@@ -1,0 +1,69 @@
+{
+	"buckets": {
+		"favorites": "المفضلة",
+		"today": "اليوم",
+		"yesterday": "أمس",
+		"fewDaysAgo": "منذ بضعة أيام",
+		"lastWeek": "الأسبوع الماضي",
+		"thisMonth": "هذا الشهر",
+		"lastMonth": "الشهر الماضي",
+		"older": "أقدم"
+	},
+	"messages": {
+		"errorLoadingRooms": "خطأ في تحميل الغرف",
+		"noRoomsFound": "لم يتم العثور على غرف",
+		"untitled": "بدون عنوان"
+	},
+	"actions": {
+		"openNavigation": "فتح التنقل",
+		"openSidebar": "فتح الشريط الجانبي",
+		"closeSidebar": "إغلاق الشريط الجانبي",
+		"favorite": "مفضل",
+		"unfavorite": "إلغاء المفضلة",
+		"rename": "إعادة التسمية",
+		"download": "تنزيل",
+		"delete": "حذف",
+		"openInline": "فتح مضمّن",
+		"minimize": "تصغير",
+		"maximize": "تكبير",
+		"close": "إغلاق"
+	},
+	"toasts": {
+		"failedToPin": "فشل تثبيت الغرفة",
+		"failedToUnpin": "فشل إلغاء تثبيت الغرفة",
+		"roomNameEmpty": "لا يمكن أن يكون اسم الغرفة فارغاً",
+		"roomRenamedSuccess": "تمت إعادة تسمية الغرفة بنجاح",
+		"failedToRename": "فشل إعادة تسمية الغرفة",
+		"roomDeletedSuccess": "تم حذف الغرفة بنجاح",
+		"failedToDelete": "تعذر حذف الغرفة"
+	},
+	"settings": {
+		"title": "الإعدادات",
+		"description": "تفضيلاتك والتطبيقات التي يمكن للمساعد استخدامها.",
+		"sections": {
+			"general": "عام",
+			"connectors": "الموصلات"
+		},
+		"general": {
+			"appearance": "المظهر",
+			"theme": "السمة",
+			"themeDescription": "السمة الداكنة وسمة النظام في مرحلة تجريبية.",
+			"themes": {
+				"system": "النظام",
+				"light": "فاتح",
+				"dark": "داكن"
+			},
+			"language": "اللغة",
+			"languageDescription": "اللغة التي يُعرض بها التطبيق.",
+			"version": "الإصدار {{version}}"
+		}
+	},
+	"download": {
+		"title": "تنزيل المحادثة",
+		"description": "اختر تنسيقًا للتنزيل.",
+		"word": "مستند Word",
+		"pdf": "مستند PDF",
+		"success": "تم تنزيل المحادثة بتنسيق {{format}}",
+		"failed": "تعذر تنزيل المحادثة"
+	}
+}

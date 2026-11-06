@@ -1,0 +1,69 @@
+{
+	"buckets": {
+		"favorites": "पसंदीदा",
+		"today": "आज",
+		"yesterday": "कल",
+		"fewDaysAgo": "कुछ दिन पहले",
+		"lastWeek": "पिछले सप्ताह",
+		"thisMonth": "इस महीने",
+		"lastMonth": "पिछले महीने",
+		"older": "पुराना"
+	},
+	"messages": {
+		"errorLoadingRooms": "रूम लोड करने में त्रुटि",
+		"noRoomsFound": "कोई रूम नहीं मिला",
+		"untitled": "शीर्षकहीन"
+	},
+	"actions": {
+		"openNavigation": "नेविगेशन खोलें",
+		"openSidebar": "साइडबार खोलें",
+		"closeSidebar": "साइडबार बंद करें",
+		"favorite": "पसंदीदा",
+		"unfavorite": "पसंदीदा से हटाएं",
+		"rename": "नाम बदलें",
+		"download": "डाउनलोड करें",
+		"delete": "हटाएं",
+		"openInline": "इन-लाइन खोलें",
+		"minimize": "छोटा करें",
+		"maximize": "बड़ा करें",
+		"close": "बंद करें"
+	},
+	"toasts": {
+		"failedToPin": "रूम पिन करने में विफल",
+		"failedToUnpin": "रूम अनपिन करने में विफल",
+		"roomNameEmpty": "रूम का नाम खाली नहीं हो सकता",
+		"roomRenamedSuccess": "रूम का नाम सफलतापूर्वक बदला गया",
+		"failedToRename": "नाम बदलने में विफल",
+		"roomDeletedSuccess": "रूम सफलतापूर्वक हटाया गया",
+		"failedToDelete": "रूम हटाया नहीं जा सका"
+	},
+	"settings": {
+		"title": "सेटिंग्स",
+		"description": "आपकी प्राथमिकताएँ और वे ऐप जिनका सहायक उपयोग कर सकता है।",
+		"sections": {
+			"general": "सामान्य",
+			"connectors": "कनेक्टर"
+		},
+		"general": {
+			"appearance": "रूप-रंग",
+			"theme": "थीम",
+			"themeDescription": "डार्क और सिस्टम थीम बीटा में हैं।",
+			"themes": {
+				"system": "सिस्टम",
+				"light": "लाइट",
+				"dark": "डार्क"
+			},
+			"language": "भाषा",
+			"languageDescription": "वह भाषा जिसमें ऐप दिखाया जाता है।",
+			"version": "संस्करण {{version}}"
+		}
+	},
+	"download": {
+		"title": "बातचीत डाउनलोड करें",
+		"description": "अपने डाउनलोड के लिए फ़ॉर्मैट चुनें।",
+		"word": "Word दस्तावेज़",
+		"pdf": "PDF दस्तावेज़",
+		"success": "बातचीत {{format}} के रूप में डाउनलोड की गई",
+		"failed": "बातचीत डाउनलोड नहीं की जा सकी"
+	}
+}

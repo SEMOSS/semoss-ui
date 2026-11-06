@@ -1,4 +1,3 @@
-import { observer } from "mobx-react-lite";
 import { useTranslation } from "@semoss/i18n";
 import { cn, useTheme } from "@semoss/ui/next";
 import appImage from "@/assets/img/app.svg";
@@ -13,7 +12,7 @@ interface AppLogoProps {
 }
 
 /** Renders the configured branding with a theme-aware default logo. */
-export const AppLogo: React.FC<AppLogoProps> = observer(({ full = false }) => {
+export const AppLogo: React.FC<AppLogoProps> = ({ full = false }) => {
 	const { t } = useTranslation("common");
 	const { root } = useRoot();
 	const { resolvedTheme } = useTheme();
@@ -44,4 +43,4 @@ export const AppLogo: React.FC<AppLogoProps> = observer(({ full = false }) => {
 			/>
 		</div>
 	);
-});
+};

@@ -4,6 +4,16 @@ export { useInsightPixel } from "./use-insight-pixel";
 export { useIteratorApi } from "./use-iterator-api";
 export { useIteratorPixel } from "./use-iterator-pixel";
 export { usePixel } from "./use-pixel";
+export {
+	useMessageSelector,
+	useObservableStore,
+	useOptionalRoomSelector,
+	useRoomSelector,
+	useRoomsClient,
+	useStoresSelector,
+	useToolSelector,
+	useToolsSelector,
+} from "./use-room";
 export { useSession } from "./use-session";
 export { useSessionInsight } from "./use-session-insight";
 export { useSessionPermissions } from "./use-session-permissions";

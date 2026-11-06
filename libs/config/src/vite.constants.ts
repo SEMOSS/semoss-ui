@@ -8,6 +8,7 @@ export const DEV_SERVER_PORTS = {
 	chromeExtension: 5178,
 	automationWorkspace: 5179,
 	collaboration: 5180,
+	playgroundDesktop: 5181,
 } as const;
 
 /**

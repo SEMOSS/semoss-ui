@@ -1,4 +1,3 @@
-import { observer } from "mobx-react-lite";
 import {
 	type CSSProperties,
 	useCallback,
@@ -7,8 +6,14 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { matchPath, Outlet, useLocation } from "react-router";
-import { useInsight } from "@semoss/sdk/react";
+import { matchPath, Outlet, useLocation, useNavigate } from "react-router";
+import {
+	ChatProvider,
+	SettingsDialogProvider,
+	useWorkspaceNavigation,
+	WorkspaceNavigationContext,
+} from "@semoss/chat";
+import { CONNECTORS_SETTINGS_PAGE } from "@semoss/chat/connectors";
 import {
 	cn,
 	SidebarInset,
@@ -20,25 +25,25 @@ import { GlobalDialog } from "@/components/common/global-dialog";
 import { GlobalFooter } from "@/components/common/global-footer";
 import { GlobalNav } from "@/components/common/global-nav";
 import { LandingTour } from "@/components/common/landing-tour";
-import { ROOM_PANEL_COMPONENTS } from "@/components/room/panels/room-panel.components";
-import { ChatContext } from "@/contexts/chat-context";
-import { TourContext } from "@/contexts/tour-context";
-import { useWorkspaceNavigation } from "@/features/conversation/use-workspace-navigation";
-import { WorkspaceNavigationContext } from "@/features/conversation/workspace-navigation.context";
+import { TourContext } from "@/contexts/tour.context";
+import { getEmbeddedPageMap } from "@/features/navigation/embedded-pages";
 import { MobileNavigationButton } from "@/features/navigation/mobile-navigation-button";
 import { PageHeaderContext } from "@/features/navigation/page-header.context";
-import { SettingsDialogProvider } from "@/features/settings/settings-dialog-provider";
 import { useRoot } from "@/hooks/use-root";
 import { useThemeTitle } from "@/hooks/use-theme-title";
-import { ChatStore } from "@/stores/chat/chat.store";
 
-export const MainLayout = observer(() => {
-	const { actions } = useInsight();
+/** The settings dialog's pages after General. */
+const SETTINGS_PAGES = [CONNECTORS_SETTINGS_PAGE];
+
+import { buildPlaygroundHostConfig } from "@/host/build-playground-host-config";
+
+export const MainLayout = () => {
 	const { root } = useRoot();
 	const theme = root.theme;
 	// React freezes DOM style props in development; keep the observable theme mutable.
 	const layoutStyle = { ...theme.overrides["main-layout"] };
 	const { pathname } = useLocation();
+	const navigate = useNavigate();
 	const [isTourOpen, setIsTourOpen] = useState(false);
 	const [pendingTour, setPendingTour] = useState(false);
 	// Routes with their own header hold the mobile navigation button there.
@@ -56,27 +61,27 @@ export const MainLayout = observer(() => {
 
 	const navigation = useWorkspaceNavigation(isSidebarOpen, setIsSidebarOpen);
 
-	// set up the chat store
-	const chatStore = useMemo(() => {
-		const store = new ChatStore(root.theme, actions, ROOM_PANEL_COMPONENTS);
-
-		// initialize it
-		store.initialize();
-
-		return store;
-	}, [root.theme, actions]);
+	// the chat's host config; the provider makes the rooms client from it
+	const chatConfig = useMemo(
+		() => buildPlaygroundHostConfig(root.theme, navigate),
+		[root.theme, navigate],
+	);
 
 	// Refs for embed iframe sync
 	const iframeRefs = useRef<Record<string, HTMLIFrameElement | null>>({});
 	const iframeReadyRef = useRef<Record<string, boolean>>({});
 	const pendingNavRef = useRef<Record<string, string>>({});
 
+	// the theme's embedded pages, whose iframes stay mounted
+	const embeddedPageMap = useMemo(
+		() => getEmbeddedPageMap(root.theme),
+		[root.theme],
+	);
+
 	// embedPath -> iframeBase (the hash-derived root path inside the iframe)
 	const embedPathToIframeBase = useMemo(() => {
 		const map: Record<string, string> = {};
-		for (const [embedPath, item] of Object.entries(
-			chatStore.embeddedPageMap,
-		)) {
+		for (const [embedPath, item] of Object.entries(embeddedPageMap)) {
 			try {
 				const hash = new URL(item.url).hash; // e.g. "#/agent"
 				map[embedPath] = hash.startsWith("#") ? hash.slice(1) : hash; // e.g. "/agent"
@@ -85,7 +90,7 @@ export const MainLayout = observer(() => {
 			}
 		}
 		return map;
-	}, [chatStore.embeddedPageMap]);
+	}, [embeddedPageMap]);
 
 	useThemeTitle(theme);
 
@@ -163,11 +168,7 @@ export const MainLayout = observer(() => {
 	}, [root.theme.tour?.show, root.theme.dialog]);
 
 	return (
-		<ChatContext.Provider
-			value={{
-				chat: chatStore,
-			}}
-		>
+		<ChatProvider config={chatConfig}>
 			<TourContext.Provider
 				value={{
 					isOpen: isTourOpen,
@@ -175,7 +176,7 @@ export const MainLayout = observer(() => {
 					stopTour: () => setIsTourOpen(false),
 				}}
 			>
-				<SettingsDialogProvider>
+				<SettingsDialogProvider pages={SETTINGS_PAGES}>
 					<LandingTour />
 					<WorkspaceNavigationContext.Provider
 						value={navigation.setWorkAreaOpen}
@@ -214,43 +215,44 @@ export const MainLayout = observer(() => {
 										)}
 										<div className="relative min-h-0 w-full flex-1 overflow-hidden">
 											<Outlet />
-											{Object.values(
-												chatStore.embeddedPageMap,
-											).map((item) => {
-												const isActive = matchPath(
-													{
-														path: `/embed/${item.path}`,
-														end: false,
-													},
-													pathname,
-												);
-												return (
-													<iframe
-														key={item.path}
-														ref={(el) => {
-															iframeRefs.current[
-																item.path
-															] = el;
-														}}
-														src={item.url}
-														title={item.path}
-														className="absolute inset-0 h-full w-full border-none"
-														style={{
-															// visibility:hidden removes the iframe from
-															// the browser touch hit-test pipeline on
-															// mobile (opacity:0 alone does not), so
-															// inactive iframes no longer intercept swipe
-															visibility: isActive
-																? "visible"
-																: "hidden",
-															pointerEvents:
-																isActive
-																	? "auto"
-																	: "none",
-														}}
-													/>
-												);
-											})}
+											{Object.values(embeddedPageMap).map(
+												(item) => {
+													const isActive = matchPath(
+														{
+															path: `/embed/${item.path}`,
+															end: false,
+														},
+														pathname,
+													);
+													return (
+														<iframe
+															key={item.path}
+															ref={(el) => {
+																iframeRefs.current[
+																	item.path
+																] = el;
+															}}
+															src={item.url}
+															title={item.path}
+															className="absolute inset-0 h-full w-full border-none"
+															style={{
+																// visibility:hidden removes the iframe from
+																// the browser touch hit-test pipeline on
+																// mobile (opacity:0 alone does not), so
+																// inactive iframes no longer intercept swipe
+																visibility:
+																	isActive
+																		? "visible"
+																		: "hidden",
+																pointerEvents:
+																	isActive
+																		? "auto"
+																		: "none",
+															}}
+														/>
+													);
+												},
+											)}
 										</div>
 										<GlobalFooter />
 									</div>
@@ -260,6 +262,6 @@ export const MainLayout = observer(() => {
 					</WorkspaceNavigationContext.Provider>
 				</SettingsDialogProvider>
 			</TourContext.Provider>
-		</ChatContext.Provider>
+		</ChatProvider>
 	);
-});
+};

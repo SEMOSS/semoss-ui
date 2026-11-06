@@ -1,7 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Env } from "../env";
 import { get } from "../utility";
-import { confirmOTP, connectLogin, loginOTP, oauth, parseLogins } from "./auth";
+import {
+	confirmOTP,
+	connectLogin,
+	loginOTP,
+	oauth,
+	parseLogins,
+	type SignInWindow,
+	setSignInWindowOpener,
+} from "./auth";
 
 vi.mock("../utility", async (importOriginal) => ({
 	...(await importOriginal<typeof import("../utility")>()),
@@ -102,6 +110,96 @@ describe("connectLogin", () => {
 		await expect(
 			connectLogin({ provider: "MICROSOFT", primaryLogin: "NATIVE" }),
 		).rejects.toMatchObject({ name: "PopupBlockedError" });
+	});
+});
+
+describe("setSignInWindowOpener", () => {
+	/** A host window that closes once the sign in page was shown. */
+	const createHostWindow = () => {
+		const visited: string[] = [];
+		const window: {
+			-readonly [K in keyof SignInWindow]: SignInWindow[K];
+		} & {
+			visited: string[];
+		} = {
+			visited: visited,
+			closed: false,
+			navigate: (url) => {
+				visited.push(url);
+				window.closed = true;
+			},
+			isBack: () => false,
+			close: vi.fn(),
+		};
+		return window;
+	};
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+		// no browser popup may open while a host opener is set
+		vi.stubGlobal("window", {
+			open: vi.fn(() => {
+				throw new Error("the browser popup must not open");
+			}),
+			setInterval: (handler: () => void, ms: number) =>
+				globalThis.setInterval(handler, ms),
+			clearInterval: (id: ReturnType<typeof setInterval>) =>
+				globalThis.clearInterval(id),
+		});
+		mockGet.mockImplementation((async () => ({
+			data: { MICROSOFT: "Ada" },
+		})) as unknown as typeof get);
+	});
+
+	afterEach(() => {
+		setSignInWindowOpener(null);
+		vi.unstubAllGlobals();
+	});
+
+	it("opens a connect sign in in the host's window and sends it to the sign in page", async () => {
+		const hostWindow = createHostWindow();
+		const opener = vi.fn(() => hostWindow);
+		setSignInWindowOpener(opener);
+
+		vi.useFakeTimers();
+		try {
+			const signIn = connectLogin({
+				provider: "MICROSOFT",
+				primaryLogin: null,
+			});
+			await vi.advanceTimersByTimeAsync(1000);
+			await expect(signIn).resolves.toBe(true);
+		} finally {
+			vi.useRealTimers();
+		}
+		expect(opener).toHaveBeenCalledWith({ kind: "connect", url: null });
+		expect(hostWindow.visited).toEqual([
+			expect.stringContaining(
+				"/api/auth/login/microsoft?disableRedirect=true",
+			),
+		]);
+	});
+
+	it("reports a window the host could not open as a blocked popup", async () => {
+		setSignInWindowOpener(() => null);
+		await expect(
+			connectLogin({ provider: "MICROSOFT", primaryLogin: "NATIVE" }),
+		).rejects.toMatchObject({ name: "PopupBlockedError" });
+	});
+
+	it("goes back to the browser popup when the opener is cleared", async () => {
+		const popup = { closed: true, location: { href: "" }, close: vi.fn() };
+		const open = vi.fn(() => popup);
+		vi.stubGlobal("window", { open: open });
+		setSignInWindowOpener(() => null);
+		setSignInWindowOpener(null);
+
+		await connectLogin({ provider: "MICROSOFT", primaryLogin: null });
+		expect(open).toHaveBeenCalledWith(
+			"",
+			"semoss-connect",
+			"popup,width=520,height=680",
+		);
 	});
 });
 

@@ -5,21 +5,21 @@ import { useRoot } from "@/hooks/use-root";
 import { InitializedLayout } from "./initialized-layout";
 import { RootLayout } from "./root-layout";
 
-const sdk = vi.hoisted(() => ({
-	isInitialized: true,
-	error: null as Error | null,
-	system: {
-		config: { theme: undefined as { THEME_MAP?: string } | undefined },
-	},
+// the SDK's config store parses THEME_MAP; a broken one reads as no theme
+const config = vi.hoisted(() => ({
+	status: "READY" as "READY" | "ERROR",
+	theme: null as Record<string, unknown> | null,
 }));
-vi.mock("@semoss/sdk/react", () => ({ useInsight: () => sdk }));
+vi.mock("@semoss/sdk/react", () => ({
+	useConfig: <T,>(selector: (state: typeof config) => T) => selector(config),
+}));
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
 afterEach(() => {
 	cleanup();
-	sdk.error = null;
-	sdk.system.config.theme = undefined;
+	config.status = "READY";
+	config.theme = null;
 });
 
 function RootConsumer() {
@@ -37,7 +37,7 @@ describe("Playground initialization", () => {
 		expect(screen.getByRole("heading")).toBeVisible();
 	});
 	it("uses defaults when custom theme JSON is invalid", () => {
-		sdk.system.config.theme = { THEME_MAP: "not JSON" };
+		config.theme = null;
 		render(
 			<RootLayout>
 				<RootConsumer />
@@ -46,11 +46,7 @@ describe("Playground initialization", () => {
 		expect(screen.getByRole("heading")).toBeVisible();
 	});
 	it("continues to apply the configured Playground theme", () => {
-		sdk.system.config.theme = {
-			THEME_MAP: JSON.stringify({
-				playground: { name: "Team Playground" },
-			}),
-		};
+		config.theme = { playground: { name: "Team Playground" } };
 		render(
 			<RootLayout>
 				<RootConsumer />
@@ -61,7 +57,7 @@ describe("Playground initialization", () => {
 		).toBeVisible();
 	});
 	it("shows an initialization error without requiring the root provider", () => {
-		sdk.error = new Error("Backend unavailable");
+		config.status = "ERROR";
 		render(
 			<MemoryRouter>
 				<InitializedLayout />

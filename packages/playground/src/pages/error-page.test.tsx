@@ -1,17 +1,17 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { createMemoryRouter, Outlet, RouterProvider } from "react-router";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { useInsight } from "@semoss/sdk/react";
+import { useConfig } from "@semoss/sdk/react";
 import { SidebarProvider, ThemeProvider } from "@semoss/ui/next";
-import { RootContext } from "@/contexts/root-context";
-import { RootStore } from "@/stores/root/root.store";
+import { RootContext } from "@/contexts/root.context";
+import { RootStore } from "@/host/root.store";
 import { ErrorPage } from "./error-page";
 import { InitializedLayout } from "./initialized-layout";
 
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
-vi.mock("@semoss/sdk/react", () => ({ useInsight: vi.fn() }));
+vi.mock("@semoss/sdk/react", () => ({ useConfig: vi.fn() }));
 vi.mock("./root-layout", () => ({
 	RootLayout: ({ children }: { children: React.ReactNode }) => children,
 }));
@@ -34,10 +34,10 @@ afterEach(() => {
 test.each(["light", "dark"] as const)(
 	"shows %s initialization failures before RootContext is mounted and allows returning home",
 	async (theme) => {
-		vi.mocked(useInsight).mockReturnValue({
-			isInitialized: false,
-			error: new Error("Initialization failed"),
-		} as ReturnType<typeof useInsight>);
+		vi.mocked(useConfig).mockImplementation(
+			<T,>(selector?: (state: { status: string }) => T) =>
+				selector?.({ status: "ERROR" }) as T,
+		);
 		const router = createMemoryRouter(
 			[
 				{ path: "/", element: <h1>Home</h1> },

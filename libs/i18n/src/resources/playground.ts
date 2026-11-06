@@ -1,60 +1,15 @@
-// Playground-specific lazy translations.
-//
-// `mcp` resolves to the playground's own copy (it intentionally overrides the
-// shared MCP namespace); `prompts` comes from the shared selectors.
+// Playground-specific lazy translations: the chat UI's (`chatResources`),
+// plus the playground's own chrome.
+import { chatResources } from "./chat";
 import type { LazyResources } from "./types";
 
 export const playgroundResources: LazyResources = {
-	ns: [
-		"common",
-		"notifications",
-		"validation",
-		"prompts",
-		"auditlog",
-		"members",
-		"agent",
-		"transcript",
-		"mcp",
-		"chat",
-		"knowledge",
-		"room",
-		"sidebar",
-		"tool",
-		"tour",
-		"workspace",
-		"mobile",
-		"chatTools",
-		"chatConnectors",
-		"connectors",
-	],
+	ns: [...chatResources.ns, "appNav", "tour", "mobile"],
 	load: {
-		// core
-		common: (l) => import(`./locales/${l}/common.json`),
-		notifications: (l) => import(`./locales/${l}/notifications.json`),
-		validation: (l) => import(`./locales/${l}/validation.json`),
-		// shared
-		prompts: (l) => import(`./locales/${l}/shared/prompts.json`),
-		auditlog: (l) => import(`./locales/${l}/shared/auditlog.json`),
-		members: (l) => import(`./locales/${l}/shared/members.json`),
-		agent: (l) => import(`./locales/${l}/shared/agent.json`),
-		// how a chat reply's reasoning and tool calls read, in every chat
-		transcript: (l) => import(`./locales/${l}/shared/transcript.json`),
-		// connectors: the Microsoft 365 and Google Workspace viewers
-		connectors: (l) => import(`./locales/${l}/connectors/connectors.json`),
-		// playground (note: playground/mcp.json overrides shared/mcp.json)
-		mcp: (l) => import(`./locales/${l}/playground/mcp.json`),
-		chat: (l) => import(`./locales/${l}/playground/chat.json`),
-		knowledge: (l) => import(`./locales/${l}/playground/knowledge.json`),
-		room: (l) => import(`./locales/${l}/playground/room.json`),
-		sidebar: (l) => import(`./locales/${l}/playground/sidebar.json`),
-		tool: (l) => import(`./locales/${l}/playground/tool.json`),
+		...chatResources.load,
+		// the navigation sidebar's own items, search and user menu
+		appNav: (l) => import(`./locales/${l}/playground/app-nav.json`),
 		tour: (l) => import(`./locales/${l}/playground/tour.json`),
-		workspace: (l) => import(`./locales/${l}/playground/workspace.json`),
 		mobile: (l) => import(`./locales/${l}/playground/mobile.json`),
-		// the default tools and the Tools section of Settings
-		chatTools: (l) => import(`./locales/${l}/playground/chat-tools.json`),
-		// the Microsoft 365 and Google Workspace connectors in a chat
-		chatConnectors: (l) =>
-			import(`./locales/${l}/playground/chat-connectors.json`),
 	},
 };

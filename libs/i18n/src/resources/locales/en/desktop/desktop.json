@@ -1,0 +1,50 @@
+{
+	"app": {
+		"title": "SEMOSS Playground"
+	},
+	"instances": {
+		"title": "Connect to SEMOSS",
+		"description": "Enter the address of the SEMOSS server you sign in to.",
+		"name": "Name",
+		"namePlaceholder": "Work",
+		"url": "Server address",
+		"module": "Deployment path",
+		"connect": "Connect",
+		"checking": "Checking the server…",
+		"unreachable": "Could not reach the server: {{message}}",
+		"saved": "Saved servers",
+		"use": "Use",
+		"remove": "Remove {{name}}",
+		"addAnother": "Add a server"
+	},
+	"auth": {
+		"title": "Sign in to {{name}}",
+		"token": "Access token",
+		"tokenHint": "Sign in with a bearer token from your identity provider.",
+		"tokenLabel": "Token",
+		"provider": "Provider",
+		"remember": "Remember on this computer",
+		"signIn": "Sign in",
+		"switchServer": "Switch server",
+		"tokenRefused": "The server did not accept the token."
+	},
+	"nav": {
+		"newChat": "New chat",
+		"chats": "Chats",
+		"agents": "Agents",
+		"knowledge": "Knowledge",
+		"signOut": "Sign out"
+	},
+	"tools": {
+		"source": "This computer",
+		"approval": "Runs on this computer once you allow it.",
+		"notify": "Show a notification",
+		"reveal": "Show in folder"
+	},
+	"browser": {
+		"name": "Browser",
+		"address": "Address",
+		"go": "Go",
+		"blocked": "Some sites refuse to be shown inside the app."
+	}
+}

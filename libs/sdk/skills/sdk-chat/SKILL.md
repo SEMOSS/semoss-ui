@@ -1,155 +1,212 @@
 ---
 name: sdk-chat
-description: "Use when working with @semoss/sdk rooms, AskRoom chat jobs, RunAgent runs, streaming, tool approvals, room options, or insight bindings. Covers public imports, parameters, return values, lifecycle cleanup, and known compatibility gaps."
+description: "Use when working with @semoss/sdk rooms: the RoomEngine/RoomsClient room engine, the playground chat reactors (AskPlayground, CreatePlaygroundRoom, GetPlaygroundRooms, AddPlaygroundToolExecution), client-run tools, streaming, RunAgent runs and approvals, room options, or room-to-insight binding. Covers public imports, configuration, lifecycle, React selector hooks, and known gaps."
 ---
 
-# @semoss/sdk Room and Agent API
+# @semoss/sdk Rooms, Chat and Agent Runs
 
-This self-contained guide ships with the SDK. Its signatures and lifecycle notes
-describe this package's implementation, not a guarantee about every SEMOSS server.
-Use a signed in session (`Session`; see the SDK's `session.skill.md`) and a ready
-insight for the room's workspace. Pass actual
-SEMOSS model engine IDs, not provider model names such as `gpt-4o`.
+This self-contained guide ships with the SDK. It describes this package's
+implementation, not a guarantee about every SEMOSS server. Use a signed in
+session (`Session`; see the SDK's `session.skill.md`). Pass SEMOSS model engine
+IDs, not provider model names such as `gpt-4o`.
 
-Import core functions, `RoomStore`, `AgentStore`, and types from `@semoss/sdk`.
-React hooks/providers such as `useInsight` and `InsightProvider` live under
-`@semoss/sdk/react`. A room's `InsightProvider` is its workspace; sign in and the
-user come from `Session` and `useSession`, not from the room's insight. There is no core export named `Room`. Framework-independent
-state does not imply that all SDK entry points are safe in Node or SSR environments.
+Import stores, API functions and types from `@semoss/sdk`; React hooks from
+`@semoss/sdk/react`. Migrating from 1.x? See `MIGRATION.md` in the package.
 
-## Agent Profile Images
+**Every surface uses the playground reactors** — `CreatePlaygroundRoom`,
+`AskPlayground`, `GetPlaygroundMessages`, `AddPlaygroundToolExecution`,
+`GetPlaygroundRooms` — whether it is the playground, a desktop app, an embedded
+chat, a terminal agent or a custom app. There is no per-surface reactor choice.
 
-Agent workspaces and skills use project catalog images. After creation returns a
-project ID, call `uploadProjectImage(projectId, file)` from `@semoss/sdk`.
-`uploadEngineImage(engineId, file)` handles engine catalog images. Both return
-`Promise<CatalogImageUploadResult>` with `id`, `name`, `message`, `imageUrl`, and
-`contentType`. `imageUrl` is a path on the backend origin, not necessarily the
-frontend origin. These calls require edit access and the resource-scoped image
-upload routes on Monolith.
+## Choose a Level
 
-Use `CATALOG_IMAGE_ACCEPT`, `CATALOG_IMAGE_MAX_BYTES`, and
-`getCatalogImageValidationError(file)` for file-picker validation. Supported files
-are PNG, JPEG, and GIF up to 10 MiB. The server validates the bytes and enforces a
-25-million-pixel limit. A failure rejects; preserve the new project ID so a retry
-uploads to the same agent. Do not pass a temporary form ID or an agent run ID.
-
-## Choose the Transport Explicitly
-
-| Operation | Submission | Progress | Settled result |
-|---|---|---|---|
-| Chat | `askRoom(insightId, params)` or `addRoomToolExecution(insightId, params)` returns `Promise<{ jobId: string }>` | `getPixelJobStreaming(jobId)` | `getPixelAsyncResult(jobId)` |
-| Agent harness | `runAgent(params, insightId?)` returns `Promise<{ runId: string; roomId: string; status: AgentRunStatusValue }>` | `pollAgentRun(runId)` or `AgentStore.watch(...)` | `getAgentRun(runId, options?, insightId?)` |
-
-The function you call chooses the protocol. `runAgent` sends `wait=false`; it does
-not use the SDK's async pixel job APIs. Do not pass its `runId` to chat job polling,
-even when a subagent summary also labels that identifier `jobId`.
-
-`RoomOptions.harnessType?: string` is persisted configuration, not an enforced
-creation-time switch. `room.ask()` always uses AskRoom; `room.askAgent()` always
-uses RunAgent. The current `room.createAgent()` does not forward the room's
-`harnessType`. Use `runAgent` or `AgentStore.start` to select a harness explicitly.
-Omitted `engine` or `harnessType` values are omitted on the wire, not defaulted by
-the SDK; server defaults must be checked against the deployed backend.
-
-## Room Records and Options
-
-All functions in this table are exported from `@semoss/sdk`.
-
-| Call | Return type / behavior |
+| You want | Use |
 |---|---|
-| `createRoomRecord(insightId, workspaceId?)` | `Promise<RoomRecord>`; creates a record, without binding it |
-| `createRoom(insightId, workspaceId?)` | `Promise<RoomStore>`; creates a record, binds it, and seeds local default options |
-| `getUserRooms(insightId, options?)` | `Promise<RoomRecord[]>`; options are `{ pinned?: boolean; sort?: "ASC" \| "DESC" }` |
-| `getRoomMessages(insightId, roomId)` | `Promise<RoomMessage[]>` |
-| `getRoomOptions(insightId, roomId)` | `Promise<RoomOptions>` |
-| `getRoomForInsight(insightId)` | `Promise<RoomRecord \| null>` |
-| `setRoomForInsight(insightId, roomId)` | `Promise<void>`; throws on returned pixel errors |
-| `updateRoomOptions(insightId, roomId, roomOptions)` | `Promise<void>`; serializes a `RoomOptions[]`, without merging or returning server options |
+| A whole chat: rooms, turns, streaming, tool loop, agent runs | **The room engine**: `RoomsClient` + `RoomEngine` (below) |
+| One pixel, batched or streamed your own way | **Builders**: `chatPixels.*` (strings) |
+| One call with no state | **Runners**: `createPlaygroundRoom`, `askPlayground`, `getPlaygroundRooms`, … |
+| An agent run you drive yourself | `runAgent` / `AgentStore` (see Agent Runs) |
 
-The raw update wrapper does not establish server-side replace/merge semantics.
-Fetch the current options before assembling an update when preservation matters.
-`RoomRecord` requires `roomId` and `name`; `RoomMessage` declares `messageId`,
-`content`, and `role`. Both allow extra fields. These types are not runtime
-validators for richer backend message parts.
+The engine is framework-free — no React, DOM or `window` — so it runs in a
+browser, a webview, or Node (with `Env.HEADLESS` / a bearer token).
 
-Required `RoomOptions` fields are `predefinedPrompts: PredefinedPrompt[]`,
-`instructions: string`, `mcp: MCPToolConfig[]`, and `modelId: string`.
-Optional fields are `workspace: RoomWorkspace`, `harnessType: string`, and
-`overrideSystemPrompt: boolean`.
+## The Room Engine
 
-On backends supporting `overrideSystemPrompt`, set it to `false` to append
-`instructions` after the selected agent's authored system prompt. Set it to
-`true` to replace that prompt with nonempty `instructions`. Omitting the flag
-retains the legacy replacement behavior; blank instructions retain the agent
-prompt in either mode. Workbench assistants send `false` by default. Deploy the
-backend change together with clients using this option; older servers ignore
-the flag and continue replacing the agent prompt.
+### RoomsClient — the user's rooms
 
-- `PredefinedPrompt` requires `{ id, title, context }` strings, not plain strings;
-  optional fields are `tags?: string[]`, `version?: number`, and `intent?: string`.
-- `MCPToolConfig` requires `{ id, type, name }` strings; `fromWorkspace` and
-  `fromRoom` are optional booleans. The type does not restrict server entry kinds.
-- `RoomWorkspace` requires `{ workspace_id: string; name: string }`.
-
-```ts
-import { createRoom } from "@semoss/sdk";
-
-async function configureRoom(
-	insightId: string,
-	modelEngineId: string,
-	workspaceId?: string,
-) {
-	const room = await createRoom(insightId, workspaceId);
-	await room.updateOptions({
-		modelId: modelEngineId,
-		instructions: "Be concise.",
-		predefinedPrompts: [
-			{ id: "summary", title: "Summarize", context: "Summarize this." },
-		],
-	});
-	return room;
-}
-```
-
-## Managed RoomStore
-
-`createRoom` seeds `{ predefinedPrompts: [], instructions: "", mcp: [], modelId: "" }`.
-It does not load existing server/workspace options; configure it before asking.
-For an existing room, fetch its options and use
-`new RoomStore(roomId, insightId, options)`. That constructor neither binds the
-insight nor restores the conversation's last response ID from history.
+`new RoomsClient<R>(config?)` keeps the rooms opened on a page and makes new
+ones; every room it makes shares `config.engine` (a `RoomEngineConfig`).
 
 | Member | Contract |
 |---|---|
-| `room.updateOptions(partial)` | `Promise<void>`; shallow-merges local options, persists `[merged]`, then updates local state |
-| `room.getMessages()` | `Promise<RoomMessage[]>` |
-| `room.ask(command, options?)` | `Promise<RoomAskResult>` containing `inputMessageId`, `responseMessageId`, `text` |
-| `room.createAgent(command, engine?)` | `Promise<AgentStore>`; caches it as `room.agent`, but does not start watching |
-| `room.askAgent(command, options?)` | `Promise<RoomAskAgentResult>`; same result fields plus `status: string`, checked for `"COMPLETED"` on success |
-| `room.options` | `Readonly<RoomOptions>` getter; not a deeply frozen copy |
-| `room.roomId`, `room.insightId`, `room.agent` | IDs and the latest `AgentStore \| null` |
+| `initialize()` | Reads the models and picks the one new rooms run on (profile default → last pick this login → host default → first). Never rejects |
+| `createRoom(mode, prompt, files, options, workspaceId?, askOptions?, prepareRoom?)` | Creates a room in a fresh insight, saves its options, then sends the first message without waiting; the room is listed optimistically. Resolves with the room |
+| `createEmptyRoom(mode, name, options, workspaceId?, prepareRoom?)` | A room with no first message (e.g. an agent greeting) |
+| `loadRoom(roomId)` | The cached room, or loads one — which binds a fresh insight. Throws for a room with no messages |
+| `closeRoom(roomId)` | `RemoveUserRoom` in the session's insight, then `DropInsight` on the room's |
+| `renameRoom(roomId, name)`, `pinRoom(roomId, pinned)` | Through the session's insight; bump `roomsVersion` |
+| `listRooms(query?)` | `GetPlaygroundRooms` in the session's insight, within `roomScope` |
+| `roomsVersion` | Moves whenever rooms change; lists read again on it |
+| `optimisticRooms`, `addOptimisticRoom`, `removeOptimisticRoom` | Rooms shown before the backend lists them (a room is listed once its first message has data) |
+| `models`, `setSelectedModel`, `selectModelById`, `applyProfileDefaultModel` | The model new rooms run on; remembered through `config.preferences` |
 
-`RoomAskOptions` accepts `onChunk`, `parentMessageId`, `image`, and `context`.
-The parent defaults to the last successful response ID on this instance, initially
-`"ROOT_PLACEHOLDER_ID"`; `image` defaults to `[]`; `context` defaults to local
-instructions. It exposes no `paramValues`, timeout, or abort option. Serialize
-turns on one instance to avoid racing the mutable last-response ID.
+`RoomsClientConfig`: `engine`, `enableModelSelect`, `defaultModel`,
+`preferences` (`ChatPreferencesAdapter`: read/write the picked model; reads never
+throw), `createRoomStore(init)` (make your subclass of `RoomEngine`),
+`onFirstMessageError(room, error)`.
 
-`RoomAskAgentOptions` accepts only `onChunk` and `onPendingActions`. Neither is an
-awaited async callback. Handle errors from async approval UI actions yourself.
-If durable reconciliation reports `INPUT_REQUIRED` without a handler, the method
-stops local observation and rejects; it does not cancel or reject backend actions.
-`RoomStreamChunk` has `type: "content" | "thinking" | "tool"` and optional
-`content`, `thinking`, or `toolData` respectively.
+### RoomEngine — one room
 
-**Current managed-method limitations:** `room.ask` has an unbounded poll loop with
-no delay, deadline, or cancellation and attempts result retrieval after any
-terminal status. `room.askAgent` waits for reconciliation callbacks, not
-`AgentStore.done`; local stop/abort, exhausted polling, or failed terminal
-reconciliation can leave its promise pending. Its chunk adapter also misses full
-message/reasoning text supplied only on item start/completion. Prefer the explicit
-lifecycles below when bounded observation and reliable completion matter. Merely
-racing a Room method against a timeout does not stop its internal work.
+**1 room = 1 insight per load.** `initialize()` reads the room's messages and
+options and binds the insight it runs in (`SetRoomForInsight`) in one request;
+`new RoomEngine({ roomId })` starts in `"new"`, so loading makes a fresh insight.
+Never rebind one insight to another room; close rooms through `RoomsClient`.
+
+| Member | Contract |
+|---|---|
+| `initialize({ isNew? })` | Builds the conversation tree, restores agent mode from a persisted `harnessType`, merges the agent's toolboxes and greeting, picks the model the history ran on. Reconnects a running agent turn, or continues a chat turn's unfinished tool calls |
+| `history`, `tail`, `latestResponseMessage`, `root` | The active branch of the tree |
+| `askMessage(prompt, files?, { visible? })` | Shows the user's turn and a placeholder at once, saves options (with turn context), uploads files, sends queued `contextItems`, then runs the turn. Rejects with `UploadError` when a file could not be read; queued files go back on failure |
+| `send(prompt, files?)` | `askMessage` then `waitForIdle()`; resolves with the last response's text — for hosts with no view |
+| `waitForIdle()` | Resolves when no stream, tool call, or tool save is running. Calls waiting for the user do not hold it |
+| `cancelActiveJob()` | Stops the live stream (and commits what streamed), or hard-stops pending tool calls |
+| `canCancel`, `isCancelling`, `isLoading`, `error` | Turn state |
+| `compactMessages(strategy?)` | `SUMMARY`, `TOOL_PRUNE` or the backend's choice |
+| `updateRoomOptions(options)`, `syncRoomOptions()`, `setOptions`, `setModel`, `setMode`, `setMetadata` | Saved options skip a save the backend already holds; agent and folder toolboxes (`fromWorkspace`, `fromRoom`) are never stored |
+| `getTool(id)`, `tools`, `chatTools`, `contextItems` | Tool calls, client tools, files queued for the next message |
+| `runRoomPixel(pixel, showLoading?, setErrorOnFail?, throwOnError?)` | Any pixel in the room's insight |
+
+`RoomEngine<O>` is generic over its options so a host can keep richer types.
+
+Hooks a host with a UI overrides (protected or public no-ops):
+`onInsightBound({ isNew })` (re-point file views at the new insight; restore
+integrations), `refreshFiles()`, `showToolPanel(tool)`, `hideToolPanel(tool)`.
+
+### RoomEngineConfig
+
+| Field | Effect |
+|---|---|
+| `clientTools` | `ClientToolProvider[]` — see Client Tools |
+| `roomScope: { token }` | Stamped into every saved options (`roomScope`) and passed as `roomOptionsSearch` by `listRooms`. LIKE match: tokens must not prefix one another |
+| `instructions` | A new room's instructions |
+| `turnContext()` | Read before **every** turn; appended to the instructions the turn is saved and sent with (local options keep the room's own) |
+| `runParams: { maxTurns, maxReflections }` | Sent with agent runs |
+| `onPendingAction(action, room)` | Answer an agent run's pending action yourself: resolve `{ decision, paramValues }`, or null to leave it to the user. Each action is offered once |
+| `autoNameRooms` | Names a new room from its first exchange with `GenerateRoomName` |
+| `toolAutoExecutionLimit` | Calls running at once in a chat turn (5 when unset) |
+| `sendTemperature`, `allowedFileTypes`, `defaultRoomSettings.model`, `appName` | Model temperature, which files go to the model, the default model, export file names |
+
+### Messages and tool calls
+
+`InputMessageStore` and `ResponseMessageStore` (`parts`, `isThinking`,
+`feedback`, `hasTools`, `hasUnfinishedTools`, `shouldFoldUp`, `recordFeedback`,
+`rewriteMessage`, `downloadResponse`, `continueToolExecution`,
+`saveToolExecution`) and `ToolCallStore` (`status`, `json`, `parameters`,
+`response`, `pendingAction`, `isResolved`, `display`, `openTool`, `closeTool`).
+`decideAgentToolAction(tool, decision, paramValues?)` decides a paused agent
+run's call through the run's live watcher.
+
+### Observing
+
+Every engine store is an `ObservableStore`: `getSnapshot()` returns a change
+counter (a new object per change) and `subscribe(listener)` hears each change.
+A message or tool call's change also tells its room, so reading the room sees
+everything; a streamed chunk replaces its message's `parts` (copy-on-write).
+Wrap several changes in `batchChanges(fn)` to notify once. Hosts can build their
+own stores on `ObservableStore` (`observeFields` in the constructor).
+
+React (`@semoss/sdk/react`) selector hooks render again only when the selection
+changes (shallow compare):
+
+```tsx
+const { isLoading, history } = useRoomSelector(room, (r) => ({
+	isLoading: r.isLoading,
+	history: r.history,
+}));
+const parts = useMessageSelector(message, (m) => m.parts); // one message only
+const status = useToolSelector(tool, (t) => t.status, "INITIAL");
+const { roomsVersion } = useRoomsClient(client, (c) => ({ roomsVersion: c.roomsVersion }));
+```
+
+Also `useOptionalRoomSelector(room | null, selector, fallback)`,
+`useToolsSelector(tools, selector)`, `useStoresSelector(stores, selector)` and
+`useObservableStore(store, selector, fallback)`. Write selectors inline: a
+stable function reference is cached per snapshot of the store it is given.
+
+## Client Tools
+
+A `ClientToolProvider` runs tools on the client with no backend change:
+
+```ts
+interface ClientToolProvider {
+	id: string;
+	getTools(room): ClientToolDefinition[];   // sent in paramValues.tools
+	canHandle(call): boolean;
+	execute(call, room): Promise<{ output: string; isError?: boolean }>;
+	decorateToolCall?(call, room): RoomToolCall; // restore _meta, title, execution
+	policy?(toolName, room): "auto" | "ask" | "disabled";
+}
+```
+
+- The room sends every provider's tools with **every** chat turn **and** every
+  tool-result save — the model's follow up only re-adds the room's own tools, so
+  leaving them off a save drops them mid-task.
+- Calls come back with no `_meta`; `decorateToolCall` restores it.
+  `SMSS_MCP_EXECUTION: "auto"` runs at once; `"ask"` waits for
+  `chatTools.approveChatTool(tool)` / `declineChatTool(tool)`.
+- Agent runs bring their own tools; answer agent-run tools with
+  `onPendingAction` instead.
+- `createChatFilesToolProvider({ labels? })` is the room's files tools (list,
+  read, search, write, move, delete) over the insight asset pixels. A room's
+  `defaultTools` option sets each to `auto`, `ask` or `disabled` (reads auto,
+  changes ask by default). It never addresses the room folder's root for a write
+  and hides its `mcp` folder — `DeleteInsightAssets` with an empty path clears the
+  whole space.
+
+## Pixel Builders and Runners
+
+`chatPixels` builds one statement each: `createRoom({ workspaceId, mode })`,
+`ask(turn, commit?)`, `addToolExecution(params, commit?)`, `getMessages(roomId)`,
+`getRooms(query)`, `getRoomOptions`, `setRoomForInsight`, `updateRoomOptions`,
+`removeRoom`, `renameRoom`, `pinRoom`, `generateRoomName`, `stopJob`,
+`submitFeedback`, `exportMarkdown`, `compactMessages`, `dropInsight`.
+A `commit` (`{ responseParts, hiddenMessage }`) persists a stopped turn instead of
+asking the model.
+
+| Runner | Returns |
+|---|---|
+| `createPlaygroundRoom({ workspaceId?, mode? }, insightId = "new")` | `{ roomId, insightId }` |
+| `askPlayground(insightId, turn, commit?)` | `{ jobId }` — stream it (Chat Jobs) |
+| `addPlaygroundToolExecution(insightId, params, commit?)` | `{ jobId }` |
+| `getPlaygroundMessages(insightId, roomId)` | `PixelMessage[]` |
+| `getPlaygroundRooms(insightId, { search, roomOptionsSearch, pinned, limit, offset, sort, mode })` | `PlaygroundRoomRow[]` |
+| `getRoomOptions`, `updateRoomOptions`, `setRoomForInsight`, `getRoomForInsight` | As before |
+| `removeUserRoom`, `renameRoom`, `pinRoom`, `stopPixelExecution`, `submitLlmFeedback` | `void` |
+| `generateRoomName(insightId, { roomId, prompt?, engine? })` | The name, or null |
+| `exportMarkdown(insightId, { markdown, fileName, format })` | A file key to `download` from the same insight |
+
+`PlaygroundTurnParams`: `engine`, `roomId`, `command`, `context?`, `media?`,
+`parentMessageId?`, `paramValues?` (one map; client tools go in `tools`).
+Runners throw on pixel errors; `runPixel` itself returns `errors` instead.
+
+## Chat Jobs
+
+A chat turn and a tool save are pixel jobs: `askPlayground` / 
+`addPlaygroundToolExecution` return `{ jobId }`. Poll `getPixelJobStreaming(jobId)`
+for chunks, then read `getPixelAsyncResult(jobId)` once the status is
+`Complete` or `ProgressComplete`. `Canceled`, `Error` and `UnknownJob` are
+failures; `Paused` needs explicit handling. Space polls (the engine uses 500 ms)
+and bound the wait locally (see below). Read chunks with
+`readPixelStreamChunk(chunk, { onText, onThinking, onTool, onUsage })`; never run a
+tool from incomplete streamed arguments, and validate the settled output before
+reading message parts. A settled tool save's output is either the model's reply
+(`{ inputMessage, responseMessage }`) or, while more calls of the response are
+pending, a string or `{ responseMessage: string }`.
+
+To stop a turn: `StopPixelExecution`, then persist what streamed by replaying the
+same turn with `commit` (`responseParts` + `hiddenMessage`); the backend skips the
+model and appends a hidden note so the next turn knows. `RoomEngine.cancelActiveJob`
+does all of this.
 
 ## Bounded Local Observation
 
@@ -187,130 +244,6 @@ the caller's wait, not the duration of an in-flight HTTP request. That request m
 still finish; check the signal before updating UI or starting more work. Retain
 the job/run ID for later reconciliation. Local timeout or stopping a watcher does
 not establish that backend execution was cancelled.
-
-## Chat Jobs
-
-`AskRoomParams` requires `engine`, `roomId`, `command`, `context`, and
-`parentMessageId`, all strings. Use `"ROOT_PLACEHOLDER_ID"` for a new thread.
-Optional `image: string[]` defaults to `[]`; optional
-`paramValues: Record<string, unknown>[]` defaults to `[{}]`.
-
-The wrapper places `command` and `context` inside Pixel `<encode>` markers; it
-does not call `encodeURIComponent`. Do not assume this is general-purpose input
-escaping. See the backend compatibility notes below.
-
-This example consumes an already submitted job, spaces polls by 500 ms, and
-handles every declared status without treating cancellation or errors as success.
-Submit with `await askRoom(insightId, params)` using a complete `AskRoomParams`,
-then pass its `jobId` to this function.
-
-```ts
-import { getPixelAsyncResult, getPixelJobStreaming } from "@semoss/sdk";
-import type { PixelStreamMessage } from "@semoss/sdk";
-
-async function observeChatJob(
-	jobId: string,
-	onChunk: (chunk: PixelStreamMessage) => void,
-) {
-	return withLocalDeadline(async (signal) => {
-		for (let attempt = 0; attempt < 120; attempt += 1) {
-			signal.throwIfAborted();
-			const { message, status } = await getPixelJobStreaming(jobId);
-			signal.throwIfAborted();
-			for (const chunk of message) onChunk(chunk);
-			switch (status) {
-				case "Complete":
-				case "ProgressComplete": {
-					const { errors, results } =
-						await getPixelAsyncResult<[unknown]>(jobId);
-					signal.throwIfAborted();
-					if (errors.length) throw new Error(errors.join(", "));
-					const result = results[0];
-					if (!result) throw new Error("Chat job returned no result");
-					return result.output;
-				}
-				case "Canceled":
-				case "Error":
-				case "UnknownJob":
-					throw new Error(`Chat job ended with ${status}`);
-				case "Paused":
-					throw new Error(
-						"Chat job is paused; explicit application handling is required",
-					);
-				case "Created":
-				case "Submitted":
-				case "InProgress":
-				case "Streaming":
-					break;
-				default:
-					throw new Error(`Unexpected chat job status: ${status}`);
-			}
-			await new Promise<void>((resolve) => setTimeout(resolve, 500));
-		}
-		throw new Error("Chat polling limit reached");
-	});
-}
-```
-
-`PixelStreamMessage` is discriminated by `stream_type`: `content` carries
-`data.content`, `thinking` carries `data.thinking`, `tool` carries optional
-`data.index`, `id`, and `function` name/argument fragments, and `usage` carries
-`data.input_tokens` or `data.output_tokens`. Read chunks with
-`readPixelStreamChunk(chunk, { onText, onThinking, onTool, onUsage })` rather
-than branching on `stream_type` yourself: it skips empty text and reasoning,
-hands each kind to its handler, and ignores a kind it does not know instead of
-taking it for a tool call. Do not execute tools
-from incomplete streamed arguments. Validate the settled `unknown` output before
-reading message parts or executing tool calls. A generic type argument is not
-runtime validation. Keep one consumer per job's incremental stream.
-
-Room record/options wrappers throw on pixel errors. In contrast, `runPixel` and
-`getPixelAsyncResult` return an `errors` array for pixel failures; inspect it.
-Transport failures can reject. Successful `askRoom` submission only establishes
-receipt of a job handle, not a successful model turn.
-
-## Chat Tool Results
-
-`addRoomToolExecution(insightId, params)` returns `Promise<{ jobId: string }>`.
-Observe that job with the same bounded chat lifecycle. Required
-`AddRoomToolExecutionParams` fields are:
-
-| Field | Type |
-|---|---|
-| `engine`, `roomId`, `toolId`, `toolName`, `toolExecutionResponse` | `string` |
-| `mcpToolStatus` | `"success" \| "error" \| "cancelled" \| "paused"` |
-| `toolParameterValues` | `Record<string, unknown>` |
-| `parentMessageId` (optional) | `string`; normally the response containing the tool call |
-| `paramValues` (optional) | `Record<string, unknown>[]`; defaults to `[{}]` |
-
-Use the model engine identifier for `engine`, not a project/workspace ID or an
-assumed `room.model.app_id` field. `RoomStore` has no `model` field. The wrapper
-passes this string through; verify the deployed reactor's identifier contract.
-It wraps tool output in `<encode>` markers and does not URL-encode it.
-
-To run a chat tool call itself, `runMcpTool({ project, roomId, name, paramValues }, insightId?)`
-calls RunMCPTool and returns `Promise<string>`: the tool's text, JSON for output
-that is not text, or `""` for none. It rejects when the pixel fails or answers
-with no statement; submit that failure with `mcpToolStatus: "error"`. Use
-`decideAgentRunAction` instead for a paused agent run's tool.
-`makeUserPixelMcp({ filePath, generator, tools })` writes a generator's tools
-into a pixel MCP file in the user's own assets.
-`getMcpTools({ id, type })` calls GetMCPTools and returns the MCP document as
-the backend returns it, with its `tools` (each tool's definition and `_meta`).
-A `PROJECT` is read by project and every other catalog type by engine. It
-rejects when the pixel fails.
-
-The client owns chat tool execution, authorization, concurrency, and result
-submission. There is no SDK `toolAutoExecutionLimit` option or default of five.
-Report a genuine tool failure using `mcpToolStatus: "error"`; a failure to save a
-successful tool result is a separate transport/persistence failure. Do not relabel
-it as tool failure and automatically resubmit, or blindly rerun a side-effecting
-tool. Reconcile first and use an integration-verified retry policy.
-
-Do not assume every settled tool result is `{ inputMessage, responseMessage }`.
-Known server variants include a top-level string for intermediate/duplicate
-submissions. Check `typeof output === "string"` before accessing any fields;
-validate objects too. A string alone does not prove another tool should run.
 
 ## Agent Runs
 
@@ -465,32 +398,35 @@ wake the right watcher. Child runs have independent rooms and run IDs; use
 `getSubagentRuns`/`getAgentRun` and a separate owner per child when live observation
 is needed. Do not assume a parent's watcher resolves child approvals.
 
+## Agent Profile Images
+
+Agent workspaces and skills use project catalog images. After creation returns a
+project ID, call `uploadProjectImage(projectId, file)` from `@semoss/sdk`.
+`uploadEngineImage(engineId, file)` handles engine catalog images. Both return
+`Promise<CatalogImageUploadResult>` with `id`, `name`, `message`, `imageUrl`, and
+`contentType`. `imageUrl` is a path on the backend origin, not necessarily the
+frontend origin. These calls require edit access and the resource-scoped image
+upload routes on Monolith.
+
+Use `CATALOG_IMAGE_ACCEPT`, `CATALOG_IMAGE_MAX_BYTES`, and
+`getCatalogImageValidationError(file)` for file-picker validation. Supported files
+are PNG, JPEG, and GIF up to 10 MiB. The server validates the bytes and enforces a
+25-million-pixel limit. A failure rejects; preserve the new project ID so a retry
+uploads to the same agent. Do not pass a temporary form ID or an agent run ID.
+
 ## Known Gaps and Verification Boundary
 
-These are current limitations, not recommendations to change SDK/backend source
-while updating documentation:
-
-- The watcher retains its subscription after stopping. `isWatching` can remain
-    true, and another `watch()` on that instance returns the stopped subscription.
-    Wait for the previous `done` before attaching a new store; never overlap drains.
-- An already-aborted signal is not checked internally. Stop/abort does not abort
-    an in-flight request or suppress all callbacks from it. Guard UI delivery and
-    bound the outer wait as above.
-- Internal reconciliation omits the store's insight ID, records status before a
-    successful read, and does not retry that read for an unchanged status. It can
-    miss a new approval batch while status remains `INPUT_REQUIRED`. Inspect
-    `onSnapshot` pending action IDs and use `getSnapshot()` or
-    `getAgentRun(runId, { includeMessages: true }, insightId)` explicitly.
-- Legacy AskRoom `image`/`context` fields have a known compatibility gap with
-    servers expecting `media` and persisted room instructions. Configuring room
-    instructions does not prove the legacy request override is honored.
-- Command encoding, separate harness/provider parameters, model engine ID
-    interpretation, tool-result shapes, approval resumption, destructive drains,
-    and StopAgentRun/child cancellation require deployed-backend verification.
-    In particular, a server that URL-decodes RunAgent commands may not round-trip
-    all text from this version's raw JSON serialization. There is no verified
-    separate harness-parameter mapping here.
-
-Local types and mocked tests verify client behavior only. Check these integration
-contracts before promising compatibility, changing encodings, retrying tool
-execution, or claiming successful cancellation.
+- `AskPlayground` reads `media` and `paramValues`; the `context` argument the
+  builders send is not one of `AskRoom`'s keys. Room instructions reach the
+  model through the saved room options (`updateRoomOptions`), which the engine
+  saves before every turn.
+- The agent watcher keeps its subscription after stopping; wait for the previous
+  `done` before attaching another store to the same run. Stop/abort does not abort
+  an in-flight request.
+- Internal reconciliation omits the store's insight ID and can miss a new approval
+  batch while status stays `INPUT_REQUIRED`; compare pending action IDs in
+  `onSnapshot`.
+- Command encoding, tool-result shapes, approval resumption and
+  StopAgentRun/child cancellation require deployed-backend verification.
+- Engine tests run in Node against mocked transport; they verify client behavior
+  only.

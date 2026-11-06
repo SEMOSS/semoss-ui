@@ -10,7 +10,6 @@ import {
 	StarIcon,
 	TrashIcon,
 } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	Link,
@@ -19,8 +18,15 @@ import {
 	useNavigate,
 	useParams,
 } from "react-router";
+import {
+	DownloadConversationDialog,
+	renameRoom,
+	toggleRoomFavorite,
+	useChat,
+	useRoomsQuery,
+} from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
-import { useIteratorPixel } from "@semoss/sdk/react";
+import { useRoomsClient } from "@semoss/sdk/react";
 import {
 	Button,
 	cn,
@@ -59,12 +65,6 @@ import {
 import { MobileNavigationClose } from "@/features/navigation/mobile-navigation-close";
 import { NavigationRail } from "@/features/navigation/navigation-rail";
 import { NavigationToggle } from "@/features/navigation/navigation-toggle";
-import { DownloadConversationDialog } from "@/features/room-actions/download-conversation-dialog";
-import {
-	renameRoom,
-	toggleRoomFavorite,
-} from "@/features/room-actions/use-room-actions";
-import { useChat } from "@/hooks/use-chat";
 import { useRoot } from "@/hooks/use-root";
 import { AppLogo } from "./app-logo";
 import { GlobalNavItem } from "./global-nav-item";
@@ -82,8 +82,8 @@ try {
  *
  * @component
  */
-export const GlobalNav = observer(() => {
-	const { t } = useTranslation("sidebar");
+export const GlobalNav = () => {
+	const { t } = useTranslation(["sidebar", "appNav"]);
 
 	const dateBucketLabels = DATE_BUCKET_ORDER.map((bucket) =>
 		t(`buckets.${bucket}`),
@@ -122,76 +122,18 @@ export const GlobalNav = observer(() => {
 
 	const navigate = useNavigate();
 
-	const getPinnedRooms = useIteratorPixel<
-		{
-			ROOM_ID: string;
-			ROOM_NAME: string;
-			DATE_CREATED: string;
-			WORKSPACE_ID?: string;
-			PINNED?: boolean;
-		}[],
-		{
-			ROOM_ID: string;
-			ROOM_NAME: string;
-			DATE_CREATED: string;
-			WORKSPACE_ID?: string;
-			PINNED?: boolean;
-		}
-	>(
-		(_limit, _offset) =>
-			hideChatHistory
-				? ""
-				: `META | GetPlaygroundRooms(pinned=[true], sort=["DESC"]);`,
-		() => -1,
-		(response) => response,
-		{},
-		// No roomCounter dependency here — the useEffect below already
-		// calls reset() when roomCounter increments, and reset() preserves
-		// the current data while refetching (no blank flash). Putting
-		// roomCounter in the useIteratorPixel deps would call setAllData([])
-		// instead, which is the source of the sidebar flicker.
-		[],
-	);
-
-	const getRooms = useIteratorPixel<
-		{
-			ROOM_ID: string;
-			ROOM_NAME: string;
-			DATE_CREATED: string;
-			WORKSPACE_ID?: string;
-			PINNED?: boolean;
-		}[],
-		{
-			ROOM_ID: string;
-			ROOM_NAME: string;
-			DATE_CREATED: string;
-			WORKSPACE_ID?: string;
-			PINNED?: boolean;
-		}
-	>(
-		(limit, offset) =>
-			hideChatHistory
-				? ""
-				: `META | GetPlaygroundRooms(${debouncedSearch ? `search="<encode>${debouncedSearch}</encode>", ` : ""}limit=${limit}, offset=${offset}, sort=["DESC"]);`,
-
-		(response) => {
-			// if its less than the limit, we know its the end
-			if (response.length < 25) {
-				return -1;
-			}
-
-			return Infinity;
-		},
-		(response) => {
-			return response;
-		},
-		{
-			limit: 25,
-		},
-		// Re-fetch only on search change — counter-based refreshes are handled
-		// by the useEffect below, which calls reset() and preserves data.
-		[debouncedSearch],
-	);
+	// favorites first, then the rest page by page; both read again whenever
+	// a room is created, renamed, pinned or closed anywhere in the app
+	const getPinnedRooms = useRoomsQuery({
+		pinned: true,
+		enabled: !hideChatHistory,
+	});
+	const getRooms = useRoomsQuery({
+		search: debouncedSearch,
+		limit: 25,
+		enabled: !hideChatHistory,
+		includeOptimistic: true,
+	});
 
 	/**
 	 * Setup infinite scroll for the command list
@@ -232,39 +174,21 @@ export const GlobalNav = observer(() => {
 		}
 	}, [handleScroll]);
 
-	// Skip the reset on first mount — the iterators already fetch on
-	// init, so resetting here would cause a duplicate request. Subsequent
-	// runs (when `roomCounter` increments after a new chat is created)
-	// should refetch as intended.
-	const didInitialMount = useRef(false);
+	// The rooms queries read again when the rooms change (`roomsVersion`);
+	// the list scrolls back to the top so the change is in view. Skipped on
+	// first mount, which has nothing to scroll back from.
+	const roomsVersion = useRoomsClient(chat, (client) => client.roomsVersion);
+	const seenRoomsVersion = useRef(roomsVersion);
 	useEffect(() => {
-		// keep this counter
-		chat.keys.roomCounter;
-		if (!didInitialMount.current) {
-			didInitialMount.current = true;
+		if (seenRoomsVersion.current === roomsVersion) {
 			return;
 		}
-		getRooms.reset();
-		getPinnedRooms.reset();
+		seenRoomsVersion.current = roomsVersion;
 		if (scrollElementRef.current) {
 			scrollElementRef.current.scrollTop = 0;
 			setSavedScrollPosition(0);
 		}
-	}, [getRooms.reset, getPinnedRooms.reset, chat.keys.roomCounter]);
-
-	/**
-	 * Once the refetch returns a room we were showing optimistically, drop the
-	 * optimistic entry so the store's map doesn't grow unbounded across a
-	 * session. The render-time filter already hides it, so this is housekeeping.
-	 */
-	useEffect(() => {
-		const fetchedIds = new Set(getRooms.data.map((r) => r.ROOM_ID));
-		Object.keys(chat.optimisticRooms).forEach((roomId) => {
-			if (fetchedIds.has(roomId)) {
-				chat.removeOptimisticRoom(roomId);
-			}
-		});
-	}, [getRooms.data, chat]);
+	}, [roomsVersion]);
 
 	/**
 	 * Save and restore scroll position when sidebar opens/closes
@@ -309,11 +233,9 @@ export const GlobalNav = observer(() => {
 		...getRooms.data.map((r) => r.ROOM_ID),
 		...pinnedRoomIds,
 	]);
-	const optimisticRooms = debouncedSearch
-		? []
-		: Object.values(chat.optimisticRooms).filter(
-				(r) => !fetchedRoomIds.has(r.ROOM_ID),
-			);
+	const optimisticRooms = getRooms.optimisticRooms.filter(
+		(r) => !fetchedRoomIds.has(r.ROOM_ID),
+	);
 
 	const bucketedRooms = [...optimisticRooms, ...getRooms.data].reduce(
 		(acc, val) => {
@@ -335,8 +257,8 @@ export const GlobalNav = observer(() => {
 	/**
 	 * Handlers
 	 */
-	// pinRoom bumps roomCounter, which the effect above watches to refetch
-	// both room queries here, and keeps the chats page in sync
+	// pinRoom bumps the rooms version, so both room queries here read again
+	// and the chats page stays in sync
 	const handleToggleFavorite = (roomId: string, isFavorite: boolean) =>
 		toggleRoomFavorite(chat, roomId, isFavorite, t);
 
@@ -390,7 +312,7 @@ export const GlobalNav = observer(() => {
 								data-tour="tour-search"
 							>
 								<InputGroupInput
-									placeholder={t("search")}
+									placeholder={t("appNav:search")}
 									value={search}
 									onChange={(e) => setSearch(e.target.value)}
 								/>
@@ -407,7 +329,9 @@ export const GlobalNav = observer(() => {
 										asChild
 										isActive={!!matchPath("/new", pathname)}
 										tooltip={{
-											children: t("nav.newChat.tooltip"),
+											children: t(
+												"appNav:nav.newChat.tooltip",
+											),
 											hidden: false,
 										}}
 									>
@@ -416,7 +340,7 @@ export const GlobalNav = observer(() => {
 											aria-label={"New Chat"}
 										>
 											<SquarePenIcon />
-											{t("nav.newChat.label")}
+											{t("appNav:nav.newChat.label")}
 										</Link>
 									</SidebarMenuButton>
 								</SidebarMenuItem>
@@ -429,8 +353,9 @@ export const GlobalNav = observer(() => {
 												!!matchPath("/agent", pathname)
 											}
 											tooltip={{
-												children:
-													t("nav.agents.tooltip"),
+												children: t(
+													"appNav:nav.agents.tooltip",
+												),
 												hidden: false,
 											}}
 										>
@@ -439,7 +364,7 @@ export const GlobalNav = observer(() => {
 												aria-label={"agent"}
 											>
 												<Bot />
-												{t("nav.agents.label")}
+												{t("appNav:nav.agents.label")}
 											</Link>
 										</SidebarMenuButton>
 									</SidebarMenuItem>
@@ -454,7 +379,7 @@ export const GlobalNav = observer(() => {
 											}
 											tooltip={{
 												children: t(
-													"nav.allChats.tooltip",
+													"appNav:nav.allChats.tooltip",
 												),
 												hidden: false,
 											}}
@@ -464,7 +389,7 @@ export const GlobalNav = observer(() => {
 												aria-label={"chats"}
 											>
 												<MessagesSquareIcon />
-												{t("nav.allChats.label")}
+												{t("appNav:nav.allChats.label")}
 											</Link>
 										</SidebarMenuButton>
 									</SidebarMenuItem>
@@ -910,4 +835,4 @@ export const GlobalNav = observer(() => {
 			/>
 		</>
 	);
-});
+};

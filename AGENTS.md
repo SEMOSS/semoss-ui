@@ -35,6 +35,7 @@ skills supplement the standard; they do not waive reading it for React work.
 - [Mobile development](./skills/mobile-development.skill.md): responsive and touch interfaces.
 - [React form builder](./skills/react-form-builder.skill.md): form fields, validation, and submission.
 - [SDK chat](./skills/sdk-chat.skill.md): rooms, messages, agent runs, approvals, and polling lifecycle.
+- [Chat host](./skills/chat-host.skill.md): standing up a chat host on the SDK engine and `@semoss/chat`.
 - [SDK session](./libs/sdk/skills/session.skill.md): sign in, the user, config, permissions, and
   which insight a pixel runs in.
 - [Design rulebook](./DESIGN.md): UI composition and styling.
@@ -52,7 +53,9 @@ and the owning guides define the exact public entry points and architectural bou
 
 Libraries (`libs/*`, publishable):
 - `@semoss/utility` → Generic text, date, object, JSON, file, encoding, browser, and other functional helpers
-- `@semoss/sdk` → Core SDK (bundles `@semoss/utility`; no runtime dependencies)
+- `@semoss/sdk` → Core SDK (bundles `@semoss/utility`; no runtime dependencies), including the
+  framework-agnostic room engine (`RoomEngine`, `RoomsClient`, client tool providers) every chat
+  surface runs on through the playground reactors
 - `@semoss/ui` → Component library (no internal dependencies)
 - `@semoss/i18n` → Internationalization library (no internal dependencies)
 - `@semoss/shared` → Shared utilities (depends on i18n, sdk, ui, utility)
@@ -62,13 +65,23 @@ Libraries (`libs/*`, publishable):
 - `@semoss/workbench` → Multi-panel dock shell (depends on ui only — deliberately
   domain-agnostic, so it can never import sdk, shared or i18n)
 - `@semoss/panels` → File panels for the dock (depends on i18n, sdk, shared, ui, utility, workbench)
+- `@semoss/chat` → The chat UI every chat host shares (depends on i18n, sdk, shared, ui, utility,
+  workbench; its `./connectors` subpath also on connectors; never imports panels or a router)
 
 The dock and the panels are two layers, in one direction:
 `@semoss/ui ← @semoss/workbench ← @semoss/panels → @semoss/shared → @semoss/sdk`.
 
+The chat UI sits beside the panels, over the same layers, and hosts compose it:
+`@semoss/chat → workbench/shared/sdk/ui/i18n/utility`; `@semoss/chat/connectors → @semoss/connectors`;
+`@semoss/playground` (thin shell) `→ @semoss/chat + @semoss/panels`. File panels reach the chat as
+host-injected blueprints.
+
 Applications (`packages/*`, not published):
 - `@semoss/client` → Main web application (depends on automation, i18n, panels, renderer, sdk, shared, terminal, ui, utility, workbench)
-- `@semoss/playground` → Chat (depends on connectors, i18n, panels, sdk, shared, ui, utility, workbench)
+- `@semoss/playground` → Chat, a thin shell over `@semoss/chat` (depends on chat, connectors, i18n,
+  panels, sdk, shared, ui, utility, workbench)
+- `@semoss/playground-desktop` → The chat as a Tauri 2 desktop app (depends on chat, connectors, i18n,
+  panels, sdk, shared, ui, utility, workbench; Rust side in `src-tauri/`)
 - `@semoss/terminal` → Embedded terminal (depends on i18n, panels, sdk, shared, ui, workbench)
 - `@semoss/auditlog-package` → Audit log dashboard (depends on i18n, sdk, shared, ui)
 - `@semoss/automation` → Automation workspace app (depends on i18n, sdk, shared, ui, utility;
@@ -86,6 +99,10 @@ Applications (`packages/*`, not published):
 the `connectors` i18n namespace. See
 [libs/connectors/AGENTS.md](./libs/connectors/AGENTS.md#what-a-host-has-to-wire-up).
 
+**Every host that mounts the chat UI** imports `@semoss/chat/globals.css`, loads `chatResources`
+from `@semoss/i18n`, and wraps its routes in `<ChatProvider config={…}>`. See
+[libs/chat/AGENTS.md](./libs/chat/AGENTS.md) and the [chat host skill](./skills/chat-host.skill.md).
+
 ## Workspace Structure
 
 ```
@@ -99,10 +116,12 @@ semoss/
 │   ├── connectors/ # @semoss/connectors - Microsoft 365 and Google Workspace viewers
 │   ├── renderer/   # @semoss/renderer - Visualization components
 │   ├── workbench/  # @semoss/workbench - Multi-panel dock shell
-│   └── panels/     # @semoss/panels - File panels for the dock
+│   ├── panels/     # @semoss/panels - File panels for the dock
+│   └── chat/       # @semoss/chat - Chat UI shared by chat hosts
 ├── packages/       # Applications (not published)
 │   ├── client/                     # @semoss/client - Main web application
 │   ├── playground/                 # @semoss/playground - Chat
+│   ├── playground-desktop/         # @semoss/playground-desktop - Chat desktop app (Tauri 2)
 │   ├── terminal/                   # @semoss/terminal - Embedded terminal app
 │   ├── auditlog/                   # @semoss/auditlog-package - Audit log dashboard
 │   ├── automation/                 # @semoss/automation - Automation workspace app
@@ -129,6 +148,7 @@ semoss/
 | `pnpm dev` | Run all packages in dev mode |
 | `pnpm dev:client` | Run client with dependencies |
 | `pnpm dev:playground` | Run playground with dependencies |
+| `pnpm dev:desktop` | Run the desktop app's web bundle with dependencies |
 | `pnpm dev:terminal` | Run terminal with dependencies |
 | `pnpm build` | Production build all packages |
 | `pnpm build:dev` | Development build all packages |
@@ -202,10 +222,12 @@ For validation and handoff, follow the React skill's
 - [libs/i18n/AGENTS.md](./libs/i18n/AGENTS.md) - Internationalization library specifics
 - [libs/workbench/AGENTS.md](./libs/workbench/AGENTS.md) - Workbench dock shell specifics
 - [libs/panels/AGENTS.md](./libs/panels/AGENTS.md) - File panels for the dock
+- [libs/chat/AGENTS.md](./libs/chat/AGENTS.md) - Chat UI, host contract, and the connectors subpath
 
 **Applications** (`packages/*`):
 - [packages/client/AGENTS.md](./packages/client/AGENTS.md) - Main web application specifics
-- [packages/playground/AGENTS.md](./packages/playground/AGENTS.md) - Playground (chat) app specifics
+- [packages/playground/AGENTS.md](./packages/playground/AGENTS.md) - Playground (chat) thin shell
+- [packages/playground-desktop/AGENTS.md](./packages/playground-desktop/AGENTS.md) - Desktop app: platform layer, Rust commands, security rules
 - [packages/terminal/AGENTS.md](./packages/terminal/AGENTS.md) - Embedded terminal app specifics
 - [packages/auditlog/AGENTS.md](./packages/auditlog/AGENTS.md) - Audit log dashboard app specifics
 - [packages/automation/AGENTS.md](./packages/automation/AGENTS.md) - Automation workspace app specifics

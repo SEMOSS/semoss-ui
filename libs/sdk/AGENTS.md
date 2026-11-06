@@ -14,7 +14,8 @@ package's `skills/` folder, so apps get the same guidance under
 - [Session, Config and permissions](./skills/session.skill.md): sign in and out, the user and
   their metadata, `useSession`/`useConfig`/`useSessionPermissions`/`useLogins`, and which
   insight a pixel runs in.
-- [Rooms, chat and agent runs](./skills/sdk-chat/SKILL.md): rooms, AskRoom jobs,
+- [Rooms, chat and agent runs](./skills/sdk-chat/SKILL.md): the room engine
+  (`RoomEngine`, `RoomsClient`, client tools), the playground chat reactors,
   RunAgent/`AgentStore`, tool approvals and streaming.
 
 When an API they describe changes, update the skill in the same change. Keep each skill
@@ -65,7 +66,7 @@ router):
 | Folder / file | Purpose |
 |---------------|---------|
 | `api/` | API / pixel call implementations |
-| `stores/` | State (e.g. `InsightStore`, exported as `Insight`) |
+| `stores/` | State (e.g. `InsightStore`, exported as `Insight`); `stores/room/` is the room engine |
 | `utility/` | Utility functions |
 | `js-frameworks/react/` | React binding (published as `@semoss/sdk/react`) |
 | `constants.ts` | Shared constants |
@@ -116,18 +117,78 @@ with [biome.json](../../biome.json) as lint/formatting authority.
 
 Load the [SDK chat guide](./skills/sdk-chat/SKILL.md) for API contracts, examples,
 transport selection, lifecycle cleanup, and known gaps. Maintain those details
-there instead of repeating them in AGENTS files.
+there instead of repeating them in AGENTS files. Migration from 1.x is in
+[MIGRATION.md](./MIGRATION.md).
+
+### The room engine (`stores/room/`)
+
+The SDK owns running a room, framework-free, so any surface — the playground,
+a desktop app, an embedded chat, a terminal agent — runs rooms with the SDK alone:
+
+- **Playground reactors only.** [`api/chat-pixels.ts`](./src/api/chat-pixels.ts)
+  builds every room pixel (`chatPixels.*`) on `CreatePlaygroundRoom`,
+  `AskPlayground`, `GetPlaygroundMessages`, `AddPlaygroundToolExecution` and
+  `GetPlaygroundRooms`; [`api/chat.ts`](./src/api/chat.ts) runs them. There is no
+  per-surface reactor set.
+- **No React, DOM, `window`, i18n or UI-lib imports** in `stores/room/` — engine
+  tests run in Node (`environment: "node"`). Timers, `fetch` (via transport),
+  `FormData` and `crypto` are fine. Translations come in through options (e.g.
+  `createChatFilesToolProvider({ labels })`).
+- **Observable stores.** Every engine store extends
+  [`ObservableStore`](./src/stores/room/observable-store.ts): `observeFields`
+  turns data fields into notifying accessors, values are replaced (copy-on-write),
+  `batchChanges` notifies once, and messages/tool calls propagate to their room.
+  React reads them through the selector hooks in
+  [`js-frameworks/react/hooks/use-room.ts`](./src/js-frameworks/react/hooks/use-room.ts).
+- **1 room = 1 insight.** [`room-session.ts`](./src/stores/room/room-session.ts)
+  owns the binding: a load binds a fresh insight (`SetRoomForInsight` batched with
+  the reads); `RoomsClient.closeRoom` removes the room and drops its insight.
+- **Client tools.** [`chat-tools/`](./src/stores/room/chat-tools/) holds the
+  `ClientToolProvider` seam, `ChatToolsStore` (sends every provider's tools with
+  every turn **and** every tool save) and the chat-files provider.
+- **Agent runs** ([`message/agent-harness.ts`](./src/stores/room/message/agent-harness.ts)):
+  one live watcher per run, reconnection on load, `onPendingAction` auto-decisions.
+- **Hosts extend `RoomEngine`** for UI (a dock, file views) through its hooks
+  (`onInsightBound`, `refreshFiles`, `showToolPanel`, `hideToolPanel`) and pass
+  `createRoomStore` to `RoomsClient`.
 
 When changing an API, inspect its owning implementation and adjacent tests:
 
-- [Chat wrappers](./src/api/chat.ts) and [pixel transport](./src/api/base.ts).
+- [Chat pixels](./src/api/chat-pixels.ts), [chat runners](./src/api/chat.ts) and
+  [pixel transport](./src/api/base.ts).
 - [Agent wrappers](./src/api/agent.ts) and [AgentStore](./src/stores/agent/agent.store.ts).
 - [MCP wrappers](./src/api/mcp.ts): `runMcpTool`, `makeUserPixelMcp`, and `getMcpTools`.
-- [RoomStore](./src/stores/room/room.store.ts) and [shared types](./src/types.ts).
+- [RoomEngine](./src/stores/room/room-engine.store.ts),
+  [RoomsClient](./src/stores/room/rooms-client.store.ts) and
+  [room types](./src/stores/room/room.types.ts).
 - [Core exports](./src/index.ts) and [React exports](./src/js-frameworks/react/index.ts).
 
 Update the packaged guide with signature/behavior changes. Comments and mocked
 tests are not backend authority; retain its compatibility caveats until verified.
+
+### Sign in outside a browser popup
+
+`setSignInWindowOpener(opener)` in [`api/auth.ts`](./src/api/auth.ts) lets a host
+open sign ins (`connectLogin`, `oauth`) in its own window, such as a desktop
+webview; `null` restores the browser popup. An absolute `Env.MODULE`
+(`https://host/Monolith`) also points `InsightWebSocket` at that host.
+
+### Downloads outside a browser
+
+`setDownloadHandler(handler)` in [`api/file.ts`](./src/api/file.ts) lets a host save the files
+`download` (and so `Insight.download`, conversation exports) hands on, such as through a desktop
+app's native save dialog, since a webview cannot follow a download link across origins; `null`
+restores the browser link. The handler gets `{ url, insightId, fileKey }` and rejects when the
+file was not saved.
+
+### Host seams (intentional exports)
+
+Beyond the engine (`RoomEngine`, `RoomsClient`, `ClientToolProvider`, the chat pixels), these
+exports exist for chat hosts and are public: `setSignInWindowOpener`, `setDownloadHandler`,
+`runSessionPixel` (a room-less pixel in `Session.insight`, throwing on errors),
+`parseSelectedModelPreference` (validating a stored `ChatPreferencesAdapter` value), and
+`Env.update` (`MODULE`, `BEARER_TOKEN`, `BEARER_PROVIDER`). The React entry adds only hooks; the
+selector cache behind `useRoomSelector` is internal.
 
 ## Engine and App Actions
 

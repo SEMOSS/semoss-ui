@@ -44,6 +44,11 @@ export * from "./loading-screen";
 export * from "./markdown";
 export * from "./pagination";
 export * from "./popover";
+export {
+	PortalContainerProvider,
+	type PortalContainerProviderProps,
+	usePortalContainer,
+} from "./portal-container";
 export * from "./progress";
 export * from "./radio-group";
 export * from "./resizable";

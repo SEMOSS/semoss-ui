@@ -1,0 +1,34 @@
+{
+	"search": "Rechercher",
+	"takeTour": "Faire une Visite",
+	"userMenu": {
+		"settings": "Paramètres",
+		"language": "Langue"
+	},
+	"nav": {
+		"newChat": {
+			"label": "Nouveau",
+			"tooltip": "Nouvelle discussion - Démarrez une nouvelle conversation à tout moment."
+		},
+		"agents": {
+			"label": "Agents",
+			"tooltip": "Agents"
+		},
+		"allChats": {
+			"label": "Toutes les discussions",
+			"tooltip": "Toutes les discussions"
+		},
+		"agentsWorkspaces": {
+			"tooltip": "Agents/Espaces de travail - Accédez à vos espaces ou créez de nouveaux agents IA."
+		},
+		"knowledgeLibrary": {
+			"tooltip": "Bibliothèque de connaissances - Parcourez, créez, partagez et gérez vos bibliothèques de documents."
+		},
+		"toolbox": {
+			"tooltip": "Boîte à outils - Découvrez les capacités étendues d'Elsa avec de puissants outils supplémentaires."
+		},
+		"promptLibrary": {
+			"tooltip": "Bibliothèque de prompts - Parcourez, créez et utilisez des prompts enregistrés."
+		}
+	}
+}

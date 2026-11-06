@@ -1,13 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Env } from "../../env";
-import type { RoomOptions } from "../../types";
 
 const {
 	mockGetSystemConfig,
 	mockGetRoomForInsight,
-	mockGetRoomOptions,
-	mockSetRoomForInsight,
-	mockCreateRoom,
+	mockCreatePlaygroundRoom,
+	mockInitializeRoom,
 	mockLogin,
 	mockLogout,
 	mockRunPixel,
@@ -15,9 +13,8 @@ const {
 } = vi.hoisted(() => ({
 	mockGetSystemConfig: vi.fn(),
 	mockGetRoomForInsight: vi.fn(),
-	mockGetRoomOptions: vi.fn(),
-	mockSetRoomForInsight: vi.fn(),
-	mockCreateRoom: vi.fn(),
+	mockCreatePlaygroundRoom: vi.fn(),
+	mockInitializeRoom: vi.fn(),
 	mockLogin: vi.fn(),
 	mockLogout: vi.fn(),
 	mockRunPixel: vi.fn(),
@@ -32,22 +29,28 @@ const {
 vi.mock("../../api", () => ({
 	getSystemConfig: mockGetSystemConfig,
 	getRoomForInsight: mockGetRoomForInsight,
-	getRoomOptions: mockGetRoomOptions,
-	setRoomForInsight: mockSetRoomForInsight,
+	createPlaygroundRoom: mockCreatePlaygroundRoom,
 	login: mockLogin,
 	logout: mockLogout,
 	runPixel: mockRunPixel,
 }));
 
-vi.mock("../room", async (importOriginal) => ({
-	...(await importOriginal<typeof import("../room")>()),
-	createRoom: mockCreateRoom,
+// the room engine loads through its own transport; only its binding matters here
+vi.mock("../room/room-engine.store", () => ({
+	RoomEngine: class {
+		roomId: string;
+		insightId: string;
+		initialize = mockInitializeRoom;
+		constructor(init: { roomId: string; insightId: string }) {
+			this.roomId = init.roomId;
+			this.insightId = init.insightId;
+		}
+	},
 }));
 
 vi.mock("../session/session.store", () => ({ Session: session }));
 
 import { Config } from "../config/config.store";
-import { RoomStore } from "../room/room.store";
 import { InsightStore } from "./insight.store";
 
 const backendConfig = (logins: Record<string, string>) => ({
@@ -59,13 +62,6 @@ const backendConfig = (logins: Record<string, string>) => ({
 		{ metakey: "a", display_order: 1 },
 	],
 });
-
-const ROOM_OPTIONS: RoomOptions = {
-	predefinedPrompts: [],
-	instructions: "",
-	mcp: [],
-	modelId: "",
-};
 
 describe("InsightStore baseline lifecycle", () => {
 	beforeEach(() => {
@@ -79,7 +75,7 @@ describe("InsightStore baseline lifecycle", () => {
 			TOOL: null,
 		});
 		mockGetSystemConfig.mockResolvedValue(backendConfig({ NATIVE: "Ada" }));
-		mockGetRoomOptions.mockResolvedValue(ROOM_OPTIONS);
+		mockInitializeRoom.mockResolvedValue(undefined);
 		mockRunPixel.mockResolvedValue({
 			insightId: "insight-1",
 			errors: [],
@@ -158,7 +154,10 @@ describe("InsightStore baseline lifecycle", () => {
 		expect(room?.insightId).toBe("workspace");
 		expect(await insight.actions.getRoom()).toBe(room);
 		expect(mockGetRoomForInsight).toHaveBeenCalledTimes(1);
-		expect(mockGetRoomOptions).toHaveBeenCalledWith("workspace", "room-1");
+		// loading the room binds this insight to it
+		expect(mockInitializeRoom).toHaveBeenCalledExactlyOnceWith({
+			isNew: false,
+		});
 	});
 
 	it("uses the tool's room before looking up another room", async () => {
@@ -176,28 +175,32 @@ describe("InsightStore baseline lifecycle", () => {
 		const insight = new InsightStore();
 		await insight.initialize({ insightId: "workspace" });
 
-		expect((await insight.actions.getRoom())?.roomId).toBe("tool-room");
-		expect(mockSetRoomForInsight).toHaveBeenCalledWith(
-			"workspace",
-			"tool-room",
-		);
+		const room = await insight.actions.getRoom();
+		expect(room?.roomId).toBe("tool-room");
+		expect(room?.insightId).toBe("workspace");
+		expect(mockInitializeRoom).toHaveBeenCalledWith({ isNew: false });
 		expect(mockGetRoomForInsight).not.toHaveBeenCalled();
 	});
 
 	it("creates and caches a room when none is bound", async () => {
 		mockGetRoomForInsight.mockResolvedValue(null);
-		const created = new RoomStore(
-			"created-room",
-			"workspace",
-			ROOM_OPTIONS,
-		);
-		mockCreateRoom.mockResolvedValue(created);
+		mockCreatePlaygroundRoom.mockResolvedValue({
+			roomId: "created-room",
+			insightId: "workspace",
+		});
 		const insight = new InsightStore();
 		await insight.initialize({ insightId: "workspace" });
 
+		const created = await insight.actions.getRoom();
+		expect(created?.roomId).toBe("created-room");
 		expect(await insight.actions.getRoom()).toBe(created);
-		expect(await insight.actions.getRoom()).toBe(created);
-		expect(mockCreateRoom).toHaveBeenCalledExactlyOnceWith("workspace");
+		expect(mockCreatePlaygroundRoom).toHaveBeenCalledExactlyOnceWith(
+			{},
+			"workspace",
+		);
+		expect(mockInitializeRoom).toHaveBeenCalledExactlyOnceWith({
+			isNew: true,
+		});
 	});
 
 	it("returns no room only when room handling is disabled", async () => {
@@ -206,6 +209,6 @@ describe("InsightStore baseline lifecycle", () => {
 
 		expect(await insight.actions.getRoom()).toBeNull();
 		expect(mockGetRoomForInsight).not.toHaveBeenCalled();
-		expect(mockCreateRoom).not.toHaveBeenCalled();
+		expect(mockCreatePlaygroundRoom).not.toHaveBeenCalled();
 	});
 });

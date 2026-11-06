@@ -1,13 +1,13 @@
+import { LanguageDirection } from "@semoss/chat";
 import {
 	I18nBuilder,
 	I18nextProvider,
 	playgroundResources,
 } from "@semoss/i18n";
 import { AccessStoreProvider, createAccessStore } from "@semoss/panels";
-import { Env, InsightProvider } from "@semoss/sdk/react";
+import { Env } from "@semoss/sdk/react";
 import { ThemeProvider, Toaster } from "@semoss/ui/next";
 import { LandscapeRestriction } from "@/components/common/landscape-restriction";
-import { LanguageDirection } from "@/components/common/language-direction";
 import { Router } from "@/pages";
 
 // use the environment variable to set the module
@@ -37,19 +37,17 @@ export const App = () => {
 		<I18nextProvider i18n={i18n}>
 			<LanguageDirection>
 				<AccessStoreProvider store={accessStore}>
-					<InsightProvider>
-						{/* TODO: read default theme from theme map somehow */}
-						<ThemeProvider
-							defaultTheme="light"
-							storageKey="smss-ui-theme-playground"
-						>
-							<LandscapeRestriction />
-							<div className="absolute inset-0 h-screen w-screen overflow-hidden">
-								<Router />
-							</div>
-							<Toaster position="top-center" />
-						</ThemeProvider>
-					</InsightProvider>
+					{/* TODO: read default theme from theme map somehow */}
+					<ThemeProvider
+						defaultTheme="light"
+						storageKey="smss-ui-theme-playground"
+					>
+						<LandscapeRestriction />
+						<div className="absolute inset-0 h-screen w-screen overflow-hidden">
+							<Router />
+						</div>
+						<Toaster position="top-center" />
+					</ThemeProvider>
 				</AccessStoreProvider>
 			</LanguageDirection>
 		</I18nextProvider>

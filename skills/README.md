@@ -16,6 +16,7 @@ on automatic discovery.
 | [Mobile development](./mobile-development.skill.md) | Working on responsive layouts, small screens, touch interaction, viewport handling, or mobile navigation |
 | [React form builder](./react-form-builder.skill.md) | Creating or touching forms, including fields, validation, submission, and modal form behavior |
 | [SDK chat](./sdk-chat.skill.md) | Rooms, AskRoom/RunAgent messages, tool approvals, streaming/polling lifecycle, and room configuration |
+| [Chat host](./chat-host.skill.md) | Standing up or changing a chat host on the SDK room engine and `@semoss/chat`: host config, `ChatProvider`, panels, client tools, integrations, navigation, minimal bundles, embedding |
 | [SDK session](../libs/sdk/skills/session.skill.md) | Sign in and out, the signed in user and their metadata, `useSession`/`useConfig`/`useSessionPermissions`/`useLogins`, and which insight a pixel runs in |
 
 Loading the React standard is mandatory for React work; apply individual rules

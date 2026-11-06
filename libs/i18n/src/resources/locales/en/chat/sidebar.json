@@ -1,0 +1,69 @@
+{
+	"buckets": {
+		"favorites": "Favorites",
+		"today": "Today",
+		"yesterday": "Yesterday",
+		"fewDaysAgo": "Few Days Ago",
+		"lastWeek": "Last Week",
+		"thisMonth": "This Month",
+		"lastMonth": "Last Month",
+		"older": "Older"
+	},
+	"messages": {
+		"errorLoadingRooms": "Error loading rooms",
+		"noRoomsFound": "No rooms found",
+		"untitled": "Untitled"
+	},
+	"actions": {
+		"openNavigation": "Open navigation",
+		"openSidebar": "Open sidebar",
+		"closeSidebar": "Close sidebar",
+		"favorite": "Favorite",
+		"unfavorite": "Unfavorite",
+		"rename": "Rename",
+		"download": "Download",
+		"delete": "Delete",
+		"openInline": "Open in-line",
+		"minimize": "Minimize",
+		"maximize": "Maximize",
+		"close": "Close"
+	},
+	"toasts": {
+		"failedToPin": "Could not add the room to favorites",
+		"failedToUnpin": "Could not remove the room from favorites",
+		"roomNameEmpty": "Room name cannot be empty",
+		"roomRenamedSuccess": "Room renamed",
+		"failedToRename": "Could not rename the room",
+		"roomDeletedSuccess": "Room deleted",
+		"failedToDelete": "Could not delete the room"
+	},
+	"settings": {
+		"title": "Settings",
+		"description": "Your preferences and the apps the assistant can use.",
+		"sections": {
+			"general": "General",
+			"connectors": "Connectors"
+		},
+		"general": {
+			"appearance": "Appearance",
+			"theme": "Theme",
+			"themeDescription": "Dark and system themes are in beta.",
+			"themes": {
+				"system": "System",
+				"light": "Light",
+				"dark": "Dark"
+			},
+			"language": "Language",
+			"languageDescription": "The language the app is shown in.",
+			"version": "Version {{version}}"
+		}
+	},
+	"download": {
+		"title": "Download conversation",
+		"description": "Choose a format for your download.",
+		"word": "Word document",
+		"pdf": "PDF document",
+		"success": "Conversation downloaded as {{format}}",
+		"failed": "Could not download the conversation"
+	}
+}

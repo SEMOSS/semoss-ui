@@ -1,28 +1,24 @@
-import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { Navigate, useLocation } from "react-router";
-import { useInsight } from "@semoss/sdk/react";
-import { LoginForm } from "@semoss/shared";
-import { useTheme } from "@semoss/ui/next";
+import { useSession } from "@semoss/sdk/react";
+import { SessionLoginForm } from "@semoss/shared";
+import { Spinner } from "@semoss/ui/next";
 import { setFavicon } from "@semoss/utility/browser";
-import { AppLogo } from "@/components";
-import { useRoot } from "@/hooks";
+import { AppLogo } from "@/components/common/app-logo";
+import { useIsDarkMode } from "@/hooks/use-is-dark-mode";
+import { useRoot } from "@/hooks/use-root";
 import { useThemeTitle } from "@/hooks/use-theme-title";
 
 /**
  * LoginPage
  */
-export const LoginPage = observer(() => {
+export const LoginPage = () => {
 	const { root } = useRoot();
 	const theme = root.theme;
-	const { isAuthorized } = useInsight();
-	const { theme: colorMode } = useTheme();
+	const status = useSession((state) => state.status);
 
 	// theme = dark or system matches dark
-	const isDark =
-		colorMode === "dark" ||
-		(colorMode === "system" &&
-			window.matchMedia("(prefers-color-scheme: dark)").matches); // gets system preference
+	const isDark = useIsDarkMode();
 
 	const location = useLocation();
 
@@ -36,8 +32,17 @@ export const LoginPage = observer(() => {
 		if (icon) setFavicon(icon);
 	}, [theme?.images?.tabIcon]);
 
+	// the first read of the session decides whether to sign in at all
+	if (status === "INITIALIZING") {
+		return (
+			<div className="flex h-full w-full items-center justify-center">
+				<Spinner />
+			</div>
+		);
+	}
+
 	// navigate if already logged in
-	if (isAuthorized) {
+	if (status === "AUTHENTICATED") {
 		return <Navigate to={path} replace />;
 	}
 
@@ -56,7 +61,7 @@ export const LoginPage = observer(() => {
 				</div>
 				<div className="flex flex-1 items-center justify-center">
 					<div className="w-full max-w-sm rounded-xl border bg-card p-6 shadow-sm">
-						<LoginForm />
+						<SessionLoginForm />
 					</div>
 				</div>
 			</div>
@@ -71,4 +76,4 @@ export const LoginPage = observer(() => {
 			)}
 		</div>
 	);
-});
+};

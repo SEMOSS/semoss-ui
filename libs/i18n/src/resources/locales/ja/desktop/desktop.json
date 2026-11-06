@@ -1,0 +1,50 @@
+{
+	"app": {
+		"title": "SEMOSS Playground"
+	},
+	"instances": {
+		"title": "SEMOSS に接続",
+		"description": "サインインする SEMOSS サーバーのアドレスを入力してください。",
+		"name": "名前",
+		"namePlaceholder": "仕事",
+		"url": "サーバーのアドレス",
+		"module": "デプロイのパス",
+		"connect": "接続",
+		"checking": "サーバーを確認しています…",
+		"unreachable": "サーバーに接続できませんでした: {{message}}",
+		"saved": "保存したサーバー",
+		"use": "使用",
+		"remove": "{{name}} を削除",
+		"addAnother": "サーバーを追加"
+	},
+	"auth": {
+		"title": "{{name}} にサインイン",
+		"token": "アクセストークン",
+		"tokenHint": "ID プロバイダーのベアラートークンでサインインします。",
+		"tokenLabel": "トークン",
+		"provider": "プロバイダー",
+		"remember": "このコンピューターに記憶する",
+		"signIn": "サインイン",
+		"switchServer": "サーバーを切り替え",
+		"tokenRefused": "サーバーはトークンを受け付けませんでした。"
+	},
+	"nav": {
+		"newChat": "新しいチャット",
+		"chats": "チャット",
+		"agents": "エージェント",
+		"knowledge": "ナレッジ",
+		"signOut": "サインアウト"
+	},
+	"tools": {
+		"source": "このコンピューター",
+		"approval": "許可すると、このコンピューターで実行されます。",
+		"notify": "通知を表示",
+		"reveal": "フォルダーに表示"
+	},
+	"browser": {
+		"name": "ブラウザー",
+		"address": "アドレス",
+		"go": "移動",
+		"blocked": "アプリ内に表示できないサイトもあります。"
+	}
+}
