@@ -148,6 +148,7 @@ export type JobKind =
 	| "classify"
 	| "topic_map"
 	| "topic_match"
+	| "topic_resort"
 	| "style";
 
 export async function getJob(

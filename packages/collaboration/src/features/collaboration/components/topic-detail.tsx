@@ -99,6 +99,7 @@ export function TopicDetail() {
 	const [isEditing, setIsEditing] = useState(false);
 	const [tab, setTab] = useState("actions");
 	const [isMatchReviewOpen, setIsMatchReviewOpen] = useState(false);
+	const [isResortOpen, setIsResortOpen] = useState(false);
 	const updates = useWorkUpdates();
 	const editButtonRef = useRef<HTMLButtonElement>(null);
 	// the button that opened the review, for focus on close; a click does not focus it in Safari
@@ -241,6 +242,14 @@ export function TopicDetail() {
 								editButtonRef.current = null;
 								setIsEditing(true);
 							}}
+							onResort={
+								canFindConversations && threads.length > 0
+									? () => {
+											matchTriggerRef.current = null;
+											setIsResortOpen(true);
+										}
+									: undefined
+							}
 							onFindConversations={
 								canFindConversations
 									? () => openMatchReview()
@@ -955,6 +964,20 @@ export function TopicDetail() {
 					updates={updates}
 					open={isMatchReviewOpen}
 					onOpenChange={setIsMatchReviewOpen}
+					returnFocusRef={matchTriggerRef}
+				/>
+			)}
+			{updates && canFindConversations && (
+				<TopicMatchesDialog
+					key={`resort
+${topic.name}
+${topic.description}
+${topic.accountId ?? ""}`}
+					mode="resort"
+					topic={topic}
+					updates={updates}
+					open={isResortOpen}
+					onOpenChange={setIsResortOpen}
 					returnFocusRef={matchTriggerRef}
 				/>
 			)}

@@ -9,6 +9,7 @@ import {
 	type TopicMatch,
 	type TopicMatchApplyResult,
 	type TopicMatchChange,
+	type TopicMatchMode,
 	type TopicMatchOp,
 } from "../api/topic-matches";
 
@@ -23,6 +24,8 @@ interface TopicMatchesInput {
 	/** The topic's id on this page; one made here is resolved to its server id before each call. */
 	topicId: string;
 	serverId: (id: string) => Promise<string>;
+	/** Find new conversations, or re-sort the topic's own; default find. */
+	mode?: TopicMatchMode;
 	/** Re-read Brain and Work once choices are applied. */
 	onApplied: () => void;
 }
@@ -43,7 +46,10 @@ export interface TopicMatchesReview {
 	remaining: TopicMatch[];
 	/** The rows on screen, which Apply decides. */
 	visible: TopicMatch[];
-	/** What Apply sends for the rows on screen: their accept op, or reject when unchecked. */
+	/**
+	 * What Apply sends for the rows on screen: their op, and for an unchecked row reject (find) or nothing,
+	 * so it stays as it is (re-sort).
+	 */
 	changes: TopicMatchChange[];
 	isStarting: boolean;
 	isApplying: boolean;
@@ -63,6 +69,7 @@ export function useTopicMatches({
 	actions,
 	topicId,
 	serverId,
+	mode = "find",
 	onApplied,
 }: TopicMatchesInput): TopicMatchesReview {
 	const [jobId, setJobId] = useState("");
@@ -77,7 +84,11 @@ export function useTopicMatches({
 	);
 	const [ops, setOps] = useState<Readonly<Record<string, TopicMatchOp>>>({});
 	const [shown, setShown] = useState(PAGE);
-	const { job, error: pollError } = useJob(actions, "topic_match", jobId);
+	const { job, error: pollError } = useJob(
+		actions,
+		mode === "resort" ? "topic_resort" : "topic_match",
+		jobId,
+	);
 	const preview = job?.status === "done" ? readTopicMatches(job) : null;
 	const remaining =
 		preview?.matches.filter((match) => !decided.has(match.threadId)) ?? [];
@@ -86,10 +97,18 @@ export function useTopicMatches({
 		const chosen = ops[match.threadId];
 		return chosen && match.ops.includes(chosen) ? chosen : match.op;
 	};
-	const changes: TopicMatchChange[] = visible.map((match) => ({
-		threadId: match.threadId,
-		op: unchecked.has(match.threadId) ? "reject" : opOf(match),
-	}));
+	const changes: TopicMatchChange[] = [];
+	for (const match of visible) {
+		const op = unchecked.has(match.threadId) ? "reject" : opOf(match);
+		if (mode === "resort" && unchecked.has(match.threadId)) continue;
+		changes.push({
+			threadId: match.threadId,
+			op,
+			...(mode === "resort" && op === "move" && match.toTopicId
+				? { toTopicId: match.toTopicId }
+				: {}),
+		});
+	}
 
 	let phase: TopicMatchesPhase = "checking";
 	let jobError: string | null = null;
@@ -111,6 +130,7 @@ export function useTopicMatches({
 			const started = await startTopicMatches(
 				actions,
 				await serverId(topicId),
+				mode,
 			);
 			if (!started.id) throw new Error("The check did not start.");
 			setDecided(new Set());
@@ -135,11 +155,12 @@ export function useTopicMatches({
 				await serverId(topicId),
 				changes,
 			);
+			// every row on screen is decided, including re-sort rows left unchecked
 			setDecided(
 				(current) =>
 					new Set([
 						...current,
-						...changes.map((change) => change.threadId),
+						...visible.map((match) => match.threadId),
 					]),
 			);
 			setShown(PAGE);
