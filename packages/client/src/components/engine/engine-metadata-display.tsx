@@ -381,18 +381,6 @@ export type StaticModelMetadata = {
 };
 
 /**
- * Whether the catalog actually knows this model. The pixel answers with an
- * empty map for a model it has never heard of, which is the signal that none
- * of the advisory checks below can say anything.
- */
-export const hasCatalogEntry = (
-	metadata: StaticModelMetadata | undefined,
-): boolean =>
-	!!metadata &&
-	typeof metadata === "object" &&
-	Object.keys(metadata).length > 0;
-
-/**
  * Modalities the curated catalog is capable of expressing. VECTOR and FILE
  * never appear in meta/model.json - embedding models are recorded there with a
  * text output - so the catalog staying silent about them says nothing about

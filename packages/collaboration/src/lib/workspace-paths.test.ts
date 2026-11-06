@@ -1,7 +1,6 @@
 import {
 	newRoomPath,
 	roomPath,
-	sessionsPath,
 	threadPath,
 	topicPath,
 } from "./workspace-paths";
@@ -30,15 +29,6 @@ describe("newRoomPath", () => {
 		expect(newRoomPath()).toBe("/");
 		expect(newRoomPath("agent/one", "model&two")).toBe(
 			"/?agentId=agent%2Fone&model=model%26two",
-		);
-	});
-});
-
-describe("sessionsPath", () => {
-	it("builds bare and agent-filtered session URLs", () => {
-		expect(sessionsPath()).toBe("/room");
-		expect(sessionsPath("agent/one & two")).toBe(
-			"/room?agentId=agent%2Fone+%26+two",
 		);
 	});
 });

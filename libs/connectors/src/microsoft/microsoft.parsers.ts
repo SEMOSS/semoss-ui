@@ -79,16 +79,6 @@ export const parseOneDriveFolder = (raw: unknown): MicrosoftDriveItem[] =>
 	);
 
 /**
- * The items of a search or of what is shared, in the order the backend ranked
- * them.
- *
- * @param raw - The reactor's output, `{ count, files }`.
- * @return The items.
- */
-export const parseOneDriveResults = (raw: unknown): MicrosoftDriveItem[] =>
-	parseEach(requireList(raw, "files", "any files"), parseDriveItem);
-
-/**
  * The items of a Teams channel folder, from `MicrosoftTeamsListFiles`.
  *
  * @param raw - The reactor's output, a bare list.

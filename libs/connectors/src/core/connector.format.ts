@@ -217,5 +217,3 @@ export const toPlainText = (content: string): string => {
 		.replace(/\n{3,}/g, "\n\n")
 		.trim();
 };
-
-export { addLocalDays } from "@semoss/utility/date";

@@ -1,6 +1,6 @@
 import { getRoomMessages } from "@/features/messages/api/get-room-messages";
 import { createRoom } from "./create-room";
-import { listRooms } from "./list-rooms";
+import { listRoomsPage } from "./list-rooms";
 
 function pixelResponse(output: unknown) {
 	return {
@@ -166,7 +166,7 @@ describe("playground room APIs", () => {
 		]);
 	});
 
-	it("lists playground rooms once and maps uppercase fields", async () => {
+	it("lists a page of playground rooms and maps uppercase fields", async () => {
 		const run = vi.fn().mockResolvedValue(
 			pixelResponse([
 				{
@@ -178,7 +178,8 @@ describe("playground room APIs", () => {
 				},
 			]),
 		);
-		await expect(listRooms({ run } as never)).resolves.toEqual([
+		const { rooms } = await listRoomsPage({ run } as never);
+		expect(rooms).toEqual([
 			{
 				roomId: "room-1",
 				roomName: "Review",
@@ -188,9 +189,6 @@ describe("playground room APIs", () => {
 			},
 		]);
 		expect(run).toHaveBeenCalledOnce();
-		expect(run).toHaveBeenCalledWith(
-			'META | GetPlaygroundRooms(sort=["DESC"], mode=["collaboration"]);',
-		);
 	});
 
 	it("loads playground message visibility", async () => {

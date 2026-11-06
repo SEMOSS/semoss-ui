@@ -40,14 +40,6 @@ interface AgentRunRoomFilters {
 	status: AgentRunRoomStatusFilter;
 }
 
-export const EMPTY_AGENT_RUN_ROOM_FILTERS: AgentRunRoomFilters = {
-	agentId: "",
-	userId: "",
-	userType: "",
-	search: "",
-	status: "all",
-};
-
 /** How many choices the agent and user filters list for a search */
 export const AGENT_RUN_FILTER_OPTION_LIMIT = 25;
 

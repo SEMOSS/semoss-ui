@@ -61,11 +61,3 @@ export function linkLabel(href: string, max = 48): string {
 export function isLongText(text: string): boolean {
 	return text.length > 1200 || text.split("\n").length > 18;
 }
-
-/** Which messages to show when a long thread is folded: the first, and the newest few. */
-export function foldedRange(
-	count: number,
-	newest = 3,
-): { head: number; tail: number } | null {
-	return count > newest + 2 ? { head: 1, tail: newest } : null;
-}
