@@ -1,6 +1,7 @@
 import {
 	Archive,
 	Bolt,
+	BrushCleaning,
 	Clock,
 	Cpu,
 	Database,
@@ -78,6 +79,14 @@ export const STEP_TYPES: {
 		icon: Clock,
 		color: "text-sky-600",
 	},
+	{
+		type: "clean",
+		label: "Clean",
+		description:
+			"Clean a compatible upstream table using existing BI routines",
+		icon: BrushCleaning,
+		color: "text-primary",
+	},
 ];
 
 // Two namespaces in one map: UPPERCASE keys match RunStatus/NodeStatus from the
@@ -125,6 +134,7 @@ export const TYPE_DISPLAY_META: Record<
 	data: STEP_TYPES[5],
 	app: STEP_TYPES[6],
 	wait: STEP_TYPES[7],
+	clean: STEP_TYPES[8],
 	loop: {
 		label: "Loop over items",
 		description: "Repeat a nested sequence for every item or batch",

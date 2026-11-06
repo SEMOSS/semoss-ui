@@ -52,6 +52,7 @@ import {
 	RUN_NODE_VIEW_LABELS,
 	RUN_RESULTS_LAYOUT_CLASSES,
 	type RunNodeContentView,
+	resolveLiveRunNodeId,
 } from "./run-node-view-state";
 
 export interface RunsTabSnapshot {
@@ -535,7 +536,8 @@ function LiveRunView({
 	onViewAgentRun?: (trace: AutomationNodeTrace) => void;
 }) {
 	const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-	const previousRunningNodeIdRef = useRef<string | null>(null);
+	const explicitSelectionRef = useRef(false);
+	const selectionRunIdRef = useRef(runId);
 	// `onDismiss` only notifies the host — nothing upstream tracks whether this run's banner
 	// was dismissed, so without local state it would never actually disappear. Reset whenever
 	// the run this banner is about changes, so dismissing one run's banner doesn't also hide
@@ -558,27 +560,38 @@ function LiveRunView({
 		null;
 
 	useEffect(() => {
-		const runningNodeId = runningResult?.NODE_ID ?? null;
-		if (
-			runningNodeId &&
-			previousRunningNodeIdRef.current !== runningNodeId
-		) {
-			previousRunningNodeIdRef.current = runningNodeId;
-			setSelectedNodeId(runningNodeId);
-			return;
+		if (selectionRunIdRef.current !== runId) {
+			selectionRunIdRef.current = runId;
+			explicitSelectionRef.current = false;
 		}
-		if (!runningNodeId) previousRunningNodeIdRef.current = null;
-		setSelectedNodeId((current) =>
-			current && results.some((r) => r.NODE_ID === current)
-				? current
-				: (results[results.length - 1]?.NODE_ID ?? null),
-		);
-	}, [results, runningResult?.NODE_ID]);
+		setSelectedNodeId((current) => {
+			const currentExists = Boolean(
+				current && results.some((result) => result.NODE_ID === current),
+			);
+			if (explicitSelectionRef.current && !currentExists) {
+				explicitSelectionRef.current = false;
+			}
+			return resolveLiveRunNodeId(
+				results,
+				current,
+				explicitSelectionRef.current,
+				latestRunStatus,
+			);
+		});
+	}, [latestRunStatus, results, runId]);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: focusToken forces re-focusing the same node id after navigating away and back; it's not read in the body.
 	useEffect(() => {
-		if (focusNodeId) setSelectedNodeId(focusNodeId);
+		if (focusNodeId) {
+			explicitSelectionRef.current = true;
+			setSelectedNodeId(focusNodeId);
+		}
 	}, [focusNodeId, focusToken]);
+
+	const selectNode = useCallback((nodeId: string) => {
+		explicitSelectionRef.current = true;
+		setSelectedNodeId(nodeId);
+	}, []);
 
 	useEffect(() => {
 		if (previousRunStatusRef.current === latestRunStatus) return;
@@ -622,7 +635,7 @@ function LiveRunView({
 				onOutputPopout={onOutputPopout}
 				selectedResult={selectedResult}
 				stepMap={stepMap}
-				onSelectNode={setSelectedNodeId}
+				onSelectNode={selectNode}
 				onViewAgentRun={onViewAgentRun}
 			/>
 		</div>

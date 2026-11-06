@@ -3,6 +3,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
 	Button,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
 	Field,
 	FieldLabel,
 	Input,
@@ -54,6 +59,37 @@ const RUN_STATUS_CLASSES: Record<StepRunStatus, string> = {
 		"border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
 	error: "border-destructive/30 bg-destructive/5 text-destructive",
 };
+
+const PYTHON_DATAFRAME_EXAMPLE = [
+	"import pandas as pd",
+	"",
+	"def run(scope):",
+	'    rows = scope.get("extracted_rows") or []',
+	'    filters = scope.get("filters") or {}',
+	'    region = filters.get("region")',
+	"",
+	"    frame = pd.DataFrame.from_records(rows)",
+	'    if region and "region" in frame.columns:',
+	'        frame = frame.loc[frame["region"] == region].copy()',
+	'    if "amount" in frame.columns:',
+	'        frame["amount"] = pd.to_numeric(frame["amount"], errors="coerce")',
+	"",
+	"    return frame",
+].join("\n");
+
+const PYTHON_DATAFRAME_PASSTHROUGH_EXAMPLE = [
+	"def run(scope):",
+	'    return scope["query_result"].copy()',
+].join("\n");
+
+const PYTHON_STRUCTURED_OUTPUT_EXAMPLE = [
+	"def run(scope):",
+	"    return {",
+	'        "run_id": scope["run_id"],',
+	'        "processed": True,',
+	"    }",
+].join("\n");
+
 export interface NodeEditDrawerProps {
 	step: AutomationNode;
 	appId: string;
@@ -108,6 +144,7 @@ export function NodeEditDrawer({
 	readOnly = false,
 }: NodeEditDrawerProps) {
 	const [editorMode, setEditorMode] = useState<NodeEditorMode>("form");
+	const [pythonExamplesOpen, setPythonExamplesOpen] = useState(false);
 	const meta = getDisplayMeta(step.type);
 	const workflowDefinition = step.workflowType
 		? getWorkflowNodeDefinition(step.workflowType)
@@ -468,7 +505,7 @@ export function NodeEditDrawer({
 												</TooltipTrigger>
 												<TooltipContent
 													side="right"
-													className="max-w-80"
+													className="max-w-96"
 												>
 													<p className="font-medium">
 														run(scope)
@@ -484,14 +521,13 @@ export function NodeEditDrawer({
 														variable.
 													</p>
 													<p className="mt-1">
-														Read with
+														Read values with
 														scope[&quot;name&quot;]
 														or
 														scope.get(&quot;name&quot;).
-														Assigning to scope
-														raises; return a
-														JSON-shaped value to
-														pass data on.
+														The mapping is
+														read-only. For return
+														types, open Examples.
 													</p>
 												</TooltipContent>
 											</Tooltip>
@@ -508,6 +544,19 @@ export function NodeEditDrawer({
 													)
 												}
 											/>
+										)}
+										{devMode && (
+											<Button
+												type="button"
+												size="sm"
+												variant="outline"
+												className="h-7 px-2 text-xs"
+												onClick={() =>
+													setPythonExamplesOpen(true)
+												}
+											>
+												Examples
+											</Button>
 										)}
 										{!readOnly && (
 											<Tooltip>
@@ -613,6 +662,77 @@ export function NodeEditDrawer({
 					</div>
 				</div>
 			</div>
+			<Dialog
+				open={pythonExamplesOpen}
+				onOpenChange={setPythonExamplesOpen}
+			>
+				<DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
+					<DialogHeader>
+						<DialogTitle>Python node examples</DialogTitle>
+						<DialogDescription>
+							Implement run(scope), read values from the read-only
+							run scope, and return the output for this
+							node&apos;s output variable.
+						</DialogDescription>
+					</DialogHeader>
+					<p className="text-muted-foreground text-xs">
+						<a
+							href="https://github.com/SEMOSS/Semoss/blob/dev/py/install_config/pyproject.toml#L10"
+							target="_blank"
+							rel="noreferrer"
+							className="text-primary underline underline-offset-4"
+						>
+							View all available Python packages
+						</a>
+					</p>
+					<div className="space-y-4">
+						<section className="space-y-2">
+							<p className="font-medium text-sm">
+								Read upstream values, filter and transform
+								records, then return a table
+							</p>
+							<pre className="max-w-full overflow-x-auto rounded-md bg-muted p-3 font-mono text-xs">
+								<code>{PYTHON_DATAFRAME_EXAMPLE}</code>
+							</pre>
+							<p className="text-muted-foreground text-xs">
+								Replace extracted_rows and filters with the
+								output variables available in your workflow.
+								Optional nested values can be read with
+								scope.get(&quot;filters&quot;, {}
+								).get(&quot;region&quot;). The returned pandas
+								DataFrame is a table that downstream Clean and
+								Transform nodes can use.
+							</p>
+						</section>
+						<section className="space-y-2">
+							<p className="font-medium text-sm">
+								Pass through an existing DataFrame
+							</p>
+							<pre className="max-w-full overflow-x-auto rounded-md bg-muted p-3 font-mono text-xs">
+								<code>
+									{PYTHON_DATAFRAME_PASSTHROUGH_EXAMPLE}
+								</code>
+							</pre>
+						</section>
+						<section className="space-y-2">
+							<p className="font-medium text-sm">
+								Return structured data instead of a table
+							</p>
+							<pre className="max-w-full overflow-x-auto rounded-md bg-muted p-3 font-mono text-xs">
+								<code>{PYTHON_STRUCTURED_OUTPUT_EXAMPLE}</code>
+							</pre>
+							<p className="text-muted-foreground text-xs">
+								A dictionary, list, or scalar value is returned
+								as structured output, not a table frame. Scope
+								also contains date, triggered_at, run_id,
+								trigger inputs, and successful earlier-step
+								outputs. The scope mapping is read-only; return
+								a value rather than assigning to scope.
+							</p>
+						</section>
+					</div>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }
