@@ -462,7 +462,10 @@ export function collaborationReducer(
 					});
 				else if (
 					command.operation === "confirm" ||
-					command.operation === "add"
+					command.operation === "add" ||
+					// live sync never saves a suggested link, so starring one confirms it
+					(command.operation === "primary" &&
+						existing.source === "suggested")
 				)
 					existing.source = "confirmed";
 				if (command.operation === "primary")

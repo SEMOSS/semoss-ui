@@ -17,6 +17,7 @@ import {
 	CollaborationSessionProvider,
 	useCollaborationSession,
 } from "../state/collaboration-session.context";
+import { memoriesAbout } from "../state/memory";
 import {
 	readMailCheck,
 	readTopic,
@@ -114,12 +115,14 @@ it("deduplicates server echoes, ignores removed actions during a refresh, and re
 	await waitFor(() => expect(readWorkUpdates).toHaveBeenCalledTimes(1));
 	expect(screen.getByRole("status")).toHaveTextContent(/^Saved reminder$/);
 	let finish: ((value: typeof updates) => void) | undefined;
-	vi.mocked(readWorkUpdates).mockImplementationOnce(
-		() =>
-			new Promise((resolve) => {
-				finish = resolve;
-			}),
-	);
+	vi.mocked(readWorkUpdates)
+		.mockImplementationOnce(
+			() =>
+				new Promise((resolve) => {
+					finish = resolve;
+				}),
+		)
+		.mockReturnValueOnce(new Promise(() => undefined));
 	fireEvent.click(screen.getByText("Refresh"));
 	await waitFor(() => expect(readWorkUpdates).toHaveBeenCalledTimes(2));
 	fireEvent.click(screen.getByText("Refresh"));
@@ -127,9 +130,11 @@ it("deduplicates server echoes, ignores removed actions during a refresh, and re
 	fireEvent.click(screen.getByText("Remove"));
 	await act(async () => finish?.(updates));
 	expect(screen.getByRole("status")).toBeEmptyDOMElement();
+	// the Refresh pressed during that read runs once it is done
+	await waitFor(() => expect(readWorkUpdates).toHaveBeenCalledTimes(3));
 	view.unmount();
 	fireEvent(window, new Event("focus"));
-	expect(readWorkUpdates).toHaveBeenCalledTimes(2);
+	expect(readWorkUpdates).toHaveBeenCalledTimes(3);
 });
 
 it("pulls new mail before reloading when Refresh is pressed, and shows sync failures", async () => {
@@ -452,6 +457,70 @@ it("gives a topic made on this page its server id after queued saves, and keeps 
 	).toEqual(["local-topic-9"]);
 });
 
+it("keeps a note on a topic made on this page when a refresh returns both with server ids", async () => {
+	const state = createInitialCollaborationState();
+	state.topics.push({ ...state.topics[0], id: "local-topic-9" });
+	const note = {
+		...state.memories[0],
+		id: "local-memory-1",
+		about: [{ type: "topic" as const, id: "local-topic-9" }],
+		isSample: false,
+	};
+	state.memories = [note];
+	const serverIds: Record<string, string> = {
+		"server-topic": "local-topic-9",
+		"server-memory": "local-memory-1",
+	};
+	const sync: LiveSync = Object.assign(vi.fn(), {
+		settled: async () => undefined,
+		localId: (id: string) => serverIds[id] ?? id,
+		serverId: (id: string) => id,
+	});
+	vi.mocked(readWorkUpdates).mockResolvedValueOnce({
+		threads: [],
+		items: [],
+		workspaces: {},
+		memories: [
+			{
+				...note,
+				id: "server-memory",
+				text: "Saved on the server",
+				about: [{ type: "topic", id: "server-topic" }],
+			},
+		],
+		lastMailCheck: null,
+	});
+	const { result } = renderHook(
+		() => ({
+			...useCollaborationSession(),
+			updates: useWorkUpdates(),
+		}),
+		{
+			wrapper: ({ children }) => (
+				<CollaborationSessionProvider initialState={state}>
+					<WorkUpdatesProvider
+						actions={{} as InsightActions}
+						sync={sync}
+					>
+						{children}
+					</WorkUpdatesProvider>
+				</CollaborationSessionProvider>
+			),
+		},
+	);
+	act(() => result.current.updates?.refresh());
+	await waitFor(() =>
+		expect(result.current.updates?.lastUpdated).not.toBeNull(),
+	);
+	// the topic page lists notes by the id the page knows the topic by
+	expect(
+		memoriesAbout(result.current.state.memories, {
+			type: "topic",
+			id: "local-topic-9",
+		}).map((memory) => [memory.id, memory.text]),
+	).toEqual([["local-memory-1", "Saved on the server"]]);
+});
+
 function renderUpdates(
 	state: ReturnType<typeof createInitialCollaborationState>,
 ) {
@@ -544,6 +613,31 @@ it("reloads threads again when a reload was already running before the assistant
 	await act(async () =>
 		result.current.updates?.refreshTopic({ topicId: state.topics[0].id }),
 	);
+	expect(readWorkUpdates).toHaveBeenCalledTimes(1);
+	await act(async () => running.resolve(updates));
+	await waitFor(() => expect(readWorkUpdates).toHaveBeenCalledTimes(2));
+});
+
+it("reloads again after the running reload when another is asked for meanwhile", async () => {
+	const state = createInitialCollaborationState();
+	const updates = {
+		threads: state.threads,
+		items: [],
+		workspaces: {},
+		memories: [],
+		lastMailCheck: null,
+	};
+	const running = deferred<typeof updates>();
+	vi.mocked(readWorkUpdates)
+		.mockReset()
+		.mockReturnValueOnce(running.promise)
+		.mockResolvedValue(updates);
+	const { result } = renderUpdates(state);
+
+	act(() => result.current.updates?.refresh());
+	await waitFor(() => expect(readWorkUpdates).toHaveBeenCalledTimes(1));
+	// linking a folder files conversations the running read has already missed
+	act(() => result.current.updates?.refresh());
 	expect(readWorkUpdates).toHaveBeenCalledTimes(1);
 	await act(async () => running.resolve(updates));
 	await waitFor(() => expect(readWorkUpdates).toHaveBeenCalledTimes(2));

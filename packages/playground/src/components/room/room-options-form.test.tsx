@@ -1,13 +1,16 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { expect, test, vi } from "vitest";
+import { RoomToolsConnectorsSection } from "@/features/chat-tools/components/room-tools-connectors-section";
+import { useRoomToolbox } from "@/features/chat-tools/use-room-toolbox";
 import type { RoomStore } from "@/stores/room/room.store";
 import { RoomOptionsForm } from "./room-options-form";
 
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({
-		t: (key: string, args?: { name: string }) =>
-			args?.name ? `${key} ${args.name}` : key,
+		t: (key: string, args?: Record<string, unknown>) =>
+			args ? [key, ...Object.values(args)].join(" ") : key,
+		i18n: { language: "en" },
 	}),
 }));
 vi.mock("@/hooks/use-root", () => ({
@@ -60,12 +63,32 @@ vi.mock("@/components/mcp/mcp-overlay", () => ({
 		) : null,
 }));
 
+vi.mock("@/features/settings/settings-dialog.context", () => ({
+	useSettingsDialog: () => ({ openSettings: vi.fn() }),
+}));
+vi.mock("@/features/connectors/use-connector-logins", () => ({
+	useConnectorLogins: vi.fn(),
+}));
+const signIn = vi.fn();
+vi.mock("@/features/connectors/use-connect-provider", () => ({
+	useConnectProvider: () => signIn,
+}));
+vi.mock("@/features/chat-tools/use-room-toolbox", () => ({
+	useRoomToolbox: vi.fn(),
+}));
+
 const options: RoomStore["options"] = {
 	instructions: "Keep this instruction",
 	predefinedPrompts: [],
 	mcp: [
 		{ id: "knowledge", name: "Handbook", type: "VECTOR" },
 		{ id: "tool", name: "Calculator", type: "FUNCTION" },
+		{
+			id: "agent-tool",
+			name: "Agent search",
+			type: "FUNCTION",
+			fromWorkspace: true,
+		},
 		{
 			id: "agent",
 			name: "Inherited search",
@@ -78,21 +101,29 @@ const options: RoomStore["options"] = {
 function Settings({
 	disabled = false,
 	isAgentMode = false,
+	initialOptions = options,
+	connectorsSection,
+	onOptionsChange,
 }: {
 	disabled?: boolean;
 	isAgentMode?: boolean;
+	initialOptions?: RoomStore["options"];
+	connectorsSection?: ReactNode;
+	onOptionsChange?: (next: Partial<RoomStore["options"]>) => void;
 }) {
-	const [value, setValue] = useState(options);
+	const [value, setValue] = useState(initialOptions);
 	return (
 		<RoomOptionsForm
 			model={null}
 			onModelChange={vi.fn()}
 			options={value}
-			onOptionsChange={(next) =>
-				setValue((previous) => ({ ...previous, ...next }))
-			}
+			onOptionsChange={(next) => {
+				onOptionsChange?.(next);
+				setValue((previous) => ({ ...previous, ...next }));
+			}}
 			disabled={disabled}
 			isAgentMode={isAgentMode}
+			connectorsSection={connectorsSection}
 		/>
 	);
 }
@@ -102,16 +133,27 @@ test("lists separate selected resources and removes only the chosen local select
 	const knowledge = screen.getByRole("region", {
 		name: "room:form.knowledgeLabel 2",
 	});
-	const tools = screen.getByRole("region", { name: "room:studio.tools 2" });
+	const toolboxes = screen.getByRole("region", {
+		name: "sections.toolboxes.title",
+	});
+	const agent = screen.getByRole("region", {
+		name: "sections.agent.title",
+	});
 	expect(within(knowledge).getByText("Handbook")).toBeVisible();
-	expect(within(tools).getByText("Calculator")).toBeVisible();
+	expect(within(toolboxes).getByText("Calculator")).toBeVisible();
+	expect(within(toolboxes).queryByText("Agent search")).toBeNull();
+	expect(within(agent).getByText("Agent search")).toBeVisible();
+	expect(
+		screen.queryByRole("button", {
+			name: /removeSelection Agent search/,
+		}),
+	).toBeNull();
+	// the room's own toolbox is listed under Connectors instead
+	expect(screen.queryByText("Room files")).toBeNull();
 	expect(
 		screen.queryByRole("button", {
 			name: /removeSelection Inherited search/,
 		}),
-	).toBeNull();
-	expect(
-		screen.queryByRole("button", { name: /removeSelection Room files/ }),
 	).toBeNull();
 	fireEvent.click(
 		screen.getByRole("button", {
@@ -120,7 +162,18 @@ test("lists separate selected resources and removes only the chosen local select
 	);
 	expect(screen.queryByText("Handbook")).toBeNull();
 	expect(screen.getByText("Inherited search")).toBeVisible();
-	expect(screen.getByText("Calculator")).toBeVisible();
+	fireEvent.click(
+		screen.getByRole("button", {
+			name: "room:settings.removeSelection Calculator",
+		}),
+	);
+	expect(screen.queryByText("Calculator")).toBeNull();
+	// the last added toolbox gone, the section goes too
+	expect(
+		screen.queryByRole("region", {
+			name: "sections.toolboxes.title",
+		}),
+	).toBeNull();
 	expect(screen.getByLabelText("room:form.instructionsLabel")).toHaveValue(
 		"Keep this instruction",
 	);
@@ -152,20 +205,152 @@ test("running chats keep selections visible and disable all edits", () => {
 		}),
 	).toBeDisabled();
 	expect(
+		screen.getByRole("button", {
+			name: "room:settings.removeSelection Calculator",
+		}),
+	).toBeDisabled();
+	expect(
 		screen.getByRole("button", { name: "room:menuKnowledge.addKnowledge" }),
+	).toBeDisabled();
+	expect(
+		screen.getByRole("button", { name: "room:menuToolbox.addToolbox" }),
 	).toBeDisabled();
 	expect(screen.getByLabelText("room:form.instructionsLabel")).toBeDisabled();
 	for (const select of screen.getAllByRole("combobox"))
 		expect(select).toBeDisabled();
+	// the tools can still be browsed and explained while a response runs
+	for (const name of [
+		"sections.default.title",
+		"sections.toolboxes.title",
+		"sections.agent.title",
+		"tools.titles.folder_list",
+		/^Calculator/,
+		/^Agent search/,
+		"sections.about room:settings.toolsTitle",
+	])
+		expect(screen.getByRole("button", { name: name })).toBeEnabled();
 });
 
-test("agent mode hides default chat tools and chat mode restores them", () => {
+test("agent mode notes its own tools in place of the default tools", () => {
 	const { rerender } = render(<Settings />);
-	expect(screen.getByText("defaultTools.label")).toBeVisible();
+	const defaults = () =>
+		screen.getByRole("region", { name: "sections.default.title" });
+	expect(within(defaults()).getAllByRole("combobox")).toHaveLength(8);
+	expect(
+		within(defaults()).queryByText("sections.default.agentNote"),
+	).toBeNull();
 	rerender(<Settings isAgentMode />);
-	expect(screen.queryByText("defaultTools.label")).toBeNull();
-	rerender(<Settings />);
-	expect(screen.getByText("defaultTools.label")).toBeVisible();
+	expect(within(defaults()).queryAllByRole("combobox")).toHaveLength(0);
+	expect(
+		within(defaults()).getByText("sections.default.agentNote"),
+	).toBeVisible();
+});
+
+test("every default tool is a row with its mode in the mode column, and the section collapses", () => {
+	render(
+		<Settings
+			initialOptions={{
+				...options,
+				defaultTools: { folder_read: "disabled" },
+			}}
+		/>,
+	);
+	const defaults = screen.getByRole("region", {
+		name: "sections.default.title",
+	});
+	// the select is named by its tool (and, in browsers, the mode it shows)
+	expect(
+		within(defaults).getByRole("combobox", {
+			name: /^tools\.titles\.folder_read/,
+		}),
+	).toHaveTextContent("defaultTools.modes.disabled");
+	fireEvent.click(
+		within(defaults).getByRole("button", {
+			name: "tools.titles.folder_read",
+		}),
+	);
+	expect(within(defaults).getByText("folder_read")).toBeVisible();
+
+	const toggle = within(defaults).getByRole("button", {
+		name: "sections.default.title",
+	});
+	expect(toggle).toHaveAttribute("aria-expanded", "true");
+	fireEvent.click(toggle);
+	expect(toggle).toHaveAttribute("aria-expanded", "false");
+	expect(within(defaults).queryAllByRole("combobox")).toHaveLength(0);
+});
+
+test("leaves out the Agent and Toolboxes sections when they hold nothing", () => {
+	render(
+		<Settings
+			initialOptions={{
+				...options,
+				mcp: [{ id: "knowledge", name: "Handbook", type: "VECTOR" }],
+			}}
+		/>,
+	);
+	expect(
+		screen.getByRole("region", { name: "sections.default.title" }),
+	).toBeVisible();
+	expect(
+		screen.queryByRole("region", { name: "sections.agent.title" }),
+	).toBeNull();
+	expect(
+		screen.queryByRole("region", {
+			name: "sections.toolboxes.title",
+		}),
+	).toBeNull();
+	expect(
+		screen.getByRole("button", { name: "room:menuToolbox.addToolbox" }),
+	).toBeEnabled();
+});
+
+test("the Connectors section's Refresh and Sign In never submit the form", () => {
+	const load = vi.fn();
+	vi.mocked(useRoomToolbox).mockReturnValue({
+		status: "ready",
+		tools: [
+			{
+				name: "MicrosoftOutlookListMail",
+				reactor: "MicrosoftOutlookListMail",
+				title: "List Mail",
+				description: "",
+				execution: "auto",
+				parameters: [],
+			},
+		],
+		load: load,
+	});
+	const room = {
+		connectors: {
+			services: ["outlook"],
+			isSavingConnectors: false,
+			connectedProviders: [],
+			isProviderOffered: () => true,
+			isServiceCovered: () => true,
+		},
+	} as unknown as RoomStore;
+	const onOptionsChange = vi.fn();
+	const onSubmit = vi.fn((event: SubmitEvent) => event.preventDefault());
+	const { container } = render(
+		<Settings
+			connectorsSection={<RoomToolsConnectorsSection room={room} />}
+			onOptionsChange={onOptionsChange}
+		/>,
+	);
+	container.querySelector("form")?.addEventListener("submit", onSubmit);
+
+	fireEvent.click(
+		screen.getByRole("button", { name: "common:buttons.refresh" }),
+	);
+	fireEvent.click(
+		screen.getByRole("button", { name: "chatConnectors:signIn.action" }),
+	);
+
+	expect(load).toHaveBeenCalledTimes(1);
+	expect(signIn).toHaveBeenCalledWith("MICROSOFT");
+	expect(onSubmit).not.toHaveBeenCalled();
+	expect(onOptionsChange).not.toHaveBeenCalled();
 });
 
 test("a new chat's Settings reports Default Agent and names it once picked", () => {
@@ -180,9 +365,9 @@ test("a new chat's Settings reports Default Agent and names it once picked", () 
 		onDefaultAgentChange,
 	};
 	const { rerender } = render(<RoomOptionsForm {...props} />);
-	fireEvent.click(
-		screen.getByRole("button", { name: "room:menuWorkspace.selectAgent" }),
-	);
+	const agent = screen.getByRole("button", { name: "room:form.agentLabel" });
+	expect(agent).toHaveTextContent("room:menuWorkspace.selectAgent");
+	fireEvent.click(agent);
 	expect(screen.getByRole("dialog", { name: "AGENT" })).toHaveAttribute(
 		"data-default-agent",
 		"false",
@@ -195,6 +380,6 @@ test("a new chat's Settings reports Default Agent and names it once picked", () 
 	expect(onDefaultAgentChange).toHaveBeenCalledExactlyOnceWith(true);
 	rerender(<RoomOptionsForm {...props} isAgentMode />);
 	expect(
-		screen.getByRole("button", { name: "room:modes.defaultAgent" }),
-	).toBeVisible();
+		screen.getByRole("button", { name: "room:form.agentLabel" }),
+	).toHaveTextContent("room:modes.defaultAgent");
 });

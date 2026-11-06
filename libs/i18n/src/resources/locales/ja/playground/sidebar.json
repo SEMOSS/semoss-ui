@@ -61,27 +61,8 @@
 		"roomNameEmpty": "ルーム名を空にすることはできません",
 		"roomRenamedSuccess": "ルーム名を正常に変更しました",
 		"failedToRename": "ルーム名の変更に失敗しました",
-		"roomDeletedSuccess": "ルームを正常に削除しました"
-	},
-	"workbench": {
-		"view": "表示",
-		"navigate": "移動",
-		"commandPalette": "コマンドパレットを開く…",
-		"layout": "パネルを配置",
-		"single": "1つのグループにまとめる",
-		"columns": "2列に分割",
-		"rows": "2行に分割",
-		"balance": "ペインのサイズを均等にする",
-		"left": "左側の領域を表示",
-		"right": "右側の領域を表示",
-		"top": "上側の領域を表示",
-		"bottom": "下側の領域を表示",
-		"previous": "前のパネルに移動",
-		"next": "次のパネルに移動",
-		"openPanels": "開いているパネル",
-		"noPanels": "開いているパネルはありません",
-		"maximize": "ワークスペースを最大化",
-		"restore": "ワークスペースを元に戻す"
+		"roomDeletedSuccess": "ルームを正常に削除しました",
+		"failedToDelete": "ルームを削除できませんでした"
 	},
 	"userMenu": {
 		"settings": "設定",
@@ -107,5 +88,13 @@
 			"languageDescription": "アプリの表示言語。",
 			"version": "バージョン {{version}}"
 		}
+	},
+	"download": {
+		"title": "会話をダウンロード",
+		"description": "ダウンロードの形式を選んでください。",
+		"word": "Word 文書",
+		"pdf": "PDF 文書",
+		"success": "会話を {{format}} としてダウンロードしました",
+		"failed": "会話をダウンロードできませんでした"
 	}
 }

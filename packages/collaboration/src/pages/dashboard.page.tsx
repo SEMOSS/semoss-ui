@@ -9,7 +9,7 @@ import { useNeedsOnboarding } from "@/features/onboarding/use-needs-onboarding";
 
 /** Today: an ask box, the top work items and the day's meetings. */
 export function DashboardPage() {
-	// a new user (nothing imported yet) is sent to onboarding first
+	// until the owner finishes or skips setup, Today sends them back to it; other pages keep their deep links
 	if (useNeedsOnboarding()) return <Navigate to="/onboarding" replace />;
 
 	return (

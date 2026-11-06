@@ -62,6 +62,7 @@ export function useChatHistory(
 	const refreshQueued = useRef(false);
 	const failedReset = useRef(false);
 	const scrollTop = useRef(0);
+	const deletedRoomIds = useRef(new Set<string>());
 	const read = useCallback(
 		async (reset: boolean): Promise<void> => {
 			if (busy.current) {
@@ -78,13 +79,17 @@ export function useChatHistory(
 					reset ? 0 : offset.current,
 				);
 				if (token !== epoch.current) return;
+				// a page read before a delete landed can still list the deleted chats
+				const listed = page.rooms.filter(
+					(room) => !deletedRoomIds.current.has(room.roomId),
+				);
 				setRooms((current) => {
 					const incoming = new Map(
-						page.rooms.map((room) => [room.roomId, room]),
+						listed.map((room) => [room.roomId, room]),
 					);
 					const values = reset
 						? [
-								...page.rooms,
+								...listed,
 								...current.filter(
 									(room) => !incoming.has(room.roomId),
 								),
@@ -93,7 +98,7 @@ export function useChatHistory(
 								...current.map(
 									(room) => incoming.get(room.roomId) ?? room,
 								),
-								...page.rooms,
+								...listed,
 							];
 					return [
 						...new Map(
@@ -130,6 +135,17 @@ export function useChatHistory(
 		let reread: ReturnType<typeof setTimeout> | undefined;
 		const changed = (event: Event) => {
 			if (event instanceof CustomEvent) {
+				const deleted = z
+					.object({ deletedRoomIds: z.array(z.string()) })
+					.safeParse(event.detail);
+				if (deleted.success) {
+					const ids = deleted.data.deletedRoomIds;
+					for (const roomId of ids)
+						deletedRoomIds.current.add(roomId);
+					setRooms((current) =>
+						current.filter((room) => !ids.includes(room.roomId)),
+					);
+				}
 				const row = z
 					.object({
 						roomId: z.string().min(1),

@@ -8,6 +8,7 @@ import { getFileExtension as legacyExtension } from "@semoss/utility/file-extens
 import * as json from "@semoss/utility/json";
 import * as markdown from "@semoss/utility/markdown";
 import * as object from "@semoss/utility/object";
+import * as observable from "@semoss/utility/observable";
 import * as string from "@semoss/utility/string";
 import * as text from "@semoss/utility/text";
 import { toError } from "./error";
@@ -18,6 +19,8 @@ it("exports the canonical helper names through their categories and root", () =>
 	expect(utility).toMatchObject({
 		isSameArray: array.isSameArray,
 		deepCopy: object.deepCopy,
+		isShallowEqual: object.isShallowEqual,
+		Observable: observable.Observable,
 		formatTextByteSize: text.formatTextByteSize,
 		readNonBlankString: text.readNonBlankString,
 		stripAnsiStyleCodes: text.stripAnsiStyleCodes,

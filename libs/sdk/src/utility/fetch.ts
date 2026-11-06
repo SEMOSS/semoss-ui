@@ -70,6 +70,25 @@ const handleHeaderRedirect = (response: Response): boolean => {
 	return false;
 };
 
+/** Everyone told when the backend sends a request away to sign in. */
+const unauthorizedListeners = new Set<(error: UnauthorizedError) => void>();
+
+/**
+ * Hear when the backend sends a request away to sign in, which means the
+ * session has ended. The request still throws its error afterwards.
+ *
+ * @param listener - Called with the error, before it is thrown.
+ * @returns Stops listening.
+ */
+export const onUnauthorized = (
+	listener: (error: UnauthorizedError) => void,
+): (() => void) => {
+	unauthorizedListeners.add(listener);
+	return () => {
+		unauthorizedListeners.delete(listener);
+	};
+};
+
 /**
  * Store the interceptors to modify any fetch command
  */
@@ -164,10 +183,14 @@ const interceptors: {
 		captureHeadlessCookie(response);
 
 		if (handleHeaderRedirect(response)) {
-			throw new UnauthorizedError(
+			const error = new UnauthorizedError(
 				"Redirecting from header direct value",
 				302,
 			);
+			for (const listener of unauthorizedListeners) {
+				listener(error);
+			}
+			throw error;
 		}
 	},
 };

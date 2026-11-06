@@ -100,12 +100,14 @@ export function useDelegationStatus(
 		let cancelled = false;
 		let timer: ReturnType<typeof setTimeout> | undefined;
 		const seen: Record<string, AgentRun> = {};
-		const poll = async () => {
-			const ids = runIds
+		// a request whose reads all failed has no run yet, and still needs reading
+		const pending = () =>
+			runIds
 				.split(",")
 				.filter((id) => !seen[id] || !isTerminalRun(seen[id]));
+		const poll = async () => {
 			let settled = false;
-			for (const id of ids) {
+			for (const id of pending()) {
 				try {
 					const run = await readRun(insightId, id, false);
 					if (
@@ -122,7 +124,7 @@ export function useDelegationStatus(
 			if (cancelled) return;
 			setRuns({ ...seen });
 			if (settled) answered.current();
-			if (Object.values(seen).some((run) => !isTerminalRun(run)))
+			if (pending().length)
 				timer = setTimeout(
 					() => void poll(),
 					document.visibilityState === "hidden"

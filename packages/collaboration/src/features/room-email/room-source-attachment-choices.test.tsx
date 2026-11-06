@@ -7,7 +7,8 @@ import { RoomEmailContext } from "./room-email.context";
 import { RoomSourceAttachmentChoices } from "./room-source-attachment-choices";
 import { stageSourceAttachment } from "./room-source-attachments";
 
-vi.mock("./room-source-attachments", () => ({
+vi.mock("./room-source-attachments", async (importOriginal) => ({
+	...(await importOriginal<typeof import("./room-source-attachments")>()),
 	stageSourceAttachment: vi.fn(),
 }));
 
@@ -29,6 +30,7 @@ const session = {
 
 function choices(
 	props: Partial<ComponentProps<typeof RoomSourceAttachmentChoices>> = {},
+	room: { sourceMessages?: WorkspaceMessage[]; session?: unknown } = {},
 ) {
 	return (
 		<RoomEmailContext.Provider
@@ -37,6 +39,7 @@ function choices(
 					source,
 					sourceMessages: [message],
 					session,
+					...room,
 				} as unknown as ComponentProps<
 					typeof RoomEmailContext.Provider
 				>["value"]
@@ -141,4 +144,66 @@ it("never sends an Office file without its text", async () => {
 		await screen.findByText("The file is password protected."),
 	).toBeVisible();
 	expect(onAdd).not.toHaveBeenCalled();
+});
+
+it("adds an Outlook-sourced Office file as the text copy Outlook writes", async () => {
+	const actual = await vi.importActual<
+		typeof import("./room-source-attachments")
+	>("./room-source-attachments");
+	vi.mocked(stageSourceAttachment).mockImplementationOnce(
+		actual.stageSourceAttachment,
+	);
+	const user = userEvent.setup();
+	const onAdd = vi.fn();
+	// the connector writes a text copy only when asked for one
+	const run = vi.fn(async (statement: string) => {
+		const filePath = JSON.parse(
+			/fileName=(\[[^\]]*\])/.exec(statement)?.[1] ?? "[]",
+		)[0];
+		return {
+			pixelReturn: [
+				{
+					operationType: [],
+					output: {
+						success: true,
+						id: "outlook-mail",
+						attachmentId: "o1",
+						name: "Report.docx",
+						filePath,
+						size: 10,
+						...(statement.includes("includeText=[true]")
+							? { textPath: `${filePath}.txt` }
+							: {}),
+					},
+				},
+			],
+		};
+	});
+	render(
+		choices(
+			{ onAdd },
+			{
+				sourceMessages: [
+					{
+						...message,
+						id: "outlook-mail",
+						attachments: [
+							{ id: "o1", name: "Report.docx", isFile: true },
+						],
+					},
+				],
+				session: {
+					insight: { insightId: "room-insight", actions: { run } },
+				},
+			},
+		),
+	);
+	await user.click(screen.getByRole("button", { name: "Add Report.docx" }));
+	expect(run.mock.calls[0]?.[0]).toMatch(
+		/^MicrosoftOutlookDownloadAttachment\(/,
+	);
+	expect(onAdd).toHaveBeenCalledWith({
+		fileLocation: expect.stringMatching(/-Report\.docx\.txt$/),
+		fileName: "Report.docx (text)",
+	});
 });

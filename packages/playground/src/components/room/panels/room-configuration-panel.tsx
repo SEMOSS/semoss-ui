@@ -4,15 +4,20 @@ import { useContext } from "react";
 import { ScrollArea } from "@semoss/ui/next";
 import type { WorkbenchPanelConfig } from "@semoss/workbench";
 import { useRoom } from "@/contexts/room.context";
+import { RoomToolsConnectorsSection } from "@/features/chat-tools/components/room-tools-connectors-section";
 import { DraftSettingsContext } from "@/features/workbench/draft-settings.context";
 import { useChat } from "@/hooks/use-chat";
 import { RoomOptionsForm } from "../room-options-form";
 
+/**
+ * The room's settings: its model, instructions, knowledge, and every tool the
+ * assistant has. A new chat's draft settings replace the room's, and leave out
+ * the room's own toolbox, which is not settled until the first message.
+ */
 const RoomConfigurationPanel = observer(() => {
 	const room = useRoom();
 	const { chat } = useChat();
 	const draftSettings = useContext(DraftSettingsContext);
-
 	return (
 		<ScrollArea className="h-full w-full">
 			<RoomOptionsForm
@@ -35,13 +40,18 @@ const RoomConfigurationPanel = observer(() => {
 						room.setOptions(options);
 					}
 				}}
+				connectorsSection={
+					draftSettings ? undefined : (
+						<RoomToolsConnectorsSection room={room} />
+					)
+				}
 				{...draftSettings}
 			/>
 		</ScrollArea>
 	);
 });
 
-/** The room's model and options form. One per sidebar. */
+/** The room's model, options, and tools. One per sidebar. */
 export const ROOM_CONFIGURATION_PANEL: WorkbenchPanelConfig = {
 	name: "Settings",
 	icon: ({ className }) => <Settings2Icon className={className} />,

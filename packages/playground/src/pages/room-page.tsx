@@ -1,30 +1,27 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { useTranslation } from "@semoss/i18n";
 import { InsightProvider } from "@semoss/sdk/react";
 import { ToolViewProvider } from "@semoss/shared";
 import { Spinner, toast } from "@semoss/ui/next";
 import { RoomContent } from "@/components/room/room-content";
-import { RoomSidebar } from "@/components/room/room-sidebar";
+import { RoomWorkbench } from "@/components/room/room-workbench";
 import { FileDragProvider } from "@/contexts/file-drag-context";
 import { RoomProvider } from "@/contexts/room.context";
-import { ConversationWorkspace } from "@/features/conversation/conversation-workspace";
+import { RoomActionsProvider } from "@/features/room-actions/room-actions.context";
+import { RoomHeader } from "@/features/room-header/room-header";
 import { TOOL_VIEW_LIBRARIES } from "@/features/tool-views/tool-view-libraries";
-import { WorkspaceMenuItems } from "@/features/workbench/workspace-menu-items";
-import { WorkspaceRail } from "@/features/workbench/workspace-rail";
+import { FittedRoomLayout } from "@/features/workbench/fitted-room-layout";
 import { useChat } from "@/hooks/use-chat";
 import type { RoomStore } from "@/stores/room/room.store";
-import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
 import type { Engine } from "@/types";
 /**
- * The page for a room
+ * The room page: the room's header, its conversation, and its Workspace.
  *
  * @component
  */
 export const RoomPage = observer(() => {
 	const { roomId } = useParams();
-	const { t } = useTranslation("room");
 	const { chat } = useChat();
 	const navigate = useNavigate();
 
@@ -114,28 +111,18 @@ export const RoomPage = observer(() => {
 		>
 			<RoomProvider room={room}>
 				<ToolViewProvider libraries={TOOL_VIEW_LIBRARIES}>
-					<ConversationWorkspace
-						isOpen={room.sidebar.isOpen}
-						onOpenWorkArea={() => {
-							if (
-								room.workbench.getState().layout.openPanelIds
-									.length === 0
-							) {
-								room.openSidebarPanel(
-									ROOM_PANEL_TYPES.CONFIGURATION,
-									{},
-									t("settings.panelTitle"),
-								);
-							} else room.openSidebar();
-						}}
-						rail={<WorkspaceRail room={room} />}
-						railMenuItems={<WorkspaceMenuItems room={room} />}
-						panel={<RoomSidebar room={room} />}
-					>
-						<FileDragProvider>
-							<RoomContent room={room} />
-						</FileDragProvider>
-					</ConversationWorkspace>
+					{/* the header and the composer's slash menu share the room's actions */}
+					<RoomActionsProvider room={room}>
+						<FittedRoomLayout
+							room={room}
+							header={<RoomHeader room={room} />}
+							workbench={<RoomWorkbench room={room} />}
+						>
+							<FileDragProvider>
+								<RoomContent room={room} />
+							</FileDragProvider>
+						</FittedRoomLayout>
+					</RoomActionsProvider>
 				</ToolViewProvider>
 			</RoomProvider>
 		</InsightProvider>

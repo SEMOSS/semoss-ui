@@ -15,7 +15,7 @@ export const useConnectorLogins = (connectors: ConnectorsStore): void => {
 
 	useEffect(() => {
 		// nothing is known, sign ins offered included, until the config is read
-		const isKnown = status !== "loading";
+		const isKnown = status !== "LOADING";
 		connectors.setSessionLogins({
 			logins: isKnown ? logins : null,
 			connectorAccess: connectorAccess,

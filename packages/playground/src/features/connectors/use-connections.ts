@@ -175,7 +175,7 @@ export const useConnections = (): UseConnectionsResult => {
 		isCoveredByServer(serviceId, connectorAccess);
 
 	return {
-		status: status,
+		status: status.toLowerCase() as UseConnectionsResult["status"],
 		connections: connections,
 		connectingProviderId: connectingProviderId,
 		disconnectingProviderId: disconnectingProviderId,

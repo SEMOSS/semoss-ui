@@ -21,6 +21,7 @@
 		"./file": "./src/file.ts",
 		"./identifier": "./src/identifier.ts",
 		"./object": "./src/object.ts",
+		"./observable": "./src/observable.ts",
 		"./text": "./src/text.ts"
 	},
 	"files": [
