@@ -13,6 +13,15 @@ import {
 	AlertDescription,
 	AlertTitle,
 	Button,
+	Dialog,
+	DialogContent,
+	DialogTitle,
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
 	toast,
 } from "@semoss/ui/next";
 import { formatDurationMs } from "@semoss/utility/date";
@@ -43,12 +52,11 @@ import { TraceDetail } from "../../form-editor/trace-detail";
 import { StatusBadge } from "../../status-badge";
 import { RunBanner } from "../run-banner";
 import { RunNodeDataViewer } from "./run-node-data-viewer";
-import { RunNodeSourceViewer } from "./run-node-source-viewer";
 import {
 	findSavedResultForOccurrence,
 	getRunNodeDataSource,
 	getRunNodeOccurrenceKey,
-	getVisibleRunNodeContentView,
+	getRunScopeVariableRows,
 	RUN_NODE_VIEW_LABELS,
 	RUN_RESULTS_LAYOUT_CLASSES,
 	type RunNodeContentView,
@@ -753,12 +761,12 @@ function ResultsPanel({
 	const [expandedIterationKeys, setExpandedIterationKeys] = useState<
 		Set<string>
 	>(() => new Set());
+	const [expandedVariable, setExpandedVariable] = useState<{
+		name: string;
+		value: string;
+	} | null>(null);
 	const [contentView, setContentView] =
 		useState<RunNodeContentView>("output");
-	const visibleContentView = getVisibleRunNodeContentView(
-		contentView,
-		devMode,
-	);
 
 	const [selectedBodyKey, setSelectedBodyKey] = useState<{
 		loopNodeId: string;
@@ -1203,7 +1211,7 @@ function ResultsPanel({
 										"Loop step"}
 								</p>
 							)}
-							{runId && devMode && (
+							{runId && (
 								<fieldset className="flex w-fit max-w-full flex-wrap rounded-md border bg-muted/40 p-0.5">
 									<legend className="sr-only">
 										{RUN_NODE_VIEW_LABELS.detailView}
@@ -1225,24 +1233,85 @@ function ResultsPanel({
 										type="button"
 										size="sm"
 										variant={
-											contentView === "source"
+											contentView === "scope"
 												? "secondary"
 												: "ghost"
 										}
-										aria-pressed={contentView === "source"}
-										onClick={() => setContentView("source")}
+										aria-pressed={contentView === "scope"}
+										onClick={() => setContentView("scope")}
 									>
-										{RUN_NODE_VIEW_LABELS.source}
+										{RUN_NODE_VIEW_LABELS.scope}
 									</Button>
 								</fieldset>
 							)}
-							{visibleContentView === "source" && runId ? (
-								<RunNodeSourceViewer
-									key={occurrenceKey}
-									appId={appId}
-									runId={runId}
-									nodeId={displayResult.NODE_ID}
-								/>
+							{contentView === "scope" ? (
+								(() => {
+									const scopeRows = getRunScopeVariableRows(
+										displayResult.scopeSnapshot,
+									);
+									if (!scopeRows || scopeRows.length === 0) {
+										const fallback =
+											"No variable snapshot was retained for this step.";
+										return (
+											<CellOutputBlock
+												output={fallback}
+												onOutputPopout={() =>
+													onOutputPopout(fallback)
+												}
+											/>
+										);
+									}
+									return (
+										<section
+											className={
+												RUN_RESULTS_LAYOUT_CLASSES.scrollRegion
+											}
+											aria-label="Automation run variables"
+											// biome-ignore lint/a11y/noNoninteractiveTabindex: the bounded variables table must support keyboard scrolling.
+											tabIndex={0}
+										>
+											<Table
+												className="text-xs"
+												wrapperClassName="overflow-visible"
+											>
+												<TableHeader className="sticky top-0 bg-muted">
+													<TableRow>
+														<TableHead className="h-auto py-1.5">
+															Name
+														</TableHead>
+														<TableHead className="h-auto py-1.5">
+															Value
+														</TableHead>
+													</TableRow>
+												</TableHeader>
+												<TableBody>
+													{scopeRows.map((row) => (
+														<TableRow
+															key={row.name}
+														>
+															<TableCell className="align-top font-medium">
+																{row.name}
+															</TableCell>
+															<TableCell className="p-0 align-top">
+																<button
+																	type="button"
+																	className="block w-full cursor-pointer truncate px-2 py-1.5 text-left hover:bg-muted/50"
+																	onClick={() =>
+																		setExpandedVariable(
+																			row,
+																		)
+																	}
+																>
+																	{row.value}
+																</button>
+															</TableCell>
+														</TableRow>
+													))}
+												</TableBody>
+											</Table>
+										</section>
+									);
+								})()
 							) : (
 								<>
 									{displayResult.STATUS ===
@@ -1329,6 +1398,19 @@ function ResultsPanel({
 					</div>
 				)}
 			</section>
+			<Dialog
+				open={expandedVariable !== null}
+				onOpenChange={(open) => {
+					if (!open) setExpandedVariable(null);
+				}}
+			>
+				<DialogContent className="flex h-4/5 flex-col gap-2 sm:max-w-3xl">
+					<DialogTitle>{expandedVariable?.name}</DialogTitle>
+					<div className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap rounded-md border bg-muted/20 p-3 text-xs">
+						{expandedVariable?.value}
+					</div>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }

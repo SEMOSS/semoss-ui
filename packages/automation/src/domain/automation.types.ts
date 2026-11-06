@@ -342,6 +342,18 @@ export interface AutomationNodeResult {
 		};
 	};
 	ERROR_MESSAGE: string | null;
+	/**
+	 * The node's config after scope-reference ("${...}") substitution - the
+	 * "message" sent into the node, mirrored from Mirth Connect's per-connector
+	 * message view. Serialized JSON string; parse before rendering.
+	 */
+	inputPayload?: string | null;
+	/**
+	 * Every variable in the run scope at the moment this node finished, for
+	 * point-in-time variable inspection in the run history. Serialized JSON
+	 * string; parse before rendering.
+	 */
+	scopeSnapshot?: string | null;
 	trace?: AutomationNodeTrace;
 	iterations?: AutomationNodeIteration[];
 }
