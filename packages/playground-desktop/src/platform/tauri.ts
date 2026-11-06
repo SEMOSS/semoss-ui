@@ -13,6 +13,14 @@ export interface TauriWebviewWindow {
 	once(event: string, handler: (event: { payload: unknown }) => void): void;
 }
 
+/** The window the page is in. */
+export interface TauriWindow {
+	/** Move the window with the pointer, as dragging its title bar does. */
+	startDragging(): Promise<void>;
+	/** Zoom the window, or put it back. */
+	toggleMaximize(): Promise<void>;
+}
+
 /** A persisted key-value store (`tauri-plugin-store`). */
 export interface TauriStore {
 	get<T>(key: string): Promise<T | undefined>;
@@ -25,6 +33,9 @@ export interface TauriStore {
 interface TauriGlobal {
 	core: {
 		invoke<T>(command: string, args?: Record<string, unknown>): Promise<T>;
+	};
+	window: {
+		getCurrentWindow(): TauriWindow;
 	};
 	webviewWindow: {
 		WebviewWindow: {

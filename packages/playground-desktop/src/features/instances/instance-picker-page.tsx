@@ -11,6 +11,7 @@ import {
 	H2,
 	Muted,
 } from "@semoss/ui/next";
+import { TITLE_BAR_ATTRIBUTE } from "../../platform/window-chrome";
 import type { InstanceProfile, InstanceStore } from "./instance.store";
 import { InstanceForm } from "./instance-form";
 
@@ -48,7 +49,10 @@ export const InstancePickerPage = ({
 	};
 
 	return (
-		<main className="flex min-h-svh items-center justify-center bg-muted/30 p-6">
+		<main
+			{...{ [TITLE_BAR_ATTRIBUTE]: "" }}
+			className="flex min-h-svh items-center justify-center bg-muted/30 p-6"
+		>
 			<Card className="w-full max-w-lg">
 				<CardHeader>
 					<CardTitle>

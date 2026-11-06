@@ -30,21 +30,17 @@
 	},
 	"nav": {
 		"newChat": "New chat",
-		"chats": "Chats",
+		"chats": "All Chats",
 		"agents": "Agents",
 		"knowledge": "Knowledge",
-		"signOut": "Sign out"
+		"signOut": "Sign out",
+		"search": "Search",
+		"language": "Language"
 	},
 	"tools": {
 		"source": "This computer",
 		"approval": "Runs on this computer once you allow it.",
 		"notify": "Show a notification",
 		"reveal": "Show in folder"
-	},
-	"browser": {
-		"name": "Browser",
-		"address": "Address",
-		"go": "Go",
-		"blocked": "Some sites refuse to be shown inside the app."
 	}
 }

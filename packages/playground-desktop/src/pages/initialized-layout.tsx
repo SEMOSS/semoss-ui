@@ -1,7 +1,9 @@
 import { Outlet } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import { useConfig } from "@semoss/sdk/react";
-import { Alert, AlertDescription, Button, Spinner } from "@semoss/ui/next";
+import { Alert, AlertDescription, Button } from "@semoss/ui/next";
+import { AppLoading } from "../components/app-loading";
+import { TITLE_BAR_ATTRIBUTE } from "../platform/window-chrome";
 
 /** Props for {@link InitializedLayout}. */
 export interface InitializedLayoutProps {
@@ -25,7 +27,10 @@ export const InitializedLayout = ({
 
 	if (status === "ERROR") {
 		return (
-			<main className="flex h-full w-full flex-col items-center justify-center gap-4 p-6">
+			<main
+				{...{ [TITLE_BAR_ATTRIBUTE]: "" }}
+				className="flex h-full w-full flex-col items-center justify-center gap-4 p-6"
+			>
 				<Alert variant="destructive" className="max-w-md">
 					<AlertDescription>
 						{t("instances.unreachable", {
@@ -40,11 +45,7 @@ export const InitializedLayout = ({
 		);
 	}
 	if (status !== "READY") {
-		return (
-			<div className="flex h-full w-full items-center justify-center">
-				<Spinner />
-			</div>
-		);
+		return <AppLoading />;
 	}
 	return <Outlet />;
 };

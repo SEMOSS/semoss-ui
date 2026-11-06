@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useLocation } from "react-router";
 import { useSession } from "@semoss/sdk/react";
-import { Spinner } from "@semoss/ui/next";
+import { AppLoading } from "../components/app-loading";
 
 /**
  * Show the app's routes to a signed in user, and send everyone else to sign
@@ -13,11 +13,7 @@ export const AuthenticatedLayout = () => {
 	const location = useLocation();
 
 	if (status === "INITIALIZING") {
-		return (
-			<div className="flex h-full w-full items-center justify-center">
-				<Spinner />
-			</div>
-		);
+		return <AppLoading />;
 	}
 	if (status !== "AUTHENTICATED") {
 		return <Navigate to="/login" state={{ from: location }} replace />;

@@ -44,7 +44,8 @@ export const DesktopRouter = ({
 	onSignOut,
 }: DesktopRouterProps) => {
 	// made once: a new router would start the app's navigation over. The
-	// props are the app's long-lived stores and callbacks.
+	// props are the app's long-lived stores and callbacks, and the instance
+	// in use only changes by starting the app over.
 	const [router] = useState(() =>
 		createHashRouter([
 			{
@@ -65,6 +66,9 @@ export const DesktopRouter = ({
 							{
 								element: (
 									<DesktopLayout
+										instanceName={
+											instances.activeInstance?.name ?? ""
+										}
 										preferences={preferences}
 										onSwitchServer={onSwitchServer}
 										onSignOut={onSignOut}

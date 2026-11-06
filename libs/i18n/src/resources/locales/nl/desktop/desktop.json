@@ -30,21 +30,17 @@
 	},
 	"nav": {
 		"newChat": "Nieuwe chat",
-		"chats": "Chats",
+		"chats": "Alle chats",
 		"agents": "Agents",
 		"knowledge": "Kennis",
-		"signOut": "Afmelden"
+		"signOut": "Afmelden",
+		"search": "Zoeken",
+		"language": "Taal"
 	},
 	"tools": {
 		"source": "Deze computer",
 		"approval": "Wordt op deze computer uitgevoerd zodra u het toestaat.",
 		"notify": "Een melding tonen",
 		"reveal": "Tonen in map"
-	},
-	"browser": {
-		"name": "Browser",
-		"address": "Adres",
-		"go": "Ga",
-		"blocked": "Sommige sites weigeren in de app te worden getoond."
 	}
 }

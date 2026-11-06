@@ -165,10 +165,17 @@ export const ToolsView = ({ room, app, message, toolId }: ToolsViewProps) => {
 	 * Effects
 	 */
 
+	// What the page choice reads of the call, as values: an effect keyed on
+	// the call object itself would run again whenever a new but equal object
+	// arrives, and its state updates would render it again, without end.
+	const hasTool = Boolean(tool);
+	const executionMode = tool?._meta?.SMSS_MCP_EXECUTION;
+	const hasMcpUi = Boolean(tool?._meta?.SMSS_MCP_UI);
+
 	useEffect(() => {
 		const chooseUrl = async () => {
 			// Ignore if no tool
-			if (!tool) {
+			if (!hasTool) {
 				setUrl("");
 				setIsLoading(false);
 				return;
@@ -183,10 +190,7 @@ export const ToolsView = ({ room, app, message, toolId }: ToolsViewProps) => {
 			}
 
 			// Auto-executing tool that hasn't completed yet — show default view
-			if (
-				!isAskExecutionMode(tool._meta?.SMSS_MCP_EXECUTION) &&
-				!toolResponse
-			) {
+			if (!isAskExecutionMode(executionMode) && !toolResponse) {
 				setUrl("");
 				setIsLoading(false);
 				return;
@@ -229,7 +233,7 @@ export const ToolsView = ({ room, app, message, toolId }: ToolsViewProps) => {
 
 			setIsLoading(true);
 
-			if (!tool._meta?.SMSS_MCP_UI) {
+			if (!hasMcpUi) {
 				// Legacy, check for portals
 
 				if (getAppInfo.data.project_type === "BLOCKS") {
@@ -259,7 +263,6 @@ export const ToolsView = ({ room, app, message, toolId }: ToolsViewProps) => {
 				);
 			} else {
 				// Modern
-				const resourceURI = tool._meta?.SMSS_MCP_UI?.resourceURI;
 				if (!resourceURI) {
 					// No UI defined, show form
 					setUrl("");
@@ -284,7 +287,10 @@ export const ToolsView = ({ room, app, message, toolId }: ToolsViewProps) => {
 	}, [
 		app,
 		platformUrl,
-		tool,
+		hasTool,
+		executionMode,
+		hasMcpUi,
+		resourceURI,
 		toolResponse,
 		systemAppUrl,
 		isComponentView,

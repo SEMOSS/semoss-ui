@@ -9,12 +9,13 @@ import {
 	CardHeader,
 	CardTitle,
 	H2,
-	Spinner,
 	Tabs,
 	TabsContent,
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
+import { AppLoading } from "../../components/app-loading";
+import { TITLE_BAR_ATTRIBUTE } from "../../platform/window-chrome";
 import type { InstanceStore } from "../instances/instance.store";
 import { BearerTokenForm } from "./bearer-token-form";
 
@@ -43,18 +44,17 @@ export const LoginPage = ({ instances, onSwitchServer }: LoginPageProps) => {
 			?.pathname ?? "/new";
 
 	if (status === "INITIALIZING") {
-		return (
-			<div className="flex h-full w-full items-center justify-center">
-				<Spinner />
-			</div>
-		);
+		return <AppLoading />;
 	}
 	if (status === "AUTHENTICATED") {
 		return <Navigate to={from} replace />;
 	}
 
 	return (
-		<main className="flex min-h-svh items-center justify-center bg-muted/30 p-6">
+		<main
+			{...{ [TITLE_BAR_ATTRIBUTE]: "" }}
+			className="flex min-h-svh items-center justify-center bg-muted/30 p-6"
+		>
 			<Card className="w-full max-w-md">
 				<CardHeader>
 					<CardTitle>

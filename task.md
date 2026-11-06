@@ -22,16 +22,18 @@ tests (shared 7, connectors 1, client 4, collaboration 49 + timeouts under paral
 extra collaboration failure in this tree passes 39/39 on solo re-runs). Live backend
 (`localhost:9090/Monolith`): the playground boots on `@semoss/chat` (config 200, no failed
 requests, no console errors) up to sign in; the desktop web bundle's instance picker validates
-addresses and reports an unreachable server. A signed-in chat lifecycle needs an account, and the
-Tauri shell needs Rust — both waiting on the user.
+addresses and reports an unreachable server. The Rust side compiles cleanly
+with Rust 1.99.1 / tauri-cli 2.12.4 (one fix: `reqwest` `.json()` → `serde_json`), its tests pass,
+and `pnpm tauri:dev` launches the app. Still open: a signed-in chat lifecycle in the playground
+and in the desktop window (no native UI automation here), and the hosted-backend export check.
+Committed locally as `8a5e72b68` (not pushed).
 
-**Status (2026-11-05).** Every task below landed in the working tree of
-`feat/playground-desktop`; nothing is committed. Verified: type-check and tests for
+**Status (2026-11-05).** Every task below landed on `feat/playground-desktop` (commit
+`8a5e72b68`, local only). Verified: type-check and tests for
 `@semoss/sdk` (401), `@semoss/chat` (266), `@semoss/playground` (13) and
 `@semoss/playground-desktop` (21), Biome on the touched packages, and production builds of
-playground and the desktop web bundle. **Not verified:** anything against a live backend
-(the manual smoke matrices), and the desktop app's Rust side, which was written but never
-compiled (no Rust toolchain was available). The full plan, with each task's goal, files,
+playground and the desktop web bundle. **Not verified:** a signed-in run against a live backend
+(the manual smoke matrices) — see the root-wide verification above. The full plan, with each task's goal, files,
 acceptance criteria and the architecture it refers to (§ numbers in the notes below), is kept in
 [task.full-plan.md](task.full-plan.md).
 
@@ -66,8 +68,8 @@ Checked against `feat/playground-desktop` @ `28b714799` and the Semoss backend s
 - `@semoss/shared` has 7 pre-existing test failures (`entity-header`, `audit-logs-data-table`,
   `file-explorer-item`) unrelated to this effort — reproduced with the effort's changes stashed.
 - Prior-art commits `704c4ed84` (Tauri) and `8c3b17190` (local-fs) are present locally.
-- **No Rust toolchain on this machine** (`cargo`/`rustc` absent): Phase 4–5 Rust code is
-  written but `cargo check`/`tauri dev` cannot be run here until rustup is installed.
+- No Rust toolchain was on this machine at validation time; Rust 1.99.1 and tauri-cli 2.12.4
+  were installed afterwards (see the root-wide verification above).
 
 ---
 
@@ -330,7 +332,7 @@ Checked against `feat/playground-desktop` @ `28b714799` and the Semoss backend s
   `src-tauri/` (`Cargo.toml`, `build.rs`, `tauri.conf.json` with CSP, `capabilities/default.json`,
   icons from `704c4ed84`, `src/lib.rs` command registry). `DEV_SERVER_PORTS.playgroundDesktop =
   5181`; root `pnpm dev:desktop`; root AGENTS.md entry. Web bundle type-checks, tests and builds;
-  the Rust side was written but **not compiled** (no Rust toolchain on this machine; none was installed without the user's say-so), so `tauri dev` was not run.
+  the Rust side compiles and `pnpm tauri:dev` launches the app (see the root-wide verification).
 
 #### [x] 4.2 Native fetch bridge + SDK host wiring
 - **Landed** (working tree): `src/platform/fetch-bridge.ts` (every body — string, form, Blob,
@@ -339,7 +341,7 @@ Checked against `feat/playground-desktop` @ `28b714799` and the Semoss backend s
   instance first via `set_active_instance`, absolute `Env.MODULE`; CSRF from `Config.load`).
   `lib.rs` `native_http_request` ports `704c4ed84` (cookie sync with the webview jar) with a
   runtime active-instance allowlist (origin + module path), base64 bodies both ways, `authorization`
-  / `bearer-provider` allowed for bearer sessions. Not run against a hosted instance; the Rust side was written but **not compiled** (no Rust toolchain on this machine; none was installed without the user's say-so).
+  / `bearer-provider` allowed for bearer sessions. Compiled and signed in against `localhost:9090/Monolith`; not run against a hosted instance.
 
 #### [x] 4.3 Instance picker + preferences
 - **Landed** (working tree): `InstanceStore` (Observable; validated reads; persisted through
@@ -388,6 +390,9 @@ Checked against `feat/playground-desktop` @ `28b714799` and the Semoss backend s
   address in the panel config so it is per room and survives close/reopen; URL test) and
   `createDesktopPanelsIntegration()` (rail + Open a Panel); CSP `frame-src https:`. Framing-refusing
   sites documented. v2 (child webviews) left in the backlog.
+- **Removed (2026-11-06)**: the browser panel and its integration are gone; the Workspace offers
+  only the file, room and connector panels. CSP `frame-src` stays for MCP tool views. Links open
+  in the user's browser instead (`on_new_window` in `lib.rs`).
 
 #### [x] 5.3 Packaging
 - **Partly landed** (working tree): `tauri:build` script, bundle config and icons, version wiring
@@ -472,7 +477,6 @@ Checked against `feat/playground-desktop` @ `28b714799` and the Semoss backend s
   wholesale on purpose to keep the extraction reviewable.
 - [ ] **Connectors promotion** — if a third host wants connectors, promote
   `@semoss/chat/connectors` to its own package; the subpath boundary makes this cheap.
-- [ ] **Browser panel v2** — Tauri child-webview spike (unstable multiwebview API).
 - [ ] **Voice dictation** — optional composer extension (mde4vets pattern: 16 kHz WAV
   upload + `LLM(..., useHistory=false)` with media against a transcription model engine).
 - [ ] **Desktop tool catalog** — local-fs tools with allowlist + path guard.

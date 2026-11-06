@@ -6,3 +6,19 @@
 @import "@semoss/panels/globals.css";
 
 @source "./**/*.{ts,tsx}";
+
+/* The page is the window: it never rubber-bands past its edges, and until
+   the theme is applied it takes the system's light or dark, so a dark
+   desktop never flashes white while the app starts. */
+html,
+body {
+	overscroll-behavior: none;
+}
+
+html:not(.light, .dark) {
+	color-scheme: light dark;
+}
+
+html:not(.light, .dark) body {
+	background-color: Canvas;
+}

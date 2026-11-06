@@ -117,9 +117,55 @@ export class ToolCallStore extends ObservableStore {
 	}
 
 	/**
-	 * Json for the tool
+	 * The last `json` and what it was made from. A read that finds them
+	 * unchanged returns the same object, so a component that selects `json`
+	 * renders, and runs its effects, only when the call really changed —
+	 * decorating a call makes a new object, and a view keyed on it would
+	 * otherwise render forever.
 	 */
-	get json() {
+	private jsonCache: {
+		part: PixelMessageToolCallPart | null;
+		isStreamingPlaceholder: boolean;
+		streamingName: string;
+		options: unknown;
+		value: PixelMessageToolCallPart["toolCall"];
+	} | null = null;
+
+	/**
+	 * Json for the tool. The same object until the call's part, its streaming
+	 * state or the room's options (which decide a work folder call's Ask or
+	 * Auto) change.
+	 */
+	get json(): PixelMessageToolCallPart["toolCall"] {
+		const { part } = this.toolCall;
+		const options = this.room.options;
+		const cache = this.jsonCache;
+		if (
+			cache &&
+			cache.part === part &&
+			cache.isStreamingPlaceholder === this.isStreamingPlaceholder &&
+			cache.streamingName === this.streamingName &&
+			cache.options === options
+		) {
+			return cache.value;
+		}
+		const value = this.buildJson();
+		this.jsonCache = {
+			part: part,
+			isStreamingPlaceholder: this.isStreamingPlaceholder,
+			streamingName: this.streamingName,
+			options: options,
+			value: value,
+		};
+		return value;
+	}
+
+	/**
+	 * Make the call's json from its part.
+	 *
+	 * @returns The json.
+	 */
+	private buildJson = (): PixelMessageToolCallPart["toolCall"] => {
 		const part = this.toolCall.part?.toolCall;
 		// Server tools (provider-executed, e.g. web_search) skip the MCP _meta
 		// block — synthesize one so downstream consumers see a consistent shape.
@@ -149,7 +195,7 @@ export class ToolCallStore extends ObservableStore {
 			original_name: name,
 			description: "",
 		} as PixelMessageToolCallPart["toolCall"];
-	}
+	};
 
 	/**
 	 * Whether the server-resolved tool part has synced. Until it has we only

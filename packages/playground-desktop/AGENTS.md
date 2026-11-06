@@ -13,8 +13,8 @@ desktop app.
 A Tauri 2 app: the SEMOSS chat on the desktop, against any SEMOSS instance the user adds. Like
 `@semoss/playground` it is a thin host over `@semoss/chat` and the SDK's room engine, and every
 surface goes through the playground reactors. What it adds is the platform: picking an instance,
-a native HTTP bridge, sign in windows, the keychain, native downloads, desktop tools, and the
-browser panel.
+a native HTTP bridge, sign in windows, the keychain, native downloads, desktop tools, and a window
+that behaves like a native one (its title bar, its links, its shortcuts).
 
 The web bundle carries **no Tauri npm packages**: `app.withGlobalTauri` exposes the JavaScript API
 on `window.__TAURI__`, typed in `src/platform/tauri.ts`. Outside the shell (a browser during
@@ -25,13 +25,14 @@ on `window.__TAURI__`, typed in `src/platform/tauri.ts`. Outside the shell (a br
 | Path | Purpose |
 |------|---------|
 | `src/main.tsx`, `src/app.tsx` | Boot: read the saved instances; with one in use, configure the SDK and start the session, then render the router; otherwise the instance picker |
-| `src/platform/` | The platform layer: `tauri.ts` (typed global API), `fetch-bridge.ts`, `sdk-host.ts`, `auth-window.ts`, `keychain.ts`, `downloads.ts`, `app-store.ts` |
+| `src/platform/` | The platform layer: `tauri.ts` (typed global API), `fetch-bridge.ts`, `sdk-host.ts`, `auth-window.ts`, `keychain.ts`, `downloads.ts`, `app-store.ts`, `window-chrome.ts` (the title bar) |
 | `src/features/instances/` | `InstanceStore` (Observable, persisted in `preferences.json`), the picker page and form, `checkInstance` |
 | `src/features/auth/` | Login: the SDK's `SessionLoginForm` plus a bearer token form |
 | `src/features/desktop-tools/` | `createDesktopToolProvider()` (a `ClientToolProvider`) and its integration for the chat tool card |
-| `src/features/desktop-panels/` | The browser panel and its integration (rail + Open a Panel) |
+| `src/features/navigation/` | `DesktopNav` (the sidebar), `DesktopAccountMenu`, `useDesktopShortcuts` |
+| `src/components/` | `AppLoading`, the whole-window wait for the config and the session |
 | `src/host/` | `build-desktop-host-config.ts`, `desktop-panel-components.ts`, `desktop-preferences.ts` |
-| `src/pages/` | Router, gating layouts, desktop layout and nav, thin route pages |
+| `src/pages/` | Router, gating layouts, the desktop layout, thin route pages |
 | `src-tauri/` | The Rust side: `src/lib.rs` (every command), `tauri.conf.json` (CSP, window), `capabilities/` |
 
 ## How it works
@@ -62,9 +63,38 @@ on `window.__TAURI__`, typed in `src/platform/tauri.ts`. Outside the shell (a br
   `save_file_with_dialog` asks where to save it and writes it there (the page never picks a path).
 - **Chat composition.** `buildDesktopHostConfig` reads the instance's playground theme
   (`useConfig((s) => s.theme).playground`) through `chatSettingsFromTheme`; client tools are the room's files,
-  connectors and desktop tools; integrations are connectors, desktop tools and desktop panels;
-  `DESKTOP_PANEL_COMPONENTS` adds the browser panel to the file (`CHAT_FILE_PANEL_COMPONENTS`),
-  room and connector panels.
+  connectors and desktop tools; integrations are connectors and desktop tools;
+  `DESKTOP_PANEL_COMPONENTS` is the file (`CHAT_FILE_PANEL_COMPONENTS`), room and connector
+  panels, with none of the desktop's own.
+
+## The window
+
+- **The sidebar** (`DesktopNav`, on `@semoss/ui/next`'s `Sidebar`, `collapsible="icon"`): New
+  chat, search, All Chats, Agents and Knowledge, then the chat history (`RoomHistory` from
+  `@semoss/chat`, the same list the playground shows), then the account menu (settings, language,
+  switch server, sign out, with the user and the instance named). It remembers whether it is open
+  (`useCacheState`); opening a room's Workspace folds it to its rail through
+  `useWorkspaceNavigation`, and closing the Workspace puts it back, as in the playground.
+- **The title bar.** On macOS the window's title bar is hidden (`titleBarStyle: "Overlay"`) and the
+  traffic lights float over the sidebar's top start corner (`trafficLightPosition`). The page keeps
+  clear of them (`hasOverlayTitleBar()`: the sidebar's top band pads past them, and its rail is
+  4.5rem wide so they never cover the page) and is the title bar itself: `installTitleBarDragging`
+  drags the window from a press in the top 44px on a `header` (the rooms') or on app chrome marked
+  `data-title-bar` (the sidebar's top, the full-window screens), and zooms it on a still double
+  click, unless the press is on a control. Tauri's `data-tauri-drag-region` would need the
+  attribute on the chat's own headers, which the host does not own. Windows and Linux keep their
+  native title bar and none of this runs.
+- **Links** with `target="_blank"` or `window.open` (every link the chat renders) open in the
+  user's browser: `create_main_window` in `lib.rs` builds the main window (`create: false` in
+  `tauri.conf.json`) with an `on_new_window` handler that hands http(s) and mailto addresses to the
+  opener and denies the window. The app never opens a window for a page.
+- **Shortcuts** (`useDesktopShortcuts`): ⌘N a new chat, ⌘, settings, ⌘B the sidebar (the
+  sidebar's own); Ctrl off a Mac. A focused dialog keeps its keys.
+- **Feel.** No rubber banding past the page's edges, the system's light or dark until the theme
+  applies (no white flash on a dark desktop), sidebar chrome is not selectable, and the whole-window
+  waits show their spinner only after a moment (`AppLoading`).
+- Files dropped on the window reach the page (`dragDropEnabled: false`), so the composer takes
+  them like a browser does.
 
 ## Security rules (hard)
 
@@ -74,11 +104,13 @@ on `window.__TAURI__`, typed in `src/platform/tauri.ts`. Outside the shell (a br
   bearer token.
 - **The bridge reaches only the instance in use** (origin and module path), GET/POST only, with an
   allowlist of request headers. Do not widen it to make a request work; route it through the SDK.
-- **The invoke surface is the commands registered in `lib.rs`.** Sign in windows load remote
-  pages and get no capability (`capabilities/default.json` lists only `main`).
+- **The invoke surface is the commands registered in `lib.rs`**, plus Tauri's window
+  defaults and dragging/zooming the window (`core:window:allow-start-dragging`,
+  `allow-toggle-maximize`). Sign in windows load remote pages and get no capability
+  (`capabilities/default.json` lists only `main`).
 - **CSP** (`tauri.conf.json`): scripts from the app only (plus wasm), connections only to IPC
-  (all HTTP goes through Rust), frames for https pages (the browser panel). Adding an origin is a
-  reviewed change.
+  (all HTTP goes through Rust), frames for https pages and local ports (MCP tool views load the
+  instance's portals). Adding an origin is a reviewed change.
 - **Desktop tools ask before touching the user's disk** (`desktop_open_path` is `ask`; it reveals
   a path, never opens or runs it).
 
@@ -92,14 +124,6 @@ answer an agent's tool pause from the desktop with `RoomEngineConfig.onPendingAc
 tool: a definition and policy in `DESKTOP_TOOLS`, a Rust command registered in `lib.rs`, a test.
 Local file read/write should port the allowlist + path-guard design from
 `origin/feat-desktop-local-fs` (`8c3b17190`).
-
-## Browser panel
-
-`BrowserPanel` is an iframe panel (`mount: "keepAlive"`, as the workbench requires for frames)
-with an address bar; its address is the panel's config, so each room keeps its own and it survives
-closing the Workspace. Only http(s) addresses load, in a sandboxed frame. Sites that refuse framing
-(`X-Frame-Options`, `frame-ancestors`) do not show. A v2 would embed Tauri child webviews
-(unstable multiwebview API).
 
 ## Setup and workflow
 
@@ -133,6 +157,8 @@ Root: `pnpm dev:desktop` runs the web dev server with its workspace dependencies
 
 ## Verification status
 
-The web side is type-checked, tested (`pnpm test`) and builds. The Rust side has not been compiled
-in this repository's CI or by the agent that wrote it (no Rust toolchain was available); run
-`cargo test` and `pnpm tauri:dev` before relying on it, and expect small API fixes.
+The web side is type-checked, tested (`pnpm test`) and builds. The Rust side compiles and its
+tests pass locally (Rust 1.99, tauri-cli 2.12) and `pnpm tauri:dev` launches the app; it is not
+built in this repository's CI. The window's behavior (dragging, the traffic lights' place, links
+opening in the browser) has no automated test beyond `window-chrome.test.ts` and the Rust link
+filter; check it by hand in `pnpm tauri:dev`.

@@ -77,6 +77,10 @@ export {
 	RoomHeader,
 	type RoomHeaderProps,
 } from "./features/room-header/room-header";
+export {
+	RoomHistory,
+	type RoomHistoryProps,
+} from "./features/rooms-list/room-history";
 export { RoomsListView } from "./features/rooms-list/rooms-list-view";
 export { useRoomsQuery } from "./features/rooms-list/use-rooms-query";
 export {

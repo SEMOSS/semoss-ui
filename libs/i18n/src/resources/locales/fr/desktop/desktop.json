@@ -30,21 +30,17 @@
 	},
 	"nav": {
 		"newChat": "Nouvelle conversation",
-		"chats": "Conversations",
+		"chats": "Toutes les discussions",
 		"agents": "Agents",
 		"knowledge": "Connaissances",
-		"signOut": "Se déconnecter"
+		"signOut": "Se déconnecter",
+		"search": "Rechercher",
+		"language": "Langue"
 	},
 	"tools": {
 		"source": "Cet ordinateur",
 		"approval": "S'exécute sur cet ordinateur une fois autorisé.",
 		"notify": "Afficher une notification",
 		"reveal": "Afficher dans le dossier"
-	},
-	"browser": {
-		"name": "Navigateur",
-		"address": "Adresse",
-		"go": "Aller",
-		"blocked": "Certains sites refusent de s'afficher dans l'application."
 	}
 }

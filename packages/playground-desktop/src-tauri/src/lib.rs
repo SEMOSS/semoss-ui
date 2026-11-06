@@ -14,8 +14,9 @@ use reqwest::{
 };
 use serde::{Deserialize, Serialize};
 use tauri::{
-    webview::Cookie as WebviewCookie, AppHandle, Emitter, Manager, State, Url, WebviewUrl,
-    WebviewWindow, WebviewWindowBuilder, WindowEvent,
+    webview::{Cookie as WebviewCookie, NewWindowResponse},
+    AppHandle, Emitter, Manager, State, Url, WebviewUrl, WebviewWindow, WebviewWindowBuilder,
+    WindowEvent,
 };
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_notification::NotificationExt;
@@ -431,6 +432,39 @@ fn desktop_reveal_path(app: AppHandle, path: String) -> Result<String, String> {
     Ok(format!("Shown {} in its folder", path.display()))
 }
 
+/// Whether a link the main window wants a new window for (`target="_blank"`,
+/// `window.open`) opens in the user's browser or mail app. Anything else, such
+/// as a `blob:` or `javascript:` address, goes nowhere.
+fn opens_in_browser(url: &Url) -> bool {
+    matches!(url.scheme(), "https" | "http" | "mailto")
+}
+
+/// Build the main window from `tauri.conf.json` (where it is `create: false`)
+/// so its links open outside the app: the app never opens a window of its own
+/// for a page, and the chat's links all ask for a new one.
+fn create_main_window(app: &AppHandle) -> tauri::Result<()> {
+    let Some(config) = app
+        .config()
+        .app
+        .windows
+        .iter()
+        .find(|window| window.label == "main")
+        .cloned()
+    else {
+        return Err(tauri::Error::WindowNotFound);
+    };
+    let opener = app.clone();
+    WebviewWindowBuilder::from_config(app, &config)?
+        .on_new_window(move |url, _features| {
+            if opens_in_browser(&url) {
+                let _ = opener.opener().open_url(url.as_str(), None::<&str>);
+            }
+            NewWindowResponse::Deny
+        })
+        .build()?;
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -446,6 +480,10 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_opener::init())
         .manage(ActiveInstance::default())
+        .setup(|app| {
+            create_main_window(app.handle())?;
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             set_active_instance,
             check_instance,
@@ -477,6 +515,14 @@ mod tests {
         assert!(is_under_instance(&ok, &instance));
         assert!(!is_under_instance(&sibling, &instance));
         assert!(!is_under_instance(&other, &instance));
+    }
+
+    #[test]
+    fn only_web_and_mail_links_leave_the_app() {
+        assert!(opens_in_browser(&Url::parse("https://semoss.org/docs").unwrap()));
+        assert!(opens_in_browser(&Url::parse("mailto:help@semoss.org").unwrap()));
+        assert!(!opens_in_browser(&Url::parse("javascript:alert(1)").unwrap()));
+        assert!(!opens_in_browser(&Url::parse("file:///etc/hosts").unwrap()));
     }
 
     #[test]

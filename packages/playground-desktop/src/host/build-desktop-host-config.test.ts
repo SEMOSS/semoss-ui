@@ -1,4 +1,7 @@
 import { expect, test, vi } from "vitest";
+import { ROOM_PANEL_COMPONENTS } from "@semoss/chat";
+import { CONNECTOR_PANEL_COMPONENTS } from "@semoss/chat/connectors";
+import { CHAT_FILE_PANEL_COMPONENTS } from "@semoss/chat/panels";
 import type { ChatPreferencesAdapter } from "@semoss/sdk";
 import {
 	buildDesktopHostConfig,
@@ -32,8 +35,15 @@ test("the instance's playground theme sets up the chat", () => {
 		"connectors",
 		"desktop",
 	]);
-	expect(config.integrations).toHaveLength(3);
-	expect(config.panelComponents?.["desktop-browser"]).toBeDefined();
+	expect(config.integrations).toHaveLength(2);
+	// the shared file panels, the room's and the connectors'; none of its own
+	expect(Object.keys(config.panelComponents ?? {}).sort()).toEqual(
+		Object.keys({
+			...CHAT_FILE_PANEL_COMPONENTS,
+			...ROOM_PANEL_COMPONENTS,
+			...CONNECTOR_PANEL_COMPONENTS,
+		}).sort(),
+	);
 	expect(config.filePanels?.explorerType).toBe("file-explorer");
 });
 

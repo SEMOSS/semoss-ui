@@ -30,21 +30,17 @@
 	},
 	"nav": {
 		"newChat": "新しいチャット",
-		"chats": "チャット",
+		"chats": "すべてのチャット",
 		"agents": "エージェント",
 		"knowledge": "ナレッジ",
-		"signOut": "サインアウト"
+		"signOut": "サインアウト",
+		"search": "検索",
+		"language": "言語"
 	},
 	"tools": {
 		"source": "このコンピューター",
 		"approval": "許可すると、このコンピューターで実行されます。",
 		"notify": "通知を表示",
 		"reveal": "フォルダーに表示"
-	},
-	"browser": {
-		"name": "ブラウザー",
-		"address": "アドレス",
-		"go": "移動",
-		"blocked": "アプリ内に表示できないサイトもあります。"
 	}
 }

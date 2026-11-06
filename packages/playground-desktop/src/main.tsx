@@ -5,6 +5,10 @@ import { InstanceStore } from "./features/instances/instance.store";
 import { createDesktopPreferences } from "./host/desktop-preferences";
 import { loadAppStore } from "./platform/app-store";
 import { configureSdkHost } from "./platform/sdk-host";
+import {
+	hasOverlayTitleBar,
+	installTitleBarDragging,
+} from "./platform/window-chrome";
 import "./index.css";
 
 const container = document.getElementById("root");
@@ -12,6 +16,12 @@ if (!container) {
 	throw new Error("Root element #root not found");
 }
 const root = createRoot(container);
+
+// the page covers the window's title bar, so it moves the window from the
+// start, on every screen
+if (hasOverlayTitleBar()) {
+	installTitleBarDragging();
+}
 
 /**
  * Start the app: read the saved instances, and when one is in use, point the

@@ -15,7 +15,6 @@ import {
 } from "@semoss/sdk";
 import type { ThemeMap } from "@semoss/shared";
 import { isRecord } from "@semoss/utility/object";
-import { createDesktopPanelsIntegration } from "../features/desktop-panels/desktop-panel.components";
 import { createDesktopToolProvider } from "../features/desktop-tools/desktop-tool.provider";
 import { createDesktopToolsIntegration } from "../features/desktop-tools/desktop-tools.integration";
 import { DESKTOP_PANEL_COMPONENTS } from "./desktop-panel-components";
@@ -45,8 +44,8 @@ export const readInstanceChatTheme = (
 /**
  * The desktop app's chat, as the instance's playground theme sets it up
  * (`chatSettingsFromTheme`): rooms run the room's files, connector and desktop tools within the theme's
- * limits; the Workspace offers files, the room's panels, the connector
- * viewers and the browser panel; navigation goes through the app's routes.
+ * limits; the Workspace offers files, the room's panels and the connector
+ * viewers; navigation goes through the app's routes.
  *
  * @param options.theme - The instance's playground theme.
  * @param options.preferences - Where the picked model is kept.
@@ -79,7 +78,6 @@ export const buildDesktopHostConfig = ({
 		integrations: [
 			createConnectorsIntegration(),
 			createDesktopToolsIntegration(),
-			createDesktopPanelsIntegration(),
 		],
 		preferences: preferences,
 		navigation: {
