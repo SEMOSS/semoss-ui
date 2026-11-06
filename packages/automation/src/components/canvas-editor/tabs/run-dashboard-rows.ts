@@ -3,6 +3,7 @@ import type {
 	AutomationRunDetail,
 	AutomationRunSummary,
 	NodeStatus,
+	RunStatus,
 } from "../../../domain/automation.types";
 import {
 	lastRelevantResult,
@@ -12,6 +13,11 @@ import {
 
 /** `${runId}:${nodeId}` — identifies one loop node's expand/collapse state within one run. */
 export type LoopRowKey = string;
+
+/** Mirrors the backend rule: only a RUNNING or agent-waiting run can be cancelled. */
+export function isRunCancellable(status: RunStatus): boolean {
+	return status === "RUNNING" || status === "WAITING_FOR_INPUT";
+}
 
 export function loopRowKey(runId: string, nodeId: string): LoopRowKey {
 	return `${runId}:${nodeId}`;

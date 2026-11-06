@@ -1,4 +1,5 @@
 import { createContext, useContext } from "react";
+import { toast } from "@semoss/ui/next";
 import type {
 	AutomationNodeTrace,
 	AutomationRunDetail,
@@ -167,6 +168,14 @@ export const AutomationTracePanel = () => {
 			onViewRun={context.onViewRun}
 			onViewAgentRun={context.onAgentRunTrace}
 			onExitHistoricalView={context.onExitHistoricalView}
+			onRerun={async () => {
+				const canvas = context.canvasRef.current;
+				if (!canvas) {
+					toast.error("Open the editor to re-run this automation.");
+					return;
+				}
+				await canvas.run();
+			}}
 			focusNodeId={context.runDetailsFocusNodeId}
 			focusToken={context.runDetailsFocusToken}
 		/>

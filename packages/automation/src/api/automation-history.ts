@@ -268,6 +268,33 @@ export async function resumeAutomationRun(
 	return output;
 }
 
+export interface AutomationCancelResult {
+	RUN_ID: string;
+	cancelRequested: boolean;
+	signalledLocally?: boolean;
+	STATUS?: string;
+}
+
+/** Requests cancellation of a RUNNING or WAITING_FOR_INPUT run; a running run reaches CANCELLED asynchronously. */
+export async function cancelAutomationRun(
+	appId: string,
+	runId: string,
+): Promise<AutomationCancelResult> {
+	const response = await runPixel(
+		`CancelAutomationRun(project=${JSON.stringify([appId])}, runId=${JSON.stringify([runId])});`,
+	);
+	throwPixelErrors(response.errors);
+	const output = response.pixelReturn?.[0]?.output;
+	if (
+		!isRecord(output) ||
+		output.RUN_ID !== runId ||
+		output.cancelRequested !== true
+	) {
+		throw new Error("Run cancellation was not confirmed by the server.");
+	}
+	return output as unknown as AutomationCancelResult;
+}
+
 function throwPixelErrors(errors: string[]): void {
 	if (errors.length > 0) {
 		throw new Error(errors.join("\n"));

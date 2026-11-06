@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { runPixel } from "@semoss/sdk";
 import {
+	cancelAutomationRun,
 	getAutomationResult,
 	getAutomationRun,
 	getAutomationRunFramePage,
@@ -72,6 +73,31 @@ describe("Automation history API validation", () => {
 		);
 		await expect(resumeAutomationRun("app-1", "run-1")).rejects.toThrow(
 			"Resume denied",
+		);
+	});
+
+	it("requests cancellation and validates the confirmation", async () => {
+		vi.mocked(runPixel).mockResolvedValue(
+			pixelResponse({ RUN_ID: "run-1", cancelRequested: true }),
+		);
+		await expect(cancelAutomationRun("app-1", "run-1")).resolves.toEqual({
+			RUN_ID: "run-1",
+			cancelRequested: true,
+		});
+		expect(runPixel).toHaveBeenCalledWith(
+			'CancelAutomationRun(project=["app-1"], runId=["run-1"]);',
+		);
+		vi.mocked(runPixel).mockResolvedValue(
+			pixelResponse({ RUN_ID: "other-run", cancelRequested: true }),
+		);
+		await expect(cancelAutomationRun("app-1", "run-1")).rejects.toThrow(
+			"not confirmed",
+		);
+		vi.mocked(runPixel).mockResolvedValue(
+			pixelResponse(undefined, ["Can only cancel RUNNING"]),
+		);
+		await expect(cancelAutomationRun("app-1", "run-1")).rejects.toThrow(
+			"Can only cancel RUNNING",
 		);
 	});
 

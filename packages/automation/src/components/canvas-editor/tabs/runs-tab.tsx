@@ -106,6 +106,8 @@ interface RunsTabProps extends AutomationTraceSnapshot {
 	onViewAgentRun?: (trace: AutomationNodeTrace) => void;
 	/** Returns the canvas to the live editable graph — fired whenever the run detail view is left. */
 	onExitHistoricalView?: () => void;
+	/** Starts the editor's Run flow from the dashboard's Re-run action. */
+	onRerun?: () => Promise<void>;
 	/** A node to jump straight to in the latest run's results, e.g. from the inspector's
 	 * "View run details" button. */
 	focusNodeId?: string | null;
@@ -149,6 +151,7 @@ export function RunsTab({
 	onViewRun,
 	onViewAgentRun,
 	onExitHistoricalView,
+	onRerun,
 	focusNodeId,
 	focusToken,
 }: RunsTabProps) {
@@ -430,6 +433,9 @@ export function RunsTab({
 					<RunHistoryDashboard
 						appId={appId}
 						runs={runs}
+						rerunDisabled={running}
+						onRerun={onRerun}
+						onRefreshRuns={refresh}
 						onOutputPopout={handleOutputPopout}
 					/>
 				</div>

@@ -7,8 +7,24 @@ import type {
 import {
 	assignRunNumbers,
 	buildDashboardRows,
+	isRunCancellable,
 	loopRowKey,
 } from "./run-dashboard-rows";
+
+describe("isRunCancellable", () => {
+	it("allows only the statuses the backend can cancel", () => {
+		expect(isRunCancellable("RUNNING")).toBe(true);
+		expect(isRunCancellable("WAITING_FOR_INPUT")).toBe(true);
+		for (const status of [
+			"SUCCESS",
+			"FAILED",
+			"INTERRUPTED",
+			"CANCELLED",
+		] as const) {
+			expect(isRunCancellable(status)).toBe(false);
+		}
+	});
+});
 
 function run(overrides: Partial<AutomationRunSummary>): AutomationRunSummary {
 	return {

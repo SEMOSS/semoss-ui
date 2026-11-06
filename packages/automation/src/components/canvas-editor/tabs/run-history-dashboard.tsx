@@ -1,9 +1,24 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ChevronRight, Loader2, Search, X } from "lucide-react";
+import {
+	ChevronRight,
+	Loader2,
+	RotateCw,
+	Search,
+	Square,
+	X,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CellOutputBlock } from "@semoss/shared";
 import {
+	Button,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
 	Input,
+	Spinner,
 	Table,
 	TableBody,
 	TableCell,
@@ -14,8 +29,9 @@ import {
 	TabsContent,
 	TabsList,
 	TabsTrigger,
+	toast,
 } from "@semoss/ui/next";
-import { getAutomationRun } from "../../../api";
+import { cancelAutomationRun, getAutomationRun } from "../../../api";
 import type {
 	AutomationNodeResult,
 	AutomationRunDetail,
@@ -32,6 +48,7 @@ import {
 	assignRunNumbers,
 	buildDashboardRows,
 	type DashboardRow,
+	isRunCancellable,
 	type LoopRowKey,
 	loopRowKey,
 } from "./run-dashboard-rows";
@@ -43,11 +60,19 @@ interface RunHistoryDashboardProps {
 	/** The run page already loaded by the history list — no separate backend fetch for the top-level list. */
 	runs: AutomationRunSummary[];
 	onOutputPopout: (output: string) => void;
+	/** Starts the editor's Run flow. Omit to hide the Re-run action. */
+	onRerun?: () => Promise<void>;
+	/** True while the editor already has a run in flight, so Re-run would collide with it. */
+	rerunDisabled?: boolean;
+	/** Reloads the run list, e.g. to observe a cancelled run reaching its terminal status. */
+	onRefreshRuns?: () => Promise<void> | void;
 }
 
 const ROW_HEIGHT = 36;
 const DETAIL_PANEL_HEIGHT = 320;
-const GRID_COLUMNS = "grid-cols-[28px_52px_150px_150px_1fr]";
+const GRID_COLUMNS = "grid-cols-[28px_52px_150px_150px_1fr_72px]";
+const CANCEL_POLL_INTERVAL_MS = 2000;
+const CANCEL_POLL_MAX_TICKS = 15;
 type DetailTab = "incoming" | "outgoing" | "variables";
 
 const STATUS_FILTER_OPTIONS: { status: RunStatus; label: string }[] = [
@@ -81,6 +106,9 @@ export function RunHistoryDashboard({
 	appId,
 	runs,
 	onOutputPopout,
+	onRerun,
+	rerunDisabled = false,
+	onRefreshRuns,
 }: RunHistoryDashboardProps) {
 	const isMountedRef = useRef(true);
 	useEffect(
@@ -182,6 +210,100 @@ export function RunHistoryDashboard({
 	);
 
 	const closeDetail = useCallback(() => setSelected(null), []);
+
+	const [cancelTarget, setCancelTarget] =
+		useState<AutomationRunSummary | null>(null);
+	const [cancelSubmitting, setCancelSubmitting] = useState(false);
+	const [cancellingRunIds, setCancellingRunIds] = useState<Set<string>>(
+		new Set(),
+	);
+	const [rerunPending, setRerunPending] = useState(false);
+
+	const refreshRunDetail = useCallback(
+		(runId: string) => {
+			getAutomationRun(appId, runId)
+				.then((detail) => {
+					if (!isMountedRef.current) return;
+					setRunDetails((prev) => new Map(prev).set(runId, detail));
+				})
+				.catch(() => {
+					// The cached detail stays as it was; the row can still be re-expanded.
+				});
+		},
+		[appId],
+	);
+
+	const confirmCancel = useCallback(async () => {
+		if (!cancelTarget) return;
+		const runId = cancelTarget.RUN_ID;
+		setCancelSubmitting(true);
+		try {
+			await cancelAutomationRun(appId, runId);
+			if (!isMountedRef.current) return;
+			setCancellingRunIds((prev) => new Set(prev).add(runId));
+			toast.info("Cancellation requested.");
+			setCancelTarget(null);
+			await onRefreshRuns?.();
+		} catch (error) {
+			if (!isMountedRef.current) return;
+			toast.error(
+				error instanceof Error
+					? normalizeAutomationErrorMessage(error.message)
+					: "Unable to cancel this run.",
+			);
+		} finally {
+			if (isMountedRef.current) setCancelSubmitting(false);
+		}
+	}, [appId, cancelTarget, onRefreshRuns]);
+
+	const handleRerun = useCallback(async () => {
+		if (!onRerun) return;
+		setRerunPending(true);
+		try {
+			await onRerun();
+		} catch (error) {
+			toast.error(
+				error instanceof Error
+					? normalizeAutomationErrorMessage(error.message)
+					: "Unable to start the automation.",
+			);
+		} finally {
+			if (isMountedRef.current) setRerunPending(false);
+		}
+	}, [onRerun]);
+
+	// A cancelled running run reaches CANCELLED asynchronously, so poll until it settles (bounded).
+	useEffect(() => {
+		if (cancellingRunIds.size === 0 || !onRefreshRuns) return;
+		let ticks = 0;
+		const interval = window.setInterval(() => {
+			ticks += 1;
+			if (ticks > CANCEL_POLL_MAX_TICKS) {
+				setCancellingRunIds(new Set());
+				return;
+			}
+			void onRefreshRuns();
+		}, CANCEL_POLL_INTERVAL_MS);
+		return () => window.clearInterval(interval);
+	}, [cancellingRunIds, onRefreshRuns]);
+
+	// Once a cancelled run leaves its active status, stop tracking it and refresh any cached detail.
+	useEffect(() => {
+		if (cancellingRunIds.size === 0) return;
+		const settled = [...cancellingRunIds].filter((runId) => {
+			const run = runs.find((candidate) => candidate.RUN_ID === runId);
+			return !run || !isRunCancellable(run.STATUS);
+		});
+		if (settled.length === 0) return;
+		setCancellingRunIds((prev) => {
+			const next = new Set(prev);
+			for (const runId of settled) next.delete(runId);
+			return next;
+		});
+		for (const runId of settled) {
+			if (runDetails.has(runId)) refreshRunDetail(runId);
+		}
+	}, [runs, cancellingRunIds, runDetails, refreshRunDetail]);
 
 	const [keyword, setKeyword] = useState("");
 	const [runIdQuery, setRunIdQuery] = useState("");
@@ -354,6 +476,7 @@ export function RunHistoryDashboard({
 				<span>Time Started</span>
 				<span>Time Ended</span>
 				<span>Status</span>
+				<span>Actions</span>
 			</div>
 
 			{runs.length === 0 ? (
@@ -408,6 +531,16 @@ export function RunHistoryDashboard({
 											onToggleLoop={toggleLoop}
 											onRetry={fetchDetailIfNeeded}
 											onSelectNode={selectNode}
+											cancellingRunIds={cancellingRunIds}
+											onCancelRun={setCancelTarget}
+											onRerun={
+												onRerun
+													? () => void handleRerun()
+													: undefined
+											}
+											rerunDisabled={
+												rerunDisabled || rerunPending
+											}
 										/>
 									)}
 								</div>
@@ -416,6 +549,44 @@ export function RunHistoryDashboard({
 					</div>
 				</div>
 			)}
+			<Dialog
+				open={cancelTarget !== null}
+				onOpenChange={(open) => {
+					if (!open && !cancelSubmitting) setCancelTarget(null);
+				}}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Cancel this run?</DialogTitle>
+						<DialogDescription>
+							{cancelTarget?.STATUS === "WAITING_FOR_INPUT"
+								? "The run is waiting for agent input. Cancelling stops the agent and ends the run without running the remaining steps."
+								: "The run stops between steps. Work already completed in this run is kept in its history."}
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => setCancelTarget(null)}
+							disabled={cancelSubmitting}
+						>
+							Keep running
+						</Button>
+						<Button
+							type="button"
+							variant="destructive"
+							onClick={() => void confirmCancel()}
+							disabled={cancelSubmitting}
+						>
+							{cancelSubmitting ? (
+								<Spinner className="size-4" />
+							) : null}
+							Cancel run
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }
@@ -558,6 +729,10 @@ function DashboardRowView({
 	onToggleLoop,
 	onRetry,
 	onSelectNode,
+	cancellingRunIds,
+	onCancelRun,
+	onRerun,
+	rerunDisabled,
 }: {
 	row: DashboardRow;
 	selectedKey: string | null;
@@ -569,6 +744,10 @@ function DashboardRowView({
 		label: string,
 		result: AutomationNodeResult | null,
 	) => void;
+	cancellingRunIds: Set<string>;
+	onCancelRun: (run: AutomationRunSummary) => void;
+	onRerun?: () => void;
+	rerunDisabled: boolean;
 }) {
 	if (row.kind === "run") {
 		return (
@@ -612,6 +791,42 @@ function DashboardRowView({
 				<span>
 					<RunOutcomeBadge status={row.run.STATUS} />
 				</span>
+				<span className="flex justify-end">
+					{isRunCancellable(row.run.STATUS) ? (
+						<Button
+							type="button"
+							size="sm"
+							variant="ghost"
+							className="h-6 px-2 text-xs"
+							disabled={cancellingRunIds.has(row.run.RUN_ID)}
+							onClick={() => onCancelRun(row.run)}
+							aria-label={`Cancel run ${row.runNumber}`}
+							title="Cancel run"
+						>
+							{cancellingRunIds.has(row.run.RUN_ID) ? (
+								<Loader2
+									className="h-3.5 w-3.5 animate-spin"
+									aria-hidden
+								/>
+							) : (
+								<Square className="h-3.5 w-3.5" aria-hidden />
+							)}
+						</Button>
+					) : onRerun ? (
+						<Button
+							type="button"
+							size="sm"
+							variant="ghost"
+							className="h-6 px-2 text-xs"
+							disabled={rerunDisabled}
+							onClick={onRerun}
+							aria-label={`Re-run automation from run ${row.runNumber}`}
+							title="Re-run the current saved automation"
+						>
+							<RotateCw className="h-3.5 w-3.5" aria-hidden />
+						</Button>
+					) : null}
+				</span>
 			</div>
 		);
 	}
@@ -651,6 +866,7 @@ function DashboardRowView({
 				<span>
 					<StatusBadge status={row.node.STATUS} />
 				</span>
+				<span />
 			</div>
 		);
 	}
@@ -658,7 +874,12 @@ function DashboardRowView({
 	const isSelected = row.key === selectedKey;
 	const iterationLabel = `${row.nodeLabel} · Item ${row.iterationIndex + 1}`;
 	const statusCell = (
-		<span>{row.status ? <StatusBadge status={row.status} /> : "—"}</span>
+		<>
+			<span>
+				{row.status ? <StatusBadge status={row.status} /> : "—"}
+			</span>
+			<span />
+		</>
 	);
 
 	if (row.result) {
