@@ -5,17 +5,6 @@ import { TimePickerBlock, type TimePickerBlockDef } from "./TimePickerBlock";
 
 const DefaultStyles: CSSProperties = {};
 
-// Helper function to generate multi-select options for views
-const getViewsOptions = () => {
-	const views = [
-		{ label: "Hours", value: "hours" },
-		{ label: "Minutes", value: "minutes" },
-		{ label: "Seconds", value: "seconds" },
-	];
-
-	return views;
-};
-
 // export the config for the block
 export const config: BlockConfig<TimePickerBlockDef> = {
 	widget: "timepicker",

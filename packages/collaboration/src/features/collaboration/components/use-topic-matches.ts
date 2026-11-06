@@ -31,10 +31,10 @@ interface TopicMatchesInput {
 }
 
 /** Nothing checked yet, a check running, its rows ready, or why it stopped. */
-export type TopicMatchesPhase = "intro" | "checking" | "ready" | "failed";
+type TopicMatchesPhase = "intro" | "checking" | "ready" | "failed";
 
 /** The review of one topic's matches, from starting the check to applying the owner's choices. */
-export interface TopicMatchesReview {
+interface TopicMatchesReview {
 	phase: TopicMatchesPhase;
 	/** The running or finished check. */
 	job: Job | null;

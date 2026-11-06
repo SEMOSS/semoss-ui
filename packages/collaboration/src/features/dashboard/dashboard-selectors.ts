@@ -26,7 +26,7 @@ export function prioritizeItems(items: WorkItem[], latest = false): WorkItem[] {
 	);
 }
 
-export interface RelevantMail {
+interface RelevantMail {
 	id: string;
 	title: string;
 	sender: string;

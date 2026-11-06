@@ -8,7 +8,7 @@ import { mapMemory, runBatch } from "./live-state";
 
 type Row = Record<string, unknown>;
 
-export type MemoryAction =
+type MemoryAction =
 	| "accept"
 	| "confirm"
 	| "dismiss"

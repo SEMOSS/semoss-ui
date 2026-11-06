@@ -15,7 +15,7 @@ Generic functions belong in [@semoss/utility](../utility/AGENTS.md); consume the
 category subpaths instead of duplicating them inside components.
 
 It is the home of large shared building blocks such as the file explorer, the Monaco
-editor wrappers, the FlexLayout wrapper, the shared login page, engine/MCP/prompt/skill UI,
+editor wrappers, the shared login page, engine/MCP/prompt/skill UI,
 forms, and the workbench primitives.
 
 ### The file explorer (`components/file/`)
@@ -286,7 +286,6 @@ Key `exports`:
 |--------|-------------|
 | `@semoss/shared` | `src/index.ts` (main barrel) |
 | `@semoss/shared/globals.css` | `src/styles/globals.css` |
-| `@semoss/shared/flexlayout.css` | `src/components/flex-layout/flexlayout.css` |
 | `@semoss/shared/assets/img/*` | `src/assets/img/*` |
 
 `sideEffects` is limited to `**/*.css`; consuming bundlers can tree-shake unused code.
@@ -298,7 +297,7 @@ This library retains its package layout (no `pages/` or router):
 | Folder / file | Purpose |
 |---------------|---------|
 | `assets/` | Images and static files. `assets/img/connectors/` holds each Microsoft 365 and Google Workspace app's logo as an SVG named by app (`outlook.svg`, `gmail.svg`, ...), except Teams, which is `assets/img/MS_TEAMS.svg`; `ConnectorBrandIcon` shows them, and draws the Teams views (`teams-channels`, `teams-files`, `teams-chats`) as the Teams logo with a badge for what each shows, never altering the logo. Any package can import them as `@semoss/shared/assets/img/connectors/*` |
-| `components/` | Shared components, one folder per feature (file, monaco, flex-layout, mcp, prompts, skills, settings, engine, form, members, …) |
+| `components/` | Shared components, one folder per feature (file, monaco, mcp, prompts, skills, settings, engine, form, members, …) |
 | `constants/` | Shared constant values |
 | `contexts/` | React contexts (`<name>.context.tsx`) |
 | `hooks/` | React hooks (`use-<name>.ts`) |
@@ -311,7 +310,6 @@ This library retains its package layout (no `pages/` or router):
 
 - `@semoss/sdk`, `@semoss/ui`, `@semoss/i18n`, `@semoss/utility` — workspace libs
 - `monaco-editor` / `@monaco-editor/react` — code editor
-- `flexlayout-react` — dockable layout
 - `echarts` — charts
 - `@iconify/react`, `lucide-react` — icons
 
@@ -326,15 +324,13 @@ Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling
    Application-specific composition stays in its owning package.
 - `src/styles/globals.css` supplies Tailwind source discovery only. Do not add design tokens
    there; token ownership remains in `@semoss/ui`.
-- `flex-layout/flexlayout.css` is a third-party style bridge. Map its variables to semantic UI
-   tokens and use the reason-bearing external-constraint carve-out for unavoidable literals.
 
 ## Agent Guardrails
 
 ### Do Not Modify
 
-- **`exports` paths in `package.json`** — the `globals.css` / `flexlayout.css` subpaths
-  are imported by name across the monorepo; renaming a file requires updating the export.
+- **`exports` paths in `package.json`** — the `globals.css` subpath
+  is imported by name across the monorepo; renaming a file requires updating the export.
 
 ### Be Cautious With
 

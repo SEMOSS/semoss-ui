@@ -34,7 +34,7 @@ import {
 	shouldAutoOpenTool,
 } from "../utils/tool-metadata";
 
-export interface ToolWorkbenchProviderProps {
+interface ToolWorkbenchProviderProps {
 	/** Host-specific panels and initial arrangement; supplied before store creation. */
 	components?: Record<string, WorkbenchPanelConfigAny>;
 	createLayout?: (insightId: string) => WorkbenchLayout;

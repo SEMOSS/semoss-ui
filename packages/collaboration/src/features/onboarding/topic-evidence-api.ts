@@ -189,9 +189,7 @@ const conversationContextSchema = z.object({
 	unavailableCount: z.number().int().nonnegative(),
 	hasMore: z.boolean(),
 });
-export type TopicConversationContext = z.infer<
-	typeof conversationContextSchema
->;
+type TopicConversationContext = z.infer<typeof conversationContextSchema>;
 
 /** Fetch rule-gated clean text live; it remains transient and never enters the durable draft. */
 export async function getTopicConversationContext(

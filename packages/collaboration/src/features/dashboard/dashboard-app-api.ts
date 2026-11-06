@@ -9,7 +9,7 @@ const appSchema = z.object({
 	project_type: z.enum(["CODE", "BLOCKS"]),
 	project_portal_published_date: z.string().nullish(),
 });
-export type DashboardApp = z.infer<typeof appSchema>;
+type DashboardApp = z.infer<typeof appSchema>;
 
 /** Use SEMOSS's published portal route, never a user-supplied embedding URL. */
 export function appPortalPath(appId: string): string {

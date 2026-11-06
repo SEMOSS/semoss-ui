@@ -1,12 +1,10 @@
-export interface MessageSegment {
+interface MessageSegment {
 	/** "Forwarded from ...:" or "On ... wrote:" for quoted history; absent for the sender's own words. */
 	label?: string;
 	text: string;
 }
 
-export type TextPart =
-	| { kind: "text"; text: string }
-	| { kind: "link"; href: string };
+type TextPart = { kind: "text"; text: string } | { kind: "link"; href: string };
 
 // the server writes these label lines where a forward's or earlier message's header block was
 const HISTORY_LABEL =

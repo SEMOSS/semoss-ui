@@ -91,7 +91,7 @@ export const catalogSkillListSchema = z.array(
 );
 
 /** One of the owner's reference documents for a routine, copied into each of its runs. */
-export const routineDocumentSchema = z.object({
+const routineDocumentSchema = z.object({
 	name: z.string().min(1),
 	size: z.number(),
 	updatedAt: z.string(),
@@ -106,4 +106,3 @@ export const routineDocumentsSchema = z.object({
 export type CustomRoutineSettings = z.infer<typeof customRoutineSettingsSchema>;
 export type CustomRoutine = z.infer<typeof customRoutineSchema>;
 export type CatalogSkill = z.infer<typeof catalogSkillListSchema>[number];
-export type RoutineDocument = z.infer<typeof routineDocumentSchema>;

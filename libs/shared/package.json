@@ -4,7 +4,6 @@
   "sideEffects": ["**/*.css"],
   "exports": {
     "./globals.css": "./src/styles/globals.css",
-    "./flexlayout.css": "./src/components/flex-layout/flexlayout.css",
     ".": "./src/index.ts",
     "./assets/img/*": "./src/assets/img/*"
   },
@@ -26,7 +25,6 @@
     "@semoss/utility": "workspace:*",
     "@semoss/ui": "workspace:*",
     "echarts": "^5.5.1",
-    "flexlayout-react": "^0.8.1",
     "lucide-react": "^0.545.0",
     "monaco-editor": "^0.45.0",
     "react": "^19.0.0",

@@ -55,8 +55,8 @@ const proposalSchema = z
 			("mode" in proposal && proposal.mode === "forward"),
 	);
 
-export type ThreadDraftProposal = z.infer<typeof proposalSchema>;
-export type SourcedDraftProposal = z.infer<typeof replySchema>;
+type ThreadDraftProposal = z.infer<typeof proposalSchema>;
+type SourcedDraftProposal = z.infer<typeof replySchema>;
 
 /** A reply or forward of an email in the thread, rather than a new email. */
 export function isSourcedProposal(
