@@ -4,11 +4,12 @@ import { Link, useNavigate } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
 import { Button, cn, Spinner, toast } from "@semoss/ui/next";
 import { formatDateTimeWithRelativeDay } from "@semoss/utility/date";
-import { useVisibleResource } from "@/features/dashboard/use-visible-resource";
 import { ROOM_HISTORY_CHANGED } from "@/features/rooms/api/list-rooms";
+import { useVisibleResource } from "@/lib/use-visible-resource";
 import { roomPath } from "@/lib/workspace-paths";
 import {
 	listRecentRoutineRuns,
+	type RecentRoutine,
 	ROUTINE_RUNS_CHANGED,
 } from "./api/list-recent-routine-runs";
 import { openRoutineRoom } from "./api/open-routine-room";
@@ -16,8 +17,16 @@ import { RoutineAgentAvatar } from "./routine-agent-avatar";
 import { RoutineRunMenu } from "./routine-run-menu";
 import { findSystemRoutine } from "./system-routines";
 
-// scheduled runs start and finish without anything on this page asking; runs started here re-read at once
-const POLL_MS = 30_000;
+// scheduled runs start and finish without anything on this page asking; runs started here re-read at once.
+// Poll often only while a listed run is still going.
+const RUNNING_POLL_MS = 30_000;
+const IDLE_POLL_MS = 3 * 60_000;
+const pollEvery = (routines: RecentRoutine[] | null) =>
+	routines?.some((routine) =>
+		routine.runs.some((run) => run.status === "running"),
+	)
+		? RUNNING_POLL_MS
+		: IDLE_POLL_MS;
 
 // first in the sidebar's scroller, whose top padding it rises into, so it sits 2px under Routines like the links do;
 // the insets line it up with the links above
@@ -31,17 +40,25 @@ const RUN_ROW =
 interface RoutineRecentRunsProps {
 	/** Closes mobile navigation after a routine or run opens. */
 	onNavigate?: () => void;
+	/** Hidden (a collapsed nav): stop polling, keep the last list. */
+	paused?: boolean;
 }
 
 /**
  * The routines that ran last, under Routines in the sidebar, each with its latest runs. A routine opens on the
  * Routines page; a finished run opens its chat, a running one of the owner's own routines its room.
  */
-export function RoutineRecentRuns({ onNavigate }: RoutineRecentRunsProps) {
+export function RoutineRecentRuns({
+	onNavigate,
+	paused = false,
+}: RoutineRecentRunsProps) {
 	const { actions } = useInsight();
 	const navigate = useNavigate();
 	const load = useCallback(() => listRecentRoutineRuns(actions), [actions]);
-	const recent = useVisibleResource(load, true, POLL_MS);
+	const recent = useVisibleResource(load, !paused, {
+		every: pollEvery,
+		refreshOnReturn: RUNNING_POLL_MS,
+	});
 	const { refresh } = recent;
 	const [openingRunId, setOpeningRunId] = useState<string | null>(null);
 	// each routine's link, where focus goes after one of its runs is deleted

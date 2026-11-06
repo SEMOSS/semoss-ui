@@ -3,6 +3,8 @@ import type { InsightActions } from "@/lib/pixel";
 import { getJob, type Job, type JobKind } from "./onboarding-api";
 
 const POLL_MS = 2000;
+// a failing read backs off (4s, 8s, 16s...) up to once a minute
+const MAX_ERROR_WAIT_MS = 60_000;
 type JobMode = "sort" | "topics";
 
 interface JobState {
@@ -55,6 +57,7 @@ export function useJob(
 	const request = useRef(0);
 	const trackedId = useRef(jobId);
 	const active = useRef(false);
+	const failures = useRef(0);
 	const scope = useRef<JobScope>({ actions, kind, jobId, mode });
 	scope.current = { actions, kind, jobId, mode };
 
@@ -87,6 +90,7 @@ export function useJob(
 					"The background job does not match this setup step.",
 				);
 			}
+			failures.current = 0;
 			// Once found, follow this job even if a newer unrelated job starts.
 			if (next.id) trackedId.current = next.id;
 			setState({
@@ -114,14 +118,19 @@ export function useJob(
 				error: cause instanceof Error ? cause.message : String(cause),
 				isLoading: false,
 			}));
-			timer.current = setTimeout(() => {
-				void poll();
-			}, POLL_MS * 2);
+			failures.current += 1;
+			timer.current = setTimeout(
+				() => {
+					void poll();
+				},
+				Math.min(POLL_MS * 2 ** failures.current, MAX_ERROR_WAIT_MS),
+			);
 		}
 	}, [actions, kind, jobId, mode]);
 
 	useEffect(() => {
 		active.current = true;
+		failures.current = 0;
 		epoch.current += 1;
 		trackedId.current = jobId;
 		setState({
@@ -180,6 +189,7 @@ export function useJob(
 	);
 
 	const refresh = useCallback((): void => {
+		failures.current = 0;
 		void poll();
 	}, [poll]);
 	const current =

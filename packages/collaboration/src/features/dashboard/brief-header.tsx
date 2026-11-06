@@ -1,5 +1,4 @@
 import { RefreshCw } from "lucide-react";
-import { useEffect, useState } from "react";
 import {
 	Button,
 	cn,
@@ -12,6 +11,7 @@ import {
 import { checkTime } from "@/features/collaboration/live/work-refresh-status";
 import { useWorkUpdates } from "@/features/collaboration/live/work-updates.context";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
+import { useNow } from "@/lib/use-now";
 import { useDashboard } from "./dashboard.context";
 import { dashboardTimeZone, eventStart, isAllDay } from "./dashboard-calendar";
 import { dayKey } from "./dashboard-selectors";
@@ -22,11 +22,7 @@ export function BriefHeader() {
 	const { state } = useCollaborationSession();
 	const { calendar, refreshSources } = useDashboard();
 	const updates = useWorkUpdates();
-	const [now, setNow] = useState(() => new Date());
-	useEffect(() => {
-		const timer = window.setInterval(() => setNow(new Date()), 60_000);
-		return () => window.clearInterval(timer);
-	}, []);
+	const now = new Date(useNow());
 	const zone = dashboardTimeZone(state.profile.timezone);
 	const hour = Number(
 		new Intl.DateTimeFormat("en", {

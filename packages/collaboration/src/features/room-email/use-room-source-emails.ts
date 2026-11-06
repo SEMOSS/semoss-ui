@@ -34,6 +34,12 @@ interface SourceRead {
 }
 
 const EMPTY_DRAFTS: SourceEmailDraft[] = [];
+// Outlook-source rooms read each message from Graph, so poll them slowly
+const OUTLOOK_POLL_MS = 3 * 60_000;
+// Brain-source rooms outside the page sync (no WorkUpdates) still poll
+const UNSYNCED_POLL_MS = 60_000;
+// focus and visibilitychange both fire on return; read once
+const RETURN_GAP_MS = 15_000;
 
 /** Refresh the active room's source and file without sending an assistant message. */
 export function useRoomSourceEmails(
@@ -79,12 +85,15 @@ export function useRoomSourceEmails(
 		collaboration?.state.deletedSourceIds,
 	]);
 	const previousRevision = useRef([sourceRevision, updates?.lastUpdated]);
+	// the page sync re-reads Brain sources through lastUpdated below, so they need no clock of their own
+	const followsPageSync = Boolean(updates);
 
 	useEffect(() => {
 		if (!canRead) return;
 		let isCurrent = true;
 		let isReading = false;
 		let hasQueuedRead = false;
+		let lastReadAt = 0;
 		let document: SourceThreadDocument | null = null;
 		let lastWritten = "";
 		let pendingWrite: { revision: string } | null = null;
@@ -139,6 +148,7 @@ export function useRoomSourceEmails(
 			const input = currentInput.current;
 			if (!input.source) return;
 			isReading = true;
+			lastReadAt = Date.now();
 			const release = session.retain();
 			setRead((previous) => ({
 				session,
@@ -199,6 +209,9 @@ export function useRoomSourceEmails(
 		const refreshVisible = () => {
 			if (window.document.visibilityState === "visible") void refresh();
 		};
+		const refreshOnReturn = () => {
+			if (Date.now() - lastReadAt >= RETURN_GAP_MS) refreshVisible();
+		};
 		refreshRef.current = () => void refresh();
 		writeRef.current = () => {
 			clearTimeout(writeTimer);
@@ -206,17 +219,24 @@ export function useRoomSourceEmails(
 		};
 		void refresh();
 		// shortcut: poll visible source bodies until the server exposes a cheap thread revision.
-		const isEmail = currentInput.current.source?.channel === "email";
-		const interval = isEmail
-			? setInterval(refreshVisible, 30_000)
-			: undefined;
+		const opened = currentInput.current.source;
+		const isEmail = opened?.channel === "email";
+		const every = !isEmail
+			? null
+			: opened.kind === "outlook"
+				? OUTLOOK_POLL_MS
+				: followsPageSync
+					? null
+					: UNSYNCED_POLL_MS;
+		const interval = every ? setInterval(refreshVisible, every) : undefined;
 		if (isEmail) {
-			window.addEventListener("focus", refreshVisible);
+			window.addEventListener("focus", refreshOnReturn);
 			window.document.addEventListener(
 				"visibilitychange",
-				refreshVisible,
+				refreshOnReturn,
 			);
-			window.addEventListener(MAIL_SENT_EVENT, refreshVisible);
+			// a send triggers the page sync, whose lastUpdated re-reads synced rooms below; only Outlook rooms read now
+			if (every) window.addEventListener(MAIL_SENT_EVENT, refreshVisible);
 		}
 		return () => {
 			isCurrent = false;
@@ -224,14 +244,14 @@ export function useRoomSourceEmails(
 			writeRef.current = null;
 			clearInterval(interval);
 			clearTimeout(writeTimer);
-			window.removeEventListener("focus", refreshVisible);
+			window.removeEventListener("focus", refreshOnReturn);
 			window.document.removeEventListener(
 				"visibilitychange",
-				refreshVisible,
+				refreshOnReturn,
 			);
 			window.removeEventListener(MAIL_SENT_EVENT, refreshVisible);
 		};
-	}, [canRead, key, session]);
+	}, [canRead, key, session, followsPageSync]);
 
 	useEffect(() => {
 		if (

@@ -10,13 +10,15 @@ import { Env, useInsight } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import { listCalendarEvents } from "@/features/connectors/api/microsoft";
+import { useVisibleResource } from "@/lib/use-visible-resource";
 import { roomPath } from "@/lib/workspace-paths";
 import { DashboardContext, type SourceSelection } from "./dashboard.context";
 import { dashboardStorageKey } from "./dashboard-layout";
 import { RoomSourceAssociationsProvider } from "./room-source-associations-provider";
 import { useChatHistory } from "./use-chat-history";
 import { useDashboardLayout } from "./use-dashboard-layout";
-import { useVisibleResource } from "./use-visible-resource";
+
+const CALENDAR_EVERY_MS = 5 * 60_000;
 
 /** Account-keyed shell data; opening the palette reuses the dashboard's source snapshots. */
 export function DashboardProvider({ children }: { children: ReactNode }) {
@@ -66,9 +68,11 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 		async () => (await listCalendarEvents(actions)).events,
 		[actions],
 	);
+	// a calendar changes rarely: every 5 minutes, and on return when the last read is a minute old
 	const calendar = useVisibleResource(
 		loadCalendar,
 		isActive && state.settings.sourcesJson.calendar === true,
+		{ every: CALENDAR_EVERY_MS, refreshOnReturn: 60_000 },
 	);
 	function refreshSources(): void {
 		calendar.refresh();

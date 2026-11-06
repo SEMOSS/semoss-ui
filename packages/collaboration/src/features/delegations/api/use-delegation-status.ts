@@ -11,6 +11,8 @@ import {
 
 const TOOL_NAME = "DelegateToPerson";
 const POLL_MS = 10_000;
+// a hidden tab checks a waiting delegation once a minute
+const HIDDEN_POLL_MS = 60_000;
 
 interface DelegationRef {
 	runId: string;
@@ -123,7 +125,12 @@ export function useDelegationStatus(
 			setRuns({ ...seen });
 			if (settled) answered.current();
 			if (pending().length)
-				timer = setTimeout(() => void poll(), POLL_MS);
+				timer = setTimeout(
+					() => void poll(),
+					document.visibilityState === "hidden"
+						? HIDDEN_POLL_MS
+						: POLL_MS,
+				);
 		};
 		void poll();
 		return () => {

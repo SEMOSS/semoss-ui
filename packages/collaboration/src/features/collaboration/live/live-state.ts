@@ -914,7 +914,9 @@ const SYNC_OUTCOMES = new Set<string>([
 	"quiet",
 ]);
 
-const SYNC_POLL_MS = 1500;
+// a sync can classify for minutes; check every 3 s, and slower from a hidden tab
+const SYNC_POLL_MS = 3000;
+const SYNC_HIDDEN_POLL_MS = 10_000;
 const SYNC_TIMEOUT_MS = 10 * 60_000;
 
 /** Pull new mail (and Teams when on) from Microsoft 365 through the shared sync job, then return its counts. */
@@ -934,7 +936,12 @@ export async function syncMail(
 	while (current.status === "running") {
 		if (Date.now() > deadline)
 			throw new Error("Checking for new mail is taking too long.");
-		await wait(SYNC_POLL_MS);
+		await wait(
+			typeof document !== "undefined" &&
+				document.visibilityState === "hidden"
+				? SYNC_HIDDEN_POLL_MS
+				: SYNC_POLL_MS,
+		);
 		const [polled] = await runBatch(actions, [
 			pixel("BrainGetJob", { kind: "sync" }),
 		]);

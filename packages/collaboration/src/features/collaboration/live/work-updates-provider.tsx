@@ -18,6 +18,13 @@ import {
 	syncMail,
 } from "./live-state";
 import type { LiveSync } from "./live-sync";
+import {
+	announceSync,
+	claimSync,
+	noteSyncStarted,
+	onSyncElsewhere,
+	sharedLastAttempt,
+} from "./shared-sync";
 import { WorkUpdatesContext } from "./work-updates.context";
 
 const SENT_SYNC_DELAY_MS = 5000;
@@ -26,6 +33,12 @@ const WATCH_MS = 4000;
 // coming back to the tab re-reads, but not again within this long
 const FOCUS_REREAD_MS = 15_000;
 const MAIL_CHECK_MS = 60_000;
+const CLOCK_CHECK_MS = 15_000;
+// a quiet sync (nothing in, nothing closed) skips the full reload, but changes made elsewhere
+// (an agent, another tab's edits) still show within this long
+const FULL_READ_MAX_AGE_MS = 5 * 60_000;
+// a tab return re-reads everything only when this is the last full read's age (or another tab brought mail in)
+const RETURN_FULL_READ_MS = 60_000;
 
 /** Ids of records edited locally between two snapshots (or created locally since the first). */
 export function changedSince<T extends { id: string }>(before: T[], now: T[]) {
@@ -65,7 +78,10 @@ export function WorkUpdatesProvider({
 	// a reload asked for while one is in flight runs right after it
 	const queued = useRef(false);
 	const syncing = useRef(false);
-	const lastMailAttempt = useRef(0);
+	// the session load this provider starts from is a full read
+	const lastFullRead = useRef(Date.now());
+	// another tab brought mail in while this one was hidden
+	const stale = useRef(false);
 	const hasConnectedMail = state.sources.some(
 		(source) =>
 			source.id === "email" &&
@@ -169,6 +185,8 @@ export function WorkUpdatesProvider({
 						),
 					},
 				});
+				lastFullRead.current = Date.now();
+				stale.current = false;
 				setStatus({
 					isRefreshing: false,
 					lastUpdated: new Date().toISOString(),
@@ -238,40 +256,104 @@ export function WorkUpdatesProvider({
 		(id: string): string => sync?.localId(id) ?? id,
 		[sync],
 	);
-	/** The Refresh button: pull new mail from Microsoft 365 first, then reload Brain and Work. */
-	const syncNow = useCallback(() => {
-		if (syncing.current) return;
-		const token = generation.current;
-		syncing.current = true;
-		lastMailAttempt.current = Date.now();
-		setMail((current) => ({ ...current, isSyncing: true, syncError: "" }));
-		syncMail(actions)
-			.then((result) => {
-				if (token !== generation.current) return;
-				setMail({ isSyncing: false, lastSync: result, syncError: "" });
-				refreshRef.current();
-			})
-			.catch((cause: unknown) => {
-				if (token !== generation.current) return;
-				setMail((current) => ({
-					...current,
-					isSyncing: false,
-					syncError:
-						cause instanceof Error
-							? cause.message
-							: "New mail could not be checked.",
-				}));
-			})
-			.finally(() => {
-				if (token === generation.current) syncing.current = false;
-			});
-	}, [actions]);
+	/**
+	 * The Refresh button: pull new mail from Microsoft 365 first, then reload Brain and Work. An automatic sync
+	 * that brought nothing in only re-reads the sync time, and other tabs hear about it instead of syncing too.
+	 */
+	const syncNow = useCallback(
+		(options?: { automatic?: boolean }) => {
+			if (syncing.current) return;
+			const automatic = options?.automatic === true;
+			const token = generation.current;
+			syncing.current = true;
+			noteSyncStarted();
+			setMail((current) => ({
+				...current,
+				isSyncing: true,
+				syncError: "",
+			}));
+			syncMail(actions)
+				.then(async (result) => {
+					if (token !== generation.current) return;
+					setMail({
+						isSyncing: false,
+						lastSync: result,
+						syncError: "",
+					});
+					const quiet =
+						result.newMessages === 0 &&
+						result.closedByReply === 0 &&
+						Object.values(result.outcomes).every((count) => !count);
+					if (
+						automatic &&
+						quiet &&
+						Date.now() - lastFullRead.current < FULL_READ_MAX_AGE_MS
+					) {
+						const lastMailCheck = await readMailCheck(
+							actions,
+						).catch(() => null);
+						if (token !== generation.current) return;
+						if (lastMailCheck)
+							setStatus((current) => ({
+								...current,
+								lastMailCheck,
+							}));
+						announceSync({ quiet: true, lastMailCheck });
+						return;
+					}
+					announceSync({ quiet, lastMailCheck: null });
+					refreshRef.current();
+				})
+				.catch((cause: unknown) => {
+					if (token !== generation.current) return;
+					setMail((current) => ({
+						...current,
+						isSyncing: false,
+						syncError:
+							cause instanceof Error
+								? cause.message
+								: "New mail could not be checked.",
+					}));
+				})
+				.finally(() => {
+					if (token === generation.current) syncing.current = false;
+				});
+		},
+		[actions],
+	);
+	// a sync another tab ran: take its time, and reload when it brought something in or this tab's last full read is old
+	useEffect(
+		() =>
+			onSyncElsewhere((done) => {
+				if (done.lastMailCheck) {
+					const lastMailCheck = done.lastMailCheck;
+					setStatus((current) => ({ ...current, lastMailCheck }));
+				}
+				if (done.quiet) {
+					// a quiet sync reloads nothing, so this tab keeps its own full-read age
+					if (
+						document.visibilityState === "visible" &&
+						Date.now() - lastFullRead.current >=
+							FULL_READ_MAX_AGE_MS
+					)
+						refreshRef.current();
+					return;
+				}
+				if (document.visibilityState === "visible") {
+					refreshRef.current();
+				} else stale.current = true;
+			}),
+		[],
+	);
 	// a reply sent from the app reaches Sent Items a moment later; sync it in so the card it answered closes
 	useEffect(() => {
 		let timer: number | undefined;
 		const onSent = () => {
 			window.clearTimeout(timer);
-			timer = window.setTimeout(syncNow, SENT_SYNC_DELAY_MS);
+			timer = window.setTimeout(
+				() => syncNow({ automatic: true }),
+				SENT_SYNC_DELAY_MS,
+			);
 		};
 		window.addEventListener(MAIL_SENT_EVENT, onSent);
 		return () => {
@@ -332,15 +414,20 @@ export function WorkUpdatesProvider({
 	}, [actions, watched, mail.isSyncing]);
 	const lastRead = useRef(0);
 	useEffect(() => {
-		// Graph cannot notify local servers; keep all Collaboration views current while visible.
+		// Graph cannot notify local servers and Teams has no push; keep views current while visible.
+		// The clock is shared: whichever visible tab claims it syncs, the rest hear the result.
 		const checkMail = () => {
+			// a tab still syncing must not claim the minute: the claim would push the clock and block every tab
 			if (
 				!hasConnectedMail ||
+				syncing.current ||
 				document.visibilityState !== "visible" ||
-				Date.now() - lastMailAttempt.current < MAIL_CHECK_MS
+				Date.now() - sharedLastAttempt() < MAIL_CHECK_MS
 			)
 				return false;
-			syncNow();
+			void claimSync(MAIL_CHECK_MS).then((won) => {
+				if (won) syncNow({ automatic: true });
+			});
 			return true;
 		};
 		const check = () => {
@@ -350,11 +437,17 @@ export function WorkUpdatesProvider({
 			)
 				return;
 			lastRead.current = Date.now();
-			if (!checkMail()) refresh();
+			if (checkMail()) return;
+			if (
+				stale.current ||
+				Date.now() - lastFullRead.current >= RETURN_FULL_READ_MS
+			)
+				refresh();
 		};
 		const initialCheck = window.setTimeout(checkMail, 0);
+		// a local check, no server call: catches the shared minute soon after another tab's lapses
 		const timer = hasConnectedMail
-			? window.setInterval(checkMail, MAIL_CHECK_MS)
+			? window.setInterval(checkMail, CLOCK_CHECK_MS)
 			: undefined;
 		window.addEventListener("focus", check);
 		document.addEventListener("visibilitychange", check);
@@ -372,7 +465,6 @@ export function WorkUpdatesProvider({
 			pending.current = false;
 			queued.current = false;
 			syncing.current = false;
-			lastMailAttempt.current = 0;
 		},
 		[actions],
 	);

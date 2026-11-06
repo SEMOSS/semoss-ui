@@ -43,7 +43,7 @@ vi.mock("@semoss/sdk/react", async (importOriginal) => ({
 vi.mock("@/features/dashboard/use-chat-history", () => ({
 	useChatHistory: () => remote.history,
 }));
-vi.mock("@/features/dashboard/use-visible-resource", () => ({
+vi.mock("@/lib/use-visible-resource", () => ({
 	useVisibleResource: () => ({
 		data: [],
 		error: "",

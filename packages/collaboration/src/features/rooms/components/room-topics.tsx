@@ -21,7 +21,7 @@ import {
 } from "../api/room-topics";
 
 // Brain checks the chat a few seconds after each turn; read again while it catches up
-const AFTER_TURN_READS_MS = [6000, 15000, 30000];
+const AFTER_TURN_READS_MS = [8000, 30_000];
 
 /** The chat's topics, read again after each turn so Brain's tags show up as the owner chats. */
 export function useRoomTopics(roomId: string, isRunning: boolean) {

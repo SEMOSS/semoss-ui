@@ -11,6 +11,14 @@ type RoomSourceAssociation = {
 interface AssociationRead {
 	activation: symbol;
 	value: RoomSourceAssociation;
+	at: number;
+}
+
+// a room's links read by an earlier visit are reused for this long instead of read again
+const FRESH_MS = 2 * 60_000;
+
+function isFresh(entry: AssociationRead | undefined): boolean {
+	return entry?.value.status === "ready" && Date.now() - entry.at < FRESH_MS;
 }
 
 /** One visible topic Sessions panel owns its bounded metadata reads. */
@@ -51,7 +59,7 @@ export function createRoomSourceAssociations(
 			const get = (roomId: string): RoomSourceAssociation | undefined => {
 				const entry = snapshot.get(roomId);
 				if (!entry) return undefined;
-				return entry.activation === activation
+				return entry.activation === activation || isFresh(entry)
 					? entry.value
 					: { ...entry.value, status: "loading" };
 			};
@@ -71,7 +79,8 @@ export function createRoomSourceAssociations(
 					if (owners === 0) return;
 					const ids = roomIds.filter(
 						(id) =>
-							!requested.has(id) ||
+							(!requested.has(id) &&
+								!isFresh(snapshot.get(id))) ||
 							(retry && get(id)?.status === "error"),
 					);
 					if (!ids.length) return;
@@ -85,6 +94,7 @@ export function createRoomSourceAssociations(
 									...snapshot.get(id)?.value,
 									status: "loading",
 								},
+								at: Date.now(),
 							},
 						]),
 					);
@@ -152,7 +162,14 @@ export function createRoomSourceAssociations(
 										}
 										if (isActive())
 											publish([
-												[id, { activation, value }],
+												[
+													id,
+													{
+														activation,
+														value,
+														at: Date.now(),
+													},
+												],
 											]);
 									}),
 							);

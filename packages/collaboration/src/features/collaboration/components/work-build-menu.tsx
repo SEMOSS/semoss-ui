@@ -41,6 +41,8 @@ export function WorkBuildMenu({ onDone }: { onDone: () => void }) {
 	const { actions } = useInsight();
 	const [status, setStatus] = useState<Status | null>(null);
 	const timer = useRef<number | undefined>(undefined);
+	// a poll in flight when the menu unmounts must not schedule the next one
+	const mounted = useRef(true);
 	const busy = Boolean(status && ACTIVE.has(String(status.state)));
 
 	const poll = useCallback(async () => {
@@ -48,6 +50,7 @@ export function WorkBuildMenu({ onDone }: { onDone: () => void }) {
 			const [out] = (await runBatch(actions, [
 				pixel("WorkBuildItems", { status: true }),
 			])) as Status[];
+			if (!mounted.current) return;
 			const next = out ?? {};
 			setStatus(next);
 			if (ACTIVE.has(String(next.state))) {
@@ -59,14 +62,16 @@ export function WorkBuildMenu({ onDone }: { onDone: () => void }) {
 				toast.error(String(next.error ?? "Building work items failed"));
 		} catch {
 			// a failed status check leaves the button usable
-			setStatus(null);
+			if (mounted.current) setStatus(null);
 		}
 	}, [actions, onDone]);
 
 	// a build already running (from another tab or a sync) shows its progress
 	useEffect(() => {
+		mounted.current = true;
 		void runBatch(actions, [pixel("WorkBuildItems", { status: true })])
 			.then(([out]) => {
+				if (!mounted.current) return;
 				const s = (out ?? {}) as Status;
 				if (ACTIVE.has(String(s.state))) {
 					setStatus(s);
@@ -74,7 +79,10 @@ export function WorkBuildMenu({ onDone }: { onDone: () => void }) {
 				}
 			})
 			.catch(() => {});
-		return () => window.clearTimeout(timer.current);
+		return () => {
+			mounted.current = false;
+			window.clearTimeout(timer.current);
+		};
 	}, [actions, poll]);
 
 	const start = async (args: Record<string, unknown>) => {

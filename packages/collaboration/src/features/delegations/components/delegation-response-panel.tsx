@@ -7,6 +7,7 @@ import { type Delegation, listAssignedDelegations } from "../api/delegations";
 
 // The requester can withdraw at any time, so an open request is re-read.
 const POLL_MS = 15_000;
+const HIDDEN_POLL_MS = 60_000;
 
 function closedText(delegation: Delegation): string | null {
 	const who = delegation.requesterName ?? "The requester";
@@ -52,7 +53,12 @@ export function DelegationResponsePanel({
 						rows.find((item) => item.actionId === actionId) ?? null;
 					setDelegation(row);
 					if (row?.status === "PENDING")
-						timer = setTimeout(read, POLL_MS);
+						timer = setTimeout(
+							read,
+							document.visibilityState === "hidden"
+								? HIDDEN_POLL_MS
+								: POLL_MS,
+						);
 				})
 				.catch((cause) => toast.error(toError(cause).message));
 		if (open) void read();

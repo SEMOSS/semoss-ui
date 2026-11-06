@@ -178,8 +178,10 @@ export class RoomSession {
 	getSnapshot = (): RoomSessionSnapshot => this.snapshot;
 	subscribe = (listener: () => void): (() => void) => {
 		this.listeners.add(listener);
+		this.controller?.setViewed(true);
 		return () => {
 			this.listeners.delete(listener);
+			if (!this.listeners.size) this.controller?.setViewed(false);
 		};
 	};
 	/** Hold the insight across asynchronous sends, uploads, and editor saves. */
@@ -217,6 +219,7 @@ export class RoomSession {
 		if (this.isDisposed) return;
 		this.isDisposed = true;
 		this.unsubscribeTurn?.();
+		this.controller?.setViewed(false);
 		disposeRoomEmailStore(this);
 		if (this.controller) evictIdleAgentTurnControllers(this.controller);
 		this.listeners.clear();
@@ -347,6 +350,7 @@ export class RoomSession {
 			return;
 		}
 		this.controller = getAgentTurnController(this.config());
+		this.controller.setViewed(this.listeners.size > 0);
 		this.unsubscribeTurn = this.controller.subscribe(() => {
 			const turn = this.controller?.getSnapshot();
 			if (!turn) return;

@@ -21,6 +21,7 @@ import {
 import { changedSince } from "./work-updates-provider";
 
 const POLL_MS = 2000;
+const HIDDEN_POLL_MS = 10_000;
 const TIMEOUT_MS = 5 * 60_000;
 const FAILED = "Could not summarize this thread. Try again.";
 const pause = (ms: number) =>
@@ -76,7 +77,11 @@ export function ThreadInsightsProvider({
 						throw new Error(
 							"Summarizing is taking too long. Try again in a moment.",
 						);
-					await wait(POLL_MS);
+					await wait(
+						document.visibilityState === "hidden"
+							? HIDDEN_POLL_MS
+							: POLL_MS,
+					);
 					if (!mounted.current) return null;
 					result = await read(false);
 				}
