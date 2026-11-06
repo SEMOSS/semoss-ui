@@ -10,7 +10,10 @@ import {
 	formatRelativeTime,
 	formatRunDuration,
 } from "../../../domain/automation-display";
-import { normalizeAutomationErrorMessage } from "../../../domain/automation-utils";
+import {
+	formatDurationMs,
+	normalizeAutomationErrorMessage,
+} from "../../../domain/automation-utils";
 import { StatusBadge } from "../../status-badge";
 import {
 	buildDashboardRows,
@@ -305,9 +308,7 @@ function DashboardRowView({
 				</span>
 				<span />
 				<span className="text-right tabular-nums">
-					{row.isLoop
-						? "—"
-						: `${row.node.DURATION_MS.toLocaleString()} ms`}
+					{row.isLoop ? "—" : formatDurationMs(row.node.DURATION_MS)}
 				</span>
 			</div>
 		);
@@ -329,7 +330,7 @@ function DashboardRowView({
 			</span>
 			<span />
 			<span className="text-right tabular-nums">
-				{row.durationMs.toLocaleString()} ms
+				{formatDurationMs(row.durationMs)}
 			</span>
 		</div>
 	);
