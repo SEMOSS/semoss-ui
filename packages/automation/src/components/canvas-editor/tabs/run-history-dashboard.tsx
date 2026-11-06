@@ -43,6 +43,7 @@ interface RunHistoryDashboardProps {
 }
 
 const ROW_HEIGHT = 36;
+const DETAIL_PANEL_HEIGHT = 320;
 const GRID_COLUMNS = "grid-cols-[28px_52px_150px_150px_1fr]";
 type DetailTab = "incoming" | "outgoing" | "variables";
 
@@ -51,6 +52,13 @@ interface SelectedNode {
 	label: string;
 	result: AutomationNodeResult;
 }
+
+interface DetailPanelRow {
+	kind: "detail";
+	key: string;
+}
+
+type RenderRow = DashboardRow | DetailPanelRow;
 
 /**
  * Mirth Connect message-browser-style dashboard: one row per run, expandable
@@ -183,86 +191,101 @@ export function RunHistoryDashboard({
 		],
 	);
 
+	const renderRows = useMemo<RenderRow[]>(() => {
+		if (!selected) return rows;
+		const index = rows.findIndex((row) => row.key === selected.key);
+		if (index === -1) return rows;
+		const next: RenderRow[] = [...rows];
+		next.splice(index + 1, 0, {
+			kind: "detail",
+			key: `detail:${selected.key}`,
+		});
+		return next;
+	}, [rows, selected]);
+
 	const parentRef = useRef<HTMLDivElement>(null);
 	const rowVirtualizer = useVirtualizer({
-		count: rows.length,
+		count: renderRows.length,
 		getScrollElement: () => parentRef.current,
-		estimateSize: () => ROW_HEIGHT,
+		estimateSize: (index) =>
+			renderRows[index]?.kind === "detail"
+				? DETAIL_PANEL_HEIGHT
+				: ROW_HEIGHT,
 		overscan: 16,
 	});
 
-	return (
-		<div className="flex h-full min-h-0 gap-2">
-			<div className="flex h-full min-h-0 flex-1 flex-col rounded-lg border bg-card">
-				<div
-					className={`grid ${GRID_COLUMNS} items-center gap-2 border-b bg-muted/50 px-3 py-2 text-muted-foreground text-xs uppercase tracking-wide`}
-				>
-					<span />
-					<span>ID</span>
-					<span>Time Started</span>
-					<span>Time Ended</span>
-					<span>Status</span>
-				</div>
+	// The detail row's presence/absence changes row sizes, so force a full re-measure of offsets.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: selected?.key (not just its identity) must retrigger the remeasure.
+	useEffect(() => {
+		rowVirtualizer.measure();
+	}, [rowVirtualizer, selected?.key]);
 
-				{runs.length === 0 ? (
-					<div className="flex flex-1 items-center justify-center px-4 py-10 text-center text-muted-foreground text-xs">
-						No runs yet.
-					</div>
-				) : (
-					<div
-						ref={parentRef}
-						className="relative min-h-0 flex-1 overflow-y-auto"
-					>
-						<div
-							style={{
-								height: rowVirtualizer.getTotalSize(),
-								width: "100%",
-								position: "relative",
-							}}
-						>
-							{rowVirtualizer
-								.getVirtualItems()
-								.map((virtualRow) => {
-									const row = rows[virtualRow.index];
-									return (
-										<div
-											key={row.key}
-											style={{
-												position: "absolute",
-												top: 0,
-												left: 0,
-												width: "100%",
-												height: ROW_HEIGHT,
-												transform: `translateY(${virtualRow.start}px)`,
-											}}
-										>
-											<DashboardRowView
-												row={row}
-												selectedKey={
-													selected?.key ?? null
-												}
-												onToggleRun={toggleRun}
-												onToggleLoop={toggleLoop}
-												onRetry={fetchDetailIfNeeded}
-												onSelectNode={selectNode}
-											/>
-										</div>
-									);
-								})}
-						</div>
-					</div>
-				)}
+	return (
+		<div className="flex h-full min-h-0 flex-col rounded-lg border bg-card">
+			<div
+				className={`grid ${GRID_COLUMNS} items-center gap-2 border-b bg-muted/50 px-3 py-2 text-muted-foreground text-xs uppercase tracking-wide`}
+			>
+				<span />
+				<span>ID</span>
+				<span>Time Started</span>
+				<span>Time Ended</span>
+				<span>Status</span>
 			</div>
 
-			{selected ? (
-				<NodeDetailPanel
-					selected={selected}
-					detailTab={detailTab}
-					onChangeTab={setDetailTab}
-					onClose={closeDetail}
-					onOutputPopout={onOutputPopout}
-				/>
-			) : null}
+			{runs.length === 0 ? (
+				<div className="flex flex-1 items-center justify-center px-4 py-10 text-center text-muted-foreground text-xs">
+					No runs yet.
+				</div>
+			) : (
+				<div
+					ref={parentRef}
+					className="relative min-h-0 flex-1 overflow-y-auto"
+				>
+					<div
+						style={{
+							height: rowVirtualizer.getTotalSize(),
+							width: "100%",
+							position: "relative",
+						}}
+					>
+						{rowVirtualizer.getVirtualItems().map((virtualRow) => {
+							const row = renderRows[virtualRow.index];
+							return (
+								<div
+									key={row.key}
+									style={{
+										position: "absolute",
+										top: 0,
+										left: 0,
+										width: "100%",
+										height: virtualRow.size,
+										transform: `translateY(${virtualRow.start}px)`,
+									}}
+								>
+									{row.kind === "detail" && selected ? (
+										<NodeDetailPanel
+											selected={selected}
+											detailTab={detailTab}
+											onChangeTab={setDetailTab}
+											onClose={closeDetail}
+											onOutputPopout={onOutputPopout}
+										/>
+									) : (
+										<DashboardRowView
+											row={row as DashboardRow}
+											selectedKey={selected?.key ?? null}
+											onToggleRun={toggleRun}
+											onToggleLoop={toggleLoop}
+											onRetry={fetchDetailIfNeeded}
+											onSelectNode={selectNode}
+										/>
+									)}
+								</div>
+							);
+						})}
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }
@@ -471,7 +494,7 @@ function NodeDetailPanel({
 	const variableRows = getRunScopeVariableRows(selected.result.scopeSnapshot);
 
 	return (
-		<section className="flex h-full w-[32rem] shrink-0 flex-col rounded-lg border bg-card">
+		<section className="flex h-full w-full flex-col border-b bg-muted/10 pl-9">
 			<div className="flex items-center justify-between gap-2 border-b px-3 py-2">
 				<div className="min-w-0">
 					<p className="truncate font-medium text-sm">
