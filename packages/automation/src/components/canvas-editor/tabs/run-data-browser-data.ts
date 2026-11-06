@@ -51,7 +51,7 @@ export function runtimeNodeId(result: AutomationNodeResult | null): string {
 	return result.trace?.nodeId ?? result.NODE_ID;
 }
 
-function statusForResults(
+export function statusForResults(
 	results: AutomationNodeResult[],
 ): AutomationNodeResult["STATUS"] | undefined {
 	if (results.some((result) => result.STATUS === "FAILED")) return "FAILED";
