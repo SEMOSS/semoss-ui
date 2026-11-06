@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { AutomationRunSummary } from "../../../domain/automation.types";
-import { computeRunDashboardStats } from "./run-dashboard-stats";
+import {
+	computeRunDashboardStats,
+	toMirthStyleCounts,
+} from "./run-dashboard-stats";
 
 function run(overrides: Partial<AutomationRunSummary>): AutomationRunSummary {
 	return {
@@ -21,6 +24,16 @@ describe("computeRunDashboardStats", () => {
 		expect(stats.successRatePct).toBeNull();
 		expect(stats.avgDurationMs).toBeNull();
 		expect(stats.statusCounts.SUCCESS).toBe(0);
+		expect(stats.latestStatus).toBeNull();
+	});
+
+	it("reports latestStatus from the run with the most recent STARTED_AT, not list order", () => {
+		const stats = computeRunDashboardStats([
+			run({ STARTED_AT: "2026-11-05T00:00:00Z", STATUS: "FAILED" }),
+			run({ STARTED_AT: "2026-11-05T00:00:20Z", STATUS: "SUCCESS" }),
+			run({ STARTED_AT: "2026-11-05T00:00:10Z", STATUS: "CANCELLED" }),
+		]);
+		expect(stats.latestStatus).toBe("SUCCESS");
 	});
 
 	it("computes success rate only over finished runs, excluding RUNNING/WAITING_FOR_INPUT", () => {
@@ -66,6 +79,30 @@ describe("computeRunDashboardStats", () => {
 			SCHEDULED: 1,
 			PLAYGROUND: 1,
 			UNKNOWN: 1,
+		});
+	});
+});
+
+describe("toMirthStyleCounts", () => {
+	it("maps run outcomes onto Received/Filtered/Queued/Sent/Errored", () => {
+		const stats = computeRunDashboardStats([
+			run({ STATUS: "SUCCESS" }),
+			run({ STATUS: "SUCCESS" }),
+			run({ STATUS: "FAILED", COMPLETED_AT: "2026-11-05T00:00:05Z" }),
+			run({
+				STATUS: "INTERRUPTED",
+				COMPLETED_AT: "2026-11-05T00:00:05Z",
+			}),
+			run({ STATUS: "CANCELLED", COMPLETED_AT: "2026-11-05T00:00:05Z" }),
+			run({ STATUS: "RUNNING", COMPLETED_AT: null }),
+			run({ STATUS: "WAITING_FOR_INPUT", COMPLETED_AT: null }),
+		]);
+		expect(toMirthStyleCounts(stats)).toEqual({
+			received: 7,
+			filtered: 1,
+			queued: 2,
+			sent: 2,
+			errored: 2,
 		});
 	});
 });

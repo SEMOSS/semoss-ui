@@ -20,6 +20,17 @@ export interface RunDashboardStats {
 	avgDurationMs: number | null;
 	statusCounts: Record<RunStatus, number>;
 	triggerCounts: Record<AutomationTriggerType | "UNKNOWN", number>;
+	/** STATUS of the run with the latest STARTED_AT, for a Mirth-style deployment status dot. Null if no runs. */
+	latestStatus: RunStatus | null;
+}
+
+/** Mirth Connect's channel dashboard columns, remapped onto automation run outcomes. */
+export interface MirthStyleCounts {
+	received: number;
+	filtered: number;
+	queued: number;
+	sent: number;
+	errored: number;
 }
 
 function runDurationMs(run: AutomationRunSummary): number | null {
@@ -53,6 +64,8 @@ export function computeRunDashboardStats(
 	let successCount = 0;
 	let durationSumMs = 0;
 	let durationCount = 0;
+	let latestStatus: RunStatus | null = null;
+	let latestStartedAtMs = -Infinity;
 
 	for (const run of runs) {
 		statusCounts[run.STATUS] = (statusCounts[run.STATUS] ?? 0) + 1;
@@ -68,6 +81,12 @@ export function computeRunDashboardStats(
 			durationSumMs += durationMs;
 			durationCount += 1;
 		}
+
+		const startedAtMs = Date.parse(run.STARTED_AT);
+		if (!Number.isNaN(startedAtMs) && startedAtMs > latestStartedAtMs) {
+			latestStartedAtMs = startedAtMs;
+			latestStatus = run.STATUS;
+		}
 	}
 
 	return {
@@ -78,5 +97,18 @@ export function computeRunDashboardStats(
 			durationCount === 0 ? null : durationSumMs / durationCount,
 		statusCounts,
 		triggerCounts,
+		latestStatus,
+	};
+}
+
+/** Remaps run outcome counts onto Mirth Connect's Received/Filtered/Queued/Sent/Errored dashboard columns. */
+export function toMirthStyleCounts(stats: RunDashboardStats): MirthStyleCounts {
+	const { statusCounts } = stats;
+	return {
+		received: stats.totalRuns,
+		filtered: statusCounts.CANCELLED,
+		queued: statusCounts.RUNNING + statusCounts.WAITING_FOR_INPUT,
+		sent: statusCounts.SUCCESS,
+		errored: statusCounts.FAILED + statusCounts.INTERRUPTED,
 	};
 }

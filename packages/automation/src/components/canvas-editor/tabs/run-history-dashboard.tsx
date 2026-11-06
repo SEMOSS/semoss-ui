@@ -1,20 +1,14 @@
 import { formatDurationMs } from "@semoss/utility/date";
 import type { AutomationRunSummary } from "../../../domain/automation.types";
-import { computeRunDashboardStats } from "./run-dashboard-stats";
+import {
+	computeRunDashboardStats,
+	toMirthStyleCounts,
+} from "./run-dashboard-stats";
 
 interface RunHistoryDashboardProps {
 	/** The run page already loaded by the history list — no separate backend fetch. */
 	runs: AutomationRunSummary[];
 }
-
-const STATUS_LABELS: Record<string, string> = {
-	SUCCESS: "Success",
-	FAILED: "Failed",
-	RUNNING: "Running",
-	WAITING_FOR_INPUT: "Needs input",
-	INTERRUPTED: "Interrupted",
-	CANCELLED: "Cancelled",
-};
 
 const TRIGGER_LABELS: Record<string, string> = {
 	MANUAL: "Manual",
@@ -23,103 +17,133 @@ const TRIGGER_LABELS: Record<string, string> = {
 	UNKNOWN: "Unknown",
 };
 
-function StatCard({ label, value }: { label: string; value: string }) {
+/** Mirth's channel-state dot: green running cleanly, red latest run errored, gray never run, blue in flight. */
+function StatusDot({ status }: { status: string | null }) {
+	const { color, label } =
+		status === null
+			? { color: "bg-muted-foreground/40", label: "No runs yet" }
+			: status === "RUNNING" || status === "WAITING_FOR_INPUT"
+				? { color: "bg-sky-500", label: "In progress" }
+				: status === "SUCCESS"
+					? { color: "bg-emerald-500", label: "Last run succeeded" }
+					: {
+							color: "bg-red-500",
+							label: "Last run did not complete",
+						};
 	return (
-		<div className="rounded-lg border bg-card p-3">
-			<p className="text-muted-foreground text-xs">{label}</p>
-			<p className="mt-1 font-semibold text-lg">{value}</p>
-		</div>
+		<span
+			className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full ${color}`}
+			role="img"
+			aria-label={label}
+			title={label}
+		/>
 	);
 }
 
-function BreakdownList({
-	title,
-	counts,
-	labels,
-	total,
+function MirthStatCell({
+	value,
+	tone,
 }: {
-	title: string;
-	counts: Record<string, number>;
-	labels: Record<string, string>;
-	total: number;
+	value: number;
+	tone?: "success" | "error";
 }) {
-	const entries = Object.entries(counts).filter(([, count]) => count > 0);
+	const toneClasses =
+		tone === "success"
+			? "text-emerald-600"
+			: tone === "error" && value > 0
+				? "text-red-600"
+				: "text-foreground";
 	return (
-		<div className="rounded-lg border bg-card p-3">
-			<p className="font-medium text-xs">{title}</p>
-			{entries.length === 0 ? (
-				<p className="mt-2 text-muted-foreground text-xs">
-					No data yet.
-				</p>
-			) : (
-				<ul className="mt-2 flex flex-col gap-1.5">
-					{entries.map(([key, count]) => (
-						<li
-							key={key}
-							className="flex items-center justify-between text-xs"
-						>
-							<span className="text-muted-foreground">
-								{labels[key] ?? key}
-							</span>
-							<span className="font-medium">
-								{count}
-								{total > 0 && (
-									<span className="ml-1 text-muted-foreground/70">
-										({Math.round((count / total) * 100)}%)
-									</span>
-								)}
-							</span>
-						</li>
-					))}
-				</ul>
-			)}
-		</div>
+		<td
+			className={`border-border border-l px-3 py-2 text-right font-medium tabular-nums ${toneClasses}`}
+		>
+			{value}
+		</td>
 	);
 }
 
-/** Summary stats computed client-side over the run page `RunsTab` already loaded. */
+/** Mirth Connect-style dashboard: a dense channel-statistics table, remapped onto automation run outcomes. */
 export function RunHistoryDashboard({ runs }: RunHistoryDashboardProps) {
 	const stats = computeRunDashboardStats(runs);
+	const counts = toMirthStyleCounts(stats);
+	const triggerEntries = Object.entries(stats.triggerCounts).filter(
+		([, count]) => count > 0,
+	);
 
 	return (
 		<div className="flex flex-col gap-3">
-			<div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-				<StatCard label="Total runs" value={String(stats.totalRuns)} />
-				<StatCard
-					label="Success rate"
-					value={
-						stats.successRatePct === null
-							? "—"
-							: `${Math.round(stats.successRatePct)}%`
-					}
-				/>
-				<StatCard
-					label="Avg duration"
-					value={
-						stats.avgDurationMs === null
-							? "—"
-							: formatDurationMs(stats.avgDurationMs)
-					}
-				/>
+			<div className="overflow-hidden rounded-lg border">
+				<table className="w-full border-collapse text-xs">
+					<thead>
+						<tr className="bg-muted/50 text-muted-foreground uppercase tracking-wide">
+							<th className="w-8 px-3 py-2 text-left font-medium" />
+							<th className="px-3 py-2 text-left font-medium">
+								Automation
+							</th>
+							<th className="border-border border-l px-3 py-2 text-right font-medium">
+								Received
+							</th>
+							<th className="border-border border-l px-3 py-2 text-right font-medium">
+								Filtered
+							</th>
+							<th className="border-border border-l px-3 py-2 text-right font-medium">
+								Queued
+							</th>
+							<th className="border-border border-l px-3 py-2 text-right font-medium">
+								Sent
+							</th>
+							<th className="border-border border-l px-3 py-2 text-right font-medium">
+								Errored
+							</th>
+							<th className="border-border border-l px-3 py-2 text-right font-medium">
+								Avg Time
+							</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr className="bg-card">
+							<td className="px-3 py-2">
+								<StatusDot status={stats.latestStatus} />
+							</td>
+							<td className="px-3 py-2 font-medium">
+								This automation
+							</td>
+							<MirthStatCell value={counts.received} />
+							<MirthStatCell value={counts.filtered} />
+							<MirthStatCell value={counts.queued} />
+							<MirthStatCell value={counts.sent} tone="success" />
+							<MirthStatCell
+								value={counts.errored}
+								tone="error"
+							/>
+							<td className="border-border border-l px-3 py-2 text-right tabular-nums">
+								{stats.avgDurationMs === null
+									? "—"
+									: formatDurationMs(stats.avgDurationMs)}
+							</td>
+						</tr>
+					</tbody>
+				</table>
 			</div>
-			<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-				<BreakdownList
-					title="Runs by status"
-					counts={stats.statusCounts}
-					labels={STATUS_LABELS}
-					total={stats.totalRuns}
-				/>
-				<BreakdownList
-					title="Runs by trigger"
-					counts={stats.triggerCounts}
-					labels={TRIGGER_LABELS}
-					total={stats.totalRuns}
-				/>
+
+			<div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border bg-card px-3 py-2 text-muted-foreground text-xs">
+				<span className="font-medium text-foreground">
+					Triggered by:
+				</span>
+				{triggerEntries.length === 0 ? (
+					<span>No data yet.</span>
+				) : (
+					triggerEntries.map(([key, count]) => (
+						<span key={key}>
+							{TRIGGER_LABELS[key] ?? key}: {count}
+						</span>
+					))
+				)}
+				<span className="ml-auto text-muted-foreground/70">
+					Based on the {stats.totalRuns} most recently loaded run
+					{stats.totalRuns === 1 ? "" : "s"}.
+				</span>
 			</div>
-			<p className="text-muted-foreground/70 text-xs">
-				Based on the {stats.totalRuns} most recently loaded run
-				{stats.totalRuns === 1 ? "" : "s"}.
-			</p>
 		</div>
 	);
 }
