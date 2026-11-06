@@ -5,7 +5,7 @@ import {
 	SlidersHorizontal,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { usePixel } from "@semoss/sdk/react";
+import { useConfig, usePixel } from "@semoss/sdk/react";
 import type { Engine, Project } from "@semoss/shared";
 import {
 	Badge,
@@ -20,13 +20,12 @@ import {
 	formatUnderscoreLabel,
 	toTitleCase,
 } from "@semoss/utility/text";
-import { useConfig } from "@/hooks";
-import { getTagColorPalette } from "@/utility";
 import {
 	CATALOG_ACCESS_FILTERS,
 	type CatalogAccessFilter,
 	isProjectType,
 } from "@/utility/catalog";
+import { getTagColorPalette } from "@/utility/tags";
 
 export interface CatalogFilterboxProps {
 	/** Determined to get filter keys for Engines/App */
@@ -55,13 +54,21 @@ export interface CatalogFilterboxProps {
 
 const COLLAPSED_ITEM_LIMIT = 8;
 
+/**
+ * A catalog's filters: the access filters, when given, then a section for each
+ * metadata key the server marks filterable, with its values and how many
+ * resources have each. Open beside the catalog on wide screens and folded
+ * away on narrow ones.
+ */
 export const CatalogFilterBox = (props: CatalogFilterboxProps) => {
 	const { type, projectTypes, filters, onChange, access, onAccessChange } =
 		props;
 
-	const projectMetaKeys = useConfig((state) => state.config.projectMetaKeys);
+	const projectMetaKeys = useConfig(
+		(state) => state.config?.projectMetaKeys ?? [],
+	);
 	const databaseMetaKeys = useConfig(
-		(state) => state.config.databaseMetaKeys,
+		(state) => state.config?.databaseMetaKeys ?? [],
 	);
 
 	const [filterSearch, setFilterSearch] = useState("");
@@ -187,19 +194,10 @@ export const CatalogFilterBox = (props: CatalogFilterboxProps) => {
 		};
 
 		updateMatch(mediaQuery);
-
-		if (mediaQuery.addEventListener) {
-			mediaQuery.addEventListener("change", updateMatch);
-		} else {
-			mediaQuery.addListener(updateMatch);
-		}
+		mediaQuery.addEventListener("change", updateMatch);
 
 		return () => {
-			if (mediaQuery.removeEventListener) {
-				mediaQuery.removeEventListener("change", updateMatch);
-			} else {
-				mediaQuery.removeListener(updateMatch);
-			}
+			mediaQuery.removeEventListener("change", updateMatch);
 		};
 	}, []);
 

@@ -3,6 +3,7 @@
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { useSessionInsight } from "@semoss/sdk/react";
 import {
 	Button,
 	Checkbox,
@@ -28,11 +29,34 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { encodeTextToBase64 } from "@semoss/utility/encoding";
-import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
 import { computeVisibility } from "../shared/import-form.utils";
 
+interface StorageFormProps {
+	/** The storage type's name, shown as the form's title. */
+	title: string;
+	/** Helper text shown below the title. */
+	description: string;
+	/** The storage type's logo, shown beside the title. */
+	icon?: string;
+	/**
+	 * The storage type's fields, from its connection constants, grouped into
+	 * sections by their category. Left untyped: the field configs are not
+	 * modeled yet, and their shapes vary by type.
+	 */
+	fields;
+	/** Fields shown folded away under Advanced. */
+	advanced;
+	/** Each section's description, by field category. */
+	categoryDescription: Record<string, string>;
+}
+
+/**
+ * Adds a storage engine of the chosen type to the catalog. A field's pixel,
+ * run when the form opens, can fill its value or its options. A field marked
+ * encode: "base64" is sent encoded.
+ */
 export const StorageForm = ({
 	title,
 	description,
@@ -40,7 +64,7 @@ export const StorageForm = ({
 	fields,
 	advanced,
 	categoryDescription,
-}) => {
+}: StorageFormProps) => {
 	const [openAdvanced, setOpenAdvanced] = useState(false);
 	const [resolvedFields, setResolvedFields] = useState(fields);
 	const [isValidDatabaseName, setIsValidDatabaseName] =
@@ -65,7 +89,7 @@ export const StorageForm = ({
 	});
 
 	const watchedFieldRef = useRef({});
-	const runPixel = useSession((state) => state.runPixel);
+	const { run: runPixel } = useSessionInsight();
 	const navigate = useNavigate();
 	const defaultFields = resolvedFields;
 	const advancedFields = advanced;
@@ -217,7 +241,7 @@ export const StorageForm = ({
 			return false;
 		}
 
-		if (output.exists) {
+		if ((output as { exists?: boolean }).exists) {
 			setFocus(field.key);
 			setIsValidDatabaseName(true);
 			return false;

@@ -21,7 +21,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { buildInitials, hashString } from "@semoss/utility/text";
-import { PromptModal } from "../../../pages/prompt/PromptModal";
+import { PromptModal } from "../../../pages/prompt/prompt-modal";
 import type { Prompt } from "../prompt.types";
 import { PromptDeleteModal } from "../prompt-delete-modal";
 
@@ -70,13 +70,26 @@ const formatUpdatedAgo = (dateString?: string | null): string | null => {
 };
 
 interface PromptCardProps {
+	/** The prompt to show */
 	prompt: Prompt;
+
+	/** Called when the card is clicked */
 	onClick: (p: Prompt) => void;
+
+	/** A catalog card, or a row of a list. Defaults to a card. */
 	variant?: "catalog" | "row";
+
+	/** Whether the user owns the prompt, which lets them edit and delete it */
 	isOwner?: boolean;
+
+	/** Called after the prompt is deleted */
 	onDelete?: (p: Prompt) => void;
 }
 
+/**
+ * A prompt in the prompt library, as a card or a list row, with its details and
+ * actions to copy its ID, open, duplicate, edit and delete it.
+ */
 export const PromptCard = (props: PromptCardProps) => {
 	const {
 		prompt,

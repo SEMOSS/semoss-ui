@@ -49,7 +49,7 @@ source barrel before adding a new public contract.
 
 | Package | What it provides | Main entry point | Representative APIs or surfaces | Typical use | Scope |
 | --- | --- | --- | --- | --- | --- |
-| `@semoss/client` | Main SEMOSS web application | `packages/client/src/main.tsx`, `App.tsx` | Domain APIs for auth, projects, engines, databases, rooms, teams, themes, access, GitHub, and guardrails; `useRootStore`; feature contexts | Primary browser application | Application-internal |
+| `@semoss/client` | Main SEMOSS web application | `packages/client/src/main.tsx`, `app.tsx` | Domain APIs for auth, projects, engines, databases, rooms, teams, themes, access, GitHub, and guardrails; `useRootStore`; feature contexts | Primary browser application | Application-internal |
 | `@semoss/playground` | Chat and room-oriented application | `packages/playground/src/main.tsx`, `App.tsx` | Chat/room stores, input and response message models, playground routes and views | Browser chat/playground experience | Application-internal |
 | `@semoss/terminal` | Embedded terminal and terminal panels | `packages/terminal/src/index.ts` | Terminal components, console/panel surfaces, provider and terminal hooks | Embedded by client or used as a standalone app | Embeddable application API |
 | `@semoss/automation` | Visual workflow editor and automation run UI | `packages/automation/src/index.ts` | `AutomationCanvas`, `InspectorTab`, `RunsTab`, `AgentRunDialog`, automation document/node/run types | Embedded by client or used through the standalone/MCP surface | Embeddable application API |

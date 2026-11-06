@@ -1,7 +1,7 @@
 import { Copy, Plus, Trash2 } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { Role } from "@semoss/sdk";
-import { usePixel } from "@semoss/sdk/react";
+import { usePixel, useSessionInsight } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -39,7 +39,6 @@ import {
 	zodResolver,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import { useSession } from "@/hooks";
 import {
 	collectGuardrailConfigIssues,
 	createGuardrailPipeline,
@@ -89,7 +88,7 @@ export const EngineGuardrailSettings = ({
 	permission,
 	onUpdated,
 }: EngineGuardrailSettingsProps) => {
-	const runPixel = useSession((state) => state.runPixel);
+	const { run: runPixel } = useSessionInsight();
 	const fieldId = useId();
 	const ruleSelectId = useId();
 	const isEditable = permission === "OWNER" || permission === "EDIT";

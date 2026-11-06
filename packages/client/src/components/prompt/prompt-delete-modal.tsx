@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSessionInsight } from "@semoss/sdk/react";
 import {
 	Button,
 	Dialog,
@@ -9,19 +10,28 @@ import {
 	DialogTitle,
 	toast,
 } from "@semoss/ui/next";
-import { useSession } from "@/hooks";
 
 interface PromptDeleteModalProps {
+	/** Whether the modal is open */
 	isOpen: boolean;
+
+	/** Close the modal; called after a delete, whether or not it worked */
 	onClose(): void;
+
+	/** ID of the prompt to delete */
 	promptId: string;
+
+	/** Called once the prompt is deleted */
 	onDelete?: () => void;
 }
 
+/**
+ * Confirms, then deletes a prompt.
+ */
 export const PromptDeleteModal = (props: PromptDeleteModalProps) => {
 	const { isOpen, onClose, promptId, onDelete } = props;
 
-	const runPixel = useSession((state) => state.runPixel);
+	const { run: runPixel } = useSessionInsight();
 
 	const [loading, setLoading] = useState(false);
 

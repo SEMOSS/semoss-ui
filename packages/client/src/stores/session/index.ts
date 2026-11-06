@@ -1,4 +1,1 @@
-export {
-	createSessionStore,
-	type SessionStoreState,
-} from "./session.store";
+export { createSessionAccessStore } from "./session-access.store";

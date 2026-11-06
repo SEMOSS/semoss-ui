@@ -4,7 +4,10 @@
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { console as getPixelConsole } from "@semoss/sdk/react";
+import {
+	console as getPixelConsole,
+	useSessionInsight,
+} from "@semoss/sdk/react";
 import { PairedFileUpload, type PairedFileUploadRow } from "@semoss/shared";
 import {
 	Button,
@@ -33,7 +36,6 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { capitalize } from "@semoss/utility/text";
-import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
 import { computeOptions, computeVisibility } from "../shared/import-form.utils";
@@ -46,6 +48,10 @@ import { MetaModelConnections } from "./metamodel-editor-jdbc";
 const hasParameterizedValue = (str: string) => /<([^>]+)>/.test(str);
 const CONSOLE_POLL_INTERVAL_MS = 1000;
 
+/**
+ * What a predict pixel returns for an uploaded file: its columns and their
+ * types, and its suggested tables and relations.
+ */
 export interface ParsedResult {
 	headers: string[];
 	dataTypes: Record<string, string>;
@@ -60,6 +66,35 @@ export interface ParsedResult {
 	nodeProp: Record<string, string[]>;
 }
 
+interface DatabaseFormProps {
+	/**
+	 * The tab the database type was picked from. Connections reads the
+	 * database's tables and views to pick from; File Uploads uploads files.
+	 */
+	selectedTab: string;
+	/** The database type's name: the form's title, and how an Excel or ZIP upload is read. */
+	title: string;
+	/** Helper text shown below the title. */
+	description: string;
+	/** The database type's logo, shown beside the title. */
+	icon?: string;
+	/**
+	 * The database type's fields, from its connection constants, grouped into
+	 * sections by their category. Left untyped: the field configs are not
+	 * modeled yet, and their shapes vary by type.
+	 */
+	fields;
+	/** Fields shown folded away under Advanced. */
+	advanced;
+	/** Each section's description, by field category. */
+	categoryDescription: Record<string, string>;
+}
+
+/**
+ * Adds a database of the chosen type to the catalog: a connection, with the
+ * tables and views to bring in, or uploaded files, with their columns or
+ * metamodel to review before the import.
+ */
 export const DatabaseForm = ({
 	selectedTab,
 	title,
@@ -68,7 +103,7 @@ export const DatabaseForm = ({
 	fields,
 	advanced,
 	categoryDescription,
-}) => {
+}: DatabaseFormProps) => {
 	const [step, setStep] = useState<
 		"fileUpload" | "table" | "metaModel" | "connections"
 	>("fileUpload");
@@ -127,9 +162,7 @@ export const DatabaseForm = ({
 	const debounceTimeoutsRef = useRef<
 		Record<string, ReturnType<typeof setTimeout>>
 	>({});
-	const runPixel = useSession((state) => state.runPixel);
-	const upload = useSession((state) => state.upload);
-	const insightID = useSession((state) => state.insightID);
+	const { run: runPixel, upload, insightId } = useSessionInsight();
 	const navigate = useNavigate();
 	const defaultFields = resolvedFields;
 	const advancedFields = advanced;
@@ -497,7 +530,6 @@ export const DatabaseForm = ({
 	const runPixelWithConsole = async <O extends unknown[] | []>(
 		pixel: string,
 	) => {
-		const insightId = insightID;
 		if (!insightId) {
 			throw new Error("Missing insight ID for database import request.");
 		}

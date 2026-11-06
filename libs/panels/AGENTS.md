@@ -51,9 +51,11 @@ Panels call `useAccess(type, id)`, which reads whatever store the nearest `Acces
 carries. The contract is structural (`StoreApi<PermissionCache>`) so a host can fold the cache into
 a bigger store:
 
-- **The client** folds `createPermissionCache` into its session store, so permissions sit beside
-  the user they belong to and are **cleared on logout** — without that, one user's `OWNER` survives
-  into the next user's session in the same tab.
+- **The client** mirrors the SDK session's `Session.permissions` into a `PermissionCache` store
+  (`createSessionAccessStore` in its `stores/session/`), so its workbenches and the panels share
+  one cache that is **cleared on every sign in and out** — without that, one user's `OWNER`
+  survives into the next user's session in the same tab. Once the panels read
+  `Session.permissions` themselves, the client drops that bridge.
 - **A host with no session** (the playground, a test) mounts `createAccessStore()`.
 
 Worth knowing when reasoning about cost: an `INSIGHT` permission resolves to `"EDIT"` with no

@@ -1,8 +1,8 @@
 import { Link2, Link2Off, Pencil } from "lucide-react";
 import { useCallback, useEffect, useId, useState } from "react";
+import { useSessionInsight } from "@semoss/sdk/react";
 import { Button, H4, Input, Label, Spinner, toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import { useSession } from "@/hooks";
 
 /**
  * Placeholder the backend returns in place of a stored credential. Must match
@@ -54,7 +54,7 @@ export const RemoteMcpConnection = ({
 	projectId,
 	onChange,
 }: RemoteMcpConnectionProps) => {
-	const runPixel = useSession((state) => state.runPixel);
+	const { run: runPixel } = useSessionInsight();
 
 	const endpointId = useId();
 	const schemeId = useId();

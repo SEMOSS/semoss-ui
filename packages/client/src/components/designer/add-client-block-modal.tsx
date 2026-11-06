@@ -3,6 +3,7 @@ import { ArrowLeft, Eye, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useBlocks } from "@semoss/renderer";
+import { useSessionInsight } from "@semoss/sdk/react";
 import {
 	Button,
 	Dialog,
@@ -22,18 +23,26 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useSession } from "@/hooks";
-import { getBlockElement } from "@/stores";
+import { isRecord } from "@semoss/utility/object";
+import { getBlockElement } from "@/stores/designer/designer.utility";
 import { SECTION_ORDER } from "../blocks-workspace/menus/default-menu";
 import type { DesignerMenuItem } from "../blocks-workspace/menus/menu-types";
 import { CommunityLayers } from "./CommunityLayers";
 
 interface EditDetailsModalProps {
+	/** Whether the modal is open */
 	isOpen: boolean;
-	// biome-ignore lint/suspicious/noExplicitAny: complex nested block shape
-	selected: any;
+
+	/** ID of the block to add, or of the client block being edited */
+	selected: string;
+
+	/** Close the modal */
 	onClose: (reset?: boolean) => void;
+
+	/** Edit an existing client block rather than add a new one */
 	isEdit?: boolean;
+
+	/** The client block being edited */
 	block_json?: DesignerMenuItem;
 }
 
@@ -42,12 +51,19 @@ interface AddAsClientBlockTypes {
 	section: string;
 	helperText: string;
 	visibility: "private" | "public";
-	// biome-ignore lint/suspicious/noExplicitAny: block JSON is untyped
-	block_json: any;
+	block_json: Record<string, unknown>;
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: generic dict type
-type Dict<T = any> = Record<string, T>;
+/**
+ * The client block being edited: a copy of its menu entry, updated as the
+ * layers panel and the fields change it.
+ */
+interface LocalBlockItem extends Partial<Omit<DesignerMenuItem, "json">> {
+	/** The block's JSON, as the layers panel last sent it */
+	json?: unknown;
+}
+
+type Dict<T = unknown> = Record<string, T>;
 
 interface ScanResult {
 	queries: Dict;
@@ -62,11 +78,16 @@ const AddAsClientBlock: AddAsClientBlockTypes = {
 	block_json: {},
 };
 
+/**
+ * Save the selected block, with the queries and variables it uses, as a client
+ * block in the blocks menu, or edit a client block already there. Adding offers
+ * a preview image of the block first.
+ */
 export const AddClientBlockModal = (props: EditDetailsModalProps) => {
 	const { isOpen, selected, onClose, isEdit, block_json } = props;
 	const { control, setValue, reset, handleSubmit } =
 		useForm<AddAsClientBlockTypes>({ defaultValues: AddAsClientBlock });
-	const runPixel = useSession((state) => state.runPixel);
+	const { run: runPixel } = useSessionInsight();
 	const { state } = useBlocks();
 	const allowedKeys = ["widget", "data", "listeners", "slots", "id"];
 	const [showPreviewModal, setShowPreviewModal] = useState(false);
@@ -74,8 +95,7 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
 		width: number;
 		height: number;
 	}>({ width: 0, height: 0 });
-	// biome-ignore lint/suspicious/noExplicitAny: block item shape varies
-	const [localBlockItem, setLocalBlockItem] = useState<any>([]);
+	const [localBlockItem, setLocalBlockItem] = useState<LocalBlockItem>({});
 	const [imagePreview, setImagePreview] = useState<string | null>(null);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only
@@ -94,25 +114,28 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
 		}
 	}, [isEdit, block_json, setValue, isOpen]);
 
-	// biome-ignore lint/suspicious/noExplicitAny: block JSON is untyped
-	const handleLayersPanelUpdate = (updatedJson: any) => {
-		// biome-ignore lint/suspicious/noExplicitAny: block JSON is untyped
-		setLocalBlockItem((prev: any) => ({
+	// the layers panel sends the whole item, with its new JSON
+	const handleLayersPanelUpdate = (updatedItem: object) => {
+		const json = "json" in updatedItem ? updatedItem.json : undefined;
+		setLocalBlockItem((prev) => ({
 			...prev,
-			json: updatedJson.json,
+			json: json,
 		}));
 	};
 
 	const handleFieldChange = (field: string, value: string) => {
-		// biome-ignore lint/suspicious/noExplicitAny: block item shape varies
-		setLocalBlockItem((prev: any) => ({
+		setLocalBlockItem((prev) => ({
 			...prev,
 			[field]: value,
 		}));
 	};
 
-	// biome-ignore lint/suspicious/noExplicitAny: recursive slot structure is untyped
-	const processSlots = (value: any, blocks: Record<string, any>): any => {
+	// replace each child block id in the slots with that block, recursively,
+	// keeping only the keys a client block stores
+	const processSlots = (
+		value: unknown,
+		blocks: Record<string, Record<string, unknown>>,
+	): unknown => {
 		if (Array.isArray(value)) {
 			return value.map((item) =>
 				typeof item === "string" && item in blocks
@@ -138,9 +161,10 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
 		}
 	};
 
+	// find the queries and variables the block refers to, by id or in {{ }}
+	// bindings, and those the queries refer to in turn
 	const scanBlocks = (
-		// biome-ignore lint/suspicious/noExplicitAny: block structure is untyped
-		blocks: any,
+		blocks: unknown,
 		allQueries: Dict,
 		allVariables: Dict,
 	): ScanResult => {
@@ -149,11 +173,9 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
 
 		const mustacheRE = /{{\s*([^{}\s]+?)\s*}}/g;
 
-		// biome-ignore lint/suspicious/noExplicitAny: generic walk over untyped block tree
-		function walk(root: any) {
+		function walk(root: unknown) {
 			const seen = new WeakSet<object>();
-			// biome-ignore lint/suspicious/noExplicitAny: untyped stack
-			const stack: any[] = [root];
+			const stack: unknown[] = [root];
 
 			while (stack.length) {
 				const node = stack.pop();
@@ -165,28 +187,25 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
 					continue;
 				}
 
-				if (typeof node === "object") {
+				if (isRecord(node)) {
 					if (seen.has(node)) continue;
 					seen.add(node);
 
-					const queryId =
-						// biome-ignore lint/suspicious/noExplicitAny: untyped node
-						(node as any).payload?.queryId ??
-						// biome-ignore lint/suspicious/noExplicitAny: untyped node
-						(node as any).queryId ??
-						// biome-ignore lint/suspicious/noExplicitAny: untyped node
-						(node as any).id;
+					const payload = isRecord(node.payload)
+						? node.payload
+						: undefined;
+					const queryId = payload?.queryId ?? node.queryId ?? node.id;
 
 					if (typeof queryId === "string") qIds.add(queryId);
 
 					if (
-						node.payload &&
-						typeof node.payload.queryId === "string" &&
-						typeof node.payload.cellId === "string"
+						payload &&
+						typeof payload.queryId === "string" &&
+						typeof payload.cellId === "string"
 					) {
 						const alias = state.getAlias(
-							node.payload.queryId,
-							node.payload.cellId,
+							payload.queryId,
+							payload.cellId,
 						);
 						if (alias && alias in allVariables) {
 							vIds.add(alias);
@@ -215,9 +234,8 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
 		const queue = Array.from(qIds);
 
 		while (queue.length) {
-			// biome-ignore lint/style/noNonNullAssertion: queue.length check ensures non-null
-			const qId = queue.pop()!;
-			if (processed.has(qId)) continue;
+			const qId = queue.pop();
+			if (qId === undefined || processed.has(qId)) continue;
 			processed.add(qId);
 
 			const qObj = allQueries[qId];
@@ -328,7 +346,7 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
 	};
 
 	const handleCloseModals = () => {
-		setLocalBlockItem([]);
+		setLocalBlockItem({});
 		setShowPreviewModal(false);
 		onClose();
 	};
