@@ -223,5 +223,3 @@ export const replaceFileText = (
 		replacements: occurrences,
 	};
 };
-
-export { countOccurrences } from "@semoss/utility/text";

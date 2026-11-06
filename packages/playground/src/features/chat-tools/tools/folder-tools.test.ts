@@ -10,7 +10,6 @@ import {
 	executeFolderTool,
 	FOLDER_TOOL_NAMES,
 	getUsualFolderToolExecution,
-	isFolderChangeTool,
 	ROOM_FILES_NAME,
 } from "./folder-tools";
 
@@ -151,7 +150,7 @@ describe("buildFolderToolDefinitions", () => {
 		const names = buildFolderToolDefinitions({
 			...context,
 			executionOf: (name) =>
-				isFolderChangeTool(name)
+				getUsualFolderToolExecution(name) === "ask"
 					? null
 					: getUsualFolderToolExecution(name),
 		}).map((definition) => definition.name);

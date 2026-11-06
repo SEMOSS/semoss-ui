@@ -1,9 +1,7 @@
 import { describe, expect, test } from "vitest";
-import { CONNECTOR_SERVICES } from "@/features/connectors/connector.catalog";
 import type { ToolboxTool } from "./chat-tool-info";
 import {
 	type ConnectorAccess,
-	getConnectorAccessIssue,
 	groupConnectorTools,
 } from "./group-connector-tools";
 
@@ -75,40 +73,29 @@ describe("groupConnectorTools", () => {
 	});
 });
 
-describe("getConnectorAccessIssue", () => {
-	const [outlook] = CONNECTOR_SERVICES;
+describe("a service's access issue", () => {
+	const outlookIssue = (overrides: Partial<ConnectorAccess>) =>
+		groupConnectorTools(
+			[tool("MicrosoftOutlookListMail")],
+			access(overrides),
+			label,
+		).groups[0].issue;
 
 	test("says what stops a service's tools, the server's limits first", () => {
 		expect(
-			getConnectorAccessIssue(
-				access({
-					isProviderOffered: () => false,
-					connectedProviders: [],
-				}),
-				outlook,
-			),
+			outlookIssue({
+				isProviderOffered: () => false,
+				connectedProviders: [],
+			}),
 		).toBe("notOffered");
-		expect(
-			getConnectorAccessIssue(
-				access({ isServiceCovered: () => false }),
-				outlook,
-			),
-		).toBe("notCovered");
-		expect(
-			getConnectorAccessIssue(
-				access({ connectedProviders: [] }),
-				outlook,
-			),
-		).toBe("signIn");
-		expect(getConnectorAccessIssue(access(), outlook)).toBeNull();
+		expect(outlookIssue({ isServiceCovered: () => false })).toBe(
+			"notCovered",
+		);
+		expect(outlookIssue({ connectedProviders: [] })).toBe("signIn");
+		expect(outlookIssue({})).toBeNull();
 	});
 
 	test("says nothing about signing in until the logins are read", () => {
-		expect(
-			getConnectorAccessIssue(
-				access({ connectedProviders: null }),
-				outlook,
-			),
-		).toBeNull();
+		expect(outlookIssue({ connectedProviders: null })).toBeNull();
 	});
 });

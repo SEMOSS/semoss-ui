@@ -65,8 +65,8 @@ export const getToolAppId = (meta: ToolOwnerMeta | undefined): string => {
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL ?? "";
 
 export const mcpToPlatformUrl = createMcpPlatformUrl(PLATFORM_URL);
-export const promptToPlatformUrl = createPromptPlatformUrl(PLATFORM_URL);
-export const skillToPlatformUrl = (skillId: string): string =>
+const promptToPlatformUrl = createPromptPlatformUrl(PLATFORM_URL);
+const skillToPlatformUrl = (skillId: string): string =>
 	`${PLATFORM_URL}/#/skill/${skillId}/view`;
 
 /**

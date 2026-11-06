@@ -3,7 +3,7 @@ import type { ToolsRead } from "../use-tools-read";
 import { ToolListStatus } from "./tool-list-status";
 
 /** The bordered list every section's rows sit in. */
-export const TOOL_LIST_CLASS_NAME =
+const TOOL_LIST_CLASS_NAME =
 	"flex flex-col divide-y divide-border overflow-hidden rounded-md border border-border";
 
 /**

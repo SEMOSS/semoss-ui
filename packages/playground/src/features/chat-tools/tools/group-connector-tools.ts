@@ -30,7 +30,7 @@ export type ConnectorAccess = Pick<
 >;
 
 /** One service's tools in the room's toolbox. */
-export interface ConnectorToolGroup {
+interface ConnectorToolGroup {
 	/** The service, such as Outlook. */
 	service: ConnectorService;
 	/** The service's name, as the user reads it. */
@@ -42,7 +42,7 @@ export interface ConnectorToolGroup {
 }
 
 /** One account's problem, naming every app in the toolbox it stops. */
-export interface ConnectorAccessNotice {
+interface ConnectorAccessNotice {
 	providerId: ConnectorProviderId;
 	issue: ConnectorAccessIssue;
 	/** The names of the services it stops, in display order. */
@@ -67,7 +67,7 @@ export interface GroupedConnectorTools {
  * @param service - The service.
  * @return The issue, or null when its tools can run.
  */
-export const getConnectorAccessIssue = (
+const getConnectorAccessIssue = (
 	access: ConnectorAccess,
 	service: ConnectorService,
 ): ConnectorAccessIssue | null => {
