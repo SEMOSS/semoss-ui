@@ -15,7 +15,7 @@ import type {
 import type { CalendarWindow } from "../core/use-calendar-window";
 
 /** Shared day, three-day, and week event canvas. */
-export interface ConnectorCalendarTimelineProps<T> {
+interface ConnectorCalendarTimelineProps<T> {
 	calendar: CalendarWindow;
 	days: ConnectorCalendarDay<T>[];
 	getTitle: (event: T) => string;

@@ -27,7 +27,7 @@ export const APP_SETTINGS_TYPES: Project["project_type"][] = [
 ];
 
 /** One section of a project's Settings tab. */
-export interface ProjectSettingsSection extends CatalogSettingsPanelSection {
+interface ProjectSettingsSection extends CatalogSettingsPanelSection {
 	/**
 	 * Whether a viewer sees the section on a project of a type
 	 *

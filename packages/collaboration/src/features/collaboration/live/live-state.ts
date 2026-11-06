@@ -10,7 +10,6 @@ import {
 import { createEmptyWorkspace } from "../state/collaboration.reducer";
 import type {
 	Account,
-	CollaborationCommand,
 	CollaborationState,
 	Memory,
 	MemoryRef,
@@ -556,9 +555,15 @@ export async function loadLiveState(
 }
 
 // a due day is saved as midnight UTC; as a plain date it shows on that day in every time zone
-function dueDay(value: unknown): string | null {
+export function dueDay(value: unknown): string | null {
 	const due = opt(value);
 	return due?.endsWith("T00:00:00Z") ? due.slice(0, 10) : (due ?? null);
+}
+
+/** A due to read in local time: a plain due day becomes its local midnight, so it shows on that day. */
+export function localDue(value: unknown): string | null {
+	const day = dueDay(value);
+	return day && /^\d{4}-\d{2}-\d{2}$/.test(day) ? `${day}T00:00` : day;
 }
 
 function mapStep(step: Row): WorkspaceStep {
@@ -699,20 +704,6 @@ export async function readThreadMessagesPage(
 		hiddenCount: out.hiddenCount ?? 0,
 		unavailableCount: out.unavailableCount ?? 0,
 	};
-}
-
-/** Legacy refresh callers attach the first page to the current owning thread. */
-export async function loadThreadMessages(
-	actions: InsightActions,
-	threadId: string,
-): Promise<(thread: Thread) => CollaborationCommand> {
-	const { messages } = await readThreadMessagesPage(actions, threadId);
-	return (thread) => ({
-		type: "source.import",
-		thread,
-		people: [],
-		workspace: { messages },
-	});
 }
 
 const threadInsightsSchema = z.object({

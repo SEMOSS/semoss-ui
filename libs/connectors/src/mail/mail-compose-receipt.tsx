@@ -10,7 +10,7 @@ import { parseMailReceipt } from "./mail.parsers";
 import type { MailApp } from "./mail-apps";
 
 /** Props for {@link MailComposeReceipt}. */
-export interface MailComposeReceiptProps {
+interface MailComposeReceiptProps {
 	/** The mailbox the email went out from. */
 	app: MailApp;
 	/** The call, which succeeded. */

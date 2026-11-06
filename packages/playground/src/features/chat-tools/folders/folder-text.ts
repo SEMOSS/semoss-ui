@@ -101,7 +101,7 @@ export const decodeTextFile = (
 };
 
 /** A window of lines read from a text file. */
-export interface TextFileSlice {
+interface TextFileSlice {
 	/** The lines in the window, joined with the file's own line breaks. */
 	content: string;
 	/** Number of lines in the whole file. */
@@ -223,5 +223,3 @@ export const replaceFileText = (
 		replacements: occurrences,
 	};
 };
-
-export { countOccurrences } from "@semoss/utility/text";

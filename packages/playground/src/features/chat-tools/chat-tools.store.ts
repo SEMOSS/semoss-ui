@@ -78,12 +78,12 @@ const toToolResponseText = (outcome: FolderToolOutcome): string =>
  * decisions on the calls that wait for them.
  *
  * In chat, every message carries the default tools, the folder tools this
- * browser runs in Chat Files, except the ones the room's settings disable.
+ * browser runs in Room Files, except the ones the room's settings disable.
  * The settings (`defaultTools`) also say which run on their own and which
  * wait for the user's decision in the tool's card; by default reading runs on
  * its own and every change asks. The room's tool loop hands each call to
  * {@link ChatToolsStore.runChatTool}. An agent run brings its own file, shell,
- * and code tools and works in Chat Files, so no folder tools are sent with it.
+ * and code tools and works in Room Files, so no folder tools are sent with it.
  *
  * The settings live in the room's options, which the room saves before each
  * message. Owned by the room store, and so as long lived as the room.
@@ -219,7 +219,7 @@ export class ChatToolsStore {
 		}
 		if (this.getDefaultToolMode(name) === "disabled") {
 			return failure(
-				`${name} is disabled in this chat's settings. Ask the user to allow it in Room Settings if they want this done.`,
+				`${name} is disabled in this chat's settings. Ask the user to allow it in Settings if they want this done.`,
 			);
 		}
 
@@ -304,21 +304,13 @@ export class ChatToolsStore {
 		await message.runMcpToolCall(tool);
 	};
 
-	/**
-	 * Show "Chat Tools" in the room's sidebar: every tool the assistant has
-	 * for the next message, including the ones this browser sends itself.
-	 */
-	openToolsPanel = (): void => {
-		this.room.openSidebarPanel(
-			ROOM_PANEL_TYPES.CHAT_TOOLS,
-			{},
-			getI18n().t("chatTools:panel.title"),
-		);
-	};
-
 	/** Show the room's settings in its sidebar, where the default tools are. */
 	openRoomSettings = (): void => {
-		this.room.openSidebarPanel(ROOM_PANEL_TYPES.CONFIGURATION);
+		this.room.openSidebarPanel(
+			ROOM_PANEL_TYPES.CONFIGURATION,
+			{},
+			getI18n().t("room:workspacePlaces.settings"),
+		);
 	};
 
 	/**

@@ -492,7 +492,6 @@ it("lists a chat linked to a topic made on this page, which the chat knows by it
 		error: "",
 		lastMailCheck: null,
 		refresh: vi.fn(),
-		refreshTopicGoal: vi.fn(),
 		refreshTopic: vi.fn(),
 		isSyncing: false,
 		lastSync: null,

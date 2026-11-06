@@ -17,7 +17,7 @@ import {
 } from "./connector-item-actions";
 
 /** Props for {@link ConnectorItemMenu}. */
-export interface ConnectorItemMenuProps {
+interface ConnectorItemMenuProps {
 	/** The item's actions, or nothing for an item without any. */
 	actions?: ConnectorItemActions | null;
 	/** What the menu opens on, such as the item's row. */

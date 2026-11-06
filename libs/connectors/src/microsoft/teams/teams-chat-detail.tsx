@@ -27,7 +27,7 @@ import { TeamsMessageItem } from "./teams-message-item";
 export const CHAT_MESSAGE_LIMIT = 50;
 
 /** Props for {@link TeamsChatDetail}. */
-export interface TeamsChatDetailProps {
+interface TeamsChatDetailProps {
 	/** The chat. Without a name, as when a search found it, it is read. */
 	chat: TeamsChat;
 	/** Saves the chat and its files into the insight. */

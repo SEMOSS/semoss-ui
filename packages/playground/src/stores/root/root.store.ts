@@ -78,6 +78,7 @@ export class RootStore {
 				enableAgent: true,
 				enableSuggestions: true,
 				enableAgentHarness: false,
+				modeFollowsAgent: false,
 				enableRewrite: true,
 				enablePromptOptimizer: true,
 				enableDarkMode: true,

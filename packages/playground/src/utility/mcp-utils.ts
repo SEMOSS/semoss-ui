@@ -2,6 +2,7 @@ import {
 	type AgentLinks,
 	createMcpPlatformUrl,
 	createPromptPlatformUrl,
+	type MCPConfig,
 } from "@semoss/shared";
 import { MCP_EXECUTION_AGENT_ASK, MCP_EXECUTION_ASK } from "@/constants";
 
@@ -15,6 +16,17 @@ export { isKnowledgeMcp, splitMcpByType } from "@semoss/shared";
  */
 export const isAskExecutionMode = (execution: string | undefined): boolean =>
 	execution === MCP_EXECUTION_ASK || execution === MCP_EXECUTION_AGENT_ASK;
+
+/**
+ * Whether the user can take a selection out of a room in Settings: one they
+ * added, not one the room's agent brings or the room's own toolbox.
+ *
+ * @param item - A toolbox or knowledge selection in the room's options.
+ * @return Whether it can be removed.
+ */
+export const isRemovableToolbox = (
+	item: Pick<MCPConfig, "fromWorkspace" | "fromRoom" | "type">,
+): boolean => !item.fromWorkspace && !item.fromRoom && item.type !== "ROOM";
 
 /**
  * Reserved id the backend puts on SMSS_ENGINE_ID for room scoped tools. There is
@@ -53,8 +65,8 @@ export const getToolAppId = (meta: ToolOwnerMeta | undefined): string => {
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL ?? "";
 
 export const mcpToPlatformUrl = createMcpPlatformUrl(PLATFORM_URL);
-export const promptToPlatformUrl = createPromptPlatformUrl(PLATFORM_URL);
-export const skillToPlatformUrl = (skillId: string): string =>
+const promptToPlatformUrl = createPromptPlatformUrl(PLATFORM_URL);
+const skillToPlatformUrl = (skillId: string): string =>
 	`${PLATFORM_URL}/#/skill/${skillId}/view`;
 
 /**

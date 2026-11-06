@@ -17,7 +17,7 @@ import {
 } from "@mdi/js";
 
 /** A heading the Settings page lists its tiles under. */
-export type SettingsGroup = "ACCOUNT" | "ACCESS" | "MONITORING" | "PLATFORM";
+type SettingsGroup = "ACCOUNT" | "ACCESS" | "MONITORING" | "PLATFORM";
 
 /** The Settings page's headings, in the order it shows them. */
 export const SETTINGS_GROUPS: readonly {

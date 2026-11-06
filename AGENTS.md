@@ -35,6 +35,8 @@ skills supplement the standard; they do not waive reading it for React work.
 - [Mobile development](./skills/mobile-development.skill.md): responsive and touch interfaces.
 - [React form builder](./skills/react-form-builder.skill.md): form fields, validation, and submission.
 - [SDK chat](./skills/sdk-chat.skill.md): rooms, messages, agent runs, approvals, and polling lifecycle.
+- [SDK session](./libs/sdk/skills/session.skill.md): sign in, the user, config, permissions, and
+  which insight a pixel runs in.
 - [Design rulebook](./DESIGN.md): UI composition and styling.
 
 Lint and formatting configuration lives in [biome.json](./biome.json).
@@ -50,7 +52,7 @@ and the owning guides define the exact public entry points and architectural bou
 
 Libraries (`libs/*`, publishable):
 - `@semoss/utility` → Generic text, date, object, JSON, file, encoding, browser, and other functional helpers
-- `@semoss/sdk` → Core SDK (no internal dependencies)
+- `@semoss/sdk` → Core SDK (bundles `@semoss/utility`; no runtime dependencies)
 - `@semoss/ui` → Component library (no internal dependencies)
 - `@semoss/i18n` → Internationalization library (no internal dependencies)
 - `@semoss/shared` → Shared utilities (depends on i18n, sdk, ui, utility)
@@ -60,6 +62,8 @@ Libraries (`libs/*`, publishable):
 - `@semoss/workbench` → Multi-panel dock shell (depends on ui only — deliberately
   domain-agnostic, so it can never import sdk, shared or i18n)
 - `@semoss/panels` → File panels for the dock (depends on i18n, sdk, shared, ui, utility, workbench)
+- `@semoss/config` → Shared Vite/Vitest config and `tsconfig.base.json` (private, not published;
+  dev dependency of every library and application)
 
 The dock and the panels are two layers, in one direction:
 `@semoss/ui ← @semoss/workbench ← @semoss/panels → @semoss/shared → @semoss/sdk`.
@@ -67,6 +71,8 @@ The dock and the panels are two layers, in one direction:
 Applications (`packages/*`, not published):
 - `@semoss/client` → Main web application (depends on automation, i18n, panels, renderer, sdk, shared, terminal, ui, utility, workbench)
 - `@semoss/playground` → Chat (depends on connectors, i18n, panels, sdk, shared, ui, utility, workbench)
+- `@semoss/collaboration` → Collaboration workspace: work, rooms, connectors, routines (depends on
+  automation, connectors, i18n, panels, sdk, shared, ui, utility, workbench)
 - `@semoss/terminal` → Embedded terminal (depends on i18n, panels, sdk, shared, ui, workbench)
 - `@semoss/auditlog-package` → Audit log dashboard (depends on i18n, sdk, shared, ui)
 - `@semoss/automation` → Automation workspace app (depends on i18n, sdk, shared, ui, utility;
@@ -97,16 +103,17 @@ semoss/
 │   ├── connectors/ # @semoss/connectors - Microsoft 365 and Google Workspace viewers
 │   ├── renderer/   # @semoss/renderer - Visualization components
 │   ├── workbench/  # @semoss/workbench - Multi-panel dock shell
-│   └── panels/     # @semoss/panels - File panels for the dock
+│   ├── panels/     # @semoss/panels - File panels for the dock
+│   └── config/     # @semoss/config - Shared Vite/Vitest/tsconfig (private)
 ├── packages/       # Applications (not published)
 │   ├── client/                     # @semoss/client - Main web application
 │   ├── playground/                 # @semoss/playground - Chat
+│   ├── collaboration/              # @semoss/collaboration - Collaboration workspace
 │   ├── terminal/                   # @semoss/terminal - Embedded terminal app
 │   ├── auditlog/                   # @semoss/auditlog-package - Audit log dashboard
 │   ├── automation/                 # @semoss/automation - Automation workspace app
 │   ├── browser-automation/         # @semoss/browser-automation - Browser automation harness
 │   ├── chrome-extension/           # Chrome extension for browser automation
-│   ├── vscode-extension/           # semoss-vscode - VSCode extension
 │   └── cli/                        # @semoss/cli - CLI tooling
 ├── skills/         # Provider-neutral *.skill.md guidance
 ├── pnpm-workspace.yaml
@@ -127,6 +134,7 @@ semoss/
 | `pnpm dev` | Run all packages in dev mode |
 | `pnpm dev:client` | Run client with dependencies |
 | `pnpm dev:playground` | Run playground with dependencies |
+| `pnpm dev:collaboration` | Run collaboration with dependencies |
 | `pnpm dev:terminal` | Run terminal with dependencies |
 | `pnpm build` | Production build all packages |
 | `pnpm build:dev` | Development build all packages |
@@ -134,6 +142,10 @@ semoss/
 | `pnpm test:watch` | Run tests in watch mode |
 | `pnpm check` | Run Biome linting/formatting check |
 | `pnpm fix` | Auto-fix Biome issues |
+| `pnpm clean` | Run Knip to find unused files, dependencies, and exports |
+
+Name test files `*.test.ts` / `*.test.tsx`, never `*.spec.ts`. Existing `*.spec.ts` files
+are not renamed.
 
 ## Design System & Styling
 
@@ -162,7 +174,10 @@ package guide below.
   use different names or syntax.
 - Keep feature policy, UI composition, SDK transport, and orchestration in their
   owning packages. Preserve dependency boundaries: this does not authorize adding
-  utility dependencies to SDK, UI, i18n, workbench, or CLI.
+  utility dependencies to UI, i18n, workbench, or CLI. The SDK may import utility
+  category subpaths only as a devDependency that its build bundles into `dist`, and
+  its public types must not reference utility types, since its declarations are
+  not bundled.
 - Preserve whitespace, timezone, rounding, null/fallback, filename, and error behavior.
   Use compatibility re-exports or small adapters for existing public contracts.
 - Prefer native operations over unnecessary wrappers. Do not add option-heavy

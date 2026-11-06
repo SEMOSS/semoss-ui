@@ -7,7 +7,7 @@ import { GOVERNANCE_NOUNS, type GovernanceType } from "./governance-types";
 import type { GovernanceResource } from "./use-governance-resources";
 
 /** What {@link useDeleteGovernanceResources} gives its caller. */
-export interface DeleteGovernanceResources {
+interface DeleteGovernanceResources {
 	/** Whether the deletes are running */
 	isDeleting: boolean;
 	/**

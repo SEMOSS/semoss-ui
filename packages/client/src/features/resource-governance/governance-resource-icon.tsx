@@ -3,7 +3,7 @@ import { cn } from "@semoss/ui/next";
 import type { GovernanceType } from "./governance-types";
 import type { GovernanceResource } from "./use-governance-resources";
 
-export interface GovernanceResourceIconProps {
+interface GovernanceResourceIconProps {
 	/** The resource's type */
 	entry: GovernanceType;
 	/** The resource */

@@ -17,7 +17,7 @@ import { useOptionalCollaborationSession } from "@/features/collaboration/state/
 import type { ConversationTool } from "@/features/messages/types/message";
 
 /** What Remember or Forget returned (BrainMemoryUtils.toolResult). */
-export interface MemoryToolResult {
+interface MemoryToolResult {
 	status:
 		| "saved"
 		| "updated"

@@ -27,7 +27,7 @@ import {
 	type GuardrailHitLimitScope,
 } from "./guardrail-hit-limit";
 
-export interface GuardrailHitLimitFieldProps {
+interface GuardrailHitLimitFieldProps {
 	/** The limit being edited */
 	value: GuardrailHitLimitFormValue;
 

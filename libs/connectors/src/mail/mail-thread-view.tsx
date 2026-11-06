@@ -24,7 +24,7 @@ import type { MailApp } from "./mail-apps";
 import { MailThreadMessage } from "./mail-thread-message";
 
 /** The most emails of one thread read at once. */
-export const THREAD_LIMIT = 50;
+const THREAD_LIMIT = 50;
 
 /**
  * Read a whole thread with its bodies, from every folder, so the replies the
@@ -80,7 +80,7 @@ export const threadSaveRequest = (
 });
 
 /** Props for {@link MailThreadView}. */
-export interface MailThreadViewProps
+interface MailThreadViewProps
 	extends Pick<ConnectorViewerProps, "isVisible" | "onControlsChange"> {
 	/** Re-focuses the heading when a retained detail is explicitly reopened. */
 	focusRequestId?: number;

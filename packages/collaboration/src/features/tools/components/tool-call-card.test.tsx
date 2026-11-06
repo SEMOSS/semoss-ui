@@ -161,6 +161,8 @@ it("keeps failed compose details and their full error accessible inline", async 
 	workbench.isToolInline.mockReturnValue(true);
 	view.rerender(view.content());
 	expect(details).toHaveAttribute("aria-expanded", "true");
+	// the native overview opens first; the full error stays in the Output tab
+	await userEvent.click(screen.getByRole("tab", { name: "Output" }));
 	expect(
 		screen.getByRole("textbox", { name: "Compose email result" }),
 	).toHaveValue(failure);

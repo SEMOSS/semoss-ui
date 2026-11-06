@@ -12,8 +12,14 @@ it("preserves separate Outlook UIDs even when subjects match", () => {
 		unread: false,
 		hasAttachments: false,
 	};
-	const first = importOutlookMail({ ...base, uid: "one" }, "inbox");
-	const second = importOutlookMail({ ...base, uid: "two" }, "inbox");
+	const first = importOutlookMail(
+		{ ...base, uid: "one", messageId: "<one@example.com>" },
+		"inbox",
+	);
+	const second = importOutlookMail(
+		{ ...base, uid: "two", messageId: "<two@example.com>" },
+		"inbox",
+	);
 	expect(first.nativeId).not.toBe(second.nativeId);
 	expect(first.participants).toEqual([]);
 	expect(first.receivedAt).toBeUndefined();
@@ -22,7 +28,12 @@ it("preserves separate Outlook UIDs even when subjects match", () => {
 it("refuses to import an email that has only been listed", () => {
 	expect(() =>
 		importOutlookMail(
-			{ uid: "one", unread: false, hasAttachments: false },
+			{
+				uid: "one",
+				messageId: "<one@example.com>",
+				unread: false,
+				hasAttachments: false,
+			},
 			"inbox",
 		),
 	).toThrow("Read this email");

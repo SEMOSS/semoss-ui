@@ -44,7 +44,7 @@ import {
 const MODELS_PIXEL = 'META | MyEngines(engineTypes=["MODEL"], noMeta=[true]);';
 
 /** Props for {@link JevPolicyGuardrailForm}. */
-export interface JevPolicyGuardrailFormProps {
+interface JevPolicyGuardrailFormProps {
 	/** The guardrail type's logo, shown beside the form's title. */
 	icon?: string;
 	/** Called with the new guardrail's id once it is created, or with none on cancel. */

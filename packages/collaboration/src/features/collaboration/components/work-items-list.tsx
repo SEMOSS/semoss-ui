@@ -1,5 +1,5 @@
 import { ChevronDown, GripVertical } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
 import {
@@ -17,7 +17,7 @@ import {
 } from "@semoss/ui/next";
 import { pixel } from "@/lib/pixel";
 import { roomPath } from "@/lib/workspace-paths";
-import { runBatch } from "../live/live-state";
+import { localDue, runBatch } from "../live/live-state";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { CollaborationPageHeader } from "./collaboration-page-header";
 import { CollaborationSurface } from "./collaboration-surface";
@@ -39,7 +39,7 @@ interface Step {
 	assigneeName?: string;
 }
 
-export interface Item {
+interface Item {
 	id: string;
 	title: string;
 	proposed: boolean;
@@ -84,8 +84,9 @@ function toItem(row: Row): Item {
 }
 
 function dueLabel(due?: string): { text: string; soon: boolean } | null {
-	if (!due) return null;
-	const at = new Date(due.replace(" ", "T"));
+	const shown = localDue(due);
+	if (!shown) return null;
+	const at = new Date(shown.replace(" ", "T"));
 	if (Number.isNaN(at.getTime())) return null;
 	return {
 		text: at.toLocaleDateString(undefined, {
@@ -192,7 +193,7 @@ function ItemRow({
 	draggable,
 	onDragStart,
 	onDragOver,
-	onDrop,
+	onDragEnd,
 }: {
 	item: Item;
 	compact?: boolean;
@@ -200,7 +201,7 @@ function ItemRow({
 	draggable?: boolean;
 	onDragStart?: () => void;
 	onDragOver?: () => void;
-	onDrop?: () => void;
+	onDragEnd?: () => void;
 }) {
 	const navigate = useNavigate();
 	const due = dueLabel(item.due);
@@ -216,10 +217,9 @@ function ItemRow({
 				event.preventDefault();
 				onDragOver?.();
 			}}
-			onDrop={(event) => {
-				event.preventDefault();
-				onDrop?.();
-			}}
+			onDrop={(event) => event.preventDefault()}
+			// the dragged row hears the end even when the drop misses every row
+			onDragEnd={onDragEnd}
 			className={cn(
 				"group flex min-w-0 items-center gap-3 transition-colors hover:bg-accent",
 				rowPad(compact),
@@ -535,6 +535,7 @@ export function WorkItems({
 }) {
 	const { items, setItems, error, run, isMine } = useWorkItems();
 	const [dragId, setDragId] = useState<string | null>(null);
+	const dragFrom = useRef("");
 	const [showOthers, setShowOthers] = useState(false);
 	const compact = Boolean(limit);
 
@@ -582,7 +583,9 @@ export function WorkItems({
 	};
 	const saveOrder = () => {
 		setDragId(null);
-		void run(pixel("WorkReorderItems", { taskIds: mine.map((i) => i.id) }));
+		const taskIds = mine.map((i) => i.id);
+		if (JSON.stringify(taskIds) !== dragFrom.current)
+			void run(pixel("WorkReorderItems", { taskIds }));
 	};
 
 	return (
@@ -628,9 +631,14 @@ export function WorkItems({
 							compact={compact}
 							isMine={isMine}
 							draggable={!compact}
-							onDragStart={() => setDragId(item.id)}
+							onDragStart={() => {
+								setDragId(item.id);
+								dragFrom.current = JSON.stringify(
+									mine.map((i) => i.id),
+								);
+							}}
 							onDragOver={() => moveTo(item.id)}
-							onDrop={saveOrder}
+							onDragEnd={saveOrder}
 						/>
 					))}
 				</ul>

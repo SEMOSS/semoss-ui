@@ -24,7 +24,7 @@ const LABELED_COLUMNS: Partial<
 	TARGET_TYPE: AUDIT_TARGET_LABELS,
 };
 
-export interface AuditFieldValueProps {
+interface AuditFieldValueProps {
 	/** The field */
 	column: AuditEventColumn;
 	/** Its recorded value */

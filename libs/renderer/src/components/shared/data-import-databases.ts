@@ -1,4 +1,4 @@
-export interface DataImportDatabase {
+interface DataImportDatabase {
 	engine_id: string;
 	engine_name: string;
 	engine_type: string;

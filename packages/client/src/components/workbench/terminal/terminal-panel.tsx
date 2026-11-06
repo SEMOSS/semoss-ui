@@ -14,7 +14,7 @@ export interface TerminalConfig {
 }
 
 /** Props for {@link TerminalPanelContent}. */
-export interface TerminalPanelContentProps extends WorkbenchPanelProps {
+interface TerminalPanelContentProps extends WorkbenchPanelProps {
 	/**
 	 * The project the terminal runs in: its insight opens in that project and
 	 * the console suggests the project's own reactors. Without one, the

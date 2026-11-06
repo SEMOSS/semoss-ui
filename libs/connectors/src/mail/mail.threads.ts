@@ -161,7 +161,7 @@ export const stripQuotedHistory = (text: string): string => {
 };
 
 /** An email's own text, and whether the backend cut it short. */
-export interface OwnText {
+interface OwnText {
 	text: string;
 	isTruncated: boolean;
 }

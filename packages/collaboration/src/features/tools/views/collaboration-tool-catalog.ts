@@ -148,7 +148,7 @@ export const COLLABORATION_TOOL_VIEWS = {
 export type CollaborationToolName = keyof typeof COLLABORATION_TOOL_VIEWS;
 
 /** Recognize exact built-in names without taking over an attached MCP with a similar name. */
-export function collaborationToolName(
+function collaborationToolName(
 	tool: ConversationTool,
 ): CollaborationToolName | undefined {
 	if (

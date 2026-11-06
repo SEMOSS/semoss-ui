@@ -28,10 +28,7 @@ interface AccessReadyState {
 	refresh: () => Promise<Role>;
 }
 
-export type AccessState =
-	| AccessLoadingState
-	| AccessErrorState
-	| AccessReadyState;
+type AccessState = AccessLoadingState | AccessErrorState | AccessReadyState;
 
 /** The host's permission cache, or a throw naming the missing provider. */
 export const useAccessStore = () => {

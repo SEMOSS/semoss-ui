@@ -48,7 +48,7 @@ const TABS: readonly GovernanceTab[] = [
 	},
 ];
 
-export interface GovernanceResourceDetailsProps {
+interface GovernanceResourceDetailsProps {
 	/** The resource's type */
 	entry: GovernanceType;
 	/** The resource's id */

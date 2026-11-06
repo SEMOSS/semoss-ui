@@ -5,14 +5,14 @@ import type { AgentRunRoom } from "@/api/agent-runs";
 import { agentRoomKey } from "./agent-room-table";
 
 /** A room shown in place of the list */
-export interface OpenAgentRoom {
+interface OpenAgentRoom {
 	/** The room, as the list has it */
 	room: AgentRunRoom;
 	/** The one run to load, such as from a link to it, or null for every run */
 	runId: string | null;
 }
 
-export interface UseOpenAgentRoomResult {
+interface UseOpenAgentRoomResult {
 	/** Goes on the element holding the list and the room, whose ancestors scroll */
 	rootRef: RefObject<HTMLDivElement | null>;
 	/** The room shown, or null while the list is */

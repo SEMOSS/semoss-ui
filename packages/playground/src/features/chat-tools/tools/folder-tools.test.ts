@@ -10,7 +10,6 @@ import {
 	executeFolderTool,
 	FOLDER_TOOL_NAMES,
 	getUsualFolderToolExecution,
-	isFolderChangeTool,
 	ROOM_FILES_NAME,
 } from "./folder-tools";
 
@@ -151,7 +150,7 @@ describe("buildFolderToolDefinitions", () => {
 		const names = buildFolderToolDefinitions({
 			...context,
 			executionOf: (name) =>
-				isFolderChangeTool(name)
+				getUsualFolderToolExecution(name) === "ask"
 					? null
 					: getUsualFolderToolExecution(name),
 		}).map((definition) => definition.name);
@@ -192,7 +191,7 @@ describe("buildFolderToolDefinitions", () => {
 	test("the chat's own files are described as shared with its other tools", () => {
 		const [list] = buildFolderToolDefinitions(context);
 		expect(list.description).toContain(
-			`${ROOM_FILES_NAME} (this chat's own files)`,
+			`${ROOM_FILES_NAME} (this room's own files)`,
 		);
 		expect(list.description).toContain(
 			"the chat's other tools read and write them too",

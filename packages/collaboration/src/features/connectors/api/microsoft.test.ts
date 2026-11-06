@@ -22,6 +22,10 @@ vi.mock("@semoss/sdk", () => ({ download: vi.fn(), oauth: vi.fn() }));
 function response(output: unknown) {
 	return { pixelReturn: [{ output, operationType: [] }] };
 }
+/** The file name a download pixel asked the backend to save under. */
+function stagedName(statement: string): string {
+	return JSON.parse(/fileName=(\[[^\]]*\])/.exec(statement)?.[1] ?? "[]")[0];
+}
 const mail = {
 	id: "mail-1",
 	subject: "A subject",
@@ -269,20 +273,16 @@ describe("Microsoft source adapters", () => {
 			}),
 		).rejects.toBeInstanceOf(UncertainDraftError);
 	});
-	it("stages unique files and obtains an export key before browser download", async () => {
-		vi.spyOn(crypto, "randomUUID").mockReturnValue(
-			"11111111-1111-1111-1111-111111111111",
-		);
-		const name = "11111111-1111-1111-1111-111111111111-report.pdf";
+	it("stages files and obtains an export key before browser download", async () => {
 		const run = vi
 			.fn()
-			.mockResolvedValueOnce(
+			.mockImplementationOnce(async (statement: string) =>
 				response({
 					success: true,
 					id: "mail",
 					attachmentId: "attachment",
 					name: "report.pdf",
-					filePath: name,
+					filePath: stagedName(statement),
 					size: 10,
 				}),
 			)
@@ -295,11 +295,41 @@ describe("Microsoft source adapters", () => {
 			"report.pdf",
 		);
 		await downloadStagedAttachment({ run } as never, file);
-		expect(run.mock.calls[0]?.[0]).toContain(`fileName=["${name}"]`);
+		expect(file.filePath).toMatch(/^[0-9a-z]+-report\.pdf$/);
 		expect(run.mock.calls[1]?.[0]).toBe(
-			`DownloadInsightAsset(filePath=["${name}"]);`,
+			`DownloadInsightAsset(filePath=["${file.filePath}"]);`,
 		);
 		expect(download).toHaveBeenCalledWith("insight", "download-key");
+	});
+	it("stages an Office file with its text copy, under one name per attachment", async () => {
+		const run = vi.fn(async (statement: string) =>
+			response({
+				success: true,
+				id: "mail",
+				attachmentId: statement.includes('attachmentId=["a2"]')
+					? "a2"
+					: "a1",
+				name: "Plan.docx",
+				filePath: stagedName(statement),
+				size: 10,
+				textPath: `${stagedName(statement)}.txt`,
+			}),
+		);
+		const stage = (attachmentId: string) =>
+			stageMailAttachment(
+				{ run } as never,
+				"insight",
+				"mail",
+				attachmentId,
+				"Plan.docx",
+				true,
+			);
+		const file = await stage("a1");
+		expect(run.mock.calls[0]?.[0]).toContain("includeText=[true]");
+		expect(file.textPath).toBe(`${file.filePath}.txt`);
+		// a retry replaces the copy rather than leaving another beside it
+		expect((await stage("a1")).filePath).toBe(file.filePath);
+		expect((await stage("a2")).filePath).not.toBe(file.filePath);
 	});
 	it("rejects staging receipts from a different selected file", async () => {
 		const run = vi.fn().mockResolvedValue(

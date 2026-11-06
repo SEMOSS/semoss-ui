@@ -57,7 +57,7 @@ const buildSchema = (currentName?: string) =>
 
 type TeamFormValues = z.infer<ReturnType<typeof buildSchema>>;
 
-export interface TeamFormDialogProps {
+interface TeamFormDialogProps {
 	/** Whether the dialog is open */
 	open: boolean;
 	/** The team to edit, or null to create one */

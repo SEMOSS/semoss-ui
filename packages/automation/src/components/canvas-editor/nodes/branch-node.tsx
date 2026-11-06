@@ -33,7 +33,7 @@ import {
 	LOOP_PATH_HIGHLIGHT_BORDER_CLASS,
 } from "../flow-colors";
 
-export type BranchNodeData = {
+type BranchNodeData = {
 	step: AutomationGraphNode;
 	index: number;
 	runStatus?: StepRunStatus;

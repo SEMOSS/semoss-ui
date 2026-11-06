@@ -33,7 +33,7 @@ type FlowNodeData = {
 
 /** One item on the graph's third column: either a single non-tool activity,
  * or every call made to one tool folded into a single node. */
-export type AgentRunGraphItem =
+type AgentRunGraphItem =
 	| { id: string; kind: "activity"; activity: AutomationAgentRunActivity }
 	| { id: string; kind: "toolGroup"; group: AutomationAgentRunToolGroup };
 

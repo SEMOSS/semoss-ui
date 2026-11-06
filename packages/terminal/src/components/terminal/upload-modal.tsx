@@ -22,7 +22,6 @@ export const UploadModal = () => {
 				}),
 			});
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [terminal.upload.open]);
 
 	if (!terminal.upload.open) return null;

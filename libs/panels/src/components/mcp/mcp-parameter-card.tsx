@@ -28,7 +28,7 @@ import {
 } from "../../utility/mcp-json-utils";
 import { MCPJsonField } from "./mcp-json-field";
 
-export interface MCPParameterCardProps {
+interface MCPParameterCardProps {
 	/** Current key of this parameter inside `inputSchema.properties` */
 	propKey: string;
 

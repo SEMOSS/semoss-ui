@@ -5,6 +5,7 @@ import { RouterProvider } from "react-router/dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ROOM_HISTORY_CHANGED } from "@/features/rooms/api/list-rooms";
 import { ROUTINE_RUNS_CHANGED } from "./api/list-recent-routine-runs";
+import { RoutineAgentAvatar } from "./routine-agent-avatar";
 import { RoutineRecentRuns } from "./routine-recent-runs";
 
 // one actions object, so the reader's effect does not rerun on every render
@@ -98,6 +99,30 @@ describe("RoutineRecentRuns", () => {
 			}),
 		).toBeVisible();
 		expect(older).toHaveTextContent("Failed");
+	});
+
+	it("draws each routine with the same robot as its own card", async () => {
+		renderRuns();
+		const list = await screen.findByRole("list", {
+			name: "Recent routines",
+		});
+		const tile = (root: Element | null) =>
+			root?.querySelector("svg rect")?.getAttribute("class");
+		const card = render(<RoutineAgentAvatar routineId="custom-1" />);
+		expect(
+			tile(
+				within(list).getByRole("link", {
+					name: "Vendor invoice check",
+				}),
+			),
+		).toBe(tile(card.container));
+		expect(
+			tile(
+				within(list).getByRole("link", {
+					name: "Inbox daily brief agent",
+				}),
+			),
+		).toBe("fill-chart-1");
 	});
 
 	it("opens a finished run's chat and lists the new room in Chats", async () => {

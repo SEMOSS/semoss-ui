@@ -11,7 +11,7 @@ import {
 	SelectValue,
 } from "@semoss/ui/next";
 
-export interface EnginePickerFieldProps {
+interface EnginePickerFieldProps {
 	/** Field label shown above the engine picker */
 	label: string;
 	/** Currently selected engine's display name */

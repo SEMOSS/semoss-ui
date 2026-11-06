@@ -20,7 +20,7 @@ import {
 import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { ColorPickerWithSwatch } from "../../../../settings/shared/ColorPickerWithSwatch";
 
-export interface ColorByValueProps {
+interface ColorByValueProps {
 	id: string;
 	path: Paths<Block<GridBlockDef>["data"], 4>;
 }

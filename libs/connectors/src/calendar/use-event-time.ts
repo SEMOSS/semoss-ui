@@ -16,7 +16,7 @@ import type { CalendarEvent } from "./calendar.types";
  * @param hasDate - Also names the day, for where the day is not shown already.
  * @return The description, such as `9:00 AM to 9:30 AM`.
  */
-export type DescribeEventTime = (
+type DescribeEventTime = (
 	event: Pick<CalendarEvent, "start" | "end" | "isAllDay">,
 	hasDate?: boolean,
 ) => string;

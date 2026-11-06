@@ -99,6 +99,7 @@ export function TopicDetail() {
 	const [isEditing, setIsEditing] = useState(false);
 	const [tab, setTab] = useState("actions");
 	const [isMatchReviewOpen, setIsMatchReviewOpen] = useState(false);
+	const [isResortOpen, setIsResortOpen] = useState(false);
 	const updates = useWorkUpdates();
 	const editButtonRef = useRef<HTMLButtonElement>(null);
 	// the button that opened the review, for focus on close; a click does not focus it in Safari
@@ -193,6 +194,19 @@ export function TopicDetail() {
 				}
 				actions={
 					<>
+						{/* a topic with no threads yet starts by finding the conversations that fit it */}
+						{canFindConversations && threads.length === 0 && (
+							<Button
+								type="button"
+								className="pointer-coarse:min-h-11"
+								onClick={(event) =>
+									openMatchReview(event.currentTarget)
+								}
+							>
+								<Search aria-hidden="true" />
+								Find conversations
+							</Button>
+						)}
 						<Button
 							ref={contextButtonRef}
 							variant={isContextOpen ? "secondary" : "outline"}
@@ -224,6 +238,18 @@ export function TopicDetail() {
 						<TopicActions
 							topic={topic}
 							threadCount={threads.length}
+							onEdit={() => {
+								editButtonRef.current = null;
+								setIsEditing(true);
+							}}
+							onResort={
+								canFindConversations && threads.length > 0
+									? () => {
+											matchTriggerRef.current = null;
+											setIsResortOpen(true);
+										}
+									: undefined
+							}
 							onFindConversations={
 								canFindConversations
 									? () => openMatchReview()
@@ -335,7 +361,27 @@ export function TopicDetail() {
 									)}
 							</div>
 							<TabsContent value="actions" className="mt-0">
-								<WorkItemsList feed={feed} />
+								<WorkItemsList
+									feed={feed}
+									emptyAction={
+										canFindConversations ? (
+											<Button
+												type="button"
+												size="sm"
+												className="pointer-coarse:min-h-11"
+												onClick={(event) =>
+													openMatchReview(
+														event.currentTarget,
+													)
+												}
+											>
+												<Search aria-hidden="true" />
+												Find conversations for this
+												topic
+											</Button>
+										) : undefined
+									}
+								/>
 							</TabsContent>
 							<TabsContent value="threads" className="mt-0">
 								{/* the tab already says Threads; this line only counts them */}
@@ -918,6 +964,20 @@ export function TopicDetail() {
 					updates={updates}
 					open={isMatchReviewOpen}
 					onOpenChange={setIsMatchReviewOpen}
+					returnFocusRef={matchTriggerRef}
+				/>
+			)}
+			{updates && canFindConversations && (
+				<TopicMatchesDialog
+					key={`resort
+${topic.name}
+${topic.description}
+${topic.accountId ?? ""}`}
+					mode="resort"
+					topic={topic}
+					updates={updates}
+					open={isResortOpen}
+					onOpenChange={setIsResortOpen}
 					returnFocusRef={matchTriggerRef}
 				/>
 			)}

@@ -208,7 +208,6 @@ export const FunctionForm = ({
 	// conditional field never appears
 	const watchedValues = form.watch();
 
-	// eslint-disable-next-line react-hooks/exhaustive-deps
 	useEffect(() => {
 		// a field that has stopped applying goes back to its default, so switching
 		// a choice does not carry the other branch's values into the engine, and

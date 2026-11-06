@@ -7,7 +7,7 @@ import {
 	CardTitle,
 } from "@semoss/ui/next";
 
-export interface TeamPeopleCardProps {
+interface TeamPeopleCardProps {
 	/** The card's title, such as "Members" */
 	title: string;
 	/** What the people in the card do for the team */

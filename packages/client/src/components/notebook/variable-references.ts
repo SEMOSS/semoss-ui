@@ -10,7 +10,7 @@
 
 import { ActionMessages, type StateStore } from "@semoss/renderer";
 
-export interface ReferenceHit {
+interface ReferenceHit {
 	key: string;
 	kind: "cell" | "block";
 	// cell-only

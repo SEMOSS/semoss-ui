@@ -96,7 +96,7 @@ export type Variant = {
 	model: VariantModel;
 };
 
-export type VariantModel = {
+type VariantModel = {
 	id: string;
 	name: string;
 	topP: number;
@@ -237,15 +237,6 @@ export type BlockJSON<
  */
 export type Registry<D extends BlockDef = BlockDef> = D extends BlockDef
 	? Record<D["widget"], BlockConfig<D>>
-	: never;
-
-/**
- * Unwrap the Registry
- */
-export type RegistryUnwrap<R extends Registry<BlockDef>> = R extends Registry<
-	infer W
->
-	? W
 	: never;
 
 /**

@@ -12,7 +12,6 @@ import { createMemoryRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { afterEach, describe, expect, it } from "vitest";
 import { TopicPage } from "@/pages/topic.page";
-import { WorkPage } from "@/pages/work.page";
 import { createInitialCollaborationState } from "../state/collaboration.fixtures";
 import { selectThreadContext } from "../state/collaboration.selectors";
 import type {
@@ -79,8 +78,6 @@ function renderSession(
 ) {
 	const router = createMemoryRouter(
 		[
-			{ path: "/work/all", Component: WorkPage },
-			{ path: "/work/done", Component: WorkPage },
 			{ path: "/brain", Component: BrainReview },
 			{ path: "/brain/memory", Component: BrainMemory },
 			{ path: "/topics/:topicId", Component: TopicPage },
@@ -123,12 +120,23 @@ function sectionFor(heading: string): HTMLElement {
 	return section;
 }
 
+/** Shows one status of the topic page's work through its filter menu. */
+async function showWork(
+	user: ReturnType<typeof userEvent.setup>,
+	status: "Open" | "Handled",
+) {
+	await user.click(screen.getByRole("button", { name: /^Filter work:/ }));
+	await user.click(
+		screen.getByRole("menuitemradio", { name: new RegExp(`^${status}`) }),
+	);
+}
+
 afterEach(cleanup);
 
 describe("collaboration Work and Brain integration", () => {
-	it("carries Work topic confirmation into Brain's learned links and the assistant snapshot", async () => {
+	it("carries a work card's topic confirmation into Brain's learned links and the assistant snapshot", async () => {
 		const user = userEvent.setup();
-		const router = renderSession("/work/all");
+		const router = renderSession("/topics/t-geng");
 		expect(
 			submittedContext().topics.map((topic) => topic.id),
 		).not.toContain("t-trip");
@@ -157,9 +165,9 @@ describe("collaboration Work and Brain integration", () => {
 		).toBe(true);
 	});
 
-	it("shows completed Work items in Done and reopens the selected item", async () => {
+	it("shows completed work items in Handled and reopens the selected item", async () => {
 		const user = userEvent.setup();
-		const router = renderSession("/work/all");
+		renderSession("/topics/t-geng");
 		const title = "Confirm Oct 15 architecture review slot with Ava";
 		await user.click(
 			within(articleFor(title)).getByRole("button", {
@@ -169,20 +177,20 @@ describe("collaboration Work and Brain integration", () => {
 		expect(
 			screen.queryByRole("link", { name: title }),
 		).not.toBeInTheDocument();
-		await act(() => router.navigate("/work/done"));
+		await showWork(user, "Handled");
 		expect(screen.getByRole("link", { name: title })).toBeInTheDocument();
 		await user.click(
 			within(articleFor(title)).getByRole("button", {
 				name: "Move back",
 			}),
 		);
-		await act(() => router.navigate("/work/all"));
+		await showWork(user, "Open");
 		expect(screen.getByRole("link", { name: title })).toBeInTheDocument();
 	});
 
-	it("clears an item with No response needed and keeps it out of Done", async () => {
+	it("clears an item with No response needed and keeps it out of Handled", async () => {
 		const user = userEvent.setup();
-		const router = renderSession("/work/all");
+		renderSession("/topics/t-geng");
 		const title = "Confirm Oct 15 architecture review slot with Ava";
 		await user.click(
 			within(articleFor(title)).getByRole("button", {
@@ -197,7 +205,7 @@ describe("collaboration Work and Brain integration", () => {
 		expect(
 			screen.queryByRole("link", { name: title }),
 		).not.toBeInTheDocument();
-		await act(() => router.navigate("/work/done"));
+		await showWork(user, "Handled");
 		expect(
 			screen.queryByRole("link", { name: title }),
 		).not.toBeInTheDocument();
@@ -211,7 +219,7 @@ describe("collaboration Work and Brain integration", () => {
 			(item) => item.title === title,
 		)?.threadId;
 		if (!threadId) throw new Error("Missing thread");
-		const router = renderSession("/work/all", state);
+		const router = renderSession("/topics/t-geng", state);
 		await user.click(
 			within(articleFor(title)).getByRole("button", {
 				name: /actions for/,
@@ -233,7 +241,7 @@ describe("collaboration Work and Brain integration", () => {
 		});
 		expect(ignored).toBeChecked();
 		await user.click(ignored);
-		await act(() => router.navigate("/work/all"));
+		await act(() => router.navigate("/topics/t-geng"));
 		expect(screen.getByRole("link", { name: title })).toBeInTheDocument();
 	});
 
@@ -301,6 +309,7 @@ describe("collaboration Work and Brain integration", () => {
 	it("preserves a topic memory draft when notes collapse and adds it about the topic", async () => {
 		const user = userEvent.setup();
 		renderSession("/topics/t-geng");
+		await user.click(screen.getByRole("button", { name: "Context" }));
 		expect(
 			screen.getByText(
 				"Ava prefers a written pre-read 48h before any review.",
@@ -338,6 +347,7 @@ describe("collaboration Work and Brain integration", () => {
 			).getByRole("button", { name: "Add person" }),
 		);
 		await act(() => router.navigate("/topics/t-gsales"));
+		await user.click(screen.getByRole("button", { name: "Context" }));
 		const memberSection = sectionFor("In this topic");
 		const personLink = within(memberSection).getByRole("link", {
 			name: "Gia Moreno",
@@ -358,40 +368,17 @@ describe("collaboration Work and Brain integration", () => {
 		).not.toBeInTheDocument();
 	});
 
-	it("updates a topic goal and keeps it completed while switching workspace views", async () => {
-		const user = userEvent.setup();
-		renderSession("/topics/t-geng");
-		const title =
-			"Present agent architecture at Northwind eng review (Oct 15)";
-		const checkbox = screen.getByRole("checkbox", { name: title });
-		await user.click(checkbox);
-		expect(checkbox).toBeChecked();
-		expect(
-			submittedContext().topics[0].goals.find(
-				(goal) => goal.text === title,
-			)?.status,
-		).toBe("done");
-		await user.click(screen.getByRole("tab", { name: "Threads" }));
-		await user.click(screen.getByRole("tab", { name: /^Actions/ }));
-		expect(screen.getByRole("checkbox", { name: title })).toBeChecked();
-		expect(screen.getByText(title)).not.toHaveClass("line-through");
-	});
-
-	it("adds goals, keywords, and people through the compact topic controls", async () => {
+	it("adds keywords and people through the compact topic controls", async () => {
 		const user = userEvent.setup();
 		const state = createInitialCollaborationState();
 		const topic = state.topics.find(
 			(candidate) => candidate.id === "t-geng",
 		);
 		if (!topic) throw new Error("Missing sample topic");
-		topic.goals = [];
 		topic.keywords = [];
 		topic.people = [];
 		state.memories = [];
 		renderSession("/topics/t-geng", state);
-		expect(
-			screen.queryByRole("textbox", { name: "New goal" }),
-		).not.toBeInTheDocument();
 		expect(
 			screen.queryByRole("textbox", { name: "Add keyword" }),
 		).not.toBeInTheDocument();
@@ -406,21 +393,6 @@ describe("collaboration Work and Brain integration", () => {
 
 		// topic setup lives in the Context panel, which starts closed
 		await user.click(screen.getByRole("button", { name: "Context" }));
-		const goalTrigger = screen.getByRole("button", { name: "Add goal" });
-		await user.click(goalTrigger);
-		const goal = screen.getByLabelText("New goal");
-		await user.type(goal, "Share the architecture review.");
-		const goalForm = goal.closest("form");
-		if (!goalForm) throw new Error("Missing goal form");
-		await user.click(
-			within(goalForm).getByRole("button", { name: "Add goal" }),
-		);
-		expect(
-			screen.getByRole("checkbox", {
-				name: "Share the architecture review.",
-			}),
-		).not.toBeChecked();
-
 		await user.click(screen.getByRole("button", { name: "Add keyword" }));
 		const keyword = screen.getByRole("textbox", { name: "Add keyword" });
 		await user.type(keyword, "architecture update");
@@ -485,6 +457,7 @@ describe("collaboration Work and Brain integration", () => {
 			included: true,
 		});
 		renderSession("/topics/t-geng", state);
+		await user.click(screen.getByRole("button", { name: "Context" }));
 		await user.click(screen.getByRole("button", { name: "Add people" }));
 		const picker = screen.getByRole("dialog", { name: "Add people" });
 		const onThreads = within(picker).getByRole("list", {
@@ -549,14 +522,7 @@ describe("collaboration Work and Brain integration", () => {
 
 	it("makes a member a VIP in the topic and ignores them there until stopped", async () => {
 		const user = userEvent.setup();
-		const state = createInitialCollaborationState();
-		const topic = state.topics.find(
-			(candidate) => candidate.id === "t-geng",
-		);
-		if (!topic) throw new Error("Missing sample topic");
-		// without goals the Context panel starts closed
-		topic.goals = [];
-		renderSession("/topics/t-geng", state);
+		renderSession("/topics/t-geng");
 		await user.click(screen.getByRole("button", { name: "Context" }));
 		const settings = () =>
 			within(sectionFor("In this topic")).getByRole("button", {
@@ -632,13 +598,24 @@ describe("collaboration Work and Brain integration", () => {
 		).toBeInTheDocument();
 	});
 
-	it("marks a topic's people with the settings that hold everywhere", () => {
+	it("shows an open item's due day, saved as midnight UTC, as that day on a person's page", () => {
+		const state = createInitialCollaborationState();
+		const item = state.items.find((candidate) => candidate.id === "i1");
+		if (!item) throw new Error("Missing sample item");
+		item.due = "2026-11-06T00:00:00Z";
+		renderSession("/brain/people/p-ava", state);
+		expect(screen.getByText("Due Nov 6")).toBeInTheDocument();
+	});
+
+	it("marks a topic's people with the settings that hold everywhere", async () => {
+		const user = userEvent.setup();
 		const state = createInitialCollaborationState();
 		const ava = state.people.find((person) => person.id === "p-ava");
 		if (!ava) throw new Error("Missing sample person");
 		ava.vip = true;
 		ava.neverIngest = true;
 		renderSession("/topics/t-geng", state);
+		await user.click(screen.getByRole("button", { name: "Context" }));
 		const members = sectionFor("In this topic");
 		expect(within(members).getByText("VIP everywhere")).toBeInTheDocument();
 		expect(

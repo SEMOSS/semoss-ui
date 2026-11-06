@@ -2,7 +2,7 @@ import { ChevronDown, SlidersHorizontal } from "lucide-react";
 import type { ReactElement } from "react";
 import { Badge, Button, CollapsibleTrigger } from "@semoss/ui/next";
 
-export interface AuditFilterToggleProps {
+interface AuditFilterToggleProps {
 	/** Expanded state of the enclosing filter panel. */
 	open: boolean;
 	/** Number of filters applied to the current query. */

@@ -67,7 +67,7 @@ import {
 	type GuardrailRevealTarget,
 } from "./guardrail-pipeline-field";
 
-export interface EngineGuardrailSettingsProps {
+interface EngineGuardrailSettingsProps {
 	/** Id of the engine, of any type but a guardrail */
 	engineId: string;
 

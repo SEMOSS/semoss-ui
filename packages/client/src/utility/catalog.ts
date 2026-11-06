@@ -67,22 +67,6 @@ export const getProjectLabel = (type?: Project["project_type"]): string => {
 };
 
 /**
- * Utility to check if it is a engine type
- * @param type
- * @returns true if an engine type, false otherwise
- */
-export const isEngineType = (type?: string): boolean => {
-	return (
-		type === "MODEL" ||
-		type === "STORAGE" ||
-		type === "DATABASE" ||
-		type === "FUNCTION" ||
-		type === "VECTOR" ||
-		type === "GUARDRAIL"
-	);
-};
-
-/**
  * Get the label for a project type
  * @param type
  * @returns the label for the project type

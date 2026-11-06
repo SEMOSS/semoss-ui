@@ -48,7 +48,7 @@ const isCalendarView = (value: string): value is CalendarView =>
 	VIEWS.some((view) => view === value);
 
 /** Calendar canvas and agenda, shared by providers. */
-export interface ConnectorCalendarProps<T> {
+interface ConnectorCalendarProps<T> {
 	calendar: CalendarWindow;
 	query: ConnectorQuery<CalendarDay<T>[]>;
 	serviceName: string;
