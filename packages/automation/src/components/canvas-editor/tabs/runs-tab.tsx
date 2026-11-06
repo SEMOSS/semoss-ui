@@ -427,7 +427,11 @@ export function RunsTab({
 
 			{historyView === "dashboard" ? (
 				<div className="mt-3 flex min-h-0 flex-1 flex-col">
-					<RunHistoryDashboard appId={appId} runs={runs} />
+					<RunHistoryDashboard
+						appId={appId}
+						runs={runs}
+						onOutputPopout={handleOutputPopout}
+					/>
 				</div>
 			) : (
 				<div className="mt-3 min-h-0 flex-1 overflow-y-auto rounded-lg border bg-card">

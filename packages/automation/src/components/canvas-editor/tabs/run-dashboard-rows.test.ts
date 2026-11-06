@@ -133,6 +133,7 @@ describe("buildDashboardRows", () => {
 			status: "SUCCESS",
 			durationMs: 5,
 			stepCount: 2,
+			result: expect.objectContaining({ NODE_ID: "inner-b" }),
 		});
 	});
 

@@ -25,7 +25,11 @@ import type {
 	AutomationRunDetail,
 } from "../../../domain/automation.types";
 import { StatusBadge } from "../../status-badge";
-import { buildRunDataItems, runtimeNodeId } from "./run-data-browser-data";
+import {
+	buildRunDataItems,
+	lastRelevantResult,
+	runtimeNodeId,
+} from "./run-data-browser-data";
 import { RunNodeDataViewer } from "./run-node-data-viewer";
 
 interface RunDataBrowserProps {
@@ -436,21 +440,6 @@ export function RunDataBrowser({
 function isDataTab(value: string): value is DataTab {
 	return ["input", "output", "variables", "metadata", "errors"].includes(
 		value,
-	);
-}
-
-function lastRelevantResult(
-	results: AutomationNodeResult[],
-): AutomationNodeResult | null {
-	return (
-		[...results]
-			.reverse()
-			.find(
-				(result) =>
-					result.STATUS === "FAILED" || result.STATUS === "SUCCESS",
-			) ??
-		results[results.length - 1] ??
-		null
 	);
 }
 

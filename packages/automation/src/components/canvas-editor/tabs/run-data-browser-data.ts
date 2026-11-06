@@ -63,6 +63,22 @@ export function statusForResults(
 	return results[0]?.STATUS;
 }
 
+/** The step whose output is most worth showing by default: the last failure or success, else the last step. */
+export function lastRelevantResult(
+	results: AutomationNodeResult[],
+): AutomationNodeResult | null {
+	return (
+		[...results]
+			.reverse()
+			.find(
+				(result) =>
+					result.STATUS === "FAILED" || result.STATUS === "SUCCESS",
+			) ??
+		results[results.length - 1] ??
+		null
+	);
+}
+
 function searchText(
 	label: string,
 	input: string,

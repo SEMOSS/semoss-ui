@@ -4,7 +4,11 @@ import type {
 	AutomationRunSummary,
 	NodeStatus,
 } from "../../../domain/automation.types";
-import { runtimeNodeId, statusForResults } from "./run-data-browser-data";
+import {
+	lastRelevantResult,
+	runtimeNodeId,
+	statusForResults,
+} from "./run-data-browser-data";
 
 /** `${runId}:${nodeId}` — identifies one loop node's expand/collapse state within one run. */
 export type LoopRowKey = string;
@@ -51,6 +55,8 @@ export interface DashboardIterationRow extends BaseDashboardRow {
 	status: NodeStatus | undefined;
 	durationMs: number;
 	stepCount: number;
+	/** The step whose incoming/outgoing/variable-map data is shown when this row is clicked. */
+	result: AutomationNodeResult | null;
 }
 
 export type DashboardRow =
@@ -136,6 +142,7 @@ export function buildDashboardRows(
 						0,
 					),
 					stepCount: iteration.nodeResults.length,
+					result: lastRelevantResult(iteration.nodeResults),
 				});
 			}
 		}
