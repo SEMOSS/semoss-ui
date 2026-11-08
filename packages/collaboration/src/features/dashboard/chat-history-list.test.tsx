@@ -4,6 +4,8 @@ import {
 	fireEvent,
 	render,
 	screen,
+	waitFor,
+	within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router";
@@ -17,6 +19,7 @@ const dashboard = vi.hoisted(() => ({
 		],
 		closedRoomIds: [] as string[],
 		setRoomClosed: vi.fn(),
+		renameRoom: vi.fn(),
 		closeError: "",
 		isLoading: false,
 		error: "",
@@ -233,7 +236,7 @@ it("marks the saved session opened into a Work thread and moves the selection to
 	).not.toHaveAttribute("aria-current");
 });
 
-it("closes the current chat by keyboard and returns to Today", async () => {
+it("closes the current chat from its menu by keyboard and returns to Today", async () => {
 	const user = userEvent.setup();
 	const router = createMemoryRouter(
 		[
@@ -245,14 +248,63 @@ it("closes the current chat by keyboard and returns to Today", async () => {
 	render(<RouterProvider router={router} />);
 	act(() =>
 		screen
-			.getByRole("button", { name: "Close chat: Pricing conversation" })
+			.getByRole("button", {
+				name: "More actions for Pricing conversation",
+			})
 			.focus(),
 	);
 	await user.keyboard("{Enter}");
-	expect(dashboard.history.setRoomClosed).toHaveBeenCalledWith(
-		"room-one",
-		true,
+	await waitFor(() =>
+		expect(screen.getByRole("menuitem", { name: "Rename…" })).toHaveFocus(),
+	);
+	await user.keyboard("{ArrowDown}{Enter}");
+	await waitFor(() =>
+		expect(dashboard.history.setRoomClosed).toHaveBeenCalledWith(
+			"room-one",
+			true,
+		),
 	);
 	expect(router.state.location.pathname).toBe("/");
 	expect(dashboard.openRoom).not.toHaveBeenCalled();
+	expect(dashboard.history.renameRoom).not.toHaveBeenCalled();
+});
+
+it("renames a chat from its menu, keeping the dialog and the typed name when saving fails", async () => {
+	dashboard.history.renameRoom
+		.mockRejectedValueOnce(new Error("SEMOSS did not save the room name."))
+		.mockResolvedValueOnce(undefined);
+	const user = userEvent.setup();
+	const router = createMemoryRouter(
+		[{ path: "/", Component: ChatHistoryList }],
+		{ initialEntries: ["/"] },
+	);
+	render(<RouterProvider router={router} />);
+	const trigger = screen.getByRole("button", {
+		name: "More actions for Pricing conversation",
+	});
+	await user.click(trigger);
+	await user.click(screen.getByRole("menuitem", { name: "Rename…" }));
+	const dialog = await screen.findByRole("dialog", { name: "Rename chat" });
+	const field = within(dialog).getByRole("textbox", {
+		name: "Name (required)",
+	});
+	expect(field).toHaveValue("Pricing conversation");
+	await user.clear(field);
+	await user.click(within(dialog).getByRole("button", { name: "Save" }));
+	expect(await within(dialog).findByText("Name is required.")).toBeVisible();
+	expect(dashboard.history.renameRoom).not.toHaveBeenCalled();
+	await user.type(field, "  Q3 pricing  ");
+	await user.click(within(dialog).getByRole("button", { name: "Save" }));
+	expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+		"SEMOSS did not save the room name.",
+	);
+	expect(field).toHaveValue("  Q3 pricing  ");
+	await user.click(within(dialog).getByRole("button", { name: "Save" }));
+	await waitFor(() => expect(dialog).not.toBeInTheDocument());
+	expect(dashboard.history.renameRoom).toHaveBeenLastCalledWith(
+		"room-one",
+		"Q3 pricing",
+	);
+	await waitFor(() => expect(trigger).toHaveFocus());
+	expect(dashboard.history.setRoomClosed).not.toHaveBeenCalled();
 });

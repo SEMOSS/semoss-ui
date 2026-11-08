@@ -9,6 +9,7 @@ import {
 	createRoomSession,
 	getRoomSession,
 	type RoomSession,
+	renameRoomSessions,
 } from "./room-session";
 import type { RoomSource } from "./source-import/room-source";
 
@@ -885,4 +886,15 @@ it("does not mistake an earlier identical message for a newly uncertain submissi
 		submissionNotice:
 			"Your last message was not found. You can try sending it again.",
 	});
+});
+
+it("retitles every loaded session of a renamed room and leaves other rooms alone", () => {
+	const room = own(getRoomSession(crypto.randomUUID(), "renamed-room"));
+	const sameRoom = own(getRoomSession(crypto.randomUUID(), "renamed-room"));
+	const other = own(getRoomSession(crypto.randomUUID(), "other-room"));
+	const otherTitle = other.getSnapshot().title;
+	renameRoomSessions("renamed-room", "Q3 pricing");
+	expect(room.getSnapshot().title).toBe("Q3 pricing");
+	expect(sameRoom.getSnapshot().title).toBe("Q3 pricing");
+	expect(other.getSnapshot().title).toBe(otherTitle);
 });

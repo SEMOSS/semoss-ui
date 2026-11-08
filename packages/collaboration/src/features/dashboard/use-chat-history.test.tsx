@@ -1,8 +1,10 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
+import { saveRoomName } from "@/features/rooms/api/create-room";
 import {
 	listRoomsPage,
 	ROOM_HISTORY_CHANGED,
 } from "@/features/rooms/api/list-rooms";
+import { renameRoomSessions } from "@/features/rooms/room-session";
 import { useChatHistory } from "./use-chat-history";
 
 const { actions } = vi.hoisted(() => ({ actions: {} }));
@@ -11,7 +13,14 @@ vi.mock("@/features/rooms/api/list-rooms", () => ({
 	listRoomsPage: vi.fn(),
 	ROOM_HISTORY_CHANGED: "test-room-change",
 }));
+vi.mock("@/features/rooms/api/create-room", () => ({
+	saveRoomName: vi.fn(),
+}));
+vi.mock("@/features/rooms/room-session", () => ({
+	renameRoomSessions: vi.fn(),
+}));
 const read = vi.mocked(listRoomsPage);
+const save = vi.mocked(saveRoomName);
 const rows = (start: number, count: number) =>
 	Array.from({ length: count }, (_, index) => ({
 		roomId: `room-${start + index}`,
@@ -147,4 +156,31 @@ it("keeps a chat closed after refresh and allows reopening without deleting its 
 	});
 	expect(next.result.current.closedRoomIds).toEqual([]);
 	localStorage.removeItem("test-closed-chats");
+});
+
+it("renames a chat in place and in its open sessions, and leaves it unchanged when the save fails", async () => {
+	read.mockResolvedValue({
+		rooms: rows(0, 3),
+		hasMore: false,
+		nextOffset: 3,
+	});
+	const { result } = renderHook(useChatHistory);
+	await waitFor(() => expect(result.current.rooms).toHaveLength(3));
+	save.mockRejectedValueOnce(new Error("SEMOSS did not save the room name."));
+	await expect(
+		result.current.renameRoom("room-1", "Q3 pricing"),
+	).rejects.toThrow("SEMOSS did not save the room name.");
+	expect(result.current.rooms[1]?.roomName).toBe("Chat 1");
+	await act(() => result.current.renameRoom("room-1", "Q3 pricing"));
+	expect(save).toHaveBeenLastCalledWith(actions, "room-1", "Q3 pricing");
+	expect(result.current.rooms.map((room) => room.roomName)).toEqual([
+		"Chat 0",
+		"Q3 pricing",
+		"Chat 2",
+	]);
+	await waitFor(() =>
+		expect(renameRoomSessions).toHaveBeenCalledWith("room-1", "Q3 pricing"),
+	);
+	expect(renameRoomSessions).toHaveBeenCalledOnce();
+	expect(read).toHaveBeenCalledOnce();
 });
