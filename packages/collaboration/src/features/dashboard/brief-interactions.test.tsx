@@ -187,6 +187,7 @@ function BriefHarness({
 						rooms: [],
 						closedRoomIds: [],
 						setRoomClosed: vi.fn(),
+						renameRoom: vi.fn(),
 						closeError: "",
 						isLoading: false,
 						error: "",
@@ -357,6 +358,63 @@ it("shows six work items without another click and keeps the rest behind Work", 
 	expect(
 		screen.getByRole("link", { name: "All work items" }),
 	).toHaveAttribute("href", "/work");
+});
+
+it("stages the top work item with its next step, who it waits on and its progress", async () => {
+	const daysAgo = (days: number) =>
+		new Date(Date.now() - days * 86_400_000).toISOString();
+	insight.workItems = [
+		{
+			...workItem(0),
+			title: "Set up GPU capacity",
+			stepCount: 5,
+			openSteps: [
+				{ id: "s1", text: "Pick the instance type", status: "open" },
+				{
+					id: "s2",
+					text: "Ask AWS for quota",
+					status: "open",
+					kind: "waiting_on",
+					assigneeId: "kunal",
+					assigneeName: "Patel, Kunal",
+					createdAt: daysAgo(3),
+				},
+			],
+		},
+		{
+			...workItem(1),
+			stepCount: 2,
+			openSteps: [{ id: "s3", text: "Draft the agenda", status: "open" }],
+		},
+		{ ...workItem(2), state: "proposed" },
+	];
+	renderBrief();
+	// a line's spans read as one sentence
+	const line = (text: string) =>
+		screen.getByText(
+			(_, element) =>
+				element?.tagName === "P" && element.textContent === text,
+		);
+
+	const top = await screen.findByRole("heading", {
+		level: 3,
+		name: "Set up GPU capacity",
+	});
+	expect(within(top).getByRole("link")).toHaveAttribute(
+		"href",
+		"/work/item/task-0",
+	);
+	expect(screen.getByText("3 of 5 steps done")).toBeVisible();
+	expect(line("Next Pick the instance type")).toBeVisible();
+	expect(
+		line("Waiting on Kunal Patel for 3 days: Ask AWS for quota"),
+	).toBeVisible();
+	expect(
+		screen.getByRole("progressbar", { name: "Steps done" }),
+	).toHaveAttribute("aria-valuetext", "1 of 2");
+	expect(
+		screen.getByRole("link", { name: /^1 new work item/ }),
+	).toHaveAttribute("href", "/work/review");
 });
 
 it("fills the ask box from a suggestion without sending it", async () => {
