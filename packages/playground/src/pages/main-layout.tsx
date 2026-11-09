@@ -25,7 +25,7 @@ import { ChatContext } from "@/contexts/chat-context";
 import { TourContext } from "@/contexts/tour-context";
 import { useWorkspaceNavigation } from "@/features/conversation/use-workspace-navigation";
 import { WorkspaceNavigationContext } from "@/features/conversation/workspace-navigation.context";
-import { MobileNavigationButton } from "@/features/navigation/mobile-navigation-button";
+import { NavigationButton } from "@/features/navigation/navigation-button";
 import { PageHeaderContext } from "@/features/navigation/page-header.context";
 import { SettingsDialogProvider } from "@/features/settings/settings-dialog-provider";
 import { useRoot } from "@/hooks/use-root";
@@ -191,7 +191,7 @@ export const MainLayout = observer(() => {
 									} as CSSProperties
 								}
 							>
-								<GlobalNav />
+								<GlobalNav hasPageHeader={hasPageHeader} />
 								<SidebarInset className="m-0! min-w-0 rounded-none! shadow-none">
 									<GlobalDialog
 										onAcknowledge={() => {
@@ -205,13 +205,16 @@ export const MainLayout = observer(() => {
 										data-testid="main-layout"
 										className={cn(
 											"relative flex h-dvh w-full flex-col overflow-hidden bg-background",
-											!hasPageHeader && "pt-14 md:pt-0",
+											// room the open-navigation button, on mobile and while the
+											// desktop navigation is hidden
+											!hasPageHeader &&
+												(navigation.isNavigationOpen
+													? "pt-14 md:pt-0"
+													: "pt-14 md:pt-10"),
 										)}
 										style={layoutStyle}
 									>
-										{!hasPageHeader && (
-											<MobileNavigationButton />
-										)}
+										{!hasPageHeader && <NavigationButton />}
 										<div className="relative min-h-0 w-full flex-1 overflow-hidden">
 											<Outlet />
 											{Object.values(

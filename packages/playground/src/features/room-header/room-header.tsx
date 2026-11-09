@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useContext, useEffect } from "react";
-import { MobileNavigationButton } from "@/features/navigation/mobile-navigation-button";
+import { NavigationButton } from "@/features/navigation/navigation-button";
 import { PageHeaderContext } from "@/features/navigation/page-header.context";
 import type { NewRoomWorkbenchPanels } from "@/features/workbench/use-workbench-panels";
 import { WorkbenchToggleButton } from "@/features/workbench/workbench-toggle-button";
@@ -17,9 +17,9 @@ interface RoomHeaderProps {
 /**
  * One narrow row above a room's conversation and Workbench: the room's name
  * (inside a `RoomActionsProvider`; a new chat has none), then the Workbench
- * toggle. The More actions menu sits on the Workbench rail. On mobile it also
- * holds the navigation button, in place of the layout's floating one, when it
- * is inside that layout.
+ * toggle. The More actions menu sits on the Workbench rail. Inside that
+ * layout it starts with the navigation's toggle, in place of the layout's
+ * floating button and the sidebar's own toggle.
  */
 export const RoomHeader = observer(
 	({ room, newRoomPanels }: RoomHeaderProps) => {
@@ -30,9 +30,7 @@ export const RoomHeader = observer(
 		return (
 			<header className="flex h-14 min-w-0 items-center gap-1 px-2 md:h-11">
 				{/* only a layout that takes the header's place for it has navigation */}
-				{registerPageHeader && (
-					<MobileNavigationButton placement="inline" />
-				)}
+				{registerPageHeader && <NavigationButton placement="inline" />}
 				<div className="flex min-w-0 flex-1 items-center">
 					<RoomTitle />
 				</div>

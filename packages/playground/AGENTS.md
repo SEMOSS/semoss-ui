@@ -153,6 +153,18 @@ One name per part of the playground, in code, comments, tests, and these notes:
 Ids and i18n keys tied to user-facing copy keep "workspace": the slash group `workspace`, the
 `close-workspace` command, and `room:studio.workspace` / `workspacePlaces.*`.
 
+## Navigation
+
+The global navigation (`GlobalNav`) is an offcanvas `Sidebar`: collapsed, it is hidden
+completely. It starts open (the theme's `sidebar.expandedByDefault` defaults to true), and its
+edge rail (`NavigationRail`) and Cmd/Ctrl+B toggle it. On a route with its own header (the room
+and new-chat pages register one with `PageHeaderContext`), that header's `NavigationButton`,
+left of the room's name, opens and closes it from one place, and the sidebar shows no toggle of
+its own (`GlobalNav`'s `hasPageHeader`). Elsewhere the sidebar's header holds the toggle while
+it is open, and a floating `NavigationButton` opens it while it is hidden, with `MainLayout`
+padding the page for it. On mobile, the button opens the sheet. Opening the Workspace folds
+the navigation without changing the saved preference (`useWorkspaceNavigation`).
+
 ## The room Workspace
 
 The right-hand panel is called **Workspace** in user-facing copy and is a `@semoss/workbench` dock. These details are not obvious from the
@@ -193,6 +205,9 @@ code and are easy to undo by accident:
   user drags the divider, the pane keeps their size for as long as the page is mounted. The room
   page and the new-chat page read it through `FittedRoomLayout`, which fills (`shouldFill`) while the new chat shows a
   preparation error.
+- **Dragging the divider to the right edge closes the Workspace.** `RoomLayout`'s
+  `onWorkbenchCollapse`, which `FittedRoomLayout` points at `room.closeSidebar()`, closes it, and
+  it reopens fitted to its content again. The conversation does not collapse.
 - **The Workspace has no top strip.** `RoomWorkbench` passes the workbench one border slot, the
   More actions menu (`features/workbench/room-actions-menu.tsx`) at the start of its left rail
   (`borderSlots.left.before`), so its tab row is its top edge. The mobile layout has no rails, so
@@ -214,8 +229,9 @@ code and are easy to undo by accident:
   (`RoomActionMenuItems`, which leaves out Rename); global-nav shares their favorite and rename helpers (`toggleRoomFavorite`,
   `renameRoom`). Rename is no menu item: a double-click on the name edits it in place, in the
   header and in the sidebar (where F2 on a row does too), and `/rename` in the slash menu starts it
-  through `RoomActionsProvider.startRenaming`. A new chat has no title and no Room section. On mobile it also holds the navigation button: it registers with
-  `PageHeaderContext`, so `MainLayout` drops its floating one and its top padding.
+  through `RoomActionsProvider.startRenaming`. A new chat has no title and no Room section. It also holds the navigation's toggle
+  (`NavigationButton`, before the name): it registers with `PageHeaderContext`, so `MainLayout`
+  drops its floating button and its top padding, and the sidebar drops its own toggle.
 - **The header has no quick icons.** `features/room-header/room-header.tsx` ends the
   header with the Workspace toggle alone. More actions runs in sections: Workspace (Open a Panel,
   a submenu of every panel: Files, Settings, Activity, and the connector viewers the chat can

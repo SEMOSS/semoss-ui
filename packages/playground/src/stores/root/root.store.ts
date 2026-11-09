@@ -58,7 +58,8 @@ export class RootStore {
 			altLandingKey: "",
 			altLanding: "",
 			sidebar: {
-				expandedByDefault: false,
+				// the navigation collapses completely, so it starts open
+				expandedByDefault: true,
 				chatHistoryDate: false,
 				headerItems: [],
 				footerItems: [],

@@ -3,8 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { Link, MemoryRouter } from "react-router";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { Sidebar, SidebarHeader, SidebarProvider } from "@semoss/ui/next";
-import { MobileNavigationButton } from "./mobile-navigation-button";
 import { MobileNavigationClose } from "./mobile-navigation-close";
+import { NavigationButton } from "./navigation-button";
 import { NavigationRail } from "./navigation-rail";
 
 vi.mock("@semoss/i18n", () => ({
@@ -29,14 +29,14 @@ function NavigationTest() {
 	return (
 		<MemoryRouter>
 			<SidebarProvider defaultOpen>
-				<Sidebar collapsible="icon" variant="inset">
+				<Sidebar collapsible="offcanvas" variant="inset">
 					<SidebarHeader>
 						<MobileNavigationClose />
 						<Link to="/agent">Agents</Link>
 					</SidebarHeader>
 					<NavigationRail />
 				</Sidebar>
-				<MobileNavigationButton />
+				<NavigationButton />
 			</SidebarProvider>
 		</MemoryRouter>
 	);
@@ -95,4 +95,51 @@ test("mobile navigation opens, dismisses, and returns focus after Close, Escape,
 		expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
 	);
 	await waitFor(() => expect(trigger).toHaveFocus());
+});
+
+test("on desktop the page offers to open the navigation only while it is hidden", async () => {
+	const user = userEvent.setup();
+	render(<NavigationTest />);
+	const rail = screen.getByRole("button", { name: "actions.closeSidebar" });
+	expect(
+		screen.queryAllByRole("button", { name: "actions.openNavigation" }),
+	).toHaveLength(0);
+	await user.click(rail);
+	// the rail and the page's button both open it now
+	const [, openButton] = screen.getAllByRole("button", {
+		name: "actions.openNavigation",
+	});
+	expect(openButton).not.toBe(rail);
+	expect(openButton).toHaveAttribute("aria-expanded", "false");
+	await user.click(openButton);
+	expect(rail).toHaveAttribute("aria-expanded", "true");
+	expect(
+		screen.queryAllByRole("button", { name: "actions.openNavigation" }),
+	).toHaveLength(0);
+});
+
+test("inline in a page's header on desktop, the button opens and closes the navigation from one place", async () => {
+	const user = userEvent.setup();
+	render(
+		<MemoryRouter>
+			<SidebarProvider defaultOpen>
+				<Sidebar collapsible="offcanvas" variant="inset">
+					<SidebarHeader>
+						<Link to="/agent">Agents</Link>
+					</SidebarHeader>
+				</Sidebar>
+				<header>
+					<NavigationButton placement="inline" />
+				</header>
+			</SidebarProvider>
+		</MemoryRouter>,
+	);
+	const toggle = screen.getByRole("button", { name: "actions.closeSidebar" });
+	expect(toggle).toHaveAttribute("aria-expanded", "true");
+	await user.click(toggle);
+	expect(toggle).toHaveAccessibleName("actions.openNavigation");
+	expect(toggle).toHaveAttribute("aria-expanded", "false");
+	await user.click(toggle);
+	expect(toggle).toHaveAccessibleName("actions.closeSidebar");
+	expect(toggle).toHaveAttribute("aria-expanded", "true");
 });

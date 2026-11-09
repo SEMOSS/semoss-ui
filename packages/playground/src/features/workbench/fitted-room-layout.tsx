@@ -8,7 +8,7 @@ import { useWorkbenchFitWidth } from "./use-workbench-fit-width";
 
 type FittedRoomLayoutProps = Omit<
 	RoomLayoutProps,
-	"isWorkbenchOpen" | "workbenchFitWidth"
+	"isWorkbenchOpen" | "workbenchFitWidth" | "onWorkbenchCollapse"
 > & {
 	/** The room whose Workspace sits beside its conversation. */
 	room: RoomStore;
@@ -29,6 +29,7 @@ export const FittedRoomLayout = observer(
 				{...props}
 				isWorkbenchOpen={room.sidebar.isOpen}
 				workbenchFitWidth={shouldFill ? null : fitWidth}
+				onWorkbenchCollapse={() => void room.closeSidebar()}
 			/>
 		);
 	},

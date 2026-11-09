@@ -45,6 +45,8 @@ export interface RoomLayoutProps {
 	 * drags the divider; null or omitted to take its default share.
 	 */
 	workbenchFitWidth?: number | null;
+	/** Called when the user drags the Workspace closed against the row's edge. */
+	onWorkbenchCollapse?: () => void;
 }
 
 /** The Workspace's share of the row, in percent, when it fills. */
@@ -72,6 +74,7 @@ export function RoomLayout({
 	isWorkbenchOpen: isOpen,
 	header,
 	workbenchFitWidth: fitWidth = null,
+	onWorkbenchCollapse,
 }: RoomLayoutProps) {
 	const { t } = useTranslation("room");
 	const id = useId();
@@ -317,6 +320,13 @@ export function RoomLayout({
 								order={2}
 								defaultSize={WORKBENCH_DEFAULT_SIZE}
 								minSize={workbenchMinSize}
+								collapsible
+								collapsedSize={0}
+								onCollapse={() => {
+									// reopening fits the content again
+									setIsUserSized(false);
+									onWorkbenchCollapse?.();
+								}}
 								className={cn(
 									"min-w-0 bg-muted/30",
 									!isWorkbenchShown && "hidden",
