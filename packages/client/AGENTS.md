@@ -653,7 +653,8 @@ read that list:
 - **Session and config** belong to `@semoss/sdk` (see its
   [session guide](../../libs/sdk/skills/session.skill.md)). `main.tsx` calls
   `Session.initialize()` once, after setting the server module and any embed sign in, and
-  `Router` waits on its status (a spinner while `INITIALIZING`, Retry on `ERROR`). Read the user
+  `Router` waits on its status (a spinner while `INITIALIZING`); `AuthenticatedLayout` shows Retry
+  on `ERROR`, so the login and notice pages still render. Read the user
   with `useSession`, the server config with `useConfig`, and run session pixels, uploads and
   downloads with `useSessionInsight` (all from `@semoss/sdk/react`); the client keeps no copy of
   either store. `usePlatformTheme` (`hooks/use-platform-theme.ts`) lays the client's theme

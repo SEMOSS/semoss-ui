@@ -389,9 +389,11 @@ export const LoginPage = () => {
 
 		// straight from the click: the sign in opens a popup
 		await sessionLogin({ type: "oauth", provider: provider })
-			.then(() => {
+			.then((isAuthenticated) => {
 				setIsLoading(false);
-				toast.success("Successfully logged in");
+				if (isAuthenticated) {
+					toast.success("Successfully logged in");
+				}
 			})
 			.catch((err) => {
 				setIsLoading(false);
