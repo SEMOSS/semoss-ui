@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useInsight } from "@semoss/sdk/react";
 import { z } from "@semoss/ui/next";
+import { saveRoomName } from "@/features/rooms/api/create-room";
 import {
 	listRoomsPage,
 	ROOM_HISTORY_CHANGED,
@@ -11,6 +12,8 @@ export interface ChatHistory {
 	rooms: RoomRow[];
 	closedRoomIds: string[];
 	setRoomClosed: (roomId: string, isClosed: boolean) => boolean;
+	/** Saves the name, then shows it in the list and any open chat; rejects when the save fails. */
+	renameRoom: (roomId: string, roomName: string) => Promise<void>;
 	closeError: string;
 	isLoading: boolean;
 	error: string;
@@ -173,10 +176,30 @@ export function useChatHistory(
 			refresh();
 		}
 	}, [isLoading, refresh]);
+	const renameRoom = async (
+		roomId: string,
+		roomName: string,
+	): Promise<void> => {
+		await saveRoomName(actions, roomId, roomName);
+		// shortcut: a page read already in flight can still show the old name until the next refresh
+		setRooms((current) =>
+			current.map((room) =>
+				room.roomId === roomId ? { ...room, roomName } : room,
+			),
+		);
+		// on demand, keeping the room page's chunk out of the shell's startup bundle; if it fails to load, an open
+		// chat shows the saved name when it next loads
+		void import("@/features/rooms/room-session")
+			.then(({ renameRoomSessions }) =>
+				renameRoomSessions(roomId, roomName),
+			)
+			.catch(() => undefined);
+	};
 	return {
 		rooms,
 		closedRoomIds,
 		setRoomClosed,
+		renameRoom,
 		closeError,
 		isLoading,
 		error,

@@ -1,4 +1,4 @@
-import { ChevronRight, X } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import {
@@ -10,9 +10,6 @@ import {
 	P,
 	Skeleton,
 	Small,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
 } from "@semoss/ui/next";
 import {
 	DATE_BUCKET_ORDER,
@@ -22,6 +19,7 @@ import {
 } from "@semoss/utility/date";
 import { lexicon } from "@/lib/lexicon";
 import { roomPath } from "@/lib/workspace-paths";
+import { ChatRoomMenu } from "./chat-room-menu";
 import { useDashboard } from "./dashboard.context";
 
 const dateLabels: Record<DateBucket, string> = {
@@ -249,46 +247,35 @@ export function ChatHistoryList({
 															: title}
 													</span>
 												</Button>
-												<Tooltip
-													disableHoverableContent={
-														false
+												<ChatRoomMenu
+													title={title}
+													disabled={
+														openingRoom ===
+														room.roomId
 													}
-												>
-													<TooltipTrigger asChild>
-														<Button
-															type="button"
-															variant="ghost"
-															size="icon-sm"
-															aria-label={`Close chat: ${title}`}
-															className="pointer-coarse:size-11 shrink-0 text-muted-foreground opacity-0 pointer-coarse:opacity-100 group-focus-within:opacity-100 group-hover:opacity-100"
-															disabled={
-																openingRoom ===
-																room.roomId
-															}
-															onClick={() => {
-																if (
-																	!history.setRoomClosed(
-																		room.roomId,
-																		true,
-																	)
-																)
-																	return;
-																if (isActive) {
-																	shouldFocusContent.current = true;
-																	void navigate(
-																		"/",
-																	);
-																} else
-																	disclosureRef.current?.focus();
-															}}
-														>
-															<X aria-hidden="true" />
-														</Button>
-													</TooltipTrigger>
-													<TooltipContent>
-														Close chat
-													</TooltipContent>
-												</Tooltip>
+													className="opacity-0 pointer-coarse:opacity-100 group-focus-within:opacity-100 group-hover:opacity-100 data-[state=open]:opacity-100"
+													onRename={(name) =>
+														history.renameRoom(
+															room.roomId,
+															name,
+														)
+													}
+													onClose={() => {
+														if (
+															!history.setRoomClosed(
+																room.roomId,
+																true,
+															)
+														)
+															return false;
+														if (isActive) {
+															shouldFocusContent.current = true;
+															void navigate("/");
+														} else
+															disclosureRef.current?.focus();
+														return true;
+													}}
+												/>
 											</div>
 										);
 									})}
