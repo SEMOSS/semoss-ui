@@ -25,14 +25,15 @@ interface RoomActionItem {
 	isActive?: boolean;
 	/** Whether it destroys something. */
 	isDestructive?: boolean;
-	/** Runs it from a menu; Rename waits for the menu to close. */
+	/** Runs it. */
 	onSelect: () => void;
 }
 
 /**
  * The room's own actions in the order every menu lists them: Favorite,
  * Rename, Publish as Agent, Download, and Delete. Favorite is left out where
- * the chat history is hidden. Call it from an observer inside a
+ * the chat history is hidden; only the slash menu lists Rename, since a
+ * double-click on the name renames it. Call it from an observer inside a
  * `RoomActionsProvider`.
  *
  * @return The actions, or an empty list outside a room.
@@ -65,7 +66,7 @@ export const useRoomActionItems = (): RoomActionItem[] => {
 			label: t("sidebar:actions.rename"),
 			description: t("room:slash.commands.rename.description"),
 			keywords: [],
-			onSelect: context.requestRenaming,
+			onSelect: context.startRenaming,
 		},
 		{
 			id: "publish",

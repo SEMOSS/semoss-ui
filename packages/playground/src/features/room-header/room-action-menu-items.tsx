@@ -15,15 +15,14 @@ import {
 } from "./header-menu.constants";
 
 /**
- * The More actions menu's Room section: Favorite, Rename, Publish as Agent,
- * Download, and Delete, after a separator. Its menu passes
- * `handleMenuCloseAutoFocus` as `onCloseAutoFocus` so Rename can start.
- * Outside a `RoomActionsProvider` it renders nothing.
+ * The More actions menu's Room section: Favorite, Publish as Agent, Download,
+ * and Delete, after a separator. Rename is a double-click on the room's name
+ * instead. Outside a `RoomActionsProvider` it renders nothing.
  */
 export const RoomActionMenuItems = observer(() => {
 	const { t } = useTranslation("room");
 	const labelId = useId();
-	const items = useRoomActionItems();
+	const items = useRoomActionItems().filter((item) => item.id !== "rename");
 	if (items.length === 0) return null;
 	return (
 		<>

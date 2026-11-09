@@ -701,7 +701,9 @@ export const NewRoomPage = observer(() => {
 		connectors: newRoom.connectors,
 	};
 
-	const workbench = <RoomWorkbench room={workbenchRoom} />;
+	const workbench = (
+		<RoomWorkbench room={workbenchRoom} newRoomPanels={newRoomPanels} />
+	);
 
 	return (
 		<div className="flex h-full w-full flex-col overflow-hidden">

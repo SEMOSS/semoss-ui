@@ -4,6 +4,7 @@ import {
 	render,
 	screen,
 	waitFor,
+	within,
 } from "@testing-library/react";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
@@ -352,8 +353,15 @@ afterEach(() => {
 	vi.unstubAllGlobals();
 });
 
-/** Select a panel from the room header's More actions menu, under Open a Panel. */
+/**
+ * Select a panel from the More actions menu on the Workspace's rail, under
+ * Open a Panel, opening the Workspace from the header first when it is closed.
+ */
 function selectWorkspaceItem(name: string) {
+	if (!screen.queryByRole("button", { name: "studio.moreActions" }))
+		fireEvent.click(
+			screen.getByRole("button", { name: "studio.openWorkspace" }),
+		);
 	fireEvent.keyDown(
 		screen.getByRole("button", { name: "studio.moreActions" }),
 		{ key: "Enter" },
@@ -795,10 +803,17 @@ test("Retry after a failed preparation reopens the Workspace in the prepared roo
 	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(2);
 });
 
-test("a new chat's header has its controls but no title or room menu", () => {
+test("a new chat's header has its toggle but no title, and its rail has More actions", () => {
 	render(<NewRoomPage />);
-	expect(screen.getByRole("banner")).not.toHaveTextContent("header.newChat");
+	const header = screen.getByRole("banner");
+	expect(header).not.toHaveTextContent("header.newChat");
 	expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
+	expect(
+		within(header).queryByRole("button", { name: "studio.moreActions" }),
+	).toBeNull();
+	fireEvent.click(
+		screen.getByRole("button", { name: "studio.openWorkspace" }),
+	);
 	expect(
 		screen.getByRole("button", { name: "studio.moreActions" }),
 	).toBeVisible();
