@@ -2,7 +2,7 @@ import { createRoot } from "react-dom/client";
 import { Env, Session, waitForEmbedAuth } from "@semoss/sdk/react";
 import { isRecord } from "@semoss/utility/object";
 import { App, i18nReady } from "./app";
-import { ErrorBoundary } from "./components/common/ErrorBoundary";
+import { ErrorBoundary } from "./components/common/error-boundary";
 import "./index.css";
 
 const container = document.getElementById("root");

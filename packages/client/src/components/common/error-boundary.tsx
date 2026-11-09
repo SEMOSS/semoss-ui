@@ -1,5 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
-import ErrorImage from "@/assets/img/Error.svg";
+import { ErrorState } from "./error-state";
 
 interface ErrorBoundaryProps {
 	/**
@@ -59,29 +59,17 @@ export class ErrorBoundary extends Component<
 			}
 
 			return (
-				<div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-					<img
-						src={ErrorImage}
-						alt=""
-						className="h-1/4 max-h-[200px]"
-					/>
-					{this.props.title ? (
-						<h6 className="font-semibold text-base">
-							{this.props.title}
-						</h6>
-					) : null}
-
-					{this.props.description ? (
-						<p className="text-muted-foreground text-sm">
-							{this.props.description}
-						</p>
-					) : null}
+				<ErrorState
+					title={this.props.title}
+					description={this.props.description}
+					className="absolute inset-0 h-auto w-auto"
+				>
 					{this.state.error ? (
 						<div className="mt-2 flex items-center gap-2 rounded-md bg-destructive px-4 py-3 text-destructive-foreground text-sm">
 							{this.state.error.message}
 						</div>
 					) : null}
-				</div>
+				</ErrorState>
 			);
 		}
 

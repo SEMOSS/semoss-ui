@@ -36,10 +36,15 @@ export const FileExplorerControl: FC<WorkbenchPanelProps> = ({ id }) => {
 
 	if (!value) return null;
 
+	// what the mode supports comes from its adapter, not `value.capabilities`:
+	// those also fold in the panel's read-only state, and the published api
+	// does not re-render this control when the panel's access changes, so
+	// they would lag a permission change; the access comes from `canEdit`
 	const readOnlyResource = resource ? !canEdit : false;
 	const canCreate =
 		!readOnlyResource &&
-		(value.capabilities.mutate || value.capabilities.upload);
+		(value.adapter.capabilities.mutate ||
+			value.adapter.capabilities.upload);
 
 	return (
 		<>

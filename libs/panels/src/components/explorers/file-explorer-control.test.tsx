@@ -9,13 +9,19 @@ import { FileExplorerControl } from "./file-explorer-control";
 /** The one panel id every case's dock holds. */
 const PANEL_ID = "explorer";
 
+/**
+ * A published explorer api. `capabilities` are what the mode supports; the
+ * live `capabilities` the panel would fold its access into default to them.
+ */
 const createExplorer = (
 	mode: FileMode,
 	capabilities: { mutate: boolean; upload: boolean },
+	liveCapabilities = capabilities,
 ): FileExplorerApi =>
 	({
 		mode,
-		capabilities,
+		adapter: { capabilities },
+		capabilities: liveCapabilities,
 		header: { path: "/" },
 		commands: {
 			openNewFile: vi.fn(),
@@ -138,6 +144,24 @@ describe("FileExplorerControl", () => {
 			"PROJECT",
 			"project-1",
 		);
+	});
+
+	it("shows New once a read-only project becomes editable, before the panel republishes", () => {
+		// the published api still holds the panel's read-only capabilities:
+		// the control does not re-render when the panel catches up
+		const session = renderControl(
+			createExplorer(
+				{ type: "APP", app: "project-1" },
+				{ mutate: true, upload: true },
+				{ mutate: false, upload: false },
+			),
+			"READ_ONLY",
+		);
+		expect(screen.queryByRole("button", { name: "New" })).toBeNull();
+
+		act(() => session.permissions.sync("PROJECT", "project-1", "EDIT"));
+
+		expect(screen.getByRole("button", { name: "New" })).toBeVisible();
 	});
 
 	it("hides New once a sign in or out clears the session's permissions", () => {

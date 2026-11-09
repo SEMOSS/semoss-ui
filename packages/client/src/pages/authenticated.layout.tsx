@@ -1,19 +1,14 @@
 import { Suspense, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router";
 import { useSession } from "@semoss/sdk/react";
-import {
-	Alert,
-	AlertDescription,
-	AlertTitle,
-	Button,
-	P,
-	Spinner,
-} from "@semoss/ui/next";
+import { Button, Muted, Spinner } from "@semoss/ui/next";
+import { ErrorState } from "@/components/common/error-state";
 
 /**
  * Layout for the routes that need a signed in user: a signed out user goes to
- * the login page, which returns them here after signing in. When the session
- * could not be read, these routes show Retry; the public routes still render.
+ * the login page, which returns them here after signing in. When the config
+ * or the user could not be read, for any reason other than a signed out user,
+ * these routes show the error screen with Retry; the public routes still render.
  */
 export const AuthenticatedLayout = () => {
 	const status = useSession((state) => state.status);
@@ -37,29 +32,32 @@ export const AuthenticatedLayout = () => {
 		};
 
 		return (
-			<div className="flex h-screen w-screen items-center justify-center p-4">
-				<Alert variant="destructive" className="max-w-md">
-					<AlertTitle>Unable to load your session</AlertTitle>
-					<AlertDescription>
-						<P className="break-words text-sm">{errorMessage}</P>
-						<Button
-							type="button"
-							variant="outline"
-							disabled={isRetrying}
-							onClick={handleRetry}
-						>
-							{isRetrying ? (
-								<>
-									<Spinner />
-									Retrying...
-								</>
-							) : (
-								"Retry"
-							)}
-						</Button>
-					</AlertDescription>
-				</Alert>
-			</div>
+			<ErrorState
+				title="Something went wrong!"
+				description="We couldn't load the platform. Try again, and if the issue persists, please reach out and let us know."
+			>
+				{errorMessage ? (
+					<Muted className="max-w-md break-words">
+						{errorMessage}
+					</Muted>
+				) : null}
+				<Button
+					type="button"
+					variant="outline"
+					className="mt-2"
+					disabled={isRetrying}
+					onClick={handleRetry}
+				>
+					{isRetrying ? (
+						<>
+							<Spinner />
+							Retrying...
+						</>
+					) : (
+						"Retry"
+					)}
+				</Button>
+			</ErrorState>
 		);
 	}
 
