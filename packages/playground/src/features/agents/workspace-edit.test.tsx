@@ -98,7 +98,7 @@ beforeEach(() => {
 			hooks: [
 				{
 					kind: "pixel",
-					pixel: 'Echo("ready")',
+					pixel: 'Echo("ready");',
 					events: ["beforeRun"],
 				},
 			],
@@ -157,7 +157,7 @@ test("the existing editor saves all agent settings, retains failed edits, and re
 			hooks: [
 				{
 					kind: "pixel",
-					pixel: 'Echo("ready")',
+					pixel: 'Echo("ready");',
 					events: ["beforeRun"],
 				},
 			],
