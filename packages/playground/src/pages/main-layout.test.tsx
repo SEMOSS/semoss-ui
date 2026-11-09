@@ -75,7 +75,8 @@ test.each([
 		expect(
 			screen.queryByRole("button", { name: "actions.openNavigation" }),
 		).not.toBeInTheDocument();
-		expect(layout).not.toHaveClass("md:pt-10");
+		// the page keeps the button's room either way, so it never shifts
+		expect(layout).toHaveClass("md:pt-10");
 		expect(layout.style.padding).toBe(style.padding ? "8px" : "");
 		expect(Object.isFrozen(overrides)).toBe(false);
 

@@ -21,25 +21,19 @@ interface NavigationButtonProps {
 
 /**
  * The navigation's control in the page. On mobile it opens the sheet. On
- * desktop, inline in a route's own header, it toggles the navigation open and
- * closed from one place; floating, it shows only while the navigation is
- * hidden, since the navigation then holds its own toggle.
+ * desktop it shows only while the navigation is hidden, inline in a route's own
+ * header or floating, since the open navigation holds its own toggle.
  */
 export function NavigationButton({
 	placement = "floating",
 }: NavigationButtonProps) {
 	const { t } = useTranslation("sidebar");
-	const { isMobile, open, openMobile, setOpenMobile, toggleSidebar } =
-		useSidebar();
+	const { isMobile, open, openMobile, setOpenMobile, setOpen } = useSidebar();
 	const { key: locationKey } = useLocation();
 	const previousLocation = useRef(locationKey);
 	const wasOpen = useRef(openMobile);
 	const triggerRef = useRef<HTMLButtonElement>(null);
-	const isOpen = isMobile ? openMobile : open;
-	const isInline = placement === "inline";
-	const label = t(
-		!isMobile && open ? "actions.closeSidebar" : "actions.openNavigation",
-	);
+	const label = t("actions.openNavigation");
 
 	// Route links live inside the sheet; selecting one dismisses it.
 	useEffect(() => {
@@ -58,10 +52,12 @@ export function NavigationButton({
 		return () => cancelAnimationFrame(frame);
 	}, [openMobile, isMobile]);
 
-	// floating on desktop, it gives way to the sidebar's own toggle
-	if (!isMobile && open && !isInline) return null;
+	// on desktop it gives way to the open sidebar's own toggle
+	if (!isMobile && open) return null;
 
-	const className = cn(isInline ? "shrink-0" : "absolute start-2 top-1 z-30");
+	const className = cn(
+		placement === "inline" ? "shrink-0" : "absolute start-2 top-1 z-30",
+	);
 
 	if (isMobile) {
 		return (
@@ -72,7 +68,7 @@ export function NavigationButton({
 				size="icon-lg"
 				className={cn("min-h-11 min-w-11", className)}
 				aria-label={label}
-				aria-expanded={isOpen}
+				aria-expanded={openMobile}
 				aria-haspopup="dialog"
 				onClick={() => setOpenMobile(true)}
 			>
@@ -91,8 +87,8 @@ export function NavigationButton({
 					size="icon-sm"
 					className={className}
 					aria-label={label}
-					aria-expanded={isOpen}
-					onClick={toggleSidebar}
+					aria-expanded={false}
+					onClick={() => setOpen(true)}
 				>
 					<PanelLeftIcon
 						aria-hidden="true"

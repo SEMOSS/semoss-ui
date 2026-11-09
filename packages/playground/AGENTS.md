@@ -156,12 +156,11 @@ Ids and i18n keys tied to user-facing copy keep "workspace": the slash group `wo
 ## Navigation
 
 The global navigation (`GlobalNav`) is an offcanvas `Sidebar`: collapsed, it is hidden
-completely. It starts open (the theme's `sidebar.expandedByDefault` defaults to true), and its
-edge rail (`NavigationRail`) and Cmd/Ctrl+B toggle it. On a route with its own header (the room
-and new-chat pages register one with `PageHeaderContext`), that header's `NavigationButton`,
-left of the room's name, opens and closes it from one place, and the sidebar shows no toggle of
-its own (`GlobalNav`'s `hasPageHeader`). Elsewhere the sidebar's header holds the toggle while
-it is open, and a floating `NavigationButton` opens it while it is hidden, with `MainLayout`
+completely. It starts open (the theme's `sidebar.expandedByDefault` defaults to true), and
+Cmd/Ctrl+B toggles it; it has no edge rail. While it is open, its own header holds
+the toggle (`NavigationToggle`) on every route. While it is hidden, a `NavigationButton` opens
+it: on a route with its own header (the room and new-chat pages register one with
+`PageHeaderContext`), inline before the room's name; elsewhere floating, with `MainLayout`
 padding the page for it. On mobile, the button opens the sheet. Opening the Workspace folds
 the navigation without changing the saved preference (`useWorkspaceNavigation`).
 
@@ -229,9 +228,9 @@ code and are easy to undo by accident:
   (`RoomActionMenuItems`, which leaves out Rename); global-nav shares their favorite and rename helpers (`toggleRoomFavorite`,
   `renameRoom`). Rename is no menu item: a double-click on the name edits it in place, in the
   header and in the sidebar (where F2 on a row does too), and `/rename` in the slash menu starts it
-  through `RoomActionsProvider.startRenaming`. A new chat has no title and no Room section. It also holds the navigation's toggle
-  (`NavigationButton`, before the name): it registers with `PageHeaderContext`, so `MainLayout`
-  drops its floating button and its top padding, and the sidebar drops its own toggle.
+  through `RoomActionsProvider.startRenaming`. A new chat has no title and no Room section. While the navigation is hidden it
+  also holds the button that opens it (`NavigationButton`, before the name): it registers with
+  `PageHeaderContext`, so `MainLayout` drops its floating button and its top padding.
 - **The header has no quick icons.** `features/room-header/room-header.tsx` ends the
   header with the Workspace toggle alone. More actions runs in sections: Workspace (Open a Panel,
   a submenu of every panel: Files, Settings, Activity, and the connector viewers the chat can

@@ -191,7 +191,7 @@ export const MainLayout = observer(() => {
 									} as CSSProperties
 								}
 							>
-								<GlobalNav hasPageHeader={hasPageHeader} />
+								<GlobalNav />
 								<SidebarInset className="m-0! min-w-0 rounded-none! shadow-none">
 									<GlobalDialog
 										onAcknowledge={() => {
@@ -205,12 +205,9 @@ export const MainLayout = observer(() => {
 										data-testid="main-layout"
 										className={cn(
 											"relative flex h-dvh w-full flex-col overflow-hidden bg-background",
-											// room the open-navigation button, on mobile and while the
-											// desktop navigation is hidden
-											!hasPageHeader &&
-												(navigation.isNavigationOpen
-													? "pt-14 md:pt-0"
-													: "pt-14 md:pt-10"),
+											// room for the open-navigation button, kept while the desktop
+											// navigation is open too so the page never shifts
+											!hasPageHeader && "pt-14 md:pt-10",
 										)}
 										style={layoutStyle}
 									>
