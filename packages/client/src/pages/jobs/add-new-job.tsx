@@ -102,7 +102,7 @@ export const AddNewJob = () => {
 					builder.tags.length
 						? ` jobTags=${JSON.stringify(builder.tags)},`
 						: ""
-				} jobGroup=["defaultGroup"], cronExpression=["${builder.cronExpression}"], cronTz=["${builder.cronTz}"], recipe=["<encode>${builder.pixel}</encode>"], triggerOnLoad=[${builder.triggerOnLoad}], triggerNow=[false]);`,
+				} jobGroup=["defaultGroup"], cronExpression=["${builder.cronExpression}"], cronTz=["${builder.cronTz}"], recipe=["<encode>${encodeURIComponent(builder.pixel)}</encode>"], triggerOnLoad=[${builder.triggerOnLoad}], triggerNow=[false]);`,
 			);
 			if (response.errors.length) {
 				throw new Error(response.errors[0]);
@@ -126,7 +126,7 @@ export const AddNewJob = () => {
 					builder.tags.length
 						? `jobTags=${JSON.stringify(builder.tags)},`
 						: ""
-				}jobGroup=["defaultGroup"],cronExpression="${builder.cronExpression}",cronTz="${builder.cronTz}",recipe="<encode>${builder.pixel}</encode>",triggerOnLoad=[${builder.triggerOnLoad}],triggerNow=[false]);`,
+				}jobGroup=["defaultGroup"],cronExpression="${builder.cronExpression}",cronTz="${builder.cronTz}",recipe="<encode>${encodeURIComponent(builder.pixel)}</encode>",triggerOnLoad=[${builder.triggerOnLoad}],triggerNow=[false]);`,
 			);
 			if (response.errors.length) {
 				throw new Error(response.errors[0]);
