@@ -39,7 +39,7 @@ Run these from `packages/client`, or use `pnpm --filter @semoss/client <command>
 
 ### Path Alias
 
-- `@/` → `./src/` (e.g. `import { useSession } from "@/hooks/use-session"`)
+- `@/` → `./src/` (e.g. `import { usePlatformTheme } from "@/hooks/use-platform-theme"`)
 
 ## Structure
 
@@ -56,15 +56,16 @@ application features; this inventory does not require moving existing features.
 | `features/` | Application features, one folder per concern (for example `team-list/`, `team-type/`, `team-members/`, `team-resource-access/`, `group-managers/`, `bulk-access-management/`, `usage-limit-path/`, `platform-default-limit/`, `team-usage-limit/`, `model-usage-limits/`, `my-model-usage/`) |
 | `hooks/` | React hooks (`use-<name>.ts`) |
 | `pages/` | Routing tree (see below) |
-| `stores/` | State owners (`assistant/`, `config/`, `designer/`, `page/`, `session/`, `workbench/`, `workspace/`) |
+| `stores/` | State owners (`assistant/`, `designer/`, `page/`, `session/`, `workbench/`, `workspace/`) |
 | `types/` | TypeScript types (`<name>.types.ts`) |
 | `utility/` | Client-specific adapters and compatibility exports; generic helpers live in `@semoss/utility` |
-| `main.tsx`, `App.tsx`, `index.css` | App entry files |
+| `main.tsx`, `app.tsx`, `index.css` | App entry files |
 
 Client `api/` modules contain application-specific requests. LinOTP login/OTP
 confirmation, file upload/download, engine-member listing, logout, and bulk
-permission changes use the owning `@semoss/sdk` APIs; logout is exposed through
-the session store. Reuse those APIs instead of restoring duplicate client wrappers.
+permission changes use the owning `@semoss/sdk` APIs; sign in, sign out and registration
+are the SDK session's `login`, `logout` and `register`. Reuse those APIs instead of
+restoring duplicate client wrappers.
 Database catalogs use paginated `MyEngines`/`AdminMyEngines` reactors. Audit reads
 and exports use the audit API builders backed by `AdminUserAuditEvents`.
 
@@ -404,9 +405,9 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   the text and code generation models the user's requests use, kept in their metadata as
   `text-generation-model` and `code-generation-model`. Each is a `default-model-field.tsx`, the
   shared `EngineSelect` over the models `getEngines` lists (without the EMBEDDED subtype), with No
-  default first. A pick saves at once through `setUserDefaultModel` in `api/auth.ts`
-  (`SetUserMetadata`); No default sends an empty list, which deletes the key, so a removed default
-  is gone rather than blank. A default the list no longer offers stays shown, marked unavailable,
+  default first. It reads `user.defaultModels` from `useSession`, and a pick saves at once through
+  the session's `setMetadata`, which shows it at once and puts it back when refused; No default
+  sends an empty value, which deletes the key, so a removed default is gone rather than blank. A default the list no longer offers stays shown, marked unavailable,
   so it can be removed.
 
 ### Workbench Terminal
@@ -570,9 +571,9 @@ restart and reload on every server in a cluster.
   click or a key opened moves focus into it, and back to the button when it closes. Each menu
   lists its actions with the roles the backend lets run them:
   - `features/engine-actions/engine-actions-menu.tsx`, in the engine header
-    (`engine-tabs-layout.tsx`): Clone, Export and Restart, all for owners.
+    (`engine-tabs.layout.tsx`): Clone, Export and Restart, all for owners.
   - `features/project-actions/project-actions-menu.tsx`, in the project header
-    (`project-tabs-layout.tsx`): Clone for the project's owners and for anyone who can
+    (`project-tabs.layout.tsx`): Clone for the project's owners and for anyone who can
     see a template (`project_is_template`), the backend's `userCanCloneProject`, and Export
     for the owners of an app type (`APP_SETTINGS_TYPES`), an agent or a skill, through
     `features/app-export/use-app-export.ts`, which the Import and Export section uses too.
@@ -589,7 +590,7 @@ restart and reload on every server in a cluster.
   engine (`CloseEngine`), which stops the python process it owns, so its next use starts it with
   its current files.
 - **`features/app-python-reload/`** is the Python card in the Python and Reactors section of an
-  app's Settings (`pages/app/app-python-reactors-settings-page.tsx`). Reload Python Files
+  app's Settings (`pages/app/app-python-reactors-settings.page.tsx`). Reload Python Files
   (`ReloadProject`) clears the app modules python has cached, so the next run imports the current
   .py files without restarting python.
 
@@ -649,9 +650,20 @@ read that list:
 
 ## State Management
 
-- **Application state** is split among the existing stores, including session and config.
-  Use their owning hooks, such as `hooks/use-session.ts` and `hooks/use-config.ts`; there is
-  no `stores/root`, `stores/monolith`, or `useRootStore` entry to extend.
+- **Session and config** belong to `@semoss/sdk` (see its
+  [session guide](../../libs/sdk/skills/session.skill.md)). `main.tsx` calls
+  `Session.initialize()` once, after setting the server module and any embed sign in, and
+  `Router` waits on its status (a spinner while `INITIALIZING`); `AuthenticatedLayout` shows Retry
+  on `ERROR`, so the login and notice pages still render. Read the user
+  with `useSession`, the server config with `useConfig`, and run session pixels, uploads and
+  downloads with `useSessionInsight` (all from `@semoss/sdk/react`); the client keeps no copy of
+  either store. `usePlatformTheme` (`hooks/use-platform-theme.ts`) lays the client's theme
+  defaults under the config's theme. Workbenches seed a route's permission with
+  `Session.permissions.sync` and `refresh`; the file panels' `useAccess` reads the same
+  `Session.permissions`, so a panel and a workbench on one resource share one read and a sign in
+  or out clears both. Mount no `AccessStoreProvider`: it is deprecated and reads nothing.
+- **Other application state** is split among the existing stores; there is no `stores/root`,
+  `stores/monolith`, or `useRootStore` entry to extend.
 - **Domain state** uses its existing context/store contract. See the
   [client workbench components](./src/components/workbench/) and
   [domain stores](./src/stores/workbench/) for their owning implementations. General local-state and orchestration rules
@@ -680,7 +692,6 @@ Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling
 ### Be Cautious With
 
 - **`vite.config.ts`** — dev server, build, and test configuration.
-- **`stores/session/`** — shared session state and permission ownership affect multiple surfaces.
 
 ### Known Gotchas
 

@@ -9,7 +9,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@semoss/ui/next";
-import { useConfig } from "@/hooks";
+import { usePlatformTheme } from "@/hooks/use-platform-theme";
 import { PrivacyPreferenceCenterModal } from "./privacy-preference-center-modal";
 
 interface CookieWrapperProps {
@@ -19,11 +19,14 @@ interface CookieWrapperProps {
 
 const cookieName = `smss-optional-cookie`;
 
+/**
+ * Renders the app with the theme's cookie banner over it until the user
+ * accepts the cookies, which is kept in local storage. View cookies opens the
+ * Privacy Preference Center.
+ */
 export const CookieWrapper = observer((props: CookieWrapperProps) => {
 	const { children } = props;
-	const cookiePolicyBannerReact = useConfig(
-		(state) => state.theme.cookiePolicyBannerReact,
-	);
+	const cookiePolicyBannerReact = usePlatformTheme().cookiePolicyBannerReact;
 
 	const [visible, setVisible] = useState(false);
 	const [viewCookiePolicy, setViewCookiePolicy] = useState(false);

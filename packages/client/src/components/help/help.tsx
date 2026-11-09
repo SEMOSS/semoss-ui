@@ -8,8 +8,9 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@semoss/ui/next";
+import { isRecord } from "@semoss/utility/object";
 import { formatToDataTestId } from "@semoss/utility/text";
-import { useConfig } from "@/hooks";
+import { usePlatformTheme } from "@/hooks/use-platform-theme";
 
 interface HelpProps {
 	/** Classes for the sidebar button that opens the menu */
@@ -25,28 +26,9 @@ interface HelpProps {
 export const Help = (props: HelpProps): JSX.Element | null => {
 	const { className, onOpenChange } = props;
 
-	const raw = useConfig(
-		(state) =>
-			(state.config.theme as { THEME_MAP?: string } | undefined)
-				?.THEME_MAP,
-	);
-	if (!raw) return null;
+	const { helpBannerOrder, helpBannerValues } = usePlatformTheme();
 
-	let themeMap: {
-		helpBannerOrder: string[];
-		helpBannerValues: Record<
-			string,
-			{ src: string; label: string; disabled?: boolean }
-		>;
-	};
-	try {
-		const parsed = JSON.parse(raw);
-		themeMap = typeof parsed === "string" ? JSON.parse(parsed) : parsed;
-	} catch {
-		return null;
-	}
-
-	if (!themeMap?.helpBannerOrder?.length) {
+	if (helpBannerOrder.length === 0) {
 		return null;
 	}
 
@@ -65,27 +47,31 @@ export const Help = (props: HelpProps): JSX.Element | null => {
 					</SidebarMenuButton>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent side="right" align="end" sideOffset={8}>
-					{themeMap.helpBannerOrder
+					{helpBannerOrder
 						.filter((key) => key !== "tutorials")
 						.map((key) => {
-							const v = themeMap.helpBannerValues[key];
+							const link = helpBannerValues[key];
 
-							if (v) {
+							if (isRecord(link)) {
 								return (
 									<DropdownMenuItem
 										key={key}
-										disabled={
-											v.disabled ? v.disabled : false
-										}
+										disabled={Boolean(link.disabled)}
 										asChild
 									>
 										<a
-											href={v.src}
+											href={
+												typeof link.src === "string"
+													? link.src
+													: undefined
+											}
 											target="_blank"
 											rel="noopener noreferrer"
 											className="text-foreground no-underline"
 										>
-											{v.label}
+											{typeof link.label === "string"
+												? link.label
+												: key}
 										</a>
 									</DropdownMenuItem>
 								);

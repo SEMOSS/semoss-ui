@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import { useId, useState } from "react";
+import { useSessionInsight } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -25,7 +26,6 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
-import { useSession } from "@/hooks";
 
 /** Title and error message shown based on the entity being uploaded. */
 const DIALOG_CONFIG = {
@@ -80,8 +80,7 @@ export const UploadProjectDialog = ({
 	handleClose,
 }: UploadProjectDialogProps) => {
 	const config = DIALOG_CONFIG[type];
-	const runPixel = useSession((state) => state.runPixel);
-	const sessionUpload = useSession((state) => state.upload);
+	const { run: runPixel, upload: sessionUpload } = useSessionInsight();
 
 	// --- Form state ---
 	const [upload, setUpload] = useState<File | null>(null);

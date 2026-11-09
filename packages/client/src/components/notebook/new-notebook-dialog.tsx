@@ -3,6 +3,7 @@ import type React from "react";
 import { useId } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { ActionMessages, useBlocks } from "@semoss/renderer";
+import { useConfig } from "@semoss/sdk/react";
 import {
 	Button,
 	DialogDescription,
@@ -10,7 +11,6 @@ import {
 	Input,
 	Label,
 } from "@semoss/ui/next";
-import { useConfig } from "@/hooks";
 
 type NewQueryForm = {
 	ID: string;
@@ -25,7 +25,9 @@ interface NewNotebookDialogProps {
 }
 
 /**
- * Edit or create a new query
+ * The body of the New Notebook dialog: asks for the notebook's id and adds it
+ * to the app, with one empty code cell in Python, else R, else Pixel, as the
+ * server allows.
  */
 export const NewNotebookDialog = (
 	props: NewNotebookDialogProps,
@@ -33,8 +35,8 @@ export const NewNotebookDialog = (
 	const { onClose = () => null } = props;
 
 	const { state } = useBlocks();
-	const python = useConfig((state) => state.config.python);
-	const r = useConfig((state) => state.config.r);
+	const python = useConfig((state) => state.config?.python ?? true);
+	const r = useConfig((state) => state.config?.r ?? true);
 	const fieldId = useId();
 
 	const {

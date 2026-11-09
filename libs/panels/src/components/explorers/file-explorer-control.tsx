@@ -1,14 +1,12 @@
 import { FilePlus2Icon, RefreshCwIcon } from "lucide-react";
 import type { FC } from "react";
-import { useStore } from "zustand";
+import { useSessionPermissions } from "@semoss/sdk/react";
 import type { FileExplorerApi } from "@semoss/shared";
 import {
 	useWorkbenchPanel,
 	WorkbenchChromeButton,
 	type WorkbenchPanelProps,
 } from "@semoss/workbench";
-import { useAccessStore } from "../../hooks/use-access";
-import { getPermissionKey } from "../../types/access.types";
 import type { FileExplorerParams } from "./file-explorer-panel";
 
 /** File explorer refresh and create actions for the active panel. */
@@ -17,31 +15,36 @@ export const FileExplorerControl: FC<WorkbenchPanelProps> = ({ id }) => {
 		id,
 	);
 
-	const accessKey = value
-		? value.mode.type === "APP"
-			? getPermissionKey("PROJECT", value.mode.app)
-			: value.mode.type === "ENGINE"
-				? getPermissionKey("ENGINE", value.mode.engine)
-				: value.mode.type === "STORAGE"
-					? getPermissionKey("ENGINE", value.mode.storage)
-					: null
-		: null;
-	// read the cache directly rather than through `useAccess`: a chrome
+	// the resource whose access decides whether New shows; an insight's
+	// files and a user's own have none to check
+	const mode = value?.mode;
+	const resource =
+		mode?.type === "APP"
+			? { type: "PROJECT" as const, id: mode.app }
+			: mode?.type === "ENGINE"
+				? { type: "ENGINE" as const, id: mode.engine }
+				: mode?.type === "STORAGE"
+					? { type: "ENGINE" as const, id: mode.storage }
+					: null;
+	// read the session's permission rather than `useAccess`: a chrome
 	// control renders outside its panel's subtree, so it cannot reuse the
-	// access the panel already resolved
-	const accessStore = useAccessStore();
-	const permission = useStore(accessStore, (state) =>
-		accessKey ? state.permissions[accessKey]?.permission : undefined,
+	// access the panel resolved, but both share the session's one read
+	const { canEdit } = useSessionPermissions(
+		resource?.type ?? "ENGINE",
+		resource?.id ?? null,
 	);
 
 	if (!value) return null;
 
-	const readOnlyResource = accessKey
-		? !(permission === "OWNER" || permission === "EDIT")
-		: false;
+	// what the mode supports comes from its adapter, not `value.capabilities`:
+	// those also fold in the panel's read-only state, and the published api
+	// does not re-render this control when the panel's access changes, so
+	// they would lag a permission change; the access comes from `canEdit`
+	const readOnlyResource = resource ? !canEdit : false;
 	const canCreate =
 		!readOnlyResource &&
-		(value.capabilities.mutate || value.capabilities.upload);
+		(value.adapter.capabilities.mutate ||
+			value.adapter.capabilities.upload);
 
 	return (
 		<>

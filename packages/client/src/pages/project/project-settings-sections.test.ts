@@ -4,25 +4,25 @@ import {
 	PROJECT_SETTINGS_SECTIONS,
 } from "./project-settings-sections";
 
-vi.mock("../app/app-import-export-settings-page", () => ({
+vi.mock("../app/app-import-export-settings.page", () => ({
 	AppImportExportSettingsPage: () => null,
 }));
-vi.mock("../app/app-portal-settings-page", () => ({
+vi.mock("../app/app-portal-settings.page", () => ({
 	AppPortalSettingsPage: () => null,
 }));
-vi.mock("../app/app-python-reactors-settings-page", () => ({
+vi.mock("../app/app-python-reactors-settings.page", () => ({
 	AppPythonReactorsSettingsPage: () => null,
 }));
 vi.mock("./project-dangerous-settings-page", () => ({
 	ProjectDangerousSettingsPage: () => null,
 }));
-vi.mock("./project-description-settings-page", () => ({
+vi.mock("./project-description-settings.page", () => ({
 	ProjectDescriptionSettingsPage: () => null,
 }));
 vi.mock("./project-image-settings-page", () => ({
 	ProjectImageSettingsPage: () => null,
 }));
-vi.mock("./project-tags-settings-page", () => ({
+vi.mock("./project-tags-settings.page", () => ({
 	ProjectTagsSettingsPage: () => null,
 }));
 

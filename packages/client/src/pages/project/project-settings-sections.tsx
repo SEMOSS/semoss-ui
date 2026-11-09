@@ -10,13 +10,13 @@ import {
 import type { Role } from "@semoss/sdk";
 import type { Project } from "@semoss/shared";
 import type { CatalogSettingsPanelSection } from "@/components/catalog/catalog-settings-panel";
-import { AppImportExportSettingsPage } from "../app/app-import-export-settings-page";
-import { AppPortalSettingsPage } from "../app/app-portal-settings-page";
-import { AppPythonReactorsSettingsPage } from "../app/app-python-reactors-settings-page";
+import { AppImportExportSettingsPage } from "../app/app-import-export-settings.page";
+import { AppPortalSettingsPage } from "../app/app-portal-settings.page";
+import { AppPythonReactorsSettingsPage } from "../app/app-python-reactors-settings.page";
 import { ProjectDangerousSettingsPage } from "./project-dangerous-settings-page";
-import { ProjectDescriptionSettingsPage } from "./project-description-settings-page";
+import { ProjectDescriptionSettingsPage } from "./project-description-settings.page";
 import { ProjectImageSettingsPage } from "./project-image-settings-page";
-import { ProjectTagsSettingsPage } from "./project-tags-settings-page";
+import { ProjectTagsSettingsPage } from "./project-tags-settings.page";
 
 /** The project types whose owners get the app sections and app actions */
 export const APP_SETTINGS_TYPES: Project["project_type"][] = [

@@ -1,5 +1,6 @@
 import { ChevronsDownUp, ChevronsUpDown } from "lucide-react";
 import { useState } from "react";
+import { useSessionInsight } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -23,7 +24,6 @@ import {
 import { getErrorMessage } from "@semoss/utility/error";
 import { createGuardrailEngine } from "@/api/guardrails";
 import { EngineFormHeader } from "@/components/import/shared/engine-form-header";
-import { useSession } from "@/hooks/use-session";
 import { SqlPolicyRulesField } from "./sql-policy-rules-field";
 import {
 	type BuiltInRules,
@@ -116,6 +116,7 @@ const sqlQueryGuardrailSchema = z.object({
 
 type SqlQueryGuardrailFormValues = z.infer<typeof sqlQueryGuardrailSchema>;
 
+/** The values the form starts with, before the chosen dialect's built-in rules are read. */
 export const SQL_QUERY_GUARDRAIL_DEFAULTS: SqlQueryGuardrailFormValues = {
 	MODEL_NAME: "",
 	SQL_DIALECT: "GENERIC",
@@ -188,7 +189,7 @@ export const SqlQueryGuardrailForm = ({
 	icon,
 	onSubmit,
 }: SqlQueryGuardrailFormProps) => {
-	const insightID = useSession((state) => state.insightID);
+	const { insightId } = useSessionInsight();
 	const form = useForm<SqlQueryGuardrailFormValues>({
 		resolver: zodResolver(sqlQueryGuardrailSchema),
 		defaultValues: SQL_QUERY_GUARDRAIL_DEFAULTS,
@@ -200,7 +201,7 @@ export const SqlQueryGuardrailForm = ({
 	// take the place of the previous dialect's; the user's own rules stay
 	const policyBuiltIns = useSqlPolicyBuiltIns({
 		dialect,
-		insightId: insightID,
+		insightId: insightId,
 		onChange: (next, previous) => {
 			for (const field of IDENTIFIER_POLICY_FIELDS) {
 				form.setValue(
@@ -270,7 +271,7 @@ export const SqlQueryGuardrailForm = ({
 		let engineId: string;
 		try {
 			engineId = await createGuardrailEngine(
-				insightID,
+				insightId,
 				values.MODEL_NAME,
 				toSqlQueryGuardrailDetails(values, builtIns),
 			);

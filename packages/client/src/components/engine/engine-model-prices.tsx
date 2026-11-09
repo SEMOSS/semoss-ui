@@ -1,7 +1,7 @@
 import { Lock, Plus, Trash2 } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import type { Role } from "@semoss/sdk";
-import { usePixel } from "@semoss/sdk/react";
+import { usePixel, useSessionInsight } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -29,7 +29,6 @@ import {
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import { isRecord } from "@semoss/utility/object";
-import { useSession } from "@/hooks";
 import {
 	formatPrice,
 	formatPricingProviderLabel,
@@ -136,7 +135,7 @@ export const EngineModelPrices = ({
 	permission,
 	onUpdated,
 }: EngineModelPricesProps) => {
-	const runPixel = useSession((state) => state.runPixel);
+	const { run: runPixel } = useSessionInsight();
 	const getModelMetadata = usePixel<ModelMetadata>(
 		engineId ? `GetModelMetadata(engine=["${engineId}"]);` : "",
 	);

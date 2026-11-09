@@ -1,5 +1,5 @@
 import { useId } from "react";
-import { usePixel } from "@semoss/sdk/react";
+import { usePixel, useSessionInsight } from "@semoss/sdk/react";
 import { type Engine, EngineSelect, EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Alert,
@@ -29,7 +29,6 @@ import {
 import { getErrorMessage } from "@semoss/utility/error";
 import { createGuardrailEngine } from "@/api/guardrails";
 import { EngineFormHeader } from "@/components/import/shared/engine-form-header";
-import { useSession } from "@/hooks/use-session";
 import { JevPolicyChoicesField } from "./jev-policy-choices-field";
 import {
 	JEV_JUDGE_SUBTYPE,
@@ -61,7 +60,7 @@ export const JevPolicyGuardrailForm = ({
 	icon,
 	onSubmit,
 }: JevPolicyGuardrailFormProps) => {
-	const insightID = useSession((state) => state.insightID);
+	const { insightId } = useSessionInsight();
 	const form = useForm<JevPolicyGuardrailFormValues>({
 		resolver: zodResolver(jevPolicyGuardrailSchema),
 		defaultValues: JEV_POLICY_GUARDRAIL_DEFAULTS,
@@ -69,7 +68,7 @@ export const JevPolicyGuardrailForm = ({
 	const { errors, isSubmitting } = form.formState;
 	const questionType = form.watch("QUESTION_TYPE");
 
-	const models = usePixel<Engine[]>(MODELS_PIXEL, { data: [] }, insightID);
+	const models = usePixel<Engine[]>(MODELS_PIXEL, { data: [] }, insightId);
 	const areModelsLoading =
 		models.status === "INITIAL" || models.status === "LOADING";
 	const judgeModels = (Array.isArray(models.data) ? models.data : []).filter(
@@ -91,7 +90,7 @@ export const JevPolicyGuardrailForm = ({
 		let engineId: string;
 		try {
 			engineId = await createGuardrailEngine(
-				insightID,
+				insightId,
 				values.MODEL_NAME,
 				toJevPolicyGuardrailDetails(values),
 			);

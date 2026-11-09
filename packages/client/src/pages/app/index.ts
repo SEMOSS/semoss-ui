@@ -1,15 +1,7 @@
-import { AppGithubPage } from "./app-github-page";
-import { AppGithubSelectRepoPage } from "./app-github-select-repo-page";
-import { AppMcpUsagePage } from "./app-mcp-usage-page";
-import { AppSmssPage } from "./app-smss-page";
-import { NewPromptBuilderAppPage } from "./NewPromptBuilderAppPage";
-import { ViewAppPage } from "./view-app-page";
-
-export {
-	ViewAppPage,
-	NewPromptBuilderAppPage,
-	AppGithubSelectRepoPage,
-	AppGithubPage,
-	AppMcpUsagePage,
-	AppSmssPage,
-};
+// compatibility exports; import pages from their defining files
+export { AppGithubPage } from "./app-github.page";
+export { AppGithubSelectRepoPage } from "./app-github-select-repo-page";
+export { AppMcpUsagePage } from "./app-mcp-usage.page";
+export { AppSmssPage } from "./app-smss-page";
+export { NewPromptBuilderAppPage } from "./NewPromptBuilderAppPage";
+export { ViewAppPage } from "./view-app-page";

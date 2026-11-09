@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { useSessionInsight } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -43,8 +44,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import { createGuardrailEngine } from "@/api";
-import { useSession } from "@/hooks";
+import { createGuardrailEngine } from "@/api/guardrails";
 import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
 import { ImportEngineSelect } from "../shared/import-engine-select";
@@ -58,6 +58,32 @@ const LOCAL_PYTHON_GUARDRAIL_RETURN_STRUCTURE = `{
   }
 }`;
 
+interface GuardrailFormProps {
+	/** The guardrail type's name, shown as the form's title. */
+	title: string;
+	/** Helper text shown below the title. */
+	description: string;
+	/** A note about the guardrail type, shown above its fields. */
+	notice?: string;
+	/** The guardrail type's logo, shown beside the title. */
+	icon?: string;
+	/**
+	 * The guardrail type's fields, from its connection constants, grouped into
+	 * sections by their category. Left untyped: the field configs are not
+	 * modeled yet, and their shapes vary by type.
+	 */
+	fields;
+	/** Fields shown folded away under Advanced. */
+	advanced?;
+	/** Each section's description, by field category. */
+	categoryDescription: Record<string, string>;
+}
+
+/**
+ * Adds a guardrail of the chosen type to the catalog, for the guardrail types
+ * without a form of their own. A field's pixel can fill its value or its
+ * options, and runs again when a field it names as <KEY> changes.
+ */
 export const GuardrailForm = ({
 	title,
 	description,
@@ -66,7 +92,7 @@ export const GuardrailForm = ({
 	fields,
 	advanced,
 	categoryDescription,
-}) => {
+}: GuardrailFormProps) => {
 	const [openAdvanced, setOpenAdvanced] = useState(false);
 	const [resolvedFields, setResolvedFields] = useState(fields);
 	const [isValidDatabaseName, setIsValidDatabaseName] =
@@ -100,8 +126,7 @@ export const GuardrailForm = ({
 	});
 
 	const watchedFieldRef = useRef({});
-	const runPixel = useSession((state) => state.runPixel);
-	const insightID = useSession((state) => state.insightID);
+	const { run: runPixel, insightId } = useSessionInsight();
 	const navigate = useNavigate();
 	const defaultFields = resolvedFields;
 	const advancedFields = advanced;
@@ -226,7 +251,7 @@ export const GuardrailForm = ({
 		setLoading(true);
 		try {
 			const engineId = await createGuardrailEngine(
-				insightID,
+				insightId,
 				formData.MODEL_NAME,
 				newFormData,
 			);

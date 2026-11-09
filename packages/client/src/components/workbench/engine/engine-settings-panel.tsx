@@ -1,16 +1,16 @@
 import { SettingsIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { Role } from "@semoss/sdk";
+import { useSession } from "@semoss/sdk/react";
 import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import type { WorkbenchPanelConfig } from "@semoss/workbench";
 import { ResourceAuditTrail } from "@/features/audit-trail/resource-audit-trail";
-import { useSession } from "@/hooks/use-session";
 import { useEngine } from "@/hooks/useEngine";
 import { EngineActivityPage } from "@/pages/engine/engine-activity-page";
-import { EngineMcpUsagePage } from "@/pages/engine/engine-mcp-usage-page";
-import { EngineMetadataPage } from "@/pages/engine/engine-metadata-page";
+import { EngineMcpUsagePage } from "@/pages/engine/engine-mcp-usage.page";
+import { EngineMetadataPage } from "@/pages/engine/engine-metadata.page";
 import { EngineOverviewPage } from "@/pages/engine/engine-overview-page";
-import { EngineSettingsPage } from "@/pages/engine/engine-settings-page";
+import { EngineSettingsPage } from "@/pages/engine/engine-settings.page";
 import { EngineSmssPage } from "@/pages/engine/engine-smss-page";
 import { EngineUsagePage } from "@/pages/engine/engine-usage-page";
 
@@ -45,7 +45,7 @@ interface EngineSettingsPanelProps {
  */
 const EngineSettingsPanel: React.FC<EngineSettingsPanelProps> = ({ tabs }) => {
 	const { engine, permission } = useEngine();
-	const isAdmin = useSession((state) => state.user.admin);
+	const isAdmin = useSession((state) => state.user?.isAdmin === true);
 
 	const [selectedComponent, setSelectedComponent] =
 		useState<EngineSettingsPanelProps["tabs"][number]["component"]>(

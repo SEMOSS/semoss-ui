@@ -1,33 +1,32 @@
 import { Navigate, Outlet } from "react-router";
-import { ProjectAccessControl, ProjectCatalog } from "@/components/project";
-import { AutomationWorkbenchPage } from "@/components/workbench/automation";
-import {
-	AppGithubPage,
-	AppGithubSelectRepoPage,
-	AppMcpUsagePage,
-	AppSmssPage,
-	NewPromptBuilderAppPage,
-	ViewAppPage,
-} from "../app";
+import { ProjectAccessControl } from "@/components/project/project-access-control";
+import { ProjectCatalog } from "@/components/project/project-catalog";
+import { AutomationWorkbenchPage } from "@/components/workbench/automation/automation-workbench";
 import { AppActivityPage } from "../app/app-activity-page";
+import { AppGithubPage } from "../app/app-github.page";
+import { AppGithubSelectRepoPage } from "../app/app-github-select-repo-page";
+import { AppMcpUsagePage } from "../app/app-mcp-usage.page";
+import { AppSmssPage } from "../app/app-smss-page";
+import { NewPromptBuilderAppPage } from "../app/NewPromptBuilderAppPage";
+import { ViewAppPage } from "../app/view-app-page";
 import { AgentActivityPage } from "./agent/agent-activity-page";
 import { AgentOverviewPage } from "./agent/agent-overview-page";
-import { CreateAgentPage } from "./agent/create-agent-page";
+import { CreateAgentPage } from "./agent/create-agent.page";
 import { EditAgentPage } from "./agent/edit-agent-page";
-import { CreateAppPage } from "./app/create-app-page";
+import { CreateAppPage } from "./app/create-app.page";
 import { EditAppPage } from "./app/edit-app-page";
-import { CreateAutomationPage } from "./automation/create-automation-page";
+import { CreateAutomationPage } from "./automation/create-automation.page";
 import { CreateNotebookPage } from "./notebook/create-notebook-page";
 import { EditNotebookPage } from "./notebook/edit-notebook-page";
 import { ViewNotebookPage } from "./notebook/view-notebook-page";
+import { ProjectLayout } from "./project.layout";
 import { ProjectAuditPage } from "./project-audit.page";
 import { ProjectDependenciesPage } from "./project-dependencies-page";
-import { ProjectLayout } from "./project-layout";
 import { ProjectOverviewPage } from "./project-overview-page";
 import { ProjectSettingsLayout } from "./project-settings-layout";
 import { PROJECT_SETTINGS_SECTIONS } from "./project-settings-sections";
-import { ProjectTabsLayout } from "./project-tabs-layout";
-import { CreateSkillPage } from "./skill/create-skill-page";
+import { ProjectTabsLayout } from "./project-tabs.layout";
+import { CreateSkillPage } from "./skill/create-skill.page";
 import { EditSkillPage } from "./skill/edit-skill-page";
 import { ViewSkillPage } from "./skill/view-skill-page";
 
@@ -62,6 +61,10 @@ const buildProjectSettingsRoute = (): ProjectRoute => ({
 	],
 });
 
+/**
+ * Every project type's routes: its catalog, its new pages, and each project's
+ * pages and tabs.
+ */
 export const PROJECT_ROUTES: ProjectRoute[] = [
 	{
 		path: "app",
