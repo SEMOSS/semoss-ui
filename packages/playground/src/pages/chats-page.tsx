@@ -1,6 +1,21 @@
-import { SearchIcon, StarIcon, Trash2Icon } from "lucide-react";
+import {
+	ChevronDownIcon,
+	FileIcon,
+	FileTextIcon,
+	Loader2Icon,
+	SearchIcon,
+	StarIcon,
+	Trash2Icon,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	Fragment,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { Navigate } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import { useIteratorPixel, usePixel } from "@semoss/sdk/react";
@@ -14,10 +29,14 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
+	Input,
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
 	Muted,
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
 	Spinner,
 	toast,
 	useDebouncedValue,
@@ -50,22 +69,45 @@ export const ChatsPage = observer(() => {
 
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebouncedValue(search);
+	// Inclusive DATE_CREATED range — both must be set for the backend to
+	// apply the filter. Only narrows the paginated list, not the Favorites
+	// section, matching how `search` already leaves Favorites untouched.
+	const [startDate, setStartDate] = useState("");
+	const [endDate, setEndDate] = useState("");
+	const hasDateRange = Boolean(startDate && endDate);
+	const [sortField, setSortField] = useState<"created" | "modified">(
+		"created",
+	);
+	const [sortDir, setSortDir] = useState<"newest" | "oldest">("newest");
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 	const [deletedSet, setDeletedSet] = useState<Set<string>>(new Set());
 	const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
 	const [confirmOpen, setConfirmOpen] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
+	// Set when deleting a single chat via its row menu, instead of the bulk
+	// selection toolbar — the confirm dialog below adapts its copy to
+	// whichever of the two triggered it.
+	const [singleDeleteTarget, setSingleDeleteTarget] = useState<{
+		id: string;
+		name: string;
+	} | null>(null);
+
+	const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
+	const [downloadRoomId, setDownloadRoomId] = useState<string | null>(null);
+	const [downloadingFormat, setDownloadingFormat] = useState<
+		"word" | "pdf" | null
+	>(null);
 
 	const getRooms = useIteratorPixel<RoomItem[], RoomItem>(
 		(limit, offset) =>
-			`META | GetPlaygroundRooms(${debouncedSearch ? `search = "<encode>${debouncedSearch}</encode>", ` : ""}limit=${limit}, offset=${offset}, sort=["DESC"]);`,
+			`META | GetPlaygroundRooms(${debouncedSearch ? `search = "%24%7BdebouncedSearch%7D", ` : ""}${hasDateRange ? `startDate=["${startDate}"], endDate=["${endDate}"], ` : ""}limit=${limit}, offset=${offset}, sortBy=["${sortField}"], sort=["${sortDir === "newest" ? "DESC" : "ASC"}"]);`,
 		(response) => (response.length < 25 ? -1 : Infinity),
 		(response) => response,
 		{ limit: 25 },
-		// Re-fetch only on search change — counter-based refreshes are
-		// handled by the useEffect below, which calls reset() and
-		// preserves current data instead of clearing it first.
-		[debouncedSearch],
+		// Re-fetch on search, date-range, or sort change — counter-based
+		// refreshes are handled by the useEffect below, which calls reset()
+		// and preserves current data instead of clearing it first.
+		[debouncedSearch, startDate, endDate, sortField, sortDir],
 	);
 
 	// Full set of pinned rooms across every workspace, independent of the
@@ -84,15 +126,16 @@ export const ChatsPage = observer(() => {
 			message_id: string;
 			room_name: string;
 			date_created: string;
+			match_count: number;
 		}[],
 		RoomItem
 	>(
 		(limit, offset) =>
 			debouncedSearch
-				? `META | SearchRoomMessages(search=[${JSON.stringify(debouncedSearch)}], project=["${SYSTEM__PLAYGROUND}"], limit=[${limit}], offset=[${offset}], includeMessageText=[false]);`
+				? `META | SearchRoomMessages(search=[${JSON.stringify(debouncedSearch)}], project=["${SYSTEM__PLAYGROUND}"], ${hasDateRange ? `startDate=["${startDate}"], endDate=["${endDate}"], ` : ""}limit=[${limit}], offset=[${offset}], includeMessageText=[false]);`
 				: "",
 		// Same short-page-means-last-page heuristic as getRooms above — the
-		// backend already dedupes to one row per room before limit/offset, so a
+		// backend already groups to one row per room before limit/offset, so a
 		// full page here means "there may be more matching rooms."
 		(response) => (response.length < 50 ? -1 : Infinity),
 		(rows) => {
@@ -105,10 +148,11 @@ export const ChatsPage = observer(() => {
 					ROOM_ID: r.room_id,
 					ROOM_NAME: r.room_name ?? "",
 					DATE_CREATED: r.date_created ?? "",
+					MATCH_COUNT: r.match_count,
 				}));
 		},
 		{ limit: 50 },
-		[debouncedSearch],
+		[debouncedSearch, startDate, endDate],
 	);
 
 	const { setScroll } = useInfiniteScroll({
@@ -183,25 +227,51 @@ export const ChatsPage = observer(() => {
 	// split confusingly — matches still show their star inline.
 	const isSearching = debouncedSearch.length > 0;
 
+	// The timestamp a room is bucketed/sorted by — DATE_CREATED normally, or
+	// UPDATED_AT (falling back to DATE_CREATED for rooms with no activity
+	// yet) when sorting by last-modified.
+	const getSortTimestamp = useCallback(
+		(room: RoomItem) =>
+			sortField === "modified"
+				? room.UPDATED_AT || room.DATE_CREATED
+				: room.DATE_CREATED,
+		[sortField],
+	);
+
+	const compareRooms = useCallback(
+		(a: RoomItem, b: RoomItem) => {
+			const direction = sortDir === "newest" ? -1 : 1;
+			return (
+				direction *
+				(parseTimestampWithUtcDefault(getSortTimestamp(a)).valueOf() -
+					parseTimestampWithUtcDefault(getSortTimestamp(b)).valueOf())
+			);
+		},
+		[sortDir, getSortTimestamp],
+	);
+
 	const pinnedRooms = useMemo(() => {
 		if (isSearching) return [];
 		return Array.from(pinnedIds)
 			.filter((id) => !deletedSet.has(id))
 			.map((id) => roomById.get(id))
 			.filter((r): r is RoomItem => Boolean(r))
-			.sort(
-				(a, b) =>
-					parseTimestampWithUtcDefault(b.DATE_CREATED).valueOf() -
-					parseTimestampWithUtcDefault(a.DATE_CREATED).valueOf(),
-			);
-	}, [pinnedIds, deletedSet, roomById, isSearching]);
+			.sort(compareRooms);
+	}, [pinnedIds, deletedSet, roomById, isSearching, compareRooms]);
 
-	// Non-pinned rooms grouped into date buckets, matching the sidebar.
+	// Non-pinned rooms grouped into date buckets, matching the sidebar. Bucket
+	// order (today → older) always stays most-to-least recent regardless of
+	// sortDir; only which timestamp it buckets/orders by follows sortField,
+	// so switching to "modified" surfaces recently-active rooms under
+	// "Today" even if they were created long ago.
 	const groups = useMemo(() => {
+		const nonPinned = visibleRooms.filter(
+			(room) => isSearching || !pinnedIds.has(room.ROOM_ID),
+		);
+
 		const byBucket = new Map<string, RoomItem[]>();
-		for (const room of visibleRooms) {
-			if (!isSearching && pinnedIds.has(room.ROOM_ID)) continue;
-			const d = parseTimestampWithUtcDefault(room.DATE_CREATED);
+		for (const room of nonPinned) {
+			const d = parseTimestampWithUtcDefault(getSortTimestamp(room));
 			if (!d.isValid()) continue;
 			const bucket = getDateBucket(d);
 			const rooms = byBucket.get(bucket);
@@ -211,11 +281,18 @@ export const ChatsPage = observer(() => {
 		return DATE_BUCKET_ORDER.filter((bucket) => byBucket.has(bucket)).map(
 			(bucket) => ({
 				bucket,
-				label: t(`sidebar:buckets.${bucket}`),
-				rooms: byBucket.get(bucket) ?? [],
+				label: t(`sidebar:buckets.${bucket}`) as string | null,
+				rooms: (byBucket.get(bucket) ?? []).slice().sort(compareRooms),
 			}),
 		);
-	}, [visibleRooms, pinnedIds, isSearching, t]);
+	}, [
+		visibleRooms,
+		pinnedIds,
+		isSearching,
+		t,
+		compareRooms,
+		getSortTimestamp,
+	]);
 
 	const allVisibleIds = useMemo(() => {
 		const ids: string[] = [];
@@ -324,9 +401,20 @@ export const ChatsPage = observer(() => {
 		}
 	};
 
+	const pendingDeleteIds = singleDeleteTarget
+		? [singleDeleteTarget.id]
+		: Array.from(selectedIds);
+	const isDeleteDialogOpen = confirmOpen || singleDeleteTarget !== null;
+
+	const closeDeleteDialog = () => {
+		setConfirmOpen(false);
+		setSingleDeleteTarget(null);
+	};
+
 	const handleConfirmDelete = async () => {
-		if (selectedIds.size === 0) return;
-		const ids = Array.from(selectedIds);
+		if (pendingDeleteIds.length === 0) return;
+		const ids = pendingDeleteIds;
+		const isSingle = singleDeleteTarget !== null;
 
 		setIsDeleting(true);
 		// Optimistically hide
@@ -340,9 +428,11 @@ export const ChatsPage = observer(() => {
 
 		if (failed.length === 0) {
 			toast.success(
-				t("workspace:chats.bulkDeleteSuccess", {
-					count: ids.length,
-				}),
+				isSingle
+					? t("workspace:chat.deleteSuccess")
+					: t("workspace:chats.bulkDeleteSuccess", {
+							count: ids.length,
+						}),
 			);
 		} else {
 			// Restore failed ones from deletedSet
@@ -352,18 +442,44 @@ export const ChatsPage = observer(() => {
 				return next;
 			});
 			toast.error(
-				t("workspace:chats.bulkDeletePartialFail", {
-					failed: failed.length,
-					total: ids.length,
-				}),
+				isSingle
+					? t("workspace:chat.deleteFailed")
+					: t("workspace:chats.bulkDeletePartialFail", {
+							failed: failed.length,
+							total: ids.length,
+						}),
 			);
 		}
 
 		setSelectedIds(new Set());
-		setConfirmOpen(false);
+		closeDeleteDialog();
 		setIsDeleting(false);
 		getRooms.reset();
 		getPinnedRooms.refresh();
+	};
+
+	const handleDownloadConversation = async (
+		roomId: string,
+		format: "word" | "pdf",
+	) => {
+		setDownloadingFormat(format);
+		try {
+			await chat.downloadConversation(roomId, format);
+			toast.success(
+				t("workspace:chats.downloadSuccess", {
+					format: format.toUpperCase(),
+				}),
+			);
+			setDownloadDialogOpen(false);
+		} catch (e) {
+			toast.error(
+				e instanceof Error
+					? e.message
+					: t("workspace:chats.downloadFailed"),
+			);
+		} finally {
+			setDownloadingFormat(null);
+		}
 	};
 
 	const renderRow = (room: RoomItem) => (
@@ -374,6 +490,16 @@ export const ChatsPage = observer(() => {
 			isPinned={pinnedIds.has(room.ROOM_ID)}
 			onToggleSelect={() => toggleSelectOne(room.ROOM_ID)}
 			onTogglePin={() => handleTogglePin(room.ROOM_ID)}
+			onDownloadClick={() => {
+				setDownloadRoomId(room.ROOM_ID);
+				setDownloadDialogOpen(true);
+			}}
+			onDeleteClick={() =>
+				setSingleDeleteTarget({
+					id: room.ROOM_ID,
+					name: room.ROOM_NAME,
+				})
+			}
 		/>
 	);
 
@@ -382,37 +508,159 @@ export const ChatsPage = observer(() => {
 	}
 
 	return (
-		<div
-			ref={(el) => {
-				if (el) setScroll(el);
-			}}
-			className="@container h-full w-full overflow-y-auto"
-		>
-			<div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-6 sm:px-6">
-				{/* Sticky header */}
-				<div className="-mx-4 -mt-6 sm:-mx-6 sticky top-0 z-20 flex flex-wrap items-center gap-3 border-b bg-background px-4 py-4 sm:px-6">
-					<div className="min-w-0 flex-1">
-						<div className="break-words font-semibold @md:text-2xl text-foreground text-xl leading-tight">
-							{t("workspace:chats.title")}
-						</div>
-						<div className="@md:block hidden text-muted-foreground text-sm">
-							{t("workspace:chats.subtitle")}
+		<div className="@container flex h-full w-full flex-col overflow-hidden">
+			<div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 overflow-hidden @3xl:px-12 @md:px-6 px-4 pt-8">
+				{/* Header — title row plus search/sort row. Not scrolling; only
+				    the table body below scrolls, matching the knowledge-library
+				    page's search/filters-fixed, results-scroll layout. */}
+				<div className="flex flex-col gap-3">
+					<div className="flex flex-row items-center gap-3">
+						<div className="min-w-0 flex-1">
+							<div className="truncate font-semibold @md:text-2xl text-foreground text-xl leading-tight">
+								{t("workspace:chats.title")}
+							</div>
+							<div className="@md:block hidden text-muted-foreground text-sm">
+								{t("workspace:chats.subtitle")}
+							</div>
 						</div>
 					</div>
-				</div>
 
-				{/* Search */}
-				<InputGroup className="bg-background">
-					<InputGroupInput
-						aria-label={t("common:buttons.search")}
-						placeholder={t("common:buttons.search")}
-						value={search}
-						onChange={(e) => setSearch(e.target.value)}
-					/>
-					<InputGroupAddon>
-						<SearchIcon />
-					</InputGroupAddon>
-				</InputGroup>
+					<div className="flex flex-row items-center gap-2">
+						<InputGroup className="min-w-0 flex-1 bg-background">
+							<InputGroupInput
+								placeholder={t("common:buttons.search")}
+								value={search}
+								onChange={(e) => setSearch(e.target.value)}
+							/>
+							<InputGroupAddon>
+								<SearchIcon />
+							</InputGroupAddon>
+						</InputGroup>
+
+						<Popover>
+							<PopoverTrigger asChild>
+								<Button variant="outline" size="sm">
+									{sortField === "created"
+										? sortDir === "newest"
+											? t(
+													"workspace:chats.sortCreatedNewest",
+												)
+											: t(
+													"workspace:chats.sortCreatedOldest",
+												)
+										: sortDir === "newest"
+											? t(
+													"workspace:chats.sortModifiedNewest",
+												)
+											: t(
+													"workspace:chats.sortModifiedOldest",
+												)}
+									<ChevronDownIcon className="ml-1 h-4 w-4" />
+								</Button>
+							</PopoverTrigger>
+							<PopoverContent className="w-52 p-1" align="start">
+								<Button
+									variant={
+										sortField === "created" &&
+										sortDir === "newest"
+											? "secondary"
+											: "ghost"
+									}
+									size="sm"
+									className="w-full justify-start"
+									onClick={() => {
+										setSortField("created");
+										setSortDir("newest");
+									}}
+								>
+									{t("workspace:chats.sortCreatedNewest")}
+								</Button>
+								<Button
+									variant={
+										sortField === "created" &&
+										sortDir === "oldest"
+											? "secondary"
+											: "ghost"
+									}
+									size="sm"
+									className="w-full justify-start"
+									onClick={() => {
+										setSortField("created");
+										setSortDir("oldest");
+									}}
+								>
+									{t("workspace:chats.sortCreatedOldest")}
+								</Button>
+								<Button
+									variant={
+										sortField === "modified" &&
+										sortDir === "newest"
+											? "secondary"
+											: "ghost"
+									}
+									size="sm"
+									className="w-full justify-start"
+									onClick={() => {
+										setSortField("modified");
+										setSortDir("newest");
+									}}
+								>
+									{t("workspace:chats.sortModifiedNewest")}
+								</Button>
+								<Button
+									variant={
+										sortField === "modified" &&
+										sortDir === "oldest"
+											? "secondary"
+											: "ghost"
+									}
+									size="sm"
+									className="w-full justify-start"
+									onClick={() => {
+										setSortField("modified");
+										setSortDir("oldest");
+									}}
+								>
+									{t("workspace:chats.sortModifiedOldest")}
+								</Button>
+							</PopoverContent>
+						</Popover>
+					</div>
+
+					<div className="flex flex-row items-center gap-2">
+						<Input
+							type="date"
+							value={startDate}
+							max={endDate || undefined}
+							onChange={(e) => setStartDate(e.target.value)}
+							className="w-auto"
+							aria-label={t("workspace:chats.startDate")}
+						/>
+						<span className="text-muted-foreground text-sm">
+							{t("workspace:chats.dateRangeTo")}
+						</span>
+						<Input
+							type="date"
+							value={endDate}
+							min={startDate || undefined}
+							onChange={(e) => setEndDate(e.target.value)}
+							className="w-auto"
+							aria-label={t("workspace:chats.endDate")}
+						/>
+						{hasDateRange && (
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={() => {
+									setStartDate("");
+									setEndDate("");
+								}}
+							>
+								{t("workspace:chats.clearDateRange")}
+							</Button>
+						)}
+					</div>
+				</div>
 
 				{/* Select-all toolbar — always visible so the user can select
 				    every chat without first selecting one. */}
@@ -467,80 +715,136 @@ export const ChatsPage = observer(() => {
 					</div>
 				)}
 
-				{/* Body */}
+				{/* Frame — static border/rounding, never scrolls */}
 				<div
 					className={cn(
-						"transition-opacity",
+						"flex-1 overflow-hidden rounded-lg border transition-opacity",
 						isLoadingRooms && hasLoadedOnce && "opacity-60",
 					)}
 				>
-					{!hasLoadedOnce && isLoadingRooms ? (
-						<div className="flex w-full items-center justify-center py-12">
-							<Spinner />
-						</div>
-					) : !hasRooms ? (
-						<div className="flex w-full items-center justify-center py-12">
-							<Muted>{t("workspace:chat.noChats")}</Muted>
-						</div>
-					) : (
-						<div className="flex w-full flex-col gap-6">
-							{/* Pinned section */}
-							{pinnedRooms.length > 0 && (
-								<div className="flex flex-col gap-2">
-									<div className="flex items-center gap-1.5 px-1 font-medium text-muted-foreground text-xs">
-										<StarIcon className="size-3.5 fill-primary text-primary" />
-										{t("workspace:chats.favorites")}
-									</div>
-									<div className="flex flex-col gap-2">
-										{pinnedRooms.map(renderRow)}
-									</div>
-								</div>
-							)}
+					{/* Body — the only scrollable region on this page */}
+					<div
+						ref={(el) => {
+							if (el) setScroll(el);
+						}}
+						className="h-full overflow-y-auto pb-4"
+					>
+						{!hasLoadedOnce && isLoadingRooms ? (
+							<div className="flex w-full items-center justify-center py-12">
+								<Spinner />
+							</div>
+						) : !hasRooms ? (
+							<div className="flex w-full items-center justify-center py-12">
+								<Muted>{t("workspace:chat.noChats")}</Muted>
+							</div>
+						) : (
+							<table className="w-full text-sm">
+								<thead className="sticky top-0 z-10">
+									<tr className="h-9 border-b bg-muted text-left font-medium text-muted-foreground text-xs">
+										<th className="w-10 rounded-tl-lg px-2 py-2 font-medium" />
+										<th className="w-full px-4 py-2 font-medium">
+											{t("workspace:chats.columnName")}
+										</th>
+										<th className="hidden px-4 py-2 font-medium sm:table-cell">
+											{t(
+												"workspace:chats.columnDateCreated",
+											)}
+										</th>
+										<th className="hidden px-4 py-2 font-medium sm:table-cell">
+											{t(
+												"workspace:chats.columnDateModified",
+											)}
+										</th>
+										<th className="rounded-tr-lg px-4 py-2" />
+									</tr>
+								</thead>
+								<tbody className="divide-y">
+									{/* Pinned section */}
+									{pinnedRooms.length > 0 && (
+										<>
+											<tr className="sticky top-9 z-[5]">
+												<td
+													colSpan={5}
+													className="bg-muted px-4 py-1.5"
+												>
+													<div className="flex items-center gap-1.5 font-medium text-muted-foreground text-xs">
+														<StarIcon className="size-3.5 fill-yellow-500 text-yellow-500" />
+														{t(
+															"workspace:chats.favorites",
+														)}
+													</div>
+												</td>
+											</tr>
+											{pinnedRooms.map(renderRow)}
+										</>
+									)}
 
-							{/* Date-grouped sections */}
-							{groups.map((g) => (
-								<div
-									key={g.bucket}
-									className="flex flex-col gap-2"
-								>
-									<div className="px-1 font-medium text-muted-foreground text-xs">
-										{g.label}
-									</div>
-									<div className="flex flex-col gap-2">
-										{g.rooms.map(renderRow)}
-									</div>
-								</div>
-							))}
+									{/* Date-grouped sections — a single ungrouped
+									    section (no divider) when sorting by name */}
+									{groups.map((g) => (
+										<Fragment key={g.bucket}>
+											{g.label !== null && (
+												<tr className="sticky top-9 z-[5]">
+													<td
+														colSpan={5}
+														className="bg-muted px-4 py-1.5 font-medium text-muted-foreground text-xs"
+													>
+														{g.label}
+													</td>
+												</tr>
+											)}
+											{g.rooms.map(renderRow)}
+										</Fragment>
+									))}
 
-							{hasLoadedOnce && isLoadingRooms && (
-								<div className="flex items-center justify-center p-4">
-									<Spinner className="size-4" />
-								</div>
-							)}
-						</div>
-					)}
+									{hasLoadedOnce && isLoadingRooms && (
+										<tr>
+											<td colSpan={5}>
+												<div className="flex items-center justify-center p-2">
+													<Spinner className="size-4" />
+												</div>
+											</td>
+										</tr>
+									)}
+								</tbody>
+							</table>
+						)}
+					</div>
 				</div>
 			</div>
 
-			{/* Bulk delete confirmation */}
-			<Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+			{/* Delete confirmation — bulk (from the selection toolbar) or a
+			    single chat (from its row menu) */}
+			<Dialog
+				open={isDeleteDialogOpen}
+				onOpenChange={(open) => {
+					if (!open) closeDeleteDialog();
+				}}
+			>
 				<DialogContent>
 					<DialogHeader>
 						<DialogTitle>
-							{t("workspace:chats.bulkDeleteConfirmTitle", {
-								count: selectedIds.size,
-							})}
+							{singleDeleteTarget
+								? t("workspace:chat.deleteConfirmTitle")
+								: t("workspace:chats.bulkDeleteConfirmTitle", {
+										count: selectedIds.size,
+									})}
 						</DialogTitle>
 						<DialogDescription>
-							{t("workspace:chats.bulkDeleteConfirmDescription", {
-								count: selectedIds.size,
-							})}
+							{singleDeleteTarget
+								? t("workspace:chat.deleteConfirmDescription", {
+										name: singleDeleteTarget.name,
+									})
+								: t(
+										"workspace:chats.bulkDeleteConfirmDescription",
+										{ count: selectedIds.size },
+									)}
 						</DialogDescription>
 					</DialogHeader>
 					<DialogFooter>
 						<Button
 							variant="outline"
-							onClick={() => setConfirmOpen(false)}
+							onClick={closeDeleteDialog}
 							disabled={isDeleting}
 						>
 							{t("workspace:chat.cancel")}
@@ -554,6 +858,82 @@ export const ChatsPage = observer(() => {
 							{t("workspace:chat.delete")}
 						</Button>
 					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{/* Download conversation — matches the sidebar's dialog */}
+			<Dialog
+				open={downloadDialogOpen}
+				onOpenChange={(open) => {
+					setDownloadDialogOpen(open);
+					if (!open) setDownloadRoomId(null);
+				}}
+			>
+				<DialogContent className="sm:max-w-md">
+					<DialogHeader>
+						<DialogTitle>
+							{t("workspace:chats.downloadTitle")}
+						</DialogTitle>
+						<DialogDescription>
+							{t("workspace:chats.downloadDescription")}
+						</DialogDescription>
+					</DialogHeader>
+					<div className="grid grid-cols-2 gap-3 py-4">
+						<Button
+							variant="outline"
+							className="h-auto flex-col gap-1 p-4"
+							disabled={downloadingFormat !== null}
+							onClick={() => {
+								if (downloadRoomId) {
+									handleDownloadConversation(
+										downloadRoomId,
+										"word",
+									);
+								}
+							}}
+						>
+							{downloadingFormat === "word" ? (
+								<Loader2Icon className="size-4 animate-spin" />
+							) : (
+								<>
+									<FileTextIcon className="mb-1 size-6" />
+									<span className="font-medium">
+										Word Document
+									</span>
+									<span className="text-muted-foreground text-xs">
+										.docx
+									</span>
+								</>
+							)}
+						</Button>
+						<Button
+							variant="outline"
+							className="h-auto flex-col gap-1 p-4"
+							disabled={downloadingFormat !== null}
+							onClick={() => {
+								if (downloadRoomId) {
+									handleDownloadConversation(
+										downloadRoomId,
+										"pdf",
+									);
+								}
+							}}
+						>
+							{downloadingFormat === "pdf" ? (
+								<Loader2Icon className="size-4 animate-spin" />
+							) : (
+								<>
+									<FileIcon className="mb-1 size-6" />
+									<span className="font-medium">
+										PDF Document
+									</span>
+									<span className="text-muted-foreground text-xs">
+										.pdf
+									</span>
+								</>
+							)}
+						</Button>
+					</div>
 				</DialogContent>
 			</Dialog>
 		</div>
