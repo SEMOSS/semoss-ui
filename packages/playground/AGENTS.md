@@ -39,8 +39,8 @@ added: backend calls apps share live in `libs/sdk/src/api/` (for example `runMcp
 - **Only rooms are insights.** The app has no `InsightProvider` of its own. The room page, and a
   new chat's prepared room, mount one with `options={{ insightId: room.insightId }}` and
   `destroyOnUnmount={false}`, since `RoomStore` owns that insight. Pixels that belong to no
-  room run in the session's insight: `useSessionPixel` for reads, `useIteratorPixel` with
-  `insightId` from `useSessionInsight()`, `useSessionInsight().run` / `upload` / `download`, or
+  room run in the session's insight: `useSessionPixel` for reads, `useSessionIteratorPixel` for
+  lists that page, `useSessionInsight().run` / `upload` / `download`, or
   `Session.insight.run` outside React. `run` returns `errors` rather than throwing, so wrap it in
   `throwOnPixelErrors` (`utility/pixel-errors.ts`) where a caller expects a throw.
 - **Moving off MobX and zustand.** Put new state in hooks over the SDK's stores, never in a new

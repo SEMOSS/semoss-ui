@@ -12,8 +12,7 @@ import { Link } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import {
 	runPixel,
-	useIteratorPixel,
-	useSessionInsight,
+	useSessionIteratorPixel,
 	useSessionPixel,
 } from "@semoss/sdk/react";
 import {
@@ -101,8 +100,7 @@ export const WorkspaceChatList = ({
 	const [isRenaming, setIsRenaming] = useState(false);
 	const [renamedMap, setRenamedMap] = useState<Record<string, string>>({});
 
-	const { insightId: sessionInsightId } = useSessionInsight();
-	const getWorkspaceRooms = useIteratorPixel<
+	const getWorkspaceRooms = useSessionIteratorPixel<
 		{ total_count: number; rooms: Room[] },
 		Room
 	>(
@@ -110,7 +108,7 @@ export const WorkspaceChatList = ({
 			`GetWorkspaceRooms(workspaceId=["${workspaceId}"], ${debouncedSearch ? `filters=[Filter(ROOM__ROOM_NAME ?like "<encode>${debouncedSearch}</encode>")],` : ""} limit=[${limit}], offset=[${offset}]);`,
 		(response) => response.total_count,
 		(response) => response.rooms,
-		{ limit: limit ?? 25, insightId: sessionInsightId },
+		{ limit: limit ?? 25 },
 		[debouncedSearch, workspaceId],
 	);
 

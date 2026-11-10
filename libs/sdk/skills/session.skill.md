@@ -1,6 +1,6 @@
 ---
 name: sdk-session
-description: "Use when signing users in or out, reading the signed in user or their metadata, gating UI on sign in or retrying a session that could not be read, reading the server config or theme, checking a user's permission on a project or engine, or deciding which insight a pixel runs in with @semoss/sdk. Covers Session, Config, useSession, useSessionRetry, useConfig, useSessionPermissions, useSessionInsight and useLogins."
+description: "Use when signing users in or out, reading the signed in user or their metadata, gating UI on sign in or retrying a session that could not be read, reading the server config or theme, checking a user's permission on a project or engine, or deciding which insight a pixel runs in with @semoss/sdk. Covers Session, Config, useSession, useSessionRetry, useConfig, useSessionPermissions, useSessionInsight, useSessionPixel, useSessionIteratorPixel and useLogins."
 ---
 
 # @semoss/sdk Session, Config and Permissions
@@ -103,12 +103,16 @@ session over, config included.
 | The pixel | Run it with |
 |---|---|
 | Needs no workspace and runs once, such as a one off mutation | `runPixel(pixel)` with no insight id. The backend makes an insight for it and keeps it until the session ends |
-| Needs no workspace and runs again and again, such as a search, a list that pages, or a poll | `useSessionPixel(pixel)` waits for the session's existing insight ID, or `Session.insight.run` / `useSessionInsight().run` when creation and recovery are needed. Never `runPixel` with no id, which would keep one more insight each time |
+| Needs no workspace and runs again and again, such as a search, a list that pages, or a poll | `useSessionPixel(pixel)` waits for the session's existing insight ID (`useSessionIteratorPixel` for a list that pages), or `Session.insight.run` / `useSessionInsight().run` when creation and recovery are needed. Never `runPixel` with no id, which would keep one more insight each time |
 | Belongs to a workspace | `useInsightPixel(pixel)` uses only the nearest `<InsightProvider>` and waits for its ID; it throws without a provider. Alternatively, use that workspace's `useInsight().actions.run` or its `insightId` |
 | Is one of several steps that must share an insight but belong to no workspace, such as an upload then a pixel reading the file, or an export then its download | `Session.insight`: `upload`, `run`, `download`, or `useSessionInsight()` in React |
 
 `Session.insight` (a `SessionInsightStore`) is the session's own insight. It is not a
 workspace: it has no recipe, room or state, only an id that every call shares.
+
+`useSessionIteratorPixel(pixelQuery, getTotalCount, getData, options?, dependencies?)` is
+`useIteratorPixel` in the same insight: it waits while the ID is empty and starts the list
+over when the ID changes, so a sign in or out never pages one user's list into another's.
 
 `useSessionPixel(pixel, config?)` subscribes to that ID and stays `INITIAL` while it
 is empty. It does not initialize the session or create the insight: the host must

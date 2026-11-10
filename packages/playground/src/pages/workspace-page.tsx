@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "@semoss/i18n";
-import { useIteratorPixel, useSessionInsight } from "@semoss/sdk/react";
+import { useSessionIteratorPixel } from "@semoss/sdk/react";
 import {
 	Button,
 	InputGroup,
@@ -128,8 +128,7 @@ export const WorkspacePage = observer(() => {
 	/**
 	 * Get all of the workspaces with lazy loading
 	 */
-	const { insightId: sessionInsightId } = useSessionInsight();
-	const getWorkspaces = useIteratorPixel<App[], App>(
+	const getWorkspaces = useSessionIteratorPixel<App[], App>(
 		(limit, offset) =>
 			buildCatalogPixel(filters, debouncedSearch, sort, limit, offset),
 		(response) => {
@@ -145,7 +144,6 @@ export const WorkspacePage = observer(() => {
 		},
 		{
 			limit: PAGE_SIZE,
-			insightId: sessionInsightId,
 		},
 		[filters, debouncedSearch, sort],
 	);

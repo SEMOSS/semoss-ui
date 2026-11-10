@@ -1,5 +1,4 @@
 import {
-	CSRF,
 	Env,
 	get,
 	type ModelUsageLimit,
@@ -13,8 +12,6 @@ export const setupResetPassword = async (
 	subject: string,
 	url?: string,
 ): Promise<{ success: boolean; message?: string }> => {
-	await ensureCsrfToken();
-
 	const postData: Record<string, string> = {
 		email: email,
 		type: type,
@@ -46,33 +43,28 @@ export const setupResetPassword = async (
 	return response.data;
 };
 
-const ensureCsrfToken = async () => {
-	// CSRF is disabled by configuration, no token needed.
-	if (!CSRF.isEnabled && !Env.CSRF) {
-		return;
+/**
+ * Change the signed in user's native password.
+ *
+ * @param currentPassword - Their password now.
+ * @param newPassword - The password to change it to.
+ * @returns The backend's message.
+ * @throws When the backend refuses the change, with its message.
+ */
+export const changePassword = async (
+	currentPassword: string,
+	newPassword: string,
+): Promise<string> => {
+	const response = await post<{ success: boolean; message?: string }>(
+		`${Env.MODULE}/api/auth/user/changePassword`,
+		{ currentPassword: currentPassword, newPassword: newPassword },
+	);
+
+	if (!response.data?.success) {
+		throw Error(response.data?.message || "Password change failed");
 	}
 
-	// Token already cached.
-	if (CSRF.token) {
-		return;
-	}
-
-	const response = await fetch(`${Env.MODULE}/api/config/fetchCsrf`, {
-		headers: {
-			"X-CSRF-Token": "fetch",
-		},
-	});
-
-	CSRF.token =
-		response.headers.get("X-CSRF-Token") ||
-		response.headers.get("x-csrf-token") ||
-		"";
-
-	if (!CSRF.token) {
-		throw Error(
-			"Unable to initialize security token for password reset. Please refresh and try again.",
-		);
-	}
+	return response.data.message ?? "";
 };
 
 /** @public Called by name through `useAPI`. */

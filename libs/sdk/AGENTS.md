@@ -208,7 +208,8 @@ so their public types never name a utility type.
   [session guide](./skills/session.skill.md#insight-lifecycle-belongs-to-its-owner).
 - Where a pixel runs: `runPixel(pixel)` with no insight id for a one off pixel that needs no
   workspace (the backend makes an insight and keeps it until the session ends);
-  `useSessionPixel` waits for the session's existing insight ID and `useInsightPixel`
+  `useSessionPixel` (and `useSessionIteratorPixel` for lists that page, which starts over
+  when the ID changes) waits for the session's existing insight ID and `useInsightPixel`
   waits for the nearest `InsightProvider`'s ID. Both call transport directly, without
   insight creation or recovery. Existing `usePixel` retains explicit/workspace
   routing with no session fallback; only implicit context fallback is deprecated,

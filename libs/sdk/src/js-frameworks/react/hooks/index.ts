@@ -6,6 +6,7 @@ export { useIteratorPixel } from "./use-iterator-pixel";
 export { usePixel } from "./use-pixel";
 export { useSession } from "./use-session";
 export { useSessionInsight } from "./use-session-insight";
+export { useSessionIteratorPixel } from "./use-session-iterator-pixel";
 export { useSessionPermissions } from "./use-session-permissions";
 export { useSessionPixel } from "./use-session-pixel";
 export { useSessionRetry } from "./use-session-retry";

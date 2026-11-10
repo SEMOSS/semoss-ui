@@ -3,11 +3,7 @@ import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Navigate } from "react-router";
 import { useTranslation } from "@semoss/i18n";
-import {
-	useIteratorPixel,
-	useSessionInsight,
-	useSessionPixel,
-} from "@semoss/sdk/react";
+import { useSessionIteratorPixel, useSessionPixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Checkbox,
@@ -60,13 +56,12 @@ export const ChatsPage = observer(() => {
 	const [confirmOpen, setConfirmOpen] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
 
-	const { insightId: sessionInsightId } = useSessionInsight();
-	const getRooms = useIteratorPixel<RoomItem[], RoomItem>(
+	const getRooms = useSessionIteratorPixel<RoomItem[], RoomItem>(
 		(limit, offset) =>
 			`META | GetPlaygroundRooms(${debouncedSearch ? `search = "<encode>${debouncedSearch}</encode>", ` : ""}limit=${limit}, offset=${offset}, sort=["DESC"]);`,
 		(response) => (response.length < 25 ? -1 : Infinity),
 		(response) => response,
-		{ limit: 25, insightId: sessionInsightId },
+		{ limit: 25 },
 		// Re-fetch only on search change — counter-based refreshes are
 		// handled by the useEffect below, which calls reset() and
 		// preserves current data instead of clearing it first.
@@ -83,7 +78,7 @@ export const ChatsPage = observer(() => {
 
 	// Content-match rooms from SearchRoomMessages — rooms whose message text
 	// matches the keyword but whose name may not.
-	const getContentMatches = useIteratorPixel<
+	const getContentMatches = useSessionIteratorPixel<
 		{
 			room_id: string;
 			message_id: string;
@@ -112,7 +107,7 @@ export const ChatsPage = observer(() => {
 					DATE_CREATED: r.date_created ?? "",
 				}));
 		},
-		{ limit: 50, insightId: sessionInsightId },
+		{ limit: 50 },
 		[debouncedSearch],
 	);
 
@@ -166,7 +161,7 @@ export const ChatsPage = observer(() => {
 
 	const visibleRooms = useMemo(() => {
 		// Not gated on `debouncedSearch`: when the search clears, `getRooms.data`
-		// stays stale (by design — see useIteratorPixel) until the no-search
+		// stays stale (by design — see useSessionIteratorPixel) until the no-search
 		// fetch resolves, so `getContentMatches.data` must be allowed to stay
 		// stale in step with it too. Once both settle, every leftover content
 		// match is already covered by `nameMatchIds` and drops out below.
