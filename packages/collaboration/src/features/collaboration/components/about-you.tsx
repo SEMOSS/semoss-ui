@@ -4,7 +4,6 @@ import { Button, Card, H2, H3, P } from "@semoss/ui/next";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { PersonAvatar } from "./person-avatar";
 import { ProfileForm } from "./profile-form";
-import { StyleSettings } from "./style-settings";
 
 /** The signed-in person's profile and VIPs, composed inside Settings. */
 export function AboutYou() {
@@ -22,8 +21,8 @@ export function AboutYou() {
 						About you
 					</H2>
 					<P className="text-base text-muted-foreground">
-						The profile and writing preferences you choose for
-						assistant context.
+						The profile you choose for assistant context. How you
+						write is under Email.
 					</P>
 				</header>
 				{profile ? (
@@ -49,7 +48,6 @@ export function AboutYou() {
 							profile={profile}
 							target="live"
 						/>
-						<StyleSettings profile={profile} />
 						<section
 							className="space-y-4 border-border border-t pt-5"
 							aria-label="VIPs"

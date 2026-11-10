@@ -17,7 +17,7 @@ import type {
 	AutomationScopeEntry,
 } from "../../domain/automation-inspector";
 
-export interface AutomationScopeExplorerProps {
+interface AutomationScopeExplorerProps {
 	entries: AutomationScopeEntry[];
 	onSelect?: (
 		entry: AutomationScopeEntry,

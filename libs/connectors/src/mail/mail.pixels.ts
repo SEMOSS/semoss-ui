@@ -47,9 +47,15 @@ export interface MailForward {
 	attachments: readonly string[];
 }
 
+/**
+ * The most folders the folder listings return at once, read whole so nested
+ * folders are not cut off.
+ */
+const FOLDER_LIMIT = 500;
+
 /** The pixel for each mail operation a viewer runs, against one mailbox. */
 export interface MailPixels {
-	/** @return The pixel for the places the mailbox files mail. */
+	/** @return The pixel for the places the mailbox files mail, nested ones included. */
 	listFolders: () => string;
 	/**
 	 * The newest emails in a folder, without their bodies.
@@ -61,7 +67,12 @@ export interface MailPixels {
 		folder: string;
 		limit: number;
 		offset?: number;
-		subject?: string;
+		/**
+		 * A search as a person types it: words match the sender, subject, or
+		 * body, and `from:`, `to:`, `cc:`, `subject:`, or `body:` narrow the
+		 * word or quoted phrase after them.
+		 */
+		search?: string;
 		unreadOnly?: boolean;
 	}) => string;
 	/**
@@ -79,9 +90,21 @@ export interface MailPixels {
 	 * One email with its body and attachments. Reading it does not mark it read.
 	 *
 	 * @param messageId - The email.
+	 * @param options - Whether its original formatted body comes too, for
+	 * showing it the way its mail app does.
 	 * @return The pixel.
 	 */
-	getMail: (messageId: string) => string;
+	getMail: (
+		messageId: string,
+		options?: {
+			includeDisplayBody?: boolean;
+			/**
+			 * Whether the formatted body also carries the pictures it shows by
+			 * content id, read from the mailbox.
+			 */
+			includeInlineImages?: boolean;
+		},
+	) => string;
 	/**
 	 * Save an email's attachment into the insight's folder.
 	 *
@@ -148,13 +171,14 @@ const outgoingKeys = (mail: OutgoingMail) => ({
  * @return The pixels.
  */
 export const mailPixels = (prefix: string): MailPixels => ({
-	listFolders: () => call(`${prefix}ListMailFolders`),
+	listFolders: () =>
+		call(`${prefix}ListMailFolders`, { limit: FOLDER_LIMIT }),
 	listMail: (options) =>
 		call(`${prefix}ListMail`, {
 			folder: id(options.folder),
 			limit: options.limit,
 			offset: options.offset,
-			subject: text(options.subject),
+			search: text(options.search),
 			unreadOnly: options.unreadOnly || undefined,
 			includeBody: false,
 		}),
@@ -164,10 +188,14 @@ export const mailPixels = (prefix: string): MailPixels => ({
 			limit: options.limit,
 			includeBody: true,
 		}),
-	getMail: (messageId) =>
+	getMail: (messageId, options) =>
 		call(`${prefix}GetMail`, {
 			id: id(messageId),
 			includeAttachments: true,
+			includeDisplayBody: options?.includeDisplayBody || undefined,
+			includeInlineImages:
+				(options?.includeDisplayBody && options.includeInlineImages) ||
+				undefined,
 		}),
 	downloadAttachment: (options) =>
 		call(`${prefix}DownloadAttachment`, {

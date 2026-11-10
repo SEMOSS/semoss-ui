@@ -25,7 +25,7 @@ import { FilePanelIcon } from "../file-panel-icon";
 import { MCPJsonEditor } from ".";
 
 /** MCP toolboxes are project- or engine-scoped; there is no insight variant. */
-export interface FileMcpEditorParams {
+interface FileMcpEditorParams {
 	mode: Extract<FilePanelMode, { type: "APP" } | { type: "ENGINE" }>;
 	name: string;
 	path: string;

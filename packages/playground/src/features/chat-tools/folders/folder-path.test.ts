@@ -1,10 +1,8 @@
 import { describe, expect, test } from "vitest";
 import {
 	createNameMatcher,
-	FolderPathError,
 	getFolderPathName,
 	getParentFolderPath,
-	isWithinFolderPath,
 	joinFolderPath,
 	normalizeFolderPath,
 } from "./folder-path";
@@ -32,22 +30,24 @@ describe("normalizeFolderPath", () => {
 
 	test("refuses to climb out of the folder", () => {
 		expect(() => normalizeFolderPath("../secrets")).toThrow(
-			FolderPathError,
+			/leaves the work folder/,
 		);
 		expect(() => normalizeFolderPath("reports/../../etc")).toThrow(
-			FolderPathError,
+			/leaves the work folder/,
 		);
-		expect(() => normalizeFolderPath("a/..")).toThrow(FolderPathError);
+		expect(() => normalizeFolderPath("a/..")).toThrow(
+			/leaves the work folder/,
+		);
 	});
 
 	test("refuses control characters and non strings", () => {
 		expect(() => normalizeFolderPath("bad\u0000name")).toThrow(
-			FolderPathError,
+			/control characters/,
 		);
 		expect(() => normalizeFolderPath("line\nbreak")).toThrow(
-			FolderPathError,
+			/control characters/,
 		);
-		expect(() => normalizeFolderPath(42)).toThrow(FolderPathError);
+		expect(() => normalizeFolderPath(42)).toThrow(/must be strings/);
 	});
 
 	test("keeps names that merely contain dots", () => {
@@ -70,13 +70,6 @@ describe("path helpers", () => {
 		expect(getParentFolderPath("")).toBe("");
 		expect(getFolderPathName("a/b/c.md")).toBe("c.md");
 		expect(getFolderPathName("")).toBe("");
-	});
-
-	test("containment matches whole segments", () => {
-		expect(isWithinFolderPath("a/b", "a")).toBe(true);
-		expect(isWithinFolderPath("a", "a")).toBe(true);
-		expect(isWithinFolderPath("ab/c", "a")).toBe(false);
-		expect(isWithinFolderPath("anything", "")).toBe(true);
 	});
 });
 

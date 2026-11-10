@@ -39,7 +39,7 @@ import { PanelSearch } from "./panel-search";
 type MODE = "COMMUNITY" | "SYSTEM";
 type CommunityBlockItem = DesignerMenuItem & { id?: string };
 
-export interface AddBlocksMenuProps {
+interface AddBlocksMenuProps {
 	/** Items to add to show in the menu.  */
 	items: DesignerMenuItem[];
 

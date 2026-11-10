@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { Muted } from "@semoss/ui/next";
 import { ConnectorActionBar } from "../../components/connector-action-bar";
@@ -10,6 +11,7 @@ import type {
 } from "../../core/use-connector-saver";
 import { teamsChatFileName, teamsChatToMarkdown } from "../microsoft.markdown";
 import {
+	parseChatDetail,
 	parseChatMessages,
 	readMicrosoftSavedPath,
 } from "../microsoft.parsers";
@@ -25,8 +27,8 @@ import { TeamsMessageItem } from "./teams-message-item";
 export const CHAT_MESSAGE_LIMIT = 50;
 
 /** Props for {@link TeamsChatDetail}. */
-export interface TeamsChatDetailProps {
-	/** The chat. */
+interface TeamsChatDetailProps {
+	/** The chat. Without a name, as when a search found it, it is read. */
 	chat: TeamsChat;
 	/** Saves the chat and its files into the insight. */
 	saver: ConnectorSaver;
@@ -34,10 +36,15 @@ export interface TeamsChatDetailProps {
 	onBack: () => void;
 	/** Starts the sign in, when the host offers one. */
 	onSignIn?: () => Promise<boolean>;
+	/**
+	 * A message a search found in the chat, which is marked and scrolled to
+	 * when it is among the messages read.
+	 */
+	matchedMessageId?: string;
 }
 
 /**
- * One Teams chat: its newest messages, oldest first, with their files. The
+ * One Teams chat: its newest messages, newest first, with their files. The
  * messages shown can be added to the conversation or saved as one file.
  */
 export const TeamsChatDetail = ({
@@ -45,8 +52,15 @@ export const TeamsChatDetail = ({
 	saver,
 	onBack,
 	onSignIn,
+	matchedMessageId,
 }: TeamsChatDetailProps) => {
 	const { t } = useTranslation("connectors");
+	const messagesRef = useRef<HTMLDivElement>(null);
+	const chatQuery = useConnectorQuery(
+		chat.displayName ? null : MICROSOFT_PIXELS.teamsGetChat(chat.id),
+		parseChatDetail,
+	);
+	const shownChat = chatQuery.data ?? chat;
 	const query = useConnectorQuery(
 		MICROSOFT_PIXELS.teamsListChatMessages({
 			chatId: chat.id,
@@ -57,15 +71,30 @@ export const TeamsChatDetail = ({
 	const messages = query.data?.messages ?? null;
 	const readCount = query.data?.readCount ?? 0;
 	const serviceName = t("services.teams");
-	const title = chat.displayName || t("teams.chat");
+	const title = shownChat.displayName || t("teams.chat");
+	const isMatchShown =
+		matchedMessageId !== undefined &&
+		(messages?.some((message) => message.id === matchedMessageId) ?? false);
+
+	useEffect(() => {
+		if (!isMatchShown) {
+			return;
+		}
+		const match = Array.from(
+			messagesRef.current?.querySelectorAll<HTMLElement>(
+				"[data-message-id]",
+			) ?? [],
+		).find((element) => element.dataset.messageId === matchedMessageId);
+		match?.scrollIntoView?.({ block: "center" });
+	}, [isMatchShown, matchedMessageId]);
 
 	const chatRequest = (shown: TeamsMessage[]): ConnectorSaveRequest => ({
 		key: chat.id,
 		name: title,
 		source: {
 			kind: "text",
-			fileName: teamsChatFileName(chat),
-			getContent: () => teamsChatToMarkdown(chat, shown),
+			fileName: teamsChatFileName(shownChat),
+			getContent: () => teamsChatToMarkdown(shownChat, shown),
 		},
 	});
 
@@ -111,7 +140,7 @@ export const TeamsChatDetail = ({
 					<ConnectorActionBar
 						serviceName={serviceName}
 						saveLabel={saver.saveLabel}
-						webUrl={chat.webUrl}
+						webUrl={shownChat.webUrl}
 						isBusy={saver.isBusy(chat.id)}
 						onAddToContext={
 							saver.addToContext
@@ -130,13 +159,9 @@ export const TeamsChatDetail = ({
 				messages.length === 0 ? (
 					<Muted>{t("teams.emptyChat")}</Muted>
 				) : (
-					<div className="flex flex-col gap-2">
-						{readCount >= CHAT_MESSAGE_LIMIT ? (
-							<Muted>
-								{t("teams.latestMessages", {
-									count: messages.length,
-								})}
-							</Muted>
+					<div ref={messagesRef} className="flex flex-col gap-2">
+						{matchedMessageId !== undefined && !isMatchShown ? (
+							<Muted>{t("teams.searchMatchNotShown")}</Muted>
 						) : null}
 						{messages.map((message) => (
 							<TeamsMessageItem
@@ -147,8 +172,16 @@ export const TeamsChatDetail = ({
 								getAttachmentRequest={attachmentRequests(
 									message,
 								)}
+								isMatch={message.id === matchedMessageId}
 							/>
 						))}
+						{readCount >= CHAT_MESSAGE_LIMIT ? (
+							<Muted>
+								{t("teams.latestMessages", {
+									count: messages.length,
+								})}
+							</Muted>
+						) : null}
 					</div>
 				)
 			) : (

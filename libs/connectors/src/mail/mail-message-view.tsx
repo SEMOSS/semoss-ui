@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
 import { safeHttpsUrl } from "@semoss/utility/browser";
@@ -6,7 +6,6 @@ import { ConnectorActionBar } from "../components/connector-action-bar";
 import { ConnectorDetailView } from "../components/connector-detail-view";
 import { ConnectorTextBody } from "../components/connector-text-body";
 import { ConnectorViewerStatus } from "../components/connector-viewer-status";
-import { formatFullDate } from "../core/connector.format";
 import type { ConnectorViewerProps } from "../core/connector.types";
 import { runConnectorPixel } from "../core/connector-pixel";
 import { useConnectorControls } from "../core/use-connector-controls";
@@ -20,10 +19,15 @@ import { parseMailMessageDetail } from "./mail.parsers";
 import type { MailMessage } from "./mail.types";
 import type { MailApp } from "./mail-apps";
 import { MailAttachmentList } from "./mail-attachment-list";
+import { hasMailHtmlPictures } from "./mail-html";
+import { MailHtmlBody } from "./mail-html-body";
+import { MailMessageHeader } from "./mail-message-header";
+import { MailPicturesMenu } from "./mail-pictures-menu";
 import { readConversation, threadSaveRequest } from "./mail-thread-view";
+import { useMailEmbeddedImagesReader } from "./use-mail-embedded-images-reader";
 
 /** Props for {@link MailMessageView}. */
-export interface MailMessageViewProps
+interface MailMessageViewProps
 	extends Pick<ConnectorViewerProps, "isVisible" | "onControlsChange"> {
 	/** Re-focuses the heading when a retained detail is explicitly reopened. */
 	focusRequestId?: number;
@@ -48,8 +52,10 @@ export interface MailMessageViewProps
 }
 
 /**
- * One email: who sent it and to whom, its text, and its attachments, each of
- * which can be added to the conversation or saved into the insight's files.
+ * One email, laid out the way a mail app shows it: who sent it, to whom, and
+ * when, its attachments, each of which can be added to the conversation or
+ * saved into the insight's files, and its body with its own formatting, or its
+ * text when it has none.
  */
 export const MailMessageView = ({
 	app,
@@ -63,18 +69,24 @@ export const MailMessageView = ({
 	onControlsChange,
 	focusRequestId,
 }: MailMessageViewProps) => {
-	const { t, i18n } = useTranslation("connectors");
+	const { t } = useTranslation("connectors");
 	const { insightId } = useInsight();
 	const query = useConnectorQuery(
-		app.pixels.getMail(summary.id),
+		app.pixels.getMail(summary.id, { includeDisplayBody: true }),
 		parseMailMessageDetail,
 	);
+	const readEmbeddedImages = useMailEmbeddedImagesReader(app, summary.id);
 	const message =
 		query.data?.id === summary.id
 			? query.data
 			: isSummaryComplete
 				? summary
 				: null;
+	const displayBody = message?.displayBody;
+	const hasPictures = useMemo(
+		() => hasMailHtmlPictures(displayBody),
+		[displayBody],
+	);
 	const webUrl = safeHttpsUrl(message?.webLink);
 	const serviceName = t(app.nameKey);
 	const title = (message ?? summary).subject || t("common.noSubject");
@@ -159,31 +171,6 @@ export const MailMessageView = ({
 					: undefined
 			}
 			onBack={onBack}
-			fields={
-				message
-					? [
-							{
-								label: t("mail.from"),
-								value: message.from ?? t("mail.unknownSender"),
-							},
-							{
-								label: t("mail.to"),
-								value: message.to.join(", "),
-							},
-							{
-								label: t("mail.cc"),
-								value: message.cc.join(", "),
-							},
-							{
-								label: t("mail.received"),
-								value: formatFullDate(
-									message.receivedDate ?? message.sentDate,
-									i18n.language,
-								),
-							},
-						]
-					: []
-			}
 			actions={
 				message ? (
 					<ConnectorActionBar
@@ -203,10 +190,9 @@ export const MailMessageView = ({
 		>
 			{message ? (
 				<>
-					<ConnectorTextBody
-						text={message.body}
-						isTruncated={message.isBodyTruncated}
-						emptyText={t("mail.noText")}
+					<MailMessageHeader
+						message={message}
+						actions={hasPictures ? <MailPicturesMenu /> : undefined}
 					/>
 					<MailAttachmentList
 						app={app}
@@ -214,6 +200,31 @@ export const MailMessageView = ({
 						attachments={message.attachments}
 						saver={saver}
 					/>
+					{message.displayBody?.contentType === "html" ? (
+						<MailHtmlBody
+							html={message.displayBody.content}
+							title={t("mail.htmlFrame", {
+								from:
+									message.fromName ??
+									message.from ??
+									t("mail.unknownSender"),
+							})}
+							fallback={
+								<ConnectorTextBody
+									text={message.body}
+									isTruncated={message.isBodyTruncated}
+									emptyText={t("mail.noText")}
+								/>
+							}
+							onLoadEmbeddedImages={readEmbeddedImages}
+						/>
+					) : (
+						<ConnectorTextBody
+							text={message.body}
+							isTruncated={message.isBodyTruncated}
+							emptyText={t("mail.noText")}
+						/>
+					)}
 				</>
 			) : (
 				<ConnectorViewerStatus

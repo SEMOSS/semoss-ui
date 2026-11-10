@@ -257,6 +257,7 @@ export const getUserProjectsNoCredentials = async (
 
 /**
  * List the insights within a project along with a given user's permission.
+ * @public Called by name through `useAPI`.
  */
 export const getAllProjectInsightUsers = async (
 	admin: boolean,
@@ -286,7 +287,7 @@ export const getAllProjectInsightUsers = async (
 };
 
 /** The kinds of resource a user's access can be managed for. */
-export type AccessKind = "APP" | "ENGINE" | "INSIGHT";
+export type AccessKind = "PROJECT" | "ENGINE" | "INSIGHT";
 
 /** The permission subset the project permission APIs accept. */
 type ProjectRole = "OWNER" | "EDIT" | "READ_ONLY";
@@ -324,7 +325,7 @@ export const grantUserAccess = async (
 ): Promise<boolean> => {
 	const users = [{ userid: userId, permission }];
 	switch (kind) {
-		case "APP":
+		case "PROJECT":
 			return succeeded(
 				await addProjectUserPermissions(
 					resourceId,
@@ -357,7 +358,7 @@ export const editUserAccess = async (
 ): Promise<boolean> => {
 	const users = [{ userid: userId, permission }];
 	switch (kind) {
-		case "APP":
+		case "PROJECT":
 			return succeeded(
 				await editProjectUserPermissions(
 					resourceId,
@@ -388,7 +389,7 @@ export const revokeUserAccess = async (
 	{ resourceId, userId, projectId }: AccessMutationArgs,
 ): Promise<boolean> => {
 	switch (kind) {
-		case "APP":
+		case "PROJECT":
 			return succeeded(
 				await removeProjectUserPermissions(resourceId, [userId], admin),
 			);

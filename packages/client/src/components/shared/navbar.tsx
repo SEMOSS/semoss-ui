@@ -2,6 +2,7 @@
 import { Bell } from "lucide-react";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { runPixel } from "@semoss/sdk";
+import { useConfig } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -9,27 +10,34 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { useConfig, usePage } from "@/hooks";
+import { usePage } from "@/hooks/use-page";
 import { NotificationDrawer } from "../notifications/notification-drawer";
 
+// the search loads only once a page turns it on, so the navbar does not wait for it
 const PlatformSearch = lazy(() =>
 	import("./platform-search").then((module) => ({
 		default: module.PlatformSearch,
 	})),
 );
 
+/**
+ * The bar across the top of the app: slots that pages fill (`navbar--left` and
+ * `navbar--right`), the platform search when the page asks for it, and the
+ * notifications bell when notifications are on, which checks for unread ones
+ * every minute.
+ */
 export const Navbar: React.FC = () => {
 	const page = usePage();
 	const setNavbarElement = usePage((state) => state.setNavbarElement);
 	const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
-	const [hasUnread, setHasUnread] = useState<number>(0);
+	const [unreadCount, setUnreadCount] = useState<number>(0);
 	const notificationsEnabled = useConfig(
-		(state) => state.config.notificationEnabled,
+		(state) => state.config?.notificationEnabled ?? false,
 	);
 
 	useEffect(() => {
 		if (!notificationsEnabled) {
-			setHasUnread(0);
+			setUnreadCount(0);
 			return;
 		}
 
@@ -39,9 +47,9 @@ export const Navbar: React.FC = () => {
 			try {
 				const pixel = `PollNotifications()`;
 				const res = await runPixel(pixel);
-				const num = res.pixelReturn[0].output;
+				const count = res.pixelReturn[0].output;
 				if (isActive) {
-					setHasUnread(num as number);
+					setUnreadCount(typeof count === "number" ? count : 0);
 				}
 			} catch (e) {
 				console.error("Pixel call failed:", e);
@@ -61,7 +69,7 @@ export const Navbar: React.FC = () => {
 
 	const handleBellClick = () => {
 		setDrawerOpen(true);
-		setHasUnread(0);
+		setUnreadCount(0);
 	};
 
 	return (
@@ -103,17 +111,16 @@ export const Navbar: React.FC = () => {
 									className="relative text-muted-foreground"
 								>
 									<Bell />
-									{typeof hasUnread === "number" &&
-										hasUnread > 0 && (
-											<Badge
-												variant="destructive"
-												className="absolute top-0 right-0 flex h-4 px-1 text-[8px]"
-											>
-												{hasUnread > 9
-													? "9+"
-													: hasUnread}
-											</Badge>
-										)}
+									{unreadCount > 0 && (
+										<Badge
+											variant="destructive"
+											className="absolute top-0 right-0 flex h-4 px-1 text-[8px]"
+										>
+											{unreadCount > 9
+												? "9+"
+												: unreadCount}
+										</Badge>
+									)}
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent side="bottom">

@@ -20,7 +20,7 @@ import type {
 import type { AutomationNodeSources } from "./automation-workflow-adapter";
 import { parseBranchCondition } from "./branch-condition";
 
-export interface N8nExportResult {
+interface N8nExportResult {
 	workflow: Record<string, unknown>;
 	warnings: string[];
 }

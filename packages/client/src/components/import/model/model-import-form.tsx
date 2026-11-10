@@ -4,7 +4,7 @@
 import { ChevronDown, ChevronUp, TriangleAlert, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useWatch } from "react-hook-form";
-import { usePixel } from "@semoss/sdk/react";
+import { usePixel, useSessionInsight } from "@semoss/sdk/react";
 import {
 	Button,
 	Checkbox,
@@ -40,8 +40,8 @@ import type {
 	BuiltinToolSelection,
 	ReasoningConfig,
 } from "@/components/engine/engine-metadata-display";
-import { useSession, useStepper } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
+import { useStepper } from "@/hooks/useStepper";
 import type { CatalogMatchState } from "./model-catalog-match";
 import { ModelCatalogMatch } from "./model-catalog-match";
 import type { CategoryTexts, FieldDefinition } from "./model-import.constants";
@@ -66,8 +66,10 @@ interface ModelImportFormProps {
 	 */
 	onComplete?: (data: Record<string, unknown>) => void;
 
+	/** The provider the model is added from, which picks its section descriptions. */
 	selectedProvider: string;
 
+	/** Each provider's section descriptions, by field category. */
 	importableModelsCategory: CategoryTexts;
 
 	/**
@@ -82,6 +84,7 @@ interface ModelImportFormProps {
 	/** The catalog entry the user picked by hand, null when they have not. */
 	pickedCatalogKey?: string | null;
 
+	/** Called when the user picks a catalog entry by hand, or null to clear it. */
 	onPickCatalogKey?: (catalogKey: string | null) => void;
 }
 
@@ -146,6 +149,11 @@ const getDefaultFieldValue = (field: FieldDefinition) =>
 const hasSelectedMultiselectValue = (value: unknown) =>
 	Array.isArray(value) && value.length > 0;
 
+/**
+ * Adds a model to the catalog from the chosen provider's fields. The built-in
+ * tools it offers are read for the picked providers and the typed Model ID, and
+ * once the model is made its description is saved as its metadata.
+ */
 export const ModelImportForm = (props: ModelImportFormProps) => {
 	const {
 		fields,
@@ -159,8 +167,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 		onPickCatalogKey,
 	} = props;
 
-	const runPixel = useSession((state) => state.runPixel);
-	const upload = useSession((state) => state.upload);
+	const { run: runPixel, upload } = useSessionInsight();
 	const navigate = useNavigate();
 	const { isLoading, setIsLoading } = useStepper();
 
@@ -383,7 +390,12 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 			}
 
 			// engine_id is the current key; database_id is the legacy fallback
-			const engineId = output.engine_id || output.database_id;
+			const createdEngine = output as {
+				engine_id?: string;
+				database_id?: string;
+			};
+			const engineId =
+				createdEngine.engine_id || createdEngine.database_id;
 			const description =
 				typeof newFormData.DESCRIPTION === "string"
 					? newFormData.DESCRIPTION.trim()
@@ -543,7 +555,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 			}
 
 			//if the name already exists then the engine name is not valid
-			if (output.exists) {
+			if ((output as { exists?: boolean }).exists) {
 				setFocus(field.fieldName);
 				setIsValidDatabaseName(true);
 				return false;

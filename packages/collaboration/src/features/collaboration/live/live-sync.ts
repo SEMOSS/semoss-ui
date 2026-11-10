@@ -627,6 +627,10 @@ const SETTINGS_FIELDS = [
 	"memory",
 	"draftFolderId",
 	"draftFolderName",
+	"draftFont",
+	"draftFontSize",
+	"draftSignatureHtml",
+	"draftSignatureOn",
 	"syncEveryMinutes",
 ] as const;
 

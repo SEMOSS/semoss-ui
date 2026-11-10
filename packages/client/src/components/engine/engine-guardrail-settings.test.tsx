@@ -116,6 +116,7 @@ const CONFIG = vi.hoisted(() => ({ current: null as unknown }));
 const LOCKS = vi.hoisted(() => ({ current: [] as unknown[] }));
 
 vi.mock("@semoss/sdk/react", () => ({
+	useSessionInsight: () => ({ run: async () => ({ errors: [] }) }),
 	usePixel: (pixel: string) => {
 		if (pixel.startsWith("GetEngineGuardrailConfig")) {
 			return {
@@ -191,12 +192,6 @@ vi.mock("@semoss/sdk/react", () => ({
 		isLoading: false,
 		hasMore: false,
 		next: () => {},
-	}),
-}));
-
-vi.mock("@/hooks", () => ({
-	useSession: () => ({
-		runPixel: async () => ({ errors: [] }),
 	}),
 }));
 

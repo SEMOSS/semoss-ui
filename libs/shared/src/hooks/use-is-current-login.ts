@@ -1,5 +1,5 @@
 import { useCallback, useSyncExternalStore } from "react";
-import { Logins } from "@semoss/sdk";
+import { Session } from "@semoss/sdk";
 
 /**
  * Tells whether a person is the signed in user: one of the logins the session
@@ -13,9 +13,9 @@ export const useIsCurrentLogin = (): ((
 	id: string,
 ) => boolean) => {
 	const { accountIds } = useSyncExternalStore(
-		Logins.subscribe,
-		Logins.getSnapshot,
-		Logins.getSnapshot,
+		Session.logins.subscribe,
+		Session.logins.getSnapshot,
+		Session.logins.getSnapshot,
 	);
 	return useCallback(
 		(type: string, id: string) =>

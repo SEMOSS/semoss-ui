@@ -3,7 +3,7 @@ import type { StorageEngineConfig } from "../../../domain/automation.types";
 import { EnginePickerField } from "./engine-picker-field";
 import { BoundInput } from "./pill-input";
 
-export interface StorageEngineFormProps {
+interface StorageEngineFormProps {
 	/** Current node config */
 	config: StorageEngineConfig;
 	/** Output variable names produced by upstream nodes, offered as autocomplete */

@@ -3,7 +3,7 @@ import {
 	download,
 	getRoomForInsight,
 	getRoomOptions,
-	getSystemConfig,
+	type getSystemConfig,
 	login,
 	loginLDAP,
 	loginOTP,
@@ -21,36 +21,9 @@ import {
 import { Env } from "../../env";
 import type { MCPToolResponse, Script } from "../../types";
 import { UnauthorizedError } from "../../utility";
-import { Logins } from "../logins";
+import { Config } from "../config/config.store";
 import { createRoom, RoomStore } from "../room";
-
-/**
- * Module-level cache for the system config. It is static for a page session, so
- * multiple InsightProviders (e.g. the playground's app-level provider plus a
- * room-level provider that attaches to an existing insight) can share a single
- * `/api/config` fetch instead of each re-fetching it. The in-flight promise is
- * shared so concurrent initializations dedupe to one request.
- */
-let cachedSystemConfig: Awaited<ReturnType<typeof getSystemConfig>> | null =
-	null;
-let cachedSystemConfigPromise: ReturnType<typeof getSystemConfig> | null = null;
-
-const loadSystemConfig = async () => {
-	if (cachedSystemConfig) {
-		return cachedSystemConfig;
-	}
-	if (!cachedSystemConfigPromise) {
-		cachedSystemConfigPromise = getSystemConfig();
-	}
-	try {
-		cachedSystemConfig = await cachedSystemConfigPromise;
-		return cachedSystemConfig;
-	} catch (e) {
-		// allow a retry on the next initialize if the fetch failed
-		cachedSystemConfigPromise = null;
-		throw e;
-	}
-};
+import { Session } from "../session/session.store";
 
 /**
  * The system information from the config, over the defaults every app reads.
@@ -205,14 +178,15 @@ export class InsightStore {
 		return this._store.insightId;
 	}
 	/**
-	 * If the insight is initialied
+	 * Whether the system config has been read for the insight. The config is
+	 * read once for the page, through `Config`.
 	 */
 	get isInitialized() {
 		return this._store.isInitialized;
 	}
 
 	/**
-	 * If the user is authorized
+	 * Whether initialization or this insight's own auth actions authorized it.
 	 */
 	get isAuthorized() {
 		return this._store.isAuthorized;
@@ -233,6 +207,10 @@ export class InsightStore {
 
 	/**
 	 * System information
+	 *
+	 * @deprecated Use `Config.getSnapshot().config`, or
+	 * `useConfig((state) => state.config)` in React. Its meta key lists come
+	 * sorted and its theme comes parsed as `theme`.
 	 */
 	get system() {
 		return this._store.system;
@@ -242,6 +220,8 @@ export class InsightStore {
 	 * Update user meta with a model selection
 	 * @param modelName - The model name (e.g., "text-generation-model", "code-generation-model")
 	 * @param modelId - The model ID to set
+	 * @deprecated Use `Session.setMetadata({ [modelName]: modelId })`, which
+	 * also saves it to the backend.
 	 */
 	updateUserDefaultModel(modelName: string, modelId: string): void {
 		this._store.meta = {
@@ -252,6 +232,9 @@ export class InsightStore {
 
 	/**
 	 * Get the default Text Generation model ID (UUID) from user meta
+	 *
+	 * @deprecated Use `Session.getSnapshot().user?.defaultModels.textGeneration`,
+	 * or `useSession((state) => state.user?.defaultModels.textGeneration)`.
 	 */
 	get defaultTextGenerationModel(): string {
 		const meta = this._store.meta;
@@ -266,6 +249,9 @@ export class InsightStore {
 
 	/**
 	 * Get the default Code Generation model ID (UUID) from user meta
+	 *
+	 * @deprecated Use `Session.getSnapshot().user?.defaultModels.codeGeneration`,
+	 * or `useSession((state) => state.user?.defaultModels.codeGeneration)`.
 	 */
 	get defaultCodeGenerationModel(): string {
 		const meta = this._store.meta;
@@ -281,6 +267,9 @@ export class InsightStore {
 	/**
 	 * Set the user meta with a full meta record
 	 * @param meta - full meta record to store
+	 * @deprecated The session reads the user's meta itself, from
+	 * `GetUserMetadata`; read `Session.getSnapshot().user?.meta`, and change it
+	 * with `Session.setMetadata`.
 	 */
 	setUserDefaultModel(meta: Record<string, unknown>): void {
 		this._store.meta = { ...meta };
@@ -471,11 +460,11 @@ export class InsightStore {
 		this._store.isInitialized = false;
 
 		// get the response (shared across providers via a module-level cache)
-		const data = await loadSystemConfig();
+		const data = await Config.load();
 
 		this._store.system = createSystem(data);
 		if (data) {
-			Logins.seed(data);
+			Session.logins.seed(data);
 		}
 		if (this._store.system) {
 			this._store.isInitialized = true;
@@ -493,21 +482,19 @@ export class InsightStore {
 	 * next config read, such as when another insight loads.
 	 */
 	private refreshSystem = async (): Promise<void> => {
-		cachedSystemConfig = null;
-		cachedSystemConfigPromise = null;
 		try {
-			const data = await loadSystemConfig();
+			const data = await Config.load({ force: true });
 			if (data) {
 				this._store.system = createSystem(data);
-				Logins.reset();
-				Logins.seed(data);
+				Session.logins.reset();
+				Session.logins.seed(data);
 				return;
 			}
 		} catch (error) {
 			console.warn(error);
 		}
-		Logins.reset();
-		void Logins.refresh({ maxAgeMs: 0 }).catch(() => undefined);
+		Session.logins.reset();
+		void Session.logins.refresh({ maxAgeMs: 0 }).catch(() => undefined);
 	};
 
 	/**
@@ -676,6 +663,8 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		 * @param username - username to login with
 		 * @param pin - pin to login with
 		 * @returns true if the challenge was accepted
+		 * @deprecated Use `Session.requestOTP`, which throws when the backend
+		 * refuses the pin rather than returning false.
 		 */
 		requestOTP: async (username: string, pin: string): Promise<boolean> => {
 			try {
@@ -691,6 +680,9 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		 * Allow the user to login
 		 * @param credentials
 		 * @returns
+		 * @deprecated Use `Session.login`, which takes the same credentials and
+		 * throws when the sign in is refused rather than returning false. A sign
+		 * in is for the whole page, not one insight.
 		 */
 		login: async (
 			credentials:
@@ -772,6 +764,10 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
 		/**
 		 * Allow the user to logout
+		 *
+		 * @deprecated Use `Session.logout`, which also clears the user's logins
+		 * and permissions, and throws when the backend refuses rather than
+		 * returning false. The backend drops the session's insights on sign out.
 		 */
 		logout: async (): Promise<boolean> => {
 			try {
@@ -792,9 +788,8 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 				// session that ended: forget them, and the next login reads them
 				// again. Nothing is read now, so views still on screen show the
 				// logins as unknown rather than signed out.
-				cachedSystemConfig = null;
-				cachedSystemConfigPromise = null;
-				Logins.reset();
+				Config.reset();
+				Session.logins.reset();
 
 				// success
 				return true;
@@ -1055,7 +1050,8 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		},
 
 		/**
-		 * @deprecated use uploadInsight from sdk/api/insight
+		 * @deprecated Use `actions.uploadInsight`, or `uploadInsight` from
+		 * `@semoss/sdk`.
 		 * Upload a file to the project space
 		 *
 		 * @param files- file objects to upload

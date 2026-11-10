@@ -7,8 +7,6 @@ import { ROOM_TASK_PANEL_TYPE } from "@/features/room-connectors/room-connectors
 import { RoomEmailContext } from "@/features/room-email/room-email.context";
 import { RoomTaskContext } from "./room-task-panel.context";
 
-export { ROOM_TASK_PANEL_TYPE };
-
 /** Steps and related threads for the work item behind this room. */
 function RoomTaskPanel() {
 	const ctx = useContext(RoomTaskContext);

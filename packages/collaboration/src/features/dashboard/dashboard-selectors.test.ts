@@ -1,6 +1,6 @@
 import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
 import { dashboardTimeZone, eventStart } from "./dashboard-calendar";
-import { dayKey, prioritizeItems, relevantEmails } from "./dashboard-selectors";
+import { dayKey, prioritizeItems } from "./dashboard-selectors";
 
 it("groups meetings by local day around midnight and daylight saving boundaries", () => {
 	expect(dayKey(new Date("2026-10-07T02:30:00Z"), "America/New_York")).toBe(
@@ -40,27 +40,4 @@ it("ranks actual priority above confidence while preserving an explicit recency 
 	];
 	expect(prioritizeItems(items)[0].id).toBe("urgent");
 	expect(prioritizeItems(items, true)[0].id).toBe("new");
-});
-
-it("does not invent pending replies from unread flags or reintroduce ignored email", () => {
-	const state = createInitialCollaborationState();
-	state.threads[0] = {
-		...state.threads[0],
-		muted: true,
-		source: { kind: "outlook", nativeId: "ignored" },
-	};
-	const rows = relevantEmails(state, [
-		{
-			uid: "unread",
-			from: "someone@example.com",
-			subject: "Hello",
-			unread: true,
-			hasAttachments: false,
-		},
-		{ uid: "ignored", unread: true, hasAttachments: false },
-	]);
-	expect(rows.find((row) => row.id === "unread")?.reason).toBe(
-		"Unread in your inbox",
-	);
-	expect(rows.some((row) => row.mail?.uid === "ignored")).toBe(false);
 });

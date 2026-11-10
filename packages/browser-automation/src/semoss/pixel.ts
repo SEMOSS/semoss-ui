@@ -4,7 +4,7 @@ export function getModulePath(): string {
 	return Env.MODULE || import.meta.env.MODULE || "/Monolith";
 }
 
-export type PixelReturn<T = unknown> = {
+type PixelReturn<T = unknown> = {
 	insightID?: string;
 	pixelReturn?: Array<{
 		output?: T;

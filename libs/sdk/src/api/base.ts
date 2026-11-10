@@ -4,35 +4,114 @@ import type { OutputOf, Pixel } from "./pixel";
 /**
  * Get the System's configuration information
  */
-export const getSystemConfig = async (): Promise<{
-	logins: { [key: string]: unknown };
-	/**
-	 * List of available providers (logins) that are available
-	 */
-	availableProviders: {
-		provider: string;
-		name: string;
-		isOauth: boolean;
-	}[];
-	[key: string]: unknown;
-}> => {
+export const getSystemConfig = async () => {
 	// get the response
+	// nulls are left out of backend responses, so a field that may be null is optional
 	const response = await get<{
-		logins: { [key: string]: unknown };
+		/**
+		 * The session's logins: the account name by provider, keyed by its
+		 * upper case label such as `NATIVE` or `MICROSOFT`. Empty when signed
+		 * out.
+		 */
+		logins: { [key: string]: string };
+		/** The user id and name of each login, keyed like `logins`. Empty when signed out. */
+		loginDetails: {
+			[key: string]: {
+				id: string;
+				name: string;
+				san?: Record<string, string>;
+			};
+		};
+		/** The login the session belongs to, in upper case. Only sent when signed in. */
+		primaryLogin?: string;
+		/**
+		 * What each OAuth sign in lets connectors use, by provider and app. Only
+		 * sent for a signed in, non anonymous user.
+		 */
+		connectorAccess?: { [provider: string]: { [app: string]: boolean } };
+		/**
+		 * List of available providers (logins) that are available
+		 */
 		availableProviders: {
+			/** The provider's lower case key, such as `native` or `ms`. */
 			provider: string;
+			/** The name shown for it. */
 			name: string;
+			/** The provider's upper case label, such as `NATIVE` or `MICROSOFT`. */
+			label: string;
 			isOauth: boolean;
 		}[];
+		/** Catalog metadata fields for engines */
+		databaseMetaKeys: {
+			metakey: string;
+			display_order: number;
+			single_multi: string;
+			display_options?: string;
+			display_values?: string;
+		}[];
+		/** Catalog metadata fields for projects */
+		projectMetaKeys: {
+			metakey: string;
+			display_order: number;
+			single_multi: string;
+			display_options?: string;
+			display_values?: string;
+		}[];
+		/** The active admin theme, or empty when there is none. */
+		theme: {
+			ID?: string;
+			THEME_NAME?: string;
+			/** The theme as a JSON string. */
+			THEME_MAP?: string;
+			IS_ACTIVE?: boolean;
+		};
+		/** Left out when the server cannot read its version. */
+		version?: { version: string; datetime: string };
+		/** Whether people may create native accounts. */
+		nativeRegistration: boolean;
+		/** Whether people searches can look in the organization's Microsoft directory */
+		msGraphLookup: boolean;
+		/** Whether requests must carry a CSRF token. */
+		csrf: boolean;
+		/** Whether the server can run R. */
+		r: boolean;
+		/** Whether the server can run Python. */
+		python: boolean;
+		/** Whether people who have not signed in may use the server. */
+		anonymousUsers: boolean;
+		/** Whether in-app notifications are on. */
+		notificationEnabled: boolean;
+		/** Whether only admins see the menu bar. */
+		adminOnlyViewMenuBarFlag: boolean;
+		/** Whether the audit log is on. */
+		auditLogEnabled: boolean;
+		/** How many minutes an idle session lasts. */
+		timeout: number;
+		/** The password rules for native accounts; left out when they cannot be read. */
+		passwordRequirements?: {
+			minPassLength: number;
+			requireUpperCase: boolean;
+			requireLowerCase: boolean;
+			requireNumeric: boolean;
+			requireSpecial: boolean;
+			passwordExpirationDays: number;
+			requireAdminResetForExpiration: boolean;
+			allowUserChangePassword: boolean;
+			passReuseCount: number;
+			daysToLock: number;
+			daysToLockEmail: number;
+		};
 		[key: string]: unknown;
 	}>(`${Env.MODULE}/api/config`);
 
 	if (response.data?.csrf) {
-		const token = response.data["X-CSRF-Token"] as string;
-
-		// enable and store the token
+		// enable csrf; the config does not carry the token, so a token already
+		// fetched through /api/config/fetchCsrf is kept rather than cleared
 		CSRF.isEnabled = true;
-		CSRF.token = token;
+		const token = response.data["X-CSRF-Token"];
+		if (typeof token === "string" && token) {
+			CSRF.token = token;
+		}
 	}
 
 	// save the config data

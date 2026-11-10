@@ -1,13 +1,9 @@
 import { Eye, LockKeyhole, Pencil, Plus, User } from "lucide-react";
-import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import type { Role } from "@semoss/sdk";
+import { useSessionInsight } from "@semoss/sdk/react";
 import {
 	Button,
-	Card,
-	CardDescription,
-	CardHeader,
-	CardTitle,
 	Dialog,
 	DialogContent,
 	DialogFooter,
@@ -15,54 +11,29 @@ import {
 	DialogTitle,
 	Label,
 	RadioGroup,
-	RadioGroupItem,
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
 import { PERMISSION_DESCRIPTION_MAP } from "@/constants";
-import { useEngine, useSession } from "@/hooks";
+import { useEngine } from "@/hooks/useEngine";
+import { PermissionCard } from "./permission-card";
 
 type EngineAccessButtonProps = {
+	/**
+	 * Whether the button is shown from an app: an outline button and a Submit
+	 * action, shown to owners too
+	 */
 	fromApp?: boolean;
 };
 
-const PermissionCard = ({
-	icon,
-	title,
-	description,
-	value,
-}: {
-	icon: ReactNode;
-	title: string;
-	description: string;
-	value: string;
-}) => {
-	return (
-		<Card className="rounded-xl p-2">
-			<CardHeader className="px-3 py-2">
-				<div className="flex items-start justify-between gap-4">
-					<div className="flex items-start gap-3">
-						<div className="mt-0.5 flex h-6 w-6 items-center justify-center text-muted-foreground">
-							{icon}
-						</div>
-						<div className="space-y-1">
-							<CardTitle className="text-base">{title}</CardTitle>
-							<CardDescription className="text-sm">
-								{description}
-							</CardDescription>
-						</div>
-					</div>
-					<RadioGroupItem value={value} />
-				</div>
-			</CardHeader>
-		</Card>
-	);
-};
-
+/**
+ * Requests access to the current engine, or a change to the viewer's access,
+ * through a dialog that asks for the role and a reason.
+ */
 export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
 	const { type, engine, permission } = useEngine();
 
-	const runPixel = useSession((state) => state.runPixel);
+	const { run: runPixel } = useSessionInsight();
 
 	const [open, setOpen] = useState(false);
 	const [requestedRole, setRequestedRole] = useState<Role>("READ_ONLY");

@@ -1,4 +1,4 @@
-import { Repeat, TriangleAlert } from "lucide-react";
+import { TriangleAlert } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
@@ -129,17 +129,14 @@ export function RoutineRecentRuns({ onNavigate }: RoutineRecentRunsProps) {
 							title={name}
 							className="flex min-h-8 pointer-coarse:min-h-11 min-w-0 items-center gap-2 rounded-lg px-2 py-1 text-xs hover:bg-sidebar-accent focus-visible:outline-2 focus-visible:outline-ring"
 						>
+							{/* the same robot as the routine's own card: a system agent's, or the owner's routine's own color */}
 							<span
 								aria-hidden="true"
 								className="flex size-5 shrink-0"
 							>
-								{system ? (
-									<RoutineAgentAvatar routineId={system.id} />
-								) : (
-									<span className="flex size-full items-center justify-center rounded-md border bg-muted text-muted-foreground">
-										<Repeat className="size-3" />
-									</span>
-								)}
+								<RoutineAgentAvatar
+									routineId={routine.routineId}
+								/>
 							</span>
 							<span className="min-w-0 truncate">{name}</span>
 						</Link>
@@ -193,7 +190,9 @@ export function RoutineRecentRuns({ onNavigate }: RoutineRecentRunsProps) {
 										? `${isOpening ? "Opening" : "Open"} the chat for ${name} from ${when}`
 										: run.status === "running"
 											? `${run.roomId ? "Watch" : "Open"} ${name}, running since ${when}`
-											: `Open ${name}, failed ${when}`;
+											: run.status === "stopped"
+												? `Open ${name}, stopped ${when}`
+												: `Open ${name}, failed ${when}`;
 								return (
 									<li
 										key={run.runId}

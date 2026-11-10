@@ -204,14 +204,14 @@ one type.
 Do not serialize `permission` or `readOnly` into a panel record, DB layout, or localStorage
 snapshot. Backend authorization remains authoritative.
 
-**The permission cache lives on the session store, not here.** A permission is a fact about
-(user, resource), so two workbenches open on the same project can never disagree about whether
-it is editable. Two consequences: a domain workbench calls `refreshPermission` (not
-`loadPermission`) on mount, because the shared entry would otherwise be as old as whenever some
-other workbench last fetched it — the `refreshing` / `refreshError` fields keep the stale
-permission readable meanwhile, so nothing flashes to read-only; and the session clears the cache
-on logout, because it outlives every workbench and would otherwise hand one user's access to
-the next.
+**The permission cache lives on the SDK session (`Session.permissions`), not here.** A permission
+is a fact about (user, resource), so two workbenches open on the same project can never disagree
+about whether it is editable. Two consequences: a domain workbench calls
+`Session.permissions.refresh` (not `load`) on mount, because the shared entry would otherwise be
+as old as whenever some other workbench last fetched it — the `refreshing` / `refreshError`
+fields keep the stale permission readable meanwhile, so nothing flashes to read-only; and the
+session clears the cache on every sign in and out, because it outlives every workbench and would
+otherwise hand one user's access to the next.
 
 **The dock's state views know nothing about access.** `WorkbenchPanelLoading` and
 `WorkbenchPanelError` (`components/panel/`) are the shared look of "this panel has no body to
@@ -228,7 +228,7 @@ drifted apart. Don't add the escape hatch back — a caller needing different pl
 body that cannot be shown — the first load, before there is anything to render. A **background**
 refresh must never take over a panel that still works, in either direction:
 
-- Every domain workbench calls `refreshPermission` on mount, so a full-panel scrim would cover
+- Every domain workbench calls `Session.permissions.refresh` on mount, so a full-panel scrim would cover
   every panel on every mount — hiding the stale-but-usable content that `refreshing` exists to
   preserve, which is the exact flash it was added to prevent.
 - A refresh that *fails* says nothing about access; it says the network hiccuped. Revoked

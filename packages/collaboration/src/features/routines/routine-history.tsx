@@ -23,13 +23,13 @@ import { RoutineRunMenu } from "./routine-run-menu";
 import type { RoutineId } from "./routine-schema";
 import { findSystemRoutine } from "./system-routines";
 
-export const routineRunListSchema = z.object({
+const routineRunListSchema = z.object({
 	runs: z.array(
 		z.object({
 			runId: z.string().min(1),
 			startedAt: z.iso.datetime().nullish().default(null),
 			finishedAt: z.iso.datetime().nullish().default(null),
-			status: z.enum(["running", "completed", "failed"]),
+			status: z.enum(["running", "completed", "failed", "stopped"]),
 			trigger: z.enum(["scheduled", "manual"]),
 			durationMs: z.number().nullish().default(null),
 			hasOutput: z.boolean(),
@@ -37,12 +37,11 @@ export const routineRunListSchema = z.object({
 	),
 });
 
-export type RoutineRun = z.infer<typeof routineRunListSchema>["runs"][number];
-
 const STATUS_LABELS = {
 	running: "Running",
 	completed: "Completed",
 	failed: "Failed",
+	stopped: "Stopped",
 } as const;
 
 /** A run's length as minutes and seconds, such as "4m 12s". */
@@ -105,6 +104,7 @@ export function RoutineHistory({
 				<AlertDescription>
 					{result.error?.message || "Past runs could not be loaded."}
 					<Button
+						type="button"
 						variant="outline"
 						size="sm"
 						onClick={result.refresh}
@@ -131,6 +131,7 @@ export function RoutineHistory({
 				</P>
 				<Button
 					ref={refreshButton}
+					type="button"
 					variant="outline"
 					size="sm"
 					onClick={result.refresh}

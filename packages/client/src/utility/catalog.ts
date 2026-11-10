@@ -1,4 +1,29 @@
 import type { Engine, Project } from "@semoss/shared";
+import { TYPE_TO_ROUTE } from "@/constants";
+/**
+ * Every project type, those the catalogs leave out included, such as
+ * insights, for the admin views that reach anything.
+ */
+export const ALL_PROJECT_TYPES: readonly Project["project_type"][] = [
+	"CODE",
+	"BLOCKS",
+	"INSIGHT",
+	"WORKSPACE",
+	"SKILL",
+	"NOTEBOOK",
+	"AUTOMATION",
+];
+
+/** Every engine type. */
+export const ALL_ENGINE_TYPES: readonly Engine["engine_type"][] = [
+	"DATABASE",
+	"MODEL",
+	"STORAGE",
+	"FUNCTION",
+	"VECTOR",
+	"GUARDRAIL",
+];
+
 /**
  * Utility to check if it is a project type
  * @param type
@@ -39,22 +64,6 @@ export const getProjectLabel = (type?: Project["project_type"]): string => {
 	}
 
 	return "Project";
-};
-
-/**
- * Utility to check if it is a engine type
- * @param type
- * @returns true if an engine type, false otherwise
- */
-export const isEngineType = (type?: string): boolean => {
-	return (
-		type === "MODEL" ||
-		type === "STORAGE" ||
-		type === "DATABASE" ||
-		type === "FUNCTION" ||
-		type === "VECTOR" ||
-		type === "GUARDRAIL"
-	);
 };
 
 /**
@@ -134,4 +143,31 @@ export const buildAccessFilterParams = (
 	return `${levels.length > 0 ? `effectivePermissions=${JSON.stringify(levels)}, ` : ""}${
 		access.includes("CREATED_BY_ME") ? "createdByMe=[true], " : ""
 	}`;
+};
+
+const isRoutedType = (type: string): type is keyof typeof TYPE_TO_ROUTE =>
+	Object.hasOwn(TYPE_TO_ROUTE, type);
+
+/**
+ * The page of a project or engine in the app. A project whose type has no
+ * pages of its own opens in the app pages, which load any project; an engine
+ * whose type has no pages has none.
+ *
+ * @param kind - Projects or engines.
+ * @param type - The project or engine type.
+ * @param id - The project's or engine's id.
+ * @return Its path in the app, or null when it has no page.
+ */
+export const getResourcePagePath = (
+	kind: "PROJECT" | "ENGINE",
+	type: string | null | undefined,
+	id: string,
+): string | null => {
+	const route =
+		type && isRoutedType(type)
+			? TYPE_TO_ROUTE[type]
+			: kind === "PROJECT"
+				? TYPE_TO_ROUTE.PROJECT
+				: null;
+	return route ? `${route}/${encodeURIComponent(id)}` : null;
 };

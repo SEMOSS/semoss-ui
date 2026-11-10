@@ -32,7 +32,7 @@ const SESSION_MODEL_KEY = "smss-playground-session-model";
  * returned by GetPlaygroundRooms so optimistic rooms can be merged into the
  * fetched list seamlessly.
  */
-export interface OptimisticRoom {
+interface OptimisticRoom {
 	ROOM_ID: string;
 	ROOM_NAME: string;
 	DATE_CREATED: string;

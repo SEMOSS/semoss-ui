@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { OutputOf, Pixel } from "../../../api/pixel";
-import { usePixel } from "./usePixel";
+import { usePixel } from "./use-pixel";
 
 interface UseIteratorPixelOptions<T> {
 	/** Number of items to fetch per page */

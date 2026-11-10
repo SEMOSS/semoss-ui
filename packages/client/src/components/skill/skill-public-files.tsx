@@ -12,7 +12,7 @@ import { SkillFileViewer } from "./skill-file-viewer";
 /** Skills publish everything a reader should see under this directory. */
 const PUBLIC_ROOT_PATH = "/public";
 
-export interface SkillPublicFilesProps {
+interface SkillPublicFilesProps {
 	/** The skill's project id, for the asset pixels. */
 	projectId: string;
 	/** The insight the browse and file-read pixels run against. */

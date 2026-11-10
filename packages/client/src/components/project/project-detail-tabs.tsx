@@ -1,14 +1,15 @@
 import { useMemo, useState } from "react";
 import type { Role } from "@semoss/sdk";
+import { useSession } from "@semoss/sdk/react";
 import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
-import { ProjectAccessControl, ProjectOverview } from "@/components/project";
+import { ProjectAccessControl } from "@/components/project/project-access-control";
+import { ProjectOverview } from "@/components/project/project-overview";
 import { ProjectSettingsPanel } from "@/components/project/project-settings-panel";
 import { ResourceAuditTrail } from "@/features/audit-trail/resource-audit-trail";
 import { useProject } from "@/hooks/use-project";
-import { useSession } from "@/hooks/use-session";
 import { AppActivityPage } from "@/pages/app/app-activity-page";
-import { AppGithubPage } from "@/pages/app/app-github-page";
-import { AppMcpUsagePage } from "@/pages/app/app-mcp-usage-page";
+import { AppGithubPage } from "@/pages/app/app-github.page";
+import { AppMcpUsagePage } from "@/pages/app/app-mcp-usage.page";
 import { AppSmssPage } from "@/pages/app/app-smss-page";
 import { AgentActivityPage } from "@/pages/project/agent/agent-activity-page";
 import { ProjectDependenciesPage } from "@/pages/project/project-dependencies-page";
@@ -16,7 +17,9 @@ import { ProjectDependenciesPage } from "@/pages/project/project-dependencies-pa
 interface ProjectDetailTabsProps {
 	/** Tabs to show */
 	tabs: {
+		/** The tab's label, which also names it */
 		name: string;
+		/** What the tab shows */
 		component:
 			| "project-overview"
 			| "project-dependencies"
@@ -28,13 +31,19 @@ interface ProjectDetailTabsProps {
 			| "access-control"
 			| "audit"
 			| "smss";
+		/** The roles that see the tab; everyone when empty */
 		restrict?: Role[];
 	}[];
 }
 
+/**
+ * A project's details as tabs, showing the ones the user's role allows; Audit
+ * is for the project's owners and admins. Opens on Overview, or else the first
+ * tab.
+ */
 export const ProjectDetailTabs = ({ tabs }: ProjectDetailTabsProps) => {
 	const { project, type, permission } = useProject();
-	const isAdmin = useSession((state) => state.user.admin);
+	const isAdmin = useSession((state) => state.user?.isAdmin === true);
 
 	const [selectedTabName, setSelectedTabName] = useState<string>("Overview");
 

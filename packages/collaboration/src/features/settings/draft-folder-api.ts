@@ -50,3 +50,24 @@ export async function createDraftFolder(
 	if (!folder.id) throw new Error("Outlook did not confirm the new folder.");
 	return folder;
 }
+
+/** What the owner's recent sent mail uses; blank fields when it shows none. */
+interface LearnedDraftFormat {
+	signatureHtml: string;
+	font: string;
+	fontSize: number | null;
+	read: number;
+}
+
+/** Reads the signature and font from recent sent mail; nothing is saved until the caller saves it. */
+export async function learnDraftFormat(
+	actions: InsightActions,
+): Promise<LearnedDraftFormat> {
+	const out = await run(actions, pixel("BrainLearnDraftFormat"));
+	return {
+		signatureHtml: str(out.signatureHtml),
+		font: str(out.font),
+		fontSize: typeof out.fontSize === "number" ? out.fontSize : null,
+		read: typeof out.read === "number" ? out.read : 0,
+	};
+}

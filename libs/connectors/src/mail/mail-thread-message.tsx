@@ -1,5 +1,5 @@
 import { ChevronDownIcon, ChevronRightIcon } from "lucide-react";
-import { useId, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { Button, Muted } from "@semoss/ui/next";
 import { ConnectorAuthorAvatar } from "../components/connector-author-avatar";
@@ -14,9 +14,13 @@ import { getOwnText } from "./mail.threads";
 import type { MailMessage } from "./mail.types";
 import type { MailApp } from "./mail-apps";
 import { MailAttachmentList } from "./mail-attachment-list";
+import { hasMailHtmlPictures } from "./mail-html";
+import { MailHtmlBody } from "./mail-html-body";
+import { MailPicturesMenu } from "./mail-pictures-menu";
+import { useMailEmbeddedImagesReader } from "./use-mail-embedded-images-reader";
 
 /** Props for {@link MailThreadMessage}. */
-export interface MailThreadMessageProps {
+interface MailThreadMessageProps {
 	/** The mailbox the email is in. */
 	app: MailApp;
 	/** The email, read with its body. */
@@ -32,8 +36,10 @@ export interface MailThreadMessageProps {
 /**
  * One email in a thread, set apart from the others the way a mail app shows a
  * conversation. Closed, it shows who wrote it, when, and how it starts. Open,
- * it shows its own text without the earlier emails it quotes, which the whole
- * email can be shown with, and its attachments, read the first time it opens.
+ * it shows its own part without the earlier emails it quotes, which the whole
+ * email can be shown with, and its attachments. Opening it reads the email
+ * again, so it shows with its own formatting once that arrives, its text
+ * standing in until then.
  */
 export const MailThreadMessage = ({
 	app,
@@ -52,14 +58,50 @@ export const MailThreadMessage = ({
 	// what the body has beyond this email's own text is what it quotes
 	const hasQuotedHistory = wholeText.length > own.text.length;
 
-	// a listing says whether there are attachments, not what they are
-	const attachmentsQuery = useConnectorQuery(
-		isExpanded && message.hasAttachments
-			? app.pixels.getMail(message.id)
+	// opening an email reads it again for its formatted body and for what its
+	// attachments are, since a listing says only whether it has any
+	const detailQuery = useConnectorQuery(
+		isExpanded
+			? app.pixels.getMail(message.id, { includeDisplayBody: true })
 			: null,
 		parseMailMessageDetail,
 	);
+	const displayBody = detailQuery.data?.displayBody;
+	const hasPictures = useMemo(
+		() => hasMailHtmlPictures(displayBody),
+		[displayBody],
+	);
+	const readEmbeddedImages = useMailEmbeddedImagesReader(app, message.id);
 	const Chevron = isExpanded ? ChevronDownIcon : ChevronRightIcon;
+	// the text shows at once, and stands in when the email has no formatting
+	const textBody = (
+		<>
+			<ConnectorTextBody
+				text={isWholeEmailShown ? wholeText : own.text}
+				isTruncated={
+					isWholeEmailShown
+						? message.isBodyTruncated
+						: own.isTruncated
+				}
+				emptyText={t("mail.noText")}
+			/>
+			{hasQuotedHistory ? (
+				<Button
+					variant="ghost"
+					size="sm"
+					className="self-start"
+					aria-pressed={isWholeEmailShown}
+					onClick={() =>
+						setIsWholeEmailShown((previous) => !previous)
+					}
+				>
+					{isWholeEmailShown
+						? t("mail.hideQuoted")
+						: t("mail.showQuoted")}
+				</Button>
+			) : null}
+		</>
+	);
 
 	return (
 		<article className="flex min-w-0 flex-col gap-2 rounded-md border border-border p-3">
@@ -100,52 +142,56 @@ export const MailThreadMessage = ({
 					id={contentId}
 					className="flex min-w-0 flex-col gap-2 px-1"
 				>
-					{message.to.length > 0 ? (
-						<Muted className="wrap-anywhere">
-							{t("mail.toLine", { to: message.to.join(", ") })}
-						</Muted>
+					{message.to.length > 0 ||
+					message.cc.length > 0 ||
+					hasPictures ? (
+						// the picture settings sit under the date, at the end
+						// of the recipients, since the date is part of the
+						// button that opens and closes the email
+						<div className="flex min-w-0 items-start gap-2">
+							<div className="flex min-w-0 flex-1 flex-col gap-0.5">
+								{message.to.length > 0 ? (
+									<Muted className="wrap-anywhere">
+										{t("mail.toLine", {
+											to: message.to.join(", "),
+										})}
+									</Muted>
+								) : null}
+								{message.cc.length > 0 ? (
+									<Muted className="wrap-anywhere">
+										{t("mail.ccLine", {
+											cc: message.cc.join(", "),
+										})}
+									</Muted>
+								) : null}
+							</div>
+							{hasPictures ? <MailPicturesMenu /> : null}
+						</div>
 					) : null}
-					{message.cc.length > 0 ? (
-						<Muted className="wrap-anywhere">
-							{t("mail.ccLine", { cc: message.cc.join(", ") })}
-						</Muted>
-					) : null}
-					<ConnectorTextBody
-						text={isWholeEmailShown ? wholeText : own.text}
-						isTruncated={
-							isWholeEmailShown
-								? message.isBodyTruncated
-								: own.isTruncated
-						}
-						emptyText={t("mail.noText")}
-					/>
-					{hasQuotedHistory ? (
-						<Button
-							variant="ghost"
-							size="sm"
-							className="self-start"
-							aria-pressed={isWholeEmailShown}
-							onClick={() =>
-								setIsWholeEmailShown((previous) => !previous)
-							}
-						>
-							{isWholeEmailShown
-								? t("mail.hideQuoted")
-								: t("mail.showQuoted")}
-						</Button>
-					) : null}
-					{attachmentsQuery.data ? (
+					{displayBody?.contentType === "html" ? (
+						<MailHtmlBody
+							html={displayBody.content}
+							title={t("mail.htmlFrame", { from: sender })}
+							fallback={textBody}
+							onLoadEmbeddedImages={readEmbeddedImages}
+						/>
+					) : (
+						textBody
+					)}
+					{detailQuery.data ? (
 						<MailAttachmentList
 							app={app}
 							messageId={message.id}
-							attachments={attachmentsQuery.data.attachments}
+							attachments={detailQuery.data.attachments}
 							saver={saver}
 						/>
-					) : attachmentsQuery.status === "loading" ? (
-						<Muted>{t("mail.loadingAttachments")}</Muted>
+					) : detailQuery.status === "loading" ? (
+						message.hasAttachments ? (
+							<Muted>{t("mail.loadingAttachments")}</Muted>
+						) : null
 					) : (
 						<ConnectorViewerStatus
-							query={attachmentsQuery}
+							query={detailQuery}
 							serviceName={t(app.nameKey)}
 							account={app.account}
 							onSignIn={onSignIn}

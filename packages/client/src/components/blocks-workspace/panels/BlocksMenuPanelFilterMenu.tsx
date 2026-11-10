@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Button, Checkbox, PopoverContent, Separator } from "@semoss/ui/next";
 import type { FilterCategory } from "../menus/menu-types";
 
-export interface BlocksMenuPanelFilterMenuProps {
+interface BlocksMenuPanelFilterMenuProps {
 	categoryMap: Record<string, FilterCategory>;
 	setCategoryMap: (newMap: Record<string, FilterCategory>) => void;
 	onClose: () => void;

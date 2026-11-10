@@ -44,10 +44,12 @@
     "license": "ISC",
     "devDependencies": {
         "@semoss/config": "workspace:*",
+        "@semoss/utility": "workspace:*",
         "@testing-library/jest-dom": "^6.6.3",
         "@testing-library/react": "^16.3.0",
         "@types/react": "^19.0.0",
         "@vitest/coverage-v8": "^4.1.11",
+        "jsdom": "~22.1.0",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
         "typescript": "~6.0.0",

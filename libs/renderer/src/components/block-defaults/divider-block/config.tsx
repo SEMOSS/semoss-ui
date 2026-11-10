@@ -1,4 +1,3 @@
-import { CSSProperties } from "react";
 import type { BlockConfig } from "../../../store";
 import { BLOCK_TYPE_DISPLAY } from "../block-defaults.constants";
 import { DividerBlock, type DividerBlockDef } from "./DividerBlock";

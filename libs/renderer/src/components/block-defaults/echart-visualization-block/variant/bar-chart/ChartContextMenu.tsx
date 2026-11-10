@@ -9,7 +9,7 @@ import {
 import { useBlock, type useFrame } from "../../../../../hooks";
 import type { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 
-export interface ChartContextMenuProps {
+interface ChartContextMenuProps {
 	id: string;
 	frame: ReturnType<typeof useFrame>;
 	contextMenu: {

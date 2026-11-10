@@ -1,5 +1,172 @@
+import { isRecord } from "@semoss/utility/object";
+import { asString } from "@semoss/utility/string";
 import { Env } from "../env";
 import { post } from "../utility";
+import { runPixel } from "./base";
+
+/**
+ * Read a text field from `GetUserInfo`, which sends a missing value as the
+ * string `"null"`.
+ *
+ * @param value - The field as the backend sent it.
+ * @returns The text, or empty when missing.
+ */
+const readText = (value: unknown): string => {
+	const text = asString(value);
+	return text === "null" ? "" : text;
+};
+
+/**
+ * Read the user's metadata as the backend keeps it: every key a list of text
+ * values, in order. A key sent as one value is read as a list of one.
+ *
+ * @param value - The metadata as the backend sent it, by key.
+ * @returns Each key's values.
+ */
+const readMeta = (value: unknown): Record<string, string[]> =>
+	isRecord(value)
+		? Object.fromEntries(
+				Object.entries(value).map(([key, entry]) => [
+					key,
+					(Array.isArray(entry) ? entry : [entry]).filter(
+						(item): item is string => typeof item === "string",
+					),
+				]),
+			)
+		: {};
+
+/**
+ * Read one login's record from `GetUserInfo`, keeping only well formed
+ * fields.
+ *
+ * @param record - The record as the backend sent it.
+ * @returns The login's user.
+ */
+const parseLoginInfo = (
+	record: Record<string, unknown>,
+): {
+	id: string;
+	name: string;
+	username: string;
+	email: string;
+	/** Changes whenever the user's sessions are revoked. */
+	userEpoch: string;
+	/** When the user last signed in, as the backend formats it; absent when not known. */
+	lastLogin?: string;
+	/** The directory groups the login belongs to; absent when the provider sends none. */
+	groupInfo?: { groupType?: string; groups: string[] };
+	/** The user's metadata, each key's values in order. */
+	meta: Record<string, string[]>;
+} => {
+	const groupInfo = record.groupInfo;
+	return {
+		id: readText(record.id),
+		name: readText(record.name),
+		username: readText(record.username),
+		email: readText(record.email),
+		userEpoch: readText(record.userEpoch),
+		lastLogin: readText(record.lastLogin) || undefined,
+		groupInfo:
+			isRecord(groupInfo) && Array.isArray(groupInfo.groups)
+				? (groupInfo as { groupType?: string; groups: string[] })
+				: undefined,
+		meta: readMeta(record.meta),
+	};
+};
+
+/**
+ * Read the signed in user, as each of the session's logins describes them,
+ * and the primary login's metadata as the database holds it now. Both run in
+ * one request. Running it in `"new"` creates an insight, which a session can
+ * keep as its own. They run as `META`, so they are not kept in the insight's
+ * recipe.
+ *
+ * The two reads differ: `GetUserInfo` gives every login's identity, with the
+ * metadata its token loaded at sign in, which only the user's own changes
+ * refresh; `GetUserMetadata` gives just the primary login's metadata, read
+ * from the database each time, so it also has an admin's changes and those
+ * made through another server.
+ *
+ * @param insightId - The insight to run in. Defaults to a new one.
+ * @returns The insight it ran in; each login's user keyed by its upper case
+ * provider, such as `NATIVE` or `MICROSOFT`, empty when signed out; and the
+ * primary login's metadata, each value as one entry, or null when it could
+ * not be read.
+ * @throws When the backend cannot read the user.
+ */
+export const getUserInfo = async (insightId = "new") => {
+	const response = await runPixel<
+		[Record<string, unknown>, Record<string, unknown>]
+	>("META | GetUserInfo(); META | GetUserMetadata();", insightId);
+
+	// the request's errors cover both pixels, so each answer is judged by its own
+	// operation type: the user must be read, the metadata may fail on its own
+	const [info, metadata] = response.pixelReturn;
+	if (!info || info.operationType.includes("ERROR")) {
+		throw new Error(
+			response.errors.join("") || "The signed in user could not be read",
+		);
+	}
+
+	const logins: Record<string, ReturnType<typeof parseLoginInfo>> = {};
+	if (isRecord(info.output)) {
+		for (const [provider, record] of Object.entries(info.output)) {
+			// signed out, the backend answers `{"No User": "User is not logged in"}`
+			if (isRecord(record)) {
+				logins[provider] = parseLoginInfo(record);
+			}
+		}
+	}
+
+	const meta =
+		metadata &&
+		!metadata.operationType.includes("ERROR") &&
+		isRecord(metadata.output)
+			? readMeta(metadata.output)
+			: null;
+	return { insightId: response.insightId, logins: logins, meta: meta };
+};
+
+/**
+ * Set the signed in user's metadata, on their primary login. The backend
+ * replaces only the keys sent, each with its list of values in order; an
+ * empty list removes the key. Every key must be one an admin allows (the
+ * server's user meta keys, such as `text-generation-model`).
+ *
+ * The backend logs a failed database write rather than reporting it, so read
+ * the metadata again to see what was kept.
+ *
+ * @param meta - The values to set, by key.
+ * @param insightId - The insight to run in. Defaults to a new one.
+ * @throws When the backend refuses a key or the pixel fails.
+ */
+export const setUserMetadata = async (
+	meta: Record<string, string[]>,
+	insightId = "new",
+): Promise<void> => {
+	const entries = Object.entries(meta);
+	if (entries.length === 0) {
+		return;
+	}
+
+	// `<` is escaped so a value cannot open Pixel preprocessor markup
+	const literal = (text: string) =>
+		JSON.stringify(text).replace(/</g, "\\u003c");
+	const map = entries
+		.map(
+			([key, values]) =>
+				`${literal(key)}:[${values.map(literal).join(",")}]`,
+		)
+		.join(",");
+
+	const response = await runPixel(
+		`META | SetUserMetadata(meta=[{${map}}]);`,
+		insightId,
+	);
+	if (response.errors.length > 0) {
+		throw new Error(response.errors.join(""));
+	}
+};
 
 /**
  * Upload file(s) to the current user's user space

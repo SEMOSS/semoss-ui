@@ -8,7 +8,7 @@ import {
 	DialogTitle,
 } from "@semoss/ui/next";
 
-export interface ExportEngineDialogProps {
+interface ExportEngineDialogProps {
 	/** Whether the dialog is open */
 	open: boolean;
 	/** What the catalog calls the engine, such as "Database" */

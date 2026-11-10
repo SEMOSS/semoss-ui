@@ -37,7 +37,7 @@ const PERSON_ROW_CLASS =
 export const getPersonLabel = (person: UserSearchResult): string =>
 	person.name || person.email || person.id;
 
-export interface DirectoryPersonSearchProps {
+interface DirectoryPersonSearchProps {
 	/** Called with the person the admin picks */
 	onSelect: (person: UserSearchResult) => void;
 	/** Classes for the wrapper */

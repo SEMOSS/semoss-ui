@@ -1,5 +1,11 @@
 import { Link } from "react-router";
-import { Alert, AlertDescription, AlertTitle, Button } from "@semoss/ui/next";
+import {
+	Alert,
+	AlertDescription,
+	AlertTitle,
+	Button,
+	cn,
+} from "@semoss/ui/next";
 import type { RoutineStatus } from "./routine-schema";
 
 interface RoutineAvailabilityProps {
@@ -7,17 +13,20 @@ interface RoutineAvailabilityProps {
 	routine: Pick<RoutineStatus, "mailboxAvailable" | "availabilityMessage">;
 	/** Whether the scheduler, mailbox, and assistant are all ready. */
 	isAvailable: boolean;
+	/** Replaces the card-bottom padding, such as for a place near the top. */
+	className?: string;
 }
 
 /** Keep connection and scheduler warnings visible beside an autosaving form. */
 export function RoutineAvailability({
 	routine,
 	isAvailable,
+	className,
 }: RoutineAvailabilityProps) {
 	return (
 		<>
 			{!isAvailable && (
-				<div className="px-6 pb-6">
+				<div className={cn("px-6 pb-6", className)}>
 					<Alert>
 						<AlertTitle>Setup needs attention</AlertTitle>
 						<AlertDescription>

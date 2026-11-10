@@ -1,6 +1,6 @@
 import { Copy, EyeOff, LockKeyhole, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { usePixel } from "@semoss/sdk/react";
+import { usePixel, useSession } from "@semoss/sdk/react";
 import {
 	Button,
 	Card,
@@ -13,17 +13,17 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { capitalize, formatToDataTestId } from "@semoss/utility/text";
+import { setEngineGlobal, setEngineVisiblity } from "@/api/engines";
 import {
-	setEngineGlobal,
-	setEngineVisiblity,
 	setProjectGlobal,
 	setProjectTemplate,
 	setProjectVisiblity,
-} from "@/api";
+} from "@/api/projects";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import { useDeleteResource } from "@/features/resource-delete/use-delete-resource";
-import { useSession, useSettings } from "@/hooks";
-import type { ALL_TYPES, ApiResponse } from "@/types";
+import { useSettings } from "@/hooks/useSettings";
+import type { ALL_TYPES, ApiResponse } from "@/types/types";
+import { AlertTile } from "./alert-tile";
 
 interface SettingsTilesProps {
 	/**
@@ -58,46 +58,15 @@ interface SettingsTilesProps {
 	direction?: "column" | "row";
 }
 
-const AlertTile = ({
-	icon,
-	title,
-	description,
-	action,
-	setBounds,
-	testId,
-}: {
-	icon: React.ReactNode;
-	title: string;
-	description: string;
-	action: React.ReactNode;
-	setBounds?: boolean;
-	testId?: string;
-}) => (
-	<div
-		className={`flex w-full flex-1 items-start gap-4 self-stretch rounded-xl border border--card-foreground p-4 bg-card${setBounds ? "h-[104px] max-w-[600px]" : "h-full"}
-			`}
-		data-testid={testId}
-	>
-		<div className="flex flex-1 items-start gap-2">
-			<span className="h-5 w-5 text-secondary-foreground [&_svg]:h-5 [&_svg]:w-5">
-				{icon}
-			</span>
-			<div>
-				<P className="font-medium">{title}</P>
-				<P className="text-muted-foreground text-sm">{description}</P>
-			</div>
-		</div>
-		<div className="pr-2">{action}</div>
-	</div>
-);
-
+/**
+ * The visibility and lifecycle settings of a project or engine as tiles:
+ * private, non discoverable, use as template (projects), and delete.
+ */
 export const SettingsTiles = (props: SettingsTilesProps) => {
 	const { id, type, name, condensed, onDelete, direction = "column" } = props;
 
-	const isEngineOperationAvailable = useSession(
-		(state) => state.isEngineOperationAvailable,
-	);
-	const { adminMode, engineInfo: contextEngineInfo } = useSettings();
+	const canPerform = useSession((state) => state.canPerform);
+	const { adminMode } = useSettings();
 
 	const [deleteModal, setDeleteModal] = useState(false);
 	const [discoverable, setDiscoverable] = useState(true);
@@ -112,25 +81,17 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 		type === "VECTOR" ||
 		type === "GUARDRAIL" ||
 		type === "FUNCTION";
-	// Reuse the parent settings layout's EngineInfo result when available to
-	// avoid a duplicate pixel call.
-	const shouldFetchLocally = !(isEngineType && contextEngineInfo);
-
-	const localEngineInfo = usePixel(
-		shouldFetchLocally
-			? isEngineType
+	const engineInfo = usePixel(
+		isEngineType
+			? adminMode
+				? `AdminEngineInfo(engine='${id}');`
+				: `EngineInfo(engine='${id}');`
+			: type === "PROJECT"
 				? adminMode
-					? `AdminEngineInfo(engine='${id}');`
-					: `EngineInfo(engine='${id}');`
-				: type === "PROJECT"
-					? adminMode
-						? `AdminProjectInfo(project='${id}')`
-						: `ProjectInfo(project='${id}')`
-					: ""
-			: "",
+					? `AdminProjectInfo(project='${id}')`
+					: `ProjectInfo(project='${id}')`
+				: "",
 	);
-
-	const engineInfo = shouldFetchLocally ? localEngineInfo : contextEngineInfo;
 
 	useEffect(() => {
 		// pixel call to get pending members
@@ -411,9 +372,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 										: `Make ${name} public`
 								}
 								checked={!global}
-								disabled={
-									!isEngineOperationAvailable(type, "public")
-								}
+								disabled={!canPerform(type, "public")}
 								data-testid={formatToDataTestId(
 									`settingsTiles-make-${name}-public-private-switch`,
 								)}
@@ -443,7 +402,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 												}
 												disabled={
 													global ||
-													!isEngineOperationAvailable(
+													!canPerform(
 														type,
 														"discoverable",
 													)
@@ -488,10 +447,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 									)}
 									disabled={
 										global ||
-										!isEngineOperationAvailable(
-											type,
-											"discoverable",
-										)
+										!canPerform(type, "discoverable")
 									}
 									checked={!discoverable}
 									onCheckedChange={() => {
@@ -510,9 +466,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 						action={
 							<Button
 								variant="destructive"
-								disabled={
-									!isEngineOperationAvailable(type, "delete")
-								}
+								disabled={!canPerform(type, "delete")}
 								data-testid={formatToDataTestId(
 									`settingsTiles-${name}-delete-btn`,
 								)}
@@ -563,9 +517,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 										: `Make ${name} public`
 								}
 								checked={!global}
-								disabled={
-									!isEngineOperationAvailable(type, "public")
-								}
+								disabled={!canPerform(type, "public")}
 								data-testid={formatToDataTestId(
 									`settingsTiles-make-${name}-public-private-switch`,
 								)}
@@ -591,7 +543,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 											<Switch
 												disabled={
 													global ||
-													!isEngineOperationAvailable(
+													!canPerform(
 														type,
 														"discoverable",
 													)
@@ -628,10 +580,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 								<Switch
 									disabled={
 										global ||
-										!isEngineOperationAvailable(
-											type,
-											"discoverable",
-										)
+										!canPerform(type, "discoverable")
 									}
 									title={
 										discoverable
@@ -666,12 +615,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 										data-testid={formatToDataTestId(
 											`settingsTiles-${name}-delete-btn`,
 										)}
-										disabled={
-											!isEngineOperationAvailable(
-												type,
-												"delete",
-											)
-										}
+										disabled={!canPerform(type, "delete")}
 									>
 										Delete
 									</Button>

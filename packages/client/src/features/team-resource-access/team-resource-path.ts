@@ -1,13 +1,8 @@
 import type { GroupAccessResource, TeamResource } from "@/api/teams";
-import { TYPE_TO_ROUTE } from "@/constants";
-
-const isRoutedType = (type: string): type is keyof typeof TYPE_TO_ROUTE =>
-	Object.hasOwn(TYPE_TO_ROUTE, type);
+import { getResourcePagePath } from "@/utility/catalog";
 
 /**
- * The page of a project or engine a team can use. A project whose type has no
- * pages of its own opens in the app pages, which load any project; an engine
- * whose type has no pages has none.
+ * The page of a project or engine a team can use.
  *
  * @param kind - Projects or engines.
  * @param resource - The project or engine.
@@ -16,12 +11,5 @@ const isRoutedType = (type: string): type is keyof typeof TYPE_TO_ROUTE =>
 export const getTeamResourcePath = (
 	kind: GroupAccessResource,
 	resource: TeamResource,
-): string | null => {
-	const route =
-		resource.resourceType && isRoutedType(resource.resourceType)
-			? TYPE_TO_ROUTE[resource.resourceType]
-			: kind === "PROJECT"
-				? TYPE_TO_ROUTE.PROJECT
-				: null;
-	return route ? `${route}/${encodeURIComponent(resource.id)}` : null;
-};
+): string | null =>
+	getResourcePagePath(kind, resource.resourceType, resource.id);

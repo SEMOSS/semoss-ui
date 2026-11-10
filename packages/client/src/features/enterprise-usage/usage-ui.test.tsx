@@ -38,8 +38,10 @@ vi.mock("@semoss/sdk", async (importOriginal) => ({
 vi.mock("@semoss/sdk/react", () => ({
 	usePixel: mocks.usePixel,
 	useInsight: () => ({ insightId: "test-insight" }),
+	useSession: (
+		selector: (state: { user: { isAdmin: boolean } }) => unknown,
+	) => selector({ user: { isAdmin: mocks.isAdmin } }),
 }));
-vi.mock("@/hooks/use-session", () => ({ useSession: () => mocks.isAdmin }));
 
 const summary = {
 	REQUESTS: 2,

@@ -98,6 +98,11 @@ export const COLLABORATION_TOOL_VIEWS = {
 		family: "teams",
 		collection: "messages",
 	},
+	SearchTeamsMessages: {
+		title: "Teams message search",
+		family: "teams",
+		collection: "messages",
+	},
 	GetChatMessage: { title: "Chat message", family: "teams" },
 	SendChatMessage: { title: "Send a chat message", family: "teams" },
 	DownloadMessageAttachment: { title: "Chat attachment", family: "files" },
@@ -143,7 +148,7 @@ export const COLLABORATION_TOOL_VIEWS = {
 export type CollaborationToolName = keyof typeof COLLABORATION_TOOL_VIEWS;
 
 /** Recognize exact built-in names without taking over an attached MCP with a similar name. */
-export function collaborationToolName(
+function collaborationToolName(
 	tool: ConversationTool,
 ): CollaborationToolName | undefined {
 	if (

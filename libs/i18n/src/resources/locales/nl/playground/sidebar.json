@@ -61,27 +61,8 @@
 		"roomNameEmpty": "Ruimtenaam mag niet leeg zijn",
 		"roomRenamedSuccess": "Naam van ruimte succesvol gewijzigd",
 		"failedToRename": "Naam wijzigen van ruimte mislukt",
-		"roomDeletedSuccess": "Ruimte succesvol verwijderd"
-	},
-	"workbench": {
-		"view": "Weergave",
-		"navigate": "Navigeren",
-		"commandPalette": "Opdrachtenpalet openen…",
-		"layout": "Panelen rangschikken",
-		"single": "Samenvoegen tot één groep",
-		"columns": "Splitsen in twee kolommen",
-		"rows": "Splitsen in twee rijen",
-		"balance": "Paneelgroottes gelijkmaken",
-		"left": "Linkergebied tonen",
-		"right": "Rechtergebied tonen",
-		"top": "Bovengebied tonen",
-		"bottom": "Ondergebied tonen",
-		"previous": "Naar vorig paneel gaan",
-		"next": "Naar volgend paneel gaan",
-		"openPanels": "Geopende panelen",
-		"noPanels": "Geen geopende panelen",
-		"maximize": "Werkruimte maximaliseren",
-		"restore": "Werkruimte herstellen"
+		"roomDeletedSuccess": "Ruimte succesvol verwijderd",
+		"failedToDelete": "Kan de kamer niet verwijderen"
 	},
 	"userMenu": {
 		"settings": "Instellingen",
@@ -107,5 +88,13 @@
 			"languageDescription": "De taal waarin de app wordt weergegeven.",
 			"version": "Versie {{version}}"
 		}
+	},
+	"download": {
+		"title": "Gesprek downloaden",
+		"description": "Kies een indeling voor je download.",
+		"word": "Word-document",
+		"pdf": "PDF-document",
+		"success": "Gesprek gedownload als {{format}}",
+		"failed": "Kan het gesprek niet downloaden"
 	}
 }

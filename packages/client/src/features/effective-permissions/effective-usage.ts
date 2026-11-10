@@ -71,7 +71,7 @@ export const isNotCapped = (row: EffectivePermissionRow): boolean =>
 	!row.usage?.billedTo || row.usage.unlimited;
 
 /** The limit that applies to a person's calls, and where it is set */
-export interface EffectiveLimit {
+interface EffectiveLimit {
 	/** The billed source's limit, Unlimited included, or null when no limit applies */
 	limit: ModelUsageLimit | null;
 	/** Where it is set, which decides how its counts are said */

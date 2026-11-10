@@ -1,14 +1,8 @@
-import { Plus, Search } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useId, useRef, useState } from "react";
 import {
 	Button,
 	cn,
-	H3,
-	H4,
-	InputGroup,
-	InputGroupAddon,
-	InputGroupInput,
-	P,
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
@@ -18,14 +12,16 @@ import { givenFirst } from "@/lib/person-name";
 import { selectTopicIgnores } from "../state/collaboration.selectors";
 import type { Person, Topic } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
-import { PersonAvatar } from "./person-avatar";
+import {
+	PeoplePickerPanel,
+	peoplePickerContentClassName,
+	peoplePickerRowButtonClassName,
+} from "./people-picker-panel";
 
 // before a search: the people on the topic's threads, most threads first
 const ON_THREADS_SHOWN = 8;
 // a search lists this many; typing more narrows the rest
 const RESULTS_SHOWN = 20;
-// a coarse pointer gets a 44px target in this dense list
-const rowButtonClassName = "pointer-coarse:min-h-11";
 
 /** Adds people to a topic, or ignores them in it, from a search that puts the people on its threads first. */
 export function TopicPeoplePopover({ topic }: { topic: Topic }) {
@@ -145,155 +141,66 @@ export function TopicPeoplePopover({ topic }: { topic: Topic }) {
 				collisionPadding={16}
 				aria-labelledby={`${fieldId}-title`}
 				aria-describedby={`${fieldId}-description`}
-				className="flex max-h-(--radix-popover-content-available-height) w-96 max-w-(--radix-popover-content-available-width) flex-col overflow-hidden rounded-xl p-0"
+				className={peoplePickerContentClassName}
 			>
-				<div className="shrink-0 space-y-4 p-5 pb-3">
-					<div className="space-y-1">
-						<H3
-							id={`${fieldId}-title`}
-							className="font-bold text-lg"
-						>
-							Add people
-						</H3>
-						<P
-							id={`${fieldId}-description`}
-							className="text-muted-foreground text-sm leading-relaxed"
-						>
-							Ignore keeps someone's messages in this topic's
-							threads out of Work and the assistant.
-						</P>
-					</div>
-					<InputGroup>
-						<InputGroupAddon>
-							<Search aria-hidden="true" />
-						</InputGroupAddon>
-						<InputGroupInput
-							ref={searchRef}
-							type="search"
-							aria-label="Search people by name or email"
-							placeholder="Search by name or email"
-							value={query}
-							onChange={(event) => setQuery(event.target.value)}
-						/>
-					</InputGroup>
-				</div>
-				<div className="min-h-0 flex-1 overflow-y-auto pb-2 sm:max-h-80">
-					{!text && shown.length > 0 && (
-						<H4
-							id={`${fieldId}-group`}
-							className="px-5 pt-1 pb-1 font-medium text-muted-foreground text-xs"
-						>
-							On its threads
-						</H4>
-					)}
-					{shown.length > 0 && (
-						<ul
-							aria-label={text ? "Matching people" : undefined}
-							aria-labelledby={
-								text ? undefined : `${fieldId}-group`
-							}
-						>
-							{shown.map((person) => {
-								const name = givenFirst(person.name);
-								const line = detail(person);
-								return (
-									<li
-										key={person.id}
-										className="flex items-center gap-3 px-5 py-2"
-									>
-										<PersonAvatar
-											name={person.name}
-											initials={person.initials}
-											email={person.email}
-										/>
-										<div className="min-w-0 flex-1">
-											<P className="break-words font-medium text-sm leading-5">
-												{name}
-											</P>
-											{line && (
-												<Small className="block break-words font-normal text-muted-foreground text-xs leading-5">
-													{line}
-												</Small>
+				<PeoplePickerPanel
+					fieldId={fieldId}
+					title="Add people"
+					description="Ignore keeps someone's messages in this topic's threads out of Work and the assistant."
+					query={query}
+					onQuery={setQuery}
+					searchRef={searchRef}
+					groupLabel="On its threads"
+					people={shown.map((person) => ({
+						id: person.id,
+						name: person.name,
+						initials: person.initials,
+						email: person.email,
+						detail: detail(person),
+					}))}
+					emptyText="No one else is on its threads yet. Search for anyone by name or email."
+					hiddenCount={ranked.length - shown.length}
+					status={status}
+					actions={(row) => {
+						const person = shown.find((item) => item.id === row.id);
+						if (!person) return null;
+						const name = givenFirst(person.name);
+						return (
+							<>
+								{ignored.has(person.id) ? (
+									<Small className="px-2 font-normal text-muted-foreground text-xs">
+										Ignored
+									</Small>
+								) : (
+									// excluded everywhere already covers this topic
+									!person.neverIngest && (
+										<Button
+											variant="ghost"
+											size="sm"
+											aria-label={`Ignore ${name} in this topic`}
+											className={cn(
+												peoplePickerRowButtonClassName,
+												"font-normal text-muted-foreground",
 											)}
-										</div>
-										<div className="flex shrink-0 items-center gap-1">
-											{ignored.has(person.id) ? (
-												<Small className="px-2 font-normal text-muted-foreground text-xs">
-													Ignored
-												</Small>
-											) : (
-												// excluded everywhere already covers this topic
-												!person.neverIngest && (
-													<Button
-														variant="ghost"
-														size="sm"
-														aria-label={`Ignore ${name} in this topic`}
-														className={cn(
-															rowButtonClassName,
-															"font-normal text-muted-foreground",
-														)}
-														onClick={() =>
-															ignore(person)
-														}
-													>
-														Ignore
-													</Button>
-												)
-											)}
-											<Button
-												variant="outline"
-												size="sm"
-												aria-label={`Add ${name} to this topic`}
-												className={rowButtonClassName}
-												onClick={() => add(person)}
-											>
-												Add
-											</Button>
-										</div>
-									</li>
-								);
-							})}
-						</ul>
-					)}
-					{shown.length === 0 &&
-						(text ? (
-							<div className="space-y-2 px-5 py-3">
-								<P className="text-muted-foreground text-sm">
-									No one matches "{query.trim()}".
-								</P>
+											onClick={() => ignore(person)}
+										>
+											Ignore
+										</Button>
+									)
+								)}
 								<Button
 									variant="outline"
 									size="sm"
-									className={rowButtonClassName}
-									onClick={() => {
-										setQuery("");
-										searchRef.current?.focus();
-									}}
+									aria-label={`Add ${name} to this topic`}
+									className={peoplePickerRowButtonClassName}
+									onClick={() => add(person)}
 								>
-									Clear search
+									Add
 								</Button>
-							</div>
-						) : (
-							<P className="px-5 py-3 text-muted-foreground text-sm">
-								No one else is on its threads yet. Search for
-								anyone by name or email.
-							</P>
-						))}
-					{ranked.length > shown.length && text && (
-						<Small className="block px-5 pt-2 font-normal text-muted-foreground text-xs">
-							Showing {shown.length} of {ranked.length}. Keep
-							typing to narrow it down.
-						</Small>
-					)}
-				</div>
-				<output
-					className={cn(
-						"block shrink-0 border-t bg-muted/40 px-5 py-3 text-muted-foreground text-sm",
-						!status && "sr-only",
-					)}
-				>
-					{status}
-				</output>
+							</>
+						);
+					}}
+				/>
 			</PopoverContent>
 		</Popover>
 	);
