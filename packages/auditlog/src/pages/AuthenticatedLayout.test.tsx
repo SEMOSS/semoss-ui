@@ -25,19 +25,19 @@ vi.mock("@semoss/sdk/react", () => ({
 			refresh: typeof mocks.refresh;
 		}) => T,
 	): T => selector({ status: mocks.status, refresh: mocks.refresh }),
+	useSessionRetry: () => ({ isRetrying: false, retry: mocks.refresh }),
 	InsightProvider: ({ children }: { children: ReactNode }) => (
 		<section data-testid="insight-provider">{children}</section>
 	),
 	useInsight: () => mocks.insight,
 }));
 
-// the real gate and retry, from their defining files: the shared barrel loads
+// the real gate, from its defining file: the shared barrel loads
 // the monaco editor, which the audit log does not install for its tests
 vi.mock("@semoss/shared", async () => ({
 	...(await import(
 		"../../../../libs/shared/src/components/insight-ready-gate"
 	)),
-	...(await import("../../../../libs/shared/src/hooks/use-session-retry")),
 }));
 
 vi.mock("@semoss/i18n", () => ({

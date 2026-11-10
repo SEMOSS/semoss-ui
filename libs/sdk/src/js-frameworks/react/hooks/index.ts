@@ -8,6 +8,7 @@ export { useSession } from "./use-session";
 export { useSessionInsight } from "./use-session-insight";
 export { useSessionPermissions } from "./use-session-permissions";
 export { useSessionPixel } from "./use-session-pixel";
+export { useSessionRetry } from "./use-session-retry";
 export {
 	/**@deprecated use useDebouncedCallback from @semoss/ui/next */
 	useDebouncedCallback,

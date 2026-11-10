@@ -20,6 +20,10 @@ vi.mock("@semoss/i18n", () => ({
 vi.mock("@semoss/sdk/react", () => ({
 	useSession: <T,>(selector: (state: typeof mocks.session) => T) =>
 		selector(mocks.session),
+	useSessionRetry: () => ({
+		isRetrying: false,
+		retry: mocks.session.refresh,
+	}),
 }));
 vi.mock("@/hooks/use-playground-theme", () => ({
 	usePlaygroundTheme: () => mocks.theme,

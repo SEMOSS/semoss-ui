@@ -36,7 +36,7 @@ the module).
 
 Sign in is the SDK's `Session`, not an insight: `AuthorizedLayout` gates on
 `useSession((state) => state.status)` (spinner while `INITIALIZING`, `/login` when
-`UNAUTHENTICATED`, `ErrorPage` with Retry from the shared `useSessionRetry` on `ERROR`), and the login page
+`UNAUTHENTICATED`, `ErrorPage` with Retry from the SDK's `useSessionRetry` on `ERROR`), and the login page
 redirects once `AUTHENTICATED`. The app's `InsightProvider` mounts inside `AuthorizedLayout`,
 after sign in, and the shared `InsightReadyGate` holds the pages until that insight is made, so
 `useInsight().actions.run`, `insightId` and `isAuthorized` keep working below it. Nothing

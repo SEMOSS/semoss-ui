@@ -1,6 +1,5 @@
 import { Navigate, Outlet, useLocation } from "react-router";
-import { useSession } from "@semoss/sdk/react";
-import { useSessionRetry } from "@semoss/shared";
+import { useSession, useSessionRetry } from "@semoss/sdk/react";
 import { ErrorPage } from "./error-page";
 
 /**

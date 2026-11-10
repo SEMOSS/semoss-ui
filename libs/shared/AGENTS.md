@@ -31,9 +31,9 @@ gate on `useSession((state) => state.status)`: a spinner while `INITIALIZING`, i
 `Env.update` and any `waitForEmbedAuth()`) and mount its workspace `InsightProvider` inside
 the gate, so the insight is made after sign in.
 
-An app that gates its own routes uses the two pieces every gate shares. `useSessionRetry()`
-(`hooks/use-session-retry.ts`) gives a Retry for the `ERROR` status: `{ isRetrying, retry }`
-over `refresh`. `InsightReadyGate` (`components/insight-ready-gate.tsx`) goes inside the gate's
+An app that gates its own routes takes its Retry for the `ERROR` status from the SDK's
+`useSessionRetry()` (`{ isRetrying, retry }`, from the session's `isChecking` and `refresh`).
+`InsightReadyGate` (`components/insight-ready-gate.tsx`) goes inside the gate's
 `InsightProvider` and holds its views until the insight is made, showing the app's
 `errorFallback` when it cannot be, so no view runs a pixel with an empty insight id.
 

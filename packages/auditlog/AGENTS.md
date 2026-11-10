@@ -57,7 +57,7 @@ do not relocate existing features without explicit migration scope.
 Sign in is the SDK's `Session`, not an insight. `main.tsx` calls `void Session.initialize()`
 before the first render (after `app.tsx` set the module). `pages/AuthenticatedLayout.tsx`
 gates on `useSession((state) => state.status)`: a spinner while `INITIALIZING`, `/login` when
-`UNAUTHENTICATED`, and `layout.loadFailed` with Retry (`useSessionRetry` from `@semoss/shared`) on `ERROR`. Once
+`UNAUTHENTICATED`, and `layout.loadFailed` with Retry (`useSessionRetry` from `@semoss/sdk/react`) on `ERROR`. Once
 `AUTHENTICATED` it mounts the app's `InsightProvider`, and the shared `InsightReadyGate`
 holds the pages until that insight is made, so `useInsight()` works below it. `LoginPage`
 renders the shared `LoginForm` and redirects once `AUTHENTICATED`. Nothing outside the gate

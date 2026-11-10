@@ -26,6 +26,7 @@ vi.mock("@semoss/sdk/react", () => ({
 			refresh: typeof mocks.refresh;
 		}) => T,
 	): T => selector({ status: mocks.status, refresh: mocks.refresh }),
+	useSessionRetry: () => ({ isRetrying: false, retry: mocks.refresh }),
 	InsightProvider: ({ children }: { children: ReactNode }) => (
 		<section aria-label="App insight">{children}</section>
 	),

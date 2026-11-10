@@ -28,7 +28,7 @@ added: backend calls apps share live in `libs/sdk/src/api/` (for example `runMcp
 - **Sign in, the user and the config come from the SDK.** `main.tsx` calls `Session.initialize()`
   once, after embed authentication and before the first render. `InitializedLayout` waits while
   `useSession` is `INITIALIZING`. `AuthenticatedLayout` sends `UNAUTHENTICATED` to `/login`, and
-  shows `ErrorPage` with Retry (`refresh`) on `ERROR`, so `/login` still renders.
+  shows `ErrorPage` with Retry (`useSessionRetry` from `@semoss/sdk/react`) on `ERROR`, so `/login` still renders.
   The shared `LoginForm` signs in through `useSession`, and `NavUser` signs out the same way.
   Read the user with `useSession((state) => state.user)` and config values with
   `useConfig((state) => state.config?.x)`. See [the SDK session guide](../../libs/sdk/skills/session.skill.md).

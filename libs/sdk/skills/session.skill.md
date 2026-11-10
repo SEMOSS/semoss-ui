@@ -1,6 +1,6 @@
 ---
 name: sdk-session
-description: "Use when signing users in or out, reading the signed in user or their metadata, gating UI on sign in, reading the server config or theme, checking a user's permission on a project or engine, or deciding which insight a pixel runs in with @semoss/sdk. Covers Session, Config, useSession, useConfig, useSessionPermissions, useSessionInsight and useLogins."
+description: "Use when signing users in or out, reading the signed in user or their metadata, gating UI on sign in or retrying a session that could not be read, reading the server config or theme, checking a user's permission on a project or engine, or deciding which insight a pixel runs in with @semoss/sdk. Covers Session, Config, useSession, useSessionRetry, useConfig, useSessionPermissions, useSessionInsight and useLogins."
 ---
 
 # @semoss/sdk Session, Config and Permissions
@@ -37,8 +37,9 @@ import { useSession } from "@semoss/sdk/react";
 
 const AuthenticatedLayout = () => {
     const status = useSession((state) => state.status);
+    const { isRetrying, retry } = useSessionRetry();
     if (status === "INITIALIZING") return <Spinner />;
-    if (status === "ERROR") return <ErrorPage />;
+    if (status === "ERROR") return <ErrorPage onRetry={retry} isRetrying={isRetrying} />;
     if (status !== "AUTHENTICATED") return <Navigate to="/login" />;
     return <Outlet />;
 };
@@ -63,6 +64,10 @@ state the component reads. With no provider, the hooks keep using the global ses
 | `status` | `"INITIALIZING"`, `"UNAUTHENTICATED"`, `"AUTHENTICATED"` or `"ERROR"` |
 | `user` | `null` when signed out, else `{ id, name, username, email, provider, isAdmin, isNative, userEpoch, lastLogin?, groupInfo?, meta, defaultModels: { textGeneration, codeGeneration } }` |
 | `error` | Why the session could not be read, else `null` |
+| `isChecking` | Whether the session is being read: the first check, a `refresh`, or the read after a sign in. `status` keeps its last value meanwhile, so `ERROR` stays `ERROR` while a retry runs |
+
+`useSessionRetry()` returns `{ isRetrying, retry }`: `isChecking` and `refresh`, for a Retry
+on `ERROR`. It reads the session, so every view agrees while a retry runs.
 
 The user is read in one request from two pixels, which return different things:
 
