@@ -3,7 +3,7 @@ import {
 	I18nextProvider,
 	playgroundResources,
 } from "@semoss/i18n";
-import { Env, InsightProvider } from "@semoss/sdk/react";
+import { Env } from "@semoss/sdk/react";
 import { ThemeProvider, Toaster } from "@semoss/ui/next";
 import { LandscapeRestriction } from "@/components/common/landscape-restriction";
 import { LanguageDirection } from "@/components/common/language-direction";
@@ -25,26 +25,26 @@ const i18n = i18nBuilder.i18n;
 export const i18nReady = i18nBuilder.ready;
 
 /**
- * The playground's root. The file panels need no provider here: they read
- * resource permissions from the SDK's `Session.permissions`.
+ * The playground's root. It holds no insight: sign in, the user and the config
+ * come from the SDK's `Session` and `Config` (started in `main.tsx`), and only
+ * rooms mount an `InsightProvider`. The file panels read resource permissions
+ * from `Session.permissions`.
  */
 export const App = () => {
 	return (
 		<I18nextProvider i18n={i18n}>
 			<LanguageDirection>
-				<InsightProvider>
-					{/* TODO: read default theme from theme map somehow */}
-					<ThemeProvider
-						defaultTheme="light"
-						storageKey="smss-ui-theme-playground"
-					>
-						<LandscapeRestriction />
-						<div className="absolute inset-0 h-screen w-screen overflow-hidden">
-							<Router />
-						</div>
-						<Toaster position="top-center" />
-					</ThemeProvider>
-				</InsightProvider>
+				{/* TODO: read default theme from theme map somehow */}
+				<ThemeProvider
+					defaultTheme="light"
+					storageKey="smss-ui-theme-playground"
+				>
+					<LandscapeRestriction />
+					<div className="absolute inset-0 h-screen w-screen overflow-hidden">
+						<Router />
+					</div>
+					<Toaster position="top-center" />
+				</ThemeProvider>
 			</LanguageDirection>
 		</I18nextProvider>
 	);

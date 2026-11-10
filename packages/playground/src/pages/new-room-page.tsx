@@ -3,7 +3,11 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { useTranslation } from "@semoss/i18n";
-import { InsightProvider, usePixel } from "@semoss/sdk/react";
+import {
+	InsightProvider,
+	useSession,
+	useSessionPixel,
+} from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -33,7 +37,7 @@ import {
 	type NewRoomWorkbenchPanels,
 } from "@/features/workbench/use-workbench-panels";
 import { useChat } from "@/hooks/use-chat";
-import { useRoot } from "@/hooks/use-root";
+import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
 import { RoomStore } from "@/stores/room/room.store";
 import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
 import type { MCPConfig, Prompt, Workspace } from "@/types";
@@ -51,7 +55,7 @@ export const NewRoomPage = observer(() => {
 		"chat",
 		"chatConnectors",
 	]);
-	const { root } = useRoot();
+	const theme = usePlaygroundTheme();
 	const { theme: colorMode } = useTheme();
 
 	const isDark =
@@ -59,13 +63,14 @@ export const NewRoomPage = observer(() => {
 		(colorMode === "system" &&
 			window.matchMedia("(prefers-color-scheme: dark)").matches);
 
-	const landingSrc = isDark
-		? root.theme.images.landingDark
-		: root.theme.images.landing;
+	const landingSrc = isDark ? theme.images.landingDark : theme.images.landing;
 
 	const { chat } = useChat();
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
+	const userName = useSession((state) => state.user?.name) ?? "";
+	const profileDefaultModelId =
+		useSession((state) => state.user?.defaultModels.textGeneration) ?? "";
 
 	// Re-fetch the user's profile default model each time this page mounts so
 	// changes made in the token-usage embed are reflected immediately.
@@ -86,13 +91,13 @@ export const NewRoomPage = observer(() => {
 	const newRoom = useMemo(
 		() =>
 			new RoomStore({
-				theme: root.theme,
+				theme: theme,
 				roomId: "temp",
 				panelComponents: ROOM_PANEL_COMPONENTS,
 				// no insight for Files to read until the draft prepares its room
 				includeFiles: false,
 			}),
-		[root.theme],
+		[theme],
 	);
 	// Remember manual provenance when an agent also supplies the same resource.
 	const manualMcpRef = useRef(
@@ -117,8 +122,7 @@ export const NewRoomPage = observer(() => {
 	useEffect(() => {
 		if (!bannerRef.current) return;
 		// The url stripping here is primarily due to a BE theme bug where single quote apostrophes get serial added when saving
-		const urls =
-			(root.theme.banner ?? "").match(/https?:\/\/[^\s'"<>]+/g) ?? [];
+		const urls = (theme.banner ?? "").match(/https?:\/\/[^\s'"<>]+/g) ?? [];
 		bannerRef.current
 			.querySelectorAll("a")
 			.forEach((a: HTMLAnchorElement, i: number) => {
@@ -126,7 +130,7 @@ export const NewRoomPage = observer(() => {
 				a.rel = "noopener noreferrer";
 				if (urls[i]) a.setAttribute("href", urls[i]);
 			});
-	}, [root.theme.banner]);
+	}, [theme.banner]);
 
 	const [isLoading, setIsLoading] = useState(false);
 	const submittedRef = useRef(false);
@@ -135,7 +139,7 @@ export const NewRoomPage = observer(() => {
 	const [chosenMode, setChosenMode] = useState<"chat" | "agent">("chat");
 	// With modeFollowsAgent the agent picker decides the mode: a saved agent
 	// or Default Agent runs in agent mode, No Agent in chat mode.
-	const modeFollowsAgent = !!root.theme.featureFlags?.modeFollowsAgent;
+	const modeFollowsAgent = !!theme.featureFlags?.modeFollowsAgent;
 	const mode: "chat" | "agent" =
 		modeFollowsAgent && selectedWorkspaceId ? "agent" : chosenMode;
 	const {
@@ -165,7 +169,7 @@ export const NewRoomPage = observer(() => {
 		[newRoom.options.predefinedPrompts],
 	);
 
-	const getWorkspace = usePixel<Workspace | null>(
+	const getWorkspace = useSessionPixel<Workspace | null>(
 		selectedWorkspaceId
 			? `GetWorkspace(${JSON.stringify(selectedWorkspaceId)});`
 			: "",
@@ -197,7 +201,7 @@ export const NewRoomPage = observer(() => {
 			: "";
 
 	// Fetch knowledge vector engine if knowledgeId is provided
-	const getKnowledge = usePixel<
+	const getKnowledge = useSessionPixel<
 		| {
 				engine_id: string;
 				engine_name: string;
@@ -211,7 +215,7 @@ export const NewRoomPage = observer(() => {
 		{ data: null },
 	);
 
-	const getPrompts = usePixel<Prompt[]>(
+	const getPrompts = useSessionPixel<Prompt[]>(
 		selectedWorkspaceId && prompts.length > 0
 			? `META | ListPrompt(filters=[Filter( (PROMPT__ID == [${prompts.map((p) => `"${p}"`).join(", ")}]) )])`
 			: "",
@@ -227,14 +231,14 @@ export const NewRoomPage = observer(() => {
 	useEffect(() => {
 		newRoom.setOptions({
 			instructions: "",
-			mcp: [...(root.theme.defaultTools || [])],
+			mcp: [...(theme.defaultTools || [])],
 			workspace: undefined,
 			predefinedPrompts: [],
-			temperature: root.theme.featureFlags?.enableTemperature
-				? (root.theme.defaultRoomSettings?.temperature ?? 0)
+			temperature: theme.featureFlags?.enableTemperature
+				? (theme.defaultRoomSettings?.temperature ?? 0)
 				: undefined,
 		});
-	}, [newRoom, root.theme]);
+	}, [newRoom, theme]);
 
 	/**
 	 * Options shared by every room-creation path: current MCPs, the agent
@@ -417,8 +421,8 @@ export const NewRoomPage = observer(() => {
 			// agent again applies its default model again
 			appliedAgentModelRef.current = "";
 			appliedAgentOptionsRef.current = "";
-			if (chat.profileDefaultModelId) {
-				void chat.selectModelById(chat.profileDefaultModelId);
+			if (profileDefaultModelId) {
+				void chat.selectModelById(profileDefaultModelId);
 			}
 			return;
 		}
@@ -492,6 +496,7 @@ export const NewRoomPage = observer(() => {
 		getWorkspace.data,
 		newRoom,
 		chat,
+		profileDefaultModelId,
 	]);
 
 	// A URL-routed agent with a greeting drops straight into a room with it
@@ -707,20 +712,19 @@ export const NewRoomPage = observer(() => {
 
 	return (
 		<div className="flex h-full w-full flex-col overflow-hidden">
-			{root.theme.banner ? (
+			{theme.banner ? (
 				<div
 					ref={bannerRef}
 					className="w-full shrink-0 px-4 py-2 text-center text-sm [&_a]:underline"
 					style={{
 						backgroundColor:
-							root.theme.bannerBackgroundColor ||
-							"var(--primary)",
+							theme.bannerBackgroundColor || "var(--primary)",
 						color:
-							root.theme.bannerTextColor ||
+							theme.bannerTextColor ||
 							"var(--primary-foreground)",
 					}}
 					// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
-					dangerouslySetInnerHTML={{ __html: root.theme.banner }}
+					dangerouslySetInnerHTML={{ __html: theme.banner }}
 				/>
 			) : null}
 			<div className="min-h-0 flex-1">
@@ -816,38 +820,38 @@ export const NewRoomPage = observer(() => {
 						)}
 						<DropHighlight className="flex h-full flex-col items-center overflow-auto px-4 py-8 sm:px-6">
 							<div className="relative z-10 mx-auto my-auto flex w-full max-w-3xl flex-col gap-6 py-6">
-								{root.theme.landing ? (
+								{theme.landing ? (
 									<div
 										className="mx-auto flex max-w-xl"
 										// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
 										dangerouslySetInnerHTML={{
 											__html:
-												root.theme?.altLandingKey &&
+												theme?.altLandingKey &&
 												searchParams.has(
-													root.theme.altLandingKey,
+													theme.altLandingKey,
 												) &&
-												root.theme.altLanding
-													? root.theme.altLanding
-													: root.theme.landing,
+												theme.altLanding
+													? theme.altLanding
+													: theme.landing,
 										}}
 									/>
 								) : (
 									<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
 										<H2 className="text-center">
 											{t("room:welcome", {
-												name: chat.user.name,
+												name: userName,
 											})}
 										</H2>
-										{root.theme.description ? (
+										{theme.description ? (
 											<Muted className="text-center">
-												{root.theme.description}
+												{theme.description}
 											</Muted>
 										) : null}
 									</div>
 								)}
 								{agentGreeting && (
 									<RoomGreeting
-										room={newRoom}
+										room={workbenchRoom}
 										greeting={agentGreeting}
 									/>
 								)}
@@ -889,9 +893,7 @@ export const NewRoomPage = observer(() => {
 									onWorkspaceChange={handleAgentChange}
 									onPrompt={createRoom}
 									excludeCommandIds={
-										canChooseAgentMode(
-											root.theme.featureFlags,
-										)
+										canChooseAgentMode(theme.featureFlags)
 											? []
 											: ["agent-harness", "chat-mode"]
 									}

@@ -151,6 +151,7 @@
 	},
 	"layout": {
 		"appName": "Auditlogboek",
-		"appDescription": "Auditlogboek-app"
+		"appDescription": "Auditlogboek-app",
+		"loadFailed": "We konden het auditlogboek niet laden. Probeer het opnieuw en neem contact op met support als het probleem aanhoudt."
 	}
 }

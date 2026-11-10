@@ -1,22 +1,38 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { createMemoryRouter, Outlet, RouterProvider } from "react-router";
+import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { useInsight } from "@semoss/sdk/react";
 import { SidebarProvider, ThemeProvider } from "@semoss/ui/next";
-import { RootContext } from "@/contexts/root-context";
-import { RootStore } from "@/stores/root/root.store";
+import { withPlaygroundDefaults } from "@/stores/root/playground-theme";
+import { AuthenticatedLayout } from "./authenticated-layout";
 import { ErrorPage } from "./error-page";
-import { InitializedLayout } from "./initialized-layout";
+
+const mocks = vi.hoisted(() => ({
+	session: {
+		status: "ERROR" as string,
+		refresh: vi.fn(),
+	},
+	theme: null as unknown,
+}));
 
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
-vi.mock("@semoss/sdk/react", () => ({ useInsight: vi.fn() }));
-vi.mock("./root-layout", () => ({
-	RootLayout: ({ children }: { children: React.ReactNode }) => children,
+vi.mock("@semoss/sdk/react", () => ({
+	useSession: <T,>(selector: (state: typeof mocks.session) => T) =>
+		selector(mocks.session),
+	useSessionRetry: () => ({
+		isRetrying: false,
+		retry: mocks.session.refresh,
+	}),
+}));
+vi.mock("@/hooks/use-playground-theme", () => ({
+	usePlaygroundTheme: () => mocks.theme,
 }));
 
 beforeEach(() => {
+	mocks.theme = withPlaygroundDefaults(null);
+	mocks.session.status = "ERROR";
+	mocks.session.refresh.mockResolvedValue(undefined);
 	vi.stubGlobal(
 		"matchMedia",
 		vi.fn(() => ({
@@ -31,50 +47,57 @@ afterEach(() => {
 	vi.resetAllMocks();
 });
 
-test.each(["light", "dark"] as const)(
-	"shows %s initialization failures before RootContext is mounted and allows returning home",
-	async (theme) => {
-		vi.mocked(useInsight).mockReturnValue({
-			isInitialized: false,
-			error: new Error("Initialization failed"),
-		} as ReturnType<typeof useInsight>);
-		const router = createMemoryRouter(
-			[
-				{ path: "/", element: <h1>Home</h1> },
-				{ path: "/initializing", element: <InitializedLayout /> },
-			],
-			{ initialEntries: ["/initializing"] },
-		);
-		render(
-			<ThemeProvider defaultTheme={theme}>
-				<RouterProvider router={router} />
-			</ThemeProvider>,
-		);
-		expect(
-			screen.getByRole("heading", { name: "studio.errorTitle" }),
-		).toBeVisible();
-		expect(
-			screen.getByRole("button", { name: "studio.refresh" }),
-		).toBeEnabled();
-		fireEvent.click(
-			screen.getByRole("button", { name: "studio.backHome" }),
-		);
-		expect(
-			await screen.findByRole("heading", { name: "Home" }),
-		).toBeVisible();
-	},
-);
+const renderGate = () => {
+	const router = createMemoryRouter(
+		[
+			{ path: "/login", element: <h1>Login</h1> },
+			{
+				element: <AuthenticatedLayout />,
+				children: [{ path: "/", element: <h1>Home</h1> }],
+			},
+		],
+		{ initialEntries: ["/"] },
+	);
+	render(
+		<ThemeProvider defaultTheme="light">
+			<RouterProvider router={router} />
+		</ThemeProvider>,
+	);
+};
 
-test("renders the root route error boundary outside the failed layout's provider", async () => {
-	const root = new RootStore();
+test("a session that cannot be read shows the error with a Retry that reads it again", async () => {
+	renderGate();
+	expect(
+		screen.getByRole("heading", { name: "studio.errorTitle" }),
+	).toBeVisible();
+	// home would land on the same error, so only Retry is offered
+	expect(
+		screen.queryByRole("button", { name: "studio.backHome" }),
+	).not.toBeInTheDocument();
+	fireEvent.click(screen.getByRole("button", { name: "studio.retry" }));
+	expect(mocks.session.refresh).toHaveBeenCalledTimes(1);
+	expect(
+		await screen.findByRole("button", { name: "studio.retry" }),
+	).toBeEnabled();
+});
+
+test("a signed out session goes to the login page", async () => {
+	mocks.session.status = "UNAUTHENTICATED";
+	renderGate();
+	expect(await screen.findByRole("heading", { name: "Login" })).toBeVisible();
+});
+
+test("a signed in session renders its route", () => {
+	mocks.session.status = "AUTHENTICATED";
+	renderGate();
+	expect(screen.getByRole("heading", { name: "Home" })).toBeVisible();
+});
+
+test("renders the root route error boundary with home and refresh", async () => {
 	const router = createMemoryRouter([
+		{ path: "/home", element: <h1>Home</h1> },
 		{
 			path: "/",
-			element: (
-				<RootContext.Provider value={{ root }}>
-					<Outlet />
-				</RootContext.Provider>
-			),
 			loader: () => {
 				throw new Error("Route failed");
 			},
@@ -90,29 +113,34 @@ test("renders the root route error boundary outside the failed layout's provider
 	expect(
 		await screen.findByRole("heading", { name: "studio.errorTitle" }),
 	).toBeVisible();
+	expect(
+		screen.getByRole("button", { name: "studio.refresh" }),
+	).toBeEnabled();
+	expect(
+		screen.getByRole("button", { name: "studio.backHome" }),
+	).toBeEnabled();
 	expect(container.querySelector("img")).toBeNull();
 });
 
 test.each(["light", "dark"] as const)(
 	"preserves custom %s branding and sidebar navigation for inner errors",
 	async (theme) => {
-		const root = new RootStore();
-		await root.initialize({
+		const defaults = withPlaygroundDefaults(null);
+		mocks.theme = {
+			...defaults,
 			images: {
-				...root.theme.images,
+				...defaults.images,
 				error: "/error-light.png",
 				errorDark: "/error-dark.png",
 			},
-		});
+		};
 		const router = createMemoryRouter([
 			{
 				path: "/",
 				element: (
-					<RootContext.Provider value={{ root }}>
-						<SidebarProvider>
-							<ErrorPage isInnerComponent />
-						</SidebarProvider>
-					</RootContext.Provider>
+					<SidebarProvider>
+						<ErrorPage isInnerComponent />
+					</SidebarProvider>
 				),
 			},
 		]);

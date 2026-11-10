@@ -18,6 +18,31 @@ It is the home of large shared building blocks such as the file explorer, the Mo
 editor wrappers, the shared login page, engine/MCP/prompt/skill UI,
 forms, and the workbench primitives.
 
+### Sign in (`components/login-page.tsx`, `components/form/login-form.tsx`)
+
+`LoginForm` reads the sign in providers from the SDK's config
+(`useConfig((state) => state.config?.availableProviders)`, with a stable empty fallback) and
+signs in through the session (`useSession((state) => state.login)` / `requestOTP`); it never
+uses an insight's `actions.login`. `login()` resolves whether the session is signed in and
+throws when refused; the OAuth success toast shows only when it resolves true. `LoginPage` is a
+gate on `useSession((state) => state.status)`: a spinner while `INITIALIZING`, its children when
+`AUTHENTICATED`, and the form when `UNAUTHENTICATED` or `ERROR`. Neither needs an
+`<InsightProvider>`; a host must call `Session.initialize()` once from its entry point (after
+`Env.update` and any `waitForEmbedAuth()`) and mount its workspace `InsightProvider` inside
+the gate, so the insight is made after sign in.
+
+An app that gates its own routes takes its Retry for the `ERROR` status from the SDK's
+`useSessionRetry()` (`{ isRetrying, retry }`, from the session's `isChecking` and `refresh`).
+`InsightReadyGate` (`components/insight-ready-gate.tsx`) is for an app that still keeps an
+app-wide `InsightProvider`: it goes inside it and holds its views until the insight is made
+(`isReady`), showing the app's `errorFallback` when it cannot be. It is not a sign in check;
+sign in is the session's. Prefer running pixels outside a workspace in the session's insight,
+which needs neither.
+
+`Notebook` (`components/notebook/`) runs every cell in its required `insightId` prop and reads
+no context, so it renders outside any `InsightProvider`. The caller names the insight: the
+file panel's `targetInsightId`, or the room's insight in the playground.
+
 ### The file explorer (`components/file/`)
 
 State lives in `useFileExplorer(options)`, which returns one `FileExplorerApi`; `FileExplorer`,

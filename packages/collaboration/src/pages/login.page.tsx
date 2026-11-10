@@ -1,5 +1,5 @@
 import { Navigate, useLocation } from "react-router";
-import { useInsight } from "@semoss/sdk/react";
+import { useSession } from "@semoss/sdk/react";
 import { LoginForm } from "@semoss/shared";
 import { H1, Spinner } from "@semoss/ui/next";
 import semossLogo from "@/assets/img/semoss-logo.svg";
@@ -22,12 +22,12 @@ function getReturnTarget(state: unknown): string {
  * Microsoft), then sends the user back to where they were going.
  */
 export const LoginPage = () => {
-	const { isInitialized, isAuthorized } = useInsight();
+	const status = useSession((state) => state.status);
 	const { state } = useLocation();
 	const target = getReturnTarget(state);
 
-	// the providers come from the config call; wait for it so the form does not flash empty
-	if (!isInitialized) {
+	// the providers come from the session's config read; wait for it so the form does not flash empty
+	if (status === "INITIALIZING") {
 		return (
 			<main className="flex min-h-svh items-center justify-center">
 				<Spinner />
@@ -35,7 +35,7 @@ export const LoginPage = () => {
 		);
 	}
 
-	if (isAuthorized) {
+	if (status === "AUTHENTICATED") {
 		return <Navigate to={target} replace />;
 	}
 

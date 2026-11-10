@@ -25,6 +25,24 @@ const mocks = vi.hoisted(() => ({
 	selectModelById: vi.fn(),
 	workspaceStatus: "SUCCESS",
 	refreshWorkspace: vi.fn(),
+	pixel: (pixel: string) => ({
+		status: pixel.includes("GetWorkspace")
+			? mocks.workspaceStatus
+			: "INITIAL",
+		refresh: mocks.refreshWorkspace,
+		data: pixel.includes('"alpha"') ? mocks.alpha : null,
+	}),
+	alpha: null as unknown,
+	session: {
+		status: "AUTHENTICATED",
+		user: {
+			name: "Tester",
+			defaultModels: {
+				textGeneration: "default-model",
+				codeGeneration: "",
+			},
+		},
+	},
 	// stable, as the SDK's are, so views keep the same logins between renders
 	logins: {
 		logins: {},
@@ -49,6 +67,7 @@ const alpha = {
 	prompts: [],
 	config_json: {},
 };
+mocks.alpha = alpha;
 const root = {
 	theme: {
 		...new RootStore().theme,
@@ -60,8 +79,6 @@ const root = {
 const chat = {
 	...mocks,
 	models: { selected: null },
-	user: { name: "Tester" },
-	profileDefaultModelId: "default-model",
 	refreshProfileDefaultModel: vi.fn(),
 	setSelectedModel: vi.fn(),
 	addOptimisticRoom: vi.fn(),
@@ -91,15 +108,16 @@ vi.mock("@semoss/sdk/react", async (original) => ({
 	InsightProvider: ({ children }: { children: ReactNode }) => children,
 	// the session's logins, without reading them from a server
 	useLogins: () => mocks.logins,
-	usePixel: (pixel: string) => ({
-		status: pixel.includes("GetWorkspace")
-			? mocks.workspaceStatus
-			: "INITIAL",
-		refresh: mocks.refreshWorkspace,
-		data: pixel.includes('"alpha"') ? alpha : null,
-	}),
+	usePixel: mocks.pixel,
+	useSessionPixel: mocks.pixel,
+	// a signed in user whose profile names a default model
+	useSession: <T,>(selector: (state: typeof mocks.session) => T) =>
+		selector(mocks.session),
 }));
 vi.mock("@/hooks/use-root", () => ({ useRoot: () => ({ root }) }));
+vi.mock("@/hooks/use-playground-theme", () => ({
+	usePlaygroundTheme: () => root.theme,
+}));
 vi.mock("@/hooks/use-chat", () => ({ useChat: () => ({ chat }) }));
 vi.mock("@semoss/ui/next", async (original) => ({
 	...(await original<typeof import("@semoss/ui/next")>()),

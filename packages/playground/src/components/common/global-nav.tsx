@@ -19,7 +19,7 @@ import {
 	useParams,
 } from "react-router";
 import { useTranslation } from "@semoss/i18n";
-import { useIteratorPixel } from "@semoss/sdk/react";
+import { useSessionIteratorPixel } from "@semoss/sdk/react";
 import {
 	Button,
 	cn,
@@ -119,7 +119,7 @@ export const GlobalNav = observer(() => {
 
 	const navigate = useNavigate();
 
-	const getPinnedRooms = useIteratorPixel<
+	const getPinnedRooms = useSessionIteratorPixel<
 		{
 			ROOM_ID: string;
 			ROOM_NAME: string;
@@ -145,12 +145,12 @@ export const GlobalNav = observer(() => {
 		// No roomCounter dependency here — the useEffect below already
 		// calls reset() when roomCounter increments, and reset() preserves
 		// the current data while refetching (no blank flash). Putting
-		// roomCounter in the useIteratorPixel deps would call setAllData([])
+		// roomCounter in the useSessionIteratorPixel deps would call setAllData([])
 		// instead, which is the source of the sidebar flicker.
 		[],
 	);
 
-	const getRooms = useIteratorPixel<
+	const getRooms = useSessionIteratorPixel<
 		{
 			ROOM_ID: string;
 			ROOM_NAME: string;

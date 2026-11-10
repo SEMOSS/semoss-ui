@@ -55,6 +55,12 @@ const SIGNED_OUT = {
 		| null,
 	/** Why the session could not be read, or null. */
 	error: null as Error | null,
+	/**
+	 * Whether the session is being read: the first check, a `refresh`, or the
+	 * read after a sign in. The status keeps its last value meanwhile, so a
+	 * view can show a Retry on `ERROR` as busy while it reads again.
+	 */
+	isChecking: false,
 };
 
 /**
@@ -474,6 +480,7 @@ export class SessionStore {
 	 */
 	private check = async (force: boolean): Promise<typeof SIGNED_OUT> => {
 		const version = ++this.version;
+		this.state.update({ isChecking: true });
 		try {
 			const config = await this.config.load({ force: force });
 
@@ -508,6 +515,7 @@ export class SessionStore {
 				status: "AUTHENTICATED",
 				error: null,
 				user: toUser(info, config.primaryLogin, isAdmin),
+				isChecking: false,
 			});
 		} catch (error) {
 			if (version !== this.version) {
@@ -518,7 +526,11 @@ export class SessionStore {
 			if (error instanceof UnauthorizedError) {
 				this.signOut();
 			} else {
-				this.state.update({ status: "ERROR", error: toError(error) });
+				this.state.update({
+					status: "ERROR",
+					error: toError(error),
+					isChecking: false,
+				});
 
 				// a failure, such as the network at start up, is not kept: the next
 				// `initialize` reads the session again

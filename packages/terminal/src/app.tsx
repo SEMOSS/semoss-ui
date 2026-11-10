@@ -28,20 +28,24 @@ const Branding = () => {
 	return <div className="font-semibold text-lg">{t("branding")}</div>;
 };
 
+/**
+ * The standalone terminal. `LoginPage` gates on the SDK's session (started in
+ * main.tsx), so the terminal's insight is made only once the user signs in.
+ */
 export const App = () => {
 	return (
 		<I18nextProvider i18n={i18n}>
-			<InsightProvider>
-				<ThemeProvider
-					defaultTheme="light"
-					storageKey="smss-ui-theme-terminal"
-				>
-					<LoginPage branding={<Branding />}>
+			<ThemeProvider
+				defaultTheme="light"
+				storageKey="smss-ui-theme-terminal"
+			>
+				<LoginPage branding={<Branding />}>
+					<InsightProvider>
 						<EmbedTerminal />
-					</LoginPage>
-					<Toaster position="top-center" closeButton />
-				</ThemeProvider>
-			</InsightProvider>
+					</InsightProvider>
+				</LoginPage>
+				<Toaster position="top-center" closeButton />
+			</ThemeProvider>
 		</I18nextProvider>
 	);
 };

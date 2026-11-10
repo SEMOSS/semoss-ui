@@ -19,13 +19,6 @@ const APP_THEME = import.meta.env.VITE_APP_THEME
 	? import.meta.env.VITE_APP_THEME
 	: "{}";
 
-interface UserInfo {
-	id: string;
-	name: string;
-	email: string;
-	isAdmin: boolean;
-}
-
 interface RootStoreInterface {
 	/**
 	 * Track if the store is initialized
@@ -36,11 +29,6 @@ interface RootStoreInterface {
 	 * Current theme setting
 	 */
 	theme: Theme;
-
-	/**
-	 * current user info
-	 */
-	user: UserInfo;
 }
 
 /**
@@ -59,12 +47,6 @@ export class RootStore {
 			images: {
 				logo: "",
 			},
-		},
-		user: {
-			id: "",
-			name: "",
-			email: "",
-			isAdmin: false,
 		},
 	};
 
@@ -114,14 +96,6 @@ export class RootStore {
 	}
 
 	/**
-	 *
-	 * Get the current user
-	 */
-	get user() {
-		return this._store.user;
-	}
-
-	/**
 	 * Set the default theme
 	 */
 	initialize = async (theme: Partial<Theme>): Promise<void> => {
@@ -130,15 +104,6 @@ export class RootStore {
 		runInAction(() => {
 			this._store.isInitialized = true;
 		});
-	};
-
-	/**
-	 *
-	 * @param user will have id, name, and possibly email and isAdmin
-	 */
-
-	initializeUser = (user: UserInfo): void => {
-		this._store.user = user;
 	};
 
 	/**

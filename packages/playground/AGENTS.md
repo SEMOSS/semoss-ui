@@ -23,6 +23,32 @@ added: backend calls apps share live in `libs/sdk/src/api/` (for example `runMcp
 `@semoss/shared` (`getFileExplorerAdapter`). A room's own tool file is read and written by
 `stores/room/room-tool-file.ts`.
 
+## Session, config and insights
+
+- **Sign in, the user and the config come from the SDK.** `main.tsx` calls `Session.initialize()`
+  once, after embed authentication and before the first render. `InitializedLayout` waits while
+  `useSession` is `INITIALIZING`. `AuthenticatedLayout` sends `UNAUTHENTICATED` to `/login`, and
+  shows `ErrorPage` with Retry (`useSessionRetry` from `@semoss/sdk/react`) on `ERROR`, so `/login` still renders.
+  The shared `LoginForm` signs in through `useSession`, and `NavUser` signs out the same way.
+  Read the user with `useSession((state) => state.user)` and config values with
+  `useConfig((state) => state.config?.x)`. See [the SDK session guide](../../libs/sdk/skills/session.skill.md).
+- **The theme is `usePlaygroundTheme()`** (`hooks/use-playground-theme.ts`): the server's
+  `THEME_MAP` `playground` entry over `VITE_THEME`, `VITE_NAME` and the defaults. These are laid
+  together by `withPlaygroundDefaults` in `stores/root/playground-theme.ts`, which returns the
+  same object for the same server theme.
+- **Only rooms are insights.** The app has no `InsightProvider` of its own. The room page, and a
+  new chat's prepared room, mount one with `options={{ insightId: room.insightId }}` and
+  `destroyOnUnmount={false}`, since `RoomStore` owns that insight. Pixels that belong to no
+  room run in the session's insight: `useSessionPixel` for reads, `useSessionIteratorPixel` for
+  lists that page, `useSessionInsight().run` / `upload` / `download`, or
+  `Session.insight.run` outside React. `run` returns `errors` rather than throwing, so wrap it in
+  `throwOnPixelErrors` (`utility/pixel-errors.ts`) where a caller expects a throw.
+- **Moving off MobX and zustand.** Put new state in hooks over the SDK's stores, never in a new
+  MobX or zustand store. Some members are thin, deprecated adapters over the SDK, kept only until
+  their stores move: `RootStore` / `useRoot()` (use `usePlaygroundTheme()`) and
+  `ChatStore.user` / `ChatStore.profileDefaultModelId` (use `useSession`). They hold no state of
+  their own and are not observable. Do not add consumers.
+
 ## Build System
 
 - **Bundler**: Vite 8
