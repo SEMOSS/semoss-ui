@@ -1,7 +1,6 @@
 import { Check, ChevronsUpDown } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect, useMemo, useState } from "react";
-import { debounced } from "@semoss/sdk/react";
 import {
 	Button,
 	Command,
@@ -18,6 +17,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 	Spinner,
+	useDebouncedCallback,
 } from "@semoss/ui/next";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
@@ -117,7 +117,7 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
 		return null;
 	};
 
-	const debouncedCallback = debounced(() => {
+	const debouncedCallback = useDebouncedCallback(() => {
 		listeners.onChange();
 	}, 500);
 

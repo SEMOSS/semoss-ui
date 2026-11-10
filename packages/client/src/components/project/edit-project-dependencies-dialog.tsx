@@ -1,10 +1,6 @@
 import { Check, Copy, Search, X } from "lucide-react";
 import { type UIEvent, useEffect, useState } from "react";
-import {
-	runPixel,
-	useDebouncedValue,
-	useIteratorPixel,
-} from "@semoss/sdk/react";
+import { runPixel, useIteratorPixel } from "@semoss/sdk/react";
 import {
 	AppCatalogAvatar,
 	type Engine,
@@ -32,6 +28,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 	toast,
+	useDebouncedValue,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import { isProjectType } from "@/utility/catalog";
@@ -105,10 +102,7 @@ export const EditProjectDependenciesDialog = ({
 			});
 	};
 
-	// Coalesce to "" so the initial undefined -> "" debounce transition doesn't
-	// reset the iterator (which clears its data but can't refetch an unchanged
-	// query), which would blank the list until the source is toggled.
-	const debouncedSearch = useDebouncedValue(search) ?? "";
+	const debouncedSearch = useDebouncedValue(search);
 	const filterClause = debouncedSearch
 		? `filterWord=${JSON.stringify(debouncedSearch)}, `
 		: "";

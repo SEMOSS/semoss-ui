@@ -1,7 +1,10 @@
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
-import { debounced } from "@semoss/sdk/react";
-import { ToggleGroup, ToggleGroupItem } from "@semoss/ui/next";
+import {
+	ToggleGroup,
+	ToggleGroupItem,
+	useDebouncedCallback,
+} from "@semoss/ui/next";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 
@@ -40,7 +43,7 @@ export const ToggleButtonBlock: BlockComponent = observer(({ id }) => {
 		}
 	}, []);
 
-	const debouncedCallback = debounced(() => {
+	const debouncedCallback = useDebouncedCallback(() => {
 		listeners.onChange();
 	}, 200);
 

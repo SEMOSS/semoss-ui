@@ -1,6 +1,6 @@
 import { CheckIcon, ChevronDownIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
-import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	createCodeCellFromExecution,
 	type FileItem,
@@ -29,6 +29,7 @@ import {
 	PopoverTrigger,
 	Spinner,
 	toast,
+	useDebouncedValue,
 } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
 

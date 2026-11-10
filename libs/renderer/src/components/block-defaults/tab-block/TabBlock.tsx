@@ -1,7 +1,12 @@
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect, useState } from "react";
-import { debounced } from "@semoss/sdk/react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@semoss/ui/next";
+import {
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
+	useDebouncedCallback,
+} from "@semoss/ui/next";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 import { Slot } from "../../blocks";
@@ -45,7 +50,7 @@ export const TabBlock: BlockComponent = observer(({ id }) => {
 		}
 	}, []);
 
-	const debouncedCallback = debounced(() => {
+	const debouncedCallback = useDebouncedCallback(() => {
 		listeners.onChange();
 	}, 10);
 

@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { useDebouncedValue } from "@semoss/sdk/react";
-import { toast } from "@semoss/ui/next";
+import { toast, useDebouncedValue } from "@semoss/ui/next";
 import { deleteMember } from "@/api";
 import { useAPI, useServerPagination, useSettings } from "@/hooks";
 import type { SETTINGS_MEMBER } from "./settings.types";

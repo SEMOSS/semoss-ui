@@ -4,7 +4,7 @@ import { config } from "../../../generated/api/monolith";
 import { useAPI } from "./use-api";
 import { useIteratorApi } from "./use-iterator-api";
 import { useIteratorPixel } from "./use-iterator-pixel";
-import { usePixel } from "./usePixel";
+import { usePixel } from "./use-pixel";
 
 // Generated types are inline; this is how a consumer names them.
 type ServerConfig = Awaited<ReturnType<typeof config>>;
