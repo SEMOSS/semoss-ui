@@ -7,7 +7,6 @@ import {
 import { EraserIcon, FileCode2Icon, PlayIcon, PlusIcon } from "lucide-react";
 import React, {
 	forwardRef,
-	useContext,
 	useEffect,
 	useImperativeHandle,
 	useRef,
@@ -16,10 +15,8 @@ import React, {
 import {
 	getPixelAsyncResult,
 	console as getPixelConsole,
-	InsightContext,
 	runPixel,
 	runPixelAsync,
-	useSessionInsight,
 } from "@semoss/sdk/react";
 import {
 	Button,
@@ -63,10 +60,10 @@ interface NotebookProps {
 	onChange?: (content: string, isModified: boolean) => void;
 
 	/**
-	 * Insight to run cells against; defaults to the nearest
-	 * `<InsightProvider>`'s, else the session's own insight.
+	 * Insight to run cells against. Every cell runs in it, so python keeps its
+	 * state between cells.
 	 */
-	insightId?: string;
+	insightId: string;
 
 	/** Fires whenever the notebook's state changes (for an external toolbar). */
 	onStateChange?: (state: NotebookState) => void;
@@ -123,12 +120,6 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 		},
 		ref,
 	) => {
-		// optional: the notebook also renders outside any workspace, such as
-		// in a chat reply before its room exists
-		const contextInsightId = useContext(InsightContext)?.insightId;
-		const { insightId: sessionInsightId, ensure: ensureSessionInsight } =
-			useSessionInsight();
-
 		const [notebook, setNotebook] = useState<JupyterNotebook | null>(null);
 		const [parseError, setParseError] = useState<string | null>(null);
 		const [runningCellIndex, setRunningCellIndex] = useState<number | null>(
@@ -158,9 +149,6 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 		// Latest state callback, read through a ref to keep the effect stable.
 		const onStateChangeRef = useRef(onStateChange);
 		onStateChangeRef.current = onStateChange;
-
-		const execInsightId =
-			insightId ?? (contextInsightId || sessionInsightId);
 
 		// Re-seed the in-memory notebook whenever the raw content changes.
 		useEffect(() => {
@@ -245,11 +233,7 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 				let executionDurationMs: number | undefined;
 
 				if (pixel) {
-					// cells share one insight so python keeps its state between
-					// them; with none given yet, make the session's insight now
-					const runInsightId =
-						execInsightId || (await ensureSessionInsight());
-					const { jobId } = await runPixelAsync(pixel, runInsightId);
+					const { jobId } = await runPixelAsync(pixel, insightId);
 					currentJobIdRef.current = jobId;
 
 					logs = [];
@@ -467,7 +451,7 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 				try {
 					await runPixel(
 						`StopPixelExecution(id=["${jobId}"]);`,
-						execInsightId,
+						insightId,
 					);
 				} catch {
 					// ignore — abort flag already set

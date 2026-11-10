@@ -851,7 +851,7 @@ export const NewRoomPage = observer(() => {
 								)}
 								{agentGreeting && (
 									<RoomGreeting
-										room={newRoom}
+										room={workbenchRoom}
 										greeting={agentGreeting}
 									/>
 								)}

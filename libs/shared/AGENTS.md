@@ -39,9 +39,9 @@ app-wide `InsightProvider`: it goes inside it and holds its views until the insi
 sign in is the session's. Prefer running pixels outside a workspace in the session's insight,
 which needs neither.
 
-`Notebook` (`components/notebook/`) runs in its `insightId` prop, else the nearest
-`InsightContext`'s, else the session's insight (`useSessionInsight`, made with `ensure()` on the
-first run), so it renders outside any `InsightProvider`.
+`Notebook` (`components/notebook/`) runs every cell in its required `insightId` prop and reads
+no context, so it renders outside any `InsightProvider`. The caller names the insight: the
+file panel's `targetInsightId`, or the room's insight in the playground.
 
 ### The file explorer (`components/file/`)
 
