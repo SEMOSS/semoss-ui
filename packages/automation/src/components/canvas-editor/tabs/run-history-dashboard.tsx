@@ -51,6 +51,7 @@ import {
 	isRunCancellable,
 	type LoopRowKey,
 	loopRowKey,
+	runIdMatchesQuery,
 } from "./run-dashboard-rows";
 import { runMatchesKeyword } from "./run-data-browser-data";
 import { getRunScopeVariableRows } from "./run-node-view-state";
@@ -356,13 +357,14 @@ export function RunHistoryDashboard({
 				const started = new Date(run.STARTED_AT).getTime();
 				if (started > new Date(startedBefore).getTime()) return false;
 			}
-			if (runIdQuery.trim()) {
-				const needle = runIdQuery.trim().toLowerCase();
-				const numberMatch = String(runNumbers.get(run.RUN_ID) ?? "")
-					.toLowerCase()
-					.includes(needle);
-				const idMatch = run.RUN_ID.toLowerCase().includes(needle);
-				if (!numberMatch && !idMatch) return false;
+			if (
+				!runIdMatchesQuery(
+					runIdQuery,
+					runNumbers.get(run.RUN_ID),
+					run.RUN_ID,
+				)
+			) {
+				return false;
 			}
 			return true;
 		},

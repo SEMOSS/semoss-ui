@@ -9,7 +9,43 @@ import {
 	buildDashboardRows,
 	isRunCancellable,
 	loopRowKey,
+	runIdMatchesQuery,
 } from "./run-dashboard-rows";
+
+describe("runIdMatchesQuery", () => {
+	const uuid = "a1245b3c-9f0e-4d45-8a45-0c2d45e8f145";
+
+	it("matches only the exact displayed number for a numeric query", () => {
+		expect(runIdMatchesQuery("45", 45, uuid)).toBe(true);
+		expect(runIdMatchesQuery("45", 145, uuid)).toBe(false);
+		expect(runIdMatchesQuery("45", 450, uuid)).toBe(false);
+		expect(runIdMatchesQuery("4", 45, uuid)).toBe(false);
+	});
+
+	it("does not match a numeric query against digits inside the raw run ID", () => {
+		expect(runIdMatchesQuery("45", 7, uuid)).toBe(false);
+	});
+
+	it("ignores surrounding whitespace and leading zeros", () => {
+		expect(runIdMatchesQuery("  45 ", 45, uuid)).toBe(true);
+		expect(runIdMatchesQuery("045", 45, uuid)).toBe(true);
+	});
+
+	it("matches a pasted run ID exactly, ignoring case", () => {
+		expect(runIdMatchesQuery(uuid.toUpperCase(), 7, uuid)).toBe(true);
+		expect(runIdMatchesQuery("a1245b3c", 7, uuid)).toBe(false);
+		expect(runIdMatchesQuery("a1245b3c-9f0e", 7, uuid)).toBe(false);
+	});
+
+	it("does not match partial run IDs", () => {
+		expect(runIdMatchesQuery("a1245b3c", 7, uuid)).toBe(false);
+		expect(runIdMatchesQuery("abc", 7, uuid)).toBe(false);
+	});
+
+	it("treats an empty query as matching everything", () => {
+		expect(runIdMatchesQuery("   ", 7, uuid)).toBe(true);
+	});
+});
 
 describe("isRunCancellable", () => {
 	it("allows only the statuses the backend can cancel", () => {

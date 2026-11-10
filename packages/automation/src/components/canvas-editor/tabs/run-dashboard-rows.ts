@@ -19,6 +19,23 @@ export function isRunCancellable(status: RunStatus): boolean {
 	return status === "RUNNING" || status === "WAITING_FOR_INPUT";
 }
 
+/**
+ * Exact match on the displayed run number or the full run ID. A numeric query never
+ * matches digits inside a raw run ID, and "45" never matches run 145 or 450.
+ */
+export function runIdMatchesQuery(
+	query: string,
+	runNumber: number | undefined,
+	runId: string,
+): boolean {
+	const needle = query.trim().toLowerCase();
+	if (!needle) return true;
+	if (/^\d+$/.test(needle)) {
+		return runNumber !== undefined && Number(needle) === runNumber;
+	}
+	return runId.toLowerCase() === needle;
+}
+
 export function loopRowKey(runId: string, nodeId: string): LoopRowKey {
 	return `${runId}:${nodeId}`;
 }
