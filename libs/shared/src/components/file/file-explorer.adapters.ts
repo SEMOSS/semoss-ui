@@ -44,6 +44,12 @@ export interface FileExplorerCapabilities {
 	search: boolean;
 	/** Rename / move / copy / create. */
 	mutate: boolean;
+	/**
+	 * New file and new folder alone, for a source that can create but not
+	 * rename, move, or copy. Defaults to `mutate`; read it with
+	 * {@link canCreateItems}.
+	 */
+	create?: boolean;
 	upload: boolean;
 	download: boolean;
 	/** Independent of `mutate` — STORAGE supports delete but not the rest. */
@@ -55,6 +61,16 @@ export interface FileExplorerCapabilities {
 	 */
 	searchScope?: boolean;
 }
+
+/**
+ * Whether a source offers New file and New folder.
+ *
+ * @param capabilities - The source's capabilities, or an explorer's.
+ * @return Its `create`, or its `mutate` when it does not say.
+ */
+export const canCreateItems = (
+	capabilities: Pick<FileExplorerCapabilities, "create" | "mutate">,
+): boolean => capabilities.create ?? capabilities.mutate;
 
 /**
  * Everything mode-specific about an asset tree: what it can do, and the Pixel

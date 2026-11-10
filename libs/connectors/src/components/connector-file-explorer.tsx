@@ -5,9 +5,11 @@ import {
 	type FileExplorerAdapter,
 	FileExplorerHeader,
 	type FileExplorerItemActions,
+	FileExplorerNewAction,
 	FileExplorerRefreshAction,
 	type FileItem,
 	type FileMode,
+	NewFileOverlay,
 	useFileExplorer,
 } from "@semoss/shared";
 import { Spinner } from "@semoss/ui/next";
@@ -59,7 +61,9 @@ interface ConnectorFileExplorerProps {
  * has them. The row's button adds a file to context, or saves it where the
  * host takes no context, and its right-click menu adds it to context, saves it
  * to the chat's files, or opens it in its own app. Selecting a file opens a
- * preview when the host supports it. A signed out
+ * preview when the host supports it. A drive whose adapter creates also gets
+ * the explorer's New button and its New File and New Folder menu entries,
+ * which create in the drive. A signed out
  * account gets the same sign in prompt as every other viewer.
  */
 export const ConnectorFileExplorer = ({
@@ -72,10 +76,11 @@ export const ConnectorFileExplorer = ({
 	onSignIn,
 }: ConnectorFileExplorerProps) => {
 	const { t } = useTranslation("connectors");
+	// what can be changed is the adapter's to say: a drive that creates gets
+	// New, and every other drive stays browse only
 	const explorer = useFileExplorer({
 		mode: INSIGHT_MODE,
 		adapter: adapter,
-		readOnly: true,
 		onItemSelect: (item) => {
 			const request = getSaveRequest(item);
 			if (request) saver.open?.(request);
@@ -157,10 +162,15 @@ export const ConnectorFileExplorer = ({
 			header={
 				<FileExplorerHeader
 					explorer={explorer}
-					actions={<FileExplorerRefreshAction explorer={explorer} />}
+					actions={
+						<>
+							<FileExplorerNewAction explorer={explorer} />
+							<FileExplorerRefreshAction explorer={explorer} />
+						</>
+					}
 				/>
 			}
-			newFileOverlay={null}
+			newFileOverlay={NewFileOverlay}
 			itemActions={itemActions}
 			renderError={(error, retry) => {
 				const info = classifyConnectorError(toConnectorError(error));
