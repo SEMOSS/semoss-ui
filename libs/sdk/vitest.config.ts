@@ -7,6 +7,12 @@ export default createViteConfig({
 	test: {
 		environment: "node",
 		pool: "forks",
+		typecheck: {
+			enabled: true,
+			include: ["src/**/*.test-d.ts"],
+			// tsconfig.json leaves type tests out of the declaration build
+			tsconfig: "./tsconfig.typecheck.json",
+		},
 		coverage: {
 			reportsDirectory: "./coverage",
 			include: ["src/**"],

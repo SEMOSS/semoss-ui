@@ -1,7 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect, useId } from "react";
-import { debounced } from "@semoss/sdk/react";
-import { cn, Input, Spinner } from "@semoss/ui/next";
+import { cn, Input, Spinner, useDebouncedCallback } from "@semoss/ui/next";
 import { useBlock } from "../../../hooks/useBlock";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 
@@ -44,7 +43,7 @@ export const InputBlock: BlockComponent = observer(({ id }) => {
 		}
 	}, []);
 
-	const debouncedCallback = debounced(() => {
+	const debouncedCallback = useDebouncedCallback(() => {
 		listeners.onChange();
 	}, 500);
 

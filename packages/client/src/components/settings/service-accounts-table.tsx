@@ -1,6 +1,5 @@
 import { Copy, Download, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useDebouncedValue } from "@semoss/sdk/react";
 import { PersonIdentity } from "@semoss/shared";
 import {
 	Avatar,
@@ -36,6 +35,7 @@ import {
 	TableHeader,
 	TableRow,
 	toast,
+	useDebouncedValue,
 } from "@semoss/ui/next";
 import { downloadBlob } from "@semoss/utility/browser";
 import { getErrorMessage } from "@semoss/utility/error";

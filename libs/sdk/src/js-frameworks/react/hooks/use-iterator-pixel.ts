@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { OutputOf, Pixel } from "../../../api/pixel";
 import { usePixel } from "./use-pixel";
 
 interface UseIteratorPixelOptions<T> {
@@ -61,6 +62,27 @@ interface UseIteratorPixelReturn<T> {
  * );
  * ```
  */
+// Three type parameters, so two type arguments (`useIteratorPixel<Res, Item>`)
+// always pick the plain-string signature below. `TResponse` has nothing to
+// infer from, so it is the reactor's output.
+export function useIteratorPixel<
+	P extends Pixel,
+	TItem,
+	TResponse extends OutputOf<P>,
+>(
+	pixelQuery: (limit: number, offset: number) => P,
+	getTotalCount: (response: TResponse) => number,
+	getData: (response: TResponse) => TItem[],
+	options?: UseIteratorPixelOptions<TItem>,
+	dependencies?: React.DependencyList,
+): UseIteratorPixelReturn<TItem>;
+export function useIteratorPixel<TResponse, TItem>(
+	pixelQuery: (limit: number, offset: number) => string,
+	getTotalCount: (response: TResponse) => number,
+	getData: (response: TResponse) => TItem[],
+	options?: UseIteratorPixelOptions<TItem>,
+	dependencies?: React.DependencyList,
+): UseIteratorPixelReturn<TItem>;
 export function useIteratorPixel<TResponse, TItem>(
 	pixelQuery: (limit: number, offset: number) => string,
 	getTotalCount: (response: TResponse) => number,

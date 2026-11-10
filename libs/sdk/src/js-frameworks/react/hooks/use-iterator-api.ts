@@ -5,6 +5,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { stableKey } from "./stable-key";
 
 interface UseIteratorApiOptions {
 	/**
@@ -42,6 +43,67 @@ interface UseIteratorApiReturn<T> {
 	update: (updater: (prev: T[]) => T[]) => void;
 }
 
+/** A generated call that pages with `limit` and `offset`. */
+type PagedCall = (
+	input: { limit: number; offset: number },
+	options?: RequestInit,
+) => Promise<unknown>;
+
+/** A paged call's other inputs, which the caller passes; the hook fills in limit and offset. */
+type PageInput<F extends PagedCall> = Omit<
+	Parameters<F>[0],
+	"limit" | "offset"
+>;
+
+/** The other inputs are optional when every one of them is. */
+type PageArgs<F extends PagedCall, O> = Partial<
+	PageInput<F>
+> extends PageInput<F>
+	? [input?: PageInput<F>, options?: O]
+	: [input: PageInput<F>, options?: O];
+
+/** Options for paging a generated call. */
+interface UseIteratorCallOptions extends UseIteratorApiOptions {}
+
+/** Options for paging a generated call whose response wraps its rows. */
+interface UseIteratorSelectOptions<R, T> extends UseIteratorApiOptions {
+	/** Reads the rows out of a response, such as `(response) => response.rows`. */
+	select: (response: R) => T[];
+}
+
+/**
+ * Pages through a generated call from `@semoss/sdk/api/*` whose input has
+ * `limit` and `offset` and which resolves with a list. The hook fills in limit
+ * and offset, starts again from page 0 when the other inputs change (compared by
+ * value, so no deps array), and aborts a page it replaces.
+ *
+ * @example
+ * ```ts
+ * const { data, next, hasMore } = useIteratorApi(listUsers, { search }, { enabled: isOpen });
+ * ```
+ */
+export function useIteratorApi<
+	F extends (
+		input: { limit: number; offset: number },
+		options?: RequestInit,
+	) => Promise<unknown[]>,
+>(
+	call: F,
+	...args: PageArgs<F, UseIteratorCallOptions>
+): UseIteratorApiReturn<Awaited<ReturnType<F>>[number]>;
+/**
+ * Pages through a generated call whose response wraps its rows; `select` reads
+ * them out.
+ *
+ * @example
+ * ```ts
+ * const rooms = useIteratorApi(listRooms, { search }, { select: (r) => r.rooms });
+ * ```
+ */
+export function useIteratorApi<F extends PagedCall, T>(
+	call: F,
+	...args: PageArgs<F, UseIteratorSelectOptions<Awaited<ReturnType<F>>, T>>
+): UseIteratorApiReturn<T>;
 /**
  * REST analog of `useIteratorPixel` (which only speaks pixel). Accumulates
  * paginated results from a GET-backed `fetchPage(limit, offset)` and stops
@@ -53,8 +115,58 @@ interface UseIteratorApiReturn<T> {
  */
 export function useIteratorApi<T>(
 	fetchPage: (limit: number, offset: number) => Promise<T[]>,
-	options: UseIteratorApiOptions = {},
-	deps: DependencyList = [],
+	options?: UseIteratorApiOptions,
+	deps?: DependencyList,
+): UseIteratorApiReturn<T>;
+export function useIteratorApi<T>(
+	source: PagedCall | ((limit: number, offset: number) => Promise<T[]>),
+	second?: unknown,
+	third?: unknown,
+): UseIteratorApiReturn<T> {
+	// The legacy form is fetchPage(limit, offset) with a deps array; a generated
+	// call takes one input object, so it has length 1.
+	const isLegacy = Array.isArray(third) || source.length >= 2;
+	const input = isLegacy ? undefined : (second as object | undefined);
+	const options = (isLegacy ? second : third) as
+		| Partial<UseIteratorSelectOptions<unknown, T>>
+		| undefined;
+	const select = options?.select;
+	// Compared by value: a new input object with the same content does not re-page.
+	const inputKey = isLegacy ? undefined : stableKey(input, "input");
+
+	const fetchPage = isLegacy
+		? (limit: number, offset: number) =>
+				(source as (limit: number, offset: number) => Promise<T[]>)(
+					limit,
+					offset,
+				)
+		: async (limit: number, offset: number, signal: AbortSignal) => {
+				const response = await (source as PagedCall)(
+					{ ...input, limit, offset },
+					{ signal },
+				);
+				return select ? select(response) : (response as T[]);
+			};
+
+	return usePagedFetch<T>(
+		fetchPage,
+		options ?? {},
+		isLegacy ? ((third as DependencyList | undefined) ?? []) : [inputKey],
+	);
+}
+
+/**
+ * Accumulates pages from `fetchPage(limit, offset, signal)`. Changing any value in
+ * `deps` resets to page 0, and a page that is replaced or unmounted is aborted.
+ */
+function usePagedFetch<T>(
+	fetchPage: (
+		limit: number,
+		offset: number,
+		signal: AbortSignal,
+	) => Promise<T[]>,
+	options: UseIteratorApiOptions,
+	deps: DependencyList,
 ): UseIteratorApiReturn<T> {
 	const { limit = 25, enabled = true } = options;
 
@@ -115,12 +227,13 @@ export function useIteratorApi<T>(
 			return;
 		}
 		const version = ++versionRef.current;
+		const controller = new AbortController();
 		// Mark a fetch in flight for the whole async duration so `next()` cannot
 		// advance the offset before this page resolves (see fetchingRef above).
 		fetchingRef.current = true;
 		setIsLoading(true);
 		fetchPageRef
-			.current(limit, offset)
+			.current(limit, offset, controller.signal)
 			.then((page) => {
 				if (versionRef.current !== version) {
 					return;
@@ -130,7 +243,11 @@ export function useIteratorApi<T>(
 				setHasMore(page.length >= limit);
 			})
 			.catch(() => {
-				if (versionRef.current === version) {
+				// An aborted page was replaced or unmounted, not exhausted.
+				if (
+					versionRef.current === version &&
+					!controller.signal.aborted
+				) {
 					setHasMore(false);
 				}
 			})
@@ -149,6 +266,9 @@ export function useIteratorApi<T>(
 		// request at the old offset with the new filter, then a second at offset 0.
 		// The fetch itself reads fetchPageRef.current, which closes over the latest
 		// deps, so correctness does not depend on them being in the array.
+		return () => {
+			controller.abort();
+		};
 	}, [offset, resetKey, enabled, limit]);
 
 	const next = useCallback(() => {

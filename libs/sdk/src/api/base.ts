@@ -1,5 +1,6 @@
 import { Env } from "../env";
 import { CSRF, get, post } from "../utility";
+import type { OutputOf, Pixel } from "./pixel";
 /**
  * Get the System's configuration information
  */
@@ -117,16 +118,53 @@ export const getSystemConfig = async () => {
 	return response.data;
 };
 
+/** One statement's result in a Pixel response. */
+export interface PixelReturn<O = unknown> {
+	isMeta: boolean;
+	operationType: string[];
+	output: O;
+	pixelExpression: string;
+	pixelId: string;
+	additionalOutput?: unknown;
+	timeToRun: number;
+}
+
+/** What {@link runPixel} resolves with. */
+export interface PixelResult<O extends unknown[] | []> {
+	/** The output of every statement whose operation type is an error. */
+	errors: string[];
+	insightId: string;
+	pixelReturn: PixelReturn<O[number]>[];
+}
+
+/**
+ * Run a Pixel built by `buildPixel`. Its output is typed from the reactor's contract;
+ * check `errors` (or use `readPixelOutput`) before trusting it.
+ *
+ * @param pixel - pixel
+ * @param insightId - id of the insight to run
+ */
+// Two type parameters, so one type argument (`runPixel<[Foo]>` or
+// `typeof runPixel<O>`) always picks the plain-string signature below. `R` has
+// nothing to infer from, so it is the reactor's output.
+export function runPixel<P extends Pixel, R extends OutputOf<P>>(
+	pixel: P,
+	insightId?: string,
+): Promise<PixelResult<[R]>>;
 /**
  * Run a pixel string
  *
  * @param pixel - pixel
  * @param insightId - id of the insight to run
  */
-export const runPixel = async <O extends unknown[] | []>(
+export function runPixel<O extends unknown[] | []>(
 	pixel: string,
 	insightId?: string,
-) => {
+): Promise<PixelResult<O>>;
+export async function runPixel<O extends unknown[] | []>(
+	pixel: string,
+	insightId?: string,
+): Promise<PixelResult<O>> {
 	if (!pixel) {
 		throw new Error("Missing Pixel");
 	}
@@ -146,15 +184,7 @@ export const runPixel = async <O extends unknown[] | []>(
 
 	const response = await post<{
 		insightID: string;
-		pixelReturn: {
-			isMeta: boolean;
-			operationType: string[];
-			output: O[number];
-			pixelExpression: string;
-			pixelId: string;
-			additionalOutput?: unknown;
-			timeToRun: number;
-		}[];
+		pixelReturn: PixelReturn<O[number]>[];
 	}>(`${Env.MODULE}/api/engine/runPixel`, body, {});
 
 	// collect the errors
@@ -175,15 +205,55 @@ export const runPixel = async <O extends unknown[] | []>(
 		insightId: response.data.insightID,
 		pixelReturn: response.data.pixelReturn,
 	};
+}
+
+declare const pixelJobOutputs: unique symbol;
+
+/**
+ * The id of an async job started from a Pixel built by `buildPixel`. It is still
+ * a plain string at runtime; the type remembers the outputs, so
+ * `getPixelAsyncResult` can type them.
+ */
+export type PixelJobId<O extends unknown[] | []> = string & {
+	readonly [pixelJobOutputs]: O;
 };
 
+/** What {@link getPixelAsyncResult} resolves with. */
+export interface PixelAsyncResult<O extends unknown[] | []> {
+	/** The output of every statement whose operation type is an error. */
+	errors: string[];
+	insightId: string;
+	results: PixelReturn<O[number]>[];
+}
+
+// Two type parameters, so that one type argument always picks the
+// plain-string signature below. `R` has nothing to infer from, so it is the
+// reactor's output.
+/**
+ * Asyncronously run a Pixel built by `buildPixel`. Its job id remembers the
+ * reactor, so `getPixelAsyncResult` types the result.
+ *
+ * @param pixel - pixel
+ * @param insightId - id of the insight to run
+ */
+export function runPixelAsync<P extends Pixel, R extends OutputOf<P>>(
+	pixel: P,
+	insightId?: string,
+): Promise<{ jobId: PixelJobId<[R]> }>;
 /**
  * Asyncronously run a pixel string
  *
  * @param pixel - pixel
  * @param insightId - id of the insight to run
  */
-export const runPixelAsync = async (pixel: string, insightId?: string) => {
+export function runPixelAsync(
+	pixel: string,
+	insightId?: string,
+): Promise<{ jobId: string }>;
+export async function runPixelAsync(
+	pixel: string,
+	insightId?: string,
+): Promise<{ jobId: string }> {
 	if (!pixel) {
 		throw Error("No Pixel To Execute");
 	}
@@ -208,15 +278,25 @@ export const runPixelAsync = async (pixel: string, insightId?: string) => {
 	return {
 		jobId: response.data.jobId,
 	};
-};
+}
 
+/**
+ * Gets the typed results of a job started with `runPixelAsync(buildPixel(...))`.
+ */
+export function getPixelAsyncResult<
+	J extends PixelJobId<unknown[] | []>,
+	O extends J extends PixelJobId<infer Q> ? Q : never,
+>(jobId: J): Promise<PixelAsyncResult<O>>;
 /**
  * @name getPixelAsyncResult
  * @description Gets results for async pixel calls
  */
-export const getPixelAsyncResult = async <O extends unknown[] | []>(
+export function getPixelAsyncResult<O extends unknown[] | []>(
 	jobId: string,
-) => {
+): Promise<PixelAsyncResult<O>>;
+export async function getPixelAsyncResult<O extends unknown[] | []>(
+	jobId: string,
+): Promise<PixelAsyncResult<O>> {
 	if (!jobId) {
 		throw Error("No job id provided to get pixel response");
 	}
@@ -227,15 +307,7 @@ export const getPixelAsyncResult = async <O extends unknown[] | []>(
 
 	const response = await post<{
 		insightID: string;
-		pixelReturn: {
-			isMeta: boolean;
-			operationType: string[];
-			output: O[number];
-			pixelExpression: string;
-			pixelId: string;
-			additionalOutput?: unknown;
-			timeToRun: number;
-		}[];
+		pixelReturn: PixelReturn<O[number]>[];
 	}>(`${Env.MODULE}/api/engine/result`, body, {});
 
 	// collect the errors
@@ -256,7 +328,7 @@ export const getPixelAsyncResult = async <O extends unknown[] | []>(
 		insightId: response.data.insightID,
 		results: response.data.pixelReturn,
 	};
-};
+}
 
 /**
  * @deprecated use getPixelJobStreaming

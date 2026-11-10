@@ -1,0 +1,8 @@
+{
+	"generatorVersion": 1,
+	"specSha256": "76d003d10d7972e3e313f21ed56a8de769416e5ad1ef528ddf2b472deb0e1771",
+	"files": {
+		"api/monolith.ts": "e87b2c2c4b658ac9c956286d34d81d11a6c3830006af00de540b05f30eee24ed",
+		"pixel/catalog.ts": "349eb9f77e37fdb6cf303ee39fc2ae6eb51291a7b51c9f67c81cecee21fce7d1"
+	}
+}
