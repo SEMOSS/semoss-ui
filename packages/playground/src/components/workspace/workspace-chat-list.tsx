@@ -10,7 +10,12 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "@semoss/i18n";
-import { runPixel, useIteratorPixel, usePixel } from "@semoss/sdk/react";
+import {
+	runPixel,
+	useIteratorPixel,
+	useSessionInsight,
+	useSessionPixel,
+} from "@semoss/sdk/react";
 import {
 	Button,
 	cn,
@@ -96,6 +101,7 @@ export const WorkspaceChatList = ({
 	const [isRenaming, setIsRenaming] = useState(false);
 	const [renamedMap, setRenamedMap] = useState<Record<string, string>>({});
 
+	const { insightId: sessionInsightId } = useSessionInsight();
 	const getWorkspaceRooms = useIteratorPixel<
 		{ total_count: number; rooms: Room[] },
 		Room
@@ -104,7 +110,7 @@ export const WorkspaceChatList = ({
 			`GetWorkspaceRooms(workspaceId=["${workspaceId}"], ${debouncedSearch ? `filters=[Filter(ROOM__ROOM_NAME ?like "<encode>${debouncedSearch}</encode>")],` : ""} limit=[${limit}], offset=[${offset}]);`,
 		(response) => response.total_count,
 		(response) => response.rooms,
-		{ limit: limit ?? 25 },
+		{ limit: limit ?? 25, insightId: sessionInsightId },
 		[debouncedSearch, workspaceId],
 	);
 
@@ -114,7 +120,7 @@ export const WorkspaceChatList = ({
 	});
 
 	// Cross-workspace pinned-rooms query — filtered locally to this workspace
-	const getPinnedRooms = usePixel<PinnedRoom[]>(
+	const getPinnedRooms = useSessionPixel<PinnedRoom[]>(
 		`META | GetPlaygroundRooms(pinned=[true], sort=["DESC"]);`,
 		{ data: [] },
 	);

@@ -22,7 +22,11 @@ import {
 	type PostUser,
 	removeEngineUserPermissions,
 } from "@semoss/sdk";
-import { download, useInsight, usePixel } from "@semoss/sdk/react";
+import {
+	useConfig,
+	useSessionInsight,
+	useSessionPixel,
+} from "@semoss/sdk/react";
 import { type UserSource, UserSourceToggle } from "@semoss/shared";
 import {
 	Badge,
@@ -58,6 +62,7 @@ import { getFileExtension } from "@semoss/utility/file";
 import { getImageMimeType } from "@semoss/utility/image";
 import { EmbedDocumentsOverlay } from "@/components/knowledge/embed-documents-overlay";
 import { NewKnowledgeOverlay } from "@/components/knowledge/new-knowledge-mcp-overlay";
+import { throwOnPixelErrors } from "@/utility/pixel-errors";
 
 type KnowledgeEngine = {
 	engine_id: string;
@@ -162,7 +167,7 @@ export const KnowledgeDetailPage = observer(() => {
 	const navigate = useNavigate();
 	const { knowledgeId } = useParams<{ knowledgeId: string }>();
 
-	const getKnowledge = usePixel<KnowledgeEngine[]>(
+	const getKnowledge = useSessionPixel<KnowledgeEngine[]>(
 		knowledgeId
 			? `MyEngines(engine=["${knowledgeId}"], engineTypes=['VECTOR'], metaKeys=["description","tag"], userT=[true], limit=[1], offset=[0]);`
 			: "",
@@ -180,7 +185,7 @@ export const KnowledgeDetailPage = observer(() => {
 		return Array.isArray(raw) ? raw : [raw];
 	}, [knowledge?.tag]);
 
-	const getDocuments = usePixel<VectorDocument[]>(
+	const getDocuments = useSessionPixel<VectorDocument[]>(
 		knowledgeId
 			? `ListDocumentsInVectorDatabase(engine=["${knowledgeId}"]);`
 			: "",
@@ -212,8 +217,10 @@ export const KnowledgeDetailPage = observer(() => {
 	// with both available, people already in the app are searched first
 	const [userSource, setUserSource] = useState<UserSource>("existing");
 	const [removeTarget, setRemoveTarget] = useState<EngineUser | null>(null);
-	const insight = useInsight();
-	const isDirectoryAvailable = insight.system?.config.msGraphLookup === true;
+	const { run, download } = useSessionInsight();
+	const isDirectoryAvailable = useConfig(
+		(state) => state.config?.msGraphLookup === true,
+	);
 	// Without the directory, leave the choice to the backend
 	const msGraphLookup = isDirectoryAvailable
 		? userSource === "directory"
@@ -236,15 +243,15 @@ export const KnowledgeDetailPage = observer(() => {
 			try {
 				const filePath = `/schema/default/documents/${previewDoc.fileName}`;
 				if (isText(previewDoc.fileName)) {
-					const { pixelReturn } = await insight.actions.run<[string]>(
+					const { pixelReturn } = await run<[string]>(
 						`GetEngineAssets(filePath=["${filePath}"], engine=["${knowledgeId}"]);`,
-					);
+					).then(throwOnPixelErrors);
 					const text = pixelReturn[0].output;
 					if (!cancelled) setPreviewText(text);
 				} else {
-					const { pixelReturn } = await insight.actions.run<[string]>(
+					const { pixelReturn } = await run<[string]>(
 						`GetEngineAssetsBase64(filePath=["${filePath}"], engine=["${knowledgeId}"]);`,
-					);
+					).then(throwOnPixelErrors);
 					const b64 = pixelReturn[0].output;
 					if (!cancelled) {
 						const mimeType = isImage(previewDoc.fileName)
@@ -269,7 +276,7 @@ export const KnowledgeDetailPage = observer(() => {
 			cancelled = true;
 			if (createdBlobUrl) URL.revokeObjectURL(createdBlobUrl);
 		};
-	}, [previewDoc, knowledgeId, insight.actions.run]);
+	}, [previewDoc, knowledgeId, run]);
 
 	const loadMembers = useCallback(async () => {
 		if (!knowledgeId) return;
@@ -397,11 +404,11 @@ export const KnowledgeDetailPage = observer(() => {
 	};
 
 	const handleDownload = async (fileName: string) => {
-		const { pixelReturn } = await insight.actions.run<[string]>(
+		const { pixelReturn } = await run<[string]>(
 			`META | VectorFileDownload(engine = "${knowledgeId}", fileNames=["${fileName}"]);`,
-		);
+		).then(throwOnPixelErrors);
 		const fileKey = pixelReturn[0].output;
-		await download(insight.insightId, fileKey);
+		await download(fileKey);
 	};
 
 	if (!knowledgeId) {

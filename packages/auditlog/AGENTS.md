@@ -52,6 +52,17 @@ do not relocate existing features without explicit migration scope.
 | `types.d.ts` | Ambient TypeScript types |
 | `app.tsx`, `main.tsx`, `index.css` | App entry files |
 
+### Sign in
+
+Sign in is the SDK's `Session`, not an insight. `main.tsx` calls `void Session.initialize()`
+before the first render (after `app.tsx` set the module). `pages/AuthenticatedLayout.tsx`
+gates on `useSession((state) => state.status)`: a spinner while `INITIALIZING`, `/login` when
+`UNAUTHENTICATED`, and `layout.loadFailed` with Retry (`useSessionRetry` from `@semoss/shared`) on `ERROR`. Once
+`AUTHENTICATED` it mounts the app's `InsightProvider`, and the shared `InsightReadyGate`
+holds the pages until that insight is made, so `useInsight()` works below it. `LoginPage`
+renders the shared `LoginForm` and redirects once `AUTHENTICATED`. Nothing outside the gate
+(`app.tsx`, `router.tsx`, `root-layout.tsx`, `/login`) may call `useInsight()`.
+
 > Some page files retain legacy names. Apply the React skill's
 > [naming policy](../../skills/react-standard.skill.md#types-and-naming) without unrelated renames.
 

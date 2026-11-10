@@ -1,22 +1,32 @@
 import { observer } from "mobx-react-lite";
 import { Navigate, useLocation } from "react-router";
-import { useInsight } from "@semoss/sdk/react";
+import { useSession } from "@semoss/sdk/react";
 import { LoginForm } from "@semoss/shared";
+import { Spinner } from "@semoss/ui/next";
 import loginBackground from "@/assets/img/login-background.svg";
 import { AppLogo } from "@/components/app-logo";
 
 /**
- * LoginPage
+ * LoginPage: the shared login form until the SDK's session is signed in, then
+ * back to where the user was going.
  */
 export const LoginPage = observer(() => {
-	const { isAuthorized, ...insightProps } = useInsight();
+	const status = useSession((state) => state.status);
 	const location = useLocation();
-	console.log(insightProps, "insightProps");
 	// get the path the user is coming from
 	const path = (location.state as { from: Location })?.from?.pathname || "/";
 
+	// the providers come from the session's config read; wait for it
+	if (status === "INITIALIZING") {
+		return (
+			<div className="flex h-full w-full items-center justify-center">
+				<Spinner />
+			</div>
+		);
+	}
+
 	// navigate if already logged in
-	if (isAuthorized) {
+	if (status === "AUTHENTICATED") {
 		return <Navigate to={path} replace />;
 	}
 

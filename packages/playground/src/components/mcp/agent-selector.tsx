@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { useId, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { useIteratorPixel } from "@semoss/sdk/react";
+import { useIteratorPixel, useSessionInsight } from "@semoss/sdk/react";
 import { AppCatalogAvatar } from "@semoss/shared";
 import {
 	Alert,
@@ -71,12 +71,13 @@ export function AgentSelector({
 		(offersDefaultAgent && isDefaultAgent ? DEFAULT_AGENT_VALUE : "");
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebouncedValue(search);
+	const { insightId: sessionInsightId } = useSessionInsight();
 	const getWorkspaces = useIteratorPixel<App[], App>(
 		(limit, offset) =>
 			`META | MyProjects(${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}projectType=["WORKSPACE"], limit=[${limit}], offset=[${offset}])`,
 		(response) => (response.length < 25 ? -1 : Infinity),
 		(response) => response,
-		{ limit: 25 },
+		{ limit: 25, insightId: sessionInsightId },
 		[debouncedSearch],
 	);
 	const { setScroll } = useInfiniteScroll({

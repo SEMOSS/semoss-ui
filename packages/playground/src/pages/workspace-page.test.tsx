@@ -18,6 +18,7 @@ vi.mock("@semoss/ui/next", async (original) => ({
 	useDebouncedValue: (value: string) => value,
 }));
 vi.mock("@semoss/sdk/react", () => ({
+	useSessionInsight: () => ({ insightId: "session-insight" }),
 	useIteratorPixel: (
 		buildPixel: (limit: number, offset: number) => string,
 	) => {

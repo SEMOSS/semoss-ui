@@ -18,6 +18,29 @@ It is the home of large shared building blocks such as the file explorer, the Mo
 editor wrappers, the shared login page, engine/MCP/prompt/skill UI,
 forms, and the workbench primitives.
 
+### Sign in (`components/login-page.tsx`, `components/form/login-form.tsx`)
+
+`LoginForm` reads the sign in providers from the SDK's config
+(`useConfig((state) => state.config?.availableProviders)`, with a stable empty fallback) and
+signs in through the session (`useSession((state) => state.login)` / `requestOTP`); it never
+uses an insight's `actions.login`. `login()` resolves whether the session is signed in and
+throws when refused; the OAuth success toast shows only when it resolves true. `LoginPage` is a
+gate on `useSession((state) => state.status)`: a spinner while `INITIALIZING`, its children when
+`AUTHENTICATED`, and the form when `UNAUTHENTICATED` or `ERROR`. Neither needs an
+`<InsightProvider>`; a host must call `Session.initialize()` once from its entry point (after
+`Env.update` and any `waitForEmbedAuth()`) and mount its workspace `InsightProvider` inside
+the gate, so the insight is made after sign in.
+
+An app that gates its own routes uses the two pieces every gate shares. `useSessionRetry()`
+(`hooks/use-session-retry.ts`) gives a Retry for the `ERROR` status: `{ isRetrying, retry }`
+over `refresh`. `InsightReadyGate` (`components/insight-ready-gate.tsx`) goes inside the gate's
+`InsightProvider` and holds its views until the insight is made, showing the app's
+`errorFallback` when it cannot be, so no view runs a pixel with an empty insight id.
+
+`Notebook` (`components/notebook/`) runs in its `insightId` prop, else the nearest
+`InsightContext`'s, else the session's insight (`useSessionInsight`, made with `ensure()` on the
+first run), so it renders outside any `InsightProvider`.
+
 ### The file explorer (`components/file/`)
 
 State lives in `useFileExplorer(options)`, which returns one `FileExplorerApi`; `FileExplorer`,

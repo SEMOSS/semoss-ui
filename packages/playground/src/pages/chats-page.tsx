@@ -3,7 +3,11 @@ import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Navigate } from "react-router";
 import { useTranslation } from "@semoss/i18n";
-import { useIteratorPixel, usePixel } from "@semoss/sdk/react";
+import {
+	useIteratorPixel,
+	useSessionInsight,
+	useSessionPixel,
+} from "@semoss/sdk/react";
 import {
 	Button,
 	Checkbox,
@@ -56,12 +60,13 @@ export const ChatsPage = observer(() => {
 	const [confirmOpen, setConfirmOpen] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
 
+	const { insightId: sessionInsightId } = useSessionInsight();
 	const getRooms = useIteratorPixel<RoomItem[], RoomItem>(
 		(limit, offset) =>
 			`META | GetPlaygroundRooms(${debouncedSearch ? `search = "<encode>${debouncedSearch}</encode>", ` : ""}limit=${limit}, offset=${offset}, sort=["DESC"]);`,
 		(response) => (response.length < 25 ? -1 : Infinity),
 		(response) => response,
-		{ limit: 25 },
+		{ limit: 25, insightId: sessionInsightId },
 		// Re-fetch only on search change — counter-based refreshes are
 		// handled by the useEffect below, which calls reset() and
 		// preserves current data instead of clearing it first.
@@ -71,7 +76,7 @@ export const ChatsPage = observer(() => {
 	// Full set of pinned rooms across every workspace, independent of the
 	// paginated list above — so the pinned section shows every pinned chat
 	// even before the user scrolls it into view.
-	const getPinnedRooms = usePixel<RoomItem[]>(
+	const getPinnedRooms = useSessionPixel<RoomItem[]>(
 		`META | GetPlaygroundRooms(pinned=[true], sort=["DESC"]);`,
 		{ data: [] },
 	);
@@ -107,7 +112,7 @@ export const ChatsPage = observer(() => {
 					DATE_CREATED: r.date_created ?? "",
 				}));
 		},
-		{ limit: 50 },
+		{ limit: 50, insightId: sessionInsightId },
 		[debouncedSearch],
 	);
 

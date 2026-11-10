@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useTranslation } from "@semoss/i18n";
-import { useInsight, usePixel } from "@semoss/sdk/react";
+import { useConfig, useSessionPixel } from "@semoss/sdk/react";
 import {
 	AgentForm,
 	type AgentFormValues,
@@ -38,8 +38,9 @@ interface AgentFormSeed {
  */
 export const EditWorkspacePage = observer(() => {
 	const { t } = useTranslation(["workspace", "common", "notifications"]);
-	const { system } = useInsight();
-	const isDirectoryAvailable = system?.config.msGraphLookup === true;
+	const isDirectoryAvailable = useConfig(
+		(state) => state.config?.msGraphLookup === true,
+	);
 	const { workspaceId } = useParams<{ workspaceId: string }>();
 	const navigate = useNavigate();
 	const { chat } = useChat();
@@ -52,19 +53,18 @@ export const EditWorkspacePage = observer(() => {
 	const [saveError, setSaveError] = useState<string | null>(null);
 	const seededWorkspace = useRef<string | null>(null);
 
-	const getWorkspace = usePixel<AgentWorkspace & { workspace_id: string }>(
-		workspaceId ? `GetWorkspace(workspaceId=["${workspaceId}"]);` : "",
-		{
-			data: null,
-			onError: (_d, e) => {
-				toast.error(
-					t("workspace:edit.failedToLoad", {
-						error: getErrorMessage(e, "Unknown error"),
-					}),
-				);
-			},
+	const getWorkspace = useSessionPixel<
+		AgentWorkspace & { workspace_id: string }
+	>(workspaceId ? `GetWorkspace(workspaceId=["${workspaceId}"]);` : "", {
+		data: null,
+		onError: (_d, e) => {
+			toast.error(
+				t("workspace:edit.failedToLoad", {
+					error: getErrorMessage(e, "Unknown error"),
+				}),
+			);
 		},
-	);
+	});
 
 	// AgentForm reads its values once on mount, so it is seeded once per
 	// agent: a refetch never overwrites unsaved edits, and a different agent

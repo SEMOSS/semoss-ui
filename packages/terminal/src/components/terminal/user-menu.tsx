@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { LANGUAGES, useTranslation } from "@semoss/i18n";
-import { Env, useInsight } from "@semoss/sdk/react";
+import { Env, useInsight, useSession } from "@semoss/sdk/react";
 import {
 	Avatar,
 	AvatarFallback,
@@ -52,6 +52,8 @@ interface VersionInfo {
  */
 export const UserMenu = () => {
 	const { actions, isAuthorized } = useInsight();
+	// sign out the page's session, which the login gate reads
+	const logout = useSession((state) => state.logout);
 	const { theme, setTheme } = useTheme();
 	const { t, i18n } = useTranslation("chrome");
 	const [user, setUser] = useState<UserInfo>({});
@@ -137,7 +139,7 @@ export const UserMenu = () => {
 	const handleLogout = async () => {
 		setLoggingOut(true);
 		try {
-			await actions.logout();
+			await logout();
 		} finally {
 			setLoggingOut(false);
 		}

@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useState } from "react";
-import { useInsight } from "@semoss/sdk/react";
+import { type getSystemConfig, useConfig, useSession } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -35,12 +35,28 @@ type CredentialProvider = (typeof CREDENTIAL_PROVIDERS)[number]["provider"];
 const UNABLE_TO_LOGIN =
 	"Unable to login. Check your credentials and try again.";
 
+type LoginProvider = Awaited<
+	ReturnType<typeof getSystemConfig>
+>["availableProviders"][number];
+
+/** The providers while the config is unread, one array so the memo below holds */
+const NO_PROVIDERS: LoginProvider[] = [];
+
+/**
+ * The shared sign in form: the username / password providers and the OAuth
+ * providers the server's config turns on. It signs in through the SDK's
+ * `Session`, so the host must call `Session.initialize()` at start up and gate
+ * its app on `useSession((state) => state.status)`.
+ */
 export function LoginForm() {
 	const usernameId = useId();
 	const passwordId = useId();
 	const otpId = useId();
 
-	const { system, actions } = useInsight();
+	const availableProviders =
+		useConfig((state) => state.config?.availableProviders) ?? NO_PROVIDERS;
+	const login = useSession((state) => state.login);
+	const requestOTP = useSession((state) => state.requestOTP);
 
 	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
@@ -52,8 +68,6 @@ export function LoginForm() {
 	const [error, setError] = useState("");
 	const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
 	const isLoading = loadingProvider !== null;
-
-	const availableProviders = system.config.availableProviders;
 
 	// the username / password providers the backend has turned on
 	const credentialProviders = useMemo(() => {
@@ -122,7 +136,7 @@ export function LoginForm() {
 			if (loginType === "linotp") {
 				// step one, verify the pin and trigger the otp challenge
 				if (!showOTPField) {
-					if (await actions.requestOTP(username, password)) {
+					if (await requestOTP(username, password)) {
 						setShowOTPField(true);
 					} else {
 						setError(UNABLE_TO_LOGIN);
@@ -132,7 +146,7 @@ export function LoginForm() {
 				}
 
 				// step two, confirm the otp to create the session
-				if (!(await actions.login({ type: "linotp", otp: otp }))) {
+				if (!(await login({ type: "linotp", otp: otp }))) {
 					setError(UNABLE_TO_LOGIN);
 				}
 
@@ -141,12 +155,12 @@ export function LoginForm() {
 
 			const loggedIn =
 				loginType === "ldap"
-					? await actions.login({
+					? await login({
 							type: "ldap",
 							username: username,
 							password: password,
 						})
-					: await actions.login({
+					: await login({
 							type: "native",
 							username: username,
 							password: password,
@@ -296,17 +310,19 @@ export function LoginForm() {
 									onClick={async () => {
 										setLoadingProvider(p.provider);
 
-										await actions
-											.login({
-												type: "oauth",
-												provider: p.provider,
-											})
-											.then(() => {
+										await login({
+											type: "oauth",
+											provider: p.provider,
+										})
+											.then((isLoggedIn) => {
 												setLoadingProvider(null);
 
-												toast.success(
-													`Successfully logged in`,
-												);
+												// false: the backend kept no session to sign in to
+												if (isLoggedIn) {
+													toast.success(
+														`Successfully logged in`,
+													);
+												}
 											})
 											.catch((e) => {
 												setLoadingProvider(null);

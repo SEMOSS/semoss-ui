@@ -19,7 +19,7 @@ import {
 	useParams,
 } from "react-router";
 import { useTranslation } from "@semoss/i18n";
-import { useIteratorPixel } from "@semoss/sdk/react";
+import { useIteratorPixel, useSessionInsight } from "@semoss/sdk/react";
 import {
 	Button,
 	cn,
@@ -119,6 +119,7 @@ export const GlobalNav = observer(() => {
 
 	const navigate = useNavigate();
 
+	const { insightId: sessionInsightId } = useSessionInsight();
 	const getPinnedRooms = useIteratorPixel<
 		{
 			ROOM_ID: string;
@@ -141,7 +142,7 @@ export const GlobalNav = observer(() => {
 				: `META | GetPlaygroundRooms(pinned=[true], sort=["DESC"]);`,
 		() => -1,
 		(response) => response,
-		{},
+		{ insightId: sessionInsightId },
 		// No roomCounter dependency here — the useEffect below already
 		// calls reset() when roomCounter increments, and reset() preserves
 		// the current data while refetching (no blank flash). Putting
@@ -184,6 +185,7 @@ export const GlobalNav = observer(() => {
 		},
 		{
 			limit: 25,
+			insightId: sessionInsightId,
 		},
 		// Re-fetch only on search change — counter-based refreshes are handled
 		// by the useEffect below, which calls reset() and preserves data.

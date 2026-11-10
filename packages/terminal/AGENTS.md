@@ -51,6 +51,16 @@ without requiring a migration of these embedded components.
 | `app.tsx`, `main.tsx`, `index.css` | Standalone app entry files |
 | `index.ts` | Barrel consumed by `@semoss/client` |
 
+## Sign in (standalone)
+
+Sign in is the SDK's `Session`, not an insight. `main.tsx` calls `void Session.initialize()`
+before the first render (after `app.tsx` set the module), and `app.tsx` composes
+`LoginPage` (from `@semoss/shared`, gated on `useSession` status) > `InsightProvider` >
+`EmbedTerminal`, so the terminal's insight is made only after sign in; `EmbedTerminal` waits for
+its `isReady`. The user menu logs out with `useSession((state) => state.logout)`, which the
+gate hears; the insight's `actions.logout` does not notify `Session`. When the client mounts
+the terminal it supplies its own session gate and insight.
+
 ## Key Dependencies
 
 - `@semoss/workbench` — the dock. Three panel types: explorer, file editor, repl
