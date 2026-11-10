@@ -30,7 +30,7 @@ export interface SourceImportResult {
 }
 
 /** One route activation owns one import, including all retries of its partial work. */
-export interface SourceImportAttempt {
+interface SourceImportAttempt {
 	retain: () => () => void;
 	subscribe: (listener: () => void) => () => void;
 	getSnapshot: () => SourceImportSnapshot;

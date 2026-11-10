@@ -27,7 +27,7 @@ export interface PDFViewerBlockDef extends BlockDef<"pdfViewer"> {
 	};
 }
 
-export const PDF_FILE_PREFIX = "data:application/pdf;base64,";
+const PDF_FILE_PREFIX = "data:application/pdf;base64,";
 
 export const PDFViewerBlock: BlockComponent = observer(({ id }) => {
 	const { attrs, data, setData, listeners } = useBlock<PDFViewerBlockDef>(id);

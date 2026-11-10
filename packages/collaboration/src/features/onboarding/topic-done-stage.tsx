@@ -90,27 +90,15 @@ export function TopicDoneStage({
 					})}
 				</ul>
 			)}
-			<div className="flex flex-wrap gap-x-3 text-sm">
-				<span className="text-muted-foreground">Change something:</span>
-				{(["areas", "people", "conversations"] as const).map(
-					(stage) => (
-						<Button
-							key={stage}
-							type="button"
-							variant="link"
-							className="h-auto p-0"
-							disabled={isBusy}
-							onClick={() => onEdit(stage)}
-						>
-							{stage === "areas"
-								? "Topics"
-								: stage === "people"
-									? "People"
-									: "Conversations"}
-						</Button>
-					),
-				)}
-			</div>
+			<Button
+				type="button"
+				variant="link"
+				className="h-auto self-start p-0 text-sm"
+				disabled={isBusy}
+				onClick={() => onEdit("areas")}
+			>
+				Change topics, people or conversations
+			</Button>
 		</div>
 	);
 }

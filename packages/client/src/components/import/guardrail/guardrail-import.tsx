@@ -5,6 +5,7 @@
 import { ChevronRight, SearchIcon, UploadIcon } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSessionInsight } from "@semoss/sdk/react";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -27,8 +28,8 @@ import {
 	TabsTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useSession } from "@/hooks";
+import { NavbarHeader } from "@/components/shared/navbar-header";
+import { NavbarLeft } from "@/components/shared/navbar-left";
 import { useNavigate } from "@/hooks/useNavigate";
 import { GUARDRAIL_CONNECTION } from "./guardrail-import.constants";
 import { GuardrailForm } from "./guardrail-import-form";
@@ -47,10 +48,20 @@ interface GuardrailOption {
 	form?: "sql-query-policy" | "jev-policy";
 }
 
-export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
+interface GuardrailImportProps {
+	/** The catalog the page opened from, named in the first breadcrumb, such as "Guardrail". */
+	name: string;
+}
+
+/**
+ * The Connect to Guardrail page: the guardrail types to add, by tab when there
+ * are several, and the chosen one's form. The SQL query and Jev policy
+ * guardrails have forms of their own; the rest share the generic one. An
+ * exported guardrail can also be uploaded as a zip.
+ */
+export const GuardrailImport: React.FC<GuardrailImportProps> = ({ name }) => {
 	const navigate = useNavigate();
-	const runPixel = useSession((state) => state.runPixel);
-	const upload = useSession((state) => state.upload);
+	const { run: runPixel, upload } = useSessionInsight();
 	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState("");
 	const [selectedTab, setSelectedTab] = useState("");
@@ -58,7 +69,7 @@ export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 		useState<GuardrailOption | null>(null);
 
 	const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false);
-	const [filedata, setFiledata] = useState(null);
+	const [filedata, setFiledata] = useState<File | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	const GuardrailOptions = GUARDRAIL_CONNECTION;
@@ -87,7 +98,7 @@ export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 		}
 	}, [tabLabels]);
 
-	const onSubmit = async (data) => {
+	const onSubmit = async (data: File) => {
 		setLoading(true);
 		try {
 			const uploadedFiles = await upload([data]);

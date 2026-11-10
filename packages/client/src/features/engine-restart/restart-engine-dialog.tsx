@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { restartEngine } from "@semoss/sdk";
+import { useSessionInsight } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -14,9 +15,8 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import { useSession } from "@/hooks/use-session";
 
-export interface RestartEngineDialogProps {
+interface RestartEngineDialogProps {
 	/** Whether the dialog is open */
 	open: boolean;
 	/** The engine to restart */
@@ -41,7 +41,7 @@ export const RestartEngineDialog = ({
 	engineLabel,
 	onClose,
 }: RestartEngineDialogProps) => {
-	const insightID = useSession((state) => state.insightID);
+	const { insightId } = useSessionInsight();
 	const [isRestarting, setIsRestarting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const label = engineLabel.toLowerCase();
@@ -56,7 +56,7 @@ export const RestartEngineDialog = ({
 		setError(null);
 		let warnings: string[];
 		try {
-			({ warnings } = await restartEngine(engineId, insightID));
+			({ warnings } = await restartEngine(engineId, insightId));
 		} catch (e: unknown) {
 			setError(getErrorMessage(e, `Could not restart the ${label}`));
 			setIsRestarting(false);

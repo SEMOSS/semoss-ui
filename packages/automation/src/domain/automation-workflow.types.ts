@@ -163,7 +163,7 @@ export interface AutomationWorkflowNode<
 	body?: AutomationWorkflowGraph;
 }
 
-export type AutomationWorkflowGraphNode = AutomationWorkflowNode;
+type AutomationWorkflowGraphNode = AutomationWorkflowNode;
 
 export interface AutomationControlEdge {
 	id: string;

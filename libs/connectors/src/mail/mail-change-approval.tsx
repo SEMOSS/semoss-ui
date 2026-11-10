@@ -17,7 +17,7 @@ interface MailChangeValues {
 }
 
 /** Props for {@link MailChangeApproval}. */
-export interface MailChangeApprovalProps {
+interface MailChangeApprovalProps {
 	/** The mailbox the email is in. */
 	app: MailApp;
 	/** Whether the call moves the email to a folder or deletes it. */

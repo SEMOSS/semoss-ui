@@ -20,7 +20,7 @@ export type FilePanelMode =
 	| { type: "INSIGHT"; insightId: string };
 
 /** The resource a mode's permissions are resolved against. */
-export interface FilePanelResource {
+interface FilePanelResource {
 	type: ResourceType;
 	id: string;
 }

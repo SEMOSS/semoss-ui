@@ -23,7 +23,7 @@ import { RoutineRunMenu } from "./routine-run-menu";
 import type { RoutineId } from "./routine-schema";
 import { findSystemRoutine } from "./system-routines";
 
-export const routineRunListSchema = z.object({
+const routineRunListSchema = z.object({
 	runs: z.array(
 		z.object({
 			runId: z.string().min(1),
@@ -36,8 +36,6 @@ export const routineRunListSchema = z.object({
 		}),
 	),
 });
-
-export type RoutineRun = z.infer<typeof routineRunListSchema>["runs"][number];
 
 const STATUS_LABELS = {
 	running: "Running",

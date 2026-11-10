@@ -16,7 +16,7 @@ import {
 import { CatalogGridItem } from "@/components/catalog/catalog-grid-item";
 import { normalizeTagArray } from "@/utility/tags";
 
-export interface EngineGridItemProps {
+interface EngineGridItemProps {
 	/** Display style - list row or grid card */
 	variant: "LIST" | "CARD";
 	/** Path to navigate to */

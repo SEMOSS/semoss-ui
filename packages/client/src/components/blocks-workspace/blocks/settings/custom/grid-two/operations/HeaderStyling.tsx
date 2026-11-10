@@ -27,7 +27,7 @@ import {
 import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { ColorPickerSettingsNew } from "../../../shared/ColorPickerSettingsNew";
 
-export interface HeaderStylingProps<D extends BlockDef = GridBlockDef> {
+interface HeaderStylingProps<D extends BlockDef = GridBlockDef> {
 	id: string;
 	path: Paths<Block<D>["data"], 4>;
 }

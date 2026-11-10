@@ -4,7 +4,7 @@ import { Button, Small } from "@semoss/ui/next";
 import type { ProviderConnection } from "../use-connections";
 
 /** Props for {@link ConnectionProviderSummary}. */
-export interface ConnectionProviderSummaryProps {
+interface ConnectionProviderSummaryProps {
 	/** The provider and where it stands. */
 	connection: ProviderConnection;
 	/** Whether its sign in popup is open. */

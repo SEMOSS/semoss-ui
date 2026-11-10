@@ -24,12 +24,12 @@ pixel reactors. Frontend-only changes are the norm (README states "no backend ch
 ## 2. Stack and workspace dependencies
 
 React 19, react-router 8 (data router, lazy routes), Lexical (rich email/composer editors),
-dnd-kit, DOMPurify, lucide-react, Tailwind via `@semoss/ui/next`.
+DOMPurify, lucide-react, Tailwind via `@semoss/ui/next`.
 Internal deps: `automation, connectors, i18n, panels, sdk, shared, ui, utility, workbench`.
 Path alias `@/` → `src/`. Generic helpers belong in `@semoss/utility` (search before adding).
 
 Bootstrap (`src/app.tsx`): `Env.update` (MODULE/ENDPOINT/APP/ACCESS_KEY/SECRET_KEY) →
-`I18nextProvider` → `AccessStoreProvider` → `InsightProvider` → `ThemeProvider`
+`I18nextProvider` → `InsightProvider` → `ThemeProvider`
 (storage key `smss-ui-theme-collaboration`, default light) → `Router` + `Toaster`.
 
 ## 3. Directory map
@@ -37,7 +37,6 @@ Bootstrap (`src/app.tsx`): `Env.update` (MODULE/ENDPOINT/APP/ACCESS_KEY/SECRET_K
 ```
 src/
   app.tsx, main.tsx, index.css
-  app/            main.context.ts, refresh-keys.ts
   components/     common (agent-avatar, empty-view), layouts (root, authorized)
   lib/            pixel.ts (callPixel/pixel), workspace-paths, lexicon, person-name, typeface
   pages/          THIN route pages + route-config.tsx + router.tsx

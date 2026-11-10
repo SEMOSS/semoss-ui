@@ -9,7 +9,7 @@ import {
 import { UsageLimitPathPanel } from "./usage-limit-path-panel";
 import type { UsageLimitPathRequest } from "./use-usage-limit-path";
 
-export interface UsageLimitPathSheetProps {
+interface UsageLimitPathSheetProps {
 	/** Whose path to show on which model, or null to keep the sheet closed */
 	request: UsageLimitPathRequest | null;
 	/** The sheet's title, such as "How Limits Apply to Eli on GPT-5" */

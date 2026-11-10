@@ -10,6 +10,7 @@ import {
 	X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useSessionInsight } from "@semoss/sdk/react";
 import { DataTypeIcon } from "@semoss/shared";
 import {
 	Button,
@@ -35,7 +36,6 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { useSession } from "@/hooks";
 import { ColumnEditModal } from "./column-edit-modal";
 
 interface ParsedResult {
@@ -44,9 +44,16 @@ interface ParsedResult {
 	cleanHeaders: string[];
 }
 interface ExcelDataSelectionProps {
+	/**
+	 * The uploaded workbooks, as PredictExcelDataTypes returns them: each maps
+	 * its sheets to their ranges, and each range to its predicted columns.
+	 */
 	files: ParsedResult[];
+	/** Each workbook's uploaded file name, in the order of `files`. */
 	fileName: string[];
+	/** Called with one import payload per workbook once the columns are reviewed. */
 	onImport: (payload: Record<string, unknown>[]) => void;
+	/** Called when the user leaves without importing. */
 	onCancel: () => void;
 }
 
@@ -58,6 +65,11 @@ interface ColumnMetadata {
 	logicalName?: string[];
 }
 
+/**
+ * Reviews the columns of uploaded Excel workbooks before they are imported, a
+ * table per sheet: each column's name, type, format, description and logical
+ * names, and the range of the sheet to read.
+ */
 export const ExcelDataSelection = ({
 	files,
 	fileName,
@@ -93,7 +105,7 @@ export const ExcelDataSelection = ({
 		{},
 	);
 
-	const runPixel = useSession((state) => state.runPixel);
+	const { run: runPixel } = useSessionInsight();
 
 	const handlePreviewRange = async (
 		filePath: string,

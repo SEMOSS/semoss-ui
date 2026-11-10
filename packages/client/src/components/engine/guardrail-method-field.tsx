@@ -20,7 +20,7 @@ import {
 	type InterceptableMethod,
 } from "./engine-guardrail-settings.constants";
 
-export interface GuardrailMethodFieldProps {
+interface GuardrailMethodFieldProps {
 	/** React Hook Form path for this rule's method field. */
 	name: `pipelines.${number}.method`;
 

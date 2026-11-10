@@ -21,7 +21,7 @@ import {
 } from "./automation-node-catalog";
 
 /** Visual metadata shared by workflow-node pickers and canvas cards. */
-export interface AutomationWorkflowNodeDisplay {
+interface AutomationWorkflowNodeDisplay {
 	icon: LucideIcon;
 	color: string;
 }

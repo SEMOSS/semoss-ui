@@ -1,7 +1,7 @@
 import { cn, Small } from "@semoss/ui/next";
 
 /** Props for {@link ToolTextBlock}. */
-export interface ToolTextBlockProps {
+interface ToolTextBlockProps {
 	/** What the text is, such as "New contents". */
 	label: string;
 	/** The text, shown as is. */

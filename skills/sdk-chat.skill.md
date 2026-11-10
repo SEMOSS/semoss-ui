@@ -13,6 +13,8 @@ here.
 
 ## Repository Workflow
 
+- Rooms keep their own `InsightProvider`; sign in, the user and permissions come from
+  `Session` (see the [packaged session guide](../libs/sdk/skills/session.skill.md)).
 - Follow the [SDK package guide](../libs/sdk/AGENTS.md) when changing the SDK and
   the consuming package's guide when changing a caller.
 - Apply the [React standard](./react-standard.skill.md) to TypeScript and React

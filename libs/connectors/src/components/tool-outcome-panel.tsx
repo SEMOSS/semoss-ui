@@ -9,7 +9,7 @@ import {
 } from "@semoss/ui/next";
 
 /** Props for {@link ToolOutcomePanel}. */
-export interface ToolOutcomePanelProps {
+interface ToolOutcomePanelProps {
 	/** What the user did, such as `Saved as a draft in Gmail.` */
 	message: string;
 	/** Where the result opens in its app. */

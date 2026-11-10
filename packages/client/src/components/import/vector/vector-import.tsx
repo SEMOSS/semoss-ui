@@ -3,6 +3,7 @@
 import { ChevronRight, Search, Upload } from "lucide-react";
 import type React from "react";
 import { useMemo, useRef, useState } from "react";
+import { useSessionInsight } from "@semoss/sdk/react";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -24,8 +25,8 @@ import {
 	TabsTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useSession } from "@/hooks";
+import { NavbarHeader } from "@/components/shared/navbar-header";
+import { NavbarLeft } from "@/components/shared/navbar-left";
 import { useNavigate } from "@/hooks/useNavigate";
 import { VECTOR_CONNECTIONS } from "./vector-import.constants";
 import { VectorForm } from "./vector-import-form";
@@ -40,17 +41,26 @@ interface vector {
 	disable: boolean;
 }
 
-export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
+interface VectorImportProps {
+	/** The catalog the page opened from, named in the first breadcrumb, such as "Vector". */
+	name: string;
+}
+
+/**
+ * The Connect to Vector Database page: the vector database types to connect
+ * to, by tab when there are several, and the chosen one's form. An exported
+ * vector database can also be uploaded as a zip.
+ */
+export const VectorImport: React.FC<VectorImportProps> = ({ name }) => {
 	const navigate = useNavigate();
-	const runPixel = useSession((state) => state.runPixel);
-	const upload = useSession((state) => state.upload);
+	const { run: runPixel, upload } = useSessionInsight();
 	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState("");
 	const [selectedTab, setSelectedTab] = useState("Connections");
 	const [selectedEngine, setSelectedEngine] = useState<vector | null>(null);
 
 	const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false);
-	const [filedata, setFiledata] = useState(null);
+	const [filedata, setFiledata] = useState<File | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	const VectorOptions = VECTOR_CONNECTIONS;
@@ -107,7 +117,7 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 		}
 	};
 
-	const onSubmit = async (data) => {
+	const onSubmit = async (data: File) => {
 		setLoading(true);
 		try {
 			const uploadedFiles = await upload([data]);
@@ -130,7 +140,8 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 					return;
 				}
 				toast.success("Successfully Created Vector Database");
-				const databaseId = output.database_id;
+				const databaseId = (output as { database_id?: string })
+					.database_id;
 				navigate(`/vector/${databaseId}`);
 			}
 		} catch {

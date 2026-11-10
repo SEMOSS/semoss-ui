@@ -68,8 +68,3 @@ export const TYPE_TO_ROUTE = {
 	STORAGE: "/storage",
 	GUARDRAIL: "/guardrail",
 } as const;
-
-export const MCP = {
-	DRIVER_PATHS: ["/py/mcp_driver.py"],
-	JSON_PATHS: ["/mcp/py_mcp.json", "/mcp/pixel_mcp.json"],
-} as const;

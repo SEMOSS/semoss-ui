@@ -12,12 +12,13 @@ import { VizBlockContextMenu } from "../../VizBlockContextMenu";
 import { processData } from "./ScatterPlotProcessData";
 import { getSelector } from "./ScatterPlotSelector";
 import { formatdatapoints } from "./ScatterPlotTooltipData";
-export interface EChartColumns {
+
+interface EChartColumns {
 	name: string;
 	selector: string;
 	width: string;
 }
-export interface EchartVisualizationBlockDef {
+interface EchartVisualizationBlockDef {
 	widget: "e-chart";
 	data: {
 		// biome-ignore lint/suspicious/noExplicitAny: echart option structure is dynamic

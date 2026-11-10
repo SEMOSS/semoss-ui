@@ -36,6 +36,8 @@ interface MCPOverlaySave {
 	mcp: MCPConfig[];
 	/** Only present when the overlay was opened with an `workspace` prop. */
 	workspace?: WorkspaceRef | null;
+	/** Only present when the overlay was opened with an `isDefaultAgent` prop. */
+	isDefaultAgent?: boolean;
 }
 
 interface MCPOverlayProps {
@@ -62,6 +64,12 @@ interface MCPOverlayProps {
 	 */
 	agentEditable?: boolean;
 	allowDefaultAgent?: boolean;
+	/**
+	 * Whether Default Agent is picked. Passing it offers Default Agent and No
+	 * agent as separate choices in the Agent tab, and the save reports
+	 * `isDefaultAgent`.
+	 */
+	isDefaultAgent?: boolean;
 	/** Keep selections visible when the conversation becomes busy. */
 	disabled?: boolean;
 
@@ -79,6 +87,7 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 	workspace,
 	agentEditable = false,
 	allowDefaultAgent = false,
+	isDefaultAgent,
 	disabled = false,
 	onClose,
 }) => {
@@ -93,6 +102,10 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 	);
 	const [workspaceDraft, setWorkspaceDraft] = useState<WorkspaceRef | null>(
 		workspace ?? null,
+	);
+	const offersDefaultAgent = isDefaultAgent !== undefined;
+	const [defaultAgentDraft, setDefaultAgentDraft] = useState(
+		isDefaultAgent ?? false,
 	);
 	const [activeTab, setActiveTab] = useState<Tab>(defaultTab);
 
@@ -120,12 +133,13 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 			setKnowledge(next.knowledge);
 			setToolbox(next.toolbox);
 			setWorkspaceDraft(workspace ?? null);
+			setDefaultAgentDraft(isDefaultAgent ?? false);
 			setActiveTab(defaultTab);
 			setView("list");
 			mergedWorkspaceId.current = workspace?.workspace_id ?? null;
 		}
 		wasOpen.current = open;
-	}, [open, values, defaultTab, workspace]);
+	}, [open, values, defaultTab, workspace, isDefaultAgent]);
 
 	// Fetch the selected agent's MCPs whenever the user picks one in the
 	// modal. Empty string disables the call (per the usePixel convention).
@@ -318,7 +332,9 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 										</span>
 										{/* Absolutely positioned so the centered label
 										    doesn't shift when the indicator appears. */}
-										{workspaceDraft ? (
+										{workspaceDraft ||
+										(offersDefaultAgent &&
+											defaultAgentDraft) ? (
 											<CheckIcon className="absolute end-2.5 size-3.5 text-primary" />
 										) : null}
 									</TabsTrigger>
@@ -368,6 +384,12 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 											disabled={disabled}
 											value={workspaceDraft}
 											onChange={setWorkspaceDraft}
+											isDefaultAgent={defaultAgentDraft}
+											onDefaultAgentChange={
+												offersDefaultAgent
+													? setDefaultAgentDraft
+													: undefined
+											}
 										/>
 									)}
 								</TabsContent>
@@ -461,6 +483,12 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 									onClose({
 										mcp: [...knowledge, ...toolbox],
 										workspace: workspaceDraft,
+										...(offersDefaultAgent
+											? {
+													isDefaultAgent:
+														defaultAgentDraft,
+												}
+											: {}),
 									})
 								}
 							>

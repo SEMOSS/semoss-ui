@@ -24,7 +24,7 @@ const SETTINGS_SECTIONS: readonly {
 ];
 
 /** Props for {@link SettingsDialog}. */
-export interface SettingsDialogProps {
+interface SettingsDialogProps {
 	/** Whether the dialog is open. */
 	open: boolean;
 	/** Open or close the dialog. */

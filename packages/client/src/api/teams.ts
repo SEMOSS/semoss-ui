@@ -108,7 +108,7 @@ const parseCount = (value: unknown) => {
 	return 0;
 };
 
-export const getNumProjectsForGroup = async (
+const getNumProjectsForGroup = async (
 	groupId: string,
 	groupType: string,
 	searchTerm?: string,
@@ -131,7 +131,7 @@ export const getNumProjectsForGroup = async (
 	return parseCount(response.data);
 };
 
-export const getNumEnginesForGroup = async (
+const getNumEnginesForGroup = async (
 	groupId: string,
 	groupType: string,
 	searchTerm?: string,

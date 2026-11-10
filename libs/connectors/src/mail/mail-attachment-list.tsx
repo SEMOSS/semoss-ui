@@ -12,7 +12,7 @@ import type { MailAttachment } from "./mail.types";
 import type { MailApp } from "./mail-apps";
 
 /** Props for {@link MailAttachmentList}. */
-export interface MailAttachmentListProps {
+interface MailAttachmentListProps {
 	/** The mailbox the email is in. */
 	app: MailApp;
 	/** The email the attachments belong to. */

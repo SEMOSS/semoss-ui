@@ -16,7 +16,10 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
-import type { TopicMatchApplyResult } from "../api/topic-matches";
+import type {
+	TopicMatchApplyResult,
+	TopicMatchMode,
+} from "../api/topic-matches";
 import { dateLabel } from "../date-label";
 import type { WorkUpdatesStatus } from "../live/work-updates.context";
 import type { Topic } from "../state/collaboration.types";
@@ -33,21 +36,34 @@ interface TopicMatchesDialogProps {
 	onOpenChange: (open: boolean) => void;
 	/** The button that opened the review; focus goes back to it on close while it is still on the page. */
 	returnFocusRef: RefObject<HTMLElement | null>;
+	/** Find conversations that fit, or re-sort the topic's own after narrowing it; default find. */
+	mode?: TopicMatchMode;
 }
 
 const conversations = (count: number) =>
 	`${count} ${count === 1 ? "conversation" : "conversations"}`;
 
 /** What applying did, for the toast; a skipped choice found the conversation changed since the check. */
-function appliedSummary(result: TopicMatchApplyResult): string {
+function appliedSummary(
+	result: TopicMatchApplyResult,
+	mode: TopicMatchMode,
+): string {
 	const applied = (op: string) =>
 		result.results.filter(
 			(row) => row.status === "applied" && row.op === op,
 		).length;
 	const parts = [
-		[applied("move"), "moved here"],
+		[
+			applied("move"),
+			mode === "resort" ? "moved to a better topic" : "moved here",
+		],
 		[applied("also_link"), "added"],
-		[applied("reject"), "marked not about this topic"],
+		[
+			applied("reject"),
+			mode === "resort"
+				? "taken off this topic"
+				: "marked not about this topic",
+		],
 		[result.skipped, "changed since the check and left as they are"],
 	] as const;
 	return parts
@@ -66,13 +82,16 @@ export function TopicMatchesDialog({
 	open,
 	onOpenChange,
 	returnFocusRef,
+	mode = "find",
 }: TopicMatchesDialogProps) {
+	const resort = mode === "resort";
 	const { actions } = useInsight();
 	const { state } = useCollaborationSession();
 	const review = useTopicMatches({
 		actions,
 		topicId: topic.id,
 		serverId: updates.serverId,
+		mode,
 		onApplied: updates.refresh,
 	});
 	const topicNames = new Map(
@@ -90,25 +109,33 @@ export function TopicMatchesDialog({
 		const result = await review.apply();
 		if (!result) return;
 		toast.success(`Updated ${topic.name}`, {
-			description: appliedSummary(result),
+			description: appliedSummary(result, mode),
 		});
 		if (left === 0) onOpenChange(false);
 	};
 
-	let description = `Brain checks your newest conversations against your topics and lists the ones that fit ${topic.name}. Nothing changes until you apply.`;
+	let description = resort
+		? `Brain checks the conversations it filed under ${topic.name} against its description now and lists the ones that no longer fit. Ones you filed yourself are left alone. Nothing changes until you apply.`
+		: `Brain checks your newest conversations against your topics and lists the ones that fit ${topic.name}. Nothing changes until you apply.`;
 	if (review.phase === "checking")
-		description =
-			"Checking your newest conversations. You can close this; the check keeps going.";
+		description = resort
+			? `Checking the conversations in ${topic.name}. You can close this; the check keeps going.`
+			: "Checking your newest conversations. You can close this; the check keeps going.";
 	else if (review.phase === "failed")
 		description = "The check could not finish.";
 	else if (review.phase === "ready" && review.remaining.length)
-		description = `${conversations(review.remaining.length)} may belong here. Checked ones are applied; unchecked ones are remembered as not about ${topic.name}.`;
+		description = resort
+			? `${conversations(review.remaining.length)} no longer fit ${topic.name}. Checked ones move or come off the topic; unchecked ones stay as they are.`
+			: `${conversations(review.remaining.length)} may belong here. Checked ones are applied; unchecked ones are remembered as not about ${topic.name}.`;
 	else if (review.phase === "ready" && review.found)
 		description = "You went through every conversation this check found.";
 	else if (review.phase === "ready")
-		description = review.scanned
-			? `Nothing else fits ${topic.name} in the ${conversations(review.scanned)} checked.`
-			: "Every conversation is already in this topic or was turned down for it.";
+		description = resort
+			? `Every conversation Brain filed under ${topic.name} still fits it.`
+			: review.scanned
+				? `Nothing else fits ${topic.name} in the ${conversations(review.scanned)} checked.`
+				: "Every conversation is already in this topic or was turned down for it.";
+	const kept = review.visible.length - review.changes.length;
 
 	return (
 		<Dialog
@@ -137,7 +164,9 @@ export function TopicMatchesDialog({
 				<DialogHeader>
 					{/* room for the close button, which sits inside the content's top corner */}
 					<DialogTitle className="wrap-anywhere px-6 sm:pl-0">
-						Find conversations for {topic.name}
+						{resort
+							? `Re-sort ${topic.name}`
+							: `Find conversations for ${topic.name}`}
 					</DialogTitle>
 					<DialogDescription>{description}</DialogDescription>
 				</DialogHeader>
@@ -200,6 +229,7 @@ export function TopicMatchesDialog({
 										match={match}
 										topicName={topic.name}
 										topicNames={topicNames}
+										mode={mode}
 										isChecked={review.isChecked(
 											match.threadId,
 										)}
@@ -233,8 +263,18 @@ export function TopicMatchesDialog({
 							)}
 						</div>
 						<P className="text-muted-foreground text-sm">
-							{counts.move} to move · {counts.also_link} to add ·{" "}
-							{counts.reject} not about this topic
+							{resort ? (
+								<>
+									{counts.move} to move · {counts.reject} to
+									take off · {kept} left as they are
+								</>
+							) : (
+								<>
+									{counts.move} to move · {counts.also_link}{" "}
+									to add · {counts.reject} not about this
+									topic
+								</>
+							)}
 						</P>
 					</div>
 				)}

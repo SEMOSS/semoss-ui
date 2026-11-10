@@ -13,5 +13,6 @@ export * from "./image";
 export * from "./json";
 export * from "./markdown";
 export * from "./object";
+export * from "./observable";
 export { asString } from "./string";
 export * from "./text";

@@ -4,7 +4,6 @@ import React from "react";
 import { beforeEach, expect, test, vi } from "vitest";
 import { toast } from "@semoss/ui/next";
 import type { MCPOverlay } from "@/components/mcp/mcp-overlay";
-import { ConversationWorkspaceActionsContext } from "@/features/conversation/conversation-workspace-actions.context";
 import type { RoomStore } from "@/stores/room/room.store";
 import { RoomInput } from "./room-input";
 import { RoomInputMenuMCP } from "./room-input-menu-mcp";
@@ -14,7 +13,6 @@ import { RoomInputMenuUpload } from "./room-input-menu-upload";
 // Fake editor state shared between mocks
 // ---------------------------------------------------------------------------
 const openFilePicker = vi.hoisted(() => vi.fn());
-const openSettings = vi.hoisted(() => vi.fn());
 // stable, as the SDK's are, so views keep the same logins between renders
 const sessionLogins = vi.hoisted(() => ({
 	logins: {},
@@ -33,6 +31,11 @@ let triggerOnChange: (() => void) | null = null;
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
+
+// the slash menu's commands have their own tests; the composer only hands them on
+vi.mock("@/features/conversation/use-room-slash-commands", () => ({
+	useRoomSlashCommands: () => [],
+}));
 
 // the session's logins, without reading them from a server
 vi.mock("@semoss/sdk/react", async (importOriginal) => ({
@@ -57,11 +60,6 @@ vi.mock("@semoss/i18n", async (importOriginal) => {
 		}),
 	};
 });
-
-// the settings dialog belongs to the main layout, which these tests leave out
-vi.mock("@/features/settings/settings-dialog.context", () => ({
-	useSettingsDialog: () => ({ openSettings }),
-}));
 
 vi.mock("@/contexts/file-drag-context", async (importOriginal) => {
 	const actual =
@@ -129,9 +127,16 @@ vi.mock("@/components/mcp/mcp-overlay", () => ({
 		defaultTab,
 		onClose,
 		values,
+		allowDefaultAgent,
+		isDefaultAgent,
 	}: React.ComponentProps<typeof MCPOverlay>) =>
 		open ? (
-			<div role="dialog" aria-label={defaultTab}>
+			<div
+				role="dialog"
+				aria-label={defaultTab}
+				data-allow-default-agent={String(Boolean(allowDefaultAgent))}
+				data-default-agent={String(isDefaultAgent)}
+			>
 				<button type="button" onClick={() => onClose()}>
 					Close picker
 				</button>
@@ -145,6 +150,18 @@ vi.mock("@/components/mcp/mcp-overlay", () => ({
 					}
 				>
 					Save agent
+				</button>
+				<button
+					type="button"
+					onClick={() =>
+						onClose({
+							mcp: values,
+							workspace: null,
+							isDefaultAgent: true,
+						})
+					}
+				>
+					Save Default Agent
 				</button>
 			</div>
 		) : null,
@@ -187,8 +204,6 @@ vi.mock("lexical", async (importOriginal) => {
 			},
 		})),
 		$createTextNode: vi.fn((text: string) => text),
-		$isElementNode: vi.fn(() => true),
-		$isSlashCommandNode: vi.fn(() => false),
 	};
 });
 
@@ -263,7 +278,6 @@ const defaultProps = {
 	room: {
 		chatTools: {
 			isAgentMode: false,
-			openToolsPanel: vi.fn(),
 		},
 		connectors: {
 			services: [],
@@ -390,7 +404,7 @@ test("stop delegates cancellation and never submits a message", () => {
 test("has one add menu and no standalone tools or mode chip", () => {
 	render(<RoomInput {...defaultProps} />);
 	expect(
-		screen.getAllByRole("button", { name: "input.openSettings" }),
+		screen.getAllByRole("button", { name: "input.addToChat" }),
 	).toHaveLength(1);
 	expect(
 		screen.queryByRole("button", { name: "menuUpload.attachDocument" }),
@@ -416,7 +430,7 @@ test("shows only a selected agent next to add and opens its picker when editable
 		/>,
 	);
 	const agent = screen.getByRole("button", { name: "Example agent" });
-	const add = screen.getByRole("button", { name: "input.openSettings" });
+	const add = screen.getByRole("button", { name: "input.addToChat" });
 	expect(add.parentElement).toBe(agent.parentElement);
 	fireEvent.click(agent);
 	expect(screen.getByRole("dialog", { name: "AGENT" })).toBeVisible();
@@ -439,6 +453,45 @@ test("keeps an existing room's agent read-only", () => {
 	expect(screen.queryByRole("dialog")).toBeNull();
 });
 
+test("an existing agent room without a saved agent shows a read-only Default Agent pill", () => {
+	const { rerender } = render(
+		<RoomInput
+			{...defaultProps}
+			room={{ ...defaultProps.room, mode: "agent" } as RoomStore}
+			onMcpChange={vi.fn()}
+		/>,
+	);
+	const pill = screen.getByRole("button", { name: "modes.defaultAgent" });
+	expect(pill).toHaveAttribute("aria-disabled", "true");
+	fireEvent.click(pill);
+	expect(screen.queryByRole("dialog")).toBeNull();
+	rerender(
+		<RoomInput
+			{...defaultProps}
+			room={{ ...defaultProps.room, mode: "chat" } as RoomStore}
+			onMcpChange={vi.fn()}
+		/>,
+	);
+	expect(
+		screen.queryByRole("button", { name: "modes.defaultAgent" }),
+	).toBeNull();
+});
+
+test("a new chat in agent mode without a saved agent shows an editable Default Agent pill", () => {
+	render(
+		<RoomInput
+			{...defaultProps}
+			room={{ ...defaultProps.room, mode: "agent" } as RoomStore}
+			onMcpChange={vi.fn()}
+			onWorkspaceChange={vi.fn()}
+		/>,
+	);
+	const pill = screen.getByRole("button", { name: "modes.defaultAgent" });
+	expect(pill).not.toHaveAttribute("aria-disabled");
+	fireEvent.click(pill);
+	expect(screen.getByRole("dialog", { name: "AGENT" })).toBeVisible();
+});
+
 test("keeps optimizer beside the editor after typing and disables it while busy", () => {
 	featureFlags.enablePromptOptimizer = true;
 	const { rerender } = render(<RoomInput {...defaultProps} />);
@@ -455,7 +508,7 @@ test("keeps optimizer beside the editor after typing and disables it while busy"
 	).toBeDisabled();
 });
 
-test("routes file, tool, and source actions from the single add menu", async () => {
+test("routes file and tool actions from the single add menu", async () => {
 	const user = userEvent.setup();
 	render(
 		<RoomInput
@@ -484,7 +537,7 @@ test("routes file, tool, and source actions from the single add menu", async () 
 			)}
 		/>,
 	);
-	const add = screen.getByRole("button", { name: "input.openSettings" });
+	const add = screen.getByRole("button", { name: "input.addToChat" });
 	await user.click(add);
 	await user.click(
 		screen.getByRole("menuitem", { name: "menuUpload.attachDocument" }),
@@ -529,21 +582,16 @@ test("opens prompts from the inline action before the microphone", async () => {
 	).toBeVisible();
 });
 
-test("keeps Workspace accessible during a turn while locking mutating menu actions", async () => {
+test("locks mutating menu actions during a turn", async () => {
 	const user = userEvent.setup();
-	const openWorkspace = vi.fn();
 	render(
-		<ConversationWorkspaceActionsContext.Provider value={openWorkspace}>
-			<RoomInput
-				{...defaultProps}
-				MenuComponent={undefined}
-				sendState="stop"
-			/>
-		</ConversationWorkspaceActionsContext.Provider>,
+		<RoomInput
+			{...defaultProps}
+			MenuComponent={undefined}
+			sendState="stop"
+		/>,
 	);
-	await user.click(
-		screen.getByRole("button", { name: "input.openSettings" }),
-	);
+	await user.click(screen.getByRole("button", { name: "input.addToChat" }));
 	for (const name of [
 		"menuUpload.attachDocument",
 		"menuKnowledge.addKnowledge 0",
@@ -554,26 +602,6 @@ test("keeps Workspace accessible during a turn while locking mutating menu actio
 			"true",
 		);
 	}
-	expect(screen.getAllByRole("separator")).toHaveLength(1);
-	await user.click(
-		screen.getByRole("menuitem", { name: "studio.openWorkArea" }),
-	);
-	expect(openWorkspace).toHaveBeenCalledTimes(1);
-});
-
-test("Connectors opens the settings dialog on its Connectors page", async () => {
-	openSettings.mockClear();
-	const user = userEvent.setup();
-	render(<RoomInput {...defaultProps} MenuComponent={undefined} />);
-	await user.click(
-		screen.getByRole("button", { name: "input.openSettings" }),
-	);
-	await user.click(
-		screen.getByRole("menuitem", {
-			name: "sidebar:settings.sections.connectors",
-		}),
-	);
-	expect(openSettings).toHaveBeenCalledWith("connectors");
 });
 
 test("new chats choose execution mode separately from the saved agent", async () => {
@@ -597,7 +625,7 @@ test("new chats choose execution mode separately from the saved agent", async ()
 		/>,
 	);
 	setEditorText("Keep composed text");
-	const add = screen.getByRole("button", { name: "input.openSettings" });
+	const add = screen.getByRole("button", { name: "input.addToChat" });
 	await user.click(add);
 	expect(
 		screen.getByRole("menuitemradio", { name: "modes.ask" }),
@@ -610,6 +638,10 @@ test("new chats choose execution mode separately from the saved agent", async ()
 	expect(screen.queryByRole("dialog")).toBeNull();
 	expect(add).toHaveFocus();
 	rerender(<RoomInput {...props} room={defaultProps.room} />);
+	// agent mode with no saved agent runs Default Agent, which the pill names
+	expect(
+		screen.getByRole("button", { name: "modes.defaultAgent" }),
+	).toBeVisible();
 	await user.click(add);
 	expect(
 		screen.getByRole("menuitemradio", { name: "modes.agent" }),
@@ -618,7 +650,7 @@ test("new chats choose execution mode separately from the saved agent", async ()
 	expect(onExitAgentHarness).toHaveBeenCalledTimes(1);
 	await user.click(add);
 	await user.click(
-		screen.getByRole("menuitem", { name: "menuWorkspace.selectAgent" }),
+		screen.getByRole("menuitem", { name: "modes.selectedAgent" }),
 	);
 	expect(screen.getByRole("dialog", { name: "AGENT" })).toBeVisible();
 	await user.click(screen.getByRole("button", { name: "Close picker" }));
@@ -639,6 +671,7 @@ test.each([true, false])(
 		render(
 			<RoomInput
 				{...defaultProps}
+				room={{ ...defaultProps.room, mode: "chat" } as RoomStore}
 				MenuComponent={undefined}
 				onMcpChange={vi.fn()}
 				onWorkspaceChange={onWorkspaceChange}
@@ -647,7 +680,7 @@ test.each([true, false])(
 			/>,
 		);
 		await user.click(
-			screen.getByRole("button", { name: "input.openSettings" }),
+			screen.getByRole("button", { name: "input.addToChat" }),
 		);
 		expect(screen.queryAllByRole("menuitemradio")).toHaveLength(
 			enableAgentHarness ? 2 : 0,
@@ -664,6 +697,71 @@ test.each([true, false])(
 		expect(onExitAgentHarness).not.toHaveBeenCalled();
 	},
 );
+
+test("when the agent decides the mode, new chats pick a saved agent, Default Agent, or No Agent", async () => {
+	featureFlags.enableAgentHarness = true;
+	featureFlags.modeFollowsAgent = true;
+	const user = userEvent.setup();
+	const onWorkspaceChange = vi.fn();
+	const onDefaultAgentChange = vi.fn();
+	const props = {
+		...defaultProps,
+		MenuComponent: undefined,
+		onMcpChange: vi.fn(),
+		onWorkspaceChange,
+		onDefaultAgentChange,
+	};
+	const { rerender } = render(
+		<RoomInput
+			{...props}
+			room={{ ...defaultProps.room, mode: "chat" } as RoomStore}
+		/>,
+	);
+	const add = screen.getByRole("button", { name: "input.addToChat" });
+	await user.click(add);
+	expect(screen.queryAllByRole("menuitemradio")).toHaveLength(0);
+	await user.click(
+		screen.getByRole("menuitem", { name: "menuWorkspace.selectAgent" }),
+	);
+	const picker = screen.getByRole("dialog", { name: "AGENT" });
+	expect(picker).toHaveAttribute("data-allow-default-agent", "false");
+	expect(picker).toHaveAttribute("data-default-agent", "false");
+	await user.click(screen.getByRole("button", { name: "Save agent" }));
+	expect(onWorkspaceChange).toHaveBeenCalledExactlyOnceWith({
+		workspace_id: "alpha",
+		name: "Alpha",
+	});
+	expect(onDefaultAgentChange).not.toHaveBeenCalled();
+
+	await user.click(add);
+	await user.click(
+		screen.getByRole("menuitem", { name: "menuWorkspace.selectAgent" }),
+	);
+	await user.click(
+		screen.getByRole("button", { name: "Save Default Agent" }),
+	);
+	expect(onWorkspaceChange).toHaveBeenLastCalledWith(null);
+	expect(onDefaultAgentChange).toHaveBeenCalledExactlyOnceWith(true);
+
+	// the draft now runs Default Agent: the chip and the menu name it
+	rerender(
+		<RoomInput
+			{...props}
+			room={{ ...defaultProps.room, mode: "agent" } as RoomStore}
+		/>,
+	);
+	const chip = screen.getByRole("button", { name: "modes.defaultAgent" });
+	await user.click(chip);
+	expect(screen.getByRole("dialog", { name: "AGENT" })).toHaveAttribute(
+		"data-default-agent",
+		"true",
+	);
+	await user.click(screen.getByRole("button", { name: "Close picker" }));
+	await user.click(add);
+	expect(
+		screen.getByRole("menuitem", { name: "modes.selectedAgent" }),
+	).toBeVisible();
+});
 
 test("connector attachments stay visible and removable without an uploaded file", () => {
 	const remove = vi.fn();

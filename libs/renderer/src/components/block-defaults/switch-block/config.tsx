@@ -3,7 +3,7 @@ import type { BlockConfig } from "../../../store";
 import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
 import { SwitchBlock, type SwitchBlockDef } from "./SwitchBlock";
 
-export const DefaultStyles: CSSProperties = {
+const DefaultStyles: CSSProperties = {
 	width: "fit-content",
 };
 

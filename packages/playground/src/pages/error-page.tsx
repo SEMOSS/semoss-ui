@@ -5,7 +5,7 @@ import { useTranslation } from "@semoss/i18n";
 import { Button, cn, H1, P, SidebarTrigger, useTheme } from "@semoss/ui/next";
 import { RootContext } from "@/contexts/root-context";
 
-export interface ErrorPageProps {
+interface ErrorPageProps {
 	isInnerComponent?: boolean;
 }
 

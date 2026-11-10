@@ -16,7 +16,7 @@ const MODEL_WIDE_DETAILS: Readonly<Record<"PUBLIC" | "MODEL", string>> = {
 	MODEL: "Everyone together",
 };
 
-export interface AccessIdentityProps {
+interface AccessIdentityProps {
 	/** A person, a team, a model's public use or a model's total */
 	category: AccessIdentityCategory;
 	/** The person's login type, or the team's type */

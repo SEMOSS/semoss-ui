@@ -45,5 +45,3 @@ export function getReplayWaitAfterMs(
 		? waitAfterMs
 		: fallback;
 }
-
-export { sleep as wait } from "@semoss/utility/async";

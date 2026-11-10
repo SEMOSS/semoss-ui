@@ -8,6 +8,8 @@ import { WorkThreadPage } from "@/pages/work-thread.page";
 export function ThreadPage() {
 	const { threadId } = useParams();
 	if (!threadId) return <NotFoundPage />;
+	// a thread imported from Sources has no saved record; the page reads it from its source again
+	if (threadId.startsWith("connected:")) return <WorkThreadPage />;
 	if (!threadId.startsWith("room:"))
 		return (
 			<SavedRecordBoundary kind="thread" id={threadId}>

@@ -28,7 +28,7 @@ export interface ActionsMenuItem {
 	onSelect: () => void;
 }
 
-export interface ActionsMenuProps {
+interface ActionsMenuProps {
 	/** The actions the viewer has, in order. With none, the menu is not shown. */
 	items: ActionsMenuItem[];
 	/** Prefix for the data-testid of the trigger and each item */

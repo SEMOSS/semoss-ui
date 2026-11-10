@@ -1,0 +1,192 @@
+import { ArrowRight } from "lucide-react";
+import { useState } from "react";
+import { Link } from "react-router";
+import type { Variable } from "@semoss/renderer";
+import { STATE_VERSION } from "@semoss/renderer/version";
+import { useSession } from "@semoss/sdk/react";
+import { Button, H4, Muted } from "@semoss/ui/next";
+import BI from "@/assets/img/BI.png";
+import BIDark from "@/assets/img/BI-dark.png";
+import DevBanner from "@/assets/img/DevBanner.png";
+import DevBannerDark from "@/assets/img/DevBanner-dark.png";
+import Playwright from "@/assets/img/Playwright.svg";
+import PlaywrightDark from "@/assets/img/Playwright-dark.svg";
+import Terminal from "@/assets/img/Terminal.png";
+import TerminalDark from "@/assets/img/Terminal-dark.png";
+import { NewAppModal } from "@/components/app/new-app-modal";
+import { BannerSection } from "@/components/landing/banner-section";
+import { LandingHeader } from "@/components/landing/landing-header";
+import { SystemAppCard } from "@/components/landing/system-app-card";
+import { usePage } from "@/hooks/use-page";
+import { useAdminMode } from "@/hooks/useAdminMode";
+import { useNavigate } from "@/hooks/useNavigate";
+import {
+	BASE_APP_QUERIES,
+	BASE_APP_VARIABLES,
+	BASE_PAGE_BLOCKS,
+} from "@/pages/app/app.constants";
+import { NavbarHeader } from "../components/shared/navbar-header";
+import { NavbarLeft } from "../components/shared/navbar-left";
+
+/**
+ * The home page: the Playground banner, the ways to start building an app for
+ * users who can add projects, and the system apps.
+ */
+export const LandingPage: React.FC = () => {
+	// setup the page
+	usePage({
+		showNavbarSearch: true,
+	});
+
+	const isAdmin = useSession((state) => state.user?.isAdmin === true);
+	const canPerform = useSession((state) => state.canPerform);
+	const navigate = useNavigate();
+	const adminMode = useAdminMode();
+
+	const [newAppOptions, setNewAppOptions] = useState<
+		React.ComponentProps<typeof NewAppModal>["options"] | null
+	>(null);
+
+	const isNameOpen = !!newAppOptions;
+
+	const isRestricted = !canPerform("PROJECT", "add");
+
+	return (
+		<>
+			<NavbarLeft>
+				<NavbarHeader />
+			</NavbarLeft>
+			<div className="flex w-full flex-col gap-6 pb-8">
+				<BannerSection
+					imageUrl={DevBanner}
+					darkImageUrl={DevBannerDark}
+					tagline={"Experiment with AI in the Playground"}
+					description={
+						"Experience AI that goes beyond chat. Deploy multiple LLMs with powerful tool-calling abilities through MCP integration. Watch AI agents manipulate files, call APIs, and execute real workflows while tackling complex tasks. Turn conversations into actions and ideas into results."
+					}
+					link={{
+						label: "Launch Playground",
+						to: "../../playground/dist/",
+					}}
+				/>
+				{!isRestricted && (
+					<div className="flex w-full flex-col gap-6">
+						<div className="flex grow flex-row gap-6">
+							<div className="flex w-full flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+								<div className="flex flex-col gap-1">
+									<H4 className="font-bold text-foreground">
+										Get started with our tool
+									</H4>
+									<Muted>
+										Start building your app in the way that
+										works best for you.
+									</Muted>
+								</div>
+								<Button
+									asChild
+									variant="ghost"
+									size="default"
+									className="shrink-0 text-primary hover:bg-transparent hover:text-primary"
+								>
+									<Link to="/templates">
+										Browse Templates
+										<ArrowRight className="size-4" />
+									</Link>
+								</Button>
+							</div>
+						</div>
+						{isNameOpen ? (
+							<NewAppModal
+								open={isNameOpen}
+								options={newAppOptions}
+								onClose={(appId) => {
+									if (appId) {
+										navigate(`/app/${appId}/edit`);
+									} else {
+										// close the modal
+										setNewAppOptions(null);
+									}
+								}}
+							/>
+						) : null}
+						<LandingHeader
+							isAdmin={isAdmin && adminMode}
+							onCreate={(type) => {
+								if (type === "blocks") {
+									setNewAppOptions({
+										type: "blocks",
+										state: {
+											version: STATE_VERSION,
+											variables:
+												BASE_APP_VARIABLES as Record<
+													string,
+													Variable
+												>,
+											queries: BASE_APP_QUERIES,
+											blocks: BASE_PAGE_BLOCKS,
+											executionOrder: [],
+										},
+									});
+								} else if (type === "code") {
+									setNewAppOptions({
+										type: "code",
+									});
+								} else if (type === "agent") {
+									navigate("/app/new/prompt");
+								} else if (type === "automation") {
+									navigate("/automation/new");
+								} else if (type === "notebook") {
+									navigate("/notebook");
+								}
+							}}
+						/>
+					</div>
+				)}
+
+				<div className="flex w-full flex-col gap-3">
+					<div className="flex-col gap-1">
+						<H4 className="font-bold text-foreground">
+							Try these fan favorites
+						</H4>
+						<Muted>
+							Explore popular apps built by the community.
+						</Muted>
+					</div>
+					<div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2">
+						<SystemAppCard
+							name="Playground"
+							description="Test your apps and skills"
+							href="../../playground/dist/"
+							img={DevBanner}
+							darkImg={DevBannerDark}
+						/>
+
+						<SystemAppCard
+							name="Terminal"
+							description="Execute commands and see a response"
+							href="../../terminal/dist/"
+							img={Terminal}
+							darkImg={TerminalDark}
+						/>
+
+						<SystemAppCard
+							name="BI"
+							description="Develop dashboards and visualizations to view data"
+							href="../../legacy/dist/"
+							img={BI}
+							darkImg={BIDark}
+						/>
+
+						<SystemAppCard
+							name="Browser Automation"
+							description="Drive a remote browser, record what you do, and replay it later"
+							href="../../browser-automation/dist/"
+							img={Playwright}
+							darkImg={PlaywrightDark}
+						/>
+					</div>
+				</div>
+			</div>
+		</>
+	);
+};

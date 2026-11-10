@@ -4,7 +4,7 @@ import { useCollaborationSession } from "@/features/collaboration/state/collabor
 import { givenFirst } from "@/lib/person-name";
 import { BriefPanel } from "./brief-panel";
 import { useDashboard } from "./dashboard.context";
-import { dashboardTimeZone, eventStart } from "./dashboard-calendar";
+import { dashboardTimeZone, eventStart, isAllDay } from "./dashboard-calendar";
 import { DashboardResourceStatus } from "./dashboard-resource-status";
 import { dayKey } from "./dashboard-selectors";
 
@@ -28,12 +28,21 @@ export function BriefDay({ compact = false }: { compact?: boolean }) {
 	const events = (calendar.data ?? [])
 		.flatMap((event) => {
 			const start = eventStart(event);
-			return start && dayKey(start, zone) === today
-				? [{ event, start }]
+			const allDay = isAllDay(event);
+			return start &&
+				(allDay ? event.start : dayKey(start, zone)) === today
+				? [{ event, start, allDay }]
 				: [];
 		})
-		.sort((a, b) => a.start.getTime() - b.start.getTime());
-	const nextIndex = events.findIndex(({ start }) => start >= now);
+		// whole day events lead the day; east of UTC their UTC midnight would sort mid-morning
+		.sort(
+			(a, b) =>
+				Number(b.allDay) - Number(a.allDay) ||
+				a.start.getTime() - b.start.getTime(),
+		);
+	const nextIndex = events.findIndex(
+		({ start, allDay }) => !allDay && start >= now,
+	);
 	const markerIndex = nextIndex === -1 ? events.length : nextIndex;
 	const hasCalendar = Boolean(
 		state.settings.sourcesJson.calendar && calendar.data && !calendar.error,
@@ -84,15 +93,22 @@ export function BriefDay({ compact = false }: { compact?: boolean }) {
 											index > 0 &&
 												index !== markerIndex &&
 												"border-t",
-											entry.start < now &&
+											!entry.allDay &&
+												entry.start < now &&
 												"text-muted-foreground",
 										)}
 									>
 										<time
-											dateTime={entry.start.toISOString()}
+											dateTime={
+												entry.allDay
+													? entry.event.start
+													: entry.start.toISOString()
+											}
 											className="w-12 shrink-0 pt-0.5 text-sm tabular-nums"
 										>
-											{time.format(entry.start)}
+											{entry.allDay
+												? "All day"
+												: time.format(entry.start)}
 										</time>
 										<div className="min-w-0 flex-1">
 											<Button

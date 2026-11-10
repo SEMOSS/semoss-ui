@@ -27,7 +27,7 @@ import { GuardrailEngineField } from "./guardrail-engine-field";
 import { useGuardrailEngineParameters } from "./guardrail-engine-parameters";
 import { GuardrailInputMappingField } from "./guardrail-input-mapping-field";
 
-export interface GuardrailReactorEntryFieldProps {
+interface GuardrailReactorEntryFieldProps {
 	/** The check being edited. */
 	value: GuardrailReactorFormValue;
 

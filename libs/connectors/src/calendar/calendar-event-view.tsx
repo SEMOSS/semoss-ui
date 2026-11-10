@@ -24,7 +24,7 @@ import type { CalendarApp } from "./calendar-apps";
 import { useEventTime } from "./use-event-time";
 
 /** Props for {@link CalendarEventView}. */
-export interface CalendarEventViewProps
+interface CalendarEventViewProps
 	extends Pick<ConnectorViewerProps, "isVisible" | "onControlsChange"> {
 	/** The calendar the event is on. */
 	app: CalendarApp;

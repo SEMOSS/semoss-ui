@@ -4,7 +4,7 @@ import { copyTextToClipboard as copyText } from "@semoss/utility/clipboard";
 import { getErrorMessage } from "@semoss/utility/error";
 
 export { isOutputJSON } from "@semoss/utility/json";
-export { splitAtPeriod, toTitleCase } from "@semoss/utility/text";
+export { splitAtPeriod } from "@semoss/utility/text";
 
 /**
  * @desc Copies string to clipboard

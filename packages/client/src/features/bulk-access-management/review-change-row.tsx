@@ -12,7 +12,7 @@ const ACTION_STYLES: Record<
 	REMOVE: { label: "Removed", className: "text-destructive" },
 };
 
-export interface ReviewChangeRowProps {
+interface ReviewChangeRowProps {
 	/** Gives, changes or takes away access */
 	action: PermissionChange["action"];
 	/** The person's or team's name */

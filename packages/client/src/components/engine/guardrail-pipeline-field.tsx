@@ -35,7 +35,7 @@ export interface GuardrailRevealTarget {
 	entryId: string;
 }
 
-export interface GuardrailPipelineFieldProps {
+interface GuardrailPipelineFieldProps {
 	/** The rule being edited. */
 	value: GuardrailPipelineFormValue;
 

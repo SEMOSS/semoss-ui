@@ -5,7 +5,6 @@ export { ProjectAccessControl } from "./project-access-control";
 export { ProjectAccessRequestButton } from "./project-access-request-button";
 export { ProjectCatalog } from "./project-catalog";
 export { ProjectDetailTabs } from "./project-detail-tabs";
-export { ProjectGridItem } from "./project-grid-item";
 export { ProjectNavbar } from "./project-navbar";
 export { ProjectOverview } from "./project-overview";
 export { ProjectShareButton } from "./project-share-button";

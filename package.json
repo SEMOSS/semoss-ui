@@ -14,7 +14,8 @@
     "test": "turbo run test",
     "test:watch": "turbo run test:watch",
     "check": "biome check",
-    "fix": "biome check --write"
+    "fix": "biome check --write",
+    "clean": "knip"
   },
   "author": "",
   "license": "Apache-2.0",
@@ -23,10 +24,8 @@
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
     "@types/jest": "^29.5.14",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "jest": "30.4.2",
     "jsdom": "~22.1.0",
+    "knip": "^5.88.1",
     "lefthook": "^1.12.2",
     "turbo": "^2.9.14",
     "typescript": "~6.0.0"

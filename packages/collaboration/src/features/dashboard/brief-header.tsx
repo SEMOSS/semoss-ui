@@ -13,7 +13,7 @@ import { checkTime } from "@/features/collaboration/live/work-refresh-status";
 import { useWorkUpdates } from "@/features/collaboration/live/work-updates.context";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import { useDashboard } from "./dashboard.context";
-import { dashboardTimeZone, eventStart } from "./dashboard-calendar";
+import { dashboardTimeZone, eventStart, isAllDay } from "./dashboard-calendar";
 import { dayKey } from "./dashboard-selectors";
 import { selectToday } from "./today-selectors";
 
@@ -48,7 +48,9 @@ export function BriefHeader() {
 	const next = (calendar.data ?? [])
 		.flatMap((event) => {
 			const start = eventStart(event);
+			// a whole day event has no time to meet at
 			return start &&
+				!isAllDay(event) &&
 				start >= now &&
 				dayKey(start, zone) === dayKey(now, zone)
 				? [start]

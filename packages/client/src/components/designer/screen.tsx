@@ -2,16 +2,16 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { ActionMessages, useBlocks } from "@semoss/renderer";
-import { useDesigner } from "@/hooks";
+import { useDesigner } from "@/hooks/useDesigner";
 import {
 	getNearestBlock,
 	getNearestBlockElement,
 	getNearestSlot,
 	getNearestSlotElement,
 	getRelativeSize,
-} from "@/stores";
+} from "@/stores/designer/designer.utility";
 import { BlockSettingsMask } from "./BlockSettingsMask";
-import { DeleteDuplicateMask } from "./DeleteDuplicateMask";
+import { DeleteDuplicateMask } from "./delete-duplicate-mask";
 import { FormMenuHost } from "./FormMenuHost";
 import { Ghost } from "./Ghost";
 import { HoveredMask } from "./HoveredMask";
@@ -24,6 +24,11 @@ interface ScreenProps {
 	children: React.ReactNode;
 }
 
+/**
+ * The designer canvas: selects and hovers blocks under the pointer, places
+ * dragged blocks, deletes the selection on Ctrl/Cmd+Shift+X, and draws the masks
+ * over the selected and hovered blocks.
+ */
 export const Screen = observer((props: ScreenProps) => {
 	const { children } = props;
 
@@ -43,7 +48,7 @@ export const Screen = observer((props: ScreenProps) => {
 		designer.setSelected(designer.hovered);
 	};
 
-	const handleMultipleSelection = (event) => {
+	const handleMultipleSelection = (event: React.MouseEvent) => {
 		if (!designer.hovered || designer.hovered === designer.selected) {
 			return;
 		}

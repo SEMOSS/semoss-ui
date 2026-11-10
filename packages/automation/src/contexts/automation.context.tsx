@@ -4,7 +4,7 @@ import type {
 	AutomationNodeTrace,
 } from "../domain/automation.types";
 
-export interface AutomationContextValue {
+interface AutomationContextValue {
 	nodes: AutomationNode[];
 	readOnly: boolean;
 	viewingHistory: boolean;

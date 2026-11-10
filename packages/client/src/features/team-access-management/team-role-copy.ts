@@ -1,7 +1,7 @@
 import type { TeamRole } from "@semoss/sdk";
 
 /** What a team's Bulk Access Management says about one of its lists */
-export interface TeamRoleCopy {
+interface TeamRoleCopy {
 	/** The list's name, on its tab and its card */
 	title: string;
 	/** What being in the list means, under the card's title */

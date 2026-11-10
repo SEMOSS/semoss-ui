@@ -2,7 +2,7 @@ import { useCallback, useSyncExternalStore } from "react";
 import type { MailComposeAlternative } from "./mail-compose";
 
 /** An operation the user ran in place of a compose call, and what it returned. */
-export interface MailComposeOutcome {
+interface MailComposeOutcome {
 	alternative: MailComposeAlternative;
 	result: unknown;
 }

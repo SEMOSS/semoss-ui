@@ -111,6 +111,8 @@ const combine = change({
 
 beforeEach(() => {
 	vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
+	// the setup chat keeps its messages per review, and every test here reuses one review id
+	sessionStorage.clear();
 });
 afterEach(() => {
 	cleanup();
@@ -316,6 +318,30 @@ describe("setup assistant", () => {
 			["Recruiting", "Northwind Delivery"],
 		);
 		expect(session.saved?.result.merges).toHaveLength(1);
+	});
+
+	it("marks a proposed combination Done only once its preview is used", async () => {
+		const { actions } = assistantSession([combine]);
+		const user = userEvent.setup();
+		render(step(actions));
+		await screen.findByRole("heading", { name: "Your main areas of work" });
+		const preview = await openCombinePreview(user);
+		await user.click(
+			within(preview).getByRole("button", { name: "Back to topics" }),
+		);
+		const chat = screen.getByRole("dialog", { name: "Setup assistant" });
+		// only its preview opened, so the combination is still on offer
+		expect(within(chat).queryByText("Done")).not.toBeInTheDocument();
+
+		await user.click(within(chat).getByRole("button", { name: "Apply" }));
+		await user.click(
+			within(
+				await screen.findByRole("dialog", {
+					name: "Review your grouping changes",
+				}),
+			).getByRole("button", { name: "Use this grouping in my draft" }),
+		);
+		expect(await within(chat).findByText("Done")).toBeVisible();
 	});
 
 	it("shows a blocked combination honestly and does not change the draft", async () => {

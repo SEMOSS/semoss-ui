@@ -204,7 +204,7 @@ const RoomAuditLogPanel = observer(() => {
 
 /** The room's activity log. One per sidebar. */
 export const ROOM_AUDIT_LOG_PANEL: WorkbenchPanelConfig = {
-	name: "Activity Log",
+	name: "Activity",
 	icon: ({ className }) => <ScrollTextIcon className={className} />,
 	canRename: false,
 	mount: "keepAlive",

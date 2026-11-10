@@ -38,7 +38,7 @@ const CHOSEN_MODE_CLASSES =
 	"aria-checked:border-primary aria-checked:bg-primary aria-checked:text-primary-foreground aria-checked:hover:bg-primary/90 aria-checked:hover:text-primary-foreground";
 
 /** Props for {@link DatabaseTransactionOptions}. */
-export interface DatabaseTransactionOptionsProps {
+interface DatabaseTransactionOptionsProps {
 	/** Whether the options are locked, as they are while the script runs. */
 	disabled?: boolean;
 }

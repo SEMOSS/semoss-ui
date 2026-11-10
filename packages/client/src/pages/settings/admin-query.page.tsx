@@ -1,0 +1,124 @@
+import { useId, useState } from "react";
+import { Navigate } from "react-router";
+import { useConfig } from "@semoss/sdk/react";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
+import { WorkbenchProvider } from "@semoss/workbench";
+import {
+	ADMIN_QUERY_COMPONENTS,
+	AdminQueryWorkbench,
+} from "@/components/workbench/engine/database/admin-query-workbench";
+import { EngineContext } from "@/contexts/engine-context";
+import { useSettings } from "@/hooks/useSettings";
+
+const DATABASE_OPTIONS = [
+	{ label: "Audit Logs", value: "AuditLogs" },
+	{ label: "Local Master Database", value: "LocalMasterDatabase" },
+	{
+		label: "Model Inference Logs Database",
+		value: "ModelInferenceLogsDatabase",
+	},
+	{ label: "Prompt Database", value: "PromptDatabase" },
+	{ label: "Scheduler", value: "scheduler" },
+	{ label: "Security", value: "security" },
+	{ label: "Themes", value: "themes" },
+	{ label: "User Tracking Database", value: "UserTrackingDatabase" },
+];
+
+/**
+ * Admin Query: pick one of the platform's system databases and query it in a
+ * database workbench. Admins in admin mode only; anyone else goes to Settings.
+ */
+export const AdminQueryPage = () => {
+	const notificationEnabled = useConfig(
+		(state) => state.config?.notificationEnabled ?? false,
+	);
+	const { adminMode } = useSettings();
+	const dbSelectId = useId();
+	const [selectedDatabase, setSelectedDatabase] = useState("");
+
+	const databaseOptions = notificationEnabled
+		? [
+				...DATABASE_OPTIONS,
+				{ label: "Notification", value: "Notification" },
+			]
+		: DATABASE_OPTIONS;
+
+	if (!adminMode) {
+		return <Navigate to={"/settings"} />;
+	}
+
+	return (
+		<div className="flex w-full flex-col gap-4">
+			<div className="flex w-full max-w-md flex-col gap-2">
+				<label
+					htmlFor={dbSelectId}
+					className="text-muted-foreground text-sm"
+				>
+					Database
+				</label>
+				<Select
+					value={selectedDatabase}
+					onValueChange={setSelectedDatabase}
+				>
+					<SelectTrigger id={dbSelectId} className="w-full">
+						<SelectValue placeholder="Select database" />
+					</SelectTrigger>
+					<SelectContent>
+						{databaseOptions.map((option, i) => (
+							<SelectItem
+								value={option.value}
+								key={option.value}
+								data-testid={`adminQueryPage-db-option-${i}`}
+							>
+								{option.label}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+			</div>
+
+			{selectedDatabase ? (
+				<div className="h-[calc(100dvh-240px)] min-h-[480px] w-full overflow-hidden">
+					{/* Reuse workbench panels that now read from useEngine by
+					injecting a minimal database-shaped context for admin routes. */}
+					<EngineContext.Provider
+						value={{
+							type: "DATABASE",
+							catalog: {
+								name: "admin",
+								path: "",
+							},
+							engine: {
+								engine_id: selectedDatabase,
+								engine_name: selectedDatabase,
+								engine_type: "DATABASE",
+							},
+							permission: "OWNER",
+							refresh: () => null,
+							update: () => null,
+						}}
+					>
+						{/* keyed per database so each system DB gets its own
+						workbench instance and persisted layout */}
+						<WorkbenchProvider
+							key={selectedDatabase}
+							components={ADMIN_QUERY_COMPONENTS}
+						>
+							<AdminQueryWorkbench />
+						</WorkbenchProvider>
+					</EngineContext.Provider>
+				</div>
+			) : (
+				<div className="flex h-60 w-full items-center justify-center rounded-2xl border border-border/50 border-dashed bg-card/50 text-muted-foreground text-sm">
+					Select a database to begin querying.
+				</div>
+			)}
+		</div>
+	);
+};

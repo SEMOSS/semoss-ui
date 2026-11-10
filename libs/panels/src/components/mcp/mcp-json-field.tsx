@@ -17,7 +17,7 @@ import {
 } from "@semoss/ui/next";
 import { locateJsonError } from "@semoss/utility/json";
 
-export interface MCPJsonFieldProps {
+interface MCPJsonFieldProps {
 	/** Current raw text. Not required to be valid JSON while the user types. */
 	value: string;
 

@@ -63,7 +63,7 @@ const SLASH_COMMANDS: SlashCommandDefinition[] = [
 ];
 
 /** Result of stripping slash commands out of a composer submission. */
-export interface SlashCommandParseResult {
+interface SlashCommandParseResult {
 	/** The message with command lines removed. */
 	text: string;
 	/** New effort when set by a command; null resets to the model default. */
