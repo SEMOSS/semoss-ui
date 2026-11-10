@@ -4,7 +4,6 @@ import {
 	HelpCircle,
 	MessagesSquareIcon,
 	MoreVertical,
-	PencilIcon,
 	Search,
 	SquarePenIcon,
 	StarIcon,
@@ -28,7 +27,6 @@ import {
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
-	Input,
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
@@ -57,13 +55,13 @@ import {
 	parseTimestampWithUtcDefault,
 } from "@semoss/utility/date";
 import { MobileNavigationClose } from "@/features/navigation/mobile-navigation-close";
-import { NavigationRail } from "@/features/navigation/navigation-rail";
 import { NavigationToggle } from "@/features/navigation/navigation-toggle";
 import { DownloadConversationDialog } from "@/features/room-actions/download-conversation-dialog";
 import {
 	renameRoom,
 	toggleRoomFavorite,
 } from "@/features/room-actions/use-room-actions";
+import { RoomName } from "@/features/room-name/room-name";
 import { useChat } from "@/hooks/use-chat";
 import { useRoot } from "@/hooks/use-root";
 import { AppLogo } from "./app-logo";
@@ -116,7 +114,6 @@ export const GlobalNav = observer(() => {
 	 * Inline rename state - tracks which room is being renamed
 	 */
 	const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
-	const [editingName, setEditingName] = useState("");
 
 	const [deletedSet, setDeletedSet] = useState(new Set<string>());
 
@@ -340,25 +337,14 @@ export const GlobalNav = observer(() => {
 	const handleToggleFavorite = (roomId: string, isFavorite: boolean) =>
 		toggleRoomFavorite(chat, roomId, isFavorite, t);
 
-	const handleStartRename = (roomId: string, currentName: string) => {
-		setEditingRoomId(roomId);
-		setEditingName(currentName);
-	};
+	const handleStartRename = (roomId: string) => setEditingRoomId(roomId);
 
-	const handleCancelRename = () => {
-		setEditingRoomId(null);
-		setEditingName("");
-	};
-
-	const handleSaveRename = async (roomId: string) => {
-		if (await renameRoom(chat, roomId, editingName, t))
-			handleCancelRename();
-	};
+	const handleCancelRename = () => setEditingRoomId(null);
 
 	return (
 		<>
 			<Sidebar
-				collapsible="icon"
+				collapsible="offcanvas"
 				variant="inset"
 				className="z-30 h-full p-0 transition-[width] duration-200 ease-in-out"
 			>
@@ -553,9 +539,6 @@ export const GlobalNav = observer(() => {
 											<SidebarMenu>
 												{rooms.map((room) => {
 													const roomId = room.ROOM_ID;
-													const name =
-														room.ROOM_NAME ||
-														t("messages.untitled");
 													const date = root.theme
 														.sidebar.chatHistoryDate
 														? parseTimestampWithUtcDefault(
@@ -580,6 +563,45 @@ export const GlobalNav = observer(() => {
 														editingRoomId ===
 														roomId;
 
+													// the same name, editable in place, whether or not it is being renamed
+													const roomName = (
+														<RoomName
+															name={
+																room.ROOM_NAME ??
+																""
+															}
+															placeholder={t(
+																"messages.untitled",
+															)}
+															isRenaming={
+																isEditing
+															}
+															onStartRename={() =>
+																handleStartRename(
+																	roomId,
+																)
+															}
+															onRename={(
+																nextName,
+															) =>
+																renameRoom(
+																	chat,
+																	roomId,
+																	nextName,
+																	t,
+																)
+															}
+															onStopRename={
+																handleCancelRename
+															}
+															className={
+																isEditing
+																	? "h-8 max-w-none flex-1"
+																	: "w-full font-medium text-sm leading-tight"
+															}
+														/>
+													);
+
 													// if the room is in the deleted set, don't render it
 													if (
 														deletedSet.has(roomId)
@@ -593,44 +615,7 @@ export const GlobalNav = observer(() => {
 															className="group relative flex"
 														>
 															{isEditing ? (
-																<Input
-																	value={
-																		editingName
-																	}
-																	onChange={(
-																		e,
-																	) =>
-																		setEditingName(
-																			e
-																				.target
-																				.value,
-																		)
-																	}
-																	onKeyDown={(
-																		e,
-																	) => {
-																		if (
-																			e.key ===
-																			"Enter"
-																		) {
-																			handleSaveRename(
-																				roomId,
-																			);
-																		} else if (
-																			e.key ===
-																			"Escape"
-																		) {
-																			handleCancelRename();
-																		}
-																	}}
-																	onBlur={() =>
-																		handleSaveRename(
-																			roomId,
-																		)
-																	}
-																	autoFocus
-																	className="h-8 flex-1"
-																/>
+																roomName
 															) : (
 																<>
 																	<SidebarMenuButton
@@ -650,15 +635,23 @@ export const GlobalNav = observer(() => {
 																			aria-label={
 																				"Select room"
 																			}
+																			onKeyDown={(
+																				event,
+																			) => {
+																				if (
+																					event.key !==
+																					"F2"
+																				)
+																					return;
+																				event.preventDefault();
+																				handleStartRename(
+																					roomId,
+																				);
+																			}}
 																		>
-																			<span
-																				dir="auto"
-																				className="truncate font-medium text-sm leading-tight"
-																			>
-																				{
-																					name
-																				}
-																			</span>
+																			{
+																				roomName
+																			}
 																			{date && (
 																				<span className="text-muted-foreground text-xs leading-none">
 																					{
@@ -736,22 +729,6 @@ export const GlobalNav = observer(() => {
 																				<DownloadIcon className="me-2 size-4" />
 																				{t(
 																					"actions.download",
-																				)}
-																			</DropdownMenuItem>
-																			<DropdownMenuItem
-																				onClick={(
-																					e,
-																				) => {
-																					e.stopPropagation();
-																					handleStartRename(
-																						roomId,
-																						name,
-																					);
-																				}}
-																			>
-																				<PencilIcon className="me-2 size-4" />
-																				{t(
-																					"actions.rename",
 																				)}
 																			</DropdownMenuItem>
 																			<DropdownMenuItem
@@ -898,7 +875,6 @@ export const GlobalNav = observer(() => {
 						</SidebarMenuItem>
 					</SidebarMenu>
 				</SidebarFooter>
-				<NavigationRail />
 			</Sidebar>
 
 			<DownloadConversationDialog

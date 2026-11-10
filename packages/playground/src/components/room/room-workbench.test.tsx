@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
@@ -34,6 +34,9 @@ vi.mock("@semoss/panels", async (original) => {
 		},
 	};
 });
+vi.mock("@/features/settings/settings-dialog.context", () => ({
+	useSettingsDialog: () => ({ openSettings: vi.fn() }),
+}));
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 	getI18n: () => ({ t: (key: string) => key }),
@@ -84,6 +87,14 @@ test("the Workspace has no strip above its tabs", () => {
 	render(<RoomLayoutTest room={createRoom()} />);
 	expect(screen.queryByTestId("workbench-border-top")).toBeNull();
 	expect(screen.queryByRole("button", { name: "workbench.view" })).toBeNull();
+});
+
+test("More actions leads the Workspace's left rail", () => {
+	const { container } = render(<RoomLayoutTest room={createRoom()} />);
+	const rail = container.querySelector<HTMLElement>("[data-rail='left']");
+	if (!rail) throw new Error("the left rail did not render");
+	const [first] = within(rail).getAllByRole("button");
+	expect(first).toHaveAccessibleName("studio.moreActions");
 });
 
 test("closing from the header and reopening retain drafts and panels and restore conversation focus", async () => {

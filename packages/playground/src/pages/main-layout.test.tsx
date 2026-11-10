@@ -71,9 +71,12 @@ test.each([
 		expect(
 			screen.queryByRole("button", { name: /toggle sidebar/i }),
 		).not.toBeInTheDocument();
+		// the navigation starts open, so the page has no button to open it
 		expect(
 			screen.queryByRole("button", { name: "actions.openNavigation" }),
 		).not.toBeInTheDocument();
+		// the page keeps the button's room either way, so it never shifts
+		expect(layout).toHaveClass("md:pt-10");
 		expect(layout.style.padding).toBe(style.padding ? "8px" : "");
 		expect(Object.isFrozen(overrides)).toBe(false);
 

@@ -8,10 +8,7 @@ import {
 	DropdownMenuTrigger,
 	toast,
 } from "@semoss/ui/next";
-import {
-	RoomActionsProvider,
-	useRoomActionsContext,
-} from "@/features/room-actions/room-actions.context";
+import { RoomActionsProvider } from "@/features/room-actions/room-actions.context";
 import type { RoomStore } from "@/stores/room/room.store";
 import { RoomActionMenuItems } from "./room-action-menu-items";
 import { RoomTitle } from "./room-title";
@@ -62,21 +59,24 @@ beforeEach(() => {
 	mocks.pinned = [];
 });
 
-/** A menu holding the room's actions, wired as the More actions menu is. */
+/** A menu holding the room's actions, as the More actions menu holds them. */
 function MoreActionsMenu() {
-	const roomActions = useRoomActionsContext();
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
 				<Button>More actions</Button>
 			</DropdownMenuTrigger>
-			<DropdownMenuContent
-				onCloseAutoFocus={roomActions?.handleMenuCloseAutoFocus}
-			>
+			<DropdownMenuContent>
 				<RoomActionMenuItems />
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);
+}
+
+/** Double-click the room's name to edit it, and return the field. */
+async function startRename(user: ReturnType<typeof userEvent.setup>) {
+	await user.dblClick(screen.getByText("Quarterly plan"));
+	return screen.findByRole("textbox", { name: "header.renameLabel" });
 }
 
 /** The room's name and its menu, inside the room's shared actions. */
@@ -98,7 +98,7 @@ async function openMenu(user: ReturnType<typeof userEvent.setup>) {
 	await user.click(screen.getByRole("button", { name: "More actions" }));
 }
 
-test("the room's name is plain text, with no menu of its own", () => {
+test("the room's name is a heading, with no menu of its own", () => {
 	renderTitle();
 	expect(
 		screen.getByRole("heading", { name: "Quarterly plan" }),
@@ -125,16 +125,10 @@ test("the room menu favorites, and says unfavorite once the room is a favorite",
 	expect(mocks.pinRoom).toHaveBeenCalledWith("r1", false);
 });
 
-test("rename edits the name in place: Enter saves, Escape keeps the old name", async () => {
+test("a double-click edits the name in place: Enter saves, Escape keeps the old name", async () => {
 	const user = userEvent.setup();
 	renderTitle();
-	await openMenu(user);
-	await user.click(
-		screen.getByRole("menuitem", { name: "sidebar:actions.rename" }),
-	);
-	const field = await screen.findByRole("textbox", {
-		name: "header.renameLabel",
-	});
+	const field = await startRename(user);
 	expect(field).toHaveValue("Quarterly plan");
 	await user.clear(field);
 	await user.type(field, "Q3 plan{Enter}");
@@ -145,14 +139,7 @@ test("rename edits the name in place: Enter saves, Escape keeps the old name", a
 		).toHaveFocus(),
 	);
 
-	await openMenu(user);
-	await user.click(
-		screen.getByRole("menuitem", { name: "sidebar:actions.rename" }),
-	);
-	await user.type(
-		await screen.findByRole("textbox", { name: "header.renameLabel" }),
-		" draft{Escape}",
-	);
+	await user.type(await startRename(user), " draft{Escape}");
 	expect(mocks.renameRoom).toHaveBeenCalledTimes(1);
 	expect(
 		screen.getByRole("heading", { name: "Quarterly plan" }),
@@ -163,13 +150,7 @@ test("rename refuses an empty name and keeps the field open", async () => {
 	const error = vi.spyOn(toast, "error").mockImplementation(() => "");
 	const user = userEvent.setup();
 	renderTitle();
-	await openMenu(user);
-	await user.click(
-		screen.getByRole("menuitem", { name: "sidebar:actions.rename" }),
-	);
-	const field = await screen.findByRole("textbox", {
-		name: "header.renameLabel",
-	});
+	const field = await startRename(user);
 	await user.clear(field);
 	await user.type(field, "{Enter}");
 	expect(error).toHaveBeenCalledWith("toasts.roomNameEmpty");
@@ -190,7 +171,7 @@ test("delete removes the room and leaves its page", async () => {
 	await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith("/"));
 });
 
-test("the menu lists the room's actions under its heading, and Rename takes focus", async () => {
+test("the menu lists the room's actions under its heading, with no Rename", async () => {
 	const user = userEvent.setup();
 	renderTitle();
 	await openMenu(user);
@@ -201,17 +182,16 @@ test("the menu lists the room's actions under its heading, and Rename takes focu
 		screen.getAllByRole("menuitem").map((item) => item.textContent),
 	).toEqual([
 		"sidebar:actions.favorite",
-		"sidebar:actions.rename",
 		"room:workspace.publish",
 		"sidebar:actions.download",
 		"sidebar:actions.delete",
 	]);
-	await user.click(
-		screen.getByRole("menuitem", { name: "sidebar:actions.rename" }),
-	);
-	const field = await screen.findByRole("textbox", {
-		name: "header.renameLabel",
-	});
+});
+
+test("the field takes focus as a double-click opens it", async () => {
+	const user = userEvent.setup();
+	renderTitle();
+	const field = await startRename(user);
 	await waitFor(() => expect(field).toHaveFocus());
 });
 
@@ -254,20 +234,14 @@ test("the menu leaves out Favorite where the chat history is hidden", async () =
 		screen.queryByRole("menuitem", { name: "sidebar:actions.favorite" }),
 	).toBeNull();
 	expect(
-		screen.getByRole("menuitem", { name: "sidebar:actions.rename" }),
+		screen.getByRole("menuitem", { name: "room:workspace.publish" }),
 	).toBeVisible();
 });
 
 test("rename saves the trimmed name", async () => {
 	const user = userEvent.setup();
 	renderTitle();
-	await openMenu(user);
-	await user.click(
-		screen.getByRole("menuitem", { name: "sidebar:actions.rename" }),
-	);
-	const field = await screen.findByRole("textbox", {
-		name: "header.renameLabel",
-	});
+	const field = await startRename(user);
 	await user.clear(field);
 	await user.type(field, "  Q4 plan  {Enter}");
 	expect(mocks.renameRoom).toHaveBeenCalledWith("r1", "Q4 plan");

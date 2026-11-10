@@ -25,7 +25,7 @@ import { ChatContext } from "@/contexts/chat-context";
 import { TourContext } from "@/contexts/tour-context";
 import { useWorkspaceNavigation } from "@/features/conversation/use-workspace-navigation";
 import { WorkspaceNavigationContext } from "@/features/conversation/workspace-navigation.context";
-import { MobileNavigationButton } from "@/features/navigation/mobile-navigation-button";
+import { NavigationButton } from "@/features/navigation/navigation-button";
 import { PageHeaderContext } from "@/features/navigation/page-header.context";
 import { SettingsDialogProvider } from "@/features/settings/settings-dialog-provider";
 import { useRoot } from "@/hooks/use-root";
@@ -205,13 +205,13 @@ export const MainLayout = observer(() => {
 										data-testid="main-layout"
 										className={cn(
 											"relative flex h-dvh w-full flex-col overflow-hidden bg-background",
-											!hasPageHeader && "pt-14 md:pt-0",
+											// room for the open-navigation button, kept while the desktop
+											// navigation is open too so the page never shifts
+											!hasPageHeader && "pt-14 md:pt-10",
 										)}
 										style={layoutStyle}
 									>
-										{!hasPageHeader && (
-											<MobileNavigationButton />
-										)}
+										{!hasPageHeader && <NavigationButton />}
 										<div className="relative min-h-0 w-full flex-1 overflow-hidden">
 											<Outlet />
 											{Object.values(

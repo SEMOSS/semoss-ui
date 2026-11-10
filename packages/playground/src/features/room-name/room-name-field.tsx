@@ -1,6 +1,6 @@
 import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { Input } from "@semoss/ui/next";
+import { cn, Input } from "@semoss/ui/next";
 
 interface RoomNameFieldProps {
 	/** The room's saved name, which the field starts from. */
@@ -18,6 +18,8 @@ interface RoomNameFieldProps {
 	 * after Enter or Escape but not after a click elsewhere.
 	 */
 	onClose: (shouldRefocus: boolean) => void;
+	/** Classes for the field, merged over its default size. */
+	className?: string;
 }
 
 /**
@@ -29,6 +31,7 @@ export function RoomNameField({
 	savedName,
 	onRename,
 	onClose,
+	className,
 }: RoomNameFieldProps) {
 	const { t } = useTranslation("room");
 	const [draftName, setDraftName] = useState(savedName);
@@ -71,7 +74,7 @@ export function RoomNameField({
 			onChange={(event) => setDraftName(event.target.value)}
 			onKeyDown={handleKeyDown}
 			onBlur={() => void handleSave(false)}
-			className="h-8 w-full max-w-sm"
+			className={cn("h-8 w-full max-w-sm", className)}
 		/>
 	);
 }
