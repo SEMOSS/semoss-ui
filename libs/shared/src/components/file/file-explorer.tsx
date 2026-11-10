@@ -16,6 +16,7 @@ import {
 	TreeView,
 } from "@semoss/ui/next";
 import type { FileItem } from "./file.types";
+import { canCreateItems } from "./file-explorer.adapters";
 import type {
 	FileExplorerApi,
 	FileExplorerItemActions,
@@ -299,10 +300,11 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 			)}
 
 			{NewFileOverlayComponent &&
-				(capabilities.mutate || capabilities.upload) && (
+				(canCreateItems(capabilities) || capabilities.upload) && (
 					<NewFileOverlayComponent
 						key={newFile.instance}
 						mode={explorer.mode}
+						adapter={explorer.adapter}
 						path={newFile.path}
 						open={newFile.isOpen}
 						action={newFile.action}

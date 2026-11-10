@@ -39,8 +39,11 @@ maps the output to `FileItem`s (`mapEntries(raw, path)` is handed the folder it 
 source whose entries carry no path), and says what the source can do. A source keeps anything
 its rows need in `FileItem.data`; `itemActions` adds the host's row button and context-menu
 entries, `renderError` draws a failed listing the host's way, and `searchScope: false` hides the
-scope choice for a search that always covers everything. `@semoss/connectors`' drive views are
-built this way.
+scope choice for a search that always covers everything. A source that can make files and
+folders but not rename, move, or copy them sets `create` alone: `canCreateItems` reads it,
+falling back to `mutate`, and it shows New, New File, and New Folder without the rest.
+`FileExplorer` hands the overlay the explorer's `adapter`, so it creates in that source rather
+than in the mode's asset tree. `@semoss/connectors`' drive views are built this way.
 
 **Every row's menu has three ways in.** Right-click, the row's More actions button, and
 Shift+F10 or the menu key on a focused row open the same menu, so the context-menu entries a
