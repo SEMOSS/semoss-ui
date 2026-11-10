@@ -29,8 +29,7 @@ import {
 import { formatToDataTestId, hashString } from "@semoss/utility/text";
 import { getTagBadgeStyle } from "@/utility";
 
-export interface CatalogGridItemProps
-	extends React.ComponentProps<typeof Card> {
+interface CatalogGridItemProps extends React.ComponentProps<typeof Card> {
 	/** Display style - list row or grid card */
 	variant: "LIST" | "CARD";
 	/** Variant specific options */

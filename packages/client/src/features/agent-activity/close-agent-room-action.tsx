@@ -9,7 +9,7 @@ import {
 import type { AgentRunRoomClosure } from "@/api/agent-runs";
 import { CloseAgentRoomDialog } from "./close-agent-room-dialog";
 
-export interface CloseAgentRoomActionProps {
+interface CloseAgentRoomActionProps {
 	/** The room to close */
 	roomId: string;
 	/** The room's name, or its id when it has none */

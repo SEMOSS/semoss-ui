@@ -17,6 +17,7 @@ import {
 	canEvictRoomEmailStore,
 	disposeRoomEmailStore,
 } from "@/features/room-email/room-email-store";
+import { sendsAsText } from "@/features/thread-assistant/api/thread-attachments";
 import { resolveThreadModel } from "@/features/thread-assistant/api/thread-model";
 import {
 	getThreadAgent,
@@ -48,6 +49,7 @@ import {
 } from "./api/room-schemas";
 import { saveRoomSourceFile } from "./api/save-room-source-file";
 import type { UploadedRoomFile } from "./api/upload-room-files";
+import { uploadRoomTextCopies } from "./api/upload-room-text-copies";
 import type { ComposerDraft } from "./components/room-composer.types";
 import { removeSubmittedComposerDraft } from "./components/submitted-composer-draft";
 import { type RoomSource, roomSourceSchema } from "./source-import/room-source";
@@ -228,6 +230,10 @@ export class RoomSession {
 	}
 	setComposerDraft = (composerDraft: ComposerDraft): void => {
 		this.update({ composerDraft });
+	};
+	/** Show a name the server already saved, such as a rename from the chat list. */
+	setTitle = (title: string): void => {
+		this.update({ title });
 	};
 	/** Queue a saved file once without replacing an existing submission's entry. */
 	addContextFile = (file: UploadedRoomFile): void => {
@@ -713,13 +719,28 @@ export class RoomSession {
 		try {
 			if (this.snapshot.options?.modelId !== this.snapshot.modelId)
 				await this.updateOptions({ modelId: this.snapshot.modelId });
+			const files = submittedDraft.composer.files;
+			const textFiles = files.filter((file) => sendsAsText(file.name));
+			// awaited only when needed, so any other send starts its turn, and its Stop, at once
+			const textCopies = textFiles.length
+				? await uploadRoomTextCopies(
+						this.insight.actions,
+						this.insight.insightId,
+						textFiles,
+					)
+				: [];
+			for (const copy of textCopies)
+				existingMedia.push({
+					...copy,
+					insightId: this.insight.insightId,
+				});
 			requested = true;
 			const accepted = await this.controller.send(
 				{
 					...submission,
 					text: command,
 					userText,
-					files: submittedDraft.composer.files,
+					files: files.filter((file) => !sendsAsText(file.name)),
 					existingMedia,
 				},
 				this.config(),
@@ -833,6 +854,12 @@ function registerRoomSession(session: RoomSession): void {
 /** Create an unallocated draft; it joins the room registry as soon as allocation succeeds. */
 export function createRoomSession(scope: string): RoomSession {
 	return new RoomSession(scope);
+}
+
+/** Retitle every loaded session of a renamed room; they only read the name when they first load. */
+export function renameRoomSessions(roomId: string, title: string): void {
+	for (const session of sessions.values())
+		if (session.getSnapshot().roomId === roomId) session.setTitle(title);
 }
 
 /** Resolve only by actual room identity, never by source/thread association. */

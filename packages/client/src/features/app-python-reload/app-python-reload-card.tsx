@@ -10,7 +10,7 @@ import {
 } from "@semoss/ui/next";
 import { useAppPythonReload } from "./use-app-python-reload";
 
-export interface AppPythonReloadCardProps {
+interface AppPythonReloadCardProps {
 	/** The app whose python files to reload */
 	appId: string;
 }

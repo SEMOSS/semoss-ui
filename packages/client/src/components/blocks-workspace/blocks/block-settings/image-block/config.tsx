@@ -4,7 +4,8 @@ import {
 	Maximize2,
 	Image as PanoramaOutlined,
 } from "lucide-react";
-import { ButtonGroupSettings, SelectInputSettings } from "../../settings";
+import { ButtonGroupSettings } from "../../settings/shared/ButtonGroupSettings";
+import { SelectInputSettings } from "../../settings/shared/SelectInputSettings";
 import { BLOCK_TYPE_DISPLAY } from "../block-defaults.constants";
 import {
 	buildDimensionsSection,
@@ -12,8 +13,12 @@ import {
 	buildShowField,
 } from "../block-defaults.shared";
 import type { BlockSettingsConfig } from "../settings.types";
-import { GeneralSettings } from "./GeneralSettings";
+import { GeneralSettings } from "./general-settings";
 
+/**
+ * The image block's settings menus: its image, when it shows and its pre
+ * process listeners, then its ratio, position and dimensions.
+ */
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_DISPLAY,
 	icon: PanoramaOutlined,

@@ -63,12 +63,6 @@ export const WORKBENCH_EVENTS = {
 	GIT_STATUS_CHANGED: "git:status-changed",
 } as const;
 
-/** What each topic carries. */
-export interface WorkbenchEventPayloads {
-	[WORKBENCH_EVENTS.APP_PUBLISHED]: { projectId: string };
-	[WORKBENCH_EVENTS.GIT_STATUS_CHANGED]: { scope: string };
-}
-
 /**
  * Shared panel instance records, keyed by role.
  *

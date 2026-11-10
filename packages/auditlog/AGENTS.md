@@ -25,7 +25,6 @@ logs. It is a **private** package built with Vite, MobX, and `react-router`.
 | `pnpm dev` | Start dev server |
 | `pnpm build` | Production build |
 | `pnpm test` | Vitest (`--passWithNoTests`; success may mean no tests ran) |
-| `pnpm lint` | **ESLint** (see Linting below) |
 | `pnpm preview` | Preview the production build |
 
 Run these from `packages/auditlog`, or use `pnpm --filter @semoss/auditlog-package <command>`.
@@ -33,13 +32,8 @@ Run these from `packages/auditlog`, or use `pnpm --filter @semoss/auditlog-packa
 ### Linting
 
 Follow the [React validation guidance](../../skills/react-standard.skill.md#validation).
-This package additionally ships `eslint.config.js` with React hooks/refresh plugins; run
-its local check alongside the applicable root check:
-
-```bash
-pnpm check                          # Biome (repo-wide)
-pnpm --filter @semoss/auditlog-package lint   # ESLint (react hooks/refresh)
-```
+Linting and formatting use Biome from the repository root (`pnpm check`); this package has
+no local lint configuration.
 
 ## Structure
 
@@ -72,11 +66,10 @@ composition; responsive and accessible behavior follow the [root skills](../../s
 ### Be Cautious With
 
 - **`vite.config.ts`** — dev server and build configuration.
-- **`eslint.config.js`** — local lint rules for this package.
 
 ### Testing Changes
 
 ```bash
-pnpm --filter @semoss/auditlog-package lint
+pnpm check
 pnpm --filter @semoss/auditlog-package build
 ```

@@ -1,4 +1,3 @@
-/* eslint-disable */
 /** biome-ignore-all lint/nursery/useSortedClasses: using existing Tailwind order in this file */
 
 import { FileIcon, XIcon } from "lucide-react";

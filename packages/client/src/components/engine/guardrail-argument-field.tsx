@@ -16,7 +16,7 @@ import {
 } from "@semoss/ui/next";
 import type { InterceptableMethodArgument } from "./engine-guardrail-settings.constants";
 
-export interface GuardrailArgumentFieldProps {
+interface GuardrailArgumentFieldProps {
 	/** React Hook Form path for this mapping row's argument list. */
 	name: string;
 

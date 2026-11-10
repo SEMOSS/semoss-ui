@@ -7,7 +7,7 @@ import { findConnectorSource } from "@/features/connectors/sources/connector-sou
 import type { ContextItemsStore } from "./context-items.store";
 
 /** Props for {@link ContextItems}. */
-export interface ContextItemsProps {
+interface ContextItemsProps {
 	/** The room's queue for its next message. */
 	contextItems: ContextItemsStore;
 }

@@ -11,7 +11,7 @@ const ENGINE_TYPES: ALL_TYPES[] = [
 ];
 
 /** The pixel that deletes a resource, and what the product calls it. */
-export interface DeleteRequest {
+interface DeleteRequest {
 	/** The delete pixel */
 	pixel: string;
 	/** What the product calls the resource, such as "engine" or "agent" */

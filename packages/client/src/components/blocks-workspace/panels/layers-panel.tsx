@@ -64,7 +64,7 @@ const customCollisionDetection = (args) => {
 	return collisions.filter((collision) => collision.id !== args.active.id);
 };
 
-export const PAGE_BLOCK: BlockJSON = {
+const PAGE_BLOCK: BlockJSON = {
 	widget: "page",
 	data: {
 		style: {

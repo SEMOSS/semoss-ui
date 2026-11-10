@@ -8,7 +8,7 @@ import {
 } from "@semoss/ui/next";
 import { copyTextToClipboard } from "@semoss/utility/clipboard";
 
-export interface ResourceIdProps {
+interface ResourceIdProps {
 	/** The project's or engine's id. */
 	id: string;
 	/** Its name, which says which id the button copies. */

@@ -52,7 +52,7 @@ const columns: { label: string; sort?: AuditSort }[] = [
 	{ label: "Details" },
 ];
 
-export interface ResourceAuditTrailProps {
+interface ResourceAuditTrailProps {
 	/** Whether the resource is an engine or a project */
 	scope: AuditScope;
 	/** The engine's or project's id */

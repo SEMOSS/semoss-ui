@@ -17,7 +17,8 @@ interface ConfigState {
 
 const mocks = vi.hoisted(() => ({ providers: [] as Provider[] }));
 
-vi.mock("@/hooks", () => ({
+vi.mock("@semoss/sdk/react", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
 	useConfig: (selector: (state: ConfigState) => unknown) =>
 		selector({ config: { availableProviders: mocks.providers } }),
 }));

@@ -9,7 +9,7 @@ import { useBlock, type useFrame } from "../../../hooks";
 import type { GridBlockDef } from "./grid-block";
 import type { GridBlockColumn } from "./grid-block.types";
 
-export interface GridBlockContextMenuProps {
+interface GridBlockContextMenuProps {
 	/** ID of the block */
 	id: string;
 

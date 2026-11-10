@@ -170,6 +170,7 @@ const EMPTY_PLAYGROUND: ThemeMap["playground"] = {
 		enableSuggestions: true,
 		enablePromptOptimizer: true,
 		enableAgentHarness: false,
+		modeFollowsAgent: false,
 		showActivityLog: true,
 		enableTemperature: false,
 		enableRewrite: true,
@@ -193,12 +194,15 @@ const FEATURE_FLAGS: {
 	key: keyof NonNullable<ThemeMap["playground"]["featureFlags"]>;
 	label: string;
 	description: string;
+	/** A flag that covers this one: while it is on, this switch shows as on and is locked. */
+	includedIn?: keyof NonNullable<ThemeMap["playground"]["featureFlags"]>;
 }[] = [
 	// Sidebar navigation items
 	{
 		key: "enableAgent",
-		label: "Enable Agent",
-		description: "Shows the Agent item in the sidebar navigation.",
+		label: "Show Agents In Sidebar",
+		description:
+			"Shows the Agents link in the sidebar navigation. Users can still pick an agent in a new chat when this is off.",
 	},
 	// Room and chat input behavior
 	{
@@ -221,7 +225,14 @@ const FEATURE_FLAGS: {
 		key: "enableAgentHarness",
 		label: "Enable Agent Harness",
 		description:
-			"Lets a new room be started in agent mode, where messages run server-side via RunAgent instead of the normal chat flow.",
+			"Lets users choose Chat or Agent mode for a new chat. Agent mode runs messages server-side via RunAgent instead of the normal chat flow.",
+		includedIn: "modeFollowsAgent",
+	},
+	{
+		key: "modeFollowsAgent",
+		label: "Mode Follows Agent",
+		description:
+			"The agent picker decides a new chat's mode: a saved agent or Default Agent runs in agent mode, and No Agent runs in chat mode. The Chat and Agent choice is not shown. Turns on agent mode itself, so Enable Agent Harness is not needed.",
 	},
 	{
 		key: "showActivityLog",
@@ -1009,6 +1020,8 @@ type PlaygroundField =
 			label: string;
 			description?: string;
 			checked: boolean;
+			/** Locks this switch alone, on top of the form's own disabled state. */
+			disabled?: boolean;
 			onChange: (value: boolean) => void;
 	  }
 	| {
@@ -1095,7 +1108,7 @@ const PlaygroundFieldRenderer: React.FC<{
 					label={field.label}
 					description={field.description}
 					checked={field.checked}
-					disabled={disabled}
+					disabled={disabled || field.disabled}
 					onChange={field.onChange}
 				/>
 			);
@@ -1322,20 +1335,36 @@ const PlaygroundForm: React.FC<FormProps> = ({
 		{
 			title: "Feature Flags",
 			layout: "grid",
-			fields: FEATURE_FLAGS.map(({ key, label, description }) => ({
-				type: "switch",
-				label,
-				description,
-				checked: pg?.featureFlags?.[key] ?? false,
-				onChange: (value: boolean) =>
-					updateTheme((d) => {
-						const p = ensurePlayground(d);
-						if (!p.featureFlags) {
-							p.featureFlags = {};
-						}
-						p.featureFlags[key] = value;
-					}),
-			})),
+			fields: FEATURE_FLAGS.map(
+				({ key, label, description, includedIn }): PlaygroundField => {
+					// shown as on while the covering flag is, without saving it
+					const includingFlag =
+						includedIn && pg?.featureFlags?.[includedIn]
+							? FEATURE_FLAGS.find(
+									(flag) => flag.key === includedIn,
+								)
+							: undefined;
+					return {
+						type: "switch",
+						label,
+						description: includingFlag
+							? `${description} Included in ${includingFlag.label}.`
+							: description,
+						checked:
+							Boolean(includingFlag) ||
+							(pg?.featureFlags?.[key] ?? false),
+						disabled: Boolean(includingFlag),
+						onChange: (value: boolean) =>
+							updateTheme((d) => {
+								const p = ensurePlayground(d);
+								if (!p.featureFlags) {
+									p.featureFlags = {};
+								}
+								p.featureFlags[key] = value;
+							}),
+					};
+				},
+			),
 		},
 		{
 			title: "HTML Content",

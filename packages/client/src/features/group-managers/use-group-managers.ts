@@ -6,7 +6,7 @@ import {
 	getGroupManagers,
 } from "@/api/teams";
 
-export interface UseGroupManagersResult {
+interface UseGroupManagersResult {
 	/** The team's managers, empty until they load */
 	managers: GroupManager[];
 	/** Whether the team's managers are being read; true until the team's first read ends */

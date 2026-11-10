@@ -8,14 +8,14 @@ import type {
 type ReplaceSection = "blocks" | "notebooks" | "variables" | "all" | "";
 type Replacements = Record<string, string>;
 
-export interface ReplaceTargets {
+interface ReplaceTargets {
 	queryId?: string;
 	cellId?: string;
 	blockId?: string;
 	variableId?: string;
 }
 
-export interface ReplaceOptions {
+interface ReplaceOptions {
 	replaceSection?: ReplaceSection;
 	replaceInListenerStrings?: boolean;
 }

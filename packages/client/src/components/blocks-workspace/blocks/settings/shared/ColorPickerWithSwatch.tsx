@@ -1,6 +1,6 @@
 import { Input } from "@semoss/ui/next";
 
-export interface colorPickerProps {
+interface colorPickerProps {
 	value: string;
 	onChange: (value: string) => void;
 }

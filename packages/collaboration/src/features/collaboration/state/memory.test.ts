@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { createInitialCollaborationState } from "./collaboration.fixtures";
 import type { Memory } from "./collaboration.types";
 import {
-	canDismiss,
 	dropTopicMemories,
 	guessMemoryKind,
 	learnedMemories,
@@ -92,21 +91,6 @@ describe("memory helpers", () => {
 		).toEqual(["a", "c"]);
 		expect(suggestedMemories(memories).map(({ id }) => id)).toEqual(["b"]);
 		expect(learnedMemories(memories).map(({ id }) => id)).toEqual(["c"]);
-	});
-
-	it("only lets what the owner did not write be dismissed", () => {
-		expect(canDismiss(memory({}))).toBe(false);
-		expect(
-			canDismiss(memory({ origin: "assistant", confirmed: false })),
-		).toBe(true);
-		expect(
-			canDismiss(memory({ origin: "assistant", confirmed: true })),
-		).toBe(false);
-		expect(
-			canDismiss(
-				memory({ state: "suggested", origin: "you", confirmed: false }),
-			),
-		).toBe(true);
 	});
 
 	it("says who wrote a memory", () => {

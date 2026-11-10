@@ -61,27 +61,8 @@
 		"roomNameEmpty": "El nombre de la sala no puede estar vacío",
 		"roomRenamedSuccess": "Sala renombrada exitosamente",
 		"failedToRename": "Error al renombrar la sala",
-		"roomDeletedSuccess": "Sala eliminada exitosamente"
-	},
-	"workbench": {
-		"view": "Ver",
-		"navigate": "Navegar",
-		"commandPalette": "Abrir paleta de comandos…",
-		"layout": "Organizar paneles",
-		"single": "Combinar en un grupo",
-		"columns": "Dividir en dos columnas",
-		"rows": "Dividir en dos filas",
-		"balance": "Equilibrar tamaños de paneles",
-		"left": "Mostrar área izquierda",
-		"right": "Mostrar área derecha",
-		"top": "Mostrar área superior",
-		"bottom": "Mostrar área inferior",
-		"previous": "Ir al panel anterior",
-		"next": "Ir al siguiente panel",
-		"openPanels": "Paneles abiertos",
-		"noPanels": "No hay paneles abiertos",
-		"maximize": "Maximizar espacio de trabajo",
-		"restore": "Restaurar espacio de trabajo"
+		"roomDeletedSuccess": "Sala eliminada exitosamente",
+		"failedToDelete": "No se pudo eliminar la sala"
 	},
 	"userMenu": {
 		"settings": "Configuración",
@@ -107,5 +88,13 @@
 			"languageDescription": "El idioma en el que se muestra la aplicación.",
 			"version": "Versión {{version}}"
 		}
+	},
+	"download": {
+		"title": "Descargar conversación",
+		"description": "Elige un formato para la descarga.",
+		"word": "Documento de Word",
+		"pdf": "Documento PDF",
+		"success": "Conversación descargada como {{format}}",
+		"failed": "No se pudo descargar la conversación"
 	}
 }

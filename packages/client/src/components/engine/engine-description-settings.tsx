@@ -1,7 +1,7 @@
 import type { Role } from "@semoss/sdk";
+import { useSessionInsight } from "@semoss/sdk/react";
 import type { Engine } from "@semoss/shared";
-import { CatalogDescriptionSettings } from "@/components/catalog";
-import { useSession } from "@/hooks";
+import { CatalogDescriptionSettings } from "@/components/catalog/catalog-description-settings";
 
 interface EngineDescriptionSettingsProps {
 	/** Current engine */
@@ -23,7 +23,7 @@ export const EngineDescriptionSettings = ({
 	permission,
 	onUpdated,
 }: EngineDescriptionSettingsProps) => {
-	const runPixel = useSession((state) => state.runPixel);
+	const { run: runPixel } = useSessionInsight();
 
 	return (
 		<CatalogDescriptionSettings

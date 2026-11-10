@@ -16,6 +16,7 @@ const MENU_LABELS: Record<WorkbenchMenuLabel, string> = {
 	bottom: "Bottom Area",
 	previous: "Previous Panel",
 	next: "Next Panel",
+	goTo: "Go to",
 	openPanels: "Open Panels",
 	noPanels: "No open panels",
 	maximize: "Maximize Work Area",

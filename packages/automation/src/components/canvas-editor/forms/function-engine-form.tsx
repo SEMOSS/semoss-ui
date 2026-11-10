@@ -130,7 +130,7 @@ function parameterValue(value: string, type: string): unknown {
 	return value;
 }
 
-export interface FunctionEngineFormProps {
+interface FunctionEngineFormProps {
 	/** Current node config */
 	config: FunctionEngineConfig;
 	/** Output variable names produced by upstream nodes, offered as autocomplete */

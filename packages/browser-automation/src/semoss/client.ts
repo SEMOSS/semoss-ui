@@ -61,7 +61,7 @@ if (!Env.MODULE) {
 	});
 }
 
-export const insight = new Insight();
+const insight = new Insight();
 
 let initialized = false;
 let toolContext = normalizeToolContext((Env as EnvWithTool).TOOL);
@@ -173,10 +173,6 @@ export async function initSemoss(): Promise<McpToolContext | null> {
 		initialized = true;
 	}
 
-	return toolContext;
-}
-
-export function getMcpToolContext(): McpToolContext | null {
 	return toolContext;
 }
 

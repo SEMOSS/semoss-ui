@@ -8,7 +8,7 @@ import {
 	DialogTitle,
 } from "@semoss/ui/next";
 
-export interface DiscardChangesDialogProps {
+interface DiscardChangesDialogProps {
 	/** Whether the dialog is open */
 	open: boolean;
 	/** What would drop the changes: the Discard Changes button, or leaving the page */

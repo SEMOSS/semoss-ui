@@ -5,12 +5,12 @@ import type {
 	AutomationSavedResultReference,
 } from "../../../domain/automation.types";
 
-export interface RunNodeOccurrence {
+interface RunNodeOccurrence {
 	parentNodeId?: string | null;
 	iterationIndex?: number | null;
 }
 
-export type RunNodeDataSource =
+type RunNodeDataSource =
 	| {
 			kind: "retained";
 			savedResult: AutomationSavedResultReference;
@@ -22,7 +22,7 @@ export type RunNodeDataSource =
 	  }
 	| { kind: "preview" };
 
-export type AsyncViewerState = "loading" | "error" | "empty" | "ready";
+type AsyncViewerState = "loading" | "error" | "empty" | "ready";
 export type RunNodeContentView = "output" | "source";
 
 export const RUN_NODE_VIEW_LABELS = {

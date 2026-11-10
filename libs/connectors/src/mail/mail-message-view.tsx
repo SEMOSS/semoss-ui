@@ -27,7 +27,7 @@ import { readConversation, threadSaveRequest } from "./mail-thread-view";
 import { useMailEmbeddedImagesReader } from "./use-mail-embedded-images-reader";
 
 /** Props for {@link MailMessageView}. */
-export interface MailMessageViewProps
+interface MailMessageViewProps
 	extends Pick<ConnectorViewerProps, "isVisible" | "onControlsChange"> {
 	/** Re-focuses the heading when a retained detail is explicitly reopened. */
 	focusRequestId?: number;

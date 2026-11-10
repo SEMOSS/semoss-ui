@@ -33,7 +33,7 @@ export interface GrantCandidate {
 	subtype?: string;
 }
 
-export interface UserAccessGrantOverlayProps {
+interface UserAccessGrantOverlayProps {
 	open: boolean;
 	title: string;
 	description?: string;

@@ -153,7 +153,7 @@ export type PlaygroundMessage = {
 };
 
 /** Result row returned by CompactRoomMessages. */
-export type CompactRoomResult = {
+type CompactRoomResult = {
 	/** Compaction step the row describes. */
 	type: string;
 	/** Whether the step succeeded. */
@@ -196,7 +196,7 @@ const assertPixelSuccess = (errors: string[]): void => {
  * @return The string value (first array element when wrapped), or an empty
  * string when the value is not a string.
  */
-export const getProfileMetadataValue = (value: unknown): string => {
+const getProfileMetadataValue = (value: unknown): string => {
 	if (typeof value === "string") {
 		return value;
 	}
@@ -247,7 +247,7 @@ export const resolveWorkbenchAssistantModel = async (
  * @return The first available engine, or null when the user can access no
  * text-generation models at all.
  */
-export const getFirstWorkbenchAssistantModel = async (
+const getFirstWorkbenchAssistantModel = async (
 	insightId: string,
 ): Promise<Engine | null> => {
 	const modelsResponse = await runPixel<[Engine[]]>(
@@ -472,7 +472,7 @@ export const getRoomOptions = async (
 };
 
 /** Paging, name search, and date direction for a conversation-list query. */
-export interface ConversationRoomQuery {
+interface ConversationRoomQuery {
 	/** Term matched against each room's name (LIKE). */
 	nameSearch?: string;
 	/**

@@ -6,7 +6,7 @@ import {
 	describeAuditEvent,
 } from "./audit-labels";
 
-export interface AuditEventSummaryProps {
+interface AuditEventSummaryProps {
 	/** The event to describe; a resource owner's view has fewer fields */
 	event: Partial<AuditEvent>;
 }

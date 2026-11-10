@@ -18,7 +18,7 @@ import { TeamPeopleMembers } from "./team-people-members";
 /** A section heading inside the sheet */
 const SECTION_TITLE_CLASS = "font-medium text-sm";
 
-export interface TeamPeopleSheetProps {
+interface TeamPeopleSheetProps {
 	/** The custom team to show, or null to keep the sheet closed */
 	team: GroupKey | null;
 	/** The project or engine the team has access to, which the people are read through */

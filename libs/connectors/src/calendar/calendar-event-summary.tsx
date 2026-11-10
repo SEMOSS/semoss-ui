@@ -6,7 +6,7 @@ import type { CalendarApp } from "./calendar-apps";
 import { useEventTime } from "./use-event-time";
 
 /** Props for {@link CalendarEventSummary}. */
-export interface CalendarEventSummaryProps {
+interface CalendarEventSummaryProps {
 	/** The calendar the event is on. */
 	app: CalendarApp;
 	/** The event. */

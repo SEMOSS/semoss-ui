@@ -104,7 +104,7 @@ const getManagerNames = (managers: GroupManager[]): string =>
 		.map((manager) => manager.name || manager.email || manager.userid)
 		.join(", ");
 
-export interface AddGroupAccessDialogProps {
+interface AddGroupAccessDialogProps {
 	/** Whether the dialog is open */
 	open: boolean;
 	/** The type of resource the team gets access to */

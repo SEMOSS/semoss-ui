@@ -8,15 +8,8 @@ import type {
 
 export const ASSISTANT_TOOL_PANEL_TYPE = "workbench-assistant-tool";
 
-/** Durable identifiers only; live data stays in the owning assistant store. */
-export interface AssistantToolPanelIdentity {
-	conversationId: string;
-	runId: string;
-	toolCallId: string;
-}
-
 /** Authored MCP presentation, with the same defaults as other room tool views. */
-export interface AssistantToolUi {
+interface AssistantToolUi {
 	displayLocation: "inline" | "sidebar" | "hidden";
 	autoOpen: boolean;
 	resourceURI?: string;
@@ -88,7 +81,7 @@ export const getPresentedTools = (run: BuildRun): BuildTool[] => {
 };
 
 /** Supported authored page; portal projects still need their Blocks/Code type resolved. */
-export type AssistantToolResource =
+type AssistantToolResource =
 	| { kind: "page"; url: string }
 	| {
 			kind: "portal";

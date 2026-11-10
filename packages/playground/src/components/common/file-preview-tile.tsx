@@ -2,7 +2,7 @@ import { FileIcon, XIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button, Muted, Small } from "@semoss/ui/next";
 
-export interface FilePreviewTileProps {
+interface FilePreviewTileProps {
 	/** Visible name of the pending attachment. */
 	name: string;
 	/** File size or source description. */

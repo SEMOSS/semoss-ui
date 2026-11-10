@@ -2,10 +2,11 @@ import { describe, expect, test, vi } from "vitest";
 import type { RoomStore } from "./room.store";
 import {
 	parseMcpFile,
-	ROOM_TOOL_FILE_PATH,
 	readRoomToolFile,
 	saveRoomToolFile,
 } from "./room-tool-file";
+
+const ROOM_TOOL_FILE_PATH = "/mcp/pixel_mcp.json";
 
 /** A room whose pixels answer with `output`, or fail with `errors`. */
 const createRoom = (output: unknown, errors: string[] = []) =>

@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-	addLocalDays,
 	formatConnectorSize,
 	formatListDate,
 	parseGraphDate,
@@ -38,12 +37,6 @@ describe("parseGraphDay", () => {
 		expect(day?.getFullYear()).toBe(2026);
 		expect(day?.getMonth()).toBe(8);
 		expect(day?.getDate()).toBe(27);
-	});
-});
-
-describe("addLocalDays", () => {
-	it("moves by whole days", () => {
-		expect(addLocalDays(new Date(2026, 8, 30), 1).getDate()).toBe(1);
 	});
 });
 
