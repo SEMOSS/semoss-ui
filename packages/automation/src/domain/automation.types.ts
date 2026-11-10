@@ -6,6 +6,7 @@ import type {
 	AutomationNodeCodeMode,
 	AutomationWorkflowNodeConfig,
 	AutomationWorkflowNodeType,
+	TemplatePptxConfig,
 } from "./automation-workflow.types";
 
 // ─── node types ───────────────────────────────────────────────────────────────
@@ -21,7 +22,8 @@ export type AutomationNodeType =
 	| "app"
 	| "branch"
 	| "loop"
-	| "wait";
+	| "wait"
+	| "export.template_pptx";
 
 // ─── shared form types ────────────────────────────────────────────────────────
 
@@ -189,7 +191,8 @@ export type NodeConfig =
 	| BranchConfig
 	| JevDecisionConfig
 	| LoopConfig
-	| WaitConfig;
+	| WaitConfig
+	| TemplatePptxConfig;
 
 /** Canvas projection of the nested graph owned by a container node. */
 export interface AutomationNodeBody {

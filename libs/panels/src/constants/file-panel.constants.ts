@@ -76,6 +76,12 @@ export const FILE_PANEL_EVENTS = {
 	 * source file into its in-memory step.
 	 */
 	FILE_SAVED: "files:saved",
+	/**
+	 * The user selected a shape inside the PPTX viewer. Emitted by the PPTX file
+	 * panel blueprint so the automation inspector can receive picked shapes without
+	 * violating the panels → workbench dependency direction.
+	 */
+	PPTX_SHAPE_SELECTED: "pptx:shape-selected",
 } as const;
 
 /**

@@ -23,7 +23,8 @@ export type AutomationWorkflowNodeType =
 	| "control.if"
 	| "control.jev"
 	| "control.loop"
-	| "developer.python";
+	| "developer.python"
+	| "export.template_pptx";
 
 export type AutomationPortKind = "control" | "data";
 export type AutomationDataType =
@@ -265,4 +266,15 @@ export interface AutomationNodeDefinition {
 export interface AutomationNodeCatalog {
 	schemaVersion: number;
 	nodes: readonly AutomationNodeDefinition[];
+}
+
+export interface TemplatePptxReplacement {
+	shapeName: string;
+	type: "text" | "image" | "chart";
+	value: string;
+}
+
+export interface TemplatePptxConfig {
+	templateFile: string;
+	replacements: TemplatePptxReplacement[];
 }

@@ -20,6 +20,8 @@ import type {
 	AutomationWorkflowNode,
 	AutomationWorkflowNodeConfig,
 	AutomationWorkflowNodeType,
+	TemplatePptxConfig,
+	TemplatePptxReplacement,
 	TriggerBinding,
 } from "./automation-workflow.types";
 
@@ -383,6 +385,7 @@ function canvasTypeForWorkflow(
 	if (type === "control.wait") return "wait";
 	if (type === "control.loop") return "loop";
 	if (isRoutingWorkflowType(type)) return "branch";
+	if (type === "export.template_pptx") return "export.template_pptx";
 	return "app";
 }
 
@@ -560,6 +563,14 @@ function defaultCanvasConfig(
 			paramValues: jsonObjectValue(config.paramValues),
 		};
 	}
+	if (type === "export.template_pptx") {
+		return {
+			templateFile: stringValue(config.templateFile),
+			replacements: Array.isArray(config.replacements)
+				? (config.replacements as unknown as TemplatePptxReplacement[])
+				: [],
+		};
+	}
 	return {
 		pixel: stringValue(config.pixel),
 		appId: stringValue(config.appId),
@@ -621,6 +632,8 @@ function canvasTypeToWorkflow(
 			return "control.if";
 		case "app":
 			return "app.pixel";
+		case "export.template_pptx":
+			return "export.template_pptx";
 	}
 }
 
@@ -853,6 +866,12 @@ function mergeCanvasConfig(
 		delete next.question;
 		delete next.questionType;
 		delete next.confidenceThreshold;
+	}
+	if (type === "export.template_pptx") {
+		const pptxConfig = config as TemplatePptxConfig;
+		next.templateFile = pptxConfig.templateFile;
+		next.replacements =
+			pptxConfig.replacements as unknown as AutomationWorkflowNodeConfig["replacements"];
 	}
 	return next;
 }

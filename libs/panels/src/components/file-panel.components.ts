@@ -2,6 +2,7 @@ import { lazy } from "react";
 import type { WorkbenchPanelConfigAny } from "@semoss/workbench";
 import { FILE_PANEL_TYPES } from "../constants/file-panel.constants";
 import { FILE_EXPLORER_PANEL } from "./explorers";
+import { FILE_PPTX_VIEWER_PANEL } from "./file-pptx-panel";
 import { createFileViewPanel } from "./file-view-panel";
 import { FILE_MCP_EDITOR_PANEL } from "./mcp/file-mcp-editor-panel";
 import {
@@ -16,11 +17,6 @@ import {
 const FileDocxView = lazy(() =>
 	import("./views/file-docx-view").then(({ FileDocxView }) => ({
 		default: FileDocxView,
-	})),
-);
-const FilePptxView = lazy(() =>
-	import("./views/file-pptx-view").then(({ FilePptxView }) => ({
-		default: FilePptxView,
 	})),
 );
 const FileVisioView = lazy(() =>
@@ -76,10 +72,7 @@ export const FILE_PANEL_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 		name: "PDF",
 		view: FilePdfView,
 	}),
-	[FILE_PANEL_TYPES.FILE_PPTX_VIEWER]: createFileViewPanel({
-		name: "PowerPoint",
-		view: FilePptxView,
-	}),
+	[FILE_PANEL_TYPES.FILE_PPTX_VIEWER]: FILE_PPTX_VIEWER_PANEL,
 	[FILE_PANEL_TYPES.FILE_VISIO_VIEWER]: createFileViewPanel({
 		name: "Visio",
 		view: FileVisioView,
