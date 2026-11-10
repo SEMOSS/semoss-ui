@@ -1,7 +1,7 @@
 import { FilePlus2Icon, RefreshCwIcon } from "lucide-react";
 import type { FC } from "react";
 import { useSessionPermissions } from "@semoss/sdk/react";
-import type { FileExplorerApi } from "@semoss/shared";
+import { canCreateItems, type FileExplorerApi } from "@semoss/shared";
 import {
 	useWorkbenchPanel,
 	WorkbenchChromeButton,
@@ -43,7 +43,7 @@ export const FileExplorerControl: FC<WorkbenchPanelProps> = ({ id }) => {
 	const readOnlyResource = resource ? !canEdit : false;
 	const canCreate =
 		!readOnlyResource &&
-		(value.adapter.capabilities.mutate ||
+		(canCreateItems(value.adapter.capabilities) ||
 			value.adapter.capabilities.upload);
 
 	return (

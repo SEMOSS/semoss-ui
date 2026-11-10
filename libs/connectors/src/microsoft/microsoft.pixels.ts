@@ -71,6 +71,54 @@ export const MICROSOFT_PIXELS = {
 			fileName: text(options.fileName),
 		}),
 
+	/**
+	 * Create an empty file in the user's own drive. A name already taken
+	 * fails rather than replacing the file there.
+	 *
+	 * @param options - The file's name, and its folder's path from the drive's
+	 * top, left out for the top.
+	 * @return The pixel.
+	 */
+	oneDriveCreateFile: (options: { name: string; path?: string }): string =>
+		call("MicrosoftOneDriveCreateFile", {
+			name: text(options.name),
+			path: text(options.path),
+		}),
+
+	/**
+	 * Create a folder in the user's own drive. A name already taken fails.
+	 *
+	 * @param options - The folder's name, and the path of the folder it goes
+	 * in, left out for the drive's top.
+	 * @return The pixel.
+	 */
+	oneDriveCreateFolder: (options: { name: string; path?: string }): string =>
+		call("MicrosoftOneDriveCreateFolder", {
+			name: text(options.name),
+			path: text(options.path),
+		}),
+
+	/**
+	 * Upload a file from the insight's folder into the user's own drive. A
+	 * name already taken leaves the file there alone: the upload gets a
+	 * numbered name beside it.
+	 *
+	 * @param options - Where the file is in the insight's folder, the name to
+	 * give it in the drive, and its folder's path from the drive's top, left
+	 * out for the top.
+	 * @return The pixel.
+	 */
+	oneDriveUpload: (options: {
+		filePath: string;
+		name: string;
+		path?: string;
+	}): string =>
+		call("MicrosoftOneDriveUploadFile", {
+			filePath: text(options.filePath),
+			name: text(options.name),
+			path: text(options.path),
+		}),
+
 	/** @return The pixel for the teams the user belongs to. */
 	teamsListTeams: (): string => call("MicrosoftTeamsListTeams"),
 

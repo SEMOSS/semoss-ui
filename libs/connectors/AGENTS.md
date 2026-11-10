@@ -179,7 +179,18 @@ code may import from `core/` and `components/`; those two never import from them
   the ids it was listed with, remembered under the path it is shown at. The rows carry their
   drive item in `FileItem.data` for the connector's actions: the row button adds a file to
   context, and the menu saves it to the chat's files or opens it in its app. A new drive, such
-  as Google Drive, needs only an adapter and those two callbacks. Because the explorer is
+  as Google Drive, needs only an adapter and those two callbacks. My Files also writes: its
+  adapter sets `create` and `upload`, so the explorer shows its New button, the menu's New File
+  and New Folder, and takes files dropped on it. New File and New Folder run
+  `MicrosoftOneDriveCreateFile` (an empty file) and `MicrosoftOneDriveCreateFolder` in the
+  drive, never in the chat's files, and a name already taken fails. An upload from the computer
+  has to pass through the insight's files, which is where `MicrosoftOneDriveUploadFile` reads
+  from: it goes into a `.onedrive-upload-*` folder of its own, reaches the drive under the name
+  it has on the computer (the server escapes the name of its copy), and the folder is removed
+  whether or not the upload worked. A name already taken keeps both files. The removal names
+  its folder in a pixel written out by hand, never with `call`: `DeleteInsightAssets` with no
+  path deletes every file in the insight. Shared with Me and channel files stay browse only,
+  since writing to them needs the `Files.ReadWrite.All` scope. Because the explorer is
   rendered, the tests alias `monaco-editor` the way every host that renders a file panel does.
 - **Teams chats read newest first, by when each message was sent.** `MicrosoftTeamsListChats`
   answers each chat with its last message, and the chat list orders and dates chats by that
