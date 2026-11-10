@@ -10,10 +10,6 @@
 			"label": "Agents",
 			"tooltip": "Agents"
 		},
-		"allChats": {
-			"label": "All Chats",
-			"tooltip": "All Chats"
-		},
 		"agentsWorkspaces": {
 			"tooltip": "Agents/Workspaces - Access your workspaces or create new AI agents."
 		},
@@ -54,7 +50,8 @@
 		"openInline": "Open in-line",
 		"minimize": "Minimize",
 		"maximize": "Maximize",
-		"close": "Close"
+		"close": "Close",
+		"roomActions": "Room actions"
 	},
 	"toasts": {
 		"failedToPin": "Could not add the room to favorites",
@@ -97,5 +94,40 @@
 		"pdf": "PDF document",
 		"success": "Conversation downloaded as {{format}}",
 		"failed": "Could not download the conversation"
+	},
+	"chats": "Chats",
+	"view": {
+		"button": "Sort and group chats",
+		"customized": "custom order",
+		"sortBy": "Sort by",
+		"groupBy": "Group by",
+		"sort": {
+			"recent": "Most recent",
+			"oldest": "Oldest",
+			"nameAsc": "Name (A–Z)",
+			"nameDesc": "Name (Z–A)"
+		},
+		"group": {
+			"date": "Date",
+			"agent": "Agent"
+		}
+	},
+	"groups": {
+		"all": "All chats",
+		"noAgent": "No agent",
+		"unnamedAgent": "Untitled agent",
+		"openAgent": "Open {{name}} in a new tab"
+	},
+	"searchChats": {
+		"label": "Search chats",
+		"title": "Search chats",
+		"description": "Find a chat by its name or by what was said in it.",
+		"placeholder": "Search chats…",
+		"loading": "Searching…",
+		"empty": "No chats match “{{query}}”",
+		"recent": "Recent",
+		"allAgents": "All agents",
+		"results": "Results",
+		"matchedMessage": "Matched in messages"
 	}
 }
