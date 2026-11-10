@@ -33,9 +33,11 @@ the gate, so the insight is made after sign in.
 
 An app that gates its own routes takes its Retry for the `ERROR` status from the SDK's
 `useSessionRetry()` (`{ isRetrying, retry }`, from the session's `isChecking` and `refresh`).
-`InsightReadyGate` (`components/insight-ready-gate.tsx`) goes inside the gate's
-`InsightProvider` and holds its views until the insight is made, showing the app's
-`errorFallback` when it cannot be, so no view runs a pixel with an empty insight id.
+`InsightReadyGate` (`components/insight-ready-gate.tsx`) is for an app that still keeps an
+app-wide `InsightProvider`: it goes inside it and holds its views until the insight is made
+(`isReady`), showing the app's `errorFallback` when it cannot be. It is not a sign in check;
+sign in is the session's. Prefer running pixels outside a workspace in the session's insight,
+which needs neither.
 
 `Notebook` (`components/notebook/`) runs in its `insightId` prop, else the nearest
 `InsightContext`'s, else the session's insight (`useSessionInsight`, made with `ensure()` on the

@@ -5,7 +5,7 @@ import { InsightReadyGate } from "./insight-ready-gate";
 const mocks = vi.hoisted(() => ({
 	insight: {
 		isInitialized: false,
-		isAuthorized: false,
+		isReady: false,
 		error: null as Error | null,
 	},
 }));
@@ -14,7 +14,7 @@ vi.mock("@semoss/sdk/react", () => ({ useInsight: () => mocks.insight }));
 
 afterEach(() => {
 	cleanup();
-	mocks.insight = { isInitialized: false, isAuthorized: false, error: null };
+	mocks.insight = { isInitialized: false, isReady: false, error: null };
 });
 
 const renderGate = (loadingFallback?: string) =>
@@ -37,7 +37,7 @@ it("waits while the insight is made", () => {
 
 it("renders the views once the insight is ready", () => {
 	mocks.insight.isInitialized = true;
-	mocks.insight.isAuthorized = true;
+	mocks.insight.isReady = true;
 	renderGate();
 	expect(screen.getByText("Page")).toBeTruthy();
 });

@@ -1,19 +1,13 @@
 import { Navigate, Outlet, useLocation } from "react-router";
 import { useTranslation } from "@semoss/i18n";
-import {
-	InsightProvider,
-	useSession,
-	useSessionRetry,
-} from "@semoss/sdk/react";
-import { InsightReadyGate } from "@semoss/shared";
+import { useSession, useSessionRetry } from "@semoss/sdk/react";
 import { Button, Muted, Spinner } from "@semoss/ui/next";
 
 /**
  * Wrap the routes that need a signed in user. It reads the SDK's session:
  * a spinner while it is read, the login page when signed out, and the error
- * with Retry when it could not be read. Once signed in it makes the app's
- * insight and renders the pages once it is ready; they read it through
- * `useInsight`.
+ * with Retry when it could not be read. Once signed in it renders the
+ * pages, which run their pixels in the session's own insight.
  */
 export const AuthenticatedLayout = () => {
 	const { t } = useTranslation("auditlog");
@@ -55,22 +49,5 @@ export const AuthenticatedLayout = () => {
 		);
 	}
 
-	return (
-		<InsightProvider>
-			<InsightReadyGate
-				errorFallback={
-					<div
-						role="alert"
-						className="flex h-full w-full items-center justify-center p-6 text-center"
-					>
-						<Muted className="max-w-md">
-							{t("layout.loadFailed")}
-						</Muted>
-					</div>
-				}
-			>
-				<Outlet />
-			</InsightReadyGate>
-		</InsightProvider>
-	);
+	return <Outlet />;
 };

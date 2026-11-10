@@ -13,7 +13,7 @@ const mocks = vi.hoisted(() => ({
 	refresh: vi.fn<() => Promise<unknown>>(),
 	insight: {
 		isInitialized: false,
-		isAuthorized: false,
+		isReady: false,
 		error: null as Error | null,
 	},
 }));
@@ -58,7 +58,7 @@ function renderGate() {
 beforeEach(() => {
 	mocks.refresh.mockReset();
 	mocks.refresh.mockResolvedValue(undefined);
-	mocks.insight = { isInitialized: false, isAuthorized: false, error: null };
+	mocks.insight = { isInitialized: false, isReady: false, error: null };
 });
 afterEach(cleanup);
 
@@ -101,7 +101,7 @@ it("makes the insight once signed in and renders the page when it is ready", () 
 	expect(screen.queryByText("Work page")).not.toBeInTheDocument();
 	cleanup();
 
-	mocks.insight = { isInitialized: true, isAuthorized: true, error: null };
+	mocks.insight = { isInitialized: true, isReady: true, error: null };
 	renderGate();
 	expect(screen.getByText("Work page")).toBeInTheDocument();
 });
@@ -110,7 +110,7 @@ it("shows the error when the insight could not be made", () => {
 	mocks.status = "AUTHENTICATED";
 	mocks.insight = {
 		isInitialized: false,
-		isAuthorized: false,
+		isReady: false,
 		error: new Error("Offline"),
 	};
 	renderGate();

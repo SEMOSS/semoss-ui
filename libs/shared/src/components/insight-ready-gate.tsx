@@ -24,12 +24,12 @@ export const InsightReadyGate = ({
 	errorFallback,
 	loadingFallback,
 }: InsightReadyGateProps) => {
-	const { isInitialized, isAuthorized, error } = useInsight();
+	const { isInitialized, isReady, error } = useInsight();
 
-	// synced once the insight's setup finishes, insight id included
-	if (isAuthorized) return <>{children}</>;
+	// ready once the insight has an id; sign in is the session's, not this gate's
+	if (isReady) return <>{children}</>;
 
-	// the session is signed in, so an insight that is not is a failure
+	// setup finished, or failed, without making the insight
 	if (error || isInitialized) return <>{errorFallback}</>;
 
 	return (
