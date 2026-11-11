@@ -1,4 +1,4 @@
-import { type EditorHandle, WordEditor } from "docx-react-viewer";
+import type { EditorHandle } from "docx-react-viewer";
 import { useEffect, useMemo, useState } from "react";
 import { decodeBase64Asset } from "@semoss/shared";
 import { useFilePanel } from "../../hooks/use-file-panel";
@@ -10,12 +10,17 @@ import type { FileViewProps } from "../../types/file-view.types";
 import { DOCX_HIDDEN_ACTIONS } from "./office/docx-viewer-policy";
 import { OfficeViewerError } from "./office/office-viewer-error";
 import { OfficeViewerFrame } from "./office/office-viewer-frame";
+import { WordSurface } from "./office/word-surface";
 
 /** Preview and edit a Word document from a project, engine, or user resource. */
 export const FileDocxView = ({ config, onControls }: FileViewProps) => {
 	const panel = useFilePanel(config, { base64: true });
-	const [handle, setHandle] = useState<EditorHandle | null>(null);
-	const element = handle?.element ?? null;
+	const [commandTarget, setCommandTarget] = useState<HTMLDivElement | null>(
+		null,
+	);
+	const [element, setElement] = useState<EditorHandle["element"] | null>(
+		null,
+	);
 	const content = useMemo(
 		() => decodeBase64Asset(panel.read.data),
 		[panel.read.data],
@@ -51,7 +56,7 @@ export const FileDocxView = ({ config, onControls }: FileViewProps) => {
 		};
 	}, [element, panel.readOnly]);
 
-	useOfficeFileCommands(element, editor.save);
+	useOfficeFileCommands(commandTarget, editor.save);
 	useFileViewControls(onControls, {
 		canDownload: panel.access.status === "ready",
 		download: panel.download,
@@ -99,13 +104,14 @@ export const FileDocxView = ({ config, onControls }: FileViewProps) => {
 			label={`Word document: ${config.name}`}
 			className="semoss-docx-viewer"
 		>
-			<WordEditor
-				ref={setHandle}
-				className="size-full"
-				readOnly={panel.readOnly}
-				showToolbar
-				hiddenActions={DOCX_HIDDEN_ACTIONS}
-			/>
+			<div ref={setCommandTarget} className="size-full min-h-0 min-w-0">
+				<WordSurface
+					key={`${getFilePanelScope(config.mode)}:${panel.read.revision}`}
+					fileName={config.name}
+					readOnly={panel.readOnly}
+					onElement={setElement}
+				/>
+			</div>
 		</OfficeViewerFrame>
 	);
 };

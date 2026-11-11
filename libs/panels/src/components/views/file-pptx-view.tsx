@@ -1,7 +1,4 @@
-import {
-	PowerPointViewer,
-	type PowerPointViewerHandle,
-} from "pptx-react-viewer";
+import type { PowerPointViewerHandle } from "pptx-react-viewer";
 import { translationsEn } from "pptx-react-viewer/i18n";
 import {
 	useCallback,
@@ -25,10 +22,7 @@ import { getFilePanelScope } from "../../types/file-panel.types";
 import type { FileViewProps } from "../../types/file-view.types";
 import { OfficeViewerError } from "./office/office-viewer-error";
 import { OfficeViewerFrame } from "./office/office-viewer-frame";
-import {
-	PPTX_VIEWER_CUSTOMIZATION,
-	PPTX_VIEWER_THEME,
-} from "./office/pptx-viewer-policy";
+import { PresentationSurface } from "./office/presentation-surface";
 import "pptx-react-viewer/styles";
 
 let registered = false;
@@ -79,7 +73,6 @@ export const FilePptxView = ({ config, onControls }: FileViewProps) => {
 		};
 	}, [scope, config.path, panel.read.revision, panel.read.data]);
 	const serializingRef = useRef(false);
-	const [editorError, setEditorError] = useState<Error | null>(null);
 	const [isDirty, setIsDirty] = useState(false);
 	const [isSerializing, setIsSerializing] = useState(false);
 	const content = useMemo(
@@ -90,7 +83,6 @@ export const FilePptxView = ({ config, onControls }: FileViewProps) => {
 	useEffect(() => registerViewerCopy(i18n), [i18n]);
 	useEffect(() => {
 		if (panel.read.status === "SUCCESS" && panel.read.revision > 0) {
-			setEditorError(null);
 			setIsDirty(false);
 		}
 	}, [panel.read.revision, panel.read.status]);
@@ -171,17 +163,11 @@ export const FilePptxView = ({ config, onControls }: FileViewProps) => {
 	});
 
 	if (panel.gate) return panel.gate;
-	if (
-		panel.read.status === "ERROR" ||
-		(panel.read.data && !content) ||
-		editorError
-	) {
+	if (panel.read.status === "ERROR" || (panel.read.data && !content)) {
 		return (
 			<OfficeViewerError
 				message={
-					panel.read.error?.message ||
-					editorError?.message ||
-					"Failed to load presentation"
+					panel.read.error?.message || "Failed to load presentation"
 				}
 				isDownloading={panel.isDownloading}
 				onDownload={() => void panel.download()}
@@ -193,21 +179,14 @@ export const FilePptxView = ({ config, onControls }: FileViewProps) => {
 
 	return (
 		<OfficeViewerFrame label={`Presentation: ${config.name}`}>
-			<div
-				ref={setCommandTarget}
-				className="pptx-viewer-scope size-full min-h-0 min-w-0"
-			>
-				<PowerPointViewer
+			<div ref={setCommandTarget} className="size-full min-h-0 min-w-0">
+				<PresentationSurface
 					key={panel.read.revision}
-					ref={viewerRef}
+					handle={viewerRef}
 					content={content}
 					fileName={config.name}
-					theme={PPTX_VIEWER_THEME}
-					customization={PPTX_VIEWER_CUSTOMIZATION}
-					canEdit={!panel.readOnly}
-					autosave={false}
+					readOnly={panel.readOnly}
 					onDirtyChange={handleDirtyChange}
-					onError={(message) => setEditorError(new Error(message))}
 				/>
 			</div>
 		</OfficeViewerFrame>
