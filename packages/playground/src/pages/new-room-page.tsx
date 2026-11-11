@@ -27,10 +27,10 @@ import { canChooseAgentMode } from "@/features/conversation/agent-mode-choice";
 import { clearAgentOptions } from "@/features/conversation/clear-agent-options";
 import { DropHighlight } from "@/features/conversation/drop-highlight";
 import { NextMessageRoomProvider } from "@/features/conversation/next-message-room.context";
+import { RoomLayout } from "@/features/conversation/room-layout";
 import { useNewRoom } from "@/features/conversation/use-new-room";
 import { RoomHeader } from "@/features/room-header/room-header";
 import { DraftSettingsContext } from "@/features/workbench/draft-settings.context";
-import { FittedRoomLayout } from "@/features/workbench/fitted-room-layout";
 import {
 	NEW_ROOM_READY_PANEL_KINDS,
 	type NewRoomPanelRequest,
@@ -728,10 +728,11 @@ export const NewRoomPage = observer(() => {
 				/>
 			) : null}
 			<div className="min-h-0 flex-1">
-				<FittedRoomLayout
-					room={workbenchRoom}
-					// a preparation error needs the space, so the Workspace fills
-					shouldFill={preparationError}
+				<RoomLayout
+					isWorkbenchOpen={workbenchRoom.sidebar.isOpen}
+					onWorkbenchCollapse={() =>
+						void workbenchRoom.closeSidebar()
+					}
 					header={
 						<RoomHeader
 							room={workbenchRoom}
@@ -949,7 +950,7 @@ export const NewRoomPage = observer(() => {
 							</div>
 						</DropHighlight>
 					</FileDragProvider>
-				</FittedRoomLayout>
+				</RoomLayout>
 			</div>
 		</div>
 	);
