@@ -1,6 +1,13 @@
 import { Lock, Play, Plus, Trash2, X } from "lucide-react";
 import { useId, useState } from "react";
-import { Button, Field, FieldLabel, Input, Textarea } from "@semoss/ui/next";
+import {
+	Button,
+	cn,
+	Field,
+	FieldLabel,
+	Input,
+	Textarea,
+} from "@semoss/ui/next";
 import type { AutomationNode } from "../../../domain/automation.types";
 import type { AutomationGlobalVariable } from "../../../domain/automation-workflow.types";
 import { SchedulePanel } from "../schedule-dialog";
@@ -16,6 +23,8 @@ interface TriggerEditPanelProps {
 	/** Retained for host compatibility; trigger nodes never expose Python. */
 	devMode?: boolean;
 	readOnly?: boolean;
+	/** Administrator status supplied by the host session. */
+	isAdmin?: boolean;
 }
 
 interface GlobalInputRow {
@@ -38,6 +47,7 @@ export function TriggerEditPanel({
 	step,
 	onUpdate,
 	readOnly = false,
+	isAdmin = false,
 }: TriggerEditPanelProps) {
 	const [globalRows, setGlobalRows] = useState<GlobalInputRow[]>(() => {
 		const globals = Array.isArray(step.workflowConfig?.globals)
@@ -64,7 +74,7 @@ export function TriggerEditPanel({
 		mode: OptionalTriggerMode,
 		enabled: boolean,
 	) => {
-		if (readOnly) return;
+		if (readOnly || (mode === "schedule" && !isAdmin)) return;
 		const triggerModes = enabled
 			? [...optionalTriggerModes, mode]
 			: optionalTriggerModes.filter((item) => item !== mode);
@@ -152,8 +162,17 @@ export function TriggerEditPanel({
 						</p>
 					</section>
 					<section
-						className="space-y-3 rounded-lg border p-3"
+						className={cn(
+							"space-y-3 rounded-lg border p-3",
+							!isAdmin &&
+								"border-dashed bg-muted/30 text-muted-foreground",
+						)}
 						aria-labelledby={scheduleTriggerHeadingId}
+						title={
+							!isAdmin
+								? "Scheduled jobs are only available to admins."
+								: undefined
+						}
 					>
 						<div className="flex items-center justify-between gap-3">
 							<div>
@@ -170,6 +189,7 @@ export function TriggerEditPanel({
 							{!readOnly && (
 								<Button
 									size="sm"
+									disabled={!isAdmin}
 									variant={
 										optionalTriggerModes.includes(
 											"schedule",
@@ -192,12 +212,18 @@ export function TriggerEditPanel({
 								</Button>
 							)}
 						</div>
-						{optionalTriggerModes.includes("schedule") && (
-							<SchedulePanel
-								projectId={appId}
-								onPrepareSchedule={onPrepareSchedule}
-							/>
+						{!isAdmin && (
+							<p className="text-muted-foreground text-xs">
+								Scheduled jobs are only available to admins.
+							</p>
 						)}
+						{isAdmin &&
+							optionalTriggerModes.includes("schedule") && (
+								<SchedulePanel
+									projectId={appId}
+									onPrepareSchedule={onPrepareSchedule}
+								/>
+							)}
 					</section>
 					{/* The runtime accepts MANUAL, PLAYGROUND, and SCHEDULED triggers only,
 					    so this is shown as upcoming rather than as a control that stores
