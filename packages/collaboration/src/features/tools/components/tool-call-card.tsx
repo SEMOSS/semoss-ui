@@ -6,7 +6,6 @@ import {
 	FileText,
 	Hourglass,
 	Mail,
-	MessagesSquare,
 } from "lucide-react";
 import { useContext, useId, useMemo, useRef, useState } from "react";
 import {
@@ -19,6 +18,7 @@ import {
 	useIsMobile,
 } from "@semoss/ui/next";
 import { asString } from "@semoss/utility";
+import { OutlookIcon, TeamsIcon } from "@/components/common/app-icons";
 import {
 	DelegationRequestApproval,
 	isDelegationRequest,
@@ -111,8 +111,8 @@ const SUBMIT_LABELS: Partial<Record<ConversationTool["status"], string>> = {
 
 /** What a found item is called and drawn as on its card. */
 const SHOWN_KINDS = {
-	email: { label: "email", icon: Mail },
-	chat: { label: "Teams chat", icon: MessagesSquare },
+	email: { label: "email", icon: OutlookIcon },
+	chat: { label: "Teams chat", icon: TeamsIcon },
 	file: { label: "file", icon: FileText },
 } as const;
 

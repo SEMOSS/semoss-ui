@@ -140,6 +140,11 @@ export interface FileExplorerItemProps
 	 * to its descendants, so a consumer supplies it once.
 	 */
 	itemActions?: (item: FileItem) => FileExplorerItemActions;
+	/**
+	 * A line to show under a directory's children; see `FileExplorer`'s
+	 * `listingNote`. Called for this row's children and passed down.
+	 */
+	listingNote?: (items: FileItem[], path: string) => string | undefined;
 }
 
 /**
@@ -158,6 +163,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 	explorer,
 	item,
 	itemActions,
+	listingNote,
 	...otherProps
 }) => {
 	const treeView = useTreeView<FileItem>();
@@ -210,6 +216,10 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 		() => adapter.mapEntries(getChildren.data, item.path),
 		[adapter, getChildren.data, item.path],
 	);
+	const childrenNote =
+		isDirectory && getChildren.status === "SUCCESS"
+			? listingNote?.(children, item.path)
+			: undefined;
 
 	useEffect(() => {
 		if (!isDirectory) return;
@@ -548,6 +558,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 								explorer={explorer}
 								item={child}
 								itemActions={itemActions}
+								listingNote={listingNote}
 							/>
 						))}
 					{getChildren.status === "SUCCESS" &&
@@ -559,6 +570,14 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 								{t("fileExplorer.emptyFolder")}
 							</Muted>
 						)}
+					{childrenNote ? (
+						<Muted
+							data-testid={`${itemTestId}-listing-note`}
+							className="flex items-center justify-center px-2 py-2 text-center text-xs"
+						>
+							{childrenNote}
+						</Muted>
+					) : null}
 					{/* Placeholder to ensure chevron is always shown for directories */}
 					{getChildren.status !== "LOADING" &&
 						getChildren.status !== "SUCCESS" && (

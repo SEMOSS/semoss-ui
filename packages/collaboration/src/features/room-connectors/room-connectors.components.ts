@@ -1,14 +1,3 @@
-import {
-	CalendarDays,
-	CalendarRange,
-	Cloud,
-	Files,
-	Hash,
-	type LucideIcon,
-	Mail,
-	MailOpen,
-	MessagesSquare,
-} from "lucide-react";
 import { createElement } from "react";
 import {
 	OneDriveViewer,
@@ -19,8 +8,17 @@ import {
 import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelConfigAny,
+	WorkbenchPanelIconProps,
 } from "@semoss/workbench";
+import {
+	type AppIcon,
+	OneDriveIcon,
+	TeamsChannelsIcon,
+	TeamsChatsIcon,
+	TeamsFilesIcon,
+} from "@/components/common/app-icons";
 import { CalendarBrowserPanel } from "./calendar-browser-panel";
+import { ConnectorPanelIcon } from "./connector-panel-icon";
 import { connectorViewerPanel } from "./connector-viewer-panel";
 import { EmailBrowserPanel } from "./email-browser-panel";
 import { EventDetailPanel } from "./event-detail-panel";
@@ -43,10 +41,15 @@ import type {
 	MailPanelConfig,
 } from "./room-connectors.types";
 
+// a mail or calendar tab wears its account's logo, so a Gmail tab is never drawn as Outlook
+const mailIcon = (props: WorkbenchPanelIconProps) =>
+	createElement(ConnectorPanelIcon, { ...props, app: "mail" });
+const calendarIcon = (props: WorkbenchPanelIconProps) =>
+	createElement(ConnectorPanelIcon, { ...props, app: "calendar" });
+
 const emails: WorkbenchPanelConfig<ConnectorPanelConfig> = {
 	name: "Emails",
-	icon: ({ className }) =>
-		createElement(Mail, { className, "aria-hidden": true }),
+	icon: mailIcon,
 	canClose: false,
 	canDrag: false,
 	canRename: false,
@@ -56,8 +59,7 @@ const emails: WorkbenchPanelConfig<ConnectorPanelConfig> = {
 };
 const calendar: WorkbenchPanelConfig<ConnectorPanelConfig> = {
 	name: "Calendar",
-	icon: ({ className }) =>
-		createElement(CalendarDays, { className, "aria-hidden": true }),
+	icon: calendarIcon,
 	canClose: false,
 	canDrag: false,
 	canRename: false,
@@ -67,8 +69,7 @@ const calendar: WorkbenchPanelConfig<ConnectorPanelConfig> = {
 };
 const mail: WorkbenchPanelConfig<MailPanelConfig> = {
 	name: "Email",
-	icon: ({ className }) =>
-		createElement(MailOpen, { className, "aria-hidden": true }),
+	icon: mailIcon,
 	canRename: false,
 	mount: "keepAlive",
 	matches: (a, b) =>
@@ -77,8 +78,7 @@ const mail: WorkbenchPanelConfig<MailPanelConfig> = {
 };
 const event: WorkbenchPanelConfig<EventPanelConfig> = {
 	name: "Event",
-	icon: ({ className }) =>
-		createElement(CalendarDays, { className, "aria-hidden": true }),
+	icon: calendarIcon,
 	canRename: false,
 	mount: "keepAlive",
 	matches: (a, b) => a.provider === b.provider && a.itemId === b.itemId,
@@ -86,8 +86,7 @@ const event: WorkbenchPanelConfig<EventPanelConfig> = {
 };
 const fullCalendar: WorkbenchPanelConfig<ConnectorPanelConfig> = {
 	name: "Calendar",
-	icon: ({ className }) =>
-		createElement(CalendarRange, { className, "aria-hidden": true }),
+	icon: calendarIcon,
 	canRename: false,
 	mount: "keepAlive",
 	matches: (a, b) => a.provider === b.provider,
@@ -96,12 +95,11 @@ const fullCalendar: WorkbenchPanelConfig<ConnectorPanelConfig> = {
 /** A Microsoft 365 browser opened from the + menu; unlike Emails and Calendar it can be closed. */
 const viewer = (
 	name: string,
-	icon: LucideIcon,
+	icon: AppIcon,
 	content: Parameters<typeof connectorViewerPanel>[0],
 ): WorkbenchPanelConfig<ConnectorPanelConfig> => ({
 	name,
-	icon: ({ className }) =>
-		createElement(icon, { className, "aria-hidden": true }),
+	icon: ({ className }) => createElement(icon, { className }),
 	canDrag: false,
 	canRename: false,
 	mount: "keepAlive",
@@ -119,8 +117,16 @@ export const ROOM_CONNECTOR_COMPONENTS: Record<
 	[MAIL_DETAIL_PANEL]: mail,
 	[EVENT_DETAIL_PANEL]: event,
 	[FULL_CALENDAR_PANEL]: fullCalendar,
-	[ONEDRIVE_BROWSER_PANEL]: viewer("OneDrive", Cloud, OneDriveViewer),
-	[TEAMS_CHATS_PANEL]: viewer("Teams Chats", MessagesSquare, TeamsChatViewer),
-	[TEAMS_CHANNELS_PANEL]: viewer("Teams Channels", Hash, TeamsChannelViewer),
-	[TEAMS_FILES_PANEL]: viewer("Teams Files", Files, TeamsFilesViewer),
+	[ONEDRIVE_BROWSER_PANEL]: viewer("OneDrive", OneDriveIcon, OneDriveViewer),
+	[TEAMS_CHATS_PANEL]: viewer("Teams Chats", TeamsChatsIcon, TeamsChatViewer),
+	[TEAMS_CHANNELS_PANEL]: viewer(
+		"Teams Channels",
+		TeamsChannelsIcon,
+		TeamsChannelViewer,
+	),
+	[TEAMS_FILES_PANEL]: viewer(
+		"Teams Files",
+		TeamsFilesIcon,
+		TeamsFilesViewer,
+	),
 };

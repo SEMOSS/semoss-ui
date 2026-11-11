@@ -35,7 +35,16 @@ export {
 	GoogleDriveViewer,
 	type GoogleDriveViewerProps,
 } from "./google/drive/google-drive-viewer";
-export type { MailMessage } from "./mail/mail.types";
+export {
+	buildMailFolderTree,
+	type MailFolderNode,
+} from "./mail/mail.folders";
+export {
+	groupMailByConversation,
+	type MailConversation,
+	normalizeMailSubject,
+} from "./mail/mail.threads";
+export type { MailFolder, MailMessage } from "./mail/mail.types";
 export {
 	MailDetailView,
 	type MailDetailViewProps,
@@ -46,6 +55,8 @@ export {
 	MailboxView,
 	type MailboxViewProps,
 } from "./mail/mailbox-view";
+export { type MailFolders, useMailFolders } from "./mail/use-mail-folders";
+export { type MailPages, useMailPages } from "./mail/use-mail-pages";
 export {
 	OneDriveViewer,
 	type OneDriveViewerProps,

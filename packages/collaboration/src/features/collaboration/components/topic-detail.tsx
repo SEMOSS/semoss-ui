@@ -1,13 +1,13 @@
 import {
 	ChevronDown,
+	ListChecks,
 	LockKeyhole,
-	PanelRightOpen,
 	Plus,
 	Search,
 	X,
 } from "lucide-react";
 import { lazy, Suspense, useId, useRef, useState } from "react";
-import { Link, useParams } from "react-router";
+import { Link, useLocation, useNavigate, useParams } from "react-router";
 import {
 	Badge,
 	Button,
@@ -37,6 +37,7 @@ import {
 import { TopicSessions } from "@/features/dashboard/topic-sessions";
 import { lexicon } from "@/lib/lexicon";
 import { givenFirst } from "@/lib/person-name";
+import { topicContentsPath } from "@/lib/workspace-paths";
 import { WorkRefreshStatus } from "../live/work-refresh-status";
 import { useWorkUpdates } from "../live/work-updates.context";
 import { useCollaborationSession } from "../state/collaboration-session.context";
@@ -91,21 +92,32 @@ const hintClassName =
 const memberControlClassName =
 	"text-muted-foreground pointer-fine:opacity-0 pointer-fine:group-focus-within/person:opacity-100 pointer-fine:group-hover/person:opacity-100";
 
+/** The tab a link back to the topic asks for in its state; Actions otherwise. */
+function returnTab(state: unknown): string {
+	return typeof state === "object" &&
+		state !== null &&
+		"tab" in state &&
+		(state.tab === "threads" || state.tab === "sessions")
+		? state.tab
+		: "actions";
+}
+
 /** One topic workspace for actions, threads, sessions, and editable context. */
 export function TopicDetail() {
 	const { topicId } = useParams();
 	const fieldId = useId();
 	const { state, dispatch } = useCollaborationSession();
 	const [isEditing, setIsEditing] = useState(false);
-	const [tab, setTab] = useState("actions");
+	const navigate = useNavigate();
+	const location = useLocation();
+	// the add-or-remove page comes back to the tab it was opened from
+	const [tab, setTab] = useState(() => returnTab(location.state));
 	const [isMatchReviewOpen, setIsMatchReviewOpen] = useState(false);
 	const [isResortOpen, setIsResortOpen] = useState(false);
 	const updates = useWorkUpdates();
 	const editButtonRef = useRef<HTMLButtonElement>(null);
 	// the button that opened the review, for focus on close; a click does not focus it in Safari
 	const matchTriggerRef = useRef<HTMLElement | null>(null);
-	const contextButtonRef = useRef<HTMLButtonElement>(null);
-	const contextRef = useRef<HTMLElement>(null);
 	const [showAllSuggested, setShowAllSuggested] = useState(false);
 	const topic = state.topics.find((candidate) => candidate.id === topicId);
 	const canStartAssistant =
@@ -114,7 +126,6 @@ export function TopicDetail() {
 		type: "topic",
 		id: topicId ?? "",
 	});
-	const [isContextOpen, setIsContextOpen] = useState(false);
 	const [areNotesOpen, setAreNotesOpen] = useState(topicMemories.length > 0);
 	const feed = useWorkFeed({ topicId: topicId ?? "", initialFilter: "open" });
 	if (!topic)
@@ -151,11 +162,27 @@ export function TopicDetail() {
 	// the server scores active and dormant topics; samples and isolated pages have no server to ask
 	const canFindConversations =
 		Boolean(updates) && !topic.isSample && canStartAssistant;
+	// the server only links a chat to a saved topic that is active or dormant
+	const canManageChats = !topic.isSample && canStartAssistant;
 	// the menu returns focus to its own trigger; a button passes itself
 	const openMatchReview = (trigger?: HTMLElement) => {
 		matchTriggerRef.current = trigger ?? null;
 		setIsMatchReviewOpen(true);
 	};
+	// the full page for adding and removing by hand, opened on the mailbox or on the chats
+	const manageButton = (label: string, place?: string) => (
+		<Button
+			asChild
+			variant="outline"
+			size="sm"
+			className="pointer-coarse:min-h-11"
+		>
+			<Link to={topicContentsPath(topic.id, place)}>
+				<ListChecks aria-hidden="true" />
+				{label}
+			</Link>
+		</Button>
+	);
 
 	return (
 		<CollaborationPage>
@@ -207,34 +234,6 @@ export function TopicDetail() {
 								Find conversations
 							</Button>
 						)}
-						<Button
-							ref={contextButtonRef}
-							variant={isContextOpen ? "secondary" : "outline"}
-							className="pointer-coarse:min-h-11"
-							aria-expanded={isContextOpen}
-							aria-controls={`${fieldId}-context`}
-							onClick={() => {
-								setIsContextOpen((open) => !open);
-								if (!isContextOpen) {
-									requestAnimationFrame(() => {
-										const context = contextRef.current;
-										if (
-											context &&
-											context.getBoundingClientRect()
-												.top >= window.innerHeight
-										) {
-											context.focus();
-											context.scrollIntoView({
-												block: "start",
-											});
-										}
-									});
-								}
-							}}
-						>
-							<PanelRightOpen aria-hidden="true" />
-							Context
-						</Button>
 						<TopicActions
 							topic={topic}
 							threadCount={threads.length}
@@ -242,6 +241,20 @@ export function TopicDetail() {
 								editButtonRef.current = null;
 								setIsEditing(true);
 							}}
+							onManageThreads={() =>
+								navigate(topicContentsPath(topic.id))
+							}
+							onManageChats={
+								canManageChats
+									? () =>
+											navigate(
+												topicContentsPath(
+													topic.id,
+													"chats",
+												),
+											)
+									: undefined
+							}
 							onResort={
 								canFindConversations && threads.length > 0
 									? () => {
@@ -284,18 +297,8 @@ export function TopicDetail() {
 					</Suspense>
 				)}
 			</section>
-			<div
-				className={cn(
-					"grid min-w-0 grid-cols-1 items-start gap-5",
-					isContextOpen && "xl:grid-cols-3",
-				)}
-			>
-				<div
-					className={cn(
-						"min-w-0 space-y-5",
-						isContextOpen && "xl:col-span-2",
-					)}
-				>
+			<div className="grid min-w-0 grid-cols-1 items-start gap-5 xl:grid-cols-3">
+				<div className="min-w-0 space-y-5 xl:col-span-2">
 					<Card className={cardClassName}>
 						<Tabs
 							value={tab}
@@ -341,24 +344,32 @@ export function TopicDetail() {
 										<WorkFilterMenu feed={feed} />
 									</div>
 								)}
-								{tab === "threads" &&
-									canFindConversations &&
-									threads.length > 0 && (
-										<Button
-											type="button"
-											variant="outline"
-											size="sm"
-											className="ml-auto pointer-coarse:min-h-11"
-											onClick={(event) =>
-												openMatchReview(
-													event.currentTarget,
-												)
-											}
-										>
-											<Search aria-hidden="true" />
-											Find conversations
-										</Button>
-									)}
+								{tab === "threads" && threads.length > 0 && (
+									<div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+										{canFindConversations && (
+											<Button
+												type="button"
+												variant="outline"
+												size="sm"
+												className="pointer-coarse:min-h-11"
+												onClick={(event) =>
+													openMatchReview(
+														event.currentTarget,
+													)
+												}
+											>
+												<Search aria-hidden="true" />
+												Find conversations
+											</Button>
+										)}
+										{manageButton("Add or remove")}
+									</div>
+								)}
+								{tab === "sessions" && canManageChats && (
+									<div className="ml-auto">
+										{manageButton("Add or remove", "chats")}
+									</div>
+								)}
 							</div>
 							<TabsContent value="actions" className="mt-0">
 								<WorkItemsList
@@ -420,33 +431,33 @@ export function TopicDetail() {
 											/>
 										))}
 									</ul>
-								) : canFindConversations ? (
+								) : (
 									<div className="flex flex-col items-start gap-3 px-5 py-4">
 										<P className="text-muted-foreground text-sm">
-											No threads in this topic yet. Find
-											conversations that fit it, or add it
-											from a thread's details.
+											{canFindConversations
+												? "No threads in this topic yet. Let Brain find the conversations that fit it, or pick them yourself."
+												: "No threads in this topic yet. Pick the conversations that belong here."}
 										</P>
-										<Button
-											type="button"
-											variant="outline"
-											size="sm"
-											className="pointer-coarse:min-h-11"
-											onClick={(event) =>
-												openMatchReview(
-													event.currentTarget,
-												)
-											}
-										>
-											<Search aria-hidden="true" />
-											Find conversations
-										</Button>
+										<div className="flex flex-wrap gap-2">
+											{canFindConversations && (
+												<Button
+													type="button"
+													variant="outline"
+													size="sm"
+													className="pointer-coarse:min-h-11"
+													onClick={(event) =>
+														openMatchReview(
+															event.currentTarget,
+														)
+													}
+												>
+													<Search aria-hidden="true" />
+													Find conversations
+												</Button>
+											)}
+											{manageButton("Add threads")}
+										</div>
 									</div>
-								) : (
-									<P className="px-5 py-4 text-muted-foreground text-sm">
-										No threads in this topic yet. Add it
-										from a thread's details.
-									</P>
 								)}
 							</TabsContent>
 							<TabsContent value="sessions" className="mt-0">
@@ -458,31 +469,9 @@ export function TopicDetail() {
 					</Card>
 				</div>
 				<aside
-					ref={contextRef}
-					tabIndex={-1}
-					id={`${fieldId}-context`}
-					hidden={!isContextOpen}
 					aria-label="Topic context"
-					className="min-w-0 divide-y divide-border focus-visible:outline-2 focus-visible:outline-ring xl:pt-1 [&>section:first-of-type]:pt-0 [&>section]:py-6"
+					className="min-w-0 divide-y divide-border xl:pt-1 [&>section:first-of-type]:pt-0 [&>section]:py-6"
 				>
-					<div className="flex items-center justify-between gap-3 pb-4 xl:hidden">
-						<H2 className={contextHeadingClassName}>
-							Topic context
-						</H2>
-						<Button
-							type="button"
-							variant="ghost"
-							size="icon-sm"
-							className="pointer-coarse:size-11"
-							aria-label="Close topic context"
-							onClick={() => {
-								setIsContextOpen(false);
-								contextButtonRef.current?.focus();
-							}}
-						>
-							<X aria-hidden="true" />
-						</Button>
-					</div>
 					<section aria-labelledby={`${fieldId}-people`}>
 						<div>
 							<div className={asideHeaderClassName}>

@@ -1,5 +1,6 @@
 import { z } from "@semoss/ui/next";
 import { callPixel, type InsightActions, pixel } from "@/lib/pixel";
+import { type RoomRow, readableRoomName } from "./room-schemas";
 
 const roomTopicSchema = z.object({
 	topicId: z.string(),
@@ -28,6 +29,41 @@ export async function listRoomTopics(
 		roomTopicsSchema,
 	);
 	return result.topics;
+}
+
+const topicRoomsSchema = z.object({
+	items: z.array(
+		z.object({
+			roomId: z.string(),
+			name: z.string().nullish(),
+			origin: z.string().nullish(),
+			lastAt: z.string().nullish(),
+		}),
+	),
+});
+
+/** A chat linked to a topic. Origin says who linked it: you, thread (its source thread), brain or agent. */
+export interface TopicRoom extends RoomRow {
+	origin?: string;
+}
+
+/** The open chats linked to a topic, most recently active first. */
+export async function listTopicRooms(
+	actions: InsightActions,
+	topicId: string,
+): Promise<TopicRoom[]> {
+	const result = await callPixel(
+		actions,
+		// shortcut: reads at most 500 chats per topic, page with offset if a topic outgrows it
+		pixel("BrainListTopicRooms", { topicId, limit: 500 }),
+		topicRoomsSchema,
+	);
+	return result.items.map((room) => ({
+		roomId: room.roomId,
+		roomName: readableRoomName(room.name),
+		dateUpdated: room.lastAt ?? undefined,
+		origin: room.origin ?? undefined,
+	}));
 }
 
 /** Set or accept a topic on the chat, or remove it (it stays dismissed). */
