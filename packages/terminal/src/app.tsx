@@ -9,11 +9,15 @@ import { LoginPage } from "@semoss/shared";
 import { ThemeProvider, Toaster } from "@semoss/ui/next";
 import { EmbedTerminal } from "./components/embed-terminal/embed-terminal";
 
-// In production the server writes MODULE into index.html (semoss-env tag, read
-// when the SDK loads). In dev a tag still wins; otherwise MODULE and the access keys come from .env.
+// The server writes MODULE into index.html (semoss-env tag, read when the SDK
+// loads) and it always wins; .env, then "/Monolith", cover a page without one.
+Env.update({
+	MODULE: Env.MODULE || import.meta.env.MODULE || "/Monolith",
+});
+
+// The access keys are for local development only.
 if (import.meta.env.DEV) {
 	Env.update({
-		MODULE: Env.MODULE || import.meta.env.MODULE || "/Monolith",
 		ACCESS_KEY: import.meta.env.ACCESS_KEY,
 		SECRET_KEY: import.meta.env.SECRET_KEY,
 	});

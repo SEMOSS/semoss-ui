@@ -10,13 +10,11 @@ if (!container) {
 }
 const root = createRoot(container);
 
-// In production the server writes MODULE into index.html (semoss-env tag, read
-// when the SDK loads). In dev a tag still wins; otherwise MODULE comes from .env.
-if (import.meta.env.DEV) {
-	Env.update({
-		MODULE: Env.MODULE || import.meta.env.MODULE || "/Monolith",
-	});
-}
+// The server writes MODULE into index.html (semoss-env tag, read when the SDK
+// loads) and it always wins; .env, then "/Monolith", cover a page without one.
+Env.update({
+	MODULE: Env.MODULE || import.meta.env.MODULE || "/Monolith",
+});
 
 const mount = async () => {
 	// Wait for the active language's translations before the first render so
