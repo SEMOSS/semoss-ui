@@ -51,6 +51,14 @@ const agentRunSchema = z.object({
 	finalOutputMessageId: z.string().nullish(),
 	finalText: z.string().nullish(),
 	errorMessage: z.string().nullish(),
+	taskOutcome: z
+		.object({
+			status: z.enum(["UNKNOWN", "FULFILLED", "PARTIAL", "BLOCKED"]),
+			summary: z.string().nullish(),
+			limitations: z.array(z.string()).optional(),
+			actionRequired: z.string().nullish(),
+		})
+		.nullish(),
 	input: z.string().nullish(),
 	parentRunId: z.string().nullish(),
 	workspaceId: z.string().nullish(),
@@ -65,7 +73,12 @@ const agentRunSchema = z.object({
 		.nullish()
 		.transform((value) => value ?? []),
 	messages: z.array(roomMessageSchema).optional(),
-	progress: z.object({ activity: z.string() }).nullish(),
+	progress: z
+		.object({
+			activity: z.string(),
+			phase: z.string().nullish(),
+		})
+		.nullish(),
 });
 
 /** Only fields used by the conversation are retained from harness events. */
