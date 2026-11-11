@@ -30,7 +30,7 @@ import type {
 	GuardrailParametersStatus,
 } from "./guardrail-engine-parameters";
 
-export interface GuardrailInputMappingFieldProps {
+interface GuardrailInputMappingFieldProps {
 	/** Mapping rows currently held for this check. */
 	value: GuardrailMappingEntryFormValue[];
 

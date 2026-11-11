@@ -320,7 +320,7 @@ it("opens the display menu independently and preserves its destination choices",
 	expect(workbench.openWorkbench).toHaveBeenCalledWith("tool-0");
 });
 
-it("keeps a result that can open what it found outside the folded steps, in a room only", () => {
+it("folds a result that can open what it found with the other steps, keeping its Open inside them", () => {
 	const step = (id: string, name: string, output?: unknown) => ({
 		type: "tool" as const,
 		tool: {
@@ -350,26 +350,19 @@ it("keeps a result that can open what it found outside the folded steps, in a ro
 		store: new RoomEmailStore(),
 		openItem: vi.fn(),
 	} as unknown as NonNullable<ContextType<typeof RoomEmailContext>>;
-	const view = render(
+	render(
 		<RoomEmailContext.Provider value={room}>
 			<MessageToolActivity items={items} />
 		</RoomEmailContext.Provider>,
 	);
-	expect(
-		screen.getByRole("button", {
-			name: "2 tool calls 2 completed View steps",
-		}),
-	).toBeVisible();
-	expect(
-		screen.getByRole("button", { name: "Open email: ReadThread · GTC DC" }),
-	).toBeVisible();
-	view.unmount();
-	render(<MessageToolActivity items={items} />);
-	expect(
+	const open = { name: "Open email: ReadThread · GTC DC" };
+	expect(screen.queryByRole("button", open)).toBeNull();
+	fireEvent.click(
 		screen.getByRole("button", {
 			name: "3 tool calls 3 completed View steps",
 		}),
-	).toBeVisible();
+	);
+	expect(screen.getByRole("button", open)).toBeVisible();
 });
 
 it("keeps a sidebar tool inline on mobile", async () => {

@@ -2,7 +2,7 @@ import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "@semoss/i18n";
-import { usePixel } from "@semoss/sdk/react";
+import { useSessionPixel } from "@semoss/sdk/react";
 import {
 	AGENT_FORM_DEFAULT_VALUES,
 	type AgentDefaultTool,
@@ -47,7 +47,7 @@ export const NewWorkspacePage = observer(() => {
 
 	// The built-in tool catalog and hook kinds are deployment-level, so they
 	// are available before the agent exists
-	const formOptions = usePixel<{
+	const formOptions = useSessionPixel<{
 		default_tools?: AgentDefaultTool[];
 		known_hook_kinds?: string[];
 	}>("GetAgentFormOptions();");

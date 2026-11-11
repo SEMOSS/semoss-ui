@@ -1,17 +1,52 @@
 import { Navigate, Outlet, useLocation } from "react-router";
-import { useInsight } from "@semoss/sdk/react";
+import { useTranslation } from "@semoss/i18n";
+import { useSession, useSessionRetry } from "@semoss/sdk/react";
+import { Button, Muted, Spinner } from "@semoss/ui/next";
 
 /**
- * Wrap the database routes and add additional funcitonality
+ * Wrap the routes that need a signed in user. It reads the SDK's session:
+ * a spinner while it is read, the login page when signed out, and the error
+ * with Retry when it could not be read. Once signed in it renders the
+ * pages, which run their pixels in the session's own insight.
  */
 export const AuthenticatedLayout = () => {
-	const { isAuthorized } = useInsight();
+	const { t } = useTranslation("auditlog");
+	const status = useSession((state) => state.status);
+	const { isRetrying, retry } = useSessionRetry();
 
 	// track the location
 	const location = useLocation();
 
-	if (!isAuthorized) {
+	if (status === "INITIALIZING") {
+		return (
+			<div className="flex h-full w-full items-center justify-center">
+				<Spinner />
+			</div>
+		);
+	}
+
+	if (status === "UNAUTHENTICATED") {
 		return <Navigate to="/login" state={{ from: location }} replace />;
+	}
+
+	if (status === "ERROR") {
+		return (
+			<div
+				role="alert"
+				className="flex h-full w-full flex-col items-center justify-center gap-3 p-6 text-center"
+			>
+				<Muted className="max-w-md">{t("layout.loadFailed")}</Muted>
+				<Button
+					type="button"
+					variant="outline"
+					disabled={isRetrying}
+					onClick={retry}
+				>
+					{isRetrying ? <Spinner /> : null}
+					{t("common:buttons.retry")}
+				</Button>
+			</div>
+		);
 	}
 
 	return <Outlet />;

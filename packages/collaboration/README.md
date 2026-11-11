@@ -284,6 +284,33 @@ Source readers retain explicit attachment downloads through the existing
 Microsoft APIs. Source snapshot imports include attachment names only. Files
 chosen for a room's composer use the room's ordinary upload and submission flow.
 
+## Writing style
+
+Settings → About you holds **How you write**. Drafts use only the style the owner has confirmed; an
+unconfirmed or still-pending style never reaches the assistant, the frontend context, or the server prompt.
+
+- **Learn from my writing** starts the `BrainLearnStyle` job (followed with `BrainGetJob(kind="style")`). It samples up
+  to 50 emails from the Sent folder and the owner's own chat messages from the last 30 days, skips forwards and anything
+  the owner's Brain rules keep out, and asks the classifier model (`COLLAB_CLASSIFIER_ENGINE_ID`) to keep only messages
+  written by a person. The text model (`COLLAB_LLM_ENGINE_ID`) then returns a summary, short excerpts and internal and
+  external variants. Excerpts must be found in the named sample, and a variant needs at least three samples.
+- The result is stored as a **pending proposal** (`style.pending`). The owner edits the summary, examples, and variants,
+  then confirms it (saved with `source: "learned"`) or discards it. Only the agreed content is retained.
+- **Audience variants** follow the recipients: an email is internal when every recipient belongs to the owner's
+  organisation (`BrainOrgDomains`) and external when any recipient is outside it. Before composing an email, the assistant
+  calls `GetWritingStyle` with the recipients and uses the returned confirmed style for that audience. Pending proposals
+  are excluded; the frontend does not inject a profile/style snapshot into each request.
+- **Re-learning** is manual. Learning again replaces only the pending proposal and never overwrites the confirmed style.
+- The general summary is optional. Saving a style with no summary, examples, or variants, or pressing **Reset style**
+  (with a confirmation), removes the whole style and any proposal; drafts then use no style.
+- Style changes are saved directly and awaited (`useStyleSave`), not through the background saver. Each save sends the
+  whole style, the session takes the style the server returns (`profile.style.server`), a success toast confirms it,
+  and a failure stays visible in the form with the owner's entries kept. The proposal is written by the server alone;
+  reviewing it clears it with `pending: null`.
+- The assistant reads `GetWritingStyle` before generating an email and calling `ComposeEmail`. Generic messages,
+  Teams chats, summaries, and factual lookups do not trigger email-style retrieval. A newly saved style is available
+  on the next tool call; existing drafts retain their text until edited or regenerated.
+
 ## Routes and ownership
 
 | Routes | Feature |
@@ -292,6 +319,7 @@ chosen for a room's composer use the room's ordinary upload and submission flow.
 | `/work` | Topic overview |
 | `/work/all`, `/work/waiting`, `/work/done` | Global work lists |
 | `/topics/:topicId` | Shared topic actions, threads, sessions, and editable context |
+| `/topics/:topicId/contents` | Full-screen page for adding and removing a topic's emails and chats by hand: the Outlook folder tree, what Brain has read, and the assistant chats |
 | `/work/topic/:topicId`, `/brain/topics/:topicId` | Redirects to the shared topic workspace |
 | `/thread/:id` | Source import bridge, or saved room when the identity starts with `room:` |
 | `/brain`, `/brain/sources` | Review and source readers/imports |

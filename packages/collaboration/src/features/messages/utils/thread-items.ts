@@ -112,7 +112,9 @@ function persistedPartToConversationPart(
 }
 
 /** Saved times are UTC with no zone ("2026-10-02 13:05:00"); browsers would read them as local time. */
-function savedTimestamp(value: string | null | undefined): string | undefined {
+export function savedTimestamp(
+	value: string | null | undefined,
+): string | undefined {
 	if (!value) return undefined;
 	const date = parseTimestampWithUtcDefault(value);
 	return date.isValid() ? date.toISOString() : undefined;
@@ -246,7 +248,9 @@ export function optimisticUserMessage(
  * messages keep the room's order, and the turn's copy of a message wins. A
  * message the room has not saved yet (the pending request, streamed output, a
  * run card) stays after the turn message it followed. Anything after the
- * turn's last saved message is newer than all of history and goes last.
+ * turn's last saved message is newer than all of history and goes last. A card
+ * for an earlier run's child goes right after the saved message it names in
+ * `parentMessageId`, since the turn may not hold that message.
  */
 export function mergeTranscript(
 	history: ConversationMessage[],
@@ -257,12 +261,25 @@ export function mergeTranscript(
 	// Unsaved turn messages, keyed by the saved turn message they follow.
 	const leading: ConversationMessage[] = [];
 	const following = new Map<string, ConversationMessage[]>();
+	// Run cards, keyed by the saved message they name.
+	const anchored = new Map<string, ConversationMessage[]>();
 	let group = leading;
 	let first: string | undefined;
 	let last: string | undefined;
 	for (const message of turn) {
 		if (!saved.has(message.id)) {
-			group.push(message);
+			const anchor = message.parentMessageId;
+			// an unsaved reply also names a parent, but it belongs with its turn
+			if (
+				anchor &&
+				saved.has(anchor) &&
+				message.parts.every((part) => part.type === "run")
+			)
+				anchored.set(anchor, [
+					...(anchored.get(anchor) ?? []),
+					message,
+				]);
+			else group.push(message);
 			continue;
 		}
 		first ??= message.id;
@@ -280,6 +297,7 @@ export function mergeTranscript(
 	for (const message of history) {
 		if (message.id === first) leading.forEach(add);
 		add(latest.get(message.id) ?? message);
+		anchored.get(message.id)?.forEach(add);
 		if (message.id !== last) following.get(message.id)?.forEach(add);
 	}
 	// With nothing saved in the turn, all of it is newer than history.

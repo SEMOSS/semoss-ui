@@ -1,6 +1,6 @@
 import type { SerializedEditorState } from "lexical";
-import type { LucideIcon } from "lucide-react";
 import type { RefObject } from "react";
+import type { AppIcon } from "@/components/common/app-icons";
 
 export const COMPOSER_MAX_CHARACTERS = 8_000;
 
@@ -20,9 +20,7 @@ export interface ComposerActionControls {
 export interface ComposerPanelAction {
 	id: string;
 	label: string;
-	icon: LucideIcon;
-	/** Colors the icon, such as an app's own color; muted when absent. */
-	iconClassName?: string;
+	icon: AppIcon;
 	disabled?: boolean;
 	onSelect: () => void;
 }

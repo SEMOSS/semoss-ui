@@ -10,16 +10,18 @@ import {
 import { createEmptyWorkspace } from "../state/collaboration.reducer";
 import type {
 	Account,
-	CollaborationCommand,
 	CollaborationState,
 	Memory,
 	MemoryRef,
 	Person,
 	Profile,
+	ProfileStyle,
 	ReviewEntry,
 	Rule,
 	Settings,
 	SourceStatus,
+	StyleAudience,
+	StyleVariant,
 	Thread,
 	ThreadWorkspace,
 	Topic,
@@ -100,12 +102,58 @@ function mapProfile(row: Row, selfId: string | undefined): Profile {
 					? `${str(hours.start)} - ${str(hours.end)}`
 					: "",
 		vips: list<string>(row.vips),
-		style: {
-			summary: str(style.summary),
-			source: style.source === "you" ? "you" : "learned",
-			confirmed: style.confirmed === true,
-			examples: list<string>(style.examples),
-		},
+		style: mapStyle(style),
+	};
+}
+
+const AUDIENCES: StyleAudience[] = ["internal", "external"];
+
+const strings = (value: unknown): string[] =>
+	list(value).filter((item): item is string => typeof item === "string");
+
+function mapVariants(
+	value: unknown,
+): Partial<Record<StyleAudience, StyleVariant>> {
+	const row = (value ?? {}) as Row;
+	const variants: Partial<Record<StyleAudience, StyleVariant>> = {};
+	for (const audience of AUDIENCES) {
+		const variant = row[audience] as Row | undefined;
+		if (variant && str(variant.summary).trim())
+			variants[audience] = {
+				summary: str(variant.summary),
+				examples: strings(variant.examples),
+			};
+	}
+	return variants;
+}
+
+/** The profile's writing style, with the agreed variants and any proposal still to review. */
+export function mapStyle(style: Row): ProfileStyle {
+	const pending = style.pending as Row | undefined;
+	const sample = pending?.sample as Row | undefined;
+	return {
+		summary: str(style.summary),
+		source: style.source === "you" ? "you" : "learned",
+		confirmed: style.confirmed === true,
+		examples: strings(style.examples),
+		variants: mapVariants(style.variants),
+		pending:
+			pending && str(pending.summary).trim()
+				? {
+						summary: str(pending.summary),
+						examples: strings(pending.examples),
+						variants: mapVariants(pending.variants),
+						learnedAt: opt(pending.learnedAt),
+						sample: sample
+							? {
+									emails: Number(sample.emails ?? 0),
+									chats: Number(sample.chats ?? 0),
+									windowDays: Number(sample.windowDays ?? 0),
+								}
+							: undefined,
+					}
+				: null,
+		learnedAt: opt(style.learnedAt),
 	};
 }
 
@@ -121,6 +169,10 @@ function mapSettings(row: Row): Settings {
 		},
 		draftFolderId: str(row.draftFolderId),
 		draftFolderName: str(row.draftFolderName),
+		draftFont: str(row.draftFont) || "Aptos",
+		draftFontSize: Number(row.draftFontSize ?? 12),
+		draftSignatureHtml: str(row.draftSignatureHtml),
+		draftSignatureOn: row.draftSignatureOn !== false,
 		// older servers send none and sync every 15 minutes
 		syncEveryMinutes: Number(row.syncEveryMinutes ?? 15),
 		version: Number(row.version ?? 0),
@@ -222,7 +274,6 @@ export function mapTopic(row: Row): Topic {
 		status: (row.status as Topic["status"]) ?? "active",
 		description: str(row.description),
 		keywords: list<string>(row.keywords),
-		goals: list(row.goals),
 		people: list<Row>(row.people).map((person) => ({
 			personId: str(person.personId),
 			role: str(person.role),
@@ -465,7 +516,7 @@ export async function loadLiveState(
 	const topicIds = [
 		...new Set(topicsPage.items.map((topic) => str(topic.id))),
 	];
-	// topic goals and people come from the detail call; topic notes are memories
+	// topic people come from the detail call; topic notes are memories
 	const topicRows = (await runBatch(
 		actions,
 		topicIds.map((topicId) => pixel("BrainGetTopic", { topicId })),
@@ -504,9 +555,15 @@ export async function loadLiveState(
 }
 
 // a due day is saved as midnight UTC; as a plain date it shows on that day in every time zone
-function dueDay(value: unknown): string | null {
+export function dueDay(value: unknown): string | null {
 	const due = opt(value);
 	return due?.endsWith("T00:00:00Z") ? due.slice(0, 10) : (due ?? null);
+}
+
+/** A due to read in local time: a plain due day becomes its local midnight, so it shows on that day. */
+export function localDue(value: unknown): string | null {
+	const day = dueDay(value);
+	return day && /^\d{4}-\d{2}-\d{2}$/.test(day) ? `${day}T00:00` : day;
 }
 
 function mapStep(step: Row): WorkspaceStep {
@@ -523,14 +580,13 @@ function mapStep(step: Row): WorkspaceStep {
 	};
 }
 
-// saved goal and steps; messages load when the thread opens, and a thread's facts are memories
+// saved steps; messages load when the thread opens, and a thread's facts are memories
 export function mapWorkspaces(page: Page): Record<string, ThreadWorkspace> {
 	return Object.fromEntries(
 		page.items.map((row) => [
 			str(row.threadId),
 			{
 				...createEmptyWorkspace(),
-				goal: str(row.goal),
 				steps: list<Row>(row.steps).map(mapStep),
 			},
 		]),
@@ -650,20 +706,6 @@ export async function readThreadMessagesPage(
 	};
 }
 
-/** Legacy refresh callers attach the first page to the current owning thread. */
-export async function loadThreadMessages(
-	actions: InsightActions,
-	threadId: string,
-): Promise<(thread: Thread) => CollaborationCommand> {
-	const { messages } = await readThreadMessagesPage(actions, threadId);
-	return (thread) => ({
-		type: "source.import",
-		thread,
-		people: [],
-		workspace: { messages },
-	});
-}
-
 const threadInsightsSchema = z.object({
 	threadId: z.string(),
 	status: z.enum(["running", "done", "failed"]),
@@ -761,28 +803,6 @@ export async function readWorkUpdates(actions: InsightActions): Promise<
 		memories: schema.parse(outputs[4]).items.map(mapMemory),
 		lastMailCheck: mapMailCheck(outputs[3]),
 	};
-}
-
-/** Read the current goals after an assistant edits a topic, including calls that use its name. */
-export function readTopicGoals(
-	actions: InsightActions,
-	topic: { topicId?: string; topic?: string },
-): Promise<Pick<Topic, "id" | "goals">> {
-	return callPixel(
-		actions,
-		pixel("BrainListTopics", topic),
-		z.object({
-			id: z.string().min(1),
-			goals: z.array(
-				z.object({
-					noteId: z.string().min(1),
-					text: z.string(),
-					status: z.enum(["open", "done"]),
-					resolution: z.string().optional(),
-				}),
-			),
-		}),
-	);
 }
 
 /** Read one topic in full after an assistant creates or changes it, by id or by a name that picks one. */

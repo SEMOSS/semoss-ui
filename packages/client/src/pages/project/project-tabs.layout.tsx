@@ -1,0 +1,238 @@
+import {
+	ChevronRightIcon,
+	PencilIcon,
+	SquareArrowOutUpRight,
+} from "lucide-react";
+import { useMemo } from "react";
+import { Link, matchPath, Outlet, useLocation } from "react-router";
+import type { Role } from "@semoss/sdk";
+import { useSession, useSessionInsight } from "@semoss/sdk/react";
+import { AppCatalogAvatar, EntityHeader } from "@semoss/shared";
+import {
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
+	Button,
+	Tabs,
+	TabsList,
+	TabsTrigger,
+} from "@semoss/ui/next";
+import { setProjectDisplayName } from "@/api/projects";
+import { ProjectAccessRequestButton } from "@/components/project/project-access-request-button";
+import { NavbarHeader } from "@/components/shared/navbar-header";
+import { NavbarLeft } from "@/components/shared/navbar-left";
+import { ProjectActionsMenu } from "@/features/project-actions/project-actions-menu";
+import { useProject } from "@/hooks/use-project";
+import { useNavigate } from "@/hooks/useNavigate";
+
+interface ProjectTabsLayoutProps {
+	/** Tabs to show */
+	tabs: {
+		name: string;
+		path: string;
+		restrict?: Role[];
+	}[];
+}
+
+/**
+ * Wrap the project routes and render the catalog header + tab navigation
+ */
+export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
+	const { catalog, project, permission, refresh, type, update } =
+		useProject();
+	const { insightId } = useSessionInsight();
+	const isAdmin = useSession((state) => state.user?.isAdmin === true);
+
+	const navigate = useNavigate();
+	const { pathname } = useLocation();
+	const projectPath = `${catalog.path}/${project.project_id}`;
+
+	// see all the visible tabs
+	const visibleTabs = useMemo(() => {
+		return tabs.filter((tab) => {
+			if (tab.path === "audit" && isAdmin) return true;
+			if (!tab.restrict || tab.restrict.length === 0) {
+				return true;
+			}
+			if (!permission) {
+				return false;
+			}
+			return tab.restrict.includes(permission);
+		});
+	}, [tabs, permission, isAdmin]);
+
+	// the current active tab index based on the current pathname
+	const activeTabIdx = useMemo(() => {
+		for (let i = 0; i < visibleTabs.length; i++) {
+			const tab = visibleTabs[i];
+			const tabPath = tab.path
+				? `${projectPath}/${tab.path}`
+				: projectPath;
+			if (
+				matchPath({ path: tabPath, end: true }, pathname) ||
+				(tab.path !== "" && matchPath(`${tabPath}/*`, pathname))
+			) {
+				return i;
+			}
+		}
+		return -1;
+	}, [visibleTabs, projectPath, pathname]);
+
+	const activeTab = activeTabIdx >= 0 ? visibleTabs[activeTabIdx] : undefined;
+	const openProjectPath =
+		type === "AUTOMATION"
+			? `${catalog.path}/${project.project_id}/edit`
+			: `${catalog.path}/${project.project_id}/view`;
+
+	/**
+	 * Save the project's new display name and show it in place
+	 */
+	const handleRename = async (name: string) => {
+		await setProjectDisplayName(insightId, project.project_id, name);
+		update({ project_display_name: name });
+	};
+
+	return (
+		<div className="w-full">
+			<NavbarLeft>
+				<NavbarHeader logo={null} />
+				<Breadcrumb>
+					<BreadcrumbList>
+						<BreadcrumbItem>
+							<BreadcrumbLink asChild>
+								<Link to={catalog.path}>
+									{catalog.name} Catalog
+								</Link>
+							</BreadcrumbLink>
+						</BreadcrumbItem>
+						<BreadcrumbSeparator>
+							<ChevronRightIcon />
+						</BreadcrumbSeparator>
+						<BreadcrumbItem>
+							<BreadcrumbPage
+								title={
+									project.project_display_name ||
+									project.project_name
+								}
+							>
+								{project.project_display_name ||
+									project.project_name}
+							</BreadcrumbPage>
+						</BreadcrumbItem>
+					</BreadcrumbList>
+				</Breadcrumb>
+			</NavbarLeft>
+			<div className="flex h-full w-full flex-col justify-center gap-4">
+				<div className={`mx-auto flex h-full w-full flex-col gap-3`}>
+					<EntityHeader
+						icon={
+							<AppCatalogAvatar
+								projectId={project.project_id}
+								name={
+									project.project_display_name ||
+									project.project_name ||
+									""
+								}
+								className="h-full w-full rounded-lg text-xl"
+							/>
+						}
+						name={
+							project.project_display_name ||
+							project.project_name ||
+							""
+						}
+						id={project.project_id}
+						copyLabel="Copy ID"
+						idTestId="appDetail-id"
+						onRename={
+							permission === "OWNER" ? handleRename : undefined
+						}
+						renameLabel={`Rename ${catalog.name}`}
+						actions={
+							<>
+								<ProjectActionsMenu />
+								{permission !== "OWNER" && (
+									<ProjectAccessRequestButton
+										project={project}
+										permission={permission}
+										onSuccess={() => {
+											refresh();
+										}}
+									/>
+								)}
+								{type === "WORKSPACE"
+									? // Agents land on a read-only overview, so the
+										// header offers editing to those who can edit
+										(permission === "OWNER" ||
+											permission === "EDIT") && (
+											<Button
+												asChild
+												variant="default"
+												className="gap-2"
+												data-testid="appDetail-edit-btn"
+											>
+												<Link
+													to={`${catalog.path}/${project.project_id}/edit`}
+												>
+													<PencilIcon className="size-4" />
+													Edit
+												</Link>
+											</Button>
+										)
+									: permission !== "DISCOVERABLE" && (
+											<Button
+												asChild
+												variant="default"
+												className="gap-2"
+												data-testid="appDetail-open-btn"
+											>
+												<Link to={openProjectPath}>
+													<SquareArrowOutUpRight className="size-4" />
+													Open {catalog.name}
+												</Link>
+											</Button>
+										)}
+							</>
+						}
+					/>
+				</div>
+
+				<div className="flex flex-col rounded-lg bg-muted">
+					{visibleTabs.length > 0 && (
+						<Tabs
+							value={activeTab?.path ?? ""}
+							className="gap-0 bg-transparent"
+						>
+							<div className="w-full overflow-x-auto">
+								<TabsList className="w-max flex-nowrap gap-2">
+									{visibleTabs.map((tab) => (
+										<TabsTrigger
+											key={tab.name}
+											value={tab.path}
+											onClick={() => {
+												navigate(
+													tab.path
+														? `${projectPath}/${tab.path}`
+														: projectPath,
+												);
+											}}
+											data-testid={`appDetail-${tab.name}-tab`}
+										>
+											{tab.name}
+										</TabsTrigger>
+									))}
+								</TabsList>
+							</div>
+						</Tabs>
+					)}
+					<div className="w-full bg-card p-3 md:p-4">
+						<Outlet />
+					</div>
+				</div>
+			</div>
+		</div>
+	);
+};

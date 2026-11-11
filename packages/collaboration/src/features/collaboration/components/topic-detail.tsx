@@ -1,19 +1,17 @@
 import {
-	Bot,
 	ChevronDown,
+	ListChecks,
 	LockKeyhole,
-	PanelRightOpen,
 	Plus,
 	Search,
 	X,
 } from "lucide-react";
 import { lazy, Suspense, useId, useRef, useState } from "react";
-import { Link, useParams } from "react-router";
+import { Link, useLocation, useNavigate, useParams } from "react-router";
 import {
 	Badge,
 	Button,
 	Card,
-	Checkbox,
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
@@ -25,7 +23,6 @@ import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
-	Progress,
 	Select,
 	SelectContent,
 	SelectItem,
@@ -40,6 +37,7 @@ import {
 import { TopicSessions } from "@/features/dashboard/topic-sessions";
 import { lexicon } from "@/lib/lexicon";
 import { givenFirst } from "@/lib/person-name";
+import { topicContentsPath } from "@/lib/workspace-paths";
 import { WorkRefreshStatus } from "../live/work-refresh-status";
 import { useWorkUpdates } from "../live/work-updates.context";
 import { useCollaborationSession } from "../state/collaboration-session.context";
@@ -56,7 +54,6 @@ import { TextEntryForm } from "./text-entry-form";
 import { TopicActions } from "./topic-actions";
 import { TopicEditor } from "./topic-editor";
 import { TopicFolders } from "./topic-folders";
-import { TopicGoalPopover } from "./topic-goal-popover";
 import { TopicIgnoredPeople } from "./topic-ignored-people";
 import { TopicMatchesDialog } from "./topic-matches-dialog";
 import { TopicPeoplePopover } from "./topic-people-popover";
@@ -95,20 +92,32 @@ const hintClassName =
 const memberControlClassName =
 	"text-muted-foreground pointer-fine:opacity-0 pointer-fine:group-focus-within/person:opacity-100 pointer-fine:group-hover/person:opacity-100";
 
+/** The tab a link back to the topic asks for in its state; Actions otherwise. */
+function returnTab(state: unknown): string {
+	return typeof state === "object" &&
+		state !== null &&
+		"tab" in state &&
+		(state.tab === "threads" || state.tab === "sessions")
+		? state.tab
+		: "actions";
+}
+
 /** One topic workspace for actions, threads, sessions, and editable context. */
 export function TopicDetail() {
 	const { topicId } = useParams();
 	const fieldId = useId();
 	const { state, dispatch } = useCollaborationSession();
 	const [isEditing, setIsEditing] = useState(false);
-	const [tab, setTab] = useState("actions");
+	const navigate = useNavigate();
+	const location = useLocation();
+	// the add-or-remove page comes back to the tab it was opened from
+	const [tab, setTab] = useState(() => returnTab(location.state));
 	const [isMatchReviewOpen, setIsMatchReviewOpen] = useState(false);
+	const [isResortOpen, setIsResortOpen] = useState(false);
 	const updates = useWorkUpdates();
 	const editButtonRef = useRef<HTMLButtonElement>(null);
 	// the button that opened the review, for focus on close; a click does not focus it in Safari
 	const matchTriggerRef = useRef<HTMLElement | null>(null);
-	const contextButtonRef = useRef<HTMLButtonElement>(null);
-	const contextRef = useRef<HTMLElement>(null);
 	const [showAllSuggested, setShowAllSuggested] = useState(false);
 	const topic = state.topics.find((candidate) => candidate.id === topicId);
 	const canStartAssistant =
@@ -117,9 +126,6 @@ export function TopicDetail() {
 		type: "topic",
 		id: topicId ?? "",
 	});
-	const [isContextOpen, setIsContextOpen] = useState(
-		Boolean(topic?.goals.length),
-	);
 	const [areNotesOpen, setAreNotesOpen] = useState(topicMemories.length > 0);
 	const feed = useWorkFeed({ topicId: topicId ?? "", initialFilter: "open" });
 	if (!topic)
@@ -132,7 +138,7 @@ export function TopicDetail() {
 						This topic is not available.
 					</P>
 					<Button asChild variant="outline">
-						<Link to="/work">All topics</Link>
+						<Link to="/work/topics">All topics</Link>
 					</Button>
 				</div>
 			</CollaborationSurface>
@@ -151,17 +157,32 @@ export function TopicDetail() {
 	const accountName =
 		state.accounts.find((account) => account.id === topic.accountId)
 			?.name || "No account";
-	const doneGoals = topic.goals.filter((goal) => goal.status === "done");
 	const feedThreadCount = new Set(workItems.map((item) => item.threadId))
 		.size;
 	// the server scores active and dormant topics; samples and isolated pages have no server to ask
 	const canFindConversations =
 		Boolean(updates) && !topic.isSample && canStartAssistant;
+	// the server only links a chat to a saved topic that is active or dormant
+	const canManageChats = !topic.isSample && canStartAssistant;
 	// the menu returns focus to its own trigger; a button passes itself
 	const openMatchReview = (trigger?: HTMLElement) => {
 		matchTriggerRef.current = trigger ?? null;
 		setIsMatchReviewOpen(true);
 	};
+	// the full page for adding and removing by hand, opened on the mailbox or on the chats
+	const manageButton = (label: string, place?: string) => (
+		<Button
+			asChild
+			variant="outline"
+			size="sm"
+			className="pointer-coarse:min-h-11"
+		>
+			<Link to={topicContentsPath(topic.id, place)}>
+				<ListChecks aria-hidden="true" />
+				{label}
+			</Link>
+		</Button>
+	);
 
 	return (
 		<CollaborationPage>
@@ -200,37 +221,48 @@ export function TopicDetail() {
 				}
 				actions={
 					<>
-						<Button
-							ref={contextButtonRef}
-							variant={isContextOpen ? "secondary" : "outline"}
-							className="pointer-coarse:min-h-11"
-							aria-expanded={isContextOpen}
-							aria-controls={`${fieldId}-context`}
-							onClick={() => {
-								setIsContextOpen((open) => !open);
-								if (!isContextOpen) {
-									requestAnimationFrame(() => {
-										const context = contextRef.current;
-										if (
-											context &&
-											context.getBoundingClientRect()
-												.top >= window.innerHeight
-										) {
-											context.focus();
-											context.scrollIntoView({
-												block: "start",
-											});
-										}
-									});
+						{/* a topic with no threads yet starts by finding the conversations that fit it */}
+						{canFindConversations && threads.length === 0 && (
+							<Button
+								type="button"
+								className="pointer-coarse:min-h-11"
+								onClick={(event) =>
+									openMatchReview(event.currentTarget)
 								}
-							}}
-						>
-							<PanelRightOpen aria-hidden="true" />
-							Context
-						</Button>
+							>
+								<Search aria-hidden="true" />
+								Find conversations
+							</Button>
+						)}
 						<TopicActions
 							topic={topic}
 							threadCount={threads.length}
+							onEdit={() => {
+								editButtonRef.current = null;
+								setIsEditing(true);
+							}}
+							onManageThreads={() =>
+								navigate(topicContentsPath(topic.id))
+							}
+							onManageChats={
+								canManageChats
+									? () =>
+											navigate(
+												topicContentsPath(
+													topic.id,
+													"chats",
+												),
+											)
+									: undefined
+							}
+							onResort={
+								canFindConversations && threads.length > 0
+									? () => {
+											matchTriggerRef.current = null;
+											setIsResortOpen(true);
+										}
+									: undefined
+							}
 							onFindConversations={
 								canFindConversations
 									? () => openMatchReview()
@@ -256,7 +288,7 @@ export function TopicDetail() {
 			<section aria-label="Topic assistant" className="mb-8 space-y-3">
 				<P className="text-muted-foreground text-sm">
 					{canStartAssistant
-						? "Ask about this topic’s goals, people, and emails."
+						? "Ask about this topic’s work, people, and emails."
 						: "Set this topic to Active or Dormant to start a chat."}
 				</P>
 				{canStartAssistant && (
@@ -265,18 +297,8 @@ export function TopicDetail() {
 					</Suspense>
 				)}
 			</section>
-			<div
-				className={cn(
-					"grid min-w-0 grid-cols-1 items-start gap-5",
-					isContextOpen && "xl:grid-cols-3",
-				)}
-			>
-				<div
-					className={cn(
-						"min-w-0 space-y-5",
-						isContextOpen && "xl:col-span-2",
-					)}
-				>
+			<div className="grid min-w-0 grid-cols-1 items-start gap-5 xl:grid-cols-3">
+				<div className="min-w-0 space-y-5 xl:col-span-2">
 					<Card className={cardClassName}>
 						<Tabs
 							value={tab}
@@ -322,27 +344,55 @@ export function TopicDetail() {
 										<WorkFilterMenu feed={feed} />
 									</div>
 								)}
-								{tab === "threads" &&
-									canFindConversations &&
-									threads.length > 0 && (
-										<Button
-											type="button"
-											variant="outline"
-											size="sm"
-											className="ml-auto pointer-coarse:min-h-11"
-											onClick={(event) =>
-												openMatchReview(
-													event.currentTarget,
-												)
-											}
-										>
-											<Search aria-hidden="true" />
-											Find conversations
-										</Button>
-									)}
+								{tab === "threads" && threads.length > 0 && (
+									<div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+										{canFindConversations && (
+											<Button
+												type="button"
+												variant="outline"
+												size="sm"
+												className="pointer-coarse:min-h-11"
+												onClick={(event) =>
+													openMatchReview(
+														event.currentTarget,
+													)
+												}
+											>
+												<Search aria-hidden="true" />
+												Find conversations
+											</Button>
+										)}
+										{manageButton("Add or remove")}
+									</div>
+								)}
+								{tab === "sessions" && canManageChats && (
+									<div className="ml-auto">
+										{manageButton("Add or remove", "chats")}
+									</div>
+								)}
 							</div>
 							<TabsContent value="actions" className="mt-0">
-								<WorkItemsList feed={feed} />
+								<WorkItemsList
+									feed={feed}
+									emptyAction={
+										canFindConversations ? (
+											<Button
+												type="button"
+												size="sm"
+												className="pointer-coarse:min-h-11"
+												onClick={(event) =>
+													openMatchReview(
+														event.currentTarget,
+													)
+												}
+											>
+												<Search aria-hidden="true" />
+												Find conversations for this
+												topic
+											</Button>
+										) : undefined
+									}
+								/>
 							</TabsContent>
 							<TabsContent value="threads" className="mt-0">
 								{/* the tab already says Threads; this line only counts them */}
@@ -381,33 +431,33 @@ export function TopicDetail() {
 											/>
 										))}
 									</ul>
-								) : canFindConversations ? (
+								) : (
 									<div className="flex flex-col items-start gap-3 px-5 py-4">
 										<P className="text-muted-foreground text-sm">
-											No threads in this topic yet. Find
-											conversations that fit it, or add it
-											from a thread's details.
+											{canFindConversations
+												? "No threads in this topic yet. Let Brain find the conversations that fit it, or pick them yourself."
+												: "No threads in this topic yet. Pick the conversations that belong here."}
 										</P>
-										<Button
-											type="button"
-											variant="outline"
-											size="sm"
-											className="pointer-coarse:min-h-11"
-											onClick={(event) =>
-												openMatchReview(
-													event.currentTarget,
-												)
-											}
-										>
-											<Search aria-hidden="true" />
-											Find conversations
-										</Button>
+										<div className="flex flex-wrap gap-2">
+											{canFindConversations && (
+												<Button
+													type="button"
+													variant="outline"
+													size="sm"
+													className="pointer-coarse:min-h-11"
+													onClick={(event) =>
+														openMatchReview(
+															event.currentTarget,
+														)
+													}
+												>
+													<Search aria-hidden="true" />
+													Find conversations
+												</Button>
+											)}
+											{manageButton("Add threads")}
+										</div>
 									</div>
-								) : (
-									<P className="px-5 py-4 text-muted-foreground text-sm">
-										No threads in this topic yet. Add it
-										from a thread's details.
-									</P>
 								)}
 							</TabsContent>
 							<TabsContent value="sessions" className="mt-0">
@@ -419,136 +469,9 @@ export function TopicDetail() {
 					</Card>
 				</div>
 				<aside
-					ref={contextRef}
-					tabIndex={-1}
-					id={`${fieldId}-context`}
-					hidden={!isContextOpen}
 					aria-label="Topic context"
-					className="min-w-0 divide-y divide-border focus-visible:outline-2 focus-visible:outline-ring xl:pt-1 [&>section:first-of-type]:pt-0 [&>section]:py-6"
+					className="min-w-0 divide-y divide-border xl:pt-1 [&>section:first-of-type]:pt-0 [&>section]:py-6"
 				>
-					<div className="flex items-center justify-between gap-3 pb-4 xl:hidden">
-						<H2 className={contextHeadingClassName}>
-							Topic context
-						</H2>
-						<Button
-							type="button"
-							variant="ghost"
-							size="icon-sm"
-							className="pointer-coarse:size-11"
-							aria-label="Close topic context"
-							onClick={() => {
-								setIsContextOpen(false);
-								contextButtonRef.current?.focus();
-							}}
-						>
-							<X aria-hidden="true" />
-						</Button>
-					</div>
-					<section aria-labelledby={`${fieldId}-goals`}>
-						<div>
-							<div className={asideHeaderClassName}>
-								<div className="min-w-0 space-y-1.5">
-									<H2
-										id={`${fieldId}-goals`}
-										className="font-display font-semibold text-base"
-									>
-										Goals
-									</H2>
-									<div className="flex flex-wrap items-center gap-3">
-										{topic.goals.length > 0 && (
-											<Progress
-												aria-label="Goals completed"
-												aria-valuenow={
-													(doneGoals.length /
-														topic.goals.length) *
-													100
-												}
-												aria-valuetext={`${doneGoals.length} of ${topic.goals.length} complete`}
-												className={cn(
-													"h-1.5 w-16 bg-muted [&>div]:motion-reduce:transition-none",
-													doneGoals.length ===
-														topic.goals.length &&
-														"[&>div]:bg-success",
-												)}
-												value={
-													(doneGoals.length /
-														topic.goals.length) *
-													100
-												}
-											/>
-										)}
-										<Small className="font-normal text-muted-foreground text-xs tabular-nums">
-											<output>
-												{topic.goals.length
-													? `${doneGoals.length} of ${topic.goals.length} complete`
-													: "No goals yet"}
-											</output>
-										</Small>
-									</div>
-								</div>
-								<TopicGoalPopover topicId={topic.id} />
-							</div>
-							{topic.goals.length > 0 ? (
-								<ul
-									aria-label="Topic goals"
-									className="divide-y divide-border border-t"
-								>
-									{topic.goals.map((goal) => (
-										<li
-											key={goal.noteId}
-											className="flex items-start gap-3 py-2.5"
-										>
-											<Checkbox
-												id={`${fieldId}-${goal.noteId}`}
-												checked={goal.status === "done"}
-												className="after:-inset-2.5 relative size-5 rounded-full border-muted-foreground bg-background shadow-none after:absolute after:content-[''] data-[state=checked]:border-success data-[state=checked]:bg-success/10 data-[state=checked]:text-foreground dark:data-[state=checked]:bg-success/10"
-												onCheckedChange={(checked) =>
-													dispatch({
-														type: "topic.note",
-														topicId: topic.id,
-														kind: "goal",
-														operation: "save",
-														noteId: goal.noteId,
-														status:
-															checked === true
-																? "done"
-																: "open",
-													})
-												}
-											/>
-											<div className="min-w-0 flex-1 space-y-2">
-												<Label
-													htmlFor={`${fieldId}-${goal.noteId}`}
-													className="wrap-anywhere block min-w-0 cursor-pointer whitespace-pre-wrap font-normal text-foreground text-sm leading-5"
-												>
-													{goal.text}
-												</Label>
-												{goal.resolution && (
-													<div className="space-y-1.5 rounded-lg bg-muted/60 p-3">
-														<Small className="flex items-center gap-2 font-medium text-foreground text-xs leading-5">
-															<Bot
-																aria-hidden="true"
-																className="size-4 shrink-0 text-muted-foreground"
-															/>
-															AI accomplishment
-														</Small>
-														<P className="wrap-anywhere max-w-prose whitespace-pre-wrap text-muted-foreground text-sm leading-relaxed">
-															{goal.resolution}
-														</P>
-													</div>
-												)}
-											</div>
-										</li>
-									))}
-								</ul>
-							) : (
-								<P className="text-muted-foreground text-sm">
-									Add a goal for you and your assistant to
-									work toward.
-								</P>
-							)}
-						</div>
-					</section>
 					<section aria-labelledby={`${fieldId}-people`}>
 						<div>
 							<div className={asideHeaderClassName}>
@@ -911,8 +834,8 @@ export function TopicDetail() {
 											isSample={topic.isSample}
 										/>
 										<Small className={hintClassName}>
-											Goals and notes are used in chats
-											and threads linked to this topic.
+											Notes are used in chats and threads
+											linked to this topic.
 										</Small>
 									</CollapsibleContent>
 								</Collapsible>
@@ -1030,6 +953,20 @@ export function TopicDetail() {
 					updates={updates}
 					open={isMatchReviewOpen}
 					onOpenChange={setIsMatchReviewOpen}
+					returnFocusRef={matchTriggerRef}
+				/>
+			)}
+			{updates && canFindConversations && (
+				<TopicMatchesDialog
+					key={`resort
+${topic.name}
+${topic.description}
+${topic.accountId ?? ""}`}
+					mode="resort"
+					topic={topic}
+					updates={updates}
+					open={isResortOpen}
+					onOpenChange={setIsResortOpen}
 					returnFocusRef={matchTriggerRef}
 				/>
 			)}

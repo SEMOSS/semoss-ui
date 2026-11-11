@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useId, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { useInsight } from "@semoss/sdk/react";
+import { useSessionInsight } from "@semoss/sdk/react";
 import { type Engine, EngineSelect, NewEngineInput } from "@semoss/shared";
 import {
 	Alert,
@@ -22,8 +22,9 @@ import {
 import { FilePreviewGrid } from "@/components/common/file-preview-grid";
 import { useRoot } from "@/hooks";
 import type { MCPConfig } from "@/types";
+import { throwOnPixelErrors } from "@/utility/pixel-errors";
 
-export interface NewKnowledgeFormBodyProps {
+interface NewKnowledgeFormBodyProps {
 	/**
 	 * Form id. An external submit button can target this form via
 	 * `<button type="submit" form={formId}>` so the same body works inside
@@ -48,7 +49,7 @@ export interface NewKnowledgeFormBodyProps {
  */
 export const NewKnowledgeFormBody = observer(
 	({ formId, onSuccess, onLoadingChange }: NewKnowledgeFormBodyProps) => {
-		const { actions } = useInsight();
+		const { run, upload } = useSessionInsight();
 		const { root } = useRoot();
 		const { t } = useTranslation([
 			"knowledge",
@@ -102,9 +103,9 @@ export const NewKnowledgeFormBody = observer(
 					? embeddingEngine?.engine_id
 					: defaultEmbedderId;
 				if (!embedderId && !showEmbeddingOptions) {
-					const res = await actions.run<[Engine[]]>(
+					const res = await run<[Engine[]]>(
 						`MyEngines(engineTypes=["MODEL"], metaFilters=[{"tag":"embeddings"}], limit=[1], offset=[0]);`,
-					);
+					).then(throwOnPixelErrors);
 					embedderId = res.pixelReturn[0].output[0]?.engine_id;
 				}
 				if (!embedderId) {
@@ -121,35 +122,35 @@ export const NewKnowledgeFormBody = observer(
 					return;
 				}
 
-				const createVectorEngine = await actions.run<
+				const createVectorEngine = await run<
 					[{ engine_id: string }]
 				>(`CreateVectorDatabaseEngine(
 				database=["${name}"],
 				conDetails=[{"VECTOR_TYPE": "FAISS", "EMBEDDER_ENGINE_ID": "${embedderId}","DESCRIPTION":"${description}","TAGS":""}]
-			);`);
+			);`).then(throwOnPixelErrors);
 
 				engineId = createVectorEngine.pixelReturn[0].output.engine_id;
 				if (!engineId) {
 					throw new Error(t("notifications:knowledge.createError"));
 				}
 
-				const uploaded = await actions.upload(files, "");
+				const uploaded = await upload(files);
 
 				const filePaths = uploaded
 					.map(({ fileLocation }) => `"${fileLocation}"`)
 					.join(", ");
 
-				await actions.run<[{ engine_id: string }]>(
+				await run<[{ engine_id: string }]>(
 					`CreateEmbeddingsFromDocuments(
 				engine=["${engineId}"],
 				filePaths=[${filePaths}]
 			);`,
-				);
+				).then(throwOnPixelErrors);
 
 				if (runMCP) {
-					await actions.run<[{ success: boolean }]>(
+					await run<[{ success: boolean }]>(
 						`MakeEngineMCP("${engineId}");`,
-					);
+					).then(throwOnPixelErrors);
 				}
 			} catch (e) {
 				form.setError("root.server", {

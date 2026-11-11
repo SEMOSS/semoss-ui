@@ -1,101 +1,27 @@
 import {
-	CSRF,
 	Env,
 	get,
 	type ModelUsageLimit,
 	post,
 	readModelUsageLimit,
-	runPixel,
 } from "@semoss/sdk/react";
-import { auditPixelLiteral } from "./audit-pixel";
 
-export const config = async () => {
-	// get the response
-	const response = await get<{
-		logins: {
-			[key: string]: unknown;
-		};
-		/**
-		 * List of available providers (logins) that are available
-		 */
-		availableProviders: {
-			provider: string;
-			name: string;
-			isOauth: boolean;
-		}[];
-		[key: string]: unknown;
-	}>(`${Env.MODULE}/api/config`).catch((error) => {
-		throw Error(error);
-	});
-	// there was an error, no response
-	if (!response) {
-		throw Error("No Config Response");
-	}
-	// save the config data
-	return response.data;
-};
-
-export const login = async (
-	username: string,
-	password: string,
-): Promise<boolean> => {
-	//not encoding these, because the post function has encode URI built in.
-	const postData = {
-		username: username,
-		password: password,
-		disableRedirect: true,
-	};
-
-	await post(`${Env.MODULE}/api/auth/login`, postData).catch((error) => {
-		throw Error(error);
-	});
-	return true;
-};
-
-export const loginLDAP = async (
-	username: string,
-	password: string,
-): Promise<boolean> => {
-	// loginLDAP reads username / password, pin is only for linotp
-	const postData = {
-		username: username,
-		password: password,
-		disableRedirect: true,
-	};
-
-	// an expired password comes back as a 401 with the error message,
-	// let it bubble up to the caller
-	await post(`${Env.MODULE}/api/auth/loginLDAP`, postData, {}).catch(
-		(error) => {
-			throw new Error(
-				error instanceof Error ? error.message : `${error}`,
-			);
-		},
-	);
-	return true;
-};
-
+/**
+ * Ask the server to email a password reset link. The server builds the link and
+ * the subject itself, and answers the same whether or not an account exists for
+ * the email.
+ *
+ * @param email - The account's email.
+ * @param type - The login type whose password to reset.
+ * @returns The server's answer, with the message to show the user.
+ */
 export const setupResetPassword = async (
 	email: string,
 	type: "NATIVE" | "LDAP" | "LINOTP",
-	subject: string,
-	url?: string,
 ): Promise<{ success: boolean; message?: string }> => {
-	await ensureCsrfToken();
-
-	const postData: Record<string, string> = {
-		email: email,
-		type: type,
-		subject: subject,
-	};
-
-	if (url) {
-		postData.url = url;
-	}
-
 	const response = await post<{ success: boolean; message?: string }>(
 		`${Env.MODULE}/api/auth/user/setupResetPassword`,
-		postData,
+		{ email, type },
 	).catch((error) => {
 		const errorMessage =
 			error?.response?.data?.errorMessage ||
@@ -114,69 +40,31 @@ export const setupResetPassword = async (
 	return response.data;
 };
 
-const ensureCsrfToken = async () => {
-	// CSRF is disabled by configuration, no token needed.
-	if (!CSRF.isEnabled && !Env.CSRF) {
-		return;
-	}
-
-	// Token already cached.
-	if (CSRF.token) {
-		return;
-	}
-
-	const response = await fetch(`${Env.MODULE}/api/config/fetchCsrf`, {
-		headers: {
-			"X-CSRF-Token": "fetch",
-		},
-	});
-
-	CSRF.token =
-		response.headers.get("X-CSRF-Token") ||
-		response.headers.get("x-csrf-token") ||
-		"";
-
-	if (!CSRF.token) {
-		throw Error(
-			"Unable to initialize security token for password reset. Please refresh and try again.",
-		);
-	}
-};
-
-export const registerUser = async (
-	name: string,
-	username: string,
-	email: string,
-	password: string,
-	phone: string,
-	phoneextension: string,
-	countrycode: string,
-) => {
-	const create: Record<string, string> = {
-		name: name,
-		username: username,
-		email: email,
-		password: password,
-		phone: phone,
-		phoneextension: phoneextension,
-		countrycode: countrycode,
-	};
-	return await post(`${Env.MODULE}/api/auth/createUser`, create).catch(
-		(error) => {
-			if (
-				error.response &&
-				error.response.status === 401 &&
-				error.response.data &&
-				error.response.data.requirePwdChange
-			) {
-				return;
-			}
-			// throw the message
-			throw Error(error);
-		},
+/**
+ * Change the signed in user's native password.
+ *
+ * @param currentPassword - Their password now.
+ * @param newPassword - The password to change it to.
+ * @returns The backend's message.
+ * @throws When the backend refuses the change, with its message.
+ */
+export const changePassword = async (
+	currentPassword: string,
+	newPassword: string,
+): Promise<string> => {
+	const response = await post<{ success: boolean; message?: string }>(
+		`${Env.MODULE}/api/auth/user/changePassword`,
+		{ currentPassword: currentPassword, newPassword: newPassword },
 	);
+
+	if (!response.data?.success) {
+		throw Error(response.data?.message || "Password change failed");
+	}
+
+	return response.data.message ?? "";
 };
 
+/** @public Called by name through `useAPI`. */
 export const getLoginProperties = async () => {
 	const url = `${Env.MODULE}/api/auth/loginProperties`;
 	const response = await get(url).catch((error) => {
@@ -193,20 +81,6 @@ export const modifyLoginProperties = async (provider, properties) => {
 	const response = await post<boolean>(url, postData).catch((error) => {
 		throw Error(error);
 	});
-	return response.data;
-};
-
-export const isAdminUser = async (): Promise<boolean> => {
-	const response = await get<boolean>(
-		`${Env.MODULE}/api/auth/admin/user/isAdminUser`,
-	).catch((error) => {
-		throw Error(error);
-	});
-
-	if (!response) {
-		throw Error("No Response to isAdminUser");
-	}
-
 	return response.data;
 };
 
@@ -282,6 +156,7 @@ export const removeInsightUserPermissions = async (
 	return response;
 };
 
+/** @public Called by name through `useAPI`. */
 export const getAllUsers = async (
 	admin: boolean,
 	searchTerm?: string,
@@ -366,6 +241,7 @@ export const getAllUsers = async (
 	return finalResponse;
 };
 
+/** @public Called by name through `useAPI`. */
 export const getAllAPIUsers = async (
 	admin: boolean,
 	searchTerm?: string,
@@ -611,6 +487,7 @@ export const createUser = async (
 	return response;
 };
 
+/** @public Called by name through `useAPI`. */
 export const getUserAccessKeys = async () => {
 	const url = `${Env.MODULE}/api/auth/user/getUserAccessKeys`;
 	const response = await get<
@@ -663,30 +540,4 @@ export const deleteUserAccessKeys = async (accessKey: string) => {
 		throw Error(error);
 	});
 	return response.data;
-};
-
-/** A default model kept in the user's metadata. */
-export type UserDefaultModelKey =
-	| "text-generation-model"
-	| "code-generation-model";
-
-/**
- * Sets or removes one of the user's default models. An empty list for the key
- * deletes its stored value, so a removed default is gone rather than blank.
- *
- * @param metaKey - Which default.
- * @param engineId - The model's engine id, or empty to remove the default.
- * @throws When the backend refuses the change.
- */
-export const setUserDefaultModel = async (
-	metaKey: UserDefaultModelKey,
-	engineId: string,
-): Promise<void> => {
-	const value = engineId ? auditPixelLiteral(engineId) : "";
-	const response = await runPixel(
-		`SetUserMetadata(meta=[{${auditPixelLiteral(metaKey)}:[${value}]}]);`,
-	);
-	if (response.errors.length > 0) {
-		throw new Error(response.errors.join(""));
-	}
 };

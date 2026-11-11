@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSessionInsight } from "@semoss/sdk/react";
 import {
 	Button,
 	Dialog,
@@ -7,15 +8,29 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@semoss/ui/next";
-import { useSession } from "@/hooks";
 
-export const PromptBuilderContextTestDialog = (props: {
+interface PromptBuilderContextTestDialogProps {
+	/** ID of the LLM to run the context against */
 	llm: string;
+
+	/** The prompt context to run */
 	context: string;
+
+	/** Whether the dialog is open; opening it runs the test */
 	open: boolean;
+
+	/** Close the dialog */
 	close: () => void;
-}) => {
-	const runPixel = useSession((state) => state.runPixel);
+}
+
+/**
+ * Runs the prompt's context against the chosen LLM and shows its response,
+ * with Retry to run it again.
+ */
+export const PromptBuilderContextTestDialog = (
+	props: PromptBuilderContextTestDialogProps,
+) => {
+	const { run: runPixel } = useSessionInsight();
 	const [loading, setLoading] = useState(false);
 	const [response, setResponse] = useState("");
 

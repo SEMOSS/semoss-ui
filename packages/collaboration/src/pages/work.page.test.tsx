@@ -1,11 +1,4 @@
-import {
-	act,
-	cleanup,
-	render,
-	screen,
-	waitFor,
-	within,
-} from "@testing-library/react";
+import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { createMemoryRouter, RouterProvider } from "react-router";
@@ -32,6 +25,36 @@ vi.mock("@/features/dashboard/topic-sessions", () => ({
 		return <p>Sessions for {topicId}</p>;
 	},
 }));
+// the Work list and its build menu read the server; one actions object, since their loads rerun when it changes
+const insight = vi.hoisted(() => ({
+	actions: {
+		run: vi.fn(async (statement: string) => ({
+			pixelReturn: [
+				{
+					output: statement.startsWith("WorkListMyWork")
+						? {
+								selfId: "me",
+								workItems: [
+									{
+										id: "launch",
+										title: "Ship the Alpha launch",
+										state: "active",
+										mine: true,
+										openSteps: [],
+									},
+								],
+							}
+						: {},
+					operationType: ["OPERATION"],
+				},
+			],
+		})),
+	},
+}));
+vi.mock("@semoss/sdk/react", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
+	useInsight: () => insight,
+}));
 
 afterEach(() => {
 	cleanup();
@@ -57,9 +80,6 @@ function workState(): CollaborationState {
 			description: "Ship the launch with the customer.",
 			status: "active",
 			stats: { threads: 999, openItems: 999, lastActivity: "" },
-			goals: [
-				{ noteId: "goal", text: "Launch by Friday", status: "open" },
-			],
 			people: [
 				{
 					personId: person.id,
@@ -83,7 +103,6 @@ function workState(): CollaborationState {
 			name: "Beta hiring",
 			short: "Beta",
 			description: "Build the hiring team.",
-			goals: [],
 			people: [],
 		},
 		{
@@ -227,9 +246,13 @@ function workState(): CollaborationState {
 function renderWork(path: string, initialState = workState()) {
 	const router = createMemoryRouter(
 		[
-			...["/work", "/work/all", "/work/waiting", "/work/done"].map(
-				(route) => ({ path: route, Component: WorkPage }),
-			),
+			...[
+				"/work",
+				"/work/topics",
+				"/work/all",
+				"/work/waiting",
+				"/work/done",
+			].map((route) => ({ path: route, Component: WorkPage })),
 			{ path: "/topics/:topicId", Component: TopicPage },
 			{ path: "/thread/:threadId", element: <p>Source import</p> },
 		],
@@ -243,8 +266,26 @@ function renderWork(path: string, initialState = workState()) {
 	return { router, user: userEvent.setup() };
 }
 
-it("opens Work as a topic index with selector-based counts and the existing new-topic dialog", async () => {
-	const { user } = renderWork("/work");
+it.each(["/work", "/work/all", "/work/waiting", "/work/done"])(
+	"opens %s as the work items list with topics one link away",
+	async (path) => {
+		const { router } = renderWork(path);
+		expect(
+			await screen.findByRole("button", {
+				name: "Ship the Alpha launch",
+			}),
+		).toBeVisible();
+		expect(router.state.location.pathname).toBe("/work");
+		expect(screen.getByRole("heading", { name: "Work" })).toBeVisible();
+		expect(screen.getByRole("link", { name: "Topics" })).toHaveAttribute(
+			"href",
+			"/work/topics",
+		);
+	},
+);
+
+it("opens the Work topic index with selector-based counts and the existing new-topic dialog", async () => {
+	const { user } = renderWork("/work/topics");
 	expect(screen.getByRole("heading", { name: "Work" })).toBeVisible();
 	const index = screen.getByRole("list", { name: "Work topics" });
 	const alpha = within(index).getByRole("link", { name: /Alpha launch/ });
@@ -257,7 +298,7 @@ it("opens Work as a topic index with selector-based counts and the existing new-
 	expect(screen.queryByRole("article")).not.toBeInTheDocument();
 	expect(screen.getByRole("link", { name: "All work" })).toHaveAttribute(
 		"href",
-		"/work/all",
+		"/work",
 	);
 	const create = screen.getByRole("button", { name: "New topic" });
 	await user.click(create);
@@ -266,18 +307,9 @@ it("opens Work as a topic index with selector-based counts and the existing new-
 	expect(create).toHaveFocus();
 });
 
-it("combines scoped work with editable goals, people, and notes in one topic", async () => {
-	const { user } = renderWork("/topics/alpha");
+it("combines scoped work with people and notes in one topic", () => {
+	renderWork("/topics/alpha");
 	expect(screen.getByRole("heading", { name: "Alpha launch" })).toBeVisible();
-	expect(
-		screen.getByRole("checkbox", { name: "Launch by Friday" }),
-	).not.toBeChecked();
-	await user.click(
-		screen.getByRole("checkbox", { name: "Launch by Friday" }),
-	);
-	expect(
-		screen.getByRole("checkbox", { name: "Launch by Friday" }),
-	).toBeChecked();
 	expect(
 		screen.queryByRole("link", { name: "Edit in Brain" }),
 	).not.toBeInTheDocument();
@@ -307,31 +339,6 @@ it("combines scoped work with editable goals, people, and notes in one topic", a
 		screen.queryByRole("link", { name: "Action beta-open" }),
 	).not.toBeInTheDocument();
 	expect(sessions.mounted).not.toHaveBeenCalled();
-});
-
-it("shows a goal resolution as plain text and keeps it when reopening and completing the goal", async () => {
-	const state = workState();
-	const goal = {
-		noteId: "goal",
-		text: "Get room code for Florida",
-		status: "done" as const,
-		resolution: "Florida room code is 444553 <b>Keep this code</b>",
-	};
-	state.topics[0].goals = [goal];
-	const { user } = renderWork("/topics/alpha", state);
-	const checkbox = screen.getByRole("checkbox", { name: goal.text });
-	const resolution = screen.getByText(goal.resolution);
-	expect(checkbox).toBeChecked();
-	expect(resolution).toBeVisible();
-	expect(resolution.querySelector("b")).toBeNull();
-	expect(resolution.closest(".line-through")).toBeNull();
-	expect(screen.getByText(goal.text)).not.toHaveClass("line-through");
-	await user.click(checkbox);
-	expect(checkbox).not.toBeChecked();
-	expect(screen.getByText(goal.resolution)).toBeVisible();
-	await user.click(checkbox);
-	expect(checkbox).toBeChecked();
-	expect(screen.getByText(goal.resolution)).toBeVisible();
 });
 
 it("combines topic status and source filters, keeps multi-topic work, and sorts scoped rows", async () => {
@@ -394,33 +401,27 @@ it("combines topic status and source filters, keeps multi-topic work, and sorts 
 	).toBeVisible();
 });
 
-it("defaults All work to Needs you while preserving Open and direct legacy statuses", async () => {
-	const { router, user } = renderWork("/work/all");
-	expect(
-		screen.getByRole("button", { name: "Filter work: Needs you 3" }),
-	).toBeVisible();
-	expect(
-		screen.queryByRole("link", { name: "Action alpha-fyi" }),
-	).not.toBeInTheDocument();
-	await user.click(screen.getByRole("button", { name: /^Filter work:/ }));
-	await user.click(screen.getByRole("menuitemradio", { name: "Open 4" }));
-	expect(
-		screen.getByRole("link", { name: "Action alpha-fyi" }),
-	).toBeVisible();
-	expect(
-		screen.queryByRole("link", { name: "Action alpha-muted" }),
-	).not.toBeInTheDocument();
-	expect(
-		screen.queryByRole("link", { name: "Action alpha-auto" }),
-	).not.toBeInTheDocument();
-	await act(() => router.navigate("/work/waiting"));
-	expect(
-		screen.getByRole("button", { name: "Filter work: Waiting 1" }),
-	).toBeVisible();
-	await act(() => router.navigate("/work/done"));
-	expect(
-		screen.getByRole("button", { name: "Filter work: Handled 1" }),
-	).toBeVisible();
+it("opens on the tab a link back from the add-or-remove page asks for, and links to that page", async () => {
+	const { router } = renderWork("/topics/beta");
+	await act(() =>
+		router.navigate("/topics/alpha", { state: { tab: "threads" } }),
+	);
+	expect(screen.getByRole("tab", { name: "Threads" })).toHaveAttribute(
+		"aria-selected",
+		"true",
+	);
+	expect(screen.getByRole("link", { name: "Add or remove" })).toHaveAttribute(
+		"href",
+		"/topics/alpha/contents",
+	);
+	// a tab the page does not have falls back to Actions
+	await act(() =>
+		router.navigate("/topics/beta", { state: { tab: "anything" } }),
+	);
+	expect(screen.getByRole("tab", { name: /^Actions/ })).toHaveAttribute(
+		"aria-selected",
+		"true",
+	);
 });
 
 it("opens source threads by their canonical import route and reads sessions only on selection", async () => {
@@ -462,111 +463,28 @@ it("never falls back to global work for an unknown topic", () => {
 	).toBeVisible();
 	expect(screen.getByRole("link", { name: "All topics" })).toHaveAttribute(
 		"href",
-		"/work",
+		"/work/topics",
 	);
 	expect(screen.queryByRole("article")).not.toBeInTheDocument();
 	expect(screen.queryByRole("tab")).not.toBeInTheDocument();
 });
 
-it("keeps empty-topic setup optional and preserves context when toggled", async () => {
-	const { user } = renderWork("/topics/beta");
-	const toggle = screen.getByRole("button", { name: "Context" });
-	expect(toggle).toHaveAttribute("aria-expanded", "false");
+it("shows an empty topic's context beside its work, with nothing to open first", () => {
+	renderWork("/topics/beta");
 	expect(
-		screen.queryByRole("complementary", { name: "Topic context" }),
+		screen.queryByRole("button", { name: "Context" }),
 	).not.toBeInTheDocument();
 	expect(
 		screen.getByRole("link", { name: "Action beta-open" }),
 	).toBeVisible();
-	await user.click(toggle);
+	const context = screen.getByRole("complementary", {
+		name: "Topic context",
+	});
 	expect(
-		screen.getByRole("heading", { name: "Topic settings" }),
+		within(context).getByRole("heading", { name: "Topic settings" }),
 	).toBeVisible();
 	expect(
-		screen.getByRole("combobox", { name: "Topic status" }),
-	).toBeVisible();
-	await user.click(
-		screen.getByRole("button", { name: "Notes for the assistant" }),
-	);
-	await user.click(toggle);
-	expect(
-		screen.queryByRole("button", { name: "Add keyword" }),
-	).not.toBeInTheDocument();
-	await user.click(toggle);
-	expect(
-		screen.getByRole("button", { name: "Notes for the assistant" }),
-	).toHaveAttribute("aria-expanded", "true");
-	expect(toggle).toHaveFocus();
-});
-
-it("finds work within status and source, clears an empty search, and restores keyboard focus", async () => {
-	const { user } = renderWork("/work/all");
-	const search = screen.getByRole("searchbox", { name: "Find work" });
-	await user.type(search, " ALPHA email ");
-	expect(
-		screen.getByRole("link", { name: "Action alpha-email" }),
-	).toBeVisible();
-	expect(screen.getByRole("link", { name: "Action shared" })).toBeVisible();
-	expect(
-		screen.queryByRole("link", { name: "Action beta-open" }),
-	).not.toBeInTheDocument();
-	expect(
-		screen.queryByRole("link", { name: "Action alpha-fyi" }),
-	).not.toBeInTheDocument();
-	await user.click(screen.getByRole("button", { name: /^Filter work:/ }));
-	await user.click(screen.getByRole("menuitemradio", { name: "Waiting 1" }));
-	await waitFor(() =>
-		expect(screen.queryByRole("menu")).not.toBeInTheDocument(),
-	);
-	expect(
-		screen.getByRole("link", { name: "Action alpha-wait" }),
-	).toBeVisible();
-	await user.clear(search);
-	await user.type(search, "no matching work");
-	expect(
-		screen.getByText("No work matches your search in this view."),
-	).toBeVisible();
-	await user.click(
-		within(screen.getByRole("region", { name: "Waiting 0" })).getByRole(
-			"button",
-			{ name: "Clear search" },
-		),
-	);
-	expect(search).toHaveValue("");
-	expect(search).toHaveFocus();
-	expect(
-		screen.getByRole("link", { name: "Action alpha-wait" }),
-	).toBeVisible();
-	await user.type(search, "alpha");
-	await user.keyboard("{Escape}");
-	expect(search).toHaveValue("");
-	expect(search).toHaveFocus();
-});
-
-it("searches summaries and people while retaining the selected source", async () => {
-	const state = workState();
-	const email = state.threads.find((thread) => thread.id === "alpha-email");
-	const fyi = state.threads.find((thread) => thread.id === "alpha-fyi");
-	if (!email || !fyi) throw new Error("Missing search fixtures");
-	email.summary = "Confirm the rollout schedule";
-	fyi.summary = "Rollout notes";
-	const { user } = renderWork("/work/all", state);
-	await user.click(screen.getByRole("button", { name: /^Filter work:/ }));
-	await user.click(screen.getByRole("menuitemradio", { name: "Open 4" }));
-	await user.click(screen.getByRole("button", { name: /^Filter work:/ }));
-	await user.click(screen.getByRole("menuitemradio", { name: "Teams 1" }));
-	const search = screen.getByRole("searchbox", { name: "Find work" });
-	await user.type(search, "rollout");
-	expect(
-		screen.getByRole("link", { name: "Action alpha-fyi" }),
-	).toBeVisible();
-	expect(
-		screen.queryByRole("link", { name: "Action alpha-email" }),
-	).not.toBeInTheDocument();
-	await user.clear(search);
-	await user.type(search, state.people[0].name);
-	expect(
-		screen.getByRole("link", { name: "Action alpha-fyi" }),
+		within(context).getByRole("combobox", { name: "Topic status" }),
 	).toBeVisible();
 });
 
@@ -580,7 +498,7 @@ it("keeps urgency visible and classification reasons under row details", async (
 	thread.participants = [
 		{ personId: state.people[0].id, role: "Participant", included: false },
 	];
-	const { user } = renderWork("/work/all", state);
+	const { user } = renderWork("/topics/alpha", state);
 	expect(screen.getByText("Today")).toBeVisible();
 	expect(screen.getByText("1 participant excluded")).toBeVisible();
 	expect(screen.getByText("From a VIP")).not.toBeVisible();
@@ -599,23 +517,6 @@ it("keeps urgency visible and classification reasons under row details", async (
 			name: "Thread actions for Source alpha-email",
 		}),
 	).toHaveFocus();
-});
-
-it("takes focus to context below the viewport and returns to the work on close", async () => {
-	const { user } = renderWork("/topics/beta");
-	const context = screen.getByRole("complementary", { hidden: true });
-	vi.spyOn(context, "getBoundingClientRect").mockReturnValue(
-		new DOMRect(0, 1200, 320, 800),
-	);
-	const toggle = screen.getByRole("button", { name: "Context" });
-	await user.click(toggle);
-	await waitFor(() => expect(context).toHaveFocus());
-	await user.click(
-		screen.getByRole("button", { name: "Close topic context" }),
-	);
-	expect(toggle).toHaveFocus();
-	expect(toggle).toHaveAttribute("aria-expanded", "false");
-	expect(context).not.toBeVisible();
 });
 
 // Route composition is exercised with isolated child views; hydration has its own integration coverage.

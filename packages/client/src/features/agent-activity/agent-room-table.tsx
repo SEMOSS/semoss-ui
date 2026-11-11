@@ -24,7 +24,7 @@ export interface AgentRoomColumn {
 	className?: string;
 }
 
-export interface AgentRoomTableProps {
+interface AgentRoomTableProps {
 	/** The rooms listed, most recently active first */
 	rooms: AgentRunRoom[];
 	/** More columns after the room */

@@ -1,4 +1,3 @@
-import { Mail } from "lucide-react";
 import { createElement, useEffect } from "react";
 import { P } from "@semoss/ui/next";
 import {
@@ -6,6 +5,7 @@ import {
 	type WorkbenchPanelConfig,
 	type WorkbenchPanelProps,
 } from "@semoss/workbench";
+import { OutlookIcon } from "@/components/common/app-icons";
 import { useOptionalCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import { useRoomEmail } from "./room-email.context";
 import { RoomEmailReader, shownEmail } from "./room-email-reader";
@@ -64,8 +64,7 @@ export function RoomEmailSourcePanel({ id }: WorkbenchPanelProps) {
 const ROOM_EMAIL_SOURCE_PANEL: WorkbenchPanelConfig<RoomEmailSourcePanelConfig> =
 	{
 		name: "Email",
-		icon: ({ className }) =>
-			createElement(Mail, { className, "aria-hidden": true }),
+		icon: ({ className }) => createElement(OutlookIcon, { className }),
 		content: RoomEmailSourcePanel,
 		mount: "keepAlive",
 		canRename: false,

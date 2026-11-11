@@ -132,7 +132,8 @@ export class AgentTurnController {
 	/** Reconnect from server-owned run records, never from old tool-call history. */
 	reconnect = async (): Promise<void> => {
 		if (this.restoring) return this.restoring;
-		if (this.observing) {
+		// a send in flight observes its own run; restoring now would drop the message it shows
+		if (this.observing || this.snapshot.isSubmitting) {
 			this.wake?.();
 			return;
 		}
@@ -686,14 +687,18 @@ export class AgentTurnController {
 			const parent = this.historyRuns.find(
 				(entry) => entry.runId === child.parentRunId,
 			);
+			const anchor =
+				parent?.finalOutputMessageId ||
+				parent?.inputMessageId ||
+				undefined;
 			const parentIndex = messages.findIndex(
-				(message) =>
-					message.id === parent?.finalOutputMessageId ||
-					message.id === parent?.inputMessageId,
+				(message) => message.id === anchor,
 			);
 			const card: ConversationMessage = {
 				id: `child-run:${child.runId}`,
 				role: "assistant",
+				// after a reload only the latest run is in view, so the merge with room history places the card
+				parentMessageId: anchor,
 				parts: [
 					{
 						type: "run",

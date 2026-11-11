@@ -14,7 +14,7 @@ import { MICROSOFT_PIXELS } from "./microsoft.pixels";
 import type { MicrosoftDriveItem } from "./microsoft.types";
 
 /** The most items a drive folder, search, or shared list reads. */
-const LIST_LIMIT = 200;
+export const DRIVE_LIST_LIMIT = 200;
 
 /**
  * What a drive offers the file explorer: browsing, and searching when the
@@ -72,6 +72,74 @@ const READ_ONLY_OPERATIONS = {
  */
 const toDrivePath = (path: string): string | undefined =>
 	path.replace(/^\/+|\/+$/g, "") || undefined;
+
+/**
+ * A new item's name and the folder it goes in, as the create reactors take
+ * them.
+ *
+ * @param path - The item's explorer path, such as `/Reports/2026/notes.txt`.
+ * @return The name, and the folder's path, left out for the drive's top.
+ */
+const toNewItem = (path: string): { name: string; path?: string } => {
+	const drivePath = toDrivePath(path) ?? "";
+	const cut = drivePath.lastIndexOf("/");
+	return {
+		name: drivePath.slice(cut + 1),
+		path: drivePath.slice(0, Math.max(cut, 0)) || undefined,
+	};
+};
+
+/**
+ * The pixel that removes an upload's scratch folder from the insight's files.
+ * Written out rather than built with `call`, which leaves an empty value out:
+ * this reactor deletes every file in the insight when it is given no path.
+ *
+ * @param folder - The scratch folder, at the top of the insight's folder.
+ * @return The pixel.
+ */
+const removeScratchFolder = (folder: string): string =>
+	`DeleteInsightAssets(filePath=[${JSON.stringify(folder)}]);`;
+
+/**
+ * Upload files from the user's computer into a folder of their own drive.
+ *
+ * The upload reactor reads from the insight's folder, so the files pass
+ * through a folder of their own there, which is removed again whether or not
+ * the upload worked. Each file keeps the name it has on the computer, since
+ * the server may save its scratch copy under another.
+ */
+const uploadToOneDrive: FileExplorerAdapter["upload"] = async (
+	actions,
+	path,
+	files,
+) => {
+	const scratch = `.onedrive-upload-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+	try {
+		const response = await actions.uploadInsight(scratch, files);
+		for (const [index, file] of files.entries()) {
+			const saved = response?.data?.[index]?.fileLocation;
+			if (!saved) {
+				throw new Error(`The server did not save ${file.name}.`);
+			}
+			await actions.run(
+				MICROSOFT_PIXELS.oneDriveUpload({
+					// reported with the server's own separators
+					filePath: saved.replace(/\\/g, "/"),
+					name: file.name,
+					path: toDrivePath(path),
+				}),
+			);
+		}
+		return response;
+	} finally {
+		try {
+			await actions.run(removeScratchFolder(scratch));
+		} catch {
+			// a scratch folder left behind is only clutter: it must not fail an
+			// upload that worked, or hide why one did not
+		}
+	}
+};
 
 /**
  * The explorer path of an item inside a folder.
@@ -165,23 +233,33 @@ export const getDriveSaveRequest = (
 
 /**
  * The user's own OneDrive, browsed by path from its top. A search covers the
- * whole drive and lists each hit under its own path.
+ * whole drive and lists each hit under its own path. It is the one drive that
+ * takes new files, new folders, and uploads: shared folders and channel files
+ * stay browse only, since writing to them needs the Files.ReadWrite.All scope.
  *
  * @return The adapter.
  */
 export const createOneDriveAdapter = (): FileExplorerAdapter => ({
 	...READ_ONLY_OPERATIONS,
-	capabilities: readOnlyCapabilities(true),
+	capabilities: {
+		...readOnlyCapabilities(true),
+		create: true,
+		upload: true,
+	},
+	createFile: (path) => MICROSOFT_PIXELS.oneDriveCreateFile(toNewItem(path)),
+	createDirectory: (path) =>
+		MICROSOFT_PIXELS.oneDriveCreateFolder(toNewItem(path)),
+	upload: uploadToOneDrive,
 	browse: (path) =>
 		MICROSOFT_PIXELS.oneDriveListFolder({
 			path: toDrivePath(path),
-			limit: LIST_LIMIT,
+			limit: DRIVE_LIST_LIMIT,
 		}),
 	search: (_path, term) =>
 		MICROSOFT_PIXELS.oneDriveSearch({
 			search: term,
 			scope: "drive",
-			limit: LIST_LIMIT,
+			limit: DRIVE_LIST_LIMIT,
 		}),
 	mapEntries: (raw, path) =>
 		readItems(raw, parseOneDriveFolder).map((item) =>
@@ -240,15 +318,15 @@ export const createOneDriveSharedAdapter = (): FileExplorerAdapter => {
 				? MICROSOFT_PIXELS.oneDriveListFolder({
 						driveId: folder.driveId,
 						itemId: folder.itemId,
-						limit: LIST_LIMIT,
+						limit: DRIVE_LIST_LIMIT,
 					})
-				: MICROSOFT_PIXELS.oneDriveListShared(LIST_LIMIT);
+				: MICROSOFT_PIXELS.oneDriveListShared(DRIVE_LIST_LIMIT);
 		},
 		search: (_path, term) =>
 			MICROSOFT_PIXELS.oneDriveSearch({
 				search: term,
 				scope: "shared",
-				limit: LIST_LIMIT,
+				limit: DRIVE_LIST_LIMIT,
 			}),
 		mapEntries: (raw, path) =>
 			toRows(readItems(raw, parseOneDriveFolder), path),

@@ -8,7 +8,7 @@ import {
 } from "./tool-result-data";
 
 interface ToolResultDetailsProps {
-	/** Structured data stays readable, including nested people, goals and attachments. */
+	/** Structured data stays readable, including nested people and attachments. */
 	value: unknown;
 	depth?: number;
 }

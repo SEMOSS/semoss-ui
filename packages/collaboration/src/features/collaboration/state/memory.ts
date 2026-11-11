@@ -37,16 +37,6 @@ export function learnedMemories(memories: Memory[]): Memory[] {
 	);
 }
 
-/** The assistant may only undo what it saved and the owner has not confirmed. */
-export function canDismiss(memory: Memory): boolean {
-	return (
-		memory.state === "suggested" ||
-		(memory.state === "active" &&
-			!memory.confirmed &&
-			memory.origin !== "you")
-	);
-}
-
 /** A display name for what a memory is about, from the records already loaded. */
 export function refLabel(state: CollaborationState, ref: MemoryRef): string {
 	switch (ref.type) {

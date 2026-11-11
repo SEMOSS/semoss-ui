@@ -15,8 +15,33 @@ Generic functions belong in [@semoss/utility](../utility/AGENTS.md); consume the
 category subpaths instead of duplicating them inside components.
 
 It is the home of large shared building blocks such as the file explorer, the Monaco
-editor wrappers, the FlexLayout wrapper, the shared login page, engine/MCP/prompt/skill UI,
+editor wrappers, the shared login page, engine/MCP/prompt/skill UI,
 forms, and the workbench primitives.
+
+### Sign in (`components/login-page.tsx`, `components/form/login-form.tsx`)
+
+`LoginForm` reads the sign in providers from the SDK's config
+(`useConfig((state) => state.config?.availableProviders)`, with a stable empty fallback) and
+signs in through the session (`useSession((state) => state.login)` / `requestOTP`); it never
+uses an insight's `actions.login`. `login()` resolves whether the session is signed in and
+throws when refused; the OAuth success toast shows only when it resolves true. `LoginPage` is a
+gate on `useSession((state) => state.status)`: a spinner while `INITIALIZING`, its children when
+`AUTHENTICATED`, and the form when `UNAUTHENTICATED` or `ERROR`. Neither needs an
+`<InsightProvider>`; a host must call `Session.initialize()` once from its entry point (after
+`Env.update` and any `waitForEmbedAuth()`) and mount its workspace `InsightProvider` inside
+the gate, so the insight is made after sign in.
+
+An app that gates its own routes takes its Retry for the `ERROR` status from the SDK's
+`useSessionRetry()` (`{ isRetrying, retry }`, from the session's `isChecking` and `refresh`).
+`InsightReadyGate` (`components/insight-ready-gate.tsx`) is for an app that still keeps an
+app-wide `InsightProvider`: it goes inside it and holds its views until the insight is made
+(`isReady`), showing the app's `errorFallback` when it cannot be. It is not a sign in check;
+sign in is the session's. Prefer running pixels outside a workspace in the session's insight,
+which needs neither.
+
+`Notebook` (`components/notebook/`) runs every cell in its required `insightId` prop and reads
+no context, so it renders outside any `InsightProvider`. The caller names the insight: the
+file panel's `targetInsightId`, or the room's insight in the playground.
 
 ### The file explorer (`components/file/`)
 
@@ -38,9 +63,13 @@ other than an asset tree, such as a connector's drive: the adapter builds each l
 maps the output to `FileItem`s (`mapEntries(raw, path)` is handed the folder it listed, for a
 source whose entries carry no path), and says what the source can do. A source keeps anything
 its rows need in `FileItem.data`; `itemActions` adds the host's row button and context-menu
-entries, `renderError` draws a failed listing the host's way, and `searchScope: false` hides the
-scope choice for a search that always covers everything. `@semoss/connectors`' drive views are
-built this way.
+entries, `renderError` draws a failed listing the host's way, `listingNote` puts a line under a
+listing (the current folder's and each open one's), such as that its source stopped at a limit,
+and `searchScope: false` hides the scope choice for a search that always covers everything. A source that can make files and
+folders but not rename, move, or copy them sets `create` alone: `canCreateItems` reads it,
+falling back to `mutate`, and it shows New, New File, and New Folder without the rest.
+`FileExplorer` hands the overlay the explorer's `adapter`, so it creates in that source rather
+than in the mode's asset tree. `@semoss/connectors`' drive views are built this way.
 
 **Every row's menu has three ways in.** Right-click, the row's More actions button, and
 Shift+F10 or the menu key on a focused row open the same menu, so the context-menu entries a
@@ -141,13 +170,25 @@ anyone else the list's Delete button and selection box are disabled on those row
 usage limit") under the list.
 
 `useIsCurrentLogin()` (`hooks/use-is-current-login.ts`) checks a person's login type and id
-against the account ids the SDK's `Logins` holds, reading them as they are so every row can call
+against the account ids the SDK's `Session.logins` holds, reading them as they are so every row can call
 it. A lone login logo, outside an avatar, gets `CurrentLoginStar` (`components/current-login-star.tsx`)
 at its corner. The members table also stars its host's `currentUserId` when the login type is not
 known, and keeps a Login Type column with `LoginTypeLabel` (`components/login-type-label.tsx`):
 the login's logo or icon (`LoginTypeIcon`; a person for native logins, a key for API logins) and
 its name from `getLoginTypeName`. Show a login's name that way rather than the stored label, such
 as `API_USER`.
+
+### Chat replies (`components/chat/`)
+
+A reply reads the same in every chat, the playground's and the client's model chat alike:
+`ChatReasoning` shows the model's reasoning collapsed under Reasoning, with a spinner while it
+streams; `ChatToolCallRow` shows a tool call by name and status (running, completed, failed), for
+a chat that only displays its calls, since a chat that runs or approves tools draws its own row;
+and `ChatGeneratingIndicator` is the line that says the reply is on its way while nothing else
+shows it, with the rotating messages of `useLoadingMessage` (`hooks/use-loading-message.ts`).
+They take plain values, never a chat's own stores. Their words are in the `transcript`
+namespace, which every host that shows them loads. Each chat reads its stream with the SDK's
+`readPixelStreamChunk`, so the parts these show come from chunks read the same way.
 
 ### Engine pickers (`components/engine/`)
 
@@ -274,7 +315,6 @@ Key `exports`:
 |--------|-------------|
 | `@semoss/shared` | `src/index.ts` (main barrel) |
 | `@semoss/shared/globals.css` | `src/styles/globals.css` |
-| `@semoss/shared/flexlayout.css` | `src/components/flex-layout/flexlayout.css` |
 | `@semoss/shared/assets/img/*` | `src/assets/img/*` |
 
 `sideEffects` is limited to `**/*.css`; consuming bundlers can tree-shake unused code.
@@ -286,7 +326,7 @@ This library retains its package layout (no `pages/` or router):
 | Folder / file | Purpose |
 |---------------|---------|
 | `assets/` | Images and static files. `assets/img/connectors/` holds each Microsoft 365 and Google Workspace app's logo as an SVG named by app (`outlook.svg`, `gmail.svg`, ...), except Teams, which is `assets/img/MS_TEAMS.svg`; `ConnectorBrandIcon` shows them, and draws the Teams views (`teams-channels`, `teams-files`, `teams-chats`) as the Teams logo with a badge for what each shows, never altering the logo. Any package can import them as `@semoss/shared/assets/img/connectors/*` |
-| `components/` | Shared components, one folder per feature (file, monaco, flex-layout, mcp, prompts, skills, settings, engine, form, members, …) |
+| `components/` | Shared components, one folder per feature (file, monaco, mcp, prompts, skills, settings, engine, form, members, …) |
 | `constants/` | Shared constant values |
 | `contexts/` | React contexts (`<name>.context.tsx`) |
 | `hooks/` | React hooks (`use-<name>.ts`) |
@@ -299,7 +339,6 @@ This library retains its package layout (no `pages/` or router):
 
 - `@semoss/sdk`, `@semoss/ui`, `@semoss/i18n`, `@semoss/utility` — workspace libs
 - `monaco-editor` / `@monaco-editor/react` — code editor
-- `flexlayout-react` — dockable layout
 - `echarts` — charts
 - `@iconify/react`, `lucide-react` — icons
 
@@ -314,15 +353,13 @@ Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling
    Application-specific composition stays in its owning package.
 - `src/styles/globals.css` supplies Tailwind source discovery only. Do not add design tokens
    there; token ownership remains in `@semoss/ui`.
-- `flex-layout/flexlayout.css` is a third-party style bridge. Map its variables to semantic UI
-   tokens and use the reason-bearing external-constraint carve-out for unavoidable literals.
 
 ## Agent Guardrails
 
 ### Do Not Modify
 
-- **`exports` paths in `package.json`** — the `globals.css` / `flexlayout.css` subpaths
-  are imported by name across the monorepo; renaming a file requires updating the export.
+- **`exports` paths in `package.json`** — the `globals.css` subpath
+  is imported by name across the monorepo; renaming a file requires updating the export.
 
 ### Be Cautious With
 

@@ -26,7 +26,9 @@ const catalog = vi.hoisted(() => ({
 	next: vi.fn(),
 	reset: vi.fn(),
 }));
-vi.mock("@semoss/sdk/react", () => ({ useIteratorPixel: () => catalog }));
+vi.mock("@semoss/sdk/react", () => ({
+	useSessionIteratorPixel: () => catalog,
+}));
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
@@ -67,6 +69,45 @@ test("keyboard selection includes Default agent and saved agents", async () => {
 	await user.keyboard("{/ArrowDown}{ArrowUp>}");
 	await waitFor(() => expect(defaultAgent).toBeChecked());
 	await user.keyboard("{/ArrowUp}");
+});
+
+test("offered beside No Agent, Default Agent is its own choice and a saved agent clears it", async () => {
+	const user = userEvent.setup();
+	const onDefaultAgentChange = vi.fn();
+	function PickerWithDefaultAgent() {
+		const [value, setValue] = useState<{
+			workspace_id: string;
+			name?: string;
+		} | null>(null);
+		const [isDefaultAgent, setIsDefaultAgent] = useState(false);
+		return (
+			<AgentSelector
+				value={value}
+				onChange={setValue}
+				isDefaultAgent={isDefaultAgent}
+				onDefaultAgentChange={(next) => {
+					onDefaultAgentChange(next);
+					setIsDefaultAgent(next);
+				}}
+			/>
+		);
+	}
+	render(<PickerWithDefaultAgent />);
+	const noAgent = screen.getByRole("radio", { name: "room:modes.noAgent" });
+	const defaultAgent = screen.getByRole("radio", {
+		name: "room:modes.defaultAgent",
+	});
+	expect(noAgent).toBeChecked();
+	await user.click(defaultAgent);
+	expect(defaultAgent).toBeChecked();
+	expect(onDefaultAgentChange).toHaveBeenLastCalledWith(true);
+	await user.click(screen.getByRole("radio", { name: /Alpha researcher/ }));
+	expect(defaultAgent).not.toBeChecked();
+	expect(onDefaultAgentChange).toHaveBeenLastCalledWith(false);
+	await user.click(defaultAgent);
+	await user.click(noAgent);
+	expect(noAgent).toBeChecked();
+	expect(onDefaultAgentChange).toHaveBeenLastCalledWith(false);
 });
 
 test("busy selections remain visible and disabled, and catalog errors can retry", () => {

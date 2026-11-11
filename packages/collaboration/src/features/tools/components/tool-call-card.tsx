@@ -6,7 +6,6 @@ import {
 	FileText,
 	Hourglass,
 	Mail,
-	MessagesSquare,
 } from "lucide-react";
 import { useContext, useId, useMemo, useRef, useState } from "react";
 import {
@@ -19,6 +18,7 @@ import {
 	useIsMobile,
 } from "@semoss/ui/next";
 import { asString } from "@semoss/utility";
+import { OutlookIcon, TeamsIcon } from "@/components/common/app-icons";
 import {
 	DelegationRequestApproval,
 	isDelegationRequest,
@@ -111,8 +111,8 @@ const SUBMIT_LABELS: Partial<Record<ConversationTool["status"], string>> = {
 
 /** What a found item is called and drawn as on its card. */
 const SHOWN_KINDS = {
-	email: { label: "email", icon: Mail },
-	chat: { label: "Teams chat", icon: MessagesSquare },
+	email: { label: "email", icon: OutlookIcon },
+	chat: { label: "Teams chat", icon: TeamsIcon },
 	file: { label: "file", icon: FileText },
 } as const;
 
@@ -224,8 +224,17 @@ function GenericToolCallCard({
 	);
 	const isEditorDraft =
 		isRoomCompose && Boolean(editorEmail) && tool.status === "COMPLETED";
+	// the editor opens when the run settles; until then the draft is being prepared, not missing
+	const isDraftPreparing =
+		isRoomCompose &&
+		!editorEmail &&
+		tool.status === "COMPLETED" &&
+		Boolean(roomEmail?.isDraftPending);
 	const isDraftUnavailable =
-		isRoomCompose && !editorEmail && tool.status === "COMPLETED";
+		isRoomCompose &&
+		!editorEmail &&
+		tool.status === "COMPLETED" &&
+		!isDraftPreparing;
 	const composeKind =
 		editorEmail?.mode ??
 		(asString(tool.arguments.replyTo)
@@ -252,7 +261,13 @@ function GenericToolCallCard({
 		(isSubmit || isRequest ? SUBMIT_LABELS[tool.status] : undefined) ??
 		(pendingApproval?.requiresResponse ? "Needs your input" : undefined);
 	const details = {
-		...statusDetails(isDraftUnavailable ? "FAILED" : tool.status),
+		...statusDetails(
+			isDraftUnavailable
+				? "FAILED"
+				: isDraftPreparing
+					? "RUNNING"
+					: tool.status,
+		),
 		...(statusLabel && { label: statusLabel }),
 	};
 	const title = isSubmit
@@ -304,6 +319,7 @@ function GenericToolCallCard({
 
 	const status =
 		(isDraftUnavailable ? "Draft unavailable" : undefined) ??
+		(isDraftPreparing ? "Preparing draft..." : undefined) ??
 		(sendDraft ? SEND_STATUS[tool.status] : undefined) ??
 		(isEmailCompose && draftPreview
 			? COMPOSE_STATUS[tool.status]
@@ -389,6 +405,7 @@ function GenericToolCallCard({
 								roomEmail &&
 									tool.status === "COMPLETED" &&
 									!isDraftUnavailable &&
+									!isDraftPreparing &&
 									"bg-success/10 text-success",
 								roomEmail &&
 									isDraftUnavailable &&
@@ -424,6 +441,7 @@ function GenericToolCallCard({
 									roomEmail &&
 										tool.status === "COMPLETED" &&
 										!isDraftUnavailable &&
+										!isDraftPreparing &&
 										"text-success",
 									isDraftUnavailable && "text-destructive",
 									tool.status === "INPUT_REQUIRED" &&

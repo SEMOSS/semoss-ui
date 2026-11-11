@@ -60,13 +60,19 @@
 	"onedrive": {
 		"viewLabel": "Wat tonen",
 		"mine": "Mijn bestanden",
-		"shared": "Gedeeld met mij"
+		"shared": "Gedeeld met mij",
+		"sharedNote": "Bestanden die met je zijn gedeeld worden gevonden via de zoekfunctie van Microsoft, dus een onlangs gedeeld bestand kan hier even op zich laten wachten."
 	},
 	"mail": {
 		"folder": "Mailmap",
+		"folderPicker": "Mailmap: {{folder}}",
+		"unreadCount_one": "{{count}} ongelezen",
+		"unreadCount_other": "{{count}} ongelezen",
 		"inbox": "Postvak IN",
 		"unreadOnly": "Ongelezen",
-		"searchPlaceholder": "Zoeken in onderwerpen",
+		"searchPlaceholder": "E-mail zoeken",
+		"searchHintOutlook": "Woorden zoeken in de afzender, het onderwerp of de tekst. Beperk er een met from:, to:, cc:, subject: of body:, en gebruik aanhalingstekens voor een zin.",
+		"searchHintGmail": "Woorden zoeken in de hele e-mail. Beperk er een met from:, to:, cc: of subject:, en gebruik aanhalingstekens voor een zin.",
 		"empty": "Geen e-mails in deze map",
 		"noUnread": "Geen ongelezen e-mails in deze map",
 		"unknownSender": "Onbekende afzender",
@@ -102,7 +108,25 @@
 		"hideQuoted": "Geciteerde e-mails verbergen",
 		"filters": "Filters",
 		"pageError": "Meer berichten konden niet worden geladen.",
-		"emptyPage": "De mailbox gaf een lege pagina terug. Probeer het opnieuw."
+		"emptyPage": "De mailbox gaf een lege pagina terug. Probeer het opnieuw.",
+		"picturesHidden": "Afbeeldingen van het web zijn verborgen om je privacy te beschermen.",
+		"showWebPictures": "Afbeeldingen van het web tonen",
+		"showEmbeddedPictures": "Ingesloten afbeeldingen tonen",
+		"loadingPictures": "Afbeeldingen laden...",
+		"embeddedPicturesHidden": "Afbeeldingen die in deze e-mail zijn ingesloten, zijn verborgen.",
+		"embeddedPicturesLoading": "De ingesloten afbeeldingen van deze e-mail worden geladen...",
+		"embeddedPicturesFailed": "De ingesloten afbeeldingen van deze e-mail konden niet worden geladen.",
+		"embeddedPicturesOmitted_one": "{{count}} ingesloten afbeelding kon niet worden getoond.",
+		"embeddedPicturesOmitted_other": "{{count}} ingesloten afbeeldingen konden niet worden getoond.",
+		"pictureSettings": "Instellingen voor afbeeldingen",
+		"picturesInEmails": "Afbeeldingen in e-mails",
+		"picturesAsk": "Elke keer vragen",
+		"picturesEmbedded": "Ingesloten afbeeldingen altijd tonen",
+		"picturesAll": "Alle afbeeldingen altijd tonen",
+		"remoteImage": "Afbeelding van het web",
+		"embeddedImage": "Ingesloten afbeelding of bestand",
+		"image": "Afbeelding",
+		"htmlFrame": "E-mail van {{from}}"
 	},
 	"calendar": {
 		"range": "{{start}} tot {{end}}",
@@ -162,6 +186,7 @@
 		"openCalendar": "Agenda openen"
 	},
 	"teams": {
+		"pageError": "Meer berichten konden niet worden geladen.",
 		"team": "Team",
 		"channel": "Kanaal",
 		"chooseTeam": "Kies een team",
@@ -199,7 +224,12 @@
 		"changeLocation": "Team of kanaal wijzigen: {{team}}, {{channel}}",
 		"postsLabel": "Berichten",
 		"filesLabel": "Bestanden",
-		"chatsLabel": "Je chats"
+		"chatsLabel": "Je chats",
+		"searchMessages": "Berichten zoeken",
+		"searchResultIn": "{{author}} in {{chat}}",
+		"openSearchResult": "Het bericht van {{author}} openen: {{text}}",
+		"searchMatch": "Gevonden met je zoekopdracht",
+		"searchMatchNotShown": "Het bericht dat je zoekopdracht vond is ouder dan de berichten die hier staan. Open de chat in Teams om verder terug te lezen."
 	},
 	"accounts": {
 		"microsoft": "Microsoft 365",

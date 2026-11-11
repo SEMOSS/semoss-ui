@@ -2,7 +2,7 @@ import { type ConnectorBrand, ConnectorBrandIcon } from "@semoss/shared";
 import { useWorkbench, type WorkbenchPanelId } from "@semoss/workbench";
 
 /** What a connector panel can be opened with. */
-export interface ConnectorViewerPanelParams {
+interface ConnectorViewerPanelParams {
 	/**
 	 * The app whose logo the tab shows, when it is not the viewer's own, such
 	 * as one mail viewer shown as Outlook or as Gmail. Part of the panel's
@@ -12,7 +12,7 @@ export interface ConnectorViewerPanelParams {
 }
 
 /** Props for {@link ConnectorPanelIcon}. */
-export interface ConnectorPanelIconProps {
+interface ConnectorPanelIconProps {
 	/** The panel whose tab it is. */
 	id: WorkbenchPanelId;
 	/** The logo when the panel was opened without a brand of its own. */

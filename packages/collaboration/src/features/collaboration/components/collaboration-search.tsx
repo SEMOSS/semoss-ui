@@ -48,7 +48,7 @@ const GO_TO = [
 		id: "everything",
 		label: lexicon.everything,
 		detail: "Every open, waiting and done item",
-		path: "/work/all",
+		path: "/work",
 	},
 	{
 		id: "topics",

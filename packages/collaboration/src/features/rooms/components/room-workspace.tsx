@@ -1,11 +1,7 @@
+import { Brain, FolderOpen, Settings2 } from "lucide-react";
 import {
-	Brain,
-	FolderOpen,
-	Mail,
-	MessagesSquare,
-	Settings2,
-} from "lucide-react";
-import {
+	type KeyboardEvent,
+	type PointerEvent as ReactPointerEvent,
 	useContext,
 	useEffect,
 	useId,
@@ -23,6 +19,7 @@ import {
 	toast,
 	useIsMobile,
 } from "@semoss/ui/next";
+import { OutlookIcon, TeamsIcon } from "@/components/common/app-icons";
 import { CollaborationHeaderLayoutContext } from "@/features/collaboration/components/collaboration-header.context";
 import { useOptionalCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import {
@@ -30,11 +27,7 @@ import {
 	rememberCommand,
 } from "@/features/collaboration/state/memory";
 import { roomFileLinks } from "@/features/messages/utils/room-file-link";
-import {
-	connectorPanelActions,
-	OUTLOOK_TONE,
-	TEAMS_TONE,
-} from "@/features/room-connectors/connector-panel-actions";
+import { connectorPanelActions } from "@/features/room-connectors/connector-panel-actions";
 import { useRoomConnectors } from "@/features/room-connectors/room-connectors.context";
 import { RoomEmailContext } from "@/features/room-email/room-email.context";
 import {
@@ -257,6 +250,63 @@ export function RoomWorkspace({
 		openWorkbench();
 	}
 
+	/**
+	 * A fitted dock has no split to drag, so the room handle resizes the open
+	 * sidebar instead, within the workbench's own 140-640px sidebar limits and
+	 * without squeezing the chat below its minimum.
+	 */
+	function resizeSidebar(width: number) {
+		const { borders, panels, actions } = store.getState().layout;
+		const panel = borders.left.activeId
+			? panels[borders.left.activeId]
+			: undefined;
+		const maxWidth = Math.min(
+			panel?.maxWidth ?? 640,
+			workspaceWidth > 0
+				? workspaceWidth - MIN_CONVERSATION_WIDTH - 64
+				: Number.POSITIVE_INFINITY,
+		);
+		actions.resizeBorder(
+			"left",
+			Math.max(panel?.minWidth ?? 140, Math.min(maxWidth, width)),
+		);
+	}
+
+	// react-resizable-panels types its handle's DOM props by tag name, not element
+	function handleSidebarResizePointerDown(
+		event: ReactPointerEvent<keyof HTMLElementTagNameMap>,
+	) {
+		const handle: EventTarget = event.currentTarget;
+		if (!isSidebarOnly || !sidebarWidth || !(handle instanceof HTMLElement))
+			return;
+		event.preventDefault();
+		const startX = event.clientX;
+		const startWidth = sidebarWidth;
+		const onMove = (move: PointerEvent) =>
+			resizeSidebar(startWidth + startX - move.clientX);
+		handle.setPointerCapture(event.pointerId);
+		handle.addEventListener("pointermove", onMove);
+		handle.addEventListener(
+			"lostpointercapture",
+			() => handle.removeEventListener("pointermove", onMove),
+			{ once: true },
+		);
+	}
+
+	function handleSidebarResizeKeyDown(
+		event: KeyboardEvent<keyof HTMLElementTagNameMap>,
+	) {
+		const step =
+			event.key === "ArrowLeft"
+				? 20
+				: event.key === "ArrowRight"
+					? -20
+					: 0;
+		if (!isSidebarOnly || !sidebarWidth || !step) return;
+		event.preventDefault();
+		resizeSidebar(sidebarWidth + step);
+	}
+
 	function handleSend(submission: ComposerSubmission): Promise<void> {
 		const remembered = memorySession
 			? rememberCommand(submission.text)
@@ -391,12 +441,8 @@ export function RoomWorkspace({
 																	? "View email"
 																	: "View Teams chat",
 																icon: roomEmail.hasSourceEmail
-																	? Mail
-																	: MessagesSquare,
-																iconClassName:
-																	roomEmail.hasSourceEmail
-																		? OUTLOOK_TONE
-																		: TEAMS_TONE,
+																	? OutlookIcon
+																	: TeamsIcon,
 																onSelect: () =>
 																	roomEmail.openSource(
 																		actionsTriggerId,
@@ -497,11 +543,20 @@ export function RoomWorkspace({
 							<ResizableHandle
 								aria-label="Resize tool workbench"
 								disabled={isSidebarOnly}
+								// the panel library keeps onPointerDown for its own drag
+								onPointerDownCapture={
+									handleSidebarResizePointerDown
+								}
+								onKeyDown={handleSidebarResizeKeyDown}
 								className={cn(
 									"hidden bg-transparent transition-colors focus-visible:bg-border data-[resize-handle-state=drag]:bg-border data-[resize-handle-state=hover]:bg-border",
 									isToolWorkbenchOpen &&
-										!isSidebarOnly &&
+										(!isSidebarOnly ||
+											Boolean(sidebarWidth)) &&
 										"md:flex",
+									// the library's hit-area slop is off while disabled, so widen the grip over the dock
+									isSidebarOnly &&
+										"z-10 cursor-ew-resize after:w-3 hover:bg-border",
 								)}
 							/>
 							<ResizablePanel

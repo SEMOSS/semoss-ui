@@ -1,4 +1,4 @@
-import { PanelLeftCloseIcon, PanelLeftOpenIcon } from "lucide-react";
+import { PanelLeftIcon } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
@@ -13,7 +13,6 @@ export function NavigationToggle() {
 	const { t } = useTranslation("sidebar");
 	const { open, isMobile, toggleSidebar } = useSidebar();
 	const label = t(open ? "actions.closeSidebar" : "actions.openNavigation");
-	const Icon = open ? PanelLeftCloseIcon : PanelLeftOpenIcon;
 
 	if (isMobile) return null;
 
@@ -29,7 +28,10 @@ export function NavigationToggle() {
 					aria-expanded={open}
 					onClick={toggleSidebar}
 				>
-					<Icon aria-hidden="true" className="rtl:-scale-x-100" />
+					<PanelLeftIcon
+						aria-hidden="true"
+						className="rtl:-scale-x-100"
+					/>
 				</Button>
 			</TooltipTrigger>
 			<TooltipContent>{label}</TooltipContent>

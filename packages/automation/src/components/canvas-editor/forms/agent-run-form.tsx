@@ -4,7 +4,7 @@ import { EnginePickerField } from "./engine-picker-field";
 import { BoundInput } from "./pill-input";
 import { AutomationProjectSelect } from "./project-select";
 
-export interface AgentRunFormProps {
+interface AgentRunFormProps {
 	config: AgentRunConfig;
 	upstreamVars: string[];
 	onChange: (config: AgentRunConfig) => void;

@@ -3,7 +3,7 @@ import {
 	type RoomSession,
 } from "@/features/rooms/room-session";
 
-export interface NewChatDraft {
+interface NewChatDraft {
 	id: string;
 	topicId: string;
 	session: RoomSession;

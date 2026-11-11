@@ -38,7 +38,7 @@ interface PickedSource {
 	engineSubtype?: string;
 }
 
-export interface CopyAccessDialogProps {
+interface CopyAccessDialogProps {
 	/** Whether the dialog is open */
 	open: boolean;
 	/** The project, engine or team being changed */

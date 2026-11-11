@@ -4,10 +4,7 @@
 		"title": "Seguimientos sugeridos"
 	},
 	"settings": {
-		"title": "Configuración de la sala",
-		"description": "Actualizar la configuración de la sala y modificar el comportamiento del chat",
-		"open": "Abrir Configuración",
-		"close": "Cerrar",
+		"description": "Modelo, instrucciones, conocimiento y herramientas de esta sala.",
 		"compact": "Compactar mensajes de herramientas",
 		"compactSuccess": "Mensajes de herramientas compactados correctamente",
 		"compactError": "Error al compactar los mensajes de herramientas",
@@ -24,20 +21,18 @@
 			"TOOL_PRUNE": "Elimina los resultados detallados de las llamadas a herramientas del historial de la conversación. Ideal cuando las salidas de las herramientas son extensas y los detalles ya no son necesarios.",
 			"AUTO": "Seleccionará el resumen o la reducción de herramientas según la conversación actual."
 		},
-		"panelTitle": "Configuración",
 		"noKnowledge": "No hay conocimiento seleccionado.",
-		"noTools": "No hay herramientas seleccionadas.",
 		"fromRoom": "De la sala",
 		"inheritedSelection": "Las selecciones heredadas no se pueden quitar de este chat.",
 		"removeSelection": "Quitar {{name}}",
-		"agentLoadError": "No se pudo cargar el agente. Inténtalo de nuevo o selecciona otro."
+		"agentLoadError": "No se pudo cargar el agente. Inténtalo de nuevo o selecciona otro.",
+		"toolsTitle": "Herramientas"
 	},
 	"form": {
 		"modelLabel": "Modelo",
 		"instructionsLabel": "Instrucciones",
 		"agentLabel": "Agente",
 		"knowledgeLabel": "Conocimiento",
-		"toolboxLabel": "Cajas de herramientas",
 		"temperatureLabel": "Temperatura"
 	},
 	"modes": {
@@ -49,7 +44,7 @@
 		"noAgent": "Sin agente"
 	},
 	"workspace": {
-		"publishTooltip": "Publicar como agente",
+		"publish": "Publicar como agente",
 		"publishTitle": "Publicar agente",
 		"publishDescription": "Publica un nuevo agente con la configuración actual de la sala, incluyendo instrucciones y MCPs.",
 		"nameLabel": "Nombre *",
@@ -67,7 +62,7 @@
 		"ariaPlaceholder": "Ingresa texto",
 		"thinking": "Pensando...",
 		"menuPrompt": "¿Cómo puedo ayudarte hoy?",
-		"openSettings": "Añadir a tu chat",
+		"addToChat": "Añadir a tu chat",
 		"recordLabel": "Grabar al modelo",
 		"stopRecording": "Detener grabación",
 		"record": "Grabar",
@@ -116,9 +111,7 @@
 		"attachDocument": "Adjuntar archivos"
 	},
 	"menuFileExplorer": {
-		"name": "Archivos del chat",
-		"open": "Mostrar archivos del chat",
-		"close": "Ocultar archivos del chat"
+		"name": "Archivos de la sala"
 	},
 	"errors": {
 		"createRoom": "Ocurrió un error al crear la sala. Error: {{message}}",
@@ -142,18 +135,12 @@
 	"studio": {
 		"views": "Vistas de la conversación",
 		"chat": "Chat",
-		"openWorkArea": "Abrir espacio de trabajo",
-		"workArea": "Espacio de trabajo",
-		"toolsCount": "Herramientas, {{count}} seleccionadas",
-		"tools": "Herramientas",
+		"workspace": "Espacio de trabajo",
 		"toolsLocked": "No se pueden cambiar las herramientas mientras se genera una respuesta.",
 		"toolsHint": "Las selecciones se aplican a tu próximo mensaje.",
-		"toolsTitle": "Herramientas y conocimiento",
-		"toolsDescription": "Elige las herramientas y el conocimiento disponibles para esta conversación.",
 		"moreActions": "Más acciones",
 		"prompts": "Prompts",
 		"removeFile": "Eliminar {{name}}",
-		"thinking": "Razonamiento",
 		"errorTitle": "Se ha producido un error",
 		"errorDescription": "Actualiza la página o vuelve al inicio e inténtalo de nuevo.",
 		"backHome": "Volver al inicio",
@@ -162,16 +149,21 @@
 		"exportCsv": "Exportar como CSV",
 		"exportPdf": "Exportar como PDF",
 		"closeWorkspace": "Cerrar espacio de trabajo",
+		"openWorkspace": "Abrir espacio de trabajo",
 		"preparingWorkspace": "Preparando espacio de trabajo…",
-		"activityLog": "Registro de actividad",
 		"prepareError": "No se pudo preparar el espacio de trabajo. Se conserva tu borrador.",
 		"retry": "Intentar de nuevo"
 	},
 	"workspacePlaces": {
 		"files": "Archivos",
-		"tools": "Herramientas",
+		"openPanel": "Abrir un panel",
 		"activity": "Actividad",
-		"settings": "Configuración"
+		"settings": "Configuración",
+		"descriptions": {
+			"files": "Los archivos que subes aquí y lo que crean las herramientas de la sala",
+			"settings": "El modelo, las instrucciones, el conocimiento y las herramientas de esta sala",
+			"activity": "Cada llamada a herramientas y cada cambio en esta sala"
+		}
 	},
 	"optimizer": {
 		"optimize": "Optimizar mensaje",
@@ -187,5 +179,71 @@
 	"contextItems": {
 		"label": "Añadido a tu próximo mensaje",
 		"remove": "Quitar {{name}} de tu próximo mensaje"
+	},
+	"header": {
+		"untitled": "Sala sin título",
+		"renameLabel": "Nombre de la sala",
+		"roomSection": "Sala"
+	},
+	"slash": {
+		"empty": "No se encontraron comandos",
+		"openPlace": "Abrir {{name}} en el espacio de trabajo",
+		"groups": {
+			"chat": "Chat",
+			"workspace": "Espacio de trabajo",
+			"room": "Sala",
+			"prompts": "Prompts"
+		},
+		"commands": {
+			"attach": {
+				"label": "Adjuntar archivos",
+				"description": "Añade archivos a tu próximo mensaje"
+			},
+			"knowledge": {
+				"label": "Añadir conocimiento",
+				"description": "Permite que el asistente busque en tus fuentes de conocimiento"
+			},
+			"toolbox": {
+				"label": "Añadir herramientas",
+				"description": "Añade cajas de herramientas que el asistente puede usar"
+			},
+			"agent": {
+				"label": "Elegir agente",
+				"description": "Elige el agente que ejecuta esta sala"
+			},
+			"agent-harness": {
+				"label": "Cambiar a agente",
+				"description": "Ejecuta esta sala con un agente"
+			},
+			"chat-mode": {
+				"label": "Cambiar a chat",
+				"description": "Ejecuta esta sala sin un agente"
+			},
+			"compact": {
+				"label": "Compactar",
+				"description": "Resume la conversación para liberar contexto"
+			},
+			"close-workspace": {
+				"description": "Oculta el espacio de trabajo y conserva sus pestañas"
+			},
+			"favorite": {
+				"description": "Fija esta sala al principio de tu lista"
+			},
+			"unfavorite": {
+				"description": "Desfija esta sala del principio de tu lista"
+			},
+			"rename": {
+				"description": "Cambia el nombre de esta sala"
+			},
+			"download": {
+				"description": "Guarda esta conversación como Word o PDF"
+			},
+			"delete": {
+				"description": "Elimina esta sala y su conversación"
+			},
+			"publish": {
+				"description": "Guarda las instrucciones y herramientas de esta sala como un agente"
+			}
+		}
 	}
 }

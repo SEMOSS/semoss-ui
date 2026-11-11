@@ -99,6 +99,7 @@ export type WorkbenchMenuLabel =
 	| "bottom"
 	| "previous"
 	| "next"
+	| "goTo"
 	| "openPanels"
 	| "noPanels"
 	| "maximize"

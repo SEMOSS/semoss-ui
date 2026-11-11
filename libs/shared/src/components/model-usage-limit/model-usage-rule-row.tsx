@@ -34,7 +34,7 @@ import {
 } from "./model-usage-rule-draft";
 
 /** Props for {@link ModelUsageRuleRow}. */
-export interface ModelUsageRuleRowProps {
+interface ModelUsageRuleRowProps {
 	/** The rule as the editor holds it */
 	draft: ModelUsageRuleDraft;
 	/** Its place in the list, from 1, for the controls' names */

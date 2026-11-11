@@ -13,7 +13,7 @@ import {
  * since the turn did not single one out, and an email written after them wins,
  * since its draft opens instead. The room's own thread is already on screen.
  */
-export function itemsToShow(
+function itemsToShow(
 	messages: ConversationMessage[],
 	roomId?: string,
 	sourceThreadId?: string,

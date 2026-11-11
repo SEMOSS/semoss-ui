@@ -1,7 +1,7 @@
 import type { GroupAccessResource } from "@/api/teams";
 
 /** What the team pages call a kind of resource */
-export interface TeamResourceNouns {
+interface TeamResourceNouns {
 	/** One of them, such as "project" */
 	singular: string;
 	/** Several of them, such as "projects" */

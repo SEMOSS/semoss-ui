@@ -15,7 +15,7 @@ export interface OwnedMessagePart {
 }
 
 /** Consecutive assistant messages share a shell without changing their owners. */
-export interface MessagePresentation {
+interface MessagePresentation {
 	message: ConversationMessage;
 	parts: OwnedMessagePart[];
 	/** First valid source timestamp, independent of the stable response identity. */
@@ -132,7 +132,7 @@ export function presentMessages(
 	return visible;
 }
 
-export type MessagePartBlock =
+type MessagePartBlock =
 	| { type: "part"; key: string; item: OwnedMessagePart }
 	| { type: "tools"; key: string; items: OwnedMessagePart[] };
 

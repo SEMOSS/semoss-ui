@@ -41,6 +41,8 @@ export const routes: RouteObject[] = [
 							},
 							...[
 								"work",
+								"work/topics",
+								"work/review",
 								"work/all",
 								"work/waiting",
 								"work/done",
@@ -60,6 +62,26 @@ export const routes: RouteObject[] = [
 									Component: (
 										await import("@/pages/topic.page")
 									).TopicPage,
+								}),
+							},
+							{
+								path: "topics/:topicId/contents",
+								id: "topic-contents",
+								lazy: async () => ({
+									Component: (
+										await import(
+											"@/pages/topic-contents.page"
+										)
+									).TopicContentsPage,
+								}),
+							},
+							{
+								path: "work/item/:taskId",
+								id: "work/item/:taskId",
+								lazy: async () => ({
+									Component: (
+										await import("@/pages/work-item.page")
+									).WorkItemPage,
 								}),
 							},
 							...[

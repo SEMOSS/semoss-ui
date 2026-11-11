@@ -1,4 +1,4 @@
-import { CalendarClock, Inbox } from "lucide-react";
+import { CalendarClock, Inbox, ListChecks } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { cn, Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 import { ChatHistoryList } from "@/features/dashboard/chat-history-list";
@@ -48,6 +48,13 @@ export function CollaborationNavigation({
 			isActive: pathname === "/",
 		},
 		{
+			to: "/work",
+			label: "Work",
+			icon: ListChecks,
+			count: 0,
+			isActive: pathname.startsWith("/work"),
+		},
+		{
 			to: "/routines",
 			label: "Routines",
 			icon: CalendarClock,
@@ -69,7 +76,12 @@ export function CollaborationNavigation({
 				className="flex shrink-0 flex-col gap-0.5 px-2 pt-2 pr-3 pb-0.5"
 			>
 				{links.map(({ to, label, icon: Icon, count, isActive }) => (
-					<Tooltip key={to} disableHoverableContent={false}>
+					// a fresh tooltip per rail state: hovered while expanded (no label drawn) it never closes, so collapsing would
+					// show every label hovered before
+					<Tooltip
+						key={`${to}:${isCollapsed}`}
+						disableHoverableContent={false}
+					>
 						<TooltipTrigger asChild>
 							<Link
 								to={to}
@@ -102,7 +114,7 @@ export function CollaborationNavigation({
 						{isCollapsed && (
 							<TooltipContent side="right">
 								{label}
-								{count > 0 ? ` · ${count}` : ""}
+								{count > 0 ? ` \u00b7 ${count}` : ""}
 							</TooltipContent>
 						)}
 					</Tooltip>

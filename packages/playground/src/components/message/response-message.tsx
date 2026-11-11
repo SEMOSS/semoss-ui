@@ -24,6 +24,7 @@ import {
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
+import { ChatReasoning } from "@semoss/shared";
 import {
 	Button,
 	ButtonGroup,
@@ -52,7 +53,6 @@ import type { ResponseMessageStore } from "@/stores/message/response-message.sto
 import type { RoomStore } from "@/stores/room/room.store";
 import { ResponseMessageSubagent } from "./response-message-subagent";
 import { ResponseMessageText } from "./response-message-text";
-import { ResponseMessageThinking } from "./response-message-thinking";
 import { ResponseMessageToolGroup } from "./response-message-tool-group";
 
 const getExtIcon = (fileName: string) => {
@@ -107,7 +107,7 @@ const hasStreamedContent = (parts: ResponseMessageStore["parts"]) =>
 			part.type === "MEDIA",
 	);
 
-export interface ResponseMessageProps {
+interface ResponseMessageProps {
 	/** Room */
 	room: RoomStore;
 
@@ -466,12 +466,10 @@ export const ResponseMessage = observer(
 								return null;
 							}
 							return (
-								<ResponseMessageThinking
+								<ChatReasoning
 									key={key}
-									message={message}
-									part={p}
-									status={status}
-									isFirstView={isFirstView}
+									thinking={p.thinking}
+									isStreaming={status === "active"}
 								/>
 							);
 						} else if (p.type === "TOOL_CALL") {

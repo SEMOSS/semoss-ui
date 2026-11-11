@@ -17,7 +17,6 @@ import {
 	console as getPixelConsole,
 	runPixel,
 	runPixelAsync,
-	useInsight,
 } from "@semoss/sdk/react";
 import {
 	Button,
@@ -60,8 +59,11 @@ interface NotebookProps {
 	/** Fired on every edit with the serialized notebook and its modified flag. */
 	onChange?: (content: string, isModified: boolean) => void;
 
-	/** Insight to run cells against; defaults to the ambient insight. */
-	insightId?: string;
+	/**
+	 * Insight to run cells against. Every cell runs in it, so python keeps its
+	 * state between cells.
+	 */
+	insightId: string;
 
 	/** Fires whenever the notebook's state changes (for an external toolbar). */
 	onStateChange?: (state: NotebookState) => void;
@@ -118,8 +120,6 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 		},
 		ref,
 	) => {
-		const insight = useInsight();
-
 		const [notebook, setNotebook] = useState<JupyterNotebook | null>(null);
 		const [parseError, setParseError] = useState<string | null>(null);
 		const [runningCellIndex, setRunningCellIndex] = useState<number | null>(
@@ -149,8 +149,6 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 		// Latest state callback, read through a ref to keep the effect stable.
 		const onStateChangeRef = useRef(onStateChange);
 		onStateChangeRef.current = onStateChange;
-
-		const execInsightId = insightId ?? insight.insightId;
 
 		// Re-seed the in-memory notebook whenever the raw content changes.
 		useEffect(() => {
@@ -235,7 +233,7 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 				let executionDurationMs: number | undefined;
 
 				if (pixel) {
-					const { jobId } = await runPixelAsync(pixel, execInsightId);
+					const { jobId } = await runPixelAsync(pixel, insightId);
 					currentJobIdRef.current = jobId;
 
 					logs = [];
@@ -453,7 +451,7 @@ export const Notebook = forwardRef<NotebookHandle, NotebookProps>(
 				try {
 					await runPixel(
 						`StopPixelExecution(id=["${jobId}"]);`,
-						execInsightId,
+						insightId,
 					);
 				} catch {
 					// ignore — abort flag already set

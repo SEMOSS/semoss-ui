@@ -1,14 +1,19 @@
 import { observer } from "mobx-react-lite";
 import {
 	type CSSProperties,
+	useCallback,
 	useEffect,
 	useMemo,
 	useRef,
 	useState,
 } from "react";
 import { matchPath, Outlet, useLocation } from "react-router";
-import { useInsight } from "@semoss/sdk/react";
-import { SidebarInset, SidebarProvider, useCacheState } from "@semoss/ui/next";
+import {
+	cn,
+	SidebarInset,
+	SidebarProvider,
+	useCacheState,
+} from "@semoss/ui/next";
 import { setFavicon } from "@semoss/utility/browser";
 import { GlobalDialog } from "@/components/common/global-dialog";
 import { GlobalFooter } from "@/components/common/global-footer";
@@ -19,21 +24,27 @@ import { ChatContext } from "@/contexts/chat-context";
 import { TourContext } from "@/contexts/tour-context";
 import { useWorkspaceNavigation } from "@/features/conversation/use-workspace-navigation";
 import { WorkspaceNavigationContext } from "@/features/conversation/workspace-navigation.context";
-import { MobileNavigationButton } from "@/features/navigation/mobile-navigation-button";
+import { NavigationButton } from "@/features/navigation/navigation-button";
+import { PageHeaderContext } from "@/features/navigation/page-header.context";
 import { SettingsDialogProvider } from "@/features/settings/settings-dialog-provider";
-import { useRoot } from "@/hooks/use-root";
+import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
 import { useThemeTitle } from "@/hooks/use-theme-title";
 import { ChatStore } from "@/stores/chat/chat.store";
 
 export const MainLayout = observer(() => {
-	const { actions } = useInsight();
-	const { root } = useRoot();
-	const theme = root.theme;
+	const theme = usePlaygroundTheme();
 	// React freezes DOM style props in development; keep the observable theme mutable.
 	const layoutStyle = { ...theme.overrides["main-layout"] };
 	const { pathname } = useLocation();
 	const [isTourOpen, setIsTourOpen] = useState(false);
 	const [pendingTour, setPendingTour] = useState(false);
+	// Routes with their own header hold the mobile navigation button there.
+	const [pageHeaderCount, setPageHeaderCount] = useState(0);
+	const registerPageHeader = useCallback(() => {
+		setPageHeaderCount((count) => count + 1);
+		return () => setPageHeaderCount((count) => count - 1);
+	}, []);
+	const hasPageHeader = pageHeaderCount > 0;
 
 	const [isSidebarOpen, setIsSidebarOpen] = useCacheState(
 		theme.sidebar.expandedByDefault,
@@ -44,13 +55,13 @@ export const MainLayout = observer(() => {
 
 	// set up the chat store
 	const chatStore = useMemo(() => {
-		const store = new ChatStore(root.theme, actions, ROOM_PANEL_COMPONENTS);
+		const store = new ChatStore(theme, ROOM_PANEL_COMPONENTS);
 
 		// initialize it
 		store.initialize();
 
 		return store;
-	}, [root.theme, actions]);
+	}, [theme]);
 
 	// Refs for embed iframe sync
 	const iframeRefs = useRef<Record<string, HTMLIFrameElement | null>>({});
@@ -133,20 +144,20 @@ export const MainLayout = observer(() => {
 	// Auto-show tour for first-time users (resets when cookies are cleared).
 	// If the welcome dialog is visible, defer until it is acknowledged.
 	useEffect(() => {
-		if (root.theme.tour?.show === false) return;
+		if (theme.tour?.show === false) return;
 		const hasSeen = document.cookie
 			.split("; ")
 			.find((c) => c.startsWith("hasSeenTour="));
 		if (!hasSeen) {
 			// biome-ignore lint/suspicious/noDocumentCookie: TODO: why not use localStorage?
 			document.cookie = "hasSeenTour=true; path=/; max-age=31536000"; // 1 year
-			if (root.theme.dialog) {
+			if (theme.dialog) {
 				setPendingTour(true);
 			} else {
 				setIsTourOpen(true);
 			}
 		}
-	}, [root.theme.tour?.show, root.theme.dialog]);
+	}, [theme.tour?.show, theme.dialog]);
 
 	return (
 		<ChatContext.Provider
@@ -166,75 +177,83 @@ export const MainLayout = observer(() => {
 					<WorkspaceNavigationContext.Provider
 						value={navigation.setWorkAreaOpen}
 					>
-						<SidebarProvider
-							open={navigation.isNavigationOpen}
-							onOpenChange={navigation.setNavigationOpen}
-							style={
-								{
-									"--sidebar-width": "16rem",
-									"--sidebar-width-mobile": "16rem",
-								} as CSSProperties
-							}
-						>
-							<GlobalNav />
-							<SidebarInset className="m-0! min-w-0 rounded-none! shadow-none">
-								<GlobalDialog
-									onAcknowledge={() => {
-										if (pendingTour) {
-											setPendingTour(false);
-											setIsTourOpen(true);
-										}
-									}}
-								/>
-								<div
-									data-testid="main-layout"
-									className="relative flex h-dvh w-full flex-col overflow-hidden bg-background pt-14 md:pt-0"
-									style={layoutStyle}
-								>
-									<MobileNavigationButton />
-									<div className="relative min-h-0 w-full flex-1 overflow-hidden">
-										<Outlet />
-										{Object.values(
-											chatStore.embeddedPageMap,
-										).map((item) => {
-											const isActive = matchPath(
-												{
-													path: `/embed/${item.path}`,
-													end: false,
-												},
-												pathname,
-											);
-											return (
-												<iframe
-													key={item.path}
-													ref={(el) => {
-														iframeRefs.current[
-															item.path
-														] = el;
-													}}
-													src={item.url}
-													title={item.path}
-													className="absolute inset-0 h-full w-full border-none"
-													style={{
-														// visibility:hidden removes the iframe from
-														// the browser touch hit-test pipeline on
-														// mobile (opacity:0 alone does not), so
-														// inactive iframes no longer intercept swipe
-														visibility: isActive
-															? "visible"
-															: "hidden",
-														pointerEvents: isActive
-															? "auto"
-															: "none",
-													}}
-												/>
-											);
-										})}
+						<PageHeaderContext.Provider value={registerPageHeader}>
+							<SidebarProvider
+								open={navigation.isNavigationOpen}
+								onOpenChange={navigation.setNavigationOpen}
+								style={
+									{
+										"--sidebar-width": "16rem",
+										"--sidebar-width-mobile": "16rem",
+									} as CSSProperties
+								}
+							>
+								<GlobalNav />
+								<SidebarInset className="m-0! min-w-0 rounded-none! shadow-none">
+									<GlobalDialog
+										onAcknowledge={() => {
+											if (pendingTour) {
+												setPendingTour(false);
+												setIsTourOpen(true);
+											}
+										}}
+									/>
+									<div
+										data-testid="main-layout"
+										className={cn(
+											"relative flex h-dvh w-full flex-col overflow-hidden bg-background",
+											// room for the open-navigation button, kept while the desktop
+											// navigation is open too so the page never shifts
+											!hasPageHeader && "pt-14 md:pt-10",
+										)}
+										style={layoutStyle}
+									>
+										{!hasPageHeader && <NavigationButton />}
+										<div className="relative min-h-0 w-full flex-1 overflow-hidden">
+											<Outlet />
+											{Object.values(
+												chatStore.embeddedPageMap,
+											).map((item) => {
+												const isActive = matchPath(
+													{
+														path: `/embed/${item.path}`,
+														end: false,
+													},
+													pathname,
+												);
+												return (
+													<iframe
+														key={item.path}
+														ref={(el) => {
+															iframeRefs.current[
+																item.path
+															] = el;
+														}}
+														src={item.url}
+														title={item.path}
+														className="absolute inset-0 h-full w-full border-none"
+														style={{
+															// visibility:hidden removes the iframe from
+															// the browser touch hit-test pipeline on
+															// mobile (opacity:0 alone does not), so
+															// inactive iframes no longer intercept swipe
+															visibility: isActive
+																? "visible"
+																: "hidden",
+															pointerEvents:
+																isActive
+																	? "auto"
+																	: "none",
+														}}
+													/>
+												);
+											})}
+										</div>
+										<GlobalFooter />
 									</div>
-									<GlobalFooter />
-								</div>
-							</SidebarInset>
-						</SidebarProvider>
+								</SidebarInset>
+							</SidebarProvider>
+						</PageHeaderContext.Provider>
 					</WorkspaceNavigationContext.Provider>
 				</SettingsDialogProvider>
 			</TourContext.Provider>

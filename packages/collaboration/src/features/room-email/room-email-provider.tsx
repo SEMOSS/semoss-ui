@@ -283,6 +283,8 @@ export function RoomEmailProvider({
 				store,
 				session,
 				source,
+				// editors open when the run settles, so a compose card waits until then
+				isDraftPending: !isReady || turn.isRunning || turn.isSubmitting,
 				...sourceEmails,
 				hasSourceEmail,
 				hasSourceChat,

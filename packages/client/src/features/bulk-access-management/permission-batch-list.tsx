@@ -65,7 +65,7 @@ const STATUS_BADGES: Record<
 /** Which entries the list shows */
 type ListFilter = "ALL" | "CHANGES";
 
-export interface PermissionBatchListProps {
+interface PermissionBatchListProps {
 	/** Everyone in the batch */
 	entries: BatchEntry[];
 	/** What the signed in user may change */

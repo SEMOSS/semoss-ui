@@ -21,8 +21,8 @@ export function AboutYou() {
 						About you
 					</H2>
 					<P className="text-base text-muted-foreground">
-						The profile and writing preferences you choose for
-						assistant context.
+						The profile you choose for assistant context. How you
+						write is under Email.
 					</P>
 				</header>
 				{profile ? (

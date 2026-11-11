@@ -35,7 +35,7 @@ function buildPixel(
 	return `${name}(${args});`;
 }
 
-export interface AppEngineFormProps {
+interface AppEngineFormProps {
 	/** Current node config */
 	config: AppConfig;
 	/** Output variable names produced by upstream nodes, offered as autocomplete */

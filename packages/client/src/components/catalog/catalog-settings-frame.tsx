@@ -1,4 +1,4 @@
-export interface CatalogSettingsFrameProps {
+interface CatalogSettingsFrameProps {
 	/** Accessible name for the section nav */
 	ariaLabel: string;
 	/** The nav entries, one per section */

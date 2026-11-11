@@ -65,6 +65,8 @@ vi.mock("@/features/tools/tool-workbench.context", () => ({
 					actions: {
 						selectPanel: workbenchState.selectPanel,
 						updatePanel: workbenchState.updatePanel,
+						resizeBorder:
+							layoutStore.getState().layout.actions.resizeBorder,
 					},
 				},
 			}),
@@ -450,7 +452,7 @@ describe("RoomWorkspace", () => {
 		expect(composer.parentElement).toHaveClass(
 			"mx-auto",
 			"w-full",
-			"max-w-3xl",
+			"max-w-4xl",
 		);
 		expect(composer.parentElement?.parentElement).toHaveClass(
 			"px-4",
@@ -513,6 +515,32 @@ describe("RoomWorkspace", () => {
 			draft,
 		);
 		expect(draft).toHaveValue("Keep the browser state");
+	});
+
+	it("resizes the fitted browser from the room handle within the sidebar's limits and keeps the saved split", () => {
+		const { container } = render(<RoomWorkspace {...defaultProps} />);
+		const savedSplit = panelSizes(container);
+		const handle = screen.getByRole("separator", {
+			name: "Resize tool workbench",
+		});
+		const dock = container.querySelector<HTMLElement>(
+			'[data-panel-id="collaboration-room-tool-workbench"]',
+		);
+		const actions = layoutStore.getState().layout.actions;
+		act(() => actions.closePanel("preview"));
+		fireEvent.keyDown(handle, { key: "ArrowLeft" });
+		expect(dock).toHaveStyle({ flexBasis: "384px" });
+		fireEvent.keyDown(handle, { key: "ArrowRight" });
+		fireEvent.keyDown(handle, { key: "ArrowRight" });
+		expect(dock).toHaveStyle({ flexBasis: "344px" });
+		act(() => actions.resizeBorder("left", 630));
+		fireEvent.keyDown(handle, { key: "ArrowLeft" });
+		expect(layoutStore.getState().layout.borders.left.size).toBe(640);
+		act(() => actions.resizeBorder("left", 150));
+		fireEvent.keyDown(handle, { key: "ArrowRight" });
+		expect(layoutStore.getState().layout.borders.left.size).toBe(140);
+		act(() => actions.selectPanel("preview"));
+		expect(panelSizes(container)).toEqual(savedSplit);
 	});
 
 	it("keeps room controls wide enough as the shared workspace resizes without losing a panel draft", () => {

@@ -15,7 +15,10 @@ import { download, useInsight, usePixel } from "@semoss/sdk/react";
 import { toast, useDebouncedValue } from "@semoss/ui/next";
 import { downloadBlob } from "@semoss/utility/browser";
 import type { FileItem } from "./file.types";
-import { getFileExplorerAdapter } from "./file-explorer.adapters";
+import {
+	canCreateItems,
+	getFileExplorerAdapter,
+} from "./file-explorer.adapters";
 import type {
 	FileExplorerApi,
 	FileExplorerClipboard,
@@ -98,6 +101,7 @@ export const useFileExplorer = (
 			searchScope: adapter.capabilities.searchScope !== false,
 			download: adapter.capabilities.download,
 			mutate: adapter.capabilities.mutate && !readOnly,
+			create: canCreateItems(adapter.capabilities) && !readOnly,
 			upload: adapter.capabilities.upload && !readOnly,
 			delete: adapter.capabilities.delete && !readOnly,
 		}),

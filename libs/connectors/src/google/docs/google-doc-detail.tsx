@@ -22,7 +22,7 @@ import {
 import type { GoogleDoc, GoogleDocContent } from "../google.types";
 
 /** Props for {@link GoogleDocDetail}. */
-export interface GoogleDocDetailProps {
+interface GoogleDocDetailProps {
 	/** The document as the list showed it. */
 	doc: GoogleDoc;
 	/** Saves the document's text into the insight. */

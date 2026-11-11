@@ -87,7 +87,7 @@ const LimitField = ({ control, config }: LimitFieldProps) => {
 	);
 };
 
-export interface AgentExecutionLimitsFieldsProps {
+interface AgentExecutionLimitsFieldsProps {
 	/** React Hook Form control for the shared agent form. */
 	control: Control<AgentFormValues>;
 	/** Hide the master toggle when a richer default-tools field is rendered elsewhere. */

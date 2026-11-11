@@ -4,7 +4,7 @@ import { EnginePickerField } from "./engine-picker-field";
 import { BoundInput } from "./pill-input";
 import { StringListInput } from "./string-list-input";
 
-export interface ModelEngineFormProps {
+interface ModelEngineFormProps {
 	/** Current node config */
 	config: ModelEngineConfig;
 	/** Output variable names produced by upstream nodes, offered as autocomplete */

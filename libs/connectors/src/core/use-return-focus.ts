@@ -1,7 +1,7 @@
 import { type RefObject, useCallback, useEffect, useRef } from "react";
 
 /** What {@link useReturnFocus} returns. */
-export interface ReturnFocus<T extends HTMLElement = HTMLUListElement> {
+interface ReturnFocus<T extends HTMLElement = HTMLUListElement> {
 	/** Attach to the list whose rows open items. */
 	listRef: RefObject<T | null>;
 	/** Note the row that opened an item, so focus goes back to it. */

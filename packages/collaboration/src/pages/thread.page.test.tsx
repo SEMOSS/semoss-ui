@@ -100,7 +100,38 @@ it("rejects a direct-room namespace without an identity", () => {
 	expect(screen.queryByLabelText("Direct room")).not.toBeInTheDocument();
 });
 
+it("reads a thread imported from Sources from its source after a reload, not from saved records", () => {
+	// the session no longer holds it, and the server has no saved record for it
+	renderThread(`/thread/${encodeURIComponent("connected:teams:chat-one")}`);
+	expect(screen.getByLabelText("Work thread")).toHaveTextContent(
+		"connected:teams:chat-one",
+	);
+	expect(
+		screen.queryByLabelText("Loading saved record"),
+	).not.toBeInTheDocument();
+});
+
+it("loads a saved thread the session does not hold before opening it", () => {
+	renderThread("/thread/th-not-loaded");
+	expect(screen.getByLabelText("Loading saved record")).toHaveTextContent(
+		"th-not-loaded",
+	);
+	expect(screen.queryByLabelText("Work thread")).not.toBeInTheDocument();
+});
+
 // Route composition is exercised with isolated child views; hydration has its own integration coverage.
 vi.mock("@/features/collaboration/components/saved-record-boundary", () => ({
-	SavedRecordBoundary: ({ children }: { children: ReactNode }) => children,
+	// a session that holds th-work-one only; any other saved record is still loading
+	SavedRecordBoundary: ({
+		id,
+		children,
+	}: {
+		id: string;
+		children: ReactNode;
+	}) =>
+		id === "th-work-one" ? (
+			children
+		) : (
+			<output aria-label="Loading saved record">{id}</output>
+		),
 }));

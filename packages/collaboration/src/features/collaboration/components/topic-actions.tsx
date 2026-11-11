@@ -26,14 +26,26 @@ import { topicPath } from "@/lib/workspace-paths";
 import type { Topic } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 
-/** Confirm merging this topic into another one or deleting it, or open its conversation review. */
+/** Confirm merging this topic into another one or deleting it, or open its checklists and conversation review. */
 export function TopicActions({
 	topic,
 	threadCount,
+	onEdit,
+	onManageThreads,
+	onManageChats,
+	onResort,
 	onFindConversations,
 }: {
 	topic: Topic;
 	threadCount: number;
+	/** Opens the topic editor: name, description, kind and account. */
+	onEdit?: () => void;
+	/** Opens the checklist of the topic's threads, for adding and removing them by hand. */
+	onManageThreads?: () => void;
+	/** The same for its chats; absent where no server can save a chat's topic. */
+	onManageChats?: () => void;
+	/** Re-checks the conversations already in the topic, for after narrowing it. */
+	onResort?: () => void;
 	/** Opens the review of existing conversations that fit; absent where no server can check them. */
 	onFindConversations?: () => void;
 }) {
@@ -65,9 +77,29 @@ export function TopicActions({
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="end">
+					{onEdit && (
+						<DropdownMenuItem onSelect={onEdit}>
+							Edit topic...
+						</DropdownMenuItem>
+					)}
+					{onManageThreads && (
+						<DropdownMenuItem onSelect={onManageThreads}>
+							Add or remove emails and Teams chats...
+						</DropdownMenuItem>
+					)}
+					{onManageChats && (
+						<DropdownMenuItem onSelect={onManageChats}>
+							Add or remove assistant chats...
+						</DropdownMenuItem>
+					)}
 					{onFindConversations && (
 						<DropdownMenuItem onSelect={onFindConversations}>
 							Find conversations...
+						</DropdownMenuItem>
+					)}
+					{onResort && (
+						<DropdownMenuItem onSelect={onResort}>
+							Re-sort conversations...
 						</DropdownMenuItem>
 					)}
 					<DropdownMenuItem
@@ -94,8 +126,8 @@ export function TopicActions({
 					<DialogHeader>
 						<DialogTitle>Merge {topic.name}</DialogTitle>
 						<DialogDescription>
-							Its {threadCount} threads, people, goals, notes,
-							keywords, and rules move to the topic you pick, and{" "}
+							Its {threadCount} threads, people, notes, keywords,
+							and rules move to the topic you pick, and{" "}
 							{topic.name} is removed.
 						</DialogDescription>
 					</DialogHeader>
@@ -153,7 +185,7 @@ export function TopicActions({
 					<DialogHeader>
 						<DialogTitle>Delete {topic.name}?</DialogTitle>
 						<DialogDescription>
-							Its goals, notes, people, and rules are removed, and{" "}
+							Its notes, people, and rules are removed, and{" "}
 							{threadCount} threads lose this topic. The threads
 							themselves stay.
 						</DialogDescription>
@@ -175,7 +207,7 @@ export function TopicActions({
 								});
 								close();
 								toast.success(`Deleted ${topic.name}.`);
-								navigate("/work");
+								navigate("/work/topics");
 							}}
 						>
 							Delete topic

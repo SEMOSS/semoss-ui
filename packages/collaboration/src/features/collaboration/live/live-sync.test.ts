@@ -19,13 +19,11 @@ function fakeActions() {
 					? { id: "wi-new" }
 					: /^WorkSaveStep\(/.test(statement)
 						? { id: "server-step" }
-						: /^BrainSaveTopicNote\(/.test(statement)
-							? { noteId: "server-note" }
-							: /^BrainSaveMemory\(/.test(statement)
-								? { id: "server-memory" }
-								: /^BrainSaveRule\(/.test(statement)
-									? { id: "server-rule" }
-									: true,
+						: /^BrainSaveMemory\(/.test(statement)
+							? { id: "server-memory" }
+							: /^BrainSaveRule\(/.test(statement)
+								? { id: "server-rule" }
+								: true,
 			})),
 		};
 	});
@@ -123,6 +121,30 @@ it("ignoring someone in a topic saves that topic's exclude_topic rule", async ()
 	expect(onError).not.toHaveBeenCalled();
 });
 
+it("starring a suggested topic confirms it and saves it as the main topic", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	const star = step({
+		type: "thread.link",
+		threadId: "th-geng-review",
+		topicId: "t-trip",
+		operation: "primary",
+	});
+	sync(star);
+	await sync.settled();
+	// the new primary demotes the old one on the server
+	expect(sent).toEqual([
+		'BrainLinkThreadTopic(threadId=["th-geng-review"], topicId=["t-trip"], primary=[true]);',
+	]);
+	expect(
+		star.next.threads.find((thread) => thread.id === "th-geng-review")
+			?.topicLinks,
+	).toMatchObject([
+		{ topicId: "t-geng", source: "confirmed", primary: false },
+		{ topicId: "t-trip", source: "confirmed", primary: true },
+	]);
+});
+
 it("a delete sends one BrainDeleteTopic operation", async () => {
 	const { actions, sent } = fakeActions();
 	const sync = createLiveSync(actions, vi.fn());
@@ -203,73 +225,6 @@ it("step and memory edits and removals go out as saves and deletes", async () =>
 		'BrainSaveMemory(memory=[{"id":"server-memory","text":"Budget is approved by Kira"}]);',
 	);
 	expect(sent[4]).toBe('BrainDeleteMemory(memoryId=["server-memory"]);');
-});
-
-it("does not save an assistant goal completion again", async () => {
-	const { actions, sent } = fakeActions();
-	const sync = createLiveSync(actions, vi.fn());
-	const previous = createInitialCollaborationState();
-	const topic = previous.topics[0];
-	topic.isSample = false;
-	const command: CollaborationCommand = {
-		type: "topic.goal.server",
-		topicId: topic.id,
-		before: topic.goals[0],
-		goal: {
-			...topic.goals[0],
-			status: "done",
-			resolution: "Released version 2.0",
-		},
-	};
-	const next = collaborationReducer(previous, command, NOW);
-	sync({ previous, next, commands: [command] });
-	await sync.settled();
-	expect(next.topics[0].goals[0].status).toBe("done");
-	expect(sent).toEqual([]);
-});
-
-it("preserves a goal resolution while saving reopen, edit, and completion changes", async () => {
-	const { actions, sent } = fakeActions();
-	const onError = vi.fn();
-	const sync = createLiveSync(actions, onError);
-	let state = createInitialCollaborationState();
-	const topic = state.topics[0];
-	topic.isSample = false;
-	topic.goals = [
-		{
-			noteId: "goal",
-			text: "Get room code for Florida",
-			status: "done",
-			resolution: "Florida room code is 444553",
-		},
-	];
-	for (const status of ["open", "done"] as const) {
-		const command: CollaborationCommand = {
-			type: "topic.note",
-			topicId: topic.id,
-			kind: "goal",
-			operation: "save",
-			noteId: "goal",
-			text: "Confirm room code for Florida",
-			status,
-		};
-		const next = collaborationReducer(state, command, NOW);
-		sync({ previous: state, next, commands: [command] });
-		state = next;
-		await sync.settled();
-		expect(state.topics[0].goals[0]).toEqual({
-			...topic.goals[0],
-			text: "Confirm room code for Florida",
-			status,
-		});
-	}
-	expect(sent).toEqual(
-		["open", "done"].map(
-			(status) =>
-				`BrainSaveTopicNote(topicId=["${topic.id}"], noteId=["goal"], kind=["goal"], text=["Confirm room code for Florida"], state=["${status}"]);`,
-		),
-	);
-	expect(onError).not.toHaveBeenCalled();
 });
 
 it("memory state changes go through BrainResolveMemory, and Delete all is one call", async () => {
@@ -458,43 +413,6 @@ it("removes a generated step by its existing server id", async () => {
 	]);
 });
 
-it("removes a new topic goal by its server id while creation is still queued", async () => {
-	const { actions, sent } = fakeActions();
-	const sync = createLiveSync(actions, vi.fn());
-	const created = step({
-		type: "topic.note",
-		topicId: "t-geng",
-		kind: "goal",
-		operation: "save",
-		text: "Discuss the budget",
-	});
-	const note = created.next.topics
-		.find((topic) => topic.id === "t-geng")
-		?.goals.at(-1);
-	if (!note) throw new Error("Missing created goal");
-	const command: CollaborationCommand = {
-		type: "topic.note",
-		topicId: "t-geng",
-		kind: "goal",
-		operation: "remove",
-		noteId: note.noteId,
-	};
-	sync(created);
-	sync({
-		previous: created.next,
-		next: collaborationReducer(created.next, command, NOW),
-		commands: [command],
-	});
-	await sync.settled();
-	expect(sent).toHaveLength(2);
-	expect(sent[0]).toMatch(/^BrainSaveTopicNote\(/);
-	expect(sent[0]).not.toContain("noteId=");
-	expect(sent[1]).toBe(
-		'BrainDeleteTopicNote(topicId=["t-geng"], noteId=["server-note"]);',
-	);
-	expect(sync.localId("server-note")).toBe(note.noteId);
-});
-
 it("clears a manual priority with the backend's empty-noun contract", async () => {
 	const { actions, sent } = fakeActions();
 	const sync = createLiveSync(actions, vi.fn());
@@ -624,6 +542,104 @@ it("does not save hydrated records, even when a user edit settles in the same ch
 	expect(sent[0]).toContain('"id":"saved-topic"');
 	expect(sent[0]).toContain('"name":"User rename"');
 	expect(sent[0]).not.toContain("Saved on server");
+});
+
+function withProposal() {
+	const base = createInitialCollaborationState();
+	const profile = {
+		...base.profile,
+		id: "me",
+		style: {
+			summary: "",
+			source: "learned" as const,
+			confirmed: false,
+			examples: [],
+			variants: {},
+			pending: {
+				summary: "Short and friendly.",
+				examples: ["Thanks, will do."],
+				variants: {},
+			},
+		},
+	};
+	return { ...base, liveProfile: profile };
+}
+
+it("confirming a proposal saves the agreed style and clears the proposal", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	const previous = withProposal();
+	const command: CollaborationCommand = {
+		type: "profile.save",
+		target: "live",
+		changes: {
+			style: {
+				...previous.liveProfile.style,
+				summary: "Short and friendly.",
+				source: "learned",
+				confirmed: true,
+				examples: ["Thanks, will do."],
+				pending: null,
+			},
+		},
+	};
+	const next = collaborationReducer(previous, command, NOW);
+	sync({ previous, next, commands: [command] });
+	await sync.settled();
+	expect(sent).toHaveLength(1);
+	const style = JSON.parse(
+		sent[0]
+			.replace(/^BrainSaveProfile\(profile=\[/, "")
+			.replace(/\]\);$/, ""),
+	).style;
+	expect(style).toEqual({
+		summary: "Short and friendly.",
+		source: "learned",
+		confirmed: true,
+		examples: ["Thanks, will do."],
+		pending: null,
+	});
+});
+
+it("discarding a proposal sends only the clearing of the proposal", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	const previous = withProposal();
+	const command: CollaborationCommand = {
+		type: "profile.save",
+		target: "live",
+		changes: { style: { ...previous.liveProfile.style, pending: null } },
+	};
+	const next = collaborationReducer(previous, command, NOW);
+	sync({ previous, next, commands: [command] });
+	await sync.settled();
+	expect(sent).toEqual([
+		'BrainSaveProfile(profile=[{"style":{"pending":null}}]);',
+	]);
+});
+
+it("a proposal read from the server is not written back", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	const base = createInitialCollaborationState();
+	const previous = {
+		...base,
+		liveProfile: {
+			...withProposal().liveProfile,
+			style: { ...withProposal().liveProfile.style, pending: null },
+		},
+	};
+	const command: CollaborationCommand = {
+		type: "profile.style.server",
+		style: withProposal().liveProfile.style,
+	};
+	const next = collaborationReducer(previous, command, NOW);
+	sync({ previous, next, commands: [command] });
+	await Promise.resolve();
+	expect(sent).toHaveLength(0);
+	expect(next.liveProfile?.style.pending?.summary).toBe(
+		"Short and friendly.",
+	);
 });
 
 it("does not save a topic the assistant made again, even beside an owner edit", async () => {

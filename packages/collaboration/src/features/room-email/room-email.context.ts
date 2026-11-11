@@ -20,6 +20,8 @@ interface RoomEmailContextValue {
 	store: RoomEmailStore;
 	session: RoomEmailSession;
 	source: RoomSource | null;
+	/** The run is still going or the room is loading: a compose tool's editor is not open yet. */
+	isDraftPending?: boolean;
 	sourceMessages: WorkspaceMessage[];
 	isSourceLoading: boolean;
 	sourceError: string | null;

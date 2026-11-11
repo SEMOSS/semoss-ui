@@ -1,5 +1,3 @@
-export const MODEL_KEY = "SMSS-SELECTED-MODEL-V3";
-
 export const SYSTEM__PLAYGROUND = "SYSTEM__PLAYGROUND";
 
 export const MCP_EXECUTION_AUTO = "auto";
@@ -14,25 +12,7 @@ export const MCP_EXECUTION_ASK = "ask";
 export const MCP_EXECUTION_AGENT_ASK = "agent-ask";
 export const MCP_EXECUTION_AGENT_AUTO = "agent-auto";
 
-export const MCP_DISPLAY_INLINE = "inline";
-export const MCP_DISPLAY_SIDEBAR = "sidebar";
-export const MCP_DISPLAY_HIDDEN = "hidden";
-
 export const STREAMING_PLACEHOLDER_ID = "STREAMING_PLACEHOLDER_ID";
-
-export const LOADING_MESSAGES = [
-	"Thinking through it...",
-	"Working on that...",
-	"Processing your request...",
-	"Checking the details...",
-	"Gathering context...",
-	"Making progress...",
-	"Preparing the result...",
-	"Finalizing...",
-	"Almost done...",
-	"One moment...",
-	"Still working...",
-] as const;
 
 export const TOOL_CANCELLATION_PROMPT = `The user cancelled this tool. It may or may not have already run, so its effect is uncertain and its result is unavailable. Guidance:
 1. Don't make a point of the cancellation on your own — just respond naturally to what the user says next. If they ask, keep it plain and everyday; don't explain whether or not it ran unless they want specifics.

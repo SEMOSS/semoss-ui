@@ -3,7 +3,7 @@
 import { LanguagesIcon, LogOutIcon, MapIcon, SettingsIcon } from "lucide-react";
 import { useNavigate } from "react-router";
 import { LANGUAGES, useTranslation } from "@semoss/i18n";
-import { useInsight } from "@semoss/sdk/react";
+import { useSession } from "@semoss/sdk/react";
 import {
 	Avatar,
 	AvatarFallback,
@@ -18,11 +18,14 @@ import {
 	DropdownMenuSubContent,
 	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
+	toast,
 	useSidebar,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import { buildInitials } from "@semoss/utility/text";
 import { useSettingsDialog } from "@/features/settings/settings-dialog.context";
-import { useChat, useRoot, useTour } from "@/hooks";
+import { useTour } from "@/hooks";
+import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
 
 /**
  * The signed in user's name and avatar at the foot of the sidebar. Clicking it
@@ -32,15 +35,22 @@ import { useChat, useRoot, useTour } from "@/hooks";
 export const NavUser = () => {
 	const { t, i18n } = useTranslation(["common", "sidebar"]);
 	const { isMobile } = useSidebar();
-	const { actions } = useInsight();
-	const { chat } = useChat();
-	const { root } = useRoot();
+	const userName = useSession((state) => state.user?.name) ?? "";
+	const logout = useSession((state) => state.logout);
+	const theme = usePlaygroundTheme();
 	const { startTour } = useTour();
 	const { openSettings } = useSettingsDialog();
 
 	const navigate = useNavigate();
 
-	const userName = chat.user.name;
+	const handleLogout = async () => {
+		try {
+			await logout();
+			navigate("/login");
+		} catch (e) {
+			toast.error(getErrorMessage(e));
+		}
+	};
 
 	const selectedLanguage = LANGUAGES.find(
 		(lang) => lang.code === i18n.language,
@@ -100,7 +110,7 @@ export const NavUser = () => {
 						</DropdownMenuSubContent>
 					</DropdownMenuPortal>
 				</DropdownMenuSub>
-				{root.theme.tour?.show !== false ? (
+				{theme.tour?.show !== false ? (
 					<DropdownMenuItem
 						onSelect={() => {
 							navigate("/new");
@@ -112,13 +122,7 @@ export const NavUser = () => {
 					</DropdownMenuItem>
 				) : null}
 				<DropdownMenuSeparator />
-				<DropdownMenuItem
-					onClick={async () => {
-						await actions.logout();
-
-						navigate("/login");
-					}}
-				>
+				<DropdownMenuItem onClick={handleLogout}>
 					<LogOutIcon />
 					{t("navigation.logOut")}
 				</DropdownMenuItem>

@@ -111,7 +111,7 @@ export async function addThreadToChat(
 }
 
 /** What {@link useAddToCurrentChat} returns while there is a current chat. */
-export interface AddToCurrentChat {
+interface AddToCurrentChat {
 	/** The action's label, naming the chat, such as `Add to “Q3 plan”`. */
 	label: string;
 	/** Add a thread, or one of its emails, and report how it went in a toast. */

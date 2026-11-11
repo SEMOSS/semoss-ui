@@ -19,7 +19,7 @@ function uiMetadata(tool: ConversationTool): ToolUiMetadata | undefined {
 		: undefined;
 }
 
-export type ToolDisplayLocation = "inline" | "sidebar" | "hidden";
+type ToolDisplayLocation = "inline" | "sidebar" | "hidden";
 
 /** Resolve the tool's declared display location with Playground defaults. */
 export function getToolDisplayLocation(

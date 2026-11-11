@@ -40,7 +40,7 @@ type TeamAccessDialog =
 	| "DISCARD"
 	| null;
 
-export interface TeamAccessManagementProps {
+interface TeamAccessManagementProps {
 	/** The custom team */
 	groupId: string;
 	/** Where the team's page is, relative to this view */

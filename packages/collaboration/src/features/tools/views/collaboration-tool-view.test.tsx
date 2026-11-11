@@ -349,3 +349,62 @@ it("declines through the room controller without running the tool", async () => 
 		await screen.findByText("This action was not run."),
 	).toBeInTheDocument();
 });
+
+it("reviews a routine's new preferences on its own card, as text that takes more lines", async () => {
+	const tool = call("SetRoutinePreferences");
+	tool.status = "INPUT_REQUIRED";
+	tool.arguments = {
+		routine: "inbox-daily-brief",
+		preferences: "Keep drafts short.",
+	};
+	// as the server builds it for this tool
+	tool.metadata = {
+		SMSS_TOOL_INPUT_SCHEMA: {
+			type: "object",
+			required: ["routine", "preferences"],
+			properties: {
+				preferences: { type: "string" },
+				routine: {
+					type: "string",
+					enum: [
+						"inbox-daily-brief",
+						"weekly-meeting-agendas",
+						"event-planning",
+					],
+				},
+			},
+		},
+	};
+	workbench.tools.tool = tool;
+	workbench.pendingApprovals = [
+		{
+			toolId: tool.id,
+			toolName: tool.name,
+			parentMessageId: tool.parentMessageId,
+			arguments: tool.arguments,
+		},
+	];
+	render(<ToolContent toolId="tool" />);
+	expect(
+		await screen.findByRole("heading", {
+			name: "Update routine preferences",
+		}),
+	).toBeInTheDocument();
+	expect(
+		screen.getByRole("combobox", { name: "Routine (required)" }),
+	).toHaveTextContent("inbox-daily-brief");
+	const preferences = screen.getByRole("textbox", {
+		name: "Preferences (required)",
+	});
+	await userEvent.type(preferences, "{Enter}Skip newsletters.");
+	await userEvent.click(screen.getByRole("button", { name: "Approve" }));
+	await waitFor(() =>
+		expect(workbench.onApproveTool).toHaveBeenCalledWith(
+			expect.anything(),
+			{
+				routine: "inbox-daily-brief",
+				preferences: "Keep drafts short.\nSkip newsletters.",
+			},
+		),
+	);
+});

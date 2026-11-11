@@ -1,13 +1,9 @@
 import {
 	Bot,
 	DownloadIcon,
-	FileIcon,
-	FileTextIcon,
 	HelpCircle,
-	Loader2Icon,
 	MessagesSquareIcon,
 	MoreVertical,
-	PencilIcon,
 	Search,
 	SquarePenIcon,
 	StarIcon,
@@ -23,20 +19,14 @@ import {
 	useParams,
 } from "react-router";
 import { useTranslation } from "@semoss/i18n";
-import { runPixel, useIteratorPixel } from "@semoss/sdk/react";
+import { useSessionIteratorPixel } from "@semoss/sdk/react";
 import {
 	Button,
 	cn,
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
-	Input,
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
@@ -65,8 +55,13 @@ import {
 	parseTimestampWithUtcDefault,
 } from "@semoss/utility/date";
 import { MobileNavigationClose } from "@/features/navigation/mobile-navigation-close";
-import { NavigationRail } from "@/features/navigation/navigation-rail";
 import { NavigationToggle } from "@/features/navigation/navigation-toggle";
+import { DownloadConversationDialog } from "@/features/room-actions/download-conversation-dialog";
+import {
+	renameRoom,
+	toggleRoomFavorite,
+} from "@/features/room-actions/use-room-actions";
+import { RoomName } from "@/features/room-name/room-name";
 import { useChat } from "@/hooks/use-chat";
 import { useRoot } from "@/hooks/use-root";
 import { AppLogo } from "./app-logo";
@@ -92,11 +87,7 @@ export const GlobalNav = observer(() => {
 		t(`buckets.${bucket}`),
 	);
 	const BUCKETS = [t("buckets.favorites"), ...dateBucketLabels];
-	const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
 	const [downloadRoomId, setDownloadRoomId] = useState<string | null>(null);
-	const [downloadingFormat, setDownloadingFormat] = useState<string | null>(
-		null,
-	);
 	const { root } = useRoot();
 	const [search, setSearch] = useState("");
 	const [helpOpen, setHelpOpen] = useState(false);
@@ -123,13 +114,12 @@ export const GlobalNav = observer(() => {
 	 * Inline rename state - tracks which room is being renamed
 	 */
 	const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
-	const [editingName, setEditingName] = useState("");
 
 	const [deletedSet, setDeletedSet] = useState(new Set<string>());
 
 	const navigate = useNavigate();
 
-	const getPinnedRooms = useIteratorPixel<
+	const getPinnedRooms = useSessionIteratorPixel<
 		{
 			ROOM_ID: string;
 			ROOM_NAME: string;
@@ -155,12 +145,12 @@ export const GlobalNav = observer(() => {
 		// No roomCounter dependency here — the useEffect below already
 		// calls reset() when roomCounter increments, and reset() preserves
 		// the current data while refetching (no blank flash). Putting
-		// roomCounter in the useIteratorPixel deps would call setAllData([])
+		// roomCounter in the useSessionIteratorPixel deps would call setAllData([])
 		// instead, which is the source of the sidebar flicker.
 		[],
 	);
 
-	const getRooms = useIteratorPixel<
+	const getRooms = useSessionIteratorPixel<
 		{
 			ROOM_ID: string;
 			ROOM_NAME: string;
@@ -342,91 +332,21 @@ export const GlobalNav = observer(() => {
 	/**
 	 * Handlers
 	 */
-	const handleToggleFavorite = async (
-		roomId: string,
-		isFavorite: boolean,
-	) => {
-		try {
-			// pinRoom bumps roomCounter, which the effect above watches to
-			// refetch both room queries here — and keeps the chats page in
-			// sync, so pinning is bidirectional across the two views.
-			await chat.pinRoom(roomId, !isFavorite);
-		} catch {
-			toast.error(
-				isFavorite
-					? t("toasts.failedToUnpin")
-					: t("toasts.failedToPin"),
-			);
-		}
-	};
+	// pinRoom bumps roomCounter, which the effect above watches to refetch
+	// both room queries here, and keeps the chats page in sync
+	const handleToggleFavorite = (roomId: string, isFavorite: boolean) =>
+		toggleRoomFavorite(chat, roomId, isFavorite, t);
 
-	const handleStartRename = (roomId: string, currentName: string) => {
-		setEditingRoomId(roomId);
-		setEditingName(currentName);
-	};
+	const handleStartRename = (roomId: string) => setEditingRoomId(roomId);
 
-	const handleCancelRename = () => {
-		setEditingRoomId(null);
-		setEditingName("");
-	};
-
-	const handleSaveRename = async (roomId: string) => {
-		if (!editingName.trim()) {
-			toast.error(t("toasts.roomNameEmpty"));
-			return;
-		}
-
-		try {
-			await runPixel(
-				`META | RenameRoom(roomId=["${roomId}"], name=["${editingName}"]);`,
-			);
-
-			toast.success(t("toasts.roomRenamedSuccess"));
-
-			// Reset state
-			setEditingRoomId(null);
-			setEditingName("");
-
-			// Refetch rooms after renaming
-			getRooms.reset();
-			getPinnedRooms.reset();
-		} catch {
-			toast.error(t("toasts.failedToRename"));
-		}
-	};
-
-	const handleDownloadConversation = async (
-		roomId: string,
-		format: "word" | "pdf",
-	) => {
-		if (!roomId) return;
-
-		setDownloadingFormat(format);
-
-		try {
-			await chat.downloadConversation(roomId, format);
-			toast.success(
-				`Conversation downloaded successfully as ${format.toUpperCase()}`,
-			);
-			setDownloadDialogOpen(false);
-		} catch (e) {
-			console.error("Download error:", e);
-			if (e instanceof Error) {
-				toast.error(e.message || "Failed to download conversation");
-			} else {
-				toast.error("Failed to download conversation");
-			}
-		} finally {
-			setDownloadingFormat(null);
-		}
-	};
+	const handleCancelRename = () => setEditingRoomId(null);
 
 	return (
 		<>
 			<Sidebar
-				collapsible="icon"
+				collapsible="offcanvas"
 				variant="inset"
-				className="h-full p-0 transition-[width] duration-200 ease-in-out"
+				className="z-30 h-full p-0 transition-[width] duration-200 ease-in-out"
 			>
 				<SidebarHeader>
 					<SidebarMenu className="gap-1 transition-all duration-200 ease-in-out group-data-[collapsible=icon]:px-2">
@@ -619,9 +539,6 @@ export const GlobalNav = observer(() => {
 											<SidebarMenu>
 												{rooms.map((room) => {
 													const roomId = room.ROOM_ID;
-													const name =
-														room.ROOM_NAME ||
-														t("messages.untitled");
 													const date = root.theme
 														.sidebar.chatHistoryDate
 														? parseTimestampWithUtcDefault(
@@ -646,6 +563,45 @@ export const GlobalNav = observer(() => {
 														editingRoomId ===
 														roomId;
 
+													// the same name, editable in place, whether or not it is being renamed
+													const roomName = (
+														<RoomName
+															name={
+																room.ROOM_NAME ??
+																""
+															}
+															placeholder={t(
+																"messages.untitled",
+															)}
+															isRenaming={
+																isEditing
+															}
+															onStartRename={() =>
+																handleStartRename(
+																	roomId,
+																)
+															}
+															onRename={(
+																nextName,
+															) =>
+																renameRoom(
+																	chat,
+																	roomId,
+																	nextName,
+																	t,
+																)
+															}
+															onStopRename={
+																handleCancelRename
+															}
+															className={
+																isEditing
+																	? "h-8 max-w-none flex-1"
+																	: "w-full font-medium text-sm leading-tight"
+															}
+														/>
+													);
+
 													// if the room is in the deleted set, don't render it
 													if (
 														deletedSet.has(roomId)
@@ -659,44 +615,7 @@ export const GlobalNav = observer(() => {
 															className="group relative flex"
 														>
 															{isEditing ? (
-																<Input
-																	value={
-																		editingName
-																	}
-																	onChange={(
-																		e,
-																	) =>
-																		setEditingName(
-																			e
-																				.target
-																				.value,
-																		)
-																	}
-																	onKeyDown={(
-																		e,
-																	) => {
-																		if (
-																			e.key ===
-																			"Enter"
-																		) {
-																			handleSaveRename(
-																				roomId,
-																			);
-																		} else if (
-																			e.key ===
-																			"Escape"
-																		) {
-																			handleCancelRename();
-																		}
-																	}}
-																	onBlur={() =>
-																		handleSaveRename(
-																			roomId,
-																		)
-																	}
-																	autoFocus
-																	className="h-8 flex-1"
-																/>
+																roomName
 															) : (
 																<>
 																	<SidebarMenuButton
@@ -716,15 +635,23 @@ export const GlobalNav = observer(() => {
 																			aria-label={
 																				"Select room"
 																			}
+																			onKeyDown={(
+																				event,
+																			) => {
+																				if (
+																					event.key !==
+																					"F2"
+																				)
+																					return;
+																				event.preventDefault();
+																				handleStartRename(
+																					roomId,
+																				);
+																			}}
 																		>
-																			<span
-																				dir="auto"
-																				className="truncate font-medium text-sm leading-tight"
-																			>
-																				{
-																					name
-																				}
-																			</span>
+																			{
+																				roomName
+																			}
 																			{date && (
 																				<span className="text-muted-foreground text-xs leading-none">
 																					{
@@ -797,30 +724,11 @@ export const GlobalNav = observer(() => {
 																					setDownloadRoomId(
 																						roomId,
 																					);
-																					setDownloadDialogOpen(
-																						true,
-																					);
 																				}}
 																			>
 																				<DownloadIcon className="me-2 size-4" />
 																				{t(
 																					"actions.download",
-																				)}
-																			</DropdownMenuItem>
-																			<DropdownMenuItem
-																				onClick={(
-																					e,
-																				) => {
-																					e.stopPropagation();
-																					handleStartRename(
-																						roomId,
-																						name,
-																					);
-																				}}
-																			>
-																				<PencilIcon className="me-2 size-4" />
-																				{t(
-																					"actions.rename",
 																				)}
 																			</DropdownMenuItem>
 																			<DropdownMenuItem
@@ -967,82 +875,15 @@ export const GlobalNav = observer(() => {
 						</SidebarMenuItem>
 					</SidebarMenu>
 				</SidebarFooter>
-				<NavigationRail />
 			</Sidebar>
 
-			{/* Download Conversation Dialog */}
-			<Dialog
-				open={downloadDialogOpen}
+			<DownloadConversationDialog
+				roomId={downloadRoomId}
+				open={downloadRoomId !== null}
 				onOpenChange={(open) => {
-					setDownloadDialogOpen(open);
 					if (!open) setDownloadRoomId(null);
 				}}
-			>
-				<DialogContent className="sm:max-w-md">
-					<DialogHeader>
-						<DialogTitle>Download Conversation</DialogTitle>
-						<DialogDescription>
-							Choose the format for your download:
-						</DialogDescription>
-					</DialogHeader>
-					<div className="grid grid-cols-2 gap-3 py-4">
-						<Button
-							variant="outline"
-							className="h-auto flex-col gap-1 p-4"
-							disabled={downloadingFormat !== null}
-							onClick={() => {
-								if (downloadRoomId) {
-									handleDownloadConversation(
-										downloadRoomId,
-										"word",
-									);
-								}
-							}}
-						>
-							{downloadingFormat === "word" ? (
-								<Loader2Icon className="size-4 animate-spin" />
-							) : (
-								<>
-									<FileTextIcon className="mb-1 size-6" />
-									<span className="font-medium">
-										Word Document
-									</span>
-									<span className="text-muted-foreground text-xs">
-										.docx
-									</span>
-								</>
-							)}
-						</Button>
-						<Button
-							variant="outline"
-							className="h-auto flex-col gap-1 p-4"
-							disabled={downloadingFormat !== null}
-							onClick={() => {
-								if (downloadRoomId) {
-									handleDownloadConversation(
-										downloadRoomId,
-										"pdf",
-									);
-								}
-							}}
-						>
-							{downloadingFormat === "pdf" ? (
-								<Loader2Icon className="size-4 animate-spin" />
-							) : (
-								<>
-									<FileIcon className="mb-1 size-6" />
-									<span className="font-medium">
-										PDF Document
-									</span>
-									<span className="text-muted-foreground text-xs">
-										.pdf
-									</span>
-								</>
-							)}
-						</Button>
-					</div>
-				</DialogContent>
-			</Dialog>
+			/>
 		</>
 	);
 });

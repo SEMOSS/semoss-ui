@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { getMyUsageLimitPaths, type MyModelUsagePath } from "@semoss/sdk";
 import { getErrorMessage } from "@semoss/utility/error";
 
-export interface UseMyModelUsageResult {
+interface UseMyModelUsageResult {
 	/** Every model the signed in person can use, with its path, or null until it is read */
 	models: MyModelUsagePath[] | null;
 	/** Whether a read is running */

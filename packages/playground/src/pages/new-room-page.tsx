@@ -2,9 +2,12 @@ import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import type { ConnectorViewerService } from "@semoss/connectors";
 import { useTranslation } from "@semoss/i18n";
-import { InsightProvider, usePixel } from "@semoss/sdk/react";
+import {
+	InsightProvider,
+	useSession,
+	useSessionPixel,
+} from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -18,19 +21,23 @@ import { getErrorMessage } from "@semoss/utility/error";
 import { ROOM_PANEL_COMPONENTS } from "@/components/room/panels/room-panel.components";
 import { RoomGreeting } from "@/components/room/room-greeting";
 import { RoomInput } from "@/components/room/room-input";
-import { RoomSidebar } from "@/components/room/room-sidebar";
+import { RoomWorkbench } from "@/components/room/room-workbench";
 import { FileDragProvider } from "@/contexts/file-drag-context";
+import { canChooseAgentMode } from "@/features/conversation/agent-mode-choice";
 import { clearAgentOptions } from "@/features/conversation/clear-agent-options";
-import { ConversationWorkspace } from "@/features/conversation/conversation-workspace";
 import { DropHighlight } from "@/features/conversation/drop-highlight";
 import { NextMessageRoomProvider } from "@/features/conversation/next-message-room.context";
-import { usePreparedRoom } from "@/features/conversation/use-prepared-room";
+import { useNewRoom } from "@/features/conversation/use-new-room";
+import { RoomHeader } from "@/features/room-header/room-header";
 import { DraftSettingsContext } from "@/features/workbench/draft-settings.context";
-import type { DraftWorkspacePlaces } from "@/features/workbench/use-workspace-places";
-import { WorkspaceMenuItems } from "@/features/workbench/workspace-menu-items";
-import { WorkspaceRail } from "@/features/workbench/workspace-rail";
+import { FittedRoomLayout } from "@/features/workbench/fitted-room-layout";
+import {
+	NEW_ROOM_READY_PANEL_KINDS,
+	type NewRoomPanelRequest,
+	type NewRoomWorkbenchPanels,
+} from "@/features/workbench/use-workbench-panels";
 import { useChat } from "@/hooks/use-chat";
-import { useRoot } from "@/hooks/use-root";
+import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
 import { RoomStore } from "@/stores/room/room.store";
 import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
 import type { MCPConfig, Prompt, Workspace } from "@/types";
@@ -48,7 +55,7 @@ export const NewRoomPage = observer(() => {
 		"chat",
 		"chatConnectors",
 	]);
-	const { root } = useRoot();
+	const theme = usePlaygroundTheme();
 	const { theme: colorMode } = useTheme();
 
 	const isDark =
@@ -56,13 +63,14 @@ export const NewRoomPage = observer(() => {
 		(colorMode === "system" &&
 			window.matchMedia("(prefers-color-scheme: dark)").matches);
 
-	const landingSrc = isDark
-		? root.theme.images.landingDark
-		: root.theme.images.landing;
+	const landingSrc = isDark ? theme.images.landingDark : theme.images.landing;
 
 	const { chat } = useChat();
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
+	const userName = useSession((state) => state.user?.name) ?? "";
+	const profileDefaultModelId =
+		useSession((state) => state.user?.defaultModels.textGeneration) ?? "";
 
 	// Re-fetch the user's profile default model each time this page mounts so
 	// changes made in the token-usage embed are reflected immediately.
@@ -78,42 +86,43 @@ export const NewRoomPage = observer(() => {
 	/**
 	 * State
 	 */
-	// Create a temporary RoomStore instance to handle options mutations
-	// This prevents re-renders on tool selection since MobX handles the mutations
-	const tempRoomStore = useMemo(
+	// The new room holds the new chat's options until its first message;
+	// MobX handles the mutations, so tool selection does not re-render the page
+	const newRoom = useMemo(
 		() =>
 			new RoomStore({
-				theme: root.theme,
+				theme: theme,
 				roomId: "temp",
 				panelComponents: ROOM_PANEL_COMPONENTS,
+				// no insight for Files to read until the draft prepares its room
+				includeFiles: false,
 			}),
-		[root.theme],
+		[theme],
 	);
 	// Remember manual provenance when an agent also supplies the same resource.
 	const manualMcpRef = useRef(
 		new Map(
-			tempRoomStore.options.mcp
+			newRoom.options.mcp
 				.filter((item) => !item.fromWorkspace)
 				.map((item) => [item.id, item]),
 		),
 	);
 	useEffect(() => {
 		const next = new Map<string, MCPConfig>();
-		for (const item of tempRoomStore.options.mcp) {
+		for (const item of newRoom.options.mcp) {
 			const manual = item.fromWorkspace
 				? manualMcpRef.current.get(item.id)
 				: item;
 			if (manual) next.set(item.id, manual);
 		}
 		manualMcpRef.current = next;
-	}, [tempRoomStore.options.mcp]);
+	}, [newRoom.options.mcp]);
 	const bannerRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		if (!bannerRef.current) return;
 		// The url stripping here is primarily due to a BE theme bug where single quote apostrophes get serial added when saving
-		const urls =
-			(root.theme.banner ?? "").match(/https?:\/\/[^\s'"<>]+/g) ?? [];
+		const urls = (theme.banner ?? "").match(/https?:\/\/[^\s'"<>]+/g) ?? [];
 		bannerRef.current
 			.querySelectorAll("a")
 			.forEach((a: HTMLAnchorElement, i: number) => {
@@ -121,44 +130,46 @@ export const NewRoomPage = observer(() => {
 				a.rel = "noopener noreferrer";
 				if (urls[i]) a.setAttribute("href", urls[i]);
 			});
-	}, [root.theme.banner]);
+	}, [theme.banner]);
 
 	const [isLoading, setIsLoading] = useState(false);
 	const submittedRef = useRef(false);
 	const greetingRoomStartedForRef = useRef<string>("");
-	const [mode, setMode] = useState<"chat" | "agent">("chat");
+	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
+	const [chosenMode, setChosenMode] = useState<"chat" | "agent">("chat");
+	// With modeFollowsAgent the agent picker decides the mode: a saved agent
+	// or Default Agent runs in agent mode, No Agent in chat mode.
+	const modeFollowsAgent = !!theme.featureFlags?.modeFollowsAgent;
+	const mode: "chat" | "agent" =
+		modeFollowsAgent && selectedWorkspaceId ? "agent" : chosenMode;
 	const {
-		room: preCreatedRoom,
+		room: preparedRoom,
 		isPreparing,
 		hasError: preparationError,
 		prepare,
-	} = usePreparedRoom(tempRoomStore, mode, submittedRef);
-	const workspaceRoom = preCreatedRoom ?? tempRoomStore;
+	} = useNewRoom(newRoom, mode, submittedRef);
+	// the room whose Workspace shows: the prepared room once there is one
+	const workbenchRoom = preparedRoom ?? newRoom;
 	// what Retry opens again after a failed preparation
-	const pendingPlaceRef = useRef<
-		| { kind: "files" }
-		| { kind: "activity" }
-		| { kind: "source"; service: ConnectorViewerService }
-	>({ kind: "files" });
+	const pendingPanelRef = useRef<NewRoomPanelRequest>({ kind: "workbench" });
 
-	// tempRoomStore is only created once (createRoom below builds the real,
+	// newRoom is only created once (createRoom below builds the real,
 	// separate room), so RoomInput's agent-harness chip — keyed off
 	// room.mode — needs this synced explicitly rather than reading straight
 	// off local mode state.
 	useEffect(() => {
-		tempRoomStore.setMode(mode);
-	}, [mode, tempRoomStore]);
-	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
+		newRoom.setMode(mode);
+	}, [mode, newRoom]);
 	// The agent whose default model has already been applied to the picker
 	const appliedAgentModelRef = useRef<string>("");
 	const appliedAgentOptionsRef = useRef<string>("");
 	const [prompts, setPrompts] = useState<string[]>([]);
 	const previewPrompts = useMemo(
-		() => tempRoomStore.options.predefinedPrompts.slice(0, 5),
-		[tempRoomStore.options.predefinedPrompts],
+		() => newRoom.options.predefinedPrompts.slice(0, 5),
+		[newRoom.options.predefinedPrompts],
 	);
 
-	const getWorkspace = usePixel<Workspace | null>(
+	const getWorkspace = useSessionPixel<Workspace | null>(
 		selectedWorkspaceId
 			? `GetWorkspace(${JSON.stringify(selectedWorkspaceId)});`
 			: "",
@@ -190,7 +201,7 @@ export const NewRoomPage = observer(() => {
 			: "";
 
 	// Fetch knowledge vector engine if knowledgeId is provided
-	const getKnowledge = usePixel<
+	const getKnowledge = useSessionPixel<
 		| {
 				engine_id: string;
 				engine_name: string;
@@ -204,7 +215,7 @@ export const NewRoomPage = observer(() => {
 		{ data: null },
 	);
 
-	const getPrompts = usePixel<Prompt[]>(
+	const getPrompts = useSessionPixel<Prompt[]>(
 		selectedWorkspaceId && prompts.length > 0
 			? `META | ListPrompt(filters=[Filter( (PROMPT__ID == [${prompts.map((p) => `"${p}"`).join(", ")}]) )])`
 			: "",
@@ -213,21 +224,21 @@ export const NewRoomPage = observer(() => {
 		},
 	);
 	useEffect(() => {
-		void tempRoomStore.connectors.loadUserConnectors();
-	}, [tempRoomStore]);
+		void newRoom.connectors.loadUserConnectors();
+	}, [newRoom]);
 
-	// On initial load, set the default options from the theme using the temporary RoomStore
+	// On initial load, set the default options from the theme
 	useEffect(() => {
-		tempRoomStore.setOptions({
+		newRoom.setOptions({
 			instructions: "",
-			mcp: [...(root.theme.defaultTools || [])],
+			mcp: [...(theme.defaultTools || [])],
 			workspace: undefined,
 			predefinedPrompts: [],
-			temperature: root.theme.featureFlags?.enableTemperature
-				? (root.theme.defaultRoomSettings?.temperature ?? 0)
+			temperature: theme.featureFlags?.enableTemperature
+				? (theme.defaultRoomSettings?.temperature ?? 0)
 				: undefined,
 		});
-	}, [tempRoomStore, root.theme]);
+	}, [newRoom, theme]);
 
 	/**
 	 * Options shared by every room-creation path: current MCPs, the agent
@@ -235,8 +246,8 @@ export const NewRoomPage = observer(() => {
 	 */
 	const buildRoomOptions = (): RoomStore["options"] => {
 		const options = {
-			...tempRoomStore.options,
-			mcp: tempRoomStore.options.mcp,
+			...newRoom.options,
+			mcp: newRoom.options.mcp,
 			// Persisted so agent mode survives a reload.
 			harnessType: mode === "agent" ? "semoss" : undefined,
 		};
@@ -246,9 +257,9 @@ export const NewRoomPage = observer(() => {
 
 	/** Transfer queued context and copy connectors before the first message. */
 	const prepareRoom = async (room: RoomStore): Promise<void> => {
-		room.contextItems.adopt(tempRoomStore.contextItems);
+		room.contextItems.adopt(newRoom.contextItems);
 		try {
-			await room.connectors.adopt(tempRoomStore.connectors);
+			await room.connectors.adopt(newRoom.connectors);
 		} catch (error) {
 			toast.error(
 				t("chatConnectors:connectors.adoptError", {
@@ -296,20 +307,20 @@ export const NewRoomPage = observer(() => {
 
 			const options = buildRoomOptions();
 
-			if (preCreatedRoom) {
+			if (preparedRoom) {
 				// Room was pre-created so files could be uploaded to its insight.
 				// Sync final mode/options, fire askMessage, then navigate.
 				// Files from the file explorer are already in the insight —
 				// only RoomInput drag/drop/paste attachments are passed here.
-				preCreatedRoom.setModel(chat.models.selected);
-				preCreatedRoom.setMode(mode === "agent" ? "agent" : "chat");
-				preCreatedRoom.setMetadata({ name: prompt.substring(0, 15) });
-				await preCreatedRoom.updateRoomOptions(options);
-				await prepareRoom(preCreatedRoom);
+				preparedRoom.setModel(chat.models.selected);
+				preparedRoom.setMode(mode === "agent" ? "agent" : "chat");
+				preparedRoom.setMetadata({ name: prompt.substring(0, 15) });
+				await preparedRoom.updateRoomOptions(options);
+				await prepareRoom(preparedRoom);
 				// Optimistically surface the room in the nav — GetPlaygroundRooms
 				// won't return it until its first message has data.
 				chat.addOptimisticRoom({
-					ROOM_ID: preCreatedRoom.roomId,
+					ROOM_ID: preparedRoom.roomId,
 					ROOM_NAME: prompt.substring(0, 100),
 					DATE_CREATED: new Date().toISOString(),
 					WORKSPACE_ID: options.workspace?.workspace_id,
@@ -317,7 +328,7 @@ export const NewRoomPage = observer(() => {
 				// Fire-and-forget so we navigate without waiting on the response.
 				(async () => {
 					try {
-						await preCreatedRoom.askMessage(
+						await preparedRoom.askMessage(
 							prompt,
 							files,
 							askOptions,
@@ -329,11 +340,11 @@ export const NewRoomPage = observer(() => {
 						if ((e as Error)?.name === "UploadError") {
 							toast.error(t("room:errors.fileInUse"));
 						}
-						chat.removeOptimisticRoom(preCreatedRoom.roomId);
+						chat.removeOptimisticRoom(preparedRoom.roomId);
 					}
 				})();
 				submittedRef.current = true;
-				navigate(`/room/${preCreatedRoom.roomId}`);
+				navigate(`/room/${preparedRoom.roomId}`);
 			} else {
 				// Standard flow — create room and send first message together.
 				const room = await chat.createRoom(
@@ -403,15 +414,15 @@ export const NewRoomPage = observer(() => {
 		}
 	}, [workspaceIdSearchParams]);
 
-	// Handle workspace data loading from RoomWorkspace component selection
+	// Handle workspace data loading
 	useEffect(() => {
 		if (!selectedWorkspaceId) {
 			// clearing the agent clears the guard below, so picking the same
 			// agent again applies its default model again
 			appliedAgentModelRef.current = "";
 			appliedAgentOptionsRef.current = "";
-			if (chat.profileDefaultModelId) {
-				void chat.selectModelById(chat.profileDefaultModelId);
+			if (profileDefaultModelId) {
+				void chat.selectModelById(profileDefaultModelId);
 			}
 			return;
 		}
@@ -428,7 +439,7 @@ export const NewRoomPage = observer(() => {
 
 		if (appliedAgentOptionsRef.current === selectedWorkspaceId) return;
 		appliedAgentOptionsRef.current = selectedWorkspaceId;
-		// Sync options using the temporary RoomStore
+		// Sync options
 		// Add workspace MCPs with fromWorkspace flag to the mcp array
 		const workspaceMCPs = (getWorkspace.data.mcp || []).map((mcp) => ({
 			...mcp,
@@ -436,7 +447,7 @@ export const NewRoomPage = observer(() => {
 		}));
 
 		// Preserve existing tools that are not from workspace
-		const nonWorkspaceMCPs = tempRoomStore.options.mcp.filter(
+		const nonWorkspaceMCPs = newRoom.options.mcp.filter(
 			(mcp) => !mcp.fromWorkspace,
 		);
 
@@ -470,8 +481,8 @@ export const NewRoomPage = observer(() => {
 					)
 				: [],
 		);
-		tempRoomStore.setOptions({
-			...tempRoomStore.options,
+		newRoom.setOptions({
+			...newRoom.options,
 			instructions: getWorkspace.data.system_prompt || "",
 			mcp: Array.from(mcpMap.values()),
 			workspace: {
@@ -483,8 +494,9 @@ export const NewRoomPage = observer(() => {
 		selectedWorkspaceId,
 		getWorkspace.status,
 		getWorkspace.data,
-		tempRoomStore,
+		newRoom,
 		chat,
+		profileDefaultModelId,
 	]);
 
 	// A URL-routed agent with a greeting drops straight into a room with it
@@ -535,9 +547,9 @@ export const NewRoomPage = observer(() => {
 			return;
 		}
 
-		// Add the knowledge MCP to options using the temporary RoomStore
+		// Add the knowledge MCP to options
 		// Check if this knowledge MCP already exists
-		const existingMcp = tempRoomStore.options.mcp.find(
+		const existingMcp = newRoom.options.mcp.find(
 			(mcp) => mcp.id === knowledgeId && mcp.type === "VECTOR",
 		);
 
@@ -556,11 +568,11 @@ export const NewRoomPage = observer(() => {
 				knowledgeId,
 		};
 
-		tempRoomStore.setOptions({
-			...tempRoomStore.options,
-			mcp: [...tempRoomStore.options.mcp, knowledgeMcp],
+		newRoom.setOptions({
+			...newRoom.options,
+			mcp: [...newRoom.options.mcp, knowledgeMcp],
 		});
-	}, [knowledgeId, getKnowledge.status, getKnowledge.data, tempRoomStore]);
+	}, [knowledgeId, getKnowledge.status, getKnowledge.data, newRoom]);
 
 	// Handle prompts from URL parameter
 	useEffect(() => {
@@ -589,8 +601,8 @@ export const NewRoomPage = observer(() => {
 				global: false, // TODO: figure out if this is needed
 			}));
 
-		tempRoomStore.setOptions({
-			...tempRoomStore.options,
+		newRoom.setOptions({
+			...newRoom.options,
 			predefinedPrompts: loadedPrompts,
 		});
 	}, [
@@ -598,21 +610,19 @@ export const NewRoomPage = observer(() => {
 		prompts,
 		getPrompts.status,
 		getPrompts.data,
-		tempRoomStore,
+		newRoom,
 	]);
 
 	const handleAgentChange = (
 		next: RoomStore["options"]["workspace"] | null,
 	) => {
 		if (isLoading || isPreparing) return;
-		if (
-			next?.workspace_id !== tempRoomStore.options.workspace?.workspace_id
-		) {
+		if (next?.workspace_id !== newRoom.options.workspace?.workspace_id) {
 			appliedAgentOptionsRef.current = "";
 			appliedAgentModelRef.current = "";
 			setPrompts([]);
-			const cleared = clearAgentOptions(tempRoomStore.options);
-			tempRoomStore.setOptions({
+			const cleared = clearAgentOptions(newRoom.options);
+			newRoom.setOptions({
 				...cleared,
 				mcp: Array.from(
 					new Map(
@@ -627,107 +637,108 @@ export const NewRoomPage = observer(() => {
 		setSelectedWorkspaceId(next?.workspace_id ?? "");
 	};
 	const handleSelectChat = () => {
-		setMode("chat");
+		setChosenMode("chat");
 	};
-	const handleOpenSettings = () => {
-		workspaceRoom.openSidebarPanel(
-			ROOM_PANEL_TYPES.CONFIGURATION,
-			{},
-			t("room:settings.panelTitle"),
-		);
+	const handleDefaultAgentChange = (isDefaultAgent: boolean) => {
+		if (isLoading || isPreparing) return;
+		setChosenMode(isDefaultAgent ? "agent" : "chat");
 	};
-	const handleOpenFiles = async () => {
-		pendingPlaceRef.current = { kind: "files" };
-		const room = await prepare();
-		if (room)
-			room.openSidebarFileExplorer(
-				undefined,
-				t("room:menuFileExplorer.name"),
-			);
-		else handleOpenWorkArea();
-	};
-	const handleOpenSource = async (
-		service: ConnectorViewerService,
-	): Promise<void> => {
-		if (isLoading) return;
-		pendingPlaceRef.current = { kind: "source", service };
-		// Sources, Files, and Activity share preparation, layout transfer, and abandoned-draft cleanup.
-		const room = await prepare();
-		if (room) room.connectors.openSourcePanel(service);
-		else handleOpenWorkArea();
-	};
-	const handleOpenActivity = async (): Promise<void> => {
-		pendingPlaceRef.current = { kind: "activity" };
-		const room = await prepare();
-		if (room)
-			room.openSidebarPanel(
-				ROOM_PANEL_TYPES.AUDIT_LOG,
-				{},
-				t("room:studio.activityLog"),
-			);
-		else handleOpenWorkArea();
-	};
-	const handleRetryPreparation = () => {
-		const pending = pendingPlaceRef.current;
-		if (pending.kind === "source") void handleOpenSource(pending.service);
-		else if (pending.kind === "activity") void handleOpenActivity();
-		else void handleOpenFiles();
+	/** Shows the Workspace, or one of its panels, in a room. */
+	const showPanel = (room: RoomStore, request: NewRoomPanelRequest): void => {
+		switch (request.kind) {
+			case "workbench":
+				room.openSidebar();
+				return;
+			case "settings":
+				room.chatTools.openRoomSettings();
+				return;
+			case "files":
+				room.openSidebarFileExplorer();
+				return;
+			case "activity":
+				room.openSidebarPanel(
+					ROOM_PANEL_TYPES.AUDIT_LOG,
+					{},
+					t("room:workspacePlaces.activity"),
+				);
+				return;
+			case "connector":
+				room.connectors.openSourcePanel(request.service);
+		}
 	};
 
-	const handleOpenWorkArea = () => {
-		if (
-			workspaceRoom.workbench.getState().layout.openPanelIds.length === 0
-		) {
-			handleOpenSettings();
+	/**
+	 * Opens the Workspace or one of its panels, preparing the draft's room for
+	 * it. Every request shares preparation, layout transfer, and
+	 * abandoned-draft cleanup. The Workspace and Settings show on the draft at
+	 * once and carry over to the room, unless closed meanwhile; Files, the
+	 * activity log, and the viewers read the room's insight, so they wait for
+	 * it. A failure shows in the Workspace, where Retry opens the same panel.
+	 *
+	 * @param request - What to open.
+	 */
+	const openPanel = async (request: NewRoomPanelRequest): Promise<void> => {
+		// submitting builds its own room
+		if (isLoading) return;
+		if (preparedRoom) {
+			showPanel(preparedRoom, request);
 			return;
 		}
-		workspaceRoom.openSidebar();
+		pendingPanelRef.current = request;
+		const isReady = NEW_ROOM_READY_PANEL_KINDS.has(request.kind);
+		if (isReady) showPanel(newRoom, request);
+		const room = await prepare();
+		if (!room) {
+			if (!isReady) newRoom.openSidebar();
+			return;
+		}
+		if (!isReady) showPanel(room, request);
+		else if (newRoom.sidebar.isOpen) room.openSidebar();
 	};
 
-	const draftPlaces: DraftWorkspacePlaces = {
-		onOpenFiles: () => void handleOpenFiles(),
-		onOpenSettings: handleOpenSettings,
-		onOpenActivity: () => void handleOpenActivity(),
-		onOpenSource: (service) => void handleOpenSource(service),
-		isPreparing: isPreparing || isLoading,
-		connectors: tempRoomStore.connectors,
+	const handleRetryPreparation = () => {
+		void openPanel(pendingPanelRef.current);
+	};
+
+	const newRoomPanels: NewRoomWorkbenchPanels = {
+		onOpenPanel: (request) => void openPanel(request),
+		isBusy: isPreparing || isLoading,
+		connectors: newRoom.connectors,
 	};
 
 	const workbench = (
-		<RoomSidebar
-			room={workspaceRoom}
-			canPublish={Boolean(preCreatedRoom)}
-			draft={draftPlaces}
-		/>
+		<RoomWorkbench room={workbenchRoom} newRoomPanels={newRoomPanels} />
 	);
 
 	return (
 		<div className="flex h-full w-full flex-col overflow-hidden">
-			{root.theme.banner ? (
+			{theme.banner ? (
 				<div
 					ref={bannerRef}
-					className="w-full shrink-0 bg-primary px-4 py-2 text-center text-primary-foreground text-sm [&_a]:underline"
+					className="w-full shrink-0 px-4 py-2 text-center text-sm [&_a]:underline"
+					style={{
+						backgroundColor:
+							theme.bannerBackgroundColor || "var(--primary)",
+						color:
+							theme.bannerTextColor ||
+							"var(--primary-foreground)",
+					}}
 					// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
-					dangerouslySetInnerHTML={{ __html: root.theme.banner }}
+					dangerouslySetInnerHTML={{ __html: theme.banner }}
 				/>
 			) : null}
 			<div className="min-h-0 flex-1">
-				<ConversationWorkspace
-					isOpen={workspaceRoom.sidebar.isOpen}
-					onOpenWorkArea={handleOpenWorkArea}
-					rail={
-						<WorkspaceRail
-							room={workspaceRoom}
-							draft={draftPlaces}
+				<FittedRoomLayout
+					room={workbenchRoom}
+					// a preparation error needs the space, so the Workspace fills
+					shouldFill={preparationError}
+					header={
+						<RoomHeader
+							room={workbenchRoom}
+							newRoomPanels={newRoomPanels}
 						/>
 					}
-					railMenuItems={
-						<WorkspaceMenuItems
-							room={workspaceRoom}
-							draft={draftPlaces}
-						/>
-					}
-					panel={
+					workbench={
 						<DraftSettingsContext.Provider
 							value={{
 								disabled:
@@ -735,19 +746,22 @@ export const NewRoomPage = observer(() => {
 									isPreparing ||
 									agentOptionsPending,
 								model: chat.models.selected,
-								options: tempRoomStore.options,
+								options: newRoom.options,
 								onModelChange: (model) => {
 									if (model) chat.setSelectedModel(model);
 								},
 								agentEditable: true,
 								isAgentMode: mode === "agent",
+								onDefaultAgentChange: modeFollowsAgent
+									? handleDefaultAgentChange
+									: undefined,
 								onOptionsChange: (opts) => {
 									if ("workspace" in opts)
 										handleAgentChange(
 											opts.workspace ?? null,
 										);
-									tempRoomStore.setOptions({
-										...tempRoomStore.options,
+									newRoom.setOptions({
+										...newRoom.options,
 										...opts,
 									});
 								},
@@ -773,17 +787,17 @@ export const NewRoomPage = observer(() => {
 									</Alert>
 								)}
 								<div className="min-h-0 flex-1">
-									{preCreatedRoom ? (
+									{preparedRoom ? (
 										<InsightProvider
-											key={preCreatedRoom.roomId}
+											key={preparedRoom.roomId}
 											options={{
 												insightId:
-													preCreatedRoom.insightId,
+													preparedRoom.insightId,
 											}}
 											destroyOnUnmount={false}
 										>
 											<NextMessageRoomProvider
-												room={tempRoomStore}
+												room={newRoom}
 											>
 												{workbench}
 											</NextMessageRoomProvider>
@@ -806,38 +820,38 @@ export const NewRoomPage = observer(() => {
 						)}
 						<DropHighlight className="flex h-full flex-col items-center overflow-auto px-4 py-8 sm:px-6">
 							<div className="relative z-10 mx-auto my-auto flex w-full max-w-3xl flex-col gap-6 py-6">
-								{root.theme.landing ? (
+								{theme.landing ? (
 									<div
 										className="mx-auto flex max-w-xl"
 										// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
 										dangerouslySetInnerHTML={{
 											__html:
-												root.theme?.altLandingKey &&
+												theme?.altLandingKey &&
 												searchParams.has(
-													root.theme.altLandingKey,
+													theme.altLandingKey,
 												) &&
-												root.theme.altLanding
-													? root.theme.altLanding
-													: root.theme.landing,
+												theme.altLanding
+													? theme.altLanding
+													: theme.landing,
 										}}
 									/>
 								) : (
 									<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
 										<H2 className="text-center">
 											{t("room:welcome", {
-												name: chat.user.name,
+												name: userName,
 											})}
 										</H2>
-										{root.theme.description ? (
+										{theme.description ? (
 											<Muted className="text-center">
-												{root.theme.description}
+												{theme.description}
 											</Muted>
 										) : null}
 									</div>
 								)}
 								{agentGreeting && (
 									<RoomGreeting
-										room={tempRoomStore}
+										room={workbenchRoom}
 										greeting={agentGreeting}
 									/>
 								)}
@@ -858,37 +872,40 @@ export const NewRoomPage = observer(() => {
 								)}
 								<RoomInput
 									predefinedPrompts={
-										tempRoomStore.options.predefinedPrompts
+										newRoom.options.predefinedPrompts
 									}
 									className="max-h-72"
 									isLoading={isLoading || isPreparing}
 									isSubmitDisabled={agentOptionsPending}
 									initialValue={initialPrompt}
 									model={chat.models.selected}
-									room={tempRoomStore}
+									room={newRoom}
 									setModel={(m) => {
 										chat.setSelectedModel(m);
 									}}
-									options={tempRoomStore.options}
+									options={newRoom.options}
 									onMcpChange={(mcp) =>
-										tempRoomStore.setOptions({
-											...tempRoomStore.options,
+										newRoom.setOptions({
+											...newRoom.options,
 											mcp,
 										})
 									}
 									onWorkspaceChange={handleAgentChange}
 									onPrompt={createRoom}
-									excludeCommandIds={[
-										"compact",
-										...(root.theme.featureFlags
-											?.enableAgentHarness
+									excludeCommandIds={
+										canChooseAgentMode(theme.featureFlags)
 											? []
-											: ["agent-harness", "harness"]),
-									]}
+											: ["agent-harness", "chat-mode"]
+									}
 									onSwitchToAgentHarness={() =>
-										setMode("agent")
+										setChosenMode("agent")
 									}
 									onExitAgentHarness={handleSelectChat}
+									onDefaultAgentChange={
+										modeFollowsAgent
+											? handleDefaultAgentChange
+											: undefined
+									}
 									// The new-room flow has no cancellable turn, so
 									// it's only ever busy (spinner) or idle (send).
 									sendState={
@@ -896,13 +913,13 @@ export const NewRoomPage = observer(() => {
 											? "loading"
 											: "send"
 									}
-									onOpenSettings={handleOpenSettings}
-									onOpenSource={(service) =>
-										void handleOpenSource(service)
-									}
+									workbenchPanels={{
+										room: workbenchRoom,
+										newRoomPanels: newRoomPanels,
+									}}
 								/>
-								{tempRoomStore.options.predefinedPrompts
-									.length > 0 ? (
+								{newRoom.options.predefinedPrompts.length >
+								0 ? (
 									<div className="mx-auto flex w-full flex-col items-center gap-3">
 										<div className="flex w-full flex-wrap justify-center gap-2">
 											{previewPrompts.map((prompt) => {
@@ -932,7 +949,7 @@ export const NewRoomPage = observer(() => {
 							</div>
 						</DropHighlight>
 					</FileDragProvider>
-				</ConversationWorkspace>
+				</FittedRoomLayout>
 			</div>
 		</div>
 	);

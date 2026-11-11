@@ -64,7 +64,7 @@ const getPersonRows = (
 	}),
 ];
 
-export interface TeamRoleListProps {
+interface TeamRoleListProps {
 	/** Which of the team's lists this is: its members or its managers */
 	role: TeamRole;
 	/** The people in the list now */

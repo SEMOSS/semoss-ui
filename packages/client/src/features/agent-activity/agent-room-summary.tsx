@@ -12,7 +12,7 @@ export interface AgentRoomSummaryItem {
 	value: ReactNode;
 }
 
-export interface AgentRoomSummaryProps {
+interface AgentRoomSummaryProps {
 	/** The room, as the list has it */
 	room: AgentRunRoom;
 	/**

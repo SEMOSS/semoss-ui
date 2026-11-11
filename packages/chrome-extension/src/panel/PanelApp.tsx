@@ -218,7 +218,6 @@ const PanelApp: React.FC = () => {
 		return () => {
 			chrome.runtime.onMessage.removeListener(messageListener);
 		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isRunning, waitingForUserInput, userInputCallback]);
 
 	// Close dropdown when clicking outside

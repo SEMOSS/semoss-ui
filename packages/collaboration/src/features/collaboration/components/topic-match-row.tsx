@@ -7,7 +7,11 @@ import {
 	ToggleGroup,
 	ToggleGroupItem,
 } from "@semoss/ui/next";
-import type { TopicMatch, TopicMatchOp } from "../api/topic-matches";
+import type {
+	TopicMatch,
+	TopicMatchMode,
+	TopicMatchOp,
+} from "../api/topic-matches";
 import { dateLabel } from "../date-label";
 
 // the toggle's own "on" tint is about 1:1 against the dialog and its blue label about 4:1 on it, so the
@@ -26,10 +30,108 @@ interface TopicMatchRowProps {
 	disabled: boolean;
 	onCheckedChange: (isChecked: boolean) => void;
 	onOpChange: (op: TopicMatchOp) => void;
+	/** A re-sort row: the conversation is in the topic and may move out; unchecked keeps it. */
+	mode?: TopicMatchMode;
 }
 
-/** One suggested conversation: checked joins the topic by move or also_link, unchecked turns it down. */
-export function TopicMatchRow({
+/**
+ * One suggested conversation: checked joins the topic by move or also_link, unchecked turns it down. On a
+ * re-sort, checked moves it to the topic that fits now or takes the topic off, and unchecked keeps it.
+ */
+export function TopicMatchRow(props: TopicMatchRowProps) {
+	return props.mode === "resort" ? (
+		<ResortRow {...props} />
+	) : (
+		<FindRow {...props} />
+	);
+}
+
+function ResortRow({
+	match,
+	topicName,
+	topicNames,
+	isChecked,
+	op,
+	disabled,
+	onCheckedChange,
+	onOpChange,
+}: TopicMatchRowProps) {
+	const id = useId();
+	const subject = match.subject?.trim() || "(no subject)";
+	const target = match.toTopicId
+		? (topicNames.get(match.toTopicId) ?? "another topic")
+		: null;
+	const others = match.links
+		.filter((link) => topicNames.get(link.topicId) !== topicName)
+		.map((link) => topicNames.get(link.topicId) ?? "another topic");
+	let outcome = `Stays in ${topicName}`;
+	if (isChecked && op === "move" && target)
+		outcome = `Moves to ${target}${match.toConfidence ? ` (${match.toConfidence}% fit)` : ""}`;
+	else if (isChecked)
+		outcome = others.length
+			? `Comes off ${topicName}; stays in ${others.join(", ")}`
+			: `Comes off ${topicName}; no topic fits`;
+	const details = [
+		match.lastMessageAt
+			? dateLabel(match.lastMessageAt, undefined, "date")
+			: "",
+		match.channel === "teams" ? "Teams" : "",
+		outcome,
+		`${match.confidence}% fit for ${topicName}`,
+	]
+		.filter(Boolean)
+		.join(" · ");
+	return (
+		<li className="flex min-w-0 flex-wrap items-start gap-x-3 gap-y-2 px-3 py-2.5">
+			<Checkbox
+				id={`${id}-pick`}
+				className="after:-inset-2.5 relative mt-0.5 after:absolute after:content-['']"
+				checked={isChecked}
+				disabled={disabled}
+				aria-describedby={`${id}-details`}
+				onCheckedChange={(checked) => onCheckedChange(checked === true)}
+			/>
+			<div className="min-w-0 flex-1 basis-48">
+				<Label
+					htmlFor={`${id}-pick`}
+					className="wrap-anywhere block cursor-pointer font-normal leading-5"
+				>
+					{subject}
+				</Label>
+				<Small
+					id={`${id}-details`}
+					className="font-normal text-muted-foreground text-xs leading-5"
+				>
+					{details}
+				</Small>
+			</div>
+			{isChecked && target && match.ops.includes("move") && (
+				<ToggleGroup
+					type="single"
+					variant="outline"
+					size="sm"
+					className="ml-auto"
+					value={op}
+					disabled={disabled}
+					aria-label={`Where "${subject}" goes`}
+					onValueChange={(value) => {
+						if (value === "move" || value === "reject")
+							onOpChange(value);
+					}}
+				>
+					<ToggleGroupItem value="move" className={choiceClassName}>
+						Move to {target}
+					</ToggleGroupItem>
+					<ToggleGroupItem value="reject" className={choiceClassName}>
+						Only remove
+					</ToggleGroupItem>
+				</ToggleGroup>
+			)}
+		</li>
+	);
+}
+
+function FindRow({
 	match,
 	topicName,
 	topicNames,
@@ -69,7 +171,7 @@ export function TopicMatchRow({
 		>
 			<Checkbox
 				id={`${id}-pick`}
-				// a 16px box gets a 36px hit area, as the topic goals do
+				// a 16px box gets a 36px hit area, as other rows do
 				className="after:-inset-2.5 relative mt-0.5 after:absolute after:content-['']"
 				checked={isChecked}
 				disabled={disabled}

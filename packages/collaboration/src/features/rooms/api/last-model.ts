@@ -1,6 +1,6 @@
 const LAST_MODEL_KEY = "collaboration.lastModel";
 
-export interface LastModel {
+interface LastModel {
 	modelId: string;
 	modelName: string;
 }

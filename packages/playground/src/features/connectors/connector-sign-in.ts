@@ -1,4 +1,4 @@
-import { Logins } from "@semoss/sdk";
+import { Session } from "@semoss/sdk";
 import {
 	type ConnectorProviderId,
 	getConnectorProvider,
@@ -35,5 +35,5 @@ export const signInToProvider = (
 	providerId: ConnectorProviderId,
 ): Promise<boolean> => {
 	const provider = getConnectorProvider(providerId);
-	return Logins.connect(provider.loginKey, provider.loginPath);
+	return Session.logins.connect(provider.loginKey, provider.loginPath);
 };

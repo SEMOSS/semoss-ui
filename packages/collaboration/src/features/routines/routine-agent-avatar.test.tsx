@@ -32,4 +32,24 @@ describe("RoutineAgentAvatar", () => {
 				expect(own).toContain(reference);
 		}
 	});
+
+	it("draws an owner's routine as the plain robot in a color its id keeps", () => {
+		const { container } = render(
+			<>
+				<RoutineAgentAvatar routineId="6f1c2a3e-routine" />
+				<RoutineAgentAvatar routineId="6f1c2a3e-routine" />
+				<RoutineAgentAvatar routineId="inbox-daily-brief" />
+			</>,
+		);
+		const [first, second, system] = [...container.querySelectorAll("svg")];
+		const tile = (svg: Element | undefined) =>
+			svg?.querySelector("rect")?.getAttribute("class");
+		expect(tile(first)).toMatch(/^fill-chart-[1-5]$/);
+		expect(tile(second)).toBe(tile(first));
+		expect(tile(system)).toBe("fill-chart-1");
+		// the system agent wears its envelope; the owner's robot wears nothing
+		const shapes = (svg: Element | undefined) =>
+			svg?.querySelectorAll("g[filter] > *").length ?? 0;
+		expect(shapes(system)).toBeGreaterThan(shapes(first));
+	});
 });

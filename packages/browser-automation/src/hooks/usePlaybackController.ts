@@ -17,19 +17,19 @@ import type {
 	ReplayStepResult,
 } from "../types/browserEvents";
 
-export type PlaybackProject = { label: string; value: string };
-export type PlaybackRecordingSource = "project" | "room";
-export const CURRENT_ROOM_PROJECT: PlaybackProject = {
+type PlaybackProject = { label: string; value: string };
+type PlaybackRecordingSource = "project" | "room";
+const CURRENT_ROOM_PROJECT: PlaybackProject = {
 	label: "Current Room",
 	value: "__current_room__",
 };
-export type FlattenedRecordingStep = {
+type FlattenedRecordingStep = {
 	tabId: string;
 	step: LoadedRecordingStep;
 	index: number;
 };
 
-export interface PlaybackRunResult {
+interface PlaybackRunResult {
 	completed: boolean;
 	stepsRun: number;
 	pausedAtStepId?: number;
