@@ -483,7 +483,7 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 							<Controller
 								name="type"
 								control={control}
-								rules={{}}
+								rules={{ required: isNewUser }}
 								render={({ field }) => {
 									const availableTypeLabels =
 										availableProviders.map(
@@ -499,7 +499,9 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 
 									return (
 										<div className="grid gap-1.5">
-											<Label>Type</Label>
+											<Label>
+												{isNewUser ? "Type *" : "Type"}
+											</Label>
 											<Select
 												disabled={!isNewUser}
 												value={
