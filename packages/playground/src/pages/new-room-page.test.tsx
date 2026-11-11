@@ -372,23 +372,16 @@ afterEach(() => {
 });
 
 /**
- * Select a panel from the More actions menu on the Workspace's rail, under
- * Open a Panel, opening the Workspace from the header first when it is closed.
+ * Open a panel from the Workspace's rail, opening the Workspace from the
+ * header first when it is closed — while it is, the whole pane is hidden, and
+ * a role query skips it. A rail entry is a button; its tab is a tab.
  */
 function selectWorkspaceItem(name: string) {
-	if (!screen.queryByRole("button", { name: "studio.moreActions" }))
-		fireEvent.click(
-			screen.getByRole("button", { name: "studio.openWorkspace" }),
-		);
-	fireEvent.keyDown(
-		screen.getByRole("button", { name: "studio.moreActions" }),
-		{ key: "Enter" },
-	);
-	fireEvent.keyDown(
-		screen.getByRole("menuitem", { name: "workspacePlaces.openPanel" }),
-		{ key: "Enter" },
-	);
-	fireEvent.click(screen.getByRole("menuitem", { name }));
+	const toggle = screen.queryByRole("button", {
+		name: "studio.openWorkspace",
+	});
+	if (toggle) fireEvent.click(toggle);
+	fireEvent.click(screen.getByRole("button", { name }));
 }
 
 /** Open Settings, which prepares the room, and let the preparation settle. */
@@ -821,22 +814,22 @@ test("Retry after a failed preparation reopens the Workspace in the prepared roo
 	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(2);
 });
 
-test("a new chat's header has its toggle but no title, and its rail has More actions", () => {
+test("a new chat's header has its toggle but no title, and its rail lists panels", () => {
 	render(<NewRoomPage />);
 	const header = screen.getByRole("banner");
 	expect(header).not.toHaveTextContent("header.newChat");
 	expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
-	expect(
-		within(header).queryByRole("button", { name: "studio.moreActions" }),
-	).toBeNull();
 	fireEvent.click(
 		screen.getByRole("button", { name: "studio.openWorkspace" }),
 	);
+	const rail = document.querySelector<HTMLElement>("[data-rail]");
+	if (!rail) throw new Error("the panel rail did not render");
 	expect(
-		screen.getByRole("button", { name: "studio.moreActions" }),
+		within(rail).getByRole("button", { name: "workspacePlaces.settings" }),
 	).toBeVisible();
+	// a draft is not a room yet: no room actions anywhere
 	expect(
-		screen.queryByRole("menuitem", { name: "sidebar:actions.rename" }),
+		screen.queryByRole("button", { name: "sidebar:actions.rename" }),
 	).toBeNull();
 });
 

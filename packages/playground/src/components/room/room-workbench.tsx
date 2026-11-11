@@ -10,7 +10,7 @@ import { Workbench, WorkbenchProvider } from "@semoss/workbench";
 import { RoomProvider } from "@/contexts/room.context";
 import { normalizeFolderPath } from "@/features/chat-tools/folders/folder-path";
 import { useNextMessageRoom } from "@/features/conversation/next-message-room.context";
-import { RoomActionsMenu } from "@/features/workbench/room-actions-menu";
+import { RoomWorkbenchRail } from "@/features/workbench/room-workbench-rail";
 import type { NewRoomWorkbenchPanels } from "@/features/workbench/use-workbench-panels";
 import type { RoomStore } from "@/stores/room/room.store";
 
@@ -23,9 +23,11 @@ interface RoomWorkbenchProps {
 
 /**
  * A room's Workspace: its `@semoss/workbench` dock, whose editors stay mounted
- * through view changes. The More actions menu leads its left rail; the mobile
- * layout has no rails, so there it sits above the tabs instead. Its tab row is
- * its top edge; the room header opens and closes it.
+ * through view changes. Files and Settings open as tabs in its main area, and
+ * its rail — the room's cog menu over one icon per panel — stands on its left
+ * edge. The mobile layout has no rails, so there the same rail runs across the
+ * top, above the tabs. Its tab row is its top edge; the room header opens and
+ * closes it.
  */
 export const RoomWorkbench = observer(
 	({ room, newRoomPanels }: RoomWorkbenchProps) => {
@@ -54,11 +56,13 @@ export const RoomWorkbench = observer(
 			}),
 			[nextMessageRoom, t],
 		);
-		const actionsMenu = ({ vertical }: { vertical: boolean }) => (
-			<RoomActionsMenu
+		// a left rail opens its labels and menu into the dock; the mobile
+		// toolbar sits above the tabs, so there they open downward
+		const panelRail = ({ vertical }: { vertical: boolean }) => (
+			<RoomWorkbenchRail
 				room={room}
 				newRoomPanels={newRoomPanels}
-				isVertical={vertical}
+				side={vertical ? "right" : "bottom"}
 			/>
 		);
 		return (
@@ -71,8 +75,8 @@ export const RoomWorkbench = observer(
 								snapshot={room.sidebarSnapshot}
 								borderSlots={
 									isMobile
-										? { top: { before: actionsMenu } }
-										: { left: { before: actionsMenu } }
+										? { top: { before: panelRail } }
+										: { left: { before: panelRail } }
 								}
 								mobileTopBorder="toolbar"
 							/>

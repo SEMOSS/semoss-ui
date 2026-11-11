@@ -8,10 +8,10 @@ import { RoomContent } from "@/components/room/room-content";
 import { RoomWorkbench } from "@/components/room/room-workbench";
 import { FileDragProvider } from "@/contexts/file-drag-context";
 import { RoomProvider } from "@/contexts/room.context";
+import { RoomLayout } from "@/features/conversation/room-layout";
 import { RoomActionsProvider } from "@/features/room-actions/room-actions.context";
 import { RoomHeader } from "@/features/room-header/room-header";
 import { TOOL_VIEW_LIBRARIES } from "@/features/tool-views/tool-view-libraries";
-import { FittedRoomLayout } from "@/features/workbench/fitted-room-layout";
 import { useChat } from "@/hooks/use-chat";
 import type { RoomStore } from "@/stores/room/room.store";
 import type { Engine } from "@/types";
@@ -113,15 +113,16 @@ export const RoomPage = observer(() => {
 				<ToolViewProvider libraries={TOOL_VIEW_LIBRARIES}>
 					{/* the header and the composer's slash menu share the room's actions */}
 					<RoomActionsProvider room={room}>
-						<FittedRoomLayout
-							room={room}
+						<RoomLayout
+							isWorkbenchOpen={room.sidebar.isOpen}
+							onWorkbenchCollapse={() => void room.closeSidebar()}
 							header={<RoomHeader room={room} />}
 							workbench={<RoomWorkbench room={room} />}
 						>
 							<FileDragProvider>
 								<RoomContent room={room} />
 							</FileDragProvider>
-						</FittedRoomLayout>
+						</RoomLayout>
 					</RoomActionsProvider>
 				</ToolViewProvider>
 			</RoomProvider>

@@ -5,7 +5,7 @@ import type { RoomStore } from "@/stores/room/room.store";
 import { DownloadConversationDialog } from "./download-conversation-dialog";
 import { type RoomActions, useRoomActions } from "./use-room-actions";
 
-/** One room's actions, shared by its name, the More actions menu, and the composer's slash menu. */
+/** One room's actions, shared by its name, Settings' Room section, and the composer's slash menu. */
 interface RoomActionsContextValue {
 	/** The room the actions act on. */
 	room: RoomStore;

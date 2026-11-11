@@ -40,23 +40,25 @@ export const ROOM_PANEL_TYPES = {
 	GOOGLE_DOCS: "room-google-docs",
 } as const;
 
-/** The width the Workspace's left rail opens to, in px. */
-export const ROOM_SIDEBAR_RAIL_SIZE = 450;
-
-/** The room's own panels, docked collapsed on the Workspace's left rail. */
-const ROOM_RAIL_PANEL_IDS = {
-	FILES: "room-rail-files",
-	SETTINGS: "room-rail-settings",
+/** The room's own panels, open in the Workspace's main tab area by default. */
+const ROOM_DEFAULT_PANEL_IDS = {
+	FILES: "room-panel-files",
+	SETTINGS: "room-panel-settings",
 } as const;
 
 /**
- * The room sidebar's starting arrangement: an empty dock, with Files and
- * Settings collapsed on the left rail.
+ * The room sidebar's starting arrangement: Files and Settings as tabs in the
+ * main area, Files in front.
  *
  * The tabset has to survive its last close, or the dock would prune its only
- * container and have nowhere to put the next panel. The rail's panels cannot
- * be closed; `RoomStore._syncSidebarRail` adds the connector viewers beside
- * them, and Files once a draft has a room to read.
+ * container and have nowhere to put the next panel — which it must, because
+ * both of these close like any other tab and the rail reopens them. Everything
+ * else — the activity log, the connector viewers, a file, a tool — is added
+ * beside them from that rail too.
+ *
+ * The ids are a layout convenience, not a contract: nothing looks a panel up
+ * by them — a draft's arrangement is adopted whole, and every other lookup
+ * goes through the blueprint's `matches`.
  *
  * @param options.fileMode - The scope Files reads, or null to leave Files out
  * (a new chat has no insight to read until it prepares its room).
@@ -74,45 +76,38 @@ export const createRoomSidebarLayout = ({
 	settingsName: string;
 }): WorkbenchLayout => {
 	const panels: WorkbenchLayout["panels"] = {
-		[ROOM_RAIL_PANEL_IDS.SETTINGS]: {
-			id: ROOM_RAIL_PANEL_IDS.SETTINGS,
+		[ROOM_DEFAULT_PANEL_IDS.SETTINGS]: {
+			id: ROOM_DEFAULT_PANEL_IDS.SETTINGS,
 			type: ROOM_PANEL_TYPES.CONFIGURATION,
 			name: settingsName,
 			config: {},
-			canClose: false,
-			minWidth: ROOM_SIDEBAR_RAIL_SIZE,
 		},
 	};
 	if (fileMode) {
-		panels[ROOM_RAIL_PANEL_IDS.FILES] = {
-			id: ROOM_RAIL_PANEL_IDS.FILES,
+		panels[ROOM_DEFAULT_PANEL_IDS.FILES] = {
+			id: ROOM_DEFAULT_PANEL_IDS.FILES,
 			type: FILE_PANEL_TYPES.FILE_EXPLORER,
 			name: filesName,
 			config: { mode: fileMode },
-			canClose: false,
-			minWidth: ROOM_SIDEBAR_RAIL_SIZE,
 		};
 	}
+	const frontId = fileMode
+		? ROOM_DEFAULT_PANEL_IDS.FILES
+		: ROOM_DEFAULT_PANEL_IDS.SETTINGS;
 	return {
 		tree: {
 			type: "tabset",
 			id: "main",
 			size: 1,
-			panelIds: [],
-			activeId: null,
+			panelIds: [
+				...(fileMode ? [ROOM_DEFAULT_PANEL_IDS.FILES] : []),
+				ROOM_DEFAULT_PANEL_IDS.SETTINGS,
+			],
+			activeId: frontId,
 			enableDeleteWhenEmpty: false,
 		},
 		panels: panels,
-		borders: {
-			left: {
-				panelIds: [
-					...(fileMode ? [ROOM_RAIL_PANEL_IDS.FILES] : []),
-					ROOM_RAIL_PANEL_IDS.SETTINGS,
-				],
-				activeId: null,
-				size: ROOM_SIDEBAR_RAIL_SIZE,
-			},
-		},
+		selectedPanelId: frontId,
 	};
 };
 
@@ -160,15 +155,6 @@ export const isActiveSidebarPanel = (
 		.matchPanels(type, config)
 		.some((record) => record.id === selected);
 };
-
-/**
- * Whether any tab is open in the Workspace's main area, outside its rail.
- *
- * @param layout - The Workspace's dock layout state.
- * @return True when a tabset holds a panel.
- */
-export const hasMainAreaTabs = (layout: WorkbenchState["layout"]): boolean =>
-	layout.tabsets.some((tabset) => tabset.panelIds.length > 0);
 
 /**
  * The file scope a docked panel was opened with, if it is a file panel.

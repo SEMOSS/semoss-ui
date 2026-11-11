@@ -89,12 +89,19 @@ test("the Workspace has no strip above its tabs", () => {
 	expect(screen.queryByRole("button", { name: "workbench.view" })).toBeNull();
 });
 
-test("More actions leads the Workspace's left rail", () => {
+test("the panel rail sits on the left, and holds panels alone", () => {
 	const { container } = render(<RoomLayoutTest room={createRoom()} />);
+	expect(container.querySelector("[data-rail='right']")).toBeNull();
 	const rail = container.querySelector<HTMLElement>("[data-rail='left']");
-	if (!rail) throw new Error("the left rail did not render");
-	const [first] = within(rail).getAllByRole("button");
-	expect(first).toHaveAccessibleName("studio.moreActions");
+	if (!rail) throw new Error("the panel rail did not render");
+	const names = within(rail)
+		.getAllByRole("button")
+		.map((button) => button.getAttribute("aria-label"));
+	expect(names).toEqual([
+		"workspacePlaces.files",
+		"workspacePlaces.settings",
+		"workspacePlaces.activity",
+	]);
 });
 
 test("closing from the header and reopening retain drafts and panels and restore conversation focus", async () => {
