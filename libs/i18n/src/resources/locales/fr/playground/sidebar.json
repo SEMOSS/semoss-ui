@@ -10,10 +10,6 @@
 			"label": "Agents",
 			"tooltip": "Agents"
 		},
-		"allChats": {
-			"label": "Toutes les discussions",
-			"tooltip": "Toutes les discussions"
-		},
 		"agentsWorkspaces": {
 			"tooltip": "Agents/Espaces de travail - Accédez à vos espaces ou créez de nouveaux agents IA."
 		},
@@ -53,7 +49,8 @@
 		"openInline": "Ouvrir en ligne",
 		"minimize": "Réduire",
 		"maximize": "Agrandir",
-		"close": "Fermer"
+		"close": "Fermer",
+		"roomActions": "Actions de la discussion"
 	},
 	"toasts": {
 		"failedToPin": "Échec de l'épinglage de la salle",
@@ -96,5 +93,40 @@
 		"pdf": "Document PDF",
 		"success": "Conversation téléchargée au format {{format}}",
 		"failed": "Impossible de télécharger la conversation"
+	},
+	"chats": "Discussions",
+	"view": {
+		"button": "Trier et regrouper les discussions",
+		"customized": "ordre personnalisé",
+		"sortBy": "Trier par",
+		"groupBy": "Regrouper par",
+		"sort": {
+			"recent": "Plus récentes",
+			"oldest": "Plus anciennes",
+			"nameAsc": "Nom (A–Z)",
+			"nameDesc": "Nom (Z–A)"
+		},
+		"group": {
+			"date": "Date",
+			"agent": "Agent"
+		}
+	},
+	"groups": {
+		"all": "Toutes les discussions",
+		"noAgent": "Sans agent",
+		"unnamedAgent": "Agent sans titre",
+		"openAgent": "Ouvrir {{name}} dans un nouvel onglet"
+	},
+	"searchChats": {
+		"label": "Rechercher des discussions",
+		"title": "Rechercher des discussions",
+		"description": "Trouvez une discussion par son nom ou par son contenu.",
+		"placeholder": "Rechercher des discussions…",
+		"loading": "Recherche…",
+		"empty": "Aucune discussion ne correspond à « {{query}} »",
+		"recent": "Récentes",
+		"allAgents": "Tous les agents",
+		"results": "Résultats",
+		"matchedMessage": "Trouvé dans les messages"
 	}
 }
