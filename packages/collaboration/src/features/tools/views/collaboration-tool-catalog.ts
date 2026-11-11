@@ -65,6 +65,11 @@ export const COLLABORATION_TOOL_VIEWS = {
 		family: "mail",
 		collection: "messages",
 	},
+	RelatedThreads: {
+		title: "Related conversations",
+		family: "mail",
+		collection: "items",
+	},
 	EditTopic: { title: "Update a topic", family: "topics" },
 	EditThread: { title: "Organize a conversation", family: "topics" },
 	TagTopic: { title: "Chat topic", family: "topics" },
