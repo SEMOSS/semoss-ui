@@ -61,7 +61,7 @@ export function ToolValueField({
 	// Decide once so editing across a length threshold never replaces the focused input.
 	const [isLong] = useState(
 		() =>
-			/(?:text|body|message|description|prompt|resolution|note|instructions|content)/i.test(
+			/(?:text|body|message|description|prompt|resolution|note|instructions|content|preferences)/i.test(
 				name,
 			) ||
 			(typeof value === "string" &&

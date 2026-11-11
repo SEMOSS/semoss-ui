@@ -1,18 +1,17 @@
+import { MessageSquare, SquareCheck, Users } from "lucide-react";
 import {
-	Calendar,
-	type LucideIcon,
-	Mail,
-	MessageSquare,
-	MessagesSquare,
-	SquareCheck,
-	Users,
-} from "lucide-react";
+	type AppIcon,
+	OutlookCalendarIcon,
+	OutlookIcon,
+	TeamsIcon,
+} from "@/components/common/app-icons";
 import type { Channel } from "./state/collaboration.types";
 
-const CHANNELS: Record<Channel, { label: string; icon: LucideIcon }> = {
-	email: { label: "Email", icon: Mail },
-	teams: { label: "Teams", icon: MessagesSquare },
-	calendar: { label: "Calendar", icon: Calendar },
+// mail, Teams and the calendar are read from Microsoft 365, so each wears its app's logo
+const CHANNELS: Record<Channel, { label: string; icon: AppIcon }> = {
+	email: { label: "Email", icon: OutlookIcon },
+	teams: { label: "Teams", icon: TeamsIcon },
+	calendar: { label: "Calendar", icon: OutlookCalendarIcon },
 	room: { label: "Room", icon: Users },
 	task: { label: "Task", icon: SquareCheck },
 };
@@ -20,7 +19,7 @@ const CHANNELS: Record<Channel, { label: string; icon: LucideIcon }> = {
 /** Label and icon for a channel; an unknown one reads as a message. */
 export function channelMeta(channel: string): {
 	label: string;
-	icon: LucideIcon;
+	icon: AppIcon;
 } {
 	return (
 		CHANNELS[channel as Channel] ?? { label: channel, icon: MessageSquare }

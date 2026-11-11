@@ -1,7 +1,13 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import type { CalendarEventSelection, MailSelection } from "@semoss/connectors";
-import { FILE_PANEL_COMPONENTS, FILE_PANEL_TYPES } from "@semoss/panels";
+import {
+	FILE_PANEL_COMPONENTS,
+	FILE_PANEL_EVENTS,
+	FILE_PANEL_TYPES,
+	getFilePanelScope,
+} from "@semoss/panels";
 import { WorkbenchProvider } from "@semoss/workbench";
+import { RoomSession } from "../rooms/room-session";
 import { ToolWorkbenchProvider } from "../tools/components/tool-workbench-provider";
 import { openToolWorkbenchFiles } from "../tools/open-tool-workbench-files";
 import { useToolWorkbench } from "../tools/tool-workbench.context";
@@ -53,7 +59,7 @@ function Harness() {
 	return null;
 }
 
-function setup(includeFiles = true) {
+function setup(includeFiles = true, session?: RoomSession) {
 	return render(
 		<ToolWorkbenchProvider
 			roomId="room"
@@ -69,7 +75,7 @@ function setup(includeFiles = true) {
 			onRejectTool={vi.fn()}
 			autoReveal={false}
 		>
-			<RoomConnectorsProvider>
+			<RoomConnectorsProvider session={session}>
 				<Harness />
 			</RoomConnectorsProvider>
 		</ToolWorkbenchProvider>,
@@ -370,4 +376,42 @@ it("renders the current detail actions in the header and disables Add to Context
 	expect(
 		screen.queryByRole("button", { name: "actions.addToContext" }),
 	).not.toBeInTheDocument();
+});
+
+it("says the chat's files changed, without naming any, each time a run finishes", () => {
+	const session = new RoomSession("test-account");
+	const snapshot = session.getSnapshot();
+	let settlementVersion = 0;
+	let notify = () => {};
+	vi.spyOn(session, "getSnapshot").mockImplementation(() => ({
+		...snapshot,
+		turn: { ...snapshot.turn, settlementVersion },
+	}));
+	vi.spyOn(session, "subscribe").mockImplementation((listener) => {
+		notify = listener;
+		return () => {};
+	});
+	setup(true, session);
+	const onFilesChanged = vi.fn();
+	workbench.store
+		.getState()
+		.events.actions.subscribe(
+			FILE_PANEL_EVENTS.FILES_CHANGED,
+			onFilesChanged,
+		);
+
+	// a turn that is still streaming has settled nothing
+	act(() => notify());
+	expect(onFilesChanged).not.toHaveBeenCalled();
+
+	settlementVersion = 1;
+	act(() => notify());
+	act(() => notify());
+	expect(onFilesChanged).toHaveBeenCalledTimes(1);
+	expect(onFilesChanged).toHaveBeenCalledWith({
+		scope: getFilePanelScope({
+			type: "INSIGHT",
+			insightId: session.insight.insightId,
+		}),
+	});
 });

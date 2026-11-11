@@ -136,6 +136,10 @@ export const COLLABORATION_TOOL_VIEWS = {
 		collection: "routines",
 	},
 	ManageRoutine: { title: "Manage a routine", family: "routines" },
+	SetRoutinePreferences: {
+		title: "Update routine preferences",
+		family: "routines",
+	},
 	ListMySkills: {
 		title: "Your skills",
 		family: "skills",

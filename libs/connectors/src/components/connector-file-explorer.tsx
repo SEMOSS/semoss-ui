@@ -1,4 +1,5 @@
 import { DownloadIcon, MessageSquarePlusIcon } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	FileExplorer,
@@ -52,7 +53,22 @@ interface ConnectorFileExplorerProps {
 	getWebUrl: (item: FileItem) => string | undefined;
 	/** Open the account's sign in. Must be called inside the click. */
 	onSignIn?: () => Promise<boolean>;
+	/** Whether the host is showing the viewer. Defaults to true. */
+	isVisible?: boolean;
+	/** The host's `refreshRequestId`: the listing is read again when it changes. */
+	refreshRequestId?: number;
+	/**
+	 * A line to show under a listing, such as that the drive stopped at its
+	 * limit; see the explorer's `listingNote`.
+	 */
+	listingNote?: (items: FileItem[], path: string) => string | undefined;
 }
+
+/**
+ * How old a listing has to be before coming back to it reads it again, so
+ * that flicking between windows does not ask the drive each time.
+ */
+const STALE_AFTER_MS = 30_000;
 
 /**
  * A connector's files in the file explorer the rest of SEMOSS browses files
@@ -65,6 +81,11 @@ interface ConnectorFileExplorerProps {
  * the explorer's New button and its New File and New Folder menu entries,
  * which create in the drive. A signed out
  * account gets the same sign in prompt as every other viewer.
+ *
+ * A drive changes behind the viewer, which nothing tells it about, so the
+ * listing is read again when the user comes back to it (to the window, or to
+ * the viewer's tab) once it is half a minute old, and whenever the host says
+ * the drive may have changed.
  */
 export const ConnectorFileExplorer = ({
 	adapter,
@@ -74,6 +95,9 @@ export const ConnectorFileExplorer = ({
 	getSaveRequest,
 	getWebUrl,
 	onSignIn,
+	isVisible = true,
+	refreshRequestId,
+	listingNote,
 }: ConnectorFileExplorerProps) => {
 	const { t } = useTranslation("connectors");
 	// what can be changed is the adapter's to say: a drive that creates gets
@@ -86,6 +110,28 @@ export const ConnectorFileExplorer = ({
 			if (request) saver.open?.(request);
 		},
 	});
+
+	// the commands keep one identity, so neither effect below runs again for a
+	// render of the explorer
+	const { commands } = explorer;
+	const lastReadAtRef = useRef(Date.now());
+	useEffect(() => {
+		if (!isVisible) return;
+		const readIfStale = () => {
+			if (Date.now() - lastReadAtRef.current < STALE_AFTER_MS) return;
+			lastReadAtRef.current = Date.now();
+			commands.refresh();
+		};
+		// shown again after being hidden, which is also a coming back
+		readIfStale();
+		window.addEventListener("focus", readIfStale);
+		return () => window.removeEventListener("focus", readIfStale);
+	}, [isVisible, commands]);
+	useEffect(() => {
+		if (!refreshRequestId) return;
+		lastReadAtRef.current = Date.now();
+		commands.refresh();
+	}, [refreshRequestId, commands]);
 
 	const itemActions = (item: FileItem): FileExplorerItemActions => {
 		const request = getSaveRequest(item);
@@ -172,6 +218,7 @@ export const ConnectorFileExplorer = ({
 			}
 			newFileOverlay={NewFileOverlay}
 			itemActions={itemActions}
+			listingNote={listingNote}
 			renderError={(error, retry) => {
 				const info = classifyConnectorError(toConnectorError(error));
 				return (

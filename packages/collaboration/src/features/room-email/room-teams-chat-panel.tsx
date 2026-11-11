@@ -1,10 +1,10 @@
-import { MessagesSquare } from "lucide-react";
 import { createElement, useEffect, useState } from "react";
 import {
 	useWorkbenchPanel,
 	type WorkbenchPanelConfig,
 	type WorkbenchPanelProps,
 } from "@semoss/workbench";
+import { TeamsIcon } from "@/components/common/app-icons";
 import type { WorkspaceMessage } from "@/features/collaboration/state/collaboration.types";
 import { getTeamsMessages } from "@/features/connectors/api/microsoft";
 import { liveTeamsMessages } from "./load-room-source-emails";
@@ -88,8 +88,7 @@ export function RoomTeamsChatPanel({ id }: WorkbenchPanelProps) {
 
 const ROOM_TEAMS_CHAT_PANEL: WorkbenchPanelConfig<RoomTeamsChatPanelConfig> = {
 	name: "Teams chat",
-	icon: ({ className }) =>
-		createElement(MessagesSquare, { className, "aria-hidden": true }),
+	icon: ({ className }) => createElement(TeamsIcon, { className }),
 	content: RoomTeamsChatPanel,
 	mount: "keepAlive",
 	canRename: false,

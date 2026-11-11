@@ -44,7 +44,7 @@ export type TeamsFilesViewerProps = ConnectorViewerProps;
  * tree with, and bring files into the insight.
  */
 export const TeamsFilesViewer = (props: TeamsFilesViewerProps) => {
-	const { onSignIn } = props;
+	const { onSignIn, isVisible, refreshRequestId } = props;
 	const { t } = useTranslation("connectors");
 	const saver = useConnectorSaver("teams-files", props);
 	const choice = useTeamsChannelChoice();
@@ -117,6 +117,8 @@ export const TeamsFilesViewer = (props: TeamsFilesViewerProps) => {
 					}
 					getWebUrl={(row) => getDriveItem(row)?.webUrl}
 					onSignIn={onSignIn}
+					isVisible={isVisible}
+					refreshRequestId={refreshRequestId}
 				/>
 			</div>
 		);
