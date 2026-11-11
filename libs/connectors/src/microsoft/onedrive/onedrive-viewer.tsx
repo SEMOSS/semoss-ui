@@ -5,7 +5,6 @@ import { Tabs, TabsContent } from "@semoss/ui/next";
 import { ConnectorFileExplorer } from "../../components/connector-file-explorer";
 import { ConnectorTabsList } from "../../components/connector-tabs-list";
 import { ConnectorTabsTrigger } from "../../components/connector-tabs-trigger";
-import type { ConnectorViewerProps } from "../../core/connector.types";
 import { useConnectorSaver } from "../../core/use-connector-saver";
 import { MICROSOFT_PIXELS } from "../microsoft.pixels";
 import type { MicrosoftDriveItem } from "../microsoft.types";
@@ -13,7 +12,9 @@ import {
 	createOneDriveAdapter,
 	createOneDriveSharedAdapter,
 	DRIVE_LIST_LIMIT,
+	type DriveViewerProps,
 	getDriveItem,
+	getDriveItemAction,
 	getDriveSaveRequest,
 } from "../microsoft-drive.adapters";
 
@@ -36,7 +37,7 @@ const getDownload = (item: MicrosoftDriveItem) => (fileName: string) =>
 	});
 
 /** Props for {@link OneDriveViewer}. */
-export type OneDriveViewerProps = ConnectorViewerProps;
+export type OneDriveViewerProps = DriveViewerProps;
 
 /**
  * Browse the user's OneDrive and what others shared with them in the file
@@ -50,7 +51,7 @@ export type OneDriveViewerProps = ConnectorViewerProps;
  * note under that view's top listing says so.
  */
 export const OneDriveViewer = (props: OneDriveViewerProps) => {
-	const { onSignIn, isVisible, refreshRequestId } = props;
+	const { onSignIn, isVisible, refreshRequestId, getFileAction } = props;
 	const { t, i18n } = useTranslation("connectors");
 	const saver = useConnectorSaver("onedrive", props);
 	const [view, setView] = useState<OneDriveView>("mine");
@@ -115,6 +116,7 @@ export const OneDriveViewer = (props: OneDriveViewerProps) => {
 							getDriveSaveRequest(row, getDownload)
 						}
 						getWebUrl={(row) => getDriveItem(row)?.webUrl}
+						getItemAction={getDriveItemAction(getFileAction)}
 						onSignIn={onSignIn}
 						isVisible={isVisible}
 						refreshRequestId={refreshRequestId}

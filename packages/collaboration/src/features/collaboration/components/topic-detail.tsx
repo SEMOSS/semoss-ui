@@ -53,6 +53,7 @@ import { PersonGlobalBadges } from "./person-global-badges";
 import { TextEntryForm } from "./text-entry-form";
 import { TopicActions } from "./topic-actions";
 import { TopicEditor } from "./topic-editor";
+import { TopicFiles } from "./topic-files";
 import { TopicFolders } from "./topic-folders";
 import { TopicIgnoredPeople } from "./topic-ignored-people";
 import { TopicMatchesDialog } from "./topic-matches-dialog";
@@ -97,12 +98,14 @@ function returnTab(state: unknown): string {
 	return typeof state === "object" &&
 		state !== null &&
 		"tab" in state &&
-		(state.tab === "threads" || state.tab === "sessions")
+		(state.tab === "threads" ||
+			state.tab === "sessions" ||
+			state.tab === "files")
 		? state.tab
 		: "actions";
 }
 
-/** One topic workspace for actions, threads, sessions, and editable context. */
+/** One topic workspace for actions, threads, sessions, linked files, and editable context. */
 export function TopicDetail() {
 	const { topicId } = useParams();
 	const fieldId = useId();
@@ -164,12 +167,15 @@ export function TopicDetail() {
 		Boolean(updates) && !topic.isSample && canStartAssistant;
 	// the server only links a chat to a saved topic that is active or dormant
 	const canManageChats = !topic.isSample && canStartAssistant;
+	// the server keeps a saved topic's file links
+	const canManageFiles = !topic.isSample;
+	const files = topic.files ?? [];
 	// the menu returns focus to its own trigger; a button passes itself
 	const openMatchReview = (trigger?: HTMLElement) => {
 		matchTriggerRef.current = trigger ?? null;
 		setIsMatchReviewOpen(true);
 	};
-	// the full page for adding and removing by hand, opened on the mailbox or on the chats
+	// the full page for adding and removing by hand, opened on the mailbox, the chats or OneDrive
 	const manageButton = (label: string, place?: string) => (
 		<Button
 			asChild
@@ -251,6 +257,17 @@ export function TopicDetail() {
 												topicContentsPath(
 													topic.id,
 													"chats",
+												),
+											)
+									: undefined
+							}
+							onManageFiles={
+								canManageFiles
+									? () =>
+											navigate(
+												topicContentsPath(
+													topic.id,
+													"onedrive",
 												),
 											)
 									: undefined
@@ -337,6 +354,14 @@ export function TopicDetail() {
 									>
 										{lexicon.chats}
 									</TabsTrigger>
+									<TabsTrigger
+										value="files"
+										className={
+											collaborationTabsStyles.trigger
+										}
+									>
+										Files
+									</TabsTrigger>
 								</TabsList>
 								{tab === "actions" && (
 									<div className="ml-auto flex flex-wrap items-center justify-end gap-3">
@@ -370,6 +395,16 @@ export function TopicDetail() {
 										{manageButton("Add or remove", "chats")}
 									</div>
 								)}
+								{tab === "files" &&
+									canManageFiles &&
+									files.length > 0 && (
+										<div className="ml-auto">
+											{manageButton(
+												"Add or remove",
+												"onedrive",
+											)}
+										</div>
+									)}
 							</div>
 							<TabsContent value="actions" className="mt-0">
 								<WorkItemsList
@@ -464,6 +499,19 @@ export function TopicDetail() {
 								{tab === "sessions" && (
 									<TopicSessions topicId={topic.id} />
 								)}
+							</TabsContent>
+							<TabsContent value="files" className="mt-0">
+								<TopicFiles
+									files={files}
+									emptyAction={
+										canManageFiles
+											? manageButton(
+													"Add files",
+													"onedrive",
+												)
+											: undefined
+									}
+								/>
 							</TabsContent>
 						</Tabs>
 					</Card>

@@ -2,6 +2,7 @@ import {
 	ArrowLeft,
 	Brain,
 	CircleDashed,
+	File,
 	Mail,
 	MessageSquare,
 } from "lucide-react";
@@ -9,11 +10,16 @@ import type { ReactNode } from "react";
 import { Link, Navigate, useParams, useSearchParams } from "react-router";
 import { type MailFolder, useMailFolders } from "@semoss/connectors";
 import { Button, cn, H1, P } from "@semoss/ui/next";
-import { TeamsIcon } from "@/components/common/app-icons";
+import {
+	OneDriveIcon,
+	TeamsFilesIcon,
+	TeamsIcon,
+} from "@/components/common/app-icons";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import { topicTone } from "@/features/collaboration/topic-tone";
 import { topicPath } from "@/lib/workspace-paths";
 import { ChatSource } from "./chat-source";
+import { FileSource } from "./file-source";
 import { MailboxSource } from "./mailbox-source";
 import { ThreadSource } from "./thread-source";
 import { isInThreadView, type ThreadView } from "./thread-views";
@@ -26,6 +32,12 @@ import {
 // the mailbox takes the inbox by this name in place of its id
 const INBOX = "folder:inbox";
 const THREAD_VIEWS: ThreadView[] = ["topic", "unfiled", "teams", "all"];
+// the places that list files, with what each shows; a map, since the place is read from the address
+const FILE_VIEWS = new Map<string, "topic" | "onedrive" | "teams">([
+	["topic-files", "topic"],
+	["onedrive", "onedrive"],
+	["teams-files", "teams"],
+]);
 // Outlook's own folders that Brain never reads mail from, so nothing in them can be added
 // shortcut: matched by their English names, the only identity the listing gives them, so a mailbox in another
 // language lists them all; have the folder listing name its well known folders to hide them there too
@@ -54,15 +66,15 @@ function fileableFolders(folders: MailFolder[]): MailFolder[] {
 
 /**
  * A full page for choosing what is in a topic by hand: the owner's Outlook folders as the mailbox has them,
- * the conversations Brain has read, and the assistant chats, each row with a box that adds it or takes it
- * off, and a pane to read it in first.
+ * the conversations Brain has read, the assistant chats, and their OneDrive and Teams files, each row with a
+ * box that adds it or takes it off, and for mail a pane to read it in first.
  */
 export function TopicContents() {
 	const { topicId } = useParams();
 	const [params, setParams] = useSearchParams();
 	const { state } = useCollaborationSession();
 	const topic = state.topics.find((candidate) => candidate.id === topicId);
-	// the server files mail and links chats, and it holds no sample topic
+	// the server files mail and links chats and files, and it holds no sample topic
 	const isSaved = topic !== undefined && !topic.isSample;
 	const mailbox = useMailFolders(isSaved ? "microsoft" : null);
 	if (!topic) return <Navigate to={topicPath(topicId ?? "")} replace />;
@@ -100,6 +112,16 @@ export function TopicContents() {
 							},
 						]
 					: []),
+				...(isSaved
+					? [
+							{
+								id: "topic-files",
+								label: "Files",
+								icon: File,
+								count: topic.files?.length ?? 0,
+							},
+						]
+					: []),
 			],
 		},
 		{
@@ -132,6 +154,20 @@ export function TopicContents() {
 					icon: Brain,
 					count: counts.all,
 				},
+				...(isSaved
+					? [
+							{
+								id: "onedrive",
+								label: "OneDrive",
+								icon: OneDriveIcon,
+							},
+							{
+								id: "teams-files",
+								label: "Teams files",
+								icon: TeamsFilesIcon,
+							},
+						]
+					: []),
 			],
 		},
 	];
@@ -143,13 +179,12 @@ export function TopicContents() {
 		: undefined;
 	const folder = folders.find((entry) => entry.id === folderId);
 	const threadView = THREAD_VIEWS.find((view) => view === place);
+	const fileView = isSaved ? FILE_VIEWS.get(place) : undefined;
 	// the topic page opens on the tab that lists what was just changed
-	const backState = {
-		tab:
-			place === "chats" || place === "topic-chats"
-				? "sessions"
-				: "threads",
-	};
+	let tab = "threads";
+	if (place === "chats" || place === "topic-chats") tab = "sessions";
+	else if (fileView) tab = "files";
+	const backState = { tab };
 	// each place starts with its own search and open row; one this topic cannot show falls back to the unfiled
 	let active: string = threadView ?? "unfiled";
 	let list: ReactNode = (
@@ -196,6 +231,9 @@ export function TopicContents() {
 				view={place === "chats" ? "all" : "topic"}
 			/>
 		);
+	} else if (fileView) {
+		active = place;
+		list = <FileSource key={place} topic={topic} view={fileView} />;
 	}
 
 	return (
@@ -225,7 +263,7 @@ export function TopicContents() {
 							)}
 						/>
 						<span className="wrap-anywhere line-clamp-2 min-w-0">
-							Emails and chats in {topic.name}
+							Emails, chats and files in {topic.name}
 						</span>
 					</H1>
 					{/* a phone keeps the room for the list; the page says the same as it is used */}

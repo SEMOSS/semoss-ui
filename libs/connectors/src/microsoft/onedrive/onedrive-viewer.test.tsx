@@ -6,7 +6,10 @@ import { OneDriveViewer } from "./onedrive-viewer";
 const sdk = vi.hoisted(() => ({
 	// one object each, so hooks keyed on them do not run again every render
 	insight: { insightId: "origin", actions: { run: vi.fn() } },
-	listing: { count: 0, files: [] as { id: string; name: string }[] },
+	listing: {
+		count: 0,
+		files: [] as { id: string; name: string; isFolder?: boolean }[],
+	},
 	refresh: vi.fn(),
 }));
 
@@ -98,4 +101,41 @@ it("says what is shared with the user comes from Microsoft's search, which lists
 	list(200);
 	await render();
 	expect(note()).toBe("common.limitReached(200) onedrive.sharedNote");
+});
+
+it("gives each file the host's own action in place of the chat's, and folders none", async () => {
+	sdk.listing = {
+		count: 2,
+		files: [
+			{ id: "folder-1", name: "Reports", isFolder: true },
+			{ id: "item-1", name: "Plan.docx" },
+		],
+	};
+	const onLink = vi.fn();
+	await act(async () =>
+		root.render(
+			<OneDriveViewer
+				getFileAction={(file) => ({
+					name: `Link ${file.name}`,
+					icon: null,
+					tooltip: "Link",
+					action: async () => onLink(file.id),
+				})}
+			/>,
+		),
+	);
+	const labels = Array.from(document.querySelectorAll("button"), (button) =>
+		button.getAttribute("aria-label"),
+	);
+	expect(labels).toContain("Link Plan.docx");
+	expect(labels).not.toContain("Link Reports");
+	// saving into a chat's files is not offered beside it
+	expect(labels).not.toContain("actions.save");
+
+	await act(async () =>
+		document
+			.querySelector<HTMLElement>('[aria-label="Link Plan.docx"]')
+			?.click(),
+	);
+	expect(onLink).toHaveBeenCalledWith("item-1");
 });

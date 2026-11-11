@@ -7,6 +7,7 @@ import {
 	FileExplorerHeader,
 	type FileExplorerItemActions,
 	FileExplorerNewAction,
+	type FileExplorerPrimaryAction,
 	FileExplorerRefreshAction,
 	type FileItem,
 	type FileMode,
@@ -51,6 +52,13 @@ interface ConnectorFileExplorerProps {
 	getSaveRequest: (item: FileItem) => ConnectorSaveRequest | undefined;
 	/** Where a row opens in its own app, when it does. */
 	getWebUrl: (item: FileItem) => string | undefined;
+	/**
+	 * The host's own action on a row, for a host that does something else with
+	 * a file than bring it into a chat, such as link it to a record. It is the
+	 * row's button and leads its menu, in place of adding to context and
+	 * saving. Undefined for a row it does not apply to, such as a folder.
+	 */
+	getItemAction?: (item: FileItem) => FileExplorerPrimaryAction | undefined;
 	/** Open the account's sign in. Must be called inside the click. */
 	onSignIn?: () => Promise<boolean>;
 	/** Whether the host is showing the viewer. Defaults to true. */
@@ -76,7 +84,9 @@ const STALE_AFTER_MS = 30_000;
  * the files; the rows add the connector's own actions, as every connector row
  * has them. The row's button adds a file to context, or saves it where the
  * host takes no context, and its right-click menu adds it to context, saves it
- * to the chat's files, or opens it in its own app. Selecting a file opens a
+ * to the chat's files, or opens it in its own app. A host with an action of
+ * its own (`getItemAction`) gets that as the button and first in the menu
+ * instead, with the open entry after it. Selecting a file opens a
  * preview when the host supports it. A drive whose adapter creates also gets
  * the explorer's New button and its New File and New Folder menu entries,
  * which create in the drive. A signed out
@@ -94,6 +104,7 @@ export const ConnectorFileExplorer = ({
 	saver,
 	getSaveRequest,
 	getWebUrl,
+	getItemAction,
 	onSignIn,
 	isVisible = true,
 	refreshRequestId,
@@ -136,6 +147,27 @@ export const ConnectorFileExplorer = ({
 	const itemActions = (item: FileItem): FileExplorerItemActions => {
 		const request = getSaveRequest(item);
 		const webUrl = getWebUrl(item);
+		const openIn = webUrl
+			? {
+					name: t("actions.openIn", { service: serviceName }),
+					action: async () => {
+						window.open(webUrl, "_blank", "noopener,noreferrer");
+					},
+				}
+			: null;
+		if (getItemAction) {
+			const hostAction = getItemAction(item) ?? null;
+			return {
+				actions: [hostAction],
+				secondaryActions: [
+					hostAction && {
+						name: hostAction.name,
+						action: hostAction.action,
+					},
+					openIn,
+				],
+			};
+		}
 		const { addToContext } = saver;
 		const icon =
 			request && saver.isBusy(request.key) ? (
@@ -186,18 +218,7 @@ export const ConnectorFileExplorer = ({
 							},
 						}
 					: null,
-				webUrl
-					? {
-							name: t("actions.openIn", { service: serviceName }),
-							action: async () => {
-								window.open(
-									webUrl,
-									"_blank",
-									"noopener,noreferrer",
-								);
-							},
-						}
-					: null,
+				openIn,
 			],
 		};
 	};

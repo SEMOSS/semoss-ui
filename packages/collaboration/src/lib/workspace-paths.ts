@@ -3,7 +3,7 @@ export function topicPath(topicId: string): string {
 	return `/topics/${encodeURIComponent(topicId)}`;
 }
 
-/** The full page for adding and removing a topic's emails and chats, opened on a place such as "chats". */
+/** The full page for adding and removing a topic's emails, chats and files, opened on a place such as "chats". */
 export function topicContentsPath(topicId: string, place?: string): string {
 	const path = `${topicPath(topicId)}/contents`;
 	return place ? `${path}?${new URLSearchParams({ in: place })}` : path;
