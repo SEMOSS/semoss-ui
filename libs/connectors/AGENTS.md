@@ -181,7 +181,11 @@ code may import from `core/` and `components/`; those two never import from them
   My Files and a channel's files are browsed by path, while Shared with Me reaches each folder by
   the ids it was listed with, remembered under the path it is shown at. The rows carry their
   drive item in `FileItem.data` for the connector's actions: the row button adds a file to
-  context, and the menu saves it to the chat's files or opens it in its app. A new drive, such
+  context, and the menu saves it to the chat's files or opens it in its app. A host that does
+  something else with a file passes `getFileAction` to `OneDriveViewer` or `TeamsFilesViewer`,
+  as Collaboration's topic page does to link a file to a topic: that action is then the row's
+  button and leads its menu, in place of adding to context and saving, and folders get none.
+  A new drive, such
   as Google Drive, needs only an adapter and those two callbacks. My Files also writes: its
   adapter sets `create` and `upload`, so the explorer shows its New button, the menu's New File
   and New Folder, and takes files dropped on it. New File and New Folder run

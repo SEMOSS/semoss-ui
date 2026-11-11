@@ -424,6 +424,58 @@ it("opens on the tab a link back from the add-or-remove page asks for, and links
 	);
 });
 
+it("lists a topic's linked files on their own tab, each opening where it lives, with the page to add more", async () => {
+	const state = workState();
+	const [alpha] = state.topics;
+	if (!alpha) throw new Error("Missing topic fixture");
+	// a saved topic: the server keeps its file links
+	alpha.isSample = false;
+	alpha.files = [
+		{
+			itemId: "item-1",
+			driveId: "drive-1",
+			name: "Budget.xlsx",
+			source: "onedrive",
+			webUrl: "https://contoso.sharepoint.com/budget",
+		},
+		{
+			itemId: "item-2",
+			name: "Plan.docx",
+			source: "teams",
+			webUrl: "javascript:alert(1)",
+		},
+	];
+	const { router, user } = renderWork("/topics/alpha", state);
+	await user.click(screen.getByRole("tab", { name: "Files" }));
+
+	const list = screen.getByRole("list", { name: "Topic files" });
+	expect(
+		within(list).getByRole("link", {
+			name: "Budget.xlsx (opens in OneDrive)",
+		}),
+	).toHaveAttribute("href", "https://contoso.sharepoint.com/budget");
+	// only an https address becomes a link
+	expect(within(list).queryAllByRole("link")).toHaveLength(1);
+	expect(within(list).getByText("Plan.docx")).toBeVisible();
+	expect(screen.getByRole("link", { name: "Add or remove" })).toHaveAttribute(
+		"href",
+		"/topics/alpha/contents?in=onedrive",
+	);
+
+	// the add-or-remove page comes back to this tab; a sample topic has no server to link a file on
+	await act(() =>
+		router.navigate("/topics/beta", { state: { tab: "files" } }),
+	);
+	expect(screen.getByRole("tab", { name: "Files" })).toHaveAttribute(
+		"aria-selected",
+		"true",
+	);
+	expect(screen.getByText(/^No files in this topic yet\./)).toBeVisible();
+	expect(
+		screen.queryByRole("link", { name: "Add files" }),
+	).not.toBeInTheDocument();
+});
+
 it("opens source threads by their canonical import route and reads sessions only on selection", async () => {
 	const { router, user } = renderWork("/topics/alpha");
 	await user.click(screen.getByRole("tab", { name: "Threads" }));

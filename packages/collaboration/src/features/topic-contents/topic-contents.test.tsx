@@ -31,6 +31,9 @@ vi.mock("./mailbox-source", () => ({
 vi.mock("./chat-source", () => ({
 	ChatSource: ({ view }: { view: string }) => <p>Chats: {view}</p>,
 }));
+vi.mock("./file-source", () => ({
+	FileSource: ({ view }: { view: string }) => <p>Files: {view}</p>,
+}));
 
 const folder = (
 	id: string,
@@ -95,7 +98,7 @@ it("opens a saved topic on the inbox, with the mailbox's folders as a tree besid
 	expect(
 		screen.getByRole("heading", {
 			level: 1,
-			name: "Emails and chats in Northwind - Engineering partnership",
+			name: "Emails, chats and files in Northwind - Engineering partnership",
 		}),
 	).toBeVisible();
 	expect(screen.getByText("Mail in inbox, named Inbox")).toBeVisible();
@@ -149,6 +152,8 @@ it("keeps the two kinds of chat apart, each under its own name and above the fol
 		"Assistant chats",
 		expect.stringMatching(/^No topic yet/),
 		expect.stringMatching(/^Everything Brain has read/),
+		"OneDrive",
+		"Teams files",
 	]);
 	// the topic's own assistant chats are a list of their own
 	expect(
@@ -286,6 +291,51 @@ it("points at Connections when Teams chats are off and Brain holds none", () => 
 	).toHaveAttribute("href", "/brain/sources");
 });
 
+it("lists the topic's files with their count, and the drives to pick more from", async () => {
+	const state = createInitialCollaborationState();
+	for (const record of [...state.topics, ...state.threads])
+		record.isSample = false;
+	const topic = state.topics.find((candidate) => candidate.id === TOPIC);
+	if (!topic) throw new Error("Missing topic fixture");
+	topic.files = [
+		{ itemId: "item-1", name: "Budget.xlsx", source: "onedrive" },
+		{ itemId: "item-2", name: "Plan.docx", source: "teams" },
+	];
+	const router = createMemoryRouter(
+		[
+			{ path: "/topics/:topicId/contents", element: <TopicContents /> },
+			{ path: "/topics/:topicId", element: <p>Topic page</p> },
+		],
+		{ initialEntries: [`/topics/${TOPIC}/contents?in=onedrive`] },
+	);
+	render(
+		<CollaborationSessionProvider initialState={state}>
+			<RouterProvider router={router} />
+		</CollaborationSessionProvider>,
+	);
+	const user = userEvent.setup();
+	expect(screen.getByText("Files: onedrive")).toBeVisible();
+	expect(
+		within(group("Add from")).getByRole("button", { name: "OneDrive" }),
+	).toHaveAttribute("aria-current", "true");
+
+	await user.click(
+		within(group("Add from")).getByRole("button", { name: "Teams files" }),
+	);
+	expect(screen.getByText("Files: teams")).toBeVisible();
+
+	await user.click(
+		within(group("In this topic")).getByRole("button", {
+			name: "Files 2",
+		}),
+	);
+	expect(screen.getByText("Files: topic")).toBeVisible();
+
+	// the topic page opens on the files that were just changed
+	await user.click(screen.getByRole("link", { name: "Done" }));
+	expect(router.state.location.state).toEqual({ tab: "files" });
+});
+
 it("opens on the place a link asks for", () => {
 	setup(`/topics/${TOPIC}/contents?in=topic-chats`);
 	expect(screen.getByText("Chats: topic")).toBeVisible();
@@ -303,7 +353,16 @@ it("goes back to the topic on the tab that lists what was changed", async () => 
 	expect(router.state.location.state).toEqual({ tab: "sessions" });
 });
 
-it("offers a sample topic only what Brain has read: no mailbox and no chats", () => {
+it("offers a sample topic only what Brain has read: no mailbox, no chats and no files", () => {
+	setup(`/topics/${TOPIC}/contents?in=onedrive`, true);
+	expect(
+		within(rail()).queryByRole("button", { name: "OneDrive" }),
+	).not.toBeInTheDocument();
+	expect(
+		within(rail()).queryByRole("button", { name: /^Files/ }),
+	).not.toBeInTheDocument();
+	expect(screen.queryByText("Files: onedrive")).not.toBeInTheDocument();
+	cleanup();
 	setup(`/topics/${TOPIC}/contents?in=chats`, true);
 	expect(mocks.provider).toHaveBeenLastCalledWith(null);
 	expect(

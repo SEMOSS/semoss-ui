@@ -25,6 +25,7 @@ import type {
 	Thread,
 	ThreadWorkspace,
 	Topic,
+	TopicFile,
 	WorkItem,
 	WorkspaceMessage,
 	WorkspaceStep,
@@ -262,6 +263,17 @@ function mapSources(settings: Settings): SourceStatus[] {
 	}));
 }
 
+/** A topic's linked files, as BrainGetTopic and BrainLinkTopicFile answer them. */
+export function mapTopicFiles(rows: unknown): TopicFile[] {
+	return list<Row>(rows).map((file) => ({
+		itemId: str(file.itemId),
+		driveId: opt(file.driveId),
+		name: str(file.name, "Untitled file"),
+		source: file.source === "teams" ? "teams" : "onedrive",
+		webUrl: opt(file.webUrl),
+	}));
+}
+
 export function mapTopic(row: Row): Topic {
 	const stats = (row.stats ?? {}) as Row;
 	return {
@@ -294,6 +306,7 @@ export function mapTopic(row: Row): Topic {
 			path: str(folder.path),
 			origin: opt(folder.origin),
 		})),
+		files: mapTopicFiles(row.files),
 		stats: {
 			threads: Number(stats.threads ?? 0),
 			openItems: Number(stats.openItems ?? 0),
