@@ -440,21 +440,16 @@ export const LoginPage = () => {
 
 		const selectedLoginType =
 			loginType.toUpperCase() as LoginPasswordResetApiType;
-		const subjectPrefix = theme.name?.trim() || "SEMOSS";
-		const subject = `${subjectPrefix} Reset Password Request`;
 
 		setIsResetPasswordSubmitting(true);
 		setResetPasswordError("");
 		setResetPasswordSuccess("");
 
 		try {
-			const response = await setupResetPassword(
-				email,
-				selectedLoginType,
-				subject,
-			);
+			const response = await setupResetPassword(email, selectedLoginType);
 			const message =
-				response.message || `Email has been sent to: ${email}`;
+				response.message ||
+				"If an account with that email exists, a password reset link has been sent to it.";
 
 			setResetPasswordSuccess(message);
 			toast.success(message);
