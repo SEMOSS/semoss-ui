@@ -13,14 +13,6 @@ Env.update({
 	MODULE: Env.MODULE || import.meta.env.MODULE || "/Monolith",
 });
 
-// The access keys are for local development only.
-if (import.meta.env.DEV) {
-	Env.update({
-		ACCESS_KEY: import.meta.env.ACCESS_KEY,
-		SECRET_KEY: import.meta.env.SECRET_KEY,
-	});
-}
-
 const i18nBuilder = new I18nBuilder(playgroundResources);
 
 /**

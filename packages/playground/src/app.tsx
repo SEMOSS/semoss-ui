@@ -15,14 +15,6 @@ Env.update({
 	MODULE: Env.MODULE || import.meta.env.MODULE || "/Monolith",
 });
 
-// The access keys are for local development only.
-if (import.meta.env.DEV) {
-	Env.update({
-		ACCESS_KEY: import.meta.env.ACCESS_KEY,
-		SECRET_KEY: import.meta.env.SECRET_KEY,
-	});
-}
-
 // create a new i18n instance for the playground. Languages load lazily (one
 // chunk per language) via the builder's dynamic backend.
 const i18nBuilder = new I18nBuilder(playgroundResources);
