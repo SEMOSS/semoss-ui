@@ -40,6 +40,7 @@ import { RoutineTimeFields } from "./routine-time-fields";
 const DELIVERY_DETAILS = {
 	email: "In your inbox, with any files it makes attached.",
 	teams: "A message in your own Teams chat. Text only.",
+	brief: "A section of your daily brief, under this routine's name. Text only.",
 	none: "Only here, under Latest result.",
 } as const;
 
@@ -64,6 +65,8 @@ export function CustomRoutineFields({
 }: CustomRoutineFieldsProps) {
 	const id = useId();
 	const form = useFormContext<CustomRoutineSettings>();
+	// a section of the daily brief runs when the brief does; its saved days and time stay but are not used
+	const isBriefSection = form.watch("delivery") === "brief";
 	const skillNames = new Map(skills.map((skill) => [skill.id, skill.name]));
 	const skillOptions = {
 		options: skills.map((skill) => ({
@@ -90,50 +93,63 @@ export function CustomRoutineFields({
 			</FieldSet>
 			<FieldSet className="min-w-0">
 				<FieldLegend>When should it run?</FieldLegend>
-				<FieldGroup className="min-w-0">
-					<FormField
-						control={form.control}
-						name="days"
-						render={({ field, fieldState }) => (
-							<Field data-invalid={Boolean(fieldState.error)}>
-								<FieldLabel id={`${id}-days-label`}>
-									Days (required)
-								</FieldLabel>
-								<ToggleGroup
-									type="multiple"
-									variant="outline"
-									spacing={1}
-									className="flex-wrap"
-									value={field.value}
-									onValueChange={field.onChange}
-									onBlur={field.onBlur}
-									aria-labelledby={`${id}-days-label`}
-									aria-invalid={Boolean(fieldState.error)}
-								>
-									{ROUTINE_DAYS.map((day) => (
-										<ToggleGroupItem
-											key={day}
-											value={day}
-											aria-label={ROUTINE_DAY_NAMES[day]}
-											className={cn(
-												"min-h-11 min-w-11",
-												CHOSEN_DAY,
-											)}
-										>
-											{ROUTINE_DAY_NAMES[day].slice(0, 3)}
-										</ToggleGroupItem>
-									))}
-								</ToggleGroup>
-								{fieldState.error && (
-									<FieldError>
-										{fieldState.error.message}
-									</FieldError>
-								)}
-							</Field>
-						)}
-					/>
-					<RoutineTimeFields />
-				</FieldGroup>
+				{isBriefSection ? (
+					<FieldDescription>
+						With your daily brief. The brief starts this routine on
+						every run and prints its result as a section, so it has
+						no schedule of its own.
+					</FieldDescription>
+				) : (
+					<FieldGroup className="min-w-0">
+						<FormField
+							control={form.control}
+							name="days"
+							render={({ field, fieldState }) => (
+								<Field data-invalid={Boolean(fieldState.error)}>
+									<FieldLabel id={`${id}-days-label`}>
+										Days (required)
+									</FieldLabel>
+									<ToggleGroup
+										type="multiple"
+										variant="outline"
+										spacing={1}
+										className="flex-wrap"
+										value={field.value}
+										onValueChange={field.onChange}
+										onBlur={field.onBlur}
+										aria-labelledby={`${id}-days-label`}
+										aria-invalid={Boolean(fieldState.error)}
+									>
+										{ROUTINE_DAYS.map((day) => (
+											<ToggleGroupItem
+												key={day}
+												value={day}
+												aria-label={
+													ROUTINE_DAY_NAMES[day]
+												}
+												className={cn(
+													"min-h-11 min-w-11",
+													CHOSEN_DAY,
+												)}
+											>
+												{ROUTINE_DAY_NAMES[day].slice(
+													0,
+													3,
+												)}
+											</ToggleGroupItem>
+										))}
+									</ToggleGroup>
+									{fieldState.error && (
+										<FieldError>
+											{fieldState.error.message}
+										</FieldError>
+									)}
+								</Field>
+							)}
+						/>
+						<RoutineTimeFields />
+					</FieldGroup>
+				)}
 			</FieldSet>
 			<FieldSet className="min-w-0">
 				<FieldLegend id={`${id}-delivery`}>
@@ -148,7 +164,7 @@ export function CustomRoutineFields({
 							name={field.name}
 							value={field.value}
 							onValueChange={field.onChange}
-							className="grid gap-3 md:grid-cols-3"
+							className="grid gap-3 md:grid-cols-2"
 						>
 							{CUSTOM_ROUTINE_DELIVERIES.map((delivery) => (
 								<FieldLabel

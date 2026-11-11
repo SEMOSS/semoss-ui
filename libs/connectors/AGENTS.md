@@ -64,7 +64,10 @@ code may import from `core/` and `components/`; those two never import from them
 
 - **Saving goes into the insight's files, at the top level.** The download reactors always write
   there and replace a file of the same name, so `saveToInsight` picks a free name first and runs
-  one download at a time per insight. Emails, threads, chats, events, and documents have no file
+  one download at a time per insight. The OneDrive download does not always use that name: a copy
+  of the same file that is already in the insight, and was not changed there, is brought up to
+  date in place and its path is answered instead, so adding or opening a file twice leaves one
+  copy. Read the saved path from the response, as `readSavedPath` does; never assume it. Emails, threads, chats, events, and documents have no file
   of their own; they are written out as Markdown (`mail/mail.markdown.ts`,
   `calendar/calendar.markdown.ts`, `microsoft/microsoft.markdown.ts`,
   `google/google.markdown.ts`) and uploaded. The top level matters: a message's `media` is copied
@@ -192,6 +195,14 @@ code may import from `core/` and `components/`; those two never import from them
   path deletes every file in the insight. Shared with Me and channel files stay browse only,
   since writing to them needs the `Files.ReadWrite.All` scope. Because the explorer is
   rendered, the tests alias `monaco-editor` the way every host that renders a file panel does.
+- **A drive changes behind its viewer.** Nothing tells the viewer, so `ConnectorFileExplorer`
+  reads the listing again when the user comes back to it, to the window or to the viewer's tab
+  (`isVisible`), once the listing is half a minute old, and whenever the host raises
+  `refreshRequestId`, as Collaboration does when a run finishes, since the assistant may have
+  written to the drive. A listing that reaches `DRIVE_LIST_LIMIT` says so under it through the
+  explorer's `listingNote`, in the current folder and in each open one, so a file past the limit
+  is not taken for missing. Shared with Me's top listing also says its files come from
+  Microsoft's search, which lists a new share late.
 - **Teams chats read newest first, by when each message was sent.** `MicrosoftTeamsListChats`
   answers each chat with its last message, and the chat list orders and dates chats by that
   message (`teamsChatActivityDate`); a chat's `lastUpdatedDateTime` is when it was renamed or
@@ -277,6 +288,12 @@ provider captured in that selection. `CalendarAgendaView` accepts `onOpenEvent`,
 `presentation="agenda"` keeps the date-grouped browser; `presentation="calendar"` adapts
 below 640px of its own container and restores the chosen grid when wider. The default
 presentation preserves Playground's existing calendar/list behavior.
+
+A host that lays a mailbox out itself, with its folders beside the list as a mail app has
+them, builds it from the same parts `MailboxView` uses: `useMailFolders` (the listing, ordered
+inbox first), `buildMailFolderTree`, `useMailPages`, `groupMailByConversation`, and
+`normalizeMailSubject`. Collaboration's topic contents page does, so each email can show
+whether it is in the topic.
 
 Optional `onControlsChange(ConnectorViewerControls)` publishes refresh, external-link,
 internal Open calendar, and mail/event Add to Context actions instead of showing their inline

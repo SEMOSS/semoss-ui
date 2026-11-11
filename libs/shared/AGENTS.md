@@ -38,8 +38,9 @@ other than an asset tree, such as a connector's drive: the adapter builds each l
 maps the output to `FileItem`s (`mapEntries(raw, path)` is handed the folder it listed, for a
 source whose entries carry no path), and says what the source can do. A source keeps anything
 its rows need in `FileItem.data`; `itemActions` adds the host's row button and context-menu
-entries, `renderError` draws a failed listing the host's way, and `searchScope: false` hides the
-scope choice for a search that always covers everything. A source that can make files and
+entries, `renderError` draws a failed listing the host's way, `listingNote` puts a line under a
+listing (the current folder's and each open one's), such as that its source stopped at a limit,
+and `searchScope: false` hides the scope choice for a search that always covers everything. A source that can make files and
 folders but not rename, move, or copy them sets `create` alone: `canCreateItems` reads it,
 falling back to `mutate`, and it shows New, New File, and New Folder without the rest.
 `FileExplorer` hands the overlay the explorer's `adapter`, so it creates in that source rather

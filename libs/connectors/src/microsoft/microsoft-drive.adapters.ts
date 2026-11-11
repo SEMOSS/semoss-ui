@@ -14,7 +14,7 @@ import { MICROSOFT_PIXELS } from "./microsoft.pixels";
 import type { MicrosoftDriveItem } from "./microsoft.types";
 
 /** The most items a drive folder, search, or shared list reads. */
-const LIST_LIMIT = 200;
+export const DRIVE_LIST_LIMIT = 200;
 
 /**
  * What a drive offers the file explorer: browsing, and searching when the
@@ -253,13 +253,13 @@ export const createOneDriveAdapter = (): FileExplorerAdapter => ({
 	browse: (path) =>
 		MICROSOFT_PIXELS.oneDriveListFolder({
 			path: toDrivePath(path),
-			limit: LIST_LIMIT,
+			limit: DRIVE_LIST_LIMIT,
 		}),
 	search: (_path, term) =>
 		MICROSOFT_PIXELS.oneDriveSearch({
 			search: term,
 			scope: "drive",
-			limit: LIST_LIMIT,
+			limit: DRIVE_LIST_LIMIT,
 		}),
 	mapEntries: (raw, path) =>
 		readItems(raw, parseOneDriveFolder).map((item) =>
@@ -318,15 +318,15 @@ export const createOneDriveSharedAdapter = (): FileExplorerAdapter => {
 				? MICROSOFT_PIXELS.oneDriveListFolder({
 						driveId: folder.driveId,
 						itemId: folder.itemId,
-						limit: LIST_LIMIT,
+						limit: DRIVE_LIST_LIMIT,
 					})
-				: MICROSOFT_PIXELS.oneDriveListShared(LIST_LIMIT);
+				: MICROSOFT_PIXELS.oneDriveListShared(DRIVE_LIST_LIMIT);
 		},
 		search: (_path, term) =>
 			MICROSOFT_PIXELS.oneDriveSearch({
 				search: term,
 				scope: "shared",
-				limit: LIST_LIMIT,
+				limit: DRIVE_LIST_LIMIT,
 			}),
 		mapEntries: (raw, path) =>
 			toRows(readItems(raw, parseOneDriveFolder), path),

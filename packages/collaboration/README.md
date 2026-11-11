@@ -319,6 +319,7 @@ unconfirmed or still-pending style never reaches the assistant, the frontend con
 | `/work` | Topic overview |
 | `/work/all`, `/work/waiting`, `/work/done` | Global work lists |
 | `/topics/:topicId` | Shared topic actions, threads, sessions, and editable context |
+| `/topics/:topicId/contents` | Full-screen page for adding and removing a topic's emails and chats by hand: the Outlook folder tree, what Brain has read, and the assistant chats |
 | `/work/topic/:topicId`, `/brain/topics/:topicId` | Redirects to the shared topic workspace |
 | `/thread/:id` | Source import bridge, or saved room when the identity starts with `room:` |
 | `/brain`, `/brain/sources` | Review and source readers/imports |

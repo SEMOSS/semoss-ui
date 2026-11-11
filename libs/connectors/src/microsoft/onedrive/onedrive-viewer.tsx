@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
+import type { FileItem } from "@semoss/shared";
 import { Tabs, TabsContent } from "@semoss/ui/next";
 import { ConnectorFileExplorer } from "../../components/connector-file-explorer";
 import { ConnectorTabsList } from "../../components/connector-tabs-list";
@@ -11,6 +12,7 @@ import type { MicrosoftDriveItem } from "../microsoft.types";
 import {
 	createOneDriveAdapter,
 	createOneDriveSharedAdapter,
+	DRIVE_LIST_LIMIT,
 	getDriveItem,
 	getDriveSaveRequest,
 } from "../microsoft-drive.adapters";
@@ -41,9 +43,14 @@ export type OneDriveViewerProps = ConnectorViewerProps;
  * explorer SEMOSS browses every file tree with, and bring files into the
  * insight: add one to the conversation, save a copy into the insight's files,
  * or open it in OneDrive.
+ *
+ * A listing that stopped at the drive's limit says so under it, so a file
+ * past the limit is not taken for missing. What is shared with the user is
+ * found through Microsoft's search, which lists a new share late, and the
+ * note under that view's top listing says so.
  */
 export const OneDriveViewer = (props: OneDriveViewerProps) => {
-	const { onSignIn } = props;
+	const { onSignIn, isVisible, refreshRequestId } = props;
 	const { t, i18n } = useTranslation("connectors");
 	const saver = useConnectorSaver("onedrive", props);
 	const [view, setView] = useState<OneDriveView>("mine");
@@ -55,6 +62,29 @@ export const OneDriveViewer = (props: OneDriveViewerProps) => {
 		}),
 		[],
 	);
+
+	/**
+	 * What to say under one listing of a view.
+	 *
+	 * @param tab - The view the listing is in.
+	 * @param items - The listing's items.
+	 * @param path - The folder that was listed.
+	 * @return The note, or undefined when the listing is whole.
+	 */
+	const getListingNote = (
+		tab: OneDriveView,
+		items: FileItem[],
+		path: string,
+	): string | undefined => {
+		const notes: string[] = [];
+		if (items.length >= DRIVE_LIST_LIMIT) {
+			notes.push(t("common.limitReached", { count: items.length }));
+		}
+		if (tab === "shared" && path === "/") {
+			notes.push(t("onedrive.sharedNote"));
+		}
+		return notes.join(" ") || undefined;
+	};
 
 	return (
 		<Tabs
@@ -86,6 +116,11 @@ export const OneDriveViewer = (props: OneDriveViewerProps) => {
 						}
 						getWebUrl={(row) => getDriveItem(row)?.webUrl}
 						onSignIn={onSignIn}
+						isVisible={isVisible}
+						refreshRequestId={refreshRequestId}
+						listingNote={(items, path) =>
+							getListingNote(tab, items, path)
+						}
 					/>
 				</TabsContent>
 			))}
