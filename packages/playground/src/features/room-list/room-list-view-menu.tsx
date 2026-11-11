@@ -1,16 +1,14 @@
-import { ArrowUpDownIcon, LayersIcon, ListFilterIcon } from "lucide-react";
+import { ListFilterIcon } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	cn,
 	DropdownMenu,
 	DropdownMenuContent,
-	DropdownMenuPortal,
+	DropdownMenuLabel,
 	DropdownMenuRadioGroup,
 	DropdownMenuRadioItem,
-	DropdownMenuSub,
-	DropdownMenuSubContent,
-	DropdownMenuSubTrigger,
+	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 	Tooltip,
 	TooltipContent,
@@ -65,10 +63,6 @@ export const RoomListViewMenu = ({
 	const { t } = useTranslation("sidebar");
 	const label = t("view.button");
 	const sortValue = `${view.sortBy}:${view.sortDir}`;
-	const sortLabel = SORT_OPTIONS.find((o) => o.value === sortValue)?.labelKey;
-	const groupLabel = GROUP_OPTIONS.find(
-		(o) => o.value === view.groupBy,
-	)?.labelKey;
 
 	const handleSortChange = (value: string) => {
 		const option = SORT_OPTIONS.find((sort) => sort.value === value);
@@ -120,63 +114,40 @@ export const RoomListViewMenu = ({
 				</TooltipTrigger>
 				<TooltipContent side="bottom">{label}</TooltipContent>
 			</Tooltip>
-			<DropdownMenuContent align="end" className="w-56">
-				<DropdownMenuSub>
-					<DropdownMenuSubTrigger>
-						<ArrowUpDownIcon />
-						<span className="flex-1">{t("view.sortBy")}</span>
-						{sortLabel ? (
-							<span className="text-muted-foreground text-xs">
-								{t(sortLabel)}
-							</span>
-						) : null}
-					</DropdownMenuSubTrigger>
-					<DropdownMenuPortal>
-						<DropdownMenuSubContent className="w-44">
-							<DropdownMenuRadioGroup
-								value={sortValue}
-								onValueChange={handleSortChange}
-							>
-								{SORT_OPTIONS.map((option) => (
-									<DropdownMenuRadioItem
-										key={option.value}
-										value={option.value}
-									>
-										{t(option.labelKey)}
-									</DropdownMenuRadioItem>
-								))}
-							</DropdownMenuRadioGroup>
-						</DropdownMenuSubContent>
-					</DropdownMenuPortal>
-				</DropdownMenuSub>
-				<DropdownMenuSub>
-					<DropdownMenuSubTrigger>
-						<LayersIcon />
-						<span className="flex-1">{t("view.groupBy")}</span>
-						{groupLabel ? (
-							<span className="text-muted-foreground text-xs">
-								{t(groupLabel)}
-							</span>
-						) : null}
-					</DropdownMenuSubTrigger>
-					<DropdownMenuPortal>
-						<DropdownMenuSubContent className="w-36">
-							<DropdownMenuRadioGroup
-								value={view.groupBy}
-								onValueChange={handleGroupChange}
-							>
-								{GROUP_OPTIONS.map((option) => (
-									<DropdownMenuRadioItem
-										key={option.value}
-										value={option.value}
-									>
-										{t(option.labelKey)}
-									</DropdownMenuRadioItem>
-								))}
-							</DropdownMenuRadioGroup>
-						</DropdownMenuSubContent>
-					</DropdownMenuPortal>
-				</DropdownMenuSub>
+			<DropdownMenuContent align="end" className="w-44">
+				<DropdownMenuLabel className="text-muted-foreground text-xs">
+					{t("view.sortBy")}
+				</DropdownMenuLabel>
+				<DropdownMenuRadioGroup
+					value={sortValue}
+					onValueChange={handleSortChange}
+				>
+					{SORT_OPTIONS.map((option) => (
+						<DropdownMenuRadioItem
+							key={option.value}
+							value={option.value}
+						>
+							{t(option.labelKey)}
+						</DropdownMenuRadioItem>
+					))}
+				</DropdownMenuRadioGroup>
+				<DropdownMenuSeparator />
+				<DropdownMenuLabel className="text-muted-foreground text-xs">
+					{t("view.groupBy")}
+				</DropdownMenuLabel>
+				<DropdownMenuRadioGroup
+					value={view.groupBy}
+					onValueChange={handleGroupChange}
+				>
+					{GROUP_OPTIONS.map((option) => (
+						<DropdownMenuRadioItem
+							key={option.value}
+							value={option.value}
+						>
+							{t(option.labelKey)}
+						</DropdownMenuRadioItem>
+					))}
+				</DropdownMenuRadioGroup>
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);
