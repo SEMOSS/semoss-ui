@@ -9,12 +9,15 @@ import { LandscapeRestriction } from "@/components/common/landscape-restriction"
 import { LanguageDirection } from "@/components/common/language-direction";
 import { Router } from "@/pages";
 
-// use the environment variable to set the module
-Env.update({
-	MODULE: import.meta.env.MODULE || "/Monolith",
-	ACCESS_KEY: import.meta.env.ACCESS_KEY,
-	SECRET_KEY: import.meta.env.SECRET_KEY,
-});
+// In production the server writes MODULE into index.html (semoss-env tag, read
+// when the SDK loads). In dev a tag still wins; otherwise MODULE and the access keys come from .env.
+if (import.meta.env.DEV) {
+	Env.update({
+		MODULE: Env.MODULE || import.meta.env.MODULE || "/Monolith",
+		ACCESS_KEY: import.meta.env.ACCESS_KEY,
+		SECRET_KEY: import.meta.env.SECRET_KEY,
+	});
+}
 
 // create a new i18n instance for the playground. Languages load lazily (one
 // chunk per language) via the builder's dynamic backend.

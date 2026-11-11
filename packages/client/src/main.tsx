@@ -1,6 +1,5 @@
 import { createRoot } from "react-dom/client";
 import { Env, Session, waitForEmbedAuth } from "@semoss/sdk/react";
-import { isRecord } from "@semoss/utility/object";
 import { App, i18nReady } from "./app";
 import { ErrorBoundary } from "./components/common/error-boundary";
 import "./index.css";
@@ -11,35 +10,15 @@ if (!container) {
 }
 const root = createRoot(container);
 
-/**
- * Point the SDK at the server: the build's module, or the one the page names
- * in its `semoss-env` script in production.
- */
-const loadEnv = (): void => {
+// In production the server writes MODULE into index.html (semoss-env tag, read
+// when the SDK loads). In dev a tag still wins; otherwise MODULE comes from .env.
+if (import.meta.env.DEV) {
 	Env.update({
-		MODULE: import.meta.env.MODULE || "/Monolith",
+		MODULE: Env.MODULE || import.meta.env.MODULE || "/Monolith",
 	});
-
-	const text = document.getElementById("semoss-env")?.textContent;
-	if (!text) {
-		return;
-	}
-
-	try {
-		const env: unknown = JSON.parse(text);
-		if (isRecord(env) && typeof env.MODULE === "string") {
-			Env.update({
-				MODULE: env.MODULE,
-			});
-		}
-	} catch {
-		// a malformed script keeps the build's module
-	}
-};
+}
 
 const mount = async () => {
-	loadEnv();
-
 	// Wait for the active language's translations before the first render so
 	// shared components don't flash raw i18n keys.
 	await Promise.all([waitForEmbedAuth(), i18nReady]);

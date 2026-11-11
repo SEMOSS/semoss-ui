@@ -7,12 +7,15 @@ import { Env } from "@semoss/sdk/react";
 import { ThemeProvider, Toaster } from "@semoss/ui/next";
 import { Router } from "./pages/router";
 
-// the server writes MODULE into index.html (semoss-env tag, read when the SDK loads); .env is for local dev
-Env.update({
-	MODULE: Env.MODULE || import.meta.env.MODULE || "/Monolith",
-	ACCESS_KEY: import.meta.env.ACCESS_KEY,
-	SECRET_KEY: import.meta.env.SECRET_KEY,
-});
+// In production the server writes MODULE into index.html (semoss-env tag, read
+// when the SDK loads). In dev a tag still wins; otherwise MODULE and the access keys come from .env.
+if (import.meta.env.DEV) {
+	Env.update({
+		MODULE: Env.MODULE || import.meta.env.MODULE || "/Monolith",
+		ACCESS_KEY: import.meta.env.ACCESS_KEY,
+		SECRET_KEY: import.meta.env.SECRET_KEY,
+	});
+}
 
 const i18nBuilder = new I18nBuilder(playgroundResources);
 

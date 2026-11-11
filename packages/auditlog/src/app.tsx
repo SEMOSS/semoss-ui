@@ -3,10 +3,13 @@ import { Env } from "@semoss/sdk/react";
 import { LoadingScreen, ThemeProvider, Toaster } from "@semoss/ui/next";
 import { Router } from "@/pages";
 
-// use the environment variable to set the module
-Env.update({
-	MODULE: import.meta.env.MODULE || "/Monolith",
-});
+// In production the server writes MODULE into index.html (semoss-env tag, read
+// when the SDK loads). In dev a tag still wins; otherwise MODULE comes from .env.
+if (import.meta.env.DEV) {
+	Env.update({
+		MODULE: Env.MODULE || import.meta.env.MODULE || "/Monolith",
+	});
+}
 
 // Responsive i18n instance: unlike the client, the standalone Audit Log app is NOT
 // locked to English — it follows the shared `smss-language` value (the one the
