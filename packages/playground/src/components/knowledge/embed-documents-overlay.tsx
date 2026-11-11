@@ -3,7 +3,7 @@
 import { FileIcon, XIcon } from "lucide-react";
 import { useId, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { useInsight } from "@semoss/sdk/react";
+import { useSessionInsight } from "@semoss/sdk/react";
 import {
 	Button,
 	Dialog,
@@ -14,6 +14,7 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
+import { throwOnPixelErrors } from "@/utility/pixel-errors";
 
 type EmbedDocumentsOverlayProps = {
 	open: boolean;
@@ -27,7 +28,7 @@ export const EmbedDocumentsOverlay = ({
 	onClose,
 }: EmbedDocumentsOverlayProps) => {
 	const { t } = useTranslation(["knowledge", "common"]);
-	const { actions } = useInsight();
+	const { run, upload } = useSessionInsight();
 	const fileInputId = useId();
 	const [files, setFiles] = useState<File[]>([]);
 	const [isEmbedding, setIsEmbedding] = useState(false);
@@ -52,20 +53,18 @@ export const EmbedDocumentsOverlay = ({
 			return;
 		}
 
-		let embeddingsResponse:
-			| Awaited<ReturnType<typeof actions.run>>
-			| undefined;
+		let embeddingsResponse: Awaited<ReturnType<typeof run>> | undefined;
 		setIsEmbedding(true);
 		try {
 			// Upload the files
-			const uploaded = await actions.upload(files, "");
+			const uploaded = await upload(files);
 
 			// Create the embeddings
 			const filePaths = uploaded
 				.map(({ fileLocation }) => `"${fileLocation}"`)
 				.join(", ");
 
-			embeddingsResponse = await actions.run<
+			embeddingsResponse = await run<
 				[
 					{
 						database_id: string;
@@ -74,7 +73,7 @@ export const EmbedDocumentsOverlay = ({
 			>(`CreateEmbeddingsFromDocuments(
 				engine=["${knowledgeId}"],
 				filePaths=[${filePaths}]
-			);`);
+			);`).then(throwOnPixelErrors);
 
 			toast.success(t("embedMessages.embedSuccess"));
 			setFiles([]);

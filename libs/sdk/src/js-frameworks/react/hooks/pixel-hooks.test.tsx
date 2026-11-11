@@ -10,6 +10,7 @@ import { InsightContext } from "../contexts/insight.context";
 import { SessionProvider } from "../contexts/session.context";
 import { useInsightPixel } from "./use-insight-pixel";
 import { usePixel } from "./use-pixel";
+import { useSessionIteratorPixel } from "./use-session-iterator-pixel";
 import { useSessionPixel } from "./use-session-pixel";
 
 vi.mock("../../../api/base", async (importOriginal) => ({
@@ -358,5 +359,52 @@ describe("usePixel compatibility", () => {
 			undefined,
 		);
 		expect(session.insight.getSnapshot().insightId).toBe("");
+	});
+});
+
+describe("useSessionIteratorPixel", () => {
+	it("waits for the session's insight, ignores the workspace and starts over for a new session", async () => {
+		const session = createSession();
+		mockRunPixel.mockImplementation(async (_pixel, insightId) =>
+			answer([`${insightId}-room`]),
+		);
+		const { result } = renderHook(
+			() =>
+				useSessionIteratorPixel<string[], string>(
+					(limit, offset) =>
+						`Rooms(limit=${limit}, offset=${offset});`,
+					() => 1,
+					(response) => response,
+					{ limit: 10 },
+				),
+			{
+				wrapper: ({ children }) => (
+					<Wrapper session={session} insightId="workspace">
+						{children}
+					</Wrapper>
+				),
+			},
+		);
+		expect(mockRunPixel).not.toHaveBeenCalled();
+		expect(result.current.data).toEqual([]);
+
+		await setInsight(session, "session-1");
+		await waitFor(() =>
+			expect(result.current.data).toEqual(["session-1-room"]),
+		);
+		expect(mockRunPixel).toHaveBeenCalledExactlyOnceWith(
+			"Rooms(limit=10, offset=0);",
+			"session-1",
+		);
+
+		act(() => session.insight.clear());
+		await setInsight(session, "session-2");
+		await waitFor(() =>
+			expect(result.current.data).toEqual(["session-2-room"]),
+		);
+		expect(mockRunPixel).toHaveBeenLastCalledWith(
+			"Rooms(limit=10, offset=0);",
+			"session-2",
+		);
 	});
 });

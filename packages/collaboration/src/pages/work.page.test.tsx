@@ -1,11 +1,4 @@
-import {
-	act,
-	cleanup,
-	render,
-	screen,
-	waitFor,
-	within,
-} from "@testing-library/react";
+import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { createMemoryRouter, RouterProvider } from "react-router";
@@ -314,11 +307,9 @@ it("opens the Work topic index with selector-based counts and the existing new-t
 	expect(create).toHaveFocus();
 });
 
-it("combines scoped work with people and notes in one topic", async () => {
-	const { user } = renderWork("/topics/alpha");
+it("combines scoped work with people and notes in one topic", () => {
+	renderWork("/topics/alpha");
 	expect(screen.getByRole("heading", { name: "Alpha launch" })).toBeVisible();
-	// the context starts closed; only goals used to open it
-	await user.click(screen.getByRole("button", { name: "Context" }));
 	expect(
 		screen.queryByRole("link", { name: "Edit in Brain" }),
 	).not.toBeInTheDocument();
@@ -410,6 +401,81 @@ it("combines topic status and source filters, keeps multi-topic work, and sorts 
 	).toBeVisible();
 });
 
+it("opens on the tab a link back from the add-or-remove page asks for, and links to that page", async () => {
+	const { router } = renderWork("/topics/beta");
+	await act(() =>
+		router.navigate("/topics/alpha", { state: { tab: "threads" } }),
+	);
+	expect(screen.getByRole("tab", { name: "Threads" })).toHaveAttribute(
+		"aria-selected",
+		"true",
+	);
+	expect(screen.getByRole("link", { name: "Add or remove" })).toHaveAttribute(
+		"href",
+		"/topics/alpha/contents",
+	);
+	// a tab the page does not have falls back to Actions
+	await act(() =>
+		router.navigate("/topics/beta", { state: { tab: "anything" } }),
+	);
+	expect(screen.getByRole("tab", { name: /^Actions/ })).toHaveAttribute(
+		"aria-selected",
+		"true",
+	);
+});
+
+it("lists a topic's linked files on their own tab, each opening where it lives, with the page to add more", async () => {
+	const state = workState();
+	const [alpha] = state.topics;
+	if (!alpha) throw new Error("Missing topic fixture");
+	// a saved topic: the server keeps its file links
+	alpha.isSample = false;
+	alpha.files = [
+		{
+			itemId: "item-1",
+			driveId: "drive-1",
+			name: "Budget.xlsx",
+			source: "onedrive",
+			webUrl: "https://contoso.sharepoint.com/budget",
+		},
+		{
+			itemId: "item-2",
+			name: "Plan.docx",
+			source: "teams",
+			webUrl: "javascript:alert(1)",
+		},
+	];
+	const { router, user } = renderWork("/topics/alpha", state);
+	await user.click(screen.getByRole("tab", { name: "Files" }));
+
+	const list = screen.getByRole("list", { name: "Topic files" });
+	expect(
+		within(list).getByRole("link", {
+			name: "Budget.xlsx (opens in OneDrive)",
+		}),
+	).toHaveAttribute("href", "https://contoso.sharepoint.com/budget");
+	// only an https address becomes a link
+	expect(within(list).queryAllByRole("link")).toHaveLength(1);
+	expect(within(list).getByText("Plan.docx")).toBeVisible();
+	expect(screen.getByRole("link", { name: "Add or remove" })).toHaveAttribute(
+		"href",
+		"/topics/alpha/contents?in=onedrive",
+	);
+
+	// the add-or-remove page comes back to this tab; a sample topic has no server to link a file on
+	await act(() =>
+		router.navigate("/topics/beta", { state: { tab: "files" } }),
+	);
+	expect(screen.getByRole("tab", { name: "Files" })).toHaveAttribute(
+		"aria-selected",
+		"true",
+	);
+	expect(screen.getByText(/^No files in this topic yet\./)).toBeVisible();
+	expect(
+		screen.queryByRole("link", { name: "Add files" }),
+	).not.toBeInTheDocument();
+});
+
 it("opens source threads by their canonical import route and reads sessions only on selection", async () => {
 	const { router, user } = renderWork("/topics/alpha");
 	await user.click(screen.getByRole("tab", { name: "Threads" }));
@@ -455,35 +521,23 @@ it("never falls back to global work for an unknown topic", () => {
 	expect(screen.queryByRole("tab")).not.toBeInTheDocument();
 });
 
-it("keeps empty-topic setup optional and preserves context when toggled", async () => {
-	const { user } = renderWork("/topics/beta");
-	const toggle = screen.getByRole("button", { name: "Context" });
-	expect(toggle).toHaveAttribute("aria-expanded", "false");
+it("shows an empty topic's context beside its work, with nothing to open first", () => {
+	renderWork("/topics/beta");
 	expect(
-		screen.queryByRole("complementary", { name: "Topic context" }),
+		screen.queryByRole("button", { name: "Context" }),
 	).not.toBeInTheDocument();
 	expect(
 		screen.getByRole("link", { name: "Action beta-open" }),
 	).toBeVisible();
-	await user.click(toggle);
+	const context = screen.getByRole("complementary", {
+		name: "Topic context",
+	});
 	expect(
-		screen.getByRole("heading", { name: "Topic settings" }),
+		within(context).getByRole("heading", { name: "Topic settings" }),
 	).toBeVisible();
 	expect(
-		screen.getByRole("combobox", { name: "Topic status" }),
+		within(context).getByRole("combobox", { name: "Topic status" }),
 	).toBeVisible();
-	await user.click(
-		screen.getByRole("button", { name: "Notes for the assistant" }),
-	);
-	await user.click(toggle);
-	expect(
-		screen.queryByRole("button", { name: "Add keyword" }),
-	).not.toBeInTheDocument();
-	await user.click(toggle);
-	expect(
-		screen.getByRole("button", { name: "Notes for the assistant" }),
-	).toHaveAttribute("aria-expanded", "true");
-	expect(toggle).toHaveFocus();
 });
 
 it("keeps urgency visible and classification reasons under row details", async () => {
@@ -515,23 +569,6 @@ it("keeps urgency visible and classification reasons under row details", async (
 			name: "Thread actions for Source alpha-email",
 		}),
 	).toHaveFocus();
-});
-
-it("takes focus to context below the viewport and returns to the work on close", async () => {
-	const { user } = renderWork("/topics/beta");
-	const context = screen.getByRole("complementary", { hidden: true });
-	vi.spyOn(context, "getBoundingClientRect").mockReturnValue(
-		new DOMRect(0, 1200, 320, 800),
-	);
-	const toggle = screen.getByRole("button", { name: "Context" });
-	await user.click(toggle);
-	await waitFor(() => expect(context).toHaveFocus());
-	await user.click(
-		screen.getByRole("button", { name: "Close topic context" }),
-	);
-	expect(toggle).toHaveFocus();
-	expect(toggle).toHaveAttribute("aria-expanded", "false");
-	expect(context).not.toBeVisible();
 });
 
 // Route composition is exercised with isolated child views; hydration has its own integration coverage.

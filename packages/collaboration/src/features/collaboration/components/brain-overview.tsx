@@ -1,6 +1,10 @@
-import { CalendarDays, Mail, MessagesSquare } from "lucide-react";
 import { Link } from "react-router";
 import { P, Small } from "@semoss/ui/next";
+import {
+	OutlookCalendarIcon,
+	OutlookIcon,
+	TeamsIcon,
+} from "@/components/common/app-icons";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { PersonAvatar } from "./person-avatar";
 import { Section } from "./section";
@@ -58,16 +62,20 @@ export function BrainOverview() {
 			>
 				<div className="divide-y">
 					{[
-						{ kind: "outlook", label: "Outlook email", Icon: Mail },
+						{
+							kind: "outlook",
+							label: "Outlook email",
+							Icon: OutlookIcon,
+						},
 						{
 							kind: "teams",
 							label: "Teams conversations",
-							Icon: MessagesSquare,
+							Icon: TeamsIcon,
 						},
 						{
 							kind: "calendar",
 							label: "Calendar events",
-							Icon: CalendarDays,
+							Icon: OutlookCalendarIcon,
 						},
 					].map(({ kind, label, Icon }) => (
 						<div

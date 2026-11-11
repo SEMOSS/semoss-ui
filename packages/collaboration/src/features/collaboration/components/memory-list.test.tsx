@@ -25,3 +25,26 @@ it("links a memory about a conversation to the conversation's page", () => {
 		`/thread/${encodeURIComponent(thread.id)}`,
 	);
 });
+
+it("shows which memory a suggested change would replace", () => {
+	const state = createInitialCollaborationState();
+	const [memory] = state.memories;
+	render(
+		<CollaborationSessionProvider initialState={state}>
+			<MemoryRouter>
+				<MemoryRow
+					memory={{
+						...memory,
+						id: "m-change",
+						text: "A corrected memory",
+						state: "suggested",
+						origin: "brain",
+						confirmed: false,
+						replacesId: memory.id,
+					}}
+				/>
+			</MemoryRouter>
+		</CollaborationSessionProvider>,
+	);
+	expect(screen.getByText(`Replaces: ${memory.text}`)).toBeInTheDocument();
+});

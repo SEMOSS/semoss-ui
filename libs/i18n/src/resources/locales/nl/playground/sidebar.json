@@ -10,10 +10,6 @@
 			"label": "Agents",
 			"tooltip": "Agents"
 		},
-		"allChats": {
-			"label": "Alle chats",
-			"tooltip": "Alle chats"
-		},
 		"agentsWorkspaces": {
 			"tooltip": "Agents/Werkruimtes - Open je werkruimtes of maak nieuwe AI-agents aan."
 		},
@@ -53,7 +49,8 @@
 		"openInline": "In-line openen",
 		"minimize": "Minimaliseren",
 		"maximize": "Maximaliseren",
-		"close": "Sluiten"
+		"close": "Sluiten",
+		"roomActions": "Chatacties"
 	},
 	"toasts": {
 		"failedToPin": "Vastmaken van ruimte mislukt",
@@ -96,5 +93,40 @@
 		"pdf": "PDF-document",
 		"success": "Gesprek gedownload als {{format}}",
 		"failed": "Kan het gesprek niet downloaden"
+	},
+	"chats": "Chats",
+	"view": {
+		"button": "Chats sorteren en groeperen",
+		"customized": "aangepaste volgorde",
+		"sortBy": "Sorteren op",
+		"groupBy": "Groeperen op",
+		"sort": {
+			"recent": "Meest recent",
+			"oldest": "Oudste",
+			"nameAsc": "Naam (A–Z)",
+			"nameDesc": "Naam (Z–A)"
+		},
+		"group": {
+			"date": "Datum",
+			"agent": "Agent"
+		}
+	},
+	"groups": {
+		"all": "Alle chats",
+		"noAgent": "Geen agent",
+		"unnamedAgent": "Naamloze agent",
+		"openAgent": "{{name}} openen in een nieuw tabblad"
+	},
+	"searchChats": {
+		"label": "Chats zoeken",
+		"title": "Chats zoeken",
+		"description": "Vind een chat op naam of op wat erin is gezegd.",
+		"placeholder": "Chats zoeken…",
+		"loading": "Zoeken…",
+		"empty": "Geen chats gevonden voor ‘{{query}}’",
+		"recent": "Recent",
+		"allAgents": "Alle agents",
+		"results": "Resultaten",
+		"matchedMessage": "Gevonden in berichten"
 	}
 }

@@ -1,15 +1,9 @@
-import {
-	CheckCircle2,
-	ChevronRight,
-	Circle,
-	Clock,
-	Mail,
-	MessagesSquare,
-} from "lucide-react";
+import { CheckCircle2, ChevronRight, Circle, Clock } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { Link } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
 import { cn, P, Progress, Small } from "@semoss/ui/next";
+import { OutlookIcon, TeamsIcon } from "@/components/common/app-icons";
 import { pixel } from "@/lib/pixel";
 import { threadPath } from "@/lib/workspace-paths";
 import { runBatch } from "../live/live-state";
@@ -281,7 +275,7 @@ export function TaskContextView({
 					<ul className="space-y-1.5">
 						{task.threads.map((t) => {
 							const isTeams = t.source === "teams";
-							const Icon = isTeams ? MessagesSquare : Mail;
+							const Icon = isTeams ? TeamsIcon : OutlookIcon;
 							const row =
 								"group flex w-full items-center gap-3 rounded-lg border bg-background px-3 py-2 text-left text-sm transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring";
 							const body = (

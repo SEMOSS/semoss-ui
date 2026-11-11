@@ -151,6 +151,7 @@
 	},
 	"layout": {
 		"appName": "Registro de auditoría",
-		"appDescription": "Aplicación de registro de auditoría"
+		"appDescription": "Aplicación de registro de auditoría",
+		"loadFailed": "No pudimos cargar el registro de auditoría. Inténtelo de nuevo y, si el problema persiste, comuníquese con soporte."
 	}
 }

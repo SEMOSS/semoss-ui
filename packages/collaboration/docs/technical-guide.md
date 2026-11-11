@@ -29,8 +29,19 @@ Internal deps: `automation, connectors, i18n, panels, sdk, shared, ui, utility, 
 Path alias `@/` → `src/`. Generic helpers belong in `@semoss/utility` (search before adding).
 
 Bootstrap (`src/app.tsx`): `Env.update` (MODULE/ENDPOINT/APP/ACCESS_KEY/SECRET_KEY) →
-`I18nextProvider` → `InsightProvider` → `ThemeProvider`
+`I18nextProvider` → `ThemeProvider`
 (storage key `smss-ui-theme-collaboration`, default light) → `Router` + `Toaster`.
+`src/main.tsx` calls `void Session.initialize()` before the first render (after `app.tsx` set
+the module).
+
+Sign in is the SDK's `Session`, not an insight: `AuthorizedLayout` gates on
+`useSession((state) => state.status)` (spinner while `INITIALIZING`, `/login` when
+`UNAUTHENTICATED`, `ErrorPage` with Retry from the SDK's `useSessionRetry` on `ERROR`), and the login page
+redirects once `AUTHENTICATED`. The app's `InsightProvider` mounts inside `AuthorizedLayout`,
+after sign in, and the shared `InsightReadyGate` holds the pages until that insight is made, so
+`useInsight().actions.run`, `insightId` and `isAuthorized` keep working below it. Nothing
+outside the gate (`RootLayout`, `/login`, `ErrorPage`) may call `useInsight()`. Log out with
+`useSession((state) => state.logout)`, never `actions.logout`, which the gate does not hear.
 
 ## 3. Directory map
 
@@ -68,7 +79,8 @@ Rule: **pages stay thin**; logic lives in features. Cross-feature imports use `@
 
 ## 4. Routing (`src/pages/route-config.tsx`)
 
-Tree: `RootLayout` → `AuthorizedLayout` → `CollaborationLayout` (shell) → lazy pages.
+Tree: `RootLayout` → `AuthorizedLayout` (session gate + app `InsightProvider`) →
+`CollaborationLayout` (shell) → lazy pages; `/login` sits beside `AuthorizedLayout`.
 
 | Route | Purpose |
 | --- | --- |
@@ -76,6 +88,7 @@ Tree: `RootLayout` → `AuthorizedLayout` → `CollaborationLayout` (shell) → 
 | `/routines` | Routines workspace |
 | `/work`, `/work/all`, `/work/waiting`, `/work/done` | Topics / global work lists |
 | `/topics/:topicId` | Topic workspace (Actions, Threads, Sessions, goals, notes) |
+| `/topics/:topicId/contents` | Add or remove a topic's emails, chats and linked files by hand (`features/topic-contents`): live Outlook folders, Brain's threads, assistant chats, OneDrive and Teams files |
 | `/work/topic/:id`, `/brain/topics/:id` | Redirect to `/topics/:id` |
 | `/thread/:id` | Source-import bridge; `room:`-prefixed id = saved room |
 | `/brain`, `/brain/sources`, `/brain/people[/:id]`, `/brain/threads[/:id]` | Brain |

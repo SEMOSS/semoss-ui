@@ -1,11 +1,12 @@
 import { auditlogResources, I18nBuilder, I18nextProvider } from "@semoss/i18n";
-import { Env, InsightProvider } from "@semoss/sdk/react";
+import { Env } from "@semoss/sdk/react";
 import { LoadingScreen, ThemeProvider, Toaster } from "@semoss/ui/next";
 import { Router } from "@/pages";
 
-// use the environment variable to set the module
+// The server writes MODULE into index.html (semoss-env tag, read when the SDK
+// loads) and it always wins; .env, then "/Monolith", cover a page without one.
 Env.update({
-	MODULE: import.meta.env.MODULE || "/Monolith",
+	MODULE: Env.MODULE || import.meta.env.MODULE || "/Monolith",
 });
 
 // Responsive i18n instance: unlike the client, the standalone Audit Log app is NOT
@@ -23,23 +24,20 @@ export const i18nReady = i18nBuilder.ready;
  * The Router is used to render the pages.
  * The LoadingScreen is used to display a loading indicator when the application is loading.
  * The Notification is used to display notifications to the user.
- * The InsightProvider is used to provide insights to the application.
+ * The app's InsightProvider is in AuthenticatedLayout, so its insight is made
+ * after sign in; main.tsx starts the SDK's session.
  */
-function App() {
+export function App() {
 	return (
 		<I18nextProvider i18n={i18n}>
-			<InsightProvider>
-				<LoadingScreen>
-					<ThemeProvider defaultTheme="light">
-						<div className="absolute inset-0 h-screen w-screen overflow-auto">
-							<Router />
-						</div>
-						<Toaster />
-					</ThemeProvider>
-				</LoadingScreen>
-			</InsightProvider>
+			<LoadingScreen>
+				<ThemeProvider defaultTheme="light">
+					<div className="absolute inset-0 h-screen w-screen overflow-auto">
+						<Router />
+					</div>
+					<Toaster />
+				</ThemeProvider>
+			</LoadingScreen>
 		</I18nextProvider>
 	);
 }
-
-export default App;

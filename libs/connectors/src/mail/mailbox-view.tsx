@@ -33,16 +33,15 @@ import type {
 import { runConnectorPixel } from "../core/connector-pixel";
 import { useConnectorControls } from "../core/use-connector-controls";
 import { useConnectorFocus } from "../core/use-connector-focus";
-import { useConnectorQuery } from "../core/use-connector-query";
 import {
 	type ConnectorSaveRequest,
 	useConnectorSaver,
 } from "../core/use-connector-saver";
 import { useConnectorSearch } from "../core/use-connector-search";
 import { useReturnFocus } from "../core/use-return-focus";
-import { getMailFolderLabel, INBOX, orderMailFolders } from "./mail.folders";
+import { getMailFolderLabel, INBOX } from "./mail.folders";
 import { mailMessageFileName, mailMessageToMarkdown } from "./mail.markdown";
-import { parseMailFolders, parseMailMessageDetail } from "./mail.parsers";
+import { parseMailMessageDetail } from "./mail.parsers";
 import {
 	groupMailByConversation,
 	type MailConversation,
@@ -59,6 +58,7 @@ import {
 	readConversation,
 	threadSaveRequest,
 } from "./mail-thread-view";
+import { useMailFolders } from "./use-mail-folders";
 import { useMailPages } from "./use-mail-pages";
 
 /**
@@ -123,11 +123,8 @@ export const MailboxView = (props: MailboxViewProps) => {
 	const { listRef, rememberItem } = useReturnFocus(openConversation !== null);
 	const serviceName = t(app.nameKey);
 
-	const foldersQuery = useConnectorQuery(
-		app.pixels.listFolders(),
-		parseMailFolders,
-	);
-	const folders = orderMailFolders(foldersQuery.data ?? [], t("mail.inbox"));
+	const foldersQuery = useMailFolders(provider);
+	const { folders } = foldersQuery;
 	const selectedFolder = folders.find((entry) => entry.id === folder);
 	const folderName = selectedFolder
 		? getMailFolderLabel(selectedFolder)

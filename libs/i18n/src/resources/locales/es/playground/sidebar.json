@@ -10,10 +10,6 @@
 			"label": "Agentes",
 			"tooltip": "Agentes"
 		},
-		"allChats": {
-			"label": "Todos los chats",
-			"tooltip": "Todos los chats"
-		},
 		"agentsWorkspaces": {
 			"tooltip": "Agentes/Espacios de trabajo - Accede a tus espacios de trabajo o crea nuevos agentes de IA."
 		},
@@ -53,7 +49,8 @@
 		"openInline": "Abrir en línea",
 		"minimize": "Minimizar",
 		"maximize": "Maximizar",
-		"close": "Cerrar"
+		"close": "Cerrar",
+		"roomActions": "Acciones del chat"
 	},
 	"toasts": {
 		"failedToPin": "Error al fijar la sala",
@@ -96,5 +93,40 @@
 		"pdf": "Documento PDF",
 		"success": "Conversación descargada como {{format}}",
 		"failed": "No se pudo descargar la conversación"
+	},
+	"chats": "Chats",
+	"view": {
+		"button": "Ordenar y agrupar chats",
+		"customized": "orden personalizado",
+		"sortBy": "Ordenar por",
+		"groupBy": "Agrupar por",
+		"sort": {
+			"recent": "Más recientes",
+			"oldest": "Más antiguos",
+			"nameAsc": "Nombre (A–Z)",
+			"nameDesc": "Nombre (Z–A)"
+		},
+		"group": {
+			"date": "Fecha",
+			"agent": "Agente"
+		}
+	},
+	"groups": {
+		"all": "Todos los chats",
+		"noAgent": "Sin agente",
+		"unnamedAgent": "Agente sin título",
+		"openAgent": "Abrir {{name}} en una pestaña nueva"
+	},
+	"searchChats": {
+		"label": "Buscar chats",
+		"title": "Buscar chats",
+		"description": "Encuentra un chat por su nombre o por lo que se dijo en él.",
+		"placeholder": "Buscar chats…",
+		"loading": "Buscando…",
+		"empty": "Ningún chat coincide con «{{query}}»",
+		"recent": "Recientes",
+		"allAgents": "Todos los agentes",
+		"results": "Resultados",
+		"matchedMessage": "Coincide en mensajes"
 	}
 }

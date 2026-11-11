@@ -18,6 +18,31 @@ It is the home of large shared building blocks such as the file explorer, the Mo
 editor wrappers, the shared login page, engine/MCP/prompt/skill UI,
 forms, and the workbench primitives.
 
+### Sign in (`components/login-page.tsx`, `components/form/login-form.tsx`)
+
+`LoginForm` reads the sign in providers from the SDK's config
+(`useConfig((state) => state.config?.availableProviders)`, with a stable empty fallback) and
+signs in through the session (`useSession((state) => state.login)` / `requestOTP`); it never
+uses an insight's `actions.login`. `login()` resolves whether the session is signed in and
+throws when refused; the OAuth success toast shows only when it resolves true. `LoginPage` is a
+gate on `useSession((state) => state.status)`: a spinner while `INITIALIZING`, its children when
+`AUTHENTICATED`, and the form when `UNAUTHENTICATED` or `ERROR`. Neither needs an
+`<InsightProvider>`; a host must call `Session.initialize()` once from its entry point (after
+`Env.update` and any `waitForEmbedAuth()`) and mount its workspace `InsightProvider` inside
+the gate, so the insight is made after sign in.
+
+An app that gates its own routes takes its Retry for the `ERROR` status from the SDK's
+`useSessionRetry()` (`{ isRetrying, retry }`, from the session's `isChecking` and `refresh`).
+`InsightReadyGate` (`components/insight-ready-gate.tsx`) is for an app that still keeps an
+app-wide `InsightProvider`: it goes inside it and holds its views until the insight is made
+(`isReady`), showing the app's `errorFallback` when it cannot be. It is not a sign in check;
+sign in is the session's. Prefer running pixels outside a workspace in the session's insight,
+which needs neither.
+
+`Notebook` (`components/notebook/`) runs every cell in its required `insightId` prop and reads
+no context, so it renders outside any `InsightProvider`. The caller names the insight: the
+file panel's `targetInsightId`, or the room's insight in the playground.
+
 ### The file explorer (`components/file/`)
 
 State lives in `useFileExplorer(options)`, which returns one `FileExplorerApi`; `FileExplorer`,
@@ -38,9 +63,13 @@ other than an asset tree, such as a connector's drive: the adapter builds each l
 maps the output to `FileItem`s (`mapEntries(raw, path)` is handed the folder it listed, for a
 source whose entries carry no path), and says what the source can do. A source keeps anything
 its rows need in `FileItem.data`; `itemActions` adds the host's row button and context-menu
-entries, `renderError` draws a failed listing the host's way, and `searchScope: false` hides the
-scope choice for a search that always covers everything. `@semoss/connectors`' drive views are
-built this way.
+entries, `renderError` draws a failed listing the host's way, `listingNote` puts a line under a
+listing (the current folder's and each open one's), such as that its source stopped at a limit,
+and `searchScope: false` hides the scope choice for a search that always covers everything. A source that can make files and
+folders but not rename, move, or copy them sets `create` alone: `canCreateItems` reads it,
+falling back to `mutate`, and it shows New, New File, and New Folder without the rest.
+`FileExplorer` hands the overlay the explorer's `adapter`, so it creates in that source rather
+than in the mode's asset tree. `@semoss/connectors`' drive views are built this way.
 
 **Every row's menu has three ways in.** Right-click, the row's More actions button, and
 Shift+F10 or the menu key on a focused row open the same menu, so the context-menu entries a

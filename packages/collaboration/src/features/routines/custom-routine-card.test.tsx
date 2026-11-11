@@ -156,6 +156,15 @@ describe("A custom routine", () => {
 		).not.toBeChecked();
 	});
 
+	it("says a section of the daily brief runs with the brief, on no schedule of its own", () => {
+		renderCard({ ...routine, delivery: "brief", nextRunAt: null });
+		expect(
+			screen.getByText(
+				/^Runs with your daily brief · Shown as a section of the brief$/,
+			),
+		).toBeVisible();
+	});
+
 	it("deletes only after confirming, and keeps the dialog open with the reason when it cannot", async () => {
 		const { onChange, user } = renderCard();
 		api.manageCustomRoutine.mockRejectedValueOnce(
