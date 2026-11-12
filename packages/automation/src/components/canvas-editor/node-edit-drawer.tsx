@@ -30,6 +30,7 @@ import {
 	type AutomationPythonEditorHandle,
 } from "./automation-python-editor";
 import { AutomationScopeExplorer } from "./automation-scope-explorer";
+import type { PptxShapeSelection } from "./forms/template-pptx-form";
 import {
 	convertNodeToCustomPython,
 	getNodePythonViewState,
@@ -54,7 +55,7 @@ const RUN_STATUS_CLASSES: Record<StepRunStatus, string> = {
 		"border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
 	error: "border-destructive/30 bg-destructive/5 text-destructive",
 };
-interface NodeEditDrawerProps {
+export interface NodeEditDrawerProps {
 	step: AutomationNode;
 	appId: string;
 	upstreamVars: string[];
@@ -75,6 +76,7 @@ interface NodeEditDrawerProps {
 	/** When true, renders the node's configuration as view-only: mutating fields, the
 	 * delete action, and raw Python editing (inline and the popout modal) are all disabled. */
 	readOnly?: boolean;
+	pptxShapeSelection?: PptxShapeSelection | null;
 }
 
 interface PendingPythonUpdate {
@@ -106,6 +108,7 @@ export function NodeEditDrawer({
 	onViewRunDetails,
 	pythonFileOpen = false,
 	readOnly = false,
+	pptxShapeSelection,
 }: NodeEditDrawerProps) {
 	const [editorMode, setEditorMode] = useState<NodeEditorMode>("form");
 	const meta = getDisplayMeta(step.type);
@@ -413,6 +416,7 @@ export function NodeEditDrawer({
 									devMode={devMode}
 									appId={appId}
 									readOnly={readOnly}
+									pptxShapeSelection={pptxShapeSelection}
 								/>
 							) : (
 								<p className="rounded-lg border border-dashed px-3 py-2 text-[11px] text-muted-foreground">

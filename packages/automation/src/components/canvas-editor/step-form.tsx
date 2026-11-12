@@ -12,7 +12,10 @@ import type {
 	VectorEngineConfig,
 	WaitConfig,
 } from "../../domain/automation.types";
-import type { AutomationWorkflowNodeConfig } from "../../domain/automation-workflow.types";
+import type {
+	AutomationWorkflowNodeConfig,
+	TemplatePptxConfig,
+} from "../../domain/automation-workflow.types";
 import { normalizeJevDecisionConfig } from "../../domain/automation-workflow-adapter";
 import { AgentRunForm } from "./forms/agent-run-form";
 import { AppEngineForm } from "./forms/app-engine-form";
@@ -25,6 +28,8 @@ import { LoopForm } from "./forms/loop-form";
 import { ModelEngineForm } from "./forms/model-engine-form";
 import { PillInput } from "./forms/pill-input";
 import { StorageEngineForm } from "./forms/storage-engine-form";
+import type { PptxShapeSelection } from "./forms/template-pptx-form";
+import { TemplatePptxForm } from "./forms/template-pptx-form";
 import { VectorEngineForm } from "./forms/vector-engine-form";
 
 interface StepFormProps {
@@ -35,6 +40,7 @@ interface StepFormProps {
 	appId?: string;
 	/** When true, every field renders as non-editable and mutating actions are disabled */
 	readOnly?: boolean;
+	pptxShapeSelection?: PptxShapeSelection | null;
 }
 
 export function StepForm({
@@ -44,6 +50,7 @@ export function StepForm({
 	devMode = false,
 	appId = "",
 	readOnly = false,
+	pptxShapeSelection,
 }: StepFormProps) {
 	const update = (config: AutomationNode["config"]) => {
 		if (readOnly) return;
@@ -190,6 +197,16 @@ export function StepForm({
 				/>
 			);
 		}
+		case "export.template_pptx":
+			return (
+				<TemplatePptxForm
+					config={step.config as TemplatePptxConfig}
+					upstreamVars={upstreamVars}
+					onChange={update}
+					pptxShapeSelection={pptxShapeSelection}
+					readOnly={readOnly}
+				/>
+			);
 		default:
 			return (
 				<div className="text-muted-foreground text-xs">

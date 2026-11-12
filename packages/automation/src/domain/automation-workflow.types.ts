@@ -268,11 +268,20 @@ export interface AutomationNodeCatalog {
 	nodes: readonly AutomationNodeDefinition[];
 }
 
-export interface TemplatePptxReplacement {
-	shapeName: string;
-	type: "text" | "image" | "chart";
-	value: string;
+export interface PptxChartSeries {
+	name: string;
+	values: number[];
 }
+
+export type TemplatePptxReplacement =
+	| { shapeName: string; type: "text"; value: string }
+	| { shapeName: string; type: "image"; value: string }
+	| {
+			shapeName: string;
+			type: "chart";
+			categories: string[];
+			series: PptxChartSeries[];
+	  };
 
 export interface TemplatePptxConfig {
 	templateFile: string;

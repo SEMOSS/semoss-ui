@@ -7,6 +7,7 @@ import type {
 import type { AutomationScopeEntry } from "../../../domain/automation-inspector";
 import type { AutomationNodeGroup } from "../../../domain/automation-workflow.types";
 import { AutomationVariableContext } from "../automation-variable-context";
+import type { PptxShapeSelection } from "../forms/template-pptx-form";
 import { NodeEditDrawer } from "../node-edit-drawer";
 import { TriggerEditPanel } from "./trigger-edit-panel";
 
@@ -39,6 +40,7 @@ interface InspectorTabProps {
 	/** When true, the trigger/node panels render view-only and all mutating controls
 	 * (including delete and raw Python editing) are disabled. */
 	readOnly?: boolean;
+	pptxShapeSelection?: PptxShapeSelection | null;
 }
 
 export function InspectorTab({
@@ -62,6 +64,7 @@ export function InspectorTab({
 	onViewRunDetails,
 	pythonFileOpen = false,
 	readOnly = false,
+	pptxShapeSelection,
 }: InspectorTabProps) {
 	const groupLabelId = useId();
 	if (editingNodeGroup) {
@@ -141,6 +144,7 @@ export function InspectorTab({
 					onViewRunDetails={onViewRunDetails}
 					pythonFileOpen={pythonFileOpen}
 					readOnly={readOnly}
+					pptxShapeSelection={pptxShapeSelection}
 				/>
 			</AutomationVariableContext.Provider>
 		);

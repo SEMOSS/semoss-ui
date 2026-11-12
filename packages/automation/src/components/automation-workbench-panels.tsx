@@ -8,6 +8,7 @@ import type { AutomationInspectorSnapshot } from "../domain/automation-inspector
 import type { N8nImportConversionModel } from "../domain/n8n-import-adapter";
 import type { AutomationCanvasHandle } from "./canvas-editor/automation-canvas";
 import { AutomationCanvas } from "./canvas-editor/automation-canvas-loader";
+import type { PptxShapeSelection } from "./canvas-editor/forms/template-pptx-form";
 import { InspectorTab } from "./canvas-editor/tabs/inspector-tab";
 import {
 	type AutomationTraceSnapshot,
@@ -44,6 +45,9 @@ export interface AutomationWorkbenchContextValue {
 	 * so re-focusing the same node (after navigating away) still takes effect. */
 	runDetailsFocusNodeId: string | null;
 	runDetailsFocusToken: number;
+	/** Set by the host when a shape is selected in an open PPTX panel. The
+	 *  TemplatePptxForm uses this to add replacements when pick mode is active. */
+	pptxShapeSelection: PptxShapeSelection | null;
 }
 
 export const AutomationWorkbenchContext =
@@ -137,6 +141,7 @@ export const AutomationInspectorPanel = () => {
 					: false
 			}
 			onViewRunDetails={context.onViewRunDetails}
+			pptxShapeSelection={context.pptxShapeSelection}
 		/>
 	);
 };
