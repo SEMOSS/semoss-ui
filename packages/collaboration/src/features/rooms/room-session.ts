@@ -234,6 +234,10 @@ export class RoomSession {
 	setComposerDraft = (composerDraft: ComposerDraft): void => {
 		this.update({ composerDraft });
 	};
+	/** Show a name the server already saved, such as a rename from the chat list. */
+	setTitle = (title: string): void => {
+		this.update({ title });
+	};
 	/** Queue a saved file once without replacing an existing submission's entry. */
 	addContextFile = (file: UploadedRoomFile): void => {
 		if (
@@ -854,6 +858,12 @@ function registerRoomSession(session: RoomSession): void {
 /** Create an unallocated draft; it joins the room registry as soon as allocation succeeds. */
 export function createRoomSession(scope: string): RoomSession {
 	return new RoomSession(scope);
+}
+
+/** Retitle every loaded session of a renamed room; they only read the name when they first load. */
+export function renameRoomSessions(roomId: string, title: string): void {
+	for (const session of sessions.values())
+		if (session.getSnapshot().roomId === roomId) session.setTitle(title);
 }
 
 /** Resolve only by actual room identity, never by source/thread association. */

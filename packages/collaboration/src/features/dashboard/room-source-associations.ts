@@ -6,6 +6,8 @@ import type { InsightActions } from "@/lib/pixel";
 type RoomSourceAssociation = {
 	threadId?: string | null;
 	topicIds?: string[];
+	/** Topics the owner took off the chat; they outrank a topic its source thread is in. */
+	dismissedTopicIds?: string[];
 } & ({ status: "loading" | "ready" } | { status: "error"; error: string });
 
 interface AssociationRead {
@@ -143,13 +145,23 @@ export function createRoomSourceAssociations(
 														getActions(),
 														id,
 													);
-											value.topicIds = topics
-												.filter(
-													(topic) =>
-														topic.state ===
-														"linked",
-												)
-												.map((topic) => topic.topicId);
+											const withState = (
+												state: string,
+											): string[] =>
+												topics
+													.filter(
+														(topic) =>
+															topic.state ===
+															state,
+													)
+													.map(
+														(topic) =>
+															topic.topicId,
+													);
+											value.topicIds =
+												withState("linked");
+											value.dismissedTopicIds =
+												withState("dismissed");
 										} catch (cause) {
 											value = {
 												...value,

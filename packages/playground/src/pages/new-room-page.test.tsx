@@ -4,6 +4,7 @@ import {
 	render,
 	screen,
 	waitFor,
+	within,
 } from "@testing-library/react";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
@@ -24,6 +25,24 @@ const mocks = vi.hoisted(() => ({
 	selectModelById: vi.fn(),
 	workspaceStatus: "SUCCESS",
 	refreshWorkspace: vi.fn(),
+	pixel: (pixel: string) => ({
+		status: pixel.includes("GetWorkspace")
+			? mocks.workspaceStatus
+			: "INITIAL",
+		refresh: mocks.refreshWorkspace,
+		data: pixel.includes('"alpha"') ? mocks.alpha : null,
+	}),
+	alpha: null as unknown,
+	session: {
+		status: "AUTHENTICATED",
+		user: {
+			name: "Tester",
+			defaultModels: {
+				textGeneration: "default-model",
+				codeGeneration: "",
+			},
+		},
+	},
 	// stable, as the SDK's are, so views keep the same logins between renders
 	logins: {
 		logins: {},
@@ -48,6 +67,7 @@ const alpha = {
 	prompts: [],
 	config_json: {},
 };
+mocks.alpha = alpha;
 const root = {
 	theme: {
 		...new RootStore().theme,
@@ -59,8 +79,6 @@ const root = {
 const chat = {
 	...mocks,
 	models: { selected: null },
-	user: { name: "Tester" },
-	profileDefaultModelId: "default-model",
 	refreshProfileDefaultModel: vi.fn(),
 	setSelectedModel: vi.fn(),
 	addOptimisticRoom: vi.fn(),
@@ -90,15 +108,16 @@ vi.mock("@semoss/sdk/react", async (original) => ({
 	InsightProvider: ({ children }: { children: ReactNode }) => children,
 	// the session's logins, without reading them from a server
 	useLogins: () => mocks.logins,
-	usePixel: (pixel: string) => ({
-		status: pixel.includes("GetWorkspace")
-			? mocks.workspaceStatus
-			: "INITIAL",
-		refresh: mocks.refreshWorkspace,
-		data: pixel.includes('"alpha"') ? alpha : null,
-	}),
+	usePixel: mocks.pixel,
+	useSessionPixel: mocks.pixel,
+	// a signed in user whose profile names a default model
+	useSession: <T,>(selector: (state: typeof mocks.session) => T) =>
+		selector(mocks.session),
 }));
 vi.mock("@/hooks/use-root", () => ({ useRoot: () => ({ root }) }));
+vi.mock("@/hooks/use-playground-theme", () => ({
+	usePlaygroundTheme: () => root.theme,
+}));
 vi.mock("@/hooks/use-chat", () => ({ useChat: () => ({ chat }) }));
 vi.mock("@semoss/ui/next", async (original) => ({
 	...(await original<typeof import("@semoss/ui/next")>()),
@@ -352,17 +371,17 @@ afterEach(() => {
 	vi.unstubAllGlobals();
 });
 
-/** Select a panel from the room header's More actions menu, under Open a Panel. */
+/**
+ * Open a panel from the Workspace's rail, opening the Workspace from the
+ * header first when it is closed — while it is, the whole pane is hidden, and
+ * a role query skips it. A rail entry is a button; its tab is a tab.
+ */
 function selectWorkspaceItem(name: string) {
-	fireEvent.keyDown(
-		screen.getByRole("button", { name: "studio.moreActions" }),
-		{ key: "Enter" },
-	);
-	fireEvent.keyDown(
-		screen.getByRole("menuitem", { name: "workspacePlaces.openPanel" }),
-		{ key: "Enter" },
-	);
-	fireEvent.click(screen.getByRole("menuitem", { name }));
+	const toggle = screen.queryByRole("button", {
+		name: "studio.openWorkspace",
+	});
+	if (toggle) fireEvent.click(toggle);
+	fireEvent.click(screen.getByRole("button", { name }));
 }
 
 /** Open Settings, which prepares the room, and let the preparation settle. */
@@ -795,15 +814,22 @@ test("Retry after a failed preparation reopens the Workspace in the prepared roo
 	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(2);
 });
 
-test("a new chat's header has its controls but no title or room menu", () => {
+test("a new chat's header has its toggle but no title, and its rail lists panels", () => {
 	render(<NewRoomPage />);
-	expect(screen.getByRole("banner")).not.toHaveTextContent("header.newChat");
+	const header = screen.getByRole("banner");
+	expect(header).not.toHaveTextContent("header.newChat");
 	expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
+	fireEvent.click(
+		screen.getByRole("button", { name: "studio.openWorkspace" }),
+	);
+	const rail = document.querySelector<HTMLElement>("[data-rail]");
+	if (!rail) throw new Error("the panel rail did not render");
 	expect(
-		screen.getByRole("button", { name: "studio.moreActions" }),
+		within(rail).getByRole("button", { name: "workspacePlaces.settings" }),
 	).toBeVisible();
+	// a draft is not a room yet: no room actions anywhere
 	expect(
-		screen.queryByRole("menuitem", { name: "sidebar:actions.rename" }),
+		screen.queryByRole("button", { name: "sidebar:actions.rename" }),
 	).toBeNull();
 });
 

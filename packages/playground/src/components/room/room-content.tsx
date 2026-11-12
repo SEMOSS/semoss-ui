@@ -35,7 +35,7 @@ import { RoomSuggestions } from "./room-suggestions";
 
 const SCROLL_THRESHOLD = 150;
 
-export interface RoomContentProps {
+interface RoomContentProps {
 	/** Room to load */
 	room: RoomStore;
 }

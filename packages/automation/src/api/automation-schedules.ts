@@ -80,7 +80,7 @@ export async function createAutomationSchedule(
 ): Promise<void> {
 	const recipe = `TriggerAutomation(project=${JSON.stringify([projectId])}, triggerType=${JSON.stringify(["SCHEDULED"])});`;
 	const response = await runPixel(
-		`META|ScheduleJob(jobName=${JSON.stringify([values.name])}, jobGroup=${JSON.stringify([projectId])}, cronExpression=${JSON.stringify([values.cronExpression])}, cronTz=${JSON.stringify([values.timezone])}, recipe=${JSON.stringify([`<encode>${recipe}</encode>`])}, recipeParameters=[""], triggerOnLoad=[false], triggerNow=[false]);`,
+		`META|ScheduleJob(jobName=${JSON.stringify([values.name])}, jobGroup=${JSON.stringify([projectId])}, cronExpression=${JSON.stringify([values.cronExpression])}, cronTz=${JSON.stringify([values.timezone])}, recipe=${JSON.stringify([`<encode>${encodeURIComponent(recipe)}</encode>`])}, recipeParameters=[""], triggerOnLoad=[false], triggerNow=[false]);`,
 	);
 	const error = getPixelError(response);
 	if (error) throw new Error(error);

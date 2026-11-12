@@ -1,6 +1,6 @@
 import { parsePatch } from "diff";
 
-export interface GitDiffCodeModels {
+interface GitDiffCodeModels {
 	/** Reconstructed reference-side hunk content. */
 	original: string;
 	/** Reconstructed changed-side hunk content. */

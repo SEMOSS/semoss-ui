@@ -12,7 +12,7 @@ interface ConnectorViewerPanelParams {
 }
 
 /** Props for {@link ConnectorPanelIcon}. */
-export interface ConnectorPanelIconProps {
+interface ConnectorPanelIconProps {
 	/** The panel whose tab it is. */
 	id: WorkbenchPanelId;
 	/** The logo when the panel was opened without a brand of its own. */

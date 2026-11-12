@@ -83,7 +83,6 @@ export const routineStatusSchema = z.object({
 		.default(null),
 });
 
-export type RoutineDay = z.infer<typeof routineDaySchema>;
 /** What the shared result view and form parts read from either routine. */
 export type RoutineStatus = z.infer<typeof routineStatusSchema> & {
 	enabled: boolean;

@@ -7,9 +7,9 @@ import type {
 import { dashboardTimeZone } from "./dashboard-calendar";
 import { dayKey, prioritizeItems } from "./dashboard-selectors";
 
-export const TODAY_LIMIT = 5;
+const TODAY_LIMIT = 5;
 
-export interface TodaySelection {
+interface TodaySelection {
 	/** The short list shown on Today. */
 	items: WorkItem[];
 	/** Items due today or overdue. */

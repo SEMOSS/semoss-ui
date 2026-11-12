@@ -77,7 +77,7 @@ export const workspacePayloadSchema = z.object({
 });
 
 /** A validated `GetWorkspace` payload, before it is mapped to the client shape. */
-export type WorkspacePayload = z.infer<typeof workspacePayloadSchema>;
+type WorkspacePayload = z.infer<typeof workspacePayloadSchema>;
 
 /** A workspace as the client models it: the agent contract plus its id. */
 export type WorkspaceAgent = AgentConfiguration & {

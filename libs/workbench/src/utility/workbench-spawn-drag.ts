@@ -16,7 +16,7 @@ import type { WorkbenchPanelParams, WorkbenchPanelType } from "../types";
 const WORKBENCH_SPAWN_DRAG_TYPE = "application/x-semoss-workbench-panel";
 
 /** What a spawn drag asks the shell to open. */
-export interface WorkbenchSpawnDragSpec {
+interface WorkbenchSpawnDragSpec {
 	type: WorkbenchPanelType;
 	config?: WorkbenchPanelParams;
 	/** Tab name for the new instance; the blueprint's name is the fallback. */

@@ -44,7 +44,7 @@ const OWNED_TOP_KEYS = new Set([
 	META_UI_KEY,
 ]);
 
-export interface MCPMetadataEditorProps {
+interface MCPMetadataEditorProps {
 	/** The tool's `_meta` object, or undefined when the tool has none */
 	meta?: MetaRecord;
 

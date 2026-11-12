@@ -5,6 +5,7 @@ import type {
 	ConversationTool,
 } from "../types/message";
 import { messageCalendarDay } from "./message-metadata";
+import { hasVisibleTaskOutcome } from "./task-outcome";
 
 /** A rendered part keeps the identity and metadata of its original message. */
 export interface OwnedMessagePart {
@@ -14,7 +15,7 @@ export interface OwnedMessagePart {
 }
 
 /** Consecutive assistant messages share a shell without changing their owners. */
-export interface MessagePresentation {
+interface MessagePresentation {
 	message: ConversationMessage;
 	parts: OwnedMessagePart[];
 	/** First valid source timestamp, independent of the stable response identity. */
@@ -79,12 +80,17 @@ export function presentMessages(
 	for (const message of messages) {
 		if (message.visible === false) continue;
 		const parts = ownedMessageParts(message, tools);
+		const outcomeOnly =
+			message.role === "assistant" &&
+			!parts.length &&
+			hasVisibleTaskOutcome(message.taskOutcome);
 		const isDelegation = !!(
 			message.delegationReply || message.delegationRequest
 		);
 		const day = messageCalendarDay(message.createdAt);
 		if (
 			message.role === "user" ||
+			outcomeOnly ||
 			isDelegation ||
 			(day && currentDay && day !== currentDay)
 		)
@@ -112,6 +118,8 @@ export function presentMessages(
 	const visible = entries.filter(
 		({ message, parts }) =>
 			parts.length > 0 ||
+			(message.role === "assistant" &&
+				hasVisibleTaskOutcome(message.taskOutcome)) ||
 			message.delegationReply ||
 			message.delegationRequest,
 	);
@@ -124,7 +132,7 @@ export function presentMessages(
 	return visible;
 }
 
-export type MessagePartBlock =
+type MessagePartBlock =
 	| { type: "part"; key: string; item: OwnedMessagePart }
 	| { type: "tools"; key: string; items: OwnedMessagePart[] };
 

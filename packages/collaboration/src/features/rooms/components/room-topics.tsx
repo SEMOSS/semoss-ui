@@ -24,7 +24,7 @@ import {
 const AFTER_TURN_READS_MS = [8000, 30_000];
 
 /** The chat's topics, read again after each turn so Brain's tags show up as the owner chats. */
-export function useRoomTopics(roomId: string, isRunning: boolean) {
+function useRoomTopics(roomId: string, isRunning: boolean) {
 	const { actions } = useInsight();
 	const { serverId } = useRecordIds();
 	const [topics, setTopics] = useState<RoomTopic[] | null>(null);

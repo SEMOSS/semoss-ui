@@ -13,7 +13,7 @@ import { decideAgentToolAction } from "@/stores/message/agent-harness";
 import type { ResponseMessageStore } from "@/stores/message/response-message.store";
 import type { ToolStore } from "@/stores/tool/tool.store";
 
-export interface ResponseMessageToolMenuProps {
+interface ResponseMessageToolMenuProps {
 	message: ResponseMessageStore;
 	tool: ToolStore;
 	isFullButton?: boolean;

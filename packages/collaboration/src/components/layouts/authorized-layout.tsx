@@ -1,16 +1,51 @@
 import { Navigate, Outlet, useLocation } from "react-router";
-import { useInsight } from "@semoss/sdk/react";
+import {
+	InsightProvider,
+	useSession,
+	useSessionRetry,
+} from "@semoss/sdk/react";
+import { InsightReadyGate } from "@semoss/shared";
+import { Spinner } from "@semoss/ui/next";
+import { ErrorPage } from "@/pages/error.page";
+
+/** Shown while the session, then the app's insight, is read. */
+const LOADING = (
+	<div className="flex h-full w-full items-center justify-center py-4">
+		<Spinner aria-label="Loading Collaboration" />
+	</div>
+);
 
 /**
- * Sends users to the login page if they are not authorized, shows a loading screen while app data is loading, otherwise renders the child components.
+ * Gates the signed in routes on the SDK's session: a spinner while it is read,
+ * the login page (with the intended route) when signed out, and the error with
+ * Retry when it could not be read. Once signed in it makes the app's insight
+ * and renders the pages once it is ready; they read it through `useInsight`.
  */
 export const AuthorizedLayout = () => {
-	const { isAuthorized } = useInsight(); // Read whether the user is authorized
+	const status = useSession((state) => state.status);
+	const { isRetrying, retry } = useSessionRetry();
 	const { pathname } = useLocation();
 
-	// If the user is not authorized, take them to the login page, and pass their intended route
-	if (!isAuthorized)
+	if (status === "INITIALIZING") {
+		return LOADING;
+	}
+
+	// If the user is not signed in, take them to the login page, and pass their intended route
+	if (status === "UNAUTHENTICATED")
 		return <Navigate to={"/login"} state={{ target: pathname }} />;
 
-	return <Outlet />;
+	if (status === "ERROR") {
+		return <ErrorPage onRetry={retry} isRetrying={isRetrying} />;
+	}
+
+	return (
+		<InsightProvider>
+			<InsightReadyGate
+				errorFallback={<ErrorPage />}
+				loadingFallback={LOADING}
+			>
+				<Outlet />
+			</InsightReadyGate>
+		</InsightProvider>
+	);
 };

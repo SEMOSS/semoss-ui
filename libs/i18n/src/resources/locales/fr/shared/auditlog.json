@@ -151,6 +151,7 @@
 	},
 	"layout": {
 		"appName": "Journal d'audit",
-		"appDescription": "Application de journal d'audit"
+		"appDescription": "Application de journal d'audit",
+		"loadFailed": "Impossible de charger le journal d'audit. Réessayez et, si le problème persiste, contactez le support."
 	}
 }

@@ -1,0 +1,32 @@
+import { useSessionInsight } from "@semoss/sdk/react";
+import { CatalogDescriptionSettings } from "@/components/catalog/catalog-description-settings";
+import { useProject } from "@/hooks/use-project";
+
+/** Settings section for a project's catalog description and About markdown. */
+export const ProjectDescriptionSettingsPage = () => {
+	const { project, permission, refresh, catalog } = useProject();
+	const { run: runPixel } = useSessionInsight();
+	const noun = catalog.name.toLowerCase();
+
+	return (
+		<CatalogDescriptionSettings
+			metadata={project as unknown as Record<string, unknown>}
+			permission={permission}
+			onSave={async (meta) => {
+				const response = await runPixel(
+					`SetProjectMetadata(project=["${project.project_id}"], meta=[${JSON.stringify(
+						meta,
+					)}])`,
+				);
+				if (response.errors.length > 0) {
+					throw new Error(response.errors.join(""));
+				}
+			}}
+			onUpdated={refresh}
+			description={`The summary and About content that describe this ${noun}.`}
+			descriptionHelp={`A short summary shown in the ${noun} catalog and on the Overview tab.`}
+			aboutHelp="Long-form markdown shown on the Overview tab."
+			testIdPrefix="project-description-settings"
+		/>
+	);
+};

@@ -32,14 +32,14 @@ export interface AgentRoomRunsSource {
 }
 
 /** How {@link UseAgentRoomRunsResult.loadRoom} narrows what it loads */
-export interface LoadAgentRoomOptions {
+interface LoadAgentRoomOptions {
 	/** Loads only this run, rather than the room's root runs */
 	requestedRunId?: string;
 	/** The agent a requested run must belong to */
 	workspaceId?: string;
 }
 
-export interface UseAgentRoomRunsResult {
+interface UseAgentRoomRunsResult {
 	/** The open room's runs, each with its transcript and subagent tree */
 	runs: RoomRunDetail[];
 	/** Model display names, keyed by engine id */

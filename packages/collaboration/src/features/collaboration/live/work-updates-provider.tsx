@@ -157,6 +157,9 @@ export function WorkUpdatesProvider({
 						memories: updates.memories.map((memory) => ({
 							...memory,
 							id: localId(memory.id),
+							replacesId: memory.replacesId
+								? localId(memory.replacesId)
+								: null,
 							about: memory.about.map((ref) =>
 								ref.type === "topic"
 									? { ...ref, id: localId(ref.id) }

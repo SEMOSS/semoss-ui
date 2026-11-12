@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { useSessionInsight } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -43,8 +44,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import { createGuardrailEngine } from "@/api";
-import { useSession } from "@/hooks";
+import { createGuardrailEngine } from "@/api/guardrails";
 import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
 import { ImportEngineSelect } from "../shared/import-engine-select";
@@ -58,6 +58,32 @@ const LOCAL_PYTHON_GUARDRAIL_RETURN_STRUCTURE = `{
   }
 }`;
 
+interface GuardrailFormProps {
+	/** The guardrail type's name, shown as the form's title. */
+	title: string;
+	/** Helper text shown below the title. */
+	description: string;
+	/** A note about the guardrail type, shown above its fields. */
+	notice?: string;
+	/** The guardrail type's logo, shown beside the title. */
+	icon?: string;
+	/**
+	 * The guardrail type's fields, from its connection constants, grouped into
+	 * sections by their category. Left untyped: the field configs are not
+	 * modeled yet, and their shapes vary by type.
+	 */
+	fields;
+	/** Fields shown folded away under Advanced. */
+	advanced?;
+	/** Each section's description, by field category. */
+	categoryDescription: Record<string, string>;
+}
+
+/**
+ * Adds a guardrail of the chosen type to the catalog, for the guardrail types
+ * without a form of their own. A field's pixel can fill its value or its
+ * options, and runs again when a field it names as <KEY> changes.
+ */
 export const GuardrailForm = ({
 	title,
 	description,
@@ -66,15 +92,13 @@ export const GuardrailForm = ({
 	fields,
 	advanced,
 	categoryDescription,
-}) => {
+}: GuardrailFormProps) => {
 	const [openAdvanced, setOpenAdvanced] = useState(false);
 	const [resolvedFields, setResolvedFields] = useState(fields);
 	const [isValidDatabaseName, setIsValidDatabaseName] =
 		useState<boolean>(false);
 	const [initScriptCallback, setInitScriptCallback] = useState(null);
 	const [updateFieldName, setUpdateFieldName] = useState("");
-	const [isDynamicInputChangedByUser, setIsDynamicInputChangedByUser] =
-		useState(false);
 	const [isReturnStructureCopied, setIsReturnStructureCopied] =
 		useState(false);
 
@@ -102,8 +126,7 @@ export const GuardrailForm = ({
 	});
 
 	const watchedFieldRef = useRef({});
-	const runPixel = useSession((state) => state.runPixel);
-	const insightID = useSession((state) => state.insightID);
+	const { run: runPixel, insightId } = useSessionInsight();
 	const navigate = useNavigate();
 	const defaultFields = resolvedFields;
 	const advancedFields = advanced;
@@ -167,7 +190,6 @@ export const GuardrailForm = ({
 	 */
 	useEffect(() => {
 		if (!initScriptCallback) return;
-		if (isDynamicInputChangedByUser) return;
 
 		const mappedValuesObject = dynamicFieldsToWatch.reduce(
 			(acc, fieldName) => {
@@ -229,7 +251,7 @@ export const GuardrailForm = ({
 		setLoading(true);
 		try {
 			const engineId = await createGuardrailEngine(
-				insightID,
+				insightId,
 				formData.MODEL_NAME,
 				newFormData,
 			);
@@ -415,44 +437,6 @@ export const GuardrailForm = ({
 		setIsValidDatabaseName(false);
 
 		return true;
-	};
-
-	/**
-	 * This runs on input changes to check if the user has changed a dynamically updated field manually
-	 * It sets a flag that will stop dynamic update from running if the user has manually changed it
-	 * Allows the user to manually change the field back to re-enable dynamic updates
-	 */
-
-	// biome-ignore lint/correctness/noUnusedVariables: TODO - fix this
-	const checkForDynamicFieldChange = () => {
-		// check to see if this form has a dynamically updated field
-		if (updateFieldName && initScriptCallback && dynamicFieldsToWatch) {
-			// setTimeout sets this to occur after field values are updated
-			setTimeout(() => {
-				// get values from all dynamic fields
-				const mappedValuesObject = dynamicFieldsToWatch.reduce(
-					(acc, fieldName) => {
-						acc[fieldName] = getValues(fieldName);
-						return acc;
-					},
-					{},
-				);
-
-				// check if current value of initScript field matches what updateCallback would return
-				// if they do not match the user changed the initScript manually
-				const initScriptValueFromCallback = initScriptCallback(
-					mappedValuesObject,
-				).replace(/\s+/g, " ");
-				const initScriptValueFromTextField = getValues(updateFieldName);
-
-				// if they do match the user has not changed the initScript or they manually changed it back
-				// this allows them to re-enable the dynamic updateScript behavior if they revert the field value manually
-				const isMatched =
-					initScriptValueFromCallback ===
-					initScriptValueFromTextField;
-				setIsDynamicInputChangedByUser(!isMatched);
-			}, 0);
-		}
 	};
 
 	// Helper functions for file upload (matching database-form.tsx)

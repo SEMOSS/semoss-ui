@@ -16,6 +16,12 @@ import {
 	Small,
 	Switch,
 } from "@semoss/ui/next";
+import {
+	type AppIcon,
+	OutlookCalendarIcon,
+	OutlookIcon,
+	TeamsIcon,
+} from "@/components/common/app-icons";
 import { WorkRefreshStatus } from "@/features/collaboration/live/work-refresh-status";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import {
@@ -60,6 +66,13 @@ function folderDetail(folders: NonNullable<Connection["folders"]>): string {
 // pilot sources the Brain actually reads today
 const SHOWN_SOURCES = new Set(["email", "calendar", "teams"]);
 
+// the app each shown source is read from, drawn at the start of its row
+const SOURCE_ICONS: Record<string, AppIcon> = {
+	email: OutlookIcon,
+	calendar: OutlookCalendarIcon,
+	teams: TeamsIcon,
+};
+
 // what each switch does, on and off; mail and Teams feed threads, topics and work, calendar is read live (no last item)
 const SOURCE_DETAIL: Record<string, { on: string; off: string }> = {
 	email: {
@@ -87,12 +100,15 @@ const SYNC_CHOICES = [
 
 /** One row: what it is, its state, and the one action that changes it. */
 function Row({
+	icon: Icon,
 	title,
 	titleId,
 	detail,
 	state,
 	action,
 }: {
+	/** The app the row is about, when it is about one. */
+	icon?: AppIcon;
 	title: string;
 	/** Id for the title, so a control in the row can be named by it. */
 	titleId?: string;
@@ -103,7 +119,12 @@ function Row({
 	return (
 		<div className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
 			<div className="min-w-0 flex-1">
-				<Small id={titleId} className="font-medium text-sm">
+				{/* the logo sits in the title line, so the text keeps its full width on a phone */}
+				<Small
+					id={titleId}
+					className="flex items-center gap-2 font-medium text-sm"
+				>
+					{Icon && <Icon />}
 					{title}
 				</Small>
 				{detail && (
@@ -227,6 +248,7 @@ export function ConnectionsView() {
 				<div className="divide-y">
 					{connection?.folders?.known && (
 						<Row
+							icon={OutlookIcon}
 							title="Outlook folders"
 							detail={folderDetail(connection.folders)}
 							state={
@@ -274,6 +296,7 @@ export function ConnectionsView() {
 						return (
 							<Row
 								key={source.id}
+								icon={SOURCE_ICONS[source.id]}
 								title={source.label}
 								titleId={titleId}
 								detail={detail}

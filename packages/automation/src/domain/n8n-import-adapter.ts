@@ -39,7 +39,7 @@ export interface N8nConnectionTarget {
 	index: number;
 }
 
-export interface N8nCondition {
+interface N8nCondition {
 	leftValue: unknown;
 	rightValue: unknown;
 	operator?: { operation?: string };
@@ -65,7 +65,7 @@ export interface N8nWorkflow {
 	>;
 }
 
-export interface N8nImportResult {
+interface N8nImportResult {
 	document: AutomationWorkflowDocument;
 	nodeSources: AutomationNodeSources;
 	/** Human-readable notes about anything dropped or best-effort translated. */

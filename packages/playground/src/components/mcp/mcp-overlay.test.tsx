@@ -14,7 +14,7 @@ const query = vi.hoisted(() => ({
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
-vi.mock("@semoss/sdk/react", () => ({ usePixel: () => query }));
+vi.mock("@semoss/sdk/react", () => ({ useSessionPixel: () => query }));
 vi.mock("@/hooks/use-root", () => ({
 	useRoot: () => ({ root: { theme: { featureFlags: {} } } }),
 }));

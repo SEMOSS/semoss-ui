@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { usePixel } from "@semoss/sdk/react";
+import { usePixel, useSessionInsight } from "@semoss/sdk/react";
 import {
 	Button,
 	Checkbox,
@@ -33,7 +33,7 @@ import {
 	TableRow,
 	toast,
 } from "@semoss/ui/next";
-import { useSession } from "@/hooks";
+import { isRecord } from "@semoss/utility/object";
 
 interface FileTableProps {
 	/**
@@ -73,10 +73,8 @@ interface EmbeddingFileResult {
 type PixelReturnLike = {
 	output?: string | unknown;
 	operationType?: string[];
-	additionalOutput?: Array<{
-		output?: EmbeddingFileResult[] | string | unknown;
-		operationType?: string[];
-	}>;
+	/** A list whose first entry's output holds the embedding results, when the backend sends them */
+	additionalOutput?: unknown;
 };
 
 /**
@@ -100,9 +98,11 @@ export const FileTable = (props: FileTableProps) => {
 	const fileSearchRef = useRef<HTMLInputElement>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const didMount = useRef<boolean>(false);
-	const runPixel = useSession((state) => state.runPixel);
-	const sessionUpload = useSession((state) => state.upload);
-	const download = useSession((state) => state.download);
+	const {
+		run: runPixel,
+		upload: sessionUpload,
+		download,
+	} = useSessionInsight();
 	const [exportLoading, setExportLoading] = useState(false);
 
 	// newly added state
@@ -337,7 +337,11 @@ export const FileTable = (props: FileTableProps) => {
 	};
 
 	const getEmbeddingResults = (pixelReturn: PixelReturnLike) => {
-		const results = pixelReturn.additionalOutput?.[0]?.output;
+		const { additionalOutput } = pixelReturn;
+		const first: unknown = Array.isArray(additionalOutput)
+			? additionalOutput[0]
+			: undefined;
+		const results = isRecord(first) ? first.output : undefined;
 		return Array.isArray(results)
 			? (results as EmbeddingFileResult[])
 			: null;

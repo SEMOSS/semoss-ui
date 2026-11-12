@@ -4,6 +4,7 @@
 
 import { ChevronDown, ChevronUp, Info, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSessionInsight } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -38,7 +39,6 @@ import {
 	z,
 	zodResolver,
 } from "@semoss/ui/next";
-import { useSession } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
 import type { FormField as FormFieldConfig } from "../shared/import-form.types";
@@ -158,6 +158,32 @@ const buildFunctionFormSchema = (allFields: FunctionFormFieldConfig[]) =>
 			}
 		});
 
+interface FunctionFormProps {
+	/** The function type's name, shown as the form's title. */
+	title: string;
+	/** Helper text shown below the title. */
+	description: string;
+	/** A note about the function type, shown above its fields. */
+	notice?: string;
+	/** The function type's logo, shown beside the title. */
+	icon?: string;
+	/**
+	 * The function type's fields, from its connection constants, grouped into
+	 * sections by their category. Left untyped: the field configs are not
+	 * modeled yet, and their shapes vary by type.
+	 */
+	fields;
+	/** Fields shown folded away under Advanced. */
+	advanced;
+	/** Each section's description, by field category. */
+	categoryDescription: Record<string, string>;
+}
+
+/**
+ * Adds a function engine of the chosen type to the catalog, checking its
+ * fields with a schema built from their configs. A field's pixel, run when the
+ * form opens, can fill its value or its options.
+ */
 export const FunctionForm = ({
 	title,
 	description,
@@ -166,15 +192,7 @@ export const FunctionForm = ({
 	fields,
 	advanced,
 	categoryDescription,
-}: {
-	title: string;
-	description: string;
-	notice?: string;
-	icon?: string;
-	fields;
-	advanced;
-	categoryDescription;
-}) => {
+}: FunctionFormProps) => {
 	const [openAdvanced, setOpenAdvanced] = useState(false);
 	const [resolvedFields, setResolvedFields] = useState(fields);
 	const [isValidDatabaseName, setIsValidDatabaseName] =
@@ -208,7 +226,6 @@ export const FunctionForm = ({
 	// conditional field never appears
 	const watchedValues = form.watch();
 
-	// eslint-disable-next-line react-hooks/exhaustive-deps
 	useEffect(() => {
 		// a field that has stopped applying goes back to its default, so switching
 		// a choice does not carry the other branch's values into the engine, and
@@ -231,8 +248,7 @@ export const FunctionForm = ({
 			}
 		}
 	}, [watchedValues, allFormFields]);
-	const runPixel = useSession((state) => state.runPixel);
-	const upload = useSession((state) => state.upload);
+	const { run: runPixel, upload } = useSessionInsight();
 	const navigate = useNavigate();
 	const defaultFields = resolvedFields;
 	const advancedFields = advanced;

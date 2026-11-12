@@ -10,12 +10,12 @@ import { useTranslation } from "@semoss/i18n";
 import { useRoomActionsContext } from "./room-actions.context";
 
 /** One of a room's actions, as a menu item or a slash command shows it. */
-export interface RoomActionItem {
+interface RoomActionItem {
 	/** Stable key; also the slash command's id. */
 	id: "favorite" | "rename" | "publish" | "download" | "delete";
 	/** The action's icon. */
 	icon: LucideIcon;
-	/** Its name, the same in the More actions menu and the slash menu. */
+	/** Its name, the same in Settings' Room section and the slash menu. */
 	label: string;
 	/** What it does, for the slash menu. */
 	description: string;
@@ -25,14 +25,15 @@ export interface RoomActionItem {
 	isActive?: boolean;
 	/** Whether it destroys something. */
 	isDestructive?: boolean;
-	/** Runs it from a menu; Rename waits for the menu to close. */
+	/** Runs it. */
 	onSelect: () => void;
 }
 
 /**
  * The room's own actions in the order every menu lists them: Favorite,
  * Rename, Publish as Agent, Download, and Delete. Favorite is left out where
- * the chat history is hidden. Call it from an observer inside a
+ * the chat history is hidden; only the slash menu lists Rename, since a
+ * double-click on the name renames it. Call it from an observer inside a
  * `RoomActionsProvider`.
  *
  * @return The actions, or an empty list outside a room.
@@ -60,20 +61,20 @@ export const useRoomActionItems = (): RoomActionItem[] => {
 	}
 	items.push(
 		{
-			id: "rename",
-			icon: PencilIcon,
-			label: t("sidebar:actions.rename"),
-			description: t("room:slash.commands.rename.description"),
-			keywords: [],
-			onSelect: context.requestRenaming,
-		},
-		{
 			id: "publish",
 			icon: PackagePlusIcon,
 			label: t("room:workspace.publish"),
 			description: t("room:slash.commands.publish.description"),
 			keywords: ["agent", "save as agent"],
 			onSelect: context.openPublish,
+		},
+		{
+			id: "rename",
+			icon: PencilIcon,
+			label: t("sidebar:actions.rename"),
+			description: t("room:slash.commands.rename.description"),
+			keywords: [],
+			onSelect: context.startRenaming,
 		},
 		{
 			id: "download",

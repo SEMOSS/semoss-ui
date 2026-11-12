@@ -10,7 +10,6 @@ import {
 import { createEmptyWorkspace } from "../state/collaboration.reducer";
 import type {
 	Account,
-	CollaborationCommand,
 	CollaborationState,
 	Memory,
 	MemoryRef,
@@ -26,6 +25,7 @@ import type {
 	Thread,
 	ThreadWorkspace,
 	Topic,
+	TopicFile,
 	WorkItem,
 	WorkspaceMessage,
 	WorkspaceStep,
@@ -263,6 +263,17 @@ function mapSources(settings: Settings): SourceStatus[] {
 	}));
 }
 
+/** A topic's linked files, as BrainGetTopic and BrainLinkTopicFile answer them. */
+export function mapTopicFiles(rows: unknown): TopicFile[] {
+	return list<Row>(rows).map((file) => ({
+		itemId: str(file.itemId),
+		driveId: opt(file.driveId),
+		name: str(file.name, "Untitled file"),
+		source: file.source === "teams" ? "teams" : "onedrive",
+		webUrl: opt(file.webUrl),
+	}));
+}
+
 export function mapTopic(row: Row): Topic {
 	const stats = (row.stats ?? {}) as Row;
 	return {
@@ -295,6 +306,7 @@ export function mapTopic(row: Row): Topic {
 			path: str(folder.path),
 			origin: opt(folder.origin),
 		})),
+		files: mapTopicFiles(row.files),
 		stats: {
 			threads: Number(stats.threads ?? 0),
 			openItems: Number(stats.openItems ?? 0),
@@ -705,20 +717,6 @@ export async function readThreadMessagesPage(
 		hiddenCount: out.hiddenCount ?? 0,
 		unavailableCount: out.unavailableCount ?? 0,
 	};
-}
-
-/** Legacy refresh callers attach the first page to the current owning thread. */
-export async function loadThreadMessages(
-	actions: InsightActions,
-	threadId: string,
-): Promise<(thread: Thread) => CollaborationCommand> {
-	const { messages } = await readThreadMessagesPage(actions, threadId);
-	return (thread) => ({
-		type: "source.import",
-		thread,
-		people: [],
-		workspace: { messages },
-	});
 }
 
 const threadInsightsSchema = z.object({

@@ -36,7 +36,7 @@ export interface ConnectorQuery<T> {
 }
 
 /** Options for {@link useConnectorQuery}. */
-export interface ConnectorQueryOptions {
+interface ConnectorQueryOptions {
 	/**
 	 * Keeps the data on screen while a different pixel with the same key
 	 * loads, as when more items of the same list are asked for. Without a key,

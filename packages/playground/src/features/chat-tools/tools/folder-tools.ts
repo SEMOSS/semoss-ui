@@ -118,7 +118,7 @@ export const getUsualFolderToolExecution = (
 export const ROOM_FILES_NAME = "Room Files";
 
 /** What the definitions need to know. */
-export interface FolderToolContext {
+interface FolderToolContext {
 	/**
 	 * How each tool runs, or null to leave it out of the definitions
 	 * altogether.

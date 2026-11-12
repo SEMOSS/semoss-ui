@@ -1,0 +1,1854 @@
+import {
+	AlertCircleIcon,
+	ChevronDown,
+	ChevronLeft,
+	ChevronRight,
+	ChevronUp,
+	DownloadIcon,
+	Pencil,
+	RefreshCwIcon,
+	SaveIcon,
+	Search,
+} from "lucide-react";
+import { observer } from "mobx-react-lite";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	console as getPixelConsole,
+	runPixel,
+	usePixel,
+	useSessionInsight,
+} from "@semoss/sdk/react";
+import { ColumnMetadataModal, type LogicalDataType } from "@semoss/shared";
+import {
+	Alert,
+	AlertDescription,
+	AlertTitle,
+	Badge,
+	Button,
+	Card,
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+	H4,
+	Input,
+	Muted,
+	P,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	Spinner,
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+	toast,
+} from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
+import { SyncExternalDatabaseOverlay } from "@/components/database/sync-external-database-overlay";
+import {
+	Metamodel,
+	type MetamodelNodeType,
+} from "@/components/metamodel/meta-model";
+import { Section } from "@/components/ui/section";
+import { useEngine } from "@/hooks/useEngine";
+
+const normalizeSearchValue = (value: string) =>
+	value.toLowerCase().replace(/[\s_]+/g, "");
+const CONSOLE_POLL_INTERVAL_MS = 1000;
+
+/** What the progress overlay says while each long request runs. */
+const LOADING_COPY = {
+	SCHEMA: {
+		title: "Reading Database Schema",
+		description:
+			"We are reading the tables and views you picked from the database.",
+	},
+	SAVE: {
+		title: "Syncing Database",
+		description: "We are applying your database changes.",
+	},
+} as const;
+
+type SearchMatch = {
+	nodeId: string;
+	columnIndex: number | null;
+};
+
+type SupportedDataType = LogicalDataType;
+
+type ColumnDetails = {
+	tableName: string;
+	columnId: string;
+	columnName: string;
+	physicalType: string;
+	description: string;
+	logicalNames: string[];
+};
+
+const normalizeSupportedDataType = (value?: string): SupportedDataType | "" =>
+	(value || "") as SupportedDataType | "";
+
+const normalizePhysicalTypeKey = (value: string) =>
+	value.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+const resolvePhysicalType = (
+	physicalTypes: Record<string, string> | undefined,
+	tableName: string,
+	columnName: string,
+	propertyId?: string,
+) => {
+	if (!physicalTypes) {
+		return "";
+	}
+
+	const table = tableName.trim();
+	const column = columnName.trim();
+	const basePropertyId = propertyId ?? `${table}__${column}`;
+	const candidates = [
+		basePropertyId,
+		`${table}__${column}`,
+		`${table}.${column}`,
+		basePropertyId.toLowerCase(),
+		basePropertyId.toUpperCase(),
+		`${table.toLowerCase()}__${column.toLowerCase()}`,
+		`${table.toLowerCase()}.${column.toLowerCase()}`,
+		`${table.toUpperCase()}__${column.toUpperCase()}`,
+		`${table.toUpperCase()}.${column.toUpperCase()}`,
+	];
+
+	for (const candidate of candidates) {
+		if (candidate in physicalTypes) {
+			return physicalTypes[candidate] ?? "";
+		}
+	}
+
+	const normalizedNeedle = normalizePhysicalTypeKey(`${table}${column}`);
+	for (const [key, value] of Object.entries(physicalTypes)) {
+		if (normalizePhysicalTypeKey(key) === normalizedNeedle) {
+			return value ?? "";
+		}
+	}
+
+	return "";
+};
+
+const haveNodePositionsChanged = (
+	prevNodes: {
+		id: string;
+		position: {
+			x: number;
+			y: number;
+		};
+	}[],
+	nextNodes: {
+		id: string;
+		position: {
+			x: number;
+			y: number;
+		};
+	}[],
+) => {
+	const previousById = new Map(
+		prevNodes.map((node) => [node.id, node.position]),
+	);
+
+	for (const node of nextNodes) {
+		const previous = previousById.get(node.id);
+		if (
+			!previous ||
+			previous.x !== node.position.x ||
+			previous.y !== node.position.y
+		) {
+			return true;
+		}
+	}
+
+	return false;
+};
+
+/**
+ * A database engine's metadata: its metamodel of tables, columns and
+ * relationships, each column's details, and syncing the metamodel with the
+ * database, saving and downloading it.
+ */
+export const EngineMetadataPage = observer(() => {
+	type MetadataEdge = {
+		id: string;
+		type: "floating";
+		source: string;
+		target: string;
+		relName?: string;
+	};
+
+	const { engine } = useEngine();
+	const { run: sessionRunPixel, insightId, download } = useSessionInsight();
+
+	const [isModified, setIsModified] = useState(false);
+	const [nodes, setNodes] = useState<
+		{
+			id: string;
+			type: "metamodel";
+			data: {
+				name: string;
+				properties: {
+					id: string;
+					name: string;
+					type: string;
+					physicalType?: string;
+					description?: string;
+					logicalNames?: string[];
+				}[];
+			};
+			position: {
+				x: number;
+				y: number;
+			};
+		}[]
+	>([]);
+	const [edges, setEdges] = useState<MetadataEdge[]>([]);
+	// the canvas redraws from nodes and edges on its own only when a table id
+	// changes, so this tells it to show a metamodel the backend returned exactly
+	// as given, names, columns and types included
+	const [metamodelResetKey, setMetamodelResetKey] = useState(0);
+	// whether the next metamodel read follows a save that changed the schema,
+	// whose names and types the database may return differently from what was
+	// sent; a read after a save of positions alone keeps the canvas as it is
+	const shouldRedrawAfterReadRef = useRef(false);
+
+	const [selectedNode, setSelectedNode] = useState(null);
+	const [columnPage, setColumnPage] = useState<number>(0);
+	const [columnVisibleRows, setColumnVisibleRows] = useState<number>(10);
+	const [columnSearch, setColumnSearch] = useState("");
+	const [metadataSearch, setMetadataSearch] = useState("");
+	const [activeSearchMatch, setActiveSearchMatch] =
+		useState<SearchMatch | null>(null);
+	const [openColumnDetails, setOpenColumnDetails] = useState(false);
+	const [selectedColumnDetails, setSelectedColumnDetails] =
+		useState<ColumnDetails | null>(null);
+
+	const getDatabaseMetamodel = usePixel<{
+		dataTypes: Record<string, string>;
+		logicalNames: Record<string, string[]>;
+		nodes: { propSet: string[]; conceptualName: string }[];
+		edges: {
+			sourceColumn?: string;
+			targetColumn?: string;
+			relation: string;
+			source: string;
+			target: string;
+		}[];
+		physicalTypes: Record<string, string>;
+		positions: Record<
+			string,
+			{
+				top: number;
+				left: number;
+			}
+		>;
+		descriptions: Record<string, string>;
+		additionalDataTypes: Record<string, string>;
+	}>(
+		engine.engine_id
+			? `GetDatabaseMetamodel( database=["${engine.engine_id}"], options=["dataTypes","physicalTypes","additionalDataTypes","logicalNames","descriptions","positions"]);`
+			: "",
+		{
+			onSuccess({
+				nodes,
+				edges,
+				positions,
+				dataTypes,
+				additionalDataTypes,
+				logicalNames,
+				descriptions,
+				physicalTypes = {},
+			}) {
+				// update the nodes
+				const n = nodes.map((n) => ({
+					id: n.conceptualName,
+					type: "metamodel" as const,
+					data: {
+						name: n.conceptualName,
+						properties: n.propSet.map((p) => {
+							const propertyId = `${n.conceptualName}__${p}`;
+							const normalizedDataType =
+								normalizeSupportedDataType(
+									dataTypes[propertyId],
+								) ||
+								normalizeSupportedDataType(
+									additionalDataTypes[propertyId],
+								);
+
+							return {
+								id: propertyId,
+								name: p,
+								type: normalizedDataType,
+								physicalType: resolvePhysicalType(
+									physicalTypes,
+									n.conceptualName,
+									p,
+									propertyId,
+								),
+								description: descriptions[propertyId] ?? "",
+								logicalNames: logicalNames[propertyId] ?? [],
+							};
+						}),
+					},
+					position: positions[n.conceptualName]
+						? {
+								x: positions[n.conceptualName].left,
+								y: positions[n.conceptualName].top,
+							}
+						: { x: 0, y: 0 },
+				}));
+
+				setNodes(n);
+
+				// update the edges
+				const e = edges.map((e, i) => ({
+					id: `${e.relation}-${i}`,
+					type: "floating" as const,
+					source: e.source,
+					target: e.target,
+					relName: e.relation,
+				}));
+
+				setEdges(e);
+				if (shouldRedrawAfterReadRef.current) {
+					shouldRedrawAfterReadRef.current = false;
+					setMetamodelResetKey((k) => k + 1);
+				}
+			},
+		},
+		insightId,
+	);
+
+	// get the data if a table is selected
+	const getData = usePixel<{
+		data: {
+			values: (string | number | boolean)[][];
+			headers: string[];
+		};
+		headerInfo: {
+			dataType: string;
+			additionalDataType: string;
+			alias: string;
+			header: string;
+			type: string;
+			derived: boolean;
+		}[];
+		numCollected: number;
+	}>(
+		selectedNode && selectedNode.data.properties.length > 0
+			? `Database(database=["${
+					engine.engine_id
+				}"]) | Distinct(false) | Select(${selectedNode.data.properties
+					.map((p) => p.id)
+					.join(", ")}) | Collect(100);`
+			: "",
+		{
+			data: {
+				data: {
+					values: [],
+					headers: [],
+				},
+				headerInfo: [],
+				numCollected: 0,
+			},
+		},
+		insightId,
+	);
+
+	const getDatabaseCategory = usePixel<string>(
+		engine.engine_id
+			? `GetDatabaseCategory(engine=["${engine.engine_id}"]);`
+			: "",
+	);
+	const isRdbms = getDatabaseCategory.data?.toUpperCase() === "SQL";
+
+	const [showSyncDatabase, setShowSyncDatabase] = useState(false);
+	const [showSaveReminder, setShowSaveReminder] = useState(false);
+	const [hasSchemaChanges, setHasSchemaChanges] = useState(false);
+	const [hasPositionChanges, setHasPositionChanges] = useState(false);
+	// the long request running, if any, which the progress overlay describes
+	const [loadingKind, setLoadingKind] = useState<
+		keyof typeof LOADING_COPY | null
+	>(null);
+	const isLoading = loadingKind !== null;
+	const [loadingMessage, setLoadingMessage] = useState("Loading...");
+	const [loadingLogMessages, setLoadingLogMessages] = useState<string[]>([]);
+	const [openLoadingLog, setOpenLoadingLog] = useState(false);
+
+	const createPositionsMap = useCallback(
+		(sourceNodes = nodes) => {
+			return sourceNodes.reduce<
+				Record<string, { top: number; left: number }>
+			>((acc, node) => {
+				acc[node.id] = {
+					top: node.position.y,
+					left: node.position.x,
+				};
+
+				return acc;
+			}, {});
+		},
+		[nodes],
+	);
+
+	const runPixelWithConsole = async <O extends unknown[] | []>(
+		pixel: string,
+	) => {
+		if (!insightId) {
+			throw new Error("Missing insight ID for the metadata request.");
+		}
+
+		let stopPolling = false;
+		const pollConsole = async () => {
+			while (!stopPolling) {
+				try {
+					const { message } = await getPixelConsole(insightId);
+
+					if (Array.isArray(message) && message.length > 0) {
+						let latestConsoleMessage = "";
+						const cleanedMessages = message
+							.map((entry) => String(entry ?? "").trim())
+							.filter(Boolean);
+
+						if (cleanedMessages.length > 0) {
+							latestConsoleMessage =
+								cleanedMessages[cleanedMessages.length - 1];
+							setLoadingLogMessages((prev) => {
+								const next = [...prev];
+								for (const entry of cleanedMessages) {
+									if (next[next.length - 1] !== entry) {
+										next.push(entry);
+									}
+								}
+								return next;
+							});
+						}
+
+						if (latestConsoleMessage) {
+							setLoadingMessage(latestConsoleMessage);
+						}
+					}
+				} catch {
+					// Ignore console polling failures; pixel result decides success/failure.
+				}
+
+				await new Promise((resolve) =>
+					setTimeout(resolve, CONSOLE_POLL_INTERVAL_MS),
+				);
+			}
+		};
+
+		const pollPromise = pollConsole();
+		try {
+			return await runPixel<O>(pixel, insightId);
+		} finally {
+			stopPolling = true;
+			await pollPromise;
+		}
+	};
+
+	const filteredColumns = useMemo(() => {
+		if (!selectedNode?.data?.properties?.length) {
+			return [];
+		}
+
+		const normalizedColumnSearch = normalizeSearchValue(
+			columnSearch.trim(),
+		);
+		if (!normalizedColumnSearch) {
+			return selectedNode.data.properties;
+		}
+
+		return selectedNode.data.properties.filter((property) =>
+			normalizeSearchValue(property.name).includes(
+				normalizedColumnSearch,
+			),
+		);
+	}, [selectedNode, columnSearch]);
+
+	const columnRows = useMemo(() => {
+		return filteredColumns.slice(
+			columnPage * columnVisibleRows,
+			(columnPage + 1) * columnVisibleRows,
+		);
+	}, [filteredColumns, columnPage, columnVisibleRows]);
+	const totalColumns = filteredColumns.length;
+	const visibleColumnStart =
+		totalColumns === 0 ? 0 : columnPage * columnVisibleRows + 1;
+	const visibleColumnEnd = Math.min(
+		(columnPage + 1) * columnVisibleRows,
+		totalColumns,
+	);
+	const columnTableViewportClass =
+		columnVisibleRows >= 50
+			? "max-h-[560px]"
+			: columnVisibleRows >= 25
+				? "max-h-[440px]"
+				: "max-h-[320px]";
+
+	const description = selectedNode?.id
+		? (getDatabaseMetamodel.data?.descriptions?.[selectedNode.id] ?? "")
+		: "";
+
+	const logical = selectedNode?.id
+		? (getDatabaseMetamodel.data?.logicalNames?.[selectedNode.id] ?? [])
+		: [];
+
+	// get the concepts
+	const concepts = nodes.map((n) => n.id);
+	const normalizedMetadataSearch = normalizeSearchValue(
+		metadataSearch.trim(),
+	);
+	const normalizedColumnSearch = normalizeSearchValue(columnSearch.trim());
+
+	useEffect(() => {
+		if (!activeSearchMatch) {
+			return;
+		}
+
+		if (activeSearchMatch.columnIndex !== null) {
+			setColumnPage(
+				Math.floor(activeSearchMatch.columnIndex / columnVisibleRows),
+			);
+		} else {
+			setColumnPage(0);
+		}
+	}, [activeSearchMatch, columnVisibleRows]);
+
+	useEffect(() => {
+		const maxPage = Math.max(
+			0,
+			Math.ceil(totalColumns / columnVisibleRows) - 1,
+		);
+		if (columnPage > maxPage) {
+			setColumnPage(maxPage);
+		}
+	}, [columnPage, columnVisibleRows, totalColumns]);
+
+	const openColumnDetailsModal = (details: ColumnDetails) => {
+		setSelectedColumnDetails(details);
+		setOpenColumnDetails(true);
+	};
+
+	const closeColumnDetailsModal = () => {
+		setOpenColumnDetails(false);
+		setSelectedColumnDetails(null);
+	};
+
+	const metadataPreviewData = useMemo(
+		() =>
+			selectedNode && getData.status === "SUCCESS"
+				? {
+						output: {
+							data: {
+								headers: getData.data.data.headers || [],
+								values: getData.data.data.values || [],
+							},
+						},
+						queryType: "SELECT" as const,
+						timeToRun: 0,
+						numCollected: getData.data.numCollected || 0,
+					}
+				: null,
+		[
+			selectedNode,
+			getData.status,
+			getData.data.data.headers,
+			getData.data.data.values,
+			getData.data.numCollected,
+		],
+	);
+
+	const handleMetaModelUpdate = useCallback(
+		(snapshot: MetamodelNodeType[]) => {
+			const normalizedNodes = snapshot.map((node) => ({
+				id: node.id,
+				type: "metamodel" as const,
+				data: {
+					name: node.data?.name ?? node.id,
+					properties: Array.isArray(node.data?.properties)
+						? node.data.properties.map((property) => ({
+								id: property.id,
+								name: property.name,
+								type: property.type,
+								physicalType: property.physicalType,
+								description: property.description,
+								logicalNames: property.logicalNames,
+							}))
+						: [],
+				},
+				position: {
+					x: node.position?.x ?? 0,
+					y: node.position?.y ?? 0,
+				},
+			}));
+
+			setNodes((previousNodes) => {
+				if (haveNodePositionsChanged(previousNodes, normalizedNodes)) {
+					setIsModified(true);
+					setHasPositionChanges(true);
+					setShowSaveReminder(true);
+				}
+
+				return normalizedNodes;
+			});
+		},
+		[],
+	);
+
+	/**
+	 * Sync the metamodel with the database, given the tables and views to sync
+	 * @param tables
+	 * @param views
+	 */
+	const syncDatabase = async (tables: string[], views: string[]) => {
+		if (isLoading) {
+			return;
+		}
+
+		setLoadingKind("SCHEMA");
+		setLoadingMessage("Reading the database schema...");
+		setLoadingLogMessages(["Reading the database schema..."]);
+		setOpenLoadingLog(false);
+		try {
+			// create the filters
+			const filters = JSON.stringify([...tables, ...views]);
+
+			// run it, showing each table it reads as it goes
+			const { errors, pixelReturn } = await runPixelWithConsole<
+				[
+					{
+						positions: Record<
+							string,
+							{
+								top: number;
+								left: number;
+							}
+						>;
+						tables: {
+							table: string;
+							raw_type: string[];
+							columns: string[];
+							type: string[];
+							isPrimKey: boolean[];
+						}[];
+						relationships: {
+							fromTable: string;
+							toTable: string;
+							relName?: string;
+							relation?: string;
+							fromCol?: string;
+							toCol?: string;
+							sourceColumn?: string;
+							targetColumn?: string;
+						}[];
+					},
+				]
+			>(
+				`ExternalUpdateJdbcSchema(database=["${engine.engine_id}"], filters=${filters});`,
+			);
+
+			if (errors.length > 0) {
+				throw new Error(errors.join(""));
+			}
+
+			const rawOutput = pixelReturn[0]?.output;
+			const output =
+				typeof rawOutput === "string"
+					? (() => {
+							try {
+								return JSON.parse(rawOutput) as {
+									positions?: Record<
+										string,
+										{
+											top?: number;
+											left?: number;
+										}
+									>;
+									tables?: unknown;
+									relationships?: unknown;
+									edges?: unknown;
+								};
+							} catch {
+								return {};
+							}
+						})()
+					: ((rawOutput as {
+							positions?: Record<
+								string,
+								{
+									top?: number;
+									left?: number;
+								}
+							>;
+							tables?: unknown;
+							relationships?: unknown;
+							edges?: unknown;
+						}) ?? {});
+
+			const outputPositions =
+				output.positions && typeof output.positions === "object"
+					? output.positions
+					: {};
+
+			const rawTables = output.tables;
+			const outputTables = Array.isArray(rawTables)
+				? rawTables
+						.map((table) => {
+							if (!table || typeof table !== "object") {
+								return null;
+							}
+
+							const typedTable = table as {
+								table?: string;
+								conceptualName?: string;
+								name?: string;
+								columns?: unknown;
+								propSet?: unknown;
+								type?: unknown;
+							};
+							const tableName =
+								typedTable.table ??
+								typedTable.conceptualName ??
+								typedTable.name;
+							if (!tableName) {
+								return null;
+							}
+
+							const columns = Array.isArray(typedTable.columns)
+								? typedTable.columns
+								: Array.isArray(typedTable.propSet)
+									? typedTable.propSet
+									: [];
+
+							return {
+								table: String(tableName),
+								columns: columns.map((col) => String(col)),
+								type: Array.isArray(typedTable.type)
+									? typedTable.type.map((item) =>
+											String(item),
+										)
+									: [],
+							};
+						})
+						.filter(
+							(
+								table,
+							): table is {
+								table: string;
+								columns: string[];
+								type: string[];
+							} => table !== null,
+						)
+				: rawTables && typeof rawTables === "object"
+					? Object.entries(rawTables).map(([key, value]) => {
+							const tableName = key.includes(".")
+								? key.split(".")[0]
+								: key;
+							const columns = Array.isArray(value)
+								? value.map((col) => String(col))
+								: [];
+
+							return {
+								table: String(tableName),
+								columns: columns,
+								type: [] as string[],
+							};
+						})
+					: [];
+
+			const rawRelationships = Array.isArray(output.relationships)
+				? output.relationships
+				: Array.isArray(output.edges)
+					? output.edges
+					: [];
+			const outputRelationships = rawRelationships
+				.map((relationship) => {
+					if (!relationship || typeof relationship !== "object") {
+						return null;
+					}
+
+					return relationship as {
+						fromTable?: string;
+						toTable?: string;
+						relName?: string;
+						relation?: string;
+						fromCol?: string;
+						toCol?: string;
+						sourceColumn?: string;
+						targetColumn?: string;
+						source?: string;
+						target?: string;
+					};
+				})
+				.filter(
+					(
+						relationship,
+					): relationship is {
+						fromTable?: string;
+						toTable?: string;
+						relName?: string;
+						relation?: string;
+						fromCol?: string;
+						toCol?: string;
+						sourceColumn?: string;
+						targetColumn?: string;
+						source?: string;
+						target?: string;
+					} => relationship !== null,
+				);
+
+			const fallbackTableNames =
+				outputTables.length > 0
+					? []
+					: Array.from(
+							new Set([
+								...Object.keys(outputPositions),
+								...tables,
+								...views,
+							]),
+						);
+			const normalizedTables =
+				outputTables.length > 0
+					? outputTables
+					: fallbackTableNames.map((tableName) => ({
+							table: tableName,
+							columns: [],
+							type: [] as string[],
+						}));
+
+			// a table already on the canvas stays where it is, saved or not
+			const canvasPositions = new Map(
+				nodes.map((node) => [node.id, node.position]),
+			);
+			const newNodes = normalizedTables.map((table) => ({
+				id: table.table,
+				type: "metamodel" as const,
+				data: {
+					name: table.table,
+					properties: table.columns.map((col, idx) => ({
+						id: `${table.table}__${col}`,
+						name: col,
+						type: table.type?.[idx] || "",
+					})),
+				},
+				position:
+					canvasPositions.get(table.table) ??
+					(outputPositions?.[table.table]
+						? {
+								x: outputPositions[table.table].left ?? 0,
+								y: outputPositions[table.table].top ?? 0,
+							}
+						: { x: 0, y: 0 }),
+			}));
+
+			const existingRelationshipNamesByPair = edges.reduce(
+				(acc, edge) => {
+					const key = `${edge.source}->${edge.target}`;
+					const existing = acc.get(key) || [];
+					if (edge.relName) {
+						existing.push(edge.relName);
+					}
+					acc.set(key, existing);
+					return acc;
+				},
+				new Map<string, string[]>(),
+			);
+
+			const newEdges = outputRelationships
+				.map((rel, i): MetadataEdge | null => {
+					const fromTable = rel.fromTable ?? rel.source;
+					const toTable = rel.toTable ?? rel.target;
+					if (!fromTable || !toTable) {
+						return null;
+					}
+
+					const pairKey = `${fromTable}->${toTable}`;
+					const preservedRelName = existingRelationshipNamesByPair
+						.get(pairKey)
+						?.shift();
+					const relName =
+						rel.relName ??
+						rel.relation ??
+						(rel.fromCol && rel.toCol
+							? `${rel.fromCol}.${rel.toCol}`
+							: undefined) ??
+						(rel.sourceColumn && rel.targetColumn
+							? `${rel.sourceColumn}.${rel.targetColumn}`
+							: undefined) ??
+						preservedRelName ??
+						`${fromTable}_${toTable}`;
+
+					return {
+						id: `${relName}-${i}`,
+						type: "floating" as const,
+						source: fromTable,
+						target: toTable,
+						relName: relName,
+					};
+				})
+				.filter((edge): edge is MetadataEdge => edge !== null);
+
+			setNodes(newNodes);
+			setEdges(newEdges);
+			// show the tables as the database returned them, even ones whose id is
+			// unchanged, such as a column whose case the database changed
+			setMetamodelResetKey((k) => k + 1);
+			setSelectedNode(newNodes[0] ?? null);
+
+			// set as modified
+			setIsModified(true);
+			setHasSchemaChanges(true);
+			setShowSaveReminder(true);
+		} catch (e) {
+			toast.error(
+				`
+Failed to sync with database changes. Please try again. 
+				
+Error ${getErrorMessage(e, "Unknown error")}				
+				`,
+			);
+		} finally {
+			setLoadingKind(null);
+			setLoadingMessage("Loading...");
+			setLoadingLogMessages([]);
+			setOpenLoadingLog(false);
+		}
+	};
+
+	/**
+	 * Download teh database metadata as a PDF
+	 */
+	const downloadDatabaseMetadata = async () => {
+		try {
+			// run it
+			const { errors, pixelReturn } = await sessionRunPixel<[string]>(
+				`DatabaseMetadataToPdf(database=["${engine.engine_id}"]);`,
+			);
+
+			if (errors.length > 0) {
+				throw new Error(errors.join(""));
+			}
+
+			const output = pixelReturn[0]?.output;
+
+			// download the file
+			download(output);
+		} catch (e) {
+			toast.error(
+				`
+Error downloading PDF. Please try again.
+				
+Error ${e.message || "Unknown error"}				
+				`,
+			);
+		}
+	};
+
+	/**
+	 * Save the changes
+	 */
+	const saveDatabase = async () => {
+		if (isLoading || (!hasSchemaChanges && !hasPositionChanges)) {
+			return;
+		}
+
+		const saveSchemaChanges = hasSchemaChanges;
+
+		setLoadingKind("SAVE");
+		if (saveSchemaChanges) {
+			setLoadingMessage("Starting database synchronization...");
+			setLoadingLogMessages(["Starting database synchronization..."]);
+		} else {
+			setLoadingMessage("Saving table positions...");
+			setLoadingLogMessages(["Saving table positions..."]);
+		}
+		setOpenLoadingLog(false);
+		try {
+			const positions = createPositionsMap();
+
+			if (saveSchemaChanges) {
+				const relationships = [];
+				for (const edge of edges) {
+					const relName =
+						edge.relName || `${edge.source}_${edge.target}`;
+
+					relationships.push({
+						fromTable: edge.source,
+						toTable: edge.target,
+						relName: relName,
+					});
+				}
+
+				const tables = {};
+				for (const node of nodes) {
+					const firstProperty = node.data.properties[0]?.name;
+					if (!firstProperty) {
+						continue;
+					}
+
+					const tableKey = `${node.data.name}.${firstProperty}`;
+					if (!tables[tableKey]) {
+						tables[tableKey] = node.data.properties.map((col) => {
+							return col.name;
+						});
+					}
+				}
+
+				const { errors } = await runPixelWithConsole(
+					`RdbmsExternalUpload(database=["${engine.engine_id}"], metamodel=[${JSON.stringify({ relationships: relationships, tables: tables })}], existing=[true]); META|SaveOwlPositions(database=["${engine.engine_id}"], positionMap=[${JSON.stringify(positions)}]);SyncDatabaseWithLocalMaster(database=["${engine.engine_id}"]);`,
+				);
+
+				if (errors.length > 0) {
+					throw new Error(errors.join(""));
+				}
+			} else {
+				const { errors } = await runPixel(
+					`META|SaveOwlPositions(database=["${engine.engine_id}"], positionMap=[${JSON.stringify(positions)}]);`,
+				);
+
+				if (errors.length > 0) {
+					throw new Error(errors.join(""));
+				}
+			}
+
+			// refresh it
+			shouldRedrawAfterReadRef.current = saveSchemaChanges;
+			getDatabaseMetamodel.refresh();
+
+			setIsModified(false);
+			setHasSchemaChanges(false);
+			setHasPositionChanges(false);
+			setShowSaveReminder(false);
+
+			// throw a success
+			toast.success(
+				saveSchemaChanges
+					? "Successfully saved changes."
+					: "Successfully saved table positions.",
+			);
+		} catch (e) {
+			toast.error(
+				`
+Failed to sync with database changes. Please try again. 
+				
+Error ${getErrorMessage(e, "Unknown error")}				
+				`,
+			);
+		} finally {
+			setLoadingKind(null);
+			setLoadingMessage("Loading...");
+			setLoadingLogMessages([]);
+			setOpenLoadingLog(false);
+		}
+	};
+
+	const handleReset = useCallback(() => {
+		const data = getDatabaseMetamodel.data;
+		if (!data) return;
+
+		const {
+			nodes: rawNodes,
+			edges: rawEdges,
+			positions,
+			dataTypes,
+			additionalDataTypes,
+			logicalNames,
+			descriptions,
+			physicalTypes = {},
+		} = data;
+
+		const n = rawNodes.map((n) => ({
+			id: n.conceptualName,
+			type: "metamodel" as const,
+			data: {
+				name: n.conceptualName,
+				properties: n.propSet.map((p) => {
+					const propertyId = `${n.conceptualName}__${p}`;
+					const normalizedDataType =
+						normalizeSupportedDataType(dataTypes[propertyId]) ||
+						normalizeSupportedDataType(
+							additionalDataTypes[propertyId],
+						);
+					return {
+						id: propertyId,
+						name: p,
+						type: normalizedDataType,
+						physicalType: resolvePhysicalType(
+							physicalTypes,
+							n.conceptualName,
+							p,
+							propertyId,
+						),
+						description: descriptions[propertyId] ?? "",
+						logicalNames: logicalNames[propertyId] ?? [],
+					};
+				}),
+			},
+			position: positions[n.conceptualName]
+				? {
+						x: positions[n.conceptualName].left,
+						y: positions[n.conceptualName].top,
+					}
+				: { x: 0, y: 0 },
+		}));
+
+		const e = rawEdges.map((e, i) => ({
+			id: `${e.relation}-${i}`,
+			type: "floating" as const,
+			source: e.source,
+			target: e.target,
+			relName: e.relation,
+		}));
+
+		setNodes(n);
+		setEdges(e);
+		setIsModified(false);
+		setHasSchemaChanges(false);
+		setHasPositionChanges(false);
+		setShowSaveReminder(false);
+		setMetamodelResetKey((k) => k + 1);
+	}, [getDatabaseMetamodel.data]);
+
+	const isPositionOnlyChange = hasPositionChanges && !hasSchemaChanges;
+	const saveReminderText = isPositionOnlyChange
+		? "Positions updated. Save to persist layout."
+		: "Save changes or they will be lost.";
+	const saveButtonHighlightClass = isPositionOnlyChange
+		? "border-primary/40 bg-primary/10 text-foreground hover:bg-primary/15"
+		: "border-destructive/40 bg-destructive/10 text-foreground hover:bg-destructive/15";
+	const saveTooltipText = isPositionOnlyChange
+		? "Save to persist updated table positions."
+		: "You must save your changes or they will be lost.";
+
+	return (
+		<div className="relative z-0">
+			<Section>
+				<Section.Header
+					actions={
+						<div className="flex items-center gap-2">
+							{showSaveReminder && (
+								<div
+									className={
+										isPositionOnlyChange
+											? "rounded-md border border-primary/40 bg-primary/10 px-2 py-1"
+											: "rounded-md border border-destructive/40 bg-destructive/10 px-2 py-1"
+									}
+								>
+									<P
+										className={
+											isPositionOnlyChange
+												? "whitespace-nowrap font-medium text-[11px] text-foreground"
+												: "whitespace-nowrap font-medium text-[11px] text-foreground"
+										}
+									>
+										{saveReminderText}
+									</P>
+								</div>
+							)}
+							{isModified && (
+								<Tooltip disableHoverableContent={false}>
+									<TooltipTrigger asChild>
+										<Button
+											aria-label={
+												"Reset to last saved state"
+											}
+											size="sm"
+											variant="outline"
+											onClick={handleReset}
+											disabled={isLoading}
+											data-testid="engineMetadata-reset-btn"
+										>
+											<RefreshCwIcon />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>
+										Reset to last saved state
+									</TooltipContent>
+								</Tooltip>
+							)}
+
+							{isRdbms && (
+								<Tooltip disableHoverableContent={false}>
+									<TooltipTrigger asChild>
+										<Button
+											aria-label={
+												"Sync the metamodel with the database"
+											}
+											size="sm"
+											variant="outline"
+											onClick={() =>
+												setShowSyncDatabase(true)
+											}
+											disabled={isLoading}
+											data-testid="engineMetadata-sync-btn"
+										>
+											<RefreshCwIcon />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>
+										Sync the metamodel with the database
+									</TooltipContent>
+								</Tooltip>
+							)}
+
+							<Tooltip disableHoverableContent={false}>
+								<TooltipTrigger asChild>
+									<Button
+										aria-label={"Download the metadata"}
+										size="sm"
+										variant="outline"
+										onClick={() =>
+											downloadDatabaseMetadata()
+										}
+										data-testid="engineMetadata-print-btn"
+									>
+										<DownloadIcon />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									Download the metadata
+								</TooltipContent>
+							</Tooltip>
+
+							<Tooltip disableHoverableContent={false}>
+								<TooltipTrigger asChild>
+									<span
+										className="inline-flex"
+										tabIndex={
+											!isModified || isLoading
+												? 0
+												: undefined
+										}
+									>
+										<Button
+											aria-label={
+												showSaveReminder
+													? saveTooltipText
+													: "Save changes to the metamodel"
+											}
+											size="sm"
+											disabled={!isModified || isLoading}
+											variant="outline"
+											className={
+												showSaveReminder
+													? saveButtonHighlightClass
+													: undefined
+											}
+											onClick={() => saveDatabase()}
+											data-testid="engineMetadata-save-btn"
+										>
+											<SaveIcon
+												className={
+													showSaveReminder
+														? "animate-pulse"
+														: undefined
+												}
+											/>
+										</Button>
+									</span>
+								</TooltipTrigger>
+								<TooltipContent>
+									{isLoading
+										? "Wait for the sync to finish"
+										: !isModified
+											? "No changes to save"
+											: showSaveReminder
+												? saveTooltipText
+												: "Save changes to the metamodel"}
+								</TooltipContent>
+							</Tooltip>
+						</div>
+					}
+				>
+					Metamodel
+				</Section.Header>
+				<div className="relative flex flex-col">
+					<section className="relative h-[55vh] w-full overflow-hidden rounded-lg border border-border">
+						<Metamodel
+							nodes={nodes}
+							edges={edges}
+							resetKey={metamodelResetKey}
+							selectedNode={selectedNode}
+							onSelectNode={(node) => {
+								setSelectedNode(node);
+								setColumnPage(0);
+							}}
+							autoFocusSelectedNode={true}
+							onViewColumnMetadata={(payload) =>
+								openColumnDetailsModal({
+									tableName: payload.tableName,
+									columnId: payload.columnId,
+									columnName: payload.name,
+									physicalType:
+										payload.physicalType ||
+										resolvePhysicalType(
+											getDatabaseMetamodel.data
+												?.physicalTypes,
+											payload.tableName,
+											payload.name,
+											payload.columnId,
+										),
+									description: payload.description ?? "",
+									logicalNames: payload.logicalNames ?? [],
+								})
+							}
+							isInteractive={true}
+							onMetaModelUpdate={handleMetaModelUpdate}
+							showSearch={true}
+							searchValue={metadataSearch}
+							onSearchValueChange={setMetadataSearch}
+							onSearchMatchChange={setActiveSearchMatch}
+							searchInputTestId="engineMetadata-search-input"
+						/>
+					</section>
+					{loadingKind && (
+						<div className="absolute inset-0 z-50 flex items-center justify-center rounded-lg bg-background/70 backdrop-blur-sm">
+							<div className="w-full max-w-2xl px-4">
+								<div className="flex flex-col items-center gap-5 rounded-md border border-border bg-card p-6 shadow-md">
+									<Spinner
+										className="size-8 text-primary"
+										aria-label={
+											LOADING_COPY[loadingKind].title
+										}
+									/>
+									<div className="flex flex-col items-center gap-1">
+										<H4 className="text-center font-semibold text-lg tracking-tight">
+											{LOADING_COPY[loadingKind].title}
+										</H4>
+										<Muted className="text-center text-sm leading-6">
+											{
+												LOADING_COPY[loadingKind]
+													.description
+											}
+										</Muted>
+									</div>
+									<div className="flex w-full max-w-xl flex-col items-center gap-1">
+										<Muted className="text-xs uppercase tracking-wide">
+											Latest Status
+										</Muted>
+										<P className="text-center text-base leading-6">
+											{loadingMessage}
+										</P>
+									</div>
+
+									<Collapsible
+										open={openLoadingLog}
+										onOpenChange={setOpenLoadingLog}
+									>
+										<div className="flex w-full justify-center">
+											<CollapsibleTrigger asChild>
+												<Button
+													variant="outline"
+													size="sm"
+													className="gap-2 font-medium"
+												>
+													{openLoadingLog ? (
+														<ChevronUp className="size-4" />
+													) : (
+														<ChevronDown className="size-4" />
+													)}
+													{openLoadingLog
+														? "Hide"
+														: "Show"}{" "}
+													Execution Log (
+													{loadingLogMessages.length})
+												</Button>
+											</CollapsibleTrigger>
+										</div>
+										<CollapsibleContent>
+											<div className="mt-3 max-h-64 overflow-auto rounded-md border border-border bg-background p-3">
+												{loadingLogMessages.length >
+												0 ? (
+													<div className="space-y-1.5">
+														{loadingLogMessages.map(
+															(entry, index) => (
+																<P
+																	key={`${index}-${entry}`}
+																	className="wrap-break-word text-muted-foreground text-sm leading-6"
+																>
+																	{entry}
+																</P>
+															),
+														)}
+													</div>
+												) : (
+													<P className="text-center text-muted-foreground text-sm">
+														No console messages
+														received yet.
+													</P>
+												)}
+											</div>
+										</CollapsibleContent>
+									</Collapsible>
+								</div>
+							</div>
+						</div>
+					)}
+				</div>
+			</Section>
+
+			{selectedNode && (
+				<Section>
+					<Section.Header>Table Details</Section.Header>
+					<div className="grid gap-3 xl:grid-cols-12">
+						<Card className="flex h-fit flex-col gap-0 self-start overflow-hidden rounded-xl border border-border/70 bg-card py-0 shadow-sm xl:col-span-6">
+							<div className="space-y-4 border-border/60 border-b p-4">
+								<div className="space-y-2">
+									<P className="font-medium text-foreground text-sm">
+										Logical Names
+									</P>
+									<div className="flex min-h-11 flex-wrap content-start gap-2 rounded-lg border border-border/50 bg-muted/20 p-2.5">
+										{logical.length > 0 ? (
+											logical.map((name) => (
+												<Badge
+													key={name}
+													variant="default"
+													className="text-xs"
+													data-testid={`logical-name-${name}`}
+												>
+													{name}
+												</Badge>
+											))
+										) : (
+											<P className="text-muted-foreground text-sm">
+												No logical names provided.
+											</P>
+										)}
+									</div>
+								</div>
+								<div className="space-y-2">
+									<P className="font-medium text-foreground text-sm">
+										Description
+									</P>
+									<div className="min-h-11 rounded-lg border border-border/50 bg-muted/20 p-2.5">
+										<P className="text-muted-foreground text-sm">
+											{description ||
+												"No description provided."}
+										</P>
+									</div>
+								</div>
+							</div>
+
+							<div className="flex items-center justify-between border-border/60 border-t px-4 py-2">
+								<div className="space-y-1">
+									<P className="font-semibold text-base text-foreground">
+										Columns
+									</P>
+									<P className="text-muted-foreground text-xs">
+										Review column metadata and open details.
+									</P>
+								</div>
+								<Badge variant="secondary" className="text-xs">
+									{totalColumns} total
+								</Badge>
+							</div>
+							<div className="border-border/50 border-t px-4 py-1.5">
+								<div className="relative max-w-xs">
+									<Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 text-muted-foreground" />
+									<Input
+										value={columnSearch}
+										onChange={(event) => {
+											setColumnSearch(event.target.value);
+											setColumnPage(0);
+										}}
+										placeholder="Search column names..."
+										className="h-8 pl-8"
+										data-testid="engineMetadata-column-search-input"
+									/>
+								</div>
+							</div>
+							<div className="overflow-hidden px-4 pb-1.5">
+								<div
+									className={`min-h-[120px] overflow-auto rounded-lg border border-border/60 bg-background ${columnTableViewportClass}`}
+								>
+									<Table className="text-sm">
+										<TableHeader className="sticky top-0 z-10 bg-muted/80 backdrop-blur supports-backdrop-filter:bg-muted/60">
+											<TableRow>
+												<TableHead className="h-10 w-12 px-2" />
+												<TableHead className="h-10 min-w-[220px] px-3 font-semibold text-[11px] text-muted-foreground uppercase tracking-wide">
+													Name
+												</TableHead>
+												<TableHead className="h-10 min-w-[220px] px-3 font-semibold text-[11px] text-muted-foreground uppercase tracking-wide">
+													Logical Names
+												</TableHead>
+												<TableHead className="h-10 min-w-[260px] px-3 font-semibold text-[11px] text-muted-foreground uppercase tracking-wide">
+													Description
+												</TableHead>
+											</TableRow>
+										</TableHeader>
+										<TableBody>
+											{columnRows.length === 0 && (
+												<TableRow>
+													<TableCell
+														colSpan={4}
+														className="py-8 text-center text-muted-foreground text-sm"
+													>
+														No columns found.
+													</TableCell>
+												</TableRow>
+											)}
+											{columnRows.map((property) => {
+												const isMetadataMatch =
+													normalizedMetadataSearch.length >
+														0 &&
+													normalizeSearchValue(
+														property.name,
+													).includes(
+														normalizedMetadataSearch,
+													);
+												const isColumnSearchMatch =
+													normalizedColumnSearch.length >
+														0 &&
+													normalizeSearchValue(
+														property.name,
+													).includes(
+														normalizedColumnSearch,
+													);
+												const isActiveMatch =
+													activeSearchMatch?.columnIndex !==
+														null &&
+													selectedNode?.id ===
+														activeSearchMatch?.nodeId &&
+													selectedNode.data
+														.properties[
+														activeSearchMatch
+															.columnIndex
+													]?.id === property.id;
+												const desc =
+													getDatabaseMetamodel.data
+														?.descriptions?.[
+														property.id
+													] || "";
+												const logic =
+													getDatabaseMetamodel.data
+														?.logicalNames?.[
+														property.id
+													] || [];
+												const columnType =
+													property.type ||
+													normalizeSupportedDataType(
+														property.physicalType,
+													) ||
+													"UNKNOWN";
+
+												return (
+													<TableRow
+														key={property.id}
+														className={
+															isActiveMatch
+																? "border-border/60 bg-primary/15 ring-1 ring-primary/30"
+																: isMetadataMatch ||
+																		isColumnSearchMatch
+																	? "border-border/50 bg-primary/10"
+																	: "border-border/50 hover:bg-muted/40"
+														}
+														data-testid={`column-row-${property.id}`}
+													>
+														<TableCell className="w-12 px-2 align-top">
+															<Button
+																variant="ghost"
+																size="icon"
+																className="h-8 w-8"
+																onClick={() => {
+																	if (
+																		!selectedNode
+																	) {
+																		return;
+																	}
+																	openColumnDetailsModal(
+																		{
+																			tableName:
+																				selectedNode
+																					.data
+																					.name,
+																			columnId:
+																				property.id,
+																			columnName:
+																				property.name,
+																			physicalType:
+																				property.physicalType ||
+																				resolvePhysicalType(
+																					getDatabaseMetamodel
+																						.data
+																						?.physicalTypes,
+																					selectedNode
+																						.data
+																						.name,
+																					property.name,
+																					property.id,
+																				),
+																			description:
+																				desc,
+																			logicalNames:
+																				logic,
+																		},
+																	);
+																}}
+																data-testid={`column-row-${property.id}-metadata-btn`}
+															>
+																<Pencil className="size-4" />
+															</Button>
+														</TableCell>
+														<TableCell className="min-w-[220px] px-3 py-2.5 align-top">
+															<div className="flex flex-wrap items-center gap-2">
+																<span
+																	className={
+																		isMetadataMatch ||
+																		isColumnSearchMatch
+																			? "rounded bg-primary/20 px-1 py-0.5 font-medium text-[13px] text-foreground leading-5"
+																			: "font-medium text-[13px] text-foreground leading-5"
+																	}
+																>
+																	{
+																		property.name
+																	}
+																</span>
+																<Badge
+																	variant="outline"
+																	className="h-5 rounded-sm px-1.5 font-medium text-[10px] text-muted-foreground uppercase tracking-wide"
+																>
+																	{columnType}
+																</Badge>
+															</div>
+														</TableCell>
+														<TableCell className="min-w-[220px] px-3 py-2.5 align-top">
+															<div className="flex flex-wrap gap-1.5">
+																{logic.length >
+																0 ? (
+																	logic.map(
+																		(
+																			ln,
+																		) => (
+																			<Badge
+																				key={
+																					ln
+																				}
+																				variant="secondary"
+																				className="h-5 rounded-sm px-1.5 font-medium text-[10px]"
+																			>
+																				{
+																					ln
+																				}
+																			</Badge>
+																		),
+																	)
+																) : (
+																	<span className="text-muted-foreground text-xs">
+																		-
+																	</span>
+																)}
+															</div>
+														</TableCell>
+														<TableCell className="min-w-[260px] px-3 py-2.5 align-top">
+															<P className="wrap-break-word max-w-[420px] text-muted-foreground text-xs leading-5">
+																{desc || "-"}
+															</P>
+														</TableCell>
+													</TableRow>
+												);
+											})}
+										</TableBody>
+									</Table>
+								</div>
+							</div>
+							<div className="flex flex-wrap items-center justify-between gap-3 border-border/60 border-t px-4 py-1.5">
+								<div className="flex items-center gap-2">
+									<P className="text-muted-foreground text-sm">
+										Rows per page:
+									</P>
+									<Select
+										value={String(columnVisibleRows)}
+										onValueChange={(value) => {
+											setColumnVisibleRows(Number(value));
+											setColumnPage(0);
+										}}
+									>
+										<SelectTrigger className="h-8 w-[88px]">
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="10">
+												10
+											</SelectItem>
+											<SelectItem value="25">
+												25
+											</SelectItem>
+											<SelectItem value="50">
+												50
+											</SelectItem>
+										</SelectContent>
+									</Select>
+								</div>
+								<div className="flex items-center gap-4">
+									<P className="text-muted-foreground text-sm">
+										{visibleColumnStart}-{visibleColumnEnd}{" "}
+										of {totalColumns}
+									</P>
+									<div className="flex gap-1">
+										<Button
+											variant="outline"
+											size="icon"
+											className="h-8 w-8"
+											onClick={() =>
+												setColumnPage(
+													Math.max(0, columnPage - 1),
+												)
+											}
+											disabled={columnPage === 0}
+											aria-label="Previous page"
+										>
+											<ChevronLeft className="h-4 w-4" />
+										</Button>
+										<Button
+											variant="outline"
+											size="icon"
+											className="h-8 w-8"
+											onClick={() =>
+												setColumnPage(columnPage + 1)
+											}
+											disabled={
+												(columnPage + 1) *
+													columnVisibleRows >=
+												totalColumns
+											}
+											aria-label="Next page"
+										>
+											<ChevronRight className="h-4 w-4" />
+										</Button>
+									</div>
+								</div>
+							</div>
+						</Card>
+
+						<Card className="flex h-[600px] max-h-[72vh] min-h-[520px] flex-col gap-0 overflow-hidden rounded-xl border border-border/70 bg-card py-0 shadow-sm xl:col-span-6 xl:h-[680px]">
+							<div className="space-y-1 border-border/60 border-b px-4 py-3">
+								<P className="font-medium text-foreground text-sm">
+									Data
+								</P>
+								<P className="text-muted-foreground text-xs">
+									Preview up to 100 rows from the selected
+									table.
+								</P>
+							</div>
+							<div className="min-h-0 flex-1 overflow-hidden">
+								{getData.status === "SUCCESS" &&
+								metadataPreviewData ? (
+									<div className="h-full w-full overflow-hidden px-4 py-1.5">
+										<Table wrapperClassName="h-full w-full rounded-md border border-border overflow-auto">
+											<TableHeader className="sticky top-0 z-10 bg-secondary">
+												<TableRow>
+													{metadataPreviewData.output.data.headers.map(
+														(header) => (
+															<TableHead
+																key={header}
+															>
+																{header}
+															</TableHead>
+														),
+													)}
+												</TableRow>
+											</TableHeader>
+											<TableBody>
+												{metadataPreviewData.output.data.values.map(
+													(row, rowIdx) => (
+														// biome-ignore lint/suspicious/noArrayIndexKey: table rows have no natural unique key
+														<TableRow key={rowIdx}>
+															{(
+																row as unknown[]
+															).map(
+																(
+																	cell,
+																	cellIdx,
+																) => (
+																	<TableCell
+																		key={
+																			metadataPreviewData
+																				.output
+																				.data
+																				.headers[
+																				cellIdx
+																			]
+																		}
+																	>
+																		{String(
+																			cell ??
+																				"",
+																		)}
+																	</TableCell>
+																),
+															)}
+														</TableRow>
+													),
+												)}
+											</TableBody>
+										</Table>
+									</div>
+								) : getData.status === "LOADING" ? (
+									<div className="flex h-full items-center justify-center p-8">
+										<Spinner />
+									</div>
+								) : getData.status === "ERROR" ? (
+									<div className="flex h-full w-full items-center justify-center">
+										<Alert
+											variant="destructive"
+											className="max-w-md"
+										>
+											<AlertCircleIcon />
+											<AlertTitle>Error</AlertTitle>
+											<AlertDescription>
+												{getData.error?.message ||
+													"Error"}
+											</AlertDescription>
+										</Alert>
+									</div>
+								) : (
+									<div className="flex h-full items-center justify-center p-8">
+										<Muted>
+											Select a table to view data.
+										</Muted>
+									</div>
+								)}
+							</div>
+						</Card>
+					</div>
+				</Section>
+			)}
+
+			<ColumnMetadataModal
+				open={openColumnDetails}
+				onClose={closeColumnDetailsModal}
+				tableName={selectedColumnDetails?.tableName}
+				columnName={selectedColumnDetails?.columnName}
+				physicalType={selectedColumnDetails?.physicalType}
+				logicalNames={selectedColumnDetails?.logicalNames}
+				description={selectedColumnDetails?.description}
+			/>
+
+			<SyncExternalDatabaseOverlay
+				engine={engine.engine_id}
+				tables={concepts} // for RDBMS, tables and views are the same in terms of metadata, so we can just pass the concepts as both
+				views={concepts} // for RDBMS, tables and views are the same in terms of metadata, so we can just pass the concepts as both
+				open={showSyncDatabase}
+				onClose={async (success, data) => {
+					// close it first, so the page shows its progress while the
+					// schema is read
+					setShowSyncDatabase(false);
+					if (success && data) {
+						await syncDatabase(data.tables, data.views);
+					}
+				}}
+			/>
+		</div>
+	);
+});

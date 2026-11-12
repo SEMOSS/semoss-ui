@@ -11,7 +11,7 @@ import {
 } from "./model-usage-limit-format";
 
 /** Props for {@link UsageLimitRuleMeter}. */
-export interface UsageLimitRuleMeterProps {
+interface UsageLimitRuleMeterProps {
 	/** The rule, with what is used */
 	rule: UsageLimitRuleUsage;
 	/** Where its limit is set, which decides how its counts are said */

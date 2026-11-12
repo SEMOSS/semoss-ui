@@ -13,7 +13,7 @@ import type { GitDataStatus } from "./git-commit-row";
 import { getGitDiffCodeModels } from "./git-diff.utility";
 
 /** Props for displaying a standalone Git diff. */
-export interface GitDiffEditorProps {
+interface GitDiffEditorProps {
 	/** Repository-relative path being compared. */
 	path: string;
 	/** Loaded diff data. */

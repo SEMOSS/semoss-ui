@@ -30,7 +30,7 @@ export const ACCESS_PERMISSIONS: { value: Role; label: string }[] = [
 	{ value: "READ_ONLY", label: "Read-Only" },
 ];
 
-export interface UserAccessTableProps {
+interface UserAccessTableProps {
 	/** Resources the selected user currently has access to */
 	rows: UserResourceAccess[];
 	/** Show a Type column (used for engines and apps) */

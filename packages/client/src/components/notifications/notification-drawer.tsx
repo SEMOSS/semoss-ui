@@ -2,6 +2,7 @@
 import type * as React from "react";
 import { useEffect, useId, useMemo, useState } from "react";
 import { runPixel } from "@semoss/sdk";
+import { useSession } from "@semoss/sdk/react";
 import {
 	Button,
 	Sheet,
@@ -12,20 +13,27 @@ import {
 	TabsTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useSession } from "@/hooks";
+import { getErrorMessage } from "@semoss/utility/error";
 import { NotificationItem } from "./notification-item";
 import type { NotificationRecord } from "./types";
 
 interface NotificationDrawerProps {
+	/** Whether the drawer is open; it reads the notifications each time it opens */
 	open: boolean;
+	/** Called when the drawer closes, or a notification's link is followed */
 	onClose: () => void;
 }
 
+/**
+ * The signed in user's notifications in a side sheet, with All, Read and
+ * Unread tabs. All loads more as it scrolls; the other tabs have Load more.
+ * Notifications can be marked read and deleted, one at a time or all at once.
+ */
 export const NotificationDrawer: React.FC<NotificationDrawerProps> = (
 	props: NotificationDrawerProps,
 ) => {
 	const { open, onClose } = props;
-	const loggedInUser = useSession((state) => state.user.id);
+	const loggedInUser = useSession((state) => state.user?.id ?? "");
 	const LIMIT = 10;
 	const [offset, setOffset] = useState(0);
 	const [hasMore, setHasMore] = useState(true);
@@ -75,7 +83,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = (
 			const notifications = first.output as NotificationRecord[];
 			return notifications;
 		} catch (e) {
-			toast.error(e?.message ?? "Failed to fetch notifications");
+			toast.error(getErrorMessage(e, "Failed to fetch notifications"));
 			return []; // return empty list so caller doesn't break
 		}
 	};

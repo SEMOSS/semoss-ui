@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button, Textarea } from "@semoss/ui/next";
 
-export interface JSONEditorProps {
+interface JSONEditorProps {
 	/** The JSON value to edit */
 	value: unknown;
 	/** Callback fired when the JSON value changes */

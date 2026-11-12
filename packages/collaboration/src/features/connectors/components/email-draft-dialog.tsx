@@ -12,7 +12,7 @@ import type { SavedEmailDraft } from "../types";
 import { EmailDraftEditorForm } from "./email-draft-editor-form";
 import type { EmailReplyContext } from "./email-reply-field";
 
-export interface EmailDraftDialogProps {
+interface EmailDraftDialogProps {
 	/** Controlled visibility; closing retains unsaved content while the component remains mounted. */
 	isOpen: boolean;
 	onOpenChange: (isOpen: boolean) => void;

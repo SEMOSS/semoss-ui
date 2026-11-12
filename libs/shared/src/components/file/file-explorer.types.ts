@@ -319,6 +319,12 @@ export interface FileExplorerOptions {
 export interface FileExplorerNewFileOverlayProps {
 	mode: FileMode;
 	/**
+	 * The explorer's source, which creates in a host's own source, such as a
+	 * connector's drive, where the mode's asset tree would create in the
+	 * insight. Left out, the overlay uses the mode's.
+	 */
+	adapter?: FileExplorerAdapter;
+	/**
 	 * The directory to create in, trailing-slashed. This is the *initial*
 	 * destination only — the overlay may let the user retarget it, and reports
 	 * where it actually created through `onClose`.

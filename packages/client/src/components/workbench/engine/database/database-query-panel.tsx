@@ -65,7 +65,7 @@ const SQL_KEYWORDS = [
 ];
 
 /** The config a query-editor instance is opened with. */
-export interface DatabaseQueryConfig {
+interface DatabaseQueryConfig {
 	/** Query text the editor starts with. */
 	initialQuery?: string;
 	/** Sequence number behind the default "Query N" name. */

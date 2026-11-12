@@ -5,10 +5,8 @@ import {
 	screen,
 	waitFor,
 } from "@testing-library/react";
-import {
-	useEnsureThreadInsights,
-	useThreadInsights,
-} from "@/features/work-thread/use-thread-insights";
+import { useContext } from "react";
+import { useEnsureThreadInsights } from "@/features/work-thread/use-thread-insights";
 import type { InsightActions } from "@/lib/pixel";
 import { createInitialCollaborationState } from "../state/collaboration.fixtures";
 import type { CollaborationState } from "../state/collaboration.types";
@@ -16,6 +14,7 @@ import {
 	CollaborationSessionProvider,
 	useCollaborationSession,
 } from "../state/collaboration-session.context";
+import { ThreadInsightsContext } from "./thread-insights.context";
 import { ThreadInsightsProvider } from "./thread-insights-provider";
 
 type Out = Record<string, unknown>;
@@ -51,15 +50,19 @@ function Thread({ ensure = true }: { ensure?: boolean }) {
 	const { state } = useCollaborationSession();
 	const thread = state.threads[0];
 	useEnsureThreadInsights(ensure ? thread : undefined);
-	const run = useThreadInsights(thread);
+	const insights = useContext(ThreadInsightsContext);
+	const run = insights?.runs[thread.id];
 	return (
 		<>
-			<button type="button" onClick={run.generate}>
+			<button
+				type="button"
+				onClick={() => insights?.summarize(thread.id, true)}
+			>
 				Summarize
 			</button>
-			<p>{run.isGenerating ? "generating" : "idle"}</p>
+			<p>{run?.isRunning ? "generating" : "idle"}</p>
 			<p>{thread.summary}</p>
-			<p>{run.error}</p>
+			<p>{run?.isRunning ? "" : run?.error}</p>
 			<ul>
 				{state.workspaces[thread.id].steps.map((step) => (
 					<li key={step.id}>{`${step.text}:${step.status}`}</li>
@@ -127,7 +130,7 @@ it("summarizes an opened thread in the background and applies Brain's steps with
 	expect(statements.some((s) => /RunAgent|Room/.test(s))).toBe(false);
 });
 
-it("leaves a current summary alone and forces a new one only on Summarize", async () => {
+it("leaves a current summary alone and forces a new one when asked", async () => {
 	const state = liveState((draft) => {
 		draft.threads[0].summary = "Already summarized.";
 		draft.threads[0].summaryAt = "2026-10-02T14:00:00Z";
@@ -147,7 +150,7 @@ it("leaves a current summary alone and forces a new one only on Summarize", asyn
 	);
 });
 
-it("reports a failed run once and does not retry it until the owner asks", async () => {
+it("reports a failed run once and does not retry it on rerender", async () => {
 	const state = liveState();
 	const threadId = state.threads[0].id;
 	const run = respond(() =>
@@ -231,7 +234,6 @@ it("never summarizes sample threads, which have no server thread", async () => {
 	state.threads[0].summaryCurrent = false;
 	const run = respond(() => ({}));
 	renderThread(state, run);
-	fireEvent.click(screen.getByRole("button", { name: "Summarize" }));
 	await act(async () => undefined);
 	expect(run).not.toHaveBeenCalled();
 });

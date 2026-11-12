@@ -12,7 +12,7 @@ import { copyTextToClipboard } from "@semoss/utility/clipboard";
 /** How long the button shows a check after a copy */
 const COPIED_RESET_MS = 2000;
 
-export interface ShareCopyButtonProps {
+interface ShareCopyButtonProps {
 	/** The text the button copies */
 	text: string;
 	/** The button's name and tooltip, such as "Copy link" */

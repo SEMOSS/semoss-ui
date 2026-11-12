@@ -7,7 +7,7 @@ import {
 } from "@semoss/ui/next";
 
 /** Props for {@link TooltipIconButton}. */
-export interface TooltipIconButtonProps {
+interface TooltipIconButtonProps {
 	/** The button's accessible name, and its tooltip unless `tooltip` is given. */
 	label: string;
 	/** The icon the button shows; mark it `aria-hidden`. */

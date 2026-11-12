@@ -24,7 +24,7 @@ export interface CatalogSettingsSection {
 	description: string;
 }
 
-export interface CatalogSettingsLayoutProps {
+interface CatalogSettingsLayoutProps {
 	/** Sections the viewer can open, in order. The first one opens by default. */
 	sections: CatalogSettingsSection[];
 	/** Accessible name for the section nav. */

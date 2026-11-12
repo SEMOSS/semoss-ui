@@ -3159,17 +3159,6 @@ export const AutomationCanvasContent = forwardRef<
 		mcpMode,
 	]);
 
-	const _takeToValidationStep = useCallback((stepId: string) => {
-		setShowAddMenu(false);
-		setEditingStepId(stepId);
-		setActiveDockTab("inspector");
-		reactFlowInstanceRef.current?.fitView({
-			nodes: [{ id: stepId }],
-			padding: 0.5,
-			duration: 250,
-		});
-	}, []);
-
 	// ---- React Flow node/edge sync ----
 	useEffect(() => {
 		if (!displaySteps.length) return;

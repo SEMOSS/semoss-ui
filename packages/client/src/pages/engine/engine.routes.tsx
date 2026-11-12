@@ -4,20 +4,21 @@ import { FunctionImport } from "@/components/import/function/function-import";
 import { GuardrailImport } from "@/components/import/guardrail/guardrail-import";
 import { StorageImport } from "@/components/import/storage/storage-import";
 import { VectorImport } from "@/components/import/vector/vector-import";
-import { ImportLayout, ModelImportPage } from "../import";
+import { ImportLayout } from "../import/import-layout";
+import { ModelImportPage } from "../import/model-import.page";
 import { DatabaseWorkbenchPage } from "./database-workbench-page";
+import { EngineLayout } from "./engine.layout";
 import { EngineActivityPage } from "./engine-activity-page";
 import { EngineAuditPage } from "./engine-audit.page";
-import { EngineIndexPage } from "./engine-index-page";
-import { EngineLayout } from "./engine-layout";
-import { EngineMcpUsagePage } from "./engine-mcp-usage-page";
-import { EngineMetadataPage } from "./engine-metadata-page";
+import { EngineIndexPage } from "./engine-index.page";
+import { EngineMcpUsagePage } from "./engine-mcp-usage.page";
+import { EngineMetadataPage } from "./engine-metadata.page";
 import { EngineOverviewPage } from "./engine-overview-page";
+import { EngineSettingsPage } from "./engine-settings.page";
 import { EngineSettingsLayout } from "./engine-settings-layout";
-import { EngineSettingsPage } from "./engine-settings-page";
 import { ENGINE_SETTINGS_SECTIONS } from "./engine-settings-sections";
 import { EngineSmssPage } from "./engine-smss-page";
-import { EngineTabsLayout } from "./engine-tabs-layout";
+import { EngineTabsLayout } from "./engine-tabs.layout";
 import { EngineUsagePage } from "./engine-usage-page";
 import { FunctionWorkbenchPage } from "./function-workbench-page";
 import { GuardrailWorkbenchPage } from "./guardrail-workbench-page";
@@ -56,6 +57,10 @@ const buildEngineSettingsRoute = (): EngineRoute => ({
 	],
 });
 
+/**
+ * Every engine type's routes: its catalog, its import page, and each engine's
+ * workbench and tabs.
+ */
 export const ENGINE_ROUTES: EngineRoute[] = [
 	// FUNCTION
 	{

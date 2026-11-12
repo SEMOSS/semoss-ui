@@ -2,7 +2,7 @@ import { ConnectorBrandIcon } from "@semoss/shared";
 import type { ConnectorServiceId } from "../connector.catalog";
 
 /** Props for {@link ConnectorServiceIcon}. */
-export interface ConnectorServiceIconProps {
+interface ConnectorServiceIconProps {
 	/** The service to draw. */
 	serviceId: ConnectorServiceId;
 	/** Classes for the icon, such as its size. */

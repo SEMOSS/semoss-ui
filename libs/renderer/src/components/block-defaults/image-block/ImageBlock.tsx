@@ -161,14 +161,11 @@ export const ImageBlock: BlockComponent = observer(({ id }) => {
 		// Fallback: no src or unknown type
 		setStatus({ isLoading: false, hasError: false });
 		setImgStyle(dataStyle);
-
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [getImage.status, isObjSrc ? src.fileName : src]);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		listeners.preProcess?.();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	const style = useMemo(
@@ -198,5 +195,3 @@ export const ImageBlock: BlockComponent = observer(({ id }) => {
 		</Tooltip>
 	);
 });
-
-export default ImageBlock;

@@ -1,49 +1,24 @@
-import { type PropsWithChildren, useMemo } from "react";
-import { useInsight } from "@semoss/sdk/react";
-import type { ThemeMap } from "@semoss/shared";
-import { Spinner } from "@semoss/ui/next";
+import { type PropsWithChildren, useEffect, useMemo } from "react";
 import { RootContext } from "@/contexts/root-context";
+import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
+import { applyPlaygroundThemeVariables } from "@/stores/root/playground-theme";
 import { RootStore } from "@/stores/root/root.store";
 
+/**
+ * Provide the playground's theme, read from the SDK's `Config`, to the views
+ * that still read it through `useRoot()`, and apply its colors to the page.
+ */
 export const RootLayout = ({ children }: PropsWithChildren) => {
-	const { system } = useInsight();
+	const theme = usePlaygroundTheme();
 
-	// set up the store
-	const rootStore = useMemo(() => {
-		const store = new RootStore();
-		let theme: Partial<ThemeMap["playground"]> = {};
+	// the deprecated adapter for useRoot(); rebuilt when the theme changes
+	const value = useMemo(() => ({ root: new RootStore(theme) }), [theme]);
 
-		if (system?.config?.theme) {
-			// parse the theme
-			const rawTheme = system.config.theme.THEME_MAP || "{}";
-			try {
-				if (rawTheme) {
-					const parsedTheme = JSON.parse(String(rawTheme));
-					theme = parsedTheme?.playground || {};
-				}
-			} catch (_e) {}
-		}
-		// A deployment without a custom theme still uses the normal app defaults.
-		void store.initialize(theme);
-
-		return store;
-	}, [system.config.theme]);
-
-	if (!rootStore.isInitialized) {
-		return (
-			<div className="flex h-full w-full items-center justify-center">
-				<Spinner />
-			</div>
-		);
-	}
+	useEffect(() => {
+		applyPlaygroundThemeVariables(theme);
+	}, [theme]);
 
 	return (
-		<RootContext.Provider
-			value={{
-				root: rootStore,
-			}}
-		>
-			{children}
-		</RootContext.Provider>
+		<RootContext.Provider value={value}>{children}</RootContext.Provider>
 	);
 };
