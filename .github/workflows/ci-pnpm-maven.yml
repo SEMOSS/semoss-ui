@@ -40,11 +40,11 @@ jobs:
             - name: Install n (Node version manager)
               run: npm install -g n
 
-            # ---------- Build semoss-ui (Node 24) -----------                
+            # ---------- Build semoss-ui (Node 26) -----------                
             - name: Install pnpm
               uses: pnpm/action-setup@v4
               with:
-                version: 10.13.1
+                version: 12.18.0
 
             - name: Install pnpm dependencies
               run: |
@@ -232,11 +232,11 @@ jobs:
             - name: Install n (Node version manager)
               run: npm install -g n
 
-            # ---------- Build semoss-ui (Node 24) -----------                
+            # ---------- Build semoss-ui (Node 26) -----------                
             - name: Install pnpm
               uses: pnpm/action-setup@v4
               with:
-                version: 10.13.1
+                version: 12.18.0
 
             - name: Install npm dependencies
               run: |
@@ -468,11 +468,11 @@ jobs:
             - name: Install n (Node version manager)
               run: npm install -g n
 
-            # ---------- Build semoss-ui (Node 24) -----------                
+            # ---------- Build semoss-ui (Node 26) -----------                
             - name: Install pnpm
               uses: pnpm/action-setup@v4
               with:
-                version: 10.13.1
+                version: 12.18.0
 
             - name: Install npm dependencies
               run: |

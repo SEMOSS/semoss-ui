@@ -124,7 +124,7 @@ semoss/
 ## Requirements
 
 - **Node.js**: >=26.0.0 <27 (see `.nvmrc`)
-- **pnpm**: ~10.13.0 (see `engines`; `packageManager` pins `pnpm@10.13.1`)
+- **pnpm**: ~12.18.0 (see `engines`; `packageManager` pins `pnpm@12.18.0`)
 
 ## Build Commands
 
