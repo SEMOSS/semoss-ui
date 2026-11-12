@@ -1,10 +1,18 @@
 import { ChevronDown, GripVertical } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
 import {
+	Alert,
+	AlertDescription,
 	Button,
 	cn,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuGroup,
@@ -12,9 +20,16 @@ import {
 	DropdownMenuLabel,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
+	Label,
 	P,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	Small,
 } from "@semoss/ui/next";
+import type { Room } from "@/features/collaboration/state/collaboration.types";
 import { pixel } from "@/lib/pixel";
 import { roomPath } from "@/lib/workspace-paths";
 import { localDue, runBatch } from "../live/live-state";
@@ -49,6 +64,7 @@ export interface Item {
 	topic?: string;
 	topicId?: string;
 	roomId?: string;
+	rooms?: Room[];
 	due?: string;
 	openSteps: Step[];
 	/** Every step on the item, done ones too; absent from older servers. */
@@ -59,6 +75,14 @@ const str = (value: unknown): string =>
 	typeof value === "string" ? value : "";
 const list = (value: unknown): Row[] =>
 	Array.isArray(value) ? (value as Row[]) : [];
+
+function toRoom(row: Row): Room {
+	return {
+		id: str(row.id),
+		title: str(row.title) || undefined,
+		lastActivity: str(row.lastActivity),
+	};
+}
 
 function toStep(row: Row): Step {
 	return {
@@ -83,6 +107,7 @@ function toItem(row: Row): Item {
 		topic: primary ? str(primary.name) : undefined,
 		topicId: primary ? str(primary.id) : undefined,
 		roomId: str(row.roomId) || undefined,
+		rooms: list(row.rooms).map(toRoom),
 		due: str(row.due) || undefined,
 		openSteps: list(row.openSteps).map(toStep),
 		stepCount:
@@ -155,6 +180,25 @@ export function useWorkItems() {
 		},
 		[actions, load],
 	);
+	const mergeChats = useCallback(
+		async (
+			taskId: string,
+			roomId: string,
+			intoRoomId: string,
+		): Promise<void> => {
+			try {
+				await runBatch(actions, [
+					pixel("WorkMergeRooms", { taskId, roomId, intoRoomId }),
+				]);
+				await load();
+			} catch (cause) {
+				const message = errorText(cause);
+				setError(message);
+				throw new Error(message);
+			}
+		},
+		[actions, load],
+	);
 
 	const isMine = useCallback(
 		(step: Step) =>
@@ -163,8 +207,17 @@ export function useWorkItems() {
 		[selfId],
 	);
 
-	return { items, setItems, error, run, isMine };
+	return { items, setItems, error, run, mergeChats, isMine };
 }
+
+/** An item's chats, newest first; an older server reports only its one room. */
+function roomsOf(item: Item): Room[] {
+	if (item.rooms?.length) return item.rooms;
+	return item.roomId ? [{ id: item.roomId, lastActivity: "" }] : [];
+}
+
+const chatLabel = (room: Room, index: number) =>
+	room.title || `Chat ${index + 1}`;
 
 /** The owner's next step: theirs first, then one nobody was named for (a group ask on their item). */
 export function mineNext(item: Item, isMine: (step: Step) => boolean) {
@@ -178,9 +231,12 @@ function nextStep(item: Item, isMine: (step: Step) => boolean) {
 	return mineNext(item, isMine) ?? item.openSteps[0];
 }
 
-/** Where an item is worked: its room, or the item page until it has one. */
-export const itemPath = (item: Item) =>
-	item.roomId ? roomPath(item.roomId) : `/work/item/${item.id}`;
+/** Where an item is worked: its newest room, legacy room, or the item page until it has one. */
+export const itemPath = (item: Item) => {
+	const room = item.rooms?.[0]; // Newest first
+	const roomId = room?.id || item.roomId;
+	return roomId ? roomPath(roomId) : `/work/item/${item.id}`;
+};
 
 function openRoom(navigate: ReturnType<typeof useNavigate>, item: Item) {
 	void navigate(itemPath(item));
@@ -195,6 +251,7 @@ export function waitingOn(item: Item, isMine: (step: Step) => boolean) {
 function ItemRow({
 	item,
 	isMine,
+	onRequestMerge,
 	draggable,
 	onDragStart,
 	onDragOver,
@@ -202,6 +259,7 @@ function ItemRow({
 }: {
 	item: Item;
 	isMine: (step: Step) => boolean;
+	onRequestMerge?: (item: Item) => void;
 	draggable?: boolean;
 	onDragStart?: () => void;
 	onDragOver?: () => void;
@@ -211,6 +269,7 @@ function ItemRow({
 	const due = dueLabel(item.due);
 	const next = mineNext(item, isMine);
 	const waiting = waitingOn(item, isMine);
+	const rooms = roomsOf(item);
 
 	return (
 		<li
@@ -271,14 +330,63 @@ function ItemRow({
 					{due.text}
 				</Small>
 			) : null}
-			<Button
-				size="sm"
-				variant="outline"
-				className="shrink-0 opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
-				onClick={() => openRoom(navigate, item)}
-			>
-				Open room
-			</Button>
+			<div className="flex shrink-0 items-center gap-2">
+				{rooms.length > 0 ? (
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button
+								size="sm"
+								variant="outline"
+								aria-label={`More chats for ${item.title}`}
+							>
+								Chats
+								<ChevronDown aria-hidden="true" />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end" className="w-64">
+							<DropdownMenuItem
+								onSelect={() =>
+									void navigate(
+										`/work/item/${encodeURIComponent(item.id)}`,
+									)
+								}
+							>
+								New chat
+							</DropdownMenuItem>
+							<DropdownMenuSeparator />
+							{rooms.map((room, index) => (
+								<DropdownMenuItem
+									key={room.id}
+									onSelect={() =>
+										void navigate(roomPath(room.id))
+									}
+								>
+									<span className="truncate">
+										{chatLabel(room, index)}
+									</span>
+								</DropdownMenuItem>
+							))}
+							{onRequestMerge && rooms.length > 1 ? (
+								<>
+									<DropdownMenuSeparator />
+									<DropdownMenuItem
+										onSelect={() => onRequestMerge(item)}
+									>
+										Merge chats...
+									</DropdownMenuItem>
+								</>
+							) : null}
+						</DropdownMenuContent>
+					</DropdownMenu>
+				) : null}
+				<Button
+					size="sm"
+					variant="outline"
+					onClick={() => openRoom(navigate, item)}
+				>
+					Open room
+				</Button>
+			</div>
 		</li>
 	);
 }
@@ -528,10 +636,17 @@ export function split(items: Item[]) {
 
 /** The owner's work items, or with review, the inferred ones waiting for the owner. */
 export function WorkItems({ review: reviewing }: { review?: boolean }) {
-	const { items, setItems, error, run, isMine } = useWorkItems();
+	const { items, setItems, error, run, mergeChats, isMine } = useWorkItems();
 	const [dragId, setDragId] = useState<string | null>(null);
 	const dragFrom = useRef("");
 	const [showOthers, setShowOthers] = useState(false);
+	const [mergeItemId, setMergeItemId] = useState<string | null>(null);
+	const [fromRoomId, setFromRoomId] = useState("");
+	const [intoRoomId, setIntoRoomId] = useState("");
+	const [isMerging, setIsMerging] = useState(false);
+	const [mergeError, setMergeError] = useState("");
+	const fromFieldId = useId();
+	const intoFieldId = useId();
 
 	if (items === null) {
 		return (
@@ -545,6 +660,31 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 		);
 	}
 	const { review, proposed, mine, others } = split(items);
+	const mergeItem = items.find((item) => item.id === mergeItemId);
+	const mergeRooms = mergeItem ? roomsOf(mergeItem) : [];
+	const closeMerge = () => {
+		setMergeItemId(null);
+		setFromRoomId("");
+		setIntoRoomId("");
+		setMergeError("");
+	};
+	const handleRequestMerge = (item: Item) => {
+		closeMerge();
+		setMergeItemId(item.id);
+	};
+	const handleMerge = async () => {
+		if (!mergeItemId || !fromRoomId || !intoRoomId || isMerging) return;
+		setIsMerging(true);
+		setMergeError("");
+		try {
+			await mergeChats(mergeItemId, fromRoomId, intoRoomId);
+			closeMerge();
+		} catch (cause) {
+			setMergeError(errorText(cause));
+		} finally {
+			setIsMerging(false);
+		}
+	};
 
 	if (reviewing) {
 		return (
@@ -612,6 +752,7 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 							key={item.id}
 							item={item}
 							isMine={isMine}
+							onRequestMerge={handleRequestMerge}
 							draggable
 							onDragStart={() => {
 								setDragId(item.id);
@@ -658,12 +799,111 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 									key={item.id}
 									item={item}
 									isMine={isMine}
+									onRequestMerge={handleRequestMerge}
 								/>
 							))}
 						</ul>
 					) : null}
 				</div>
 			) : null}
+			<Dialog
+				open={mergeItem !== undefined}
+				onOpenChange={(open) => {
+					if (!open && !isMerging) closeMerge();
+				}}
+			>
+				<DialogContent
+					showCloseButton={!isMerging}
+					onEscapeKeyDown={(event) => {
+						if (isMerging) event.preventDefault();
+					}}
+					onInteractOutside={(event) => {
+						if (isMerging) event.preventDefault();
+					}}
+				>
+					<DialogHeader>
+						<DialogTitle>Merge chats</DialogTitle>
+						<DialogDescription>
+							The messages of the first chat are added to the end
+							of the second, and the first chat is removed from{" "}
+							{mergeItem?.title}.
+						</DialogDescription>
+					</DialogHeader>
+					<div className="space-y-2">
+						<Label htmlFor={fromFieldId}>Chat to merge</Label>
+						<Select
+							value={fromRoomId}
+							onValueChange={setFromRoomId}
+							disabled={isMerging}
+						>
+							<SelectTrigger id={fromFieldId} className="w-full">
+								<SelectValue placeholder="Choose a chat" />
+							</SelectTrigger>
+							<SelectContent>
+								{mergeRooms.map((room, index) =>
+									room.id === intoRoomId ? null : (
+										<SelectItem
+											key={room.id}
+											value={room.id}
+										>
+											{chatLabel(room, index)}
+										</SelectItem>
+									),
+								)}
+							</SelectContent>
+						</Select>
+					</div>
+					<div className="space-y-2">
+						<Label htmlFor={intoFieldId}>Merge into</Label>
+						<Select
+							value={intoRoomId}
+							onValueChange={setIntoRoomId}
+							disabled={isMerging}
+						>
+							<SelectTrigger id={intoFieldId} className="w-full">
+								<SelectValue placeholder="Choose a chat" />
+							</SelectTrigger>
+							<SelectContent>
+								{mergeRooms.map((room, index) =>
+									room.id === fromRoomId ? null : (
+										<SelectItem
+											key={room.id}
+											value={room.id}
+										>
+											{chatLabel(room, index)}
+										</SelectItem>
+									),
+								)}
+							</SelectContent>
+						</Select>
+					</div>
+					<P className="text-muted-foreground text-sm">
+						This merge cannot be undone.
+					</P>
+					{mergeError ? (
+						<Alert variant="destructive">
+							<AlertDescription>{mergeError}</AlertDescription>
+						</Alert>
+					) : null}
+					<DialogFooter className="flex-col sm:flex-row">
+						<Button
+							type="button"
+							variant="outline"
+							disabled={isMerging}
+							onClick={closeMerge}
+						>
+							Cancel
+						</Button>
+						<Button
+							type="button"
+							disabled={!fromRoomId || !intoRoomId || isMerging}
+							onClick={() => void handleMerge()}
+						>
+							{isMerging ? "Merging..." : "Merge chats"}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</>
 	);
 }

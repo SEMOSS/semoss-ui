@@ -1,6 +1,7 @@
-import { Navigate, useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { Small } from "@semoss/ui/next";
 import { CollaborationPage } from "@/features/collaboration/components/collaboration-page";
+import { RoomSelector } from "@/features/collaboration/components/room-selector";
 import {
 	TaskContextView,
 	useTaskContext,
@@ -9,13 +10,13 @@ import { useWorkItems } from "@/features/collaboration/components/work-items-lis
 import { LandingChatComposer } from "@/features/daily-chat/landing-chat-composer";
 import { roomPath } from "@/lib/workspace-paths";
 
-/** Start the room for one work item; once it has one, go straight there. */
+/** Start a new chat for one work item; show room selector if other chats exist. */
 export function WorkItemPage() {
 	const { taskId = "" } = useParams();
+	const navigate = useNavigate();
 	const { items, error } = useWorkItems();
 	const item = items?.find((i) => i.id === taskId);
 	const context = useTaskContext({ taskId });
-	if (item?.roomId) return <Navigate to={roomPath(item.roomId)} replace />;
 	return (
 		<CollaborationPage>
 			<div className="mx-auto w-full max-w-3xl pt-4 pb-12 sm:pt-12">
@@ -32,6 +33,15 @@ export function WorkItemPage() {
 							Ask anything about this item. The assistant sees its
 							steps and the mail and chats it came from.
 						</Small>
+						{item.rooms && item.rooms.length > 0 && (
+							<RoomSelector
+								rooms={item.rooms}
+								onRoomSelect={(roomId) =>
+									navigate(roomPath(roomId))
+								}
+								label="View earlier chats"
+							/>
+						)}
 						<LandingChatComposer
 							topicId={item.topicId}
 							taskId={item.id}
