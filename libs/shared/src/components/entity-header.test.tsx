@@ -5,7 +5,7 @@ import {
 	screen,
 	waitFor,
 } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EntityHeader } from "./entity-header";
 
 const mocks = vi.hoisted(() => ({
@@ -52,8 +52,21 @@ const startRename = (): HTMLInputElement => {
 };
 
 describe("EntityHeader rename", () => {
+	beforeEach(() => {
+		// jsdom has no ResizeObserver; the rename button's tooltip measures with one.
+		vi.stubGlobal(
+			"ResizeObserver",
+			class {
+				observe() {}
+				unobserve() {}
+				disconnect() {}
+			},
+		);
+	});
+
 	afterEach(() => {
 		cleanup();
+		vi.unstubAllGlobals();
 		mocks.toastError.mockReset();
 		mocks.toastSuccess.mockReset();
 	});
