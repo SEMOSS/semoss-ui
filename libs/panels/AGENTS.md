@@ -78,6 +78,16 @@ The playground adds Add to Context to Chat Files this way. Entries with `placeme
 listed after every standard entry. Keep the host object's identity stable: it is a dependency of
 every row's actions.
 
+## A host can keep the explorer to one folder
+
+A `FILE_EXPLORER_PANEL` instance whose config has `rootPath`, such as `/public`, treats that
+folder as its whole tree: nothing above it is browsed, searched or written to. The panel builds
+its explorer on `scopeFileExplorerAdapter` (`@semoss/shared`) and resolves every path that leaves
+the explorer (an opened file, a rename or delete that open tabs follow, a drag, a toolbox path, a
+host's row entries) back to its place in the source, so open panels and events still speak source
+paths. `initialPath` is then a path inside the folder. The client's Agent Files panel is built
+this way.
+
 ## A view renders a file; a host draws its actions
 
 `components/views/` holds one component per `FileEditorKind`. A view owns the read, the buffer

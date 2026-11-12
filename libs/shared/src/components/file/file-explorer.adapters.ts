@@ -394,3 +394,84 @@ export const getFileExplorerAdapter = (mode: FileMode): FileExplorerAdapter => {
 
 	return createStorageAdapter(mode.storage);
 };
+
+/**
+ * Where a path from an explorer kept to one folder is in its source.
+ *
+ * `.` and `..` segments are resolved first and cannot climb above `root`, so a
+ * typed destination such as `/../notes` still lands inside it. A trailing
+ * slash is kept, since it marks a directory.
+ *
+ * @param root - The folder the explorer is kept to, such as `/public`.
+ * @param path - A path as that explorer has it, where `/` is `root`. Empty
+ * means `root` itself.
+ * @return The path in the source.
+ */
+export const resolveScopedFilePath = (root: string, path: string): string => {
+	const segments: string[] = [];
+	for (const segment of path.split("/")) {
+		if (segment === "..") {
+			segments.pop();
+		} else if (segment !== "" && segment !== ".") {
+			segments.push(segment);
+		}
+	}
+	const resolved = [root.replace(/\/+$/, ""), ...segments].join("/");
+
+	return path.endsWith("/") ? `${resolved}/` : resolved;
+};
+
+/**
+ * Keep a source to one of its folders. The adapter returned sees `root` as
+ * `/`, so an explorer over it lists, searches, creates and uploads there and
+ * reaches nothing above it.
+ *
+ * Paths the explorer hands over are resolved against `root`
+ * ({@link resolveScopedFilePath}), and the paths of listed items lose that
+ * prefix. A host that takes a path out of such an explorer, to open a file for
+ * instance, resolves it the same way first.
+ *
+ * @param adapter - The source to keep to a folder.
+ * @param root - The folder, such as `/public`.
+ * @return An adapter over that folder alone. Keep its identity stable, as with
+ * any custom adapter.
+ */
+export const scopeFileExplorerAdapter = (
+	adapter: FileExplorerAdapter,
+	root: string,
+): FileExplorerAdapter => {
+	const prefix = root.replace(/\/+$/, "");
+	const toSource = (path: string): string =>
+		resolveScopedFilePath(root, path);
+	const fromSource = (path: string): string => {
+		if (path === prefix) {
+			return "/";
+		}
+
+		return path.startsWith(`${prefix}/`) ? path.slice(prefix.length) : path;
+	};
+
+	return {
+		capabilities: adapter.capabilities,
+		browse: (path) => adapter.browse(toSource(path)),
+		search: (path, term) => adapter.search(toSource(path), term),
+		rename: (oldPath, newPath) =>
+			adapter.rename(toSource(oldPath), toSource(newPath)),
+		copy: (oldPath, newPath) =>
+			adapter.copy(toSource(oldPath), toSource(newPath)),
+		remove: (path) => adapter.remove(toSource(path)),
+		download: (path) => adapter.download(toSource(path)),
+		read: (path, base64) => adapter.read(toSource(path), base64),
+		save: (path, content, base64) =>
+			adapter.save(toSource(path), content, base64),
+		createFile: (path) => adapter.createFile(toSource(path)),
+		createDirectory: (path) => adapter.createDirectory(toSource(path)),
+		unzip: (path) => adapter.unzip(toSource(path)),
+		upload: (actions, path, files) =>
+			adapter.upload(actions, toSource(path), files),
+		mapEntries: (raw, path) =>
+			adapter
+				.mapEntries(raw, toSource(path))
+				.map((item) => ({ ...item, path: fromSource(item.path) })),
+	};
+};
