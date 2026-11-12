@@ -91,8 +91,9 @@ const AutomationRunFilesPanel: WorkbenchComponent = ({ id }) => {
 	if (run) {
 		return (
 			<EmptyRunFiles>
-				The run workspace is no longer open. Node results remain
-				available in Run details.
+				The run workspace is no longer open. Files are not retained;
+				node results remain available in Source Explorer and Run
+				details.
 			</EmptyRunFiles>
 		);
 	}
@@ -108,7 +109,7 @@ const AutomationRunFilesPanel: WorkbenchComponent = ({ id }) => {
 /** Automation-owned panel blueprint; shared file panels remain unchanged. */
 export const AUTOMATION_RUN_FILES_PANEL: WorkbenchPanelConfig = {
 	name: "Run files",
-	helpText: "Files in the selected run's open execution workspace",
+	helpText: "Temporary files in the selected run's open execution workspace",
 	icon: ({ className }) => <FolderClockIcon className={className} />,
 	canClose: false,
 	canRename: false,

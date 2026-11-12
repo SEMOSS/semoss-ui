@@ -9,6 +9,7 @@ import {
 	listAutomationVersions,
 	resumeAutomationRun,
 	rollbackAutomation,
+	searchAutomationRuns,
 } from "./automation-history";
 
 vi.mock("@semoss/sdk", () => ({ runPixel: vi.fn() }));
@@ -197,6 +198,60 @@ describe("Automation history API validation", () => {
 
 		await expect(listAutomationRuns("app-1")).rejects.toThrow(
 			"History denied",
+		);
+	});
+
+	it("searches bounded run summaries with server-side filters", async () => {
+		vi.mocked(runPixel).mockResolvedValue(
+			pixelResponse({
+				runs: [
+					{
+						RUN_ID: "run-1",
+						PROJECT_ID: "app-1",
+						STATUS: "FAILED",
+						STARTED_AT: "2026-10-14T12:00:00Z",
+						COMPLETED_AT: "2026-10-14T12:00:03Z",
+					},
+				],
+				offset: 0,
+				nextOffset: 1,
+				hasMore: false,
+			}),
+		);
+
+		await expect(
+			searchAutomationRuns("app-1", {
+				search: "smtp",
+				status: "FAILED",
+				triggerType: "SCHEDULED",
+				startDate: "2026-10-14T00:00:00Z",
+				variableName: "trackingNumber",
+				variableValue: "4471",
+			}),
+		).resolves.toMatchObject({ nextOffset: 1, hasMore: false });
+		expect(vi.mocked(runPixel).mock.calls[0]?.[0]).toContain(
+			"SearchAutomationRuns",
+		);
+		expect(vi.mocked(runPixel).mock.calls[0]?.[0]).toContain(
+			'status=["FAILED"]',
+		);
+		expect(vi.mocked(runPixel).mock.calls[0]?.[0]).toContain(
+			'variableName=["trackingNumber"], variableValue=["4471"]',
+		);
+	});
+
+	it("rejects a search page that cannot advance while more runs remain", async () => {
+		vi.mocked(runPixel).mockResolvedValue(
+			pixelResponse({
+				runs: [],
+				offset: 50,
+				nextOffset: 50,
+				hasMore: true,
+			}),
+		);
+
+		await expect(searchAutomationRuns("app-1", {}, 50)).rejects.toThrow(
+			"invalid response",
 		);
 	});
 

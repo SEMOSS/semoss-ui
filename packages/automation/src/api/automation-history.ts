@@ -4,11 +4,14 @@ import type {
 	AutomationNodeResult,
 	AutomationRunDetail,
 	AutomationRunImplementationView,
+	AutomationRunSearchFilters,
+	AutomationRunSearchPage,
 	AutomationRunSummary,
 	AutomationSavedResultPage,
 } from "../domain/automation.types";
 
 const RUN_DATA_PAGE_SIZE = 50;
+const RUN_SEARCH_PAGE_SIZE = 50;
 
 export interface AutomationVersion {
 	id: string;
@@ -97,6 +100,46 @@ export async function listAutomationRuns(
 		throw new Error("Automation run history returned an invalid response.");
 	}
 	return output as AutomationRunSummary[];
+}
+
+function isAutomationRunSearchPage(
+	value: unknown,
+): value is AutomationRunSearchPage {
+	return (
+		isRecord(value) &&
+		Array.isArray(value.runs) &&
+		value.runs.every(
+			(run) =>
+				isRecord(run) &&
+				typeof run.RUN_ID === "string" &&
+				typeof run.PROJECT_ID === "string" &&
+				typeof run.STATUS === "string" &&
+				typeof run.STARTED_AT === "string",
+		) &&
+		typeof value.offset === "number" &&
+		value.offset >= 0 &&
+		typeof value.nextOffset === "number" &&
+		value.nextOffset >= value.offset &&
+		typeof value.hasMore === "boolean" &&
+		(!value.hasMore || value.nextOffset > value.offset)
+	);
+}
+
+/** Searches lightweight run summaries without loading node output payloads. */
+export async function searchAutomationRuns(
+	appId: string,
+	filters: AutomationRunSearchFilters,
+	offset = 0,
+): Promise<AutomationRunSearchPage> {
+	const response = await runPixel(
+		`SearchAutomationRuns(project=${JSON.stringify([appId])}, search=${JSON.stringify([filters.search ?? ""])}, status=${JSON.stringify([filters.status ?? ""])}, triggerType=${JSON.stringify([filters.triggerType ?? ""])}, startDate=${JSON.stringify([filters.startDate ?? ""])}, endDate=${JSON.stringify([filters.endDate ?? ""])}, variableName=${JSON.stringify([filters.variableName ?? ""])}, variableValue=${JSON.stringify([filters.variableValue ?? ""])}, offset=${JSON.stringify([String(offset)])}, limit=${JSON.stringify([String(RUN_SEARCH_PAGE_SIZE)])});`,
+	);
+	throwPixelErrors(response.errors);
+	const output = response.pixelReturn?.[0]?.output;
+	if (!isAutomationRunSearchPage(output)) {
+		throw new Error("Automation run search returned an invalid response.");
+	}
+	return output;
 }
 
 /** Returns one persisted automation run including its ordered node results. */

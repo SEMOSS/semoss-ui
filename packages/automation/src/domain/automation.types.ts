@@ -236,6 +236,7 @@ export type StepRunStatus =
 // ─── run history ──────────────────────────────────────────────────────────────
 
 export type RunStatus =
+	| "SUBMITTED"
 	| "RUNNING"
 	| "WAITING_FOR_INPUT"
 	| "SUCCESS"
@@ -281,6 +282,7 @@ export interface AutomationRunSummary {
 	COMPLETED_AT: string | null;
 	STATUS: RunStatus;
 	TRIGGER_TYPE?: AutomationTriggerType;
+	CREATED_BY?: string;
 	TOTAL_NODES?: number;
 	COMPLETED_NODES?: number;
 	FAILED_NODE_ID?: string;
@@ -322,6 +324,8 @@ export interface AutomationExecutedDefinition {
 export interface AutomationNodeIteration {
 	/** 0-based iteration index matching the backend's buildNodeResults contract. */
 	index: number;
+	/** Exact durable item or batch presented to this loop pass. */
+	input?: unknown;
 	nodeResults: AutomationNodeResult[];
 }
 
@@ -332,6 +336,8 @@ export interface AutomationNodeResult {
 	DURATION_MS: number;
 	OUTPUT_PREVIEW: string | null;
 	OUTPUT_VALUE?: string | null;
+	/** Named Java-scope output published by this node. */
+	OUTPUT_VAR_NAME?: string;
 	/** Standard SEMOSS frame noun for row-shaped output in the live run Insight. */
 	OUTPUT_FRAME?: {
 		type: "FRAME_MAP";
@@ -379,10 +385,43 @@ export interface AutomationSavedResultPage
 
 export interface AutomationRunDetail extends AutomationRunSummary {
 	DEFINITION_SNAPSHOT?: string;
+	/** Immutable, bounded trigger input captured when the run was submitted. */
+	INPUT_SNAPSHOT?: string;
 	/** Temporary workspace for an active or recently completed run on this server. */
 	executionInsightId?: string;
 	nodeResults: AutomationNodeResult[];
 	savedResults?: AutomationSavedResultReference[];
+}
+
+/** Indexed filters accepted by the bounded Automation run search API. */
+export interface AutomationRunSearchFilters {
+	search?: string;
+	status?: RunStatus;
+	triggerType?: AutomationTriggerType;
+	startDate?: string;
+	endDate?: string;
+	/** Exact name of a variable a run set, such as `trackingNumber`. */
+	variableName?: string;
+	/** Exact value of that variable; requires `variableName`. */
+	variableValue?: string;
+}
+
+/** Where a run set a searched variable. */
+export interface AutomationVariableMatch {
+	NODE_ID: string;
+	ITERATION_INDEX?: number | null;
+	VARIABLE_NAME: string;
+	VARIABLE_VALUE: string;
+}
+
+/** One page of lightweight Automation run summaries. */
+export interface AutomationRunSearchPage {
+	runs: (AutomationRunSummary & {
+		variableMatches?: AutomationVariableMatch[];
+	})[];
+	offset: number;
+	nextOffset: number;
+	hasMore: boolean;
 }
 
 export interface AutomationToolContext {
