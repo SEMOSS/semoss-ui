@@ -16,6 +16,14 @@ export async function saveRoomSourceFile(
 			encodeTextToBase64(markdown),
 			true,
 		),
-		z.literal("Success!"),
+		// one entry per file written: the path asked for, the path written, and
+		// whether a taken path pushed the write to a copy number
+		z.array(
+			z.object({
+				requestedPath: z.string(),
+				savedPath: z.string(),
+				renamed: z.boolean(),
+			}),
+		),
 	);
 }

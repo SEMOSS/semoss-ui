@@ -1,4 +1,5 @@
 import {
+	isHeroPath,
 	newRoomPath,
 	roomPath,
 	threadPath,
@@ -31,4 +32,17 @@ describe("newRoomPath", () => {
 			"/?agentId=agent%2Fone&model=model%26two",
 		);
 	});
+});
+
+it("opens Today, Work, its review and its topics on the hero photo, with or without a trailing slash", () => {
+	for (const path of ["/", "/work", "/work/", "/work/review", "/work/topics"])
+		expect(isHeroPath(path)).toBe(true);
+	// Settings lists the same topics under its own tab bar, without the hero
+	for (const path of [
+		"/brain/topics",
+		"/work/item/one",
+		"/routines",
+		"/brain",
+	])
+		expect(isHeroPath(path)).toBe(false);
 });

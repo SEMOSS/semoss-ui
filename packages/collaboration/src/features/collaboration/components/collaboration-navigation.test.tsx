@@ -114,7 +114,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("CollaborationNavigation", () => {
-	it("keeps Today, Work and Routines as the main destinations without Topics", () => {
+	it("keeps Today, Work, Topics and Routines as the main destinations", () => {
 		const state = createInitialCollaborationState();
 		state.items = [];
 		state.reviews = [];
@@ -136,7 +136,7 @@ describe("CollaborationNavigation", () => {
 			Array.from(main.querySelectorAll("a,button")).map((control) =>
 				control.getAttribute("aria-label"),
 			),
-		).toEqual(["Today", "Work", "Routines"]);
+		).toEqual(["Today", "Work", "Topics", "Routines"]);
 		expect(
 			within(main).getByRole("link", { name: "Today" }),
 		).toHaveTextContent(/^Today$/);
@@ -145,10 +145,10 @@ describe("CollaborationNavigation", () => {
 				screen.queryByRole("link", { name }),
 			).not.toBeInTheDocument();
 		}
-		// topics moved to Settings
+		// Topics opens the topic index; making a topic stays on that page
 		expect(
-			screen.queryByRole("button", { name: "Topics" }),
-		).not.toBeInTheDocument();
+			within(main).getByRole("link", { name: "Topics" }),
+		).toHaveAttribute("href", "/work/topics");
 		expect(
 			screen.queryByRole("button", { name: "New topic" }),
 		).not.toBeInTheDocument();
@@ -168,6 +168,21 @@ describe("CollaborationNavigation", () => {
 			within(screen.getByRole("link", { name: "Today" })).getByText("2"),
 		).toBeVisible();
 		expect(screen.queryByText(/^0(?: to check)?$/)).not.toBeInTheDocument();
+	});
+
+	it.each([
+		["/work", "Work"],
+		["/work/review", "Work"],
+		["/work/topics", "Topics"],
+		["/topics/alpha", "Topics"],
+	])("marks only its own destination current on %s", (path, current) => {
+		renderNavigation(path);
+		for (const name of ["Today", "Work", "Topics", "Routines"]) {
+			const link = screen.getByRole("link", { name });
+			if (name === current)
+				expect(link).toHaveAttribute("aria-current", "page");
+			else expect(link).not.toHaveAttribute("aria-current");
+		}
 	});
 
 	it("selects Today only on the landing page", () => {

@@ -44,94 +44,13 @@
 	--font-display: var(--font-display);
 }
 
-/* Today > Your work: a light circling the new-items pill, a stage light on the top item, a highlight gliding between rows */
-@property --spot-x {
-	syntax: "<length-percentage>";
-	inherits: true;
-	initial-value: 85%;
-}
-@property --spot-y {
-	syntax: "<length-percentage>";
-	inherits: true;
-	initial-value: 0%;
-}
-@keyframes work-beam {
-	to {
-		offset-distance: 100%;
-	}
-}
+/* Today > Your work: a highlight gliding between rows */
 @layer components {
-	/* the pill's face covers all but its 1px ring, so the light shows only on the ring */
-	.work-beam {
-		position: absolute;
-		inset: 0;
-		overflow: hidden;
-		border-radius: inherit;
-		pointer-events: none;
-	}
-	@supports (offset-path: inset(0 round 1px)) {
-		.work-beam::before {
-			content: "";
-			position: absolute;
-			top: 0;
-			left: 0;
-			width: 8rem;
-			aspect-ratio: 1;
-			background: radial-gradient(
-				closest-side,
-				var(--primary),
-				transparent
-			);
-			offset-path: inset(0 round 9999px);
-			offset-rotate: 0deg;
-			animation: work-beam 9s linear infinite;
-		}
-	}
-	/* rests top right and trails the pointer; a dot grid shows only around it */
-	.work-stage {
-		isolation: isolate;
-		transition:
-			--spot-x 500ms cubic-bezier(0.22, 1, 0.36, 1),
-			--spot-y 500ms cubic-bezier(0.22, 1, 0.36, 1);
-	}
-	.work-stage::before,
-	.work-stage::after {
-		content: "";
-		position: absolute;
-		inset: 0;
-		z-index: -1;
-		pointer-events: none;
-	}
-	.work-stage::before {
-		/* reaches up behind the new-items pill, so the light has no top edge */
-		top: -5rem;
-		background: radial-gradient(
-			40rem circle at var(--spot-x) calc(var(--spot-y) + 5rem),
-			color-mix(in oklab, var(--primary) 11%, transparent),
-			transparent 55%
-		);
-	}
-	.work-stage::after {
-		background-image: radial-gradient(
-			color-mix(in oklab, var(--primary) 32%, transparent) 1px,
-			transparent 1.5px
-		);
-		background-size: 1rem 1rem;
-		mask-image: radial-gradient(
-			12rem circle at var(--spot-x) var(--spot-y),
-			black,
-			transparent
-		);
-		opacity: 0;
-		transition: opacity 300ms ease-out;
-	}
-	.work-stage:hover::after {
-		opacity: 1;
-	}
 	/* the rows set --glide-y/--glide-h on the track; it appears in place, then glides */
 	.work-glide {
 		position: absolute;
-		inset-inline: 0.5rem;
+		/* reaches past the rows into the card's padding */
+		inset-inline: -0.5rem;
 		top: 0;
 		height: var(--glide-h, 0px);
 		translate: 0 var(--glide-y, 0px);
@@ -146,18 +65,7 @@
 			translate 350ms cubic-bezier(0.22, 1, 0.36, 1),
 			height 350ms cubic-bezier(0.22, 1, 0.36, 1);
 	}
-	/* the stage has its own light */
-	[data-glide]:has(.work-stage:hover, .work-stage:focus-within)
-		> .work-glide {
-		opacity: 0;
-	}
 	@media (prefers-reduced-motion: reduce) {
-		.work-beam::before {
-			display: none;
-		}
-		.work-stage {
-			transition: none;
-		}
 		[data-glide] > .work-glide {
 			transition: opacity 200ms ease-out;
 		}

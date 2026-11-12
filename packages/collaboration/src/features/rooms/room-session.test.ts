@@ -86,6 +86,14 @@ function own(session: RoomSession): RoomSession {
 function draft(): RoomSession {
 	return own(createRoomSession(crypto.randomUUID()));
 }
+/** What `SaveInsightAssetsBase64` returns when the source file is overwritten. */
+const savedSourceFile = [
+	{
+		requestedPath: source.file.fileLocation,
+		savedPath: source.file.fileLocation,
+		renamed: false,
+	},
+];
 function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
 	let resolve: (value: T) => void = () => undefined;
 	const promise = new Promise<T>((done) => {
@@ -100,7 +108,7 @@ beforeEach(() => {
 	setThreadAgent(null);
 	transport.options.clear();
 	transport.failOptions = false;
-	transport.fileSave.mockResolvedValue("Success!");
+	transport.fileSave.mockResolvedValue(savedSourceFile);
 	transport.run.mockImplementation(
 		async (_insightId: string, statement: string) => {
 			const roomId = JSON.parse(
@@ -665,7 +673,7 @@ it("serializes source revisions and retains the session while a file save is pen
 	await session.create("Imported");
 	await session.setSource(source);
 	session.removeContextFile(source.file.fileLocation);
-	const pending = deferred<string>();
+	const pending = deferred<typeof savedSourceFile>();
 	transport.fileSave.mockReturnValueOnce(pending.promise);
 	const first = session.updateSourceFile(source, "# First revision");
 	const refreshed = { ...source, title: "Latest subject" };
@@ -673,7 +681,7 @@ it("serializes source revisions and retains the session while a file save is pen
 	await vi.waitFor(() => expect(transport.fileSave).toHaveBeenCalledTimes(1));
 	expect(session.getSnapshot().source).toEqual(source);
 	expect(session.canEvict()).toBe(false);
-	pending.resolve("Success!");
+	pending.resolve(savedSourceFile);
 	await Promise.all([first, second]);
 	expect(transport.fileSave).toHaveBeenCalledTimes(2);
 	expect(session.getSnapshot().source).toEqual(refreshed);
