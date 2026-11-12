@@ -17,7 +17,7 @@ vi.mock("./use-chat-history", () => ({
 	useChatHistory: () => ({ rooms: [], setRoomClosed: vi.fn() }),
 }));
 vi.mock("./use-dashboard-layout", () => ({ useDashboardLayout: () => ({}) }));
-vi.mock("./use-visible-resource", () => ({
+vi.mock("@/lib/use-visible-resource", () => ({
 	useVisibleResource: () => ({ data: [], refresh: vi.fn() }),
 }));
 

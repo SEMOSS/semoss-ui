@@ -23,6 +23,10 @@ import {
 } from "../api/source-mapping";
 import type { ImportedSource, MailSearchFilters } from "../types";
 
+// the picker's mail list re-reads every 2 minutes, and on return when that long has passed
+const MAIL_REFRESH_MS = 2 * 60_000;
+const MAIL_REFRESH_GAP_MS = 60_000;
+
 type SourceArea = "mail" | "teams" | "calendar" | "selection" | "connection";
 interface LoadState {
 	isLoading: boolean;
@@ -75,15 +79,23 @@ export function useSources(): SourcesResult {
 	const pendingMail = useRef(0);
 	const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 	const refreshRef = useRef(() => {});
+	const lastBackgroundRead = useRef(0);
+	// a background refresh re-reads the message list only; folders change rarely
 	refreshRef.current = () => {
 		if (lastFilters.current && !pendingMail.current)
-			void loadMail(lastFilters.current);
+			void loadMail(lastFilters.current, { withFolders: false });
 	};
 	useEffect(() => {
 		const refresh = () => {
-			if (document.visibilityState === "visible") refreshRef.current();
+			if (
+				document.visibilityState !== "visible" ||
+				Date.now() - lastBackgroundRead.current < MAIL_REFRESH_GAP_MS
+			)
+				return;
+			lastBackgroundRead.current = Date.now();
+			refreshRef.current();
 		};
-		const timer = window.setInterval(refresh, 30_000);
+		const timer = window.setInterval(refresh, MAIL_REFRESH_MS);
 		window.addEventListener("focus", refresh);
 		return () => {
 			window.clearInterval(timer);
@@ -140,7 +152,10 @@ export function useSources(): SourcesResult {
 		}
 	}
 
-	async function loadMail(filters: MailSearchFilters): Promise<void> {
+	async function loadMail(
+		filters: MailSearchFilters,
+		{ withFolders = true }: { withFolders?: boolean } = {},
+	): Promise<void> {
 		lastFilters.current = filters;
 		pendingMail.current += 1;
 		await request(
@@ -149,7 +164,9 @@ export function useSources(): SourcesResult {
 				// Preserve a usable message page when a separately optional folder lookup fails.
 				const results = await Promise.allSettled([
 					listMail(actions, filters),
-					listMailFolders(actions),
+					withFolders
+						? listMailFolders(actions)
+						: Promise.resolve(null),
 				]);
 				const messages = results[0];
 				if (messages.status === "rejected") throw messages.reason;
@@ -157,7 +174,7 @@ export function useSources(): SourcesResult {
 					page: messages.value,
 					folders:
 						results[1].status === "fulfilled"
-							? results[1].value.folders
+							? (results[1].value?.folders ?? null)
 							: null,
 				};
 			},
@@ -165,6 +182,7 @@ export function useSources(): SourcesResult {
 				setMail(result.page.messages);
 				setLastUpdated(new Date().toISOString());
 				folder.current = result.page.folder;
+				if (!withFolders) return;
 				if (result.folders) setFolders(result.folders);
 				setFolderError(
 					result.folders

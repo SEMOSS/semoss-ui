@@ -20,9 +20,9 @@ import {
 } from "@/features/connectors/api/source-mapping";
 import { SourcePreview } from "@/features/connectors/components/source-preview";
 import type { ImportedSource } from "@/features/connectors/types";
+import { useVisibleResource } from "@/lib/use-visible-resource";
 import { threadPath } from "@/lib/workspace-paths";
 import { useDashboard } from "./dashboard.context";
-import { useVisibleResource } from "./use-visible-resource";
 
 /** Reuse the existing source reader and editable email actions from both entry points. */
 export function DashboardSourceDialog() {
@@ -37,7 +37,11 @@ export function DashboardSourceDialog() {
 			? importCalendarEvent(await getCalendarEvent(actions, id))
 			: importOutlookMail(await getMail(actions, id), "inbox");
 	}, [actions, id, kind]);
-	const resource = useVisibleResource(load, Boolean(id));
+	// one open email or event is read once; Retry reads again after a failure
+	const resource = useVisibleResource(load, Boolean(id), {
+		every: null,
+		refreshOnReturn: false,
+	});
 	const selected =
 		source &&
 		resource.data?.nativeId === id &&

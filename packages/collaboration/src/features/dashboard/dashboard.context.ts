@@ -1,9 +1,9 @@
 import { createContext, type RefObject, useContext } from "react";
 import type { CalendarEvent } from "@/features/connectors/api/microsoft-schemas";
 import type { InsightActions } from "@/lib/pixel";
+import type { VisibleResource } from "@/lib/use-visible-resource";
 import type { ChatHistory } from "./use-chat-history";
 import type { useDashboardLayout } from "./use-dashboard-layout";
-import type { VisibleResource } from "./use-visible-resource";
 
 export interface SourceSelection {
 	kind: "email" | "calendar";

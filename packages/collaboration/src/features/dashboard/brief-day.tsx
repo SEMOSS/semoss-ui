@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
 import { Button, cn, P } from "@semoss/ui/next";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import { givenFirst } from "@/lib/person-name";
+import { useNow } from "@/lib/use-now";
 import { BriefPanel } from "./brief-panel";
 import { useDashboard } from "./dashboard.context";
 import { dashboardTimeZone, eventStart, isAllDay } from "./dashboard-calendar";
@@ -12,11 +12,7 @@ import { dayKey } from "./dashboard-selectors";
 export function BriefDay({ compact = false }: { compact?: boolean }) {
 	const { state } = useCollaborationSession();
 	const { calendar, setSource } = useDashboard();
-	const [now, setNow] = useState(() => new Date());
-	useEffect(() => {
-		const timer = window.setInterval(() => setNow(new Date()), 60_000);
-		return () => window.clearInterval(timer);
-	}, []);
+	const now = new Date(useNow());
 	const zone = dashboardTimeZone(state.profile.timezone);
 	const today = dayKey(now, zone);
 	const time = new Intl.DateTimeFormat(undefined, {

@@ -8,6 +8,8 @@ import {
 } from "@/features/rooms/api/list-rooms";
 import type { RoomRow } from "@/features/rooms/api/room-schemas";
 
+const HISTORY_REREAD_MS = 1500;
+
 export interface ChatHistory {
 	rooms: RoomRow[];
 	closedRoomIds: string[];
@@ -132,6 +134,8 @@ export function useChatHistory(
 	}, [read]);
 	useEffect(() => {
 		refresh();
+		// a new chat sends two changes back to back (created, first turn); read once for both
+		let reread: ReturnType<typeof setTimeout> | undefined;
 		const changed = (event: Event) => {
 			if (event instanceof CustomEvent) {
 				const deleted = z
@@ -161,10 +165,12 @@ export function useChatHistory(
 						),
 					]);
 			}
-			refresh();
+			clearTimeout(reread);
+			reread = setTimeout(refresh, HISTORY_REREAD_MS);
 		};
 		window.addEventListener(ROOM_HISTORY_CHANGED, changed);
 		return () => {
+			clearTimeout(reread);
 			epoch.current++;
 			busy.current = false;
 			window.removeEventListener(ROOM_HISTORY_CHANGED, changed);
