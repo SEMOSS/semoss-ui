@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { Outlet } from "react-router";
-import { ErrorBoundary } from "@/components/common/ErrorBoundary";
+import { ErrorBoundary } from "@/components/common/error-boundary";
 import { Page } from "@/components/shared/page";
 import { PageContext } from "@/contexts";
 import { createPageStore } from "@/stores";

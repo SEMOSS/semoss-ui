@@ -10,9 +10,10 @@ import { useChat } from "@/hooks/use-chat";
 import { RoomOptionsForm } from "../room-options-form";
 
 /**
- * The room's settings: its model, instructions, knowledge, and every tool the
- * assistant has. A new chat's draft settings replace the room's, and leave out
- * the room's own toolbox, which is not settled until the first message.
+ * The room's settings: its model, instructions, knowledge, every tool the
+ * assistant has, and the room's own actions. A new chat's draft settings
+ * replace the room's, and leave out both the room's own toolbox, which is not
+ * settled until the first message, and its actions, which need a room.
  */
 const RoomConfigurationPanel = observer(() => {
 	const room = useRoom();

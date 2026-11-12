@@ -31,6 +31,7 @@ import {
 	type CustomRoutineSettings,
 	DELIVERY_LABELS,
 	IS_ROUTINE_KNOWLEDGE_ENABLED,
+	MAX_ROUTINE_TOOLS,
 } from "./custom-routine-schema";
 import { ROUTINE_DAY_NAMES, ROUTINE_DAYS } from "./routine-schema";
 import { RoutineTimeFields } from "./routine-time-fields";
@@ -39,6 +40,7 @@ import { RoutineTimeFields } from "./routine-time-fields";
 const DELIVERY_DETAILS = {
 	email: "In your inbox, with any files it makes attached.",
 	teams: "A message in your own Teams chat. Text only.",
+	brief: "A section of your daily brief, under this routine's name. Text only.",
 	none: "Only here, under Latest result.",
 } as const;
 
@@ -63,6 +65,8 @@ export function CustomRoutineFields({
 }: CustomRoutineFieldsProps) {
 	const id = useId();
 	const form = useFormContext<CustomRoutineSettings>();
+	// a section of the daily brief runs when the brief does; its saved days and time stay but are not used
+	const isBriefSection = form.watch("delivery") === "brief";
 	const skillNames = new Map(skills.map((skill) => [skill.id, skill.name]));
 	const skillOptions = {
 		options: skills.map((skill) => ({
@@ -89,50 +93,63 @@ export function CustomRoutineFields({
 			</FieldSet>
 			<FieldSet className="min-w-0">
 				<FieldLegend>When should it run?</FieldLegend>
-				<FieldGroup className="min-w-0">
-					<FormField
-						control={form.control}
-						name="days"
-						render={({ field, fieldState }) => (
-							<Field data-invalid={Boolean(fieldState.error)}>
-								<FieldLabel id={`${id}-days-label`}>
-									Days (required)
-								</FieldLabel>
-								<ToggleGroup
-									type="multiple"
-									variant="outline"
-									spacing={1}
-									className="flex-wrap"
-									value={field.value}
-									onValueChange={field.onChange}
-									onBlur={field.onBlur}
-									aria-labelledby={`${id}-days-label`}
-									aria-invalid={Boolean(fieldState.error)}
-								>
-									{ROUTINE_DAYS.map((day) => (
-										<ToggleGroupItem
-											key={day}
-											value={day}
-											aria-label={ROUTINE_DAY_NAMES[day]}
-											className={cn(
-												"min-h-11 min-w-11",
-												CHOSEN_DAY,
-											)}
-										>
-											{ROUTINE_DAY_NAMES[day].slice(0, 3)}
-										</ToggleGroupItem>
-									))}
-								</ToggleGroup>
-								{fieldState.error && (
-									<FieldError>
-										{fieldState.error.message}
-									</FieldError>
-								)}
-							</Field>
-						)}
-					/>
-					<RoutineTimeFields />
-				</FieldGroup>
+				{isBriefSection ? (
+					<FieldDescription>
+						With your daily brief. The brief starts this routine on
+						every run and prints its result as a section, so it has
+						no schedule of its own.
+					</FieldDescription>
+				) : (
+					<FieldGroup className="min-w-0">
+						<FormField
+							control={form.control}
+							name="days"
+							render={({ field, fieldState }) => (
+								<Field data-invalid={Boolean(fieldState.error)}>
+									<FieldLabel id={`${id}-days-label`}>
+										Days (required)
+									</FieldLabel>
+									<ToggleGroup
+										type="multiple"
+										variant="outline"
+										spacing={1}
+										className="flex-wrap"
+										value={field.value}
+										onValueChange={field.onChange}
+										onBlur={field.onBlur}
+										aria-labelledby={`${id}-days-label`}
+										aria-invalid={Boolean(fieldState.error)}
+									>
+										{ROUTINE_DAYS.map((day) => (
+											<ToggleGroupItem
+												key={day}
+												value={day}
+												aria-label={
+													ROUTINE_DAY_NAMES[day]
+												}
+												className={cn(
+													"min-h-11 min-w-11",
+													CHOSEN_DAY,
+												)}
+											>
+												{ROUTINE_DAY_NAMES[day].slice(
+													0,
+													3,
+												)}
+											</ToggleGroupItem>
+										))}
+									</ToggleGroup>
+									{fieldState.error && (
+										<FieldError>
+											{fieldState.error.message}
+										</FieldError>
+									)}
+								</Field>
+							)}
+						/>
+						<RoutineTimeFields />
+					</FieldGroup>
+				)}
 			</FieldSet>
 			<FieldSet className="min-w-0">
 				<FieldLegend id={`${id}-delivery`}>
@@ -147,7 +164,7 @@ export function CustomRoutineFields({
 							name={field.name}
 							value={field.value}
 							onValueChange={field.onChange}
-							className="grid gap-3 md:grid-cols-3"
+							className="grid gap-3 md:grid-cols-2"
 						>
 							{CUSTOM_ROUTINE_DELIVERIES.map((delivery) => (
 								<FieldLabel
@@ -245,12 +262,21 @@ export function CustomRoutineFields({
 										(tool) => tool.id !== toolId,
 									),
 								);
+							// the server refuses more, hidden knowledge included; removing stays open
+							const isFull =
+								field.value.length >= MAX_ROUTINE_TOOLS;
+							const limit = isFull
+								? `A routine can use up to ${MAX_ROUTINE_TOOLS} tools and knowledge bases. Remove one to add another.`
+								: null;
 							return (
 								<>
 									{IS_ROUTINE_KNOWLEDGE_ENABLED && (
 										<CapabilitySection
 											title="Knowledge"
-											description="Knowledge bases the routine can search, such as your team's policy documents."
+											description={
+												limit ??
+												"Knowledge bases the routine can search, such as your team's policy documents."
+											}
 											emptyText="No knowledge added."
 											icon={BookOpen}
 											items={knowledge}
@@ -259,6 +285,7 @@ export function CustomRoutineFields({
 											<CapabilityPicker
 												kind="KNOWLEDGE"
 												values={knowledge}
+												disabled={isFull}
 												onChange={(values) =>
 													save([
 														...toolbox,
@@ -270,7 +297,10 @@ export function CustomRoutineFields({
 									)}
 									<CapabilitySection
 										title="Tools"
-										description="Toolboxes the routine can use, such as a database. A tool that asks for your approval does not run in a routine."
+										description={
+											limit ??
+											"Toolboxes the routine can use, such as a database. A tool that asks for your approval does not run in a routine."
+										}
 										emptyText="No tools added."
 										icon={Wrench}
 										items={toolbox}
@@ -279,6 +309,7 @@ export function CustomRoutineFields({
 										<CapabilityPicker
 											kind="TOOLBOX"
 											values={toolbox}
+											disabled={isFull}
 											onChange={(values) =>
 												save([...values, ...knowledge])
 											}

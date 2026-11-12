@@ -18,6 +18,7 @@ import {
 import type React from "react";
 import { useEffect, useState } from "react";
 import { Link, matchPath, useLocation } from "react-router";
+import { useConfig, useSession } from "@semoss/sdk/react";
 import {
 	Sidebar as ShadcnSidebar,
 	SidebarContent as ShadcnSidebarContent,
@@ -36,8 +37,9 @@ import {
 } from "@semoss/ui/next";
 import { formatToDataTestId } from "@semoss/utility/text";
 import { Help } from "@/components/help/help";
-import { useConfig, usePage, useSession } from "@/hooks";
-import { LogoutPopover } from "./LogoutPopover";
+import { usePage } from "@/hooks/use-page";
+import { usePlatformTheme } from "@/hooks/use-platform-theme";
+import { LogoutPopover } from "./logout-popover";
 
 const CATALOG_ROUTES = [
 	{
@@ -101,13 +103,19 @@ const SIDEBAR_WIDTH = "18rem";
 const NAV_BUTTON_CLASS =
 	"h-auto rounded-none px-4 py-2 text-sm data-[active=true]:rounded-md data-[active=true]:bg-primary/10 data-[active=true]:text-primary";
 
+/**
+ * The app's navigation: Home, the catalogs (hidden from non-admins when the
+ * menu bar is admin only), Settings, Help and the account. Pinned, it sits
+ * beside the page; otherwise it opens over the page and closes when the
+ * pointer leaves it, unless one of its menus is open.
+ */
 export const Sidebar: React.FC = () => {
-	const themeName = useConfig((state) => state.theme.name);
+	const themeName = usePlatformTheme().name;
 	const adminOnlyViewMenuBarFlag = useConfig(
-		(state) => state.config.adminOnlyViewMenuBarFlag,
+		(state) => state.config?.adminOnlyViewMenuBarFlag ?? false,
 	);
-	const isAdmin = useSession((state) => state.user.admin);
-	const userName = useSession((state) => state.user.name);
+	const isAdmin = useSession((state) => state.user?.isAdmin === true);
+	const userName = useSession((state) => state.user?.name ?? "");
 	const page = usePage();
 
 	const { pathname } = useLocation();

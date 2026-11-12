@@ -458,6 +458,34 @@ describe("shared collaboration session", () => {
 		}
 	});
 
+	it("keeps a topic's linked files, and carries them to the topic it is merged into", () => {
+		const file = (itemId: string) => ({
+			itemId,
+			name: `${itemId}.docx`,
+			source: "onedrive" as const,
+		});
+		let state = createInitialCollaborationState();
+		state = apply(state, {
+			type: "topic.save",
+			topic: { id: "t-geng", files: [file("a"), file("b")] },
+		});
+		state = apply(state, {
+			type: "topic.save",
+			topic: { id: "t-gsales", files: [file("b")] },
+		});
+		state = apply(state, {
+			type: "topic.merge",
+			sourceId: "t-geng",
+			targetId: "t-gsales",
+		});
+		// a file on both topics is linked once
+		expect(
+			state.topics
+				.find((topic) => topic.id === "t-gsales")
+				?.files?.map((entry) => entry.itemId),
+		).toEqual(["b", "a"]);
+	});
+
 	it("merges topic links, memories, members, rules and Work associations atomically", () => {
 		let state = createInitialCollaborationState();
 		state = apply(state, {

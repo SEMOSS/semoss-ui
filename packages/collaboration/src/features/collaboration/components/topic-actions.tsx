@@ -30,14 +30,29 @@ import { useWorkUpdates } from "../live/work-updates.context";
 import type { Topic } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 
-/** Confirm merging this topic into another one or deleting it, or open its conversation review. */
+/** Confirm merging this topic into another one or deleting it, or open its checklists and conversation review. */
 export function TopicActions({
 	topic,
 	threadCount,
+	onEdit,
+	onManageThreads,
+	onManageChats,
+	onManageFiles,
+	onResort,
 	onFindConversations,
 }: {
 	topic: Topic;
 	threadCount: number;
+	/** Opens the topic editor: name, description, kind and account. */
+	onEdit?: () => void;
+	/** Opens the checklist of the topic's threads, for adding and removing them by hand. */
+	onManageThreads?: () => void;
+	/** The same for its chats; absent where no server can save a chat's topic. */
+	onManageChats?: () => void;
+	/** The same for its OneDrive and Teams files; absent where no server can keep the links. */
+	onManageFiles?: () => void;
+	/** Re-checks the conversations already in the topic, for after narrowing it. */
+	onResort?: () => void;
 	/** Opens the review of existing conversations that fit; absent where no server can check them. */
 	onFindConversations?: () => void;
 }) {
@@ -161,9 +176,34 @@ export function TopicActions({
 								</DropdownMenuItem>
 							</>
 						))}
+					{onEdit && (
+						<DropdownMenuItem onSelect={onEdit}>
+							Edit topic...
+						</DropdownMenuItem>
+					)}
+					{onManageThreads && (
+						<DropdownMenuItem onSelect={onManageThreads}>
+							Add or remove emails and Teams chats...
+						</DropdownMenuItem>
+					)}
+					{onManageChats && (
+						<DropdownMenuItem onSelect={onManageChats}>
+							Add or remove assistant chats...
+						</DropdownMenuItem>
+					)}
+					{onManageFiles && (
+						<DropdownMenuItem onSelect={onManageFiles}>
+							Add or remove files...
+						</DropdownMenuItem>
+					)}
 					{onFindConversations && (
 						<DropdownMenuItem onSelect={onFindConversations}>
 							Find conversations...
+						</DropdownMenuItem>
+					)}
+					{onResort && (
+						<DropdownMenuItem onSelect={onResort}>
+							Re-sort conversations...
 						</DropdownMenuItem>
 					)}
 					<DropdownMenuItem

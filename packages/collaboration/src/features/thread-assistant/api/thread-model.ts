@@ -6,7 +6,7 @@ const modelSchema = z.object({
 	engine_name: z.string(),
 	engine_display_name: z.string().nullish(),
 });
-export type ThreadModel = z.infer<typeof modelSchema>;
+type ThreadModel = z.infer<typeof modelSchema>;
 
 /** Resolve eligible models in preference order, then use the catalog's first result. */
 export async function resolveThreadModel(

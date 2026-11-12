@@ -79,16 +79,6 @@ export const parseOneDriveFolder = (raw: unknown): MicrosoftDriveItem[] =>
 	);
 
 /**
- * The items of a search or of what is shared, in the order the backend ranked
- * them.
- *
- * @param raw - The reactor's output, `{ count, files }`.
- * @return The items.
- */
-export const parseOneDriveResults = (raw: unknown): MicrosoftDriveItem[] =>
-	parseEach(requireList(raw, "files", "any files"), parseDriveItem);
-
-/**
  * The items of a Teams channel folder, from `MicrosoftTeamsListFiles`.
  *
  * @param raw - The reactor's output, a bare list.
@@ -254,7 +244,7 @@ const isPersonMessage = (message: TeamsMessage): boolean =>
  * as a member joining are left out of the messages but counted, so a caller
  * can tell whether the read stopped at its limit.
  */
-export interface TeamsMessagePage {
+interface TeamsMessagePage {
 	messages: TeamsMessage[];
 	/** How many messages the backend returned, system events included. */
 	readCount: number;

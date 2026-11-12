@@ -65,6 +65,17 @@ export const routes: RouteObject[] = [
 								}),
 							},
 							{
+								path: "topics/:topicId/contents",
+								id: "topic-contents",
+								lazy: async () => ({
+									Component: (
+										await import(
+											"@/pages/topic-contents.page"
+										)
+									).TopicContentsPage,
+								}),
+							},
+							{
 								path: "work/item/:taskId",
 								id: "work/item/:taskId",
 								lazy: async () => ({

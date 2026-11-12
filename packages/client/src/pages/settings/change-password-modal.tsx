@@ -1,6 +1,5 @@
 import { CircleCheck, Eye, EyeOff, Lock } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Env } from "@semoss/sdk/react";
 import {
 	Button,
 	Dialog,
@@ -12,6 +11,7 @@ import {
 	Separator,
 	toast,
 } from "@semoss/ui/next";
+import { changePassword } from "@/api/auth";
 
 interface PasswordFieldProps {
 	label: string;
@@ -122,31 +122,9 @@ export const ChangePasswordModal = ({ open, onClose }) => {
 	const onChangePassword = async () => {
 		setLoading(true);
 		try {
-			const res = await fetch(
-				`${Env.MODULE}/api/auth/user/changePassword`,
-				{
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ currentPassword, newPassword }),
-				},
-			);
+			const message = await changePassword(currentPassword, newPassword);
 
-			if (!res.ok) {
-				const errBody = await res.json().catch(() => ({}));
-				throw new Error(
-					errBody?.errorMessage ||
-						errBody?.message ||
-						"Password change failed",
-				);
-			}
-
-			const data = await res.json();
-
-			if (!data.success) {
-				throw new Error(data.message || "Password change failed");
-			}
-
-			toast.success(data.message);
+			toast.success(message);
 			setCurrentPassword("");
 			setNewPassword("");
 			setConfirmPassword("");

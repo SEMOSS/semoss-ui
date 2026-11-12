@@ -12,7 +12,7 @@ import { PromptOptimizer } from "./PromptOptimizer";
 
 const run = vi.hoisted(() => vi.fn());
 vi.mock("@semoss/sdk/react", () => ({
-	useInsight: () => ({ actions: { run } }),
+	useSessionInsight: () => ({ run }),
 }));
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
@@ -51,6 +51,7 @@ beforeEach(() => {
 
 test("optimizes and reverts the draft from the same button", async () => {
 	run.mockResolvedValue({
+		errors: [],
 		pixelReturn: [{ output: { response: "Improved draft" } }],
 	});
 	render(<Harness />);

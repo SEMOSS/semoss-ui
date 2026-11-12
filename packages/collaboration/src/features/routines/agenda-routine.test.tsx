@@ -1,4 +1,11 @@
-import { act, cleanup, render, screen, within } from "@testing-library/react";
+import {
+	act,
+	cleanup,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -84,16 +91,59 @@ function renderForm(record: AgendaRoutine = routine) {
 		...settings,
 		configured: true,
 	}));
+	const onRunNow = vi.fn(async () => record);
 	render(
 		<MemoryRouter>
-			<AgendaRoutineForm routine={record} onSave={onSave} />
+			<AgendaRoutineForm
+				routine={record}
+				onSave={onSave}
+				onRunNow={onRunNow}
+			/>
 		</MemoryRouter>,
 	);
 	return {
 		user: userEvent.setup(),
 		onSave,
+		onRunNow,
 	};
 }
+
+describe("Run now for the weekly agendas", () => {
+	it("starts the agendas from their card while the routine is on", async () => {
+		const { user, onRunNow } = renderForm({ ...routine, enabled: true });
+		await user.click(screen.getByRole("button", { name: "Run now" }));
+		expect(onRunNow).toHaveBeenCalledTimes(1);
+	});
+
+	it("saves an edit still waiting to save before it starts, and does not start when the edit is invalid", async () => {
+		const { user, onSave, onRunNow } = renderForm({
+			...routine,
+			enabled: true,
+			configured: true,
+		});
+		await user.type(
+			screen.getByLabelText("Preferences (optional)"),
+			"Open with a safety moment",
+		);
+		await user.click(screen.getByRole("button", { name: "Run now" }));
+		await waitFor(() => expect(onRunNow).toHaveBeenCalledOnce());
+		expect(onSave).toHaveBeenCalledExactlyOnceWith(
+			expect.objectContaining({
+				preferences: "Open with a safety moment",
+			}),
+		);
+		expect(onSave.mock.invocationCallOrder[0]).toBeLessThan(
+			onRunNow.mock.invocationCallOrder[0] ?? 0,
+		);
+		// the only chosen day turned off leaves no day to run on
+		await user.click(screen.getByRole("radio", { name: "Monday" }));
+		await user.click(screen.getByRole("button", { name: "Run now" }));
+		expect(
+			await screen.findByText(/Fix the highlighted settings/),
+		).toBeVisible();
+		expect(onRunNow).toHaveBeenCalledOnce();
+	});
+});
 
 /** Settle the debounce while preserving the real timers used by user-event. */
 async function autosave(milliseconds = 800): Promise<void> {

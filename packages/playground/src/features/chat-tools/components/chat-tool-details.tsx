@@ -3,7 +3,7 @@ import { Badge, Muted, Small } from "@semoss/ui/next";
 import type { ChatToolParameter } from "../tools/chat-tool-info";
 
 /** Props for {@link ChatToolDetails}. */
-export interface ChatToolDetailsProps {
+interface ChatToolDetailsProps {
 	/** What the model calls. */
 	name: string;
 	/** What the model is told the tool does. */

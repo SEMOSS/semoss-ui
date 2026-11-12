@@ -34,7 +34,7 @@ const PANEL_KEYWORDS: Readonly<Record<string, string[]>> = {
 };
 
 /** What the composer hands {@link useRoomSlashCommands}. */
-export interface RoomSlashCommandsOptions {
+interface RoomSlashCommandsOptions {
 	/** The room the composer sends to, or the new room before a chat's first message. */
 	room: RoomStore;
 	/** The room whose Workspace the panels open in; defaults to `room`. */
@@ -63,9 +63,9 @@ export interface RoomSlashCommandsOptions {
  * Every action the composer's "/" menu offers: adding to the next message,
  * switching mode, and compacting; each Workspace panel that can open now and
  * Close Workspace; the room's own actions, inside a room; and the room's
- * prompts. Panels and room actions share their labels with the More actions
- * menu, so a command is found by the name it has there. Call it from an
- * observer: the panels are read from MobX.
+ * prompts. Panels share their labels with the Workbench rail and room actions
+ * with Settings' Room section, so a command is found by the name it has there.
+ * Call it from an observer: the panels are read from MobX.
  *
  * @param options - The composer's room and its actions.
  * @return The commands, by group.

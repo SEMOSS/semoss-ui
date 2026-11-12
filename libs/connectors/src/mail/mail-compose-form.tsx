@@ -61,7 +61,7 @@ const APPROVE_KEYS = {
 } as const;
 
 /** Props for {@link MailComposeForm}. */
-export interface MailComposeFormProps {
+interface MailComposeFormProps {
 	/** The mailbox the email goes out from. */
 	app: MailApp;
 	/** What the call does. */

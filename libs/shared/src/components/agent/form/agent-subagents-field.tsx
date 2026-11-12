@@ -26,7 +26,7 @@ import type { AgentFormValues } from "./types";
 const getAgentName = (agent: Project) =>
 	agent.project_display_name || agent.project_name;
 
-export interface AgentSubagentsFieldProps {
+interface AgentSubagentsFieldProps {
 	/** React Hook Form control for the shared agent form. */
 	control: Control<AgentFormValues>;
 	/** Locks the picker while its owning form is saving. */

@@ -33,7 +33,7 @@ const instructionsSchema = z.object({ instructions: z.string() });
 type InstructionsValues = z.infer<typeof instructionsSchema>;
 
 /** Props for {@link RoomOptionsForm}. */
-export interface RoomOptionsFormProps {
+interface RoomOptionsFormProps {
 	/** The model the room answers with. */
 	model: RoomStore["model"];
 	/** Told when the user picks another model. */
@@ -61,8 +61,8 @@ export interface RoomOptionsFormProps {
 }
 
 /**
- * A room's settings: its agent, model, instructions, knowledge, and every
- * tool the assistant has. Changes apply as they are made.
+ * A room's settings: its agent, model, instructions, knowledge, every tool the
+ * assistant has. Changes apply as they are made.
  */
 export const RoomOptionsForm = observer(
 	({

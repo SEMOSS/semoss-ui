@@ -195,6 +195,14 @@ function mergeTopics(
 	target.calendarSeries = [
 		...new Set([...target.calendarSeries, ...source.calendarSeries]),
 	];
+	// a file on both stays linked once, as the server leaves it
+	const targetFiles = target.files ?? [];
+	target.files = [
+		...targetFiles,
+		...(source.files ?? []).filter(
+			(file) => !targetFiles.some((kept) => kept.itemId === file.itemId),
+		),
+	];
 	for (const thread of state.threads) {
 		const sourceLink = thread.topicLinks.find(
 			(link) => link.topicId === sourceId,
@@ -474,7 +482,10 @@ export function collaborationReducer(
 					});
 				else if (
 					command.operation === "confirm" ||
-					command.operation === "add"
+					command.operation === "add" ||
+					// live sync never saves a suggested link, so starring one confirms it
+					(command.operation === "primary" &&
+						existing.source === "suggested")
 				)
 					existing.source = "confirmed";
 				if (command.operation === "primary")

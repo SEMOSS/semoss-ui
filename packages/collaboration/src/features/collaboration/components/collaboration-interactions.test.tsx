@@ -266,7 +266,7 @@ describe("collaboration Work and Brain integration", () => {
 			within(kept).queryByText("Not used until you keep it"),
 		).not.toBeInTheDocument();
 		expect(
-			within(kept).getByText(/Suggested by the assistant/),
+			within(kept).getByText(/Learned in chat, confirmed/),
 		).toBeInTheDocument();
 	});
 
@@ -309,7 +309,6 @@ describe("collaboration Work and Brain integration", () => {
 	it("preserves a topic memory draft when notes collapse and adds it about the topic", async () => {
 		const user = userEvent.setup();
 		renderSession("/topics/t-geng");
-		await user.click(screen.getByRole("button", { name: "Context" }));
 		expect(
 			screen.getByText(
 				"Ava prefers a written pre-read 48h before any review.",
@@ -347,7 +346,6 @@ describe("collaboration Work and Brain integration", () => {
 			).getByRole("button", { name: "Add person" }),
 		);
 		await act(() => router.navigate("/topics/t-gsales"));
-		await user.click(screen.getByRole("button", { name: "Context" }));
 		const memberSection = sectionFor("In this topic");
 		const personLink = within(memberSection).getByRole("link", {
 			name: "Gia Moreno",
@@ -391,8 +389,6 @@ describe("collaboration Work and Brain integration", () => {
 			screen.queryByRole("textbox", { name: "New note" }),
 		).not.toBeInTheDocument();
 
-		// topic setup lives in the Context panel, which starts closed
-		await user.click(screen.getByRole("button", { name: "Context" }));
 		await user.click(screen.getByRole("button", { name: "Add keyword" }));
 		const keyword = screen.getByRole("textbox", { name: "Add keyword" });
 		await user.type(keyword, "architecture update");
@@ -457,7 +453,6 @@ describe("collaboration Work and Brain integration", () => {
 			included: true,
 		});
 		renderSession("/topics/t-geng", state);
-		await user.click(screen.getByRole("button", { name: "Context" }));
 		await user.click(screen.getByRole("button", { name: "Add people" }));
 		const picker = screen.getByRole("dialog", { name: "Add people" });
 		const onThreads = within(picker).getByRole("list", {
@@ -523,7 +518,6 @@ describe("collaboration Work and Brain integration", () => {
 	it("makes a member a VIP in the topic and ignores them there until stopped", async () => {
 		const user = userEvent.setup();
 		renderSession("/topics/t-geng");
-		await user.click(screen.getByRole("button", { name: "Context" }));
 		const settings = () =>
 			within(sectionFor("In this topic")).getByRole("button", {
 				name: "Settings for Ava Reed in this topic",
@@ -598,15 +592,22 @@ describe("collaboration Work and Brain integration", () => {
 		).toBeInTheDocument();
 	});
 
-	it("marks a topic's people with the settings that hold everywhere", async () => {
-		const user = userEvent.setup();
+	it("shows an open item's due day, saved as midnight UTC, as that day on a person's page", () => {
+		const state = createInitialCollaborationState();
+		const item = state.items.find((candidate) => candidate.id === "i1");
+		if (!item) throw new Error("Missing sample item");
+		item.due = "2026-11-06T00:00:00Z";
+		renderSession("/brain/people/p-ava", state);
+		expect(screen.getByText("Due Nov 6")).toBeInTheDocument();
+	});
+
+	it("marks a topic's people with the settings that hold everywhere", () => {
 		const state = createInitialCollaborationState();
 		const ava = state.people.find((person) => person.id === "p-ava");
 		if (!ava) throw new Error("Missing sample person");
 		ava.vip = true;
 		ava.neverIngest = true;
 		renderSession("/topics/t-geng", state);
-		await user.click(screen.getByRole("button", { name: "Context" }));
 		const members = sectionFor("In this topic");
 		expect(within(members).getByText("VIP everywhere")).toBeInTheDocument();
 		expect(

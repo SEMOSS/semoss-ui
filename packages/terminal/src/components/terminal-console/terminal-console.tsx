@@ -76,7 +76,7 @@ export const TerminalConsole = ({
 	consoleId = "default",
 }: TerminalConsoleProps) => {
 	const terminal = useTerminal();
-	const { actions, insightId, isAuthorized } = useInsight();
+	const { actions, insightId, isReady } = useInsight();
 	const { theme } = useTheme();
 	const { t } = useTranslation("console");
 	const insightIdRef = useRef(insightId);
@@ -455,8 +455,14 @@ export const TerminalConsole = ({
 		// schedule after the controlled value flushes through React
 		setTimeout(() => {
 			const editor = editorRef.current;
-			if (!editor) return;
-			editor.gotoLine(editor.session.getLength(), Infinity, false);
+			const model = editor?.getModel();
+			if (!editor || !model) return;
+			const lineNumber = model.getLineCount();
+			editor.setPosition({
+				lineNumber,
+				column: model.getLineMaxColumn(lineNumber),
+			});
+			editor.revealLine(lineNumber);
 			editor.focus();
 		}, 0);
 	};
@@ -545,7 +551,8 @@ export const TerminalConsole = ({
 
 	// Platform reactors via help() — fetched once per auth, not per project.
 	useEffect(() => {
-		if (!isAuthorized) return;
+		// the workspace's insight is made; sign in is the session's
+		if (!isReady) return;
 		let cancelled = false;
 		(async () => {
 			try {
@@ -586,11 +593,11 @@ export const TerminalConsole = ({
 		return () => {
 			cancelled = true;
 		};
-	}, [isAuthorized, actions, rebuildReactorCatalog]);
+	}, [isReady, actions, rebuildReactorCatalog]);
 
 	// App-specific reactors — re-fetched only when the project context changes.
 	useEffect(() => {
-		if (!isAuthorized || !effectiveProjectId) {
+		if (!isReady || !effectiveProjectId) {
 			appReactorsRef.current = [];
 			rebuildReactorCatalog();
 			return;
@@ -616,7 +623,7 @@ export const TerminalConsole = ({
 		return () => {
 			cancelled = true;
 		};
-	}, [isAuthorized, actions, effectiveProjectId, rebuildReactorCatalog]);
+	}, [isReady, actions, effectiveProjectId, rebuildReactorCatalog]);
 
 	// Expose an external submission path so other panes (the file editor's
 	// Run button) can pipe their pixel through this transcript — same async

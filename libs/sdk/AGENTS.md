@@ -158,7 +158,8 @@ so their public types never name a utility type.
 - [`SessionStore`](./src/stores/session/session.store.ts) (`Session`) is the signed in
   user. It owns `config`, `logins` (its own `LoginsStore`; `Session.logins` is the page's) and
   `permissions`. `initialize`
-  is single flight; `login(credentials)`, `logout`, and the 302 handler
+  is single flight, and `isChecking` is true while a check runs (the status keeps its last
+  value, so `ERROR` stays `ERROR` while a retry reads); `login(credentials)`, `logout`, and the 302 handler
   (`onUnauthorized` in [`utility/fetch.ts`](./src/utility/fetch.ts)) start the session over,
   clearing logins and permissions. Every sign out, the 302 one included, reads the config
   again in the background and seeds the logins from it; when that read fails it resets
@@ -189,7 +190,8 @@ so their public types never name a utility type.
   after a clear.
 - React: `useSession(selector)`, `useConfig(selector)`, `useLogins()`,
   `useSessionPermissions(type, id)` (which also returns `refresh` and `sync`) and
-  `useSessionInsight()` (`insightId` and the insight's actions), under an optional
+  `useSessionInsight()` (`insightId` and the insight's actions), and `useSessionRetry()`
+  (`{ isRetrying, retry }` over the snapshot's `isChecking` and `refresh`), under an optional
   `SessionProvider`. Each finds its session through the internal `useSessionStore` in
   `hooks/use-session.ts`: the nearest provider's, else `Session`. Selectors may build objects;
   equal selections do not render. `useSessionStore`, `SessionContext` and the selector cache
@@ -206,7 +208,8 @@ so their public types never name a utility type.
   [session guide](./skills/session.skill.md#insight-lifecycle-belongs-to-its-owner).
 - Where a pixel runs: `runPixel(pixel)` with no insight id for a one off pixel that needs no
   workspace (the backend makes an insight and keeps it until the session ends);
-  `useSessionPixel` waits for the session's existing insight ID and `useInsightPixel`
+  `useSessionPixel` (and `useSessionIteratorPixel` for lists that page, which starts over
+  when the ID changes) waits for the session's existing insight ID and `useInsightPixel`
   waits for the nearest `InsightProvider`'s ID. Both call transport directly, without
   insight creation or recovery. Existing `usePixel` retains explicit/workspace
   routing with no session fallback; only implicit context fallback is deprecated,

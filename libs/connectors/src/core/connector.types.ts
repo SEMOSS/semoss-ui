@@ -52,6 +52,12 @@ export interface ConnectorViewerProps {
 	prepareSave?: () => Promise<void | (() => void)>;
 	/** Whether this retained viewer is currently visible. Defaults to true. */
 	isVisible?: boolean;
+	/**
+	 * Raised by the host when what the viewer shows may have changed behind
+	 * it, such as after an agent's run wrote to the drive. A viewer that keeps
+	 * a listing reads it again each time the number changes.
+	 */
+	refreshRequestId?: number;
 	/** Publish actions to host chrome instead of rendering their inline equivalents. */
 	onControlsChange?: (controls: ConnectorViewerControls) => void;
 	/**

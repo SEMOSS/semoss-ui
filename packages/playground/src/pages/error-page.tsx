@@ -1,24 +1,38 @@
 import { Home, OctagonAlert } from "lucide-react";
-import { useContext } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "@semoss/i18n";
-import { Button, cn, H1, P, SidebarTrigger, useTheme } from "@semoss/ui/next";
-import { RootContext } from "@/contexts/root-context";
+import {
+	Button,
+	cn,
+	H1,
+	P,
+	SidebarTrigger,
+	Spinner,
+	useTheme,
+} from "@semoss/ui/next";
+import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
 
-export interface ErrorPageProps {
+interface ErrorPageProps {
+	/** Fill the main area beside the navigation rather than the whole page. */
 	isInnerComponent?: boolean;
+	/** Offers Retry in place of going home or reloading. */
+	onRetry?: () => void;
+	/** Whether the retry is running; disables Retry. */
+	isRetrying?: boolean;
 }
 
-export const ErrorPage = ({ isInnerComponent = false }: ErrorPageProps) => {
+export const ErrorPage = ({
+	isInnerComponent = false,
+	onRetry,
+	isRetrying = false,
+}: ErrorPageProps) => {
 	const { t } = useTranslation("room");
 	const navigate = useNavigate();
-	// Initialization failures and the root route boundary render outside RootLayout.
-	const context = useContext(RootContext);
+	const theme = usePlaygroundTheme();
 	const { resolvedTheme } = useTheme();
 	const src =
-		resolvedTheme === "dark"
-			? context?.root.theme.images.errorDark
-			: context?.root.theme.images.error;
+		resolvedTheme === "dark" ? theme.images.errorDark : theme.images.error;
+
 	return (
 		<div
 			className={cn(
@@ -50,20 +64,33 @@ export const ErrorPage = ({ isInnerComponent = false }: ErrorPageProps) => {
 					{t("studio.errorDescription")}
 				</P>
 				<div className="flex flex-wrap justify-center gap-2">
-					<Button
-						type="button"
-						onClick={() => navigate("/")}
-						variant="outline"
-					>
-						<Home aria-hidden="true" />
-						{t("studio.backHome")}
-					</Button>
-					<Button
-						type="button"
-						onClick={() => window.location.reload()}
-					>
-						{t("studio.refresh")}
-					</Button>
+					{onRetry ? (
+						<Button
+							type="button"
+							disabled={isRetrying}
+							onClick={onRetry}
+						>
+							{isRetrying ? <Spinner aria-hidden="true" /> : null}
+							{t("studio.retry")}
+						</Button>
+					) : (
+						<>
+							<Button
+								type="button"
+								onClick={() => navigate("/")}
+								variant="outline"
+							>
+								<Home aria-hidden="true" />
+								{t("studio.backHome")}
+							</Button>
+							<Button
+								type="button"
+								onClick={() => window.location.reload()}
+							>
+								{t("studio.refresh")}
+							</Button>
+						</>
+					)}
 				</div>
 			</div>
 		</div>

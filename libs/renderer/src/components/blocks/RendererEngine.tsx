@@ -2,7 +2,7 @@ import { observer } from "mobx-react-lite";
 import { createElement, type JSX } from "react";
 import { useBlocks } from "../../hooks";
 
-export interface RendererEngineProps {
+interface RendererEngineProps {
 	/** Id of the block */
 	id: string;
 }

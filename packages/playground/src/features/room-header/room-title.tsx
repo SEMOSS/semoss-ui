@@ -2,12 +2,12 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useRoomActionsContext } from "@/features/room-actions/room-actions.context";
-import { RoomNameField } from "./room-name-field";
+import { RoomName } from "@/features/room-name/room-name";
 
 /**
- * The room's name at the start of its header. Rename, from the More actions
- * menu or the slash menu, edits it in place with {@link RoomNameField}.
- * Renders inside a `RoomActionsProvider`.
+ * The room's name at the start of its header, as {@link RoomName} shows it in
+ * the sidebar too. A double-click on it, or `/rename` in the slash menu, edits
+ * it in place. Renders inside a `RoomActionsProvider`.
  */
 export const RoomTitle = observer(() => {
 	const { t } = useTranslation("room");
@@ -24,29 +24,28 @@ export const RoomTitle = observer(() => {
 	}, [isRenaming]);
 
 	if (!context) return null;
-	const savedName = context.room.metadata.name ?? "";
 
-	if (isRenaming) {
-		return (
-			<RoomNameField
-				savedName={savedName}
-				onRename={context.actions.rename}
-				onClose={(isRefocusing) => {
-					shouldRefocus.current = isRefocusing;
-					context.stopRenaming();
-				}}
-			/>
-		);
-	}
+	const name = (
+		<RoomName
+			name={context.room.metadata.name ?? ""}
+			placeholder={t("header.untitled")}
+			isRenaming={isRenaming}
+			onStartRename={context.startRenaming}
+			onRename={context.actions.rename}
+			onStopRename={(isRefocusing) => {
+				shouldRefocus.current = isRefocusing;
+				context.stopRenaming();
+			}}
+		/>
+	);
 
-	const name = savedName || t("header.untitled");
+	if (isRenaming) return name;
+
 	return (
 		<h1
 			ref={headingRef}
-			dir="auto"
-			title={name}
 			tabIndex={-1}
-			className="min-w-0 truncate px-2 font-medium text-sm focus-visible:outline-none"
+			className="min-w-0 px-2 font-medium text-sm focus-visible:outline-none"
 		>
 			{name}
 		</h1>

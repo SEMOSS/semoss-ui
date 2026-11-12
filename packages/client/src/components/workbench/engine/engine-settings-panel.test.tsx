@@ -17,20 +17,25 @@ vi.mock("@/hooks/useEngine", () => ({
 		permission: mocks.permission,
 	}),
 }));
-vi.mock("@/hooks/use-session", () => ({ useSession: () => mocks.admin }));
+vi.mock("@semoss/sdk/react", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
+	useSession: (
+		selector: (state: { user: { isAdmin: boolean } }) => unknown,
+	) => selector({ user: { isAdmin: mocks.admin } }),
+}));
 vi.mock("@/pages/engine/engine-activity-page", () => ({
 	EngineActivityPage: () => null,
 }));
-vi.mock("@/pages/engine/engine-mcp-usage-page", () => ({
+vi.mock("@/pages/engine/engine-mcp-usage.page", () => ({
 	EngineMcpUsagePage: () => null,
 }));
-vi.mock("@/pages/engine/engine-metadata-page", () => ({
+vi.mock("@/pages/engine/engine-metadata.page", () => ({
 	EngineMetadataPage: () => null,
 }));
 vi.mock("@/pages/engine/engine-overview-page", () => ({
 	EngineOverviewPage: () => null,
 }));
-vi.mock("@/pages/engine/engine-settings-page", () => ({
+vi.mock("@/pages/engine/engine-settings.page", () => ({
 	EngineSettingsPage: () => null,
 }));
 vi.mock("@/pages/engine/engine-smss-page", () => ({

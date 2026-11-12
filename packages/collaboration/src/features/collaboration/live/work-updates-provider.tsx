@@ -66,7 +66,7 @@ export function WorkUpdatesProvider({
 		syncError: "",
 	});
 	const pending = useRef(false);
-	// a reload asked for while one is in flight (a finished sync, an assistant's topic change) runs right after it
+	// a reload asked for while one is in flight runs right after it
 	const queued = useRef(false);
 	const syncing = useRef(false);
 	const lastMailAttempt = useRef(0);
@@ -78,7 +78,10 @@ export function WorkUpdatesProvider({
 	);
 	const generation = useRef(0);
 	const refresh = useCallback(() => {
-		if (pending.current) return;
+		if (pending.current) {
+			queued.current = true;
+			return;
+		}
 		const token = generation.current;
 		const requestedState = latest.current;
 		pending.current = true;
@@ -142,6 +145,14 @@ export function WorkUpdatesProvider({
 						memories: updates.memories.map((memory) => ({
 							...memory,
 							id: localId(memory.id),
+							replacesId: memory.replacesId
+								? localId(memory.replacesId)
+								: null,
+							about: memory.about.map((ref) =>
+								ref.type === "topic"
+									? { ...ref, id: localId(ref.id) }
+									: ref,
+							),
 						})),
 						keepItemIds: changedSince(
 							requestedState.items,
@@ -218,8 +229,7 @@ export function WorkUpdatesProvider({
 				.finally(() => {
 					if (token !== generation.current) return;
 					// its emails come back on the threads; a reload already running read them too early
-					if (pending.current) queued.current = true;
-					else refreshRef.current();
+					refreshRef.current();
 				});
 		},
 		[actions, dispatch, sync],
@@ -246,8 +256,7 @@ export function WorkUpdatesProvider({
 			.then((result) => {
 				if (token !== generation.current) return;
 				setMail({ isSyncing: false, lastSync: result, syncError: "" });
-				if (pending.current) queued.current = true;
-				else refreshRef.current();
+				refreshRef.current();
 			})
 			.catch((cause: unknown) => {
 				if (token !== generation.current) return;

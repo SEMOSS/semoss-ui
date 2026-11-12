@@ -18,7 +18,7 @@ export type BranchConditionOperator =
 	| "lessThan"
 	| "lessThanOrEqual";
 
-export interface BranchConditionOperatorOption {
+interface BranchConditionOperatorOption {
 	value: BranchConditionOperator;
 	label: string;
 }
@@ -33,7 +33,7 @@ export const BRANCH_CONDITION_OPERATORS: BranchConditionOperatorOption[] = [
 	{ value: "lessThanOrEqual", label: "is less than or equal to" },
 ];
 
-export interface ParsedBranchCondition {
+interface ParsedBranchCondition {
 	value1: string;
 	operator: BranchConditionOperator;
 	value2: string;
@@ -106,7 +106,7 @@ function operandToDisplayValue(token: string): string {
 }
 
 /** Converts a builder input's plain text into the condition operand token that will be persisted. */
-export function displayValueToOperand(text: string): string {
+function displayValueToOperand(text: string): string {
 	const trimmed = text.trim();
 	if (new RegExp(`^${VAR_TOKEN}$`).test(trimmed)) return trimmed;
 	if (new RegExp(`^${NUMBER_TOKEN}$`).test(trimmed)) return trimmed;

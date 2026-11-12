@@ -32,7 +32,7 @@ export const ROW_CHEVRON = (
 export const MODE_COLUMN_CLASS_NAME = "w-28 shrink-0";
 
 /** Props for {@link ChatToolRow}. */
-export interface ChatToolRowProps {
+interface ChatToolRowProps {
 	/** The tool. */
 	tool: ChatToolInfo;
 	/**

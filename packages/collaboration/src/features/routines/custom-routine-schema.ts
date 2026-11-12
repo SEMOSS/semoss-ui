@@ -8,7 +8,13 @@ import {
 
 const { enabled, time, timezone } = routineScheduleSchema.shape;
 
-export const CUSTOM_ROUTINE_DELIVERIES = ["email", "teams", "none"] as const;
+/** "brief" makes the routine a section of the daily brief, which runs it; it has no schedule of its own. */
+export const CUSTOM_ROUTINE_DELIVERIES = [
+	"email",
+	"teams",
+	"brief",
+	"none",
+] as const;
 
 /**
  * Whether the routine form offers knowledge bases (VECTOR). While it is off, knowledge already saved on a routine
@@ -17,10 +23,14 @@ export const CUSTOM_ROUTINE_DELIVERIES = ["email", "teams", "none"] as const;
 // shortcut: off until this environment has an embedder model; set true to offer knowledge again
 export const IS_ROUTINE_KNOWLEDGE_ENABLED = false;
 
+/** The most tools and knowledge bases, together, the server saves on one routine (WorkCustomRoutine.MAX_TOOLS). */
+export const MAX_ROUTINE_TOOLS = 10;
+
 /** Where a routine's answer goes; always only to the owner. */
 export const DELIVERY_LABELS = {
 	email: "Email me",
 	teams: "Teams message to me",
+	brief: "Add to my daily brief",
 	none: "Keep it here",
 } as const;
 
@@ -50,7 +60,12 @@ export const customRoutineSettingsSchema = z.object({
 	delivery: z.enum(CUSTOM_ROUTINE_DELIVERIES),
 	skills: z.array(z.string()),
 	/** Toolboxes and knowledge bases (VECTOR) the owner added; a run uses their ids, Routines shows their names. */
-	tools: z.array(mcpConfigSchema),
+	tools: z
+		.array(mcpConfigSchema)
+		.max(
+			MAX_ROUTINE_TOOLS,
+			`Add at most ${MAX_ROUTINE_TOOLS} tools and knowledge bases.`,
+		),
 	agentId: z.string(),
 });
 
@@ -83,7 +98,7 @@ export const catalogSkillListSchema = z.array(
 );
 
 /** One of the owner's reference documents for a routine, copied into each of its runs. */
-export const routineDocumentSchema = z.object({
+const routineDocumentSchema = z.object({
 	name: z.string().min(1),
 	size: z.number(),
 	updatedAt: z.string(),
@@ -98,4 +113,3 @@ export const routineDocumentsSchema = z.object({
 export type CustomRoutineSettings = z.infer<typeof customRoutineSettingsSchema>;
 export type CustomRoutine = z.infer<typeof customRoutineSchema>;
 export type CatalogSkill = z.infer<typeof catalogSkillListSchema>[number];
-export type RoutineDocument = z.infer<typeof routineDocumentSchema>;

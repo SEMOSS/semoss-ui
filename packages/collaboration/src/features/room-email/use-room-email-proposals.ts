@@ -91,6 +91,7 @@ export function useRoomEmailProposals({
 	onOpenRef.current = onOpen;
 	const observedRun = useRef(false);
 	const baseline = useRef<number | null>(null);
+	const hasNewCompletion = useRef(false);
 	const [error, setError] = useState("");
 	useEffect(() => {
 		if (!isReady) return;
@@ -111,6 +112,7 @@ export function useRoomEmailProposals({
 			observedRun.current &&
 			snapshot.turn.phase === "completed" &&
 			snapshot.turn.settlementVersion > baseline.current;
+		hasNewCompletion.current = isNewCompletion;
 		baseline.current = snapshot.turn.settlementVersion;
 		if (!isRunning) observedRun.current = false;
 		// Ordinary generation waits for settlement; a paused send must review its
@@ -262,8 +264,23 @@ export function useRoomEmailProposals({
 		if (toOpen) onOpenRef.current?.(toOpen);
 	}, [allowedSources, composer, isReady, snapshot.turn, thread]);
 	useEffect(() => {
-		if (!isReady) return;
-		const messages = readyEmailMessages(snapshot.turn);
+		// only the run the effect above (which runs first) saw finish, or one paused to review a send; never history
+		if (
+			!isReady ||
+			(!hasNewCompletion.current &&
+				snapshot.turn.phase !== "awaiting_approval")
+		)
+			return;
+		const lastUser = snapshot.turn.messages.reduce(
+			(last, message, index) => (message.role === "user" ? index : last),
+			-1,
+		);
+		const thisRun = new Set(
+			snapshot.turn.messages.slice(lastUser + 1).map(({ id }) => id),
+		);
+		const messages = readyEmailMessages(snapshot.turn).filter((message) =>
+			thisRun.has(message.id),
+		);
 		for (const message of messages) {
 			for (const part of message.parts) {
 				const proposal = readDraftProposal({

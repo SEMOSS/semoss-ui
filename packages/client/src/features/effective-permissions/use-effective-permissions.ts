@@ -6,7 +6,7 @@ import {
 } from "@semoss/sdk";
 import { getErrorMessage } from "@semoss/utility/error";
 
-export interface UseEffectivePermissionsResult {
+interface UseEffectivePermissionsResult {
 	/** Everyone who can use the target, or null until it loads */
 	access: EffectivePermissions | null;
 	/** Whether it is being read */

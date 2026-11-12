@@ -2,7 +2,7 @@ import { BookOpenIcon, Bot, CheckIcon, HammerIcon } from "lucide-react";
 import type React from "react";
 import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { usePixel } from "@semoss/sdk/react";
+import { useSessionPixel } from "@semoss/sdk/react";
 import { type MCPConfig, MCPSelector } from "@semoss/shared";
 import {
 	Alert,
@@ -143,7 +143,7 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 
 	// Fetch the selected agent's MCPs whenever the user picks one in the
 	// modal. Empty string disables the call (per the usePixel convention).
-	const getWorkspace = usePixel<Workspace | null>(
+	const getWorkspace = useSessionPixel<Workspace | null>(
 		open && workspaceDraft?.workspace_id
 			? `GetWorkspace(${JSON.stringify(workspaceDraft.workspace_id)});`
 			: "",

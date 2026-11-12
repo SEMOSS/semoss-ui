@@ -8,7 +8,7 @@ import {
 	useFormContext,
 } from "@semoss/ui/next";
 
-export interface GuardrailEngineFieldProps {
+interface GuardrailEngineFieldProps {
 	/** React Hook Form path for this check's guardrail engine id. */
 	name: string;
 

@@ -1,17 +1,17 @@
 import {
 	Bot,
+	ChevronRightIcon,
 	DownloadIcon,
+	ExternalLinkIcon,
 	HelpCircle,
-	MessagesSquareIcon,
 	MoreVertical,
-	PencilIcon,
 	Search,
 	SquarePenIcon,
 	StarIcon,
 	TrashIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
 	Link,
 	matchPath,
@@ -20,18 +20,17 @@ import {
 	useParams,
 } from "react-router";
 import { useTranslation } from "@semoss/i18n";
-import { useIteratorPixel } from "@semoss/sdk/react";
+import { useSessionIteratorPixel } from "@semoss/sdk/react";
 import {
 	Button,
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
 	cn,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
-	Input,
-	InputGroup,
-	InputGroupAddon,
-	InputGroupInput,
 	Muted,
 	ScrollArea,
 	Separator,
@@ -46,29 +45,51 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 	Spinner,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
-	useDebouncedValue,
+	useCacheState,
 	useInfiniteScroll,
 	useSidebar,
 } from "@semoss/ui/next";
-import {
-	DATE_BUCKET_ORDER,
-	getDateBucket,
-	parseTimestampWithUtcDefault,
-} from "@semoss/utility/date";
+import { parseTimestampWithUtcDefault } from "@semoss/utility/date";
 import { MobileNavigationClose } from "@/features/navigation/mobile-navigation-close";
-import { NavigationRail } from "@/features/navigation/navigation-rail";
 import { NavigationToggle } from "@/features/navigation/navigation-toggle";
 import { DownloadConversationDialog } from "@/features/room-actions/download-conversation-dialog";
 import {
 	renameRoom,
 	toggleRoomFavorite,
 } from "@/features/room-actions/use-room-actions";
+import { RoomAgentAvatar } from "@/features/room-list/room-agent-avatar";
+import {
+	buildPlaygroundRoomsPixel,
+	getRoomDate,
+	groupRoomList,
+	type RoomListHeading,
+	type RoomListItem,
+} from "@/features/room-list/room-list";
+import {
+	ROOM_LIST_ACTION_CLASS,
+	RoomListViewMenu,
+} from "@/features/room-list/room-list-view-menu";
+import { useRoomListView } from "@/features/room-list/use-room-list-view";
+import { RoomName } from "@/features/room-name/room-name";
+import { RoomSearchDialog } from "@/features/room-search/room-search-dialog";
 import { useChat } from "@/hooks/use-chat";
 import { useRoot } from "@/hooks/use-root";
 import { AppLogo } from "./app-logo";
 import { GlobalNavItem } from "./global-nav-item";
 import { NavUser } from "./nav-user";
+
+/** Whether the shortcut keys read ⌘ (Apple) or Ctrl. */
+const isApplePlatform =
+	typeof navigator !== "undefined" &&
+	/mac|iphone|ipad/i.test(navigator.userAgent);
+
+/** Section keys the user collapsed, kept across reloads. */
+const isStringList = (value: unknown): value is string[] =>
+	Array.isArray(value) && value.every((item) => typeof item === "string");
 
 let isIframed = false;
 try {
@@ -85,13 +106,19 @@ try {
 export const GlobalNav = observer(() => {
 	const { t } = useTranslation("sidebar");
 
-	const dateBucketLabels = DATE_BUCKET_ORDER.map((bucket) =>
-		t(`buckets.${bucket}`),
-	);
-	const BUCKETS = [t("buckets.favorites"), ...dateBucketLabels];
 	const [downloadRoomId, setDownloadRoomId] = useState<string | null>(null);
 	const { root } = useRoot();
-	const [search, setSearch] = useState("");
+	const [isSearchOpen, setIsSearchOpen] = useState(false);
+	const { view, isCustomized, setView } = useRoomListView();
+	const [storedCollapsed, setStoredCollapsed] = useCacheState<unknown>(
+		[],
+		"sidebar--collapsedRoomGroups--v1",
+	);
+	const collapsedKeys = new Set(
+		isStringList(storedCollapsed) ? storedCollapsed : [],
+	);
+	// the room whose actions menu is open, from its ⋯ button or a right click
+	const [menuRoomId, setMenuRoomId] = useState<string | null>(null);
 	const [helpOpen, setHelpOpen] = useState(false);
 	const { chat } = useChat();
 	const { open, openMobile, isMobile } = useSidebar();
@@ -104,100 +131,65 @@ export const GlobalNav = observer(() => {
 	const isVisible = (isMobile ? openMobile : open) && !hideChatHistory;
 	const { pathname } = useLocation();
 	const { roomId: activeRoomId } = useParams<{ roomId: string }>();
-	const debouncedSearch = useDebouncedValue(search);
 
 	/**
-	 * Preserving scroll position
+	 * Preserving scroll position: the last position is kept in a ref, so
+	 * scrolling never re-renders the nav, and put back only when the sidebar
+	 * opens again.
 	 */
-	const [savedScrollPosition, setSavedScrollPosition] = useState(0);
+	const savedScrollRef = useRef(0);
 	const scrollElementRef = useRef<HTMLDivElement | null>(null);
+
+	// Which view the rows on screen were loaded for. Until the first page of a
+	// new view lands, the old rows stay, dimmed, and infinite scroll waits.
+	const viewKey = `${view.sortBy}:${view.sortDir}:${view.groupBy}`;
+	const viewKeyRef = useRef(viewKey);
+	viewKeyRef.current = viewKey;
+	const [loadedViewKey, setLoadedViewKey] = useState(viewKey);
+	const isViewLoading = loadedViewKey !== viewKey;
 
 	/**
 	 * Inline rename state - tracks which room is being renamed
 	 */
 	const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
-	const [editingName, setEditingName] = useState("");
 
 	const [deletedSet, setDeletedSet] = useState(new Set<string>());
 
 	const navigate = useNavigate();
 
-	const getPinnedRooms = useIteratorPixel<
-		{
-			ROOM_ID: string;
-			ROOM_NAME: string;
-			DATE_CREATED: string;
-			WORKSPACE_ID?: string;
-			PINNED?: boolean;
-		}[],
-		{
-			ROOM_ID: string;
-			ROOM_NAME: string;
-			DATE_CREATED: string;
-			WORKSPACE_ID?: string;
-			PINNED?: boolean;
-		}
-	>(
-		(_limit, _offset) =>
-			hideChatHistory
-				? ""
-				: `META | GetPlaygroundRooms(pinned=[true], sort=["DESC"]);`,
-		() => -1,
-		(response) => response,
-		{},
-		// No roomCounter dependency here — the useEffect below already
-		// calls reset() when roomCounter increments, and reset() preserves
-		// the current data while refetching (no blank flash). Putting
-		// roomCounter in the useIteratorPixel deps would call setAllData([])
-		// instead, which is the source of the sidebar flicker.
-		[],
-	);
-
-	const getRooms = useIteratorPixel<
-		{
-			ROOM_ID: string;
-			ROOM_NAME: string;
-			DATE_CREATED: string;
-			WORKSPACE_ID?: string;
-			PINNED?: boolean;
-		}[],
-		{
-			ROOM_ID: string;
-			ROOM_NAME: string;
-			DATE_CREATED: string;
-			WORKSPACE_ID?: string;
-			PINNED?: boolean;
-		}
-	>(
+	// The server orders by group, then favorites, then the sort, so each
+	// section of the list arrives as one run and paging never reshuffles it.
+	const getRooms = useSessionIteratorPixel<RoomListItem[], RoomListItem>(
 		(limit, offset) =>
 			hideChatHistory
 				? ""
-				: `META | GetPlaygroundRooms(${debouncedSearch ? `search="<encode>${debouncedSearch}</encode>", ` : ""}limit=${limit}, offset=${offset}, sort=["DESC"]);`,
-
-		(response) => {
-			// if its less than the limit, we know its the end
-			if (response.length < 25) {
-				return -1;
-			}
-
-			return Infinity;
-		},
-		(response) => {
-			return response;
-		},
+				: buildPlaygroundRoomsPixel(view, { limit, offset }),
+		// a short page is the last one
+		(response) => (response.length < 25 ? -1 : Infinity),
+		(response) => response,
 		{
 			limit: 25,
+			onSuccess: (_rows, isLoadingMore) => {
+				if (!isLoadingMore) {
+					setLoadedViewKey(viewKeyRef.current);
+				}
+			},
 		},
-		// Re-fetch only on search change — counter-based refreshes are handled
-		// by the useEffect below, which calls reset() and preserves data.
-		[debouncedSearch],
+		// Re-fetch from the top when the view changes. Counter-based refreshes
+		// are handled by the useEffect below, which calls reset() and keeps
+		// the current rows until the new ones land (no blank flash).
+		[view.sortBy, view.sortDir, view.groupBy],
 	);
 
 	/**
 	 * Setup infinite scroll for the command list
 	 */
 	const { setScroll } = useInfiniteScroll({
-		disabled: !isVisible || getRooms.isLoading || !getRooms.hasMore,
+		disabled:
+			!isVisible ||
+			isViewLoading ||
+			getRooms.isLoading ||
+			!getRooms.hasMore,
 		onNext: () => {
 			if (isVisible) {
 				getRooms.next();
@@ -205,32 +197,21 @@ export const GlobalNav = observer(() => {
 		},
 	});
 
-	const handleScroll = useCallback(() => {
-		if (scrollElementRef.current) {
-			if (savedScrollPosition !== scrollElementRef.current.scrollTop) {
-				const { scrollTop, scrollHeight, clientHeight } =
-					scrollElementRef.current;
-				const distanceFromBottom =
-					scrollHeight - (scrollTop + clientHeight);
-
-				// Threshold pulled from use-infinite-scroll
-				if (distanceFromBottom > 100) {
-					setSavedScrollPosition(scrollElementRef.current.scrollTop);
-				}
-			}
-		}
-	}, [savedScrollPosition]);
-
 	/**
 	 * Effects
 	 */
+	// one passive listener per viewport; it only records where the list is
 	useEffect(() => {
 		const element = scrollElementRef.current;
-		if (element) {
-			element.addEventListener("scroll", handleScroll);
-			return () => element.removeEventListener("scroll", handleScroll);
+		if (!element || !isVisible) {
+			return;
 		}
-	}, [handleScroll]);
+		const handleScroll = () => {
+			savedScrollRef.current = element.scrollTop;
+		};
+		element.addEventListener("scroll", handleScroll, { passive: true });
+		return () => element.removeEventListener("scroll", handleScroll);
+	}, [isVisible]);
 
 	// Skip the reset on first mount — the iterators already fetch on
 	// init, so resetting here would cause a duplicate request. Subsequent
@@ -245,12 +226,45 @@ export const GlobalNav = observer(() => {
 			return;
 		}
 		getRooms.reset();
-		getPinnedRooms.reset();
 		if (scrollElementRef.current) {
 			scrollElementRef.current.scrollTop = 0;
-			setSavedScrollPosition(0);
 		}
-	}, [getRooms.reset, getPinnedRooms.reset, chat.keys.roomCounter]);
+		savedScrollRef.current = 0;
+	}, [getRooms.reset, chat.keys.roomCounter]);
+
+	// A new order or grouping starts at the top; the iterator already reloads
+	// from its first page for the new view
+	const shownViewKey = useRef(viewKey);
+	useEffect(() => {
+		if (shownViewKey.current === viewKey) {
+			return;
+		}
+		shownViewKey.current = viewKey;
+		if (scrollElementRef.current) {
+			scrollElementRef.current.scrollTop = 0;
+		}
+		savedScrollRef.current = 0;
+	}, [viewKey]);
+
+	// Cmd/Ctrl+K opens chat search from anywhere
+	useEffect(() => {
+		if (hideChatHistory) {
+			return;
+		}
+		const handleKeyDown = (event: KeyboardEvent) => {
+			if (
+				event.key.toLowerCase() === "k" &&
+				(event.metaKey || event.ctrlKey) &&
+				!event.altKey &&
+				!event.shiftKey
+			) {
+				event.preventDefault();
+				setIsSearchOpen(true);
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [hideChatHistory]);
 
 	/**
 	 * Once the refetch returns a room we were showing optimistically, drop the
@@ -266,24 +280,17 @@ export const GlobalNav = observer(() => {
 		});
 	}, [getRooms.data, chat]);
 
-	/**
-	 * Save and restore scroll position when sidebar opens/closes
-	 */
+	// put the list back where it was when the sidebar opens again
 	useEffect(() => {
 		const scrollElement = scrollElementRef.current;
-
-		if (!scrollElement || !open) return;
-
-		if (
-			savedScrollPosition > 0 &&
-			savedScrollPosition !== scrollElement.scrollTop
-		) {
-			// Restore scroll position when opening
-			requestAnimationFrame(() => {
-				scrollElement.scrollTop = savedScrollPosition;
-			});
+		if (!scrollElement || !open || savedScrollRef.current === 0) {
+			return;
 		}
-	}, [open, savedScrollPosition]);
+		const frame = requestAnimationFrame(() => {
+			scrollElement.scrollTop = savedScrollRef.current;
+		});
+		return () => cancelAnimationFrame(frame);
+	}, [open]);
 
 	/**
 	 * Wire infinite scroll once the sidebar becomes visible. The
@@ -297,40 +304,63 @@ export const GlobalNav = observer(() => {
 		}
 	}, [isVisible, setScroll]);
 
-	/**
-	 * Bucket the rooms by date
-	 */
-	const pinnedRoomIds = new Set(getPinnedRooms.data.map((r) => r.ROOM_ID));
-
 	// Rooms optimistically shown before their first message has persisted.
-	// Drop any that the server has since returned (real data wins), and skip
-	// them entirely while searching so they don't pollute filtered results.
-	const fetchedRoomIds = new Set([
-		...getRooms.data.map((r) => r.ROOM_ID),
-		...pinnedRoomIds,
-	]);
-	const optimisticRooms = debouncedSearch
-		? []
-		: Object.values(chat.optimisticRooms).filter(
-				(r) => !fetchedRoomIds.has(r.ROOM_ID),
-			);
+	// Drop any that the server has since returned (real data wins).
+	const fetchedRoomIds = new Set(getRooms.data.map((r) => r.ROOM_ID));
+	const optimisticRooms: RoomListItem[] = Object.values(
+		chat.optimisticRooms,
+	).filter((r) => !fetchedRoomIds.has(r.ROOM_ID));
 
-	const bucketedRooms = [...optimisticRooms, ...getRooms.data].reduce(
-		(acc, val) => {
-			// Skip rooms handled by the dedicated pinned query
-			if (val.PINNED || pinnedRoomIds.has(val.ROOM_ID)) return acc;
+	const sections = groupRoomList(getRooms.data, view, optimisticRooms);
+	const isGrouped = view.groupBy === "agent";
 
-			const d = parseTimestampWithUtcDefault(val.DATE_CREATED);
-			const bucket = getDateBucket(d);
-			acc[t(`buckets.${bucket}`)].push(val);
+	const handleSectionOpenChange = (key: string, isOpen: boolean) => {
+		const next = new Set(collapsedKeys);
+		if (isOpen) {
+			next.delete(key);
+		} else {
+			next.add(key);
+		}
+		setStoredCollapsed([...next]);
+	};
 
-			return acc;
-		},
-		{
-			[t("buckets.favorites")]: [...getPinnedRooms.data],
-			...Object.fromEntries(dateBucketLabels.map((label) => [label, []])),
-		} as Record<string, typeof getRooms.data>,
-	);
+	const renderHeading = (heading: RoomListHeading) => {
+		switch (heading.type) {
+			case "pinned":
+				return (
+					<>
+						<StarIcon
+							className="size-3 fill-current"
+							aria-hidden="true"
+						/>
+						{t("buckets.favorites")}
+					</>
+				);
+			case "date":
+				return t(`buckets.${heading.bucket}`);
+			case "all":
+				return t("groups.all");
+			case "agent":
+				return (
+					<>
+						<RoomAgentAvatar
+							workspaceId={heading.workspaceId}
+							workspaceName={heading.workspaceName}
+						/>
+						<span className="truncate text-foreground leading-none">
+							{heading.workspaceName || t("groups.unnamedAgent")}
+						</span>
+					</>
+				);
+			case "noAgent":
+				// no icon and no indent: a quiet, placeholder-like label
+				return (
+					<span className="truncate font-normal text-muted-foreground/70 leading-none">
+						{t("groups.noAgent")}
+					</span>
+				);
+		}
+	};
 
 	/**
 	 * Handlers
@@ -340,25 +370,14 @@ export const GlobalNav = observer(() => {
 	const handleToggleFavorite = (roomId: string, isFavorite: boolean) =>
 		toggleRoomFavorite(chat, roomId, isFavorite, t);
 
-	const handleStartRename = (roomId: string, currentName: string) => {
-		setEditingRoomId(roomId);
-		setEditingName(currentName);
-	};
+	const handleStartRename = (roomId: string) => setEditingRoomId(roomId);
 
-	const handleCancelRename = () => {
-		setEditingRoomId(null);
-		setEditingName("");
-	};
-
-	const handleSaveRename = async (roomId: string) => {
-		if (await renameRoom(chat, roomId, editingName, t))
-			handleCancelRename();
-	};
+	const handleCancelRename = () => setEditingRoomId(null);
 
 	return (
 		<>
 			<Sidebar
-				collapsible="icon"
+				collapsible="offcanvas"
 				variant="inset"
 				className="z-30 h-full p-0 transition-[width] duration-200 ease-in-out"
 			>
@@ -384,21 +403,6 @@ export const GlobalNav = observer(() => {
 					</SidebarMenu>
 
 					<SidebarMenu className="max-h-[45vh] gap-2 overflow-y-auto p-2">
-						{!hideChatHistory && (
-							<InputGroup
-								className="bg-background group-data-[collapsible=icon]:hidden"
-								data-tour="tour-search"
-							>
-								<InputGroupInput
-									placeholder={t("search")}
-									value={search}
-									onChange={(e) => setSearch(e.target.value)}
-								/>
-								<InputGroupAddon>
-									<Search />
-								</InputGroupAddon>
-							</InputGroup>
-						)}
 						{root.theme.featureFlags?.hideToolsInIframe &&
 						isIframed ? null : (
 							<>
@@ -445,31 +449,6 @@ export const GlobalNav = observer(() => {
 									</SidebarMenuItem>
 								)}
 
-								{!hideChatHistory && (
-									<SidebarMenuItem>
-										<SidebarMenuButton
-											asChild
-											isActive={
-												!!matchPath("/chats", pathname)
-											}
-											tooltip={{
-												children: t(
-													"nav.allChats.tooltip",
-												),
-												hidden: false,
-											}}
-										>
-											<Link
-												to={"/chats"}
-												aria-label={"chats"}
-											>
-												<MessagesSquareIcon />
-												{t("nav.allChats.label")}
-											</Link>
-										</SidebarMenuButton>
-									</SidebarMenuItem>
-								)}
-
 								{root.theme.sidebar.headerItems.map(
 									(item, index) => (
 										<GlobalNavItem
@@ -490,11 +469,51 @@ export const GlobalNav = observer(() => {
 				</SidebarHeader>
 				{!hideChatHistory && (
 					<SidebarContent
-						className="min-h-[120px] flex-1 overflow-hidden pe-2 transition-all duration-200 ease-in-out"
+						className="min-h-[120px] flex-1 overflow-hidden pe-2"
 						data-tour="tour-chat-history"
 					>
+						<div className="flex items-center justify-between gap-2 ps-6 pe-1 group-data-[collapsible=icon]:hidden">
+							<h2 className="font-medium text-sidebar-foreground/70 text-xs">
+								{t("chats")}
+							</h2>
+							<div className="flex items-center gap-0.5">
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon-sm"
+											className={ROOM_LIST_ACTION_CLASS}
+											onClick={() =>
+												setIsSearchOpen(true)
+											}
+											aria-haspopup="dialog"
+											aria-label={t("searchChats.label")}
+											aria-keyshortcuts={
+												isApplePlatform
+													? "Meta+K"
+													: "Control+K"
+											}
+											data-tour="tour-search"
+										>
+											<Search />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent side="bottom">
+										{t("searchChats.label")}
+										<span className="ms-2 text-muted-foreground">
+											{isApplePlatform ? "⌘K" : "Ctrl K"}
+										</span>
+									</TooltipContent>
+								</Tooltip>
+								<RoomListViewMenu
+									view={view}
+									isCustomized={isCustomized}
+									onViewChange={setView}
+								/>
+							</div>
+						</div>
 						<ScrollArea
-							className="[&_[data-slot=scroll-area-viewport]>div]:block! h-full"
+							className="[&_[data-slot=scroll-area-viewport]>div]:block! min-h-0 flex-1"
 							viewportRef={(ele) => {
 								// Store reference for scroll position management
 								if (ele) {
@@ -535,313 +554,411 @@ export const GlobalNav = observer(() => {
 										</Muted>
 									</div>
 								)}
-							{BUCKETS.map((bucket) => {
-								const rooms = bucketedRooms[bucket];
+							{sections.map((section) => {
+								const rooms = section.rooms;
 								if (!isVisible || rooms.length === 0) {
 									return null;
 								}
 
 								return (
-									<SidebarGroup
-										key={bucket}
-										className="ps-4 transition-all duration-200 ease-in-out group-data-[collapsible=icon]:hidden"
+									<Collapsible
+										key={section.key}
+										open={!collapsedKeys.has(section.key)}
+										onOpenChange={(isOpen) =>
+											handleSectionOpenChange(
+												section.key,
+												isOpen,
+											)
+										}
+										asChild
 									>
-										<SidebarGroupLabel className="truncate font-medium text-muted-foreground text-xs leading-normal">
-											{bucket}
-										</SidebarGroupLabel>
-										<SidebarGroupContent>
-											<SidebarMenu>
-												{rooms.map((room) => {
-													const roomId = room.ROOM_ID;
-													const name =
-														room.ROOM_NAME ||
-														t("messages.untitled");
-													const date = root.theme
-														.sidebar.chatHistoryDate
-														? parseTimestampWithUtcDefault(
-																room.DATE_CREATED,
-															)
-																.toDate()
-																.toLocaleString(
-																	undefined,
-																	{
-																		month: "numeric",
-																		day: "numeric",
-																		year: "numeric",
-																		hour: "numeric",
-																		minute: "2-digit",
-																		hour12: true,
-																	},
-																)
-														: null;
-													const isFavorite =
-														room.PINNED || false;
-													const isEditing =
-														editingRoomId ===
-														roomId;
-
-													// if the room is in the deleted set, don't render it
-													if (
-														deletedSet.has(roomId)
-													) {
-														return null;
-													}
-
-													return (
-														<SidebarMenuItem
-															key={roomId}
-															className="group relative flex"
-														>
-															{isEditing ? (
-																<Input
-																	value={
-																		editingName
-																	}
-																	onChange={(
-																		e,
-																	) =>
-																		setEditingName(
-																			e
-																				.target
-																				.value,
+										<SidebarGroup
+											className={cn(
+												"group/section py-0.5 ps-4 group-data-[collapsible=icon]:hidden",
+												isViewLoading && "opacity-60",
+											)}
+											aria-busy={isViewLoading}
+										>
+											{/* stays at the top while its rooms scroll by; the next heading pushes it up */}
+											<div className="sticky top-0 z-10 bg-sidebar">
+												<SidebarGroupLabel asChild>
+													<CollapsibleTrigger className="w-full gap-2 truncate font-medium text-muted-foreground text-xs leading-none hover:text-sidebar-foreground">
+														{renderHeading(
+															section.heading,
+														)}
+														<ChevronRightIcon
+															aria-hidden="true"
+															className="ms-auto size-3 shrink-0 text-muted-foreground/60 opacity-0 transition-[transform,opacity] group-focus-within/section:opacity-100 group-hover/section:opacity-100 group-data-[state=open]/section:rotate-90 group-data-[state=closed]/section:opacity-100"
+														/>
+													</CollapsibleTrigger>
+												</SidebarGroupLabel>
+												{section.heading.type ===
+												"agent" ? (
+													<Link
+														to={`/agent/${section.heading.workspaceId}`}
+														target="_blank"
+														rel="noopener noreferrer"
+														aria-label={t(
+															"groups.openAgent",
+															{
+																name:
+																	section
+																		.heading
+																		.workspaceName ||
+																	t(
+																		"groups.unnamedAgent",
+																	),
+															},
+														)}
+														title={t(
+															"groups.openAgent",
+															{
+																name:
+																	section
+																		.heading
+																		.workspaceName ||
+																	t(
+																		"groups.unnamedAgent",
+																	),
+															},
+														)}
+														// beside the heading, not in it: the heading is the collapse button
+														className="absolute end-7 top-1.5 flex size-5 items-center justify-center rounded-md text-muted-foreground opacity-0 outline-hidden ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:opacity-100 focus-visible:ring-2 group-hover/section:opacity-100 max-md:opacity-100"
+													>
+														<ExternalLinkIcon
+															aria-hidden="true"
+															className="size-3.5"
+														/>
+													</Link>
+												) : null}
+											</div>
+											<CollapsibleContent>
+												<SidebarGroupContent>
+													<SidebarMenu className="gap-0">
+														{rooms.map((room) => {
+															const roomId =
+																room.ROOM_ID;
+															const date = root
+																.theme.sidebar
+																.chatHistoryDate
+																? parseTimestampWithUtcDefault(
+																		getRoomDate(
+																			room,
+																		),
+																	)
+																		.toDate()
+																		.toLocaleString(
+																			undefined,
+																			{
+																				month: "numeric",
+																				day: "numeric",
+																				year: "numeric",
+																				hour: "numeric",
+																				minute: "2-digit",
+																				hour12: true,
+																			},
 																		)
+																: null;
+															const isFavorite =
+																room.PINNED ||
+																false;
+															// grouped, favorites lead their group instead of a section
+															const showFavoriteMark =
+																isGrouped &&
+																isFavorite;
+															const isEditing =
+																editingRoomId ===
+																roomId;
+
+															// the same name, editable in place, whether or not it is being renamed
+															const roomName = (
+																<RoomName
+																	name={
+																		room.ROOM_NAME ??
+																		""
 																	}
-																	onKeyDown={(
-																		e,
-																	) => {
-																		if (
-																			e.key ===
-																			"Enter"
-																		) {
-																			handleSaveRename(
-																				roomId,
-																			);
-																		} else if (
-																			e.key ===
-																			"Escape"
-																		) {
-																			handleCancelRename();
-																		}
-																	}}
-																	onBlur={() =>
-																		handleSaveRename(
+																	placeholder={t(
+																		"messages.untitled",
+																	)}
+																	isRenaming={
+																		isEditing
+																	}
+																	onStartRename={() =>
+																		handleStartRename(
 																			roomId,
 																		)
 																	}
-																	autoFocus
-																	className="h-8 flex-1"
+																	onRename={(
+																		nextName,
+																	) =>
+																		renameRoom(
+																			chat,
+																			roomId,
+																			nextName,
+																			t,
+																		)
+																	}
+																	onStopRename={
+																		handleCancelRename
+																	}
+																	className={
+																		isEditing
+																			? "h-8 max-w-none flex-1"
+																			: "min-w-0 flex-1 font-medium text-sm leading-tight"
+																	}
 																/>
-															) : (
-																<>
-																	<SidebarMenuButton
-																		asChild
-																		isActive={
-																			activeRoomId ===
-																			roomId
-																		}
-																	>
-																		<Link
-																			className={cn(
-																				"flex h-auto flex-col items-start p-2",
-																				date &&
-																					"gap-1",
-																			)}
-																			to={`/room/${roomId}`}
-																			aria-label={
-																				"Select room"
-																			}
-																		>
-																			<span
-																				dir="auto"
-																				className="truncate font-medium text-sm leading-tight"
-																			>
-																				{
-																					name
+															);
+
+															// if the room is in the deleted set, don't render it
+															if (
+																deletedSet.has(
+																	roomId,
+																)
+															) {
+																return null;
+															}
+
+															return (
+																<SidebarMenuItem
+																	key={roomId}
+																	className="group/room relative flex"
+																>
+																	{isEditing ? (
+																		roomName
+																	) : (
+																		<>
+																			<SidebarMenuButton
+																				asChild
+																				isActive={
+																					activeRoomId ===
+																					roomId
 																				}
-																			</span>
-																			{date && (
-																				<span className="text-muted-foreground text-xs leading-none">
-																					{
-																						date
-																					}
-																				</span>
-																			)}
-																		</Link>
-																	</SidebarMenuButton>
-																	<DropdownMenu
-																		modal={
-																			false
-																		}
-																	>
-																		<DropdownMenuTrigger
-																			asChild
-																		>
-																			<Button
-																				variant="ghost"
-																				size="icon-sm"
-																				className=""
-																				onClick={(
-																					e,
-																				) => {
-																					e.stopPropagation();
-																				}}
 																			>
-																				<MoreVertical className="size-4" />
-																			</Button>
-																		</DropdownMenuTrigger>
-																		<DropdownMenuContent
-																			align="start"
-																			side="right"
-																			sideOffset={
-																				5
-																			}
-																			className="w-40"
-																		>
-																			<DropdownMenuItem
-																				onClick={(
-																					e,
-																				) => {
-																					e.stopPropagation();
-																					handleToggleFavorite(
-																						roomId,
-																						isFavorite,
-																					);
-																				}}
-																			>
-																				<StarIcon
+																				<Link
 																					className={cn(
-																						"me-2 size-4",
-																						isFavorite &&
-																							"fill-yellow-500 text-yellow-500",
+																						"flex h-auto flex-col items-start justify-center px-2 py-1",
+																						date &&
+																							"gap-1",
 																					)}
-																				/>
-																				{isFavorite
-																					? t(
-																							"actions.unfavorite",
-																						)
-																					: t(
-																							"actions.favorite",
-																						)}
-																			</DropdownMenuItem>
-																			<DropdownMenuItem
-																				onClick={(
-																					e,
-																				) => {
-																					e.stopPropagation();
-																					setDownloadRoomId(
-																						roomId,
-																					);
-																				}}
-																			>
-																				<DownloadIcon className="me-2 size-4" />
-																				{t(
-																					"actions.download",
-																				)}
-																			</DropdownMenuItem>
-																			<DropdownMenuItem
-																				onClick={(
-																					e,
-																				) => {
-																					e.stopPropagation();
-																					handleStartRename(
-																						roomId,
-																						name,
-																					);
-																				}}
-																			>
-																				<PencilIcon className="me-2 size-4" />
-																				{t(
-																					"actions.rename",
-																				)}
-																			</DropdownMenuItem>
-																			<DropdownMenuItem
-																				onClick={async (
-																					e,
-																				) => {
-																					e.stopPropagation();
-
-																					try {
-																						// optimistically add to deleted set to remove from UI immediately
-																						setDeletedSet(
-																							(
-																								prev,
-																							) =>
-																								new Set(
-																									[
-																										...prev,
-																										roomId,
-																									],
-																								),
-																						);
-
-																						await chat.closeRoom(
+																					to={`/room/${roomId}`}
+																					onContextMenu={(
+																						event,
+																					) => {
+																						event.preventDefault();
+																						setMenuRoomId(
 																							roomId,
 																						);
-
-																						toast.success(
-																							t(
-																								"toasts.roomDeletedSuccess",
-																							),
+																					}}
+																					onKeyDown={(
+																						event,
+																					) => {
+																						if (
+																							event.key !==
+																							"F2"
+																						)
+																							return;
+																						event.preventDefault();
+																						handleStartRename(
+																							roomId,
 																						);
-																						if (
-																							activeRoomId ===
-																							roomId
-																						) {
-																							navigate(
-																								"/",
-																							);
+																					}}
+																				>
+																					<span className="flex w-full min-w-0 items-center gap-1.5">
+																						{showFavoriteMark ? (
+																							<StarIcon
+																								className="size-3 shrink-0 fill-current text-muted-foreground"
+																								aria-hidden="true"
+																							/>
+																						) : null}
+																						{
+																							roomName
 																						}
+																					</span>
+																					{date && (
+																						<span className="text-muted-foreground text-xs leading-none">
+																							{
+																								date
+																							}
+																						</span>
+																					)}
+																				</Link>
+																			</SidebarMenuButton>
+																			<DropdownMenu
+																				modal={
+																					false
+																				}
+																				open={
+																					menuRoomId ===
+																					roomId
+																				}
+																				onOpenChange={(
+																					isOpen,
+																				) =>
+																					setMenuRoomId(
+																						isOpen
+																							? roomId
+																							: null,
+																					)
+																				}
+																			>
+																				<DropdownMenuTrigger
+																					asChild
+																				>
+																					<Button
+																						variant="ghost"
+																						size="icon-sm"
+																						aria-label={t(
+																							"actions.roomActions",
+																						)}
+																						// shown on hover, keyboard focus, or while open; always on touch screens
+																						className="text-muted-foreground hover:text-sidebar-accent-foreground focus-visible:opacity-100 data-[state=open]:opacity-100 md:opacity-0 md:group-hover/room:opacity-100 md:group-focus-within/room:opacity-100"
+																						onClick={(
+																							e,
+																						) => {
+																							e.stopPropagation();
+																						}}
+																					>
+																						<MoreVertical className="size-4" />
+																					</Button>
+																				</DropdownMenuTrigger>
+																				<DropdownMenuContent
+																					align="start"
+																					side="right"
+																					sideOffset={
+																						5
+																					}
+																					className="w-40"
+																				>
+																					<DropdownMenuItem
+																						onClick={(
+																							e,
+																						) => {
+																							e.stopPropagation();
+																							handleToggleFavorite(
+																								roomId,
+																								isFavorite,
+																							);
+																						}}
+																					>
+																						<StarIcon
+																							className={cn(
+																								"me-2 size-4",
+																								isFavorite &&
+																									"fill-yellow-500 text-yellow-500",
+																							)}
+																						/>
+																						{isFavorite
+																							? t(
+																									"actions.unfavorite",
+																								)
+																							: t(
+																									"actions.favorite",
+																								)}
+																					</DropdownMenuItem>
+																					<DropdownMenuItem
+																						onClick={(
+																							e,
+																						) => {
+																							e.stopPropagation();
+																							setDownloadRoomId(
+																								roomId,
+																							);
+																						}}
+																					>
+																						<DownloadIcon className="me-2 size-4" />
+																						{t(
+																							"actions.download",
+																						)}
+																					</DropdownMenuItem>
+																					<DropdownMenuItem
+																						onClick={async (
+																							e,
+																						) => {
+																							e.stopPropagation();
 
-																						// Refetch rooms after deletion
-																						getRooms.reset();
-																						getPinnedRooms.reset();
-																					} catch (e) {
-																						if (
-																							e instanceof
-																							Error
-																						) {
-																							toast.error(
-																								e.message,
-																							);
-																						}
-																						// Deletion failed — restore the room in the list.
-																						// On the success path we intentionally leave the
-																						// roomId in deletedSet until the refetch lands, so
-																						// the room doesn't briefly reappear between the
-																						// reset() call and the new data arriving.
-																						setDeletedSet(
-																							(
-																								prev,
-																							) => {
-																								const newSet =
-																									new Set(
+																							try {
+																								// optimistically add to deleted set to remove from UI immediately
+																								setDeletedSet(
+																									(
 																										prev,
-																									);
-																								newSet.delete(
+																									) =>
+																										new Set(
+																											[
+																												...prev,
+																												roomId,
+																											],
+																										),
+																								);
+
+																								await chat.closeRoom(
 																									roomId,
 																								);
-																								return newSet;
-																							},
-																						);
-																					}
-																				}}
-																				className="text-destructive focus:text-destructive"
-																			>
-																				<TrashIcon className="me-2 size-4" />
-																				{t(
-																					"actions.delete",
-																				)}
-																			</DropdownMenuItem>
-																		</DropdownMenuContent>
-																	</DropdownMenu>
-																</>
-															)}
-														</SidebarMenuItem>
-													);
-												})}
-											</SidebarMenu>
-										</SidebarGroupContent>
-									</SidebarGroup>
+
+																								toast.success(
+																									t(
+																										"toasts.roomDeletedSuccess",
+																									),
+																								);
+																								if (
+																									activeRoomId ===
+																									roomId
+																								) {
+																									navigate(
+																										"/",
+																									);
+																								}
+
+																								// Refetch rooms after deletion
+																								getRooms.reset();
+																							} catch (e) {
+																								if (
+																									e instanceof
+																									Error
+																								) {
+																									toast.error(
+																										e.message,
+																									);
+																								}
+																								// Deletion failed — restore the room in the list.
+																								// On the success path we intentionally leave the
+																								// roomId in deletedSet until the refetch lands, so
+																								// the room doesn't briefly reappear between the
+																								// reset() call and the new data arriving.
+																								setDeletedSet(
+																									(
+																										prev,
+																									) => {
+																										const newSet =
+																											new Set(
+																												prev,
+																											);
+																										newSet.delete(
+																											roomId,
+																										);
+																										return newSet;
+																									},
+																								);
+																							}
+																						}}
+																						className="text-destructive focus:text-destructive"
+																					>
+																						<TrashIcon className="me-2 size-4" />
+																						{t(
+																							"actions.delete",
+																						)}
+																					</DropdownMenuItem>
+																				</DropdownMenuContent>
+																			</DropdownMenu>
+																		</>
+																	)}
+																</SidebarMenuItem>
+															);
+														})}
+													</SidebarMenu>
+												</SidebarGroupContent>
+											</CollapsibleContent>
+										</SidebarGroup>
+									</Collapsible>
 								);
 							})}
 						</ScrollArea>
@@ -898,9 +1015,12 @@ export const GlobalNav = observer(() => {
 						</SidebarMenuItem>
 					</SidebarMenu>
 				</SidebarFooter>
-				<NavigationRail />
 			</Sidebar>
 
+			<RoomSearchDialog
+				open={isSearchOpen}
+				onOpenChange={setIsSearchOpen}
+			/>
 			<DownloadConversationDialog
 				roomId={downloadRoomId}
 				open={downloadRoomId !== null}

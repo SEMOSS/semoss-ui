@@ -6,6 +6,7 @@ import { CustomRoutineFields } from "./custom-routine-fields";
 import {
 	type CatalogSkill,
 	type CustomRoutineSettings,
+	customRoutineSettingsSchema,
 	IS_ROUTINE_KNOWLEDGE_ENABLED,
 } from "./custom-routine-schema";
 
@@ -44,23 +45,41 @@ const catalog: CatalogSkill[] = [
 	{ id: "status", name: "Status report", description: "" },
 ];
 
-function Harness({ onValues }: { onValues: (values: unknown) => void }) {
+const settings: CustomRoutineSettings = {
+	enabled: true,
+	name: "Pipeline",
+	prompt: "Summarize the pipeline",
+	time: "08:00",
+	days: ["MON"],
+	timezone: "America/New_York",
+	delivery: "email",
+	skills: ["summary", "gone"],
+	tools: [
+		{ id: "sales-db", name: "Sales DB", type: "DATABASE" },
+		{ id: "policies", name: "Policy library", type: "VECTOR" },
+	],
+	agentId: "",
+};
+
+/** Ten tools, with a saved knowledge base among them; the server takes no more. */
+const tenTools: CustomRoutineSettings["tools"] = [
+	...Array.from({ length: 9 }, (_, index) => ({
+		id: `db-${index}`,
+		name: `Database ${index}`,
+		type: "DATABASE" as const,
+	})),
+	{ id: "policies", name: "Policy library", type: "VECTOR" },
+];
+
+function Harness({
+	onValues,
+	tools = settings.tools,
+}: {
+	onValues: (values: unknown) => void;
+	tools?: CustomRoutineSettings["tools"];
+}) {
 	const form = useForm<CustomRoutineSettings>({
-		defaultValues: {
-			enabled: true,
-			name: "Pipeline",
-			prompt: "Summarize the pipeline",
-			time: "08:00",
-			days: ["MON"],
-			timezone: "America/New_York",
-			delivery: "email",
-			skills: ["summary", "gone"],
-			tools: [
-				{ id: "sales-db", name: "Sales DB", type: "DATABASE" },
-				{ id: "policies", name: "Policy library", type: "VECTOR" },
-			],
-			agentId: "",
-		},
+		defaultValues: { ...settings, tools },
 	});
 	onValues(form.watch());
 	return (
@@ -133,6 +152,86 @@ describe("custom routine skills and tools", () => {
 			}),
 		);
 		expect(values.skills).toEqual(["summary", "status"]);
+	});
+
+	it("stops adding tools at ten, counting saved knowledge, and says why", async () => {
+		const user = userEvent.setup();
+		render(<Harness onValues={() => undefined} tools={tenTools} />);
+		const reason =
+			"A routine can use up to 10 tools and knowledge bases. Remove one to add another.";
+		expect(within(section("Tools")).getByText(reason)).toBeVisible();
+		expect(
+			screen.getByRole("button", { name: "Remove Database 0" }),
+		).toBeEnabled();
+		await user.click(screen.getByRole("button", { name: "Add tools" }));
+		expect(
+			within(screen.getByRole("dialog")).getByRole("checkbox", {
+				name: /Jira/,
+			}),
+		).toBeDisabled();
+		await user.click(screen.getByRole("button", { name: "Done" }));
+		// removing one makes room again
+		await user.click(
+			screen.getByRole("button", { name: "Remove Database 0" }),
+		);
+		expect(screen.queryByText(reason)).not.toBeInTheDocument();
+		await user.click(screen.getByRole("button", { name: "Add tools" }));
+		expect(
+			within(screen.getByRole("dialog")).getByRole("checkbox", {
+				name: /Jira/,
+			}),
+		).toBeEnabled();
+	});
+
+	it("offers the daily brief as a place for the result, and then asks for no schedule", async () => {
+		const user = userEvent.setup();
+		let values = {} as CustomRoutineSettings;
+		render(
+			<Harness
+				onValues={(next) => {
+					values = next as CustomRoutineSettings;
+				}}
+			/>,
+		);
+		expect(
+			screen.getByRole("group", { name: "Days (required)" }),
+		).toBeVisible();
+		await user.click(
+			screen.getByRole("radio", { name: /Add to my daily brief/ }),
+		);
+		expect(values.delivery).toBe("brief");
+		expect(
+			screen.getByText(/The brief starts this routine on every run/),
+		).toBeVisible();
+		expect(
+			screen.queryByRole("group", { name: "Days (required)" }),
+		).not.toBeInTheDocument();
+		// its days and time stay saved, for when the result goes somewhere else again
+		expect(values.days).toEqual(["MON"]);
+		expect(values.time).toBe("08:00");
+		await user.click(screen.getByRole("radio", { name: /Email me/ }));
+		expect(
+			screen.getByRole("group", { name: "Days (required)" }),
+		).toBeVisible();
+	});
+
+	it("refuses an eleventh tool before it reaches the server", () => {
+		const eleven = [
+			...tenTools,
+			{ id: "jira", name: "Jira", type: "PROJECT" as const },
+		];
+		expect(
+			customRoutineSettingsSchema.safeParse({
+				...settings,
+				tools: tenTools,
+			}).success,
+		).toBe(true);
+		expect(
+			customRoutineSettingsSchema.safeParse({
+				...settings,
+				tools: eleven,
+			}).success,
+		).toBe(false);
 	});
 
 	it.runIf(IS_ROUTINE_KNOWLEDGE_ENABLED)(

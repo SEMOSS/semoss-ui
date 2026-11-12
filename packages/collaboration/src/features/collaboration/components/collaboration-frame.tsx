@@ -71,7 +71,10 @@ export function CollaborationFrame() {
 		// An explicit expansion applies only until the user opens another page.
 		setNavigationOverride(null);
 	}
-	const isRoom = pathname.startsWith("/thread/");
+	// a room and a topic's contents page are workbenches: they get the navigation's width
+	const isRoom =
+		pathname.startsWith("/thread/") ||
+		/^\/topics\/[^/]+\/contents$/.test(pathname);
 	const isCollapsed =
 		navigationOverride?.pathname === pathname
 			? navigationOverride.isCollapsed

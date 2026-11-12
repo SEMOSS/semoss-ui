@@ -40,18 +40,12 @@ export interface RoomLayoutProps {
 	 * pane shows at a time, it sits above both.
 	 */
 	header?: ReactNode;
-	/**
-	 * The Workspace's content width in px, which it opens to until the user
-	 * drags the divider; null or omitted to take its default share.
-	 */
-	workbenchFitWidth?: number | null;
+	/** Called when the user drags the Workspace closed against the row's edge. */
+	onWorkbenchCollapse?: () => void;
 }
 
-/** The Workspace's share of the row, in percent, when it fills. */
+/** The Workspace's share of the row, in percent. */
 const WORKBENCH_DEFAULT_SIZE = 65;
-
-/** The most of the row the Workspace takes when fitting its content. */
-const WORKBENCH_MAX_FIT_SIZE = 75;
 
 /** The least of the row each pane can be dragged to, in percent. */
 const PANE_MIN_SIZE = 25;
@@ -71,7 +65,7 @@ export function RoomLayout({
 	workbench,
 	isWorkbenchOpen: isOpen,
 	header,
-	workbenchFitWidth: fitWidth = null,
+	onWorkbenchCollapse,
 }: RoomLayoutProps) {
 	const { t } = useTranslation("room");
 	const id = useId();
@@ -143,20 +137,14 @@ export function RoomLayout({
 	const isWorkbenchShown =
 		isOpen && (!isNarrow || activeView === "workbench");
 	const hasTabs = isNarrow && isOpen;
-	// the fitted share of the row; null fills
-	const fitSize =
-		fitWidth !== null && rowWidth > 0
-			? Math.min((fitWidth / rowWidth) * 100, WORKBENCH_MAX_FIT_SIZE)
-			: null;
-	// a pane narrower than the minimum share is what fitting is for
-	const workbenchMinSize = Math.min(PANE_MIN_SIZE, fitSize ?? PANE_MIN_SIZE);
 
-	// the panel group is an external layout engine: size it to the content
-	// whenever the content changes, until the user takes over
+	// the panel group is an external layout engine, and a pane dragged shut
+	// collapses to zero: put the Workspace back on its share when it reopens,
+	// until the user sizes it themselves
 	useEffect(() => {
 		if (!isOpen || isNarrow || isUserSized) return;
-		workbenchPaneRef.current?.resize(fitSize ?? WORKBENCH_DEFAULT_SIZE);
-	}, [fitSize, isOpen, isNarrow, isUserSized]);
+		workbenchPaneRef.current?.resize(WORKBENCH_DEFAULT_SIZE);
+	}, [isOpen, isNarrow, isUserSized]);
 
 	useEffect(() => {
 		const active = document.activeElement;
@@ -316,7 +304,14 @@ export function RoomLayout({
 								id={`${id}-workbench`}
 								order={2}
 								defaultSize={WORKBENCH_DEFAULT_SIZE}
-								minSize={workbenchMinSize}
+								minSize={PANE_MIN_SIZE}
+								collapsible
+								collapsedSize={0}
+								onCollapse={() => {
+									// reopening fits the content again
+									setIsUserSized(false);
+									onWorkbenchCollapse?.();
+								}}
 								className={cn(
 									"min-w-0 bg-muted/30",
 									!isWorkbenchShown && "hidden",

@@ -125,7 +125,7 @@ const parseGroupsResponse = (result: unknown) => {
 	return { groups: [] as RawTeam[], totalGroups: 0, hasTotal: false };
 };
 
-export interface TeamsTableProps {
+interface TeamsTableProps {
 	/** Whether the teams have access to a project or an engine */
 	type: GroupAccessResource;
 	/** The project or engine id */

@@ -39,7 +39,7 @@ export const getGovernancePath = (type: string, id?: string): string =>
 		? `/settings/resources/${encodeURIComponent(type)}/${encodeURIComponent(id)}`
 		: `/settings/resources/${encodeURIComponent(type)}`;
 
-export interface GovernanceTypeViewProps {
+interface GovernanceTypeViewProps {
 	/** The type chosen in the dropdown */
 	entry: GovernanceType;
 	/** The type dropdown, shown at the top of the list */

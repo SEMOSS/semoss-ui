@@ -24,7 +24,7 @@ import {
 } from "@semoss/ui/next";
 import { pixel } from "@/lib/pixel";
 import { roomPath } from "@/lib/workspace-paths";
-import { runBatch } from "../live/live-state";
+import { localDue, runBatch } from "../live/live-state";
 import { useWorkUpdates } from "../live/work-updates.context";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { CollaborationPageHeader } from "./collaboration-page-header";
@@ -38,13 +38,15 @@ import { WorkItemDetails } from "./work-item-details";
 
 type Row = Record<string, unknown>;
 
-interface Step {
+export interface Step {
 	id: string;
 	text: string;
 	status: string;
 	kind?: string;
 	assigneeId?: string;
 	assigneeName?: string;
+	/** When the step was made: how long an ask has been waiting. */
+	createdAt?: string;
 }
 
 export interface Item {
@@ -57,6 +59,8 @@ export interface Item {
 	roomId?: string;
 	due?: string;
 	openSteps: Step[];
+	/** Every step on the item, done ones too; absent from older servers. */
+	stepCount?: number;
 }
 
 const str = (value: unknown): string =>
@@ -72,6 +76,7 @@ function toStep(row: Row): Step {
 		kind: str(row.kind) || undefined,
 		assigneeId: str(row.assigneeId) || undefined,
 		assigneeName: str(row.assigneeName) || undefined,
+		createdAt: str(row.createdAt) || undefined,
 	};
 }
 
@@ -88,12 +93,15 @@ function toItem(row: Row): Item {
 		roomId: str(row.roomId) || undefined,
 		due: str(row.due) || undefined,
 		openSteps: list(row.openSteps).map(toStep),
+		stepCount:
+			typeof row.stepCount === "number" ? row.stepCount : undefined,
 	};
 }
 
-function dueLabel(due?: string): { text: string; soon: boolean } | null {
-	if (!due) return null;
-	const at = new Date(due.replace(" ", "T"));
+export function dueLabel(due?: string): { text: string; soon: boolean } | null {
+	const shown = localDue(due);
+	if (!shown) return null;
+	const at = new Date(shown.replace(" ", "T"));
 	if (Number.isNaN(at.getTime())) return null;
 	return {
 		text: at.toLocaleDateString(undefined, {
@@ -107,8 +115,8 @@ function dueLabel(due?: string): { text: string; soon: boolean } | null {
 const errorText = (cause: unknown) =>
 	cause instanceof Error ? cause.message : String(cause);
 
-// the same topic chip Topics and threads use; a plain one if the topic is not loaded
-function TopicChip({ item }: { item: Item }) {
+/** The same topic chip Topics and threads use; a plain one if the topic is not loaded. */
+export function ItemTopicChip({ item }: { item: Item }) {
 	const { state } = useCollaborationSession();
 	const topic = state.topics.find((t) => t.id === item.topicId);
 	if (topic) return <SharedTopicChip topic={topic} />;
@@ -181,8 +189,8 @@ export function useWorkItems(): {
 	return { items, setItems, error, run, isMine };
 }
 
-// the owner's next step: theirs first, then one nobody was named for (a group ask on their item)
-function mineNext(item: Item, isMine: (step: Step) => boolean) {
+/** The owner's next step: theirs first, then one nobody was named for (a group ask on their item). */
+export function mineNext(item: Item, isMine: (step: Step) => boolean) {
 	return (
 		item.openSteps.find((s) => s.status === "open" && isMine(s)) ??
 		item.openSteps.find((s) => isMine(s))
@@ -193,37 +201,34 @@ function nextStep(item: Item, isMine: (step: Step) => boolean) {
 	return mineNext(item, isMine) ?? item.openSteps[0];
 }
 
-// page rows match the Topics list; Today's rows sit inside its card padding
-const rowPad = (compact?: boolean) => (compact ? "py-4" : "px-5 py-4 md:px-6");
+/** Where an item is worked: its room, or the item page until it has one. */
+export const itemPath = (item: Item) =>
+	item.roomId ? roomPath(item.roomId) : `/work/item/${item.id}`;
 
 function openRoom(navigate: ReturnType<typeof useNavigate>, item: Item) {
-	void navigate(
-		item.roomId ? roomPath(item.roomId) : `/work/item/${item.id}`,
-	);
+	void navigate(itemPath(item));
 }
 
-// the first open step someone else owes the owner
-function waitingOn(item: Item, isMine: (step: Step) => boolean) {
+/** The first open step someone else owes the owner. */
+export function waitingOn(item: Item, isMine: (step: Step) => boolean) {
 	return item.openSteps.find((s) => !isMine(s));
 }
 
 /** One row: the item, your next step and who you are waiting on; drag to reorder, Open room to work it. */
 function ItemRow({
 	item,
-	compact,
 	isMine,
 	draggable,
 	onDragStart,
 	onDragOver,
-	onDrop,
+	onDragEnd,
 }: {
 	item: Item;
-	compact?: boolean;
 	isMine: (step: Step) => boolean;
 	draggable?: boolean;
 	onDragStart?: () => void;
 	onDragOver?: () => void;
-	onDrop?: () => void;
+	onDragEnd?: () => void;
 }) {
 	const navigate = useNavigate();
 	const [isExpanded, setIsExpanded] = useState(false);
@@ -241,18 +246,11 @@ function ItemRow({
 				event.preventDefault();
 				onDragOver?.();
 			}}
-			onDrop={(event) => {
-				event.preventDefault();
-				onDrop?.();
-			}}
+			onDrop={(event) => event.preventDefault()}
+			// the dragged row hears the end even when the drop misses every row
+			onDragEnd={onDragEnd}
 		>
-			<div
-				className={cn(
-					"group flex min-w-0 flex-wrap items-center gap-3 transition-colors hover:bg-accent",
-					rowPad(compact),
-					compact && "-mx-5 px-5",
-				)}
-			>
+			<div className="group flex min-w-0 flex-wrap items-center gap-3 px-5 py-4 transition-colors hover:bg-accent md:px-6">
 				{draggable ? (
 					<GripVertical
 						aria-hidden="true"
@@ -270,7 +268,7 @@ function ItemRow({
 						>
 							{item.title}
 						</button>
-						<TopicChip item={item} />
+						<ItemTopicChip item={item} />
 					</div>
 					{next ? (
 						<P className="truncate text-sm">
@@ -405,7 +403,7 @@ function ReviewList({
 										/>
 										{item.title}
 									</button>
-									<TopicChip item={item} />
+									<ItemTopicChip item={item} />
 								</div>
 								{next ? (
 									<P className="pl-5.5 text-sm">
@@ -535,7 +533,8 @@ function ReviewList({
 	);
 }
 
-function split(items: Item[]) {
+/** The items to review, the owner's own and the ones someone else is driving. */
+export function split(items: Item[]) {
 	const kept = items.filter((i) => !i.proposed);
 	const proposed = items.filter((i) => i.proposed);
 	return {
@@ -550,22 +549,16 @@ function split(items: Item[]) {
 	};
 }
 
-/** The owner's work items; compact is Today's short list that links to Work. */
-export function WorkItems({
-	limit,
-	review: reviewing,
-}: {
-	limit?: number;
-	review?: boolean;
-}) {
+/** The owner's work items, or with review, the inferred ones waiting for the owner. */
+export function WorkItems({ review: reviewing }: { review?: boolean }) {
 	const { items, setItems, error, run, isMine } = useWorkItems();
 	const [dragId, setDragId] = useState<string | null>(null);
+	const dragFrom = useRef("");
 	const [showOthers, setShowOthers] = useState(false);
-	const compact = Boolean(limit);
 
 	if (items === null) {
 		return (
-			<div className={compact ? "py-4" : "p-6"}>
+			<div className="p-6">
 				{error ? (
 					<P className="text-destructive text-sm">{error}</P>
 				) : (
@@ -575,7 +568,6 @@ export function WorkItems({
 		);
 	}
 	const { review, proposed, mine, others } = split(items);
-	const shown = limit ? mine.slice(0, limit) : mine;
 
 	if (reviewing) {
 		return (
@@ -607,28 +599,20 @@ export function WorkItems({
 	};
 	const saveOrder = () => {
 		setDragId(null);
-		void run(pixel("WorkReorderItems", { taskIds: mine.map((i) => i.id) }));
+		const taskIds = mine.map((i) => i.id);
+		if (JSON.stringify(taskIds) !== dragFrom.current)
+			void run(pixel("WorkReorderItems", { taskIds }));
 	};
 
 	return (
 		<>
 			{error ? (
-				<P
-					className={cn(
-						"text-destructive text-sm",
-						compact ? "pt-4" : "px-5 pt-4 md:px-6",
-					)}
-				>
+				<P className="px-5 pt-4 text-destructive text-sm md:px-6">
 					{error}
 				</P>
 			) : null}
 			{review.length ? (
-				<div
-					className={cn(
-						"flex items-center gap-3 border-border border-b bg-muted/40 py-3 text-sm",
-						compact ? "-mx-5 -mt-1 px-5" : "px-5 md:px-6",
-					)}
-				>
+				<div className="flex items-center gap-3 border-border border-b bg-muted/40 px-5 py-3 text-sm md:px-6">
 					<span className="flex-1 text-muted-foreground">
 						<span className="font-medium text-foreground">
 							{review.length} new work item
@@ -641,45 +625,36 @@ export function WorkItems({
 					</Button>
 				</div>
 			) : null}
-			{shown.length ? (
+			{mine.length ? (
 				<ul
 					aria-label="Your work items"
 					className="divide-y divide-border"
 				>
-					{shown.map((item) => (
+					{mine.map((item) => (
 						<ItemRow
 							key={item.id}
 							item={item}
-							compact={compact}
 							isMine={isMine}
-							draggable={!compact}
-							onDragStart={() => setDragId(item.id)}
+							draggable
+							onDragStart={() => {
+								setDragId(item.id);
+								dragFrom.current = JSON.stringify(
+									mine.map((i) => i.id),
+								);
+							}}
 							onDragOver={() => moveTo(item.id)}
-							onDrop={saveOrder}
+							onDragEnd={saveOrder}
 						/>
 					))}
 				</ul>
 			) : (
-				<P
-					className={cn(
-						"text-muted-foreground text-sm",
-						compact ? "py-4" : "p-6",
-					)}
-				>
+				<P className="p-6 text-muted-foreground text-sm">
 					{review.length
 						? "Review the new items to start your list."
 						: "No work items yet. They come from your mail and chats, or ask in chat to add one."}
 				</P>
 			)}
-			{compact && mine.length > shown.length ? (
-				<Link
-					to="/work"
-					className="-mx-5 block border-border border-t px-5 py-3 text-muted-foreground text-sm hover:text-foreground"
-				>
-					See all {mine.length}
-				</Link>
-			) : null}
-			{!compact && others.length ? (
+			{others.length ? (
 				<div className="border-border border-t">
 					<button
 						type="button"

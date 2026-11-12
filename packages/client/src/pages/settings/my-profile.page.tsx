@@ -1,0 +1,859 @@
+import {
+	ChevronDown,
+	ChevronUp,
+	Copy,
+	Download,
+	Plus,
+	Trash2,
+} from "lucide-react";
+import { useId, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { useConfig, useSession } from "@semoss/sdk/react";
+import {
+	Button,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	Input,
+	Label,
+	Spinner,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+	toast,
+} from "@semoss/ui/next";
+import { downloadBlob } from "@semoss/utility/browser";
+import { formatDateTimeWithRelativeDay } from "@semoss/utility/date";
+import { sanitizeFileNameStem } from "@semoss/utility/file";
+import {
+	createUserAccessKey,
+	deleteUserAccessKeys,
+	editMemberInfo,
+} from "@/api/auth";
+import { MicrosoftSubscriptions } from "@/components/settings/microsoft-subscriptions";
+import { SdkBlock } from "@/components/shared/sdk-block";
+import { DefaultModelsCard } from "@/features/default-models/default-models-card";
+import { MyModelUsageCard } from "@/features/my-model-usage/my-model-usage-card";
+import { useAPI } from "@/hooks/use-api";
+import { getSDKSnippet } from "@/utility/general";
+import { ChangePasswordModal } from "./change-password-modal";
+
+interface CreateAccessKeyForm {
+	TOKENNAME: string;
+	TOKENDESCRIPTION?: string;
+	ACCESSKEY: string;
+	SECRETKEY: string;
+}
+
+interface EditUserInfoForm {
+	NAME: string;
+	USERNAME: string;
+	EMAIL: string;
+	USERID?: string | undefined;
+}
+
+/**
+ * The signed in user's profile: account details and groups, editing a native
+ * login's name and email, the password, access keys, default models, model
+ * usage and Microsoft subscriptions.
+ */
+export const MyProfilePage = () => {
+	const generateKeyFormId = useId();
+	const nativeRegistration = useConfig(
+		(state) => state.config?.nativeRegistration ?? false,
+	);
+	const logins = useConfig((state) => state.config?.logins ?? {});
+	const loginDetails = useConfig((state) => state.config?.loginDetails ?? {});
+	const { email, id, name, isAdmin, isNative, lastLogin, groupInfo } =
+		useSession((state) => ({
+			email: state.user?.email ?? "",
+			id: state.user?.id ?? "",
+			name: state.user?.name ?? "",
+			isAdmin: state.user?.isAdmin === true,
+			isNative: state.user?.isNative === true,
+			lastLogin: state.user?.lastLogin,
+			groupInfo: state.user?.groupInfo,
+		}));
+	const groups = groupInfo?.groups ?? [];
+
+	const [addModal, setAddModal] = useState(false);
+	const [passwordModal, setPasswordModal] = useState(false);
+	const [editName, setEditName] = useState(name);
+	const [editEmail, setEditEmail] = useState(email);
+
+	const getUserAccessKeys = useAPI(["getUserAccessKeys"]);
+
+	const nativeLogin = (logins as unknown as { NATIVE: string })?.NATIVE;
+	// the config keys logins by auth provider, so a Microsoft entry is the only
+	// sign that somebody has a Microsoft login to subscribe with
+	const microsoftLogin = (logins as unknown as { MICROSOFT?: string })
+		?.MICROSOFT;
+
+	const { control, reset, setValue, handleSubmit, watch } =
+		useForm<CreateAccessKeyForm>({
+			defaultValues: {
+				TOKENNAME: "",
+				TOKENDESCRIPTION: "",
+				ACCESSKEY: "",
+				SECRETKEY: "",
+			},
+		});
+
+	const {
+		control: userInfoControl,
+		reset: userInfoReset,
+		handleSubmit: userInfoHandleSubmit,
+		watch: userInfoWatch,
+	} = useForm<EditUserInfoForm>({
+		defaultValues: {
+			NAME: name,
+			USERNAME: id,
+			USERID: id,
+			EMAIL: email,
+		},
+	});
+
+	const ACCESSKEY = watch("ACCESSKEY");
+	const SECRETKEY = watch("SECRETKEY");
+	const TOKENNAME = watch("TOKENNAME");
+	const isCreated = !!(ACCESSKEY && SECRETKEY);
+
+	const downloadAccessKeyJson = () => {
+		if (!ACCESSKEY || !SECRETKEY) return;
+		const slug = sanitizeFileNameStem(TOKENNAME) || "access-key";
+		const blob = new Blob(
+			[JSON.stringify({ ACCESSKEY, SECRETKEY }, null, 2)],
+			{ type: "application/json" },
+		);
+		downloadBlob(blob, `${slug}-credentials.json`);
+	};
+
+	const [isJsSdkOpen, setIsJsSdkOpen] = useState(false);
+	const [isPySdkOpen, setIsPySdkOpen] = useState(false);
+
+	const profileEditSubmit = async (data: EditUserInfoForm) => {
+		try {
+			console.log(data);
+			const userObj: Record<string, unknown> = {
+				password: "",
+				id: nativeLogin,
+				email: email,
+				username: id,
+				name: data.NAME,
+				type: nativeRegistration ? "NATIVE" : "CUSTOM",
+				admin: isAdmin,
+			};
+			userObj.id =
+				data.USERID !== nativeLogin ? data.USERID : nativeLogin;
+			userObj.newUsername = data.USERNAME !== id ? data.USERNAME : null;
+			userObj.newEmail = data.EMAIL;
+
+			const response = await editMemberInfo(false, userObj);
+			setEditName(data.NAME);
+			setEditEmail(data.EMAIL);
+
+			if (response.data) {
+				toast.success("Successfully edited profile information");
+			} else {
+				toast.error("Error editing profile information");
+			}
+		} catch (_e) {
+			toast.error("Error editing profile information");
+		}
+	};
+
+	const createAccessKey = async (data: CreateAccessKeyForm) => {
+		try {
+			const output = await createUserAccessKey(
+				data.TOKENNAME,
+				data.TOKENDESCRIPTION || "",
+			);
+			setValue("ACCESSKEY", output.ACCESSKEY);
+			setValue("SECRETKEY", output.SECRETKEY);
+			toast.success("Successfully created key");
+		} catch (e) {
+			if (e instanceof Error) {
+				toast.error(e.message);
+			}
+		}
+	};
+
+	const [accessKeyToDelete, setAccessKeyToDelete] = useState<{
+		ACCESSKEY: string;
+		TOKENNAME?: string;
+	} | null>(null);
+	const [isDeletingAccessKey, setIsDeletingAccessKey] = useState(false);
+
+	const confirmDeleteAccessKey = async () => {
+		if (!accessKeyToDelete) return;
+		setIsDeletingAccessKey(true);
+		try {
+			const response = await deleteUserAccessKeys(
+				accessKeyToDelete.ACCESSKEY,
+			);
+			if (!response) throw new Error("Error deleting key");
+			getUserAccessKeys.refresh();
+			toast.success("Successfully deleted key");
+			setAccessKeyToDelete(null);
+		} catch (e) {
+			if (e instanceof Error) {
+				toast.error(e.message);
+			}
+		} finally {
+			setIsDeletingAccessKey(false);
+		}
+	};
+
+	const closeModel = () => {
+		setAddModal(false);
+		if (isCreated) getUserAccessKeys.refresh();
+		reset({});
+		setIsJsSdkOpen(false);
+		setIsPySdkOpen(false);
+	};
+
+	const copy = async (text: string) => {
+		try {
+			await navigator.clipboard.writeText(text);
+			toast.success("Successfully copied code");
+		} catch (_e) {
+			toast.error("Unable to copy code");
+		}
+	};
+
+	const pySnippet = getSDKSnippet("py", ACCESSKEY, SECRETKEY);
+	const jsSnippet = getSDKSnippet("js", ACCESSKEY, SECRETKEY);
+
+	const watchedName = userInfoWatch("NAME");
+	const watchedEmail = userInfoWatch("EMAIL");
+	const isChanged = watchedName !== editName || watchedEmail !== editEmail;
+
+	return (
+		<div className="my-profile-page flex flex-col gap-4">
+			{/* Profile Info */}
+			<div className="rounded-lg border bg-card px-6 py-5">
+				<div className="grid gap-8 [grid-template-columns:1fr_2fr]">
+					{/* Left: account details */}
+					<div>
+						<h3 className="mb-3 font-semibold text-base">
+							Account Details
+						</h3>
+						<div className="flex flex-col gap-4">
+							<div className="flex flex-col gap-1">
+								<Label className="text-muted-foreground text-xs">
+									User Id
+								</Label>
+								<span className="text-sm">{id}</span>
+							</div>
+							{isNative && (
+								<div className="flex flex-col gap-1">
+									<Label className="text-muted-foreground text-xs">
+										Username
+									</Label>
+									<span className="text-sm">{id}</span>
+								</div>
+							)}
+							<div className="flex flex-col gap-1">
+								<Label className="text-muted-foreground text-xs">
+									Last Login
+								</Label>
+								<span className="text-sm">
+									{lastLogin
+										? formatDateTimeWithRelativeDay(
+												lastLogin,
+											) || lastLogin
+										: "—"}
+								</span>
+							</div>
+							<div className="flex flex-col gap-1">
+								<Label className="text-muted-foreground text-xs">
+									Groups
+								</Label>
+								{groups.length > 0 ? (
+									<div className="flex max-h-28 flex-wrap gap-1.5 overflow-y-auto pt-0.5">
+										{groups.map((g) => (
+											<span
+												key={g}
+												className="rounded-full border px-2.5 py-0.5 font-medium text-xs"
+											>
+												{g}
+											</span>
+										))}
+									</div>
+								) : (
+									<span className="text-muted-foreground text-sm">
+										No groups
+									</span>
+								)}
+							</div>
+						</div>
+					</div>
+					{/* Right: edit form */}
+					<div className="border-l pl-8">
+						<h3 className="mb-3 font-semibold text-base">
+							{isNative
+								? "Edit profile information"
+								: "Profile Info"}
+						</h3>
+						{isNative ? (
+							<form
+								onSubmit={userInfoHandleSubmit(
+									profileEditSubmit,
+								)}
+							>
+								<div className="flex flex-col gap-3">
+									<div className="grid grid-cols-2 gap-3">
+										<Controller
+											name="NAME"
+											control={userInfoControl}
+											rules={{ required: true }}
+											render={({ field }) => (
+												<div className="flex flex-col gap-1">
+													<Label className="text-xs">
+														Name
+													</Label>
+													<Input
+														value={
+															field.value ?? ""
+														}
+														onChange={
+															field.onChange
+														}
+														maxLength={255}
+													/>
+												</div>
+											)}
+										/>
+										<Controller
+											name="EMAIL"
+											control={userInfoControl}
+											render={({ field }) => (
+												<div className="flex flex-col gap-1">
+													<Label className="text-xs">
+														Email
+													</Label>
+													<Input
+														value={
+															field.value ?? ""
+														}
+														onChange={
+															field.onChange
+														}
+														maxLength={500}
+													/>
+												</div>
+											)}
+										/>
+									</div>
+									<div>
+										<button
+											type="button"
+											className="cursor-pointer font-medium text-primary text-sm underline"
+											onClick={() =>
+												setPasswordModal(true)
+											}
+										>
+											Change Password
+										</button>
+									</div>
+									<div className="flex gap-2">
+										<Button
+											type="submit"
+											disabled={
+												!isChanged ||
+												!(
+													(watchedName ?? "")
+														.toString()
+														.trim().length > 0 &&
+													(watchedEmail ?? "")
+														.toString()
+														.trim().length > 0
+												)
+											}
+											data-testid="myProfilePage-save-btn"
+										>
+											Save
+										</Button>
+										<Button
+											type="button"
+											variant="ghost"
+											onClick={() => userInfoReset()}
+											disabled={!isChanged}
+											data-testid="myProfilePage-reset-btn"
+										>
+											Reset
+										</Button>
+									</div>
+								</div>
+							</form>
+						) : (
+							<div className="flex flex-col gap-2">
+								<div className="flex flex-col gap-1">
+									<Label className="text-xs">
+										Login Type
+									</Label>
+									<Input
+										value={
+											Object.keys(
+												loginDetails as object,
+											)[0]
+										}
+										maxLength={500}
+										disabled
+									/>
+								</div>
+								{name && (
+									<div className="flex flex-col gap-1">
+										<Label className="text-xs">Name</Label>
+										<Input
+											value={name}
+											maxLength={500}
+											disabled
+										/>
+									</div>
+								)}
+								{email && (
+									<div className="flex flex-col gap-1">
+										<Label className="text-xs">Email</Label>
+										<Input
+											value={email}
+											maxLength={500}
+											disabled
+										/>
+									</div>
+								)}
+							</div>
+						)}
+					</div>
+				</div>
+			</div>
+
+			<DefaultModelsCard />
+
+			<MyModelUsageCard />
+
+			<MicrosoftSubscriptions
+				signedIntoMicrosoft={microsoftLogin !== undefined}
+			/>
+
+			{/* JS SDK */}
+			<div className="rounded-lg border bg-card px-6 py-5">
+				<h3 className="mb-3 font-semibold text-base">Javascript SDK</h3>
+				<SdkBlock
+					label="javascript"
+					code={jsSnippet}
+					testId="myProfilePage-js-copy-btn"
+				/>
+			</div>
+
+			{/* Python SDK */}
+			<div className="rounded-lg border bg-card px-6 py-5">
+				<h3 className="mb-3 font-semibold text-base">Python SDK</h3>
+				<SdkBlock
+					label="python"
+					code={pySnippet}
+					testId="myProfilePage-py-copy-btn"
+				/>
+			</div>
+
+			{/* Personal Access Tokens */}
+			<div className="rounded-lg border bg-card px-6 py-5">
+				<div className="mb-2 flex flex-row items-center justify-between">
+					<h3 className="font-semibold text-base">
+						Personal Access Tokens
+					</h3>
+					<Button
+						onClick={() => setAddModal(true)}
+						data-testid="myProfilePage-new-key-btn"
+					>
+						<Plus className="mr-2 size-4" />
+						New Key
+					</Button>
+				</div>
+				<div className="mt-4 overflow-x-auto">
+					<table className="w-full text-sm">
+						<thead>
+							<tr className="bg-muted text-muted-foreground">
+								<th className="rounded-tl-xl border-border border-b px-3 py-2 text-left font-medium">
+									Name
+								</th>
+								<th className="border-border border-b px-3 py-2 text-left font-medium">
+									Description
+								</th>
+								<th className="border-border border-b px-3 py-2 text-left font-medium">
+									Date Created
+								</th>
+								<th className="border-border border-b px-3 py-2 text-left font-medium">
+									Last Used Created
+								</th>
+								<th className="border-border border-b px-3 py-2 text-left font-medium">
+									Access Key
+								</th>
+								<th className="rounded-tr-xl border-border border-b px-3 py-2">
+									&nbsp;
+								</th>
+							</tr>
+						</thead>
+						<tbody>
+							{(getUserAccessKeys.status === "INITIAL" ||
+								getUserAccessKeys.status === "LOADING") && (
+								<tr>
+									<td
+										colSpan={6}
+										className="py-8 text-center"
+									>
+										<div className="flex items-center justify-center gap-2">
+											<Spinner className="size-4" />
+											<span className="text-muted-foreground text-sm">
+												Loading keys...
+											</span>
+										</div>
+									</td>
+								</tr>
+							)}
+							{getUserAccessKeys.status === "SUCCESS" &&
+							getUserAccessKeys.data?.length !== 0
+								? getUserAccessKeys.data?.map((k, idx) => (
+										<tr key={`${k.TOKENNAME}-${idx}`}>
+											<td className="px-3 py-2">
+												{k.TOKENNAME}
+											</td>
+											<td className="px-3 py-2">
+												{k.TOKENDESCRIPTION || ""}
+											</td>
+											<td className="px-3 py-2">
+												{k.DATECREATED}
+											</td>
+											<td className="px-3 py-2">
+												{k.LASTUSED}
+											</td>
+											<td className="px-3 py-2">
+												<div className="flex items-center gap-1">
+													<Tooltip
+														disableHoverableContent={
+															false
+														}
+													>
+														<TooltipTrigger asChild>
+															<Button
+																aria-label={
+																	"Copy"
+																}
+																variant="ghost"
+																size="icon"
+																className="size-6 shrink-0"
+																onClick={() =>
+																	copy(
+																		k.ACCESSKEY,
+																	)
+																}
+																data-testid="myProfilePage-access-key-copy-btn"
+															>
+																<Copy className="size-3.5" />
+															</Button>
+														</TooltipTrigger>
+														<TooltipContent
+															sideOffset={4}
+															className="max-w-xs break-words"
+														>
+															{"Copy"}
+														</TooltipContent>
+													</Tooltip>
+													<span className="font-mono text-xs">
+														{k.ACCESSKEY}
+													</span>
+												</div>
+											</td>
+											<td className="px-3 py-2 text-right">
+												<Tooltip
+													disableHoverableContent={
+														false
+													}
+												>
+													<TooltipTrigger asChild>
+														<Button
+															aria-label={
+																"Delete"
+															}
+															variant="ghost"
+															size="icon"
+															onClick={() =>
+																setAccessKeyToDelete(
+																	{
+																		ACCESSKEY:
+																			k.ACCESSKEY,
+																		TOKENNAME:
+																			k.TOKENNAME,
+																	},
+																)
+															}
+															data-testid="myProfilePage-access-key-delete-btn"
+														>
+															<Trash2 className="size-4" />
+														</Button>
+													</TooltipTrigger>
+													<TooltipContent
+														sideOffset={4}
+														className="max-w-xs break-words"
+													>
+														{"Delete"}
+													</TooltipContent>
+												</Tooltip>
+											</td>
+										</tr>
+									))
+								: null}
+						</tbody>
+					</table>
+				</div>
+				{getUserAccessKeys.status === "SUCCESS" &&
+					getUserAccessKeys.data?.length === 0 && (
+						<div className="mx-auto my-[75px] block w-full text-center text-[13px] text-muted-foreground">
+							No Personal Access Tokens to display at this time
+							<br />
+							Click New Key to create a new Personal Access Token
+						</div>
+					)}
+			</div>
+
+			{/* Generate Key Modal */}
+			<Dialog
+				open={addModal}
+				onOpenChange={(open) => !open && closeModel()}
+			>
+				<DialogContent className="flex max-h-[90vh] max-w-3xl flex-col">
+					<DialogHeader className="shrink-0">
+						<DialogTitle className="font-medium text-base leading-6">
+							Generate Key
+						</DialogTitle>
+						<DialogDescription>
+							Create a user key for API access. Do not share
+							tokens with other users.
+						</DialogDescription>
+					</DialogHeader>
+					<div className="min-h-0 flex-1 overflow-y-auto px-1 py-1">
+						<form
+							id={generateKeyFormId}
+							onSubmit={handleSubmit(createAccessKey)}
+							className="my-profile-page__generate-key-form"
+						>
+							<div className="flex flex-col gap-3">
+								<div className="rounded-md border border-primary/20 bg-primary/10 px-4 py-3 text-primary text-sm">
+									Note: Your private key will only be
+									generated once
+								</div>
+								<Controller
+									name="TOKENNAME"
+									control={control}
+									rules={{ required: true }}
+									render={({ field }) => (
+										<div className="flex flex-col gap-1">
+											<Label className="text-xs">
+												Name{" "}
+												<span className="text-destructive">
+													*
+												</span>
+											</Label>
+											<Input
+												value={field.value ?? ""}
+												disabled={isCreated}
+												onChange={field.onChange}
+												maxLength={255}
+												data-testid="myProfilePage-generate-key-name-txt"
+											/>
+										</div>
+									)}
+								/>
+								<Controller
+									name="TOKENDESCRIPTION"
+									control={control}
+									render={({ field }) => (
+										<div className="flex flex-col gap-1">
+											<Label className="text-xs">
+												Description
+											</Label>
+											<Input
+												value={field.value ?? ""}
+												disabled={isCreated}
+												onChange={field.onChange}
+												maxLength={500}
+												data-testid="myProfilePage-generate-key-description-txt"
+											/>
+										</div>
+									)}
+								/>
+								<div className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-warning">
+									One-time credentials are shown only once
+									after creation. Copy and store them now.
+								</div>
+								{isCreated && (
+									<div className="flex flex-col gap-3 rounded bg-background p-2">
+										<div className="flex flex-col gap-1.5">
+											<p className="font-medium text-sm">
+												Access Key
+											</p>
+											<SdkBlock
+												label="access key"
+												code={ACCESSKEY}
+												testId="myProfilePage-created-access-copy-btn"
+											/>
+										</div>
+										<div className="flex flex-col gap-1.5">
+											<p className="font-medium text-sm">
+												Secret Key
+											</p>
+											<SdkBlock
+												label="secret key"
+												code={SECRETKEY}
+												testId="myProfilePage-secret-key-copy-btn"
+											/>
+										</div>
+										<div className="myProfilePage_js-sdk-access flex flex-col gap-1.5">
+											<div className="flex items-center justify-between">
+												<p className="font-medium text-sm">
+													Javascript Example
+												</p>
+												<Button
+													type="button"
+													variant="ghost"
+													size="icon"
+													onClick={() =>
+														setIsJsSdkOpen(
+															!isJsSdkOpen,
+														)
+													}
+													data-testid="myProfilePage-js-toggle-btn"
+												>
+													{isJsSdkOpen ? (
+														<ChevronUp className="size-4" />
+													) : (
+														<ChevronDown className="size-4" />
+													)}
+												</Button>
+											</div>
+											{isJsSdkOpen && (
+												<SdkBlock
+													label="javascript"
+													code={jsSnippet}
+													testId="myProfilePage-js-sdk-copy-btn"
+												/>
+											)}
+										</div>
+										<div className="myProfilePage-py-sdk-access flex flex-col gap-1.5">
+											<div className="flex items-center justify-between">
+												<p className="font-medium text-sm">
+													Python Example
+												</p>
+												<Button
+													type="button"
+													variant="ghost"
+													size="icon"
+													onClick={() =>
+														setIsPySdkOpen(
+															!isPySdkOpen,
+														)
+													}
+													data-testid="myProfilePage-py-toggle-btn"
+												>
+													{isPySdkOpen ? (
+														<ChevronUp className="size-4" />
+													) : (
+														<ChevronDown className="size-4" />
+													)}
+												</Button>
+											</div>
+											{isPySdkOpen && (
+												<SdkBlock
+													label="python"
+													code={pySnippet}
+													testId="myProfilePage-py-sdk-copy-btn"
+												/>
+											)}
+										</div>
+									</div>
+								)}
+							</div>
+						</form>
+					</div>
+					<DialogFooter className="shrink-0">
+						{isCreated ? (
+							<Button
+								variant="default"
+								className="gap-2"
+								onClick={downloadAccessKeyJson}
+								data-testid="myProfilePage-download-key-btn"
+							>
+								<Download className="size-4" />
+								Download JSON
+							</Button>
+						) : (
+							<Button
+								type="submit"
+								form={generateKeyFormId}
+								variant="default"
+								data-testid="myProfilePage-generate-btn"
+							>
+								Create
+							</Button>
+						)}
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			<ChangePasswordModal
+				open={passwordModal}
+				onClose={() => setPasswordModal(false)}
+			/>
+
+			<Dialog
+				open={Boolean(accessKeyToDelete)}
+				onOpenChange={(open) => {
+					if (!open) setAccessKeyToDelete(null);
+				}}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle className="font-medium text-base leading-6">
+							Delete personal access token
+						</DialogTitle>
+						<DialogDescription>
+							{accessKeyToDelete?.TOKENNAME ? (
+								<>
+									Are you sure you want to delete{" "}
+									<span className="font-medium text-foreground">
+										{accessKeyToDelete.TOKENNAME}
+									</span>
+									? Any clients using this token will lose
+									access. This action cannot be undone.
+								</>
+							) : (
+								"Are you sure you want to delete this token? Any clients using it will lose access. This action cannot be undone."
+							)}
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							variant="ghost"
+							onClick={() => setAccessKeyToDelete(null)}
+							disabled={isDeletingAccessKey}
+							data-testid="myProfilePage-delete-key-cancel-btn"
+						>
+							Cancel
+						</Button>
+						<Button
+							variant="destructive"
+							onClick={confirmDeleteAccessKey}
+							disabled={isDeletingAccessKey}
+							data-testid="myProfilePage-delete-key-confirm-btn"
+						>
+							{isDeletingAccessKey ? "Deleting..." : "Delete"}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+		</div>
+	);
+};

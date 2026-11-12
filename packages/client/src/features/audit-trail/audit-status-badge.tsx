@@ -9,7 +9,7 @@ import type { ReactElement } from "react";
 import { Badge } from "@semoss/ui/next";
 import { AUDIT_STATUS_LABELS, auditLabel } from "./audit-labels";
 
-export interface AuditStatusBadgeProps {
+interface AuditStatusBadgeProps {
 	/** The stored outcome: SUCCESS, FAILURE, DENIED or ERROR */
 	status: unknown;
 }

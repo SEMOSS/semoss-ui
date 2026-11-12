@@ -257,6 +257,7 @@ export const getUserProjectsNoCredentials = async (
 
 /**
  * List the insights within a project along with a given user's permission.
+ * @public Called by name through `useAPI`.
  */
 export const getAllProjectInsightUsers = async (
 	admin: boolean,

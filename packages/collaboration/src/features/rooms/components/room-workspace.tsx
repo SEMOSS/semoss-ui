@@ -1,10 +1,4 @@
-import {
-	Brain,
-	FolderOpen,
-	Mail,
-	MessagesSquare,
-	Settings2,
-} from "lucide-react";
+import { Brain, FolderOpen, Settings2 } from "lucide-react";
 import {
 	type KeyboardEvent,
 	type PointerEvent as ReactPointerEvent,
@@ -25,6 +19,7 @@ import {
 	toast,
 	useIsMobile,
 } from "@semoss/ui/next";
+import { OutlookIcon, TeamsIcon } from "@/components/common/app-icons";
 import { CollaborationHeaderLayoutContext } from "@/features/collaboration/components/collaboration-header.context";
 import { useOptionalCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import {
@@ -32,11 +27,7 @@ import {
 	rememberCommand,
 } from "@/features/collaboration/state/memory";
 import { roomFileLinks } from "@/features/messages/utils/room-file-link";
-import {
-	connectorPanelActions,
-	OUTLOOK_TONE,
-	TEAMS_TONE,
-} from "@/features/room-connectors/connector-panel-actions";
+import { connectorPanelActions } from "@/features/room-connectors/connector-panel-actions";
 import { useRoomConnectors } from "@/features/room-connectors/room-connectors.context";
 import { RoomEmailContext } from "@/features/room-email/room-email.context";
 import {
@@ -450,12 +441,8 @@ export function RoomWorkspace({
 																	? "View email"
 																	: "View Teams chat",
 																icon: roomEmail.hasSourceEmail
-																	? Mail
-																	: MessagesSquare,
-																iconClassName:
-																	roomEmail.hasSourceEmail
-																		? OUTLOOK_TONE
-																		: TEAMS_TONE,
+																	? OutlookIcon
+																	: TeamsIcon,
 																onSelect: () =>
 																	roomEmail.openSource(
 																		actionsTriggerId,

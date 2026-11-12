@@ -27,7 +27,7 @@ import { ToolList } from "./tool-list";
 import { TooltipIconButton } from "./tooltip-icon-button";
 
 /** Props for {@link RoomToolsConnectorsSection}. */
-export interface RoomToolsConnectorsSectionProps {
+interface RoomToolsConnectorsSectionProps {
 	/** The room whose own toolbox is listed. */
 	room: RoomStore;
 }

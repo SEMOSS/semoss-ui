@@ -41,7 +41,7 @@ const TEAM_LISTS: readonly TeamRole[] = ["MEMBERS", "MANAGERS"];
 /** The one list of a team that can go into a project or an engine */
 const MEMBERS_ONLY: readonly TeamRole[] = ["MEMBERS"];
 
-export interface CopyTeamPeopleDialogProps {
+interface CopyTeamPeopleDialogProps {
 	/** Whether the dialog is open */
 	open: boolean;
 	/** The project or engine, or the team's members or managers, being changed */

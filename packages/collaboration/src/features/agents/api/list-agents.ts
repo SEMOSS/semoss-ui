@@ -3,7 +3,7 @@ import { pixel } from "@/lib/pixel";
 /** Project type that identifies an agent workspace, per `IProject.PROJECT_TYPE`. */
 const WORKSPACE_PROJECT_TYPE = "WORKSPACE";
 
-export interface ListAgentsOptions {
+interface ListAgentsOptions {
 	/** Text matched by `MyProjects` against workspace names and identifiers. */
 	filterWord?: string;
 	/** Page size; omit for the server default. */

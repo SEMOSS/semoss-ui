@@ -3,7 +3,7 @@ import { useChat } from "@/hooks/use-chat";
 import type { RoomStore } from "@/stores/room/room.store";
 
 /** What {@link useNewRoom} returns. */
-export interface NewRoomPreparation {
+interface NewRoomPreparation {
 	/** The prepared room, once there is one. */
 	room: RoomStore | null;
 	/** Whether the room is being prepared. */

@@ -10,10 +10,6 @@
 			"label": "エージェント",
 			"tooltip": "エージェント"
 		},
-		"allChats": {
-			"label": "すべてのチャット",
-			"tooltip": "すべてのチャット"
-		},
 		"agentsWorkspaces": {
 			"tooltip": "エージェント/ワークスペース - ワークスペースにアクセスしたり、新しいAIエージェントを作成します。"
 		},
@@ -53,7 +49,8 @@
 		"openInline": "インラインで開く",
 		"minimize": "最小化",
 		"maximize": "最大化",
-		"close": "閉じる"
+		"close": "閉じる",
+		"roomActions": "チャットの操作"
 	},
 	"toasts": {
 		"failedToPin": "ルームの固定に失敗しました",
@@ -96,5 +93,40 @@
 		"pdf": "PDF 文書",
 		"success": "会話を {{format}} としてダウンロードしました",
 		"failed": "会話をダウンロードできませんでした"
+	},
+	"chats": "チャット",
+	"view": {
+		"button": "チャットの並べ替えとグループ化",
+		"customized": "カスタムの並び順",
+		"sortBy": "並べ替え",
+		"groupBy": "グループ化",
+		"sort": {
+			"recent": "新しい順",
+			"oldest": "古い順",
+			"nameAsc": "名前（A–Z）",
+			"nameDesc": "名前（Z–A）"
+		},
+		"group": {
+			"date": "日付",
+			"agent": "エージェント"
+		}
+	},
+	"groups": {
+		"all": "すべてのチャット",
+		"noAgent": "エージェントなし",
+		"unnamedAgent": "無題のエージェント",
+		"openAgent": "{{name}} を新しいタブで開く"
+	},
+	"searchChats": {
+		"label": "チャットを検索",
+		"title": "チャットを検索",
+		"description": "名前や会話の内容からチャットを探します。",
+		"placeholder": "チャットを検索…",
+		"loading": "検索中…",
+		"empty": "「{{query}}」に一致するチャットはありません",
+		"recent": "最近",
+		"allAgents": "すべてのエージェント",
+		"results": "結果",
+		"matchedMessage": "メッセージに一致"
 	}
 }

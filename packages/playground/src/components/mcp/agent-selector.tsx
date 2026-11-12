@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { useId, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { useIteratorPixel } from "@semoss/sdk/react";
+import { useSessionIteratorPixel } from "@semoss/sdk/react";
 import { AppCatalogAvatar } from "@semoss/shared";
 import {
 	Alert,
@@ -33,7 +33,7 @@ type WorkspaceRef = Pick<Workspace, "workspace_id"> &
 /** Radio value of the Default Agent choice; agent ids are never this. */
 const DEFAULT_AGENT_VALUE = "default-agent";
 
-export interface AgentSelectorProps {
+interface AgentSelectorProps {
 	/** The saved agent picked, or null when none is. */
 	value: WorkspaceRef | null;
 	/** Called with the saved agent picked, or null when none is. */
@@ -71,7 +71,7 @@ export function AgentSelector({
 		(offersDefaultAgent && isDefaultAgent ? DEFAULT_AGENT_VALUE : "");
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebouncedValue(search);
-	const getWorkspaces = useIteratorPixel<App[], App>(
+	const getWorkspaces = useSessionIteratorPixel<App[], App>(
 		(limit, offset) =>
 			`META | MyProjects(${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}projectType=["WORKSPACE"], limit=[${limit}], offset=[${offset}])`,
 		(response) => (response.length < 25 ? -1 : Infinity),

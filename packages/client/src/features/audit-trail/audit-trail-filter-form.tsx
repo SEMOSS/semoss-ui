@@ -83,7 +83,7 @@ const TEXT_FILTERS: {
 	{ name: "insightId", label: "Insight ID", placeholder: "Exact insight ID" },
 ];
 
-export interface AuditTrailFilterFormProps {
+interface AuditTrailFilterFormProps {
 	/** Resource views cannot change the backend-enforced resource scope. */
 	resourceScoped?: boolean;
 	/** Applies the filters and returns to the first page. */

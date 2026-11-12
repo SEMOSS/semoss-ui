@@ -97,7 +97,7 @@ export interface MembersListSource {
 }
 
 /** Props for {@link MembersList}. */
-export interface MembersListProps {
+interface MembersListProps {
 	/** Id of the project or engine; unused with `source` */
 	id?: string;
 	/** Kind of resource; unused with `source` */

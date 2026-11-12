@@ -3,7 +3,7 @@ import { type KeyboardEvent, useEffect, useId, useRef, useState } from "react";
 import { cn, Popover, PopoverAnchor, PopoverContent } from "@semoss/ui/next";
 import { normalizeTagArray } from "@/utility";
 
-export interface CatalogTagInputProps {
+interface CatalogTagInputProps {
 	/** Selected tag values */
 	value?: string[] | string;
 	/** Callback fired when tag collection changes */

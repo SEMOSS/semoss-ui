@@ -8,7 +8,7 @@ import { ConnectorIconButton } from "./connector-icon-button";
 import type { ConnectorItemActions } from "./connector-item-actions";
 
 /** Props for {@link ConnectorItemQuickAction}. */
-export interface ConnectorItemQuickActionProps {
+interface ConnectorItemQuickActionProps {
 	/** The item's actions. */
 	actions: ConnectorItemActions;
 }

@@ -1,21 +1,27 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { ConfigStore, SessionStore } from "@semoss/sdk";
+import { SessionProvider } from "@semoss/sdk/react";
 import type { FileExplorerApi, FileMode } from "@semoss/shared";
 import { createWorkbenchStore, WorkbenchProvider } from "@semoss/workbench";
-import { AccessStoreProvider } from "../../contexts/access.context";
-import { createAccessStore } from "../../stores/access.store";
 import { FileExplorerControl } from "./file-explorer-control";
 
 /** The one panel id every case's dock holds. */
 const PANEL_ID = "explorer";
 
+/**
+ * A published explorer api. `capabilities` are what the mode supports; the
+ * live `capabilities` the panel would fold its access into default to them.
+ */
 const createExplorer = (
 	mode: FileMode,
 	capabilities: { mutate: boolean; upload: boolean },
+	liveCapabilities = capabilities,
 ): FileExplorerApi =>
 	({
 		mode,
-		capabilities,
+		adapter: { capabilities },
+		capabilities: liveCapabilities,
 		header: { path: "/" },
 		commands: {
 			openNewFile: vi.fn(),
@@ -23,20 +29,26 @@ const createExplorer = (
 		},
 	}) as unknown as FileExplorerApi;
 
+/**
+ * Render the control under its own session, with `permission` already known
+ * for the explorer's resource. A read the session has to make never lands, so
+ * a case without one sees the permission as still loading.
+ *
+ * @returns The session, to change its permissions after rendering.
+ */
 const renderControl = (
 	explorer: FileExplorerApi,
 	permission?: "EDIT" | "READ_ONLY",
-) => {
-	const store = createAccessStore();
+): SessionStore => {
+	const session = new SessionStore({ config: new ConfigStore() });
+	vi.spyOn(session.permissions, "load").mockReturnValue(
+		new Promise(() => undefined),
+	);
 	if (permission && explorer.mode.type === "APP") {
-		store
-			.getState()
-			.syncPermission("PROJECT", explorer.mode.app, permission);
+		session.permissions.sync("PROJECT", explorer.mode.app, permission);
 	}
 	if (permission && explorer.mode.type === "STORAGE") {
-		store
-			.getState()
-			.syncPermission("ENGINE", explorer.mode.storage, permission);
+		session.permissions.sync("ENGINE", explorer.mode.storage, permission);
 	}
 
 	// the control reads its panel out of the dock now, so it needs one: a
@@ -58,12 +70,13 @@ const renderControl = (
 	workbench.getState().layout.actions.setPanelValue(PANEL_ID, explorer);
 
 	render(
-		<WorkbenchProvider store={workbench}>
-			<AccessStoreProvider store={store}>
+		<SessionProvider session={session}>
+			<WorkbenchProvider store={workbench}>
 				<FileExplorerControl id={PANEL_ID} />
-			</AccessStoreProvider>
-		</WorkbenchProvider>,
+			</WorkbenchProvider>
+		</SessionProvider>,
 	);
+	return session;
 };
 
 describe("FileExplorerControl", () => {
@@ -107,7 +120,7 @@ describe("FileExplorerControl", () => {
 	});
 
 	it("keeps Insight-scoped creation independent of project access", () => {
-		renderControl(
+		const session = renderControl(
 			createExplorer(
 				{ type: "INSIGHT", insightId: "insight-1" },
 				{ mutate: true, upload: true },
@@ -115,5 +128,54 @@ describe("FileExplorerControl", () => {
 		);
 
 		expect(screen.getByRole("button", { name: "New" })).toBeVisible();
+		expect(session.permissions.load).not.toHaveBeenCalled();
+	});
+
+	it("asks the session for a permission it does not know, hiding New meanwhile", () => {
+		const session = renderControl(
+			createExplorer(
+				{ type: "APP", app: "project-1" },
+				{ mutate: true, upload: true },
+			),
+		);
+
+		expect(screen.queryByRole("button", { name: "New" })).toBeNull();
+		expect(session.permissions.load).toHaveBeenCalledWith(
+			"PROJECT",
+			"project-1",
+		);
+	});
+
+	it("shows New once a read-only project becomes editable, before the panel republishes", () => {
+		// the published api still holds the panel's read-only capabilities:
+		// the control does not re-render when the panel catches up
+		const session = renderControl(
+			createExplorer(
+				{ type: "APP", app: "project-1" },
+				{ mutate: true, upload: true },
+				{ mutate: false, upload: false },
+			),
+			"READ_ONLY",
+		);
+		expect(screen.queryByRole("button", { name: "New" })).toBeNull();
+
+		act(() => session.permissions.sync("PROJECT", "project-1", "EDIT"));
+
+		expect(screen.getByRole("button", { name: "New" })).toBeVisible();
+	});
+
+	it("hides New once a sign in or out clears the session's permissions", () => {
+		const session = renderControl(
+			createExplorer(
+				{ type: "APP", app: "project-1" },
+				{ mutate: true, upload: true },
+			),
+			"EDIT",
+		);
+		expect(screen.getByRole("button", { name: "New" })).toBeVisible();
+
+		act(() => session.permissions.clear());
+
+		expect(screen.queryByRole("button", { name: "New" })).toBeNull();
 	});
 });

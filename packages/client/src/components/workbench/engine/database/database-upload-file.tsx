@@ -1,5 +1,6 @@
 import { useEffect, useId, useState } from "react";
 import type { ColumnInterface } from "@semoss/sdk/react";
+import { useSessionInsight } from "@semoss/sdk/react";
 import {
 	Button,
 	Dialog,
@@ -31,7 +32,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import { useEngine, useSession } from "@/hooks";
+import { useEngine } from "@/hooks/useEngine";
 
 const NEW_DATABASE = "TABLE";
 
@@ -52,6 +53,10 @@ interface DatabaseUploadFileProps {
 	onClose: (success: boolean) => void;
 }
 
+/**
+ * Uploads a CSV file into one of the database's tables, or a new one: the
+ * file is read and previewed first, then appended to or replaces the table.
+ */
 export const DatabaseUploadCsv = ({
 	structure,
 	table,
@@ -59,8 +64,7 @@ export const DatabaseUploadCsv = ({
 	onClose,
 }: DatabaseUploadFileProps) => {
 	const { engine } = useEngine();
-	const runPixel = useSession((state) => state.runPixel);
-	const upload = useSession((state) => state.upload);
+	const { run: runPixel, upload } = useSessionInsight();
 
 	const targetTableId = useId();
 	const appendModeId = useId();

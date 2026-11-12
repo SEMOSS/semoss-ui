@@ -60,7 +60,8 @@
 	"onedrive": {
 		"viewLabel": "Qué mostrar",
 		"mine": "Mis archivos",
-		"shared": "Compartido conmigo"
+		"shared": "Compartido conmigo",
+		"sharedNote": "Los archivos compartidos contigo se obtienen mediante la búsqueda de Microsoft, por lo que uno compartido recientemente puede tardar en aparecer aquí."
 	},
 	"mail": {
 		"folder": "Carpeta de correo",

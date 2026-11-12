@@ -80,6 +80,24 @@ it("a rename saves the changed topic name", async () => {
 	]);
 });
 
+it("the files linked to a topic are the server's already, so the page's copy of them is not saved", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	sync(
+		step({
+			type: "topic.save",
+			topic: {
+				id: "t-geng",
+				files: [
+					{ itemId: "item-1", name: "Plan.docx", source: "onedrive" },
+				],
+			},
+		}),
+	);
+	await sync.settled();
+	expect(sent).toEqual([]);
+});
+
 it("a topic VIP saves on the person's membership", async () => {
 	const { actions, sent } = fakeActions();
 	const sync = createLiveSync(actions, vi.fn());
@@ -119,6 +137,30 @@ it("ignoring someone in a topic saves that topic's exclude_topic rule", async ()
 		'BrainSaveRule(rule=[{"kind":"exclude_topic","value":"","topicId":"t-geng","personId":"p-ava"}]);',
 	]);
 	expect(onError).not.toHaveBeenCalled();
+});
+
+it("starring a suggested topic confirms it and saves it as the main topic", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	const star = step({
+		type: "thread.link",
+		threadId: "th-geng-review",
+		topicId: "t-trip",
+		operation: "primary",
+	});
+	sync(star);
+	await sync.settled();
+	// the new primary demotes the old one on the server
+	expect(sent).toEqual([
+		'BrainLinkThreadTopic(threadId=["th-geng-review"], topicId=["t-trip"], primary=[true]);',
+	]);
+	expect(
+		star.next.threads.find((thread) => thread.id === "th-geng-review")
+			?.topicLinks,
+	).toMatchObject([
+		{ topicId: "t-geng", source: "confirmed", primary: false },
+		{ topicId: "t-trip", source: "confirmed", primary: true },
+	]);
 });
 
 it("a delete sends one BrainDeleteTopic operation", async () => {

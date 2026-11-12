@@ -11,18 +11,22 @@ import {
 /** How long the pointer rests on a header icon before its tooltip shows. */
 const HEADER_TOOLTIP_DELAY = 500;
 
-export type HeaderIconButtonProps = ComponentProps<typeof Button> & {
+type HeaderIconButtonProps = ComponentProps<typeof Button> & {
 	/** The button's accessible name, also shown as its tooltip. */
 	label: string;
+	/** Where the tooltip shows; below the button unless a rail puts it beside. */
+	tooltipSide?: "top" | "right" | "bottom" | "left";
 };
 
 /**
- * An icon button in the room header with its name as a tooltip, sized up for
+ * An icon button in the room header or on the Workbench rail, with its name
+ * as a tooltip, sized up for
  * touch on mobile. It passes other props and its ref to the button, so a menu
  * trigger can wrap it with `asChild`.
  */
 export const HeaderIconButton = ({
 	label,
+	tooltipSide = "bottom",
 	className,
 	children,
 	...props
@@ -47,7 +51,7 @@ export const HeaderIconButton = ({
 				</Button>
 			</TooltipTrigger>
 			<TooltipContent
-				side="bottom"
+				side={tooltipSide}
 				sideOffset={6}
 				collisionPadding={8}
 				arrow={false}

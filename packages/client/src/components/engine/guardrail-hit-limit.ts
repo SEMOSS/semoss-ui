@@ -16,7 +16,7 @@ import type {
 const GUARDRAIL_HIT_LIMIT_SCOPES = ["ROOM", "USER"] as const;
 
 /** The units a window or a lock is entered in, each as minutes */
-export const GUARDRAIL_DURATION_UNITS = {
+const GUARDRAIL_DURATION_UNITS = {
 	minutes: 1,
 	hours: 60,
 	days: 1440,
@@ -51,7 +51,7 @@ export type GuardrailHitLimitFormValue = z.infer<
 	typeof guardrailHitLimitSchema
 >;
 export type GuardrailHitLimitScope = GuardrailHitLimitFormValue["scope"];
-export type GuardrailDurationUnit = keyof typeof GUARDRAIL_DURATION_UNITS;
+type GuardrailDurationUnit = keyof typeof GUARDRAIL_DURATION_UNITS;
 
 /** A check a hit limit can count, as the limit editor lists it */
 export interface GuardrailHitLimitCheck {

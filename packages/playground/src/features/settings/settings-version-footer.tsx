@@ -1,5 +1,5 @@
 import { useTranslation } from "@semoss/i18n";
-import { useInsight } from "@semoss/sdk/react";
+import { useConfig } from "@semoss/sdk/react";
 import { isRecord } from "@semoss/utility/object";
 
 /**
@@ -10,9 +10,7 @@ import { isRecord } from "@semoss/utility/object";
  */
 export const SettingsVersionFooter = () => {
 	const { t } = useTranslation("sidebar");
-	const { system } = useInsight();
-
-	const versionInfo = system?.config.version;
+	const versionInfo = useConfig((state) => state.config?.version);
 	const version =
 		isRecord(versionInfo) && typeof versionInfo.version === "string"
 			? versionInfo.version

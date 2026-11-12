@@ -30,14 +30,14 @@ export interface EmailDraftSeed {
 }
 
 /** A paused SendEmail call waiting on this email; pressing Send approves it with the saved draft. */
-export interface EmailSendApproval {
+interface EmailSendApproval {
 	toolId: string;
 	approve: (draftId: string) => Promise<void>;
 	reject: () => Promise<void>;
 }
 
 /** How an approved send ended; a turned-down or cancelled one sent nothing. */
-export type EmailSendOutcome =
+type EmailSendOutcome =
 	| { sent: true }
 	| { sent: false; error: string; isNotSent: boolean };
 
