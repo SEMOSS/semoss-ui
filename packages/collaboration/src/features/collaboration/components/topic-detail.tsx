@@ -18,16 +18,10 @@ import {
 	cn,
 	H2,
 	H3,
-	Label,
 	P,
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
 	Small,
 	Tabs,
 	TabsContent,
@@ -124,7 +118,9 @@ export function TopicDetail() {
 	const [showAllSuggested, setShowAllSuggested] = useState(false);
 	const topic = state.topics.find((candidate) => candidate.id === topicId);
 	const canStartAssistant =
-		topic?.status === "active" || topic?.status === "dormant";
+		topic?.status === "active" ||
+		topic?.status === "dormant" ||
+		topic?.status === "hibernated";
 	const topicMemories = memoriesAbout(state.memories, {
 		type: "topic",
 		id: topicId ?? "",
@@ -162,7 +158,7 @@ export function TopicDetail() {
 			?.name || "No account";
 	const feedThreadCount = new Set(workItems.map((item) => item.threadId))
 		.size;
-	// the server scores active and dormant topics; samples and isolated pages have no server to ask
+	// the server scores active and hibernated topics; samples and isolated pages have no server to ask
 	const canFindConversations =
 		Boolean(updates) && !topic.isSample && canStartAssistant;
 	// the server only links a chat to a saved topic that is active or dormant
@@ -898,60 +894,18 @@ export function TopicDetail() {
 							Topic settings
 						</H2>
 						<div className="flex flex-wrap items-center gap-1">
-							<Label
-								htmlFor={`${fieldId}-topic-status`}
-								className="sr-only"
-							>
-								Topic status
-							</Label>
-							<Select
-								value={topic.status}
-								onValueChange={(status) => {
-									if (
-										status === "active" ||
-										status === "dormant" ||
-										status === "archived"
-									)
-										dispatch({
-											type: "topic.save",
-											topic: { id: topic.id, status },
-										});
-								}}
-							>
-								<SelectTrigger
-									id={`${fieldId}-topic-status`}
-									className="h-8 w-auto gap-2 border-0 bg-transparent px-2 text-muted-foreground shadow-none hover:bg-muted hover:text-foreground dark:bg-transparent"
-								>
-									<span
-										aria-hidden="true"
-										className={cn(
-											"size-2 shrink-0 rounded-full",
-											topic.status === "active"
-												? "bg-success"
-												: topic.status === "suggested"
-													? "bg-warning"
-													: "bg-muted-foreground",
-										)}
-									/>
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="active">
-										Active
-									</SelectItem>
-									<SelectItem value="dormant">
-										Dormant
-									</SelectItem>
-									<SelectItem value="archived">
-										Archived
-									</SelectItem>
-									{topic.status === "suggested" && (
-										<SelectItem value="suggested">
-											Suggested
-										</SelectItem>
-									)}
-								</SelectContent>
-							</Select>
+							<Badge variant="outline" className="capitalize">
+								{topic.status === "dormant"
+									? "Active"
+									: topic.status}
+							</Badge>
+							{topic.stats.idle && (
+								<Small className="text-muted-foreground">
+									No activity for {topic.stats.idleDays ?? 30}{" "}
+									days
+								</Small>
+							)}
+
 							<Button
 								variant="ghost"
 								size="sm"

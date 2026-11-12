@@ -62,6 +62,40 @@ export function selectWorkItems(
 			);
 			if (thread?.muted) return false;
 			if (
+				!options.topicId &&
+				options.view !== "done_today" &&
+				options.view !== "snoozed"
+			) {
+				const suggestedIds = new Set(
+					thread?.topicLinks
+						.filter((link) => link.source === "suggested")
+						.map((link) => link.topicId),
+				);
+				const topicIds = new Set([
+					...item.topicIds.filter(
+						(id) =>
+							!suggestedIds.has(id) || item.linkTopicId === id,
+					),
+					...(thread?.topicLinks
+						.filter((link) => link.source !== "suggested")
+						.map((link) => link.topicId) ?? []),
+				]);
+				const topics = state.topics.filter((topic) =>
+					topicIds.has(topic.id),
+				);
+				const active = topics.some(
+					(topic) =>
+						topic.status === "active" || topic.status === "dormant",
+				);
+				const allKnown = topics.length === topicIds.size;
+				if (
+					!active &&
+					((allKnown && topics.length > 0) ||
+						(!allKnown && item.attentionEligible === false))
+				)
+					return false;
+			}
+			if (
 				options.isSample !== undefined &&
 				item.isSample !== options.isSample
 			)

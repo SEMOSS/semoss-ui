@@ -24,8 +24,21 @@ import {
 const AFTER_TURN_READS_MS = [6000, 15000, 30000];
 
 /** The chat's topics, read again after each turn so Brain's tags show up as the owner chats. */
-function useRoomTopics(roomId: string, isRunning: boolean) {
+export function useRoomTopics(
+	roomId: string,
+	isRunning: boolean,
+): {
+	topics: RoomTopic[] | null;
+	change: (topicId: string, remove: boolean) => Promise<void>;
+} {
 	const { actions } = useInsight();
+	const session = useOptionalCollaborationSession();
+	const lifecycle =
+		session?.state.topics
+			.map((topic) => `${topic.id}:${topic.status}`)
+			.join("|") ?? "";
+	const latestLifecycle = useRef(lifecycle);
+	latestLifecycle.current = lifecycle;
 	const { serverId } = useRecordIds();
 	const [topics, setTopics] = useState<RoomTopic[] | null>(null);
 	const wasRunning = useRef(isRunning);
@@ -33,12 +46,14 @@ function useRoomTopics(roomId: string, isRunning: boolean) {
 	const refresh = useCallback(async () => {
 		if (!actions || !roomId) return;
 		try {
-			setTopics(await listRoomTopics(actions, roomId));
+			const requestedLifecycle = lifecycle;
+			const next = await listRoomTopics(actions, roomId);
+			if (requestedLifecycle === latestLifecycle.current) setTopics(next);
 		} catch {
 			// not one of the owner's own chats: no topics to show
 			setTopics(null);
 		}
-	}, [actions, roomId]);
+	}, [actions, roomId, lifecycle]);
 
 	useEffect(() => {
 		void refresh();
@@ -91,7 +106,10 @@ export function RoomTopics({
 		session.state.topics.map((topic) => [topic.id, topic]),
 	);
 	const shown = topics.filter(
-		(t) => t.state !== "dismissed" && byId.has(localId(t.topicId)),
+		(t) =>
+			t.state !== "dismissed" &&
+			byId.has(localId(t.topicId)) &&
+			byId.get(localId(t.topicId))?.status !== "archived",
 	);
 	const onChat = new Set(
 		topics
@@ -100,7 +118,9 @@ export function RoomTopics({
 	);
 	const choices = session.state.topics.filter(
 		(topic) =>
-			(topic.status === "active" || topic.status === "dormant") &&
+			(topic.status === "active" ||
+				topic.status === "dormant" ||
+				topic.status === "hibernated") &&
 			!onChat.has(topic.id),
 	);
 

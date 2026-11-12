@@ -1,5 +1,12 @@
 import { ChevronDown, GripVertical } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+	type Dispatch,
+	type SetStateAction,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 import { Link, useNavigate } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
 import {
@@ -18,12 +25,13 @@ import {
 import { pixel } from "@/lib/pixel";
 import { roomPath } from "@/lib/workspace-paths";
 import { localDue, runBatch } from "../live/live-state";
+import { useWorkUpdates } from "../live/work-updates.context";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { CollaborationPageHeader } from "./collaboration-page-header";
 import { CollaborationSurface } from "./collaboration-surface";
-import { TaskContextView, useTaskContext } from "./task-context";
 import { TopicChip as SharedTopicChip } from "./topic-chip";
 import { WorkBuildMenu } from "./work-build-menu";
+import { WorkItemDetails } from "./work-item-details";
 
 // The Work page: the outcomes the owner is driving (D25), in the owner's order.
 // Items Brain infers wait in review until the owner adds, merges or dismisses them.
@@ -121,28 +129,43 @@ export function ItemTopicChip({ item }: { item: Item }) {
 }
 
 /** The work list data and the owner's actions on it. */
-export function useWorkItems() {
+export function useWorkItems(): {
+	items: Item[] | null;
+	setItems: Dispatch<SetStateAction<Item[] | null>>;
+	error: string;
+	run: (statement: string) => Promise<void>;
+	isMine: (step: Step) => boolean;
+} {
 	const { actions } = useInsight();
+	const updates = useWorkUpdates();
+	const lastUpdated = updates?.lastUpdated;
 	const [items, setItems] = useState<Item[] | null>(null);
 	const [selfId, setSelfId] = useState("");
 	const [error, setError] = useState("");
+	const requestVersion = useRef(0);
 
 	const load = useCallback(async () => {
+		const request = ++requestVersion.current;
 		try {
 			const [out] = (await runBatch(actions, [
 				pixel("WorkListMyWork"),
 			])) as Row[];
+			if (request !== requestVersion.current) return;
 			setItems(list(out?.workItems).map(toItem));
 			setSelfId(str(out?.selfId));
 			setError("");
 		} catch (cause) {
-			setError(errorText(cause));
+			if (request === requestVersion.current) setError(errorText(cause));
 		}
 	}, [actions]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: A completed workspace refresh invalidates the independently loaded task list.
 	useEffect(() => {
 		void load();
-	}, [load]);
+		return () => {
+			requestVersion.current += 1;
+		};
+	}, [load, lastUpdated]);
 
 	const run = useCallback(
 		async (statement: string) => {
@@ -208,12 +231,14 @@ function ItemRow({
 	onDragEnd?: () => void;
 }) {
 	const navigate = useNavigate();
+	const [isExpanded, setIsExpanded] = useState(false);
 	const due = dueLabel(item.due);
 	const next = mineNext(item, isMine);
 	const waiting = waitingOn(item, isMine);
 
 	return (
 		<li
+			className="min-w-0"
 			draggable={draggable}
 			onDragStart={onDragStart}
 			onDragOver={(event) => {
@@ -224,88 +249,86 @@ function ItemRow({
 			onDrop={(event) => event.preventDefault()}
 			// the dragged row hears the end even when the drop misses every row
 			onDragEnd={onDragEnd}
-			className="group flex min-w-0 items-center gap-3 px-5 py-4 transition-colors hover:bg-accent md:px-6"
 		>
-			{draggable ? (
-				<GripVertical
-					aria-hidden="true"
-					className="-ml-2 size-4 flex-none cursor-grab text-muted-foreground/40 group-hover:text-muted-foreground"
-				/>
-			) : null}
-			<div className="min-w-0 flex-1 space-y-1">
-				<div className="flex flex-wrap items-center gap-2">
-					<button
-						type="button"
-						onClick={() => openRoom(navigate, item)}
-						className="min-w-0 break-words text-left font-medium text-base hover:underline focus-visible:outline-2 focus-visible:outline-ring"
-					>
-						{item.title}
-					</button>
-					<ItemTopicChip item={item} />
+			<div className="group flex min-w-0 flex-wrap items-center gap-3 px-5 py-4 transition-colors hover:bg-accent md:px-6">
+				{draggable ? (
+					<GripVertical
+						aria-hidden="true"
+						className="-ml-2 size-4 flex-none cursor-grab text-muted-foreground/40 group-hover:text-muted-foreground"
+					/>
+				) : null}
+				<div className="min-w-0 flex-1 space-y-1">
+					<div className="flex flex-wrap items-center gap-2">
+						<button
+							type="button"
+							onClick={() => setIsExpanded((current) => !current)}
+							aria-expanded={isExpanded}
+							aria-controls={`work-${item.id}-detail`}
+							className="min-w-0 break-words text-left font-medium text-base hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+						>
+							{item.title}
+						</button>
+						<ItemTopicChip item={item} />
+					</div>
+					{next ? (
+						<P className="truncate text-sm">
+							<span className="text-muted-foreground">
+								Next:{" "}
+							</span>
+							{next.text}
+						</P>
+					) : null}
+					{waiting ? (
+						<P className="truncate text-muted-foreground text-sm">
+							Waiting on {waiting.assigneeName ?? "someone"}:{" "}
+							{waiting.text}
+						</P>
+					) : null}
+					{!next && !waiting ? (
+						<P className="text-muted-foreground text-sm">
+							No open steps
+						</P>
+					) : null}
 				</div>
-				{next ? (
-					<P className="truncate text-sm">
-						<span className="text-muted-foreground">Next: </span>
-						{next.text}
-					</P>
+				{due ? (
+					<Small
+						className={cn(
+							"shrink-0 text-muted-foreground tabular-nums",
+							due.soon && "text-destructive",
+						)}
+					>
+						{due.text}
+					</Small>
 				) : null}
-				{waiting ? (
-					<P className="truncate text-muted-foreground text-sm">
-						Waiting on {waiting.assigneeName ?? "someone"}:{" "}
-						{waiting.text}
-					</P>
-				) : null}
-				{!next && !waiting ? (
-					<P className="text-muted-foreground text-sm">
-						No open steps
-					</P>
-				) : null}
-			</div>
-			{due ? (
-				<Small
-					className={cn(
-						"shrink-0 text-muted-foreground tabular-nums",
-						due.soon && "text-destructive",
-					)}
+				<Button
+					size="sm"
+					variant="outline"
+					className="w-full shrink-0 sm:w-auto"
+					onClick={() => openRoom(navigate, item)}
 				>
-					{due.text}
-				</Small>
-			) : null}
-			<Button
-				size="sm"
-				variant="outline"
-				className="shrink-0 opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
-				onClick={() => openRoom(navigate, item)}
-			>
-				Open room
-			</Button>
+					{item.roomId ? "Open latest room" : "Open details"}
+				</Button>
+			</div>
+			{isExpanded && (
+				<div
+					id={`work-${item.id}-detail`}
+					className="border-t bg-muted/30"
+				>
+					<WorkItemDetails taskId={item.id} />
+				</div>
+			)}
 		</li>
 	);
 }
 
-// loads only once a row is opened
+// Pending and accepted rows share the exact same details/editor pane.
 function ExpandedTask({ taskId, id }: { taskId: string; id: string }) {
-	const { task, loading, error } = useTaskContext({ taskId });
 	return (
 		<div
 			id={id}
-			className="mt-3 overflow-hidden rounded-lg border bg-muted/30 sm:ml-5.5"
+			className="mt-3 overflow-hidden rounded-lg border bg-muted/30"
 		>
-			{task ? (
-				<TaskContextView task={task} />
-			) : (
-				<P
-					role={error ? "alert" : undefined}
-					className={cn(
-						"px-4 py-3 text-sm",
-						error ? "text-destructive" : "text-muted-foreground",
-					)}
-				>
-					{loading
-						? "Loading details..."
-						: error || "No more detail for this item."}
-				</P>
-			)}
+			<WorkItemDetails taskId={taskId} />
 		</div>
 	);
 }
@@ -676,6 +699,7 @@ export function WorkItemsList({ review = false }: { review?: boolean }) {
 		<CollaborationSurface
 			header={
 				<CollaborationPageHeader
+					layoutClassName="flex-col sm:flex-row"
 					title={review ? "New work items" : "Work"}
 					description={
 						review

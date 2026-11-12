@@ -41,6 +41,12 @@ vi.mock("@semoss/sdk/react", async (importOriginal) => ({
 	useInsight: () => insight,
 }));
 
+vi.mock("./work-item-details", () => ({
+	WorkItemDetails: ({ taskId }: { taskId: string }) => (
+		<section aria-label={`Details for ${taskId}`} />
+	),
+}));
+
 afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
@@ -97,4 +103,28 @@ it("saves a drop on a row once, and a drag that moved nothing not at all", async
 			pixel("WorkReorderItems", { taskIds: ["b", "a", "c"] }),
 		]),
 	);
+});
+
+it("keeps expanded details with their work item after a reorder", async () => {
+	await renderWork();
+	const title = screen.getByRole("button", { name: "Item a" });
+	expect(title).toHaveAttribute("aria-expanded", "false");
+	fireEvent.click(title);
+	expect(title).toHaveAttribute("aria-expanded", "true");
+	expect(screen.getByRole("region", { name: "Details for a" })).toBeVisible();
+	fireEvent.dragStart(row("Item a"));
+	fireEvent.dragOver(row("Item c"));
+	fireEvent.dragEnd(row("Item a"));
+	await waitFor(() => expect(reorders()).toHaveLength(1));
+	expect(screen.getByRole("button", { name: "Item a" })).toHaveAttribute(
+		"aria-expanded",
+		"true",
+	);
+	expect(screen.getByRole("button", { name: "Item b" })).toHaveAttribute(
+		"aria-expanded",
+		"false",
+	);
+	expect(screen.getByRole("region", { name: "Details for a" })).toBeVisible();
+	fireEvent.click(screen.getByRole("button", { name: "Item a" }));
+	expect(screen.queryByRole("region", { name: "Details for a" })).toBeNull();
 });

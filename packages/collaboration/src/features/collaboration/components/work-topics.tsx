@@ -1,7 +1,18 @@
 import { ArrowRight, Plus } from "lucide-react";
 import { useRef, useState } from "react";
 import { Link } from "react-router";
-import { Badge, Button, cn, P, Small } from "@semoss/ui/next";
+import {
+	Badge,
+	Button,
+	cn,
+	P,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	Small,
+} from "@semoss/ui/next";
 import { topicPath } from "@/lib/workspace-paths";
 import { WorkRefreshStatus } from "../live/work-refresh-status";
 import { selectWorkItems } from "../state/collaboration.selectors";
@@ -22,7 +33,15 @@ export function WorkTopics({
 	const { state } = useCollaborationSession();
 	const [isCreating, setIsCreating] = useState(false);
 	const createButtonRef = useRef<HTMLButtonElement>(null);
-	const topics = state.topics.filter((topic) => topic.status !== "archived");
+	const [statusFilter, setStatusFilter] = useState("current");
+	const topics = state.topics.filter(
+		(topic) =>
+			statusFilter === "all" ||
+			(statusFilter === "current"
+				? topic.status !== "archived"
+				: topic.status === statusFilter ||
+					(statusFilter === "active" && topic.status === "dormant")),
+	);
 	return (
 		<CollaborationSurface
 			header={
@@ -55,6 +74,23 @@ export function WorkTopics({
 				</CollaborationPageHeader>
 			}
 		>
+			<div className="border-b px-5 py-3">
+				<Select value={statusFilter} onValueChange={setStatusFilter}>
+					<SelectTrigger
+						className="w-full sm:w-48"
+						aria-label="Filter topics by status"
+					>
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="current">Current topics</SelectItem>
+						<SelectItem value="active">Active</SelectItem>
+						<SelectItem value="hibernated">Hibernated</SelectItem>
+						<SelectItem value="archived">Archived</SelectItem>
+						<SelectItem value="all">All topics</SelectItem>
+					</SelectContent>
+				</Select>
+			</div>
 			{topics.length ? (
 				<ul aria-label="Work topics" className="divide-y divide-border">
 					{topics.map((topic) => {
@@ -87,7 +123,9 @@ export function WorkTopics({
 												variant="outline"
 												className="font-normal capitalize"
 											>
-												{topic.status}
+												{topic.status === "dormant"
+													? "active"
+													: topic.status}
 											</Badge>
 											{topic.isSample && (
 												<Badge variant="secondary">
@@ -115,7 +153,11 @@ export function WorkTopics({
 				</ul>
 			) : (
 				<div className="space-y-2 p-6">
-					<P>No topics yet.</P>
+					<P>
+						{state.topics.length
+							? "No topics match this filter."
+							: "No topics yet."}
+					</P>
 					<P className="text-muted-foreground text-sm">
 						Create a topic to organize your work, or open All work
 						to see unfiled actions.
