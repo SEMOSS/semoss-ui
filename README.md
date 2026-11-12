@@ -2,7 +2,7 @@
 
 | Software    | Version |
 | -------- | ------- |
-| Node |  v24.4.0|
+| Node |  v26|
 | pnpm | v10.13.x |
 
 1. Git clone this repository to your `webapps` folder. `git clone git@repo.semoss.org:semoss/semoss-ui.git`

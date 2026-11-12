@@ -27,7 +27,7 @@ jobs:
         runs-on: codebuild-semoss-github-runner-${{ github.run_id }}-${{ github.run_attempt }}
         if: ${{ vars.RELEASE != 'TRUE'  && (github.event_name =='push' || github.event_name =='pull_request')  }}
         container:
-            image: public.ecr.aws/docker/library/node:24-bookworm
+            image: public.ecr.aws/docker/library/node:26-bookworm
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
@@ -180,7 +180,7 @@ jobs:
         runs-on: codebuild-semoss-github-runner-${{ github.run_id }}-${{ github.run_attempt }}
         if: ${{ vars.RELEASE != 'TRUE'  && github.event_name =='workflow_dispatch' }}
         container:
-            image: public.ecr.aws/docker/library/node:24-bookworm
+            image: public.ecr.aws/docker/library/node:26-bookworm
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
@@ -419,7 +419,7 @@ jobs:
         runs-on: codebuild-semoss-github-runner-${{ github.run_id }}-${{ github.run_attempt }}
         if: ${{ vars.RELEASE == 'TRUE' && github.event_name == 'workflow_dispatch' && (github.ref_name == 'main' || github.ref_name == 'dev') }}
         container:
-            image: public.ecr.aws/docker/library/node:24-bookworm
+            image: public.ecr.aws/docker/library/node:26-bookworm
         steps:
             - name: Checkout code
               uses: actions/checkout@v4

@@ -33,7 +33,7 @@
   "packageManager": "pnpm@10.13.1",
   "engines": {
     "pnpm": "~10.13.0",
-    "node": ">=24.4.0 <25"
+    "node": ">=26.0.0 <27"
   },
   "pnpm": {
     "overrides": {
