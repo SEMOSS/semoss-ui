@@ -2,7 +2,10 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { afterEach, expect, it } from "vitest";
 import { createInitialCollaborationState } from "../state/collaboration.fixtures";
-import type { CollaborationState } from "../state/collaboration.types";
+import type {
+	CollaborationState,
+	FilingSignals,
+} from "../state/collaboration.types";
 import {
 	CollaborationSessionProvider,
 	useCollaborationSession,
@@ -72,4 +75,65 @@ it("offers both candidates, Both and Neither, and Both confirms only them", () =
 	expect(screen.getByRole("status")).toHaveTextContent(
 		/^t-geng:confirmed,t-gsales:confirmed,t-trip:suggested$/,
 	);
+});
+
+const keywordSignals: FilingSignals = {
+	keywordMatches: [{ keyword: "rate limit", field: "subject" }],
+	matchedSenderIds: [],
+	baseConfidence: 80,
+	finalConfidence: 80,
+	topicVipApplied: false,
+	topicVipPoints: 0,
+};
+
+it("shows why each candidate topic was suggested", () => {
+	renderChoice((state) => {
+		const review = state.reviews.find((r) => r.id === "r2");
+		if (review) {
+			review.candidates = ["t-geng", "t-gsales"];
+			review.candidateSignals = { "t-geng": keywordSignals };
+		}
+	});
+	expect(screen.getByText("Northwind Eng:")).toBeVisible();
+	expect(
+		screen.getByText('The subject has the topic keyword "rate limit".'),
+	).toBeVisible();
+	expect(screen.getByText("Confidence 80%.")).toBeVisible();
+	// Northwind Sales has no evidence, so it says nothing
+	expect(screen.queryByText("Northwind Sales:")).toBeNull();
+});
+
+it("falls back to the thread's link for a review asked before evidence was kept", () => {
+	renderChoice((state) => {
+		const review = state.reviews.find((r) => r.id === "r2");
+		if (review) {
+			review.candidates = ["t-gsales"];
+			review.candidateSignals = undefined;
+		}
+		const link = state.threads
+			.find((t) => t.id === "th-hugo-chat")
+			?.topicLinks.find((l) => l.topicId === "t-gsales");
+		if (link) link.signals = keywordSignals;
+	});
+	expect(screen.getByText("Northwind Sales:")).toBeVisible();
+	expect(screen.getByText("Confidence 80%.")).toBeVisible();
+});
+
+it("keeps one line per candidate when compact", () => {
+	const state = createInitialCollaborationState();
+	const review = state.reviews.find((r) => r.id === "r2");
+	if (!review) throw new Error("Missing topic choice review");
+	review.candidates = ["t-geng"];
+	review.candidateSignals = { "t-geng": keywordSignals };
+	render(
+		<CollaborationSessionProvider initialState={state}>
+			<MemoryRouter>
+				<ReviewCard review={review} compact />
+			</MemoryRouter>
+		</CollaborationSessionProvider>,
+	);
+	expect(screen.queryByRole("list")).toBeNull();
+	expect(
+		screen.getByText(/topic keyword "rate limit"\. Confidence 80%\./),
+	).toBeVisible();
 });

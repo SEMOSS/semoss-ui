@@ -777,8 +777,8 @@ export function TopicDetail() {
 								)}
 								<P className="text-muted-foreground text-sm leading-relaxed">
 									{topic.keywords.length
-										? "New threads that match are filed here."
-										: "Add keywords so new threads are filed here on their own."}
+										? "A keyword in a thread's subject or mail makes it more likely to be filed here."
+										: "Add keywords so threads that use them are more likely to be filed here."}
 								</P>
 								{topic.calendarSeries.length > 0 && (
 									<div className="space-y-1 border-t pt-3">

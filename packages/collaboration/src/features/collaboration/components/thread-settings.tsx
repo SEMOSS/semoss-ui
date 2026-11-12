@@ -16,6 +16,7 @@ import {
 } from "@semoss/ui/next";
 import type { Thread } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
+import { FilingReason } from "./filing-reason";
 import { PersonAvatar } from "./person-avatar";
 import { Section } from "./section";
 import { TopicChip } from "./topic-chip";
@@ -111,6 +112,11 @@ export function ThreadSettings({
 											Confirm
 										</Button>
 									)}
+									{/* wraps under the chip, aligned past the star button */}
+									<FilingReason
+										link={link}
+										className="w-full pl-9"
+									/>
 								</div>
 							)
 						);
