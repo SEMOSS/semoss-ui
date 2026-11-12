@@ -10,6 +10,8 @@ interface InputModeToggleProps {
 	onValueChange: (value: InputMode) => void;
 	/** Prevents switching to the form when the JSON cannot be represented safely. */
 	formDisabled?: boolean;
+	/** Name of the guided editing mode; defaults to Form for existing consumers. */
+	formLabel?: string;
 }
 
 /** Switches one node value between guided fields and its raw JSON representation. */
@@ -17,6 +19,7 @@ export function InputModeToggle({
 	value,
 	onValueChange,
 	formDisabled = false,
+	formLabel = "Form",
 }: InputModeToggleProps) {
 	const labelId = useId();
 
@@ -38,7 +41,7 @@ export function InputModeToggle({
 				}}
 			>
 				<ToggleGroupItem value="form" disabled={formDisabled}>
-					Form
+					{formLabel}
 				</ToggleGroupItem>
 				<ToggleGroupItem value="json">JSON</ToggleGroupItem>
 			</ToggleGroup>
