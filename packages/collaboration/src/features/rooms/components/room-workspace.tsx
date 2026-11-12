@@ -39,6 +39,7 @@ import { openToolWorkbenchFiles } from "@/features/tools/open-tool-workbench-fil
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
 import type { Session } from "@/types/session";
 import { useShowCurrentChat } from "../current-chat";
+import { takeFileToShow } from "../room-file-to-show";
 import type { ComposerSubmission, RoomViewProps } from "../types/room";
 import { RoomComposer } from "./room-composer";
 import type { RoomSlashCommand } from "./room-composer-slash-plugin";
@@ -220,6 +221,12 @@ export function RoomWorkspace({
 			}
 		}
 	}, [thread, showToolWorkbench, isMobile, openFile]);
+	// a room opened for a file shows that file at once; the owner asked for it, so on a phone too
+	useEffect(() => {
+		if (!showToolWorkbench) return;
+		const file = takeFileToShow(session.id);
+		if (file) openFile(file.path, file.name);
+	}, [showToolWorkbench, session.id, openFile]);
 	const [resumeSignal, setResumeSignal] = useState(0);
 	// Local memory commands do not enter RoomSession's submission lifecycle.
 	const isLocalMemoryDraft = Boolean(

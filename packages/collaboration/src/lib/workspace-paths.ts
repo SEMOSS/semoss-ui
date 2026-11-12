@@ -29,3 +29,10 @@ export function newRoomPath(agentId?: string, modelId?: string) {
 	const query = search.toString();
 	return query ? `/?${query}` : "/";
 }
+
+/** Pages that open on the hero photo; the shell scrolls them together with its header so the photo runs behind it. */
+export function isHeroPath(pathname: string): boolean {
+	return ["/", "/work", "/work/review", "/work/topics"].includes(
+		pathname.replace(/\/$/, "") || "/",
+	);
+}
