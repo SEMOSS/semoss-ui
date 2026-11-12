@@ -49,12 +49,25 @@ grouped rows and filters; contextual panels become drawers on narrower screens.
 The global landing page (Today) opens with its greeting over a decorative hero
 photo, shown only on wide windows in the light theme, then one compact composer
 and three starter questions. Three cards follow: Your work, Your day, and Recent
-activity, which lists the newest mail, chat, and meeting conversations. They share
+activity, which lists the newest mail, chat, and meeting conversations with the
+files changed lately in the owner's OneDrive. A file opens in a room of its own,
+which joins the topics the file is linked to. They share
 a row on wide windows and stack in that order on narrow ones, which is also the
 reading and keyboard order. On desktop the page scrolls together with the shell
 header so the photo runs behind the search box; on smaller screens the header
 stays pinned. Saved sessions remain available from the sidebar. The overview has
 no topic filter or separate chat mode.
+
+Work, its review, and its topic index open on the same hero photo and scroll
+the same way; a route does so when `isHeroPath` lists it and its page renders
+`CollaborationHeroPage`. The sidebar lists Topics under Work and marks it on
+the index and on each topic's page. Settings shows the same topic list under
+its own tab bar, without the hero. Work shows what waits for review in a banner, then the
+owner's list as Your priorities, with views for every item, the ones with a
+next step of the owner's, and the ones waiting on someone, beside a Waiting on
+card that lists each handoff. Rows drag into order, and each row's menu moves
+it too. The review lists inferred items to add, merge, or dismiss, with a topic
+filter, Expand all, and a count of how many were handled.
 
 New conversations start from the landing composer. Settings and Files open an
 inline workbench beneath that composer without navigating away or replacing the

@@ -1,4 +1,4 @@
-import { CalendarClock, House, Layers } from "lucide-react";
+import { CalendarClock, House, Layers, Tags } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { cn, Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 import { ChatHistoryList } from "@/features/dashboard/chat-history-list";
@@ -26,7 +26,7 @@ interface CollaborationNavigationProps {
 	toggle?: NavigationToggle;
 }
 
-/** One quiet navigation follows the daily brief and conversations; topics live in Settings. */
+/** One quiet navigation follows the daily brief, the work and its topics, and conversations. */
 export function CollaborationNavigation({
 	isCollapsed = false,
 	isSessionsOpen,
@@ -36,8 +36,8 @@ export function CollaborationNavigation({
 }: CollaborationNavigationProps) {
 	const { state } = useCollaborationSession();
 	const { pathname } = useLocation();
-	// Work, filing and setup stay reachable from Today, Settings and search;
-	// Routines stays here because it is the proactive part
+	// filing and setup stay reachable from Settings and search; Topics sits under Work because the owner
+	// opens it often, and Routines stays here because it is the proactive part
 	const links = [
 		{
 			to: "/",
@@ -52,7 +52,20 @@ export function CollaborationNavigation({
 			label: "Work",
 			icon: Layers,
 			count: 0,
-			isActive: pathname.startsWith("/work"),
+			// its topic index has a link of its own
+			isActive:
+				pathname.startsWith("/work") &&
+				!pathname.startsWith("/work/topics"),
+		},
+		{
+			to: "/work/topics",
+			label: "Topics",
+			icon: Tags,
+			count: 0,
+			// the index and each topic's own page
+			isActive:
+				pathname.startsWith("/work/topics") ||
+				pathname.startsWith("/topics/"),
 		},
 		{
 			to: "/routines",

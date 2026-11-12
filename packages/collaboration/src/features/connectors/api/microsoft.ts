@@ -22,6 +22,8 @@ import {
 	mailListSchema,
 	mailSchema,
 	newDraftReceiptSchema,
+	type RecentFile,
+	recentFilesSchema,
 	replyDraftReceiptSchema,
 	stagedAttachmentSchema,
 } from "./microsoft-schemas";
@@ -127,6 +129,19 @@ export function listCalendarEvents(actions: InsightActions) {
 		}),
 		eventsSchema,
 	);
+}
+
+/** The files changed most recently in the owner's own OneDrive this week, newest first. */
+export async function listRecentFiles(
+	actions: InsightActions,
+	limit: number,
+): Promise<RecentFile[]> {
+	const { files } = await callPixel(
+		actions,
+		pixel("MicrosoftOneDriveListRecentFiles", { limit }),
+		recentFilesSchema,
+	);
+	return files;
 }
 
 /** Fetch a selected event, whose times come back in UTC. */

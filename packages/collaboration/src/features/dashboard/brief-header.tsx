@@ -1,27 +1,16 @@
-import { RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
-import {
-	Button,
-	cn,
-	H1,
-	P,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@semoss/ui/next";
-import { checkTime } from "@/features/collaboration/live/work-refresh-status";
-import { useWorkUpdates } from "@/features/collaboration/live/work-updates.context";
+import { CollaborationHeroHeader } from "@/features/collaboration/components/collaboration-hero-header";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import { useDashboard } from "./dashboard.context";
 import { dashboardTimeZone, eventStart, isAllDay } from "./dashboard-calendar";
 import { dayKey } from "./dashboard-selectors";
+import { MailCheckStatus } from "./mail-check-status";
 import { selectToday } from "./today-selectors";
 
 /** One line: what is due today and when the next meeting starts. */
 export function BriefHeader() {
 	const { state } = useCollaborationSession();
-	const { calendar, refreshSources } = useDashboard();
-	const updates = useWorkUpdates();
+	const { calendar } = useDashboard();
 	const [now, setNow] = useState(() => new Date());
 	useEffect(() => {
 		const timer = window.setInterval(() => setNow(new Date()), 60_000);
@@ -57,11 +46,6 @@ export function BriefHeader() {
 				: [];
 		})
 		.sort((a, b) => a.getTime() - b.getTime())[0];
-	// the same check as Work's Refresh: when Microsoft 365 was last read, not when this page re-read
-	const check = updates?.lastMailCheck ?? null;
-	const isChecking = Boolean(
-		updates?.isSyncing || check?.status === "running",
-	);
 	const at = next?.toLocaleTimeString(undefined, {
 		timeZone: zone,
 		hour: "numeric",
@@ -75,54 +59,16 @@ export function BriefHeader() {
 				? "One thing is due today."
 				: `${due} things are due today.`;
 	return (
-		<header className="flex flex-col items-start gap-1 pt-4 pb-6 lg:px-6 lg:pt-14">
-			<P className="font-medium text-muted-foreground text-xs uppercase tracking-widest">
-				Welcome to Collaboration
-			</P>
-			<H1 className="text-3xl leading-tight tracking-tight sm:text-5xl">
-				{greeting}
-				{name ? `, ${name}` : ""}.
-			</H1>
-			<P className="text-lg text-muted-foreground">
-				{dueLine}
-				{at ? ` Your next meeting is at ${at}.` : ""}
-			</P>
-			{/* the button leads, pulled left so its icon sits on the text edge whether or not a time follows */}
-			<div className="-ms-1.5 flex items-center gap-1 text-muted-foreground text-xs">
-				<Tooltip disableHoverableContent={false}>
-					<TooltipTrigger asChild>
-						<Button
-							variant="ghost"
-							size="icon-sm"
-							aria-label="Check for new mail"
-							disabled={!updates || isChecking}
-							className="pointer-coarse:size-11 size-7 text-muted-foreground"
-							onClick={() => {
-								updates?.syncMail();
-								refreshSources();
-							}}
-						>
-							<RefreshCw
-								aria-hidden="true"
-								className={cn(
-									"size-3.5",
-									isChecking && "animate-spin",
-								)}
-							/>
-						</Button>
-					</TooltipTrigger>
-					<TooltipContent>Check for new mail</TooltipContent>
-				</Tooltip>
-				<span>
-					{isChecking
-						? "Checking\u2026"
-						: updates?.syncError || check?.status === "failed"
-							? "Last check failed"
-							: check?.at
-								? `Updated ${checkTime(check.at)}`
-								: ""}
+		<CollaborationHeroHeader
+			eyebrow={
+				<span className="font-medium text-xs uppercase tracking-widest">
+					Welcome to Collaboration
 				</span>
-			</div>
-		</header>
+			}
+			title={`${greeting}${name ? `, ${name}` : ""}.`}
+			description={`${dueLine}${at ? ` Your next meeting is at ${at}.` : ""}`}
+		>
+			<MailCheckStatus />
+		</CollaborationHeroHeader>
 	);
 }

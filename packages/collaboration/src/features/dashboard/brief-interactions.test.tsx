@@ -22,30 +22,46 @@ vi.mock("@/features/daily-chat/landing-chat-composer", () => ({
 		<section aria-label="Start a conversation">Chat composer</section>
 	),
 }));
-// Today reads the onboarding flag and the owner's work items from the server; one actions
-// object, since those reads rerun whenever it changes
+// opening a file's room has its own tests; here only that a row asks for it
+const fileRoom = vi.hoisted(() => ({ open: vi.fn(), openingId: "" }));
+vi.mock("./use-open-file-room", () => ({
+	useOpenFileRoom: () => ({
+		open: fileRoom.open,
+		openingId: fileRoom.openingId,
+	}),
+}));
+// Today reads the onboarding flag, the owner's work items and their recently changed files from
+// the server; one actions object, since those reads rerun whenever it changes
 const insight = vi.hoisted(() => ({
 	workItems: [] as Record<string, unknown>[],
 	workError: "",
+	recentFiles: [] as Record<string, unknown>[],
+	filesError: "",
 	actions: {
-		run: vi.fn(async (statement: string) => ({
-			pixelReturn: [
-				statement.startsWith("WorkListMyWork") && !insight.workError
-					? {
-							output: {
-								selfId: "me",
-								workItems: insight.workItems,
+		run: vi.fn(async (statement: string) => {
+			const isFiles = statement.startsWith(
+				"MicrosoftOneDriveListRecentFiles",
+			);
+			const failure = isFiles ? insight.filesError : insight.workError;
+			const output = isFiles
+				? {
+						count: insight.recentFiles.length,
+						files: insight.recentFiles,
+					}
+				: { selfId: "me", workItems: insight.workItems };
+			return {
+				pixelReturn: [
+					(isFiles || statement.startsWith("WorkListMyWork")) &&
+					!failure
+						? { output, operationType: ["OPERATION"] }
+						: // an unread connection keeps Today, as a server without the onboarding flag does
+							{
+								output: failure || "Not read in these tests",
+								operationType: ["ERROR"],
 							},
-							operationType: ["OPERATION"],
-						}
-					: // an unread connection keeps Today, as a server without the onboarding flag does
-						{
-							output:
-								insight.workError || "Not read in these tests",
-							operationType: ["ERROR"],
-						},
-			],
-		})),
+				],
+			};
+		}),
 	},
 }));
 vi.mock("@semoss/sdk/react", async (importOriginal) => ({
@@ -251,6 +267,9 @@ afterEach(() => {
 	vi.clearAllMocks();
 	insight.workItems = [];
 	insight.workError = "";
+	insight.recentFiles = [];
+	insight.filesError = "";
+	fileRoom.openingId = "";
 });
 
 it("shows Today as greeting, ask box, your work, Your day and Recent activity without setup panels", () => {
@@ -449,6 +468,109 @@ it("lists the newest conversations under Recent activity and leaves out muted an
 	expect(
 		activity.getByRole("link", { name: "Teams: Newer chat" }),
 	).toHaveAttribute("href", "/thread/support-thread");
+});
+
+it("mixes the owner's recently changed OneDrive files into Recent activity once Microsoft 365 is connected, each opening in its room", async () => {
+	const user = userEvent.setup();
+	const state = createBriefState();
+	state.settings.sourcesJson.email = true;
+	// the conversations were all last active on Oct 6
+	insight.recentFiles = [
+		{
+			id: "f1",
+			driveId: "d1",
+			name: "Q1 Business Review.pptx",
+			webUrl: "https://contoso-my.sharepoint.com/personal/riley/Documents/Q1%20Business%20Review.pptx",
+			lastModifiedDateTime: "2026-10-07T09:00:00Z",
+		},
+		{
+			id: "f2",
+			name: "Old notes.docx",
+			lastModifiedDateTime: "2026-10-01T09:00:00Z",
+		},
+	];
+	renderBrief(state);
+	const activity = within(
+		screen.getByRole("region", { name: "Recent activity" }),
+	);
+	const deck = await activity.findByRole("button", {
+		name: "File: Q1 Business Review.pptx",
+	});
+	expect(insight.actions.run).toHaveBeenCalledWith(
+		"MicrosoftOneDriveListRecentFiles(limit=[3]);",
+	);
+	// newest first across both kinds
+	expect(
+		activity
+			.getAllByRole("listitem")
+			.map((row) => row.textContent?.split(":")[0]),
+	).toEqual(["File", "Email", "Email", "Email", "Email", "File"]);
+	// a file is not a link out to OneDrive: it opens in a room here
+	expect(activity.getAllByRole("link")).toHaveLength(4);
+	await user.click(deck);
+	expect(fileRoom.open).toHaveBeenCalledWith({
+		id: "f1",
+		driveId: "d1",
+		name: "Q1 Business Review.pptx",
+		lastModifiedDateTime: "2026-10-07T09:00:00Z",
+	});
+});
+
+it("shows which file's room is opening and holds the other files until it has", async () => {
+	const state = createBriefState();
+	state.settings.sourcesJson.calendar = true;
+	insight.recentFiles = [
+		{
+			id: "f1",
+			name: "Q1 Business Review.pptx",
+			lastModifiedDateTime: "2026-10-07T09:00:00Z",
+		},
+		{
+			id: "f2",
+			name: "Old notes.docx",
+			lastModifiedDateTime: "2026-10-01T09:00:00Z",
+		},
+	];
+	fileRoom.openingId = "f1";
+	renderBrief(state);
+	const activity = within(
+		screen.getByRole("region", { name: "Recent activity" }),
+	);
+	const deck = await activity.findByRole("button", {
+		name: "File: Q1 Business Review.pptx",
+	});
+	expect(deck).toHaveAttribute("aria-busy", "true");
+	expect(deck).toBeDisabled();
+	expect(
+		activity.getByRole("button", { name: "File: Old notes.docx" }),
+	).toBeDisabled();
+	expect(activity.getAllByRole("status", { name: "Opening" })).toHaveLength(
+		1,
+	);
+});
+
+it("keeps the conversations when the recent files cannot be read, and does not read them with Microsoft 365 off", async () => {
+	insight.filesError = "OneDrive is unavailable.";
+	renderBrief();
+	const activity = within(
+		screen.getByRole("region", { name: "Recent activity" }),
+	);
+	expect(activity.getAllByRole("link")).toHaveLength(4);
+	expect(insight.actions.run).not.toHaveBeenCalledWith(
+		expect.stringMatching(/^MicrosoftOneDrive/),
+	);
+	cleanup();
+	const state = createBriefState();
+	state.settings.sourcesJson.teams = true;
+	renderBrief(state);
+	const connected = within(
+		screen.getByRole("region", { name: "Recent activity" }),
+	);
+	expect(
+		await connected.findByText("OneDrive is unavailable."),
+	).toBeVisible();
+	expect(connected.getByRole("button", { name: "Retry" })).toBeVisible();
+	expect(connected.getAllByRole("link")).toHaveLength(4);
 });
 
 it("fills the ask box from a suggestion without sending it", async () => {

@@ -15,6 +15,7 @@ import {
 } from "@semoss/ui/next";
 import { useDashboard } from "@/features/dashboard/dashboard.context";
 import { DashboardSourceDialog } from "@/features/dashboard/dashboard-source-dialog";
+import { isHeroPath } from "@/lib/workspace-paths";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { CollaborationHeader } from "./collaboration-header";
 import {
@@ -75,8 +76,8 @@ export function CollaborationFrame() {
 	const isRoom =
 		pathname.startsWith("/thread/") ||
 		/^\/topics\/[^/]+\/contents$/.test(pathname);
-	// Today scrolls header and page as one, so its hero photo can run up behind the search box
-	const isToday = pathname === "/";
+	// a hero page scrolls with the header as one, so its photo can run up behind the search box
+	const hasHero = isHeroPath(pathname);
 	const isCollapsed =
 		navigationOverride?.pathname === pathname
 			? navigationOverride.isCollapsed
@@ -85,9 +86,10 @@ export function CollaborationFrame() {
 	const navigationId = useId();
 	const contentRef = useRef<HTMLDivElement>(null);
 	useLayoutEffect(() => {
-		// the browser keeps the column's scroll offset while other pages scroll themselves; Today opens at its top
-		if (isToday && contentRef.current) contentRef.current.scrollTop = 0;
-	}, [isToday]);
+		// the column keeps its scroll offset from one page to the next, even across pages that scroll themselves; a hero page opens at its top
+		if (isHeroPath(pathname) && contentRef.current)
+			contentRef.current.scrollTop = 0;
+	}, [pathname]);
 	const mainRef = useRef<HTMLElement>(null);
 	const desktopNavigationRef = useRef<HTMLElement>(null);
 	const navigationToggleRef = useRef<HTMLButtonElement>(null);
@@ -185,14 +187,14 @@ export function CollaborationFrame() {
 				ref={contentRef}
 				className={cn(
 					"relative flex min-h-0 min-w-0 flex-1 flex-col",
-					isToday && "overflow-y-auto",
+					hasHero && "overflow-y-auto",
 				)}
 			>
 				<CollaborationHeaderContext.Provider value={headerControls}>
 					<CollaborationHeader
 						roomControlsRef={setHeaderControls}
 						conversationWidth={conversationWidth}
-						isOverPage={isToday}
+						isOverPage={hasHero}
 					>
 						<Sheet
 							open={isNavOpen}
@@ -270,7 +272,7 @@ export function CollaborationFrame() {
 						className={cn(
 							"flex min-w-0 flex-col outline-none",
 							// as tall as its content when the column around it scrolls
-							isToday ? "flex-none" : "min-h-0 flex-1",
+							hasHero ? "flex-none" : "min-h-0 flex-1",
 						)}
 					>
 						<CollaborationHeaderLayoutContext.Provider
