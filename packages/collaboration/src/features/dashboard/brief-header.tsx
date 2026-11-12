@@ -75,25 +75,20 @@ export function BriefHeader() {
 				? "One thing is due today."
 				: `${due} things are due today.`;
 	return (
-		<header className="mb-6 flex flex-col items-center gap-2 text-center">
-			<H1 className="font-display font-medium text-3xl leading-tight sm:text-[2.5rem]">
+		<header className="flex flex-col items-start gap-1 pt-4 pb-6 lg:px-6 lg:pt-14">
+			<P className="font-medium text-muted-foreground text-xs uppercase tracking-widest">
+				Welcome to Collaboration
+			</P>
+			<H1 className="text-3xl leading-tight tracking-tight sm:text-5xl">
 				{greeting}
 				{name ? `, ${name}` : ""}.
 			</H1>
-			<P className="text-base text-muted-foreground">
+			<P className="text-lg text-muted-foreground">
 				{dueLine}
 				{at ? ` Your next meeting is at ${at}.` : ""}
 			</P>
-			<div className="flex items-center gap-1 text-muted-foreground/80 text-xs">
-				<span>
-					{isChecking
-						? "Checking\u2026"
-						: updates?.syncError || check?.status === "failed"
-							? "Last check failed"
-							: check?.at
-								? `Updated ${checkTime(check.at)}`
-								: ""}
-				</span>
+			{/* the button leads, pulled left so its icon sits on the text edge whether or not a time follows */}
+			<div className="-ms-1.5 flex items-center gap-1 text-muted-foreground text-xs">
 				<Tooltip disableHoverableContent={false}>
 					<TooltipTrigger asChild>
 						<Button
@@ -118,6 +113,15 @@ export function BriefHeader() {
 					</TooltipTrigger>
 					<TooltipContent>Check for new mail</TooltipContent>
 				</Tooltip>
+				<span>
+					{isChecking
+						? "Checking\u2026"
+						: updates?.syncError || check?.status === "failed"
+							? "Last check failed"
+							: check?.at
+								? `Updated ${checkTime(check.at)}`
+								: ""}
+				</span>
 			</div>
 		</header>
 	);

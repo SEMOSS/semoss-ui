@@ -75,12 +75,19 @@ export function CollaborationFrame() {
 	const isRoom =
 		pathname.startsWith("/thread/") ||
 		/^\/topics\/[^/]+\/contents$/.test(pathname);
+	// Today scrolls header and page as one, so its hero photo can run up behind the search box
+	const isToday = pathname === "/";
 	const isCollapsed =
 		navigationOverride?.pathname === pathname
 			? navigationOverride.isCollapsed
 			: isRoom || isNavigationCollapsed;
 	const mainId = useId();
 	const navigationId = useId();
+	const contentRef = useRef<HTMLDivElement>(null);
+	useLayoutEffect(() => {
+		// the browser keeps the column's scroll offset while other pages scroll themselves; Today opens at its top
+		if (isToday && contentRef.current) contentRef.current.scrollTop = 0;
+	}, [isToday]);
 	const mainRef = useRef<HTMLElement>(null);
 	const desktopNavigationRef = useRef<HTMLElement>(null);
 	const navigationToggleRef = useRef<HTMLButtonElement>(null);
@@ -174,11 +181,18 @@ export function CollaborationFrame() {
 					/>
 				</div>
 			</aside>
-			<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+			<div
+				ref={contentRef}
+				className={cn(
+					"relative flex min-h-0 min-w-0 flex-1 flex-col",
+					isToday && "overflow-y-auto",
+				)}
+			>
 				<CollaborationHeaderContext.Provider value={headerControls}>
 					<CollaborationHeader
 						roomControlsRef={setHeaderControls}
 						conversationWidth={conversationWidth}
+						isOverPage={isToday}
 					>
 						<Sheet
 							open={isNavOpen}
@@ -253,7 +267,11 @@ export function CollaborationFrame() {
 						ref={mainRef}
 						id={mainId}
 						tabIndex={-1}
-						className="flex min-h-0 min-w-0 flex-1 flex-col outline-none"
+						className={cn(
+							"flex min-w-0 flex-col outline-none",
+							// as tall as its content when the column around it scrolls
+							isToday ? "flex-none" : "min-h-0 flex-1",
+						)}
 					>
 						<CollaborationHeaderLayoutContext.Provider
 							value={setConversationColumn}

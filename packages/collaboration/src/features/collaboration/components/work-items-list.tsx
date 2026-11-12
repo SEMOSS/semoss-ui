@@ -30,18 +30,16 @@ import { WorkBuildMenu } from "./work-build-menu";
 
 type Row = Record<string, unknown>;
 
-export interface Step {
+interface Step {
 	id: string;
 	text: string;
 	status: string;
 	kind?: string;
 	assigneeId?: string;
 	assigneeName?: string;
-	/** When the step was made: how long an ask has been waiting. */
-	createdAt?: string;
 }
 
-export interface Item {
+interface Item {
 	id: string;
 	title: string;
 	proposed: boolean;
@@ -51,8 +49,6 @@ export interface Item {
 	roomId?: string;
 	due?: string;
 	openSteps: Step[];
-	/** Every step on the item, done ones too; absent from older servers. */
-	stepCount?: number;
 }
 
 const str = (value: unknown): string =>
@@ -68,7 +64,6 @@ function toStep(row: Row): Step {
 		kind: str(row.kind) || undefined,
 		assigneeId: str(row.assigneeId) || undefined,
 		assigneeName: str(row.assigneeName) || undefined,
-		createdAt: str(row.createdAt) || undefined,
 	};
 }
 
@@ -85,8 +80,6 @@ function toItem(row: Row): Item {
 		roomId: str(row.roomId) || undefined,
 		due: str(row.due) || undefined,
 		openSteps: list(row.openSteps).map(toStep),
-		stepCount:
-			typeof row.stepCount === "number" ? row.stepCount : undefined,
 	};
 }
 
@@ -108,7 +101,7 @@ const errorText = (cause: unknown) =>
 	cause instanceof Error ? cause.message : String(cause);
 
 /** The same topic chip Topics and threads use; a plain one if the topic is not loaded. */
-export function ItemTopicChip({ item }: { item: Item }) {
+function ItemTopicChip({ item }: { item: Item }) {
 	const { state } = useCollaborationSession();
 	const topic = state.topics.find((t) => t.id === item.topicId);
 	if (topic) return <SharedTopicChip topic={topic} />;

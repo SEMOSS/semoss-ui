@@ -46,12 +46,15 @@ Work, Brain, and Settings share the Brief's page canvas, reading width, heading
 scale, responsive spacing, and quiet card treatment. Directories retain their
 grouped rows and filters; contextual panels become drawers on narrower screens.
 
-The global landing page places one compact composer beneath its greeting and
-status links. At desktop widths, Your day and Handled sit on the left, Needs you
-in the center, and Brain on the right. The mobile reading and keyboard order is
-composer, Needs you, Brain, Your day, and Handled. Saved sessions remain available
-from the sidebar. Brain includes pending decisions, draft notes, and directory
-links. The overview has no topic filter or separate chat mode.
+The global landing page (Today) opens with its greeting over a decorative hero
+photo, shown only on wide windows in the light theme, then one compact composer
+and three starter questions. Three cards follow: Your work, Your day, and Recent
+activity, which lists the newest mail, chat, and meeting conversations. They share
+a row on wide windows and stack in that order on narrow ones, which is also the
+reading and keyboard order. On desktop the page scrolls together with the shell
+header so the photo runs behind the search box; on smaller screens the header
+stays pinned. Saved sessions remain available from the sidebar. The overview has
+no topic filter or separate chat mode.
 
 New conversations start from the landing composer. Settings and Files open an
 inline workbench beneath that composer without navigating away or replacing the

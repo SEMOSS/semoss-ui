@@ -309,6 +309,23 @@ describe("CollaborationFrame", () => {
 		).toBe(header);
 	});
 
+	it("scrolls Today together with its header, from the top, and leaves other pages to scroll themselves", async () => {
+		const { router } = renderFrame();
+		const column = screen
+			.getByRole("button", { name: "Search" })
+			.closest("header")?.parentElement;
+		if (!column) throw new Error("Missing the content column");
+		expect(column).toHaveClass("overflow-y-auto");
+		column.scrollTop = 200;
+		expect(column.scrollTop).toBe(200);
+		await act(() => router.navigate("/brain"));
+		expect(column).not.toHaveClass("overflow-y-auto");
+		// the browser hands the old offset back with the scroller; Today must not reopen part-way down
+		await act(() => router.navigate("/"));
+		expect(column).toHaveClass("overflow-y-auto");
+		expect(column.scrollTop).toBe(0);
+	});
+
 	it("keeps one header and search palette mounted across page and room navigation", async () => {
 		const { router, user } = renderFrame();
 		const header = screen

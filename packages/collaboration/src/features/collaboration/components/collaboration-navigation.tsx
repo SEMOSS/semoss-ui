@@ -1,4 +1,4 @@
-import { CalendarClock, Inbox, ListChecks } from "lucide-react";
+import { CalendarClock, House, Layers } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { cn, Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 import { ChatHistoryList } from "@/features/dashboard/chat-history-list";
@@ -42,7 +42,7 @@ export function CollaborationNavigation({
 		{
 			to: "/",
 			label: lexicon.today,
-			icon: Inbox,
+			icon: House,
 			// only what is due today, so the badge stays meaningful
 			count: selectToday(state).due,
 			isActive: pathname === "/",
@@ -50,7 +50,7 @@ export function CollaborationNavigation({
 		{
 			to: "/work",
 			label: "Work",
-			icon: ListChecks,
+			icon: Layers,
 			count: 0,
 			isActive: pathname.startsWith("/work"),
 		},
