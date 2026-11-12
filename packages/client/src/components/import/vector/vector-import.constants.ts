@@ -16,6 +16,8 @@ export const VECTOR_CONNECTIONS = {
 			"Configure your vector store provider, index structure, dimensionality, and similarity metric to optimize retrieval accuracy and performance.",
 		Credentials:
 			"Provide your vector database API key or connection details to securely enable indexing and search operations.",
+		"Searchable Fields":
+			"Choose which text fields support keyword search and full-text filters. Limiting searchable fields can reduce index size and improve indexing performance. These settings apply when creating a new Azure AI Search index.",
 	},
 	Connections: [
 		{
@@ -116,6 +118,57 @@ export const VECTOR_CONNECTIONS = {
 					disabled: false,
 					required: true,
 					category: "Credentials",
+				},
+				{
+					key: "SEARCHABLE_FIELDS",
+					label: "Fields",
+					value: [
+						"id",
+						"Source",
+						"Modality",
+						"Divider",
+						"Part",
+						"Content",
+						"embeddings",
+					],
+					type: "checkbox-group",
+					options: [
+						{
+							display: "ID",
+							value: "id",
+						},
+						{
+							display: "Source",
+							value: "Source",
+							disabled: true,
+						},
+						{
+							display: "Modality",
+							value: "Modality",
+						},
+						{
+							display: "Divider",
+							value: "Divider",
+						},
+						{
+							display: "Part",
+							value: "Part",
+						},
+						{
+							display: "Content",
+							value: "Content",
+						},
+						{
+							display: "Embeddings",
+							value: "embeddings",
+							disabled: true,
+						},
+					],
+					disabled: false,
+					required: true,
+					helperText:
+						"Source and Embeddings are required. Source supports document deletion. Content is selected by default; deselecting it excludes document text from keyword matching, including in hybrid search, and full-text filters. Stored content and vector search remain available.",
+					category: "Searchable Fields",
 				},
 				{
 					key: "INDEX_CLASSES",
