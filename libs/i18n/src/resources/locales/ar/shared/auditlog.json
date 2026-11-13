@@ -68,7 +68,8 @@
 		},
 		"guardrailActions": {
 			"MASK": "مُقنّع",
-			"BLOCK": "محظور"
+			"BLOCK": "محظور",
+			"TIMEOUT": "انتهت المهلة"
 		},
 		"groupRequest": "الطلب",
 		"groupSpan": "النطاق",
