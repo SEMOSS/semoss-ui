@@ -13,3 +13,16 @@ export const canChooseAgentMode = (
 ): boolean =>
 	Boolean(featureFlags?.enableAgentHarness) &&
 	!featureFlags?.modeFollowsAgent;
+
+/**
+ * Whether a new chat can run in agent mode: users pick it with the Chat and
+ * Agent choice (`enableAgentHarness`), or the agent picker decides it
+ * (`modeFollowsAgent`).
+ *
+ * @param featureFlags - The playground theme's feature flags.
+ * @returns True when agent mode is offered.
+ */
+export const offersAgentMode = (
+	featureFlags: ThemeMap["playground"]["featureFlags"],
+): boolean =>
+	Boolean(featureFlags?.enableAgentHarness || featureFlags?.modeFollowsAgent);

@@ -79,7 +79,7 @@ export const CreateSkillPage = () => {
 					project_id: string;
 				}[]
 			>(
-				`CreateSkill(skillContent=[${JSON.stringify(form.skillContent)}], name=[${JSON.stringify(form.name)}], description=[${JSON.stringify(form.agentDescription)}]);`,
+				`CreateSkill(skillContent=[${JSON.stringify(form.skillContent)}], catalogName=[${JSON.stringify(form.name)}], description=[${JSON.stringify(form.agentDescription)}]);`,
 			);
 
 			if (errors.length > 0) throw new Error(errors.join(","));

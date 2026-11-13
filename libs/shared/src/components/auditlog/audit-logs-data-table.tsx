@@ -223,7 +223,8 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 				{event.guardrailAction ? (
 					<Badge
 						variant={
-							event.guardrailAction === "BLOCK"
+							event.guardrailAction === "BLOCK" ||
+							event.guardrailAction === "TIMEOUT"
 								? "destructive"
 								: "secondary"
 						}

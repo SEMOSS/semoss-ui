@@ -112,6 +112,7 @@ export const ENGINE_IMAGES: Record<string, EngineImageEntry[]> = {
 		{ name: "EMBEDDED_OPENAI_MODERATION", icon: "OPEN_AI.svg" },
 		{ name: "EMBEDDED_PERSPECTIVE_API", icon: "BRAIN.png" },
 		{ name: "EMBEDDED_POLICY_COMPLIANCE", icon: "POLICY_COMPLIANCE.svg" },
+		{ name: "EMBEDDED_PROMPT_INJECTION", icon: "HUGGINGFACE_COLOR.svg" },
 		{ name: "EMBEDDED_PROMPTGUARD_META", icon: "META_COLOR.svg" },
 		{ name: "EMBEDDED_REBUFF", icon: "BRAIN.png" },
 		{ name: "EMBEDDED_SQL_QUERY", icon: "SQL_QUERY_POLICY.svg" },

@@ -31,7 +31,7 @@ describe("SQL query guardrail SMSS configuration", () => {
 	it("writes every supported option as an SMSS string", () => {
 		const details = toSqlQueryGuardrailDetails({
 			...SQL_QUERY_GUARDRAIL_DEFAULTS,
-			MODEL_NAME: "Database policy",
+			CATALOG_NAME: "Database policy",
 		});
 
 		expect(Object.keys(details).sort()).toEqual(SQL_QUERY_SMSS_KEYS);
@@ -43,7 +43,7 @@ describe("SQL query guardrail SMSS configuration", () => {
 			SQL_DIALECT: "GENERIC",
 			PARSER_FAILURE_POLICY: "DENY",
 		});
-		expect(details).not.toHaveProperty("MODEL_NAME");
+		expect(details).not.toHaveProperty("CATALOG_NAME");
 		// a policy with no rules is an empty JSON object
 		expect(details.OPERATION_POLICY).toBe("{}");
 	});
@@ -51,7 +51,7 @@ describe("SQL query guardrail SMSS configuration", () => {
 	it("writes each policy's rules as the JSON object the guardrail reads", () => {
 		const details = toSqlQueryGuardrailDetails({
 			...SQL_QUERY_GUARDRAIL_DEFAULTS,
-			MODEL_NAME: "Database policy",
+			CATALOG_NAME: "Database policy",
 			OPERATION_POLICY: [
 				{ key: "SELECT", requirement: "FOLLOW_ENGINE_PERMISSIONS" },
 				{ key: "*", requirement: "DENY" },
@@ -73,7 +73,7 @@ describe("SQL query guardrail SMSS configuration", () => {
 		const details = toSqlQueryGuardrailDetails(
 			{
 				...SQL_QUERY_GUARDRAIL_DEFAULTS,
-				MODEL_NAME: "Database policy",
+				CATALOG_NAME: "Database policy",
 				FUNCTION_POLICY: [
 					{ key: "PG_SLEEP*", requirement: "DENY", builtIn: true },
 					{

@@ -68,7 +68,8 @@
 		},
 		"guardrailActions": {
 			"MASK": "मास्क किया गया",
-			"BLOCK": "अवरुद्ध"
+			"BLOCK": "अवरुद्ध",
+			"TIMEOUT": "समय समाप्त"
 		},
 		"groupRequest": "अनुरोध",
 		"groupSpan": "स्पैन",

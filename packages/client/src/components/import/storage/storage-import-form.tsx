@@ -29,6 +29,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { encodeTextToBase64 } from "@semoss/utility/encoding";
+import { CATALOG_NAME_KEY } from "@/components/import/shared/import-form.constants";
 import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
 import { computeVisibility } from "../shared/import-form.utils";
@@ -123,7 +124,7 @@ export const StorageForm = ({
 	const onFormSubmit = async (rawFormData) => {
 		setLoading(true);
 		const formData = encodeMarkedFields(rawFormData);
-		const pixel = `CreateStorageEngine(storage=["${formData.NAME}"],storageDetails=[${JSON.stringify(formData)}])`;
+		const pixel = `CreateStorageEngine(catalogName=["${formData[CATALOG_NAME_KEY]}"],storageDetails=[${JSON.stringify(formData)}])`;
 
 		runPixel(pixel).then(async (response) => {
 			const pixelOutput = response.pixelReturn[0].output as {

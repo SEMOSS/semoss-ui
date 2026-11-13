@@ -1,11 +1,12 @@
 import AggressiveSelfHarm from "@/assets/img/AGGRESSIVE_SELF_HARM.svg";
 import Detoxify from "@/assets/img/DETOXIFY.svg";
-import Gliner from "@/assets/img/HUGGINGFACE_COLOR.svg";
+import HuggingFace from "@/assets/img/HUGGINGFACE_COLOR.svg";
 import OnTopic from "@/assets/img/ON_TOPIC.svg";
 import PolicyCompliance from "@/assets/img/POLICY_COMPLIANCE.svg";
 import Python from "@/assets/img/PYTHON.svg";
 import SqlQueryPolicy from "@/assets/img/SQL_QUERY_POLICY.svg";
 import TypeSafe from "@/assets/img/TYPESAFE.png";
+import { CATALOG_NAME_KEY } from "@/components/import/shared/import-form.constants";
 export const GUARDRAIL_CONNECTION = {
 	description: {
 		General:
@@ -39,12 +40,12 @@ export const GUARDRAIL_CONNECTION = {
 		{
 			name: "Gliner",
 			disable: false,
-			icon: Gliner,
+			icon: HuggingFace,
 			description:
 				"Leverage Gliner to implement advanced guardrail capabilities, ensuring safe and compliant AI interactions through content filtering and moderation.",
 			fields: [
 				{
-					key: "MODEL_NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -72,6 +73,17 @@ export const GUARDRAIL_CONNECTION = {
 					disabled: false,
 					required: false,
 					category: "General",
+				},
+				{
+					key: "MODEL_NAME",
+					label: "Model Repository",
+					value: "urchade/gliner_multi-v2.1",
+					type: "text",
+					disabled: false,
+					required: true,
+					category: "Settings",
+					helperText:
+						"The Hugging Face repository of the GLiNER model to load, such as urchade/gliner_multi-v2.1.",
 				},
 				{
 					key: "DEFAULT_THRESHOLD",
@@ -102,7 +114,7 @@ export const GUARDRAIL_CONNECTION = {
 				"Utilize Detoxify to enhance your AI systems with robust content moderation capabilities, ensuring safe and responsible interactions by filtering harmful or inappropriate content effectively.",
 			fields: [
 				{
-					key: "MODEL_NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -151,7 +163,7 @@ export const GUARDRAIL_CONNECTION = {
 				"Checks whether a prompt is on-topic by performing a similarity search against a pre-loaded vector database of example on-topic content. Prompts whose best similarity score falls below the configured threshold are rejected.",
 			fields: [
 				{
-					key: "MODEL_NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -240,7 +252,7 @@ export const GUARDRAIL_CONNECTION = {
 				"Detects aggressive, violent, or self-harm content in user prompts by routing the check through a configured LLM.",
 			fields: [
 				{
-					key: "MODEL_NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -307,7 +319,7 @@ export const GUARDRAIL_CONNECTION = {
 					required: true,
 					category: "Settings",
 					helperText:
-						"Choose whether the protected operation is allowed when the judge model is unavailable or errors.",
+						"Choose whether the protected operation is allowed when the judge model is unavailable, errors, or answers with neither SAFE nor UNSAFE.",
 				},
 				{
 					key: "GUARDRAIL_TYPE",
@@ -329,7 +341,7 @@ export const GUARDRAIL_CONNECTION = {
 				"Uses an LLM judge to classify prompts, responses, or function data against a configurable policy.",
 			fields: [
 				{
-					key: "MODEL_NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -406,7 +418,7 @@ export const GUARDRAIL_CONNECTION = {
 					required: true,
 					category: "Settings",
 					helperText:
-						"Block is recommended for sends and other irreversible operations. Allow preserves availability if the judge fails.",
+						"Block is recommended for sends and other irreversible operations. Allow preserves availability if the judge fails or answers with neither SAFE nor UNSAFE.",
 				},
 				{
 					key: "GUARDRAIL_TYPE",
@@ -429,7 +441,7 @@ export const GUARDRAIL_CONNECTION = {
 			notice: "After creating this guardrail engine, upload your Python file and any supporting files from the guardrail Edit page. The function named in 'Guardrail Function Name' must return a dict with 'pass' (boolean), plus optional 'returnPrompt' (string) if masking is supported and optional 'fullDetails' (object).",
 			fields: [
 				{
-					key: "MODEL_NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -515,13 +527,14 @@ export const GUARDRAIL_CONNECTION = {
 			],
 		},
 		{
-			name: "Perspective API",
-			disable: true,
+			name: "Prompt Injection",
+			disable: false,
+			icon: HuggingFace,
 			description:
-				"Detects and scores toxic, abusive, and harassing language in text.",
+				"Run a Hugging Face text-classification model on each prompt and block the labels you mark, such as prompt injection attempts.",
 			fields: [
 				{
-					key: "MODEL_NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -542,252 +555,26 @@ export const GUARDRAIL_CONNECTION = {
 					},
 				},
 				{
-					key: "LABELS",
-					label: "Labels",
-					value: "",
-					type: "tags",
-					disabled: false,
-					required: false,
-					category: "General",
-				},
-				{
-					key: "DEFAULT_THRESHOLD",
-					label: "Default Threshold",
-					value: "",
-					type: "number",
-					disabled: false,
-					required: false,
-					category: "Settings",
-				},
-				{
-					key: "GUARDRAIL_TYPE",
-					label: "Guardrail Type",
-					value: "EMBEDDED_PERSPECTIVE_API",
-					type: "text",
-					disabled: true,
-					hidden: true,
-					required: false,
-					category: "Settings",
-				},
-			],
-		},
-		{
-			name: "OpenAI Moderation",
-			disable: true,
-			description:
-				"Classifies content to identify policy-violating or unsafe text.",
-			fields: [
-				{
 					key: "MODEL_NAME",
-					label: "Catalog Name",
-					value: "",
+					label: "Model Repository",
+					value: "protectai/deberta-v3-base-prompt-injection-v2",
 					type: "text",
 					disabled: false,
 					required: true,
-					category: "General",
-					rules: {
-						pattern: {
-							value: /^[\w\-\s]+$/,
-							message:
-								"Catalog names can only contain alphanumeric characters and dashes.",
-						},
-						custom_rules: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
-							message:
-								"This Catalog name has already been used, please try another.",
-						},
-					},
-				},
-				{
-					key: "CATEGORIES",
-					label: "Categories",
-					value: "",
-					type: "tags",
-					disabled: false,
-					required: false,
-					category: "General",
-				},
-				{
-					key: "DEFAULT_THRESHOLD",
-					label: "Default Threshold",
-					value: "",
-					type: "number",
-					disabled: false,
-					required: false,
 					category: "Settings",
-				},
-				{
-					key: "GUARDRAIL_TYPE",
-					label: "Guardrail Type",
-					value: "EMBEDDED_OPENAI_MODERATION",
-					type: "text",
-					disabled: true,
-					hidden: true,
-					required: false,
-					category: "Settings",
-				},
-			],
-		},
-		{
-			name: "Microsoft Content Moderation",
-			disable: true,
-			description:
-				"Classifies content to identify policy-violating or unsafe text.",
-			fields: [
-				{
-					key: "MODEL_NAME",
-					label: "Catalog Name",
-					value: "",
-					type: "text",
-					disabled: false,
-					required: true,
-					category: "General",
-					rules: {
-						pattern: {
-							value: /^[\w\-\s]+$/,
-							message:
-								"Catalog names can only contain alphanumeric characters and dashes.",
-						},
-						custom_rules: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
-							message:
-								"This Catalog name has already been used, please try another.",
-						},
-					},
-				},
-				{
-					key: "CATEGORIES",
-					label: "Categories",
-					value: "",
-					type: "tags",
-					disabled: false,
-					required: false,
-					category: "General",
-				},
-				{
-					key: "DEFAULT_THRESHOLD",
-					label: "Default Threshold",
-					value: "",
-					type: "number",
-					disabled: false,
-					required: false,
-					category: "Settings",
-				},
-				{
-					key: "GUARDRAIL_TYPE",
-					label: "Guardrail Type",
-					value: "EMBEDDED_MICROSOFT_CONTENT_MODERATION",
-					type: "text",
-					disabled: true,
-					hidden: true,
-					required: false,
-					category: "Settings",
-				},
-			],
-		},
-		{
-			name: "NVIDIA NEMO GUARDRAILS",
-			disable: true,
-			description:
-				"Classifies content to identify policy-violating or unsafe text.",
-			fields: [
-				{
-					key: "MODEL_NAME",
-					label: "Catalog Name",
-					value: "",
-					type: "text",
-					disabled: false,
-					required: true,
-					category: "General",
-					rules: {
-						pattern: {
-							value: /^[\w\-\s]+$/,
-							message:
-								"Catalog names can only contain alphanumeric characters and dashes.",
-						},
-						custom_rules: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
-							message:
-								"This Catalog name has already been used, please try another.",
-						},
-					},
-				},
-				{
-					key: "RULES",
-					label: "Rules",
-					value: "",
-					type: "text",
-					disabled: false,
-					required: false,
-					category: "General",
-				},
-				{
-					key: "ACTION",
-					label: "Action",
-					value: "",
-					type: "text",
-					disabled: false,
-					required: false,
-					category: "General",
-				},
-				{
-					key: "DEFAULT_THRESHOLD",
-					label: "Default Threshold",
-					value: "",
-					type: "number",
-					disabled: false,
-					required: false,
-					category: "Settings",
-				},
-				{
-					key: "GUARDRAIL_TYPE",
-					label: "Guardrail Type",
-					value: "EMBEDDED_NVIDIA_NEMO",
-					type: "text",
-					disabled: true,
-					hidden: true,
-					required: false,
-					category: "Settings",
-				},
-			],
-		},
-		{
-			name: "REBUFF (Prompt Injection)",
-			disable: true,
-			description:
-				"Detects and scores toxic, abusive, and harassing language in text.",
-			fields: [
-				{
-					key: "MODEL_NAME",
-					label: "Catalog Name",
-					value: "",
-					type: "text",
-					disabled: false,
-					required: true,
-					category: "General",
-					rules: {
-						pattern: {
-							value: /^[\w\-\s]+$/,
-							message:
-								"Catalog names can only contain alphanumeric characters and dashes.",
-						},
-						custom_rules: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
-							message:
-								"This Catalog name has already been used, please try another.",
-						},
-					},
-				},
-				{
-					key: "ACTION",
-					label: "Action",
-					value: "",
-					type: "tags",
-					disabled: false,
-					required: false,
-					category: "General",
 					helperText:
-						"Defines what the system should do when this guardrail is triggered (e.g., block, mask, warn, or log).",
+						"The Hugging Face repository of the text-classification model to load, such as protectai/deberta-v3-base-prompt-injection-v2.",
+				},
+				{
+					key: "LABEL_DECISION_MAP",
+					label: "Label Decisions",
+					value: '{"SAFE":"PASS","INJECTION":"BLOCK"}',
+					type: "textarea",
+					disabled: false,
+					required: true,
+					category: "Settings",
+					helperText:
+						'A JSON object that maps each label the model returns to BLOCK or PASS, such as {"SAFE":"PASS","INJECTION":"BLOCK"}. Use the exact labels the model produces.',
 				},
 				{
 					key: "DEFAULT_THRESHOLD",
@@ -797,11 +584,39 @@ export const GUARDRAIL_CONNECTION = {
 					disabled: false,
 					required: false,
 					category: "Settings",
+					helperText:
+						"The score at or above which a label marked BLOCK fails the check. Defaults to 0.7.",
+				},
+				{
+					key: "DEFAULT_DECISION",
+					label: "Unmapped Labels",
+					value: "BLOCK",
+					type: "select",
+					options: [
+						{ value: "BLOCK", display: "Block the call" },
+						{ value: "PASS", display: "Allow the call" },
+					],
+					disabled: false,
+					required: true,
+					category: "Settings",
+					helperText:
+						"Choose what happens when the model returns a label that Label Decisions does not list.",
+				},
+				{
+					key: "DEFAULT_MAX_LENGTH",
+					label: "Max Length",
+					value: "",
+					type: "number",
+					disabled: false,
+					required: false,
+					category: "Settings",
+					helperText:
+						"The most tokens of the prompt the model reads. Defaults to 512.",
 				},
 				{
 					key: "GUARDRAIL_TYPE",
 					label: "Guardrail Type",
-					value: "EMBEDDED_REBUFF",
+					value: "EMBEDDED_PROMPT_INJECTION",
 					type: "text",
 					disabled: true,
 					hidden: true,
@@ -809,109 +624,17 @@ export const GUARDRAIL_CONNECTION = {
 					category: "Settings",
 				},
 			],
-		},
-		{
-			name: "Lakera Guard",
-			disable: true,
-			description:
-				" Provides real-time content moderation to ensure safe and compliant AI interactions.",
-			fields: [
+			advanced: [
 				{
-					key: "MODEL_NAME",
-					label: "Catalog Name",
+					key: "DEVICE",
+					label: "Device",
 					value: "",
 					type: "text",
 					disabled: false,
-					required: true,
-					category: "General",
-					rules: {
-						pattern: {
-							value: /^[\w\-\s]+$/,
-							message:
-								"Catalog names can only contain alphanumeric characters and dashes.",
-						},
-						custom_rules: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
-							message:
-								"This Catalog name has already been used, please try another.",
-						},
-					},
-				},
-				{
-					key: "CATEGORIES",
-					label: "Categories",
-					value: "",
-					type: "tags",
-					disabled: false,
-					required: false,
-					category: "General",
-				},
-				{
-					key: "DEFAULT_THRESHOLD",
-					label: "Default Threshold",
-					value: "",
-					type: "number",
-					disabled: false,
 					required: false,
 					category: "Settings",
-				},
-				{
-					key: "GUARDRAIL_TYPE",
-					label: "Guardrail Type",
-					value: "EMBEDDED_LAKERA_GUARD",
-					type: "text",
-					disabled: true,
-					hidden: true,
-					required: false,
-					category: "Settings",
-				},
-			],
-		},
-		{
-			name: "PromptGuard (META)",
-			disable: true,
-			description:
-				"Classifies content to identify policy-violating or unsafe text.",
-			fields: [
-				{
-					key: "MODEL_NAME",
-					label: "Catalog Name",
-					value: "",
-					type: "text",
-					disabled: false,
-					required: true,
-					category: "General",
-					rules: {
-						pattern: {
-							value: /^[\w\-\s]+$/,
-							message:
-								"Catalog names can only contain alphanumeric characters and dashes.",
-						},
-						custom_rules: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
-							message:
-								"This Catalog name has already been used, please try another.",
-						},
-					},
-				},
-				{
-					key: "DEFAULT_THRESHOLD",
-					label: "Default Threshold",
-					value: "",
-					type: "number",
-					disabled: false,
-					required: false,
-					category: "Settings",
-				},
-				{
-					key: "GUARDRAIL_TYPE",
-					label: "Guardrail Type",
-					value: "EMBEDDED_PROMPTGUARD_META",
-					type: "text",
-					disabled: true,
-					hidden: true,
-					required: false,
-					category: "Settings",
+					helperText:
+						"The device the model runs on, such as cpu or cuda:0. Leave empty to choose automatically.",
 				},
 			],
 		},
