@@ -1,23 +1,14 @@
 {
 	"messages": {
-		"actions": "Message actions",
-		"placeholder": "Type a message...",
-		"sending": "Sending...",
-		"error": "Failed to send message"
-	},
-	"attachments": {
-		"addFile": "Add File",
-		"removeFile": "Remove File"
+		"actions": "Message actions"
 	},
 	"response": {
-		"agent": "Agent",
 		"previousMessage": "Previous Message",
 		"nextMessage": "Next Message",
 		"rewriteMessage": "Rewrite Message",
 		"goodResponse": "Good response",
 		"poorResponse": "Poor response",
 		"copyResponse": "Copy Response",
-		"copyCode": "Copy Code",
 		"copy": "Copy",
 		"saveInRoom": "Save In Room",
 		"savingToRoom": "Saving...",
@@ -27,7 +18,6 @@
 		"feedbackPlaceholder": "Add a comment (optional)",
 		"feedbackCancel": "Cancel",
 		"feedbackSubmit": "Submit",
-		"fastForwardToEnd": "Fast Forward to End",
 		"completeToolsAsk_one": "Please complete the tool to proceed.",
 		"completeToolsAsk_other": "Please complete the tools to proceed.",
 		"emptyResponse": "Empty response."
@@ -35,21 +25,12 @@
 	"input": {
 		"copyMessage": "Copy Message"
 	},
-	"plan": {
-		"heading": "Here is the plan that I have created. Feel free to modify it as needed.",
-		"fixStep": "Fix Step",
-		"edit": "Edit",
-		"delete": "Delete",
-		"addTask": "Add Task",
-		"confirmPlan": "Confirm Plan"
-	},
 	"notifications": {
 		"feedbackSuccess": "Successfully submitted feedback",
 		"rewriteSuccess": "Successfully rewrote message",
 		"copySuccess": "Successfully copied to clipboard",
 		"noCopyContent": "No content to copy",
-		"savedInRoom": "Saved in room as {{filePath}}",
-		"planStepRemoved": "Successfully removed step {{stepNumber}} from plan"
+		"savedInRoom": "Saved in room as {{filePath}}"
 	},
 	"gracefulErrors": {
 		"errorDefault": "Unable to process request. Please check your connection, copy your message, and refresh.",

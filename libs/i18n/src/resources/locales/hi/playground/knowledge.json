@@ -54,11 +54,6 @@
 		"embedSuccess": "दस्तावेज़ सफलतापूर्वक एम्बेड किए गए",
 		"embedFailed": "दस्तावेज़ एम्बेड करने में विफल"
 	},
-	"breadcrumbs": {
-		"home": "होम",
-		"knowledgeStores": "ज्ञान स्टोर",
-		"loading": "लोड हो रहा है"
-	},
 	"detail": {
 		"knowledge": "ज्ञान",
 		"embedDocuments": "दस्तावेज़ एम्बेड करें",

@@ -1,6 +1,4 @@
 {
-	"welcomeTitle": "مرحباً بك في مدير الوكلاء",
-	"welcomeDescription": "استكشف وكلاء الذكاء الاصطناعي المخصصين المصممين لتلبية احتياجاتك الفريدة والتكامل بسلاسة في عملياتك.",
 	"form": {
 		"nameLabel": "الاسم",
 		"descriptionLabel": "الوصف",
@@ -24,19 +22,6 @@
 		"deleteConfirmDescription": "هذا الإجراء لا رجعة فيه. سيؤدي ذلك إلى حذف مساحة العمل {{name}} نهائياً.",
 		"createdAgo": "تم الإنشاء {{when}}"
 	},
-	"sharing": {
-		"title": "إضافة أعضاء",
-		"description": "دعوة الأعضاء للوصول والتعاون على هذا الوكيل.",
-		"searchPlaceholder": "البحث عن مستخدم...",
-		"searchUsers": "البحث عن مستخدمين...",
-		"noUsersFound": "لم يتم العثور على مستخدمين",
-		"hasAccess": "لديه وصول",
-		"pendingInvite": "دعوة معلقة",
-		"membersToAdd": "الأعضاء المراد إضافتهم",
-		"emptyState": "إضافة مستخدمين لمشاركة مساحة العمل هذه",
-		"buttonAdding": "جارٍ الإضافة...",
-		"buttonAdd": "إضافة أعضاء"
-	},
 	"members": {
 		"autoSaveHint": "تُحفظ إضافات الأعضاء وإزالاتهم وتغييرات الأذونات تلقائيًا.",
 		"heading": "من لديه الوصول",
@@ -53,18 +38,10 @@
 		"changePermissionDescription": "أنت على وشك تغيير إذنك من {{oldPermission}} إلى {{newPermission}}. سيؤثر ذلك على الإجراءات التي يمكنك تنفيذها في هذا الوكيل.",
 		"changePermissionButton": "تغيير الإذن"
 	},
-	"mcp": {
-		"noToolboxes": "لم يتم العثور على صناديق أدوات",
-		"noKnowledge": "لم يتم العثور على مكتبات معرفة",
-		"failedToLoad": "فشل تحميل موارد مساحة العمل",
-		"requestedSuccess": "تم طلب الوصول إلى {{name}}",
-		"requestedFailed": "فشل طلب الوصول"
-	},
 	"chat": {
 		"noChats": "لم يتم العثور على دردشات",
 		"error": "خطأ:",
 		"selectRoom": "اختر غرفة",
-		"newChat": "دردشة جديدة",
 		"delete": "حذف",
 		"cancel": "إلغاء",
 		"deleteSuccess": "تم حذف الدردشة",
@@ -85,39 +62,14 @@
 		"agentIllustration": "توضيح الوكيل"
 	},
 	"messages": {
-		"noResults": "لم يتم العثور على نتائج",
-		"userAlreadyAdded": "تمت إضافة المستخدم بالفعل",
-		"fetchUsersFailed": "فشل جلب المستخدمين",
-		"addAtLeastOne": "الرجاء إضافة مستخدم واحد على الأقل",
-		"addMembersSuccess": "تمت إضافة {{count}} عضو بنجاح",
-		"addMembersSuccess_plural": "تمت إضافة {{count}} أعضاء بنجاح",
-		"addMembersFailed": "فشل إضافة الأعضاء",
-		"permissionUpdated": "تم تحديث الإذن بنجاح",
-		"permissionUpdateFailed": "فشل تحديث الإذن",
-		"userRemoved": "تمت إزالة المستخدم بنجاح",
-		"userRemoveFailed": "فشل إزالة المستخدم",
-		"fetchPermissionsFailed": "فشل جلب أذونات المستخدم"
-	},
-	"breadcrumbs": {
-		"home": "الرئيسية",
-		"agent": "الوكيل",
-		"loading": "جارٍ التحميل",
-		"edit": "تعديل",
-		"new": "جديد",
-		"room": "الغرفة"
+		"noResults": "لم يتم العثور على نتائج"
 	},
 	"detail": {
 		"tabs": {
-			"myChats": "محادثاتي",
-			"knowledge": "المعرفة",
-			"toolbox": "صناديق الأدوات",
-			"prompts": "الموجهات",
-			"members": "الأعضاء",
-			"skills": "المهارات"
+			"members": "الأعضاء"
 		},
 		"about": {
-			"title": "نبذة",
-			"noInstructions": "لا توجد تعليمات مكوَّنة."
+			"title": "نبذة"
 		},
 		"recentChats": {
 			"title": "متابعة دردشة سابقة"
@@ -137,24 +89,7 @@
 		"subtitle": "إنشاء وكيل جديد للبدء"
 	},
 	"prompts": {
-		"noPrompts": "لم يتم العثور على موجهات",
 		"searchPlaceholder": "البحث في الموجهات..."
-	},
-	"instructions": {
-		"expand": "توسيع",
-		"viewTitle": "التعليمات",
-		"viewDescription": "موجه النظام الذي يوجِّه سلوك هذا الوكيل.",
-		"editTitle": "تعديل التعليمات",
-		"editDescription": "تحديث موجه النظام الذي يوجِّه سلوك هذا الوكيل.",
-		"charCount_zero": "{{count, number}} حرف",
-		"charCount_one": "{{count, number}} حرف",
-		"charCount_two": "{{count, number}} حرفان",
-		"charCount_few": "{{count, number}} أحرف",
-		"charCount_many": "{{count, number}} حرفًا",
-		"charCount_other": "{{count, number}} حرف"
-	},
-	"skills": {
-		"noSkills": "لم تتم إضافة أي مهارات"
 	},
 	"catalog": {
 		"title": "وكلائي",

@@ -2,13 +2,11 @@
 	"embedDocuments": {
 		"title": "मौजूदा भंडार में दस्तावेज़ एम्बेड करें",
 		"description": "एक ज्ञान भंडार चुनें और एम्बेड करने के लिए दस्तावेज़ अपलोड करें।",
-		"knowledgeSource": "ज्ञान भंडार",
 		"documents": "दस्तावेज़",
 		"selectFiles": "फ़ाइलें चुनने के लिए क्लिक करें या ड्रैग और ड्रॉप करें",
 		"embedButton": "दस्तावेज़ एम्बेड करें",
 		"embedding": "एम्बेड किया जा रहा है...",
-		"removeFile": "फ़ाइल हटाएं",
-		"selectPlaceholder": "एक ज्ञान भंडार चुनें"
+		"removeFile": "फ़ाइल हटाएं"
 	},
 	"selector": {
 		"search": "खोजें",
@@ -37,19 +35,9 @@
 		"collapseField": "फ़ील्ड संकुचित करें",
 		"expandField": "फ़ील्ड विस्तार करें"
 	},
-	"messages": {
-		"selectKnowledgeSource": "कृपया एक ज्ञान भंडार चुनें",
-		"selectDocument": "कृपया कम से कम एक दस्तावेज़ चुनें",
-		"embedSuccess": "दस्तावेज़ सफलतापूर्वक एम्बेड किए गए",
-		"embedFailed": "दस्तावेज़ एम्बेड करने में विफल",
-		"loadFailed": "ज्ञान भंडार लोड करने में विफल।",
-		"noSources": "कोई ज्ञान भंडार नहीं मिला।"
-	},
 	"buttons": {
 		"cancel": "रद्द करें",
-		"embed": "एम्बेड करें",
-		"save": "सहेजें",
-		"close": "बंद करें"
+		"save": "सहेजें"
 	},
 	"permission": {
 		"owner": "मालिक",

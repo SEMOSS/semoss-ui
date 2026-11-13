@@ -19,20 +19,12 @@
 	},
 	"tabs": {
 		"output": "Sortie",
-		"inputs": "Entrées",
 		"description": "Description"
 	},
 	"group": {
 		"labelClosed": "{{toolName}} + {{count}} de plus",
-		"labelOpen": "Outils exécutés ({{count}})",
-		"labelStreaming_one": "Chargement de {{count}} outil…",
-		"labelStreaming_other": "Chargement de {{count}} outils…",
-		"labelPartial_one": "{{count}} outil terminé, {{loadingCount}} en chargement…",
-		"labelPartial_other": "{{count}} outils terminés, {{loadingCount}} en chargement…",
 		"summaryCompleted": "{{count}} terminé",
-		"summaryLoading": "{{count}} en chargement",
-		"summaryError": "{{count}} échoué",
-		"summaryCancelled": "{{count}} annulé"
+		"summaryError": "{{count}} échoué"
 	},
 	"form": {
 		"result": "Résultat",

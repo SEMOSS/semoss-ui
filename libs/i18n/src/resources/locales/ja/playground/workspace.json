@@ -1,6 +1,4 @@
 {
-	"welcomeTitle": "エージェントマネージャーへようこそ",
-	"welcomeDescription": "お客様固有のニーズに合わせて設計され、プロセスにシームレスに統合されるカスタムAIエージェントをご覧ください。",
 	"form": {
 		"nameLabel": "名前",
 		"descriptionLabel": "説明",
@@ -24,19 +22,6 @@
 		"deleteConfirmDescription": "この操作は元に戻せません。{{name}}ワークスペースが完全に削除されます。",
 		"createdAgo": "作成: {{when}}"
 	},
-	"sharing": {
-		"title": "メンバーを追加",
-		"description": "このエージェントにアクセスして共同作業するメンバーを招待します。",
-		"searchPlaceholder": "ユーザーを検索...",
-		"searchUsers": "ユーザーを検索...",
-		"noUsersFound": "ユーザーが見つかりません",
-		"hasAccess": "アクセス権あり",
-		"pendingInvite": "招待保留中",
-		"membersToAdd": "追加するメンバー",
-		"emptyState": "このワークスペースを共有するユーザーを追加",
-		"buttonAdding": "追加中...",
-		"buttonAdd": "メンバーを追加"
-	},
 	"members": {
 		"autoSaveHint": "メンバーの追加・削除、権限の変更は自動的に保存されます。",
 		"heading": "アクセス権を持つユーザー",
@@ -53,18 +38,10 @@
 		"changePermissionDescription": "自分の権限を{{oldPermission}}から{{newPermission}}に変更しようとしています。これはこのエージェントで実行できるアクションに影響します。",
 		"changePermissionButton": "権限を変更"
 	},
-	"mcp": {
-		"noToolboxes": "ツールボックスが見つかりません",
-		"noKnowledge": "ナレッジライブラリが見つかりません",
-		"failedToLoad": "ワークスペースリソースの読み込みに失敗しました",
-		"requestedSuccess": "{{name}}へのアクセスをリクエストしました",
-		"requestedFailed": "アクセスのリクエストに失敗しました"
-	},
 	"chat": {
 		"noChats": "チャットが見つかりません",
 		"error": "エラー:",
 		"selectRoom": "ルームを選択",
-		"newChat": "新しいチャット",
 		"delete": "削除",
 		"cancel": "キャンセル",
 		"deleteSuccess": "チャットを削除しました",
@@ -85,39 +62,14 @@
 		"agentIllustration": "エージェントのイラスト"
 	},
 	"messages": {
-		"noResults": "結果が見つかりません",
-		"userAlreadyAdded": "ユーザーは既に追加されています",
-		"fetchUsersFailed": "ユーザーの取得に失敗しました",
-		"addAtLeastOne": "少なくとも1人のユーザーを追加してください",
-		"addMembersSuccess": "{{count}}人のメンバーを正常に追加しました",
-		"addMembersSuccess_plural": "{{count}}人のメンバーを正常に追加しました",
-		"addMembersFailed": "メンバーの追加に失敗しました",
-		"permissionUpdated": "権限を正常に更新しました",
-		"permissionUpdateFailed": "権限の更新に失敗しました",
-		"userRemoved": "ユーザーを正常に削除しました",
-		"userRemoveFailed": "ユーザーの削除に失敗しました",
-		"fetchPermissionsFailed": "ユーザー権限の取得に失敗しました"
-	},
-	"breadcrumbs": {
-		"home": "ホーム",
-		"agent": "エージェント",
-		"loading": "読み込み中",
-		"edit": "編集",
-		"new": "新規",
-		"room": "ルーム"
+		"noResults": "結果が見つかりません"
 	},
 	"detail": {
 		"tabs": {
-			"myChats": "マイチャット",
-			"knowledge": "ナレッジ",
-			"toolbox": "ツールボックス",
-			"prompts": "プロンプト",
-			"members": "メンバー",
-			"skills": "スキル"
+			"members": "メンバー"
 		},
 		"about": {
-			"title": "概要",
-			"noInstructions": "指示は設定されていません。"
+			"title": "概要"
 		},
 		"recentChats": {
 			"title": "前のチャットを続ける"
@@ -137,19 +89,7 @@
 		"subtitle": "新しいエージェントを作成して始めましょう"
 	},
 	"prompts": {
-		"noPrompts": "プロンプトが見つかりません",
 		"searchPlaceholder": "プロンプトを検索..."
-	},
-	"instructions": {
-		"expand": "展開",
-		"viewTitle": "指示",
-		"viewDescription": "このエージェントの動作を導くシステムプロンプト。",
-		"editTitle": "指示を編集",
-		"editDescription": "このエージェントの動作を導くシステムプロンプトを更新します。",
-		"charCount_other": "{{count, number}} 文字"
-	},
-	"skills": {
-		"noSkills": "スキルが追加されていません"
 	},
 	"catalog": {
 		"title": "マイ エージェント",

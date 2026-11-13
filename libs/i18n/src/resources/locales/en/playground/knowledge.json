@@ -54,11 +54,6 @@
 		"embedSuccess": "Documents embedded successfully",
 		"embedFailed": "Failed to embed documents"
 	},
-	"breadcrumbs": {
-		"home": "Home",
-		"knowledgeStores": "Knowledge Stores",
-		"loading": "Loading"
-	},
 	"detail": {
 		"knowledge": "Knowledge",
 		"embedDocuments": "Embed documents",

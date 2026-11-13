@@ -2,13 +2,11 @@
 	"embedDocuments": {
 		"title": "Insertar documentos en almacén existente",
 		"description": "Selecciona un almacén de conocimiento y sube documentos para insertar.",
-		"knowledgeSource": "Almacén de conocimiento",
 		"documents": "Documentos",
 		"selectFiles": "Haz clic para seleccionar archivos o arrastra y suelta",
 		"embedButton": "Insertar documentos",
 		"embedding": "Insertando...",
-		"removeFile": "Eliminar archivo",
-		"selectPlaceholder": "Selecciona un almacén de conocimiento"
+		"removeFile": "Eliminar archivo"
 	},
 	"selector": {
 		"search": "Buscar",
@@ -37,19 +35,9 @@
 		"collapseField": "Colapsar campo",
 		"expandField": "Expandir campo"
 	},
-	"messages": {
-		"selectKnowledgeSource": "Por favor, selecciona un almacén de conocimiento",
-		"selectDocument": "Por favor, selecciona al menos un documento",
-		"embedSuccess": "Documentos insertados con éxito",
-		"embedFailed": "Error al insertar documentos",
-		"loadFailed": "Error al cargar almacenes de conocimiento.",
-		"noSources": "No se encontraron almacenes de conocimiento."
-	},
 	"buttons": {
 		"cancel": "Cancelar",
-		"embed": "Insertar",
-		"save": "Guardar",
-		"close": "Cerrar"
+		"save": "Guardar"
 	},
 	"permission": {
 		"owner": "Propietario",

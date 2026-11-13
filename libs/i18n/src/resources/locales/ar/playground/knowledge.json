@@ -54,11 +54,6 @@
 		"embedSuccess": "تم تضمين المستندات بنجاح",
 		"embedFailed": "فشل تضمين المستندات"
 	},
-	"breadcrumbs": {
-		"home": "الرئيسية",
-		"knowledgeStores": "مخازن المعرفة",
-		"loading": "جارٍ التحميل"
-	},
 	"detail": {
 		"knowledge": "المعرفة",
 		"embedDocuments": "تضمين المستندات",

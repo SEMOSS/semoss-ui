@@ -2,13 +2,11 @@
 	"embedDocuments": {
 		"title": "Embed Documents into Existing Store",
 		"description": "Select a knowledge store and upload documents to embed.",
-		"knowledgeSource": "Knowledge Store",
 		"documents": "Documents",
 		"selectFiles": "Click to select files or drag and drop",
 		"embedButton": "Embed Documents",
 		"embedding": "Embedding...",
-		"removeFile": "Remove file",
-		"selectPlaceholder": "Select a knowledge store"
+		"removeFile": "Remove file"
 	},
 	"selector": {
 		"search": "Search",
@@ -37,19 +35,9 @@
 		"collapseField": "Collapse field",
 		"expandField": "Expand field"
 	},
-	"messages": {
-		"selectKnowledgeSource": "Please select a knowledge store",
-		"selectDocument": "Please select at least one document",
-		"embedSuccess": "Documents embedded successfully",
-		"embedFailed": "Failed to embed documents",
-		"loadFailed": "Failed to load knowledge stores.",
-		"noSources": "No knowledge stores found."
-	},
 	"buttons": {
 		"cancel": "Cancel",
-		"embed": "Embed",
-		"save": "Save",
-		"close": "Close"
+		"save": "Save"
 	},
 	"permission": {
 		"owner": "Owner",

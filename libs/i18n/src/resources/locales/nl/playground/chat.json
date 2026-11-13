@@ -1,23 +1,14 @@
 {
 	"messages": {
-		"actions": "Berichtacties",
-		"placeholder": "Typ een bericht...",
-		"sending": "Bezig met verzenden...",
-		"error": "Verzenden van bericht mislukt"
-	},
-	"attachments": {
-		"addFile": "Bestand toevoegen",
-		"removeFile": "Bestand verwijderen"
+		"actions": "Berichtacties"
 	},
 	"response": {
-		"agent": "Agent",
 		"previousMessage": "Vorig bericht",
 		"nextMessage": "Volgend bericht",
 		"rewriteMessage": "Bericht herschrijven",
 		"goodResponse": "Goed antwoord",
 		"poorResponse": "Slecht antwoord",
 		"copyResponse": "Antwoord kopiëren",
-		"copyCode": "Code kopiëren",
 		"copy": "Kopiëren",
 		"saveInRoom": "Opslaan in kamer",
 		"savingToRoom": "Bezig met opslaan...",
@@ -27,7 +18,6 @@
 		"feedbackPlaceholder": "Voeg een opmerking toe (optioneel)",
 		"feedbackCancel": "Annuleren",
 		"feedbackSubmit": "Verzenden",
-		"fastForwardToEnd": "Snel doorspoelen naar het einde",
 		"completeToolsAsk_one": "Voltooi de tool om door te gaan.",
 		"completeToolsAsk_other": "Voltooi de tools om door te gaan.",
 		"emptyResponse": "Leeg antwoord."
@@ -35,21 +25,12 @@
 	"input": {
 		"copyMessage": "Bericht kopiëren"
 	},
-	"plan": {
-		"heading": "Dit is het plan dat ik heb gemaakt. Pas het gerust naar wens aan.",
-		"fixStep": "Stap herstellen",
-		"edit": "Bewerken",
-		"delete": "Verwijderen",
-		"addTask": "Taak toevoegen",
-		"confirmPlan": "Plan bevestigen"
-	},
 	"notifications": {
 		"feedbackSuccess": "Feedback succesvol verzonden",
 		"rewriteSuccess": "Bericht succesvol herschreven",
 		"copySuccess": "Succesvol gekopieerd naar klembord",
 		"noCopyContent": "Geen inhoud om te kopiëren",
-		"savedInRoom": "Opgeslagen in kamer als {{filePath}}",
-		"planStepRemoved": "Stap {{stepNumber}} succesvol uit plan verwijderd"
+		"savedInRoom": "Opgeslagen in kamer als {{filePath}}"
 	},
 	"gracefulErrors": {
 		"errorDefault": "Kan verzoek niet verwerken. Controleer uw verbinding, kopieer uw bericht en vernieuw de pagina.",

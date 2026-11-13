@@ -67,22 +67,17 @@
 		"thinking": "جارٍ التفكير...",
 		"menuPrompt": "كيف يمكنني مساعدتك اليوم؟",
 		"addToChat": "أضف إلى دردشتك",
-		"recordLabel": "تسجيل النموذج",
 		"stopRecording": "إيقاف التسجيل",
 		"record": "تسجيل",
 		"askLabel": "اسأل الذكاء الاصطناعي",
-		"thinkingTooltip": "جارٍ التفكير",
 		"enterQuestion": "الرجاء إدخال سؤال",
 		"completeTool": "يرجى إكمال الأداة (الأدوات) للمتابعة",
 		"ask": "اسأل",
-		"errorProcessing": "خطأ في معالجة الدردشة",
 		"stopLabel": "إيقاف الرد",
 		"stopTooltip": "إيقاف",
-		"stoppingTooltip": "جارٍ الإيقاف",
 		"recordUnavailable": "الإملاء غير متاح في هذا المتصفح",
 		"historyHint": "الرسالة السابقة {{index}} من {{total}} · ↑/↓ للتصفح · Esc لاستعادة المسودة",
-		"draftRestored": "تمت استعادة المسودة",
-		"removeFile": "إزالة {{name}}"
+		"draftRestored": "تمت استعادة المسودة"
 	},
 	"content": {
 		"scrollToTop": "انتقل إلى الأعلى",
@@ -108,8 +103,7 @@
 	},
 	"menuWorkspace": {
 		"selectAgent": "اختر وكيل",
-		"searchPlaceholder": "البحث عن وكلاء",
-		"notFound": "غير موجود"
+		"searchPlaceholder": "البحث عن وكلاء"
 	},
 	"menuUpload": {
 		"attachDocument": "إرفاق ملفات"
@@ -131,18 +125,12 @@
 		"totalUsedTitle": "إجمالي المحادثة:",
 		"totalUsedValue": "{{total}} رمز"
 	},
-	"menuMcp": {
-		"searchPlaceholder": "البحث في المعرفة وصناديق الأدوات",
-		"noResults": "لم يتم العثور على عناصر مطابقة",
-		"noItemsAvailable": "لا توجد معرفة أو صناديق أدوات متاحة"
-	},
 	"studio": {
 		"views": "طرق عرض المحادثة",
 		"chat": "المحادثة",
 		"workspace": "مساحة العمل",
 		"toolsLocked": "لا يمكن تغيير الأدوات أثناء إنشاء الرد.",
 		"toolsHint": "تُطبّق اختياراتك على رسالتك التالية.",
-		"moreActions": "إجراءات إضافية",
 		"prompts": "المطالبات",
 		"removeFile": "إزالة {{name}}",
 		"errorTitle": "حدث خطأ",
@@ -186,8 +174,7 @@
 	},
 	"header": {
 		"untitled": "غرفة بلا عنوان",
-		"renameLabel": "اسم الغرفة",
-		"roomSection": "الغرفة"
+		"renameLabel": "اسم الغرفة"
 	},
 	"slash": {
 		"empty": "لم يتم العثور على أوامر",

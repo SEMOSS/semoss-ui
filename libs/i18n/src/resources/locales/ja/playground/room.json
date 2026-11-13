@@ -67,22 +67,17 @@
 		"thinking": "考え中...",
 		"menuPrompt": "今日はどのようにお手伝いできますか？",
 		"addToChat": "チャットに追加",
-		"recordLabel": "モデルを録音",
 		"stopRecording": "録音を停止",
 		"record": "録音",
 		"askLabel": "AIに質問",
-		"thinkingTooltip": "考え中",
 		"enterQuestion": "質問を入力してください",
 		"completeTool": "続行するにはツールを完了してください",
 		"ask": "質問",
-		"errorProcessing": "チャットの処理中にエラーが発生しました",
 		"stopLabel": "応答を停止",
 		"stopTooltip": "停止",
-		"stoppingTooltip": "停止中",
 		"recordUnavailable": "このブラウザーでは音声入力を利用できません",
 		"historyHint": "過去のプロンプト {{index}} / {{total}} · ↑/↓で移動 · Escで下書きを復元",
-		"draftRestored": "下書きを復元しました",
-		"removeFile": "{{name}} を削除"
+		"draftRestored": "下書きを復元しました"
 	},
 	"content": {
 		"scrollToTop": "一番上にスクロール",
@@ -108,8 +103,7 @@
 	},
 	"menuWorkspace": {
 		"selectAgent": "エージェントを選択",
-		"searchPlaceholder": "エージェントを検索",
-		"notFound": "見つかりません"
+		"searchPlaceholder": "エージェントを検索"
 	},
 	"menuUpload": {
 		"attachDocument": "ファイルを添付"
@@ -131,18 +125,12 @@
 		"totalUsedTitle": "チャット合計:",
 		"totalUsedValue": "{{total}} トークン"
 	},
-	"menuMcp": {
-		"searchPlaceholder": "ナレッジとツールボックスを検索",
-		"noResults": "一致する項目が見つかりません",
-		"noItemsAvailable": "使用可能なナレッジまたはツールボックスはありません"
-	},
 	"studio": {
 		"views": "会話の表示",
 		"chat": "チャット",
 		"workspace": "ワークスペース",
 		"toolsLocked": "応答の生成中はツールを変更できません。",
 		"toolsHint": "選択内容は次のメッセージに適用されます。",
-		"moreActions": "その他の操作",
 		"prompts": "プロンプト",
 		"removeFile": "{{name}} を削除",
 		"errorTitle": "問題が発生しました",
@@ -186,8 +174,7 @@
 	},
 	"header": {
 		"untitled": "無題のルーム",
-		"renameLabel": "ルーム名",
-		"roomSection": "ルーム"
+		"renameLabel": "ルーム名"
 	},
 	"slash": {
 		"empty": "コマンドが見つかりません",

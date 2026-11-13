@@ -67,22 +67,17 @@
 		"thinking": "सोच रहा है...",
 		"menuPrompt": "मैं आज आपकी कैसे मदद कर सकता हूं?",
 		"addToChat": "अपनी चैट में जोड़ें",
-		"recordLabel": "मॉडल रिकॉर्ड करें",
 		"stopRecording": "रिकॉर्डिंग बंद करें",
 		"record": "रिकॉर्ड करें",
 		"askLabel": "AI से पूछें",
-		"thinkingTooltip": "सोच रहा है",
 		"enterQuestion": "कृपया एक प्रश्न दर्ज करें",
 		"completeTool": "कृपया आगे बढ़ने के लिए टूल पूरा करें",
 		"ask": "पूछें",
-		"errorProcessing": "चैट प्रोसेस करने में त्रुटि",
 		"stopLabel": "प्रतिक्रिया रोकें",
 		"stopTooltip": "रोकें",
-		"stoppingTooltip": "रोक रहा है",
 		"recordUnavailable": "इस ब्राउज़र में बोलकर लिखना उपलब्ध नहीं है",
 		"historyHint": "पिछला प्रॉम्प्ट {{index}} / {{total}} · ↑/↓ से देखें · ड्राफ़्ट वापस लाने के लिए Esc",
-		"draftRestored": "ड्राफ़्ट वापस लाया गया",
-		"removeFile": "{{name}} हटाएं"
+		"draftRestored": "ड्राफ़्ट वापस लाया गया"
 	},
 	"content": {
 		"scrollToTop": "शीर्ष पर स्क्रॉल करें",
@@ -108,8 +103,7 @@
 	},
 	"menuWorkspace": {
 		"selectAgent": "एजेंट चुनें",
-		"searchPlaceholder": "एजेंट खोजें",
-		"notFound": "नहीं मिला"
+		"searchPlaceholder": "एजेंट खोजें"
 	},
 	"menuUpload": {
 		"attachDocument": "फ़ाइलें संलग्न करें"
@@ -131,18 +125,12 @@
 		"totalUsedTitle": "चैट कुल:",
 		"totalUsedValue": "{{total}} टोकन"
 	},
-	"menuMcp": {
-		"searchPlaceholder": "ज्ञान और टूलबॉक्स खोजें",
-		"noResults": "कोई मेल खाने वाली आइटम नहीं मिली",
-		"noItemsAvailable": "कोई ज्ञान या टूलबॉक्स उपलब्ध नहीं है"
-	},
 	"studio": {
 		"views": "बातचीत के दृश्य",
 		"chat": "चैट",
 		"workspace": "कार्यस्थान",
 		"toolsLocked": "उत्तर तैयार होते समय टूल बदले नहीं जा सकते।",
 		"toolsHint": "चयन आपके अगले संदेश पर लागू होंगे।",
-		"moreActions": "अन्य कार्रवाइयाँ",
 		"prompts": "प्रॉम्प्ट",
 		"removeFile": "{{name}} हटाएँ",
 		"errorTitle": "कुछ गलत हो गया",
@@ -186,8 +174,7 @@
 	},
 	"header": {
 		"untitled": "बिना शीर्षक वाला रूम",
-		"renameLabel": "रूम का नाम",
-		"roomSection": "रूम"
+		"renameLabel": "रूम का नाम"
 	},
 	"slash": {
 		"empty": "कोई कमांड नहीं मिली",

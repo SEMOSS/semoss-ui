@@ -1,5 +1,16 @@
 # Playground refresh handoff
 
+> **Historical record.** This describes the refresh as it was handed off. Where it differs from
+> [AGENTS.md](./AGENTS.md), AGENTS.md is current. Since then:
+>
+> - The navigation sidebar is offcanvas: it is still 16rem, but it has no icon rail, and
+>   `NavigationButton` opens it while it is hidden.
+> - The "work area" is the room's **Workspace** (a `@semoss/workbench` dock, `RoomWorkbench`).
+>   Its panels open from the Workbench rail, and below 1024px it sits behind the Chat and
+>   Workspace tabs. It still takes 65% of the row by default.
+> - Unused playground translation keys have been removed from all seven locales, so some of the
+>   copy counted under "Validation completed" no longer exists.
+
 ## Implemented
 
 - Neutral shell and compact headers, a 16rem desktop navigation sidebar with its existing icon rail/mobile drawer, restrained welcome content, and consistent catalog/detail/form spacing. Configured branding images and overrides remain supported.

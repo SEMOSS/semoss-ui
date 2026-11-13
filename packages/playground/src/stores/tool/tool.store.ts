@@ -92,13 +92,6 @@ export class ToolStore {
 	pendingAction: PendingAgentAction | null = null;
 
 	/**
-	 * Whether the tool call is still streaming in (name/arguments arriving via SSE).
-	 * While true, the tool does not have its final `_meta`, `title`, or parsed
-	 * `arguments` yet and should not be interactive.
-	 */
-	argumentsStreaming: boolean = false;
-
-	/**
 	 * Raw partial JSON string for `arguments` accumulated from streaming chunks.
 	 * Cleared once the final response sync replaces it with the parsed object.
 	 */
@@ -166,10 +159,8 @@ export class ToolStore {
 	 * such as `title`: MCP tools aren't required to declare one, and a titleless
 	 * tool would otherwise never resolve.
 	 *
-	 * Distinct from `argumentsStreaming` (only true while deltas are still
-	 * arriving): a tool stays unresolved through the gap between the terminal
-	 * stream chunk and the final `sync()`, which is what prevents a flicker
-	 * there.
+	 * A tool stays unresolved through the gap between the terminal stream
+	 * chunk and the final `sync()`, which is what prevents a flicker there.
 	 */
 	get isResolved(): boolean {
 		return !!this.toolCall.part && !this.isStreamingPlaceholder;
@@ -266,7 +257,6 @@ export class ToolStore {
 
 			// once the final part has arrived, clear streaming bookkeeping
 			if (!this.isStreamingPlaceholder) {
-				this.argumentsStreaming = false;
 				this.argumentsBuffer = "";
 				this.streamingName = "";
 			}
@@ -296,11 +286,10 @@ export class ToolStore {
 	};
 
 	/**
-	 * Mark the tool as actively streaming and seed its wire identity.
+	 * Start a fresh `arguments` buffer for a tool that begins streaming.
 	 * Called when the first streaming chunk for this tool arrives (carries `id`).
 	 */
 	beginStreaming = () => {
-		this.argumentsStreaming = true;
 		this.argumentsBuffer = "";
 	};
 
@@ -316,14 +305,6 @@ export class ToolStore {
 	 */
 	appendStreamingArguments = (delta: string) => {
 		this.argumentsBuffer += delta;
-	};
-
-	/**
-	 * Streaming finished; we still don't have the parsed meta (that arrives in
-	 * the final sync), but no further deltas are coming.
-	 */
-	endStreaming = () => {
-		this.argumentsStreaming = false;
 	};
 
 	/**

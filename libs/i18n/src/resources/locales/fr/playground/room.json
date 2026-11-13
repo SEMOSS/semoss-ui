@@ -67,22 +67,17 @@
 		"thinking": "Réflexion...",
 		"menuPrompt": "Comment puis-je vous aider aujourd'hui ?",
 		"addToChat": "Ajouter à votre discussion",
-		"recordLabel": "Enregistrer le modèle",
 		"stopRecording": "Arrêter l'enregistrement",
 		"record": "Enregistrer",
 		"askLabel": "Interroger l'IA",
-		"thinkingTooltip": "Réflexion",
 		"enterQuestion": "Veuillez entrer une question",
 		"completeTool": "Veuillez compléter le(s) outil(s) pour continuer",
 		"ask": "Demander",
-		"errorProcessing": "Erreur de traitement du chat",
 		"stopLabel": "Arrêter la réponse",
 		"stopTooltip": "Arrêter",
-		"stoppingTooltip": "Arrêt en cours",
 		"recordUnavailable": "La dictée est indisponible dans ce navigateur",
 		"historyHint": "Message précédent {{index}} sur {{total}} · ↑/↓ parcourir · Échap pour restaurer le brouillon",
-		"draftRestored": "Brouillon restauré",
-		"removeFile": "Retirer {{name}}"
+		"draftRestored": "Brouillon restauré"
 	},
 	"content": {
 		"scrollToTop": "Défiler vers le haut",
@@ -108,8 +103,7 @@
 	},
 	"menuWorkspace": {
 		"selectAgent": "Sélectionner un agent",
-		"searchPlaceholder": "Rechercher des agents",
-		"notFound": "Non trouvé"
+		"searchPlaceholder": "Rechercher des agents"
 	},
 	"menuUpload": {
 		"attachDocument": "Joindre des fichiers"
@@ -131,18 +125,12 @@
 		"totalUsedTitle": "Total du chat :",
 		"totalUsedValue": "{{total}} jetons"
 	},
-	"menuMcp": {
-		"searchPlaceholder": "Rechercher des connaissances et des boîtes à outils",
-		"noResults": "Aucun élément correspondant trouvé",
-		"noItemsAvailable": "Aucune connaissance ou boîte à outils disponible"
-	},
 	"studio": {
 		"views": "Vues de la conversation",
 		"chat": "Discussion",
 		"workspace": "Espace de travail",
 		"toolsLocked": "Les outils ne peuvent pas être modifiés pendant une réponse.",
 		"toolsHint": "Les sélections s’appliquent à votre prochain message.",
-		"moreActions": "Autres actions",
 		"prompts": "Prompts",
 		"removeFile": "Retirer {{name}}",
 		"errorTitle": "Une erreur est survenue",
@@ -186,8 +174,7 @@
 	},
 	"header": {
 		"untitled": "Salle sans titre",
-		"renameLabel": "Nom de la salle",
-		"roomSection": "Salle"
+		"renameLabel": "Nom de la salle"
 	},
 	"slash": {
 		"empty": "Aucune commande trouvée",

@@ -19,20 +19,12 @@
 	},
 	"tabs": {
 		"output": "Salida",
-		"inputs": "Entradas",
 		"description": "Descripción"
 	},
 	"group": {
 		"labelClosed": "{{toolName}} + {{count}} más",
-		"labelOpen": "Herramientas ejecutadas ({{count}})",
-		"labelStreaming_one": "Cargando {{count}} herramienta…",
-		"labelStreaming_other": "Cargando {{count}} herramientas…",
-		"labelPartial_one": "{{count}} herramienta completada, {{loadingCount}} cargando…",
-		"labelPartial_other": "{{count}} herramientas completadas, {{loadingCount}} cargando…",
 		"summaryCompleted": "{{count}} completado",
-		"summaryLoading": "{{count}} cargando",
-		"summaryError": "{{count}} fallido",
-		"summaryCancelled": "{{count}} cancelado"
+		"summaryError": "{{count}} fallido"
 	},
 	"form": {
 		"result": "Resultado",

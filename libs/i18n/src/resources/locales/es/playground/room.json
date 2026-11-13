@@ -63,22 +63,17 @@
 		"thinking": "Pensando...",
 		"menuPrompt": "¿Cómo puedo ayudarte hoy?",
 		"addToChat": "Añadir a tu chat",
-		"recordLabel": "Grabar al modelo",
 		"stopRecording": "Detener grabación",
 		"record": "Grabar",
 		"askLabel": "Preguntar a la IA",
-		"thinkingTooltip": "Pensando",
 		"enterQuestion": "Por favor, ingresa una pregunta",
 		"completeTool": "Por favor, completa las herramientas para continuar",
 		"ask": "Preguntar",
-		"errorProcessing": "Error al procesar el chat",
 		"stopLabel": "Detener la respuesta",
 		"stopTooltip": "Detener",
-		"stoppingTooltip": "Deteniendo",
 		"recordUnavailable": "El dictado no está disponible en este navegador",
 		"historyHint": "Mensaje anterior {{index}} de {{total}} · ↑/↓ explorar · Esc para restaurar el borrador",
-		"draftRestored": "Borrador restaurado",
-		"removeFile": "Quitar {{name}}"
+		"draftRestored": "Borrador restaurado"
 	},
 	"content": {
 		"scrollToTop": "Ir al inicio",
@@ -104,8 +99,7 @@
 	},
 	"menuWorkspace": {
 		"selectAgent": "Seleccionar agente",
-		"searchPlaceholder": "Buscar agentes",
-		"notFound": "No encontrado"
+		"searchPlaceholder": "Buscar agentes"
 	},
 	"menuUpload": {
 		"attachDocument": "Adjuntar archivos"
@@ -127,18 +121,12 @@
 		"totalUsedTitle": "Total del chat:",
 		"totalUsedValue": "{{total}} tokens"
 	},
-	"menuMcp": {
-		"searchPlaceholder": "Buscar conocimiento y cajas de herramientas",
-		"noResults": "No se encontraron elementos coincidentes",
-		"noItemsAvailable": "No hay conocimiento o cajas de herramientas disponibles"
-	},
 	"studio": {
 		"views": "Vistas de la conversación",
 		"chat": "Chat",
 		"workspace": "Espacio de trabajo",
 		"toolsLocked": "No se pueden cambiar las herramientas mientras se genera una respuesta.",
 		"toolsHint": "Las selecciones se aplican a tu próximo mensaje.",
-		"moreActions": "Más acciones",
 		"prompts": "Prompts",
 		"removeFile": "Eliminar {{name}}",
 		"errorTitle": "Se ha producido un error",
@@ -182,8 +170,7 @@
 	},
 	"header": {
 		"untitled": "Sala sin título",
-		"renameLabel": "Nombre de la sala",
-		"roomSection": "Sala"
+		"renameLabel": "Nombre de la sala"
 	},
 	"slash": {
 		"empty": "No se encontraron comandos",

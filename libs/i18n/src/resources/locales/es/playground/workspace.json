@@ -1,6 +1,4 @@
 {
-	"welcomeTitle": "Bienvenido al Gestor de Agentes",
-	"welcomeDescription": "Explore agentes de IA personalizados diseñados para satisfacer sus necesidades únicas e integrarse perfectamente en sus procesos.",
 	"form": {
 		"nameLabel": "Nombre",
 		"descriptionLabel": "Descripción",
@@ -24,19 +22,6 @@
 		"deleteConfirmDescription": "Esta acción es irreversible. Esto eliminará permanentemente el espacio de trabajo {{name}}.",
 		"createdAgo": "Creado {{when}}"
 	},
-	"sharing": {
-		"title": "Añadir miembros",
-		"description": "Invitar miembros para acceder y colaborar en este agente.",
-		"searchPlaceholder": "Buscar un usuario...",
-		"searchUsers": "Buscar usuarios...",
-		"noUsersFound": "No se encontraron usuarios",
-		"hasAccess": "Tiene acceso",
-		"pendingInvite": "Invitación pendiente",
-		"membersToAdd": "Miembros a añadir",
-		"emptyState": "Añadir usuarios para compartir este espacio de trabajo",
-		"buttonAdding": "Añadiendo...",
-		"buttonAdd": "Añadir Miembros"
-	},
 	"members": {
 		"autoSaveHint": "Las adiciones y eliminaciones de miembros y los cambios de permisos se guardan automáticamente.",
 		"heading": "Quién tiene acceso",
@@ -53,18 +38,10 @@
 		"changePermissionDescription": "Estás a punto de cambiar tu permiso de {{oldPermission}} a {{newPermission}}. Esto afectará las acciones que puedes realizar en este agente.",
 		"changePermissionButton": "Cambiar permiso"
 	},
-	"mcp": {
-		"noToolboxes": "No se encontraron cajas de herramientas",
-		"noKnowledge": "No se encontraron bibliotecas de conocimiento",
-		"failedToLoad": "Error al cargar los recursos del espacio de trabajo",
-		"requestedSuccess": "Acceso solicitado a {{name}}",
-		"requestedFailed": "Error al solicitar acceso"
-	},
 	"chat": {
 		"noChats": "No se encontraron chats",
 		"error": "Error:",
 		"selectRoom": "Seleccionar sala",
-		"newChat": "Nuevo chat",
 		"delete": "Eliminar",
 		"cancel": "Cancelar",
 		"deleteSuccess": "Chat eliminado",
@@ -85,39 +62,14 @@
 		"agentIllustration": "Ilustración del agente"
 	},
 	"messages": {
-		"noResults": "No se encontraron resultados",
-		"userAlreadyAdded": "Usuario ya añadido",
-		"fetchUsersFailed": "Error al obtener usuarios",
-		"addAtLeastOne": "Por favor, añade al menos un usuario",
-		"addMembersSuccess": "{{count}} miembro añadido exitosamente",
-		"addMembersSuccess_plural": "{{count}} miembros añadidos exitosamente",
-		"addMembersFailed": "Error al añadir miembros",
-		"permissionUpdated": "Permiso actualizado exitosamente",
-		"permissionUpdateFailed": "Error al actualizar el permiso",
-		"userRemoved": "Usuario eliminado exitosamente",
-		"userRemoveFailed": "Error al eliminar usuario",
-		"fetchPermissionsFailed": "Error al obtener permisos de usuario"
-	},
-	"breadcrumbs": {
-		"home": "Inicio",
-		"agent": "Agente",
-		"loading": "Cargando",
-		"edit": "Editar",
-		"new": "Nuevo",
-		"room": "Sala"
+		"noResults": "No se encontraron resultados"
 	},
 	"detail": {
 		"tabs": {
-			"myChats": "Mis Chats",
-			"knowledge": "Conocimiento",
-			"toolbox": "Cajas de herramientas",
-			"prompts": "Indicaciones",
-			"members": "Miembros",
-			"skills": "Habilidades"
+			"members": "Miembros"
 		},
 		"about": {
-			"title": "Acerca de",
-			"noInstructions": "No hay instrucciones configuradas."
+			"title": "Acerca de"
 		},
 		"recentChats": {
 			"title": "Continuar un chat anterior"
@@ -137,21 +89,7 @@
 		"subtitle": "Crea un nuevo agente para comenzar"
 	},
 	"prompts": {
-		"noPrompts": "No se encontraron indicaciones",
 		"searchPlaceholder": "Buscar indicaciones..."
-	},
-	"instructions": {
-		"expand": "Expandir",
-		"viewTitle": "Instrucciones",
-		"viewDescription": "La indicación del sistema que guía el comportamiento de este agente.",
-		"editTitle": "Editar instrucciones",
-		"editDescription": "Actualiza la indicación del sistema que guía el comportamiento de este agente.",
-		"charCount_one": "{{count, number}} carácter",
-		"charCount_many": "{{count, number}} caracteres",
-		"charCount_other": "{{count, number}} caracteres"
-	},
-	"skills": {
-		"noSkills": "No se han añadido habilidades"
 	},
 	"catalog": {
 		"title": "Mis agentes",

@@ -1,23 +1,14 @@
 {
 	"messages": {
-		"actions": "メッセージの操作",
-		"placeholder": "メッセージを入力...",
-		"sending": "送信中...",
-		"error": "メッセージの送信に失敗しました"
-	},
-	"attachments": {
-		"addFile": "ファイルを追加",
-		"removeFile": "ファイルを削除"
+		"actions": "メッセージの操作"
 	},
 	"response": {
-		"agent": "エージェント",
 		"previousMessage": "前のメッセージ",
 		"nextMessage": "次のメッセージ",
 		"rewriteMessage": "メッセージを書き直す",
 		"goodResponse": "良い回答",
 		"poorResponse": "悪い回答",
 		"copyResponse": "回答をコピー",
-		"copyCode": "コードをコピー",
 		"copy": "コピー",
 		"saveInRoom": "ルームに保存",
 		"savingToRoom": "保存中...",
@@ -27,7 +18,6 @@
 		"feedbackPlaceholder": "コメントを追加（任意）",
 		"feedbackCancel": "キャンセル",
 		"feedbackSubmit": "送信",
-		"fastForwardToEnd": "最後まで早送り",
 		"completeToolsAsk_one": "続行するにはツールを完了してください。",
 		"completeToolsAsk_other": "続行するにはすべてのツールを完了してください。",
 		"emptyResponse": "空のレスポンス。"
@@ -35,21 +25,12 @@
 	"input": {
 		"copyMessage": "メッセージをコピー"
 	},
-	"plan": {
-		"heading": "以下のプランを作成しました。必要に応じて変更してください。",
-		"fixStep": "ステップを修正",
-		"edit": "編集",
-		"delete": "削除",
-		"addTask": "タスクを追加",
-		"confirmPlan": "プランを確認"
-	},
 	"notifications": {
 		"feedbackSuccess": "フィードバックをありがとうございます!",
 		"rewriteSuccess": "メッセージを正常に書き直しました",
 		"copySuccess": "クリップボードに正常にコピーしました",
 		"noCopyContent": "コピーするコンテンツがありません",
-		"savedInRoom": "{{filePath}} としてルームに保存しました",
-		"planStepRemoved": "プランからステップ{{stepNumber}}を正常に削除しました"
+		"savedInRoom": "{{filePath}} としてルームに保存しました"
 	},
 	"gracefulErrors": {
 		"errorDefault": "リクエストを処理できません。接続を確認し、メッセージをコピーしてから更新してください。",

@@ -2,13 +2,11 @@
 	"embedDocuments": {
 		"title": "既存ストアにドキュメントを埋め込む",
 		"description": "ナレッジストアを選択し、埋め込むドキュメントをアップロードします。",
-		"knowledgeSource": "ナレッジストア",
 		"documents": "ドキュメント",
 		"selectFiles": "クリックしてファイルを選択するか、ドラッグ＆ドロップ",
 		"embedButton": "ドキュメントを埋め込む",
 		"embedding": "埋め込み中...",
-		"removeFile": "ファイルを削除",
-		"selectPlaceholder": "ナレッジストアを選択"
+		"removeFile": "ファイルを削除"
 	},
 	"selector": {
 		"search": "検索",
@@ -37,19 +35,9 @@
 		"collapseField": "フィールドを折りたたむ",
 		"expandField": "フィールドを展開"
 	},
-	"messages": {
-		"selectKnowledgeSource": "ナレッジストアを選択してください",
-		"selectDocument": "少なくとも1つのドキュメントを選択してください",
-		"embedSuccess": "ドキュメントを正常に埋め込みました",
-		"embedFailed": "ドキュメントの埋め込みに失敗しました",
-		"loadFailed": "ナレッジストアの読み込みに失敗しました。",
-		"noSources": "ナレッジストアが見つかりません。"
-	},
 	"buttons": {
 		"cancel": "キャンセル",
-		"embed": "埋め込む",
-		"save": "保存",
-		"close": "閉じる"
+		"save": "保存"
 	},
 	"permission": {
 		"owner": "オーナー",

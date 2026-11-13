@@ -54,11 +54,6 @@
 		"embedSuccess": "Documenten succesvol geëmbed",
 		"embedFailed": "Embedden van documenten mislukt"
 	},
-	"breadcrumbs": {
-		"home": "Home",
-		"knowledgeStores": "Kennisopslagplaatsen",
-		"loading": "Laden"
-	},
 	"detail": {
 		"knowledge": "Kennis",
 		"embedDocuments": "Documenten embedden",

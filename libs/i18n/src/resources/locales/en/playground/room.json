@@ -67,22 +67,17 @@
 		"thinking": "Thinking...",
 		"menuPrompt": "How can I help you today?",
 		"addToChat": "Add to your chat",
-		"recordLabel": "Record the Model",
 		"stopRecording": "Stop Recording",
 		"record": "Record",
 		"askLabel": "Ask the AI",
-		"thinkingTooltip": "Thinking",
 		"enterQuestion": "Please enter a question",
 		"completeTool": "Please complete the tool(s) to proceed",
 		"ask": "Ask",
-		"errorProcessing": "Error processing chat",
 		"stopLabel": "Stop the response",
 		"stopTooltip": "Stop",
-		"stoppingTooltip": "Stopping",
 		"recordUnavailable": "Dictation is unavailable in this browser",
 		"historyHint": "Earlier prompt {{index}} of {{total}} · ↑/↓ browse · Esc to restore draft",
-		"draftRestored": "Draft restored",
-		"removeFile": "Remove {{name}}"
+		"draftRestored": "Draft restored"
 	},
 	"content": {
 		"scrollToTop": "Scroll to top",
@@ -108,8 +103,7 @@
 	},
 	"menuWorkspace": {
 		"selectAgent": "Select Agent",
-		"searchPlaceholder": "Search agents",
-		"notFound": "Not Found"
+		"searchPlaceholder": "Search agents"
 	},
 	"menuUpload": {
 		"attachDocument": "Attach Files"
@@ -131,18 +125,12 @@
 		"totalUsedTitle": "Chat total:",
 		"totalUsedValue": "{{total}} tokens"
 	},
-	"menuMcp": {
-		"searchPlaceholder": "Search knowledge and toolboxes",
-		"noResults": "No matching items found",
-		"noItemsAvailable": "No knowledge or toolboxes available"
-	},
 	"studio": {
 		"views": "Conversation views",
 		"chat": "Chat",
 		"workspace": "Workspace",
 		"toolsLocked": "Tools cannot be changed while a response is running.",
 		"toolsHint": "Selections apply to your next message.",
-		"moreActions": "More actions",
 		"prompts": "Prompts",
 		"removeFile": "Remove {{name}}",
 		"errorTitle": "Something went wrong",
@@ -186,8 +174,7 @@
 	},
 	"header": {
 		"untitled": "Untitled room",
-		"renameLabel": "Room name",
-		"roomSection": "Room"
+		"renameLabel": "Room name"
 	},
 	"slash": {
 		"empty": "No commands found",

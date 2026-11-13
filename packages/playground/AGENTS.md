@@ -533,6 +533,25 @@ pnpm type-check     # Verify TypeScript
 pnpm dev            # Manual testing
 ```
 
+### Finding unused code
+
+Run Knip from the repository root, in production mode so code only tests reach shows up:
+
+```bash
+pnpm exec knip --workspace packages/playground --production --include files,exports,types,classMembers
+```
+
+Knip cannot follow store members reached through hooks and context (`useChat()`, `useRoom()`), so
+grep every flagged class member before removing it. `forgetSessionNewChat` is a deliberate test
+seam that resets module state; keep it.
+
+The playground's copy lives in `libs/i18n/src/resources/locales/<locale>/playground/` and is loaded
+through `playgroundResources`, which `@semoss/collaboration` also loads. Before removing a key,
+search `packages/playground`, `packages/collaboration` and `libs/*` for it. Many keys are built at
+runtime (`` t(`buckets.${bucket}`) ``, `` t(`steps.${s.key}.title`) ``, `` t(`slash.groups.${group}`) ``),
+so a missing literal does not make a key unused. Remove a key from every locale, along with all of
+its plural forms (`_zero`, `_one`, `_two`, `_few`, `_many`, `_other`).
+
 ### Running with Backend
 
 To connect to a local SEMOSS backend:

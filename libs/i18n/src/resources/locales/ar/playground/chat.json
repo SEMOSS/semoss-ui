@@ -1,23 +1,14 @@
 {
 	"messages": {
-		"actions": "إجراءات الرسالة",
-		"placeholder": "اكتب رسالة...",
-		"sending": "جارٍ الإرسال...",
-		"error": "فشل إرسال الرسالة"
-	},
-	"attachments": {
-		"addFile": "إضافة ملف",
-		"removeFile": "إزالة الملف"
+		"actions": "إجراءات الرسالة"
 	},
 	"response": {
-		"agent": "الوكيل",
 		"previousMessage": "الرسالة السابقة",
 		"nextMessage": "الرسالة التالية",
 		"rewriteMessage": "إعادة كتابة الرسالة",
 		"goodResponse": "استجابة جيدة",
 		"poorResponse": "استجابة ضعيفة",
 		"copyResponse": "نسخ الاستجابة",
-		"copyCode": "نسخ الكود",
 		"copy": "نسخ",
 		"saveInRoom": "حفظ في الغرفة",
 		"savingToRoom": "جارٍ الحفظ...",
@@ -27,7 +18,6 @@
 		"feedbackPlaceholder": "أضف تعليقًا (اختياري)",
 		"feedbackCancel": "إلغاء",
 		"feedbackSubmit": "إرسال",
-		"fastForwardToEnd": "التقدم السريع إلى النهاية",
 		"completeToolsAsk_one": "يرجى إكمال الأداة للمتابعة.",
 		"completeToolsAsk_other": "يرجى إكمال الأدوات للمتابعة.",
 		"emptyResponse": "استجابة فارغة."
@@ -35,21 +25,12 @@
 	"input": {
 		"copyMessage": "نسخ الرسالة"
 	},
-	"plan": {
-		"heading": "هذه هي الخطة التي أنشأتها. لا تتردد في تعديلها حسب الحاجة.",
-		"fixStep": "إصلاح الخطوة",
-		"edit": "تعديل",
-		"delete": "حذف",
-		"addTask": "إضافة مهمة",
-		"confirmPlan": "تأكيد الخطة"
-	},
 	"notifications": {
 		"feedbackSuccess": "شكراً على الملاحظات!",
 		"rewriteSuccess": "تمت إعادة كتابة الرسالة بنجاح",
 		"copySuccess": "تم النسخ إلى الحافظة بنجاح",
 		"noCopyContent": "لا يوجد محتوى للنسخ",
-		"savedInRoom": "تم الحفظ في الغرفة باسم {{filePath}}",
-		"planStepRemoved": "تمت إزالة الخطوة {{stepNumber}} من الخطة بنجاح"
+		"savedInRoom": "تم الحفظ في الغرفة باسم {{filePath}}"
 	},
 	"gracefulErrors": {
 		"errorDefault": "غير قادر على معالجة الطلب. يرجى التحقق من اتصالك، ونسخ رسالتك، والتحديث.",

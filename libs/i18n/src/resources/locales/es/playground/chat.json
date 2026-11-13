@@ -1,23 +1,14 @@
 {
 	"messages": {
-		"actions": "Acciones del mensaje",
-		"placeholder": "Escriba un mensaje...",
-		"sending": "Enviando...",
-		"error": "No se pudo enviar el mensaje"
-	},
-	"attachments": {
-		"addFile": "Añadir archivo",
-		"removeFile": "Eliminar archivo"
+		"actions": "Acciones del mensaje"
 	},
 	"response": {
-		"agent": "Agente",
 		"previousMessage": "Mensaje anterior",
 		"nextMessage": "Siguiente mensaje",
 		"rewriteMessage": "Reescribir mensaje",
 		"goodResponse": "Buena respuesta",
 		"poorResponse": "Mala respuesta",
 		"copyResponse": "Copiar respuesta",
-		"copyCode": "Copiar código",
 		"copy": "Copiar",
 		"saveInRoom": "Guardar en la sala",
 		"savingToRoom": "Guardando...",
@@ -27,7 +18,6 @@
 		"feedbackPlaceholder": "Agregar un comentario (opcional)",
 		"feedbackCancel": "Cancelar",
 		"feedbackSubmit": "Enviar",
-		"fastForwardToEnd": "Avanzar al final",
 		"completeToolsAsk_one": "Por favor, completa la herramienta para continuar.",
 		"completeToolsAsk_other": "Por favor, completa las herramientas para continuar.",
 		"emptyResponse": "Respuesta vacía."
@@ -35,21 +25,12 @@
 	"input": {
 		"copyMessage": "Copiar mensaje"
 	},
-	"plan": {
-		"heading": "Aquí está el plan que he creado. Siéntete libre de modificarlo según sea necesario.",
-		"fixStep": "Corregir paso",
-		"edit": "Editar",
-		"delete": "Eliminar",
-		"addTask": "Agregar tarea",
-		"confirmPlan": "Confirmar plan"
-	},
 	"notifications": {
 		"feedbackSuccess": "¡Gracias por tus comentarios!",
 		"rewriteSuccess": "Mensaje reescrito con éxito",
 		"copySuccess": "Copiado al portapapeles con éxito",
 		"noCopyContent": "No hay contenido para copiar",
-		"savedInRoom": "Guardado en la sala como {{filePath}}",
-		"planStepRemoved": "Paso {{stepNumber}} eliminado del plan con éxito"
+		"savedInRoom": "Guardado en la sala como {{filePath}}"
 	},
 	"gracefulErrors": {
 		"errorDefault": "No se pudo procesar la solicitud. Verifique su conexión, copie su mensaje y actualice la página.",

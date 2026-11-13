@@ -19,20 +19,12 @@
 	},
 	"tabs": {
 		"output": "出力",
-		"inputs": "入力",
 		"description": "説明"
 	},
 	"group": {
 		"labelClosed": "{{toolName}} 他 {{count}} 件",
-		"labelOpen": "実行済みツール ({{count}})",
-		"labelStreaming_one": "{{count}} 個のツールを読み込み中…",
-		"labelStreaming_other": "{{count}} 個のツールを読み込み中…",
-		"labelPartial_one": "{{count}} 件完了、{{loadingCount}} 件読み込み中…",
-		"labelPartial_other": "{{count}} 件完了、{{loadingCount}} 件読み込み中…",
 		"summaryCompleted": "{{count}} 件完了",
-		"summaryLoading": "{{count}} 件読み込み中",
-		"summaryError": "{{count}} 件失敗",
-		"summaryCancelled": "{{count}} 件キャンセル"
+		"summaryError": "{{count}} 件失敗"
 	},
 	"form": {
 		"result": "結果",

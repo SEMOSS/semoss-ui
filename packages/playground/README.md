@@ -19,13 +19,19 @@ Note: If you have a custom setup, create a `.env.local` to configure your enviro
 
 # Notes on Naming
 
-1. "WORKSPACE" = Collection of "Toolbox, Knowledge, Prompt"
+1. An **agent** is a saved collection of toolboxes, knowledge, prompts, and skills. The backend
+   still calls it a workspace (`GetWorkspace`, `workspaceId`), and so do the agent pages' code.
 
-2. "Toolbox" = Collection of "Tools"
+2. A **toolbox** is a collection of tools.
+
+3. In user-facing copy, **Workspace** is the right-hand dock of a room (`RoomWorkbench`).
+
+See the glossary in [AGENTS.md](./AGENTS.md#glossary) for the name of each part of the app.
 
 # Unit Testing with Vitest
 
-Add unit tests for @semoss/playground next to the corresponding file. Files should be in a .test file format.
+Add unit tests for @semoss/playground next to the corresponding file, named `*.test.ts` or
+`*.test.tsx`.
 
 ## Running tests:
 

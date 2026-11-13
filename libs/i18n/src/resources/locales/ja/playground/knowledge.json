@@ -54,11 +54,6 @@
 		"embedSuccess": "ドキュメントを正常に埋め込みました",
 		"embedFailed": "ドキュメントの埋め込みに失敗しました"
 	},
-	"breadcrumbs": {
-		"home": "ホーム",
-		"knowledgeStores": "ナレッジストア",
-		"loading": "読み込み中"
-	},
 	"detail": {
 		"knowledge": "ナレッジ",
 		"embedDocuments": "ドキュメントを埋め込む",

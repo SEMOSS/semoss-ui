@@ -2,13 +2,11 @@
 	"embedDocuments": {
 		"title": "Documenten insluiten in bestaande opslag",
 		"description": "Selecteer een kennisopslag en upload documenten om in te sluiten.",
-		"knowledgeSource": "Kennisopslag",
 		"documents": "Documenten",
 		"selectFiles": "Klik om bestanden te selecteren of sleep ze hierheen",
 		"embedButton": "Documenten insluiten",
 		"embedding": "Insluiten...",
-		"removeFile": "Bestand verwijderen",
-		"selectPlaceholder": "Selecteer een kennisopslag"
+		"removeFile": "Bestand verwijderen"
 	},
 	"selector": {
 		"search": "Zoeken",
@@ -37,19 +35,9 @@
 		"collapseField": "Veld samenvouwen",
 		"expandField": "Veld uitvouwen"
 	},
-	"messages": {
-		"selectKnowledgeSource": "Selecteer een kennisopslag",
-		"selectDocument": "Selecteer ten minste één document",
-		"embedSuccess": "Documenten succesvol ingesloten",
-		"embedFailed": "Insluiten van documenten mislukt",
-		"loadFailed": "Laden van kennisopslagen mislukt.",
-		"noSources": "Geen kennisopslagen gevonden."
-	},
 	"buttons": {
 		"cancel": "Annuleren",
-		"embed": "Insluiten",
-		"save": "Opslaan",
-		"close": "Sluiten"
+		"save": "Opslaan"
 	},
 	"permission": {
 		"accessRequested": "Toegang aangevraagd",

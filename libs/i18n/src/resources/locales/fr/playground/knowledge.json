@@ -54,11 +54,6 @@
 		"embedSuccess": "Documents intégrés avec succès",
 		"embedFailed": "Échec de l'intégration des documents"
 	},
-	"breadcrumbs": {
-		"home": "Accueil",
-		"knowledgeStores": "Bases de connaissances",
-		"loading": "Chargement"
-	},
 	"detail": {
 		"knowledge": "Connaissances",
 		"embedDocuments": "Intégrer des documents",

@@ -67,22 +67,17 @@
 		"thinking": "Bezig met denken...",
 		"menuPrompt": "Hoe kan ik je vandaag helpen?",
 		"addToChat": "Voeg toe aan je chat",
-		"recordLabel": "Het model opnemen",
 		"stopRecording": "Opname stoppen",
 		"record": "Opnemen",
 		"askLabel": "Vraag het de AI",
-		"thinkingTooltip": "Bezig met denken",
 		"enterQuestion": "Voer een vraag in",
 		"completeTool": "Voltooi de tool(s) om door te gaan",
 		"ask": "Vragen",
-		"errorProcessing": "Fout bij het verwerken van de chat",
 		"stopLabel": "Het antwoord stoppen",
 		"stopTooltip": "Stoppen",
-		"stoppingTooltip": "Bezig met stoppen",
 		"recordUnavailable": "Dicteren is niet beschikbaar in deze browser",
 		"historyHint": "Eerdere prompt {{index}} van {{total}} · ↑/↓ bladeren · Esc om concept te herstellen",
-		"draftRestored": "Concept hersteld",
-		"removeFile": "{{name}} verwijderen"
+		"draftRestored": "Concept hersteld"
 	},
 	"content": {
 		"scrollToTop": "Scroll naar boven",
@@ -108,8 +103,7 @@
 	},
 	"menuWorkspace": {
 		"selectAgent": "Agent selecteren",
-		"searchPlaceholder": "Agents zoeken",
-		"notFound": "Niet gevonden"
+		"searchPlaceholder": "Agents zoeken"
 	},
 	"menuUpload": {
 		"attachDocument": "Bestanden bijvoegen"
@@ -131,18 +125,12 @@
 		"totalUsedTitle": "Gesprek totaal:",
 		"totalUsedValue": "{{total}} tokens"
 	},
-	"menuMcp": {
-		"searchPlaceholder": "Kennis en toolboxes zoeken",
-		"noResults": "Geen overeenkomende items gevonden",
-		"noItemsAvailable": "Geen kennis of toolboxes beschikbaar"
-	},
 	"studio": {
 		"views": "Gespreksweergaven",
 		"chat": "Chat",
 		"workspace": "Werkruimte",
 		"toolsLocked": "Tools kunnen niet worden gewijzigd terwijl een antwoord wordt gemaakt.",
 		"toolsHint": "Selecties gelden voor je volgende bericht.",
-		"moreActions": "Meer acties",
 		"prompts": "Prompts",
 		"removeFile": "{{name}} verwijderen",
 		"errorTitle": "Er is iets misgegaan",
@@ -186,8 +174,7 @@
 	},
 	"header": {
 		"untitled": "Naamloze kamer",
-		"renameLabel": "Naam van de kamer",
-		"roomSection": "Kamer"
+		"renameLabel": "Naam van de kamer"
 	},
 	"slash": {
 		"empty": "Geen opdrachten gevonden",

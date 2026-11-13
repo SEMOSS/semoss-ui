@@ -54,11 +54,6 @@
 		"embedSuccess": "Documentos insertados con éxito",
 		"embedFailed": "Error al insertar documentos"
 	},
-	"breadcrumbs": {
-		"home": "Inicio",
-		"knowledgeStores": "Almacenes de Conocimiento",
-		"loading": "Cargando"
-	},
 	"detail": {
 		"knowledge": "Conocimiento",
 		"embedDocuments": "Insertar documentos",

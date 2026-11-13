@@ -568,13 +568,6 @@ export class RoomStore {
 	}
 
 	/**
-	 * Number of tools in this room
-	 */
-	get numberOfTools() {
-		return Object.keys(this._store.tools).length;
-	}
-
-	/**
 	 * Last response message - avoids INPUT_TOOL_EXEC and STREAMING_PLACEHOLDER_ID messages
 	 */
 	get latestResponseMessage(): ResponseMessageStore {

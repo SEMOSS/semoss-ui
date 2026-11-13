@@ -2,13 +2,11 @@
 	"embedDocuments": {
 		"title": "تضمين المستندات في مخزن موجود",
 		"description": "اختر مخزن معرفة ورفع المستندات للتضمين.",
-		"knowledgeSource": "مخزن المعرفة",
 		"documents": "المستندات",
 		"selectFiles": "انقر لتحديد الملفات أو اسحب وأفلت",
 		"embedButton": "تضمين المستندات",
 		"embedding": "جارٍ التضمين...",
-		"removeFile": "إزالة الملف",
-		"selectPlaceholder": "اختر مخزن معرفة"
+		"removeFile": "إزالة الملف"
 	},
 	"selector": {
 		"search": "بحث",
@@ -37,19 +35,9 @@
 		"collapseField": "طي الحقل",
 		"expandField": "توسيع الحقل"
 	},
-	"messages": {
-		"selectKnowledgeSource": "الرجاء اختيار مخزن معرفة",
-		"selectDocument": "الرجاء اختيار مستند واحد على الأقل",
-		"embedSuccess": "تم تضمين المستندات بنجاح",
-		"embedFailed": "فشل تضمين المستندات",
-		"loadFailed": "فشل تحميل مخازن المعرفة.",
-		"noSources": "لم يتم العثور على مخازن معرفة."
-	},
 	"buttons": {
 		"cancel": "إلغاء",
-		"embed": "تضمين",
-		"save": "حفظ",
-		"close": "إغلاق"
+		"save": "حفظ"
 	},
 	"permission": {
 		"owner": "المالك",
