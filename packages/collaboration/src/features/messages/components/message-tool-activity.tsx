@@ -1,5 +1,6 @@
 import { Fragment, useId, useState } from "react";
-import { cn } from "@semoss/ui/next";
+import { cn, Muted } from "@semoss/ui/next";
+import { ChildAgentRunCard } from "@/features/runs/components/child-agent-run-card";
 import { ToolCallCard } from "@/features/tools/components/tool-call-card";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
 import {
@@ -76,6 +77,8 @@ export function MessageToolActivity({
 		});
 	}
 
+	const runItems = items.filter((item) => item.part.type === "run");
+
 	return (
 		<div
 			className="min-w-0"
@@ -93,6 +96,45 @@ export function MessageToolActivity({
 					setFocusedTool(null);
 			}}
 		>
+			{runItems.length > 0 && (
+				<div
+					className="overflow-hidden rounded-xl border border-border/60"
+					data-scroll-anchor={`runs-${runItems[0]?.key}`}
+				>
+					<div className="flex items-center gap-2 border-border/60 border-b bg-muted/40 px-3.5 py-2">
+						{runItems.some(
+							({ part }) =>
+								part.type === "run" &&
+								part.run.status !== "COMPLETED" &&
+								part.run.status !== "FAILED" &&
+								part.run.status !== "CANCELLED",
+						) && (
+							<span
+								aria-hidden="true"
+								className="size-1.5 shrink-0 animate-pulse rounded-full bg-primary"
+							/>
+						)}
+						<Muted className="font-medium text-xs">
+							{runItems.length === 1
+								? "1 sub-agent"
+								: `${runItems.length} sub-agents`}
+						</Muted>
+						<span className="text-border/80">·</span>
+						<Muted className="text-xs">
+							{runStatusSummary(runItems)}
+						</Muted>
+						<RunStatusDots items={runItems} />
+					</div>
+					{runItems.map((item) =>
+						item.part.type === "run" ? (
+							<ChildAgentRunCard
+								key={item.key}
+								run={item.part.run}
+							/>
+						) : null,
+					)}
+				</div>
+			)}
 			{tools.map((item) => {
 				if (item.part.type !== "tool" && item.part.type !== "thinking")
 					return null;
@@ -175,6 +217,47 @@ export function MessageToolActivity({
 const LIVE_STEPS = 2;
 
 const SETTLED = new Set(["completed", "failed", "cancelled"]);
+
+function runCounts(items: OwnedMessagePart[]) {
+	const counts = { done: 0, running: 0, waiting: 0, failed: 0 };
+	for (const { part } of items) {
+		if (part.type !== "run") continue;
+		const s = part.run.status;
+		if (s === "COMPLETED") counts.done++;
+		else if (s === "INPUT_REQUIRED") counts.waiting++;
+		else if (s === "FAILED" || s === "CANCELLED") counts.failed++;
+		else counts.running++;
+	}
+	return counts;
+}
+
+function runStatusSummary(items: OwnedMessagePart[]): string {
+	const counts = runCounts(items);
+	const parts: string[] = [];
+	if (counts.done) parts.push(`${counts.done} done`);
+	if (counts.running) parts.push(`${counts.running} running`);
+	if (counts.waiting) parts.push(`${counts.waiting} waiting for you`);
+	if (counts.failed) parts.push(`${counts.failed} failed`);
+	return parts.join(" · ") || "complete";
+}
+
+function RunStatusDots({ items }: { items: OwnedMessagePart[] }) {
+	const { done, running, waiting, failed } = runCounts(items);
+	return (
+		<span aria-hidden="true" className="ml-auto flex items-center gap-1">
+			{done > 0 && <span className="size-1.5 rounded-full bg-success" />}
+			{running > 0 && (
+				<span className="size-1.5 animate-pulse rounded-full bg-primary" />
+			)}
+			{waiting > 0 && (
+				<span className="size-1.5 animate-pulse rounded-full bg-warning" />
+			)}
+			{failed > 0 && (
+				<span className="size-1.5 rounded-full bg-destructive" />
+			)}
+		</span>
+	);
+}
 
 function isWorking(items: OwnedMessagePart[]): boolean {
 	const message = items.at(-1)?.message;

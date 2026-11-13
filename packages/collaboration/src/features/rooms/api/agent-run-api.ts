@@ -66,6 +66,7 @@ const agentRunSchema = z.object({
 	startedAt: z.string().nullish(),
 	completedAt: z.string().nullish(),
 	workspaceName: z.string().nullish(),
+	label: z.string().nullish(),
 	executorType: z.enum(["AGENT", "HUMAN"]).nullish(),
 	executorLabel: z.string().nullish(),
 	pendingActions: z
@@ -112,6 +113,7 @@ export const agentItemSchema = z.discriminatedUnion("kind", [
 		childRunId: z.string(),
 		roomId: z.string(),
 		alias: z.string().nullish(),
+		label: z.string().nullish(),
 		status: statusSchema,
 		error: z.string().nullish(),
 		resultPreview: z.string().nullish(),
