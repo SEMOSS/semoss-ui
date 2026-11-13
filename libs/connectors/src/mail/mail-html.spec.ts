@@ -184,9 +184,18 @@ describe("mail html", () => {
 				{ contentId: "tile@x", contentType: "image/gif", data: "BBBB" },
 			],
 		});
-		expect(shown.html).toContain('url("data:image/png;base64,AAAA")');
-		expect(shown.html).toContain('url("data:image/gif;base64,BBBB")');
-		expect(shown.html).toContain("url(https://example.com/b.png)");
+		// read the styles back, since the serialized attribute escapes their quotes
+		const shownDoc = body(shown.html);
+		expect(
+			shownDoc.querySelector("table")?.getAttribute("style"),
+		).toContain('url("data:image/png;base64,AAAA")');
+		const [tile, web] = Array.from(shownDoc.querySelectorAll("td"));
+		expect(tile?.getAttribute("style")).toContain(
+			'url("data:image/gif;base64,BBBB")',
+		);
+		expect(web?.getAttribute("style")).toContain(
+			"url(https://example.com/b.png)",
+		);
 		expect(shown.html).toContain("img-src data: https:");
 	});
 

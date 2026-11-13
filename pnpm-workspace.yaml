@@ -1,4 +1,29 @@
 packages:
     - 'packages/*'
     - 'libs/*'
-    - 'packages/vscode-extension/src/webviews/*'
+
+# pnpm 11+ reads every setting below only from this file, not from package.json's "pnpm" field
+
+# Install scripts of dependencies; pnpm 11+ fails the install on any not listed
+allowBuilds:
+    # checks its platform binary and speeds up its CLI
+    'esbuild': true
+    # only falls back to a WebAssembly build when the native binding is missing
+    '@swc/core': false
+    # prints a funding banner
+    'core-js': false
+    # prints a message for installs in some time zones
+    'es5-ext': false
+    # installs git hooks; the root "prepare" script already runs lefthook install
+    'lefthook': false
+    # only manages npm's global yarn shims
+    'yarn': false
+
+overrides:
+    # @crxjs/vite-plugin 2.4.0 pins rollup 2.79.2; 2.80.0 has the security fix
+    '@crxjs/vite-plugin>rollup': '2.80.0'
+
+patchedDependencies:
+    'ooxml-ui@1.21.0': 'patches/ooxml-ui@1.21.0.patch'
+    'pptx-react-viewer@4.45.0': 'patches/pptx-react-viewer@4.45.0.patch'
+    'ooxml-core@1.22.0': 'patches/ooxml-core@1.22.0.patch'
