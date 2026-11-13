@@ -50,7 +50,7 @@ SEMOSS is a React-based analytics platform built as a pnpm monorepo with Turbore
 These summaries include declared internal dependencies and peers. Package manifests
 and the owning guides define the exact public entry points and architectural boundaries.
 
-Libraries (`libs/*`, publishable):
+Libraries:
 - `@semoss/utility` → Generic text, date, object, JSON, file, encoding, browser, and other functional helpers
 - `@semoss/sdk` → Core SDK (bundles `@semoss/utility`; no runtime dependencies)
 - `@semoss/ui` → Component library (no internal dependencies)
@@ -68,7 +68,7 @@ Libraries (`libs/*`, publishable):
 The dock and the panels are two layers, in one direction:
 `@semoss/ui ← @semoss/workbench ← @semoss/panels → @semoss/shared → @semoss/sdk`.
 
-Applications (`packages/*`, not published):
+Applications:
 - `@semoss/client` → Main web application (depends on automation, i18n, panels, renderer, sdk, shared, terminal, ui, utility, workbench)
 - `@semoss/playground` → Chat (depends on connectors, i18n, panels, sdk, shared, ui, utility, workbench)
 - `@semoss/collaboration` → Collaboration workspace: work, rooms, connectors, routines (depends on
@@ -94,7 +94,7 @@ the `connectors` i18n namespace. See
 
 ```
 semoss/
-├── libs/           # Shared libraries (publishable)
+├── libs/           # Shared libraries
 │   ├── utility/    # Generic cross-package utility functions
 │   ├── sdk/        # @semoss/sdk - Core SDK
 │   ├── ui/         # @semoss/ui - Component library
