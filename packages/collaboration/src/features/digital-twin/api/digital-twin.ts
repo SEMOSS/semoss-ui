@@ -9,6 +9,7 @@ import {
 	toAgentFormValues,
 } from "@semoss/shared";
 import { z } from "@semoss/ui/next";
+import { decodeBase64ToBytes } from "@semoss/utility/encoding";
 import { tryParseJson } from "@semoss/utility/json";
 import {
 	type ProjectRow,
@@ -235,6 +236,52 @@ export async function saveTwin(
 			{ cause },
 		);
 	}
+}
+
+/** A generated avatar option: the file a save uploads, and an address to show it from. */
+export interface TwinAvatarOption {
+	file: File;
+	url: string;
+}
+
+const avatarSchema = z.object({
+	needsDescription: z.boolean().optional(),
+	image: z.string().min(1).optional(),
+});
+
+/**
+ * Ask the server for one avatar option: a cartoon character drawn with the
+ * owner's Microsoft profile photo as a rough reference, or from `description`
+ * when one is given. The server picks the image model, and nothing is saved
+ * until the twin is.
+ *
+ * @param description - How the avatar should look; left out to use the photo.
+ * @param variant - Which look to draw, as any whole number: the server counts
+ * it round the looks it has, so three numbers in a row are three different looks.
+ * @returns The option, or null when the owner has no photo and gave no description.
+ */
+// shortcut: each option is one ordinary request, so a picture slower than the load balancer allows fails; run it as a pixel job (actions.runAsync and polling) if that shows up
+export async function generateTwinAvatar(
+	actions: InsightActions,
+	description?: string,
+	variant?: number,
+): Promise<TwinAvatarOption | null> {
+	const answer = await callPixel(
+		actions,
+		pixel("WorkGenerateTwinAvatar", { description, variant }),
+		avatarSchema,
+	);
+	if (!answer.image) {
+		if (answer.needsDescription) return null;
+		throw new Error("The server did not return a picture.");
+	}
+	return {
+		// the server always answers with a PNG, a type the image upload takes
+		file: new File([decodeBase64ToBytes(answer.image)], "avatar.png", {
+			type: "image/png",
+		}),
+		url: `data:image/png;base64,${answer.image}`,
+	};
 }
 
 /**

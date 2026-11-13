@@ -10,7 +10,9 @@ import {
 	useFormContext,
 } from "@semoss/ui/next";
 import { AgentAvatar } from "@/components/common/agent-avatar";
+import { useOptionalCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import type { TwinProfile } from "./api/digital-twin";
+import { TwinAvatarOptions } from "./twin-avatar-options";
 import { useImagePreview } from "./use-image-preview";
 
 interface TwinImageFieldProps {
@@ -20,7 +22,8 @@ interface TwinImageFieldProps {
 
 /**
  * The twin's image in its profile form: the portrait as it will show, beside
- * the file to replace it with. The file is only uploaded when the form saves.
+ * the file to replace it with, and options to generate where the server can
+ * make them. The image is only uploaded when the form saves.
  */
 export function TwinImageField({ imageUrl }: TwinImageFieldProps) {
 	const id = useId();
@@ -29,9 +32,17 @@ export function TwinImageField({ imageUrl }: TwinImageFieldProps) {
 	const name = form.watch("name");
 	const image = form.watch("image");
 	const preview = useImagePreview(image);
-	// a file input cannot be given a value, only emptied: once the form holds no file, neither does it
+	// off on a server with no image model set, and where no session is around the form
+	const canGenerate =
+		useOptionalCollaborationSession()?.state.settings.avatarGeneration ===
+		true;
+	// a file input cannot be given a value, only emptied: once the form's image is not the file it holds, it holds none
 	useEffect(() => {
-		if (!image && input.current) input.current.value = "";
+		if (
+			input.current &&
+			(input.current.files?.[0] ?? null) !== (image ?? null)
+		)
+			input.current.value = "";
 	}, [image]);
 
 	return (
@@ -69,13 +80,21 @@ export function TwinImageField({ imageUrl }: TwinImageFieldProps) {
 						/>
 					</div>
 					<FieldDescription id={`${id}-hint`}>
-						Optional. A PNG, JPEG or GIF, up to 10 MiB. It is
-						uploaded when you save.
+						{canGenerate
+							? "Optional. Generate options or upload a PNG, JPEG or GIF, up to 10 MiB. It is saved when you save."
+							: "Optional. A PNG, JPEG or GIF, up to 10 MiB. It is uploaded when you save."}
 					</FieldDescription>
 					{fieldState.error?.message && (
 						<FieldError id={`${id}-error`}>
 							{fieldState.error.message}
 						</FieldError>
+					)}
+					{canGenerate && (
+						<TwinAvatarOptions
+							image={image}
+							onPick={field.onChange}
+							isDisabled={form.formState.isSubmitting}
+						/>
 					)}
 				</Field>
 			)}

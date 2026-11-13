@@ -176,6 +176,8 @@ function mapSettings(row: Row): Settings {
 		draftSignatureOn: row.draftSignatureOn !== false,
 		// older servers send none and sync every 15 minutes
 		syncEveryMinutes: Number(row.syncEveryMinutes ?? 15),
+		// older servers send none and cannot make avatars
+		avatarGeneration: row.avatarGeneration === true,
 		version: Number(row.version ?? 0),
 	};
 }

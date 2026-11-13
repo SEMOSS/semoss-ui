@@ -277,6 +277,8 @@ export interface Settings {
 	draftSignatureOn: boolean;
 	/** Minutes between background syncs while the app is closed; 0 turns them off. */
 	syncEveryMinutes: number;
+	/** Read-only: the server has an image model set for Digital Twin avatar options. */
+	avatarGeneration: boolean;
 	version: number;
 }
 
