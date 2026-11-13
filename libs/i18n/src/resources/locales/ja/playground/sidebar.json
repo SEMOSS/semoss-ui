@@ -83,7 +83,23 @@
 			},
 			"language": "言語",
 			"languageDescription": "アプリの表示言語。",
-			"version": "バージョン {{version}}"
+			"version": "バージョン {{version}}",
+			"newChat": {
+				"title": "チャット",
+				"default": "既定",
+				"model": "モデル",
+				"modelDescription": "新しいチャットで使うモデル。",
+				"unavailableModel": "利用できないモデル",
+				"mode": "モード",
+				"modeDescription": "新しいチャットをチャットとして開始するか、エージェントで開始するか。",
+				"modes": {
+					"chat": "チャット",
+					"agent": "エージェント"
+				},
+				"agent": "エージェント",
+				"agentDescription": "エージェントモードの新しいチャットで実行するエージェント。",
+				"saveError": "設定を保存できませんでした: {{message}}"
+			}
 		}
 	},
 	"download": {
