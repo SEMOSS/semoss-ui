@@ -113,6 +113,7 @@ const getNumProjectsForGroup = async (
 	groupType: string,
 	searchTerm?: string,
 	admin = true,
+	projectTypes?: string[],
 ) => {
 	let url = `${Env.MODULE}/api/auth/${admin ? "admin/" : ""}`;
 	url += "group/getNumProjectsForGroup";
@@ -120,6 +121,9 @@ const getNumProjectsForGroup = async (
 	if (groupId) params.set("groupId", groupId);
 	if (groupType) params.set("groupType", groupType);
 	if (searchTerm) params.set("searchTerm", searchTerm);
+	for (const projectType of projectTypes ?? []) {
+		params.append("projectTypes", projectType);
+	}
 	const query = params.toString();
 	if (query) {
 		url += `?${query}`;
@@ -390,9 +394,8 @@ const getTeamProjects = async (
 	limit: number,
 	offset: number,
 	searchTerm: string,
-	onlyApps: boolean,
-	type?: string,
 	admin = true,
+	projectTypes?: string[],
 ) => {
 	let url = `${Env.MODULE}/api/auth/${admin ? "admin/" : ""}`;
 	url += "group/getProjectsForGroup";
@@ -402,8 +405,9 @@ const getTeamProjects = async (
 	if (limit) params.set("limit", String(limit));
 	if (offset) params.set("offset", String(offset));
 	if (searchTerm) params.set("searchTerm", searchTerm);
-	if (onlyApps) params.set("onlyApps", String(onlyApps));
-	if (type) params.set("type", type);
+	for (const projectType of projectTypes ?? []) {
+		params.append("projectTypes", projectType);
+	}
 	const query = params.toString();
 	if (query) {
 		url += `?${query}`;
@@ -423,6 +427,7 @@ const getUnassignedTeamProjects = async (
 	limit: number,
 	offset: number,
 	searchTerm: string,
+	projectTypes?: string[],
 ) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
 	url += "group/getAvailableProjectsForGroup";
@@ -432,6 +437,9 @@ const getUnassignedTeamProjects = async (
 	if (limit) params.set("limit", String(limit));
 	if (offset) params.set("offset", String(offset));
 	if (searchTerm) params.set("searchTerm", searchTerm);
+	for (const projectType of projectTypes ?? []) {
+		params.append("projectTypes", projectType);
+	}
 	const query = params.toString();
 	if (query) {
 		url += `?${query}`;
@@ -956,6 +964,7 @@ const toTeamResources = (
  * @param limit - Page size
  * @param offset - Rows to skip
  * @param admin - Whether to use the admin endpoint; a team's managers use the other
+ * @param projectTypes - Keep only the projects of these types; every type when empty. Engines ignore it
  */
 export const getTeamResources = async (
 	kind: GroupAccessResource,
@@ -964,6 +973,7 @@ export const getTeamResources = async (
 	limit: number,
 	offset: number,
 	admin = true,
+	projectTypes?: string[],
 ): Promise<TeamResource[]> =>
 	toTeamResources(
 		kind,
@@ -974,9 +984,8 @@ export const getTeamResources = async (
 					limit,
 					offset,
 					searchTerm,
-					false,
-					undefined,
 					admin,
+					projectTypes,
 				)
 			: await getTeamEngines(
 					group.id,
@@ -995,12 +1004,14 @@ export const getTeamResources = async (
  * @param group - The team
  * @param searchTerm - Text matched against the name or id
  * @param admin - Whether to use the admin endpoint; a team's managers use the other
+ * @param projectTypes - Count only the projects of these types; every type when empty. Engines ignore it
  */
 export const getTeamResourceCount = async (
 	kind: GroupAccessResource,
 	group: GroupKey,
 	searchTerm: string,
 	admin = true,
+	projectTypes?: string[],
 ): Promise<number> =>
 	kind === "PROJECT"
 		? getNumProjectsForGroup(
@@ -1008,6 +1019,7 @@ export const getTeamResourceCount = async (
 				group.type,
 				searchTerm || undefined,
 				admin,
+				projectTypes,
 			)
 		: getNumEnginesForGroup(
 				group.id,
@@ -1023,6 +1035,7 @@ export const getTeamResourceCount = async (
  * @param searchTerm - Text matched against the name or id
  * @param limit - Page size
  * @param offset - Rows to skip
+ * @param projectTypes - Keep only the projects of these types; every type when empty. Engines ignore it
  */
 export const getAvailableTeamResources = async (
 	kind: GroupAccessResource,
@@ -1030,6 +1043,7 @@ export const getAvailableTeamResources = async (
 	searchTerm: string,
 	limit: number,
 	offset: number,
+	projectTypes?: string[],
 ): Promise<TeamResource[]> =>
 	toTeamResources(
 		kind,
@@ -1040,6 +1054,7 @@ export const getAvailableTeamResources = async (
 					limit,
 					offset,
 					searchTerm,
+					projectTypes,
 				)
 			: await getUnassignedTeamEngines(
 					group.id,

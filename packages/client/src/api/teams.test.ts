@@ -8,6 +8,7 @@ import {
 	deleteTeamUser,
 	editTeam,
 	getAvailableGroupsForResource,
+	getAvailableTeamResources,
 	getGroupDetails,
 	getGroupManagers,
 	getGroupsWithAccessToEngine,
@@ -496,6 +497,36 @@ describe("getTeamResources and getTeamResourceCount", () => {
 
 		expect(get).toHaveBeenCalledWith(
 			"/Monolith/api/auth/admin/group/getNumEnginesForGroup?groupId=Sales&groupType=CUSTOM",
+		);
+	});
+
+	it("sends each project type to filter a team's projects", async () => {
+		vi.mocked(get).mockResolvedValue(respond([]));
+
+		await getTeamResources("PROJECT", team, "", 50, 0, true, [
+			"CODE",
+			"BLOCKS",
+		]);
+		await getAvailableTeamResources("PROJECT", team, "", 50, 0, ["CODE"]);
+
+		expect(get).toHaveBeenNthCalledWith(
+			1,
+			"/Monolith/api/auth/admin/group/getProjectsForGroup?groupId=Sales&groupType=CUSTOM&limit=50&projectTypes=CODE&projectTypes=BLOCKS",
+		);
+		expect(get).toHaveBeenNthCalledWith(
+			2,
+			"/Monolith/api/auth/admin/group/getAvailableProjectsForGroup?groupId=Sales&groupType=CUSTOM&limit=50&projectTypes=CODE",
+		);
+	});
+
+	it("counts only the projects of the types asked for", async () => {
+		vi.mocked(get).mockResolvedValue(respond(1));
+
+		expect(
+			await getTeamResourceCount("PROJECT", team, "", false, ["CODE"]),
+		).toBe(1);
+		expect(get).toHaveBeenCalledWith(
+			"/Monolith/api/auth/group/getNumProjectsForGroup?groupId=Sales&groupType=CUSTOM&projectTypes=CODE",
 		);
 	});
 });
