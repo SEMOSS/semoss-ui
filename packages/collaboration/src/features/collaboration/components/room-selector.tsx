@@ -65,17 +65,17 @@ export function RoomSelector({
 						<DropdownMenuItem
 							key={room.id}
 							onSelect={() => onRoomSelect(room.id)}
-							className="flex flex-col gap-1 py-2"
+							className="flex items-center justify-between gap-2 py-2"
 						>
-							<div className="flex items-center gap-2">
+							<div className="flex min-w-0 items-center gap-2">
 								{idx === 0 && (
-									<span className="inline-block h-2 w-2 rounded-full bg-green-500" />
+									<span className="inline-block h-2 w-2 shrink-0 rounded-full bg-green-500" />
 								)}
-								<span className="font-medium text-sm">
+								<span className="truncate font-medium text-sm">
 									{room.title || `Chat ${rooms.length - idx}`}
 								</span>
 							</div>
-							<span className="text-muted-foreground text-xs">
+							<span className="shrink-0 text-muted-foreground text-xs">
 								{formatActivityTime(room.lastActivity)}
 							</span>
 						</DropdownMenuItem>
