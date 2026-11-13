@@ -1,4 +1,5 @@
 import { z } from "@semoss/ui/next";
+import { CATALOG_NAME_KEY } from "@/components/import/shared/import-form.constants";
 
 /** The guardrail type the Jev policy guardrail is created with. */
 const JEV_POLICY_GUARDRAIL_TYPE = "EMBEDDED_JEV_POLICY";
@@ -60,7 +61,7 @@ const choiceSchema = z.object({
  */
 export const jevPolicyGuardrailSchema = z
 	.object({
-		MODEL_NAME: z
+		[CATALOG_NAME_KEY]: z
 			.string()
 			.trim()
 			.min(1, "Catalog name is required")
@@ -166,7 +167,7 @@ export type JevPolicyGuardrailFormValues = z.infer<
  * the second of them blocking the call.
  */
 export const JEV_POLICY_GUARDRAIL_DEFAULTS: JevPolicyGuardrailFormValues = {
-	MODEL_NAME: "",
+	[CATALOG_NAME_KEY]: "",
 	MODEL_ENGINE_ID: "",
 	QUESTION_TYPE: "NOUL",
 	QUESTION_INSTRUCTIONS: "",

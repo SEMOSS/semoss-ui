@@ -140,7 +140,7 @@ export const UploadProjectDialog = ({
 				// Assets Copy: create the project shell, set metadata, then
 				// delete the default assets folder and unzip the uploaded file
 				const createResp = await runPixel(
-					`CreateProject(project=["${name}"], global=["${isGlobal}"], projectType=["${appType}"], portal=["true"])`,
+					`CreateProject(catalogName=["${name}"], global=["${isGlobal}"], projectType=["${appType}"], portal=["true"])`,
 				);
 				const createOutput = createResp.pixelReturn[0].output as {
 					project_id: string;

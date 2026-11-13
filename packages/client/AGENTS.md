@@ -566,6 +566,20 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   logo, name and id. The role decides the models offered: only `TYPESAFE` models decide, and they
   never answer, classify by chat or embed.
 
+### Catalog name in the import forms
+
+- Every engine import form keeps the catalog name under `CATALOG_NAME_KEY`
+  (`components/import/shared/import-form.constants.ts`), for every engine type. The backend
+  reserves the key (`UploadUtilities.CATALOG_NAME_KEY` in SEMOSS) and drops it from the engine
+  details before it writes the engine's smss, so no form field uses it for an engine setting. A
+  setting such as the model a Gliner or Prompt Injection guardrail loads has a key of its own
+  (`MODEL_NAME`).
+- Every engine and project create pixel takes the name as `catalogName` (`CreateModelEngine`,
+  `CreateGuardrailEngine`, `CreateProject`, `CreateNotebook`, `CreateSkill`, `CloneEngine` and the
+  rest). The file upload database pixels (`RdbmsUploadTableData`, `RdbmsUploadExcelData`,
+  `RdfLoaderSheetUpload` and the others) and `RdbmsExternalUpload` take `database`, which holds the
+  new database's name or, with `existing`, the id of the database to add to.
+
 ### Engine fields in the import forms
 
 - A field that picks another engine, such as a vector database's embeddings model or a

@@ -20,7 +20,7 @@ export const createGuardrailEngine = async (
 	name: string,
 	details: Record<string, unknown>,
 ): Promise<string> => {
-	const pixel = `CreateGuardrailEngine(guardrail=[${JSON.stringify(name)}],guardrailDetails=[${JSON.stringify(details)}]);`;
+	const pixel = `CreateGuardrailEngine(catalogName=[${JSON.stringify(name)}],guardrailDetails=[${JSON.stringify(details)}]);`;
 	const response = await runPixel<[CreateGuardrailEngineOutput]>(
 		pixel,
 		insightId,

@@ -99,7 +99,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 					throw new Error("State is missing from the blocks app");
 
 				const { errors, pixelReturn } = await runPixel<[Project]>(
-					`CreateAppFromBlocks ( project = [ "${
+					`CreateAppFromBlocks ( catalogName = [ "${
 						data.APP_NAME
 					}" ] , json =[${JSON.stringify(state)}]  ) ;`,
 				);
@@ -114,7 +114,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 
 				if (!(await saveMetadata(appId))) return;
 			} else if (type === "automation") {
-				const pixel = `CreateAutomation(projectName=${JSON.stringify([data.APP_NAME])});`;
+				const pixel = `CreateAutomation(catalogName=${JSON.stringify([data.APP_NAME])});`;
 				const { errors, pixelReturn } =
 					await runPixel<[Project]>(pixel);
 
@@ -128,7 +128,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 
 				if (!(await saveMetadata(appId, ["AUTOMATION"]))) return;
 			} else if (type === "code") {
-				const pixel = `CreateProject(project=["${data.APP_NAME}"], portal=[true], projectType=["CODE"]);`;
+				const pixel = `CreateProject(catalogName=["${data.APP_NAME}"], portal=[true], projectType=["CODE"]);`;
 				const { errors, pixelReturn } =
 					await runPixel<[Project]>(pixel);
 
