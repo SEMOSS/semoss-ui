@@ -71,6 +71,12 @@ falling back to `mutate`, and it shows New, New File, and New Folder without the
 `FileExplorer` hands the overlay the explorer's `adapter`, so it creates in that source rather
 than in the mode's asset tree. `@semoss/connectors`' drive views are built this way.
 
+**A source can be kept to one folder.** `scopeFileExplorerAdapter(adapter, root)` returns an
+adapter that sees `root` as `/`: the explorer lists, searches, creates and uploads there and
+reaches nothing above it, a typed `..` included. Item paths are then relative to the folder, so a
+host resolves a path it takes out of the explorer with `resolveScopedFilePath(root, path)` before
+opening it. `@semoss/panels`' file explorer panel does both when it is given a `rootPath`.
+
 **Every row's menu has three ways in.** Right-click, the row's More actions button, and
 Shift+F10 or the menu key on a focused row open the same menu, so the context-menu entries a
 host adds through `itemActions` are reachable without a right-click: from the keyboard, and on

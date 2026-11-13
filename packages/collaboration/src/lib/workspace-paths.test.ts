@@ -1,8 +1,11 @@
 import {
+	isHeroPath,
 	newRoomPath,
 	roomPath,
 	threadPath,
 	topicPath,
+	twinChatPath,
+	twinContentsPath,
 } from "./workspace-paths";
 
 it("encodes a topic identity as one shared workspace route segment", () => {
@@ -31,4 +34,25 @@ describe("newRoomPath", () => {
 			"/?agentId=agent%2Fone&model=model%26two",
 		);
 	});
+});
+
+it("names the twin to chat with, and the place its contents page opens on, in the address", () => {
+	expect(twinChatPath("agent/one")).toBe("/twins/chat?agentId=agent%2Fone");
+	expect(twinContentsPath()).toBe("/twins/mine/contents");
+	expect(twinContentsPath("teams-chats")).toBe(
+		"/twins/mine/contents?in=teams-chats",
+	);
+});
+
+it("opens Today, Work, its review and its topics on the hero photo, with or without a trailing slash", () => {
+	for (const path of ["/", "/work", "/work/", "/work/review", "/work/topics"])
+		expect(isHeroPath(path)).toBe(true);
+	// Settings lists the same topics under its own tab bar, without the hero
+	for (const path of [
+		"/brain/topics",
+		"/work/item/one",
+		"/routines",
+		"/brain",
+	])
+		expect(isHeroPath(path)).toBe(false);
 });

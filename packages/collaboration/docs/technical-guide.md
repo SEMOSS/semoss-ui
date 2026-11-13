@@ -88,7 +88,7 @@ Tree: `RootLayout` → `AuthorizedLayout` (session gate + app `InsightProvider`)
 | `/routines` | Routines workspace |
 | `/work`, `/work/all`, `/work/waiting`, `/work/done` | Topics / global work lists |
 | `/topics/:topicId` | Topic workspace (Actions, Threads, Sessions, goals, notes) |
-| `/topics/:topicId/contents` | Add or remove a topic's emails and chats by hand (`features/topic-contents`): live Outlook folders, Brain's threads, assistant chats |
+| `/topics/:topicId/contents` | Add or remove a topic's emails, chats and linked files by hand (`features/topic-contents`): live Outlook folders, Brain's threads, assistant chats, OneDrive and Teams files |
 | `/work/topic/:id`, `/brain/topics/:id` | Redirect to `/topics/:id` |
 | `/thread/:id` | Source-import bridge; `room:`-prefixed id = saved room |
 | `/brain`, `/brain/sources`, `/brain/people[/:id]`, `/brain/threads[/:id]` | Brain |

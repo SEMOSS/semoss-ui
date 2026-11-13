@@ -5,6 +5,7 @@ import type {
 	ConversationToolStates,
 	PlaygroundTurnPhase,
 } from "@/features/messages/types/message";
+import { hasVisibleTaskOutcome } from "@/features/messages/utils/task-outcome";
 import {
 	optimisticUserMessage,
 	threadFromMessages,
@@ -739,6 +740,7 @@ export class AgentTurnController {
 				live: {
 					phase,
 					hasObservationIssue: !!this.snapshot.transportError,
+					activity: run.progress?.activity,
 				},
 			});
 		if (
@@ -758,6 +760,24 @@ export class AgentTurnController {
 				parts: [{ type: "text", text: run.finalText }],
 			});
 		}
+		if (
+			terminal &&
+			hasVisibleTaskOutcome(run.taskOutcome) &&
+			!messages.some(
+				(message) =>
+					message.role === "assistant" &&
+					message.visible !== false &&
+					message.runId === run.runId,
+			)
+		) {
+			messages.push({
+				id: `agent-outcome:${run.runId}`,
+				runId: run.runId,
+				role: "assistant",
+				parts: [],
+				taskOutcome: run.taskOutcome,
+			});
+		}
 		const settled = finished && this.settledRunId !== run.runId;
 		if (settled) this.settledRunId = run.runId;
 		const runStates = new Map(
@@ -766,12 +786,17 @@ export class AgentTurnController {
 				...this.historicalChildren.values(),
 				...this.children.values(),
 				run,
-			].map((entry) => [entry.runId, entry.status]),
+			].map((entry) => [entry.runId, entry]),
 		);
 		this.update({
 			messages: messages.map((message) =>
 				message.runId
-					? { ...message, runStatus: runStates.get(message.runId) }
+					? {
+							...message,
+							runStatus: runStates.get(message.runId)?.status,
+							taskOutcome: runStates.get(message.runId)
+								?.taskOutcome,
+						}
 					: message,
 			),
 			toolStates,
@@ -779,7 +804,7 @@ export class AgentTurnController {
 			phase,
 			isRunning: !finished,
 			turnError:
-				run.status === "FAILED"
+				run.status === "FAILED" && run.taskOutcome?.status !== "PARTIAL"
 					? run.errorMessage || "The agent run failed."
 					: null,
 			settlementVersion:

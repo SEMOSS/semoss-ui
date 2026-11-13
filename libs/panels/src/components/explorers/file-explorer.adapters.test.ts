@@ -1,5 +1,11 @@
-import { describe, expect, it } from "vitest";
-import { type FileMode, getFileExplorerAdapter } from "@semoss/shared";
+import { describe, expect, it, vi } from "vitest";
+import {
+	type FileExplorerUploadActions,
+	type FileMode,
+	getFileExplorerAdapter,
+	resolveScopedFilePath,
+	scopeFileExplorerAdapter,
+} from "@semoss/shared";
 
 /**
  * Every Pixel the asset adapters build, pinned per mode.
@@ -181,5 +187,106 @@ describe("storage", () => {
 		expect(() => adapter.save("/a.txt", "body")).toThrow();
 		expect(() => adapter.save("/a.txt", "Ym9keQ==", true)).toThrow();
 		expect(() => adapter.download("/a.txt")).toThrow();
+	});
+});
+
+describe("a source kept to one folder", () => {
+	// what the Agent files explorer is built on: the project's public folder is
+	// its whole world, so nothing it offers can read or write above it
+	const scoped = scopeFileExplorerAdapter(
+		getFileExplorerAdapter(APP),
+		"/public",
+	);
+
+	it("builds every Pixel under the folder", () => {
+		expect(scoped.browse("/")).toBe(
+			'BrowseAppAssets(filePath=["/public/"], project=["p1"]);',
+		);
+		expect(scoped.browse("/dir/")).toBe(
+			'BrowseAppAssets(filePath=["/public/dir/"], project=["p1"]);',
+		);
+		// an empty path is a search of the whole tree, which here is the folder
+		expect(scoped.search("", "term")).toBe(
+			'SearchAppAssets(filePath=["/public"], project=["p1"], search=["term"]);',
+		);
+		expect(scoped.rename("/a.txt", "/dir/b.txt")).toBe(
+			'RenameAppAsset(project=["p1"], filePath=["/public/a.txt"], newValue=["/public/dir/b.txt"]);',
+		);
+		expect(scoped.copy("/a.txt", "/b.txt")).toBe(
+			'CopyAppAsset(project="p1", filePath="/public/a.txt", newValue="/public/b.txt");',
+		);
+		expect(scoped.remove("/a.txt")).toBe(
+			'DeleteAppAssets(project=["p1"], filePath=["/public/a.txt"]);',
+		);
+		expect(scoped.read("/a.txt")).toBe(
+			'GetAppAssets(filePath=["/public/a.txt"], project=["p1"]);',
+		);
+		expect(scoped.save("/a.txt", "body")).toBe(
+			'SaveAppAssets(project=["p1"], filePath=["/public/a.txt"], content=["<encode>body</encode>"]);',
+		);
+		expect(scoped.download("/a.txt")).toBe(
+			'DownloadAppAsset(project=["p1"], filePath=["/public/a.txt"]);',
+		);
+		expect(scoped.createFile("/a.txt")).toBe(
+			'NewAppAssetsFile(project=["p1"], filePath=["/public/a.txt"]);',
+		);
+		expect(scoped.createDirectory("/dir")).toBe(
+			'NewAppAssetsDirectory(project=["p1"], filePath=["/public/dir"]);',
+		);
+		expect(scoped.unzip("/a.zip")).toBe(
+			'UnzipAppAssetFile(project=["p1"], filePath=["/public/a.zip"])',
+		);
+	});
+
+	it("never lets a path climb above the folder", () => {
+		// the new-file overlay's destination is typed by hand
+		expect(scoped.createFile("/../../secret.txt")).toBe(
+			'NewAppAssetsFile(project=["p1"], filePath=["/public/secret.txt"]);',
+		);
+		expect(scoped.browse("/dir/../..")).toBe(
+			'BrowseAppAssets(filePath=["/public"], project=["p1"]);',
+		);
+		expect(resolveScopedFilePath("/public", "/a/./b/../c/")).toBe(
+			"/public/a/c/",
+		);
+		expect(resolveScopedFilePath("/public/", "")).toBe("/public");
+	});
+
+	it("uploads into the folder", async () => {
+		const uploadApp = vi.fn().mockResolvedValue({ data: [] });
+		const files = [new File(["x"], "guide.pdf")];
+
+		await scoped.upload(
+			{ uploadApp } as unknown as FileExplorerUploadActions,
+			"/dir/",
+			files,
+		);
+
+		expect(uploadApp).toHaveBeenCalledWith("p1", "/public/dir/", files);
+	});
+
+	it("lists items by their place inside the folder", () => {
+		expect(
+			scoped.mapEntries(
+				[
+					{ name: "guide.pdf", path: "/public/guide.pdf" },
+					{
+						name: "templates",
+						path: "/public/templates/",
+						type: "directory",
+					},
+				],
+				"/",
+			),
+		).toEqual([
+			{ name: "guide.pdf", path: "/guide.pdf" },
+			{ name: "templates", path: "/templates/", type: "directory" },
+		]);
+	});
+
+	it("can do what its source can", () => {
+		expect(scoped.capabilities).toEqual(
+			getFileExplorerAdapter(APP).capabilities,
+		);
 	});
 });

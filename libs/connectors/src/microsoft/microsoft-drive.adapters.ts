@@ -2,8 +2,10 @@ import {
 	ensureDirectoryPath,
 	type FileExplorerAdapter,
 	type FileExplorerCapabilities,
+	type FileExplorerPrimaryAction,
 	type FileItem,
 } from "@semoss/shared";
+import type { ConnectorViewerProps } from "../core/connector.types";
 import type { ConnectorSaveRequest } from "../core/use-connector-saver";
 import {
 	parseOneDriveFolder,
@@ -230,6 +232,35 @@ export const getDriveSaveRequest = (
 		},
 	};
 };
+
+/** What a host gives a viewer of a Microsoft drive. */
+export interface DriveViewerProps extends ConnectorViewerProps {
+	/**
+	 * The host's own action on a file, for a host that does something else
+	 * with a file than bring it into a chat, such as link it to a record. It
+	 * is the row's button and leads its menu, in place of adding to context
+	 * and saving. Undefined for a file it does not apply to; folders never
+	 * get it.
+	 */
+	getFileAction?: (
+		file: MicrosoftDriveItem,
+	) => FileExplorerPrimaryAction | undefined;
+}
+
+/**
+ * A host's file action as the explorer's row action.
+ *
+ * @param getFileAction - The host's action, when it has one.
+ * @return The row action, which leaves folders out, or undefined.
+ */
+export const getDriveItemAction = (
+	getFileAction: DriveViewerProps["getFileAction"],
+): ((row: FileItem) => FileExplorerPrimaryAction | undefined) | undefined =>
+	getFileAction &&
+	((row) => {
+		const item = getDriveItem(row);
+		return item && !item.isFolder ? getFileAction(item) : undefined;
+	});
 
 /**
  * The user's own OneDrive, browsed by path from its top. A search covers the

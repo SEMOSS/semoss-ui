@@ -33,6 +33,7 @@ export function TopicActions({
 	onEdit,
 	onManageThreads,
 	onManageChats,
+	onManageFiles,
 	onResort,
 	onFindConversations,
 }: {
@@ -44,6 +45,8 @@ export function TopicActions({
 	onManageThreads?: () => void;
 	/** The same for its chats; absent where no server can save a chat's topic. */
 	onManageChats?: () => void;
+	/** The same for its OneDrive and Teams files; absent where no server can keep the links. */
+	onManageFiles?: () => void;
 	/** Re-checks the conversations already in the topic, for after narrowing it. */
 	onResort?: () => void;
 	/** Opens the review of existing conversations that fit; absent where no server can check them. */
@@ -90,6 +93,11 @@ export function TopicActions({
 					{onManageChats && (
 						<DropdownMenuItem onSelect={onManageChats}>
 							Add or remove assistant chats...
+						</DropdownMenuItem>
+					)}
+					{onManageFiles && (
+						<DropdownMenuItem onSelect={onManageFiles}>
+							Add or remove files...
 						</DropdownMenuItem>
 					)}
 					{onFindConversations && (

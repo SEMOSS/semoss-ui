@@ -80,6 +80,24 @@ it("a rename saves the changed topic name", async () => {
 	]);
 });
 
+it("the files linked to a topic are the server's already, so the page's copy of them is not saved", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	sync(
+		step({
+			type: "topic.save",
+			topic: {
+				id: "t-geng",
+				files: [
+					{ itemId: "item-1", name: "Plan.docx", source: "onedrive" },
+				],
+			},
+		}),
+	);
+	await sync.settled();
+	expect(sent).toEqual([]);
+});
+
 it("a topic VIP saves on the person's membership", async () => {
 	const { actions, sent } = fakeActions();
 	const sync = createLiveSync(actions, vi.fn());

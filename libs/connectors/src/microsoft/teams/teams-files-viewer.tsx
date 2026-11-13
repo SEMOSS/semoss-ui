@@ -3,13 +3,14 @@ import { useTranslation } from "@semoss/i18n";
 import { Muted } from "@semoss/ui/next";
 import { ConnectorFileExplorer } from "../../components/connector-file-explorer";
 import { ConnectorViewerStatus } from "../../components/connector-viewer-status";
-import type { ConnectorViewerProps } from "../../core/connector.types";
 import { useConnectorSaver } from "../../core/use-connector-saver";
 import { MICROSOFT_PIXELS } from "../microsoft.pixels";
 import type { MicrosoftDriveItem } from "../microsoft.types";
 import {
 	createTeamsFilesAdapter,
+	type DriveViewerProps,
 	getDriveItem,
+	getDriveItemAction,
 	getDriveSaveRequest,
 } from "../microsoft-drive.adapters";
 import { TeamsChannelPicker } from "./teams-channel-picker";
@@ -36,7 +37,7 @@ const getDownload = (item: MicrosoftDriveItem) => {
 };
 
 /** Props for {@link TeamsFilesViewer}. */
-export type TeamsFilesViewerProps = ConnectorViewerProps;
+export type TeamsFilesViewerProps = DriveViewerProps;
 
 /**
  * Browse the files shared in a Teams channel: pick a team and channel, then
@@ -44,7 +45,7 @@ export type TeamsFilesViewerProps = ConnectorViewerProps;
  * tree with, and bring files into the insight.
  */
 export const TeamsFilesViewer = (props: TeamsFilesViewerProps) => {
-	const { onSignIn, isVisible, refreshRequestId } = props;
+	const { onSignIn, isVisible, refreshRequestId, getFileAction } = props;
 	const { t } = useTranslation("connectors");
 	const saver = useConnectorSaver("teams-files", props);
 	const choice = useTeamsChannelChoice();
@@ -116,6 +117,7 @@ export const TeamsFilesViewer = (props: TeamsFilesViewerProps) => {
 						getDriveSaveRequest(row, getDownload)
 					}
 					getWebUrl={(row) => getDriveItem(row)?.webUrl}
+					getItemAction={getDriveItemAction(getFileAction)}
 					onSignIn={onSignIn}
 					isVisible={isVisible}
 					refreshRequestId={refreshRequestId}

@@ -25,7 +25,6 @@ export const LOGIN_TYPE_NAMES: Readonly<Record<string, string>> = {
 	MICROSOFT: "Microsoft",
 	NATIVE: "Native",
 	OKTA: "Okta",
-	PRODUCT_HUNT: "Product Hunt",
 	SALESFORCE: "Salesforce",
 	SAML: "SAML",
 	SERVICENOW: "ServiceNow",

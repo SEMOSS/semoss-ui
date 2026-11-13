@@ -3,7 +3,7 @@ export function topicPath(topicId: string): string {
 	return `/topics/${encodeURIComponent(topicId)}`;
 }
 
-/** The full page for adding and removing a topic's emails and chats, opened on a place such as "chats". */
+/** The full page for adding and removing a topic's emails, chats and files, opened on a place such as "chats". */
 export function topicContentsPath(topicId: string, place?: string): string {
 	const path = `${topicPath(topicId)}/contents`;
 	return place ? `${path}?${new URLSearchParams({ in: place })}` : path;
@@ -28,4 +28,22 @@ export function newRoomPath(agentId?: string, modelId?: string) {
 
 	const query = search.toString();
 	return query ? `/?${query}` : "/";
+}
+
+/** The page that starts a chat with a Digital Twin, the signed-in person's own or one shared with them. */
+export function twinChatPath(agentId: string): string {
+	return `/twins/chat?${new URLSearchParams({ agentId })}`;
+}
+
+/** The full page of what the owner's Digital Twin knows, opened on a place such as "outlook". */
+export function twinContentsPath(place?: string): string {
+	const path = "/twins/mine/contents";
+	return place ? `${path}?${new URLSearchParams({ in: place })}` : path;
+}
+
+/** Pages that open on the hero photo; the shell scrolls them together with its header so the photo runs behind it. */
+export function isHeroPath(pathname: string): boolean {
+	return ["/", "/work", "/work/review", "/work/topics"].includes(
+		pathname.replace(/\/$/, "") || "/",
+	);
 }

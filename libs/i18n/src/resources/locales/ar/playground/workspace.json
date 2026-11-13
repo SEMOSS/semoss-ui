@@ -140,21 +140,6 @@
 		"noPrompts": "لم يتم العثور على موجهات",
 		"searchPlaceholder": "البحث في الموجهات..."
 	},
-	"chats": {
-		"title": "جميع الدردشات",
-		"subtitle": "تصفّح دردشاتك وابحث فيها ونظّفها.",
-		"selectAll": "تحديد الكل",
-		"deselectAll": "إلغاء تحديد الكل",
-		"favorites": "المفضلة",
-		"selectChat": "تحديد الدردشة {{name}}",
-		"selectedCount": "تم تحديد {{count}}",
-		"totalCount": "{{count}} دردشات",
-		"deleteSelected": "حذف {{count}} المحددة",
-		"bulkDeleteConfirmTitle": "حذف {{count}} دردشات؟",
-		"bulkDeleteConfirmDescription": "سيؤدي هذا إلى حذف {{count}} دردشات نهائيًا. لا يمكن التراجع عن هذا الإجراء.",
-		"bulkDeleteSuccess": "تم حذف {{count}} دردشات",
-		"bulkDeletePartialFail": "فشل حذف {{failed}} من أصل {{total}} دردشات"
-	},
 	"instructions": {
 		"expand": "توسيع",
 		"viewTitle": "التعليمات",
