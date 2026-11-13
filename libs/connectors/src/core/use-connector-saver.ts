@@ -3,6 +3,7 @@ import { useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
 import type {
+	ConnectorSavedItemsProps,
 	ConnectorViewerProps,
 	ConnectorViewerService,
 } from "./connector.types";
@@ -28,6 +29,11 @@ export interface ConnectorSaver {
 	saveLabel: string;
 	/** Whether the item with this key is being saved. */
 	isBusy: (key: string) => boolean;
+	/**
+	 * What to say where the item with this key would be offered for saving,
+	 * when the host already holds it; undefined for an item it does not hold.
+	 */
+	savedLabel: (key: string) => string | undefined;
 	/** Save an item into the insight's files. */
 	save: (request: ConnectorSaveRequest) => void;
 	/** Fetch a file and open it when the host supports file previews. */
@@ -52,10 +58,16 @@ export interface ConnectorSaver {
  */
 export const useConnectorSaver = (
 	service: ConnectorViewerService,
-	host: ConnectorViewerProps,
+	host: ConnectorViewerProps & ConnectorSavedItemsProps,
 ): ConnectorSaver => {
-	const { saveTargetName, onSaved, onOpenFile, onAddToContext, prepareSave } =
-		host;
+	const {
+		saveTargetName,
+		onSaved,
+		onOpenFile,
+		onAddToContext,
+		prepareSave,
+		savedItems,
+	} = host;
 	const { insightId } = useInsight();
 	const { t } = useTranslation("connectors");
 	const [busyKeys, setBusyKeys] = useState<ReadonlySet<string>>(
@@ -106,7 +118,7 @@ export const useConnectorSaver = (
 				} else if (intent === "context" && onAddToContext) {
 					onAddToContext(file);
 				} else if (onSaved) {
-					onSaved(file);
+					onSaved({ ...file, itemKey: request.key });
 				} else {
 					toast.success(t("actions.saved", { name: file.name }));
 				}
@@ -174,6 +186,8 @@ export const useConnectorSaver = (
 			? t("actions.saveTo", { target: saveTargetName })
 			: t("actions.save"),
 		isBusy: (key) => busyKeys.has(key),
+		savedLabel: (key) =>
+			savedItems?.isSaved(key) ? savedItems.label : undefined,
 		save: save,
 		open: onOpenFile ? open : undefined,
 		addToContext: onAddToContext ? addToContext : undefined,

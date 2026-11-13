@@ -140,6 +140,7 @@ export const TeamsChatDetail = ({
 					<ConnectorActionBar
 						serviceName={serviceName}
 						saveLabel={saver.saveLabel}
+						savedLabel={saver.savedLabel(chat.id)}
 						webUrl={shownChat.webUrl}
 						isBusy={saver.isBusy(chat.id)}
 						onAddToContext={

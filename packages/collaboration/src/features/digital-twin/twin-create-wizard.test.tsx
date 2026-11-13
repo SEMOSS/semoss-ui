@@ -9,6 +9,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type {
+	ConnectorSavedItemsProps,
 	ConnectorViewerProps,
 	ConnectorViewerService,
 } from "@semoss/connectors";
@@ -30,21 +31,35 @@ vi.mock("@semoss/sdk", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@semoss/sdk")>()),
 	uploadProjectImage: upload,
 }));
-// the viewers are the library's own; the step only has to take what one saved
+// the viewers are the library's own; the step only has to take what one saved, and say what was chosen
 vi.mock("@semoss/connectors", async (importOriginal) => {
 	const viewer =
 		(name: string, service: ConnectorViewerService, file: string) =>
-		({ saveTargetName, onSaved }: ConnectorViewerProps) => (
+		({
+			saveTargetName,
+			savedItems,
+			onSaved,
+		}: ConnectorViewerProps & ConnectorSavedItemsProps) => (
 			<div>
 				<p>{name}</p>
-				<button
-					type="button"
-					onClick={() =>
-						onSaved?.({ path: file, name: file, service })
-					}
-				>
-					Save to {saveTargetName}
-				</button>
+				{/* one item, which a viewer marks in place of offering it once the host holds it */}
+				{savedItems?.isSaved(file) ? (
+					<p>{savedItems.label}</p>
+				) : (
+					<button
+						type="button"
+						onClick={() =>
+							onSaved?.({
+								path: file,
+								name: file,
+								service,
+								itemKey: file,
+							})
+						}
+					>
+						Save to {saveTargetName}
+					</button>
+				)}
 			</div>
 		);
 	return {
@@ -298,6 +313,11 @@ it("chooses emails, Teams chats and files for the twin, and lets one be taken ba
 			'Chose "Budget review.md". It is added when your Digital Twin is created.',
 		),
 	).toBeVisible();
+	// its viewer marks it from here on, in place of offering it again
+	expect(screen.getByText("Chosen for your Digital Twin")).toBeVisible();
+	expect(
+		screen.queryByRole("button", { name: "Save to Digital Twin" }),
+	).toBeNull();
 	for (const [source, viewer] of [
 		["Teams chats", "The Teams chat list"],
 		["OneDrive", "The OneDrive explorer"],
@@ -338,6 +358,13 @@ it("chooses emails, Teams chats and files for the twin, and lets one be taken ba
 	);
 	expect(screen.queryByText("Roadmap.pptx")).toBeNull();
 	expect(place(/What you chose/)).toHaveTextContent("4");
+	// taken back out, it is offered again where it was picked; what stayed is still marked
+	await user.click(place("Teams files"));
+	expect(
+		screen.getByRole("button", { name: "Save to Digital Twin" }),
+	).toBeVisible();
+	await user.click(place("OneDrive"));
+	expect(screen.getByText("Chosen for your Digital Twin")).toBeVisible();
 
 	// nothing has left the page yet
 	expect(insight.actions.run).not.toHaveBeenCalled();
@@ -406,6 +433,9 @@ it("makes the twin step by step once the review is confirmed, copies in what was
 		"GetWorkspace",
 		"EditWorkspace",
 		"Copy",
+		// where the copy came from is recorded, so the owner's lists mark it from then on
+		"BrowseAppAssets",
+		"SaveAppAssets",
 	]);
 	expect(insight.actions.run.mock.calls[0]?.[0]).toMatch(
 		/^AddDigitalTwin\(name=\["Robin Twin"\], systemPrompt=\["You are the Digital Twin of Robin Reyes: .*"\], mcp=\[\], skills=\[\]\);$/,

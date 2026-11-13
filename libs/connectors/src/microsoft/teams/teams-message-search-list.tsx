@@ -135,6 +135,7 @@ export const TeamsMessageSearchList = ({
 									serviceName: t("services.teams"),
 									webUrl: chat.webUrl ?? hit.webUrl,
 									saveLabel: saver.saveLabel,
+									savedLabel: saver.savedLabel(request.key),
 									isBusy: isBusy,
 									onAddToContext: saver.addToContext
 										? () => saver.addToContext?.(request)

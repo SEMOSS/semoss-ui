@@ -28,6 +28,7 @@ import { formatListDate } from "../core/connector.format";
 import type {
 	ConnectorAccount,
 	ConnectorFocusRequest,
+	ConnectorSavedItemsProps,
 	ConnectorViewerProps,
 } from "../core/connector.types";
 import { runConnectorPixel } from "../core/connector-pixel";
@@ -45,6 +46,7 @@ import { parseMailMessageDetail } from "./mail.parsers";
 import {
 	groupMailByConversation,
 	type MailConversation,
+	mailSaveKey,
 	normalizeMailSubject,
 } from "./mail.threads";
 import type { MailMessage } from "./mail.types";
@@ -74,7 +76,9 @@ const isWholeThread = (
 	!!conversation.conversationId;
 
 /** Props for {@link MailboxView}. */
-export interface MailboxViewProps extends ConnectorViewerProps {
+export interface MailboxViewProps
+	extends ConnectorViewerProps,
+		ConnectorSavedItemsProps {
 	/** The account whose mailbox is read: Outlook for `microsoft`, Gmail for `google`. */
 	provider: ConnectorAccount;
 	/** The logo the header shows. Defaults to the mailbox's own. */
@@ -194,13 +198,15 @@ export const MailboxView = (props: MailboxViewProps) => {
 		title: string,
 	): ConnectorSaveRequest => {
 		// a row with conversations off stands for one email, which still
-		// belongs to a thread; saving takes the whole thread either way
+		// belongs to a thread; saving takes the whole thread either way, so
+		// every row of the thread is saving, and held, together
+		const key = mailSaveKey(conversation.latest);
 		const conversationId =
 			conversation.conversationId ?? conversation.latest.conversationId;
 		if (conversationId) {
 			return threadSaveRequest(
 				app,
-				conversation.key,
+				key,
 				title,
 				conversation.latest.subject,
 				() => readConversation(app, read, conversationId),
@@ -208,7 +214,7 @@ export const MailboxView = (props: MailboxViewProps) => {
 		}
 		const email: MailMessage = conversation.latest;
 		return {
-			key: conversation.key,
+			key: key,
 			name: title,
 			source: {
 				kind: "text",
@@ -438,6 +444,9 @@ export const MailboxView = (props: MailboxViewProps) => {
 										itemName: title,
 										serviceName: serviceName,
 										saveLabel: saver.saveLabel,
+										savedLabel: saver.savedLabel(
+											request.key,
+										),
 										isBusy: isBusy,
 										onAddToContext: saver.addToContext
 											? () =>
