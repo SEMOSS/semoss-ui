@@ -5,6 +5,7 @@ import { topicChoiceCandidates } from "../state/collaboration.selectors";
 import type { ReviewEntry } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { topicTone } from "../topic-tone";
+import { FilingReason } from "./filing-reason";
 
 /** Resolves review intentions by record identity, independently of button copy. */
 export function ReviewCard({
@@ -117,6 +118,24 @@ export function ReviewCard({
 							{thread.summary}
 						</P>
 					)}
+				{/* why each topic is suggested; the review's own evidence first, then the thread's link for reviews asked before Brain kept it */}
+				{review.kind === "topic_choice" &&
+					thread &&
+					choices.map((topic) => (
+						<FilingReason
+							key={topic.id}
+							label={topic.short}
+							compact={compact}
+							link={{
+								source: "suggested",
+								signals:
+									review.candidateSignals?.[topic.id] ??
+									thread.topicLinks.find(
+										(link) => link.topicId === topic.id,
+									)?.signals,
+							}}
+						/>
+					))}
 				{review.status === "open" && (
 					<div className="flex flex-wrap gap-2 pt-1">
 						{review.kind === "topic_choice" && thread ? (

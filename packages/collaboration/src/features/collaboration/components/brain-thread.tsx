@@ -2,10 +2,12 @@ import { useParams } from "react-router";
 import { P } from "@semoss/ui/next";
 import { useEnsureThreadInsights } from "@/features/work-thread/use-thread-insights";
 import { dateLabel } from "../date-label";
+import { headlineLink } from "../filing-reason";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { BrainOverview } from "./brain-overview";
 import { CollaborationPageHeader } from "./collaboration-page-header";
 import { CollaborationSurface } from "./collaboration-surface";
+import { FilingReason } from "./filing-reason";
 import { ThreadConversation } from "./thread-conversation";
 import { ThreadMemory } from "./thread-memory";
 import { ThreadMenu } from "./thread-menu";
@@ -27,6 +29,11 @@ export function BrainThread() {
 				</P>
 			</CollaborationSurface>
 		);
+	// the topic the owner most needs explained, so the header says why without scrolling to Topics
+	const mainLink = headlineLink(thread.topicLinks);
+	const mainTopic = state.topics.find(
+		(topic) => topic.id === mainLink?.topicId,
+	);
 	return (
 		<CollaborationSurface
 			header={
@@ -38,6 +45,19 @@ export function BrainThread() {
 								description={thread.summary}
 								actions={menu}
 							>
+								{mainLink &&
+									mainTopic &&
+									mainLink.source !== "you" && (
+										<FilingReason
+											link={mainLink}
+											label={
+												mainLink.source === "suggested"
+													? `Suggested for ${mainTopic.short}`
+													: `Filed under ${mainTopic.short}`
+											}
+											compact
+										/>
+									)}
 								<div className="flex flex-wrap items-center gap-3 text-muted-foreground text-sm">
 									<span>
 										{thread.channel} · {thread.messageCount}{" "}

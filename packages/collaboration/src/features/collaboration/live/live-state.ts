@@ -7,6 +7,7 @@ import {
 	setThreadAgent,
 	type ThreadAgent,
 } from "../../thread-assistant/thread-context";
+import { parseCandidateSignals, parseFilingSignals } from "../filing-reason";
 import { createEmptyWorkspace } from "../state/collaboration.reducer";
 import type {
 	Account,
@@ -385,6 +386,7 @@ export function mapThread(row: Row): Thread {
 			confidence:
 				typeof link.confidence === "number" ? link.confidence : null,
 			primary: link.primary === true,
+			signals: parseFilingSignals(link.signals),
 		})),
 		participants: list<Row>(row.participants).map((participant) => ({
 			personId: str(participant.personId),
@@ -463,6 +465,10 @@ function mapReview(row: Row, topics: Topic[]): ReviewEntry {
 		candidates:
 			kind === "topic_choice"
 				? list<string>(data.candidates).map(String)
+				: undefined,
+		candidateSignals:
+			kind === "topic_choice"
+				? parseCandidateSignals(data.candidateSignals)
 				: undefined,
 		candidate:
 			kind === "new_topic"

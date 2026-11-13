@@ -101,11 +101,30 @@ export function isFollowed(person: Person): boolean {
 	);
 }
 
+/** A topic keyword Brain found in a thread. */
+export interface KeywordMatch {
+	keyword: string;
+	field: "subject" | "body";
+}
+
+/** Why Brain filed a thread under a topic; absent on owner-made links and on links filed before Brain kept evidence. */
+export interface FilingSignals {
+	keywordMatches: KeywordMatch[];
+	/** People on the topic who sent the mail Brain read. */
+	matchedSenderIds: string[];
+	/** Confidence (0-100) before the topic VIP boost, and the one the link carries. */
+	baseConfidence: number | null;
+	finalConfidence: number | null;
+	topicVipApplied: boolean;
+	topicVipPoints: number;
+}
+
 export interface ThreadTopicLink {
 	topicId: string;
 	source: "you" | "confirmed" | "suggested";
 	confidence: number | null;
 	primary: boolean;
+	signals?: FilingSignals;
 }
 
 interface Participant {
@@ -189,6 +208,8 @@ export interface ReviewEntry {
 	topicId?: string;
 	/** A topic choice's candidate topics: one to confirm or two to pick between. */
 	candidates?: string[];
+	/** Why each candidate topic was suggested, by topic id; older reviews omit it. */
+	candidateSignals?: Record<string, FilingSignals>;
 	candidate?: {
 		name: string;
 		accountId: string | null;

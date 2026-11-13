@@ -163,6 +163,31 @@ it("starring a suggested topic confirms it and saves it as the main topic", asyn
 	]);
 });
 
+it("a thread link's evidence stays read-only: starring another topic never writes it and keeps it", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	const star = step({
+		type: "thread.link",
+		threadId: "th-geng-review",
+		topicId: "t-trip",
+		operation: "primary",
+	});
+	sync(star);
+	await sync.settled();
+	expect(sent.join(" ")).not.toMatch(/signals|keywordMatches/);
+	// the demoted link is the one with sample evidence; it must survive the change
+	const links = star.next.threads.find(
+		(thread) => thread.id === "th-geng-review",
+	)?.topicLinks;
+	const kept = links?.find((link) => link.topicId === "t-geng")?.signals;
+	expect(kept?.keywordMatches.length).toBeGreaterThan(0);
+	expect(kept).toEqual(
+		star.previous.threads
+			.find((thread) => thread.id === "th-geng-review")
+			?.topicLinks.find((link) => link.topicId === "t-geng")?.signals,
+	);
+});
+
 it("a delete sends one BrainDeleteTopic operation", async () => {
 	const { actions, sent } = fakeActions();
 	const sync = createLiveSync(actions, vi.fn());

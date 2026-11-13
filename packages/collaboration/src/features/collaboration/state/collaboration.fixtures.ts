@@ -635,6 +635,17 @@ const SAMPLE_STATE: CollaborationState = {
 					source: "confirmed",
 					confidence: 93,
 					primary: true,
+					signals: {
+						keywordMatches: [
+							{ keyword: "agent architecture", field: "subject" },
+							{ keyword: "eng review", field: "body" },
+						],
+						matchedSenderIds: ["p-ava"],
+						baseConfidence: 93,
+						finalConfidence: 93,
+						topicVipApplied: false,
+						topicVipPoints: 0,
+					},
 				},
 				{
 					topicId: "t-trip",
@@ -1371,6 +1382,24 @@ const SAMPLE_STATE: CollaborationState = {
 			refId: "th-hugo-chat",
 			actions: ["Both", "Northwind Eng", "Northwind Sales"],
 			status: "open",
+			candidateSignals: {
+				"t-geng": {
+					keywordMatches: [{ keyword: "pilot", field: "body" }],
+					matchedSenderIds: [],
+					baseConfidence: 61,
+					finalConfidence: 61,
+					topicVipApplied: false,
+					topicVipPoints: 0,
+				},
+				"t-gsales": {
+					keywordMatches: [{ keyword: "pricing", field: "body" }],
+					matchedSenderIds: [],
+					baseConfidence: 55,
+					finalConfidence: 55,
+					topicVipApplied: false,
+					topicVipPoints: 0,
+				},
+			},
 		},
 		{
 			id: "r3",
