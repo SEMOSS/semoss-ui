@@ -6,7 +6,10 @@ import {
 	TaskContextView,
 	useTaskContext,
 } from "@/features/collaboration/components/task-context";
-import { useWorkItems } from "@/features/collaboration/components/work-items-list";
+import {
+	roomsOf,
+	useWorkItems,
+} from "@/features/collaboration/components/work-items-list";
 import { LandingChatComposer } from "@/features/daily-chat/landing-chat-composer";
 import { roomPath } from "@/lib/workspace-paths";
 
@@ -16,6 +19,7 @@ export function WorkItemPage() {
 	const navigate = useNavigate();
 	const { items, error } = useWorkItems();
 	const item = items?.find((i) => i.id === taskId);
+	const rooms = item ? roomsOf(item) : [];
 	const context = useTaskContext({ taskId });
 	return (
 		<CollaborationPage>
@@ -33,13 +37,17 @@ export function WorkItemPage() {
 							Ask anything about this item. The assistant sees its
 							steps and the mail and chats it came from.
 						</Small>
-						{item.rooms && item.rooms.length > 0 && (
+						{rooms.length > 0 && (
 							<RoomSelector
-								rooms={item.rooms}
+								rooms={rooms}
 								onRoomSelect={(roomId) =>
 									navigate(roomPath(roomId))
 								}
-								label="View earlier chats"
+								label={
+									rooms.length === 1
+										? "View earlier chat"
+										: "View earlier chats"
+								}
 							/>
 						)}
 						<LandingChatComposer

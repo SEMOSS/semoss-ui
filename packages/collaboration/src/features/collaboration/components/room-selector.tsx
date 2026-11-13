@@ -17,6 +17,7 @@ interface RoomSelectorProps {
 }
 
 function formatActivityTime(timestamp: string): string {
+	if (!timestamp) return "";
 	const date = new Date(timestamp);
 	const now = new Date();
 	const diff = now.getTime() - date.getTime();
@@ -63,7 +64,7 @@ export function RoomSelector({
 					{rooms.map((room, idx) => (
 						<DropdownMenuItem
 							key={room.id}
-							onClick={() => onRoomSelect(room.id)}
+							onSelect={() => onRoomSelect(room.id)}
 							className="flex flex-col gap-1 py-2"
 						>
 							<div className="flex items-center gap-2">
@@ -71,7 +72,7 @@ export function RoomSelector({
 									<span className="inline-block h-2 w-2 rounded-full bg-green-500" />
 								)}
 								<span className="font-medium text-sm">
-									{room.title || `Chat ${idx + 1}`}
+									{room.title || `Chat ${rooms.length - idx}`}
 								</span>
 							</div>
 							<span className="text-muted-foreground text-xs">

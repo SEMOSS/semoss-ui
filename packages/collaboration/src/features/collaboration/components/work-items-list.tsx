@@ -211,13 +211,13 @@ export function useWorkItems() {
 }
 
 /** An item's chats, newest first; an older server reports only its one room. */
-function roomsOf(item: Item): Room[] {
+export function roomsOf(item: Item): Room[] {
 	if (item.rooms?.length) return item.rooms;
 	return item.roomId ? [{ id: item.roomId, lastActivity: "" }] : [];
 }
 
-const chatLabel = (room: Room, index: number) =>
-	room.title || `Chat ${index + 1}`;
+const chatLabel = (room: Room, index: number, total: number) =>
+	room.title || `Chat ${total - index}`;
 
 /** The owner's next step: theirs first, then one nobody was named for (a group ask on their item). */
 export function mineNext(item: Item, isMine: (step: Step) => boolean) {
@@ -362,7 +362,7 @@ function ItemRow({
 									}
 								>
 									<span className="truncate">
-										{chatLabel(room, index)}
+										{chatLabel(room, index, rooms.length)}
 									</span>
 								</DropdownMenuItem>
 							))}
@@ -846,7 +846,11 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 											key={room.id}
 											value={room.id}
 										>
-											{chatLabel(room, index)}
+											{chatLabel(
+												room,
+												index,
+												mergeRooms.length,
+											)}
 										</SelectItem>
 									),
 								)}
@@ -870,7 +874,11 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 											key={room.id}
 											value={room.id}
 										>
-											{chatLabel(room, index)}
+											{chatLabel(
+												room,
+												index,
+												mergeRooms.length,
+											)}
 										</SelectItem>
 									),
 								)}

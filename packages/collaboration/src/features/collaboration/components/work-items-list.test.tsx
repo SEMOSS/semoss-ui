@@ -46,6 +46,8 @@ const insight = vi.hoisted(() => ({
 									mine: true,
 									openSteps: [],
 									rooms: roomsFor(id),
+									roomId:
+										id === "b" ? "legacy-room" : undefined,
 								})),
 							}
 						: true,
@@ -206,5 +208,25 @@ it("saves a drop on a row once, and a drag that moved nothing not at all", async
 		expect(reorders()).toEqual([
 			pixel("WorkReorderItems", { taskIds: ["b", "a", "c"] }),
 		]),
+	);
+});
+
+it("Open room navigates to the newest chat for an item with multiple rooms", async () => {
+	const user = await renderWork();
+	await user.click(
+		within(row("Item a")).getByRole("button", { name: "Open room" }),
+	);
+	expect(screen.getByTestId("current-location")).toHaveTextContent(
+		"/thread/room%3Anewest-room",
+	);
+});
+
+it("Open room falls back to the legacy roomId when rooms is empty", async () => {
+	const user = await renderWork();
+	await user.click(
+		within(row("Item b")).getByRole("button", { name: "Open room" }),
+	);
+	expect(screen.getByTestId("current-location")).toHaveTextContent(
+		"/thread/room%3Alegacy-room",
 	);
 });
