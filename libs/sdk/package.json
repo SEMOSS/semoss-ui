@@ -29,6 +29,7 @@
         "dev": "vite build --watch --mode development --configLoader runner",
         "build": "vite build --configLoader runner",
         "build:dev": "vite build --mode development --configLoader runner",
+        "type-check": "tsc --pretty --noEmit",
         "test": "vitest run --configLoader runner",
         "test:watch": "vitest --watch --configLoader runner",
         "test:coverage": "vitest --coverage --watch=false --configLoader runner"

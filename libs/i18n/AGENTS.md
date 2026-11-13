@@ -242,6 +242,9 @@ The `README.md` is the source of truth for developers. Keep it accurate.
 - **`index.ts`** - Main export file, affects all consumers
 - **Consumer `vite.config.ts` files** - Locale chunk grouping belongs to consuming apps
 - **File/directory renames** - Must update the `load` paths in the package loader maps
+- **State** - language state belongs to i18next. This package cannot import `@semoss/utility`;
+  do not add a store or state library here. Application stores follow the
+  [state management skill](../../skills/state-management.skill.md).
 
 ### When Adding Translations
 

@@ -1,5 +1,5 @@
 import { getErrorMessage } from "@semoss/utility/error";
-import { Observable } from "@semoss/utility/observable";
+import { StoreState } from "@semoss/utility/store";
 import {
 	getUserEnginePermission,
 	getUserProjectPermission,
@@ -68,7 +68,7 @@ export class SessionPermissionStore {
 	 * Every resource's permission, starting with none known. Held privately so the
 	 * store's public types do not depend on how it is kept.
 	 */
-	private readonly state = new Observable(NO_PERMISSIONS);
+	private readonly state = new StoreState(NO_PERMISSIONS);
 
 	/**
 	 * Read the current state. The same object until it changes, as

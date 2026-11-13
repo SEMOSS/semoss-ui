@@ -1,10 +1,10 @@
 import { useCallback, useEffect } from "react";
+import { useStoreSelector } from "@semoss/utility/react/use-store-selector";
 import {
 	getPermissionKey,
 	type SessionPermissionStore,
 } from "../../../stores/session/session-permissions.store";
 import type { Role } from "../../../types";
-import { useStoreSelector } from "../utility/store-selector";
 import { useSessionStore } from "./use-session";
 
 /**

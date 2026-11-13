@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isShallowEqual } from "./object";
+import { isPlainObject, isShallowEqual } from "./object";
 
 describe("isShallowEqual", () => {
 	it("matches the same value", () => {
@@ -66,5 +66,31 @@ describe("isShallowEqual", () => {
 
 		expect(isShallowEqual([], new Array(1))).toBe(false);
 		expect(isShallowEqual(new Values(1, 2), new Values(1, 2))).toBe(false);
+	});
+});
+
+describe("isPlainObject", () => {
+	it("accepts object literals and records with no prototype", () => {
+		expect(isPlainObject({})).toBe(true);
+		expect(isPlainObject({ a: 1 })).toBe(true);
+		expect(isPlainObject(Object.create(null))).toBe(true);
+	});
+
+	it("rejects arrays, maps, sets, dates, and class instances", () => {
+		class Model {}
+
+		expect(isPlainObject([])).toBe(false);
+		expect(isPlainObject(new Map())).toBe(false);
+		expect(isPlainObject(new Set())).toBe(false);
+		expect(isPlainObject(new Date())).toBe(false);
+		expect(isPlainObject(new Model())).toBe(false);
+	});
+
+	it("rejects primitives, null, and functions", () => {
+		expect(isPlainObject(null)).toBe(false);
+		expect(isPlainObject(undefined)).toBe(false);
+		expect(isPlainObject(1)).toBe(false);
+		expect(isPlainObject("a")).toBe(false);
+		expect(isPlainObject(() => 1)).toBe(false);
 	});
 });

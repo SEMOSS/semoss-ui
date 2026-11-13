@@ -1,6 +1,7 @@
 # @semoss/auditlog-package
 
-Standalone dashboard for viewing SEMOSS audit logs, built with Vite, MobX, and `react-router`.
+Standalone dashboard for viewing SEMOSS audit logs, built with Vite, MobX, and `react-router`. MobX is legacy here; see the
+[state guidance](./AGENTS.md#build-system).
 
 ```bash
 pnpm --filter @semoss/auditlog-package dev     # dev server

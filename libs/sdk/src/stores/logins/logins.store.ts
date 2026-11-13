@@ -1,4 +1,4 @@
-import { Observable } from "@semoss/utility/observable";
+import { StoreState } from "@semoss/utility/store";
 import {
 	connectLogin,
 	getLogins,
@@ -105,7 +105,7 @@ export class LoginsStore {
 	 * The logins, held privately so the store's public types do not depend on
 	 * how they are kept.
 	 */
-	private readonly state = new Observable<LoginsSnapshot>(EMPTY_SNAPSHOT);
+	private readonly state = new StoreState<LoginsSnapshot>(EMPTY_SNAPSHOT);
 
 	/** When the logins were last read, to reuse a recent read. */
 	private readAt = 0;

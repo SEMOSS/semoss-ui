@@ -344,6 +344,9 @@ This library retains its package layout (no `pages/` or router):
 ## Key Dependencies
 
 - `@semoss/sdk`, `@semoss/ui`, `@semoss/i18n`, `@semoss/utility` — workspace libs
+- No state library. Shared state that outlives a component uses a `StoreState`-backed store
+  per the [state management skill](../../skills/state-management.skill.md); move a module-level
+  listener set such as the one in `hooks/use-catalog-image.ts` onto it when you touch it
 - `monaco-editor` / `@monaco-editor/react` — code editor
 - `echarts` — charts
 - `@iconify/react`, `lucide-react` — icons

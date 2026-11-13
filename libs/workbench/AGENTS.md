@@ -27,8 +27,21 @@ measured slots, so moving a tab never unmounts its body.
 **The invariant, and the whole reason this package exists:** no import of `@semoss/sdk`,
 `@semoss/shared`, `@semoss/i18n`, or anything host-shaped. The only runtime dependencies are
 `react`, `react-dom`, `@semoss/ui` (consumed through `@semoss/ui/next`), `lucide-react`,
-and the `zustand` peer. The host supplies a compatible Zustand version and owns store
-instances; declaring a peer does not itself prevent duplicate stores. Verify boundaries with:
+and the `zustand` peer. `@semoss/utility` is also allowed: it is generic and framework-free, so
+importing `@semoss/utility/<category>` does not make the dock know about SEMOSS. It is not in
+`package.json` yet; add it as a workspace dependency, with `pnpm install`, in the change that
+first imports it. The host supplies a compatible Zustand version and owns store
+instances; declaring a peer does not itself prevent duplicate stores.
+
+**The dock's store is moving off Zustand.** The repo's shared state is moving to `StoreState`
+from `@semoss/utility/store` (see the
+[state management skill](../../skills/state-management.skill.md)). `stores/workbench.store.ts`
+and its slices are still Zustand and migrate as one scoped change, because hosts hold the
+store as a `StoreApi<WorkbenchState>`: the client's assistant, database, and model stores and
+the playground's `RoomStore` take it as a dependency, and `useWorkbench`, `useWorkbenchStoreApi`,
+`useShallow`, and `shallow` call sites read it. Until then, keep new dock state in the existing
+slices; do not add a second store mechanism beside them or copy `StoreState` into this package.
+Verify boundaries with:
 
 ```sh
 # From libs/workbench; inspect matches, including multiline imports and aliases

@@ -43,8 +43,12 @@ added: backend calls apps share live in `libs/sdk/src/api/` (for example `runMcp
   lists that page, `useSessionInsight().run` / `upload` / `download`, or
   `Session.insight.run` outside React. `run` returns `errors` rather than throwing, so wrap it in
   `throwOnPixelErrors` (`utility/pixel-errors.ts`) where a caller expects a throw.
-- **Moving off MobX and zustand.** Put new state in hooks over the SDK's stores, never in a new
-  MobX or zustand store. Some members are thin, deprecated adapters over the SDK, kept only until
+- **Moving off MobX and zustand.** Put new state in hooks over the SDK's stores, or in an
+  `StoreState`-backed store per the
+  [state management skill](../../skills/state-management.skill.md), never in a new
+  MobX or zustand store. `RoomStore`, `ChatStore`, the message stores, and the tool, connector,
+  and context-item stores are still MobX and migrate one at a time; `room.workbench` stays the
+  dock's zustand store until [`@semoss/workbench`](../../libs/workbench/AGENTS.md) moves. Some members are thin, deprecated adapters over the SDK, kept only until
   their stores move: `RootStore` / `useRoot()` (use `usePlaygroundTheme()`) and
   `ChatStore.user` / `ChatStore.profileDefaultModelId` (use `useSession`). They hold no state of
   their own and are not observable. Do not add consumers.

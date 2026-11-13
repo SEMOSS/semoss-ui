@@ -1,4 +1,4 @@
-import { useStoreSelector } from "../utility/store-selector";
+import { useStoreSelector } from "@semoss/utility/react/use-store-selector";
 import {
 	type UseIteratorPixelOptions,
 	type UseIteratorPixelReturn,

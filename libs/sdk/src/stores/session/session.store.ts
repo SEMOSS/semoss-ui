@@ -1,5 +1,5 @@
 import { toError } from "@semoss/utility/error";
-import { Observable } from "@semoss/utility/observable";
+import { StoreState } from "@semoss/utility/store";
 import {
 	confirmOTP,
 	isAdminUser,
@@ -182,7 +182,7 @@ export class SessionStore {
 	 * The session, `INITIALIZING` until its first check. Held privately so the
 	 * store's public types do not depend on how it is kept.
 	 */
-	private readonly state = new Observable<typeof SIGNED_OUT>({
+	private readonly state = new StoreState<typeof SIGNED_OUT>({
 		...SIGNED_OUT,
 		status: "INITIALIZING",
 	});

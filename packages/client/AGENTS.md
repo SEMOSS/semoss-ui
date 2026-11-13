@@ -17,7 +17,8 @@ Reuse their supported public APIs before adding local code.
 
 - **Bundler**: Vite 8
 - **Framework**: React 19 + TypeScript
-- **State**: MobX and Zustand; preserve the owning store's contract
+- **State**: MobX and Zustand today, moving to `StoreState` stores; preserve the owning
+  store's contract (see [State Management](#state-management))
 - **Routing**: `react-router` 8
 - **Styling**: Tailwind CSS v4
 - **Testing**: Vitest
@@ -695,6 +696,18 @@ read that list:
   or out clears both. Mount no `AccessStoreProvider`: it is deprecated and reads nothing.
 - **Other application state** is split among the existing stores; there is no `stores/root`,
   `stores/monolith`, or `useRootStore` entry to extend.
+- **Direction.** New shared state goes in a `StoreState`-backed store read through
+  `useStoreSelector`, per the
+  [state management skill](../../skills/state-management.skill.md). Do not add a MobX or
+  Zustand store or an `observer` component over new state. The existing stores migrate one at a
+  time, each as its own scoped change:
+  - MobX: `stores/designer/designer.store.ts` and `stores/workspace/workspace.store.ts`, plus
+    the `observer` components and `computed(() => ...).get()` reads over the renderer's block
+    state under `components/blocks-workspace/`. Those reads move with `@semoss/renderer`, not
+    before it.
+  - Zustand: `stores/assistant/`, `stores/page/`, and `stores/workbench/` (`model`, `database`,
+    `automation`). The workbench domain stores take the dock's `StoreApi<WorkbenchState>` as a
+    dependency and move with or after [`@semoss/workbench`](../../libs/workbench/AGENTS.md).
 - **Domain state** uses its existing context/store contract. See the
   [client workbench components](./src/components/workbench/) and
   [domain stores](./src/stores/workbench/) for their owning implementations. General local-state and orchestration rules

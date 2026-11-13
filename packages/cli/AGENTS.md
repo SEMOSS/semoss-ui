@@ -61,6 +61,10 @@ the build and exercise affected commands explicitly.
 
 - **`bin/`** and the `oclif` block in `package.json` — command discovery and the published bin.
 - **Node version assumptions** — keep code compatible with Node 20.
+- **State** — commands hold no stores of their own; they run the SDK's (`Env`, `Insight`) in
+  Node. This package cannot import `@semoss/utility`, so the repo's
+  [state management direction](../../skills/state-management.skill.md) reaches it only through
+  `@semoss/sdk`. Keep SDK stores used here free of browser-only APIs.
 
 ### When Adding a Command
 

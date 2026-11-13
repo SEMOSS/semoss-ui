@@ -57,6 +57,8 @@ package (theme sync and MCP tool-completion signaling to the playground parent).
 
 - **Bundler**: Vite 8 + React 19
 - **Styling**: Tailwind CSS v4 + `@semoss/ui`
+- **State**: React state and hooks; no state library. Any shared store uses `StoreState` per
+  the [state management skill](../../skills/state-management.skill.md)
 
 ### Commands
 
