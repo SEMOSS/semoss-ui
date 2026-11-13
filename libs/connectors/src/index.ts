@@ -19,6 +19,8 @@ export type {
 	ConnectorAccount,
 	ConnectorFocusRequest,
 	ConnectorSavedFile,
+	ConnectorSavedItems,
+	ConnectorSavedItemsProps,
 	ConnectorViewerControls,
 	ConnectorViewerProps,
 	ConnectorViewerService,

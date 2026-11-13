@@ -1,3 +1,4 @@
+import { CATALOG_NAME_KEY } from "@/components/import/shared/import-form.constants";
 import type {
 	CategoryTexts,
 	ImportableModels,
@@ -22,7 +23,7 @@ export const JEV_PROVIDER: ImportableModels["providers"][number] = {
 			model_types: ["evaluation"],
 			fields: [
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					type: "text",
 					required: true,

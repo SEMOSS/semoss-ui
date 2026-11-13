@@ -125,7 +125,7 @@ export const NewKnowledgeFormBody = observer(
 				const createVectorEngine = await run<
 					[{ engine_id: string }]
 				>(`CreateVectorDatabaseEngine(
-				database=["${name}"],
+				catalogName=["${name}"],
 				conDetails=[{"VECTOR_TYPE": "FAISS", "EMBEDDER_ENGINE_ID": "${embedderId}","DESCRIPTION":"${description}","TAGS":""}]
 			);`).then(throwOnPixelErrors);
 

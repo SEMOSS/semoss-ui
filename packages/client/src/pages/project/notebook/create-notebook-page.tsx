@@ -62,7 +62,7 @@ export const CreateNotebookPage = () => {
 				{
 					project_id: string;
 				}[]
-			>(`CreateNotebook(project=[${JSON.stringify(form.name)}]);`);
+			>(`CreateNotebook(catalogName=[${JSON.stringify(form.name)}]);`);
 
 			if (errors.length > 0) throw new Error(errors.join(","));
 

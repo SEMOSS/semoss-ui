@@ -1,4 +1,4 @@
-import { CalendarClock, House, Layers, Tags } from "lucide-react";
+import { CalendarClock, House, Layers, Tags, UsersRound } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { cn, Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 import { ChatHistoryList } from "@/features/dashboard/chat-history-list";
@@ -68,6 +68,14 @@ export function CollaborationNavigation({
 				pathname.startsWith("/topics/"),
 		},
 		{
+			to: "/twins",
+			label: "Digital Twins",
+			icon: UsersRound,
+			count: 0,
+			isActive: pathname.startsWith("/twins"),
+		},
+		// last: its recent runs lead the scroller below and read as its own only right under it
+		{
 			to: "/routines",
 			label: "Routines",
 			icon: CalendarClock,
@@ -75,6 +83,51 @@ export function CollaborationNavigation({
 			isActive: pathname === "/routines",
 		},
 	];
+	const renderLink = ({
+		to,
+		label,
+		icon: Icon,
+		count,
+		isActive,
+	}: (typeof links)[number]) => (
+		// a fresh tooltip per rail state: hovered while expanded (no label drawn) it never closes, so collapsing would
+		// show every label hovered before
+		<Tooltip key={`${to}:${isCollapsed}`} disableHoverableContent={false}>
+			<TooltipTrigger asChild>
+				<Link
+					to={to}
+					aria-current={isActive ? "page" : undefined}
+					onClick={onNavigate}
+					aria-label={label}
+					className={cn(
+						"flex min-h-8 pointer-coarse:min-h-11 items-center gap-2 rounded-lg px-2 py-1 font-normal text-xs hover:bg-sidebar-accent focus-visible:outline-2 focus-visible:outline-ring aria-[current=page]:bg-sidebar-accent aria-[current=page]:font-medium",
+						isCollapsed && "justify-center px-0",
+					)}
+				>
+					<Icon
+						className="size-4 shrink-0 text-muted-foreground"
+						aria-hidden="true"
+					/>
+					{!isCollapsed && (
+						<>
+							<span className="truncate">{label}</span>
+							{count > 0 && (
+								<span className="ml-auto shrink-0 font-normal text-muted-foreground text-xs tabular-nums">
+									{count}
+								</span>
+							)}
+						</>
+					)}
+				</Link>
+			</TooltipTrigger>
+			{isCollapsed && (
+				<TooltipContent side="right">
+					{label}
+					{count > 0 ? ` \u00b7 ${count}` : ""}
+				</TooltipContent>
+			)}
+		</Tooltip>
+	);
 	return (
 		<div className="flex h-full min-h-0 flex-col">
 			<div className="shrink-0 p-2 pr-3 pb-0">
@@ -88,50 +141,7 @@ export function CollaborationNavigation({
 				aria-label="Main"
 				className="flex shrink-0 flex-col gap-0.5 px-2 pt-2 pr-3 pb-0.5"
 			>
-				{links.map(({ to, label, icon: Icon, count, isActive }) => (
-					// a fresh tooltip per rail state: hovered while expanded (no label drawn) it never closes, so collapsing would
-					// show every label hovered before
-					<Tooltip
-						key={`${to}:${isCollapsed}`}
-						disableHoverableContent={false}
-					>
-						<TooltipTrigger asChild>
-							<Link
-								to={to}
-								aria-current={isActive ? "page" : undefined}
-								onClick={onNavigate}
-								aria-label={label}
-								className={cn(
-									"flex min-h-8 pointer-coarse:min-h-11 items-center gap-2 rounded-lg px-2 py-1 font-normal text-xs hover:bg-sidebar-accent focus-visible:outline-2 focus-visible:outline-ring aria-[current=page]:bg-sidebar-accent aria-[current=page]:font-medium",
-									isCollapsed && "justify-center px-0",
-								)}
-							>
-								<Icon
-									className="size-4 shrink-0 text-muted-foreground"
-									aria-hidden="true"
-								/>
-								{!isCollapsed && (
-									<>
-										<span className="truncate">
-											{label}
-										</span>
-										{count > 0 && (
-											<span className="ml-auto shrink-0 font-normal text-muted-foreground text-xs tabular-nums">
-												{count}
-											</span>
-										)}
-									</>
-								)}
-							</Link>
-						</TooltipTrigger>
-						{isCollapsed && (
-							<TooltipContent side="right">
-								{label}
-								{count > 0 ? ` \u00b7 ${count}` : ""}
-							</TooltipContent>
-						)}
-					</Tooltip>
-				))}
+				{links.map(renderLink)}
 			</nav>
 			<div className="flex min-h-0 flex-1 flex-col pr-1">
 				<div

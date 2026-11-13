@@ -59,7 +59,7 @@ describe("cloneEngine", () => {
 			},
 		});
 		expect(mockRunPixel).toHaveBeenCalledWith(
-			'CloneEngine(engine=["engine-1"], name=["Sales Copy"]);',
+			'CloneEngine(engineId=["engine-1"], catalogName=["Sales Copy"]);',
 			"insight-1",
 		);
 	});
@@ -75,7 +75,7 @@ describe("cloneEngine", () => {
 			cloneEngine({ engineId: "engine-1", name: " " }),
 		).resolves.toMatchObject({ engineId: "clone-1", name: "Sales Copy" });
 		expect(mockRunPixel).toHaveBeenCalledWith(
-			'CloneEngine(engine=["engine-1"]);',
+			'CloneEngine(engineId=["engine-1"]);',
 			undefined,
 		);
 	});

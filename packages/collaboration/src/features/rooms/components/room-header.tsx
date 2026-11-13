@@ -19,6 +19,8 @@ import { CollaborationHeaderContext } from "@/features/collaboration/components/
 interface RoomHeaderProps {
 	/** The agent assigned to this conversation. */
 	agent: AgentConfiguration;
+	/** The agent's image, such as a Digital Twin's own; its initials show without one. */
+	agentImage?: string;
 	/** The conversation title, available in full from its details popover. */
 	title: string;
 	isToolWorkbenchOpen: boolean;
@@ -35,6 +37,7 @@ interface RoomHeaderProps {
 /** Compose room identity and actions into the shell without moving their state. */
 export function RoomHeader({
 	agent,
+	agentImage,
 	title,
 	isToolWorkbenchOpen,
 	showToolWorkbench = true,
@@ -59,7 +62,10 @@ export function RoomHeader({
 							className="h-11 w-full min-w-0 justify-start gap-2 px-1 text-left font-normal"
 							aria-label={`Conversation details: ${conversationTitle}`}
 						>
-							<AgentAvatar agent={agent} size="xs" />
+							<AgentAvatar
+								agent={{ name: agent.name, avatar: agentImage }}
+								size="xs"
+							/>
 							<span className="truncate font-medium text-sm">
 								{conversationTitle}
 							</span>

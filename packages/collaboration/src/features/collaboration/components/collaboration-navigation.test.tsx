@@ -114,7 +114,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("CollaborationNavigation", () => {
-	it("keeps Today, Work, Topics and Routines as the main destinations", () => {
+	it("keeps Today, Work, Topics, Digital Twins and Routines as the main destinations", () => {
 		const state = createInitialCollaborationState();
 		state.items = [];
 		state.reviews = [];
@@ -136,7 +136,7 @@ describe("CollaborationNavigation", () => {
 			Array.from(main.querySelectorAll("a,button")).map((control) =>
 				control.getAttribute("aria-label"),
 			),
-		).toEqual(["Today", "Work", "Topics", "Routines"]);
+		).toEqual(["Today", "Work", "Topics", "Digital Twins", "Routines"]);
 		expect(
 			within(main).getByRole("link", { name: "Today" }),
 		).toHaveTextContent(/^Today$/);
@@ -175,9 +175,17 @@ describe("CollaborationNavigation", () => {
 		["/work/review", "Work"],
 		["/work/topics", "Topics"],
 		["/topics/alpha", "Topics"],
+		["/twins", "Digital Twins"],
+		["/twins/mine/contents", "Digital Twins"],
 	])("marks only its own destination current on %s", (path, current) => {
 		renderNavigation(path);
-		for (const name of ["Today", "Work", "Topics", "Routines"]) {
+		for (const name of [
+			"Today",
+			"Work",
+			"Topics",
+			"Routines",
+			"Digital Twins",
+		]) {
 			const link = screen.getByRole("link", { name });
 			if (name === current)
 				expect(link).toHaveAttribute("aria-current", "page");
@@ -254,6 +262,26 @@ describe("CollaborationNavigation", () => {
 		expect(recent.closest(".hidden")).toBeNull();
 	});
 
+	it("opens Digital Twins and keeps it between Topics and Routines in the collapsed rail", async () => {
+		const { user, router, onNavigate } = renderNavigation();
+		await user.click(screen.getByRole("link", { name: "Digital Twins" }));
+		expect(router.state.location.pathname).toBe("/twins");
+		expect(onNavigate).toHaveBeenCalledOnce();
+
+		await user.click(
+			screen.getByRole("button", { name: "Toggle navigation fixture" }),
+		);
+		const main = screen.getByRole("navigation", { name: "Main" });
+		expect(
+			within(main)
+				.getAllByRole("link")
+				.map((link) => link.getAttribute("aria-label")),
+		).toEqual(["Today", "Work", "Topics", "Digital Twins", "Routines"]);
+		expect(
+			within(main).getByRole("link", { name: "Digital Twins" }),
+		).toHaveAttribute("aria-current", "page");
+	});
+
 	it.each([
 		"/work",
 		"/work/all",
@@ -305,6 +333,7 @@ describe("CollaborationNavigation", () => {
 		const controls = [
 			screen.getByRole("link", { name: "Today" }),
 			screen.getByRole("link", { name: "Routines" }),
+			screen.getByRole("link", { name: "Digital Twins" }),
 			screen.getByRole("link", { name: "Settings" }),
 			screen.getByRole("button", { name: /Account menu for/ }),
 		];

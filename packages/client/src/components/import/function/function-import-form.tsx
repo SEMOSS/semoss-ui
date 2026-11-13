@@ -39,6 +39,7 @@ import {
 	z,
 	zodResolver,
 } from "@semoss/ui/next";
+import { CATALOG_NAME_KEY } from "@/components/import/shared/import-form.constants";
 import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
 import type { FormField as FormFieldConfig } from "../shared/import-form.types";
@@ -282,8 +283,8 @@ export const FunctionForm = ({
 			newFormData.FUNCTION_TYPE === "LOCAL_PYTHON"
 				? "CreatePythonFunctionEngine"
 				: "CreateFunctionEngine";
-		let pixel = `${createReactor}(function=["${
-			formData.NAME
+		let pixel = `${createReactor}(catalogName=["${
+			formData[CATALOG_NAME_KEY]
 		}"],functionDetails=[${JSON.stringify(newFormData)}]);`;
 		if (FILE) {
 			try {
