@@ -1,7 +1,8 @@
 import type {
+	EngineUsageLimit,
+	EngineUsageLimitRule,
+	EngineUsageMetric,
 	ModelUsageCounts,
-	ModelUsageLimit,
-	ModelUsageLimitRule,
 	ModelUsageMetric,
 	ModelUsageWindow,
 } from "@semoss/sdk";
@@ -14,11 +15,13 @@ import {
 } from "./model-usage-limit-format";
 
 /** One rule as the editor holds it while it is typed */
-export interface ModelUsageRuleDraft {
+export interface ModelUsageRuleDraft<
+	M extends EngineUsageMetric = ModelUsageMetric,
+> {
 	/** Stable key for the row */
 	id: string;
 	/** What it counts */
-	metric: ModelUsageMetric;
+	metric: M;
 	/** How long its count runs */
 	window: ModelUsageWindow;
 	/**
@@ -103,7 +106,7 @@ export const clampLengthInput = (
  * length, and 0 while nothing is typed, which the checks refuse
  */
 const getDraftWindowLength = (
-	draft: ModelUsageRuleDraft,
+	draft: Pick<ModelUsageRuleDraft, "window" | "lengthText">,
 ): number | undefined => {
 	if (!hasWindowLength(draft.window)) {
 		return undefined;
@@ -128,7 +131,7 @@ const formatWholeNumberForInput = (value: number): string =>
  * @returns the amount as the input shows it
  */
 const formatAmountForInput = (
-	metric: ModelUsageMetric,
+	metric: EngineUsageMetric,
 	amount: number | null,
 ): string => {
 	if (amount === null) {
@@ -146,7 +149,7 @@ const formatAmountForInput = (
  * at most six decimals
  */
 export const cleanAmountInput = (
-	metric: ModelUsageMetric,
+	metric: EngineUsageMetric,
 	text: string,
 ): string => {
 	if (metric !== "COST") {
@@ -162,9 +165,9 @@ export const cleanAmountInput = (
  * @param rule - a rule of the limit the editor starts from
  * @returns the rule as the editor holds it
  */
-export const toRuleDraft = (
-	rule: ModelUsageLimitRule,
-): ModelUsageRuleDraft => ({
+export const toRuleDraft = <M extends EngineUsageMetric = ModelUsageMetric>(
+	rule: EngineUsageLimitRule<M>,
+): ModelUsageRuleDraft<M> => ({
 	id: makeDraftId(),
 	metric: rule.metric,
 	window: rule.window,
@@ -178,9 +181,9 @@ export const toRuleDraft = (
  * @returns the rule; an amount not typed yet is null, and a window length is
  * sent only when it is more than 1
  */
-export const fromRuleDraft = (
-	draft: ModelUsageRuleDraft,
-): ModelUsageLimitRule => {
+export const fromRuleDraft = <M extends EngineUsageMetric = ModelUsageMetric>(
+	draft: ModelUsageRuleDraft<M>,
+): EngineUsageLimitRule<M> => {
 	const windowLength = getDraftWindowLength(draft);
 	return {
 		metric: draft.metric,
@@ -199,10 +202,12 @@ export const fromRuleDraft = (
  * @param drafts - its rules
  * @returns the limit: null for no limit defined
  */
-export const toModelUsageLimit = (
+export const toModelUsageLimit = <
+	M extends EngineUsageMetric = ModelUsageMetric,
+>(
 	mode: ModelUsageLimitMode,
-	drafts: readonly ModelUsageRuleDraft[],
-): ModelUsageLimit | null => {
+	drafts: readonly ModelUsageRuleDraft<M>[],
+): EngineUsageLimit<M> | null => {
 	if (mode === "NOT_DEFINED") {
 		return null;
 	}
@@ -223,7 +228,14 @@ export const toModelUsageLimit = (
 export const makeNewRuleDraft = (
 	drafts: readonly ModelUsageRuleDraft[],
 	source: ModelUsageLimitSource,
-): ModelUsageRuleDraft => {
+): ModelUsageRuleDraft => makeNewEngineRuleDraft(drafts, source, "TOKENS");
+
+/** Creates a draft for a catalog's default metric without reinterpreting its units. */
+export const makeNewEngineRuleDraft = <M extends EngineUsageMetric>(
+	drafts: readonly ModelUsageRuleDraft<M>[],
+	source: ModelUsageLimitSource,
+	metric: M,
+): ModelUsageRuleDraft<M> => {
 	const allowed = getSourceCounts(source);
 	const counts: ModelUsageCounts =
 		allowed.length === 1
@@ -237,7 +249,7 @@ export const makeNewRuleDraft = (
 			(candidate) =>
 				!drafts.some(
 					(draft) =>
-						draft.metric === "TOKENS" &&
+						draft.metric === metric &&
 						draft.counts === counts &&
 						draft.window === candidate &&
 						getDraftWindowLength(draft) === undefined,
@@ -245,7 +257,7 @@ export const makeNewRuleDraft = (
 		) ?? "DAY";
 	return {
 		id: makeDraftId(),
-		metric: "TOKENS",
+		metric,
 		window,
 		lengthText: "1",
 		counts,

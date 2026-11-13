@@ -14,6 +14,8 @@ import { useTranslation } from "@semoss/i18n";
 import {
 	addEngineUserPermissions,
 	addProjectUserPermissions,
+	type EngineUsageLimit,
+	type EngineUsageSettings,
 	getEngineUsersNoCredentials,
 	getProjectUsersNoCredentials,
 	getUserEnginePermission,
@@ -42,6 +44,7 @@ import {
 	useInfiniteScroll,
 } from "@semoss/ui/next";
 import { useIsCurrentLogin } from "../../hooks/use-is-current-login";
+import { DatabaseUsageLimitEditor } from "../model-usage-limit/database-usage-limit-editor";
 import { findModelUsageLimitProblem } from "../model-usage-limit/model-usage-limit-checks";
 import {
 	ModelUsageLimitEditor,
@@ -145,6 +148,9 @@ export interface AddMembersOverlayProps {
 	 * rules. Cost is offered when this is left out, and the backend checks it.
 	 */
 	isCostAvailable?: boolean;
+	/** Authoritative new engine capabilities, loaded by the hosting access page. */
+	engineUsage?: EngineUsageSettings;
+	canChangeEngineUsageLimits?: boolean;
 }
 
 /** The text a person is shown and matched by: name, then email, then id */
@@ -169,6 +175,8 @@ export const AddMembersOverlay = ({
 	isDirectoryAvailable = false,
 	people,
 	isCostAvailable = true,
+	engineUsage,
+	canChangeEngineUsageLimits = false,
 }: AddMembersOverlayProps) => {
 	const { t } = useTranslation("members");
 	const inputRef = useRef<HTMLInputElement>(null);
@@ -181,6 +189,9 @@ export const AddMembersOverlay = ({
 	const [hasAttemptedAdd, setHasAttemptedAdd] = useState(false);
 	// the limit every person added to a model gets; a new key starts the editor again
 	const [usageLimit, setUsageLimit] = useState<ModelUsageLimit | null>(null);
+	const [databaseLimit, setDatabaseLimit] = useState<EngineUsageLimit | null>(
+		null,
+	);
 	const [limitKey, setLimitKey] = useState(0);
 	// the limit's problems show from the first add they stop
 	const [shouldShowLimitProblems, setShouldShowLimitProblems] =
@@ -202,12 +213,20 @@ export const AddMembersOverlay = ({
 	const isModel = hasAccessLevels && type === "MODEL";
 	// only owners, and admins in admin mode, set usage limits
 	const canGiveLimit = isModel && isOwner;
+	const isDatabase =
+		hasAccessLevels && type === "DATABASE" && engineUsage !== undefined;
+	const canGiveDatabaseLimit = isDatabase && canChangeEngineUsageLimits;
 	const limitProblem = canGiveLimit
 		? findModelUsageLimitProblem(usageLimit, {
 				source: "DIRECT",
 				isCostAvailable,
 			})
-		: null;
+		: canGiveDatabaseLimit
+			? findModelUsageLimitProblem(databaseLimit, {
+					source: "DIRECT",
+					isCostAvailable: false,
+				})
+			: null;
 
 	const usersIterator = useIteratorApi<AddMembersCandidate>(
 		async (limit, offset) => {
@@ -342,6 +361,9 @@ export const AddMembersOverlay = ({
 				username: m.username,
 				// people added with no limit have no limit defined
 				...(canGiveLimit && usageLimit ? { usageLimit } : {}),
+				...(canGiveDatabaseLimit
+					? { engineUsageLimit: databaseLimit }
+					: {}),
 			};
 		});
 
@@ -368,8 +390,7 @@ export const AddMembersOverlay = ({
 					? error.message
 					: t("errors.addMembersFailed"),
 			);
-			resetState();
-			onClose(true);
+			// Keep the dialog, selected people and quota draft on a rejected save.
 		}
 	};
 
@@ -379,6 +400,7 @@ export const AddMembersOverlay = ({
 		setSearchKey("");
 		usersIterator.reset();
 		setUsageLimit(null);
+		setDatabaseLimit(null);
 		setLimitKey((key) => key + 1);
 		setShouldShowLimitProblems(false);
 		setUserPermission("");
@@ -740,6 +762,24 @@ export const AddMembersOverlay = ({
 					</div>
 
 					{/* a model's usage limit, for everyone added */}
+					{isDatabase && engineUsage ? (
+						<DatabaseUsageLimitEditor
+							key={limitKey}
+							ref={limitEditorRef}
+							defaultValue={null}
+							onChange={setDatabaseLimit}
+							metrics={engineUsage.metrics}
+							source="DIRECT"
+							label="Database Usage Limit"
+							disabled={isSubmitting}
+							shouldShowProblems={shouldShowLimitProblems}
+							readOnlyReason={
+								canGiveDatabaseLimit
+									? null
+									: OWNERS_ONLY_LIMIT_REASON
+							}
+						/>
+					) : null}
 					{isModel ? (
 						<div className="flex flex-col gap-2 rounded-md border border-border p-3">
 							<ModelUsageLimitEditor

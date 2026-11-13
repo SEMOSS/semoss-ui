@@ -8,6 +8,7 @@ import {
 import { createRef } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ModelUsageLimit } from "@semoss/sdk";
+import { DatabaseUsageLimitEditor } from "./database-usage-limit-editor";
 import {
 	ModelUsageLimitEditor,
 	type ModelUsageLimitEditorHandle,
@@ -108,6 +109,120 @@ describe("ModelUsageLimitEditor problems", () => {
 	afterEach(() => {
 		cleanup();
 		vi.unstubAllGlobals();
+	});
+
+	it("uses database capabilities and emits query and row metrics without model aliases", () => {
+		const onChange = vi.fn();
+		render(
+			<DatabaseUsageLimitEditor
+				defaultValue={null}
+				source="DIRECT"
+				metrics={["QUERIES", "ROWS", "COMPUTE_TIME"]}
+				onChange={onChange}
+			/>,
+		);
+		fireEvent.click(screen.getByRole("radio", { name: "Rules" }));
+		fireEvent.change(getAmount(), { target: { value: "12" } });
+		expect(onChange).toHaveBeenLastCalledWith({
+			unlimited: false,
+			rules: [
+				{
+					metric: "QUERIES",
+					amount: 12,
+					window: "DAY",
+					counts: "EACH_PERSON",
+				},
+			],
+		});
+		fireEvent.click(
+			screen.getByRole("combobox", { name: "What rule 1 counts" }),
+		);
+		expect(screen.queryByRole("option", { name: "Tokens" })).toBeNull();
+		expect(screen.queryByRole("option", { name: "Cost" })).toBeNull();
+		fireEvent.click(screen.getByRole("option", { name: "Rows" }));
+		// Changing units starts a fresh amount, matching model editing behavior.
+		expect(getAmount().getAttribute("value")).toBe("");
+		fireEvent.change(getAmount(), { target: { value: "12" } });
+		expect(onChange).toHaveBeenLastCalledWith({
+			unlimited: false,
+			rules: [
+				{
+					metric: "ROWS",
+					amount: 12,
+					window: "DAY",
+					counts: "EACH_PERSON",
+				},
+			],
+		});
+	});
+
+	it("labels database elapsed time and keeps its millisecond units", () => {
+		const onChange = vi.fn();
+		render(
+			<DatabaseUsageLimitEditor
+				defaultValue={{
+					unlimited: false,
+					rules: [
+						{
+							metric: "COMPUTE_TIME",
+							amount: 1200,
+							window: "DAY",
+							counts: "EACH_PERSON",
+						},
+					],
+				}}
+				source="DIRECT"
+				metrics={["QUERIES", "ROWS", "COMPUTE_TIME"]}
+				onChange={onChange}
+			/>,
+		);
+		expect(
+			screen.getByRole("combobox", { name: "What rule 1 counts" })
+				.textContent,
+		).toContain("Elapsed Read Time");
+		expect(
+			screen.getByText(/not CPU time or a query timeout/),
+		).toBeTruthy();
+		fireEvent.change(getAmount(), { target: { value: "1500" } });
+		expect(onChange).toHaveBeenLastCalledWith({
+			unlimited: false,
+			rules: [
+				{
+					metric: "COMPUTE_TIME",
+					amount: 1500,
+					window: "DAY",
+					counts: "EACH_PERSON",
+				},
+			],
+		});
+	});
+
+	it("uses shared-only counts and no Unlimited mode for database totals", () => {
+		const onChange = vi.fn();
+		render(
+			<DatabaseUsageLimitEditor
+				defaultValue={null}
+				source="MODEL_TOTAL"
+				metrics={["ROWS"]}
+				onChange={onChange}
+			/>,
+		);
+		expect(
+			screen.queryByRole("radio", { name: "usageLimit.modes.unlimited" }),
+		).toBeNull();
+		fireEvent.click(screen.getByRole("radio", { name: "Rules" }));
+		fireEvent.change(getAmount(), { target: { value: "20" } });
+		expect(onChange).toHaveBeenLastCalledWith({
+			unlimited: false,
+			rules: [
+				{
+					metric: "ROWS",
+					amount: 20,
+					window: "DAY",
+					counts: "SHARED",
+				},
+			],
+		});
 	});
 
 	it("does not mark a rule just added until the host shows the problems, then follows the edits", () => {

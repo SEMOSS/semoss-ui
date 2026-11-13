@@ -1,4 +1,5 @@
 import type { ModelUsageLimit } from "./api/access";
+import type { EngineUsageLimit } from "./api/engine-usage";
 
 /**
  * Script object
@@ -50,6 +51,10 @@ export interface PostUser {
 	 * limit the person has.
 	 */
 	usageLimit?: ModelUsageLimit | null;
+	/** New engine policy. Omission keeps it; explicit null clears it. */
+	engineUsageLimit?: EngineUsageLimit | null;
+	/** Preserve the complete grant when editing a new engine policy. */
+	endDate?: string | null;
 }
 
 /**

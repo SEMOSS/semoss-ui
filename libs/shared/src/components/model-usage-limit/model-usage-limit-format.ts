@@ -1,4 +1,7 @@
 import type {
+	EngineUsageLimit,
+	EngineUsageLimitRule,
+	EngineUsageMetric,
 	ModelUsageCounts,
 	ModelUsageLimit,
 	ModelUsageLimitRule,
@@ -117,7 +120,7 @@ export const getWindowMinutes = (
  * @returns what it is called after an amount, such as "a day", "a minute" or
  * "every 10 minutes"
  */
-const describeWindow = (window: ModelUsageWindow, length = 1): string =>
+export const describeWindow = (window: ModelUsageWindow, length = 1): string =>
 	length === 1
 		? WINDOW_PHRASES[window]
 		: `every ${length.toLocaleString()} ${WINDOW_UNITS[window]}`;
@@ -129,7 +132,7 @@ const describeWindow = (window: ModelUsageWindow, length = 1): string =>
  */
 export const getRuleSlotKey = (
 	rule: Pick<
-		ModelUsageLimitRule,
+		EngineUsageLimitRule,
 		"metric" | "window" | "windowLength" | "counts"
 	>,
 ): string =>
@@ -210,15 +213,20 @@ export const formatComputeTime = (milliseconds: number): string => {
  * "2 hours of compute time"
  */
 export const formatUsageAmount = (
-	metric: ModelUsageMetric,
+	metric: EngineUsageMetric,
 	amount: number,
+	timeMeasure = "compute time",
 ): string => {
 	if (metric === "COST") {
 		return formatDollars(amount);
 	}
 	if (metric === "COMPUTE_TIME") {
-		return `${formatComputeTime(amount)} of compute time`;
+		return `${formatComputeTime(amount)} of ${timeMeasure}`;
 	}
+	if (metric === "QUERIES")
+		return `${amount.toLocaleString()} ${amount === 1 ? "query" : "queries"}`;
+	if (metric === "ROWS")
+		return `${amount.toLocaleString()} ${amount === 1 ? "row" : "rows"}`;
 	return `${amount.toLocaleString()} ${amount === 1 ? "token" : "tokens"}`;
 };
 
@@ -281,14 +289,15 @@ const describeCounts = (
  * @returns the rule in words
  */
 export const describeModelUsageRule = (
-	rule: ModelUsageLimitRule,
+	rule: EngineUsageLimitRule,
 	source: ModelUsageLimitSource = "DIRECT",
+	timeMeasure = "compute time",
 ): string => {
 	const counts = describeCounts(rule.counts, source);
 	const window = describeWindow(rule.window, getWindowLength(rule));
 	return rule.amount === null
 		? `No amount ${window}${counts}`
-		: `${formatUsageAmount(rule.metric, rule.amount)} ${window}${counts}`;
+		: `${formatUsageAmount(rule.metric, rule.amount, timeMeasure)} ${window}${counts}`;
 };
 
 /**
@@ -301,7 +310,7 @@ export const describeModelUsageRule = (
  * @returns the limit in words: "No Limit Defined", "Unlimited" or its rules
  */
 export const describeModelUsageLimit = (
-	limit: ModelUsageLimit | null | undefined,
+	limit: EngineUsageLimit | null | undefined,
 	source: ModelUsageLimitSource = "DIRECT",
 ): string => {
 	if (!limit) {

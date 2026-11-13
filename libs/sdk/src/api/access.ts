@@ -1,5 +1,11 @@
 import { Env } from "../env";
 import { get, post } from "../utility";
+import {
+	type EngineUsageLimit,
+	type EngineUsageSettings,
+	readEngineUsageLimit,
+	readEngineUsageSettings,
+} from "./engine-usage";
 
 /**
  * What a permission batch changes: a project, an engine, an insight, a custom
@@ -158,6 +164,10 @@ export interface PermissionGrant {
 	 * each member.
 	 */
 	usageLimit?: ModelUsageLimit | null;
+	/** Policy for a new engine category; omission preserves it, null clears it. */
+	engineUsageLimit?: EngineUsageLimit | null;
+	/** Catalog metadata on a read grant, used to prevent incompatible copying. */
+	engineUsageCatalog?: string;
 }
 
 /** One change to a person's or team's access in a permission batch */
@@ -187,7 +197,16 @@ export interface ModelLimitChange {
 }
 
 /** One change in a permission batch */
-export type PermissionChange = PermissionAccessChange | ModelLimitChange;
+export interface EngineLimitChange {
+	action: "CHANGE";
+	subject: { category: "PUBLIC" | "ENGINE" };
+	to: { engineUsageLimit: EngineUsageLimit | null };
+}
+
+export type PermissionChange =
+	| PermissionAccessChange
+	| ModelLimitChange
+	| EngineLimitChange;
 
 /** The changes to one target */
 export interface PermissionBatch {
@@ -257,6 +276,8 @@ export interface PermissionAllowedChanges {
 	 * use limit and the model total: its owners, and admins in admin mode
 	 */
 	canChangeModelLimits: boolean;
+	/** Owner/admin authority for the new engine policy contract. */
+	canChangeEngineUsageLimits?: boolean;
 }
 
 /** Who can use a project or engine now */
@@ -275,6 +296,8 @@ export interface ResourcePermissions {
 	costLimitsAvailable: boolean;
 	/** The price entry the model's cost rules use, or null */
 	price: ModelPrice | null;
+	/** New catalog capabilities and limits; absent on legacy model responses. */
+	engineUsage?: EngineUsageSettings;
 }
 
 /** A person to copy from a source, with their access on the source and the target */
@@ -667,6 +690,12 @@ const readGrant = (value: unknown): PermissionGrant | null => {
 		level,
 		endDate: readText(value.endDate),
 		usageLimit: readModelUsageLimit(value.usageLimit),
+		...(value.engineUsageLimit !== undefined
+			? { engineUsageLimit: readEngineUsageLimit(value.engineUsageLimit) }
+			: {}),
+		...(typeof value.engineUsageCatalog === "string"
+			? { engineUsageCatalog: value.engineUsageCatalog }
+			: {}),
 	};
 };
 
@@ -775,6 +804,12 @@ export const getResourcePermissions = async (
 			addsAreAdminOnly: allowed.addsAreAdminOnly === true,
 			limitLevels: readLevels(allowed.limitLevels),
 			canChangeModelLimits: allowed.canChangeModelLimits === true,
+			...(allowed.canChangeEngineUsageLimits !== undefined
+				? {
+						canChangeEngineUsageLimits:
+							allowed.canChangeEngineUsageLimits === true,
+					}
+				: {}),
 		},
 		publicUse: readPublicUse(data.publicUse),
 		modelTotal: isObject(data.modelTotal)
@@ -782,6 +817,9 @@ export const getResourcePermissions = async (
 			: null,
 		costLimitsAvailable: data.costLimitsAvailable === true,
 		price: readPrice(data.price),
+		...(data.engineUsage !== undefined
+			? { engineUsage: readEngineUsageSettings(data.engineUsage) }
+			: {}),
 	};
 };
 

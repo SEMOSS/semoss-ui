@@ -22,6 +22,15 @@ export * from "./login-type-label";
 export * from "./mcp";
 export * from "./members";
 export {
+	DatabaseUsageLimitEditor,
+	type DatabaseUsageLimitEditorProps,
+} from "./model-usage-limit/database-usage-limit-editor";
+export {
+	EngineUsageLimitEditor,
+	type EngineUsageLimitEditorHandle,
+	type EngineUsageLimitEditorProps,
+} from "./model-usage-limit/engine-usage-limit-editor";
+export {
 	checkModelUsageLimitRules,
 	findModelUsageLimitProblem,
 	type ModelUsageLimitCheckOptions,

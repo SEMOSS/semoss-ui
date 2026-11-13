@@ -1,6 +1,7 @@
 import { Plus, Search } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
+	type EngineUsageLimit,
 	editEngineUserPermissions,
 	editProjectUserPermissions,
 	getUserEnginePermission,
@@ -30,7 +31,9 @@ import {
 	useDebouncedValue,
 } from "@semoss/ui/next";
 import { useCostLimitsAvailable } from "../../hooks/use-cost-limits-available";
+import { useEngineUsageAccess } from "../../hooks/use-engine-usage-access";
 import { useIsCurrentLogin } from "../../hooks/use-is-current-login";
+import { DatabaseUsageLimitEditor } from "../model-usage-limit/database-usage-limit-editor";
 import { findModelUsageLimitProblem } from "../model-usage-limit/model-usage-limit-checks";
 import {
 	ModelUsageLimitEditor,
@@ -135,6 +138,17 @@ export const MembersTable = ({
 	const effectiveCurrentUserId = currentUserId ?? myUserId;
 	const isCurrentLogin = useIsCurrentLogin();
 	const isModel = !source && type === "MODEL";
+	const isDatabase = !source && type === "DATABASE";
+	const databaseAccess = useEngineUsageAccess(
+		isDatabase && id ? id : null,
+		adminMode,
+	);
+	const databaseSettings = databaseAccess.access?.engineUsage;
+	const canChangeDatabaseLimit =
+		databaseAccess.access?.allowedPermissionChanges
+			.canChangeEngineUsageLimits === true;
+	const [editDatabaseLimit, setEditDatabaseLimit] =
+		useState<EngineUsageLimit | null>(null);
 	const isCostAvailable = useCostLimitsAvailable(
 		isModel && id ? id : null,
 		adminMode,
@@ -169,6 +183,11 @@ export const MembersTable = ({
 
 	// Edit dialog state
 	const [editUser, setEditUser] = useState<MemberUser | null>(null);
+	const editedDatabaseGrant = databaseAccess.access?.people.find(
+		(entry) =>
+			entry.subject.id === editUser?.id &&
+			entry.subject.type === editUser.type,
+	)?.access;
 	const [editPermission, setEditPermission] = useState<Role>("READ_ONLY");
 	const [editLimit, setEditLimit] = useState<ModelUsageLimit | null>(null);
 	// the limit's problems show from the first save they stop
@@ -185,9 +204,33 @@ export const MembersTable = ({
 					source: "DIRECT",
 					isCostAvailable,
 				})
-			: null;
+			: isDatabase && canChangeDatabaseLimit
+				? findModelUsageLimitProblem(editDatabaseLimit, {
+						source: "DIRECT",
+						isCostAvailable: false,
+					})
+				: null;
 
 	const openEditDialog = (user: MemberUser) => {
+		if (isDatabase && !databaseAccess.access) {
+			toast.error(
+				databaseAccess.error ??
+					"Database usage limits are still loading",
+			);
+			return;
+		}
+		const databaseGrant = databaseAccess.access?.people.find(
+			(entry) =>
+				entry.subject.id === user.id &&
+				entry.subject.type === user.type,
+		)?.access;
+		if (isDatabase && !databaseGrant) {
+			toast.error(
+				"Unable to read this database grant. Refresh before editing it.",
+			);
+			return;
+		}
+		setEditDatabaseLimit(databaseGrant?.engineUsageLimit ?? null);
 		setEditUser(user);
 		setEditPermission(
 			ACCESS_LEVELS.find((level) => level === user.permission) ??
@@ -198,7 +241,13 @@ export const MembersTable = ({
 	};
 
 	const saveUserEdit = async () => {
-		if (!editUser || !id) return;
+		if (!editUser || !id || isSavingEdit) return;
+		if (isDatabase && !editedDatabaseGrant) {
+			toast.error(
+				"The database grant is unavailable. Refresh before saving.",
+			);
+			return;
+		}
 		if (editLimitProblem) {
 			setShouldShowLimitProblems(true);
 			limitEditorRef.current?.focusFirstProblem();
@@ -213,6 +262,15 @@ export const MembersTable = ({
 			userid: editUser.id,
 			permission: editPermission,
 			...(isModel ? { usageLimit: toExplicitUsageLimit(limit) } : {}),
+			...(isDatabase
+				? {
+						type: editUser.type,
+						endDate: editedDatabaseGrant?.endDate ?? null,
+						...(canChangeDatabaseLimit
+							? { engineUsageLimit: editDatabaseLimit }
+							: {}),
+					}
+				: {}),
 		};
 
 		setIsSavingEdit(true);
@@ -227,6 +285,7 @@ export const MembersTable = ({
 
 		if (success) {
 			toast.success("User updated successfully.");
+			if (isDatabase) databaseAccess.reload();
 			// Editing your own permission can change what you're allowed to see/do
 			// here (and in ancestors gating on it), so let them resync, unlike
 			// adding a member, which never changes your own permission.
@@ -264,7 +323,16 @@ export const MembersTable = ({
 								type="button"
 								size="sm"
 								className="flex h-auto flex-column gap-2 align-center"
-								onClick={() => setOpenAddMembers(true)}
+								onClick={() => {
+									if (isDatabase && !databaseAccess.access) {
+										toast.error(
+											databaseAccess.error ??
+												"Database usage limits are still loading",
+										);
+										return;
+									}
+									setOpenAddMembers(true);
+								}}
 							>
 								<div className="flex flex-column items-center gap-2">
 									<Plus />
@@ -277,6 +345,19 @@ export const MembersTable = ({
 				</div>
 			</div>
 
+			{isDatabase && databaseAccess.error ? (
+				<div role="alert" className="text-destructive text-sm">
+					{databaseAccess.error}
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						onClick={databaseAccess.reload}
+					>
+						Retry
+					</Button>
+				</div>
+			) : null}
 			{/* Members List Section */}
 			<MembersList
 				id={id}
@@ -300,6 +381,7 @@ export const MembersTable = ({
 				open={openAddMembers}
 				onClose={(success) => {
 					setOpenAddMembers(false);
+					if (isDatabase && success) databaseAccess.reload();
 					// Adding a member never changes your own permission, so unlike
 					// editing, this doesn't need to notify ancestors via onChange.
 					if (success) {
@@ -310,6 +392,8 @@ export const MembersTable = ({
 				isDirectoryAvailable={isDirectoryAvailable}
 				people={source?.people}
 				isCostAvailable={isCostAvailable}
+				engineUsage={databaseSettings}
+				canChangeEngineUsageLimits={canChangeDatabaseLimit}
 			/>
 
 			{/* Edit member dialog: rendered here, outside the table */}
@@ -375,6 +459,27 @@ export const MembersTable = ({
 								</Select>
 							</div>
 
+							{isDatabase && databaseSettings ? (
+								<DatabaseUsageLimitEditor
+									key={`${editUser.id}:${editUser.type}`}
+									ref={limitEditorRef}
+									defaultValue={
+										editedDatabaseGrant?.engineUsageLimit ??
+										null
+									}
+									onChange={setEditDatabaseLimit}
+									metrics={databaseSettings.metrics}
+									source="DIRECT"
+									label="Database Usage Limit"
+									readOnlyReason={
+										canChangeDatabaseLimit
+											? null
+											: OWNERS_ONLY_LIMIT_REASON
+									}
+									shouldShowProblems={shouldShowLimitProblems}
+									disabled={isSavingEdit}
+								/>
+							) : null}
 							{isModel ? (
 								<div className="flex flex-col gap-1">
 									<ModelUsageLimitEditor

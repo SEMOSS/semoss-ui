@@ -1,4 +1,4 @@
-import type { ModelUsageLimit } from "@semoss/sdk";
+import type { EngineUsageLimit } from "@semoss/sdk";
 import { cn } from "@semoss/ui/next";
 import {
 	describeModelUsageRule,
@@ -9,13 +9,15 @@ import {
 /** Props for {@link ModelUsageLimitRules}. */
 export interface ModelUsageLimitRulesProps {
 	/** The limit, or null when there is none */
-	limit: ModelUsageLimit | null | undefined;
+	limit: EngineUsageLimit | null | undefined;
 	/** Where it is set, which decides how its counts are said */
 	source: ModelUsageLimitSource;
 	/** What to say when there is no limit */
 	emptyLabel?: string;
 	/** Classes for the list, or for the text when there are no rules */
 	className?: string;
+	/** Catalog-specific time wording, leaving model summaries unchanged. */
+	timeMeasure?: string;
 }
 
 /**
@@ -28,6 +30,7 @@ export const ModelUsageLimitRules = ({
 	source,
 	emptyLabel = "No Limit Defined",
 	className,
+	timeMeasure,
 }: ModelUsageLimitRulesProps) => {
 	if (!limit || (!limit.unlimited && limit.rules.length === 0)) {
 		return (
@@ -52,7 +55,7 @@ export const ModelUsageLimitRules = ({
 							and
 						</span>
 					) : null}
-					{describeModelUsageRule(rule, source)}
+					{describeModelUsageRule(rule, source, timeMeasure)}
 				</span>
 			))}
 		</span>

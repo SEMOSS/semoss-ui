@@ -5,6 +5,7 @@ export * from "./auth";
 export * from "./base";
 export * from "./chat";
 export * from "./engine";
+export * from "./engine-usage";
 export * from "./file";
 export * from "./insight";
 export * from "./mcp";

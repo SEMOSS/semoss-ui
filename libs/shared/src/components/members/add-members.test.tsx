@@ -25,6 +25,7 @@ const mocks = vi.hoisted(() => {
 		toastError: vi.fn(),
 		toastSuccess: vi.fn(),
 		getEngineUsers: vi.fn(),
+		addEngineUsers: vi.fn(),
 		getUserEnginePermission: vi.fn(),
 		translate: (key: string, options: Record<string, unknown> = {}) =>
 			(messages[key] ?? key).replace(
@@ -42,6 +43,7 @@ vi.mock("@semoss/i18n", async (importOriginal) => ({
 vi.mock("@semoss/sdk", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@semoss/sdk")>()),
 	getEngineUsersNoCredentials: mocks.getEngineUsers,
+	addEngineUserPermissions: mocks.addEngineUsers,
 	getUserEnginePermission: mocks.getUserEnginePermission,
 }));
 
@@ -252,6 +254,7 @@ describe("AddMembersOverlay with a host's people", () => {
 
 /** The model the dialog adds people to */
 const MODEL_ID = "m1";
+const DATABASE_ID = "database";
 
 describe("AddMembersOverlay on a model", () => {
 	beforeEach(() => {
@@ -298,6 +301,64 @@ describe("AddMembersOverlay on a model", () => {
 		expect(
 			screen.queryByRole("radio", { name: "usageLimit.modes.rules" }),
 		).toBeNull();
+	});
+
+	it("saves database access and its query policy through the existing permission endpoint", async () => {
+		mocks.getUserEnginePermission.mockResolvedValue("OWNER");
+		mocks.getEngineUsers.mockResolvedValue([GRACE]);
+		mocks.addEngineUsers.mockResolvedValue(true);
+		const onClose = vi.fn();
+		render(
+			<AddMembersOverlay
+				open
+				onClose={onClose}
+				id={DATABASE_ID}
+				type="DATABASE"
+				canChangeEngineUsageLimits
+				engineUsage={{
+					catalogType: "DATABASE",
+					metrics: ["QUERIES", "ROWS", "COMPUTE_TIME"],
+					publicUse: { isPublic: false, usageLimit: null },
+					engineTotal: { usageLimit: null },
+				}}
+			/>,
+		);
+		fireEvent.click(
+			await screen.findByRole("button", { name: /Grace Hopper/ }),
+		);
+		fireEvent.click(
+			screen.getByRole("radio", { name: "usageLimit.modes.rules" }),
+		);
+		fireEvent.change(
+			screen.getByRole("textbox", { name: "usageLimit.rule.amount" }),
+			{ target: { value: "7" } },
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Add (1)" }));
+		await waitFor(() =>
+			expect(mocks.addEngineUsers).toHaveBeenCalledWith(
+				"database",
+				[
+					expect.objectContaining({
+						userid: "grace",
+						type: "NATIVE",
+						permission: "READ_ONLY",
+						engineUsageLimit: {
+							unlimited: false,
+							rules: [
+								{
+									metric: "QUERIES",
+									amount: 7,
+									window: "DAY",
+									counts: "EACH_PERSON",
+								},
+							],
+						},
+					}),
+				],
+				false,
+			),
+		);
+		expect(onClose).toHaveBeenCalledWith(true);
 	});
 
 	it("lets an owner set the usage limit of the people added", async () => {

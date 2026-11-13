@@ -1,4 +1,4 @@
-import type { ModelUsageLimit, ModelUsageLimitRule } from "@semoss/sdk";
+import type { EngineUsageLimit, EngineUsageLimitRule } from "@semoss/sdk";
 import {
 	describeModelUsageRule,
 	getMaxWindowLength,
@@ -18,6 +18,8 @@ export interface ModelUsageLimitCheckOptions {
 	 * have cost rules
 	 */
 	isCostAvailable: boolean;
+	/** Time wording used in non-blocking warnings. */
+	timeMeasure?: string;
 }
 
 /** What is wrong with one rule, and what may not work as meant */
@@ -42,7 +44,7 @@ const LENGTH_UNITS: Readonly<Record<"MINUTE" | "HOUR", string>> = {
  * @returns the problem, or null
  */
 export const findWindowLengthProblem = (
-	rule: Pick<ModelUsageLimitRule, "window" | "windowLength">,
+	rule: Pick<EngineUsageLimitRule, "window" | "windowLength">,
 ): string | null => {
 	const length = rule.windowLength;
 	if (length === undefined || length === 1) {
@@ -65,8 +67,8 @@ export const findWindowLengthProblem = (
  * @returns why the rule cannot be saved, or null
  */
 const findRuleProblem = (
-	rule: ModelUsageLimitRule,
-	rules: readonly ModelUsageLimitRule[],
+	rule: EngineUsageLimitRule,
+	rules: readonly EngineUsageLimitRule[],
 	index: number,
 	options: ModelUsageLimitCheckOptions,
 ): string | null => {
@@ -108,9 +110,10 @@ const findRuleProblem = (
  * @returns why the rule can never be reached, or null
  */
 const findRuleWarning = (
-	rule: ModelUsageLimitRule,
-	rules: readonly ModelUsageLimitRule[],
+	rule: EngineUsageLimitRule,
+	rules: readonly EngineUsageLimitRule[],
 	source: ModelUsageLimitSource,
+	timeMeasure?: string,
 ): string | null => {
 	const { amount } = rule;
 	if (amount === null || findWindowLengthProblem(rule) !== null) {
@@ -143,7 +146,7 @@ const findRuleWarning = (
 		);
 	});
 	return tighter
-		? `${describeModelUsageRule(rule, source)} can never be reached, since ${describeModelUsageRule(tighter, source)} is less`
+		? `${describeModelUsageRule(rule, source, timeMeasure)} can never be reached, since ${describeModelUsageRule(tighter, source, timeMeasure)} is less`
 		: null;
 };
 
@@ -155,12 +158,17 @@ const findRuleWarning = (
  * @returns one check per rule, in the limit's order
  */
 export const checkModelUsageLimitRules = (
-	limit: ModelUsageLimit | null,
+	limit: EngineUsageLimit | null,
 	options: ModelUsageLimitCheckOptions,
 ): ModelUsageRuleCheck[] =>
 	(limit?.rules ?? []).map((rule, index, rules) => ({
 		problem: findRuleProblem(rule, rules, index, options),
-		warning: findRuleWarning(rule, rules, options.source),
+		warning: findRuleWarning(
+			rule,
+			rules,
+			options.source,
+			options.timeMeasure,
+		),
 	}));
 
 /**
@@ -171,7 +179,7 @@ export const checkModelUsageLimitRules = (
  * @returns the first problem, or null when it can be saved
  */
 export const findModelUsageLimitProblem = (
-	limit: ModelUsageLimit | null,
+	limit: EngineUsageLimit | null,
 	options: ModelUsageLimitCheckOptions,
 ): string | null => {
 	if (!limit || limit.unlimited) {
