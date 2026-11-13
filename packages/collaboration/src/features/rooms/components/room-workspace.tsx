@@ -20,6 +20,7 @@ import {
 	useIsMobile,
 } from "@semoss/ui/next";
 import { OutlookIcon, TeamsIcon } from "@/components/common/app-icons";
+import { agentImageUrl } from "@/features/agents/api/agent-image";
 import { CollaborationHeaderLayoutContext } from "@/features/collaboration/components/collaboration-header.context";
 import { useOptionalCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import {
@@ -357,6 +358,11 @@ export function RoomWorkspace({
 				>
 					<RoomConversation
 						agent={agent}
+						agentImage={
+							session.agentId
+								? agentImageUrl(session.agentId)
+								: undefined
+						}
 						title={session.title}
 						conversationId={session.id}
 						headerTopics={

@@ -61,7 +61,8 @@ export function RoutineDocuments({
 			) : (
 				<RoutineDocumentsDock
 					key={path}
-					path={path}
+					// the routine's folder in the owner's own files
+					config={{ mode: { type: "USER" }, initialPath: path }}
 					components={components}
 				/>
 			)}
