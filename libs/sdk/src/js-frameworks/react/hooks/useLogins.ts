@@ -1,4 +1,5 @@
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect } from "react";
+import { useStoreSelector } from "@semoss/utility/react/use-store-selector";
 import type {
 	LoginsSnapshot,
 	LoginsStore,
@@ -24,11 +25,7 @@ export const useLogins = (): LoginsSnapshot & {
 	// the session's own logins: `Session.logins` unless a provider gives another session
 	const { logins } = useSessionStore();
 
-	const snapshot = useSyncExternalStore(
-		logins.subscribe,
-		logins.getSnapshot,
-		logins.getSnapshot,
-	);
+	const snapshot = useStoreSelector(logins);
 
 	useEffect(() => {
 		const refresh = () => {

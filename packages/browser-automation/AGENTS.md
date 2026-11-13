@@ -16,6 +16,8 @@ sockets for Playwright/automation scenarios and exposes a SEMOSS MCP surface. It
 
 - **Bundler**: Vite 8 + React 19
 - **Styling**: Tailwind CSS v4
+- **State**: React state and hooks; no state library. Any shared store uses `StoreState` per
+  the [state management skill](../../skills/state-management.skill.md)
 
 ### Commands
 
