@@ -1,6 +1,7 @@
 import {
 	act,
 	cleanup,
+	fireEvent,
 	render,
 	screen,
 	waitFor,
@@ -37,6 +38,30 @@ it("keeps a room-specific focus destination when the workbench closes", () => {
 	act(() => document.getElementById(id)?.focus());
 	expect(toggle).toHaveFocus();
 	expect(roomWorkbenchTriggerId("another-room")).not.toBe(id);
+});
+
+it("shows the agent's own image, and its initials when it has none or the image does not load", () => {
+	const props = {
+		agent,
+		title: "Room",
+		isToolWorkbenchOpen: false,
+		onToggleToolWorkbench: vi.fn(),
+	};
+	const view = render(<RoomHeader {...props} />);
+	const details = screen.getByRole("button", {
+		name: "Conversation details: Room",
+	});
+	expect(details.querySelector("img")).toBeNull();
+	expect(details).toHaveTextContent("RA");
+
+	view.rerender(<RoomHeader {...props} agentImage="/twin.png" />);
+	const image = details.querySelector("img");
+	expect(image).toHaveAttribute("src", "/twin.png");
+	// decorative: the button is already named by the conversation
+	expect(image).toHaveAttribute("alt", "");
+	if (image) fireEvent.error(image);
+	expect(details.querySelector("img")).toBeNull();
+	expect(details).toHaveTextContent("RA");
 });
 
 it("exposes a long conversation title to keyboard users and returns focus", async () => {
