@@ -86,9 +86,9 @@
 			"version": "Version {{version}}",
 			"newChat": {
 				"title": "Chat",
+				"default": "Par défaut",
 				"model": "Modèle",
 				"modelDescription": "Le modèle utilisé par une nouvelle conversation.",
-				"deploymentModel": "Valeur par défaut de la plateforme",
 				"unavailableModel": "Modèle indisponible",
 				"mode": "Mode",
 				"modeDescription": "Si une nouvelle conversation démarre en mode chat ou avec un agent.",
@@ -98,7 +98,6 @@
 				},
 				"agent": "Agent",
 				"agentDescription": "L'agent exécuté par une nouvelle conversation en mode agent.",
-				"defaultAgent": "Agent par défaut",
 				"saveError": "Impossible d'enregistrer votre préférence : {{message}}"
 			}
 		}

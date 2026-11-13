@@ -12,7 +12,11 @@ import {
 import { toast } from "@semoss/ui/next";
 import { parseTimestampWithUtcDefault } from "@semoss/utility/date";
 import type { WorkbenchPanelConfigAny } from "@semoss/workbench";
-import { readNewChatPreferences } from "@/features/new-chat-preferences/new-chat-preferences";
+import {
+	readDeploymentNewChatDefaults,
+	readNewChatPreferences,
+	resolveNewChatModel,
+} from "@/features/new-chat-preferences/new-chat-preferences";
 import type {
 	AbstractPixelMessage,
 	Engine,
@@ -24,7 +28,6 @@ import type {
 import { throwOnPixelErrors } from "@/utility/pixel-errors";
 import { RoomStore } from "../room/room.store";
 
-const DEFAUlT_MODEL_ID = import.meta.env.VITE_DEFAUlT_MODEL_ID || "";
 const DEFAUlT_MODEL_NAME = import.meta.env.VITE_DEFAUlT_MODEL_NAME || "";
 
 /**
@@ -764,10 +767,7 @@ export class ChatStore {
 
 	/** The deployment's default model id: the theme's, then the env's. */
 	private get deploymentDefaultModelId(): string {
-		return (
-			this._theme.defaultRoomSettings?.model?.engine_id ||
-			DEFAUlT_MODEL_ID
-		);
+		return readDeploymentNewChatDefaults(this._theme).modelId ?? "";
 	}
 
 	/**
@@ -777,22 +777,13 @@ export class ChatStore {
 	 *
 	 * @returns The model, or undefined when the user can see none.
 	 */
-	private findNewChatDefaultModel = (): Engine | undefined => {
-		const { modelId } = readNewChatPreferences(
-			Session.getSnapshot().user?.meta,
+	private findNewChatDefaultModel = (): Engine | undefined =>
+		resolveNewChatModel(
+			null,
+			readNewChatPreferences(Session.getSnapshot().user?.meta),
+			readDeploymentNewChatDefaults(this._theme),
+			this._store.models.available,
 		);
-		const available = this._store.models.available;
-		const deploymentModelId = this.deploymentDefaultModelId;
-		return (
-			(modelId
-				? available.find((m) => m.engine_id === modelId)
-				: undefined) ??
-			(deploymentModelId
-				? available.find((m) => m.engine_id === deploymentModelId)
-				: undefined) ??
-			available[0]
-		);
-	};
 
 	/**
 	 * Select the model a new chat starts with when nothing else names one,

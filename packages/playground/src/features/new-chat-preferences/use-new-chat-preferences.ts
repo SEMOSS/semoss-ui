@@ -11,11 +11,14 @@ import {
 
 /** What {@link useNewChatPreferences} returns. */
 interface NewChatPreferencesState extends NewChatPreferences {
-	/** Set the default model, or clear it with null. */
+	/** Set the default model, or clear it with null for the deployment's. */
 	setModelId: (modelId: string | null) => void;
-	/** Set the default mode. Chat clears the default agent too. */
-	setMode: (mode: NewChatMode) => void;
-	/** Set the default saved agent, or clear it (Default Agent) with null. */
+	/**
+	 * Set the default mode, or clear it with null for the deployment's. Chat
+	 * clears the default agent too.
+	 */
+	setMode: (mode: NewChatMode | null) => void;
+	/** Set the default saved agent, or clear it with null for the deployment's. */
 	setAgentId: (agentId: string | null) => void;
 }
 
@@ -47,7 +50,7 @@ export const useNewChatPreferences = (): NewChatPreferencesState => {
 			save({ [NEW_CHAT_PREFERENCE_KEYS.model]: modelId ?? "" }),
 		setMode: (mode) =>
 			save({
-				[NEW_CHAT_PREFERENCE_KEYS.mode]: mode,
+				[NEW_CHAT_PREFERENCE_KEYS.mode]: mode ?? "",
 				...(mode === "chat"
 					? { [NEW_CHAT_PREFERENCE_KEYS.agent]: "" }
 					: {}),

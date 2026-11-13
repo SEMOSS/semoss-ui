@@ -4,6 +4,7 @@ import { useTranslation } from "@semoss/i18n";
 import { useSessionPixel } from "@semoss/sdk/react";
 import { ProjectSelect } from "@semoss/shared";
 import {
+	cn,
 	Select,
 	SelectContent,
 	SelectItem,
@@ -13,20 +14,30 @@ import {
 	ToggleGroupItem,
 } from "@semoss/ui/next";
 import { offersAgentMode } from "@/features/conversation/agent-mode-choice";
-import { isNewChatMode } from "@/features/new-chat-preferences/new-chat-preferences";
+import {
+	isNewChatMode,
+	readDeploymentNewChatDefaults,
+} from "@/features/new-chat-preferences/new-chat-preferences";
 import { useNewChatPreferences } from "@/features/new-chat-preferences/use-new-chat-preferences";
 import { useChat } from "@/hooks/use-chat";
 import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
 import type { Workspace } from "@/types";
 import { SettingsRow } from "./settings-row";
 
-/** Select value of the choice that clears the default model. */
-const DEPLOYMENT_MODEL_VALUE = "deployment-default";
+/**
+ * Value of each row's Default choice, which clears the user's own value so
+ * the deployment's applies. Model, mode, and agent ids are never this.
+ */
+const DEFAULT_VALUE = "default";
+
+/** Sets the Default choice apart from the user's own values. */
+const DEFAULT_CHOICE_CLASS = "text-muted-foreground italic";
 
 /**
  * The Chat section of the General page: the model, mode, and agent a new
  * chat starts with when this login session has not started one yet. Each
- * row shows only where the deployment lets the user choose it.
+ * row offers Default, the deployment's, beside the user's own choices, and
+ * shows only where the deployment lets the user choose it.
  */
 export const NewChatSettings = observer(() => {
 	const { t } = useTranslation("sidebar");
@@ -40,7 +51,12 @@ export const NewChatSettings = observer(() => {
 
 	const canSelectModel = Boolean(theme.featureFlags?.enableModelSelect);
 	const canUseAgentMode = offersAgentMode(theme.featureFlags);
-	const isAgentDefault = canUseAgentMode && preferences.mode === "agent";
+	// the agent row follows the mode a new chat would start in
+	const isAgentDefault =
+		canUseAgentMode &&
+		(preferences.mode ?? readDeploymentNewChatDefaults(theme).mode) ===
+			"agent";
+	const defaultLabel = t("settings.general.newChat.default");
 
 	// the saved agent's name, for the picker's trigger
 	const getAgent = useSessionPixel<Workspace | null>(
@@ -76,10 +92,10 @@ export const NewChatSettings = observer(() => {
 					description={t("settings.general.newChat.modelDescription")}
 				>
 					<Select
-						value={preferences.modelId ?? DEPLOYMENT_MODEL_VALUE}
+						value={preferences.modelId ?? DEFAULT_VALUE}
 						onValueChange={(value) =>
 							preferences.setModelId(
-								value === DEPLOYMENT_MODEL_VALUE ? null : value,
+								value === DEFAULT_VALUE ? null : value,
 							)
 						}
 					>
@@ -87,8 +103,10 @@ export const NewChatSettings = observer(() => {
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value={DEPLOYMENT_MODEL_VALUE}>
-								{t("settings.general.newChat.deploymentModel")}
+							<SelectItem value={DEFAULT_VALUE}>
+								<span className={DEFAULT_CHOICE_CLASS}>
+									{defaultLabel}
+								</span>
 							</SelectItem>
 							{isModelMissing && preferences.modelId ? (
 								<SelectItem
@@ -124,15 +142,23 @@ export const NewChatSettings = observer(() => {
 						variant="outline"
 						size="sm"
 						aria-labelledby={modeLabelId}
-						value={preferences.mode ?? "chat"}
+						value={preferences.mode ?? DEFAULT_VALUE}
 						// radix clears a single group to "" when the active item is
-						// clicked again; a mode is always chosen
+						// clicked again; a choice is always made
 						onValueChange={(value) => {
-							if (isNewChatMode(value)) {
+							if (value === DEFAULT_VALUE) {
+								preferences.setMode(null);
+							} else if (isNewChatMode(value)) {
 								preferences.setMode(value);
 							}
 						}}
 					>
+						<ToggleGroupItem
+							value={DEFAULT_VALUE}
+							className={DEFAULT_CHOICE_CLASS}
+						>
+							{defaultLabel}
+						</ToggleGroupItem>
 						<ToggleGroupItem value="chat">
 							{t("settings.general.newChat.modes.chat")}
 						</ToggleGroupItem>
@@ -150,11 +176,14 @@ export const NewChatSettings = observer(() => {
 				>
 					<ProjectSelect
 						id={agentId}
-						className="w-56"
+						className={cn(
+							"w-56",
+							!preferences.agentId && DEFAULT_CHOICE_CLASS,
+						)}
 						name={
 							preferences.agentId
 								? agentName || preferences.agentId
-								: t("settings.general.newChat.defaultAgent")
+								: defaultLabel
 						}
 						value={preferences.agentId ?? ""}
 						onChange={(project) =>
@@ -164,7 +193,7 @@ export const NewChatSettings = observer(() => {
 						showProjectImage
 						modal
 						noneOption={{
-							label: t("settings.general.newChat.defaultAgent"),
+							label: defaultLabel,
 							onSelect: () => preferences.setAgentId(null),
 						}}
 						popoverContentProps={{ align: "end" }}

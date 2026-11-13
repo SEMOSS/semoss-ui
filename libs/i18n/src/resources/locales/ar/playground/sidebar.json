@@ -86,9 +86,9 @@
 			"version": "الإصدار {{version}}",
 			"newChat": {
 				"title": "المحادثة",
+				"default": "الافتراضي",
 				"model": "النموذج",
 				"modelDescription": "النموذج الذي تستخدمه المحادثة الجديدة.",
-				"deploymentModel": "الإعداد الافتراضي للمنصة",
 				"unavailableModel": "نموذج غير متاح",
 				"mode": "الوضع",
 				"modeDescription": "هل تبدأ المحادثة الجديدة كمحادثة أم مع وكيل.",
@@ -98,7 +98,6 @@
 				},
 				"agent": "الوكيل",
 				"agentDescription": "الوكيل الذي تشغّله المحادثة الجديدة في وضع الوكيل.",
-				"defaultAgent": "الوكيل الافتراضي",
 				"saveError": "تعذّر حفظ تفضيلك: {{message}}"
 			}
 		}

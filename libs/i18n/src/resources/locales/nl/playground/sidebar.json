@@ -86,9 +86,9 @@
 			"version": "Versie {{version}}",
 			"newChat": {
 				"title": "Chat",
+				"default": "Standaard",
 				"model": "Model",
 				"modelDescription": "Het model dat een nieuwe chat gebruikt.",
-				"deploymentModel": "Platformstandaard",
 				"unavailableModel": "Model niet beschikbaar",
 				"mode": "Modus",
 				"modeDescription": "Of een nieuwe chat begint als chat of met een agent.",
@@ -98,7 +98,6 @@
 				},
 				"agent": "Agent",
 				"agentDescription": "De agent die een nieuwe chat in agentmodus uitvoert.",
-				"defaultAgent": "Standaardagent",
 				"saveError": "Je voorkeur kon niet worden opgeslagen: {{message}}"
 			}
 		}

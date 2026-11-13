@@ -33,6 +33,7 @@ import { NextMessageRoomProvider } from "@/features/conversation/next-message-ro
 import { RoomLayout } from "@/features/conversation/room-layout";
 import { useNewRoom } from "@/features/conversation/use-new-room";
 import {
+	readDeploymentNewChatDefaults,
 	readNewChatPreferences,
 	readSessionNewChat,
 	resolveNewChatAgentId,
@@ -140,14 +141,17 @@ export const NewRoomPage = observer(() => {
 	const submittedRef = useRef(false);
 	const greetingRoomStartedForRef = useRef<string>("");
 	// A new chat starts as the last chat started in this login session did,
-	// else as the user's defaults say (Settings > General). Read once: a
-	// default changed meanwhile applies to the next new chat.
+	// else as the user's defaults say (Settings > General), else as the
+	// deployment's do. Read once: a default changed meanwhile applies to the
+	// next new chat.
 	const [initialChat] = useState(() => {
 		const session = readSessionNewChat(lastLogin);
 		const preferences = readNewChatPreferences(userMeta);
+		const deployment = readDeploymentNewChatDefaults(theme);
 		const initialMode = resolveNewChatMode(
 			session,
 			preferences,
+			deployment,
 			offersAgentMode(theme.featureFlags),
 		);
 		return {
@@ -155,7 +159,7 @@ export const NewRoomPage = observer(() => {
 			// an agent link names its own agent
 			agentId:
 				initialMode === "agent" && !workspaceIdSearchParams
-					? resolveNewChatAgentId(session, preferences)
+					? resolveNewChatAgentId(session, preferences, deployment)
 					: "",
 		};
 	});

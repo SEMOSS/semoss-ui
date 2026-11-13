@@ -1049,3 +1049,24 @@ test("an agent link wins over the user's default agent", async () => {
 	);
 	expect(screen.getByLabelText("Mode")).toHaveTextContent("agent");
 });
+
+test("with no session chat or user default, the theme's mode and agent apply", async () => {
+	const settings = root.theme.defaultRoomSettings;
+	root.theme.defaultRoomSettings = {
+		...settings,
+		mode: "agent",
+		agentId: "alpha",
+	};
+	try {
+		render(<NewRoomPage />);
+
+		await waitFor(() =>
+			expect(screen.getByLabelText("Selected agent")).toHaveTextContent(
+				"Alpha",
+			),
+		);
+		expect(screen.getByLabelText("Mode")).toHaveTextContent("agent");
+	} finally {
+		root.theme.defaultRoomSettings = settings;
+	}
+});

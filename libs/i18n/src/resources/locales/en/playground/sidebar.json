@@ -87,9 +87,9 @@
 			"version": "Version {{version}}",
 			"newChat": {
 				"title": "Chat",
+				"default": "Default",
 				"model": "Model",
 				"modelDescription": "The model a new chat uses.",
-				"deploymentModel": "Platform default",
 				"unavailableModel": "Unavailable model",
 				"mode": "Mode",
 				"modeDescription": "Whether a new chat starts as a chat or with an agent.",
@@ -99,7 +99,6 @@
 				},
 				"agent": "Agent",
 				"agentDescription": "The agent a new chat in agent mode runs.",
-				"defaultAgent": "Default Agent",
 				"saveError": "Could not save your preference: {{message}}"
 			}
 		}

@@ -86,9 +86,9 @@
 			"version": "バージョン {{version}}",
 			"newChat": {
 				"title": "チャット",
+				"default": "既定",
 				"model": "モデル",
 				"modelDescription": "新しいチャットで使うモデル。",
-				"deploymentModel": "プラットフォームの既定",
 				"unavailableModel": "利用できないモデル",
 				"mode": "モード",
 				"modeDescription": "新しいチャットをチャットとして開始するか、エージェントで開始するか。",
@@ -98,7 +98,6 @@
 				},
 				"agent": "エージェント",
 				"agentDescription": "エージェントモードの新しいチャットで実行するエージェント。",
-				"defaultAgent": "既定のエージェント",
 				"saveError": "設定を保存できませんでした: {{message}}"
 			}
 		}

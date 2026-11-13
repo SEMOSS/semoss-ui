@@ -48,15 +48,20 @@ added: backend calls apps share live in `libs/sdk/src/api/` (for example `runMcp
   their stores move: `RootStore` / `useRoot()` (use `usePlaygroundTheme()`) and
   `ChatStore.user` (use `useSession`). They hold no state of their own and are not observable.
   Do not add consumers.
-- **A new chat's defaults are the user's metadata.** Settings > General's Chat section
-  (`features/settings/new-chat-settings.tsx`) saves `playground--default-input-text-model`,
-  `playground--default-chat-mode` and `playground--default-chat-agent` with `Session.setMetadata`;
-  the backend allows only these playground keys. A new chat starts from the chat last started in
-  this login session, then these defaults, then the deployment's. The session's chat is kept in
-  memory, never in `sessionStorage`: the model is `ChatStore`'s selected model, and the mode and
-  agent are held by `new-chat-preferences.ts`, by `lastLogin`. A reload starts from the defaults.
-  Fallbacks: the model falls back to the theme or env default and then the first model, the
-  mode to chat, the agent to Default Agent (also when the saved agent can no longer be opened).
+- **A new chat's model, mode and agent follow one order.** Each takes the first that is set:
+  1. what this login session last used, kept in memory and never in `sessionStorage` (the model is
+     `ChatStore`'s selected model; the mode and agent are held by `new-chat-preferences.ts`, by
+     `lastLogin`), so a reload starts again at 2;
+  2. the user's default, their metadata `playground--default-input-text-model`,
+     `playground--default-chat-mode` and `playground--default-chat-agent`, saved with
+     `Session.setMetadata` from Settings > General's Chat section
+     (`features/settings/new-chat-settings.tsx`), where each row's **Default** choice clears it;
+  3. the deployment's default: the theme's `defaultRoomSettings` (`model`, `mode`, `agentId`),
+     then `VITE_DEFAUlT_MODEL_ID`, `VITE_DEFAULT_CHAT_MODE` and `VITE_DEFAULT_CHAT_AGENT_ID`;
+  4. the first available: the first model, chat mode, and Default Agent.
+
+  A mode is always chat where agent mode is not offered, an agent link (`?workspaceId=`) wins over
+  steps 1 to 3, and an agent from them that the user can no longer open gives way to Default Agent.
   The rules live in `features/new-chat-preferences/new-chat-preferences.ts`. Playground does not
   read the platform's `text-generation-model`.
 
@@ -101,6 +106,10 @@ VITE_THEME="{}"
 # Model configuration
 VITE_DEFAUlT_MODEL_ID=""
 VITE_DEFAUlT_MODEL_NAME=""
+
+# New chat defaults (chat or agent, and a saved agent id)
+VITE_DEFAULT_CHAT_MODE=""
+VITE_DEFAULT_CHAT_AGENT_ID=""
 ```
 
 ### Environment File Precedence

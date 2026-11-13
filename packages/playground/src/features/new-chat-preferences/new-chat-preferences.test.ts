@@ -1,11 +1,14 @@
 import { beforeEach, describe, expect, test } from "vitest";
+import { withPlaygroundDefaults } from "@/stores/root/playground-theme";
 import {
 	forgetSessionNewChat,
 	NEW_CHAT_PREFERENCE_KEYS,
+	readDeploymentNewChatDefaults,
 	readNewChatPreferences,
 	readSessionNewChat,
 	resolveNewChatAgentId,
 	resolveNewChatMode,
+	resolveNewChatModel,
 	writeSessionNewChat,
 } from "./new-chat-preferences";
 
@@ -84,25 +87,89 @@ describe("session new chat", () => {
 	});
 });
 
-describe("resolveNewChatMode", () => {
-	test("prefers the session's chat, then the user's default, then chat", () => {
-		const agentDefault = { ...NONE, mode: "agent" as const };
+describe("readDeploymentNewChatDefaults", () => {
+	test("reads the theme's defaults for a new room", () => {
+		const theme = withPlaygroundDefaults(null);
 
+		expect(
+			readDeploymentNewChatDefaults({
+				...theme,
+				defaultRoomSettings: {
+					model: {
+						engine_id: "model-a",
+						engine_name: "A",
+						engine_type: "MODEL",
+					},
+					mode: "agent",
+					agentId: "agent-1",
+				},
+			}),
+		).toEqual({ modelId: "model-a", mode: "agent", agentId: "agent-1" });
+		expect(readDeploymentNewChatDefaults(theme)).toEqual(NONE);
+	});
+});
+
+// Each follows the same order: session, user, deployment, first available
+const USER = { modelId: "model-b", mode: "agent" as const, agentId: "agent-b" };
+const DEPLOYMENT = {
+	modelId: "model-c",
+	mode: "chat" as const,
+	agentId: "agent-c",
+};
+
+describe("resolveNewChatModel", () => {
+	const models = ["model-a", "model-b", "model-c", "model-d"].map(
+		(engine_id) => ({ engine_id }),
+	);
+
+	test("takes the session's, then the user's, then the deployment's, then the first", () => {
+		const pick = (
+			selected: string | null,
+			user: typeof NONE | typeof USER,
+			deployment: typeof NONE | typeof DEPLOYMENT,
+		) => resolveNewChatModel(selected, user, deployment, models)?.engine_id;
+
+		expect(pick("model-d", USER, DEPLOYMENT)).toBe("model-d");
+		expect(pick(null, USER, DEPLOYMENT)).toBe("model-b");
+		expect(pick(null, NONE, DEPLOYMENT)).toBe("model-c");
+		expect(pick(null, NONE, NONE)).toBe("model-a");
+	});
+
+	test("skips a model the user cannot see", () => {
+		expect(
+			resolveNewChatModel(
+				"gone",
+				{ ...NONE, modelId: "also-gone" },
+				DEPLOYMENT,
+				models,
+			)?.engine_id,
+		).toBe("model-c");
+		expect(resolveNewChatModel(null, USER, DEPLOYMENT, [])).toBeUndefined();
+	});
+});
+
+describe("resolveNewChatMode", () => {
+	test("takes the session's, then the user's, then the deployment's, then chat", () => {
 		expect(
 			resolveNewChatMode(
 				{ mode: "chat", agentId: "" },
-				agentDefault,
+				USER,
+				DEPLOYMENT,
 				true,
 			),
 		).toBe("chat");
-		expect(resolveNewChatMode(null, agentDefault, true)).toBe("agent");
-		expect(resolveNewChatMode(null, NONE, true)).toBe("chat");
+		expect(resolveNewChatMode(null, USER, DEPLOYMENT, true)).toBe("agent");
+		expect(
+			resolveNewChatMode(null, NONE, { ...NONE, mode: "agent" }, true),
+		).toBe("agent");
+		expect(resolveNewChatMode(null, NONE, NONE, true)).toBe("chat");
 	});
 
 	test("is always chat where agent mode is not offered", () => {
 		expect(
 			resolveNewChatMode(
 				{ mode: "agent", agentId: "" },
+				USER,
 				{ ...NONE, mode: "agent" },
 				false,
 			),
@@ -111,25 +178,32 @@ describe("resolveNewChatMode", () => {
 });
 
 describe("resolveNewChatAgentId", () => {
-	const agentDefault = { ...NONE, agentId: "agent-1" };
-
-	test("prefers the session's agent chat, even one with Default Agent", () => {
+	test("takes the session's agent chat, even one with Default Agent", () => {
 		expect(
 			resolveNewChatAgentId(
-				{ mode: "agent", agentId: "agent-2" },
-				agentDefault,
+				{ mode: "agent", agentId: "agent-a" },
+				USER,
+				DEPLOYMENT,
 			),
-		).toBe("agent-2");
+		).toBe("agent-a");
 		expect(
-			resolveNewChatAgentId({ mode: "agent", agentId: "" }, agentDefault),
+			resolveNewChatAgentId(
+				{ mode: "agent", agentId: "" },
+				USER,
+				DEPLOYMENT,
+			),
 		).toBe("");
 	});
 
-	test("falls back to the user's default, then Default Agent", () => {
+	test("then the user's, then the deployment's, then Default Agent", () => {
 		expect(
-			resolveNewChatAgentId({ mode: "chat", agentId: "" }, agentDefault),
-		).toBe("agent-1");
-		expect(resolveNewChatAgentId(null, agentDefault)).toBe("agent-1");
-		expect(resolveNewChatAgentId(null, NONE)).toBe("");
+			resolveNewChatAgentId(
+				{ mode: "chat", agentId: "" },
+				USER,
+				DEPLOYMENT,
+			),
+		).toBe("agent-b");
+		expect(resolveNewChatAgentId(null, NONE, DEPLOYMENT)).toBe("agent-c");
+		expect(resolveNewChatAgentId(null, NONE, NONE)).toBe("");
 	});
 });
