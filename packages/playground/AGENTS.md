@@ -55,7 +55,7 @@ added: backend calls apps share live in `libs/sdk/src/api/` (for example `runMcp
   2. the user's default, their metadata `playground--default-input-text-model`,
      `playground--default-chat-mode` and `playground--default-chat-agent`, saved with
      `Session.setMetadata` from Settings > General's Chat section
-     (`features/settings/new-chat-settings.tsx`), where each row's **Default** choice clears it;
+     (`features/settings/new-chat-settings.tsx`), where the model and agent rows' **Default** choice clears it;
   3. the deployment's default: the theme's `defaultRoomSettings` (`model`, `mode`, `agentId`),
      then `VITE_DEFAUlT_MODEL_ID`, `VITE_DEFAULT_CHAT_MODE` and `VITE_DEFAULT_CHAT_AGENT_ID`;
   4. the first available: the first model, chat mode, and Default Agent.

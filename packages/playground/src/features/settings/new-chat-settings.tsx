@@ -25,18 +25,16 @@ import type { Workspace } from "@/types";
 import { SettingsRow } from "./settings-row";
 
 /**
- * Value of each row's Default choice, which clears the user's own value so
- * the deployment's applies. Model, mode, and agent ids are never this.
+ * Value of the model's Default choice, which clears the user's own model so
+ * the deployment's applies. Model ids are never this.
  */
 const DEFAULT_VALUE = "default";
-
-/** Sets the Default choice apart from the user's own values. */
-const DEFAULT_CHOICE_CLASS = "text-muted-foreground italic";
 
 /**
  * The Chat section of the General page: the model, mode, and agent a new
  * chat starts with when this login session has not started one yet. Each
- * row offers Default, the deployment's, beside the user's own choices, and
+ * row but the mode's offers Default, the deployment's, beside the user's own
+ * choices, shown as the field's placeholder while it is chosen. Each row
  * shows only where the deployment lets the user choose it.
  */
 export const NewChatSettings = observer(() => {
@@ -51,11 +49,10 @@ export const NewChatSettings = observer(() => {
 
 	const canSelectModel = Boolean(theme.featureFlags?.enableModelSelect);
 	const canUseAgentMode = offersAgentMode(theme.featureFlags);
-	// the agent row follows the mode a new chat would start in
-	const isAgentDefault =
-		canUseAgentMode &&
-		(preferences.mode ?? readDeploymentNewChatDefaults(theme).mode) ===
-			"agent";
+	// the mode a new chat would start in, which the agent row follows
+	const startMode =
+		preferences.mode ?? readDeploymentNewChatDefaults(theme).mode ?? "chat";
+	const isAgentDefault = canUseAgentMode && startMode === "agent";
 	const defaultLabel = t("settings.general.newChat.default");
 
 	// the saved agent's name, for the picker's trigger
@@ -92,7 +89,8 @@ export const NewChatSettings = observer(() => {
 					description={t("settings.general.newChat.modelDescription")}
 				>
 					<Select
-						value={preferences.modelId ?? DEFAULT_VALUE}
+						// empty shows Default as the placeholder, as an unset select does
+						value={preferences.modelId ?? ""}
 						onValueChange={(value) =>
 							preferences.setModelId(
 								value === DEFAULT_VALUE ? null : value,
@@ -100,13 +98,11 @@ export const NewChatSettings = observer(() => {
 						}
 					>
 						<SelectTrigger id={modelId} size="sm" className="w-56">
-							<SelectValue />
+							<SelectValue placeholder={defaultLabel} />
 						</SelectTrigger>
 						<SelectContent>
 							<SelectItem value={DEFAULT_VALUE}>
-								<span className={DEFAULT_CHOICE_CLASS}>
-									{defaultLabel}
-								</span>
+								{defaultLabel}
 							</SelectItem>
 							{isModelMissing && preferences.modelId ? (
 								<SelectItem
@@ -142,23 +138,16 @@ export const NewChatSettings = observer(() => {
 						variant="outline"
 						size="sm"
 						aria-labelledby={modeLabelId}
-						value={preferences.mode ?? DEFAULT_VALUE}
+						// without a choice of their own, the mode a new chat would start in
+						value={startMode}
 						// radix clears a single group to "" when the active item is
-						// clicked again; a choice is always made
+						// clicked again; a mode is always chosen
 						onValueChange={(value) => {
-							if (value === DEFAULT_VALUE) {
-								preferences.setMode(null);
-							} else if (isNewChatMode(value)) {
+							if (isNewChatMode(value)) {
 								preferences.setMode(value);
 							}
 						}}
 					>
-						<ToggleGroupItem
-							value={DEFAULT_VALUE}
-							className={DEFAULT_CHOICE_CLASS}
-						>
-							{defaultLabel}
-						</ToggleGroupItem>
 						<ToggleGroupItem value="chat">
 							{t("settings.general.newChat.modes.chat")}
 						</ToggleGroupItem>
@@ -178,12 +167,13 @@ export const NewChatSettings = observer(() => {
 						id={agentId}
 						className={cn(
 							"w-56",
-							!preferences.agentId && DEFAULT_CHOICE_CLASS,
+							// unset shows Default as a placeholder, as the model's select does
+							!preferences.agentId && "text-muted-foreground",
 						)}
 						name={
 							preferences.agentId
 								? agentName || preferences.agentId
-								: defaultLabel
+								: ""
 						}
 						value={preferences.agentId ?? ""}
 						onChange={(project) =>
