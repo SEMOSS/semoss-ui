@@ -8,6 +8,7 @@ import {
 	getMyTwin,
 	hasTwinFolder,
 	listTwins,
+	readTwinHoldings,
 	saveTwin,
 	saveTwinProfile,
 	type TwinProfile,
@@ -426,7 +427,7 @@ describe("a twin's files", () => {
 					name: "Budget review.md",
 					service,
 				}),
-			).toBe("public/emails/Budget review (1).md");
+			).toEqual({ path: "public/emails/Budget review (1).md" });
 			expect(ran()).toEqual([
 				`Copy(sourceType=["INSIGHT"], sourceFilePath=["Budget review.md"], target=["twin-1"], targetType=["PROJECT"], targetFilePath=["${target}"]);`,
 			]);
@@ -478,5 +479,176 @@ describe("a twin's files", () => {
 		const { actions, ran } = transport({});
 		await deleteTwin(actions, "twin-1");
 		expect(ran()).toEqual(['DeleteWorkspace(workspaceId=["twin-1"]);']);
+	});
+});
+
+describe("what a twin holds", () => {
+	const ROOT = 'BrowseAppAssets(filePath=["/"], project=["twin-1"]);';
+	const READ =
+		'GetAppAssets(filePath=["/twin-sources.json"], project=["twin-1"]);';
+	const LIST =
+		'SearchAppAssets(project=["twin-1"], filePath=["/public"], search=["."], options=["regex"]);';
+	const record = (sources: Record<string, string>): string =>
+		`SaveAppAssets(project=["twin-1"], filePath=["/twin-sources.json"], content=["<encode>${JSON.stringify(sources)}</encode>"]);`;
+	const copyOf = (name: string): string =>
+		`Copy(sourceType=["INSIGHT"], sourceFilePath=["${name}"], target=["twin-1"], targetType=["PROJECT"], targetFilePath=["public/emails/${name}"]);`;
+	const email = (name: string, itemKey: string): TwinSource => ({
+		path: name,
+		name,
+		service: "outlook-mail",
+		itemKey,
+	});
+
+	/**
+	 * The four reactors a twin's copies go through, answering as the server
+	 * does: a copy lands where it was asked to and is listed with a leading
+	 * slash, and the record is a file at the top of the project.
+	 */
+	function twinServer(recorded?: string) {
+		const state = { record: recorded, copies: [] as string[] };
+		const run = vi.fn(async (statement: string) => {
+			const copied = /targetFilePath=\["([^"]+)"\]/.exec(statement);
+			const saved = /<encode>(.*)<\/encode>/.exec(statement);
+			let output: unknown = true;
+			if (statement.startsWith("Copy(") && copied?.[1]) {
+				state.copies.push(copied[1]);
+				output = { targetFilePath: copied[1] };
+			} else if (statement === ROOT) {
+				output = [
+					{ name: "public", path: "/public/", type: "directory" },
+					...(state.record === undefined
+						? []
+						: [
+								{
+									name: "twin-sources.json",
+									path: "/twin-sources.json",
+									type: "json",
+								},
+							]),
+				];
+			} else if (statement === READ) {
+				output = state.record;
+			} else if (statement.startsWith("SaveAppAssets(") && saved) {
+				state.record = saved[1];
+			} else if (statement === LIST) {
+				output = state.copies.map((path) => ({
+					name: path.split("/").pop(),
+					path: `/${path}`,
+				}));
+			}
+			return { pixelReturn: [{ output, operationType: ["OPERATION"] }] };
+		});
+		const ran = (): string[] =>
+			run.mock.calls.map(([statement]) => statement);
+		return { actions: { run } as unknown as InsightActions, ran, state };
+	}
+
+	it("records which item a copy came from beside the files folder, and keeps what was recorded before", async () => {
+		const { actions, ran } = twinServer();
+		expect(
+			await copyToTwin(actions, "twin-1", email("A.md", "thread-a")),
+		).toEqual({ path: "public/emails/A.md" });
+		await copyToTwin(actions, "twin-1", email("B.md", "thread-b"));
+		expect(ran()).toEqual([
+			copyOf("A.md"),
+			// nothing recorded yet, so nothing to read
+			ROOT,
+			record({ "public/emails/A.md": "thread-a" }),
+			copyOf("B.md"),
+			ROOT,
+			READ,
+			record({
+				"public/emails/A.md": "thread-a",
+				"public/emails/B.md": "thread-b",
+			}),
+		]);
+	});
+
+	it("copies into one twin one at a time, so no record is saved over another", async () => {
+		const { actions, ran, state } = twinServer();
+		await Promise.all([
+			copyToTwin(actions, "twin-1", email("A.md", "thread-a")),
+			copyToTwin(actions, "twin-1", email("B.md", "thread-b")),
+			copyToTwin(actions, "twin-1", UPLOAD),
+		]);
+		expect(ran().map((statement) => statement.split("(")[0])).toEqual([
+			"Copy",
+			"BrowseAppAssets",
+			"SaveAppAssets",
+			"Copy",
+			"BrowseAppAssets",
+			"GetAppAssets",
+			"SaveAppAssets",
+			// a file from the owner's computer came from no list, so it has nothing to record
+			"Copy",
+		]);
+		expect(JSON.parse(state.record ?? "")).toEqual({
+			"public/emails/A.md": "thread-a",
+			"public/emails/B.md": "thread-b",
+		});
+	});
+
+	it("answers with the copy when where it came from could not be recorded, and starts over a record it cannot read", async () => {
+		const unreadable = twinServer("not a list");
+		await copyToTwin(
+			unreadable.actions,
+			"twin-1",
+			email("A.md", "thread-a"),
+		);
+		expect(unreadable.ran().at(-1)).toBe(
+			record({ "public/emails/A.md": "thread-a" }),
+		);
+
+		const { actions } = transport({
+			Copy: { targetFilePath: "public/emails/A.md" },
+			SaveAppAssets: new Error("The disk is full."),
+		});
+		expect(
+			await copyToTwin(actions, "twin-1", email("A.md", "thread-a")),
+		).toEqual({
+			path: "public/emails/A.md",
+			recordError: "The disk is full.",
+		});
+	});
+
+	it("knows what the twin holds from the record and the copies still there, after the copies on their way", async () => {
+		const { actions, ran, state } = twinServer();
+		const copying = copyToTwin(
+			actions,
+			"twin-1",
+			email("A.md", "thread-a"),
+		);
+		// asked for while the copy runs: it is read once the copy is in
+		const holdings = await readTwinHoldings(actions, "twin-1");
+		await copying;
+		expect(holdings.hasFolder).toBe(true);
+		expect([...holdings.itemKeys]).toEqual(["thread-a"]);
+		expect(ran().slice(3)).toEqual([ROOT, READ, LIST]);
+
+		// a second copy of one item, then the owner deletes the first and the only copy of another
+		await copyToTwin(actions, "twin-1", email("A (2).md", "thread-a"));
+		await copyToTwin(actions, "twin-1", email("B.md", "thread-b"));
+		state.copies = state.copies.filter(
+			(path) =>
+				!["public/emails/A.md", "public/emails/B.md"].includes(path),
+		);
+		expect([
+			...(await readTwinHoldings(actions, "twin-1")).itemKeys,
+		]).toEqual(["thread-a"]);
+	});
+
+	it("looks for no copies in a twin with no files folder or nothing recorded", async () => {
+		const noFolder = transport({ [ROOT]: [] });
+		expect(await readTwinHoldings(noFolder.actions, "twin-1")).toEqual({
+			hasFolder: false,
+			itemKeys: new Set(),
+		});
+		expect(noFolder.ran()).toEqual([ROOT]);
+
+		const nothingRecorded = twinServer();
+		expect(
+			await readTwinHoldings(nothingRecorded.actions, "twin-1"),
+		).toEqual({ hasFolder: true, itemKeys: new Set() });
+		expect(nothingRecorded.ran()).toEqual([ROOT]);
 	});
 });

@@ -92,6 +92,7 @@ export const MailAttachmentList = ({
 								itemName: attachment.name,
 								serviceName: t(app.nameKey),
 								saveLabel: saver.saveLabel,
+								savedLabel: saver.savedLabel(request.key),
 								isBusy: isBusy,
 								onAddToContext: saver.addToContext
 									? () => saver.addToContext?.(request)

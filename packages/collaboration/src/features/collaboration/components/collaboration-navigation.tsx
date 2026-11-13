@@ -68,6 +68,14 @@ export function CollaborationNavigation({
 				pathname.startsWith("/topics/"),
 		},
 		{
+			to: "/twins",
+			label: "Digital Twins",
+			icon: UsersRound,
+			count: 0,
+			isActive: pathname.startsWith("/twins"),
+		},
+		// last: its recent runs lead the scroller below and read as its own only right under it
+		{
 			to: "/routines",
 			label: "Routines",
 			icon: CalendarClock,
@@ -75,15 +83,6 @@ export function CollaborationNavigation({
 			isActive: pathname === "/routines",
 		},
 	];
-	// after Routines and its recent runs, which read as Routines' own only while they sit right under it; the
-	// collapsed rail lists no runs, so there it is the last icon
-	const twins = {
-		to: "/twins",
-		label: "Digital Twins",
-		icon: UsersRound,
-		count: 0,
-		isActive: pathname.startsWith("/twins"),
-	};
 	const renderLink = ({
 		to,
 		label,
@@ -143,7 +142,6 @@ export function CollaborationNavigation({
 				className="flex shrink-0 flex-col gap-0.5 px-2 pt-2 pr-3 pb-0.5"
 			>
 				{links.map(renderLink)}
-				{isCollapsed && renderLink(twins)}
 			</nav>
 			<div className="flex min-h-0 flex-1 flex-col pr-1">
 				<div
@@ -154,13 +152,6 @@ export function CollaborationNavigation({
 				>
 					{/* under Routines, the last link, but scrolling with Chats so a long list never pushes Settings off screen */}
 					<RoutineRecentRuns onNavigate={onNavigate} />
-					{!isCollapsed && (
-						// rises into the gap above it, so it sits 2px under the runs, or under Routines when there are none,
-						// as the links do; the insets line it up with them
-						<div className="-mt-1.5 flex shrink-0 flex-col px-2">
-							{renderLink(twins)}
-						</div>
-					)}
 					<ChatHistoryList
 						isOpen={isSessionsOpen}
 						onOpenChange={onSessionsOpenChange}

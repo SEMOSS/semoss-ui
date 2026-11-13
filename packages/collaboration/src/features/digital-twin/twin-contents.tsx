@@ -28,7 +28,9 @@ import {
 	createTwinFolder,
 	getMyTwin,
 	hasTwinFolder,
+	readTwinHoldings,
 	TWIN_FILES_PATH,
+	type TwinCopy,
 } from "./api/digital-twin";
 import { TwinSourceViewer } from "./twin-source-viewer";
 import { TWIN_SOURCES } from "./twin-sources";
@@ -62,19 +64,18 @@ const GROUPS: TopicPlaceGroup[] = [
 	},
 ];
 
-/** The owner's twin and whether its files folder is there, or null when they have no twin. */
+/** The owner's twin and what it holds, or null when they have no twin. */
 const readContents = async (actions: InsightActions) => {
 	const twin = await getMyTwin(actions);
-	return (
-		twin && { ...twin, hasFolder: await hasTwinFolder(actions, twin.id) }
-	);
+	return twin && { ...twin, ...(await readTwinHoldings(actions, twin.id)) };
 };
 
 /**
  * A full page for choosing what the owner's Digital Twin knows: its own files,
  * and the owner's Outlook, Teams chats, OneDrive and Teams files to add from.
  * A viewer saves an item into the page's files, as it does in a chat, and the
- * page then copies it into the twin. The copy is a snapshot: nothing here
+ * page then copies it into the twin. A list marks what the twin already holds
+ * a copy of, whenever it was added. The copy is a snapshot: nothing here
  * reads the owner's account again later.
  */
 export function TwinContents() {
@@ -86,30 +87,66 @@ export function TwinContents() {
 	const [isFolderAdded, setIsFolderAdded] = useState(false);
 	const [isAddingFolder, setIsAddingFolder] = useState(false);
 	const [status, setStatus] = useState("");
+	// what a viewer's list marks as in the twin, by what the viewer knows each item by: what the page
+	// read, until the page adds to it or reads it again
+	const [heldKeys, setHeldKeys] = useState<ReadonlySet<string>>();
 	const twin = contents.data;
 	if (twin === null) return <Navigate to="/twins/mine" replace />;
 
 	const requested = params.get("in");
 	const place = isPlace(requested) ? requested : "files";
 
+	const markHeld = (itemKey: string | undefined, isHeld: boolean): void => {
+		if (!itemKey) return;
+		setHeldKeys((current) => {
+			const keys = new Set(current ?? twin?.itemKeys);
+			if (isHeld) keys.add(itemKey);
+			else keys.delete(itemKey);
+			return keys;
+		});
+	};
 	const handleSaved = async (
 		twinId: string,
 		file: ConnectorSavedFile,
 	): Promise<void> => {
+		// marked while the copy runs, so the same item is not asked for twice
+		markHeld(file.itemKey, true);
 		setStatus(`Copying "${file.name}" into your Digital Twin…`);
+		let copy: TwinCopy;
 		try {
-			await copyToTwin(actions, twinId, file);
+			copy = await copyToTwin(actions, twinId, file);
 		} catch (cause) {
+			markHeld(file.itemKey, false);
 			setStatus(`"${file.name}" was not added to your Digital Twin.`);
 			toast.error(`Could not add "${file.name}" to your Digital Twin.`, {
 				description: cause instanceof Error ? cause.message : undefined,
 			});
 			return;
 		}
+		// again: what the twin holds may have been read while this copy was on its way
+		markHeld(file.itemKey, true);
 		// the copy makes the folders it lands in
 		setIsFolderAdded(true);
 		setStatus(`Added "${file.name}" to your Digital Twin.`);
 		toast.success(`Added "${file.name}" to your Digital Twin.`);
+		if (copy.recordError) {
+			toast.warning(
+				`"${file.name}" will not show as added once this page is reloaded.`,
+				{ description: copy.recordError },
+			);
+		}
+	};
+	const handlePlaceChange = (next: string): void => {
+		// the owner may have deleted a copy among the files, so what the twin holds is read again
+		if (place === "files" && twin) {
+			void readTwinHoldings(actions, twin.id).then(
+				(holdings) => setHeldKeys(holdings.itemKeys),
+				// what is marked stays as it was
+				() => undefined,
+			);
+		}
+		// replaced, so Back leaves the page instead of walking the places
+		setParams({ in: next }, { replace: true });
 	};
 	const handleAddFolder = async (twinId: string): Promise<void> => {
 		setIsAddingFolder(true);
@@ -153,6 +190,11 @@ export function TwinContents() {
 		body = (
 			<TwinSourceViewer
 				source={place}
+				savedItems={{
+					isSaved: (itemKey) =>
+						(heldKeys ?? twin.itemKeys).has(itemKey),
+					label: "In your Digital Twin",
+				}}
 				// the viewer saved into this page's files; the copy reads them from the same insight
 				onSaved={(file) => void handleSaved(twin.id, file)}
 			/>
@@ -229,10 +271,7 @@ export function TwinContents() {
 				<TopicContentsNav
 					groups={GROUPS}
 					place={place}
-					onPlaceChange={(next) =>
-						// replaced, so Back leaves the page instead of walking the places
-						setParams({ in: next }, { replace: true })
-					}
+					onPlaceChange={handlePlaceChange}
 				/>
 				<section
 					aria-labelledby={labelId}

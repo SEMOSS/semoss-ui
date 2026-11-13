@@ -5,7 +5,10 @@ import {
 	type FileExplorerPrimaryAction,
 	type FileItem,
 } from "@semoss/shared";
-import type { ConnectorViewerProps } from "../core/connector.types";
+import type {
+	ConnectorSavedItemsProps,
+	ConnectorViewerProps,
+} from "../core/connector.types";
 import type { ConnectorSaveRequest } from "../core/use-connector-saver";
 import {
 	parseOneDriveFolder,
@@ -234,7 +237,9 @@ export const getDriveSaveRequest = (
 };
 
 /** What a host gives a viewer of a Microsoft drive. */
-export interface DriveViewerProps extends ConnectorViewerProps {
+export interface DriveViewerProps
+	extends ConnectorViewerProps,
+		ConnectorSavedItemsProps {
 	/**
 	 * The host's own action on a file, for a host that does something else
 	 * with a file than bring it into a chat, such as link it to a record. It
