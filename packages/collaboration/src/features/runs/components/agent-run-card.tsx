@@ -3,6 +3,7 @@ import { Badge, Button, cn, Muted } from "@semoss/ui/next";
 import type { AgentRun } from "@/features/rooms/api/agent-run-api";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
 import { ChildAgentRunCard } from "./child-agent-run-card";
+import { runStatusWord } from "./run-status-word";
 
 /** A run retains its own task, identity and result instead of masquerading as a tool call. */
 export function AgentRunCard({
@@ -13,11 +14,8 @@ export function AgentRunCard({
 	compact?: boolean;
 }) {
 	const { openRun } = useToolWorkbench();
-	const name =
-		run.workspaceName ||
-		run.executorLabel ||
-		(run.parentRunId ? "Child agent" : "Agent run");
 	if (run.parentRunId) return <ChildAgentRunCard run={run} />;
+	const name = run.workspaceName || run.executorLabel || "Agent run";
 	if (compact)
 		return (
 			<Button
@@ -44,7 +42,7 @@ export function AgentRunCard({
 							run.status === "INPUT_REQUIRED" && "text-warning",
 						)}
 					>
-						{run.status.toLowerCase().replaceAll("_", " ")}
+						{runStatusWord(run.status)}
 					</Muted>
 				</span>
 				<PanelRightOpen
@@ -65,7 +63,7 @@ export function AgentRunCard({
 						run.status === "FAILED" ? "destructive" : "outline"
 					}
 				>
-					{run.status.toLowerCase().replaceAll("_", " ")}
+					{runStatusWord(run.status)}
 				</Badge>
 			</div>
 			{run.input && (

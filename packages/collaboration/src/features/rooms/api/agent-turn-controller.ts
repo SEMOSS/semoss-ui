@@ -570,7 +570,7 @@ export class AgentTurnController {
 					? undefined
 					: this.children.get(action.runId)?.workspaceName ||
 						this.children.get(action.runId)?.executorLabel ||
-						"Child agent",
+						"Sub-agent",
 			task:
 				action.runId === run.runId
 					? (run.input ?? undefined)

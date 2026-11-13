@@ -8,6 +8,10 @@ import {
 } from "../utils/message-presentation";
 import { MessagePart } from "./message-part";
 import { MessageToolSummary } from "./message-tool-summary";
+import {
+	isSubAgentTool,
+	SubAgentBatchSummary,
+} from "./sub-agent-batch-summary";
 
 /** Finished tool summaries keep each keyed row mounted, preserving UI and focus. */
 export function MessageToolActivity({
@@ -26,7 +30,7 @@ export function MessageToolActivity({
 	const [focusedTool, setFocusedTool] = useState<string | null>(null);
 	const [openMenus, setOpenMenus] = useState<Set<string>>(() => new Set());
 	// Use controller/approval overlays just as the workbench does.
-	const tools = items.map((item) =>
+	const resolved = items.map((item) =>
 		item.part.type === "tool"
 			? {
 					...item,
@@ -38,6 +42,14 @@ export function MessageToolActivity({
 					},
 				}
 			: item,
+	);
+	// Sub-agent spawn/wait/status calls fold into one batch line instead of a row
+	// of orchestration tool cards; everything else renders as before.
+	const subAgentTools = resolved.flatMap(({ part }) =>
+		part.type === "tool" && isSubAgentTool(part.tool) ? [part.tool] : [],
+	);
+	const tools = resolved.filter(
+		({ part }) => !(part.type === "tool" && isSubAgentTool(part.tool)),
 	);
 	const pinnedIds = new Set<string>();
 	for (const { part } of tools) {
@@ -93,6 +105,9 @@ export function MessageToolActivity({
 					setFocusedTool(null);
 			}}
 		>
+			{subAgentTools.length > 0 && (
+				<SubAgentBatchSummary tools={subAgentTools} />
+			)}
 			{tools.map((item) => {
 				if (item.part.type !== "tool" && item.part.type !== "thinking")
 					return null;
