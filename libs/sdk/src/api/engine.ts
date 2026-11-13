@@ -71,10 +71,10 @@ export const cloneEngine = async (
 ): Promise<ClonedEngine> => {
 	const { engineId } = params;
 	const name = params.name?.trim();
-	const nameClause = name ? `, name=${JSON.stringify([name])}` : "";
+	const nameClause = name ? `, catalogName=${JSON.stringify([name])}` : "";
 
 	const response = await runPixel<[unknown]>(
-		`CloneEngine(engine=${JSON.stringify([engineId])}${nameClause});`,
+		`CloneEngine(engineId=${JSON.stringify([engineId])}${nameClause});`,
 		insightId,
 	);
 

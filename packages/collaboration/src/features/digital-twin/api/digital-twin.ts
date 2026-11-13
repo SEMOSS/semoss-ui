@@ -2,12 +2,14 @@ import type { ConnectorSavedFile } from "@semoss/connectors";
 import { uploadProjectImage } from "@semoss/sdk";
 import {
 	buildEditWorkspacePixel,
+	type FileItem,
 	getFileExplorerAdapter,
 	getWorkspaceSaveWarning,
 	type MCPConfig,
 	toAgentFormValues,
 } from "@semoss/shared";
 import { z } from "@semoss/ui/next";
+import { tryParseJson } from "@semoss/utility/json";
 import {
 	type ProjectRow,
 	projectListSchema,
@@ -21,6 +23,13 @@ import { callPixel, type InsightActions, pixel } from "@/lib/pixel";
  * the twin is shared with may read.
  */
 export const TWIN_FILES_PATH = "/public";
+
+// Which item each copy in the twin came from, by the copy's path, so a list of the owner's emails, chats or
+// files can mark what the twin already holds. It sits beside the files folder, not in it: a chat reads only
+// that folder, and so do the people the twin is shared with.
+const TWIN_SOURCES_FILE = "twin-sources.json";
+const TWIN_SOURCES_PATH = `/${TWIN_SOURCES_FILE}`;
+const twinSourcesSchema = z.record(z.string(), z.string());
 
 /** A Digital Twin as the lists show it. */
 export interface DigitalTwin {
@@ -85,6 +94,62 @@ const reason = (cause: unknown): string =>
 
 const twinFiles = (twinId: string) =>
 	getFileExplorerAdapter({ type: "APP", app: twinId });
+
+const isFilesFolder = (item: FileItem): boolean =>
+	item.type === "directory" && item.name === TWIN_FILES_PATH.slice(1);
+
+/** What is at the top of the twin's project. That folder is always there, so something missing is an answer and not a failed read. */
+async function listTwinTop(
+	actions: InsightActions,
+	twinId: string,
+): Promise<FileItem[]> {
+	const files = twinFiles(twinId);
+	return files.mapEntries(
+		await callPixel(actions, files.browse("/"), z.unknown()),
+		"/",
+	);
+}
+
+// What is still on its way into each twin. A twin's list of sources is read, changed and saved whole, so
+// one change at a time; a person has one twin, so this holds one entry.
+const TWIN_QUEUES = new Map<string, Promise<unknown>>();
+
+/** Run after everything already queued for the twin, whether or not that worked. */
+function queueForTwin<T>(twinId: string, task: () => Promise<T>): Promise<T> {
+	const next = (TWIN_QUEUES.get(twinId) ?? Promise.resolve()).then(
+		task,
+		task,
+	);
+	TWIN_QUEUES.set(
+		twinId,
+		next.catch(() => undefined),
+	);
+	return next;
+}
+
+/**
+ * Which item each copy came from. Empty when nothing is recorded yet, and when
+ * what is recorded cannot be read as a list, which the next copy starts over.
+ *
+ * @param top - What is at the top of the twin's project, read just before.
+ */
+async function readTwinSources(
+	actions: InsightActions,
+	twinId: string,
+	top: FileItem[],
+): Promise<Record<string, string>> {
+	if (!top.some((item) => item.name === TWIN_SOURCES_FILE)) return {};
+	const content = await callPixel(
+		actions,
+		twinFiles(twinId).read(TWIN_SOURCES_PATH),
+		z.unknown(),
+	);
+	// a file's contents come as text; a list already read out of it is taken as it is
+	const sources = twinSourcesSchema.safeParse(
+		typeof content === "string" ? tryParseJson(content) : content,
+	);
+	return sources.success ? sources.data : {};
+}
 
 /** The signed-in person's own twin, or null when they have none. */
 export async function getMyTwin(
@@ -183,6 +248,28 @@ export interface TwinSource {
 	name: string;
 	/** The viewer that saved it; left out for a file uploaded from the owner's computer. */
 	service?: ConnectorSavedFile["service"];
+	/** What that viewer knows the item by, so its list can mark it; an upload has none. */
+	itemKey?: string;
+}
+
+/** A copy made in a twin. */
+export interface TwinCopy {
+	/** The path the copy was written to, inside the twin's project. */
+	path: string;
+	/**
+	 * Why the item it came from could not be recorded, when it could not. The
+	 * copy is in the twin all the same; the owner's list stops marking it
+	 * once the page is read again.
+	 */
+	recordError?: string;
+}
+
+/** What a twin holds, as the page that fills it needs it. */
+export interface TwinHoldings {
+	/** Whether its files folder is there; a twin whose setup stopped early has none. */
+	hasFolder: boolean;
+	/** The items it holds a copy of, by what their viewer knows them by. */
+	itemKeys: ReadonlySet<string>;
 }
 
 /** What creating a twin does, one server step after another. */
@@ -312,16 +399,52 @@ export async function hasTwinFolder(
 	actions: InsightActions,
 	twinId: string,
 ): Promise<boolean> {
-	const files = twinFiles(twinId);
-	// the project's top folder, so a missing files folder is an answer and not a failed read
-	const listing = await callPixel(actions, files.browse("/"), z.unknown());
-	return files
-		.mapEntries(listing, "/")
-		.some(
-			(item) =>
-				item.type === "directory" &&
-				item.name === TWIN_FILES_PATH.slice(1),
+	return (await listTwinTop(actions, twinId)).some(isFilesFolder);
+}
+
+/**
+ * What the twin holds: its files folder, and the items a viewer saved that it
+ * still has a copy of. A copy the owner deleted since no longer counts, and
+ * neither does one made before copies recorded where they came from.
+ */
+export function readTwinHoldings(
+	actions: InsightActions,
+	twinId: string,
+): Promise<TwinHoldings> {
+	// after the copies still on their way, so what they record is read too
+	return queueForTwin(twinId, async () => {
+		const top = await listTwinTop(actions, twinId);
+		const hasFolder = top.some(isFilesFolder);
+		// without the folder there is no copy, and without a record no copy to look for
+		if (!hasFolder || !top.some((item) => item.name === TWIN_SOURCES_FILE))
+			return { hasFolder, itemKeys: new Set<string>() };
+		const [sources, found] = await Promise.all([
+			readTwinSources(actions, twinId, top),
+			// every file under the folder, however deep; the pattern is any name
+			callPixel(
+				actions,
+				pixel("SearchAppAssets", {
+					project: twinId,
+					filePath: TWIN_FILES_PATH,
+					search: ".",
+					options: ["regex"],
+				}),
+				z.array(z.object({ path: z.string() })),
+			),
+		]);
+		// a listing starts its paths with a slash; a copy answers with its path without one
+		const held = new Set(
+			found.map((item) => item.path.replace(/^\/+/, "")),
 		);
+		return {
+			hasFolder,
+			itemKeys: new Set(
+				Object.entries(sources)
+					.filter(([path]) => held.has(path))
+					.map(([, itemKey]) => itemKey),
+			),
+		};
+	});
 }
 
 /** Make the twin's files folder. Only where it is known to be missing. */
@@ -343,30 +466,54 @@ const SAVED_FOLDERS: Partial<Record<ConnectorSavedFile["service"], string>> = {
 };
 
 /**
- * Copy something in the page's files into the twin's. It has to run in the
- * insight the file was saved into, which is where the copy reads it from.
- * Nothing is overwritten: a name already taken gets a numbered copy.
+ * Copy something in the page's files into the twin's, and record which item
+ * it came from when a viewer saved it, so the owner's lists can mark it. It
+ * has to run in the insight the file was saved into, which is where the copy
+ * reads it from. Nothing is overwritten: a name already taken gets a numbered
+ * copy. Copies into one twin run one after another.
  *
- * @returns The path the copy was written to, inside the twin's project.
+ * @returns The copy; it is in the twin even when its source could not be recorded.
+ * @throws when the copy itself could not be made.
  */
-export async function copyToTwin(
+export function copyToTwin(
 	actions: InsightActions,
 	twinId: string,
 	source: TwinSource,
-): Promise<string> {
+): Promise<TwinCopy> {
 	const folder = (source.service && SAVED_FOLDERS[source.service]) || "files";
-	const copied = await callPixel(
-		actions,
-		pixel("Copy", {
-			sourceType: "INSIGHT",
-			sourceFilePath: source.path,
-			target: twinId,
-			targetType: "PROJECT",
-			targetFilePath: `${TWIN_FILES_PATH.slice(1)}/${folder}/${source.name}`,
-		}),
-		z.object({ targetFilePath: z.string() }),
-	);
-	return copied.targetFilePath;
+	return queueForTwin(twinId, async () => {
+		const { targetFilePath: path } = await callPixel(
+			actions,
+			pixel("Copy", {
+				sourceType: "INSIGHT",
+				sourceFilePath: source.path,
+				target: twinId,
+				targetType: "PROJECT",
+				targetFilePath: `${TWIN_FILES_PATH.slice(1)}/${folder}/${source.name}`,
+			}),
+			z.object({ targetFilePath: z.string() }),
+		);
+		if (!source.itemKey) return { path };
+		try {
+			// read again each time: another window may have added to it since
+			const sources = await readTwinSources(
+				actions,
+				twinId,
+				await listTwinTop(actions, twinId),
+			);
+			await callPixel(
+				actions,
+				twinFiles(twinId).save(
+					TWIN_SOURCES_PATH,
+					JSON.stringify({ ...sources, [path]: source.itemKey }),
+				),
+				z.unknown(),
+			);
+			return { path };
+		} catch (cause) {
+			return { path, recordError: reason(cause) };
+		}
+	});
 }
 
 /**

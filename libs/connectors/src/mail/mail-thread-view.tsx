@@ -205,6 +205,7 @@ export const MailThreadView = ({
 						serviceName={t(app.appNameKey)}
 						webUrl={onControlsChange ? undefined : webUrl}
 						saveLabel={saver.saveLabel}
+						savedLabel={saver.savedLabel(conversation.key)}
 						isBusy={isThreadBusy}
 						onAddToContext={
 							!onControlsChange && addToContext

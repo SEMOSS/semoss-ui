@@ -31,6 +31,7 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
+import { CATALOG_NAME_KEY } from "@/components/import/shared/import-form.constants";
 import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
 import { ImportEngineSelect } from "../shared/import-engine-select";
@@ -119,9 +120,9 @@ export const VectorForm = ({
 		const metaData = JSON.stringify({ description, tag });
 
 		setLoading(true);
-		const pixel = `CreateVectorDatabaseEngine(database=["${
-			formData.NAME
-		}"],conDetails=[${JSON.stringify(newFormData)}]);SetDatabaseMetadata(database=["${formData.NAME}"],meta=[${metaData}])`;
+		const pixel = `CreateVectorDatabaseEngine(catalogName=["${
+			formData[CATALOG_NAME_KEY]
+		}"],conDetails=[${JSON.stringify(newFormData)}]);SetDatabaseMetadata(database=["${formData[CATALOG_NAME_KEY]}"],meta=[${metaData}])`;
 
 		runPixel(pixel).then(async (response) => {
 			const pixelOutput = response.pixelReturn[0].output as {
