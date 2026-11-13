@@ -25,7 +25,7 @@ const CodeAppRendererPanelContent: WorkbenchComponent = ({ id }) => {
 		number
 	>(id);
 
-	const { project } = useProject();
+	const { project, permission } = useProject();
 
 	useWorkbenchControl(id, CodeAppRendererRefreshControl);
 	// A publish replaces what this iframe is showing, whoever did it. Before
@@ -39,6 +39,7 @@ const CodeAppRendererPanelContent: WorkbenchComponent = ({ id }) => {
 		<div className="h-full w-full overflow-hidden bg-background text-foreground">
 			<CodeRenderer
 				appId={project.project_id}
+				canRecord={permission === "OWNER" || permission === "EDIT"}
 				key={`project.project_id--${value ?? 0}`}
 			/>
 		</div>

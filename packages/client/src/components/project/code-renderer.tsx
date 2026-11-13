@@ -1,17 +1,20 @@
 import { useCallback, useEffect, useRef } from "react";
 import { Env } from "@semoss/sdk/react";
 import { useTheme } from "@semoss/ui/next";
+import { AppTestingToolbar } from "@/features/app-testing/app-testing-toolbar";
 
 interface CodeRendererProps {
 	/** Id of the app to render */
 	appId: string;
+	/** Editors can record and run app checks; shared/read-only views stay uncluttered. */
+	canRecord?: boolean;
 }
 
 /**
  * Render an app based on an id
  */
 export const CodeRenderer = (props: CodeRendererProps) => {
-	const { appId } = props;
+	const { appId, canRecord = false } = props;
 	const iframeRef = useRef<HTMLIFrameElement | null>(null);
 	const { resolvedTheme } = useTheme();
 
@@ -50,13 +53,22 @@ export const CodeRenderer = (props: CodeRendererProps) => {
 
 	// return the app
 	return (
-		<iframe
-			ref={iframeRef}
-			className="h-full w-full flex-1 border-none"
-			src={`${Env.MODULE}/public_home/${appId}/portals/`}
-			data-test={`iframe--${appId}`}
-			title={`App ${appId}`}
-			onLoad={syncEmbeddedTheme}
-		/>
+		<div className="flex h-full min-h-0 w-full flex-col">
+			{canRecord && (
+				<AppTestingToolbar
+					key={appId}
+					appId={appId}
+					frameRef={iframeRef}
+				/>
+			)}
+			<iframe
+				ref={iframeRef}
+				className="h-full w-full flex-1 border-none"
+				src={`${Env.MODULE}/public_home/${appId}/portals/`}
+				data-test={`iframe--${appId}`}
+				title={`App ${appId}`}
+				onLoad={syncEmbeddedTheme}
+			/>
+		</div>
 	);
 };
