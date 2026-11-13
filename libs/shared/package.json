@@ -1,5 +1,6 @@
 {
   "name": "@semoss/shared",
+  "private": true,
   "version": "1.0.0-beta.1",
   "sideEffects": ["**/*.css"],
   "exports": {
