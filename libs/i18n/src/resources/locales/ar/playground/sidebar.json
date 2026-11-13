@@ -83,7 +83,24 @@
 			},
 			"language": "اللغة",
 			"languageDescription": "اللغة التي يُعرض بها التطبيق.",
-			"version": "الإصدار {{version}}"
+			"version": "الإصدار {{version}}",
+			"newChat": {
+				"title": "المحادثة",
+				"model": "النموذج",
+				"modelDescription": "النموذج الذي تستخدمه المحادثة الجديدة.",
+				"deploymentModel": "الإعداد الافتراضي للمنصة",
+				"unavailableModel": "نموذج غير متاح",
+				"mode": "الوضع",
+				"modeDescription": "هل تبدأ المحادثة الجديدة كمحادثة أم مع وكيل.",
+				"modes": {
+					"chat": "محادثة",
+					"agent": "وكيل"
+				},
+				"agent": "الوكيل",
+				"agentDescription": "الوكيل الذي تشغّله المحادثة الجديدة في وضع الوكيل.",
+				"defaultAgent": "الوكيل الافتراضي",
+				"saveError": "تعذّر حفظ تفضيلك: {{message}}"
+			}
 		}
 	},
 	"download": {

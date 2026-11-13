@@ -83,7 +83,24 @@
 			},
 			"language": "भाषा",
 			"languageDescription": "वह भाषा जिसमें ऐप दिखाया जाता है।",
-			"version": "संस्करण {{version}}"
+			"version": "संस्करण {{version}}",
+			"newChat": {
+				"title": "चैट",
+				"model": "मॉडल",
+				"modelDescription": "नई चैट जिस मॉडल का उपयोग करती है।",
+				"deploymentModel": "प्लेटफ़ॉर्म डिफ़ॉल्ट",
+				"unavailableModel": "अनुपलब्ध मॉडल",
+				"mode": "मोड",
+				"modeDescription": "नई चैट चैट के रूप में शुरू हो या एजेंट के साथ।",
+				"modes": {
+					"chat": "चैट",
+					"agent": "एजेंट"
+				},
+				"agent": "एजेंट",
+				"agentDescription": "एजेंट मोड में नई चैट जो एजेंट चलाती है।",
+				"defaultAgent": "डिफ़ॉल्ट एजेंट",
+				"saveError": "आपकी प्राथमिकता सहेजी नहीं जा सकी: {{message}}"
+			}
 		}
 	},
 	"download": {

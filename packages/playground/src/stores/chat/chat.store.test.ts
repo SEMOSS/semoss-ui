@@ -4,26 +4,28 @@ import type { Engine } from "@/types";
 import { ChatStore } from "./chat.store";
 
 const mocks = vi.hoisted(() => {
-	const user = (textGeneration: string) => ({
+	const user = (defaultModelId: string) => ({
 		id: "user-1",
 		name: "Tester",
 		lastLogin: "2026-11-10",
-		defaultModels: { textGeneration, codeGeneration: "" },
+		meta: defaultModelId
+			? { "playground--default-input-text-model": [defaultModelId] }
+			: {},
+		// the platform's default, which the playground does not read
+		defaultModels: { textGeneration: "model-a", codeGeneration: "" },
 	});
 	return {
 		user,
 		snapshot: { status: "AUTHENTICATED", user: user("model-b") },
 		run: vi.fn(),
-		reloadUser: vi.fn(),
 	};
 });
 
 vi.mock("@semoss/sdk/react", async (original) => ({
 	...(await original<typeof import("@semoss/sdk/react")>()),
-	// the page's session: a signed in user whose profile names model-b
+	// the page's session: a signed in user whose new chat default is model-b
 	Session: {
 		getSnapshot: () => mocks.snapshot,
-		reloadUser: mocks.reloadUser,
 		insight: { run: mocks.run },
 	},
 }));
@@ -49,12 +51,10 @@ const answer = (pixel: string) => {
 };
 
 beforeEach(() => {
-	sessionStorage.clear();
 	mocks.snapshot = { status: "AUTHENTICATED", user: mocks.user("model-b") };
 	mocks.run
 		.mockReset()
 		.mockImplementation(async (pixel: string) => answer(pixel));
-	mocks.reloadUser.mockReset();
 });
 
 const createStore = async () => {
@@ -63,7 +63,7 @@ const createStore = async () => {
 	return store;
 };
 
-test("reads the user and their profile default model from the session", async () => {
+test("reads the user and their new chat default model from the session", async () => {
 	const store = await createStore();
 
 	expect(store.user).toEqual({
@@ -71,7 +71,6 @@ test("reads the user and their profile default model from the session", async ()
 		name: "Tester",
 		lastLogin: "2026-11-10",
 	});
-	expect(store.profileDefaultModelId).toBe("model-b");
 	expect(store.models.selected.engine_id).toBe("model-b");
 	// the user is not read again: only the models and the context window are
 	for (const [pixel] of mocks.run.mock.calls) {
@@ -79,30 +78,34 @@ test("reads the user and their profile default model from the session", async ()
 	}
 });
 
-test("selects a changed profile default after reading the user again", async () => {
-	const store = await createStore();
-	mocks.reloadUser.mockImplementation(async () => {
-		mocks.snapshot = {
-			status: "AUTHENTICATED",
-			user: mocks.user("model-c"),
-		};
-		return mocks.snapshot;
-	});
+test("falls back to the deployment's default, then the first model", async () => {
+	mocks.snapshot = { status: "AUTHENTICATED", user: mocks.user("gone") };
+	const theme = withPlaygroundDefaults(null);
+	const store = new ChatStore(
+		{
+			...theme,
+			defaultRoomSettings: {
+				model: MODELS[2],
+			},
+		},
+		{},
+	);
+	await store.initialize();
 
-	await store.refreshProfileDefaultModel();
-
-	expect(mocks.reloadUser).toHaveBeenCalledTimes(1);
 	expect(store.models.selected.engine_id).toBe("model-c");
+
+	const plain = await createStore();
+
+	expect(plain.models.selected.engine_id).toBe("model-a");
 });
 
-test("keeps a model the user picked when the profile default is unchanged", async () => {
+test("selects the new chat default when nothing else names a model", async () => {
 	const store = await createStore();
-	store.setSelectedModel(MODELS[0]);
-	mocks.reloadUser.mockResolvedValue(mocks.snapshot);
+	store.setSelectedModel(MODELS[2]);
 
-	await store.refreshProfileDefaultModel();
+	store.selectNewChatDefaultModel();
 
-	expect(store.models.selected.engine_id).toBe("model-a");
+	expect(store.models.selected.engine_id).toBe("model-b");
 });
 
 test("pixel errors from the session's insight reject, as the insight's did", async () => {

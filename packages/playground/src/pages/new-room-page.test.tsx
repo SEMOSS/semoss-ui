@@ -13,6 +13,11 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { ROOM_PANEL_COMPONENTS } from "@/components/room/panels/room-panel.components";
 import type { RoomInput } from "@/components/room/room-input";
 import type { RoomOptionsForm } from "@/components/room/room-options-form";
+import {
+	forgetSessionNewChat,
+	readSessionNewChat,
+	writeSessionNewChat,
+} from "@/features/new-chat-preferences/new-chat-preferences";
 import { RoomStore } from "@/stores/room/room.store";
 import { RootStore } from "@/stores/root/root.store";
 import { NewRoomPage } from "./new-room-page";
@@ -33,14 +38,13 @@ const mocks = vi.hoisted(() => ({
 		data: pixel.includes('"alpha"') ? mocks.alpha : null,
 	}),
 	alpha: null as unknown,
+	searchParams: new URLSearchParams(),
 	session: {
 		status: "AUTHENTICATED",
 		user: {
 			name: "Tester",
-			defaultModels: {
-				textGeneration: "default-model",
-				codeGeneration: "",
-			},
+			lastLogin: "login-1",
+			meta: {} as Record<string, string[]>,
 		},
 	},
 	// stable, as the SDK's are, so views keep the same logins between renders
@@ -79,7 +83,7 @@ const root = {
 const chat = {
 	...mocks,
 	models: { selected: null },
-	refreshProfileDefaultModel: vi.fn(),
+	selectNewChatDefaultModel: vi.fn(),
 	setSelectedModel: vi.fn(),
 	addOptimisticRoom: vi.fn(),
 	removeOptimisticRoom: vi.fn(),
@@ -90,7 +94,7 @@ vi.mock("@/features/settings/settings-dialog.context", () => ({
 }));
 vi.mock("react-router", () => ({
 	useNavigate: () => mocks.navigate,
-	useSearchParams: () => [new URLSearchParams()],
+	useSearchParams: () => [mocks.searchParams],
 }));
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
@@ -110,7 +114,7 @@ vi.mock("@semoss/sdk/react", async (original) => ({
 	useLogins: () => mocks.logins,
 	usePixel: mocks.pixel,
 	useSessionPixel: mocks.pixel,
-	// a signed in user whose profile names a default model
+	// a signed in user, with any new chat defaults a test gives them
 	useSession: <T,>(selector: (state: typeof mocks.session) => T) =>
 		selector(mocks.session),
 }));
@@ -360,6 +364,9 @@ beforeEach(() => {
 		new DOMRect(0, 0, 800, 600),
 	);
 	mocks.workspaceStatus = "SUCCESS";
+	mocks.searchParams = new URLSearchParams();
+	mocks.session.user.meta = {};
+	forgetSessionNewChat();
 	root.theme.featureFlags.enableAgentHarness = true;
 	root.theme.featureFlags.modeFollowsAgent = false;
 	mocks.createRoom.mockResolvedValue({ roomId: "sent" });
@@ -961,4 +968,84 @@ test("Activity prepares the room and opens its log, and Retry after a failure op
 	expect(
 		screen.getByRole("tab", { name: "room:workspacePlaces.files" }),
 	).toHaveAttribute("aria-selected", "false");
+});
+
+/** Give the user a default of agent mode with this agent. */
+function preferAgent(agentId: string) {
+	mocks.session.user.meta = {
+		"playground--default-chat-mode": ["agent"],
+		"playground--default-chat-agent": [agentId],
+	};
+}
+
+test("a new chat starts with the user's default mode and agent, and remembers the chat sent", async () => {
+	preferAgent("alpha");
+	render(<NewRoomPage />);
+	await waitFor(() =>
+		expect(screen.getByLabelText("Selected agent")).toHaveTextContent(
+			"Alpha",
+		),
+	);
+	expect(screen.getByLabelText("Mode")).toHaveTextContent("agent");
+
+	fireEvent.click(screen.getByRole("button", { name: "Save default" }));
+	fireEvent.click(screen.getByRole("button", { name: "Send" }));
+	await waitFor(() => expect(mocks.createRoom).toHaveBeenCalled());
+	expect(readSessionNewChat("login-1")).toEqual({
+		mode: "agent",
+		agentId: "",
+	});
+});
+
+test("the chat last started in this session beats the user's defaults", async () => {
+	preferAgent("alpha");
+	writeSessionNewChat("login-1", { mode: "chat", agentId: "" });
+	render(<NewRoomPage />);
+	await act(async () => {});
+
+	expect(screen.getByLabelText("Mode")).toHaveTextContent("chat");
+	expect(screen.getByLabelText("Selected agent")).toHaveTextContent(
+		"Default",
+	);
+});
+
+test("a default agent the user can no longer open gives way to Default Agent", async () => {
+	preferAgent("gone");
+	render(<NewRoomPage />);
+
+	await waitFor(() =>
+		expect(screen.getByLabelText("Mode")).toHaveTextContent("agent"),
+	);
+	await act(async () => {});
+	expect(screen.getByLabelText("Selected agent")).toHaveTextContent(
+		"Default",
+	);
+	expect(
+		screen.queryByText("room:settings.agentLoadError"),
+	).not.toBeInTheDocument();
+	fireEvent.click(screen.getByRole("button", { name: "Send" }));
+	await waitFor(() =>
+		expect(mocks.createRoom).toHaveBeenCalledWith(
+			"agent",
+			"Hello",
+			[],
+			expect.objectContaining({ workspace: undefined }),
+			undefined,
+			undefined,
+			expect.any(Function),
+		),
+	);
+});
+
+test("an agent link wins over the user's default agent", async () => {
+	preferAgent("gone");
+	mocks.searchParams = new URLSearchParams("workspaceId=alpha");
+	render(<NewRoomPage />);
+
+	await waitFor(() =>
+		expect(screen.getByLabelText("Selected agent")).toHaveTextContent(
+			"Alpha",
+		),
+	);
+	expect(screen.getByLabelText("Mode")).toHaveTextContent("agent");
 });

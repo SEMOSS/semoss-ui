@@ -83,7 +83,24 @@
 			},
 			"language": "Idioma",
 			"languageDescription": "El idioma en el que se muestra la aplicación.",
-			"version": "Versión {{version}}"
+			"version": "Versión {{version}}",
+			"newChat": {
+				"title": "Chat",
+				"model": "Modelo",
+				"modelDescription": "El modelo que usa un chat nuevo.",
+				"deploymentModel": "Predeterminado de la plataforma",
+				"unavailableModel": "Modelo no disponible",
+				"mode": "Modo",
+				"modeDescription": "Si un chat nuevo empieza como chat o con un agente.",
+				"modes": {
+					"chat": "Chat",
+					"agent": "Agente"
+				},
+				"agent": "Agente",
+				"agentDescription": "El agente que ejecuta un chat nuevo en modo agente.",
+				"defaultAgent": "Agente predeterminado",
+				"saveError": "No se pudo guardar tu preferencia: {{message}}"
+			}
 		}
 	},
 	"download": {

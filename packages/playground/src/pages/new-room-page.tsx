@@ -23,12 +23,22 @@ import { RoomGreeting } from "@/components/room/room-greeting";
 import { RoomInput } from "@/components/room/room-input";
 import { RoomWorkbench } from "@/components/room/room-workbench";
 import { FileDragProvider } from "@/contexts/file-drag-context";
-import { canChooseAgentMode } from "@/features/conversation/agent-mode-choice";
+import {
+	canChooseAgentMode,
+	offersAgentMode,
+} from "@/features/conversation/agent-mode-choice";
 import { clearAgentOptions } from "@/features/conversation/clear-agent-options";
 import { DropHighlight } from "@/features/conversation/drop-highlight";
 import { NextMessageRoomProvider } from "@/features/conversation/next-message-room.context";
 import { RoomLayout } from "@/features/conversation/room-layout";
 import { useNewRoom } from "@/features/conversation/use-new-room";
+import {
+	readNewChatPreferences,
+	readSessionNewChat,
+	resolveNewChatAgentId,
+	resolveNewChatMode,
+	writeSessionNewChat,
+} from "@/features/new-chat-preferences/new-chat-preferences";
 import { RoomHeader } from "@/features/room-header/room-header";
 import { DraftSettingsContext } from "@/features/workbench/draft-settings.context";
 import {
@@ -69,14 +79,8 @@ export const NewRoomPage = observer(() => {
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
 	const userName = useSession((state) => state.user?.name) ?? "";
-	const profileDefaultModelId =
-		useSession((state) => state.user?.defaultModels.textGeneration) ?? "";
-
-	// Re-fetch the user's profile default model each time this page mounts so
-	// changes made in the token-usage embed are reflected immediately.
-	useEffect(() => {
-		chat.refreshProfileDefaultModel();
-	}, [chat]);
+	const lastLogin = useSession((state) => state.user?.lastLogin);
+	const userMeta = useSession((state) => state.user?.meta);
 
 	const initialPrompt = searchParams.get("prompt") ?? "";
 
@@ -135,8 +139,35 @@ export const NewRoomPage = observer(() => {
 	const [isLoading, setIsLoading] = useState(false);
 	const submittedRef = useRef(false);
 	const greetingRoomStartedForRef = useRef<string>("");
-	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
-	const [chosenMode, setChosenMode] = useState<"chat" | "agent">("chat");
+	// A new chat starts as the last chat started in this login session did,
+	// else as the user's defaults say (Settings > General). Read once: a
+	// default changed meanwhile applies to the next new chat.
+	const [initialChat] = useState(() => {
+		const session = readSessionNewChat(lastLogin);
+		const preferences = readNewChatPreferences(userMeta);
+		const initialMode = resolveNewChatMode(
+			session,
+			preferences,
+			offersAgentMode(theme.featureFlags),
+		);
+		return {
+			mode: initialMode,
+			// an agent link names its own agent
+			agentId:
+				initialMode === "agent" && !workspaceIdSearchParams
+					? resolveNewChatAgentId(session, preferences)
+					: "",
+		};
+	});
+	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>(
+		initialChat.agentId,
+	);
+	const [chosenMode, setChosenMode] = useState<"chat" | "agent">(
+		initialChat.mode,
+	);
+	// The agent the defaults picked: one the user can no longer open is
+	// dropped quietly, for Default Agent, rather than shown as an error.
+	const defaultAgentIdRef = useRef(initialChat.agentId);
 	// With modeFollowsAgent the agent picker decides the mode: a saved agent
 	// or Default Agent runs in agent mode, No Agent in chat mode.
 	const modeFollowsAgent = !!theme.featureFlags?.modeFollowsAgent;
@@ -269,6 +300,14 @@ export const NewRoomPage = observer(() => {
 		}
 	};
 
+	/** Remember the chat started, so the next new chat starts as it did. */
+	const rememberChat = (options: RoomStore["options"]): void => {
+		writeSessionNewChat(lastLogin, {
+			mode: mode,
+			agentId: options.workspace?.workspace_id ?? "",
+		});
+	};
+
 	/** Shared error handling for every room-creation path below. */
 	const handleCreateRoomError = (error: unknown) => {
 		const sdkError = error as { message: string; code?: number };
@@ -344,6 +383,7 @@ export const NewRoomPage = observer(() => {
 					}
 				})();
 				submittedRef.current = true;
+				rememberChat(options);
 				navigate(`/room/${preparedRoom.roomId}`);
 			} else {
 				// Standard flow — create room and send first message together.
@@ -357,6 +397,7 @@ export const NewRoomPage = observer(() => {
 					prepareRoom,
 				);
 				submittedRef.current = true;
+				rememberChat(options);
 				navigate(`/room/${room.roomId}`);
 			}
 			return true;
@@ -396,6 +437,7 @@ export const NewRoomPage = observer(() => {
 				prepareRoom,
 			);
 			submittedRef.current = true;
+			rememberChat(options);
 			navigate(`/room/${room.roomId}`);
 		} catch (error: unknown) {
 			handleCreateRoomError(error);
@@ -421,9 +463,6 @@ export const NewRoomPage = observer(() => {
 			// agent again applies its default model again
 			appliedAgentModelRef.current = "";
 			appliedAgentOptionsRef.current = "";
-			if (profileDefaultModelId) {
-				void chat.selectModelById(profileDefaultModelId);
-			}
 			return;
 		}
 		if (getWorkspace.status !== "SUCCESS" || !getWorkspace.data) {
@@ -496,8 +535,20 @@ export const NewRoomPage = observer(() => {
 		getWorkspace.data,
 		newRoom,
 		chat,
-		profileDefaultModelId,
 	]);
+
+	// A default agent the user can no longer open gives way to Default Agent
+	useEffect(() => {
+		if (
+			!agentLoadFailed ||
+			!defaultAgentIdRef.current ||
+			selectedWorkspaceId !== defaultAgentIdRef.current
+		) {
+			return;
+		}
+		defaultAgentIdRef.current = "";
+		setSelectedWorkspaceId("");
+	}, [agentLoadFailed, selectedWorkspaceId]);
 
 	// A URL-routed agent with a greeting drops straight into a room with it
 	// already rendered, instead of the landing page.
@@ -617,7 +668,12 @@ export const NewRoomPage = observer(() => {
 		next: RoomStore["options"]["workspace"] | null,
 	) => {
 		if (isLoading || isPreparing) return;
+		defaultAgentIdRef.current = "";
 		if (next?.workspace_id !== newRoom.options.workspace?.workspace_id) {
+			// an agent's model gives way to the new chat's default with it
+			if (!next && appliedAgentModelRef.current) {
+				chat.selectNewChatDefaultModel();
+			}
 			appliedAgentOptionsRef.current = "";
 			appliedAgentModelRef.current = "";
 			setPrompts([]);

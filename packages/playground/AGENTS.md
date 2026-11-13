@@ -46,8 +46,19 @@ added: backend calls apps share live in `libs/sdk/src/api/` (for example `runMcp
 - **Moving off MobX and zustand.** Put new state in hooks over the SDK's stores, never in a new
   MobX or zustand store. Some members are thin, deprecated adapters over the SDK, kept only until
   their stores move: `RootStore` / `useRoot()` (use `usePlaygroundTheme()`) and
-  `ChatStore.user` / `ChatStore.profileDefaultModelId` (use `useSession`). They hold no state of
-  their own and are not observable. Do not add consumers.
+  `ChatStore.user` (use `useSession`). They hold no state of their own and are not observable.
+  Do not add consumers.
+- **A new chat's defaults are the user's metadata.** Settings > General's Chat section
+  (`features/settings/new-chat-settings.tsx`) saves `playground--default-input-text-model`,
+  `playground--default-chat-mode` and `playground--default-chat-agent` with `Session.setMetadata`;
+  the backend allows only these playground keys. A new chat starts from the chat last started in
+  this login session, then these defaults, then the deployment's. The session's chat is kept in
+  memory, never in `sessionStorage`: the model is `ChatStore`'s selected model, and the mode and
+  agent are held by `new-chat-preferences.ts`, by `lastLogin`. A reload starts from the defaults.
+  Fallbacks: the model falls back to the theme or env default and then the first model, the
+  mode to chat, the agent to Default Agent (also when the saved agent can no longer be opened).
+  The rules live in `features/new-chat-preferences/new-chat-preferences.ts`. Playground does not
+  read the platform's `text-generation-model`.
 
 ## Build System
 

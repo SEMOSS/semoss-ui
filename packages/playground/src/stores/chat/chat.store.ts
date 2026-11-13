@@ -12,6 +12,7 @@ import {
 import { toast } from "@semoss/ui/next";
 import { parseTimestampWithUtcDefault } from "@semoss/utility/date";
 import type { WorkbenchPanelConfigAny } from "@semoss/workbench";
+import { readNewChatPreferences } from "@/features/new-chat-preferences/new-chat-preferences";
 import type {
 	AbstractPixelMessage,
 	Engine,
@@ -25,8 +26,6 @@ import { RoomStore } from "../room/room.store";
 
 const DEFAUlT_MODEL_ID = import.meta.env.VITE_DEFAUlT_MODEL_ID || "";
 const DEFAUlT_MODEL_NAME = import.meta.env.VITE_DEFAUlT_MODEL_NAME || "";
-
-const SESSION_MODEL_KEY = "smss-playground-session-model";
 
 /**
  * Shape of a room row as rendered in the nav list. Matches the columns
@@ -197,18 +196,6 @@ export class ChatStore {
 	}
 
 	/**
-	 * Engine ID of the model set as default in the user's profile (Settings >
-	 * My Profile), read from the SDK's `Session`; empty when none is set. Not
-	 * observable.
-	 *
-	 * @deprecated Use `useSession((state) => state.user?.defaultModels.textGeneration)`.
-	 * Kept until the playground's stores move off MobX.
-	 */
-	get profileDefaultModelId(): string {
-		return Session.getSnapshot().user?.defaultModels.textGeneration ?? "";
-	}
-
-	/**
 	 * Get the rooms optimistically shown in the nav
 	 */
 	get optimisticRooms() {
@@ -220,7 +207,7 @@ export class ChatStore {
 	 */
 	initialize = async (): Promise<void> => {
 		try {
-			// the user, and their profile default model, come from the session
+			// the user, and their default model, come from the session
 			await this.getDefaultModel();
 		} catch (e) {
 			console.error(e);
@@ -610,46 +597,12 @@ export class ChatStore {
 	};
 
 	/**
-	 * Read the user again and, when their profile default text-generation
-	 * model has changed, select it. Called when the new-room page mounts so a
-	 * change made in the token-usage page (embed) is picked up without
-	 * requiring a logout/login cycle.
-	 */
-	refreshProfileDefaultModel = async (): Promise<void> => {
-		try {
-			const previousModelId = this.profileDefaultModelId;
-			const { user } = await Session.reloadUser();
-			const newModelId = user?.defaultModels.textGeneration ?? "";
-
-			// Only update if the default has actually changed
-			if (!newModelId || newModelId === previousModelId) {
-				return;
-			}
-
-			const match = this._store.models.available.find(
-				(m) => m.engine_id === newModelId,
-			);
-
-			if (match) {
-				this.setSelectedModel(match);
-			}
-		} catch (e) {
-			console.error("[ChatStore] refreshProfileDefaultModel failed:", e);
-		}
-	};
-
-	/**
 	 * Set the selected model
 	 */
 	setSelectedModel = (model: Engine): void => {
 		runInAction(() => {
 			this._store.models.selected = model;
 		});
-
-		sessionStorage.setItem(
-			SESSION_MODEL_KEY,
-			JSON.stringify({ model, lastLogin: this.user.lastLogin }),
-		);
 
 		this.loadEngineContextWindow(model.engine_id);
 	};
@@ -809,22 +762,70 @@ export class ChatStore {
 	private run = async <O extends unknown[] | []>(pixel: string) =>
 		throwOnPixelErrors(await Session.insight.run<O>(pixel));
 
+	/** The deployment's default model id: the theme's, then the env's. */
+	private get deploymentDefaultModelId(): string {
+		return (
+			this._theme.defaultRoomSettings?.model?.engine_id ||
+			DEFAUlT_MODEL_ID
+		);
+	}
+
 	/**
-	 * Get available models from the backend
+	 * The model a new chat starts with when the session has none: the user's
+	 * default (Settings > General), then the deployment's, then the first
+	 * the user can see.
+	 *
+	 * @returns The model, or undefined when the user can see none.
+	 */
+	private findNewChatDefaultModel = (): Engine | undefined => {
+		const { modelId } = readNewChatPreferences(
+			Session.getSnapshot().user?.meta,
+		);
+		const available = this._store.models.available;
+		const deploymentModelId = this.deploymentDefaultModelId;
+		return (
+			(modelId
+				? available.find((m) => m.engine_id === modelId)
+				: undefined) ??
+			(deploymentModelId
+				? available.find((m) => m.engine_id === deploymentModelId)
+				: undefined) ??
+			available[0]
+		);
+	};
+
+	/**
+	 * Select the model a new chat starts with when nothing else names one,
+	 * as when its agent is cleared: the user's default, then the
+	 * deployment's, then the first the user can see. Does nothing while
+	 * model selection is off, since the deployment's model is always used.
+	 */
+	selectNewChatDefaultModel = (): void => {
+		if (!this._theme.featureFlags?.enableModelSelect) return;
+		const model = this.findNewChatDefaultModel();
+		if (
+			model &&
+			model.engine_id !== this._store.models.selected?.engine_id
+		) {
+			this.setSelectedModel(model);
+		}
+	};
+
+	/**
+	 * Read the models the user can see and select the one the first new chat
+	 * starts with: the user's default, then the deployment's, then the first.
+	 * The selected model is the session's last: later new chats keep it.
 	 */
 	private getDefaultModel = async (): Promise<void> => {
-		const defaultModelId =
-			this._theme.defaultRoomSettings?.model?.engine_id ||
-			DEFAUlT_MODEL_ID;
-		const defaultModelName =
-			this._theme.defaultRoomSettings?.model?.engine_display_name ||
-			this._theme.defaultRoomSettings?.model?.engine_name ||
-			DEFAUlT_MODEL_NAME;
 		// model selection is not enabled, set it to the default
 		if (!this._theme.featureFlags?.enableModelSelect) {
 			this.setSelectedModel({
-				engine_id: defaultModelId,
-				engine_name: defaultModelName,
+				engine_id: this.deploymentDefaultModelId,
+				engine_name:
+					this._theme.defaultRoomSettings?.model
+						?.engine_display_name ||
+					this._theme.defaultRoomSettings?.model?.engine_name ||
+					DEFAUlT_MODEL_NAME,
 				engine_type: "MODEL",
 			});
 			return;
@@ -835,69 +836,12 @@ export class ChatStore {
 		);
 
 		runInAction(() => {
-			const { output } = pixelReturn[0];
-
-			// Cache the full list so setProfileDefaultModel() can resolve an id to an Engine later
-			this._store.models.available = output;
-
+			// kept so an id can be resolved to an Engine later
+			this._store.models.available = pixelReturn[0].output;
 			// the session has read the user before any authenticated route mounts
-			const profileDefaultModelId = this.profileDefaultModelId;
-			let isSelected = false;
-
-			// 1. user's profile default — explicitly set by the user, highest personal priority
-			if (profileDefaultModelId) {
-				for (const m of output) {
-					if (m.engine_id === profileDefaultModelId) {
-						this.setSelectedModel(m);
-						isSelected = true;
-						break;
-					}
-				}
-			}
-
-			// 2. last model selected in this login session (survives refresh, resets on new login)
-			if (!isSelected) {
-				try {
-					const sessionItem =
-						sessionStorage.getItem(SESSION_MODEL_KEY);
-					if (sessionItem) {
-						const { model: sessionModel, lastLogin: storedLogin } =
-							JSON.parse(sessionItem) as {
-								model: Engine;
-								lastLogin?: string;
-							};
-						const currentLogin = this.user.lastLogin;
-						if (
-							storedLogin &&
-							currentLogin &&
-							storedLogin === currentLogin
-						) {
-							for (const m of output) {
-								if (m.engine_id === sessionModel.engine_id) {
-									this.setSelectedModel(m);
-									isSelected = true;
-									break;
-								}
-							}
-						}
-					}
-				} catch {}
-			}
-
-			// 3. theme/admin-suggested default — used as a fallback when the user has no preference
-			if (!isSelected && defaultModelId) {
-				for (const m of output) {
-					if (m.engine_id === defaultModelId) {
-						this.setSelectedModel(m);
-						isSelected = true;
-						break;
-					}
-				}
-			}
-
-			// 4. first available model
-			if (!isSelected && output.length > 0) {
-				this.setSelectedModel(output[0]);
+			const model = this.findNewChatDefaultModel();
+			if (model) {
+				this.setSelectedModel(model);
 			}
 		});
 	};
