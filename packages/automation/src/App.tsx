@@ -26,7 +26,7 @@ function useQueryParams(): URLSearchParams {
  * its companion tabs (`InspectorTab`, `RunsTab`) directly as a normal package import instead of
  * iframing this app — see that package's `automation-workbench.tsx`.
  */
-export default function App() {
+export function App() {
 	const params = useQueryParams();
 	const rawMode = params.get("mode");
 	const parentOrigin = params.get("parentOrigin") || window.location.origin;
@@ -99,7 +99,7 @@ export default function App() {
 		setCreating(true);
 		void insight.actions
 			.run(
-				`CreateAutomation(projectName=${JSON.stringify([cleanName])});`,
+				`CreateAutomation(catalogName=${JSON.stringify([cleanName])});`,
 			)
 			.then((result) => {
 				const projectId = (

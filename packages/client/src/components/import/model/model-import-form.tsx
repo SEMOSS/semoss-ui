@@ -40,6 +40,7 @@ import type {
 	BuiltinToolSelection,
 	ReasoningConfig,
 } from "@/components/engine/engine-metadata-display";
+import { CATALOG_NAME_KEY } from "@/components/import/shared/import-form.constants";
 import { useNavigate } from "@/hooks/useNavigate";
 import { useStepper } from "@/hooks/useStepper";
 import type { CatalogMatchState } from "./model-catalog-match";
@@ -353,8 +354,8 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 		}
 
 		setIsLoading(true);
-		let pixel = `CreateModelEngine(model=["${
-			newFormData.NAME
+		let pixel = `CreateModelEngine(catalogName=["${
+			newFormData[CATALOG_NAME_KEY]
 		}"],modelDetails=[${JSON.stringify(newFormData)}])`;
 
 		if (FILE !== "" && FILE !== undefined) {

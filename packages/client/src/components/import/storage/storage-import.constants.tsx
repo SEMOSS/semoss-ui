@@ -12,6 +12,7 @@ import MS_TEAMS from "@/assets/img/MS_TEAMS.svg";
 import NETWORK_FILE_SYSTEM from "@/assets/img/NETWORK_FILE_SYSTEM.png";
 import ONEDRIVE from "@/assets/img/ONEDRIVE.png";
 import SFTP from "@/assets/img/SFTP.png";
+import { CATALOG_NAME_KEY } from "@/components/import/shared/import-form.constants";
 
 export interface Storage {
 	fields: [];
@@ -51,7 +52,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -141,7 +142,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -237,7 +238,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -313,7 +314,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -389,7 +390,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -482,7 +483,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -531,7 +532,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -621,7 +622,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -697,7 +698,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -823,7 +824,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -938,7 +939,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -1034,7 +1035,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -1110,7 +1111,7 @@ export const STORAGE_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",

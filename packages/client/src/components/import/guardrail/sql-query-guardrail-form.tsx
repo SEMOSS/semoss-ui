@@ -24,6 +24,7 @@ import {
 import { getErrorMessage } from "@semoss/utility/error";
 import { createGuardrailEngine } from "@/api/guardrails";
 import { EngineFormHeader } from "@/components/import/shared/engine-form-header";
+import { CATALOG_NAME_KEY } from "@/components/import/shared/import-form.constants";
 import { SqlPolicyRulesField } from "./sql-policy-rules-field";
 import {
 	type BuiltInRules,
@@ -79,7 +80,7 @@ const nonNegativeIntegerSchema = z
 	.refine((value) => Number(value) <= 2_147_483_647, "Value is too large");
 
 const sqlQueryGuardrailSchema = z.object({
-	MODEL_NAME: z
+	[CATALOG_NAME_KEY]: z
 		.string()
 		.trim()
 		.min(1, "Catalog name is required")
@@ -118,7 +119,7 @@ type SqlQueryGuardrailFormValues = z.infer<typeof sqlQueryGuardrailSchema>;
 
 /** The values the form starts with, before the chosen dialect's built-in rules are read. */
 export const SQL_QUERY_GUARDRAIL_DEFAULTS: SqlQueryGuardrailFormValues = {
-	MODEL_NAME: "",
+	[CATALOG_NAME_KEY]: "",
 	SQL_DIALECT: "GENERIC",
 	SQUARE_BRACKET_QUOTATION: "AUTO",
 	PARSER_FAILURE_POLICY: "DENY",
@@ -155,7 +156,7 @@ export const toSqlQueryGuardrailDetails = (
 	values: SqlQueryGuardrailFormValues,
 	builtIns: BuiltInRules = {},
 ): Record<string, string> => {
-	const { MODEL_NAME: _modelName, ...configuration } = values;
+	const { [CATALOG_NAME_KEY]: _catalogName, ...configuration } = values;
 	const policyBuiltIns: Partial<Record<string, readonly PolicyRule[]>> =
 		builtIns;
 	return {
@@ -272,7 +273,7 @@ export const SqlQueryGuardrailForm = ({
 		try {
 			engineId = await createGuardrailEngine(
 				insightId,
-				values.MODEL_NAME,
+				values[CATALOG_NAME_KEY],
 				toSqlQueryGuardrailDetails(values, builtIns),
 			);
 		} catch (error: unknown) {
@@ -323,7 +324,7 @@ export const SqlQueryGuardrailForm = ({
 						</div>
 						<div className="flex flex-2 flex-col gap-2">
 							<FormInput
-								name="MODEL_NAME"
+								name={CATALOG_NAME_KEY}
 								label="Catalog name"
 								description="Name used to identify this guardrail in the catalog."
 								disabled={isSubmitting}
