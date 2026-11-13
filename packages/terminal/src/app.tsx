@@ -9,10 +9,10 @@ import { LoginPage } from "@semoss/shared";
 import { ThemeProvider, Toaster } from "@semoss/ui/next";
 import { EmbedTerminal } from "./components/embed-terminal/embed-terminal";
 
+// The server writes MODULE into index.html (semoss-env tag, read when the SDK
+// loads) and it always wins; .env, then "/Monolith", cover a page without one.
 Env.update({
-	MODULE: import.meta.env.MODULE || "/Monolith",
-	ACCESS_KEY: import.meta.env.ACCESS_KEY,
-	SECRET_KEY: import.meta.env.SECRET_KEY,
+	MODULE: Env.MODULE || import.meta.env.MODULE || "/Monolith",
 });
 
 // Languages load lazily (one chunk per language) via the builder's dynamic

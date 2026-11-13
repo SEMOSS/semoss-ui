@@ -36,6 +36,19 @@ interface TopicPerson {
 	vip?: boolean;
 }
 
+/** A OneDrive or Teams file linked to a topic; the file stays where it is in Microsoft 365. */
+export interface TopicFile {
+	/** The file's id in its drive, which with the drive's id is how Microsoft 365 finds it again. */
+	itemId: string;
+	driveId?: string;
+	/** As Microsoft 365 named it when it was linked. */
+	name: string;
+	/** The app it was picked in. */
+	source: "onedrive" | "teams";
+	/** Opens it in its own app; as it was when the file was linked. */
+	webUrl?: string;
+}
+
 export interface Topic {
 	id: string;
 	name: string;
@@ -50,6 +63,8 @@ export interface Topic {
 	calendarSeries: string[];
 	/** Outlook folders the topic stands for; mail in them is filed under it. */
 	folders?: { id: string; path: string; origin?: string | null }[];
+	/** OneDrive and Teams files the owner linked to the topic. */
+	files?: TopicFile[];
 	stats: { threads: number; openItems: number; lastActivity: string };
 	isSample: boolean;
 }

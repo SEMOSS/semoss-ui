@@ -3,6 +3,7 @@ import {
 	Card,
 	CardContent,
 	Field,
+	FieldDescription,
 	FieldError,
 	FieldGroup,
 	FieldLabel,
@@ -332,6 +333,11 @@ export function InboxRoutineForm({
 										label={INBOX_SECTION_LABELS[section]}
 									/>
 								))}
+								<FieldDescription>
+									To add a section of your own, create a
+									routine under New routine and choose "Add to
+									my daily brief" as where its result goes.
+								</FieldDescription>
 							</fieldset>
 							<FormInput
 								name="priorityAmount"
@@ -346,7 +352,7 @@ export function InboxRoutineForm({
 							<FormTextarea
 								name="preferences"
 								label="Preferences (optional)"
-								description="How you like reply drafts and meeting notes written, such as: keep drafts to three sentences, sign off with my first name, skip newsletters."
+								description="What your brief should show and how it reads, such as: start with a countdown to my vacation, leave out other people's time off, put meetings first, keep reply drafts to three sentences."
 								rows={3}
 								maxLength={ROUTINE_PREFERENCES_LIMIT}
 							/>

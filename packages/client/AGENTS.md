@@ -433,6 +433,23 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   version at the end of that workbench's cache name (`workbench-layout--<id>--<version>`), or
   people who already opened it never see the change.
 
+### Agent Files
+
+- An agent's own files are the files in its project's `public` assets folder
+  (`AGENT_FILES_PATH`), the folder someone with only view access may read. A chat run reads them
+  in place as `agent:/<path>` and never writes them; the backend offers a run nothing else from
+  the agent's project.
+- `components/workbench/project/agent/agent-files-panel.tsx` is the Agent Files panel
+  (`AGENT_FILES_PANEL`, type `project-agent-files`), the only file panel on the agent workbench:
+  it has no project-wide Files panel, so a file cannot be uploaded where the agent would not see
+  it. The panel wraps the shared file explorer under its own type with `rootPath` set to that
+  folder (see [libs/panels/AGENTS.md](../../libs/panels/AGENTS.md)), so the folder is the
+  explorer's whole tree and uploads, renames and deletes are the explorer's. The File commands
+  in the palette drive this panel. It reads the project's top folder to learn whether the folder
+  exists: when it does not, someone who can edit the agent gets Add Files, which creates it, and
+  anyone else is told the agent has no files. The folder is never created just by opening the
+  panel.
+
 ### Database Workbench
 
 - **`components/workbench/engine/database/`** is a database's query workbench: query panels,

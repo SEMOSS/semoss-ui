@@ -23,7 +23,6 @@ const LOGIN_PROVIDER_LOGO_PATH_BY_PROVIDER: Record<string, string> = {
 	microsoft: "../assets/img/MICROSOFT.png",
 	ms: "../assets/img/MICROSOFT.png",
 	okta: "../assets/loginProviders/OKTA.svg",
-	product_hunt: "../assets/loginProviders/product_hunt.png",
 	salesforce: "../assets/loginProviders/SALESFORCE.svg",
 	saml: "../assets/loginProviders/saml.png",
 	siteminder: "../assets/loginProviders/siteminder.png",

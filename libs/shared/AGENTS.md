@@ -63,12 +63,19 @@ other than an asset tree, such as a connector's drive: the adapter builds each l
 maps the output to `FileItem`s (`mapEntries(raw, path)` is handed the folder it listed, for a
 source whose entries carry no path), and says what the source can do. A source keeps anything
 its rows need in `FileItem.data`; `itemActions` adds the host's row button and context-menu
-entries, `renderError` draws a failed listing the host's way, and `searchScope: false` hides the
-scope choice for a search that always covers everything. A source that can make files and
+entries, `renderError` draws a failed listing the host's way, `listingNote` puts a line under a
+listing (the current folder's and each open one's), such as that its source stopped at a limit,
+and `searchScope: false` hides the scope choice for a search that always covers everything. A source that can make files and
 folders but not rename, move, or copy them sets `create` alone: `canCreateItems` reads it,
 falling back to `mutate`, and it shows New, New File, and New Folder without the rest.
 `FileExplorer` hands the overlay the explorer's `adapter`, so it creates in that source rather
 than in the mode's asset tree. `@semoss/connectors`' drive views are built this way.
+
+**A source can be kept to one folder.** `scopeFileExplorerAdapter(adapter, root)` returns an
+adapter that sees `root` as `/`: the explorer lists, searches, creates and uploads there and
+reaches nothing above it, a typed `..` included. Item paths are then relative to the folder, so a
+host resolves a path it takes out of the explorer with `resolveScopedFilePath(root, path)` before
+opening it. `@semoss/panels`' file explorer panel does both when it is given a `rootPath`.
 
 **Every row's menu has three ways in.** Right-click, the row's More actions button, and
 Shift+F10 or the menu key on a focused row open the same menu, so the context-menu entries a

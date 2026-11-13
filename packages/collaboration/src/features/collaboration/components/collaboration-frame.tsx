@@ -15,6 +15,7 @@ import {
 } from "@semoss/ui/next";
 import { useDashboard } from "@/features/dashboard/dashboard.context";
 import { DashboardSourceDialog } from "@/features/dashboard/dashboard-source-dialog";
+import { isHeroPath, twinContentsPath } from "@/lib/workspace-paths";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { CollaborationHeader } from "./collaboration-header";
 import {
@@ -71,13 +72,25 @@ export function CollaborationFrame() {
 		// An explicit expansion applies only until the user opens another page.
 		setNavigationOverride(null);
 	}
-	const isRoom = pathname.startsWith("/thread/");
+	// a room, a topic's contents page and a twin's are workbenches: they get the navigation's width
+	const isRoom =
+		pathname.startsWith("/thread/") ||
+		/^\/topics\/[^/]+\/contents$/.test(pathname) ||
+		pathname === twinContentsPath();
+	// a hero page scrolls with the header as one, so its photo can run up behind the search box
+	const hasHero = isHeroPath(pathname);
 	const isCollapsed =
 		navigationOverride?.pathname === pathname
 			? navigationOverride.isCollapsed
 			: isRoom || isNavigationCollapsed;
 	const mainId = useId();
 	const navigationId = useId();
+	const contentRef = useRef<HTMLDivElement>(null);
+	useLayoutEffect(() => {
+		// the column keeps its scroll offset from one page to the next, even across pages that scroll themselves; a hero page opens at its top
+		if (isHeroPath(pathname) && contentRef.current)
+			contentRef.current.scrollTop = 0;
+	}, [pathname]);
 	const mainRef = useRef<HTMLElement>(null);
 	const desktopNavigationRef = useRef<HTMLElement>(null);
 	const navigationToggleRef = useRef<HTMLButtonElement>(null);
@@ -171,11 +184,18 @@ export function CollaborationFrame() {
 					/>
 				</div>
 			</aside>
-			<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+			<div
+				ref={contentRef}
+				className={cn(
+					"relative flex min-h-0 min-w-0 flex-1 flex-col",
+					hasHero && "overflow-y-auto",
+				)}
+			>
 				<CollaborationHeaderContext.Provider value={headerControls}>
 					<CollaborationHeader
 						roomControlsRef={setHeaderControls}
 						conversationWidth={conversationWidth}
+						isOverPage={hasHero}
 					>
 						<Sheet
 							open={isNavOpen}
@@ -250,7 +270,11 @@ export function CollaborationFrame() {
 						ref={mainRef}
 						id={mainId}
 						tabIndex={-1}
-						className="flex min-h-0 min-w-0 flex-1 flex-col outline-none"
+						className={cn(
+							"flex min-w-0 flex-col outline-none",
+							// as tall as its content when the column around it scrolls
+							hasHero ? "flex-none" : "min-h-0 flex-1",
+						)}
 					>
 						<CollaborationHeaderLayoutContext.Provider
 							value={setConversationColumn}

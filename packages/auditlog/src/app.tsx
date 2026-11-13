@@ -3,9 +3,10 @@ import { Env } from "@semoss/sdk/react";
 import { LoadingScreen, ThemeProvider, Toaster } from "@semoss/ui/next";
 import { Router } from "@/pages";
 
-// use the environment variable to set the module
+// The server writes MODULE into index.html (semoss-env tag, read when the SDK
+// loads) and it always wins; .env, then "/Monolith", cover a page without one.
 Env.update({
-	MODULE: import.meta.env.MODULE || "/Monolith",
+	MODULE: Env.MODULE || import.meta.env.MODULE || "/Monolith",
 });
 
 // Responsive i18n instance: unlike the client, the standalone Audit Log app is NOT

@@ -1,10 +1,4 @@
-import {
-	Brain,
-	FolderOpen,
-	Mail,
-	MessagesSquare,
-	Settings2,
-} from "lucide-react";
+import { Brain, FolderOpen, Settings2 } from "lucide-react";
 import {
 	type KeyboardEvent,
 	type PointerEvent as ReactPointerEvent,
@@ -25,6 +19,8 @@ import {
 	toast,
 	useIsMobile,
 } from "@semoss/ui/next";
+import { OutlookIcon, TeamsIcon } from "@/components/common/app-icons";
+import { agentImageUrl } from "@/features/agents/api/agent-image";
 import { CollaborationHeaderLayoutContext } from "@/features/collaboration/components/collaboration-header.context";
 import { useOptionalCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import {
@@ -32,11 +28,7 @@ import {
 	rememberCommand,
 } from "@/features/collaboration/state/memory";
 import { roomFileLinks } from "@/features/messages/utils/room-file-link";
-import {
-	connectorPanelActions,
-	OUTLOOK_TONE,
-	TEAMS_TONE,
-} from "@/features/room-connectors/connector-panel-actions";
+import { connectorPanelActions } from "@/features/room-connectors/connector-panel-actions";
 import { useRoomConnectors } from "@/features/room-connectors/room-connectors.context";
 import { RoomEmailContext } from "@/features/room-email/room-email.context";
 import {
@@ -48,6 +40,7 @@ import { openToolWorkbenchFiles } from "@/features/tools/open-tool-workbench-fil
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
 import type { Session } from "@/types/session";
 import { useShowCurrentChat } from "../current-chat";
+import { takeFileToShow } from "../room-file-to-show";
 import type { ComposerSubmission, RoomViewProps } from "../types/room";
 import { RoomComposer } from "./room-composer";
 import type { RoomSlashCommand } from "./room-composer-slash-plugin";
@@ -229,6 +222,12 @@ export function RoomWorkspace({
 			}
 		}
 	}, [thread, showToolWorkbench, isMobile, openFile]);
+	// a room opened for a file shows that file at once; the owner asked for it, so on a phone too
+	useEffect(() => {
+		if (!showToolWorkbench) return;
+		const file = takeFileToShow(session.id);
+		if (file) openFile(file.path, file.name);
+	}, [showToolWorkbench, session.id, openFile]);
 	const [resumeSignal, setResumeSignal] = useState(0);
 	// Local memory commands do not enter RoomSession's submission lifecycle.
 	const isLocalMemoryDraft = Boolean(
@@ -359,6 +358,11 @@ export function RoomWorkspace({
 				>
 					<RoomConversation
 						agent={agent}
+						agentImage={
+							session.agentId
+								? agentImageUrl(session.agentId)
+								: undefined
+						}
 						title={session.title}
 						conversationId={session.id}
 						headerTopics={
@@ -450,12 +454,8 @@ export function RoomWorkspace({
 																	? "View email"
 																	: "View Teams chat",
 																icon: roomEmail.hasSourceEmail
-																	? Mail
-																	: MessagesSquare,
-																iconClassName:
-																	roomEmail.hasSourceEmail
-																		? OUTLOOK_TONE
-																		: TEAMS_TONE,
+																	? OutlookIcon
+																	: TeamsIcon,
 																onSelect: () =>
 																	roomEmail.openSource(
 																		actionsTriggerId,

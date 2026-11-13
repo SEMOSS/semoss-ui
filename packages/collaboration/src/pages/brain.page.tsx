@@ -35,8 +35,11 @@ export function BrainPage() {
 	else if (pathname.endsWith("/topics"))
 		content = (
 			<WorkTopics
-				title="Topics"
-				description="What your mail and work are filed under. Open one to see its actions and conversations."
+				settings={{
+					title: "Topics",
+					description:
+						"What your mail and work are filed under. Open one to see its actions and conversations.",
+				}}
 			/>
 		);
 	else content = <BrainReview />;

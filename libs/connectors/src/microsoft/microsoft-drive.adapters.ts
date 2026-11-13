@@ -2,8 +2,10 @@ import {
 	ensureDirectoryPath,
 	type FileExplorerAdapter,
 	type FileExplorerCapabilities,
+	type FileExplorerPrimaryAction,
 	type FileItem,
 } from "@semoss/shared";
+import type { ConnectorViewerProps } from "../core/connector.types";
 import type { ConnectorSaveRequest } from "../core/use-connector-saver";
 import {
 	parseOneDriveFolder,
@@ -14,7 +16,7 @@ import { MICROSOFT_PIXELS } from "./microsoft.pixels";
 import type { MicrosoftDriveItem } from "./microsoft.types";
 
 /** The most items a drive folder, search, or shared list reads. */
-const LIST_LIMIT = 200;
+export const DRIVE_LIST_LIMIT = 200;
 
 /**
  * What a drive offers the file explorer: browsing, and searching when the
@@ -231,6 +233,35 @@ export const getDriveSaveRequest = (
 	};
 };
 
+/** What a host gives a viewer of a Microsoft drive. */
+export interface DriveViewerProps extends ConnectorViewerProps {
+	/**
+	 * The host's own action on a file, for a host that does something else
+	 * with a file than bring it into a chat, such as link it to a record. It
+	 * is the row's button and leads its menu, in place of adding to context
+	 * and saving. Undefined for a file it does not apply to; folders never
+	 * get it.
+	 */
+	getFileAction?: (
+		file: MicrosoftDriveItem,
+	) => FileExplorerPrimaryAction | undefined;
+}
+
+/**
+ * A host's file action as the explorer's row action.
+ *
+ * @param getFileAction - The host's action, when it has one.
+ * @return The row action, which leaves folders out, or undefined.
+ */
+export const getDriveItemAction = (
+	getFileAction: DriveViewerProps["getFileAction"],
+): ((row: FileItem) => FileExplorerPrimaryAction | undefined) | undefined =>
+	getFileAction &&
+	((row) => {
+		const item = getDriveItem(row);
+		return item && !item.isFolder ? getFileAction(item) : undefined;
+	});
+
 /**
  * The user's own OneDrive, browsed by path from its top. A search covers the
  * whole drive and lists each hit under its own path. It is the one drive that
@@ -253,13 +284,13 @@ export const createOneDriveAdapter = (): FileExplorerAdapter => ({
 	browse: (path) =>
 		MICROSOFT_PIXELS.oneDriveListFolder({
 			path: toDrivePath(path),
-			limit: LIST_LIMIT,
+			limit: DRIVE_LIST_LIMIT,
 		}),
 	search: (_path, term) =>
 		MICROSOFT_PIXELS.oneDriveSearch({
 			search: term,
 			scope: "drive",
-			limit: LIST_LIMIT,
+			limit: DRIVE_LIST_LIMIT,
 		}),
 	mapEntries: (raw, path) =>
 		readItems(raw, parseOneDriveFolder).map((item) =>
@@ -318,15 +349,15 @@ export const createOneDriveSharedAdapter = (): FileExplorerAdapter => {
 				? MICROSOFT_PIXELS.oneDriveListFolder({
 						driveId: folder.driveId,
 						itemId: folder.itemId,
-						limit: LIST_LIMIT,
+						limit: DRIVE_LIST_LIMIT,
 					})
-				: MICROSOFT_PIXELS.oneDriveListShared(LIST_LIMIT);
+				: MICROSOFT_PIXELS.oneDriveListShared(DRIVE_LIST_LIMIT);
 		},
 		search: (_path, term) =>
 			MICROSOFT_PIXELS.oneDriveSearch({
 				search: term,
 				scope: "shared",
-				limit: LIST_LIMIT,
+				limit: DRIVE_LIST_LIMIT,
 			}),
 		mapEntries: (raw, path) =>
 			toRows(readItems(raw, parseOneDriveFolder), path),

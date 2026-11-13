@@ -6,25 +6,22 @@ import {
 	readModelUsageLimit,
 } from "@semoss/sdk/react";
 
+/**
+ * Ask the server to email a password reset link. The server builds the link and
+ * the subject itself, and answers the same whether or not an account exists for
+ * the email.
+ *
+ * @param email - The account's email.
+ * @param type - The login type whose password to reset.
+ * @returns The server's answer, with the message to show the user.
+ */
 export const setupResetPassword = async (
 	email: string,
 	type: "NATIVE" | "LDAP" | "LINOTP",
-	subject: string,
-	url?: string,
 ): Promise<{ success: boolean; message?: string }> => {
-	const postData: Record<string, string> = {
-		email: email,
-		type: type,
-		subject: subject,
-	};
-
-	if (url) {
-		postData.url = url;
-	}
-
 	const response = await post<{ success: boolean; message?: string }>(
 		`${Env.MODULE}/api/auth/user/setupResetPassword`,
-		postData,
+		{ email, type },
 	).catch((error) => {
 		const errorMessage =
 			error?.response?.data?.errorMessage ||

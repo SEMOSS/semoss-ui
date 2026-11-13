@@ -1,4 +1,4 @@
-import { act } from "react";
+import { act, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { FileExplorerAdapter } from "@semoss/shared";
@@ -37,7 +37,13 @@ const saver = { saveLabel: "Save", isBusy: () => false, save: vi.fn() };
 let root: Root;
 let container: HTMLDivElement;
 
-const render = async (adapter: FileExplorerAdapter) => {
+const render = async (
+	adapter: FileExplorerAdapter,
+	host: Pick<
+		ComponentProps<typeof ConnectorFileExplorer>,
+		"isVisible" | "refreshRequestId" | "listingNote"
+	> = {},
+) => {
 	await act(async () =>
 		root.render(
 			<ConnectorFileExplorer
@@ -46,9 +52,17 @@ const render = async (adapter: FileExplorerAdapter) => {
 				saver={saver}
 				getSaveRequest={() => undefined}
 				getWebUrl={() => undefined}
+				{...host}
 			/>,
 		),
 	);
+};
+// the clock the explorer reads to tell how old its listing is
+let now = 0;
+const comeBackToTheWindow = async () => {
+	await act(async () => {
+		window.dispatchEvent(new Event("focus"));
+	});
 };
 const find = (testId: string) =>
 	document.querySelector<HTMLElement>(`[data-testid="${testId}"]`);
@@ -82,6 +96,8 @@ beforeEach(() => {
 			})),
 		}));
 	sdk.refresh.mockReset();
+	now = 1_000_000;
+	vi.spyOn(Date, "now").mockImplementation(() => now);
 	container = document.createElement("div");
 	document.body.append(container);
 	root = createRoot(container);
@@ -90,6 +106,7 @@ afterEach(async () => {
 	await act(async () => root.unmount());
 	container.remove();
 	vi.unstubAllGlobals();
+	vi.restoreAllMocks();
 });
 
 it("creates a new file in the user's own drive, not in the chat's files", async () => {
@@ -141,4 +158,57 @@ it("offers no New for a drive that only browses", async () => {
 	await render(shared);
 	expect(find("file-explorer")).not.toBeNull();
 	expect(find("file-explorer-new-button")).toBeNull();
+});
+
+it("reads the drive again when the user comes back to the window, once the listing is half a minute old", async () => {
+	await render(mine);
+
+	now += 29_000;
+	await comeBackToTheWindow();
+	expect(sdk.refresh).not.toHaveBeenCalled();
+
+	now += 2_000;
+	await comeBackToTheWindow();
+	expect(sdk.refresh).toHaveBeenCalledTimes(1);
+
+	// flicking between windows right after does not ask the drive again
+	await comeBackToTheWindow();
+	expect(sdk.refresh).toHaveBeenCalledTimes(1);
+});
+
+it("reads the drive again when its tab is shown again, and never while it is hidden", async () => {
+	await render(mine, { isVisible: false });
+	now += 60_000;
+	await comeBackToTheWindow();
+	expect(sdk.refresh).not.toHaveBeenCalled();
+
+	await render(mine, { isVisible: true });
+	expect(sdk.refresh).toHaveBeenCalledTimes(1);
+});
+
+it("reads the drive again each time the host says it may have changed", async () => {
+	await render(mine, { refreshRequestId: 0 });
+	expect(sdk.refresh).not.toHaveBeenCalled();
+
+	await render(mine, { refreshRequestId: 1 });
+	expect(sdk.refresh).toHaveBeenCalledTimes(1);
+
+	// another render with the same request is not another request
+	await render(mine, { refreshRequestId: 1 });
+	expect(sdk.refresh).toHaveBeenCalledTimes(1);
+
+	await render(mine, { refreshRequestId: 2 });
+	expect(sdk.refresh).toHaveBeenCalledTimes(2);
+});
+
+it("shows the host's note under the listing it is about", async () => {
+	await render(mine, {
+		listingNote: (items, path) => `${items.length} listed in ${path}`,
+	});
+	expect(find("file-explorer-listing-note")?.textContent).toBe(
+		"0 listed in /",
+	);
+
+	await render(mine, { listingNote: () => undefined });
+	expect(find("file-explorer-listing-note")).toBeNull();
 });

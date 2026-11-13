@@ -1,4 +1,4 @@
-import { CornerDownRight, MessagesSquare, Undo2, X } from "lucide-react";
+import { CornerDownRight, Undo2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
 	Badge,
@@ -13,6 +13,7 @@ import {
 	P,
 	Spinner,
 } from "@semoss/ui/next";
+import { TeamsIcon } from "@/components/common/app-icons";
 import type { InsightActions } from "@/lib/pixel";
 import { Failure, message } from "./onboarding-ui";
 import {
@@ -314,7 +315,7 @@ export function TopicConversationsPanel({
 										variant="secondary"
 										className="shrink-0 gap-1 font-normal"
 									>
-										<MessagesSquare
+										<TeamsIcon
 											className="size-3"
 											aria-hidden="true"
 										/>

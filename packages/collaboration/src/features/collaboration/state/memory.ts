@@ -25,12 +25,12 @@ export function memoriesAbout(memories: Memory[], ref: MemoryRef): Memory[] {
 	);
 }
 
-/** Proposed by Brain from a finished chat (or a migrated draft); not used until accepted. */
+/** A change Brain proposes to a memory the owner wrote or confirmed (or a migrated draft); not used until accepted. */
 export function suggestedMemories(memories: Memory[]): Memory[] {
 	return memories.filter((memory) => memory.state === "suggested");
 }
 
-/** Saved by the assistant and in use, but not confirmed by the owner. */
+/** Saved by the assistant, in a chat or from one in the background, and in use, but not confirmed by the owner. */
 export function learnedMemories(memories: Memory[]): Memory[] {
 	return memories.filter(
 		(memory) => memory.state === "active" && !memory.confirmed,
@@ -66,13 +66,8 @@ export function refLabel(state: CollaborationState, ref: MemoryRef): string {
 /** Who wrote it, in the words the lists use. */
 export function originLabel(memory: Memory): string {
 	if (memory.origin === "you") return "You";
-	if (memory.origin === "assistant")
-		return memory.confirmed
-			? "Learned in chat, confirmed"
-			: "Learned in chat";
-	return memory.state === "suggested"
-		? "Assistant suggestion"
-		: "Suggested by the assistant";
+	if (memory.state === "suggested") return "Assistant suggestion";
+	return memory.confirmed ? "Learned in chat, confirmed" : "Learned in chat";
 }
 
 /** Mirrors BrainMergeTopics: memories about the source are about the target, one link each. */
