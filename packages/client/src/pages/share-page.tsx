@@ -30,7 +30,7 @@ export const SharePage = observer(() => {
 	useEffect(() => {
 		setInsightId(null);
 
-		runPixel(`SetContext("${project.project_id}")`, "new")
+		runPixel(`LoadApp("${project.project_id}")`, "new")
 			.then((response) => {
 				if (!SHAREABLE_TYPES.has(project.project_type)) {
 					toast.error("This project type cannot be shared.");
