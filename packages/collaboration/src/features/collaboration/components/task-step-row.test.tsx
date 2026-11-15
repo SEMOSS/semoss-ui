@@ -11,6 +11,8 @@ const step: TaskStep = {
 	assigneeId: "",
 	assigneeName: "",
 	closedBy: "",
+	closedText: "",
+	closedSubject: "",
 };
 
 describe("TaskStepRow", () => {
@@ -38,7 +40,13 @@ describe("TaskStepRow", () => {
 		rerender(
 			<ul>
 				<TaskStepRow
-					step={{ ...step, status: "done", closedBy: "c-12" }}
+					step={{
+						...step,
+						status: "done",
+						closedBy: "c-12",
+						closedText: "Sent Kira the deck",
+						closedSubject: "Deck for Friday",
+					}}
 					state="done"
 					selfId="me"
 					onChange={onChange}
@@ -46,7 +54,11 @@ describe("TaskStepRow", () => {
 			</ul>,
 		);
 		// a step closed from mail says so, since the owner did not close it
-		expect(screen.getByText(/Marked done from a message/)).toBeTruthy();
+		expect(
+			screen.getByText(
+				'Marked done from "Deck for Friday": Sent Kira the deck. Reopen it if that is wrong.',
+			),
+		).toBeTruthy();
 		await user.click(
 			screen.getByRole("button", { name: "Reopen: Send Kira the deck" }),
 		);

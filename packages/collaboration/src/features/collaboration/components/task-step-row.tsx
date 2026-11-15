@@ -22,6 +22,9 @@ export interface TaskStep {
 	assigneeName: string;
 	/** Who finished it: "owner", or the message that said it was done. */
 	closedBy: string;
+	/** What that message said, and the conversation it was on; "" when the owner finished it. */
+	closedText: string;
+	closedSubject: string;
 }
 
 interface TaskStepRowProps {
@@ -136,8 +139,8 @@ export function TaskStepRow({
 				{state === "done" &&
 				step.closedBy &&
 				step.closedBy !== "owner" ? (
-					<span className="mt-1 block text-muted-foreground text-xs">
-						Marked done from a message. Reopen it if that is wrong.
+					<span className="mt-1 block break-words text-muted-foreground text-xs">
+						{`Marked done from ${step.closedSubject ? `"${step.closedSubject}"` : "a message"}${step.closedText ? `: ${step.closedText}` : ""}. Reopen it if that is wrong.`}
 					</span>
 				) : null}
 			</div>

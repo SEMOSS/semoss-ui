@@ -64,6 +64,8 @@ async function loadTask(
 			assigneeId: str(s.assigneeId),
 			assigneeName: str(s.assigneeName),
 			closedBy: str(s.closedBy),
+			closedText: str(s.closedText),
+			closedSubject: str(s.closedSubject),
 		})),
 		threads: rows(work?.threads).map((t) => ({
 			id: str(t.threadId),
