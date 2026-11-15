@@ -1,6 +1,18 @@
 import { FolderPlus, MessagesSquare, UserRoundPlus } from "lucide-react";
+import { useState } from "react";
 import { Link } from "react-router";
-import { Badge, Button, cn, P, Small } from "@semoss/ui/next";
+import {
+	Badge,
+	Button,
+	cn,
+	P,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	Small,
+} from "@semoss/ui/next";
 import { topicChoiceCandidates } from "../state/collaboration.selectors";
 import type { ReviewEntry } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
@@ -30,6 +42,17 @@ export function ReviewCard({
 			: review.kind === "add_person"
 				? "Person"
 				: "Topic choice";
+	// a new topic can instead go into a topic that is already in use
+	const mergeTargets =
+		review.kind === "new_topic"
+			? state.topics.filter(
+					(topic) =>
+						topic.status === "active" && topic.id !== review.refId,
+				)
+			: [];
+	const [mergeTarget, setMergeTarget] = useState(
+		review.candidate?.mergeCandidate ?? "",
+	);
 	const actionClassName = compact ? "h-7 px-2.5" : undefined;
 	const choices =
 		review.kind === "topic_choice" && thread
@@ -186,24 +209,45 @@ export function ReviewCard({
 									: "Add person"}
 							</Button>
 						)}
-						{review.candidate?.mergeCandidate && (
-							<Button
-								variant="outline"
-								size="sm"
-								className={cn(actionClassName, "font-normal")}
-								aria-label="Merge into existing topic"
-								onClick={() =>
-									resolve(
-										"merge",
-										review.candidate?.mergeCandidate ??
-											undefined,
-									)
-								}
-							>
-								{compact
-									? "Merge"
-									: "Merge into existing topic"}
-							</Button>
+						{mergeTargets.length > 0 && (
+							<div className="flex items-center gap-2">
+								<Select
+									value={mergeTarget}
+									onValueChange={setMergeTarget}
+								>
+									<SelectTrigger
+										aria-label="Existing topic"
+										size="sm"
+										className="w-48"
+									>
+										<SelectValue placeholder="An existing topic" />
+									</SelectTrigger>
+									<SelectContent>
+										{mergeTargets.map((topic) => (
+											<SelectItem
+												key={topic.id}
+												value={topic.id}
+											>
+												{topic.short || topic.name}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+								<Button
+									variant="outline"
+									size="sm"
+									className={cn(
+										actionClassName,
+										"font-normal",
+									)}
+									disabled={!mergeTarget}
+									onClick={() =>
+										resolve("merge", mergeTarget)
+									}
+								>
+									Add to an existing topic
+								</Button>
+							</div>
 						)}
 						<Button
 							variant="ghost"
@@ -222,6 +266,28 @@ export function ReviewCard({
 						</Button>
 					</div>
 				)}
+				{review.status !== "open" &&
+					(review.kind === "topic_choice" ||
+						review.kind === "add_person") && (
+						<div className="pt-1">
+							<Button
+								variant="ghost"
+								size="sm"
+								className={cn(
+									actionClassName,
+									"font-normal text-muted-foreground",
+								)}
+								onClick={() =>
+									dispatch({
+										type: "review.reopen",
+										reviewId: review.id,
+									})
+								}
+							>
+								Undo
+							</Button>
+						</div>
+					)}
 			</div>
 		</article>
 	);

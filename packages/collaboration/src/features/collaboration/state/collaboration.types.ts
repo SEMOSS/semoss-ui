@@ -279,6 +279,10 @@ export interface Settings {
 	syncEveryMinutes: number;
 	/** Read-only: the server has an image model set for Digital Twin avatar options. */
 	avatarGeneration: boolean;
+	/** Hours between looks for new topics in mail no topic holds: 0 never, 24 daily, 72 every 3 days, 168 weekly. */
+	newTopicsEveryHours: number;
+	/** Whether a message in one conversation of a topic may close a step from another. */
+	closeAcrossThreads: boolean;
 	version: number;
 }
 
@@ -551,6 +555,7 @@ export type CollaborationCommand =
 			changes: Partial<Profile>;
 			target?: "sample" | "live";
 	  }
+	| { type: "review.reopen"; reviewId: string }
 	| { type: "settings.save"; changes: Partial<Settings> }
 	| { type: "rule.add"; rule: Omit<Rule, "id" | "createdBy" | "createdAt"> }
 	| { type: "rule.remove"; ruleId: string }

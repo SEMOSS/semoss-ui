@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, expect, it } from "vitest";
 import { createInitialCollaborationState } from "../state/collaboration.fixtures";
@@ -72,4 +73,73 @@ it("offers both candidates, Both and Neither, and Both confirms only them", () =
 	expect(screen.getByRole("status")).toHaveTextContent(
 		/^t-geng:confirmed,t-gsales:confirmed,t-trip:suggested$/,
 	);
+});
+
+function Topics() {
+	const { state } = useCollaborationSession();
+	const review = state.reviews.find((r) => r.id === "r1");
+	return (
+		<output data-testid="topics">
+			{`${state.topics.some((t) => t.id === "st-gsec")}:${review?.status}:${
+				state.threads.filter((t) =>
+					t.topicLinks.some((l) => l.topicId === "t-gsales"),
+				).length > 0
+			}`}
+		</output>
+	);
+}
+
+it("adds a new topic to an existing topic picked from the list", async () => {
+	const user = userEvent.setup();
+	const state = createInitialCollaborationState();
+	const review = state.reviews.find((r) => r.id === "r1");
+	if (!review) throw new Error("Missing new topic review");
+	// no suggested match, so the owner has to pick
+	if (review.candidate) review.candidate.mergeCandidate = null;
+	for (const topic of state.topics) topic.status = "active";
+	render(
+		<CollaborationSessionProvider initialState={state}>
+			<MemoryRouter>
+				<ReviewCard review={review} />
+				<Topics />
+			</MemoryRouter>
+		</CollaborationSessionProvider>,
+	);
+	const add = screen.getByRole("button", {
+		name: "Add to an existing topic",
+	});
+	expect(add).toBeDisabled();
+	const picker = screen.getByRole("combobox", { name: "Existing topic" });
+	picker.focus();
+	await user.keyboard("{Enter}");
+	await user.click(await screen.findByRole("option", { name: /Sales/ }));
+	expect(add).toBeEnabled();
+	await user.click(add);
+	// the question is answered and the new topic is gone, merged into the chosen one
+	expect(screen.getByTestId("topics")).toHaveTextContent(/^false:accepted:/);
+});
+
+it("undoes an answered topic question", async () => {
+	const state = createInitialCollaborationState();
+	const review = state.reviews.find((r) => r.id === "r2");
+	if (!review) throw new Error("Missing topic choice review");
+	review.status = "dismissed";
+	function Status() {
+		const { state: current } = useCollaborationSession();
+		return (
+			<output>
+				{current.reviews.find((r) => r.id === "r2")?.status}
+			</output>
+		);
+	}
+	render(
+		<CollaborationSessionProvider initialState={state}>
+			<MemoryRouter>
+				<ReviewCard review={review} />
+				<Status />
+			</MemoryRouter>
+		</CollaborationSessionProvider>,
+	);
+	fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+	expect(screen.getByRole("status")).toHaveTextContent("open");
 });

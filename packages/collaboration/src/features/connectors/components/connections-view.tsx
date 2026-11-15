@@ -28,6 +28,7 @@ import {
 	type Connection,
 	forgetBackgroundAccess,
 	getConnection,
+	lookForNewTopics,
 	saveBackgroundAccess,
 } from "../api/connection";
 import { connectMicrosoft } from "../api/microsoft";
@@ -98,6 +99,14 @@ const SYNC_CHOICES = [
 	{ minutes: 0, label: "Off" },
 ] as const;
 
+// how often new topics may be proposed from mail that fits none; the server accepts only these hours
+const NEW_TOPIC_CHOICES = [
+	{ hours: 0, label: "Never" },
+	{ hours: 24, label: "Daily" },
+	{ hours: 72, label: "Every 3 days" },
+	{ hours: 168, label: "Weekly" },
+] as const;
+
 /** One row: what it is, its state, and the one action that changes it. */
 function Row({
 	icon: Icon,
@@ -144,9 +153,13 @@ export function ConnectionsView() {
 	const { actions } = useInsight();
 	const { state, dispatch } = useCollaborationSession();
 	const syncTitleId = useId();
+	const newTopicsTitleId = useId();
+	const acrossTitleId = useId();
 	const [connection, setConnection] = useState<Connection | null>(null);
 	const [busy, setBusy] = useState<string | null>(null);
 	const [error, setError] = useState("");
+	const [looking, setLooking] = useState(false);
+	const [lookResult, setLookResult] = useState("");
 
 	const load = useCallback(async () => {
 		setError("");
@@ -182,7 +195,28 @@ export function ConnectionsView() {
 	const hasBackgroundAccess =
 		background?.saved === true && background.renewable;
 	const syncEveryMinutes = state.settings.syncEveryMinutes;
+	const { newTopicsEveryHours, closeAcrossThreads } = state.settings;
 	const enabled = state.settings.sourcesJson;
+
+	async function lookNow() {
+		setLooking(true);
+		setLookResult("");
+		setError("");
+		try {
+			const result = await lookForNewTopics(actions);
+			setLookResult(
+				result.error
+					? "Could not look for new topics right now. Try again later."
+					: result.found === 0
+						? "Nothing new. No recent conversation points to a new topic."
+						: `Found ${result.found} new ${result.found === 1 ? "topic" : "topics"}. ${result.found === 1 ? "A question was" : "Questions were"} added to Review.`,
+			);
+		} catch (cause: unknown) {
+			setError(message(cause, "Could not look for new topics."));
+		} finally {
+			setLooking(false);
+		}
+	}
 
 	function toggleSource(id: string, on: boolean) {
 		if (
@@ -457,6 +491,77 @@ export function ConnectionsView() {
 									))}
 								</SelectContent>
 							</Select>
+						}
+					/>
+					<Row
+						title="Suggest new topics"
+						titleId={newTopicsTitleId}
+						detail="How often new topics may be proposed from incoming mail that fits no topic."
+						action={
+							<div className="flex flex-wrap items-center gap-2">
+								<Select
+									value={String(newTopicsEveryHours)}
+									onValueChange={(value) =>
+										dispatch({
+											type: "settings.save",
+											changes: {
+												newTopicsEveryHours:
+													Number(value),
+											},
+										})
+									}
+								>
+									<SelectTrigger
+										aria-labelledby={newTopicsTitleId}
+										className="w-44"
+									>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										{NEW_TOPIC_CHOICES.map((choice) => (
+											<SelectItem
+												key={choice.hours}
+												value={String(choice.hours)}
+											>
+												{choice.label}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									disabled={looking}
+									onClick={() => void lookNow()}
+								>
+									{looking
+										? "Looking..."
+										: "Look for new topics now"}
+								</Button>
+							</div>
+						}
+					/>
+					{lookResult && (
+						<output className="block pb-3 text-muted-foreground text-sm">
+							{lookResult}
+						</output>
+					)}
+					<Row
+						title="Close steps across conversations"
+						titleId={acrossTitleId}
+						detail="A message in one conversation of a topic may mark a step from another conversation done. Each closed step shows the message that closed it and can be reopened."
+						action={
+							<Switch
+								aria-labelledby={acrossTitleId}
+								checked={closeAcrossThreads}
+								onCheckedChange={(next) =>
+									dispatch({
+										type: "settings.save",
+										changes: { closeAcrossThreads: next },
+									})
+								}
+							/>
 						}
 					/>
 				</div>

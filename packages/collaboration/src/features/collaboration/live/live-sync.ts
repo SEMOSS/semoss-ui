@@ -155,6 +155,39 @@ function planChange(
 			);
 		return plan;
 	}
+	// a new topic merged into an existing one: the answer keeps the new topic, then the merge moves its
+	// conversations, people, and notes to the chosen topic and removes it
+	const reviewMerges = change.commands.filter(
+		(
+			command,
+		): command is Extract<
+			CollaborationCommand,
+			{ type: "review.resolve" }
+		> =>
+			command.type === "review.resolve" &&
+			command.decision === "merge" &&
+			!!command.targetTopicId,
+	);
+	if (reviewMerges.length) {
+		for (const merge of reviewMerges) {
+			const review = prev.reviews.find(
+				(candidate) => candidate.id === merge.reviewId,
+			);
+			if (!review?.refId || !merge.targetTopicId) continue;
+			plan.statements.push(
+				pixel("BrainResolveReview", {
+					reviewId: review.id,
+					action: "merge",
+					paramValues: { topicId: merge.targetTopicId },
+				}),
+				pixel("BrainMergeTopics", {
+					sourceTopicId: id(review.refId),
+					targetTopicId: id(merge.targetTopicId),
+				}),
+			);
+		}
+		return plan;
+	}
 	// a delete drops the topic's links, people, notes, and rules on the server in one call
 	const deletes = change.commands.filter(
 		(
@@ -494,6 +527,12 @@ function planReviews(
 	_id: (v: string) => string,
 ) {
 	const before = byId(prev.reviews);
+	// undo: the question goes back to open
+	for (const command of commands)
+		if (command.type === "review.reopen")
+			plan.statements.push(
+				pixel("BrainReopenReview", { reviewId: command.reviewId }),
+			);
 	for (const review of next.reviews) {
 		const old = before.get(review.id);
 		if (!old || old.status === review.status || review.status === "open")
@@ -632,6 +671,8 @@ const SETTINGS_FIELDS = [
 	"draftSignatureHtml",
 	"draftSignatureOn",
 	"syncEveryMinutes",
+	"newTopicsEveryHours",
+	"closeAcrossThreads",
 ] as const;
 
 /**

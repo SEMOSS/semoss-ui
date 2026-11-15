@@ -66,6 +66,67 @@ it("a background sync choice saves only that setting", async () => {
 	]);
 });
 
+it("merging a new topic into an existing one keeps it, then merges it", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	const merge = step({
+		type: "review.resolve",
+		reviewId: "r1",
+		decision: "merge",
+		targetTopicId: "t-gsales",
+	});
+	sync(merge);
+	await sync.settled();
+	expect(sent).toEqual([
+		'BrainResolveReview(reviewId=["r1"], action=["merge"], paramValues=[{"topicId":"t-gsales"}]);',
+		'BrainMergeTopics(sourceTopicId=["st-gsec"], targetTopicId=["t-gsales"]);',
+	]);
+	expect(merge.next.topics.some((topic) => topic.id === "st-gsec")).toBe(
+		false,
+	);
+	expect(merge.next.reviews.find((r) => r.id === "r1")?.status).toBe(
+		"accepted",
+	);
+});
+
+it("undoing an answered question sends BrainReopenReview", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	const answered = step({
+		type: "review.resolve",
+		reviewId: "r2",
+		decision: "dismiss",
+	});
+	const undo = {
+		previous: answered.next,
+		next: collaborationReducer(
+			answered.next,
+			{ type: "review.reopen", reviewId: "r2" },
+			NOW,
+		),
+		commands: [{ type: "review.reopen", reviewId: "r2" } as const],
+	};
+	sync(undo);
+	await sync.settled();
+	expect(sent).toEqual(['BrainReopenReview(reviewId=["r2"]);']);
+	expect(undo.next.reviews.find((r) => r.id === "r2")?.status).toBe("open");
+});
+
+it("a new-topic choice and the closing setting save with their keys", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	sync(
+		step({
+			type: "settings.save",
+			changes: { newTopicsEveryHours: 72, closeAcrossThreads: false },
+		}),
+	);
+	await sync.settled();
+	expect(sent).toEqual([
+		'BrainSaveSettings(settings=[{"newTopicsEveryHours":72,"closeAcrossThreads":false}]);',
+	]);
+});
+
 it("a rename saves the changed topic name", async () => {
 	const { actions, sent } = fakeActions();
 	const sync = createLiveSync(actions, vi.fn());

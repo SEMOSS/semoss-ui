@@ -622,7 +622,8 @@ export function collaborationReducer(
 					!state.topics.some(
 						(topic) =>
 							topic.id === command.targetTopicId &&
-							topic.isSample,
+							topic.id !== review.refId &&
+							topic.status === "active",
 					)
 				)
 					break;
@@ -697,6 +698,28 @@ export function collaborationReducer(
 			}
 			review.status = "accepted";
 			review.resolvedAt = now;
+			break;
+		}
+		case "review.reopen": {
+			const review = state.reviews.find(
+				(candidate) => candidate.id === command.reviewId,
+			);
+			// a new topic's answer cannot be taken back: a no removed the topic, a yes made it a real one
+			if (
+				!review ||
+				review.status === "open" ||
+				review.kind === "new_topic"
+			)
+				break;
+			review.status = "open";
+			review.resolvedAt = undefined;
+			const thread =
+				review.kind === "topic_choice"
+					? state.threads.find(
+							(candidate) => candidate.id === review.refId,
+						)
+					: undefined;
+			if (thread) thread.needsTopicChoice = true;
 			break;
 		}
 		case "profile.save": {

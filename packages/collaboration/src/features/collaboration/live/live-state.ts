@@ -178,6 +178,8 @@ function mapSettings(row: Row): Settings {
 		syncEveryMinutes: Number(row.syncEveryMinutes ?? 15),
 		// older servers send none and cannot make avatars
 		avatarGeneration: row.avatarGeneration === true,
+		newTopicsEveryHours: Number(row.newTopicsEveryHours ?? 24),
+		closeAcrossThreads: row.closeAcrossThreads !== false,
 		version: Number(row.version ?? 0),
 	};
 }
