@@ -45,7 +45,9 @@ interface TaskView {
 
 const str = (v: unknown): string => (typeof v === "string" ? v : "");
 const inboxOf = (v: unknown): StepInbox | undefined =>
-	v === "needs_me" || v === "waiting" || v === "fyi" ? v : undefined;
+	v === "needs_me" || v === "waiting" || v === "fyi" || v === "outside"
+		? v
+		: undefined;
 const rows = (v: unknown): Row[] => (Array.isArray(v) ? (v as Row[]) : []);
 
 async function loadTask(

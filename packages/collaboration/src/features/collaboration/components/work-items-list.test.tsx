@@ -310,7 +310,7 @@ it("puts items from filed-away conversations under 'Also asked of you', and coun
 	expect(also.getByText("2")).toBeVisible();
 	expect(
 		also.getByText(
-			"From conversations filed as for your information or waiting on someone else.",
+			"From conversations filed as for your information or waiting on someone else, or from people you have not worked with.",
 		),
 	).toBeVisible();
 	// the items other people drive are not in either group

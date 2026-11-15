@@ -15,7 +15,7 @@ import { PersonAvatar } from "./person-avatar";
 import { dueLabel } from "./work-items-list";
 
 /** What the inbox decided about the conversation a step came from. */
-export type StepInbox = "needs_me" | "waiting" | "fyi";
+export type StepInbox = "needs_me" | "waiting" | "fyi" | "outside";
 
 /** One step of a work item, as the task view shows it. */
 export interface TaskStep {
@@ -39,6 +39,7 @@ export interface TaskStep {
 const INBOX_NOTE: Partial<Record<StepInbox, string>> = {
 	fyi: "From a conversation filed as for your information",
 	waiting: "From a conversation where you are waiting on someone else",
+	outside: "From someone you have not worked with before",
 };
 
 interface TaskStepRowProps {

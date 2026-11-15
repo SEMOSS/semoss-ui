@@ -597,8 +597,9 @@ function ReviewList({
 											{item.mine ? (
 												item.needsYou ? null : (
 													<span>
-														Filed as for your
-														information or waiting
+														Set aside: for your
+														information, waiting, or
+														from someone new
 													</span>
 												)
 											) : (
@@ -1097,7 +1098,7 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 													{groupHeading(
 														"Also asked of you",
 														shownAlsoAsked.length,
-														"From conversations filed as for your information or waiting on someone else.",
+														"From conversations filed as for your information or waiting on someone else, or from people you have not worked with.",
 													)}
 													{rows(
 														shownAlsoAsked,
