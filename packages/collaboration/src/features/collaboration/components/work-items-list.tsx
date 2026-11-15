@@ -32,6 +32,7 @@ import {
 	DropdownMenuLabel,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
+	H3,
 	P,
 	Progress,
 	Select,
@@ -52,7 +53,10 @@ import { givenFirst } from "@/lib/person-name";
 import { pixel } from "@/lib/pixel";
 import { roomPath } from "@/lib/workspace-paths";
 import { localDue, runBatch } from "../live/live-state";
-import { useCollaborationSession } from "../state/collaboration-session.context";
+import {
+	useCollaborationSession,
+	useWorkChanged,
+} from "../state/collaboration-session.context";
 import { CollaborationHeroHeader } from "./collaboration-hero-header";
 import { CollaborationHeroPage } from "./collaboration-hero-page";
 import { NewWorkItemDialog } from "./new-work-item-dialog";
@@ -80,6 +84,8 @@ interface Item {
 	title: string;
 	proposed: boolean;
 	mine: boolean;
+	/** The owner has an open step that is not from a conversation filed as for their information or waiting on someone else. */
+	needsYou: boolean;
 	topic?: string;
 	topicId?: string;
 	roomId?: string;
@@ -111,6 +117,8 @@ function toItem(row: Row): Item {
 		title: str(row.title),
 		proposed: str(row.state) === "proposed",
 		mine: row.mine === true,
+		// an older server does not say, so every item of the owner's needs them
+		needsYou: row.needsYou !== false,
 		topic: primary ? str(primary.name) : undefined,
 		topicId: primary ? str(primary.id) : undefined,
 		roomId: str(row.roomId) || undefined,
@@ -155,6 +163,10 @@ export function useWorkItems() {
 	const [items, setItems] = useState<Item[] | null>(null);
 	const [selfId, setSelfId] = useState("");
 	const [error, setError] = useState("");
+	const { workVersion, markWorkChanged } = useWorkChanged();
+	// the version this list's own change made, whose reload it has already done
+	const ownVersion = useRef(-1);
+	const seenVersion = useRef(workVersion);
 
 	const load = useCallback(async () => {
 		try {
@@ -170,19 +182,25 @@ export function useWorkItems() {
 	}, [actions]);
 
 	useEffect(() => {
+		// another view changed work: read the list again
+		const isNewVersion = seenVersion.current !== workVersion;
+		seenVersion.current = workVersion;
+		if (isNewVersion && ownVersion.current === workVersion) return;
 		void load();
-	}, [load]);
+	}, [load, workVersion]);
 
 	const run = useCallback(
 		async (statement: string) => {
 			try {
 				await runBatch(actions, [statement]);
 				await load();
+				// the cards and other lists read their own copy of work
+				ownVersion.current = markWorkChanged();
 			} catch (cause) {
 				setError(errorText(cause));
 			}
 		},
-		[actions, load],
+		[actions, load, markWorkChanged],
 	);
 
 	const isMine = useCallback(
@@ -752,14 +770,18 @@ function ReviewList({
 export function split(items: Item[]) {
 	const kept = items.filter((i) => !i.proposed);
 	const proposed = items.filter((i) => i.proposed);
+	const mine = kept.filter((i) => i.mine);
 	return {
+		// the owner's items in two groups, each in the owner's order
+		needsYou: mine.filter((i) => i.needsYou),
+		alsoAsked: mine.filter((i) => !i.needsYou),
 		// the owner's own first, then the rest someone else is driving
 		review: [
 			...proposed.filter((i) => i.mine),
 			...proposed.filter((i) => !i.mine),
 		],
 		proposed,
-		mine: kept.filter((i) => i.mine),
+		mine,
 		others: kept.filter((i) => !i.mine),
 	};
 }
@@ -806,7 +828,8 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 			</output>
 		);
 	}
-	const { review, proposed, mine, others } = split(items);
+	const { review, proposed, mine, others, needsYou, alsoAsked } =
+		split(items);
 
 	if (reviewing) {
 		return (
@@ -828,8 +851,15 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 
 	const withNext = mine.filter((item) => mineNext(item, isMine));
 	const waiting = mine.filter((item) => waitingOn(item, isMine));
-	const shown =
-		view === "next" ? withNext : view === "waiting" ? waiting : mine;
+	/** The part of a group the chosen tab shows. */
+	const inView = (group: Item[]) =>
+		view === "next"
+			? group.filter((item) => mineNext(item, isMine))
+			: view === "waiting"
+				? group.filter((item) => waitingOn(item, isMine))
+				: group;
+	const shownNeedsYou = inView(needsYou);
+	const shownAlsoAsked = inView(alsoAsked);
 	const waits = mine.flatMap((item) =>
 		item.openSteps
 			.filter((step) => !isMine(step))
@@ -870,6 +900,60 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 			pixel("WorkReorderItems", { taskIds: order.map((i) => i.id) }),
 		);
 	};
+
+	/** A group's heading with its count, and a line saying what it is when it needs one. */
+	const groupHeading = (title: string, count: number, note?: string) => (
+		<div className="pt-4">
+			<div className="flex items-center gap-3">
+				<H3 className="text-base leading-tight">{title}</H3>
+				<span className="rounded-md bg-muted px-2 py-0.5 font-medium text-muted-foreground text-sm tabular-nums">
+					{count}
+				</span>
+			</div>
+			{note ? (
+				<P className="mt-1 text-muted-foreground text-sm">{note}</P>
+			) : null}
+		</div>
+	);
+	/** One group's rows, which drag and move inside the group. */
+	const rows = (groupRows: Item[], label: string) => (
+		<ul aria-label={label} className="divide-y divide-border">
+			{groupRows.map((item, index) => {
+				const before = groupRows[index - 1];
+				const after = groupRows[index + 1];
+				return (
+					<ItemRow
+						key={item.id}
+						item={item}
+						isMine={isMine}
+						showTopic={!sharedTopic}
+						onDragStart={() => {
+							setDragId(item.id);
+							dragFrom.current = JSON.stringify(
+								mine.map((i) => i.id),
+							);
+						}}
+						onDragOver={() => {
+							// over itself nothing moves, and this fires many times a second
+							if (
+								dragId &&
+								dragId !== item.id &&
+								groupRows.some((row) => row.id === dragId)
+							)
+								show(placed(mine, dragId, item.id));
+						}}
+						onDragEnd={saveOrder}
+						onMoveUp={
+							before ? () => move(item.id, before.id) : undefined
+						}
+						onMoveDown={
+							after ? () => move(item.id, after.id) : undefined
+						}
+					/>
+				);
+			})}
+		</ul>
+	);
 
 	return (
 		<>
@@ -976,68 +1060,43 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 									</span>
 								</div>
 								<TabsContent value={view}>
-									{shown.length ? (
-										<ul
-											aria-label="Your work items"
-											className="divide-y divide-border"
-										>
-											{shown.map((item, index) => {
-												const before = shown[index - 1];
-												const after = shown[index + 1];
-												return (
-													<ItemRow
-														key={item.id}
-														item={item}
-														isMine={isMine}
-														showTopic={!sharedTopic}
-														onDragStart={() => {
-															setDragId(item.id);
-															dragFrom.current =
-																JSON.stringify(
-																	mine.map(
-																		(i) =>
-																			i.id,
-																	),
-																);
-														}}
-														onDragOver={() => {
-															// over itself nothing moves, and this fires many times a second
-															if (
-																dragId &&
-																dragId !==
-																	item.id
-															)
-																show(
-																	placed(
-																		mine,
-																		dragId,
-																		item.id,
-																	),
-																);
-														}}
-														onDragEnd={saveOrder}
-														onMoveUp={
-															before
-																? () =>
-																		move(
-																			item.id,
-																			before.id,
-																		)
-																: undefined
-														}
-														onMoveDown={
-															after
-																? () =>
-																		move(
-																			item.id,
-																			after.id,
-																		)
-																: undefined
-														}
-													/>
-												);
-											})}
-										</ul>
+									{shownNeedsYou.length ||
+									shownAlsoAsked.length ? (
+										<>
+											{shownNeedsYou.length ||
+											view === "all" ? (
+												<section aria-label="Needs you">
+													{groupHeading(
+														"Needs you",
+														shownNeedsYou.length,
+													)}
+													{shownNeedsYou.length ? (
+														rows(
+															shownNeedsYou,
+															"Your work items",
+														)
+													) : (
+														<P className="py-4 text-muted-foreground text-sm">
+															Nothing needs you
+															right now.
+														</P>
+													)}
+												</section>
+											) : null}
+											{shownAlsoAsked.length ? (
+												<section aria-label="Also asked of you">
+													{groupHeading(
+														"Also asked of you",
+														shownAlsoAsked.length,
+														"From conversations filed as for your information or waiting on someone else.",
+													)}
+													{rows(
+														shownAlsoAsked,
+														"Also asked of you",
+													)}
+												</section>
+											) : null}
+										</>
 									) : (
 										<P className="py-6 text-muted-foreground text-sm">
 											{EMPTY_VIEW[view]}
@@ -1126,9 +1185,6 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 
 /** The Work page and its review: the hero heading, then the owner's list or the items waiting for them. */
 export function WorkItemsList({ review = false }: { review?: boolean }) {
-	// a finished build remounts the list so it loads the new items
-	const [version, setVersion] = useState(0);
-	const onBuilt = useCallback(() => setVersion((v) => v + 1), []);
 	return (
 		<CollaborationHeroPage>
 			{review ? (
@@ -1158,8 +1214,8 @@ export function WorkItemsList({ review = false }: { review?: boolean }) {
 						orientation="vertical"
 						className="data-[orientation=vertical]:h-4"
 					/>
-					<WorkBuildMenu onDone={onBuilt} />
-					<NewWorkItemDialog onCreated={onBuilt} />
+					<WorkBuildMenu />
+					<NewWorkItemDialog />
 					<Button
 						asChild
 						variant="ghost"
@@ -1173,7 +1229,7 @@ export function WorkItemsList({ review = false }: { review?: boolean }) {
 					</Button>
 				</CollaborationHeroHeader>
 			)}
-			<WorkItems key={version} review={review} />
+			<WorkItems review={review} />
 		</CollaborationHeroPage>
 	);
 }

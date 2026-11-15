@@ -1,5 +1,11 @@
 import { ChevronRight } from "lucide-react";
-import { type FormEvent, type ReactNode, useEffect, useState } from "react";
+import {
+	type FormEvent,
+	type ReactNode,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 import { Link } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
 import { Button, cn, Input, P, Progress, Small } from "@semoss/ui/next";
@@ -13,8 +19,9 @@ import {
 	type WorkStepChange,
 } from "../api/work-steps";
 import { runBatch } from "../live/live-state";
+import { useWorkChanged } from "../state/collaboration-session.context";
 import { TaskItemControls } from "./task-item-controls";
-import { type TaskStep, TaskStepRow } from "./task-step-row";
+import { type StepInbox, type TaskStep, TaskStepRow } from "./task-step-row";
 
 type Row = Record<string, unknown>;
 
@@ -37,6 +44,8 @@ interface TaskView {
 }
 
 const str = (v: unknown): string => (typeof v === "string" ? v : "");
+const inboxOf = (v: unknown): StepInbox | undefined =>
+	v === "needs_me" || v === "waiting" || v === "fyi" ? v : undefined;
 const rows = (v: unknown): Row[] => (Array.isArray(v) ? (v as Row[]) : []);
 
 async function loadTask(
@@ -75,6 +84,7 @@ async function loadTask(
 			closedBy: str(s.closedBy),
 			closedText: str(s.closedText),
 			closedSubject: str(s.closedSubject),
+			inbox: inboxOf(s.inbox),
 		})),
 		threads: rows(work?.threads).map((t) => ({
 			id: str(t.threadId),
@@ -121,6 +131,10 @@ export function useTaskContext(key: {
 	roomId?: string;
 }): TaskContext {
 	const { actions } = useInsight();
+	const { workVersion, markWorkChanged } = useWorkChanged();
+	// the version this view's own change made, whose reload it has already done
+	const ownVersion = useRef(-1);
+	const seenVersion = useRef(workVersion);
 	const { taskId, roomId } = key;
 	const current = `${taskId ?? ""}|${roomId ?? ""}`;
 	// results are tagged with their key so a new room never shows the last room's task
@@ -135,6 +149,10 @@ export function useTaskContext(key: {
 		from: "" as "" | "steps" | "item",
 	});
 	useEffect(() => {
+		// another view changed work (this view's own change was read again when it saved)
+		const isNewVersion = seenVersion.current !== workVersion;
+		seenVersion.current = workVersion;
+		if (isNewVersion && ownVersion.current === workVersion) return;
 		let live = true;
 		const key = `${taskId ?? ""}|${roomId ?? ""}`;
 		loadTask(actions, { taskId, roomId })
@@ -151,7 +169,7 @@ export function useTaskContext(key: {
 		return () => {
 			live = false;
 		};
-	}, [actions, taskId, roomId]);
+	}, [actions, taskId, roomId, workVersion]);
 	const fresh = result?.key === current ? result : null;
 	// saves a change, then reads the task again; the result is tagged, so one for another room is ignored
 	const save = (from: "steps" | "item", work: Promise<void>) => {
@@ -160,6 +178,8 @@ export function useTaskContext(key: {
 			(task) => {
 				setSaving({ isBusy: false, error: "", from });
 				setResult({ key: current, task, error: "" });
+				// the list and the cards read their own copy of work
+				ownVersion.current = markWorkChanged();
 			},
 			(e) =>
 				setSaving({

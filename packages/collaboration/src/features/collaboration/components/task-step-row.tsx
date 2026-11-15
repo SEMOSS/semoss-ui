@@ -14,6 +14,9 @@ import { dueDay } from "../live/live-state";
 import { PersonAvatar } from "./person-avatar";
 import { dueLabel } from "./work-items-list";
 
+/** What the inbox decided about the conversation a step came from. */
+export type StepInbox = "needs_me" | "waiting" | "fyi";
+
 /** One step of a work item, as the task view shows it. */
 export interface TaskStep {
 	id: string;
@@ -29,7 +32,14 @@ export interface TaskStep {
 	/** What that message said, and the conversation it was on; "" when the owner finished it. */
 	closedText: string;
 	closedSubject: string;
+	/** What the inbox decided about the conversation the step came from; absent for a step made by hand or an older server. */
+	inbox?: StepInbox;
 }
+
+const INBOX_NOTE: Partial<Record<StepInbox, string>> = {
+	fyi: "From a conversation filed as for your information",
+	waiting: "From a conversation where you are waiting on someone else",
+};
 
 interface TaskStepRowProps {
 	step: TaskStep;
@@ -176,6 +186,11 @@ export function TaskStepRow({
 							/>
 						) : null}
 						Waiting on {step.assigneeName || "someone"}
+					</span>
+				) : null}
+				{step.inbox && INBOX_NOTE[step.inbox] ? (
+					<span className="mt-1 block text-muted-foreground text-xs">
+						{INBOX_NOTE[step.inbox]}
 					</span>
 				) : null}
 				{state === "done" &&

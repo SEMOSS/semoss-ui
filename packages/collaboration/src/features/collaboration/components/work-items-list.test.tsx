@@ -11,7 +11,10 @@ import { MemoryRouter } from "react-router";
 import { afterEach, beforeAll, beforeEach, expect, it, vi } from "vitest";
 import { pixel } from "@/lib/pixel";
 import { createInitialCollaborationState } from "../state/collaboration.fixtures";
-import { CollaborationSessionProvider } from "../state/collaboration-session.context";
+import {
+	CollaborationSessionProvider,
+	useWorkChanged,
+} from "../state/collaboration-session.context";
 import { WorkItems } from "./work-items-list";
 
 /** A work item as WorkListMyWork returns it. */
@@ -271,4 +274,167 @@ it("keeps the count of what was reviewed once nothing is left", async () => {
 	expect(
 		screen.getByRole("progressbar", { name: "Items reviewed" }),
 	).toHaveAttribute("aria-valuetext", "1 of 1");
+});
+
+/** Titles in one of the two groups, top to bottom. */
+const groupTitles = (name: string) =>
+	within(screen.getByRole("list", { name }))
+		.getAllByRole("listitem")
+		.map((item) => within(item).getAllByRole("link")[0].textContent);
+
+const listReads = () =>
+	insight.actions.run.mock.calls.filter(([statement]) =>
+		statement.startsWith("WorkListMyWork"),
+	).length;
+
+/** Two items that need the owner and two filed away, mixed in the owner's order. */
+const groupedWork = () => [
+	workItem("a"),
+	workItem("b", { needsYou: false }),
+	workItem("c", { needsYou: true }),
+	workItem("d", { needsYou: false }),
+];
+
+it("puts items from filed-away conversations under 'Also asked of you', and counts both groups", async () => {
+	insight.workItems = groupedWork();
+	await renderWork();
+	// an item with no needsYou (an older server) needs the owner
+	expect(groupTitles("Your work items")).toEqual(["Item a", "Item c"]);
+	expect(groupTitles("Also asked of you")).toEqual(["Item b", "Item d"]);
+	const needs = within(screen.getByRole("region", { name: "Needs you" }));
+	const also = within(
+		screen.getByRole("region", { name: "Also asked of you" }),
+	);
+	expect(needs.getByRole("heading", { name: "Needs you" })).toBeVisible();
+	expect(needs.getByText("2")).toBeVisible();
+	expect(also.getByText("2")).toBeVisible();
+	expect(
+		also.getByText(
+			"From conversations filed as for your information or waiting on someone else.",
+		),
+	).toBeVisible();
+	// the items other people drive are not in either group
+	expect(screen.queryByText("Nothing needs you right now.")).toBeNull();
+});
+
+it("says nothing needs the owner when every item was filed away, and hides an empty second group", async () => {
+	insight.workItems = [workItem("a", { needsYou: false })];
+	render(
+		<CollaborationSessionProvider
+			initialState={createInitialCollaborationState()}
+		>
+			<MemoryRouter>
+				<WorkItems />
+			</MemoryRouter>
+		</CollaborationSessionProvider>,
+	);
+	expect(
+		await screen.findByText("Nothing needs you right now."),
+	).toBeVisible();
+	expect(groupTitles("Also asked of you")).toEqual(["Item a"]);
+	cleanup();
+	insight.workItems = [workItem("a")];
+	await renderWork();
+	expect(
+		screen.queryByRole("region", { name: "Also asked of you" }),
+	).toBeNull();
+});
+
+it("narrows both groups by the chosen tab", async () => {
+	insight.workItems = [
+		workItem("a", {
+			openSteps: [{ id: "s1", text: "Draft", status: "open" }],
+		}),
+		workItem("b", {
+			needsYou: false,
+			openSteps: [{ id: "s2", text: "Read it", status: "open" }],
+		}),
+		workItem("c", { needsYou: false }),
+	];
+	const user = userEvent.setup();
+	await renderWork();
+	await user.click(screen.getByRole("tab", { name: "Next steps 2" }));
+	expect(groupTitles("Your work items")).toEqual(["Item a"]);
+	expect(groupTitles("Also asked of you")).toEqual(["Item b"]);
+});
+
+it("moves a row inside its group and saves the order with every other item where it was", async () => {
+	insight.workItems = groupedWork();
+	const user = userEvent.setup();
+	await renderWork();
+	await user.click(
+		screen.getByRole("button", { name: "More actions for Item d" }),
+	);
+	await user.click(screen.getByRole("menuitem", { name: "Move up" }));
+	await waitFor(() =>
+		expect(reorders()).toEqual([
+			pixel("WorkReorderItems", { taskIds: ["a", "d", "b", "c"] }),
+		]),
+	);
+	cleanup();
+	// the top of a group has nowhere to go, even when the other group sits above it
+	await renderWork();
+	await user.click(
+		screen.getByRole("button", { name: "More actions for Item b" }),
+	);
+	expect(screen.getByRole("menuitem", { name: "Move up" })).toHaveAttribute(
+		"aria-disabled",
+		"true",
+	);
+});
+
+it("reads the list again when another view changes work, but not for its own change", async () => {
+	function Probe() {
+		const { markWorkChanged } = useWorkChanged();
+		return (
+			<button type="button" onClick={() => markWorkChanged()}>
+				Changed elsewhere
+			</button>
+		);
+	}
+	render(
+		<CollaborationSessionProvider
+			initialState={createInitialCollaborationState()}
+		>
+			<MemoryRouter>
+				<Probe />
+				<WorkItems />
+			</MemoryRouter>
+		</CollaborationSessionProvider>,
+	);
+	await screen.findByRole("list", { name: "Your work items" });
+	expect(listReads()).toBe(1);
+	insight.workItems = [workItem("z"), workItem("y")];
+	await userEvent.click(
+		screen.getByRole("button", { name: "Changed elsewhere" }),
+	);
+	await screen.findByRole("link", { name: "Item z" });
+	expect(listReads()).toBe(2);
+	// the list's own save reads once for itself, and does not read again for the signal it sent
+	await userEvent.click(
+		screen.getByRole("button", { name: "More actions for Item z" }),
+	);
+	await userEvent.click(screen.getByRole("menuitem", { name: "Move down" }));
+	await waitFor(() => expect(listReads()).toBe(3));
+	await new Promise((resolve) => setTimeout(resolve, 50));
+	expect(listReads()).toBe(3);
+});
+
+it("does not move a row into the other group when it is dragged over one", async () => {
+	insight.workItems = groupedWork();
+	await renderWork();
+	fireEvent.dragStart(row("Item a"));
+	const other = within(
+		screen.getByRole("list", { name: "Also asked of you" }),
+	)
+		.getByRole("link", { name: "Item b" })
+		.closest("li");
+	if (!other) throw new Error("No row for Item b");
+	fireEvent.dragOver(other);
+	fireEvent.dragEnd(row("Item a"));
+	expect(groupTitles("Your work items")).toEqual(["Item a", "Item c"]);
+	expect(groupTitles("Also asked of you")).toEqual(["Item b", "Item d"]);
+	// the save, if there were one, goes out a moment after the drag ends
+	await new Promise((resolve) => setTimeout(resolve, 50));
+	expect(reorders()).toEqual([]);
 });

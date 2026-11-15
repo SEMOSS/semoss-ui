@@ -2,7 +2,10 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { createInitialCollaborationState } from "../state/collaboration.fixtures";
-import { CollaborationSessionProvider } from "../state/collaboration-session.context";
+import {
+	CollaborationSessionProvider,
+	useWorkChanged,
+} from "../state/collaboration-session.context";
 import { NewWorkItemDialog } from "./new-work-item-dialog";
 
 const insight = vi.hoisted(() => ({
@@ -29,12 +32,21 @@ afterEach(() => {
 	vi.clearAllMocks();
 });
 
+function WorkVersion() {
+	return (
+		<output aria-label="Work version">
+			{useWorkChanged().workVersion}
+		</output>
+	);
+}
+
 function setup(onCreated = vi.fn()) {
 	render(
 		<CollaborationSessionProvider
 			initialState={createInitialCollaborationState()}
 		>
 			<NewWorkItemDialog onCreated={onCreated} />
+			<WorkVersion />
 		</CollaborationSessionProvider>,
 	);
 	return onCreated;
@@ -53,6 +65,8 @@ describe("NewWorkItemDialog", () => {
 		);
 		await user.click(make);
 		await waitFor(() => expect(onCreated).toHaveBeenCalled());
+		// every view of work is told, not only the one that mounted the dialog
+		expect(screen.getByLabelText("Work version")).toHaveTextContent("1");
 		expect(insight.actions.run).toHaveBeenCalledWith(
 			'WorkSaveWork(title=["Plan the offsite"]);',
 		);

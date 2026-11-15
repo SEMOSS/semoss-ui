@@ -642,3 +642,22 @@ it("reloads again after the running reload when another is asked for meanwhile",
 	await act(async () => running.resolve(updates));
 	await waitFor(() => expect(readWorkUpdates).toHaveBeenCalledTimes(2));
 });
+
+it("reads the work cards again when the owner changes work in another view", async () => {
+	const state = createInitialCollaborationState();
+	const updates = {
+		threads: state.threads,
+		items: [],
+		workspaces: {},
+		memories: [],
+		lastMailCheck: null,
+	};
+	vi.mocked(readWorkUpdates).mockReset().mockResolvedValue(updates);
+	const { result } = renderUpdates(state);
+	// nothing changed yet, so nothing is read on mount
+	expect(readWorkUpdates).not.toHaveBeenCalled();
+	act(() => {
+		result.current.markWorkChanged();
+	});
+	await waitFor(() => expect(readWorkUpdates).toHaveBeenCalledTimes(1));
+});

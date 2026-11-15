@@ -20,14 +20,18 @@ import {
 	Spinner,
 } from "@semoss/ui/next";
 import { createWorkItem } from "../api/work-items";
-import { useCollaborationSession } from "../state/collaboration-session.context";
+import {
+	useCollaborationSession,
+	useWorkChanged,
+} from "../state/collaboration-session.context";
 
 const NO_TOPIC = "none";
 
-/** "New work item": asks for a name (and a topic, when there are any), makes the item, then tells the list. */
-export function NewWorkItemDialog({ onCreated }: { onCreated: () => void }) {
+/** "New work item": asks for a name (and a topic, when there are any), makes the item, then tells the list and every view of work. */
+export function NewWorkItemDialog({ onCreated }: { onCreated?: () => void }) {
 	const { actions } = useInsight();
 	const { state } = useCollaborationSession();
+	const { markWorkChanged } = useWorkChanged();
 	const [isOpen, setIsOpen] = useState(false);
 	const [title, setTitle] = useState("");
 	const [topicId, setTopicId] = useState(NO_TOPIC);
@@ -54,7 +58,8 @@ export function NewWorkItemDialog({ onCreated }: { onCreated: () => void }) {
 				topicId: topicId === NO_TOPIC ? undefined : topicId,
 			});
 			setIsOpen(false);
-			onCreated();
+			markWorkChanged();
+			onCreated?.();
 		} catch (cause) {
 			setError(cause instanceof Error ? cause.message : String(cause));
 		} finally {

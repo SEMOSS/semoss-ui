@@ -8,7 +8,10 @@ import {
 import { MAIL_SENT_EVENT } from "@/features/connectors/api/microsoft";
 import type { InsightActions } from "@/lib/pixel";
 import type { Topic } from "../state/collaboration.types";
-import { useCollaborationSession } from "../state/collaboration-session.context";
+import {
+	useCollaborationSession,
+	useWorkChanged,
+} from "../state/collaboration-session.context";
 import {
 	type MailCheck,
 	type MailSyncResult,
@@ -201,6 +204,14 @@ export function WorkUpdatesProvider({
 	}, [actions, dispatch, sync]);
 	const refreshRef = useRef(refresh);
 	refreshRef.current = refresh;
+	// the owner changed a step or item somewhere: the cards here (WorkListItems) are read again too
+	const { workVersion } = useWorkChanged();
+	const seenWorkVersion = useRef(workVersion);
+	useEffect(() => {
+		if (seenWorkVersion.current === workVersion) return;
+		seenWorkVersion.current = workVersion;
+		refreshRef.current();
+	}, [workVersion]);
 	const refreshTopic = useCallback(
 		(topic: { topicId?: string; topic?: string }) => {
 			const token = generation.current;

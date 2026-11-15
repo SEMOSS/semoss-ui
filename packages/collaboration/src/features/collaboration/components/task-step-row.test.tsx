@@ -221,4 +221,45 @@ describe("TaskStepRow", () => {
 		);
 		expect(screen.queryByRole("button")).toBeNull();
 	});
+
+	it("says when a step came from a conversation filed away, and says nothing otherwise", () => {
+		const { rerender } = render(
+			<ul>
+				<TaskStepRow
+					step={{ ...step, inbox: "fyi" }}
+					state="mine"
+					selfId="me"
+				/>
+			</ul>,
+		);
+		expect(
+			screen.getByText(
+				"From a conversation filed as for your information",
+			),
+		).toBeTruthy();
+		rerender(
+			<ul>
+				<TaskStepRow
+					step={{ ...step, inbox: "waiting" }}
+					state="mine"
+					selfId="me"
+				/>
+			</ul>,
+		);
+		expect(
+			screen.getByText(
+				"From a conversation where you are waiting on someone else",
+			),
+		).toBeTruthy();
+		rerender(
+			<ul>
+				<TaskStepRow
+					step={{ ...step, inbox: "needs_me" }}
+					state="mine"
+					selfId="me"
+				/>
+			</ul>,
+		);
+		expect(screen.queryByText(/From a conversation/)).toBeNull();
+	});
 });
