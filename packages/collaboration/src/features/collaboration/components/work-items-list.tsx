@@ -380,11 +380,6 @@ function ItemRow({
 							Due {due.text}
 						</span>
 					) : null}
-					{item.proposed && item.mine && !item.needsYou ? (
-						<span className="shrink-0 text-muted-foreground text-xs">
-							Filed as for your information or waiting
-						</span>
-					) : null}
 					{owed > 0 ? (
 						<span className="flex shrink-0 items-center gap-1.5 text-muted-foreground text-xs">
 							<Users aria-hidden="true" className="size-3.5" />
@@ -599,7 +594,14 @@ function ReviewList({
 													? ""
 													: "s"}
 											</span>
-											{item.mine ? null : (
+											{item.mine ? (
+												item.needsYou ? null : (
+													<span>
+														Filed as for your
+														information or waiting
+													</span>
+												)
+											) : (
 												<span>
 													None assigned to you
 												</span>
