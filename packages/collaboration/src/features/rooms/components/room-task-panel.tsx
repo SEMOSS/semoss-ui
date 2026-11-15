@@ -21,6 +21,7 @@ function RoomTaskPanel() {
 		<section aria-label="Task" className="size-full overflow-y-auto">
 			<TaskContextView
 				task={ctx.task}
+				steps={ctx.steps}
 				onOpenThread={
 					email
 						? (t) =>

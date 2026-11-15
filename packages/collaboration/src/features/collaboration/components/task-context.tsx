@@ -1,24 +1,20 @@
-import { CheckCircle2, ChevronRight, Circle, Clock } from "lucide-react";
-import { type ReactNode, useEffect, useState } from "react";
+import { ChevronRight } from "lucide-react";
+import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 import { Link } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
-import { cn, P, Progress, Small } from "@semoss/ui/next";
+import { Button, cn, Input, P, Progress, Small } from "@semoss/ui/next";
 import { OutlookIcon, TeamsIcon } from "@/components/common/app-icons";
 import { pixel } from "@/lib/pixel";
 import { threadPath } from "@/lib/workspace-paths";
+import {
+	addWorkStep,
+	updateWorkStep,
+	type WorkStepChange,
+} from "../api/work-steps";
 import { runBatch } from "../live/live-state";
-import { PersonAvatar } from "./person-avatar";
+import { type TaskStep, TaskStepRow } from "./task-step-row";
 
 type Row = Record<string, unknown>;
-
-interface TaskStep {
-	id: string;
-	text: string;
-	kind: string;
-	status: string;
-	assigneeId: string;
-	assigneeName: string;
-}
 
 interface TaskThread {
 	id: string;
@@ -67,6 +63,7 @@ async function loadTask(
 			status: str(s.status),
 			assigneeId: str(s.assigneeId),
 			assigneeName: str(s.assigneeName),
+			closedBy: str(s.closedBy),
 		})),
 		threads: rows(work?.threads).map((t) => ({
 			id: str(t.threadId),
@@ -79,8 +76,29 @@ async function loadTask(
 	};
 }
 
-/** The task a room belongs to (or the task itself): steps, threads and updates. */
-export function useTaskContext(key: { taskId?: string; roomId?: string }) {
+/** The owner's changes to a task's steps; each saves, then the task is read again. */
+export interface TaskStepActions {
+	change: (stepId: string, change: WorkStepChange) => void;
+	add: (text: string) => void;
+	/** A change is being saved. */
+	isBusy: boolean;
+	/** Why the last change did not save, or "". */
+	error: string;
+}
+
+/** What {@link useTaskContext} gives a view. */
+export interface TaskContext {
+	task: TaskView | null;
+	loading: boolean;
+	error: string;
+	steps: TaskStepActions;
+}
+
+/** The task a room belongs to (or the task itself): steps, threads and updates, and the owner's step changes. */
+export function useTaskContext(key: {
+	taskId?: string;
+	roomId?: string;
+}): TaskContext {
 	const { actions } = useInsight();
 	const { taskId, roomId } = key;
 	const current = `${taskId ?? ""}|${roomId ?? ""}`;
@@ -90,6 +108,7 @@ export function useTaskContext(key: { taskId?: string; roomId?: string }) {
 		task: TaskView | null;
 		error: string;
 	} | null>(null);
+	const [saving, setSaving] = useState({ isBusy: false, error: "" });
 	useEffect(() => {
 		let live = true;
 		const key = `${taskId ?? ""}|${roomId ?? ""}`;
@@ -109,10 +128,34 @@ export function useTaskContext(key: { taskId?: string; roomId?: string }) {
 		};
 	}, [actions, taskId, roomId]);
 	const fresh = result?.key === current ? result : null;
+	// saves a change, then reads the task again; the result is tagged, so one for another room is ignored
+	const save = (work: Promise<void>) => {
+		setSaving({ isBusy: true, error: "" });
+		work.then(() => loadTask(actions, { taskId, roomId })).then(
+			(task) => {
+				setSaving({ isBusy: false, error: "" });
+				setResult({ key: current, task, error: "" });
+			},
+			(e) =>
+				setSaving({
+					isBusy: false,
+					error: e instanceof Error ? e.message : String(e),
+				}),
+		);
+	};
+	const openTaskId = fresh?.task?.id;
 	return {
 		task: fresh?.task ?? null,
 		loading: !fresh,
 		error: fresh?.error ?? "",
+		steps: {
+			change: (stepId, change) =>
+				save(updateWorkStep(actions, stepId, change)),
+			add: (text) => {
+				if (openTaskId) save(addWorkStep(actions, openTaskId, text));
+			},
+			...saving,
+		},
 	};
 }
 
@@ -143,63 +186,28 @@ function Section({
 	);
 }
 
-function StepRow({
-	step,
-	state,
-}: {
-	step: TaskStep;
-	state: "mine" | "waiting" | "done";
-}) {
-	const Icon =
-		state === "done" ? CheckCircle2 : state === "waiting" ? Clock : Circle;
-	return (
-		<li className="flex items-start gap-2.5 px-3 py-2">
-			<Icon
-				aria-hidden="true"
-				className={cn(
-					"mt-0.5 size-4 shrink-0",
-					state === "done" && "text-success",
-					state === "mine" && "text-primary",
-					state === "waiting" && "text-muted-foreground",
-				)}
-			/>
-			<div className="min-w-0 flex-1 text-sm">
-				<span
-					className={cn(
-						"break-words",
-						state === "done" &&
-							"text-muted-foreground line-through decoration-muted-foreground/40",
-					)}
-				>
-					{step.text}
-				</span>
-				{state === "waiting" ? (
-					<span className="mt-1 flex items-center gap-1.5 text-muted-foreground text-xs">
-						{step.assigneeName ? (
-							<PersonAvatar
-								name={step.assigneeName}
-								className="size-4 text-[0.5rem]"
-							/>
-						) : null}
-						Waiting on {step.assigneeName || "someone"}
-					</span>
-				) : null}
-			</div>
-		</li>
-	);
-}
-
 function StepList({
 	steps,
 	state,
+	selfId,
+	actions,
 }: {
 	steps: TaskStep[];
 	state: "mine" | "waiting" | "done";
+	selfId: string;
+	actions?: TaskStepActions;
 }) {
 	return (
 		<ul className="divide-y divide-border overflow-hidden rounded-lg border bg-background">
 			{steps.map((s) => (
-				<StepRow key={s.id} step={s} state={state} />
+				<TaskStepRow
+					key={s.id}
+					step={s}
+					state={state}
+					selfId={selfId}
+					onChange={actions?.change}
+					isBusy={actions?.isBusy}
+				/>
 			))}
 		</ul>
 	);
@@ -209,6 +217,8 @@ interface TaskContextViewProps {
 	task: TaskView;
 	/** Show the task name (the room and page headers already do). */
 	showTitle?: boolean;
+	/** The owner's step changes (from {@link useTaskContext}); without them the steps are read-only. */
+	steps?: TaskStepActions;
 	/** Open a thread beside the chat; without it a thread is a link. */
 	onOpenThread?: (thread: TaskThread) => void;
 	className?: string;
@@ -218,9 +228,18 @@ interface TaskContextViewProps {
 export function TaskContextView({
 	task,
 	showTitle,
+	steps,
 	onOpenThread,
 	className,
 }: TaskContextViewProps) {
+	const [newStep, setNewStep] = useState("");
+	const handleAdd = (event: FormEvent) => {
+		event.preventDefault();
+		const text = newStep.trim();
+		if (!text) return;
+		steps?.add(text);
+		setNewStep("");
+	};
 	const open = task.steps.filter(
 		(s) => s.status === "open" || s.status === "waiting",
 	);
@@ -258,16 +277,49 @@ export function TaskContextView({
 			) : null}
 			<Section title="Your steps" count={mine.length}>
 				{mine.length ? (
-					<StepList steps={mine} state="mine" />
+					<StepList
+						steps={mine}
+						state="mine"
+						selfId={task.selfId}
+						actions={steps}
+					/>
 				) : (
 					<P className="text-muted-foreground text-sm">
 						Nothing left for you.
 					</P>
 				)}
+				{steps ? (
+					<form className="flex gap-2" onSubmit={handleAdd}>
+						<Input
+							aria-label="Add a step"
+							placeholder="Add a step"
+							value={newStep}
+							onChange={(event) => setNewStep(event.target.value)}
+						/>
+						<Button
+							type="submit"
+							size="sm"
+							variant="outline"
+							disabled={steps.isBusy || !newStep.trim()}
+						>
+							Add
+						</Button>
+					</form>
+				) : null}
+				{steps?.error ? (
+					<P role="alert" className="text-destructive text-sm">
+						That change was not saved: {steps.error}
+					</P>
+				) : null}
 			</Section>
 			{waiting.length ? (
 				<Section title="Waiting on others" count={waiting.length}>
-					<StepList steps={waiting} state="waiting" />
+					<StepList
+						steps={waiting}
+						state="waiting"
+						selfId={task.selfId}
+						actions={steps}
+					/>
 				</Section>
 			) : null}
 			{task.threads.length ? (
@@ -342,7 +394,12 @@ export function TaskContextView({
 			) : null}
 			{done.length ? (
 				<Section title="Done" count={done.length}>
-					<StepList steps={done} state="done" />
+					<StepList
+						steps={done}
+						state="done"
+						selfId={task.selfId}
+						actions={steps}
+					/>
 				</Section>
 			) : null}
 		</div>

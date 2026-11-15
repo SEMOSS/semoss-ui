@@ -642,7 +642,8 @@ export function collaborationReducer(
 									)?.kind === "internal"
 										? "internal"
 										: "client",
-								isSample: true,
+								// sample data only where there is no live mailbox
+								isSample: !state.liveProfile,
 							},
 							now,
 						),

@@ -375,14 +375,14 @@ function ItemRow({
 
 // loads only once a row is opened
 function ExpandedTask({ taskId, id }: { taskId: string; id: string }) {
-	const { task, loading, error } = useTaskContext({ taskId });
+	const { task, loading, error, steps } = useTaskContext({ taskId });
 	return (
 		<div
 			id={id}
 			className="mt-3 overflow-hidden rounded-lg border bg-muted/30 sm:ml-6"
 		>
 			{task ? (
-				<TaskContextView task={task} />
+				<TaskContextView task={task} steps={steps} />
 			) : (
 				<P
 					role={error ? "alert" : undefined}

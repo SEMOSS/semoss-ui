@@ -47,6 +47,7 @@ export function WorkItemPage() {
 								<div className="overflow-hidden rounded-xl border bg-card">
 									<TaskContextView
 										task={context.task}
+										steps={context.steps}
 										className="p-5"
 									/>
 								</div>
