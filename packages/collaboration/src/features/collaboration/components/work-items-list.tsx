@@ -380,6 +380,11 @@ function ItemRow({
 							Due {due.text}
 						</span>
 					) : null}
+					{item.proposed && item.mine && !item.needsYou ? (
+						<span className="shrink-0 text-muted-foreground text-xs">
+							Filed as for your information or waiting
+						</span>
+					) : null}
 					{owed > 0 ? (
 						<span className="flex shrink-0 items-center gap-1.5 text-muted-foreground text-xs">
 							<Users aria-hidden="true" className="size-3.5" />
@@ -777,7 +782,9 @@ export function split(items: Item[]) {
 		alsoAsked: mine.filter((i) => !i.needsYou),
 		// the owner's own first, then the rest someone else is driving
 		review: [
-			...proposed.filter((i) => i.mine),
+			// what needs the owner first, then what the inbox filed as for their information or waiting
+			...proposed.filter((i) => i.mine && i.needsYou),
+			...proposed.filter((i) => i.mine && !i.needsYou),
 			...proposed.filter((i) => !i.mine),
 		],
 		proposed,
