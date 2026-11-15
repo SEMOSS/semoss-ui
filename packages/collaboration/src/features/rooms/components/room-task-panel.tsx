@@ -22,6 +22,7 @@ function RoomTaskPanel() {
 			<TaskContextView
 				task={ctx.task}
 				steps={ctx.steps}
+				item={ctx.item}
 				onOpenThread={
 					email
 						? (t) =>

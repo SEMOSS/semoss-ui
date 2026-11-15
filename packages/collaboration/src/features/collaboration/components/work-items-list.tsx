@@ -55,6 +55,7 @@ import { localDue, runBatch } from "../live/live-state";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { CollaborationHeroHeader } from "./collaboration-hero-header";
 import { CollaborationHeroPage } from "./collaboration-hero-page";
+import { NewWorkItemDialog } from "./new-work-item-dialog";
 import { TaskContextView, useTaskContext } from "./task-context";
 import { TopicChip as SharedTopicChip } from "./topic-chip";
 import { WorkBuildMenu } from "./work-build-menu";
@@ -1158,6 +1159,7 @@ export function WorkItemsList({ review = false }: { review?: boolean }) {
 						className="data-[orientation=vertical]:h-4"
 					/>
 					<WorkBuildMenu onDone={onBuilt} />
+					<NewWorkItemDialog onCreated={onBuilt} />
 					<Button
 						asChild
 						variant="ghost"

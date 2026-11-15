@@ -7,6 +7,8 @@ export interface WorkStepChange {
 	/** `dropped` takes the step off the list without calling it done. */
 	status?: "open" | "done" | "dropped";
 	text?: string;
+	/** A day as `YYYY-MM-DD`; an empty string clears it. */
+	due?: string;
 	/** Why it changed, kept with the step (for example "not mine"). */
 	note?: string;
 	assigneeId?: string;

@@ -6,12 +6,14 @@ import { Button, cn, Input, P, Progress, Small } from "@semoss/ui/next";
 import { OutlookIcon, TeamsIcon } from "@/components/common/app-icons";
 import { pixel } from "@/lib/pixel";
 import { threadPath } from "@/lib/workspace-paths";
+import { updateWorkItem, type WorkItemChange } from "../api/work-items";
 import {
 	addWorkStep,
 	updateWorkStep,
 	type WorkStepChange,
 } from "../api/work-steps";
 import { runBatch } from "../live/live-state";
+import { TaskItemControls } from "./task-item-controls";
 import { type TaskStep, TaskStepRow } from "./task-step-row";
 
 type Row = Record<string, unknown>;
@@ -25,6 +27,9 @@ interface TaskThread {
 interface TaskView {
 	id: string;
 	title: string;
+	status: string;
+	due: string;
+	priority: string;
 	steps: TaskStep[];
 	threads: TaskThread[];
 	timeline: { id: string; text: string }[];
@@ -55,6 +60,9 @@ async function loadTask(
 	return {
 		id: taskId,
 		title: str(work?.title),
+		status: str(work?.status),
+		due: str(work?.due),
+		priority: str(work?.priority),
 		selfId,
 		steps: rows(work?.steps).map((s) => ({
 			id: str(s.id),
@@ -63,6 +71,7 @@ async function loadTask(
 			status: str(s.status),
 			assigneeId: str(s.assigneeId),
 			assigneeName: str(s.assigneeName),
+			due: str(s.due),
 			closedBy: str(s.closedBy),
 			closedText: str(s.closedText),
 			closedSubject: str(s.closedSubject),
@@ -88,12 +97,22 @@ export interface TaskStepActions {
 	error: string;
 }
 
+/** The owner's changes to the work item itself; each saves, then the task is read again. */
+export interface TaskItemActions {
+	change: (change: WorkItemChange) => void;
+	/** A change is being saved. */
+	isBusy: boolean;
+	/** Why the last change did not save, or "". */
+	error: string;
+}
+
 /** What {@link useTaskContext} gives a view. */
 export interface TaskContext {
 	task: TaskView | null;
 	loading: boolean;
 	error: string;
 	steps: TaskStepActions;
+	item: TaskItemActions;
 }
 
 /** The task a room belongs to (or the task itself): steps, threads and updates, and the owner's step changes. */
@@ -110,7 +129,11 @@ export function useTaskContext(key: {
 		task: TaskView | null;
 		error: string;
 	} | null>(null);
-	const [saving, setSaving] = useState({ isBusy: false, error: "" });
+	const [saving, setSaving] = useState({
+		isBusy: false,
+		error: "",
+		from: "" as "" | "steps" | "item",
+	});
 	useEffect(() => {
 		let live = true;
 		const key = `${taskId ?? ""}|${roomId ?? ""}`;
@@ -131,20 +154,24 @@ export function useTaskContext(key: {
 	}, [actions, taskId, roomId]);
 	const fresh = result?.key === current ? result : null;
 	// saves a change, then reads the task again; the result is tagged, so one for another room is ignored
-	const save = (work: Promise<void>) => {
-		setSaving({ isBusy: true, error: "" });
+	const save = (from: "steps" | "item", work: Promise<void>) => {
+		setSaving({ isBusy: true, error: "", from });
 		work.then(() => loadTask(actions, { taskId, roomId })).then(
 			(task) => {
-				setSaving({ isBusy: false, error: "" });
+				setSaving({ isBusy: false, error: "", from });
 				setResult({ key: current, task, error: "" });
 			},
 			(e) =>
 				setSaving({
 					isBusy: false,
 					error: e instanceof Error ? e.message : String(e),
+					from,
 				}),
 		);
 	};
+	// a failure shows where the change was made
+	const errorFor = (from: "steps" | "item") =>
+		saving.from === from ? saving.error : "";
 	const openTaskId = fresh?.task?.id;
 	return {
 		task: fresh?.task ?? null,
@@ -152,11 +179,21 @@ export function useTaskContext(key: {
 		error: fresh?.error ?? "",
 		steps: {
 			change: (stepId, change) =>
-				save(updateWorkStep(actions, stepId, change)),
+				save("steps", updateWorkStep(actions, stepId, change)),
 			add: (text) => {
-				if (openTaskId) save(addWorkStep(actions, openTaskId, text));
+				if (openTaskId)
+					save("steps", addWorkStep(actions, openTaskId, text));
 			},
-			...saving,
+			isBusy: saving.isBusy,
+			error: errorFor("steps"),
+		},
+		item: {
+			change: (change) => {
+				if (openTaskId)
+					save("item", updateWorkItem(actions, openTaskId, change));
+			},
+			isBusy: saving.isBusy,
+			error: errorFor("item"),
 		},
 	};
 }
@@ -221,6 +258,8 @@ interface TaskContextViewProps {
 	showTitle?: boolean;
 	/** The owner's step changes (from {@link useTaskContext}); without them the steps are read-only. */
 	steps?: TaskStepActions;
+	/** The owner's changes to the work item itself; without them the item is read-only. */
+	item?: TaskItemActions;
 	/** Open a thread beside the chat; without it a thread is a link. */
 	onOpenThread?: (thread: TaskThread) => void;
 	className?: string;
@@ -231,6 +270,7 @@ export function TaskContextView({
 	task,
 	showTitle,
 	steps,
+	item,
 	onOpenThread,
 	className,
 }: TaskContextViewProps) {
@@ -274,6 +314,20 @@ export function TaskContextView({
 								{done.length} of {total} done
 							</Small>
 						</div>
+					) : null}
+				</div>
+			) : null}
+			{item ? (
+				<div className="space-y-2">
+					<TaskItemControls
+						item={task}
+						onChange={item.change}
+						isBusy={item.isBusy}
+					/>
+					{item.error ? (
+						<P role="alert" className="text-destructive text-sm">
+							That change was not saved: {item.error}
+						</P>
 					) : null}
 				</div>
 			) : null}

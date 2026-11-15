@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { type TaskStep, TaskStepRow } from "./task-step-row";
@@ -10,6 +10,7 @@ const step: TaskStep = {
 	status: "open",
 	assigneeId: "",
 	assigneeName: "",
+	due: "",
 	closedBy: "",
 	closedText: "",
 	closedSubject: "",
@@ -142,6 +143,74 @@ describe("TaskStepRow", () => {
 		expect(onChange).toHaveBeenCalledWith("s1", {
 			text: "Send Kira the final deck",
 		});
+	});
+
+	it("sets, changes and clears a step's due date from the edit form", async () => {
+		const user = userEvent.setup();
+		const onChange = vi.fn();
+		const { rerender } = render(
+			<ul>
+				<TaskStepRow
+					step={step}
+					state="mine"
+					selfId="me"
+					onChange={onChange}
+				/>
+			</ul>,
+		);
+		const openEdit = async () => {
+			await user.click(
+				screen.getByRole("button", {
+					name: "More for: Send Kira the deck",
+				}),
+			);
+			await user.click(screen.getByRole("menuitem", { name: "Edit" }));
+		};
+		await openEdit();
+		fireEvent.change(screen.getByLabelText("Due"), {
+			target: { value: "2026-12-03" },
+		});
+		await user.click(screen.getByRole("button", { name: "Save" }));
+		expect(onChange).toHaveBeenLastCalledWith("s1", { due: "2026-12-03" });
+		rerender(
+			<ul>
+				<TaskStepRow
+					step={{ ...step, due: "2026-12-03T00:00:00Z" }}
+					state="mine"
+					selfId="me"
+					onChange={onChange}
+				/>
+			</ul>,
+		);
+		await openEdit();
+		expect((screen.getByLabelText("Due") as HTMLInputElement).value).toBe(
+			"2026-12-03",
+		);
+		fireEvent.change(screen.getByLabelText("Due"), {
+			target: { value: "" },
+		});
+		await user.click(screen.getByRole("button", { name: "Save" }));
+		expect(onChange).toHaveBeenLastCalledWith("s1", { due: "" });
+	});
+
+	it("shows the due date on an open step, not on a finished one", () => {
+		const dated = { ...step, due: "2026-12-03T00:00:00Z" };
+		const { rerender } = render(
+			<ul>
+				<TaskStepRow step={dated} state="mine" selfId="me" />
+			</ul>,
+		);
+		expect(screen.getByText(/^Due Dec 3$/)).toBeTruthy();
+		rerender(
+			<ul>
+				<TaskStepRow
+					step={{ ...dated, status: "done" }}
+					state="done"
+					selfId="me"
+				/>
+			</ul>,
+		);
+		expect(screen.queryByText(/^Due /)).toBeNull();
 	});
 
 	it("shows no controls without a way to save", () => {

@@ -10,7 +10,9 @@ import {
 	Input,
 } from "@semoss/ui/next";
 import type { WorkStepChange } from "../api/work-steps";
+import { dueDay } from "../live/live-state";
 import { PersonAvatar } from "./person-avatar";
+import { dueLabel } from "./work-items-list";
 
 /** One step of a work item, as the task view shows it. */
 export interface TaskStep {
@@ -20,6 +22,8 @@ export interface TaskStep {
 	status: string;
 	assigneeId: string;
 	assigneeName: string;
+	/** When it is due, as the server sent it; "" when it has no due date. */
+	due: string;
 	/** Who finished it: "owner", or the message that said it was done. */
 	closedBy: string;
 	/** What that message said, and the conversation it was on; "" when the owner finished it. */
@@ -39,6 +43,12 @@ interface TaskStepRowProps {
 	isBusy?: boolean;
 }
 
+/** A due as the `YYYY-MM-DD` a date field takes; "" when there is none. */
+function dayOf(due: string): string {
+	const day = dueDay(due) ?? "";
+	return /^\d{4}-\d{2}-\d{2}/.test(day) ? day.slice(0, 10) : "";
+}
+
 /** A step with the owner's controls: done or reopen, not mine, mine after all, edit, remove. */
 export function TaskStepRow({
 	step,
@@ -47,7 +57,10 @@ export function TaskStepRow({
 	onChange,
 	isBusy,
 }: TaskStepRowProps) {
-	const [draft, setDraft] = useState<string | null>(null);
+	const [draft, setDraft] = useState<{ text: string; due: string } | null>(
+		null,
+	);
+	const due = dueLabel(step.due);
 	const Icon =
 		state === "done" ? CheckCircle2 : state === "waiting" ? Clock : Circle;
 	const icon = (
@@ -63,8 +76,12 @@ export function TaskStepRow({
 	);
 	const handleSave = (event: FormEvent) => {
 		event.preventDefault();
-		const text = draft?.trim();
-		if (text && text !== step.text) onChange?.(step.id, { text });
+		const text = draft?.text.trim();
+		const change: WorkStepChange = {};
+		if (text && text !== step.text) change.text = text;
+		if (draft && draft.due !== dayOf(step.due)) change.due = draft.due;
+		if (change.text !== undefined || change.due !== undefined)
+			onChange?.(step.id, change);
 		setDraft(null);
 	};
 	return (
@@ -102,15 +119,30 @@ export function TaskStepRow({
 						{step.text}
 					</span>
 				) : (
-					<form className="flex gap-2" onSubmit={handleSave}>
+					<form
+						className="flex flex-wrap gap-2"
+						onSubmit={handleSave}
+					>
 						<Input
 							autoFocus
 							aria-label="Step"
-							value={draft}
-							onChange={(event) => setDraft(event.target.value)}
+							className="min-w-40 flex-1"
+							value={draft.text}
+							onChange={(event) =>
+								setDraft({ ...draft, text: event.target.value })
+							}
 							onKeyDown={(event) => {
 								if (event.key === "Escape") setDraft(null);
 							}}
+						/>
+						<Input
+							type="date"
+							aria-label="Due"
+							className="w-auto"
+							value={draft.due}
+							onChange={(event) =>
+								setDraft({ ...draft, due: event.target.value })
+							}
 						/>
 						<Button type="submit" size="sm">
 							Save
@@ -125,6 +157,16 @@ export function TaskStepRow({
 						</Button>
 					</form>
 				)}
+				{due && draft === null && state !== "done" ? (
+					<span
+						className={cn(
+							"mt-1 block text-muted-foreground text-xs",
+							due.soon && "text-destructive",
+						)}
+					>
+						Due {due.text}
+					</span>
+				) : null}
 				{state === "waiting" ? (
 					<span className="mt-1 flex items-center gap-1.5 text-muted-foreground text-xs">
 						{step.assigneeName ? (
@@ -191,7 +233,14 @@ export function TaskStepRow({
 								</DropdownMenuItem>
 							</>
 						) : null}
-						<DropdownMenuItem onSelect={() => setDraft(step.text)}>
+						<DropdownMenuItem
+							onSelect={() =>
+								setDraft({
+									text: step.text,
+									due: dayOf(step.due),
+								})
+							}
+						>
 							Edit
 						</DropdownMenuItem>
 						<DropdownMenuItem

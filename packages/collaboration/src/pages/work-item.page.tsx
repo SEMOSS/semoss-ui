@@ -26,7 +26,7 @@ export function WorkItemPage() {
 				) : item ? (
 					<>
 						<h1 className="mb-1 font-semibold text-2xl">
-							{item.title}
+							{context.task?.title || item.title}
 						</h1>
 						<Small className="mb-6 block text-muted-foreground">
 							Ask anything about this item. The assistant sees its
@@ -48,6 +48,7 @@ export function WorkItemPage() {
 									<TaskContextView
 										task={context.task}
 										steps={context.steps}
+										item={context.item}
 										className="p-5"
 									/>
 								</div>
