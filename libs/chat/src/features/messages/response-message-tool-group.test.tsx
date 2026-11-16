@@ -38,13 +38,13 @@ test("expands running activity, collapses success, and preserves manual choices"
 	const trigger = screen.getByRole("button");
 	const parameters = screen.getByLabelText("step");
 	expect(trigger).toHaveAttribute("aria-expanded", "true");
-	step.status = "SUCCESS";
+	Object.assign(step, { status: "SUCCESS" });
 	rerender(<ResponseMessageToolGroup tools={[...tools]} />);
 	expect(trigger).toHaveAttribute("aria-expanded", "false");
 	fireEvent.click(trigger);
-	step.status = "LOADING";
+	Object.assign(step, { status: "LOADING" });
 	rerender(<ResponseMessageToolGroup tools={[...tools]} />);
-	step.status = "SUCCESS";
+	Object.assign(step, { status: "SUCCESS" });
 	rerender(<ResponseMessageToolGroup tools={[...tools]} />);
 	expect(trigger).toHaveAttribute("aria-expanded", "true");
 	expect(screen.getByLabelText("step")).toBe(parameters);
@@ -102,7 +102,7 @@ test.each(["INITIAL", "LOADING", "SUCCESS", "ERROR", "CANCELLED"])(
 
 test("keeps a single approval visible even when other tools are hidden", () => {
 	const hidden = tool("hidden", "SUCCESS");
-	hidden.display = "hidden";
+	Object.assign(hidden, { display: "hidden" });
 	render(
 		<ResponseMessageToolGroup
 			tools={[hidden, tool("approval", "INITIAL", true)]}

@@ -146,7 +146,7 @@ test("results automatically appear unless the user has chosen a tab", async () =
 	).toHaveAttribute("aria-selected", "true");
 	act(() =>
 		runInAction(() => {
-			tool.status = "SUCCESS";
+			Object.assign(tool, { status: "SUCCESS" });
 		}),
 	);
 	expect(screen.getByRole("tab", { name: "tabs.output" })).toHaveAttribute(
@@ -159,7 +159,7 @@ test("results automatically appear unless the user has chosen a tab", async () =
 	await user.click(screen.getByRole("tab", { name: "inspector.info" }));
 	act(() =>
 		runInAction(() => {
-			pendingTool.status = "SUCCESS";
+			Object.assign(pendingTool, { status: "SUCCESS" });
 		}),
 	);
 	expect(screen.getByRole("tab", { name: "inspector.info" })).toHaveAttribute(
@@ -207,7 +207,7 @@ test.each(["ERROR", "CANCELLED"] as const)(
 	"%s keeps the outcome visible even with an empty response",
 	(status) => {
 		const tool = createTool(status);
-		tool.response = "";
+		Object.assign(tool, { response: "" });
 		render(<ToolInspector tool={tool} />);
 		expect(screen.getByText("inspector.emptyOutput")).toBeVisible();
 		expect(
@@ -368,8 +368,10 @@ test("the editable default form survives tab changes and submits through the age
 test("completed default tools show the arguments actually executed and no execute action", async () => {
 	const user = userEvent.setup();
 	const tool = createTool("ERROR");
-	tool.parameters = { actual: "executed value", undeclared: false };
-	tool.response = "The tool failed.";
+	Object.assign(tool, {
+		parameters: { actual: "executed value", undeclared: false },
+	});
+	Object.assign(tool, { response: "The tool failed." });
 	render(
 		<ToolsDefaultView
 			tool={tool}
@@ -394,7 +396,7 @@ test("completed default tools show the arguments actually executed and no execut
 test("Pretty uses schema descriptions and keeps expanded fields when switching modes", async () => {
 	const user = userEvent.setup();
 	const tool = createTool("INITIAL");
-	tool.parameters = { advanced: { limit: 25 } };
+	Object.assign(tool, { parameters: { advanced: { limit: 25 } } });
 	render(
 		<ToolInspector
 			tool={tool}
@@ -428,10 +430,15 @@ test("Pretty uses schema descriptions and keeps expanded fields when switching m
 test("Pretty reveals long text and pages large collections without dropping data from Copy", async () => {
 	const user = userEvent.setup();
 	const tool = createTool("INITIAL");
-	tool.parameters = {
-		body: `${"Long text. ".repeat(100)}END_OF_VALUE`,
-		messages: Array.from({ length: 105 }, (_, index) => `message-${index}`),
-	};
+	Object.assign(tool, {
+		parameters: {
+			body: `${"Long text. ".repeat(100)}END_OF_VALUE`,
+			messages: Array.from(
+				{ length: 105 },
+				(_, index) => `message-${index}`,
+			),
+		},
+	});
 	const copy = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
 	render(<ToolInspector tool={tool} />);
 	expect(screen.queryByText(/END_OF_VALUE/)).not.toBeInTheDocument();

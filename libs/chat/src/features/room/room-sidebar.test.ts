@@ -1,4 +1,3 @@
-import { runInAction } from "mobx";
 import { beforeEach, expect, test, vi } from "vitest";
 import { FILE_PANEL_TYPES } from "@semoss/panels";
 import type { ThemeMap } from "@semoss/shared";
@@ -256,9 +255,7 @@ test("explicitly closing a cancelled tool does not reopen it inline", () => {
 	const tool = new ToolStore(room, "t1");
 	room.tools.t1 = tool;
 	tool.openTool("sidebar");
-	runInAction(() => {
-		tool.status = "CANCELLED";
-	});
+	tool.setStatus("CANCELLED");
 
 	tool.closeTool();
 

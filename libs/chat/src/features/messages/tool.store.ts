@@ -1,5 +1,6 @@
-import { makeAutoObservable } from "mobx";
+import { computed, createAtom } from "mobx";
 import type { PendingAgentAction } from "@semoss/sdk";
+import { StoreState } from "@semoss/utility/store";
 import type {
 	PixelMessageToolCallPart,
 	PixelMessageToolResultPart,
@@ -42,145 +43,206 @@ const buildServerToolJson = (
 	},
 });
 
+/** Where a tool call stands. */
+export type ToolStatus =
+	| "INITIAL"
+	| "LOADING"
+	| "CANCELLED"
+	| "SUCCESS"
+	| "ERROR";
+
+/** Where a tool call shows: in the conversation, in the Workspace, or not at all. */
+export type ToolDisplay = "inline" | "sidebar" | "hidden";
+
+/** What a tool call holds. Every field is readonly. */
+export interface ToolSnapshot {
+	readonly status: ToolStatus;
+	/** The call's arguments, as the model sent them or the user edited them. */
+	readonly parameters: Readonly<Record<string, unknown>>;
+	/**
+	 * Set while an agent run is paused on this call awaiting a human decision
+	 * (approve, edit, reject), synced from the run's durable snapshot (see
+	 * agent-harness.ts). Null for every call outside an agent run.
+	 */
+	readonly pendingAction: PendingAgentAction | null;
+	/**
+	 * Whether the call is still streaming in (name and arguments arriving over
+	 * SSE). Until the final part syncs it has no `_meta`, title, or parsed
+	 * arguments and is not interactive.
+	 */
+	readonly argumentsStreaming: boolean;
+	/** The partial JSON of `arguments` streamed so far; cleared by the final sync. */
+	readonly argumentsBuffer: string;
+	/** The wire name from the stream, shown until the final part brings the title. */
+	readonly streamingName: string;
+	/**
+	 * Whether `part` is the placeholder pushed while the call streams in. It
+	 * carries a stubbed `_meta`, so `json` does not hand it out.
+	 */
+	readonly isStreamingPlaceholder: boolean;
+	/** The TOOL_CALL part, once one has synced. */
+	readonly part: PixelMessageToolCallPart | null;
+	readonly response: string;
+	readonly isOpen: boolean;
+	/** Whether an inline call is expanded to fill the conversation. */
+	readonly isExpanded: boolean;
+	readonly display: ToolDisplay;
+}
+
+const INITIAL_TOOL: ToolSnapshot = {
+	status: "INITIAL",
+	parameters: {},
+	pendingAction: null,
+	argumentsStreaming: false,
+	argumentsBuffer: "",
+	streamingName: "",
+	isStreamingPlaceholder: false,
+	part: null,
+	response: "",
+	isOpen: false,
+	isExpanded: false,
+	display: "sidebar",
+};
+
 /**
- * Tool
+ * One tool call in a room, from its first streamed chunk to its result.
+ *
+ * Its state is a `StoreState`; read it in React with `useTool`. Until the
+ * room and message stores leave MobX, every read also reports to a MobX atom
+ * and every change tells it, so their getters and `observer` components keep
+ * tracking it.
  */
 export class ToolStore {
-	/**
-	 * Store the room
-	 */
-	room: RoomStore;
+	/** The room the call is in. */
+	readonly room: RoomStore;
+
+	/** The call's id. */
+	readonly id: string;
+
+	private readonly state = new StoreState<ToolSnapshot>(INITIAL_TOOL);
+
+	/** The MobX adapter; goes with the last MobX reader. */
+	private readonly atom = createAtom("ToolStore");
 
 	/**
-	 * Id for the tool
+	 * `json`, cached while something observes it, as it was as a MobX
+	 * computed: it reads the room's options, which are still MobX.
 	 */
-	id: string;
+	private readonly jsonValue = computed(() =>
+		this.toJson(this.getSnapshot()),
+	);
+
+	/** The message whose `parts` holds this call's TOOL_CALL. */
+	private toolMessage: ResponseMessageStore | null = null;
 
 	/**
-	 * What identifies this tool's sidebar panel.
-	 *
-	 * The dock mints its own instance ids, so a tool is no longer found by
-	 * parsing a `tool--<id>` node id back apart: the panel's config *is* the
-	 * identity, and the blueprint's `matches` compares `toolId`.
+	 * @param room - The room the call is in.
+	 * @param toolId - The call's id.
+	 */
+	constructor(room: RoomStore, toolId: string) {
+		this.room = room;
+		this.id = toolId;
+		this.state.subscribe(() => this.atom.reportChanged());
+	}
+
+	getSnapshot = (): ToolSnapshot => {
+		this.atom.reportObserved();
+		return this.state.getSnapshot();
+	};
+
+	subscribe = (listener: () => void): (() => void) =>
+		this.state.subscribe(listener);
+
+	get status(): ToolStatus {
+		return this.getSnapshot().status;
+	}
+
+	get parameters(): Readonly<Record<string, unknown>> {
+		return this.getSnapshot().parameters;
+	}
+
+	get pendingAction(): PendingAgentAction | null {
+		return this.getSnapshot().pendingAction;
+	}
+
+	get argumentsStreaming(): boolean {
+		return this.getSnapshot().argumentsStreaming;
+	}
+
+	get argumentsBuffer(): string {
+		return this.getSnapshot().argumentsBuffer;
+	}
+
+	get streamingName(): string {
+		return this.getSnapshot().streamingName;
+	}
+
+	/** Whether the part it holds is the stub pushed while it streams in. */
+	get isStreamingPlaceholder(): boolean {
+		return this.getSnapshot().isStreamingPlaceholder;
+	}
+
+	get response(): string {
+		return this.getSnapshot().response;
+	}
+
+	get isOpen(): boolean {
+		return this.getSnapshot().isOpen;
+	}
+
+	get isExpanded(): boolean {
+		return this.getSnapshot().isExpanded;
+	}
+
+	get display(): ToolDisplay {
+		return this.getSnapshot().display;
+	}
+
+	/** The message whose `parts` holds this call's TOOL_CALL. */
+	get message(): ResponseMessageStore | null {
+		// the message comes with the part, so reading the part tracks it
+		this.getSnapshot();
+		return this.toolMessage;
+	}
+
+	/**
+	 * What identifies this call's Workspace panel. The dock mints its own
+	 * instance ids, so the panel's config is its identity, and the blueprint's
+	 * `matches` compares `toolId`.
 	 */
 	get panelConfig() {
 		return {
 			app: getToolAppId(this.json._meta),
-			message: this.toolCall.message?.id,
+			message: this.message?.id,
 			toolId: this.json.id,
 		};
 	}
 
-	/**
-	 * Status for the tool
-	 */
-	status: "INITIAL" | "LOADING" | "CANCELLED" | "SUCCESS" | "ERROR" =
-		"INITIAL";
-
-	/**
-	 * Parameters for the tool
-	 */
-	parameters: Record<string, unknown> = {};
-
-	/**
-	 * Set while an agent run is paused on this tool call awaiting a human
-	 * decision (approve/edit/reject). Synced from the run's durable snapshot
-	 * — see agent-harness.ts. Null for every tool outside an agent run.
-	 */
-	pendingAction: PendingAgentAction | null = null;
-
-	/**
-	 * Whether the tool call is still streaming in (name/arguments arriving via SSE).
-	 * While true, the tool does not have its final `_meta`, `title`, or parsed
-	 * `arguments` yet and should not be interactive.
-	 */
-	argumentsStreaming: boolean = false;
-
-	/**
-	 * Raw partial JSON string for `arguments` accumulated from streaming chunks.
-	 * Cleared once the final response sync replaces it with the parsed object.
-	 */
-	argumentsBuffer: string = "";
-
-	/**
-	 * Wire name received from the streaming chunk, used as a placeholder for
-	 * `name`/`title` until the final synced part provides the friendly title.
-	 */
-	streamingName: string = "";
-
-	/**
-	 * Whether the stored TOOL_CALL part is the placeholder pushed while the call
-	 * streams in, rather than the final part synced from the response. The
-	 * placeholder carries a stubbed `_meta`, so `json` must not hand it out.
-	 */
-	isStreamingPlaceholder: boolean = false;
-
-	/** The message whose `parts` actually contains this tool's TOOL_CALL. */
-	get message() {
-		return this.toolCall.message;
+	/** The call as the views read it. */
+	get json(): PixelMessageToolCallPart["toolCall"] {
+		return this.jsonValue.get();
 	}
 
 	/**
-	 * Json for the tool
-	 */
-	get json() {
-		const part = this.toolCall.part?.toolCall;
-		// Server tools (provider-executed, e.g. web_search) skip the MCP _meta
-		// block — synthesize one so downstream consumers see a consistent shape.
-		if (part?.server_tool) {
-			return buildServerToolJson(part);
-		}
-		// If the final part has arrived, use it. Otherwise (placeholder pushed
-		// during streaming, or no part at all) synthesize from streamingName so
-		// the pill renders the wire name until the final sync swaps it. Never key
-		// this off a display field such as `title`: MCP tools are not required to
-		// declare one, and a real part without a title would lose its `_meta`.
-		// Work folder and connector calls get their metadata filled in by the
-		// room's chat tools; every other part comes back as it is.
-		if (part && !this.isStreamingPlaceholder) {
-			return this.room.chatTools.decorateToolCall(part);
-		}
-		const name = this.streamingName;
-		return {
-			id: this.id,
-			title: name,
-			_meta: {
-				SMSS_MCP_EXECUTION: MCP_EXECUTION_ASK,
-				SMSS_PROJECT_NAME: "",
-				SMSS_PROJECT_ID: "",
-			},
-			name,
-			original_name: name,
-			description: "",
-		} as PixelMessageToolCallPart["toolCall"];
-	}
-
-	/**
-	 * Whether the server-resolved tool part has synced. Until it has we only
-	 * have wire-level data (id, raw name, partial args) from the SSE stream — no
-	 * friendly title, description, or `_meta` — so the tool should render as a
-	 * generic loading state rather than exposing the raw wire name. Mirrors the
-	 * `json` getter's own resolved check — never key this off a display field
-	 * such as `title`: MCP tools aren't required to declare one, and a titleless
-	 * tool would otherwise never resolve.
+	 * Whether the server-resolved part has synced. Until then there is only
+	 * wire data (id, raw name, partial arguments), so the call renders as a
+	 * generic loading state rather than its raw wire name. Never keyed off a
+	 * display field such as `title`: MCP tools need not declare one.
 	 *
-	 * Distinct from `argumentsStreaming` (only true while deltas are still
-	 * arriving): a tool stays unresolved through the gap between the terminal
-	 * stream chunk and the final `sync()`, which is what prevents a flicker
-	 * there.
+	 * Distinct from `argumentsStreaming`, which is true only while deltas
+	 * arrive: a call stays unresolved through the gap between the last chunk
+	 * and the final sync, which keeps it from flickering there.
 	 */
 	get isResolved(): boolean {
-		return !!this.toolCall.part && !this.isStreamingPlaceholder;
+		const { part, isStreamingPlaceholder } = this.getSnapshot();
+		return !!part && !isStreamingPlaceholder;
 	}
 
 	/**
-	 * Label to render for the tool. `title` is optional in MCP and the backend
-	 * only stamps it on when the tool declares one, so fall back to the name.
-	 * `_meta.SMSS_ORIGINAL_TOOL_NAME` is the name the tool declared before the
-	 * backend rewrote it for the model, so it is preferred over `original_name`
-	 * and `name`, which hold the rewritten wire name whenever the tool has no
-	 * explicit function-name indirection. While streaming, all we have is the
-	 * wire name.
+	 * The label to show. `title` is optional in MCP, so it falls back to
+	 * `_meta.SMSS_ORIGINAL_TOOL_NAME` (the name the tool declared before the
+	 * backend rewrote it for the model), then `original_name` and `name`. While
+	 * streaming, there is only the wire name.
 	 */
 	get displayName(): string {
 		const json = this.json;
@@ -194,203 +256,242 @@ export class ToolStore {
 	}
 
 	/**
-	 * Response for the tool
-	 */
-	response: string = "";
-
-	/**
-	 * Track if the tool is open
-	 */
-	isOpen: boolean = false;
-
-	/**
-	 * Track if the tool is expanded (fullscreen) in inline mode
-	 */
-	isExpanded: boolean = false;
-
-	/**
-	 * Display information for the tool
-	 */
-	display: "inline" | "sidebar" | "hidden" = "sidebar";
-
-	/**
-	 * Tool call data
-	 */
-	private toolCall: {
-		message: ResponseMessageStore | null;
-		part: PixelMessageToolCallPart | null;
-	} = { message: null, part: null };
-
-	constructor(room: RoomStore, toolId: string) {
-		this.room = room;
-
-		// set the id based on the json
-		this.id = toolId;
-
-		makeAutoObservable(this);
-	}
-
-	/**
-	 * Update the tool with the new message information
-	 * @param message - the message that contains the tool call information
-	 * @param part - the part of the message that contains the tool call or result information
-	 * @param options.placeholder - the part is the stub pushed while the call streams in
+	 * Take a call or result part from a message.
+	 *
+	 * @param message - The message that holds the part.
+	 * @param part - The TOOL_CALL or TOOL_RESULT part.
+	 * @param options.placeholder - The part is the stub pushed while the call
+	 * streams in.
 	 */
 	syncMessage = (
 		message: InputMessageStore | ResponseMessageStore,
 		part: PixelMessageToolCallPart | PixelMessageToolResultPart,
 		options?: { placeholder?: boolean },
-	) => {
+	): void => {
 		if (
 			part.type === "TOOL_CALL" &&
 			message instanceof ResponseMessageStore
 		) {
-			this.isStreamingPlaceholder = options?.placeholder === true;
-
-			//set the parameters based on the json
-			this.parameters = part.toolCall.arguments || {};
-
-			// update the tool call information
-			this.toolCall = {
-				message: message,
-				part,
-			};
-
-			// set the display from the resolved json, which is where a work
-			// folder call gets its metadata. Server tools default to sidebar
-			// since they have no SMSS_MCP_UI block
-			this.display =
-				this.json._meta?.SMSS_MCP_UI?.displayLocation || "sidebar";
-
-			// once the final part has arrived, clear streaming bookkeeping
-			if (!this.isStreamingPlaceholder) {
-				this.argumentsStreaming = false;
-				this.argumentsBuffer = "";
-				this.streamingName = "";
-			}
+			const isStreamingPlaceholder = options?.placeholder === true;
+			this.toolMessage = message;
+			this.state.update((current) => {
+				const next = { ...current, isStreamingPlaceholder, part };
+				return {
+					isStreamingPlaceholder,
+					part,
+					parameters: part.toolCall.arguments || {},
+					// the resolved json is where a work folder call gets its
+					// metadata; server tools have no SMSS_MCP_UI, so sidebar
+					display:
+						this.toJson(next)._meta?.SMSS_MCP_UI?.displayLocation ||
+						"sidebar",
+					// the final part ends the streaming bookkeeping
+					argumentsStreaming:
+						isStreamingPlaceholder && current.argumentsStreaming,
+					argumentsBuffer: isStreamingPlaceholder
+						? current.argumentsBuffer
+						: "",
+					streamingName: isStreamingPlaceholder
+						? current.streamingName
+						: "",
+				};
+			});
 		} else if (part.type === "TOOL_RESULT") {
-			// Server tool results don't echo back toolParameterValues — keep the
-			// args we already captured from the matching TOOL_CALL sync.
-			if (part.toolResult.toolParameterValues) {
-				this.parameters = part.toolResult.toolParameterValues;
-			}
-			this.response = part.toolResult.output;
-
-			// Server tool results also typically omit toolStatus — they're only
-			// emitted on success, so default to SUCCESS in that case.
-			if (part.toolResult.toolStatus === "error") {
-				this.status = "ERROR";
-			} else if (
-				part.toolResult.toolStatus === "cancelled" ||
-				// "paused" is a legacy status, retired in favor of cancelled;
-				// surface any persisted paused tools as cancelled.
-				part.toolResult.toolStatus === "paused"
-			) {
-				this.status = "CANCELLED";
-			} else {
-				this.status = "SUCCESS";
-			}
+			const { output, toolParameterValues, toolStatus } = part.toolResult;
+			this.state.update((current) => ({
+				// server tool results do not echo the arguments back; keep the
+				// ones the TOOL_CALL brought
+				parameters: toolParameterValues ?? current.parameters,
+				response: output,
+				// server tool results usually have no status and come only on
+				// success; "paused" is a retired status, shown as cancelled
+				status:
+					toolStatus === "error"
+						? "ERROR"
+						: toolStatus === "cancelled" || toolStatus === "paused"
+							? "CANCELLED"
+							: "SUCCESS",
+			}));
 		}
 	};
 
-	/**
-	 * Mark the tool as actively streaming and seed its wire identity.
-	 * Called when the first streaming chunk for this tool arrives (carries `id`).
-	 */
-	beginStreaming = () => {
-		this.argumentsStreaming = true;
-		this.argumentsBuffer = "";
+	/** The first streamed chunk arrived: the call is streaming in. */
+	beginStreaming = (): void => {
+		this.state.update({ argumentsStreaming: true, argumentsBuffer: "" });
 	};
 
 	/**
-	 * Record the wire name from a streaming chunk.
+	 * Record the wire name from a streamed chunk.
+	 *
+	 * @param name - The name.
 	 */
-	setStreamingName = (name: string) => {
-		this.streamingName = name;
+	setStreamingName = (name: string): void => {
+		this.state.update({ streamingName: name });
 	};
 
 	/**
-	 * Append an `arguments` delta from a streaming chunk.
+	 * Append a streamed `arguments` delta.
+	 *
+	 * @param delta - The next piece of the arguments' JSON.
 	 */
-	appendStreamingArguments = (delta: string) => {
-		this.argumentsBuffer += delta;
+	appendStreamingArguments = (delta: string): void => {
+		this.state.update((current) => ({
+			argumentsBuffer: current.argumentsBuffer + delta,
+		}));
+	};
+
+	/** No more deltas are coming; the parsed `_meta` arrives with the final sync. */
+	endStreaming = (): void => {
+		this.state.update({ argumentsStreaming: false });
 	};
 
 	/**
-	 * Streaming finished; we still don't have the parsed meta (that arrives in
-	 * the final sync), but no further deltas are coming.
+	 * Set where the call stands.
+	 *
+	 * @param status - The status.
 	 */
-	endStreaming = () => {
-		this.argumentsStreaming = false;
+	setStatus = (status: ToolStatus): void => {
+		this.state.update({ status });
 	};
 
 	/**
-	 * Set the isOpen state
+	 * Record how the call ended.
+	 *
+	 * @param outcome.status - Its final status.
+	 * @param outcome.response - What it returned, as the model reads it.
+	 * @param outcome.parameters - The arguments it ran with, when they differ
+	 * from the ones it has.
 	 */
-	setIsOpen = (isOpen: boolean) => {
-		// set as open
-		this.isOpen = isOpen;
+	settle = ({
+		status,
+		response,
+		parameters,
+	}: {
+		status: ToolStatus;
+		response: string;
+		parameters?: Readonly<Record<string, unknown>>;
+	}): void => {
+		this.state.update((current) => ({
+			status,
+			response,
+			parameters: parameters ?? current.parameters,
+		}));
 	};
 
 	/**
-	 * Set the isExpanded state
+	 * Replace the call's arguments, as the user edited them.
+	 *
+	 * @param parameters - The arguments.
 	 */
-	setIsExpanded = (isExpanded: boolean) => {
-		this.isExpanded = isExpanded;
+	setParameters = (parameters: Readonly<Record<string, unknown>>): void => {
+		this.state.update({ parameters });
 	};
 
 	/**
-	 * Update the parameters of the tool
+	 * Set the agent run's pending decision on this call.
+	 *
+	 * @param pendingAction - The decision it waits for, or null.
 	 */
-	openTool = (display?: "inline" | "sidebar" | "hidden") => {
-		if (this.isOpen) {
-			// Tool is already open. If the new display is the same or undefined, move to front
-			// if the new display is different, close and reopen in the new location
-			if (display !== undefined && display !== this.display) {
-				this.closeTool();
-			}
+	setPendingAction = (pendingAction: PendingAgentAction | null): void => {
+		this.state.update({ pendingAction });
+	};
+
+	/**
+	 * Mark the call open or closed, without moving it.
+	 *
+	 * @param isOpen - Whether it is open.
+	 */
+	setIsOpen = (isOpen: boolean): void => {
+		this.state.update({ isOpen });
+	};
+
+	/**
+	 * Expand an inline call to fill the conversation, or shrink it back.
+	 *
+	 * @param isExpanded - Whether it is expanded.
+	 */
+	setIsExpanded = (isExpanded: boolean): void => {
+		this.state.update({ isExpanded });
+	};
+
+	/**
+	 * Open the call where it shows, or move it. An open call asked to show
+	 * somewhere else closes where it was first.
+	 *
+	 * @param display - Where to show it; where it shows now when left out.
+	 */
+	openTool = (display?: ToolDisplay): void => {
+		const current = this.state.getSnapshot();
+		if (
+			current.isOpen &&
+			display !== undefined &&
+			display !== current.display
+		) {
+			this.closeTool();
 		}
+		this.state.update({
+			isOpen: true,
+			display: display ?? current.display,
+		});
 
-		// set as open
-		this.isOpen = true;
-
-		// update the display if it is defined
-		if (display) {
-			this.display = display;
-		}
-
-		if (this.display === "inline") {
-			// noop. processed by component
-		} else if (this.display === "sidebar") {
-			// Default to sidebar
+		// an inline call is drawn by its component; a hidden one nowhere
+		if (this.display === "sidebar") {
 			this.room.openSidebarPanel(
 				ROOM_PANEL_TYPES.TOOL,
 				this.panelConfig,
 				this.displayName,
 			);
-		} else if (this.display === "hidden") {
-			// noop
 		}
 	};
 
-	/**
-	 * Close the tool
-	 */
-	closeTool = () => {
-		// close it
-		this.isOpen = false;
-		this.isExpanded = false;
-
-		// close the previous location
-		if (this.display === "inline") {
-			// noop. processed by component
-		} else if (this.display === "sidebar") {
+	/** Close the call where it shows. */
+	closeTool = (): void => {
+		this.state.update({ isOpen: false, isExpanded: false });
+		if (this.state.getSnapshot().display === "sidebar") {
 			this.room.closeSidebarPanel(
 				ROOM_PANEL_TYPES.TOOL,
 				this.panelConfig,
 			);
-		} else if (this.display === "hidden") {
-			// noop
 		}
+	};
+
+	/**
+	 * The call as the views read it, from a snapshot.
+	 *
+	 * @param snapshot - The call's state.
+	 * @returns Its part's call, filled in by the room's chat tools, or one made
+	 * from the wire name while it streams in.
+	 */
+	private toJson = ({
+		part,
+		isStreamingPlaceholder,
+		streamingName,
+	}: Pick<
+		ToolSnapshot,
+		"part" | "isStreamingPlaceholder" | "streamingName"
+	>): PixelMessageToolCallPart["toolCall"] => {
+		const call = part?.toolCall;
+		// server tools (run by the model provider, e.g. web_search) have no MCP
+		// _meta; make one so every reader sees the same shape
+		if (call?.server_tool) {
+			return buildServerToolJson(call);
+		}
+		// work folder and connector calls get their metadata from the room's
+		// chat tools; every other final part comes back as it is
+		if (call && !isStreamingPlaceholder) {
+			return this.room.chatTools.decorateToolCall(call);
+		}
+		return {
+			id: this.id,
+			title: streamingName,
+			_meta: {
+				SMSS_MCP_EXECUTION: MCP_EXECUTION_ASK,
+				SMSS_PROJECT_NAME: "",
+				SMSS_PROJECT_ID: "",
+			},
+			name: streamingName,
+			original_name: streamingName,
+			description: "",
+		} as PixelMessageToolCallPart["toolCall"];
 	};
 }

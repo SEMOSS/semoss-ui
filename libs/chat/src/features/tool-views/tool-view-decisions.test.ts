@@ -22,6 +22,9 @@ const chatTool = () => {
 	const tool = {
 		status: "INITIAL",
 		parameters: { to: ["ada@example.com"] },
+		setParameters(parameters: Record<string, unknown>) {
+			this.parameters = parameters;
+		},
 		pendingAction: null,
 		message: message,
 		room: room,

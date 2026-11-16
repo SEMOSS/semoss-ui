@@ -232,7 +232,7 @@ const applyAgentRunItem = (
 			const tool = room.getTool(item.id);
 			const status = mapToolStatus(item.status);
 			if (tool && status) {
-				tool.status = status;
+				tool.setStatus(status);
 			}
 		} else if (item.kind === "subagent") {
 			responseMessage.parts.push({
@@ -267,7 +267,7 @@ const applyAgentRunItem = (
 			const status =
 				merged?.kind === "tool" ? mapToolStatus(merged.status) : null;
 			if (tool && status) {
-				tool.status = status;
+				tool.setStatus(status);
 			}
 		} else if (event.kind === "subagent") {
 			const merged = items.itemsById[event.itemId];
@@ -288,11 +288,10 @@ const applyAgentRunItem = (
 		if (!tool) {
 			return;
 		}
-		const status = mapToolStatus(item.status);
-		if (status) {
-			tool.status = status;
-		}
-		tool.response = item.output ?? item.error ?? "";
+		tool.settle({
+			status: mapToolStatus(item.status) ?? tool.status,
+			response: item.output ?? item.error ?? "",
+		});
 	} else if (item.kind === "subagent") {
 		const part = findSubagentPart(responseMessage, item.id);
 		if (part) {
@@ -346,7 +345,7 @@ const syncPendingActions = (
 		if (!tool) {
 			return;
 		}
-		tool.pendingAction = byToolCallId.get(tool.id) ?? null;
+		tool.setPendingAction(byToolCallId.get(tool.id) ?? null);
 	});
 };
 

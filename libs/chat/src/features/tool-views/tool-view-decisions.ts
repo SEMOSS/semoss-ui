@@ -1,4 +1,3 @@
-import { runInAction } from "mobx";
 import type { ToolViewProps } from "@semoss/shared";
 import { decideAgentToolAction } from "../messages/agent-harness";
 import type { ToolStore } from "../messages/tool.store";
@@ -37,9 +36,7 @@ export const createToolViewDecisions = (
 			return;
 		}
 		if (editedArguments) {
-			runInAction(() => {
-				tool.parameters = editedArguments;
-			});
+			tool.setParameters(editedArguments);
 		}
 		await message.runMcpToolCall(tool);
 	},

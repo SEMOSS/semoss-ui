@@ -1,4 +1,3 @@
-import { runInAction } from "mobx";
 import { getI18n } from "@semoss/i18n";
 import type { PixelMessageToolCallPart } from "../../types";
 import { MCP_EXECUTION_ASK, MCP_EXECUTION_AUTO } from "../mcp/mcp-constants";
@@ -242,9 +241,7 @@ export class ChatToolsStore {
 			return;
 		}
 
-		runInAction(() => {
-			tool.status = "LOADING";
-		});
+		tool.setStatus("LOADING");
 		const outcome = await this.runFolderCall(
 			tool.json.name,
 			tool.parameters,

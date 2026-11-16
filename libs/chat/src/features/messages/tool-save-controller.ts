@@ -101,15 +101,15 @@ export class ToolSaveController {
 			wrapped = `${TOOL_CANCELLATION_PROMPT}${toolResponse ? `\n\nCancellation Details: ${toolResponse}` : ""}`;
 		}
 
-		runInAction(() => {
-			tool.response = wrapped;
-			tool.parameters = executedParameters;
-			tool.status =
+		tool.settle({
+			status:
 				toolStatus === "success"
 					? "SUCCESS"
 					: toolStatus === "cancelled"
 						? "CANCELLED"
-						: "ERROR";
+						: "ERROR",
+			response: wrapped,
+			parameters: executedParameters,
 		});
 
 		return new Promise<void>((resolve, reject) => {
@@ -161,8 +161,10 @@ export class ToolSaveController {
 					tool &&
 					(tool.status === "INITIAL" || tool.status === "LOADING")
 				) {
-					tool.response = TOOL_INTERRUPTED_PROMPT;
-					tool.status = "CANCELLED";
+					tool.settle({
+						status: "CANCELLED",
+						response: TOOL_INTERRUPTED_PROMPT,
+					});
 					entries.push({
 						tool,
 						toolResponse: TOOL_INTERRUPTED_PROMPT,
@@ -467,16 +469,12 @@ export class ToolSaveController {
 		detail: unknown,
 	): void => {
 		if (entry.toolStatus !== "success") {
-			runInAction(() => {
-				entry.tool.status = "ERROR";
-			});
+			entry.tool.setStatus("ERROR");
 			entry.reject(detail);
 			return;
 		}
 		// clear the terminal status so the re-save isn't skipped
-		runInAction(() => {
-			entry.tool.status = "LOADING";
-		});
+		entry.tool.setStatus("LOADING");
 		(async () => {
 			try {
 				await this.save(

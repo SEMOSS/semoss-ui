@@ -655,9 +655,7 @@ paramValues=[${JSON.stringify({
 	 * @throws Error when the response cannot be saved.
 	 */
 	runMcpToolCall = async (tool: ToolStore): Promise<void> => {
-		runInAction(() => {
-			tool.status = "LOADING";
-		});
+		tool.setStatus("LOADING");
 
 		let output = "";
 		let toolError = false;
