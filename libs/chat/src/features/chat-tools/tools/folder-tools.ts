@@ -424,7 +424,7 @@ const readInteger = (
  * @param value - The raw argument.
  * @returns True only for `true` or `"true"`.
  */
-const readBoolean = (value: unknown): boolean =>
+export const readBoolean = (value: unknown): boolean =>
 	value === true || value === "true";
 
 /**

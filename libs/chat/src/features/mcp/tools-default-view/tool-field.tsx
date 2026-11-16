@@ -14,35 +14,38 @@ import {
 import { CollapsibleField } from "./collapsible-field";
 import { JSONEditor } from "./json-editor";
 
+/** The JSON schema of one tool parameter, as `GetMCPTools` describes it. */
+export interface ToolFieldSchema {
+	/** JSON schema type (string, number, boolean, array, object, etc.) */
+	type?: string;
+	/** Allowed enum values for string types */
+	enum?: string[];
+	/** Schema for array item types */
+	items?: unknown;
+	/** Minimum value for numeric types */
+	minimum?: number;
+	/** Maximum value for numeric types */
+	maximum?: number;
+	/** Minimum length for string types */
+	minLength?: number;
+	/** Maximum length for string types */
+	maxLength?: number;
+	/** Regex pattern for string validation */
+	pattern?: string;
+	/** Format hint (e.g., 'date', 'email') */
+	format?: string;
+	/** Default value for the field */
+	default?: unknown;
+	/** Human-readable description of the field */
+	description?: string;
+}
+
 /** Props for {@link ToolField}. */
 interface ToolFieldProps<T = unknown> {
 	/** The parameter's name, shown as is and used as the input's id. */
 	fieldName: string;
 	/** JSON schema definition for the field. */
-	fieldSchema: {
-		/** JSON schema type (string, number, boolean, array, object, etc.) */
-		type?: string;
-		/** Allowed enum values for string types */
-		enum?: string[];
-		/** Schema for array item types */
-		items?: unknown;
-		/** Minimum value for numeric types */
-		minimum?: number;
-		/** Maximum value for numeric types */
-		maximum?: number;
-		/** Minimum length for string types */
-		minLength?: number;
-		/** Maximum length for string types */
-		maxLength?: number;
-		/** Regex pattern for string validation */
-		pattern?: string;
-		/** Format hint (e.g., 'date', 'email') */
-		format?: string;
-		/** Default value for the field */
-		default?: unknown;
-		/** Human-readable description of the field */
-		description?: string;
-	};
+	fieldSchema: ToolFieldSchema;
 	/** Whether this field is required, which marks its label. */
 	required?: boolean;
 	/** Whether the field is read-only. */

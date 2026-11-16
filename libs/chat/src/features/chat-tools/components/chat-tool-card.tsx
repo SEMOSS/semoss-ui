@@ -27,7 +27,11 @@ import {
 	getConnectorToolService,
 	isFolderToolCall,
 } from "../tools/chat-tool-kind";
-import { FOLDER_TOOL_NAMES, isFolderToolName } from "../tools/folder-tools";
+import {
+	FOLDER_TOOL_NAMES,
+	isFolderToolName,
+	readBoolean,
+} from "../tools/folder-tools";
 import { readToolResponseDetail } from "../tools/tool-response-detail";
 import { ToolTextBlock } from "./tool-text-block";
 import { ToolValueRow } from "./tool-value-row";
@@ -51,14 +55,6 @@ const INLINE_VALUE_MAX = 80;
  */
 const toDisplayText = (value: unknown): string =>
 	typeof value === "string" ? value : JSON.stringify(value, null, 2);
-
-/**
- * Whether a boolean argument is set. Models sometimes quote booleans.
- *
- * @param value - The raw value.
- * @returns True for `true` or `"true"`.
- */
-const isSet = (value: unknown): boolean => value === true || value === "true";
 
 /**
  * A saved tool response for display: the details without the model guidance
@@ -249,7 +245,7 @@ export const ChatToolCard = ({ tool, variant }: ChatToolCardProps) => {
 						<ToolTextBlock label={t("card.with")}>
 							{toDisplayText(args.new_text ?? "")}
 						</ToolTextBlock>
-						{isSet(args.replace_all) ? (
+						{readBoolean(args.replace_all) ? (
 							<Small className="text-muted-foreground">
 								{t("card.replaceAll")}
 							</Small>
@@ -276,7 +272,7 @@ export const ChatToolCard = ({ tool, variant }: ChatToolCardProps) => {
 							label={t("card.path")}
 							value={toDisplayText(args.path)}
 						/>
-						{isSet(args.recursive) ? (
+						{readBoolean(args.recursive) ? (
 							<Small className="text-warning">
 								{t("card.deleteRecursive")}
 							</Small>
@@ -451,7 +447,7 @@ export const ChatToolCard = ({ tool, variant }: ChatToolCardProps) => {
 							)}
 							{isWaiting &&
 								name === FOLDER_TOOL_NAMES.DELETE &&
-								isSet(args.recursive) && (
+								readBoolean(args.recursive) && (
 									<Small className="text-warning">
 										{t("card.deleteRecursive")}
 									</Small>

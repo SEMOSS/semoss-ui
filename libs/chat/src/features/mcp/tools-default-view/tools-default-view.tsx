@@ -19,7 +19,7 @@ import type { RoomStore } from "../../room/room.store";
 import { useRoomSelector } from "../../room/use-room-selector";
 import { ToolInspector } from "../../tool-inspector/tool-inspector";
 import { getToolEngineId, isAskExecutionMode } from "../mcp-utils";
-import { ToolField } from "./tool-field";
+import { ToolField, type ToolFieldSchema } from "./tool-field";
 
 /** Props for {@link ToolsDefaultView}. */
 interface ToolsDefaultViewProps {
@@ -34,21 +34,6 @@ interface ToolsDefaultViewProps {
 
 	/** The tool call. */
 	tool: ToolStore;
-}
-
-/** The JSON schema of one tool parameter, as `GetMCPTools` returns it. */
-interface FieldSchema {
-	type?: string;
-	enum?: string[];
-	items?: unknown;
-	minimum?: number;
-	maximum?: number;
-	minLength?: number;
-	maxLength?: number;
-	pattern?: string;
-	format?: string;
-	default?: unknown;
-	description?: string;
 }
 
 /**
@@ -85,7 +70,7 @@ export const ToolsDefaultView = ({
 			title?: string;
 			description?: string;
 			inputSchema: {
-				properties?: Record<string, FieldSchema>;
+				properties?: Record<string, ToolFieldSchema>;
 				required?: string[];
 			};
 		}[];
@@ -314,7 +299,10 @@ export const ToolsDefaultView = ({
 	 * @param required - Whether these are the tool's required parameters.
 	 * @returns One `ToolField` per parameter.
 	 */
-	const renderFields = (fields: [string, FieldSchema][], required: boolean) =>
+	const renderFields = (
+		fields: [string, ToolFieldSchema][],
+		required: boolean,
+	) =>
 		fields.map(([fieldName, fieldSchema]) => (
 			<ToolField
 				key={fieldName}
