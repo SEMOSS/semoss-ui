@@ -1,5 +1,4 @@
 import { act, renderHook } from "@testing-library/react";
-import { autorun } from "mobx";
 import { expect, test, vi } from "vitest";
 import type { PixelMessageToolCallPart } from "../../types";
 import type { RoomStore } from "../room/room.store";
@@ -128,16 +127,6 @@ test("opens in the Workspace, and moves when asked to show elsewhere", () => {
 		isOpen: false,
 		isExpanded: false,
 	});
-});
-
-test("MobX readers still track it through the adapter", () => {
-	const tool = new ToolStore(room, "call-1");
-	const seen: string[] = [];
-	const stop = autorun(() => seen.push(tool.status));
-	tool.setStatus("LOADING");
-	tool.setStatus("SUCCESS");
-	stop();
-	expect(seen).toEqual(["INITIAL", "LOADING", "SUCCESS"]);
 });
 
 test("useTool renders on a change to what it selects, not on others", () => {

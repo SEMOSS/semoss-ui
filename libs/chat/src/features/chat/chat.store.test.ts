@@ -80,14 +80,9 @@ const createStore = async () => {
 	return store;
 };
 
-test("reads the user and their new chat default model from the session", async () => {
+test("reads the user's new chat default model from the session", async () => {
 	const store = await createStore();
 
-	expect(store.user).toEqual({
-		id: "user-1",
-		name: "Tester",
-		lastLogin: "2026-11-10",
-	});
 	expect(store.models.selected.engine_id).toBe("model-b");
 	// the user is not read again: only the models and the context window are
 	for (const [pixel] of mocks.run.mock.calls) {

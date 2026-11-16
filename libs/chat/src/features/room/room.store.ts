@@ -1,4 +1,3 @@
-import { createAtom } from "mobx";
 import type { StoreApi } from "zustand";
 import { getI18n } from "@semoss/i18n";
 import {
@@ -274,9 +273,6 @@ export class RoomStore {
 	});
 	private readonly state: StoreState<RoomSnapshot>;
 
-	/** The MobX adapter; goes with the last MobX reader. */
-	private readonly atom = createAtom("RoomStore");
-
 	/**
 	 * Key of the options the backend holds, as of the last read or save. A
 	 * save that would not change them is skipped.
@@ -354,7 +350,6 @@ export class RoomStore {
 				),
 			}),
 		});
-		this.state.subscribe(() => this.atom.reportChanged());
 		this.workbench = createWorkbenchStore({ components: panelComponents });
 		this.workbench
 			.getState()
@@ -461,9 +456,8 @@ export class RoomStore {
 	subscribe = (listener: () => void): (() => void) =>
 		this.state.subscribe(listener);
 
-	/** The current snapshot, reported to the MobX adapter. */
+	/** The current snapshot. */
 	private get snapshot(): RoomSnapshot {
-		this.atom.reportObserved();
 		return this.state.getSnapshot();
 	}
 

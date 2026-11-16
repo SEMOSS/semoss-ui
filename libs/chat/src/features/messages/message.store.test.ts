@@ -1,5 +1,4 @@
 import { act, renderHook } from "@testing-library/react";
-import { autorun } from "mobx";
 import { expect, test, vi } from "vitest";
 import type { InputPixelMessage, ResponsePixelMessage } from "../../types";
 import type { RoomStore } from "../room/room.store";
@@ -86,15 +85,6 @@ test("children connect, activate, and reindex when one is removed", () => {
 
 	root.removeChild(b);
 	expect(root.activeChild).toBe(c);
-});
-
-test("MobX readers still track it through the adapter", () => {
-	const message = response("r1");
-	const seen: number[] = [];
-	const stop = autorun(() => seen.push(message.parts.length));
-	message.addPart({ type: "TEXT", text: "a", uiText: "a" });
-	stop();
-	expect(seen).toEqual([0, 1]);
 });
 
 test("useMessage renders on its own message's changes only", () => {

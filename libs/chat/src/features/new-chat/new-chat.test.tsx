@@ -6,8 +6,6 @@ import {
 	waitFor,
 	within,
 } from "@testing-library/react";
-import { runInAction } from "mobx";
-import { observer } from "mobx-react-lite";
 import type { ComponentProps, ReactNode } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { fakeStore } from "../../test/fake-store";
@@ -249,9 +247,10 @@ vi.mock("../room-settings/room-options-form", () => ({
 		</>
 	),
 }));
-vi.mock("../composer/room-input", () => ({
-	RoomInput: observer(
-		({
+vi.mock("../composer/room-input", async () => {
+	const { useRoomSelector } = await import("../room/use-room-selector");
+	return {
+		RoomInput: ({
 			options,
 			room,
 			onMcpChange,
@@ -261,91 +260,98 @@ vi.mock("../composer/room-input", () => ({
 			onDefaultAgentChange,
 			onPrompt,
 			workbenchPanels,
-		}: ComponentProps<typeof RoomInput>) => (
-			<>
-				{onDefaultAgentChange && (
-					<>
-						<button
-							type="button"
-							onClick={() => {
-								onWorkspaceChange?.(null);
-								onDefaultAgentChange(true);
-							}}
-						>
-							Pick Default Agent
-						</button>
-						<button
-							type="button"
-							onClick={() => {
-								onWorkspaceChange?.(null);
-								onDefaultAgentChange(false);
-							}}
-						>
-							Pick No Agent
-						</button>
-					</>
-				)}
-				<input
-					aria-label="Message draft"
-					defaultValue="Keep this draft"
-				/>
-				<output aria-label="Mode">{room.mode}</output>
-				<QueuedContext store={room.contextItems} />
-				<button
-					type="button"
-					onClick={() =>
-						workbenchPanels?.newRoomPanels?.onOpenPanel({
-							kind: "connector",
-							service: "gmail",
-						})
-					}
-				>
-					Open Gmail
-				</button>
-				<output aria-label="Selected agent">
-					{options.workspace?.name ?? "Default"}
-				</output>
-				<output aria-label="Resources">
-					{options.mcp.map((item) => item.id).join(",")}
-				</output>
-				<button
-					type="button"
-					onClick={() =>
-						onMcpChange?.([
-							...options.mcp,
-							{ id: "local", type: "VECTOR", name: "Local" },
-						])
-					}
-				>
-					Add local
-				</button>
-				<button
-					type="button"
-					onClick={() =>
-						onWorkspaceChange?.({
-							workspace_id: "alpha",
-							name: "Alpha",
-						})
-					}
-				>
-					Save Alpha
-				</button>
-				<button type="button" onClick={() => onWorkspaceChange?.(null)}>
-					Save default
-				</button>
-				<button type="button" onClick={onSwitchToAgentHarness}>
-					Agent
-				</button>
-				<button type="button" onClick={onExitAgentHarness}>
-					Chat
-				</button>
-				<button type="button" onClick={() => onPrompt("Hello", [])}>
-					Send
-				</button>
-			</>
-		),
-	),
-}));
+		}: ComponentProps<typeof RoomInput>) => {
+			// the draft's mode, read as the real input does
+			const mode = useRoomSelector(room, (current) => current.mode);
+			return (
+				<>
+					{onDefaultAgentChange && (
+						<>
+							<button
+								type="button"
+								onClick={() => {
+									onWorkspaceChange?.(null);
+									onDefaultAgentChange(true);
+								}}
+							>
+								Pick Default Agent
+							</button>
+							<button
+								type="button"
+								onClick={() => {
+									onWorkspaceChange?.(null);
+									onDefaultAgentChange(false);
+								}}
+							>
+								Pick No Agent
+							</button>
+						</>
+					)}
+					<input
+						aria-label="Message draft"
+						defaultValue="Keep this draft"
+					/>
+					<output aria-label="Mode">{mode}</output>
+					<QueuedContext store={room.contextItems} />
+					<button
+						type="button"
+						onClick={() =>
+							workbenchPanels?.newRoomPanels?.onOpenPanel({
+								kind: "connector",
+								service: "gmail",
+							})
+						}
+					>
+						Open Gmail
+					</button>
+					<output aria-label="Selected agent">
+						{options.workspace?.name ?? "Default"}
+					</output>
+					<output aria-label="Resources">
+						{options.mcp.map((item) => item.id).join(",")}
+					</output>
+					<button
+						type="button"
+						onClick={() =>
+							onMcpChange?.([
+								...options.mcp,
+								{ id: "local", type: "VECTOR", name: "Local" },
+							])
+						}
+					>
+						Add local
+					</button>
+					<button
+						type="button"
+						onClick={() =>
+							onWorkspaceChange?.({
+								workspace_id: "alpha",
+								name: "Alpha",
+							})
+						}
+					>
+						Save Alpha
+					</button>
+					<button
+						type="button"
+						onClick={() => onWorkspaceChange?.(null)}
+					>
+						Save default
+					</button>
+					<button type="button" onClick={onSwitchToAgentHarness}>
+						Agent
+					</button>
+					<button type="button" onClick={onExitAgentHarness}>
+						Chat
+					</button>
+					<button type="button" onClick={() => onPrompt("Hello", [])}>
+						Send
+					</button>
+				</>
+			);
+		},
+	};
+});
 
 /** The names queued for a room's next message, as the composer would show them. */
 const QueuedContext = ({ store }: { store: ContextItemsStore }) => {
@@ -532,12 +538,9 @@ test.each(["chat", "agent"] as const)(
 		const updateRoomOptions = vi
 			.fn<RoomStore["updateRoomOptions"]>()
 			.mockResolvedValue();
-		runInAction(() => {
-			room.updateRoomOptions = updateRoomOptions;
-			room.askMessage = vi
-				.fn<RoomStore["askMessage"]>()
-				.mockResolvedValue();
-		});
+		room.updateRoomOptions = updateRoomOptions;
+		room.askMessage = vi.fn<RoomStore["askMessage"]>().mockResolvedValue();
+
 		mocks.createEmptyRoom.mockResolvedValue(room);
 		await renderWorkspace();
 		fireEvent.click(screen.getByRole("button", { name: "Add local" }));
@@ -917,12 +920,11 @@ test("connector viewers share the prepared room and transfer draft context befor
 			}),
 	);
 	const askMessage = vi.fn<RoomStore["askMessage"]>().mockResolvedValue();
-	runInAction(() => {
-		room.updateRoomOptions = vi
-			.fn<RoomStore["updateRoomOptions"]>()
-			.mockResolvedValue();
-		room.askMessage = askMessage;
-	});
+	room.updateRoomOptions = vi
+		.fn<RoomStore["updateRoomOptions"]>()
+		.mockResolvedValue();
+	room.askMessage = askMessage;
+
 	render(<NewChatFromLink />);
 	selectWorkspaceItem("workspacePlaces.settings");
 	fireEvent.change(screen.getByLabelText("Instructions"), {

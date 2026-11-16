@@ -22,8 +22,6 @@
         "@semoss/utility": "workspace:*",
         "@semoss/workbench": "workspace:*",
         "lucide-react": "^0.545.0",
-        "mobx": "6.3.7",
-        "mobx-react-lite": "^4.0.0",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
         "react-router": "8.3.0",

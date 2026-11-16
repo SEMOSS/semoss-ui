@@ -1,4 +1,3 @@
-import { configure, createAtom } from "mobx";
 import { getI18n } from "@semoss/i18n";
 import {
 	getModelContextWindow,
@@ -35,12 +34,6 @@ import {
 	resolveNewChatModel,
 } from "../new-chat-preferences/new-chat-preferences";
 import { RoomStore } from "../room/room.store";
-
-// The chat's MobX stores (chat, room, message, tool) mutate state only inside
-// actions.
-configure({
-	enforceActions: "always",
-});
 
 /**
  * Shape of a room row as rendered in the nav list. Matches the columns
@@ -120,9 +113,6 @@ export class ChatStore {
 	private _build: NewChatBuildDefaults;
 	private readonly state: StoreState<ChatSnapshot>;
 
-	/** The MobX adapter; goes with the last MobX reader. */
-	private readonly atom = createAtom("ChatStore");
-
 	constructor(
 		theme: ThemeMap["playground"],
 		/**
@@ -166,7 +156,6 @@ export class ChatStore {
 			keys: { roomCounter: 0 },
 			embeddedPageMap,
 		});
-		this.state.subscribe(() => this.atom.reportChanged());
 	}
 
 	getSnapshot = (): ChatSnapshot => this.snapshot;
@@ -174,9 +163,8 @@ export class ChatStore {
 	subscribe = (listener: () => void): (() => void) =>
 		this.state.subscribe(listener);
 
-	/** The current snapshot, reported to the MobX adapter. */
+	/** The current snapshot. */
 	private get snapshot(): ChatSnapshot {
-		this.atom.reportObserved();
 		return this.state.getSnapshot();
 	}
 
@@ -233,22 +221,6 @@ export class ChatStore {
 	 */
 	get keys() {
 		return this.snapshot.keys;
-	}
-
-	/**
-	 * The signed in user's id, name and last login, read from the SDK's
-	 * `Session`. Not observable.
-	 *
-	 * @deprecated Use `useSession((state) => state.user)`. Kept until the
-	 * playground's stores move off MobX.
-	 */
-	get user(): { id: string; name: string; lastLogin?: string } {
-		const user = Session.getSnapshot().user;
-		return {
-			id: user?.id ?? "",
-			name: user?.name ?? "",
-			lastLogin: user?.lastLogin,
-		};
 	}
 
 	/**

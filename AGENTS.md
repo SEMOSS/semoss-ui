@@ -193,7 +193,7 @@ Where each package stands:
 | `@semoss/sdk` | Session, config, logins, permissions, and session insight on `StoreState` | Reference implementation; `InsightStore`, `AgentStore`, `RoomStore`, and `Env` are out of scope |
 | `@semoss/collaboration`, `@semoss/connectors`, `@semoss/shared` | Hand-rolled `getSnapshot`/`subscribe` stores and module listener sets | Adopt `StoreState` when touched |
 | `@semoss/client` | MobX (designer, workspace) and Zustand (assistant, page, workbench domains) | New state on `StoreState`; migrate per store |
-| `@semoss/chat` | MobX (chat, room, message, tool, connectors, chat tools) plus the dock's Zustand store; the next message's queue (`ContextItemsStore`) is on `StoreState` | Migrate per store, leaves first; connectors and chat tools move with `RoomStore`'s watchers |
+| `@semoss/chat` | Chat, room, message, tool, connectors, and the next message's queue on `StoreState`, read with `useChatSelector`, `useRoomSelector`, `useMessage`, and `useTool`; no MobX. The room's dock is the workbench's Zustand store | The dock moves with `@semoss/workbench` |
 | `@semoss/playground`, `@semoss/playground-desktop` | No stores of their own; they compose `@semoss/chat` | `StoreState` for any new shared state |
 | `@semoss/renderer` | MobX block and notebook state | Last to move; needs a structural-sharing design first |
 | `@semoss/auditlog-package` | One MobX root store | Migrate as one change |

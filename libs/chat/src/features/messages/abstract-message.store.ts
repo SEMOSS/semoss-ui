@@ -1,4 +1,3 @@
-import { createAtom } from "mobx";
 import { parseTimestampWithUtcDefault } from "@semoss/utility/date";
 import { StoreState } from "@semoss/utility/store";
 import type { AbstractPixelMessage, PixelMessage } from "../../types";
@@ -81,10 +80,8 @@ export const initialMessageSnapshot = (
  * One message in a room's conversation tree: the root, a user's input, or a
  * response.
  *
- * Its state is a `StoreState`; read it in React with `useMessage`. Until the
- * room store leaves MobX, every read also reports to a MobX atom and every
- * change tells it, so its getters and `observer` components keep tracking
- * the message.
+ * Its state is a `StoreState`; read it in React with `useMessage`, or with
+ * `useRoomSelector` for what depends on other messages or tool calls.
  */
 export abstract class AbstractMessageStore<
 	S extends MessageSnapshot = MessageSnapshot,
@@ -100,9 +97,6 @@ export abstract class AbstractMessageStore<
 
 	protected readonly state: StoreState<S>;
 
-	/** The MobX adapter; goes with the last MobX reader. */
-	private readonly atom = createAtom("MessageStore");
-
 	/** Who hears about a change to this message or any message below it. */
 	private readonly treeListeners = new Set<() => void>();
 
@@ -117,14 +111,10 @@ export abstract class AbstractMessageStore<
 		this.room = room;
 		this.key = `room-${room.roomId}-${Date.now()}-${Math.floor(Math.random() * 100000000)}`;
 		this.state = new StoreState<S>(initial);
-		this.state.subscribe(() => this.atom.reportChanged());
 		this.state.subscribe(this.notifyTree);
 	}
 
-	getSnapshot = (): S => {
-		this.atom.reportObserved();
-		return this.state.getSnapshot();
-	};
+	getSnapshot = (): S => this.state.getSnapshot();
 
 	subscribe = (listener: () => void): (() => void) =>
 		this.state.subscribe(listener);

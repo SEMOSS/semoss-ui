@@ -1,5 +1,4 @@
 import { act, renderHook } from "@testing-library/react";
-import { autorun } from "mobx";
 import { expect, test, vi } from "vitest";
 import type { ThemeMap } from "@semoss/shared";
 import { ROOM_PANEL_COMPONENTS } from "../workbench/room-panel.components";
@@ -52,15 +51,6 @@ test("opening a panel opens the Workspace once", () => {
 	room.openSidebar();
 	expect(room.sidebar.isOpen).toBe(true);
 	expect(listener).toHaveBeenCalledTimes(1);
-});
-
-test("MobX readers still track it through the adapter", () => {
-	const room = createRoom();
-	const seen: string[] = [];
-	const stop = autorun(() => seen.push(room.mode));
-	room.setMode("agent");
-	stop();
-	expect(seen).toEqual(["chat", "agent"]);
 });
 
 test("useRoomSelector renders on a change to what it selects, not on others", () => {

@@ -81,14 +81,36 @@ hooks, the chat store, helpers, and types. A host lays the pieces out however it
 
 ## State
 
-The stores are still MobX (`ChatStore`, `RoomStore`, the message and tool stores, `ConnectorsStore`,
-`ChatToolsStore`) except `ContextItemsStore`, which is on `StoreState` and read with
-`useContextItems`. New state goes on `StoreState` per the
-[state management skill](../../skills/state-management.skill.md); migrate one store per change,
-leaves first. `ConnectorsStore` and `ChatToolsStore` feed `RoomStore`'s MobX `reaction`s, so they
-move with `RoomStore`'s watchers. `ChatStore` owns every `RoomStore` (a reply keeps streaming while
-another room is open) and calls `RoomStore.dispose()` when it drops one. `room.workbench` is the
-dock's zustand store until `@semoss/workbench` moves.
+Every store is on `StoreState` (see the
+[state management skill](../../skills/state-management.skill.md)), and the library has no MobX.
+Each keeps its getters, which read its snapshot; React reads them through a selector hook:
+
+| Store | Hook | Hears about |
+|---|---|---|
+| `ChatStore` (`useChatSession()`) | `useChatSelector(chat, (chat) => …)` | its models, cached and optimistic rooms, and the room list counter |
+| `RoomStore` | `useRoomSelector(room, (room) => …)` | the room, and every change to its messages and tool calls (its `revision`) |
+| `ResponseMessageStore`, `InputMessageStore` | `useMessage(message, (message) => …)` | that message alone, so a streamed token renders only its message |
+| `ToolStore` | `useTool(tool, (tool) => …)` | that call alone |
+| `ConnectorsStore` | `useConnectors(room.connectors)` | the room's connectors |
+| `ContextItemsStore` | `useContextItems(room.contextItems, (snapshot) => …)` | the next message's queue |
+
+- **Select through the store**, the least a component needs. A selector runs again on every change
+  its store hears about and the component renders only when what it returns changes (one level
+  deep), so derived reads (`room.history`, `room.canCancel`, `message.hasUnfinishedTools`) belong
+  in a `useRoomSelector`, and one message's own content in `useMessage`.
+- **Parts and maps are replaced, never changed in place.** `savePart`, `addPart` and
+  `updateParts` build a message's next parts; tool calls change through their actions
+  (`setStatus`, `settle`, `setParameters`, `setPendingAction`); the room's tools map and sidebar
+  are new objects on each change.
+- **The tree tells the room.** A message tells its tree listeners (`subscribeTree`) about a change
+  to it or any message below it; the room follows its root and every tool call it creates, and
+  stops in `dispose()`.
+- `ChatToolsStore` holds no state; `StreamJobController` is a plain class that tells the room
+  when its cancel state changes. `ChatStore` owns every `RoomStore` (a reply keeps streaming while
+  another room is open) and calls `RoomStore.dispose()` when it drops one. `room.workbench` is the
+  dock's zustand store until `@semoss/workbench` moves.
+- Tests give a fake store what the hooks read with `fakeStore` (`src/test/fake-store.ts`), and
+  call its `notify()` after changing a field.
 
 A new chat's model, mode and agent follow the order described in the
 [playground guide](../../packages/playground/AGENTS.md#session-config-and-insights); the rules live
@@ -149,9 +171,9 @@ code and are easy to undo by accident:
   stays open, showing its rail. Nothing docks in a border: the dock's
   four borders hold no panels at all. A new chat's draft is built with `includeFiles: false`,
   since it has no insight for Files to read; the room it prepares gains Files in
-  `RoomStore.restoreSidebarLayout`, behind whatever tab the draft was on. A reaction on
-  `ConnectorsStore.availableSources` (`_closeHiddenConnectorPanels`) closes a viewer whose
-  connector the chat can no longer show.
+  `RoomStore.restoreSidebarLayout`, behind whatever tab the draft was on. A subscription to
+  `ConnectorsStore` (`_closeHiddenConnectorPanels`) closes a viewer whose connector the chat can
+  no longer show.
 - **Every panel opens from the Workspace's panel rail.** `RoomWorkbenchRail`
   (`features/workbench/room-workbench-rail.tsx`) is the host's own chrome in the dock's **left**
   border slot (`borderSlots.left.before`): the room's cog menu, a divider, then one icon per entry

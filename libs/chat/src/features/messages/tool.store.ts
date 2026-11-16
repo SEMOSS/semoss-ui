@@ -1,4 +1,3 @@
-import { computed, createAtom } from "mobx";
 import type { PendingAgentAction } from "@semoss/sdk";
 import { StoreState } from "@semoss/utility/store";
 import type {
@@ -107,10 +106,7 @@ const INITIAL_TOOL: ToolSnapshot = {
 /**
  * One tool call in a room, from its first streamed chunk to its result.
  *
- * Its state is a `StoreState`; read it in React with `useTool`. Until the
- * room and message stores leave MobX, every read also reports to a MobX atom
- * and every change tells it, so their getters and `observer` components keep
- * tracking it.
+ * Its state is a `StoreState`; read it in React with `useTool`.
  */
 export class ToolStore {
 	/** The room the call is in. */
@@ -121,16 +117,15 @@ export class ToolStore {
 
 	private readonly state = new StoreState<ToolSnapshot>(INITIAL_TOOL);
 
-	/** The MobX adapter; goes with the last MobX reader. */
-	private readonly atom = createAtom("ToolStore");
-
 	/**
-	 * `json`, cached while something observes it, as it was as a MobX
-	 * computed: it reads the room's options, which are still MobX.
+	 * The last `json` and what it was made from, so reading it again returns
+	 * the same object until the call or the room's options change.
 	 */
-	private readonly jsonValue = computed(() =>
-		this.toJson(this.getSnapshot()),
-	);
+	private jsonCache: {
+		snapshot: ToolSnapshot;
+		options: RoomStore["options"];
+		value: PixelMessageToolCallPart["toolCall"];
+	} | null = null;
 
 	/** The message whose `parts` holds this call's TOOL_CALL. */
 	private toolMessage: ResponseMessageStore | null = null;
@@ -142,13 +137,9 @@ export class ToolStore {
 	constructor(room: RoomStore, toolId: string) {
 		this.room = room;
 		this.id = toolId;
-		this.state.subscribe(() => this.atom.reportChanged());
 	}
 
-	getSnapshot = (): ToolSnapshot => {
-		this.atom.reportObserved();
-		return this.state.getSnapshot();
-	};
+	getSnapshot = (): ToolSnapshot => this.state.getSnapshot();
 
 	subscribe = (listener: () => void): (() => void) =>
 		this.state.subscribe(listener);
@@ -220,7 +211,16 @@ export class ToolStore {
 
 	/** The call as the views read it. */
 	get json(): PixelMessageToolCallPart["toolCall"] {
-		return this.jsonValue.get();
+		const snapshot = this.state.getSnapshot();
+		// a work folder call's metadata follows the room's default tool modes
+		const options = this.room.options;
+		const cache = this.jsonCache;
+		if (cache?.snapshot === snapshot && cache.options === options) {
+			return cache.value;
+		}
+		const value = this.toJson(snapshot);
+		this.jsonCache = { snapshot, options, value };
+		return value;
 	}
 
 	/**
