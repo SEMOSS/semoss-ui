@@ -27,7 +27,7 @@ import { SettingsRow } from "./settings-row";
 
 /**
  * Value of the model's Default choice, which clears the user's own model so
- * the deployment's applies. Model ids are never this.
+ * the deployment's applies. No model id is this.
  */
 const DEFAULT_VALUE = "default";
 
@@ -45,9 +45,9 @@ export const NewChatSettings = () => {
 	const theme = usePlaygroundTheme();
 	const preferences = useNewChatPreferences();
 	const headingId = useId();
-	const modelId = useId();
+	const modelSelectId = useId();
 	const modeLabelId = useId();
-	const agentId = useId();
+	const agentSelectId = useId();
 
 	const canSelectModel = Boolean(theme.featureFlags?.enableModelSelect);
 	const canUseAgentMode = offersAgentMode(theme.featureFlags);
@@ -60,15 +60,15 @@ export const NewChatSettings = () => {
 	const defaultLabel = t("settings.general.newChat.default");
 
 	// the saved agent's name, for the picker's trigger
-	const getAgent = useSessionPixel<Workspace | null>(
+	const agentPixel = useSessionPixel<Workspace | null>(
 		isAgentDefault && preferences.agentId
 			? `GetWorkspace(${JSON.stringify(preferences.agentId)});`
 			: "",
 		{ data: null },
 	);
 	const agentName =
-		getAgent.data?.workspace_id === preferences.agentId
-			? getAgent.data.display_name || getAgent.data.name
+		agentPixel.data?.workspace_id === preferences.agentId
+			? agentPixel.data.display_name || agentPixel.data.name
 			: "";
 
 	// a default the user can no longer see still shows, so it can be changed
@@ -88,7 +88,7 @@ export const NewChatSettings = () => {
 			{canSelectModel ? (
 				<SettingsRow
 					label={t("settings.general.newChat.model")}
-					controlId={modelId}
+					controlId={modelSelectId}
 					description={t("settings.general.newChat.modelDescription")}
 				>
 					<Select
@@ -100,7 +100,11 @@ export const NewChatSettings = () => {
 							)
 						}
 					>
-						<SelectTrigger id={modelId} size="sm" className="w-56">
+						<SelectTrigger
+							id={modelSelectId}
+							size="sm"
+							className="w-56"
+						>
 							<SelectValue placeholder={defaultLabel} />
 						</SelectTrigger>
 						<SelectContent>
@@ -163,11 +167,11 @@ export const NewChatSettings = () => {
 			{isAgentDefault ? (
 				<SettingsRow
 					label={t("settings.general.newChat.agent")}
-					controlId={agentId}
+					controlId={agentSelectId}
 					description={t("settings.general.newChat.agentDescription")}
 				>
 					<ProjectSelect
-						id={agentId}
+						id={agentSelectId}
 						className={cn(
 							"w-56",
 							// unset shows Default as a placeholder, as the model's select does

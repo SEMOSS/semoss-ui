@@ -3,9 +3,8 @@ import { useTranslation } from "@semoss/i18n";
 import { cn } from "@semoss/ui/next";
 
 /**
- * Component that displays a full-screen overlay when the device is in landscape mode on mobile.
- * Prevents users from using the app in landscape orientation.
- * Has no effect on desktop browsers.
+ * A full-screen overlay asking a phone or tablet held in landscape to rotate,
+ * since the app is laid out for portrait there. Desktop browsers never see it.
  */
 export const LandscapeRestriction = () => {
 	const { t } = useTranslation("mobile");

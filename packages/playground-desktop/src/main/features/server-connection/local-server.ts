@@ -16,11 +16,15 @@ import {
 
 /** The app's own origin, on this machine. */
 export interface LocalServer {
+	/** The origin the window loads, such as `http://127.0.0.1:4321`. */
 	readonly origin: string;
+	/** The port it listens on, saved so the next launch reuses it. */
 	readonly port: number;
+	/** Stop the proxy and the server. */
 	close: () => Promise<void>;
 }
 
+/** What {@link startLocalServer} serves and forwards. */
 interface LocalServerOptions {
 	/** The built renderer, served in production. */
 	readonly rootDir: string;
@@ -34,6 +38,7 @@ interface LocalServerOptions {
 	readonly contentSecurityPolicy?: string;
 }
 
+/** The `Content-Type` for each file extension the built renderer contains. */
 const CONTENT_TYPES: Readonly<Record<string, string>> = {
 	".html": "text/html; charset=utf-8",
 	".js": "text/javascript; charset=utf-8",
@@ -77,6 +82,13 @@ export const localizeCookie = (cookie: string): string => {
 	return parts.join("; ");
 };
 
+/**
+ * Listen on 127.0.0.1 only, so nothing else on the network reaches the app.
+ *
+ * @param server - The server.
+ * @param port - The port, or 0 for any free one.
+ * @returns The port it bound.
+ */
 const listen = (server: Server, port: number): Promise<number> =>
 	new Promise((resolvePort, reject) => {
 		const onError = (error: Error) => reject(error);
@@ -136,12 +148,23 @@ export const startLocalServer = async ({
 		(target as Duplex | undefined)?.destroy();
 	});
 
-	/** The server, when this request belongs to its module. */
+	/**
+	 * The server, when this request belongs to its module.
+	 *
+	 * @param url - The request's path, with any query.
+	 * @returns The server to forward to, or null for anything else.
+	 */
 	const serverFor = (url = "/"): ServerConfig | null => {
 		const server = getServer();
 		return server && isModulePath(url, server.module) ? server : null;
 	};
 
+	/**
+	 * Serve a file of the built renderer, refusing any path that escapes it.
+	 *
+	 * @param request - The request.
+	 * @param response - Its response.
+	 */
 	const serveFile = async (
 		request: IncomingMessage,
 		response: ServerResponse,

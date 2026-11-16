@@ -1,11 +1,15 @@
 import type { ServerConfig } from "./server-connection";
 
-/** What checking a server found. */
+/** What checking a server found: success, or a message saying why not. */
 export type ServerCheckResult =
 	| { readonly ok: true }
 	| { readonly ok: false; readonly message: string };
 
-/** Every renderer → main call: its arguments and its result. */
+/**
+ * Every renderer → main call: its arguments and its result. Main registers a
+ * handler per key (`register-ipc.ts`) and the preload allowlists the same keys
+ * ({@link IPC_CHANNELS}).
+ */
 export interface IpcContract {
 	/** The saved server, or null before the first one is saved. */
 	"server-connection:get": { request: []; response: ServerConfig | null };
@@ -34,7 +38,7 @@ export const IPC_CHANNELS = [
 	"shell:open-external",
 ] as const satisfies readonly IpcChannel[];
 
-/** Main → renderer: what the app menu asks for. */
+/** Main → renderer: what the app menu asks the page to do. */
 export type DesktopCommand =
 	| { readonly type: "new-chat" }
 	| { readonly type: "change-server" };

@@ -90,6 +90,12 @@ afterEach(() => {
 	window.semossDesktop = undefined;
 });
 
+/**
+ * Mount the app's routes on a memory router.
+ *
+ * @param path - The first location.
+ * @returns The router, to read its location.
+ */
 const renderAt = (path: string) => {
 	const router = createMemoryRouter(routes, { initialEntries: [path] });
 	render(<RouterProvider router={router} />);

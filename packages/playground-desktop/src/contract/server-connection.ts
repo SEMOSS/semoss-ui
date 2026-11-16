@@ -9,6 +9,7 @@ export interface ServerConfig {
 /** The module path most SEMOSS servers deploy at. */
 export const DEFAULT_MODULE = "/Monolith";
 
+/** Hosts on this machine, the only ones a server may be reached over plain http. */
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
 
 /**
@@ -44,6 +45,8 @@ export const parseServerConfig = (value: unknown): ServerConfig => {
 	}
 
 	const raw = typeof module === "string" ? module.trim() : "";
+	// each segment is a plain path word; `.` and `..` would let the proxy
+	// forward paths outside the module
 	const modulePath = (raw || DEFAULT_MODULE).replace(/\/+$/, "");
 	const segments = modulePath.split("/").slice(1);
 	if (

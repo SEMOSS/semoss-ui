@@ -25,21 +25,26 @@ import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 
 /** The values the form was seeded with, and the agent they belong to. */
 interface AgentFormSeed {
+	/** The agent the values were read from. */
 	workspaceId: string;
+	/** The form's starting values, also what Save compares against. */
 	values: AgentFormValues;
 }
 
-/**
- * Edit an agent.
- *
- * The shared agent form, the same one the client's agent pages use, followed
- * by the members table, which saves per action rather than with the form.
- */
+/** Props for {@link AgentEdit}. */
 interface AgentEditProps {
 	/** The agent to edit. */
 	workspaceId?: string;
 }
 
+/**
+ * Edit an agent.
+ *
+ * The shared agent form, the same one the client's agent pages use, under a
+ * sticky Cancel/Save header, followed by the members table, which saves per
+ * action rather than with the form. A failed save shows inline and keeps the
+ * form's values for a retry.
+ */
 export const AgentEdit = ({ workspaceId }: AgentEditProps) => {
 	const { t } = useTranslation(["workspace", "common", "notifications"]);
 	const isDirectoryAvailable = useConfig(
@@ -54,9 +59,9 @@ export const AgentEdit = ({ workspaceId }: AgentEditProps) => {
 	const [formValues, setFormValues] = useState<AgentFormValues | null>(null);
 	const [isSaving, setIsSaving] = useState(false);
 	const [saveError, setSaveError] = useState<string | null>(null);
-	const seededWorkspace = useRef<string | null>(null);
+	const seededWorkspaceId = useRef<string | null>(null);
 
-	const getWorkspace = useSessionPixel<
+	const workspacePixel = useSessionPixel<
 		AgentWorkspace & { workspace_id: string }
 	>(workspaceId ? `GetWorkspace(workspaceId=["${workspaceId}"]);` : "", {
 		data: null,
@@ -74,26 +79,26 @@ export const AgentEdit = ({ workspaceId }: AgentEditProps) => {
 	// remounts the form with its own values
 	useEffect(() => {
 		if (
-			getWorkspace.status !== "SUCCESS" ||
-			!getWorkspace.data ||
-			getWorkspace.data.workspace_id !== workspaceId ||
-			seededWorkspace.current === workspaceId
+			workspacePixel.status !== "SUCCESS" ||
+			!workspacePixel.data ||
+			workspacePixel.data.workspace_id !== workspaceId ||
+			seededWorkspaceId.current === workspaceId
 		)
 			return;
-		const w = getWorkspace.data;
+		const workspace = workspacePixel.data;
 		const values = {
-			...toAgentFormValues(w),
-			instructions: (w.system_prompt || "").replace(/\\n/g, "\n"),
+			...toAgentFormValues(workspace),
+			instructions: (workspace.system_prompt || "").replace(/\\n/g, "\n"),
 		};
-		seededWorkspace.current = workspaceId;
+		seededWorkspaceId.current = workspaceId;
 		setSeed({ workspaceId, values });
 		setFormValues(values);
 		setSaveError(null);
-	}, [workspaceId, getWorkspace.status, getWorkspace.data]);
+	}, [workspaceId, workspacePixel.status, workspacePixel.data]);
 
 	if (
-		getWorkspace.status === "INITIAL" ||
-		getWorkspace.status === "LOADING"
+		workspacePixel.status === "INITIAL" ||
+		workspacePixel.status === "LOADING"
 	) {
 		return (
 			<div className="flex h-full w-full items-center justify-center">
@@ -103,10 +108,10 @@ export const AgentEdit = ({ workspaceId }: AgentEditProps) => {
 	}
 
 	if (
-		getWorkspace.status === "ERROR" ||
+		workspacePixel.status === "ERROR" ||
 		!workspaceId ||
-		!getWorkspace.data ||
-		getWorkspace.data.workspace_id !== workspaceId
+		!workspacePixel.data ||
+		workspacePixel.data.workspace_id !== workspaceId
 	) {
 		return (
 			<div className="@container relative h-full w-full overflow-hidden">
@@ -130,12 +135,15 @@ export const AgentEdit = ({ workspaceId }: AgentEditProps) => {
 		);
 	}
 
+	// Save is offered only once something changed
 	const isDirty = JSON.stringify(formValues) !== JSON.stringify(seed.values);
 
+	/** Leaves without saving, back to the agent's page. */
 	const handleCancel = () => {
 		navigate(`/agent/${workspaceId}`);
 	};
 
+	/** Saves the edits and returns to the agent's page. */
 	const handleSave = async () => {
 		const name = formValues.name.trim();
 		if (isSaving || !name) return;
@@ -207,9 +215,9 @@ export const AgentEdit = ({ workspaceId }: AgentEditProps) => {
 					data={seed.values}
 					onChange={setFormValues}
 					disabled={isSaving}
-					promptTitles={toAgentPromptTitles(getWorkspace.data)}
-					knownHookKinds={getWorkspace.data.known_hook_kinds ?? []}
-					defaultTools={getWorkspace.data.default_tools ?? []}
+					promptTitles={toAgentPromptTitles(workspacePixel.data)}
+					knownHookKinds={workspacePixel.data.known_hook_kinds ?? []}
+					defaultTools={workspacePixel.data.default_tools ?? []}
 					workspaceId={workspaceId}
 					links={getPlaygroundAgentLinks(
 						featureFlags?.showPlatformLinks,

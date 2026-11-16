@@ -5,14 +5,24 @@ import { checkServer } from "../server-connection/check-server";
 import type { SettingsFile } from "../server-connection/settings-file";
 import { handleIpc } from "./handle-ipc";
 
+/** What the IPC handlers act on. */
 interface RegisterIpcOptions {
+	/** The app's origin, the only one allowed to call. */
 	readonly appOrigin: string;
+	/** The saved settings, which hold the server. */
 	readonly settings: SettingsFile;
+	/** The browser session, cleared when the server changes. */
 	readonly session: Session;
+	/** The app's window, reloaded onto a newly saved server. */
 	readonly getWindow: () => BrowserWindow | null;
 }
 
-/** Wire every IpcContract channel to the main process's features. */
+/**
+ * Wire every IpcContract channel to the main process's features. Each handler
+ * validates its arguments, since they come from the page untyped.
+ *
+ * @param options - What the handlers act on.
+ */
 export const registerIpc = ({
 	appOrigin,
 	settings,

@@ -16,12 +16,20 @@ import {
 	toast,
 } from "@semoss/ui/next";
 
+/** Props for {@link EmbedDocumentsOverlay}. */
 type EmbedDocumentsOverlayProps = {
+	/** Whether the dialog is open. */
 	open: boolean;
+	/** Called when the dialog closes, with whether documents were embedded. */
 	onClose: (success: boolean) => void;
+	/** The knowledge source (vector database) to embed into. */
 	knowledgeId: string;
 };
 
+/**
+ * A dialog that uploads documents, picked or dropped, and embeds them into a
+ * knowledge source.
+ */
 export const EmbedDocumentsOverlay = ({
 	open,
 	knowledgeId,
@@ -33,15 +41,26 @@ export const EmbedDocumentsOverlay = ({
 	const [files, setFiles] = useState<File[]>([]);
 	const [isEmbedding, setIsEmbedding] = useState(false);
 
+	/**
+	 * Adds the picked files to the list.
+	 *
+	 * @param e - The file input's change event.
+	 */
 	const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const selectedFiles = Array.from(e.target.files || []);
 		setFiles((prev) => [...prev, ...selectedFiles]);
 	};
 
+	/**
+	 * Removes a file from the list.
+	 *
+	 * @param index - The file's position in the list.
+	 */
 	const handleRemoveFile = (index: number) => {
 		setFiles((prev) => prev.filter((_, i) => i !== index));
 	};
 
+	/** Uploads the files, then embeds them into the knowledge source. */
 	const handleEmbed = async () => {
 		if (!knowledgeId) {
 			toast.error(t("embedMessages.selectKnowledgeSource"));
@@ -53,6 +72,7 @@ export const EmbedDocumentsOverlay = ({
 			return;
 		}
 
+		// Kept outside the try so a failure can log what the pixel returned
 		let embeddingsResponse: Awaited<ReturnType<typeof run>> | undefined;
 		setIsEmbedding(true);
 		try {
@@ -89,18 +109,33 @@ export const EmbedDocumentsOverlay = ({
 
 	const [isDragging, setIsDragging] = useState(false);
 
+	/**
+	 * Marks the drop zone while files are dragged over it.
+	 *
+	 * @param e - The drag event.
+	 */
 	const handleDragOver = (e: React.DragEvent<HTMLElement>) => {
 		e.preventDefault();
 		e.stopPropagation();
 		setIsDragging(true);
 	};
 
+	/**
+	 * Clears the drop zone's mark when the drag leaves it.
+	 *
+	 * @param e - The drag event.
+	 */
 	const handleDragLeave = (e: React.DragEvent<HTMLElement>) => {
 		e.preventDefault();
 		e.stopPropagation();
 		setIsDragging(false);
 	};
 
+	/**
+	 * Adds the dropped files to the list.
+	 *
+	 * @param e - The drop event.
+	 */
 	const handleDrop = (e: React.DragEvent<HTMLElement>) => {
 		e.preventDefault();
 		e.stopPropagation();

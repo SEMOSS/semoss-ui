@@ -9,9 +9,6 @@ import {
 import { useConfig } from "@semoss/sdk/react";
 import { isRecord } from "@semoss/utility/object";
 
-/** The desktop build sets no new-chat defaults of its own. */
-const NO_BUILD_DEFAULTS = {};
-
 /**
  * The chat's config on the desktop: the server's playground theme over the
  * chat's defaults, and the app's routes. The desktop has no agent pages or
@@ -24,6 +21,7 @@ export const useDesktopChatConfig = (): ChatConfig => {
 	const navigate = useNavigate();
 
 	const theme = useMemo<ChatTheme>(() => {
+		// the server's THEME_MAP keeps the chat's theme under `playground`
 		const playground = isRecord(serverTheme?.playground)
 			? (serverTheme.playground as Partial<ChatTheme>)
 			: undefined;
@@ -33,7 +31,8 @@ export const useDesktopChatConfig = (): ChatConfig => {
 	return useMemo<ChatConfig>(
 		() => ({
 			theme,
-			newChatDefaults: NO_BUILD_DEFAULTS,
+			// the desktop build sets no new-chat defaults of its own
+			newChatDefaults: {},
 			platformUrl: "",
 			navigation: {
 				openRoom: (roomId) => navigate(`/room/${roomId}`),

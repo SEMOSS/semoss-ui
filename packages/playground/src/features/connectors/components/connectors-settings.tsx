@@ -57,6 +57,7 @@ export const ConnectorsSettings = () => {
 		Partial<Record<ConnectorProviderId, boolean>>
 	>({});
 
+	// after a sign in: a provider's first sign in switches on every app it covers
 	const handleConnected = useCallback(
 		(providerId: ConnectorProviderId) => {
 			if (wasConnectedRef.current[providerId]) {
@@ -89,6 +90,12 @@ export const ConnectorsSettings = () => {
 	const [pendingServiceId, setPendingServiceId] =
 		useState<ConnectorServiceId | null>(null);
 
+	/**
+	 * Sign the session out of a provider, then switch its apps off. Each step
+	 * toasts its own failure.
+	 *
+	 * @param providerId - The provider to sign out of.
+	 */
 	const handleDisconnect = async (providerId: ConnectorProviderId) => {
 		const name = t(`providers.${providerId}.name`);
 		try {
@@ -96,7 +103,7 @@ export const ConnectorsSettings = () => {
 		} catch (error) {
 			toast.error(
 				t("providers.disconnectError", {
-					name: name,
+					name,
 					message:
 						error instanceof SessionLoginDisconnectError
 							? t("providers.sessionLoginNote")
@@ -105,7 +112,7 @@ export const ConnectorsSettings = () => {
 			);
 			return;
 		}
-		toast.success(t("providers.disconnectSuccess", { name: name }));
+		toast.success(t("providers.disconnectSuccess", { name }));
 		try {
 			await userConnectors.disableServices(
 				getConnectorProvider(providerId).services,
@@ -119,6 +126,12 @@ export const ConnectorsSettings = () => {
 		}
 	};
 
+	/**
+	 * Switch an app on or off for the user, toasting a failed save.
+	 *
+	 * @param serviceId - The app.
+	 * @param isOn - Whether it should be on.
+	 */
 	const handleServiceChange = async (
 		serviceId: ConnectorServiceId,
 		isOn: boolean,

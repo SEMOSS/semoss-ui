@@ -7,9 +7,13 @@ import {
 	type IpcChannel,
 } from "../contract/ipc-contract";
 
+/** The channels the page may call; anything else is refused before it reaches main. */
 const allowedChannels = new Set<string>(IPC_CHANNELS);
 
-// The preload holds no logic: an allowlisted invoke, and the menu's commands.
+/**
+ * The bridge the page sees as `window.semossDesktop`. The preload holds no
+ * logic: an allowlisted invoke, and the menu's commands.
+ */
 const bridge: DesktopBridge = {
 	invoke: (channel: IpcChannel, ...args: unknown[]) => {
 		if (!allowedChannels.has(channel)) {

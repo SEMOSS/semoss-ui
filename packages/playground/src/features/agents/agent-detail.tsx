@@ -36,20 +36,22 @@ import { getPlaygroundAgentLinks } from "@/features/agents/agent-links";
 import { WorkspaceChatList } from "@/features/agents/workspace-chat-list";
 import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 
-/**
- * Renders the Workspace (Agent) Detail Page.
- *
- * Read-only configuration view:
- *   - Header: agent name + Edit / Delete actions (top right)
- *   - Continue recent chats: scrollable list with a max height
- *   - The shared agent definition, the same view the client uses
- *   - Members
- */
+/** Props for {@link AgentDetail}. */
 interface AgentDetailProps {
 	/** The agent to show. */
 	workspaceId?: string;
 }
 
+/**
+ * An agent's detail page, read-only:
+ *   - Header: the agent's name with Edit, Delete and New Chat actions
+ *   - Recent chats with the agent
+ *   - The shared agent definition, the same view the client uses
+ *   - Members
+ *
+ * Edit and Delete show only for the permission that allows them. An agent
+ * that fails to load sends the user back to the catalog.
+ */
 export const AgentDetail = ({ workspaceId }: AgentDetailProps) => {
 	const { t } = useTranslation(["workspace", "common"]);
 
@@ -58,9 +60,11 @@ export const AgentDetail = ({ workspaceId }: AgentDetailProps) => {
 	const theme = usePlaygroundTheme();
 
 	const [isDeleting, setIsDeleting] = useState(false);
-	const [deleteModal, setDeleteModal] = useState(false);
+	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 	const [userPermission, setUserPermission] = useState<Role | null>(null);
 
+	// The user's role on this agent, refetched when the agent changes; a stale
+	// answer for a previous agent is dropped
 	useEffect(() => {
 		setUserPermission(null);
 		if (!workspaceId) return;
@@ -83,7 +87,7 @@ export const AgentDetail = ({ workspaceId }: AgentDetailProps) => {
 	const canEdit = userPermission === "EDIT" || userPermission === "OWNER";
 	const canDelete = userPermission === "OWNER";
 
-	const getWorkspace = useSessionPixel<
+	const workspacePixel = useSessionPixel<
 		AgentWorkspace & Pick<Workspace, "workspace_id">
 	>(workspaceId ? `GetWorkspace(workspaceId=["${workspaceId}"]);` : "", {
 		onError: (_d, e) => {
@@ -96,8 +100,8 @@ export const AgentDetail = ({ workspaceId }: AgentDetailProps) => {
 	});
 
 	if (
-		getWorkspace.status === "LOADING" ||
-		(getWorkspace.status === "SUCCESS" && !getWorkspace.data)
+		workspacePixel.status === "LOADING" ||
+		(workspacePixel.status === "SUCCESS" && !workspacePixel.data)
 	) {
 		return (
 			<div className="flex h-full w-full items-center justify-center">
@@ -106,11 +110,11 @@ export const AgentDetail = ({ workspaceId }: AgentDetailProps) => {
 		);
 	}
 
-	if (getWorkspace.status === "ERROR" || !workspaceId) {
+	if (workspacePixel.status === "ERROR" || !workspaceId) {
 		return <Navigate to="/agent" />;
 	}
 
-	const workspace = getWorkspace.data;
+	const workspace = workspacePixel.data;
 	if (!workspace) {
 		return (
 			<div className="flex h-full w-full items-center justify-center">
@@ -172,7 +176,9 @@ export const AgentDetail = ({ workspaceId }: AgentDetailProps) => {
 										aria-label={t(
 											"workspace:actions.delete",
 										)}
-										onClick={() => setDeleteModal(true)}
+										onClick={() =>
+											setIsDeleteDialogOpen(true)
+										}
 										data-testid="workspace-detail-page--delete-btn"
 									>
 										<Trash2Icon />
@@ -195,9 +201,9 @@ export const AgentDetail = ({ workspaceId }: AgentDetailProps) => {
 					</div>
 				</div>
 
-				{/* Body — flows naturally; outer container scrolls */}
+				{/* Body: the outer container scrolls */}
 				<div className="flex flex-col gap-8">
-					{/* Recent chats — timeline grouped by day */}
+					{/* Recent chats, grouped by day */}
 					<section className="flex min-w-0 flex-col gap-4">
 						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
 							<MessagesSquareIcon className="size-5" />
@@ -234,7 +240,10 @@ export const AgentDetail = ({ workspaceId }: AgentDetailProps) => {
 			</div>
 
 			{/* Delete confirmation */}
-			<Dialog open={deleteModal} onOpenChange={setDeleteModal}>
+			<Dialog
+				open={isDeleteDialogOpen}
+				onOpenChange={setIsDeleteDialogOpen}
+			>
 				<DialogContent>
 					<DialogHeader>
 						<DialogTitle>
@@ -251,7 +260,7 @@ export const AgentDetail = ({ workspaceId }: AgentDetailProps) => {
 							variant="outline"
 							onClick={(e) => {
 								e.stopPropagation();
-								setDeleteModal(false);
+								setIsDeleteDialogOpen(false);
 							}}
 							data-testid="workspace-detail-page--cancel-delete-btn"
 						>

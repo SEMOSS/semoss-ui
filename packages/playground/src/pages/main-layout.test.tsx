@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import type { CSSProperties } from "react";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { mergeChatTheme as mergePlaygroundTheme } from "@semoss/chat";
+import { mergeChatTheme } from "@semoss/chat";
 import { withPlaygroundDefaults } from "@/features/theme/playground-theme";
 import { MainLayout } from "./main-layout";
 
@@ -10,6 +10,7 @@ import { MainLayout } from "./main-layout";
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
+/** The theme `usePlaygroundTheme` returns; each test sets it. */
 const theme = vi.hoisted(() => ({ current: null as unknown }));
 vi.mock("@/features/theme/use-playground-theme", () => ({
 	usePlaygroundTheme: () => theme.current,
@@ -57,7 +58,7 @@ test.each([
 	({ style }) => {
 		const defaults = withPlaygroundDefaults(null);
 		const overrides: CSSProperties = { ...style };
-		theme.current = mergePlaygroundTheme(defaults, {
+		theme.current = mergeChatTheme(defaults, {
 			overrides: { "main-layout": overrides },
 		});
 		render(

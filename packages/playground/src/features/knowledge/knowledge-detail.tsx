@@ -61,37 +61,64 @@ import { getErrorMessage } from "@semoss/utility/error";
 import { getFileExtension } from "@semoss/utility/file";
 import { getImageMimeType } from "@semoss/utility/image";
 import { EmbedDocumentsOverlay } from "@/features/knowledge/embed-documents-overlay";
-import { NewKnowledgeOverlay } from "@/features/knowledge/new-knowledge-mcp-overlay";
+import { NewKnowledgeOverlay } from "@/features/knowledge/new-knowledge-overlay";
 
+/** A knowledge source (a vector database), as `MyEngines` returns it. */
 type KnowledgeEngine = {
+	/** The engine's id. */
 	engine_id: string;
+	/** The engine's name. */
 	engine_name: string;
+	/** The name to show, when it differs from the engine's name. */
 	engine_display_name?: string;
+	/** The engine's description metadata. */
 	description?: string;
+	/** The engine's tag metadata: one tag or several. */
 	tag?: string[] | string;
 };
 
+/** A document embedded in the source, as `ListDocumentsInVectorDatabase` returns it. */
 type VectorDocument = {
+	/** The document's file name. */
 	fileName: string;
+	/** When the document last changed. */
 	lastModified: string;
+	/** The document's size: bytes, or a string with a unit such as `12 KB`. */
 	fileSize: string | number;
 };
 
+/** A member of the source, as `getEngineUsers` returns it. */
 type EngineUser = {
+	/** The user's id. */
 	id: string;
+	/** The user's name. */
 	name: string;
+	/** The user's email. */
 	email: string;
+	/** The member's role: OWNER, EDIT or READ_ONLY. */
 	permission: string;
 };
 
+/** A user found by the add-member search. */
 type SearchUser = {
+	/** The user's id. */
 	id: string;
+	/** The user's name. */
 	name: string | null;
+	/** The user's email. */
 	email: string | null;
+	/** The user's login type. */
 	type: string;
+	/** The user's username. */
 	username: string | null;
 };
 
+/**
+ * The icon for a document, by its extension.
+ *
+ * @param fileName - The document's file name.
+ * @returns The icon element.
+ */
 const getFileIcon = (fileName: string) => {
 	const ext = getFileExtension(fileName);
 	if (ext === "pdf")
@@ -114,6 +141,12 @@ const getFileIcon = (fileName: string) => {
 	return <FileIcon className="h-4 w-4 shrink-0 text-muted-foreground" />;
 };
 
+/**
+ * Reads a document's size in bytes.
+ *
+ * @param fileSize - The size, in bytes or with a B, KB, MB or GB unit.
+ * @returns The size in bytes, or 0 when it does not parse.
+ */
 const parseSizeBytes = (fileSize: string | number): number => {
 	const s = String(fileSize ?? "");
 	const match = s.match(/^([\d.]+)\s*(KB|MB|GB|B)?$/i);
@@ -126,6 +159,12 @@ const parseSizeBytes = (fileSize: string | number): number => {
 	return num;
 };
 
+/**
+ * Formats a document's size in KB or MB.
+ *
+ * @param fileSize - The size, as the server sends it.
+ * @returns The formatted size, or the input when it does not parse.
+ */
 const formatFileSize = (fileSize: string | number): string => {
 	const bytes = parseSizeBytes(fileSize);
 	if (bytes === 0) return String(fileSize);
@@ -133,6 +172,12 @@ const formatFileSize = (fileSize: string | number): string => {
 	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
+/**
+ * Formats a server timestamp in the user's locale.
+ *
+ * @param dateStr - The timestamp, as `yyyy-MM-dd HH:mm:ss`.
+ * @returns The local date and time, or the input when it does not parse.
+ */
 const formatDateTime = (dateStr: string): string => {
 	const d = new Date(dateStr.replace(" ", "T"));
 	if (Number.isNaN(d.getTime())) return dateStr;
@@ -146,31 +191,60 @@ const formatDateTime = (dateStr: string): string => {
 	});
 };
 
-const isPdf = (name: string) =>
+/**
+ * Whether a document previews in a PDF frame (Word files included).
+ *
+ * @param name - The document's file name.
+ * @returns Whether it is a PDF or Word file.
+ */
+const isPdfPreview = (name: string) =>
 	["pdf", "doc", "docx"].includes(getFileExtension(name));
+/**
+ * Whether a document previews as an image.
+ *
+ * @param name - The document's file name.
+ * @returns Whether it has an image extension.
+ */
 const isImage = (name: string) =>
 	["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(
 		getFileExtension(name),
 	);
+/**
+ * Whether a document previews as plain text.
+ *
+ * @param name - The document's file name.
+ * @returns Whether it has a text extension.
+ */
 const isText = (name: string) =>
 	["txt", "md", "csv", "log", "json", "xml", "yaml", "yml"].includes(
 		getFileExtension(name),
 	);
-const isPreviewable = (name?: string) =>
-	!!name && (isPdf(name) || isImage(name) || isText(name));
 /**
- * Knowledge detail page
+ * Whether a document has any preview.
+ *
+ * @param name - The document's file name.
+ * @returns Whether it previews as a PDF, an image or text.
  */
+const isPreviewable = (name?: string) =>
+	!!name && (isPdfPreview(name) || isImage(name) || isText(name));
+
+/** Props for {@link KnowledgeDetail}. */
 interface KnowledgeDetailProps {
 	/** The knowledge base to show. */
 	knowledgeId?: string;
 }
 
+/**
+ * A knowledge source's page: its name, description and tags, with New Chat
+ * and Embed Documents actions, a Files tab (a sortable document table with
+ * preview and download) and a Permissions tab (members, their roles, and
+ * adding or removing members).
+ */
 export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 	const { t } = useTranslation(["knowledge", "common"]);
 	const navigate = useNavigate();
 
-	const getKnowledge = useSessionPixel<KnowledgeEngine[]>(
+	const knowledgePixel = useSessionPixel<KnowledgeEngine[]>(
 		knowledgeId
 			? `MyEngines(engine=["${knowledgeId}"], engineTypes=['VECTOR'], metaKeys=["description","tag"], userT=[true], limit=[1], offset=[0]);`
 			: "",
@@ -178,7 +252,7 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 	);
 
 	const knowledge =
-		getKnowledge.status === "SUCCESS" ? getKnowledge.data?.[0] : null;
+		knowledgePixel.status === "SUCCESS" ? knowledgePixel.data?.[0] : null;
 
 	const tags = useMemo(() => {
 		const raw = knowledge?.tag;
@@ -188,15 +262,15 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 		return Array.isArray(raw) ? raw : [raw];
 	}, [knowledge?.tag]);
 
-	const getDocuments = useSessionPixel<VectorDocument[]>(
+	const documentsPixel = useSessionPixel<VectorDocument[]>(
 		knowledgeId
 			? `ListDocumentsInVectorDatabase(engine=["${knowledgeId}"]);`
 			: "",
 		{ data: [] },
 	);
 
-	const [isEmbedOpen, setIsEmbedOpen] = useState(false);
-	const [isEmbedExistingOpen, setIsEmbedExistingOpen] = useState(false);
+	const [isNewKnowledgeOpen, setIsNewKnowledgeOpen] = useState(false);
+	const [isEmbedDocumentsOpen, setIsEmbedDocumentsOpen] = useState(false);
 	const [docSortBy, setDocSortBy] = useState<"name" | "size" | "date">(
 		"name",
 	);
@@ -204,17 +278,17 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 	const [previewDoc, setPreviewDoc] = useState<VectorDocument | null>(null);
 	const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
 	const [previewText, setPreviewText] = useState<string | null>(null);
-	const [previewLoading, setPreviewLoading] = useState(false);
-	const [previewError, setPreviewError] = useState(false);
+	const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+	const [hasPreviewError, setHasPreviewError] = useState(false);
 	const [activeTab, setActiveTab] = useState<"files" | "permissions">(
 		"files",
 	);
 	const [members, setMembers] = useState<EngineUser[]>([]);
-	const [membersLoading, setMembersLoading] = useState(false);
-	const [addOpen, setAddOpen] = useState(false);
+	const [isLoadingMembers, setIsLoadingMembers] = useState(false);
+	const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
 	const [userSearch, setUserSearch] = useState("");
 	const [searchResults, setSearchResults] = useState<SearchUser[]>([]);
-	const [searchLoading, setSearchLoading] = useState(false);
+	const [isSearchingUsers, setIsSearchingUsers] = useState(false);
 	const [selectedUser, setSelectedUser] = useState<SearchUser | null>(null);
 	const [selectedRole, setSelectedRole] = useState<string>("READ_ONLY");
 	// with both available, people already in the app are searched first
@@ -228,18 +302,20 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 	const msGraphLookup = isDirectoryAvailable
 		? userSource === "directory"
 		: undefined;
+	// Load the previewed document: text as text, anything else as a blob URL,
+	// revoked when the preview changes or closes
 	useEffect(() => {
 		if (!previewDoc) {
 			setPreviewBlobUrl(null);
 			setPreviewText(null);
-			setPreviewLoading(false);
-			setPreviewError(false);
+			setIsPreviewLoading(false);
+			setHasPreviewError(false);
 			return;
 		}
 		let cancelled = false;
 		let createdBlobUrl: string | null = null;
-		setPreviewLoading(true);
-		setPreviewError(false);
+		setIsPreviewLoading(true);
+		setHasPreviewError(false);
 		setPreviewBlobUrl(null);
 		setPreviewText(null);
 		(async () => {
@@ -270,9 +346,9 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 					}
 				}
 			} catch {
-				if (!cancelled) setPreviewError(true);
+				if (!cancelled) setHasPreviewError(true);
 			} finally {
-				if (!cancelled) setPreviewLoading(false);
+				if (!cancelled) setIsPreviewLoading(false);
 			}
 		})();
 		return () => {
@@ -281,17 +357,19 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 		};
 	}, [previewDoc, knowledgeId, run]);
 
+	/** Reloads the source's members. */
 	const loadMembers = useCallback(async () => {
 		if (!knowledgeId) return;
-		setMembersLoading(true);
+		setIsLoadingMembers(true);
 		try {
 			const { members } = await getEngineUsers(knowledgeId);
 			setMembers((members ?? []) as unknown as EngineUser[]);
 		} finally {
-			setMembersLoading(false);
+			setIsLoadingMembers(false);
 		}
 	}, [knowledgeId]);
 
+	/** Adds the chosen user with the chosen role, then closes the dialog. */
 	const handleAddUser = async () => {
 		if (!selectedUser) return;
 		await addEngineUserPermissions(knowledgeId, [
@@ -304,18 +382,25 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 				username: selectedUser.username,
 			},
 		] as unknown as PostUser[]);
-		closeAddDialog();
+		closeAddMemberDialog();
 		void loadMembers();
 	};
 
-	const closeAddDialog = () => {
-		setAddOpen(false);
+	/** Closes the add-member dialog and resets its choices. */
+	const closeAddMemberDialog = () => {
+		setIsAddMemberOpen(false);
 		setUserSearch("");
 		setSelectedUser(null);
 		setSelectedRole("READ_ONLY");
 		setUserSource("existing");
 	};
 
+	/**
+	 * Changes a member's role.
+	 *
+	 * @param userId - The member.
+	 * @param newRole - The role to give them.
+	 */
 	const handleRoleChange = async (userId: string, newRole: string) => {
 		await editEngineUserPermissions(knowledgeId, [
 			{ userid: userId, permission: newRole },
@@ -327,6 +412,7 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 		);
 	};
 
+	/** Removes the member awaiting confirmation. */
 	const handleRemoveConfirmed = async () => {
 		if (!removeTarget) return;
 		await removeEngineUserPermissions(knowledgeId, [removeTarget.id]);
@@ -334,22 +420,24 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 		void loadMembers();
 	};
 
+	// Members load when the Permissions tab opens
 	useEffect(() => {
 		if (activeTab === "permissions") {
 			void loadMembers();
 		}
 	}, [activeTab, loadMembers]);
 
+	// Search users as the add-member search changes, debounced
 	useEffect(() => {
-		if (!userSearch || !addOpen) {
+		if (!userSearch || !isAddMemberOpen) {
 			setSearchResults([]);
-			setSearchLoading(false);
+			setIsSearchingUsers(false);
 			return;
 		}
 		// a search that a newer one replaced must not overwrite its results
 		let isStale = false;
 		const timer = setTimeout(async () => {
-			setSearchLoading(true);
+			setIsSearchingUsers(true);
 			try {
 				const results = await getEngineUsersNoCredentials(
 					knowledgeId,
@@ -374,7 +462,7 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 				}
 			} finally {
 				if (!isStale) {
-					setSearchLoading(false);
+					setIsSearchingUsers(false);
 				}
 			}
 		}, 300);
@@ -382,11 +470,11 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 			isStale = true;
 			clearTimeout(timer);
 		};
-	}, [userSearch, addOpen, knowledgeId, msGraphLookup, t]);
+	}, [userSearch, isAddMemberOpen, knowledgeId, msGraphLookup, t]);
 
 	const sortedDocuments = useMemo(() => {
-		if (getDocuments.status !== "SUCCESS") return [];
-		return [...getDocuments.data].sort((a, b) => {
+		if (documentsPixel.status !== "SUCCESS") return [];
+		return [...documentsPixel.data].sort((a, b) => {
 			let cmp = 0;
 			if (docSortBy === "name")
 				cmp = a.fileName.localeCompare(b.fileName);
@@ -395,9 +483,15 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 			else cmp = a.lastModified.localeCompare(b.lastModified);
 			return docSortDir === "asc" ? cmp : -cmp;
 		});
-	}, [getDocuments.status, getDocuments.data, docSortBy, docSortDir]);
+	}, [documentsPixel.status, documentsPixel.data, docSortBy, docSortDir]);
 
-	const toggleSort = (col: "name" | "size" | "date") => {
+	/**
+	 * Sorts the documents by a column, or flips the direction when it already
+	 * sorts by it.
+	 *
+	 * @param col - The column.
+	 */
+	const handleToggleSort = (col: "name" | "size" | "date") => {
 		if (docSortBy === col) {
 			setDocSortDir((d) => (d === "asc" ? "desc" : "asc"));
 		} else {
@@ -406,6 +500,11 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 		}
 	};
 
+	/**
+	 * Downloads a document.
+	 *
+	 * @param fileName - The document's file name.
+	 */
 	const handleDownload = async (fileName: string) => {
 		const { pixelReturn } = await run<[string]>(
 			`META | VectorFileDownload(engine = "${knowledgeId}", fileNames=["${fileName}"]);`,
@@ -418,7 +517,7 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 		return <Navigate to="/knowledge" replace />;
 	}
 
-	if (getKnowledge.status === "LOADING") {
+	if (knowledgePixel.status === "LOADING") {
 		return (
 			<div className="flex h-full w-full items-center justify-center">
 				<Spinner />
@@ -426,7 +525,7 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 		);
 	}
 
-	if (getKnowledge.status === "ERROR") {
+	if (knowledgePixel.status === "ERROR") {
 		return <Navigate to="/knowledge" replace />;
 	}
 
@@ -476,7 +575,7 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 
 						<Button
 							variant="default"
-							onClick={() => setIsEmbedExistingOpen(true)}
+							onClick={() => setIsEmbedDocumentsOpen(true)}
 						>
 							<FolderPlusIcon />
 							{t("knowledge:detail.embedDocuments")}
@@ -485,9 +584,9 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 				</div>
 
 				<NewKnowledgeOverlay
-					open={isEmbedOpen}
+					open={isNewKnowledgeOpen}
 					onClose={(knowledgeCreated) => {
-						setIsEmbedOpen(false);
+						setIsNewKnowledgeOpen(false);
 						if (knowledgeCreated) {
 							toast.info(
 								t("knowledge:detail.newKnowledgeCreated"),
@@ -497,12 +596,12 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 				/>
 
 				<EmbedDocumentsOverlay
-					open={isEmbedExistingOpen}
+					open={isEmbedDocumentsOpen}
 					knowledgeId={knowledgeId}
 					onClose={(success) => {
-						setIsEmbedExistingOpen(false);
+						setIsEmbedDocumentsOpen(false);
 						if (success) {
-							getDocuments.refresh?.();
+							documentsPixel.refresh?.();
 						}
 					}}
 				/>
@@ -528,9 +627,10 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 									{t("knowledge:documents.title")}
 								</CardTitle>
 								<CardDescription>
-									{getDocuments.status === "SUCCESS"
+									{documentsPixel.status === "SUCCESS"
 										? t("knowledge:studio.documentCount", {
-												count: getDocuments.data.length,
+												count: documentsPixel.data
+													.length,
 											})
 										: t(
 												"knowledge:detail.documentsDescription",
@@ -538,19 +638,19 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 								</CardDescription>
 							</CardHeader>
 							<CardContent className="px-0 pb-0">
-								{getDocuments.status === "LOADING" ? (
+								{documentsPixel.status === "LOADING" ? (
 									<div className="px-6 pb-6 text-muted-foreground text-sm">
 										{t(
 											"knowledge:messages.loadingDocuments",
 										)}
 									</div>
-								) : getDocuments.status === "ERROR" ? (
+								) : documentsPixel.status === "ERROR" ? (
 									<div className="px-6 pb-6 text-destructive text-sm">
 										{t(
 											"knowledge:detail.failedToLoadDocuments",
 										)}
 									</div>
-								) : getDocuments.data.length === 0 ? (
+								) : documentsPixel.data.length === 0 ? (
 									<div className="px-6 pb-6 text-muted-foreground text-sm">
 										{t("knowledge:messages.noDocuments")}
 									</div>
@@ -572,7 +672,7 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 																type="button"
 																className="flex items-center gap-1 hover:text-foreground"
 																onClick={() =>
-																	toggleSort(
+																	handleToggleSort(
 																		"name",
 																	)
 																}
@@ -596,7 +696,7 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 																type="button"
 																className="flex items-center gap-1 hover:text-foreground"
 																onClick={() =>
-																	toggleSort(
+																	handleToggleSort(
 																		"date",
 																	)
 																}
@@ -620,7 +720,7 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 																type="button"
 																className="flex items-center justify-end gap-1 hover:text-foreground"
 																onClick={() =>
-																	toggleSort(
+																	handleToggleSort(
 																		"size",
 																	)
 																}
@@ -716,14 +816,14 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 									</CardTitle>
 									<Button
 										size="sm"
-										onClick={() => setAddOpen(true)}
+										onClick={() => setIsAddMemberOpen(true)}
 									>
 										{t("knowledge:studio.addUser")}
 									</Button>
 								</div>
 							</CardHeader>
 							<CardContent className="overflow-x-auto px-0 pb-4">
-								{membersLoading ? (
+								{isLoadingMembers ? (
 									<div className="flex items-center justify-center py-8">
 										<Spinner />
 									</div>
@@ -835,14 +935,14 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 								</span>
 							</DialogTitle>
 						</DialogHeader>
-						{previewLoading && (
+						{isPreviewLoading && (
 							<div className="flex items-center justify-center py-16">
 								<Spinner />
 							</div>
 						)}
 						{previewBlobUrl &&
 							previewDoc &&
-							isPdf(previewDoc.fileName) && (
+							isPdfPreview(previewDoc.fileName) && (
 								<iframe
 									className="w-full border-0"
 									style={{ height: "75vh" }}
@@ -873,15 +973,15 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 									</pre>
 								</div>
 							)}
-						{(previewError ||
-							(!previewLoading &&
+						{(hasPreviewError ||
+							(!isPreviewLoading &&
 								!previewBlobUrl &&
 								previewText === null &&
 								previewDoc &&
 								!isPreviewable(previewDoc.fileName))) && (
 							<div className="flex items-center justify-center py-16">
 								<p className="text-muted-foreground text-sm">
-									{previewError
+									{hasPreviewError
 										? t("knowledge:studio.previewError")
 										: t(
 												"knowledge:studio.previewUnavailable",
@@ -892,9 +992,11 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 					</DialogContent>
 				</Dialog>
 				<Dialog
-					open={addOpen}
+					open={isAddMemberOpen}
 					onOpenChange={(isOpen) =>
-						isOpen ? setAddOpen(true) : closeAddDialog()
+						isOpen
+							? setIsAddMemberOpen(true)
+							: closeAddMemberDialog()
 					}
 				>
 					<DialogContent className="sm:max-w-md">
@@ -920,7 +1022,7 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 								value={userSearch}
 								onChange={(e) => setUserSearch(e.target.value)}
 							/>
-							{searchLoading && (
+							{isSearchingUsers && (
 								<div className="flex items-center justify-center py-4">
 									<Spinner />
 								</div>
@@ -954,7 +1056,7 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 								</div>
 							)}
 							{userSearch &&
-								!searchLoading &&
+								!isSearchingUsers &&
 								searchResults.length === 0 && (
 									<p className="py-2 text-center text-muted-foreground text-sm">
 										{t("knowledge:studio.noUsers")}
@@ -984,7 +1086,7 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 							<div className="flex justify-end gap-2">
 								<Button
 									variant="outline"
-									onClick={closeAddDialog}
+									onClick={closeAddMemberDialog}
 								>
 									{t("knowledge:studio.cancel")}
 								</Button>

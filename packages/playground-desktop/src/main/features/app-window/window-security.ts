@@ -1,5 +1,6 @@
 import { type BrowserWindow, shell } from "electron";
 
+/** The link protocols the system browser (or mail app) may open. */
 const EXTERNAL_PROTOCOLS = new Set(["https:", "http:", "mailto:"]);
 
 /**

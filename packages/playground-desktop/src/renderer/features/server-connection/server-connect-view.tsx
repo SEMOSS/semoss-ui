@@ -20,13 +20,19 @@ import {
 	type ServerConfig,
 } from "../../../contract/server-connection";
 
+/**
+ * The form's shape. It only requires an address; {@link parseServerConfig}
+ * does the real validation on submit, as the main process does again.
+ */
 const schema = z.object({
 	url: z.string().trim().min(1),
 	module: z.string().trim(),
 });
 
+/** The form's values. */
 type ServerConnectValues = z.infer<typeof schema>;
 
+/** Props for {@link ServerConnectView}. */
 interface ServerConnectViewProps {
 	/** The bridge that checks and saves the server. */
 	bridge: DesktopBridge;
@@ -55,6 +61,11 @@ export const ServerConnectView = ({
 	});
 	const { errors, isSubmitting } = form.formState;
 
+	/**
+	 * Validate, check, then save the server; a failure shows on the form.
+	 *
+	 * @param values - The form's values.
+	 */
 	const handleSubmit = async (values: ServerConnectValues): Promise<void> => {
 		let server: ServerConfig;
 		try {

@@ -8,11 +8,16 @@ const i18nBuilder = new I18nBuilder(desktopResources);
 /** Resolves once the active language's translations are in. */
 export const i18nReady = i18nBuilder.ready;
 
+/** Props for {@link App}. */
 interface AppProps {
+	/** The screen to show: the connect screen or the router. */
 	children: ReactNode;
 }
 
-/** The app's root: translations, light and dark theme, and toasts. */
+/**
+ * The app's root: translations, light and dark theme, and toasts. It holds no
+ * session, so the connect screen can render before any server is saved.
+ */
 export const App = ({ children }: AppProps) => (
 	<I18nextProvider i18n={i18nBuilder.i18n}>
 		<ThemeProvider defaultTheme="system" storageKey="smss-ui-theme-desktop">

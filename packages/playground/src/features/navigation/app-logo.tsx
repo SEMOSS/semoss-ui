@@ -4,14 +4,16 @@ import appImage from "@/assets/img/app.svg";
 import logoImage from "@/assets/img/logo.svg";
 import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 
+/** Props for {@link AppLogo}. */
 interface AppLogoProps {
-	/**
-	 * Show the full logo
-	 */
+	/** Show the full app logo (`images.app`) rather than the compact mark (`images.logo`). */
 	full: boolean;
 }
 
-/** Renders the configured branding with a theme-aware default logo. */
+/**
+ * The theme's logo, or the bundled one, in the light or dark variant for the
+ * active color mode.
+ */
 export const AppLogo: React.FC<AppLogoProps> = ({ full = false }) => {
 	const { t } = useTranslation("common");
 	const theme = usePlaygroundTheme();

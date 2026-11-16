@@ -20,8 +20,8 @@ export const SettingsDialogContext =
 /**
  * The way to open the settings dialog from anywhere inside the main layout.
  *
- * @return The actions on the dialog.
- * @throws Error when rendered outside `SettingsDialogProvider`.
+ * @returns The actions on the dialog.
+ * @throws When rendered outside `SettingsDialogProvider`.
  */
 export const useSettingsDialog = (): SettingsDialogContextValue => {
 	const context = useContext(SettingsDialogContext);

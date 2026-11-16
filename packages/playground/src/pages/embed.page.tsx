@@ -2,6 +2,11 @@ import { useEffect } from "react";
 import { Navigate, useNavigate, useParams } from "react-router";
 import { useChatSelector, useChatSession } from "@semoss/chat";
 
+/**
+ * The route for an embedded page (`/embed/<path>`). `MainLayout` already keeps
+ * that page's iframe mounted and shows it, so this route only sends an unknown
+ * path home and turns the iframe's messages into navigation.
+ */
 export const EmbedPage: React.FC = () => {
 	const { "*": splatPath } = useParams();
 	const basePath = splatPath?.split("/")[0] ?? "";
@@ -13,6 +18,7 @@ export const EmbedPage: React.FC = () => {
 		(chat) => chat.embeddedPageMap[basePath] ?? null,
 	);
 
+	// The embedded app asks the playground to start a chat or open a room.
 	useEffect(() => {
 		const handleMessage = (event: MessageEvent) => {
 			if (event.data?.type === "SMSS_NEW_CHAT") {

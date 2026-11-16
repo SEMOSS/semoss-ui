@@ -40,12 +40,23 @@ const startUpstream = (): Promise<Server> =>
 		upstream.listen(0, "127.0.0.1", () => resolve(upstream));
 	});
 
+/** A response as the tests read it. */
 interface Reply {
+	/** The status code. */
 	readonly status: number;
+	/** The response headers. */
 	readonly headers: Record<string, string | string[] | undefined>;
+	/** The body, as text. */
 	readonly body: string;
 }
 
+/**
+ * GET a path from an origin.
+ *
+ * @param origin - The origin.
+ * @param path - The path, with any query.
+ * @returns The response.
+ */
 const get = (origin: string, path: string): Promise<Reply> =>
 	new Promise((resolve, reject) => {
 		const req = request(`${origin}${path}`, (res) => {
@@ -86,6 +97,7 @@ describe("startLocalServer", () => {
 		await new Promise((resolve) => upstream.close(resolve));
 	});
 
+	/** Start the local server on the stand-in upstream, optionally on a port. */
 	const start = async (preferredPort: number | null = null) => {
 		local = await startLocalServer({
 			rootDir,

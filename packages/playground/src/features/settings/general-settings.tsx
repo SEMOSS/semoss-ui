@@ -15,6 +15,7 @@ import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 import { NewChatSettings } from "./new-chat-settings";
 import { SettingsRow } from "./settings-row";
 
+/** A color mode `useTheme` accepts: system, light, or dark. */
 type ThemeMode = ReturnType<typeof useTheme>["theme"];
 
 /** The theme choices, in display order. */
@@ -24,6 +25,12 @@ const THEME_OPTIONS: readonly { value: ThemeMode; icon: LucideIcon }[] = [
 	{ value: "dark", icon: MoonIcon },
 ];
 
+/**
+ * Whether a toggle value is one of the color modes.
+ *
+ * @param value - The toggle group's value; "" when the active item is clicked again.
+ * @returns Whether it is a {@link ThemeMode}.
+ */
 const isThemeMode = (value: string): value is ThemeMode =>
 	THEME_OPTIONS.some((option) => option.value === value);
 

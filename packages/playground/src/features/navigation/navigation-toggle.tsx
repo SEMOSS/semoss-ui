@@ -8,7 +8,10 @@ import {
 	useSidebar,
 } from "@semoss/ui/next";
 
-/** Keeps a visible desktop navigation toggle in both sidebar states. */
+/**
+ * The desktop toggle in the navigation's header, labelled for closing or
+ * opening it; nothing on mobile, where the sheet has its own Close.
+ */
 export function NavigationToggle() {
 	const { t } = useTranslation("sidebar");
 	const { open, isMobile, toggleSidebar } = useSidebar();

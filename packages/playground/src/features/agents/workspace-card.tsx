@@ -22,9 +22,12 @@ import {
 } from "@semoss/ui/next";
 import { parseTimestampWithUtcDefault } from "@semoss/utility/date";
 
+/** Props for {@link WorkspaceCard}. */
 interface WorkspaceCardProps {
+	/** The agent the card shows. */
 	workspace: Pick<Workspace, "workspace_id" | "name" | "description">;
-	onDeleteClick: () => void;
+	/** Called once the user confirms the delete dialog. */
+	onDelete: () => void;
 	/**
 	 * The viewing user's permission on this workspace. Gates the Edit
 	 * (EDIT/OWNER) and Delete (OWNER) buttons, and surfaces as a small
@@ -40,13 +43,13 @@ interface WorkspaceCardProps {
 }
 
 /**
- * Renders a card representing a workspace
- *
- * @component
+ * A card for one agent (a workspace) in the catalog: its avatar, name,
+ * description, the user's permission and when it was made, with New Chat,
+ * Edit and Delete actions. Delete asks for confirmation first.
  */
 export const WorkspaceCard = ({
 	workspace,
-	onDeleteClick,
+	onDelete,
 	permission,
 	dateCreated,
 }: WorkspaceCardProps) => {
@@ -57,13 +60,10 @@ export const WorkspaceCard = ({
 		permission === "OWNER" ||
 		permission === "EDIT";
 	const canDelete = permission === undefined || permission === "OWNER";
-	/**
-	 * Library Hooks
-	 */
 	const navigate = useNavigate();
 	const { t } = useTranslation(["workspace", "common"]);
 
-	const [deleteModal, setDeleteModal] = useState(false);
+	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
 	const permissionLabel = permission
 		? permission === "OWNER"
@@ -73,6 +73,7 @@ export const WorkspaceCard = ({
 				: t("workspace:members.readOnly")
 		: null;
 
+	// Unparseable dates show no label rather than "Invalid date"
 	const createdLabel = (() => {
 		if (!dateCreated) return null;
 		const d = parseTimestampWithUtcDefault(dateCreated);
@@ -84,6 +85,7 @@ export const WorkspaceCard = ({
 
 	return (
 		<>
+			{/* The whole card opens the agent; its actions stop propagation */}
 			<Card
 				className="cursor-pointer gap-0 bg-card p-0"
 				onClick={() => {
@@ -179,7 +181,7 @@ export const WorkspaceCard = ({
 											)}
 											onClick={(e) => {
 												e.stopPropagation();
-												setDeleteModal(true);
+												setIsDeleteDialogOpen(true);
 											}}
 										>
 											<Trash2Icon />
@@ -194,7 +196,10 @@ export const WorkspaceCard = ({
 					)}
 				</CardContent>
 			</Card>
-			<Dialog open={deleteModal} onOpenChange={setDeleteModal}>
+			<Dialog
+				open={isDeleteDialogOpen}
+				onOpenChange={setIsDeleteDialogOpen}
+			>
 				<DialogContent>
 					<DialogHeader>
 						<DialogTitle>
@@ -211,7 +216,7 @@ export const WorkspaceCard = ({
 							variant="outline"
 							onClick={(e) => {
 								e.stopPropagation();
-								setDeleteModal(false);
+								setIsDeleteDialogOpen(false);
 							}}
 							data-testid={`workspace-card--cancel-delete-btn`}
 						>
@@ -222,8 +227,8 @@ export const WorkspaceCard = ({
 							data-testid={`workspace-card--confirm-delete-btn`}
 							onClick={(e) => {
 								e.stopPropagation();
-								setDeleteModal(false);
-								onDeleteClick();
+								setIsDeleteDialogOpen(false);
+								onDelete();
 							}}
 						>
 							{t("workspace:actions.delete")}

@@ -17,12 +17,14 @@ import { toast } from "@semoss/ui/next";
 import { AgentDetailPage } from "@/pages/agent-detail.page";
 import { AgentEditPage } from "@/pages/agent-edit.page";
 
+/** The stubs the mocked modules call, reset before each test. */
 const mocks = vi.hoisted(() => ({
 	workspaceId: "agent-1",
 	workspace: {} as Record<string, unknown>,
 	editWorkspace: vi.fn(),
 	navigate: vi.fn(),
 }));
+/** Answers each pixel the pages read with this test's fixtures. */
 const mockPixel = vi.hoisted(() => (pixel: string) => ({
 	status: "SUCCESS",
 	data: pixel.startsWith("GetWorkspace") ? mocks.workspace : [],

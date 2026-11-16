@@ -1,33 +1,40 @@
 import { Link, matchPath, useLocation } from "react-router";
 import { useTranslation } from "@semoss/i18n";
-import { SidebarMenuButton, SidebarMenuItem, useTheme } from "@semoss/ui/next";
+import {
+	cn,
+	SidebarMenuButton,
+	SidebarMenuItem,
+	useTheme,
+} from "@semoss/ui/next";
 
+/** Props for {@link GlobalNavItem}; each comes from a theme sidebar item. */
 interface GlobalNavItemProps {
-	/** Name of the item */
+	/** The item's label, and its accessible name. */
 	name: string;
 
-	/** Icon for the item (light mode) */
+	/** The item's icon in light mode. */
 	icon: string;
 
-	/** Icon for the item in dark mode; falls back to CSS inversion when absent */
+	/** The item's icon in dark mode; without it the light icon is inverted. */
 	iconDark?: string;
 
-	/** Path for the item */
+	/** The item's id: its `/embed/<path>` route and its tour target (`nav-<path>`). */
 	path: string;
 
-	/** Url for the item */
+	/** Where the item goes: a hash route (`#/knowledge`) stays in the app, anything else opens a new tab. */
 	url: string;
 
-	/** Whether to embed the item */
+	/** Show `url` inside the app at `/embed/<path>` rather than linking to it. */
 	embed: boolean;
 
-	/** Tooltip text from theme configuration */
+	/** Tooltip text from the theme; wins over the translated one. */
 	tooltip?: string;
 }
 
-// Maps the well-known English item names that ship in default themes to
-// translation keys under sidebar:nav.<item>.tooltip. Items with names outside
-// this map fall back to displaying the raw `name` as both label and tooltip.
+/**
+ * Tooltip translation keys (`sidebar:nav.<item>.tooltip`) for the English item
+ * names the default themes ship. Other names use `name` as their tooltip.
+ */
 const KNOWN_TOOLTIP_KEYS: Record<string, string> = {
 	"Agents/Workspaces": "nav.agentsWorkspaces.tooltip",
 	"Knowledge Library": "nav.knowledgeLibrary.tooltip",
@@ -36,9 +43,8 @@ const KNOWN_TOOLTIP_KEYS: Record<string, string> = {
 };
 
 /**
- * Renders a sidebar allowing users to navigate between pages
- *
- * @component
+ * One of the theme's navigation items: an embedded page, an in-app route, or
+ * an external link in a new tab.
  */
 export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 	name,
@@ -54,11 +60,13 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 	const { resolvedTheme } = useTheme();
 	const isDarkMode = resolvedTheme === "dark";
 
-	// Use the dark asset when available; otherwise keep the light asset and
-	// let the JS-driven filter invert it. Both src and filter use the same
-	// isDark value so they can never be out of sync.
+	// Use the dark asset when there is one; otherwise invert the light asset.
+	// Both read the same isDarkMode, so the icon and its filter stay in sync.
 	const activeIcon = isDarkMode && iconDark ? iconDark : icon;
-	const imgClass = `size-4 select-none${isDarkMode && !iconDark ? " brightness-0 invert" : ""}`;
+	const iconClassName = cn(
+		"size-4 select-none",
+		isDarkMode && !iconDark && "brightness-0 invert",
+	);
 
 	// Priority: 1) tooltip prop from theme, 2) i18n translation, 3) fallback to name
 	const tooltipKey = KNOWN_TOOLTIP_KEYS[name];
@@ -80,7 +88,7 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 					<Link to={`/embed/${path}`} aria-label={name}>
 						{activeIcon ? (
 							<img
-								className={imgClass}
+								className={iconClassName}
 								src={activeIcon}
 								alt={name}
 							/>
@@ -105,7 +113,7 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 					<Link to={internalPath} aria-label={name}>
 						{activeIcon ? (
 							<img
-								className={imgClass}
+								className={iconClassName}
 								src={activeIcon}
 								alt={name}
 							/>
@@ -130,7 +138,11 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 					className="cursor-pointer"
 				>
 					{activeIcon ? (
-						<img className={imgClass} src={activeIcon} alt={name} />
+						<img
+							className={iconClassName}
+							src={activeIcon}
+							alt={name}
+						/>
 					) : null}
 					{name}
 				</a>

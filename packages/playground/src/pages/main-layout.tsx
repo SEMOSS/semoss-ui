@@ -34,14 +34,22 @@ import { useThemeTitle } from "@/features/theme/use-theme-title";
 import { LandingTour } from "@/features/tour/landing-tour";
 import { TourContext } from "@/features/tour/tour.context";
 
+/**
+ * The signed in shell: it makes and provides the chat store, the chat's
+ * config, the settings dialog and the tour, and lays out the global
+ * navigation beside the route. It also keeps every embedded page's iframe
+ * mounted, showing the one the `/embed/*` route names.
+ */
 export const MainLayout = () => {
 	const theme = usePlaygroundTheme();
 	// React freezes DOM style props in development; keep the shared theme mutable.
 	const layoutStyle = { ...theme.overrides["main-layout"] };
 	const { pathname } = useLocation();
 	const [isTourOpen, setIsTourOpen] = useState(false);
-	const [pendingTour, setPendingTour] = useState(false);
-	// Routes with their own header hold the mobile navigation button there.
+	// The tour waits for the welcome dialog when the theme shows one.
+	const [isTourPending, setIsTourPending] = useState(false);
+	// Routes with their own header hold the open-navigation button there; they
+	// register through `PageHeaderContext`, and the count survives overlaps.
 	const [pageHeaderCount, setPageHeaderCount] = useState(0);
 	const registerPageHeader = useCallback(() => {
 		setPageHeaderCount((count) => count + 1);
@@ -62,7 +70,8 @@ export const MainLayout = () => {
 		(chat) => chat.embeddedPageMap,
 	);
 
-	// Refs for embed iframe sync
+	// Each embedded page's iframe, whether it has sent SMSS_READY, and the path
+	// to send it once it has, all by embed path.
 	const iframeRefs = useRef<Record<string, HTMLIFrameElement | null>>({});
 	const iframeReadyRef = useRef<Record<string, boolean>>({});
 	const pendingNavRef = useRef<Record<string, string>>({});
@@ -117,7 +126,7 @@ export const MainLayout = () => {
 
 	// Listen for SMSS_READY and flush any queued navigation
 	useEffect(() => {
-		const handle = (e: MessageEvent) => {
+		const handleReady = (e: MessageEvent) => {
 			if (e.data?.type !== "SMSS_READY") return;
 			const entry = Object.entries(iframeRefs.current).find(
 				([, iframe]) => iframe?.contentWindow === e.source,
@@ -134,8 +143,8 @@ export const MainLayout = () => {
 				);
 			}
 		};
-		window.addEventListener("message", handle);
-		return () => window.removeEventListener("message", handle);
+		window.addEventListener("message", handleReady);
+		return () => window.removeEventListener("message", handleReady);
 	}, []);
 
 	// Auto-show tour for first-time users (resets when cookies are cleared).
@@ -149,7 +158,7 @@ export const MainLayout = () => {
 			// biome-ignore lint/suspicious/noDocumentCookie: TODO: why not use localStorage?
 			document.cookie = "hasSeenTour=true; path=/; max-age=31536000"; // 1 year
 			if (theme.dialog) {
-				setPendingTour(true);
+				setIsTourPending(true);
 			} else {
 				setIsTourOpen(true);
 			}
@@ -188,8 +197,8 @@ export const MainLayout = () => {
 									<SidebarInset className="m-0! min-w-0 rounded-none! shadow-none">
 										<GlobalDialog
 											onAcknowledge={() => {
-												if (pendingTour) {
-													setPendingTour(false);
+												if (isTourPending) {
+													setIsTourPending(false);
 													setIsTourOpen(true);
 												}
 											}}

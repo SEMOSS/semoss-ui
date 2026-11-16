@@ -12,21 +12,25 @@ import {
 	Spinner,
 } from "@semoss/ui/next";
 
-interface NewKnowledgeMCPOverlayProps {
-	/** Open */
+/** Props for {@link NewKnowledgeOverlay}. */
+interface NewKnowledgeOverlayProps {
+	/** Whether the dialog is open. */
 	open: boolean;
 
-	/** Callback triggered when the tool model is closed */
+	/**
+	 * Called when the dialog closes: with the new knowledge source once it is
+	 * created, or with nothing when the user cancels.
+	 */
 	onClose: (knowledge?: MCPConfig) => void;
 }
 
 /**
- * Standalone Dialog wrapper around NewKnowledgeForm. Used by callers that
- * are not themselves inside a modal (e.g. WorkspaceForm). Callers that are
- * already inside a modal should host the form body directly to avoid stacking
- * Dialogs.
+ * A dialog around the chat's `NewKnowledgeForm`, for the knowledge pages,
+ * which are not themselves inside a modal. A caller already inside a modal
+ * should host the form directly rather than stack dialogs. The dialog cannot
+ * close while the form is creating the source.
  */
-export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> = ({
+export const NewKnowledgeOverlay: React.FC<NewKnowledgeOverlayProps> = ({
 	open,
 	onClose,
 }) => {

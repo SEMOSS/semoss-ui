@@ -13,6 +13,7 @@ import { AGENT_FORM_DEFAULT_VALUES } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
 import { AgentCreate } from "@/features/agents/agent-create";
 
+/** The stubs the mocked modules call, reset before each test. */
 const mocks = vi.hoisted(() => ({
 	addWorkspace: vi.fn(),
 	createAgent: vi.fn(),
@@ -20,6 +21,7 @@ const mocks = vi.hoisted(() => ({
 	run: vi.fn(),
 	upload: vi.fn(),
 }));
+/** Answers each pixel the pages read with this test's fixtures. */
 const mockPixel = vi.hoisted(() => (pixel: string) => ({
 	status: "SUCCESS",
 	data:

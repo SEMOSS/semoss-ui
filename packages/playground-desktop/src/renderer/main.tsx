@@ -6,6 +6,12 @@ import { ServerConnectView } from "./features/server-connection/server-connect-v
 import { Router } from "./pages/router";
 import "./index.css";
 
+/**
+ * Render the app: the connect screen until a server is saved, then the
+ * signed in routes on that server's module.
+ *
+ * @returns Once the first screen is rendered.
+ */
 const mount = async (): Promise<void> => {
 	const container = document.getElementById("root");
 	if (!container) {

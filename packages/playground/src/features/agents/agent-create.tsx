@@ -53,10 +53,15 @@ export const AgentCreate = () => {
 	const isLoadingOptions =
 		formOptions.status === "INITIAL" || formOptions.status === "LOADING";
 
+	/** Leaves without saving, back to the agent catalog. */
 	const handleCancel = () => {
 		navigate("/agent");
 	};
 
+	/**
+	 * Creates the agent and opens it. A failed follow-up settings save still
+	 * opens the created agent, so a retry never makes a duplicate.
+	 */
 	const handleCreate = async () => {
 		const name = formValues.name.trim();
 		if (isSaving || isLoadingOptions || !name) return;

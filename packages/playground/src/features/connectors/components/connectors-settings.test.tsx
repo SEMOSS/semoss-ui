@@ -5,6 +5,7 @@ import { getConnectorProvider, type UseConnectionsResult } from "@semoss/chat";
 import type { UseUserConnectorsResult } from "../use-user-connectors";
 import { ConnectorsSettings } from "./connectors-settings";
 
+/** What the mocked `useConnections` and `useUserConnectors` return; each test sets them. */
 const mocks = vi.hoisted(() => ({
 	connections: null as unknown as UseConnectionsResult,
 	userConnectors: null as unknown as UseUserConnectorsResult,
@@ -54,7 +55,7 @@ const createConnections = (
 	isServiceCovered: () => true,
 	hasAccessInfo: () => true,
 	refresh: vi.fn(async () => undefined),
-	connect: connect,
+	connect,
 	disconnect: vi.fn(async () => undefined),
 });
 

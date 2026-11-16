@@ -5,11 +5,15 @@ import type {
 	WindowState,
 } from "../server-connection/settings-file";
 
+/** The first launch's window size. */
 const DEFAULT_SIZE = { width: 1280, height: 820 };
 
 /**
  * Whether a saved position still lands on a connected display, so a window
  * last shown on an unplugged monitor does not open off screen.
+ *
+ * @param state - The saved window state.
+ * @returns True when the saved bounds overlap a display's work area.
  */
 const isOnScreen = ({ x, y, width, height }: WindowState): boolean =>
 	x !== undefined &&
@@ -65,6 +69,7 @@ export const createMainWindow = (settings: SettingsFile): BrowserWindow => {
 	if (saved?.isMaximized) window.maximize();
 	window.once("ready-to-show", () => window.show());
 
+	// moving and resizing fire many events; save once they settle
 	let timer: NodeJS.Timeout | undefined;
 	const save = (): void => {
 		const bounds = window.getNormalBounds();

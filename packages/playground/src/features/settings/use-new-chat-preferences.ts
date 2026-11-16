@@ -31,6 +31,7 @@ export const useNewChatPreferences = (): NewChatPreferencesState => {
 	const meta = useSession((state) => state.user?.meta);
 	const preferences = readNewChatPreferences(meta);
 
+	/** Save metadata changes, toasting a failure. */
 	const save = (changes: Record<string, string>): void => {
 		Session.setMetadata(changes).catch((error: unknown) => {
 			toast.error(

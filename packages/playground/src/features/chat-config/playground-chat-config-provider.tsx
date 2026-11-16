@@ -6,7 +6,9 @@ import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 import { NEW_CHAT_BUILD_DEFAULTS } from "./new-chat-build-defaults";
 import { PLATFORM_URL } from "./platform-url";
 
+/** Props for {@link PlaygroundChatConfigProvider}. */
 interface PlaygroundChatConfigProviderProps {
+	/** The chat UI that reads the config. */
 	children: ReactNode;
 }
 
@@ -21,6 +23,7 @@ export const PlaygroundChatConfigProvider = ({
 	const navigate = useNavigate();
 	const { openSettings } = useSettingsDialog();
 
+	// Memoized so chat UI only rerenders when the theme or routes change.
 	const config = useMemo<ChatConfig>(
 		() => ({
 			theme,

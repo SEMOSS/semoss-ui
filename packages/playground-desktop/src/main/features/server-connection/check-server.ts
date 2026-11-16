@@ -1,6 +1,7 @@
 import type { ServerCheckResult } from "../../../contract/ipc-contract";
 import type { ServerConfig } from "../../../contract/server-connection";
 
+/** How long a server has to answer before the check gives up. */
 const CHECK_TIMEOUT_MS = 10_000;
 
 /**
@@ -18,6 +19,7 @@ export const checkServer = async (
 	const url = `${server.url}${server.module}/api/config`;
 	try {
 		const response = await fetchImpl(url, {
+			// a redirect usually means a sign in page, not a SEMOSS config
 			redirect: "manual",
 			signal: AbortSignal.timeout(CHECK_TIMEOUT_MS),
 			headers: { Accept: "application/json" },

@@ -7,24 +7,32 @@ import {
 
 /** Where and how big the window was when it last closed. */
 export interface WindowState {
+	/** The left edge; none until the window has been placed. */
 	readonly x?: number;
+	/** The top edge; none until the window has been placed. */
 	readonly y?: number;
+	/** The unmaximized width. */
 	readonly width: number;
+	/** The unmaximized height. */
 	readonly height: number;
+	/** Whether it was maximized. */
 	readonly isMaximized: boolean;
 }
 
 /** What the app keeps between launches, in its user data folder. */
 interface DesktopSettings {
+	/** The file format's version, for a future migration. */
 	readonly version: 1;
 	/** The server the app signs in to; null until the user picks one. */
 	readonly server: ServerConfig | null;
 	/** The local origin's port. Cookies and storage belong to it, so it is reused. */
 	readonly port: number | null;
+	/** Where the window last was; null before it first closes. */
 	readonly window: WindowState | null;
 }
 
-const EMPTY: DesktopSettings = {
+/** The settings before anything is saved, and the fallback for a bad file. */
+const DEFAULT_SETTINGS: DesktopSettings = {
 	version: 1,
 	server: null,
 	port: null,
@@ -33,20 +41,38 @@ const EMPTY: DesktopSettings = {
 
 /** The app's saved settings, read once and written through on every change. */
 export interface SettingsFile {
+	/** The saved server; null until the user picks one. */
 	readonly server: ServerConfig | null;
+	/** The saved local port; null before the first launch. */
 	readonly port: number | null;
+	/** The saved window state; null before the window first closes. */
 	readonly window: WindowState | null;
+	/** Save the server. */
 	setServer: (server: ServerConfig) => void;
+	/** Save the local port. */
 	setPort: (port: number) => void;
+	/** Save the window state. */
 	setWindow: (window: WindowState) => void;
 }
 
+/**
+ * Whether a value is a usable TCP port.
+ *
+ * @param value - The saved value.
+ * @returns True for an integer from 1 to 65535.
+ */
 const isPort = (value: unknown): value is number =>
 	typeof value === "number" &&
 	Number.isInteger(value) &&
 	value > 0 &&
 	value < 65536;
 
+/**
+ * Read a saved window state, held to the window's minimum size.
+ *
+ * @param value - The saved value.
+ * @returns The state, or null when it is missing or invalid.
+ */
 const parseWindow = (value: unknown): WindowState | null => {
 	if (typeof value !== "object" || value === null) return null;
 	const { x, y, width, height, isMaximized } = value as Record<
@@ -75,9 +101,9 @@ export const parseSettings = (text: string): DesktopSettings => {
 	try {
 		raw = JSON.parse(text);
 	} catch {
-		return EMPTY;
+		return DEFAULT_SETTINGS;
 	}
-	if (typeof raw !== "object" || raw === null) return EMPTY;
+	if (typeof raw !== "object" || raw === null) return DEFAULT_SETTINGS;
 	const { server, port, window } = raw as Record<string, unknown>;
 	let parsedServer: ServerConfig | null = null;
 	try {
@@ -101,13 +127,14 @@ export const parseSettings = (text: string): DesktopSettings => {
  */
 export const openSettingsFile = (folder: string): SettingsFile => {
 	const path = join(folder, "desktop-settings.json");
-	let settings = EMPTY;
+	let settings = DEFAULT_SETTINGS;
 	try {
 		settings = parseSettings(readFileSync(path, "utf8"));
 	} catch {
 		// first launch: no file yet
 	}
 
+	// write a temporary file and rename it, so a crash never leaves half a file
 	const write = (next: DesktopSettings): void => {
 		settings = next;
 		mkdirSync(dirname(path), { recursive: true });

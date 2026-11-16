@@ -16,6 +16,7 @@ test("associates field labels, caller hints and validation errors and retains va
 		.fn()
 		.mockRejectedValueOnce(new Error("Save failed"))
 		.mockResolvedValueOnce(undefined);
+	/** A two-field form that reports a failed save as a root error. */
 	function Example() {
 		const id = useId();
 		const form = useForm({

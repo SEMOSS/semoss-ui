@@ -9,6 +9,7 @@ import { PageHeaderContext } from "./page-header.context";
 export const PageHeaderNavigation = () => {
 	const registerPageHeader = useContext(PageHeaderContext);
 
+	// the registration's return value is the effect's cleanup
 	useEffect(() => registerPageHeader?.(), [registerPageHeader]);
 
 	return registerPageHeader ? <NavigationButton placement="inline" /> : null;

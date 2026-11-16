@@ -32,6 +32,7 @@ import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
  * the agents the user made, under any of their logins.
  */
 const AGENT_FILTERS = ["createdByMe", "owner", "edit", "view"] as const;
+/** One of the catalog's filters. */
 type AgentFilter = (typeof AGENT_FILTERS)[number];
 
 /** The permission level each access filter keeps. */
@@ -47,13 +48,27 @@ const SORT_OPTIONS = {
 	newest: '{"DATECREATED": "DESC"}',
 	edited: '{"DATELASTEDITED": "DESC"}',
 } as const;
+/** One of the catalog's orderings. */
 type SortOption = keyof typeof SORT_OPTIONS;
 
+/** How many agents each page of the list loads. */
 const PAGE_SIZE = 25;
 
+/**
+ * Whether a toggle value is one of the catalog's filters.
+ *
+ * @param value - The toggle group's value.
+ * @returns Whether it is an {@link AgentFilter}.
+ */
 const isAgentFilter = (value: string): value is AgentFilter =>
 	AGENT_FILTERS.some((filter) => filter === value);
 
+/**
+ * Whether a select value is one of the catalog's orderings.
+ *
+ * @param value - The select's value.
+ * @returns Whether it is a {@link SortOption}.
+ */
 const isSortOption = (value: string): value is SortOption =>
 	value in SORT_OPTIONS;
 
@@ -66,7 +81,7 @@ const isSortOption = (value: string): value is SortOption =>
  * @param sort - The ordering.
  * @param limit - The page size.
  * @param offset - How many agents to skip.
- * @return The pixel.
+ * @returns The pixel.
  */
 const buildCatalogPixel = (
 	filters: readonly AgentFilter[],
@@ -97,7 +112,7 @@ const buildCatalogPixel = (
  * user holds no grant on is one they can use but not change.
  *
  * @param app - The agent, as the list returns it.
- * @return The permission.
+ * @returns The permission.
  */
 const toCardPermission = (app: App): "OWNER" | "EDIT" | "READ_ONLY" =>
 	app.permission === 1
@@ -107,9 +122,8 @@ const toCardPermission = (app: App): "OWNER" | "EDIT" | "READ_ONLY" =>
 			: "READ_ONLY";
 
 /**
- * The agent catalog: the user's agents and the ones they can discover
- *
- * @component
+ * The agent catalog: the user's agents and the ones they can discover,
+ * searchable, filterable by access, sortable, and loaded a page at a time.
  */
 export const AgentCatalog = () => {
 	const { t } = useTranslation(["workspace", "notifications", "common"]);
@@ -123,14 +137,13 @@ export const AgentCatalog = () => {
 	const debouncedSearch = useDebouncedValue(search);
 	const { chat } = useChatSession();
 
-	/**
-	 * Get all of the workspaces with lazy loading
-	 */
-	const getWorkspaces = useSessionIteratorPixel<App[], App>(
+	// One page of agents at a time; the list restarts when a filter, the
+	// search or the sort changes
+	const agentList = useSessionIteratorPixel<App[], App>(
 		(limit, offset) =>
 			buildCatalogPixel(filters, debouncedSearch, sort, limit, offset),
 		(response) => {
-			// if its less than the limit, we know its the end
+			// A short page is the last one
 			if (response.length < PAGE_SIZE) {
 				return -1;
 			}
@@ -146,23 +159,23 @@ export const AgentCatalog = () => {
 		[filters, debouncedSearch, sort],
 	);
 
-	/**
-	 * Setup infinite scroll for the command list
-	 */
+	// Load the next page as the page scrolls to the end
 	const { setScroll } = useInfiniteScroll({
-		disabled: getWorkspaces.isLoading || !getWorkspaces.hasMore,
+		disabled: agentList.isLoading || !agentList.hasMore,
 		onNext: () => {
-			getWorkspaces.next();
+			agentList.next();
 		},
 	});
 
-	// theme == dark or system matches
+	// Dark when chosen, or when following a system that is dark
 	const isDark =
 		colorMode === "dark" ||
 		(colorMode === "system" &&
 			window.matchMedia("(prefers-color-scheme: dark)").matches);
 
-	const src = isDark ? theme.images.workspaceDark : theme.images.workspace;
+	const illustrationSrc = isDark
+		? theme.images.workspaceDark
+		: theme.images.workspace;
 
 	return (
 		<div
@@ -184,9 +197,9 @@ export const AgentCatalog = () => {
 					<Button onClick={() => navigate("/agent/new")}>
 						{t("workspace:actions.createAgent")}
 					</Button>
-					{src && (
+					{illustrationSrc && (
 						<img
-							src={src}
+							src={illustrationSrc}
 							alt={t("workspace:images.agentIllustration")}
 							className="max-h-32 w-full rounded-xl object-cover"
 						/>
@@ -251,18 +264,17 @@ export const AgentCatalog = () => {
 						))}
 					</ToggleGroup>
 
-					{getWorkspaces.isLoading &&
-					getWorkspaces.data.length === 0 ? (
+					{agentList.isLoading && agentList.data.length === 0 ? (
 						<div className="flex items-center justify-center py-12">
 							<Spinner />
 						</div>
-					) : getWorkspaces.data.length === 0 ? (
+					) : agentList.data.length === 0 ? (
 						<div className="flex items-center justify-center py-12">
 							<Muted>{t("workspace:messages.noResults")}</Muted>
 						</div>
 					) : (
 						<div className="grid @2xl:grid-cols-2 @3xl:grid-cols-3 grid-cols-1 gap-4">
-							{getWorkspaces.data.map((w) => (
+							{agentList.data.map((w) => (
 								<WorkspaceCard
 									key={w.project_id}
 									workspace={{
@@ -274,13 +286,13 @@ export const AgentCatalog = () => {
 									}}
 									permission={toCardPermission(w)}
 									dateCreated={w.project_date_created}
-									onDeleteClick={async () => {
+									onDelete={async () => {
 										try {
 											await chat.deleteWorkspace(
 												w.project_id,
 											);
 
-											getWorkspaces.reset();
+											agentList.reset();
 										} catch (e) {
 											toast.error(
 												e instanceof Error
@@ -296,12 +308,11 @@ export const AgentCatalog = () => {
 						</div>
 					)}
 
-					{getWorkspaces.isLoading &&
-						getWorkspaces.data.length > 0 && (
-							<div className="flex items-center justify-center p-4">
-								<Spinner className="size-4" />
-							</div>
-						)}
+					{agentList.isLoading && agentList.data.length > 0 && (
+						<div className="flex items-center justify-center p-4">
+							<Spinner className="size-4" />
+						</div>
+					)}
 				</div>
 			</div>
 		</div>

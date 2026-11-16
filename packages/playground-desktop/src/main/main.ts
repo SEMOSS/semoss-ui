@@ -10,11 +10,11 @@ import { startLocalServer } from "./features/server-connection/local-server";
 import { openSettingsFile } from "./features/server-connection/settings-file";
 
 /**
- * The production page's policy: scripts and workers from the app itself
-
- * (Monaco runs workers from blob URLs, Mermaid and the Office viewers evaluate
- * code, so Electron calls the policy insecure), the UI's Google fonts, every call to the app's origin (the proxy), and images and tool views
- * from anywhere, as on the web.
+ * The production page's Content-Security-Policy: scripts and workers from the
+ * app itself (Monaco runs workers from blob URLs, Mermaid and the Office
+ * viewers evaluate code, so Electron calls the policy insecure), the UI's
+ * Google fonts, every call to the app's origin (the proxy), and images and
+ * tool views from anywhere, as on the web.
  */
 const CONTENT_SECURITY_POLICY = [
 	"default-src 'self'",
@@ -31,8 +31,10 @@ const CONTENT_SECURITY_POLICY = [
 	"base-uri 'self'",
 ].join("; ");
 
+/** The app's one window, or null before it opens and after it closes. */
 let mainWindow: BrowserWindow | null = null;
 
+// one app at a time: a second launch quits and focuses the first one's window
 if (!app.requestSingleInstanceLock()) {
 	app.quit();
 } else {

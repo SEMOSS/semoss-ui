@@ -30,6 +30,7 @@ export const routes: RouteObject[] = [
 	{ path: "*", element: <Navigate to="/new" replace /> },
 ];
 
+/** One router for the app's lifetime, made outside render so it is not rebuilt. */
 const router = createHashRouter(routes);
 
 /** The app's routes, on a hash router since the page is one file. */

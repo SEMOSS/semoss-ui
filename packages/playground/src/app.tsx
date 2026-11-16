@@ -15,12 +15,12 @@ Env.update({
 	MODULE: Env.MODULE || import.meta.env.MODULE || "/Monolith",
 });
 
-// create a new i18n instance for the playground. Languages load lazily (one
-// chunk per language) via the builder's dynamic backend.
+// The playground's own i18n instance. Languages load lazily (one chunk per
+// language) via the builder's dynamic backend.
 const i18nBuilder = new I18nBuilder(playgroundResources);
 const i18n = i18nBuilder.i18n;
 
-// Awaited by main.tsx before the first render so the active language is present.
+/** Resolves once the active language is loaded; `main.tsx` awaits it before the first render. */
 export const i18nReady = i18nBuilder.ready;
 
 /**

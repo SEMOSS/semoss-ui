@@ -52,6 +52,7 @@ export const NavUser = () => {
 		}
 	};
 
+	// i18n.language can be a code LANGUAGES lacks, which then checks nothing
 	const selectedLanguage = LANGUAGES.find(
 		(lang) => lang.code === i18n.language,
 	);

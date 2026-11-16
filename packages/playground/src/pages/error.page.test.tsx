@@ -6,6 +6,7 @@ import { withPlaygroundDefaults } from "@/features/theme/playground-theme";
 import { AuthenticatedLayout } from "@/pages/authenticated-layout";
 import { ErrorPage } from "@/pages/error.page";
 
+/** The session and theme the mocked SDK and theme hooks return. */
 const mocks = vi.hoisted(() => ({
 	session: {
 		status: "ERROR" as string,
@@ -47,6 +48,7 @@ afterEach(() => {
 	vi.resetAllMocks();
 });
 
+/** Render `AuthenticatedLayout` over a home route, beside a login route. */
 const renderGate = () => {
 	const router = createMemoryRouter(
 		[

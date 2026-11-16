@@ -8,6 +8,7 @@ import type { ServerConfig } from "../../contract/server-connection";
 export const ServerPage = () => {
 	const bridge = getDesktopBridge();
 	const navigate = useNavigate();
+	// undefined while loading; null when no server is saved
 	const [current, setCurrent] = useState<ServerConfig | null | undefined>();
 
 	useEffect(() => {

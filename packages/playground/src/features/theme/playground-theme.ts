@@ -8,7 +8,9 @@ import { isRecord } from "@semoss/utility/object";
 /** The playground's theme, with every default filled in. */
 export type PlaygroundTheme = ChatTheme;
 
+/** The build's app name (`VITE_NAME`), or empty for the default. */
 const NAME = import.meta.env.VITE_NAME || "";
+/** The build's theme JSON (`VITE_THEME`). */
 const THEME = import.meta.env.VITE_THEME || "{}";
 
 /**

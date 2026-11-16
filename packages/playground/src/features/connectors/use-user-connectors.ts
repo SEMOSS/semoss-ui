@@ -48,7 +48,7 @@ export interface UseUserConnectorsResult {
  * The user's connectors, read from and written to their own file, for a page
  * that has no chat of its own, such as Connections.
  *
- * @return The services and the actions that change them.
+ * @returns The services and the actions that change them.
  */
 export const useUserConnectors = (): UseUserConnectorsResult => {
 	const [status, setStatus] =
@@ -57,7 +57,9 @@ export const useUserConnectors = (): UseUserConnectorsResult => {
 	// read by saves that start after an await, such as the one a sign in
 	// makes once its popup closes, when the render's values may be stale
 	const servicesRef = useRef<ConnectorServiceId[]>([]);
+	// whether the current read has finished; writes wait for it
 	const isReadRef = useRef(false);
+	/** Set the services in the ref and in state together. */
 	const setServices = useCallback((next: ConnectorServiceId[]) => {
 		servicesRef.current = next;
 		setServicesState(next);
@@ -100,6 +102,12 @@ export const useUserConnectors = (): UseUserConnectorsResult => {
 		};
 	}, [reloadCount]);
 
+	/**
+	 * Write the user's services, then show what the server saved.
+	 *
+	 * @param next - Every service that should be on.
+	 * @throws When the write fails.
+	 */
 	const save = async (next: ConnectorServiceId[]): Promise<void> => {
 		setIsSaving(true);
 		try {
@@ -157,12 +165,12 @@ export const useUserConnectors = (): UseUserConnectorsResult => {
 	}, []);
 
 	return {
-		status: status,
-		services: services,
-		isSaving: isSaving,
-		setService: setService,
-		enableServices: enableServices,
-		disableServices: disableServices,
-		reload: reload,
+		status,
+		services,
+		isSaving,
+		setService,
+		enableServices,
+		disableServices,
+		reload,
 	};
 };

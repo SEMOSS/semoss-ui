@@ -22,13 +22,14 @@ export const SettingsDialogProvider = ({
 	const [isOpen, setIsOpen] = useState(false);
 	const [section, setSection] = useState<SettingsSectionId>("general");
 
+	// stable, so the chat config that carries it is not rebuilt
 	const openSettings = useCallback((next: SettingsSectionId = "general") => {
 		setSection(next);
 		setIsOpen(true);
 	}, []);
 
 	const value = useMemo<SettingsDialogContextValue>(
-		() => ({ openSettings: openSettings }),
+		() => ({ openSettings }),
 		[openSettings],
 	);
 

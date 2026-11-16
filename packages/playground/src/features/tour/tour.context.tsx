@@ -1,11 +1,16 @@
 import { createContext } from "react";
 
-type TourContextProps = {
+/** What {@link TourContext} gives: whether the landing tour is open, and its controls. */
+export type TourContextValue = {
+	/** Whether the tour is showing. */
 	isOpen: boolean;
+	/** Open the tour at its first step. */
 	startTour: () => void;
+	/** Close the tour. */
 	stopTour: () => void;
 };
 
-export const TourContext = createContext<TourContextProps | undefined>(
+/** The landing tour's state, provided by `MainLayout`; read it with `useTour`. */
+export const TourContext = createContext<TourContextValue | undefined>(
 	undefined,
 );

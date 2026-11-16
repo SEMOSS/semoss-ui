@@ -6,9 +6,9 @@ import {
 	useCreateChatStore,
 } from "@semoss/chat";
 import { SidebarInset, SidebarProvider } from "@semoss/ui/next";
+import { useDesktopChatConfig } from "@/features/chat-config/use-desktop-chat-config";
 import { useDesktopCommands } from "@/features/commands/use-desktop-commands";
 import { getDesktopBridge } from "@/features/desktop-bridge/desktop-bridge";
-import { useDesktopChatConfig } from "@/features/room/use-desktop-chat-config";
 import { DesktopSidebar } from "@/features/sidebar/desktop-sidebar";
 
 /**

@@ -15,7 +15,7 @@ This document provides context for AI coding assistants working with the SEMOSS 
 ## Structure & Conventions
 
 Code lives in `src/features/<feature>/` (agents, app-shell, chat-config, connectors, knowledge,
-navigation, room-page, settings, theme, tour); `src/pages/` holds the router, the layouts, and thin
+navigation, settings, theme, tour); `src/pages/` holds the router, the layouts, and thin
 `<name>.page.tsx` route pages. Follow the React skill's
 [architecture policy](../../skills/react-standard.skill.md#architecture-and-exports); a feature
 imports another feature, or anything outside its own folder, through `@/`, and the chat through

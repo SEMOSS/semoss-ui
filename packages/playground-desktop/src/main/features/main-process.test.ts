@@ -9,7 +9,9 @@ import { parseSettings } from "./server-connection/settings-file";
 // the modules under test import electron for their wiring, not for these helpers
 vi.mock("electron", () => ({ ipcMain: {}, shell: {}, app: {}, screen: {} }));
 
+/** The app's local origin. */
 const APP = "http://127.0.0.1:4321";
+/** The hosted server the app signs in to. */
 const SERVER = { url: "https://semoss.example", module: "/Monolith" };
 
 describe("isTrustedSender", () => {
@@ -121,6 +123,7 @@ describe("parseSettings", () => {
 });
 
 describe("checkServer", () => {
+	/** A fetch that always answers with this response. */
 	const respond = (response: Response) =>
 		vi.fn<typeof fetch>().mockResolvedValue(response);
 

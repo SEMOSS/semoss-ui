@@ -11,22 +11,32 @@ import {
 } from "@semoss/ui/next";
 import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 
-export const GlobalDialog: React.FC<{ onAcknowledge?: () => void }> = ({
+/** Props for {@link GlobalDialog}. */
+interface GlobalDialogProps {
+	/** Called when the user acknowledges the dialog and it closes. */
+	onAcknowledge?: () => void;
+}
+
+/**
+ * The theme's welcome dialog (`theme.dialog`). Once acknowledged it stays
+ * closed, remembered per dialog `key`, so a new key shows again.
+ */
+export const GlobalDialog: React.FC<GlobalDialogProps> = ({
 	onAcknowledge,
 }) => {
 	const { t } = useTranslation("common");
 	const theme = usePlaygroundTheme();
-	const [visible, setVisible] = useCacheState(
+	const [isVisible, setIsVisible] = useCacheState(
 		true,
 		`global-dialog--${theme.dialog?.key}`,
 	);
 
-	if (!theme.dialog || !visible) {
+	if (!theme.dialog || !isVisible) {
 		return null;
 	}
 
 	return (
-		<Dialog open={visible}>
+		<Dialog open={isVisible}>
 			<DialogContent
 				className="max-h-[90dvh] grid-rows-[auto_1fr_auto] overflow-hidden sm:max-w-3xl"
 				showCloseButton={false}
@@ -45,7 +55,7 @@ export const GlobalDialog: React.FC<{ onAcknowledge?: () => void }> = ({
 					<Button
 						variant="default"
 						onClick={() => {
-							setVisible(false);
+							setIsVisible(false);
 							onAcknowledge?.();
 						}}
 					>

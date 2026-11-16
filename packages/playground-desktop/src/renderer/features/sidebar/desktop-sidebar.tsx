@@ -62,6 +62,7 @@ export const DesktopSidebar = () => {
 						</SidebarMenuItem>
 					</SidebarMenu>
 				</SidebarHeader>
+				{/* the list only loads and pages while the sidebar shows */}
 				<RoomList
 					isVisible={isMobile ? openMobile : open}
 					activeRoomId={roomMatch?.params.roomId}

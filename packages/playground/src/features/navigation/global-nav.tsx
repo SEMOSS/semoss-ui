@@ -24,6 +24,7 @@ import { NavUser } from "@/features/navigation/nav-user";
 import { NavigationToggle } from "@/features/navigation/navigation-toggle";
 import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 
+/** Whether the app runs inside another page's iframe (a cross-origin parent throws). */
 let isIframed = false;
 try {
 	isIframed = window.self !== window.top;
@@ -32,15 +33,15 @@ try {
 }
 
 /**
- * Renders a sidebar allowing users to navigate between pages
- *
- * @component
+ * The global navigation: the logo and toggle, new chat, agents and the
+ * theme's header items, the room list, then the theme's help items and the
+ * account menu. It also owns the room search dialog and its shortcut.
  */
 export const GlobalNav = () => {
 	const { t } = useTranslation("sidebar");
 	const theme = usePlaygroundTheme();
 	const [isSearchOpen, setIsSearchOpen] = useState(false);
-	const [helpOpen, setHelpOpen] = useState(false);
+	const [isHelpOpen, setIsHelpOpen] = useState(false);
 	const { open, openMobile, isMobile } = useSidebar();
 	const hideChatHistory = !!theme.featureFlags?.hideChatHistory;
 	// True when the sidebar is actually visible to the user.
@@ -163,14 +164,14 @@ export const GlobalNav = () => {
 								className="relative group-data-[collapsible=icon]:hidden"
 								role="button"
 								tabIndex={0}
-								onMouseEnter={() => setHelpOpen(true)}
-								onMouseLeave={() => setHelpOpen(false)}
+								onMouseEnter={() => setIsHelpOpen(true)}
+								onMouseLeave={() => setIsHelpOpen(false)}
 								onKeyDown={(e) => {
 									if (e.key === "Enter" || e.key === " ") {
 										e.preventDefault();
 									}
 								}}
-								onClick={() => setHelpOpen((prev) => !prev)}
+								onClick={() => setIsHelpOpen((prev) => !prev)}
 							>
 								<SidebarMenuItem>
 									<SidebarMenuButton>
@@ -178,7 +179,7 @@ export const GlobalNav = () => {
 										Help
 									</SidebarMenuButton>
 								</SidebarMenuItem>
-								{helpOpen && (
+								{isHelpOpen && (
 									<div className="absolute start-0 bottom-full z-50 w-full rounded-md border bg-popover p-1 shadow-md">
 										<SidebarMenu>
 											{theme.sidebar.footerItems.map(

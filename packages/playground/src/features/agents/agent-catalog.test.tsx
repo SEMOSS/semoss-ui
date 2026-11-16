@@ -10,6 +10,7 @@ import {
 } from "@semoss/chat";
 import { AgentCatalog } from "@/features/agents/agent-catalog";
 
+/** The stubs the mocked modules call, reset before each test. */
 const mocks = vi.hoisted(() => ({ pixel: "", navigate: vi.fn() }));
 vi.mock("@/features/theme/use-playground-theme", () => ({
 	usePlaygroundTheme: () => ({ images: {} }),
@@ -79,6 +80,8 @@ const chatWrapper = ({ children }: { children: ReactNode }) => (
 	</ChatSessionProvider>
 );
 
+// jsdom has no scrollIntoView, which the sort select calls; stub it per test
+// and put back whatever was there
 const scrollIntoViewDescriptor = Object.getOwnPropertyDescriptor(
 	HTMLElement.prototype,
 	"scrollIntoView",

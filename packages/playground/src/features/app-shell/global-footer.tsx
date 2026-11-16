@@ -1,6 +1,7 @@
 import type React from "react";
 import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 
+/** The theme's footer HTML (`theme.footer`) under the page; nothing when it has none. */
 export const GlobalFooter: React.FC = () => {
 	const theme = usePlaygroundTheme();
 

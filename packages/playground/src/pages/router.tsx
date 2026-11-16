@@ -15,9 +15,10 @@ import { InitializedLayout } from "./initialized-layout";
 import { KnowledgeDetailPage } from "./knowledge-detail.page";
 import { MainLayout } from "./main-layout";
 
+/** Every route, built once at module load so a rerender never resets navigation. */
 const router = createHashRouter([
 	{
-		// wrap eveything in an error boundary to catch any errors in the layouts or login page
+		// catches errors in the layouts and the login page
 		element: <InitializedLayout />,
 		errorElement: <ErrorPage />,
 		children: [
@@ -28,8 +29,7 @@ const router = createHashRouter([
 						element: <MainLayout />,
 						children: [
 							{
-								// all the main app routes
-								// wrap in an error boundary to catch any errors in the room or workspace pages
+								// catches errors in the pages, keeping the navigation beside them
 								errorElement: <ErrorPage isInnerComponent />,
 								children: [
 									{
@@ -91,9 +91,7 @@ const router = createHashRouter([
 	},
 ]);
 
-/**
- * The main router for the application. It handles the routing logic and renders the appropriate components based on the current URL.
- */
+/** The playground's hash router. */
 export const Router = () => {
 	return <RouterProvider router={router} />;
 };

@@ -41,28 +41,51 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import { NewKnowledgeOverlay } from "@/features/knowledge/new-knowledge-mcp-overlay";
+import { NewKnowledgeOverlay } from "@/features/knowledge/new-knowledge-overlay";
 
+/** A knowledge source (a vector database), shaped for the library's list. */
 type DocumentLibraryEngine = {
+	/** The name shown: the display name, the engine name or a tag. */
 	name: string;
+	/** The engine's own name. */
 	subheader: string;
+	/** The engine's description metadata. */
 	description: string;
+	/** The engine's id. */
 	id: string;
+	/** The engine's name, or its tag when it has none. */
 	engine_name: string;
+	/** The engine's tags. */
 	tag: string[];
+	/** When the engine was created, as the server sends it. */
 	dateCreated: string;
+	/** Whether the user has favorited the engine, per the server. */
 	favorite: boolean;
 };
 
+/** A document in a knowledge source, as `ListDocumentsInVectorDatabase` returns it. */
 type EngineAsset = {
+	/** The document's name. */
 	name?: string;
+	/** The document's path. */
 	path?: string;
+	/** The entry's type; folders are left out of the list. */
 	type?: string;
+	/** The document's file name. */
 	fileName?: string;
+	/** When the document last changed. */
 	lastModified?: string;
+	/** The document's size. */
 	fileSize?: string;
 };
 
+/**
+ * Formats a server timestamp, which is UTC without a zone, in the user's
+ * locale.
+ *
+ * @param dateStr - The timestamp, as `yyyy-MM-dd HH:mm:ss`.
+ * @returns The local date and time, or the input when it does not parse.
+ */
 const formatDateTime = (dateStr: string): string => {
 	const d = new Date(`${dateStr.replace(" ", "T")}Z`);
 	if (Number.isNaN(d.getTime())) return dateStr;
@@ -76,6 +99,11 @@ const formatDateTime = (dateStr: string): string => {
 	});
 };
 
+/**
+ * The knowledge library: the user's knowledge sources, searchable by name or
+ * tag, filterable by tag, scope and favorites, and sortable, with a dialog to
+ * create a new source.
+ */
 export const KnowledgeLibrary = () => {
 	const { t } = useTranslation(["knowledge", "common"]);
 	const navigate = useNavigate();
@@ -89,7 +117,7 @@ export const KnowledgeLibrary = () => {
 	);
 	const [isNewKnowledgeOpen, setIsNewKnowledgeOpen] = useState(false);
 
-	const [documentsModalOpen, setDocumentsModalOpen] = useState(false);
+	const [isDocumentsDialogOpen, setIsDocumentsDialogOpen] = useState(false);
 	const [selectedEngine, setSelectedEngine] =
 		useState<DocumentLibraryEngine | null>(null);
 	const [engineAssets, setEngineAssets] = useState<EngineAsset[]>([]);
@@ -99,16 +127,17 @@ export const KnowledgeLibrary = () => {
 
 	const { run } = useSessionInsight();
 	const [data, setData] = useState([]);
-	const [loading, setLoading] = useState(true);
-	const [loadError, setLoadError] = useState(false);
-	const [reload, setReload] = useState(0);
+	const [isLoading, setIsLoading] = useState(true);
+	const [hasLoadError, setHasLoadError] = useState(false);
+	const [reloadCount, setReloadCount] = useState(0);
 
+	// Load the knowledge sources, again on each Retry
 	// biome-ignore lint/correctness/useExhaustiveDependencies: explicit retry counter restarts this read after an error.
 	useEffect(() => {
 		let active = true;
 		const getEngines = async () => {
-			setLoading(true);
-			setLoadError(false);
+			setIsLoading(true);
+			setHasLoadError(false);
 			try {
 				const result = await run(
 					`MyEngines ( engineTypes = [ 'VECTOR' ], metaKeys = ["description", "tag"])`,
@@ -124,9 +153,9 @@ export const KnowledgeLibrary = () => {
 				if (active) setData([output]);
 			} catch (error) {
 				console.error("Error retrieving vectors", error);
-				if (active) setLoadError(true);
+				if (active) setHasLoadError(true);
 			} finally {
-				if (active) setLoading(false);
+				if (active) setIsLoading(false);
 			}
 		};
 
@@ -134,8 +163,9 @@ export const KnowledgeLibrary = () => {
 		return () => {
 			active = false;
 		};
-	}, [run, reload]);
+	}, [run, reloadCount]);
 
+	// Every tag across the sources, for the tag filter
 	const centers = useMemo(() => {
 		const tags = new Set<string>();
 		data[0]?.forEach((item) => {
@@ -153,8 +183,9 @@ export const KnowledgeLibrary = () => {
 		return Array.from(tags).sort();
 	}, [data]);
 
+	// List the selected source's documents while the documents dialog is open
 	useEffect(() => {
-		if (!documentsModalOpen || !selectedEngine?.id) {
+		if (!isDocumentsDialogOpen || !selectedEngine?.id) {
 			return;
 		}
 
@@ -194,7 +225,7 @@ export const KnowledgeLibrary = () => {
 		return () => {
 			cancelled = true;
 		};
-	}, [run, documentsModalOpen, selectedEngine?.id]);
+	}, [run, isDocumentsDialogOpen, selectedEngine?.id]);
 
 	const formatted: DocumentLibraryEngine[] =
 		data[0]?.reduce((acc, item) => {
@@ -290,6 +321,12 @@ export const KnowledgeLibrary = () => {
 			.filter((a) => (a.type ? a.type !== "folder" : true));
 	}, [engineAssets]);
 
+	/**
+	 * The name to show for a document.
+	 *
+	 * @param f - The document.
+	 * @returns Its file name, name, or the last part of its path.
+	 */
 	const getDisplayName = (f: EngineAsset) => {
 		return (
 			f.fileName ||
@@ -299,11 +336,13 @@ export const KnowledgeLibrary = () => {
 		);
 	};
 
-	const getDisplayPath = (f: EngineAsset) => {
-		return f.path || "";
-	};
-
-	const toggleFavorite = async (
+	/**
+	 * Favorites or unfavorites a source, optimistically.
+	 *
+	 * @param e - The click, kept from reaching the row.
+	 * @param item - The source to toggle.
+	 */
+	const handleToggleFavorite = async (
 		e: React.MouseEvent,
 		item: DocumentLibraryEngine,
 	) => {
@@ -331,7 +370,7 @@ export const KnowledgeLibrary = () => {
 					onClose={(knowledge) => {
 						setIsNewKnowledgeOpen(false);
 
-						// refresh list if a knowledge source was created
+						// Refresh the list once a knowledge source is created
 						if (knowledge) {
 							void run(
 								`MyEngines ( engineTypes = [ 'VECTOR' ], metaKeys = ["description", "tag"],  metaFilters=[{"tag":${JSON.stringify(
@@ -351,9 +390,9 @@ export const KnowledgeLibrary = () => {
 				/>
 
 				<Dialog
-					open={documentsModalOpen}
+					open={isDocumentsDialogOpen}
 					onOpenChange={(open) => {
-						setDocumentsModalOpen(open);
+						setIsDocumentsDialogOpen(open);
 						if (!open) {
 							setSelectedEngine(null);
 							setEngineAssets([]);
@@ -392,16 +431,16 @@ export const KnowledgeLibrary = () => {
 								<ul className="divide-y rounded-md border">
 									{documentFiles.map((f, idx) => (
 										<li
-											key={`${getDisplayPath(f) || getDisplayName(f)}-${idx}`}
+											key={`${f.path || getDisplayName(f)}-${idx}`}
 											className="flex items-center justify-between gap-3 px-3 py-2"
 										>
 											<div className="min-w-0">
 												<p className="truncate font-medium text-sm">
 													{getDisplayName(f)}
 												</p>
-												{getDisplayPath(f) ? (
+												{f.path ? (
 													<p className="truncate text-muted-foreground text-xs">
-														{getDisplayPath(f)}
+														{f.path}
 													</p>
 												) : null}
 											</div>
@@ -658,11 +697,11 @@ export const KnowledgeLibrary = () => {
 					</CardContent>
 				</Card>
 
-				{loading ? (
+				{isLoading ? (
 					<div className="flex justify-center p-8">
 						<Spinner />
 					</div>
-				) : loadError ? (
+				) : hasLoadError ? (
 					<div
 						role="alert"
 						className="flex flex-col items-center gap-3 rounded-xl border p-6"
@@ -670,7 +709,7 @@ export const KnowledgeLibrary = () => {
 						<p>{t("knowledge:studio.loadError")}</p>
 						<Button
 							variant="outline"
-							onClick={() => setReload((value) => value + 1)}
+							onClick={() => setReloadCount((value) => value + 1)}
 						>
 							{t("knowledge:studio.retry")}
 						</Button>
@@ -723,7 +762,7 @@ export const KnowledgeLibrary = () => {
 															variant="ghost"
 															size="icon-sm"
 															onClick={(e) =>
-																toggleFavorite(
+																handleToggleFavorite(
 																	e,
 																	item,
 																)

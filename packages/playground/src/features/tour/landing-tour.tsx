@@ -16,21 +16,32 @@ import {
 import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 import { useTour } from "@/features/tour/use-tour";
 
+/** A step as shown: translated, with the theme's overrides applied. */
 interface TourStep {
+	/** The `data-tour` value of the element to spotlight; none centers the card. */
 	target?: string;
+	/** The card's title. */
 	title: string;
+	/** The card's text. */
 	content: string;
+	/** Which side of the target the card sits on; right by default. */
 	placement?: "top" | "bottom" | "left" | "right";
 }
 
-// Static step definitions (target + placement). Title/content are
-// translated at render time from the `tour` namespace via the step `key`.
+/**
+ * A built-in step. Its title and content are translated at render time from
+ * the `tour` namespace, under `steps.<key>`.
+ */
 interface TourStepDef {
+	/** The step's translation key. */
 	key: string;
+	/** The `data-tour` value of the element to spotlight. */
 	target?: string;
+	/** Which side of the target the card sits on. */
 	placement?: "top" | "bottom" | "left" | "right";
 }
 
+/** The built-in steps, in order. */
 const TOUR_STEP_DEFS: TourStepDef[] = [
 	{ key: "welcome" },
 	{ key: "input", target: "tour-input", placement: "top" },
@@ -49,15 +60,30 @@ const TOUR_STEP_DEFS: TourStepDef[] = [
 	{ key: "takeTour", target: "tour-take-tour", placement: "right" },
 ];
 
+/** The card's widest width, in px. */
 const CARD_WIDTH = 320;
+/** The space between the spotlight's edge and its target, in px. */
 const SPOTLIGHT_PAD = 6;
 
+/**
+ * Measure a step's target.
+ *
+ * @param target - The `data-tour` value to find.
+ * @returns The element's box, or null when there is no target or it is not on the page.
+ */
 function getTargetRect(target: string | undefined): DOMRect | null {
 	if (!target) return null;
 	const el = document.querySelector(`[data-tour="${target}"]`);
 	return el ? el.getBoundingClientRect() : null;
 }
 
+/**
+ * Place the card beside its target, kept inside the viewport.
+ *
+ * @param rect - The target's box; null centers the card.
+ * @param placement - Which side of the target the card sits on.
+ * @returns The card's fixed position and width.
+ */
 function getCardStyle(
 	rect: DOMRect | null,
 	placement: TourStep["placement"],
@@ -76,6 +102,7 @@ function getCardStyle(
 	const vw = window.innerWidth;
 	const vh = window.innerHeight;
 	const W = Math.min(CARD_WIDTH, vw - 32);
+	// an estimate of the card's height, to keep it on screen
 	const CARD_H = 180;
 
 	const centerLeft = Math.min(
@@ -119,6 +146,11 @@ function getCardStyle(
 	}
 }
 
+/**
+ * The landing tour: a card per step that spotlights a part of the app. The
+ * theme can hide it, drop or override built-in steps, and add its own steps
+ * for navigation items.
+ */
 export const LandingTour: React.FC = () => {
 	const { t } = useTranslation("tour");
 	const { isOpen, stopTour } = useTour();
@@ -144,8 +176,8 @@ export const LandingTour: React.FC = () => {
 				title: t(`steps.${s.key}.title`),
 				content: t(`steps.${s.key}.content`),
 			};
-			const ov = overrides[id];
-			return ov ? { ...translated, ...ov } : translated;
+			const override = overrides[id];
+			return override ? { ...translated, ...override } : translated;
 		});
 		const mapStep = (s: (typeof custom)[number]): TourStep => ({
 			target: `nav-${s.navItemPath}`,

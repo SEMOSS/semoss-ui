@@ -12,6 +12,7 @@ import {
 } from "@semoss/ui/next";
 import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 
+/** Props for {@link ErrorPage}. */
 interface ErrorPageProps {
 	/** Fill the main area beside the navigation rather than the whole page. */
 	isInnerComponent?: boolean;
@@ -21,6 +22,11 @@ interface ErrorPageProps {
 	isRetrying?: boolean;
 }
 
+/**
+ * The error screen, over the theme's error image. Used as a route error
+ * boundary (with Home and Refresh) and for a session that could not be read
+ * (with Retry).
+ */
 export const ErrorPage = ({
 	isInnerComponent = false,
 	onRetry,
@@ -30,7 +36,7 @@ export const ErrorPage = ({
 	const navigate = useNavigate();
 	const theme = usePlaygroundTheme();
 	const { resolvedTheme } = useTheme();
-	const src =
+	const backgroundSrc =
 		resolvedTheme === "dark" ? theme.images.errorDark : theme.images.error;
 
 	return (
@@ -40,9 +46,9 @@ export const ErrorPage = ({
 				isInnerComponent ? "h-full" : "min-h-svh",
 			)}
 		>
-			{src && (
+			{backgroundSrc && (
 				<img
-					src={src}
+					src={backgroundSrc}
 					alt=""
 					className="pointer-events-none absolute inset-0 h-full w-full object-cover"
 				/>
