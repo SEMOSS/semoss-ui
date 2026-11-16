@@ -17,8 +17,8 @@ vi.mock("@semoss/sdk/react", () => ({
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
-vi.mock("@/hooks/use-chat", () => ({
-	useChat: () => ({ chat: { models: {} } }),
+vi.mock("@/hooks/use-chat-session", () => ({
+	useChatSession: () => ({ chat: { models: {} } }),
 }));
 const room = {
 	roomId: "room",

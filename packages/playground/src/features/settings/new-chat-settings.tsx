@@ -19,7 +19,7 @@ import {
 	readDeploymentNewChatDefaults,
 } from "@/features/new-chat-preferences/new-chat-preferences";
 import { useNewChatPreferences } from "@/features/new-chat-preferences/use-new-chat-preferences";
-import { useChat } from "@/hooks/use-chat";
+import { useChatSession } from "@/hooks/use-chat-session";
 import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
 import type { Workspace } from "@/types";
 import { SettingsRow } from "./settings-row";
@@ -39,7 +39,7 @@ const DEFAULT_VALUE = "default";
  */
 export const NewChatSettings = observer(() => {
 	const { t } = useTranslation("sidebar");
-	const { chat } = useChat();
+	const { chat } = useChatSession();
 	const theme = usePlaygroundTheme();
 	const preferences = useNewChatPreferences();
 	const headingId = useId();

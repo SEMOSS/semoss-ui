@@ -22,7 +22,7 @@ import { RoomInput, type SendButtonState } from "@/components/room/room-input";
 import { useFileDrag } from "@/contexts/file-drag-context";
 import { ConversationScrollContext } from "@/features/conversation/conversation-scroll.context";
 import { ModelRouterAttribution } from "@/features/conversation/model-router-attribution";
-import { useChat } from "@/hooks/use-chat";
+import { useChatSession } from "@/hooks/use-chat-session";
 import { useGracefulErrors } from "@/hooks/use-graceful-errors";
 import { decideAgentToolAction } from "@/stores/message/agent-harness";
 import type { InputMessageStore } from "@/stores/message/input-message.store";
@@ -44,7 +44,7 @@ interface RoomContentProps {
  * A room's conversation and its composer
  */
 export const RoomContent = observer(({ room }: RoomContentProps) => {
-	const { chat } = useChat();
+	const { chat } = useChatSession();
 	const { t } = useTranslation("room");
 	const { t: tChat } = useTranslation("chat");
 	const { getGracefulErrorMessage } = useGracefulErrors();

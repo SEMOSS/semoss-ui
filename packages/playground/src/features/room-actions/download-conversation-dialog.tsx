@@ -12,7 +12,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import { useChat } from "@/hooks/use-chat";
+import { useChatSession } from "@/hooks/use-chat-session";
 
 type DownloadFormat = "word" | "pdf";
 
@@ -41,7 +41,7 @@ export function DownloadConversationDialog({
 	onOpenChange,
 }: DownloadConversationDialogProps) {
 	const { t } = useTranslation("sidebar");
-	const { chat } = useChat();
+	const { chat } = useChatSession();
 	const [downloadingFormat, setDownloadingFormat] =
 		useState<DownloadFormat | null>(null);
 

@@ -42,7 +42,7 @@ import {
 	getDateBucket,
 	parseTimestampWithUtcDefault,
 } from "@semoss/utility/date";
-import { useChat } from "@/hooks";
+import { useChatSession } from "@/hooks";
 
 interface WorkspaceChatListProps {
 	/**
@@ -87,7 +87,7 @@ export const WorkspaceChatList = ({
 	maxHeightClassName = "max-h-96",
 }: WorkspaceChatListProps) => {
 	const { t } = useTranslation(["workspace", "sidebar"]);
-	const { chat } = useChat();
+	const { chat } = useChatSession();
 
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebouncedValue(search);

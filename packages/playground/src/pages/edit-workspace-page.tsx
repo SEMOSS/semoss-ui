@@ -20,7 +20,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import { useChat } from "@/hooks/use-chat";
+import { useChatSession } from "@/hooks/use-chat-session";
 import { useRoot } from "@/hooks/use-root";
 import { getPlaygroundAgentLinks } from "@/utility/mcp-utils";
 
@@ -43,7 +43,7 @@ export const EditWorkspacePage = observer(() => {
 	);
 	const { workspaceId } = useParams<{ workspaceId: string }>();
 	const navigate = useNavigate();
-	const { chat } = useChat();
+	const { chat } = useChatSession();
 	const { root } = useRoot();
 	const featureFlags = root.theme.featureFlags;
 

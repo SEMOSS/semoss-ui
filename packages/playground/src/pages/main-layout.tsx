@@ -20,7 +20,7 @@ import { GlobalFooter } from "@/components/common/global-footer";
 import { GlobalNav } from "@/components/common/global-nav";
 import { LandingTour } from "@/components/common/landing-tour";
 import { ROOM_PANEL_COMPONENTS } from "@/components/room/panels/room-panel.components";
-import { ChatContext } from "@/contexts/chat-context";
+import { ChatSessionContext } from "@/contexts/chat-session.context";
 import { TourContext } from "@/contexts/tour-context";
 import { useWorkspaceNavigation } from "@/features/conversation/use-workspace-navigation";
 import { WorkspaceNavigationContext } from "@/features/conversation/workspace-navigation.context";
@@ -160,7 +160,7 @@ export const MainLayout = observer(() => {
 	}, [theme.tour?.show, theme.dialog]);
 
 	return (
-		<ChatContext.Provider
+		<ChatSessionContext.Provider
 			value={{
 				chat: chatStore,
 			}}
@@ -257,6 +257,6 @@ export const MainLayout = observer(() => {
 					</WorkspaceNavigationContext.Provider>
 				</SettingsDialogProvider>
 			</TourContext.Provider>
-		</ChatContext.Provider>
+		</ChatSessionContext.Provider>
 	);
 });

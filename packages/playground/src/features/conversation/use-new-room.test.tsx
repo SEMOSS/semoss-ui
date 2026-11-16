@@ -9,7 +9,9 @@ const chat = vi.hoisted(() => ({
 	createEmptyRoom: vi.fn(),
 	closeRoom: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock("@/hooks/use-chat", () => ({ useChat: () => ({ chat }) }));
+vi.mock("@/hooks/use-chat-session", () => ({
+	useChatSession: () => ({ chat }),
+}));
 let draft: RoomStore;
 let prepared: RoomStore;
 beforeEach(() => {

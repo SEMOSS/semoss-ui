@@ -16,7 +16,7 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
-import { useChat } from "@/hooks/use-chat";
+import { useChatSession } from "@/hooks/use-chat-session";
 import { useRoot } from "@/hooks/use-root";
 import { getPlaygroundAgentLinks } from "@/utility/mcp-utils";
 
@@ -35,7 +35,7 @@ export const NewWorkspacePage = observer(() => {
 		"agent",
 	]);
 	const navigate = useNavigate();
-	const { chat } = useChat();
+	const { chat } = useChatSession();
 	const { root } = useRoot();
 	const featureFlags = root.theme.featureFlags;
 

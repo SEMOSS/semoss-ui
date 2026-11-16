@@ -12,7 +12,7 @@ import { RoomLayout } from "@/features/conversation/room-layout";
 import { RoomActionsProvider } from "@/features/room-actions/room-actions.context";
 import { RoomHeader } from "@/features/room-header/room-header";
 import { TOOL_VIEW_LIBRARIES } from "@/features/tool-views/tool-view-libraries";
-import { useChat } from "@/hooks/use-chat";
+import { useChatSession } from "@/hooks/use-chat-session";
 import type { RoomStore } from "@/stores/room/room.store";
 import type { Engine } from "@/types";
 /**
@@ -22,7 +22,7 @@ import type { Engine } from "@/types";
  */
 export const RoomPage = observer(() => {
 	const { roomId } = useParams();
-	const { chat } = useChat();
+	const { chat } = useChatSession();
 	const navigate = useNavigate();
 
 	/**

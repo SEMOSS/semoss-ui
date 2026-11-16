@@ -20,7 +20,7 @@ import {
 	zodResolver,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import { useChat } from "@/hooks";
+import { useChatSession } from "@/hooks";
 import type { MCPConfig } from "@/types";
 
 interface SaveWorkspaceDialogProps {
@@ -37,7 +37,7 @@ interface SaveWorkspaceDialogProps {
 /** Publishes the room's instructions and tools as a new agent. */
 export const SaveWorkspaceDialog = observer(
 	({ systemPrompt, mcps, open, onOpenChange }: SaveWorkspaceDialogProps) => {
-		const { chat } = useChat();
+		const { chat } = useChatSession();
 		const { t } = useTranslation("room");
 		const form = useForm({
 			resolver: zodResolver(

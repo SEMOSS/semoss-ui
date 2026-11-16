@@ -15,7 +15,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { useChat } from "@/hooks/use-chat";
+import { useChatSession } from "@/hooks/use-chat-session";
 import { useRoot } from "@/hooks/use-root";
 import type { RoomStore } from "@/stores/room/room.store";
 
@@ -174,7 +174,7 @@ export const RoomContextUsageIndicator = observer(
 		isLoading = false,
 	}: RoomContextUsageIndicatorProps) => {
 		const { t } = useTranslation("room");
-		const { chat } = useChat();
+		const { chat } = useChatSession();
 		const { root } = useRoot();
 		const [open, setOpen] = useState(false);
 		const [compactionStrategy, setCompactionStrategy] =

@@ -92,8 +92,8 @@ vi.mock("@/hooks/use-graceful-errors", () => ({
 		getGracefulErrorMessage: (error: Error) => error.message,
 	}),
 }));
-vi.mock("@/hooks/use-chat", () => ({
-	useChat: () => ({ chat: { models: { contextWindow: 0 } } }),
+vi.mock("@/hooks/use-chat-session", () => ({
+	useChatSession: () => ({ chat: { models: { contextWindow: 0 } } }),
 }));
 vi.mock("@/hooks/use-sidebar-panel-active", () => ({
 	useSidebarPanelActive: () => false,
@@ -104,7 +104,7 @@ vi.mock("@/hooks", async (importOriginal) => ({
 	useRoot: () => ({
 		root: { theme: { featureFlags, defaultCompactionStrategy: "AUTO" } },
 	}),
-	useChat: () => ({ chat: { models: { contextWindow: 0 } } }),
+	useChatSession: () => ({ chat: { models: { contextWindow: 0 } } }),
 }));
 vi.mock("@/components/prompt/PromptOptimizer", () => ({
 	PromptOptimizer: ({

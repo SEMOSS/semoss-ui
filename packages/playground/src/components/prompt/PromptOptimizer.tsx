@@ -12,7 +12,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useChat } from "@/hooks/use-chat";
+import { useChatSession } from "@/hooks/use-chat-session";
 import type { RoomStore } from "@/stores/room/room.store";
 import { throwOnPixelErrors } from "@/utility/pixel-errors";
 
@@ -58,7 +58,7 @@ export const PromptOptimizer: React.FC<PromptOptimizerProps> = observer(
 	({ input, setInput, disabled, modelId, room }) => {
 		const { run } = useSessionInsight();
 		const { t } = useTranslation("room");
-		const { chat } = useChat();
+		const { chat } = useChatSession();
 
 		const [isOptimizing, setIsOptimizing] = useState(false);
 		const [showRevert, setShowRevert] = useState(false);

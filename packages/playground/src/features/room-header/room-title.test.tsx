@@ -18,8 +18,8 @@ vi.mock("react-router", () => ({ useNavigate: () => mocks.navigate }));
 vi.mock("@semoss/sdk/react", () => ({
 	usePixel: () => ({ data: [], refresh: vi.fn() }),
 }));
-vi.mock("@/hooks/use-chat", () => ({
-	useChat: () => ({
+vi.mock("@/hooks/use-chat-session", () => ({
+	useChatSession: () => ({
 		chat: { keys: { roomCounter: 0 }, renameRoom: mocks.renameRoom },
 	}),
 }));

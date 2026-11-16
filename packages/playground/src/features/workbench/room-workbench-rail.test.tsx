@@ -30,8 +30,8 @@ vi.mock("@semoss/sdk/react", async (original) => ({
 	...(await original<typeof import("@semoss/sdk/react")>()),
 	usePixel: () => ({ data: mocks.pinned, refresh: vi.fn() }),
 }));
-vi.mock("@/hooks/use-chat", () => ({
-	useChat: () => ({
+vi.mock("@/hooks/use-chat-session", () => ({
+	useChatSession: () => ({
 		chat: {
 			keys: { roomCounter: 0 },
 			pinRoom: mocks.pinRoom,

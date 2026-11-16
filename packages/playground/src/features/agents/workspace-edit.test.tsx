@@ -35,8 +35,8 @@ vi.mock("react-router", async (original) => ({
 	useParams: () => ({ workspaceId: mocks.workspaceId }),
 	useNavigate: () => mocks.navigate,
 }));
-vi.mock("@/hooks/use-chat", () => ({
-	useChat: () => ({ chat: { editWorkspace: mocks.editWorkspace } }),
+vi.mock("@/hooks/use-chat-session", () => ({
+	useChatSession: () => ({ chat: { editWorkspace: mocks.editWorkspace } }),
 }));
 vi.mock("@/hooks/use-root", () => ({
 	useRoot: () => ({ root: { theme: { featureFlags: {} } } }),

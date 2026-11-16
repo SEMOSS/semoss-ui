@@ -47,7 +47,7 @@ import {
 	type NewRoomPanelRequest,
 	type NewRoomWorkbenchPanels,
 } from "@/features/workbench/use-workbench-panels";
-import { useChat } from "@/hooks/use-chat";
+import { useChatSession } from "@/hooks/use-chat-session";
 import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
 import { RoomStore } from "@/stores/room/room.store";
 import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
@@ -76,7 +76,7 @@ export const NewRoomPage = observer(() => {
 
 	const landingSrc = isDark ? theme.images.landingDark : theme.images.landing;
 
-	const { chat } = useChat();
+	const { chat } = useChatSession();
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
 	const userName = useSession((state) => state.user?.name) ?? "";

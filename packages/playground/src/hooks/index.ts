@@ -1,5 +1,5 @@
 export * from "./use-active-index";
-export * from "./use-chat";
+export * from "./use-chat-session";
 export * from "./use-graceful-errors";
 export * from "./use-markdown-typewriter";
 export * from "./use-root";

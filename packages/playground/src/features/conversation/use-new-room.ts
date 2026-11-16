@@ -1,5 +1,5 @@
 import { type RefObject, useEffect, useRef, useState } from "react";
-import { useChat } from "@/hooks/use-chat";
+import { useChatSession } from "@/hooks/use-chat-session";
 import type { RoomStore } from "@/stores/room/room.store";
 
 /** What {@link useNewRoom} returns. */
@@ -28,7 +28,7 @@ export function useNewRoom(
 	mode: "chat" | "agent",
 	submitted: RefObject<boolean>,
 ): NewRoomPreparation {
-	const { chat } = useChat();
+	const { chat } = useChatSession();
 	const [room, setRoom] = useState<RoomStore | null>(null);
 	const [isPreparing, setIsPreparing] = useState(false);
 	const [hasError, setHasError] = useState(false);

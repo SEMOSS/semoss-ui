@@ -8,7 +8,9 @@ vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
 vi.mock("react-router", () => ({ useNavigate: () => mocks.navigate }));
-vi.mock("@/hooks/use-chat", () => ({ useChat: () => ({ chat: {} }) }));
+vi.mock("@/hooks/use-chat-session", () => ({
+	useChatSession: () => ({ chat: {} }),
+}));
 vi.mock("@/hooks/use-root", () => ({
 	useRoot: () => ({ root: { theme: { images: {} } } }),
 }));

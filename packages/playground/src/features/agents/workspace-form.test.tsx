@@ -27,7 +27,7 @@ vi.mock("@semoss/i18n", () => ({
 }));
 vi.mock("react-router", () => ({ useNavigate: () => mocks.navigate }));
 vi.mock("@/hooks", () => ({
-	useChat: () => ({
+	useChatSession: () => ({
 		chat: {
 			addWorkspace: mocks.addWorkspace,
 			createAgent: mocks.createAgent,
@@ -37,8 +37,8 @@ vi.mock("@/hooks", () => ({
 		root: { theme: { featureFlags: {}, defaultEmbedderId: "embedder" } },
 	}),
 }));
-vi.mock("@/hooks/use-chat", () => ({
-	useChat: () => ({
+vi.mock("@/hooks/use-chat-session", () => ({
+	useChatSession: () => ({
 		chat: {
 			addWorkspace: mocks.addWorkspace,
 			createAgent: mocks.createAgent,

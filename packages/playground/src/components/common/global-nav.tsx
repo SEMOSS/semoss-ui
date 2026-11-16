@@ -76,7 +76,7 @@ import {
 import { useRoomListView } from "@/features/room-list/use-room-list-view";
 import { RoomName } from "@/features/room-name/room-name";
 import { RoomSearchDialog } from "@/features/room-search/room-search-dialog";
-import { useChat } from "@/hooks/use-chat";
+import { useChatSession } from "@/hooks/use-chat-session";
 import { useRoot } from "@/hooks/use-root";
 import { AppLogo } from "./app-logo";
 import { GlobalNavItem } from "./global-nav-item";
@@ -120,7 +120,7 @@ export const GlobalNav = observer(() => {
 	// the room whose actions menu is open, from its ⋯ button or a right click
 	const [menuRoomId, setMenuRoomId] = useState<string | null>(null);
 	const [helpOpen, setHelpOpen] = useState(false);
-	const { chat } = useChat();
+	const { chat } = useChatSession();
 	const { open, openMobile, isMobile } = useSidebar();
 	const hideChatHistory = !!root.theme.featureFlags?.hideChatHistory;
 	// True when the sidebar is actually visible to the user.

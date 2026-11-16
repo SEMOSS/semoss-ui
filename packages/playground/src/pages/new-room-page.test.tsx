@@ -122,7 +122,9 @@ vi.mock("@/hooks/use-root", () => ({ useRoot: () => ({ root }) }));
 vi.mock("@/hooks/use-playground-theme", () => ({
 	usePlaygroundTheme: () => root.theme,
 }));
-vi.mock("@/hooks/use-chat", () => ({ useChat: () => ({ chat }) }));
+vi.mock("@/hooks/use-chat-session", () => ({
+	useChatSession: () => ({ chat }),
+}));
 vi.mock("@semoss/ui/next", async (original) => ({
 	...(await original<typeof import("@semoss/ui/next")>()),
 	useTheme: () => ({ theme: "light" }),

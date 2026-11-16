@@ -61,8 +61,8 @@ vi.mock("@/components/room/room-input", () => ({ RoomInput: () => null }));
 vi.mock("@/contexts/file-drag-context", () => ({
 	useFileDrag: () => ({ isDragging: false }),
 }));
-vi.mock("@/hooks/use-chat", () => ({
-	useChat: () => ({ chat: { setSelectedModel: vi.fn() } }),
+vi.mock("@/hooks/use-chat-session", () => ({
+	useChatSession: () => ({ chat: { setSelectedModel: vi.fn() } }),
 }));
 vi.mock("@/hooks/use-graceful-errors", () => ({
 	useGracefulErrors: () => ({

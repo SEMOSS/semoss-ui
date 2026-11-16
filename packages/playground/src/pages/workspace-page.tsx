@@ -24,7 +24,7 @@ import {
 	useTheme,
 } from "@semoss/ui/next";
 import { WorkspaceCard } from "@/components/workspace/workspace-card";
-import { useChat } from "@/hooks/use-chat";
+import { useChatSession } from "@/hooks/use-chat-session";
 import { useRoot } from "@/hooks/use-root";
 import type { App } from "@/types";
 
@@ -123,7 +123,7 @@ export const WorkspacePage = observer(() => {
 	const [sort, setSort] = useState<SortOption>("name");
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebouncedValue(search);
-	const { chat } = useChat();
+	const { chat } = useChatSession();
 
 	/**
 	 * Get all of the workspaces with lazy loading

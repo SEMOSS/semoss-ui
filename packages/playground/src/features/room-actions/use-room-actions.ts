@@ -4,7 +4,7 @@ import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import { useChat } from "@/hooks/use-chat";
+import { useChatSession } from "@/hooks/use-chat-session";
 import type { ChatStore } from "@/stores/chat/chat.store";
 
 /** Translates a `sidebar` key. */
@@ -91,7 +91,7 @@ export interface RoomActions {
  */
 export const useRoomActions = (roomId: string): RoomActions => {
 	const { t } = useTranslation("sidebar");
-	const { chat } = useChat();
+	const { chat } = useChatSession();
 	const navigate = useNavigate();
 	const pinnedRooms = usePixel<{ ROOM_ID: string }[]>(
 		`META | GetPlaygroundRooms(pinned=[true], sort=["DESC"]);`,

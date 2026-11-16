@@ -4,7 +4,7 @@ import type { ChatStore } from "@/stores";
 /**
  * Value
  */
-type ChatContextProps = {
+type ChatSessionContextProps = {
 	/** chat store */
 	chat: ChatStore;
 };
@@ -12,6 +12,6 @@ type ChatContextProps = {
 /**
  * Context
  */
-export const ChatContext = createContext<ChatContextProps | undefined>(
-	undefined,
-);
+export const ChatSessionContext = createContext<
+	ChatSessionContextProps | undefined
+>(undefined);

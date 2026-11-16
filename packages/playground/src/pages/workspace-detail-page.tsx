@@ -33,7 +33,7 @@ import {
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import { WorkspaceChatList } from "@/components/workspace/workspace-chat-list";
-import { useChat } from "@/hooks/use-chat";
+import { useChatSession } from "@/hooks/use-chat-session";
 import { useRoot } from "@/hooks/use-root";
 import type { Workspace } from "@/types";
 import { getPlaygroundAgentLinks } from "@/utility/mcp-utils";
@@ -52,7 +52,7 @@ export const WorkspaceDetailPage = observer(() => {
 
 	const { workspaceId } = useParams<{ workspaceId: string }>();
 	const navigate = useNavigate();
-	const { chat } = useChat();
+	const { chat } = useChatSession();
 	const { root } = useRoot();
 
 	const [isDeleting, setIsDeleting] = useState(false);

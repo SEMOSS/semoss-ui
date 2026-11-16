@@ -1,12 +1,12 @@
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { Navigate, useNavigate, useParams } from "react-router";
-import { useChat } from "@/hooks/use-chat";
+import { useChatSession } from "@/hooks/use-chat-session";
 
 export const EmbedPage: React.FC = observer(() => {
 	const { "*": splatPath } = useParams();
 	const basePath = splatPath?.split("/")[0] ?? "";
-	const { chat } = useChat();
+	const { chat } = useChatSession();
 	const navigate = useNavigate();
 
 	const pageInfo = chat.embeddedPageMap[basePath] ?? null;

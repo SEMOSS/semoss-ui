@@ -6,7 +6,7 @@ import type { WorkbenchPanelConfig } from "@semoss/workbench";
 import { useRoom } from "@/contexts/room.context";
 import { RoomToolsConnectorsSection } from "@/features/chat-tools/components/room-tools-connectors-section";
 import { DraftSettingsContext } from "@/features/workbench/draft-settings.context";
-import { useChat } from "@/hooks/use-chat";
+import { useChatSession } from "@/hooks/use-chat-session";
 import { RoomOptionsForm } from "../room-options-form";
 
 /**
@@ -17,7 +17,7 @@ import { RoomOptionsForm } from "../room-options-form";
  */
 const RoomConfigurationPanel = observer(() => {
 	const room = useRoom();
-	const { chat } = useChat();
+	const { chat } = useChatSession();
 	const draftSettings = useContext(DraftSettingsContext);
 	return (
 		<ScrollArea className="h-full w-full">
