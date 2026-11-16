@@ -575,7 +575,11 @@ export async function loadLiveState(
 // a due day is saved as midnight UTC; as a plain date it shows on that day in every time zone
 export function dueDay(value: unknown): string | null {
 	const due = opt(value);
-	return due?.endsWith("T00:00:00Z") ? due.slice(0, 10) : (due ?? null);
+	// a due is a day: the server stores it at noon UTC (older rows at midnight), which is the next day east of
+	// UTC+11 when read as an instant
+	return due && /T(00|12):00:00(\.0+)?Z$/.test(due)
+		? due.slice(0, 10)
+		: (due ?? null);
 }
 
 /** A due to read in local time: a plain due day becomes its local midnight, so it shows on that day. */
