@@ -36,6 +36,8 @@ export interface TaskStep {
 	closedSubject: string;
 	/** What the inbox decided about the conversation the step came from; absent for a step made by hand or an older server. */
 	inbox?: StepInbox;
+	/** The card's warning that the sender's address only resembles an organisation the owner knows. */
+	senderWarning?: string;
 	/** The topic a loose step sits under, when it has one. */
 	topicId?: string;
 	/** The conversation the step came from; absent for a step made by hand. */
@@ -69,6 +71,7 @@ export function toTaskStep(row: Record<string, unknown>): TaskStep {
 			inbox === "outside"
 				? inbox
 				: undefined,
+		senderWarning: str(row.senderWarning) || undefined,
 		topicId: str(row.topicId) || undefined,
 		threadId: str(row.threadId) || undefined,
 		note: str(row.note) || undefined,
@@ -261,7 +264,11 @@ export function TaskStepRow({
 						The message did not say who this is for
 					</span>
 				) : null}
-				{step.inbox && INBOX_NOTE[step.inbox] ? (
+				{step.senderWarning ? (
+					<span className="mt-1 block break-words text-destructive text-xs">
+						{step.senderWarning}
+					</span>
+				) : step.inbox && INBOX_NOTE[step.inbox] ? (
 					<span className="mt-1 block text-muted-foreground text-xs">
 						{INBOX_NOTE[step.inbox]}
 					</span>

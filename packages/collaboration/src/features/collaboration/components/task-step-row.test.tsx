@@ -171,6 +171,32 @@ describe("TaskStepRow", () => {
 		).not.toBeInTheDocument();
 	});
 
+	it("shows the sender warning in place of the set-aside note", () => {
+		render(
+			<ul>
+				<TaskStepRow
+					step={{
+						...step,
+						inbox: "outside",
+						senderWarning:
+							"Check the sender: adatum-billing.com is not adatum.com",
+					}}
+					state="mine"
+					selfId="me"
+					onChange={vi.fn()}
+				/>
+			</ul>,
+		);
+		expect(
+			screen.getByText(
+				"Check the sender: adatum-billing.com is not adatum.com",
+			),
+		).toBeInTheDocument();
+		expect(
+			screen.queryByText("From someone you have not worked with before"),
+		).not.toBeInTheDocument();
+	});
+
 	it("hands a step to someone else on its conversation", async () => {
 		const user = userEvent.setup();
 		const onChange = vi.fn();
