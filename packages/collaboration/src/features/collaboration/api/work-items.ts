@@ -11,8 +11,10 @@ export interface WorkItemChange {
 	/** A day as `YYYY-MM-DD`; an empty string clears it. */
 	due?: string;
 	priority?: WorkItemPriority;
-	/** `done` finishes the whole item; `active` reopens it. */
-	status?: "active" | "done";
+	/** `done` finishes the whole item, `dropped` sets it aside as not wanted; `active` reopens it. */
+	status?: "active" | "done" | "dropped";
+	/** Ongoing work stays open when its last step is finished. */
+	ongoing?: boolean;
 }
 
 /** Change one work item (`WorkSaveWork` with its `taskId`). Throws when the server refuses. */

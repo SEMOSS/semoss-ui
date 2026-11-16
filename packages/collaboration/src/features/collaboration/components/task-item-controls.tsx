@@ -19,6 +19,8 @@ export interface TaskItemFields {
 	/** As the server sent it; "" when there is none. */
 	due: string;
 	priority: string;
+	/** Ongoing work stays open when its last step is finished. */
+	ongoing?: boolean;
 }
 
 interface TaskItemControlsProps {
@@ -41,14 +43,14 @@ function dayOf(due: string): string {
 	return /^\d{4}-\d{2}-\d{2}/.test(day) ? day.slice(0, 10) : "";
 }
 
-/** The owner's controls for a whole work item: rename, due date, priority, and done or reopen. */
+/** The owner's controls for a whole work item: rename, due date, priority, ongoing, and done, dropped or reopened. */
 export function TaskItemControls({
 	item,
 	onChange,
 	isBusy,
 }: TaskItemControlsProps) {
 	const [draft, setDraft] = useState<string | null>(null);
-	const isDone = item.status === "done";
+	const isClosed = item.status === "done" || item.status === "dropped";
 	const handleRename = (event: FormEvent) => {
 		event.preventDefault();
 		const title = draft?.trim();
@@ -117,15 +119,42 @@ export function TaskItemControls({
 					))}
 				</SelectContent>
 			</Select>
+			{isClosed ? null : (
+				<Button
+					type="button"
+					size="sm"
+					variant={item.ongoing ? "secondary" : "outline"}
+					aria-pressed={Boolean(item.ongoing)}
+					title="Ongoing work stays open when its last step is finished"
+					disabled={isBusy}
+					onClick={() => onChange({ ongoing: !item.ongoing })}
+				>
+					Ongoing
+				</Button>
+			)}
 			<Button
 				type="button"
 				size="sm"
-				variant={isDone ? "outline" : "default"}
+				variant={isClosed ? "outline" : "default"}
 				disabled={isBusy}
-				onClick={() => onChange({ status: isDone ? "active" : "done" })}
+				onClick={() =>
+					onChange({ status: isClosed ? "active" : "done" })
+				}
 			>
-				{isDone ? "Reopen work item" : "Mark work item done"}
+				{isClosed ? "Reopen work item" : "Mark work item done"}
 			</Button>
+			{isClosed ? null : (
+				<Button
+					type="button"
+					size="sm"
+					variant="ghost"
+					className="text-muted-foreground"
+					disabled={isBusy}
+					onClick={() => onChange({ status: "dropped" })}
+				>
+					Drop
+				</Button>
+			)}
 		</div>
 	);
 }

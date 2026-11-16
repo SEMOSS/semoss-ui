@@ -91,4 +91,30 @@ describe("TaskItemControls", () => {
 			).disabled,
 		).toBe(true);
 	});
+	it("keeps ongoing work open, and drops an item", async () => {
+		const user = userEvent.setup();
+		const onChange = vi.fn();
+		const { rerender } = render(
+			<TaskItemControls item={item} onChange={onChange} />,
+		);
+		const ongoing = screen.getByRole("button", { name: "Ongoing" });
+		expect(ongoing).toHaveAttribute("aria-pressed", "false");
+		await user.click(ongoing);
+		expect(onChange).toHaveBeenLastCalledWith({ ongoing: true });
+		await user.click(screen.getByRole("button", { name: "Drop" }));
+		expect(onChange).toHaveBeenLastCalledWith({ status: "dropped" });
+		rerender(
+			<TaskItemControls
+				item={{ ...item, status: "dropped" }}
+				onChange={onChange}
+			/>,
+		);
+		expect(
+			screen.queryByRole("button", { name: "Drop" }),
+		).not.toBeInTheDocument();
+		await user.click(
+			screen.getByRole("button", { name: "Reopen work item" }),
+		);
+		expect(onChange).toHaveBeenLastCalledWith({ status: "active" });
+	});
 });

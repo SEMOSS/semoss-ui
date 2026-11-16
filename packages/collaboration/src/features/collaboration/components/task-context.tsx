@@ -42,6 +42,7 @@ interface TaskView {
 	status: string;
 	due: string;
 	priority: string;
+	ongoing: boolean;
 	steps: TaskStep[];
 	threads: TaskThread[];
 	timeline: { id: string; text: string }[];
@@ -89,6 +90,7 @@ async function loadTask(
 		status: str(work?.status),
 		due: str(work?.due),
 		priority: str(work?.priority),
+		ongoing: work?.ongoing === true,
 		selfId,
 		steps: rows(work?.steps).map((row) => {
 			const step = toTaskStep(row);
@@ -238,23 +240,31 @@ export function useTaskContext(key: {
 					"item",
 					updateWorkItem(actions, openTaskId, change),
 					() => {
-						if (change.status === "done")
-							toast("Work item marked done.", {
-								action: {
-									label: "Undo",
-									onClick: () =>
-										save(
-											"item",
-											updateWorkItem(
-												actions,
-												openTaskId,
-												{
-													status: "active",
-												},
+						if (
+							change.status === "done" ||
+							change.status === "dropped"
+						)
+							toast(
+								change.status === "done"
+									? "Work item marked done."
+									: "Work item dropped.",
+								{
+									action: {
+										label: "Undo",
+										onClick: () =>
+											save(
+												"item",
+												updateWorkItem(
+													actions,
+													openTaskId,
+													{
+														status: "active",
+													},
+												),
 											),
-										),
+									},
 								},
-							});
+							);
 					},
 				);
 			},
