@@ -10,7 +10,7 @@ import { type ToolsRead, useToolsRead } from "./use-tools-read";
  *
  * @param room - The room.
  * @param revision - Changes whenever the toolbox may have.
- * @return The tools, how the read went, and a way to read them again.
+ * @returns The tools, how the read went, and a way to read them again.
  */
 export const useRoomToolbox = (
 	room: RoomStore,

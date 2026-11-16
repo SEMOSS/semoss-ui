@@ -61,7 +61,7 @@ interface MCPOverlayProps {
 	values: MCPConfig[];
 
 	/**
-	 * Currently-selected agent (workspace), if any. When `agentEditable` is
+	 * Currently-selected agent (workspace), if any. When `isAgentEditable` is
 	 * true this hydrates the Agent tab; either way it's used to merge the
 	 * agent's MCPs into the drafts as `fromWorkspace` entries.
 	 */
@@ -72,7 +72,7 @@ interface MCPOverlayProps {
 	 * `false` — callers must explicitly opt in. When false the Agent tab is
 	 * omitted entirely (existing rooms have their workspace baked in).
 	 */
-	agentEditable?: boolean;
+	isAgentEditable?: boolean;
 
 	/** Whether the Agent tab offers Default Agent. */
 	allowDefaultAgent?: boolean;
@@ -104,7 +104,7 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 	defaultTab,
 	values,
 	workspace,
-	agentEditable = false,
+	isAgentEditable = false,
 	allowDefaultAgent = false,
 	isDefaultAgent,
 	disabled = false,
@@ -333,12 +333,12 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 							<TabsList
 								className={cn(
 									"grid h-auto w-full p-1",
-									agentEditable
+									isAgentEditable
 										? "grid-cols-3"
 										: "grid-cols-2",
 								)}
 							>
-								{agentEditable && (
+								{isAgentEditable && (
 									<TabsTrigger
 										value="AGENT"
 										className="relative h-full min-w-0 flex-wrap gap-1 whitespace-normal py-2 sm:gap-2"
@@ -391,7 +391,7 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 								</TabsTrigger>
 							</TabsList>
 
-							{agentEditable && (
+							{isAgentEditable && (
 								<TabsContent
 									value="AGENT"
 									className="flex min-h-0 flex-1 flex-col"

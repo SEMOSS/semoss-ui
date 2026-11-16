@@ -1,5 +1,5 @@
 import { AlertCircle, Loader2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { runMcpTool, usePixel } from "@semoss/sdk/react";
 import {
@@ -112,35 +112,10 @@ export const ToolsDefaultView = ({
 		useState<boolean>(false);
 	const [isRetryingExtensionCheck, setIsRetryingExtensionCheck] =
 		useState<boolean>(false);
-	// Whether the browser extension's panel last said it is open
-	const isExtensionOpenRef = useRef<boolean>(false);
 
 	// A browser automation tool names its recorded Playwright script here
 	const scriptForBrowserAutomation =
 		typeof data.recordedFile === "string" ? data.recordedFile : "";
-
-	// Follow the extension's panel opening and closing
-	useEffect(() => {
-		const handleMessage = (event: MessageEvent) => {
-			if (event.origin !== window.location.origin) {
-				return;
-			}
-
-			if (event.data?.type === "SMSS_EXTENSION_OPENED") {
-				isExtensionOpenRef.current = true;
-			}
-
-			if (event.data?.type === "SMSS_EXTENSION_CLOSED") {
-				isExtensionOpenRef.current = false;
-			}
-		};
-
-		window.addEventListener("message", handleMessage);
-
-		return () => {
-			window.removeEventListener("message", handleMessage);
-		};
-	}, []);
 
 	const hasResponse = status === "SUCCESS";
 	const hasFailed = status === "ERROR" || status === "CANCELLED";

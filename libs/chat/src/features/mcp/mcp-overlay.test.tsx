@@ -115,7 +115,7 @@ test("cancel discards the agent draft and reopening restores committed values", 
 		open: true,
 		defaultTab: "AGENT" as const,
 		values: [local],
-		agentEditable: true,
+		isAgentEditable: true,
 		allowDefaultAgent: true,
 		onClose,
 	};
@@ -138,7 +138,7 @@ test("waits for the current agent, rejects stale results, and exposes retry on f
 		open: true,
 		defaultTab: "AGENT" as const,
 		values: [local],
-		agentEditable: true,
+		isAgentEditable: true,
 		allowDefaultAgent: true,
 		onClose,
 	};
@@ -203,7 +203,7 @@ test("Default agent removes inherited resources but retains local selections", (
 				},
 			]}
 			workspace={{ workspace_id: "alpha", name: "Alpha" }}
-			agentEditable
+			isAgentEditable
 			allowDefaultAgent
 			onClose={onClose}
 		/>,
@@ -222,7 +222,7 @@ test("with isDefaultAgent, the save reports Default Agent, and No Agent removes 
 		open: true,
 		defaultTab: "AGENT" as const,
 		values: [local],
-		agentEditable: true,
+		isAgentEditable: true,
 		onClose,
 	};
 	const { rerender } = render(
@@ -252,7 +252,7 @@ test("without isDefaultAgent, No Agent and Default Agent are not separate choice
 			open
 			defaultTab="AGENT"
 			values={[local]}
-			agentEditable
+			isAgentEditable
 			allowDefaultAgent
 			onClose={vi.fn()}
 		/>,
@@ -291,7 +291,7 @@ test("returns keyboard focus to the Settings Add button after Cancel", async () 
 					open={isOpen}
 					defaultTab="AGENT"
 					values={[]}
-					agentEditable
+					isAgentEditable
 					onClose={() => setIsOpen(false)}
 				/>
 			</>
@@ -315,7 +315,7 @@ test("choosing Default agent from another overlay tab explicitly commits Agent m
 			open
 			defaultTab="KNOWLEDGE"
 			values={[local]}
-			agentEditable
+			isAgentEditable
 			allowDefaultAgent
 			onClose={onClose}
 		/>,

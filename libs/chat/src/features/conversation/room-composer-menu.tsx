@@ -27,7 +27,7 @@ export interface RoomComposerMenuProps {
 	/** The room's mode, checked in the Chat and Agent choice. */
 	mode?: "chat" | "agent" | "workspace";
 	/** Shows the agent picker; true only while creating a chat. */
-	agentEditable?: boolean;
+	isAgentEditable?: boolean;
 	/** Shows the Chat and Agent choice. */
 	canChooseMode?: boolean;
 	/** Default Agent is picked, so the agent item names it. */
@@ -47,7 +47,7 @@ export function RoomComposerMenu({
 	onSelectChat,
 	onSelectAgent,
 	mode,
-	agentEditable,
+	isAgentEditable,
 	canChooseMode,
 	isDefaultAgent,
 }: RoomComposerMenuProps) {
@@ -80,7 +80,7 @@ export function RoomComposerMenu({
 				disabled={disabled}
 				onSelect={() => openPicker("TOOLBOX")}
 			/>
-			{agentEditable && (
+			{isAgentEditable && (
 				<>
 					<DropdownMenuSeparator />
 					{canChooseMode && (

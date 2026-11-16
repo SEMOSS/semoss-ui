@@ -23,7 +23,7 @@ class FolderPathError extends Error {
  * Whether a string carries a control character, which no file name should.
  *
  * @param value - The string to check.
- * @return True when any character is below U+0020 or is U+007F.
+ * @returns True when any character is below U+0020 or is U+007F.
  */
 const hasControlCharacter = (value: string): boolean => {
 	for (let index = 0; index < value.length; index++) {
@@ -45,7 +45,7 @@ const hasControlCharacter = (value: string): boolean => {
  * would make a path that looks contained mean something else.
  *
  * @param input - The path as the model or the UI wrote it.
- * @return The path relative to the folder root, without leading or trailing slashes.
+ * @returns The path relative to the folder root, without leading or trailing slashes.
  * @throws FolderPathError when the path is not a string or is not allowed.
  */
 export const normalizeFolderPath = (input: unknown): string => {
@@ -80,7 +80,7 @@ export const normalizeFolderPath = (input: unknown): string => {
  * Split a normalized path into its segments. The root has none.
  *
  * @param path - A normalized path.
- * @return The path's segments, in order.
+ * @returns The path's segments, in order.
  */
 export const splitFolderPath = (path: string): string[] =>
 	path ? path.split("/") : [];
@@ -89,7 +89,7 @@ export const splitFolderPath = (path: string): string[] =>
  * Join normalized paths, skipping empty ones so the root disappears.
  *
  * @param parts - Normalized paths to join.
- * @return The joined path.
+ * @returns The joined path.
  */
 export const joinFolderPath = (...parts: string[]): string =>
 	parts.filter((part) => part.length > 0).join("/");
@@ -98,7 +98,7 @@ export const joinFolderPath = (...parts: string[]): string =>
  * The directory holding an entry. The root's parent is the root.
  *
  * @param path - A normalized path.
- * @return The parent's normalized path.
+ * @returns The parent's normalized path.
  */
 export const getParentFolderPath = (path: string): string => {
 	const segments = splitFolderPath(path);
@@ -109,7 +109,7 @@ export const getParentFolderPath = (path: string): string => {
  * The last segment of a path, which is the entry's own name.
  *
  * @param path - A normalized path.
- * @return The entry's name, or `""` for the root.
+ * @returns The entry's name, or `""` for the root.
  */
 export const getFolderPathName = (path: string): string => {
 	const segments = splitFolderPath(path);
@@ -124,7 +124,7 @@ export const getFolderPathName = (path: string): string => {
  * finds `2026 Budget.xlsx`.
  *
  * @param query - What the user or the model is looking for.
- * @return A predicate over entry names.
+ * @returns A predicate over entry names.
  */
 export const createNameMatcher = (
 	query: string,

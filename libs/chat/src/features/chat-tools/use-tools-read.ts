@@ -31,7 +31,7 @@ interface ToolsReadState {
  *
  * @param source - Identifies what `read` reads, such as a toolbox's id.
  * @param read - Reads the MCP document; keep it stable for one source.
- * @return The tools, how the read went, and a way to read them.
+ * @returns The tools, how the read went, and a way to read them.
  */
 export const useToolsRead = (
 	source: string,

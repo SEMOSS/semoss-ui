@@ -7,10 +7,10 @@ import {
 	TOOL_OUTPUT_UNREADABLE_PROMPT,
 	TURN_CANCELLATION_PROMPT,
 } from "../mcp/mcp-constants";
+import { type CancelCommitOutput, spliceHiddenMessages } from "./message-tree";
 import { ResponseMessageStore } from "./response-message.store";
 import { applyResponseStreamChunk } from "./response-stream";
 import type { ToolStore } from "./tool.store";
-import { type CancelCommitOutput, spliceHiddenMessages } from "./utility";
 
 /** A tool result waiting to be written to room history via the save queue. */
 interface ToolSaveEntry {

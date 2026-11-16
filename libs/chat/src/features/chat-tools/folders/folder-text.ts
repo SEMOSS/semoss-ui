@@ -69,7 +69,7 @@ export class FolderToolError extends Error {
  * Whether a file is binary by its name alone.
  *
  * @param name - A file name or path.
- * @return True for images, media, archives, PDFs, and Office documents.
+ * @returns True for images, media, archives, PDFs, and Office documents.
  */
 export const isBinaryFileName = (name: string): boolean =>
 	BINARY_EXTENSIONS.has(getFileExtension(name));
@@ -83,7 +83,7 @@ export const isBinaryFileName = (name: string): boolean =>
  * @param isPartial - The bytes are only the start of the file, so the last
  * character may be cut in half. Invalid bytes are then replaced rather than
  * marking the file as binary.
- * @return The text, or null for binary content.
+ * @returns The text, or null for binary content.
  */
 export const decodeTextFile = (
 	bytes: Uint8Array,
@@ -126,7 +126,7 @@ interface TextFileSlice {
  * @param offset - First line to include, counting from 1.
  * @param limit - Most lines to include.
  * @param maxChars - Most characters to include.
- * @return The window and where it sits in the file.
+ * @returns The window and where it sits in the file.
  * @throws FolderToolError when `offset` is past the end of the file.
  */
 export const sliceTextLines = (
@@ -194,7 +194,7 @@ export const sliceTextLines = (
  * @param oldText - The exact text to replace.
  * @param newText - What to put in its place.
  * @param replaceAll - Replace every occurrence rather than exactly one.
- * @return The new contents and how many replacements were made.
+ * @returns The new contents and how many replacements were made.
  * @throws FolderToolError when the text is missing, empty, or ambiguous.
  */
 export const replaceFileText = (

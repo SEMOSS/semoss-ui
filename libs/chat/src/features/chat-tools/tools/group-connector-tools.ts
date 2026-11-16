@@ -67,7 +67,7 @@ interface GroupedConnectorTools {
  *
  * @param access - The room's connector access.
  * @param service - The service.
- * @return The issue, or null when its tools can run.
+ * @returns The issue, or null when its tools can run.
  */
 const getConnectorAccessIssue = (
 	access: ConnectorAccess,
@@ -94,7 +94,7 @@ const getConnectorAccessIssue = (
  * @param tools - The toolbox's tools.
  * @param access - The room's connector access.
  * @param getServiceLabel - A service's name, as the user reads it.
- * @return The services with tools, the other tools, and the access notices.
+ * @returns The services with tools, the other tools, and the access notices.
  */
 export const groupConnectorTools = (
 	tools: ToolboxTool[],

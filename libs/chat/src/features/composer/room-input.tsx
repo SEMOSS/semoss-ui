@@ -865,7 +865,7 @@ export const RoomInput = ({
 												onSelectAgent={
 													handleSwitchToAgentHarness
 												}
-												agentEditable={
+												isAgentEditable={
 													!!onWorkspaceChange
 												}
 												canChooseMode={canChooseMode}
@@ -1144,7 +1144,7 @@ export const RoomInput = ({
 					defaultTab={mcpOverlay.defaultTab}
 					values={options.mcp}
 					workspace={agentChipWorkspace}
-					agentEditable={!!onWorkspaceChange}
+					isAgentEditable={!!onWorkspaceChange}
 					allowDefaultAgent={canChooseMode}
 					isDefaultAgent={
 						onDefaultAgentChange ? isDefaultAgent : undefined

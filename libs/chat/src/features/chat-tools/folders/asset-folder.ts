@@ -69,7 +69,7 @@ export class AssetFolderProvider implements WorkFolderProvider {
 	 * List a directory's direct children, leaving out reserved entries.
 	 *
 	 * @param path - A normalized directory path; `""` is the root.
-	 * @return The entries.
+	 * @returns The entries.
 	 */
 	async list(path: string): Promise<FolderEntry[]> {
 		const output = await this.run(
@@ -104,7 +104,7 @@ export class AssetFolderProvider implements WorkFolderProvider {
 	 * Read a file's bytes.
 	 *
 	 * @param path - A normalized file path.
-	 * @return The file's contents.
+	 * @returns The file's contents.
 	 * @throws FolderToolError when the contents do not come back as base64.
 	 */
 	async readFile(path: string): Promise<Blob> {
@@ -195,7 +195,7 @@ export class AssetFolderProvider implements WorkFolderProvider {
 	 * Describe one entry, found by listing its parent.
 	 *
 	 * @param path - A normalized path; `""` is the folder root.
-	 * @return The entry, or null when it does not exist or is reserved.
+	 * @returns The entry, or null when it does not exist or is reserved.
 	 */
 	async stat(path: string): Promise<FolderEntry | null> {
 		if (!path) {
@@ -225,7 +225,7 @@ export class AssetFolderProvider implements WorkFolderProvider {
 	 * entries.
 	 *
 	 * @param path - A normalized path inside this folder.
-	 * @return True when the folder hides and never touches it.
+	 * @returns True when the folder hides and never touches it.
 	 */
 	private isReserved(path: string): boolean {
 		const [top] = splitFolderPath(joinFolderPath(this.root, path));
@@ -243,7 +243,7 @@ export class AssetFolderProvider implements WorkFolderProvider {
 	 *
 	 * @param path - A normalized path inside this folder.
 	 * @param allowRoot - Whether the folder root itself may be addressed.
-	 * @return The space's path.
+	 * @returns The space's path.
 	 * @throws FolderToolError when the root is not allowed, the path is
 	 * reserved, or the path cannot be carried by a pixel.
 	 */

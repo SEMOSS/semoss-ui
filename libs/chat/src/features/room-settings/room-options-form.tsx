@@ -44,7 +44,7 @@ interface RoomOptionsFormProps {
 	/** Told of each change to the options, with only the changed ones. */
 	onOptionsChange: (options: Partial<RoomStore["options"]>) => void;
 	/** Whether the user can pick the room's agent. */
-	agentEditable?: boolean;
+	isAgentEditable?: boolean;
 	/** Lock every edit while the current turn is in progress. */
 	disabled?: boolean;
 	/** Agent runs supply their own tools instead of the chat's default tools. */
@@ -70,7 +70,7 @@ export const RoomOptionsForm = ({
 	onModelChange,
 	options,
 	onOptionsChange,
-	agentEditable = false,
+	isAgentEditable = false,
 	disabled = false,
 	isAgentMode = false,
 	connectorsSection,
@@ -131,7 +131,7 @@ export const RoomOptionsForm = ({
 				disabled={disabled}
 				className="flex min-w-0 flex-col gap-6"
 			>
-				{(agentEditable || options.workspace || isAgentMode) && (
+				{(isAgentEditable || options.workspace || isAgentMode) && (
 					<Field>
 						<FieldLabel htmlFor={`${id}-agent`}>
 							{t("room:form.agentLabel")}
@@ -141,7 +141,7 @@ export const RoomOptionsForm = ({
 							id={`${id}-agent`}
 							type="button"
 							variant="outline"
-							disabled={disabled || !agentEditable}
+							disabled={disabled || !isAgentEditable}
 							title={agentName}
 							className="w-full min-w-0 justify-start overflow-hidden border-input bg-transparent px-3 py-2"
 							onClick={() =>
@@ -156,7 +156,7 @@ export const RoomOptionsForm = ({
 								<span className="min-w-0 truncate">
 									{agentName}
 								</span>
-								{agentEditable && (
+								{isAgentEditable && (
 									<ChevronDown
 										aria-hidden="true"
 										className="inline-block! ms-auto size-4 shrink-0 opacity-70"
@@ -325,12 +325,12 @@ export const RoomOptionsForm = ({
 				defaultTab={overlay.type}
 				values={options.mcp}
 				workspace={options.workspace ?? null}
-				agentEditable={agentEditable}
+				isAgentEditable={isAgentEditable}
 				onClose={(next) => {
 					if (next && !disabled) {
 						onOptionsChange({
 							mcp: next.mcp,
-							...(agentEditable && "workspace" in next
+							...(isAgentEditable && "workspace" in next
 								? { workspace: next.workspace ?? undefined }
 								: {}),
 						});

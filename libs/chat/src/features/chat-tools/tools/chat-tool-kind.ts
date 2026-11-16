@@ -17,7 +17,7 @@ type ToolCall = PixelMessageToolCallPart["toolCall"];
  * metadata the harness was given.
  *
  * @param call - The tool call.
- * @return True for work folder calls.
+ * @returns True for work folder calls.
  */
 export const isFolderToolCall = (call: ToolCall): boolean =>
 	isFolderToolName(call.name) || call._meta?.SMSS_CLIENT_TOOL === true;
@@ -27,7 +27,7 @@ export const isFolderToolCall = (call: ToolCall): boolean =>
  * connector tools written into the room's own toolbox.
  *
  * @param call - The tool call.
- * @return The service, or undefined for every other tool.
+ * @returns The service, or undefined for every other tool.
  */
 export const getConnectorToolService = (
 	call: ToolCall,
@@ -41,7 +41,7 @@ export const getConnectorToolService = (
  * generic tool view.
  *
  * @param call - The tool call.
- * @return True for folder and connector calls.
+ * @returns True for folder and connector calls.
  */
 export const isChatToolCall = (call: ToolCall): boolean =>
 	isFolderToolCall(call) || !!getConnectorToolService(call);

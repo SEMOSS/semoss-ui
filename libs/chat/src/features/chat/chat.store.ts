@@ -191,8 +191,8 @@ export class ChatStore {
 		});
 	};
 
-	/** Make every room list refetch. */
-	private bumpRoomCounter = (): void => {
+	/** Make every room list refetch, after a change the list cannot see. */
+	refreshRoomLists = (): void => {
 		this.state.update((current) => ({
 			keys: { roomCounter: current.keys.roomCounter + 1 },
 		}));
@@ -397,7 +397,7 @@ export class ChatStore {
 			WORKSPACE_ID: workspaceId,
 		});
 
-		this.bumpRoomCounter();
+		this.refreshRoomLists();
 
 		// ask the room — fire-and-forget so we return (and navigate) without
 		// waiting on the response
@@ -405,7 +405,7 @@ export class ChatStore {
 			try {
 				await room.askMessage(prompt, files, askOptions);
 				// the room now has data, so the lists can fetch it
-				this.bumpRoomCounter();
+				this.refreshRoomLists();
 			} catch (e) {
 				if ((e as Error)?.name === "UploadError") {
 					// Leave the optimistic room so the user can retry with a new message.
@@ -476,7 +476,7 @@ export class ChatStore {
 
 		room?.dispose();
 		this.setCachedRoom(roomId, null);
-		this.bumpRoomCounter();
+		this.refreshRoomLists();
 	};
 
 	/**
@@ -501,7 +501,7 @@ export class ChatStore {
 		if (cached) {
 			cached.setMetadata({ name: trimmed });
 		}
-		this.bumpRoomCounter();
+		this.refreshRoomLists();
 	};
 
 	/**
@@ -516,7 +516,7 @@ export class ChatStore {
 		await Session.insight.withInsight((id) =>
 			pinUserRoom(id, roomId, pinned),
 		);
-		this.bumpRoomCounter();
+		this.refreshRoomLists();
 	};
 
 	/**

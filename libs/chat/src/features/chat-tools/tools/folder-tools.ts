@@ -116,7 +116,7 @@ const MAX_WRITE_CHARS = 2_000_000;
  * Whether a tool call name is one of the work folder tools.
  *
  * @param name - The name the model called.
- * @return True for the folder tools.
+ * @returns True for the folder tools.
  */
 export const isFolderToolName = (name: string): name is FolderToolName =>
 	ALL_FOLDER_TOOLS.includes(name);
@@ -126,7 +126,7 @@ export const isFolderToolName = (name: string): name is FolderToolName =>
  * every change once the user approves it.
  *
  * @param name - A folder tool.
- * @return The execution mode.
+ * @returns The execution mode.
  */
 export const getUsualFolderToolExecution = (
 	name: FolderToolName,
@@ -166,7 +166,7 @@ const PATH_PROPERTY = {
  * each such call small and expects a person in the loop.
  *
  * @param name - A folder tool that asks first.
- * @return The sentence to add to its description.
+ * @returns The sentence to add to its description.
  */
 const describeApproval = (name: FolderToolName): string => {
 	if (name === FOLDER_TOOL_NAMES.DELETE) {
@@ -183,7 +183,7 @@ const describeApproval = (name: FolderToolName): string => {
  * definitions carry no execution mode of their own.
  *
  * @param context - How each tool runs.
- * @return The definitions to send with the turn.
+ * @returns The definitions to send with the turn.
  */
 export const buildFolderToolDefinitions = (
 	context: FolderToolContext,
@@ -374,7 +374,7 @@ export const buildFolderToolDefinitions = (
  *
  * @param args - The call's arguments.
  * @param key - Which argument.
- * @return The path. The root is refused, since every tool that requires a
+ * @returns The path. The root is refused, since every tool that requires a
  * path means an entry inside the folder.
  */
 const readRequiredPath = (
@@ -398,7 +398,7 @@ const readRequiredPath = (
  * @param fallback - Used when the argument is missing or not a number.
  * @param min - Smallest allowed value.
  * @param max - Largest allowed value.
- * @return The number.
+ * @returns The number.
  */
 const readInteger = (
 	value: unknown,
@@ -422,7 +422,7 @@ const readInteger = (
  * A boolean argument. Accepts `"true"`, since models sometimes quote booleans.
  *
  * @param value - The raw argument.
- * @return True only for `true` or `"true"`.
+ * @returns True only for `true` or `"true"`.
  */
 const readBoolean = (value: unknown): boolean =>
 	value === true || value === "true";
@@ -432,7 +432,7 @@ const readBoolean = (value: unknown): boolean =>
  *
  * @param args - The call's arguments.
  * @param key - Which argument.
- * @return The string.
+ * @returns The string.
  */
 const readRequiredString = (
 	args: Record<string, unknown>,
@@ -451,7 +451,7 @@ const readRequiredString = (
  *
  * @param provider - The folder.
  * @param path - A normalized file path.
- * @return The text.
+ * @returns The text.
  */
 const readTextFile = async (
 	provider: WorkFolderProvider,
@@ -496,7 +496,7 @@ const readTextFile = async (
  * The shape one entry takes in a listing or search result.
  *
  * @param entry - The entry.
- * @return A compact row for the model.
+ * @returns A compact row for the model.
  */
 const toResultRow = (entry: FolderEntry): Record<string, unknown> => ({
 	path: entry.path,
@@ -508,7 +508,7 @@ const toResultRow = (entry: FolderEntry): Record<string, unknown> => ({
 /**
  * The current time, for a change's `at`.
  *
- * @return The time as an ISO string.
+ * @returns The time as an ISO string.
  */
 const now = (): string => new Date().toISOString();
 
@@ -516,7 +516,7 @@ const now = (): string => new Date().toISOString();
  * Turn whatever a tool call threw into a sentence the model can act on.
  *
  * @param error - What was thrown.
- * @return The explanation.
+ * @returns The explanation.
  */
 const describeFolderError = (error: unknown): string =>
 	getErrorMessage(error, "") || "The operation failed.";
@@ -531,7 +531,7 @@ const describeFolderError = (error: unknown): string =>
  * @param name - The tool the model called.
  * @param args - The call's arguments.
  * @param folderName - The folder's name, echoed in listings.
- * @return The outcome.
+ * @returns The outcome.
  */
 export const executeFolderTool = async (
 	provider: WorkFolderProvider,
@@ -575,7 +575,7 @@ export const executeFolderTool = async (
  * @param provider - The folder.
  * @param args - The call's arguments.
  * @param folderName - The folder's name, echoed in the result.
- * @return The listing.
+ * @returns The listing.
  */
 const listFolder = async (
 	provider: WorkFolderProvider,
@@ -644,7 +644,7 @@ const listFolder = async (
  *
  * @param provider - The folder.
  * @param args - The call's arguments.
- * @return The lines, and where to continue when there are more.
+ * @returns The lines, and where to continue when there are more.
  */
 const readFile = async (
 	provider: WorkFolderProvider,
@@ -687,7 +687,7 @@ const readFile = async (
  *
  * @param provider - The folder.
  * @param args - The call's arguments.
- * @return The matches.
+ * @returns The matches.
  */
 const searchFolder = async (
 	provider: WorkFolderProvider,
@@ -793,7 +793,7 @@ const searchFolder = async (
  *
  * @param provider - The folder.
  * @param args - The call's arguments.
- * @return What was written, and whether the file is new.
+ * @returns What was written, and whether the file is new.
  */
 const writeFile = async (
 	provider: WorkFolderProvider,
@@ -832,7 +832,7 @@ const writeFile = async (
  *
  * @param provider - The folder.
  * @param args - The call's arguments.
- * @return How many replacements were made.
+ * @returns How many replacements were made.
  */
 const editFile = async (
 	provider: WorkFolderProvider,
@@ -859,7 +859,7 @@ const editFile = async (
  *
  * @param provider - The folder.
  * @param args - The call's arguments.
- * @return Whether the folder was created.
+ * @returns Whether the folder was created.
  */
 const createDirectory = async (
 	provider: WorkFolderProvider,
@@ -893,7 +893,7 @@ const createDirectory = async (
  *
  * @param provider - The folder.
  * @param args - The call's arguments.
- * @return Where the entry went.
+ * @returns Where the entry went.
  */
 const moveEntry = async (
 	provider: WorkFolderProvider,
@@ -920,7 +920,7 @@ const moveEntry = async (
  *
  * @param provider - The folder.
  * @param args - The call's arguments.
- * @return What was deleted.
+ * @returns What was deleted.
  */
 const deleteEntry = async (
 	provider: WorkFolderProvider,

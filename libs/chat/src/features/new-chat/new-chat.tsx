@@ -405,7 +405,7 @@ export const NewChat = ({
 							files,
 							askOptions,
 						);
-						chat.keys.roomCounter++;
+						chat.refreshRoomLists();
 					} catch (e) {
 						if ((e as Error)?.name === "UploadError") {
 							toast.error(t("room:errors.fileInUse"));
@@ -864,7 +864,7 @@ export const NewChat = ({
 								onModelChange: (model) => {
 									if (model) chat.setSelectedModel(model);
 								},
-								agentEditable: true,
+								isAgentEditable: true,
 								isAgentMode: mode === "agent",
 								onDefaultAgentChange: modeFollowsAgent
 									? handleDefaultAgentChange

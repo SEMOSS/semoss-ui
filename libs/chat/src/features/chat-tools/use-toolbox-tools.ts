@@ -10,7 +10,7 @@ import { type ToolsRead, useToolsRead } from "./use-tools-read";
  * again, with none of the last one's tools.
  *
  * @param toolbox - The toolbox.
- * @return The tools, how the read went, and a way to read them.
+ * @returns The tools, how the read went, and a way to read them.
  */
 export const useToolboxTools = (
 	toolbox: Pick<MCPConfig, "id" | "type">,

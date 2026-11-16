@@ -4,19 +4,19 @@ import type { WorkbenchPanelOption } from "./use-workbench-panels";
 /** Props for {@link WorkbenchPanelIcon}. */
 interface WorkbenchPanelIconProps {
 	/** The panel whose icon to draw. */
-	place: WorkbenchPanelOption;
+	panel: WorkbenchPanelOption;
 	/** Size classes. */
 	className?: string;
 }
 
 /** A panel's icon, or its app's logo for a connector viewer. */
 export function WorkbenchPanelIcon({
-	place,
+	panel,
 	className,
 }: WorkbenchPanelIconProps) {
-	if (place.kind === "connector") {
-		return <ConnectorBrandIcon brand={place.brand} className={className} />;
+	if (panel.kind === "connector") {
+		return <ConnectorBrandIcon brand={panel.brand} className={className} />;
 	}
-	const Icon = place.icon;
+	const Icon = panel.icon;
 	return <Icon aria-hidden="true" className={className} />;
 }

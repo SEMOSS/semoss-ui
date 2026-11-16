@@ -16,7 +16,7 @@ import type { ResponseMessageStore } from "./response-message.store";
  * @returns The card's icon, its icon's classes, its status line, and its
  * background class.
  */
-export const getSubagentState = (
+export const getSubagentCardState = (
 	status: AgentRunStatusValue,
 	subagent: PixelMessageSubagentPart["subagent"],
 	t: ReturnType<typeof useTranslation<"tool">>["t"],
@@ -82,7 +82,7 @@ export const ResponseMessageSubagent = ({
 	const { t } = useTranslation("tool");
 	const { room } = message;
 	const { subagent } = part;
-	const state = getSubagentState(subagent.status, subagent, t);
+	const state = getSubagentCardState(subagent.status, subagent, t);
 	const panelConfig = { subagentId: subagent.id };
 	const isActive = useSidebarPanelActive(
 		room,

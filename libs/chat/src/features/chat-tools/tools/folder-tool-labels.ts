@@ -7,7 +7,7 @@ import { FOLDER_TOOL_NAMES, type FolderToolName } from "./folder-tools";
  * normalize, so a refused path still shows what the model asked for.
  *
  * @param value - The raw argument.
- * @return The path, or a label for the folder root.
+ * @returns The path, or a label for the folder root.
  */
 const displayPath = (value: unknown): string => {
 	try {
@@ -24,7 +24,7 @@ const displayPath = (value: unknown): string => {
  * The name the user sees for a folder tool, such as "Read File".
  *
  * @param name - A folder tool.
- * @return Its translated title.
+ * @returns Its translated title.
  */
 export const getFolderToolTitle = (name: FolderToolName): string =>
 	getI18n().t(`chatTools:tools.titles.${name}`);
@@ -35,7 +35,7 @@ export const getFolderToolTitle = (name: FolderToolName): string =>
  *
  * @param name - A folder tool.
  * @param args - The call's arguments.
- * @return The summary.
+ * @returns The summary.
  */
 export const summarizeFolderToolCall = (
 	name: FolderToolName,

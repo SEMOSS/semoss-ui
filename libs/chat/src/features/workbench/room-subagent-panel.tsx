@@ -6,7 +6,7 @@ import type {
 	WorkbenchPanelProps,
 } from "@semoss/workbench";
 import { useWorkbenchPanel } from "@semoss/workbench";
-import { getSubagentState } from "../messages/response-message-subagent";
+import { getSubagentCardState } from "../messages/response-message-subagent";
 import { useRoom } from "../room/room.context";
 import { useRoomSelector } from "../room/use-room-selector";
 
@@ -41,7 +41,7 @@ const RoomSubagentPanel = ({ id }: WorkbenchPanelProps) => {
 		);
 	}
 
-	const state = getSubagentState(subagent.status, subagent, t);
+	const state = getSubagentCardState(subagent.status, subagent, t);
 	// a finished run shows its result, a failed one its error, else its status
 	const body =
 		subagent.status === "COMPLETED"

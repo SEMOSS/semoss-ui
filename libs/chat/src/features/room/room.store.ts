@@ -49,9 +49,9 @@ import {
 	reconstructAllSubagents,
 } from "../messages/agent-harness";
 import { InputMessageStore } from "../messages/input-message.store";
+import { createMessageStore } from "../messages/message-tree";
 import { ResponseMessageStore } from "../messages/response-message.store";
 import { ToolStore } from "../messages/tool.store";
-import { createMessageStore } from "../messages/utility";
 import {
 	createRoomSidebarLayout,
 	getPanelFileMode,

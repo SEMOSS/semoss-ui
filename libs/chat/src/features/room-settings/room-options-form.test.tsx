@@ -368,7 +368,7 @@ test("a new chat's Settings reports Default Agent and names it once picked", () 
 		onModelChange: vi.fn(),
 		options,
 		onOptionsChange,
-		agentEditable: true,
+		isAgentEditable: true,
 		onDefaultAgentChange,
 	};
 	const { rerender } = render(<RoomOptionsForm {...props} />);

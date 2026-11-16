@@ -32,7 +32,7 @@ export const DEFAULT_TOOL_MODES: readonly DefaultToolMode[] = [
  * select reports.
  *
  * @param value - The value to check.
- * @return Whether it is `auto`, `ask`, or `disabled`.
+ * @returns Whether it is `auto`, `ask`, or `disabled`.
  */
 export const isDefaultToolMode = (value: unknown): value is DefaultToolMode =>
 	DEFAULT_TOOL_MODES.includes(value as DefaultToolMode);
@@ -45,7 +45,7 @@ export const isDefaultToolMode = (value: unknown): value is DefaultToolMode =>
  *
  * @param setting - The chat's `defaultTools` option.
  * @param name - The tool.
- * @return Its mode.
+ * @returns Its mode.
  */
 export const getDefaultToolMode = (
 	setting: unknown,
@@ -64,7 +64,7 @@ export const getDefaultToolMode = (
  * @param setting - The option as stored.
  * @param name - The tool.
  * @param mode - Its new mode.
- * @return The modes to store, by tool.
+ * @returns The modes to store, by tool.
  */
 export const setDefaultToolMode = (
 	setting: unknown,

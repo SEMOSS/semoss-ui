@@ -16,10 +16,10 @@ import {
 } from "./abstract-message.store";
 import { runAgentMessage } from "./agent-harness";
 import { InputMessageStore } from "./input-message.store";
+import { type CancelCommitOutput, spliceHiddenMessages } from "./message-tree";
 import { applyResponseStreamChunk } from "./response-stream";
 import type { ToolStore } from "./tool.store";
 import { ToolSaveController } from "./tool-save-controller";
-import { type CancelCommitOutput, spliceHiddenMessages } from "./utility";
 
 /** The user's rating of a response. */
 export interface ResponseFeedback {

@@ -158,7 +158,7 @@ export const useRoomSlashCommands = ({
 			command(
 				panel.id,
 				"workspace",
-				<WorkbenchPanelIcon place={panel} />,
+				<WorkbenchPanelIcon panel={panel} />,
 				() => panel.onOpen(),
 				{
 					label: panel.label,

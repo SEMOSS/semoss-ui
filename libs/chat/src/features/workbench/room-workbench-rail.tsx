@@ -153,7 +153,7 @@ export const RoomWorkbenchRail = ({
 						onClick={() => panel.onOpen()}
 					>
 						<WorkbenchPanelIcon
-							place={panel}
+							panel={panel}
 							className="size-4 shrink-0"
 						/>
 					</HeaderIconButton>

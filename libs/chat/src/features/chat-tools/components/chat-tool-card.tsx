@@ -47,7 +47,7 @@ const INLINE_VALUE_MAX = 80;
  * An argument value as text.
  *
  * @param value - The raw value.
- * @return Text for display.
+ * @returns Text for display.
  */
 const toDisplayText = (value: unknown): string =>
 	typeof value === "string" ? value : JSON.stringify(value, null, 2);
@@ -56,7 +56,7 @@ const toDisplayText = (value: unknown): string =>
  * Whether a boolean argument is set. Models sometimes quote booleans.
  *
  * @param value - The raw value.
- * @return True for `true` or `"true"`.
+ * @returns True for `true` or `"true"`.
  */
 const isSet = (value: unknown): boolean => value === true || value === "true";
 
@@ -65,7 +65,7 @@ const isSet = (value: unknown): boolean => value === true || value === "true";
  * around them, pretty printed when they are JSON.
  *
  * @param response - The saved response.
- * @return Text for display.
+ * @returns Text for display.
  */
 const formatResponse = (response: string): string =>
 	formatJson(readToolResponseDetail(response));
@@ -217,7 +217,7 @@ export const ChatToolCard = ({ tool, variant }: ChatToolCardProps) => {
 	 * What a folder call acts on, laid out for its tool: the file and the new
 	 * text for a write or an edit, both paths for a move, and so on.
 	 *
-	 * @return The details, or nothing for a name that is not a folder tool.
+	 * @returns The details, or nothing for a name that is not a folder tool.
 	 */
 	const renderFolderDetails = (): ReactNode => {
 		if (!isFolderToolName(name)) {
@@ -306,7 +306,7 @@ export const ChatToolCard = ({ tool, variant }: ChatToolCardProps) => {
 	 * A connector call's arguments, each a value row, or a text block when it
 	 * is long or runs over several lines.
 	 *
-	 * @return The arguments, or a note that there are none.
+	 * @returns The arguments, or a note that there are none.
 	 */
 	const renderArguments = (): ReactNode => {
 		const entries = Object.entries(args);

@@ -9,7 +9,7 @@ const DETAIL_MARKERS = ["\n\nError Details: ", "\n\nCancellation Details: "];
  * wraps around a failed or stopped call, for showing to the user.
  *
  * @param response - The saved response.
- * @return The details, or the response as it is when nothing wraps it.
+ * @returns The details, or the response as it is when nothing wraps it.
  */
 export const readToolResponseDetail = (response: string): string => {
 	for (const marker of DETAIL_MARKERS) {

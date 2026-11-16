@@ -9,7 +9,7 @@ import {
 } from "react";
 
 /** What {@link useFileDrop} gives the composer and its outlines. */
-interface FileDropContextType {
+interface FileDropContextValue {
 	/** True while a file is being dragged over the provider's territory. */
 	isDragging: boolean;
 	/** The files waiting to go with the next message, in the order added. */
@@ -25,7 +25,7 @@ interface FileDropContextType {
 }
 
 /** The provider's drag state and waiting files; undefined outside it. */
-const FileDropContext = createContext<FileDropContextType | undefined>(
+const FileDropContext = createContext<FileDropContextValue | undefined>(
 	undefined,
 );
 
@@ -129,7 +129,7 @@ export const FileDropProvider = ({ children }: FileDropProviderProps) => {
  * @returns The drag state, the waiting files, and their actions.
  * @throws When called outside a `FileDropProvider`.
  */
-export const useFileDrop = (): FileDropContextType => {
+export const useFileDrop = (): FileDropContextValue => {
 	const context = useContext(FileDropContext);
 	if (!context) {
 		throw new Error("useFileDrop must be used within FileDropProvider");

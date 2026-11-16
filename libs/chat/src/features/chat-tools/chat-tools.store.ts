@@ -49,7 +49,7 @@ const EMPTY_ENGINE_META: Omit<ToolCallMeta, "SMSS_MCP_EXECUTION"> = {
  * A failed tool call, in the shape the model reads back.
  *
  * @param message - Why it failed.
- * @return The outcome.
+ * @returns The outcome.
  */
 const failure = (message: string): FolderToolOutcome => ({
 	isError: true,
@@ -66,7 +66,7 @@ const failure = (message: string): FolderToolOutcome => ({
  * has the marker broken up the same way.
  *
  * @param outcome - The tool call's outcome.
- * @return The text to save.
+ * @returns The text to save.
  */
 const toToolResponseText = (outcome: FolderToolOutcome): string =>
 	(outcome.isError
@@ -113,7 +113,7 @@ export class ChatToolsStore {
 	 * How the chat runs a default tool, from the room's settings.
 	 *
 	 * @param name - The tool.
-	 * @return `auto`, `ask`, or `disabled`.
+	 * @returns `auto`, `ask`, or `disabled`.
 	 */
 	getDefaultToolMode = (name: FolderToolName): DefaultToolMode =>
 		readDefaultToolMode(this.room.options.defaultTools, name);
@@ -155,7 +155,7 @@ export class ChatToolsStore {
 	 * their approval card, rather than in the sidebar.
 	 *
 	 * @param call - The tool call as the room received it.
-	 * @return The call to render and run. Other tools come back unchanged.
+	 * @returns The call to render and run. Other tools come back unchanged.
 	 */
 	decorateToolCall = (call: ToolCall): ToolCall => {
 		if (isFolderToolCall(call) && isFolderToolName(call.name)) {
@@ -206,7 +206,7 @@ export class ChatToolsStore {
 	 *
 	 * @param name - The tool the model called.
 	 * @param args - The call's arguments.
-	 * @return The outcome, in the shape the model reads back.
+	 * @returns The outcome, in the shape the model reads back.
 	 */
 	runFolderCall = async (
 		name: string,
@@ -314,7 +314,7 @@ export class ChatToolsStore {
 	 * statement's output.
 	 *
 	 * @param pixel - The pixel.
-	 * @return The output.
+	 * @returns The output.
 	 */
 	private runFolderPixel = async (pixel: string): Promise<unknown> => {
 		const response = await this.room.runRoomPixel<[unknown]>(

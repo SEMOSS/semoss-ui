@@ -32,7 +32,7 @@ export type ToolboxTool = ChatToolInfo & { reactor: string };
  * The arguments an input schema lists, required ones first.
  *
  * @param inputSchema - A tool's JSON schema.
- * @return The arguments, or none when the schema lists no properties.
+ * @returns The arguments, or none when the schema lists no properties.
  */
 export const listToolParameters = (
 	inputSchema: unknown,
@@ -69,7 +69,7 @@ export const listToolParameters = (
  * left out: the assistant is never offered them.
  *
  * @param mcpJson - The parsed MCP document, with its `tools`.
- * @return The tools, each with the reactor it runs.
+ * @returns The tools, each with the reactor it runs.
  */
 export const parseMcpTools = (mcpJson: unknown): ToolboxTool[] => {
 	const tools =
