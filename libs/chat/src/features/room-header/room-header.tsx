@@ -1,4 +1,3 @@
-import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
 import { useRoomOrContext } from "../room/room.context";
 import type { RoomStore } from "../room/room.store";
@@ -20,22 +19,24 @@ interface RoomHeaderProps {
  * controls, the room's name (inside a `RoomActionsProvider`; a new chat has
  * none), then the Workbench toggle. The Workbench's panels sit on its own rail.
  */
-export const RoomHeader = observer(
-	({ room: roomProp, newRoomPanels, leading }: RoomHeaderProps) => {
-		const room = useRoomOrContext(roomProp);
-		return (
-			<header className="flex h-14 min-w-0 items-center gap-1 px-2 md:h-11">
-				{leading}
-				<div className="flex min-w-0 flex-1 items-center">
-					<RoomTitle />
-				</div>
-				<div className="flex shrink-0 items-center gap-0.5">
-					<WorkbenchToggleButton
-						room={room}
-						newRoomPanels={newRoomPanels}
-					/>
-				</div>
-			</header>
-		);
-	},
-);
+export const RoomHeader = ({
+	room: roomProp,
+	newRoomPanels,
+	leading,
+}: RoomHeaderProps) => {
+	const room = useRoomOrContext(roomProp);
+	return (
+		<header className="flex h-14 min-w-0 items-center gap-1 px-2 md:h-11">
+			{leading}
+			<div className="flex min-w-0 flex-1 items-center">
+				<RoomTitle />
+			</div>
+			<div className="flex shrink-0 items-center gap-0.5">
+				<WorkbenchToggleButton
+					room={room}
+					newRoomPanels={newRoomPanels}
+				/>
+			</div>
+		</header>
+	);
+};

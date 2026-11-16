@@ -1,5 +1,4 @@
 import { Download, RefreshCw, ScrollTextIcon } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { download } from "@semoss/sdk";
@@ -27,6 +26,7 @@ import {
 } from "@semoss/ui/next";
 import type { WorkbenchPanelConfig } from "@semoss/workbench";
 import { useRoom } from "../room/room.context";
+import { useRoomSelector } from "../room/use-room-selector";
 
 /**
  * The audit logs dashboard scoped to the current room, shown in the room's
@@ -34,11 +34,13 @@ import { useRoom } from "../room/room.context";
  * builders, run through the room's insight. The scope is locked to the room's id
  * (no engine/project pickers), so it can't be changed from this view.
  */
-const RoomAuditLogPanel = observer(() => {
+const RoomAuditLogPanel = () => {
 	const { t } = useTranslation("room");
 	const room = useRoom();
-	const roomId = room.roomId;
-	const insightId = room.insightId;
+	const { roomId, insightId } = useRoomSelector(room, (current) => ({
+		roomId: current.roomId,
+		insightId: current.insightId,
+	}));
 	const scope: AuditLogScope = { roomId };
 
 	const [logs, setLogs] = useState<EventData[]>([]);
@@ -200,7 +202,7 @@ const RoomAuditLogPanel = observer(() => {
 			)}
 		</div>
 	);
-});
+};
 
 /** The room's activity log. One per sidebar. */
 export const ROOM_AUDIT_LOG_PANEL: WorkbenchPanelConfig = {

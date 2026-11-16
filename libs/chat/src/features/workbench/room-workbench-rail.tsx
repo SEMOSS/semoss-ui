@@ -1,5 +1,4 @@
 import { SettingsIcon } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import type { DragEvent } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
@@ -48,112 +47,112 @@ interface RoomWorkbenchRailProps {
  * dropping Files beside an open Files useful. A new chat's rail does not drag:
  * its panels have to prepare the draft's room first, which only `onOpen` does.
  */
-export const RoomWorkbenchRail = observer(
-	({ room, newRoomPanels, side }: RoomWorkbenchRailProps) => {
-		const { t } = useTranslation(["room", "sidebar"]);
-		const items = useRoomActionItems().filter(
-			(item) => item.id !== "rename",
-		);
+export const RoomWorkbenchRail = ({
+	room,
+	newRoomPanels,
+	side,
+}: RoomWorkbenchRailProps) => {
+	const { t } = useTranslation(["room", "sidebar"]);
+	const items = useRoomActionItems().filter((item) => item.id !== "rename");
 
-		const panels = useWorkbenchPanels(room, newRoomPanels);
-		const handleDragStart = (
-			event: DragEvent<HTMLElement>,
-			panel: WorkbenchPanelOption,
-		): void => {
-			// the dock asks for `copy` on a spawn drop; anything the source does
-			// not allow resolves the drag to "none" and never fires `drop`
-			event.dataTransfer.effectAllowed = "copy";
-			writeSpawnDragSpec(event.dataTransfer, {
-				type: panel.panelType,
-				config: panel.panelConfig,
-				name: panel.label,
-			});
-		};
+	const panels = useWorkbenchPanels(room, newRoomPanels);
+	const handleDragStart = (
+		event: DragEvent<HTMLElement>,
+		panel: WorkbenchPanelOption,
+	): void => {
+		// the dock asks for `copy` on a spawn drop; anything the source does
+		// not allow resolves the drag to "none" and never fires `drop`
+		event.dataTransfer.effectAllowed = "copy";
+		writeSpawnDragSpec(event.dataTransfer, {
+			type: panel.panelType,
+			config: panel.panelConfig,
+			name: panel.label,
+		});
+	};
 
-		return (
-			<>
-				{items.length > 0 && (
-					<>
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<HeaderIconButton
-									label={t("sidebar:actions.roomActions")}
-									tooltipSide={side}
-								>
-									<SettingsIcon
-										aria-hidden="true"
-										className="size-4"
-									/>
-								</HeaderIconButton>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent
-								side={side}
-								align="start"
-								className="w-56"
+	return (
+		<>
+			{items.length > 0 && (
+				<>
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<HeaderIconButton
+								label={t("sidebar:actions.roomActions")}
+								tooltipSide={side}
 							>
-								{items.map((item) => (
-									<DropdownMenuItem
-										key={item.id}
-										variant={
-											item.isDestructive
-												? "destructive"
-												: "default"
-										}
-										className="gap-2.5 max-md:min-h-11"
-										onSelect={item.onSelect}
-									>
-										<item.icon
-											aria-hidden="true"
-											className={cn(
-												item.isActive &&
-													"fill-current text-foreground",
-											)}
-										/>
-										{item.label}
-									</DropdownMenuItem>
-								))}
-							</DropdownMenuContent>
-						</DropdownMenu>
-						<Separator
-							orientation={
-								side === "bottom" ? "vertical" : "horizontal"
-							}
-							className={cn(
-								"flex-none",
-								side === "bottom" ? "mx-0.5 h-5" : "my-0.5 w-5",
-							)}
-						/>
-					</>
-				)}
-
-				{panels.map((panel) => {
-					const isDraggable = !newRoomPanels && !panel.isDisabled;
-					return (
-						<HeaderIconButton
-							key={panel.id}
-							label={
-								panel.isLoading
-									? t("studio.preparingWorkspace")
-									: panel.label
-							}
-							tooltipSide={side}
-							disabled={panel.isDisabled}
-							draggable={isDraggable}
-							onDragStart={
-								isDraggable
-									? (event) => handleDragStart(event, panel)
-									: undefined
-							}
-							onClick={() => panel.onOpen()}
+								<SettingsIcon
+									aria-hidden="true"
+									className="size-4"
+								/>
+							</HeaderIconButton>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent
+							side={side}
+							align="start"
+							className="w-56"
 						>
-							<WorkbenchPanelIcon
-								place={panel}
-								className="size-4 shrink-0"
-							/>
-						</HeaderIconButton>
-					);
-				})}
-			</>
-		);
-	},
-);
+							{items.map((item) => (
+								<DropdownMenuItem
+									key={item.id}
+									variant={
+										item.isDestructive
+											? "destructive"
+											: "default"
+									}
+									className="gap-2.5 max-md:min-h-11"
+									onSelect={item.onSelect}
+								>
+									<item.icon
+										aria-hidden="true"
+										className={cn(
+											item.isActive &&
+												"fill-current text-foreground",
+										)}
+									/>
+									{item.label}
+								</DropdownMenuItem>
+							))}
+						</DropdownMenuContent>
+					</DropdownMenu>
+					<Separator
+						orientation={
+							side === "bottom" ? "vertical" : "horizontal"
+						}
+						className={cn(
+							"flex-none",
+							side === "bottom" ? "mx-0.5 h-5" : "my-0.5 w-5",
+						)}
+					/>
+				</>
+			)}
+
+			{panels.map((panel) => {
+				const isDraggable = !newRoomPanels && !panel.isDisabled;
+				return (
+					<HeaderIconButton
+						key={panel.id}
+						label={
+							panel.isLoading
+								? t("studio.preparingWorkspace")
+								: panel.label
+						}
+						tooltipSide={side}
+						disabled={panel.isDisabled}
+						draggable={isDraggable}
+						onDragStart={
+							isDraggable
+								? (event) => handleDragStart(event, panel)
+								: undefined
+						}
+						onClick={() => panel.onOpen()}
+					>
+						<WorkbenchPanelIcon
+							place={panel}
+							className="size-4 shrink-0"
+						/>
+					</HeaderIconButton>
+				);
+			})}
+		</>
+	);
+};

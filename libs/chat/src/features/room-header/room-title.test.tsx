@@ -23,11 +23,14 @@ vi.mock("../chat-config/use-chat-config", () => ({
 vi.mock("@semoss/sdk/react", () => ({
 	usePixel: () => ({ data: [], refresh: vi.fn() }),
 }));
-vi.mock("../chat/use-chat-session", () => ({
-	useChatSession: () => ({
-		chat: { keys: { roomCounter: 0 }, renameRoom: mocks.renameRoom },
-	}),
-}));
+vi.mock("../chat/use-chat-session", async () => {
+	const { fakeStore } = await import("../../test/fake-store");
+	const chat = fakeStore({
+		keys: { roomCounter: 0 },
+		renameRoom: mocks.renameRoom,
+	});
+	return { useChatSession: () => ({ chat }) };
+});
 
 /** Only the fields the room's name reads. */
 const room = fakeStore({

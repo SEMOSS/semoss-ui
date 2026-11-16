@@ -26,16 +26,16 @@ vi.mock("@semoss/sdk/react", () => ({
 		reset: mocks.reset,
 	}),
 }));
-vi.mock("../chat/use-chat-session", () => ({
-	useChatSession: () => ({
-		chat: {
-			keys: { roomCounter: 0 },
-			optimisticRooms: {},
-			removeOptimisticRoom: vi.fn(),
-			closeRoom: mocks.closeRoom,
-		},
-	}),
-}));
+vi.mock("../chat/use-chat-session", async () => {
+	const { fakeStore } = await import("../../test/fake-store");
+	const chat = fakeStore({
+		keys: { roomCounter: 0 },
+		optimisticRooms: {},
+		removeOptimisticRoom: vi.fn(),
+		closeRoom: mocks.closeRoom,
+	});
+	return { useChatSession: () => ({ chat }) };
+});
 vi.mock("../chat-config/use-chat-config", () => ({
 	useChatConfig: () => ({
 		theme: { featureFlags: {}, sidebar: { chatHistoryDate: false } },

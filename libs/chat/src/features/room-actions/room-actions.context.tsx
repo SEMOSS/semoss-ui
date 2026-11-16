@@ -1,6 +1,8 @@
-import { observer } from "mobx-react-lite";
 import { createContext, type ReactNode, useContext, useState } from "react";
+import { useChatSelector } from "../chat/use-chat-selector";
+import { useChatSession } from "../chat/use-chat-session";
 import type { RoomStore } from "../room/room.store";
+import { useRoomSelector } from "../room/use-room-selector";
 import { SaveWorkspaceDialog } from "../room-settings/room-workspace-creation";
 import { DownloadConversationDialog } from "./download-conversation-dialog";
 import { type RoomActions, useRoomActions } from "./use-room-actions";
@@ -42,37 +44,46 @@ interface RoomActionsProviderProps {
  * place and either menu can open the publish and download dialogs. Wraps the
  * whole room page.
  */
-export const RoomActionsProvider = observer(
-	({ room, children }: RoomActionsProviderProps) => {
-		const actions = useRoomActions(room.roomId);
-		const [isRenaming, setIsRenaming] = useState(false);
-		const [isDownloadOpen, setIsDownloadOpen] = useState(false);
-		const [isPublishOpen, setIsPublishOpen] = useState(false);
-		return (
-			<RoomActionsContext.Provider
-				value={{
-					room: room,
-					actions: actions,
-					isRenaming: isRenaming,
-					startRenaming: () => setIsRenaming(true),
-					stopRenaming: () => setIsRenaming(false),
-					openDownload: () => setIsDownloadOpen(true),
-					openPublish: () => setIsPublishOpen(true),
-				}}
-			>
-				{children}
-				<SaveWorkspaceDialog
-					systemPrompt={room.options.instructions}
-					mcps={room.options.mcp}
-					open={isPublishOpen}
-					onOpenChange={setIsPublishOpen}
-				/>
-				<DownloadConversationDialog
-					roomId={room.roomId}
-					open={isDownloadOpen}
-					onOpenChange={setIsDownloadOpen}
-				/>
-			</RoomActionsContext.Provider>
-		);
-	},
-);
+export const RoomActionsProvider = ({
+	room,
+	children,
+}: RoomActionsProviderProps) => {
+	const { roomId, instructions, mcps } = useRoomSelector(room, (current) => ({
+		roomId: current.roomId,
+		instructions: current.options.instructions,
+		mcps: current.options.mcp,
+	}));
+	// `useRoomActions` reads the favorites again when the room counter moves
+	const { chat } = useChatSession();
+	useChatSelector(chat, (current) => current.keys.roomCounter);
+	const actions = useRoomActions(roomId);
+	const [isRenaming, setIsRenaming] = useState(false);
+	const [isDownloadOpen, setIsDownloadOpen] = useState(false);
+	const [isPublishOpen, setIsPublishOpen] = useState(false);
+	return (
+		<RoomActionsContext.Provider
+			value={{
+				room: room,
+				actions: actions,
+				isRenaming: isRenaming,
+				startRenaming: () => setIsRenaming(true),
+				stopRenaming: () => setIsRenaming(false),
+				openDownload: () => setIsDownloadOpen(true),
+				openPublish: () => setIsPublishOpen(true),
+			}}
+		>
+			{children}
+			<SaveWorkspaceDialog
+				systemPrompt={instructions}
+				mcps={mcps}
+				open={isPublishOpen}
+				onOpenChange={setIsPublishOpen}
+			/>
+			<DownloadConversationDialog
+				roomId={roomId}
+				open={isDownloadOpen}
+				onOpenChange={setIsDownloadOpen}
+			/>
+		</RoomActionsContext.Provider>
+	);
+};

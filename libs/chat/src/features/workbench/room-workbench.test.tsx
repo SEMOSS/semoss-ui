@@ -1,6 +1,5 @@
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import type { FileExplorerHost } from "@semoss/panels";
@@ -8,6 +7,7 @@ import { DEFAULT_CHAT_THEME } from "../chat-config/chat-theme";
 import { NextMessageRoomProvider } from "../conversation/next-message-room.context";
 import { RoomLayout } from "../conversation/room-layout";
 import { RoomStore } from "../room/room.store";
+import { useRoomSelector } from "../room/use-room-selector";
 import { RoomWorkbench } from "./room-workbench";
 import { WorkbenchToggleButton } from "./workbench-toggle-button";
 
@@ -44,15 +44,18 @@ function NotesEditor() {
 	return <textarea aria-label="Notes" defaultValue="Unsaved notes" />;
 }
 
-const RoomLayoutTest = observer(({ room }: { room: RoomStore }) => (
-	<RoomLayout
-		isWorkbenchOpen={room.sidebar.isOpen}
-		header={<WorkbenchToggleButton room={room} />}
-		workbench={<RoomWorkbench room={room} />}
-	>
-		<input aria-label="Draft" defaultValue="Unsent draft" />
-	</RoomLayout>
-));
+const RoomLayoutTest = ({ room }: { room: RoomStore }) => {
+	const isOpen = useRoomSelector(room, (current) => current.sidebar.isOpen);
+	return (
+		<RoomLayout
+			isWorkbenchOpen={isOpen}
+			header={<WorkbenchToggleButton room={room} />}
+			workbench={<RoomWorkbench room={room} />}
+		>
+			<input aria-label="Draft" defaultValue="Unsent draft" />
+		</RoomLayout>
+	);
+};
 
 /** Build a room with a local panel, without starting network-backed room loading. */
 function createRoom(): RoomStore {

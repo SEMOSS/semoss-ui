@@ -1,4 +1,3 @@
-import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
@@ -11,6 +10,7 @@ import { normalizeFolderPath } from "../chat-tools/folders/folder-path";
 import { useNextMessageRoom } from "../conversation/next-message-room.context";
 import { RoomProvider, useRoomOrContext } from "../room/room.context";
 import type { RoomStore } from "../room/room.store";
+import { useRoomSelector } from "../room/use-room-selector";
 import { RoomWorkbenchRail } from "./room-workbench-rail";
 import type { NewRoomWorkbenchPanels } from "./use-workbench-panels";
 
@@ -29,62 +29,65 @@ interface RoomWorkbenchProps {
  * top, above the tabs. Its tab row is its top edge; the room header opens and
  * closes it.
  */
-export const RoomWorkbench = observer(
-	({ room: roomProp, newRoomPanels }: RoomWorkbenchProps) => {
-		const room = useRoomOrContext(roomProp);
-		const { t } = useTranslation("connectors");
-		const isMobile = useIsMobile();
-		const nextMessageRoom = useNextMessageRoom() ?? room;
-		const explorerHost = useMemo<FileExplorerHost>(
-			() => ({
-				secondaryActions: (item) =>
-					item.type === "directory"
-						? []
-						: [
-								{
-									name: t("actions.addToContext"),
-									placement: "end",
-									action: async () => {
-										nextMessageRoom.contextItems.add({
-											path: normalizeFolderPath(
-												item.path,
-											),
-											name: item.name,
-										});
-									},
+export const RoomWorkbench = ({
+	room: roomProp,
+	newRoomPanels,
+}: RoomWorkbenchProps) => {
+	const room = useRoomOrContext(roomProp);
+	const sidebarSnapshot = useRoomSelector(
+		room,
+		(current) => current.sidebarSnapshot,
+	);
+	const { t } = useTranslation("connectors");
+	const isMobile = useIsMobile();
+	const nextMessageRoom = useNextMessageRoom() ?? room;
+	const explorerHost = useMemo<FileExplorerHost>(
+		() => ({
+			secondaryActions: (item) =>
+				item.type === "directory"
+					? []
+					: [
+							{
+								name: t("actions.addToContext"),
+								placement: "end",
+								action: async () => {
+									nextMessageRoom.contextItems.add({
+										path: normalizeFolderPath(item.path),
+										name: item.name,
+									});
 								},
-							],
-			}),
-			[nextMessageRoom, t],
-		);
-		// a left rail opens its labels and menu into the dock; the mobile
-		// toolbar sits above the tabs, so there they open downward
-		const panelRail = ({ vertical }: { vertical: boolean }) => (
-			<RoomWorkbenchRail
-				room={room}
-				newRoomPanels={newRoomPanels}
-				side={vertical ? "right" : "bottom"}
-			/>
-		);
-		return (
-			// The workbench's absolute shell must stay inside this pane.
-			<div className="relative h-full min-h-0 w-full bg-background">
-				<RoomProvider room={room}>
-					<WorkbenchProvider store={room.workbench}>
-						<FileExplorerHostProvider host={explorerHost}>
-							<Workbench
-								snapshot={room.sidebarSnapshot}
-								borderSlots={
-									isMobile
-										? { top: { before: panelRail } }
-										: { left: { before: panelRail } }
-								}
-								mobileTopBorder="toolbar"
-							/>
-						</FileExplorerHostProvider>
-					</WorkbenchProvider>
-				</RoomProvider>
-			</div>
-		);
-	},
-);
+							},
+						],
+		}),
+		[nextMessageRoom, t],
+	);
+	// a left rail opens its labels and menu into the dock; the mobile
+	// toolbar sits above the tabs, so there they open downward
+	const panelRail = ({ vertical }: { vertical: boolean }) => (
+		<RoomWorkbenchRail
+			room={room}
+			newRoomPanels={newRoomPanels}
+			side={vertical ? "right" : "bottom"}
+		/>
+	);
+	return (
+		// The workbench's absolute shell must stay inside this pane.
+		<div className="relative h-full min-h-0 w-full bg-background">
+			<RoomProvider room={room}>
+				<WorkbenchProvider store={room.workbench}>
+					<FileExplorerHostProvider host={explorerHost}>
+						<Workbench
+							snapshot={sidebarSnapshot}
+							borderSlots={
+								isMobile
+									? { top: { before: panelRail } }
+									: { left: { before: panelRail } }
+							}
+							mobileTopBorder="toolbar"
+						/>
+					</FileExplorerHostProvider>
+				</WorkbenchProvider>
+			</RoomProvider>
+		</div>
+	);
+};

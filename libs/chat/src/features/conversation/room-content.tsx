@@ -1,4 +1,3 @@
-import { observer } from "mobx-react-lite";
 import { cn } from "@semoss/ui/next";
 import { useFileDrag } from "../composer/file-drag.context";
 import { RoomComposer } from "../composer/room-composer";
@@ -15,7 +14,7 @@ interface RoomContentProps {
  * A room's conversation and its composer, outlined while a file is dragged
  * over the page.
  */
-export const RoomContent = observer(({ room: roomProp }: RoomContentProps) => {
+export const RoomContent = ({ room: roomProp }: RoomContentProps) => {
 	const room = useRoomOrContext(roomProp);
 	const { isDragging } = useFileDrag();
 
@@ -30,4 +29,4 @@ export const RoomContent = observer(({ room: roomProp }: RoomContentProps) => {
 			<RoomComposer room={room} />
 		</div>
 	);
-});
+};

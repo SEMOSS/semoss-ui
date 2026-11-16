@@ -1,6 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { runInAction } from "mobx";
 import type { ReactElement } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { FILE_PANEL_TYPES } from "@semoss/panels";
@@ -31,16 +30,16 @@ vi.mock("@semoss/sdk/react", async (original) => ({
 	...(await original<typeof import("@semoss/sdk/react")>()),
 	usePixel: () => ({ data: mocks.pinned, refresh: vi.fn() }),
 }));
-vi.mock("../chat/use-chat-session", () => ({
-	useChatSession: () => ({
-		chat: {
-			keys: { roomCounter: 0 },
-			pinRoom: mocks.pinRoom,
-			closeRoom: mocks.closeRoom,
-			addWorkspace: mocks.addWorkspace,
-		},
-	}),
-}));
+vi.mock("../chat/use-chat-session", async () => {
+	const { fakeStore } = await import("../../test/fake-store");
+	const chat = fakeStore({
+		keys: { roomCounter: 0 },
+		pinRoom: mocks.pinRoom,
+		closeRoom: mocks.closeRoom,
+		addWorkspace: mocks.addWorkspace,
+	});
+	return { useChatSession: () => ({ chat }) };
+});
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 	getI18n: () => ({ t: (key: string) => key }),
@@ -332,9 +331,7 @@ test("the cog's Publish as Agent saves the room's instructions and tools", async
 test("the cog leaves out Favorite where the chat history is hidden", async () => {
 	const user = userEvent.setup();
 	const room = createRoom();
-	runInAction(() => {
-		room.theme.featureFlags = { hideChatHistory: true };
-	});
+	room.theme.featureFlags = { hideChatHistory: true };
 	render(withActions(room, <RoomWorkbenchRail room={room} side="right" />));
 
 	await openCog(user);

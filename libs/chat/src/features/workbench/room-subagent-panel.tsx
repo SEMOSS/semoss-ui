@@ -1,5 +1,4 @@
 import { BotIcon } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useTranslation } from "@semoss/i18n";
 import { cn, ScrollArea } from "@semoss/ui/next";
 import type {
@@ -9,6 +8,7 @@ import type {
 import { useWorkbenchPanel } from "@semoss/workbench";
 import { getSubagentState } from "../messages/response-message-subagent";
 import { useRoom } from "../room/room.context";
+import { useRoomSelector } from "../room/use-room-selector";
 
 /** Which subagent a panel is showing. `subagentId` is what dedupes it. */
 interface RoomSubagentParams {
@@ -22,14 +22,15 @@ interface RoomSubagentParams {
  * `RoomStore.getSubagentPart`) so it stays in sync while open. No drill-in into
  * the subagent's own turns yet.
  */
-const RoomSubagentPanel = observer(({ id }: WorkbenchPanelProps) => {
+const RoomSubagentPanel = ({ id }: WorkbenchPanelProps) => {
 	const { config } = useWorkbenchPanel<RoomSubagentParams>(id);
 
 	const room = useRoom();
 	const { t } = useTranslation("tool");
-	const subagent = config?.subagentId
-		? room.getSubagentPart(config.subagentId)
-		: undefined;
+	const subagentId = config?.subagentId;
+	const subagent = useRoomSelector(room, (current) =>
+		subagentId ? current.getSubagentPart(subagentId) : undefined,
+	);
 
 	if (!subagent) {
 		return (
@@ -80,7 +81,7 @@ const RoomSubagentPanel = observer(({ id }: WorkbenchPanelProps) => {
 			</div>
 		</ScrollArea>
 	);
-});
+};
 
 /** One spawned subagent's status and result. */
 export const ROOM_SUBAGENT_PANEL: WorkbenchPanelConfig<RoomSubagentParams> = {

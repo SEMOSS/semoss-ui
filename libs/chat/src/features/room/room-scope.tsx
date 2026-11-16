@@ -1,15 +1,16 @@
-import { observer } from "mobx-react-lite";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { InsightProvider } from "@semoss/sdk/react";
 import { ToolViewProvider } from "@semoss/shared";
 import { Spinner, toast } from "@semoss/ui/next";
 import type { Engine } from "../../types";
+import { useChatSelector } from "../chat/use-chat-selector";
 import { useChatSession } from "../chat/use-chat-session";
 import { useChatConfig } from "../chat-config/use-chat-config";
 import { RoomActionsProvider } from "../room-actions/room-actions.context";
 import { TOOL_VIEW_LIBRARIES } from "../tool-views/tool-view-libraries";
 import { RoomProvider } from "./room.context";
 import type { RoomStore } from "./room.store";
+import { useRoomSelector } from "./use-room-selector";
 
 interface RoomScopeProps {
 	/** The room to open. */
@@ -23,18 +24,30 @@ interface RoomScopeProps {
  * its tool views, and its actions. A room the chat store already
  * holds shows at once; one that cannot load sends the host to a new chat.
  */
-export const RoomScope = observer(({ roomId, children }: RoomScopeProps) => {
+export const RoomScope = ({ roomId, children }: RoomScopeProps) => {
 	const { chat } = useChatSession();
 	const { navigation } = useChatConfig();
 	const [room, setRoom] = useState<RoomStore | null>(() =>
 		roomId ? chat.getCachedRoom(roomId) : null,
 	);
-	const selectedModelRef = useRef<Engine>(chat.models.selected);
+	const { selectedModel, isInitialized } = useChatSelector(
+		chat,
+		(current) => ({
+			selectedModel: current.models.selected,
+			isInitialized: current.isInitialized,
+		}),
+	);
+	const { roomKey, insightId } =
+		useRoomSelector(room, (current) => ({
+			roomKey: current.roomId,
+			insightId: current.insightId,
+		})) ?? {};
+	const selectedModelRef = useRef<Engine>(selectedModel);
 	const openNewChatRef = useRef(navigation.openNewChat);
 
 	useEffect(() => {
-		selectedModelRef.current = chat.models.selected;
-	}, [chat.models.selected]);
+		selectedModelRef.current = selectedModel;
+	}, [selectedModel]);
 
 	useEffect(() => {
 		openNewChatRef.current = navigation.openNewChat;
@@ -44,7 +57,7 @@ export const RoomScope = observer(({ roomId, children }: RoomScopeProps) => {
 		let isCurrent = true;
 		const loadRoom = async () => {
 			// wait for the chat store to initialize
-			if (!chat.isInitialized) {
+			if (!isInitialized) {
 				return;
 			}
 
@@ -84,7 +97,7 @@ export const RoomScope = observer(({ roomId, children }: RoomScopeProps) => {
 		chat.getCachedRoom,
 		chat.loadRoom,
 		chat.setSelectedModel,
-		chat.isInitialized,
+		isInitialized,
 	]);
 
 	if (!room) {
@@ -97,8 +110,8 @@ export const RoomScope = observer(({ roomId, children }: RoomScopeProps) => {
 
 	return (
 		<InsightProvider
-			key={room.roomId}
-			options={{ insightId: room.insightId }}
+			key={roomKey}
+			options={{ insightId }}
 			destroyOnUnmount={false}
 		>
 			<RoomProvider room={room}>
@@ -111,4 +124,4 @@ export const RoomScope = observer(({ roomId, children }: RoomScopeProps) => {
 			</RoomProvider>
 		</InsightProvider>
 	);
-});
+};

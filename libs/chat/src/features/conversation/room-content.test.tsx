@@ -1,6 +1,7 @@
 import { act, render } from "@testing-library/react";
 import type { PropsWithChildren } from "react";
 import { beforeEach, expect, test, vi } from "vitest";
+import { fakeStore } from "../../test/fake-store";
 import type { RoomStore } from "../room/room.store";
 import { RoomContent } from "./room-content";
 
@@ -133,7 +134,7 @@ beforeEach(() => {
 
 test("finishes the stream scroll before a later grouped-tool resize", () => {
 	const response = new mocks.MockResponseMessageStore();
-	const room = {
+	const room = fakeStore({
 		history: [response],
 		latestResponseMessage: response,
 		agentGreeting: null,
@@ -155,15 +156,18 @@ test("finishes the stream scroll before a later grouped-tool resize", () => {
 		compactMessages: vi.fn(),
 		cancelActiveJob: vi.fn(),
 		processTool: vi.fn(),
-	} as unknown as RoomStore;
+	});
 
-	const { getByTestId, rerender } = render(<RoomContent room={room} />);
+	const { getByTestId } = render(
+		<RoomContent room={room as unknown as RoomStore} />,
+	);
 	act(flushAnimationFrames);
 	mocks.scrollTo.mockClear();
 
-	response.setIsThinking(false);
-	const settledRoom = { ...room } as RoomStore;
-	rerender(<RoomContent room={settledRoom} />);
+	act(() => {
+		response.setIsThinking(false);
+		room.notify();
+	});
 	act(flushAnimationFrames);
 
 	expect(mocks.scrollTo).toHaveBeenCalledTimes(1);

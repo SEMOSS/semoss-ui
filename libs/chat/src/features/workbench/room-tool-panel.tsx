@@ -1,6 +1,4 @@
 import { HammerIcon, PanelBottomIcon } from "lucide-react";
-import { observer } from "mobx-react-lite";
-import type { FC } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
@@ -19,6 +17,7 @@ import {
 } from "@semoss/workbench";
 import { ToolsView } from "../mcp/tools-view";
 import { useRoom } from "../room/room.context";
+import { useRoomSelector } from "../room/use-room-selector";
 
 /** Which tool a panel is showing. `toolId` is what dedupes it. */
 interface RoomToolParams {
@@ -34,11 +33,14 @@ interface RoomToolParams {
  * per-panel: it acts on the tool the front tab is showing, so it registers as
  * that panel's control rather than sitting beside the container-level actions.
  */
-const RoomToolInlineControl: FC<WorkbenchPanelProps> = observer(({ id }) => {
+const RoomToolInlineControl = ({ id }: WorkbenchPanelProps) => {
 	const { config } = useWorkbenchPanel<RoomToolParams>(id);
 	const { t } = useTranslation("sidebar");
 	const room = useRoom();
-	const tool = config?.toolId ? room.getTool(config.toolId) : null;
+	const toolId = config?.toolId;
+	const tool = useRoomSelector(room, (current) =>
+		toolId ? current.getTool(toolId) : null,
+	);
 
 	if (!tool) {
 		return null;
@@ -67,9 +69,9 @@ const RoomToolInlineControl: FC<WorkbenchPanelProps> = observer(({ id }) => {
 			<TooltipContent>{t("actions.openInline")}</TooltipContent>
 		</Tooltip>
 	);
-});
+};
 
-const RoomToolPanel = observer(({ id }: WorkbenchPanelProps) => {
+const RoomToolPanel = ({ id }: WorkbenchPanelProps) => {
 	const { config } = useWorkbenchPanel<RoomToolParams>(id);
 
 	const room = useRoom();
@@ -90,7 +92,7 @@ const RoomToolPanel = observer(({ id }: WorkbenchPanelProps) => {
 			toolId={config.toolId}
 		/>
 	);
-});
+};
 
 /** One tool, opened into the room sidebar. */
 export const ROOM_TOOL_PANEL: WorkbenchPanelConfig<RoomToolParams> = {
