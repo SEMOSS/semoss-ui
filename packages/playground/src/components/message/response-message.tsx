@@ -44,10 +44,10 @@ import { getErrorMessage } from "@semoss/utility/error";
 import { getFileExtension } from "@semoss/utility/file";
 import { getImageMimeType } from "@semoss/utility/image";
 import { STREAMING_PLACEHOLDER_ID } from "@/constants";
+import { useChatConfig } from "@/features/chat-config/use-chat-config";
 import { MessageActions } from "@/features/conversation/message-actions";
 import { groupToolActivity } from "@/features/conversation/tool-activity";
 import { useActiveIndex } from "@/hooks/use-active-index";
-import { useRoot } from "@/hooks/use-root";
 import { InputMessageStore } from "@/stores/message/input-message.store";
 import type { ResponseMessageStore } from "@/stores/message/response-message.store";
 import type { RoomStore } from "@/stores/room/room.store";
@@ -121,7 +121,7 @@ interface ResponseMessageProps {
 export const ResponseMessage = observer(
 	({ room, message, subsequentTools = [] }: ResponseMessageProps) => {
 		const { t } = useTranslation("chat");
-		const { root } = useRoot();
+		const { theme } = useChatConfig();
 
 		const allParts = [
 			...message.parts,
@@ -197,8 +197,7 @@ export const ResponseMessage = observer(
 			inputMessage = message.parent;
 		}
 
-		const feedbackTextEnabled =
-			!!root.theme.featureFlags?.enableFeedbackText;
+		const feedbackTextEnabled = !!theme.featureFlags?.enableFeedbackText;
 
 		/**
 		 * Record the feedback
@@ -569,32 +568,29 @@ export const ResponseMessage = observer(
 				<MessageActions
 					isDialogOpen={isDownloadDialogOpen || isFeedbackTextOpen}
 				>
-					{root.theme.featureFlags?.enableRewrite &&
-						parentHasContent && (
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Button
-										disabled={
-											message.isThinking ||
-											!inputMessage?.parent?.parent
-										}
-										variant="ghost"
-										size="icon-sm"
-										aria-label={t(
-											"response.rewriteMessage",
-										)}
-										onClick={() => {
-											rewriteMessage();
-										}}
-									>
-										<RefreshCwIcon aria-hidden="true" />
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent side="bottom">
-									{t("response.rewriteMessage")}
-								</TooltipContent>
-							</Tooltip>
-						)}
+					{theme.featureFlags?.enableRewrite && parentHasContent && (
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									disabled={
+										message.isThinking ||
+										!inputMessage?.parent?.parent
+									}
+									variant="ghost"
+									size="icon-sm"
+									aria-label={t("response.rewriteMessage")}
+									onClick={() => {
+										rewriteMessage();
+									}}
+								>
+									<RefreshCwIcon aria-hidden="true" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent side="bottom">
+								{t("response.rewriteMessage")}
+							</TooltipContent>
+						</Tooltip>
+					)}
 
 					<Tooltip>
 						<TooltipTrigger asChild>

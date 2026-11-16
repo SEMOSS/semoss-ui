@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
 import { Markdown } from "@semoss/ui/next";
-import { useRoot } from "@/hooks";
+import { useChatConfig } from "@/features/chat-config/use-chat-config";
 import type { RoomStore } from "@/stores";
 import {
 	createMarkdownComponents,
@@ -24,21 +24,21 @@ interface RoomGreetingProps {
  */
 export const RoomGreeting: React.FC<RoomGreetingProps> = observer(
 	({ room, greeting }) => {
-		const { root } = useRoot();
+		const { theme } = useChatConfig();
 
 		const components = useMemo(
 			() =>
 				createMarkdownComponents(
 					room,
 					false,
-					!!root.theme.featureFlags?.enableTableExport,
+					!!theme.featureFlags?.enableTableExport,
 				),
-			[room, root.theme.featureFlags?.enableTableExport],
+			[room, theme.featureFlags?.enableTableExport],
 		);
 
 		const urlTransform = useMemo(
-			() => createMarkdownUrlTransform(root.theme.allowedUrlPrefixes),
-			[root.theme.allowedUrlPrefixes],
+			() => createMarkdownUrlTransform(theme.allowedUrlPrefixes),
+			[theme.allowedUrlPrefixes],
 		);
 
 		return (

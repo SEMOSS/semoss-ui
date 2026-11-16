@@ -1,9 +1,9 @@
 import { useEffect, useRef } from "react";
-import { useNavigate } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
+import { useChatConfig } from "@/features/chat-config/use-chat-config";
 import { useChatSession } from "@/hooks/use-chat-session";
 import type { ChatStore } from "@/stores/chat/chat.store";
 
@@ -92,7 +92,7 @@ export interface RoomActions {
 export const useRoomActions = (roomId: string): RoomActions => {
 	const { t } = useTranslation("sidebar");
 	const { chat } = useChatSession();
-	const navigate = useNavigate();
+	const { navigation } = useChatConfig();
 	const pinnedRooms = usePixel<{ ROOM_ID: string }[]>(
 		`META | GetPlaygroundRooms(pinned=[true], sort=["DESC"]);`,
 		{ data: [] },
@@ -122,7 +122,7 @@ export const useRoomActions = (roomId: string): RoomActions => {
 		try {
 			await chat.closeRoom(roomId);
 			toast.success(t("toasts.roomDeletedSuccess"));
-			navigate("/");
+			navigation.onRoomDeleted(roomId);
 		} catch (e) {
 			toast.error(getErrorMessage(e) || t("toasts.failedToDelete"));
 		}

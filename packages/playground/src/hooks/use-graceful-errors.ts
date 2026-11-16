@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { type UseTranslationOptions, useTranslation } from "@semoss/i18n";
-import { useRoot } from "./use-root";
+import { useChatConfig } from "@/features/chat-config/use-chat-config";
 
 /**
  * Custom hook for transforming error messages into user-friendly, localized messages.
@@ -27,9 +27,9 @@ export const useGracefulErrors = (
 	translationOptions?: UseTranslationOptions<undefined>,
 ) => {
 	const { t } = useTranslation("chat", translationOptions);
-	const { root } = useRoot();
+	const { theme } = useChatConfig();
 
-	const gracefulErrors = root.theme.gracefulErrors;
+	const gracefulErrors = theme.gracefulErrors;
 
 	/**
 	 * Transforms an error into a user-friendly, localized message.

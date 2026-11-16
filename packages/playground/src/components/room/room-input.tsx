@@ -60,6 +60,7 @@ import {
 	type PromptLibraryItem,
 } from "@/components/prompts/prompt-library-dialog";
 import { useFileDrag } from "@/contexts/file-drag-context";
+import { useChatConfig } from "@/features/chat-config/use-chat-config";
 import { ConnectorSignInNotice } from "@/features/connectors/components/connector-sign-in-notice";
 import { useUserConnectorsSync } from "@/features/connectors/use-user-connectors-sync";
 import { canChooseAgentMode } from "@/features/conversation/agent-mode-choice";
@@ -76,7 +77,6 @@ import {
 import { useRoomSlashCommands } from "@/features/conversation/use-room-slash-commands";
 import type { NewRoomWorkbenchPanels } from "@/features/workbench/use-workbench-panels";
 import { useGracefulErrors } from "@/hooks/use-graceful-errors";
-import { useRoot } from "@/hooks/use-root";
 import { AGENT_HARNESS_TYPE } from "@/stores/message/agent-harness";
 import type { RoomStore } from "@/stores/room/room.store";
 import type { Engine, MCPConfig, Workspace } from "@/types";
@@ -260,8 +260,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		const [menuOpen, setMenuOpen] = useState(false);
 		const [isScrollable, setIsScrollable] = useState(false);
 		const [inputText, setInputText] = useState("");
-		const { root } = useRoot();
-		const canChooseMode = canChooseAgentMode(root.theme.featureFlags);
+		const { theme } = useChatConfig();
+		const canChooseMode = canChooseAgentMode(theme.featureFlags);
 		// connectors switched on or off in settings reach this chat at once
 		useUserConnectorsSync(room.connectors);
 		const afterMenuClose = useRef<(() => void) | null>(null);
@@ -644,9 +644,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								// Need pb-1 for scroll bar
 								<div className="max-h-24 shrink-0 overflow-y-auto bg-card p-3 pb-1">
 									{files.length > 0 &&
-										root.theme.fileDragDisclaimer && (
+										theme.fileDragDisclaimer && (
 											<P className="-mt-1 pb-2 text-muted-foreground text-xs">
-												{root.theme.fileDragDisclaimer}
+												{theme.fileDragDisclaimer}
 											</P>
 										)}
 									<FilePreviewGrid
@@ -661,8 +661,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								</div>
 							)}
 							<div className="flex min-h-0 min-w-0 flex-1 items-stretch overflow-hidden">
-								{root.theme.featureFlags
-									?.enablePromptOptimizer && (
+								{theme.featureFlags?.enablePromptOptimizer && (
 									<div
 										className={cn(
 											"shrink-0 ps-2",
@@ -706,7 +705,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													ref={contentEditableRef}
 													className={cn(
 														"col-start-1 row-start-1 min-h-16 px-4 pb-3 text-base leading-relaxed outline-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
-														root.theme.featureFlags
+														theme.featureFlags
 															?.enablePromptOptimizer &&
 															"ps-2",
 														hasAttachments
@@ -806,8 +805,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													<div
 														className={cn(
 															"pointer-events-none col-start-1 row-start-1 select-none px-4 pb-3 text-base text-muted-foreground",
-															root.theme
-																.featureFlags
+															theme.featureFlags
 																?.enablePromptOptimizer &&
 																"ps-2",
 															hasAttachments
@@ -837,8 +835,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							<div className="flex shrink-0 flex-wrap items-center gap-1 p-2">
 								<div className="flex min-w-0 max-w-full items-center gap-1">
 									{!(
-										root.theme.featureFlags
-											?.hideToolsInIframe && isIframed
+										theme.featureFlags?.hideToolsInIframe &&
+										isIframed
 									) && (
 										<DropdownMenu
 											open={menuOpen}
@@ -1046,8 +1044,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											</TooltipContent>
 										</Tooltip>
 									</div>
-									{root.theme.featureFlags
-										?.enableModelSelect && (
+									{theme.featureFlags?.enableModelSelect && (
 										<Tooltip
 											disableHoverableContent={false}
 										>

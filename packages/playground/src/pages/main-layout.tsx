@@ -7,7 +7,7 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { matchPath, Outlet, useLocation } from "react-router";
+import { matchPath, Outlet, useLocation, useNavigate } from "react-router";
 import {
 	cn,
 	SidebarInset,
@@ -22,6 +22,10 @@ import { LandingTour } from "@/components/common/landing-tour";
 import { ROOM_PANEL_COMPONENTS } from "@/components/room/panels/room-panel.components";
 import { ChatSessionContext } from "@/contexts/chat-session.context";
 import { TourContext } from "@/contexts/tour-context";
+import {
+	type ChatConfig,
+	ChatConfigContext,
+} from "@/features/chat-config/chat-config.context";
 import { useWorkspaceNavigation } from "@/features/conversation/use-workspace-navigation";
 import { WorkspaceNavigationContext } from "@/features/conversation/workspace-navigation.context";
 import { NavigationButton } from "@/features/navigation/navigation-button";
@@ -36,6 +40,7 @@ export const MainLayout = observer(() => {
 	// React freezes DOM style props in development; keep the observable theme mutable.
 	const layoutStyle = { ...theme.overrides["main-layout"] };
 	const { pathname } = useLocation();
+	const navigate = useNavigate();
 	const [isTourOpen, setIsTourOpen] = useState(false);
 	const [pendingTour, setPendingTour] = useState(false);
 	// Routes with their own header hold the mobile navigation button there.
@@ -62,6 +67,18 @@ export const MainLayout = observer(() => {
 
 		return store;
 	}, [theme]);
+
+	// what chat UI reads from the host: the theme, and where to go
+	const chatConfig = useMemo<ChatConfig>(
+		() => ({
+			theme,
+			navigation: {
+				openRoom: (roomId) => navigate(`/room/${roomId}`),
+				onRoomDeleted: () => navigate("/"),
+			},
+		}),
+		[theme, navigate],
+	);
 
 	// Refs for embed iframe sync
 	const iframeRefs = useRef<Record<string, HTMLIFrameElement | null>>({});
@@ -165,98 +182,106 @@ export const MainLayout = observer(() => {
 				chat: chatStore,
 			}}
 		>
-			<TourContext.Provider
-				value={{
-					isOpen: isTourOpen,
-					startTour: () => setIsTourOpen(true),
-					stopTour: () => setIsTourOpen(false),
-				}}
-			>
-				<SettingsDialogProvider>
-					<LandingTour />
-					<WorkspaceNavigationContext.Provider
-						value={navigation.setWorkAreaOpen}
-					>
-						<PageHeaderContext.Provider value={registerPageHeader}>
-							<SidebarProvider
-								open={navigation.isNavigationOpen}
-								onOpenChange={navigation.setNavigationOpen}
-								style={
-									{
-										"--sidebar-width": "16rem",
-										"--sidebar-width-mobile": "16rem",
-									} as CSSProperties
-								}
+			<ChatConfigContext.Provider value={chatConfig}>
+				<TourContext.Provider
+					value={{
+						isOpen: isTourOpen,
+						startTour: () => setIsTourOpen(true),
+						stopTour: () => setIsTourOpen(false),
+					}}
+				>
+					<SettingsDialogProvider>
+						<LandingTour />
+						<WorkspaceNavigationContext.Provider
+							value={navigation.setWorkAreaOpen}
+						>
+							<PageHeaderContext.Provider
+								value={registerPageHeader}
 							>
-								<GlobalNav />
-								<SidebarInset className="m-0! min-w-0 rounded-none! shadow-none">
-									<GlobalDialog
-										onAcknowledge={() => {
-											if (pendingTour) {
-												setPendingTour(false);
-												setIsTourOpen(true);
-											}
-										}}
-									/>
-									<div
-										data-testid="main-layout"
-										className={cn(
-											"relative flex h-dvh w-full flex-col overflow-hidden bg-background",
-											// room for the open-navigation button, kept while the desktop
-											// navigation is open too so the page never shifts
-											!hasPageHeader && "pt-14 md:pt-10",
-										)}
-										style={layoutStyle}
-									>
-										{!hasPageHeader && <NavigationButton />}
-										<div className="relative min-h-0 w-full flex-1 overflow-hidden">
-											<Outlet />
-											{Object.values(
-												chatStore.embeddedPageMap,
-											).map((item) => {
-												const isActive = matchPath(
-													{
-														path: `/embed/${item.path}`,
-														end: false,
-													},
-													pathname,
-												);
-												return (
-													<iframe
-														key={item.path}
-														ref={(el) => {
-															iframeRefs.current[
-																item.path
-															] = el;
-														}}
-														src={item.url}
-														title={item.path}
-														className="absolute inset-0 h-full w-full border-none"
-														style={{
-															// visibility:hidden removes the iframe from
-															// the browser touch hit-test pipeline on
-															// mobile (opacity:0 alone does not), so
-															// inactive iframes no longer intercept swipe
-															visibility: isActive
-																? "visible"
-																: "hidden",
-															pointerEvents:
-																isActive
-																	? "auto"
-																	: "none",
-														}}
-													/>
-												);
-											})}
+								<SidebarProvider
+									open={navigation.isNavigationOpen}
+									onOpenChange={navigation.setNavigationOpen}
+									style={
+										{
+											"--sidebar-width": "16rem",
+											"--sidebar-width-mobile": "16rem",
+										} as CSSProperties
+									}
+								>
+									<GlobalNav />
+									<SidebarInset className="m-0! min-w-0 rounded-none! shadow-none">
+										<GlobalDialog
+											onAcknowledge={() => {
+												if (pendingTour) {
+													setPendingTour(false);
+													setIsTourOpen(true);
+												}
+											}}
+										/>
+										<div
+											data-testid="main-layout"
+											className={cn(
+												"relative flex h-dvh w-full flex-col overflow-hidden bg-background",
+												// room for the open-navigation button, kept while the desktop
+												// navigation is open too so the page never shifts
+												!hasPageHeader &&
+													"pt-14 md:pt-10",
+											)}
+											style={layoutStyle}
+										>
+											{!hasPageHeader && (
+												<NavigationButton />
+											)}
+											<div className="relative min-h-0 w-full flex-1 overflow-hidden">
+												<Outlet />
+												{Object.values(
+													chatStore.embeddedPageMap,
+												).map((item) => {
+													const isActive = matchPath(
+														{
+															path: `/embed/${item.path}`,
+															end: false,
+														},
+														pathname,
+													);
+													return (
+														<iframe
+															key={item.path}
+															ref={(el) => {
+																iframeRefs.current[
+																	item.path
+																] = el;
+															}}
+															src={item.url}
+															title={item.path}
+															className="absolute inset-0 h-full w-full border-none"
+															style={{
+																// visibility:hidden removes the iframe from
+																// the browser touch hit-test pipeline on
+																// mobile (opacity:0 alone does not), so
+																// inactive iframes no longer intercept swipe
+																visibility:
+																	isActive
+																		? "visible"
+																		: "hidden",
+																pointerEvents:
+																	isActive
+																		? "auto"
+																		: "none",
+															}}
+														/>
+													);
+												})}
+											</div>
+											<GlobalFooter />
 										</div>
-										<GlobalFooter />
-									</div>
-								</SidebarInset>
-							</SidebarProvider>
-						</PageHeaderContext.Provider>
-					</WorkspaceNavigationContext.Provider>
-				</SettingsDialogProvider>
-			</TourContext.Provider>
+									</SidebarInset>
+								</SidebarProvider>
+							</PageHeaderContext.Provider>
+						</WorkspaceNavigationContext.Provider>
+					</SettingsDialogProvider>
+				</TourContext.Provider>
+			</ChatConfigContext.Provider>
 		</ChatSessionContext.Provider>
 	);
 });

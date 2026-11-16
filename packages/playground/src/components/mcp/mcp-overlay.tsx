@@ -22,7 +22,7 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
-import { useRoot } from "@/hooks/use-root";
+import { useChatConfig } from "@/features/chat-config/use-chat-config";
 import type { Workspace } from "@/types";
 import { mcpToPlatformUrl, splitMcpByType } from "@/utility/mcp-utils";
 import { NewKnowledgeFormBody } from "../knowledge/new-knowledge-form-body";
@@ -92,7 +92,7 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 	onClose,
 }) => {
 	const { t } = useTranslation(["mcp", "knowledge", "common", "room"]);
-	const { root } = useRoot();
+	const { theme } = useChatConfig();
 
 	const [knowledge, setKnowledge] = useState<MCPConfig[]>(
 		() => splitMcpByType(values).knowledge,
@@ -409,11 +409,11 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 										}}
 										autoFocus
 										enableKnowledgeMCP={
-											root.theme.featureFlags
+											theme.featureFlags
 												?.enableKnowledgeMCP
 										}
 										getPlatformUrl={
-											root.theme.featureFlags
+											theme.featureFlags
 												?.showPlatformLinks
 												? mcpToPlatformUrl
 												: undefined
@@ -433,15 +433,14 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 										onChange={setToolbox}
 										autoFocus
 										enableKnowledgeMCP={
-											root.theme.featureFlags
+											theme.featureFlags
 												?.enableKnowledgeMCP
 										}
 										showSystemTools={
-											root.theme.featureFlags
-												?.showSystemTools
+											theme.featureFlags?.showSystemTools
 										}
 										getPlatformUrl={
-											root.theme.featureFlags
+											theme.featureFlags
 												?.showPlatformLinks
 												? mcpToPlatformUrl
 												: undefined

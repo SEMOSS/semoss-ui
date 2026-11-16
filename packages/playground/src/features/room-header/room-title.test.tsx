@@ -7,14 +7,18 @@ import type { RoomStore } from "@/stores/room/room.store";
 import { RoomTitle } from "./room-title";
 
 const mocks = vi.hoisted(() => ({
-	navigate: vi.fn(),
+	onRoomDeleted: vi.fn(),
 	renameRoom: vi.fn(),
 }));
 
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
-vi.mock("react-router", () => ({ useNavigate: () => mocks.navigate }));
+vi.mock("@/features/chat-config/use-chat-config", () => ({
+	useChatConfig: () => ({
+		navigation: { openRoom: vi.fn(), onRoomDeleted: mocks.onRoomDeleted },
+	}),
+}));
 vi.mock("@semoss/sdk/react", () => ({
 	usePixel: () => ({ data: [], refresh: vi.fn() }),
 }));
@@ -33,7 +37,7 @@ const room = {
 } as unknown as RoomStore;
 
 beforeEach(() => {
-	mocks.navigate.mockReset();
+	mocks.onRoomDeleted.mockReset();
 	mocks.renameRoom.mockReset().mockResolvedValue(undefined);
 });
 

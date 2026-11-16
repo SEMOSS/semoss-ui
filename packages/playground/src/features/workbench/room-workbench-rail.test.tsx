@@ -13,7 +13,7 @@ import { RoomWorkbenchRail } from "./room-workbench-rail";
 import type { NewRoomWorkbenchPanels } from "./use-workbench-panels";
 
 const mocks = vi.hoisted(() => ({
-	navigate: vi.fn(),
+	onRoomDeleted: vi.fn(),
 	pinRoom: vi.fn(),
 	closeRoom: vi.fn(),
 	addWorkspace: vi.fn(),
@@ -23,7 +23,11 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/features/settings/settings-dialog.context", () => ({
 	useSettingsDialog: () => ({ openSettings: vi.fn() }),
 }));
-vi.mock("react-router", () => ({ useNavigate: () => mocks.navigate }));
+vi.mock("@/features/chat-config/use-chat-config", () => ({
+	useChatConfig: () => ({
+		navigation: { openRoom: vi.fn(), onRoomDeleted: mocks.onRoomDeleted },
+	}),
+}));
 // the cog's actions read the favorites and act on the chat store; the room
 // itself still needs the real SDK module around them
 vi.mock("@semoss/sdk/react", async (original) => ({
@@ -47,7 +51,7 @@ vi.mock("@semoss/i18n", () => ({
 
 // a desktop window: the rail's icons are the compact size
 beforeEach(() => {
-	for (const mock of [mocks.navigate, mocks.pinRoom, mocks.closeRoom])
+	for (const mock of [mocks.onRoomDeleted, mocks.pinRoom, mocks.closeRoom])
 		mock.mockReset();
 	mocks.addWorkspace.mockReset().mockResolvedValue("saved-agent");
 	mocks.pinned = [];
@@ -293,7 +297,9 @@ test("the cog's Delete removes the room and leaves its page", async () => {
 	);
 
 	expect(mocks.closeRoom).toHaveBeenCalledWith("panel-rail");
-	await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith("/"));
+	await waitFor(() =>
+		expect(mocks.onRoomDeleted).toHaveBeenCalledWith("panel-rail"),
+	);
 });
 
 test("the cog's Publish as Agent saves the room's instructions and tools", async () => {

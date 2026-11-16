@@ -19,12 +19,12 @@ import {
 	zodResolver,
 } from "@semoss/ui/next";
 import { MCPOverlay } from "@/components/mcp/mcp-overlay";
+import { useChatConfig } from "@/features/chat-config/use-chat-config";
 import { RoomToolsDefaultSection } from "@/features/chat-tools/components/room-tools-default-section";
 import { RoomToolsToolboxesSection } from "@/features/chat-tools/components/room-tools-toolboxes-section";
 import { SectionInfoTooltip } from "@/features/chat-tools/components/section-info-tooltip";
 import { canChooseAgentMode } from "@/features/conversation/agent-mode-choice";
 import { RoomSelectedResources } from "@/features/conversation/room-selected-resources";
-import { useRoot } from "@/hooks/use-root";
 import type { RoomStore } from "@/stores/room/room.store";
 import { isRemovableToolbox, splitMcpByType } from "@/utility/mcp-utils";
 
@@ -77,7 +77,7 @@ export const RoomOptionsForm = observer(
 		onDefaultAgentChange,
 	}: RoomOptionsFormProps) => {
 		const { t } = useTranslation(["room", "common", "chatTools"]);
-		const { root } = useRoot();
+		const { theme } = useChatConfig();
 		const id = useId();
 		const form = useForm<InstructionsValues>({
 			values: { instructions: options.instructions },
@@ -165,7 +165,7 @@ export const RoomOptionsForm = observer(
 							</Button>
 						</Field>
 					)}
-					{root.theme.featureFlags?.enableModelSelect && (
+					{theme.featureFlags?.enableModelSelect && (
 						<Field>
 							<FieldLabel htmlFor={`${id}-model`}>
 								{t("room:form.modelLabel")}
@@ -232,7 +232,7 @@ export const RoomOptionsForm = observer(
 						}
 						onRemove={handleRemove}
 					/>
-					{root.theme.featureFlags?.enableTemperature && (
+					{theme.featureFlags?.enableTemperature && (
 						<Field>
 							<FieldLabel htmlFor={`${id}-temperature`}>
 								{t("room:form.temperatureLabel")} (
@@ -318,9 +318,7 @@ export const RoomOptionsForm = observer(
 				<MCPOverlay
 					open={overlay.isOpen}
 					disabled={disabled}
-					allowDefaultAgent={canChooseAgentMode(
-						root.theme.featureFlags,
-					)}
+					allowDefaultAgent={canChooseAgentMode(theme.featureFlags)}
 					isDefaultAgent={
 						onDefaultAgentChange
 							? isAgentMode && !options.workspace

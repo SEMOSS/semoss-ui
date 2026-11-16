@@ -1,7 +1,8 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo } from "react";
 import { Markdown } from "@semoss/ui/next";
-import { type ChunkStatus, useRoot } from "@/hooks";
+import { useChatConfig } from "@/features/chat-config/use-chat-config";
+import type { ChunkStatus } from "@/hooks";
 import { useMarkdownTypewriter } from "@/hooks/use-markdown-typewriter";
 import type { ResponseMessageStore } from "@/stores";
 import {
@@ -37,7 +38,7 @@ interface ResponseMessageTextMdProps {
 
 export const ResponseMessageTextMd: React.FC<ResponseMessageTextMdProps> =
 	observer(({ content, status, message, onComplete, isFirstView }) => {
-		const { root } = useRoot();
+		const { theme } = useChatConfig();
 
 		// ── Typewriter ────────────────────────────────────────────────────────────
 		// On a first view the typewriter animates the whole chunk from 0 (even if
@@ -59,19 +60,19 @@ export const ResponseMessageTextMd: React.FC<ResponseMessageTextMdProps> =
 				createMarkdownComponents(
 					message.room,
 					isPreviewLoading,
-					!!root.theme.featureFlags?.enableTableExport,
+					!!theme.featureFlags?.enableTableExport,
 				),
 			[
 				message.room,
 				isPreviewLoading,
-				root.theme.featureFlags?.enableTableExport,
+				theme.featureFlags?.enableTableExport,
 			],
 		);
 
 		// ── URL transform ─────────────────────────────────────────────────────────
 		const urlTransform = useMemo(
-			() => createMarkdownUrlTransform(root.theme.allowedUrlPrefixes),
-			[root.theme.allowedUrlPrefixes],
+			() => createMarkdownUrlTransform(theme.allowedUrlPrefixes),
+			[theme.allowedUrlPrefixes],
 		);
 
 		// ── Effects ───────────────────────────────────────────────────────────────

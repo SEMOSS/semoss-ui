@@ -2,7 +2,7 @@ import type React from "react";
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { MentionPlugin } from "@/components";
-import { useRoot } from "@/hooks";
+import { useChatConfig } from "@/features/chat-config/use-chat-config";
 import { useSlashCommands } from "./context";
 import { filterSlashCommands, SlashCommandMenu } from "./menu";
 import type { SlashCommand } from "./types";
@@ -90,11 +90,11 @@ export const SlashCommandPlugin: React.FC<{
 	isLoading?: boolean;
 	hasTools?: boolean;
 }> = ({ isLoading, hasTools }) => {
-	const { root } = useRoot();
+	const { theme } = useChatConfig();
 	const { commands } = useSlashCommands();
 	const isBusy = Boolean(isLoading || hasTools);
 
-	if (root.theme.featureFlags?.hideToolsInIframe && isIframed) return null;
+	if (theme.featureFlags?.hideToolsInIframe && isIframed) return null;
 
 	/**
 	 * Runs a picked command, unless it is locked while busy.

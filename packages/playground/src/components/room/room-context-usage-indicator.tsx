@@ -15,8 +15,8 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { useChatConfig } from "@/features/chat-config/use-chat-config";
 import { useChatSession } from "@/hooks/use-chat-session";
-import { useRoot } from "@/hooks/use-root";
 import type { RoomStore } from "@/stores/room/room.store";
 
 type CompactionStrategy = "TOOL_PRUNE" | "SUMMARY" | "AUTO";
@@ -175,11 +175,11 @@ export const RoomContextUsageIndicator = observer(
 	}: RoomContextUsageIndicatorProps) => {
 		const { t } = useTranslation("room");
 		const { chat } = useChatSession();
-		const { root } = useRoot();
+		const { theme } = useChatConfig();
 		const [open, setOpen] = useState(false);
 		const [compactionStrategy, setCompactionStrategy] =
 			useState<CompactionStrategy>(
-				root.theme.defaultCompactionStrategy ?? "AUTO",
+				theme.defaultCompactionStrategy ?? "AUTO",
 			);
 		const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 		const isHovering = useRef(false);

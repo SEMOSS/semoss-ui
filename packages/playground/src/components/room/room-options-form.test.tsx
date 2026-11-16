@@ -13,8 +13,8 @@ vi.mock("@semoss/i18n", () => ({
 		i18n: { language: "en" },
 	}),
 }));
-vi.mock("@/hooks/use-root", () => ({
-	useRoot: () => ({ root: { theme: { featureFlags: {} } } }),
+vi.mock("@/features/chat-config/use-chat-config", () => ({
+	useChatConfig: () => ({ theme: { featureFlags: {} } }),
 }));
 vi.mock("@semoss/shared", async (original) => ({
 	...(await original<typeof import("@semoss/shared")>()),

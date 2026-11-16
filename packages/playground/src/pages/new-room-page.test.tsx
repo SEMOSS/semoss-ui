@@ -119,6 +119,9 @@ vi.mock("@semoss/sdk/react", async (original) => ({
 		selector(mocks.session),
 }));
 vi.mock("@/hooks/use-root", () => ({ useRoot: () => ({ root }) }));
+vi.mock("@/features/chat-config/use-chat-config", () => ({
+	useChatConfig: () => ({ theme: root.theme }),
+}));
 vi.mock("@/hooks/use-playground-theme", () => ({
 	usePlaygroundTheme: () => root.theme,
 }));

@@ -82,9 +82,9 @@ vi.mock("@/contexts", async (importOriginal) => ({
 	useFileDrag: () => ({ openFilePicker }),
 }));
 const featureFlags: Record<string, boolean> = {};
-vi.mock("@/hooks/use-root", () => ({
-	useRoot: () => ({
-		root: { theme: { featureFlags, defaultCompactionStrategy: "AUTO" } },
+vi.mock("@/features/chat-config/use-chat-config", () => ({
+	useChatConfig: () => ({
+		theme: { featureFlags, defaultCompactionStrategy: "AUTO" },
 	}),
 }));
 vi.mock("@/hooks/use-graceful-errors", () => ({

@@ -1,6 +1,5 @@
 import { StarIcon } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router";
 import { useTranslation } from "@semoss/i18n";
 import { ProjectSelect } from "@semoss/shared";
 import {
@@ -21,6 +20,7 @@ import {
 	getDateBucket,
 	parseTimestampWithUtcDefault,
 } from "@semoss/utility/date";
+import { useChatConfig } from "@/features/chat-config/use-chat-config";
 import { RoomAgentAvatar } from "@/features/room-list/room-agent-avatar";
 import { getRoomDate } from "@/features/room-list/room-list";
 import { useRoomSearch } from "./use-room-search";
@@ -47,7 +47,7 @@ export const RoomSearchDialog = ({
 	onOpenChange,
 }: RoomSearchDialogProps) => {
 	const { t } = useTranslation("sidebar");
-	const navigate = useNavigate();
+	const { navigation } = useChatConfig();
 	const [query, setQuery] = useState("");
 	const [agent, setAgent] = useState<AgentChoice | null>(null);
 	const debouncedQuery = useDebouncedValue(query);
@@ -70,7 +70,7 @@ export const RoomSearchDialog = ({
 
 	const handleSelect = (roomId: string) => {
 		handleOpenChange(false);
-		navigate(`/room/${roomId}`);
+		navigation.openRoom(roomId);
 	};
 
 	return (

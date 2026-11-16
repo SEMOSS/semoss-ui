@@ -15,8 +15,8 @@ vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
 vi.mock("@semoss/sdk/react", () => ({ useSessionPixel: () => query }));
-vi.mock("@/hooks/use-root", () => ({
-	useRoot: () => ({ root: { theme: { featureFlags: {} } } }),
+vi.mock("@/features/chat-config/use-chat-config", () => ({
+	useChatConfig: () => ({ theme: { featureFlags: {} } }),
 }));
 vi.mock("@semoss/shared", () => ({
 	MCPSelector: ({ values }: { values: MCPConfig[] }) => (
