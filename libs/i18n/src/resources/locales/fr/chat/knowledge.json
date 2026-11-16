@@ -36,8 +36,7 @@
 		"noDocuments": "Aucun document trouvé."
 	},
 	"documents": {
-		"title": "Documents",
-		"description": "Fichiers actuellement associés à cette base de connaissances."
+		"title": "Documents"
 	},
 	"embedDocuments": {
 		"title": "Intégrer des documents dans une source existante",
@@ -62,7 +61,6 @@
 	"detail": {
 		"knowledge": "Connaissances",
 		"embedDocuments": "Intégrer des documents",
-		"newKnowledgeCreated": "Une nouvelle base de connaissances a été créée. Vous pouvez maintenant la sélectionner pour intégrer des documents supplémentaires.",
 		"documentsDescription": "Documents actuellement intégrés dans cette base de connaissances.",
 		"failedToLoadDocuments": "Échec du chargement des documents."
 	},

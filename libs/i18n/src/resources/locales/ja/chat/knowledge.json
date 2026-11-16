@@ -36,8 +36,7 @@
 		"noDocuments": "ドキュメントが見つかりません。"
 	},
 	"documents": {
-		"title": "ドキュメント",
-		"description": "このナレッジストアに現在関連付けられているファイル。"
+		"title": "ドキュメント"
 	},
 	"embedDocuments": {
 		"title": "既存ソースにドキュメントを埋め込む",
@@ -62,7 +61,6 @@
 	"detail": {
 		"knowledge": "ナレッジ",
 		"embedDocuments": "ドキュメントを埋め込む",
-		"newKnowledgeCreated": "新しいナレッジストアが作成されました。追加のドキュメントを埋め込むために選択できます。",
 		"documentsDescription": "このナレッジストアに現在埋め込まれているドキュメント。",
 		"failedToLoadDocuments": "ドキュメントの読み込みに失敗しました。"
 	},

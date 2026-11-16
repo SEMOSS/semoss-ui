@@ -61,7 +61,6 @@ import { getErrorMessage } from "@semoss/utility/error";
 import { getFileExtension } from "@semoss/utility/file";
 import { getImageMimeType } from "@semoss/utility/image";
 import { EmbedDocumentsOverlay } from "@/features/knowledge/embed-documents-overlay";
-import { NewKnowledgeOverlay } from "@/features/knowledge/new-knowledge-overlay";
 
 /** A knowledge source (a vector database), as `MyEngines` returns it. */
 type KnowledgeEngine = {
@@ -269,7 +268,6 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 		{ data: [] },
 	);
 
-	const [isNewKnowledgeOpen, setIsNewKnowledgeOpen] = useState(false);
 	const [isEmbedDocumentsOpen, setIsEmbedDocumentsOpen] = useState(false);
 	const [docSortBy, setDocSortBy] = useState<"name" | "size" | "date">(
 		"name",
@@ -582,18 +580,6 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 						</Button>
 					</div>
 				</div>
-
-				<NewKnowledgeOverlay
-					open={isNewKnowledgeOpen}
-					onClose={(knowledgeCreated) => {
-						setIsNewKnowledgeOpen(false);
-						if (knowledgeCreated) {
-							toast.info(
-								t("knowledge:detail.newKnowledgeCreated"),
-							);
-						}
-					}}
-				/>
 
 				<EmbedDocumentsOverlay
 					open={isEmbedDocumentsOpen}

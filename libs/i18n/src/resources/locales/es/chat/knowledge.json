@@ -36,8 +36,7 @@
 		"noDocuments": "No se encontraron documentos."
 	},
 	"documents": {
-		"title": "Documentos",
-		"description": "Archivos actualmente asociados con este almacén de conocimiento."
+		"title": "Documentos"
 	},
 	"embedDocuments": {
 		"title": "Insertar documentos en fuente existente",
@@ -62,7 +61,6 @@
 	"detail": {
 		"knowledge": "Conocimiento",
 		"embedDocuments": "Insertar documentos",
-		"newKnowledgeCreated": "Se ha creado un nuevo almacén de conocimiento. Ahora puedes seleccionarlo para insertar documentos adicionales.",
 		"documentsDescription": "Documentos actualmente insertados en este almacén de conocimiento.",
 		"failedToLoadDocuments": "Error al cargar los documentos."
 	},

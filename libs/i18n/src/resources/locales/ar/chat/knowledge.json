@@ -36,8 +36,7 @@
 		"noDocuments": "لم يتم العثور على مستندات."
 	},
 	"documents": {
-		"title": "المستندات",
-		"description": "الملفات المرتبطة حالياً بمخزن المعرفة هذا."
+		"title": "المستندات"
 	},
 	"embedDocuments": {
 		"title": "تضمين المستندات في مصدر موجود",
@@ -62,7 +61,6 @@
 	"detail": {
 		"knowledge": "المعرفة",
 		"embedDocuments": "تضمين المستندات",
-		"newKnowledgeCreated": "تم إنشاء مخزن معرفة جديد. يمكنك الآن تحديده لتضمين مستندات إضافية.",
 		"documentsDescription": "المستندات المضمنة حالياً في مخزن المعرفة هذا.",
 		"failedToLoadDocuments": "فشل تحميل المستندات."
 	},

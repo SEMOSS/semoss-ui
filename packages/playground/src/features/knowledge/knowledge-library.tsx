@@ -19,11 +19,6 @@ import {
 	CommandInput,
 	CommandItem,
 	CommandList,
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
@@ -40,7 +35,6 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { getErrorMessage } from "@semoss/utility/error";
 import { NewKnowledgeOverlay } from "@/features/knowledge/new-knowledge-overlay";
 
 /** A knowledge source (a vector database), shaped for the library's list. */
@@ -61,22 +55,6 @@ type DocumentLibraryEngine = {
 	dateCreated: string;
 	/** Whether the user has favorited the engine, per the server. */
 	favorite: boolean;
-};
-
-/** A document in a knowledge source, as `ListDocumentsInVectorDatabase` returns it. */
-type EngineAsset = {
-	/** The document's name. */
-	name?: string;
-	/** The document's path. */
-	path?: string;
-	/** The entry's type; folders are left out of the list. */
-	type?: string;
-	/** The document's file name. */
-	fileName?: string;
-	/** When the document last changed. */
-	lastModified?: string;
-	/** The document's size. */
-	fileSize?: string;
 };
 
 /**
@@ -117,12 +95,6 @@ export const KnowledgeLibrary = () => {
 	);
 	const [isNewKnowledgeOpen, setIsNewKnowledgeOpen] = useState(false);
 
-	const [isDocumentsDialogOpen, setIsDocumentsDialogOpen] = useState(false);
-	const [selectedEngine, setSelectedEngine] =
-		useState<DocumentLibraryEngine | null>(null);
-	const [engineAssets, setEngineAssets] = useState<EngineAsset[]>([]);
-	const [isLoadingAssets, setIsLoadingAssets] = useState(false);
-	const [assetsError, setAssetsError] = useState<string | null>(null);
 	const [favorites, setFavorites] = useState<Record<string, boolean>>({});
 
 	const { run } = useSessionInsight();
@@ -182,50 +154,6 @@ export const KnowledgeLibrary = () => {
 		});
 		return Array.from(tags).sort();
 	}, [data]);
-
-	// List the selected source's documents while the documents dialog is open
-	useEffect(() => {
-		if (!isDocumentsDialogOpen || !selectedEngine?.id) {
-			return;
-		}
-
-		let cancelled = false;
-		setIsLoadingAssets(true);
-		setAssetsError(null);
-		setEngineAssets([]);
-
-		void run<
-			{ fileName: string; lastModified: string; fileSize: string }[]
-		>(`ListDocumentsInVectorDatabase(engine=["${selectedEngine.id}"]);`)
-			.then(throwOnPixelErrors)
-			.then((result) => {
-				if (cancelled) {
-					return;
-				}
-
-				const output = result?.pixelReturn?.[0]?.output;
-				const assets = Array.isArray(output)
-					? (output as EngineAsset[])
-					: [];
-				setEngineAssets(assets);
-			})
-			.catch((e) => {
-				if (cancelled) {
-					return;
-				}
-				setAssetsError(getErrorMessage(e));
-			})
-			.finally(() => {
-				if (cancelled) {
-					return;
-				}
-				setIsLoadingAssets(false);
-			});
-
-		return () => {
-			cancelled = true;
-		};
-	}, [run, isDocumentsDialogOpen, selectedEngine?.id]);
 
 	const formatted: DocumentLibraryEngine[] =
 		data[0]?.reduce((acc, item) => {
@@ -315,27 +243,6 @@ export const KnowledgeLibrary = () => {
 			return b.dateCreated.localeCompare(a.dateCreated);
 		});
 
-	const documentFiles = useMemo(() => {
-		return engineAssets
-			.filter((a) => a && typeof a === "object")
-			.filter((a) => (a.type ? a.type !== "folder" : true));
-	}, [engineAssets]);
-
-	/**
-	 * The name to show for a document.
-	 *
-	 * @param f - The document.
-	 * @returns Its file name, name, or the last part of its path.
-	 */
-	const getDisplayName = (f: EngineAsset) => {
-		return (
-			f.fileName ||
-			f.name ||
-			(f.path ? f.path.split(/[/\\]/).pop() : "") ||
-			"Untitled"
-		);
-	};
-
 	/**
 	 * Favorites or unfavorites a source, optimistically.
 	 *
@@ -388,69 +295,6 @@ export const KnowledgeLibrary = () => {
 						}
 					}}
 				/>
-
-				<Dialog
-					open={isDocumentsDialogOpen}
-					onOpenChange={(open) => {
-						setIsDocumentsDialogOpen(open);
-						if (!open) {
-							setSelectedEngine(null);
-							setEngineAssets([]);
-							setAssetsError(null);
-							setIsLoadingAssets(false);
-						}
-					}}
-				>
-					<DialogContent className="max-w-2xl">
-						<DialogHeader>
-							<DialogTitle>
-								{t("knowledge:documents.title")}
-								{selectedEngine?.engine_name
-									? `: ${selectedEngine.engine_name}`
-									: ""}
-							</DialogTitle>
-							<DialogDescription>
-								{t("knowledge:documents.description")}
-							</DialogDescription>
-						</DialogHeader>
-
-						<div className="space-y-3 px-0">
-							{isLoadingAssets ? (
-								<div className="text-muted-foreground text-sm">
-									{t("knowledge:messages.loadingDocuments")}
-								</div>
-							) : assetsError ? (
-								<div className="text-destructive text-sm">
-									{assetsError}
-								</div>
-							) : documentFiles.length === 0 ? (
-								<div className="text-muted-foreground text-sm">
-									{t("knowledge:messages.noDocuments")}
-								</div>
-							) : (
-								<ul className="divide-y rounded-md border">
-									{documentFiles.map((f, idx) => (
-										<li
-											key={`${f.path || getDisplayName(f)}-${idx}`}
-											className="flex items-center justify-between gap-3 px-3 py-2"
-										>
-											<div className="min-w-0">
-												<p className="truncate font-medium text-sm">
-													{getDisplayName(f)}
-												</p>
-												{f.path ? (
-													<p className="truncate text-muted-foreground text-xs">
-														{f.path}
-													</p>
-												) : null}
-											</div>
-										</li>
-									))}
-								</ul>
-							)}
-						</div>
-					</DialogContent>
-				</Dialog>
 
 				<Card className="rounded-none border-0 border-b bg-transparent shadow-none">
 					<CardHeader className="px-0 pb-3">

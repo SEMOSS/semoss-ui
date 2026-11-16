@@ -36,8 +36,7 @@
 		"noDocuments": "Geen documenten gevonden."
 	},
 	"documents": {
-		"title": "Documenten",
-		"description": "Bestanden die momenteel aan deze kennisopslagplaats zijn gekoppeld."
+		"title": "Documenten"
 	},
 	"embedDocuments": {
 		"title": "Documenten in bestaande bron embedden",
@@ -62,7 +61,6 @@
 	"detail": {
 		"knowledge": "Kennis",
 		"embedDocuments": "Documenten embedden",
-		"newKnowledgeCreated": "Er is een nieuwe kennisopslagplaats aangemaakt. U kunt deze nu selecteren om aanvullende documenten te embedden.",
 		"documentsDescription": "Documenten die momenteel in deze kennisopslagplaats zijn geëmbed.",
 		"failedToLoadDocuments": "Laden van documenten mislukt."
 	},

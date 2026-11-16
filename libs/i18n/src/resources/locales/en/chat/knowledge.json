@@ -36,8 +36,7 @@
 		"noDocuments": "No documents found."
 	},
 	"documents": {
-		"title": "Documents",
-		"description": "Files currently associated with this knowledge store."
+		"title": "Documents"
 	},
 	"embedDocuments": {
 		"title": "Embed Documents into Existing Source",
@@ -62,7 +61,6 @@
 	"detail": {
 		"knowledge": "Knowledge",
 		"embedDocuments": "Embed documents",
-		"newKnowledgeCreated": "A new knowledge store was created. You can now select it to embed additional documents.",
 		"documentsDescription": "Documents currently embedded in this knowledge store.",
 		"failedToLoadDocuments": "Failed to load documents."
 	},
