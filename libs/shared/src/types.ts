@@ -208,6 +208,16 @@ export interface ThemeMap {
 			model?: Engine;
 			/** Default temperature for new rooms (0–1). Only used when enableTemperature is true. */
 			temperature?: number;
+			/**
+			 * The mode a new chat starts in when neither the session nor the user
+			 * names one. Only used where agent mode is offered.
+			 */
+			mode?: "chat" | "agent";
+			/**
+			 * The saved agent a new chat in agent mode starts with when neither
+			 * the session nor the user names one.
+			 */
+			agentId?: string;
 		};
 
 		/**

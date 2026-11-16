@@ -28,6 +28,11 @@ export interface ConnectorSavedFile {
 	name: string;
 	/** The viewer it came from. */
 	service: ConnectorViewerService;
+	/**
+	 * What that viewer knows the item it was saved from by. Set on the file
+	 * `onSaved` is handed, so a host can mark the item through `savedItems`.
+	 */
+	itemKey?: string;
 }
 
 /** Transient actions a host can display in its own viewer chrome. */
@@ -43,6 +48,27 @@ export interface ConnectorViewerControls {
 export interface ConnectorFocusRequest {
 	itemKey: string;
 	requestId: number;
+}
+
+/** How a host marks the items it already holds, in a viewer that lists them. */
+export interface ConnectorSavedItems {
+	/** Whether the host holds the item, by the `itemKey` of its saved file. */
+	isSaved: (itemKey: string) => boolean;
+	/**
+	 * What a held item says in place of the save action, such as
+	 * `In your Digital Twin`.
+	 */
+	label: string;
+}
+
+/** What a host can also give a viewer that marks the items the host holds. */
+export interface ConnectorSavedItemsProps {
+	/**
+	 * The items the host already holds. Each shows as held where the viewer
+	 * would offer to save it: on its row, and above it once it is open. Its
+	 * right-click menu still saves, since the host may have let its copy go.
+	 */
+	savedItems?: ConnectorSavedItems;
 }
 
 /** What a host gives every connector viewer. */

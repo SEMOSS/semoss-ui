@@ -45,6 +45,7 @@ import {
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import { createGuardrailEngine } from "@/api/guardrails";
+import { CATALOG_NAME_KEY } from "@/components/import/shared/import-form.constants";
 import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
 import { ImportEngineSelect } from "../shared/import-engine-select";
@@ -239,7 +240,11 @@ export const GuardrailForm = ({
 		const newFormData = { ...formData };
 
 		(fields as Array<{ key: string; type: string }>).forEach((f) => {
-			if (f.type === "parameter-list" || f.type === "string-list") {
+			if (
+				f.type === "parameter-list" ||
+				f.type === "string-list" ||
+				f.type === "tags"
+			) {
 				const value = newFormData[f.key];
 				if (Array.isArray(value)) {
 					newFormData[f.key] =
@@ -252,7 +257,7 @@ export const GuardrailForm = ({
 		try {
 			const engineId = await createGuardrailEngine(
 				insightId,
-				formData.MODEL_NAME,
+				formData[CATALOG_NAME_KEY],
 				newFormData,
 			);
 			toast.success("Successfully added new guardrail to catalog");

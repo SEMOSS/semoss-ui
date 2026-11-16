@@ -28,6 +28,24 @@ Object.defineProperty(globalThis, "ClipboardEvent", {
 	value: TestClipboardEvent,
 });
 
+// RichTextPlugin checks drag events when routing clipboard files; jsdom omits DragEvent.
+class TestDragEvent extends MouseEvent {
+	readonly dataTransfer: DataTransfer | null;
+
+	constructor(
+		type: string,
+		init?: MouseEventInit & { dataTransfer?: DataTransfer },
+	) {
+		super(type, init);
+		this.dataTransfer = init?.dataTransfer ?? null;
+	}
+}
+
+Object.defineProperty(globalThis, "DragEvent", {
+	configurable: true,
+	value: TestDragEvent,
+});
+
 Object.defineProperty(Range.prototype, "getBoundingClientRect", {
 	configurable: true,
 	value: () => new DOMRect(),

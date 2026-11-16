@@ -43,8 +43,13 @@ export const useDeleteGovernanceResources = (
 		for (const resource of resources) {
 			const request =
 				entry.kind === "PROJECT"
-					? getDeleteRequest("PROJECT", resource.id, entry.type)
-					: getDeleteRequest(entry.type, resource.id);
+					? getDeleteRequest("PROJECT", resource.id, entry.type, true)
+					: getDeleteRequest(
+							entry.type,
+							resource.id,
+							undefined,
+							true,
+						);
 			if (!request) {
 				failures.push(`${resource.name}: cannot be deleted here.`);
 				continue;

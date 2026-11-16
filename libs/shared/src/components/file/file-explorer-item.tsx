@@ -294,6 +294,8 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 			// keeps it under the pointer
 			rowClassName={cn(
 				"group rounded-md",
+				resolvedActions?.isMarked &&
+					"bg-primary/10 hover:bg-primary/15",
 				isContextActive &&
 					"bg-accent text-accent-foreground ring-1 ring-primary/30 ring-inset hover:bg-accent",
 				isBulkSelected &&
@@ -472,7 +474,13 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 					{/* Column 2: Date */}
 					<div
 						data-testid={`${itemTestId}-date`}
-						className="w-(--date-col-width,170px) shrink-0 overflow-hidden truncate px-2 text-end text-[11px] text-muted-foreground"
+						className={cn(
+							"w-(--date-col-width,170px) shrink-0 overflow-hidden truncate px-2 text-end text-[11px]",
+							// muted grey drops below 4.5:1 on a marked row's fill
+							resolvedActions?.isMarked
+								? "text-foreground/75"
+								: "text-muted-foreground",
+						)}
 					>
 						{macDate ?? ""}
 					</div>

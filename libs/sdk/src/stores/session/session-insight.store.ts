@@ -1,5 +1,5 @@
 import { isRecord } from "@semoss/utility/object";
-import { Observable } from "@semoss/utility/observable";
+import { StoreState } from "@semoss/utility/store";
 import { runPixel, runPixelAsync } from "../../api/base";
 import { download, upload } from "../../api/file";
 import { HttpError } from "../../utility/error";
@@ -58,7 +58,7 @@ export class SessionInsightStore {
 	 * The insight, starting with none. Held privately so the store's public
 	 * types do not depend on how it is kept.
 	 */
-	private readonly state = new Observable(NO_INSIGHT);
+	private readonly state = new StoreState(NO_INSIGHT);
 
 	/**
 	 * Read the current state. The same object until it changes, as

@@ -28,6 +28,7 @@ const LIMIT_TYPE_LABELS: Readonly<Record<UsageLimitType, string>> = {
 	MODEL_TOTAL: "Model Total",
 	DIRECT: "Direct Limit",
 	TEAM: "Team Limit",
+	APP: "App Limit",
 	PUBLIC: "Public Use Limit",
 	ALL_MODELS: "User's Total Model Limit",
 	PLATFORM: "General Platform Limit",
@@ -49,6 +50,7 @@ const STATE_LABELS: Readonly<Record<UsageLimitStepState, string>> = {
 const REASON_LABELS: Readonly<Record<string, string>> = {
 	NOT_PUBLIC: "This model is not public",
 	NO_GRANT: "No access given on this model",
+	HAS_GRANT: "Has access given on this model",
 };
 
 /**
@@ -91,6 +93,7 @@ const LOGGED_BILLED_SOURCES: Readonly<Record<string, UsageBilledLimitType>> = {
 	USER: "DIRECT",
 	TEAM: "TEAM",
 	PUBLIC: "PUBLIC",
+	PROJECT: "APP",
 	ALL_MODELS: "ALL_MODELS",
 	PLATFORM: "PLATFORM",
 };
@@ -100,9 +103,9 @@ const LOGGED_BILLED_SOURCES: Readonly<Record<string, UsageBilledLimitType>> = {
  * logs record it (BILLED_SOURCE_TYPE, BILLED_SUBJECT_ID and
  * BILLED_SUBJECT_TYPE), such as "Direct Limit" or "Ops Team Limit"
  *
- * @param sourceType - the source billed: USER, TEAM, PUBLIC, ALL_MODELS or
- * PLATFORM
- * @param subjectId - the person's login id or the team billed
+ * @param sourceType - the source billed: USER, TEAM, PUBLIC, PROJECT (an
+ * app), ALL_MODELS or PLATFORM
+ * @param subjectId - the person's login id, or the team or app billed
  * @param subjectType - the matching login type or team type
  * @returns the limit, the source type itself when it is not one this knows, or
  * null when the logs record no source

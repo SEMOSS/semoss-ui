@@ -1,6 +1,7 @@
 import { useEffect } from "react";
+import { useStoreSelector } from "@semoss/utility/react/use-store-selector";
 import type { ConfigStore } from "../../../stores/config/config.store";
-import { pickActions, useStoreSelector } from "../utility/store-selector";
+import { pickActions } from "../utility/pick-actions";
 import { useSessionStore } from "./use-session";
 
 /** The config's actions, handed to selectors beside its state. */

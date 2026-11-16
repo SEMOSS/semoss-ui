@@ -36,6 +36,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { capitalize } from "@semoss/utility/text";
+import { CATALOG_NAME_KEY } from "@/components/import/shared/import-form.constants";
 import { useNavigate } from "@/hooks/useNavigate";
 import { EngineFormHeader } from "../shared/engine-form-header";
 import { computeOptions, computeVisibility } from "../shared/import-form.utils";
@@ -271,7 +272,7 @@ export const DatabaseForm = ({
 							tag: formData.DATABASE_TAG,
 						}),
 					};
-					const pixel = `databaseVar = CreateEmptyRdbmsDatabase(database=[${JSON.stringify(formData.NAME)}], rdbmsType=[${JSON.stringify(formData.dbDriver)}], username=[${JSON.stringify(formData.USERNAME ?? "")}], password=[${JSON.stringify(formData.PASSWORD ?? "")}]);SetDatabaseMetadata(database=[databaseVar], meta=[${JSON.stringify(meta)}]);SyncDatabaseWithLocalMaster(database=[databaseVar]);`;
+					const pixel = `databaseVar = CreateEmptyRdbmsDatabase(catalogName=[${JSON.stringify(formData[CATALOG_NAME_KEY])}], rdbmsType=[${JSON.stringify(formData.dbDriver)}], username=[${JSON.stringify(formData.USERNAME ?? "")}], password=[${JSON.stringify(formData.PASSWORD ?? "")}]);SetDatabaseMetadata(database=[databaseVar], meta=[${JSON.stringify(meta)}]);SyncDatabaseWithLocalMaster(database=[databaseVar]);`;
 					const response = await runPixel(pixel);
 					if (response.errors?.length > 0) {
 						toast.error(response.errors.join(""));
@@ -394,7 +395,7 @@ export const DatabaseForm = ({
 							tag: formData.DATABASE_TAG,
 						}),
 					};
-					const pixel = `databaseVar = RdfLoaderSheetUpload(database=[${JSON.stringify(formData.DATABASE_NAME)}], filePath=["${filePath}"], customBaseURI=[${JSON.stringify(customBaseURI)}]);SetDatabaseMetadata(database=[databaseVar], meta=[${JSON.stringify(meta)}]);SyncDatabaseWithLocalMaster(database=[databaseVar]);`;
+					const pixel = `databaseVar = RdfLoaderSheetUpload(database=[${JSON.stringify(formData[CATALOG_NAME_KEY])}], filePath=["${filePath}"], customBaseURI=[${JSON.stringify(customBaseURI)}]);SetDatabaseMetadata(database=[databaseVar], meta=[${JSON.stringify(meta)}]);SyncDatabaseWithLocalMaster(database=[databaseVar]);`;
 					const response = await runPixelWithConsole(pixel);
 					if (response.errors?.length > 0) {
 						toast.error(response.errors.join(""));
@@ -638,7 +639,7 @@ export const DatabaseForm = ({
 
 				const databaseParam =
 					index === 0
-						? `["${String(formValuesLocal.DATABASE_NAME ?? "")}"]`
+						? `["${String(formValuesLocal[CATALOG_NAME_KEY] ?? "")}"]`
 						: `[databaseVar]`;
 
 				const existingParam = index === 0 ? `[false]` : `[true]`;
@@ -677,7 +678,7 @@ export const DatabaseForm = ({
 			};
 
 			const response = await runPixel(
-				`${pixelCommands.join("")}SetDatabaseMetadata(database=[${JSON.stringify(formValuesLocal.DATABASE_NAME)}], meta=[${JSON.stringify(meta)}]);`,
+				`${pixelCommands.join("")}SetDatabaseMetadata(database=[${JSON.stringify(formValuesLocal[CATALOG_NAME_KEY])}], meta=[${JSON.stringify(meta)}]);`,
 			);
 
 			if (response.errors?.length > 0) {
@@ -709,7 +710,7 @@ export const DatabaseForm = ({
 		setOpenLoadingLog(false);
 		let pixelStatements = payloadArray
 			.map((payloadObject) => {
-				return `newDbInfo=RdbmsUploadExcelData(database=["${formValues.DATABASE_NAME}"],filePath=${JSON.stringify(payloadObject.filePath)},dataTypeMap=[${JSON.stringify(payloadObject.dataTypeMap)}],newHeaders=[${JSON.stringify(payloadObject.newHeaders)}],additionalDataTypes=[${JSON.stringify(payloadObject.additionalDataTypes)}],descriptionMap=[${JSON.stringify(payloadObject.descriptionMap)}],logicalNamesMap=[${JSON.stringify(payloadObject.logicalNamesMap)}],existing=[${payloadObject.existing}],tables=[${JSON.stringify(payloadObject.tables)}]);SyncDatabaseWithLocalMaster(database=[newDbInfo]);`;
+				return `newDbInfo=RdbmsUploadExcelData(database=["${formValues[CATALOG_NAME_KEY]}"],filePath=${JSON.stringify(payloadObject.filePath)},dataTypeMap=[${JSON.stringify(payloadObject.dataTypeMap)}],newHeaders=[${JSON.stringify(payloadObject.newHeaders)}],additionalDataTypes=[${JSON.stringify(payloadObject.additionalDataTypes)}],descriptionMap=[${JSON.stringify(payloadObject.descriptionMap)}],logicalNamesMap=[${JSON.stringify(payloadObject.logicalNamesMap)}],existing=[${payloadObject.existing}],tables=[${JSON.stringify(payloadObject.tables)}]);SyncDatabaseWithLocalMaster(database=[newDbInfo]);`;
 			})
 			.join("");
 		const meta = {
@@ -720,7 +721,7 @@ export const DatabaseForm = ({
 				tag: formValues.DATABASE_TAG,
 			}),
 		};
-		pixelStatements += `SetDatabaseMetadata(database=["${formValues.DATABASE_NAME}"],meta=[${JSON.stringify(meta)}])`;
+		pixelStatements += `SetDatabaseMetadata(database=["${formValues[CATALOG_NAME_KEY]}"],meta=[${JSON.stringify(meta)}])`;
 		try {
 			const response = await runPixelWithConsole(pixelStatements);
 			const output = response.pixelReturn[0].output as {
@@ -751,7 +752,7 @@ export const DatabaseForm = ({
 		setOpenLoadingLog(false);
 		let pixel = payloadObject
 			.map((pixel) => {
-				return `newDbInfo=RdbmsUploadTableData(database=["${formValues.DATABASE_NAME}"],filePath=["${pixel.filePath}"],delimiter=["${formValues.DELIMITER}"],dataTypeMap=[${JSON.stringify(pixel.dataTypeMap)}],newHeaders=[${JSON.stringify(pixel.newHeaders)}],additionalDataTypes=[${JSON.stringify(pixel.additionalDataTypes)}],descriptionMap=[${JSON.stringify(pixel.descriptionMap)}],logicalNamesMap=[${JSON.stringify(pixel.logicalNamesMap)}],existing=[${JSON.stringify(pixel.existing)}],table=[${JSON.stringify(pixel.table)}]);SyncDatabaseWithLocalMaster(database=[newDbInfo]);`;
+				return `newDbInfo=RdbmsUploadTableData(database=["${formValues[CATALOG_NAME_KEY]}"],filePath=["${pixel.filePath}"],delimiter=["${formValues.DELIMITER}"],dataTypeMap=[${JSON.stringify(pixel.dataTypeMap)}],newHeaders=[${JSON.stringify(pixel.newHeaders)}],additionalDataTypes=[${JSON.stringify(pixel.additionalDataTypes)}],descriptionMap=[${JSON.stringify(pixel.descriptionMap)}],logicalNamesMap=[${JSON.stringify(pixel.logicalNamesMap)}],existing=[${JSON.stringify(pixel.existing)}],table=[${JSON.stringify(pixel.table)}]);SyncDatabaseWithLocalMaster(database=[newDbInfo]);`;
 			})
 			.join("");
 		const meta = {
@@ -762,7 +763,7 @@ export const DatabaseForm = ({
 				tag: formValues.DATABASE_TAG,
 			}),
 		};
-		pixel += `SetDatabaseMetadata(database=["${formValues.DATABASE_NAME}"],meta=[${JSON.stringify(meta)}])`;
+		pixel += `SetDatabaseMetadata(database=["${formValues[CATALOG_NAME_KEY]}"],meta=[${JSON.stringify(meta)}])`;
 
 		try {
 			const response = await runPixelWithConsole(pixel);
@@ -797,7 +798,7 @@ export const DatabaseForm = ({
 		const newFormValues = Object.fromEntries(
 			Object.entries(formValues).filter(
 				([key]) =>
-					key !== "NAME" &&
+					key !== CATALOG_NAME_KEY &&
 					key !== "DATABASE_DESCRIPTION" &&
 					key !== "DATABASE_TAG" &&
 					key !== "FILE_UPLOAD" &&
@@ -818,7 +819,7 @@ export const DatabaseForm = ({
 		setLoadingMessage("Starting database synchronization...");
 		setLoadingLogMessages(["Starting database synchronization..."]);
 		setOpenLoadingLog(false);
-		const pixel = `newDbInfo=RdbmsExternalUpload(conDetails=[${JSON.stringify(newFormValues)}],database=["${formValues.NAME}"], metamodel=[{"relationships":${JSON.stringify(formValues.relationships)},"tables":${JSON.stringify(formValues.tables)}}]);SetDatabaseMetadata(database=[newDbInfo],meta=[${JSON.stringify(meta)}]);SaveOwlPositions(database=[newDbInfo],positionMap=[${JSON.stringify(formValues.positions)}]);SyncDatabaseWithLocalMaster(database=[newDbInfo]);`;
+		const pixel = `newDbInfo=RdbmsExternalUpload(conDetails=[${JSON.stringify(newFormValues)}],database=["${formValues[CATALOG_NAME_KEY]}"], metamodel=[{"relationships":${JSON.stringify(formValues.relationships)},"tables":${JSON.stringify(formValues.tables)}}]);SetDatabaseMetadata(database=[newDbInfo],meta=[${JSON.stringify(meta)}]);SaveOwlPositions(database=[newDbInfo],positionMap=[${JSON.stringify(formValues.positions)}]);SyncDatabaseWithLocalMaster(database=[newDbInfo]);`;
 		try {
 			const response = await runPixelWithConsole(pixel);
 			const output = response.pixelReturn[0].output as {

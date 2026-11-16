@@ -12,6 +12,11 @@ interface DeleteResourceTarget {
 	id: string;
 	/** For a project, its project type, which picks the delete pixel */
 	projectType?: string;
+	/**
+	 * Whether the delete is made in admin mode, where an admin can delete any
+	 * engine or project; outside it the user deletes what they own
+	 */
+	admin?: boolean;
 }
 
 /** What {@link useDeleteResource} gives its caller. */
@@ -29,8 +34,8 @@ interface UseDeleteResourceResult {
 }
 
 /**
- * Deletes an engine or a project with the pixel its type takes, tracking
- * whether the delete is running.
+ * Deletes an engine or a project with the pixel its type takes, or the admin
+ * pixel in admin mode, tracking whether the delete is running.
  *
  * @param target - The resource to delete.
  * @returns The delete action and its state.
@@ -39,10 +44,11 @@ export const useDeleteResource = ({
 	type,
 	id,
 	projectType,
+	admin = false,
 }: DeleteResourceTarget): UseDeleteResourceResult => {
 	const { run: runPixel } = useSessionInsight();
 	const [isDeleting, setIsDeleting] = useState(false);
-	const request = getDeleteRequest(type, id, projectType);
+	const request = getDeleteRequest(type, id, projectType, admin);
 
 	const deleteResource = async (): Promise<boolean> => {
 		if (!request) {

@@ -37,7 +37,7 @@ export const Workspace: React.FC = () => {
 			return;
 		}
 
-		runPixel(`SetContext("${project.project_id}")`, insight.insightId)
+		runPixel(`LoadApp("${project.project_id}")`, insight.insightId)
 			.then(() => {
 				const w = new WorkspaceStore({
 					insightId: insight.insightId,

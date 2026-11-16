@@ -48,6 +48,11 @@ interface TopicContentsNavProps {
 	onPlaceChange: (place: string) => void;
 }
 
+// the accent fill alone is about 1:1 against the page, and it is what hovering any place paints, so the
+// place shown also wears a ring, and keeps its fill under the pointer and its ring's color under keyboard focus
+const CURRENT_CLASS =
+	"bg-primary/10 font-medium text-foreground ring-1 ring-primary ring-inset hover:bg-primary/10 focus-visible:ring-primary dark:hover:bg-primary/10";
+
 const folderPlace = (folder: MailFolder): string => `folder:${folder.id}`;
 /** What to call a folder away from its tree: a nested one by its path, as the mailbox's own picker does. */
 export const folderLabel = (folder: MailFolder): string =>
@@ -91,8 +96,7 @@ export function TopicContentsNav({
 					aria-selected={isSelected}
 					rowClassName={cn(
 						"pointer-coarse:min-h-11",
-						isSelected &&
-							"bg-accent font-medium text-accent-foreground",
+						isSelected && CURRENT_CLASS,
 					)}
 					label={
 						<span className="flex min-w-0 items-center justify-between gap-2 text-sm">
@@ -101,7 +105,13 @@ export function TopicContentsNav({
 								{folder.name}
 							</span>
 							{unread > 0 && (
-								<span className="shrink-0 text-muted-foreground text-xs tabular-nums">
+								<span
+									className={cn(
+										"shrink-0 text-xs tabular-nums",
+										// muted grey drops below 4.5:1 on the selected row's fill
+										!isSelected && "text-muted-foreground",
+									)}
+								>
 									<span aria-hidden="true">
 										{unread.toLocaleString()}
 									</span>
@@ -184,8 +194,7 @@ export function TopicContentsNav({
 										}
 										className={cn(
 											"pointer-coarse:min-h-11 w-full justify-start gap-2 px-2 font-normal",
-											entry.id === place &&
-												"bg-accent font-medium text-accent-foreground",
+											entry.id === place && CURRENT_CLASS,
 										)}
 										onClick={() => onPlaceChange(entry.id)}
 									>
@@ -197,7 +206,14 @@ export function TopicContentsNav({
 											{entry.label}
 										</span>
 										{entry.count !== undefined && (
-											<span className="shrink-0 font-normal text-muted-foreground text-xs tabular-nums">
+											<span
+												className={cn(
+													"shrink-0 font-normal text-xs tabular-nums",
+													// muted grey drops below 4.5:1 on the shown place's fill
+													entry.id !== place &&
+														"text-muted-foreground",
+												)}
+											>
 												{entry.count.toLocaleString()}
 											</span>
 										)}

@@ -106,6 +106,9 @@ export const TeamsMessageItem = ({
 												itemName: name,
 												serviceName: serviceName,
 												saveLabel: saver.saveLabel,
+												savedLabel: saver.savedLabel(
+													request.key,
+												),
 												isBusy: isBusy,
 												onAddToContext:
 													saver.addToContext

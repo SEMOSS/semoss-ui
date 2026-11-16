@@ -68,7 +68,8 @@
 		},
 		"guardrailActions": {
 			"MASK": "Enmascarado",
-			"BLOCK": "Bloqueado"
+			"BLOCK": "Bloqueado",
+			"TIMEOUT": "Tiempo agotado"
 		},
 		"groupRequest": "Petición",
 		"groupSpan": "Span",

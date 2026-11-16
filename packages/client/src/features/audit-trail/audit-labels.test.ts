@@ -74,9 +74,31 @@ describe("audit labels", () => {
 			describeAuditAction("PERMISSION_DELETE", PERMISSION_EXPIRED_ACTION),
 		).toBe("");
 		expect(describeAuditAction("LOGIN", "LOGIN")).toBe("");
+		expect(describeAuditEvent("PERMISSION_DELETE", null, "SUCCESS")).toBe(
+			"Access Removed",
+		);
 		expect(
 			describeAuditAction("PERMISSION_BULK_GRANT", "GRANT_ALL_ENGINES"),
 		).toBe("GRANT_ALL_ENGINES");
+	});
+
+	it("names a place in a team removed at its end date Team Membership Ended", () => {
+		expect(
+			describeAuditEvent(
+				"GROUP_MEMBER_REMOVE",
+				PERMISSION_EXPIRED_ACTION,
+				"SUCCESS",
+			),
+		).toBe("Team Membership Ended");
+		expect(
+			describeAuditAction(
+				"GROUP_MEMBER_REMOVE",
+				PERMISSION_EXPIRED_ACTION,
+			),
+		).toBe("");
+		expect(describeAuditEvent("GROUP_MEMBER_REMOVE", null, "SUCCESS")).toBe(
+			"Team Member Removed",
+		);
 	});
 
 	it("puts values with no label in words, and leaves missing values empty", () => {

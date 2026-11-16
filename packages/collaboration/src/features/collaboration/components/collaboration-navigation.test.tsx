@@ -114,7 +114,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("CollaborationNavigation", () => {
-	it("keeps Today, Work, Topics and Routines as the main destinations", () => {
+	it("keeps Today, Work, Topics, Digital Twins and Routines as the main destinations", () => {
 		const state = createInitialCollaborationState();
 		state.items = [];
 		state.reviews = [];
@@ -136,7 +136,7 @@ describe("CollaborationNavigation", () => {
 			Array.from(main.querySelectorAll("a,button")).map((control) =>
 				control.getAttribute("aria-label"),
 			),
-		).toEqual(["Today", "Work", "Topics", "Routines"]);
+		).toEqual(["Today", "Work", "Topics", "Digital Twins", "Routines"]);
 		expect(
 			within(main).getByRole("link", { name: "Today" }),
 		).toHaveTextContent(/^Today$/);
@@ -262,36 +262,9 @@ describe("CollaborationNavigation", () => {
 		expect(recent.closest(".hidden")).toBeNull();
 	});
 
-	it("puts Digital Twins under Routines and its recent runs, and last in the collapsed rail", async () => {
-		insight.routines = [
-			{
-				routineId: "inbox-daily-brief",
-				name: null,
-				runs: [
-					{
-						runId: "inbox-1",
-						status: "completed",
-						startedAt: new Date().toISOString(),
-					},
-				],
-			},
-		];
+	it("opens Digital Twins and keeps it between Topics and Routines in the collapsed rail", async () => {
 		const { user, router, onNavigate } = renderNavigation();
-		const recent = await screen.findByRole("list", {
-			name: "Recent routines",
-		});
-		const twins = screen.getByRole("link", { name: "Digital Twins" });
-		// the runs stay right under the link they belong to
-		expect(
-			recent.compareDocumentPosition(twins) &
-				Node.DOCUMENT_POSITION_FOLLOWING,
-		).toBeTruthy();
-		expect(
-			twins.compareDocumentPosition(
-				screen.getByRole("region", { name: "Chats" }),
-			) & Node.DOCUMENT_POSITION_FOLLOWING,
-		).toBeTruthy();
-		await user.click(twins);
+		await user.click(screen.getByRole("link", { name: "Digital Twins" }));
 		expect(router.state.location.pathname).toBe("/twins");
 		expect(onNavigate).toHaveBeenCalledOnce();
 
@@ -303,14 +276,10 @@ describe("CollaborationNavigation", () => {
 			within(main)
 				.getAllByRole("link")
 				.map((link) => link.getAttribute("aria-label")),
-		).toEqual(["Today", "Work", "Topics", "Routines", "Digital Twins"]);
+		).toEqual(["Today", "Work", "Topics", "Digital Twins", "Routines"]);
 		expect(
 			within(main).getByRole("link", { name: "Digital Twins" }),
 		).toHaveAttribute("aria-current", "page");
-		// one link either way, never one in each place
-		expect(
-			screen.getAllByRole("link", { name: "Digital Twins" }),
-		).toHaveLength(1);
 	});
 
 	it.each([

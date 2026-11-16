@@ -14,7 +14,10 @@ logs. It is a **private** package built with Vite, MobX, and `react-router`.
 ## Build System
 
 - **Bundler**: Vite 8
-- **State**: MobX (`mobx` + `mobx-react-lite`)
+- **State**: MobX (`mobx` + `mobx-react-lite`), legacy. `stores/root.store.ts` is the only
+  store; new shared state uses a `StoreState`-backed store per the
+  [state management skill](../../skills/state-management.skill.md), and the root store
+  migrates as one scoped change.
 - **Routing**: `react-router` 8
 - **Styling**: Tailwind CSS v4
 
@@ -48,7 +51,7 @@ do not relocate existing features without explicit migration scope.
 | `contexts/` | React contexts (`<name>.context.tsx`) |
 | `hooks/` | React hooks (`use-<name>.ts`) |
 | `pages/` | Routing tree — `router.tsx`, layouts, pages |
-| `stores/` | MobX stores (`<name>.store.ts`) |
+| `stores/` | Stores (`<name>.store.ts`); MobX today, `StoreState` for new ones |
 | `types.d.ts` | Ambient TypeScript types |
 | `app.tsx`, `main.tsx`, `index.css` | App entry files |
 

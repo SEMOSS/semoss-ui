@@ -24,6 +24,7 @@ import type {
 	ConnectorSaveRequest,
 	ConnectorSaver,
 } from "../core/use-connector-saver";
+import { ConnectorSavedMark } from "./connector-saved-mark";
 import { ConnectorViewerStatus } from "./connector-viewer-status";
 
 /**
@@ -84,7 +85,8 @@ const STALE_AFTER_MS = 30_000;
  * the files; the rows add the connector's own actions, as every connector row
  * has them. The row's button adds a file to context, or saves it where the
  * host takes no context, and its right-click menu adds it to context, saves it
- * to the chat's files, or opens it in its own app. A host with an action of
+ * to the chat's files, or opens it in its own app. A file the host already
+ * holds shows that in place of the save button. A host with an action of
  * its own (`getItemAction`) gets that as the button and first in the menu
  * instead, with the open entry after it. Selecting a file opens a
  * preview when the host supports it. A drive whose adapter creates also gets
@@ -169,28 +171,45 @@ export const ConnectorFileExplorer = ({
 			};
 		}
 		const { addToContext } = saver;
+		// a file the host already holds says so in place of its save button
+		const savedLabel =
+			request && !addToContext
+				? saver.savedLabel(request.key)
+				: undefined;
 		const icon =
 			request && saver.isBusy(request.key) ? (
 				<Spinner aria-hidden />
+			) : savedLabel ? (
+				<ConnectorSavedMark />
 			) : addToContext ? (
 				<MessageSquarePlusIcon aria-hidden />
 			) : (
 				<DownloadIcon aria-hidden />
 			);
 		return {
+			isMarked: !!savedLabel,
 			actions: [
 				request
 					? {
-							name: addToContext
-								? t("actions.addNamedToContext", {
+							name: savedLabel
+								? t("actions.named", {
+										action: savedLabel,
 										name: item.name,
 									})
-								: saver.saveLabel,
+								: addToContext
+									? t("actions.addNamedToContext", {
+											name: item.name,
+										})
+									: saver.saveLabel,
 							icon: icon,
-							tooltip: addToContext
-								? t("actions.addToContext")
-								: saver.saveLabel,
+							tooltip:
+								savedLabel ??
+								(addToContext
+									? t("actions.addToContext")
+									: saver.saveLabel),
 							action: async () => {
+								// the explorer's rows take a button here; a held file's does nothing
+								if (savedLabel) return;
 								if (addToContext) {
 									addToContext(request);
 								} else {

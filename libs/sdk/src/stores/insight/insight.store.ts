@@ -520,7 +520,7 @@ export class InsightStore {
 		// load the app reactors (if they exist)
 		let pixel = "";
 		if (this._store.options.appId) {
-			pixel += `SetContext("${this._store.options.appId}");`;
+			pixel += `LoadApp("${this._store.options.appId}");`;
 		}
 
 		// load the python code int

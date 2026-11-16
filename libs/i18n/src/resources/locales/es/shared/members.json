@@ -46,6 +46,19 @@
 		"yearly": "Anual",
 		"allTime": "Todo el tiempo"
 	},
+	"usageLimit": {
+		"notDefinedHint": {
+			"APP": "Las personas que usan el modelo a través de esta aplicación usan el límite de uso público, su límite total de modelos o el límite general de la plataforma."
+		},
+		"unlimitedHint": {
+			"APP": "Sin tope para las llamadas que los reactores personalizados de esta aplicación hacen con su permiso. El total del modelo se sigue aplicando."
+		},
+		"counts": {
+			"appShared": "Compartido por la aplicación",
+			"appEach": "Por cada usuario"
+		},
+		"eachUserNote": "Las reglas por cada usuario solo cuentan las llamadas a las que se aplica el límite de esta aplicación."
+	},
 	"footer": {
 		"add": "Agregar",
 		"addWithCount": "Agregar ({{count}})"
