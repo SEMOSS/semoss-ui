@@ -2,6 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 import { toast } from "@semoss/ui/next";
+import { fakeStore } from "../../test/fake-store";
 import type { RoomStore } from "../room/room.store";
 import { RoomActionsProvider } from "../room-actions/room-actions.context";
 import { RoomTitle } from "./room-title";
@@ -29,12 +30,12 @@ vi.mock("../chat/use-chat-session", () => ({
 }));
 
 /** Only the fields the room's name reads. */
-const room = {
+const room = fakeStore({
 	roomId: "r1",
 	metadata: { name: "Quarterly plan", dateCreated: "" },
 	options: { instructions: "", mcp: [] },
 	theme: { featureFlags: {} },
-} as unknown as RoomStore;
+}) as unknown as RoomStore;
 
 beforeEach(() => {
 	mocks.onRoomDeleted.mockReset();

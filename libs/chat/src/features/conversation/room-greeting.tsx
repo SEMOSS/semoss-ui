@@ -1,4 +1,3 @@
-import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
 import { Markdown } from "@semoss/ui/next";
 import { useChatConfig } from "../chat-config/use-chat-config";
@@ -22,38 +21,36 @@ interface RoomGreetingProps {
  * affordances and never reaches room.history or the model. Uses the same
  * markdown renderer and URL allowlist as a real assistant reply.
  */
-export const RoomGreeting: React.FC<RoomGreetingProps> = observer(
-	({ room, greeting }) => {
-		const { theme } = useChatConfig();
+export const RoomGreeting = ({ room, greeting }: RoomGreetingProps) => {
+	const { theme } = useChatConfig();
 
-		const components = useMemo(
-			() =>
-				createMarkdownComponents(
-					room,
-					false,
-					!!theme.featureFlags?.enableTableExport,
-				),
-			[room, theme.featureFlags?.enableTableExport],
-		);
+	const components = useMemo(
+		() =>
+			createMarkdownComponents(
+				room,
+				false,
+				!!theme.featureFlags?.enableTableExport,
+			),
+		[room, theme.featureFlags?.enableTableExport],
+	);
 
-		const urlTransform = useMemo(
-			() => createMarkdownUrlTransform(theme.allowedUrlPrefixes),
-			[theme.allowedUrlPrefixes],
-		);
+	const urlTransform = useMemo(
+		() => createMarkdownUrlTransform(theme.allowedUrlPrefixes),
+		[theme.allowedUrlPrefixes],
+	);
 
-		return (
-			<div className="group">
-				<div className="mb-0 flex w-full flex-col gap-2 pe-3 sm:pe-10">
-					<Markdown
-						dir="auto"
-						components={components}
-						className="wrap-anywhere [&>*:first-child]:mt-0"
-						urlTransform={urlTransform}
-					>
-						{greeting}
-					</Markdown>
-				</div>
+	return (
+		<div className="group">
+			<div className="mb-0 flex w-full flex-col gap-2 pe-3 sm:pe-10">
+				<Markdown
+					dir="auto"
+					components={components}
+					className="wrap-anywhere [&>*:first-child]:mt-0"
+					urlTransform={urlTransform}
+				>
+					{greeting}
+				</Markdown>
 			</div>
-		);
-	},
-);
+		</div>
+	);
+};

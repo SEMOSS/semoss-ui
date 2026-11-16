@@ -1,6 +1,6 @@
-import { observer } from "mobx-react-lite";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "@semoss/i18n";
+import { useRoomSelector } from "../room/use-room-selector";
 import { useRoomActionsContext } from "../room-actions/room-actions.context";
 import { RoomName } from "../room-name/room-name";
 
@@ -9,13 +9,17 @@ import { RoomName } from "../room-name/room-name";
  * the sidebar too. A double-click on it, or `/rename` in the slash menu, edits
  * it in place. Renders inside a `RoomActionsProvider`.
  */
-export const RoomTitle = observer(() => {
+export const RoomTitle = () => {
 	const { t } = useTranslation("room");
 	const context = useRoomActionsContext();
 	const headingRef = useRef<HTMLHeadingElement>(null);
 	// Enter and Escape hand focus back to the name; a click elsewhere keeps it
 	const shouldRefocus = useRef(false);
 	const isRenaming = context?.isRenaming ?? false;
+	const roomName = useRoomSelector(
+		context?.room,
+		(room) => room.metadata.name,
+	);
 
 	useEffect(() => {
 		if (isRenaming || !shouldRefocus.current) return;
@@ -27,7 +31,7 @@ export const RoomTitle = observer(() => {
 
 	const name = (
 		<RoomName
-			name={context.room.metadata.name ?? ""}
+			name={roomName ?? ""}
 			placeholder={t("header.untitled")}
 			isRenaming={isRenaming}
 			onStartRename={context.startRenaming}
@@ -50,4 +54,4 @@ export const RoomTitle = observer(() => {
 			{name}
 		</h1>
 	);
-});
+};
