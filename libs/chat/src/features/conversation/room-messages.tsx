@@ -73,13 +73,31 @@ const isPendingResponse = (m: RoomMessage): boolean =>
  * shown message, the message, whether it folds up into the response before
  * it, whether its model's name shows, and its ornaments.
  *
+ * The history is one chain from the root, so a message's ancestors are the
+ * root and the messages before it: the nearest visible one and the nearest
+ * with a model are kept as the loop goes, rather than walked up to from every
+ * message, which made each read grow with the square of the conversation.
+ *
  * @param room - The room.
  * @returns {@link ROW_STRIDE} values per shown message.
  */
 const selectHistoryRows = (room: RoomStore): unknown[] => {
 	const rows: unknown[] = [];
 	let hasAnchor = false;
+	const { root } = room.getSnapshot();
+	// the nearest ancestor that is visible, and the nearest with a model
+	let visibleAncestor: RoomMessage | null = null;
+	let modelAncestorId: string | null = root?.modelId || null;
 	for (const m of room.history) {
+		const nearestVisible = visibleAncestor;
+		const nearestModelId = modelAncestorId;
+		if (m.visible) {
+			visibleAncestor = m;
+		}
+		if (m.modelId) {
+			modelAncestorId = m.modelId;
+		}
+
 		if (!m.visible || isPendingResponse(m)) {
 			continue;
 		}
@@ -94,7 +112,7 @@ const selectHistoryRows = (room: RoomStore): unknown[] => {
 			m.type === "OUTPUT" &&
 			!m.hasVisibleContent &&
 			!m.isThinking &&
-			m.findAncestor((a) => a.visible)?.type === "OUTPUT"
+			nearestVisible?.type === "OUTPUT"
 		) {
 			continue;
 		}
@@ -106,8 +124,8 @@ const selectHistoryRows = (room: RoomStore): unknown[] => {
 
 		// find the most recent ancestor that actually has a model; with none,
 		// show this message's, else only a different one, to reduce clutter
-		const ancestor = m.findAncestor((a) => !!a.modelId);
-		const shouldShowModelName = !ancestor || m.modelId !== ancestor.modelId;
+		const shouldShowModelName =
+			nearestModelId === null || m.modelId !== nearestModelId;
 
 		rows.push(m, isFoldedUp, shouldShowModelName, m.ornaments);
 	}

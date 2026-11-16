@@ -246,25 +246,6 @@ export abstract class AbstractMessageStore<
 	}
 
 	/**
-	 * The nearest ancestor that matches.
-	 *
-	 * @param predicate - What to look for.
-	 * @returns The ancestor, or null when none matches.
-	 */
-	findAncestor(
-		predicate: (message: AbstractMessageStore) => boolean,
-	): AbstractMessageStore | null {
-		let ancestor = this.parent;
-		while (ancestor) {
-			if (predicate(ancestor)) {
-				return ancestor;
-			}
-			ancestor = ancestor.parent;
-		}
-		return null;
-	}
-
-	/**
 	 * Take the backend's copy of the message.
 	 *
 	 * @param message - The pixel message.
