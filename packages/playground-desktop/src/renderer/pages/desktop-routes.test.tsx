@@ -154,3 +154,15 @@ test("an unreachable server names it and offers a different one", async () => {
 	);
 	expect(router.state.location.pathname).toBe("/server");
 });
+
+test("the sign in page names the server and offers a different one", async () => {
+	mocks.status = "UNAUTHENTICATED";
+	const user = userEvent.setup();
+	const router = renderAt("/login");
+
+	expect(await screen.findByText("connect.current")).toBeVisible();
+	await user.click(
+		screen.getByRole("button", { name: "account.changeServer" }),
+	);
+	expect(router.state.location.pathname).toBe("/server");
+});
