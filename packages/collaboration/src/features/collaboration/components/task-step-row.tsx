@@ -281,6 +281,17 @@ export function TaskStepRow({
 						</Button>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end">
+						{state === "mine" &&
+						step.inbox &&
+						INBOX_NOTE[step.inbox] ? (
+							<DropdownMenuItem
+								onSelect={() =>
+									onChange(step.id, { status: "open" })
+								}
+							>
+								This needs me
+							</DropdownMenuItem>
+						) : null}
 						{state === "mine" ? (
 							<DropdownMenuItem
 								onSelect={() =>

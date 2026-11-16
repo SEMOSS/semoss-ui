@@ -129,6 +129,48 @@ describe("TaskStepRow", () => {
 		});
 	});
 
+	it("lets the owner say a set-aside step does need them, only on such a step", async () => {
+		const user = userEvent.setup();
+		const onChange = vi.fn();
+		const { rerender } = render(
+			<ul>
+				<TaskStepRow
+					step={{ ...step, inbox: "fyi" }}
+					state="mine"
+					selfId="me"
+					onChange={onChange}
+				/>
+			</ul>,
+		);
+		await user.click(
+			screen.getByRole("button", {
+				name: "More for: Send Kira the deck",
+			}),
+		);
+		await user.click(
+			screen.getByRole("menuitem", { name: "This needs me" }),
+		);
+		expect(onChange).toHaveBeenCalledWith("s1", { status: "open" });
+		rerender(
+			<ul>
+				<TaskStepRow
+					step={step}
+					state="mine"
+					selfId="me"
+					onChange={onChange}
+				/>
+			</ul>,
+		);
+		await user.click(
+			screen.getByRole("button", {
+				name: "More for: Send Kira the deck",
+			}),
+		);
+		expect(
+			screen.queryByRole("menuitem", { name: "This needs me" }),
+		).not.toBeInTheDocument();
+	});
+
 	it("takes over a step someone else was given", async () => {
 		const user = userEvent.setup();
 		const onChange = vi.fn();
