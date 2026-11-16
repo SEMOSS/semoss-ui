@@ -7,8 +7,7 @@ import { applyToolStreamChunk } from "./tool-stream";
  * its parts, and tool deltas its streaming tool calls. The SDK decides what
  * kind each chunk is, so this reads streams the way every other chat does.
  *
- * Callers keep `indexToToolId` across one stream's chunks and must already be
- * inside a mobx action.
+ * Callers keep `indexToToolId` across one stream's chunks.
  *
  * @param message - The response the stream is filling.
  * @param indexToToolId - The stream's tool delta indexes and their call ids.

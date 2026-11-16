@@ -28,8 +28,7 @@ interface ToolStreamChunkData {
  * completes replaces the placeholder with the fully-resolved part — same
  * `toolCall.id`, so the existing ToolStore is reused.
  *
- * Callers maintain `indexToToolId` across chunks (per-stream closure) and must
- * already be inside a mobx action.
+ * Callers maintain `indexToToolId` across chunks (per-stream closure).
  */
 export const applyToolStreamChunk = (
 	message: ResponseMessageStore,

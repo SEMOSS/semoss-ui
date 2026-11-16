@@ -1,4 +1,3 @@
-import { runInAction } from "mobx";
 import type { InputPixelMessage, ResponsePixelMessage } from "../../types";
 import {
 	STREAMING_PLACEHOLDER_ID,
@@ -151,30 +150,28 @@ export class ToolSaveController {
 		);
 
 		// Mark the still-pending tools CANCELLED and add them to the commit.
-		runInAction(() => {
-			message.parts.forEach((part) => {
-				if (part.type !== "TOOL_CALL") {
-					return;
-				}
-				const tool = room.getTool(part.toolCall.id);
-				if (
-					tool &&
-					(tool.status === "INITIAL" || tool.status === "LOADING")
-				) {
-					tool.settle({
-						status: "CANCELLED",
-						response: TOOL_INTERRUPTED_PROMPT,
-					});
-					entries.push({
-						tool,
-						toolResponse: TOOL_INTERRUPTED_PROMPT,
-						toolStatus: "cancelled",
-						executedParameters: {},
-						resolve: () => {},
-						reject: () => {},
-					});
-				}
-			});
+		message.parts.forEach((part) => {
+			if (part.type !== "TOOL_CALL") {
+				return;
+			}
+			const tool = room.getTool(part.toolCall.id);
+			if (
+				tool &&
+				(tool.status === "INITIAL" || tool.status === "LOADING")
+			) {
+				tool.settle({
+					status: "CANCELLED",
+					response: TOOL_INTERRUPTED_PROMPT,
+				});
+				entries.push({
+					tool,
+					toolResponse: TOOL_INTERRUPTED_PROMPT,
+					toolStatus: "cancelled",
+					executedParameters: {},
+					resolve: () => {},
+					reject: () => {},
+				});
+			}
 		});
 
 		if (entries.length === 0) {
@@ -357,9 +354,7 @@ export class ToolSaveController {
 			message.setToolResponseMessage(responseMessage);
 			message.addChild(responseMessage);
 		}
-		runInAction(() => {
-			responseMessage.setIsThinking(true);
-		});
+		responseMessage.setIsThinking(true);
 
 		// The finalizing (model-invoking) result is the last statement, and the
 		// only one the backend leaves uncommitted when its stream is aborted; its
@@ -372,12 +367,10 @@ export class ToolSaveController {
 				pixel,
 				{
 					onEmit: (chunk) => {
-						runInAction(() =>
-							applyResponseStreamChunk(
-								responseMessage,
-								toolStreamIndexToId,
-								chunk,
-							),
+						applyResponseStreamChunk(
+							responseMessage,
+							toolStreamIndexToId,
+							chunk,
 						);
 					},
 					onResult: ({ results }) => {
@@ -415,9 +408,7 @@ export class ToolSaveController {
 					room.getTool(part.toolCall.id)?.status === "LOADING",
 			);
 			if (!hasRunningTools) {
-				runInAction(() => {
-					responseMessage.setIsThinking(false);
-				});
+				responseMessage.setIsThinking(false);
 			}
 		}
 	};

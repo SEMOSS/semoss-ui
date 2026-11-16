@@ -1,4 +1,3 @@
-import { runInAction } from "mobx";
 import type {
 	AgentRunItemEvent,
 	AgentRunItemsState,
@@ -212,8 +211,7 @@ const updateSubagentPart = (
 };
 
 /**
- * Apply one agent-run item event onto the response message. Must already be
- * inside a mobx action. Tool status reads from `items` (the SDK's
+ * Apply one agent-run item event onto the response message. Tool status reads from `items` (the SDK's
  * already-merged state), not the raw event, so Playground never handles
  * patch merging itself. Text is read straight off the event.
  */
@@ -436,44 +434,33 @@ const watchAgentRun = (
 
 		agent.watch({
 			onEvent: (event, items) => {
-				runInAction(() => {
-					applyAgentRunItem(responseMessage, event, items);
-				});
+				applyAgentRunItem(responseMessage, event, items);
 			},
 			onSnapshot: (snapshot) => {
-				runInAction(() => {
-					syncPendingActions(
-						responseMessage,
-						snapshot.pendingActions,
-					);
-				});
+				syncPendingActions(responseMessage, snapshot.pendingActions);
 			},
 			onReconcile: (snapshot) => {
-				runInAction(() => {
-					if (inputMessage && snapshot.inputMessageId) {
-						inputMessage.setId(snapshot.inputMessageId);
-					}
-					if (snapshot.finalOutputMessageId) {
-						responseMessage.setId(snapshot.finalOutputMessageId);
-					}
+				if (inputMessage && snapshot.inputMessageId) {
+					inputMessage.setId(snapshot.inputMessageId);
+				}
+				if (snapshot.finalOutputMessageId) {
+					responseMessage.setId(snapshot.finalOutputMessageId);
+				}
 
-					// if nothing streamed as visible text, fall back to finalText
-					const hasStreamedText = responseMessage.parts.some(
-						(part) => part.type === "TEXT" && part.text,
-					);
-					if (!hasStreamedText && snapshot.finalText) {
-						responseMessage.savePart({
-							type: "TEXT",
-							text: snapshot.finalText,
-							uiText: snapshot.finalText,
-						});
-					}
+				// if nothing streamed as visible text, fall back to finalText
+				const hasStreamedText = responseMessage.parts.some(
+					(part) => part.type === "TEXT" && part.text,
+				);
+				if (!hasStreamedText && snapshot.finalText) {
+					responseMessage.savePart({
+						type: "TEXT",
+						text: snapshot.finalText,
+						uiText: snapshot.finalText,
+					});
+				}
 
-					syncPendingActions(
-						responseMessage,
-						snapshot.pendingActions,
-					);
-				});
+				syncPendingActions(responseMessage, snapshot.pendingActions);
+
 				settleTerminal(snapshot);
 			},
 			onError: (e) => {
@@ -578,10 +565,9 @@ export const runAgentMessage = async (
 
 		throw e;
 	} finally {
-		runInAction(() => {
-			// turn off thinking
-			responseMessage.setIsThinking(false);
-		});
+		// turn off thinking
+		responseMessage.setIsThinking(false);
+
 		room.setIsLoading(false);
 	}
 };
@@ -653,27 +639,25 @@ export const reconstructAllSubagents = async (room: RoomStore) => {
 	for (const [runId, messages] of messagesByRunId) {
 		try {
 			const subagents = await getSubagentRuns(runId, room.insightId);
-			runInAction(() => {
-				subagents.forEach((subagent) => {
-					const responseMessages = messages.filter(
-						(message): message is ResponseMessageStore =>
-							message instanceof ResponseMessageStore,
-					);
-					const target =
-						findSpawningMessage(messages, subagent.runId) ??
-						responseMessages[responseMessages.length - 1];
-					if (!target || findSubagentPart(target, subagent.runId)) {
-						return;
-					}
-					target.addPart({
-						type: "SUBAGENT",
-						subagent: {
-							id: subagent.runId,
-							status: subagent.status,
-							resultPreview: subagent.finalText ?? undefined,
-							error: subagent.errorMessage ?? undefined,
-						},
-					});
+			subagents.forEach((subagent) => {
+				const responseMessages = messages.filter(
+					(message): message is ResponseMessageStore =>
+						message instanceof ResponseMessageStore,
+				);
+				const target =
+					findSpawningMessage(messages, subagent.runId) ??
+					responseMessages[responseMessages.length - 1];
+				if (!target || findSubagentPart(target, subagent.runId)) {
+					return;
+				}
+				target.addPart({
+					type: "SUBAGENT",
+					subagent: {
+						id: subagent.runId,
+						status: subagent.status,
+						resultPreview: subagent.finalText ?? undefined,
+						error: subagent.errorMessage ?? undefined,
+					},
 				});
 			});
 		} catch (e) {
@@ -701,9 +685,7 @@ export const reconnectAgentRun = (responseMessage: ResponseMessageStore) => {
 			: null;
 
 	room.setIsLoading(true);
-	runInAction(() => {
-		responseMessage.setIsThinking(true);
-	});
+	responseMessage.setIsThinking(true);
 
 	(async () => {
 		try {
@@ -713,9 +695,8 @@ export const reconnectAgentRun = (responseMessage: ResponseMessageStore) => {
 			console.error("Failed to reconnect to agent run", e);
 			room.setError(toError(e));
 		} finally {
-			runInAction(() => {
-				responseMessage.setIsThinking(false);
-			});
+			responseMessage.setIsThinking(false);
+
 			room.setIsLoading(false);
 		}
 	})();

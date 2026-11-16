@@ -18,6 +18,7 @@ import { useConnectors } from "../connectors/use-connectors";
 import { RoomLayoutActionsContext } from "../conversation/room-layout-actions.context";
 import type { RoomStore } from "../room/room.store";
 import { ROOM_PANEL_TYPES } from "../room/room-sidebar";
+import { useRoomSelector } from "../room/use-room-selector";
 
 interface WorkbenchPanelOptionBase {
 	/** Stable key; also the panel's slash command id. */
@@ -73,8 +74,7 @@ export interface NewRoomWorkbenchPanels {
  * The panels a room's Workspace opens: Files, Settings, and the activity log,
  * then the connector viewers the chat can show. A draft's panels that need its
  * room wait while it prepares. Opening a panel also brings the Workspace into
- * view, selecting its tab on narrow screens. Call it from an observer: the
- * viewers are read from MobX.
+ * view, selecting its tab on narrow screens.
  *
  * @param room - The room whose Workspace shows the panels.
  * @param newRoomPanels - A new chat's own panel actions, until its first message.
@@ -89,6 +89,7 @@ export const useWorkbenchPanels = (
 	const connectors = newRoomPanels?.connectors ?? room.connectors;
 	// the viewers on offer follow the connectors switched on and signed in
 	useConnectors(connectors);
+	const fileMode = useRoomSelector(room, (current) => current.fileMode);
 	const isBusy = newRoomPanels?.isBusy ?? false;
 	const isWaiting = (kind: NewRoomPanelRequest["kind"]) =>
 		isBusy && !NEW_ROOM_READY_PANEL_KINDS.has(kind);
@@ -107,7 +108,7 @@ export const useWorkbenchPanels = (
 			description: t("workspacePlaces.descriptions.files"),
 			icon: FolderTreeIcon,
 			panelType: FILE_PANEL_TYPES.FILE_EXPLORER,
-			panelConfig: { mode: room.fileMode },
+			panelConfig: { mode: fileMode },
 			isDisabled: isWaiting("files"),
 			isLoading: isWaiting("files"),
 			onOpen: open({ kind: "files" }, () =>
