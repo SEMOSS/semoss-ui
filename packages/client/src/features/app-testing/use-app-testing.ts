@@ -12,10 +12,16 @@ import type {
 	AppTestStep,
 } from "./app-test.types";
 import type { IframeRecorder } from "./iframe-recorder";
-import { appendRecordedStep, attachIframeRecorder } from "./iframe-recorder";
+import {
+	appendRecordedStep,
+	attachIframeRecorder,
+	isStableSelector,
+} from "./iframe-recorder";
 
 interface AppTestingState {
 	steps: AppTestStep[];
+	/** Steps whose target has no unique data-testid; a recording with any cannot be saved. */
+	weakSteps: number;
 	isRecording: boolean;
 	isPickingCheck: boolean;
 	isSaving: boolean;
@@ -33,7 +39,7 @@ interface AppTestingState {
 	stopRecording: () => void;
 	addCheck: () => void;
 	save: (name: string) => Promise<void>;
-	startRun: () => Promise<void>;
+	startRun: (repeat?: number) => Promise<void>;
 	refreshRun: () => Promise<void>;
 	discard: () => void;
 }
@@ -74,6 +80,9 @@ export const useAppTesting = (
 	const recorder = useRef<IframeRecorder | null>(null);
 	const lifetime = useRef<AbortController | null>(null);
 	const runStartedAt = useRef(0);
+	const weakSteps = steps.filter(
+		(step) => step.selector && !isStableSelector(step.selector),
+	).length;
 
 	useEffect(() => {
 		const controller = new AbortController();
@@ -208,6 +217,11 @@ export const useAppTesting = (
 	};
 
 	const save = async (name: string): Promise<void> => {
+		if (weakSteps > 0) {
+			throw new Error(
+				`${weakSteps} step${weakSteps === 1 ? " has" : "s have"} no unique data-testid. Ask the assistant to add test ids to those elements, then record again.`,
+			);
+		}
 		const signal = lifetime.current?.signal;
 		setIsSaving(true);
 		setError("");
@@ -234,7 +248,7 @@ export const useAppTesting = (
 		}
 	};
 
-	const startRun = async (): Promise<void> => {
+	const startRun = async (repeat = 1): Promise<void> => {
 		if (!selectedId || isRunning) return;
 		const signal = lifetime.current?.signal;
 		setIsStartingRun(true);
@@ -242,7 +256,7 @@ export const useAppTesting = (
 		setRun(null);
 		runStartedAt.current = Date.now();
 		try {
-			const result = await runAppTests(appId, selectedId);
+			const result = await runAppTests(appId, selectedId, repeat);
 			if (!signal?.aborted) setRun(result);
 		} catch (failure: unknown) {
 			if (!signal?.aborted)
@@ -277,6 +291,7 @@ export const useAppTesting = (
 
 	return {
 		steps,
+		weakSteps,
 		isRecording,
 		isPickingCheck,
 		isSaving,

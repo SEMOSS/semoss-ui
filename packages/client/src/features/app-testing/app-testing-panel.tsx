@@ -188,6 +188,21 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 								)}
 								{state.isRunning ? "Running…" : "Run test"}
 							</Button>
+							<Button
+								type="button"
+								size="sm"
+								variant="outline"
+								title="Replays the recording three times in fresh browsers; it passes only if every replay passes"
+								onClick={() => void state.startRun(3)}
+								disabled={
+									!state.selectedId ||
+									state.selectedId === "__platform_smoke__" ||
+									state.isRunning ||
+									state.isLoading
+								}
+							>
+								Verify (3 replays)
+							</Button>
 						</>
 					)}
 				</div>
@@ -238,7 +253,7 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 						<Button
 							type="submit"
 							size="sm"
-							disabled={state.isSaving}
+							disabled={state.isSaving || state.weakSteps > 0}
 						>
 							{state.isSaving && <Spinner className="size-4" />}
 							{state.isSaving ? "Saving…" : "Save recording"}
@@ -247,6 +262,15 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 							<p className="text-muted-foreground text-sm">
 								No outcome checks recorded. Replay alone will
 								not verify the app.
+							</p>
+						)}
+						{state.weakSteps > 0 && (
+							<p className="text-destructive text-sm">
+								{state.weakSteps} step
+								{state.weakSteps === 1 ? " has" : "s have"} no
+								unique data-testid, so this recording cannot be
+								saved. Ask the assistant to add test ids to
+								those elements, then record again.
 							</p>
 						)}
 					</div>
