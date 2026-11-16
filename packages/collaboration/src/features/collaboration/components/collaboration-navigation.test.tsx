@@ -39,6 +39,10 @@ const dashboard = vi.hoisted(() => ({
 	},
 }));
 
+const due = vi.hoisted(() => ({ today: 0 }));
+vi.mock("@/features/dashboard/use-due-today", () => ({
+	useDueToday: () => due.today,
+}));
 vi.mock("@/features/dashboard/dashboard.context", () => ({
 	useDashboard: () => dashboard,
 }));
@@ -111,7 +115,10 @@ beforeEach(() => {
 	dashboard.history.scrollTop.current = 0;
 	dashboard.openRoom.mockResolvedValue(undefined);
 });
-afterEach(cleanup);
+afterEach(() => {
+	cleanup();
+	due.today = 0;
+});
 
 describe("CollaborationNavigation", () => {
 	it("keeps Today, Work, Topics, Digital Twins and Routines as the main destinations", () => {
@@ -157,9 +164,7 @@ describe("CollaborationNavigation", () => {
 
 	it("shows a nonzero Today count without introducing zero labels", () => {
 		const state = createInitialCollaborationState();
-		state.items = state.items
-			.filter((item) => item.status === "open" && item.askType !== "fyi")
-			.slice(0, 2);
+		due.today = 2;
 		state.topics = [];
 		state.memories = [];
 		renderNavigation("/", state);
