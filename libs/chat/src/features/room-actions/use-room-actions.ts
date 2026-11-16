@@ -4,6 +4,7 @@ import { usePixel } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import type { ChatStore } from "../chat/chat.store";
+import { useChatSelector } from "../chat/use-chat-selector";
 import { useChatSession } from "../chat/use-chat-session";
 import { useChatConfig } from "../chat-config/use-chat-config";
 
@@ -97,7 +98,10 @@ export const useRoomActions = (roomId: string): RoomActions => {
 		`META | GetPlaygroundRooms(pinned=[true], sort=["DESC"]);`,
 		{ data: [] },
 	);
-	const roomCounter = chat.keys.roomCounter;
+	const roomCounter = useChatSelector(
+		chat,
+		(current) => current.keys.roomCounter,
+	);
 	const seenCounter = useRef(roomCounter);
 	const { refresh } = pinnedRooms;
 

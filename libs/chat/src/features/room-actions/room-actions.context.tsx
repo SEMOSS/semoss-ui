@@ -1,6 +1,4 @@
 import { createContext, type ReactNode, useContext, useState } from "react";
-import { useChatSelector } from "../chat/use-chat-selector";
-import { useChatSession } from "../chat/use-chat-session";
 import type { RoomStore } from "../room/room.store";
 import { useRoomSelector } from "../room/use-room-selector";
 import { SaveWorkspaceDialog } from "../room-settings/room-workspace-creation";
@@ -53,9 +51,6 @@ export const RoomActionsProvider = ({
 		instructions: current.options.instructions,
 		mcps: current.options.mcp,
 	}));
-	// `useRoomActions` reads the favorites again when the room counter moves
-	const { chat } = useChatSession();
-	useChatSelector(chat, (current) => current.keys.roomCounter);
 	const actions = useRoomActions(roomId);
 	const [isRenaming, setIsRenaming] = useState(false);
 	const [isDownloadOpen, setIsDownloadOpen] = useState(false);

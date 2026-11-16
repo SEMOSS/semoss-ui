@@ -2,7 +2,6 @@ import { ListMinusIcon, PlusIcon } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
 import { Button, Small } from "@semoss/ui/next";
 import type { RoomStore } from "../room/room.store";
-import { useRoomSelector } from "../room/use-room-selector";
 import { useRoomSuggestions } from "../suggestions/use-room-suggestions";
 
 interface RoomSuggestionsProps {
@@ -15,25 +14,6 @@ interface RoomSuggestionsProps {
  */
 export const RoomSuggestions = ({ room }: RoomSuggestionsProps) => {
 	const { t } = useTranslation("room");
-	// What `useRoomSuggestions` reads from the room while rendering, so a
-	// change to any of it asks for suggestions again
-	useRoomSelector(room, (current) => {
-		const response = current.latestResponseMessage;
-		return [
-			current.model?.engine_id,
-			current.roomId,
-			current.insightId,
-			current.mode,
-			current.options,
-			current.history.length,
-			current.tail.id,
-			current.isLoading,
-			current.isCancelling,
-			current.error,
-			response?.isThinking,
-			response?.hasUnfinishedTools,
-		];
-	});
 	const suggestions = useRoomSuggestions(room);
 	if (suggestions.length === 0) {
 		return null;

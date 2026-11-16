@@ -4,6 +4,7 @@ import { isRecord } from "@semoss/utility/object";
 import { CONNECTOR_SERVICES } from "../connectors/connector.catalog";
 import { useConnectors } from "../connectors/use-connectors";
 import type { RoomStore } from "../room/room.store";
+import { useRoomSelector } from "../room/use-room-selector";
 
 /** Validate the default suggestion response before rendering clickable messages. */
 const readSuggestions = (data: unknown): string[] => {
@@ -36,17 +37,13 @@ const readSuggestions = (data: unknown): string[] => {
 };
 
 /**
- * Generate follow-ups for the settled conversation and current tool selection.
- * Capability descriptions are context only; the server resolves attached MCPs.
- * The SDK discards cancelled responses, and the completed request key also hides
- * the previous result immediately when its inputs change, before effects run.
+ * The pixel that asks for follow-ups, once the conversation has settled.
  *
- * @param room - The conversation and capabilities to suggest follow-ups for.
- * @returns Valid suggestions for the current request, or none while unavailable.
+ * @param room - The room.
+ * @returns The pixel, or an empty string while the room is busy or empty.
  */
-export const useRoomSuggestions = (room: RoomStore): string[] => {
+const buildSuggestionsPixel = (room: RoomStore): string => {
 	const { connectors } = room;
-	useConnectors(connectors);
 	const response = room.latestResponseMessage;
 	const isReady = Boolean(
 		room.model?.engine_id &&
@@ -59,6 +56,9 @@ export const useRoomSuggestions = (room: RoomStore): string[] => {
 			!response?.hasUnfinishedTools &&
 			!connectors.isSavingConnectors,
 	);
+	if (!isReady) {
+		return "";
+	}
 	const unavailableReactors = CONNECTOR_SERVICES.filter(
 		(service) =>
 			!connectors.isProviderOffered(service.provider) ||
@@ -74,10 +74,28 @@ export const useRoomSuggestions = (room: RoomStore): string[] => {
 		})),
 		unavailableReactors,
 	};
-	const pixel = isReady
-		? `GenerateFollowUpQuestions(engine=${JSON.stringify([room.model.engine_id])}, roomId=${JSON.stringify([room.roomId])}, parentMessageId=${JSON.stringify([room.tail.id])}, suggestionContext=[${JSON.stringify(suggestionContext)}]);`
-		: "";
-	const requestKey = JSON.stringify([room.insightId, pixel]);
+	return `GenerateFollowUpQuestions(engine=${JSON.stringify([room.model.engine_id])}, roomId=${JSON.stringify([room.roomId])}, parentMessageId=${JSON.stringify([room.tail.id])}, suggestionContext=[${JSON.stringify(suggestionContext)}]);`;
+};
+
+/**
+ * Generate follow-ups for the settled conversation and current tool selection.
+ * Capability descriptions are context only; the server resolves attached MCPs.
+ * The SDK discards cancelled responses, and the completed request key also hides
+ * the previous result immediately when its inputs change, before effects run.
+ *
+ * @param room - The conversation and capabilities to suggest follow-ups for.
+ * @returns Valid suggestions for the current request, or none while unavailable.
+ */
+export const useRoomSuggestions = (room: RoomStore): string[] => {
+	const { connectors } = room;
+	// the connectors render this hook again when they change; the room's
+	// selector reads them then
+	useConnectors(connectors);
+	const { pixel, insightId } = useRoomSelector(room, (current) => ({
+		pixel: buildSuggestionsPixel(current),
+		insightId: current.insightId,
+	}));
+	const requestKey = JSON.stringify([insightId, pixel]);
 	const [completedRequest, setCompletedRequest] = useState("");
 	const query = usePixel<unknown>(
 		pixel,
@@ -85,7 +103,7 @@ export const useRoomSuggestions = (room: RoomStore): string[] => {
 			data: null,
 			onSuccess: () => setCompletedRequest(requestKey),
 		},
-		room.insightId,
+		insightId,
 	);
 
 	return pixel &&
