@@ -9,6 +9,7 @@ import { RoomLayout } from "./features/conversation/room-layout";
 import { RoomMessages } from "./features/conversation/room-messages";
 import { NewKnowledgeFormBody } from "./features/knowledge/new-knowledge-form-body";
 import { NewChat } from "./features/new-chat/new-chat";
+import { RoomFrame } from "./features/room/room-frame";
 import { RoomScope } from "./features/room/room-scope";
 import { RoomHeader } from "./features/room-header/room-header";
 import { RoomTitle } from "./features/room-header/room-title";
@@ -32,6 +33,8 @@ export const Chat = {
 	ConfigProvider: ChatConfigProvider,
 	/** Opens a room by id and provides it to the pieces inside. */
 	Room: RoomScope,
+	/** Lays out the open room: its conversation beside its Workspace. */
+	Frame: RoomFrame,
 	/** A new chat before its first message. */
 	NewChat,
 	/** A room's conversation beside its Workspace, with a header slot above. */

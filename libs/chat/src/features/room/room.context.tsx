@@ -29,3 +29,19 @@ export const useRoom = (): RoomStore => {
 	}
 	return room;
 };
+
+/**
+ * The room a piece shows: the one it was given, else the nearest `Chat.Room`.
+ *
+ * @param room - The room passed as a prop, if any.
+ * @returns The room.
+ * @throws Error when there is neither.
+ */
+export const useRoomOrContext = (room?: RoomStore): RoomStore => {
+	const contextRoom = useContext(RoomContext);
+	const resolved = room ?? contextRoom;
+	if (!resolved) {
+		throw new Error("Pass a room, or render this piece inside Chat.Room");
+	}
+	return resolved;
+};

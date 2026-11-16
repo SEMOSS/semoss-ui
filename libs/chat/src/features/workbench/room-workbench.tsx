@@ -9,14 +9,14 @@ import { useIsMobile } from "@semoss/ui/next";
 import { Workbench, WorkbenchProvider } from "@semoss/workbench";
 import { normalizeFolderPath } from "../chat-tools/folders/folder-path";
 import { useNextMessageRoom } from "../conversation/next-message-room.context";
-import { RoomProvider } from "../room/room.context";
+import { RoomProvider, useRoomOrContext } from "../room/room.context";
 import type { RoomStore } from "../room/room.store";
 import { RoomWorkbenchRail } from "./room-workbench-rail";
 import type { NewRoomWorkbenchPanels } from "./use-workbench-panels";
 
 interface RoomWorkbenchProps {
 	/** The room owns the dock, including while this view is hidden. */
-	room: RoomStore;
+	room?: RoomStore;
 	/** A new chat's own panel actions, which prepare its room, until its first message. */
 	newRoomPanels?: NewRoomWorkbenchPanels;
 }
@@ -30,7 +30,8 @@ interface RoomWorkbenchProps {
  * closes it.
  */
 export const RoomWorkbench = observer(
-	({ room, newRoomPanels }: RoomWorkbenchProps) => {
+	({ room: roomProp, newRoomPanels }: RoomWorkbenchProps) => {
+		const room = useRoomOrContext(roomProp);
 		const { t } = useTranslation("connectors");
 		const isMobile = useIsMobile();
 		const nextMessageRoom = useNextMessageRoom() ?? room;

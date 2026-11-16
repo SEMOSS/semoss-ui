@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { runInAction } from "mobx";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { DEFAULT_CHAT_THEME } from "../chat-config/chat-theme";
+import { RoomProvider } from "../room/room.context";
 import { RoomStore } from "../room/room.store";
 import { RoomHeader } from "./room-header";
 
@@ -73,4 +74,22 @@ test("the toggle opens the Workspace as it was left and closes it", () => {
 	fireEvent.click(toggle);
 	expect(room.sidebar.isOpen).toBe(false);
 	expect(toggle).toHaveAttribute("aria-label", "studio.openWorkspace");
+});
+
+test("inside a room, the header finds its room without a prop", () => {
+	const room = createRoom();
+	render(
+		<RoomProvider room={room}>
+			<RoomHeader />
+		</RoomProvider>,
+	);
+	fireEvent.click(
+		screen.getByRole("button", { name: "studio.openWorkspace" }),
+	);
+	expect(room.sidebar.isOpen).toBe(true);
+});
+
+test("without a room or a prop, the header says where it belongs", () => {
+	vi.spyOn(console, "error").mockImplementation(() => undefined);
+	expect(() => render(<RoomHeader />)).toThrow(/Chat\.Room/);
 });
