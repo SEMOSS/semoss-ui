@@ -13,6 +13,7 @@ import {
 	ToggleGroup,
 	ToggleGroupItem,
 } from "@semoss/ui/next";
+import { NEW_CHAT_BUILD_DEFAULTS } from "@/features/chat-config/new-chat-build-defaults";
 import { offersAgentMode } from "@/features/conversation/agent-mode-choice";
 import {
 	isNewChatMode,
@@ -51,7 +52,9 @@ export const NewChatSettings = observer(() => {
 	const canUseAgentMode = offersAgentMode(theme.featureFlags);
 	// the mode a new chat would start in, which the agent row follows
 	const startMode =
-		preferences.mode ?? readDeploymentNewChatDefaults(theme).mode ?? "chat";
+		preferences.mode ??
+		readDeploymentNewChatDefaults(theme, NEW_CHAT_BUILD_DEFAULTS).mode ??
+		"chat";
 	const isAgentDefault = canUseAgentMode && startMode === "agent";
 	const defaultLabel = t("settings.general.newChat.default");
 

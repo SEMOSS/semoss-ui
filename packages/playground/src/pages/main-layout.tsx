@@ -26,6 +26,7 @@ import {
 	type ChatConfig,
 	ChatConfigContext,
 } from "@/features/chat-config/chat-config.context";
+import { NEW_CHAT_BUILD_DEFAULTS } from "@/features/chat-config/new-chat-build-defaults";
 import { useWorkspaceNavigation } from "@/features/conversation/use-workspace-navigation";
 import { WorkspaceNavigationContext } from "@/features/conversation/workspace-navigation.context";
 import { NavigationButton } from "@/features/navigation/navigation-button";
@@ -60,7 +61,11 @@ export const MainLayout = observer(() => {
 
 	// set up the chat store
 	const chatStore = useMemo(() => {
-		const store = new ChatStore(theme, ROOM_PANEL_COMPONENTS);
+		const store = new ChatStore(
+			theme,
+			ROOM_PANEL_COMPONENTS,
+			NEW_CHAT_BUILD_DEFAULTS,
+		);
 
 		// initialize it
 		store.initialize();
@@ -72,6 +77,7 @@ export const MainLayout = observer(() => {
 	const chatConfig = useMemo<ChatConfig>(
 		() => ({
 			theme,
+			newChatDefaults: NEW_CHAT_BUILD_DEFAULTS,
 			navigation: {
 				openRoom: (roomId) => navigate(`/room/${roomId}`),
 				onRoomDeleted: () => navigate("/"),

@@ -13,6 +13,7 @@ import { toast } from "@semoss/ui/next";
 import { parseTimestampWithUtcDefault } from "@semoss/utility/date";
 import type { WorkbenchPanelConfigAny } from "@semoss/workbench";
 import {
+	type NewChatBuildDefaults,
 	readDeploymentNewChatDefaults,
 	readNewChatPreferences,
 	resolveNewChatModel,
@@ -27,8 +28,6 @@ import type {
 } from "@/types";
 import { throwOnPixelErrors } from "@/utility/pixel-errors";
 import { RoomStore } from "../room/room.store";
-
-const DEFAUlT_MODEL_NAME = import.meta.env.VITE_DEFAUlT_MODEL_NAME || "";
 
 /**
  * Shape of a room row as rendered in the nav list. Matches the columns
@@ -104,6 +103,7 @@ interface ChatStoreInterface {
 export class ChatStore {
 	private _theme: ThemeMap["playground"];
 	private _panelComponents: Record<string, WorkbenchPanelConfigAny>;
+	private _build: NewChatBuildDefaults;
 	private _store: ChatStoreInterface = {
 		isInitialized: false,
 		models: {
@@ -127,8 +127,11 @@ export class ChatStore {
 		 * imports `@/stores`.
 		 */
 		panelComponents: Record<string, WorkbenchPanelConfigAny>,
+		/** The build's new-chat defaults, read from its env by the host. */
+		build: NewChatBuildDefaults = {},
 	) {
 		this._theme = theme;
+		this._build = build;
 		this._panelComponents = panelComponents;
 		this._store.embeddedPageMap = [
 			...theme.sidebar.headerItems,
@@ -767,7 +770,10 @@ export class ChatStore {
 
 	/** The deployment's default model id: the theme's, then the env's. */
 	private get deploymentDefaultModelId(): string {
-		return readDeploymentNewChatDefaults(this._theme).modelId ?? "";
+		return (
+			readDeploymentNewChatDefaults(this._theme, this._build).modelId ??
+			""
+		);
 	}
 
 	/**
@@ -781,7 +787,7 @@ export class ChatStore {
 		resolveNewChatModel(
 			null,
 			readNewChatPreferences(Session.getSnapshot().user?.meta),
-			readDeploymentNewChatDefaults(this._theme),
+			readDeploymentNewChatDefaults(this._theme, this._build),
 			this._store.models.available,
 		);
 
@@ -816,7 +822,8 @@ export class ChatStore {
 					this._theme.defaultRoomSettings?.model
 						?.engine_display_name ||
 					this._theme.defaultRoomSettings?.model?.engine_name ||
-					DEFAUlT_MODEL_NAME,
+					this._build.modelName ||
+					"",
 				engine_type: "MODEL",
 			});
 			return;

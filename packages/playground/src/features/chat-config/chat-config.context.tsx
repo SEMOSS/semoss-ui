@@ -1,5 +1,6 @@
 import { createContext } from "react";
 import type { ThemeMap } from "@semoss/shared";
+import type { NewChatBuildDefaults } from "@/features/new-chat-preferences/new-chat-preferences";
 
 /**
  * Where chat UI asks the host to go. Chat code never routes itself, so the
@@ -17,6 +18,8 @@ export interface ChatConfig {
 	/** The deployment's theme, with every default filled in. */
 	readonly theme: ThemeMap["playground"];
 	readonly navigation: ChatNavigation;
+	/** The build's new-chat defaults, under the theme's. */
+	readonly newChatDefaults: NewChatBuildDefaults;
 }
 
 export const ChatConfigContext = createContext<ChatConfig | undefined>(

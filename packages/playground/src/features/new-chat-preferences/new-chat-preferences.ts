@@ -72,28 +72,32 @@ export const readNewChatPreferences = (
 	};
 };
 
+/** The build's own new-chat defaults. The host reads them from its env. */
+export interface NewChatBuildDefaults {
+	readonly modelId?: string;
+	readonly modelName?: string;
+	readonly mode?: string;
+	readonly agentId?: string;
+}
+
 /**
  * Read the deployment's defaults: the playground theme's
- * `defaultRoomSettings`, then the build's env.
+ * `defaultRoomSettings`, then the build's.
  *
  * @param theme - The playground theme.
+ * @param build - The build's defaults, from the host.
  * @returns Each default, null when neither names one or it is not valid.
  */
 export const readDeploymentNewChatDefaults = (
 	theme: ThemeMap["playground"],
+	build: NewChatBuildDefaults = {},
 ): NewChatPreferences => {
 	const settings = theme.defaultRoomSettings;
-	const mode = settings?.mode || import.meta.env.VITE_DEFAULT_CHAT_MODE;
+	const mode = settings?.mode || build.mode;
 	return {
-		modelId:
-			settings?.model?.engine_id ||
-			import.meta.env.VITE_DEFAUlT_MODEL_ID ||
-			null,
+		modelId: settings?.model?.engine_id || build.modelId || null,
 		mode: isNewChatMode(mode) ? mode : null,
-		agentId:
-			settings?.agentId ||
-			import.meta.env.VITE_DEFAULT_CHAT_AGENT_ID ||
-			null,
+		agentId: settings?.agentId || build.agentId || null,
 	};
 };
 

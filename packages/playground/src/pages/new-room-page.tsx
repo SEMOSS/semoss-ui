@@ -23,6 +23,7 @@ import { RoomGreeting } from "@/components/room/room-greeting";
 import { RoomInput } from "@/components/room/room-input";
 import { RoomWorkbench } from "@/components/room/room-workbench";
 import { FileDragProvider } from "@/contexts/file-drag-context";
+import { useChatConfig } from "@/features/chat-config/use-chat-config";
 import {
 	canChooseAgentMode,
 	offersAgentMode,
@@ -67,6 +68,7 @@ export const NewRoomPage = observer(() => {
 		"chatConnectors",
 	]);
 	const theme = usePlaygroundTheme();
+	const { newChatDefaults } = useChatConfig();
 	const { theme: colorMode } = useTheme();
 
 	const isDark =
@@ -147,7 +149,10 @@ export const NewRoomPage = observer(() => {
 	const [initialChat] = useState(() => {
 		const session = readSessionNewChat(lastLogin);
 		const preferences = readNewChatPreferences(userMeta);
-		const deployment = readDeploymentNewChatDefaults(theme);
+		const deployment = readDeploymentNewChatDefaults(
+			theme,
+			newChatDefaults,
+		);
 		const initialMode = resolveNewChatMode(
 			session,
 			preferences,
