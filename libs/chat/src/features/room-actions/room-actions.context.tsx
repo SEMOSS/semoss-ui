@@ -1,7 +1,7 @@
 import { createContext, type ReactNode, useContext, useState } from "react";
 import type { RoomStore } from "../room/room.store";
 import { useRoomSelector } from "../room/use-room-selector";
-import { SaveWorkspaceDialog } from "../room-settings/room-workspace-creation";
+import { SaveAgentDialog } from "../room-settings/save-agent-dialog";
 import { DownloadConversationDialog } from "./download-conversation-dialog";
 import { type RoomActions, useRoomActions } from "./use-room-actions";
 
@@ -68,7 +68,7 @@ export const RoomActionsProvider = ({
 			}}
 		>
 			{children}
-			<SaveWorkspaceDialog
+			<SaveAgentDialog
 				systemPrompt={instructions}
 				mcps={mcps}
 				open={isPublishOpen}

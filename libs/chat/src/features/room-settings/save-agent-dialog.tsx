@@ -22,7 +22,7 @@ import { getErrorMessage } from "@semoss/utility/error";
 import type { MCPConfig } from "../../types";
 import { useChatSession } from "../chat/use-chat-session";
 
-interface SaveWorkspaceDialogProps {
+interface SaveAgentDialogProps {
 	/** System prompt/instructions to save. */
 	systemPrompt: string;
 	/** MCPs to include in the saved agent. */
@@ -34,12 +34,12 @@ interface SaveWorkspaceDialogProps {
 }
 
 /** Publishes the room's instructions and tools as a new agent. */
-export const SaveWorkspaceDialog = ({
+export const SaveAgentDialog = ({
 	systemPrompt,
 	mcps,
 	open,
 	onOpenChange,
-}: SaveWorkspaceDialogProps) => {
+}: SaveAgentDialogProps) => {
 	const { chat } = useChatSession();
 	const { t } = useTranslation("room");
 	const form = useForm({

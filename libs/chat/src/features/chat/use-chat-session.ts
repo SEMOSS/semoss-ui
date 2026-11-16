@@ -9,7 +9,7 @@ export const useChatSession = () => {
 	const context = useContext(ChatSessionContext);
 	if (context === undefined) {
 		throw new Error(
-			"useChatSession must be used within Chat.SessionProvider",
+			"useChatSession must be used within ChatSessionProvider",
 		);
 	}
 

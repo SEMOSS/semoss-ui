@@ -6,7 +6,7 @@ import {
 	isRoomListView,
 	type RoomListItem,
 	type RoomListView,
-} from "./room-list";
+} from "./room-list-groups";
 
 const now = new Date();
 const daysAgo = (days: number) =>

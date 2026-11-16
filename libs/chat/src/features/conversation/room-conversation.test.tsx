@@ -3,7 +3,7 @@ import type { PropsWithChildren } from "react";
 import { beforeEach, expect, test, vi } from "vitest";
 import { fakeStore } from "../../test/fake-store";
 import type { RoomStore } from "../room/room.store";
-import { RoomContent } from "./room-content";
+import { RoomConversation } from "./room-conversation";
 
 const mocks = vi.hoisted(() => {
 	class MockResponseMessageStore {
@@ -62,8 +62,8 @@ vi.mock("../messages/response-message", () => ({
 	ResponseMessage: () => null,
 }));
 vi.mock("../composer/room-input", () => ({ RoomInput: () => null }));
-vi.mock("../composer/file-drag.context", () => ({
-	useFileDrag: () => ({ isDragging: false }),
+vi.mock("../composer/file-drop.context", () => ({
+	useFileDrop: () => ({ isDragging: false }),
 }));
 vi.mock("../chat/use-chat-session", () => ({
 	useChatSession: () => ({ chat: { setSelectedModel: vi.fn() } }),
@@ -159,7 +159,7 @@ test("finishes the stream scroll before a later grouped-tool resize", () => {
 	});
 
 	const { getByTestId } = render(
-		<RoomContent room={room as unknown as RoomStore} />,
+		<RoomConversation room={room as unknown as RoomStore} />,
 	);
 	act(flushAnimationFrames);
 	mocks.scrollTo.mockClear();

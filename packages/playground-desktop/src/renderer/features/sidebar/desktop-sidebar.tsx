@@ -6,7 +6,11 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Link, useMatch, useNavigate } from "react-router";
-import { Chat, useRoomSearchShortcut } from "@semoss/chat";
+import {
+	RoomList,
+	RoomSearchDialog,
+	useRoomSearchShortcut,
+} from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import { useSession } from "@semoss/sdk/react";
 import {
@@ -58,7 +62,7 @@ export const DesktopSidebar = () => {
 						</SidebarMenuItem>
 					</SidebarMenu>
 				</SidebarHeader>
-				<Chat.RoomList
+				<RoomList
 					isVisible={isMobile ? openMobile : open}
 					activeRoomId={roomMatch?.params.roomId}
 					onSearch={() => setIsSearchOpen(true)}
@@ -103,7 +107,7 @@ export const DesktopSidebar = () => {
 					</SidebarMenu>
 				</SidebarFooter>
 			</Sidebar>
-			<Chat.RoomSearch
+			<RoomSearchDialog
 				open={isSearchOpen}
 				onOpenChange={setIsSearchOpen}
 			/>

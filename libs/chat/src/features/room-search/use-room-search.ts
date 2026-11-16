@@ -3,7 +3,7 @@ import {
 	buildPlaygroundRoomsPixel,
 	type RoomListItem,
 	type RoomListView,
-} from "../room-list/room-list";
+} from "../room-list/room-list-groups";
 
 /** Most recently active rooms first, favorites leading. */
 const SEARCH_VIEW: RoomListView = {

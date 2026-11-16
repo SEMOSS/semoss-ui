@@ -1,5 +1,5 @@
 import { TriangleAlertIcon } from "lucide-react";
-import { Chat, type ConnectorService } from "@semoss/chat";
+import { type ConnectorService, ConnectorServiceIcon } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import { cn, Label, Muted, Small, Switch } from "@semoss/ui/next";
 
@@ -50,7 +50,10 @@ export const ConnectorServiceRow = ({
 	return (
 		<div className="flex min-w-0 items-start gap-3 py-3">
 			<div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border bg-background">
-				<Chat.ConnectorIcon serviceId={service.id} className="size-5" />
+				<ConnectorServiceIcon
+					serviceId={service.id}
+					className="size-5"
+				/>
 			</div>
 			<div className="flex min-w-0 flex-1 flex-col gap-0.5">
 				<Label htmlFor={switchId} className="font-medium text-sm">

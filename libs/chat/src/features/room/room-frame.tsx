@@ -4,17 +4,17 @@ import { useRoom } from "./room.context";
 import { useRoomSelector } from "./use-room-selector";
 
 interface RoomFrameProps {
-	/** The row above the room, such as `Chat.Header`. */
+	/** The row above the room, such as `RoomHeader`. */
 	header?: ReactNode;
-	/** The room's Workspace, such as `Chat.Workbench`; none leaves it out. */
+	/** The room's Workspace, such as `RoomWorkbench`; none leaves it out. */
 	workbench?: ReactNode;
-	/** The conversation, such as `Chat.Conversation`. */
+	/** The conversation, such as `RoomConversation`. */
 	children: ReactNode;
 }
 
 /**
  * Lay out the open room: its conversation beside its Workspace, which opens,
- * closes, and collapses with the room. Render inside `Chat.Room`.
+ * closes, and collapses with the room. Render inside `RoomScope`.
  */
 export const RoomFrame = ({ header, workbench, children }: RoomFrameProps) => {
 	const room = useRoom();

@@ -3,7 +3,7 @@ import { useEffect } from "react";
 /**
  * Open chat search on Cmd+K (Ctrl+K elsewhere), from anywhere in the page.
  *
- * @param onOpenChange - Opens the search, as `Chat.RoomSearch`'s `onOpenChange`; pass a stable
+ * @param onOpenChange - Opens the search, as `RoomSearchDialog`'s `onOpenChange`; pass a stable
  * function, such as a state setter.
  * @param isEnabled - Whether the shortcut is on, as when the chat history is shown.
  */

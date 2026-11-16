@@ -54,7 +54,7 @@ import {
 	groupRoomList,
 	type RoomListHeading,
 	type RoomListItem,
-} from "./room-list";
+} from "./room-list-groups";
 import {
 	ROOM_LIST_ACTION_CLASS,
 	RoomListViewMenu,
@@ -70,7 +70,7 @@ const isApplePlatform =
 const isStringList = (value: unknown): value is string[] =>
 	Array.isArray(value) && value.every((item) => typeof item === "string");
 
-interface RoomListSectionProps {
+interface RoomListProps {
 	/** Whether the list is on screen; it only loads and pages while it is. */
 	isVisible: boolean;
 	/** The room open now, marked in the list. */
@@ -85,11 +85,11 @@ interface RoomListSectionProps {
  * renames in place (double-click or F2) and has a menu to favorite, download,
  * or delete it.
  */
-export const RoomListSection = ({
+export const RoomList = ({
 	isVisible,
 	activeRoomId,
 	onSearch,
-}: RoomListSectionProps) => {
+}: RoomListProps) => {
 	const { t } = useTranslation("sidebar");
 	const { theme, navigation } = useChatConfig();
 	const [downloadRoomId, setDownloadRoomId] = useState<string | null>(null);

@@ -28,7 +28,7 @@ import {
 } from "@semoss/ui/next";
 import type { Workspace } from "../../types";
 import { useChatConfig } from "../chat-config/use-chat-config";
-import { NewKnowledgeFormBody } from "../knowledge/new-knowledge-form-body";
+import { NewKnowledgeForm } from "../knowledge/new-knowledge-form";
 import { AgentSelector } from "./agent-selector";
 import { splitMcpByType } from "./mcp-utils";
 
@@ -256,7 +256,7 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 						    which trims the focus ring on the inputs at the edges.
 						    A tiny inset gives the rings room. */}
 						<div className="min-h-0 flex-1 overflow-y-auto px-1 py-1">
-							<NewKnowledgeFormBody
+							<NewKnowledgeForm
 								formId={createFormId}
 								onLoadingChange={setIsCreating}
 								onSuccess={(next) => {

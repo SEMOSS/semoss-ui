@@ -34,8 +34,8 @@ vi.mock("@semoss/shared", () => ({
 	createMcpPlatformUrl: () => () => "",
 	createPromptPlatformUrl: () => () => "",
 }));
-vi.mock("../knowledge/new-knowledge-form-body", () => ({
-	NewKnowledgeFormBody: () => null,
+vi.mock("../knowledge/new-knowledge-form", () => ({
+	NewKnowledgeForm: () => null,
 }));
 vi.mock("./agent-selector", () => ({
 	AgentSelector: ({

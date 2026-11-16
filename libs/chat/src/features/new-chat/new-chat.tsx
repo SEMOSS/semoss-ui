@@ -19,7 +19,7 @@ import type { MCPConfig, Prompt, Workspace } from "../../types";
 import { useChatSelector } from "../chat/use-chat-selector";
 import { useChatSession } from "../chat/use-chat-session";
 import { useChatConfig } from "../chat-config/use-chat-config";
-import { FileDragProvider } from "../composer/file-drag.context";
+import { FileDropProvider } from "../composer/file-drop.context";
 import { RoomInput } from "../composer/room-input";
 import {
 	canChooseAgentMode,
@@ -901,7 +901,7 @@ export const NewChat = ({
 						</DraftSettingsContext.Provider>
 					}
 				>
-					<FileDragProvider>
+					<FileDropProvider>
 						{landingSrc && (
 							<img
 								src={landingSrc}
@@ -1035,7 +1035,7 @@ export const NewChat = ({
 								) : null}
 							</div>
 						</DropHighlight>
-					</FileDragProvider>
+					</FileDropProvider>
 				</RoomLayout>
 			</div>
 		</div>

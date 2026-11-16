@@ -63,11 +63,11 @@ vi.mock("@semoss/i18n", async (importOriginal) => {
 	};
 });
 
-vi.mock("./file-drag.context", async (importOriginal) => {
-	const actual = await importOriginal<typeof import("./file-drag.context")>();
+vi.mock("./file-drop.context", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("./file-drop.context")>();
 	return {
 		...actual,
-		useFileDrag: () => ({
+		useFileDrop: () => ({
 			isDragging: false,
 			files: [],
 			addFiles: vi.fn(),

@@ -1,7 +1,11 @@
 import { Bot, HelpCircle, SquarePenIcon } from "lucide-react";
 import { useState } from "react";
 import { Link, matchPath, useLocation, useParams } from "react-router";
-import { Chat, useRoomSearchShortcut } from "@semoss/chat";
+import {
+	RoomList,
+	RoomSearchDialog,
+	useRoomSearchShortcut,
+} from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Separator,
@@ -144,7 +148,7 @@ export const GlobalNav = () => {
 					</SidebarMenu>
 				</SidebarHeader>
 				{!hideChatHistory && (
-					<Chat.RoomList
+					<RoomList
 						isVisible={isVisible}
 						activeRoomId={activeRoomId}
 						onSearch={() => setIsSearchOpen(true)}
@@ -203,7 +207,7 @@ export const GlobalNav = () => {
 				</SidebarFooter>
 			</Sidebar>
 
-			<Chat.RoomSearch
+			<RoomSearchDialog
 				open={isSearchOpen}
 				onOpenChange={setIsSearchOpen}
 			/>

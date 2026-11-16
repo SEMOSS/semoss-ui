@@ -129,7 +129,7 @@ export type RoomListHeading =
 	| { type: "noAgent" };
 
 /** One headed run of rooms. */
-export interface RoomListSection {
+export interface RoomListGroup {
 	key: string;
 	heading: RoomListHeading;
 	rooms: RoomListItem[];
@@ -168,7 +168,7 @@ const headingOf = (
  * agent, at the top, except "No agent", which always ends the list.
  */
 const insertAt = (
-	sections: readonly RoomListSection[],
+	sections: readonly RoomListGroup[],
 	key: string,
 	view: RoomListView,
 ): number => {
@@ -192,9 +192,9 @@ export const groupRoomList = (
 	rooms: readonly RoomListItem[],
 	view: RoomListView,
 	pending: readonly RoomListItem[] = [],
-): RoomListSection[] => {
-	const sections: RoomListSection[] = [];
-	const byKey = new Map<string, RoomListSection>();
+): RoomListGroup[] => {
+	const sections: RoomListGroup[] = [];
+	const byKey = new Map<string, RoomListGroup>();
 	for (const room of rooms) {
 		const { key, heading } = headingOf(room, view);
 		let section = byKey.get(key);

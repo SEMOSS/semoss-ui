@@ -88,5 +88,5 @@ test("inside a room, the header finds its room without a prop", () => {
 
 test("without a room or a prop, the header says where it belongs", () => {
 	vi.spyOn(console, "error").mockImplementation(() => undefined);
-	expect(() => render(<RoomHeader />)).toThrow(/Chat\.Room/);
+	expect(() => render(<RoomHeader />)).toThrow(/RoomScope/);
 });

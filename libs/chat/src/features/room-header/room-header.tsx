@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import { useRoomOrContext } from "../room/room.context";
 import type { RoomStore } from "../room/room.store";
+import { RoomWorkbenchToggle } from "../workbench/room-workbench-toggle";
 import type { NewRoomWorkbenchPanels } from "../workbench/use-workbench-panels";
-import { WorkbenchToggleButton } from "../workbench/workbench-toggle-button";
 import { RoomTitle } from "./room-title";
 
 interface RoomHeaderProps {
@@ -32,7 +32,7 @@ export const RoomHeader = ({
 				<RoomTitle />
 			</div>
 			<div className="flex shrink-0 items-center gap-0.5">
-				<WorkbenchToggleButton
+				<RoomWorkbenchToggle
 					room={room}
 					newRoomPanels={newRoomPanels}
 				/>

@@ -9,7 +9,7 @@ import { RoomLayout } from "../conversation/room-layout";
 import { RoomStore } from "../room/room.store";
 import { useRoomSelector } from "../room/use-room-selector";
 import { RoomWorkbench } from "./room-workbench";
-import { WorkbenchToggleButton } from "./workbench-toggle-button";
+import { RoomWorkbenchToggle } from "./room-workbench-toggle";
 
 const mocks = vi.hoisted(() => ({
 	explorerHost: vi.fn<(host: FileExplorerHost) => void>(),
@@ -49,7 +49,7 @@ const RoomLayoutTest = ({ room }: { room: RoomStore }) => {
 	return (
 		<RoomLayout
 			isWorkbenchOpen={isOpen}
-			header={<WorkbenchToggleButton room={room} />}
+			header={<RoomWorkbenchToggle room={room} />}
 			workbench={<RoomWorkbench room={room} />}
 		>
 			<input aria-label="Draft" defaultValue="Unsent draft" />

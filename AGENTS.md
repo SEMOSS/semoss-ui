@@ -65,8 +65,8 @@ Libraries:
   generic helpers and `StoreState` — deliberately domain-agnostic, so it can never import sdk,
   shared or i18n)
 - `@semoss/panels` → File panels for the dock (depends on i18n, sdk, shared, ui, utility, workbench)
-- `@semoss/chat` → The chat: rooms, messages, tools, the composer, the room list and new chat, as a
-  `Chat` object of composable pieces (depends on connectors, i18n, panels, sdk, shared, ui, utility,
+- `@semoss/chat` → The chat: rooms, messages, tools, the composer, the room list and new chat, as named
+  composable pieces (depends on connectors, i18n, panels, sdk, shared, ui, utility,
   workbench; never on `packages/*`, a router, Electron, or `import.meta.env`)
 - `@semoss/config` → Shared Vite/Vitest config and `tsconfig.base.json` (private, not published;
   dev dependency of every library and application)

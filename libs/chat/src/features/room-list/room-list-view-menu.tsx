@@ -19,7 +19,7 @@ import type {
 	RoomListView,
 	RoomSortBy,
 	RoomSortDirection,
-} from "./room-list";
+} from "./room-list-groups";
 
 /** Each sort the menu offers, as column and direction. */
 const SORT_OPTIONS = [

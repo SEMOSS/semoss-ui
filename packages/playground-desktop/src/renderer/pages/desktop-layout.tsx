@@ -1,6 +1,10 @@
 import type { CSSProperties } from "react";
 import { Outlet } from "react-router";
-import { Chat, useCreateChatStore } from "@semoss/chat";
+import {
+	ChatConfigProvider,
+	ChatSessionProvider,
+	useCreateChatStore,
+} from "@semoss/chat";
 import { SidebarInset, SidebarProvider } from "@semoss/ui/next";
 import { useDesktopCommands } from "@/features/commands/use-desktop-commands";
 import { getDesktopBridge } from "@/features/desktop-bridge/desktop-bridge";
@@ -17,8 +21,8 @@ export const DesktopLayout = () => {
 	useDesktopCommands(getDesktopBridge());
 
 	return (
-		<Chat.SessionProvider store={store}>
-			<Chat.ConfigProvider config={config}>
+		<ChatSessionProvider store={store}>
+			<ChatConfigProvider config={config}>
 				<SidebarProvider
 					style={{ "--sidebar-width": "16rem" } as CSSProperties}
 					className="h-dvh"
@@ -30,7 +34,7 @@ export const DesktopLayout = () => {
 						</div>
 					</SidebarInset>
 				</SidebarProvider>
-			</Chat.ConfigProvider>
-		</Chat.SessionProvider>
+			</ChatConfigProvider>
+		</ChatSessionProvider>
 	);
 };

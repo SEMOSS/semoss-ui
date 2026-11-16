@@ -9,9 +9,7 @@ import { type ChatConfig, ChatConfigContext } from "./chat-config.context";
 export const useChatConfig = (): ChatConfig => {
 	const config = useContext(ChatConfigContext);
 	if (!config) {
-		throw new Error(
-			"useChatConfig must be used within Chat.ConfigProvider",
-		);
+		throw new Error("useChatConfig must be used within ChatConfigProvider");
 	}
 	return config;
 };

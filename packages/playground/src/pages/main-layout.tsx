@@ -8,7 +8,7 @@ import {
 } from "react";
 import { matchPath, Outlet, useLocation } from "react-router";
 import {
-	Chat,
+	ChatSessionProvider,
 	useChatSelector,
 	useCreateChatStore,
 	WorkspaceNavigationContext,
@@ -157,7 +157,7 @@ export const MainLayout = () => {
 	}, [theme.tour?.show, theme.dialog]);
 
 	return (
-		<Chat.SessionProvider store={chatStore}>
+		<ChatSessionProvider store={chatStore}>
 			<TourContext.Provider
 				value={{
 					isOpen: isTourOpen,
@@ -258,6 +258,6 @@ export const MainLayout = () => {
 					</PlaygroundChatConfigProvider>
 				</SettingsDialogProvider>
 			</TourContext.Provider>
-		</Chat.SessionProvider>
+		</ChatSessionProvider>
 	);
 };

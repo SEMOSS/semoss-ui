@@ -3,7 +3,7 @@ import {
 	DEFAULT_ROOM_LIST_VIEW,
 	isRoomListView,
 	type RoomListView,
-} from "./room-list";
+} from "./room-list-groups";
 
 /** The saved room list view, and a way to change it. */
 export interface UseRoomListViewReturn {

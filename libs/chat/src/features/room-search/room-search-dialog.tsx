@@ -22,7 +22,7 @@ import {
 } from "@semoss/utility/date";
 import { useChatConfig } from "../chat-config/use-chat-config";
 import { RoomAgentAvatar } from "../room-list/room-agent-avatar";
-import { getRoomDate } from "../room-list/room-list";
+import { getRoomDate } from "../room-list/room-list-groups";
 import { useRoomSearch } from "./use-room-search";
 
 /** The agent the results are narrowed to. */

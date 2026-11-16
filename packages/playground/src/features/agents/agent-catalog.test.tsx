@@ -2,7 +2,12 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { Chat, type ChatConfig, type ChatStore } from "@semoss/chat";
+import {
+	type ChatConfig,
+	ChatConfigProvider,
+	ChatSessionProvider,
+	type ChatStore,
+} from "@semoss/chat";
 import { AgentCatalog } from "@/features/agents/agent-catalog";
 
 const mocks = vi.hoisted(() => ({ pixel: "", navigate: vi.fn() }));
@@ -58,8 +63,8 @@ vi.mock("@/features/agents/workspace-card", () => ({
 
 /** The chat providers the pages read from, over this test's stub chat store. */
 const chatWrapper = ({ children }: { children: ReactNode }) => (
-	<Chat.SessionProvider store={{} as unknown as ChatStore}>
-		<Chat.ConfigProvider
+	<ChatSessionProvider store={{} as unknown as ChatStore}>
+		<ChatConfigProvider
 			config={
 				{
 					theme: { featureFlags: {}, images: {} },
@@ -70,8 +75,8 @@ const chatWrapper = ({ children }: { children: ReactNode }) => (
 			}
 		>
 			{children}
-		</Chat.ConfigProvider>
-	</Chat.SessionProvider>
+		</ChatConfigProvider>
+	</ChatSessionProvider>
 );
 
 const scrollIntoViewDescriptor = Object.getOwnPropertyDescriptor(

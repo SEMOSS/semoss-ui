@@ -39,7 +39,7 @@ added: backend calls apps share live in `libs/sdk/src/api/` (for example `runMcp
   together by `withPlaygroundDefaults` in `features/theme/playground-theme.ts`, over the chat's
   `DEFAULT_CHAT_THEME`,, which returns the
   same object for the same server theme.
-- **Only rooms are insights.** The app has no `InsightProvider` of its own. `Chat.Room`, and a
+- **Only rooms are insights.** The app has no `InsightProvider` of its own. `RoomScope`, and a
   new chat's prepared room, mount one with `options={{ insightId: room.insightId }}` and
   `destroyOnUnmount={false}`, since `RoomStore` owns that insight. Pixels that belong to no
   room run in the session's insight: `useSessionPixel` for reads, `useSessionIteratorPixel` for
@@ -190,10 +190,10 @@ The chat itself (rooms, messages, tools, the Workspace, the room list, and the n
 is [`@semoss/chat`](../../libs/chat/AGENTS.md); read its guide for the glossary, the room
 Workspace, chat tools, the slash menu, tool views, the next message's files, and connectors. The
 playground composes its pieces: `MainLayout` makes the chat store (`useCreateChatStore`) and
-provides it with `Chat.SessionProvider`, `PlaygroundChatConfigProvider`
+provides it with `ChatSessionProvider`, `PlaygroundChatConfigProvider`
 (`features/chat-config/`) gives the theme, the env's defaults and the routes through
-`Chat.ConfigProvider`, `pages/room.page.tsx` lays out `Chat.Room`, and
-`pages/new-room.page.tsx` renders `Chat.NewChat`.
+`ChatConfigProvider`, `pages/room.page.tsx` lays out `RoomScope`, and
+`pages/new-room.page.tsx` renders `NewChat`.
 
 ## Navigation
 

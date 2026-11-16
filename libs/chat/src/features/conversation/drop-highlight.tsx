@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import { cn } from "@semoss/ui/next";
-import { useFileDrag } from "../composer/file-drag.context";
+import { useFileDrop } from "../composer/file-drop.context";
 
-/** File-drop feedback inside the conversation's FileDragProvider. */
+/** File-drop feedback inside the conversation's FileDropProvider. */
 export function DropHighlight({
 	className,
 	children,
@@ -10,7 +10,7 @@ export function DropHighlight({
 	className?: string;
 	children: ReactNode;
 }) {
-	const { isDragging } = useFileDrag();
+	const { isDragging } = useFileDrop();
 	return (
 		<div
 			className={cn(

@@ -70,7 +70,7 @@ import { AGENT_HARNESS_TYPE } from "../messages/agent-harness";
 import type { RoomStore } from "../room/room.store";
 import { useRoomSelector } from "../room/use-room-selector";
 import type { NewRoomWorkbenchPanels } from "../workbench/use-workbench-panels";
-import { useFileDrag } from "./file-drag.context";
+import { useFileDrop } from "./file-drop.context";
 import { FilePreviewGrid } from "./file-preview-grid";
 import { AutoScrollOnPastePlugin } from "./lexical/auto-scroll-on-paste-plugin";
 import { BackspacePlugin } from "./lexical/backspace-plugin";
@@ -355,7 +355,7 @@ export const RoomInput = ({
 
 	// File handling
 	const { files, addFiles, removeFile, clearFiles, openFilePicker } =
-		useFileDrag();
+		useFileDrop();
 	const queuedFileCount = useContextItems(
 		room.contextItems,
 		(state) => state.items.length,

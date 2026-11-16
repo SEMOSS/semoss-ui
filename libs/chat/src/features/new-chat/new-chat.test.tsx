@@ -177,8 +177,8 @@ vi.mock("../workbench/room-panel.components", async () => {
 		},
 	};
 });
-vi.mock("../composer/file-drag.context", () => ({
-	FileDragProvider: ({ children }: { children: ReactNode }) => children,
+vi.mock("../composer/file-drop.context", () => ({
+	FileDropProvider: ({ children }: { children: ReactNode }) => children,
 }));
 vi.mock("../conversation/drop-highlight", () => ({
 	DropHighlight: ({ children }: { children: ReactNode }) => children,

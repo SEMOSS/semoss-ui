@@ -7,7 +7,12 @@ import {
 } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, expect, test, vi } from "vitest";
-import { Chat, type ChatConfig, type ChatStore } from "@semoss/chat";
+import {
+	type ChatConfig,
+	ChatConfigProvider,
+	ChatSessionProvider,
+	type ChatStore,
+} from "@semoss/chat";
 import { toast } from "@semoss/ui/next";
 import { AgentDetailPage } from "@/pages/agent-detail.page";
 import { AgentEditPage } from "@/pages/agent-edit.page";
@@ -62,10 +67,10 @@ vi.mock("@/features/agents/workspace-chat-list", () => ({
 
 /** The chat providers the pages read from, over this test's stub chat store. */
 const chatWrapper = ({ children }: { children: ReactNode }) => (
-	<Chat.SessionProvider
+	<ChatSessionProvider
 		store={{ editWorkspace: mocks.editWorkspace } as unknown as ChatStore}
 	>
-		<Chat.ConfigProvider
+		<ChatConfigProvider
 			config={
 				{
 					theme: { featureFlags: {} },
@@ -76,8 +81,8 @@ const chatWrapper = ({ children }: { children: ReactNode }) => (
 			}
 		>
 			{children}
-		</Chat.ConfigProvider>
-	</Chat.SessionProvider>
+		</ChatConfigProvider>
+	</ChatSessionProvider>
 );
 
 beforeEach(() => {

@@ -1,5 +1,5 @@
 import { useId, useState } from "react";
-import { Chat, type MCPConfig } from "@semoss/chat";
+import { type MCPConfig, NewKnowledgeForm } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
@@ -21,7 +21,7 @@ interface NewKnowledgeMCPOverlayProps {
 }
 
 /**
- * Standalone Dialog wrapper around Chat.KnowledgeForm. Used by callers that
+ * Standalone Dialog wrapper around NewKnowledgeForm. Used by callers that
  * are not themselves inside a modal (e.g. WorkspaceForm). Callers that are
  * already inside a modal should host the form body directly to avoid stacking
  * Dialogs.
@@ -51,7 +51,7 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> = ({
 					</DialogDescription>
 				</DialogHeader>
 
-				<Chat.KnowledgeForm
+				<NewKnowledgeForm
 					formId={formId}
 					onSuccess={(knowledge) => onClose(knowledge)}
 					onLoadingChange={setIsLoading}

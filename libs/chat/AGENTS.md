@@ -21,40 +21,41 @@ host knows (a route, the env's defaults, the platform's URL, a settings dialog),
 
 ## The public API
 
-`src/index.ts` is the only entry. It exports one `Chat` object of composable pieces, plus named
-hooks, the chat store, helpers, and types. A host lays the pieces out however it likes:
+`src/index.ts` is the only entry. It exports each composable piece by its own name (providers,
+`Room*` pieces, the room list and search, `NewChat`), plus named hooks, the chat store, helpers,
+and types. A host lays the pieces out however it likes:
 
 ```tsx
-<Chat.Provider config={config}>
+<ChatProvider config={config}>
   <aside>
-    <Chat.RoomList isVisible activeRoomId={roomId} onSearch={openSearch} />
-    <Chat.RoomSearch open={isSearchOpen} onOpenChange={setIsSearchOpen} />
+    <RoomList isVisible activeRoomId={roomId} onSearch={openSearch} />
+    <RoomSearchDialog open={isSearchOpen} onOpenChange={setIsSearchOpen} />
   </aside>
-  <Chat.Room roomId={roomId}>
-    <Chat.Frame
-      header={<Chat.Header leading={<MyNavButton />} />}
-      workbench={<Chat.Workbench />}
+  <RoomScope roomId={roomId}>
+    <RoomFrame
+      header={<RoomHeader leading={<MyNavButton />} />}
+      workbench={<RoomWorkbench />}
     >
-      <Chat.FileDrop>
-        <Chat.Conversation />   {/* or <Chat.Messages /> and <Chat.Composer /> apart */}
-      </Chat.FileDrop>
-    </Chat.Frame>
-  </Chat.Room>
-</Chat.Provider>
+      <FileDropProvider>
+        <RoomConversation />   {/* or <RoomMessages /> and <RoomComposer /> apart */}
+      </FileDropProvider>
+    </RoomFrame>
+  </RoomScope>
+</ChatProvider>
 ```
 
-- **`Chat.Provider`** makes the session's `ChatStore` (`useCreateChatStore`) and provides it with
+- **`ChatProvider`** makes the session's `ChatStore` (`useCreateChatStore`) and provides it with
   the host's `ChatConfig`. A host that puts something between the two (the playground's settings
-  dialog reads the store but provides `openSettings` to the config) uses `Chat.SessionProvider`
-  and `Chat.ConfigProvider` instead.
-- **`Chat.Room`** opens a room by id (from the store's cache at once, else by loading it), and
+  dialog reads the store but provides `openSettings` to the config) uses `ChatSessionProvider`
+  and `ChatConfigProvider` instead.
+- **`RoomScope`** opens a room by id (from the store's cache at once, else by loading it), and
   provides its insight, the room, its tool views and its actions. A room that cannot load calls
-  `navigation.openNewChat`. Inside it, `Chat.Header`, `Chat.Workbench`, `Chat.Conversation`,
-  `Chat.Messages` and `Chat.Composer` read the room from context; each still takes a `room` prop,
-  which `Chat.NewChat` uses for its draft.
-- **`Chat.Frame`** lays out the open room's conversation beside its Workspace, which opens,
-  closes, and collapses with the room. `Chat.Layout` is the same layout for any room passed in.
-- **`Chat.NewChat`** is the new-chat screen: the landing, the composer, and a draft Workspace. Its
+  `navigation.openNewChat`. Inside it, `RoomHeader`, `RoomWorkbench`, `RoomConversation`,
+  `RoomMessages` and `RoomComposer` read the room from context; each still takes a `room` prop,
+  which `NewChat` uses for its draft.
+- **`RoomFrame`** lays out the open room's conversation beside its Workspace, which opens,
+  closes, and collapses with the room. `RoomLayout` is the same layout for any room passed in.
+- **`NewChat`** is the new-chat screen: the landing, the composer, and a draft Workspace. Its
   route inputs (`initialPrompt`, `workspaceId`, `knowledgeId`, `showAltLanding`) are props, and
   its first message opens the created room through `navigation.openRoom`.
 - **`ChatConfig`** (`features/chat-config/chat-config.context.tsx`): the theme (`ChatTheme`; merge
@@ -62,8 +63,7 @@ hooks, the chat store, helpers, and types. A host lays the pieces out however it
   the `platformUrl` tool views and catalog links use, and `navigation`: `openRoom`, `roomHref`
   (links keep their middle click), `openNewChat`, `onRoomDeleted`, and the optional `agentHref`
   and `openSettings` (without them, chat UI shows no agent links or Manage Connectors).
-- The `Chat` object is one value, so a host bundles every piece it names through it; import the
-  named hooks and helpers directly.
+- Every piece is a named export, so a host bundles only the pieces it imports.
 
 ## What a host has to wire up
 
@@ -123,14 +123,14 @@ One name per part of the playground, in code, comments, tests, and these notes:
 
 | Part | Name in code | Notes |
 |---|---|---|
-| An open room, and a new chat | **room** (`Chat.Room`, `RoomScope`), **new chat** (`Chat.NewChat`, `NewChat`) | The hosts' route pages compose them |
-| Messages and composer, the left column | **conversation** (`RoomContent`) | "Chat" is the chat *mode* and the narrow-screen tab label |
-| The right-hand dock | **Workbench** (`RoomWorkbench`, `WorkbenchToggleButton`) | A `@semoss/workbench` dock, called **Workspace** in user-facing copy. `RoomStore` still calls it the sidebar (`room.sidebar`, `openSidebar*`, `features/room/room-sidebar.ts`): a legacy name kept on purpose |
+| An open room, and a new chat | **room** (`RoomScope`, `RoomScope`), **new chat** (`NewChat`, `NewChat`) | The hosts' route pages compose them |
+| Messages and composer, the left column | **conversation** (`RoomConversation`) | "Chat" is the chat *mode* and the narrow-screen tab label |
+| The right-hand dock | **Workbench** (`RoomWorkbench`, `RoomWorkbenchToggle`) | A `@semoss/workbench` dock, called **Workspace** in user-facing copy. `RoomStore` still calls it the sidebar (`room.sidebar`, `openSidebar*`, `features/room/room-sidebar.ts`): a legacy name kept on purpose |
 | The layout holding both | **room layout** (`RoomLayout`, `RoomLayoutActionsContext`) | |
 | The Workbench's icon rail, on its left edge | **Workbench rail** (`RoomWorkbenchRail`) | A host-owned toolbar in `@semoss/workbench`'s left border slot, not a docked panel: the room's cog menu over one icon per panel |
 | An entry of the rail, and of Open a Panel | **Workbench panel** (`WorkbenchPanelOption`, `useWorkbenchPanels`, `WorkbenchPanelIcon`) | Selects its open tab, or adds one to the main area |
 | The top row | **room header** (`RoomHeader`) | The room's name (`RoomTitle`) and the Workbench toggle |
-| A room's name, double-click to rename | **room name** (`RoomName`, `RoomNameField`) | `features/room-name/`; the same in the sidebar (`Chat.RoomList`) and the header |
+| A room's name, double-click to rename | **room name** (`RoomName`, `RoomNameField`) | `features/room-name/`; the same in the sidebar (`RoomList`) and the header |
 | Favorite, Rename, Publish, Download, Delete | **room actions** (`RoomActionsProvider`, `useRoomActionItems`) | `features/room-actions/`; the rail's cog menu (`RoomWorkbenchRail`) and the slash menu |
 | A new chat before its first message | **new room** (`newRoom`, `NewRoomWorkbenchPanels`, `NewRoomPanelRequest`); once created lazily, **prepared room** | |
 | Settings → Tools groups | **room tools** (`RoomToolsSection`, `RoomToolsDefaultSection`, `RoomToolsConnectorsSection`, `RoomToolsToolboxesSection`) | Default, Connectors, Agent and Toolboxes |
@@ -199,10 +199,10 @@ code and are easy to undo by accident:
   there the same rail runs across `top.before` with `mobileTopBorder="toolbar"`, above the tabs,
   its labels opening downward; the mobile drawer still switches between open panels. The rail shows
   only while the Workspace is open. A new chat hands `RoomWorkbench` its `NewRoomWorkbenchPanels`,
-  so a panel opened from the rail prepares the room (and its insight) as the toggle does. The header's last icon toggles it (`WorkbenchToggleButton`, which
+  so a panel opened from the rail prepares the room (and its insight) as the toggle does. The header's last icon toggles it (`RoomWorkbenchToggle`, which
   opens it as it was left and brings it forward behind the narrow Chat tab), and Close Workspace
   is also in the slash menu; Publish as Agent is in the rail's cog menu and the slash menu
-  (`RoomActionsProvider` renders a controlled `SaveWorkspaceDialog`), so a new chat publishes
+  (`RoomActionsProvider` renders a controlled `SaveAgentDialog`), so a new chat publishes
   only once it is a room.
   The per-panel control — "open inline" — is registered by the tool panel with
   `useWorkbenchControl`.
@@ -215,7 +215,7 @@ code and are easy to undo by accident:
   the cog menu at the head of the Workspace's rail (drawn by `RoomWorkbenchRail` itself, which
   leaves out Rename and draws no cog outside a `RoomActionsProvider`, which is how a new chat
   leaves it out);
-  `Chat.RoomList` shares their favorite and rename helpers (`toggleRoomFavorite`,
+  `RoomList` shares their favorite and rename helpers (`toggleRoomFavorite`,
   `renameRoom`). Rename is no menu item: a double-click on the name edits it in place, in the
   header and in the sidebar (where F2 on a row does too), and `/rename` in the slash menu starts it
   through `RoomActionsProvider.startRenaming`. A new chat has no title and no Room section. Before the name it holds the
@@ -316,15 +316,15 @@ affects only the current room instance.
 `/` in the composer lists every action (`features/conversation/use-room-slash-commands.tsx`), by
 group: Chat (attach, knowledge, tools, agent, mode, compact), Workspace (each of
 `useWorkbenchPanels`' panels that can open now, its connector viewers, and Close Workspace), Room
-(`useRoomActionItems`, inside `RoomActionsProvider`, which wraps `Chat.Room`), and Prompts (the room's predefined prompts). It
+(`useRoomActionItems`, inside `RoomActionsProvider`, which wraps `RoomScope`), and Prompts (the room's predefined prompts). It
 matches the query against each command's id, label, and keywords, which keep the old command
-names. `excludeCommandIds` still removes commands by id, as `Chat.Room` does for mode changes.
+names. `excludeCommandIds` still removes commands by id, as `RoomScope` does for mode changes.
 
 ## Tool views
 
 `features/tool-views/` draws tool calls whose `SMSS_MCP_UI.resourceURI` is
 `component://<library>/<view>`, with the views `@semoss/connectors` provides
-(`TOOL_VIEW_LIBRARIES`: `mail` and `calendar`), in the page and never in a frame. `Chat.Room`
+(`TOOL_VIEW_LIBRARIES`: `mail` and `calendar`), in the page and never in a frame. `RoomScope`
 mounts `ToolViewProvider` around the conversation workspace, so the conversation and the sidebar
 both find them.
 
@@ -335,7 +335,7 @@ both find them.
   not draw, or whose view fails, shows the card it would have without one.
 - **Where.** In the conversation an approval sizes to its form and a result is kept to a bounded
   height; in the sidebar the view fills its tab. Once a decision is made the view shows the result,
-  even before an agent run's next update, so a call is not decided twice. `Chat.Room` provides
+  even before an agent run's next update, so a call is not decided twice. `RoomScope` provides
   the room (`RoomProvider`) to the conversation as well as the sidebar, since a view saves into
   the room's files. Connector calls that ask open inline, as their cards do.
 - **Decisions** (`tool-view-decisions.ts`). In an agent run they decide the run's pending

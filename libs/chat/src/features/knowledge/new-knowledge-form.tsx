@@ -23,7 +23,7 @@ import type { MCPConfig } from "../../types";
 import { useChatConfig } from "../chat-config/use-chat-config";
 import { FilePreviewGrid } from "../composer/file-preview-grid";
 
-interface NewKnowledgeFormBodyProps {
+interface NewKnowledgeFormProps {
 	/**
 	 * Form id. An external submit button can target this form via
 	 * `<button type="submit" form={formId}>` so the same body works inside
@@ -46,11 +46,11 @@ interface NewKnowledgeFormBodyProps {
  * Form fields + create flow for a new VECTOR knowledge store. Renders only the
  * field grid; chrome (title, footer buttons) is provided by the parent.
  */
-export const NewKnowledgeFormBody = ({
+export const NewKnowledgeForm = ({
 	formId,
 	onSuccess,
 	onLoadingChange,
-}: NewKnowledgeFormBodyProps) => {
+}: NewKnowledgeFormProps) => {
 	const { run, upload } = useSessionInsight();
 	const { theme } = useChatConfig();
 	const { t } = useTranslation([

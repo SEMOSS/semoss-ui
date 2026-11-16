@@ -1,5 +1,12 @@
 import { useParams } from "react-router";
-import { Chat } from "@semoss/chat";
+import {
+	FileDropProvider,
+	RoomConversation,
+	RoomFrame,
+	RoomHeader,
+	RoomScope,
+	RoomWorkbench,
+} from "@semoss/chat";
 import { SidebarTrigger } from "@semoss/ui/next";
 
 /** The room the route names, composed from the chat's pieces. */
@@ -7,15 +14,15 @@ export const RoomPage = () => {
 	const { roomId = "" } = useParams();
 
 	return (
-		<Chat.Room roomId={roomId}>
-			<Chat.Frame
-				header={<Chat.Header leading={<SidebarTrigger />} />}
-				workbench={<Chat.Workbench />}
+		<RoomScope roomId={roomId}>
+			<RoomFrame
+				header={<RoomHeader leading={<SidebarTrigger />} />}
+				workbench={<RoomWorkbench />}
 			>
-				<Chat.FileDrop>
-					<Chat.Conversation />
-				</Chat.FileDrop>
-			</Chat.Frame>
-		</Chat.Room>
+				<FileDropProvider>
+					<RoomConversation />
+				</FileDropProvider>
+			</RoomFrame>
+		</RoomScope>
 	);
 };

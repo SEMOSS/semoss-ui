@@ -1,4 +1,10 @@
-import { Chat } from "@semoss/chat";
+import {
+	FileDropProvider,
+	RoomConversation,
+	RoomFrame,
+	RoomHeader,
+	RoomWorkbench,
+} from "@semoss/chat";
 import { PageHeaderNavigation } from "@/features/navigation/page-header-navigation";
 
 /**
@@ -6,12 +12,12 @@ import { PageHeaderNavigation } from "@/features/navigation/page-header-navigati
  * conversation, and the Workspace, composed from the open room's pieces.
  */
 export const RoomPageBody = () => (
-	<Chat.Frame
-		header={<Chat.Header leading={<PageHeaderNavigation />} />}
-		workbench={<Chat.Workbench />}
+	<RoomFrame
+		header={<RoomHeader leading={<PageHeaderNavigation />} />}
+		workbench={<RoomWorkbench />}
 	>
-		<Chat.FileDrop>
-			<Chat.Conversation />
-		</Chat.FileDrop>
-	</Chat.Frame>
+		<FileDropProvider>
+			<RoomConversation />
+		</FileDropProvider>
+	</RoomFrame>
 );

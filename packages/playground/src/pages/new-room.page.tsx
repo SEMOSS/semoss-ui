@@ -1,5 +1,5 @@
 import { useSearchParams } from "react-router";
-import { Chat } from "@semoss/chat";
+import { NewChat } from "@semoss/chat";
 import { PageHeaderNavigation } from "@/features/navigation/page-header-navigation";
 import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 
@@ -9,7 +9,7 @@ export const NewRoomPage = () => {
 	const { altLandingKey } = usePlaygroundTheme();
 
 	return (
-		<Chat.NewChat
+		<NewChat
 			initialPrompt={searchParams.get("prompt") ?? ""}
 			workspaceId={searchParams.get("workspaceId")}
 			knowledgeId={searchParams.get("knowledgeId")}

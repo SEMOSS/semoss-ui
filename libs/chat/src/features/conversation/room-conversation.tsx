@@ -1,11 +1,11 @@
 import { cn } from "@semoss/ui/next";
-import { useFileDrag } from "../composer/file-drag.context";
+import { useFileDrop } from "../composer/file-drop.context";
 import { RoomComposer } from "../composer/room-composer";
 import { useRoomOrContext } from "../room/room.context";
 import type { RoomStore } from "../room/room.store";
 import { RoomMessages } from "./room-messages";
 
-interface RoomContentProps {
+interface RoomConversationProps {
 	/** Room to load */
 	room?: RoomStore;
 }
@@ -14,9 +14,9 @@ interface RoomContentProps {
  * A room's conversation and its composer, outlined while a file is dragged
  * over the page.
  */
-export const RoomContent = ({ room: roomProp }: RoomContentProps) => {
+export const RoomConversation = ({ room: roomProp }: RoomConversationProps) => {
 	const room = useRoomOrContext(roomProp);
-	const { isDragging } = useFileDrag();
+	const { isDragging } = useFileDrop();
 
 	return (
 		<div

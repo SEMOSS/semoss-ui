@@ -8,7 +8,7 @@ import {
 	useState,
 } from "react";
 
-interface FileDragContextType {
+interface FileDropContextType {
 	/** True while a file is being dragged over the provider's territory. */
 	isDragging: boolean;
 	files: File[];
@@ -19,11 +19,11 @@ interface FileDragContextType {
 	openFilePicker: () => void;
 }
 
-const FileDragContext = createContext<FileDragContextType | undefined>(
+const FileDropContext = createContext<FileDropContextType | undefined>(
 	undefined,
 );
 
-export const FileDragProvider = ({ children }: { children: ReactNode }) => {
+export const FileDropProvider = ({ children }: { children: ReactNode }) => {
 	const [isDragging, setIsDragging] = useState(false);
 	const [files, setFiles] = useState<File[]>([]);
 	const fileInputRef = useRef<HTMLInputElement>(null);
@@ -48,7 +48,7 @@ export const FileDragProvider = ({ children }: { children: ReactNode }) => {
 	}, []);
 
 	return (
-		<FileDragContext.Provider
+		<FileDropContext.Provider
 			value={{
 				isDragging,
 				files,
@@ -100,14 +100,14 @@ export const FileDragProvider = ({ children }: { children: ReactNode }) => {
 				/>
 				{children}
 			</div>
-		</FileDragContext.Provider>
+		</FileDropContext.Provider>
 	);
 };
 
-export const useFileDrag = (): FileDragContextType => {
-	const context = useContext(FileDragContext);
+export const useFileDrop = (): FileDropContextType => {
+	const context = useContext(FileDropContext);
 	if (!context) {
-		throw new Error("useFileDrag must be used within FileDragProvider");
+		throw new Error("useFileDrop must be used within FileDropProvider");
 	}
 	return context;
 };

@@ -1,7 +1,14 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, expect, test, vi } from "vitest";
-import { Chat, type ChatConfig, type ChatStore } from "@semoss/chat";
+import {
+	type ChatConfig,
+	ChatConfigProvider,
+	ChatSessionProvider,
+	type ChatStore,
+	NewKnowledgeForm,
+	SaveAgentDialog,
+} from "@semoss/chat";
 import { AGENT_FORM_DEFAULT_VALUES } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
 import { AgentCreate } from "@/features/agents/agent-create";
@@ -47,7 +54,7 @@ vi.mock("@semoss/shared", async (original) => ({
 
 /** The chat providers the pages read from, over this test's stub chat store. */
 const chatWrapper = ({ children }: { children: ReactNode }) => (
-	<Chat.SessionProvider
+	<ChatSessionProvider
 		store={
 			{
 				addWorkspace: mocks.addWorkspace,
@@ -55,7 +62,7 @@ const chatWrapper = ({ children }: { children: ReactNode }) => (
 			} as unknown as ChatStore
 		}
 	>
-		<Chat.ConfigProvider
+		<ChatConfigProvider
 			config={
 				{
 					theme: { featureFlags: {}, defaultEmbedderId: "embedder" },
@@ -66,8 +73,8 @@ const chatWrapper = ({ children }: { children: ReactNode }) => (
 			}
 		>
 			{children}
-		</Chat.ConfigProvider>
-	</Chat.SessionProvider>
+		</ChatConfigProvider>
+	</ChatSessionProvider>
 );
 
 beforeEach(() => vi.clearAllMocks());
@@ -75,7 +82,7 @@ beforeEach(() => vi.clearAllMocks());
 test("saving an agent from a conversation validates and retains the form after a failed save", async () => {
 	mocks.addWorkspace.mockRejectedValueOnce(new Error("Save failed"));
 	render(
-		<Chat.SaveAgentDialog
+		<SaveAgentDialog
 			systemPrompt="Current instructions"
 			mcps={[]}
 			open
@@ -156,7 +163,7 @@ test("knowledge creation retains its files and text after failure", async () => 
 	const formId = "knowledge-test-form";
 	render(
 		<>
-			<Chat.KnowledgeForm formId={formId} onSuccess={onSuccess} />
+			<NewKnowledgeForm formId={formId} onSuccess={onSuccess} />
 			<button type="submit" form={formId}>
 				Create collection
 			</button>

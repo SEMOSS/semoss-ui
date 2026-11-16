@@ -8,7 +8,7 @@ import { useRoomSelector } from "../room/use-room-selector";
 import { HeaderIconButton } from "../room-header/header-icon-button";
 import type { NewRoomWorkbenchPanels } from "./use-workbench-panels";
 
-interface WorkbenchToggleButtonProps {
+interface RoomWorkbenchToggleProps {
 	/** The room whose Workspace it opens and closes. */
 	room: RoomStore;
 	/** A new chat's own actions, until its first message. */
@@ -21,10 +21,10 @@ interface WorkbenchToggleButtonProps {
  * Behind the Chat tab on a narrow screen, it brings the Workspace forward.
  * A new chat's toggle also prepares its room.
  */
-export const WorkbenchToggleButton = ({
+export const RoomWorkbenchToggle = ({
 	room,
 	newRoomPanels,
-}: WorkbenchToggleButtonProps) => {
+}: RoomWorkbenchToggleProps) => {
 	const { t } = useTranslation("room");
 	const roomLayout = useContext(RoomLayoutActionsContext);
 	const isOpen = useRoomSelector(room, (current) => current.sidebar.isOpen);

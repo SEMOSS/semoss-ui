@@ -2,8 +2,8 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { SidebarProvider } from "@semoss/ui/next";
-import type { RoomListItem } from "./room-list";
-import { RoomListSection } from "./room-list-section";
+import { RoomList } from "./room-list";
+import type { RoomListItem } from "./room-list-groups";
 
 const mocks = vi.hoisted(() => ({
 	openRoom: vi.fn(),
@@ -83,7 +83,7 @@ afterEach(() => vi.unstubAllGlobals());
 const renderSection = (activeRoomId?: string) =>
 	render(
 		<SidebarProvider>
-			<RoomListSection
+			<RoomList
 				isVisible
 				activeRoomId={activeRoomId}
 				onSearch={vi.fn()}

@@ -61,11 +61,8 @@ vi.mock("@semoss/chat", async (original) => {
 	return {
 		...actual,
 		useCreateChatStore: () => mocks.chat,
-		Chat: {
-			...actual.Chat,
-			NewChat: () => <h1>New chat screen</h1>,
-			Room: ({ roomId }: { roomId: string }) => <h1>Room {roomId}</h1>,
-		},
+		NewChat: () => <h1>New chat screen</h1>,
+		RoomScope: ({ roomId }: { roomId: string }) => <h1>Room {roomId}</h1>,
 	};
 });
 
