@@ -57,7 +57,7 @@ describe("getResourcePermissions", () => {
 		vi.clearAllMocks();
 	});
 
-	it("reads a resource's people, teams and allowed changes", async () => {
+	it("reads a resource's people, teams and allowed changes, with no apps when the response has none", async () => {
 		answerGet({
 			people: [
 				{
@@ -143,10 +143,13 @@ describe("getResourcePermissions", () => {
 			id: "Sales",
 			type: "CUSTOM",
 		});
+		expect(access.projects).toEqual([]);
 		expect(access.allowedPermissionChanges).toEqual({
 			canChangePeople: true,
 			canGiveAuthorAccess: false,
 			canChangeTeams: false,
+			canViewProjects: false,
+			canChangeProjects: false,
 			addsAreAdminOnly: false,
 			limitLevels: [],
 			canChangeModelLimits: false,
@@ -220,6 +223,145 @@ describe("getResourcePermissions", () => {
 			cache_write: null,
 			reasoning: null,
 		});
+	});
+
+	it("reads an engine's apps with their permission, naming an app with no name by its id, and whether the user can change them", async () => {
+		answerGet({
+			people: [],
+			teams: [],
+			projects: [
+				{
+					subject: {
+						category: "PROJECT",
+						id: "app1",
+						name: "Intake Form",
+					},
+					access: {
+						level: "EDIT",
+						endDate: "2026-12-31T00:00Z",
+						usageLimit: {
+							unlimited: false,
+							rules: [
+								{
+									metric: "TOKENS",
+									amount: 5000,
+									window: "DAY",
+									counts: "SHARED",
+								},
+								{
+									metric: "TOKENS",
+									amount: 100,
+									window: "DAY",
+									counts: "EACH_PERSON",
+								},
+							],
+						},
+					},
+				},
+				{
+					subject: { category: "PROJECT", id: "app2" },
+					access: { level: "READ_ONLY" },
+				},
+			],
+			allowedPermissionChanges: {
+				canChangePeople: true,
+				canViewProjects: true,
+				canChangeProjects: true,
+			},
+		});
+
+		const access = await getResourcePermissions({
+			resourceType: "ENGINE",
+			id: "e1",
+		});
+
+		expect(access.projects).toEqual([
+			{
+				subject: {
+					category: "PROJECT",
+					id: "app1",
+					name: "Intake Form",
+				},
+				access: {
+					level: "EDIT",
+					endDate: "2026-12-31T00:00Z",
+					usageLimit: {
+						unlimited: false,
+						rules: [
+							{
+								metric: "TOKENS",
+								amount: 5000,
+								window: "DAY",
+								counts: "SHARED",
+							},
+							{
+								metric: "TOKENS",
+								amount: 100,
+								window: "DAY",
+								counts: "EACH_PERSON",
+							},
+						],
+					},
+				},
+			},
+			{
+				subject: { category: "PROJECT", id: "app2", name: "app2" },
+				access: { level: "READ_ONLY", endDate: null, usageLimit: null },
+			},
+		]);
+		expect(access.allowedPermissionChanges.canViewProjects).toBe(true);
+		expect(access.allowedPermissionChanges.canChangeProjects).toBe(true);
+	});
+
+	it("leaves out apps without an id or a known level, reads anything but a list as no apps, and lets only true say the apps can change", async () => {
+		answerGet({
+			people: [],
+			teams: [],
+			projects: [
+				{
+					subject: { category: "PROJECT", name: "No Id" },
+					access: { level: "EDIT" },
+				},
+				{ subject: { category: "PROJECT", id: "nogrant" } },
+				{
+					subject: { category: "PROJECT", id: "nolevel" },
+					access: { level: "NOPE" },
+				},
+				{ access: { level: "EDIT" } },
+				"app3",
+				null,
+				{
+					subject: { category: "PROJECT", id: "app1", name: "  " },
+					access: { level: "READ_ONLY" },
+				},
+			],
+			allowedPermissionChanges: { canChangeProjects: "true" },
+		});
+
+		const access = await getResourcePermissions({
+			resourceType: "ENGINE",
+			id: "e1",
+		});
+
+		expect(access.projects).toEqual([
+			{
+				subject: { category: "PROJECT", id: "app1", name: "app1" },
+				access: { level: "READ_ONLY", endDate: null, usageLimit: null },
+			},
+		]);
+		expect(access.allowedPermissionChanges.canChangeProjects).toBe(false);
+
+		answerGet({
+			people: [],
+			teams: [],
+			projects: { id: "app1" },
+			allowedPermissionChanges: {},
+		});
+		const malformed = await getResourcePermissions({
+			resourceType: "ENGINE",
+			id: "e1",
+		});
+		expect(malformed.projects).toEqual([]);
 	});
 
 	it("fails when the response has no allowed changes", async () => {
@@ -323,6 +465,68 @@ describe("validatePermissionBatches and savePermissionBatches", () => {
 		answerPost(null);
 		await expect(savePermissionBatches([BATCH])).rejects.toThrow(
 			"No Response to save the permission batch",
+		);
+	});
+
+	it("saves changes to the apps an engine gives a permission to", async () => {
+		answerPost({ targets: 1, changes: 3 });
+		const batch: PermissionBatch = {
+			target: { resourceType: "ENGINE", id: "e1" },
+			changes: [
+				{
+					action: "ADD",
+					subject: { category: "PROJECT", id: "app1" },
+					to: { level: "READ_ONLY", endDate: null },
+				},
+				{
+					action: "CHANGE",
+					subject: { category: "PROJECT", id: "app2" },
+					to: {
+						level: "EDIT",
+						endDate: "2026-12-31T00:00Z",
+						usageLimit: { unlimited: true, rules: [] },
+					},
+				},
+				{
+					action: "REMOVE",
+					subject: { category: "PROJECT", id: "app3" },
+				},
+			],
+		};
+
+		await expect(savePermissionBatches([batch])).resolves.toEqual({
+			targets: 1,
+			changes: 3,
+		});
+		expect(mockPost).toHaveBeenCalledExactlyOnceWith(
+			expect.stringContaining(
+				"/api/auth/permissionBatch/savePermissionBatches",
+			),
+			{ batches: [batch] },
+			{},
+		);
+	});
+
+	it("rejects with the backend's reason when an app change is refused", async () => {
+		mockPost.mockRejectedValueOnce(
+			new Error(
+				"Only this engine's owners can change which apps can use it",
+			),
+		);
+		await expect(
+			savePermissionBatches([
+				{
+					target: { resourceType: "ENGINE", id: "e1" },
+					changes: [
+						{
+							action: "REMOVE",
+							subject: { category: "PROJECT", id: "app1" },
+						},
+					],
+				},
+			]),
+		).rejects.toThrow(
+			"Only this engine's owners can change which apps can use it",
 		);
 	});
 });

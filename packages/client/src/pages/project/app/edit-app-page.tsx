@@ -31,7 +31,7 @@ export const EditAppPage = () => {
 	}
 
 	// A plain InsightProvider, unlike CODE below: `Workspace` binds the
-	// project with its own `SetContext` call before building the store, and
+	// project with its own `LoadApp` call before building the store, and
 	// the blocks state is loaded through that same insight.
 	if (type !== "CODE") {
 		return (

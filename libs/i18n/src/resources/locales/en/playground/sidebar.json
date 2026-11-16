@@ -84,7 +84,23 @@
 			},
 			"language": "Language",
 			"languageDescription": "The language the app is shown in.",
-			"version": "Version {{version}}"
+			"version": "Version {{version}}",
+			"newChat": {
+				"title": "Chat",
+				"default": "Default",
+				"model": "Model",
+				"modelDescription": "The model a new chat uses.",
+				"unavailableModel": "Unavailable model",
+				"mode": "Mode",
+				"modeDescription": "Whether a new chat starts as a chat or with an agent.",
+				"modes": {
+					"chat": "Chat",
+					"agent": "Agent"
+				},
+				"agent": "Agent",
+				"agentDescription": "The agent a new chat in agent mode runs.",
+				"saveError": "Could not save your preference: {{message}}"
+			}
 		}
 	},
 	"download": {

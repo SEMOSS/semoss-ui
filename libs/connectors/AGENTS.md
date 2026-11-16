@@ -75,6 +75,15 @@ code may import from `core/` and `components/`; those two never import from them
 - **`onAddToContext` is the host's.** The viewer saves the item, then hands the saved file over;
   the action only shows when the host passes the callback. `onSaved` replaces the viewer's own
   confirmation, and `onSignIn` opens the account's sign in, which must happen inside the click.
+- **A host can mark what it already holds.** `MailboxView`, `TeamsChatViewer`, `OneDriveViewer`,
+  and `TeamsFilesViewer` take `savedItems` (`{ isSaved(itemKey), label }`). The file `onSaved`
+  is handed names its item in `itemKey`, which is the save request's key, so the host answers
+  `isSaved` from what it kept. A held item says the host's `label` where it would be offered for
+  saving, with a filled check (`ConnectorSavedMark`): on its row, which is filled too, and on the
+  bar above it once it is open. Its right-click menu still saves, since the host may have let
+  its copy go. Mail is keyed by thread (`mailSaveKey`), since a save takes the whole thread, so
+  every row of a thread is held together whether or not the list groups them. Collaboration's
+  Digital Twin pages use it.
 - **Save preparation belongs to the originating host.** Optional
   `prepareSave?: () => Promise<void | (() => void)>` runs before saving. A returned release
   function runs in `finally`, after save callbacks, including failures and navigation away.

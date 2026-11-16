@@ -159,8 +159,9 @@ export const AUDIT_TARGET_LABELS: Readonly<Record<string, string>> = {
 };
 
 /**
- * The action of the PERMISSION_DELETE SEMOSS records when a grant's end date
- * passes and it removes the grant.
+ * The action SEMOSS records when it removes access whose end date passed: on the
+ * PERMISSION_DELETE of a grant, and on the GROUP_MEMBER_REMOVE of a place in a
+ * team.
  */
 export const PERMISSION_EXPIRED_ACTION = "PERMISSION_EXPIRED";
 
@@ -192,8 +193,9 @@ export function auditLabel(
 }
 
 /**
- * Names an event: a denied request is Access Denied, whatever it tried, and a
- * grant SEMOSS removed when its end date passed is Access Ended.
+ * Names an event: a denied request is Access Denied, whatever it tried, a grant
+ * SEMOSS removed when its end date passed is Access Ended, and a place in a team
+ * that ended is Team Membership Ended.
  *
  * @param eventType the stored event type
  * @param action the stored action
@@ -206,11 +208,10 @@ export function describeAuditEvent(
 	status: unknown,
 ): string {
 	if (status === "DENIED") return AUDIT_EVENT_LABELS.AUTHORIZATION_DENIED;
-	if (
-		eventType === "PERMISSION_DELETE" &&
-		action === PERMISSION_EXPIRED_ACTION
-	)
-		return "Access Ended";
+	if (action === PERMISSION_EXPIRED_ACTION) {
+		if (eventType === "PERMISSION_DELETE") return "Access Ended";
+		if (eventType === "GROUP_MEMBER_REMOVE") return "Team Membership Ended";
+	}
 	return auditLabel(AUDIT_EVENT_LABELS, eventType);
 }
 

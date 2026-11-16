@@ -82,10 +82,13 @@ const ACCESS: ResourcePermissions = {
 		},
 	],
 	teams: [TEAM],
+	projects: [],
 	allowedPermissionChanges: {
 		canChangePeople: true,
 		canGiveAuthorAccess: true,
 		canChangeTeams: true,
+		canViewProjects: true,
+		canChangeProjects: true,
 		addsAreAdminOnly: false,
 		limitLevels: ["READ_ONLY", "EDIT", "OWNER"],
 		canChangeModelLimits: true,

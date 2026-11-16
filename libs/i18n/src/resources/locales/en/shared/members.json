@@ -44,13 +44,15 @@
 			"MODEL_TOTAL": "There is no total for everyone together.",
 			"ALL_MODELS": "Uses the General Platform Limit.",
 			"PLATFORM": "People with no other limit have no limit.",
-			"TEAM_TOTAL": "There is no total across all models for this team."
+			"TEAM_TOTAL": "There is no total across all models for this team.",
+			"APP": "People using the model through this app use the Public Use Limit, their User's Total Model Limit or the General Platform Limit."
 		},
 		"unlimitedHint": {
 			"DIRECT": "No cap for this person on this model, whatever their Team Limits or the Public Use Limit allow. The model total still applies.",
 			"TEAM": "No cap on the calls this team's limit applies to. Unlimited Team Limits apply before Team Limits with rules.",
 			"PUBLIC": "No cap on public use. The model total still applies.",
-			"ALL_MODELS": "Exempts the person from the General Platform Limit."
+			"ALL_MODELS": "Exempts the person from the General Platform Limit.",
+			"APP": "No cap on the calls this app's custom reactors make with its permission. The model total still applies."
 		},
 		"addRule": "Add Rule",
 		"noRules": "Add a rule to cap use. A call must pass every rule.",
@@ -91,9 +93,12 @@
 			"teamShared": "Shared by the Team",
 			"teamEach": "For Each Member",
 			"publicShared": "Shared by All Public Use",
-			"publicEach": "For Each Person"
+			"publicEach": "For Each Person",
+			"appShared": "Shared by the App",
+			"appEach": "For Each User"
 		},
 		"eachMemberNote": "For each member rules count only the calls this team's limit applies to.",
+		"eachUserNote": "For each user rules count only the calls this app's limit applies to.",
 		"costAcrossModelsNote": "Models without known prices are not counted by cost rules. Add a token rule to cover them.",
 		"teamTotalTokensNote": "Cost is the natural measure for a total across models, since tokens from different models are not alike.",
 		"windowsNote": "Minute and hour rules slide. Day, week, month and year rules start again at the start of each calendar day, week, month or year in UTC."

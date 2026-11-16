@@ -9,7 +9,7 @@ import {
 
 const NOUL_VALUES: JevPolicyGuardrailFormValues = {
 	...JEV_POLICY_GUARDRAIL_DEFAULTS,
-	MODEL_NAME: "Scope check",
+	CATALOG_NAME: "Scope check",
 	MODEL_ENGINE_ID: "jev-model",
 	QUESTION_INSTRUCTIONS: "Is this request within the approved scope?",
 	VIOLATION_DIRECTION: "NO",
@@ -223,11 +223,11 @@ describe("Jev policy guardrail settings", () => {
 		expect(
 			problemsOf({
 				...CHOICE_VALUES,
-				MODEL_NAME: "",
+				CATALOG_NAME: "",
 				CHOICES: [],
 			}),
 		).toEqual({
-			MODEL_NAME: "Catalog name is required",
+			CATALOG_NAME: "Catalog name is required",
 			CHOICES: "Mark at least one choice as blocking the call",
 		});
 	});

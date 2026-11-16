@@ -86,15 +86,22 @@ describe("workbench project audit tab", () => {
 			expect(mocks.audit).not.toHaveBeenCalled();
 		},
 	);
-	it("permits admins without an owner role and stops rendering after access is revoked", () => {
+	it("hides audit history from an admin who does not own the project", () => {
 		mocks.permission = "READ_ONLY";
 		mocks.admin = true;
+		render(<ProjectDetailTabs tabs={tabs} />);
+		expect(
+			screen.queryByRole("tab", { name: "Audit Trail" }),
+		).not.toBeInTheDocument();
+		expect(mocks.audit).not.toHaveBeenCalled();
+	});
+	it("stops rendering audit history once the user no longer owns the project", () => {
 		const view = render(<ProjectDetailTabs tabs={tabs} />);
 		fireEvent.click(screen.getByRole("tab", { name: "Audit Trail" }));
 		expect(
 			screen.getByText("Automation audit history"),
 		).toBeInTheDocument();
-		mocks.admin = false;
+		mocks.permission = "READ_ONLY";
 		view.rerender(<ProjectDetailTabs tabs={tabs} />);
 		expect(
 			screen.queryByText("Automation audit history"),
