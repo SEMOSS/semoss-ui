@@ -13,6 +13,7 @@ import { useTranslation } from "@semoss/i18n";
 import type { SlashCommand } from "../composer/lexical/slash-command/types";
 import type { PromptLibraryItem } from "../composer/prompt-library-dialog";
 import type { RoomStore } from "../room/room.store";
+import { useRoomSelector } from "../room/use-room-selector";
 import { useRoomActionsContext } from "../room-actions/room-actions.context";
 import { useRoomActionItems } from "../room-actions/use-room-action-items";
 import {
@@ -86,7 +87,10 @@ export const useRoomSlashCommands = ({
 	const panels = useWorkbenchPanels(workbenchRoom, newRoomPanels);
 	const roomActions = useRoomActionsContext();
 	const roomActionItems = useRoomActionItems();
-	const isAgentMode = room.mode === "agent";
+	const isAgentMode = useRoomSelector(
+		room,
+		(current) => current.mode === "agent",
+	);
 	/** Build a command whose label and description come from `slash.commands.<id>`, unless `extra` overrides them. */
 	const command = (
 		id: string,
