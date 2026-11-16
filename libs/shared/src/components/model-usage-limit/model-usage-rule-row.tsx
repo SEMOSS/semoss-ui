@@ -58,8 +58,8 @@ interface ModelUsageRuleRowProps {
 
 /**
  * One rule of a usage limit: its amount, what it counts, its window and, for a
- * team or public use, whose use it counts. A minute or hour window has a length
- * beside it, so the rule reads "every 10 minutes".
+ * team, an app or public use, whose use it counts. A minute or hour window has
+ * a length beside it, so the rule reads "every 10 minutes".
  */
 export const ModelUsageRuleRow = ({
 	draft,
@@ -117,6 +117,11 @@ export const ModelUsageRuleRow = ({
 			return counts === "SHARED"
 				? t("usageLimit.counts.publicShared")
 				: t("usageLimit.counts.publicEach");
+		}
+		if (source === "APP") {
+			return counts === "SHARED"
+				? t("usageLimit.counts.appShared")
+				: t("usageLimit.counts.appEach");
 		}
 		return counts === "SHARED"
 			? t("usageLimit.counts.teamShared")

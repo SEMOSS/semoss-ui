@@ -1,3 +1,4 @@
+import { CATALOG_NAME_KEY } from "@/components/import/shared/import-form.constants";
 import type { FormField } from "../shared/import-form.types";
 
 const NAME_PATTERN_RULE = {
@@ -30,7 +31,7 @@ export function dbDriverField(value: string): FormField {
 
 export const COMMON_FILE_GENERAL_FIELDS: FormField[] = [
 	{
-		key: "DATABASE_NAME",
+		key: CATALOG_NAME_KEY,
 		label: "Enter Database Name",
 		value: "",
 		section: "general",
@@ -74,7 +75,7 @@ export const COMMON_FILE_GENERAL_FIELDS: FormField[] = [
 
 export const COMMON_JDBC_GENERAL_FIELDS: FormField[] = [
 	{
-		key: "NAME",
+		key: CATALOG_NAME_KEY,
 		label: "Catalog Name",
 		value: "",
 		type: "text",

@@ -45,6 +45,11 @@ export interface FileExplorerSecondaryAction {
 export interface FileExplorerItemActions {
 	actions?: (FileExplorerPrimaryAction | null)[];
 	secondaryActions?: (FileExplorerSecondaryAction | null)[];
+	/**
+	 * Fills the row, for an item the consumer sets apart from the rest, such
+	 * as a file it already holds. The row's own states show over it.
+	 */
+	isMarked?: boolean;
 }
 
 /** Items held for a paste, and how they got there. */

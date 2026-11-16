@@ -28,6 +28,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
+import type { MyAccessRequest } from "@/api/user-access";
 import OPEN_AI from "@/assets/img/OPEN_AI.svg";
 import { PERMISSION_DESCRIPTION_MAP, TYPE_TO_ROUTE } from "@/constants";
 
@@ -43,6 +44,12 @@ interface ProjectAccessRequestDialogProps {
 
 	/** Callback that is fired on close */
 	onClose: (success: boolean) => void;
+
+	/**
+	 * The user's own request that waits for a decision, or null. With one, the
+	 * dialog starts from the level and reason it gives, so the user changes it.
+	 */
+	request?: MyAccessRequest | null;
 }
 
 const PermissionCard = ({
@@ -105,6 +112,7 @@ export const ProjectAccessRequestDialog = ({
 	permission,
 	open,
 	onClose,
+	request = null,
 }: ProjectAccessRequestDialogProps) => {
 	const [tabValue, setTabValue] = useState("permissions");
 	const [requestedDeps, setRequestedDeps] = useState<Set<string>>(new Set());
@@ -150,7 +158,7 @@ export const ProjectAccessRequestDialog = ({
 			const response = await runPixel(
 				`META | RequestEngine(engine=['${depId}'], permission=['${requestedPermission}']${
 					roleChangeComment
-						? `, comment=['${roleChangeComment}']`
+						? `, comment=["<encode>${roleChangeComment}</encode>"]`
 						: ""
 				})`,
 			);
@@ -203,7 +211,7 @@ export const ProjectAccessRequestDialog = ({
 			for (const dep of dependenciesToRequest) {
 				pixel += `META | RequestEngine(engine=['${dep.engine_id}'], permission=['${requestedPermission}']${
 					roleChangeComment
-						? `, comment=['${roleChangeComment}']`
+						? `, comment=["<encode>${roleChangeComment}</encode>"]`
 						: ""
 				})`;
 			}
@@ -257,7 +265,7 @@ export const ProjectAccessRequestDialog = ({
 			setIsLoading(true);
 
 			const response = await runPixel(
-				`RequestProject(project=['${id}'], permission=['${requested}'], comment=['${comment}'])`,
+				`RequestProject(project=['${id}'], permission=['${requested}'], comment=["<encode>${comment}</encode>"])`,
 			);
 
 			const { operationType, output } = response.pixelReturn[0];
@@ -281,13 +289,14 @@ export const ProjectAccessRequestDialog = ({
 			return;
 		}
 
-		setRequestedPermission(permission);
+		setRequestedPermission(request?.permission ?? permission);
 		setRoleChangeComment(
-			`I am requesting access to for [please provide a reason]`,
+			request?.comment ??
+				`I am requesting access to for [please provide a reason]`,
 		);
 		setRequestedDeps(new Set());
 		setTabValue("permissions");
-	}, [open, permission]);
+	}, [open, permission, request]);
 
 	return (
 		<Dialog

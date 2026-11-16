@@ -9,6 +9,7 @@ import type {
 } from "../types/message";
 import { MessageMarkdown } from "./message-markdown";
 import { MessageMediaPart } from "./message-media-part";
+import { MessageRichText } from "./message-rich-text";
 import { MessageThinkingPart } from "./message-thinking-part";
 
 /** Render one part with its source message's streaming lifecycle. */
@@ -37,7 +38,9 @@ export const MessagePart = memo(function MessagePart({
 				<div
 					className={cn("min-w-0", role === "user" && "max-w-prose")}
 				>
-					{role === "user" ? (
+					{role === "user" && part.contentFormat === "html-v1" ? (
+						<MessageRichText html={part.text} />
+					) : role === "user" ? (
 						<P
 							dir="auto"
 							className="wrap-anywhere whitespace-pre-wrap text-sm leading-6 group-data-[layout=bubbles]/message:text-base"

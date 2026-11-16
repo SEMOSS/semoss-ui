@@ -7,6 +7,7 @@ import OPEN_SEARCH from "@/assets/img/OPEN_SEARCH.png";
 import PINECONE from "@/assets/img/PINECONE.png";
 import POSTGRES from "@/assets/img/POSTGRES.svg";
 import WEVIATE from "@/assets/img/WEVIATE.png";
+import { CATALOG_NAME_KEY } from "@/components/import/shared/import-form.constants";
 
 export const VECTOR_CONNECTIONS = {
 	description: {
@@ -27,7 +28,7 @@ export const VECTOR_CONNECTIONS = {
 			link: "https://learn.microsoft.com/en-us/azure/search/",
 			fields: [
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -334,7 +335,7 @@ export const VECTOR_CONNECTIONS = {
 				"An open-source vector database designed for building and querying AI/LLM embeddings.",
 			fields: [
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -555,7 +556,7 @@ export const VECTOR_CONNECTIONS = {
 			link: "https://www.elastic.co/docs/solutions/search",
 			fields: [
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -858,7 +859,7 @@ export const VECTOR_CONNECTIONS = {
 			link: "https://faiss.ai/",
 			fields: [
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -1049,7 +1050,7 @@ export const VECTOR_CONNECTIONS = {
 			link: "https://milvus.io/docs",
 			fields: [
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -1317,7 +1318,7 @@ export const VECTOR_CONNECTIONS = {
 			link: "https://docs.opensearch.org/latest/about/",
 			fields: [
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -1612,7 +1613,7 @@ export const VECTOR_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -1909,7 +1910,7 @@ export const VECTOR_CONNECTIONS = {
 			link: "https://docs.pinecone.io/guides/get-started/overview",
 			fields: [
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -2134,7 +2135,7 @@ export const VECTOR_CONNECTIONS = {
 			link: "https://docs.weaviate.io/weaviate",
 			fields: [
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",

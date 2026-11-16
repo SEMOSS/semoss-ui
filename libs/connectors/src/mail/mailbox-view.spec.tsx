@@ -115,6 +115,38 @@ it("keeps the browser mounted while handing a provider-bound selection to the ho
 	);
 });
 
+it("says a thread the host holds is held on each of its rows, in place of offering to save it", async () => {
+	mocks.messages = parseMailPage({
+		messages: [
+			{ id: "m1", subject: "Held", conversationId: "c1" },
+			{ id: "m2", subject: "Re: Held", conversationId: "c1" },
+			{ id: "m3", subject: "Free" },
+		],
+	}).messages;
+	await render({
+		presentation: "default",
+		savedItems: {
+			isSaved: (itemKey) => itemKey === "conversation:c1",
+			label: "In the host",
+		},
+	});
+	const held = () =>
+		container.querySelectorAll('[role="img"][title="In the host"]');
+	// the translation stand-in answers a key: this one is the save label with the email's subject
+	const offered = () =>
+		container.querySelectorAll('li button[aria-label="actions.named"]');
+	expect(held()).toHaveLength(1);
+	expect(offered()).toHaveLength(1);
+
+	// with conversations off each email is a row, and a save still takes its whole thread
+	const conversations = Array.from(container.querySelectorAll("button")).find(
+		(button) => button.textContent === "mail.conversations",
+	);
+	await act(async () => conversations?.click());
+	expect(held()).toHaveLength(2);
+	expect(offered()).toHaveLength(1);
+});
+
 it("restores the origin row on return, waits while hidden, and does not refocus unchanged requests", async () => {
 	await render({
 		isVisible: false,

@@ -14,28 +14,48 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
+import type { MyAccessRequest } from "@/api/user-access";
 import { PERMISSION_DESCRIPTION_MAP } from "@/constants";
 import { useEngine } from "@/hooks/useEngine";
 import { PermissionCard } from "./permission-card";
 
-type EngineAccessButtonProps = {
+/** Props for {@link EngineAccessButton}. */
+export interface EngineAccessButtonProps {
 	/**
 	 * Whether the button is shown from an app: an outline button and a Submit
 	 * action, shown to owners too
 	 */
 	fromApp?: boolean;
-};
+	/** The user's own request that waits for a decision, or null */
+	request: MyAccessRequest | null;
+	/** Whether the user's request is still being read */
+	isRequestLoading: boolean;
+	/** Whether the request dialog is open */
+	open: boolean;
+	/** Opens or closes the request dialog; a stable setter, such as a state setter */
+	onOpenChange: (open: boolean) => void;
+	/** Called after the user asks for access, or changes what they asked for */
+	onSuccess: () => void;
+}
 
 /**
  * Requests access to the current engine, or a change to the viewer's access,
- * through a dialog that asks for the role and a reason.
+ * through a dialog that asks for the role and a reason. With a request
+ * waiting, it changes that request: the dialog starts from the level and
+ * reason the user gave, and asking again replaces it.
  */
-export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
+export const EngineAccessButton = ({
+	fromApp,
+	request,
+	isRequestLoading,
+	open,
+	onOpenChange,
+	onSuccess,
+}: EngineAccessButtonProps) => {
 	const { type, engine, permission } = useEngine();
 
 	const { run: runPixel } = useSessionInsight();
 
-	const [open, setOpen] = useState(false);
 	const [requestedRole, setRequestedRole] = useState<Role>("READ_ONLY");
 	const [comment, setComment] = useState<string>("");
 	const previousEngineId = useRef(engine.engine_id);
@@ -44,17 +64,20 @@ export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
 	useEffect(() => {
 		if (previousEngineId.current !== engine.engine_id) {
 			previousEngineId.current = engine.engine_id;
-			setOpen(false);
+			onOpenChange(false);
 		}
-	}, [engine.engine_id]);
+	}, [engine.engine_id, onOpenChange]);
 
-	const handleOpen = () => {
-		setRequestedRole("READ_ONLY");
+	useEffect(() => {
+		if (!open) {
+			return;
+		}
+		setRequestedRole(request?.permission ?? "READ_ONLY");
 		setComment(
-			`I am requesting access to ${engine.engine_display_name || "this engine"} for [please provide a reason]`,
+			request?.comment ??
+				`I am requesting access to ${engine.engine_display_name || "this engine"} for [please provide a reason]`,
 		);
-		setOpen(true);
-	};
+	}, [open, request, engine.engine_display_name]);
 
 	/**
 	 * Request the new access
@@ -65,7 +88,7 @@ export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
 				`META | RequestEngine(engine=['${
 					engine.engine_id
 				}'], permission=['${requestedRole}']${
-					comment && `, comment=['${comment}']`
+					comment && `, comment=["<encode>${comment}</encode>"]`
 				})`,
 			);
 
@@ -79,7 +102,8 @@ export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
 
 			toast.success(String(output));
 
-			setOpen(false);
+			onOpenChange(false);
+			onSuccess();
 		} catch (e) {
 			console.log(e);
 		}
@@ -89,45 +113,55 @@ export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
 	if (permission === "OWNER" && !fromApp) {
 		return null;
 	}
+	const handleOpen = () => onOpenChange(true);
+	const isAsking = permission === "DISCOVERABLE" || !permission;
 	return (
 		<>
 			{fromApp ? (
-				<Button variant="outline" onClick={handleOpen}>
-					{permission === "DISCOVERABLE" || !permission
-						? "Request Access"
-						: "Change Access"}
+				<Button
+					variant="outline"
+					disabled={isRequestLoading}
+					onClick={handleOpen}
+				>
+					{request
+						? "Change Request"
+						: isAsking
+							? "Request Access"
+							: "Change Access"}
 				</Button>
-			) : permission === "DISCOVERABLE" || !permission ? (
+			) : isAsking && !request ? (
 				<Button
 					variant="default"
 					className="gap-2"
+					disabled={isRequestLoading}
 					onClick={handleOpen}
 				>
 					<LockKeyhole className="size-4" />
 					Request Access
 				</Button>
 			) : (
-				<Button variant="outline" onClick={handleOpen}>
+				<Button
+					variant="outline"
+					disabled={isRequestLoading}
+					onClick={handleOpen}
+				>
 					<Plus className="size-4" />
-					Change Access
+					{request ? "Change Request" : "Change Access"}
 				</Button>
 			)}
 
-			<Dialog
-				open={open}
-				onOpenChange={(isOpen) => {
-					setOpen(isOpen);
-				}}
-			>
+			<Dialog open={open} onOpenChange={onOpenChange}>
 				<DialogContent
 					aria-describedby={undefined}
 					className="max-h-[90vh] overflow-auto sm:max-w-2xl"
 				>
 					<DialogHeader>
 						<DialogTitle className="font-medium text-base leading-6">
-							{permission === "DISCOVERABLE"
-								? "Request Access"
-								: "Change Access"}
+							{request
+								? "Change Request"
+								: permission === "DISCOVERABLE"
+									? "Request Access"
+									: "Change Access"}
 						</DialogTitle>
 					</DialogHeader>
 					<div className="space-y-4">
@@ -177,7 +211,7 @@ export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
 						<Button
 							variant="outline"
 							onClick={() => {
-								setOpen(false);
+								onOpenChange(false);
 							}}
 						>
 							Cancel

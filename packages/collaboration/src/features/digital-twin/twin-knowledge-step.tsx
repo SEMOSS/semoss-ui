@@ -42,7 +42,8 @@ interface TwinKnowledgeStepProps {
  * The step of creating a Digital Twin that chooses what it knows: the
  * owner's Outlook, Teams chats, OneDrive, Teams files and computer to pick
  * from, and the list of what was picked. There is no twin yet to copy into,
- * so each pick only waits in the page's files for the create that copies it.
+ * so each pick only waits in the page's files for the create that copies it,
+ * marked in the list it was picked from until it is taken back out.
  */
 export function TwinKnowledgeStep({
 	items,
@@ -132,7 +133,17 @@ export function TwinKnowledgeStep({
 					className="h-96 min-h-0 overflow-y-auto md:h-auto md:flex-1"
 				>
 					{isSource(place) ? (
-						<TwinSourceViewer source={place} onSaved={handleAdd} />
+						<TwinSourceViewer
+							source={place}
+							savedItems={{
+								isSaved: (itemKey) =>
+									items.some(
+										(item) => item.itemKey === itemKey,
+									),
+								label: "Chosen for your Digital Twin",
+							}}
+							onSaved={handleAdd}
+						/>
 					) : place === "upload" ? (
 						<div className="flex flex-col gap-3 p-4">
 							<FileDropzone

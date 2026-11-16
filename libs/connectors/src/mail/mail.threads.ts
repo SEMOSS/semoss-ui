@@ -38,6 +38,19 @@ export const normalizeMailSubject = (subject: string | undefined): string => {
 const getMailDate = (message: MailMessage): string =>
 	message.receivedDate ?? message.sentDate ?? "";
 
+/**
+ * What saving an email is known by: its thread, since a save takes the whole
+ * thread, or the email itself when it belongs to none. Every row of a thread
+ * shares it, whether or not the list groups them.
+ *
+ * @param message - The email.
+ * @return The key.
+ */
+export const mailSaveKey = (message: MailMessage): string =>
+	message.conversationId
+		? `conversation:${message.conversationId}`
+		: `message:${message.id}`;
+
 /** The emails of one thread, as a folder's list shows them. */
 export interface MailConversation {
 	/** Identifies the thread in the list. */
@@ -70,10 +83,7 @@ export const groupMailByConversation = (
 ): MailConversation[] => {
 	const groups = new Map<string, MailMessage[]>();
 	for (const message of messages) {
-		const key =
-			isGrouped && message.conversationId
-				? `conversation:${message.conversationId}`
-				: `message:${message.id}`;
+		const key = isGrouped ? mailSaveKey(message) : `message:${message.id}`;
 		const group = groups.get(key);
 		if (group) {
 			group.push(message);

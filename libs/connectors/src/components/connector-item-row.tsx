@@ -57,6 +57,9 @@ export const ConnectorItemRow = ({
 	isBusy = false,
 	actions,
 }: ConnectorItemRowProps) => {
+	// a held item's row is filled, and muted grey drops below 4.5:1 on that fill
+	const isHeld = !!actions?.savedLabel;
+	const detailColor = isHeld ? "text-foreground/75" : "text-muted-foreground";
 	// spans only: the text sits inside a button, which cannot hold paragraphs.
 	// Center the icon and metadata against the whole text stack so dates and
 	// the trailing action share a centerline in both one- and two-line rows.
@@ -87,7 +90,7 @@ export const ConnectorItemRow = ({
 				</span>
 				{description ? (
 					<span
-						className="truncate text-muted-foreground text-xs"
+						className={cn("truncate text-xs", detailColor)}
 						title={description}
 					>
 						{description}
@@ -95,7 +98,12 @@ export const ConnectorItemRow = ({
 				) : null}
 			</span>
 			{meta ? (
-				<span className="shrink-0 text-end text-muted-foreground text-xs tabular-nums">
+				<span
+					className={cn(
+						"shrink-0 text-end text-xs tabular-nums",
+						detailColor,
+					)}
+				>
 					{meta}
 				</span>
 			) : null}
@@ -108,6 +116,9 @@ export const ConnectorItemRow = ({
 				className={cn(
 					"flex min-w-0 items-center gap-1 border-border/60 border-b pe-2 last:border-b-0 focus-within:bg-accent/40 hover:bg-accent/60",
 					isEmphasized && "bg-accent/20",
+					// stronger than the hover and unread tints, and kept under the pointer
+					isHeld &&
+						"bg-primary/10 focus-within:bg-primary/10 hover:bg-primary/15",
 				)}
 				aria-busy={isBusy || undefined}
 			>

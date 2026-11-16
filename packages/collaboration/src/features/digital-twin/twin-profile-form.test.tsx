@@ -1,6 +1,8 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
+import { CollaborationSessionProvider } from "@/features/collaboration/state/collaboration-session.context";
 import { TwinProfileForm } from "./twin-profile-form";
 
 // one actions object, as the provider gives
@@ -49,9 +51,11 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-function renderForm() {
+/** The form, in a session whose server can make avatar options when `canGenerate` is set. */
+function renderForm(canGenerate = false) {
 	const onSaved = vi.fn();
-	render(
+	const session = createInitialCollaborationState();
+	const form = (
 		<TwinProfileForm
 			twin={{
 				id: "twin-1",
@@ -74,7 +78,21 @@ function renderForm() {
 			]}
 			imageUrl="/twin.png"
 			onSaved={onSaved}
-		/>,
+		/>
+	);
+	render(
+		canGenerate ? (
+			<CollaborationSessionProvider
+				initialState={{
+					...session,
+					settings: { ...session.settings, avatarGeneration: true },
+				}}
+			>
+				{form}
+			</CollaborationSessionProvider>
+		) : (
+			form
+		),
 	);
 	return { onSaved, user: userEvent.setup() };
 }
@@ -171,4 +189,57 @@ it("shows a save that failed, with what was entered still there, and saves on th
 	await user.click(screen.getByRole("button", { name: "Save" }));
 	await vi.waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
 	expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+});
+
+it("offers no generated options where the server cannot make them", () => {
+	renderForm();
+	expect(
+		screen.queryByRole("button", { name: "Generate options" }),
+	).toBeNull();
+	expect(screen.getByText(/It is uploaded when you save/)).toBeVisible();
+});
+
+it("uploads a generated option the owner picked, as it does a chosen file", async () => {
+	// three bytes, as base64
+	answers.WorkGenerateTwinAvatar = { image: "AQID" };
+	const { onSaved, user } = renderForm(true);
+	await user.click(screen.getByRole("button", { name: "Generate options" }));
+	await user.click(await screen.findByRole("radio", { name: "Option 2" }));
+	expect(screen.getByRole("radio", { name: "Option 2" })).toBeChecked();
+
+	await user.click(screen.getByRole("button", { name: "Save" }));
+	await vi.waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
+	expect(upload).toHaveBeenCalledOnce();
+	const [twinId, file] = upload.mock.calls[0];
+	expect(twinId).toBe("twin-1");
+	expect(file).toBeInstanceOf(File);
+	expect(file.type).toBe("image/png");
+	// saved: nothing is waiting to upload, so no option shows as picked
+	expect(screen.getByRole("radio", { name: "Option 2" })).not.toBeChecked();
+});
+
+it("holds one image at a time: a picked option takes a chosen file's place, and a chosen file a picked option's", async () => {
+	answers.WorkGenerateTwinAvatar = { image: "AQID" };
+	const { user } = renderForm(true);
+	const input = screen.getByLabelText<HTMLInputElement>("Image");
+	await user.upload(
+		input,
+		new File(["x"], "robin.png", { type: "image/png" }),
+	);
+	expect(input.files).toHaveLength(1);
+
+	await user.click(screen.getByRole("button", { name: "Generate options" }));
+	await user.click(await screen.findByRole("radio", { name: "Option 1" }));
+	// the file picker no longer names a file the form does not hold
+	expect(input.files).toHaveLength(0);
+
+	const chosen = new File(["y"], "robin-2.png", { type: "image/png" });
+	await user.upload(input, chosen);
+	expect(input.files?.[0]).toBe(chosen);
+	expect(screen.getByRole("radio", { name: "Option 1" })).not.toBeChecked();
+
+	await user.click(screen.getByRole("button", { name: "Save" }));
+	await vi.waitFor(() =>
+		expect(upload).toHaveBeenCalledExactlyOnceWith("twin-1", chosen),
+	);
 });

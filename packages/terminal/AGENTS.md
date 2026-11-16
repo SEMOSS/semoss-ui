@@ -67,7 +67,10 @@ the terminal it supplies its own session gate and insight.
 - `@semoss/panels` — `FileExplorerPane` for the tree, and `useFilePanel` /
   `useFileBuffer` for the editor
 - `@semoss/ui`, `@semoss/shared`, `@semoss/sdk`, `@semoss/i18n`
-- `zustand` — peer of the dock; read its store with `useWorkbench`
+- `zustand` — peer of the dock, until the dock moves off it; read its store with
+  `useWorkbench`. Do not create Zustand
+  stores here: state the terminal owns itself uses a `StoreState`-backed store per the
+  [state management skill](../../skills/state-management.skill.md)
 
 ## The dock
 

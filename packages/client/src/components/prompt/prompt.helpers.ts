@@ -726,7 +726,7 @@ export async function setBlocksAndOpenUIBuilder(
 		}
 	}
 
-	const pixel = `CreateAppFromBlocks ( project = [ "${
+	const pixel = `CreateAppFromBlocks ( catalogName = [ "${
 		builder.title.value
 	}" ] , json =["<encode>${JSON.stringify(state)}</encode>"]  ) ;`;
 

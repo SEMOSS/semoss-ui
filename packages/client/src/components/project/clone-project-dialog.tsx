@@ -87,7 +87,7 @@ export const CloneProjectDialog = (props: CloneProjectDialogProps) => {
 
 			if (project.project_type === "SKILL") {
 				const { errors, pixelReturn } = await runPixel(
-					`CloneSkill(skillId=["${project.project_id}"], name=["${escapePixelString(values.name.trim())}"]);`,
+					`CloneSkill(skillId=["${project.project_id}"], catalogName=["${escapePixelString(values.name.trim())}"]);`,
 				);
 
 				if (errors.length > 0) {
@@ -100,7 +100,7 @@ export const CloneProjectDialog = (props: CloneProjectDialogProps) => {
 				);
 			} else {
 				const { errors, pixelReturn } = await runPixel(
-					`CreateAppFromTemplate(project=["${escapePixelString(values.name.trim())}"], projectTemplate=["${project.project_id}"], global=["${values.isGlobal}"]);`,
+					`CreateAppFromTemplate(catalogName=["${escapePixelString(values.name.trim())}"], projectTemplate=["${project.project_id}"], global=["${values.isGlobal}"]);`,
 				);
 
 				if (errors.length > 0) {

@@ -9,7 +9,10 @@ import { ConnectorList } from "../../components/connector-list";
 import { ConnectorSearchField } from "../../components/connector-search-field";
 import { ConnectorViewerHeader } from "../../components/connector-viewer-header";
 import { formatListDate } from "../../core/connector.format";
-import type { ConnectorViewerProps } from "../../core/connector.types";
+import type {
+	ConnectorSavedItemsProps,
+	ConnectorViewerProps,
+} from "../../core/connector.types";
 import { runConnectorPixel } from "../../core/connector-pixel";
 import { useConnectorQuery } from "../../core/use-connector-query";
 import {
@@ -45,7 +48,8 @@ interface OpenChat {
 }
 
 /** Props for {@link TeamsChatViewer}. */
-export type TeamsChatViewerProps = ConnectorViewerProps;
+export type TeamsChatViewerProps = ConnectorViewerProps &
+	ConnectorSavedItemsProps;
 
 /**
  * The user's Teams chats, the one with the newest message first: search their
@@ -229,6 +233,9 @@ export const TeamsChatViewer = (props: TeamsChatViewerProps) => {
 											serviceName: t("services.teams"),
 											webUrl: chat.webUrl,
 											saveLabel: saver.saveLabel,
+											savedLabel: saver.savedLabel(
+												request.key,
+											),
 											isBusy: isBusy,
 											onAddToContext: saver.addToContext
 												? () =>
