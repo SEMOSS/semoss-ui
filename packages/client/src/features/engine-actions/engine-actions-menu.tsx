@@ -7,17 +7,13 @@ import {
 	type ActionsMenuItem,
 } from "@/components/shared/actions-menu";
 import { CloneEngineDialog } from "@/features/engine-clone/clone-engine-dialog";
-import { ExportEngineDialog } from "@/features/engine-export/export-engine-dialog";
-import {
-	ENGINE_SUBTYPES_WITH_DATA,
-	useEngineExport,
-} from "@/features/engine-export/use-engine-export";
+import { useEngineExport } from "@/features/engine-export/use-engine-export";
 import { RestartEngineDialog } from "@/features/engine-restart/restart-engine-dialog";
 import { useEngine } from "@/hooks/useEngine";
 import { useNavigate } from "@/hooks/useNavigate";
 
 /** The dialog an action opens */
-type ActionDialog = "EXPORT" | "CLONE" | "RESTART";
+type ActionDialog = "CLONE" | "RESTART";
 
 /** An engine action, with the roles the backend lets run it */
 interface EngineAction extends ActionsMenuItem {
@@ -38,9 +34,6 @@ export const EngineActionsMenu = () => {
 	const [cloneKey, setCloneKey] = useState(0);
 
 	const engineName = engine.engine_display_name || engine.engine_name;
-	const canIncludeData = ENGINE_SUBTYPES_WITH_DATA.includes(
-		engine.engine_subtype ?? "",
-	);
 
 	const actions: EngineAction[] = [
 		{
@@ -61,11 +54,7 @@ export const EngineActionsMenu = () => {
 			isBusy: isExporting,
 			busyLabel: "Exporting...",
 			onSelect: () => {
-				if (canIncludeData) {
-					setDialog("EXPORT");
-				} else {
-					void exportEngine(false);
-				}
+				void exportEngine();
 			},
 		},
 		{
@@ -86,15 +75,6 @@ export const EngineActionsMenu = () => {
 				testIdPrefix={formatToDataTestId(
 					`engineHeader-${catalog.name}-actions`,
 				)}
-			/>
-			<ExportEngineDialog
-				open={dialog === "EXPORT"}
-				engineLabel={catalog.name}
-				onExport={(includeData) => {
-					setDialog(null);
-					void exportEngine(includeData);
-				}}
-				onClose={() => setDialog(null)}
 			/>
 			<CloneEngineDialog
 				key={cloneKey}

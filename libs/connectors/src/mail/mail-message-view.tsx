@@ -16,6 +16,7 @@ import type {
 } from "../core/use-connector-saver";
 import { mailMessageFileName, mailMessageToMarkdown } from "./mail.markdown";
 import { parseMailMessageDetail } from "./mail.parsers";
+import { mailSaveKey } from "./mail.threads";
 import type { MailMessage } from "./mail.types";
 import type { MailApp } from "./mail-apps";
 import { MailAttachmentList } from "./mail-attachment-list";
@@ -100,13 +101,15 @@ export const MailMessageView = ({
 	 * @param full - The email, read in full.
 	 * @return The save request.
 	 */
+	// the key the email's row in the list saves under, so the two are saving, and held, together
+	const saveKey = mailSaveKey(summary);
 	const messageRequest = useCallback(
 		(full: MailMessage): ConnectorSaveRequest => {
 			const conversationId = full.conversationId;
 			if (conversationId) {
 				return threadSaveRequest(
 					app,
-					full.id,
+					saveKey,
 					title,
 					full.subject,
 					() => {
@@ -122,7 +125,7 @@ export const MailMessageView = ({
 				);
 			}
 			return {
-				key: full.id,
+				key: saveKey,
 				name: title,
 				source: {
 					kind: "text",
@@ -131,13 +134,13 @@ export const MailMessageView = ({
 				},
 			};
 		},
-		[app, insightId, noInsightMessage, title],
+		[app, insightId, noInsightMessage, saveKey, title],
 	);
 	const handleAddToContext = useCallback(() => {
 		if (message) addToContext?.(messageRequest(message));
 	}, [addToContext, message, messageRequest]);
 
-	const isMessageBusy = saver.isBusy(summary.id);
+	const isMessageBusy = saver.isBusy(saveKey);
 	useConnectorControls(
 		{
 			openIn: webUrl
@@ -177,6 +180,7 @@ export const MailMessageView = ({
 						serviceName={t(app.appNameKey)}
 						webUrl={onControlsChange ? undefined : webUrl}
 						saveLabel={saver.saveLabel}
+						savedLabel={saver.savedLabel(saveKey)}
 						isBusy={isMessageBusy}
 						onAddToContext={
 							!onControlsChange && addToContext

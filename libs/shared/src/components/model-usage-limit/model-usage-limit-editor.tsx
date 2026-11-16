@@ -87,7 +87,7 @@ export interface ModelUsageLimitEditorProps {
  * instead; Unlimited; or a list of rules a call must be within, all of them. Each rule has
  * an amount, a measure (tokens, cost in US dollars or compute time) and a
  * window, which for minutes and hours can be longer than one, such as every 10
- * minutes, and, on a team or public use, whose use it counts. Cost amounts are
+ * minutes, and, on a team, an app or public use, whose use it counts. Cost amounts are
  * typed in dollars and sent in millionths of a dollar. It warns about rules
  * that can never be reached, and, once the host asks, says what cannot be
  * saved.
@@ -135,9 +135,11 @@ export const ModelUsageLimitEditor = ({
 	});
 	const hasCostRule = rules.some((rule) => rule.metric === "COST");
 	const hasTokenRule = rules.some((rule) => rule.metric === "TOKENS");
-	const hasEachMemberRule =
-		source === "TEAM" &&
-		rules.some((rule) => rule.counts === "EACH_PERSON");
+	const hasEachPersonRule = rules.some(
+		(rule) => rule.counts === "EACH_PERSON",
+	);
+	const hasEachMemberRule = source === "TEAM" && hasEachPersonRule;
+	const hasEachUserRule = source === "APP" && hasEachPersonRule;
 	// each rule's problem, shown only once the host asks
 	const shownProblems = checks.map((check) =>
 		shouldShowProblems ? check.problem : null,
@@ -344,6 +346,11 @@ export const ModelUsageLimitEditor = ({
 						{hasEachMemberRule ? (
 							<p className="text-muted-foreground text-xs">
 								{t("usageLimit.eachMemberNote")}
+							</p>
+						) : null}
+						{hasEachUserRule ? (
+							<p className="text-muted-foreground text-xs">
+								{t("usageLimit.eachUserNote")}
 							</p>
 						) : null}
 						{isAcrossAllModels(source) &&

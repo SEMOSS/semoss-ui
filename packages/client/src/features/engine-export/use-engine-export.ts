@@ -3,20 +3,16 @@ import { download, runPixel, useSessionInsight } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 
-/** The engine subtypes whose export can leave out the data, which the user picks */
-export const ENGINE_SUBTYPES_WITH_DATA = ["H2_DB"];
-
 /** What {@link useEngineExport} gives its caller. */
 interface UseEngineExportResult {
 	/** Whether an export is running */
 	isExporting: boolean;
 	/**
 	 * Exports the engine as a zip and downloads it, reporting a failure in a
-	 * toast.
-	 *
-	 * @param includeData - Whether to include the database's data
+	 * toast. The zip holds the engine's folder, so an engine that keeps its
+	 * data in files, such as an H2 or RDF database, comes with its data.
 	 */
-	exportEngine: (includeData: boolean) => Promise<void>;
+	exportEngine: () => Promise<void>;
 }
 
 /**
@@ -30,11 +26,11 @@ export const useEngineExport = (engineId: string): UseEngineExportResult => {
 	const { insightId } = useSessionInsight();
 	const [isExporting, setIsExporting] = useState(false);
 
-	const exportEngine = async (includeData: boolean) => {
+	const exportEngine = async () => {
 		setIsExporting(true);
 		try {
 			const response = await runPixel(
-				`META | ExportEngine(engine=[${JSON.stringify(engineId)}], includeData="${includeData ? "true" : "false"}" );`,
+				`META | ExportEngine(engine=[${JSON.stringify(engineId)}]);`,
 				insightId,
 			);
 			if (response.errors.length > 0) {

@@ -5,6 +5,7 @@ import * as fs from "node:fs";
 import { Env, Insight } from "@semoss/sdk/react";
 import type { Config } from "../types.js";
 
+// biome-ignore lint/style/noDefaultExport: oclif loads each command from its file's default export
 export default class Deploy extends Command {
 	static description = "Initialize a new app";
 
@@ -54,7 +55,7 @@ init (./src/commands/init.ts)
 				configOptions = JSON.parse(
 					fs.readFileSync(configPath, "utf8"),
 				) as Config;
-			} catch (e) {
+			} catch {
 				// noop
 			}
 
@@ -69,10 +70,7 @@ init (./src/commands/init.ts)
 		}
 
 		// throw the error
-		const name =
-			configOptions && configOptions.name
-				? configOptions.name
-				: flags.name;
+		const name = configOptions?.name || flags.name;
 		if (!name) {
 			throw new Error("Name is required");
 		}
@@ -133,7 +131,7 @@ init (./src/commands/init.ts)
 					// Load the insight classes
 					const { pixelReturn } = await insight.actions.run<
 						[{ project_id: string }]
-					>(`CreateProject("${name}")`);
+					>(`CreateProject(catalogName=["${name}"])`);
 					// save the new app ID
 					context.APP = pixelReturn[0].output.project_id;
 					return true;

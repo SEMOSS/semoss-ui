@@ -239,9 +239,17 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 		try {
 			let response = null;
 			if (type === "PROJECT") {
-				response = await updateProjectSmssProperties(id, value);
+				response = await updateProjectSmssProperties(
+					id,
+					value,
+					adminMode,
+				);
 			} else {
-				response = await updateDatabaseSmssProperties(id, value);
+				response = await updateDatabaseSmssProperties(
+					id,
+					value,
+					adminMode,
+				);
 			}
 
 			if (!response) {

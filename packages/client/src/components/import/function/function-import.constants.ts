@@ -16,6 +16,7 @@ import PYTHON from "@/assets/img/PYTHON.svg";
 import RESTAPI from "@/assets/img/REST-API.svg";
 import SERVICE_NOW from "@/assets/img/SERVICE_NOW.svg";
 import SMTP from "@/assets/img/SMTP.svg";
+import { CATALOG_NAME_KEY } from "@/components/import/shared/import-form.constants";
 
 export const FUNCTION_CONNECTIONS = {
 	description: {
@@ -47,7 +48,7 @@ export const FUNCTION_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -124,7 +125,7 @@ export const FUNCTION_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -200,7 +201,7 @@ export const FUNCTION_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					rules: {
 						pattern: {
@@ -267,7 +268,7 @@ export const FUNCTION_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -344,7 +345,7 @@ export const FUNCTION_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -402,7 +403,7 @@ export const FUNCTION_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -462,7 +463,7 @@ export const FUNCTION_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -713,7 +714,7 @@ export const FUNCTION_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -932,7 +933,7 @@ export const FUNCTION_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -1321,7 +1322,7 @@ export const FUNCTION_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -1603,7 +1604,7 @@ export const FUNCTION_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -2015,7 +2016,7 @@ export const FUNCTION_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -2102,7 +2103,7 @@ export const FUNCTION_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -2162,7 +2163,7 @@ export const FUNCTION_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -2520,7 +2521,7 @@ export const FUNCTION_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -2624,7 +2625,7 @@ export const FUNCTION_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -2874,7 +2875,7 @@ export const FUNCTION_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -3019,7 +3020,7 @@ export const FUNCTION_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",
@@ -3345,7 +3346,7 @@ export const FUNCTION_CONNECTIONS = {
 					category: "General",
 				},
 				{
-					key: "NAME",
+					key: CATALOG_NAME_KEY,
 					label: "Catalog Name",
 					value: "",
 					type: "text",

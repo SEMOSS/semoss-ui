@@ -268,6 +268,22 @@ a call's `admin` is true, where an admin can read and change anything:
 - `getResourcePermissions` (`getPermissions`) reads the people and teams who can use a project or
   engine and what the signed in user may change (`allowedPermissionChanges`). `getTeamPeople`
   reads a custom team's members or managers through the same endpoint.
+- **Apps on an engine.** An engine can give an app (a project) a permission, which the app's
+  custom reactors use in place of the signed in user's own, so the app works with the engine for
+  people who have no access to it themselves. `AppSubject` (`category: "PROJECT"`, `id`, `name`)
+  is the app; it is kept apart from `PermissionSubject`, which is always a person or a team. On
+  an `ENGINE` target `getResourcePermissions` reads `projects`, a `CurrentAccess<AppSubject>` for
+  each app with its name (the app's display name when it has one), level (`READ_ONLY` or
+  `EDIT`), end date and, on a model, usage limit, and `allowedPermissionChanges.canViewProjects`,
+  true for the engine's editors and owners and in admin mode (anyone else gets an empty
+  `projects`), and `canChangeProjects`, true for the engine's owners and in admin mode. A
+  response with no `projects` reads as an empty list and one with no `canViewProjects` or
+  `canChangeProjects` as false, as for every other target; an app with no name is named by its
+  id. An `AppAccessChange` in a batch on the engine gives, changes or takes away an app's
+  permission: `action` `ADD`, `CHANGE` or `REMOVE`, `subject` the app's `category` and `id`, and
+  `to` a `PermissionGrant`, left out for `REMOVE`. A `CHANGE` sets the whole grant, so it sends
+  the level, the end date the app has and its usage limit. `PermissionChange` is a
+  `PermissionAccessChange`, a `ModelLimitChange` or an `AppAccessChange`.
 - `validatePermissionBatches` and `savePermissionBatches` post the batches as JSON in the
   `batches` form field. Validating returns one result per batch, in the order sent, and each
   change's result carries its index in its batch. Saving saves every change of every batch, or
@@ -277,8 +293,9 @@ a call's `admin` is true, where an admin can read and change anything:
   engine, and where their access comes from.
 
 Each call checks the response's shape and throws when it is not what the call reads. Lists of
-people leave out rows without an id, login type or known level; validation results are never
-left out, since they are matched to the batches by position.
+people leave out rows without an id, login type or known level, and an engine's apps leave out
+rows without an id or a known level; validation results are never left out, since they are
+matched to the batches by position.
 
 ## Model Usage Limits
 
@@ -298,6 +315,13 @@ with no rules that is not Unlimited is null too.
 
 - **Grants.** `PermissionGrant.usageLimit` is a model grant's limit. A `ModelLimitChange` (`PUBLIC` or `MODEL`
   subject, `CHANGE` only, `to: { usageLimit }`) changes a model's public use limit or its total.
+- **An app's limit.** The grant a model gives an app (`AppAccessChange`, and each of
+  `getResourcePermissions`' `projects`) carries a `usageLimit` too. It covers the calls the app's
+  custom reactors make to the model for people whose only way to it is the app, those with no
+  grant of their own and none through a team, and comes before the Public Use Limit. It counts
+  like a team's: its `SHARED` rules are the overall amount
+  for the app, and its `EACH_PERSON` rules the amount for each user of the app. Null is no limit
+  defined.
 - **Reads.** `getResourcePermissions` adds a model's `publicUse`, `modelTotal`,
   `costLimitsAvailable` and `price`, and `allowedPermissionChanges.limitLevels` and
   `canChangeModelLimits`. Only a model's owners, and admins in admin mode, set usage limits: they

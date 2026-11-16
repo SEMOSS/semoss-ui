@@ -10,6 +10,7 @@ import { createMemoryRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type {
+	ConnectorSavedItemsProps,
 	ConnectorViewerProps,
 	ConnectorViewerService,
 } from "@semoss/connectors";
@@ -25,28 +26,39 @@ vi.mock("@semoss/sdk/react", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
 	useInsight: () => insight,
 }));
-// the viewers are the library's own; the page only has to take what one saved
+// the viewers are the library's own; the page only has to take what one saved, and say what it holds
 vi.mock("@semoss/connectors", async (importOriginal) => {
 	const viewer =
 		(name: string, service: ConnectorViewerService) =>
-		({ saveTargetName, showHeader, onSaved }: ConnectorViewerProps) => (
+		({
+			saveTargetName,
+			showHeader,
+			savedItems,
+			onSaved,
+		}: ConnectorViewerProps & ConnectorSavedItemsProps) => (
 			<div>
 				<p>
 					{name}
 					{showHeader === false ? ", without its own header" : ""}
 				</p>
-				<button
-					type="button"
-					onClick={() =>
-						onSaved?.({
-							path: "Budget review.md",
-							name: "Budget review.md",
-							service,
-						})
-					}
-				>
-					Save to {saveTargetName}
-				</button>
+				{/* one item, which a viewer marks in place of offering it once the host holds it */}
+				{savedItems?.isSaved("budget-review") ? (
+					<p>{savedItems.label}</p>
+				) : (
+					<button
+						type="button"
+						onClick={() =>
+							onSaved?.({
+								path: "Budget review.md",
+								name: "Budget review.md",
+								service,
+								itemKey: "budget-review",
+							})
+						}
+					>
+						Save to {saveTargetName}
+					</button>
+				)}
 			</div>
 		);
 	return {
@@ -68,6 +80,25 @@ vi.mock("@/features/connectors/api/microsoft", () => ({
 }));
 
 const BROWSE = 'BrowseAppAssets(filePath=["/"], project=["twin-1"]);';
+// the one item the viewers offer, as the twin records where a copy of it came from
+const RECORD = { "public/emails/Budget review.md": "budget-review" };
+const SAVE_RECORD = `SaveAppAssets(project=["twin-1"], filePath=["/twin-sources.json"], content=["<encode>${JSON.stringify(RECORD)}</encode>"]);`;
+/** Answer as a twin that already holds a copy of the viewers' item, or held one the owner deleted since. */
+const holdCopy = (isStillThere = true): void => {
+	answers.BrowseAppAssets = [
+		{ name: "public", path: "/public/", type: "directory" },
+		{ name: "twin-sources.json", path: "/twin-sources.json", type: "json" },
+	];
+	answers.GetAppAssets = JSON.stringify(RECORD);
+	answers.SearchAppAssets = isStillThere
+		? [
+				{
+					name: "Budget review.md",
+					path: "/public/emails/Budget review.md",
+				},
+			]
+		: [];
+};
 const NEW_FOLDER =
 	'NewAppAssetsDirectory(project=["twin-1"], filePath=["/public"]);';
 /** What the server answers each reactor with; an Error is a refusal. */
@@ -111,6 +142,7 @@ beforeEach(() => {
 	});
 	vi.spyOn(toast, "success").mockImplementation(() => "");
 	vi.spyOn(toast, "error").mockImplementation(() => "");
+	vi.spyOn(toast, "warning").mockImplementation(() => "");
 });
 afterEach(() => {
 	cleanup();
@@ -183,15 +215,75 @@ it.each([
 				'Added "Budget review.md" to your Digital Twin.',
 			),
 		);
-		expect(ran().at(-1)).toBe(
+		expect(ran()).toContain(
 			`Copy(sourceType=["INSIGHT"], sourceFilePath=["Budget review.md"], target=["twin-1"], targetType=["PROJECT"], targetFilePath=["public/${folder}/Budget review.md"]);`,
 		);
+		// then where the copy came from is recorded, for the next time the page opens
+		expect(ran().at(-1)).toBe(SAVE_RECORD);
 		expect(
 			screen.getByText('Added "Budget review.md" to your Digital Twin.'),
 		).toBeVisible();
 		expect(toast.error).not.toHaveBeenCalled();
+		// its viewer marks it from here on, in place of offering it again
+		expect(screen.getByText("In your Digital Twin")).toBeVisible();
+		expect(
+			screen.queryByRole("button", { name: "Save to Digital Twin" }),
+		).not.toBeInTheDocument();
 	},
 );
+
+it("marks what the twin already holds when the page opens, and offers a copy the owner deleted again", async () => {
+	holdCopy();
+	const held = renderContents("outlook");
+	expect(await screen.findByText("In your Digital Twin")).toBeVisible();
+	expect(
+		screen.queryByRole("button", { name: "Save to Digital Twin" }),
+	).not.toBeInTheDocument();
+	held.router.dispose();
+	cleanup();
+
+	holdCopy(false);
+	renderContents("outlook");
+	expect(
+		await screen.findByRole("button", { name: "Save to Digital Twin" }),
+	).toBeVisible();
+	expect(screen.queryByText("In your Digital Twin")).not.toBeInTheDocument();
+});
+
+it("reads what the twin holds again when the owner comes back from its files", async () => {
+	holdCopy();
+	const { user } = renderContents("outlook");
+	expect(await screen.findByText("In your Digital Twin")).toBeVisible();
+
+	const rail = screen.getByRole("navigation", { name: "What to list" });
+	await user.click(within(rail).getByRole("button", { name: "Files" }));
+	expect(await screen.findByText(/The file dock on/)).toBeVisible();
+	// the owner deletes the copy there
+	holdCopy(false);
+	await user.click(within(rail).getByRole("button", { name: "Outlook" }));
+	expect(
+		await screen.findByRole("button", { name: "Save to Digital Twin" }),
+	).toBeVisible();
+});
+
+it("keeps an added item marked, and says so, when where it came from could not be recorded", async () => {
+	answers.SaveAppAssets = new Error("The disk is full");
+	const { user } = renderContents("outlook");
+	await user.click(
+		await screen.findByRole("button", { name: "Save to Digital Twin" }),
+	);
+	await waitFor(() =>
+		expect(toast.warning).toHaveBeenCalledWith(
+			'"Budget review.md" will not show as added once this page is reloaded.',
+			{ description: "The disk is full." },
+		),
+	);
+	// it is in the twin all the same
+	expect(toast.success).toHaveBeenCalledWith(
+		'Added "Budget review.md" to your Digital Twin.',
+	);
+	expect(screen.getByText("In your Digital Twin")).toBeVisible();
+});
 
 it("says when a copy fails, with the server's reason, and keeps the viewer", async () => {
 	answers.Copy = new Error(
@@ -217,6 +309,11 @@ it("says when a copy fails, with the server's reason, and keeps the viewer", asy
 	).toBeVisible();
 	expect(toast.success).not.toHaveBeenCalled();
 	expect(screen.getByText(/The Outlook mailbox/)).toBeVisible();
+	// not in the twin, so it is offered again and not marked
+	expect(screen.queryByText("In your Digital Twin")).not.toBeInTheDocument();
+	expect(
+		screen.getByRole("button", { name: "Save to Digital Twin" }),
+	).toBeVisible();
 });
 
 it("moves between places in the address, and falls back to the files for a place it does not have", async () => {

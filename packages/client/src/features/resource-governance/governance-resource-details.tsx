@@ -20,6 +20,7 @@ import { ResourceAuditTrail } from "@/features/audit-trail/resource-audit-trail"
 import { BulkAccessManagement } from "@/features/bulk-access-management/bulk-access-management";
 import { useAdminResourceName } from "@/features/bulk-access-management/use-admin-resource-name";
 import { EffectivePermissions } from "@/features/effective-permissions/effective-permissions";
+import { EngineAppsTable } from "@/features/engine-app-permissions/engine-apps-table";
 import { ModelUsageLimitsCard } from "@/features/model-usage-limits/model-usage-limits-card";
 import { getResourcePagePath } from "@/utility/catalog";
 import { GovernanceResourceIcon } from "./governance-resource-icon";
@@ -38,6 +39,11 @@ interface GovernanceTab {
 
 const TABS: readonly GovernanceTab[] = [
 	{ value: "access", label: "Access" },
+	{
+		value: "apps",
+		label: "Apps",
+		isAvailable: (entry) => entry.kind === "ENGINE",
+	},
 	{ value: "effective-permissions", label: "Effective Permissions" },
 	{ value: "requests", label: "Requests" },
 	{ value: "visibility", label: "Visibility" },
@@ -63,9 +69,10 @@ interface GovernanceResourceDetailsProps {
 
 /**
  * Everything about one project or engine for an admin: who can use it, with
- * changes for many people staged and saved together, its effective
- * permissions, requests, visibility, audit trail and SMSS, and a model's usage
- * limits. The tab is kept in the address, so a link opens it.
+ * changes for many people staged and saved together, the apps an engine gives
+ * a permission to, its effective permissions, requests, visibility, audit
+ * trail and SMSS, and a model's usage limits. The tab is kept in the address,
+ * so a link opens it.
  */
 export const GovernanceResourceDetails = ({
 	entry,
@@ -195,6 +202,16 @@ export const GovernanceResourceDetails = ({
 							headingLevel={3}
 						/>
 					</TabsContent>
+					{entry.kind === "ENGINE" ? (
+						<TabsContent value="apps">
+							<EngineAppsTable
+								key={resourceId}
+								id={resourceId}
+								type={entry.type}
+								admin
+							/>
+						</TabsContent>
+					) : null}
 					<TabsContent value="effective-permissions">
 						<EffectivePermissions
 							key={resourceId}

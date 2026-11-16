@@ -35,6 +35,32 @@ describe("getDeleteRequest", () => {
 		});
 	});
 
+	it("deletes an engine and a project with the admin pixels in admin mode", () => {
+		expect(getDeleteRequest("MODEL", "engine-1", undefined, true)).toEqual({
+			pixel: "AdminDeleteEngine(engine=['engine-1']);",
+			entityLabel: "engine",
+		});
+		expect(getDeleteRequest("PROJECT", "p-1", "CODE", true)).toEqual({
+			pixel: "AdminDeleteProject(project=['p-1']);",
+			entityLabel: "app",
+		});
+		expect(getDeleteRequest("PROJECT", "p-1", "NOTEBOOK", true)).toEqual({
+			pixel: "AdminDeleteProject(project=['p-1']);",
+			entityLabel: "notebook",
+		});
+	});
+
+	it("deletes an agent and a skill with their admin pixels in admin mode", () => {
+		expect(getDeleteRequest("PROJECT", "p-1", "WORKSPACE", true)).toEqual({
+			pixel: "AdminDeleteWorkspace(workspaceId=['p-1']);",
+			entityLabel: "agent",
+		});
+		expect(getDeleteRequest("PROJECT", "p-1", "SKILL", true)).toEqual({
+			pixel: "AdminDeleteSkill(skillId=['p-1']);",
+			entityLabel: "skill",
+		});
+	});
+
 	it("has no request for a type deleted another way", () => {
 		expect(getDeleteRequest("WORKSPACE", "p-1")).toBeNull();
 	});

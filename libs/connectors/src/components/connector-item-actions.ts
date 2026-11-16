@@ -13,6 +13,11 @@ export interface ConnectorItemActions {
 	onSave?: () => void;
 	/** The save action's label, such as `Save to Chat files`. */
 	saveLabel: string;
+	/**
+	 * Set when the host already holds the item, such as `In your Digital
+	 * Twin`: the row says so in place of its save button.
+	 */
+	savedLabel?: string;
 	/** Opens the item in its own app. */
 	webUrl?: string;
 	/** The app's name, for the open action. */

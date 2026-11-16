@@ -283,7 +283,7 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
 			} as typeof newClientBlock & { queries: Dict; variables: Dict };
 
 			const response = await runPixel<[true]>(
-				`AddBlock(name=["${data.name}"], section=["${
+				`AdminAddBlock(name=["${data.name}"], section=["${
 					data.section
 				}"], json=["<encode>${JSON.stringify(newClientBlock)}</encode>"]);`,
 			);
