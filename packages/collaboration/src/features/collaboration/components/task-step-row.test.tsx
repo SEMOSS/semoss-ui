@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { type TaskStep, TaskStepRow } from "./task-step-row";
 
@@ -261,5 +262,28 @@ describe("TaskStepRow", () => {
 			</ul>,
 		);
 		expect(screen.queryByText(/From a conversation/)).toBeNull();
+	});
+
+	it("links a step to the conversation it came from, and says the topic of a loose step", () => {
+		render(
+			<MemoryRouter>
+				<ul>
+					<TaskStepRow
+						step={{
+							...step,
+							threadId: "th 1",
+							threadSubject: "Deck for Friday",
+						}}
+						state="mine"
+						selfId="me"
+						topicName="Launch"
+					/>
+				</ul>
+			</MemoryRouter>,
+		);
+		expect(
+			screen.getByRole("link", { name: "Deck for Friday" }),
+		).toHaveAttribute("href", "/thread/th%201");
+		expect(screen.getByText("Topic: Launch")).toBeVisible();
 	});
 });

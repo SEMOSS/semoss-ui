@@ -16,25 +16,31 @@ export function WorkItemPage() {
 	const item = items?.find((i) => i.id === taskId);
 	const context = useTaskContext({ taskId });
 	if (item?.roomId) return <Navigate to={roomPath(item.roomId)} replace />;
+	// a finished item is not in the open list, but the page still shows it so it can be reopened
+	const shown =
+		item ??
+		(context.task
+			? { title: context.task.title, id: taskId, topicId: undefined }
+			: undefined);
 	return (
 		<CollaborationPage>
 			<div className="mx-auto w-full max-w-3xl pt-4 pb-12 sm:pt-12">
-				{items === null ? (
+				{items === null || (!shown && context.loading) ? (
 					<Small className="text-muted-foreground">
 						{error || "Loading..."}
 					</Small>
-				) : item ? (
+				) : shown ? (
 					<>
 						<h1 className="mb-1 font-semibold text-2xl">
-							{context.task?.title || item.title}
+							{context.task?.title || shown.title}
 						</h1>
 						<Small className="mb-6 block text-muted-foreground">
 							Ask anything about this item. The assistant sees its
 							steps and the mail and chats it came from.
 						</Small>
 						<LandingChatComposer
-							topicId={item.topicId}
-							taskId={item.id}
+							topicId={shown.topicId}
+							taskId={shown.id}
 						/>
 						{context.task ? (
 							<section

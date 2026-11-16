@@ -30,18 +30,35 @@ const workItem = (id: string, extra: Record<string, unknown> = {}) => ({
 // one actions object, since the list's load reruns when it changes
 const insight = vi.hoisted(() => ({
 	workItems: [] as Record<string, unknown>[],
+	looseSteps: [] as Record<string, unknown>[],
+	totals: {} as Record<string, number>,
+	done: [] as Record<string, unknown>[],
 	actions: {
+		// one result per statement, as a batch gets
 		run: vi.fn(async (statement: string) => ({
-			pixelReturn: [
-				{
-					output: statement.startsWith("WorkListMyWork")
-						? { selfId: "me", workItems: insight.workItems }
+			pixelReturn: statement
+				.split(");")
+				.filter((part) => part.trim())
+				.map((part) => ({
+					output: part.startsWith("WorkListMyWork")
+						? {
+								selfId: "me",
+								workItems: part.includes('status=["done"]')
+									? insight.done
+									: insight.workItems,
+								looseSteps: insight.looseSteps,
+								...insight.totals,
+							}
 						: true,
 					operationType: ["OPERATION"],
-				},
-			],
+				})),
 		})),
 	},
+}));
+const toastMock = vi.hoisted(() => vi.fn());
+vi.mock("@semoss/ui/next", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@semoss/ui/next")>()),
+	toast: toastMock,
 }));
 vi.mock("@semoss/sdk/react", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
@@ -56,6 +73,9 @@ beforeAll(() => {
 
 beforeEach(() => {
 	insight.workItems = ["a", "b", "c"].map((id) => workItem(id));
+	insight.looseSteps = [];
+	insight.totals = {};
+	insight.done = [];
 });
 
 afterEach(() => {
@@ -437,4 +457,157 @@ it("does not move a row into the other group when it is dragged over one", async
 	// the save, if there were one, goes out a moment after the drag ends
 	await new Promise((resolve) => setTimeout(resolve, 50));
 	expect(reorders()).toEqual([]);
+});
+
+const ran = () =>
+	insight.actions.run.mock.calls.map(([statement]) => statement);
+
+it("shows single steps under Needs you and Also asked of you, with their topic and controls", async () => {
+	insight.workItems = [];
+	insight.looseSteps = [
+		{ id: "l1", text: "Send Kira the deck", kind: "task", status: "open" },
+		{
+			id: "l2",
+			text: "Read the memo",
+			kind: "task",
+			status: "open",
+			inbox: "fyi",
+		},
+	];
+	insight.totals = { workItemTotal: 0, looseStepTotal: 5 };
+	render(
+		<CollaborationSessionProvider
+			initialState={createInitialCollaborationState()}
+		>
+			<MemoryRouter>
+				<WorkItems />
+			</MemoryRouter>
+		</CollaborationSessionProvider>,
+	);
+	const needs = within(
+		await screen.findByRole("list", {
+			name: "Single steps: Needs you",
+		}),
+	);
+	expect(needs.getByText("Send Kira the deck")).toBeVisible();
+	const aside = within(
+		screen.getByRole("list", { name: "Single steps: Also asked of you" }),
+	);
+	expect(aside.getByText("Read the memo")).toBeVisible();
+	expect(screen.getByText("Showing the first 2 of 5.")).toBeVisible();
+	// the list asks for the assistant's own loose steps too
+	expect(ran()).toContain(
+		pixel("WorkListMyWork", { includeSuggested: true }),
+	);
+	await userEvent.click(
+		needs.getByRole("button", { name: "Mark done: Send Kira the deck" }),
+	);
+	await waitFor(() =>
+		expect(ran()).toContain(
+			pixel("WorkUpdateStep", { stepId: "l1", status: "done" }),
+		),
+	);
+});
+
+it("offers Undo after a single step is taken off the list", async () => {
+	insight.workItems = [];
+	insight.looseSteps = [
+		{ id: "l1", text: "Send Kira the deck", kind: "task", status: "open" },
+	];
+	render(
+		<CollaborationSessionProvider
+			initialState={createInitialCollaborationState()}
+		>
+			<MemoryRouter>
+				<WorkItems />
+			</MemoryRouter>
+		</CollaborationSessionProvider>,
+	);
+	await userEvent.click(
+		await screen.findByRole("button", {
+			name: "More for: Send Kira the deck",
+		}),
+	);
+	await userEvent.click(screen.getByRole("menuitem", { name: "Not mine" }));
+	await waitFor(() => expect(toastMock).toHaveBeenCalled());
+	const options = toastMock.mock.calls[0][1] as {
+		action: { onClick: () => void };
+	};
+	options.action.onClick();
+	await waitFor(() =>
+		expect(ran()).toContain(
+			pixel("WorkUpdateStep", { stepId: "l1", status: "open", note: "" }),
+		),
+	);
+});
+
+it("adds every proposed item as one batch after a confirmation, and one topic's items", async () => {
+	insight.workItems = [
+		workItem("n1", {
+			state: "proposed",
+			topics: [{ id: "alpha", name: "Alpha", primary: true }],
+		}),
+		workItem("n2", {
+			state: "proposed",
+			topics: [{ id: "beta", name: "Beta", primary: true }],
+		}),
+		workItem("n3", {
+			state: "proposed",
+			topics: [{ id: "beta", name: "Beta", primary: true }],
+		}),
+	];
+	const user = userEvent.setup();
+	await renderWork(true);
+	await user.click(screen.getByRole("combobox", { name: "Filter by topic" }));
+	await user.click(screen.getByRole("option", { name: "Beta" }));
+	await user.click(
+		screen.getByRole("button", { name: "Add all in this topic" }),
+	);
+	expect(screen.getByText("Add 2 work items to your list?")).toBeVisible();
+	// nothing is sent until the owner confirms
+	expect(ran().some((s) => s.includes("accept"))).toBe(false);
+	insight.workItems = insight.workItems.filter((i) => i.id === "n1");
+	await user.click(screen.getByRole("button", { name: "Add to my work" }));
+	await waitFor(() =>
+		expect(ran()).toContain(
+			`${pixel("WorkSaveWork", { taskId: "n2", accept: true })} ${pixel("WorkSaveWork", { taskId: "n3", accept: true })}`,
+		),
+	);
+});
+
+it("offers Undo after a new item is dismissed, which makes it active again", async () => {
+	insight.workItems = [workItem("n1", { state: "proposed" })];
+	const list = await renderWork(true);
+	await userEvent.click(list.getByRole("button", { name: "Dismiss" }));
+	await waitFor(() => expect(toastMock).toHaveBeenCalled());
+	const options = toastMock.mock.calls[0][1] as {
+		action: { onClick: () => void };
+	};
+	options.action.onClick();
+	await waitFor(() =>
+		expect(ran()).toContain(
+			pixel("WorkSaveWork", { taskId: "n1", status: "active" }),
+		),
+	);
+});
+
+it("loads finished work only when opened, leaves out dismissed items, and reopens one", async () => {
+	insight.done = [
+		workItem("d1", { status: "done" }),
+		workItem("d2", { status: "dropped" }),
+	];
+	await renderWork();
+	expect(ran().some((s) => s.includes('status=["done"]'))).toBe(false);
+	await userEvent.click(screen.getByRole("button", { name: "Done" }));
+	const done = within(
+		await screen.findByRole("list", { name: "Done work items" }),
+	);
+	expect(done.getByText("Item d1")).toBeVisible();
+	expect(done.queryByText("Item d2")).toBeNull();
+	await userEvent.click(done.getByRole("button", { name: "Reopen Item d1" }));
+	await waitFor(() =>
+		expect(ran()).toContain(
+			pixel("WorkSaveWork", { taskId: "d1", status: "active" }),
+		),
+	);
 });

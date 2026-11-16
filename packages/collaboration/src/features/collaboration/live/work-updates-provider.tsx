@@ -205,7 +205,7 @@ export function WorkUpdatesProvider({
 	const refreshRef = useRef(refresh);
 	refreshRef.current = refresh;
 	// the owner changed a step or item somewhere: the cards here (WorkListItems) are read again too
-	const { workVersion } = useWorkChanged();
+	const { workVersion, markWorkChanged } = useWorkChanged();
 	const seenWorkVersion = useRef(workVersion);
 	useEffect(() => {
 		if (seenWorkVersion.current === workVersion) return;
@@ -263,6 +263,10 @@ export function WorkUpdatesProvider({
 			.then((result) => {
 				if (token !== generation.current) return;
 				setMail({ isSyncing: false, lastSync: result, syncError: "" });
+				// Work and Today read their own copy: tell them when the sync changed anything. The version is
+				// taken as seen so this provider's own listener does not read a second time.
+				if (result.newMessages > 0 || result.closedByReply > 0)
+					seenWorkVersion.current = markWorkChanged();
 				refreshRef.current();
 			})
 			.catch((cause: unknown) => {
@@ -279,7 +283,7 @@ export function WorkUpdatesProvider({
 			.finally(() => {
 				if (token === generation.current) syncing.current = false;
 			});
-	}, [actions]);
+	}, [actions, markWorkChanged]);
 	// a reply sent from the app reaches Sent Items a moment later; sync it in so the card it answered closes
 	useEffect(() => {
 		let timer: number | undefined;

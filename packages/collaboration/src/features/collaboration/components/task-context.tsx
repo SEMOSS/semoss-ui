@@ -8,7 +8,7 @@ import {
 } from "react";
 import { Link } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
-import { Button, cn, Input, P, Progress, Small } from "@semoss/ui/next";
+import { Button, cn, Input, P, Progress, Small, toast } from "@semoss/ui/next";
 import { OutlookIcon, TeamsIcon } from "@/components/common/app-icons";
 import { pixel } from "@/lib/pixel";
 import { threadPath } from "@/lib/workspace-paths";
@@ -20,8 +20,9 @@ import {
 } from "../api/work-steps";
 import { runBatch } from "../live/live-state";
 import { useWorkChanged } from "../state/collaboration-session.context";
+import { offerStepUndo } from "../work-item-actions";
 import { TaskItemControls } from "./task-item-controls";
-import { type StepInbox, type TaskStep, TaskStepRow } from "./task-step-row";
+import { type TaskStep, TaskStepRow, toTaskStep } from "./task-step-row";
 
 type Row = Record<string, unknown>;
 
@@ -44,10 +45,6 @@ interface TaskView {
 }
 
 const str = (v: unknown): string => (typeof v === "string" ? v : "");
-const inboxOf = (v: unknown): StepInbox | undefined =>
-	v === "needs_me" || v === "waiting" || v === "fyi" || v === "outside"
-		? v
-		: undefined;
 const rows = (v: unknown): Row[] => (Array.isArray(v) ? (v as Row[]) : []);
 
 async function loadTask(
@@ -59,15 +56,29 @@ async function loadTask(
 		pixel("WorkListMyWork"),
 	])) as Row[];
 	const selfId = str(list?.selfId);
-	const taskId =
+	let taskId =
 		key.taskId ??
 		str(
 			rows(list?.workItems).find((i) => str(i.roomId) === key.roomId)?.id,
 		);
+	if (!taskId && key.roomId) {
+		// a finished item is not in the open list; its room still belongs to it
+		const [all] = (await runBatch(actions, [
+			pixel("WorkListMyWork", { status: "all" }),
+		])) as Row[];
+		taskId = str(
+			rows(all?.workItems).find((i) => str(i.roomId) === key.roomId)?.id,
+		);
+	}
 	if (!taskId) return null;
 	const [work] = (await runBatch(actions, [
 		pixel("WorkGetWork", { taskId }),
 	])) as Row[];
+	const threads = rows(work?.threads).map((t) => ({
+		id: str(t.threadId),
+		subject: str(t.subject) || "(no subject)",
+		source: str(t.source),
+	}));
 	return {
 		id: taskId,
 		title: str(work?.title),
@@ -75,24 +86,14 @@ async function loadTask(
 		due: str(work?.due),
 		priority: str(work?.priority),
 		selfId,
-		steps: rows(work?.steps).map((s) => ({
-			id: str(s.id),
-			text: str(s.text),
-			kind: str(s.kind),
-			status: str(s.status),
-			assigneeId: str(s.assigneeId),
-			assigneeName: str(s.assigneeName),
-			due: str(s.due),
-			closedBy: str(s.closedBy),
-			closedText: str(s.closedText),
-			closedSubject: str(s.closedSubject),
-			inbox: inboxOf(s.inbox),
-		})),
-		threads: rows(work?.threads).map((t) => ({
-			id: str(t.threadId),
-			subject: str(t.subject) || "(no subject)",
-			source: str(t.source),
-		})),
+		steps: rows(work?.steps).map((row) => {
+			const step = toTaskStep(row);
+			const subject = threads.find(
+				(t) => t.id === step.threadId,
+			)?.subject;
+			return subject ? { ...step, threadSubject: subject } : step;
+		}),
+		threads,
 		timeline: rows(work?.timeline)
 			.slice(0, 5)
 			.map((u) => ({ id: str(u.id), text: str(u.text) })),
@@ -174,7 +175,11 @@ export function useTaskContext(key: {
 	}, [actions, taskId, roomId, workVersion]);
 	const fresh = result?.key === current ? result : null;
 	// saves a change, then reads the task again; the result is tagged, so one for another room is ignored
-	const save = (from: "steps" | "item", work: Promise<void>) => {
+	const save = (
+		from: "steps" | "item",
+		work: Promise<void>,
+		onSaved?: () => void,
+	) => {
 		setSaving({ isBusy: true, error: "", from });
 		work.then(() => loadTask(actions, { taskId, roomId })).then(
 			(task) => {
@@ -182,6 +187,7 @@ export function useTaskContext(key: {
 				setResult({ key: current, task, error: "" });
 				// the list and the cards read their own copy of work
 				ownVersion.current = markWorkChanged();
+				onSaved?.();
 			},
 			(e) =>
 				setSaving({
@@ -201,7 +207,19 @@ export function useTaskContext(key: {
 		error: fresh?.error ?? "",
 		steps: {
 			change: (stepId, change) =>
-				save("steps", updateWorkStep(actions, stepId, change)),
+				save("steps", updateWorkStep(actions, stepId, change), () =>
+					offerStepUndo(change, () =>
+						save(
+							"steps",
+							updateWorkStep(actions, stepId, {
+								status: "open",
+								// "not mine" was only the reason it was set aside
+								note:
+									change.note === undefined ? undefined : "",
+							}),
+						),
+					),
+				),
 			add: (text) => {
 				if (openTaskId)
 					save("steps", addWorkStep(actions, openTaskId, text));
@@ -211,8 +229,30 @@ export function useTaskContext(key: {
 		},
 		item: {
 			change: (change) => {
-				if (openTaskId)
-					save("item", updateWorkItem(actions, openTaskId, change));
+				if (!openTaskId) return;
+				save(
+					"item",
+					updateWorkItem(actions, openTaskId, change),
+					() => {
+						if (change.status === "done")
+							toast("Work item marked done.", {
+								action: {
+									label: "Undo",
+									onClick: () =>
+										save(
+											"item",
+											updateWorkItem(
+												actions,
+												openTaskId,
+												{
+													status: "active",
+												},
+											),
+										),
+								},
+							});
+					},
+				);
 			},
 			isBusy: saving.isBusy,
 			error: errorFor("item"),
@@ -297,6 +337,7 @@ export function TaskContextView({
 	className,
 }: TaskContextViewProps) {
 	const [newStep, setNewStep] = useState("");
+	const [showRemoved, setShowRemoved] = useState(false);
 	const handleAdd = (event: FormEvent) => {
 		event.preventDefault();
 		const text = newStep.trim();
@@ -315,6 +356,7 @@ export function TaskContextView({
 	);
 	const mine = open.filter((s) => !waiting.includes(s));
 	const done = task.steps.filter((s) => s.status === "done");
+	const removed = task.steps.filter((s) => s.status === "dropped");
 	const total = open.length + done.length;
 	return (
 		<div className={cn("space-y-5 p-4", className)}>
@@ -469,6 +511,66 @@ export function TaskContextView({
 						))}
 					</ol>
 				</Section>
+			) : null}
+			{removed.length ? (
+				<section aria-label="Removed steps">
+					<button
+						type="button"
+						aria-expanded={showRemoved}
+						onClick={() => setShowRemoved((v) => !v)}
+						className="flex items-center gap-2 rounded-sm text-muted-foreground text-sm hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+					>
+						<ChevronRight
+							aria-hidden="true"
+							className={cn(
+								"size-4 transition-transform motion-reduce:transition-none",
+								showRemoved && "rotate-90",
+							)}
+						/>
+						Removed steps ({removed.length})
+					</button>
+					{showRemoved ? (
+						<ul className="mt-2 divide-y divide-border overflow-hidden rounded-lg border bg-background">
+							{removed.map((s) => (
+								<li
+									key={s.id}
+									className="flex items-start gap-2.5 px-3 py-2 text-sm"
+								>
+									<div className="min-w-0 flex-1">
+										<span className="break-words text-muted-foreground line-through decoration-muted-foreground/40">
+											{s.text}
+										</span>
+										{s.note === "not mine" ? (
+											<span className="mt-1 block text-muted-foreground text-xs">
+												Set aside: not mine
+											</span>
+										) : null}
+									</div>
+									{steps ? (
+										<Button
+											type="button"
+											size="sm"
+											variant="outline"
+											disabled={steps.isBusy}
+											aria-label={`Put back: ${s.text}`}
+											onClick={() =>
+												steps.change(s.id, {
+													status: "open",
+													note:
+														s.note === "not mine"
+															? ""
+															: undefined,
+												})
+											}
+										>
+											Put back
+										</Button>
+									) : null}
+								</li>
+							))}
+						</ul>
+					) : null}
+				</section>
 			) : null}
 			{done.length ? (
 				<Section title="Done" count={done.length}>

@@ -1,5 +1,6 @@
 import { CheckCircle2, Circle, Clock, MoreHorizontal } from "lucide-react";
 import { type FormEvent, useState } from "react";
+import { Link } from "react-router";
 import {
 	Button,
 	cn,
@@ -9,6 +10,7 @@ import {
 	DropdownMenuTrigger,
 	Input,
 } from "@semoss/ui/next";
+import { threadPath } from "@/lib/workspace-paths";
 import type { WorkStepChange } from "../api/work-steps";
 import { dueDay } from "../live/live-state";
 import { PersonAvatar } from "./person-avatar";
@@ -34,6 +36,43 @@ export interface TaskStep {
 	closedSubject: string;
 	/** What the inbox decided about the conversation the step came from; absent for a step made by hand or an older server. */
 	inbox?: StepInbox;
+	/** The topic a loose step sits under, when it has one. */
+	topicId?: string;
+	/** The conversation the step came from; absent for a step made by hand. */
+	threadId?: string;
+	/** That conversation's subject, when the work item's conversation list has it. */
+	threadSubject?: string;
+	/** Why it changed, such as "not mine". */
+	note?: string;
+}
+
+const str = (v: unknown): string => (typeof v === "string" ? v : "");
+
+/** A step as the server sends it (`WorkGetWork` steps, `WorkListMyWork` loose steps). */
+export function toTaskStep(row: Record<string, unknown>): TaskStep {
+	const inbox = row.inbox;
+	return {
+		id: str(row.id),
+		text: str(row.text),
+		kind: str(row.kind),
+		status: str(row.status),
+		assigneeId: str(row.assigneeId),
+		assigneeName: str(row.assigneeName),
+		due: str(row.due),
+		closedBy: str(row.closedBy),
+		closedText: str(row.closedText),
+		closedSubject: str(row.closedSubject),
+		inbox:
+			inbox === "needs_me" ||
+			inbox === "waiting" ||
+			inbox === "fyi" ||
+			inbox === "outside"
+				? inbox
+				: undefined,
+		topicId: str(row.topicId) || undefined,
+		threadId: str(row.threadId) || undefined,
+		note: str(row.note) || undefined,
+	};
 }
 
 const INBOX_NOTE: Partial<Record<StepInbox, string>> = {
@@ -52,6 +91,8 @@ interface TaskStepRowProps {
 	onChange?: (stepId: string, change: WorkStepChange) => void;
 	/** A change is being saved, so the controls wait. */
 	isBusy?: boolean;
+	/** The topic's name, shown when the step sits under one outside its work item. */
+	topicName?: string;
 }
 
 /** A due as the `YYYY-MM-DD` a date field takes; "" when there is none. */
@@ -67,6 +108,7 @@ export function TaskStepRow({
 	selfId,
 	onChange,
 	isBusy,
+	topicName,
 }: TaskStepRowProps) {
 	const [draft, setDraft] = useState<{ text: string; due: string } | null>(
 		null,
@@ -187,6 +229,22 @@ export function TaskStepRow({
 							/>
 						) : null}
 						Waiting on {step.assigneeName || "someone"}
+					</span>
+				) : null}
+				{topicName ? (
+					<span className="mt-1 block text-muted-foreground text-xs">
+						Topic: {topicName}
+					</span>
+				) : null}
+				{step.threadId ? (
+					<span className="mt-1 block text-muted-foreground text-xs">
+						From:{" "}
+						<Link
+							to={threadPath(step.threadId)}
+							className="rounded-sm underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+						>
+							{step.threadSubject || "the conversation"}
+						</Link>
 					</span>
 				) : null}
 				{step.inbox && INBOX_NOTE[step.inbox] ? (

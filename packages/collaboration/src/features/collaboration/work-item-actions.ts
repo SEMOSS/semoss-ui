@@ -1,4 +1,5 @@
 import { toast } from "@semoss/ui/next";
+import type { WorkStepChange } from "./api/work-steps";
 import type {
 	CollaborationCommand,
 	Thread,
@@ -31,4 +32,18 @@ export function ignoreThread(dispatch: Dispatch, thread: Thread) {
 
 export function resumeThread(dispatch: Dispatch, thread: Thread) {
 	dispatch({ type: "thread.mute", threadId: thread.id, muted: false });
+}
+
+/**
+ * After a step was taken off the owner's list ("Not mine" or "Remove"), says so and offers to put it back.
+ * Any other change says nothing.
+ */
+export function offerStepUndo(change: WorkStepChange, undo: () => void) {
+	if (change.status !== "dropped") return;
+	toast(
+		change.note === "not mine"
+			? "Step taken off your list."
+			: "Step removed.",
+		{ action: { label: "Undo", onClick: undo } },
+	);
 }
