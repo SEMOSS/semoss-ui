@@ -112,6 +112,15 @@ do not present those checks as backend integration verification. Follow the
 [repository validation guidance](../../skills/react-standard.skill.md#validation),
 with [biome.json](../../biome.json) as lint/formatting authority.
 
+## Requests and CSRF
+
+`get` and `post` in [`utility/fetch.ts`](./src/utility/fetch.ts) add the access key or bearer
+headers `Env` holds to every request. When the server asks for a CSRF token (`Env.CSRF`, set
+by `Config`), they also send it on every method its CSRF filter guards, which is all but GET,
+HEAD and OPTIONS. The token is read once from `/api/config/fetchCsrf` and kept until logout.
+A call made with `fetch` directly sends the same token by spreading `await getCsrfHeaders()`
+into its headers.
+
 ## Chat and Agent Ownership
 
 Load the [SDK chat guide](./skills/sdk-chat/SKILL.md) for API contracts, examples,
