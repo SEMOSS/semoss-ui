@@ -12,6 +12,16 @@ const mocks = vi.hoisted(() => ({
 	status: "AUTHENTICATED",
 	rooms: [] as { ROOM_ID: string; ROOM_NAME: string; DATE_CREATED: string }[],
 	commandListener: null as ((command: DesktopCommand) => void) | null,
+	// a fixed chat store: its snapshot is itself
+	chat: {
+		keys: { roomCounter: 0 },
+		optimisticRooms: {},
+		removeOptimisticRoom: () => {},
+		getSnapshot() {
+			return this;
+		},
+		subscribe: () => () => {},
+	},
 }));
 
 vi.mock("@semoss/i18n", () => ({
@@ -50,11 +60,7 @@ vi.mock("@semoss/chat", async (original) => {
 	const actual = await original<typeof import("@semoss/chat")>();
 	return {
 		...actual,
-		useCreateChatStore: () => ({
-			keys: { roomCounter: 0 },
-			optimisticRooms: {},
-			removeOptimisticRoom: vi.fn(),
-		}),
+		useCreateChatStore: () => mocks.chat,
 		Chat: {
 			...actual.Chat,
 			NewChat: () => <h1>New chat screen</h1>,
