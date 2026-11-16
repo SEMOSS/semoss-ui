@@ -19,6 +19,9 @@ import { ResponseMessageStore } from "./response-message.store";
  * without the MCP `_meta` block, so we fill in safe defaults — notably
  * `SMSS_MCP_EXECUTION: "disabled"` so the tool is never queued for client-side
  * execution.
+ *
+ * @param part - The provider's tool call.
+ * @returns The call, with defaults for what it lacks.
  */
 const buildServerToolJson = (
 	part: PixelMessageToolCallPart["toolCall"],
@@ -55,6 +58,7 @@ export type ToolDisplay = "inline" | "sidebar" | "hidden";
 
 /** What a tool call holds. Every field is readonly. */
 export interface ToolSnapshot {
+	/** Where the call stands. */
 	readonly status: ToolStatus;
 	/** The call's arguments, as the model sent them or the user edited them. */
 	readonly parameters: Readonly<Record<string, unknown>>;
@@ -81,13 +85,17 @@ export interface ToolSnapshot {
 	readonly isStreamingPlaceholder: boolean;
 	/** The TOOL_CALL part, once one has synced. */
 	readonly part: PixelMessageToolCallPart | null;
+	/** The call's result, once it has one. */
 	readonly response: string;
+	/** Whether the call is open, in the conversation or the Workspace by `display`. */
 	readonly isOpen: boolean;
 	/** Whether an inline call is expanded to fill the conversation. */
 	readonly isExpanded: boolean;
+	/** Where the call shows when it is open. */
 	readonly display: ToolDisplay;
 }
 
+/** A call before anything has synced. */
 const INITIAL_TOOL: ToolSnapshot = {
 	status: "INITIAL",
 	parameters: {},
@@ -139,31 +147,44 @@ export class ToolStore {
 		this.id = toolId;
 	}
 
+	/** The call's current state. */
 	getSnapshot = (): ToolSnapshot => this.state.getSnapshot();
 
+	/**
+	 * Listen for changes to the call.
+	 *
+	 * @param listener - Called after each change.
+	 * @returns Stops listening.
+	 */
 	subscribe = (listener: () => void): (() => void) =>
 		this.state.subscribe(listener);
 
+	/** Where the call stands. */
 	get status(): ToolStatus {
 		return this.getSnapshot().status;
 	}
 
+	/** The call's arguments, as the model sent them or the user edited them. */
 	get parameters(): Readonly<Record<string, unknown>> {
 		return this.getSnapshot().parameters;
 	}
 
+	/** The agent run's action paused on this call, or null. */
 	get pendingAction(): PendingAgentAction | null {
 		return this.getSnapshot().pendingAction;
 	}
 
+	/** Whether the call is still streaming in. */
 	get argumentsStreaming(): boolean {
 		return this.getSnapshot().argumentsStreaming;
 	}
 
+	/** The partial JSON of the arguments streamed so far. */
 	get argumentsBuffer(): string {
 		return this.getSnapshot().argumentsBuffer;
 	}
 
+	/** The wire name from the stream, until the final part brings the title. */
 	get streamingName(): string {
 		return this.getSnapshot().streamingName;
 	}
@@ -173,26 +194,28 @@ export class ToolStore {
 		return this.getSnapshot().isStreamingPlaceholder;
 	}
 
+	/** The call's result, once it has one. */
 	get response(): string {
 		return this.getSnapshot().response;
 	}
 
+	/** Whether the call is open. */
 	get isOpen(): boolean {
 		return this.getSnapshot().isOpen;
 	}
 
+	/** Whether an inline call is expanded to fill the conversation. */
 	get isExpanded(): boolean {
 		return this.getSnapshot().isExpanded;
 	}
 
+	/** Where the call shows when it is open. */
 	get display(): ToolDisplay {
 		return this.getSnapshot().display;
 	}
 
 	/** The message whose `parts` holds this call's TOOL_CALL. */
 	get message(): ResponseMessageStore | null {
-		// the message comes with the part, so reading the part tracks it
-		this.getSnapshot();
 		return this.toolMessage;
 	}
 

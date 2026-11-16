@@ -40,6 +40,11 @@ const agentsByRunId = new Map<string, AgentStore>();
 /**
  * Get the live AgentStore for a run if one is already being watched,
  * otherwise create (and register) a fresh, not-yet-watched one.
+ *
+ * @param roomId - The run's room.
+ * @param insightId - The insight its pixels run in.
+ * @param runId - The run's id.
+ * @returns The run's agent store.
  */
 const getOrCreateAgent = (
 	roomId: string,
@@ -58,8 +63,12 @@ const getOrCreateAgent = (
 /**
  * QUEUED and INPUT_REQUIRED have no branch — they leave the tool at
  * ToolStore's own default "INITIAL" status, which renders as the ask/awaiting
- * card (see getShouldGroupTool/getToolState, keyed off execution mode via
- * isAskExecutionMode) rather than a generic loading spinner.
+ * card (see `needsDecision` in ResponseMessageTool and
+ * ResponseMessageToolGroup, keyed off execution mode via isAskExecutionMode)
+ * rather than a generic loading spinner.
+ *
+ * @param status - The agent run item's status.
+ * @returns The call's status, or null to leave it as it is.
  */
 const mapToolStatus = (
 	status: string,
@@ -87,6 +96,9 @@ const mapToolStatus = (
  * agent- prefix avoids both while still preserving which one it originally
  * was, so ask/auto-mode rendering (grouping, tool UI, custom UI resolution)
  * stays keyed on execution mode alone — see isAskExecutionMode.
+ *
+ * @param originalExecution - The tool's own `SMSS_MCP_EXECUTION`.
+ * @returns `agent-ask` for an ask tool, else `agent-auto`.
  */
 const toAgentExecutionMode = (originalExecution: unknown): string =>
 	originalExecution === MCP_EXECUTION_ASK
@@ -99,6 +111,9 @@ const toAgentExecutionMode = (originalExecution: unknown): string =>
  * real `_meta` block, passed through as-is. `item.name` is the raw,
  * engine-id-prefixed LLM-facing name — never display it directly; prefer
  * `item.title` or `metadata.SMSS_ORIGINAL_TOOL_NAME`.
+ *
+ * @param item - The run's tool item.
+ * @returns The TOOL_CALL part for it.
  */
 const buildToolCallPart = (item: {
 	id: string;
@@ -142,6 +157,9 @@ const buildToolCallPart = (item: {
  * stream item was missed. Live runs normally receive item.started before the
  * PendingAgentAction snapshot, so syncPendingActions keeps the existing part.
  * Always agent-ask: only ask tools ever become pending actions.
+ *
+ * @param action - The run's pending action.
+ * @returns The TOOL_CALL part for it.
  */
 const buildPendingToolCallPart = (
 	action: PendingAgentAction,
@@ -178,6 +196,10 @@ const buildPendingToolCallPart = (
 /**
  * Find an already-pushed SUBAGENT part by its item id, for item.updated/
  * item.completed to change.
+ *
+ * @param responseMessage - The response that holds it.
+ * @param id - The subagent item's id.
+ * @returns The part, or undefined.
  */
 const findSubagentPart = (
 	responseMessage: ResponseMessageStore,
@@ -214,6 +236,10 @@ const updateSubagentPart = (
  * Apply one agent-run item event onto the response message. Tool status reads from `items` (the SDK's
  * already-merged state), not the raw event, so Playground never handles
  * patch merging itself. Text is read straight off the event.
+ *
+ * @param responseMessage - The response the run fills.
+ * @param event - The item event.
+ * @param items - The run's merged items.
  */
 const applyAgentRunItem = (
 	responseMessage: ResponseMessageStore,
@@ -331,6 +357,9 @@ const applyAgentRunItem = (
  * Sync each tool's pendingAction from the run's current snapshot. Matched by
  * toolCallId; a tool not in `pendingActions` is cleared (its decision has
  * been made, or it was never a pending call).
+ *
+ * @param responseMessage - The response whose tool calls to sync.
+ * @param pendingActions - The run's pending actions.
  */
 const syncPendingActions = (
 	responseMessage: ResponseMessageStore,
@@ -377,6 +406,11 @@ const syncPendingActions = (
  * Resolve a tool call paused on a human decision. The legacy ask-tool paths
  * write straight into room history and never touch the AGENT_RUN_ACTION row,
  * so this is the only call that actually resumes the run. Thin wrapper over AgentStore.decide.
+ *
+ * @param tool - The paused call; a call with no pending action is left alone.
+ * @param decision - Approve (`submit`), reject, or `respond` with what the
+ * user did instead.
+ * @param paramValues - The edited arguments, or the response.
  */
 export const decideAgentToolAction = async (
 	tool: ToolStore,
@@ -401,6 +435,11 @@ export const decideAgentToolAction = async (
  * reconnecting to one already in progress after a page reload
  * (reconnectAgentRun) — the wiring is identical either way, only how the
  * `agent` was obtained differs.
+ *
+ * @param agent - The run's agent store.
+ * @param responseMessage - The response the run fills.
+ * @param inputMessage - The user's message, when there is one.
+ * @returns Resolves when the run completes; rejects when it fails or is cancelled.
  */
 const watchAgentRun = (
 	agent: AgentStore,
@@ -480,6 +519,11 @@ const watchAgentRun = (
  * AgentStore.watch. A non-COMPLETED terminal status rejects (caller removes
  * the optimistic input). INPUT_REQUIRED leaves the turn mounted and pending;
  * paused tool calls surface via ToolStore.pendingAction for the approval UI.
+ *
+ * @param message - The response the user's message answers.
+ * @param inputMessage - The user's message.
+ * @param existingResponse - A response placeholder already in the tree, to
+ * fill instead of making one.
  */
 export const runAgentMessage = async (
 	message: ResponseMessageStore,
@@ -575,6 +619,10 @@ export const runAgentMessage = async (
 /**
  * Find the message whose TOOL_CALL spawned childRunId, by matching the
  * TOOL_RESULT whose output carries a `jobId`/`runId` equal to it.
+ *
+ * @param messages - The room's messages.
+ * @param childRunId - The subagent's run id.
+ * @returns The response with the spawning call, or undefined.
  */
 const findSpawningMessage = (
 	messages: (InputMessageStore | ResponseMessageStore)[],
@@ -621,7 +669,9 @@ const findSpawningMessage = (
  * Rebuilds every subagent from GetSubagentRuns (one query per agentRunId)
  * since live subagent parts don't survive a reload. Placed on the spawning
  * message (see findSpawningMessage), using the same part shape/id as the live
- * path so later updates mutate it instead of duplicating.
+ * path so later updates replace it instead of duplicating.
+ *
+ * @param room - The room to rebuild subagents in.
  */
 export const reconstructAllSubagents = async (room: RoomStore) => {
 	const messagesByRunId = new Map<
@@ -671,6 +721,8 @@ export const reconstructAllSubagents = async (room: RoomStore) => {
  * reload, since an AgentStore otherwise only ever starts watching from
  * runAgentMessage's own submit. Fire-and-forget; a no-op if the message was
  * never part of an agent run, or if it already settled.
+ *
+ * @param responseMessage - The room's most recent response.
  */
 export const reconnectAgentRun = (responseMessage: ResponseMessageStore) => {
 	const runId = responseMessage.agentRun?.runId;

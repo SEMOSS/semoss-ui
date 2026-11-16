@@ -12,7 +12,7 @@ import { useRoomToolViewHost } from "./use-room-tool-view-host";
  *
  * @param decide - Makes the decision.
  * @param onDecided - Called once it is made.
- * @return The decision.
+ * @returns The decision.
  */
 const afterDecision =
 	<A extends unknown[]>(
@@ -58,8 +58,9 @@ export const ComponentToolView = ({
 	const toolMode = useRoomSelector(tool.room, () => toToolViewMode(tool));
 	const call = useRoomSelector(tool.room, () => toToolViewCall(tool));
 	const mode = isDecided ? "result" : toolMode;
+	// the decisions read the call when they run, so a fresh set per render is fine
 	const decisions = createToolViewDecisions(tool);
-	const markDecided = () => setIsDecided(true);
+	const handleDecided = () => setIsDecided(true);
 	return (
 		<div
 			className={cn(
@@ -75,9 +76,9 @@ export const ComponentToolView = ({
 				call={call}
 				mode={mode}
 				host={host}
-				onApprove={afterDecision(decisions.onApprove, markDecided)}
-				onDecline={afterDecision(decisions.onDecline, markDecided)}
-				onRespond={afterDecision(decisions.onRespond, markDecided)}
+				onApprove={afterDecision(decisions.onApprove, handleDecided)}
+				onDecline={afterDecision(decisions.onDecline, handleDecided)}
+				onRespond={afterDecision(decisions.onRespond, handleDecided)}
 				loading={<Skeleton className="h-24 w-full" />}
 				fallback={fallback}
 			/>

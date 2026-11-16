@@ -82,6 +82,7 @@ vi.mock("@semoss/ui/next", async (importOriginal) => {
 	};
 });
 
+/** A fake chat call with the given status. */
 const createTool = (status: ToolStore["status"] = "SUCCESS") =>
 	fakeStore({
 		id: "call-123",
@@ -270,6 +271,7 @@ test("returning to a payload preserves its viewer instead of remounting it", asy
 	expect(screen.getByRole("textbox", { name: /tabs.output/ })).toBe(output);
 });
 
+/** A fake call that waits for the user, with its decision spies. */
 const createApprovalTool = (mode: "chat" | "agent" = "chat") => {
 	const approveChatTool = vi.fn().mockResolvedValue(undefined);
 	const declineChatTool = vi.fn().mockResolvedValue(undefined);

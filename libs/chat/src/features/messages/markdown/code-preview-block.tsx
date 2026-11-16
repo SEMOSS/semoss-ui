@@ -44,6 +44,7 @@ import { SaveCodeNotebookDialog } from "./save-code-notebook-dialog";
 import { SaveFileDialog } from "./save-file-dialog";
 import { useStickToBottom } from "./use-stick-to-bottom";
 
+/** Props for {@link CodePreviewBlock}. */
 interface CodePreviewBlockProps {
 	/** The code block's source text. */
 	code: string;
@@ -90,8 +91,8 @@ export const CodePreviewBlock = ({
 	const executePixel = buildExecutePixel(langStr, code);
 	const canExecute = executePixel !== null;
 
-	/** Opens the save-as dialog with a generated default name. */
-	const openSaveCodeDialog = () => {
+	/** Opens the save-as dialog. */
+	const handleOpenSaveCodeDialog = () => {
 		setIsSaveCodeDialogOpen(true);
 	};
 
@@ -99,7 +100,7 @@ export const CodePreviewBlock = ({
 	 * Run the code block server-side, streaming console logs into state and
 	 * mapping the final result (or error) into the output panel.
 	 */
-	const execute = async () => {
+	const handleExecute = async () => {
 		if (!room || !executePixel) {
 			return;
 		}
@@ -174,7 +175,7 @@ export const CodePreviewBlock = ({
 					label={langLabel}
 					isCollapsed={isCollapsed}
 					onToggleCollapse={() => setIsCollapsed((prev) => !prev)}
-					collapseDisabled={!code}
+					isCollapseDisabled={!code}
 				>
 					{canExecute && (
 						<Tooltip>
@@ -184,7 +185,7 @@ export const CodePreviewBlock = ({
 									variant="ghost"
 									size="sm"
 									disabled={!room || isExecuting}
-									onClick={() => void execute()}
+									onClick={() => void handleExecute()}
 								>
 									{isExecuting ? (
 										<Spinner className="size-3" />
@@ -222,7 +223,9 @@ export const CodePreviewBlock = ({
 							<DropdownMenuContent align="end">
 								<DropdownMenuLabel>Save</DropdownMenuLabel>
 								<DropdownMenuSeparator />
-								<DropdownMenuItem onClick={openSaveCodeDialog}>
+								<DropdownMenuItem
+									onClick={handleOpenSaveCodeDialog}
+								>
 									<FileCodeIcon />
 									Code
 								</DropdownMenuItem>
@@ -242,7 +245,7 @@ export const CodePreviewBlock = ({
 									variant="ghost"
 									size="sm"
 									disabled={!room || !code}
-									onClick={openSaveCodeDialog}
+									onClick={handleOpenSaveCodeDialog}
 								>
 									<SaveIcon className="size-3" />
 								</Button>

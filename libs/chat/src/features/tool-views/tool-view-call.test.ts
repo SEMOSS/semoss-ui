@@ -2,6 +2,13 @@ import { describe, expect, it } from "vitest";
 import type { ToolStore } from "../messages/tool.store";
 import { toToolViewCall, toToolViewMode } from "./tool-view-call";
 
+/**
+ * A fake call.
+ *
+ * @param overrides - Fields that differ from a waiting chat call.
+ * @param roomMode - The room's mode.
+ * @returns The call.
+ */
 const toolWith = (
 	overrides: Record<string, unknown> = {},
 	roomMode: "chat" | "agent" = "chat",

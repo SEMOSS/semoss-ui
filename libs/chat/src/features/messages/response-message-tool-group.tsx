@@ -20,6 +20,7 @@ import { useRoomSelector } from "../room/use-room-selector";
 import { ResponseMessageTool } from "./response-message-tool";
 import type { ToolStore } from "./tool.store";
 
+/** Props for {@link ResponseMessageToolGroup}. */
 interface ResponseMessageToolGroupProps {
 	/** Consecutive tools in transcript order. */
 	tools: ToolStore[];
@@ -29,7 +30,7 @@ interface ResponseMessageToolGroupProps {
  * Whether a call waits on the user's decision.
  *
  * @param tool - The call.
- * @return True while it waits.
+ * @returns True while it waits.
  */
 const needsDecision = (tool: ToolStore): boolean =>
 	Boolean(tool.pendingAction) ||
@@ -42,7 +43,8 @@ export const ResponseMessageToolGroup = ({
 	tools,
 }: ResponseMessageToolGroupProps) => {
 	const { t } = useTranslation("tool");
-	const [manualOpen, setManualOpen] = useState<boolean | null>(null);
+	// null until the user opens or closes the group; till then it follows its calls
+	const [isOpenByUser, setIsOpenByUser] = useState<boolean | null>(null);
 	// the calls of a group share a room, which hears every one of them
 	const room = tools[0]?.room;
 	const visibleTools =
@@ -87,7 +89,8 @@ export const ResponseMessageToolGroup = ({
 	const hasError = failedCount > 0 && completedCount === 0;
 	const hasPartialError = failedCount > 0 && completedCount > 0;
 	const hasCancelled = summary?.hasCancelled ?? false;
-	const isOpen = manualOpen ?? (isRunning || hasError || pending.length > 0);
+	const isOpen =
+		isOpenByUser ?? (isRunning || hasError || pending.length > 0);
 	const status = pending.length
 		? "waitingForInput"
 		: isRunning
@@ -121,7 +124,7 @@ export const ResponseMessageToolGroup = ({
 		<div className="flex min-w-0 flex-col gap-2">
 			<Collapsible
 				open={isOpen}
-				onOpenChange={setManualOpen}
+				onOpenChange={setIsOpenByUser}
 				className="overflow-hidden rounded-lg border bg-accent/40 dark:bg-accent/20"
 			>
 				<CollapsibleTrigger asChild>

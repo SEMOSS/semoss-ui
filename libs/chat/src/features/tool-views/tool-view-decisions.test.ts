@@ -13,6 +13,7 @@ const OUTCOME = {
 	result: { draft: true, id: "d1" },
 };
 
+/** A fake chat call that waits to run, with its message and room spies. */
 const chatTool = () => {
 	const message = {
 		runMcpToolCall: vi.fn(),

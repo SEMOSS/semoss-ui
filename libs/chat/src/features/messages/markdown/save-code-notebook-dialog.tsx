@@ -32,8 +32,11 @@ import {
 } from "@semoss/ui/next";
 import type { RoomStore } from "../../room/room.store";
 
+/** Props for {@link SaveCodeNotebookDialog}. */
 interface SaveCodeNotebookDialogProps {
+	/** Whether the dialog is open. */
 	open: boolean;
+	/** Called when the dialog opens or closes, and after a save. */
 	onOpenChange: (open: boolean) => void;
 	/** Source code to store as the notebook cell's input. */
 	code: string;
@@ -44,7 +47,9 @@ interface SaveCodeNotebookDialogProps {
 				output: string;
 				/** Streaming console lines captured during execution. */
 				logs: string[];
+				/** Whether the run failed, so the cell's output is an error. */
 				isError: boolean;
+				/** Whether the run is still going. */
 				pending: boolean;
 				/** Unwrapped pixel value used to build rich notebook cell outputs. */
 				rawOutput?: unknown;
@@ -58,7 +63,12 @@ interface SaveCodeNotebookDialogProps {
 /** Sentinel value used as the Select item for creating a new notebook. */
 const NEW_NOTEBOOK_VALUE = "__new__";
 
-/** Sanitises user input into a safe `.ipynb` filename. */
+/**
+ * Sanitises user input into a safe `.ipynb` filename.
+ *
+ * @param name - The typed name, with or without `.ipynb`.
+ * @returns The file name; a timestamped one when nothing usable was typed.
+ */
 const createNotebookFilePath = (name: string): string => {
 	const baseName = name.trim().replace(/\.ipynb$/i, "");
 	const safeName = baseName
@@ -67,6 +77,11 @@ const createNotebookFilePath = (name: string): string => {
 	return `${safeName || `notebook-${Date.now()}`}.ipynb`;
 };
 
+/**
+ * Adds a code block, with its last run's output, as a cell of a notebook in
+ * the room's files: an existing one the user searches for, or a new one they
+ * name.
+ */
 export const SaveCodeNotebookDialog = ({
 	open,
 	onOpenChange,
@@ -78,7 +93,7 @@ export const SaveCodeNotebookDialog = ({
 	const [newNotebookName, setNewNotebookName] = useState("");
 	const [notebookSearch, setNotebookSearch] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
-	const [popoverOpen, setPopoverOpen] = useState(false);
+	const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
 	const debouncedSearch = useDebouncedValue(notebookSearch, 300);
 
@@ -98,7 +113,7 @@ export const SaveCodeNotebookDialog = ({
 	);
 
 	// True when the typed name matches an existing notebook — creating would duplicate it.
-	const nameExists =
+	const doesNameExist =
 		notebookSearch.trim().length > 0 &&
 		notebooks.some(
 			(item) =>
@@ -128,7 +143,7 @@ export const SaveCodeNotebookDialog = ({
 	};
 
 	/** Appends the code (with its execution outputs) as a new cell to the target notebook. */
-	const confirmSave = async () => {
+	const handleSave = async () => {
 		if (!room || !code || !canSave) return;
 
 		const targetPath = isNew
@@ -229,7 +244,7 @@ export const SaveCodeNotebookDialog = ({
 			setSelectedValue("");
 			setNewNotebookName("");
 			setNotebookSearch("");
-			setPopoverOpen(false);
+			setIsPopoverOpen(false);
 		}
 		onOpenChange(next);
 	};
@@ -241,12 +256,15 @@ export const SaveCodeNotebookDialog = ({
 					<DialogTitle>Add to Notebook</DialogTitle>
 				</DialogHeader>
 				<div className="space-y-3">
-					<Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+					<Popover
+						open={isPopoverOpen}
+						onOpenChange={setIsPopoverOpen}
+					>
 						<PopoverTrigger asChild>
 							<Button
 								variant="outline"
 								role="combobox"
-								aria-expanded={popoverOpen}
+								aria-expanded={isPopoverOpen}
 								aria-label="Select or create a notebook"
 								className="w-full justify-between font-normal hover:bg-transparent hover:text-foreground"
 							>
@@ -290,7 +308,7 @@ export const SaveCodeNotebookDialog = ({
 												onSelect={() => {
 													setSelectedValue(item.path);
 													setNewNotebookName("");
-													setPopoverOpen(false);
+													setIsPopoverOpen(false);
 												}}
 											>
 												<span className="min-w-0 truncate">
@@ -305,7 +323,7 @@ export const SaveCodeNotebookDialog = ({
 										{notebookSearch.trim().length > 0 && (
 											<CommandItem
 												value={NEW_NOTEBOOK_VALUE}
-												disabled={nameExists}
+												disabled={doesNameExist}
 												onSelect={() => {
 													setSelectedValue(
 														NEW_NOTEBOOK_VALUE,
@@ -313,7 +331,7 @@ export const SaveCodeNotebookDialog = ({
 													setNewNotebookName(
 														notebookSearch,
 													);
-													setPopoverOpen(false);
+													setIsPopoverOpen(false);
 												}}
 											>
 												<PlusIcon className="size-3.5" />
@@ -334,7 +352,7 @@ export const SaveCodeNotebookDialog = ({
 						Cancel
 					</Button>
 					<Button
-						onClick={() => void confirmSave()}
+						onClick={() => void handleSave()}
 						disabled={isSaving || !canSave}
 					>
 						{isSaving ? "Saving…" : isNew ? "Create" : "Append"}

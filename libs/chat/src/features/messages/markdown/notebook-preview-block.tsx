@@ -32,6 +32,7 @@ import type { RoomStore } from "../../room/room.store";
 import { BlockHeader } from "./block-header";
 import { SaveFileDialog } from "./save-file-dialog";
 
+/** Props for {@link NotebookPreviewBlock}. */
 interface NotebookPreviewBlockProps {
 	/** Raw `.ipynb` JSON from the fenced block. */
 	content: string;
@@ -90,10 +91,11 @@ export const NotebookPreviewBlock = ({
 	// cells run in the room's insight, which a new chat's draft does not have
 	// until it is prepared, so it shows the JSON until then
 	const hasInsight = !!room && room.insightId !== "new";
-	const showNotebook = isValidNotebook && hasInsight && !isRaw;
-	const isRunning = showNotebook && notebookState.isRunning;
+	const shouldShowNotebook = isValidNotebook && hasInsight && !isRaw;
+	const isRunning = shouldShowNotebook && notebookState.isRunning;
 
-	const openSaveDialog = () => {
+	/** Open Save with the notebook as edited, or the block's JSON before it mounts. */
+	const handleOpenSaveDialog = () => {
 		setSaveContent(notebookRef.current?.save() || content);
 		setIsSaveDialogOpen(true);
 	};
@@ -105,7 +107,7 @@ export const NotebookPreviewBlock = ({
 					label="Notebook"
 					isCollapsed={isCollapsed}
 					onToggleCollapse={() => setIsCollapsed((prev) => !prev)}
-					collapseDisabled={!content}
+					isCollapseDisabled={!content}
 				>
 					{isRunning ? (
 						<Tooltip>
@@ -140,7 +142,7 @@ export const NotebookPreviewBlock = ({
 									variant="ghost"
 									size="sm"
 									disabled={
-										!showNotebook ||
+										!shouldShowNotebook ||
 										!notebookState.hasCodeCells
 									}
 									aria-label="Run all"
@@ -202,7 +204,7 @@ export const NotebookPreviewBlock = ({
 								size="sm"
 								disabled={!isValidNotebook || !room}
 								aria-label="Save notebook to room"
-								onClick={openSaveDialog}
+								onClick={handleOpenSaveDialog}
 							>
 								<SaveIcon className="size-3" />
 							</Button>
@@ -226,7 +228,7 @@ export const NotebookPreviewBlock = ({
 					</Tooltip>
 				</BlockHeader>
 				{!isCollapsed &&
-					(showNotebook ? (
+					(shouldShowNotebook ? (
 						<div className="h-[60vh]">
 							<Notebook
 								ref={notebookRef}
@@ -255,7 +257,7 @@ export const NotebookPreviewBlock = ({
 						<DialogTitle>Notebook</DialogTitle>
 					</DialogHeader>
 					<div className="relative h-full min-h-0 overflow-hidden">
-						{showNotebook ? (
+						{shouldShowNotebook ? (
 							<Notebook
 								ref={fullViewNotebookRef}
 								content={content}

@@ -35,6 +35,7 @@ import { ResponseMessageToolMenu } from "./response-message-tool-menu";
 import { ResponseMessageToolStreaming } from "./response-message-tool-streaming";
 import type { ToolStore } from "./tool.store";
 
+/** Props for {@link ResponseMessageTool}. */
 interface ResponseMessageToolProps {
 	/** Tool activity to display and open. */
 	tool: ToolStore;
@@ -125,32 +126,32 @@ export const ResponseMessageTool = ({
 	const shouldShowInlineDecision = Boolean(
 		isLarge && needsDecision && !isOpenInSidebar,
 	);
-	const failed = toolStatus === "ERROR";
-	const cancelled = toolStatus === "CANCELLED";
-	const running = toolStatus === "LOADING";
-	const succeeded = toolStatus === "SUCCESS";
+	const isFailed = toolStatus === "ERROR";
+	const isCancelled = toolStatus === "CANCELLED";
+	const isRunning = toolStatus === "LOADING";
+	const isSucceeded = toolStatus === "SUCCESS";
 	// the arrow shows or hides the tool in the chat; the sidebar button moves it out and back
 	const isOpenInline = isOpen && display === "inline";
-	const showDecision = shouldShowInlineDecision && !isDecisionCollapsed;
-	const isExpanded = isOpenInline || showDecision;
+	const shouldShowDecision = shouldShowInlineDecision && !isDecisionCollapsed;
+	const isExpanded = isOpenInline || shouldShowDecision;
 	const isActive = isExpanded || (isOpenInSidebar && isSidebarActive);
 	// mobile keeps tools inline, but a tool already in the drawer can come back
 	const canUseSidebar = !isMobile || isOpenInSidebar;
 	// Agent runs own their cancellation lifecycle. Never write a legacy tool result into an active run.
 	const canCancel =
-		!succeeded &&
-		!failed &&
-		!cancelled &&
+		!isSucceeded &&
+		!isFailed &&
+		!isCancelled &&
 		(!isAgentRoom || hasPendingAction);
-	const status = failed
+	const status = isFailed
 		? t("status.failed")
-		: cancelled
+		: isCancelled
 			? t("status.cancelled")
-			: succeeded
+			: isSucceeded
 				? t("status.completed")
 				: needsDecision
 					? t("activity.needsInput")
-					: running
+					: isRunning
 						? loadingMessage || t("status.running")
 						: t("status.queued");
 	const openAction = isExpanded
@@ -159,6 +160,7 @@ export const ResponseMessageTool = ({
 	const sidebarAction = isOpenInSidebar
 		? t("actions.openInline")
 		: t("actions.openInSidebar");
+	/** Reject the run's pending action, or save the chat call as cancelled, then close it. */
 	const handleCancel = async () => {
 		if (isCancelling) return;
 		setIsCancelling(true);
@@ -176,6 +178,7 @@ export const ResponseMessageTool = ({
 			setIsCancelling(false);
 		}
 	};
+	/** Show or hide the call in the conversation. */
 	const handleToggle = () => {
 		if (isExpanded) {
 			setIsDecisionCollapsed(true);
@@ -186,6 +189,7 @@ export const ResponseMessageTool = ({
 		// a pending decision already renders inline once it is uncollapsed
 		if (!shouldShowInlineDecision) tool.openTool("inline");
 	};
+	/** Move the call into the sidebar, or back into the conversation. */
 	const handleSidebar = () => {
 		if (isOpenInSidebar) {
 			setIsDecisionCollapsed(false);
@@ -225,15 +229,15 @@ export const ResponseMessageTool = ({
 						aria-hidden="true"
 						className={cn(
 							"shrink-0 text-muted-foreground",
-							succeeded && "text-success",
-							failed && "text-destructive/60",
+							isSucceeded && "text-success",
+							isFailed && "text-destructive/60",
 						)}
 					>
-						{running ? (
+						{isRunning ? (
 							<Spinner />
-						) : succeeded ? (
+						) : isSucceeded ? (
 							<CheckIcon className="size-4" />
-						) : failed || cancelled ? (
+						) : isFailed || isCancelled ? (
 							<XCircleIcon className="size-4" />
 						) : (
 							<HammerIcon className="size-4" />
@@ -287,11 +291,11 @@ export const ResponseMessageTool = ({
 					<ResponseMessageToolMenu
 						message={message}
 						tool={tool}
-						showCancelInMenu
+						shouldShowCancel
 					/>
 				)}
 			</div>
-			{showDecision ? (
+			{shouldShowDecision ? (
 				componentView ? (
 					<div className="min-w-0 border-t p-2">
 						<ComponentToolView

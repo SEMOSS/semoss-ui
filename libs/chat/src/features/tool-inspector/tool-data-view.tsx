@@ -13,8 +13,11 @@ import { formatToolPayload } from "./tool-payload";
 import { ToolPayloadEditor } from "./tool-payload-editor";
 import { ToolPayloadToolbar } from "./tool-payload-toolbar";
 
+/** Props for {@link ToolDataView}. */
 interface ToolDataViewProps {
+	/** The complete payload to show. */
 	value: unknown;
+	/** The payload's accessible name, and the expanded dialog's title. */
 	label: string;
 	/** Tool results can contain either serialized JSON or plain text. */
 	parseResponse?: boolean;
@@ -30,8 +33,9 @@ export const ToolDataView = ({
 	prettyContent,
 }: ToolDataViewProps) => {
 	const { t, i18n } = useTranslation("tool");
-	const [expanded, setExpanded] = useState(false);
+	const [isExpanded, setIsExpanded] = useState(false);
 	const [view, setView] = useState("pretty");
+	// the raw editor mounts the first time it is chosen, then stays mounted
 	const [hasViewedRaw, setHasViewedRaw] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const payload = useMemo(
@@ -58,6 +62,12 @@ export const ToolDataView = ({
 			</ToggleGroupItem>
 		</ToggleGroup>
 	) : undefined;
+	/**
+	 * Render the pretty and raw views, once in the panel and once in the dialog.
+	 *
+	 * @param onExpand - Opens the dialog; left out inside the dialog itself.
+	 * @returns The payload's views.
+	 */
 	const renderPayload = (onExpand?: (trigger: HTMLButtonElement) => void) => (
 		<>
 			{prettyContent && (
@@ -104,12 +114,13 @@ export const ToolDataView = ({
 	return (
 		<>
 			<div ref={containerRef} className="h-full min-h-0">
-				{renderPayload(() => setExpanded(true))}
+				{renderPayload(() => setIsExpanded(true))}
 			</div>
-			<Dialog open={expanded} onOpenChange={setExpanded}>
+			<Dialog open={isExpanded} onOpenChange={setIsExpanded}>
 				<DialogContent
 					className="h-[85dvh] min-h-0 gap-3 overflow-hidden p-4 [scrollbar-gutter:auto] sm:max-w-[min(80rem,calc(100%-4rem))]"
 					onCloseAutoFocus={(event) => {
+						// return focus to the Expand button of the view that is showing
 						event.preventDefault();
 						containerRef.current
 							?.querySelector<HTMLButtonElement>(

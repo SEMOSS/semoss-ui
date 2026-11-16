@@ -37,6 +37,14 @@ vi.mock("../conversation/room-inline-tool", () => ({
 	RoomInlineTool: () => null,
 }));
 
+/**
+ * A fake resolved call.
+ *
+ * @param mode - The room's mode.
+ * @param approval - Whether the call waits for the user.
+ * @param state - Where it shows and whether it is open.
+ * @returns The call.
+ */
 function createTool(
 	mode: "chat" | "agent",
 	approval = false,

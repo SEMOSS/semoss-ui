@@ -15,6 +15,10 @@ const MAX_BACKTRACK = 40; // Maximum characters to walk back for syntax safety
  * index just past the closing fence so the block is revealed atomically.
  * Prevents partial syntax from rendering mid-animation.
  * Inline backticks are NOT affected — only triple-backtick fences.
+ *
+ * @param fullText - The chunk's full content.
+ * @param targetIndex - Where the reveal would stop.
+ * @returns The index past the enclosing fence, or `targetIndex`.
  */
 function skipPastCodeFence(fullText: string, targetIndex: number): number {
 	let i = 0;
@@ -47,6 +51,7 @@ function skipPastCodeFence(fullText: string, targetIndex: number): number {
 // ============================================
 // SYNTAX-AWARE SAFE INDEX FINDER
 // ============================================
+/** Markdown that is still open at the end of the revealed text. */
 const INCOMPLETE_MARKDOWN_PATTERNS: RegExp[] = [
 	/```[\s\S]*$/, // Unclosed code block
 	/`[^`]*$/, // Unclosed inline code
@@ -62,6 +67,9 @@ const INCOMPLETE_MARKDOWN_PATTERNS: RegExp[] = [
 
 /**
  * Test if text has incomplete markdown syntax using early-exit matching.
+ *
+ * @param text - The text revealed so far.
+ * @returns Whether it ends inside open markdown.
  */
 function hasIncompleteMarkdown(text: string): boolean {
 	for (const pattern of INCOMPLETE_MARKDOWN_PATTERNS) {
@@ -72,6 +80,11 @@ function hasIncompleteMarkdown(text: string): boolean {
 
 /**
  * Find safe index using binary search + validation for faster backtracking.
+ *
+ * @param fullText - The chunk's full content.
+ * @param targetIndex - Where the reveal would stop.
+ * @returns The furthest index at most `MAX_BACKTRACK` back where no markdown
+ * is left open; at least 1.
  */
 function findSafeIndex(fullText: string, targetIndex: number): number {
 	targetIndex = Math.min(targetIndex, fullText.length);
@@ -100,15 +113,32 @@ function findSafeIndex(fullText: string, targetIndex: number): number {
 	return Math.max(1, safeIndex);
 }
 
+/** What {@link useMarkdownTypewriter} returns. */
 interface UseMarkdownTypewriterReturn {
+	/** The content revealed so far. */
 	rendered: string;
+	/** Whether the reveal is running and has not caught up. */
 	isTyping: boolean;
+	/** Start revealing. */
 	start: () => void;
+	/** Pause the reveal. */
 	stop: () => void;
+	/** Reveal everything and stop. */
 	skipToEnd: () => void;
+	/** Hide everything and stop. */
 	reset: () => void;
 }
 
+/**
+ * Reveal streamed markdown a few characters per frame, never stopping inside
+ * a code fence or open markdown, so a partial reveal always renders cleanly.
+ * Content that is replaced, not extended, starts over; returning to the tab
+ * reveals everything that streamed while it was hidden.
+ *
+ * @param content - The chunk's content, which may grow.
+ * @param startAtLatest - Start fully revealed, so only later tokens animate.
+ * @returns The revealed text, whether it is typing, and its controls.
+ */
 export function useMarkdownTypewriter(
 	content: string,
 	startAtLatest: boolean = false,
@@ -125,7 +155,7 @@ export function useMarkdownTypewriter(
 	const lastUpdateRef = useRef<number>(0);
 	const pendingCharsRef = useRef<number>(0);
 
-	// Keep content ref updated
+	// Keep content ref updated; content that is not an extension starts over
 	useEffect(() => {
 		const prev = contentRef.current;
 		if (!content.startsWith(prev) || content.length < prev.length) {

@@ -4,6 +4,7 @@ import type { RoomStore } from "../../room/room.store";
 import type { ChunkStatus } from "../use-active-index";
 import { HtmlPreviewBlock } from "./html-preview-block";
 
+/** Props for {@link ResponseMessageTextHtml}. */
 interface ResponseMessageTextHtmlProps {
 	/** HTML content for this chunk (may grow during streaming). */
 	html: string;
@@ -23,6 +24,7 @@ interface ResponseMessageTextHtmlProps {
 	onComplete: () => void;
 }
 
+/** One HTML chunk of a text part, drawn as a preview block in the reveal queue. */
 export const ResponseMessageTextHtml: React.FC<
 	ResponseMessageTextHtmlProps
 > = ({ html, status, room, onComplete }) => {

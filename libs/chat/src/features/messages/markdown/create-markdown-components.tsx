@@ -24,24 +24,36 @@ import { KNOWN_SHIKI_LANGS } from "./constants";
 import { MermaidBlock } from "./mermaid-block";
 import { NotebookPreviewBlock } from "./notebook-preview-block";
 
+/** The element renderers react-markdown takes. */
 type MarkdownComponents = NonNullable<
 	ComponentProps<typeof Markdown>["components"]
 >;
 
+/** The parts of a markdown syntax node a blockquote reads its text from. */
 type BlockQuoteNode = {
+	/** The node's kind, such as `paragraph` or `text`. */
 	type?: string;
+	/** A text node's text. */
 	value?: string;
+	/** The node's child nodes. */
 	children?: unknown[];
 };
 
+/** What react-markdown passes the blockquote renderer. */
 type BlockQuoteProps = ComponentProps<"blockquote"> & {
+	/** The rendered quote. */
 	children?: ReactNode;
+	/** The quote's syntax node. */
 	node?: unknown;
 };
 
 /**
  * Builds the `urlTransform` for anything rendered as assistant content.
  * Unmatched urls are rewritten to "", leaving the link inert.
+ *
+ * @param allowedUrlPrefixes - The theme's extra allowed prefixes, beside
+ * `room://`, http(s), `mailto:`, and in-page anchors.
+ * @returns The transform.
  */
 export const createMarkdownUrlTransform =
 	(allowedUrlPrefixes?: string[]) =>
@@ -53,9 +65,21 @@ export const createMarkdownUrlTransform =
 		return "";
 	};
 
+/**
+ * The renderers for a response's markdown: headings, text, and lists in the
+ * chat's type scale; `room://` links that open the room's files; a
+ * `source:` quote as a small note; fenced code as a code, mermaid, or
+ * notebook block; and tables with a collapse toggle and optional CSV export.
+ *
+ * @param room - The room links open in and blocks run and save in.
+ * @param isPreviewLoading - Whether the text is still streaming, so mermaid
+ * and notebook blocks wait to render.
+ * @param enableTableExport - Whether tables offer Export CSV.
+ * @returns The renderers.
+ */
 export const createMarkdownComponents = (
 	room?: RoomStore,
-	isHtmlPreviewLoading?: boolean,
+	isPreviewLoading?: boolean,
 	enableTableExport?: boolean,
 ): MarkdownComponents => ({
 	h1: ({ children, ...props }) => (
@@ -167,6 +191,7 @@ export const createMarkdownComponents = (
 		</li>
 	),
 	blockquote: ({ children, node, ...props }: BlockQuoteProps) => {
+		// the quote's plain text, to tell a `Source:` note from a quote
 		const nodeChildren = (node as BlockQuoteNode | undefined)?.children;
 		const text =
 			nodeChildren
@@ -232,7 +257,7 @@ export const createMarkdownComponents = (
 			return (
 				<MermaidBlock
 					code={code}
-					isLoading={isHtmlPreviewLoading}
+					isLoading={isPreviewLoading}
 					room={room}
 				/>
 			);
@@ -242,7 +267,7 @@ export const createMarkdownComponents = (
 			return (
 				<NotebookPreviewBlock
 					content={code}
-					isLoading={isHtmlPreviewLoading}
+					isLoading={isPreviewLoading}
 					room={room}
 				/>
 			);
@@ -257,11 +282,13 @@ export const createMarkdownComponents = (
 			/>
 		);
 	},
+	// react-markdown renders each renderer as a component, so the table's hooks hold
 	table: ({ className, ...props }) => {
 		const tableRef = useRef<HTMLTableElement>(null);
 		const [isCollapsed, setIsCollapsed] = useState(false);
 
-		const exportCsv = () => {
+		/** Download the table's cells as a CSV file. */
+		const handleExportCsv = () => {
 			const table = tableRef.current;
 			if (!table) return;
 
@@ -294,7 +321,7 @@ export const createMarkdownComponents = (
 									variant="ghost"
 									size="sm"
 									aria-label="Export to CSV"
-									onClick={exportCsv}
+									onClick={handleExportCsv}
 								>
 									<Download className="size-3.5" />
 									Export CSV

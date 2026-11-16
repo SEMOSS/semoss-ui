@@ -11,10 +11,15 @@ import type { ResponseMessageStore } from "./response-message.store";
  *   - closing chunk:  `{ finish_reason }`
  */
 interface ToolStreamChunkData {
+	/** Which of the turn's tool calls the delta is for; absent on the closing chunk. */
 	index?: number;
+	/** The call's id, on its opening chunk only. */
 	id?: string;
+	/** The call's type, normally `function`. */
 	type?: string;
+	/** The call's name, or the next piece of its JSON arguments. */
 	function?: { name?: string; arguments?: string };
+	/** Set on the closing chunk, once every call has streamed. */
 	finish_reason?: string;
 }
 
@@ -29,12 +34,17 @@ interface ToolStreamChunkData {
  * `toolCall.id`, so the existing ToolStore is reused.
  *
  * Callers maintain `indexToToolId` across chunks (per-stream closure).
+ *
+ * @param message - The response the stream is filling.
+ * @param indexToToolId - The stream's delta indexes and their call ids; the
+ * opening chunk adds to it.
+ * @param data - The chunk's `data` payload.
  */
 export const applyToolStreamChunk = (
 	message: ResponseMessageStore,
 	indexToToolId: Record<number, string>,
 	data: ToolStreamChunkData,
-) => {
+): void => {
 	// The terminal chunk has no index — flip the streaming flag off for every
 	// tool we've been tracking in this turn.
 	if (data.finish_reason) {

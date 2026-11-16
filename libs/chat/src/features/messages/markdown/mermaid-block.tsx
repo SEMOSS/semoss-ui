@@ -21,6 +21,9 @@ import { BlockHeader } from "./block-header";
  * Mermaid bakes fixed pixel width/height attributes and a max-width inline
  * style onto the root <svg> element. Those fight CSS sizing, so strip them
  * before storing — the viewBox is preserved, so aspect ratio stays correct.
+ *
+ * @param svg - The SVG mermaid rendered.
+ * @returns The SVG without its fixed size.
  */
 function normalizeMermaidSvg(svg: string): string {
 	return svg
@@ -29,12 +32,20 @@ function normalizeMermaidSvg(svg: string): string {
 		.replace(/(<svg\b[^>]*?style="[^"]*?)max-width:[^;}"]*;?\s*/i, "$1");
 }
 
+/** Props for {@link MermaidBlock}. */
 interface MermaidBlockProps {
+	/** The diagram's mermaid definition. */
 	code: string;
+	/** Whether the definition is still streaming, so it is not rendered yet. */
 	isLoading?: boolean;
+	/** The room whose files Save in Room writes to; without it the action is disabled. */
 	room?: RoomStore;
 }
 
+/**
+ * A mermaid code block in a response, drawn as its diagram once it has
+ * streamed, with Raw, Full View, Save in Room, and Copy.
+ */
 export const MermaidBlock = ({ code, isLoading, room }: MermaidBlockProps) => {
 	const { t } = useTranslation("chat");
 	const [svg, setSvg] = useState<string | null>(null);
@@ -42,6 +53,7 @@ export const MermaidBlock = ({ code, isLoading, room }: MermaidBlockProps) => {
 	const [isFullViewOpen, setIsFullViewOpen] = useState(false);
 	const [isSavingToRoom, setIsSavingToRoom] = useState(false);
 	const [isRaw, setIsRaw] = useState(false);
+	// mermaid needs an id per render target
 	const idRef = useRef(`mermaid-${Math.random().toString(36).slice(2)}`);
 
 	useEffect(() => {
@@ -49,7 +61,7 @@ export const MermaidBlock = ({ code, isLoading, room }: MermaidBlockProps) => {
 		// incomplete syntax reliably throws inside mermaid.render().
 		if (isLoading || !code.trim()) return;
 
-		let cancelled = false;
+		let isCancelled = false;
 		setSvg(null);
 
 		import("mermaid")
@@ -63,18 +75,19 @@ export const MermaidBlock = ({ code, isLoading, room }: MermaidBlockProps) => {
 				return mermaid.render(idRef.current, code);
 			})
 			.then(({ svg: rendered }) => {
-				if (!cancelled) setSvg(normalizeMermaidSvg(rendered));
+				if (!isCancelled) setSvg(normalizeMermaidSvg(rendered));
 			})
 			.catch(() => {
-				// svg stays null — showCode fallback renders the raw definition
+				// svg stays null — shouldShowCode fallback renders the raw definition
 			});
 
 		return () => {
-			cancelled = true;
+			isCancelled = true;
 		};
 	}, [code, isLoading]);
 
-	const saveInRoom = async () => {
+	/** Save the definition to the room's files as a `.mmd` file. */
+	const handleSaveInRoom = async () => {
 		if (!room || !code) return;
 		const filePath = `save-mermaid-response-${Date.now()}.mmd`;
 		try {
@@ -98,7 +111,7 @@ export const MermaidBlock = ({ code, isLoading, room }: MermaidBlockProps) => {
 	};
 
 	// Show raw code while streaming, rendering, on error, or when user toggled Raw.
-	const showCode = isLoading || !svg || isRaw;
+	const shouldShowCode = isLoading || !svg || isRaw;
 
 	return (
 		<>
@@ -107,7 +120,7 @@ export const MermaidBlock = ({ code, isLoading, room }: MermaidBlockProps) => {
 					label="Mermaid"
 					isCollapsed={isCollapsed}
 					onToggleCollapse={() => setIsCollapsed((prev) => !prev)}
-					collapseDisabled={!code}
+					isCollapseDisabled={!code}
 				>
 					<Button
 						className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
@@ -132,7 +145,7 @@ export const MermaidBlock = ({ code, isLoading, room }: MermaidBlockProps) => {
 						variant="ghost"
 						size="sm"
 						disabled={!room || !code || isSavingToRoom}
-						onClick={() => void saveInRoom()}
+						onClick={() => void handleSaveInRoom()}
 					>
 						{isSavingToRoom
 							? t("response.savingToRoom")
@@ -165,7 +178,7 @@ export const MermaidBlock = ({ code, isLoading, room }: MermaidBlockProps) => {
 					</Tooltip>
 				</BlockHeader>
 				{!isCollapsed &&
-					(showCode ? (
+					(shouldShowCode ? (
 						<div className="p-3">
 							<Code code={code} language="txt" />
 						</div>

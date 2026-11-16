@@ -6,7 +6,9 @@ import { formatJson } from "@semoss/utility/json";
 import type { ToolStore } from "./tool.store";
 import { useTool } from "./use-tool";
 
+/** Props for {@link ResponseMessageToolStreaming}. */
 interface ResponseMessageToolStreamingProps {
+	/** The call that is still streaming in. */
 	tool: ToolStore;
 }
 

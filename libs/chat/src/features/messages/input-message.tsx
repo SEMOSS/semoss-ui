@@ -34,6 +34,12 @@ import type { RoomStore } from "../room/room.store";
 import type { InputMessageStore } from "./input-message.store";
 import { useMessage } from "./use-message";
 
+/**
+ * The icon for an attachment that shows no preview, picked by its extension.
+ *
+ * @param fileName - The attachment's name.
+ * @returns The icon component and the extension it was picked by.
+ */
 const getExtIcon = (fileName: string) => {
 	const ext = getFileExtension(fileName);
 	if (["xls", "xlsx", "csv"].includes(ext))
@@ -71,14 +77,20 @@ const getExtIcon = (fileName: string) => {
 	return { Icon: FileIcon, ext };
 };
 
+/** Props for {@link InputMessage}. */
 interface InputMessageProps {
-	/** Room */
+	/** The room the message is in, which opens a saved attachment in its sidebar. */
 	room: RoomStore;
 
-	/** Message to render */
+	/** The user's message to render. */
 	message: InputMessageStore;
 }
 
+/**
+ * A message the user sent: its attachments, its text, and a Copy action. An
+ * attachment saved to the room opens in the sidebar; one sent inline opens in
+ * a preview dialog, as an image or a PDF.
+ */
 export const InputMessage = ({ room, message }: InputMessageProps) => {
 	const { t } = useTranslation("chat");
 	const [previewPdf, setPreviewPdf] = useState<{
@@ -97,6 +109,7 @@ export const InputMessage = ({ room, message }: InputMessageProps) => {
 		dateCreated: current.dateCreated,
 	}));
 
+	// keep each part's index, so keys stay stable as parts of the other kind change
 	const mediaParts = parts.flatMap((p, i) =>
 		p.type === "MEDIA" ? [{ p, i }] : [],
 	);

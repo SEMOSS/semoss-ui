@@ -19,6 +19,7 @@ const pixel = {
 	pruneToolsAbove: false,
 };
 
+/** A response store with no parts. */
 const response = (messageId: string) =>
 	new ResponseMessageStore(room, {
 		...pixel,
@@ -27,6 +28,7 @@ const response = (messageId: string) =>
 		parts: [],
 	} as unknown as ResponsePixelMessage);
 
+/** A user message store that says hi. */
 const input = (messageId: string) =>
 	new InputMessageStore(room, {
 		...pixel,

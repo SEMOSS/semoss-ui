@@ -6,6 +6,7 @@ import { ResponseMessageTextMd } from "./markdown/response-message-text-md";
 import type { ResponseMessageStore } from "./response-message.store";
 import { type ChunkStatus, useActiveIndex } from "./use-active-index";
 
+/** Props for {@link ResponseMessageText}. */
 interface ResponseMessageTextProps {
 	/** Message to render */
 	message: ResponseMessageStore;

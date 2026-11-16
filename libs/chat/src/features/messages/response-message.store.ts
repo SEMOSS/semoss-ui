@@ -23,6 +23,7 @@ import { type CancelCommitOutput, spliceHiddenMessages } from "./utility";
 
 /** The user's rating of a response. */
 export interface ResponseFeedback {
+	/** True for thumbs up, false for thumbs down. */
 	readonly rating: boolean;
 	/** A comment; unused for now. */
 	readonly feedbackText: string;
@@ -30,6 +31,7 @@ export interface ResponseFeedback {
 
 /** What a response holds. */
 export interface ResponseMessageSnapshot extends MessageSnapshot {
+	/** What the model said: text, reasoning, tool calls, and subagents. */
 	readonly parts: ResponsePixelMessage["parts"];
 	/** Whether the model is still working on it. */
 	readonly isThinking: boolean;
@@ -47,6 +49,7 @@ export interface ResponseMessageSnapshot extends MessageSnapshot {
 
 /** A response from the model. */
 export class ResponseMessageStore extends AbstractMessageStore<ResponseMessageSnapshot> {
+	/** Tells a response from an input message. */
 	readonly type = "OUTPUT";
 
 	/**
@@ -74,26 +77,32 @@ export class ResponseMessageStore extends AbstractMessageStore<ResponseMessageSn
 		this.sync(message);
 	}
 
+	/** Whether the model is still working on it. */
 	get isThinking(): boolean {
 		return this.getSnapshot().isThinking;
 	}
 
+	/** The model's reply to this response's tool results, while it streams. */
 	get toolResponseMessage(): ResponseMessageStore | null {
 		return this.getSnapshot().toolResponseMessage;
 	}
 
+	/** The user's rating; only for messages the model wrote. */
 	get feedback(): ResponseFeedback | null {
 		return this.getSnapshot().feedback;
 	}
 
+	/** The model that wrote it. */
 	get model(): ResponseMessageSnapshot["model"] {
 		return this.getSnapshot().model;
 	}
 
+	/** Whether the conversation above it is compacted. */
 	get conversationCompactedAbove(): boolean {
 		return this.getSnapshot().conversationCompactedAbove;
 	}
 
+	/** Whether its conversation is being compacted now. */
 	get isCompacting(): boolean {
 		return this.getSnapshot().isCompacting;
 	}
@@ -399,9 +408,10 @@ paramValues=[${JSON.stringify({
 	};
 
 	/**
-	 * Record Feedback
-	 * @param rating
-	 * @param feedbackText
+	 * Save the user's rating of the response.
+	 *
+	 * @param rating - True for thumbs up, false for down, null to clear it.
+	 * @param feedbackText - A comment; unused for now.
 	 */
 	recordFeedback = async (
 		rating: boolean | null,
@@ -420,14 +430,17 @@ paramValues=[${JSON.stringify({
 				feedback: rating === null ? null : { rating, feedbackText },
 			});
 		} finally {
-			// noop
+			// a failed save throws to the caller and leaves the rating as it was
 		}
 	};
 
 	/**
-	 * Download the response as a Word or PDF document
+	 * Download the response's text as a Word or PDF document.
+	 *
+	 * @param format - The document's format.
+	 * @throws When the response has no text or the server makes no file.
 	 */
-	downloadResponse = async (format: "word" | "pdf") => {
+	downloadResponse = async (format: "word" | "pdf"): Promise<void> => {
 		// Extract text from all TEXT parts
 		const text = this.parts
 			.filter((part) => part.type === "TEXT")
@@ -469,7 +482,11 @@ paramValues=[${JSON.stringify({
 	};
 
 	/**
-	 * Rewrite a message and generate a new sibling
+	 * Rewrite Message: send the user's message that this answers once more, as a
+	 * new branch beside it.
+	 *
+	 * @throws When the response does not answer a user's message that follows
+	 * a response.
 	 */
 	rewriteMessage = async (): Promise<void> => {
 		const room = this.room;
@@ -534,22 +551,17 @@ paramValues=[${JSON.stringify({
 		);
 	}
 
-	/**
-	 * Execution
-	 */
-	/**
-	 * Whether this response includes any tool calls, finished or not
-	 */
-	get hasTools() {
+	/** Whether this response includes any tool calls, finished or not. */
+	get hasTools(): boolean {
 		return this.parts.some((part) => part.type === "TOOL_CALL");
 	}
 
 	/**
 	 * Whether this response should fold up into the one before it instead
-	 * of rendering as its own block — see room-content.tsx. True once it
+	 * of rendering as its own block — see room-messages.tsx. True once it
 	 * has tool calls and nothing else worth showing on its own.
 	 */
-	get shouldFoldUp() {
+	get shouldFoldUp(): boolean {
 		return (
 			this.hasTools &&
 			!this.parts.some(
@@ -562,10 +574,8 @@ paramValues=[${JSON.stringify({
 		);
 	}
 
-	/**
-	 * Check if there are any unfinished tools
-	 */
-	get hasUnfinishedTools() {
+	/** Whether any of its tool calls has yet to run or is running. */
+	get hasUnfinishedTools(): boolean {
 		return this.parts.some((part) => {
 			if (part.type !== "TOOL_CALL") {
 				return false;
@@ -576,9 +586,10 @@ paramValues=[${JSON.stringify({
 	}
 
 	/**
-	 * Run tools associated with the message
+	 * Run the response's auto tool calls that have not run, up to the theme's
+	 * limit on calls running at once (5 when unset).
 	 */
-	continueToolExecution = () => {
+	continueToolExecution = (): void => {
 		// A stop halts the loop — don't spawn new tool runs once a cancel has
 		// been issued and the in-flight streams are still unwinding.
 		if (this.room.isCancelling) {
@@ -614,7 +625,11 @@ paramValues=[${JSON.stringify({
 	};
 
 	/**
-	 * Run a tool
+	 * Run one auto tool call: a work folder call in the browser, any other
+	 * through the room's toolbox. A call that is not auto or already ran is
+	 * skipped.
+	 *
+	 * @param tool - The call.
 	 */
 	private runToolExecution = async (tool: ToolStore): Promise<void> => {
 		if (
@@ -681,6 +696,14 @@ paramValues=[${JSON.stringify({
 	 * {@link ToolSaveController}, which serializes and coalesces the writes and
 	 * streams the final (model-invoking) one. Resolves when the batch carrying
 	 * this result settles.
+	 *
+	 * @param tool - The call.
+	 * @param toolResponse - What it returned, or its error.
+	 * @param toolStatus - How it ended.
+	 * @param executedParameters - The arguments it ran with.
+	 * @param errorDuringSaving - Whether the call returned but its output could
+	 * not be read.
+	 * @returns Settles with the batch that carries the result.
 	 */
 	saveToolExecution = (
 		tool: ToolStore,

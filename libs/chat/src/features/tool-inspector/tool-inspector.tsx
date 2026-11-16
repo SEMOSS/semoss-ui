@@ -15,13 +15,19 @@ import { ToolDataView } from "./tool-data-view";
 import { ToolInfo } from "./tool-info";
 import { ToolInputValue } from "./tool-input-value";
 
+/** Props for {@link ToolInspector}. */
 interface ToolInspectorProps {
+	/** The tool call to inspect. */
 	tool: ToolStore;
+	/** Replaces the default heading of the call's name and status. */
 	header?: ReactNode;
 	/** An editable form, only while the call can still be executed. */
 	inputContent?: ReactNode;
+	/** Shown below the tabs, such as the call's approval actions. */
 	footer?: ReactNode;
+	/** The tool definition's description, for the Info tab. */
 	description?: string;
+	/** The tool definition's input schema, for field titles and the Info tab. */
 	inputSchema?: unknown;
 	/** Some tools wrap failures in model guidance that should not be displayed. */
 	response?: string;
@@ -39,6 +45,7 @@ export const ToolInspector = ({
 }: ToolInspectorProps) => {
 	const { t, i18n } = useTranslation("tool");
 	const [selectedTab, setSelectedTab] = useState<string | null>(null);
+	// a tab mounts the first time it is shown and stays mounted after
 	const [visitedTabs, setVisitedTabs] = useState<string[]>([]);
 	const { status, parameters, toolResponse } = useTool(tool, (current) => ({
 		status: current.status,
@@ -51,8 +58,9 @@ export const ToolInspector = ({
 		execution: tool.json._meta?.SMSS_MCP_EXECUTION,
 	}));
 	const response = responseProp ?? toolResponse;
-	const completed = ["SUCCESS", "ERROR", "CANCELLED"].includes(status);
-	const activeTab = selectedTab ?? (completed ? "output" : "inputs");
+	const isCompleted = ["SUCCESS", "ERROR", "CANCELLED"].includes(status);
+	// until the user picks a tab, a finished call opens on its output
+	const activeTab = selectedTab ?? (isCompleted ? "output" : "inputs");
 	const statusLabel = t(
 		`status.${
 			{
@@ -69,6 +77,12 @@ export const ToolInspector = ({
 	const tabClassName = "min-h-0 min-w-0 flex-1 overflow-hidden";
 	const triggerClassName =
 		"h-8 flex-none rounded-none border-0 border-b-2 border-transparent px-2.5 text-xs shadow-none hover:text-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none dark:data-[state=active]:border-primary dark:data-[state=active]:bg-transparent";
+	/**
+	 * Whether a tab has been shown, so its content is mounted.
+	 *
+	 * @param tab - The tab's value.
+	 * @returns Whether the tab is active or was before.
+	 */
 	const isVisited = (tab: string) =>
 		activeTab === tab || visitedTabs.includes(tab);
 
@@ -161,7 +175,7 @@ export const ToolInspector = ({
 									{statusLabel}
 								</output>
 							)}
-							{completed && response !== "" ? (
+							{isCompleted && response !== "" ? (
 								<div className="min-h-0 flex-1">
 									<ToolDataView
 										value={response}
@@ -172,7 +186,7 @@ export const ToolInspector = ({
 							) : (
 								<output className="p-4 text-center text-muted-foreground text-sm">
 									{t(
-										completed
+										isCompleted
 											? "inspector.emptyOutput"
 											: status === "LOADING"
 												? "inspector.runningOutput"

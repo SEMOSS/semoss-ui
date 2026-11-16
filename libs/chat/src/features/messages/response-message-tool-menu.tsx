@@ -13,22 +13,33 @@ import { decideAgentToolAction } from "./agent-harness";
 import type { ResponseMessageStore } from "./response-message.store";
 import type { ToolStore } from "./tool.store";
 
+/** Props for {@link ResponseMessageToolMenu}. */
 interface ResponseMessageToolMenuProps {
+	/** The response the call belongs to, which saves a cancelled call. */
 	message: ResponseMessageStore;
+	/** The call the menu acts on. */
 	tool: ToolStore;
+	/** Draw the trigger as the full-height end of the pill, not an icon button. */
 	isFullButton?: boolean;
+	/** Text shown beside the trigger's icon. */
 	label?: string;
-	showCancelInMenu: boolean;
+	/** Whether the menu offers Cancel. */
+	shouldShowCancel: boolean;
 }
 
+/**
+ * The ⋯ menu on a tool call's pill. Cancel rejects an agent run's pending
+ * action, or saves a chat call as cancelled, and then closes the call.
+ */
 export const ResponseMessageToolMenu = ({
 	message,
 	tool,
 	isFullButton,
 	label,
-	showCancelInMenu,
+	shouldShowCancel,
 }: ResponseMessageToolMenuProps) => {
 	const { t } = useTranslation("tool");
+	// the ref guards a second click before the disabled state renders
 	const cancellingRef = useRef(false);
 	const [isCancelling, setIsCancelling] = useState(false);
 
@@ -76,7 +87,7 @@ export const ResponseMessageToolMenu = ({
 				)}
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end">
-				{showCancelInMenu && (
+				{shouldShowCancel && (
 					<DropdownMenuItem
 						variant="destructive"
 						disabled={isCancelling}

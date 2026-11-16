@@ -2,8 +2,7 @@
 // CHUNK TYPES
 // ============================================================
 
-type ChunkType = "md" | "html";
-
+/** One run of a text part: markdown, or the body of an HTML block. */
 interface ContentChunk {
 	/**
 	 * Stable identity key: the character offset where this chunk begins in
@@ -12,7 +11,8 @@ interface ContentChunk {
 	 */
 	key: number;
 
-	type: ChunkType;
+	/** Whether the chunk is markdown or HTML. */
+	type: "md" | "html";
 
 	/** The text content of this chunk (growing during streaming for the last chunk). */
 	content: string;
@@ -34,6 +34,9 @@ interface ContentChunk {
  * - After a closing fence, scanning resumes — the next segment may be MD, HTML,
  *   or nothing. Two adjacent HTML blocks produce no MD chunk between them.
  * - Chunk `key` = start offset in original string — stable across re-parses.
+ *
+ * @param text - A text part's text, complete or still streaming.
+ * @returns The chunks, in order; none for empty text.
  */
 export const parseChunks = (text: string): ContentChunk[] => {
 	// ── Standalone HTML detection ─────────────────────────────────────────────
@@ -130,6 +133,10 @@ export const parseChunks = (text: string): ContentChunk[] => {
  *
  * Matches: ` ```html ` optionally followed by spaces/tabs, then end of line.
  * Case-insensitive for the "html" part.
+ *
+ * @param text - The text to search.
+ * @param from - The index to start at.
+ * @returns The index of the fence's first backtick, or -1.
  */
 const findHtmlFenceOpen = (text: string, from: number): number => {
 	let i = from;

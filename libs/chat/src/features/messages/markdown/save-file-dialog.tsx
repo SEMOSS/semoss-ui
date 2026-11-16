@@ -12,14 +12,28 @@ import {
 import { getErrorMessage } from "@semoss/utility/error";
 import type { RoomStore } from "../../room/room.store";
 
+/** Props for {@link SaveFileDialog}. */
 interface SaveFileDialogProps {
+	/** Whether the dialog is open. */
 	open: boolean;
+	/** The text to save. */
 	content: string;
+	/** Called when the dialog closes, with whether the file was saved. */
 	onClose: (success?: boolean) => void;
+	/** The room whose files the file is saved to; without it Save does nothing. */
 	room?: RoomStore;
+	/** The extension the saved file gets, whatever the user typed. */
 	extension: string;
 }
 
+/**
+ * The path a file is saved at, from the name the user typed.
+ *
+ * @param name - The typed name; its own extension is dropped.
+ * @param extension - The extension to give the file.
+ * @returns A name safe for a path, with the extension; a timestamped name
+ * when nothing usable was typed.
+ */
 const createCodeFilePathFromName = (name: string, extension: string) => {
 	const baseName = name.trim().replace(/\.[^./\\]+$/, "");
 	const safeName = baseName
@@ -30,6 +44,7 @@ const createCodeFilePathFromName = (name: string, extension: string) => {
 	return `${resolvedName}.${extension}`;
 };
 
+/** Asks for a file name and saves a block's text to the room's files, then opens it. */
 export const SaveFileDialog = ({
 	open,
 	content,
@@ -40,6 +55,7 @@ export const SaveFileDialog = ({
 	const [fileName, setFileName] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
 
+	// start empty each time the dialog opens
 	useEffect(() => {
 		if (!open) {
 			setFileName("");
@@ -47,6 +63,7 @@ export const SaveFileDialog = ({
 		}
 	}, [open]);
 
+	/** Save the file to the room and open it in the sidebar. */
 	const handleSave = async () => {
 		if (!room || !content || !fileName.trim()) return;
 

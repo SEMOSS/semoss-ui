@@ -8,11 +8,13 @@ import {
 
 /** What a user's message holds. */
 export interface InputMessageSnapshot extends MessageSnapshot {
+	/** What the user sent: text, files, and the results of tool calls it answers. */
 	readonly parts: InputPixelMessage["parts"];
 }
 
 /** A message the user sent. */
 export class InputMessageStore extends AbstractMessageStore<InputMessageSnapshot> {
+	/** Tells an input message from a response. */
 	readonly type = "INPUT";
 
 	/**

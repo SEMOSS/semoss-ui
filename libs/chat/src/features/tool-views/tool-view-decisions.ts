@@ -21,7 +21,7 @@ type ToolViewDecisions = Pick<
  *   result, without running it, so the conversation continues from there.
  *
  * @param tool - The call.
- * @return The decisions.
+ * @returns The decisions.
  */
 export const createToolViewDecisions = (
 	tool: ToolStore,

@@ -5,17 +5,22 @@ import { useTool } from "../messages/use-tool";
 import { useRoomSelector } from "../room/use-room-selector";
 import { ToolDataView } from "./tool-data-view";
 
+/** Props for {@link ToolInfo}. */
 interface ToolInfoProps {
+	/** The tool call to describe. */
 	tool: ToolStore;
+	/** The tool definition's description, ahead of the call's own. */
 	description?: string;
+	/** The tool definition's input schema; left out when unknown. */
 	inputSchema?: unknown;
 }
 
 /** The supplied tool definition and call metadata, separate from its payloads. */
 export const ToolInfo = ({ tool, description, inputSchema }: ToolInfoProps) => {
 	const { t } = useTranslation("tool");
-	const [metadataOpen, setMetadataOpen] = useState(false);
-	const [schemaOpen, setSchemaOpen] = useState(false);
+	// the schema and metadata viewers mount only once their section is opened
+	const [isMetadataOpen, setIsMetadataOpen] = useState(false);
+	const [isSchemaOpen, setIsSchemaOpen] = useState(false);
 	// the call's json reads the room's options too; a decorated call's json
 	// is a new object on every read, so select its values
 	const { toolName, source, execution, toolDescription } = useRoomSelector(
@@ -70,13 +75,13 @@ export const ToolInfo = ({ tool, description, inputSchema }: ToolInfoProps) => {
 				{inputSchema != null && (
 					<details
 						onToggle={(event) =>
-							setSchemaOpen(event.currentTarget.open)
+							setIsSchemaOpen(event.currentTarget.open)
 						}
 					>
 						<summary className="cursor-pointer rounded-sm py-2 font-medium focus-visible:outline-ring">
 							{t("inspector.inputSchema")}
 						</summary>
-						{schemaOpen && (
+						{isSchemaOpen && (
 							<div className="h-72">
 								<ToolDataView
 									value={inputSchema}
@@ -89,13 +94,13 @@ export const ToolInfo = ({ tool, description, inputSchema }: ToolInfoProps) => {
 				{meta && Object.keys(meta).length > 0 && (
 					<details
 						onToggle={(event) =>
-							setMetadataOpen(event.currentTarget.open)
+							setIsMetadataOpen(event.currentTarget.open)
 						}
 					>
 						<summary className="cursor-pointer rounded-sm py-2 font-medium focus-visible:outline-ring">
 							{t("inspector.metadata")}
 						</summary>
-						{metadataOpen && (
+						{isMetadataOpen && (
 							<div className="h-72">
 								<ToolDataView
 									value={meta}

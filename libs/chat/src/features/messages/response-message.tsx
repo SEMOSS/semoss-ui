@@ -57,6 +57,12 @@ import { ResponseMessageToolGroup } from "./response-message-tool-group";
 import { useActiveIndex } from "./use-active-index";
 import { useMessage } from "./use-message";
 
+/**
+ * The icon for an attachment that shows no preview, picked by its extension.
+ *
+ * @param fileName - The attachment's name.
+ * @returns The icon component and the extension it was picked by.
+ */
 const getExtIcon = (fileName: string) => {
 	const ext = getFileExtension(fileName);
 	if (["xls", "xlsx", "csv"].includes(ext))
@@ -99,6 +105,9 @@ const getExtIcon = (fileName: string) => {
  * streaming message starts with zero parts, so an empty array means nothing
  * has streamed. Used to tell a first view (start animations from 0) apart
  * from a return view (jump to the latest part/chunk/content).
+ *
+ * @param parts - The message's parts, with those of the messages folded into it.
+ * @returns Whether any has content.
  */
 const hasStreamedContent = (parts: ResponseMessageStore["parts"]) =>
 	parts.some(
@@ -109,17 +118,23 @@ const hasStreamedContent = (parts: ResponseMessageStore["parts"]) =>
 			part.type === "MEDIA",
 	);
 
+/** Props for {@link ResponseMessage}. */
 interface ResponseMessageProps {
-	/** Room */
+	/** The room the message is in. */
 	room: RoomStore;
 
-	/** Message to render */
+	/** The response to render. */
 	message: ResponseMessageStore;
 
-	/** Tool-only messages folded into this one — see room-content.tsx */
+	/** Tool-only messages folded into this one — see room-messages.tsx */
 	subsequentTools?: ResponseMessageStore[];
 }
 
+/**
+ * A response from the model: its parts revealed in order (text, reasoning,
+ * media, tool calls, and subagents), then its actions: switching between
+ * the branches of the user's message, Rewrite Message, rating, Copy, and Download.
+ */
 export const ResponseMessage = ({
 	room,
 	message,
@@ -159,7 +174,7 @@ export const ResponseMessage = ({
 		hasPreviousInput,
 		hasNextInput,
 		canRewrite,
-		parentHasContent,
+		hasParentContent,
 		isSubsequentThinking,
 	} = useRoomSelector(room, () => {
 		// get the parent input message
@@ -173,7 +188,7 @@ export const ResponseMessage = ({
 			hasPreviousInput: !!input?.previousSibling,
 			hasNextInput: !!input?.nextSibling,
 			canRewrite: !!input?.parent?.parent,
-			parentHasContent: input?.parts.some(
+			hasParentContent: input?.parts.some(
 				(part) => part.type === "TEXT" || part.type === "MEDIA",
 			),
 			isSubsequentThinking: subsequentTools.some((m) => m.isThinking),
@@ -242,16 +257,18 @@ export const ResponseMessage = ({
 		}
 	});
 
-	const feedbackTextEnabled = !!theme.featureFlags?.enableFeedbackText;
+	const isFeedbackTextEnabled = !!theme.featureFlags?.enableFeedbackText;
 
 	/**
-	 * Record the feedback
-	 * @param rating - positive or negative
+	 * Rate the response, or clear the rating when it is clicked again. With
+	 * feedback text on, a new rating first asks for a comment.
+	 *
+	 * @param rating - True for thumbs up, false for down.
 	 */
-	const recordFeedback = async (rating: boolean) => {
+	const handleFeedback = async (rating: boolean) => {
 		const isDeleting = message.feedback?.rating === rating;
 
-		if (feedbackTextEnabled && !isDeleting) {
+		if (isFeedbackTextEnabled && !isDeleting) {
 			// Open text input for the user to optionally add a comment
 			setPendingRating(rating);
 			setFeedbackText("");
@@ -272,10 +289,8 @@ export const ResponseMessage = ({
 		}
 	};
 
-	/**
-	 * Submit the feedback with optional text comment
-	 */
-	const submitFeedbackText = async () => {
+	/** Save the pending rating with its optional comment. */
+	const handleSubmitFeedbackText = async () => {
 		if (pendingRating === null) return;
 		try {
 			await message.recordFeedback(pendingRating, feedbackText.trim());
@@ -287,10 +302,8 @@ export const ResponseMessage = ({
 		}
 	};
 
-	/**
-	 * Rewrite the message
-	 */
-	const rewriteMessage = async () => {
+	/** Rewrite Message: send the user's message once more, as a new branch. */
+	const handleRewrite = async () => {
 		try {
 			await message.rewriteMessage();
 
@@ -300,7 +313,12 @@ export const ResponseMessage = ({
 		}
 	};
 
-	const downloadResponse = async (format: "word" | "pdf") => {
+	/**
+	 * Download the response as a document, then close the dialog.
+	 *
+	 * @param format - The document's format.
+	 */
+	const handleDownload = async (format: "word" | "pdf") => {
 		setDownloadingFormat(format);
 		try {
 			await message.downloadResponse(format);
@@ -315,10 +333,8 @@ export const ResponseMessage = ({
 		}
 	};
 
-	/**
-	 * Copy image to clipboard
-	 */
-	const copyImage = async () => {
+	/** Copy the response's first image to the clipboard. */
+	const handleCopyImage = async () => {
 		const mediaPart = message.parts.find((p) => p.type === "MEDIA");
 		if (
 			!mediaPart ||
@@ -593,7 +609,7 @@ export const ResponseMessage = ({
 			<MessageActions
 				isDialogOpen={isDownloadDialogOpen || isFeedbackTextOpen}
 			>
-				{theme.featureFlags?.enableRewrite && parentHasContent && (
+				{theme.featureFlags?.enableRewrite && hasParentContent && (
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<Button
@@ -602,7 +618,7 @@ export const ResponseMessage = ({
 								size="icon-sm"
 								aria-label={t("response.rewriteMessage")}
 								onClick={() => {
-									rewriteMessage();
+									handleRewrite();
 								}}
 							>
 								<RefreshCwIcon aria-hidden="true" />
@@ -624,7 +640,7 @@ export const ResponseMessage = ({
 							disabled={isMessageThinking}
 							onClick={(event) => {
 								actionTriggerRef.current = event.currentTarget;
-								recordFeedback(true);
+								handleFeedback(true);
 							}}
 						>
 							<ThumbsUpIcon
@@ -652,7 +668,7 @@ export const ResponseMessage = ({
 							disabled={isMessageThinking}
 							onClick={(event) => {
 								actionTriggerRef.current = event.currentTarget;
-								recordFeedback(false);
+								handleFeedback(false);
 							}}
 						>
 							<ThumbsDownIcon
@@ -670,7 +686,7 @@ export const ResponseMessage = ({
 					</TooltipContent>
 				</Tooltip>
 
-				{feedbackTextEnabled && isFeedbackTextOpen && (
+				{isFeedbackTextEnabled && isFeedbackTextOpen && (
 					<Dialog
 						open={isFeedbackTextOpen}
 						onOpenChange={(open) => {
@@ -728,7 +744,7 @@ export const ResponseMessage = ({
 								>
 									{t("response.feedbackCancel")}
 								</Button>
-								<Button onClick={submitFeedbackText}>
+								<Button onClick={handleSubmitFeedbackText}>
 									{t("response.feedbackSubmit")}
 								</Button>
 							</div>
@@ -744,7 +760,7 @@ export const ResponseMessage = ({
 								size="icon-sm"
 								aria-label={t("response.copyResponse")}
 								disabled={isMessageThinking}
-								onClick={copyImage}
+								onClick={handleCopyImage}
 							>
 								<CopyIcon aria-hidden="true" />
 							</Button>
@@ -862,7 +878,7 @@ export const ResponseMessage = ({
 								variant="outline"
 								className="h-auto flex-col gap-1 p-4"
 								disabled={downloadingFormat !== null}
-								onClick={() => downloadResponse(format.value)}
+								onClick={() => handleDownload(format.value)}
 							>
 								{downloadingFormat === format.value ? (
 									<Loader2Icon className="size-4 animate-spin" />

@@ -3,6 +3,7 @@ import { useTranslation } from "@semoss/i18n";
 import { Button, cn } from "@semoss/ui/next";
 import { isRecord } from "@semoss/utility/object";
 
+/** Props for {@link ToolInputValue}. */
 interface ToolInputValueProps {
 	/** A raw parameter or nested value. */
 	value: unknown;
@@ -12,9 +13,17 @@ interface ToolInputValueProps {
 	schema?: unknown;
 }
 
+/** How many entries of a collection show at first, and how many more each Show More adds. */
 const PAGE_SIZE = 50;
+/** How many characters of a long string show before Show Full Value. */
 const PREVIEW_LENGTH = 300;
 
+/**
+ * Read a value as a plain record.
+ *
+ * @param value - Any value.
+ * @returns The value when it is a record, else `undefined`.
+ */
 const asRecord = (value: unknown): Record<string, unknown> | undefined =>
 	isRecord(value) ? (value as Record<string, unknown>) : undefined;
 
@@ -41,6 +50,7 @@ export const ToolInputValue = ({
 		: Object.entries(record ?? {}).slice(0, visibleCount);
 	const definition = asRecord(schema);
 	const properties = asRecord(definition?.properties);
+	// a schema title wins; else the key, split from camelCase or snake_case
 	const label =
 		typeof definition?.title === "string"
 			? definition.title
@@ -57,7 +67,7 @@ export const ToolInputValue = ({
 	const isBlockText =
 		typeof value === "string" &&
 		(value.length > 120 || value.includes("\n"));
-	const collection = () => (
+	const renderCollection = () => (
 		<>
 			<dl className="min-w-0 divide-y divide-border/60">
 				{entries.map(([key, item]) => (
@@ -87,9 +97,10 @@ export const ToolInputValue = ({
 		</>
 	);
 
+	// the root collection lists its fields with no row of its own
 	if (name === undefined) {
 		return entries.length ? (
-			collection()
+			renderCollection()
 		) : (
 			<p className="p-3 text-muted-foreground text-sm">
 				{t("form.noParameters")}
@@ -129,7 +140,7 @@ export const ToolInputValue = ({
 										{description}
 									</p>
 								)}
-								{collection()}
+								{renderCollection()}
 							</div>
 						)}
 					</details>

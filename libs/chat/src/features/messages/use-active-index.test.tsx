@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { expect, test, vi } from "vitest";
 import { type ChunkStatus, useActiveIndex } from "./use-active-index";
 
+/** A part of the harness message. */
 interface HarnessPart {
 	/** Stable key for the part. */
 	id: string;
@@ -11,6 +12,7 @@ interface HarnessPart {
 	type: "text" | "tool";
 }
 
+/** Props for {@link CaughtUpChunk}. */
 interface CaughtUpChunkProps {
 	/** Status the text part's queue gives this chunk. */
 	status: ChunkStatus;
@@ -27,6 +29,7 @@ const CaughtUpChunk = ({ status, onComplete }: CaughtUpChunkProps) => {
 	return <p>text</p>;
 };
 
+/** Props for {@link TextPart}. */
 interface TextPartProps {
 	/** Status the message queue gives this part. */
 	status: ChunkStatus;
@@ -50,6 +53,7 @@ const TextPart = ({ status, onComplete }: TextPartProps) => {
 	);
 };
 
+/** Props for {@link MessageHarness}. */
 interface MessageHarnessProps {
 	/** Parts in transcript order. */
 	parts: HarnessPart[];

@@ -22,7 +22,7 @@ const CALL_STATUSES: Record<ToolStore["status"], ToolViewCallStatus> = {
  * them.
  *
  * @param tool - The call.
- * @return The call for the view.
+ * @returns The call for the view.
  */
 export const toToolViewCall = (tool: ToolStore): ToolViewCall => {
 	const status = CALL_STATUSES[tool.status];
@@ -48,7 +48,7 @@ export const toToolViewCall = (tool: ToolStore): ToolViewCall => {
  * has not run.
  *
  * @param tool - The call.
- * @return `approval` while it waits, `result` otherwise.
+ * @returns `approval` while it waits, `result` otherwise.
  */
 export const toToolViewMode = (tool: ToolStore): ToolViewMode => {
 	if (tool.status !== "INITIAL") {

@@ -11,6 +11,11 @@ export const RESPONSE_BLOCK_MAX_HEIGHT = "62.5dvh";
 /** Floor for the same blocks, so a nearly empty preview is still usable. */
 export const RESPONSE_BLOCK_MIN_HEIGHT = "8rem";
 
+/**
+ * The fence languages Shiki highlights. Anything else, including a language
+ * token still streaming in, is highlighted as `txt`, since Shiki throws on an
+ * id it does not know.
+ */
 export const KNOWN_SHIKI_LANGS = new Set([
 	"c",
 	"r",
@@ -78,6 +83,7 @@ export const KNOWN_SHIKI_LANGS = new Set([
 	"plaintext",
 ]);
 
+/** The file extension a code block saves with, by its fence language; others use the language itself. */
 export const CODE_LANG_EXT: Record<string, string> = {
 	javascript: "js",
 	typescript: "ts",
@@ -129,6 +135,7 @@ export const CODE_LANG_EXT: Record<string, string> = {
 	pixel: "pixel",
 };
 
+/** The label a code block's header shows, by its fence language; others show it upper-cased. */
 export const CODE_LANG_LABELS: Record<string, string> = {
 	javascript: "JavaScript",
 	typescript: "TypeScript",
@@ -198,6 +205,10 @@ export const CODE_LANG_LABELS: Record<string, string> = {
  * Build a runnable pixel expression for a code block, or null when the
  * language is not something we can execute server-side. Python runs through
  * the Py reactor, R through the R reactor, and pixel is sent as-is.
+ *
+ * @param lang - The block's fence language.
+ * @param code - The block's code.
+ * @returns The pixel, or null for empty code or a language that cannot run.
  */
 export const buildExecutePixel = (
 	lang: string | undefined,
@@ -231,6 +242,11 @@ export const MAX_EXECUTE_LOG_CHARS = 100_000;
  * pixel value into the display string. Raw-vs-formatted toggling and JSON tree
  * rendering are handled downstream by CellOutputBlock, so this only needs the
  * "formatted" representation.
+ *
+ * @param value - The unwrapped pixel value.
+ * @param opType - The result's operation type; `ERROR` and `INVALID_SYNTAX`
+ * prefix a string value.
+ * @returns The string to display.
  */
 export const formatExecuteOutput = (value: unknown, opType: string): string => {
 	if (value === undefined || value === null) return "";

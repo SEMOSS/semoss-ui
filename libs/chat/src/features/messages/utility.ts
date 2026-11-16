@@ -14,8 +14,11 @@ import { ResponseMessageStore } from "./response-message.store";
  * hidden (invisible) input/response pairs the backend appended alongside it.
  */
 export interface CancelCommitOutput {
+	/** The user's message, as the backend saved it. */
 	inputMessage: InputPixelMessage;
+	/** The response, with the parts that streamed before the cancel. */
 	responseMessage: ResponsePixelMessage;
+	/** Hidden pairs, in conversation order after the visible one. */
 	extraMessages: {
 		inputMessage: InputPixelMessage;
 		responseMessage: ResponsePixelMessage;
@@ -23,15 +26,18 @@ export interface CancelCommitOutput {
 }
 
 /**
- * Create a messageStore from a pixelMessage
- * @param room - room store the message belongs to
- * @param pixelMessage - message from backend that needs to be converted
+ * Make the store for a message the backend sent.
+ *
+ * @param room - The room the message belongs to.
+ * @param pixelMessage - The backend's message.
+ * @returns An `InputMessageStore` for the user's message, else a
+ * `ResponseMessageStore`.
+ * @throws When the message is neither input nor output.
  */
 export const createMessageStore = (
 	room: RoomStore,
 	pixelMessage: PixelMessage,
 ): ResponseMessageStore | InputMessageStore => {
-	// set data based on type
 	if (pixelMessage.io === "INPUT") {
 		return new InputMessageStore(room, pixelMessage);
 	} else if (pixelMessage.io === "OUTPUT") {
@@ -46,6 +52,9 @@ export const createMessageStore = (
  * joining the tree keeps `tail` — and thus the next message's parent — aligned
  * with the backend's provider history. Shared by the cancelled-turn and
  * cancelled-tool-execution commits.
+ *
+ * @param parent - The visible response the hidden pairs follow.
+ * @param extraMessages - The backend's hidden pairs, if any.
  */
 export const spliceHiddenMessages = (
 	parent: AbstractMessageStore,

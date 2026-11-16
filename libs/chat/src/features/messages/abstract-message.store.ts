@@ -11,28 +11,40 @@ import type { RoomStore } from "../room/room.store";
  * reader of `children` sees it.
  */
 export interface MessageSnapshot {
+	/** The message's id. */
 	readonly id: string;
 	/** Whether the message is shown to the user. */
 	readonly visible: boolean;
+	/** The message above it in the tree, or null for the root. */
 	readonly parent: AbstractMessageStore | null;
 	/** Its index among its parent's children; -1 while it has no parent. */
 	readonly position: number;
+	/** The messages that answer it: each a branch of the conversation. */
 	readonly children: readonly AbstractMessageStore[];
 	/** Which child continues the conversation; -1 when it has none. */
 	readonly activeChildPosition: number;
+	/** What the message says, in order. */
 	readonly parts: readonly AbstractPixelMessage["parts"][number][];
 	/** The tokens the message used, for its cost. */
 	readonly tokens: number;
+	/** The model that answered, or the one the message was sent to. */
 	readonly modelId: string;
+	/** That model's type. */
 	readonly modelType: string;
 	/** The agent run the message belongs to, if any. */
 	readonly agentRun: AbstractPixelMessage["agentRun"] | undefined;
 	/** Extra properties that are not essential. */
 	readonly ornaments: AbstractPixelMessage["ornaments"];
+	/** When the message was created, once the backend has said. */
 	readonly dateCreated: Date | undefined;
 }
 
-/** The agent run a pixel message names, in either of its two forms. */
+/**
+ * The agent run a pixel message names, in either of its two forms.
+ *
+ * @param message - The pixel message.
+ * @returns Its run, from `agentRun` or its ornaments, or undefined.
+ */
 const readAgentRun = (
 	message: AbstractPixelMessage,
 ): AbstractPixelMessage["agentRun"] | undefined =>
@@ -44,7 +56,12 @@ const readAgentRun = (
 			}
 		: undefined);
 
-/** The ornaments a message keeps from a pixel message. */
+/**
+ * The ornaments a message keeps from a pixel message.
+ *
+ * @param message - The pixel message.
+ * @returns Its model name and routing.
+ */
 const readOrnaments = (
 	message: AbstractPixelMessage,
 ): AbstractPixelMessage["ornaments"] => ({
@@ -95,6 +112,7 @@ export abstract class AbstractMessageStore<
 	/** Whether it is the root, a plan, an input, or a response. */
 	abstract readonly type: "ROOT" | "PLAN" | "INPUT" | "OUTPUT";
 
+	/** The message's state; only its own actions and subclasses write it. */
 	protected readonly state: StoreState<S>;
 
 	/** Who hears about a change to this message or any message below it. */
@@ -114,8 +132,15 @@ export abstract class AbstractMessageStore<
 		this.state.subscribe(this.notifyTree);
 	}
 
+	/** The message's current state. */
 	getSnapshot = (): S => this.state.getSnapshot();
 
+	/**
+	 * Listen for changes to this message alone.
+	 *
+	 * @param listener - Called after each change.
+	 * @returns Stops listening.
+	 */
 	subscribe = (listener: () => void): (() => void) =>
 		this.state.subscribe(listener);
 
@@ -133,54 +158,67 @@ export abstract class AbstractMessageStore<
 		};
 	};
 
+	/** The message's id. */
 	get id(): string {
 		return this.getSnapshot().id;
 	}
 
+	/** Whether the message is shown to the user. */
 	get visible(): boolean {
 		return this.getSnapshot().visible;
 	}
 
+	/** The message above it in the tree, or null for the root. */
 	get parent(): AbstractMessageStore | null {
 		return this.getSnapshot().parent;
 	}
 
+	/** Its index among its parent's children; -1 while it has no parent. */
 	get position(): number {
 		return this.getSnapshot().position;
 	}
 
+	/** The messages that answer it. */
 	get children(): readonly AbstractMessageStore[] {
 		return this.getSnapshot().children;
 	}
 
+	/** Which child continues the conversation; -1 when it has none. */
 	get activeChildPosition(): number {
 		return this.getSnapshot().activeChildPosition;
 	}
 
+	/** What the message says, in order. */
 	get parts(): S["parts"] {
 		return this.getSnapshot().parts;
 	}
 
+	/** The tokens the message used. */
 	get tokens(): number {
 		return this.getSnapshot().tokens;
 	}
 
+	/** The model that answered, or the one the message was sent to. */
 	get modelId(): string {
 		return this.getSnapshot().modelId;
 	}
 
+	/** That model's type. */
 	get modelType(): string {
 		return this.getSnapshot().modelType;
 	}
 
+	/** The agent run the message belongs to, if any. */
 	get agentRun(): AbstractPixelMessage["agentRun"] | undefined {
 		return this.getSnapshot().agentRun;
 	}
 
+	/** Extra properties that are not essential. */
 	get ornaments(): AbstractPixelMessage["ornaments"] {
 		return this.getSnapshot().ornaments;
 	}
 
+	/** When the message was created, once the backend has said. */
 	get dateCreated(): Date | undefined {
 		return this.getSnapshot().dateCreated;
 	}

@@ -34,6 +34,7 @@ const CONTENT = JSON.stringify({
 	nbformat_minor: 5,
 });
 
+/** A fake room bound to the given insight. */
 const roomWith = (insightId: string) => ({ insightId }) as RoomStore;
 
 afterEach(cleanup);

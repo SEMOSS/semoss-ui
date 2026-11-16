@@ -14,18 +14,25 @@ import { type CancelCommitOutput, spliceHiddenMessages } from "./utility";
 
 /** A tool result waiting to be written to room history via the save queue. */
 interface ToolSaveEntry {
+	/** The call the result is for. */
 	tool: ToolStore;
 	/** Already wrapped with the status guidance prompt. */
 	toolResponse: string;
+	/** How the call ended. */
 	toolStatus: "success" | "error" | "cancelled";
+	/** The arguments it ran with. */
 	executedParameters: Record<string, unknown>;
+	/** Settles the caller's `save` once the batch carrying it is written. */
 	resolve: () => void;
+	/** Fails the caller's `save` when that batch fails. */
 	reject: (error: unknown) => void;
 }
 
 /** The model reply an AddPlaygroundToolExecution returns once the set is done. */
 interface ToolExecModelReply {
+	/** The model's reply to the set's results. */
 	responseMessage: ResponsePixelMessage;
+	/** The input message that carries the results. */
 	inputMessage: InputPixelMessage;
 }
 
@@ -38,7 +45,9 @@ type ToolExecOutput = string | { responseMessage: string } | ToolExecModelReply;
 
 /** Minimal per-statement result shape shared by runRoomPixel + streaming. */
 interface StatementResult {
+	/** The statement's operation types, such as `ERROR`. */
 	operationType: string[];
+	/** What the statement returned. */
 	output: ToolExecOutput;
 }
 
@@ -59,14 +68,15 @@ export class ToolSaveController {
 	/** Results waiting to be written. */
 	private queue: ToolSaveEntry[] = [];
 	/** True while a batch is being written; guards the drain loop. */
-	private flushing: boolean = false;
+	private isFlushing: boolean = false;
 	/** Once a stop takes over the queue, no more normal batches are sent. */
-	private stopped: boolean = false;
+	private isStopped: boolean = false;
 	/** Settles when the in-flight batch (if any) finishes; awaited by stop. */
 	private inFlight: Promise<void> = Promise.resolve();
 	/** Guards the cancel commit so a stopped turn is only persisted once. */
-	private cancelCommitted: boolean = false;
+	private isCancelCommitted: boolean = false;
 
+	/** @param message - The response whose tool results this writes. */
 	constructor(private readonly message: ResponseMessageStore) {}
 
 	/**
@@ -75,6 +85,14 @@ export class ToolSaveController {
 	 * The tool's status is marked up front so the UI and the finality check
 	 * reflect it immediately. Resolves when the batch carrying this result
 	 * settles.
+	 *
+	 * @param tool - The call.
+	 * @param toolResponse - What it returned, or its error.
+	 * @param toolStatus - How it ended.
+	 * @param executedParameters - The arguments it ran with.
+	 * @param errorDuringSaving - Whether the call returned but its output could
+	 * not be read, so the model is told that rather than that the call failed.
+	 * @returns Settles with the batch that carries the result.
 	 */
 	save = (
 		tool: ToolStore,
@@ -140,7 +158,7 @@ export class ToolSaveController {
 
 		// Take over the queue: no more normal batches, and let the in-flight one
 		// finish so we don't write concurrently with it.
-		this.stopped = true;
+		this.isStopped = true;
 		await this.inFlight;
 
 		// Results that were queued but not yet sent still deserve to be recorded.
@@ -240,10 +258,10 @@ export class ToolSaveController {
 	 * arrived mid-write get sent next.
 	 */
 	private flush = (): void => {
-		if (this.flushing || this.stopped || this.queue.length === 0) {
+		if (this.isFlushing || this.isStopped || this.queue.length === 0) {
 			return;
 		}
-		this.flushing = true;
+		this.isFlushing = true;
 
 		const message = this.message;
 		const room = message.room;
@@ -293,7 +311,7 @@ export class ToolSaveController {
 					this.retryEntryAsError(entry, error);
 				});
 			} finally {
-				this.flushing = false;
+				this.isFlushing = false;
 				this.flush();
 			}
 		})();
@@ -306,6 +324,9 @@ export class ToolSaveController {
 	 * and is the only write that carries an onCancel. Both paths read the
 	 * per-statement results (throwOnError: false) and reconcile them, so a
 	 * mid-batch commit failure retries only that tool.
+	 *
+	 * @param batch - The results to write, in order.
+	 * @param isFinal - Whether the batch completes the tool set.
 	 */
 	private sendBatch = async (
 		batch: ToolSaveEntry[],
@@ -419,6 +440,10 @@ export class ToolSaveController {
 	 * (see retryEntryAsError); successful ones resolve. Returns the model reply
 	 * if the batch actually finalized (a committed statement whose output is the
 	 * reply rather than a "more pending" string), otherwise null.
+	 *
+	 * @param batch - The batch's results, in order.
+	 * @param statements - The pixel's per-statement results, in the same order.
+	 * @returns The model reply, or null.
 	 */
 	private reconcile = (
 		batch: ToolSaveEntry[],
@@ -450,6 +475,9 @@ export class ToolSaveController {
 	 * gets answered (an unanswered call corrupts the next turn's provider
 	 * history). A result that was already an error/cancelled attempt is given up
 	 * on — which also stops a persistently-failing write from looping.
+	 *
+	 * @param entry - The result whose write failed.
+	 * @param detail - Why it failed.
 	 */
 	private retryEntryAsError = (
 		entry: ToolSaveEntry,
@@ -485,15 +513,18 @@ export class ToolSaveController {
 	 * hiddenMessage note; commits an empty response when the user stopped before
 	 * anything streamed. The single-commit guard protects against duplicate stop
 	 * delivery.
+	 *
+	 * @param toolExecParams - The finalizing write's parameters, to replay.
+	 * @param responseMessage - The reply that was streaming.
 	 */
 	private recordCancelledToolExecution = async (
 		toolExecParams: string,
 		responseMessage: ResponseMessageStore,
 	): Promise<void> => {
-		if (this.cancelCommitted) {
+		if (this.isCancelCommitted) {
 			return;
 		}
-		this.cancelCommitted = true;
+		this.isCancelCommitted = true;
 
 		const message = this.message;
 		const room = message.room;

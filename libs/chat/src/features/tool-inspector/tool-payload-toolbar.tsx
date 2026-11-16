@@ -9,15 +9,21 @@ import { useTranslation } from "@semoss/i18n";
 import { Button, toast } from "@semoss/ui/next";
 import { copyTextToClipboard } from "@semoss/utility/clipboard";
 
+/** Props for {@link ToolPayloadToolbar}. */
 interface ToolPayloadToolbarProps {
 	/** Format label or the Pretty / Raw selector. */
 	children: ReactNode;
 	/** Always copy the complete payload, including collapsed fields. */
 	text: string;
+	/** Opens the editor's find widget; without it there is no Find button. */
 	onFind?: () => void;
+	/** Whether the editor has mounted, so Find has something to open. */
 	isFindReady?: boolean;
+	/** Toggles line wrapping; without it there is no Wrap button. */
 	onWrap?: () => void;
+	/** Whether lines wrap, shown as the Wrap button's pressed state. */
 	isWrapped?: boolean;
+	/** Opens the payload in a larger view; gets the button so focus can return to it. */
 	onExpand?: (trigger: HTMLButtonElement) => void;
 }
 

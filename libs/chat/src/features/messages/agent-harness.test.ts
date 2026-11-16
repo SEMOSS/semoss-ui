@@ -75,6 +75,7 @@ const runsSettleWith = (snapshot: AgentRunSnapshot) =>
 			};
 		});
 
+/** A run that failed on the spend limit. */
 const failedRun = (runId: string): AgentRunSnapshot => ({
 	runId,
 	roomId: "agent-test",

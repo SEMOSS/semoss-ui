@@ -9,6 +9,7 @@ import {
 	createMarkdownUrlTransform,
 } from "./create-markdown-components";
 
+/** Props for {@link ResponseMessageTextMd}. */
 interface ResponseMessageTextMdProps {
 	/** Full content of this markdown chunk (may grow during streaming). */
 	content: string;
@@ -35,6 +36,7 @@ interface ResponseMessageTextMdProps {
 	isFirstView: boolean;
 }
 
+/** One markdown chunk of a text part, typed out while it is the active chunk. */
 export const ResponseMessageTextMd = ({
 	content,
 	status,
@@ -87,11 +89,11 @@ export const ResponseMessageTextMd = ({
 	useEffect(() => {
 		if (status !== "active") return;
 
-		const caughtUp =
+		const isCaughtUp =
 			!typewriter.isTyping &&
 			typewriter.rendered.length >= content.length;
 
-		if (caughtUp) {
+		if (isCaughtUp) {
 			onComplete();
 			return;
 		}

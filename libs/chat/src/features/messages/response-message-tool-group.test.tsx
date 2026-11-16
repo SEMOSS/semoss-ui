@@ -22,6 +22,7 @@ vi.mock("./response-message-tool", () => ({
 	),
 }));
 const room = fakeStore({});
+/** A fake resolved call in the shared room; `ask` makes it wait for the user. */
 const tool = (id: string, status: string, ask = false) =>
 	({
 		id,

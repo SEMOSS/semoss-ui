@@ -4,10 +4,15 @@ import { CodeEditor, toast } from "@semoss/ui/next";
 import { copyTextToClipboard } from "@semoss/utility/clipboard";
 import { ToolPayloadToolbar } from "./tool-payload-toolbar";
 
+/** Props for {@link ToolPayloadEditor}. */
 interface ToolPayloadEditorProps {
+	/** The formatted payload to show. */
 	text: string;
+	/** How to highlight the payload; JSON also folds. */
 	language: "json" | "plaintext";
+	/** The editor's accessible name. */
 	label: string;
+	/** Opens the payload in a larger view; gets the button so focus can return to it. */
 	onExpand?: (trigger: HTMLButtonElement) => void;
 	/** Optional format selector in place of the language label. */
 	toolbarStart?: ReactNode;
@@ -23,9 +28,10 @@ export const ToolPayloadEditor = ({
 }: ToolPayloadEditorProps) => {
 	const { t } = useTranslation("tool");
 	const editorRef = useRef<ComponentRef<typeof CodeEditor>>(null);
-	const [wrap, setWrap] = useState(true);
-	const [ready, setReady] = useState(false);
-	const copy = () =>
+	const [isWrapped, setIsWrapped] = useState(true);
+	// Find needs the mounted editor, so its button waits for the ref
+	const [isReady, setIsReady] = useState(false);
+	const handleCopy = () =>
 		copyTextToClipboard(text, {
 			onSuccess: () => toast.success(t("inspector.copied")),
 			onError: () => toast.error(t("inspector.copyFailed")),
@@ -38,9 +44,9 @@ export const ToolPayloadEditor = ({
 				onFind={() =>
 					editorRef.current?.getAction("actions.find")?.run()
 				}
-				isFindReady={ready}
-				onWrap={() => setWrap((value) => !value)}
-				isWrapped={wrap}
+				isFindReady={isReady}
+				onWrap={() => setIsWrapped((value) => !value)}
+				isWrapped={isWrapped}
 				onExpand={onExpand}
 			>
 				{toolbarStart ?? (
@@ -53,7 +59,7 @@ export const ToolPayloadEditor = ({
 				<CodeEditor
 					ref={(editor) => {
 						editorRef.current = editor;
-						setReady(!!editor);
+						setIsReady(!!editor);
 					}}
 					code={text}
 					language={language}
@@ -68,7 +74,7 @@ export const ToolPayloadEditor = ({
 						lineNumbersMinChars: 3,
 						folding: language === "json",
 						showFoldingControls: "always",
-						wordWrap: wrap ? "on" : "off",
+						wordWrap: isWrapped ? "on" : "off",
 						padding: { top: 8, bottom: 8 },
 						renderLineHighlight: "none",
 						overviewRulerLanes: 0,
@@ -87,7 +93,7 @@ export const ToolPayloadEditor = ({
 						{
 							id: "copy",
 							label: t("inspector.copy"),
-							onSelect: copy,
+							onSelect: handleCopy,
 						},
 						...(language === "json"
 							? [

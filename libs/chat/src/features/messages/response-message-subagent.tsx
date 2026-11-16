@@ -7,6 +7,15 @@ import { ROOM_PANEL_TYPES } from "../room/room-sidebar";
 import { useSidebarPanelActive } from "../workbench/use-sidebar-panel-active";
 import type { ResponseMessageStore } from "./response-message.store";
 
+/**
+ * How a subagent's card shows its status.
+ *
+ * @param status - The subagent's run status.
+ * @param subagent - The subagent, whose error a failed card shows.
+ * @param t - The `tool` namespace's translate function.
+ * @returns The card's icon, its icon's classes, its status line, and its
+ * background class.
+ */
 export const getSubagentState = (
 	status: AgentRunStatusValue,
 	subagent: PixelMessageSubagentPart["subagent"],
@@ -52,8 +61,11 @@ export const getSubagentState = (
 	}
 };
 
+/** Props for {@link ResponseMessageSubagent}. */
 interface ResponseMessageSubagentProps {
+	/** The response the subagent was spawned from. */
 	message: ResponseMessageStore;
+	/** The response's subagent part. */
 	part: PixelMessageSubagentPart;
 }
 
@@ -78,6 +90,7 @@ export const ResponseMessageSubagent = ({
 		panelConfig,
 	);
 
+	/** Open the subagent's panel in the sidebar. */
 	const handleClick = () => {
 		room.openSidebarPanel(
 			ROOM_PANEL_TYPES.SUBAGENT,

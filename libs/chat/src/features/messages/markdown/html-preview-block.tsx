@@ -30,16 +30,29 @@ import {
 import { SaveFileDialog } from "./save-file-dialog";
 import { useStickToBottom } from "./use-stick-to-bottom";
 
+/** Props for {@link HtmlPreviewBlock}. */
 interface HtmlPreviewBlockProps {
+	/** The block's HTML, which may still be streaming. */
 	html: string;
+	/** The room whose files Save writes to; without it Save is disabled. */
 	room?: RoomStore;
+	/** Whether the HTML is still streaming, so the preview updates on a throttle. */
 	isLoading?: boolean;
+	/** The Copy button's tooltip. */
 	copyTooltip: string;
+	/** The toast shown once the HTML is copied. */
 	copySuccessMessage: string;
 }
 
+/** How often, at most, a streaming preview takes new HTML. */
 const HTML_PREVIEW_STREAM_THROTTLE_MS = 120;
 
+/**
+ * Injected into the previewed page: it keeps the page's scroll position (or
+ * its place at the bottom) across the reloads each new chunk causes, fades
+ * the page in once restored, and tells the parent while the user scrolls.
+ * `__PREVIEW_CHANNEL__` is replaced with the block's own channel.
+ */
 const PREVIEW_SCROLL_SYNC_SCRIPT =
 	"<script>" +
 	"(function(){" +
@@ -63,6 +76,13 @@ const PREVIEW_SCROLL_SYNC_SCRIPT =
 	"})();" +
 	"</script>";
 
+/**
+ * Add the scroll sync script to a page, before its `</body>` when it has one.
+ *
+ * @param html - The page.
+ * @param channel - The block's channel, which keys its saved scroll and messages.
+ * @returns The page with the script.
+ */
 const injectPreviewScrollSync = (html: string, channel: string): string => {
 	const script = PREVIEW_SCROLL_SYNC_SCRIPT.replace(
 		/__PREVIEW_CHANNEL__/g,
@@ -74,6 +94,13 @@ const injectPreviewScrollSync = (html: string, channel: string): string => {
 		: html + script;
 };
 
+/**
+ * Whether streamed HTML can be previewed yet: it is not empty, and does not
+ * end inside an inline script, a style, or a tag.
+ *
+ * @param value - The HTML streamed so far.
+ * @returns Whether to preview it.
+ */
 const isPreviewChunkSafe = (value: string): boolean => {
 	if (!value.trim()) return false;
 
@@ -90,6 +117,11 @@ const isPreviewChunkSafe = (value: string): boolean => {
 	return true;
 };
 
+/**
+ * An HTML block in a response, previewed in a sandbox with Raw, Full View,
+ * Save, and Copy. While it streams, the preview takes only HTML that is safe
+ * to render, at most once per throttle, and waits while the user scrolls it.
+ */
 export const HtmlPreviewBlock = ({
 	html,
 	room,
@@ -117,12 +149,15 @@ export const HtmlPreviewBlock = ({
 	const scrollStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
 		null,
 	);
+	// HTML that arrived while the user scrolled the preview, applied once they stop
 	const pendingScrollHtmlRef = useRef<string | null>(null);
 
+	// the throttle's timer reads whether the block still streams when it fires
 	useEffect(() => {
 		isLoadingRef.current = !!isLoading;
 	}, [isLoading]);
 
+	// the preview reports its scrolls; hold new HTML until 150ms after the last
 	useEffect(() => {
 		const channel = previewChannelRef.current;
 		const handleMessage = (event: MessageEvent) => {
@@ -156,6 +191,7 @@ export const HtmlPreviewBlock = ({
 		};
 	}, []);
 
+	// take safe streamed HTML on the throttle; once streaming ends, take it all at once
 	useEffect(() => {
 		if (!isLoading) {
 			if (flushTimerRef.current) {
@@ -205,7 +241,7 @@ export const HtmlPreviewBlock = ({
 					onToggleCollapse={() =>
 						setIsCollapsed((previous) => !previous)
 					}
-					collapseDisabled={!html}
+					isCollapseDisabled={!html}
 				>
 					<Tooltip>
 						<TooltipTrigger asChild>

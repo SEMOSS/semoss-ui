@@ -12,6 +12,7 @@ const room = {
 	closeSidebarPanel: vi.fn(),
 } as unknown as RoomStore;
 
+/** A TOOL_CALL part that shows where `display` says. */
 const callPart = (
 	display?: "inline" | "sidebar",
 ): PixelMessageToolCallPart => ({

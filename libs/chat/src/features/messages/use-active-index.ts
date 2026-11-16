@@ -1,7 +1,9 @@
 import { useCallback, useMemo, useState } from "react";
 
+/** Where an item stands in the reveal: shown in full, animating, or waiting its turn. */
 export type ChunkStatus = "done" | "active" | "not_started";
 
+/** What {@link useActiveIndex} returns. */
 interface UseActiveIndexReturn {
 	/** One callback per item; each advances the queue past its item. */
 	chunkCallbacks: (() => void)[];
@@ -28,6 +30,7 @@ interface UseActiveIndexReturn {
  *                   we jump straight to the frontier instead of replaying the
  *                   reveal from the start. Only seeds the initial index; once
  *                   mounted the queue advances normally.
+ * @returns Each item's completion callback, and each item's status.
  */
 export const useActiveIndex = (
 	length: number,

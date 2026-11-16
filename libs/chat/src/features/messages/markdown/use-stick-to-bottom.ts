@@ -1,7 +1,15 @@
-import { useCallback, useLayoutEffect, useRef } from "react";
+import { type RefObject, useCallback, useLayoutEffect, useRef } from "react";
 
 /** How close to the bottom still counts as "at the bottom", in pixels. */
 const STICK_THRESHOLD = 24;
+
+/** What {@link useStickToBottom} returns. */
+interface StickToBottom {
+	/** Attach to the block's scrolling element. */
+	ref: RefObject<HTMLDivElement | null>;
+	/** Attach as the element's scroll handler; notes whether the user left the bottom. */
+	onScroll: () => void;
+}
 
 /**
  * Keeps a height capped block scrolled to its newest content.
@@ -16,10 +24,10 @@ const STICK_THRESHOLD = 24;
  * the content stops changing this does nothing, so anything streamed after the
  * block goes back to moving the room's scroll as usual.
  *
- * @param content the streaming text, so the follow runs as it grows
- * @return a ref for the scrolling element and the scroll handler to attach
+ * @param content - The streaming text, so the follow runs as it grows.
+ * @returns A ref for the scrolling element and the scroll handler to attach.
  */
-export const useStickToBottom = (content: string) => {
+export const useStickToBottom = (content: string): StickToBottom => {
 	const ref = useRef<HTMLDivElement | null>(null);
 	const shouldFollow = useRef(true);
 

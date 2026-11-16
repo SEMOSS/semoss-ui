@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import type { ConnectorViewerService } from "@semoss/connectors";
 import type { ToolViewHost, ToolViewSavedFile } from "@semoss/shared";
 import { CONNECTOR_SOURCES } from "../connectors/sources/connector-sources";
 import {
@@ -8,26 +7,17 @@ import {
 } from "../connectors/sources/use-room-connector-host";
 
 /**
- * The viewer a saved file came from, when its source names one.
- *
- * @param source - The file's source, such as `gmail`.
- * @return The viewer service, or undefined.
- */
-const readViewerService = (
-	source: string | undefined,
-): ConnectorViewerService | undefined =>
-	CONNECTOR_SOURCES.find((entry) => entry.service === source)?.service;
-
-/**
  * A file a tool view saved, in the form the room's queue takes it.
  *
  * @param file - The saved file.
- * @return The file, with the viewer it came from.
+ * @returns The file, with the viewer it came from when its source, such as
+ * `gmail`, names one.
  */
 const toRoomFile = (file: ToolViewSavedFile): RoomSavedFile => ({
 	path: file.path,
 	name: file.name,
-	service: readViewerService(file.source),
+	service: CONNECTOR_SOURCES.find((entry) => entry.service === file.source)
+		?.service,
 });
 
 /**
@@ -36,11 +26,12 @@ const toRoomFile = (file: ToolViewSavedFile): RoomSavedFile => ({
  * the account the view's `provider` names.
  *
  * @param params - The view's URI parameters.
- * @return The view's host.
+ * @returns The view's host.
  */
 export const useRoomToolViewHost = (
 	params: Readonly<Record<string, string>>,
 ): ToolViewHost => {
+	// a view names its account by `provider`; anything but google is Microsoft
 	const { saveTargetName, onSaved, onAddToContext, onSignIn } =
 		useRoomConnectorHost(
 			params.provider === "google" ? "GOOGLE" : "MICROSOFT",
