@@ -120,7 +120,12 @@ vi.mock("@semoss/sdk/react", async (original) => ({
 }));
 vi.mock("@/hooks/use-root", () => ({ useRoot: () => ({ root }) }));
 vi.mock("@/features/chat-config/use-chat-config", () => ({
-	useChatConfig: () => ({ theme: root.theme }),
+	useChatConfig: () => ({
+		theme: root.theme,
+		navigation: {
+			openRoom: (roomId: string) => mocks.navigate(`/room/${roomId}`),
+		},
+	}),
 }));
 vi.mock("@/hooks/use-playground-theme", () => ({
 	usePlaygroundTheme: () => root.theme,

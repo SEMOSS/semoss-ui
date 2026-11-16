@@ -13,6 +13,8 @@ export interface ChatNavigation {
 	roomHref: (roomId: string) => string;
 	/** An agent's link; without it, chat UI shows no agent links. */
 	agentHref?: (workspaceId: string) => string;
+	/** Start a new chat, as when a room cannot be opened. */
+	openNewChat: () => void;
 	/** A room was deleted from inside chat UI. */
 	onRoomDeleted: (roomId: string) => void;
 	/** Open the host's settings on a section; without it, chat UI links to none. */

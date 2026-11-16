@@ -30,6 +30,7 @@ export const PlaygroundChatConfigProvider = ({
 				openRoom: (roomId) => navigate(`/room/${roomId}`),
 				roomHref: (roomId) => `#/room/${roomId}`,
 				agentHref: (workspaceId) => `#/agent/${workspaceId}`,
+				openNewChat: () => navigate("/"),
 				onRoomDeleted: () => navigate("/"),
 				openSettings,
 			},
