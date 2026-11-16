@@ -9,6 +9,10 @@ import type { NewChatBuildDefaults } from "@/features/new-chat-preferences/new-c
 export interface ChatNavigation {
 	/** Open a room. */
 	openRoom: (roomId: string) => void;
+	/** A room's link, so it opens in a new tab like any link. */
+	roomHref: (roomId: string) => string;
+	/** An agent's link; without it, chat UI shows no agent links. */
+	agentHref?: (workspaceId: string) => string;
 	/** A room was deleted from inside chat UI. */
 	onRoomDeleted: (roomId: string) => void;
 }

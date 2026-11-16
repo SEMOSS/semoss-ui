@@ -80,6 +80,8 @@ export const MainLayout = observer(() => {
 			newChatDefaults: NEW_CHAT_BUILD_DEFAULTS,
 			navigation: {
 				openRoom: (roomId) => navigate(`/room/${roomId}`),
+				roomHref: (roomId) => `#/room/${roomId}`,
+				agentHref: (workspaceId) => `#/agent/${workspaceId}`,
 				onRoomDeleted: () => navigate("/"),
 			},
 		}),
