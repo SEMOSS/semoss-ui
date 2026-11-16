@@ -182,7 +182,7 @@ it("checks only when asked, with the topic's server id, and applies exactly the 
 	await user.click(
 		screen.getByRole("button", { name: "Check conversations" }),
 	);
-	expect(startTopicMatches).toHaveBeenCalledWith({}, "server-geng");
+	expect(startTopicMatches).toHaveBeenCalledWith({}, "server-geng", "find");
 	const list = await screen.findByRole("list", {
 		name: `Conversations for ${TOPIC}`,
 	});
