@@ -63,6 +63,7 @@ export const Chat = {
 } as const;
 
 export { ChatStore } from "./features/chat/chat.store";
+export { useChatSelector } from "./features/chat/use-chat-selector";
 export { useChatSession } from "./features/chat/use-chat-session";
 export { useCreateChatStore } from "./features/chat/use-create-chat-store";
 export type {
@@ -96,6 +97,8 @@ export {
 } from "./features/connectors/use-connections";
 export { offersAgentMode } from "./features/conversation/agent-mode-choice";
 export { WorkspaceNavigationContext } from "./features/conversation/workspace-navigation.context";
+export { useMessage } from "./features/messages/use-message";
+export { useTool } from "./features/messages/use-tool";
 export {
 	isNewChatMode,
 	NEW_CHAT_PREFERENCE_KEYS,
@@ -107,5 +110,6 @@ export {
 } from "./features/new-chat-preferences/new-chat-preferences";
 export { useRoom } from "./features/room/room.context";
 export type { RoomStore } from "./features/room/room.store";
+export { useRoomSelector } from "./features/room/use-room-selector";
 export { useRoomSearchShortcut } from "./features/room-search/use-room-search-shortcut";
 export type { App, MCPConfig, Workspace } from "./types";
