@@ -7,7 +7,9 @@
 	},
 	"attachments": {
 		"addFile": "ファイルを追加",
-		"removeFile": "ファイルを削除"
+		"removeFile": "ファイルを削除",
+		"view": "{{name}} を表示",
+		"previewOf": "{{name}} のプレビュー"
 	},
 	"response": {
 		"agent": "エージェント",
@@ -49,7 +51,8 @@
 		"copySuccess": "クリップボードに正常にコピーしました",
 		"noCopyContent": "コピーするコンテンツがありません",
 		"savedInRoom": "{{filePath}} としてルームに保存しました",
-		"planStepRemoved": "プランからステップ{{stepNumber}}を正常に削除しました"
+		"planStepRemoved": "プランからステップ{{stepNumber}}を正常に削除しました",
+		"invalidImage": "無効な画像形式です"
 	},
 	"gracefulErrors": {
 		"errorDefault": "リクエストを処理できません。接続を確認し、メッセージをコピーしてから更新してください。",
@@ -58,5 +61,85 @@
 		"resourceExhausted": "このモデルは現在高負荷を経験しています。別のモデルをお試しください。",
 		"inactivity": "非アクティブのためセッションが期限切れになりました。チャットを続けるにはページを更新してください。",
 		"modelNoLongerAvailable": "このモデルは利用できなくなりました。必要に応じて、現在の会話を新しいチャットにコピー&ペーストして続けてください。"
+	},
+	"download": {
+		"title": "回答をダウンロード",
+		"description": "ダウンロードする形式を選択してください:",
+		"success": "回答を {{format}} としてダウンロードしました",
+		"failed": "回答をダウンロードできませんでした",
+		"noContent": "ダウンロードする内容がありません"
+	},
+	"blocks": {
+		"expand": "{{label}} を展開",
+		"collapse": "{{label}} を折りたたむ",
+		"collapsed": "{{label}} - 折りたたみ中",
+		"run": "実行",
+		"running": "実行中",
+		"runScript": "スクリプトを実行",
+		"runAll": "すべて実行",
+		"stop": "停止",
+		"stopProgress": "停止 ({{current}} / {{total}})",
+		"code": "コード",
+		"notebook": "ノートブック",
+		"output": "出力",
+		"error": "エラー",
+		"clear": "クリア",
+		"successNoOutput": "成功 (出力なし)",
+		"edit": "編集",
+		"preview": "プレビュー",
+		"editHtml": "HTML を編集",
+		"switchToPreview": "プレビューに切り替え",
+		"htmlPreview": "HTML プレビュー",
+		"loadingPreview": "プレビューを読み込み中...",
+		"mermaid": "Mermaid",
+		"table": "表",
+		"exportToCsv": "CSV にエクスポート",
+		"exportCsv": "CSV をエクスポート",
+		"downloadAsCsv": "CSV としてダウンロード",
+		"copyNotebook": "ノートブックをコピー",
+		"saveNotebookToRoom": "ノートブックをルームに保存",
+		"saveFile": "ファイルを保存",
+		"saveFileFailed": "ファイルを保存できませんでした",
+		"addToNotebook": "ノートブックに追加",
+		"selectNotebook": "ノートブックを選択",
+		"selectOrCreateNotebook": "ノートブックを選択または作成",
+		"searchNotebook": "ノートブックを検索または名前を入力…",
+		"noNotebooks": "ノートブックが見つかりません",
+		"createNotebookOption": "「{{name}}」を作成",
+		"append": "追加",
+		"createdNotebook": "ノートブック {{name}} を作成しました",
+		"appendedToNotebook": "{{name}} に追加しました"
+	},
+	"modelRouter": {
+		"answeredBy": "<name>{{name}}</name> が回答",
+		"routingDetails": "ルーティングの詳細",
+		"classificationFallback": "分類フォールバック",
+		"destinationFailover": "宛先フェイルオーバー",
+		"routingCompleted": "ルーティング完了",
+		"sources": {
+			"classifier": "分類器がこのルートを選択しました",
+			"sticky": "会話で固定されたモデルを再利用しました — 分類器はスキップされました",
+			"keyword": "キーワードに一致しました",
+			"default": "既定のモデルを使用しました",
+			"keyword_fallback": "分類に失敗しました — フォールバックキーワードに一致しました",
+			"default_fallback": "分類に失敗しました — 既定のモデルを使用しました",
+			"weighted": "重み付け配分で選択されました"
+		},
+		"classifierRequest": "分類器のリクエスト",
+		"classifierResult": "分類器の結果",
+		"destinationAttempts": "宛先の試行",
+		"nestedRouting": "ネストされたルーティング",
+		"routerEngine": "ルーターエンジン",
+		"respondingEngine": "応答したエンジン",
+		"selectedRoute": "選択されたルート",
+		"classifier": "分類器",
+		"classifierEngineId": "分類器エンジン ID",
+		"classifierModel": "分類器モデル",
+		"classifierStatus": "分類器のステータス",
+		"classifierDuration": "分類器の所要時間",
+		"durationMs": "{{duration}} ms",
+		"classifierError": "分類器のエラー",
+		"traceId": "トレース ID",
+		"stickyHint": "リクエストごとに分類するには、ルーター設定で会話の固定をオフにしてください。"
 	}
 }

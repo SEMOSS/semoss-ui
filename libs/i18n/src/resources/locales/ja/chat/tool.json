@@ -107,5 +107,11 @@
 		"showMore": "さらに表示（残り {{remaining}} 件）",
 		"showLess": "表示を減らす",
 		"showFullValue": "値をすべて表示"
+	},
+	"view": {
+		"frameTitle": "ツール",
+		"noTool": "ツールがありません",
+		"submitAnswersError": "これらの回答を送信できませんでした。",
+		"invalidInputRequest": "アシスタントが無効な入力リクエストを送信したため、表示できません。"
 	}
 }

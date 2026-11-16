@@ -96,7 +96,8 @@
 		"permissionUpdateFailed": "Failed to update permission",
 		"userRemoved": "User removed successfully",
 		"userRemoveFailed": "Failed to remove user",
-		"fetchPermissionsFailed": "Failed to fetch user permissions"
+		"fetchPermissionsFailed": "Failed to fetch user permissions",
+		"unknownError": "Unknown error"
 	},
 	"breadcrumbs": {
 		"home": "Home",
@@ -138,7 +139,9 @@
 	},
 	"prompts": {
 		"noPrompts": "No prompts found",
-		"searchPlaceholder": "Search prompts..."
+		"searchPlaceholder": "Search prompts...",
+		"all": "All",
+		"general": "General"
 	},
 	"instructions": {
 		"expand": "Expand",

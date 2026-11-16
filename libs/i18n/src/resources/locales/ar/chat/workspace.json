@@ -96,7 +96,8 @@
 		"permissionUpdateFailed": "فشل تحديث الإذن",
 		"userRemoved": "تمت إزالة المستخدم بنجاح",
 		"userRemoveFailed": "فشل إزالة المستخدم",
-		"fetchPermissionsFailed": "فشل جلب أذونات المستخدم"
+		"fetchPermissionsFailed": "فشل جلب أذونات المستخدم",
+		"unknownError": "خطأ غير معروف"
 	},
 	"breadcrumbs": {
 		"home": "الرئيسية",
@@ -138,7 +139,9 @@
 	},
 	"prompts": {
 		"noPrompts": "لم يتم العثور على موجهات",
-		"searchPlaceholder": "البحث في الموجهات..."
+		"searchPlaceholder": "البحث في الموجهات...",
+		"all": "الكل",
+		"general": "عام"
 	},
 	"instructions": {
 		"expand": "توسيع",

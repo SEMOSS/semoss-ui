@@ -663,7 +663,9 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 																	)
 																}
 															>
-																Name
+																{t(
+																	"common:labels.name",
+																)}
 																{docSortBy ===
 																"name" ? (
 																	docSortDir ===
@@ -687,7 +689,9 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 																	)
 																}
 															>
-																Date Uploaded
+																{t(
+																	"knowledge:studio.dateUploaded",
+																)}
 																{docSortBy ===
 																"date" ? (
 																	docSortDir ===
@@ -711,7 +715,9 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 																	)
 																}
 															>
-																Size
+																{t(
+																	"knowledge:studio.size",
+																)}
 																{docSortBy ===
 																"size" ? (
 																	docSortDir ===
@@ -771,7 +777,9 @@ export const KnowledgeDetail = ({ knowledgeId }: KnowledgeDetailProps) => {
 																			variant="ghost"
 																			size="icon"
 																			className="size-9"
-																			title="Download"
+																			title={t(
+																				"common:fileExplorer.contextMenu.download",
+																			)}
 																			onClick={() =>
 																				handleDownload(
 																					d.fileName,

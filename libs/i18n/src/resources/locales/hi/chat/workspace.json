@@ -96,7 +96,8 @@
 		"permissionUpdateFailed": "अनुमति अपडेट करने में विफल",
 		"userRemoved": "उपयोगकर्ता सफलतापूर्वक हटाया गया",
 		"userRemoveFailed": "उपयोगकर्ता को हटाने में विफल",
-		"fetchPermissionsFailed": "उपयोगकर्ता अनुमतियां प्राप्त करने में विफल"
+		"fetchPermissionsFailed": "उपयोगकर्ता अनुमतियां प्राप्त करने में विफल",
+		"unknownError": "अज्ञात त्रुटि"
 	},
 	"breadcrumbs": {
 		"home": "होम",
@@ -138,7 +139,9 @@
 	},
 	"prompts": {
 		"noPrompts": "कोई प्रॉम्प्ट नहीं मिला",
-		"searchPlaceholder": "प्रॉम्प्ट खोजें..."
+		"searchPlaceholder": "प्रॉम्प्ट खोजें...",
+		"all": "सभी",
+		"general": "सामान्य"
 	},
 	"instructions": {
 		"expand": "विस्तृत करें",

@@ -51,5 +51,7 @@ it("shows a draft's notebook read-only until its room is prepared", () => {
 	render(<NotebookPreviewBlock content={CONTENT} room={roomWith("new")} />);
 
 	expect(screen.queryByText(/Notebook in/)).not.toBeInTheDocument();
-	expect(screen.getByRole("button", { name: "Run all" })).toBeDisabled();
+	expect(
+		screen.getByRole("button", { name: "blocks.runAll" }),
+	).toBeDisabled();
 });

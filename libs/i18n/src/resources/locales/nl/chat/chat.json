@@ -7,7 +7,9 @@
 	},
 	"attachments": {
 		"addFile": "Bestand toevoegen",
-		"removeFile": "Bestand verwijderen"
+		"removeFile": "Bestand verwijderen",
+		"view": "{{name}} bekijken",
+		"previewOf": "Voorbeeld van {{name}}"
 	},
 	"response": {
 		"agent": "Agent",
@@ -49,7 +51,8 @@
 		"copySuccess": "Succesvol gekopieerd naar klembord",
 		"noCopyContent": "Geen inhoud om te kopiëren",
 		"savedInRoom": "Opgeslagen in kamer als {{filePath}}",
-		"planStepRemoved": "Stap {{stepNumber}} succesvol uit plan verwijderd"
+		"planStepRemoved": "Stap {{stepNumber}} succesvol uit plan verwijderd",
+		"invalidImage": "Ongeldige afbeeldingsindeling"
 	},
 	"gracefulErrors": {
 		"errorDefault": "Kan verzoek niet verwerken. Controleer uw verbinding, kopieer uw bericht en vernieuw de pagina.",
@@ -58,5 +61,85 @@
 		"resourceExhausted": "Dit model heeft op dit moment een hoge belasting. Probeer een ander model.",
 		"inactivity": "Uw sessie is verlopen door inactiviteit. Vernieuw de pagina om de chat te blijven gebruiken.",
 		"modelNoLongerAvailable": "Dit model is niet meer beschikbaar. Kopieer/plak indien nodig het huidige gesprek in een nieuwe chat om door te gaan."
+	},
+	"download": {
+		"title": "Antwoord downloaden",
+		"description": "Kies de indeling voor je download:",
+		"success": "Antwoord gedownload als {{format}}",
+		"failed": "Kan antwoord niet downloaden",
+		"noContent": "Geen inhoud om te downloaden"
+	},
+	"blocks": {
+		"expand": "{{label}} uitvouwen",
+		"collapse": "{{label}} samenvouwen",
+		"collapsed": "{{label}} - Samengevouwen",
+		"run": "Uitvoeren",
+		"running": "Bezig",
+		"runScript": "Het script uitvoeren",
+		"runAll": "Alles uitvoeren",
+		"stop": "Stoppen",
+		"stopProgress": "Stoppen ({{current}} / {{total}})",
+		"code": "Code",
+		"notebook": "Notebook",
+		"output": "Uitvoer",
+		"error": "Fout",
+		"clear": "Wissen",
+		"successNoOutput": "Geslaagd (geen uitvoer)",
+		"edit": "Bewerken",
+		"preview": "Voorbeeld",
+		"editHtml": "HTML bewerken",
+		"switchToPreview": "Naar voorbeeld schakelen",
+		"htmlPreview": "HTML-voorbeeld",
+		"loadingPreview": "Voorbeeld laden...",
+		"mermaid": "Mermaid",
+		"table": "Tabel",
+		"exportToCsv": "Exporteren naar CSV",
+		"exportCsv": "CSV exporteren",
+		"downloadAsCsv": "Downloaden als CSV",
+		"copyNotebook": "Notebook kopiëren",
+		"saveNotebookToRoom": "Notebook opslaan in kamer",
+		"saveFile": "Bestand opslaan",
+		"saveFileFailed": "Kan bestand niet opslaan",
+		"addToNotebook": "Toevoegen aan notebook",
+		"selectNotebook": "Selecteer een notebook",
+		"selectOrCreateNotebook": "Selecteer of maak een notebook",
+		"searchNotebook": "Zoek of geef een notebook een naam…",
+		"noNotebooks": "Geen notebooks gevonden",
+		"createNotebookOption": "\"{{name}}\" maken",
+		"append": "Toevoegen",
+		"createdNotebook": "Notebook {{name}} gemaakt",
+		"appendedToNotebook": "Toegevoegd aan {{name}}"
+	},
+	"modelRouter": {
+		"answeredBy": "Beantwoord door <name>{{name}}</name>",
+		"routingDetails": "Routeringsdetails",
+		"classificationFallback": "Terugval bij classificatie",
+		"destinationFailover": "Failover van bestemming",
+		"routingCompleted": "Routering voltooid",
+		"sources": {
+			"classifier": "De classificatie heeft deze route gekozen",
+			"sticky": "Het vastgezette model van het gesprek is hergebruikt — classificatie overgeslagen",
+			"keyword": "Komt overeen met een trefwoord",
+			"default": "Het standaardmodel is gebruikt",
+			"keyword_fallback": "Classificatie mislukt — komt overeen met een terugvaltrefwoord",
+			"default_fallback": "Classificatie mislukt — het standaardmodel is gebruikt",
+			"weighted": "Gekozen via gewogen verdeling"
+		},
+		"classifierRequest": "Classificatieaanvraag",
+		"classifierResult": "Classificatieresultaat",
+		"destinationAttempts": "Bestemmingspogingen",
+		"nestedRouting": "Geneste routering",
+		"routerEngine": "Router-engine",
+		"respondingEngine": "Beantwoordende engine",
+		"selectedRoute": "Gekozen route",
+		"classifier": "Classificatie",
+		"classifierEngineId": "Engine-ID van classificatie",
+		"classifierModel": "Classificatiemodel",
+		"classifierStatus": "Classificatiestatus",
+		"classifierDuration": "Classificatieduur",
+		"durationMs": "{{duration}} ms",
+		"classifierError": "Classificatiefout",
+		"traceId": "Trace-ID",
+		"stickyHint": "Schakel het vastzetten van gesprekken uit in de routerinstellingen om elke aanvraag te classificeren."
 	}
 }

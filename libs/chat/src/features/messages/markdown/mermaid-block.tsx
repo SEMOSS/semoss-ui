@@ -102,7 +102,7 @@ export const MermaidBlock = ({ code, isLoading, room }: MermaidBlockProps) => {
 			const message =
 				error instanceof Error && error.message
 					? error.message
-					: "Error";
+					: t("blocks.error");
 
 			toast.error(message);
 		} finally {
@@ -117,7 +117,7 @@ export const MermaidBlock = ({ code, isLoading, room }: MermaidBlockProps) => {
 		<>
 			<div className="relative overflow-hidden rounded-md border border-border bg-background">
 				<BlockHeader
-					label="Mermaid"
+					label={t("blocks.mermaid")}
 					isCollapsed={isCollapsed}
 					onToggleCollapse={() => setIsCollapsed((prev) => !prev)}
 					isCollapseDisabled={!code}
@@ -194,7 +194,7 @@ export const MermaidBlock = ({ code, isLoading, room }: MermaidBlockProps) => {
 			<Dialog open={isFullViewOpen} onOpenChange={setIsFullViewOpen}>
 				<DialogContent className="h-dvh max-h-dvh w-dvw max-w-dvw grid-rows-[auto_1fr] overflow-hidden rounded-none border-0 p-3 sm:w-dvw sm:max-w-dvw">
 					<DialogHeader>
-						<DialogTitle>Mermaid</DialogTitle>
+						<DialogTitle>{t("blocks.mermaid")}</DialogTitle>
 					</DialogHeader>
 					<div className="relative h-full min-h-0 overflow-auto p-4 [&>div>svg]:h-auto [&>div>svg]:w-full">
 						{svg && (

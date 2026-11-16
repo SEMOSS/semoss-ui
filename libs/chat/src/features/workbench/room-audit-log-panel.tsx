@@ -97,7 +97,9 @@ const RoomAuditLogPanel = () => {
 		} catch (error) {
 			setLogs([]);
 			setTotalCount(0);
-			toast.error(`Error fetching logs: ${error}`);
+			toast.error(
+				t("auditlog:page.errorFetching", { error: String(error) }),
+			);
 			console.error("Error fetching room logs:", error);
 		} finally {
 			setIsLoading(false);
@@ -127,7 +129,9 @@ const RoomAuditLogPanel = () => {
 				throw new Error(`API Error: ${output}`);
 			await download(insightId, output as unknown as string);
 		} catch (error) {
-			toast.error(`Error exporting logs: ${error}`);
+			toast.error(
+				t("auditlog:page.errorExporting", { error: String(error) }),
+			);
 			console.error("Error exporting room logs:", error);
 		}
 	};

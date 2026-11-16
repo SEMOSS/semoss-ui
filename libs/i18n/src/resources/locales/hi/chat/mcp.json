@@ -35,7 +35,9 @@
 		"selectField": "{{field}} चुनें",
 		"enterField": "{{field}} दर्ज करें",
 		"collapseField": "फ़ील्ड संकुचित करें",
-		"expandField": "फ़ील्ड विस्तार करें"
+		"expandField": "फ़ील्ड विस्तार करें",
+		"apply": "लागू करें",
+		"reset": "रीसेट करें"
 	},
 	"messages": {
 		"selectKnowledgeSource": "कृपया एक ज्ञान भंडार चुनें",

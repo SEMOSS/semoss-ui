@@ -68,7 +68,10 @@ export const AgentEdit = ({ workspaceId }: AgentEditProps) => {
 		onError: (_d, e) => {
 			toast.error(
 				t("workspace:edit.failedToLoad", {
-					error: getErrorMessage(e, "Unknown error"),
+					error: getErrorMessage(
+						e,
+						t("workspace:messages.unknownError"),
+					),
 				}),
 			);
 		},

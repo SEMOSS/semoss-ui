@@ -107,5 +107,11 @@
 		"showMore": "Show more ({{remaining}} remaining)",
 		"showLess": "Show less",
 		"showFullValue": "Show full value"
+	},
+	"view": {
+		"frameTitle": "Tool",
+		"noTool": "No Tool",
+		"submitAnswersError": "Unable to submit these answers.",
+		"invalidInputRequest": "The assistant sent an invalid input request and it cannot be displayed."
 	}
 }

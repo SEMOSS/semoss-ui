@@ -4,7 +4,8 @@
 	"nav": {
 		"newChat": {
 			"label": "New",
-			"tooltip": "New Chat - Start a fresh conversation anytime."
+			"tooltip": "New Chat - Start a fresh conversation anytime.",
+			"ariaLabel": "New Chat"
 		},
 		"agents": {
 			"label": "Agents",
@@ -21,7 +22,9 @@
 		},
 		"promptLibrary": {
 			"tooltip": "Prompt Library - Browse, create and use saved prompts."
-		}
+		},
+		"goHome": "Go Home",
+		"help": "Help"
 	},
 	"buckets": {
 		"favorites": "Favorites",
@@ -109,7 +112,11 @@
 		"word": "Word document",
 		"pdf": "PDF document",
 		"success": "Conversation downloaded as {{format}}",
-		"failed": "Could not download the conversation"
+		"failed": "Could not download the conversation",
+		"noContent": "No conversation content to download",
+		"noResponse": "No response received from server",
+		"generateFailed": "Failed to generate {{format}} file",
+		"generateFailedWithType": "Failed to generate {{format}} file. Operation type: {{operationType}}"
 	},
 	"chats": "Chats",
 	"view": {

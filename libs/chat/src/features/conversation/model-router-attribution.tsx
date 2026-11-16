@@ -1,4 +1,5 @@
 import { ChevronDown } from "lucide-react";
+import { Trans, useTranslation } from "@semoss/i18n";
 import {
 	Badge,
 	Button,
@@ -16,16 +17,19 @@ interface ModelRouterAttributionProps {
 	routing?: ModelRouting;
 }
 
-/** How the router picked its route, by the trace's `selection_source`. */
-const SOURCES: Record<string, string> = {
-	classifier: "Classifier selected this route",
-	sticky: "Reused the conversation's pinned model — classifier skipped",
-	keyword: "Matched a keyword",
-	default: "Used the default model",
-	keyword_fallback: "Classification failed — matched a fallback keyword",
-	default_fallback: "Classification failed — used the default model",
-	weighted: "Selected by weighted distribution",
-};
+/**
+ * The trace's `selection_source` values that have a description, each under
+ * `modelRouter.sources.<value>` in the chat namespace.
+ */
+const SOURCES = new Set([
+	"classifier",
+	"sticky",
+	"keyword",
+	"default",
+	"keyword_fallback",
+	"default_fallback",
+	"weighted",
+]);
 
 /**
  * Names the model that answered a routed response, with collapsible routing
@@ -35,6 +39,7 @@ const SOURCES: Record<string, string> = {
 export const ModelRouterAttribution = ({
 	routing,
 }: ModelRouterAttributionProps) => {
+	const { t } = useTranslation("chat");
 	if (
 		!routing ||
 		typeof routing.routed_engine_id !== "string" ||
@@ -51,18 +56,31 @@ export const ModelRouterAttribution = ({
 		trace?.classifier_status === "invalid_choice";
 	// JSON payloads, each shown in its own scrollable block
 	const details = [
-		{ label: "Classifier request", value: trace?.classifier_request },
-		{ label: "Classifier result", value: trace?.classifier_response },
-		{ label: "Destination attempts", value: trace?.attempts },
-		{ label: "Nested routing", value: trace?.downstream },
+		{
+			label: t("modelRouter.classifierRequest"),
+			value: trace?.classifier_request,
+		},
+		{
+			label: t("modelRouter.classifierResult"),
+			value: trace?.classifier_response,
+		},
+		{
+			label: t("modelRouter.destinationAttempts"),
+			value: trace?.attempts,
+		},
+		{ label: t("modelRouter.nestedRouting"), value: trace?.downstream },
 	].filter((detail) => detail.value !== undefined);
 	return (
 		<div className="min-w-0 space-y-2">
 			<P className="wrap-anywhere text-base text-muted-foreground">
-				Answered by{" "}
-				<span className="font-medium text-foreground">
-					{name || routing.routed_engine_id}
-				</span>
+				<Trans
+					t={t}
+					i18nKey="modelRouter.answeredBy"
+					values={{ name: name || routing.routed_engine_id }}
+					components={{
+						name: <span className="font-medium text-foreground" />,
+					}}
+				/>
 				{routing.routed_route_name
 					? ` · ${routing.routed_route_name}`
 					: ""}
@@ -80,13 +98,13 @@ export const ModelRouterAttribution = ({
 								aria-hidden="true"
 								className="size-4 shrink-0"
 							/>
-							Routing details
+							{t("modelRouter.routingDetails")}
 							{hasClassificationFailure && (
 								<Badge
 									variant="outline"
 									className="border-warning/50 text-warning"
 								>
-									Classification fallback
+									{t("modelRouter.classificationFallback")}
 								</Badge>
 							)}
 							{trace.fallback_used && (
@@ -94,46 +112,68 @@ export const ModelRouterAttribution = ({
 									variant="outline"
 									className="border-warning/50 text-warning"
 								>
-									Destination failover
+									{t("modelRouter.destinationFailover")}
 								</Badge>
 							)}
 						</Button>
 					</CollapsibleTrigger>
 					<CollapsibleContent className="min-w-0 space-y-4 rounded-md border border-border p-4">
 						<P className="text-base">
-							{SOURCES[trace.selection_source || ""] ||
-								trace.selection_source ||
-								"Routing completed"}
+							{trace.selection_source &&
+							SOURCES.has(trace.selection_source)
+								? t(
+										`modelRouter.sources.${trace.selection_source}`,
+									)
+								: trace.selection_source ||
+									t("modelRouter.routingCompleted")}
 						</P>
 						<dl className="grid min-w-0 gap-2 text-base sm:grid-cols-2">
 							{[
-								["Router engine", routing.router_engine_id],
-								["Responding engine", routing.routed_engine_id],
 								[
-									"Selected route",
+									t("modelRouter.routerEngine"),
+									routing.router_engine_id,
+								],
+								[
+									t("modelRouter.respondingEngine"),
+									routing.routed_engine_id,
+								],
+								[
+									t("modelRouter.selectedRoute"),
 									trace.selected_route_name ||
 										routing.routed_route_name,
 								],
 								[
-									"Classifier",
+									t("modelRouter.classifier"),
 									trace.classifier_engine_name ||
 										trace.classifier_engine_id,
 								],
 								[
-									"Classifier engine ID",
+									t("modelRouter.classifierEngineId"),
 									trace.classifier_engine_id,
 								],
-								["Classifier model", trace.classifier_model],
-								["Classifier status", trace.classifier_status],
 								[
-									"Classifier duration",
+									t("modelRouter.classifierModel"),
+									trace.classifier_model,
+								],
+								[
+									t("modelRouter.classifierStatus"),
+									trace.classifier_status,
+								],
+								[
+									t("modelRouter.classifierDuration"),
 									typeof trace.classifier_duration_ms ===
 									"number"
-										? `${trace.classifier_duration_ms} ms`
+										? t("modelRouter.durationMs", {
+												duration:
+													trace.classifier_duration_ms,
+											})
 										: undefined,
 								],
-								["Classifier error", trace.classifier_error],
-								["Trace ID", trace.trace_id],
+								[
+									t("modelRouter.classifierError"),
+									trace.classifier_error,
+								],
+								[t("modelRouter.traceId"), trace.trace_id],
 							]
 								.filter(([, value]) => value !== undefined)
 								.map(([label, value]) => (
@@ -169,8 +209,7 @@ export const ModelRouterAttribution = ({
 						))}
 						{trace.classifier_status === "skipped_sticky" && (
 							<Muted className="text-base">
-								Turn off conversation pinning in the router
-								settings to classify each request.
+								{t("modelRouter.stickyHint")}
 							</Muted>
 						)}
 					</CollapsibleContent>

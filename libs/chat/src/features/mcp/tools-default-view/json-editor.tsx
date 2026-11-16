@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { Button, Textarea } from "@semoss/ui/next";
 
 /** Props for {@link JSONEditor}. */
@@ -17,6 +18,7 @@ interface JSONEditorProps {
  * Reset puts the current value back.
  */
 export const JSONEditor = ({ value, onChange, disabled }: JSONEditorProps) => {
+	const { t } = useTranslation("mcp");
 	// The value as the user is editing it
 	const [text, setText] = useState(() => {
 		try {
@@ -66,7 +68,7 @@ export const JSONEditor = ({ value, onChange, disabled }: JSONEditorProps) => {
 							}
 						}}
 					>
-						Apply
+						{t("tools.apply")}
 					</Button>
 					<Button
 						type="button"
@@ -81,7 +83,7 @@ export const JSONEditor = ({ value, onChange, disabled }: JSONEditorProps) => {
 							}
 						}}
 					>
-						Reset
+						{t("tools.reset")}
 					</Button>
 				</div>
 			)}

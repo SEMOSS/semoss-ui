@@ -33,7 +33,8 @@
 		"noDescription": "Aucune description",
 		"noLibrariesFound": "Aucune bibliothèque de documents trouvée correspondant à vos critères.",
 		"loadingDocuments": "Chargement des documents…",
-		"noDocuments": "Aucun document trouvé."
+		"noDocuments": "Aucun document trouvé.",
+		"untitled": "Sans titre"
 	},
 	"documents": {
 		"title": "Documents"
@@ -92,6 +93,8 @@
 		"documentCount": "Documents intégrés : {{count}}",
 		"previewError": "Impossible de charger l’aperçu.",
 		"previewUnavailable": "L’aperçu n’est pas disponible pour ce type de fichier.",
-		"removeDescription": "Retirer {{name}} de cette source de connaissances ?"
+		"removeDescription": "Retirer {{name}} de cette source de connaissances ?",
+		"dateUploaded": "Date d'importation",
+		"size": "Taille"
 	}
 }

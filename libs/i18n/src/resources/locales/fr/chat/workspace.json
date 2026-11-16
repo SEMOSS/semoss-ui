@@ -96,7 +96,8 @@
 		"permissionUpdateFailed": "Échec de la mise à jour de la permission",
 		"userRemoved": "Utilisateur supprimé avec succès",
 		"userRemoveFailed": "Échec de la suppression de l'utilisateur",
-		"fetchPermissionsFailed": "Échec de la récupération des permissions utilisateur"
+		"fetchPermissionsFailed": "Échec de la récupération des permissions utilisateur",
+		"unknownError": "Erreur inconnue"
 	},
 	"breadcrumbs": {
 		"home": "Accueil",
@@ -138,7 +139,9 @@
 	},
 	"prompts": {
 		"noPrompts": "Aucune invite trouvée",
-		"searchPlaceholder": "Rechercher des invites..."
+		"searchPlaceholder": "Rechercher des invites...",
+		"all": "Tous",
+		"general": "Général"
 	},
 	"instructions": {
 		"expand": "Agrandir",

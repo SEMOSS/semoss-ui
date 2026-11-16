@@ -4,7 +4,8 @@
 	"nav": {
 		"newChat": {
 			"label": "Nieuw",
-			"tooltip": "Nieuwe chat - Begin op elk moment een nieuw gesprek."
+			"tooltip": "Nieuwe chat - Begin op elk moment een nieuw gesprek.",
+			"ariaLabel": "Nieuwe chat"
 		},
 		"agents": {
 			"label": "Agents",
@@ -21,7 +22,9 @@
 		},
 		"promptLibrary": {
 			"tooltip": "Promptbibliotheek - Blader door, maak en gebruik opgeslagen prompts."
-		}
+		},
+		"goHome": "Naar startpagina",
+		"help": "Help"
 	},
 	"buckets": {
 		"favorites": "Favorieten",
@@ -108,7 +111,11 @@
 		"word": "Word-document",
 		"pdf": "PDF-document",
 		"success": "Gesprek gedownload als {{format}}",
-		"failed": "Kan het gesprek niet downloaden"
+		"failed": "Kan het gesprek niet downloaden",
+		"noContent": "Geen gespreksinhoud om te downloaden",
+		"noResponse": "Geen antwoord ontvangen van de server",
+		"generateFailed": "Kan {{format}}-bestand niet genereren",
+		"generateFailedWithType": "Kan {{format}}-bestand niet genereren. Bewerkingstype: {{operationType}}"
 	},
 	"chats": "Chats",
 	"view": {

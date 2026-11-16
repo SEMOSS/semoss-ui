@@ -4,7 +4,8 @@
 	"nav": {
 		"newChat": {
 			"label": "新規",
-			"tooltip": "新規チャット - いつでも新しい会話を開始できます。"
+			"tooltip": "新規チャット - いつでも新しい会話を開始できます。",
+			"ariaLabel": "新規チャット"
 		},
 		"agents": {
 			"label": "エージェント",
@@ -21,7 +22,9 @@
 		},
 		"promptLibrary": {
 			"tooltip": "プロンプトライブラリ - 保存したプロンプトを閲覧、作成、使用します。"
-		}
+		},
+		"goHome": "ホームに移動",
+		"help": "ヘルプ"
 	},
 	"buckets": {
 		"favorites": "お気に入り",
@@ -108,7 +111,11 @@
 		"word": "Word 文書",
 		"pdf": "PDF 文書",
 		"success": "会話を {{format}} としてダウンロードしました",
-		"failed": "会話をダウンロードできませんでした"
+		"failed": "会話をダウンロードできませんでした",
+		"noContent": "ダウンロードする会話の内容がありません",
+		"noResponse": "サーバーから応答がありませんでした",
+		"generateFailed": "{{format}} ファイルを生成できませんでした",
+		"generateFailedWithType": "{{format}} ファイルを生成できませんでした。操作の種類: {{operationType}}"
 	},
 	"chats": "チャット",
 	"view": {

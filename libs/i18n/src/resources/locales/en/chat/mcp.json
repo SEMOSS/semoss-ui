@@ -35,7 +35,9 @@
 		"selectField": "Select {{field}}",
 		"enterField": "Enter {{field}}",
 		"collapseField": "Collapse field",
-		"expandField": "Expand field"
+		"expandField": "Expand field",
+		"apply": "Apply",
+		"reset": "Reset"
 	},
 	"messages": {
 		"selectKnowledgeSource": "Please select a knowledge store",

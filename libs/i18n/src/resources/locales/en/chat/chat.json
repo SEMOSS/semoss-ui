@@ -7,7 +7,9 @@
 	},
 	"attachments": {
 		"addFile": "Add File",
-		"removeFile": "Remove File"
+		"removeFile": "Remove File",
+		"view": "View {{name}}",
+		"previewOf": "Preview of {{name}}"
 	},
 	"response": {
 		"agent": "Agent",
@@ -49,7 +51,8 @@
 		"copySuccess": "Successfully copied to clipboard",
 		"noCopyContent": "No content to copy",
 		"savedInRoom": "Saved in room as {{filePath}}",
-		"planStepRemoved": "Successfully removed step {{stepNumber}} from plan"
+		"planStepRemoved": "Successfully removed step {{stepNumber}} from plan",
+		"invalidImage": "Invalid image format"
 	},
 	"gracefulErrors": {
 		"errorDefault": "Unable to process request. Please check your connection, copy your message, and refresh.",
@@ -58,5 +61,85 @@
 		"resourceExhausted": "This model is experiencing high load right now. Please try a different model.",
 		"inactivity": "Your session has expired due to inactivity. Please refresh the page to continue using the chat.",
 		"modelNoLongerAvailable": "This model is no longer available. If necessary, copy/paste the current conversation into a new chat to continue."
+	},
+	"download": {
+		"title": "Download Response",
+		"description": "Choose the format for your download:",
+		"success": "Response downloaded successfully as {{format}}",
+		"failed": "Failed to download response",
+		"noContent": "No content to download"
+	},
+	"blocks": {
+		"expand": "Expand {{label}}",
+		"collapse": "Collapse {{label}}",
+		"collapsed": "{{label}} - Collapsed",
+		"run": "Run",
+		"running": "Running",
+		"runScript": "Run the script",
+		"runAll": "Run all",
+		"stop": "Stop",
+		"stopProgress": "Stop ({{current}} / {{total}})",
+		"code": "Code",
+		"notebook": "Notebook",
+		"output": "Output",
+		"error": "Error",
+		"clear": "Clear",
+		"successNoOutput": "Success (no output)",
+		"edit": "Edit",
+		"preview": "Preview",
+		"editHtml": "Edit HTML",
+		"switchToPreview": "Switch to preview",
+		"htmlPreview": "HTML Preview",
+		"loadingPreview": "Loading Preview...",
+		"mermaid": "Mermaid",
+		"table": "Table",
+		"exportToCsv": "Export to CSV",
+		"exportCsv": "Export CSV",
+		"downloadAsCsv": "Download as CSV",
+		"copyNotebook": "Copy notebook",
+		"saveNotebookToRoom": "Save notebook to room",
+		"saveFile": "Save file",
+		"saveFileFailed": "Failed to save file",
+		"addToNotebook": "Add to Notebook",
+		"selectNotebook": "Select a notebook",
+		"selectOrCreateNotebook": "Select or create a notebook",
+		"searchNotebook": "Search or name a notebook…",
+		"noNotebooks": "No notebooks found",
+		"createNotebookOption": "Create \"{{name}}\"",
+		"append": "Append",
+		"createdNotebook": "Created notebook {{name}}",
+		"appendedToNotebook": "Appended to {{name}}"
+	},
+	"modelRouter": {
+		"answeredBy": "Answered by <name>{{name}}</name>",
+		"routingDetails": "Routing details",
+		"classificationFallback": "Classification fallback",
+		"destinationFailover": "Destination failover",
+		"routingCompleted": "Routing completed",
+		"sources": {
+			"classifier": "Classifier selected this route",
+			"sticky": "Reused the conversation's pinned model — classifier skipped",
+			"keyword": "Matched a keyword",
+			"default": "Used the default model",
+			"keyword_fallback": "Classification failed — matched a fallback keyword",
+			"default_fallback": "Classification failed — used the default model",
+			"weighted": "Selected by weighted distribution"
+		},
+		"classifierRequest": "Classifier request",
+		"classifierResult": "Classifier result",
+		"destinationAttempts": "Destination attempts",
+		"nestedRouting": "Nested routing",
+		"routerEngine": "Router engine",
+		"respondingEngine": "Responding engine",
+		"selectedRoute": "Selected route",
+		"classifier": "Classifier",
+		"classifierEngineId": "Classifier engine ID",
+		"classifierModel": "Classifier model",
+		"classifierStatus": "Classifier status",
+		"classifierDuration": "Classifier duration",
+		"durationMs": "{{duration}} ms",
+		"classifierError": "Classifier error",
+		"traceId": "Trace ID",
+		"stickyHint": "Turn off conversation pinning in the router settings to classify each request."
 	}
 }

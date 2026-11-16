@@ -492,7 +492,7 @@ export class ChatStore {
 	renameRoom = async (roomId: string, name: string): Promise<void> => {
 		const trimmed = name.trim();
 		if (!trimmed) {
-			throw new Error("Room name cannot be empty");
+			throw new Error(getI18n().t("sidebar:toasts.roomNameEmpty"));
 		}
 		await Session.insight.withInsight((id) =>
 			renameUserRoom(id, roomId, trimmed),
@@ -594,7 +594,7 @@ export class ChatStore {
 			.join("\n\n---\n\n");
 
 		if (!formattedMessages) {
-			throw new Error("No conversation content to download");
+			throw new Error(getI18n().t("sidebar:download.noContent"));
 		}
 
 		const appName = this._theme.name || "Chat";
@@ -609,14 +609,17 @@ export class ChatStore {
 		);
 
 		if (!downloadResponse?.pixelReturn?.[0]) {
-			throw new Error("No response received from server");
+			throw new Error(getI18n().t("sidebar:download.noResponse"));
 		}
 
 		const { operationType, output } = downloadResponse.pixelReturn[0];
 
 		if (!operationType?.includes("FILE_DOWNLOAD")) {
 			throw new Error(
-				`Failed to generate ${format.toUpperCase()} file. Operation type: ${operationType}`,
+				getI18n().t("sidebar:download.generateFailedWithType", {
+					format: format.toUpperCase(),
+					operationType,
+				}),
 			);
 		}
 
@@ -646,7 +649,7 @@ export class ChatStore {
 		// If the room has no messages or just the placeholder, it means it is a valid room but it is empty, so we can consider it as not found and throw an error
 		// This happens if CreateRoom succeeds but the first AskPlayground call fails
 		if (!room.tail || room.tail.id === "ROOT_PLACEHOLDER_ID") {
-			throw new Error("Room not found");
+			throw new Error(getI18n().t("room:errors.roomNotFound"));
 		}
 
 		this.setCachedRoom(roomId, room);

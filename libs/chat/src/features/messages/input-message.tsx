@@ -154,7 +154,13 @@ export const InputMessage = ({ room, message }: InputMessageProps) => {
 														}
 													}
 												}}
-												aria-label={`View ${p.mediaInfo.fileName}`}
+												aria-label={t(
+													"attachments.view",
+													{
+														name: p.mediaInfo
+															.fileName,
+													},
+												)}
 											>
 												{p.mediaInfo.base64Data &&
 												(p.mediaInfo.mimeType?.startsWith(
@@ -294,10 +300,12 @@ export const InputMessage = ({ room, message }: InputMessageProps) => {
 							className="flex-1"
 							data={`data:application/pdf;base64,${previewPdf.base64Data}`}
 							type="application/pdf"
-							aria-label={`Preview of ${previewPdf.fileName}`}
+							aria-label={t("attachments.previewOf", {
+								name: previewPdf.fileName,
+							})}
 						>
 							<p className="p-4 text-muted-foreground text-sm">
-								Your browser doesn't support PDF viewing.
+								{t("common:fileExplorer.pdfNotSupported")}
 							</p>
 						</object>
 					)}

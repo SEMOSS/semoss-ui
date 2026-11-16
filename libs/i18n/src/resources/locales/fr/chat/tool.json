@@ -107,5 +107,11 @@
 		"showMore": "Afficher plus ({{remaining}} restants)",
 		"showLess": "Afficher moins",
 		"showFullValue": "Afficher la valeur complète"
+	},
+	"view": {
+		"frameTitle": "Outil",
+		"noTool": "Aucun outil",
+		"submitAnswersError": "Impossible d'envoyer ces réponses.",
+		"invalidInputRequest": "L'assistant a envoyé une demande de saisie non valide qui ne peut pas être affichée."
 	}
 }

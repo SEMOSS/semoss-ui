@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { isRequestUserInputAction, parseUserInputRequest } from "@semoss/sdk";
 import { Env, type MCPToolRequest, usePixel } from "@semoss/sdk/react";
 import { isToolViewUri, useToolView } from "@semoss/shared";
@@ -80,6 +81,7 @@ interface ToolsViewProps {
  * The call is read from the room by id, so the view follows it as it changes.
  */
 export const ToolsView = ({ room, app, message, toolId }: ToolsViewProps) => {
+	const { t } = useTranslation("tool");
 	const { platformUrl } = useChatConfig();
 	const liveTool = useRoomSelector(room, (current) =>
 		current.getTool(toolId),
@@ -344,7 +346,7 @@ export const ToolsView = ({ room, app, message, toolId }: ToolsViewProps) => {
 			{!!url && !isLoading && (
 				<iframe
 					className="h-full w-full border-none"
-					title="Tool"
+					title={t("view.frameTitle")}
 					ref={iframeRef}
 					src={url}
 					onLoad={handleIframeLoad}
@@ -377,7 +379,9 @@ export const ToolsView = ({ room, app, message, toolId }: ToolsViewProps) => {
 											toast.error(
 												getErrorMessage(
 													error,
-													"Unable to submit these answers.",
+													t(
+														"view.submitAnswersError",
+													),
 												),
 											);
 										}
@@ -386,8 +390,7 @@ export const ToolsView = ({ room, app, message, toolId }: ToolsViewProps) => {
 							</div>
 						) : (
 							<div className="p-3 text-destructive text-sm">
-								The assistant sent an invalid input request and
-								it cannot be displayed.
+								{t("view.invalidInputRequest")}
 							</div>
 						);
 					})()

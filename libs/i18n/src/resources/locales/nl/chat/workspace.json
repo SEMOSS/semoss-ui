@@ -96,7 +96,8 @@
 		"permissionUpdateFailed": "Bijwerken van rechten mislukt",
 		"userRemoved": "Gebruiker succesvol verwijderd",
 		"userRemoveFailed": "Verwijderen van gebruiker mislukt",
-		"fetchPermissionsFailed": "Ophalen van gebruikersrechten mislukt"
+		"fetchPermissionsFailed": "Ophalen van gebruikersrechten mislukt",
+		"unknownError": "Onbekende fout"
 	},
 	"breadcrumbs": {
 		"home": "Home",
@@ -138,7 +139,9 @@
 	},
 	"prompts": {
 		"noPrompts": "Geen prompts gevonden",
-		"searchPlaceholder": "Prompts zoeken..."
+		"searchPlaceholder": "Prompts zoeken...",
+		"all": "Alle",
+		"general": "Algemeen"
 	},
 	"instructions": {
 		"expand": "Uitvouwen",

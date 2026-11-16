@@ -142,7 +142,9 @@ export const CodePreviewBlock = ({
 			const formatted = formatExecuteOutput(value, opType);
 			const isError = opType === "ERROR" || opType === "INVALID_SYNTAX";
 			const output =
-				!formatted && !isError ? "Success (no output)" : formatted;
+				!formatted && !isError
+					? t("blocks.successNoOutput")
+					: formatted;
 
 			setExecuteResult({
 				output,
@@ -155,7 +157,7 @@ export const CodePreviewBlock = ({
 			const message =
 				error instanceof Error && error.message
 					? error.message
-					: "Error";
+					: t("blocks.error");
 			setExecuteResult({
 				output: message,
 				logs: [],
@@ -192,10 +194,14 @@ export const CodePreviewBlock = ({
 									) : (
 										<PlayIcon className="size-3" />
 									)}
-									{isExecuting ? "Running" : "Run"}
+									{isExecuting
+										? t("blocks.running")
+										: t("blocks.run")}
 								</Button>
 							</TooltipTrigger>
-							<TooltipContent>Run the script</TooltipContent>
+							<TooltipContent>
+								{t("blocks.runScript")}
+							</TooltipContent>
 						</Tooltip>
 					)}
 
@@ -217,23 +223,25 @@ export const CodePreviewBlock = ({
 									</DropdownMenuTrigger>
 								</TooltipTrigger>
 								<TooltipContent side="bottom">
-									Save
+									{t("common:buttons.save")}
 								</TooltipContent>
 							</Tooltip>
 							<DropdownMenuContent align="end">
-								<DropdownMenuLabel>Save</DropdownMenuLabel>
+								<DropdownMenuLabel>
+									{t("common:buttons.save")}
+								</DropdownMenuLabel>
 								<DropdownMenuSeparator />
 								<DropdownMenuItem
 									onClick={handleOpenSaveCodeDialog}
 								>
 									<FileCodeIcon />
-									Code
+									{t("blocks.code")}
 								</DropdownMenuItem>
 								<DropdownMenuItem
 									onClick={() => setIsAddToNotebookOpen(true)}
 								>
 									<NotebookPenIcon />
-									Notebook
+									{t("blocks.notebook")}
 								</DropdownMenuItem>
 							</DropdownMenuContent>
 						</DropdownMenu>
@@ -250,7 +258,9 @@ export const CodePreviewBlock = ({
 									<SaveIcon className="size-3" />
 								</Button>
 							</TooltipTrigger>
-							<TooltipContent side="bottom">Save</TooltipContent>
+							<TooltipContent side="bottom">
+								{t("common:buttons.save")}
+							</TooltipContent>
 						</Tooltip>
 					)}
 					<Tooltip>
@@ -273,7 +283,7 @@ export const CodePreviewBlock = ({
 								<CopyIcon className="size-3" />
 							</Button>
 						</TooltipTrigger>
-						<TooltipContent>Copy</TooltipContent>
+						<TooltipContent>{t("response.copy")}</TooltipContent>
 					</Tooltip>
 					<Tooltip>
 						<TooltipTrigger asChild>
@@ -287,7 +297,9 @@ export const CodePreviewBlock = ({
 								<ExpandIcon className="size-3" />
 							</Button>
 						</TooltipTrigger>
-						<TooltipContent side="bottom">Full view</TooltipContent>
+						<TooltipContent side="bottom">
+							{t("response.fullView")}
+						</TooltipContent>
 					</Tooltip>
 				</BlockHeader>
 				{!isCollapsed && (
@@ -308,10 +320,10 @@ export const CodePreviewBlock = ({
 						<div className="flex items-center justify-between gap-2 border-border border-b px-3 py-2 text-muted-foreground text-xs">
 							<span>
 								{executeResult.pending
-									? "Running…"
+									? t("common:cellOutput.running")
 									: executeResult.isError
-										? "Error"
-										: "Output"}
+										? t("blocks.error")
+										: t("blocks.output")}
 							</span>
 							<Button
 								className="-my-1 -me-2 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
@@ -320,7 +332,7 @@ export const CodePreviewBlock = ({
 								disabled={isExecuting}
 								onClick={() => setExecuteResult(undefined)}
 							>
-								Clear
+								{t("blocks.clear")}
 							</Button>
 						</div>
 						<div className="max-h-96 overflow-auto">

@@ -93,7 +93,10 @@ export const AgentDetail = ({ workspaceId }: AgentDetailProps) => {
 		onError: (_d, e) => {
 			toast.error(
 				t("workspace:detail.failedToLoad", {
-					error: getErrorMessage(e, "Unknown error"),
+					error: getErrorMessage(
+						e,
+						t("workspace:messages.unknownError"),
+					),
 				}),
 			);
 		},

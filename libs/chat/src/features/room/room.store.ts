@@ -1003,7 +1003,10 @@ export class RoomStore {
 			console.error(e);
 			this.setIsLoading(false);
 
-			throw new Error((e as Error).message || "Error initializing room");
+			throw new Error(
+				(e as Error).message ||
+					getI18n()?.t("room:errors.initializeFailed"),
+			);
 		}
 	};
 
@@ -1086,7 +1089,8 @@ export class RoomStore {
 			this.setOptions(options);
 		} catch (e) {
 			throw new Error(
-				(e as Error).message || "Error updating room options",
+				(e as Error).message ||
+					getI18n()?.t("room:errors.updateOptionsFailed"),
 			);
 		}
 	};

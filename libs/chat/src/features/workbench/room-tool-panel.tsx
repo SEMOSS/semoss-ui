@@ -82,13 +82,14 @@ const RoomToolPanel = ({ id }: WorkbenchPanelProps) => {
 	const { config } = useWorkbenchPanel<RoomToolParams>(id);
 
 	const room = useRoom();
+	const { t } = useTranslation("tool");
 
 	useWorkbenchControl(id, RoomToolInlineControl);
 
 	// `app` is empty for server tools (provider-executed) -- ToolsView
 	// handles the routing internally.
 	if (!config?.message || !config?.toolId) {
-		return <div>No Tool</div>;
+		return <div>{t("view.noTool")}</div>;
 	}
 
 	return (

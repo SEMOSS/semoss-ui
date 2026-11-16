@@ -161,7 +161,7 @@ export const KnowledgeLibrary = () => {
 				item?.engine_display_name ||
 				item?.engine_name ||
 				item?.tag ||
-				"Untitled";
+				t("knowledge:messages.untitled");
 			acc.push({
 				name,
 				subheader: item.engine_name || "",

@@ -119,7 +119,11 @@
 	},
 	"errors": {
 		"createRoom": "Une erreur s'est produite lors de la création de la salle. Erreur : {{message}}",
-		"fileInUse": "Le(s) fichier(s) téléversé(s) est/sont actuellement utilisé(s) par un autre programme. Fermez le programme et retéléversez le(s) fichier(s) dans un nouveau chat."
+		"fileInUse": "Le(s) fichier(s) téléversé(s) est/sont actuellement utilisé(s) par un autre programme. Fermez le programme et retéléversez le(s) fichier(s) dans un nouveau chat.",
+		"processingChat": "Erreur lors du traitement du chat",
+		"roomNotFound": "Salle introuvable",
+		"initializeFailed": "Erreur lors de l'initialisation de la salle",
+		"updateOptionsFailed": "Erreur lors de la mise à jour des options de la salle"
 	},
 	"contextWindow": {
 		"descriptionLow": "Toutes les conversations ont une limite. Les conversations très longues finiront par faire oublier les messages précédents au modèle.",

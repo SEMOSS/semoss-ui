@@ -33,7 +33,8 @@
 		"noDescription": "No description",
 		"noLibrariesFound": "No document libraries found matching your criteria.",
 		"loadingDocuments": "Loading documents…",
-		"noDocuments": "No documents found."
+		"noDocuments": "No documents found.",
+		"untitled": "Untitled"
 	},
 	"documents": {
 		"title": "Documents"
@@ -92,6 +93,8 @@
 		"documentCount": "Embedded documents: {{count}}",
 		"previewError": "Failed to load preview.",
 		"previewUnavailable": "Preview is not available for this file type.",
-		"removeDescription": "Remove {{name}} from this knowledge source?"
+		"removeDescription": "Remove {{name}} from this knowledge source?",
+		"dateUploaded": "Date Uploaded",
+		"size": "Size"
 	}
 }

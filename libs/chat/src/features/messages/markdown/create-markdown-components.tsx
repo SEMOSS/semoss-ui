@@ -1,6 +1,7 @@
 import { Download } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
 import { useRef, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	type Code,
@@ -286,6 +287,7 @@ export const createMarkdownComponents = (
 	table: ({ className, ...props }) => {
 		const tableRef = useRef<HTMLTableElement>(null);
 		const [isCollapsed, setIsCollapsed] = useState(false);
+		const { t } = useTranslation("chat");
 
 		/** Download the table's cells as a CSV file. */
 		const handleExportCsv = () => {
@@ -309,7 +311,7 @@ export const createMarkdownComponents = (
 		return (
 			<div className="overflow-hidden rounded-md border border-border bg-background">
 				<BlockHeader
-					label="Table"
+					label={t("blocks.table")}
 					isCollapsed={isCollapsed}
 					onToggleCollapse={() => setIsCollapsed((v) => !v)}
 				>
@@ -320,15 +322,15 @@ export const createMarkdownComponents = (
 									className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
 									variant="ghost"
 									size="sm"
-									aria-label="Export to CSV"
+									aria-label={t("blocks.exportToCsv")}
 									onClick={handleExportCsv}
 								>
 									<Download className="size-3.5" />
-									Export CSV
+									{t("blocks.exportCsv")}
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent side="left">
-								Download as CSV
+								{t("blocks.downloadAsCsv")}
 							</TooltipContent>
 						</Tooltip>
 					)}

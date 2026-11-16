@@ -107,5 +107,11 @@
 		"showMore": "عرض المزيد ({{remaining}} متبقٍ)",
 		"showLess": "عرض أقل",
 		"showFullValue": "عرض القيمة كاملة"
+	},
+	"view": {
+		"frameTitle": "أداة",
+		"noTool": "لا توجد أداة",
+		"submitAnswersError": "تعذر إرسال هذه الإجابات.",
+		"invalidInputRequest": "أرسل المساعد طلب إدخال غير صالح ولا يمكن عرضه."
 	}
 }

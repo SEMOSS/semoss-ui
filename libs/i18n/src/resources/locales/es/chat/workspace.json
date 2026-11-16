@@ -96,7 +96,8 @@
 		"permissionUpdateFailed": "Error al actualizar el permiso",
 		"userRemoved": "Usuario eliminado exitosamente",
 		"userRemoveFailed": "Error al eliminar usuario",
-		"fetchPermissionsFailed": "Error al obtener permisos de usuario"
+		"fetchPermissionsFailed": "Error al obtener permisos de usuario",
+		"unknownError": "Error desconocido"
 	},
 	"breadcrumbs": {
 		"home": "Inicio",
@@ -138,7 +139,9 @@
 	},
 	"prompts": {
 		"noPrompts": "No se encontraron indicaciones",
-		"searchPlaceholder": "Buscar indicaciones..."
+		"searchPlaceholder": "Buscar indicaciones...",
+		"all": "Todos",
+		"general": "General"
 	},
 	"instructions": {
 		"expand": "Expandir",

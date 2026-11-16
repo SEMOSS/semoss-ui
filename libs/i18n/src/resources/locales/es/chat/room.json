@@ -115,7 +115,11 @@
 	},
 	"errors": {
 		"createRoom": "Ocurrió un error al crear la sala. Error: {{message}}",
-		"fileInUse": "El/los archivo(s) cargado(s) está(n) siendo usados por otro programa. Cierre el programa y vuelva a cargarlos en un nuevo chat."
+		"fileInUse": "El/los archivo(s) cargado(s) está(n) siendo usados por otro programa. Cierre el programa y vuelva a cargarlos en un nuevo chat.",
+		"processingChat": "Error al procesar el chat",
+		"roomNotFound": "No se encontró la sala",
+		"initializeFailed": "Error al inicializar la sala",
+		"updateOptionsFailed": "Error al actualizar las opciones de la sala"
 	},
 	"contextWindow": {
 		"descriptionLow": "Todas las conversaciones tienen un límite. Las conversaciones muy largas eventualmente harán que el modelo olvide mensajes anteriores.",

@@ -35,7 +35,9 @@
 		"selectField": "Selecteer {{field}}",
 		"enterField": "Voer {{field}} in",
 		"collapseField": "Veld samenvouwen",
-		"expandField": "Veld uitvouwen"
+		"expandField": "Veld uitvouwen",
+		"apply": "Toepassen",
+		"reset": "Herstellen"
 	},
 	"messages": {
 		"selectKnowledgeSource": "Selecteer een kennisopslag",

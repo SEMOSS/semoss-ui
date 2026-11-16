@@ -33,7 +33,8 @@
 		"noDescription": "कोई विवरण नहीं",
 		"noLibrariesFound": "आपके मानदंडों से मेल खाने वाली कोई दस्तावेज़ लाइब्रेरी नहीं मिली।",
 		"loadingDocuments": "दस्तावेज़ लोड हो रहे हैं…",
-		"noDocuments": "कोई दस्तावेज़ नहीं मिला।"
+		"noDocuments": "कोई दस्तावेज़ नहीं मिला।",
+		"untitled": "शीर्षक रहित"
 	},
 	"documents": {
 		"title": "दस्तावेज़"
@@ -92,6 +93,8 @@
 		"documentCount": "एम्बेड किए गए दस्तावेज़: {{count}}",
 		"previewError": "पूर्वावलोकन लोड नहीं हुआ।",
 		"previewUnavailable": "इस प्रकार की फ़ाइल का पूर्वावलोकन उपलब्ध नहीं है।",
-		"removeDescription": "इस ज्ञान स्रोत से {{name}} को हटाएँ?"
+		"removeDescription": "इस ज्ञान स्रोत से {{name}} को हटाएँ?",
+		"dateUploaded": "अपलोड की तारीख",
+		"size": "आकार"
 	}
 }

@@ -4,7 +4,8 @@
 	"nav": {
 		"newChat": {
 			"label": "Nouveau",
-			"tooltip": "Nouvelle discussion - Démarrez une nouvelle conversation à tout moment."
+			"tooltip": "Nouvelle discussion - Démarrez une nouvelle conversation à tout moment.",
+			"ariaLabel": "Nouveau chat"
 		},
 		"agents": {
 			"label": "Agents",
@@ -21,7 +22,9 @@
 		},
 		"promptLibrary": {
 			"tooltip": "Bibliothèque de prompts - Parcourez, créez et utilisez des prompts enregistrés."
-		}
+		},
+		"goHome": "Aller à l'accueil",
+		"help": "Aide"
 	},
 	"buckets": {
 		"favorites": "Favoris",
@@ -108,7 +111,11 @@
 		"word": "Document Word",
 		"pdf": "Document PDF",
 		"success": "Conversation téléchargée au format {{format}}",
-		"failed": "Impossible de télécharger la conversation"
+		"failed": "Impossible de télécharger la conversation",
+		"noContent": "Aucun contenu de conversation à télécharger",
+		"noResponse": "Aucune réponse reçue du serveur",
+		"generateFailed": "Impossible de générer le fichier {{format}}",
+		"generateFailedWithType": "Impossible de générer le fichier {{format}}. Type d'opération : {{operationType}}"
 	},
 	"chats": "Discussions",
 	"view": {

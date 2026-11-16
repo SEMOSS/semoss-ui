@@ -151,7 +151,7 @@ export const PromptLibraryDialog: React.FC<PromptLibraryDialogProps> = ({
 								onClick={() => setActiveTag(null)}
 								className={`rounded-full border px-2.5 py-0.5 text-xs transition-colors hover:bg-accent ${activeTag === null ? "border-primary bg-primary text-primary-foreground" : ""}`}
 							>
-								All
+								{t("prompts.all")}
 							</button>
 							{allTags.map((tag) => (
 								<button
@@ -175,14 +175,16 @@ export const PromptLibraryDialog: React.FC<PromptLibraryDialogProps> = ({
 				<ScrollArea className="min-h-0 flex-1 px-4 py-4 sm:px-6">
 					{groups.length === 0 ? (
 						<p className="py-12 text-center text-muted-foreground text-sm">
-							No prompts found.
+							{t("prompts.noPrompts")}
 						</p>
 					) : (
 						<div className="flex flex-col gap-6 pb-2">
 							{groups.map(([tag, groupPrompts]) => (
 								<div key={tag}>
 									<p className="mb-3 flex items-center gap-2 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-										{tag}
+										{tag === UNGROUPED
+											? t("prompts.general")
+											: tag}
 										<span className="font-normal normal-case tracking-normal">
 											({groupPrompts.length})
 										</span>

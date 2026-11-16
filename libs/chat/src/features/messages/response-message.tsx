@@ -270,11 +270,11 @@ export const ResponseMessage = ({
 		try {
 			await message.downloadResponse(format);
 			toast.success(
-				`Response downloaded successfully as ${format.toUpperCase()}`,
+				t("download.success", { format: format.toUpperCase() }),
 			);
 			setIsDownloadDialogOpen(false);
 		} catch (e: unknown) {
-			toast.error(getErrorMessage(e) || "Failed to download response");
+			toast.error(getErrorMessage(e) || t("download.failed"));
 		} finally {
 			setDownloadingFormat(null);
 		}
@@ -292,7 +292,7 @@ export const ResponseMessage = ({
 		try {
 			const mimeType = mediaPart.mediaInfo.mimeType;
 			if (!mimeType || !mimeType.startsWith("image/")) {
-				toast.error("Invalid image format");
+				toast.error(t("notifications.invalidImage"));
 				return;
 			}
 			const arr = decodeBase64ToBytes(mediaPart.mediaInfo.base64Data);
@@ -307,8 +307,12 @@ export const ResponseMessage = ({
 	};
 
 	const downloadFormats = [
-		{ value: "word", label: "Word Document", extension: ".docx" },
-		{ value: "pdf", label: "PDF Document", extension: ".pdf" },
+		{
+			value: "word",
+			label: t("sidebar:download.word"),
+			extension: ".docx",
+		},
+		{ value: "pdf", label: t("sidebar:download.pdf"), extension: ".pdf" },
 	] as const;
 
 	const toolsById = new Map(
@@ -414,7 +418,9 @@ export const ResponseMessage = ({
 										type="button"
 										className="w-fit cursor-zoom-in overflow-hidden rounded-lg border border-border"
 										onClick={handleClick}
-										aria-label={`View ${p.mediaInfo.fileName}`}
+										aria-label={t("attachments.view", {
+											name: p.mediaInfo.fileName,
+										})}
 									>
 										<img
 											className="max-h-120 max-w-full object-contain"
@@ -437,7 +443,9 @@ export const ResponseMessage = ({
 											type="button"
 											className="group relative flex size-22 cursor-pointer flex-col items-center justify-center gap-1 overflow-hidden rounded-md border border-border bg-muted"
 											onClick={handleClick}
-											aria-label={`View ${p.mediaInfo.fileName}`}
+											aria-label={t("attachments.view", {
+												name: p.mediaInfo.fileName,
+											})}
 										>
 											<Icon
 												className="size-8 shrink-0 text-muted-foreground"
@@ -815,9 +823,9 @@ export const ResponseMessage = ({
 					}}
 				>
 					<DialogHeader>
-						<DialogTitle>Download Response</DialogTitle>
+						<DialogTitle>{t("download.title")}</DialogTitle>
 						<DialogDescription>
-							Choose the format for your download:
+							{t("download.description")}
 						</DialogDescription>
 					</DialogHeader>
 					<div className="grid grid-cols-2 gap-3 py-4">
@@ -870,10 +878,12 @@ export const ResponseMessage = ({
 							className="flex-1"
 							data={`data:application/pdf;base64,${previewPdf.base64Data}`}
 							type="application/pdf"
-							aria-label={`Preview of ${previewPdf.fileName}`}
+							aria-label={t("attachments.previewOf", {
+								name: previewPdf.fileName,
+							})}
 						>
 							<p className="p-4 text-muted-foreground text-sm">
-								Your browser doesn't support PDF viewing.
+								{t("common:fileExplorer.pdfNotSupported")}
 							</p>
 						</object>
 					)}

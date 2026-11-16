@@ -1,5 +1,6 @@
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import type { ReactNode } from "react";
+import { useTranslation } from "@semoss/i18n";
 
 /** Props for {@link BlockHeader}. */
 interface BlockHeaderProps {
@@ -23,6 +24,8 @@ export const BlockHeader = ({
 	isCollapseDisabled,
 	children,
 }: BlockHeaderProps) => {
+	const { t } = useTranslation("chat");
+
 	return (
 		<div className="border-border border-b px-3 py-2 text-muted-foreground text-xs">
 			<div className="flex items-center justify-between gap-2">
@@ -31,8 +34,8 @@ export const BlockHeader = ({
 						type="button"
 						aria-label={
 							isCollapsed
-								? `Expand ${label}`
-								: `Collapse ${label}`
+								? t("blocks.expand", { label })
+								: t("blocks.collapse", { label })
 						}
 						className="inline-flex size-5 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:text-foreground"
 						disabled={isCollapseDisabled}
@@ -45,8 +48,7 @@ export const BlockHeader = ({
 						)}
 					</button>
 					<span>
-						{label}
-						{isCollapsed ? " - Collapsed" : ""}
+						{isCollapsed ? t("blocks.collapsed", { label }) : label}
 					</span>
 				</div>
 				{children && (

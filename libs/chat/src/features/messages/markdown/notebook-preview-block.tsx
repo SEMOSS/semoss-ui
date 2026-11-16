@@ -104,7 +104,7 @@ export const NotebookPreviewBlock = ({
 		<>
 			<div className="relative overflow-hidden rounded-md border border-border bg-background">
 				<BlockHeader
-					label="Notebook"
+					label={t("blocks.notebook")}
 					isCollapsed={isCollapsed}
 					onToggleCollapse={() => setIsCollapsed((prev) => !prev)}
 					isCollapseDisabled={!content}
@@ -118,20 +118,27 @@ export const NotebookPreviewBlock = ({
 									size="sm"
 									aria-label={
 										notebookState.runProgress
-											? `Stop (${notebookState.runProgress.current} / ${notebookState.runProgress.total})`
-											: "Stop"
+											? t(
+													"blocks.stopProgress",
+													notebookState.runProgress,
+												)
+											: t("blocks.stop")
 									}
 									onClick={() =>
 										void notebookRef.current?.interrupt()
 									}
 								>
-									<SquareIcon className="size-3" /> Stop
+									<SquareIcon className="size-3" />{" "}
+									{t("blocks.stop")}
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent side="bottom">
 								{notebookState.runProgress
-									? `Stop (${notebookState.runProgress.current} / ${notebookState.runProgress.total})`
-									: "Stop"}
+									? t(
+											"blocks.stopProgress",
+											notebookState.runProgress,
+										)
+									: t("blocks.stop")}
 							</TooltipContent>
 						</Tooltip>
 					) : (
@@ -145,16 +152,17 @@ export const NotebookPreviewBlock = ({
 										!shouldShowNotebook ||
 										!notebookState.hasCodeCells
 									}
-									aria-label="Run all"
+									aria-label={t("blocks.runAll")}
 									onClick={() =>
 										void notebookRef.current?.runAll()
 									}
 								>
-									<PlayIcon className="size-3" /> Run
+									<PlayIcon className="size-3" />{" "}
+									{t("blocks.run")}
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent side="bottom">
-								Run all
+								{t("blocks.runAll")}
 							</TooltipContent>
 						</Tooltip>
 					)}
@@ -171,7 +179,7 @@ export const NotebookPreviewBlock = ({
 						) : (
 							<PencilIcon className="size-3" />
 						)}
-						{isRaw ? "Notebook" : "Edit"}
+						{isRaw ? t("blocks.notebook") : t("blocks.edit")}
 					</Button>
 					<Tooltip>
 						<TooltipTrigger asChild>
@@ -180,7 +188,7 @@ export const NotebookPreviewBlock = ({
 								variant="ghost"
 								size="sm"
 								disabled={!content}
-								aria-label="Copy notebook"
+								aria-label={t("blocks.copyNotebook")}
 								onClick={() =>
 									void copyTextToClipboard(content, {
 										onSuccess: () =>
@@ -194,7 +202,9 @@ export const NotebookPreviewBlock = ({
 								<CopyIcon className="size-3" />
 							</Button>
 						</TooltipTrigger>
-						<TooltipContent side="bottom">Copy</TooltipContent>
+						<TooltipContent side="bottom">
+							{t("response.copy")}
+						</TooltipContent>
 					</Tooltip>
 					<Tooltip>
 						<TooltipTrigger asChild>
@@ -203,13 +213,15 @@ export const NotebookPreviewBlock = ({
 								variant="ghost"
 								size="sm"
 								disabled={!isValidNotebook || !room}
-								aria-label="Save notebook to room"
+								aria-label={t("blocks.saveNotebookToRoom")}
 								onClick={handleOpenSaveDialog}
 							>
 								<SaveIcon className="size-3" />
 							</Button>
 						</TooltipTrigger>
-						<TooltipContent side="bottom">Save</TooltipContent>
+						<TooltipContent side="bottom">
+							{t("common:buttons.save")}
+						</TooltipContent>
 					</Tooltip>
 					<Tooltip>
 						<TooltipTrigger asChild>
@@ -218,13 +230,15 @@ export const NotebookPreviewBlock = ({
 								variant="ghost"
 								size="sm"
 								disabled={!content}
-								aria-label="Full view"
+								aria-label={t("response.fullView")}
 								onClick={() => setIsFullViewOpen(true)}
 							>
 								<ExpandIcon className="size-3" />
 							</Button>
 						</TooltipTrigger>
-						<TooltipContent side="bottom">Full view</TooltipContent>
+						<TooltipContent side="bottom">
+							{t("response.fullView")}
+						</TooltipContent>
 					</Tooltip>
 				</BlockHeader>
 				{!isCollapsed &&
@@ -254,7 +268,7 @@ export const NotebookPreviewBlock = ({
 			<Dialog open={isFullViewOpen} onOpenChange={setIsFullViewOpen}>
 				<DialogContent className="h-dvh max-h-dvh w-dvw max-w-dvw grid-rows-[auto_1fr] overflow-hidden rounded-none border-0 p-3 sm:w-dvw sm:max-w-dvw">
 					<DialogHeader>
-						<DialogTitle>Notebook</DialogTitle>
+						<DialogTitle>{t("blocks.notebook")}</DialogTitle>
 					</DialogHeader>
 					<div className="relative h-full min-h-0 overflow-hidden">
 						{shouldShowNotebook ? (

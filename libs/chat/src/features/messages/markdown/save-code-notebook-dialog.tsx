@@ -1,5 +1,6 @@
 import { CheckIcon, ChevronDownIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
 import {
 	createCodeCellFromExecution,
@@ -89,6 +90,7 @@ export const SaveCodeNotebookDialog = ({
 	result,
 	room,
 }: SaveCodeNotebookDialogProps) => {
+	const { t } = useTranslation("chat");
 	const [selectedValue, setSelectedValue] = useState("");
 	const [newNotebookName, setNewNotebookName] = useState("");
 	const [notebookSearch, setNotebookSearch] = useState("");
@@ -129,7 +131,7 @@ export const SaveCodeNotebookDialog = ({
 	/** Label shown on the combobox trigger for the current selection. */
 	const triggerLabel = isNew
 		? createNotebookFilePath(newNotebookName)
-		: selectedValue || "Select a notebook";
+		: selectedValue || t("blocks.selectNotebook");
 
 	/** Persists `content` to `path` and opens/refeshes its editor tab. */
 	const saveToPath = async (path: string, content: string) => {
@@ -175,7 +177,7 @@ export const SaveCodeNotebookDialog = ({
 					const message =
 						error instanceof Error && error.message
 							? error.message
-							: "Error";
+							: t("blocks.error");
 
 					toast.error(message);
 					return;
@@ -222,15 +224,20 @@ export const SaveCodeNotebookDialog = ({
 			await saveToPath(targetPath, content);
 			onOpenChange(false);
 			toast.success(
-				isNew
-					? `Created notebook ${targetPath.split("/").pop() ?? targetPath}`
-					: `Appended to ${targetPath.split("/").pop() ?? targetPath}`,
+				t(
+					isNew
+						? "blocks.createdNotebook"
+						: "blocks.appendedToNotebook",
+					{
+						name: targetPath.split("/").pop() ?? targetPath,
+					},
+				),
 			);
 		} catch (error) {
 			const message =
 				error instanceof Error && error.message
 					? error.message
-					: "Error";
+					: t("blocks.error");
 
 			toast.error(message);
 		} finally {
@@ -253,7 +260,7 @@ export const SaveCodeNotebookDialog = ({
 		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>Add to Notebook</DialogTitle>
+					<DialogTitle>{t("blocks.addToNotebook")}</DialogTitle>
 				</DialogHeader>
 				<div className="space-y-3">
 					<Popover
@@ -265,7 +272,7 @@ export const SaveCodeNotebookDialog = ({
 								variant="outline"
 								role="combobox"
 								aria-expanded={isPopoverOpen}
-								aria-label="Select or create a notebook"
+								aria-label={t("blocks.selectOrCreateNotebook")}
 								className="w-full justify-between font-normal hover:bg-transparent hover:text-foreground"
 							>
 								<span
@@ -288,7 +295,7 @@ export const SaveCodeNotebookDialog = ({
 								<CommandInput
 									value={notebookSearch}
 									onValueChange={setNotebookSearch}
-									placeholder="Search or name a notebook…"
+									placeholder={t("blocks.searchNotebook")}
 								/>
 								<CommandList>
 									<CommandEmpty>
@@ -297,7 +304,7 @@ export const SaveCodeNotebookDialog = ({
 												<Spinner />
 											</div>
 										) : (
-											"No notebooks found"
+											t("blocks.noNotebooks")
 										)}
 									</CommandEmpty>
 									<CommandGroup>
@@ -335,7 +342,14 @@ export const SaveCodeNotebookDialog = ({
 												}}
 											>
 												<PlusIcon className="size-3.5" />
-												{`Create "${createNotebookFilePath(notebookSearch)}"`}
+												{t(
+													"blocks.createNotebookOption",
+													{
+														name: createNotebookFilePath(
+															notebookSearch,
+														),
+													},
+												)}
 											</CommandItem>
 										)}
 									</CommandGroup>
@@ -349,13 +363,17 @@ export const SaveCodeNotebookDialog = ({
 						variant="outline"
 						onClick={() => handleOpenChange(false)}
 					>
-						Cancel
+						{t("common:buttons.cancel")}
 					</Button>
 					<Button
 						onClick={() => void handleSave()}
 						disabled={isSaving || !canSave}
 					>
-						{isSaving ? "Saving…" : isNew ? "Create" : "Append"}
+						{isSaving
+							? t("response.savingToRoom")
+							: isNew
+								? t("common:buttons.create")
+								: t("blocks.append")}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

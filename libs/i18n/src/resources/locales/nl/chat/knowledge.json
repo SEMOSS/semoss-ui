@@ -33,7 +33,8 @@
 		"noDescription": "Geen beschrijving",
 		"noLibrariesFound": "Geen documentbibliotheken gevonden die aan uw criteria voldoen.",
 		"loadingDocuments": "Documenten laden…",
-		"noDocuments": "Geen documenten gevonden."
+		"noDocuments": "Geen documenten gevonden.",
+		"untitled": "Naamloos"
 	},
 	"documents": {
 		"title": "Documenten"
@@ -92,6 +93,8 @@
 		"documentCount": "Ingesloten documenten: {{count}}",
 		"previewError": "Voorbeeld kon niet worden geladen.",
 		"previewUnavailable": "Voor dit bestandstype is geen voorbeeld beschikbaar.",
-		"removeDescription": "{{name}} verwijderen uit deze kennisbron?"
+		"removeDescription": "{{name}} verwijderen uit deze kennisbron?",
+		"dateUploaded": "Uploaddatum",
+		"size": "Grootte"
 	}
 }

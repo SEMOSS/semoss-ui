@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	Dialog,
@@ -52,6 +53,7 @@ export const SaveFileDialog = ({
 	room,
 	extension,
 }: SaveFileDialogProps) => {
+	const { t } = useTranslation("chat");
 	const [fileName, setFileName] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
 
@@ -77,10 +79,10 @@ export const SaveFileDialog = ({
 				false,
 			);
 			room.openFileSidebarPanel(filePath, undefined, { refresh: true });
-			toast.success(`Saved in room as ${filePath}`);
+			toast.success(t("notifications.savedInRoom", { filePath }));
 			onClose(true);
 		} catch (error) {
-			toast.error(getErrorMessage(error, "Failed to save file"));
+			toast.error(getErrorMessage(error, t("blocks.saveFileFailed")));
 		} finally {
 			setIsSaving(false);
 		}
@@ -97,7 +99,7 @@ export const SaveFileDialog = ({
 		>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>Save file</DialogTitle>
+					<DialogTitle>{t("blocks.saveFile")}</DialogTitle>
 				</DialogHeader>
 				<Input
 					value={fileName}
@@ -111,13 +113,15 @@ export const SaveFileDialog = ({
 				/>
 				<DialogFooter>
 					<Button variant="outline" onClick={() => onClose(false)}>
-						Cancel
+						{t("common:buttons.cancel")}
 					</Button>
 					<Button
 						onClick={() => void handleSave()}
 						disabled={isSaving || !fileName.trim()}
 					>
-						{isSaving ? "Saving…" : "Save"}
+						{isSaving
+							? t("response.savingToRoom")
+							: t("common:buttons.save")}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

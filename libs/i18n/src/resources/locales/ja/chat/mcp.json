@@ -35,7 +35,9 @@
 		"selectField": "{{field}}を選択",
 		"enterField": "{{field}}を入力",
 		"collapseField": "フィールドを折りたたむ",
-		"expandField": "フィールドを展開"
+		"expandField": "フィールドを展開",
+		"apply": "適用",
+		"reset": "リセット"
 	},
 	"messages": {
 		"selectKnowledgeSource": "ナレッジストアを選択してください",

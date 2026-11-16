@@ -35,7 +35,9 @@
 		"selectField": "اختر {{field}}",
 		"enterField": "أدخل {{field}}",
 		"collapseField": "طي الحقل",
-		"expandField": "توسيع الحقل"
+		"expandField": "توسيع الحقل",
+		"apply": "تطبيق",
+		"reset": "إعادة تعيين"
 	},
 	"messages": {
 		"selectKnowledgeSource": "الرجاء اختيار مخزن معرفة",

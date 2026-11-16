@@ -4,7 +4,8 @@
 	"nav": {
 		"newChat": {
 			"label": "Nuevo",
-			"tooltip": "Nuevo Chat - Inicia una nueva conversación en cualquier momento."
+			"tooltip": "Nuevo Chat - Inicia una nueva conversación en cualquier momento.",
+			"ariaLabel": "Nuevo chat"
 		},
 		"agents": {
 			"label": "Agentes",
@@ -21,7 +22,9 @@
 		},
 		"promptLibrary": {
 			"tooltip": "Biblioteca de Prompts - Explora, crea y utiliza prompts guardados."
-		}
+		},
+		"goHome": "Ir al inicio",
+		"help": "Ayuda"
 	},
 	"buckets": {
 		"favorites": "Favoritos",
@@ -108,7 +111,11 @@
 		"word": "Documento de Word",
 		"pdf": "Documento PDF",
 		"success": "Conversación descargada como {{format}}",
-		"failed": "No se pudo descargar la conversación"
+		"failed": "No se pudo descargar la conversación",
+		"noContent": "No hay contenido de la conversación para descargar",
+		"noResponse": "No se recibió respuesta del servidor",
+		"generateFailed": "No se pudo generar el archivo {{format}}",
+		"generateFailedWithType": "No se pudo generar el archivo {{format}}. Tipo de operación: {{operationType}}"
 	},
 	"chats": "Chats",
 	"view": {

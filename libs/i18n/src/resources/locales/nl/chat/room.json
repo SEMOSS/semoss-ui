@@ -119,7 +119,11 @@
 	},
 	"errors": {
 		"createRoom": "Er is een fout opgetreden bij het aanmaken van de kamer. Fout: {{message}}",
-		"fileInUse": "Het/de geüploade bestand(en) is/zijn momenteel in gebruik door een ander programma. Sluit het programma en upload het/de bestand(en) opnieuw in een nieuwe chat."
+		"fileInUse": "Het/de geüploade bestand(en) is/zijn momenteel in gebruik door een ander programma. Sluit het programma en upload het/de bestand(en) opnieuw in een nieuwe chat.",
+		"processingChat": "Fout bij het verwerken van de chat",
+		"roomNotFound": "Kamer niet gevonden",
+		"initializeFailed": "Fout bij het initialiseren van de kamer",
+		"updateOptionsFailed": "Fout bij het bijwerken van de kameropties"
 	},
 	"contextWindow": {
 		"descriptionLow": "Alle gesprekken hebben een limiet. Bij zeer lange gesprekken zal het model uiteindelijk eerdere berichten vergeten.",

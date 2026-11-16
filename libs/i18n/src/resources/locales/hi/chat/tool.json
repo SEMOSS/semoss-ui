@@ -107,5 +107,11 @@
 		"showMore": "और दिखाएँ ({{remaining}} शेष)",
 		"showLess": "कम दिखाएँ",
 		"showFullValue": "पूरा मान दिखाएँ"
+	},
+	"view": {
+		"frameTitle": "टूल",
+		"noTool": "कोई टूल नहीं",
+		"submitAnswersError": "ये उत्तर सबमिट नहीं किए जा सके।",
+		"invalidInputRequest": "असिस्टेंट ने एक अमान्य इनपुट अनुरोध भेजा है और इसे दिखाया नहीं जा सकता।"
 	}
 }

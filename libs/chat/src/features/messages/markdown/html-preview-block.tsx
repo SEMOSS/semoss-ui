@@ -6,6 +6,7 @@ import {
 	SaveIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { SandpackHtmlPreview } from "@semoss/shared";
 import {
 	Button,
@@ -129,6 +130,7 @@ export const HtmlPreviewBlock = ({
 	copyTooltip,
 	copySuccessMessage,
 }: HtmlPreviewBlockProps) => {
+	const { t } = useTranslation("chat");
 	const [isFullViewOpen, setIsFullViewOpen] = useState(false);
 	const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
 	const [isCollapsed, setIsCollapsed] = useState(false);
@@ -236,7 +238,7 @@ export const HtmlPreviewBlock = ({
 		<>
 			<div className="relative overflow-hidden rounded-md border border-border bg-background">
 				<BlockHeader
-					label="HTML Preview"
+					label={t("blocks.htmlPreview")}
 					isCollapsed={isCollapsed}
 					onToggleCollapse={() =>
 						setIsCollapsed((previous) => !previous)
@@ -252,7 +254,9 @@ export const HtmlPreviewBlock = ({
 								disabled={!html}
 								onClick={() => setIsRaw((prev) => !prev)}
 								aria-label={
-									isRaw ? "Switch to preview" : "Edit HTML"
+									isRaw
+										? t("blocks.switchToPreview")
+										: t("blocks.editHtml")
 								}
 							>
 								{isRaw ? (
@@ -260,11 +264,13 @@ export const HtmlPreviewBlock = ({
 								) : (
 									<PencilIcon className="size-3" />
 								)}
-								{isRaw ? "Preview" : "Edit"}
+								{isRaw ? t("blocks.preview") : t("blocks.edit")}
 							</Button>
 						</TooltipTrigger>
 						<TooltipContent side="bottom">
-							{isRaw ? "Switch to preview" : "Edit HTML"}
+							{isRaw
+								? t("blocks.switchToPreview")
+								: t("blocks.editHtml")}
 						</TooltipContent>
 					</Tooltip>
 					<Tooltip>
@@ -279,7 +285,9 @@ export const HtmlPreviewBlock = ({
 								<ExpandIcon className="size-3" />
 							</Button>
 						</TooltipTrigger>
-						<TooltipContent side="bottom">Full view</TooltipContent>
+						<TooltipContent side="bottom">
+							{t("response.fullView")}
+						</TooltipContent>
 					</Tooltip>
 					<Tooltip>
 						<TooltipTrigger asChild>
@@ -294,7 +302,7 @@ export const HtmlPreviewBlock = ({
 							</Button>
 						</TooltipTrigger>
 						<TooltipContent side="bottom">
-							Save in room
+							{t("response.saveInRoom")}
 						</TooltipContent>
 					</Tooltip>
 					<Tooltip>
@@ -352,7 +360,7 @@ export const HtmlPreviewBlock = ({
 								<div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
 									<div className="flex items-center gap-2 rounded-md border border-border/70 bg-background/75 px-3 py-1 font-medium text-[11px] text-muted-foreground uppercase tracking-[0.08em] shadow-sm">
 										<Spinner className="size-3" />
-										Loading Preview...
+										{t("blocks.loadingPreview")}
 									</div>
 								</div>
 							)}
@@ -365,7 +373,7 @@ export const HtmlPreviewBlock = ({
 					className="!inset-0 !top-0 !start-0 !flex !h-[100dvh] !max-h-[100dvh] !w-[100dvw] !max-w-[100dvw] !translate-x-0 !translate-y-0 !flex-col !gap-3 !overflow-hidden !rounded-none !border-0 !p-3 sm:!w-[100dvw] sm:!max-w-[100dvw]"
 				>
 					<DialogHeader className="shrink-0 pe-8">
-						<DialogTitle>HTML Preview</DialogTitle>
+						<DialogTitle>{t("blocks.htmlPreview")}</DialogTitle>
 					</DialogHeader>
 					<div className="relative min-h-0 flex-1 overflow-hidden">
 						<SandpackHtmlPreview
@@ -379,7 +387,7 @@ export const HtmlPreviewBlock = ({
 							<div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
 								<div className="flex items-center gap-2 rounded-md border border-border/70 bg-background/75 px-3 py-1 font-medium text-[11px] text-muted-foreground uppercase tracking-[0.08em] shadow-sm">
 									<Spinner className="size-3" />
-									Loading Preview...
+									{t("blocks.loadingPreview")}
 								</div>
 							</div>
 						)}

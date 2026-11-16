@@ -33,7 +33,8 @@
 		"noDescription": "Sin descripción",
 		"noLibrariesFound": "No se encontraron bibliotecas de documentos que coincidan con sus criterios.",
 		"loadingDocuments": "Cargando documentos…",
-		"noDocuments": "No se encontraron documentos."
+		"noDocuments": "No se encontraron documentos.",
+		"untitled": "Sin título"
 	},
 	"documents": {
 		"title": "Documentos"
@@ -92,6 +93,8 @@
 		"documentCount": "Documentos incorporados: {{count}}",
 		"previewError": "No se pudo cargar la vista previa.",
 		"previewUnavailable": "No hay vista previa para este tipo de archivo.",
-		"removeDescription": "¿Eliminar a {{name}} de esta fuente de conocimiento?"
+		"removeDescription": "¿Eliminar a {{name}} de esta fuente de conocimiento?",
+		"dateUploaded": "Fecha de carga",
+		"size": "Tamaño"
 	}
 }

@@ -35,7 +35,9 @@
 		"selectField": "Sélectionner {{field}}",
 		"enterField": "Entrer {{field}}",
 		"collapseField": "Réduire le champ",
-		"expandField": "Développer le champ"
+		"expandField": "Développer le champ",
+		"apply": "Appliquer",
+		"reset": "Réinitialiser"
 	},
 	"messages": {
 		"selectKnowledgeSource": "Veuillez sélectionner une base de connaissances",

@@ -72,7 +72,7 @@ export const GlobalNav = () => {
 							>
 								<Link
 									to={"/"}
-									aria-label={"Go Home"}
+									aria-label={t("nav.goHome")}
 									className="flex h-12 w-full flex-1 items-center"
 								>
 									<AppLogo full={open} />
@@ -98,7 +98,9 @@ export const GlobalNav = () => {
 									>
 										<Link
 											to={"/new"}
-											aria-label={"New Chat"}
+											aria-label={t(
+												"nav.newChat.ariaLabel",
+											)}
 										>
 											<SquarePenIcon />
 											{t("nav.newChat.label")}
@@ -121,7 +123,9 @@ export const GlobalNav = () => {
 										>
 											<Link
 												to={"/agent"}
-												aria-label={"agent"}
+												aria-label={t(
+													"nav.agents.label",
+												)}
 											>
 												<Bot />
 												{t("nav.agents.label")}
@@ -176,7 +180,7 @@ export const GlobalNav = () => {
 								<SidebarMenuItem>
 									<SidebarMenuButton>
 										<HelpCircle />
-										Help
+										{t("nav.help")}
 									</SidebarMenuButton>
 								</SidebarMenuItem>
 								{isHelpOpen && (

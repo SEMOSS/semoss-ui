@@ -35,7 +35,9 @@
 		"selectField": "Seleccionar {{field}}",
 		"enterField": "Ingresar {{field}}",
 		"collapseField": "Colapsar campo",
-		"expandField": "Expandir campo"
+		"expandField": "Expandir campo",
+		"apply": "Aplicar",
+		"reset": "Restablecer"
 	},
 	"messages": {
 		"selectKnowledgeSource": "Por favor, selecciona un almacén de conocimiento",

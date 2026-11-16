@@ -119,7 +119,11 @@
 	},
 	"errors": {
 		"createRoom": "An error occurred while creating the room. Error: {{message}}",
-		"fileInUse": "At least one uploaded file is currently in use by another program. Close the program and re-upload."
+		"fileInUse": "At least one uploaded file is currently in use by another program. Close the program and re-upload.",
+		"processingChat": "Error processing chat",
+		"roomNotFound": "Room not found",
+		"initializeFailed": "Error initializing room",
+		"updateOptionsFailed": "Error updating room options"
 	},
 	"contextWindow": {
 		"descriptionLow": "All conversations have a limit. Very long conversations will eventually cause the model to forget earlier messages.",

@@ -33,7 +33,8 @@
 		"noDescription": "لا يوجد وصف",
 		"noLibrariesFound": "لم يتم العثور على مكتبات مستندات تطابق معاييرك.",
 		"loadingDocuments": "جارٍ تحميل المستندات…",
-		"noDocuments": "لم يتم العثور على مستندات."
+		"noDocuments": "لم يتم العثور على مستندات.",
+		"untitled": "بدون عنوان"
 	},
 	"documents": {
 		"title": "المستندات"
@@ -92,6 +93,8 @@
 		"documentCount": "المستندات المضمّنة: {{count}}",
 		"previewError": "تعذّر تحميل المعاينة.",
 		"previewUnavailable": "المعاينة غير متاحة لهذا النوع من الملفات.",
-		"removeDescription": "هل تريد إزالة {{name}} من مصدر المعرفة هذا؟"
+		"removeDescription": "هل تريد إزالة {{name}} من مصدر المعرفة هذا؟",
+		"dateUploaded": "تاريخ التحميل",
+		"size": "الحجم"
 	}
 }

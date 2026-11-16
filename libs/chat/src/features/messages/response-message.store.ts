@@ -1,3 +1,4 @@
+import { getI18n } from "@semoss/i18n";
 import { download, runMcpTool } from "@semoss/sdk/react";
 import { getErrorMessage } from "@semoss/utility/error";
 import type { InputPixelMessage, ResponsePixelMessage } from "../../types";
@@ -447,7 +448,7 @@ paramValues=[${JSON.stringify({
 			.map((part) => part.text)
 			.join("");
 
-		if (!text) throw new Error("No content to download");
+		if (!text) throw new Error(getI18n().t("chat:download.noContent"));
 
 		let pixelCommand: string;
 
@@ -473,11 +474,13 @@ paramValues=[${JSON.stringify({
 				download(this.room.insightId, output);
 			} else {
 				throw new Error(
-					`Failed to generate ${format.toUpperCase()} file`,
+					getI18n().t("sidebar:download.generateFailed", {
+						format: format.toUpperCase(),
+					}),
 				);
 			}
 		} else {
-			throw new Error("No response received from server");
+			throw new Error(getI18n().t("sidebar:download.noResponse"));
 		}
 	};
 

@@ -96,7 +96,8 @@
 		"permissionUpdateFailed": "権限の更新に失敗しました",
 		"userRemoved": "ユーザーを正常に削除しました",
 		"userRemoveFailed": "ユーザーの削除に失敗しました",
-		"fetchPermissionsFailed": "ユーザー権限の取得に失敗しました"
+		"fetchPermissionsFailed": "ユーザー権限の取得に失敗しました",
+		"unknownError": "不明なエラー"
 	},
 	"breadcrumbs": {
 		"home": "ホーム",
@@ -138,7 +139,9 @@
 	},
 	"prompts": {
 		"noPrompts": "プロンプトが見つかりません",
-		"searchPlaceholder": "プロンプトを検索..."
+		"searchPlaceholder": "プロンプトを検索...",
+		"all": "すべて",
+		"general": "一般"
 	},
 	"instructions": {
 		"expand": "展開",

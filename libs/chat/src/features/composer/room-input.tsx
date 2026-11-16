@@ -376,7 +376,7 @@ export const RoomInput = ({
 		try {
 			const success = await onPrompt(prompt, []);
 			if (!success) {
-				throw new Error("Error processing chat");
+				throw new Error(t("errors.processingChat"));
 			}
 		} catch (e) {
 			toast.error(getGracefulErrorMessage(e as Error));
@@ -542,7 +542,7 @@ export const RoomInput = ({
 			// Submit to parent handler
 			const result = Boolean(await onPrompt(userInput, userFiles));
 			if (!result) {
-				throw new Error(`Error processing chat`);
+				throw new Error(t("errors.processingChat"));
 			}
 		} catch (e) {
 			// Show error to user
