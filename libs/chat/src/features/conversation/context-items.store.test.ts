@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import { ContextItemsStore } from "./context-items.store";
 
 describe("ContextItemsStore", () => {
@@ -55,5 +55,29 @@ describe("ContextItemsStore", () => {
 
 		expect(room.items.map((item) => item.path)).toEqual(["notes.md"]);
 		expect(draft.items).toEqual([]);
+	});
+
+	test("keeps its snapshot when nothing changes and tells listeners once per change", () => {
+		const contextItems = new ContextItemsStore();
+		const listener = vi.fn();
+		const stop = contextItems.subscribe(listener);
+		const empty = contextItems.getSnapshot();
+
+		contextItems.remove("missing");
+		contextItems.restore([]);
+		expect(contextItems.take()).toEqual([]);
+		expect(contextItems.getSnapshot()).toBe(empty);
+		expect(listener).not.toHaveBeenCalled();
+
+		contextItems.add({ path: "a.md", name: "a.md" });
+		const withA = contextItems.getSnapshot();
+		contextItems.add({ path: "a.md", name: "a.md" });
+		expect(contextItems.getSnapshot()).toBe(withA);
+		expect(listener).toHaveBeenCalledTimes(1);
+		expect(empty.items).toEqual([]);
+
+		stop();
+		contextItems.add({ path: "b.md", name: "b.md" });
+		expect(listener).toHaveBeenCalledTimes(1);
 	});
 });

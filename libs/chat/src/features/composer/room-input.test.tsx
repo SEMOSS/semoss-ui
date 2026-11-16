@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 import { beforeEach, expect, test, vi } from "vitest";
 import { toast } from "@semoss/ui/next";
+import { ContextItemsStore } from "../conversation/context-items.store";
 import type { MCPOverlay } from "../mcp/mcp-overlay";
 import type { RoomStore } from "../room/room.store";
 import { RoomInput } from "./room-input";
@@ -275,7 +276,7 @@ const defaultProps = {
 			unofferedProviders: [],
 			setSessionLogins: vi.fn(),
 		},
-		contextItems: { items: [], remove: vi.fn() },
+		contextItems: new ContextItemsStore(),
 		roomId: "room",
 		history: [],
 		options: {},
@@ -748,25 +749,21 @@ test("when the agent decides the mode, new chats pick a saved agent, Default Age
 });
 
 test("connector attachments stay visible and removable without an uploaded file", () => {
-	const remove = vi.fn();
+	const contextItems = new ContextItemsStore();
+	contextItems.add({
+		name: "Email summary.md",
+		path: "email.md",
+		service: "gmail",
+	});
 	const room = {
 		...defaultProps.room,
-		contextItems: {
-			items: [
-				{
-					id: "email",
-					name: "Email summary.md",
-					path: "email.md",
-					service: "gmail",
-				},
-			],
-			remove,
-		},
+		contextItems,
 	} as unknown as RoomStore;
 	render(<RoomInput {...defaultProps} room={room} />);
 	expect(screen.getByText("Email summary.md")).toBeVisible();
 	fireEvent.click(
 		screen.getByRole("button", { name: "contextItems.remove" }),
 	);
-	expect(remove).toHaveBeenCalledWith("email");
+	expect(screen.queryByText("Email summary.md")).toBeNull();
+	expect(contextItems.items).toEqual([]);
 });

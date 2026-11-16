@@ -1,10 +1,10 @@
 import { FileIcon } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useTranslation } from "@semoss/i18n";
 import { ConnectorBrandIcon } from "@semoss/shared";
 import { FilePreviewTile } from "../composer/file-preview-tile";
 import { findConnectorSource } from "../connectors/sources/connector-sources";
 import type { ContextItemsStore } from "./context-items.store";
+import { useContextItems } from "./use-context-items";
 
 /** Props for {@link ContextItems}. */
 interface ContextItemsProps {
@@ -17,10 +17,11 @@ interface ContextItemsProps {
  * next message takes them: a named chip for each, marked with the app it came
  * from. Each can be taken off; it stays in the chat's files. Renders nothing when none are waiting.
  */
-export const ContextItems = observer(({ contextItems }: ContextItemsProps) => {
+export const ContextItems = ({ contextItems }: ContextItemsProps) => {
 	const { t } = useTranslation("room");
+	const items = useContextItems(contextItems, (state) => state.items);
 
-	return contextItems.items.map((item) => {
+	return items.map((item) => {
 		const brand = item.service
 			? findConnectorSource(item.service)?.brand
 			: undefined;
@@ -41,4 +42,4 @@ export const ContextItems = observer(({ contextItems }: ContextItemsProps) => {
 			/>
 		);
 	});
-});
+};

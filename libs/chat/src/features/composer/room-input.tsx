@@ -63,6 +63,7 @@ import {
 	RoomComposerMenu,
 	type RoomComposerMenuProps,
 } from "../conversation/room-composer-menu";
+import { useContextItems } from "../conversation/use-context-items";
 import { useGracefulErrors } from "../conversation/use-graceful-errors";
 import { useRoomSlashCommands } from "../conversation/use-room-slash-commands";
 import { MCPOverlay } from "../mcp/mcp-overlay";
@@ -356,8 +357,11 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		// File handling
 		const { files, addFiles, removeFile, clearFiles, openFilePicker } =
 			useFileDrag();
-		const hasAttachments =
-			files.length > 0 || room.contextItems.items.length > 0;
+		const queuedFileCount = useContextItems(
+			room.contextItems,
+			(state) => state.items.length,
+		);
+		const hasAttachments = files.length > 0 || queuedFileCount > 0;
 
 		// Speech-to-text
 		const [canListen, setCanListen] = useState(false);

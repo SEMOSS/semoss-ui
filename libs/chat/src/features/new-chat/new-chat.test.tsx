@@ -12,6 +12,8 @@ import type { ComponentProps, ReactNode } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { DEFAULT_CHAT_THEME } from "../chat-config/chat-theme";
 import type { RoomInput } from "../composer/room-input";
+import type { ContextItemsStore } from "../conversation/context-items.store";
+import { useContextItems } from "../conversation/use-context-items";
 import {
 	forgetSessionNewChat,
 	readSessionNewChat,
@@ -287,9 +289,7 @@ vi.mock("../composer/room-input", () => ({
 					defaultValue="Keep this draft"
 				/>
 				<output aria-label="Mode">{room.mode}</output>
-				<output aria-label="Queued context">
-					{room.contextItems.items.map((item) => item.name).join(",")}
-				</output>
+				<QueuedContext store={room.contextItems} />
 				<button
 					type="button"
 					onClick={() =>
@@ -345,6 +345,14 @@ vi.mock("../composer/room-input", () => ({
 		),
 	),
 }));
+
+/** The names queued for a room's next message, as the composer would show them. */
+const QueuedContext = ({ store }: { store: ContextItemsStore }) => {
+	const names = useContextItems(store, (state) =>
+		state.items.map((item) => item.name).join(","),
+	);
+	return <output aria-label="Queued context">{names}</output>;
+};
 
 /** The new chat as the playground's route renders it, from the link's search params. */
 const NewChatFromLink = () => (
