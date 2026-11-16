@@ -10,6 +10,7 @@ import {
 } from "lexical";
 import { useEffect } from "react";
 import { chatImportDocument } from "./chat-rich-content";
+import { COMPOSER_MAX_CHARACTERS } from "./room-composer.types";
 
 /** Import table HTML atomically, and route all other paste through safe plain text. */
 export const handledChatTablePastes = new WeakSet<Event>();
@@ -34,42 +35,45 @@ export function ChatTablePastePlugin({
 					const plain = event.clipboardData.getData("text/plain");
 					if (!html && !plain) return false;
 					event.preventDefault();
-					if (/<table[\s>]/i.test(html))
-						handledChatTablePastes.add(event);
+					const hasTable = /<table[\s>]/i.test(html);
+					if (hasTable) handledChatTablePastes.add(event);
 					const selection = $getSelection();
 					if (!$isRangeSelection(selection)) return true;
-					if (!/<table[\s>]/i.test(html)) {
-						if (plain) selection.insertRawText(plain);
-						onNotice(
-							html && !plain
-								? "This clipboard content has no supported table or plain text. Copy the text again or attach the source document."
-								: /\t/.test(plain)
-									? "Pasted as plain text; the clipboard did not supply an HTML table."
-									: "",
-						);
-						return true;
-					}
+					const room =
+						COMPOSER_MAX_CHARACTERS -
+						$getRoot().getTextContent().length +
+						selection.getTextContent().length;
+					let doc: Document | null = null;
+					let reason = "";
 					try {
-						let ancestor = selection.anchor.getNode();
-						while (ancestor.getParent()) {
-							if ($isTableCellNode(ancestor))
+						if (hasTable) doc = chatImportDocument(html);
+						// One cell is a value, such as a single spreadsheet cell, not a table.
+						if (doc && doc.querySelectorAll("td,th").length < 2)
+							doc = null;
+						if (doc) {
+							let ancestor = selection.anchor.getNode();
+							while (ancestor.getParent()) {
+								if ($isTableCellNode(ancestor))
+									throw new Error(
+										"Paste a new table outside the existing table.",
+									);
+								const parent = ancestor.getParent();
+								if (!parent) break;
+								ancestor = parent;
+							}
+							if ((doc.body.textContent?.length ?? 0) > room)
 								throw new Error(
-									"Paste a new table outside the existing table, or paste plain text into its cell.",
+									"This table exceeds the message limit. Attach the source document instead.",
 								);
-							const parent = ancestor.getParent();
-							if (!parent) break;
-							ancestor = parent;
 						}
-						const doc = chatImportDocument(html);
-						if (
-							(doc.body.textContent?.length ?? 0) +
-								$getRoot().getTextContent().length -
-								selection.getTextContent().length >
-							8000
-						)
-							throw new Error(
-								"This table exceeds the message limit. Attach the source document instead.",
-							);
+					} catch (cause) {
+						doc = null;
+						reason =
+							cause instanceof Error
+								? cause.message
+								: "This table could not be pasted. Attach the source document instead.";
+					}
+					if (doc) {
 						selection.insertNodes(
 							$generateNodesFromDOM(editor, doc),
 						);
@@ -78,13 +82,24 @@ export function ChatTablePastePlugin({
 								? "Pasted the table; embedded images and resources were omitted. Attach the source to include them."
 								: "",
 						);
-					} catch (cause) {
-						onNotice(
-							cause instanceof Error
-								? cause.message
-								: "This table could not be pasted. Attach the source document instead.",
-						);
+						return true;
 					}
+					// A table that cannot be kept still pastes its values as text, but never a cut-off copy of them.
+					const pastesPlain =
+						Boolean(plain) && (!reason || plain.length <= room);
+					if (pastesPlain) selection.insertRawText(plain);
+					let notice = "";
+					if (reason)
+						notice = pastesPlain
+							? `Pasted as plain text. ${reason}`
+							: reason;
+					else if (html && !plain)
+						notice =
+							"This clipboard content has no supported table or plain text. Copy the text again or attach the source document.";
+					else if (/\t/.test(plain))
+						notice =
+							"Pasted as plain text; the clipboard did not supply an HTML table.";
+					onNotice(notice);
 					return true;
 				},
 				COMMAND_PRIORITY_HIGH,

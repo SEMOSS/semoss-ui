@@ -987,6 +987,52 @@ describe("RoomComposer", () => {
 		);
 	});
 
+	it.each([
+		{
+			name: "a table that cannot be kept as plain text, with the reason",
+			html: "<table><tr><td><table><tr><td>Sales</td><td>100</td></tr></table></td></tr></table>",
+			plain: "Sales\t100",
+			text: "Sales\t100",
+			notice: "Pasted as plain text. Nested tables cannot be pasted. Attach the source document instead.",
+		},
+		{
+			name: "a single spreadsheet cell as text",
+			html: "<table><tr><td>1200</td></tr></table>",
+			plain: "1200",
+			text: "1200",
+			notice: "",
+		},
+		{
+			name: "nothing from a table over the message limit",
+			html: `<table><tr><td>${"a".repeat(8001)}</td><td>b</td></tr></table>`,
+			plain: `${"a".repeat(8001)}\tb`,
+			text: "",
+			notice: "This table exceeds the message limit. Attach the source document instead.",
+		},
+	])("pastes $name", async ({ html, plain, text, notice }) => {
+		const user = userEvent.setup();
+		renderComposer();
+		const editor = screen.getByRole("textbox", {
+			name: "Message Research agent",
+		});
+		await user.click(editor);
+		fireEvent.paste(editor, {
+			clipboardData: {
+				items: [],
+				types: ["text/html", "text/plain"],
+				getData: (type: string) =>
+					type === "text/html" ? html : plain,
+			},
+		});
+		await waitFor(() => {
+			expect(editor.textContent).toBe(text);
+			expect(
+				screen.queryByText(/^(Pasted|This table)/)?.textContent ?? "",
+			).toBe(notice);
+		});
+		expect(screen.queryByRole("table")).toBeNull();
+	});
+
 	it("requires text, prevents duplicate submissions, and restores a failed draft", async () => {
 		const user = userEvent.setup();
 		let rejectSend: (cause: Error) => void = () => undefined;
