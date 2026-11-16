@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { getCatalogImageValidationError } from "@semoss/sdk";
 import type { InsightActions } from "@/lib/pixel";
 import {
 	addTwinKnowledge,
 	copyToTwin,
 	createTwin,
 	deleteTwin,
+	generateTwinAvatar,
 	getMyTwin,
 	hasTwinFolder,
 	listTwins,
@@ -650,5 +652,64 @@ describe("what a twin holds", () => {
 			await readTwinHoldings(nothingRecorded.actions, "twin-1"),
 		).toEqual({ hasFolder: true, itemKeys: new Set() });
 		expect(nothingRecorded.ran()).toEqual([ROOT]);
+	});
+});
+
+describe("generating an avatar option", () => {
+	it("asks for one from the owner's photo and gives back a PNG the image field takes, with an address to show it from", async () => {
+		// three bytes, as base64
+		const { actions, ran } = transport({
+			WorkGenerateTwinAvatar: { image: "AQID" },
+		});
+		const option = await generateTwinAvatar(actions);
+		expect(ran()).toEqual(["WorkGenerateTwinAvatar();"]);
+		if (!option) throw new Error("expected an option");
+		expect(option.file.name).toBe("avatar.png");
+		expect(option.file.type).toBe("image/png");
+		// jsdom's File has no arrayBuffer()
+		const bytes = await new Promise<ArrayBuffer>((resolve) => {
+			const reader = new FileReader();
+			reader.onload = () => resolve(reader.result as ArrayBuffer);
+			reader.readAsArrayBuffer(option.file);
+		});
+		expect([...new Uint8Array(bytes)]).toEqual([1, 2, 3]);
+		expect(getCatalogImageValidationError(option.file)).toBeNull();
+		expect(option.url).toBe("data:image/png;base64,AQID");
+	});
+
+	it("sends a description as an argument, so nothing in it runs as pixel", async () => {
+		const { actions, ran } = transport({
+			WorkGenerateTwinAvatar: { image: "AQID" },
+		});
+		await generateTwinAvatar(actions, 'Red hair"]); DeleteWorkspace(');
+		expect(ran()).toEqual([
+			'WorkGenerateTwinAvatar(description=["Red hair\\"]); DeleteWorkspace("]);',
+		]);
+	});
+
+	it("names the look to draw, with a description or without", async () => {
+		const { actions, ran } = transport({
+			WorkGenerateTwinAvatar: { image: "AQID" },
+		});
+		await generateTwinAvatar(actions, undefined, 7);
+		await generateTwinAvatar(actions, "Red hair", 8);
+		expect(ran()).toEqual([
+			"WorkGenerateTwinAvatar(variant=[7]);",
+			'WorkGenerateTwinAvatar(description=["Red hair"], variant=[8]);',
+		]);
+	});
+
+	it("answers with nothing when the server needs a description", async () => {
+		const { actions } = transport({
+			WorkGenerateTwinAvatar: { needsDescription: true },
+		});
+		expect(await generateTwinAvatar(actions)).toBeNull();
+	});
+
+	it("refuses an answer that is neither a picture nor a request for a description", async () => {
+		const { actions } = transport({ WorkGenerateTwinAvatar: {} });
+		await expect(generateTwinAvatar(actions)).rejects.toThrow(
+			"did not return a picture",
+		);
 	});
 });

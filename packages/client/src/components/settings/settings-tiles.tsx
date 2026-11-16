@@ -156,6 +156,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 			? (engineInfo.data as { project_type?: string } | undefined)
 					?.project_type
 			: undefined,
+		admin: adminMode,
 	});
 
 	/**

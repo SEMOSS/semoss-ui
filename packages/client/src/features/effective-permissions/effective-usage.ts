@@ -41,6 +41,7 @@ const NOT_APPLIED_REASONS: Readonly<Record<string, string>> = {
 const BILLED_LIMIT_TYPES: readonly string[] = [
 	"DIRECT",
 	"TEAM",
+	"APP",
 	"PUBLIC",
 	"ALL_MODELS",
 	"PLATFORM",
@@ -91,6 +92,7 @@ export const getEffectiveLimit = (
 	const limitType = usage.billedTo.limitType;
 	const source: ModelUsageLimitSource =
 		limitType === "TEAM" ||
+		limitType === "APP" ||
 		limitType === "PUBLIC" ||
 		limitType === "ALL_MODELS"
 			? limitType

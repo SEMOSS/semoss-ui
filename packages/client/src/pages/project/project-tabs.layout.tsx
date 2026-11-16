@@ -3,10 +3,10 @@ import {
 	PencilIcon,
 	SquareArrowOutUpRight,
 } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link, matchPath, Outlet, useLocation } from "react-router";
 import type { Role } from "@semoss/sdk";
-import { useSession, useSessionInsight } from "@semoss/sdk/react";
+import { useSessionInsight } from "@semoss/sdk/react";
 import { AppCatalogAvatar, EntityHeader } from "@semoss/shared";
 import {
 	Breadcrumb,
@@ -24,6 +24,8 @@ import { setProjectDisplayName } from "@/api/projects";
 import { ProjectAccessRequestButton } from "@/components/project/project-access-request-button";
 import { NavbarHeader } from "@/components/shared/navbar-header";
 import { NavbarLeft } from "@/components/shared/navbar-left";
+import { MyAccessRequestNotice } from "@/features/my-access-request/my-access-request-notice";
+import { useMyAccessRequest } from "@/features/my-access-request/use-my-access-request";
 import { ProjectActionsMenu } from "@/features/project-actions/project-actions-menu";
 import { useProject } from "@/hooks/use-project";
 import { useNavigate } from "@/hooks/useNavigate";
@@ -44,7 +46,12 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 	const { catalog, project, permission, refresh, type, update } =
 		useProject();
 	const { insightId } = useSessionInsight();
-	const isAdmin = useSession((state) => state.user?.isAdmin === true);
+	const accessRequest = useMyAccessRequest(
+		"PROJECT",
+		project.project_id,
+		permission !== "OWNER",
+	);
+	const [isRequestOpen, setIsRequestOpen] = useState(false);
 
 	const navigate = useNavigate();
 	const { pathname } = useLocation();
@@ -53,7 +60,6 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 	// see all the visible tabs
 	const visibleTabs = useMemo(() => {
 		return tabs.filter((tab) => {
-			if (tab.path === "audit" && isAdmin) return true;
 			if (!tab.restrict || tab.restrict.length === 0) {
 				return true;
 			}
@@ -62,7 +68,7 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 			}
 			return tab.restrict.includes(permission);
 		});
-	}, [tabs, permission, isAdmin]);
+	}, [tabs, permission]);
 
 	// the current active tab index based on the current pathname
 	const activeTabIdx = useMemo(() => {
@@ -158,8 +164,15 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 									<ProjectAccessRequestButton
 										project={project}
 										permission={permission}
+										request={accessRequest.request}
+										isRequestLoading={
+											accessRequest.isLoading
+										}
+										open={isRequestOpen}
+										onOpenChange={setIsRequestOpen}
 										onSuccess={() => {
 											refresh();
+											accessRequest.refresh();
 										}}
 									/>
 								)}
@@ -199,6 +212,15 @@ export const ProjectTabsLayout = ({ tabs }: ProjectTabsLayoutProps) => {
 						}
 					/>
 				</div>
+
+				{accessRequest.request ? (
+					<MyAccessRequestNotice
+						request={accessRequest.request}
+						noun={catalog.name.toLowerCase()}
+						onChange={() => setIsRequestOpen(true)}
+						onWithdraw={accessRequest.withdraw}
+					/>
+				) : null}
 
 				<div className="flex flex-col rounded-lg bg-muted">
 					{visibleTabs.length > 0 && (
