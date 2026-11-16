@@ -38,8 +38,11 @@ const callPart = (
 	},
 });
 
+/** A response that holds the call, with nothing behind it but its id. */
 const message = () =>
-	Object.create(ResponseMessageStore.prototype) as ResponseMessageStore;
+	Object.create(ResponseMessageStore.prototype, {
+		id: { value: "message-1" },
+	}) as ResponseMessageStore;
 
 test("a write that changes nothing keeps the snapshot and tells no one", () => {
 	const tool = new ToolStore(room, "call-1");

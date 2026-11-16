@@ -1476,7 +1476,7 @@ export class RoomStore {
 		parentMessage.addChild(inputMessage);
 		inputMessage.addChild(uploadPlaceholder);
 		runInAction(() => {
-			uploadPlaceholder.isThinking = true;
+			uploadPlaceholder.setIsThinking(true);
 		});
 
 		// files queued from the sidebar are already in the room's folder, so
@@ -1531,7 +1531,7 @@ export class RoomStore {
 				mediaInputs
 					.filter((file) => this.shouldAttachToModel(file.fileName))
 					.forEach((file) => {
-						inputMessage.parts.push({
+						inputMessage.addPart({
 							type: "MEDIA",
 							mediaInfo: {
 								base64Data: "",
@@ -1550,7 +1550,7 @@ export class RoomStore {
 
 			// remove the placeholder messages and stop the room spinner
 			runInAction(() => {
-				uploadPlaceholder.isThinking = false;
+				uploadPlaceholder.setIsThinking(false);
 			});
 			parentMessage.removeChild(inputMessage);
 			this.setIsLoading(false);

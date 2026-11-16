@@ -1,53 +1,46 @@
-import { makeObservable, observable } from "mobx";
 import type { InputPixelMessage } from "../../types";
-import { AbstractMessageStore } from "./abstract-message.store";
+import type { RoomStore } from "../room/room.store";
+import {
+	AbstractMessageStore,
+	initialMessageSnapshot,
+	type MessageSnapshot,
+} from "./abstract-message.store";
 
-/**
- * Input Message Store
- */
-export class InputMessageStore extends AbstractMessageStore {
+/** What a user's message holds. */
+export interface InputMessageSnapshot extends MessageSnapshot {
+	readonly parts: InputPixelMessage["parts"];
+}
+
+/** A message the user sent. */
+export class InputMessageStore extends AbstractMessageStore<InputMessageSnapshot> {
 	readonly type = "INPUT";
 
 	/**
-	 * Parts associated with the message
+	 * @param room - The room the message is in.
+	 * @param message - The pixel message.
 	 */
-	parts: InputPixelMessage["parts"] = [];
-
-	constructor(
-		room: AbstractMessageStore["room"],
-		message: InputPixelMessage,
-	) {
-		super(room, message);
-
-		makeObservable(this, {
-			parts: observable,
-		});
-
-		// sync the message
+	constructor(room: RoomStore, message: InputPixelMessage) {
+		super(room, { ...initialMessageSnapshot(message), parts: [] });
 		this.sync(message);
 	}
 
 	/**
-	 * Sync store properties from the pixel message
+	 * Take the backend's copy of the message, and the results of the tool
+	 * calls it answers.
+	 *
+	 * @param message - The pixel message.
 	 */
-	sync(message: InputPixelMessage) {
-		// super
+	sync(message: InputPixelMessage): void {
 		super.sync(message);
-
-		// set the id
-		this.id = message.messageId;
-
-		// set the parts
-		this.parts = message.parts;
-
-		// sync the tools
+		this.state.update({
+			id: message.messageId,
+			parts: message.parts,
+			tokens: message.tokens,
+		});
 		for (const part of message.parts) {
 			if (part.type === "TOOL_RESULT") {
 				this.room.syncTool(part.toolResult.toolCallId, this, part);
 			}
 		}
-
-		// set tokens
-		this.tokens = message.tokens;
 	}
 }

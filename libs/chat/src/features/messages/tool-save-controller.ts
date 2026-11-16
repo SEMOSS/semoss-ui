@@ -219,11 +219,9 @@ export class ToolSaveController {
 				message.addChild(followUp);
 			}
 			followUp.sync(output.responseMessage);
-			runInAction(() => {
-				followUp.isThinking = false;
-			});
+			followUp.setIsThinking(false);
 			spliceHiddenMessages(followUp, output.extraMessages);
-			message.toolResponseMessage = null;
+			message.setToolResponseMessage(null);
 
 			entries.forEach((entry) => {
 				entry.resolve();
@@ -356,11 +354,11 @@ export class ToolSaveController {
 				},
 			} as ResponsePixelMessage);
 		if (!message.toolResponseMessage) {
-			message.toolResponseMessage = responseMessage;
+			message.setToolResponseMessage(responseMessage);
 			message.addChild(responseMessage);
 		}
 		runInAction(() => {
-			responseMessage.isThinking = true;
+			responseMessage.setIsThinking(true);
 		});
 
 		// The finalizing (model-invoking) result is the last statement, and the
@@ -389,11 +387,9 @@ export class ToolSaveController {
 							// No INPUT_TOOL_EXEC store exists; stamp the server's
 							// cumulative input token count as a proxy so tokensUsed()
 							// finds a (cumulative, incremental) pair walking back.
-							runInAction(() => {
-								message.tokens = modelReply.inputMessage.tokens;
-							});
+							message.setTokens(modelReply.inputMessage.tokens);
 							responseMessage.continueToolExecution();
-							message.toolResponseMessage = null;
+							message.setToolResponseMessage(null);
 						}
 						// The else case — a commit in this batch failed, so the
 						// set never completed and no reply streamed — needs no
@@ -420,7 +416,7 @@ export class ToolSaveController {
 			);
 			if (!hasRunningTools) {
 				runInAction(() => {
-					responseMessage.isThinking = false;
+					responseMessage.setIsThinking(false);
 				});
 			}
 		}
@@ -519,13 +515,11 @@ export class ToolSaveController {
 			const { output } = response.pixelReturn[0];
 
 			responseMessage.sync(output.responseMessage);
-			runInAction(() => {
-				message.tokens = output.inputMessage.tokens;
-			});
+			message.setTokens(output.inputMessage.tokens);
 
 			spliceHiddenMessages(responseMessage, output.extraMessages);
 
-			message.toolResponseMessage = null;
+			message.setToolResponseMessage(null);
 		} catch (e) {
 			// Rethrown so stop() (StreamJobController), which awaits this as the
 			// job's onCancel, surfaces the failure as a room error — this is the

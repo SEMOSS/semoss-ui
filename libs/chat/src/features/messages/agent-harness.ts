@@ -178,7 +178,7 @@ const buildPendingToolCallPart = (
 
 /**
  * Find an already-pushed SUBAGENT part by its item id, for item.updated/
- * item.completed to mutate in place.
+ * item.completed to change.
  */
 const findSubagentPart = (
 	responseMessage: ResponseMessageStore,
@@ -188,6 +188,28 @@ const findSubagentPart = (
 		(part): part is PixelMessageSubagentPart =>
 			part.type === "SUBAGENT" && part.subagent.id === id,
 	);
+
+/**
+ * Change an already-pushed SUBAGENT part, found by its item id.
+ *
+ * @param responseMessage - The response that holds it.
+ * @param id - The subagent item's id.
+ * @param changes - Its new status, preview, and error.
+ */
+const updateSubagentPart = (
+	responseMessage: ResponseMessageStore,
+	id: string,
+	changes: Pick<
+		PixelMessageSubagentPart["subagent"],
+		"status" | "resultPreview" | "error"
+	>,
+): void => {
+	responseMessage.updateParts(
+		(part): part is PixelMessageSubagentPart =>
+			part.type === "SUBAGENT" && part.subagent.id === id,
+		(part) => ({ ...part, subagent: { ...part.subagent, ...changes } }),
+	);
+};
 
 /**
  * Apply one agent-run item event onto the response message. Must already be
@@ -210,7 +232,7 @@ const applyAgentRunItem = (
 		// one-shot bursts, so it would hang forever and hide every part after.
 		// room.isLoading already covers "run still in progress" for the input
 		// box, so it's safe to drop this once any real content exists.
-		responseMessage.isThinking = false;
+		responseMessage.setIsThinking(false);
 		if (item.kind === "message" && item.text) {
 			responseMessage.savePart({
 				type: "TEXT",
@@ -224,7 +246,7 @@ const applyAgentRunItem = (
 			});
 		} else if (item.kind === "tool") {
 			const part = buildToolCallPart(item);
-			responseMessage.parts.push(part);
+			responseMessage.addPart(part);
 			room.syncTool(item.id, responseMessage, part);
 			// syncMessage's TOOL_CALL branch never sets status, so seed it here —
 			// otherwise a tool with no item.updated in between sits at "INITIAL"
@@ -235,7 +257,7 @@ const applyAgentRunItem = (
 				tool.setStatus(status);
 			}
 		} else if (item.kind === "subagent") {
-			responseMessage.parts.push({
+			responseMessage.addPart({
 				type: "SUBAGENT",
 				subagent: {
 					id: item.id,
@@ -273,9 +295,11 @@ const applyAgentRunItem = (
 			const merged = items.itemsById[event.itemId];
 			const part = findSubagentPart(responseMessage, event.itemId);
 			if (part && merged?.kind === "subagent") {
-				part.subagent.status = merged.status;
-				part.subagent.resultPreview = merged.resultPreview;
-				part.subagent.error = merged.error;
+				updateSubagentPart(responseMessage, part.subagent.id, {
+					status: merged.status,
+					resultPreview: merged.resultPreview,
+					error: merged.error,
+				});
 			}
 		}
 		return;
@@ -295,9 +319,11 @@ const applyAgentRunItem = (
 	} else if (item.kind === "subagent") {
 		const part = findSubagentPart(responseMessage, item.id);
 		if (part) {
-			part.subagent.status = item.status;
-			part.subagent.resultPreview = item.resultPreview;
-			part.subagent.error = item.error;
+			updateSubagentPart(responseMessage, part.subagent.id, {
+				status: item.status,
+				resultPreview: item.resultPreview,
+				error: item.error,
+			});
 		}
 	}
 	// message/reasoning completion carries no new text (see comment above).
@@ -333,7 +359,7 @@ const syncPendingActions = (
 			return;
 		}
 		const part = buildPendingToolCallPart(action, toolCallId);
-		responseMessage.parts.push(part);
+		responseMessage.addPart(part);
 		room.syncTool(toolCallId, responseMessage, part);
 	});
 
@@ -425,10 +451,10 @@ const watchAgentRun = (
 			onReconcile: (snapshot) => {
 				runInAction(() => {
 					if (inputMessage && snapshot.inputMessageId) {
-						inputMessage.id = snapshot.inputMessageId;
+						inputMessage.setId(snapshot.inputMessageId);
 					}
 					if (snapshot.finalOutputMessageId) {
-						responseMessage.id = snapshot.finalOutputMessageId;
+						responseMessage.setId(snapshot.finalOutputMessageId);
 					}
 
 					// if nothing streamed as visible text, fall back to finalText
@@ -508,7 +534,7 @@ export const runAgentMessage = async (
 		}
 
 		// turn on thinking
-		responseMessage.isThinking = true;
+		responseMessage.setIsThinking(true);
 
 		// get the text
 		const text = inputMessage.parts.reduce((acc, part) => {
@@ -554,7 +580,7 @@ export const runAgentMessage = async (
 	} finally {
 		runInAction(() => {
 			// turn off thinking
-			responseMessage.isThinking = false;
+			responseMessage.setIsThinking(false);
 		});
 		room.setIsLoading(false);
 	}
@@ -639,7 +665,7 @@ export const reconstructAllSubagents = async (room: RoomStore) => {
 					if (!target || findSubagentPart(target, subagent.runId)) {
 						return;
 					}
-					target.parts.push({
+					target.addPart({
 						type: "SUBAGENT",
 						subagent: {
 							id: subagent.runId,
@@ -676,7 +702,7 @@ export const reconnectAgentRun = (responseMessage: ResponseMessageStore) => {
 
 	room.setIsLoading(true);
 	runInAction(() => {
-		responseMessage.isThinking = true;
+		responseMessage.setIsThinking(true);
 	});
 
 	(async () => {
@@ -688,7 +714,7 @@ export const reconnectAgentRun = (responseMessage: ResponseMessageStore) => {
 			room.setError(toError(e));
 		} finally {
 			runInAction(() => {
-				responseMessage.isThinking = false;
+				responseMessage.setIsThinking(false);
 			});
 			room.setIsLoading(false);
 		}

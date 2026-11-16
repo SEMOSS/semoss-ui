@@ -1,10 +1,3 @@
-import {
-	action,
-	computed,
-	makeObservable,
-	observable,
-	runInAction,
-} from "mobx";
 import { download, runMcpTool } from "@semoss/sdk/react";
 import { getErrorMessage } from "@semoss/utility/error";
 import type { InputPixelMessage, ResponsePixelMessage } from "../../types";
@@ -15,7 +8,12 @@ import {
 	TURN_CANCELLATION_PROMPT,
 } from "../mcp/mcp-constants";
 import { getToolEngineId } from "../mcp/mcp-utils";
-import { AbstractMessageStore } from "./abstract-message.store";
+import type { RoomStore } from "../room/room.store";
+import {
+	AbstractMessageStore,
+	initialMessageSnapshot,
+	type MessageSnapshot,
+} from "./abstract-message.store";
 import { runAgentMessage } from "./agent-harness";
 import { InputMessageStore } from "./input-message.store";
 import { applyResponseStreamChunk } from "./response-stream";
@@ -23,21 +21,33 @@ import type { ToolStore } from "./tool.store";
 import { ToolSaveController } from "./tool-save-controller";
 import { type CancelCommitOutput, spliceHiddenMessages } from "./utility";
 
-/**
- * Response Message Store
- */
-export class ResponseMessageStore extends AbstractMessageStore {
+/** The user's rating of a response. */
+export interface ResponseFeedback {
+	readonly rating: boolean;
+	/** A comment; unused for now. */
+	readonly feedbackText: string;
+}
+
+/** What a response holds. */
+export interface ResponseMessageSnapshot extends MessageSnapshot {
+	readonly parts: ResponsePixelMessage["parts"];
+	/** Whether the model is still working on it. */
+	readonly isThinking: boolean;
+	/** The model's reply to this response's tool results, while it streams. */
+	readonly toolResponseMessage: ResponseMessageStore | null;
+	/** The user's rating; only for messages the model wrote. */
+	readonly feedback: ResponseFeedback | null;
+	/** The model that wrote it. */
+	readonly model: { readonly id: string; readonly name: string };
+	/** Whether the conversation above it is compacted. */
+	readonly conversationCompactedAbove: boolean;
+	/** Whether its conversation is being compacted now. */
+	readonly isCompacting: boolean;
+}
+
+/** A response from the model. */
+export class ResponseMessageStore extends AbstractMessageStore<ResponseMessageSnapshot> {
 	readonly type = "OUTPUT";
-
-	/**
-	 * Parts associated with the message
-	 */
-	parts: ResponsePixelMessage["parts"] = [];
-
-	/**
-	 *  Track if the message is thinking
-	 */
-	isThinking: boolean = false;
 
 	/**
 	 * Serializes and coalesces this response's tool-result writes (and owns the
@@ -46,93 +56,72 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	private readonly toolSaves = new ToolSaveController(this);
 
 	/**
-	 * Response to an execution
+	 * @param room - The room the message is in.
+	 * @param message - The pixel message.
 	 */
-	toolResponseMessage: ResponseMessageStore | null = null;
-
-	/**
-	 * Feedback provided by the user; only applicable to messages provided via the LLM
-	 */
-	feedback: {
-		/** Sentiment */
-		rating: boolean;
-
-		/** Comment, unused for now */
-		feedbackText: string;
-	} | null = null;
-
-	/**
-	 * Model information associated with the message
-	 */
-	model: {
-		/** Id of the model */
-		id: string;
-
-		/** Name of the model */
-		name: string;
-	} = {
-		id: "",
-		name: "",
-	};
-
-	/**
-	 * Whether this conversation is compacted above this message
-	 */
-	conversationCompactedAbove: boolean = false;
-
-	/**
-	 * Whether this message's conversation is currently being compacted
-	 */
-	isCompacting: boolean = false;
-
-	constructor(
-		room: AbstractMessageStore["room"],
-		message: ResponsePixelMessage,
-	) {
-		super(room, message);
-
-		// if prune, compaction happened
-		this.conversationCompactedAbove ||= message.pruneToolsAbove;
-
-		makeObservable(this, {
-			isThinking: observable,
-			parts: observable,
-			feedback: observable,
-			conversationCompactedAbove: observable,
-			isCompacting: observable,
-			runMessage: action,
-			savePart: action,
-			recordFeedback: action,
-			rewriteMessage: action,
-			hasVisibleContent: computed,
-			hasUnfinishedTools: computed,
-			hasTools: computed,
-			continueToolExecution: action,
-			saveToolExecution: action,
-			cancelPendingTools: action,
-			setConversationCompactedAbove: action,
-			setIsCompacting: action,
+	constructor(room: RoomStore, message: ResponsePixelMessage) {
+		super(room, {
+			...initialMessageSnapshot(message),
+			parts: [],
+			isThinking: false,
+			toolResponseMessage: null,
+			feedback: null,
+			model: { id: "", name: "" },
+			// a prune means the conversation above was compacted
+			conversationCompactedAbove: !!message.pruneToolsAbove,
+			isCompacting: false,
 		});
-
-		// sync the message
 		this.sync(message);
 	}
 
+	get isThinking(): boolean {
+		return this.getSnapshot().isThinking;
+	}
+
+	get toolResponseMessage(): ResponseMessageStore | null {
+		return this.getSnapshot().toolResponseMessage;
+	}
+
+	get feedback(): ResponseFeedback | null {
+		return this.getSnapshot().feedback;
+	}
+
+	get model(): ResponseMessageSnapshot["model"] {
+		return this.getSnapshot().model;
+	}
+
+	get conversationCompactedAbove(): boolean {
+		return this.getSnapshot().conversationCompactedAbove;
+	}
+
+	get isCompacting(): boolean {
+		return this.getSnapshot().isCompacting;
+	}
+
 	/**
-	 * Sync store properties from the pixel message
+	 * Take the backend's copy of the message, and the tool calls it holds.
+	 * Server tools (provider-side, e.g. web_search) bring their call and their
+	 * result in the same response, so both part types sync.
+	 *
+	 * @param message - The pixel message.
 	 */
-	sync(message: ResponsePixelMessage) {
+	sync(message: ResponsePixelMessage): void {
 		super.sync(message);
-
-		// set the id
-		this.id = message.messageId;
-
-		// set the parts
-		this.parts = message.parts;
-
-		// sync the tools — server tools (e.g. provider-side web_search) deliver
-		// both the call and result in the same response message, so we sync both
-		// part types here.
+		this.state.update((current) => ({
+			id: message.messageId,
+			parts: message.parts,
+			tokens: message.tokens,
+			model: {
+				id: message.modelId,
+				name: message.ornaments?.modelName || "AI",
+			},
+			feedback: message.feedback
+				? {
+						rating: message.feedback.rating,
+						feedbackText: message.feedback.feedbackText,
+					}
+				: current.feedback,
+		}));
 		message.parts.forEach((part) => {
 			if (part.type === "TOOL_CALL") {
 				this.room.syncTool(part.toolCall.id, this, part);
@@ -140,24 +129,27 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				this.room.syncTool(part.toolResult.toolCallId, this, part);
 			}
 		});
-
-		// set tokens
-		this.tokens = message.tokens;
-
-		// set the model that was used
-		this.model = {
-			id: message.modelId,
-			name: message.ornaments?.modelName || "AI",
-		};
-
-		// set feedback if there
-		if (message.feedback) {
-			this.feedback = {
-				rating: message.feedback.rating,
-				feedbackText: message.feedback.feedbackText,
-			};
-		}
 	}
+
+	/**
+	 * Mark the model as working on the response, or done.
+	 *
+	 * @param isThinking - Whether it is working.
+	 */
+	setIsThinking = (isThinking: boolean): void => {
+		this.state.update({ isThinking });
+	};
+
+	/**
+	 * Set the model's reply to this response's tool results, while it streams.
+	 *
+	 * @param toolResponseMessage - The reply, or null once it is in the tree.
+	 */
+	setToolResponseMessage = (
+		toolResponseMessage: ResponseMessageStore | null,
+	): void => {
+		this.state.update({ toolResponseMessage });
+	};
 
 	/**
 	 * Execute a user message and stream the AI response
@@ -218,8 +210,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				inputMessage.addChild(responseMessage);
 			}
 
-			// turn on thinking
-			responseMessage.isThinking = true;
+			responseMessage.setIsThinking(true);
 
 			// get the text
 			const text = inputMessage.parts.reduce((acc, part) => {
@@ -271,15 +262,12 @@ paramValues=[${JSON.stringify({
 					},
 				]
 			>(`AskPlayground(${turnParams});`, {
-				onEmit: (chunk) => {
-					runInAction(() =>
-						applyResponseStreamChunk(
-							responseMessage,
-							toolStreamIndexToId,
-							chunk,
-						),
-					);
-				},
+				onEmit: (chunk) =>
+					applyResponseStreamChunk(
+						responseMessage,
+						toolStreamIndexToId,
+						chunk,
+					),
 				onResult: ({ results }) => {
 					const { output } = results[0];
 
@@ -305,10 +293,7 @@ paramValues=[${JSON.stringify({
 
 			throw e;
 		} finally {
-			runInAction(() => {
-				// turn off thinking
-				responseMessage.isThinking = false;
-			});
+			responseMessage.setIsThinking(false);
 		}
 	};
 
@@ -364,37 +349,53 @@ paramValues=[${JSON.stringify({
 	 *
 	 * @param part - The message part to append (TEXT or THINKING)
 	 */
-	savePart = async (part: ResponsePixelMessage["parts"][number]) => {
-		const lastPart = this.parts[this.parts.length - 1];
-
-		if (part.type === "TEXT") {
-			if (lastPart?.type === "TEXT") {
-				lastPart.text += part.text;
-				lastPart.uiText += part.uiText;
-			} else {
-				this.parts.push(part);
-			}
-		} else if (part.type === "THINKING") {
-			if (lastPart?.type === "THINKING") {
-				lastPart.thinking += part.thinking;
-			} else {
-				this.parts.push(part);
-			}
+	savePart = (part: ResponsePixelMessage["parts"][number]): void => {
+		if (part.type !== "TEXT" && part.type !== "THINKING") {
+			return;
 		}
+		this.state.update((current) => {
+			const parts = current.parts;
+			const last = parts[parts.length - 1];
+			if (part.type === "TEXT" && last?.type === "TEXT") {
+				return {
+					parts: [
+						...parts.slice(0, -1),
+						{
+							...last,
+							text: last.text + part.text,
+							uiText: last.uiText + part.uiText,
+						},
+					],
+				};
+			}
+			if (part.type === "THINKING" && last?.type === "THINKING") {
+				return {
+					parts: [
+						...parts.slice(0, -1),
+						{ ...last, thinking: last.thinking + part.thinking },
+					],
+				};
+			}
+			return { parts: [...parts, part] };
+		});
 	};
 
-	/*
-	 * Set whether this conversation is compacted above this message
+	/**
+	 * Set whether the conversation above this message is compacted.
+	 *
+	 * @param compacted - Whether it is.
 	 */
-	setConversationCompactedAbove = (compacted: boolean) => {
-		this.conversationCompactedAbove = compacted;
+	setConversationCompactedAbove = (compacted: boolean): void => {
+		this.state.update({ conversationCompactedAbove: compacted });
 	};
 
-	/*
-	 * Set whether this message's conversation is currently being compacted
+	/**
+	 * Set whether this message's conversation is being compacted.
+	 *
+	 * @param compacting - Whether it is.
 	 */
-	setIsCompacting = (compacting: boolean) => {
-		this.isCompacting = compacting;
+	setIsCompacting = (compacting: boolean): void => {
+		this.state.update({ isCompacting: compacting });
 	};
 
 	/**
@@ -415,15 +416,8 @@ paramValues=[${JSON.stringify({
 				false,
 			);
 
-			// save the feedback to the message's state
-			runInAction(() => {
-				this.feedback =
-					rating === null
-						? null
-						: {
-								rating,
-								feedbackText,
-							};
+			this.state.update({
+				feedback: rating === null ? null : { rating, feedbackText },
 			});
 		} finally {
 			// noop

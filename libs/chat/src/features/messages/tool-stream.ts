@@ -77,7 +77,7 @@ export const applyToolStreamChunk = (
 				},
 			},
 		};
-		message.parts.push(placeholderPart);
+		message.addPart(placeholderPart);
 
 		// ToolStore.syncMessage stores the placeholder as toolCall.part, but the
 		// `placeholder` flag keeps the `json` getter falling back to

@@ -7,6 +7,9 @@ import { RoomContent } from "./room-content";
 const mocks = vi.hoisted(() => {
 	class MockResponseMessageStore {
 		isThinking = true;
+		setIsThinking(isThinking: boolean) {
+			this.isThinking = isThinking;
+		}
 		visible = false;
 		parts: [] = [];
 		hasUnfinishedTools = false;
@@ -158,7 +161,7 @@ test("finishes the stream scroll before a later grouped-tool resize", () => {
 	act(flushAnimationFrames);
 	mocks.scrollTo.mockClear();
 
-	response.isThinking = false;
+	response.setIsThinking(false);
 	const settledRoom = { ...room } as RoomStore;
 	rerender(<RoomContent room={settledRoom} />);
 	act(flushAnimationFrames);
