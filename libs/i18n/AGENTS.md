@@ -53,7 +53,8 @@ libs/i18n/
     ├── index.ts                       # Main exports
     └── resources/
         ├── types.ts                   # LazyResources interface
-        ├── playground.ts              # Playground lazy loader map
+        ├── chat.ts                    # @semoss/chat lazy loader map, for every chat host
+        ├── playground.ts              # Playground lazy loader map (chat.ts plus its own)
         ├── terminal.ts                # Terminal lazy loader map
         ├── client.ts                  # Client lazy loader map
         ├── auditlog.ts                # Audit log lazy loader map
@@ -62,13 +63,14 @@ libs/i18n/
             │   ├── common.json        # Core: buttons, labels, actions
             │   ├── validation.json    # Core: form validations
             │   ├── notifications.json # Core: notification templates
-            │   └── playground/        # Playground-specific
-            │       ├── chat.json
-            │       ├── room.json
-            │       ├── sidebar.json
-            │       ├── knowledge.json
-            │       ├── workspace.json
-            │       └── mcp.json
+            │   ├── chat/              # @semoss/chat
+            │   │   ├── chat.json
+            │   │   ├── room.json
+            │   │   ├── sidebar.json
+            │   │   ├── knowledge.json
+            │   │   ├── workspace.json
+            │   │   └── mcp.json
+            │   └── playground/        # Playground-only: tour.json, mobile.json
             ├── es/                    # Spanish (same structure)
             ├── fr/                    # French (same structure)
             ├── hi/                    # Hindi (same structure)
@@ -116,8 +118,8 @@ export const playgroundResources: LazyResources = {
   ns: ["common", "notifications", "validation", "chat", "room", ...],
   load: {
     common: (l) => import(`./locales/${l}/common.json`),
-    chat: (l) => import(`./locales/${l}/playground/chat.json`),
-    room: (l) => import(`./locales/${l}/playground/room.json`),
+    chat: (l) => import(`./locales/${l}/chat/chat.json`),
+    room: (l) => import(`./locales/${l}/chat/room.json`),
     // ...
   },
 };
@@ -150,7 +152,7 @@ pnpm --filter @semoss/playground exec grep -r 't("chat:oldKey")' src/
 Add the new translation key to all seven language files:
 
 ```json
-// locales/en/playground/chat.json
+// locales/en/chat/chat.json
 {
   "newFeature": {
     "title": "New Feature",
@@ -158,7 +160,7 @@ Add the new translation key to all seven language files:
   }
 }
 
-// locales/es/playground/chat.json
+// locales/es/chat/chat.json
 {
   "newFeature": {
     "title": "Nueva Función",
@@ -166,7 +168,7 @@ Add the new translation key to all seven language files:
   }
 }
 
-// locales/fr/playground/chat.json
+// locales/fr/chat/chat.json
 {
   "newFeature": {
     "title": "Nouvelle Fonction",
@@ -250,7 +252,8 @@ The `README.md` is the source of truth for developers. Keep it accurate.
 
 1. **Determine the tier**:
    - Used in multiple packages? → Add to `locales/*/common.json` (core)
-   - Playground-specific? → Add to `locales/*/playground/*.json`
+   - Chat (any host that mounts `@semoss/chat`)? → Add to `locales/*/chat/*.json` and `chatResources`
+   - Playground-only? → Add to `locales/*/playground/*.json`
   - Client-specific? → Use `locales/*/client/*.json` and update `client.ts`
 
 2. **Add to all languages**:
@@ -369,7 +372,7 @@ pnpm --filter @semoss/playground exec grep -r "t('" src/ | grep -o "t('[^']*')" 
 
 ```typescript
 // 1. Add to JSON files (all languages)
-// locales/en/playground/chat.json
+// locales/en/chat/chat.json
 {
   "newKey": "New value"
 }
@@ -392,7 +395,7 @@ If a translation is needed by multiple packages:
 
 ```typescript
 // 1. Move from package namespace to core
-// FROM: locales/en/playground/chat.json
+// FROM: locales/en/chat/chat.json
 // TO: locales/en/common.json
 
 // 2. Update all references in code
