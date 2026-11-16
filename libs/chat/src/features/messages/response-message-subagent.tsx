@@ -1,5 +1,4 @@
 import { CheckIcon, HourglassIcon, XCircleIcon } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useTranslation } from "@semoss/i18n";
 import type { AgentRunStatusValue } from "@semoss/sdk";
 import { cn, Spinner } from "@semoss/ui/next";
@@ -64,59 +63,61 @@ interface ResponseMessageSubagentProps {
  * cancel action -- see agent-harness.ts's item.kind === "subagent" handling
  * for what's actually tracked.
  */
-export const ResponseMessageSubagent: React.FC<ResponseMessageSubagentProps> =
-	observer(({ message, part }) => {
-		const { t } = useTranslation("tool");
-		const { room } = message;
-		const { subagent } = part;
-		const state = getSubagentState(subagent.status, subagent, t);
-		const panelConfig = { subagentId: subagent.id };
-		const isActive = useSidebarPanelActive(
-			room,
+export const ResponseMessageSubagent = ({
+	message,
+	part,
+}: ResponseMessageSubagentProps) => {
+	const { t } = useTranslation("tool");
+	const { room } = message;
+	const { subagent } = part;
+	const state = getSubagentState(subagent.status, subagent, t);
+	const panelConfig = { subagentId: subagent.id };
+	const isActive = useSidebarPanelActive(
+		room,
+		ROOM_PANEL_TYPES.SUBAGENT,
+		panelConfig,
+	);
+
+	const handleClick = () => {
+		room.openSidebarPanel(
 			ROOM_PANEL_TYPES.SUBAGENT,
 			panelConfig,
+			subagent.alias || t("subagent.title"),
 		);
+	};
 
-		const handleClick = () => {
-			room.openSidebarPanel(
-				ROOM_PANEL_TYPES.SUBAGENT,
-				panelConfig,
-				subagent.alias || t("subagent.title"),
-			);
-		};
-
-		return (
-			<button
-				type="button"
-				onClick={handleClick}
+	return (
+		<button
+			type="button"
+			onClick={handleClick}
+			className={cn(
+				"flex items-center gap-3 rounded-lg border border-border p-2 text-start hover:bg-accent",
+				state.background,
+				isActive && "border-primary",
+			)}
+		>
+			<div
 				className={cn(
-					"flex items-center gap-3 rounded-lg border border-border p-2 text-start hover:bg-accent",
-					state.background,
-					isActive && "border-primary",
+					"flex size-9 shrink-0 items-center justify-center rounded-sm",
+					state.iconClassName,
 				)}
 			>
-				<div
-					className={cn(
-						"flex size-9 shrink-0 items-center justify-center rounded-sm",
-						state.iconClassName,
-					)}
+				{state.icon}
+			</div>
+			<div className="flex min-w-0 flex-1 flex-col">
+				<span
+					className="truncate font-medium text-foreground text-sm"
+					title={subagent.alias || t("subagent.title")}
 				>
-					{state.icon}
-				</div>
-				<div className="flex min-w-0 flex-1 flex-col">
-					<span
-						className="truncate font-medium text-foreground text-sm"
-						title={subagent.alias || t("subagent.title")}
-					>
-						{subagent.alias || t("subagent.title")}
-					</span>
-					<span
-						className="truncate text-muted-foreground text-sm"
-						title={state.subtext}
-					>
-						{state.subtext}
-					</span>
-				</div>
-			</button>
-		);
-	});
+					{subagent.alias || t("subagent.title")}
+				</span>
+				<span
+					className="truncate text-muted-foreground text-sm"
+					title={state.subtext}
+				>
+					{state.subtext}
+				</span>
+			</div>
+		</button>
+	);
+};

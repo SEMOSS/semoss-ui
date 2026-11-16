@@ -7,7 +7,6 @@ import {
 	LogInIcon,
 	XIcon,
 } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { Badge, Button, Small, toast } from "@semoss/ui/next";
@@ -22,6 +21,7 @@ import { useConnectProvider } from "../../connectors/use-connect-provider";
 import { isAskExecutionMode } from "../../mcp/mcp-utils";
 import { decideAgentToolAction } from "../../messages/agent-harness";
 import type { ToolStore } from "../../messages/tool.store";
+import { useRoomSelector } from "../../room/use-room-selector";
 import { ToolInspector } from "../../tool-inspector/tool-inspector";
 import {
 	getConnectorToolService,
@@ -80,22 +80,53 @@ const formatResponse = (response: string): string =>
  * folder calls run here and resume the run with their result, while connector
  * calls are approved or rejected for the harness to carry out.
  */
-export const ChatToolCard = observer(({ tool, variant }: ChatToolCardProps) => {
+export const ChatToolCard = ({ tool, variant }: ChatToolCardProps) => {
 	const { t } = useTranslation(["chatTools", "chatConnectors"]);
 	const [decision, setDecision] = useState<"allow" | "deny" | null>(null);
 
 	const room = tool.room;
 	const handleSignIn = useConnectProvider(signInToProvider);
-	const json = tool.json;
-	const args = tool.parameters ?? {};
-	const isFolder = isFolderToolCall(json);
-	const service = isFolder ? undefined : getConnectorToolService(json);
-	const isAgentRoom = room.mode === "agent";
-	const isAsk = isAskExecutionMode(json._meta?.SMSS_MCP_EXECUTION);
-	const isWaiting =
-		tool.status === "INITIAL" &&
-		isAsk &&
-		(isAgentRoom ? !!tool.pendingAction : !!tool.message);
+	// the call's json reads the room's options and the run mode too; a
+	// decorated call's json is a new object on every read, so select its values
+	const {
+		name,
+		jsonDescription,
+		isFolder,
+		service,
+		isAgentRoom,
+		isWaiting,
+		args,
+		toolStatus,
+		response,
+		displayName,
+	} = useRoomSelector(room, (current) => {
+		const json = tool.json;
+		const isFolderCall = isFolderToolCall(json);
+		const isAgent = current.mode === "agent";
+		return {
+			name: json.name,
+			jsonDescription: json.description,
+			isFolder: isFolderCall,
+			service: isFolderCall ? undefined : getConnectorToolService(json),
+			isAgentRoom: isAgent,
+			isWaiting:
+				tool.status === "INITIAL" &&
+				isAskExecutionMode(json._meta?.SMSS_MCP_EXECUTION) &&
+				(isAgent ? !!tool.pendingAction : !!tool.message),
+			args: tool.parameters ?? {},
+			toolStatus: tool.status,
+			response: tool.response,
+			displayName: tool.displayName,
+		};
+	});
+	// the panel's folder tool definition follows the room's settings
+	const definition = useRoomSelector(room, (current) =>
+		variant === "panel" && isFolder
+			? current.chatTools.chatToolDefinitions.find(
+					(item) => item.name === name,
+				)
+			: undefined,
+	);
 
 	/**
 	 * Run a decision, reporting a failure without leaving the buttons stuck.
@@ -148,7 +179,7 @@ export const ChatToolCard = observer(({ tool, variant }: ChatToolCardProps) => {
 				label: t("card.status.waiting"),
 				icon: <HourglassIcon aria-hidden />,
 			}
-		: tool.status === "LOADING"
+		: toolStatus === "LOADING"
 			? {
 					label: t("card.status.running"),
 					icon: (
@@ -158,17 +189,17 @@ export const ChatToolCard = observer(({ tool, variant }: ChatToolCardProps) => {
 						/>
 					),
 				}
-			: tool.status === "SUCCESS"
+			: toolStatus === "SUCCESS"
 				? {
 						label: t("card.status.done"),
 						icon: <CheckIcon aria-hidden />,
 					}
-				: tool.status === "ERROR"
+				: toolStatus === "ERROR"
 					? {
 							label: t("card.status.failed"),
 							icon: <CircleAlertIcon aria-hidden />,
 						}
-					: tool.status === "CANCELLED"
+					: toolStatus === "CANCELLED"
 						? {
 								label: t("card.status.notRun"),
 								icon: <XIcon aria-hidden />,
@@ -179,7 +210,6 @@ export const ChatToolCard = observer(({ tool, variant }: ChatToolCardProps) => {
 							};
 
 	const renderFolderDetails = (): ReactNode => {
-		const name = json.name;
 		if (!isFolderToolName(name)) {
 			return null;
 		}
@@ -254,7 +284,7 @@ export const ChatToolCard = observer(({ tool, variant }: ChatToolCardProps) => {
 				return (
 					<ToolValueRow
 						label={t("card.path")}
-						value={json.description || t("card.rootFolder")}
+						value={jsonDescription || t("card.rootFolder")}
 					/>
 				);
 		}
@@ -282,14 +312,14 @@ export const ChatToolCard = observer(({ tool, variant }: ChatToolCardProps) => {
 	};
 
 	const hasResult =
-		!!tool.response &&
-		(tool.status === "SUCCESS" ||
-			tool.status === "ERROR" ||
-			tool.status === "CANCELLED");
+		!!response &&
+		(toolStatus === "SUCCESS" ||
+			toolStatus === "ERROR" ||
+			toolStatus === "CANCELLED");
 	// a connector call that failed for want of a sign in says so, with the
 	// way to sign in right there
 	const signInProvider =
-		service && tool.status === "ERROR" && isSignInFailure(tool.response)
+		service && toolStatus === "ERROR" && isSignInFailure(response)
 			? service.provider
 			: null;
 
@@ -308,9 +338,9 @@ export const ChatToolCard = observer(({ tool, variant }: ChatToolCardProps) => {
 			<div className="flex min-w-0 flex-1 flex-col">
 				<span
 					className="truncate font-medium text-sm"
-					title={tool.displayName}
+					title={displayName}
 				>
-					{tool.displayName}
+					{displayName}
 				</span>
 				<Small className="truncate text-muted-foreground">
 					{service
@@ -381,16 +411,11 @@ export const ChatToolCard = observer(({ tool, variant }: ChatToolCardProps) => {
 		) : null;
 
 	if (variant === "panel") {
-		const definition = isFolder
-			? room.chatTools.chatToolDefinitions.find(
-					(item) => item.name === json.name,
-				)
-			: undefined;
 		return (
 			<ToolInspector
 				tool={tool}
 				header={header}
-				response={formatResponse(tool.response)}
+				response={formatResponse(response)}
 				description={definition?.description}
 				inputSchema={definition?.inputSchema}
 				footer={
@@ -404,7 +429,7 @@ export const ChatToolCard = observer(({ tool, variant }: ChatToolCardProps) => {
 								</Small>
 							)}
 							{isWaiting &&
-								json.name === FOLDER_TOOL_NAMES.DELETE &&
+								name === FOLDER_TOOL_NAMES.DELETE &&
 								isSet(args.recursive) && (
 									<Small className="text-warning">
 										{t("card.deleteRecursive")}
@@ -437,12 +462,12 @@ export const ChatToolCard = observer(({ tool, variant }: ChatToolCardProps) => {
 			{hasResult ? (
 				<ToolTextBlock
 					label={
-						tool.status === "ERROR"
+						toolStatus === "ERROR"
 							? t("card.error")
 							: t("card.result")
 					}
 				>
-					{formatResponse(tool.response)}
+					{formatResponse(response)}
 				</ToolTextBlock>
 			) : null}
 
@@ -455,4 +480,4 @@ export const ChatToolCard = observer(({ tool, variant }: ChatToolCardProps) => {
 			{body}
 		</div>
 	);
-});
+};

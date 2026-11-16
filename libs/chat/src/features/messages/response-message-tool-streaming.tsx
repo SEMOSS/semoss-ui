@@ -1,10 +1,10 @@
 import { ChevronDown } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { cn, Spinner } from "@semoss/ui/next";
 import { formatJson } from "@semoss/utility/json";
 import type { ToolStore } from "./tool.store";
+import { useTool } from "./use-tool";
 
 interface ResponseMessageToolStreamingProps {
 	tool: ToolStore;
@@ -18,50 +18,55 @@ interface ResponseMessageToolStreamingProps {
  *
  * Clicking the pill expands an inline preview of the accumulating JSON.
  */
-export const ResponseMessageToolStreaming: React.FC<ResponseMessageToolStreamingProps> =
-	observer(({ tool }) => {
-		const { t } = useTranslation("tool");
-		const [isOpen, setIsOpen] = useState(false);
+export const ResponseMessageToolStreaming = ({
+	tool,
+}: ResponseMessageToolStreamingProps) => {
+	const { t } = useTranslation("tool");
+	const [isOpen, setIsOpen] = useState(false);
+	const { title, argumentsBuffer } = useTool(tool, (current) => ({
+		title: current.json.title,
+		argumentsBuffer: current.argumentsBuffer,
+	}));
 
-		return (
-			<div className="flex flex-col rounded-lg border border-border bg-sidebar">
-				<div className="flex items-center">
-					<button
-						type="button"
-						className="flex min-w-0 flex-1 items-center gap-3 p-2 text-start"
-						onClick={() => setIsOpen((prev) => !prev)}
-					>
-						<div className="flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground">
-							<Spinner />
-						</div>
-						<div className="-ms-1.5 flex min-w-0 flex-1 items-center gap-2">
-							<span
-								className="truncate text-muted-foreground text-sm"
-								title={tool.json.title || undefined}
-							>
-								{tool.json.title || t("status.loadingTool")}
-							</span>
-						</div>
-						<ChevronDown
-							className={cn(
-								"me-1 size-4 shrink-0 text-muted-foreground transition-transform",
-								isOpen && "rotate-180",
-							)}
-						/>
-					</button>
-				</div>
-
-				{isOpen && (
-					<div className="border-border border-t p-2">
-						<pre className="max-h-48 overflow-auto whitespace-pre-wrap break-all rounded bg-muted p-2 font-mono text-muted-foreground text-xs">
-							{formatJson(tool.argumentsBuffer) || (
-								<span className="italic">
-									{t("status.waitingForArguments")}
-								</span>
-							)}
-						</pre>
+	return (
+		<div className="flex flex-col rounded-lg border border-border bg-sidebar">
+			<div className="flex items-center">
+				<button
+					type="button"
+					className="flex min-w-0 flex-1 items-center gap-3 p-2 text-start"
+					onClick={() => setIsOpen((prev) => !prev)}
+				>
+					<div className="flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground">
+						<Spinner />
 					</div>
-				)}
+					<div className="-ms-1.5 flex min-w-0 flex-1 items-center gap-2">
+						<span
+							className="truncate text-muted-foreground text-sm"
+							title={title || undefined}
+						>
+							{title || t("status.loadingTool")}
+						</span>
+					</div>
+					<ChevronDown
+						className={cn(
+							"me-1 size-4 shrink-0 text-muted-foreground transition-transform",
+							isOpen && "rotate-180",
+						)}
+					/>
+				</button>
 			</div>
-		);
-	});
+
+			{isOpen && (
+				<div className="border-border border-t p-2">
+					<pre className="max-h-48 overflow-auto whitespace-pre-wrap break-all rounded bg-muted p-2 font-mono text-muted-foreground text-xs">
+						{formatJson(argumentsBuffer) || (
+							<span className="italic">
+								{t("status.waitingForArguments")}
+							</span>
+						)}
+					</pre>
+				</div>
+			)}
+		</div>
+	);
+};

@@ -1,4 +1,3 @@
-import { toJS } from "mobx";
 import type {
 	ToolViewCall,
 	ToolViewCallStatus,
@@ -33,7 +32,7 @@ export const toToolViewCall = (tool: ToolStore): ToolViewCall => {
 		id: tool.id,
 		functionName:
 			json._meta?.SMSS_FUNCTION_NAME || json.original_name || json.name,
-		arguments: toJS(tool.parameters ?? {}),
+		arguments: tool.parameters ?? {},
 		result: response
 			? status === "succeeded"
 				? response

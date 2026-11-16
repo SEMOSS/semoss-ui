@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { expect, test, vi } from "vitest";
+import { fakeStore } from "../../test/fake-store";
 import { ResponseMessageToolGroup } from "./response-message-tool-group";
 import type { ToolStore } from "./tool.store";
 
@@ -20,9 +21,11 @@ vi.mock("./response-message-tool", () => ({
 		</>
 	),
 }));
+const room = fakeStore({});
 const tool = (id: string, status: string, ask = false) =>
 	({
 		id,
+		room,
 		displayName: id,
 		status,
 		isResolved: true,

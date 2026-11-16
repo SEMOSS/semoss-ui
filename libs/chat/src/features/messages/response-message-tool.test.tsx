@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vitest";
+import { fakeStore } from "../../test/fake-store";
 import { ResponseMessageTool } from "./response-message-tool";
 import type { ToolStore } from "./tool.store";
 
@@ -44,7 +45,7 @@ function createTool(
 		isOpen?: boolean;
 	} = {},
 ) {
-	return {
+	return fakeStore({
 		id: "tool-1",
 		isResolved: true,
 		display: state.display ?? "sidebar",
@@ -53,10 +54,10 @@ function createTool(
 		status: approval ? "INITIAL" : "LOADING",
 		pendingAction: approval ? { type: "approval" } : undefined,
 		json: { id: "tool-1", _meta: {} },
-		room: {
+		room: fakeStore({
 			mode,
 			sidebar: { isOpen: false },
-		},
+		}),
 		message: {
 			id: "message-1",
 			saveToolExecution: vi.fn().mockResolvedValue(undefined),
@@ -64,7 +65,7 @@ function createTool(
 		openTool: vi.fn(),
 		closeTool: vi.fn(),
 		setIsExpanded: vi.fn(),
-	} as unknown as ToolStore;
+	}) as unknown as ToolStore;
 }
 beforeEach(() => {
 	vi.clearAllMocks();

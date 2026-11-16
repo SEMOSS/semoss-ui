@@ -1,8 +1,8 @@
-import { observer } from "mobx-react-lite";
 import { type ReactNode, useState } from "react";
 import { type ResolvedToolView, ToolViewRenderer } from "@semoss/shared";
 import { cn, Skeleton } from "@semoss/ui/next";
 import type { ToolStore } from "../messages/tool.store";
+import { useRoomSelector } from "../room/use-room-selector";
 import { toToolViewCall, toToolViewMode } from "./tool-view-call";
 import { createToolViewDecisions } from "./tool-view-decisions";
 import { useRoomToolViewHost } from "./use-room-tool-view-host";
@@ -46,35 +46,41 @@ interface ComponentToolViewProps {
  * result, even before an agent run's next update says it is no longer
  * waiting, so it cannot be decided twice.
  */
-export const ComponentToolView = observer(
-	({ tool, view, variant, fallback }: ComponentToolViewProps) => {
-		const host = useRoomToolViewHost(view.params);
-		const [isDecided, setIsDecided] = useState(false);
-		const mode = isDecided ? "result" : toToolViewMode(tool);
-		const decisions = createToolViewDecisions(tool);
-		const markDecided = () => setIsDecided(true);
-		return (
-			<div
-				className={cn(
-					"min-w-0 overflow-auto",
-					variant === "panel"
-						? "h-full w-full"
-						: "rounded-lg border border-border bg-background",
-					variant === "inline" && mode === "result" && "max-h-96",
-				)}
-			>
-				<ToolViewRenderer
-					view={view}
-					call={toToolViewCall(tool)}
-					mode={mode}
-					host={host}
-					onApprove={afterDecision(decisions.onApprove, markDecided)}
-					onDecline={afterDecision(decisions.onDecline, markDecided)}
-					onRespond={afterDecision(decisions.onRespond, markDecided)}
-					loading={<Skeleton className="h-24 w-full" />}
-					fallback={fallback}
-				/>
-			</div>
-		);
-	},
-);
+export const ComponentToolView = ({
+	tool,
+	view,
+	variant,
+	fallback,
+}: ComponentToolViewProps) => {
+	const host = useRoomToolViewHost(view.params);
+	const [isDecided, setIsDecided] = useState(false);
+	// the call's json and mode read the room's options and run mode too
+	const toolMode = useRoomSelector(tool.room, () => toToolViewMode(tool));
+	const call = useRoomSelector(tool.room, () => toToolViewCall(tool));
+	const mode = isDecided ? "result" : toolMode;
+	const decisions = createToolViewDecisions(tool);
+	const markDecided = () => setIsDecided(true);
+	return (
+		<div
+			className={cn(
+				"min-w-0 overflow-auto",
+				variant === "panel"
+					? "h-full w-full"
+					: "rounded-lg border border-border bg-background",
+				variant === "inline" && mode === "result" && "max-h-96",
+			)}
+		>
+			<ToolViewRenderer
+				view={view}
+				call={call}
+				mode={mode}
+				host={host}
+				onApprove={afterDecision(decisions.onApprove, markDecided)}
+				onDecline={afterDecision(decisions.onDecline, markDecided)}
+				onRespond={afterDecision(decisions.onRespond, markDecided)}
+				loading={<Skeleton className="h-24 w-full" />}
+				fallback={fallback}
+			/>
+		</div>
+	);
+};

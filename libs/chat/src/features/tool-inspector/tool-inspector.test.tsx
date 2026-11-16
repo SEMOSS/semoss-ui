@@ -8,9 +8,9 @@ import {
 	within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { observable, runInAction } from "mobx";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import type { CodeEditorProps } from "@semoss/ui/next";
+import { fakeStore } from "../../test/fake-store";
 import { ChatToolCard } from "../chat-tools/components/chat-tool-card";
 import { ToolsDefaultView } from "../mcp/tools-default-view/tools-default-view";
 import type { ToolStore } from "../messages/tool.store";
@@ -83,8 +83,9 @@ vi.mock("@semoss/ui/next", async (importOriginal) => {
 });
 
 const createTool = (status: ToolStore["status"] = "SUCCESS") =>
-	observable({
+	fakeStore({
 		id: "call-123",
+		room: fakeStore({ mode: "chat" }),
 		displayName: "Example tool",
 		status,
 		parameters: {
@@ -103,7 +104,7 @@ const createTool = (status: ToolStore["status"] = "SUCCESS") =>
 				SMSS_PROJECT_NAME: "Example toolbox",
 			},
 		},
-	}) as unknown as ToolStore;
+	}) as unknown as ToolStore & { notify: () => void };
 
 beforeEach(() => vi.clearAllMocks());
 afterEach(cleanup);
@@ -144,11 +145,10 @@ test("results automatically appear unless the user has chosen a tab", async () =
 	expect(
 		screen.getByRole("tab", { name: "inspector.input" }),
 	).toHaveAttribute("aria-selected", "true");
-	act(() =>
-		runInAction(() => {
-			Object.assign(tool, { status: "SUCCESS" });
-		}),
-	);
+	act(() => {
+		Object.assign(tool, { status: "SUCCESS" });
+		tool.notify();
+	});
 	expect(screen.getByRole("tab", { name: "tabs.output" })).toHaveAttribute(
 		"aria-selected",
 		"true",
@@ -157,11 +157,10 @@ test("results automatically appear unless the user has chosen a tab", async () =
 	const pendingTool = createTool("LOADING");
 	render(<ToolInspector tool={pendingTool} />);
 	await user.click(screen.getByRole("tab", { name: "inspector.info" }));
-	act(() =>
-		runInAction(() => {
-			Object.assign(pendingTool, { status: "SUCCESS" });
-		}),
-	);
+	act(() => {
+		Object.assign(pendingTool, { status: "SUCCESS" });
+		pendingTool.notify();
+	});
 	expect(screen.getByRole("tab", { name: "inspector.info" })).toHaveAttribute(
 		"aria-selected",
 		"true",
@@ -289,7 +288,7 @@ const createApprovalTool = (mode: "chat" | "agent" = "chat") => {
 			path: "example.txt",
 			content: "Long text\n".repeat(1000),
 		},
-		room: {
+		room: fakeStore({
 			mode,
 			chatTools: {
 				approveChatTool,
@@ -297,7 +296,7 @@ const createApprovalTool = (mode: "chat" | "agent" = "chat") => {
 				approveConnectorChatTool,
 				chatToolDefinitions: [],
 			},
-		},
+		}),
 	} as unknown as ToolStore;
 	return { tool, approveChatTool, declineChatTool, approveConnectorChatTool };
 };
