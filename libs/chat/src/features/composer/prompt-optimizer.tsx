@@ -15,25 +15,33 @@ import {
 import { useChatSession } from "../chat/use-chat-session";
 import type { RoomStore } from "../room/room.store";
 
+/** What the `LLM` reactor returns. */
 interface LLMOutput {
+	/** The model's reply, or an error message. */
 	response?: string;
 	[key: string]: unknown;
 }
 
+/** One pixel's result in the response. */
 interface PixelReturn {
+	/** The reactor's output. */
 	output?: LLMOutput;
+	/** Includes `ERROR` when the pixel failed. */
 	operationType?: string[];
 }
 
+/** The response to the optimization pixel. */
 interface LLMResponse {
+	/** One result per pixel run. */
 	pixelReturn?: PixelReturn[];
 }
 
+/** Props for {@link PromptOptimizer}. */
 interface PromptOptimizerProps {
 	/** Current composer text; replacements invalidate pending optimization. */
 	input: string;
 	/** Replace the composer text after optimization or revert. */
-	setInput: React.Dispatch<React.SetStateAction<string>>;
+	onInputChange: React.Dispatch<React.SetStateAction<string>>;
 	/** Prevent optimizing while the room is busy. */
 	disabled: boolean;
 	/** Supplies instructions and scopes pending requests. */
@@ -42,10 +50,13 @@ interface PromptOptimizerProps {
 	modelId?: string;
 }
 
-/** Escape the existing LLM command argument. */
+/**
+ * Escape text for the `LLM` reactor's quoted `command` argument.
+ *
+ * @param raw - The text.
+ * @returns The text with backslashes, double quotes, and newlines escaped, safe inside `command=["..."]`.
+ */
 function escapeForPixelCommand(raw: string): string {
-	// Ensure the command string is safe inside: command=["..."]
-	// Escape backslashes, double quotes, and newlines.
 	return raw
 		.replace(/\\/g, "\\\\")
 		.replace(/"/g, '\\"')
@@ -55,7 +66,7 @@ function escapeForPixelCommand(raw: string): string {
 /** Optimize the current draft, with a single-click revert until it changes. */
 export const PromptOptimizer = ({
 	input,
-	setInput,
+	onInputChange,
 	disabled,
 	modelId,
 	room,
@@ -65,7 +76,8 @@ export const PromptOptimizer = ({
 	const { chat } = useChatSession();
 
 	const [isOptimizing, setIsOptimizing] = useState(false);
-	const [showRevert, setShowRevert] = useState(false);
+	const [isRevertShown, setIsRevertShown] = useState(false);
+	// a token for the current draft, room, and model; a reply checks it is still current
 	const requestRef = useRef<object | null>(null);
 	const prevInputRef = useRef<string>("");
 	const prevOptimizedRef = useRef<string>("");
@@ -79,6 +91,7 @@ export const PromptOptimizer = ({
 		};
 	}, [input, room, disabled, modelId]);
 
+	/** Ask the model for a clearer version of the draft and put it in the composer. */
 	const handleImprovePrompt = async (): Promise<void> => {
 		if (disabled || isOptimizing || !input.trim()) return;
 		setIsOptimizing(true);
@@ -87,7 +100,7 @@ export const PromptOptimizer = ({
 		try {
 			prevInputRef.current = input;
 
-			//Build the context if it is there
+			// the room's instructions give the model context, when set
 			const context = room?.options?.instructions || "";
 
 			const optimizationPrompt = `Please optimize the following prompt to be more clear, specific, and effective while maintaining its original intent:
@@ -143,10 +156,10 @@ export const PromptOptimizer = ({
 
 			if (newPrompt !== input) {
 				prevOptimizedRef.current = newPrompt;
-				setShowRevert(true);
+				setIsRevertShown(true);
 			}
 
-			setInput(newPrompt);
+			onInputChange(newPrompt);
 			toast.success(t("optimizer.success"));
 		} catch (e: unknown) {
 			if (requestId !== requestRef.current) return;
@@ -158,15 +171,17 @@ export const PromptOptimizer = ({
 		}
 	};
 
+	/** Put back the draft from before the last optimization. */
 	const handleRevert = () => {
 		if (disabled || isOptimizing) return;
-		setInput(prevInputRef.current);
-		setShowRevert(false);
+		onInputChange(prevInputRef.current);
+		setIsRevertShown(false);
 	};
 
+	// editing the optimized text ends the chance to revert it
 	useEffect(() => {
 		if (input !== prevOptimizedRef.current) {
-			setShowRevert(false);
+			setIsRevertShown(false);
 		}
 	}, [input]);
 
@@ -180,18 +195,18 @@ export const PromptOptimizer = ({
 						variant="ghost"
 						size="icon-sm"
 						aria-label={
-							showRevert
+							isRevertShown
 								? t("optimizer.revert")
 								: t("optimizer.optimize")
 						}
 						disabled={disabled || isOptimizing || !input.trim()}
 						onClick={
-							showRevert ? handleRevert : handleImprovePrompt
+							isRevertShown ? handleRevert : handleImprovePrompt
 						}
 					>
 						{isOptimizing ? (
 							<Spinner />
-						) : showRevert ? (
+						) : isRevertShown ? (
 							<UndoIcon aria-hidden="true" />
 						) : (
 							<WandSparklesIcon aria-hidden="true" />
@@ -202,7 +217,7 @@ export const PromptOptimizer = ({
 			<TooltipContent>
 				{isOptimizing
 					? t("optimizer.optimizing")
-					: showRevert
+					: isRevertShown
 						? t("optimizer.revert")
 						: t("optimizer.optimize")}
 			</TooltipContent>

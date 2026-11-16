@@ -10,11 +10,13 @@ import {
 } from "@semoss/ui/next";
 import type { ModelRouting } from "../../types";
 
+/** Props for {@link ModelRouterAttribution}. */
 interface ModelRouterAttributionProps {
 	/** Confirmed destination and diagnostic evidence for this individual response. */
 	routing?: ModelRouting;
 }
 
+/** How the router picked its route, by the trace's `selection_source`. */
 const SOURCES: Record<string, string> = {
 	classifier: "Classifier selected this route",
 	sticky: "Reused the conversation's pinned model — classifier skipped",
@@ -25,7 +27,11 @@ const SOURCES: Record<string, string> = {
 	weighted: "Selected by weighted distribution",
 };
 
-/** Shows the serving model plus the actual classifier input/result and fallback evidence. */
+/**
+ * Names the model that answered a routed response, with collapsible routing
+ * details: how the route was picked, the classifier's request and result, and
+ * any fallback. Renders nothing for a response the router did not route.
+ */
 export const ModelRouterAttribution = ({
 	routing,
 }: ModelRouterAttributionProps) => {
@@ -43,6 +49,7 @@ export const ModelRouterAttribution = ({
 	const hasClassificationFailure =
 		trace?.classifier_status === "error" ||
 		trace?.classifier_status === "invalid_choice";
+	// JSON payloads, each shown in its own scrollable block
 	const details = [
 		{ label: "Classifier request", value: trace?.classifier_request },
 		{ label: "Classifier result", value: trace?.classifier_response },

@@ -5,8 +5,9 @@ import { useRoomOrContext } from "../room/room.context";
 import type { RoomStore } from "../room/room.store";
 import { RoomMessages } from "./room-messages";
 
+/** Props for {@link RoomConversation}. */
 interface RoomConversationProps {
-	/** Room to load */
+	/** The room to show; defaults to the room in context. */
 	room?: RoomStore;
 }
 

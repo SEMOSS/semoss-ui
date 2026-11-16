@@ -1,5 +1,4 @@
-import { ChevronDownIcon, InfoIcon } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
@@ -8,8 +7,6 @@ import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
-	RadioGroup,
-	RadioGroupItem,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -19,9 +16,12 @@ import { useChatSession } from "../chat/use-chat-session";
 import { useChatConfig } from "../chat-config/use-chat-config";
 import type { RoomStore } from "../room/room.store";
 import { useRoomSelector } from "../room/use-room-selector";
+import {
+	type CompactionStrategy,
+	CompactStrategyPicker,
+} from "./compact-strategy-picker";
 
-type CompactionStrategy = "TOOL_PRUNE" | "SUMMARY" | "AUTO";
-
+/** Props for {@link RoomContextUsageIndicator}. */
 interface RoomContextUsageIndicatorProps {
 	/** CSS classes for styling customization */
 	className?: string;
@@ -37,8 +37,10 @@ interface RoomContextUsageIndicatorProps {
 }
 
 /**
- * Format token counts for display
- * Converts large numbers to readable format (e.g., 1500 -> 1.5k, 2000000 -> 2.0M)
+ * Format a token count for display, as 1.5k or 2.0M.
+ *
+ * @param tokens - The count; none reads as 0.
+ * @returns The formatted count.
  */
 const formatTokens = (tokens: number | undefined) => {
 	if (tokens === undefined) return "0";
@@ -52,116 +54,7 @@ const formatTokens = (tokens: number | undefined) => {
 };
 
 /**
- * CompactStrategyPicker
- * Single "Compact" button with a collapsible "Advanced Options" section.
- * Stays within the parent DOM (no portals) so it doesn't close the usage popover.
- */
-const CompactStrategyPicker: React.FC<{
-	disabled: boolean;
-	strategy: CompactionStrategy;
-	onPickStrategy: (s: CompactionStrategy) => void;
-	onCompact: () => void;
-}> = ({ disabled, strategy, onPickStrategy, onCompact }) => {
-	const { t } = useTranslation("room");
-	const [expanded, setExpanded] = useState(false);
-	const radioId = useId();
-
-	return (
-		<div className="mt-2 space-y-2 border-t pt-2">
-			<Button
-				type="button"
-				size="sm"
-				variant="default"
-				className="w-full"
-				disabled={disabled}
-				onClick={(e) => {
-					e.stopPropagation();
-					onCompact();
-				}}
-			>
-				{t("settings.compactButton")}
-			</Button>
-			<Button
-				type="button"
-				variant="ghost"
-				size="sm"
-				className="flex w-full items-center gap-1 text-muted-foreground text-xs hover:text-foreground"
-				onClick={() => setExpanded((v) => !v)}
-			>
-				<ChevronDownIcon
-					className={cn(
-						"size-3 transition-transform",
-						expanded && "rotate-180",
-					)}
-				/>
-				{expanded
-					? t("settings.compactionOptions")
-					: t("settings.advancedOptions")}
-			</Button>
-			{expanded && (
-				<RadioGroup
-					value={strategy}
-					onValueChange={(v) => {
-						if (
-							v === "SUMMARY" ||
-							v === "TOOL_PRUNE" ||
-							v === "AUTO"
-						)
-							onPickStrategy(v);
-					}}
-					className="gap-1 pl-1"
-				>
-					{(
-						[
-							"SUMMARY",
-							"TOOL_PRUNE",
-							"AUTO",
-						] as CompactionStrategy[]
-					).map((s) => (
-						<div
-							key={s}
-							className="flex items-center gap-2 rounded-sm px-1 py-0.5 text-sm hover:bg-accent"
-						>
-							<RadioGroupItem value={s} id={`${radioId}-${s}`} />
-							<label
-								htmlFor={`${radioId}-${s}`}
-								className="flex-1 cursor-pointer"
-							>
-								{t(`settings.strategyLabel.${s}`)}
-							</label>
-							<Tooltip disableHoverableContent={false}>
-								<TooltipTrigger asChild>
-									<Button
-										type="button"
-										variant="ghost"
-										size="icon-sm"
-										aria-label={t(
-											`settings.strategyLabel.${s}`,
-										)}
-									>
-										<InfoIcon
-											aria-hidden="true"
-											className="size-4 text-muted-foreground"
-										/>
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent
-									side="left"
-									className="max-w-52 text-wrap text-xs"
-								>
-									{t(`settings.strategyTooltip.${s}`)}
-								</TooltipContent>
-							</Tooltip>
-						</div>
-					))}
-				</RadioGroup>
-			)}
-		</div>
-	);
-};
-
-/**
- * RoomContextUsageIndicator - A small donut chart showing context window usage, with a
+ * A small donut chart showing context window usage, with a
  * hover popover for usage stats and a compact-conversation action.
  *
  * Hovering (or the popover content itself) keeps the popover open via a short close
@@ -176,11 +69,12 @@ export const RoomContextUsageIndicator = ({
 	const { t } = useTranslation("room");
 	const { chat } = useChatSession();
 	const { theme } = useChatConfig();
-	const [open, setOpen] = useState(false);
+	const [isOpen, setIsOpen] = useState(false);
 	const [compactionStrategy, setCompactionStrategy] =
 		useState<CompactionStrategy>(theme.defaultCompactionStrategy ?? "AUTO");
 	const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const isHovering = useRef(false);
+	// stop a pending close from setting state after unmount
 	useEffect(
 		() => () => {
 			if (closeTimer.current) clearTimeout(closeTimer.current);
@@ -202,15 +96,17 @@ export const RoomContextUsageIndicator = ({
 		(current) => current.models.contextWindow,
 	);
 
+	/** Open the popover, cancelling a pending close. */
 	const handleOpen = () => {
 		isHovering.current = true;
 		if (closeTimer.current) clearTimeout(closeTimer.current);
-		setOpen(true);
+		setIsOpen(true);
 	};
 
+	/** Close the popover after a short delay, so the pointer can move between the donut and the popover. */
 	const scheduleClose = () => {
 		isHovering.current = false;
-		closeTimer.current = setTimeout(() => setOpen(false), 150);
+		closeTimer.current = setTimeout(() => setIsOpen(false), 150);
 	};
 
 	const usedPercent =
@@ -247,10 +143,11 @@ export const RoomContextUsageIndicator = ({
 
 	return (
 		<Popover
-			open={open}
-			onOpenChange={(o) => {
-				if (!o && isHovering.current) return;
-				setOpen(o);
+			open={isOpen}
+			onOpenChange={(open) => {
+				// a pointer still over the donut or the popover keeps it open
+				if (!open && isHovering.current) return;
+				setIsOpen(open);
 			}}
 		>
 			<Tooltip disableHoverableContent={false}>
@@ -355,7 +252,7 @@ export const RoomContextUsageIndicator = ({
 						<CompactStrategyPicker
 							disabled={isLoading || latestResponseHasTools}
 							strategy={compactionStrategy}
-							onPickStrategy={setCompactionStrategy}
+							onStrategyChange={setCompactionStrategy}
 							onCompact={() => onCompact(compactionStrategy)}
 						/>
 					)}

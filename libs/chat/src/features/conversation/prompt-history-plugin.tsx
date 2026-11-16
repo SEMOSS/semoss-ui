@@ -20,19 +20,30 @@ import {
 	RESET_PROMPT_HISTORY_COMMAND,
 } from "./prompt-history";
 
+/** One run of browsing, from the first Up until the draft is back or a prompt is sent. */
 interface HistorySession {
+	/** What the input held before browsing, restored on Escape or past the newest entry. */
 	draft: EditorState;
+	/** The prompts as they were when browsing started. */
 	entries: readonly PromptHistoryEntry[];
+	/** The entry shown, or -1 for the draft. */
 	index: number;
+	/** Changes made to a recalled prompt, by entry id, kept while browsing. */
 	edits: Map<string, EditorState>;
 }
 
+/** Props for {@link PromptHistoryPlugin}. */
 interface PromptHistoryPluginProps {
 	/** Newest-first prompts from this conversation's active branch. */
 	entries: readonly PromptHistoryEntry[];
 }
 
-/** Local prompt recall. Key this plugin by room/branch to isolate its session. */
+/**
+ * Recalls the conversation's earlier prompts into the input with Up and Down
+ * on its first and last lines, and puts the draft back with Escape. Key it by
+ * room and branch so each has its own session. Announces the position to
+ * screen readers.
+ */
 export function PromptHistoryPlugin({ entries }: PromptHistoryPluginProps) {
 	const [editor] = useLexicalComposerContext();
 	const { t } = useTranslation("room");
@@ -44,12 +55,13 @@ export function PromptHistoryPlugin({ entries }: PromptHistoryPluginProps) {
 	const [isRestored, setIsRestored] = useState(false);
 
 	useEffect(() => {
-		let active = true;
+		// The effect can rerun before a queued restore runs; skip it then.
+		let isActive = true;
 		const applySnapshot = (state: EditorState, selectEnd = false): void => {
 			// Key commands run inside updates. Restore after the command finishes
 			// so Lexical can clone frozen nodes and selection into writable state.
 			queueMicrotask(() => {
-				if (!active) return;
+				if (!isActive) return;
 				editor.setEditorState(state);
 				if (selectEnd) {
 					editor.update(() => $getRoot().selectEnd(), {
@@ -111,6 +123,7 @@ export function PromptHistoryPlugin({ entries }: PromptHistoryPluginProps) {
 				restore();
 				return true;
 			}
+			// Keep edits to the entry being left, so coming back shows them.
 			const previous = current.entries[current.index];
 			if (previous)
 				current.edits.set(previous.id, editor.getEditorState());
@@ -170,7 +183,7 @@ export function PromptHistoryPlugin({ entries }: PromptHistoryPluginProps) {
 			),
 		];
 		return () => {
-			active = false;
+			isActive = false;
 			for (const remove of unregister) remove();
 		};
 	}, [editor, entries]);

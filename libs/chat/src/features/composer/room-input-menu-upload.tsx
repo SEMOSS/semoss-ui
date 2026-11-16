@@ -3,12 +3,15 @@ import { useTranslation } from "@semoss/i18n";
 import { DropdownMenuItem } from "@semoss/ui/next";
 import { useFileDrop } from "./file-drop.context";
 
+/** Props for {@link RoomInputMenuUpload}. */
 interface RoomInputMenuUploadProps {
-	/** Callback when the item is selected */
+	/** Called after the file picker opens, such as to close the menu. */
 	onSelect?: () => void;
+	/** Locks the item, as while a turn is running. */
 	disabled?: boolean;
 }
 
+/** The plus menu's Attach item, which opens the enclosing `FileDropProvider`'s file picker. */
 export const RoomInputMenuUpload = ({
 	onSelect = () => null,
 	disabled = false,

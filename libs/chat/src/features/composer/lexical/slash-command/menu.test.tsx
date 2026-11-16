@@ -42,6 +42,7 @@ afterEach(() => {
 	vi.restoreAllMocks();
 });
 
+/** The commands' ids, in order. */
 const ids = (commands: SlashCommand[]) => commands.map((cmd) => cmd.id);
 
 test("lists every group in order before anything is typed, with only the first prompts", () => {
@@ -94,8 +95,8 @@ test("the menu lists matches under their group headings, and locks busy commands
 			<SlashCommandMenu
 				query=""
 				selectedIndex={0}
-				setItemCount={vi.fn()}
-				setSelectedIndex={vi.fn()}
+				onItemCountChange={vi.fn()}
+				onSelectedIndexChange={vi.fn()}
 				onCommandSelect={vi.fn()}
 				isBusy
 			/>

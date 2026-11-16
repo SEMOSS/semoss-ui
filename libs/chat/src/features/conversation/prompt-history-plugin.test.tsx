@@ -74,6 +74,7 @@ async function press(
 	return event;
 }
 
+/** The editor's text. */
 function text(): string {
 	return editor.getEditorState().read(() => $getRoot().getTextContent());
 }

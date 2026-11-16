@@ -33,7 +33,7 @@ export const NextMessageRoomProvider = ({
 /**
  * The room a viewer should queue on, when it is not the sidebar's own.
  *
- * @return The room, or null for the sidebar's own.
+ * @returns The room, or null for the sidebar's own.
  */
 export const useNextMessageRoom = (): RoomStore | null =>
 	useContext(NextMessageRoomContext);

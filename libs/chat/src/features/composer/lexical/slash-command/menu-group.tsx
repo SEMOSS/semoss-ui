@@ -2,6 +2,7 @@ import { useTranslation } from "@semoss/i18n";
 import { CommandGroup, CommandItem } from "@semoss/ui/next";
 import type { SlashCommand, SlashCommandGroup } from "./types";
 
+/** Props for {@link SlashCommandMenuGroup}. */
 interface SlashCommandMenuGroupProps {
 	/** The group. */
 	group: SlashCommandGroup;

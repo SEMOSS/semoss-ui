@@ -90,6 +90,7 @@ let resizeObserverCallback: ResizeObserverCallback | null = null;
 let nextAnimationFrameId = 0;
 const animationFrames = new Map<number, FrameRequestCallback>();
 
+/** Run every queued animation frame callback once. */
 const flushAnimationFrames = () => {
 	const callbacks = [...animationFrames.values()];
 	animationFrames.clear();

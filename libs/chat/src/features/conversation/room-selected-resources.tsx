@@ -13,11 +13,15 @@ import {
 } from "@semoss/ui/next";
 import { isRemovableToolbox } from "../mcp/mcp-utils";
 
+/** Props for {@link RoomSelectedResources}. */
 interface RoomSelectedResourcesProps {
 	/** The selected knowledge, never the entire catalog. */
 	items: MCPConfig[];
+	/** Locks adding and removing, as while a turn is running. */
 	disabled: boolean;
+	/** Opens the knowledge picker. */
 	onAdd: () => void;
+	/** Removes one selection from this room. */
 	onRemove: (item: MCPConfig) => void;
 }
 
@@ -53,7 +57,8 @@ export function RoomSelectedResources({
 			) : (
 				<ul className="divide-y divide-border">
 					{items.map((item) => {
-						const inherited = !isRemovableToolbox(item);
+						// Knowledge from the agent or the room's own setup cannot be removed here.
+						const isInherited = !isRemovableToolbox(item);
 						return (
 							<li
 								key={item.id}
@@ -63,7 +68,7 @@ export function RoomSelectedResources({
 									<span className="block break-words text-sm">
 										{item.name || item.id}
 									</span>
-									{inherited && (
+									{isInherited && (
 										<>
 											<Badge variant="outline">
 												{t(
@@ -80,7 +85,7 @@ export function RoomSelectedResources({
 										</>
 									)}
 								</div>
-								{!inherited && (
+								{!isInherited && (
 									<Tooltip disableHoverableContent={false}>
 										<TooltipTrigger asChild>
 											<Button

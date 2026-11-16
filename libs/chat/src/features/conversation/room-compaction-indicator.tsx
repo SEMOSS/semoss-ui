@@ -6,17 +6,26 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 import type { ResponseMessageStore } from "../messages/response-message.store";
 import { useMessage } from "../messages/use-message";
 
+/** How long compaction must last before the bar shows, so a quick one does not flash. */
 const APPEAR_DELAY_MS = 150;
 
+/** Props for {@link RoomCompactionIndicator}. */
 interface RoomCompactionIndicatorProps {
+	/** The response that is compacting the conversation, or that history above it was compacted into. */
 	message: ResponseMessageStore;
 }
 
+/** Diagonal hatching behind the bar's label; a gradient has no utility class. */
 const STRIPE_STYLE = {
 	backgroundImage:
 		"repeating-linear-gradient(-45deg, currentColor, currentColor 1px, transparent 1px, transparent 8px)",
 };
 
+/**
+ * A hatched bar in the transcript while the conversation is being compacted,
+ * and above a response once the history before it was compacted, with a
+ * tooltip that explains it. Renders nothing otherwise.
+ */
 export const RoomCompactionIndicator = ({
 	message,
 }: RoomCompactionIndicatorProps) => {

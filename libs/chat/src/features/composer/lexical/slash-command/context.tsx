@@ -2,31 +2,39 @@ import type React from "react";
 import { createContext, useContext } from "react";
 import type { SlashCommand } from "./types";
 
+/** What {@link useSlashCommands} reads. */
 interface SlashCommandContextValue {
-	/** Full list of available commands (after any exclusion filtering) */
+	/** Every command offered, after `excludeCommandIds` is applied. */
 	commands: SlashCommand[];
 }
 
+/** The composer's slash commands; empty outside a provider. */
 const SlashCommandContext = createContext<SlashCommandContextValue>({
 	commands: [],
 });
 
-/** Returns the current slash command list from context */
+/**
+ * Read the composer's slash commands.
+ *
+ * @returns The commands the slash menu lists.
+ */
 export const useSlashCommands = (): SlashCommandContextValue =>
 	useContext(SlashCommandContext);
 
+/** Props for {@link SlashCommandProvider}. */
 interface SlashCommandProviderProps {
 	/** Every command the composer offers. */
 	commands: SlashCommand[];
-	/** Command IDs to suppress */
+	/** Ids of commands to leave out. */
 	excludeCommandIds?: string[];
 	/** The composer, whose slash menu reads the commands. */
 	children: React.ReactNode;
 }
 
 /**
- * Provides the slash command list to all descendants. Wrap around
- * LexicalComposer so the menu can reach commands via useSlashCommands().
+ * Provides the slash command list to all descendants. Wrap it around the
+ * `LexicalComposer` so the menu can reach the commands through
+ * `useSlashCommands()`.
  */
 export const SlashCommandProvider: React.FC<SlashCommandProviderProps> = ({
 	commands: all,

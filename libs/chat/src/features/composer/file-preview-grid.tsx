@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { FilePreviewChip } from "./file-preview-chip";
 
+/** Props for {@link FilePreviewGrid}. */
 interface FilePreviewGridProps {
 	/** Pending attachments, in submission order. */
 	files: File[];
@@ -21,6 +22,7 @@ export function FilePreviewGrid({
 			{leading}
 			{files.map((file, index) => (
 				<FilePreviewChip
+					// files have no id; the index keeps two copies of one file apart
 					key={`${file.name}-${file.size}-${file.lastModified}-${index}`}
 					file={file}
 					onRemove={() => onRemoveFile(index)}

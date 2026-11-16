@@ -4,13 +4,15 @@ import { Button, Small } from "@semoss/ui/next";
 import type { RoomStore } from "../room/room.store";
 import { useRoomSuggestions } from "../suggestions/use-room-suggestions";
 
+/** Props for {@link RoomSuggestions}. */
 interface RoomSuggestionsProps {
-	/** Room to load */
+	/** The room whose suggestions to show, and that sends the one picked. */
 	room: RoomStore;
 }
 
 /**
  * Follow-up messages that continue the conversation or use its attached tools.
+ * Picking one sends it; renders nothing when there are none.
  */
 export const RoomSuggestions = ({ room }: RoomSuggestionsProps) => {
 	const { t } = useTranslation("room");

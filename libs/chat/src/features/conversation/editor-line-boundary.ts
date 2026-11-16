@@ -1,4 +1,11 @@
-/** Return the caret's painted rectangle without changing the DOM selection. */
+/**
+ * Find the caret's painted rectangle without changing the DOM selection. A
+ * collapsed range often paints nothing, so this falls back to the character
+ * or element beside it.
+ *
+ * @param range - The collapsed selection range.
+ * @returns The caret's rectangle, or undefined when nothing is painted.
+ */
 function getCaretRect(range: Range): DOMRect | undefined {
 	const painted = Array.from(range.getClientRects()).find(
 		(rect) => rect.height > 0,
@@ -40,8 +47,13 @@ function getCaretRect(range: Range): DOMRect | undefined {
 }
 
 /**
- * Check the first/last rendered line, including soft wraps and empty paragraphs.
- * Missing layout information leaves native arrow behavior intact.
+ * Whether the caret is on the editor's first (`up`) or last (`down`) rendered
+ * line, counting soft wraps and empty paragraphs. Missing layout information
+ * returns false, which leaves native arrow behavior intact.
+ *
+ * @param root - The editor's content-editable root.
+ * @param direction - Which edge to check.
+ * @returns True when the caret is on that edge's line.
  */
 export function isAtEditorLineBoundary(
 	root: HTMLElement,
@@ -59,6 +71,7 @@ export function isAtEditorLineBoundary(
 	const caret = getCaretRect(selection.getRangeAt(0));
 	if (!caret) return false;
 	const style = root.ownerDocument.defaultView?.getComputedStyle(root);
+	// A `normal` line height does not parse, so fall back to 1.5x the font size.
 	const lineHeight =
 		Number.parseFloat(style?.lineHeight ?? "") ||
 		Number.parseFloat(style?.fontSize ?? "") * 1.5;

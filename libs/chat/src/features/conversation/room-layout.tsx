@@ -27,6 +27,7 @@ import {
 } from "./room-layout-actions.context";
 import { WorkspaceNavigationContext } from "./workspace-navigation.context";
 
+/** Props for {@link RoomLayout}. */
 export interface RoomLayoutProps {
 	/** The conversation and its composer, mounted for the lifetime of the room. */
 	children: ReactNode;
@@ -58,7 +59,10 @@ type RoomLayoutPane = "conversation" | "workbench";
 
 /**
  * A room's conversation beside its Workspace: one stable pair of panes
- * across desktop and narrow views.
+ * across desktop and narrow views. Below {@link NARROW_WIDTH} one pane shows
+ * at a time behind Chat and Workspace tabs. Provides
+ * `RoomLayoutActionsContext` to the header and the Workspace's panels, and
+ * `ConversationScrollContext` to the conversation.
  */
 export function RoomLayout({
 	children,
@@ -88,6 +92,7 @@ export function RoomLayout({
 	);
 	// the Workspace mounts the first time it opens and stays mounted after
 	const [hasOpened, setHasOpened] = useState(isOpen);
+	// the last `isOpen` seen, to react to a change during render
 	const [previousIsOpen, setPreviousIsOpen] = useState(isOpen);
 	// the conversation has scrolled beneath the floating header
 	const [isConversationScrolled, setIsConversationScrolled] = useState(false);
@@ -116,11 +121,13 @@ export function RoomLayout({
 		[],
 	);
 
+	// tell the host's shell, and report closed once the layout unmounts
 	useEffect(() => {
 		setNavigationWorkspaceOpen?.(isOpen);
 		return () => setNavigationWorkspaceOpen?.(false);
 	}, [isOpen, setNavigationWorkspaceOpen]);
 
+	// the row's width decides the narrow layout, not the viewport's
 	useEffect(() => {
 		const container = containerRef.current;
 		if (!container) return;
@@ -146,6 +153,8 @@ export function RoomLayout({
 		workbenchPaneRef.current?.resize(WORKBENCH_DEFAULT_SIZE);
 	}, [isOpen, isNarrow, isUserSized]);
 
+	// keep focus out of a pane that just hid: back to the control that
+	// revealed the Workspace, or to the conversation's last focused control
 	useEffect(() => {
 		const active = document.activeElement;
 		const hasClosed = wasOpen.current && !isOpen;
@@ -308,7 +317,7 @@ export function RoomLayout({
 								collapsible
 								collapsedSize={0}
 								onCollapse={() => {
-									// reopening fits the content again
+									// reopening puts the Workspace back on its default share
 									setIsUserSized(false);
 									onWorkbenchCollapse?.();
 								}}

@@ -7,6 +7,7 @@ import {
 } from "../messages/markdown/create-markdown-components";
 import type { RoomStore } from "../room/room.store";
 
+/** Props for {@link RoomGreeting}. */
 interface RoomGreetingProps {
 	/** Room the greeting is rendered for. */
 	room: RoomStore;
@@ -18,7 +19,7 @@ interface RoomGreetingProps {
 /**
  * The agent's scripted opening message. Derived from the workspace config at
  * render time rather than stored as a message, so it carries no message
- * affordances and never reaches room.history or the model. Uses the same
+ * affordances and never reaches `room.history` or the model. Uses the same
  * markdown renderer and URL allowlist as a real assistant reply.
  */
 export const RoomGreeting = ({ room, greeting }: RoomGreetingProps) => {

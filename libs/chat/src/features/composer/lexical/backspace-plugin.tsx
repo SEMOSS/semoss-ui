@@ -6,6 +6,7 @@ import {
 } from "lexical";
 import { useEffect } from "react";
 
+/** Props for {@link BackspacePlugin}. */
 interface BackspacePluginProps {
 	/**
 	 * Called on Backspace or Delete. Return true to mark the key handled
@@ -15,6 +16,7 @@ interface BackspacePluginProps {
 	onBackspace: (event: KeyboardEvent) => boolean;
 }
 
+/** Lets the composer handle Backspace and Delete before Lexical deletes, as to remove a mention or attachment. */
 export const BackspacePlugin: React.FC<BackspacePluginProps> = ({
 	onBackspace,
 }) => {

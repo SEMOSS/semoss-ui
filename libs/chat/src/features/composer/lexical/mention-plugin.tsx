@@ -16,27 +16,40 @@ import {
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+/** Where the menu anchors: the caret's rectangle when the trigger was typed, in viewport px. */
+interface MenuPosition {
+	top: number;
+	bottom: number;
+	left: number;
+}
+
+/** Props for {@link MentionPlugin}. */
 interface MentionPluginProps {
 	/** Character that triggers the menu (default: "/") */
 	trigger: string;
 
 	/** Rendered as the suggestion menu */
 	MenuComponent: React.ComponentType<{
+		/** Whether the menu is open. */
 		isOpen: boolean;
+		/** Opens or closes the menu; closing keeps the typed text. */
 		onOpenChange: (isOpen: boolean) => void;
-		menuPosition: { top: number; bottom: number; left: number } | null;
+		/** Where the menu anchors. */
+		menuPosition: MenuPosition | null;
+		/** Insert a text token in place of the trigger + query text */
 		addToken: (token: string) => void;
 		/** Insert a Lexical node in place of the trigger + query text */
 		addNode: (nodeFactory: () => LexicalNode) => void;
+		/** Removes the trigger + query text and closes the menu. */
 		onRequestClose: () => void;
 		/** Text typed after the trigger character, for filtering */
 		query: string;
 		/** Index of the currently highlighted item */
 		selectedIndex: number;
 		/** Called by MenuComponent to report how many items are visible */
-		setItemCount: (count: number) => void;
+		onItemCountChange: (count: number) => void;
 		/** Called by MenuComponent to sync hover/external selection back up */
-		setSelectedIndex: (index: number) => void;
+		onSelectedIndexChange: (index: number) => void;
 	}>;
 
 	/**
@@ -61,6 +74,12 @@ interface MentionPluginProps {
 	) => string | undefined;
 }
 
+/**
+ * Opens a suggestion menu when the trigger character is typed at the start of
+ * a word, tracks the query typed after it, and drives the menu from the
+ * keyboard: arrows move the highlight, Enter accepts, Tab completes, and
+ * Escape closes it until a new trigger is typed.
+ */
 export const MentionPlugin: React.FC<MentionPluginProps> = ({
 	trigger = "/",
 	MenuComponent,
@@ -69,16 +88,14 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 }) => {
 	const [editor] = useLexicalComposerContext();
 	const [isOpen, setIsOpen] = useState(false);
-	const [menuPosition, setMenuPosition] = useState<{
-		top: number;
-		bottom: number;
-		left: number;
-	} | null>(null);
+	const [menuPosition, setMenuPosition] = useState<MenuPosition | null>(null);
 	const [query, setQuery] = useState("");
 	const [selectedIndex, setSelectedIndex] = useState(0);
 
+	// where the trigger character sits in its text node, while the menu is in use
 	const triggerOffsetRef = useRef<number | null>(null);
-	const explicitlyClosedRef = useRef(false);
+	// Escape or a click away closed the menu; it stays closed for this trigger
+	const isExplicitlyClosedRef = useRef(false);
 
 	// Stable refs so key-command handlers don't need to re-register on every render
 	const queryRef = useRef(query);
@@ -97,11 +114,12 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 		setSelectedIndex(0);
 	}, [query]);
 
-	const setItemCount = useCallback((count: number) => {
+	// a ref, not state: only the arrow keys read the count
+	const handleItemCountChange = useCallback((count: number) => {
 		itemCountRef.current = count;
 	}, []);
 
-	const setSelectedIndexCallback = useCallback((index: number) => {
+	const handleSelectedIndexChange = useCallback((index: number) => {
 		setSelectedIndex(index);
 	}, []);
 
@@ -143,7 +161,7 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 			});
 
 			setIsOpen(false);
-			explicitlyClosedRef.current = false;
+			isExplicitlyClosedRef.current = false;
 			triggerOffsetRef.current = null;
 		},
 		[editor],
@@ -187,7 +205,7 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 			});
 
 			setIsOpen(false);
-			explicitlyClosedRef.current = false;
+			isExplicitlyClosedRef.current = false;
 			triggerOffsetRef.current = null;
 		},
 		[editor],
@@ -252,7 +270,7 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 
 		editor.focus();
 		setIsOpen(false);
-		explicitlyClosedRef.current = false;
+		isExplicitlyClosedRef.current = false;
 		triggerOffsetRef.current = null;
 	}, [editor]);
 
@@ -263,7 +281,7 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 				const selection = $getSelection();
 				if (!$isRangeSelection(selection)) {
 					setIsOpen(false);
-					explicitlyClosedRef.current = false;
+					isExplicitlyClosedRef.current = false;
 					return;
 				}
 
@@ -271,7 +289,7 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 				const anchorNode = anchor.getNode();
 				if (!$isTextNode(anchorNode)) {
 					setIsOpen(false);
-					explicitlyClosedRef.current = false;
+					isExplicitlyClosedRef.current = false;
 					return;
 				}
 
@@ -293,9 +311,9 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 				if (triggerIndex !== -1) {
 					const isNewTrigger =
 						triggerOffsetRef.current !== triggerIndex;
-					if (isNewTrigger) explicitlyClosedRef.current = false;
+					if (isNewTrigger) isExplicitlyClosedRef.current = false;
 
-					if (!explicitlyClosedRef.current) {
+					if (!isExplicitlyClosedRef.current) {
 						triggerOffsetRef.current = triggerIndex;
 						setIsOpen(true);
 						setQuery(text.slice(triggerIndex + 1, cursorOffset));
@@ -316,7 +334,7 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 				} else {
 					setIsOpen(false);
 					setQuery("");
-					explicitlyClosedRef.current = false;
+					isExplicitlyClosedRef.current = false;
 					triggerOffsetRef.current = null;
 				}
 			});
@@ -384,7 +402,7 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 			KEY_ESCAPE_COMMAND,
 			(event) => {
 				event?.preventDefault();
-				explicitlyClosedRef.current = true;
+				isExplicitlyClosedRef.current = true;
 				setIsOpen(false);
 				editor.focus(() => null, { defaultSelection: "rootEnd" });
 				return true;
@@ -401,9 +419,10 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 		};
 	}, [editor, isOpen, handleRequestClose, replaceQuery, addNode]);
 
+	// closing from the menu keeps it closed until a new trigger is typed
 	const handleOpenChange = useCallback(
 		(open: boolean) => {
-			if (!open && isOpen) explicitlyClosedRef.current = true;
+			if (!open && isOpen) isExplicitlyClosedRef.current = true;
 			setIsOpen(open);
 		},
 		[isOpen],
@@ -421,8 +440,8 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 			onRequestClose={handleRequestClose}
 			query={query}
 			selectedIndex={selectedIndex}
-			setItemCount={setItemCount}
-			setSelectedIndex={setSelectedIndexCallback}
+			onItemCountChange={handleItemCountChange}
+			onSelectedIndexChange={handleSelectedIndexChange}
 		/>
 	);
 };

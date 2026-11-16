@@ -7,8 +7,9 @@ import type { RoomStore } from "../room/room.store";
 import { useRoomSelector } from "../room/use-room-selector";
 import { RoomInput } from "./room-input";
 
+/** Props for {@link RoomComposer}. */
 interface RoomComposerProps {
-	/** The room the composer sends to. */
+	/** The room the composer sends to; defaults to the room in context. */
 	room?: RoomStore;
 }
 
@@ -28,6 +29,13 @@ export const RoomComposer = ({ room: roomProp }: RoomComposerProps) => {
 		}),
 	);
 
+	/**
+	 * Send a message to the room.
+	 *
+	 * @param prompt - The message's text.
+	 * @param files - The files to upload with it.
+	 * @returns True once it was sent; a failed send throws instead.
+	 */
 	const handlePrompt = async (prompt: string, files: File[]) => {
 		// ask the room, which saves its options first — let errors propagate
 		// so room-input can restore files
@@ -47,6 +55,11 @@ export const RoomComposer = ({ room: roomProp }: RoomComposerProps) => {
 		return true;
 	};
 
+	/**
+	 * Compact the conversation and toast the outcome.
+	 *
+	 * @param strategy - How to compact; the room's default when absent.
+	 */
 	const handleCompactMessages = async (
 		strategy?: "TOOL_PRUNE" | "SUMMARY" | "AUTO",
 	) => {
@@ -71,7 +84,7 @@ export const RoomComposer = ({ room: roomProp }: RoomComposerProps) => {
 					isLoading={isBusy}
 					model={model}
 					room={room}
-					setModel={(model) => {
+					onModelChange={(model) => {
 						room.setModel(model);
 						chat.setSelectedModel(model);
 					}}

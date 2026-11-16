@@ -85,23 +85,17 @@ import {
 import { PromptOptimizer } from "./prompt-optimizer";
 import { RoomContextUsageIndicator } from "./room-context-usage-indicator";
 
+/** The agent the input shows and the picker returns: its id, and its name when known. */
 type WorkspaceRef = Pick<Workspace, "workspace_id"> &
 	Partial<Pick<Workspace, "name">>;
 
+/** Whether the chat runs in a frame; a frame without access to its parent counts. */
 let isIframed = false;
 try {
 	isIframed = window.self !== window.top;
 } catch {
 	isIframed = true;
 }
-
-// ============================================================================
-// Constants & Helper Functions
-// ============================================================================
-
-// ============================================================================
-// TypeScript Interfaces
-// ============================================================================
 
 /**
  * Appearance of the send/stop button, computed by the parent from the turn +
@@ -115,6 +109,7 @@ try {
  */
 export type SendButtonState = "send" | "stop" | "loading";
 
+/** Props for {@link RoomInput}. */
 interface RoomInputProps {
 	/** Classes to override */
 	className?: string;
@@ -127,8 +122,8 @@ interface RoomInputProps {
 	/** Model of the room */
 	model: Engine | null;
 
-	/** Update options on change */
-	setModel: (model: Engine) => void;
+	/** Called with the model the user picks in the model select. */
+	onModelChange: (model: Engine) => void;
 
 	/** Menu component for + button dropdown */
 	MenuComponent?: React.ComponentType<RoomComposerMenuProps>;
@@ -209,27 +204,25 @@ interface RoomInputProps {
 	onDefaultAgentChange?: (isDefaultAgent: boolean) => void;
 }
 
-// ============================================================================
-// Main Component
-// ============================================================================
-
 /**
- * RoomInput - A rich text input component for chat/AI interactions
+ * The composer's input box, for an open room and a new chat:
  *
- * Features:
- * - Lexical editor with mention support (/ commands)
- * - File upload via drag/drop, paste, or file picker
- * - Speech-to-text input
- * - Image file previews
- * - Model selection
- * - Tool pause/resume controls
+ * - a Lexical editor with the "/" slash menu and prompt history recall
+ * - attachments from the enclosing `FileDropProvider` (drop, paste, or the
+ *   file picker) beside the files queued for the next message
+ * - the plus menu, the agent chip, and the knowledge, toolbox, and agent picker
+ * - speech-to-text, the prompt library and optimizer, context usage, and the
+ *   model select
+ * - the send button, which stops a running turn
+ *
+ * Must render inside a `FileDropProvider`.
  */
 export const RoomInput = ({
 	className,
 	isLoading,
 	isSubmitDisabled = false,
 	model,
-	setModel,
+	onModelChange,
 	MenuComponent = RoomComposerMenu,
 	options,
 	onPrompt,
@@ -248,17 +241,13 @@ export const RoomInput = ({
 	onExitAgentHarness,
 	onDefaultAgentChange,
 }: RoomInputProps) => {
-	// ========================================================================
-	// Hooks & State
-	// ========================================================================
-
 	const { t } = useTranslation("room");
 	const modelSelectId = useId();
 	const { getGracefulErrorMessage } = useGracefulErrors();
 
 	// Editor state
 	const [isEmpty, setIsEmpty] = useState(true);
-	const [menuOpen, setMenuOpen] = useState(false);
+	const [isMenuOpen, setIsMenuOpen] = useState(false);
 	const [isScrollable, setIsScrollable] = useState(false);
 	const [inputText, setInputText] = useState("");
 	const { theme } = useChatConfig();
@@ -277,7 +266,8 @@ export const RoomInput = ({
 				current.latestResponseMessage?.hasUnfinishedTools ?? false,
 		}),
 	);
-	const afterMenuClose = useRef<(() => void) | null>(null);
+	// runs once the plus menu has closed and given focus back, as opening a picker
+	const afterMenuCloseRef = useRef<(() => void) | null>(null);
 
 	// MCP overlay state — managed here so the overlay renders outside the DropdownMenu's React subtree
 	const [mcpOverlay, setMcpOverlay] = useState<{
@@ -285,17 +275,18 @@ export const RoomInput = ({
 		defaultTab: "AGENT" | "TOOLBOX" | "KNOWLEDGE";
 	}>({ open: false, defaultTab: "KNOWLEDGE" });
 
+	/** Open the knowledge, toolbox, or agent picker, after the plus menu closes when it is open. */
 	const handleOpenMcpOverlay = useCallback(
 		(defaultTab: "AGENT" | "TOOLBOX" | "KNOWLEDGE") => {
 			if (isLoading || hasOutstandingTools || sendState !== "send")
 				return;
 			const open = () => setMcpOverlay({ open: true, defaultTab });
-			if (menuOpen) {
-				afterMenuClose.current = open;
-				setMenuOpen(false);
+			if (isMenuOpen) {
+				afterMenuCloseRef.current = open;
+				setIsMenuOpen(false);
 			} else open();
 		},
-		[isLoading, hasOutstandingTools, sendState, menuOpen],
+		[isLoading, hasOutstandingTools, sendState, isMenuOpen],
 	);
 
 	// Default for an already-created room: flip mode now (takes effect on the
@@ -325,6 +316,7 @@ export const RoomInput = ({
 		(isDefaultAgent ? t("modes.defaultAgent") : "");
 	const modelName = model?.engine_display_name || model?.app_name || "";
 	const historyEntries = useMemo(() => getPromptHistory(history), [history]);
+	// a new room or branch starts a fresh prompt history session
 	const historyKey = JSON.stringify([
 		roomId,
 		history.map((message) => message.id),
@@ -332,7 +324,7 @@ export const RoomInput = ({
 	const isBusy = !!isLoading || hasOutstandingTools || sendState !== "send";
 
 	// Refs for DOM elements and Lexical editor
-	const ref = useRef<HTMLDivElement>(null);
+	const containerRef = useRef<HTMLDivElement>(null);
 	const editorRef = useRef<LexicalEditor>(null);
 	const isSubmittingRef = useRef(false);
 	const contentEditableRef = useRef<HTMLDivElement>(null);
@@ -367,6 +359,11 @@ export const RoomInput = ({
 	const [isListening, setIsListening] = useState(false);
 	const [isPromptLibraryOpen, setIsPromptLibraryOpen] = useState(false);
 
+	/**
+	 * Send a predefined prompt as is, leaving the draft alone.
+	 *
+	 * @param prompt - The prompt's text.
+	 */
 	const runPredefinedPrompt = async (prompt: string) => {
 		if (isBusy || isSubmitDisabled) {
 			return;
@@ -401,10 +398,7 @@ export const RoomInput = ({
 		onRunPrompt: (prompt) => void runPredefinedPrompt(prompt.context),
 	});
 
-	// ========================================================================
-	// Speech Recognition Setup
-	// ========================================================================
-
+	// set up speech-to-text where the browser offers it
 	useEffect(() => {
 		// Check browser support for Web Speech API
 		const SpeechRecognition =
@@ -476,6 +470,7 @@ export const RoomInput = ({
 		};
 	}, []);
 
+	// fill the editor with a prompt handed in, such as from a route
 	useEffect(() => {
 		if (!initialValue) return;
 		editorRef.current?.update(() => {
@@ -495,10 +490,6 @@ export const RoomInput = ({
 			scrollViewportRef.current = viewport as HTMLElement | null;
 		}
 	}, []);
-
-	// ========================================================================
-	// Core Functions
-	// ========================================================================
 
 	/**
 	 * Submit the current prompt to the AI model
@@ -585,7 +576,7 @@ export const RoomInput = ({
 	// Button appearance is fully decided by sendState (computed by the
 	// parent from the turn + cancel state); only the idle "send" case needs
 	// the local editor/tool signals to decide enablement + tooltip.
-	const sendDisabled =
+	const isSendDisabled =
 		sendState === "loading" ||
 		(sendState === "send" &&
 			(isEmpty || isSubmitDisabled || hasOutstandingTools));
@@ -605,12 +596,12 @@ export const RoomInput = ({
 					? t("input.completeTool")
 					: t("input.ask");
 
-	// ========================================================================
-	// Render
-	// ========================================================================
-
 	return (
-		<div className="relative w-full" ref={ref} data-tour="tour-input">
+		<div
+			className="relative w-full"
+			ref={containerRef}
+			data-tour="tour-input"
+		>
 			<SlashCommandProvider
 				commands={slashCommands}
 				excludeCommandIds={excludeCommandIds}
@@ -665,7 +656,7 @@ export const RoomInput = ({
 								>
 									<PromptOptimizer
 										input={inputText}
-										setInput={setInputFromOptimizer}
+										onInputChange={setInputFromOptimizer}
 										disabled={isBusy}
 										modelId={
 											model?.engine_id ||
@@ -825,8 +816,8 @@ export const RoomInput = ({
 									isIframed
 								) && (
 									<DropdownMenu
-										open={menuOpen}
-										onOpenChange={setMenuOpen}
+										open={isMenuOpen}
+										onOpenChange={setIsMenuOpen}
 									>
 										<Tooltip
 											disableHoverableContent={false}
@@ -856,10 +847,11 @@ export const RoomInput = ({
 											className="w-72"
 											onCloseAutoFocus={(event) => {
 												const action =
-													afterMenuClose.current;
+													afterMenuCloseRef.current;
 												if (!action) return;
 												event.preventDefault();
-												afterMenuClose.current = null;
+												afterMenuCloseRef.current =
+													null;
 												action();
 											}}
 										>
@@ -878,7 +870,7 @@ export const RoomInput = ({
 												}
 												canChooseMode={canChooseMode}
 												isDefaultAgent={isDefaultAgent}
-												onOpenChange={setMenuOpen}
+												onOpenChange={setIsMenuOpen}
 												onOpenMcpOverlay={
 													handleOpenMcpOverlay
 												}
@@ -1042,7 +1034,7 @@ export const RoomInput = ({
 															tag: "text-generation",
 														},
 													]}
-													onChange={setModel}
+													onChange={onModelChange}
 													popoverContentProps={{
 														align: "end",
 													}}
@@ -1066,7 +1058,7 @@ export const RoomInput = ({
 														? "input.stopLabel"
 														: "input.askLabel",
 												)}
-												disabled={sendDisabled}
+												disabled={isSendDisabled}
 												onClick={handleSendClick}
 											>
 												{sendState === "stop" ? (

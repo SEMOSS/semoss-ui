@@ -20,33 +20,36 @@ interface NewRoomPreparation {
  *
  * @param draft - The new room holding the chat's options.
  * @param mode - The mode the prepared room starts in.
- * @param submitted - Whether the first message was sent, so the room is kept.
- * @return The prepared room and how to prepare it.
+ * @param hasSubmitted - Whether the first message was sent, so the room is kept.
+ * @returns The prepared room and how to prepare it.
  */
 export function useNewRoom(
 	draft: RoomStore,
 	mode: "chat" | "agent",
-	submitted: RefObject<boolean>,
+	hasSubmitted: RefObject<boolean>,
 ): NewRoomPreparation {
 	const { chat } = useChatSession();
 	const [room, setRoom] = useState<RoomStore | null>(null);
 	const [isPreparing, setIsPreparing] = useState(false);
 	const [hasError, setHasError] = useState(false);
-	const active = useRef(true);
+	// Refs, not state: the cleanup and the async preparation read them after
+	// the render that started them.
+	const isMounted = useRef(true);
 	const prepared = useRef<RoomStore | null>(null);
 	const pending = useRef<Promise<RoomStore | null> | null>(null);
 	useEffect(() => {
-		active.current = true;
+		isMounted.current = true;
 		return () => {
-			active.current = false;
-			if (prepared.current && !submitted.current) {
+			isMounted.current = false;
+			if (prepared.current && !hasSubmitted.current) {
 				void chat
 					.closeRoom(prepared.current.roomId)
 					.catch(console.error);
 			}
 		};
-	}, [chat, submitted]);
+	}, [chat, hasSubmitted]);
 	const prepare = (): Promise<RoomStore | null> => {
+		// Join the preparation in flight rather than creating a second room.
 		if (prepared.current) return Promise.resolve(prepared.current);
 		if (pending.current) return pending.current;
 		setIsPreparing(true);
@@ -62,10 +65,12 @@ export function useNewRoom(
 					},
 					draft.options.workspace?.workspace_id,
 				);
-				if (!active.current) {
+				// The new chat was left while the room was being created.
+				if (!isMounted.current) {
 					await chat.closeRoom(next.roomId);
 					return null;
 				}
+				// Carry over the draft's Workspace arrangement before it first mounts.
 				next.restoreSidebarLayout(
 					draft.workbench.getState().layout.actions.getSnapshot(),
 				);
@@ -73,11 +78,11 @@ export function useNewRoom(
 				setRoom(next);
 				return next;
 			} catch {
-				if (active.current) setHasError(true);
+				if (isMounted.current) setHasError(true);
 				return null;
 			} finally {
 				pending.current = null;
-				if (active.current) setIsPreparing(false);
+				if (isMounted.current) setIsPreparing(false);
 			}
 		})();
 		return pending.current;

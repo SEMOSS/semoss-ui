@@ -9,6 +9,8 @@ import type { ThemeMap } from "@semoss/shared";
  * 2. the user's default (their metadata on the server, set in Settings),
  * 3. the deployment's default (the theme's `defaultRoomSettings`, then env),
  * 4. the first available: the first model, chat mode, and Default Agent.
+ *
+ * @packageDocumentation
  */
 
 /** The user metadata keys the backend allows for the playground's defaults. */
@@ -42,7 +44,10 @@ export interface SessionNewChat {
 	agentId: string;
 }
 
-/** The chat last started on this page, and the login it was started in. */
+/**
+ * The chat last started on this page, and the login it was started in. Module
+ * state on purpose: it lasts as long as the page, across every new chat.
+ */
 let sessionNewChat: (SessionNewChat & { login: string }) | null = null;
 
 /**
@@ -63,6 +68,7 @@ export const isNewChatMode = (value: unknown): value is NewChatMode =>
 export const readNewChatPreferences = (
 	meta: Record<string, string[]> | undefined,
 ): NewChatPreferences => {
+	// each key holds a list; the first value is the setting
 	const first = (key: string): string | null => meta?.[key]?.[0] || null;
 	const mode = first(NEW_CHAT_PREFERENCE_KEYS.mode);
 	return {
@@ -74,9 +80,13 @@ export const readNewChatPreferences = (
 
 /** The build's own new-chat defaults. The host reads them from its env. */
 export interface NewChatBuildDefaults {
+	/** The default model's engine id. */
 	readonly modelId?: string;
+	/** The default model's name, shown when model selection is off. */
 	readonly modelName?: string;
+	/** The default mode; anything but `chat` or `agent` is ignored. */
 	readonly mode?: string;
+	/** The default saved agent's id. */
 	readonly agentId?: string;
 }
 

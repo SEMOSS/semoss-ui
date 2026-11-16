@@ -2,6 +2,12 @@ import { useCallback } from "react";
 import { type UseTranslationOptions, useTranslation } from "@semoss/i18n";
 import { useChatConfig } from "../chat-config/use-chat-config";
 
+/** What {@link useGracefulErrors} returns. */
+interface GracefulErrors {
+	/** Turns an error into the message to show the user. */
+	getGracefulErrorMessage: (error: Error) => string;
+}
+
 /**
  * Custom hook for transforming error messages into user-friendly, localized messages.
  *
@@ -25,7 +31,7 @@ import { useChatConfig } from "../chat-config/use-chat-config";
  */
 export const useGracefulErrors = (
 	translationOptions?: UseTranslationOptions<undefined>,
-) => {
+): GracefulErrors => {
 	const { t } = useTranslation("chat", translationOptions);
 	const { theme } = useChatConfig();
 
@@ -46,6 +52,7 @@ export const useGracefulErrors = (
 		(error: Error): string => {
 			const errorMessage = error?.message || "";
 			if (!errorMessage) return t("gracefulErrors.errorDefault");
+			// The first configured pattern found in the message wins.
 			for (const gracefulError of gracefulErrors) {
 				if (errorMessage.includes(gracefulError.pattern)) {
 					if ("text" in gracefulError) {

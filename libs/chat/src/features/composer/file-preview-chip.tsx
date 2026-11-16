@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { FilePreviewTile } from "./file-preview-tile";
 
+/** Props for {@link FilePreviewChip}. */
 interface FilePreviewChipProps {
 	/** File waiting to be submitted. */
 	file: File;
@@ -13,6 +14,7 @@ interface FilePreviewChipProps {
 export function FilePreviewChip({ file, onRemove }: FilePreviewChipProps) {
 	const { t } = useTranslation("room");
 	const [preview, setPreview] = useState("");
+	// an image gets a thumbnail from an object URL, revoked when the file changes or the chip unmounts
 	useEffect(() => {
 		if (!file.type.startsWith("image/")) return;
 		const url = URL.createObjectURL(file);

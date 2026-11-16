@@ -13,24 +13,41 @@ import {
 	ScrollArea,
 } from "@semoss/ui/next";
 
+/** A predefined prompt the room offers. */
 export interface PromptLibraryItem {
+	/** Identifies the prompt. */
 	id: string;
+	/** The prompt's name. */
 	title: string;
+	/** The text sent when it runs. */
 	context: string;
+	/** The groups it is listed under. */
 	tags?: string[];
+	/** What it is for, shown in the slash menu. */
 	intent?: string;
 }
 
+/** Props for {@link PromptLibraryDialog}. */
 interface PromptLibraryDialogProps {
+	/** Whether the dialog is open. */
 	open: boolean;
+	/** Opens or closes it. */
 	onOpenChange: (open: boolean) => void;
+	/** The prompts to list. */
 	prompts: PromptLibraryItem[];
+	/** Locks the prompts while a turn is running. */
 	isLoading?: boolean;
+	/** Runs a prompt; the dialog then closes. */
 	onSelectPrompt: (prompt: PromptLibraryItem) => void;
 }
 
+/** The group for prompts with no tags, listed last. */
 const UNGROUPED = "General";
 
+/**
+ * The room's predefined prompts, searchable and grouped by tag, with a tag
+ * filter. Picking one runs it and closes the dialog, which clears the search.
+ */
 export const PromptLibraryDialog: React.FC<PromptLibraryDialogProps> = ({
 	open,
 	onOpenChange,
@@ -90,21 +107,22 @@ export const PromptLibraryDialog: React.FC<PromptLibraryDialogProps> = ({
 		});
 	}, [filtered, activeTag]);
 
-	const handleClose = (o: boolean) => {
-		if (!o) {
+	/** Open or close the dialog; closing clears the search and the tag filter. */
+	const handleOpenChange = (isOpen: boolean) => {
+		if (!isOpen) {
 			setSearch("");
 			setActiveTag(null);
 		}
-		onOpenChange(o);
+		onOpenChange(isOpen);
 	};
 
 	const handlePromptSelect = (prompt: PromptLibraryItem) => {
 		onSelectPrompt(prompt);
-		handleClose(false);
+		handleOpenChange(false);
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={handleClose}>
+		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogContent className="flex h-[85vh] w-[95vw] flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl">
 				{/* Header */}
 				<DialogHeader className="shrink-0 border-b px-4 pt-5 pb-4 sm:px-6">

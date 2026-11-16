@@ -2,9 +2,14 @@ import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext
 import { COMMAND_PRIORITY_LOW, PASTE_COMMAND } from "lexical";
 import { useEffect, useRef } from "react";
 
-export function AutoScrollOnPastePlugin(props: {
+/** Props for {@link AutoScrollOnPastePlugin}. */
+interface AutoScrollOnPastePluginProps {
+	/** The element that scrolls the editor's content. */
 	scrollContainerRef: React.RefObject<HTMLElement | null>;
-}) {
+}
+
+/** Scrolls the editor to its end after a paste, once the pasted content has rendered. */
+export function AutoScrollOnPastePlugin(props: AutoScrollOnPastePluginProps) {
 	const [editor] = useLexicalComposerContext();
 	const didPasteRef = useRef(false);
 

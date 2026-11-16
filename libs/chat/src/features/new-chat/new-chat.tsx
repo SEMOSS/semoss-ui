@@ -52,6 +52,7 @@ import {
 	type NewRoomWorkbenchPanels,
 } from "../workbench/use-workbench-panels";
 
+/** Props for {@link NewChat}. */
 interface NewChatProps {
 	/** Text the composer starts with. */
 	initialPrompt?: string;
@@ -98,10 +99,7 @@ export const NewChat = ({
 	const lastLogin = useSession((state) => state.user?.lastLogin);
 	const userMeta = useSession((state) => state.user?.meta);
 
-	/**
-	 * State
-	 */
-	// The new room holds the new chat's options until its first message;
+	// The new room holds the new chat's options until its first message
 	const newRoom = useMemo(
 		() =>
 			new RoomStore({
@@ -141,6 +139,7 @@ export const NewChat = ({
 	}, [newRoomOptions.mcp]);
 	const bannerRef = useRef<HTMLDivElement>(null);
 
+	// open the theme banner's links in a new tab
 	useEffect(() => {
 		if (!bannerRef.current) return;
 		// The url stripping here is primarily due to a BE theme bug where single quote apostrophes get serial added when saving
@@ -155,7 +154,8 @@ export const NewChat = ({
 	}, [theme.banner]);
 
 	const [isLoading, setIsLoading] = useState(false);
-	const submittedRef = useRef(false);
+	const hasSubmittedRef = useRef(false);
+	// the agent whose greeting room was started, so it starts once
 	const greetingRoomStartedForRef = useRef<string>("");
 	// A new chat starts as the last chat started in this login session did,
 	// else as the user's defaults say (Settings > General), else as the
@@ -200,9 +200,9 @@ export const NewChat = ({
 	const {
 		room: preparedRoom,
 		isPreparing,
-		hasError: preparationError,
+		hasError: hasPreparationError,
 		prepare,
-	} = useNewRoom(newRoom, mode, submittedRef);
+	} = useNewRoom(newRoom, mode, hasSubmittedRef);
 	// the room whose Workspace shows: the prepared room once there is one
 	const workbenchRoom = preparedRoom ?? newRoom;
 	// what Retry opens again after a failed preparation
@@ -219,7 +219,9 @@ export const NewChat = ({
 	}, [mode, newRoom]);
 	// The agent whose default model has already been applied to the picker
 	const appliedAgentModelRef = useRef<string>("");
+	// The agent whose options have already been merged into the new room
 	const appliedAgentOptionsRef = useRef<string>("");
+	// the ids of the agent's predefined prompts, loaded below
 	const [prompts, setPrompts] = useState<string[]>([]);
 	const previewPrompts = useMemo(
 		() => newRoomOptions.predefinedPrompts.slice(0, 5),
@@ -235,12 +237,13 @@ export const NewChat = ({
 		},
 	);
 
-	const agentOptionsPending = Boolean(
+	// the picked agent's options have not reached the new room yet, so sending waits
+	const isAgentOptionsPending = Boolean(
 		selectedWorkspaceId &&
 			appliedAgentOptionsRef.current !== selectedWorkspaceId,
 	);
-	const agentLoadFailed =
-		agentOptionsPending &&
+	const hasAgentLoadFailed =
+		isAgentOptionsPending &&
 		(getWorkspace.status === "ERROR" ||
 			(getWorkspace.status === "SUCCESS" && !getWorkspace.data));
 
@@ -272,6 +275,7 @@ export const NewChat = ({
 		{ data: null },
 	);
 
+	// the agent's predefined prompts
 	const getPrompts = useSessionPixel<Prompt[]>(
 		selectedWorkspaceId && prompts.length > 0
 			? `META | ListPrompt(filters=[Filter( (PROMPT__ID == [${prompts.map((p) => `"${p}"`).join(", ")}]) )])`
@@ -280,6 +284,7 @@ export const NewChat = ({
 			data: [],
 		},
 	);
+	// the draft starts with the user's connectors switched on
 	useEffect(() => {
 		void newRoom.connectors.loadUserConnectors();
 	}, [newRoom]);
@@ -350,11 +355,13 @@ export const NewChat = ({
 	};
 
 	/**
-	 * Create a new room and ask the model
+	 * Create the room with its first message and open it. Uses the prepared
+	 * room when one exists, so its files and panels carry over.
 	 *
-	 * @param prompt The prompt to ask
-	 * @param files The files to upload
-	 * @param askOptions Options for the kickoff message (e.g. visible: false)
+	 * @param prompt - The prompt to ask.
+	 * @param files - The files to upload.
+	 * @param askOptions - Options for the kickoff message (e.g. visible: false).
+	 * @returns True once the room is created; false when busy or creation failed.
 	 */
 	const createRoom = async (
 		prompt: string,
@@ -362,7 +369,7 @@ export const NewChat = ({
 		askOptions?: { visible?: boolean },
 	) => {
 		// ignore if loading
-		if (isLoading || isPreparing || agentOptionsPending) {
+		if (isLoading || isPreparing || isAgentOptionsPending) {
 			return false;
 		}
 
@@ -406,7 +413,7 @@ export const NewChat = ({
 						chat.removeOptimisticRoom(preparedRoom.roomId);
 					}
 				})();
-				submittedRef.current = true;
+				hasSubmittedRef.current = true;
 				rememberChat(options);
 				navigation.openRoom(preparedRoom.roomId);
 			} else {
@@ -420,7 +427,7 @@ export const NewChat = ({
 					askOptions,
 					prepareRoom,
 				);
-				submittedRef.current = true;
+				hasSubmittedRef.current = true;
 				rememberChat(options);
 				navigation.openRoom(room.roomId);
 			}
@@ -460,7 +467,7 @@ export const NewChat = ({
 				workspaceId,
 				prepareRoom,
 			);
-			submittedRef.current = true;
+			hasSubmittedRef.current = true;
 			rememberChat(options);
 			navigation.openRoom(room.roomId);
 		} catch (error: unknown) {
@@ -470,17 +477,14 @@ export const NewChat = ({
 		}
 	};
 
-	/**
-	 * Effects
-	 */
-	// Handle workspace data loading
+	// an agent link picks its agent
 	useEffect(() => {
 		if (workspaceIdSearchParams) {
 			setSelectedWorkspaceId(workspaceIdSearchParams);
 		}
 	}, [workspaceIdSearchParams]);
 
-	// Handle workspace data loading
+	// merge the picked agent's instructions, toolboxes, prompts, and model into the new room
 	useEffect(() => {
 		if (!selectedWorkspaceId) {
 			// clearing the agent clears the guard below, so picking the same
@@ -564,7 +568,7 @@ export const NewChat = ({
 	// A default agent the user can no longer open gives way to Default Agent
 	useEffect(() => {
 		if (
-			!agentLoadFailed ||
+			!hasAgentLoadFailed ||
 			!defaultAgentIdRef.current ||
 			selectedWorkspaceId !== defaultAgentIdRef.current
 		) {
@@ -572,7 +576,7 @@ export const NewChat = ({
 		}
 		defaultAgentIdRef.current = "";
 		setSelectedWorkspaceId("");
-	}, [agentLoadFailed, selectedWorkspaceId]);
+	}, [hasAgentLoadFailed, selectedWorkspaceId]);
 
 	// A URL-routed agent with a greeting drops straight into a room with it
 	// already rendered, instead of the landing page.
@@ -649,7 +653,7 @@ export const NewChat = ({
 		});
 	}, [knowledgeId, getKnowledge.status, getKnowledge.data, newRoom]);
 
-	// Handle prompts from URL parameter
+	// put the agent's loaded prompts on the new room
 	useEffect(() => {
 		if (
 			!selectedWorkspaceId ||
@@ -688,6 +692,12 @@ export const NewChat = ({
 		newRoom,
 	]);
 
+	/**
+	 * Pick an agent, or none. A different agent's options replace the last
+	 * one's, keeping the knowledge and tools the user added by hand.
+	 *
+	 * @param next - The agent, or null for none.
+	 */
 	const handleAgentChange = (
 		next: RoomStore["options"]["workspace"] | null,
 	) => {
@@ -716,14 +726,25 @@ export const NewChat = ({
 		}
 		setSelectedWorkspaceId(next?.workspace_id ?? "");
 	};
+	/** Switch the new chat to chat mode. */
 	const handleSelectChat = () => {
 		setChosenMode("chat");
 	};
+	/**
+	 * With `modeFollowsAgent`, picking Default Agent runs agent mode and No Agent chat mode.
+	 *
+	 * @param isDefaultAgent - Whether Default Agent is picked.
+	 */
 	const handleDefaultAgentChange = (isDefaultAgent: boolean) => {
 		if (isLoading || isPreparing) return;
 		setChosenMode(isDefaultAgent ? "agent" : "chat");
 	};
-	/** Shows the Workspace, or one of its panels, in a room. */
+	/**
+	 * Show the Workspace, or one of its panels, in a room.
+	 *
+	 * @param room - The draft or the prepared room.
+	 * @param request - What to show.
+	 */
 	const showPanel = (room: RoomStore, request: NewRoomPanelRequest): void => {
 		switch (request.kind) {
 			case "workbench":
@@ -776,10 +797,12 @@ export const NewChat = ({
 		else if (newRoom.sidebar.isOpen) room.openSidebar();
 	};
 
+	/** Prepare the room again, for the panel that asked last. */
 	const handleRetryPreparation = () => {
 		void openPanel(pendingPanelRef.current);
 	};
 
+	// the draft's own way to open panels, for the rail, the header, and the slash menu
 	const newRoomPanels: NewRoomWorkbenchPanels = {
 		onOpenPanel: (request) => void openPanel(request),
 		isBusy: isPreparing || isLoading,
@@ -835,7 +858,7 @@ export const NewChat = ({
 								disabled:
 									isLoading ||
 									isPreparing ||
-									agentOptionsPending,
+									isAgentOptionsPending,
 								model: selectedModel,
 								options: newRoomOptions,
 								onModelChange: (model) => {
@@ -859,7 +882,7 @@ export const NewChat = ({
 							}}
 						>
 							<div className="flex h-full min-h-0 flex-col">
-								{preparationError && (
+								{hasPreparationError && (
 									<Alert
 										variant="destructive"
 										className="m-4 w-auto"
@@ -943,7 +966,7 @@ export const NewChat = ({
 										greeting={agentGreeting}
 									/>
 								)}
-								{agentLoadFailed && (
+								{hasAgentLoadFailed && (
 									<Alert variant="destructive">
 										<AlertDescription>
 											{t("room:settings.agentLoadError")}
@@ -964,11 +987,11 @@ export const NewChat = ({
 									}
 									className="max-h-72"
 									isLoading={isLoading || isPreparing}
-									isSubmitDisabled={agentOptionsPending}
+									isSubmitDisabled={isAgentOptionsPending}
 									initialValue={initialPrompt}
 									model={selectedModel}
 									room={newRoom}
-									setModel={(m) => {
+									onModelChange={(m) => {
 										chat.setSelectedModel(m);
 									}}
 									options={newRoomOptions}

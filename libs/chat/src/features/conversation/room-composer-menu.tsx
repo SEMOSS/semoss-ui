@@ -10,6 +10,7 @@ import { RoomInputMenuMCP } from "../composer/room-input-menu-mcp";
 import { RoomInputMenuUpload } from "../composer/room-input-menu-upload";
 import type { RoomStore } from "../room/room.store";
 
+/** Props for {@link RoomComposerMenu}, also the props of a host's replacement menu. */
 export interface RoomComposerMenuProps {
 	/** Opens or closes the menu. */
 	onOpenChange: (isOpen: boolean) => void;
@@ -33,7 +34,11 @@ export interface RoomComposerMenuProps {
 	isDefaultAgent?: boolean;
 }
 
-/** Stable composer actions shared by draft and existing conversations. */
+/**
+ * The items of the composer's plus menu, shared by a new chat and an open
+ * room: upload, knowledge, and toolboxes, then, while creating a chat, the
+ * Chat and Agent choice and the agent picker.
+ */
 export function RoomComposerMenu({
 	onOpenChange,
 	onOpenMcpOverlay,
@@ -48,6 +53,7 @@ export function RoomComposerMenu({
 }: RoomComposerMenuProps) {
 	const { t } = useTranslation("room");
 	const close = () => onOpenChange(false);
+	// Close the menu as the picker opens, so focus moves to the picker.
 	const openPicker = (tab: "AGENT" | "KNOWLEDGE" | "TOOLBOX") => {
 		onOpenMcpOverlay(tab);
 		close();

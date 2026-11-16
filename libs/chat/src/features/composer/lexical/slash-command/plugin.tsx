@@ -1,12 +1,12 @@
 import type React from "react";
-import { useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
 import { useChatConfig } from "../../../chat-config/use-chat-config";
 import { MentionPlugin } from "../mention-plugin";
 import { useSlashCommands } from "./context";
 import { filterSlashCommands, SlashCommandMenu } from "./menu";
+import { SlashCommandMenuPortal } from "./menu-portal";
 import type { SlashCommand } from "./types";
 
+/** Whether the chat runs in a frame; a frame without access to its parent counts. */
 let isIframed = false;
 try {
 	isIframed = window.self !== window.top;
@@ -14,82 +14,24 @@ try {
 	isIframed = true;
 }
 
-/** The menu's width in px; matches its `w-72`. */
-const MENU_WIDTH = 288;
-
-/** The menu's smallest distance from the window's edge, in px. */
-const MENU_GUTTER = 8;
-
-/**
- * The room the menu needs below the caret, in px (its `max-h-80` list plus
- * margin); with less, it opens above.
- */
-const MENU_FLIP_HEIGHT = 340;
-
-/**
- * Renders the slash command menu into a portal and closes it when the user
- * clicks outside — without blocking the click from reaching its target.
- */
-const MenuPortal: React.FC<{
-	menuPosition: { top: number; bottom: number; left: number };
-	onClose: () => void;
-	children: React.ReactNode;
-}> = ({ menuPosition, onClose, children }) => {
-	const ref = useRef<HTMLDivElement>(null);
-	// Stable ref so the effect never needs to re-register
-	const onCloseRef = useRef(onClose);
-	onCloseRef.current = onClose;
-
-	useEffect(() => {
-		const handler = (e: PointerEvent) => {
-			if (!ref.current?.contains(e.target as Node)) {
-				onCloseRef.current();
-			}
-		};
-		// pointerdown fires before Radix's own pointerdown handler and before
-		// the browser can suppress mousedown (which Radix does via preventDefault).
-		// Capture phase ensures we run before any stopPropagation in the tree.
-		document.addEventListener("pointerdown", handler, true);
-		return () => document.removeEventListener("pointerdown", handler, true);
-	}, []);
-
-	// keep the whole menu on screen when the caret is near the right edge
-	const left = Math.max(
-		MENU_GUTTER,
-		Math.min(
-			menuPosition.left,
-			window.innerWidth - MENU_WIDTH - MENU_GUTTER,
-		),
-	);
-
-	return createPortal(
-		<div
-			ref={ref}
-			style={{
-				position: "fixed",
-				...(window.innerHeight - menuPosition.bottom < MENU_FLIP_HEIGHT
-					? { bottom: window.innerHeight - menuPosition.top + 4 }
-					: { top: menuPosition.bottom + 4 }),
-				left,
-				zIndex: 50,
-			}}
-			className="w-72 overflow-hidden rounded-md border border-border bg-popover shadow-md"
-		>
-			{children}
-		</div>,
-		document.body,
-	);
-};
-
-/**
- * Wires MentionPlugin to the slash command system. Must be rendered inside a
- * LexicalComposer wrapped by SlashCommandProvider so it can read the current
- * command list from context via useSlashCommands().
- */
-export const SlashCommandPlugin: React.FC<{
+/** Props for {@link SlashCommandPlugin}. */
+interface SlashCommandPluginProps {
+	/** The model is responding, which locks commands locked while busy. */
 	isLoading?: boolean;
+	/** The latest response has tool calls, which locks them too. */
 	hasTools?: boolean;
-}> = ({ isLoading, hasTools }) => {
+}
+
+/**
+ * Wires `MentionPlugin` to the slash command system. Must be rendered inside a
+ * `LexicalComposer` wrapped by `SlashCommandProvider` so it can read the
+ * current command list from context via `useSlashCommands()`. Renders nothing
+ * in a frame when the theme hides tools there.
+ */
+export const SlashCommandPlugin: React.FC<SlashCommandPluginProps> = ({
+	isLoading,
+	hasTools,
+}) => {
 	const { theme } = useChatConfig();
 	const { commands } = useSlashCommands();
 	const isBusy = Boolean(isLoading || hasTools);
@@ -99,7 +41,8 @@ export const SlashCommandPlugin: React.FC<{
 	/**
 	 * Runs a picked command, unless it is locked while busy.
 	 *
-	 * @return Whether it ran.
+	 * @param cmd - The command.
+	 * @returns Whether it ran.
 	 */
 	const runCommand = (cmd: SlashCommand): boolean => {
 		if (cmd.isLockedWhileBusy && isBusy) return false;
@@ -127,25 +70,25 @@ export const SlashCommandPlugin: React.FC<{
 				onRequestClose,
 				query,
 				selectedIndex,
-				setItemCount,
-				setSelectedIndex,
+				onItemCountChange,
+				onSelectedIndexChange,
 			}) =>
 				isOpen && menuPosition ? (
-					<MenuPortal
+					<SlashCommandMenuPortal
 						menuPosition={menuPosition}
 						onClose={() => onOpenChange(false)}
 					>
 						<SlashCommandMenu
 							query={query}
 							selectedIndex={selectedIndex}
-							setItemCount={setItemCount}
-							setSelectedIndex={setSelectedIndex}
+							onItemCountChange={onItemCountChange}
+							onSelectedIndexChange={onSelectedIndexChange}
 							isBusy={isBusy}
 							onCommandSelect={(cmd) => {
 								if (runCommand(cmd)) onRequestClose();
 							}}
 						/>
-					</MenuPortal>
+					</SlashCommandMenuPortal>
 				) : null
 			}
 		/>

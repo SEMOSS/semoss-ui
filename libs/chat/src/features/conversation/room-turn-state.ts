@@ -16,8 +16,9 @@ export interface RoomTurnState {
 }
 
 /**
- * Read a room's turn state. Pure over the room, so an observer that calls it
- * re-renders when what it read changes.
+ * Read a room's turn state. Pure over the room, so it serves as a
+ * `useRoomSelector` selector: the component re-renders only when a field of
+ * the result changes.
  *
  * @param room - The room.
  * @returns The turn state.

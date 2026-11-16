@@ -29,16 +29,20 @@ import { RoomSuggestions } from "./room-suggestions";
 import { readRoomTurnState } from "./room-turn-state";
 import { useGracefulErrors } from "./use-graceful-errors";
 
+/** How far from the top or bottom, in px, the scroll buttons appear and auto-scroll stops. */
 const SCROLL_THRESHOLD = 150;
 
+/** A message in the room's history. */
 type RoomMessage = InputMessageStore | ResponseMessageStore;
 
 /** A shown message, with the tool-only responses folded up into it. */
 interface RoomHistoryEntry {
+	/** The message. */
 	message: RoomMessage;
+	/** The tool-only responses after it, drawn as part of it. */
 	subsequentTools: ResponseMessageStore[];
 	/** Whether the model's name shows above it. */
-	showModelName: boolean;
+	shouldShowModelName: boolean;
 }
 
 /** How many values {@link selectHistoryRows} gives each shown message. */
@@ -103,9 +107,9 @@ const selectHistoryRows = (room: RoomStore): unknown[] => {
 		// find the most recent ancestor that actually has a model; with none,
 		// show this message's, else only a different one, to reduce clutter
 		const ancestor = m.findAncestor((a) => !!a.modelId);
-		const showModelName = !ancestor || m.modelId !== ancestor.modelId;
+		const shouldShowModelName = !ancestor || m.modelId !== ancestor.modelId;
 
-		rows.push(m, isFoldedUp, showModelName, m.ornaments);
+		rows.push(m, isFoldedUp, shouldShowModelName, m.ornaments);
 	}
 	return rows;
 };
@@ -128,7 +132,7 @@ const toHistoryEntries = (rows: readonly unknown[]): RoomHistoryEntry[] => {
 		const entry: RoomHistoryEntry = {
 			message,
 			subsequentTools: [],
-			showModelName: rows[index + 2] as boolean,
+			shouldShowModelName: rows[index + 2] as boolean,
 		};
 		anchor = message.type === "OUTPUT" ? entry : null;
 		entries.push(entry);
@@ -136,8 +140,9 @@ const toHistoryEntries = (rows: readonly unknown[]): RoomHistoryEntry[] => {
 	return entries;
 };
 
+/** Props for {@link RoomMessages}. */
 interface RoomMessagesProps {
-	/** The room whose conversation to show. */
+	/** The room whose conversation to show; defaults to the room in context. */
 	room?: RoomStore;
 }
 
@@ -154,8 +159,8 @@ export const RoomMessages = ({ room: roomProp }: RoomMessagesProps) => {
 	const [scrollEle, setScrollEle] = useState<HTMLDivElement | null>(null);
 	const [contentEle, setContentEle] = useState<HTMLDivElement | null>(null);
 	const [contentHeight, setContentHeight] = useState(0);
-	const [showScrollup, setShowScrollup] = useState(false);
-	const [showScrolldown, setShowScrolldown] = useState(false);
+	const [isScrollUpShown, setIsScrollUpShown] = useState(false);
+	const [isScrollDownShown, setIsScrollDownShown] = useState(false);
 	const [isScrollLocked, setIsScrollLocked] = useState(false);
 	const { isBusy, isStreamingContent, waitingAskToolCount } = useRoomSelector(
 		room,
@@ -176,7 +181,8 @@ export const RoomMessages = ({ room: roomProp }: RoomMessagesProps) => {
 	const reportConversationScrolled = useContext(ConversationScrollContext);
 
 	/**
-	 * Handle scroll events to detect user scrolling
+	 * Read the scroll position: report it to the header, show the scroll
+	 * buttons, and lock auto-scroll while the user is away from the bottom.
 	 */
 	const handleScroll = useCallback(() => {
 		// the effect that calls this only does so once the element exists
@@ -184,11 +190,11 @@ export const RoomMessages = ({ room: roomProp }: RoomMessagesProps) => {
 
 		reportConversationScrolled?.(scrollEle.scrollTop > 0);
 
-		// show scroll up if near the top
+		// show scroll up once away from the top
 		if (scrollEle.scrollTop > SCROLL_THRESHOLD) {
-			setShowScrollup(true);
+			setIsScrollUpShown(true);
 		} else {
-			setShowScrollup(false);
+			setIsScrollUpShown(false);
 		}
 
 		// Check if user is at the bottom
@@ -200,18 +206,20 @@ export const RoomMessages = ({ room: roomProp }: RoomMessagesProps) => {
 
 		// show scroll down if not at bottom
 		if (isAtBottom) {
-			setShowScrolldown(false);
+			setIsScrollDownShown(false);
 			// Unlock scroll when user scrolls back to bottom
 			setIsScrollLocked(false);
 		} else {
-			setShowScrolldown(true);
+			setIsScrollDownShown(true);
 			// Lock scroll when user scrolls away from bottom
 			setIsScrollLocked(true);
 		}
 	}, [scrollEle, reportConversationScrolled]);
 
 	/**
-	 * Scroll to target position based on direction
+	 * Smoothly scroll the conversation.
+	 *
+	 * @param target - The offset from the top to scroll to, in px.
 	 */
 	const scrollToTarget = useCallback(
 		(target: number = 0) => {
@@ -227,11 +235,7 @@ export const RoomMessages = ({ room: roomProp }: RoomMessagesProps) => {
 		[scrollEle],
 	);
 
-	/**
-	 * Effects
-	 */
-
-	// create a listener to process messages from the room
+	// run the tool results that tool views post to the window
 	useEffect(() => {
 		const handleMessage = async (
 			event: MessageEvent<{
@@ -273,7 +277,7 @@ export const RoomMessages = ({ room: roomProp }: RoomMessagesProps) => {
 					tool.executedParameters ?? {},
 				);
 			} catch {
-				// noop
+				// a malformed or failed post must not break the listener
 			}
 		};
 
@@ -336,24 +340,21 @@ export const RoomMessages = ({ room: roomProp }: RoomMessagesProps) => {
 		});
 	}, [scrollEle, isScrollLocked, contentHeight, isAnyMessageStreaming]);
 
-	/**
-	 * Set up scroll event listener
-	 */
+	// listen for scrolling, at most once a frame
 	useEffect(() => {
 		if (!scrollEle) {
 			return;
 		}
 
-		// Throttle scroll events for better performance
-		let ticking = false;
+		let isTicking = false;
 
 		const throttledHandleScroll = () => {
-			if (!ticking) {
+			if (!isTicking) {
 				requestAnimationFrame(() => {
 					handleScroll();
-					ticking = false;
+					isTicking = false;
 				});
-				ticking = true;
+				isTicking = true;
 			}
 		};
 
@@ -369,9 +370,7 @@ export const RoomMessages = ({ room: roomProp }: RoomMessagesProps) => {
 		};
 	}, [scrollEle, handleScroll]);
 
-	/**
-	 * Set up content listener
-	 */
+	// track the content's height, which drives auto-scroll while streaming
 	useEffect(() => {
 		if (!contentEle) {
 			return;
@@ -418,11 +417,11 @@ export const RoomMessages = ({ room: roomProp }: RoomMessagesProps) => {
 							({
 								message: m,
 								subsequentTools,
-								showModelName,
+								shouldShowModelName,
 							}) => {
 								return (
 									<React.Fragment key={m.key}>
-										{showModelName && (
+										{shouldShowModelName && (
 											<div className="relative mb-4 flex flex-col items-center justify-center">
 												<Muted className="z-10 bg-background px-2 text-xs leading-normal">
 													{m.ornaments.modelName}
@@ -501,7 +500,7 @@ export const RoomMessages = ({ room: roomProp }: RoomMessagesProps) => {
 				</div>
 			</ScrollArea>
 
-			{showScrollup && (
+			{isScrollUpShown && (
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<span className="absolute end-4 top-16 z-50 md:top-14">
@@ -520,7 +519,7 @@ export const RoomMessages = ({ room: roomProp }: RoomMessagesProps) => {
 				</Tooltip>
 			)}
 
-			{showScrolldown && (
+			{isScrollDownShown && (
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<span className="absolute end-4 bottom-4 z-50">

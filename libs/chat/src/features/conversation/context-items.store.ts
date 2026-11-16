@@ -15,7 +15,7 @@ export interface ContextItem {
 	readonly name: string;
 	/** Where the file is in the chat's files, as a message's `media` takes it. */
 	readonly path: string;
-	/** The viewer it came from; none for a file added from Chat Files itself. */
+	/** The viewer it came from; none for a file added from Room Files itself. */
 	readonly service?: ConnectorViewerService;
 }
 
@@ -25,11 +25,12 @@ export interface ContextItemsSnapshot {
 	readonly items: readonly ContextItem[];
 }
 
+/** An empty queue. */
 const INITIAL: ContextItemsSnapshot = { items: [] };
 
 /**
  * The files queued for one room's next message. Each is already in the chat's
- * own files: a connector viewer saved it there, or the user picked it in Chat
+ * own files: a connector viewer saved it there, or the user picked it in Room
  * Files. `RoomStore.askMessage` sends them as `media` with the next message
  * and puts them back when the send fails.
  *
@@ -40,7 +41,14 @@ const INITIAL: ContextItemsSnapshot = { items: [] };
 export class ContextItemsStore {
 	private readonly state = new StoreState<ContextItemsSnapshot>(INITIAL);
 
+	/** The current queue, for `useContextItems`. */
 	getSnapshot = (): ContextItemsSnapshot => this.state.getSnapshot();
+	/**
+	 * Hear about every change to the queue.
+	 *
+	 * @param listener - Called after each change.
+	 * @returns Stops listening.
+	 */
 	subscribe = (listener: () => void): (() => void) =>
 		this.state.subscribe(listener);
 
@@ -53,13 +61,14 @@ export class ContextItemsStore {
 	 * Queue a file from the chat's own files for the next message. A file
 	 * already queued is not added twice.
 	 *
-	 * @param file - The file, as a viewer saved it, or as Chat Files lists it
+	 * @param file - The file, as a viewer saved it, or as Room Files lists it
 	 * (with no `service`), its path relative to the chat's folder.
 	 */
 	add = (
 		file: Pick<ConnectorSavedFile, "path" | "name"> &
 			Partial<Pick<ConnectorSavedFile, "service">>,
 	): void => {
+		// Returning `current` unchanged tells no listener.
 		this.state.update((current) =>
 			current.items.some((item) => item.path === file.path)
 				? current

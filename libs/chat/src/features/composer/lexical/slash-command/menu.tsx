@@ -16,6 +16,10 @@ const WORD_PATTERN = /[\s\-_/]+/;
  * How well a command matches the query: 0 when its id, label, or a keyword
  * starts with it, 1 when one of their words does, 2 when one contains it, and
  * -1 when none do.
+ *
+ * @param cmd - The command.
+ * @param query - The lowercased, trimmed query.
+ * @returns The rank; lower is closer.
  */
 const rankSlashCommand = (cmd: SlashCommand, query: string): number => {
 	const terms = [cmd.id, cmd.label, ...(cmd.keywords ?? [])].map((term) =>
@@ -40,7 +44,7 @@ const rankSlashCommand = (cmd: SlashCommand, query: string): number => {
  *
  * @param commands - The composer's commands.
  * @param query - What was typed after "/".
- * @return The commands to list, in the order the menu shows them.
+ * @returns The commands to list, in the order the menu shows them.
  */
 export const filterSlashCommands = (
 	commands: SlashCommand[],
@@ -70,15 +74,16 @@ export const filterSlashCommands = (
 	);
 };
 
+/** Props for {@link SlashCommandMenu}. */
 interface SlashCommandMenuProps {
 	/** Text typed after the "/" trigger, used to filter commands */
 	query: string;
 	/** Index of the currently highlighted command */
 	selectedIndex: number;
 	/** Reports the current filtered item count back to the parent */
-	setItemCount: (count: number) => void;
+	onItemCountChange: (count: number) => void;
 	/** Syncs hover / cmdk-driven selection back to the parent */
-	setSelectedIndex: (index: number) => void;
+	onSelectedIndexChange: (index: number) => void;
 	/** Runs a command picked by click or keyboard, and closes the menu. */
 	onCommandSelect: (cmd: SlashCommand) => void;
 	/** Whether commands locked while busy are disabled. */
@@ -93,8 +98,8 @@ interface SlashCommandMenuProps {
 export const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({
 	query,
 	selectedIndex,
-	setItemCount,
-	setSelectedIndex,
+	onItemCountChange,
+	onSelectedIndexChange,
 	onCommandSelect,
 	isBusy,
 }) => {
@@ -104,10 +109,12 @@ export const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({
 
 	const listRef = useRef<HTMLDivElement>(null);
 
+	// the editor's arrow keys move the highlight, so they need the count
 	useEffect(() => {
-		setItemCount(filtered.length);
-	}, [filtered.length, setItemCount]);
+		onItemCountChange(filtered.length);
+	}, [filtered.length, onItemCountChange]);
 
+	// keep the highlighted item in view as the arrow keys move it
 	useEffect(() => {
 		const list = listRef.current;
 		if (!list) return;
@@ -129,7 +136,7 @@ export const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({
 			value={filtered[selectedIndex]?.id ?? ""}
 			onValueChange={(val) => {
 				const idx = filtered.findIndex((cmd) => cmd.id === val);
-				if (idx !== -1) setSelectedIndex(idx);
+				if (idx !== -1) onSelectedIndexChange(idx);
 			}}
 			className="w-full"
 		>

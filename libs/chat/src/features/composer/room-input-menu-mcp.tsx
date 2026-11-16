@@ -4,13 +4,19 @@ import { Badge, DropdownMenuItem } from "@semoss/ui/next";
 import { isKnowledgeMcp } from "../mcp/mcp-utils";
 import type { RoomStore } from "../room/room.store";
 
+/** Props for {@link RoomInputMenuMCP}. */
 interface RoomInputMenuMCPProps {
+	/** Which picker the item opens, and what it counts. */
 	type: "KNOWLEDGE" | "TOOLBOX";
+	/** The room's options, whose selections the badge counts. */
 	options: RoomStore["options"];
+	/** Opens the picker. */
 	onSelect: () => void;
+	/** Locks the item, as while a turn is running. */
 	disabled?: boolean;
 }
 
+/** A plus menu item that opens the knowledge or toolbox picker, with how many are selected. */
 export const RoomInputMenuMCP = ({
 	type,
 	options,

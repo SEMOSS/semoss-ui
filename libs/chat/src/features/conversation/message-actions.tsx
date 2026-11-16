@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { ButtonGroup, cn, Muted } from "@semoss/ui/next";
 
+/** Props for {@link MessageActions}. */
 interface MessageActionsProps {
 	/** Existing message actions, preserving their handlers and availability. */
 	children: ReactNode;

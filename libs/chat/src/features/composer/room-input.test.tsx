@@ -263,7 +263,7 @@ const defaultProps = {
 	isLoading: false,
 	onPrompt: vi.fn(() => Promise.resolve(true)),
 	model: null,
-	setModel: vi.fn(),
+	onModelChange: vi.fn(),
 	MenuComponent: () => React.createElement("div", null),
 	options: {
 		instructions: "",

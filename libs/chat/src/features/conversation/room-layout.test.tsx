@@ -104,6 +104,7 @@ function HeaderPlace({ onOpen }: { onOpen: () => void }) {
 	);
 }
 
+/** A layout whose header opens the Workspace and whose Workspace closes itself. */
 function WorkspaceHeaderHarness() {
 	const [isOpen, setIsOpen] = useState(false);
 	return (

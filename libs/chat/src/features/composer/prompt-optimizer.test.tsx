@@ -25,6 +25,7 @@ const room = {
 	options: { instructions: "" },
 } as unknown as RoomStore;
 
+/** A draft input wired to the optimizer, as the composer wires them. */
 function Harness({ disabled = false }: { disabled?: boolean }) {
 	const [input, setInput] = useState("Original draft");
 	return (
@@ -36,7 +37,7 @@ function Harness({ disabled = false }: { disabled?: boolean }) {
 			/>
 			<PromptOptimizer
 				input={input}
-				setInput={setInput}
+				onInputChange={setInput}
 				room={room}
 				disabled={disabled}
 				modelId="model"

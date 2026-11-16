@@ -65,10 +65,9 @@ interface RoomSlashCommandsOptions {
  * Close Workspace; the room's own actions, inside a room; and the room's
  * prompts. Panels share their labels with the Workbench rail and room actions
  * with Settings' Room section, so a command is found by the name it has there.
- * Call it from an observer: the panels are read from MobX.
  *
  * @param options - The composer's room and its actions.
- * @return The commands, by group.
+ * @returns The commands, by group.
  */
 export const useRoomSlashCommands = ({
 	room,
@@ -88,6 +87,7 @@ export const useRoomSlashCommands = ({
 	const roomActions = useRoomActionsContext();
 	const roomActionItems = useRoomActionItems();
 	const isAgentMode = room.mode === "agent";
+	/** Build a command whose label and description come from `slash.commands.<id>`, unless `extra` overrides them. */
 	const command = (
 		id: string,
 		group: SlashCommand["group"],

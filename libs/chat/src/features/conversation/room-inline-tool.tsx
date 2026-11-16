@@ -19,17 +19,22 @@ import type { ToolStore } from "../messages/tool.store";
 import { useTool } from "../messages/use-tool";
 import type { RoomStore } from "../room/room.store";
 
+/** Props for {@link RoomInlineTool}. */
 interface RoomInlineToolProps {
-	/** Room to render */
+	/** The room the tool call belongs to. */
 	room: RoomStore;
 
-	/** Message to render */
+	/** The response that made the call. */
 	message: ResponseMessageStore;
 
-	/** Tool to render */
+	/** The tool call to show. */
 	tool: ToolStore;
 }
 
+/**
+ * A tool call's view opened inline in the conversation. Maximized, it covers
+ * the page with controls to move it to the Workspace, restore it, or close it.
+ */
 export const RoomInlineTool = ({
 	room,
 	message,
