@@ -20,6 +20,7 @@ import type { RoomStore } from "../room/room.store";
 import { ROOM_PANEL_TYPES } from "../room/room-sidebar";
 import { useRoomSelector } from "../room/use-room-selector";
 
+/** What every Workspace panel option has, whatever its kind. */
 interface WorkbenchPanelOptionBase {
 	/** Stable key; also the panel's slash command id. */
 	id: string;
@@ -78,7 +79,7 @@ export interface NewRoomWorkbenchPanels {
  *
  * @param room - The room whose Workspace shows the panels.
  * @param newRoomPanels - A new chat's own panel actions, until its first message.
- * @return The room's panels, then the connector viewers.
+ * @returns The room's panels, then the connector viewers.
  */
 export const useWorkbenchPanels = (
 	room: RoomStore,
@@ -91,9 +92,11 @@ export const useWorkbenchPanels = (
 	useConnectors(connectors);
 	const fileMode = useRoomSelector(room, (current) => current.fileMode);
 	const isBusy = newRoomPanels?.isBusy ?? false;
+	// a busy draft holds back every panel that needs its room
 	const isWaiting = (kind: NewRoomPanelRequest["kind"]) =>
 		isBusy && !NEW_ROOM_READY_PANEL_KINDS.has(kind);
-	const open =
+	// a new chat routes the request through its draft; a room opens it itself
+	const openPanel =
 		(request: NewRoomPanelRequest, openInRoom: () => void) => () => {
 			if (newRoomPanels) newRoomPanels.onOpenPanel(request);
 			else openInRoom();
@@ -111,7 +114,7 @@ export const useWorkbenchPanels = (
 			panelConfig: { mode: fileMode },
 			isDisabled: isWaiting("files"),
 			isLoading: isWaiting("files"),
-			onOpen: open({ kind: "files" }, () =>
+			onOpen: openPanel({ kind: "files" }, () =>
 				room.openSidebarFileExplorer(),
 			),
 		},
@@ -125,7 +128,10 @@ export const useWorkbenchPanels = (
 			panelConfig: {},
 			isDisabled: isWaiting("settings"),
 			isLoading: false,
-			onOpen: open({ kind: "settings" }, room.chatTools.openRoomSettings),
+			onOpen: openPanel(
+				{ kind: "settings" },
+				room.chatTools.openRoomSettings,
+			),
 		},
 	];
 	if (room.theme.featureFlags?.showActivityLog !== false) {
@@ -139,7 +145,7 @@ export const useWorkbenchPanels = (
 			panelConfig: {},
 			isDisabled: isWaiting("activity"),
 			isLoading: false,
-			onOpen: open({ kind: "activity" }, () =>
+			onOpen: openPanel({ kind: "activity" }, () =>
 				room.openSidebarPanel(
 					ROOM_PANEL_TYPES.AUDIT_LOG,
 					{},
@@ -159,8 +165,9 @@ export const useWorkbenchPanels = (
 			// a draft prepares its room first, so one preparation at a time
 			isDisabled: isWaiting("connector"),
 			isLoading: false,
-			onOpen: open({ kind: "connector", service: source.service }, () =>
-				connectors.openSourcePanel(source.service),
+			onOpen: openPanel(
+				{ kind: "connector", service: source.service },
+				() => connectors.openSourcePanel(source.service),
 			),
 		});
 	}

@@ -34,7 +34,7 @@ function createRoom(): RoomStore {
 	return room;
 }
 
-/** The header's own icons, in order. */
+/** The accessible names of the header's own icons, in order. */
 function getIconNames(): string[] {
 	return screen
 		.getAllByRole("button")

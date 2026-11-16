@@ -77,6 +77,7 @@ vi.mock("../chat-tools/use-room-toolbox", () => ({
 	useRoomToolbox: vi.fn(),
 }));
 
+/** Knowledge, an added toolbox, an agent's toolbox and knowledge, and the room's own. */
 const options: RoomStore["options"] = {
 	instructions: "Keep this instruction",
 	predefinedPrompts: [],
@@ -98,6 +99,7 @@ const options: RoomStore["options"] = {
 		{ id: "room", name: "Room files", type: "ROOM", fromRoom: true },
 	],
 };
+/** The form over local state, as a room keeps its options, reporting each change. */
 function Settings({
 	disabled = false,
 	isAgentMode = false,

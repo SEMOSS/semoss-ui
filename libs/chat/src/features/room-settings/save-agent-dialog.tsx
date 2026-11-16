@@ -22,6 +22,7 @@ import { getErrorMessage } from "@semoss/utility/error";
 import type { MCPConfig } from "../../types";
 import { useChatSession } from "../chat/use-chat-session";
 
+/** Props for {@link SaveAgentDialog}. */
 interface SaveAgentDialogProps {
 	/** System prompt/instructions to save. */
 	systemPrompt: string;
@@ -52,12 +53,14 @@ export const SaveAgentDialog = ({
 		defaultValues: { name: "", description: "" },
 	});
 	const isLoading = form.formState.isSubmitting;
-	const close = () => {
+	/** Closes and clears the form, unless a save is running. */
+	const handleClose = () => {
 		if (isLoading) return;
 		onOpenChange(false);
 		form.reset();
 	};
-	const save = async ({
+	/** Saves the agent; a failure stays open with the server's error. */
+	const handleSave = async ({
 		name,
 		description,
 	}: {
@@ -91,7 +94,7 @@ export const SaveAgentDialog = ({
 			open={open}
 			onOpenChange={(next) => {
 				// nothing in the dialog opens it; only closing comes back
-				if (!next) close();
+				if (!next) handleClose();
 			}}
 		>
 			<DialogContent
@@ -106,7 +109,7 @@ export const SaveAgentDialog = ({
 				</DialogHeader>
 				<Form
 					form={form}
-					onSubmit={save}
+					onSubmit={handleSave}
 					noValidate
 					aria-busy={isLoading}
 					className="flex flex-col gap-4"
@@ -136,7 +139,7 @@ export const SaveAgentDialog = ({
 						<Button
 							type="button"
 							variant="outline"
-							onClick={close}
+							onClick={handleClose}
 							disabled={isLoading}
 						>
 							{t("workspace.cancelButton")}

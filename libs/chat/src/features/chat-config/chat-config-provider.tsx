@@ -1,9 +1,11 @@
 import type { ReactNode } from "react";
 import { type ChatConfig, ChatConfigContext } from "./chat-config.context";
 
+/** Props for {@link ChatConfigProvider}. */
 interface ChatConfigProviderProps {
 	/** The host's theme, defaults, platform URL, and navigation. */
 	config: ChatConfig;
+	/** The chat UI that reads the config. */
 	children: ReactNode;
 }
 

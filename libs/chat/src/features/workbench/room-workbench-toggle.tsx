@@ -8,6 +8,7 @@ import { useRoomSelector } from "../room/use-room-selector";
 import { HeaderIconButton } from "../room-header/header-icon-button";
 import type { NewRoomWorkbenchPanels } from "./use-workbench-panels";
 
+/** Props for {@link RoomWorkbenchToggle}. */
 interface RoomWorkbenchToggleProps {
 	/** The room whose Workspace it opens and closes. */
 	room: RoomStore;
@@ -28,6 +29,7 @@ export const RoomWorkbenchToggle = ({
 	const { t } = useTranslation("room");
 	const roomLayout = useContext(RoomLayoutActionsContext);
 	const isOpen = useRoomSelector(room, (current) => current.sidebar.isOpen);
+	// open but behind the narrow Chat tab counts as out of view
 	const isInView = isOpen && (roomLayout?.isWorkbenchVisible ?? true);
 	const Icon = isInView ? PanelRightCloseIcon : PanelRightOpenIcon;
 

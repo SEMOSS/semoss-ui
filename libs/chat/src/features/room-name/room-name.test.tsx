@@ -8,7 +8,13 @@ vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
 
-/** A name whose owner keeps the editing state, as the sidebar and header do. */
+/**
+ * A name whose owner keeps the editing state, as the sidebar and header do.
+ *
+ * @param props.name - The saved name.
+ * @param props.onRename - Saves a new name.
+ * @param props.onStopRename - Told when the edit ends, before the owner closes it.
+ */
 function OwnedName({
 	name,
 	onRename,

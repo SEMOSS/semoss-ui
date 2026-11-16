@@ -1,16 +1,15 @@
 import { createContext } from "react";
 import type { ChatStore } from "./chat.store";
 
-/**
- * Value
- */
+/** What the chat session context holds. */
 type ChatSessionContextProps = {
-	/** chat store */
+	/** The session's chat store. */
 	chat: ChatStore;
 };
 
 /**
- * Context
+ * The session's chat store, provided by `ChatSessionProvider` and read with
+ * `useChatSession`. Undefined outside a provider.
  */
 export const ChatSessionContext = createContext<
 	ChatSessionContextProps | undefined

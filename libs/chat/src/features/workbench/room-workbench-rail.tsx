@@ -20,6 +20,7 @@ import {
 } from "./use-workbench-panels";
 import { WorkbenchPanelIcon } from "./workbench-panel-icon";
 
+/** Props for {@link RoomWorkbenchRail}. */
 interface RoomWorkbenchRailProps {
 	/** The room whose Workspace the rail opens panels in. */
 	room: RoomStore;
@@ -53,9 +54,13 @@ export const RoomWorkbenchRail = ({
 	side,
 }: RoomWorkbenchRailProps) => {
 	const { t } = useTranslation(["room", "sidebar"]);
-	const items = useRoomActionItems().filter((item) => item.id !== "rename");
+	// a double-click on the name renames, so the cog leaves Rename out
+	const actionItems = useRoomActionItems().filter(
+		(item) => item.id !== "rename",
+	);
 
 	const panels = useWorkbenchPanels(room, newRoomPanels);
+	/** Hands the dock the panel a dropped icon spawns. */
 	const handleDragStart = (
 		event: DragEvent<HTMLElement>,
 		panel: WorkbenchPanelOption,
@@ -72,7 +77,7 @@ export const RoomWorkbenchRail = ({
 
 	return (
 		<>
-			{items.length > 0 && (
+			{actionItems.length > 0 && (
 				<>
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
@@ -91,7 +96,7 @@ export const RoomWorkbenchRail = ({
 							align="start"
 							className="w-56"
 						>
-							{items.map((item) => (
+							{actionItems.map((item) => (
 								<DropdownMenuItem
 									key={item.id}
 									variant={
@@ -127,6 +132,7 @@ export const RoomWorkbenchRail = ({
 			)}
 
 			{panels.map((panel) => {
+				// a new chat's panels prepare its room first, which only a click does
 				const isDraggable = !newRoomPanels && !panel.isDisabled;
 				return (
 					<HeaderIconButton

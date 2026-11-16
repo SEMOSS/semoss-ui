@@ -1,6 +1,7 @@
 import { cn } from "@semoss/ui/next";
 import { RoomNameField } from "./room-name-field";
 
+/** Props for {@link RoomName}. */
 interface RoomNameProps {
 	/** The room's saved name, shown and edited. */
 	name: string;
@@ -13,7 +14,8 @@ interface RoomNameProps {
 	/**
 	 * Saves a new name.
 	 *
-	 * @return Whether it was saved.
+	 * @param name - The trimmed name the user entered.
+	 * @returns Whether it was saved.
 	 */
 	onRename: (name: string) => Promise<boolean>;
 	/**

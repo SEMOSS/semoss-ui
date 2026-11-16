@@ -11,6 +11,7 @@ import {
 /** How long the pointer rests on a header icon before its tooltip shows. */
 const HEADER_TOOLTIP_DELAY = 500;
 
+/** Props for {@link HeaderIconButton}: the button's own, plus its label and tooltip side. */
 type HeaderIconButtonProps = ComponentProps<typeof Button> & {
 	/** The button's accessible name, also shown as its tooltip. */
 	label: string;
@@ -20,9 +21,8 @@ type HeaderIconButtonProps = ComponentProps<typeof Button> & {
 
 /**
  * An icon button in the room header or on the Workbench rail, with its name
- * as a tooltip, sized up for
- * touch on mobile. It passes other props and its ref to the button, so a menu
- * trigger can wrap it with `asChild`.
+ * as a tooltip, sized up for touch on mobile. It passes other props and its
+ * ref to the button, so a menu trigger can wrap it with `asChild`.
  */
 export const HeaderIconButton = ({
 	label,

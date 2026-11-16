@@ -30,6 +30,7 @@ const RoomConfigurationPanel = () => {
 			isAgentMode: current.mode === "agent",
 		}),
 	);
+	// a new chat's draft Settings, which replace the room's below
 	const draftSettings = useContext(DraftSettingsContext);
 	return (
 		<ScrollArea className="h-full w-full">
@@ -40,6 +41,7 @@ const RoomConfigurationPanel = () => {
 				isAgentMode={isAgentMode}
 				onModelChange={(model) => {
 					if (model) {
+						// the pick also becomes the chat's selected model
 						room.setModel(model);
 						chat.setSelectedModel(model);
 					}
@@ -60,7 +62,7 @@ const RoomConfigurationPanel = () => {
 	);
 };
 
-/** The room's model, options, and tools. One per sidebar. */
+/** The room's model, options, and tools. One per Workspace. */
 export const ROOM_CONFIGURATION_PANEL: WorkbenchPanelConfig = {
 	name: "Settings",
 	icon: ({ className }) => <Settings2Icon className={className} />,

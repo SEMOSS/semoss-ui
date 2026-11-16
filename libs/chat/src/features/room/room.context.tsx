@@ -5,7 +5,9 @@ import type { RoomStore } from "./room.store";
 const RoomContext = createContext<RoomStore | undefined>(undefined);
 
 interface RoomProviderProps {
+	/** The room to provide. */
 	room: RoomStore;
+	/** What reads the room. */
 	children: ReactNode;
 }
 
@@ -21,7 +23,12 @@ export function RoomProvider({ room, children }: RoomProviderProps) {
 	return <RoomContext.Provider value={room}>{children}</RoomContext.Provider>;
 }
 
-/** The nearest room. */
+/**
+ * The nearest room.
+ *
+ * @returns The room from the nearest `RoomProvider`.
+ * @throws Error outside a `RoomProvider`.
+ */
 export const useRoom = (): RoomStore => {
 	const room = useContext(RoomContext);
 	if (!room) {

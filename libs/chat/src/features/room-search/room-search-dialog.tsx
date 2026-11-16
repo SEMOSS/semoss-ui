@@ -27,13 +27,17 @@ import { useRoomSearch } from "./use-room-search";
 
 /** The agent the results are narrowed to. */
 interface AgentChoice {
+	/** The agent's project id, sent as the search's `workspaceId`. */
 	id: string;
+	/** The agent's display name, shown on the picker. */
 	name: string;
 }
 
 /** Props for {@link RoomSearchDialog}. */
 export interface RoomSearchDialogProps {
+	/** Whether the dialog is open; it only searches while it is. */
 	open: boolean;
+	/** Asks to open or close the dialog; choosing a room closes it. */
 	onOpenChange: (open: boolean) => void;
 }
 
@@ -58,8 +62,10 @@ export const RoomSearchDialog = ({
 	);
 
 	const isSearching = debouncedQuery.trim().length > 0;
+	// still typing counts as pending, so the empty state does not flash between keystrokes
 	const isPending = isLoading || query !== debouncedQuery;
 
+	// closing starts the next search afresh
 	const handleOpenChange = (next: boolean) => {
 		if (!next) {
 			setQuery("");
@@ -158,7 +164,8 @@ export const RoomSearchDialog = ({
 											getRoomDate(room),
 										),
 									);
-									const matchedMessage =
+									// the room is listed for a message, not its name
+									const isMessageMatch =
 										isSearching &&
 										room.NAME_MATCH === false;
 									return (
@@ -184,7 +191,7 @@ export const RoomSearchDialog = ({
 												<span className="truncate text-muted-foreground text-xs">
 													{room.WORKSPACE_NAME ||
 														t("groups.noAgent")}
-													{matchedMessage
+													{isMessageMatch
 														? ` · ${t("searchChats.matchedMessage")}`
 														: ""}
 												</span>

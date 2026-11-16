@@ -19,15 +19,17 @@ import { ROOM_SUBAGENT_PANEL } from "./room-subagent-panel";
 import { ROOM_TOOL_PANEL } from "./room-tool-panel";
 
 /**
- * Every panel the room sidebar can open: the room's own, the Microsoft 365
- * and Google Workspace viewers, plus the shared file explorer and editors.
+ * Every panel the room's Workspace can open, by panel type: the room's own,
+ * the Microsoft 365 and Google Workspace viewers, plus the shared file
+ * explorer and editors. The host hands it to `useCreateChatStore`, which
+ * passes it to each `RoomStore`.
  *
  * Module scope matters — blueprint identity churn remounts panels.
  */
 export const ROOM_PANEL_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 	...FILE_PANEL_COMPONENTS,
-	// A workbench pins its explorer; a sidebar's is one tab among the rest, and
-	// closing the last one is how the sidebar itself closes.
+	// A workbench pins its explorer; the room's Files is one tab among the
+	// rest, which closes like any other and reopens from the rail.
 	[FILE_PANEL_TYPES.FILE_EXPLORER]: {
 		...FILE_PANEL_COMPONENTS[FILE_PANEL_TYPES.FILE_EXPLORER],
 		canClose: true,

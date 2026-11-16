@@ -1,8 +1,9 @@
 import { ConnectorBrandIcon } from "@semoss/shared";
 import type { WorkbenchPanelOption } from "./use-workbench-panels";
 
+/** Props for {@link WorkbenchPanelIcon}. */
 interface WorkbenchPanelIconProps {
-	/** The panel to draw. */
+	/** The panel whose icon to draw. */
 	place: WorkbenchPanelOption;
 	/** Size classes. */
 	className?: string;

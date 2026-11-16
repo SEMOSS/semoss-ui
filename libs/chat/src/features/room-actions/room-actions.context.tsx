@@ -5,7 +5,7 @@ import { SaveAgentDialog } from "../room-settings/save-agent-dialog";
 import { DownloadConversationDialog } from "./download-conversation-dialog";
 import { type RoomActions, useRoomActions } from "./use-room-actions";
 
-/** One room's actions, shared by its name, Settings' Room section, and the composer's slash menu. */
+/** One room's actions, shared by its name, the Workbench rail's cog menu, and the composer's slash menu. */
 interface RoomActionsContextValue {
 	/** The room the actions act on. */
 	room: RoomStore;
@@ -23,12 +23,18 @@ interface RoomActionsContextValue {
 	openPublish: () => void;
 }
 
+/** Holds the open room's actions; null outside a `RoomActionsProvider`. */
 const RoomActionsContext = createContext<RoomActionsContextValue | null>(null);
 
-/** The room's shared actions, or null outside a room. */
+/**
+ * The room's shared actions.
+ *
+ * @returns The actions, or null outside a `RoomActionsProvider`.
+ */
 export const useRoomActionsContext = (): RoomActionsContextValue | null =>
 	useContext(RoomActionsContext);
 
+/** Props for {@link RoomActionsProvider}. */
 interface RoomActionsProviderProps {
 	/** The room the actions act on. */
 	room: RoomStore;
@@ -37,10 +43,10 @@ interface RoomActionsProviderProps {
 }
 
 /**
- * Shares one room's actions between its name, the Workbench rail's More
- * actions menu, and the composer's slash menu, so the name can be edited in
- * place and either menu can open the publish and download dialogs. Wraps the
- * whole room page.
+ * Shares one room's actions between its name, the Workbench rail's cog
+ * menu, and the composer's slash menu, so the name can be edited in
+ * place and either menu can open the publish and download dialogs, which it
+ * renders. Wraps the whole room page.
  */
 export const RoomActionsProvider = ({
 	room,

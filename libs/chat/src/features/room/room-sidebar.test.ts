@@ -14,6 +14,7 @@ vi.mock("@semoss/sdk/react", () => ({
 	uploadInsight: vi.fn(),
 }));
 
+/** No theme settings matter to the sidebar. */
 const THEME = {} as ThemeMap["playground"];
 
 /**

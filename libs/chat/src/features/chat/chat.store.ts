@@ -41,23 +41,24 @@ import { RoomStore } from "../room/room.store";
  * fetched list seamlessly.
  */
 interface OptimisticRoom {
+	/** The room's id. */
 	ROOM_ID: string;
+	/** The name the nav shows: the start of the first prompt. */
 	ROOM_NAME: string;
+	/** When the room was created, as an ISO string. */
 	DATE_CREATED: string;
+	/** The agent the room runs, if any. */
 	WORKSPACE_ID?: string;
+	/** Whether the room is pinned. */
 	PINNED?: boolean;
 }
 
 /** What the chat holds. Every field is readonly. */
 export interface ChatSnapshot {
-	/**
-	 *  Track if the chat is initialized
-	 */
+	/** Whether `initialize` has finished, whether or not it succeeded. */
 	readonly isInitialized: boolean;
 
-	/**
-	 * List of the models available
-	 */
+	/** The session's selected model and the models the user can pick from. */
 	readonly models: {
 		/** The current model */
 		selected: Engine;
@@ -69,9 +70,7 @@ export interface ChatSnapshot {
 		available: Engine[];
 	};
 
-	/**
-	 * Cached rooms
-	 */
+	/** The rooms opened this session, by id. The chat owns each one. */
 	readonly rooms: Record<string, RoomStore>;
 
 	/**
@@ -83,20 +82,13 @@ export interface ChatSnapshot {
 	 */
 	readonly optimisticRooms: Record<string, OptimisticRoom>;
 
-	/**
-	 * Options related to the navbar
-	 */
+	/** Keys that room lists watch to know when to refetch. */
 	readonly keys: {
-		/**
-		 * Counter to force re-render of the nav when the rooms change
-		 */
+		/** Goes up whenever a room is created, renamed, pinned, or removed. */
 		roomCounter: number;
 	};
 
-	/**
-	 * Preloaded embedded paths
-	 * path -> url
-	 */
+	/** The theme's sidebar items that embed a page, by their path. */
 	readonly embeddedPageMap: Record<
 		string,
 		| ThemeMap["playground"]["sidebar"]["headerItems"][number]
@@ -105,28 +97,39 @@ export interface ChatSnapshot {
 }
 
 /**
- * Manage the chat
+ * The session's chat: its models, the rooms it has opened, the rooms shown
+ * before their first message persists, and the pixels that create, rename,
+ * pin, download, and remove rooms and agents. One per session, made by
+ * `useCreateChatStore`; it owns every `RoomStore` it caches.
  */
 export class ChatStore {
+	/** The deployment's theme, with every default filled in. */
 	private _theme: ThemeMap["playground"];
+	/** The Workspace blueprints each room is built with. */
 	private _panelComponents: Record<string, WorkbenchPanelConfigAny>;
+	/** The build's new-chat defaults. */
 	private _build: NewChatBuildDefaults;
+	/** The chat's state. Only the store's own actions write it. */
 	private readonly state: StoreState<ChatSnapshot>;
 
+	/**
+	 * @param theme - The deployment's theme.
+	 * @param panelComponents - The Workspace blueprints every room it creates
+	 * is built with. Passed in rather than imported: they import the chat's
+	 * components, which import its stores, so importing them here would close
+	 * a module cycle.
+	 * @param build - The build's new-chat defaults, read from its env by the
+	 * host.
+	 */
 	constructor(
 		theme: ThemeMap["playground"],
-		/**
-		 * The sidebar blueprints every room it creates is built with. Passed
-		 * through rather than imported: they live in `@/components`, which
-		 * imports `@/stores`.
-		 */
 		panelComponents: Record<string, WorkbenchPanelConfigAny>,
-		/** The build's new-chat defaults, read from its env by the host. */
 		build: NewChatBuildDefaults = {},
 	) {
 		this._theme = theme;
 		this._build = build;
 		this._panelComponents = panelComponents;
+		// Only items that embed a page are kept, so a path lookup finds them.
 		const embeddedPageMap = [
 			...theme.sidebar.headerItems,
 			...theme.sidebar.footerItems,
@@ -158,8 +161,15 @@ export class ChatStore {
 		});
 	}
 
+	/** @returns The current snapshot, for `useStoreSelector`. */
 	getSnapshot = (): ChatSnapshot => this.snapshot;
 
+	/**
+	 * Listen for any change to the chat.
+	 *
+	 * @param listener - Called after each change.
+	 * @returns A function that stops listening.
+	 */
 	subscribe = (listener: () => void): (() => void) =>
 		this.state.subscribe(listener);
 
@@ -199,46 +209,36 @@ export class ChatStore {
 		}));
 	};
 
-	/**
-	 * Getters
-	 */
-	/**
-	 * Track if the store is loaded
-	 */
+	// Getters
+
+	/** Whether `initialize` has finished. */
 	get isInitialized() {
 		return this.snapshot.isInitialized;
 	}
 
-	/**
-	 * Get the models from the store
-	 */
+	/** The selected model, its context window, and the models available. */
 	get models() {
 		return this.snapshot.models;
 	}
 
-	/**
-	 * Get keys to refresh different objects
-	 */
+	/** Keys room lists watch to refetch, such as `roomCounter`. */
 	get keys() {
 		return this.snapshot.keys;
 	}
 
-	/**
-	 * Get the map of preloaded embed paths
-	 */
+	/** The theme's embedded pages, by path. */
 	get embeddedPageMap() {
 		return this.snapshot.embeddedPageMap;
 	}
 
-	/**
-	 * Get the rooms optimistically shown in the nav
-	 */
+	/** The rooms shown in the nav before their first message persists. */
 	get optimisticRooms() {
 		return this.snapshot.optimisticRooms;
 	}
 
 	/**
-	 * Initialize the store
+	 * Read the session's models and select the one a new chat starts with.
+	 * A failure is logged, and the chat still counts as initialized.
 	 */
 	initialize = async (): Promise<void> => {
 		try {
@@ -256,6 +256,8 @@ export class ChatStore {
 	 * discoverable by loadRoom after navigation.  Used by consumers that
 	 * need a real insight before the first message is sent (e.g. the
 	 * file-explorer on the new-room page).
+	 *
+	 * @param room - The room to cache.
 	 */
 	registerRoom = (room: RoomStore): void => {
 		this.setCachedRoom(room.roomId, room);
@@ -264,7 +266,9 @@ export class ChatStore {
 	/**
 	 * A room already held in the local cache, without loading it — so a page
 	 * can show a room it was just handed without waiting a render.
-	 * @param roomId - Room to look up
+	 *
+	 * @param roomId - The room to look up.
+	 * @returns The cached room, or null when it is not cached.
 	 */
 	getCachedRoom = (roomId: string): RoomStore | null =>
 		this.snapshot.rooms[roomId] ?? null;
@@ -273,6 +277,8 @@ export class ChatStore {
 	 * Optimistically surface a room in the nav before its first message has
 	 * persisted. Shown until the real room is returned by GetPlaygroundRooms
 	 * (see {@link removeOptimisticRoom}).
+	 *
+	 * @param room - The row to show.
 	 */
 	addOptimisticRoom = (room: OptimisticRoom): void => {
 		this.state.update((current) => ({
@@ -286,6 +292,8 @@ export class ChatStore {
 	/**
 	 * Drop an optimistic room, once the real room has been fetched or its
 	 * first message failed to send.
+	 *
+	 * @param roomId - The optimistic room's id.
 	 */
 	removeOptimisticRoom = (roomId: string): void => {
 		this.state.update((current) => {
@@ -299,6 +307,12 @@ export class ChatStore {
 	 * Creates a room via CreatePlaygroundRoom and brings it to model/mode/name
 	 * ready state, without options, a message, or surfacing it anywhere.
 	 * Callers sequence initialize()/updateRoomOptions() themselves.
+	 *
+	 * @param mode - Whether the room runs as an agent or a chat.
+	 * @param name - The room's name.
+	 * @param workspaceId - The agent the room runs, if any.
+	 * @returns The new room's store.
+	 * @throws When CreatePlaygroundRoom reports an error.
 	 */
 	private createRoomShell = async (
 		mode: "agent" | "chat",
@@ -320,13 +334,8 @@ export class ChatStore {
 			throw new Error(errors.join(""));
 		}
 
-		// get the output
-		const { output } = pixelReturn[0];
+		const roomId = pixelReturn[0].output.roomId;
 
-		// get the new roomId
-		const roomId = output.roomId;
-
-		// create the room store
 		const room = new RoomStore({
 			theme: this._theme,
 			roomId,
@@ -342,11 +351,20 @@ export class ChatStore {
 	};
 
 	/**
-	 * Create a new room
+	 * Create a room, cache it, show it in the nav, and send its first message
+	 * without waiting for the reply.
 	 *
+	 * @param mode - Whether the room runs as an agent or a chat.
+	 * @param prompt - The first message; its start names the room.
+	 * @param files - Files sent with the first message.
+	 * @param options - The room's options, saved before the first message.
+	 * @param workspaceId - The agent the room runs, if any.
+	 * @param askOptions - Options for the first message, such as whether it
+	 * shows in the conversation.
 	 * @param prepareRoom - Runs once the room exists and before its first
 	 * message, for setup the message depends on, such as the connectors the
 	 * new-chat page drafted.
+	 * @returns The new room, once its first message has started.
 	 */
 	createRoom = async (
 		mode: "agent" | "chat",
@@ -368,7 +386,6 @@ export class ChatStore {
 		await prepareRoom?.(room);
 		const roomId = room.roomId;
 
-		// save it to the cache
 		this.setCachedRoom(roomId, room);
 
 		// optimistically surface the room in the nav — GetPlaygroundRooms
@@ -380,7 +397,6 @@ export class ChatStore {
 			WORKSPACE_ID: workspaceId,
 		});
 
-		// increment the roomCounter to force re-render of the nav
 		this.bumpRoomCounter();
 
 		// ask the room — fire-and-forget so we return (and navigate) without
@@ -388,7 +404,7 @@ export class ChatStore {
 		(async () => {
 			try {
 				await room.askMessage(prompt, files, askOptions);
-				// increment the roomCounter to force re-render of the nav
+				// the room now has data, so the lists can fetch it
 				this.bumpRoomCounter();
 			} catch (e) {
 				if ((e as Error)?.name === "UploadError") {
@@ -401,7 +417,6 @@ export class ChatStore {
 			}
 		})();
 
-		// return the room
 		return room;
 	};
 
@@ -410,6 +425,13 @@ export class ChatStore {
 	 * greeting can render immediately on selection. Registered in the local
 	 * cache so loadRoom finds it after navigation, but not surfaced in the
 	 * nav until a real message lands.
+	 *
+	 * @param mode - Whether the room runs as an agent or a chat.
+	 * @param name - The room's name.
+	 * @param options - The room's options.
+	 * @param workspaceId - The agent the room runs, if any.
+	 * @param prepareRoom - Runs once the room is initialized.
+	 * @returns The new room.
 	 */
 	createEmptyRoom = async (
 		mode: "agent" | "chat",
@@ -429,14 +451,15 @@ export class ChatStore {
 	};
 
 	/**
-	 * Remove an room from the remove and all of the related messages
-	 * @param roomId - Room to remove
+	 * Delete a room and its messages on the server, drop its insight, and
+	 * remove it from the cache.
+	 *
+	 * @param roomId - The room to delete.
 	 */
 	closeRoom = async (roomId: string): Promise<void> => {
 		const room = this.snapshot.rooms[roomId];
 		const insightId = room?.insightId;
 
-		// wait for the pixel to run
 		await Session.insight.withInsight((id) => removeUserRoom(id, roomId));
 
 		// only drop if the room was opened and has a real insightId
@@ -452,10 +475,7 @@ export class ChatStore {
 		}
 
 		room?.dispose();
-		// delete it from the cache
 		this.setCachedRoom(roomId, null);
-
-		// increment the roomCounter to force re-render of the nav
 		this.bumpRoomCounter();
 	};
 
@@ -464,6 +484,10 @@ export class ChatStore {
 	 * room's metadata, and bumps the roomCounter so any room lists
 	 * elsewhere in the app (sidebar, chats page, per-agent timeline)
 	 * refetch and stay in sync.
+	 *
+	 * @param roomId - The room to rename.
+	 * @param name - The new name; it is trimmed.
+	 * @throws When the trimmed name is empty, or the pixel fails.
 	 */
 	renameRoom = async (roomId: string, name: string): Promise<void> => {
 		const trimmed = name.trim();
@@ -484,6 +508,9 @@ export class ChatStore {
 	 * Pin or unpin a room. Runs the PinRoom pixel and bumps the
 	 * roomCounter so any room lists elsewhere in the app (sidebar,
 	 * chats page, per-agent timeline) refetch and stay in sync.
+	 *
+	 * @param roomId - The room to pin or unpin.
+	 * @param pinned - Whether it should be pinned.
 	 */
 	pinRoom = async (roomId: string, pinned: boolean): Promise<void> => {
 		await Session.insight.withInsight((id) =>
@@ -492,6 +519,16 @@ export class ChatStore {
 		this.bumpRoomCounter();
 	};
 
+	/**
+	 * Download a room's conversation as a Word or PDF file: each message's
+	 * text, its time, and the tools a reply used, as markdown the server
+	 * converts.
+	 *
+	 * @param roomId - The room to download.
+	 * @param format - The file's format.
+	 * @throws When the messages cannot be read, there is nothing to download,
+	 * or the server does not return a file.
+	 */
 	downloadConversation = async (
 		roomId: string,
 		format: "word" | "pdf",
@@ -587,23 +624,23 @@ export class ChatStore {
 	};
 
 	/**
-	 * Load a room from the store or create a new one
-	 * @param roomId - Room to remove
+	 * Return a cached room, or load it from the server and cache it.
+	 *
+	 * @param roomId - The room to load.
+	 * @returns The room.
+	 * @throws When the room has no messages, as when its first message never
+	 * saved.
 	 */
 	loadRoom = async (roomId: string): Promise<RoomStore> => {
-		// if it exists in the store utilize it.
 		if (this.snapshot.rooms[roomId]) {
 			return this.snapshot.rooms[roomId];
 		}
 
-		// create the room store
 		const room = new RoomStore({
 			theme: this._theme,
 			roomId,
 			panelComponents: this._panelComponents,
 		});
-
-		// initialize the room
 		await room.initialize();
 
 		// If the room has no messages or just the placeholder, it means it is a valid room but it is empty, so we can consider it as not found and throw an error
@@ -612,17 +649,16 @@ export class ChatStore {
 			throw new Error("Room not found");
 		}
 
-		// save it to the cache
 		this.setCachedRoom(roomId, room);
 		// No roomCounter increment here — loading an existing room doesn't
 		// change the list, so there's no reason to trigger a re-fetch.
-
-		// return the room
 		return room;
 	};
 
 	/**
-	 * Set the selected model
+	 * Select a model and read its context window.
+	 *
+	 * @param model - The model to select.
 	 */
 	setSelectedModel = (model: Engine): void => {
 		this.updateModels({ selected: model });
@@ -636,7 +672,8 @@ export class ChatStore {
 	 * actually see so a stale or unshared id cannot leave the room pointed at a
 	 * model that will not run.
 	 *
-	 * @returns whether the selection changed
+	 * @param engineId - The model's id.
+	 * @returns Whether the selection changed.
 	 */
 	selectModelById = async (engineId: string): Promise<boolean> => {
 		const id = engineId?.trim();
@@ -664,6 +701,12 @@ export class ChatStore {
 		}
 	};
 
+	/**
+	 * Read a model's context window, and keep it only if the model is still
+	 * selected when the read returns.
+	 *
+	 * @param engineId - The model's id.
+	 */
 	private loadEngineContextWindow = async (engineId: string) => {
 		this.updateModels({ contextWindow: undefined });
 
@@ -677,7 +720,12 @@ export class ChatStore {
 	};
 
 	/**
-	 * Add a new workspace
+	 * Create an agent from its basics with AddWorkspace.
+	 *
+	 * @param data - The agent's name, prompt, description, tools, skills,
+	 * and prompts.
+	 * @returns The new agent's id.
+	 * @throws When the pixel fails.
 	 */
 	addWorkspace = async (
 		data: Pick<
@@ -713,6 +761,10 @@ export class ChatStore {
 	 * Resolves with the new agent's id, EditWorkspace's partial-save warning
 	 * (when there is one), and whether the follow-up save failed - the agent
 	 * exists either way.
+	 *
+	 * @param values - The agent form's values.
+	 * @returns The agent's id, and how its follow-up save went.
+	 * @throws When AddWorkspace returns no id.
 	 */
 	createAgent = async (
 		values: AgentFormValues,
@@ -742,7 +794,11 @@ export class ChatStore {
 
 	/**
 	 * Saves an agent's full configuration from the shared agent form.
-	 * Resolves with EditWorkspace's partial-save warning, when there is one.
+	 *
+	 * @param workspaceId - The agent to save.
+	 * @param values - The agent form's values.
+	 * @returns EditWorkspace's partial-save warning, when there is one.
+	 * @throws When the pixel returns nothing.
 	 */
 	editWorkspace = async (
 		workspaceId: string,
@@ -758,6 +814,11 @@ export class ChatStore {
 		return getWorkspaceSaveWarning(output);
 	};
 
+	/**
+	 * Delete an agent. A failure is logged, not thrown.
+	 *
+	 * @param workspaceId - The agent to delete.
+	 */
 	deleteWorkspace = async (workspaceId: string) => {
 		try {
 			await this.run(`DeleteWorkspace(workspaceId=['${workspaceId}'])`);
@@ -768,9 +829,8 @@ export class ChatStore {
 		}
 	};
 
-	/**
-	 * Helpers
-	 */
+	// Helpers
+
 	/**
 	 * Run a pixel that belongs to no room in the session's own insight.
 	 *
@@ -827,7 +887,7 @@ export class ChatStore {
 	 * The selected model is the session's last: later new chats keep it.
 	 */
 	private getDefaultModel = async (): Promise<void> => {
-		// model selection is not enabled, set it to the default
+		// with model selection off, every chat runs the deployment's model
 		if (!this._theme.featureFlags?.enableModelSelect) {
 			this.setSelectedModel({
 				engine_id: this.deploymentDefaultModelId,

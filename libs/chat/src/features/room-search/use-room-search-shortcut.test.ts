@@ -2,6 +2,12 @@ import { renderHook } from "@testing-library/react";
 import { expect, test, vi } from "vitest";
 import { useRoomSearchShortcut } from "./use-room-search-shortcut";
 
+/**
+ * Press a key on the window, where the shortcut listens.
+ *
+ * @param init - The key and its modifiers.
+ * @returns The event, to check whether the shortcut claimed it.
+ */
 const press = (init: KeyboardEventInit) => {
 	const event = new KeyboardEvent("keydown", { cancelable: true, ...init });
 	window.dispatchEvent(event);

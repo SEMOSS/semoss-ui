@@ -17,6 +17,7 @@ vi.mock("@semoss/sdk/react", () => ({
 
 const THEME = {} as ThemeMap["playground"];
 
+/** A room with the real blueprints, so the dock matches panels as the app does. */
 const createRoom = (roomId: string) => {
 	return new RoomStore({
 		theme: THEME,

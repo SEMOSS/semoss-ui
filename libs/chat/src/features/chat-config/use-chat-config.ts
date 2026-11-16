@@ -2,9 +2,11 @@ import { useContext } from "react";
 import { type ChatConfig, ChatConfigContext } from "./chat-config.context";
 
 /**
- * The host's chat configuration.
+ * Read the host's chat configuration from `ChatConfigProvider`.
  *
- * @returns The theme and navigation the host provided.
+ * @returns The theme, new-chat defaults, platform URL, and navigation the
+ * host provided.
+ * @throws When called outside a `ChatConfigProvider`.
  */
 export const useChatConfig = (): ChatConfig => {
 	const config = useContext(ChatConfigContext);

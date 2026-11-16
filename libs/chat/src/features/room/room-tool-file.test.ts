@@ -6,6 +6,7 @@ import {
 	saveRoomToolFile,
 } from "./room-tool-file";
 
+/** Where the module under test keeps the room's toolbox. */
 const ROOM_TOOL_FILE_PATH = "/mcp/pixel_mcp.json";
 
 /** A room whose pixels answer with `output`, or fail with `errors`. */

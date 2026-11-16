@@ -5,8 +5,9 @@ import { RoomWorkbenchToggle } from "../workbench/room-workbench-toggle";
 import type { NewRoomWorkbenchPanels } from "../workbench/use-workbench-panels";
 import { RoomTitle } from "./room-title";
 
+/** Props for {@link RoomHeader}. */
 interface RoomHeaderProps {
-	/** The room whose Workbench the header opens. */
+	/** The room whose Workbench the header opens; the `RoomScope`'s room when left out. */
 	room?: RoomStore;
 	/** A new chat's own panel actions, until its first message. */
 	newRoomPanels?: NewRoomWorkbenchPanels;

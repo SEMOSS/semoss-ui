@@ -10,13 +10,17 @@ import type {
  * Panel type ids the room's Workspace can dock.
  *
  * They live beside the store rather than beside the blueprints because both
- * halves need them and the store must not import the blueprints: those reach
- * back into `@/components`, which imports `@/stores`.
+ * halves need them and the store must not import the blueprints: those render
+ * the chat's components, which import the store.
  */
 export const ROOM_PANEL_TYPES = {
+	/** A tool call's view, moved out of the conversation. */
 	TOOL: "room-tool",
+	/** A subagent's run. */
 	SUBAGENT: "room-subagent",
+	/** The room's Settings. */
 	CONFIGURATION: "room-configuration",
+	/** The room's activity log. */
 	AUDIT_LOG: "room-audit-log",
 	/** The user's OneDrive. */
 	ONEDRIVE: "room-onedrive",
@@ -64,7 +68,7 @@ const ROOM_DEFAULT_PANEL_IDS = {
  * (a new chat has no insight to read until it prepares its room).
  * @param options.filesName - Files' tab label.
  * @param options.settingsName - Settings' tab label.
- * @return A fresh arrangement; each room keeps its own reference.
+ * @returns A fresh arrangement; each room keeps its own reference.
  */
 export const createRoomSidebarLayout = ({
 	fileMode,
@@ -121,7 +125,7 @@ export const createRoomSidebarLayout = ({
  * panels opened before that binding completes.
  *
  * @param insightId - The room's current insight.
- * @return The mode every file panel in that sidebar is opened with.
+ * @returns The mode every file panel in that sidebar is opened with.
  */
 export const getRoomFileMode = (
 	insightId: string,
@@ -140,7 +144,7 @@ export const getRoomFileMode = (
  * @param state - The sidebar's dock state.
  * @param type - Which blueprint.
  * @param config - The instance's parameters, matched as `selectPanel` matches.
- * @return True when a matching panel is the selected one.
+ * @returns True when a matching panel is the selected one.
  */
 export const isActiveSidebarPanel = (
 	state: WorkbenchState,
@@ -160,7 +164,7 @@ export const isActiveSidebarPanel = (
  * The file scope a docked panel was opened with, if it is a file panel.
  *
  * @param record - The panel.
- * @return Its `mode`, or undefined.
+ * @returns Its `mode`, or undefined.
  */
 export const getPanelFileMode = (record: {
 	config?: unknown;

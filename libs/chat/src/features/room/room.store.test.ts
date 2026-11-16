@@ -14,6 +14,7 @@ vi.mock("@semoss/sdk/react", () => ({
 	uploadInsight: vi.fn(),
 }));
 
+/** A room with the app's panel blueprints, bound to an insight. */
 const createRoom = () =>
 	new RoomStore({
 		theme: {} as ThemeMap["playground"],

@@ -43,13 +43,19 @@ vi.mock("@semoss/sdk/react", async (original) => ({
 	},
 }));
 
+/** The models the user can see, in the order MyEngines returns them. */
 const MODELS: Engine[] = [
 	{ engine_id: "model-a", engine_name: "A", engine_type: "MODEL" },
 	{ engine_id: "model-b", engine_name: "B", engine_type: "MODEL" },
 	{ engine_id: "model-c", engine_name: "C", engine_type: "MODEL" },
 ];
 
-/** Answer each pixel the store runs in the session's insight. */
+/**
+ * Answer each pixel the store runs in the session's insight.
+ *
+ * @param pixel - The pixel the store ran.
+ * @returns What the backend would return for it.
+ */
 const answer = (pixel: string) => {
 	if (pixel.includes("MyEngines")) {
 		return { errors: [], pixelReturn: [{ output: MODELS }] };
@@ -74,6 +80,11 @@ beforeEach(() => {
 		.mockImplementation(async (pixel: string) => answer(pixel));
 });
 
+/**
+ * Make a chat store on the default theme and wait for it to initialize.
+ *
+ * @returns The initialized store.
+ */
 const createStore = async () => {
 	const store = new ChatStore(DEFAULT_CHAT_THEME, {});
 	await store.initialize();
@@ -136,7 +147,7 @@ test("room calls run in the session's insight, and their errors reject", async (
 	);
 });
 
-test("a cached room replaces the rooms map and bumps nothing else", async () => {
+test("an optimistic room replaces its map and leaves the rest alone", async () => {
 	const store = await createStore();
 	const listener = vi.fn();
 	store.subscribe(listener);

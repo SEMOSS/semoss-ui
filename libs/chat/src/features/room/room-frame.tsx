@@ -3,6 +3,7 @@ import { RoomLayout } from "../conversation/room-layout";
 import { useRoom } from "./room.context";
 import { useRoomSelector } from "./use-room-selector";
 
+/** What `RoomFrame` lays out. */
 interface RoomFrameProps {
 	/** The row above the room, such as `RoomHeader`. */
 	header?: ReactNode;

@@ -14,8 +14,9 @@ import { useRoomSelector } from "../room/use-room-selector";
 import { RoomWorkbenchRail } from "./room-workbench-rail";
 import type { NewRoomWorkbenchPanels } from "./use-workbench-panels";
 
+/** Props for {@link RoomWorkbench}. */
 interface RoomWorkbenchProps {
-	/** The room owns the dock, including while this view is hidden. */
+	/** The room whose dock to show, else the room in context; it owns the dock while this view is hidden. */
 	room?: RoomStore;
 	/** A new chat's own panel actions, which prepare its room, until its first message. */
 	newRoomPanels?: NewRoomWorkbenchPanels;
@@ -40,6 +41,7 @@ export const RoomWorkbench = ({
 	);
 	const { t } = useTranslation("connectors");
 	const isMobile = useIsMobile();
+	// a new chat queues Add to Context on its draft, not the room it prepared
 	const nextMessageRoom = useNextMessageRoom() ?? room;
 	const explorerHost = useMemo<FileExplorerHost>(
 		() => ({
@@ -61,8 +63,9 @@ export const RoomWorkbench = ({
 		}),
 		[nextMessageRoom, t],
 	);
-	// a left rail opens its labels and menu into the dock; the mobile
-	// toolbar sits above the tabs, so there they open downward
+	// The rail, drawn in whichever border slot holds it. A left rail opens its
+	// labels and menu into the dock; the mobile toolbar sits above the tabs,
+	// so there they open downward.
 	const panelRail = ({ vertical }: { vertical: boolean }) => (
 		<RoomWorkbenchRail
 			room={room}

@@ -52,7 +52,7 @@ export const DEFAULT_CHAT_THEME: ChatTheme = {
 	defaultTools: [],
 	gracefulErrors: [],
 	featureFlags: {
-		// These will be the defaults, used when the user has no theme
+		// the defaults, used when the deployment has no theme
 		enableModelSelect: true,
 		enableAgent: true,
 		enableSuggestions: true,
@@ -110,7 +110,8 @@ export const mergeChatTheme = (
 		...(theme?.featureFlags || {}),
 	};
 
-	// deep merge onto the base
+	// Merge each section onto the base: lists are appended, and default tools
+	// are de-duplicated by id, the theme's winning.
 	return {
 		...base,
 		name: theme?.name || base.name,

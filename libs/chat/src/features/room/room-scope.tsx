@@ -12,6 +12,7 @@ import { RoomProvider } from "./room.context";
 import type { RoomStore } from "./room.store";
 import { useRoomSelector } from "./use-room-selector";
 
+/** Which room `RoomScope` opens, and what it wraps. */
 interface RoomScopeProps {
 	/** The room to open. */
 	roomId: string;
@@ -42,6 +43,7 @@ export const RoomScope = ({ roomId, children }: RoomScopeProps) => {
 			roomKey: current.roomId,
 			insightId: current.insightId,
 		})) ?? {};
+	// refs, so a change of model or host navigation does not reload the room
 	const selectedModelRef = useRef<Engine>(selectedModel);
 	const openNewChatRef = useRef(navigation.openNewChat);
 

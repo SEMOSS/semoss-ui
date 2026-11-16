@@ -41,7 +41,7 @@ export const toggleRoomFavorite = async (
  * @param roomId - The room.
  * @param name - The new name, trimmed before it is saved.
  * @param t - Translates the `sidebar` toasts.
- * @return Whether the room was renamed.
+ * @returns Whether the room was renamed.
  */
 export const renameRoom = async (
 	chat: ChatStore,
@@ -74,7 +74,7 @@ export interface RoomActions {
 	 * Renames the room.
 	 *
 	 * @param name - The new name; refused when blank.
-	 * @return Whether the room was renamed.
+	 * @returns Whether the room was renamed.
 	 */
 	rename: (name: string) => Promise<boolean>;
 	/** Deletes the room and leaves its page. */
@@ -84,11 +84,11 @@ export interface RoomActions {
 /**
  * Favorite, rename, and delete for one room, through the chat store, so every
  * room list in the app refetches after each. Each reports its outcome in a
- * toast. Call it from an observer: the favorites are read again whenever the
- * chat store's room counter moves.
+ * toast. The favorites are read again whenever the chat store's room counter
+ * moves, which `useChatSelector` watches.
  *
  * @param roomId - The room.
- * @return The room's favorite state and its actions.
+ * @returns The room's favorite state and its actions.
  */
 export const useRoomActions = (roomId: string): RoomActions => {
 	const { t } = useTranslation("sidebar");
@@ -102,6 +102,7 @@ export const useRoomActions = (roomId: string): RoomActions => {
 		chat,
 		(current) => current.keys.roomCounter,
 	);
+	// the counter the favorites were last read at, so the first render reads once
 	const seenCounter = useRef(roomCounter);
 	const { refresh } = pinnedRooms;
 
@@ -117,11 +118,14 @@ export const useRoomActions = (roomId: string): RoomActions => {
 		(room) => room.ROOM_ID === roomId,
 	);
 
+	/** Adds the room to the favorites, or takes it out. */
 	const toggleFavorite = () =>
 		toggleRoomFavorite(chat, roomId, isFavorite, t);
 
+	/** Renames the room; a blank name is refused. */
 	const rename = (name: string) => renameRoom(chat, roomId, name, t);
 
+	/** Deletes the room, then tells the host so it can leave the room's page. */
 	const remove = async () => {
 		try {
 			await chat.closeRoom(roomId);

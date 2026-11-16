@@ -45,7 +45,12 @@ beforeEach(() => {
 	mocks.renameRoom.mockReset().mockResolvedValue(undefined);
 });
 
-/** Double-click the room's name to edit it, and return the field. */
+/**
+ * Double-click the room's name to edit it.
+ *
+ * @param user - The test's user-event session.
+ * @returns The rename field, once it shows.
+ */
 async function startRename(user: ReturnType<typeof userEvent.setup>) {
 	await user.dblClick(screen.getByText("Quarterly plan"));
 	return screen.findByRole("textbox", { name: "header.renameLabel" });

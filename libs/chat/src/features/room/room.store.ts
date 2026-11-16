@@ -67,64 +67,57 @@ import {
 /**
  * The MCPs the backend stores for a room. Workspace MCPs and the room's own
  * toolbox, which is read from the room folder, are reported but not stored.
+ *
+ * @param mcp - Every MCP the room has loaded.
+ * @returns The ones the backend keeps.
  */
 const getStoredMcp = (mcp: MCPConfig[] = []): MCPConfig[] =>
 	mcp.filter((item) => !item?.fromWorkspace && !item?.fromRoom);
 
 /**
- * A comparable key for room options as the backend stores them.
+ * A comparable key for room options as the backend stores them, so a save
+ * that would change nothing can be skipped.
+ *
+ * @param options - The room's options.
+ * @returns The options as sorted JSON, without the MCPs it does not store.
  */
 const getStoredOptionsKey = (options: { mcp?: MCPConfig[] }): string =>
 	stringifyJsonWithSortedKeys({ ...options, mcp: getStoredMcp(options.mcp) });
 
 /** What a room holds. Every field is readonly. */
 export interface RoomSnapshot {
-	/**
-	 * ID of the room
-	 */
+	/** The room's id. */
 	readonly roomId: string;
 
 	/**
-	 * insightId of the room
-	 * Set during the constructor and never changes
+	 * The insight the room runs its pixels in. A new room starts on "new";
+	 * `initialize` binds it to the insight the backend gives the room.
 	 */
 	readonly insightId: string;
 
-	/**
-	 *  Track if the room is loading
-	 */
+	/** Whether the room is running a pixel or a turn. */
 	readonly isLoading: boolean;
 
-	/**
-	 *  Track if the room has errored
-	 */
+	/** The room's last failure, or null once a later run succeeds. */
 	readonly error?: Error | null;
 
 	/**
-	 *  Track the mode of the room.
-	 *  - "chat": standard streaming chat (AskPlayground)
-	 *  - "agent": server-side agent harness (RunAgent)
+	 * How the room sends its messages.
+	 * - "chat": standard streaming chat (AskPlayground)
+	 * - "agent": server-side agent harness (RunAgent)
 	 */
 	readonly mode: "agent" | "chat";
 
-	/**
-	 * Metadata associated with the room
-	 */
+	/** What the room list shows about the room. */
 	readonly metadata: {
-		/**
-		 * Name of the room
-		 */
+		/** The room's name. */
 		name: string;
 
-		/**
-		 * date the room was created
-		 */
+		/** When the room was created. */
 		dateCreated: string;
 	};
 
-	/**
-	 * Root message
-	 */
+	/** The hidden message every conversation in the room hangs from. */
 	readonly root: ResponseMessageStore;
 
 	/**
@@ -134,51 +127,42 @@ export interface RoomSnapshot {
 	 */
 	readonly agentGreeting: string;
 
-	/**
-	 * Active tools
-	 */
+	/** Every tool call the room has seen, by id. */
 	readonly tools: Record<string, ToolStore>;
 
-	/*
-	 * Model that is being chatted against
-	 */
+	/** The model the room chats with. */
 	readonly model: Engine;
 
-	/*
-	 * Options that is passed to the model
-	 */
+	/** The room's settings, sent with each message and saved on the backend. */
 	readonly options: {
-		/*
-		 * Context that is passed to the model
-		 */
+		/** The instructions passed to the model. */
 		instructions: string;
 
-		/*
-		 * MCPs loaded into the room (includes both room and workspace MCPs, distinguished by fromWorkspace flag)
+		/**
+		 * MCPs loaded into the room: the room's own and its agent's, the
+		 * latter marked `fromWorkspace`.
 		 */
 		mcp: MCPConfig[];
 
-		/*
-		 * Workspace associated with the room
-		 */
+		/** The agent (workspace) the room was started from. */
 		workspace?: {
+			/** The agent's id, as the backend names it. */
 			workspace_id: string;
+			/** The agent's display name, read when the room loads. */
 			name?: string;
 		};
 
-		/**
-		 * Predefined prompts that can be used in the room
-		 */
+		/** Prompts the room offers in its slash menu. */
 		predefinedPrompts: Prompt[];
 
-		/*
+		/**
 		 * Agent harness to run messages through (e.g. "semoss"). When set, the
 		 * room runs in agent mode and messages are sent via RunAgent instead of
 		 * AskPlayground. Persisted so the mode survives a reload.
 		 */
 		harnessType?: string;
 
-		/*
+		/**
 		 * Temperature of the model (0–1). Only used when enableTemperature is true.
 		 */
 		temperature?: number;
@@ -192,12 +176,10 @@ export interface RoomSnapshot {
 		defaultTools?: Record<string, "auto" | "ask" | "disabled">;
 	};
 
-	/**
-	 *  Sidebar information
-	 */
+	/** The Workspace's on-screen state. */
 	readonly sidebar: {
 		/**
-		 * Track if the sidebar is open.
+		 * Whether the Workspace is open.
 		 *
 		 * Only whether the panel is on screen. What is *in* it lives in the
 		 * room's workbench store, which outlives every open/close.
@@ -218,7 +200,7 @@ export interface RoomSnapshot {
 	 * Whether a tool-phase stop is committing (cancelling the remaining tool
 	 * calls), where there is no stream job to track.
 	 */
-	readonly cancellingTools: boolean;
+	readonly isCancellingTools: boolean;
 
 	/**
 	 * Counts changes to the room's messages and tool calls, which are stores
@@ -227,6 +209,7 @@ export interface RoomSnapshot {
 	readonly revision: number;
 }
 
+/** A room before it loads; the constructor adds its ids and arrangement. */
 const INITIAL_ROOM: Omit<
 	RoomSnapshot,
 	"roomId" | "insightId" | "sidebarSnapshot"
@@ -252,15 +235,20 @@ const INITIAL_ROOM: Omit<
 	},
 	canCancelJob: false,
 	isCancellingJob: false,
-	cancellingTools: false,
+	isCancellingTools: false,
 	revision: 0,
 };
 
 /**
- * Manage the room
+ * One room: its messages, tool calls, settings, and Workspace, and the actions
+ * that load it, send its messages, and run its pixels. Read it in React with
+ * `useRoomSelector`.
  */
 export class RoomStore {
+	/** The playground theme, which limits the files sent to the model. */
 	private _theme: ThemeMap["playground"];
+
+	/** Runs the room's streaming jobs and owns their cancel state. */
 	readonly streamJob = new StreamJobController({
 		getInsightId: () => this.snapshot.insightId,
 		setLoading: (isLoading) => this.setIsLoading(isLoading),
@@ -271,6 +259,7 @@ export class RoomStore {
 				isCancellingJob: this.streamJob.isCancelling,
 			}),
 	});
+	/** The room's snapshot; only the store's own actions write it. */
 	private readonly state: StoreState<RoomSnapshot>;
 
 	/**
@@ -283,7 +272,7 @@ export class RoomStore {
 	 * The dock backing the sidebar.
 	 *
 	 * Owned by the room rather than by `<Workbench>` for two reasons: panels are
-	 * opened from outside React (a tool store reacting to a stream) and while
+	 * opened from outside React (a tool store hearing a stream) and while
 	 * the sidebar is closed, and the arrangement has to survive the sidebar
 	 * being closed and reopened, which unmounts the shell.
 	 *
@@ -297,9 +286,10 @@ export class RoomStore {
 
 	/** Stops this room's own subscriptions; see {@link dispose}. */
 	private _disposers: (() => void)[] = [];
+
 	/**
 	 * The default tools the room's chat sends and the user's decisions on the
-	 * calls that wait for them. Its own store with its own observability, like
+	 * calls that wait for them. Its own store with its own subscribers, like
 	 * the dock, and so are the two below.
 	 */
 	readonly chatTools: ChatToolsStore;
@@ -310,15 +300,24 @@ export class RoomStore {
 	/** The files queued for the room's next message. */
 	readonly contextItems: ContextItemsStore;
 
+	/**
+	 * Build a room and its Workspace. It holds no messages until `initialize`.
+	 *
+	 * @param options - The room's theme, ids, panel blueprints, and whether its
+	 * Workspace offers Files.
+	 */
 	constructor(options: {
+		/** The playground theme. */
 		theme: ThemeMap["playground"];
+		/** The room's id. */
 		roomId: string;
+		/** The insight to start on; "new" until the room loads. */
 		insightId?: string;
 		/**
 		 * The sidebar's panel blueprints. Handed in rather than imported: they
-		 * live in `@/components`, which imports `@/stores`, so importing them
-		 * here would close a module cycle. The composition root passes them
-		 * down.
+		 * render the chat's components, which import this store, so importing
+		 * them here would close a module cycle. The composition root passes
+		 * them down.
 		 */
 		panelComponents: Record<string, WorkbenchPanelConfigAny>;
 		/**
@@ -382,6 +381,10 @@ export class RoomStore {
 	/**
 	 * A default panel's tab label. There are no translations outside the app,
 	 * as in tests, so it falls back to the blueprint's own name.
+	 *
+	 * @param panel - Which default panel.
+	 * @param panelComponents - The blueprints, for their own names.
+	 * @returns The tab label.
 	 */
 	private _getDefaultPanelName = (
 		panel: "files" | "settings",
@@ -401,9 +404,8 @@ export class RoomStore {
 	/**
 	 * Return tools inline when their tabs close.
 	 *
-	 * This is the replacement for the FlexLayout change listener, and the reason
-	 * the room store holds the dock: the reaction has to fire whether the close
-	 * came from the tab's × or from `closeTool`. There is no "closed the last
+	 * This is one reason the room store holds the dock: the watch has to fire
+	 * whether the close came from the tab's × or from `closeTool`. There is no "closed the last
 	 * tab" rule any more — every tab closes, including Files and Settings, and
 	 * an empty Workspace still shows its rail, which reopens any of them. It
 	 * closes from the header toggle, the slash command, or dragging the divider
@@ -451,8 +453,20 @@ export class RoomStore {
 		this._stopRootWatch = null;
 	};
 
+	/**
+	 * The room's current snapshot, for `useStoreSelector`.
+	 *
+	 * @returns The snapshot.
+	 */
 	getSnapshot = (): RoomSnapshot => this.snapshot;
 
+	/**
+	 * Hear about every change to the room, including its messages and tool
+	 * calls (through `revision`).
+	 *
+	 * @param listener - Called after each change.
+	 * @returns A function that stops listening.
+	 */
 	subscribe = (listener: () => void): (() => void) =>
 		this.state.subscribe(listener);
 
@@ -470,30 +484,22 @@ export class RoomStore {
 		return this.snapshot.sidebarSnapshot;
 	}
 
-	/**
-	 * Get the id of the roomId
-	 */
+	/** The room's id. */
 	get roomId() {
 		return this.snapshot.roomId;
 	}
 
-	/**
-	 * Get the insightId of the roomId
-	 */
+	/** The insight the room runs its pixels in. */
 	get insightId() {
 		return this.snapshot.insightId;
 	}
 
-	/**
-	 * Get the theme
-	 */
+	/** The playground theme the room was built with. */
 	get theme() {
 		return this._theme;
 	}
 
-	/**
-	 * Indicator to check if the room is loading
-	 */
+	/** Whether the room is running a pixel or a turn. */
 	get isLoading() {
 		return this.snapshot.isLoading;
 	}
@@ -506,19 +512,17 @@ export class RoomStore {
 	get canCancel() {
 		return (
 			this.snapshot.canCancelJob ||
-			(!this.snapshot.cancellingTools &&
+			(!this.snapshot.isCancellingTools &&
 				Boolean(this.latestResponseMessage?.hasUnfinishedTools))
 		);
 	}
 
 	/** A stop has been issued and it's still unwinding. */
 	get isCancelling() {
-		return this.snapshot.isCancellingJob || this.snapshot.cancellingTools;
+		return this.snapshot.isCancellingJob || this.snapshot.isCancellingTools;
 	}
 
-	/**
-	 * Get the error of the room
-	 */
+	/** The room's last failure, if any. */
 	get error() {
 		return this.snapshot.error;
 	}
@@ -529,42 +533,38 @@ export class RoomStore {
 	 * to persist — can report a failure that isn't already caught by
 	 * runRoomPixel/streamJob's own setErrorOnFail handling, and so a rewrite
 	 * starts its turn without the last one's error.
+	 *
+	 * @param error - The failure, or null to clear it.
 	 */
 	setError = (error: Error | null): void => {
 		this.state.update({ error });
 	};
 
-	/**
-	 * Get the mode of the room
-	 */
+	/** How the room sends its messages: chat or agent. */
 	get mode() {
 		return this.snapshot.mode;
 	}
 
-	/**
-	 * Metadata associated with the room
-	 */
+	/** The room's name and creation date. */
 	get metadata() {
 		return this.snapshot.metadata;
 	}
 
-	/**
-	 * Models that the user is interacting with
-	 */
+	/** The model the room chats with. */
 	get model() {
 		return this.snapshot.model;
 	}
 
-	/**
-	 * Get the agent's scripted opening message (see RoomSnapshot.agentGreeting).
-	 */
+	/** The agent's scripted opening message (see RoomSnapshot.agentGreeting). */
 	get agentGreeting() {
 		return this.snapshot.agentGreeting;
 	}
 
 	/**
-	 * Get a message by id
-	 * @param messageId - the message id
+	 * Find a message anywhere in the room's tree, on any branch.
+	 *
+	 * @param messageId - The message's id.
+	 * @returns The message, or null when the room has none by that id.
 	 */
 	getMessage = (messageId: string) => {
 		const queue: AbstractMessageStore[] = [this.snapshot.root];
@@ -586,7 +586,8 @@ export class RoomStore {
 	};
 
 	/**
-	 * Get the history of the room based on the active children
+	 * The conversation as shown: each message's active child, from the root
+	 * down, without the root itself.
 	 */
 	get history(): (InputMessageStore | ResponseMessageStore)[] {
 		let current: AbstractMessageStore = this.snapshot.root;
@@ -594,7 +595,6 @@ export class RoomStore {
 		const history = [];
 		while (current) {
 			if (current.activeChild) {
-				// save it
 				if (current.activeChild instanceof InputMessageStore) {
 					history.push(current.activeChild);
 				} else if (
@@ -604,16 +604,13 @@ export class RoomStore {
 				}
 			}
 
-			// move forward
 			current = current.activeChild;
 		}
 
 		return history;
 	}
 
-	/**
-	 * Last active message
-	 */
+	/** The last message of the history, or the root when it is empty. */
 	get tail() {
 		if (this.history[this.history.length - 1]) {
 			return this.history[this.history.length - 1];
@@ -622,15 +619,14 @@ export class RoomStore {
 		return this.snapshot.root;
 	}
 
-	/**
-	 * Number of tools in this room
-	 */
+	/** How many tool calls the room has seen. */
 	get numberOfTools() {
 		return Object.keys(this.snapshot.tools).length;
 	}
 
 	/**
-	 * Last response message - avoids INPUT_TOOL_EXEC and STREAMING_PLACEHOLDER_ID messages
+	 * The last real response, walking up from the tail past input messages
+	 * and the streaming placeholder. Null (typed as a store) when there is none.
 	 */
 	get latestResponseMessage(): ResponseMessageStore {
 		let responseMessage: AbstractMessageStore = this.tail;
@@ -686,7 +682,7 @@ export class RoomStore {
 	}
 
 	/**
-	 * Get the total tokens consumed across ALL messages in the conversation
+	 * The total tokens consumed across ALL messages in the conversation
 	 * (not context window - this is the actual sum of all input + output tokens)
 	 */
 	get totalTokensConsumed(): number {
@@ -696,40 +692,40 @@ export class RoomStore {
 		);
 	}
 
-	/**
-	 * Get the options of the room
-	 */
+	/** The room's settings. */
 	get options() {
 		return this.snapshot.options;
 	}
 
-	/**
-	 * Get the sidebar information
-	 */
+	/** The Workspace's on-screen state. */
 	get sidebar() {
 		return this.snapshot.sidebar;
 	}
 
-	/** Setters */
+	// Setters
+
 	/**
-	 * Set the mode
-	 * @param mode - mode of the room
+	 * Set how the room sends its messages. Not saved until the next options save.
+	 *
+	 * @param mode - Chat or agent.
 	 */
 	setMode = (mode: "agent" | "chat") => {
 		this.state.update({ mode });
 	};
 
 	/**
-	 * Set the model Id
-	 * @param modelId - model to use in the room
+	 * Set the model the room chats with.
+	 *
+	 * @param model - The model.
 	 */
 	setModel = (model: Engine) => {
 		this.state.update({ model });
 	};
 
 	/**
-	 * Set options
-	 * @param options - options
+	 * Merge new values into the room's settings, locally.
+	 *
+	 * @param options - The settings to change.
 	 */
 	setOptions = (options: Partial<RoomSnapshot["options"]>) => {
 		this.state.update((current) => ({
@@ -738,8 +734,9 @@ export class RoomStore {
 	};
 
 	/**
-	 * Set the metadata
-	 * @param metadata - metadata
+	 * Merge new values into the room's name and date, locally.
+	 *
+	 * @param metadata - The fields to change.
 	 */
 	setMetadata = (metadata: Partial<RoomSnapshot["metadata"]>) => {
 		this.state.update((current) => ({
@@ -747,12 +744,15 @@ export class RoomStore {
 		}));
 	};
 
-	/** Actions */
+	// Actions
+
 	/**
-	 * Initialize the room and load messages and options if they are there
+	 * Load the room: bind it to its insight, build its message tree, restore
+	 * its options, agent, and model, and pick up a turn still running.
 	 *
 	 * @param options - `isNew`: the room was just created, so it has no tool
 	 * file for its connectors to be read from.
+	 * @throws Error when the room cannot load.
 	 */
 	initialize = async ({ isNew = false }: { isNew?: boolean } = {}) => {
 		try {
@@ -819,7 +819,8 @@ export class RoomStore {
 			// store the last model
 			let activeModelId = this.snapshot.model?.engine_id;
 
-			// This is done as seperate loops because of linking
+			// build every message first, then link them, since a child can
+			// come before its parent
 			messageOutput.forEach((pixelMessage) => {
 				if (pixelMessage.io === "INPUT") {
 					activeModelId = pixelMessage.modelId;
@@ -1056,10 +1057,12 @@ export class RoomStore {
 	};
 
 	/**
-	 * UpdateRoomOptions. Skips the save when the backend already holds these
-	 * options, and leaves the room's loading state alone, since it runs ahead
-	 * of the turn that uses them.
-	 * @param options - full set of new options
+	 * Save the room's options (UpdateRoomOptions) and take them locally. Skips
+	 * the save when the backend already holds these options, and leaves the
+	 * room's loading state alone, since it runs ahead of the turn that uses them.
+	 *
+	 * @param options - The full set of new options.
+	 * @throws Error when the backend refuses the save.
 	 */
 	updateRoomOptions = async (options: RoomStore["options"]) => {
 		try {
@@ -1088,14 +1091,17 @@ export class RoomStore {
 		}
 	};
 
+	// Tools
+
 	/**
-	 * Tools
-	 */
-	/**
-	 * Sync a tool based on a message and part that contains tool information. This is used for both tool calls and tool results
-	 * @param toolId - the id of the tool
-	 * @param message - the message that contains the tool information
-	 * @param part - the part of the message that contains the tool information
+	 * Create or update a tool call from a message part, for both tool calls and
+	 * tool results. A new call is followed so the room hears its changes.
+	 *
+	 * @param toolId - The tool call's id.
+	 * @param message - The message holding the part.
+	 * @param part - The tool call or result part.
+	 * @param options - `placeholder`: the part is the stub pushed while the
+	 * call streams in.
 	 */
 	syncTool = (
 		toolId: string,
@@ -1122,8 +1128,10 @@ export class RoomStore {
 	}
 
 	/**
-	 * Get a tool
-	 * @param toolId - the id of the tool
+	 * Find a tool call by id.
+	 *
+	 * @param toolId - The tool call's id.
+	 * @returns The call, or null (typed as a store) when the room has not seen it.
 	 */
 	getTool = (toolId: string): ToolStore => {
 		return this.snapshot.tools[toolId] || null;
@@ -1133,6 +1141,9 @@ export class RoomStore {
 	 * Find a spawned subagent's part by id, wherever it falls in the room's
 	 * history. Looked up live (not snapshotted) so a panel showing it stays in
 	 * sync with status/result updates while open.
+	 *
+	 * @param subagentId - The subagent's id.
+	 * @returns Its part, or undefined when no message in the history spawned it.
 	 */
 	getSubagentPart = (
 		subagentId: string,
@@ -1152,9 +1163,8 @@ export class RoomStore {
 		return undefined;
 	};
 
-	/**
-	 * Sidebar
-	 */
+	// Sidebar
+
 	/** The file scope every file panel in this sidebar is opened in. */
 	get fileMode() {
 		return getRoomFileMode(this.snapshot.insightId);
@@ -1171,7 +1181,7 @@ export class RoomStore {
 	 * @param type - Which blueprint to open.
 	 * @param config - The instance's parameters, and what it dedupes on.
 	 * @param name - Tab label for a newly created instance.
-	 * @return The revealed or created panel id.
+	 * @returns The revealed or created panel id.
 	 */
 	openSidebarPanel = (
 		type: WorkbenchPanelType,
@@ -1189,6 +1199,8 @@ export class RoomStore {
 	 *
 	 * A draft is built without Files, having no insight for it to read, so the
 	 * room it prepares gains it here — behind whatever tab the draft was on.
+	 *
+	 * @param snapshot - The draft's arrangement.
 	 */
 	restoreSidebarLayout = (snapshot: WorkbenchSnapshot): void => {
 		this.state.update({ sidebarSnapshot: snapshot });
@@ -1283,7 +1295,9 @@ export class RoomStore {
 	 *
 	 * @param path - The file's insight-relative path.
 	 * @param name - Tab label; defaults to the file's own name.
-	 * @return The revealed or created panel id.
+	 * @param options - `refresh`: reload an editor already open on the file,
+	 * after its file was overwritten.
+	 * @returns The revealed or created panel id.
 	 */
 	openFileSidebarPanel = (
 		path: string,
@@ -1347,7 +1361,7 @@ export class RoomStore {
 	 * @param name - Tab label for a newly created instance. Defaults to the
 	 * chat files label, which keeps the room's own files apart from a
 	 * connector work folder.
-	 * @return The revealed or created panel id.
+	 * @returns The revealed or created panel id.
 	 */
 	openSidebarFileExplorer = (
 		initialPath?: string,
@@ -1420,14 +1434,14 @@ export class RoomStore {
 		}
 	};
 
+	// Helpers
+
 	/**
-	 * Helpers
-	 */
-	/**
-	 * Set the isLoading boolean. Public so callers that don't go through
+	 * Set the room's loading state. Public so callers that don't go through
 	 * streamJob.run() — e.g. the agent-run poll subscription — can still
 	 * participate in the room's loading state.
-	 * @param isLoading - is it loading
+	 *
+	 * @param isLoading - Whether the room is loading.
 	 */
 	setIsLoading = (isLoading: boolean): void => {
 		this.state.update({ isLoading });
@@ -1438,7 +1452,7 @@ export class RoomStore {
 	 * this to some extensions; other files stay in the room for tools.
 	 *
 	 * @param fileName - The file's name.
-	 * @return True when the file is sent to the model.
+	 * @returns True when the file is sent to the model.
 	 */
 	shouldAttachToModel = (fileName: string): boolean => {
 		const allowed = this._theme.allowedFileTypes;
@@ -1455,11 +1469,16 @@ export class RoomStore {
 	};
 
 	/**
-	 * Ask a message to the room
-	 * @param prompt - user message
-	 * @param files - files
+	 * Send the user's message: show it at once with a thinking reply, save the
+	 * room's options, upload its files, add the queued context files, then run
+	 * the turn. A failed upload withdraws the message and requeues its files.
+	 *
+	 * @param prompt - The user's message.
+	 * @param files - Files to upload with it.
 	 * @param askOptions.visible - whether the user's bubble renders (default
 	 *   true); pass false for a silent kickoff turn — the reply still shows.
+	 * @throws Error without a model or prompt; an `UploadError` when a file
+	 * cannot be read; and whatever the turn throws.
 	 */
 	askMessage = async (
 		prompt: string,
@@ -1628,12 +1647,14 @@ export class RoomStore {
 	};
 
 	/**
-	 * Process a tool call
-	 * @param messageId - id of the message
-	 * @param toolId - id of the tool
-	 * @param toolResponse - response from the tool
-	 * @param toolStatus - status of the tool execution
-	 * @param executedParameters - parameters used by the tool
+	 * Save a tool call's result on the response that made it. Ignores a call
+	 * that has already settled, and logs rather than throws a failed save.
+	 *
+	 * @param messageId - The response message's id.
+	 * @param toolId - The tool call's id.
+	 * @param toolResponse - What the tool returned.
+	 * @param toolStatus - How the call ended.
+	 * @param executedParameters - The parameters the tool ran with.
 	 */
 	processTool = async (
 		messageId: string,
@@ -1671,14 +1692,16 @@ export class RoomStore {
 	};
 
 	/**
-	 * Run a pixel
-	 * @param pixel - pixel
+	 * Run a pixel in the room's insight. A success clears the room's error.
+	 *
+	 * @param pixel - The pixel to run.
 	 * @param showLoading - toggle the room's loading state around the run
 	 * @param setErrorOnFail - surface a thrown failure on the room's error state
 	 * @param throwOnError - when true (default), throw if any statement returns
 	 *   an error. Pass false for multi-statement pixels where the caller wants to
 	 *   inspect per-statement outcomes (each `pixelReturn` entry's `operationType`
 	 *   contains "ERROR" on failure) rather than get an all-or-nothing throw.
+	 * @returns The pixel's response.
 	 */
 	runRoomPixel = async <O extends [] | unknown[]>(
 		pixel: string,
@@ -1710,7 +1733,7 @@ export class RoomStore {
 				throw new Error(response.errors.join(""));
 			}
 
-			// store the new insight id
+			// a run that succeeds clears the last failure
 			this.state.update({ error: null });
 
 			return response;
@@ -1736,6 +1759,7 @@ export class RoomStore {
 	 * @param maxLogChars - cap on total console chars; once exceeded we stop
 	 *   accumulating and append a truncation marker so the UI can't be flooded
 	 *   by a runaway / very chatty job. 0 or undefined disables the cap.
+	 * @returns The job's errors, its per-statement results, and the logs.
 	 */
 	runRoomPixelWithConsole = async (
 		pixel: string,
@@ -1769,8 +1793,8 @@ export class RoomStore {
 			}
 		};
 
-		let polling = true;
-		while (polling) {
+		let isPolling = true;
+		while (isPolling) {
 			try {
 				const { message, status } = await getPixelConsole(jobId);
 				if (message?.length) {
@@ -1782,12 +1806,12 @@ export class RoomStore {
 					status === "ProgressComplete" ||
 					status === "Streaming"
 				) {
-					polling = false;
+					isPolling = false;
 				} else {
 					await sleep(1000);
 				}
 			} catch {
-				polling = false;
+				isPolling = false;
 			}
 		}
 
@@ -1811,6 +1835,11 @@ export class RoomStore {
 	 * the handlers to make the job cancellable via {@link cancelActiveJob}
 	 * (AskPlayground); omit it for fire-to-completion jobs (tool execution,
 	 * agent harness).
+	 *
+	 * @param pixel - The pixel to run.
+	 * @param handlers - Called with each chunk, the result, and on a stop.
+	 * @param options - Loading, error, and throw behavior; see `StreamOptions`.
+	 * @returns Once the job has finished or unwound.
 	 */
 	runRoomPixelStreaming = <O extends unknown[] | []>(
 		pixel: string,
@@ -1832,19 +1861,25 @@ export class RoomStore {
 		}
 
 		const message = this.latestResponseMessage;
-		if (message?.hasUnfinishedTools && !this.snapshot.cancellingTools) {
-			this.state.update({ cancellingTools: true });
+		if (message?.hasUnfinishedTools && !this.snapshot.isCancellingTools) {
+			this.state.update({ isCancellingTools: true });
 
 			try {
 				await message.cancelPendingTools();
 			} finally {
-				this.state.update({ cancellingTools: false });
+				this.state.update({ isCancellingTools: false });
 			}
 		}
 	};
 
 	/**
-	 * Compact the messages in the room
+	 * Compact the conversation into its last real response (CompactRoomMessages):
+	 * each successful method adds its summary turn below that response.
+	 *
+	 * @param strategy - Which compaction to run; AUTO or none lets the backend pick.
+	 * @returns "compacted", or "skipped" when the backend had nothing to compact.
+	 * @throws Error when there is no response to compact, it holds tool calls,
+	 * or every method failed.
 	 */
 	compactMessages = async (strategy?: "TOOL_PRUNE" | "SUMMARY" | "AUTO") => {
 		// Compact into the last real response in the chain.

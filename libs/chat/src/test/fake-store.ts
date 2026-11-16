@@ -1,6 +1,8 @@
 /** What the chat's store hooks read from a store. */
 interface FakeStoreMethods {
+	/** A version object, replaced on each `notify` so the hooks read again. */
 	getSnapshot: () => unknown;
+	/** Listen for `notify`; returns a function that stops listening. */
 	subscribe: (listener: () => void) => () => void;
 	/** Tell the hooks a field changed, after a test sets it. */
 	notify: () => void;
@@ -30,6 +32,7 @@ export const fakeStore = <T extends object>(
 		},
 		notify: () => {
 			version = { value: version.value + 1 };
+			// a copy, so a listener that unsubscribes does not skip the next one
 			for (const listener of [...listeners]) {
 				listener();
 			}

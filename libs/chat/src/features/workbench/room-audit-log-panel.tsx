@@ -47,8 +47,9 @@ const RoomAuditLogPanel = () => {
 	const [page, setPage] = useState(0);
 	const [rowsPerPage, setRowsPerPage] = useState(50);
 	const [totalCount, setTotalCount] = useState(0);
-	const [loading, setLoading] = useState(false);
-	const filteredData = useRef<AuditLogFilterValue>({
+	const [isLoading, setIsLoading] = useState(false);
+	// the filter the last fetch used; a ref, since only a fetch reads it
+	const filterValueRef = useRef<AuditLogFilterValue>({
 		scope,
 		dateRangeType: "DAY",
 		dateRangeValue: 1,
@@ -60,17 +61,24 @@ const RoomAuditLogPanel = () => {
 		searchTerm: "",
 	});
 
+	/**
+	 * Loads one page of the room's logs under the current filter, through the
+	 * room's insight; a failure empties the table and shows a toast.
+	 *
+	 * @param limit - How many rows to load.
+	 * @param offset - How many rows to skip.
+	 */
 	const fetchLogs = async (limit: number, offset: number) => {
-		const filterValue = filteredData.current;
+		const filterValue = filterValueRef.current;
 		if (!hasScope(filterValue.scope) || !insightId) {
 			setLogs([]);
 			setTotalCount(0);
-			setLoading(false);
+			setIsLoading(false);
 			return;
 		}
-		setLoading(true);
+		setIsLoading(true);
 		try {
-			//Room scope only — no date filter values are sent.
+			// room scope only: no date filter values are sent
 			const params = filterValueToReportParams(filterValue, {
 				includeDate: false,
 			});
@@ -92,17 +100,23 @@ const RoomAuditLogPanel = () => {
 			toast.error(`Error fetching logs: ${error}`);
 			console.error("Error fetching room logs:", error);
 		} finally {
-			setLoading(false);
+			setIsLoading(false);
 		}
 	};
 
+	/**
+	 * Downloads every log under the current filter as a CSV or a PDF.
+	 *
+	 * @param pdf - Whether to export a PDF rather than a CSV.
+	 */
 	const handleExport = async (pdf: boolean) => {
-		const filterValue = filteredData.current;
+		const filterValue = filterValueRef.current;
 		if (!hasScope(filterValue.scope) || !insightId) return;
 		try {
 			const params = filterValueToReportParams(filterValue, {
 				includeDate: false,
 			});
+			// every matching row, or one page before the first count is known
 			const exportLimit = totalCount > 0 ? totalCount : rowsPerPage;
 			const response = await room.runRoomPixel<[string]>(
 				buildExportAuditLogReportPixel(params, exportLimit, 0, pdf),
@@ -118,6 +132,7 @@ const RoomAuditLogPanel = () => {
 		}
 	};
 
+	/** Loads the page the table moved to. */
 	const handlePaginationChange = (
 		newPage: number,
 		newRowsPerPage: number,
@@ -127,13 +142,15 @@ const RoomAuditLogPanel = () => {
 		fetchLogs(newRowsPerPage, newPage * newRowsPerPage);
 	};
 
-	const updateLogs = (filterValue: AuditLogFilterValue) => {
-		//Keep the scope locked to this room regardless of what the filter emits.
-		filteredData.current = { ...filterValue, scope };
+	/** Applies a new filter and loads its first page. */
+	const handleFilterChange = (filterValue: AuditLogFilterValue) => {
+		// keep the scope locked to this room whatever the filter emits
+		filterValueRef.current = { ...filterValue, scope };
 		setPage(0);
 		fetchLogs(rowsPerPage, 0);
 	};
 
+	// export and refresh, drawn at the end of the filter row
 	const actions = (
 		<>
 			<DropdownMenu>
@@ -170,7 +187,7 @@ const RoomAuditLogPanel = () => {
 		<div className="flex h-full min-w-0 flex-col gap-4 overflow-auto bg-background p-4">
 			<div className="flex w-full flex-wrap items-center gap-2">
 				<AuditLogFilter
-					updateLogs={updateLogs}
+					updateLogs={handleFilterChange}
 					insightId={insightId}
 					parent="client"
 					scope={scope}
@@ -182,7 +199,7 @@ const RoomAuditLogPanel = () => {
 					}
 				/>
 			</div>
-			{loading ? (
+			{isLoading ? (
 				<div className="flex flex-col gap-4">
 					<Skeleton className="h-72 w-full" />
 					<Skeleton className="h-72 w-full" />

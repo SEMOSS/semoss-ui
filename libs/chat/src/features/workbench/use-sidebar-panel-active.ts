@@ -24,7 +24,7 @@ import { useRoomSelector } from "../room/use-room-selector";
  * @param room - The room whose sidebar to watch.
  * @param type - Which blueprint.
  * @param config - The instance's parameters, matched as `selectPanel` matches.
- * @return True while the sidebar is open and a matching panel is its selection.
+ * @returns True while the sidebar is open and a matching panel is its selection.
  */
 export const useSidebarPanelActive = (
 	room: RoomStore,

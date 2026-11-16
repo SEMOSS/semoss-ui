@@ -15,7 +15,7 @@ interface RoomActionItem {
 	id: "favorite" | "rename" | "publish" | "download" | "delete";
 	/** The action's icon. */
 	icon: LucideIcon;
-	/** Its name, the same in Settings' Room section and the slash menu. */
+	/** Its name, the same in the rail's cog menu and the slash menu. */
 	label: string;
 	/** What it does, for the slash menu. */
 	description: string;
@@ -32,11 +32,11 @@ interface RoomActionItem {
 /**
  * The room's own actions in the order every menu lists them: Favorite,
  * Rename, Publish as Agent, Download, and Delete. Favorite is left out where
- * the chat history is hidden; only the slash menu lists Rename, since a
- * double-click on the name renames it. Call it from an observer inside a
- * `RoomActionsProvider`.
+ * the chat history is hidden. The rail's cog menu leaves out Rename, since a
+ * double-click on the name renames it; the slash menu lists it. Call it inside
+ * a `RoomActionsProvider`.
  *
- * @return The actions, or an empty list outside a room.
+ * @returns The actions, or an empty list outside a room.
  */
 export const useRoomActionItems = (): RoomActionItem[] => {
 	const { t } = useTranslation(["room", "sidebar"]);

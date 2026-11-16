@@ -15,7 +15,7 @@ const INSIGHT_ASSETS = getFileExplorerAdapter({ type: "INSIGHT" });
  * Whether an asset read failed because the file is not there.
  *
  * @param message - The read's error text.
- * @return True for a missing file.
+ * @returns True for a missing file.
  */
 export const isMissingFileError = (message: string): boolean =>
 	MISSING_FILE.test(message);
@@ -24,7 +24,7 @@ export const isMissingFileError = (message: string): boolean =>
  * A pixel MCP file as the asset reactors return it, which is its text.
  *
  * @param output - The reactor's output.
- * @return The parsed file, or null when it is not JSON.
+ * @returns The parsed file, or null when it is not JSON.
  */
 export const parseMcpFile = (output: unknown): unknown => {
 	if (typeof output !== "string") {
@@ -37,7 +37,7 @@ export const parseMcpFile = (output: unknown): unknown => {
  * A room's own tool file, which holds its toolbox.
  *
  * @param room - A room bound to its insight.
- * @return The parsed file, or null when the room has none.
+ * @returns The parsed file, or null when the room has none.
  * @throws Error when the file is there but cannot be read.
  */
 export const readRoomToolFile = async (room: RoomStore): Promise<unknown> => {

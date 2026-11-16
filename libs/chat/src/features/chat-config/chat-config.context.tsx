@@ -25,6 +25,7 @@ export interface ChatNavigation {
 export interface ChatConfig {
 	/** The deployment's theme, with every default filled in. */
 	readonly theme: ThemeMap["playground"];
+	/** Where chat UI asks the host to go. */
 	readonly navigation: ChatNavigation;
 	/** The build's new-chat defaults, under the theme's. */
 	readonly newChatDefaults: NewChatBuildDefaults;
@@ -32,6 +33,10 @@ export interface ChatConfig {
 	readonly platformUrl: string;
 }
 
+/**
+ * The host's chat configuration, provided by `ChatConfigProvider` and read
+ * with `useChatConfig`. Undefined outside a provider.
+ */
 export const ChatConfigContext = createContext<ChatConfig | undefined>(
 	undefined,
 );

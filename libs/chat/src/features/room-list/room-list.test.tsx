@@ -80,7 +80,8 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllGlobals());
 
-const renderSection = (activeRoomId?: string) =>
+/** Render the room list inside the sidebar it needs, with one room open. */
+const renderRoomList = (activeRoomId?: string) =>
 	render(
 		<SidebarProvider>
 			<RoomList
@@ -93,7 +94,7 @@ const renderSection = (activeRoomId?: string) =>
 
 test("each room links to its href and opens through the host", async () => {
 	const user = userEvent.setup();
-	renderSection();
+	renderRoomList();
 
 	const link = screen.getByRole("link", { name: /Quarterly plan/ });
 	expect(link).toHaveAttribute("href", "#/room/room-1");
@@ -103,7 +104,7 @@ test("each room links to its href and opens through the host", async () => {
 });
 
 test("a modified click is left to the browser", () => {
-	renderSection();
+	renderRoomList();
 
 	fireEvent.click(screen.getByRole("link", { name: /Travel notes/ }), {
 		metaKey: true,
@@ -114,7 +115,7 @@ test("a modified click is left to the browser", () => {
 test("deleting the open room tells the host; another room does not", async () => {
 	mocks.closeRoom.mockResolvedValue(undefined);
 	const user = userEvent.setup();
-	renderSection("room-1");
+	renderRoomList("room-1");
 
 	const [openRoomMenu, otherRoomMenu] = screen.getAllByRole("button", {
 		name: "actions.roomActions",

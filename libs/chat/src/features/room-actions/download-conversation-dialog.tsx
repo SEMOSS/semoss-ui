@@ -14,8 +14,10 @@ import {
 import { getErrorMessage } from "@semoss/utility/error";
 import { useChatSession } from "../chat/use-chat-session";
 
+/** A document format the backend can export a conversation to. */
 type DownloadFormat = "word" | "pdf";
 
+/** The formats offered, one button each, in order. */
 const FORMATS: {
 	format: DownloadFormat;
 	icon: LucideIcon;
@@ -25,6 +27,7 @@ const FORMATS: {
 	{ format: "pdf", icon: FileIcon, extension: ".pdf" },
 ];
 
+/** Props for {@link DownloadConversationDialog}. */
 interface DownloadConversationDialogProps {
 	/** The room to download, or null while the dialog is closed. */
 	roomId: string | null;
@@ -42,9 +45,11 @@ export function DownloadConversationDialog({
 }: DownloadConversationDialogProps) {
 	const { t } = useTranslation("sidebar");
 	const { chat } = useChatSession();
+	// the format being downloaded, which locks every button until it lands
 	const [downloadingFormat, setDownloadingFormat] =
 		useState<DownloadFormat | null>(null);
 
+	/** Downloads the room in `format`, closing the dialog once it lands. */
 	const handleDownload = async (format: DownloadFormat) => {
 		if (!roomId) return;
 		setDownloadingFormat(format);

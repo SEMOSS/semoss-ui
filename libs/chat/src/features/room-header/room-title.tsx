@@ -14,21 +14,23 @@ export const RoomTitle = () => {
 	const context = useRoomActionsContext();
 	const headingRef = useRef<HTMLHeadingElement>(null);
 	// Enter and Escape hand focus back to the name; a click elsewhere keeps it
-	const shouldRefocus = useRef(false);
+	const shouldRefocusRef = useRef(false);
 	const isRenaming = context?.isRenaming ?? false;
 	const roomName = useRoomSelector(
 		context?.room,
 		(room) => room.metadata.name,
 	);
 
+	// The heading only exists once the field closes, so focus moves after the render that shows it
 	useEffect(() => {
-		if (isRenaming || !shouldRefocus.current) return;
-		shouldRefocus.current = false;
+		if (isRenaming || !shouldRefocusRef.current) return;
+		shouldRefocusRef.current = false;
 		headingRef.current?.focus();
 	}, [isRenaming]);
 
 	if (!context) return null;
 
+	// The same name, as the heading's content or, while renaming, alone
 	const name = (
 		<RoomName
 			name={roomName ?? ""}
@@ -36,8 +38,8 @@ export const RoomTitle = () => {
 			isRenaming={isRenaming}
 			onStartRename={context.startRenaming}
 			onRename={context.actions.rename}
-			onStopRename={(isRefocusing) => {
-				shouldRefocus.current = isRefocusing;
+			onStopRename={(shouldRefocus) => {
+				shouldRefocusRef.current = shouldRefocus;
 				context.stopRenaming();
 			}}
 		/>

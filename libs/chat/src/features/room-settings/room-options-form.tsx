@@ -27,8 +27,10 @@ import { MCPOverlay } from "../mcp/mcp-overlay";
 import { isRemovableToolbox, splitMcpByType } from "../mcp/mcp-utils";
 import type { RoomStore } from "../room/room.store";
 
+/** The one field the form itself validates; every other control saves as it changes. */
 const instructionsSchema = z.object({ instructions: z.string() });
 
+/** The form's values: the room's instructions. */
 type InstructionsValues = z.infer<typeof instructionsSchema>;
 
 /** Props for {@link RoomOptionsForm}. */
@@ -81,6 +83,7 @@ export const RoomOptionsForm = ({
 		values: { instructions: options.instructions },
 		resolver: zodResolver(instructionsSchema),
 	});
+	// which tab of the knowledge, toolbox, and agent picker is open, if any
 	const [overlay, setOverlay] = useState<{
 		type: "AGENT" | "KNOWLEDGE" | "TOOLBOX";
 		isOpen: boolean;
@@ -90,6 +93,7 @@ export const RoomOptionsForm = ({
 	// toolboxes and the ones the user added are listed here
 	const agentToolboxes = toolboxes.filter((item) => item.fromWorkspace);
 	const addedToolboxes = toolboxes.filter(isRemovableToolbox);
+	/** Removes one knowledge source or toolbox from the room. */
 	const handleRemove = (item: (typeof options.mcp)[number]): void => {
 		if (!disabled) {
 			onOptionsChange({
@@ -107,6 +111,7 @@ export const RoomOptionsForm = ({
 				? "room:modes.defaultAgent"
 				: "room:menuWorkspace.selectAgent",
 		);
+	/** Saves the instructions when the form is submitted. */
 	const handleSubmit = (values: InstructionsValues): void => {
 		if (!disabled) onOptionsChange(values);
 	};

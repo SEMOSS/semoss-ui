@@ -44,6 +44,7 @@ function NotesEditor() {
 	return <textarea aria-label="Notes" defaultValue="Unsaved notes" />;
 }
 
+/** A room page in brief: the header's toggle, a draft, and the Workspace. */
 const RoomLayoutTest = ({ room }: { room: RoomStore }) => {
 	const isOpen = useRoomSelector(room, (current) => current.sidebar.isOpen);
 	return (

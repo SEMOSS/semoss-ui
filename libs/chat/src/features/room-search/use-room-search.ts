@@ -12,14 +12,18 @@ const SEARCH_VIEW: RoomListView = {
 	groupBy: "date",
 };
 
+/** How many recent rooms show before the user types. */
 const RECENT_LIMIT = 8;
+/** How many rooms a search returns. */
 const MATCH_LIMIT = 30;
 
 /** The rooms the search dialog lists. */
 export interface UseRoomSearchReturn {
 	/** Matching rooms, name matches first; the latest rooms with no query. */
 	rooms: RoomListItem[];
+	/** Whether a search is on its way. */
 	isLoading: boolean;
+	/** Whether the last search failed. */
 	isError: boolean;
 }
 
@@ -31,6 +35,8 @@ export interface UseRoomSearchReturn {
  * @param query - The debounced search text; empty lists recent rooms.
  * @param workspaceId - Only rooms started with this agent; null for all.
  * @param isEnabled - Whether to run the query, i.e. the dialog is open.
+ * @returns The rooms found, and whether the search is loading or failed; no
+ * rooms while it is off.
  */
 export const useRoomSearch = (
 	query: string,
@@ -38,6 +44,7 @@ export const useRoomSearch = (
 	isEnabled: boolean,
 ): UseRoomSearchReturn => {
 	const search = query.trim();
+	// an empty pixel does not run, so a closed dialog asks for nothing
 	const pixel = isEnabled
 		? buildPlaygroundRoomsPixel(SEARCH_VIEW, {
 				search: search || undefined,

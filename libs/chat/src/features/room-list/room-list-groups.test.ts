@@ -9,9 +9,11 @@ import {
 } from "./room-list-groups";
 
 const now = new Date();
+/** An ISO date this many days before the test started. */
 const daysAgo = (days: number) =>
 	new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString();
 
+/** A room updated today and created a month ago, with any fields overridden. */
 const room = (id: string, extra: Partial<RoomListItem> = {}): RoomListItem => ({
 	ROOM_ID: id,
 	ROOM_NAME: id,
@@ -20,11 +22,13 @@ const room = (id: string, extra: Partial<RoomListItem> = {}): RoomListItem => ({
 	...extra,
 });
 
+/** The default view, with any fields overridden. */
 const view = (extra: Partial<RoomListView> = {}): RoomListView => ({
 	...DEFAULT_ROOM_LIST_VIEW,
 	...extra,
 });
 
+/** Each section as its key and room ids, to compare in one expectation. */
 const shape = (sections: ReturnType<typeof groupRoomList>) =>
 	sections.map((section) => [
 		section.key,

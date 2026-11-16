@@ -5,6 +5,7 @@ import { cn } from "@semoss/ui/next";
 export interface RoomAgentAvatarProps {
 	/** The agent (workspace) the room runs; none leaves the space blank. */
 	workspaceId?: string | null;
+	/** That agent's name, for the avatar's fallback initials. */
 	workspaceName?: string | null;
 	/** Sizing; defaults to a 20px square. */
 	className?: string;

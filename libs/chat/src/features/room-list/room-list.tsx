@@ -66,10 +66,16 @@ const isApplePlatform =
 	typeof navigator !== "undefined" &&
 	/mac|iphone|ipad/i.test(navigator.userAgent);
 
-/** Section keys the user collapsed, kept across reloads. */
+/**
+ * Whether a stored value is a list of strings, as the collapsed section keys are.
+ *
+ * @param value - What was read from storage.
+ * @returns Whether it can be used as the collapsed keys.
+ */
 const isStringList = (value: unknown): value is string[] =>
 	Array.isArray(value) && value.every((item) => typeof item === "string");
 
+/** Props for {@link RoomList}. */
 interface RoomListProps {
 	/** Whether the list is on screen; it only loads and pages while it is. */
 	isVisible: boolean;
@@ -94,6 +100,7 @@ export const RoomList = ({
 	const { theme, navigation } = useChatConfig();
 	const [downloadRoomId, setDownloadRoomId] = useState<string | null>(null);
 	const { view, isCustomized, setView } = useRoomListView();
+	// section keys the user collapsed, kept across reloads
 	const [storedCollapsed, setStoredCollapsed] = useCacheState<unknown>(
 		[],
 		"sidebar--collapsedRoomGroups--v1",
@@ -111,12 +118,9 @@ export const RoomList = ({
 			optimisticRoomMap: current.optimisticRooms,
 		}),
 	);
-	const hideChatHistory = !!theme.featureFlags?.hideChatHistory;
-	/**
-	 * Preserving scroll position: the last position is kept in a ref, so
-	 * scrolling never re-renders the nav, and put back only when the sidebar
-	 * opens again.
-	 */
+	const isChatHistoryHidden = !!theme.featureFlags?.hideChatHistory;
+	// The last scroll position is kept in a ref, so scrolling never re-renders
+	// the nav, and put back only when the sidebar opens again.
 	const savedScrollRef = useRef(0);
 	const scrollElementRef = useRef<HTMLDivElement | null>(null);
 
@@ -128,18 +132,16 @@ export const RoomList = ({
 	const [loadedViewKey, setLoadedViewKey] = useState(viewKey);
 	const isViewLoading = loadedViewKey !== viewKey;
 
-	/**
-	 * Inline rename state - tracks which room is being renamed
-	 */
+	// the room whose name is being edited in place
 	const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
-
-	const [deletedSet, setDeletedSet] = useState(new Set<string>());
+	// rooms deleted here, hidden at once and until the refetch drops them
+	const [deletedRoomIds, setDeletedRoomIds] = useState(new Set<string>());
 
 	// The server orders by group, then favorites, then the sort, so each
 	// section of the list arrives as one run and paging never reshuffles it.
 	const getRooms = useSessionIteratorPixel<RoomListItem[], RoomListItem>(
 		(limit, offset) =>
-			hideChatHistory
+			isChatHistoryHidden
 				? ""
 				: buildPlaygroundRoomsPixel(view, { limit, offset }),
 		// a short page is the last one
@@ -159,9 +161,7 @@ export const RoomList = ({
 		[view.sortBy, view.sortDir, view.groupBy],
 	);
 
-	/**
-	 * Setup infinite scroll for the command list
-	 */
+	// pages in more rooms as the list scrolls, but not while a new view loads
 	const { setScroll } = useInfiniteScroll({
 		disabled:
 			!isVisible ||
@@ -175,9 +175,6 @@ export const RoomList = ({
 		},
 	});
 
-	/**
-	 * Effects
-	 */
 	// one passive listener per viewport; it only records where the list is
 	useEffect(() => {
 		const element = scrollElementRef.current;
@@ -195,12 +192,12 @@ export const RoomList = ({
 	// init, so resetting here would cause a duplicate request. Subsequent
 	// runs (when `roomCounter` increments after a new chat is created)
 	// should refetch as intended.
-	const didInitialMount = useRef(false);
+	const hasMountedRef = useRef(false);
 	useEffect(() => {
-		// keep this counter
+		// read so the effect runs again whenever the counter changes
 		roomCounter;
-		if (!didInitialMount.current) {
-			didInitialMount.current = true;
+		if (!hasMountedRef.current) {
+			hasMountedRef.current = true;
 			return;
 		}
 		getRooms.reset();
@@ -212,23 +209,21 @@ export const RoomList = ({
 
 	// A new order or grouping starts at the top; the iterator already reloads
 	// from its first page for the new view
-	const shownViewKey = useRef(viewKey);
+	const shownViewKeyRef = useRef(viewKey);
 	useEffect(() => {
-		if (shownViewKey.current === viewKey) {
+		if (shownViewKeyRef.current === viewKey) {
 			return;
 		}
-		shownViewKey.current = viewKey;
+		shownViewKeyRef.current = viewKey;
 		if (scrollElementRef.current) {
 			scrollElementRef.current.scrollTop = 0;
 		}
 		savedScrollRef.current = 0;
 	}, [viewKey]);
 
-	/**
-	 * Once the refetch returns a room we were showing optimistically, drop the
-	 * optimistic entry so the store's map doesn't grow unbounded across a
-	 * session. The render-time filter already hides it, so this is housekeeping.
-	 */
+	// Once the refetch returns a room we were showing optimistically, drop the
+	// optimistic entry so the store's map doesn't grow unbounded across a
+	// session. The render-time filter already hides it, so this is housekeeping.
 	useEffect(() => {
 		const fetchedIds = new Set(getRooms.data.map((r) => r.ROOM_ID));
 		Object.keys(chat.optimisticRooms).forEach((roomId) => {
@@ -250,12 +245,10 @@ export const RoomList = ({
 		return () => cancelAnimationFrame(frame);
 	}, [isVisible]);
 
-	/**
-	 * Wire infinite scroll once the sidebar becomes visible. The
-	 * viewportRef callback only fires on mount, so when the mobile
-	 * Sheet opens after initial mount, this effect re-registers the
-	 * scroll target with useInfiniteScroll.
-	 */
+	// Wire infinite scroll once the sidebar becomes visible. The
+	// viewportRef callback only fires on mount, so when the mobile
+	// Sheet opens after initial mount, this effect re-registers the
+	// scroll target with useInfiniteScroll.
 	useEffect(() => {
 		if (isVisible && scrollElementRef.current) {
 			setScroll(scrollElementRef.current);
@@ -272,6 +265,7 @@ export const RoomList = ({
 	const sections = groupRoomList(getRooms.data, view, optimisticRooms);
 	const isGrouped = view.groupBy === "agent";
 
+	// collapsing or expanding a section saves the whole set of collapsed keys
 	const handleSectionOpenChange = (key: string, isOpen: boolean) => {
 		const next = new Set(collapsedKeys);
 		if (isOpen) {
@@ -282,6 +276,7 @@ export const RoomList = ({
 		setStoredCollapsed([...next]);
 	};
 
+	// what each kind of section shows in its collapsible heading
 	const renderHeading = (heading: RoomListHeading) => {
 		switch (heading.type) {
 			case "pinned":
@@ -320,17 +315,41 @@ export const RoomList = ({
 		}
 	};
 
-	/**
-	 * Handlers
-	 */
-	// pinRoom bumps roomCounter, which the effect above watches to refetch
-	// both room queries here, and keeps the chats page in sync
+	// toggleRoomFavorite bumps roomCounter, which the effect above watches to
+	// refetch the list
 	const handleToggleFavorite = (roomId: string, isFavorite: boolean) =>
 		toggleRoomFavorite(chat, roomId, isFavorite, t);
 
 	const handleStartRename = (roomId: string) => setEditingRoomId(roomId);
 
-	const handleCancelRename = () => setEditingRoomId(null);
+	const handleStopRename = () => setEditingRoomId(null);
+
+	// the room leaves the list at once, and comes back if the delete fails
+	const handleDeleteRoom = async (roomId: string) => {
+		try {
+			setDeletedRoomIds((prev) => new Set([...prev, roomId]));
+			await chat.closeRoom(roomId);
+			toast.success(t("toasts.roomDeletedSuccess"));
+			if (activeRoomId === roomId) {
+				navigation.onRoomDeleted(roomId);
+			}
+			getRooms.reset();
+		} catch (e) {
+			if (e instanceof Error) {
+				toast.error(e.message);
+			}
+			// Deletion failed — restore the room in the list.
+			// On the success path we intentionally leave the
+			// roomId in deletedRoomIds until the refetch lands, so
+			// the room doesn't briefly reappear between the
+			// reset() call and the new data arriving.
+			setDeletedRoomIds((prev) => {
+				const next = new Set(prev);
+				next.delete(roomId);
+				return next;
+			});
+		}
+	};
 
 	// a plain click opens the room in place; a modified or middle click is the
 	// browser's, so the link still opens in a new tab
@@ -396,7 +415,6 @@ export const RoomList = ({
 				<ScrollArea
 					className="[&_[data-slot=scroll-area-viewport]>div]:block! min-h-0 flex-1"
 					viewportRef={(ele) => {
-						// Store reference for scroll position management
 						if (ele) {
 							scrollElementRef.current = ele;
 							// Only wire infinite scroll when the sidebar is
@@ -531,7 +549,7 @@ export const RoomList = ({
 													const isFavorite =
 														room.PINNED || false;
 													// grouped, favorites lead their group instead of a section
-													const showFavoriteMark =
+													const shouldShowFavoriteMark =
 														isGrouped && isFavorite;
 													const isEditing =
 														editingRoomId ===
@@ -566,7 +584,7 @@ export const RoomList = ({
 																)
 															}
 															onStopRename={
-																handleCancelRename
+																handleStopRename
 															}
 															className={
 																isEditing
@@ -576,9 +594,11 @@ export const RoomList = ({
 														/>
 													);
 
-													// if the room is in the deleted set, don't render it
+													// deleted here, waiting for the refetch to drop it
 													if (
-														deletedSet.has(roomId)
+														deletedRoomIds.has(
+															roomId,
+														)
 													) {
 														return null;
 													}
@@ -639,7 +659,7 @@ export const RoomList = ({
 																			}}
 																		>
 																			<span className="flex w-full min-w-0 items-center gap-1.5">
-																				{showFavoriteMark ? (
+																				{shouldShowFavoriteMark ? (
 																					<StarIcon
 																						className="size-3 shrink-0 fill-current text-muted-foreground"
 																						aria-hidden="true"
@@ -746,74 +766,13 @@ export const RoomList = ({
 																				)}
 																			</DropdownMenuItem>
 																			<DropdownMenuItem
-																				onClick={async (
+																				onClick={(
 																					e,
 																				) => {
 																					e.stopPropagation();
-
-																					try {
-																						// optimistically add to deleted set to remove from UI immediately
-																						setDeletedSet(
-																							(
-																								prev,
-																							) =>
-																								new Set(
-																									[
-																										...prev,
-																										roomId,
-																									],
-																								),
-																						);
-
-																						await chat.closeRoom(
-																							roomId,
-																						);
-
-																						toast.success(
-																							t(
-																								"toasts.roomDeletedSuccess",
-																							),
-																						);
-																						if (
-																							activeRoomId ===
-																							roomId
-																						) {
-																							navigation.onRoomDeleted(
-																								roomId,
-																							);
-																						}
-
-																						// Refetch rooms after deletion
-																						getRooms.reset();
-																					} catch (e) {
-																						if (
-																							e instanceof
-																							Error
-																						) {
-																							toast.error(
-																								e.message,
-																							);
-																						}
-																						// Deletion failed — restore the room in the list.
-																						// On the success path we intentionally leave the
-																						// roomId in deletedSet until the refetch lands, so
-																						// the room doesn't briefly reappear between the
-																						// reset() call and the new data arriving.
-																						setDeletedSet(
-																							(
-																								prev,
-																							) => {
-																								const newSet =
-																									new Set(
-																										prev,
-																									);
-																								newSet.delete(
-																									roomId,
-																								);
-																								return newSet;
-																							},
-																						);
-																					}
+																					void handleDeleteRoom(
+																						roomId,
+																					);
 																				}}
 																				className="text-destructive focus:text-destructive"
 																			>

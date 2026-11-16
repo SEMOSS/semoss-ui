@@ -32,6 +32,7 @@ const SORT_OPTIONS = [
 	labelKey: string;
 }[];
 
+/** Each grouping the menu offers. */
 const GROUP_OPTIONS = [
 	{ value: "date", labelKey: "view.group.date" },
 	{ value: "agent", labelKey: "view.group.agent" },
@@ -46,10 +47,13 @@ export const ROOM_LIST_ACTION_CLASS =
 
 /** Props for {@link RoomListViewMenu}. */
 export interface RoomListViewMenuProps {
+	/** The view the menu shows as chosen. */
 	view: RoomListView;
 	/** Whether the view differs from the default; marks the button. */
 	isCustomized: boolean;
+	/** Called with the whole next view when a sort or grouping is picked. */
 	onViewChange: (view: RoomListView) => void;
+	/** Classes for the menu's button. */
 	className?: string;
 }
 
@@ -62,6 +66,7 @@ export const RoomListViewMenu = ({
 }: RoomListViewMenuProps) => {
 	const { t } = useTranslation("sidebar");
 	const label = t("view.button");
+	// one radio group picks both the column and the direction
 	const sortValue = `${view.sortBy}:${view.sortDir}`;
 
 	const handleSortChange = (value: string) => {

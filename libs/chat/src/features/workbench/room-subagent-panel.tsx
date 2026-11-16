@@ -12,6 +12,7 @@ import { useRoomSelector } from "../room/use-room-selector";
 
 /** Which subagent a panel is showing. `subagentId` is what dedupes it. */
 interface RoomSubagentParams {
+	/** The spawned subagent's id. */
 	subagentId: string;
 }
 
@@ -41,6 +42,7 @@ const RoomSubagentPanel = ({ id }: WorkbenchPanelProps) => {
 	}
 
 	const state = getSubagentState(subagent.status, subagent, t);
+	// a finished run shows its result, a failed one its error, else its status
 	const body =
 		subagent.status === "COMPLETED"
 			? subagent.resultPreview || t("subagent.noResult")
@@ -83,7 +85,7 @@ const RoomSubagentPanel = ({ id }: WorkbenchPanelProps) => {
 	);
 };
 
-/** One spawned subagent's status and result. */
+/** One spawned subagent's status and result; one tab per subagent. */
 export const ROOM_SUBAGENT_PANEL: WorkbenchPanelConfig<RoomSubagentParams> = {
 	name: "Subagent",
 	icon: ({ className }) => <BotIcon className={className} />,

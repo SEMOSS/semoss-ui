@@ -21,16 +21,18 @@ import { useRoomSelector } from "../room/use-room-selector";
 
 /** Which tool a panel is showing. `toolId` is what dedupes it. */
 interface RoomToolParams {
+	/** The tool call's id. */
 	toolId: string;
+	/** The app that runs the call; empty for a server tool. */
 	app: string;
+	/** The id of the message that made the call. */
 	message: string;
 }
 
 /**
- * Move this tool out of the sidebar and into the conversation.
+ * Moves this tool out of the Workspace and into the conversation.
  *
- * The one piece of the old sidebar's tab-bar chrome that is genuinely
- * per-panel: it acts on the tool the front tab is showing, so it registers as
+ * The one piece of the Workspace's tab chrome that is genuinely per-panel: it acts on the tool the front tab is showing, so it registers as
  * that panel's control rather than sitting beside the container-level actions.
  */
 const RoomToolInlineControl = ({ id }: WorkbenchPanelProps) => {
@@ -55,8 +57,9 @@ const RoomToolInlineControl = ({ id }: WorkbenchPanelProps) => {
 					variant="ghost"
 					className={WORKBENCH_STYLES.chromeButton}
 					aria-label={t("actions.openInline")}
-					onClick={(e) => {
-						e.stopPropagation();
+					onClick={(event) => {
+						// keep the click from selecting the tab it sits on
+						event.stopPropagation();
 						tool.openTool("inline");
 					}}
 				>
@@ -71,6 +74,10 @@ const RoomToolInlineControl = ({ id }: WorkbenchPanelProps) => {
 	);
 };
 
+/**
+ * One tool call, drawn by `ToolsView`, with its "open inline" control
+ * registered on the panel's tab.
+ */
 const RoomToolPanel = ({ id }: WorkbenchPanelProps) => {
 	const { config } = useWorkbenchPanel<RoomToolParams>(id);
 
@@ -94,7 +101,7 @@ const RoomToolPanel = ({ id }: WorkbenchPanelProps) => {
 	);
 };
 
-/** One tool, opened into the room sidebar. */
+/** One tool call, opened into the room's Workspace; one tab per call. */
 export const ROOM_TOOL_PANEL: WorkbenchPanelConfig<RoomToolParams> = {
 	name: "Tool",
 	icon: ({ className }) => <HammerIcon className={className} />,

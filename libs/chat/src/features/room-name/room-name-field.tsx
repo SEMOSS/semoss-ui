@@ -2,13 +2,15 @@ import { type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { cn, Input } from "@semoss/ui/next";
 
+/** Props for {@link RoomNameField}. */
 interface RoomNameFieldProps {
 	/** The room's saved name, which the field starts from. */
 	savedName: string;
 	/**
 	 * Saves a new name.
 	 *
-	 * @return Whether it was saved.
+	 * @param name - The trimmed name the user entered.
+	 * @returns Whether it was saved.
 	 */
 	onRename: (name: string) => Promise<boolean>;
 	/**
@@ -43,6 +45,7 @@ export function RoomNameField({
 		inputRef.current?.focus();
 	}, []);
 
+	// An unchanged name ends the edit without a save; a refused save keeps the field open
 	const handleSave = async (shouldRefocus: boolean) => {
 		if (isSaving.current) return;
 		const name = draftName.trim();

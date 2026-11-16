@@ -15,6 +15,7 @@ type StreamResult<O extends unknown[] | []> = Awaited<
 	ReturnType<typeof getPixelAsyncResult<O>>
 >;
 
+/** What a streaming job tells its caller as it runs. */
 export interface StreamHandlers<O extends unknown[] | []> {
 	/** Fires for each streaming chunk as it arrives. */
 	onEmit: (chunk: StreamChunk) => void;
@@ -29,6 +30,7 @@ export interface StreamHandlers<O extends unknown[] | []> {
 	onCancel?: () => void | Promise<void>;
 }
 
+/** How a streaming job reports loading and failure. */
 export interface StreamOptions {
 	/** Toggle the room's global loading state around the run. Defaults true. */
 	showLoading?: boolean;
@@ -43,9 +45,13 @@ export interface StreamOptions {
 	throwOnError?: boolean;
 }
 
+/** What the controller needs from its room. */
 interface StreamJobDeps {
+	/** The insight to run the jobs in, read at each start. */
 	getInsightId: () => string;
+	/** Set the room's loading state. */
 	setLoading: (isLoading: boolean) => void;
+	/** Surface a failure on the room. */
 	setError: (error: Error) => void;
 	/** `canCancel` or `isCancelling` may have changed. */
 	onChange: () => void;
@@ -53,7 +59,9 @@ interface StreamJobDeps {
 
 /** A cancellable streaming job in flight — enough to abort it and commit. */
 interface ActiveJob {
+	/** The backend job to stop. */
 	jobId: string;
+	/** Records the cancelled turn once the job is stopped. */
 	onCancel: () => void | Promise<void>;
 }
 
@@ -71,7 +79,9 @@ interface ActiveJob {
  * abort each backend job and run its onCancel.
  */
 export class StreamJobController {
+	/** Every cancellable job in flight, by job id. */
 	private activeJobs = new Map<string, ActiveJob>();
+	/** Whether a stop was issued and has not fully drained. */
 	private stopIssued = false;
 	/**
 	 * Number of stop()-owned onCancel commits (the actual cancelled-turn/tool
@@ -85,8 +95,10 @@ export class StreamJobController {
 	 */
 	private pendingCancelCommits = 0;
 
+	/** How long to wait between polls for chunks. */
 	private static readonly POLL_INTERVAL_MS = 500;
 
+	/** @param deps - What the controller needs from its room. */
 	constructor(private readonly deps: StreamJobDeps) {}
 
 	/** A cancellable job is in flight and a stop hasn't already been issued. */
@@ -125,6 +137,12 @@ export class StreamJobController {
 	/**
 	 * Run a streaming pixel job to completion. Passing `onCancel` opts the job
 	 * into cancellation via stop(); otherwise it runs to completion untracked.
+	 *
+	 * @param pixel - The pixel to run.
+	 * @param handlers - Called with each chunk, the result, and on a stop.
+	 * @param options - Loading, error, and throw behavior.
+	 * @returns Once the job has finished, or unwound after a stop.
+	 * @throws Error when the job fails and was not stopped.
 	 */
 	run = async <O extends unknown[] | []>(
 		pixel: string,
@@ -137,7 +155,7 @@ export class StreamJobController {
 			setErrorOnFail = true,
 			throwOnError = true,
 		} = options;
-		const cancellable = onCancel !== undefined;
+		const isCancellable = onCancel !== undefined;
 
 		// Key of this run's entry in activeJobs, set once cancellable + started.
 		let trackedJobId: string | null = null;
@@ -156,7 +174,7 @@ export class StreamJobController {
 				throw new Error("No job ID returned from pixel execution");
 			}
 
-			if (cancellable) {
+			if (isCancellable) {
 				trackedJobId = jobId;
 				this.activeJobs.set(jobId, { jobId, onCancel });
 				this.deps.onChange();
@@ -169,7 +187,7 @@ export class StreamJobController {
 				// stream stops instantly. The unwind is silent: stop() owns firing
 				// onCancel, so run just stops emitting and never reports a result.
 				// Only cancellable runs honor the flag — untracked streams finish.
-				if (cancellable && this.stopIssued) {
+				if (isCancellable && this.stopIssued) {
 					return;
 				}
 
@@ -196,7 +214,7 @@ export class StreamJobController {
 					// either way it won't run further. If we stopped it, unwind
 					// silently and let stop() fire onCancel; otherwise it ended
 					// unexpectedly and there's nothing to fetch.
-					if (cancellable && this.stopIssued) {
+					if (isCancellable && this.stopIssued) {
 						return;
 					}
 					throw new Error(
@@ -226,7 +244,7 @@ export class StreamJobController {
 		} catch (e) {
 			// A stop that lands while a request is in flight surfaces here — unwind
 			// silently and let stop() fire onCancel, not the room error path.
-			if (cancellable && this.stopIssued) {
+			if (isCancellable && this.stopIssued) {
 				return;
 			}
 
