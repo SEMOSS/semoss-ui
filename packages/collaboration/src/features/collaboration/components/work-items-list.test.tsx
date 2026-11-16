@@ -33,6 +33,8 @@ const insight = vi.hoisted(() => ({
 	looseSteps: [] as Record<string, unknown>[],
 	totals: {} as Record<string, number>,
 	done: [] as Record<string, unknown>[],
+	// WorkGetWork results by task id
+	works: {} as Record<string, Record<string, unknown>>,
 	actions: {
 		// one result per statement, as a batch gets
 		run: vi.fn(async (statement: string) => ({
@@ -49,7 +51,11 @@ const insight = vi.hoisted(() => ({
 								looseSteps: insight.looseSteps,
 								...insight.totals,
 							}
-						: true,
+						: part.startsWith("WorkGetWork")
+							? (insight.works[
+									/taskId=\["([^"]*)"\]/.exec(part)?.[1] ?? ""
+								] ?? {})
+							: true,
 					operationType: ["OPERATION"],
 				})),
 		})),
@@ -76,6 +82,7 @@ beforeEach(() => {
 	insight.looseSteps = [];
 	insight.totals = {};
 	insight.done = [];
+	insight.works = {};
 });
 
 afterEach(() => {
@@ -610,4 +617,68 @@ it("loads finished work only when opened, leaves out dismissed items, and reopen
 			pixel("WorkSaveWork", { taskId: "d1", status: "active" }),
 		),
 	);
+});
+
+const recent = () =>
+	new Date(Date.now() - 86_400_000)
+		.toISOString()
+		.slice(0, 19)
+		.replace("T", " ");
+
+it("lists steps a message closed only when opened, and reopens one", async () => {
+	insight.workItems = [
+		workItem("w1", {
+			stepCount: 2,
+			updatedAt: recent(),
+			openSteps: [{ id: "s0", text: "Still open", status: "open" }],
+		}),
+		workItem("w2", { stepCount: 1, updatedAt: "2020-01-01 00:00:00" }),
+	];
+	insight.works = {
+		w1: {
+			steps: [
+				{
+					id: "s1",
+					text: "Send Kira the deck",
+					status: "done",
+					closedBy: "c-1",
+					closedText: "Sent the deck over",
+					closedSubject: "Deck for Friday",
+				},
+				{ id: "s2", text: "Mine", status: "done", closedBy: "owner" },
+			],
+		},
+	};
+	await renderWork();
+	expect(ran().some((s) => s.startsWith("WorkGetWork"))).toBe(false);
+	await userEvent.click(
+		screen.getByRole("button", { name: "Closed for you" }),
+	);
+	const closed = within(
+		await screen.findByRole("list", { name: "Steps closed for you" }),
+	);
+	expect(closed.getByText("Send Kira the deck")).toBeVisible();
+	expect(closed.getByText(/Deck for Friday/)).toBeVisible();
+	expect(closed.getByText("Sent the deck over")).toBeVisible();
+	expect(closed.queryByText("Mine")).toBeNull();
+	// the stale item is never read in full
+	expect(ran()).not.toContain(pixel("WorkGetWork", { taskId: "w2" }));
+	await userEvent.click(
+		closed.getByRole("button", { name: "Reopen step Send Kira the deck" }),
+	);
+	await waitFor(() =>
+		expect(ran()).toContain(
+			pixel("WorkUpdateStep", { stepId: "s1", status: "open" }),
+		),
+	);
+});
+
+it("says so when no message closed a step", async () => {
+	await renderWork();
+	await userEvent.click(
+		screen.getByRole("button", { name: "Closed for you" }),
+	);
+	expect(
+		await screen.findByText(/No messages closed a step for you/),
+	).toBeVisible();
 });

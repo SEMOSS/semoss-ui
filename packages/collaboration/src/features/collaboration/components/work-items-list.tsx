@@ -66,6 +66,7 @@ import {
 	useWorkChanged,
 } from "../state/collaboration-session.context";
 import { offerStepUndo } from "../work-item-actions";
+import { ClosedForYou } from "./closed-for-you";
 import { CollaborationHeroHeader } from "./collaboration-hero-header";
 import { CollaborationHeroPage } from "./collaboration-hero-page";
 import { NewWorkItemDialog } from "./new-work-item-dialog";
@@ -1550,6 +1551,7 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 					</BriefPanel>
 					{singleSteps}
 					<DoneWork />
+					<ClosedForYou />
 				</div>
 				<div className="@5xl:col-span-4 min-w-0">
 					<WorkWaitingOn
