@@ -35,7 +35,7 @@ import {
 import { getErrorMessage } from "@semoss/utility/error";
 import { WorkspaceChatList } from "@/components/workspace/workspace-chat-list";
 import { getPlaygroundAgentLinks } from "@/features/agents/agent-links";
-import { useRoot } from "@/hooks/use-root";
+import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
 
 /**
  * Renders the Workspace (Agent) Detail Page.
@@ -52,7 +52,7 @@ export const WorkspaceDetailPage = observer(() => {
 	const { workspaceId } = useParams<{ workspaceId: string }>();
 	const navigate = useNavigate();
 	const { chat } = useChatSession();
-	const { root } = useRoot();
+	const theme = usePlaygroundTheme();
 
 	const [isDeleting, setIsDeleting] = useState(false);
 	const [deleteModal, setDeleteModal] = useState(false);
@@ -208,7 +208,7 @@ export const WorkspaceDetailPage = observer(() => {
 						<AgentDefinition
 							workspace={definition}
 							{...getPlaygroundAgentLinks(
-								root.theme.featureFlags?.showPlatformLinks,
+								theme.featureFlags?.showPlatformLinks,
 							)}
 						/>
 					</section>

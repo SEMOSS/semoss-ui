@@ -26,11 +26,6 @@ vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
 vi.mock("react-router", () => ({ useNavigate: () => mocks.navigate }));
-vi.mock("@/hooks/use-root", () => ({
-	useRoot: () => ({
-		root: { theme: { featureFlags: {}, defaultEmbedderId: "embedder" } },
-	}),
-}));
 vi.mock("@semoss/sdk/react", async (original) => ({
 	...(await original<typeof import("@semoss/sdk/react")>()),
 	usePixel: mockPixel,

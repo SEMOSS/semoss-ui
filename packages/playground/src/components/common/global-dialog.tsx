@@ -10,18 +10,18 @@ import {
 	DialogTitle,
 	useCacheState,
 } from "@semoss/ui/next";
-import { useRoot } from "@/hooks/use-root";
+import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
 
 export const GlobalDialog: React.FC<{ onAcknowledge?: () => void }> = observer(
 	({ onAcknowledge }) => {
 		const { t } = useTranslation("common");
-		const { root } = useRoot();
+		const theme = usePlaygroundTheme();
 		const [visible, setVisible] = useCacheState(
 			true,
-			`global-dialog--${root.theme.dialog?.key}`,
+			`global-dialog--${theme.dialog?.key}`,
 		);
 
-		if (!root.theme.dialog || !visible) {
+		if (!theme.dialog || !visible) {
 			return null;
 		}
 
@@ -32,13 +32,13 @@ export const GlobalDialog: React.FC<{ onAcknowledge?: () => void }> = observer(
 					showCloseButton={false}
 				>
 					<DialogHeader>
-						<DialogTitle>{root.theme.dialog.title}</DialogTitle>
+						<DialogTitle>{theme.dialog.title}</DialogTitle>
 					</DialogHeader>
 					<div
 						className="overflow-y-auto"
 						// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
 						dangerouslySetInnerHTML={{
-							__html: root.theme.dialog.content,
+							__html: theme.dialog.content,
 						}}
 					/>
 					<DialogFooter>

@@ -1,11 +1,11 @@
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useRoot } from "@/hooks/use-root";
+import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
 
 export const GlobalFooter: React.FC = observer(() => {
-	const { root } = useRoot();
+	const theme = usePlaygroundTheme();
 
-	if (!root.theme.footer) {
+	if (!theme.footer) {
 		return null;
 	}
 
@@ -14,7 +14,7 @@ export const GlobalFooter: React.FC = observer(() => {
 			className="flex min-h-10 w-full shrink-0 flex-wrap items-center border-t bg-background px-4 py-2 text-muted-foreground text-xs"
 			// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
 			dangerouslySetInnerHTML={{
-				__html: root.theme.footer,
+				__html: theme.footer,
 			}}
 		></footer>
 	);

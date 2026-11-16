@@ -18,7 +18,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { getPlaygroundAgentLinks } from "@/features/agents/agent-links";
-import { useRoot } from "@/hooks/use-root";
+import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
 
 /**
  * Renders the NewWorkspacePage for creating new agents.
@@ -36,8 +36,8 @@ export const NewWorkspacePage = observer(() => {
 	]);
 	const navigate = useNavigate();
 	const { chat } = useChatSession();
-	const { root } = useRoot();
-	const featureFlags = root.theme.featureFlags;
+	const theme = usePlaygroundTheme();
+	const featureFlags = theme.featureFlags;
 
 	const [formValues, setFormValues] = useState<AgentFormValues>(
 		AGENT_FORM_DEFAULT_VALUES,

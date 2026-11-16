@@ -22,7 +22,7 @@ import {
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import { getPlaygroundAgentLinks } from "@/features/agents/agent-links";
-import { useRoot } from "@/hooks/use-root";
+import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
 
 /** The values the form was seeded with, and the agent they belong to. */
 interface AgentFormSeed {
@@ -44,8 +44,8 @@ export const EditWorkspacePage = observer(() => {
 	const { workspaceId } = useParams<{ workspaceId: string }>();
 	const navigate = useNavigate();
 	const { chat } = useChatSession();
-	const { root } = useRoot();
-	const featureFlags = root.theme.featureFlags;
+	const theme = usePlaygroundTheme();
+	const featureFlags = theme.featureFlags;
 
 	const [seed, setSeed] = useState<AgentFormSeed | null>(null);
 	const [formValues, setFormValues] = useState<AgentFormValues | null>(null);

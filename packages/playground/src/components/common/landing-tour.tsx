@@ -14,7 +14,7 @@ import {
 	DialogDescription,
 	DialogTitle,
 } from "@semoss/ui/next";
-import { useRoot } from "@/hooks/use-root";
+import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
 import { useTour } from "@/hooks/use-tour";
 
 interface TourStep {
@@ -123,15 +123,15 @@ function getCardStyle(
 export const LandingTour: React.FC = observer(() => {
 	const { t } = useTranslation("tour");
 	const { isOpen, stopTour } = useTour();
-	const { root } = useRoot();
+	const theme = usePlaygroundTheme();
 	const [step, setStep] = useState(0);
 	const [rect, setRect] = useState<DOMRect | null>(null);
 
 	const allSteps = useMemo<TourStep[]>(() => {
-		const excluded = new Set(root.theme.tour?.excludedSteps ?? []);
-		const custom = root.theme.tour?.customSteps ?? [];
-		const trailing = root.theme.tour?.trailingCustomSteps ?? [];
-		const overrides = root.theme.tour?.stepOverrides ?? {};
+		const excluded = new Set(theme.tour?.excludedSteps ?? []);
+		const custom = theme.tour?.customSteps ?? [];
+		const trailing = theme.tour?.trailingCustomSteps ?? [];
+		const overrides = theme.tour?.stepOverrides ?? {};
 		// Theme overrides are keyed by the step target (or "welcome").
 		// Translation keys live under `steps.<key>.title|content`.
 		const base = TOUR_STEP_DEFS.filter((s) => {
@@ -173,10 +173,10 @@ export const LandingTour: React.FC = observer(() => {
 		];
 	}, [
 		t,
-		root.theme.tour?.excludedSteps,
-		root.theme.tour?.customSteps,
-		root.theme.tour?.trailingCustomSteps,
-		root.theme.tour?.stepOverrides,
+		theme.tour?.excludedSteps,
+		theme.tour?.customSteps,
+		theme.tour?.trailingCustomSteps,
+		theme.tour?.stepOverrides,
 	]);
 
 	const currentStep = allSteps[step] ?? allSteps[0];
@@ -209,7 +209,7 @@ export const LandingTour: React.FC = observer(() => {
 		};
 	}, [isOpen, currentStep?.target]);
 
-	if (root.theme.tour?.show === false || !isOpen || !currentStep) return null;
+	if (theme.tour?.show === false || !isOpen || !currentStep) return null;
 
 	const cardStyle = getCardStyle(rect, currentStep.placement);
 

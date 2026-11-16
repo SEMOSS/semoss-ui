@@ -25,7 +25,7 @@ import {
 	useTheme,
 } from "@semoss/ui/next";
 import { WorkspaceCard } from "@/components/workspace/workspace-card";
-import { useRoot } from "@/hooks/use-root";
+import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
 
 /**
  * The filters offered, in display order. The access filters keep the agents
@@ -115,7 +115,7 @@ const toCardPermission = (app: App): "OWNER" | "EDIT" | "READ_ONLY" =>
 export const WorkspacePage = observer(() => {
 	const { t } = useTranslation(["workspace", "notifications", "common"]);
 	const navigate = useNavigate();
-	const { root } = useRoot();
+	const theme = usePlaygroundTheme();
 	const { theme: colorMode } = useTheme();
 
 	const [filters, setFilters] = useState<AgentFilter[]>([]);
@@ -163,9 +163,7 @@ export const WorkspacePage = observer(() => {
 		(colorMode === "system" &&
 			window.matchMedia("(prefers-color-scheme: dark)").matches);
 
-	const src = isDark
-		? root.theme.images.workspaceDark
-		: root.theme.images.workspace;
+	const src = isDark ? theme.images.workspaceDark : theme.images.workspace;
 
 	return (
 		<div

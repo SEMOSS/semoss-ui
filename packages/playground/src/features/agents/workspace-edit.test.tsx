@@ -37,9 +37,6 @@ vi.mock("react-router", async (original) => ({
 	useParams: () => ({ workspaceId: mocks.workspaceId }),
 	useNavigate: () => mocks.navigate,
 }));
-vi.mock("@/hooks/use-root", () => ({
-	useRoot: () => ({ root: { theme: { featureFlags: {} } } }),
-}));
 vi.mock("@semoss/sdk", async (original) => ({
 	...(await original<typeof import("@semoss/sdk")>()),
 	getUserProjectPermission: async () => "OWNER",

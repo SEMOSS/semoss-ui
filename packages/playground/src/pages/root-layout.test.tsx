@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { useRoot } from "@/hooks/use-root";
+import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
 import { InitializedLayout } from "./initialized-layout";
 import { RootLayout } from "./root-layout";
 
@@ -25,8 +25,8 @@ afterEach(() => {
 });
 
 function RootConsumer() {
-	const { root } = useRoot();
-	return <h1>{root.theme.name || "Default Playground"}</h1>;
+	const theme = usePlaygroundTheme();
+	return <h1>{theme.name || "Default Playground"}</h1>;
 }
 
 describe("Playground initialization", () => {

@@ -16,7 +16,7 @@ import {
 } from "@semoss/ui/next";
 import { MobileNavigationClose } from "@/features/navigation/mobile-navigation-close";
 import { NavigationToggle } from "@/features/navigation/navigation-toggle";
-import { useRoot } from "@/hooks/use-root";
+import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
 import { AppLogo } from "./app-logo";
 import { GlobalNavItem } from "./global-nav-item";
 import { NavUser } from "./nav-user";
@@ -35,11 +35,11 @@ try {
  */
 export const GlobalNav = observer(() => {
 	const { t } = useTranslation("sidebar");
-	const { root } = useRoot();
+	const theme = usePlaygroundTheme();
 	const [isSearchOpen, setIsSearchOpen] = useState(false);
 	const [helpOpen, setHelpOpen] = useState(false);
 	const { open, openMobile, isMobile } = useSidebar();
-	const hideChatHistory = !!root.theme.featureFlags?.hideChatHistory;
+	const hideChatHistory = !!theme.featureFlags?.hideChatHistory;
 	// True when the sidebar is actually visible to the user.
 	// Desktop: tracks the expand/collapse state (`open`).
 	// Mobile: tracks the Sheet's open state (`openMobile`) — the Sheet
@@ -98,7 +98,7 @@ export const GlobalNav = observer(() => {
 					</SidebarMenu>
 
 					<SidebarMenu className="max-h-[45vh] gap-2 overflow-y-auto p-2">
-						{root.theme.featureFlags?.hideToolsInIframe &&
+						{theme.featureFlags?.hideToolsInIframe &&
 						isIframed ? null : (
 							<>
 								<SidebarMenuItem data-tour="tour-new-chat">
@@ -120,7 +120,7 @@ export const GlobalNav = observer(() => {
 									</SidebarMenuButton>
 								</SidebarMenuItem>
 
-								{root.theme.featureFlags?.enableAgent && (
+								{theme.featureFlags?.enableAgent && (
 									<SidebarMenuItem>
 										<SidebarMenuButton
 											asChild
@@ -144,7 +144,7 @@ export const GlobalNav = observer(() => {
 									</SidebarMenuItem>
 								)}
 
-								{root.theme.sidebar.headerItems.map(
+								{theme.sidebar.headerItems.map(
 									(item, index) => (
 										<GlobalNavItem
 											key={`header-${item.name}-${index}`}
@@ -172,7 +172,7 @@ export const GlobalNav = observer(() => {
 				<SidebarFooter>
 					<Separator className="group-data-[collapsible=icon]:hidden" />
 					<SidebarMenu className="gap-2 p-2">
-						{root.theme.sidebar.footerItems.length > 0 && (
+						{theme.sidebar.footerItems.length > 0 && (
 							// biome-ignore lint/a11y/useSemanticElements: keeping div for layout reasons
 							<div
 								className="relative group-data-[collapsible=icon]:hidden"
@@ -196,7 +196,7 @@ export const GlobalNav = observer(() => {
 								{helpOpen && (
 									<div className="absolute start-0 bottom-full z-50 w-full rounded-md border bg-popover p-1 shadow-md">
 										<SidebarMenu>
-											{root.theme.sidebar.footerItems.map(
+											{theme.sidebar.footerItems.map(
 												(item) => (
 													<GlobalNavItem
 														key={item.path}

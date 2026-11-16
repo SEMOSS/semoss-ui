@@ -6,13 +6,13 @@ import { Chat, type ChatConfig, type ChatStore } from "@semoss/chat";
 import { WorkspacePage } from "./workspace-page";
 
 const mocks = vi.hoisted(() => ({ pixel: "", navigate: vi.fn() }));
+vi.mock("@/hooks/use-playground-theme", () => ({
+	usePlaygroundTheme: () => ({ images: {} }),
+}));
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
 vi.mock("react-router", () => ({ useNavigate: () => mocks.navigate }));
-vi.mock("@/hooks/use-root", () => ({
-	useRoot: () => ({ root: { theme: { images: {} } } }),
-}));
 vi.mock("@semoss/ui/next", async (original) => ({
 	...(await original<typeof import("@semoss/ui/next")>()),
 	useTheme: () => ({ theme: "light" }),
