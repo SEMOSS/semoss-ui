@@ -1379,176 +1379,183 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 			) : null}
 			<div className="grid @5xl:grid-cols-12 grid-cols-1 gap-6">
 				<div className="@5xl:col-span-8 min-w-0">
-					<BriefPanel
-						title="Your priorities"
-						count={mine.length}
-						detail={
-							sharedTopic ? (
-								<ItemTopicChip item={sharedTopic} />
-							) : undefined
-						}
-					>
-						{mine.length ? (
-							<Tabs
-								value={view}
-								onValueChange={(value) => {
-									if (
-										value === "all" ||
-										value === "next" ||
-										value === "waiting"
-									)
-										setView(value);
-								}}
-								className="gap-0"
-							>
-								<div className="flex items-end justify-between gap-4 border-b">
-									<TabsList className="h-auto justify-start gap-6 rounded-none bg-transparent p-0">
-										{(
-											[
-												["all", "All work", mine],
+					{/* its own block: the panel fills its parent, and the column also holds the lists below it */}
+					<div>
+						<BriefPanel
+							title="Your priorities"
+							count={mine.length}
+							detail={
+								sharedTopic ? (
+									<ItemTopicChip item={sharedTopic} />
+								) : undefined
+							}
+						>
+							{mine.length ? (
+								<Tabs
+									value={view}
+									onValueChange={(value) => {
+										if (
+											value === "all" ||
+											value === "next" ||
+											value === "waiting"
+										)
+											setView(value);
+									}}
+									className="gap-0"
+								>
+									<div className="flex items-end justify-between gap-4 border-b">
+										<TabsList className="h-auto justify-start gap-6 rounded-none bg-transparent p-0">
+											{(
 												[
-													"next",
-													"Next steps",
-													withNext,
-												],
-												["waiting", "Waiting", waiting],
-											] as const
-										).map(([value, label, rows]) => (
-											<TabsTrigger
-												key={value}
-												value={value}
-												ref={
-													value === "waiting"
-														? waitingTab
-														: undefined
-												}
-												// an underlined tab instead of the pill: the line sits on the rule under the row
-												className="-mb-px h-auto pointer-coarse:min-h-11 flex-none gap-2 rounded-none border-0 border-transparent border-b-2 px-0 pt-1 pb-3 font-normal text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:font-medium data-[state=active]:text-primary data-[state=active]:shadow-none dark:data-[state=active]:border-primary dark:data-[state=active]:bg-transparent dark:data-[state=active]:text-foreground"
-											>
-												{/* the space is for the tab's spoken name; the gap spaces them on screen */}
-												{label}{" "}
-												<span className="text-xs tabular-nums">
-													{rows.length}
-												</span>
-											</TabsTrigger>
-										))}
-									</TabsList>
-									<span className="hidden shrink-0 items-center gap-1.5 pb-3 text-muted-foreground text-xs sm:flex">
-										<ArrowUpDown
+													["all", "All work", mine],
+													[
+														"next",
+														"Next steps",
+														withNext,
+													],
+													[
+														"waiting",
+														"Waiting",
+														waiting,
+													],
+												] as const
+											).map(([value, label, rows]) => (
+												<TabsTrigger
+													key={value}
+													value={value}
+													ref={
+														value === "waiting"
+															? waitingTab
+															: undefined
+													}
+													// an underlined tab instead of the pill: the line sits on the rule under the row
+													className="-mb-px h-auto pointer-coarse:min-h-11 flex-none gap-2 rounded-none border-0 border-transparent border-b-2 px-0 pt-1 pb-3 font-normal text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:font-medium data-[state=active]:text-primary data-[state=active]:shadow-none dark:data-[state=active]:border-primary dark:data-[state=active]:bg-transparent dark:data-[state=active]:text-foreground"
+												>
+													{/* the space is for the tab's spoken name; the gap spaces them on screen */}
+													{label}{" "}
+													<span className="text-xs tabular-nums">
+														{rows.length}
+													</span>
+												</TabsTrigger>
+											))}
+										</TabsList>
+										<span className="hidden shrink-0 items-center gap-1.5 pb-3 text-muted-foreground text-xs sm:flex">
+											<ArrowUpDown
+												aria-hidden="true"
+												className="size-3.5"
+											/>
+											In your order
+										</span>
+									</div>
+									<TabsContent value={view}>
+										{shownNeedsYou.length ||
+										shownAlsoAsked.length ? (
+											<>
+												{shownNeedsYou.length ||
+												view === "all" ? (
+													<section aria-label="Needs you">
+														{groupHeading(
+															"Needs you",
+															shownNeedsYou.length,
+														)}
+														{shownNeedsYou.length ? (
+															rows(
+																shownNeedsYou,
+																"Your work items",
+															)
+														) : (
+															<P className="py-4 text-muted-foreground text-sm">
+																Nothing needs
+																you right now.
+															</P>
+														)}
+													</section>
+												) : null}
+												{shownAlsoAsked.length ? (
+													<section aria-label="Also asked of you">
+														{groupHeading(
+															"Also asked of you",
+															shownAlsoAsked.length,
+															"From conversations filed as for your information or waiting on someone else, or from people you have not worked with.",
+														)}
+														{rows(
+															shownAlsoAsked,
+															"Also asked of you",
+														)}
+													</section>
+												) : null}
+											</>
+										) : (
+											<P className="py-6 text-muted-foreground text-sm">
+												{EMPTY_VIEW[view]}
+											</P>
+										)}
+									</TabsContent>
+								</Tabs>
+							) : (
+								<P className="text-muted-foreground text-sm">
+									{review.length
+										? "Review the new items to start your list."
+										: looseSteps.length
+											? "No work items yet. Your single steps are below."
+											: "No work items yet. They come from your mail and chats, or ask in chat to add one."}
+								</P>
+							)}
+							{others.length ? (
+								<div className="border-t">
+									<button
+										type="button"
+										aria-expanded={showOthers}
+										onClick={() => setShowOthers((v) => !v)}
+										className="flex w-full items-center gap-2 rounded-sm py-3 text-left text-muted-foreground text-sm hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+									>
+										<ChevronDown
 											aria-hidden="true"
-											className="size-3.5"
+											className={cn(
+												"size-4 transition-transform motion-reduce:transition-none",
+												showOthers && "rotate-180",
+											)}
 										/>
-										In your order
+										{others.length} item
+										{others.length === 1 ? "" : "s"} other
+										people are driving
+									</button>
+									{showOthers ? (
+										<ul
+											aria-label="Work other people are driving"
+											className="divide-y divide-border border-t"
+										>
+											{others.map((item) => (
+												<ItemRow
+													key={item.id}
+													item={item}
+													isMine={isMine}
+													showTopic
+												/>
+											))}
+										</ul>
+									) : null}
+								</div>
+							) : null}
+							<CutShort
+								shown={items.length}
+								total={totals.workItems}
+							/>
+							{mine.length ? (
+								<div className="mt-auto flex flex-wrap justify-between gap-x-4 gap-y-1 border-t pt-4 text-muted-foreground text-xs">
+									<span>
+										{mine.length > 1
+											? "Drag the handle to arrange your priorities, or use a row's menu"
+											: ""}
+									</span>
+									<span className="tabular-nums">
+										{mine.length} active work item
+										{mine.length === 1 ? "" : "s"}
 									</span>
 								</div>
-								<TabsContent value={view}>
-									{shownNeedsYou.length ||
-									shownAlsoAsked.length ? (
-										<>
-											{shownNeedsYou.length ||
-											view === "all" ? (
-												<section aria-label="Needs you">
-													{groupHeading(
-														"Needs you",
-														shownNeedsYou.length,
-													)}
-													{shownNeedsYou.length ? (
-														rows(
-															shownNeedsYou,
-															"Your work items",
-														)
-													) : (
-														<P className="py-4 text-muted-foreground text-sm">
-															Nothing needs you
-															right now.
-														</P>
-													)}
-												</section>
-											) : null}
-											{shownAlsoAsked.length ? (
-												<section aria-label="Also asked of you">
-													{groupHeading(
-														"Also asked of you",
-														shownAlsoAsked.length,
-														"From conversations filed as for your information or waiting on someone else, or from people you have not worked with.",
-													)}
-													{rows(
-														shownAlsoAsked,
-														"Also asked of you",
-													)}
-												</section>
-											) : null}
-										</>
-									) : (
-										<P className="py-6 text-muted-foreground text-sm">
-											{EMPTY_VIEW[view]}
-										</P>
-									)}
-								</TabsContent>
-							</Tabs>
-						) : (
-							<P className="text-muted-foreground text-sm">
-								{review.length
-									? "Review the new items to start your list."
-									: looseSteps.length
-										? "No work items yet. Your single steps are below."
-										: "No work items yet. They come from your mail and chats, or ask in chat to add one."}
-							</P>
-						)}
-						{others.length ? (
-							<div className="border-t">
-								<button
-									type="button"
-									aria-expanded={showOthers}
-									onClick={() => setShowOthers((v) => !v)}
-									className="flex w-full items-center gap-2 rounded-sm py-3 text-left text-muted-foreground text-sm hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
-								>
-									<ChevronDown
-										aria-hidden="true"
-										className={cn(
-											"size-4 transition-transform motion-reduce:transition-none",
-											showOthers && "rotate-180",
-										)}
-									/>
-									{others.length} item
-									{others.length === 1 ? "" : "s"} other
-									people are driving
-								</button>
-								{showOthers ? (
-									<ul
-										aria-label="Work other people are driving"
-										className="divide-y divide-border border-t"
-									>
-										{others.map((item) => (
-											<ItemRow
-												key={item.id}
-												item={item}
-												isMine={isMine}
-												showTopic
-											/>
-										))}
-									</ul>
-								) : null}
-							</div>
-						) : null}
-						<CutShort
-							shown={items.length}
-							total={totals.workItems}
-						/>
-						{mine.length ? (
-							<div className="mt-auto flex flex-wrap justify-between gap-x-4 gap-y-1 border-t pt-4 text-muted-foreground text-xs">
-								<span>
-									{mine.length > 1
-										? "Drag the handle to arrange your priorities, or use a row's menu"
-										: ""}
-								</span>
-								<span className="tabular-nums">
-									{mine.length} active work item
-									{mine.length === 1 ? "" : "s"}
-								</span>
-							</div>
-						) : null}
-					</BriefPanel>
+							) : null}
+						</BriefPanel>
+					</div>
 					{singleSteps}
 					<DoneWork />
 					<ClosedForYou />
