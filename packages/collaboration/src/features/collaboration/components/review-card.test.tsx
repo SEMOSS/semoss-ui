@@ -143,3 +143,14 @@ it("undoes an answered topic question", async () => {
 	fireEvent.click(screen.getByRole("button", { name: "Undo" }));
 	expect(screen.getByRole("status")).toHaveTextContent("open");
 });
+
+it("says who the conversation is with and offers a topic the question did not name", () => {
+	renderChoice((state) => {
+		const review = state.reviews.find((r) => r.id === "r2");
+		if (review) review.candidates = ["t-gsales"];
+	});
+	expect(screen.getByText(/message/)).toHaveTextContent(/^With /);
+	expect(
+		screen.getByRole("combobox", { name: /^Another topic for / }),
+	).toBeVisible();
+});

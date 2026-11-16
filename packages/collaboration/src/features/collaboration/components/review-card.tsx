@@ -13,6 +13,7 @@ import {
 	SelectValue,
 	Small,
 } from "@semoss/ui/next";
+import { dateLabel } from "../date-label";
 import { topicChoiceCandidates } from "../state/collaboration.selectors";
 import type { ReviewEntry } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
@@ -63,6 +64,52 @@ export function ReviewCard({
 					return topic ? [topic] : [];
 				})
 			: [];
+	// any other topic in use: the question's candidates are not the only answer
+	const otherTopics =
+		review.kind === "topic_choice" && thread
+			? state.topics.filter(
+					(topic) =>
+						topic.status === "active" &&
+						topic.isSample === thread.isSample &&
+						!choices.some((choice) => choice.id === topic.id),
+				)
+			: [];
+	// who is on the conversation, so "Quick question" can be answered without opening it
+	const who = thread
+		? thread.participants
+				.map((participant) => ({
+					participant,
+					person: state.people.find(
+						(person) => person.id === participant.personId,
+					),
+				}))
+				.filter(({ person }) => person?.relationship !== "self")
+				.map(
+					({ participant, person }) =>
+						person?.name ?? participant.name,
+				)
+				.filter((name): name is string => !!name)
+		: [];
+	const fileElsewhere = (topicId: string): void => {
+		if (!thread) return;
+		dispatch({
+			type: "review.resolve",
+			reviewId: review.id,
+			decision: "dismiss",
+		});
+		dispatch({
+			type: "thread.link",
+			threadId: thread.id,
+			topicId,
+			operation: "add",
+		});
+		dispatch({
+			type: "thread.link",
+			threadId: thread.id,
+			topicId,
+			operation: "primary",
+		});
+	};
 	const resolve = (
 		decision: "accept" | "dismiss" | "both" | "merge",
 		targetTopicId?: string,
@@ -130,6 +177,19 @@ export function ReviewCard({
 				{review.detail && (
 					<Small className="font-normal text-muted-foreground text-xs leading-5">
 						{review.detail}
+					</Small>
+				)}
+				{review.kind === "topic_choice" && thread && !compact && (
+					<Small className="block font-normal text-muted-foreground text-xs leading-5">
+						{[
+							who.length
+								? `With ${who.slice(0, 3).join(", ")}${who.length > 3 ? ` and ${who.length - 3} more` : ""}`
+								: "",
+							dateLabel(thread.lastAt),
+							`${thread.messageCount} message${thread.messageCount === 1 ? "" : "s"}`,
+						]
+							.filter(Boolean)
+							.join(" \u00b7 ")}
 					</Small>
 				)}
 				{/* what the thread is about, so the owner can answer without opening it */}
@@ -248,6 +308,27 @@ export function ReviewCard({
 									Add to an existing topic
 								</Button>
 							</div>
+						)}
+						{otherTopics.length > 0 && (
+							<Select value="" onValueChange={fileElsewhere}>
+								<SelectTrigger
+									aria-label={`Another topic for ${thread?.subject ?? "this conversation"}`}
+									size="sm"
+									className="w-44"
+								>
+									<SelectValue placeholder="Another topic" />
+								</SelectTrigger>
+								<SelectContent>
+									{otherTopics.map((topic) => (
+										<SelectItem
+											key={topic.id}
+											value={topic.id}
+										>
+											{topic.short || topic.name}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
 						)}
 						<Button
 							variant="ghost"
