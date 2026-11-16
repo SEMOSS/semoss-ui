@@ -314,7 +314,13 @@ equivalents. Only visible viewers publish (`isVisible` defaults to true); hosts 
 scoped to their provider/tab and own registration, retention, and navigation. Omitting the callback restores existing viewer
 controls, including in compact host layouts. Mail detail links use only a matching loaded
 message, or the newest loaded matching thread message, validated as an absolute HTTPS URL;
-there is no mailbox-home fallback. Retained detail `focusRequestId` values request heading
+there is no mailbox-home fallback. Every link out to a service's own app passes through
+`safeHttpsUrl` and is shown only when it is an absolute HTTPS URL: the `ConnectorActionBar`,
+`ConnectorItemMenu` (and `hasItemActions`), `ConnectorFileExplorer` and `ToolOutcomePanel`
+check the `webUrl` they are given, `useConnectorControls` publishes only such an `openIn`, and
+an event's Join Meeting link and a compose receipt's link are checked where they are drawn.
+So Teams chats, channel threads, message search hits and files, OneDrive, mail and calendar
+all share the one check. Retained detail `focusRequestId` values request heading
 focus on each open/reopen, while browser `focusItem` restores the originating row or focuses
 the list when the row is gone (the browser container in empty/error states). Hidden viewers
 do not move focus. Omitting these optional host APIs preserves inline detail
