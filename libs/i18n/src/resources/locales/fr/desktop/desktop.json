@@ -1,0 +1,21 @@
+{
+	"connect": {
+		"title": "Se connecter à SEMOSS",
+		"description": "Saisissez l'adresse de votre serveur SEMOSS. Vous pourrez la modifier plus tard via Fichier > Changer de serveur.",
+		"urlLabel": "Adresse du serveur",
+		"moduleLabel": "Chemin du module",
+		"moduleHint": "La plupart des serveurs utilisent /Monolith.",
+		"submit": "Se connecter",
+		"checking": "Vérification du serveur…",
+		"cancel": "Annuler",
+		"current": "Connecté à {{server}}"
+	},
+	"nav": {
+		"newChat": "Nouvelle discussion"
+	},
+	"account": {
+		"menu": "Compte",
+		"changeServer": "Changer de serveur",
+		"signOut": "Se déconnecter"
+	}
+}

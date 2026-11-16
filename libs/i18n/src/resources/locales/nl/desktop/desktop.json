@@ -1,0 +1,21 @@
+{
+	"connect": {
+		"title": "Verbinden met SEMOSS",
+		"description": "Voer het adres van uw SEMOSS-server in. U kunt het later wijzigen via Bestand > Server wijzigen.",
+		"urlLabel": "Serveradres",
+		"moduleLabel": "Modulepad",
+		"moduleHint": "De meeste servers gebruiken /Monolith.",
+		"submit": "Verbinden",
+		"checking": "Server wordt gecontroleerd…",
+		"cancel": "Annuleren",
+		"current": "Verbonden met {{server}}"
+	},
+	"nav": {
+		"newChat": "Nieuwe chat"
+	},
+	"account": {
+		"menu": "Account",
+		"changeServer": "Server wijzigen",
+		"signOut": "Afmelden"
+	}
+}

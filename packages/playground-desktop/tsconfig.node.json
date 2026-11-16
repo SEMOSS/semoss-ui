@@ -1,0 +1,17 @@
+{
+	"extends": "@semoss/config/tsconfig.base.json",
+	"compilerOptions": {
+		"types": ["node", "vitest/globals"],
+		"lib": ["ES2023"],
+		"strict": true,
+		"jsx": "preserve"
+	},
+	"include": [
+		"src/main",
+		"src/preload",
+		"src/contract",
+		"electron.vite.config.ts",
+		"vitest.config.ts"
+	],
+	"exclude": ["dist", "out", "node_modules"]
+}

@@ -1,0 +1,21 @@
+{
+	"connect": {
+		"title": "الاتصال بـ SEMOSS",
+		"description": "أدخل عنوان خادم SEMOSS. يمكنك تغييره لاحقًا من ملف > تغيير الخادم.",
+		"urlLabel": "عنوان الخادم",
+		"moduleLabel": "مسار الوحدة",
+		"moduleHint": "تستخدم معظم الخوادم ‎/Monolith.",
+		"submit": "اتصال",
+		"checking": "جارٍ التحقق من الخادم…",
+		"cancel": "إلغاء",
+		"current": "متصل بـ {{server}}"
+	},
+	"nav": {
+		"newChat": "محادثة جديدة"
+	},
+	"account": {
+		"menu": "الحساب",
+		"changeServer": "تغيير الخادم",
+		"signOut": "تسجيل الخروج"
+	}
+}
