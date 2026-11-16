@@ -1,20 +1,16 @@
 import { useStoreSelector } from "@semoss/utility/react/use-store-selector";
-import type {
-	AbstractMessageStore,
-	MessageSnapshot,
-} from "./abstract-message.store";
+import type { AbstractMessageStore } from "./abstract-message.store";
 
 /**
- * Read a message and re-render when it changes. Only this message's changes
- * render: a streamed token re-renders the message it lands in, not the room.
- * Without a selector, every change re-renders, so the store's derived reads
- * (`activeChild`, `hasTools`, ...) stay current during render.
+ * Read a message and re-render when what you read changes. Only this
+ * message's own changes run the selector, so a streamed token renders the
+ * message it lands in and nothing else.
  *
  * @param message - The message.
- * @param selector - What to read; the whole snapshot when left out.
+ * @param selector - What to read, through the message's getters.
  * @returns The selection.
  */
-export const useMessage = <S extends MessageSnapshot, T = S>(
-	message: AbstractMessageStore<S>,
-	selector: (snapshot: S) => T = (snapshot) => snapshot as unknown as T,
-): T => useStoreSelector(message, selector);
+export const useMessage = <M extends AbstractMessageStore, T>(
+	message: M,
+	selector: (message: M) => T,
+): T => useStoreSelector(message, () => selector(message));

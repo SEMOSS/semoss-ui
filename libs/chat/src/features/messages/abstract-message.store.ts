@@ -103,6 +103,12 @@ export abstract class AbstractMessageStore<
 	/** The MobX adapter; goes with the last MobX reader. */
 	private readonly atom = createAtom("MessageStore");
 
+	/** Who hears about a change to this message or any message below it. */
+	private readonly treeListeners = new Set<() => void>();
+
+	/** Stops listening to each child's tree. */
+	private readonly childStops = new Map<AbstractMessageStore, () => void>();
+
 	/**
 	 * @param room - The room the message is in.
 	 * @param initial - Its first snapshot.
@@ -112,6 +118,7 @@ export abstract class AbstractMessageStore<
 		this.key = `room-${room.roomId}-${Date.now()}-${Math.floor(Math.random() * 100000000)}`;
 		this.state = new StoreState<S>(initial);
 		this.state.subscribe(() => this.atom.reportChanged());
+		this.state.subscribe(this.notifyTree);
 	}
 
 	getSnapshot = (): S => {
@@ -121,6 +128,20 @@ export abstract class AbstractMessageStore<
 
 	subscribe = (listener: () => void): (() => void) =>
 		this.state.subscribe(listener);
+
+	/**
+	 * Hear about a change to this message or to any message below it, as the
+	 * room does to follow its whole conversation.
+	 *
+	 * @param listener - Called after each change.
+	 * @returns Stops listening.
+	 */
+	subscribeTree = (listener: () => void): (() => void) => {
+		this.treeListeners.add(listener);
+		return () => {
+			this.treeListeners.delete(listener);
+		};
+	};
 
 	get id(): string {
 		return this.getSnapshot().id;
@@ -302,6 +323,8 @@ export abstract class AbstractMessageStore<
 	 */
 	addChild = (message: AbstractMessageStore): void => {
 		const children = [...this.state.getSnapshot().children, message];
+		this.childStops.get(message)?.();
+		this.childStops.set(message, message.subscribeTree(this.notifyTree));
 		this.updateMessage({ children });
 		message.connectParent(this, children.length - 1);
 		message.activateMessage();
@@ -323,7 +346,10 @@ export abstract class AbstractMessageStore<
 		}
 
 		const remaining = children.filter((_, position) => position !== index);
-		children[index].connectParent(null, -1);
+		const removed = children[index];
+		this.childStops.get(removed)?.();
+		this.childStops.delete(removed);
+		removed.connectParent(null, -1);
 		remaining.forEach((child, position) => {
 			child.connectParent(this, position);
 		});
@@ -352,6 +378,13 @@ export abstract class AbstractMessageStore<
 	 */
 	setActiveChildPosition = (activeChildPosition: number): void => {
 		this.updateMessage({ activeChildPosition });
+	};
+
+	/** Tell the tree's listeners about a change here or below. */
+	private notifyTree = (): void => {
+		for (const listener of [...this.treeListeners]) {
+			listener();
+		}
 	};
 
 	/**

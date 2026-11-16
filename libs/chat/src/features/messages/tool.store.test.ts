@@ -145,7 +145,7 @@ test("useTool renders on a change to what it selects, not on others", () => {
 	let renders = 0;
 	const { result } = renderHook(() => {
 		renders += 1;
-		return useTool(tool, (snapshot) => snapshot.status);
+		return useTool(tool, (current) => current.status);
 	});
 	expect(result.current).toBe("INITIAL");
 

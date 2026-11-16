@@ -103,7 +103,7 @@ test("useMessage renders on its own message's changes only", () => {
 	let renders = 0;
 	const { result } = renderHook(() => {
 		renders += 1;
-		return useMessage(message, (snapshot) => snapshot.parts);
+		return useMessage(message, (current) => current.parts);
 	});
 
 	act(() => other.savePart({ type: "TEXT", text: "x", uiText: "x" }));
@@ -113,4 +113,22 @@ test("useMessage renders on its own message's changes only", () => {
 	act(() => message.savePart({ type: "TEXT", text: "y", uiText: "y" }));
 	expect(renders).toBe(2);
 	expect(result.current).toHaveLength(1);
+});
+
+test("a message's tree hears about changes below it until they are removed", () => {
+	const root = response("root");
+	const child = input("a");
+	const grandchild = response("b");
+	root.addChild(child);
+	child.addChild(grandchild);
+	const listener = vi.fn();
+	root.subscribeTree(listener);
+
+	grandchild.savePart({ type: "TEXT", text: "x", uiText: "x" });
+	expect(listener).toHaveBeenCalledTimes(1);
+
+	root.removeChild(child);
+	listener.mockClear();
+	grandchild.savePart({ type: "TEXT", text: "y", uiText: "y" });
+	expect(listener).not.toHaveBeenCalled();
 });

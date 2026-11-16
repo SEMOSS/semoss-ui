@@ -5,7 +5,7 @@ import type { ThemeMap } from "@semoss/shared";
 import { ROOM_PANEL_COMPONENTS } from "../workbench/room-panel.components";
 import { RoomStore } from "./room.store";
 import { ROOM_PANEL_TYPES } from "./room-sidebar";
-import { useRoomState } from "./use-room-state";
+import { useRoomSelector } from "./use-room-selector";
 
 vi.mock("@semoss/sdk/react", () => ({
 	console: vi.fn(),
@@ -63,12 +63,12 @@ test("MobX readers still track it through the adapter", () => {
 	expect(seen).toEqual(["chat", "agent"]);
 });
 
-test("useRoomState renders on a change to what it selects, not on others", () => {
+test("useRoomSelector renders on a change to what it selects, not on others", () => {
 	const room = createRoom();
 	let renders = 0;
 	const { result } = renderHook(() => {
 		renders += 1;
-		return useRoomState(room, (snapshot) => snapshot.mode);
+		return useRoomSelector(room, (current) => current.mode);
 	});
 
 	act(() => room.setMetadata({ name: "Plan" }));
@@ -77,4 +77,21 @@ test("useRoomState renders on a change to what it selects, not on others", () =>
 	act(() => room.setMode("agent"));
 	expect(result.current).toBe("agent");
 	expect(renders).toBe(2);
+});
+
+test("a room hears about its messages and tool calls", () => {
+	const room = createRoom();
+	const listener = vi.fn();
+	room.subscribe(listener);
+	room.syncTool("call-1", Object.create(null), {
+		type: "TOOL_RESULT",
+		toolResult: { toolCallId: "call-1", output: "ok" },
+	} as never);
+	listener.mockClear();
+
+	room.getTool("call-1")?.setStatus("LOADING");
+	expect(listener).toHaveBeenCalledTimes(1);
+	room.dispose();
+	room.getTool("call-1")?.setStatus("SUCCESS");
+	expect(listener).toHaveBeenCalledTimes(1);
 });

@@ -220,6 +220,12 @@ export interface RoomSnapshot {
 	 * calls), where there is no stream job to track.
 	 */
 	readonly cancellingTools: boolean;
+
+	/**
+	 * Counts changes to the room's messages and tool calls, which are stores
+	 * of their own, so that a reader of the room hears about them.
+	 */
+	readonly revision: number;
 }
 
 const INITIAL_ROOM: Omit<
@@ -248,6 +254,7 @@ const INITIAL_ROOM: Omit<
 	canCancelJob: false,
 	isCancellingJob: false,
 	cancellingTools: false,
+	revision: 0,
 };
 
 /**
@@ -445,6 +452,8 @@ export class RoomStore {
 			stop();
 		}
 		this._disposers = [];
+		this._stopRootWatch?.();
+		this._stopRootWatch = null;
 	};
 
 	getSnapshot = (): RoomSnapshot => this.snapshot;
@@ -871,6 +880,7 @@ export class RoomStore {
 			}
 
 			// store it
+			this._watchRoot(root);
 			this.state.update({ root });
 
 			// Fired here, before the workspace/model round trips below, since
@@ -1106,6 +1116,7 @@ export class RoomStore {
 			this.state.update((current) => ({
 				tools: { ...current.tools, [created.id]: created },
 			}));
+			this._disposers.push(created.subscribe(this._bumpRevision));
 		}
 
 		tool.syncMessage(message, part, options);
@@ -1210,6 +1221,24 @@ export class RoomStore {
 		if (selected) {
 			actions.navigatePanel(selected);
 		}
+	};
+
+	/** Stops listening to the current root's conversation. */
+	private _stopRootWatch: (() => void) | null = null;
+
+	/**
+	 * Follow a new root's whole conversation, and stop following the last.
+	 *
+	 * @param root - The room's root message.
+	 */
+	private _watchRoot = (root: ResponseMessageStore): void => {
+		this._stopRootWatch?.();
+		this._stopRootWatch = root.subscribeTree(this._bumpRevision);
+	};
+
+	/** A message or tool call in the room changed. */
+	private _bumpRevision = (): void => {
+		this.state.update((current) => ({ revision: current.revision + 1 }));
 	};
 
 	/**
