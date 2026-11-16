@@ -1,4 +1,4 @@
-import { configure, makeAutoObservable, runInAction } from "mobx";
+import { configure, createAtom } from "mobx";
 import { getI18n } from "@semoss/i18n";
 import {
 	getModelContextWindow,
@@ -18,6 +18,7 @@ import {
 } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
 import { parseTimestampWithUtcDefault } from "@semoss/utility/date";
+import { StoreState } from "@semoss/utility/store";
 import type { WorkbenchPanelConfigAny } from "@semoss/workbench";
 import type {
 	AbstractPixelMessage,
@@ -54,16 +55,17 @@ interface OptimisticRoom {
 	PINNED?: boolean;
 }
 
-interface ChatStoreInterface {
+/** What the chat holds. Every field is readonly. */
+export interface ChatSnapshot {
 	/**
 	 *  Track if the chat is initialized
 	 */
-	isInitialized: boolean;
+	readonly isInitialized: boolean;
 
 	/**
 	 * List of the models available
 	 */
-	models: {
+	readonly models: {
 		/** The current model */
 		selected: Engine;
 
@@ -77,7 +79,7 @@ interface ChatStoreInterface {
 	/**
 	 * Cached rooms
 	 */
-	rooms: Record<string, RoomStore>;
+	readonly rooms: Record<string, RoomStore>;
 
 	/**
 	 * Rooms shown in the nav before their first message has persisted.
@@ -86,12 +88,12 @@ interface ChatStoreInterface {
 	 * first response lands. These bridge that gap and are removed once the
 	 * real room shows up in the fetched list. Keyed by room id.
 	 */
-	optimisticRooms: Record<string, OptimisticRoom>;
+	readonly optimisticRooms: Record<string, OptimisticRoom>;
 
 	/**
 	 * Options related to the navbar
 	 */
-	keys: {
+	readonly keys: {
 		/**
 		 * Counter to force re-render of the nav when the rooms change
 		 */
@@ -102,7 +104,7 @@ interface ChatStoreInterface {
 	 * Preloaded embedded paths
 	 * path -> url
 	 */
-	embeddedPageMap: Record<
+	readonly embeddedPageMap: Record<
 		string,
 		| ThemeMap["playground"]["sidebar"]["headerItems"][number]
 		| ThemeMap["playground"]["sidebar"]["footerItems"][number]
@@ -116,20 +118,10 @@ export class ChatStore {
 	private _theme: ThemeMap["playground"];
 	private _panelComponents: Record<string, WorkbenchPanelConfigAny>;
 	private _build: NewChatBuildDefaults;
-	private _store: ChatStoreInterface = {
-		isInitialized: false,
-		models: {
-			selected: null as unknown as Engine,
-			contextWindow: undefined,
-			available: [],
-		},
-		rooms: {},
-		optimisticRooms: {},
-		keys: {
-			roomCounter: 0,
-		},
-		embeddedPageMap: {},
-	};
+	private readonly state: StoreState<ChatSnapshot>;
+
+	/** The MobX adapter; goes with the last MobX reader. */
+	private readonly atom = createAtom("ChatStore");
 
 	constructor(
 		theme: ThemeMap["playground"],
@@ -145,7 +137,7 @@ export class ChatStore {
 		this._theme = theme;
 		this._build = build;
 		this._panelComponents = panelComponents;
-		this._store.embeddedPageMap = [
+		const embeddedPageMap = [
 			...theme.sidebar.headerItems,
 			...theme.sidebar.footerItems,
 		]
@@ -162,9 +154,62 @@ export class ChatStore {
 				>,
 			);
 
-		// make it observable
-		makeAutoObservable(this);
+		this.state = new StoreState<ChatSnapshot>({
+			isInitialized: false,
+			models: {
+				selected: null as unknown as Engine,
+				contextWindow: undefined,
+				available: [],
+			},
+			rooms: {},
+			optimisticRooms: {},
+			keys: { roomCounter: 0 },
+			embeddedPageMap,
+		});
+		this.state.subscribe(() => this.atom.reportChanged());
 	}
+
+	getSnapshot = (): ChatSnapshot => this.snapshot;
+
+	subscribe = (listener: () => void): (() => void) =>
+		this.state.subscribe(listener);
+
+	/** The current snapshot, reported to the MobX adapter. */
+	private get snapshot(): ChatSnapshot {
+		this.atom.reportObserved();
+		return this.state.getSnapshot();
+	}
+
+	/**
+	 * Cache a room, or drop it with null.
+	 *
+	 * @param roomId - The room's id.
+	 * @param room - The room, or null.
+	 */
+	private setCachedRoom = (roomId: string, room: RoomStore | null): void => {
+		this.state.update((current) => {
+			const { [roomId]: _dropped, ...rest } = current.rooms;
+			return { rooms: room ? { ...rest, [roomId]: room } : rest };
+		});
+	};
+
+	/** Make every room list refetch. */
+	private bumpRoomCounter = (): void => {
+		this.state.update((current) => ({
+			keys: { roomCounter: current.keys.roomCounter + 1 },
+		}));
+	};
+
+	/**
+	 * Change some of the models' fields.
+	 *
+	 * @param changes - The fields to change.
+	 */
+	private updateModels = (changes: Partial<ChatSnapshot["models"]>): void => {
+		this.state.update((current) => ({
+			models: { ...current.models, ...changes },
+		}));
+	};
 
 	/**
 	 * Getters
@@ -173,21 +218,21 @@ export class ChatStore {
 	 * Track if the store is loaded
 	 */
 	get isInitialized() {
-		return this._store.isInitialized;
+		return this.snapshot.isInitialized;
 	}
 
 	/**
 	 * Get the models from the store
 	 */
 	get models() {
-		return this._store.models;
+		return this.snapshot.models;
 	}
 
 	/**
 	 * Get keys to refresh different objects
 	 */
 	get keys() {
-		return this._store.keys;
+		return this.snapshot.keys;
 	}
 
 	/**
@@ -210,14 +255,14 @@ export class ChatStore {
 	 * Get the map of preloaded embed paths
 	 */
 	get embeddedPageMap() {
-		return this._store.embeddedPageMap;
+		return this.snapshot.embeddedPageMap;
 	}
 
 	/**
 	 * Get the rooms optimistically shown in the nav
 	 */
 	get optimisticRooms() {
-		return this._store.optimisticRooms;
+		return this.snapshot.optimisticRooms;
 	}
 
 	/**
@@ -230,9 +275,7 @@ export class ChatStore {
 		} catch (e) {
 			console.error(e);
 		} finally {
-			runInAction(() => {
-				this._store.isInitialized = true;
-			});
+			this.state.update({ isInitialized: true });
 		}
 	};
 
@@ -243,9 +286,7 @@ export class ChatStore {
 	 * file-explorer on the new-room page).
 	 */
 	registerRoom = (room: RoomStore): void => {
-		runInAction(() => {
-			this._store.rooms[room.roomId] = room;
-		});
+		this.setCachedRoom(room.roomId, room);
 	};
 
 	/**
@@ -254,7 +295,7 @@ export class ChatStore {
 	 * @param roomId - Room to look up
 	 */
 	getCachedRoom = (roomId: string): RoomStore | null =>
-		this._store.rooms[roomId] ?? null;
+		this.snapshot.rooms[roomId] ?? null;
 
 	/**
 	 * Optimistically surface a room in the nav before its first message has
@@ -262,9 +303,12 @@ export class ChatStore {
 	 * (see {@link removeOptimisticRoom}).
 	 */
 	addOptimisticRoom = (room: OptimisticRoom): void => {
-		runInAction(() => {
-			this._store.optimisticRooms[room.ROOM_ID] = room;
-		});
+		this.state.update((current) => ({
+			optimisticRooms: {
+				...current.optimisticRooms,
+				[room.ROOM_ID]: room,
+			},
+		}));
 	};
 
 	/**
@@ -272,8 +316,10 @@ export class ChatStore {
 	 * first message failed to send.
 	 */
 	removeOptimisticRoom = (roomId: string): void => {
-		runInAction(() => {
-			delete this._store.optimisticRooms[roomId];
+		this.state.update((current) => {
+			const { [roomId]: _removed, ...optimisticRooms } =
+				current.optimisticRooms;
+			return { optimisticRooms };
 		});
 	};
 
@@ -350,32 +396,28 @@ export class ChatStore {
 		await prepareRoom?.(room);
 		const roomId = room.roomId;
 
-		runInAction(() => {
-			// save it to the cache
-			this._store.rooms[roomId] = room;
+		// save it to the cache
+		this.setCachedRoom(roomId, room);
 
-			// optimistically surface the room in the nav — GetPlaygroundRooms
-			// won't return it until its first message has data
-			this._store.optimisticRooms[roomId] = {
-				ROOM_ID: roomId,
-				ROOM_NAME: prompt.substring(0, 100),
-				DATE_CREATED: new Date().toISOString(),
-				WORKSPACE_ID: workspaceId,
-			};
-
-			// increment the roomCounter to force re-render of the nav
-			this._store.keys.roomCounter++;
+		// optimistically surface the room in the nav — GetPlaygroundRooms
+		// won't return it until its first message has data
+		this.addOptimisticRoom({
+			ROOM_ID: roomId,
+			ROOM_NAME: prompt.substring(0, 100),
+			DATE_CREATED: new Date().toISOString(),
+			WORKSPACE_ID: workspaceId,
 		});
+
+		// increment the roomCounter to force re-render of the nav
+		this.bumpRoomCounter();
 
 		// ask the room — fire-and-forget so we return (and navigate) without
 		// waiting on the response
 		(async () => {
 			try {
 				await room.askMessage(prompt, files, askOptions);
-				runInAction(() => {
-					// increment the roomCounter to force re-render of the nav
-					this._store.keys.roomCounter++;
-				});
+				// increment the roomCounter to force re-render of the nav
+				this.bumpRoomCounter();
 			} catch (e) {
 				if ((e as Error)?.name === "UploadError") {
 					// Leave the optimistic room so the user can retry with a new message.
@@ -419,7 +461,7 @@ export class ChatStore {
 	 * @param roomId - Room to remove
 	 */
 	closeRoom = async (roomId: string): Promise<void> => {
-		const room = this._store.rooms[roomId];
+		const room = this.snapshot.rooms[roomId];
 		const insightId = room?.insightId;
 
 		// wait for the pixel to run
@@ -438,13 +480,11 @@ export class ChatStore {
 		}
 
 		room?.dispose();
-		runInAction(() => {
-			// delete it from the cache
-			delete this._store.rooms[roomId];
+		// delete it from the cache
+		this.setCachedRoom(roomId, null);
 
-			// increment the roomCounter to force re-render of the nav
-			this._store.keys.roomCounter++;
-		});
+		// increment the roomCounter to force re-render of the nav
+		this.bumpRoomCounter();
 	};
 
 	/**
@@ -461,13 +501,11 @@ export class ChatStore {
 		await Session.insight.withInsight((id) =>
 			renameUserRoom(id, roomId, trimmed),
 		);
-		runInAction(() => {
-			const cached = this._store.rooms[roomId];
-			if (cached) {
-				cached.setMetadata({ name: trimmed });
-			}
-			this._store.keys.roomCounter++;
-		});
+		const cached = this.snapshot.rooms[roomId];
+		if (cached) {
+			cached.setMetadata({ name: trimmed });
+		}
+		this.bumpRoomCounter();
 	};
 
 	/**
@@ -479,9 +517,7 @@ export class ChatStore {
 		await Session.insight.withInsight((id) =>
 			pinUserRoom(id, roomId, pinned),
 		);
-		runInAction(() => {
-			this._store.keys.roomCounter++;
-		});
+		this.bumpRoomCounter();
 	};
 
 	downloadConversation = async (
@@ -584,8 +620,8 @@ export class ChatStore {
 	 */
 	loadRoom = async (roomId: string): Promise<RoomStore> => {
 		// if it exists in the store utilize it.
-		if (this._store.rooms[roomId]) {
-			return this._store.rooms[roomId];
+		if (this.snapshot.rooms[roomId]) {
+			return this.snapshot.rooms[roomId];
 		}
 
 		// create the room store
@@ -604,12 +640,10 @@ export class ChatStore {
 			throw new Error("Room not found");
 		}
 
-		runInAction(() => {
-			// save it to the cache
-			this._store.rooms[roomId] = room;
-			// No roomCounter increment here — loading an existing room doesn't
-			// change the list, so there's no reason to trigger a re-fetch.
-		});
+		// save it to the cache
+		this.setCachedRoom(roomId, room);
+		// No roomCounter increment here — loading an existing room doesn't
+		// change the list, so there's no reason to trigger a re-fetch.
 
 		// return the room
 		return room;
@@ -619,9 +653,7 @@ export class ChatStore {
 	 * Set the selected model
 	 */
 	setSelectedModel = (model: Engine): void => {
-		runInAction(() => {
-			this._store.models.selected = model;
-		});
+		this.updateModels({ selected: model });
 
 		this.loadEngineContextWindow(model.engine_id);
 	};
@@ -636,7 +668,7 @@ export class ChatStore {
 	 */
 	selectModelById = async (engineId: string): Promise<boolean> => {
 		const id = engineId?.trim();
-		if (!id || this._store.models.selected?.engine_id === id) {
+		if (!id || this.snapshot.models.selected?.engine_id === id) {
 			return false;
 		}
 
@@ -661,18 +693,14 @@ export class ChatStore {
 	};
 
 	private loadEngineContextWindow = async (engineId: string) => {
-		runInAction(() => {
-			this._store.models.contextWindow = undefined;
-		});
+		this.updateModels({ contextWindow: undefined });
 
 		const contextWindow = await Session.insight.withInsight((id) =>
 			getModelContextWindow(id, engineId),
 		);
 
 		if (this.models.selected?.engine_id === engineId) {
-			runInAction(() => {
-				this._store.models.contextWindow = contextWindow;
-			});
+			this.updateModels({ contextWindow });
 		}
 	};
 
@@ -801,7 +829,7 @@ export class ChatStore {
 			null,
 			readNewChatPreferences(Session.getSnapshot().user?.meta),
 			readDeploymentNewChatDefaults(this._theme, this._build),
-			this._store.models.available,
+			this.snapshot.models.available,
 		);
 
 	/**
@@ -815,7 +843,7 @@ export class ChatStore {
 		const model = this.findNewChatDefaultModel();
 		if (
 			model &&
-			model.engine_id !== this._store.models.selected?.engine_id
+			model.engine_id !== this.snapshot.models.selected?.engine_id
 		) {
 			this.setSelectedModel(model);
 		}
@@ -846,14 +874,12 @@ export class ChatStore {
 			`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);`,
 		);
 
-		runInAction(() => {
-			// kept so an id can be resolved to an Engine later
-			this._store.models.available = pixelReturn[0].output;
-			// the session has read the user before any authenticated route mounts
-			const model = this.findNewChatDefaultModel();
-			if (model) {
-				this.setSelectedModel(model);
-			}
-		});
+		// kept so an id can be resolved to an Engine later
+		this.updateModels({ available: pixelReturn[0].output });
+		// the session has read the user before any authenticated route mounts
+		const model = this.findNewChatDefaultModel();
+		if (model) {
+			this.setSelectedModel(model);
+		}
 	};
 }

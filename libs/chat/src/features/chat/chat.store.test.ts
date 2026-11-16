@@ -140,3 +140,23 @@ test("room calls run in the session's insight, and their errors reject", async (
 		"Renamed",
 	);
 });
+
+test("a cached room replaces the rooms map and bumps nothing else", async () => {
+	const store = await createStore();
+	const listener = vi.fn();
+	store.subscribe(listener);
+	const before = store.getSnapshot();
+
+	store.addOptimisticRoom({
+		ROOM_ID: "room-1",
+		ROOM_NAME: "Plan",
+		DATE_CREATED: "2026-01-01",
+	});
+	store.removeOptimisticRoom("room-1");
+
+	const after = store.getSnapshot();
+	expect(after.optimisticRooms).toEqual({});
+	expect(after.models).toBe(before.models);
+	expect(after.keys).toBe(before.keys);
+	expect(listener).toHaveBeenCalledTimes(2);
+});
