@@ -24,6 +24,7 @@ const stepSchema = z.object({
 	checked: z.boolean().optional(),
 	key: z.string().optional(),
 	text: z.string().optional(),
+	exact: z.boolean().optional(),
 	x: z.number().optional(),
 	y: z.number().optional(),
 	path: z.string().optional(),
@@ -65,6 +66,8 @@ const runSchema = z.object({
 				status: z.string(),
 				reason: z.string().optional(),
 				classification: z.string().optional(),
+				repeats: z.number().optional(),
+				passedRepeats: z.number().optional(),
 			}),
 		)
 		.optional(),
@@ -108,10 +111,12 @@ export const saveAppTestRecording = async (
 export const runAppTests = async (
 	appId: string,
 	recordingId: string,
+	repeat = 1,
 ): Promise<AppTestRun> => {
+	const repeatArgument = repeat > 1 ? `, repeat=[${repeat}]` : "";
 	const result = runSchema.parse(
 		await callAppTestPixel(
-			`RunAppTests(project=${JSON.stringify([appId])}, suite=${JSON.stringify([recordingId])});`,
+			`RunAppTests(project=${JSON.stringify([appId])}, suite=${JSON.stringify([recordingId])}${repeatArgument});`,
 		),
 	);
 	if (result.target !== appId) throw new Error("The app test target changed");

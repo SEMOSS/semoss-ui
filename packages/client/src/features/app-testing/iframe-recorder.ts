@@ -33,6 +33,14 @@ const isElement = (target: unknown): target is Element =>
 const quoteAttribute = (value: string): string =>
 	`"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\a ").replace(/\r/g, "\\d ")}"`;
 
+/** A selector that targets one element by its authored test id. */
+const STABLE_SELECTOR =
+	/^(?:[a-zA-Z][a-zA-Z0-9-]*)?\[data-test(?:id)?="(?:[^"\\]|\\.)+"\]$/;
+
+/** Only a test id is a contract; ids, names and position paths change with edits. */
+export const isStableSelector = (selector: string): boolean =>
+	STABLE_SELECTOR.test(selector);
+
 /** Prefer unique authored identities, falling back to a document-relative path. */
 export const elementSelector = (element: Element): string => {
 	const root = element.getRootNode();
@@ -100,6 +108,14 @@ export const attachIframeRecorder = (
 	const documents = new WeakSet<Document>();
 	const frames = new WeakSet<HTMLIFrameElement>();
 	const cleanups = new Set<() => void>();
+	const weakNotified = new Set<string>();
+	const warnWeak = (selector: string): void => {
+		if (weakNotified.has(selector)) return;
+		weakNotified.add(selector);
+		onNotice(
+			`${selector} has no unique data-testid, so it may break when the app changes. Ask the assistant to add one before saving.`,
+		);
+	};
 
 	const attachFrame = (
 		child: HTMLIFrameElement,
@@ -136,7 +152,10 @@ export const attachIframeRecorder = (
 				}
 				documents.add(doc);
 				const emit = (step: AppTestStep): void => {
-					if (!isStopped) onStep({ ...step, framePath });
+					if (isStopped) return;
+					if (step.selector && !isStableSelector(step.selector))
+						warnWeak(step.selector);
+					onStep({ ...step, framePath });
 				};
 				const elementFromEvent = (event: Event): Element | null => {
 					const first = event.composedPath()[0] ?? event.target;
@@ -153,7 +172,7 @@ export const attachIframeRecorder = (
 					emit({
 						type: text ? "ASSERT_TEXT" : "ASSERT_VISIBLE",
 						selector: elementSelector(target),
-						...(text ? { text } : {}),
+						...(text ? { text, exact: true } : {}),
 					});
 				};
 				const click = (event: MouseEvent): void => {
@@ -273,18 +292,7 @@ export const attachIframeRecorder = (
 						key: event.key,
 					});
 				};
-				const scroll = (event: Event): void => {
-					const target = elementFromEvent(event);
-					if (target && isPrivate(target)) return;
-					const scrolling = target ?? doc.scrollingElement;
-					if (!scrolling) return;
-					emit({
-						type: "SCROLL",
-						selector: elementSelector(scrolling),
-						x: scrolling.scrollLeft,
-						y: scrolling.scrollTop,
-					});
-				};
+				// Scroll positions depend on layout and timing; replay scrolls elements into view itself.
 				doc.addEventListener("click", click, true);
 				doc.addEventListener(
 					"pointerdown",
@@ -295,10 +303,6 @@ export const attachIframeRecorder = (
 				doc.addEventListener("input", input, true);
 				doc.addEventListener("change", input, true);
 				doc.addEventListener("keydown", keydown, true);
-				doc.addEventListener("scroll", scroll, {
-					capture: true,
-					passive: true,
-				});
 				const discoverFrames = (root: Document | Element): void => {
 					const nestedFrames = Array.from(
 						root.querySelectorAll("iframe"),
@@ -336,7 +340,6 @@ export const attachIframeRecorder = (
 					doc.removeEventListener("input", input, true);
 					doc.removeEventListener("change", input, true);
 					doc.removeEventListener("keydown", keydown, true);
-					doc.removeEventListener("scroll", scroll, true);
 					observer.disconnect();
 					documents.delete(doc);
 					cleanups.delete(cleanupDocument);

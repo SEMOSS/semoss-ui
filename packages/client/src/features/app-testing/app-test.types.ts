@@ -17,6 +17,8 @@ export interface AppTestStep {
 	checked?: boolean;
 	key?: string;
 	text?: string;
+	/** For ASSERT_TEXT: the element's whole text must equal `text`, not just contain it. */
+	exact?: boolean;
 	x?: number;
 	y?: number;
 	path?: string;
@@ -52,5 +54,7 @@ export interface AppTestRun {
 		status: string;
 		reason?: string;
 		classification?: string;
+		repeats?: number;
+		passedRepeats?: number;
 	}[];
 }

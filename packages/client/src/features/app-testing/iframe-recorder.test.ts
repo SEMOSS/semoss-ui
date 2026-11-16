@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AppTestStep } from "./app-test.types";
-import { appendRecordedStep, attachIframeRecorder } from "./iframe-recorder";
+import {
+	appendRecordedStep,
+	attachIframeRecorder,
+	isStableSelector,
+} from "./iframe-recorder";
 
 const stopRecorders: (() => void)[] = [];
 afterEach(() => {
@@ -32,6 +36,39 @@ const element = <T extends Element>(doc: Document, selector: string): T => {
 	if (!found) throw new Error(`Missing test element ${selector}`);
 	return found;
 };
+
+describe("stable targets", () => {
+	it("accepts only data-testid selectors", () => {
+		expect(isStableSelector('button[data-testid="button-7"]')).toBe(true);
+		expect(isStableSelector('[data-test="save"]')).toBe(true);
+		expect(isStableSelector('input[id="query"]')).toBe(false);
+		expect(isStableSelector("div > button:nth-of-type(2)")).toBe(false);
+		expect(isStableSelector('button[data-testid="a"] span')).toBe(false);
+	});
+
+	it("warns once per fragile selector and never for a test id", () => {
+		const state = setup(
+			'<button id="plain">Plain</button><button data-testid="ok">Ok</button>',
+		);
+		element<HTMLButtonElement>(state.doc, "#plain").click();
+		element<HTMLButtonElement>(state.doc, "#plain").click();
+		element<HTMLButtonElement>(state.doc, '[data-testid="ok"]').click();
+		expect(state.notice).toHaveBeenCalledTimes(1);
+		expect(state.notice).toHaveBeenCalledWith(
+			expect.stringContaining("data-testid"),
+		);
+	});
+
+	it("does not record scroll positions", () => {
+		const state = setup(
+			'<div id="list" style="overflow:auto;height:10px"><p>a</p><p>b</p></div>',
+		);
+		const list = element<HTMLElement>(state.doc, "#list");
+		list.scrollTop = 5;
+		list.dispatchEvent(new Event("scroll"));
+		expect(state.steps()).toEqual([]);
+	});
+});
 
 describe("normal app iframe recording", () => {
 	it("captures inner-document events that do not bubble to the SEMOSS document", () => {
@@ -111,6 +148,7 @@ describe("normal app iframe recording", () => {
 				type: "ASSERT_TEXT",
 				selector: 'button[id="confirm"]',
 				text: "Order confirmed",
+				exact: true,
 				framePath: [],
 			},
 		]);
@@ -172,6 +210,7 @@ describe("normal app iframe recording", () => {
 				type: "ASSERT_TEXT",
 				selector: 'button[id="ready"]',
 				text: "Ready",
+				exact: true,
 				framePath: [],
 			},
 		]);
