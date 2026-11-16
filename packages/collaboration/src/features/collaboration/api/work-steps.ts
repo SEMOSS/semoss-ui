@@ -5,7 +5,7 @@ import { runBatch } from "../live/live-state";
 /** What the owner can change on a step; only the keys given are sent. */
 export interface WorkStepChange {
 	/** `dropped` takes the step off the list without calling it done. */
-	status?: "open" | "done" | "dropped";
+	status?: "open" | "waiting" | "done" | "dropped";
 	text?: string;
 	/** A day as `YYYY-MM-DD`; an empty string clears it. */
 	due?: string;

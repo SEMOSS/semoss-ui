@@ -171,6 +171,40 @@ describe("TaskStepRow", () => {
 		).not.toBeInTheDocument();
 	});
 
+	it("hands a step to someone else on its conversation", async () => {
+		const user = userEvent.setup();
+		const onChange = vi.fn();
+		render(
+			<ul>
+				<TaskStepRow
+					step={step}
+					state="mine"
+					selfId="me"
+					people={[
+						{ id: "me", name: "Me" },
+						{ id: "p-kira", name: "Kira" },
+					]}
+					onChange={onChange}
+				/>
+			</ul>,
+		);
+		await user.click(
+			screen.getByRole("button", {
+				name: "More for: Send Kira the deck",
+			}),
+		);
+		expect(
+			screen.queryByRole("menuitem", { name: "Hand to Me" }),
+		).not.toBeInTheDocument();
+		await user.click(
+			screen.getByRole("menuitem", { name: "Hand to Kira" }),
+		);
+		expect(onChange).toHaveBeenCalledWith("s1", {
+			status: "waiting",
+			assigneeId: "p-kira",
+		});
+	});
+
 	it("takes over a step someone else was given", async () => {
 		const user = userEvent.setup();
 		const onChange = vi.fn();

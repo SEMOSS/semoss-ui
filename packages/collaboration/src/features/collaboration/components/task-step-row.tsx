@@ -84,6 +84,9 @@ const INBOX_NOTE: Partial<Record<StepInbox, string>> = {
 	outside: "From someone you have not worked with before",
 };
 
+// a conversation can have dozens of people; the menu names the first few
+const MAX_HAND_TO = 8;
+
 interface TaskStepRowProps {
 	step: TaskStep;
 	/** Where the step sits: the owner's to do, someone else's, or finished. */
@@ -96,6 +99,8 @@ interface TaskStepRowProps {
 	isBusy?: boolean;
 	/** The topic's name, shown when the step sits under one outside its work item. */
 	topicName?: string;
+	/** People the step can be handed to: the others on its conversation. */
+	people?: { id: string; name: string }[];
 }
 
 /** A due as the `YYYY-MM-DD` a date field takes; "" when there is none. */
@@ -112,6 +117,7 @@ export function TaskStepRow({
 	onChange,
 	isBusy,
 	topicName,
+	people,
 }: TaskStepRowProps) {
 	const [draft, setDraft] = useState<{ text: string; due: string } | null>(
 		null,
@@ -326,6 +332,28 @@ export function TaskStepRow({
 								</DropdownMenuItem>
 							</>
 						) : null}
+						{state !== "done"
+							? (people ?? [])
+									.filter(
+										(person) =>
+											person.id !== step.assigneeId &&
+											person.id !== selfId,
+									)
+									.slice(0, MAX_HAND_TO)
+									.map((person) => (
+										<DropdownMenuItem
+											key={person.id}
+											onSelect={() =>
+												onChange(step.id, {
+													status: "waiting",
+													assigneeId: person.id,
+												})
+											}
+										>
+											Hand to {person.name}
+										</DropdownMenuItem>
+									))
+							: null}
 						<DropdownMenuItem
 							onSelect={() =>
 								setDraft({

@@ -19,7 +19,11 @@ import {
 	type WorkStepChange,
 } from "../api/work-steps";
 import { runBatch } from "../live/live-state";
-import { useWorkChanged } from "../state/collaboration-session.context";
+import { threadPeople } from "../state/collaboration.selectors";
+import {
+	useCollaborationSession,
+	useWorkChanged,
+} from "../state/collaboration-session.context";
 import { offerStepUndo } from "../work-item-actions";
 import { TaskItemControls } from "./task-item-controls";
 import { type TaskStep, TaskStepRow, toTaskStep } from "./task-step-row";
@@ -298,6 +302,7 @@ function StepList({
 	selfId: string;
 	actions?: TaskStepActions;
 }) {
+	const { state: session } = useCollaborationSession();
 	return (
 		<ul className="divide-y divide-border overflow-hidden rounded-lg border bg-background">
 			{steps.map((s) => (
@@ -306,6 +311,7 @@ function StepList({
 					step={s}
 					state={state}
 					selfId={selfId}
+					people={threadPeople(session, s.threadId)}
 					onChange={actions?.change}
 					isBusy={actions?.isBusy}
 				/>

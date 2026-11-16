@@ -61,6 +61,7 @@ import { pixel } from "@/lib/pixel";
 import { roomPath } from "@/lib/workspace-paths";
 import { updateWorkStep, type WorkStepChange } from "../api/work-steps";
 import { localDue, runBatch } from "../live/live-state";
+import { threadPeople } from "../state/collaboration.selectors";
 import {
 	useCollaborationSession,
 	useWorkChanged,
@@ -1298,6 +1299,7 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 							}}
 							state="mine"
 							selfId={selfId}
+							people={threadPeople(state, step.threadId)}
 							onChange={(stepId, change) =>
 								void changeStep(stepId, change)
 							}
