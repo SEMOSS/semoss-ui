@@ -3,6 +3,7 @@ import { useTranslation } from "@semoss/i18n";
 import { useSession, useSessionRetry } from "@semoss/sdk/react";
 import { Button, H1, Muted, Spinner } from "@semoss/ui/next";
 import { useSavedServer } from "@/features/server-connection/use-saved-server";
+import { formatServerAddress } from "../../contract/server-connection";
 
 /**
  * The routes that need a signed in user. It waits for the session, sends a
@@ -40,7 +41,7 @@ export const SessionLayout = () => {
 					<Muted>
 						{server
 							? t("desktop:unreachable.description", {
-									server: `${server.url}${server.module}`,
+									server: formatServerAddress(server),
 								})
 							: t("desktop:unreachable.descriptionNoServer")}
 					</Muted>

@@ -61,6 +61,43 @@ export const parseServerConfig = (value: unknown): ServerConfig => {
 };
 
 /**
+ * Validate one address the user typed, such as
+ * `https://semoss.example.com/team/Monolith`, into a server config: its
+ * origin, and its path as the module. An address with no path gets the
+ * default module.
+ *
+ * @param address - The address.
+ * @returns The config.
+ * @throws Error naming what is wrong, as {@link parseServerConfig} does.
+ */
+export const parseServerAddress = (address: unknown): ServerConfig => {
+	if (typeof address !== "string" || !address.trim()) {
+		throw new Error("Enter the server's address");
+	}
+	let parsed: URL;
+	try {
+		parsed = new URL(address.trim());
+	} catch {
+		throw new Error("The server's address is not a URL");
+	}
+	// a query or fragment is not part of where the server lives
+	const path = parsed.pathname.replace(/\/+$/, "");
+	return parseServerConfig({
+		url: parsed.origin,
+		module: path || DEFAULT_MODULE,
+	});
+};
+
+/**
+ * The one address a server config stands for, as the user types it.
+ *
+ * @param server - The config.
+ * @returns Its origin and module together.
+ */
+export const formatServerAddress = (server: ServerConfig): string =>
+	`${server.url}${server.module}`;
+
+/**
  * Whether a request path belongs to the server's module, which the app
  * forwards to the server.
  *

@@ -1,6 +1,11 @@
 // @vitest-environment node
 import { describe, expect, test } from "vitest";
-import { isModulePath, parseServerConfig } from "./server-connection";
+import {
+	formatServerAddress,
+	isModulePath,
+	parseServerAddress,
+	parseServerConfig,
+} from "./server-connection";
 
 describe("parseServerConfig", () => {
 	test("keeps the origin and defaults the module", () => {
@@ -52,5 +57,44 @@ describe("isModulePath", () => {
 		["/", false],
 	])("%s -> %s", (path, expected) => {
 		expect(isModulePath(path, "/Monolith")).toBe(expected);
+	});
+});
+
+describe("parseServerAddress", () => {
+	test("splits one address into its origin and module", () => {
+		expect(
+			parseServerAddress(
+				"https://workshop.cfg.deloitte.com/cfg-ai-dev/Monolith/",
+			),
+		).toEqual({
+			url: "https://workshop.cfg.deloitte.com",
+			module: "/cfg-ai-dev/Monolith",
+		});
+	});
+
+	test("defaults the module, and drops a query or fragment", () => {
+		expect(parseServerAddress("https://semoss.example.com")).toEqual({
+			url: "https://semoss.example.com",
+			module: "/Monolith",
+		});
+		expect(
+			parseServerAddress("https://semoss.example.com/Monolith?x=1#top"),
+		).toEqual({ url: "https://semoss.example.com", module: "/Monolith" });
+	});
+
+	test("refuses what the config refuses", () => {
+		expect(() => parseServerAddress("")).toThrow("address");
+		expect(() => parseServerAddress("http://semoss.example.com")).toThrow(
+			"https",
+		);
+	});
+
+	test("formats back to the same address", () => {
+		const server = parseServerAddress(
+			"https://workshop.cfg.deloitte.com/cfg-ai-dev/Monolith",
+		);
+		expect(formatServerAddress(server)).toBe(
+			"https://workshop.cfg.deloitte.com/cfg-ai-dev/Monolith",
+		);
 	});
 });

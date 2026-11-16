@@ -15,18 +15,18 @@ import {
 } from "@semoss/ui/next";
 import type { DesktopBridge } from "../../../contract/ipc-contract";
 import {
-	DEFAULT_MODULE,
-	parseServerConfig,
+	formatServerAddress,
+	parseServerAddress,
 	type ServerConfig,
 } from "../../../contract/server-connection";
 
 /**
- * The form's shape. It only requires an address; {@link parseServerConfig}
- * does the real validation on submit, as the main process does again.
+ * The form's shape: one address, such as
+ * `https://semoss.example.com/Monolith`. {@link parseServerAddress} does the
+ * real validation on submit, and the main process checks the result again.
  */
 const schema = z.object({
-	url: z.string().trim().min(1),
-	module: z.string().trim(),
+	address: z.string().trim().min(1),
 });
 
 /** The form's values. */
@@ -55,8 +55,7 @@ export const ServerConnectView = ({
 	const form = useForm<ServerConnectValues>({
 		resolver: zodResolver(schema),
 		defaultValues: {
-			url: current?.url ?? "",
-			module: current?.module ?? DEFAULT_MODULE,
+			address: current ? formatServerAddress(current) : "",
 		},
 	});
 	const { errors, isSubmitting } = form.formState;
@@ -69,9 +68,9 @@ export const ServerConnectView = ({
 	const handleSubmit = async (values: ServerConnectValues): Promise<void> => {
 		let server: ServerConfig;
 		try {
-			server = parseServerConfig(values);
+			server = parseServerAddress(values.address);
 		} catch (error) {
-			form.setError("url", {
+			form.setError("address", {
 				type: "validate",
 				message: error instanceof Error ? error.message : String(error),
 			});
@@ -96,7 +95,9 @@ export const ServerConnectView = ({
 					<H1 className="text-2xl">{t("connect.title")}</H1>
 					<Muted>
 						{current
-							? t("connect.current", { server: current.url })
+							? t("connect.current", {
+									server: formatServerAddress(current),
+								})
 							: t("connect.description")}
 					</Muted>
 				</div>
@@ -108,19 +109,14 @@ export const ServerConnectView = ({
 					className="flex flex-col gap-4"
 				>
 					<FormInput
-						name="url"
+						name="address"
 						label={t("connect.urlLabel")}
-						placeholder="https://semoss.example.com"
+						description={t("connect.urlHint")}
+						placeholder="https://semoss.example.com/Monolith"
 						type="url"
 						autoComplete="url"
 						required
 						autoFocus
-						disabled={isSubmitting}
-					/>
-					<FormInput
-						name="module"
-						label={t("connect.moduleLabel")}
-						description={t("connect.moduleHint")}
 						disabled={isSubmitting}
 					/>
 					{errors.root?.server?.message ? (

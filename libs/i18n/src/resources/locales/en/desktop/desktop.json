@@ -1,10 +1,9 @@
 {
 	"connect": {
 		"title": "Connect to SEMOSS",
-		"description": "Enter your SEMOSS server's address. You can change it later from File > Change Server.",
+		"description": "Enter your SEMOSS server's address, with its module path. You can change it later from File > Change Server.",
 		"urlLabel": "Server address",
-		"moduleLabel": "Module path",
-		"moduleHint": "Most servers use /Monolith.",
+		"urlHint": "The full address, such as https://semoss.example.com/Monolith.",
 		"submit": "Connect",
 		"checking": "Checking the server…",
 		"cancel": "Cancel",

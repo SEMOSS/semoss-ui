@@ -1,10 +1,9 @@
 {
 	"connect": {
 		"title": "الاتصال بـ SEMOSS",
-		"description": "أدخل عنوان خادم SEMOSS. يمكنك تغييره لاحقًا من ملف > تغيير الخادم.",
+		"description": "أدخل عنوان خادم SEMOSS مع مسار الوحدة. يمكنك تغييره لاحقًا من ملف > تغيير الخادم.",
 		"urlLabel": "عنوان الخادم",
-		"moduleLabel": "مسار الوحدة",
-		"moduleHint": "تستخدم معظم الخوادم ‎/Monolith.",
+		"urlHint": "العنوان الكامل، مثل https://semoss.example.com/Monolith.",
 		"submit": "اتصال",
 		"checking": "جارٍ التحقق من الخادم…",
 		"cancel": "إلغاء",

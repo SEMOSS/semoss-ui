@@ -1,10 +1,9 @@
 {
 	"connect": {
 		"title": "SEMOSS に接続",
-		"description": "SEMOSS サーバーのアドレスを入力してください。後で［ファイル］>［サーバーを変更］から変更できます。",
+		"description": "SEMOSS サーバーのアドレスをモジュールパスを含めて入力してください。後で [ファイル] > [サーバーを変更] から変更できます。",
 		"urlLabel": "サーバーのアドレス",
-		"moduleLabel": "モジュールのパス",
-		"moduleHint": "ほとんどのサーバーは /Monolith を使用します。",
+		"urlHint": "https://semoss.example.com/Monolith のような完全なアドレス。",
 		"submit": "接続",
 		"checking": "サーバーを確認しています…",
 		"cancel": "キャンセル",

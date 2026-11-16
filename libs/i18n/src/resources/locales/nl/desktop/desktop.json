@@ -1,10 +1,9 @@
 {
 	"connect": {
 		"title": "Verbinden met SEMOSS",
-		"description": "Voer het adres van uw SEMOSS-server in. U kunt het later wijzigen via Bestand > Server wijzigen.",
+		"description": "Voer het adres van je SEMOSS-server in, met het modulepad. Je kunt dit later wijzigen via Bestand > Server wijzigen.",
 		"urlLabel": "Serveradres",
-		"moduleLabel": "Modulepad",
-		"moduleHint": "De meeste servers gebruiken /Monolith.",
+		"urlHint": "Het volledige adres, zoals https://semoss.example.com/Monolith.",
 		"submit": "Verbinden",
 		"checking": "Server wordt gecontroleerd…",
 		"cancel": "Annuleren",
