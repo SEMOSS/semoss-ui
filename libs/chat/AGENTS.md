@@ -101,7 +101,7 @@ One name per part of the playground, in code, comments, tests, and these notes:
 
 | Part | Name in code | Notes |
 |---|---|---|
-| A room's whole route | **room page** (`RoomPage`, `NewRoomPage`) | |
+| An open room, and a new chat | **room** (`Chat.Room`, `RoomScope`), **new chat** (`Chat.NewChat`, `NewChat`) | The hosts' route pages compose them |
 | Messages and composer, the left column | **conversation** (`RoomContent`) | "Chat" is the chat *mode* and the narrow-screen tab label |
 | The right-hand dock | **Workbench** (`RoomWorkbench`, `WorkbenchToggleButton`) | A `@semoss/workbench` dock, called **Workspace** in user-facing copy. `RoomStore` still calls it the sidebar (`room.sidebar`, `openSidebar*`, `features/room/room-sidebar.ts`): a legacy name kept on purpose |
 | The layout holding both | **room layout** (`RoomLayout`, `RoomLayoutActionsContext`) | |
@@ -126,8 +126,9 @@ code and are easy to undo by accident:
   React and while the sidebar is closed, and the arrangement has to survive closing it — which
   unmounts the shell. `RoomStore` builds the store and restores its arrangement in its
   constructor; `<WorkbenchProvider store={room.workbench}>` only hands it down.
-- **Blueprints are handed to `RoomStore`, not registered later.** They reach into `@/components`,
-  which imports `@/stores`, so the store cannot import them without closing a module cycle. The
+- **Blueprints are handed to `RoomStore`, not registered later.** They reach into the chat's
+  components, which import its stores, so the store cannot import them without closing a module
+  cycle. The
   composition root passes them instead: the host's `useCreateChatStore` → `ChatStore` → `RoomStore`, plus the two
   places that build a room directly (`NewChat`). They have
   to be in place before the first `openSidebarPanel`, which for a streaming tool is long before
@@ -195,9 +196,9 @@ code and are easy to undo by accident:
   `Chat.RoomList` shares their favorite and rename helpers (`toggleRoomFavorite`,
   `renameRoom`). Rename is no menu item: a double-click on the name edits it in place, in the
   header and in the sidebar (where F2 on a row does too), and `/rename` in the slash menu starts it
-  through `RoomActionsProvider.startRenaming`. A new chat has no title and no Room section. While the navigation is hidden it
-  also holds the button that opens it (`NavigationButton`, before the name): it registers with
-  `PageHeaderContext`, so `MainLayout` drops its floating button and its top padding.
+  through `RoomActionsProvider.startRenaming`. A new chat has no title and no Room section. Before the name it holds the
+  host's `leading` controls: the playground puts its navigation button there
+  (`PageHeaderNavigation`), the desktop app its sidebar toggle.
 - **The header has no quick icons, and there is no ⋯ menu.** `features/room-header/room-header.tsx`
   ends the header with the Workspace toggle alone. What the menu used to hold now lives where it
   belongs: the panels are the rail, the room's own actions are the cog at its head, and the
@@ -340,9 +341,9 @@ queue with `ContextItemsStore.adopt` before its first message.
 
 `features/connectors/` connects Microsoft 365 and Google Workspace.
 `RoomStore.connectors` (`ConnectorsStore`) owns the services switched on and the accounts they
-sign in with, per room. The Connectors page of the settings dialog
-(`features/settings/`, opened from the user menu, from Manage Connectors in Settings' Connectors section, or
-anywhere with `useSettingsDialog().openSettings("connectors")`) connects accounts and switches the
+sign in with, per room. The Connectors page of the playground's settings dialog
+(the playground's `features/settings/`, opened from its user menu, or from Manage Connectors in
+Settings' Connectors section through `navigation.openSettings("connectors")`) connects accounts and switches the
 user's apps on or off for all their chats; it is the only place connectors are switched. An app switched on whose
 account is not connected shows its switch in gray with a warning mark. These details are easy to break:
 
