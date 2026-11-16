@@ -1,0 +1,80 @@
+import { act, renderHook } from "@testing-library/react";
+import { autorun } from "mobx";
+import { expect, test, vi } from "vitest";
+import type { ThemeMap } from "@semoss/shared";
+import { ROOM_PANEL_COMPONENTS } from "../workbench/room-panel.components";
+import { RoomStore } from "./room.store";
+import { ROOM_PANEL_TYPES } from "./room-sidebar";
+import { useRoomState } from "./use-room-state";
+
+vi.mock("@semoss/sdk/react", () => ({
+	console: vi.fn(),
+	getPixelAsyncResult: vi.fn(),
+	runPixel: vi.fn(),
+	runPixelAsync: vi.fn(),
+	uploadInsight: vi.fn(),
+}));
+
+const createRoom = () =>
+	new RoomStore({
+		theme: {} as ThemeMap["playground"],
+		roomId: "room-1",
+		insightId: "insight-1",
+		panelComponents: ROOM_PANEL_COMPONENTS,
+	});
+
+test("writes replace what they change and keep the rest", () => {
+	const room = createRoom();
+	const listener = vi.fn();
+	room.subscribe(listener);
+	const before = room.getSnapshot();
+
+	room.setOptions({ instructions: "Be brief" });
+	const after = room.getSnapshot();
+	expect(after.options).toMatchObject({ instructions: "Be brief", mcp: [] });
+	expect(before.options.instructions).toBe("");
+	// siblings keep their references
+	expect(after.metadata).toBe(before.metadata);
+	expect(after.sidebar).toBe(before.sidebar);
+	expect(listener).toHaveBeenCalledTimes(1);
+
+	room.setIsLoading(false);
+	room.closeSidebar();
+	expect(room.getSnapshot()).toBe(after);
+	expect(listener).toHaveBeenCalledTimes(1);
+});
+
+test("opening a panel opens the Workspace once", () => {
+	const room = createRoom();
+	const listener = vi.fn();
+	room.subscribe(listener);
+	room.openSidebarPanel(ROOM_PANEL_TYPES.CONFIGURATION);
+	room.openSidebar();
+	expect(room.sidebar.isOpen).toBe(true);
+	expect(listener).toHaveBeenCalledTimes(1);
+});
+
+test("MobX readers still track it through the adapter", () => {
+	const room = createRoom();
+	const seen: string[] = [];
+	const stop = autorun(() => seen.push(room.mode));
+	room.setMode("agent");
+	stop();
+	expect(seen).toEqual(["chat", "agent"]);
+});
+
+test("useRoomState renders on a change to what it selects, not on others", () => {
+	const room = createRoom();
+	let renders = 0;
+	const { result } = renderHook(() => {
+		renders += 1;
+		return useRoomState(room, (snapshot) => snapshot.mode);
+	});
+
+	act(() => room.setMetadata({ name: "Plan" }));
+	expect(renders).toBe(1);
+
+	act(() => room.setMode("agent"));
+	expect(result.current).toBe("agent");
+	expect(renders).toBe(2);
+});

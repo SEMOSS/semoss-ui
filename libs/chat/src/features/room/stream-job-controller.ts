@@ -1,4 +1,3 @@
-import { makeAutoObservable } from "mobx";
 import {
 	getPixelAsyncResult,
 	getPixelJobStreaming,
@@ -48,6 +47,8 @@ interface StreamJobDeps {
 	getInsightId: () => string;
 	setLoading: (isLoading: boolean) => void;
 	setError: (error: Error) => void;
+	/** `canCancel` or `isCancelling` may have changed. */
+	onChange: () => void;
 }
 
 /** A cancellable streaming job in flight — enough to abort it and commit. */
@@ -86,9 +87,7 @@ export class StreamJobController {
 
 	private static readonly POLL_INTERVAL_MS = 500;
 
-	constructor(private readonly deps: StreamJobDeps) {
-		makeAutoObservable(this);
-	}
+	constructor(private readonly deps: StreamJobDeps) {}
 
 	/** A cancellable job is in flight and a stop hasn't already been issued. */
 	get canCancel(): boolean {
@@ -119,6 +118,7 @@ export class StreamJobController {
 			this.pendingCancelCommits === 0
 		) {
 			this.stopIssued = false;
+			this.deps.onChange();
 		}
 	}
 
@@ -159,6 +159,7 @@ export class StreamJobController {
 			if (cancellable) {
 				trackedJobId = jobId;
 				this.activeJobs.set(jobId, { jobId, onCancel });
+				this.deps.onChange();
 			}
 
 			let isPolling = true;
@@ -242,6 +243,7 @@ export class StreamJobController {
 			}
 			if (trackedJobId !== null) {
 				this.activeJobs.delete(trackedJobId);
+				this.deps.onChange();
 				this.clearStopIssuedIfDrained();
 			}
 		}
@@ -264,6 +266,7 @@ export class StreamJobController {
 			return;
 		}
 		this.stopIssued = true;
+		this.deps.onChange();
 		// Snapshot before awaits: run()'s finally mutates activeJobs as loops
 		// unwind.
 		const jobs = [...this.activeJobs.values()];

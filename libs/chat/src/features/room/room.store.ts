@@ -1,4 +1,4 @@
-import { makeAutoObservable, observable, runInAction } from "mobx";
+import { createAtom } from "mobx";
 import type { StoreApi } from "zustand";
 import { getI18n } from "@semoss/i18n";
 import {
@@ -17,6 +17,7 @@ import {
 import type { FileExplorerApi, ThemeMap } from "@semoss/shared";
 import { sleep } from "@semoss/utility/async";
 import { stringifyJsonWithSortedKeys } from "@semoss/utility/json";
+import { StoreState } from "@semoss/utility/store";
 import {
 	createWorkbenchStore,
 	type WorkbenchPanelConfigAny,
@@ -77,39 +78,40 @@ const getStoredMcp = (mcp: MCPConfig[] = []): MCPConfig[] =>
 const getStoredOptionsKey = (options: { mcp?: MCPConfig[] }): string =>
 	stringifyJsonWithSortedKeys({ ...options, mcp: getStoredMcp(options.mcp) });
 
-interface RoomStoreInterface {
+/** What a room holds. Every field is readonly. */
+export interface RoomSnapshot {
 	/**
 	 * ID of the room
 	 */
-	roomId: string;
+	readonly roomId: string;
 
 	/**
 	 * insightId of the room
 	 * Set during the constructor and never changes
 	 */
-	insightId: string;
+	readonly insightId: string;
 
 	/**
 	 *  Track if the room is loading
 	 */
-	isLoading: boolean;
+	readonly isLoading: boolean;
 
 	/**
 	 *  Track if the room has errored
 	 */
-	error?: Error | null;
+	readonly error?: Error | null;
 
 	/**
 	 *  Track the mode of the room.
 	 *  - "chat": standard streaming chat (AskPlayground)
 	 *  - "agent": server-side agent harness (RunAgent)
 	 */
-	mode: "agent" | "chat";
+	readonly mode: "agent" | "chat";
 
 	/**
 	 * Metadata associated with the room
 	 */
-	metadata: {
+	readonly metadata: {
 		/**
 		 * Name of the room
 		 */
@@ -124,29 +126,29 @@ interface RoomStoreInterface {
 	/**
 	 * Root message
 	 */
-	root: ResponseMessageStore;
+	readonly root: ResponseMessageStore;
 
 	/**
 	 * The agent's scripted opening message, rendered as the first bubble in
 	 * the transcript. Re-read from the workspace on every initialize() — not
 	 * a message, never sent to the model. Empty when there is none.
 	 */
-	agentGreeting: string;
+	readonly agentGreeting: string;
 
 	/**
 	 * Active tools
 	 */
-	tools: Record<string, ToolStore>;
+	readonly tools: Record<string, ToolStore>;
 
 	/*
 	 * Model that is being chatted against
 	 */
-	model: Engine;
+	readonly model: Engine;
 
 	/*
 	 * Options that is passed to the model
 	 */
-	options: {
+	readonly options: {
 		/*
 		 * Context that is passed to the model
 		 */
@@ -194,7 +196,7 @@ interface RoomStoreInterface {
 	/**
 	 *  Sidebar information
 	 */
-	sidebar: {
+	readonly sidebar: {
 		/**
 		 * Track if the sidebar is open.
 		 *
@@ -203,7 +205,50 @@ interface RoomStoreInterface {
 		 */
 		isOpen: boolean;
 	};
+
+	/** The arrangement the room's first sidebar mount starts from; see `sidebarSnapshot`. */
+	readonly sidebarSnapshot: WorkbenchSnapshot;
+
+	/** Whether a cancellable streaming job is in flight and not yet stopped. */
+	readonly canCancelJob: boolean;
+
+	/** Whether a stop of the streaming jobs is still unwinding. */
+	readonly isCancellingJob: boolean;
+
+	/**
+	 * Whether a tool-phase stop is committing (cancelling the remaining tool
+	 * calls), where there is no stream job to track.
+	 */
+	readonly cancellingTools: boolean;
 }
+
+const INITIAL_ROOM: Omit<
+	RoomSnapshot,
+	"roomId" | "insightId" | "sidebarSnapshot"
+> = {
+	isLoading: false,
+	mode: "chat",
+	metadata: {
+		name: "",
+		dateCreated: "",
+	},
+	model: null as unknown as Engine,
+	root: null as unknown as ResponseMessageStore,
+	agentGreeting: "",
+	tools: {},
+	options: {
+		predefinedPrompts: [],
+		instructions: "",
+		mcp: [],
+		temperature: undefined,
+	},
+	sidebar: {
+		isOpen: false,
+	},
+	canCancelJob: false,
+	isCancellingJob: false,
+	cancellingTools: false,
+};
 
 /**
  * Manage the room
@@ -211,36 +256,19 @@ interface RoomStoreInterface {
 export class RoomStore {
 	private _theme: ThemeMap["playground"];
 	readonly streamJob = new StreamJobController({
-		getInsightId: () => this._store.insightId,
+		getInsightId: () => this.snapshot.insightId,
 		setLoading: (isLoading) => this.setIsLoading(isLoading),
-		setError: (error) =>
-			runInAction(() => {
-				this._store.error = error;
+		setError: (error) => this.state.update({ error }),
+		onChange: () =>
+			this.state.update({
+				canCancelJob: this.streamJob.canCancel,
+				isCancellingJob: this.streamJob.isCancelling,
 			}),
 	});
-	private _store: RoomStoreInterface = {
-		roomId: "",
-		insightId: "new",
-		isLoading: false,
-		mode: "chat",
-		metadata: {
-			name: "",
-			dateCreated: "",
-		},
-		model: null as unknown as Engine,
-		root: null as unknown as ResponseMessageStore,
-		agentGreeting: "",
-		tools: {},
-		options: {
-			predefinedPrompts: [],
-			instructions: "",
-			mcp: [],
-			temperature: undefined,
-		},
-		sidebar: {
-			isOpen: false,
-		},
-	};
+	private readonly state: StoreState<RoomSnapshot>;
+
+	/** The MobX adapter; goes with the last MobX reader. */
+	private readonly atom = createAtom("RoomStore");
 
 	/**
 	 * Key of the options the backend holds, as of the last read or save. A
@@ -260,9 +288,6 @@ export class RoomStore {
 	 * the `openSidebarPanel` family covers everything the room itself needs.
 	 */
 	readonly workbench: StoreApi<WorkbenchState>;
-
-	/** Stable initialization reference shared by the store and every sidebar mount. */
-	sidebarSnapshot: WorkbenchSnapshot;
 
 	/** Whether the Workspace's rail offers Files; a new chat's draft does not. */
 	private readonly _includesFiles: boolean;
@@ -308,19 +333,21 @@ export class RoomStore {
 			includeFiles = true,
 		} = options;
 		this._theme = theme;
-		// register the roomId, insightId, and actions
-		this._store.roomId = roomId;
-		this._store.insightId = insightId;
-
 		this._includesFiles = includeFiles;
-		this.sidebarSnapshot = createRoomSidebarLayout({
-			fileMode: includeFiles ? this.fileMode : null,
-			filesName: this._getDefaultPanelName("files", panelComponents),
-			settingsName: this._getDefaultPanelName(
-				"settings",
-				panelComponents,
-			),
+		this.state = new StoreState<RoomSnapshot>({
+			...INITIAL_ROOM,
+			roomId,
+			insightId,
+			sidebarSnapshot: createRoomSidebarLayout({
+				fileMode: includeFiles ? getRoomFileMode(insightId) : null,
+				filesName: this._getDefaultPanelName("files", panelComponents),
+				settingsName: this._getDefaultPanelName(
+					"settings",
+					panelComponents,
+				),
+			}),
 		});
+		this.state.subscribe(() => this.atom.reportChanged());
 		this.workbench = createWorkbenchStore({ components: panelComponents });
 		this.workbench
 			.getState()
@@ -330,17 +357,6 @@ export class RoomStore {
 		this.chatTools = new ChatToolsStore(this);
 		this.connectors = new ConnectorsStore(this);
 		this.contextItems = new ContextItemsStore();
-
-		// make it observable -- the dock is a zustand store with its own
-		// subscription model, and deep-observing it would be nonsense
-		makeAutoObservable<this, "_disposers">(this, {
-			workbench: false,
-			chatTools: false,
-			connectors: false,
-			contextItems: false,
-			sidebarSnapshot: observable.ref,
-			_disposers: false,
-		});
 
 		this._watchSidebar();
 		// a viewer closes when its connector can no longer be shown
@@ -431,18 +447,38 @@ export class RoomStore {
 		this._disposers = [];
 	};
 
+	getSnapshot = (): RoomSnapshot => this.snapshot;
+
+	subscribe = (listener: () => void): (() => void) =>
+		this.state.subscribe(listener);
+
+	/** The current snapshot, reported to the MobX adapter. */
+	private get snapshot(): RoomSnapshot {
+		this.atom.reportObserved();
+		return this.state.getSnapshot();
+	}
+
+	/**
+	 * The arrangement shared by the store and every sidebar mount: the shell
+	 * must start from this same reference, so mounting it does not reset tabs
+	 * opened since.
+	 */
+	get sidebarSnapshot(): WorkbenchSnapshot {
+		return this.snapshot.sidebarSnapshot;
+	}
+
 	/**
 	 * Get the id of the roomId
 	 */
 	get roomId() {
-		return this._store.roomId;
+		return this.snapshot.roomId;
 	}
 
 	/**
 	 * Get the insightId of the roomId
 	 */
 	get insightId() {
-		return this._store.insightId;
+		return this.snapshot.insightId;
 	}
 
 	/**
@@ -456,15 +492,8 @@ export class RoomStore {
 	 * Indicator to check if the room is loading
 	 */
 	get isLoading() {
-		return this._store.isLoading;
+		return this.snapshot.isLoading;
 	}
-
-	/**
-	 * A tool-phase stop is committing (cancelling the remaining tool calls). The
-	 * stream cancel state lives in the controller; this covers the tool phase,
-	 * where there's no stream job to track.
-	 */
-	private cancellingTools = false;
 
 	/**
 	 * Whether there's something the user can still stop: a cancellable streaming
@@ -473,22 +502,22 @@ export class RoomStore {
 	 */
 	get canCancel() {
 		return (
-			this.streamJob.canCancel ||
-			(!this.cancellingTools &&
+			this.snapshot.canCancelJob ||
+			(!this.snapshot.cancellingTools &&
 				Boolean(this.latestResponseMessage?.hasUnfinishedTools))
 		);
 	}
 
 	/** A stop has been issued and it's still unwinding. */
 	get isCancelling() {
-		return this.streamJob.isCancelling || this.cancellingTools;
+		return this.snapshot.isCancellingJob || this.snapshot.cancellingTools;
 	}
 
 	/**
 	 * Get the error of the room
 	 */
 	get error() {
-		return this._store.error;
+		return this.snapshot.error;
 	}
 
 	/**
@@ -499,37 +528,35 @@ export class RoomStore {
 	 * starts its turn without the last one's error.
 	 */
 	setError = (error: Error | null): void => {
-		runInAction(() => {
-			this._store.error = error;
-		});
+		this.state.update({ error });
 	};
 
 	/**
 	 * Get the mode of the room
 	 */
 	get mode() {
-		return this._store.mode;
+		return this.snapshot.mode;
 	}
 
 	/**
 	 * Metadata associated with the room
 	 */
 	get metadata() {
-		return this._store.metadata;
+		return this.snapshot.metadata;
 	}
 
 	/**
 	 * Models that the user is interacting with
 	 */
 	get model() {
-		return this._store.model;
+		return this.snapshot.model;
 	}
 
 	/**
-	 * Get the agent's scripted opening message (see RoomStoreInterface.agentGreeting).
+	 * Get the agent's scripted opening message (see RoomSnapshot.agentGreeting).
 	 */
 	get agentGreeting() {
-		return this._store.agentGreeting;
+		return this.snapshot.agentGreeting;
 	}
 
 	/**
@@ -537,7 +564,7 @@ export class RoomStore {
 	 * @param messageId - the message id
 	 */
 	getMessage = (messageId: string) => {
-		const queue: AbstractMessageStore[] = [this._store.root];
+		const queue: AbstractMessageStore[] = [this.snapshot.root];
 		while (queue.length > 0) {
 			const current = queue.shift();
 
@@ -559,7 +586,7 @@ export class RoomStore {
 	 * Get the history of the room based on the active children
 	 */
 	get history(): (InputMessageStore | ResponseMessageStore)[] {
-		let current: AbstractMessageStore = this._store.root;
+		let current: AbstractMessageStore = this.snapshot.root;
 
 		const history = [];
 		while (current) {
@@ -589,14 +616,14 @@ export class RoomStore {
 			return this.history[this.history.length - 1];
 		}
 
-		return this._store.root;
+		return this.snapshot.root;
 	}
 
 	/**
 	 * Number of tools in this room
 	 */
 	get numberOfTools() {
-		return Object.keys(this._store.tools).length;
+		return Object.keys(this.snapshot.tools).length;
 	}
 
 	/**
@@ -670,14 +697,14 @@ export class RoomStore {
 	 * Get the options of the room
 	 */
 	get options() {
-		return this._store.options;
+		return this.snapshot.options;
 	}
 
 	/**
 	 * Get the sidebar information
 	 */
 	get sidebar() {
-		return this._store.sidebar;
+		return this.snapshot.sidebar;
 	}
 
 	/** Setters */
@@ -686,7 +713,7 @@ export class RoomStore {
 	 * @param mode - mode of the room
 	 */
 	setMode = (mode: "agent" | "chat") => {
-		this._store.mode = mode;
+		this.state.update({ mode });
 	};
 
 	/**
@@ -694,29 +721,27 @@ export class RoomStore {
 	 * @param modelId - model to use in the room
 	 */
 	setModel = (model: Engine) => {
-		this._store.model = model;
+		this.state.update({ model });
 	};
 
 	/**
 	 * Set options
 	 * @param options - options
 	 */
-	setOptions = (options: Partial<RoomStoreInterface["options"]>) => {
-		this._store.options = {
-			...this._store.options,
-			...options,
-		};
+	setOptions = (options: Partial<RoomSnapshot["options"]>) => {
+		this.state.update((current) => ({
+			options: { ...current.options, ...options },
+		}));
 	};
 
 	/**
 	 * Set the metadata
 	 * @param metadata - metadata
 	 */
-	setMetadata = (metadata: Partial<RoomStoreInterface["metadata"]>) => {
-		this._store.metadata = {
-			...this._store.metadata,
-			...metadata,
-		};
+	setMetadata = (metadata: Partial<RoomSnapshot["metadata"]>) => {
+		this.state.update((current) => ({
+			metadata: { ...current.metadata, ...metadata },
+		}));
 	};
 
 	/** Actions */
@@ -732,17 +757,17 @@ export class RoomStore {
 			const response = await this.runRoomPixel<
 				[
 					PixelMessage[],
-					{ OPTIONS?: RoomStoreInterface["options"] }, // partial because this doesn't work for old rooms
+					{ OPTIONS?: RoomSnapshot["options"] }, // partial because this doesn't work for old rooms
 				]
 			>(
-				`GetPlaygroundMessages(roomId=["${this._store.roomId}"]); GetRoomOptions(roomId=${JSON.stringify(this._store.roomId)}); SetRoomForInsight(roomId=${JSON.stringify(this._store.roomId)});`,
+				`GetPlaygroundMessages(roomId=["${this.snapshot.roomId}"]); GetRoomOptions(roomId=${JSON.stringify(this.snapshot.roomId)}); SetRoomForInsight(roomId=${JSON.stringify(this.snapshot.roomId)});`,
 				false,
 			);
 
 			const messageOutput = response.pixelReturn[0]
 				.output as PixelMessage[];
 			const optionsOutput = response.pixelReturn[1].output as {
-				OPTIONS?: RoomStoreInterface["options"];
+				OPTIONS?: RoomSnapshot["options"];
 				ROOM_NAME?: string;
 			};
 			// read before the workspace merge below edits the nested objects
@@ -751,9 +776,8 @@ export class RoomStore {
 				: null;
 
 			// sync the insight ID
-			runInAction(() => {
-				this._store.insightId = response.insightId;
-			});
+			this.state.update({ insightId: response.insightId });
+
 			this._syncSidebarFileMode();
 
 			// the insight is bound to the room now, so the room's tool file can
@@ -766,14 +790,14 @@ export class RoomStore {
 				messageId: "ROOT_PLACEHOLDER_ID",
 				visible: false,
 				platform_generated: true,
-				modelId: this._store.model?.engine_id || "",
+				modelId: this.snapshot.model?.engine_id || "",
 				dateCreated: new Date().toISOString(),
 				parts: [],
 				tokens: 0,
 				ornaments: {
 					modelName:
-						this._store.model?.engine_display_name ||
-						this._store.model?.engine_name ||
+						this.snapshot.model?.engine_display_name ||
+						this.snapshot.model?.engine_name ||
 						"",
 				},
 				modelType: "",
@@ -790,7 +814,7 @@ export class RoomStore {
 			> = {};
 
 			// store the last model
-			let activeModelId = this._store.model?.engine_id;
+			let activeModelId = this.snapshot.model?.engine_id;
 
 			// This is done as seperate loops because of linking
 			messageOutput.forEach((pixelMessage) => {
@@ -836,20 +860,18 @@ export class RoomStore {
 			// options
 			const newOptions = { ...optionsOutput.OPTIONS };
 
-			runInAction(() => {
-				// Restore agent-harness mode from the persisted options so a
-				// reloaded agent room keeps sending messages via RunAgent. Only
-				// promote to "agent" here — never demote — so that a freshly
-				// created room whose mode was set via setMode() before its
-				// options have been persisted (createRoom runs initialize()
-				// before updateRoomOptions) keeps its explicitly-set mode.
-				if (newOptions.harnessType) {
-					this.setMode("agent");
-				}
+			// Restore agent-harness mode from the persisted options so a
+			// reloaded agent room keeps sending messages via RunAgent. Only
+			// promote to "agent" here — never demote — so that a freshly
+			// created room whose mode was set via setMode() before its
+			// options have been persisted (createRoom runs initialize()
+			// before updateRoomOptions) keeps its explicitly-set mode.
+			if (newOptions.harnessType) {
+				this.setMode("agent");
+			}
 
-				// store it
-				this._store.root = root;
-			});
+			// store it
+			this.state.update({ root });
 
 			// Fired here, before the workspace/model round trips below, since
 			// neither depends on them — waiting on those was delaying subagent
@@ -948,7 +970,7 @@ export class RoomStore {
 			const modelIdToLoad = activeModelId || agentDefaultModelId;
 			if (
 				modelIdToLoad &&
-				modelIdToLoad !== this._store.model?.engine_id
+				modelIdToLoad !== this.snapshot.model?.engine_id
 			) {
 				const { pixelReturn } = await this.runRoomPixel<[Engine[]]>(
 					`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=['MODEL'], filterWord=${JSON.stringify(modelIdToLoad)})`,
@@ -957,30 +979,25 @@ export class RoomStore {
 
 				const model = pixelReturn[0].output[0];
 				if (model) {
-					runInAction(() => {
-						this.setModel(model);
-					});
+					this.setModel(model);
 				}
 			}
 
-			runInAction(() => {
-				// set the options based on the history
-				this.setOptions(newOptions);
-				this._storedOptionsKey = storedOptionsKey;
+			// set the options based on the history
+			this.setOptions(newOptions);
+			this._storedOptionsKey = storedOptionsKey;
 
-				this._store.agentGreeting = agentGreeting;
+			this.state.update({ agentGreeting });
 
-				// Restore the persisted room name so the breadcrumb shows it on
-				// load/refresh (GetPlaygroundMessages doesn't carry the name).
-				if (optionsOutput.ROOM_NAME) {
-					this.setMetadata({ name: optionsOutput.ROOM_NAME });
-				}
-			});
+			// Restore the persisted room name so the breadcrumb shows it on
+			// load/refresh (GetPlaygroundMessages doesn't carry the name).
+			if (optionsOutput.ROOM_NAME) {
+				this.setMetadata({ name: optionsOutput.ROOM_NAME });
+			}
 		} catch (e) {
 			console.error(e);
-			runInAction(() => {
-				this.setIsLoading(false);
-			});
+			this.setIsLoading(false);
+
 			throw new Error((e as Error).message || "Error initializing room");
 		}
 	};
@@ -992,15 +1009,15 @@ export class RoomStore {
 	syncRoomOptions = async (): Promise<void> => {
 		try {
 			const response = await this.runRoomPixel<
-				[{ OPTIONS?: RoomStoreInterface["options"] }]
+				[{ OPTIONS?: RoomSnapshot["options"] }]
 			>(
-				`GetRoomOptions(roomId=${JSON.stringify(this._store.roomId)});`,
+				`GetRoomOptions(roomId=${JSON.stringify(this.snapshot.roomId)});`,
 				false,
 				false,
 			);
 
 			const fetched = response.pixelReturn[0].output as {
-				OPTIONS?: RoomStoreInterface["options"];
+				OPTIONS?: RoomSnapshot["options"];
 			};
 
 			if (!fetched?.OPTIONS) {
@@ -1008,7 +1025,7 @@ export class RoomStore {
 			}
 
 			// Preserve workspace MCPs that are already in local state
-			const workspaceMCPs = this._store.options.mcp.filter(
+			const workspaceMCPs = this.snapshot.options.mcp.filter(
 				(mcp) => mcp?.fromWorkspace,
 			);
 
@@ -1023,13 +1040,11 @@ export class RoomStore {
 				...freshRoomMCPs.filter((m) => !workspaceIds.has(m.id)),
 			];
 
-			runInAction(() => {
-				this.setOptions({
-					...fetched.OPTIONS,
-					mcp: merged,
-				});
-				this._storedOptionsKey = getStoredOptionsKey(fetched.OPTIONS);
+			this.setOptions({
+				...fetched.OPTIONS,
+				mcp: merged,
 			});
+			this._storedOptionsKey = getStoredOptionsKey(fetched.OPTIONS);
 		} catch (e) {
 			// non-critical — swallow errors so the chat isn't disrupted
 			console.warn("Failed to sync room options:", e);
@@ -1046,21 +1061,19 @@ export class RoomStore {
 		try {
 			const optionsToSave = {
 				...options,
-				modelId: this._store.model.engine_id,
+				modelId: this.snapshot.model.engine_id,
 				mcp: getStoredMcp(options.mcp),
 			};
 
 			const optionsKey = getStoredOptionsKey(optionsToSave);
 			if (optionsKey !== this._storedOptionsKey) {
 				await this.runRoomPixel(
-					`UpdateRoomOptions(roomId=${JSON.stringify(this._store.roomId)}, roomOptions=[${JSON.stringify(
+					`UpdateRoomOptions(roomId=${JSON.stringify(this.snapshot.roomId)}, roomOptions=[${JSON.stringify(
 						optionsToSave,
 					)}]);`,
 					false,
 				);
-				runInAction(() => {
-					this._storedOptionsKey = optionsKey;
-				});
+				this._storedOptionsKey = optionsKey;
 			}
 
 			this.setOptions(options);
@@ -1086,10 +1099,13 @@ export class RoomStore {
 		part: PixelMessageToolCallPart | PixelMessageToolResultPart,
 		options?: { placeholder?: boolean },
 	) => {
-		let tool = this._store.tools[toolId];
+		let tool = this.state.getSnapshot().tools[toolId];
 		if (!tool) {
 			tool = new ToolStore(this, toolId);
-			this._store.tools[tool.id] = tool;
+			const created = tool;
+			this.state.update((current) => ({
+				tools: { ...current.tools, [created.id]: created },
+			}));
 		}
 
 		tool.syncMessage(message, part, options);
@@ -1097,7 +1113,7 @@ export class RoomStore {
 
 	/** Every tool this room has seen, by id. */
 	get tools() {
-		return this._store.tools;
+		return this.snapshot.tools;
 	}
 
 	/**
@@ -1105,7 +1121,7 @@ export class RoomStore {
 	 * @param toolId - the id of the tool
 	 */
 	getTool = (toolId: string): ToolStore => {
-		return this._store.tools[toolId] || null;
+		return this.snapshot.tools[toolId] || null;
 	};
 
 	/**
@@ -1136,7 +1152,7 @@ export class RoomStore {
 	 */
 	/** The file scope every file panel in this sidebar is opened in. */
 	get fileMode() {
-		return getRoomFileMode(this._store.insightId);
+		return getRoomFileMode(this.snapshot.insightId);
 	}
 
 	/**
@@ -1157,7 +1173,7 @@ export class RoomStore {
 		config: WorkbenchPanelParams = {},
 		name?: string,
 	): WorkbenchPanelId => {
-		this._store.sidebar.isOpen = true;
+		this._setSidebarOpen(true);
 		return this.workbench
 			.getState()
 			.layout.actions.selectPanel(type, config, name ? { name } : {});
@@ -1170,7 +1186,7 @@ export class RoomStore {
 	 * room it prepares gains it here — behind whatever tab the draft was on.
 	 */
 	restoreSidebarLayout = (snapshot: WorkbenchSnapshot): void => {
-		this.sidebarSnapshot = snapshot;
+		this.state.update({ sidebarSnapshot: snapshot });
 		const { actions } = this.workbench.getState().layout;
 		actions.loadSnapshot(snapshot);
 		this._syncSidebarFileMode();
@@ -1196,9 +1212,23 @@ export class RoomStore {
 		}
 	};
 
+	/**
+	 * Show or hide the Workspace.
+	 *
+	 * @param isOpen - Whether it is on screen.
+	 */
+	private _setSidebarOpen = (isOpen: boolean): void => {
+		this.state.update((current) => ({
+			sidebar:
+				current.sidebar.isOpen === isOpen
+					? current.sidebar
+					: { ...current.sidebar, isOpen },
+		}));
+	};
+
 	/** Open the Workspace as it was left, its panel rail always beside it. */
 	openSidebar = (): void => {
-		this._store.sidebar.isOpen = true;
+		this._setSidebarOpen(true);
 	};
 
 	/**
@@ -1359,7 +1389,7 @@ export class RoomStore {
 	 * their arrangement for the next time the workspace opens.
 	 */
 	closeSidebar = async (): Promise<void> => {
-		this._store.sidebar.isOpen = false;
+		this._setSidebarOpen(false);
 		for (const tool of Object.values(this.tools)) {
 			if (tool.isOpen && tool.display === "sidebar") {
 				tool.openTool("inline");
@@ -1377,7 +1407,7 @@ export class RoomStore {
 	 * @param isLoading - is it loading
 	 */
 	setIsLoading = (isLoading: boolean): void => {
-		this._store.isLoading = isLoading;
+		this.state.update({ isLoading });
 	};
 
 	/**
@@ -1425,7 +1455,7 @@ export class RoomStore {
 
 		this.setIsLoading(true);
 		// a new turn starts without the last one's error
-		this._store.error = null;
+		this.state.update({ error: null });
 
 		// Create the input message immediately so the user's bubble and the
 		// thinking placeholder are visible while the options save and the
@@ -1475,9 +1505,7 @@ export class RoomStore {
 
 		parentMessage.addChild(inputMessage);
 		inputMessage.addChild(uploadPlaceholder);
-		runInAction(() => {
-			uploadPlaceholder.setIsThinking(true);
-		});
+		uploadPlaceholder.setIsThinking(true);
 
 		// files queued from the sidebar are already in the room's folder, so
 		// they go with the message as they are; a silent turn leaves them queued
@@ -1496,7 +1524,7 @@ export class RoomStore {
 			// upload the files if there are any
 			if (files.length > 0) {
 				const response = await uploadInsight(
-					this._store.insightId,
+					this.snapshot.insightId,
 					"",
 					files,
 				);
@@ -1527,31 +1555,28 @@ export class RoomStore {
 
 			// Append media parts to the already-visible input message; files
 			// outside the theme's list stay in the room for tools
-			runInAction(() => {
-				mediaInputs
-					.filter((file) => this.shouldAttachToModel(file.fileName))
-					.forEach((file) => {
-						inputMessage.addPart({
-							type: "MEDIA",
-							mediaInfo: {
-								base64Data: "",
-								fileFormat: "",
-								fileName: file.fileName,
-								fileLocation: file.fileLocation,
-								mediaInputType: "FILE",
-								mimeType: "",
-							},
-						});
+			mediaInputs
+				.filter((file) => this.shouldAttachToModel(file.fileName))
+				.forEach((file) => {
+					inputMessage.addPart({
+						type: "MEDIA",
+						mediaInfo: {
+							base64Data: "",
+							fileFormat: "",
+							fileName: file.fileName,
+							fileLocation: file.fileLocation,
+							mediaInputType: "FILE",
+							mimeType: "",
+						},
 					});
-			});
+				});
 		} catch (e) {
 			// the queued files were not sent, so they wait for the next try
 			this.contextItems.restore(queuedFiles);
 
 			// remove the placeholder messages and stop the room spinner
-			runInAction(() => {
-				uploadPlaceholder.setIsThinking(false);
-			});
+			uploadPlaceholder.setIsThinking(false);
+
 			parentMessage.removeChild(inputMessage);
 			this.setIsLoading(false);
 
@@ -1600,7 +1625,7 @@ export class RoomStore {
 				return;
 			}
 
-			const tool = this._store.tools[toolId];
+			const tool = this.snapshot.tools[toolId];
 			if (
 				!tool ||
 				tool.status === "SUCCESS" ||
@@ -1656,22 +1681,19 @@ export class RoomStore {
 			}
 
 			// get the response
-			const response = await runPixel<O>(pixel, this._store.insightId);
+			const response = await runPixel<O>(pixel, this.snapshot.insightId);
 
 			if (throwOnError && response.errors.length > 0) {
 				throw new Error(response.errors.join(""));
 			}
 
 			// store the new insight id
-			runInAction(() => {
-				this._store.error = null;
-			});
+			this.state.update({ error: null });
+
 			return response;
 		} catch (e) {
 			if (setErrorOnFail) {
-				runInAction(() => {
-					this._store.error = e as Error;
-				});
+				this.state.update({ error: e as Error });
 			}
 			throw e;
 		} finally {
@@ -1698,7 +1720,7 @@ export class RoomStore {
 		maxLogChars?: number,
 	) => {
 		// Launch the async job.
-		const { jobId } = await runPixelAsync(pixel, this._store.insightId);
+		const { jobId } = await runPixelAsync(pixel, this.snapshot.insightId);
 		if (!jobId) {
 			throw new Error("No job id returned for pixel execution");
 		}
@@ -1787,16 +1809,13 @@ export class RoomStore {
 		}
 
 		const message = this.latestResponseMessage;
-		if (message?.hasUnfinishedTools && !this.cancellingTools) {
-			runInAction(() => {
-				this.cancellingTools = true;
-			});
+		if (message?.hasUnfinishedTools && !this.snapshot.cancellingTools) {
+			this.state.update({ cancellingTools: true });
+
 			try {
 				await message.cancelPendingTools();
 			} finally {
-				runInAction(() => {
-					this.cancellingTools = false;
-				});
+				this.state.update({ cancellingTools: false });
 			}
 		}
 	};
