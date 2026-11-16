@@ -48,6 +48,7 @@ vi.mock("@semoss/sdk/react", async (importOriginal) => ({
 beforeAll(() => {
 	// JSDOM does not provide the pointer-capture APIs used by the shared Select.
 	HTMLElement.prototype.hasPointerCapture = () => false;
+	HTMLElement.prototype.setPointerCapture = () => undefined;
 	HTMLElement.prototype.releasePointerCapture = () => undefined;
 });
 
@@ -271,4 +272,154 @@ it("keeps the count of what was reviewed once nothing is left", async () => {
 	expect(
 		screen.getByRole("progressbar", { name: "Items reviewed" }),
 	).toHaveAttribute("aria-valuetext", "1 of 1");
+});
+
+const twoChats = [
+	{
+		id: "newest-room",
+		title: "Newest chat",
+		lastActivity: "2026-11-11T00:00:00Z",
+	},
+	{
+		id: "older-room",
+		title: "Earlier chat",
+		lastActivity: "2026-11-10T00:00:00Z",
+	},
+];
+
+/** Opens the row menu of an item. */
+async function openMenu(
+	user: ReturnType<typeof userEvent.setup>,
+	title: string,
+) {
+	await user.click(
+		screen.getByRole("button", { name: `More actions for ${title}` }),
+	);
+}
+
+it("opens the newest chat from Open room and the title, and lists every chat and a new chat in the menu", async () => {
+	insight.workItems = [workItem("a", { rooms: twoChats })];
+	const user = userEvent.setup();
+	await renderWork();
+	expect(row("Item a")).toContainElement(
+		screen.getByRole("link", { name: "Item a" }),
+	);
+	expect(screen.getByRole("link", { name: "Item a" })).toHaveAttribute(
+		"href",
+		"/thread/room%3Anewest-room",
+	);
+
+	await openMenu(user, "Item a");
+	expect(screen.getByRole("menuitem", { name: "Open room" })).toHaveAttribute(
+		"href",
+		"/thread/room%3Anewest-room",
+	);
+	expect(screen.getByRole("menuitem", { name: "New chat" })).toHaveAttribute(
+		"href",
+		"/work/item/a",
+	);
+	expect(
+		screen.getByRole("menuitem", { name: "Newest chat" }),
+	).toHaveAttribute("href", "/thread/room%3Anewest-room");
+	expect(
+		screen.getByRole("menuitem", { name: "Earlier chat" }),
+	).toHaveAttribute("href", "/thread/room%3Aolder-room");
+	// the reorder items stay beside the chats
+	expect(screen.getByRole("menuitem", { name: "Move down" })).toBeVisible();
+});
+
+it("opens the chat an item had before it could have several", async () => {
+	insight.workItems = [workItem("a", { roomId: "legacy-room", rooms: [] })];
+	const user = userEvent.setup();
+	await renderWork();
+	await openMenu(user, "Item a");
+	expect(screen.getByRole("menuitem", { name: "Open room" })).toHaveAttribute(
+		"href",
+		"/thread/room%3Alegacy-room",
+	);
+	expect(screen.getByRole("menuitem", { name: "Chat 1" })).toHaveAttribute(
+		"href",
+		"/thread/room%3Alegacy-room",
+	);
+});
+
+it("offers no new chat until an item has one, since its page already starts one", async () => {
+	const user = userEvent.setup();
+	await renderWork();
+	await openMenu(user, "Item a");
+	expect(screen.getByRole("menuitem", { name: "Open room" })).toHaveAttribute(
+		"href",
+		"/work/item/a",
+	);
+	expect(
+		screen.queryByRole("menuitem", { name: "New chat" }),
+	).not.toBeInTheDocument();
+});
+
+it("numbers chats without a title from the oldest, so a new chat does not rename the others", async () => {
+	const chat = (id: string) => ({ id, lastActivity: "" });
+	insight.workItems = [
+		workItem("a", { rooms: [chat("r3"), chat("r2"), chat("r1")] }),
+	];
+	const user = userEvent.setup();
+	await renderWork();
+	await openMenu(user, "Item a");
+	expect(screen.getByRole("menuitem", { name: "Chat 3" })).toHaveAttribute(
+		"href",
+		"/thread/room%3Ar3",
+	);
+	expect(screen.getByRole("menuitem", { name: "Chat 1" })).toHaveAttribute(
+		"href",
+		"/thread/room%3Ar1",
+	);
+});
+
+it("gives a row someone else drives the chat menu, without the reorder items", async () => {
+	insight.workItems = [
+		workItem("a"),
+		workItem("x", { mine: false, rooms: twoChats }),
+	];
+	const user = userEvent.setup();
+	await renderWork();
+	await user.click(
+		screen.getByRole("button", { name: /other people are driving/ }),
+	);
+	await openMenu(user, "Item x");
+	expect(screen.getByRole("menuitem", { name: "New chat" })).toHaveAttribute(
+		"href",
+		"/work/item/x",
+	);
+	expect(
+		screen.queryByRole("menuitem", { name: "Move up" }),
+	).not.toBeInTheDocument();
+});
+
+it("merges one chat of an item into another of its chats", async () => {
+	insight.workItems = [workItem("a", { rooms: twoChats })];
+	const user = userEvent.setup();
+	await renderWork();
+	await openMenu(user, "Item a");
+	await user.click(
+		await screen.findByRole("menuitem", { name: "Merge chats..." }),
+	);
+
+	await user.click(screen.getByRole("combobox", { name: "Chat to merge" }));
+	await user.click(
+		await screen.findByRole("option", { name: "Earlier chat" }),
+	);
+	await user.click(screen.getByRole("combobox", { name: "Merge into" }));
+	await user.click(
+		await screen.findByRole("option", { name: "Newest chat" }),
+	);
+	await user.click(screen.getByRole("button", { name: "Merge chats" }));
+
+	await waitFor(() =>
+		expect(insight.actions.run).toHaveBeenCalledWith(
+			pixel("WorkMergeRooms", {
+				taskId: "a",
+				roomId: "older-room",
+				intoRoomId: "newest-room",
+			}),
+		),
+	);
 });

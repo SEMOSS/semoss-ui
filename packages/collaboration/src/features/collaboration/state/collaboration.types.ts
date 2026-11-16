@@ -154,6 +154,12 @@ export interface Thread {
 	isSample: boolean;
 }
 
+export interface Room {
+	id: string;
+	title?: string;
+	lastActivity: string;
+}
+
 export interface WorkItem {
 	id: string;
 	threadId: string;
@@ -174,6 +180,10 @@ export interface WorkItem {
 	closedReason?: string;
 	snoozeUntil?: string;
 	snoozedFrom?: "open" | "waiting";
+	/** Legacy single room; prefer rooms array for multiple chats. */
+	roomId?: string;
+	/** Multiple chat rooms linked to this work item, newest first. */
+	rooms?: Room[];
 	isSample: boolean;
 }
 
