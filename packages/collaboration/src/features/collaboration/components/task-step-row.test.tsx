@@ -67,6 +67,43 @@ describe("TaskStepRow", () => {
 		expect(onChange).toHaveBeenLastCalledWith("s1", { status: "open" });
 	});
 
+	it("says so when the message did not say who a step is for", () => {
+		const { rerender } = render(
+			<MemoryRouter>
+				<ul>
+					<TaskStepRow
+						step={{
+							...step,
+							status: "waiting",
+							note: "unclear who",
+						}}
+						state="waiting"
+						selfId="me"
+						onChange={vi.fn()}
+					/>
+				</ul>
+			</MemoryRouter>,
+		);
+		expect(
+			screen.getByText("The message did not say who this is for"),
+		).toBeTruthy();
+		rerender(
+			<MemoryRouter>
+				<ul>
+					<TaskStepRow
+						step={{ ...step, status: "waiting" }}
+						state="waiting"
+						selfId="me"
+						onChange={vi.fn()}
+					/>
+				</ul>
+			</MemoryRouter>,
+		);
+		expect(
+			screen.queryByText("The message did not say who this is for"),
+		).toBeNull();
+	});
+
 	it("drops a step that is not the owner's and remembers why", async () => {
 		const user = userEvent.setup();
 		const onChange = vi.fn();

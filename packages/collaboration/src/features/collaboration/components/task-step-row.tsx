@@ -75,6 +75,9 @@ export function toTaskStep(row: Record<string, unknown>): TaskStep {
 	};
 }
 
+/** The server's note on a step whose mail did not say who it is for. */
+const UNCLEAR_WHO = "unclear who";
+
 const INBOX_NOTE: Partial<Record<StepInbox, string>> = {
 	fyi: "From a conversation filed as for your information",
 	waiting: "From a conversation where you are waiting on someone else",
@@ -245,6 +248,11 @@ export function TaskStepRow({
 						>
 							{step.threadSubject || "the conversation"}
 						</Link>
+					</span>
+				) : null}
+				{step.note === UNCLEAR_WHO ? (
+					<span className="mt-1 block text-muted-foreground text-xs">
+						The message did not say who this is for
 					</span>
 				) : null}
 				{step.inbox && INBOX_NOTE[step.inbox] ? (
