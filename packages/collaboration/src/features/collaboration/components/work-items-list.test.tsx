@@ -15,7 +15,7 @@ import {
 	CollaborationSessionProvider,
 	useWorkChanged,
 } from "../state/collaboration-session.context";
-import { WorkItems } from "./work-items-list";
+import { quietLabel, WorkItems } from "./work-items-list";
 
 /** A work item as WorkListMyWork returns it. */
 const workItem = (id: string, extra: Record<string, unknown> = {}) => ({
@@ -408,6 +408,39 @@ it("moves a row inside its group and saves the order with every other item where
 		"aria-disabled",
 		"true",
 	);
+});
+
+it("closes an item from its row and offers to put it back", async () => {
+	insight.workItems = groupedWork();
+	const user = userEvent.setup();
+	await renderWork();
+	await user.click(
+		screen.getByRole("button", { name: "More actions for Item d" }),
+	);
+	await user.click(screen.getByRole("menuitem", { name: "Mark done" }));
+	const saves = () =>
+		insight.actions.run.mock.calls
+			.map(([statement]) => statement)
+			.filter((statement) => statement.startsWith("WorkSaveWork"));
+	await waitFor(() =>
+		expect(saves()).toEqual([
+			pixel("WorkSaveWork", { taskId: "d", status: "done" }),
+		]),
+	);
+	await waitFor(() =>
+		expect(toastMock).toHaveBeenCalledWith(
+			'"Item d" marked done.',
+			expect.anything(),
+		),
+	);
+});
+
+it("says how long an item has been quiet, only once it has been a while", () => {
+	const now = new Date("2026-11-16T12:00:00Z").getTime();
+	expect(quietLabel("2026-11-10 09:00:00", now)).toBeNull();
+	expect(quietLabel("2026-10-20 09:00:00", now)).toBe("Quiet for 3 weeks");
+	expect(quietLabel("2026-08-01 09:00:00", now)).toBe("Quiet for 3 months");
+	expect(quietLabel(undefined, now)).toBeNull();
 });
 
 it("reads the list again when another view changes work, but not for its own change", async () => {

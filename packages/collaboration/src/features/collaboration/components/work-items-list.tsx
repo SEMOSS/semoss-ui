@@ -104,6 +104,8 @@ interface Item {
 	topicId?: string;
 	roomId?: string;
 	due?: string;
+	/** When the item or one of its steps last changed. */
+	updatedAt?: string;
 	openSteps: Step[];
 }
 
@@ -138,6 +140,7 @@ function toItem(row: Row): Item {
 		topicId: primary ? str(primary.id) : undefined,
 		roomId: str(row.roomId) || undefined,
 		due: str(row.due) || undefined,
+		updatedAt: str(row.updatedAt) || undefined,
 		openSteps: list(row.openSteps).map(toStep),
 	};
 }
@@ -154,6 +157,24 @@ export function dueLabel(due?: string): { text: string; soon: boolean } | null {
 		}),
 		soon: (at.getTime() - Date.now()) / 86_400_000 < 2,
 	};
+}
+
+// an item nothing has touched for this long says so, with the way to close it one menu away
+const QUIET_DAYS = 21;
+
+/** How long ago the item last changed, when that is long enough to say; null otherwise. */
+export function quietLabel(
+	updatedAt?: string,
+	now = Date.now(),
+): string | null {
+	if (!updatedAt) return null;
+	const at = new Date(updatedAt.replace(" ", "T"));
+	if (Number.isNaN(at.getTime())) return null;
+	const days = Math.floor((now - at.getTime()) / 86_400_000);
+	if (days < QUIET_DAYS) return null;
+	return days < 60
+		? `Quiet for ${Math.floor(days / 7)} weeks`
+		: `Quiet for ${Math.floor(days / 30)} months`;
 }
 
 const errorText = (cause: unknown) =>
@@ -328,6 +349,7 @@ function ItemRow({
 	onDragEnd,
 	onMoveUp,
 	onMoveDown,
+	onClose,
 }: {
 	item: Item;
 	isMine: (step: Step) => boolean;
@@ -340,9 +362,12 @@ function ItemRow({
 	/** Moves the row one place; absent at that end of the list. */
 	onMoveUp?: () => void;
 	onMoveDown?: () => void;
+	/** Closes the item as finished or as no longer wanted. */
+	onClose?: (status: "done" | "dropped") => void;
 }) {
 	const draggable = Boolean(onDragStart);
 	const due = dueLabel(item.due);
+	const quiet = quietLabel(item.updatedAt);
 	const next = mineNext(item, isMine);
 	const waiting = waitingOn(item, isMine);
 	const owed = item.openSteps.filter((step) => !isMine(step)).length;
@@ -408,6 +433,21 @@ function ItemRow({
 								>
 									Move down
 								</DropdownMenuItem>
+								{onClose ? (
+									<>
+										<DropdownMenuSeparator />
+										<DropdownMenuItem
+											onSelect={() => onClose("done")}
+										>
+											Mark done
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											onSelect={() => onClose("dropped")}
+										>
+											Drop
+										</DropdownMenuItem>
+									</>
+								) : null}
 							</DropdownMenuContent>
 						</DropdownMenu>
 					) : null}
@@ -462,6 +502,11 @@ function ItemRow({
 							)}
 						>
 							Due {due.text}
+						</span>
+					) : null}
+					{quiet ? (
+						<span className="shrink-0 text-muted-foreground text-xs">
+							{quiet}
 						</span>
 					) : null}
 					{owed > 0 ? (
@@ -1239,6 +1284,30 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 			) : null}
 		</div>
 	);
+	/** Closes an item from its row; the toast puts it back. */
+	const close = async (item: Item, status: "done" | "dropped") => {
+		const isSaved = await run(
+			pixel("WorkSaveWork", { taskId: item.id, status }),
+		);
+		if (!isSaved) return;
+		toast(
+			status === "done"
+				? `"${item.title}" marked done.`
+				: `"${item.title}" dropped.`,
+			{
+				action: {
+					label: "Undo",
+					onClick: () =>
+						void run(
+							pixel("WorkSaveWork", {
+								taskId: item.id,
+								status: item.status || "active",
+							}),
+						),
+				},
+			},
+		);
+	};
 	/** One group's rows, which drag and move inside the group. */
 	const rows = (groupRows: Item[], label: string) => (
 		<ul aria-label={label} className="divide-y divide-border">
@@ -1273,6 +1342,7 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 						onMoveDown={
 							after ? () => move(item.id, after.id) : undefined
 						}
+						onClose={(status) => void close(item, status)}
 					/>
 				);
 			})}
