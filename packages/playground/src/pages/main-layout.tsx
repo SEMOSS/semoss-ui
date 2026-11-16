@@ -7,7 +7,7 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { matchPath, Outlet, useLocation, useNavigate } from "react-router";
+import { matchPath, Outlet, useLocation } from "react-router";
 import {
 	cn,
 	SidebarInset,
@@ -22,11 +22,8 @@ import { LandingTour } from "@/components/common/landing-tour";
 import { ROOM_PANEL_COMPONENTS } from "@/components/room/panels/room-panel.components";
 import { ChatSessionContext } from "@/contexts/chat-session.context";
 import { TourContext } from "@/contexts/tour-context";
-import {
-	type ChatConfig,
-	ChatConfigContext,
-} from "@/features/chat-config/chat-config.context";
 import { NEW_CHAT_BUILD_DEFAULTS } from "@/features/chat-config/new-chat-build-defaults";
+import { PlaygroundChatConfigProvider } from "@/features/chat-config/playground-chat-config-provider";
 import { useWorkspaceNavigation } from "@/features/conversation/use-workspace-navigation";
 import { WorkspaceNavigationContext } from "@/features/conversation/workspace-navigation.context";
 import { NavigationButton } from "@/features/navigation/navigation-button";
@@ -41,7 +38,6 @@ export const MainLayout = observer(() => {
 	// React freezes DOM style props in development; keep the observable theme mutable.
 	const layoutStyle = { ...theme.overrides["main-layout"] };
 	const { pathname } = useLocation();
-	const navigate = useNavigate();
 	const [isTourOpen, setIsTourOpen] = useState(false);
 	const [pendingTour, setPendingTour] = useState(false);
 	// Routes with their own header hold the mobile navigation button there.
@@ -72,21 +68,6 @@ export const MainLayout = observer(() => {
 
 		return store;
 	}, [theme]);
-
-	// what chat UI reads from the host: the theme, and where to go
-	const chatConfig = useMemo<ChatConfig>(
-		() => ({
-			theme,
-			newChatDefaults: NEW_CHAT_BUILD_DEFAULTS,
-			navigation: {
-				openRoom: (roomId) => navigate(`/room/${roomId}`),
-				roomHref: (roomId) => `#/room/${roomId}`,
-				agentHref: (workspaceId) => `#/agent/${workspaceId}`,
-				onRoomDeleted: () => navigate("/"),
-			},
-		}),
-		[theme, navigate],
-	);
 
 	// Refs for embed iframe sync
 	const iframeRefs = useRef<Record<string, HTMLIFrameElement | null>>({});
@@ -190,15 +171,15 @@ export const MainLayout = observer(() => {
 				chat: chatStore,
 			}}
 		>
-			<ChatConfigContext.Provider value={chatConfig}>
-				<TourContext.Provider
-					value={{
-						isOpen: isTourOpen,
-						startTour: () => setIsTourOpen(true),
-						stopTour: () => setIsTourOpen(false),
-					}}
-				>
-					<SettingsDialogProvider>
+			<TourContext.Provider
+				value={{
+					isOpen: isTourOpen,
+					startTour: () => setIsTourOpen(true),
+					stopTour: () => setIsTourOpen(false),
+				}}
+			>
+				<SettingsDialogProvider>
+					<PlaygroundChatConfigProvider>
 						<LandingTour />
 						<WorkspaceNavigationContext.Provider
 							value={navigation.setWorkAreaOpen}
@@ -287,9 +268,9 @@ export const MainLayout = observer(() => {
 								</SidebarProvider>
 							</PageHeaderContext.Provider>
 						</WorkspaceNavigationContext.Provider>
-					</SettingsDialogProvider>
-				</TourContext.Provider>
-			</ChatConfigContext.Provider>
+					</PlaygroundChatConfigProvider>
+				</SettingsDialogProvider>
+			</TourContext.Provider>
 		</ChatSessionContext.Provider>
 	);
 });

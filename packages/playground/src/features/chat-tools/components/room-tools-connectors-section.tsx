@@ -8,12 +8,12 @@ import {
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "@semoss/i18n";
 import { Button } from "@semoss/ui/next";
+import { useChatConfig } from "@/features/chat-config/use-chat-config";
 import { ConnectorServiceIcon } from "@/features/connectors/components/connector-service-icon";
 import type { ConnectorProviderId } from "@/features/connectors/connector.catalog";
 import { signInToProvider } from "@/features/connectors/connector-sign-in";
 import { useConnectProvider } from "@/features/connectors/use-connect-provider";
 import { useConnectorLogins } from "@/features/connectors/use-connector-logins";
-import { useSettingsDialog } from "@/features/settings/settings-dialog.context";
 import type { RoomStore } from "@/stores/room/room.store";
 import {
 	type ConnectorAccessIssue,
@@ -49,7 +49,7 @@ export const RoomToolsConnectorsSection = observer(
 			"common",
 		]);
 		const handleSignIn = useConnectProvider(signInToProvider);
-		const { openSettings } = useSettingsDialog();
+		const { openSettings } = useChatConfig().navigation;
 		// sign ins made or lost in another tab show up when the window is focused
 		useConnectorLogins(connectors);
 		// read again once a connector change has been written to the toolbox
@@ -96,15 +96,17 @@ export const RoomToolsConnectorsSection = observer(
 							icon={<RefreshCwIcon aria-hidden />}
 							onClick={toolbox.load}
 						/>
-						<Button
-							type="button"
-							variant="ghost"
-							size="sm"
-							onClick={() => openSettings("connectors")}
-						>
-							<Settings2Icon aria-hidden />
-							{t("sections.connectors.manage")}
-						</Button>
+						{openSettings ? (
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								onClick={() => openSettings("connectors")}
+							>
+								<Settings2Icon aria-hidden />
+								{t("sections.connectors.manage")}
+							</Button>
+						) : null}
 					</>
 				}
 			>

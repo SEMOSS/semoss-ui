@@ -31,6 +31,11 @@ vi.mock("@/hooks/use-root", () => ({
 		root: { theme: { featureFlags: {}, defaultEmbedderId: "embedder" } },
 	}),
 }));
+vi.mock("@/features/chat-config/use-chat-config", () => ({
+	useChatConfig: () => ({
+		theme: { featureFlags: {}, defaultEmbedderId: "embedder" },
+	}),
+}));
 vi.mock("@/hooks/use-chat-session", () => ({
 	useChatSession: () => ({
 		chat: {

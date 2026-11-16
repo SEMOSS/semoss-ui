@@ -3,7 +3,11 @@ import type React from "react";
 import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useSessionPixel } from "@semoss/sdk/react";
-import { type MCPConfig, MCPSelector } from "@semoss/shared";
+import {
+	createMcpPlatformUrl,
+	type MCPConfig,
+	MCPSelector,
+} from "@semoss/shared";
 import {
 	Alert,
 	AlertDescription,
@@ -24,7 +28,7 @@ import {
 } from "@semoss/ui/next";
 import { useChatConfig } from "@/features/chat-config/use-chat-config";
 import type { Workspace } from "@/types";
-import { mcpToPlatformUrl, splitMcpByType } from "@/utility/mcp-utils";
+import { splitMcpByType } from "@/utility/mcp-utils";
 import { NewKnowledgeFormBody } from "../knowledge/new-knowledge-form-body";
 import { AgentSelector } from "./agent-selector";
 
@@ -92,7 +96,7 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 	onClose,
 }) => {
 	const { t } = useTranslation(["mcp", "knowledge", "common", "room"]);
-	const { theme } = useChatConfig();
+	const { theme, platformUrl } = useChatConfig();
 
 	const [knowledge, setKnowledge] = useState<MCPConfig[]>(
 		() => splitMcpByType(values).knowledge,
@@ -415,7 +419,9 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 										getPlatformUrl={
 											theme.featureFlags
 												?.showPlatformLinks
-												? mcpToPlatformUrl
+												? createMcpPlatformUrl(
+														platformUrl,
+													)
 												: undefined
 										}
 									/>
@@ -442,7 +448,9 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 										getPlatformUrl={
 											theme.featureFlags
 												?.showPlatformLinks
-												? mcpToPlatformUrl
+												? createMcpPlatformUrl(
+														platformUrl,
+													)
 												: undefined
 										}
 									/>

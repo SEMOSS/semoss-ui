@@ -13,8 +13,8 @@ vi.mock("@semoss/i18n", () => ({
 		i18n: { language: "en" },
 	}),
 }));
-vi.mock("@/features/settings/settings-dialog.context", () => ({
-	useSettingsDialog: () => ({ openSettings: openSettings }),
+vi.mock("@/features/chat-config/use-chat-config", () => ({
+	useChatConfig: () => ({ navigation: { openSettings } }),
 }));
 vi.mock("@/features/connectors/use-connector-logins", () => ({
 	useConnectorLogins: vi.fn(),

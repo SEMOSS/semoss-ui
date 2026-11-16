@@ -20,9 +20,9 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
+import { getPlaygroundAgentLinks } from "@/features/agents/agent-links";
 import { useChatSession } from "@/hooks/use-chat-session";
 import { useRoot } from "@/hooks/use-root";
-import { getPlaygroundAgentLinks } from "@/utility/mcp-utils";
 
 /** The values the form was seeded with, and the agent they belong to. */
 interface AgentFormSeed {

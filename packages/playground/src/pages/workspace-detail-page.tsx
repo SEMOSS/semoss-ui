@@ -33,10 +33,10 @@ import {
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import { WorkspaceChatList } from "@/components/workspace/workspace-chat-list";
+import { getPlaygroundAgentLinks } from "@/features/agents/agent-links";
 import { useChatSession } from "@/hooks/use-chat-session";
 import { useRoot } from "@/hooks/use-root";
 import type { Workspace } from "@/types";
-import { getPlaygroundAgentLinks } from "@/utility/mcp-utils";
 
 /**
  * Renders the Workspace (Agent) Detail Page.

@@ -20,7 +20,7 @@ import {
 	zodResolver,
 } from "@semoss/ui/next";
 import { FilePreviewGrid } from "@/components/common/file-preview-grid";
-import { useRoot } from "@/hooks/use-root";
+import { useChatConfig } from "@/features/chat-config/use-chat-config";
 import type { MCPConfig } from "@/types";
 import { throwOnPixelErrors } from "@/utility/pixel-errors";
 
@@ -50,7 +50,7 @@ interface NewKnowledgeFormBodyProps {
 export const NewKnowledgeFormBody = observer(
 	({ formId, onSuccess, onLoadingChange }: NewKnowledgeFormBodyProps) => {
 		const { run, upload } = useSessionInsight();
-		const { root } = useRoot();
+		const { theme } = useChatConfig();
 		const { t } = useTranslation([
 			"knowledge",
 			"validation",
@@ -58,10 +58,9 @@ export const NewKnowledgeFormBody = observer(
 			"common",
 		]);
 
-		const showEmbeddingOptions =
-			root.theme.featureFlags?.allowEmbeddingOptions;
-		const defaultEmbedderId = root.theme.defaultEmbedderId ?? "";
-		const runMCP = root.theme.featureFlags?.enableKnowledgeMCP;
+		const showEmbeddingOptions = theme.featureFlags?.allowEmbeddingOptions;
+		const defaultEmbedderId = theme.defaultEmbedderId ?? "";
+		const runMCP = theme.featureFlags?.enableKnowledgeMCP;
 
 		const id = useId();
 		const form = useForm({

@@ -7,6 +7,7 @@ import { isToolViewUri, useToolView } from "@semoss/shared";
 import { AgentUserInputCard, Skeleton, toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import { ToolsDefaultView } from "@/components/mcp/tools-default-view/tools-default-view";
+import { useChatConfig } from "@/features/chat-config/use-chat-config";
 import { ChatToolCard } from "@/features/chat-tools/components/chat-tool-card";
 import {
 	isChatToolCall,
@@ -17,10 +18,6 @@ import { decideAgentToolAction } from "@/stores/message/agent-harness";
 import type { RoomStore } from "@/stores/room/room.store";
 import { isAskExecutionMode } from "@/utility/mcp-utils";
 import { ToolsServerView } from "./tools-server-view";
-
-const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
-	? import.meta.env.VITE_PLATFORM_URL
-	: "";
 
 /**
  * A tool whose UI ships with the web app declares it as
@@ -60,6 +57,7 @@ interface ToolsViewProps {
 
 export const ToolsView = observer(
 	({ room, app, message, toolId }: ToolsViewProps) => {
+		const { platformUrl } = useChatConfig();
 		const liveTool = room.getTool(toolId);
 		const tool = liveTool?.json;
 		const toolResponse =
@@ -219,7 +217,7 @@ export const ToolsView = observer(
 
 					if (getAppInfo.data.project_type === "BLOCKS") {
 						// Low code app
-						setUrl(`${PLATFORM_URL}/#/s/${app}/`);
+						setUrl(`${platformUrl}/#/s/${app}/`);
 					}
 
 					// Check if portals exists
@@ -256,7 +254,7 @@ export const ToolsView = observer(
 						setUrl("");
 					} else if (getAppInfo.data.project_type === "BLOCKS") {
 						// Low code app
-						setUrl(`${PLATFORM_URL}/#/s/${app}${resourceURI}`);
+						setUrl(`${platformUrl}/#/s/${app}${resourceURI}`);
 					} else {
 						setUrl(
 							`${Env.MODULE}/public_home/${app}/portals${resourceURI}`,
@@ -276,6 +274,7 @@ export const ToolsView = observer(
 			isComponentView,
 			getAppInfo.status,
 			getAppInfo.data,
+			platformUrl,
 		]);
 
 		useEffect(() => {

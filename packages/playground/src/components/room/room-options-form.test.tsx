@@ -14,7 +14,10 @@ vi.mock("@semoss/i18n", () => ({
 	}),
 }));
 vi.mock("@/features/chat-config/use-chat-config", () => ({
-	useChatConfig: () => ({ theme: { featureFlags: {} } }),
+	useChatConfig: () => ({
+		theme: { featureFlags: {} },
+		navigation: { openSettings: vi.fn() },
+	}),
 }));
 vi.mock("@semoss/shared", async (original) => ({
 	...(await original<typeof import("@semoss/shared")>()),
@@ -63,9 +66,6 @@ vi.mock("@/components/mcp/mcp-overlay", () => ({
 		) : null,
 }));
 
-vi.mock("@/features/settings/settings-dialog.context", () => ({
-	useSettingsDialog: () => ({ openSettings: vi.fn() }),
-}));
 vi.mock("@/features/connectors/use-connector-logins", () => ({
 	useConnectorLogins: vi.fn(),
 }));

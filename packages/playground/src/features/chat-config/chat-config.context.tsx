@@ -15,6 +15,8 @@ export interface ChatNavigation {
 	agentHref?: (workspaceId: string) => string;
 	/** A room was deleted from inside chat UI. */
 	onRoomDeleted: (roomId: string) => void;
+	/** Open the host's settings on a section; without it, chat UI links to none. */
+	openSettings?: (section: "connectors") => void;
 }
 
 /** What the host gives every piece of chat UI. */
@@ -24,6 +26,8 @@ export interface ChatConfig {
 	readonly navigation: ChatNavigation;
 	/** The build's new-chat defaults, under the theme's. */
 	readonly newChatDefaults: NewChatBuildDefaults;
+	/** Where the SEMOSS platform app is served, for catalog links and tool UIs. */
+	readonly platformUrl: string;
 }
 
 export const ChatConfigContext = createContext<ChatConfig | undefined>(

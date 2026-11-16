@@ -16,9 +16,9 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
+import { getPlaygroundAgentLinks } from "@/features/agents/agent-links";
 import { useChatSession } from "@/hooks/use-chat-session";
 import { useRoot } from "@/hooks/use-root";
-import { getPlaygroundAgentLinks } from "@/utility/mcp-utils";
 
 /**
  * Renders the NewWorkspacePage for creating new agents.
