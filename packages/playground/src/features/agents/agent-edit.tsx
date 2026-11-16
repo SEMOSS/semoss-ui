@@ -1,5 +1,4 @@
 import { UsersRound } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useChatSession } from "@semoss/chat";
@@ -41,7 +40,7 @@ interface AgentEditProps {
 	workspaceId?: string;
 }
 
-export const AgentEdit = observer(({ workspaceId }: AgentEditProps) => {
+export const AgentEdit = ({ workspaceId }: AgentEditProps) => {
 	const { t } = useTranslation(["workspace", "common", "notifications"]);
 	const isDirectoryAvailable = useConfig(
 		(state) => state.config?.msGraphLookup === true,
@@ -242,4 +241,4 @@ export const AgentEdit = observer(({ workspaceId }: AgentEditProps) => {
 			</div>
 		</div>
 	);
-});
+};

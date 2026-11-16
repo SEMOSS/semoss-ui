@@ -1,5 +1,4 @@
 import { Bot, HelpCircle, SquarePenIcon } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { Link, matchPath, useLocation, useParams } from "react-router";
 import { Chat, useRoomSearchShortcut } from "@semoss/chat";
@@ -33,7 +32,7 @@ try {
  *
  * @component
  */
-export const GlobalNav = observer(() => {
+export const GlobalNav = () => {
 	const { t } = useTranslation("sidebar");
 	const theme = usePlaygroundTheme();
 	const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -210,4 +209,4 @@ export const GlobalNav = observer(() => {
 			/>
 		</>
 	);
-});
+};

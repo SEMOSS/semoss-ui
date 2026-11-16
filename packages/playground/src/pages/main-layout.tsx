@@ -1,4 +1,3 @@
-import { observer } from "mobx-react-lite";
 import {
 	type CSSProperties,
 	useCallback,
@@ -10,6 +9,7 @@ import {
 import { matchPath, Outlet, useLocation } from "react-router";
 import {
 	Chat,
+	useChatSelector,
 	useCreateChatStore,
 	WorkspaceNavigationContext,
 } from "@semoss/chat";
@@ -34,9 +34,9 @@ import { useThemeTitle } from "@/features/theme/use-theme-title";
 import { LandingTour } from "@/features/tour/landing-tour";
 import { TourContext } from "@/features/tour/tour.context";
 
-export const MainLayout = observer(() => {
+export const MainLayout = () => {
 	const theme = usePlaygroundTheme();
-	// React freezes DOM style props in development; keep the observable theme mutable.
+	// React freezes DOM style props in development; keep the shared theme mutable.
 	const layoutStyle = { ...theme.overrides["main-layout"] };
 	const { pathname } = useLocation();
 	const [isTourOpen, setIsTourOpen] = useState(false);
@@ -57,6 +57,10 @@ export const MainLayout = observer(() => {
 	const navigation = useWorkspaceNavigation(isSidebarOpen, setIsSidebarOpen);
 
 	const chatStore = useCreateChatStore(theme, NEW_CHAT_BUILD_DEFAULTS);
+	const embeddedPageMap = useChatSelector(
+		chatStore,
+		(chat) => chat.embeddedPageMap,
+	);
 
 	// Refs for embed iframe sync
 	const iframeRefs = useRef<Record<string, HTMLIFrameElement | null>>({});
@@ -66,9 +70,7 @@ export const MainLayout = observer(() => {
 	// embedPath -> iframeBase (the hash-derived root path inside the iframe)
 	const embedPathToIframeBase = useMemo(() => {
 		const map: Record<string, string> = {};
-		for (const [embedPath, item] of Object.entries(
-			chatStore.embeddedPageMap,
-		)) {
+		for (const [embedPath, item] of Object.entries(embeddedPageMap)) {
 			try {
 				const hash = new URL(item.url).hash; // e.g. "#/agent"
 				map[embedPath] = hash.startsWith("#") ? hash.slice(1) : hash; // e.g. "/agent"
@@ -77,7 +79,7 @@ export const MainLayout = observer(() => {
 			}
 		}
 		return map;
-	}, [chatStore.embeddedPageMap]);
+	}, [embeddedPageMap]);
 
 	useThemeTitle(theme);
 
@@ -209,7 +211,7 @@ export const MainLayout = observer(() => {
 											<div className="relative min-h-0 w-full flex-1 overflow-hidden">
 												<Outlet />
 												{Object.values(
-													chatStore.embeddedPageMap,
+													embeddedPageMap,
 												).map((item) => {
 													const isActive = matchPath(
 														{
@@ -258,4 +260,4 @@ export const MainLayout = observer(() => {
 			</TourContext.Provider>
 		</Chat.SessionProvider>
 	);
-});
+};

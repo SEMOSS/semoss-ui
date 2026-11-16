@@ -22,10 +22,6 @@ const mockPixel = vi.hoisted(() => (pixel: string) => ({
 	status: "SUCCESS",
 	data: pixel.startsWith("GetWorkspace") ? mocks.workspace : [],
 }));
-// Query snapshots are supplied through rerender instead of an SDK subscription.
-vi.mock("mobx-react-lite", () => ({
-	observer: <T,>(component: T) => component,
-}));
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({
 		t: (key: string) => key,

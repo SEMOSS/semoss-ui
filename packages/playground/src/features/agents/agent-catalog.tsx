@@ -1,5 +1,4 @@
 import { SearchIcon } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { type App, useChatSession } from "@semoss/chat";
@@ -112,7 +111,7 @@ const toCardPermission = (app: App): "OWNER" | "EDIT" | "READ_ONLY" =>
  *
  * @component
  */
-export const AgentCatalog = observer(() => {
+export const AgentCatalog = () => {
 	const { t } = useTranslation(["workspace", "notifications", "common"]);
 	const navigate = useNavigate();
 	const theme = usePlaygroundTheme();
@@ -307,4 +306,4 @@ export const AgentCatalog = observer(() => {
 			</div>
 		</div>
 	);
-});
+};

@@ -1,9 +1,9 @@
-import { observer } from "mobx-react-lite";
 import { useId } from "react";
 import {
 	isNewChatMode,
 	offersAgentMode,
 	readDeploymentNewChatDefaults,
+	useChatSelector,
 	useChatSession,
 	type Workspace,
 } from "@semoss/chat";
@@ -38,9 +38,10 @@ const DEFAULT_VALUE = "default";
  * choices, shown as the field's placeholder while it is chosen. Each row
  * shows only where the deployment lets the user choose it.
  */
-export const NewChatSettings = observer(() => {
+export const NewChatSettings = () => {
 	const { t } = useTranslation("sidebar");
 	const { chat } = useChatSession();
+	const models = useChatSelector(chat, (chat) => chat.models.available);
 	const theme = usePlaygroundTheme();
 	const preferences = useNewChatPreferences();
 	const headingId = useId();
@@ -70,7 +71,6 @@ export const NewChatSettings = observer(() => {
 			? getAgent.data.display_name || getAgent.data.name
 			: "";
 
-	const models = chat.models.available;
 	// a default the user can no longer see still shows, so it can be changed
 	const isModelMissing =
 		!!preferences.modelId &&
@@ -195,4 +195,4 @@ export const NewChatSettings = observer(() => {
 			) : null}
 		</section>
 	);
-});
+};

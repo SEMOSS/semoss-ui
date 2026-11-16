@@ -16,7 +16,14 @@ vi.mock("@/features/theme/use-playground-theme", () => ({
 }));
 vi.mock("@semoss/chat", async (original) => ({
 	...(await original<typeof import("@semoss/chat")>()),
-	useCreateChatStore: () => ({ embeddedPageMap: {} }),
+	useCreateChatStore: () => {
+		const store = {
+			embeddedPageMap: {},
+			getSnapshot: () => store,
+			subscribe: () => () => {},
+		};
+		return store;
+	},
 }));
 vi.mock("@/features/navigation/global-nav", () => ({ GlobalNav: () => null }));
 vi.mock("@/features/app-shell/global-footer", () => ({

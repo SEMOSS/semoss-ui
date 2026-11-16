@@ -1,15 +1,17 @@
-import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { Navigate, useNavigate, useParams } from "react-router";
-import { useChatSession } from "@semoss/chat";
+import { useChatSelector, useChatSession } from "@semoss/chat";
 
-export const EmbedPage: React.FC = observer(() => {
+export const EmbedPage: React.FC = () => {
 	const { "*": splatPath } = useParams();
 	const basePath = splatPath?.split("/")[0] ?? "";
 	const { chat } = useChatSession();
 	const navigate = useNavigate();
 
-	const pageInfo = chat.embeddedPageMap[basePath] ?? null;
+	const pageInfo = useChatSelector(
+		chat,
+		(chat) => chat.embeddedPageMap[basePath] ?? null,
+	);
 
 	useEffect(() => {
 		const handleMessage = (event: MessageEvent) => {
@@ -44,4 +46,4 @@ export const EmbedPage: React.FC = observer(() => {
 	// MainLayout has already pre-loaded this iframe and will show it on top —
 	// render nothing here to avoid running a duplicate instance of the app.
 	return null;
-});
+};

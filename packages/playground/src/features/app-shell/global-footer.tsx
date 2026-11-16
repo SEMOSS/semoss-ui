@@ -1,8 +1,7 @@
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 
-export const GlobalFooter: React.FC = observer(() => {
+export const GlobalFooter: React.FC = () => {
 	const theme = usePlaygroundTheme();
 
 	if (!theme.footer) {
@@ -18,4 +17,4 @@ export const GlobalFooter: React.FC = observer(() => {
 			}}
 		></footer>
 	);
-});
+};

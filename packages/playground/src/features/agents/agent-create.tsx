@@ -1,4 +1,3 @@
-import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useChatSession } from "@semoss/chat";
@@ -27,7 +26,7 @@ import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
  * sticky Cancel/Create header. Members are managed from the edit page once
  * the agent exists.
  */
-export const AgentCreate = observer(() => {
+export const AgentCreate = () => {
 	const { t } = useTranslation([
 		"workspace",
 		"common",
@@ -154,4 +153,4 @@ export const AgentCreate = observer(() => {
 			</div>
 		</div>
 	);
-});
+};

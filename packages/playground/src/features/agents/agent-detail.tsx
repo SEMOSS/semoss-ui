@@ -5,7 +5,6 @@ import {
 	Trash2Icon,
 	UsersRound,
 } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router";
 import { useChatSession, type Workspace } from "@semoss/chat";
@@ -51,7 +50,7 @@ interface AgentDetailProps {
 	workspaceId?: string;
 }
 
-export const AgentDetail = observer(({ workspaceId }: AgentDetailProps) => {
+export const AgentDetail = ({ workspaceId }: AgentDetailProps) => {
 	const { t } = useTranslation(["workspace", "common"]);
 
 	const navigate = useNavigate();
@@ -288,4 +287,4 @@ export const AgentDetail = observer(({ workspaceId }: AgentDetailProps) => {
 			</Dialog>
 		</div>
 	);
-});
+};

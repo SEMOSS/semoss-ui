@@ -1,4 +1,3 @@
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
@@ -12,48 +11,48 @@ import {
 } from "@semoss/ui/next";
 import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 
-export const GlobalDialog: React.FC<{ onAcknowledge?: () => void }> = observer(
-	({ onAcknowledge }) => {
-		const { t } = useTranslation("common");
-		const theme = usePlaygroundTheme();
-		const [visible, setVisible] = useCacheState(
-			true,
-			`global-dialog--${theme.dialog?.key}`,
-		);
+export const GlobalDialog: React.FC<{ onAcknowledge?: () => void }> = ({
+	onAcknowledge,
+}) => {
+	const { t } = useTranslation("common");
+	const theme = usePlaygroundTheme();
+	const [visible, setVisible] = useCacheState(
+		true,
+		`global-dialog--${theme.dialog?.key}`,
+	);
 
-		if (!theme.dialog || !visible) {
-			return null;
-		}
+	if (!theme.dialog || !visible) {
+		return null;
+	}
 
-		return (
-			<Dialog open={visible}>
-				<DialogContent
-					className="max-h-[90dvh] grid-rows-[auto_1fr_auto] overflow-hidden sm:max-w-3xl"
-					showCloseButton={false}
-				>
-					<DialogHeader>
-						<DialogTitle>{theme.dialog.title}</DialogTitle>
-					</DialogHeader>
-					<div
-						className="overflow-y-auto"
-						// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
-						dangerouslySetInnerHTML={{
-							__html: theme.dialog.content,
+	return (
+		<Dialog open={visible}>
+			<DialogContent
+				className="max-h-[90dvh] grid-rows-[auto_1fr_auto] overflow-hidden sm:max-w-3xl"
+				showCloseButton={false}
+			>
+				<DialogHeader>
+					<DialogTitle>{theme.dialog.title}</DialogTitle>
+				</DialogHeader>
+				<div
+					className="overflow-y-auto"
+					// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
+					dangerouslySetInnerHTML={{
+						__html: theme.dialog.content,
+					}}
+				/>
+				<DialogFooter>
+					<Button
+						variant="default"
+						onClick={() => {
+							setVisible(false);
+							onAcknowledge?.();
 						}}
-					/>
-					<DialogFooter>
-						<Button
-							variant="default"
-							onClick={() => {
-								setVisible(false);
-								onAcknowledge?.();
-							}}
-						>
-							{t("navigation.acknowledge")}
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
-		);
-	},
-);
+					>
+						{t("navigation.acknowledge")}
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+	);
+};

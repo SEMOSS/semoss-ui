@@ -4,7 +4,6 @@ import {
 	MapIcon,
 	XIcon,
 } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
@@ -120,7 +119,7 @@ function getCardStyle(
 	}
 }
 
-export const LandingTour: React.FC = observer(() => {
+export const LandingTour: React.FC = () => {
 	const { t } = useTranslation("tour");
 	const { isOpen, stopTour } = useTour();
 	const theme = usePlaygroundTheme();
@@ -315,4 +314,4 @@ export const LandingTour: React.FC = observer(() => {
 			</DialogContent>
 		</Dialog>
 	);
-});
+};

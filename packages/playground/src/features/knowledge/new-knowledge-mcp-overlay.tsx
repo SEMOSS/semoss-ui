@@ -1,4 +1,3 @@
-import { observer } from "mobx-react-lite";
 import { useId, useState } from "react";
 import { Chat, type MCPConfig } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
@@ -27,59 +26,55 @@ interface NewKnowledgeMCPOverlayProps {
  * already inside a modal should host the form body directly to avoid stacking
  * Dialogs.
  */
-export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> =
-	observer(({ open, onClose }) => {
-		const { t } = useTranslation(["knowledge", "common"]);
-		const formId = useId();
-		const [isLoading, setIsLoading] = useState(false);
+export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> = ({
+	open,
+	onClose,
+}) => {
+	const { t } = useTranslation(["knowledge", "common"]);
+	const formId = useId();
+	const [isLoading, setIsLoading] = useState(false);
 
-		return (
-			<Dialog
-				open={open}
-				onOpenChange={(next) => {
-					if (!next && !isLoading) {
-						onClose();
-					}
-				}}
-			>
-				<DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
-					<DialogHeader>
-						<DialogTitle>
-							{t("knowledge:newSource.title")}
-						</DialogTitle>
-						<DialogDescription>
-							{t("knowledge:newSource.description")}
-						</DialogDescription>
-					</DialogHeader>
+	return (
+		<Dialog
+			open={open}
+			onOpenChange={(next) => {
+				if (!next && !isLoading) {
+					onClose();
+				}
+			}}
+		>
+			<DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
+				<DialogHeader>
+					<DialogTitle>{t("knowledge:newSource.title")}</DialogTitle>
+					<DialogDescription>
+						{t("knowledge:newSource.description")}
+					</DialogDescription>
+				</DialogHeader>
 
-					<Chat.KnowledgeForm
-						formId={formId}
-						onSuccess={(knowledge) => onClose(knowledge)}
-						onLoadingChange={setIsLoading}
-					/>
+				<Chat.KnowledgeForm
+					formId={formId}
+					onSuccess={(knowledge) => onClose(knowledge)}
+					onLoadingChange={setIsLoading}
+				/>
 
-					<DialogFooter>
-						<Button
-							variant="ghost"
-							disabled={isLoading}
-							onClick={() => onClose()}
-						>
-							{t("common:buttons.cancel")}
-						</Button>
-						<Button
-							type="submit"
-							form={formId}
-							variant="default"
-							disabled={isLoading}
-						>
-							{isLoading ? (
-								<Spinner />
-							) : (
-								t("common:buttons.create")
-							)}
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
-		);
-	});
+				<DialogFooter>
+					<Button
+						variant="ghost"
+						disabled={isLoading}
+						onClick={() => onClose()}
+					>
+						{t("common:buttons.cancel")}
+					</Button>
+					<Button
+						type="submit"
+						form={formId}
+						variant="default"
+						disabled={isLoading}
+					>
+						{isLoading ? <Spinner /> : t("common:buttons.create")}
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+	);
+};
