@@ -265,6 +265,9 @@ export class RoomStore {
 
 	/** Whether the Workspace's rail offers Files; a new chat's draft does not. */
 	private readonly _includesFiles: boolean;
+
+	/** Stops this room's own subscriptions; see {@link dispose}. */
+	private _disposers: (() => void)[] = [];
 	/**
 	 * The default tools the room's chat sends and the user's decisions on the
 	 * calls that wait for them. Its own store with its own observability, like
@@ -329,17 +332,18 @@ export class RoomStore {
 
 		// make it observable -- the dock is a zustand store with its own
 		// subscription model, and deep-observing it would be nonsense
-		makeAutoObservable(this, {
+		makeAutoObservable<this, "_disposers">(this, {
 			workbench: false,
 			chatTools: false,
 			connectors: false,
 			contextItems: false,
 			sidebarSnapshot: observable.ref,
+			_disposers: false,
 		});
 
 		this._watchSidebar();
 		// a viewer closes when its connector can no longer be shown
-		reaction(
+		const stopConnectorWatch = reaction(
 			() =>
 				this.connectors.availableSources
 					.map((source) => source.service)
@@ -347,6 +351,7 @@ export class RoomStore {
 			() => this._closeHiddenConnectorPanels(),
 			{ fireImmediately: true },
 		);
+		this._disposers.push(stopConnectorWatch);
 	}
 
 	/**
@@ -382,7 +387,7 @@ export class RoomStore {
 	private _watchSidebar = (): void => {
 		let previous = this.workbench.getState().layout.panels;
 
-		this.workbench.subscribe((state) => {
+		const stopSidebarWatch = this.workbench.subscribe((state) => {
 			const panels = state.layout.panels;
 			if (panels === previous) {
 				return;
@@ -404,6 +409,19 @@ export class RoomStore {
 				}
 			}
 		});
+		this._disposers.push(stopSidebarWatch);
+	};
+
+	/**
+	 * Stop the room's own subscriptions: the sidebar and connector watchers.
+	 * The owner calls it once it drops the room; a disposed room no longer
+	 * reacts to its dock or its connectors. A running reply is not stopped.
+	 */
+	dispose = (): void => {
+		for (const stop of this._disposers) {
+			stop();
+		}
+		this._disposers = [];
 	};
 
 	/**

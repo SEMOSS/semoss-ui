@@ -318,3 +318,35 @@ test("a prepared layout retains its tabs through sidebar mounts and later opens"
 	expect(openedPanelIds(room)).toEqual([log]);
 	expect(room.workbench.getState().layout.selection.panel).toBe(files);
 });
+
+test("a disposed room no longer returns a closed tool's tab inline", () => {
+	const room = createRoom("room-disposed-tool");
+	const tool = new ToolStore(room, "t1");
+	room.tools.t1 = tool;
+	tool.openTool("sidebar");
+	const pid = room.openSidebarPanel(
+		ROOM_PANEL_TYPES.TOOL,
+		tool.panelConfig,
+		"Tool",
+	);
+
+	room.dispose();
+	room.workbench.getState().layout.actions.closePanel(pid);
+
+	expect(tool.display).toBe("sidebar");
+});
+
+test("a disposed room keeps a viewer whose connector goes away", () => {
+	const room = createRoom("room-disposed-connector");
+	runInAction(() => {
+		room.connectors.services = ["onedrive"];
+	});
+	room.openSidebarPanel(ROOM_PANEL_TYPES.ONEDRIVE, {}, "OneDrive");
+
+	room.dispose();
+	runInAction(() => {
+		room.connectors.services = [];
+	});
+
+	expect(mainPanelTypes(room)).toContain(ROOM_PANEL_TYPES.ONEDRIVE);
+});

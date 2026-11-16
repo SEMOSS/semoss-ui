@@ -425,6 +425,7 @@ export class ChatStore {
 			}
 		}
 
+		room?.dispose();
 		runInAction(() => {
 			// delete it from the cache
 			delete this._store.rooms[roomId];
