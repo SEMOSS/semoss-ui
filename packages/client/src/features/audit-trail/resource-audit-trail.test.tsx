@@ -180,17 +180,21 @@ describe("resource audit trail", () => {
 			"New App test Audit",
 		);
 	});
-	it("allows admins through the resource route even without an owner role", () => {
+	it("redirects an admin who does not own the engine before issuing any audit request", () => {
 		mocks.permission = "READ_ONLY";
 		mocks.isAdmin = true;
 		render(
-			<MemoryRouter>
-				<EngineAuditPage />
+			<MemoryRouter initialEntries={["/model/a/audit"]}>
+				<Routes>
+					<Route path="/model/a">
+						<Route path="audit" element={<EngineAuditPage />} />
+						<Route index element={<div>Overview</div>} />
+					</Route>
+				</Routes>
 			</MemoryRouter>,
 		);
-		expect(mocks.usePixel.mock.lastCall?.[0]).toContain(
-			'EngineAuditEvents(id=["a"]',
-		);
+		expect(mocks.usePixel).not.toHaveBeenCalled();
+		expect(screen.getByText("Overview")).toBeInTheDocument();
 	});
 	it("uses the project context for the project owner route", () => {
 		render(

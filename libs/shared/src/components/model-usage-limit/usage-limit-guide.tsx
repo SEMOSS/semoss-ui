@@ -11,6 +11,7 @@ import {
 	InfinityIcon,
 	KeyRound,
 	Layers,
+	LayoutGrid,
 	ListChecks,
 	ListOrdered,
 	type LucideIcon,
@@ -81,6 +82,7 @@ const SOURCE_ICONS: Readonly<Record<ModelUsageLimitSource, LucideIcon>> = {
 	PUBLIC: Globe,
 	ALL_MODELS: Layers,
 	PLATFORM: Building2,
+	APP: LayoutGrid,
 };
 
 /** The icons of No Limit Defined, Unlimited and Rules, in the order of USAGE_LIMIT_MODES */

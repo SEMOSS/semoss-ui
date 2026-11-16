@@ -1,8 +1,8 @@
 import { ChevronRightIcon, SquareArrowOutUpRightIcon } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link, matchPath, Navigate, Outlet, useLocation } from "react-router";
 import type { Role } from "@semoss/sdk";
-import { useSession, useSessionInsight } from "@semoss/sdk/react";
+import { useSessionInsight } from "@semoss/sdk/react";
 import { EngineSubtypeIcon, EntityHeader } from "@semoss/shared";
 import {
 	Breadcrumb,
@@ -21,6 +21,8 @@ import { EngineAccessButton } from "@/components/engine/engine-access-button";
 import { NavbarHeader } from "@/components/shared/navbar-header";
 import { NavbarLeft } from "@/components/shared/navbar-left";
 import { EngineActionsMenu } from "@/features/engine-actions/engine-actions-menu";
+import { MyAccessRequestNotice } from "@/features/my-access-request/my-access-request-notice";
+import { useMyAccessRequest } from "@/features/my-access-request/use-my-access-request";
 import { MyUsageLimitButton } from "@/features/usage-limit-path/my-usage-limit-button";
 import { useEngine } from "@/hooks/useEngine";
 import { useNavigate } from "@/hooks/useNavigate";
@@ -49,14 +51,18 @@ export const EngineTabsLayout: React.FC<EngineTabsLayoutProps> = ({ tabs }) => {
 	const navigate = useNavigate();
 	const { catalog, engine, permission, type, update } = useEngine();
 	const { insightId } = useSessionInsight();
-	const isAdmin = useSession((state) => state.user?.isAdmin === true);
+	const accessRequest = useMyAccessRequest(
+		"ENGINE",
+		engine.engine_id,
+		permission !== "OWNER",
+	);
+	const [isRequestOpen, setIsRequestOpen] = useState(false);
 	const enginePath = `${catalog.path}/${engine.engine_id}`;
 
 	// get the visible tabs based on permission
 	const visibleTabs = useMemo(() => {
 		// get the routes based on permission
 		return tabs.filter((tab) => {
-			if (tab.path === "audit" && isAdmin) return true;
 			if (!tab.restrict || tab.restrict.length === 0) {
 				return true;
 			}
@@ -65,7 +71,7 @@ export const EngineTabsLayout: React.FC<EngineTabsLayoutProps> = ({ tabs }) => {
 			}
 			return tab.restrict.includes(permission);
 		});
-	}, [tabs, permission, isAdmin]);
+	}, [tabs, permission]);
 
 	/**
 	 * Gets active tab
@@ -164,7 +170,13 @@ export const EngineTabsLayout: React.FC<EngineTabsLayoutProps> = ({ tabs }) => {
 						renameLabel={`Rename ${catalog.name}`}
 						actions={
 							<>
-								<EngineAccessButton />
+								<EngineAccessButton
+									request={accessRequest.request}
+									isRequestLoading={accessRequest.isLoading}
+									open={isRequestOpen}
+									onOpenChange={setIsRequestOpen}
+									onSuccess={accessRequest.refresh}
+								/>
 
 								<EngineActionsMenu />
 								{/* anyone who can use a model can see their own limit on it */}
@@ -196,6 +208,14 @@ export const EngineTabsLayout: React.FC<EngineTabsLayoutProps> = ({ tabs }) => {
 						}
 					/>
 				</div>
+				{accessRequest.request ? (
+					<MyAccessRequestNotice
+						request={accessRequest.request}
+						noun={catalog.name.toLowerCase()}
+						onChange={() => setIsRequestOpen(true)}
+						onWithdraw={accessRequest.withdraw}
+					/>
+				) : null}
 				<div className="flex flex-col rounded-lg bg-muted">
 					{visibleTabs.length > 0 && (
 						<div>

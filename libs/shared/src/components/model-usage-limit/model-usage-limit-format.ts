@@ -10,8 +10,9 @@ import type {
  * Where a usage limit is set, which decides whose use its rules can count:
  * a person's grant on a model (DIRECT), a team's grant (TEAM), a model's
  * public use (PUBLIC), a model's total (MODEL_TOTAL), a person's default for
- * all models (ALL_MODELS), the platform default (PLATFORM), or a team's total
- * across all models (TEAM_TOTAL)
+ * all models (ALL_MODELS), the platform default (PLATFORM), a team's total
+ * across all models (TEAM_TOTAL), or an app's permission on a model (APP),
+ * which covers the calls the app's custom reactors make with it
  */
 export type ModelUsageLimitSource =
 	| "DIRECT"
@@ -20,7 +21,8 @@ export type ModelUsageLimitSource =
 	| "MODEL_TOTAL"
 	| "ALL_MODELS"
 	| "PLATFORM"
-	| "TEAM_TOTAL";
+	| "TEAM_TOTAL"
+	| "APP";
 
 /** The metrics, in the order the editor offers them */
 export const MODEL_USAGE_METRICS: readonly ModelUsageMetric[] = [
@@ -137,13 +139,13 @@ export const getRuleSlotKey = (
 
 /**
  * @param source - where a limit is set
- * @returns which counts its rules can have: both for a team or public use,
- * only shared for a total, and only each person's own for the rest
+ * @returns which counts its rules can have: both for a team, an app or public
+ * use, only shared for a total, and only each person's own for the rest
  */
 export const getSourceCounts = (
 	source: ModelUsageLimitSource,
 ): readonly ModelUsageCounts[] => {
-	if (source === "TEAM" || source === "PUBLIC") {
+	if (source === "TEAM" || source === "PUBLIC" || source === "APP") {
 		return ["SHARED", "EACH_PERSON"];
 	}
 	return source === "MODEL_TOTAL" || source === "TEAM_TOTAL"
@@ -255,26 +257,38 @@ export const formatMicrosForInput = (micros: number): string => {
 };
 
 /**
+ * What a rule for each person is called after it, where a limit can also be
+ * shared: a team's members, an app's users, and the people using a public
+ * model. The other sources count one way only, so they say nothing.
+ */
+const EACH_PERSON_PHRASES: Readonly<
+	Partial<Record<ModelUsageLimitSource, string>>
+> = {
+	TEAM: " for each member",
+	APP: " for each user",
+	PUBLIC: " for each person",
+};
+
+/**
  * @param counts - whose use a rule counts
  * @param source - where its limit is set
- * @returns what is said after the rule, such as " shared" or " for each member"
+ * @returns what is said after the rule, such as " shared", " for each member"
+ * or " for each user"
  */
 const describeCounts = (
 	counts: ModelUsageCounts,
 	source: ModelUsageLimitSource,
 ): string => {
-	if (source !== "TEAM" && source !== "PUBLIC") {
+	const eachPerson = EACH_PERSON_PHRASES[source];
+	if (eachPerson === undefined) {
 		return "";
 	}
-	if (counts === "SHARED") {
-		return " shared";
-	}
-	return source === "TEAM" ? " for each member" : " for each person";
+	return counts === "SHARED" ? " shared" : eachPerson;
 };
 
 /**
- * One rule in words, such as "100,000 tokens a minute for each member" or
- * "100,000 tokens every 10 minutes"
+ * One rule in words, such as "100,000 tokens a minute for each member",
+ * "100,000 tokens a day for each user" or "100,000 tokens every 10 minutes"
  *
  * @param rule - the rule
  * @param source - where its limit is set, which decides how counts are said

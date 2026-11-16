@@ -53,7 +53,7 @@ application features; this inventory does not require moving existing features.
 | `assets/` | Images and static files |
 | `components/` | Components grouped by feature area (`project/`, `engine/`, `settings/`, …) |
 | `contexts/` | React contexts (`<name>.context.tsx`) |
-| `features/` | Application features, one folder per concern (for example `team-list/`, `team-type/`, `team-members/`, `team-resource-access/`, `group-managers/`, `bulk-access-management/`, `usage-limit-path/`, `platform-default-limit/`, `team-usage-limit/`, `model-usage-limits/`, `my-model-usage/`) |
+| `features/` | Application features, one folder per concern (for example `team-list/`, `team-type/`, `team-members/`, `team-resource-access/`, `group-managers/`, `bulk-access-management/`, `usage-limit-path/`, `platform-default-limit/`, `team-usage-limit/`, `model-usage-limits/`, `engine-app-permissions/`, `my-model-usage/`, `my-access-request/`) |
 | `hooks/` | React hooks (`use-<name>.ts`) |
 | `pages/` | Routing tree (see below) |
 | `stores/` | State owners (`assistant/`, `designer/`, `page/`, `session/`, `workbench/`, `workspace/`) |
@@ -115,7 +115,8 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   with the team view.
 - **How Usage Limits Work.** Every place a usage limit is set or shown has the shared
   `UsageLimitGuideButton` beside it, opening the guide at the section that matters there: the
-  Model Usage Limits card, the Teams table and Give a Team Access (Team Limits), the members
+  Model Usage Limits card, the Teams table and Give a Team Access (Team Limits), the Apps table
+  and Add App (What Rules Count), the members
   dialogs (No Limit Defined, Unlimited and Rules), Effective Permissions, Bulk Access Management
   (Who Sets Each Limit), a person's path sheet, the admin limit cards and the User's Total Model
   Limit fields, and My Profile's Model Usage (the person's own view). Each host passes what the
@@ -174,6 +175,50 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   the limits again. Editors see both read-only, with "Only owners can set usage limits".
   `model-usage-limits.ts` also holds the names (`MODEL_LIMIT_NAMES`) and descriptions Bulk Access
   Management uses for the same two limits.
+- **`features/my-access-request/`** shows the signed in user their own access request on an engine or a
+  project that waits for its owners' decision, below the header of the engine's or project's page
+  (`my-access-request-notice.tsx`): the level asked for, when, and the reason, with Change Request,
+  which opens the page's request dialog starting from that level and reason, and Withdraw Request
+  after a confirmation. The page's layout reads it once (`use-my-access-request.ts`, through
+  `getMyAccessRequest` and `withdrawMyAccessRequest` in `api/user-access.ts`, the pixels
+  `GetMyEngineAccessRequest`, `GetMyProjectAccessRequest`, `WithdrawMyEngineAccessRequest` and
+  `WithdrawMyProjectAccessRequest`) and hands it to the header's request button, which reads
+  Change Request while one waits. Asking again replaces the waiting request.
+- **`features/engine-app-permissions/`** is the Apps table (`engine-apps-table.tsx`) under Teams
+  on an engine's Access Control tab, and on the Apps tab of an engine in Resource Governance in
+  admin mode: the apps the engine gives a permission to, whose custom
+  reactors use the engine with it for people who have no access to the engine themselves. It
+  reads `getResourcePermissions` on the engine (`use-engine-app-permissions.ts`: `projects`,
+  `canChangeProjects`, `addsAreAdminOnly`, `canChangeModelLimits` and `costLimitsAvailable`, in
+  admin mode when the table's `admin` is set). Only the engine's editors and owners see the apps,
+  and admins in admin mode: the Access Control tab mounts the table for an editor or owner
+  only, and the backend sends anyone else an empty `projects`. It shows each app with its
+  image, name (the app's display name when it has one) and id
+  (`components/shared/resource-id.tsx`), its level, and an Ends column when an app has an end
+  date. The controls follow `canChangeProjects` from the backend, which is true for the
+  engine's owners and in admin mode, and not the page's permission: owners change a level in
+  place between Read-Only and Editor (an app is never an Author), take an app's access away
+  after a confirmation, and add one with Add App; editors see each level in a disabled select.
+  Where `addsAreAdminOnly` is set, an owner outside admin mode has no Add App and sees that only
+  admins give apps access, from admin mode, while changing and removing still work. On a model the table has a Usage Limit column: for someone who can change both the
+  apps and the model's limits the summary is the same `usage-limit-edit-button.tsx` and opens
+  `usage-limit-dialog.tsx` with `source="APP"`, whose rules are Shared by the App or For Each
+  User, and everyone else sees the summary with "Only owners can set usage limits". Every
+  change is one permission batch on the engine with one `PROJECT` change
+  (`engine-app-permissions.ts`: `toAddAppBatch`, `toAppLevelBatch`, `toAppLimitBatch` and
+  `toRemoveAppBatch`), saved at once through `savePermissionBatches`; a `CHANGE` sets the whole
+  grant, so it carries the app's level, end date and usage limit through `toSentGrant`. A saved
+  change shows a toast and reads the apps again, and a row's controls stay disabled until that
+  read lands, so the next change carries the grant as it is. A refused change shows the
+  backend's reason where the user acted: in the dialog, which stays open, or above the table
+  for a level changed in place. `add-engine-app-dialog.tsx` is Add App: the shared
+  `ProjectSelect` over the apps the user can see, or every app in admin mode, of the types the
+  catalog lists as apps (`ENGINE_APP_PROJECT_TYPES`: `CODE` and `BLOCKS`), the level, starting
+  at Read-Only, and on a model the App Limit, starting at No Limit Defined. The backend takes a
+  project of any type, and the table lists every project the engine gives a permission to. Authorize Access stays enabled: pressed
+  with no app it shows "Pick an app" under the field, and with an App Limit that is not
+  complete it shows the editor's problems, both from then on. Bulk Access Management works on
+  an engine's people and teams, and its apps are managed in this table.
 - **Nothing is lost by accident.** Load Latest Access reads the access again and keeps the
   staged changes. Both views ask before Discard Changes drops them, and
   `use-unsaved-changes-guard.ts` warns before leaving the page with changes that are not saved
@@ -184,7 +229,14 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   also act as an ordinary user. The Access Control tab, My Teams and their Bulk Access
   Management views call `/auth/permissionBatch` with the user's permissions. Admin mode calls
   `/auth/admin/permissionBatch` (each SDK call takes `admin`): Team Permissions' Bulk Access
-  Management, and Resource Governance's Access and Effective Permissions tabs. Making a team
+  Management, and Resource Governance's Access, Apps and Effective Permissions tabs. Admin mode
+  also calls the admin pixel or endpoint for everything else it does to someone else's engine
+  or project, since on the backend an admin has more than their own permissions only through
+  an `Admin*` reactor or `/auth/admin/...` endpoint: reading and saving the SMSS
+  (`AdminGetEngineSMSS`, `AdminGetProjectSMSS`, `auth/admin/engine/updateSmssFile`,
+  `auth/admin/project/updateSmssFile`), reading access requests
+  (`AdminGetEngineUserAccessRequest`, `AdminGetProjectUserAccessRequest`) and deleting
+  (`AdminDeleteEngine`, `AdminDeleteProject`, `AdminDeleteWorkspace`, `AdminDeleteSkill`). Making a team
   from the people in the batch is admin mode only.
 - **Layout.** Both views and Effective Permissions open with `access-view-header.tsx` (a back
   button beside the title). Both views list the people on the left and put
@@ -305,15 +357,18 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   (`GOVERNANCE_PANEL_CLASS`, sticky below the navbar).
 - **Deleting many.** Each row has a checkbox beside it, and Select all shown checks every row read
   so far. Delete (N) confirms with `delete-governance-resources-dialog.tsx`, which names each
-  one, then deletes them one after another with the pixel each type takes (`getDeleteRequest`,
-  through `use-delete-governance-resources.ts`), so one that fails does not stop the rest. The
+  one, then deletes them one after another with the admin mode pixel each type takes
+  (`getDeleteRequest` with `admin`, through `use-delete-governance-resources.ts`), so one that
+  fails does not stop the rest. The
   ones that could not be deleted stay checked, with the reasons in a toast. The list reads again,
   and the open resource closes when it was deleted.
 - **The details** (`governance-resource-details.tsx`) open with the resource's logo, name, id with
   Copy ID (`components/shared/resource-id.tsx`), type, who created it and when, and Open, which
   opens its own page in a new tab (`getResourcePagePath`). The tabs are Access (Bulk Access
   Management, without its back button: add many people at one access level, change or remove
-  access, and apply everything after one review), Effective Permissions, Requests, Visibility (the
+  access, and apply everything after one review), Apps for engines (the Apps table of
+  `features/engine-app-permissions/` in admin mode, where an admin gives any app a permission
+  on the engine), Effective Permissions, Requests, Visibility (the
   settings tiles, delete included), Audit Trail (the resource's audit trail, which admins can
   read), SMSS, and Usage Limits for models.
 - **Staged access changes are applied or discarded before moving on.** Access stays mounted on every
@@ -651,7 +706,10 @@ read that list:
   confirms with `DeleteEntityDialog` and goes back to the catalog after; the Access Control tab
   has no delete. `use-delete-resource.ts` picks the pixel from the type
   (`delete-request.ts`) and is shared with `SettingsTiles`, whose delete tile is on Resource
-  Governance's Visibility tab.
+  Governance's Visibility tab. In admin mode (`admin`, which `SettingsTiles` takes from
+  `adminMode`) each delete is the pixel of the same name with `Admin` in front
+  (`AdminDeleteEngine`, `AdminDeleteProject`, `AdminDeleteWorkspace`, `AdminDeleteSkill`), which
+  deletes any engine or project for an admin; the ordinary pixels delete what the user owns.
 - **Every section card looks the same.** A `Card` whose `CardHeader` holds a plain `CardTitle`
   (no heading element inside it), a `CardDescription` and the card's actions in a `CardAction`
   with `self-center`. The header has `border-b` when the card has a `CardContent` below it, and

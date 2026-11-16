@@ -88,9 +88,9 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 		type === "VECTOR" ||
 		type === "GUARDRAIL" ||
 		type === "FUNCTION"
-			? `GetEngineUserAccessRequest(engine='${id}');`
+			? `${adminMode ? "AdminGetEngineUserAccessRequest" : "GetEngineUserAccessRequest"}(engine='${id}');`
 			: type === "PROJECT"
-				? `GetProjectUserAccessRequest(project='${id}')`
+				? `${adminMode ? "AdminGetProjectUserAccessRequest" : "GetProjectUserAccessRequest"}(project='${id}')`
 				: "";
 
 	// Pending Member Requests Pixel call

@@ -213,8 +213,8 @@ Every place a model usage limit is set or shown uses these, so limits read the s
 
 - `ModelUsageLimitEditor` edits one limit: No Limit Defined (with what applies instead, or the
   host's `notDefinedHint`), Unlimited, or Rules. Each rule (`ModelUsageRuleRow`) has an amount, a
-  measure (Tokens, Cost in US dollars, Compute Time), a window from minute to year and, for a team
-  or public use, Shared or For Each Member / For Each Person. Each select gives its `SelectValue`
+  measure (Tokens, Cost in US dollars, Compute Time), a window from minute to year and, for a team,
+  an app or public use, Shared or For Each Member / For Each User / For Each Person. Each select gives its `SelectValue`
   the chosen option's label. Whole amounts are written with ASCII digits and comma separators
   (`toLocaleString("en-US")`) whatever the browser's locale, so they read back as typed. A minute or hour window has a length
   input beside it, so the rule reads "Every [10] Minutes": 1 to 59 minutes or 1 to 24 hours,
@@ -232,8 +232,17 @@ Every place a model usage limit is set or shown uses these, so limits read the s
   just opened or a rule just added is not red; from then on the problems follow the edits, and
   with no rules the hint to add one turns red. Warnings and notes show from the start.
 - `source` (`ModelUsageLimitSource`: `DIRECT`, `TEAM`, `PUBLIC`, `MODEL_TOTAL`, `ALL_MODELS`,
-  `PLATFORM`, `TEAM_TOTAL`) decides the counts offered and whether Unlimited is: a total and the
+  `PLATFORM`, `TEAM_TOTAL`, `APP`) decides the counts offered and whether Unlimited is: a total and the
   platform default have none.
+- `APP` is the limit on the permission a model gives an app, which covers the calls the app's
+  custom reactors make to the model for people whose only way to it is the app, and comes after
+  Team Limits and before the Public Use Limit in the guide's order. It works like a team's: it offers
+  Unlimited and both counts, named Shared by the App and For Each User in the editor, and its
+  summaries end in "shared" or "for each user" (`describeModelUsageRule`). The first rule added
+  to a limit starts shared and later ones for each user. With a rule for each user, the editor
+  notes that it counts only the calls the app's limit applies to. The client's Apps table on a
+  model's Access Control tab and its Add App dialog, labelled App Limit, are its hosts, and What
+  Rules Count in the guide names its counts.
 - `findModelUsageLimitProblem` says why a limit cannot be saved. Hosts keep Save enabled (except
   while saving) and check it when Save is pressed: on a problem they do not save, set the
   editor's `shouldShowProblems`, and call `focusFirstProblem()` through its `ref`
