@@ -1,5 +1,4 @@
 import { UndoIcon, WandSparklesIcon } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
@@ -54,161 +53,159 @@ function escapeForPixelCommand(raw: string): string {
 }
 
 /** Optimize the current draft, with a single-click revert until it changes. */
-export const PromptOptimizer: React.FC<PromptOptimizerProps> = observer(
-	({ input, setInput, disabled, modelId, room }) => {
-		const { run } = useSessionInsight();
-		const { t } = useTranslation("room");
-		const { chat } = useChatSession();
+export const PromptOptimizer = ({
+	input,
+	setInput,
+	disabled,
+	modelId,
+	room,
+}: PromptOptimizerProps) => {
+	const { run } = useSessionInsight();
+	const { t } = useTranslation("room");
+	const { chat } = useChatSession();
 
-		const [isOptimizing, setIsOptimizing] = useState(false);
-		const [showRevert, setShowRevert] = useState(false);
-		const requestRef = useRef<object | null>(null);
-		const prevInputRef = useRef<string>("");
-		const prevOptimizedRef = useRef<string>("");
+	const [isOptimizing, setIsOptimizing] = useState(false);
+	const [showRevert, setShowRevert] = useState(false);
+	const requestRef = useRef<object | null>(null);
+	const prevInputRef = useRef<string>("");
+	const prevOptimizedRef = useRef<string>("");
 
-		// Ignore replies for a draft/room/model that has changed or unmounted.
-		useEffect(() => {
-			requestRef.current = { input, room, disabled, modelId };
-			setIsOptimizing(false);
-			return () => {
-				requestRef.current = null;
-			};
-		}, [input, room, disabled, modelId]);
+	// Ignore replies for a draft/room/model that has changed or unmounted.
+	useEffect(() => {
+		requestRef.current = { input, room, disabled, modelId };
+		setIsOptimizing(false);
+		return () => {
+			requestRef.current = null;
+		};
+	}, [input, room, disabled, modelId]);
 
-		const handleImprovePrompt = async (): Promise<void> => {
-			if (disabled || isOptimizing || !input.trim()) return;
-			setIsOptimizing(true);
-			const requestId = requestRef.current;
+	const handleImprovePrompt = async (): Promise<void> => {
+		if (disabled || isOptimizing || !input.trim()) return;
+		setIsOptimizing(true);
+		const requestId = requestRef.current;
 
-			try {
-				prevInputRef.current = input;
+		try {
+			prevInputRef.current = input;
 
-				//Build the context if it is there
-				const context = room?.options?.instructions || "";
+			//Build the context if it is there
+			const context = room?.options?.instructions || "";
 
-				const optimizationPrompt = `Please optimize the following prompt to be more clear, specific, and effective while maintaining its original intent:
+			const optimizationPrompt = `Please optimize the following prompt to be more clear, specific, and effective while maintaining its original intent:
 				"${input}"
 				Return only the optimized prompt without any additional explanation or formatting.`;
 
-				const selectedModelId =
-					modelId ?? chat?.models?.selected?.app_id;
+			const selectedModelId = modelId ?? chat?.models?.selected?.app_id;
 
-				if (!selectedModelId) {
-					throw new Error(t("optimizer.noModel"));
-				}
+			if (!selectedModelId) {
+				throw new Error(t("optimizer.noModel"));
+			}
 
-				const escapedPrompt = escapeForPixelCommand(optimizationPrompt);
-				const contextValue = context
-					? `"<encode>${context}</encode>"`
-					: "";
-				const pixel = `LLM(engine=["${selectedModelId}"], command=["${escapedPrompt}"], context=[${contextValue}], paramValues=[{"max_tokens":10000}]);`;
-				const response = (await run(pixel).then(
-					throwOnPixelErrors,
-				)) as LLMResponse;
-				if (requestId !== requestRef.current) return;
+			const escapedPrompt = escapeForPixelCommand(optimizationPrompt);
+			const contextValue = context ? `"<encode>${context}</encode>"` : "";
+			const pixel = `LLM(engine=["${selectedModelId}"], command=["${escapedPrompt}"], context=[${contextValue}], paramValues=[{"max_tokens":10000}]);`;
+			const response = (await run(pixel).then(
+				throwOnPixelErrors,
+			)) as LLMResponse;
+			if (requestId !== requestRef.current) return;
 
-				if (!response?.pixelReturn?.[0]) {
-					throw new Error(t("optimizer.invalidResponse"));
-				}
+			if (!response?.pixelReturn?.[0]) {
+				throw new Error(t("optimizer.invalidResponse"));
+			}
 
-				const { output, operationType } = response.pixelReturn[0];
+			const { output, operationType } = response.pixelReturn[0];
 
-				if (operationType?.includes("ERROR")) {
-					const errorMessage =
-						output?.response || output || t("optimizer.failed");
-
-					if (typeof errorMessage === "string") {
-						const msg = errorMessage.toLowerCase();
-						if (
-							msg.includes("token limit") ||
-							msg.includes("context length")
-						) {
-							throw new Error(t("optimizer.tooLarge"));
-						}
-						if (
-							msg.includes("permission") ||
-							msg.includes("access")
-						) {
-							throw new Error(t("optimizer.noPermission"));
-						}
-						throw new Error(errorMessage);
-					}
-
-					throw new Error(t("optimizer.failed"));
-				}
-
-				const newPrompt = output?.response;
-
-				if (typeof newPrompt !== "string" || !newPrompt.trim()) {
-					throw new Error(t("optimizer.invalidResponse"));
-				}
-
-				if (newPrompt !== input) {
-					prevOptimizedRef.current = newPrompt;
-					setShowRevert(true);
-				}
-
-				setInput(newPrompt);
-				toast.success(t("optimizer.success"));
-			} catch (e: unknown) {
-				if (requestId !== requestRef.current) return;
+			if (operationType?.includes("ERROR")) {
 				const errorMessage =
-					e instanceof Error ? e.message : t("optimizer.failed");
-				toast.error(errorMessage);
-			} finally {
-				if (requestId === requestRef.current) setIsOptimizing(false);
-			}
-		};
+					output?.response || output || t("optimizer.failed");
 
-		const handleRevert = () => {
-			if (disabled || isOptimizing) return;
-			setInput(prevInputRef.current);
+				if (typeof errorMessage === "string") {
+					const msg = errorMessage.toLowerCase();
+					if (
+						msg.includes("token limit") ||
+						msg.includes("context length")
+					) {
+						throw new Error(t("optimizer.tooLarge"));
+					}
+					if (msg.includes("permission") || msg.includes("access")) {
+						throw new Error(t("optimizer.noPermission"));
+					}
+					throw new Error(errorMessage);
+				}
+
+				throw new Error(t("optimizer.failed"));
+			}
+
+			const newPrompt = output?.response;
+
+			if (typeof newPrompt !== "string" || !newPrompt.trim()) {
+				throw new Error(t("optimizer.invalidResponse"));
+			}
+
+			if (newPrompt !== input) {
+				prevOptimizedRef.current = newPrompt;
+				setShowRevert(true);
+			}
+
+			setInput(newPrompt);
+			toast.success(t("optimizer.success"));
+		} catch (e: unknown) {
+			if (requestId !== requestRef.current) return;
+			const errorMessage =
+				e instanceof Error ? e.message : t("optimizer.failed");
+			toast.error(errorMessage);
+		} finally {
+			if (requestId === requestRef.current) setIsOptimizing(false);
+		}
+	};
+
+	const handleRevert = () => {
+		if (disabled || isOptimizing) return;
+		setInput(prevInputRef.current);
+		setShowRevert(false);
+	};
+
+	useEffect(() => {
+		if (input !== prevOptimizedRef.current) {
 			setShowRevert(false);
-		};
+		}
+	}, [input]);
 
-		useEffect(() => {
-			if (input !== prevOptimizedRef.current) {
-				setShowRevert(false);
-			}
-		}, [input]);
-
-		return (
-			<Tooltip disableHoverableContent={false}>
-				<TooltipTrigger asChild>
-					<span className="inline-flex">
-						<Button
-							type="button"
-							className="rounded-full"
-							variant="ghost"
-							size="icon-sm"
-							aria-label={
-								showRevert
-									? t("optimizer.revert")
-									: t("optimizer.optimize")
-							}
-							disabled={disabled || isOptimizing || !input.trim()}
-							onClick={
-								showRevert ? handleRevert : handleImprovePrompt
-							}
-						>
-							{isOptimizing ? (
-								<Spinner />
-							) : showRevert ? (
-								<UndoIcon aria-hidden="true" />
-							) : (
-								<WandSparklesIcon aria-hidden="true" />
-							)}
-						</Button>
-					</span>
-				</TooltipTrigger>
-				<TooltipContent>
-					{isOptimizing
-						? t("optimizer.optimizing")
-						: showRevert
-							? t("optimizer.revert")
-							: t("optimizer.optimize")}
-				</TooltipContent>
-			</Tooltip>
-		);
-	},
-);
+	return (
+		<Tooltip disableHoverableContent={false}>
+			<TooltipTrigger asChild>
+				<span className="inline-flex">
+					<Button
+						type="button"
+						className="rounded-full"
+						variant="ghost"
+						size="icon-sm"
+						aria-label={
+							showRevert
+								? t("optimizer.revert")
+								: t("optimizer.optimize")
+						}
+						disabled={disabled || isOptimizing || !input.trim()}
+						onClick={
+							showRevert ? handleRevert : handleImprovePrompt
+						}
+					>
+						{isOptimizing ? (
+							<Spinner />
+						) : showRevert ? (
+							<UndoIcon aria-hidden="true" />
+						) : (
+							<WandSparklesIcon aria-hidden="true" />
+						)}
+					</Button>
+				</span>
+			</TooltipTrigger>
+			<TooltipContent>
+				{isOptimizing
+					? t("optimizer.optimizing")
+					: showRevert
+						? t("optimizer.revert")
+						: t("optimizer.optimize")}
+			</TooltipContent>
+		</Tooltip>
+	);
+};

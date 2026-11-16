@@ -10,6 +10,7 @@ import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import type { ComponentProps, ReactNode } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { fakeStore } from "../../test/fake-store";
 import { DEFAULT_CHAT_THEME } from "../chat-config/chat-theme";
 import type { RoomInput } from "../composer/room-input";
 import type { ContextItemsStore } from "../conversation/context-items.store";
@@ -82,7 +83,7 @@ const root = {
 		landing: "",
 	},
 };
-const chat = {
+const chat = fakeStore({
 	...mocks,
 	models: { selected: null },
 	selectNewChatDefaultModel: vi.fn(),
@@ -90,7 +91,7 @@ const chat = {
 	addOptimisticRoom: vi.fn(),
 	removeOptimisticRoom: vi.fn(),
 	keys: { roomCounter: 0 },
-};
+});
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 	getI18n: () => ({ t: (key: string) => key }),

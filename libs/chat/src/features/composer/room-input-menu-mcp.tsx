@@ -1,5 +1,4 @@
 import { BookOpenIcon, HammerIcon } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useTranslation } from "@semoss/i18n";
 import { Badge, DropdownMenuItem } from "@semoss/ui/next";
 import { isKnowledgeMcp } from "../mcp/mcp-utils";
@@ -12,12 +11,12 @@ interface RoomInputMenuMCPProps {
 	disabled?: boolean;
 }
 
-const RoomInputMenuMCPInner: React.FC<RoomInputMenuMCPProps> = ({
+export const RoomInputMenuMCP = ({
 	type,
 	options,
 	onSelect,
 	disabled = false,
-}) => {
+}: RoomInputMenuMCPProps) => {
 	const { t } = useTranslation("room");
 
 	const items = options.mcp.filter((mcp) =>
@@ -38,5 +37,3 @@ const RoomInputMenuMCPInner: React.FC<RoomInputMenuMCPProps> = ({
 		</DropdownMenuItem>
 	);
 };
-
-export const RoomInputMenuMCP = observer(RoomInputMenuMCPInner);

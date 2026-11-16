@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 import { beforeEach, expect, test, vi } from "vitest";
 import { toast } from "@semoss/ui/next";
+import { fakeStore } from "../../test/fake-store";
 import { ContextItemsStore } from "../conversation/context-items.store";
 import type { MCPOverlay } from "../mcp/mcp-overlay";
 import type { RoomStore } from "../room/room.store";
@@ -88,8 +89,16 @@ vi.mock("../conversation/use-graceful-errors", () => ({
 		getGracefulErrorMessage: (error: Error) => error.message,
 	}),
 }));
+const CHAT = vi.hoisted(() => ({
+	models: { contextWindow: 0 },
+	getSnapshot() {
+		return this;
+	},
+	subscribe: () => () => {},
+}));
 vi.mock("../chat/use-chat-session", () => ({
-	useChatSession: () => ({ chat: { models: { contextWindow: 0 } } }),
+	// a fixed chat store: its snapshot is itself
+	useChatSession: () => ({ chat: CHAT }),
 }));
 vi.mock("../workbench/use-sidebar-panel-active", () => ({
 	useSidebarPanelActive: () => false,
@@ -263,7 +272,7 @@ const defaultProps = {
 		predefinedPrompts: [],
 	},
 	// Only these room fields are consumed by the composer in this test.
-	room: {
+	room: fakeStore({
 		chatTools: {
 			isAgentMode: false,
 		},
@@ -286,7 +295,7 @@ const defaultProps = {
 		history: [],
 		options: {},
 		mode: "agent",
-	} as unknown as RoomStore,
+	}) as unknown as RoomStore,
 };
 
 /** Set fake editor text and trigger the OnChangePlugin callback to update isEmpty */
