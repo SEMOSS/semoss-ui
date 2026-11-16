@@ -26,6 +26,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { copyTextToClipboard } from "@semoss/utility/clipboard";
 import { getErrorMessage } from "@semoss/utility/error";
 import { getFileExtension } from "@semoss/utility/file";
 import { getImageMimeType } from "@semoss/utility/image";
@@ -314,9 +315,7 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 										}
 
 										try {
-											await navigator.clipboard.writeText(
-												text,
-											);
+											await copyTextToClipboard(text);
 
 											toast.success(
 												t("notifications.copySuccess"),

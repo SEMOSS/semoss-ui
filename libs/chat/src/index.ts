@@ -107,4 +107,5 @@ export {
 } from "./features/new-chat-preferences/new-chat-preferences";
 export { useRoom } from "./features/room/room.context";
 export type { RoomStore } from "./features/room/room.store";
+export { useRoomSearchShortcut } from "./features/room-search/use-room-search-shortcut";
 export type { App, MCPConfig, Workspace } from "./types";

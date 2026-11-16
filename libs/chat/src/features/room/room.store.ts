@@ -15,6 +15,7 @@ import {
 	uploadInsight,
 } from "@semoss/sdk/react";
 import type { FileExplorerApi, ThemeMap } from "@semoss/shared";
+import { sleep } from "@semoss/utility/async";
 import { stringifyJsonWithSortedKeys } from "@semoss/utility/json";
 import {
 	createWorkbenchStore,
@@ -1732,7 +1733,7 @@ export class RoomStore {
 				) {
 					polling = false;
 				} else {
-					await new Promise((r) => setTimeout(r, 1000));
+					await sleep(1000);
 				}
 			} catch {
 				polling = false;

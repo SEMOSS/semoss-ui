@@ -1,8 +1,8 @@
 import { Bot, HelpCircle, SquarePenIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, matchPath, useLocation, useParams } from "react-router";
-import { Chat } from "@semoss/chat";
+import { Chat, useRoomSearchShortcut } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Separator,
@@ -49,25 +49,7 @@ export const GlobalNav = observer(() => {
 	const { pathname } = useLocation();
 	const { roomId: activeRoomId } = useParams<{ roomId: string }>();
 
-	// Cmd/Ctrl+K opens chat search from anywhere
-	useEffect(() => {
-		if (hideChatHistory) {
-			return;
-		}
-		const handleKeyDown = (event: KeyboardEvent) => {
-			if (
-				event.key.toLowerCase() === "k" &&
-				(event.metaKey || event.ctrlKey) &&
-				!event.altKey &&
-				!event.shiftKey
-			) {
-				event.preventDefault();
-				setIsSearchOpen(true);
-			}
-		};
-		window.addEventListener("keydown", handleKeyDown);
-		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [hideChatHistory]);
+	useRoomSearchShortcut(setIsSearchOpen, !hideChatHistory);
 
 	return (
 		<>

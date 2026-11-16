@@ -4,9 +4,9 @@ import {
 	ServerIcon,
 	SquarePenIcon,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useMatch, useNavigate } from "react-router";
-import { Chat } from "@semoss/chat";
+import { Chat, useRoomSearchShortcut } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import { useSession } from "@semoss/sdk/react";
 import {
@@ -37,21 +37,7 @@ export const DesktopSidebar = () => {
 	const userName = useSession((state) => state.user?.name) ?? "";
 	const logout = useSession((state) => state.logout);
 
-	useEffect(() => {
-		const handleKeyDown = (event: KeyboardEvent) => {
-			if (
-				event.key.toLowerCase() === "k" &&
-				(event.metaKey || event.ctrlKey) &&
-				!event.altKey &&
-				!event.shiftKey
-			) {
-				event.preventDefault();
-				setIsSearchOpen(true);
-			}
-		};
-		window.addEventListener("keydown", handleKeyDown);
-		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, []);
+	useRoomSearchShortcut(setIsSearchOpen);
 
 	return (
 		<>
