@@ -14,7 +14,13 @@ import {
 	TextNode,
 } from "lexical";
 import type React from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+	type ReactNode,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 
 /** Where the menu anchors: the caret's rectangle when the trigger was typed, in viewport px. */
 interface MenuPosition {
@@ -23,34 +29,40 @@ interface MenuPosition {
 	left: number;
 }
 
+/** What {@link MentionPluginProps.renderMenu} draws the menu from. */
+export interface MentionMenuProps {
+	/** Whether the menu is open. */
+	isOpen: boolean;
+	/** Opens or closes the menu; closing keeps the typed text. */
+	onOpenChange: (isOpen: boolean) => void;
+	/** Where the menu anchors. */
+	menuPosition: MenuPosition | null;
+	/** Insert a text token in place of the trigger + query text */
+	addToken: (token: string) => void;
+	/** Insert a Lexical node in place of the trigger + query text */
+	addNode: (nodeFactory: () => LexicalNode) => void;
+	/** Removes the trigger + query text and closes the menu. */
+	onRequestClose: () => void;
+	/** Text typed after the trigger character, for filtering */
+	query: string;
+	/** Index of the currently highlighted item */
+	selectedIndex: number;
+	/** Called by the menu to report how many items are visible */
+	onItemCountChange: (count: number) => void;
+	/** Called by the menu to sync hover/external selection back up */
+	onSelectedIndexChange: (index: number) => void;
+}
+
 /** Props for {@link MentionPlugin}. */
 interface MentionPluginProps {
 	/** Character that triggers the menu (default: "/") */
 	trigger: string;
 
-	/** Rendered as the suggestion menu */
-	MenuComponent: React.ComponentType<{
-		/** Whether the menu is open. */
-		isOpen: boolean;
-		/** Opens or closes the menu; closing keeps the typed text. */
-		onOpenChange: (isOpen: boolean) => void;
-		/** Where the menu anchors. */
-		menuPosition: MenuPosition | null;
-		/** Insert a text token in place of the trigger + query text */
-		addToken: (token: string) => void;
-		/** Insert a Lexical node in place of the trigger + query text */
-		addNode: (nodeFactory: () => LexicalNode) => void;
-		/** Removes the trigger + query text and closes the menu. */
-		onRequestClose: () => void;
-		/** Text typed after the trigger character, for filtering */
-		query: string;
-		/** Index of the currently highlighted item */
-		selectedIndex: number;
-		/** Called by MenuComponent to report how many items are visible */
-		onItemCountChange: (count: number) => void;
-		/** Called by MenuComponent to sync hover/external selection back up */
-		onSelectedIndexChange: (index: number) => void;
-	}>;
+	/**
+	 * Draws the suggestion menu while it is open. Called rather than mounted,
+	 * so a new function each render does not remount the menu.
+	 */
+	renderMenu: (props: MentionMenuProps) => ReactNode;
 
 	/**
 	 * Called when Enter is pressed while the menu is open. The plugin closes
@@ -82,7 +94,7 @@ interface MentionPluginProps {
  */
 export const MentionPlugin: React.FC<MentionPluginProps> = ({
 	trigger = "/",
-	MenuComponent,
+	renderMenu,
 	onAccept,
 	onTabComplete,
 }) => {
@@ -430,18 +442,16 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 
 	if (!isOpen || !menuPosition) return null;
 
-	return (
-		<MenuComponent
-			isOpen={isOpen}
-			onOpenChange={handleOpenChange}
-			menuPosition={menuPosition}
-			addToken={addToken}
-			addNode={addNode}
-			onRequestClose={handleRequestClose}
-			query={query}
-			selectedIndex={selectedIndex}
-			onItemCountChange={handleItemCountChange}
-			onSelectedIndexChange={handleSelectedIndexChange}
-		/>
-	);
+	return renderMenu({
+		isOpen: isOpen,
+		onOpenChange: handleOpenChange,
+		menuPosition: menuPosition,
+		addToken: addToken,
+		addNode: addNode,
+		onRequestClose: handleRequestClose,
+		query: query,
+		selectedIndex: selectedIndex,
+		onItemCountChange: handleItemCountChange,
+		onSelectedIndexChange: handleSelectedIndexChange,
+	});
 };

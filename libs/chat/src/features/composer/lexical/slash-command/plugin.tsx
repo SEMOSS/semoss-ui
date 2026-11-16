@@ -63,7 +63,7 @@ export const SlashCommandPlugin: React.FC<SlashCommandPluginProps> = ({
 				const match = filtered[selectedIndex] ?? filtered[0];
 				return match?.id;
 			}}
-			MenuComponent={({
+			renderMenu={({
 				isOpen,
 				onOpenChange,
 				menuPosition,
