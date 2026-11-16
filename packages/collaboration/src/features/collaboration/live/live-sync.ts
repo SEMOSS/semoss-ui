@@ -394,6 +394,13 @@ function planThreads(
 					muted: thread.muted,
 				}),
 			);
+		if (Boolean(old.notAutomated) !== Boolean(thread.notAutomated))
+			plan.statements.push(
+				pixel("BrainSetThreadNotAutomated", {
+					threadId: thread.id,
+					notAutomated: Boolean(thread.notAutomated),
+				}),
+			);
 		for (const participant of thread.participants) {
 			const was = old.participants.find(
 				(candidate) => candidate.personId === participant.personId,

@@ -137,6 +137,8 @@ export interface Thread {
 	participants: Participant[];
 	muted: boolean;
 	automated?: boolean;
+	/** You said a person writes here; the sort never marks it automated again. */
+	notAutomated?: boolean;
 	messageCount: number;
 	lastAt: string;
 	roomId: string | null;
@@ -523,6 +525,7 @@ export type CollaborationCommand =
 			included: boolean;
 	  }
 	| { type: "thread.mute"; threadId: string; muted: boolean }
+	| { type: "thread.notAutomated"; threadId: string; notAutomated: boolean }
 	| {
 			type: "person.save";
 			personId: string;

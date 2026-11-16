@@ -513,6 +513,16 @@ export function collaborationReducer(
 			if (thread) thread.muted = command.muted;
 			break;
 		}
+		case "thread.notAutomated": {
+			const thread = state.threads.find(
+				(candidate) => candidate.id === command.threadId,
+			);
+			if (thread) {
+				thread.notAutomated = command.notAutomated || undefined;
+				if (command.notAutomated) thread.automated = undefined;
+			}
+			break;
+		}
 		case "person.save": {
 			const person = state.people.find(
 				(candidate) => candidate.id === command.personId,

@@ -30,6 +30,26 @@ export function ignoreThread(dispatch: Dispatch, thread: Thread) {
 	});
 }
 
+// "a person writes here": the conversation is sorted again and never marked automated after that
+export function markNotAutomated(dispatch: Dispatch, thread: Thread) {
+	dispatch({
+		type: "thread.notAutomated",
+		threadId: thread.id,
+		notAutomated: true,
+	});
+	toast("Marked as not automated. It is being sorted again.", {
+		action: {
+			label: "Undo",
+			onClick: () =>
+				dispatch({
+					type: "thread.notAutomated",
+					threadId: thread.id,
+					notAutomated: false,
+				}),
+		},
+	});
+}
+
 export function resumeThread(dispatch: Dispatch, thread: Thread) {
 	dispatch({ type: "thread.mute", threadId: thread.id, muted: false });
 }

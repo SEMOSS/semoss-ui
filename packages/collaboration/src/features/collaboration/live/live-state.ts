@@ -410,6 +410,7 @@ export function mapThread(row: Row): Thread {
 		})),
 		muted: row.muted === true,
 		automated: row.automated === true ? true : undefined,
+		notAutomated: row.notAutomated === true ? true : undefined,
 		messageCount: Number(row.messageCount ?? 0),
 		lastAt: str(row.lastAt),
 		roomId: opt(row.roomId) ?? null,

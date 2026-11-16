@@ -17,7 +17,7 @@ import { dateLabel } from "../date-label";
 import { WorkRefreshStatus } from "../live/work-refresh-status";
 import { threadNeedsTopic } from "../state/collaboration.selectors";
 import { useCollaborationSession } from "../state/collaboration-session.context";
-import { resumeThread } from "../work-item-actions";
+import { markNotAutomated, resumeThread } from "../work-item-actions";
 import { BrainOverview } from "./brain-overview";
 import { CollaborationPageHeader } from "./collaboration-page-header";
 import { CollaborationSurface } from "./collaboration-surface";
@@ -194,6 +194,20 @@ export function ThreadsDirectory() {
 											}
 										>
 											Resume thread
+										</Button>
+									)}
+									{thread.automated && !thread.muted && (
+										<Button
+											variant="outline"
+											size="sm"
+											onClick={() =>
+												markNotAutomated(
+													dispatch,
+													thread,
+												)
+											}
+										>
+											Not automated
 										</Button>
 									)}
 									{menu}
