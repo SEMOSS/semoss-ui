@@ -31,6 +31,27 @@
 		},
 		"libs/panels": {
 			"entry": ["src/vite/ai-sdk-stub.ts!"]
+		},
+		"packages/playground-desktop": {
+			"entry": [
+				"src/main/main.ts!",
+				"src/preload/preload.ts!",
+				"src/renderer/main.tsx!",
+				"electron.vite.config.ts"
+			],
+			"ignoreDependencies": [
+				"@semoss/connectors",
+				"@semoss/workbench",
+				"@tailwindcss/vite",
+				"@vitejs/plugin-react",
+				"postcss",
+				"rolldown",
+				"unplugin-dts",
+				"vite-plugin-svgr"
+			]
+		},
+		"packages/playground": {
+			"ignoreDependencies": ["@semoss/connectors", "@semoss/workbench"]
 		}
 	},
 	"ignoreDependencies": ["@vitest/coverage-v8"]

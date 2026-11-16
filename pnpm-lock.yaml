@@ -1427,9 +1427,6 @@ importers:
 
   packages/playground:
     dependencies:
-      '@lexical/react':
-        specifier: ^0.39.0
-        version: 0.39.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(yjs@13.6.33)
       '@semoss/chat':
         specifier: workspace:*
         version: link:../../libs/chat
@@ -1457,15 +1454,9 @@ importers:
       '@semoss/workbench':
         specifier: workspace:*
         version: link:../../libs/workbench
-      lexical:
-        specifier: ^0.39.0
-        version: 0.39.0
       lucide-react:
         specifier: ^0.545.0
         version: 0.545.0(react@19.2.8)
-      mermaid:
-        specifier: ^11.15.0
-        version: 11.15.0
       mobx:
         specifier: 6.3.7
         version: 6.3.7
@@ -1557,9 +1548,6 @@ importers:
       '@testing-library/jest-dom':
         specifier: ^6.6.3
         version: 6.9.1
-      '@testing-library/react':
-        specifier: ^16.2.0
-        version: 16.3.0(@testing-library/dom@10.4.1)(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@types/node':
         specifier: ^26.0.0
         version: 26.6.6

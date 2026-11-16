@@ -87,20 +87,6 @@ export interface Workspace {
 	};
 }
 
-/**
- * Instructions from the backend
- */
-export interface Instructions {
-	/** ID of the instructions */
-	id: string;
-
-	/** Description */
-	description: string;
-
-	/** Context info */
-	context: string;
-}
-
 // Re-export types from shared to avoid breaking existing imports
 export type {
 	MCP,
@@ -338,74 +324,4 @@ export interface PixelMessageSubagentPart {
 		/** Set once status is FAILED. */
 		error?: string;
 	};
-}
-
-export interface MCPTool {
-	description?: string;
-	inputSchema: {
-		properties?: { [key: string]: object };
-		required?: string[];
-		type: "object";
-		title: string;
-	};
-	name: string;
-	outputSchema?: {
-		properties?: { [key: string]: object };
-		required?: string[];
-		type: "object";
-	};
-	title?: string;
-	original_name: string;
-	_meta: {
-		generated_on: string;
-		SMSS_MCP_UI?: {
-			loadingMessage?: string;
-			// `component://`, `system://`, or a portal path, as on a tool call.
-			resourceURI?: string;
-			displayLocation?: "inline" | "sidebar" | "hidden";
-			autoOpen?: boolean;
-		};
-	};
-}
-
-export interface ToolStructure {
-	_meta: {
-		SMSS_PROJECT_NAME: string;
-		SMSS_PROJECT_ID: string;
-		SMSS_ENGINE_NAME: string;
-		SMSS_ENGINE_TYPE: string;
-		SMSS_ENGINE_ID: string;
-	};
-	tools: MCPTool[];
-}
-
-export interface User {
-	date_added: string;
-	name: string;
-	permission: string;
-	id: string;
-	type: string;
-	email: string;
-}
-
-export interface ProjectDependency {
-	engine_type:
-		| "PROJECT"
-		| "STORAGE"
-		| "DATABASE"
-		| "FUNCTION"
-		| "MODEL"
-		| "VECTOR";
-	engine_id: string;
-	engine_name: string;
-	engine_subtype?: string;
-	description?: string;
-	engine_discoverable?: boolean;
-	permission_name?: "READ_ONLY" | "EDIT" | "OWNER";
-	engine_global?: boolean;
-	access_permission?: number; // The permission level the user has requested, if any
-	tags?: string; // comma separated tags
-	can_view_dependencies?: boolean;
-	engine_date_created?: string;
-	dependencies?: string[]; // Array of dependency engine IDs
 }

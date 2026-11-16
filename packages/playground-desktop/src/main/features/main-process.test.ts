@@ -1,16 +1,13 @@
 // @vitest-environment node
 import { describe, expect, test, vi } from "vitest";
+import { isExternalLink, isSignInPopup } from "./app-window/window-security";
+import { toLocalModuleUrl } from "./auth/sign-in-redirect";
+import { isTrustedSender } from "./ipc/handle-ipc";
+import { checkServer } from "./server-connection/check-server";
+import { parseSettings } from "./server-connection/settings-file";
 
 // the modules under test import electron for their wiring, not for these helpers
 vi.mock("electron", () => ({ ipcMain: {}, shell: {}, app: {}, screen: {} }));
-
-const { isTrustedSender } = await import("./ipc/handle-ipc");
-const { isExternalLink, isSignInPopup } = await import(
-	"./app-window/window-security"
-);
-const { toLocalModuleUrl } = await import("./auth/sign-in-redirect");
-const { parseSettings } = await import("./server-connection/settings-file");
-const { checkServer } = await import("./server-connection/check-server");
 
 const APP = "http://127.0.0.1:4321";
 const SERVER = { url: "https://semoss.example", module: "/Monolith" };
