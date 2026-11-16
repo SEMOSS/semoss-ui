@@ -1,32 +1,19 @@
-import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { getDesktopBridge } from "@/features/desktop-bridge/desktop-bridge";
 import { ServerConnectView } from "@/features/server-connection/server-connect-view";
-import type { ServerConfig } from "../../contract/server-connection";
+import { useSavedServer } from "@/features/server-connection/use-saved-server";
 
-/** Change the server the app signs in to. */
+/** Change the server the app signs in to; Cancel goes back where it came from. */
 export const ServerPage = () => {
-	const bridge = getDesktopBridge();
 	const navigate = useNavigate();
-	// undefined while loading; null when no server is saved
-	const [current, setCurrent] = useState<ServerConfig | null | undefined>();
-
-	useEffect(() => {
-		let isCurrent = true;
-		void bridge.invoke("server-connection:get").then((server) => {
-			if (isCurrent) setCurrent(server);
-		});
-		return () => {
-			isCurrent = false;
-		};
-	}, [bridge]);
+	const current = useSavedServer();
 
 	if (current === undefined) {
 		return null;
 	}
 	return (
 		<ServerConnectView
-			bridge={bridge}
+			bridge={getDesktopBridge()}
 			current={current}
 			onCancel={() => navigate(-1)}
 		/>

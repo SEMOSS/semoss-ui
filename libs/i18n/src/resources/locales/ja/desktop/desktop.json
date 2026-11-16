@@ -17,5 +17,11 @@
 		"menu": "アカウント",
 		"changeServer": "サーバーを変更",
 		"signOut": "サインアウト"
+	},
+	"unreachable": {
+		"title": "サーバーに接続できません",
+		"description": "{{server}} から応答がありません。再試行するか、別のサーバーに接続してください。",
+		"descriptionNoServer": "サーバーから応答がありません。再試行するか、別のサーバーに接続してください。",
+		"changeServer": "別のサーバーを使用"
 	}
 }

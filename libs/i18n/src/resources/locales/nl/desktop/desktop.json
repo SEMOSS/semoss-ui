@@ -17,5 +17,11 @@
 		"menu": "Account",
 		"changeServer": "Server wijzigen",
 		"signOut": "Afmelden"
+	},
+	"unreachable": {
+		"title": "Server niet bereikbaar",
+		"description": "{{server}} reageerde niet. Probeer het opnieuw of maak verbinding met een andere server.",
+		"descriptionNoServer": "De server reageerde niet. Probeer het opnieuw of maak verbinding met een andere server.",
+		"changeServer": "Andere server gebruiken"
 	}
 }

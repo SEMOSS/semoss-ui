@@ -76,7 +76,11 @@ beforeEach(() => {
 		},
 	];
 	const bridge: DesktopBridge = {
-		invoke: vi.fn(),
+		// the saved server, for the screens that name it
+		invoke: vi.fn().mockResolvedValue({
+			url: "https://semoss.example.com",
+			module: "/Monolith",
+		}),
 		onCommand: (listener) => {
 			mocks.commandListener = listener;
 			return () => {
@@ -129,4 +133,24 @@ test("a signed out user is sent to sign in", () => {
 	mocks.status = "UNAUTHENTICATED";
 	const router = renderAt("/new");
 	expect(router.state.location.pathname).toBe("/login");
+});
+
+test("an unreachable server names it and offers a different one", async () => {
+	mocks.status = "ERROR";
+	const user = userEvent.setup();
+	const router = renderAt("/new");
+
+	expect(
+		await screen.findByText("desktop:unreachable.description"),
+	).toBeVisible();
+	expect(
+		screen.getByRole("button", { name: "common:buttons.retry" }),
+	).toBeVisible();
+
+	await user.click(
+		screen.getByRole("button", {
+			name: "desktop:unreachable.changeServer",
+		}),
+	);
+	expect(router.state.location.pathname).toBe("/server");
 });

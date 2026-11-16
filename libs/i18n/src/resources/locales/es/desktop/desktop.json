@@ -17,5 +17,11 @@
 		"menu": "Cuenta",
 		"changeServer": "Cambiar servidor",
 		"signOut": "Cerrar sesión"
+	},
+	"unreachable": {
+		"title": "No se puede conectar con el servidor",
+		"description": "{{server}} no respondió. Vuelve a intentarlo o conéctate a otro servidor.",
+		"descriptionNoServer": "El servidor no respondió. Vuelve a intentarlo o conéctate a otro servidor.",
+		"changeServer": "Usar otro servidor"
 	}
 }

@@ -17,5 +17,11 @@
 		"menu": "Account",
 		"changeServer": "Change server",
 		"signOut": "Sign out"
+	},
+	"unreachable": {
+		"title": "Can't reach the server",
+		"description": "{{server}} didn't answer. Retry, or connect to a different server.",
+		"descriptionNoServer": "The server didn't answer. Retry, or connect to a different server.",
+		"changeServer": "Use a different server"
 	}
 }

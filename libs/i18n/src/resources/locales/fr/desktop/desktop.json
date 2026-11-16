@@ -17,5 +17,11 @@
 		"menu": "Compte",
 		"changeServer": "Changer de serveur",
 		"signOut": "Se déconnecter"
+	},
+	"unreachable": {
+		"title": "Impossible de joindre le serveur",
+		"description": "{{server}} n'a pas répondu. Réessayez ou connectez-vous à un autre serveur.",
+		"descriptionNoServer": "Le serveur n'a pas répondu. Réessayez ou connectez-vous à un autre serveur.",
+		"changeServer": "Utiliser un autre serveur"
 	}
 }
