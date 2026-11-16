@@ -14,6 +14,7 @@ import type { ConnectorProviderId } from "../../connectors/connector.catalog";
 import { signInToProvider } from "../../connectors/connector-sign-in";
 import { useConnectProvider } from "../../connectors/use-connect-provider";
 import { useConnectorLogins } from "../../connectors/use-connector-logins";
+import { useConnectors } from "../../connectors/use-connectors";
 import type { RoomStore } from "../../room/room.store";
 import {
 	type ConnectorAccessIssue,
@@ -52,6 +53,7 @@ export const RoomToolsConnectorsSection = observer(
 		const { openSettings } = useChatConfig().navigation;
 		// sign ins made or lost in another tab show up when the window is focused
 		useConnectorLogins(connectors);
+		useConnectors(connectors);
 		// read again once a connector change has been written to the toolbox
 		const toolbox = useRoomToolbox(
 			room,

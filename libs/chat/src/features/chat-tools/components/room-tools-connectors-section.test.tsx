@@ -28,6 +28,11 @@ const mockUseRoomToolbox = vi.mocked(useRoomToolbox);
 
 const room = {
 	connectors: {
+		// a fixed store: its snapshot is itself
+		getSnapshot() {
+			return this;
+		},
+		subscribe: () => () => {},
 		services: [],
 		isSavingConnectors: false,
 		connectedProviders: [],

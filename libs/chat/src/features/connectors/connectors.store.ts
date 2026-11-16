@@ -1,7 +1,7 @@
-import { makeAutoObservable, observable, runInAction } from "mobx";
 import type { ConnectorViewerService } from "@semoss/connectors";
 import { getI18n } from "@semoss/i18n";
 import { isSameArray } from "@semoss/utility/array";
+import { StoreState } from "@semoss/utility/store";
 import type { RoomStore } from "../room/room.store";
 import {
 	CONNECTOR_PROVIDERS,
@@ -44,40 +44,89 @@ const isSameProviderList = (
  *
  * Owned by the room store, and so as long lived as the room. The new-chat page
  * drafts one on its temporary room; the room it creates takes the user's
- * connectors through {@link ConnectorsStore.adopt}.
+ * connectors through {@link ConnectorsStore.adopt}. React reads it with
+ * `useConnectors`.
  */
-export class ConnectorsStore {
+/** What {@link ConnectorsStore} holds. */
+export interface ConnectorsSnapshot {
 	/** The connector services switched on for the user, in every chat. */
-	services: ConnectorServiceId[] = [];
-
+	readonly services: readonly ConnectorServiceId[];
 	/** Whether the connectors are being written to the room. */
-	isSavingConnectors = false;
-
+	readonly isSavingConnectors: boolean;
 	/**
 	 * The providers the session holds a login for, or null until they have
 	 * been read.
 	 */
-	connectedProviders: ConnectorProviderId[] | null = null;
-
+	readonly connectedProviders: readonly ConnectorProviderId[] | null;
 	/** Accounts whose sign in prompt the user put away until the page reloads. */
-	dismissedSignIns: ConnectorProviderId[] = [];
-
+	readonly dismissedSignIns: readonly ConnectorProviderId[];
 	/**
 	 * Which connector apps each OAuth sign in lets the connectors use, as
 	 * `connectorAccess` in `/api/config` reports it, or null until read or when
 	 * the backend does not say. The server judges it from the scopes the sign
 	 * in asks for; the scopes themselves are never sent.
 	 */
-	connectorAccess: unknown = null;
-
+	readonly connectorAccess: unknown;
 	/** The providers this server offers signing in with, or null until read. */
-	offeredProviders: ConnectorProviderId[] | null = null;
-
+	readonly offeredProviders: readonly ConnectorProviderId[] | null;
 	/**
 	 * Accounts whose missing permissions notice the user put away until the
 	 * page reloads.
 	 */
-	dismissedScopeNotices: ConnectorProviderId[] = [];
+	readonly dismissedScopeNotices: readonly ConnectorProviderId[];
+}
+
+const INITIAL: ConnectorsSnapshot = {
+	services: [],
+	isSavingConnectors: false,
+	connectedProviders: null,
+	dismissedSignIns: [],
+	connectorAccess: null,
+	offeredProviders: null,
+	dismissedScopeNotices: [],
+};
+
+export class ConnectorsStore {
+	private readonly state = new StoreState<ConnectorsSnapshot>(INITIAL);
+
+	getSnapshot = (): ConnectorsSnapshot => this.state.getSnapshot();
+	subscribe = (listener: () => void): (() => void) =>
+		this.state.subscribe(listener);
+
+	/** The connector services switched on for the user, in every chat. */
+	get services(): readonly ConnectorServiceId[] {
+		return this.state.getSnapshot().services;
+	}
+
+	/** Whether the connectors are being written to the room. */
+	get isSavingConnectors(): boolean {
+		return this.state.getSnapshot().isSavingConnectors;
+	}
+
+	/** The providers the session holds a login for, or null until read. */
+	get connectedProviders(): readonly ConnectorProviderId[] | null {
+		return this.state.getSnapshot().connectedProviders;
+	}
+
+	/** Accounts whose sign in prompt the user put away. */
+	get dismissedSignIns(): readonly ConnectorProviderId[] {
+		return this.state.getSnapshot().dismissedSignIns;
+	}
+
+	/** What the server says each sign in lets the connectors use. */
+	get connectorAccess(): unknown {
+		return this.state.getSnapshot().connectorAccess;
+	}
+
+	/** The providers this server offers signing in with, or null until read. */
+	get offeredProviders(): readonly ConnectorProviderId[] | null {
+		return this.state.getSnapshot().offeredProviders;
+	}
+
+	/** Accounts whose missing permissions notice the user put away. */
+	get dismissedScopeNotices(): readonly ConnectorProviderId[] {
+		return this.state.getSnapshot().dismissedScopeNotices;
+	}
 
 	private readonly room: RoomStore;
 
@@ -92,18 +141,18 @@ export class ConnectorsStore {
 	 */
 	constructor(room: RoomStore) {
 		this.room = room;
-
-		makeAutoObservable<ConnectorsStore, "room" | "stateVersion">(this, {
-			room: false,
-			stateVersion: false,
-			services: observable.ref,
-			connectedProviders: observable.ref,
-			dismissedSignIns: observable.ref,
-			connectorAccess: observable.ref,
-			offeredProviders: observable.ref,
-			dismissedScopeNotices: observable.ref,
-		});
 	}
+
+	/**
+	 * Switch services on for this chat without writing them anywhere, as a
+	 * draft or a test sets them.
+	 *
+	 * @param services - The services switched on.
+	 */
+	setServices = (services: readonly ConnectorServiceId[]): void => {
+		this.stateVersion++;
+		this.state.update({ services });
+	};
 
 	/**
 	 * Whether this is the new-chat page's draft rather than a real room. A
@@ -204,10 +253,10 @@ export class ConnectorsStore {
 	applyUserConnectorTools = async (
 		userTools: readonly McpTool[],
 	): Promise<void> => {
-		runInAction(() => {
-			this.stateVersion++;
-			this.services = getConnectorServices(userTools);
-			this.isSavingConnectors = !this.isDraft;
+		this.stateVersion++;
+		this.state.update({
+			services: getConnectorServices(userTools),
+			isSavingConnectors: !this.isDraft,
 		});
 		if (this.isDraft) {
 			return;
@@ -215,9 +264,7 @@ export class ConnectorsStore {
 		try {
 			await syncRoomConnectorTools(this.room, userTools);
 		} finally {
-			runInAction(() => {
-				this.isSavingConnectors = false;
-			});
+			this.state.update({ isSavingConnectors: false });
 		}
 	};
 
@@ -229,10 +276,8 @@ export class ConnectorsStore {
 	 * @throws Error when the connectors cannot be copied.
 	 */
 	adopt = async (draft: ConnectorsStore): Promise<void> => {
-		runInAction(() => {
-			this.stateVersion++;
-			this.services = [...draft.services];
-		});
+		this.stateVersion++;
+		this.state.update({ services: [...draft.services] });
 		const userTools = await readUserConnectorTools();
 		if (userTools !== null) {
 			await syncRoomConnectorTools(this.room, userTools);
@@ -275,14 +320,14 @@ export class ConnectorsStore {
 		const version = this.stateVersion;
 		try {
 			const userTools = await readUserConnectorTools();
-			runInAction(() => {
-				if (this.stateVersion === version) {
-					this.services =
+			if (this.stateVersion === version) {
+				this.state.update({
+					services:
 						userTools === null
 							? []
-							: getConnectorServices(userTools);
-				}
-			});
+							: getConnectorServices(userTools),
+				});
+			}
 		} catch (error) {
 			console.warn("Could not read the user's connectors", error);
 		}
@@ -314,20 +359,32 @@ export class ConnectorsStore {
 				: CONNECTOR_PROVIDERS.filter(
 						(provider) => provider.loginKey in logins,
 					).map((provider) => provider.id);
-		if (!isSameProviderList(this.connectedProviders, connected)) {
-			this.connectedProviders = connected;
-		}
-		if (connectorAccess !== undefined && connectorAccess !== null) {
-			this.connectorAccess = connectorAccess;
-		}
-		if (Array.isArray(availableProviders)) {
-			const offered = CONNECTOR_PROVIDERS.filter((provider) =>
-				isOfferedByServer(availableProviders, provider),
-			).map((provider) => provider.id);
-			if (!isSameProviderList(this.offeredProviders, offered)) {
-				this.offeredProviders = offered;
-			}
-		}
+		this.state.update((current) => {
+			const offered = Array.isArray(availableProviders)
+				? CONNECTOR_PROVIDERS.filter((provider) =>
+						isOfferedByServer(availableProviders, provider),
+					).map((provider) => provider.id)
+				: current.offeredProviders;
+			// an unchanged field keeps its value, which update skips
+			return {
+				connectedProviders: isSameProviderList(
+					current.connectedProviders,
+					connected,
+				)
+					? current.connectedProviders
+					: connected,
+				connectorAccess:
+					connectorAccess === undefined || connectorAccess === null
+						? current.connectorAccess
+						: connectorAccess,
+				offeredProviders: isSameProviderList(
+					current.offeredProviders,
+					offered,
+				)
+					? current.offeredProviders
+					: offered,
+			};
+		});
 	};
 
 	/**
@@ -336,9 +393,11 @@ export class ConnectorsStore {
 	 * @param providerId - The provider whose prompt to hide.
 	 */
 	dismissSignIn = (providerId: ConnectorProviderId): void => {
-		if (!this.dismissedSignIns.includes(providerId)) {
-			this.dismissedSignIns = [...this.dismissedSignIns, providerId];
-		}
+		this.state.update((current) => ({
+			dismissedSignIns: current.dismissedSignIns.includes(providerId)
+				? current.dismissedSignIns
+				: [...current.dismissedSignIns, providerId],
+		}));
 	};
 
 	/**
@@ -347,12 +406,13 @@ export class ConnectorsStore {
 	 * @param providerId - The provider whose notice to hide.
 	 */
 	dismissScopeNotice = (providerId: ConnectorProviderId): void => {
-		if (!this.dismissedScopeNotices.includes(providerId)) {
-			this.dismissedScopeNotices = [
-				...this.dismissedScopeNotices,
+		this.state.update((current) => ({
+			dismissedScopeNotices: current.dismissedScopeNotices.includes(
 				providerId,
-			];
-		}
+			)
+				? current.dismissedScopeNotices
+				: [...current.dismissedScopeNotices, providerId],
+		}));
 	};
 
 	/**
@@ -412,9 +472,7 @@ export class ConnectorsStore {
 		if (this.stateVersion !== version) {
 			return;
 		}
-		runInAction(() => {
-			this.services = services;
-		});
+		this.state.update({ services });
 		if (userTools !== null && !isNew) {
 			await syncRoomConnectorTools(this.room, userTools);
 		}

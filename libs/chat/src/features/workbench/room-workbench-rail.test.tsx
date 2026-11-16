@@ -75,9 +75,7 @@ function createRoom(): RoomStore {
 		roomId: "panel-rail",
 		panelComponents: ROOM_PANEL_COMPONENTS,
 	});
-	runInAction(() => {
-		room.connectors.services = ["onedrive"];
-	});
+	room.connectors.setServices(["onedrive"]);
 	return room;
 }
 

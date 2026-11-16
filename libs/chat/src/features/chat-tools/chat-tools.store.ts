@@ -1,4 +1,4 @@
-import { makeAutoObservable, runInAction } from "mobx";
+import { runInAction } from "mobx";
 import { getI18n } from "@semoss/i18n";
 import type { PixelMessageToolCallPart } from "../../types";
 import { MCP_EXECUTION_ASK, MCP_EXECUTION_AUTO } from "../mcp/mcp-constants";
@@ -100,11 +100,6 @@ export class ChatToolsStore {
 	constructor(room: RoomStore) {
 		this.room = room;
 		this.roomFiles = new RoomFolderProvider(this.runFolderPixel);
-
-		makeAutoObservable<ChatToolsStore, "room" | "roomFiles">(this, {
-			room: false,
-			roomFiles: false,
-		});
 	}
 
 	/** Whether the room runs its messages through the agent harness. */

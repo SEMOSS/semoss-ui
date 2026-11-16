@@ -7,6 +7,7 @@ import { signInToProvider } from "../connector-sign-in";
 import type { ConnectorsStore } from "../connectors.store";
 import { useConnectProvider } from "../use-connect-provider";
 import { useConnectorLogins } from "../use-connector-logins";
+import { useConnectors } from "../use-connectors";
 
 /** Props for {@link ConnectorSignInNotice}. */
 interface ConnectorSignInNoticeProps {
@@ -33,6 +34,7 @@ export const ConnectorSignInNotice = observer(
 		const { t, i18n } = useTranslation("chatConnectors");
 		const handleSignIn = useConnectProvider(signInToProvider);
 		useConnectorLogins(connectors);
+		useConnectors(connectors);
 
 		const list = new Intl.ListFormat(i18n.language, {
 			type: "conjunction",

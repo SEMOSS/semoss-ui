@@ -14,6 +14,7 @@ import type {
 	WorkbenchPanelType,
 } from "@semoss/workbench";
 import type { ConnectorsStore } from "../connectors/connectors.store";
+import { useConnectors } from "../connectors/use-connectors";
 import { RoomLayoutActionsContext } from "../conversation/room-layout-actions.context";
 import type { RoomStore } from "../room/room.store";
 import { ROOM_PANEL_TYPES } from "../room/room-sidebar";
@@ -86,6 +87,8 @@ export const useWorkbenchPanels = (
 	const { t } = useTranslation(["room", "connectors"]);
 	const roomLayout = useContext(RoomLayoutActionsContext);
 	const connectors = newRoomPanels?.connectors ?? room.connectors;
+	// the viewers on offer follow the connectors switched on and signed in
+	useConnectors(connectors);
 	const isBusy = newRoomPanels?.isBusy ?? false;
 	const isWaiting = (kind: NewRoomPanelRequest["kind"]) =>
 		isBusy && !NEW_ROOM_READY_PANEL_KINDS.has(kind);

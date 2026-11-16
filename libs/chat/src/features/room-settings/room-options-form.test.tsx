@@ -323,6 +323,11 @@ test("the Connectors section's Refresh and Sign In never submit the form", () =>
 	});
 	const room = {
 		connectors: {
+			// a fixed store: its snapshot is itself
+			getSnapshot() {
+				return this;
+			},
+			subscribe: () => () => {},
 			services: ["outlook"],
 			isSavingConnectors: false,
 			connectedProviders: [],

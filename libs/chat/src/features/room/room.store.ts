@@ -1,4 +1,4 @@
-import { makeAutoObservable, observable, reaction, runInAction } from "mobx";
+import { makeAutoObservable, observable, runInAction } from "mobx";
 import type { StoreApi } from "zustand";
 import { getI18n } from "@semoss/i18n";
 import {
@@ -344,15 +344,21 @@ export class RoomStore {
 
 		this._watchSidebar();
 		// a viewer closes when its connector can no longer be shown
-		const stopConnectorWatch = reaction(
-			() =>
-				this.connectors.availableSources
-					.map((source) => source.service)
-					.join(),
-			() => this._closeHiddenConnectorPanels(),
-			{ fireImmediately: true },
+		const availableServices = () =>
+			this.connectors.availableSources
+				.map((source) => source.service)
+				.join();
+		let shownServices = availableServices();
+		this._closeHiddenConnectorPanels();
+		this._disposers.push(
+			this.connectors.subscribe(() => {
+				const next = availableServices();
+				if (next !== shownServices) {
+					shownServices = next;
+					this._closeHiddenConnectorPanels();
+				}
+			}),
 		);
-		this._disposers.push(stopConnectorWatch);
 	}
 
 	/**

@@ -179,9 +179,7 @@ test("Files and Settings select their open tabs rather than adding another", () 
 test("a connector viewer opens as a tab and closes with its connector", () => {
 	const room = createRoom("room-connector-viewer");
 
-	runInAction(() => {
-		room.connectors.services = ["onedrive"];
-	});
+	room.connectors.setServices(["onedrive"]);
 	// a viewer is not opened until it is asked for
 	expect(mainPanelTypes(room)).toEqual([
 		FILE_PANEL_TYPES.FILE_EXPLORER,
@@ -192,9 +190,7 @@ test("a connector viewer opens as a tab and closes with its connector", () => {
 	room.openSidebarPanel(ROOM_PANEL_TYPES.ONEDRIVE, {}, "OneDrive");
 	expect(mainPanelTypes(room)).toContain(ROOM_PANEL_TYPES.ONEDRIVE);
 
-	runInAction(() => {
-		room.connectors.services = [];
-	});
+	room.connectors.setServices([]);
 
 	expect(mainPanelTypes(room)).toEqual([
 		FILE_PANEL_TYPES.FILE_EXPLORER,
@@ -338,15 +334,11 @@ test("a disposed room no longer returns a closed tool's tab inline", () => {
 
 test("a disposed room keeps a viewer whose connector goes away", () => {
 	const room = createRoom("room-disposed-connector");
-	runInAction(() => {
-		room.connectors.services = ["onedrive"];
-	});
+	room.connectors.setServices(["onedrive"]);
 	room.openSidebarPanel(ROOM_PANEL_TYPES.ONEDRIVE, {}, "OneDrive");
 
 	room.dispose();
-	runInAction(() => {
-		room.connectors.services = [];
-	});
+	room.connectors.setServices([]);
 
 	expect(mainPanelTypes(room)).toContain(ROOM_PANEL_TYPES.ONEDRIVE);
 });

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { usePixel } from "@semoss/sdk/react";
 import { isRecord } from "@semoss/utility/object";
 import { CONNECTOR_SERVICES } from "../connectors/connector.catalog";
+import { useConnectors } from "../connectors/use-connectors";
 import type { RoomStore } from "../room/room.store";
 
 /** Validate the default suggestion response before rendering clickable messages. */
@@ -45,6 +46,7 @@ const readSuggestions = (data: unknown): string[] => {
  */
 export const useRoomSuggestions = (room: RoomStore): string[] => {
 	const { connectors } = room;
+	useConnectors(connectors);
 	const response = room.latestResponseMessage;
 	const isReady = Boolean(
 		room.model?.engine_id &&

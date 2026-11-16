@@ -1,4 +1,3 @@
-import { runInAction } from "mobx";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { RoomStore } from "../room/room.store";
 import { readRoomToolFile } from "../room/room-tool-file";
@@ -148,8 +147,10 @@ describe("ConnectorsStore", () => {
 			"gmail",
 		]);
 
-		runInAction(() => {
-			connectors.connectedProviders = ["MICROSOFT"];
+		connectors.setSessionLogins({
+			logins: { MICROSOFT: "Ada" },
+			connectorAccess: undefined,
+			availableProviders: undefined,
 		});
 		expect(
 			connectors.availableSources.some(
@@ -196,8 +197,10 @@ describe("ConnectorsStore", () => {
 		);
 		expect(connectors.missingSignIns).toEqual([]);
 
-		runInAction(() => {
-			connectors.connectedProviders = ["GOOGLE"];
+		connectors.setSessionLogins({
+			logins: { GOOGLE: "Ada" },
+			connectorAccess: undefined,
+			availableProviders: undefined,
 		});
 		expect(connectors.missingSignIns).toEqual(["MICROSOFT"]);
 
@@ -209,11 +212,13 @@ describe("ConnectorsStore", () => {
 		await connectors.applyUserConnectorTools(
 			await writeUserConnectorTools(["outlook", "gmail"]),
 		);
-		runInAction(() => {
-			connectors.connectorAccess = {
+		connectors.setSessionLogins({
+			logins: null,
+			connectorAccess: {
 				MICROSOFT: { outlook: true, calendar: false },
 				GOOGLE: { gmail: false },
-			};
+			},
+			availableProviders: undefined,
 		});
 
 		expect(
@@ -231,9 +236,10 @@ describe("ConnectorsStore", () => {
 		await connectors.applyUserConnectorTools(
 			await writeUserConnectorTools(["gmail"]),
 		);
-		runInAction(() => {
-			connectors.connectedProviders = [];
-			connectors.offeredProviders = ["MICROSOFT"];
+		connectors.setSessionLogins({
+			logins: {},
+			connectorAccess: undefined,
+			availableProviders: [{ provider: "ms", isOauth: true }],
 		});
 		expect(connectors.missingSignIns).toEqual([]);
 		expect(connectors.unofferedProviders).toEqual(["GOOGLE"]);

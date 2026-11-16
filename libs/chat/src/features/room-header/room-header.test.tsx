@@ -1,5 +1,4 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { runInAction } from "mobx";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { DEFAULT_CHAT_THEME } from "../chat-config/chat-theme";
 import { RoomProvider } from "../room/room.context";
@@ -31,9 +30,7 @@ function createRoom(): RoomStore {
 		roomId: "header-controls",
 		panelComponents: {},
 	});
-	runInAction(() => {
-		room.connectors.services = ["onedrive"];
-	});
+	room.connectors.setServices(["onedrive"]);
 	return room;
 }
 

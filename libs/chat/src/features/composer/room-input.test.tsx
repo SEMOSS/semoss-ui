@@ -268,6 +268,11 @@ const defaultProps = {
 			isAgentMode: false,
 		},
 		connectors: {
+			// a fixed store: its snapshot is itself
+			getSnapshot() {
+				return this;
+			},
+			subscribe: () => () => {},
 			services: [],
 			availableSources: [],
 			openSourcePanel: vi.fn(),
