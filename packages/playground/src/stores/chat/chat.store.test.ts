@@ -1,5 +1,5 @@
 import { beforeEach, expect, test, vi } from "vitest";
-import { withPlaygroundDefaults } from "@/stores/root/playground-theme";
+import { DEFAULT_CHAT_THEME } from "@/features/chat-config/chat-theme";
 import type { Engine } from "@/types";
 import { ChatStore } from "./chat.store";
 
@@ -58,7 +58,7 @@ beforeEach(() => {
 });
 
 const createStore = async () => {
-	const store = new ChatStore(withPlaygroundDefaults(null), {});
+	const store = new ChatStore(DEFAULT_CHAT_THEME, {});
 	await store.initialize();
 	return store;
 };
@@ -80,7 +80,7 @@ test("reads the user and their new chat default model from the session", async (
 
 test("falls back to the deployment's default, then the first model", async () => {
 	mocks.snapshot = { status: "AUTHENTICATED", user: mocks.user("gone") };
-	const theme = withPlaygroundDefaults(null);
+	const theme = DEFAULT_CHAT_THEME;
 	const store = new ChatStore(
 		{
 			...theme,

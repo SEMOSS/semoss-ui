@@ -1,8 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { runInAction } from "mobx";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { DEFAULT_CHAT_THEME } from "@/features/chat-config/chat-theme";
 import { RoomStore } from "@/stores/room/room.store";
-import { RootStore } from "@/stores/root/root.store";
 import { RoomHeader } from "./room-header";
 
 vi.mock("@semoss/i18n", () => ({
@@ -26,7 +26,7 @@ afterEach(() => vi.unstubAllGlobals());
 /** Build a room with OneDrive switched on, without network-backed loading. */
 function createRoom(): RoomStore {
 	const room = new RoomStore({
-		theme: new RootStore().theme,
+		theme: DEFAULT_CHAT_THEME,
 		roomId: "header-controls",
 		panelComponents: {},
 	});

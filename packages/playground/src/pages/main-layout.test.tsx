@@ -2,10 +2,8 @@ import { render, screen } from "@testing-library/react";
 import type { CSSProperties } from "react";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import {
-	mergePlaygroundTheme,
-	withPlaygroundDefaults,
-} from "@/stores/root/playground-theme";
+import { mergeChatTheme as mergePlaygroundTheme } from "@/features/chat-config/chat-theme";
+import { withPlaygroundDefaults } from "@/stores/root/playground-theme";
 import { MainLayout } from "./main-layout";
 
 // Keep the real layout and UI primitives; isolate network-backed children.

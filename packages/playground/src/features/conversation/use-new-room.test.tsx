@@ -1,8 +1,8 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vitest";
+import { DEFAULT_CHAT_THEME } from "@/features/chat-config/chat-theme";
 import { RoomStore } from "@/stores/room/room.store";
 import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
-import { RootStore } from "@/stores/root/root.store";
 import { useNewRoom } from "./use-new-room";
 
 const chat = vi.hoisted(() => ({
@@ -16,7 +16,7 @@ let draft: RoomStore;
 let prepared: RoomStore;
 beforeEach(() => {
 	vi.clearAllMocks();
-	const theme = new RootStore().theme;
+	const theme = DEFAULT_CHAT_THEME;
 	draft = new RoomStore({ theme, roomId: "temp", panelComponents: {} });
 	draft.setOptions({ instructions: "Draft", mcp: [], predefinedPrompts: [] });
 	prepared = new RoomStore({

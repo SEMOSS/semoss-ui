@@ -4,11 +4,11 @@ import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import type { FileExplorerHost } from "@semoss/panels";
+import { DEFAULT_CHAT_THEME } from "@/features/chat-config/chat-theme";
 import { NextMessageRoomProvider } from "@/features/conversation/next-message-room.context";
 import { RoomLayout } from "@/features/conversation/room-layout";
 import { WorkbenchToggleButton } from "@/features/workbench/workbench-toggle-button";
 import { RoomStore } from "@/stores/room/room.store";
-import { RootStore } from "@/stores/root/root.store";
 import { RoomWorkbench } from "./room-workbench";
 
 const mocks = vi.hoisted(() => ({
@@ -34,9 +34,6 @@ vi.mock("@semoss/panels", async (original) => {
 		},
 	};
 });
-vi.mock("@/features/settings/settings-dialog.context", () => ({
-	useSettingsDialog: () => ({ openSettings: vi.fn() }),
-}));
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 	getI18n: () => ({ t: (key: string) => key }),
@@ -60,7 +57,7 @@ const RoomLayoutTest = observer(({ room }: { room: RoomStore }) => (
 /** Build a room with a local panel, without starting network-backed room loading. */
 function createRoom(): RoomStore {
 	const room = new RoomStore({
-		theme: new RootStore().theme,
+		theme: DEFAULT_CHAT_THEME,
 		roomId: "room-controls",
 		panelComponents: { notes: { name: "Notes", content: NotesEditor } },
 	});
@@ -131,7 +128,7 @@ test.each([false, true])(
 	async (isDraft) => {
 		const room = createRoom();
 		const draft = new RoomStore({
-			theme: new RootStore().theme,
+			theme: DEFAULT_CHAT_THEME,
 			roomId: "",
 			panelComponents: {},
 		});

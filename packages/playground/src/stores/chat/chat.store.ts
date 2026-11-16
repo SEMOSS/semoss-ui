@@ -1,4 +1,4 @@
-import { makeAutoObservable, runInAction } from "mobx";
+import { configure, makeAutoObservable, runInAction } from "mobx";
 import { getI18n } from "@semoss/i18n";
 import { download, runPixel, Session } from "@semoss/sdk/react";
 import {
@@ -28,6 +28,12 @@ import type {
 } from "@/types";
 import { throwOnPixelErrors } from "@/utility/pixel-errors";
 import { RoomStore } from "../room/room.store";
+
+// The chat's MobX stores (chat, room, message, tool) mutate state only inside
+// actions.
+configure({
+	enforceActions: "always",
+});
 
 /**
  * Shape of a room row as rendered in the nav list. Matches the columns

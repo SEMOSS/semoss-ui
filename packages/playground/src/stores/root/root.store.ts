@@ -1,14 +1,7 @@
-import { configure } from "mobx";
 import {
 	type PlaygroundTheme,
 	withPlaygroundDefaults,
 } from "./playground-theme";
-
-// The playground's remaining MobX stores (chat, room, message, tool) mutate
-// state only inside actions.
-configure({
-	enforceActions: "always",
-});
 
 /**
  * The playground's theme, for views that still read it from `useRoot()`.

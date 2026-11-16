@@ -1,8 +1,8 @@
 import { renderHook } from "@testing-library/react";
 import { expect, test, vi } from "vitest";
+import { DEFAULT_CHAT_THEME } from "@/features/chat-config/chat-theme";
 import type { NewRoomWorkbenchPanels } from "@/features/workbench/use-workbench-panels";
 import { RoomStore } from "@/stores/room/room.store";
-import { RootStore } from "@/stores/root/root.store";
 import { useRoomSlashCommands } from "./use-room-slash-commands";
 
 vi.mock("@semoss/i18n", () => ({
@@ -13,7 +13,7 @@ vi.mock("@semoss/i18n", () => ({
 /** The commands a draft's composer offers, by id. */
 const getCommandIds = (newRoomPanels: NewRoomWorkbenchPanels): string[] => {
 	const room = new RoomStore({
-		theme: new RootStore().theme,
+		theme: DEFAULT_CHAT_THEME,
 		roomId: "slash-commands",
 		panelComponents: {},
 	});
@@ -34,7 +34,7 @@ const getCommandIds = (newRoomPanels: NewRoomWorkbenchPanels): string[] => {
 
 test("a draft's slash menu leaves out panels that wait for its room while it prepares", () => {
 	const connectors = new RoomStore({
-		theme: new RootStore().theme,
+		theme: DEFAULT_CHAT_THEME,
 		roomId: "new-room",
 		panelComponents: {},
 	}).connectors;

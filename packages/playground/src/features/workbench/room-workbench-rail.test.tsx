@@ -5,10 +5,10 @@ import type { ReactElement } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { FILE_PANEL_TYPES } from "@semoss/panels";
 import { ROOM_PANEL_COMPONENTS } from "@/components/room/panels/room-panel.components";
+import { DEFAULT_CHAT_THEME } from "@/features/chat-config/chat-theme";
 import { RoomActionsProvider } from "@/features/room-actions/room-actions.context";
 import { RoomStore } from "@/stores/room/room.store";
 import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
-import { RootStore } from "@/stores/root/root.store";
 import { RoomWorkbenchRail } from "./room-workbench-rail";
 import type { NewRoomWorkbenchPanels } from "./use-workbench-panels";
 
@@ -20,9 +20,6 @@ const mocks = vi.hoisted(() => ({
 	pinned: [] as { ROOM_ID: string }[],
 }));
 
-vi.mock("@/features/settings/settings-dialog.context", () => ({
-	useSettingsDialog: () => ({ openSettings: vi.fn() }),
-}));
 vi.mock("@/features/chat-config/use-chat-config", () => ({
 	useChatConfig: () => ({
 		navigation: { openRoom: vi.fn(), onRoomDeleted: mocks.onRoomDeleted },
@@ -74,7 +71,7 @@ afterEach(() => vi.unstubAllGlobals());
  */
 function createRoom(): RoomStore {
 	const room = new RoomStore({
-		theme: new RootStore().theme,
+		theme: DEFAULT_CHAT_THEME,
 		roomId: "panel-rail",
 		panelComponents: ROOM_PANEL_COMPONENTS,
 	});

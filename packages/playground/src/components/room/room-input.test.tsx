@@ -94,11 +94,6 @@ vi.mock("@/hooks/use-chat-session", () => ({
 vi.mock("@/hooks/use-sidebar-panel-active", () => ({
 	useSidebarPanelActive: () => false,
 }));
-vi.mock("@/hooks/use-root", () => ({
-	useRoot: () => ({
-		root: { theme: { featureFlags, defaultCompactionStrategy: "AUTO" } },
-	}),
-}));
 vi.mock("@/components/prompt/PromptOptimizer", () => ({
 	PromptOptimizer: ({
 		input,

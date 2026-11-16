@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "vitest";
-import { withPlaygroundDefaults } from "@/stores/root/playground-theme";
+import { DEFAULT_CHAT_THEME } from "@/features/chat-config/chat-theme";
 import {
 	forgetSessionNewChat,
 	NEW_CHAT_PREFERENCE_KEYS,
@@ -89,7 +89,7 @@ describe("session new chat", () => {
 
 describe("readDeploymentNewChatDefaults", () => {
 	test("reads the theme's defaults for a new room", () => {
-		const theme = withPlaygroundDefaults(null);
+		const theme = DEFAULT_CHAT_THEME;
 
 		expect(
 			readDeploymentNewChatDefaults({
