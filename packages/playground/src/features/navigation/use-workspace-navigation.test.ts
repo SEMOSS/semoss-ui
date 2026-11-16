@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { expect, test, vi } from "vitest";
-import { useWorkspaceNavigation } from "./use-workspace-navigation";
+import { useWorkspaceNavigation } from "@/features/navigation/use-workspace-navigation";
 
 test.each([true, false])(
 	"restores navigation preference %s after temporary work-area overrides",

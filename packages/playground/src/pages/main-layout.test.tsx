@@ -3,7 +3,7 @@ import type { CSSProperties } from "react";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { mergeChatTheme as mergePlaygroundTheme } from "@semoss/chat";
-import { withPlaygroundDefaults } from "@/stores/root/playground-theme";
+import { withPlaygroundDefaults } from "@/features/theme/playground-theme";
 import { MainLayout } from "./main-layout";
 
 // Keep the real layout and UI primitives; isolate network-backed children.
@@ -11,21 +11,21 @@ vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
 const theme = vi.hoisted(() => ({ current: null as unknown }));
-vi.mock("@/hooks/use-playground-theme", () => ({
+vi.mock("@/features/theme/use-playground-theme", () => ({
 	usePlaygroundTheme: () => theme.current,
 }));
 vi.mock("@semoss/chat", async (original) => ({
 	...(await original<typeof import("@semoss/chat")>()),
 	useCreateChatStore: () => ({ embeddedPageMap: {} }),
 }));
-vi.mock("@/components/common/global-nav", () => ({ GlobalNav: () => null }));
-vi.mock("@/components/common/global-footer", () => ({
+vi.mock("@/features/navigation/global-nav", () => ({ GlobalNav: () => null }));
+vi.mock("@/features/app-shell/global-footer", () => ({
 	GlobalFooter: () => null,
 }));
-vi.mock("@/components/common/global-dialog", () => ({
+vi.mock("@/features/app-shell/global-dialog", () => ({
 	GlobalDialog: () => null,
 }));
-vi.mock("@/components/common/landing-tour", () => ({
+vi.mock("@/features/tour/landing-tour", () => ({
 	LandingTour: () => null,
 }));
 

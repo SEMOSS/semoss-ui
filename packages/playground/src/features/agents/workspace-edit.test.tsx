@@ -9,8 +9,8 @@ import type { ReactNode } from "react";
 import { beforeEach, expect, test, vi } from "vitest";
 import { Chat, type ChatConfig, type ChatStore } from "@semoss/chat";
 import { toast } from "@semoss/ui/next";
-import { EditWorkspacePage } from "@/pages/edit-workspace-page";
-import { WorkspaceDetailPage } from "@/pages/workspace-detail-page";
+import { AgentDetailPage } from "@/pages/agent-detail.page";
+import { AgentEditPage } from "@/pages/agent-edit.page";
 
 const mocks = vi.hoisted(() => ({
 	workspaceId: "agent-1",
@@ -60,7 +60,7 @@ vi.mock("@semoss/shared", async (original) => ({
 	MembersTable: () => null,
 	AppCatalogAvatar: () => null,
 }));
-vi.mock("@/components/workspace/workspace-chat-list", () => ({
+vi.mock("@/features/agents/workspace-chat-list", () => ({
 	WorkspaceChatList: () => null,
 }));
 
@@ -134,7 +134,7 @@ test("the existing editor saves all agent settings, retains failed edits, and re
 				}),
 		)
 		.mockResolvedValueOnce(undefined);
-	render(<EditWorkspacePage />, { wrapper: chatWrapper });
+	render(<AgentEditPage />, { wrapper: chatWrapper });
 	const name = screen.getByLabelText("form.name");
 	expect(name).toHaveValue("Research agent");
 	expect(screen.getByLabelText("about.instructions")).toHaveValue(
@@ -208,12 +208,12 @@ test("refreshes preserve dirty edits while switching agents resets the full conf
 		.spyOn(toast, "warning")
 		.mockImplementation(() => "warning");
 	mocks.editWorkspace.mockResolvedValue("Some resources were skipped");
-	const view = render(<EditWorkspacePage />, { wrapper: chatWrapper });
+	const view = render(<AgentEditPage />, { wrapper: chatWrapper });
 	fireEvent.change(screen.getByLabelText("form.name"), {
 		target: { value: "Unsaved name" },
 	});
 	mocks.workspace = { ...mocks.workspace, name: "Refetched name" };
-	view.rerender(<EditWorkspacePage />);
+	view.rerender(<AgentEditPage />);
 	expect(screen.getByLabelText("form.name")).toHaveValue("Unsaved name");
 	mocks.workspaceId = "agent-2";
 	mocks.workspace = {
@@ -223,7 +223,7 @@ test("refreshes preserve dirty edits while switching agents resets the full conf
 		config_json: {},
 		prompts: [],
 	};
-	view.rerender(<EditWorkspacePage />);
+	view.rerender(<AgentEditPage />);
 	expect(screen.getByLabelText("form.name")).toHaveValue("Second agent");
 	expect(screen.getByLabelText("about.greeting")).toHaveValue("");
 	fireEvent.change(screen.getByLabelText("form.name"), {
@@ -248,7 +248,7 @@ test("refreshes preserve dirty edits while switching agents resets the full conf
 });
 
 test("the detail view shows the shared agent definition with its attached resources", async () => {
-	render(<WorkspaceDetailPage />, { wrapper: chatWrapper });
+	render(<AgentDetailPage />, { wrapper: chatWrapper });
 	await screen.findByRole("button", { name: "workspace:actions.edit" });
 	expect(screen.getByText("Notes")).toBeVisible();
 	expect(screen.getByText("Files")).toBeVisible();

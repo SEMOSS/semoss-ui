@@ -3,10 +3,10 @@ import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { Chat, type ChatConfig, type ChatStore } from "@semoss/chat";
-import { WorkspacePage } from "./workspace-page";
+import { AgentCatalog } from "@/features/agents/agent-catalog";
 
 const mocks = vi.hoisted(() => ({ pixel: "", navigate: vi.fn() }));
-vi.mock("@/hooks/use-playground-theme", () => ({
+vi.mock("@/features/theme/use-playground-theme", () => ({
 	usePlaygroundTheme: () => ({ images: {} }),
 }));
 vi.mock("@semoss/i18n", () => ({
@@ -42,7 +42,7 @@ vi.mock("@semoss/sdk/react", () => ({
 		};
 	},
 }));
-vi.mock("@/components/workspace/workspace-card", () => ({
+vi.mock("@/features/agents/workspace-card", () => ({
 	WorkspaceCard: ({
 		workspace,
 		permission,
@@ -96,7 +96,7 @@ afterEach(() => {
 });
 
 test("catalog uses effective permissions for group and global agents", () => {
-	render(<WorkspacePage />, { wrapper: chatWrapper });
+	render(<AgentCatalog />, { wrapper: chatWrapper });
 	expect(screen.getByText("Group agent: EDIT")).toBeInTheDocument();
 	expect(screen.getByText("Global agent: READ_ONLY")).toBeInTheDocument();
 	expect(mocks.pixel).not.toContain("effectivePermissions");
@@ -104,7 +104,7 @@ test("catalog uses effective permissions for group and global agents", () => {
 
 test("catalog combines access filters, search, and sorting in the existing page", async () => {
 	const user = userEvent.setup();
-	render(<WorkspacePage />, { wrapper: chatWrapper });
+	render(<AgentCatalog />, { wrapper: chatWrapper });
 	await user.click(
 		screen.getByRole("button", { name: "workspace:catalog.filters.owner" }),
 	);

@@ -10,7 +10,7 @@ import {
 	Spinner,
 	useTheme,
 } from "@semoss/ui/next";
-import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
+import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 
 interface ErrorPageProps {
 	/** Fill the main area beside the navigation rather than the whole page. */

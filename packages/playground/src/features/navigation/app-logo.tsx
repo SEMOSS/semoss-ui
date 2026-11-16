@@ -3,7 +3,7 @@ import { useTranslation } from "@semoss/i18n";
 import { cn, useTheme } from "@semoss/ui/next";
 import appImage from "@/assets/img/app.svg";
 import logoImage from "@/assets/img/logo.svg";
-import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
+import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 
 interface AppLogoProps {
 	/**

@@ -2,7 +2,7 @@ import { type ReactNode, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { Chat, type ChatConfig } from "@semoss/chat";
 import { useSettingsDialog } from "@/features/settings/settings-dialog.context";
-import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
+import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 import { NEW_CHAT_BUILD_DEFAULTS } from "./new-chat-build-defaults";
 import { PLATFORM_URL } from "./platform-url";
 

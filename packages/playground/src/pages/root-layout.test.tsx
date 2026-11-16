@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
+import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 import { InitializedLayout } from "./initialized-layout";
 import { RootLayout } from "./root-layout";
 

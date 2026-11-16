@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useLocation } from "react-router";
 import { useSession, useSessionRetry } from "@semoss/sdk/react";
-import { ErrorPage } from "./error-page";
+import { ErrorPage } from "@/pages/error.page";
 
 /**
  * Layout for the routes that need a signed in user: a signed out user goes to

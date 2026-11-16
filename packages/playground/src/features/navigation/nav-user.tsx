@@ -24,8 +24,8 @@ import {
 import { getErrorMessage } from "@semoss/utility/error";
 import { buildInitials } from "@semoss/utility/text";
 import { useSettingsDialog } from "@/features/settings/settings-dialog.context";
-import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
-import { useTour } from "@/hooks/use-tour";
+import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
+import { useTour } from "@/features/tour/use-tour";
 
 /**
  * The signed in user's name and avatar at the foot of the sidebar. Clicking it

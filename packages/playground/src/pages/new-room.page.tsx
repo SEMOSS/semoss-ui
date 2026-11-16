@@ -1,7 +1,7 @@
 import { useSearchParams } from "react-router";
 import { Chat } from "@semoss/chat";
 import { PageHeaderNavigation } from "@/features/navigation/page-header-navigation";
-import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
+import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 
 /** The page to start a new chat; its links name a prompt, agent, or knowledge base. */
 export const NewRoomPage = () => {

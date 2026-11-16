@@ -18,16 +18,16 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { getPlaygroundAgentLinks } from "@/features/agents/agent-links";
-import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
+import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 
 /**
- * Renders the NewWorkspacePage for creating new agents.
+ * Create an agent.
  *
  * The shared agent form, the same one the client's agent pages use, under a
  * sticky Cancel/Create header. Members are managed from the edit page once
  * the agent exists.
  */
-export const NewWorkspacePage = observer(() => {
+export const AgentCreate = observer(() => {
 	const { t } = useTranslation([
 		"workspace",
 		"common",

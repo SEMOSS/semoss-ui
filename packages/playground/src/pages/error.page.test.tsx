@@ -2,9 +2,9 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { SidebarProvider, ThemeProvider } from "@semoss/ui/next";
-import { withPlaygroundDefaults } from "@/stores/root/playground-theme";
-import { AuthenticatedLayout } from "./authenticated-layout";
-import { ErrorPage } from "./error-page";
+import { withPlaygroundDefaults } from "@/features/theme/playground-theme";
+import { AuthenticatedLayout } from "@/pages/authenticated-layout";
+import { ErrorPage } from "@/pages/error.page";
 
 const mocks = vi.hoisted(() => ({
 	session: {
@@ -25,7 +25,7 @@ vi.mock("@semoss/sdk/react", () => ({
 		retry: mocks.session.refresh,
 	}),
 }));
-vi.mock("@/hooks/use-playground-theme", () => ({
+vi.mock("@/features/theme/use-playground-theme", () => ({
 	usePlaygroundTheme: () => mocks.theme,
 }));
 

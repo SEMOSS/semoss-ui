@@ -5,8 +5,8 @@ import {
 } from "@semoss/i18n";
 import { Env } from "@semoss/sdk/react";
 import { ThemeProvider, Toaster } from "@semoss/ui/next";
-import { LandscapeRestriction } from "@/components/common/landscape-restriction";
-import { LanguageDirection } from "@/components/common/language-direction";
+import { LandscapeRestriction } from "@/features/app-shell/landscape-restriction";
+import { LanguageDirection } from "@/features/app-shell/language-direction";
 import { Router } from "@/pages/router";
 
 // The server writes MODULE into index.html (semoss-env tag, read when the SDK

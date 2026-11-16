@@ -14,12 +14,12 @@ import {
 	SidebarMenuItem,
 	useSidebar,
 } from "@semoss/ui/next";
+import { AppLogo } from "@/features/navigation/app-logo";
+import { GlobalNavItem } from "@/features/navigation/global-nav-item";
 import { MobileNavigationClose } from "@/features/navigation/mobile-navigation-close";
+import { NavUser } from "@/features/navigation/nav-user";
 import { NavigationToggle } from "@/features/navigation/navigation-toggle";
-import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
-import { AppLogo } from "./app-logo";
-import { GlobalNavItem } from "./global-nav-item";
-import { NavUser } from "./nav-user";
+import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 
 let isIframed = false;
 try {

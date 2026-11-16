@@ -4,9 +4,9 @@ import { useSession } from "@semoss/sdk/react";
 import { LoginForm } from "@semoss/shared";
 import { useTheme } from "@semoss/ui/next";
 import { setFavicon } from "@semoss/utility/browser";
-import { AppLogo } from "@/components/common/app-logo";
-import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
-import { useThemeTitle } from "@/hooks/use-theme-title";
+import { AppLogo } from "@/features/navigation/app-logo";
+import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
+import { useThemeTitle } from "@/features/theme/use-theme-title";
 
 /**
  * LoginPage

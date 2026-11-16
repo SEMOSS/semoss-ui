@@ -11,7 +11,7 @@ import {
 	ToggleGroupItem,
 	useTheme,
 } from "@semoss/ui/next";
-import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
+import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 import { NewChatSettings } from "./new-chat-settings";
 import { SettingsRow } from "./settings-row";
 

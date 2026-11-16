@@ -20,19 +20,19 @@ import {
 	useCacheState,
 } from "@semoss/ui/next";
 import { setFavicon } from "@semoss/utility/browser";
-import { GlobalDialog } from "@/components/common/global-dialog";
-import { GlobalFooter } from "@/components/common/global-footer";
-import { GlobalNav } from "@/components/common/global-nav";
-import { LandingTour } from "@/components/common/landing-tour";
-import { TourContext } from "@/contexts/tour-context";
+import { GlobalDialog } from "@/features/app-shell/global-dialog";
+import { GlobalFooter } from "@/features/app-shell/global-footer";
 import { NEW_CHAT_BUILD_DEFAULTS } from "@/features/chat-config/new-chat-build-defaults";
 import { PlaygroundChatConfigProvider } from "@/features/chat-config/playground-chat-config-provider";
-import { useWorkspaceNavigation } from "@/features/conversation/use-workspace-navigation";
+import { GlobalNav } from "@/features/navigation/global-nav";
 import { NavigationButton } from "@/features/navigation/navigation-button";
 import { PageHeaderContext } from "@/features/navigation/page-header.context";
+import { useWorkspaceNavigation } from "@/features/navigation/use-workspace-navigation";
 import { SettingsDialogProvider } from "@/features/settings/settings-dialog-provider";
-import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
-import { useThemeTitle } from "@/hooks/use-theme-title";
+import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
+import { useThemeTitle } from "@/features/theme/use-theme-title";
+import { LandingTour } from "@/features/tour/landing-tour";
+import { TourContext } from "@/features/tour/tour.context";
 
 export const MainLayout = observer(() => {
 	const theme = usePlaygroundTheme();

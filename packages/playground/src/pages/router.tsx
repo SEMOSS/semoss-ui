@@ -1,19 +1,19 @@
 import { createHashRouter, Navigate } from "react-router";
 import { RouterProvider } from "react-router/dom";
-import { DocumentLibrary } from "@/pages/knowledge-page";
+import { AgentCatalog } from "@/features/agents/agent-catalog";
+import { AgentCreate } from "@/features/agents/agent-create";
+import { KnowledgeLibrary } from "@/features/knowledge/knowledge-library";
+import { EmbedPage } from "@/pages/embed.page";
+import { ErrorPage } from "@/pages/error.page";
+import { LoginPage } from "@/pages/login.page";
+import { NewRoomPage } from "@/pages/new-room.page";
+import { RoomPage } from "@/pages/room.page";
+import { AgentDetailPage } from "./agent-detail.page";
+import { AgentEditPage } from "./agent-edit.page";
 import { AuthenticatedLayout } from "./authenticated-layout";
-import { EditWorkspacePage } from "./edit-workspace-page";
-import { EmbedPage } from "./embed-page";
-import { ErrorPage } from "./error-page";
 import { InitializedLayout } from "./initialized-layout";
-import { KnowledgeDetailPage } from "./knowledge-detail-page";
-import { LoginPage } from "./login-page";
+import { KnowledgeDetailPage } from "./knowledge-detail.page";
 import { MainLayout } from "./main-layout";
-import { NewRoomPage } from "./new-room-page";
-import { NewWorkspacePage } from "./new-workspace-page";
-import { RoomPage } from "./room-page";
-import { WorkspaceDetailPage } from "./workspace-detail-page";
-import { WorkspacePage } from "./workspace-page";
 
 const router = createHashRouter([
 	{
@@ -46,24 +46,24 @@ const router = createHashRouter([
 									},
 									{
 										path: "agent",
-										element: <WorkspacePage />,
+										element: <AgentCatalog />,
 									},
 
 									{
 										path: "agent/new",
-										element: <NewWorkspacePage />,
+										element: <AgentCreate />,
 									},
 									{
 										path: "agent/:workspaceId",
-										element: <WorkspaceDetailPage />,
+										element: <AgentDetailPage />,
 									},
 									{
 										path: "agent/:workspaceId/edit",
-										element: <EditWorkspacePage />,
+										element: <AgentEditPage />,
 									},
 									{
 										path: "knowledge",
-										element: <DocumentLibrary />,
+										element: <KnowledgeLibrary />,
 									},
 									{
 										path: "knowledge/:knowledgeId",

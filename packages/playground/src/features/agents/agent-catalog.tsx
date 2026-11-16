@@ -24,8 +24,8 @@ import {
 	useInfiniteScroll,
 	useTheme,
 } from "@semoss/ui/next";
-import { WorkspaceCard } from "@/components/workspace/workspace-card";
-import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
+import { WorkspaceCard } from "@/features/agents/workspace-card";
+import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 
 /**
  * The filters offered, in display order. The access filters keep the agents
@@ -108,11 +108,11 @@ const toCardPermission = (app: App): "OWNER" | "EDIT" | "READ_ONLY" =>
 			: "READ_ONLY";
 
 /**
- * Renders the WorkspacePage, allowing users to access their workspace or discover new ones
+ * The agent catalog: the user's agents and the ones they can discover
  *
  * @component
  */
-export const WorkspacePage = observer(() => {
+export const AgentCatalog = observer(() => {
 	const { t } = useTranslation(["workspace", "notifications", "common"]);
 	const navigate = useNavigate();
 	const theme = usePlaygroundTheme();

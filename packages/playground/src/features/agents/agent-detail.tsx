@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
-import { Navigate, useNavigate, useParams } from "react-router";
+import { Navigate, useNavigate } from "react-router";
 import { useChatSession, type Workspace } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import { getUserProjectPermission, type Role } from "@semoss/sdk";
@@ -33,9 +33,9 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import { WorkspaceChatList } from "@/components/workspace/workspace-chat-list";
 import { getPlaygroundAgentLinks } from "@/features/agents/agent-links";
-import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
+import { WorkspaceChatList } from "@/features/agents/workspace-chat-list";
+import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 
 /**
  * Renders the Workspace (Agent) Detail Page.
@@ -46,10 +46,14 @@ import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
  *   - The shared agent definition, the same view the client uses
  *   - Members
  */
-export const WorkspaceDetailPage = observer(() => {
+interface AgentDetailProps {
+	/** The agent to show. */
+	workspaceId?: string;
+}
+
+export const AgentDetail = observer(({ workspaceId }: AgentDetailProps) => {
 	const { t } = useTranslation(["workspace", "common"]);
 
-	const { workspaceId } = useParams<{ workspaceId: string }>();
 	const navigate = useNavigate();
 	const { chat } = useChatSession();
 	const theme = usePlaygroundTheme();

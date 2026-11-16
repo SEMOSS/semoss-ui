@@ -1,7 +1,7 @@
 import { UsersRound } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate } from "react-router";
 import { useChatSession } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import { useConfig, useSessionPixel } from "@semoss/sdk/react";
@@ -22,7 +22,7 @@ import {
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import { getPlaygroundAgentLinks } from "@/features/agents/agent-links";
-import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
+import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 
 /** The values the form was seeded with, and the agent they belong to. */
 interface AgentFormSeed {
@@ -31,17 +31,21 @@ interface AgentFormSeed {
 }
 
 /**
- * Renders the EditWorkspacePage for editing existing agents.
+ * Edit an agent.
  *
  * The shared agent form, the same one the client's agent pages use, followed
  * by the members table, which saves per action rather than with the form.
  */
-export const EditWorkspacePage = observer(() => {
+interface AgentEditProps {
+	/** The agent to edit. */
+	workspaceId?: string;
+}
+
+export const AgentEdit = observer(({ workspaceId }: AgentEditProps) => {
 	const { t } = useTranslation(["workspace", "common", "notifications"]);
 	const isDirectoryAvailable = useConfig(
 		(state) => state.config?.msGraphLookup === true,
 	);
-	const { workspaceId } = useParams<{ workspaceId: string }>();
 	const navigate = useNavigate();
 	const { chat } = useChatSession();
 	const theme = usePlaygroundTheme();

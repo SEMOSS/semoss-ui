@@ -21,8 +21,8 @@ import {
 	ToggleGroupItem,
 } from "@semoss/ui/next";
 import { NEW_CHAT_BUILD_DEFAULTS } from "@/features/chat-config/new-chat-build-defaults";
-import { useNewChatPreferences } from "@/features/new-chat-preferences/use-new-chat-preferences";
-import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
+import { useNewChatPreferences } from "@/features/settings/use-new-chat-preferences";
+import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 import { SettingsRow } from "./settings-row";
 
 /**

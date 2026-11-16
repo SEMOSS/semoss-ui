@@ -4,7 +4,7 @@ import { beforeEach, expect, test, vi } from "vitest";
 import { Chat, type ChatConfig, type ChatStore } from "@semoss/chat";
 import { AGENT_FORM_DEFAULT_VALUES } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
-import { NewWorkspacePage } from "@/pages/new-workspace-page";
+import { AgentCreate } from "@/features/agents/agent-create";
 
 const mocks = vi.hoisted(() => ({
 	addWorkspace: vi.fn(),
@@ -113,7 +113,7 @@ test("agent creation retains all settings on failure and retries with the full c
 				}),
 		)
 		.mockResolvedValueOnce({ workspaceId: "agent-1" });
-	render(<NewWorkspacePage />, { wrapper: chatWrapper });
+	render(<AgentCreate />, { wrapper: chatWrapper });
 	const name = screen.getByLabelText("form.name");
 	const instructions = screen.getByLabelText("about.instructions");
 	fireEvent.change(name, { target: { value: "Research agent" } });
@@ -193,7 +193,7 @@ test("agent creation opens the created agent when its follow-up settings save fa
 		workspaceId: "partial-agent",
 		settingsFailed: true,
 	});
-	render(<NewWorkspacePage />, { wrapper: chatWrapper });
+	render(<AgentCreate />, { wrapper: chatWrapper });
 	fireEvent.change(screen.getByLabelText("form.name"), {
 		target: { value: "Research agent" },
 	});

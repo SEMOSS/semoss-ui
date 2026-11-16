@@ -10,7 +10,7 @@ import {
 	DialogTitle,
 	useCacheState,
 } from "@semoss/ui/next";
-import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
+import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 
 export const GlobalDialog: React.FC<{ onAcknowledge?: () => void }> = observer(
 	({ onAcknowledge }) => {

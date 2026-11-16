@@ -2,7 +2,7 @@ import { useConfig } from "@semoss/sdk/react";
 import {
 	type PlaygroundTheme,
 	withPlaygroundDefaults,
-} from "@/stores/root/playground-theme";
+} from "@/features/theme/playground-theme";
 
 /**
  * Read the playground's theme: the server's `THEME_MAP` `playground` entry

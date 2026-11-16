@@ -41,7 +41,7 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import { NewKnowledgeOverlay } from "@/components/knowledge/new-knowledge-mcp-overlay";
+import { NewKnowledgeOverlay } from "@/features/knowledge/new-knowledge-mcp-overlay";
 
 type DocumentLibraryEngine = {
 	name: string;
@@ -76,7 +76,7 @@ const formatDateTime = (dateStr: string): string => {
 	});
 };
 
-export const DocumentLibrary = () => {
+export const KnowledgeLibrary = () => {
 	const { t } = useTranslation(["knowledge", "common"]);
 	const navigate = useNavigate();
 
