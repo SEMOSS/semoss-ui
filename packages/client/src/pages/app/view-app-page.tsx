@@ -197,12 +197,7 @@ export const ViewAppPage = observer(() => {
 						/>
 					) : null}
 					{type === "CODE" ? (
-						<CodeRenderer
-							appId={project.project_id}
-							canRecord={
-								permission === "OWNER" || permission === "EDIT"
-							}
-						/>
+						<CodeRenderer appId={project.project_id} />
 					) : null}
 				</Suspense>
 			</div>

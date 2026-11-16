@@ -1,4 +1,3 @@
-import type { RefObject } from "react";
 import {
 	Alert,
 	AlertDescription,
@@ -15,6 +14,7 @@ import {
 	z,
 	zodResolver,
 } from "@semoss/ui/next";
+import { useAppFrame } from "./app-frame-registry";
 import { useAppTesting } from "./use-app-testing";
 
 const schema = z.object({
@@ -25,18 +25,15 @@ const schema = z.object({
 		.max(80, "Use at most 80 characters"),
 });
 
-interface AppTestingToolbarProps {
-	/** The explicit app whose ordinary iframe is recorded. */
+interface AppTestingPanelProps {
+	/** The app whose preview iframe, in the App panel, is recorded. */
 	appId: string;
-	frameRef: RefObject<HTMLIFrameElement | null>;
 }
 
 /** Record workflows and explicit checks without changing the app's files. */
-export const AppTestingToolbar = ({
-	appId,
-	frameRef,
-}: AppTestingToolbarProps) => {
-	const state = useAppTesting(appId, frameRef);
+export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
+	const frame = useAppFrame(appId);
+	const state = useAppTesting(appId, frame);
 	const form = useForm<z.infer<typeof schema>>({
 		resolver: zodResolver(schema),
 		defaultValues: { name: "" },
@@ -80,7 +77,7 @@ export const AppTestingToolbar = ({
 	return (
 		<section
 			aria-label="App recording and tests"
-			className="shrink-0 border-b bg-background p-2"
+			className="h-full overflow-y-auto bg-background p-3"
 		>
 			<Form
 				form={form}
@@ -143,7 +140,7 @@ export const AppTestingToolbar = ({
 							>
 								<SelectTrigger
 									aria-label="Saved app recording"
-									className="w-64 max-w-full"
+									className="w-full"
 								>
 									<SelectValue
 										placeholder={
@@ -194,11 +191,18 @@ export const AppTestingToolbar = ({
 						</>
 					)}
 				</div>
-				{!state.isAccessible && (
+				{!frame ? (
 					<p className="text-muted-foreground text-sm">
-						Recording becomes available when this app's document can
-						be accessed. External frames cannot be recorded here.
+						Open the App preview to record a workflow.
 					</p>
+				) : (
+					!state.isAccessible && (
+						<p className="text-muted-foreground text-sm">
+							Recording becomes available when this app's document
+							can be accessed. External frames cannot be recorded
+							here.
+						</p>
+					)
 				)}
 				{state.isPickingCheck && (
 					<output className="text-sm">

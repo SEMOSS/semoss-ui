@@ -36,6 +36,7 @@ export const WORKBENCH_COMPONENTS = {
 	PROJECT_SETTINGS: "project-settings",
 	PROJECT_INSIGHT_EXPLORER: "project-insight-explorer",
 	PROJECT_APP_RENDERER: "project-app-renderer",
+	PROJECT_APP_TESTING: "project-app-testing",
 	PROJECT_ENGINES: "project-engines",
 	TERMINAL: "terminal",
 } as const;
@@ -218,6 +219,13 @@ export const WORKBENCH_PANEL_RECORDS = {
 		type: WORKBENCH_COMPONENTS.PROJECT_APP_RENDERER,
 		name: "App",
 		helpText: "App Preview",
+		canClose: false,
+	},
+	PROJECT_APP_TESTING: {
+		id: WORKBENCH_COMPONENTS.PROJECT_APP_TESTING,
+		type: WORKBENCH_COMPONENTS.PROJECT_APP_TESTING,
+		name: "Testing",
+		helpText: "Record and run app tests",
 		canClose: false,
 	},
 	TERMINAL: {

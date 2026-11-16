@@ -1,4 +1,5 @@
 import { PanelsTopLeftIcon } from "lucide-react";
+import { useEffect, useState } from "react";
 import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
@@ -9,6 +10,7 @@ import {
 	useWorkbenchPanel,
 } from "@semoss/workbench";
 import { CodeRenderer } from "@/components/project";
+import { registerAppFrame } from "@/features/app-testing/app-frame-registry";
 import { useProject } from "@/hooks";
 import { WORKBENCH_EVENTS } from "@/stores/workbench";
 import { CodeAppRendererRefreshControl } from "./code-app-renderer-refresh-control";
@@ -25,7 +27,8 @@ const CodeAppRendererPanelContent: WorkbenchComponent = ({ id }) => {
 		number
 	>(id);
 
-	const { project, permission } = useProject();
+	const { project } = useProject();
+	const [frame, setFrame] = useState<HTMLIFrameElement | null>(null);
 
 	useWorkbenchControl(id, CodeAppRendererRefreshControl);
 	// A publish replaces what this iframe is showing, whoever did it. Before
@@ -34,12 +37,17 @@ const CodeAppRendererPanelContent: WorkbenchComponent = ({ id }) => {
 	useWorkbenchEvent(WORKBENCH_EVENTS.APP_PUBLISHED, () => {
 		setValue((count = 0) => count + 1);
 	});
+	// The Testing panel records this iframe from a different panel.
+	useEffect(
+		() => (frame ? registerAppFrame(project.project_id, frame) : undefined),
+		[frame, project.project_id],
+	);
 
 	return (
 		<div className="h-full w-full overflow-hidden bg-background text-foreground">
 			<CodeRenderer
 				appId={project.project_id}
-				canRecord={permission === "OWNER" || permission === "EDIT"}
+				onFrame={setFrame}
 				key={`project.project_id--${value ?? 0}`}
 			/>
 		</div>

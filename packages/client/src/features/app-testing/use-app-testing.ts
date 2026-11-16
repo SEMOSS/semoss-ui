@@ -1,4 +1,3 @@
-import type { RefObject } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSessionPixel } from "@semoss/sdk/react";
 import {
@@ -42,7 +41,7 @@ interface AppTestingState {
 /** Own recording listeners, draft lifetime, saves and bounded result polling. */
 export const useAppTesting = (
 	appId: string,
-	frameRef: RefObject<HTMLIFrameElement | null>,
+	frame: HTMLIFrameElement | null,
 ): AppTestingState => {
 	const query = useSessionPixel<unknown>(
 		`META | ListAppTestRecordings(project=${JSON.stringify([appId])});`,
@@ -79,7 +78,10 @@ export const useAppTesting = (
 	useEffect(() => {
 		const controller = new AbortController();
 		lifetime.current = controller;
-		const frame = frameRef.current;
+		return () => controller.abort();
+	}, []);
+
+	useEffect(() => {
 		const checkAccess = (): void => {
 			try {
 				const url = frame?.contentDocument?.URL;
@@ -103,12 +105,19 @@ export const useAppTesting = (
 		frame?.addEventListener("load", checkAccess);
 		checkAccess();
 		return () => {
-			controller.abort();
-			recorder.current?.stop();
-			recorder.current = null;
 			frame?.removeEventListener("load", checkAccess);
+			if (recorder.current) {
+				recorder.current.stop();
+				recorder.current = null;
+				setIsRecording(false);
+				setIsPickingCheck(false);
+				setNotice(
+					"Recording stopped because the app preview reloaded. Save or discard the captured steps.",
+				);
+			}
+			setIsAccessible(false);
 		};
-	}, [frameRef]);
+	}, [frame]);
 
 	const isRunning =
 		isStartingRun || run?.status === "RUNNING" || run?.status === "QUEUED";
@@ -149,7 +158,6 @@ export const useAppTesting = (
 	};
 
 	const startRecording = (): void => {
-		const frame = frameRef.current;
 		if (!frame || !isAccessible) return;
 		try {
 			const actual = new URL(frame.contentDocument?.URL ?? "");

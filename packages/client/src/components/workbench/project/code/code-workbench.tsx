@@ -49,6 +49,7 @@ import {
 } from "../project-settings-toggle";
 import { PROJECT_TERMINAL_PANEL } from "../project-terminal-panel";
 import { PROJECT_APP_RENDERER_PANEL } from "./code-app-renderer-panel";
+import { PROJECT_APP_TESTING_PANEL } from "./code-app-testing-panel";
 
 /**
  * Tool names that publish the app's frontend, matched case-insensitively on
@@ -92,6 +93,12 @@ const createCodeWorkbenchLayout = (
 				: {}),
 			[WORKBENCH_PANEL_RECORDS.PROJECT_INSIGHT_EXPLORER.id]:
 				WORKBENCH_PANEL_RECORDS.PROJECT_INSIGHT_EXPLORER,
+			...(!readOnly
+				? {
+						[WORKBENCH_PANEL_RECORDS.PROJECT_APP_TESTING.id]:
+							WORKBENCH_PANEL_RECORDS.PROJECT_APP_TESTING,
+					}
+				: {}),
 			[WORKBENCH_PANEL_RECORDS.PROJECT_TERMINAL.id]:
 				WORKBENCH_PANEL_RECORDS.PROJECT_TERMINAL,
 			[WORKBENCH_PANEL_RECORDS.PROJECT_ENGINES.id]:
@@ -105,6 +112,9 @@ const createCodeWorkbenchLayout = (
 					WORKBENCH_COMPONENTS.FILE_EXPLORER,
 					...(!readOnly ? [WORKBENCH_COMPONENTS.GIT_VERSION] : []),
 					WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER,
+					...(!readOnly
+						? [WORKBENCH_COMPONENTS.PROJECT_APP_TESTING]
+						: []),
 				],
 				activeId: WORKBENCH_COMPONENTS.FILE_EXPLORER,
 				size: 400,
@@ -132,6 +142,7 @@ export const CODE_WORKBENCH_COMPONENTS: Record<
 	WorkbenchPanelConfigAny
 > = {
 	[WORKBENCH_COMPONENTS.PROJECT_APP_RENDERER]: PROJECT_APP_RENDERER_PANEL,
+	[WORKBENCH_COMPONENTS.PROJECT_APP_TESTING]: PROJECT_APP_TESTING_PANEL,
 	...FILE_PANEL_COMPONENTS,
 	[WORKBENCH_COMPONENTS.GIT_VERSION]: GIT_VERSION_PANEL,
 	[WORKBENCH_COMPONENTS.GIT_DIFF]: GIT_DIFF_PANEL,
@@ -204,8 +215,9 @@ export const CodeWorkbench: React.FC = () => {
 		? `${project.project_id}--read-only`
 		: project.project_id;
 
+	// Bumped when the default layout gains a panel, so cached layouts pick it up.
 	const [snapshot, onSnapshotChange] = useCacheData<WorkbenchSnapshot>(
-		`workbench-layout--${workbenchId}--1`,
+		`workbench-layout--${workbenchId}--2`,
 		workbenchLayout,
 	);
 
@@ -319,6 +331,15 @@ export const CodeWorkbench: React.FC = () => {
 			label: "Open App Preview",
 			type: WORKBENCH_COMPONENTS.PROJECT_APP_RENDERER,
 		}),
+		...(!readOnly
+			? [
+					createOpenPanelCommand({
+						id: "workbench.project-app-testing.open",
+						label: "Open Testing",
+						type: WORKBENCH_COMPONENTS.PROJECT_APP_TESTING,
+					}),
+				]
+			: []),
 		createOpenPanelCommand({
 			id: "workbench.project-terminal.open",
 			label: "Open Terminal",
