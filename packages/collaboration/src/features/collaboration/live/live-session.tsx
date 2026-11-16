@@ -7,11 +7,12 @@ import {
 	useState,
 } from "react";
 import { useInsight } from "@semoss/sdk/react";
-import { Button, toast } from "@semoss/ui/next";
+import { Button } from "@semoss/ui/next";
 import type { CollaborationState } from "../state/collaboration.types";
 import { CollaborationSessionProvider } from "../state/collaboration-session.context";
 import { loadLiveState } from "./live-state";
 import { createLiveSync, type LiveSync } from "./live-sync";
+import { recoverFromFailedSave } from "./sync-recovery";
 import { ThreadHistoryProvider } from "./thread-history-provider";
 import { ThreadInsightsProvider } from "./thread-insights-provider";
 import { offerTopicUndo, undoTopicChange } from "./topic-undo";
@@ -43,7 +44,7 @@ function LiveSessionProvider({ children }: { children: ReactNode }) {
 	useEffect(() => {
 		load();
 	}, [load]);
-	// a new copy of the saved data replaces the page's after an undo
+	// a new copy of the saved data replaces the page's: after a refused save, and after an undo
 	const [generation, setGeneration] = useState(0);
 	const syncRef = useRef<LiveSync | null>(null);
 	const reload = useCallback(async () => {
@@ -55,12 +56,11 @@ function LiveSessionProvider({ children }: { children: ReactNode }) {
 		const created = createLiveSync(
 			actions,
 			(message) =>
-				toast.error(`Could not save: ${message}`, {
-					action: {
-						label: "Reload",
-						onClick: () => window.location.reload(),
-					},
-				}),
+				void recoverFromFailedSave(
+					message,
+					() => created.settled(),
+					reload,
+				),
 			(change) =>
 				offerTopicUndo(
 					change,
