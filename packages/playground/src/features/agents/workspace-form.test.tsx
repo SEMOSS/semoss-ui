@@ -26,13 +26,7 @@ vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
 vi.mock("react-router", () => ({ useNavigate: () => mocks.navigate }));
-vi.mock("@/hooks", () => ({
-	useChatSession: () => ({
-		chat: {
-			addWorkspace: mocks.addWorkspace,
-			createAgent: mocks.createAgent,
-		},
-	}),
+vi.mock("@/hooks/use-root", () => ({
 	useRoot: () => ({
 		root: { theme: { featureFlags: {}, defaultEmbedderId: "embedder" } },
 	}),
@@ -43,11 +37,6 @@ vi.mock("@/hooks/use-chat-session", () => ({
 			addWorkspace: mocks.addWorkspace,
 			createAgent: mocks.createAgent,
 		},
-	}),
-}));
-vi.mock("@/hooks/use-root", () => ({
-	useRoot: () => ({
-		root: { theme: { featureFlags: {}, defaultEmbedderId: "embedder" } },
 	}),
 }));
 vi.mock("@semoss/sdk/react", async (original) => ({

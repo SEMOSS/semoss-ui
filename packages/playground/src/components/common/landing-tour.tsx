@@ -14,7 +14,8 @@ import {
 	DialogDescription,
 	DialogTitle,
 } from "@semoss/ui/next";
-import { useRoot, useTour } from "@/hooks";
+import { useRoot } from "@/hooks/use-root";
+import { useTour } from "@/hooks/use-tour";
 
 interface TourStep {
 	target?: string;

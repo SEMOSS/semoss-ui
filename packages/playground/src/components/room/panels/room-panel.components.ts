@@ -12,7 +12,7 @@ import {
 	TEAMS_CHATS_PANEL,
 	TEAMS_FILES_PANEL,
 } from "@/features/connectors/components/connector-viewer-panels";
-import { ROOM_PANEL_TYPES } from "@/stores";
+import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
 import { ROOM_AUDIT_LOG_PANEL } from "./room-audit-log-panel";
 import { ROOM_CONFIGURATION_PANEL } from "./room-configuration-panel";
 import { ROOM_SUBAGENT_PANEL } from "./room-subagent-panel";

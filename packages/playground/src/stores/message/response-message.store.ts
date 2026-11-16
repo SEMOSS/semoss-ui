@@ -13,7 +13,7 @@ import {
 	TURN_CANCELLATION_PROMPT,
 } from "@/constants";
 import { isFolderToolCall } from "@/features/chat-tools/tools/chat-tool-kind";
-import type { ToolStore } from "@/stores";
+import type { ToolStore } from "@/stores/tool/tool.store";
 import type { InputPixelMessage, ResponsePixelMessage } from "@/types";
 import { getToolEngineId } from "@/utility/mcp-utils";
 import { AbstractMessageStore } from "./abstract-message.store";

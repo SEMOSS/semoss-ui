@@ -2,8 +2,9 @@ import { renderHook } from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vitest";
 import { FILE_PANEL_TYPES } from "@semoss/panels";
 import type { ThemeMap } from "@semoss/shared";
-import { ROOM_PANEL_COMPONENTS } from "@/components/room/panels";
-import { ROOM_PANEL_TYPES, RoomStore } from "@/stores";
+import { ROOM_PANEL_COMPONENTS } from "@/components/room/panels/room-panel.components";
+import { RoomStore } from "@/stores/room/room.store";
+import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
 import { useSidebarPanelActive } from "./use-sidebar-panel-active";
 
 vi.mock("@semoss/sdk/react", () => ({

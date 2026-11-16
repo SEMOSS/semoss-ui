@@ -7,7 +7,7 @@ import {
 	TOOL_OUTPUT_UNREADABLE_PROMPT,
 	TURN_CANCELLATION_PROMPT,
 } from "@/constants";
-import type { ToolStore } from "@/stores";
+import type { ToolStore } from "@/stores/tool/tool.store";
 import type { InputPixelMessage, ResponsePixelMessage } from "@/types";
 import { ResponseMessageStore } from "./response-message.store";
 import { applyResponseStreamChunk } from "./response-stream";

@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { ChatSessionContext } from "@/contexts";
+import { ChatSessionContext } from "@/contexts/chat-session.context";
 
 /**
  * Access the current chat store

@@ -2,7 +2,7 @@ import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
 import { Markdown } from "@semoss/ui/next";
 import { useChatConfig } from "@/features/chat-config/use-chat-config";
-import type { RoomStore } from "@/stores";
+import type { RoomStore } from "@/stores/room/room.store";
 import {
 	createMarkdownComponents,
 	createMarkdownUrlTransform,

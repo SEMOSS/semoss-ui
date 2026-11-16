@@ -42,7 +42,7 @@ import {
 	getDateBucket,
 	parseTimestampWithUtcDefault,
 } from "@semoss/utility/date";
-import { useChatSession } from "@/hooks";
+import { useChatSession } from "@/hooks/use-chat-session";
 
 interface WorkspaceChatListProps {
 	/**

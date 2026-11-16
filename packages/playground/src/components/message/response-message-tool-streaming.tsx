@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { cn, Spinner } from "@semoss/ui/next";
 import { formatJson } from "@semoss/utility/json";
-import type { ToolStore } from "@/stores";
+import type { ToolStore } from "@/stores/tool/tool.store";
 
 interface ResponseMessageToolStreamingProps {
 	tool: ToolStore;

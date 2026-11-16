@@ -22,7 +22,9 @@ vi.mock("@/stores/chat/chat.store", () => ({
 		embeddedPageMap = {};
 	},
 }));
-vi.mock("@/components/room/panels", () => ({ ROOM_PANEL_COMPONENTS: {} }));
+vi.mock("@/components/room/panels/room-panel.components", () => ({
+	ROOM_PANEL_COMPONENTS: {},
+}));
 vi.mock("@/components/common/global-nav", () => ({ GlobalNav: () => null }));
 vi.mock("@/components/common/global-footer", () => ({
 	GlobalFooter: () => null,

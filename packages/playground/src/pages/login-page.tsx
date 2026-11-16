@@ -4,7 +4,7 @@ import { useSession } from "@semoss/sdk/react";
 import { LoginForm } from "@semoss/shared";
 import { useTheme } from "@semoss/ui/next";
 import { setFavicon } from "@semoss/utility/browser";
-import { AppLogo } from "@/components";
+import { AppLogo } from "@/components/common/app-logo";
 import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
 import { useThemeTitle } from "@/hooks/use-theme-title";
 

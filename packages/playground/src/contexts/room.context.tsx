@@ -1,5 +1,5 @@
 import { createContext, type ReactNode, useContext } from "react";
-import type { RoomStore } from "@/stores";
+import type { RoomStore } from "@/stores/room/room.store";
 
 /** The room a sidebar panel, or a tool view in its conversation, belongs to. */
 const RoomContext = createContext<RoomStore | undefined>(undefined);

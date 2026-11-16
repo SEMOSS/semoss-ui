@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useRoot } from "@/hooks";
+import { useRoot } from "@/hooks/use-root";
 
 export const GlobalFooter: React.FC = observer(() => {
 	const { root } = useRoot();

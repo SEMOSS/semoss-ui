@@ -6,16 +6,16 @@ import { Env, type MCPToolRequest, usePixel } from "@semoss/sdk/react";
 import { isToolViewUri, useToolView } from "@semoss/shared";
 import { AgentUserInputCard, Skeleton, toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
+import { ToolsDefaultView } from "@/components/mcp/tools-default-view/tools-default-view";
 import { ChatToolCard } from "@/features/chat-tools/components/chat-tool-card";
 import {
 	isChatToolCall,
 	isFolderToolCall,
 } from "@/features/chat-tools/tools/chat-tool-kind";
 import { ComponentToolView } from "@/features/tool-views/component-tool-view";
-import type { RoomStore } from "@/stores";
 import { decideAgentToolAction } from "@/stores/message/agent-harness";
+import type { RoomStore } from "@/stores/room/room.store";
 import { isAskExecutionMode } from "@/utility/mcp-utils";
-import { ToolsDefaultView } from "./tools-default-view";
 import { ToolsServerView } from "./tools-server-view";
 
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL

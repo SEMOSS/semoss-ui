@@ -8,7 +8,7 @@ import type {
 } from "@semoss/workbench";
 import { useWorkbenchPanel } from "@semoss/workbench";
 import { getSubagentState } from "@/components/message/response-message-subagent";
-import { useRoom } from "@/contexts";
+import { useRoom } from "@/contexts/room.context";
 
 /** Which subagent a panel is showing. `subagentId` is what dedupes it. */
 interface RoomSubagentParams {

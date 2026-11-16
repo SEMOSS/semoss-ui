@@ -20,7 +20,7 @@ import {
 	zodResolver,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import { useChatSession } from "@/hooks";
+import { useChatSession } from "@/hooks/use-chat-session";
 import type { MCPConfig } from "@/types";
 
 interface SaveWorkspaceDialogProps {

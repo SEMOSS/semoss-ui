@@ -28,7 +28,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { copyTextToClipboard } from "@semoss/utility/clipboard";
-import type { RoomStore } from "@/stores";
+import type { RoomStore } from "@/stores/room/room.store";
 import { BlockHeader } from "./block-header";
 import { SaveFileDialog } from "./save-file-dialog";
 

@@ -17,8 +17,8 @@ import {
 	useWorkbenchPanel,
 	WORKBENCH_STYLES,
 } from "@semoss/workbench";
-import { ToolsView } from "@/components";
-import { useRoom } from "@/contexts";
+import { ToolsView } from "@/components/mcp/tools-view";
+import { useRoom } from "@/contexts/room.context";
 
 /** Which tool a panel is showing. `toolId` is what dedupes it. */
 interface RoomToolParams {

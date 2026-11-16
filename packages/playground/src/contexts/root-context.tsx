@@ -1,5 +1,5 @@
 import { createContext } from "react";
-import type { RootStore } from "@/stores";
+import type { RootStore } from "@/stores/root/root.store";
 
 /**
  * Value

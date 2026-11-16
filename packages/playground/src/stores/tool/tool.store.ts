@@ -1,11 +1,9 @@
 import { makeAutoObservable } from "mobx";
 import type { PendingAgentAction } from "@semoss/sdk";
 import { MCP_EXECUTION_ASK } from "@/constants";
-import {
-	type InputMessageStore,
-	ResponseMessageStore,
-	type RoomStore,
-} from "@/stores";
+import type { InputMessageStore } from "@/stores/message/input-message.store";
+import { ResponseMessageStore } from "@/stores/message/response-message.store";
+import type { RoomStore } from "@/stores/room/room.store";
 import type {
 	PixelMessageToolCallPart,
 	PixelMessageToolResultPart,

@@ -3,8 +3,9 @@ import { observer } from "mobx-react-lite";
 import { useTranslation } from "@semoss/i18n";
 import type { AgentRunStatusValue } from "@semoss/sdk";
 import { cn, Spinner } from "@semoss/ui/next";
-import { useSidebarPanelActive } from "@/hooks";
-import { type ResponseMessageStore, ROOM_PANEL_TYPES } from "@/stores";
+import { useSidebarPanelActive } from "@/hooks/use-sidebar-panel-active";
+import type { ResponseMessageStore } from "@/stores/message/response-message.store";
+import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
 import type { PixelMessageSubagentPart } from "@/types";
 
 export const getSubagentState = (

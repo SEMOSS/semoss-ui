@@ -1,4 +1,4 @@
-import type { RoomStore } from "@/stores";
+import type { RoomStore } from "@/stores/room/room.store";
 import type {
 	InputPixelMessage,
 	PixelMessage,

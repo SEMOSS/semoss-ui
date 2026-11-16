@@ -10,7 +10,7 @@ import {
 	DialogTitle,
 	useCacheState,
 } from "@semoss/ui/next";
-import { useRoot } from "@/hooks";
+import { useRoot } from "@/hooks/use-root";
 
 export const GlobalDialog: React.FC<{ onAcknowledge?: () => void }> = observer(
 	({ onAcknowledge }) => {

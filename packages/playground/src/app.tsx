@@ -7,7 +7,7 @@ import { Env } from "@semoss/sdk/react";
 import { ThemeProvider, Toaster } from "@semoss/ui/next";
 import { LandscapeRestriction } from "@/components/common/landscape-restriction";
 import { LanguageDirection } from "@/components/common/language-direction";
-import { Router } from "@/pages";
+import { Router } from "@/pages/router";
 
 // The server writes MODULE into index.html (semoss-env tag, read when the SDK
 // loads) and it always wins; .env, then "/Monolith", cover a page without one.

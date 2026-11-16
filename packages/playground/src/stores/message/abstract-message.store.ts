@@ -1,6 +1,6 @@
 import { action, computed, makeObservable, observable } from "mobx";
 import { parseTimestampWithUtcDefault } from "@semoss/utility/date";
-import type { RoomStore } from "@/stores";
+import type { RoomStore } from "@/stores/room/room.store";
 import type { AbstractPixelMessage, PixelMessage } from "@/types";
 
 /**

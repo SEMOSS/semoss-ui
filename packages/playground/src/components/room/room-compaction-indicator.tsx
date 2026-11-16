@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useLoadingMessage } from "@semoss/shared";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
-import type { ResponseMessageStore } from "@/stores";
+import type { ResponseMessageStore } from "@/stores/message/response-message.store";
 
 const APPEAR_DELAY_MS = 150;
 

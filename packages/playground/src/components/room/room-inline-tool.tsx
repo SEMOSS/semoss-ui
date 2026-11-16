@@ -13,9 +13,11 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import type { ResponseMessageStore, RoomStore, ToolStore } from "@/stores";
+import { ToolsView } from "@/components/mcp/tools-view";
+import type { ResponseMessageStore } from "@/stores/message/response-message.store";
+import type { RoomStore } from "@/stores/room/room.store";
+import type { ToolStore } from "@/stores/tool/tool.store";
 import { getToolAppId } from "@/utility/mcp-utils";
-import { ToolsView } from "../mcp";
 
 interface RoomInlineToolProps {
 	/** Room to render */

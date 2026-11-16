@@ -77,10 +77,6 @@ vi.mock("@/contexts/file-drag-context", async (importOriginal) => {
 	};
 });
 
-vi.mock("@/contexts", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/contexts")>()),
-	useFileDrag: () => ({ openFilePicker }),
-}));
 const featureFlags: Record<string, boolean> = {};
 vi.mock("@/features/chat-config/use-chat-config", () => ({
 	useChatConfig: () => ({
@@ -98,13 +94,10 @@ vi.mock("@/hooks/use-chat-session", () => ({
 vi.mock("@/hooks/use-sidebar-panel-active", () => ({
 	useSidebarPanelActive: () => false,
 }));
-// Unchanged child components still use the package's hook barrel.
-vi.mock("@/hooks", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/hooks")>()),
+vi.mock("@/hooks/use-root", () => ({
 	useRoot: () => ({
 		root: { theme: { featureFlags, defaultCompactionStrategy: "AUTO" } },
 	}),
-	useChatSession: () => ({ chat: { models: { contextWindow: 0 } } }),
 }));
 vi.mock("@/components/prompt/PromptOptimizer", () => ({
 	PromptOptimizer: ({

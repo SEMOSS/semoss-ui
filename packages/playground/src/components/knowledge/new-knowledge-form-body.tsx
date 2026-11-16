@@ -20,7 +20,7 @@ import {
 	zodResolver,
 } from "@semoss/ui/next";
 import { FilePreviewGrid } from "@/components/common/file-preview-grid";
-import { useRoot } from "@/hooks";
+import { useRoot } from "@/hooks/use-root";
 import type { MCPConfig } from "@/types";
 import { throwOnPixelErrors } from "@/utility/pixel-errors";
 
