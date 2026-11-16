@@ -45,7 +45,7 @@ added: backend calls apps share live in `libs/sdk/src/api/` (for example `runMcp
   room run in the session's insight: `useSessionPixel` for reads, `useSessionIteratorPixel` for
   lists that page, `useSessionInsight().run` / `upload` / `download`, or
   `Session.insight.run` outside React. `run` returns `errors` rather than throwing, so wrap it in
-  `throwOnPixelErrors` (exported by `@semoss/chat`) where a caller expects a throw.
+  `throwOnPixelErrors` (exported by `@semoss/sdk`) where a caller expects a throw.
 - **Moving off MobX and zustand.** Put new state in hooks over the SDK's stores, or in an
   `StoreState`-backed store per the
   [state management skill](../../skills/state-management.skill.md), never in a new

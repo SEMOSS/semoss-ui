@@ -12,5 +12,6 @@ export * from "./model-usage";
 export * from "./permissions";
 export * from "./pixel-messages";
 export * from "./pixel-stream";
+export * from "./playground-room";
 export * from "./user";
 export * from "./websocket";

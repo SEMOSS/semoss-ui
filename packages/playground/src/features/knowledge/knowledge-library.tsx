@@ -1,8 +1,8 @@
 import { Bookmark, ChevronDown, Info, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { throwOnPixelErrors } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
+import { throwOnPixelErrors } from "@semoss/sdk";
 import { Env, post, useSessionInsight } from "@semoss/sdk/react";
 import {
 	Badge,

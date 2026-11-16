@@ -1,5 +1,12 @@
 import { configure, makeAutoObservable, runInAction } from "mobx";
 import { getI18n } from "@semoss/i18n";
+import {
+	getModelContextWindow,
+	pinUserRoom,
+	removeUserRoom,
+	renameUserRoom,
+	throwOnPixelErrors,
+} from "@semoss/sdk";
 import { download, runPixel, Session } from "@semoss/sdk/react";
 import {
 	type AgentFormValues,
@@ -27,7 +34,6 @@ import {
 	resolveNewChatModel,
 } from "../new-chat-preferences/new-chat-preferences";
 import { RoomStore } from "../room/room.store";
-import { throwOnPixelErrors } from "./pixel-errors";
 
 // The chat's MobX stores (chat, room, message, tool) mutate state only inside
 // actions.
@@ -417,7 +423,7 @@ export class ChatStore {
 		const insightId = room?.insightId;
 
 		// wait for the pixel to run
-		await this.run<[boolean]>(`RemoveUserRoom(roomId=["${roomId}"]);`);
+		await Session.insight.withInsight((id) => removeUserRoom(id, roomId));
 
 		// only drop if the room was opened and has a real insightId
 		if (insightId && insightId !== "new") {
@@ -452,8 +458,8 @@ export class ChatStore {
 		if (!trimmed) {
 			throw new Error("Room name cannot be empty");
 		}
-		await this.run<[boolean]>(
-			`META | RenameRoom(roomId=["${roomId}"], name=["<encode>${trimmed}</encode>"]);`,
+		await Session.insight.withInsight((id) =>
+			renameUserRoom(id, roomId, trimmed),
 		);
 		runInAction(() => {
 			const cached = this._store.rooms[roomId];
@@ -470,8 +476,8 @@ export class ChatStore {
 	 * chats page, per-agent timeline) refetch and stay in sync.
 	 */
 	pinRoom = async (roomId: string, pinned: boolean): Promise<void> => {
-		await this.run<[boolean]>(
-			`PinRoom(roomId=["${roomId}"], pinned=[${pinned}]);`,
+		await Session.insight.withInsight((id) =>
+			pinUserRoom(id, roomId, pinned),
 		);
 		runInAction(() => {
 			this._store.keys.roomCounter++;
@@ -659,13 +665,13 @@ export class ChatStore {
 			this._store.models.contextWindow = undefined;
 		});
 
-		const { pixelReturn } = await this.run<[number | undefined]>(
-			`META | GetContextWindow(${JSON.stringify(engineId)});`,
+		const contextWindow = await Session.insight.withInsight((id) =>
+			getModelContextWindow(id, engineId),
 		);
 
 		if (this.models.selected?.engine_id === engineId) {
 			runInAction(() => {
-				this._store.models.contextWindow = pixelReturn[0].output;
+				this._store.models.contextWindow = contextWindow;
 			});
 		}
 	};

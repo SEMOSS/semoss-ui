@@ -2,8 +2,8 @@
 
 import { FileIcon, XIcon } from "lucide-react";
 import { useId, useState } from "react";
-import { throwOnPixelErrors } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
+import { throwOnPixelErrors } from "@semoss/sdk";
 import { useSessionInsight } from "@semoss/sdk/react";
 import {
 	Button,

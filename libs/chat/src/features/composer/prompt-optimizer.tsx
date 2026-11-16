@@ -3,6 +3,7 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
+import { throwOnPixelErrors } from "@semoss/sdk";
 import { useSessionInsight } from "@semoss/sdk/react";
 import {
 	Button,
@@ -12,7 +13,6 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { throwOnPixelErrors } from "../chat/pixel-errors";
 import { useChatSession } from "../chat/use-chat-session";
 import type { RoomStore } from "../room/room.store";
 

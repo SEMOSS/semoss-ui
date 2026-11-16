@@ -1,6 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useId, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
+import { throwOnPixelErrors } from "@semoss/sdk";
 import { useSessionInsight } from "@semoss/sdk/react";
 import { type Engine, EngineSelect, NewEngineInput } from "@semoss/shared";
 import {
@@ -20,7 +21,6 @@ import {
 	zodResolver,
 } from "@semoss/ui/next";
 import type { MCPConfig } from "../../types";
-import { throwOnPixelErrors } from "../chat/pixel-errors";
 import { useChatConfig } from "../chat-config/use-chat-config";
 import { FilePreviewGrid } from "../composer/file-preview-grid";
 

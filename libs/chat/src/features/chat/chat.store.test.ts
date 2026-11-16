@@ -18,15 +18,28 @@ const mocks = vi.hoisted(() => {
 		user,
 		snapshot: { status: "AUTHENTICATED", user: user("model-b") },
 		run: vi.fn(),
+		pinUserRoom: vi.fn(),
+		renameUserRoom: vi.fn(),
 	};
 });
+
+vi.mock("@semoss/sdk", async (original) => ({
+	...(await original<typeof import("@semoss/sdk")>()),
+	pinUserRoom: mocks.pinUserRoom,
+	renameUserRoom: mocks.renameUserRoom,
+	getModelContextWindow: async () => 4096,
+}));
 
 vi.mock("@semoss/sdk/react", async (original) => ({
 	...(await original<typeof import("@semoss/sdk/react")>()),
 	// the page's session: a signed in user whose new chat default is model-b
 	Session: {
 		getSnapshot: () => mocks.snapshot,
-		insight: { run: mocks.run },
+		insight: {
+			run: mocks.run,
+			withInsight: <R>(task: (insightId: string) => Promise<R>) =>
+				task("session-insight"),
+		},
 	},
 }));
 
@@ -52,6 +65,10 @@ const answer = (pixel: string) => {
 
 beforeEach(() => {
 	mocks.snapshot = { status: "AUTHENTICATED", user: mocks.user("model-b") };
+	mocks.pinUserRoom
+		.mockReset()
+		.mockRejectedValue(new Error("Room not found"));
+	mocks.renameUserRoom.mockReset().mockResolvedValue(undefined);
 	mocks.run
 		.mockReset()
 		.mockImplementation(async (pixel: string) => answer(pixel));
@@ -108,16 +125,18 @@ test("selects the new chat default when nothing else names a model", async () =>
 	expect(store.models.selected.engine_id).toBe("model-b");
 });
 
-test("pixel errors from the session's insight reject, as the insight's did", async () => {
+test("room calls run in the session's insight, and their errors reject", async () => {
 	const store = await createStore();
 
 	await expect(store.pinRoom("room-1", true)).rejects.toThrow(
 		"Room not found",
 	);
 	await expect(
-		store.renameRoom("room-1", "Renamed"),
+		store.renameRoom("room-1", "  Renamed "),
 	).resolves.toBeUndefined();
-	expect(mocks.run).toHaveBeenCalledWith(
-		expect.stringContaining('RenameRoom(roomId=["room-1"]'),
+	expect(mocks.renameUserRoom).toHaveBeenCalledWith(
+		"session-insight",
+		"room-1",
+		"Renamed",
 	);
 });

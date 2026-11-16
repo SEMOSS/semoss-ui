@@ -13,7 +13,6 @@ import {
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router";
-import { throwOnPixelErrors } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import {
 	addEngineUserPermissions,
@@ -22,6 +21,7 @@ import {
 	getEngineUsersNoCredentials,
 	type PostUser,
 	removeEngineUserPermissions,
+	throwOnPixelErrors,
 } from "@semoss/sdk";
 import {
 	useConfig,

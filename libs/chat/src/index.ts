@@ -63,7 +63,6 @@ export const Chat = {
 } as const;
 
 export { ChatStore } from "./features/chat/chat.store";
-export { throwOnPixelErrors } from "./features/chat/pixel-errors";
 export { useChatSession } from "./features/chat/use-chat-session";
 export { useCreateChatStore } from "./features/chat/use-create-chat-store";
 export type {

@@ -42,7 +42,7 @@
 		"react": "^19.0.0",
 		"react-dom": "^19.0.0",
 		"react-router": "8.3.0",
-		"rolldown": "~1.2.3",
+		"rolldown": "1.2.3",
 		"typescript": "~6.0.0",
 		"unplugin-dts": "^1.0.3",
 		"vite": "^8.2.1",
