@@ -319,7 +319,7 @@ export const GUARDRAIL_CONNECTION = {
 					required: true,
 					category: "Settings",
 					helperText:
-						"Choose whether the protected operation is allowed when the judge model is unavailable or errors.",
+						"Choose whether the protected operation is allowed when the judge model is unavailable, errors, or answers with neither SAFE nor UNSAFE.",
 				},
 				{
 					key: "GUARDRAIL_TYPE",
@@ -418,7 +418,7 @@ export const GUARDRAIL_CONNECTION = {
 					required: true,
 					category: "Settings",
 					helperText:
-						"Block is recommended for sends and other irreversible operations. Allow preserves availability if the judge fails.",
+						"Block is recommended for sends and other irreversible operations. Allow preserves availability if the judge fails or answers with neither SAFE nor UNSAFE.",
 				},
 				{
 					key: "GUARDRAIL_TYPE",

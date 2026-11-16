@@ -3,11 +3,11 @@ import AdmZip from "adm-zip";
 import { config } from "dotenv";
 import { glob } from "glob";
 import Listr from "listr";
-import { File } from "node:buffer";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { Env, Insight, upload } from "@semoss/sdk";
 
+// biome-ignore lint/style/noDefaultExport: oclif loads each command from its file's default export
 export default class Deploy extends Command {
 	static args = {};
 
@@ -96,10 +96,10 @@ deploy (./src/commands/deploy.ts)
 			this.log(`   • MODULE: ${Env.MODULE || "Not set"}`);
 			this.log(`   • APP: ${Env.APP || "Not set"}`);
 			this.log(
-				`   • ACCESS_KEY: ${Env.ACCESS_KEY ? "***" + Env.ACCESS_KEY.slice(-4) : "Not set"}`,
+				`   • ACCESS_KEY: ${Env.ACCESS_KEY ? `***${Env.ACCESS_KEY.slice(-4)}` : "Not set"}`,
 			);
 			this.log(
-				`   • SECRET_KEY: ${Env.SECRET_KEY ? "***" + Env.SECRET_KEY.slice(-4) : "Not set"}`,
+				`   • SECRET_KEY: ${Env.SECRET_KEY ? `***${Env.SECRET_KEY.slice(-4)}` : "Not set"}`,
 			);
 		}
 
@@ -163,8 +163,8 @@ deploy (./src/commands/deploy.ts)
 		const tasks = new Listr<{
 			result?: number;
 			zipBuffer?: Buffer;
-			deleteResult?: any;
-			uploadResult?: any;
+			deleteResult?: unknown;
+			uploadResult?: Awaited<ReturnType<typeof upload>>[number];
 			url?: string;
 		}>([
 			{
@@ -286,9 +286,9 @@ deploy (./src/commands/deploy.ts)
 
 						if (flags.superVerbose) {
 							this.log(`📋 Files to include:`);
-							paths
-								.slice(0, 10)
-								.forEach((p) => this.log(`   • ${p}`));
+							for (const p of paths.slice(0, 10)) {
+								this.log(`   • ${p}`);
+							}
 							if (paths.length > 10) {
 								this.log(
 									`   • ... and ${paths.length - 10} more files`,
@@ -452,9 +452,9 @@ deploy (./src/commands/deploy.ts)
 						// Create a file from the zip buffer
 						const fileName = "current-directory.zip";
 						const file = new File(
-							[context.zipBuffer],
+							[new Uint8Array(context.zipBuffer)],
 							fileName,
-						) as any;
+						);
 
 						if (flags.superVerbose) {
 							this.log(`🔍 File Details:`);
@@ -530,9 +530,9 @@ deploy (./src/commands/deploy.ts)
 			{
 				title: "Loading App Reactors",
 				task: async () => {
-					// Load the insight classes
+					// Compile the app reactors
 					await insight.actions.run(
-						`ReloadInsightClasses(project='${Env.APP}', release=true);`,
+						`CompileAppReactors(project='${Env.APP}', release=true);`,
 					);
 
 					return true;

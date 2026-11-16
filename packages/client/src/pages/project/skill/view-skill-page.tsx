@@ -38,7 +38,7 @@ export const ViewSkillPage = observer(() => {
 		// so its own selection resets with it
 		setInsightId(null);
 
-		runPixel(`SetContext("${project.project_id}")`, "new")
+		runPixel(`LoadApp("${project.project_id}")`, "new")
 			.then((response) => {
 				setInsightId(response.insightId);
 			})
