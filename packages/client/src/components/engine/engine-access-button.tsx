@@ -88,7 +88,7 @@ export const EngineAccessButton = ({
 				`META | RequestEngine(engine=['${
 					engine.engine_id
 				}'], permission=['${requestedRole}']${
-					comment && `, comment=['${comment}']`
+					comment && `, comment=["<encode>${comment}</encode>"]`
 				})`,
 			);
 
