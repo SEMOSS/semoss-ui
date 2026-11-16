@@ -13,11 +13,11 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { ToolsView } from "@/components/mcp/tools-view";
-import type { ResponseMessageStore } from "@/stores/message/response-message.store";
-import type { RoomStore } from "@/stores/room/room.store";
-import type { ToolStore } from "@/stores/tool/tool.store";
-import { getToolAppId } from "@/utility/mcp-utils";
+import { getToolAppId } from "../mcp/mcp-utils";
+import { ToolsView } from "../mcp/tools-view";
+import type { ResponseMessageStore } from "../messages/response-message.store";
+import type { ToolStore } from "../messages/tool.store";
+import type { RoomStore } from "../room/room.store";
 
 interface RoomInlineToolProps {
 	/** Room to render */

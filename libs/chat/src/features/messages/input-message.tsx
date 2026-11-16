@@ -29,9 +29,9 @@ import {
 import { getErrorMessage } from "@semoss/utility/error";
 import { getFileExtension } from "@semoss/utility/file";
 import { getImageMimeType } from "@semoss/utility/image";
-import { MessageActions } from "@/features/conversation/message-actions";
-import type { InputMessageStore } from "@/stores/message/input-message.store";
-import type { RoomStore } from "@/stores/room/room.store";
+import { MessageActions } from "../conversation/message-actions";
+import type { RoomStore } from "../room/room.store";
+import type { InputMessageStore } from "./input-message.store";
 
 const getExtIcon = (fileName: string) => {
 	const ext = getFileExtension(fileName);

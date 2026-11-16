@@ -1,11 +1,11 @@
 import { useMemo } from "react";
 import type { ConnectorViewerService } from "@semoss/connectors";
 import type { ToolViewHost, ToolViewSavedFile } from "@semoss/shared";
-import { CONNECTOR_SOURCES } from "@/features/connectors/sources/connector-sources";
+import { CONNECTOR_SOURCES } from "../connectors/sources/connector-sources";
 import {
 	type RoomSavedFile,
 	useRoomConnectorHost,
-} from "@/features/connectors/sources/use-room-connector-host";
+} from "../connectors/sources/use-room-connector-host";
 
 /**
  * The viewer a saved file came from, when its source names one.

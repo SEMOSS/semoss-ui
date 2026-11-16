@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
+import { useChatSession } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import {
 	runPixel,
@@ -42,7 +43,6 @@ import {
 	getDateBucket,
 	parseTimestampWithUtcDefault,
 } from "@semoss/utility/date";
-import { useChatSession } from "@/hooks/use-chat-session";
 
 interface WorkspaceChatListProps {
 	/**

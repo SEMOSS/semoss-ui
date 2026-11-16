@@ -6,17 +6,17 @@ import { Env, type MCPToolRequest, usePixel } from "@semoss/sdk/react";
 import { isToolViewUri, useToolView } from "@semoss/shared";
 import { AgentUserInputCard, Skeleton, toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import { ToolsDefaultView } from "@/components/mcp/tools-default-view/tools-default-view";
-import { useChatConfig } from "@/features/chat-config/use-chat-config";
-import { ChatToolCard } from "@/features/chat-tools/components/chat-tool-card";
+import { useChatConfig } from "../chat-config/use-chat-config";
+import { ChatToolCard } from "../chat-tools/components/chat-tool-card";
 import {
 	isChatToolCall,
 	isFolderToolCall,
-} from "@/features/chat-tools/tools/chat-tool-kind";
-import { ComponentToolView } from "@/features/tool-views/component-tool-view";
-import { decideAgentToolAction } from "@/stores/message/agent-harness";
-import type { RoomStore } from "@/stores/room/room.store";
-import { isAskExecutionMode } from "@/utility/mcp-utils";
+} from "../chat-tools/tools/chat-tool-kind";
+import { decideAgentToolAction } from "../messages/agent-harness";
+import type { RoomStore } from "../room/room.store";
+import { ComponentToolView } from "../tool-views/component-tool-view";
+import { isAskExecutionMode } from "./mcp-utils";
+import { ToolsDefaultView } from "./tools-default-view/tools-default-view";
 import { ToolsServerView } from "./tools-server-view";
 
 /**

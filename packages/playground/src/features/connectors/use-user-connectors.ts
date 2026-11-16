@@ -2,12 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	type ConnectorServiceId,
 	getConnectorServices,
-	sanitizeConnectorServices,
-} from "./connector.catalog";
-import {
 	readUserConnectorTools,
+	sanitizeConnectorServices,
 	writeUserConnectorTools,
-} from "./connector-tools";
+} from "@semoss/chat";
 
 /** What {@link useUserConnectors} returns. */
 export interface UseUserConnectorsResult {

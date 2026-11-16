@@ -1,8 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { getConnectorProvider } from "../connector.catalog";
-import type { UseConnectionsResult } from "../use-connections";
+import { getConnectorProvider, type UseConnectionsResult } from "@semoss/chat";
 import type { UseUserConnectorsResult } from "../use-user-connectors";
 import { ConnectorsSettings } from "./connectors-settings";
 
@@ -18,7 +17,8 @@ vi.mock("@semoss/i18n", async (importOriginal) => ({
 
 // the session's logins and the user's connector file come from the server;
 // the tests stand in for both
-vi.mock("../use-connections", () => ({
+vi.mock("@semoss/chat", async (original) => ({
+	...(await original<typeof import("@semoss/chat")>()),
 	useConnections: () => mocks.connections,
 }));
 vi.mock("../use-user-connectors", () => ({

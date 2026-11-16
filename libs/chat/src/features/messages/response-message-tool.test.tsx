@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vitest";
-import type { ToolStore } from "@/stores/tool/tool.store";
 import { ResponseMessageTool } from "./response-message-tool";
+import type { ToolStore } from "./tool.store";
 
 const mocks = vi.hoisted(() => ({
 	decide: vi.fn(),
@@ -21,10 +21,10 @@ vi.mock("@semoss/shared", async (original) => ({
 	...(await original<typeof import("@semoss/shared")>()),
 	useLoadingMessage: () => ({ loadingMessage: "Running" }),
 }));
-vi.mock("@/hooks/use-sidebar-panel-active", () => ({
+vi.mock("../workbench/use-sidebar-panel-active", () => ({
 	useSidebarPanelActive: () => mocks.isSidebarActive,
 }));
-vi.mock("@/stores/message/agent-harness", () => ({
+vi.mock("./agent-harness", () => ({
 	decideAgentToolAction: mocks.decide,
 }));
 vi.mock("../mcp/tools-view", () => ({
@@ -32,7 +32,9 @@ vi.mock("../mcp/tools-view", () => ({
 		<textarea aria-label="Approval parameters" defaultValue="Keep edits" />
 	),
 }));
-vi.mock("../room/room-inline-tool", () => ({ RoomInlineTool: () => null }));
+vi.mock("../conversation/room-inline-tool", () => ({
+	RoomInlineTool: () => null,
+}));
 
 function createTool(
 	mode: "chat" | "agent",

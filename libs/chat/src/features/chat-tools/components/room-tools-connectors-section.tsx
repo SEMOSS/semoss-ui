@@ -8,13 +8,13 @@ import {
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "@semoss/i18n";
 import { Button } from "@semoss/ui/next";
-import { useChatConfig } from "@/features/chat-config/use-chat-config";
-import { ConnectorServiceIcon } from "@/features/connectors/components/connector-service-icon";
-import type { ConnectorProviderId } from "@/features/connectors/connector.catalog";
-import { signInToProvider } from "@/features/connectors/connector-sign-in";
-import { useConnectProvider } from "@/features/connectors/use-connect-provider";
-import { useConnectorLogins } from "@/features/connectors/use-connector-logins";
-import type { RoomStore } from "@/stores/room/room.store";
+import { useChatConfig } from "../../chat-config/use-chat-config";
+import { ConnectorServiceIcon } from "../../connectors/components/connector-service-icon";
+import type { ConnectorProviderId } from "../../connectors/connector.catalog";
+import { signInToProvider } from "../../connectors/connector-sign-in";
+import { useConnectProvider } from "../../connectors/use-connect-provider";
+import { useConnectorLogins } from "../../connectors/use-connector-logins";
+import type { RoomStore } from "../../room/room.store";
 import {
 	type ConnectorAccessIssue,
 	groupConnectorTools,

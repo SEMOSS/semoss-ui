@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { beforeEach, expect, test, vi } from "vitest";
 import type { MCPConfig } from "@semoss/shared";
-import type { Workspace } from "@/types";
+import type { Workspace } from "../../types";
 import { MCPOverlay } from "./mcp-overlay";
 
 const query = vi.hoisted(() => ({
@@ -15,7 +15,7 @@ vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
 vi.mock("@semoss/sdk/react", () => ({ useSessionPixel: () => query }));
-vi.mock("@/features/chat-config/use-chat-config", () => ({
+vi.mock("../chat-config/use-chat-config", () => ({
 	useChatConfig: () => ({ theme: { featureFlags: {} } }),
 }));
 vi.mock("@semoss/shared", () => ({

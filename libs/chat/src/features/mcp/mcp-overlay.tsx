@@ -26,11 +26,11 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
-import { useChatConfig } from "@/features/chat-config/use-chat-config";
-import type { Workspace } from "@/types";
-import { splitMcpByType } from "@/utility/mcp-utils";
+import type { Workspace } from "../../types";
+import { useChatConfig } from "../chat-config/use-chat-config";
 import { NewKnowledgeFormBody } from "../knowledge/new-knowledge-form-body";
 import { AgentSelector } from "./agent-selector";
+import { splitMcpByType } from "./mcp-utils";
 
 type Tab = "AGENT" | "TOOLBOX" | "KNOWLEDGE";
 type WorkspaceRef = Pick<Workspace, "workspace_id"> &

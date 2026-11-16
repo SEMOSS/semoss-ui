@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useId, useState } from "react";
+import { Chat, type MCPConfig } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
@@ -11,8 +12,6 @@ import {
 	DialogTitle,
 	Spinner,
 } from "@semoss/ui/next";
-import type { MCPConfig } from "@/types";
-import { NewKnowledgeFormBody } from "./new-knowledge-form-body";
 
 interface NewKnowledgeMCPOverlayProps {
 	/** Open */
@@ -23,7 +22,7 @@ interface NewKnowledgeMCPOverlayProps {
 }
 
 /**
- * Standalone Dialog wrapper around NewKnowledgeFormBody. Used by callers that
+ * Standalone Dialog wrapper around Chat.KnowledgeForm. Used by callers that
  * are not themselves inside a modal (e.g. WorkspaceForm). Callers that are
  * already inside a modal should host the form body directly to avoid stacking
  * Dialogs.
@@ -53,7 +52,7 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> =
 						</DialogDescription>
 					</DialogHeader>
 
-					<NewKnowledgeFormBody
+					<Chat.KnowledgeForm
 						formId={formId}
 						onSuccess={(knowledge) => onClose(knowledge)}
 						onLoadingChange={setIsLoading}

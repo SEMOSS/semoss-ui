@@ -1,6 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ReactNode } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { Chat, type ChatConfig, type ChatStore } from "@semoss/chat";
 import { WorkspacePage } from "./workspace-page";
 
 const mocks = vi.hoisted(() => ({ pixel: "", navigate: vi.fn() }));
@@ -8,9 +10,6 @@ vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
 vi.mock("react-router", () => ({ useNavigate: () => mocks.navigate }));
-vi.mock("@/hooks/use-chat-session", () => ({
-	useChatSession: () => ({ chat: {} }),
-}));
 vi.mock("@/hooks/use-root", () => ({
 	useRoot: () => ({ root: { theme: { images: {} } } }),
 }));
@@ -57,6 +56,24 @@ vi.mock("@/components/workspace/workspace-card", () => ({
 	),
 }));
 
+/** The chat providers the pages read from, over this test's stub chat store. */
+const chatWrapper = ({ children }: { children: ReactNode }) => (
+	<Chat.SessionProvider store={{} as unknown as ChatStore}>
+		<Chat.ConfigProvider
+			config={
+				{
+					theme: { featureFlags: {}, images: {} },
+					navigation: {},
+					newChatDefaults: {},
+					platformUrl: "",
+				} as unknown as ChatConfig
+			}
+		>
+			{children}
+		</Chat.ConfigProvider>
+	</Chat.SessionProvider>
+);
+
 const scrollIntoViewDescriptor = Object.getOwnPropertyDescriptor(
 	HTMLElement.prototype,
 	"scrollIntoView",
@@ -79,7 +96,7 @@ afterEach(() => {
 });
 
 test("catalog uses effective permissions for group and global agents", () => {
-	render(<WorkspacePage />);
+	render(<WorkspacePage />, { wrapper: chatWrapper });
 	expect(screen.getByText("Group agent: EDIT")).toBeInTheDocument();
 	expect(screen.getByText("Global agent: READ_ONLY")).toBeInTheDocument();
 	expect(mocks.pixel).not.toContain("effectivePermissions");
@@ -87,7 +104,7 @@ test("catalog uses effective permissions for group and global agents", () => {
 
 test("catalog combines access filters, search, and sorting in the existing page", async () => {
 	const user = userEvent.setup();
-	render(<WorkspacePage />);
+	render(<WorkspacePage />, { wrapper: chatWrapper });
 	await user.click(
 		screen.getByRole("button", { name: "workspace:catalog.filters.owner" }),
 	);

@@ -19,21 +19,21 @@ import {
 	toast,
 	useIsMobile,
 } from "@semoss/ui/next";
-import { ChatToolCard } from "@/features/chat-tools/components/chat-tool-card";
+import { ChatToolCard } from "../chat-tools/components/chat-tool-card";
 import {
 	isChatToolCall,
 	isFolderToolCall,
-} from "@/features/chat-tools/tools/chat-tool-kind";
-import { ComponentToolView } from "@/features/tool-views/component-tool-view";
-import { useSidebarPanelActive } from "@/hooks/use-sidebar-panel-active";
-import { decideAgentToolAction } from "@/stores/message/agent-harness";
-import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
-import type { ToolStore } from "@/stores/tool/tool.store";
-import { getToolAppId, isAskExecutionMode } from "@/utility/mcp-utils";
+} from "../chat-tools/tools/chat-tool-kind";
+import { RoomInlineTool } from "../conversation/room-inline-tool";
+import { getToolAppId, isAskExecutionMode } from "../mcp/mcp-utils";
 import { ToolsView } from "../mcp/tools-view";
-import { RoomInlineTool } from "../room/room-inline-tool";
+import { ROOM_PANEL_TYPES } from "../room/room-sidebar";
+import { ComponentToolView } from "../tool-views/component-tool-view";
+import { useSidebarPanelActive } from "../workbench/use-sidebar-panel-active";
+import { decideAgentToolAction } from "./agent-harness";
 import { ResponseMessageToolMenu } from "./response-message-tool-menu";
 import { ResponseMessageToolStreaming } from "./response-message-tool-streaming";
+import type { ToolStore } from "./tool.store";
 
 interface ResponseMessageToolProps {
 	/** Tool activity to display and open. */

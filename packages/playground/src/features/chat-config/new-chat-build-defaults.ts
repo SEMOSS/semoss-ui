@@ -1,4 +1,4 @@
-import type { NewChatBuildDefaults } from "@/features/new-chat-preferences/new-chat-preferences";
+import type { NewChatBuildDefaults } from "@semoss/chat";
 
 /** The playground build's new-chat defaults, from its env. */
 export const NEW_CHAT_BUILD_DEFAULTS: NewChatBuildDefaults = {

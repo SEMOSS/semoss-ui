@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ToolStore } from "@/stores/tool/tool.store";
+import type { ToolStore } from "../messages/tool.store";
 import { toToolViewCall, toToolViewMode } from "./tool-view-call";
 
 const toolWith = (

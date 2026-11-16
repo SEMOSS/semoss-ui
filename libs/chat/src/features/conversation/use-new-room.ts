@@ -1,6 +1,6 @@
 import { type RefObject, useEffect, useRef, useState } from "react";
-import { useChatSession } from "@/hooks/use-chat-session";
-import type { RoomStore } from "@/stores/room/room.store";
+import { useChatSession } from "../chat/use-chat-session";
+import type { RoomStore } from "../room/room.store";
 
 /** What {@link useNewRoom} returns. */
 interface NewRoomPreparation {

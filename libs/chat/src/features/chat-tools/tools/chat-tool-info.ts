@@ -1,5 +1,5 @@
 import { isRecord } from "@semoss/utility/object";
-import { isAskExecutionMode } from "@/utility/mcp-utils";
+import { isAskExecutionMode } from "../../mcp/mcp-utils";
 
 /** One argument a tool takes, as its input schema describes it. */
 export interface ChatToolParameter {

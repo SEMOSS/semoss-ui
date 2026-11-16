@@ -18,15 +18,15 @@ import {
 	z,
 	zodResolver,
 } from "@semoss/ui/next";
-import { MCPOverlay } from "@/components/mcp/mcp-overlay";
-import { useChatConfig } from "@/features/chat-config/use-chat-config";
-import { RoomToolsDefaultSection } from "@/features/chat-tools/components/room-tools-default-section";
-import { RoomToolsToolboxesSection } from "@/features/chat-tools/components/room-tools-toolboxes-section";
-import { SectionInfoTooltip } from "@/features/chat-tools/components/section-info-tooltip";
-import { canChooseAgentMode } from "@/features/conversation/agent-mode-choice";
-import { RoomSelectedResources } from "@/features/conversation/room-selected-resources";
-import type { RoomStore } from "@/stores/room/room.store";
-import { isRemovableToolbox, splitMcpByType } from "@/utility/mcp-utils";
+import { useChatConfig } from "../chat-config/use-chat-config";
+import { RoomToolsDefaultSection } from "../chat-tools/components/room-tools-default-section";
+import { RoomToolsToolboxesSection } from "../chat-tools/components/room-tools-toolboxes-section";
+import { SectionInfoTooltip } from "../chat-tools/components/section-info-tooltip";
+import { canChooseAgentMode } from "../conversation/agent-mode-choice";
+import { RoomSelectedResources } from "../conversation/room-selected-resources";
+import { MCPOverlay } from "../mcp/mcp-overlay";
+import { isRemovableToolbox, splitMcpByType } from "../mcp/mcp-utils";
+import type { RoomStore } from "../room/room.store";
 
 const instructionsSchema = z.object({ instructions: z.string() });
 

@@ -16,9 +16,9 @@ import {
 	Muted,
 	Spinner,
 } from "@semoss/ui/next";
-import type { ToolStore } from "@/stores/tool/tool.store";
-import { isAskExecutionMode } from "@/utility/mcp-utils";
+import { isAskExecutionMode } from "../mcp/mcp-utils";
 import { ResponseMessageTool } from "./response-message-tool";
+import type { ToolStore } from "./tool.store";
 
 interface ResponseMessageToolGroupProps {
 	/** Consecutive tools in transcript order. */

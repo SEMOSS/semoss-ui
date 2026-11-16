@@ -1,8 +1,8 @@
 import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
-import type { NewRoomWorkbenchPanels } from "@/features/workbench/use-workbench-panels";
-import { WorkbenchToggleButton } from "@/features/workbench/workbench-toggle-button";
-import type { RoomStore } from "@/stores/room/room.store";
+import type { RoomStore } from "../room/room.store";
+import type { NewRoomWorkbenchPanels } from "../workbench/use-workbench-panels";
+import { WorkbenchToggleButton } from "../workbench/workbench-toggle-button";
 import { RoomTitle } from "./room-title";
 
 interface RoomHeaderProps {

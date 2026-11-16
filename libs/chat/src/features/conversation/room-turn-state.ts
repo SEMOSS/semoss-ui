@@ -1,7 +1,7 @@
-import type { SendButtonState } from "@/components/room/room-input";
-import { ResponseMessageStore } from "@/stores/message/response-message.store";
-import type { RoomStore } from "@/stores/room/room.store";
-import { isAskExecutionMode } from "@/utility/mcp-utils";
+import type { SendButtonState } from "../composer/room-input";
+import { isAskExecutionMode } from "../mcp/mcp-utils";
+import { ResponseMessageStore } from "../messages/response-message.store";
+import type { RoomStore } from "../room/room.store";
 
 /** Where a room's current turn stands, as its messages and composer show it. */
 export interface RoomTurnState {

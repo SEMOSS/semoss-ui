@@ -1,7 +1,7 @@
+import type { ProviderConnection } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import { LoginProviderIcon } from "@semoss/shared";
 import { Button, Small } from "@semoss/ui/next";
-import type { ProviderConnection } from "../use-connections";
 
 /** Props for {@link ConnectionProviderSummary}. */
 interface ConnectionProviderSummaryProps {

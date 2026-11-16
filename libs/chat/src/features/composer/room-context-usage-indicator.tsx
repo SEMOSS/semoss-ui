@@ -15,9 +15,9 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { useChatConfig } from "@/features/chat-config/use-chat-config";
-import { useChatSession } from "@/hooks/use-chat-session";
-import type { RoomStore } from "@/stores/room/room.store";
+import { useChatSession } from "../chat/use-chat-session";
+import { useChatConfig } from "../chat-config/use-chat-config";
+import type { RoomStore } from "../room/room.store";
 
 type CompactionStrategy = "TOOL_PRUNE" | "SUMMARY" | "AUTO";
 

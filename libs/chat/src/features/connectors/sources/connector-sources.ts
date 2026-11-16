@@ -1,6 +1,6 @@
 import type { ConnectorViewerService } from "@semoss/connectors";
 import type { ConnectorBrand } from "@semoss/shared";
-import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
+import { ROOM_PANEL_TYPES } from "../../room/room-sidebar";
 import type {
 	ConnectorProviderId,
 	ConnectorServiceId,

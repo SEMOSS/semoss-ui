@@ -19,10 +19,10 @@ import {
 	z,
 	zodResolver,
 } from "@semoss/ui/next";
-import { FilePreviewGrid } from "@/components/common/file-preview-grid";
-import { useChatConfig } from "@/features/chat-config/use-chat-config";
-import type { MCPConfig } from "@/types";
-import { throwOnPixelErrors } from "@/utility/pixel-errors";
+import type { MCPConfig } from "../../types";
+import { throwOnPixelErrors } from "../chat/pixel-errors";
+import { useChatConfig } from "../chat-config/use-chat-config";
+import { FilePreviewGrid } from "../composer/file-preview-grid";
 
 interface NewKnowledgeFormBodyProps {
 	/**

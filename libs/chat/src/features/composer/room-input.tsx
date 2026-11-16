@@ -1,3 +1,4 @@
+/// <reference path="../../speech-recognition.d.ts" />
 import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
@@ -47,40 +48,40 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { FilePreviewGrid } from "@/components/common/file-preview-grid";
-import { AutoScrollOnPastePlugin } from "@/components/common/lexical/auto-scroll-on-paste-plugin";
-import { BackspacePlugin } from "@/components/common/lexical/backspace-plugin";
-import { EnterPlugin } from "@/components/common/lexical/enter-plugin";
-import { FocusPlugin } from "@/components/common/lexical/focus-plugin";
-import { SlashCommandProvider } from "@/components/common/lexical/slash-command/context";
-import { SlashCommandPlugin } from "@/components/common/lexical/slash-command/plugin";
-import { MCPOverlay } from "@/components/mcp/mcp-overlay";
-import {
-	PromptLibraryDialog,
-	type PromptLibraryItem,
-} from "@/components/prompts/prompt-library-dialog";
-import { useFileDrag } from "@/contexts/file-drag-context";
-import { useChatConfig } from "@/features/chat-config/use-chat-config";
-import { ConnectorSignInNotice } from "@/features/connectors/components/connector-sign-in-notice";
-import { useUserConnectorsSync } from "@/features/connectors/use-user-connectors-sync";
-import { canChooseAgentMode } from "@/features/conversation/agent-mode-choice";
-import { ContextItems } from "@/features/conversation/context-items";
+import type { Engine, MCPConfig, Workspace } from "../../types";
+import { useChatConfig } from "../chat-config/use-chat-config";
+import { ConnectorSignInNotice } from "../connectors/components/connector-sign-in-notice";
+import { useUserConnectorsSync } from "../connectors/use-user-connectors-sync";
+import { canChooseAgentMode } from "../conversation/agent-mode-choice";
+import { ContextItems } from "../conversation/context-items";
 import {
 	getPromptHistory,
 	RESET_PROMPT_HISTORY_COMMAND,
-} from "@/features/conversation/prompt-history";
-import { PromptHistoryPlugin } from "@/features/conversation/prompt-history-plugin";
+} from "../conversation/prompt-history";
+import { PromptHistoryPlugin } from "../conversation/prompt-history-plugin";
 import {
 	RoomComposerMenu,
 	type RoomComposerMenuProps,
-} from "@/features/conversation/room-composer-menu";
-import { useRoomSlashCommands } from "@/features/conversation/use-room-slash-commands";
-import type { NewRoomWorkbenchPanels } from "@/features/workbench/use-workbench-panels";
-import { useGracefulErrors } from "@/hooks/use-graceful-errors";
-import { AGENT_HARNESS_TYPE } from "@/stores/message/agent-harness";
-import type { RoomStore } from "@/stores/room/room.store";
-import type { Engine, MCPConfig, Workspace } from "@/types";
-import { PromptOptimizer } from "../../components/prompt/PromptOptimizer";
+} from "../conversation/room-composer-menu";
+import { useGracefulErrors } from "../conversation/use-graceful-errors";
+import { useRoomSlashCommands } from "../conversation/use-room-slash-commands";
+import { MCPOverlay } from "../mcp/mcp-overlay";
+import { AGENT_HARNESS_TYPE } from "../messages/agent-harness";
+import type { RoomStore } from "../room/room.store";
+import type { NewRoomWorkbenchPanels } from "../workbench/use-workbench-panels";
+import { useFileDrag } from "./file-drag.context";
+import { FilePreviewGrid } from "./file-preview-grid";
+import { AutoScrollOnPastePlugin } from "./lexical/auto-scroll-on-paste-plugin";
+import { BackspacePlugin } from "./lexical/backspace-plugin";
+import { EnterPlugin } from "./lexical/enter-plugin";
+import { FocusPlugin } from "./lexical/focus-plugin";
+import { SlashCommandProvider } from "./lexical/slash-command/context";
+import { SlashCommandPlugin } from "./lexical/slash-command/plugin";
+import {
+	PromptLibraryDialog,
+	type PromptLibraryItem,
+} from "./prompt-library-dialog";
+import { PromptOptimizer } from "./prompt-optimizer";
 import { RoomContextUsageIndicator } from "./room-context-usage-indicator";
 
 type WorkspaceRef = Pick<Workspace, "workspace_id"> &

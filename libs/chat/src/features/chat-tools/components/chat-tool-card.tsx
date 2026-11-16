@@ -13,16 +13,16 @@ import { useTranslation } from "@semoss/i18n";
 import { Badge, Button, Small, toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import { formatJson } from "@semoss/utility/json";
-import { ConnectorServiceIcon } from "@/features/connectors/components/connector-service-icon";
+import { ConnectorServiceIcon } from "../../connectors/components/connector-service-icon";
 import {
 	isSignInFailure,
 	signInToProvider,
-} from "@/features/connectors/connector-sign-in";
-import { useConnectProvider } from "@/features/connectors/use-connect-provider";
-import { ToolInspector } from "@/features/tool-inspector/tool-inspector";
-import { decideAgentToolAction } from "@/stores/message/agent-harness";
-import type { ToolStore } from "@/stores/tool/tool.store";
-import { isAskExecutionMode } from "@/utility/mcp-utils";
+} from "../../connectors/connector-sign-in";
+import { useConnectProvider } from "../../connectors/use-connect-provider";
+import { isAskExecutionMode } from "../../mcp/mcp-utils";
+import { decideAgentToolAction } from "../../messages/agent-harness";
+import type { ToolStore } from "../../messages/tool.store";
+import { ToolInspector } from "../../tool-inspector/tool-inspector";
 import {
 	getConnectorToolService,
 	isFolderToolCall,

@@ -4,9 +4,9 @@ import type {
 	ToolViewCallStatus,
 	ToolViewMode,
 } from "@semoss/shared";
-import { readToolResponseDetail } from "@/features/chat-tools/tools/tool-response-detail";
-import type { ToolStore } from "@/stores/tool/tool.store";
-import { isAskExecutionMode } from "@/utility/mcp-utils";
+import { readToolResponseDetail } from "../chat-tools/tools/tool-response-detail";
+import { isAskExecutionMode } from "../mcp/mcp-utils";
+import type { ToolStore } from "../messages/tool.store";
 
 /** A tool's status, as a tool view reads it. */
 const CALL_STATUSES: Record<ToolStore["status"], ToolViewCallStatus> = {

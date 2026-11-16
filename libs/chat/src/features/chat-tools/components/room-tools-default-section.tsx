@@ -7,7 +7,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
-import type { RoomStore } from "@/stores/room/room.store";
+import type { RoomStore } from "../../room/room.store";
 import { listToolParameters } from "../tools/chat-tool-info";
 import {
 	DEFAULT_TOOL_MODES,

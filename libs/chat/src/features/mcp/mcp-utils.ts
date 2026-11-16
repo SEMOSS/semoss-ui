@@ -1,5 +1,5 @@
 import type { MCPConfig } from "@semoss/shared";
-import { MCP_EXECUTION_AGENT_ASK, MCP_EXECUTION_ASK } from "@/constants";
+import { MCP_EXECUTION_AGENT_ASK, MCP_EXECUTION_ASK } from "./mcp-constants";
 
 export { isKnowledgeMcp, splitMcpByType } from "@semoss/shared";
 

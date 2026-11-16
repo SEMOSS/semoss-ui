@@ -1,15 +1,15 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vitest";
-import { DEFAULT_CHAT_THEME } from "@/features/chat-config/chat-theme";
-import { RoomStore } from "@/stores/room/room.store";
-import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
+import { DEFAULT_CHAT_THEME } from "../chat-config/chat-theme";
+import { RoomStore } from "../room/room.store";
+import { ROOM_PANEL_TYPES } from "../room/room-sidebar";
 import { useNewRoom } from "./use-new-room";
 
 const chat = vi.hoisted(() => ({
 	createEmptyRoom: vi.fn(),
 	closeRoom: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock("@/hooks/use-chat-session", () => ({
+vi.mock("../chat/use-chat-session", () => ({
 	useChatSession: () => ({ chat }),
 }));
 let draft: RoomStore;

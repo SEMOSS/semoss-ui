@@ -2,6 +2,7 @@ import { SearchIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { type App, useChatSession } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import { useSessionIteratorPixel } from "@semoss/sdk/react";
 import {
@@ -24,9 +25,7 @@ import {
 	useTheme,
 } from "@semoss/ui/next";
 import { WorkspaceCard } from "@/components/workspace/workspace-card";
-import { useChatSession } from "@/hooks/use-chat-session";
 import { useRoot } from "@/hooks/use-root";
-import type { App } from "@/types";
 
 /**
  * The filters offered, in display order. The access filters keep the agents

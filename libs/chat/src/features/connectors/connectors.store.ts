@@ -2,7 +2,7 @@ import { makeAutoObservable, observable, runInAction } from "mobx";
 import type { ConnectorViewerService } from "@semoss/connectors";
 import { getI18n } from "@semoss/i18n";
 import { isSameArray } from "@semoss/utility/array";
-import type { RoomStore } from "@/stores/room/room.store";
+import type { RoomStore } from "../room/room.store";
 import {
 	CONNECTOR_PROVIDERS,
 	type ConnectorProviderId,

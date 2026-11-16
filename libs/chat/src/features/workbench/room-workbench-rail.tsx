@@ -11,9 +11,9 @@ import {
 	Separator,
 } from "@semoss/ui/next";
 import { writeSpawnDragSpec } from "@semoss/workbench";
-import { HeaderIconButton } from "@/features/room-header/header-icon-button";
-import type { RoomStore } from "@/stores/room/room.store";
+import type { RoomStore } from "../room/room.store";
 import { useRoomActionItems } from "../room-actions/use-room-action-items";
+import { HeaderIconButton } from "../room-header/header-icon-button";
 import {
 	type NewRoomWorkbenchPanels,
 	useWorkbenchPanels,

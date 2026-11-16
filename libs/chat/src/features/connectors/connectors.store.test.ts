@@ -1,7 +1,7 @@
 import { runInAction } from "mobx";
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import type { RoomStore } from "@/stores/room/room.store";
-import { readRoomToolFile } from "@/stores/room/room-tool-file";
+import type { RoomStore } from "../room/room.store";
+import { readRoomToolFile } from "../room/room-tool-file";
 import {
 	readUserConnectorTools,
 	syncRoomConnectorTools,
@@ -17,8 +17,8 @@ vi.mock("@semoss/i18n", async (importOriginal) => ({
 // the user's connector file comes from the server, and so does the room's
 // tool file, which the tests leave out. The session's logins come from the
 // SDK, which the tests set through setSessionLogins.
-vi.mock("@/stores/room/room-tool-file", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/stores/room/room-tool-file")>()),
+vi.mock("../room/room-tool-file", async (importOriginal) => ({
+	...(await importOriginal<typeof import("../room/room-tool-file")>()),
 	readRoomToolFile: vi.fn(async () => null),
 	saveRoomToolFile: vi.fn(async () => undefined),
 }));

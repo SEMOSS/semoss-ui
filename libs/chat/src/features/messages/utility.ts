@@ -1,9 +1,9 @@
-import type { RoomStore } from "@/stores/room/room.store";
 import type {
 	InputPixelMessage,
 	PixelMessage,
 	ResponsePixelMessage,
-} from "@/types";
+} from "../../types";
+import type { RoomStore } from "../room/room.store";
 import type { AbstractMessageStore } from "./abstract-message.store";
 import { InputMessageStore } from "./input-message.store";
 import { ResponseMessageStore } from "./response-message.store";

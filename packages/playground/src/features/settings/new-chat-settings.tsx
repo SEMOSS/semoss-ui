@@ -1,5 +1,12 @@
 import { observer } from "mobx-react-lite";
 import { useId } from "react";
+import {
+	isNewChatMode,
+	offersAgentMode,
+	readDeploymentNewChatDefaults,
+	useChatSession,
+	type Workspace,
+} from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import { useSessionPixel } from "@semoss/sdk/react";
 import { ProjectSelect } from "@semoss/shared";
@@ -14,15 +21,8 @@ import {
 	ToggleGroupItem,
 } from "@semoss/ui/next";
 import { NEW_CHAT_BUILD_DEFAULTS } from "@/features/chat-config/new-chat-build-defaults";
-import { offersAgentMode } from "@/features/conversation/agent-mode-choice";
-import {
-	isNewChatMode,
-	readDeploymentNewChatDefaults,
-} from "@/features/new-chat-preferences/new-chat-preferences";
 import { useNewChatPreferences } from "@/features/new-chat-preferences/use-new-chat-preferences";
-import { useChatSession } from "@/hooks/use-chat-session";
 import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
-import type { Workspace } from "@/types";
 import { SettingsRow } from "./settings-row";
 
 /**

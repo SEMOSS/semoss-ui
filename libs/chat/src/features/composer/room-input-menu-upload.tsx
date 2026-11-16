@@ -1,7 +1,7 @@
 import { PaperclipIcon } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
 import { DropdownMenuItem } from "@semoss/ui/next";
-import { useFileDrag } from "@/contexts/file-drag-context";
+import { useFileDrag } from "./file-drag.context";
 
 interface RoomInputMenuUploadProps {
 	/** Callback when the item is selected */

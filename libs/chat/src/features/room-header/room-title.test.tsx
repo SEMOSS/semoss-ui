@@ -2,8 +2,8 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 import { toast } from "@semoss/ui/next";
-import { RoomActionsProvider } from "@/features/room-actions/room-actions.context";
-import type { RoomStore } from "@/stores/room/room.store";
+import type { RoomStore } from "../room/room.store";
+import { RoomActionsProvider } from "../room-actions/room-actions.context";
 import { RoomTitle } from "./room-title";
 
 const mocks = vi.hoisted(() => ({
@@ -14,7 +14,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
-vi.mock("@/features/chat-config/use-chat-config", () => ({
+vi.mock("../chat-config/use-chat-config", () => ({
 	useChatConfig: () => ({
 		navigation: { openRoom: vi.fn(), onRoomDeleted: mocks.onRoomDeleted },
 	}),
@@ -22,7 +22,7 @@ vi.mock("@/features/chat-config/use-chat-config", () => ({
 vi.mock("@semoss/sdk/react", () => ({
 	usePixel: () => ({ data: [], refresh: vi.fn() }),
 }));
-vi.mock("@/hooks/use-chat-session", () => ({
+vi.mock("../chat/use-chat-session", () => ({
 	useChatSession: () => ({
 		chat: { keys: { roomCounter: 0 }, renameRoom: mocks.renameRoom },
 	}),

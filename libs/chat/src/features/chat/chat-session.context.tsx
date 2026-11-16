@@ -1,5 +1,5 @@
 import { createContext } from "react";
-import type { ChatStore } from "@/stores/chat/chat.store";
+import type { ChatStore } from "./chat.store";
 
 /**
  * Value

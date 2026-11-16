@@ -6,9 +6,9 @@ import {
 	DropdownMenuRadioItem,
 	DropdownMenuSeparator,
 } from "@semoss/ui/next";
-import { RoomInputMenuMCP } from "@/components/room/room-input-menu-mcp";
-import { RoomInputMenuUpload } from "@/components/room/room-input-menu-upload";
-import type { RoomStore } from "@/stores/room/room.store";
+import { RoomInputMenuMCP } from "../composer/room-input-menu-mcp";
+import { RoomInputMenuUpload } from "../composer/room-input-menu-upload";
+import type { RoomStore } from "../room/room.store";
 
 export interface RoomComposerMenuProps {
 	/** Opens or closes the menu. */

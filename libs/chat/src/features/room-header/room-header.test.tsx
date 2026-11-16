@@ -1,8 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { runInAction } from "mobx";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { DEFAULT_CHAT_THEME } from "@/features/chat-config/chat-theme";
-import { RoomStore } from "@/stores/room/room.store";
+import { DEFAULT_CHAT_THEME } from "../chat-config/chat-theme";
+import { RoomStore } from "../room/room.store";
 import { RoomHeader } from "./room-header";
 
 vi.mock("@semoss/i18n", () => ({

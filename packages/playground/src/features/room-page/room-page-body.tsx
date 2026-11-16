@@ -1,11 +1,6 @@
 import { observer } from "mobx-react-lite";
-import { RoomContent } from "@/components/room/room-content";
-import { RoomWorkbench } from "@/components/room/room-workbench";
-import { FileDragProvider } from "@/contexts/file-drag-context";
-import { useRoom } from "@/contexts/room.context";
-import { RoomLayout } from "@/features/conversation/room-layout";
+import { Chat, useRoom } from "@semoss/chat";
 import { PageHeaderNavigation } from "@/features/navigation/page-header-navigation";
-import { RoomHeader } from "@/features/room-header/room-header";
 
 /**
  * The playground's room: the header with the navigation button, the
@@ -15,17 +10,17 @@ export const RoomPageBody = observer(() => {
 	const room = useRoom();
 
 	return (
-		<RoomLayout
+		<Chat.Layout
 			isWorkbenchOpen={room.sidebar.isOpen}
 			onWorkbenchCollapse={() => void room.closeSidebar()}
 			header={
-				<RoomHeader room={room} leading={<PageHeaderNavigation />} />
+				<Chat.Header room={room} leading={<PageHeaderNavigation />} />
 			}
-			workbench={<RoomWorkbench room={room} />}
+			workbench={<Chat.Workbench room={room} />}
 		>
-			<FileDragProvider>
-				<RoomContent room={room} />
-			</FileDragProvider>
-		</RoomLayout>
+			<Chat.FileDrop>
+				<Chat.Conversation room={room} />
+			</Chat.FileDrop>
+		</Chat.Layout>
 	);
 });

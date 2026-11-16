@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@semoss/ui/next";
-import { useFileDrag } from "@/contexts/file-drag-context";
+import { useFileDrag } from "../composer/file-drag.context";
 
 /** File-drop feedback inside the conversation's FileDragProvider. */
 export function DropHighlight({

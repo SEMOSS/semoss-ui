@@ -5,8 +5,8 @@ import {
 	type ConnectorService,
 	findConnectorTool,
 	getConnectorToolTitle,
-} from "@/features/connectors/connector.catalog";
-import type { ConnectorsStore } from "@/features/connectors/connectors.store";
+} from "../../connectors/connector.catalog";
+import type { ConnectorsStore } from "../../connectors/connectors.store";
 import type { ToolboxTool } from "./chat-tool-info";
 
 /**

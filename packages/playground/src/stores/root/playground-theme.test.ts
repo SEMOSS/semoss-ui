@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { mergeChatTheme as mergePlaygroundTheme } from "@/features/chat-config/chat-theme";
+import { mergeChatTheme as mergePlaygroundTheme } from "@semoss/chat";
 import { withPlaygroundDefaults } from "./playground-theme";
 
 test("no server theme, or none for the playground, gives the defaults", () => {

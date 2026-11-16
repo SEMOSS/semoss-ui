@@ -1,10 +1,10 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo } from "react";
 import { Markdown } from "@semoss/ui/next";
-import { useChatConfig } from "@/features/chat-config/use-chat-config";
-import type { ChunkStatus } from "@/hooks/use-active-index";
-import { useMarkdownTypewriter } from "@/hooks/use-markdown-typewriter";
-import type { ResponseMessageStore } from "@/stores/message/response-message.store";
+import { useChatConfig } from "../../chat-config/use-chat-config";
+import type { ResponseMessageStore } from "../response-message.store";
+import type { ChunkStatus } from "../use-active-index";
+import { useMarkdownTypewriter } from "../use-markdown-typewriter";
 import {
 	createMarkdownComponents,
 	createMarkdownUrlTransform,

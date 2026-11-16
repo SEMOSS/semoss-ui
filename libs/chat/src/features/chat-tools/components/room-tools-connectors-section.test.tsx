@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vitest";
-import type { RoomStore } from "@/stores/room/room.store";
+import type { RoomStore } from "../../room/room.store";
 import { useRoomToolbox } from "../use-room-toolbox";
 import type { ToolsRead } from "../use-tools-read";
 import { RoomToolsConnectorsSection } from "./room-tools-connectors-section";
@@ -13,13 +13,13 @@ vi.mock("@semoss/i18n", () => ({
 		i18n: { language: "en" },
 	}),
 }));
-vi.mock("@/features/chat-config/use-chat-config", () => ({
+vi.mock("../../chat-config/use-chat-config", () => ({
 	useChatConfig: () => ({ navigation: { openSettings } }),
 }));
-vi.mock("@/features/connectors/use-connector-logins", () => ({
+vi.mock("../../connectors/use-connector-logins", () => ({
 	useConnectorLogins: vi.fn(),
 }));
-vi.mock("@/features/connectors/use-connect-provider", () => ({
+vi.mock("../../connectors/use-connect-provider", () => ({
 	useConnectProvider: () => vi.fn(),
 }));
 vi.mock("../use-room-toolbox", () => ({ useRoomToolbox: vi.fn() }));

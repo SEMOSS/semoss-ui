@@ -18,10 +18,8 @@ vi.mock("@semoss/sdk/react", () => ({
 	uploadInsight: vi.fn(),
 }));
 
-vi.mock("@/features/connectors/connector-tools", async (importOriginal) => ({
-	...(await importOriginal<
-		typeof import("@/features/connectors/connector-tools")
-	>()),
+vi.mock("../connectors/connector-tools", async (importOriginal) => ({
+	...(await importOriginal<typeof import("../connectors/connector-tools")>()),
 	readUserConnectorTools: vi.fn().mockResolvedValue(null),
 }));
 

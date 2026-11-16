@@ -43,17 +43,17 @@ import { decodeBase64ToBytes } from "@semoss/utility/encoding";
 import { getErrorMessage } from "@semoss/utility/error";
 import { getFileExtension } from "@semoss/utility/file";
 import { getImageMimeType } from "@semoss/utility/image";
-import { STREAMING_PLACEHOLDER_ID } from "@/constants";
-import { useChatConfig } from "@/features/chat-config/use-chat-config";
-import { MessageActions } from "@/features/conversation/message-actions";
-import { groupToolActivity } from "@/features/conversation/tool-activity";
-import { useActiveIndex } from "@/hooks/use-active-index";
-import { InputMessageStore } from "@/stores/message/input-message.store";
-import type { ResponseMessageStore } from "@/stores/message/response-message.store";
-import type { RoomStore } from "@/stores/room/room.store";
+import { useChatConfig } from "../chat-config/use-chat-config";
+import { MessageActions } from "../conversation/message-actions";
+import { groupToolActivity } from "../conversation/tool-activity";
+import { STREAMING_PLACEHOLDER_ID } from "../mcp/mcp-constants";
+import type { RoomStore } from "../room/room.store";
+import { InputMessageStore } from "./input-message.store";
+import type { ResponseMessageStore } from "./response-message.store";
 import { ResponseMessageSubagent } from "./response-message-subagent";
 import { ResponseMessageText } from "./response-message-text";
 import { ResponseMessageToolGroup } from "./response-message-tool-group";
+import { useActiveIndex } from "./use-active-index";
 
 const getExtIcon = (fileName: string) => {
 	const ext = getFileExtension(fileName);

@@ -26,7 +26,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import type { WorkbenchPanelConfig } from "@semoss/workbench";
-import { useRoom } from "@/contexts/room.context";
+import { useRoom } from "../room/room.context";
 
 /**
  * The audit logs dashboard scoped to the current room, shown in the room's

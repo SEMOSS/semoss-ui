@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
-import type { RoomStore } from "@/stores/room/room.store";
+import type { RoomStore } from "../../room/room.store";
 import { NotebookPreviewBlock } from "./notebook-preview-block";
 
 vi.mock("@semoss/i18n", () => ({

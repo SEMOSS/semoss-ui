@@ -2,7 +2,7 @@ import { observer } from "mobx-react-lite";
 import { type ReactNode, useState } from "react";
 import { type ResolvedToolView, ToolViewRenderer } from "@semoss/shared";
 import { cn, Skeleton } from "@semoss/ui/next";
-import type { ToolStore } from "@/stores/tool/tool.store";
+import type { ToolStore } from "../messages/tool.store";
 import { toToolViewCall, toToolViewMode } from "./tool-view-call";
 import { createToolViewDecisions } from "./tool-view-decisions";
 import { useRoomToolViewHost } from "./use-room-tool-view-host";

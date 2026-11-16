@@ -10,7 +10,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import type { RoomStore } from "@/stores/room/room.store";
+import type { RoomStore } from "../../room/room.store";
 
 interface SaveFileDialogProps {
 	open: boolean;

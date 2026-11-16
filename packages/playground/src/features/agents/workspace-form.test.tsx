@@ -1,9 +1,9 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { beforeEach, expect, test, vi } from "vitest";
+import { Chat, type ChatConfig, type ChatStore } from "@semoss/chat";
 import { AGENT_FORM_DEFAULT_VALUES } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
-import { NewKnowledgeFormBody } from "@/components/knowledge/new-knowledge-form-body";
-import { SaveWorkspaceDialog } from "@/components/room/room-workspace-creation";
 import { NewWorkspacePage } from "@/pages/new-workspace-page";
 
 const mocks = vi.hoisted(() => ({
@@ -31,19 +31,6 @@ vi.mock("@/hooks/use-root", () => ({
 		root: { theme: { featureFlags: {}, defaultEmbedderId: "embedder" } },
 	}),
 }));
-vi.mock("@/features/chat-config/use-chat-config", () => ({
-	useChatConfig: () => ({
-		theme: { featureFlags: {}, defaultEmbedderId: "embedder" },
-	}),
-}));
-vi.mock("@/hooks/use-chat-session", () => ({
-	useChatSession: () => ({
-		chat: {
-			addWorkspace: mocks.addWorkspace,
-			createAgent: mocks.createAgent,
-		},
-	}),
-}));
 vi.mock("@semoss/sdk/react", async (original) => ({
 	...(await original<typeof import("@semoss/sdk/react")>()),
 	usePixel: mockPixel,
@@ -63,17 +50,43 @@ vi.mock("@semoss/shared", async (original) => ({
 	SkillSelector: () => null,
 }));
 
+/** The chat providers the pages read from, over this test's stub chat store. */
+const chatWrapper = ({ children }: { children: ReactNode }) => (
+	<Chat.SessionProvider
+		store={
+			{
+				addWorkspace: mocks.addWorkspace,
+				createAgent: mocks.createAgent,
+			} as unknown as ChatStore
+		}
+	>
+		<Chat.ConfigProvider
+			config={
+				{
+					theme: { featureFlags: {}, defaultEmbedderId: "embedder" },
+					navigation: {},
+					newChatDefaults: {},
+					platformUrl: "",
+				} as unknown as ChatConfig
+			}
+		>
+			{children}
+		</Chat.ConfigProvider>
+	</Chat.SessionProvider>
+);
+
 beforeEach(() => vi.clearAllMocks());
 
 test("saving an agent from a conversation validates and retains the form after a failed save", async () => {
 	mocks.addWorkspace.mockRejectedValueOnce(new Error("Save failed"));
 	render(
-		<SaveWorkspaceDialog
+		<Chat.SaveAgentDialog
 			systemPrompt="Current instructions"
 			mcps={[]}
 			open
 			onOpenChange={vi.fn()}
 		/>,
+		{ wrapper: chatWrapper },
 	);
 	fireEvent.click(
 		screen.getByRole("button", { name: "workspace.publishButton" }),
@@ -105,7 +118,7 @@ test("agent creation retains all settings on failure and retries with the full c
 				}),
 		)
 		.mockResolvedValueOnce({ workspaceId: "agent-1" });
-	render(<NewWorkspacePage />);
+	render(<NewWorkspacePage />, { wrapper: chatWrapper });
 	const name = screen.getByLabelText("form.name");
 	const instructions = screen.getByLabelText("about.instructions");
 	fireEvent.change(name, { target: { value: "Research agent" } });
@@ -148,11 +161,12 @@ test("knowledge creation retains its files and text after failure", async () => 
 	const formId = "knowledge-test-form";
 	render(
 		<>
-			<NewKnowledgeFormBody formId={formId} onSuccess={onSuccess} />
+			<Chat.KnowledgeForm formId={formId} onSuccess={onSuccess} />
 			<button type="submit" form={formId}>
 				Create collection
 			</button>
 		</>,
+		{ wrapper: chatWrapper },
 	);
 	const name = screen.getByLabelText("knowledge:form.nameLabel");
 	const description = screen.getByLabelText(
@@ -184,7 +198,7 @@ test("agent creation opens the created agent when its follow-up settings save fa
 		workspaceId: "partial-agent",
 		settingsFailed: true,
 	});
-	render(<NewWorkspacePage />);
+	render(<NewWorkspacePage />, { wrapper: chatWrapper });
 	fireEvent.change(screen.getByLabelText("form.name"), {
 		target: { value: "Research agent" },
 	});

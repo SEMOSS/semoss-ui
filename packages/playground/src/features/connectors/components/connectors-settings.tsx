@@ -1,5 +1,13 @@
 import { TriangleAlertIcon } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
+import {
+	type ConnectorProviderId,
+	type ConnectorServiceId,
+	getConnectorProvider,
+	getConnectorService,
+	useConnections,
+	useConnectProvider,
+} from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import { SessionLoginDisconnectError } from "@semoss/sdk";
 import {
@@ -13,14 +21,6 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import {
-	type ConnectorProviderId,
-	type ConnectorServiceId,
-	getConnectorProvider,
-	getConnectorService,
-} from "../connector.catalog";
-import { useConnectProvider } from "../use-connect-provider";
-import { useConnections } from "../use-connections";
 import { useUserConnectors } from "../use-user-connectors";
 import { ConnectionProviderSummary } from "./connection-provider-summary";
 import { ConnectorServiceRow } from "./connector-service-row";

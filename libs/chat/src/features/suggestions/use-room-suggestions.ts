@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { usePixel } from "@semoss/sdk/react";
 import { isRecord } from "@semoss/utility/object";
-import { CONNECTOR_SERVICES } from "@/features/connectors/connector.catalog";
-import type { RoomStore } from "@/stores/room/room.store";
+import { CONNECTOR_SERVICES } from "../connectors/connector.catalog";
+import type { RoomStore } from "../room/room.store";
 
 /** Validate the default suggestion response before rendering clickable messages. */
 const readSuggestions = (data: unknown): string[] => {

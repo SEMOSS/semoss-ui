@@ -3,8 +3,8 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useTranslation } from "@semoss/i18n";
 import { Button, Small } from "@semoss/ui/next";
-import { useRoomSuggestions } from "@/features/suggestions/use-room-suggestions";
-import type { RoomStore } from "@/stores/room/room.store";
+import type { RoomStore } from "../room/room.store";
+import { useRoomSuggestions } from "../suggestions/use-room-suggestions";
 
 interface RoomSuggestionsProps {
 	/** Room to load */

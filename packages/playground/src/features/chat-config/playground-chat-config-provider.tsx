@@ -1,8 +1,8 @@
 import { type ReactNode, useMemo } from "react";
 import { useNavigate } from "react-router";
+import { Chat, type ChatConfig } from "@semoss/chat";
 import { useSettingsDialog } from "@/features/settings/settings-dialog.context";
 import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
-import { type ChatConfig, ChatConfigContext } from "./chat-config.context";
 import { NEW_CHAT_BUILD_DEFAULTS } from "./new-chat-build-defaults";
 import { PLATFORM_URL } from "./platform-url";
 
@@ -39,8 +39,6 @@ export const PlaygroundChatConfigProvider = ({
 	);
 
 	return (
-		<ChatConfigContext.Provider value={config}>
-			{children}
-		</ChatConfigContext.Provider>
+		<Chat.ConfigProvider config={config}>{children}</Chat.ConfigProvider>
 	);
 };

@@ -7,8 +7,8 @@ import { useTranslation } from "@semoss/i18n";
 import { PopupBlockedError } from "@semoss/sdk";
 import { toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import { useRoom } from "@/contexts/room.context";
-import { useNextMessageRoom } from "@/features/conversation/next-message-room.context";
+import { useNextMessageRoom } from "../../conversation/next-message-room.context";
+import { useRoom } from "../../room/room.context";
 import {
 	type ConnectorProviderId,
 	getConnectorProvider,

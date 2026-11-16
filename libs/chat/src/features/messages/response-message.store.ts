@@ -7,19 +7,19 @@ import {
 } from "mobx";
 import { download, runMcpTool } from "@semoss/sdk/react";
 import { getErrorMessage } from "@semoss/utility/error";
+import type { InputPixelMessage, ResponsePixelMessage } from "../../types";
+import { isFolderToolCall } from "../chat-tools/tools/chat-tool-kind";
 import {
 	MCP_EXECUTION_AUTO,
 	STREAMING_PLACEHOLDER_ID,
 	TURN_CANCELLATION_PROMPT,
-} from "@/constants";
-import { isFolderToolCall } from "@/features/chat-tools/tools/chat-tool-kind";
-import type { ToolStore } from "@/stores/tool/tool.store";
-import type { InputPixelMessage, ResponsePixelMessage } from "@/types";
-import { getToolEngineId } from "@/utility/mcp-utils";
+} from "../mcp/mcp-constants";
+import { getToolEngineId } from "../mcp/mcp-utils";
 import { AbstractMessageStore } from "./abstract-message.store";
 import { runAgentMessage } from "./agent-harness";
 import { InputMessageStore } from "./input-message.store";
 import { applyResponseStreamChunk } from "./response-stream";
+import type { ToolStore } from "./tool.store";
 import { ToolSaveController } from "./tool-save-controller";
 import { type CancelCommitOutput, spliceHiddenMessages } from "./utility";
 

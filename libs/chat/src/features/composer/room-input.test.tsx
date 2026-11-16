@@ -3,8 +3,8 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 import { beforeEach, expect, test, vi } from "vitest";
 import { toast } from "@semoss/ui/next";
-import type { MCPOverlay } from "@/components/mcp/mcp-overlay";
-import type { RoomStore } from "@/stores/room/room.store";
+import type { MCPOverlay } from "../mcp/mcp-overlay";
+import type { RoomStore } from "../room/room.store";
 import { RoomInput } from "./room-input";
 import { RoomInputMenuMCP } from "./room-input-menu-mcp";
 import { RoomInputMenuUpload } from "./room-input-menu-upload";
@@ -33,7 +33,7 @@ let triggerOnChange: (() => void) | null = null;
 // ---------------------------------------------------------------------------
 
 // the slash menu's commands have their own tests; the composer only hands them on
-vi.mock("@/features/conversation/use-room-slash-commands", () => ({
+vi.mock("../conversation/use-room-slash-commands", () => ({
 	useRoomSlashCommands: () => [],
 }));
 
@@ -61,9 +61,8 @@ vi.mock("@semoss/i18n", async (importOriginal) => {
 	};
 });
 
-vi.mock("@/contexts/file-drag-context", async (importOriginal) => {
-	const actual =
-		await importOriginal<typeof import("@/contexts/file-drag-context")>();
+vi.mock("./file-drag.context", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("./file-drag.context")>();
 	return {
 		...actual,
 		useFileDrag: () => ({
@@ -78,23 +77,23 @@ vi.mock("@/contexts/file-drag-context", async (importOriginal) => {
 });
 
 const featureFlags: Record<string, boolean> = {};
-vi.mock("@/features/chat-config/use-chat-config", () => ({
+vi.mock("../chat-config/use-chat-config", () => ({
 	useChatConfig: () => ({
 		theme: { featureFlags, defaultCompactionStrategy: "AUTO" },
 	}),
 }));
-vi.mock("@/hooks/use-graceful-errors", () => ({
+vi.mock("../conversation/use-graceful-errors", () => ({
 	useGracefulErrors: () => ({
 		getGracefulErrorMessage: (error: Error) => error.message,
 	}),
 }));
-vi.mock("@/hooks/use-chat-session", () => ({
+vi.mock("../chat/use-chat-session", () => ({
 	useChatSession: () => ({ chat: { models: { contextWindow: 0 } } }),
 }));
-vi.mock("@/hooks/use-sidebar-panel-active", () => ({
+vi.mock("../workbench/use-sidebar-panel-active", () => ({
 	useSidebarPanelActive: () => false,
 }));
-vi.mock("@/components/prompt/PromptOptimizer", () => ({
+vi.mock("./prompt-optimizer", () => ({
 	PromptOptimizer: ({
 		input,
 		disabled,
@@ -109,7 +108,7 @@ vi.mock("@/components/prompt/PromptOptimizer", () => ({
 		/>
 	),
 }));
-vi.mock("@/components/mcp/mcp-overlay", () => ({
+vi.mock("../mcp/mcp-overlay", () => ({
 	MCPOverlay: ({
 		open,
 		defaultTab,
@@ -230,7 +229,7 @@ vi.mock("@lexical/react/LexicalOnChangePlugin", () => ({
 }));
 
 // Mock EnterPlugin to listen for keydown directly (bypasses Lexical command system)
-vi.mock("@/components/common/lexical/enter-plugin", () => ({
+vi.mock("./lexical/enter-plugin", () => ({
 	EnterPlugin: ({ onEnter }: { onEnter: () => void }) => {
 		React.useEffect(() => {
 			const handler = (e: KeyboardEvent) => {

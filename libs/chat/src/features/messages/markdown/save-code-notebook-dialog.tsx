@@ -30,7 +30,7 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
-import type { RoomStore } from "@/stores/room/room.store";
+import type { RoomStore } from "../../room/room.store";
 
 interface SaveCodeNotebookDialogProps {
 	open: boolean;

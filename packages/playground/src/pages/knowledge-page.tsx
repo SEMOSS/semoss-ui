@@ -1,6 +1,7 @@
 import { Bookmark, ChevronDown, Info, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
+import { throwOnPixelErrors } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import { Env, post, useSessionInsight } from "@semoss/sdk/react";
 import {
@@ -41,7 +42,6 @@ import {
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import { NewKnowledgeOverlay } from "@/components/knowledge/new-knowledge-mcp-overlay";
-import { throwOnPixelErrors } from "@/utility/pixel-errors";
 
 type DocumentLibraryEngine = {
 	name: string;

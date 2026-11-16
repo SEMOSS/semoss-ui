@@ -39,27 +39,27 @@ import {
 	useInfiniteScroll,
 } from "@semoss/ui/next";
 import { parseTimestampWithUtcDefault } from "@semoss/utility/date";
-import { useChatConfig } from "@/features/chat-config/use-chat-config";
-import { DownloadConversationDialog } from "@/features/room-actions/download-conversation-dialog";
+import { useChatSession } from "../chat/use-chat-session";
+import { useChatConfig } from "../chat-config/use-chat-config";
+import { DownloadConversationDialog } from "../room-actions/download-conversation-dialog";
 import {
 	renameRoom,
 	toggleRoomFavorite,
-} from "@/features/room-actions/use-room-actions";
-import { RoomAgentAvatar } from "@/features/room-list/room-agent-avatar";
+} from "../room-actions/use-room-actions";
+import { RoomName } from "../room-name/room-name";
+import { RoomAgentAvatar } from "./room-agent-avatar";
 import {
 	buildPlaygroundRoomsPixel,
 	getRoomDate,
 	groupRoomList,
 	type RoomListHeading,
 	type RoomListItem,
-} from "@/features/room-list/room-list";
+} from "./room-list";
 import {
 	ROOM_LIST_ACTION_CLASS,
 	RoomListViewMenu,
-} from "@/features/room-list/room-list-view-menu";
-import { useRoomListView } from "@/features/room-list/use-room-list-view";
-import { RoomName } from "@/features/room-name/room-name";
-import { useChatSession } from "@/hooks/use-chat-session";
+} from "./room-list-view-menu";
+import { useRoomListView } from "./use-room-list-view";
 
 /** Whether the shortcut keys read ⌘ (Apple) or Ctrl. */
 const isApplePlatform =

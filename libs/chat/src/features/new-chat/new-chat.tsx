@@ -17,21 +17,21 @@ import {
 	useTheme,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import { ROOM_PANEL_COMPONENTS } from "@/components/room/panels/room-panel.components";
-import { RoomGreeting } from "@/components/room/room-greeting";
-import { RoomInput } from "@/components/room/room-input";
-import { RoomWorkbench } from "@/components/room/room-workbench";
-import { FileDragProvider } from "@/contexts/file-drag-context";
-import { useChatConfig } from "@/features/chat-config/use-chat-config";
+import type { MCPConfig, Prompt, Workspace } from "../../types";
+import { useChatSession } from "../chat/use-chat-session";
+import { useChatConfig } from "../chat-config/use-chat-config";
+import { FileDragProvider } from "../composer/file-drag.context";
+import { RoomInput } from "../composer/room-input";
 import {
 	canChooseAgentMode,
 	offersAgentMode,
-} from "@/features/conversation/agent-mode-choice";
-import { clearAgentOptions } from "@/features/conversation/clear-agent-options";
-import { DropHighlight } from "@/features/conversation/drop-highlight";
-import { NextMessageRoomProvider } from "@/features/conversation/next-message-room.context";
-import { RoomLayout } from "@/features/conversation/room-layout";
-import { useNewRoom } from "@/features/conversation/use-new-room";
+} from "../conversation/agent-mode-choice";
+import { clearAgentOptions } from "../conversation/clear-agent-options";
+import { DropHighlight } from "../conversation/drop-highlight";
+import { NextMessageRoomProvider } from "../conversation/next-message-room.context";
+import { RoomGreeting } from "../conversation/room-greeting";
+import { RoomLayout } from "../conversation/room-layout";
+import { useNewRoom } from "../conversation/use-new-room";
 import {
 	readDeploymentNewChatDefaults,
 	readNewChatPreferences,
@@ -39,18 +39,18 @@ import {
 	resolveNewChatAgentId,
 	resolveNewChatMode,
 	writeSessionNewChat,
-} from "@/features/new-chat-preferences/new-chat-preferences";
-import { RoomHeader } from "@/features/room-header/room-header";
-import { DraftSettingsContext } from "@/features/workbench/draft-settings.context";
+} from "../new-chat-preferences/new-chat-preferences";
+import { RoomStore } from "../room/room.store";
+import { ROOM_PANEL_TYPES } from "../room/room-sidebar";
+import { RoomHeader } from "../room-header/room-header";
+import { DraftSettingsContext } from "../workbench/draft-settings.context";
+import { ROOM_PANEL_COMPONENTS } from "../workbench/room-panel.components";
+import { RoomWorkbench } from "../workbench/room-workbench";
 import {
 	NEW_ROOM_READY_PANEL_KINDS,
 	type NewRoomPanelRequest,
 	type NewRoomWorkbenchPanels,
-} from "@/features/workbench/use-workbench-panels";
-import { useChatSession } from "@/hooks/use-chat-session";
-import { RoomStore } from "@/stores/room/room.store";
-import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
-import type { MCPConfig, Prompt, Workspace } from "@/types";
+} from "../workbench/use-workbench-panels";
 
 interface NewChatProps {
 	/** Text the composer starts with. */

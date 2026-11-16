@@ -13,12 +13,12 @@ import {
 	DialogTitle,
 	toast,
 } from "@semoss/ui/next";
-import { ToolInspector } from "@/features/tool-inspector/tool-inspector";
-import { decideAgentToolAction } from "@/stores/message/agent-harness";
-import { ResponseMessageStore } from "@/stores/message/response-message.store";
-import type { RoomStore } from "@/stores/room/room.store";
-import type { ToolStore } from "@/stores/tool/tool.store";
-import { getToolEngineId, isAskExecutionMode } from "@/utility/mcp-utils";
+import { decideAgentToolAction } from "../../messages/agent-harness";
+import { ResponseMessageStore } from "../../messages/response-message.store";
+import type { ToolStore } from "../../messages/tool.store";
+import type { RoomStore } from "../../room/room.store";
+import { ToolInspector } from "../../tool-inspector/tool-inspector";
+import { getToolEngineId, isAskExecutionMode } from "../mcp-utils";
 import { ToolField } from "./tool-field";
 
 interface ToolsDefaultViewProps {

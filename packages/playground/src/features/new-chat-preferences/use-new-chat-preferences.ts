@@ -1,13 +1,13 @@
-import { useTranslation } from "@semoss/i18n";
-import { Session, useSession } from "@semoss/sdk/react";
-import { toast } from "@semoss/ui/next";
-import { getErrorMessage } from "@semoss/utility/error";
 import {
 	NEW_CHAT_PREFERENCE_KEYS,
 	type NewChatMode,
 	type NewChatPreferences,
 	readNewChatPreferences,
-} from "./new-chat-preferences";
+} from "@semoss/chat";
+import { useTranslation } from "@semoss/i18n";
+import { Session, useSession } from "@semoss/sdk/react";
+import { toast } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 
 /** What {@link useNewChatPreferences} returns. */
 interface NewChatPreferencesState extends NewChatPreferences {

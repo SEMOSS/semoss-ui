@@ -1,4 +1,4 @@
-import type { PixelMessageToolCallPart } from "@/types";
+import type { PixelMessageToolCallPart } from "../../types";
 import type { ResponseMessageStore } from "./response-message.store";
 
 /**

@@ -9,6 +9,11 @@ import {
 } from "react";
 import { matchPath, Outlet, useLocation } from "react-router";
 import {
+	Chat,
+	useCreateChatStore,
+	WorkspaceNavigationContext,
+} from "@semoss/chat";
+import {
 	cn,
 	SidebarInset,
 	SidebarProvider,
@@ -19,19 +24,15 @@ import { GlobalDialog } from "@/components/common/global-dialog";
 import { GlobalFooter } from "@/components/common/global-footer";
 import { GlobalNav } from "@/components/common/global-nav";
 import { LandingTour } from "@/components/common/landing-tour";
-import { ROOM_PANEL_COMPONENTS } from "@/components/room/panels/room-panel.components";
-import { ChatSessionContext } from "@/contexts/chat-session.context";
 import { TourContext } from "@/contexts/tour-context";
 import { NEW_CHAT_BUILD_DEFAULTS } from "@/features/chat-config/new-chat-build-defaults";
 import { PlaygroundChatConfigProvider } from "@/features/chat-config/playground-chat-config-provider";
 import { useWorkspaceNavigation } from "@/features/conversation/use-workspace-navigation";
-import { WorkspaceNavigationContext } from "@/features/conversation/workspace-navigation.context";
 import { NavigationButton } from "@/features/navigation/navigation-button";
 import { PageHeaderContext } from "@/features/navigation/page-header.context";
 import { SettingsDialogProvider } from "@/features/settings/settings-dialog-provider";
 import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
 import { useThemeTitle } from "@/hooks/use-theme-title";
-import { ChatStore } from "@/stores/chat/chat.store";
 
 export const MainLayout = observer(() => {
 	const theme = usePlaygroundTheme();
@@ -55,19 +56,7 @@ export const MainLayout = observer(() => {
 
 	const navigation = useWorkspaceNavigation(isSidebarOpen, setIsSidebarOpen);
 
-	// set up the chat store
-	const chatStore = useMemo(() => {
-		const store = new ChatStore(
-			theme,
-			ROOM_PANEL_COMPONENTS,
-			NEW_CHAT_BUILD_DEFAULTS,
-		);
-
-		// initialize it
-		store.initialize();
-
-		return store;
-	}, [theme]);
+	const chatStore = useCreateChatStore(theme, NEW_CHAT_BUILD_DEFAULTS);
 
 	// Refs for embed iframe sync
 	const iframeRefs = useRef<Record<string, HTMLIFrameElement | null>>({});
@@ -166,11 +155,7 @@ export const MainLayout = observer(() => {
 	}, [theme.tour?.show, theme.dialog]);
 
 	return (
-		<ChatSessionContext.Provider
-			value={{
-				chat: chatStore,
-			}}
-		>
+		<Chat.SessionProvider store={chatStore}>
 			<TourContext.Provider
 				value={{
 					isOpen: isTourOpen,
@@ -271,6 +256,6 @@ export const MainLayout = observer(() => {
 					</PlaygroundChatConfigProvider>
 				</SettingsDialogProvider>
 			</TourContext.Provider>
-		</ChatSessionContext.Provider>
+		</Chat.SessionProvider>
 	);
 });

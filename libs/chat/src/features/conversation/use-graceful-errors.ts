@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { type UseTranslationOptions, useTranslation } from "@semoss/i18n";
-import { useChatConfig } from "@/features/chat-config/use-chat-config";
+import { useChatConfig } from "../chat-config/use-chat-config";
 
 /**
  * Custom hook for transforming error messages into user-friendly, localized messages.

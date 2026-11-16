@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import type { RoomStore } from "@/stores/room/room.store";
+import type { RoomStore } from "../room/room.store";
 import { getPromptHistory } from "./prompt-history";
 
 test("recalls only displayed user text in reverse chronological order", () => {

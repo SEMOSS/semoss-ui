@@ -3,13 +3,13 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 import { InsightProvider } from "@semoss/sdk/react";
 import { ToolViewProvider } from "@semoss/shared";
 import { Spinner, toast } from "@semoss/ui/next";
-import { RoomProvider } from "@/contexts/room.context";
-import { useChatConfig } from "@/features/chat-config/use-chat-config";
-import { RoomActionsProvider } from "@/features/room-actions/room-actions.context";
-import { TOOL_VIEW_LIBRARIES } from "@/features/tool-views/tool-view-libraries";
-import { useChatSession } from "@/hooks/use-chat-session";
-import type { RoomStore } from "@/stores/room/room.store";
-import type { Engine } from "@/types";
+import type { Engine } from "../../types";
+import { useChatSession } from "../chat/use-chat-session";
+import { useChatConfig } from "../chat-config/use-chat-config";
+import { RoomActionsProvider } from "../room-actions/room-actions.context";
+import { TOOL_VIEW_LIBRARIES } from "../tool-views/tool-view-libraries";
+import { RoomProvider } from "./room.context";
+import type { RoomStore } from "./room.store";
 
 interface RoomScopeProps {
 	/** The room to open. */

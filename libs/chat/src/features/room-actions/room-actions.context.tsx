@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { createContext, type ReactNode, useContext, useState } from "react";
-import { SaveWorkspaceDialog } from "@/components/room/room-workspace-creation";
-import type { RoomStore } from "@/stores/room/room.store";
+import type { RoomStore } from "../room/room.store";
+import { SaveWorkspaceDialog } from "../room-settings/room-workspace-creation";
 import { DownloadConversationDialog } from "./download-conversation-dialog";
 import { type RoomActions, useRoomActions } from "./use-room-actions";
 

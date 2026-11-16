@@ -1,12 +1,12 @@
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useMemo } from "react";
-import { type ChunkStatus, useActiveIndex } from "@/hooks/use-active-index";
-import type { ResponseMessageStore } from "@/stores/message/response-message.store";
-import type { PixelMessageTextPart } from "@/types";
-import { parseChunks } from "./response-message-text/parse-chunks";
-import { ResponseMessageTextHtml } from "./response-message-text/response-message-text-html";
-import { ResponseMessageTextMd } from "./response-message-text/response-message-text-md";
+import type { PixelMessageTextPart } from "../../types";
+import { parseChunks } from "./markdown/parse-chunks";
+import { ResponseMessageTextHtml } from "./markdown/response-message-text-html";
+import { ResponseMessageTextMd } from "./markdown/response-message-text-md";
+import type { ResponseMessageStore } from "./response-message.store";
+import { type ChunkStatus, useActiveIndex } from "./use-active-index";
 
 interface ResponseMessageTextProps {
 	/** Message to render */

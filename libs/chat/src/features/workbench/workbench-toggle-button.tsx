@@ -3,9 +3,9 @@ import { observer } from "mobx-react-lite";
 import { type MouseEvent, useContext } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { cn } from "@semoss/ui/next";
-import { RoomLayoutActionsContext } from "@/features/conversation/room-layout-actions.context";
-import { HeaderIconButton } from "@/features/room-header/header-icon-button";
-import type { RoomStore } from "@/stores/room/room.store";
+import { RoomLayoutActionsContext } from "../conversation/room-layout-actions.context";
+import type { RoomStore } from "../room/room.store";
+import { HeaderIconButton } from "../room-header/header-icon-button";
 import type { NewRoomWorkbenchPanels } from "./use-workbench-panels";
 
 interface WorkbenchToggleButtonProps {

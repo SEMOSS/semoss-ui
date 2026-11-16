@@ -1,10 +1,10 @@
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "@semoss/i18n";
 import { toast } from "@semoss/ui/next";
-import { RoomInput } from "@/components/room/room-input";
-import { readRoomTurnState } from "@/features/conversation/room-turn-state";
-import { useChatSession } from "@/hooks/use-chat-session";
-import type { RoomStore } from "@/stores/room/room.store";
+import { useChatSession } from "../chat/use-chat-session";
+import { readRoomTurnState } from "../conversation/room-turn-state";
+import type { RoomStore } from "../room/room.store";
+import { RoomInput } from "./room-input";
 
 interface RoomComposerProps {
 	/** The room the composer sends to. */

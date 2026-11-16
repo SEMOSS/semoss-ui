@@ -1,6 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { useChatSession } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import { useSessionPixel } from "@semoss/sdk/react";
 import {
@@ -17,7 +18,6 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { getPlaygroundAgentLinks } from "@/features/agents/agent-links";
-import { useChatSession } from "@/hooks/use-chat-session";
 import { useRoot } from "@/hooks/use-root";
 
 /**

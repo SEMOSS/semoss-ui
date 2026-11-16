@@ -3,11 +3,11 @@ import { observer } from "mobx-react-lite";
 import { useContext } from "react";
 import { ScrollArea } from "@semoss/ui/next";
 import type { WorkbenchPanelConfig } from "@semoss/workbench";
-import { useRoom } from "@/contexts/room.context";
-import { RoomToolsConnectorsSection } from "@/features/chat-tools/components/room-tools-connectors-section";
-import { DraftSettingsContext } from "@/features/workbench/draft-settings.context";
-import { useChatSession } from "@/hooks/use-chat-session";
-import { RoomOptionsForm } from "../room-options-form";
+import { useChatSession } from "../chat/use-chat-session";
+import { RoomToolsConnectorsSection } from "../chat-tools/components/room-tools-connectors-section";
+import { useRoom } from "../room/room.context";
+import { RoomOptionsForm } from "../room-settings/room-options-form";
+import { DraftSettingsContext } from "./draft-settings.context";
 
 /**
  * The room's settings: its model, instructions, knowledge, every tool the

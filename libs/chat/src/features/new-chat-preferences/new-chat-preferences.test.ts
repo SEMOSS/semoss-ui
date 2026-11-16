@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "vitest";
-import { DEFAULT_CHAT_THEME } from "@/features/chat-config/chat-theme";
+import { DEFAULT_CHAT_THEME } from "../chat-config/chat-theme";
 import {
 	forgetSessionNewChat,
 	NEW_CHAT_PREFERENCE_KEYS,

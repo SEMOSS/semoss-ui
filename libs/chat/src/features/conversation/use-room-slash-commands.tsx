@@ -10,16 +10,16 @@ import {
 	TextQuoteIcon,
 } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
-import type { SlashCommand } from "@/components/common/lexical/slash-command/types";
-import type { PromptLibraryItem } from "@/components/prompts/prompt-library-dialog";
-import { useRoomActionsContext } from "@/features/room-actions/room-actions.context";
-import { useRoomActionItems } from "@/features/room-actions/use-room-action-items";
+import type { SlashCommand } from "../composer/lexical/slash-command/types";
+import type { PromptLibraryItem } from "../composer/prompt-library-dialog";
+import type { RoomStore } from "../room/room.store";
+import { useRoomActionsContext } from "../room-actions/room-actions.context";
+import { useRoomActionItems } from "../room-actions/use-room-action-items";
 import {
 	type NewRoomWorkbenchPanels,
 	useWorkbenchPanels,
-} from "@/features/workbench/use-workbench-panels";
-import { WorkbenchPanelIcon } from "@/features/workbench/workbench-panel-icon";
-import type { RoomStore } from "@/stores/room/room.store";
+} from "../workbench/use-workbench-panels";
+import { WorkbenchPanelIcon } from "../workbench/workbench-panel-icon";
 
 /** Other words a Workspace panel's command is found by, such as old names. */
 const PANEL_KEYWORDS: Readonly<Record<string, string[]>> = {

@@ -1,4 +1,5 @@
 import type { AgentRunStatusValue } from "@semoss/sdk";
+import type { MCPConfig, SkillConfig } from "@semoss/shared";
 
 export interface Engine {
 	engine_id: string;
@@ -355,8 +356,6 @@ export interface MCPTool {
 	};
 	title?: string;
 	original_name: string;
-	description?: string;
-	title?: string;
 	_meta: {
 		generated_on: string;
 		SMSS_MCP_UI?: {

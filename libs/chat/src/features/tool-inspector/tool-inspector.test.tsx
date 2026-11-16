@@ -11,10 +11,10 @@ import userEvent from "@testing-library/user-event";
 import { observable, runInAction } from "mobx";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import type { CodeEditorProps } from "@semoss/ui/next";
-import { ToolsDefaultView } from "@/components/mcp/tools-default-view/tools-default-view";
-import { ChatToolCard } from "@/features/chat-tools/components/chat-tool-card";
-import type { RoomStore } from "@/stores/room/room.store";
-import type { ToolStore } from "@/stores/tool/tool.store";
+import { ChatToolCard } from "../chat-tools/components/chat-tool-card";
+import { ToolsDefaultView } from "../mcp/tools-default-view/tools-default-view";
+import type { ToolStore } from "../messages/tool.store";
+import type { RoomStore } from "../room/room.store";
 import { ToolDataView } from "./tool-data-view";
 import { ToolInspector } from "./tool-inspector";
 import { formatToolPayload } from "./tool-payload";
@@ -31,10 +31,10 @@ vi.mock("@semoss/i18n", () => ({
 		i18n: { dir: () => "ltr" },
 	}),
 }));
-vi.mock("@/stores/message/agent-harness", () => ({
+vi.mock("../messages/agent-harness", () => ({
 	decideAgentToolAction: mocks.decideAgent,
 }));
-vi.mock("@/stores/message/response-message.store", () => ({
+vi.mock("../messages/response-message.store", () => ({
 	ResponseMessageStore: class {},
 }));
 vi.mock("@semoss/sdk/react", () => ({
@@ -54,7 +54,7 @@ vi.mock("@semoss/sdk/react", () => ({
 		},
 	}),
 }));
-vi.mock("@/features/connectors/use-connect-provider", () => ({
+vi.mock("../connectors/use-connect-provider", () => ({
 	useConnectProvider: () => vi.fn(),
 }));
 vi.mock("@semoss/ui/next", async (importOriginal) => {

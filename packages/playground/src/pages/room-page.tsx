@@ -1,5 +1,5 @@
 import { useParams } from "react-router";
-import { RoomScope } from "@/features/room/room-scope";
+import { Chat } from "@semoss/chat";
 import { RoomPageBody } from "@/features/room-page/room-page-body";
 
 /** The room page: the room the route names, composed by the playground. */
@@ -7,8 +7,8 @@ export const RoomPage = () => {
 	const { roomId = "" } = useParams();
 
 	return (
-		<RoomScope roomId={roomId}>
+		<Chat.Room roomId={roomId}>
 			<RoomPageBody />
-		</RoomScope>
+		</Chat.Room>
 	);
 };

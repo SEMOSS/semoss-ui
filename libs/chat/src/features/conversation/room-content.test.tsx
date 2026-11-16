@@ -1,7 +1,7 @@
 import { act, render } from "@testing-library/react";
 import type { PropsWithChildren } from "react";
 import { beforeEach, expect, test, vi } from "vitest";
-import type { RoomStore } from "@/stores/room/room.store";
+import type { RoomStore } from "../room/room.store";
 import { RoomContent } from "./room-content";
 
 const mocks = vi.hoisted(() => {
@@ -51,25 +51,25 @@ vi.mock("@semoss/ui/next", async (importOriginal) => {
 	};
 });
 
-vi.mock("@/components/message/input-message", () => ({
+vi.mock("../messages/input-message", () => ({
 	InputMessage: () => null,
 }));
-vi.mock("@/components/message/response-message", () => ({
+vi.mock("../messages/response-message", () => ({
 	ResponseMessage: () => null,
 }));
-vi.mock("@/components/room/room-input", () => ({ RoomInput: () => null }));
-vi.mock("@/contexts/file-drag-context", () => ({
+vi.mock("../composer/room-input", () => ({ RoomInput: () => null }));
+vi.mock("../composer/file-drag.context", () => ({
 	useFileDrag: () => ({ isDragging: false }),
 }));
-vi.mock("@/hooks/use-chat-session", () => ({
+vi.mock("../chat/use-chat-session", () => ({
 	useChatSession: () => ({ chat: { setSelectedModel: vi.fn() } }),
 }));
-vi.mock("@/hooks/use-graceful-errors", () => ({
+vi.mock("./use-graceful-errors", () => ({
 	useGracefulErrors: () => ({
 		getGracefulErrorMessage: (error: unknown) => String(error),
 	}),
 }));
-vi.mock("@/stores/message/response-message.store", () => ({
+vi.mock("../messages/response-message.store", () => ({
 	ResponseMessageStore: mocks.MockResponseMessageStore,
 }));
 

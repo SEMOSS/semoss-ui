@@ -10,17 +10,17 @@ import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import type { ComponentProps, ReactNode } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { ROOM_PANEL_COMPONENTS } from "@/components/room/panels/room-panel.components";
-import type { RoomInput } from "@/components/room/room-input";
-import type { RoomOptionsForm } from "@/components/room/room-options-form";
+import { DEFAULT_CHAT_THEME } from "../chat-config/chat-theme";
+import type { RoomInput } from "../composer/room-input";
 import {
 	forgetSessionNewChat,
 	readSessionNewChat,
 	writeSessionNewChat,
-} from "@/features/new-chat-preferences/new-chat-preferences";
-import { RoomStore } from "@/stores/room/room.store";
-import { RootStore } from "@/stores/root/root.store";
-import { NewRoomPage } from "./new-room-page";
+} from "../new-chat-preferences/new-chat-preferences";
+import { RoomStore } from "../room/room.store";
+import type { RoomOptionsForm } from "../room-settings/room-options-form";
+import { ROOM_PANEL_COMPONENTS } from "../workbench/room-panel.components";
+import { NewChat } from "./new-chat";
 
 const mocks = vi.hoisted(() => ({
 	createRoom: vi.fn(),
@@ -74,7 +74,7 @@ const alpha = {
 mocks.alpha = alpha;
 const root = {
 	theme: {
-		...new RootStore().theme,
+		...DEFAULT_CHAT_THEME,
 		featureFlags: { enableAgentHarness: true, modeFollowsAgent: false },
 		banner: "",
 		landing: "",
@@ -89,21 +89,12 @@ const chat = {
 	removeOptimisticRoom: vi.fn(),
 	keys: { roomCounter: 0 },
 };
-vi.mock("@/features/settings/settings-dialog.context", () => ({
-	useSettingsDialog: () => ({ openSettings: vi.fn() }),
-}));
-vi.mock("react-router", () => ({
-	useNavigate: () => mocks.navigate,
-	useSearchParams: () => [mocks.searchParams],
-}));
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 	getI18n: () => ({ t: (key: string) => key }),
 }));
-vi.mock("@/features/connectors/connector-tools", async (original) => ({
-	...(await original<
-		typeof import("@/features/connectors/connector-tools")
-	>()),
+vi.mock("../connectors/connector-tools", async (original) => ({
+	...(await original<typeof import("../connectors/connector-tools")>()),
 	readUserConnectorTools: vi.fn().mockResolvedValue(null),
 	syncRoomConnectorTools: vi.fn().mockResolvedValue(undefined),
 }));
@@ -118,8 +109,7 @@ vi.mock("@semoss/sdk/react", async (original) => ({
 	useSession: <T,>(selector: (state: typeof mocks.session) => T) =>
 		selector(mocks.session),
 }));
-vi.mock("@/hooks/use-root", () => ({ useRoot: () => ({ root }) }));
-vi.mock("@/features/chat-config/use-chat-config", () => ({
+vi.mock("../chat-config/use-chat-config", () => ({
 	useChatConfig: () => ({
 		theme: root.theme,
 		navigation: {
@@ -127,24 +117,21 @@ vi.mock("@/features/chat-config/use-chat-config", () => ({
 		},
 	}),
 }));
-vi.mock("@/hooks/use-playground-theme", () => ({
-	usePlaygroundTheme: () => root.theme,
-}));
-vi.mock("@/hooks/use-chat-session", () => ({
+vi.mock("../chat/use-chat-session", () => ({
 	useChatSession: () => ({ chat }),
 }));
 vi.mock("@semoss/ui/next", async (original) => ({
 	...(await original<typeof import("@semoss/ui/next")>()),
 	useTheme: () => ({ theme: "light" }),
 }));
-vi.mock("@/components/room/panels/room-panel.components", async () => {
-	const { ROOM_PANEL_TYPES } = await import("@/stores/room/room-sidebar");
+vi.mock("../workbench/room-panel.components", async () => {
+	const { ROOM_PANEL_TYPES } = await import("../room/room-sidebar");
 	const { ROOM_CONFIGURATION_PANEL } = await import(
-		"@/components/room/panels/room-configuration-panel"
+		"../workbench/room-configuration-panel"
 	);
 	const { FILE_PANEL_TYPES } = await import("@semoss/panels");
 	const { useNextMessageRoom } = await import(
-		"@/features/conversation/next-message-room.context"
+		"../conversation/next-message-room.context"
 	);
 	const Source = () => {
 		const draft = useNextMessageRoom();
@@ -189,13 +176,13 @@ vi.mock("@/components/room/panels/room-panel.components", async () => {
 		},
 	};
 });
-vi.mock("@/contexts/file-drag-context", () => ({
+vi.mock("../composer/file-drag.context", () => ({
 	FileDragProvider: ({ children }: { children: ReactNode }) => children,
 }));
-vi.mock("@/features/conversation/drop-highlight", () => ({
+vi.mock("../conversation/drop-highlight", () => ({
 	DropHighlight: ({ children }: { children: ReactNode }) => children,
 }));
-vi.mock("@/features/conversation/room-layout", () => ({
+vi.mock("../conversation/room-layout", () => ({
 	RoomLayout: ({
 		children,
 		workbench,
@@ -214,7 +201,7 @@ vi.mock("@/features/conversation/room-layout", () => ({
 		</>
 	),
 }));
-vi.mock("@/components/room/room-options-form", () => ({
+vi.mock("../room-settings/room-options-form", () => ({
 	RoomOptionsForm: ({
 		options,
 		onOptionsChange,
@@ -259,7 +246,7 @@ vi.mock("@/components/room/room-options-form", () => ({
 		</>
 	),
 }));
-vi.mock("@/components/room/room-input", () => ({
+vi.mock("../composer/room-input", () => ({
 	RoomInput: observer(
 		({
 			options,
@@ -359,6 +346,15 @@ vi.mock("@/components/room/room-input", () => ({
 	),
 }));
 
+/** The new chat as the playground's route renders it, from the link's search params. */
+const NewChatFromLink = () => (
+	<NewChat
+		initialPrompt={mocks.searchParams.get("prompt") ?? ""}
+		workspaceId={mocks.searchParams.get("workspaceId")}
+		knowledgeId={mocks.searchParams.get("knowledgeId")}
+	/>
+);
+
 beforeEach(() => {
 	vi.clearAllMocks();
 	vi.stubGlobal("innerWidth", 1440);
@@ -403,7 +399,7 @@ function selectWorkspaceItem(name: string) {
 
 /** Open Settings, which prepares the room, and let the preparation settle. */
 async function renderWorkspace() {
-	const result = render(<NewRoomPage />);
+	const result = render(<NewChatFromLink />);
 	selectWorkspaceItem("workspacePlaces.settings");
 	await waitFor(() => expect(mocks.createEmptyRoom).toHaveBeenCalled());
 	await act(async () => {});
@@ -592,7 +588,7 @@ test("a pending agent stays selected in Chat, and removing it ignores its late r
 	expect(mocks.refreshWorkspace).toHaveBeenCalledTimes(1);
 	fireEvent.click(screen.getByRole("button", { name: "Save default" }));
 	mocks.workspaceStatus = "SUCCESS";
-	rerender(<NewRoomPage />);
+	rerender(<NewChatFromLink />);
 	expect(screen.getByLabelText("Instructions")).toHaveValue("");
 	expect(screen.getByLabelText("Resources")).toHaveTextContent(/^local$/);
 	expect(screen.getByLabelText("Mode")).toHaveTextContent("chat");
@@ -774,7 +770,7 @@ test("Settings prepares the room, and the toggle closes and reopens it on the sa
 test("opening the Workspace on a new chat prepares its room once", async () => {
 	const room = createPreparedRoom();
 	mocks.createEmptyRoom.mockResolvedValue(room);
-	render(<NewRoomPage />);
+	render(<NewChatFromLink />);
 	fireEvent.click(
 		screen.getByRole("button", { name: "studio.openWorkspace" }),
 	);
@@ -802,7 +798,7 @@ test("closing the Workspace while the room prepares leaves it closed", async () 
 				resolvePreparation = resolve;
 			}),
 	);
-	render(<NewRoomPage />);
+	render(<NewChatFromLink />);
 	fireEvent.click(
 		screen.getByRole("button", { name: "studio.openWorkspace" }),
 	);
@@ -820,7 +816,7 @@ test("Retry after a failed preparation reopens the Workspace in the prepared roo
 	mocks.createEmptyRoom
 		.mockRejectedValueOnce(new Error("Offline"))
 		.mockResolvedValueOnce(room);
-	render(<NewRoomPage />);
+	render(<NewChatFromLink />);
 	fireEvent.click(
 		screen.getByRole("button", { name: "studio.openWorkspace" }),
 	);
@@ -832,7 +828,7 @@ test("Retry after a failed preparation reopens the Workspace in the prepared roo
 });
 
 test("a new chat's header has its toggle but no title, and its rail lists panels", () => {
-	render(<NewRoomPage />);
+	render(<NewChatFromLink />);
 	const header = screen.getByRole("banner");
 	expect(header).not.toHaveTextContent("header.newChat");
 	expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
@@ -918,7 +914,7 @@ test("connector viewers share the prepared room and transfer draft context befor
 			.mockResolvedValue();
 		room.askMessage = askMessage;
 	});
-	render(<NewRoomPage />);
+	render(<NewChatFromLink />);
 	selectWorkspaceItem("workspacePlaces.settings");
 	fireEvent.change(screen.getByLabelText("Instructions"), {
 		target: { value: "Keep draft settings" },
@@ -990,7 +986,7 @@ function preferAgent(agentId: string) {
 
 test("a new chat starts with the user's default mode and agent, and remembers the chat sent", async () => {
 	preferAgent("alpha");
-	render(<NewRoomPage />);
+	render(<NewChatFromLink />);
 	await waitFor(() =>
 		expect(screen.getByLabelText("Selected agent")).toHaveTextContent(
 			"Alpha",
@@ -1010,7 +1006,7 @@ test("a new chat starts with the user's default mode and agent, and remembers th
 test("the chat last started in this session beats the user's defaults", async () => {
 	preferAgent("alpha");
 	writeSessionNewChat("login-1", { mode: "chat", agentId: "" });
-	render(<NewRoomPage />);
+	render(<NewChatFromLink />);
 	await act(async () => {});
 
 	expect(screen.getByLabelText("Mode")).toHaveTextContent("chat");
@@ -1021,7 +1017,7 @@ test("the chat last started in this session beats the user's defaults", async ()
 
 test("a default agent the user can no longer open gives way to Default Agent", async () => {
 	preferAgent("gone");
-	render(<NewRoomPage />);
+	render(<NewChatFromLink />);
 
 	await waitFor(() =>
 		expect(screen.getByLabelText("Mode")).toHaveTextContent("agent"),
@@ -1050,7 +1046,7 @@ test("a default agent the user can no longer open gives way to Default Agent", a
 test("an agent link wins over the user's default agent", async () => {
 	preferAgent("gone");
 	mocks.searchParams = new URLSearchParams("workspaceId=alpha");
-	render(<NewRoomPage />);
+	render(<NewChatFromLink />);
 
 	await waitFor(() =>
 		expect(screen.getByLabelText("Selected agent")).toHaveTextContent(
@@ -1068,7 +1064,7 @@ test("with no session chat or user default, the theme's mode and agent apply", a
 		agentId: "alpha",
 	};
 	try {
-		render(<NewRoomPage />);
+		render(<NewChatFromLink />);
 
 		await waitFor(() =>
 			expect(screen.getByLabelText("Selected agent")).toHaveTextContent(

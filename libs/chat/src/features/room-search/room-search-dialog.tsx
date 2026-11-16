@@ -20,9 +20,9 @@ import {
 	getDateBucket,
 	parseTimestampWithUtcDefault,
 } from "@semoss/utility/date";
-import { useChatConfig } from "@/features/chat-config/use-chat-config";
-import { RoomAgentAvatar } from "@/features/room-list/room-agent-avatar";
-import { getRoomDate } from "@/features/room-list/room-list";
+import { useChatConfig } from "../chat-config/use-chat-config";
+import { RoomAgentAvatar } from "../room-list/room-agent-avatar";
+import { getRoomDate } from "../room-list/room-list";
 import { useRoomSearch } from "./use-room-search";
 
 /** The agent the results are narrowed to. */

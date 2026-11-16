@@ -5,7 +5,9 @@ import {
 	screen,
 	waitFor,
 } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { beforeEach, expect, test, vi } from "vitest";
+import { Chat, type ChatConfig, type ChatStore } from "@semoss/chat";
 import { toast } from "@semoss/ui/next";
 import { EditWorkspacePage } from "@/pages/edit-workspace-page";
 import { WorkspaceDetailPage } from "@/pages/workspace-detail-page";
@@ -34,9 +36,6 @@ vi.mock("react-router", async (original) => ({
 	...(await original<typeof import("react-router")>()),
 	useParams: () => ({ workspaceId: mocks.workspaceId }),
 	useNavigate: () => mocks.navigate,
-}));
-vi.mock("@/hooks/use-chat-session", () => ({
-	useChatSession: () => ({ chat: { editWorkspace: mocks.editWorkspace } }),
 }));
 vi.mock("@/hooks/use-root", () => ({
 	useRoot: () => ({ root: { theme: { featureFlags: {} } } }),
@@ -67,6 +66,26 @@ vi.mock("@semoss/shared", async (original) => ({
 vi.mock("@/components/workspace/workspace-chat-list", () => ({
 	WorkspaceChatList: () => null,
 }));
+
+/** The chat providers the pages read from, over this test's stub chat store. */
+const chatWrapper = ({ children }: { children: ReactNode }) => (
+	<Chat.SessionProvider
+		store={{ editWorkspace: mocks.editWorkspace } as unknown as ChatStore}
+	>
+		<Chat.ConfigProvider
+			config={
+				{
+					theme: { featureFlags: {} },
+					navigation: {},
+					newChatDefaults: {},
+					platformUrl: "",
+				} as unknown as ChatConfig
+			}
+		>
+			{children}
+		</Chat.ConfigProvider>
+	</Chat.SessionProvider>
+);
 
 beforeEach(() => {
 	vi.clearAllMocks();
@@ -118,7 +137,7 @@ test("the existing editor saves all agent settings, retains failed edits, and re
 				}),
 		)
 		.mockResolvedValueOnce(undefined);
-	render(<EditWorkspacePage />);
+	render(<EditWorkspacePage />, { wrapper: chatWrapper });
 	const name = screen.getByLabelText("form.name");
 	expect(name).toHaveValue("Research agent");
 	expect(screen.getByLabelText("about.instructions")).toHaveValue(
@@ -192,7 +211,7 @@ test("refreshes preserve dirty edits while switching agents resets the full conf
 		.spyOn(toast, "warning")
 		.mockImplementation(() => "warning");
 	mocks.editWorkspace.mockResolvedValue("Some resources were skipped");
-	const view = render(<EditWorkspacePage />);
+	const view = render(<EditWorkspacePage />, { wrapper: chatWrapper });
 	fireEvent.change(screen.getByLabelText("form.name"), {
 		target: { value: "Unsaved name" },
 	});
@@ -232,7 +251,7 @@ test("refreshes preserve dirty edits while switching agents resets the full conf
 });
 
 test("the detail view shows the shared agent definition with its attached resources", async () => {
-	render(<WorkspaceDetailPage />);
+	render(<WorkspaceDetailPage />, { wrapper: chatWrapper });
 	await screen.findByRole("button", { name: "workspace:actions.edit" });
 	expect(screen.getByText("Notes")).toBeVisible();
 	expect(screen.getByText("Files")).toBeVisible();

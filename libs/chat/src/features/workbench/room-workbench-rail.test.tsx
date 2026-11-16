@@ -4,11 +4,11 @@ import { runInAction } from "mobx";
 import type { ReactElement } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { FILE_PANEL_TYPES } from "@semoss/panels";
-import { ROOM_PANEL_COMPONENTS } from "@/components/room/panels/room-panel.components";
-import { DEFAULT_CHAT_THEME } from "@/features/chat-config/chat-theme";
-import { RoomActionsProvider } from "@/features/room-actions/room-actions.context";
-import { RoomStore } from "@/stores/room/room.store";
-import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
+import { DEFAULT_CHAT_THEME } from "../chat-config/chat-theme";
+import { RoomStore } from "../room/room.store";
+import { ROOM_PANEL_TYPES } from "../room/room-sidebar";
+import { RoomActionsProvider } from "../room-actions/room-actions.context";
+import { ROOM_PANEL_COMPONENTS } from "./room-panel.components";
 import { RoomWorkbenchRail } from "./room-workbench-rail";
 import type { NewRoomWorkbenchPanels } from "./use-workbench-panels";
 
@@ -20,7 +20,7 @@ const mocks = vi.hoisted(() => ({
 	pinned: [] as { ROOM_ID: string }[],
 }));
 
-vi.mock("@/features/chat-config/use-chat-config", () => ({
+vi.mock("../chat-config/use-chat-config", () => ({
 	useChatConfig: () => ({
 		navigation: { openRoom: vi.fn(), onRoomDeleted: mocks.onRoomDeleted },
 	}),
@@ -31,7 +31,7 @@ vi.mock("@semoss/sdk/react", async (original) => ({
 	...(await original<typeof import("@semoss/sdk/react")>()),
 	usePixel: () => ({ data: mocks.pinned, refresh: vi.fn() }),
 }));
-vi.mock("@/hooks/use-chat-session", () => ({
+vi.mock("../chat/use-chat-session", () => ({
 	useChatSession: () => ({
 		chat: {
 			keys: { roomCounter: 0 },

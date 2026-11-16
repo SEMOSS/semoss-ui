@@ -1,9 +1,9 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { type ReactNode, useState } from "react";
 import { expect, test, vi } from "vitest";
-import { RoomToolsConnectorsSection } from "@/features/chat-tools/components/room-tools-connectors-section";
-import { useRoomToolbox } from "@/features/chat-tools/use-room-toolbox";
-import type { RoomStore } from "@/stores/room/room.store";
+import { RoomToolsConnectorsSection } from "../chat-tools/components/room-tools-connectors-section";
+import { useRoomToolbox } from "../chat-tools/use-room-toolbox";
+import type { RoomStore } from "../room/room.store";
 import { RoomOptionsForm } from "./room-options-form";
 
 vi.mock("@semoss/i18n", () => ({
@@ -13,7 +13,7 @@ vi.mock("@semoss/i18n", () => ({
 		i18n: { language: "en" },
 	}),
 }));
-vi.mock("@/features/chat-config/use-chat-config", () => ({
+vi.mock("../chat-config/use-chat-config", () => ({
 	useChatConfig: () => ({
 		theme: { featureFlags: {} },
 		navigation: { openSettings: vi.fn() },
@@ -23,7 +23,7 @@ vi.mock("@semoss/shared", async (original) => ({
 	...(await original<typeof import("@semoss/shared")>()),
 	EngineSelect: () => null,
 }));
-vi.mock("@/components/mcp/mcp-overlay", () => ({
+vi.mock("../mcp/mcp-overlay", () => ({
 	MCPOverlay: ({
 		open,
 		defaultTab,
@@ -66,14 +66,14 @@ vi.mock("@/components/mcp/mcp-overlay", () => ({
 		) : null,
 }));
 
-vi.mock("@/features/connectors/use-connector-logins", () => ({
+vi.mock("../connectors/use-connector-logins", () => ({
 	useConnectorLogins: vi.fn(),
 }));
 const signIn = vi.fn();
-vi.mock("@/features/connectors/use-connect-provider", () => ({
+vi.mock("../connectors/use-connect-provider", () => ({
 	useConnectProvider: () => signIn,
 }));
-vi.mock("@/features/chat-tools/use-room-toolbox", () => ({
+vi.mock("../chat-tools/use-room-toolbox", () => ({
 	useRoomToolbox: vi.fn(),
 }));
 

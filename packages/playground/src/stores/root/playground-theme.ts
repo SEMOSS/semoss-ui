@@ -1,9 +1,9 @@
-import { isRecord } from "@semoss/utility/object";
 import {
 	type ChatTheme,
 	DEFAULT_CHAT_THEME,
 	mergeChatTheme,
-} from "@/features/chat-config/chat-theme";
+} from "@semoss/chat";
+import { isRecord } from "@semoss/utility/object";
 
 /** The playground's theme, with every default filled in. */
 export type PlaygroundTheme = ChatTheme;

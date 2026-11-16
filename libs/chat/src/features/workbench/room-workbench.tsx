@@ -7,12 +7,12 @@ import {
 } from "@semoss/panels";
 import { useIsMobile } from "@semoss/ui/next";
 import { Workbench, WorkbenchProvider } from "@semoss/workbench";
-import { RoomProvider } from "@/contexts/room.context";
-import { normalizeFolderPath } from "@/features/chat-tools/folders/folder-path";
-import { useNextMessageRoom } from "@/features/conversation/next-message-room.context";
-import { RoomWorkbenchRail } from "@/features/workbench/room-workbench-rail";
-import type { NewRoomWorkbenchPanels } from "@/features/workbench/use-workbench-panels";
-import type { RoomStore } from "@/stores/room/room.store";
+import { normalizeFolderPath } from "../chat-tools/folders/folder-path";
+import { useNextMessageRoom } from "../conversation/next-message-room.context";
+import { RoomProvider } from "../room/room.context";
+import type { RoomStore } from "../room/room.store";
+import { RoomWorkbenchRail } from "./room-workbench-rail";
+import type { NewRoomWorkbenchPanels } from "./use-workbench-panels";
 
 interface RoomWorkbenchProps {
 	/** The room owns the dock, including while this view is hidden. */

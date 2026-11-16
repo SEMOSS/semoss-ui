@@ -1,6 +1,6 @@
 import { beforeEach, expect, test, vi } from "vitest";
-import { DEFAULT_CHAT_THEME } from "@/features/chat-config/chat-theme";
-import type { Engine } from "@/types";
+import type { Engine } from "../../types";
+import { DEFAULT_CHAT_THEME } from "../chat-config/chat-theme";
 import { ChatStore } from "./chat.store";
 
 const mocks = vi.hoisted(() => {

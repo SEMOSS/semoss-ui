@@ -1,8 +1,8 @@
 import { observer } from "mobx-react-lite";
 import { cn } from "@semoss/ui/next";
-import { useFileDrag } from "@/contexts/file-drag-context";
-import type { RoomStore } from "@/stores/room/room.store";
-import { RoomComposer } from "./room-composer";
+import { useFileDrag } from "../composer/file-drag.context";
+import { RoomComposer } from "../composer/room-composer";
+import type { RoomStore } from "../room/room.store";
 import { RoomMessages } from "./room-messages";
 
 interface RoomContentProps {

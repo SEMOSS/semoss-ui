@@ -2,7 +2,7 @@ import { toJS } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import type { ToolStore } from "@/stores/tool/tool.store";
+import type { ToolStore } from "../messages/tool.store";
 import { ToolDataView } from "./tool-data-view";
 
 interface ToolInfoProps {

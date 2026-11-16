@@ -12,12 +12,6 @@ import {
 import { toast } from "@semoss/ui/next";
 import { parseTimestampWithUtcDefault } from "@semoss/utility/date";
 import type { WorkbenchPanelConfigAny } from "@semoss/workbench";
-import {
-	type NewChatBuildDefaults,
-	readDeploymentNewChatDefaults,
-	readNewChatPreferences,
-	resolveNewChatModel,
-} from "@/features/new-chat-preferences/new-chat-preferences";
 import type {
 	AbstractPixelMessage,
 	Engine,
@@ -25,9 +19,15 @@ import type {
 	PixelMessageTextPart,
 	PixelMessageToolCallPart,
 	Workspace,
-} from "@/types";
-import { throwOnPixelErrors } from "@/utility/pixel-errors";
+} from "../../types";
+import {
+	type NewChatBuildDefaults,
+	readDeploymentNewChatDefaults,
+	readNewChatPreferences,
+	resolveNewChatModel,
+} from "../new-chat-preferences/new-chat-preferences";
 import { RoomStore } from "../room/room.store";
+import { throwOnPixelErrors } from "./pixel-errors";
 
 // The chat's MobX stores (chat, room, message, tool) mutate state only inside
 // actions.

@@ -2,6 +2,7 @@ import { Bot, HelpCircle, SquarePenIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { Link, matchPath, useLocation, useParams } from "react-router";
+import { Chat } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Separator,
@@ -15,8 +16,6 @@ import {
 } from "@semoss/ui/next";
 import { MobileNavigationClose } from "@/features/navigation/mobile-navigation-close";
 import { NavigationToggle } from "@/features/navigation/navigation-toggle";
-import { RoomListSection } from "@/features/room-list/room-list-section";
-import { RoomSearchDialog } from "@/features/room-search/room-search-dialog";
 import { useRoot } from "@/hooks/use-root";
 import { AppLogo } from "./app-logo";
 import { GlobalNavItem } from "./global-nav-item";
@@ -164,7 +163,7 @@ export const GlobalNav = observer(() => {
 					</SidebarMenu>
 				</SidebarHeader>
 				{!hideChatHistory && (
-					<RoomListSection
+					<Chat.RoomList
 						isVisible={isVisible}
 						activeRoomId={activeRoomId}
 						onSearch={() => setIsSearchOpen(true)}
@@ -223,7 +222,7 @@ export const GlobalNav = observer(() => {
 				</SidebarFooter>
 			</Sidebar>
 
-			<RoomSearchDialog
+			<Chat.RoomSearch
 				open={isSearchOpen}
 				onOpenChange={setIsSearchOpen}
 			/>

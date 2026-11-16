@@ -1,6 +1,6 @@
 import { createContext } from "react";
 import type { ThemeMap } from "@semoss/shared";
-import type { NewChatBuildDefaults } from "@/features/new-chat-preferences/new-chat-preferences";
+import type { NewChatBuildDefaults } from "../new-chat-preferences/new-chat-preferences";
 
 /**
  * Where chat UI asks the host to go. Chat code never routes itself, so the

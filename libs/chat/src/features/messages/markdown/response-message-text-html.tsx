@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useTranslation } from "@semoss/i18n";
-import type { ChunkStatus } from "@/hooks/use-active-index";
-import type { RoomStore } from "@/stores/room/room.store";
+import type { RoomStore } from "../../room/room.store";
+import type { ChunkStatus } from "../use-active-index";
 import { HtmlPreviewBlock } from "./html-preview-block";
 
 interface ResponseMessageTextHtmlProps {

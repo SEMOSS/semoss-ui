@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { expect, test, vi } from "vitest";
-import type { ToolStore } from "@/stores/tool/tool.store";
 import { ResponseMessageToolGroup } from "./response-message-tool-group";
+import type { ToolStore } from "./tool.store";
 
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),

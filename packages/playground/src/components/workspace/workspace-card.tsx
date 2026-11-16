@@ -2,6 +2,7 @@ import { PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import type { Workspace } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import { AppCatalogAvatar } from "@semoss/shared";
 import {
@@ -21,7 +22,6 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { parseTimestampWithUtcDefault } from "@semoss/utility/date";
-import type { Workspace } from "@/types";
 
 interface WorkspaceCardProps {
 	workspace: Pick<Workspace, "workspace_id" | "name" | "description">;

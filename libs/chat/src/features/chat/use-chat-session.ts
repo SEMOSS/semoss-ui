@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { ChatSessionContext } from "@/contexts/chat-session.context";
+import { ChatSessionContext } from "./chat-session.context";
 
 /**
  * Access the current chat store
@@ -8,7 +8,9 @@ import { ChatSessionContext } from "@/contexts/chat-session.context";
 export const useChatSession = () => {
 	const context = useContext(ChatSessionContext);
 	if (context === undefined) {
-		throw new Error("useChatSession must be used within MainLayout");
+		throw new Error(
+			"useChatSession must be used within Chat.SessionProvider",
+		);
 	}
 
 	return context;

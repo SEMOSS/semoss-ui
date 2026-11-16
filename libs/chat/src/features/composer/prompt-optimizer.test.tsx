@@ -7,8 +7,8 @@ import {
 } from "@testing-library/react";
 import { useState } from "react";
 import { beforeEach, expect, test, vi } from "vitest";
-import type { RoomStore } from "@/stores/room/room.store";
-import { PromptOptimizer } from "./PromptOptimizer";
+import type { RoomStore } from "../room/room.store";
+import { PromptOptimizer } from "./prompt-optimizer";
 
 const run = vi.hoisted(() => vi.fn());
 vi.mock("@semoss/sdk/react", () => ({
@@ -17,7 +17,7 @@ vi.mock("@semoss/sdk/react", () => ({
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
-vi.mock("@/hooks/use-chat-session", () => ({
+vi.mock("../chat/use-chat-session", () => ({
 	useChatSession: () => ({ chat: { models: {} } }),
 }));
 const room = {

@@ -9,8 +9,8 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
-import type { ToolStore } from "@/stores/tool/tool.store";
-import { isAskExecutionMode } from "@/utility/mcp-utils";
+import { isAskExecutionMode } from "../mcp/mcp-utils";
+import type { ToolStore } from "../messages/tool.store";
 import { ToolDataView } from "./tool-data-view";
 import { ToolInfo } from "./tool-info";
 import { ToolInputValue } from "./tool-input-value";

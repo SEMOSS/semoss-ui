@@ -1,5 +1,5 @@
 import { createCommand } from "lexical";
-import type { RoomStore } from "@/stores/room/room.store";
+import type { RoomStore } from "../room/room.store";
 
 /** One user-authored prompt on the active conversation branch. */
 export interface PromptHistoryEntry {

@@ -14,19 +14,19 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { InputMessage } from "@/components/message/input-message";
-import { ResponseMessage } from "@/components/message/response-message";
-import { ConversationScrollContext } from "@/features/conversation/conversation-scroll.context";
-import { ModelRouterAttribution } from "@/features/conversation/model-router-attribution";
-import { readRoomTurnState } from "@/features/conversation/room-turn-state";
-import { useGracefulErrors } from "@/hooks/use-graceful-errors";
-import { decideAgentToolAction } from "@/stores/message/agent-harness";
-import type { InputMessageStore } from "@/stores/message/input-message.store";
-import { ResponseMessageStore } from "@/stores/message/response-message.store";
-import type { RoomStore } from "@/stores/room/room.store";
+import { decideAgentToolAction } from "../messages/agent-harness";
+import { InputMessage } from "../messages/input-message";
+import type { InputMessageStore } from "../messages/input-message.store";
+import { ResponseMessage } from "../messages/response-message";
+import { ResponseMessageStore } from "../messages/response-message.store";
+import type { RoomStore } from "../room/room.store";
+import { ConversationScrollContext } from "./conversation-scroll.context";
+import { ModelRouterAttribution } from "./model-router-attribution";
 import { RoomCompactionIndicator } from "./room-compaction-indicator";
 import { RoomGreeting } from "./room-greeting";
 import { RoomSuggestions } from "./room-suggestions";
+import { readRoomTurnState } from "./room-turn-state";
+import { useGracefulErrors } from "./use-graceful-errors";
 
 const SCROLL_THRESHOLD = 150;
 

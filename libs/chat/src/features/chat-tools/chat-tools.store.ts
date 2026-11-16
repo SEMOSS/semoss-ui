@@ -1,11 +1,11 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import { getI18n } from "@semoss/i18n";
-import { MCP_EXECUTION_ASK, MCP_EXECUTION_AUTO } from "@/constants";
-import type { RoomStore } from "@/stores/room/room.store";
-import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
-import type { ToolStore } from "@/stores/tool/tool.store";
-import type { PixelMessageToolCallPart } from "@/types";
-import { isAskExecutionMode } from "@/utility/mcp-utils";
+import type { PixelMessageToolCallPart } from "../../types";
+import { MCP_EXECUTION_ASK, MCP_EXECUTION_AUTO } from "../mcp/mcp-constants";
+import { isAskExecutionMode } from "../mcp/mcp-utils";
+import type { ToolStore } from "../messages/tool.store";
+import type { RoomStore } from "../room/room.store";
+import { ROOM_PANEL_TYPES } from "../room/room-sidebar";
 import { RoomFolderProvider } from "./folders/room-folder";
 import {
 	getConnectorToolService,

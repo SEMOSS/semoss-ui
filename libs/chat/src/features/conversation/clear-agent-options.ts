@@ -1,4 +1,4 @@
-import type { RoomStore } from "@/stores/room/room.store";
+import type { RoomStore } from "../room/room.store";
 
 /** Clears inherited agent configuration without dropping manually added context. */
 export function clearAgentOptions(

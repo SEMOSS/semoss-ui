@@ -1,12 +1,12 @@
 import { makeUserPixelMcp, runPixel } from "@semoss/sdk";
 import { getFileExplorerAdapter } from "@semoss/shared";
-import type { RoomStore } from "@/stores/room/room.store";
+import type { RoomStore } from "../room/room.store";
 import {
 	isMissingFileError,
 	parseMcpFile,
 	readRoomToolFile,
 	saveRoomToolFile,
-} from "@/stores/room/room-tool-file";
+} from "../room/room-tool-file";
 import {
 	buildUserConnectorTools,
 	CONNECTORS_GENERATOR,

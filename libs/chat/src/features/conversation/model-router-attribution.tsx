@@ -8,7 +8,7 @@ import {
 	Muted,
 	P,
 } from "@semoss/ui/next";
-import type { ModelRouting } from "@/types";
+import type { ModelRouting } from "../../types";
 
 interface ModelRouterAttributionProps {
 	/** Confirmed destination and diagnostic evidence for this individual response. */

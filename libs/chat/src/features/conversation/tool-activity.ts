@@ -1,4 +1,4 @@
-import type { ResponseMessageStore } from "@/stores/message/response-message.store";
+import type { ResponseMessageStore } from "../messages/response-message.store";
 
 /** Keep tool runs in transcript order without crossing intervening content. */
 export function groupToolActivity<T>(

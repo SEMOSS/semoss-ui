@@ -1,8 +1,8 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { useRoomActionsContext } from "@/features/room-actions/room-actions.context";
-import { RoomName } from "@/features/room-name/room-name";
+import { useRoomActionsContext } from "../room-actions/room-actions.context";
+import { RoomName } from "../room-name/room-name";
 
 /**
  * The room's name at the start of its header, as {@link RoomName} shows it in

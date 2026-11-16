@@ -3,8 +3,8 @@ import type {
 	WorkbenchPanelParams,
 	WorkbenchPanelType,
 } from "@semoss/workbench";
-import type { RoomStore } from "@/stores/room/room.store";
-import { isActiveSidebarPanel } from "@/stores/room/room-sidebar";
+import type { RoomStore } from "../room/room.store";
+import { isActiveSidebarPanel } from "../room/room-sidebar";
 
 /**
  * Whether the room's sidebar is showing the panel `type`/`config` names.

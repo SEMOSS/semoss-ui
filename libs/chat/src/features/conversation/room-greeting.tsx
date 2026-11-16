@@ -1,12 +1,12 @@
 import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
 import { Markdown } from "@semoss/ui/next";
-import { useChatConfig } from "@/features/chat-config/use-chat-config";
-import type { RoomStore } from "@/stores/room/room.store";
+import { useChatConfig } from "../chat-config/use-chat-config";
 import {
 	createMarkdownComponents,
 	createMarkdownUrlTransform,
-} from "../message/response-message-text/create-markdown-components";
+} from "../messages/markdown/create-markdown-components";
+import type { RoomStore } from "../room/room.store";
 
 interface RoomGreetingProps {
 	/** Room the greeting is rendered for. */

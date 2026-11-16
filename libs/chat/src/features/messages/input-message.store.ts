@@ -1,5 +1,5 @@
 import { makeObservable, observable } from "mobx";
-import type { InputPixelMessage } from "@/types";
+import type { InputPixelMessage } from "../../types";
 import { AbstractMessageStore } from "./abstract-message.store";
 
 /**

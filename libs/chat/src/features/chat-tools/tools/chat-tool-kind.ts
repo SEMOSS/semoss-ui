@@ -1,9 +1,9 @@
+import type { PixelMessageToolCallPart } from "../../../types";
 import {
 	type ConnectorService,
 	findConnectorTool,
-} from "@/features/connectors/connector.catalog";
-import type { PixelMessageToolCallPart } from "@/types";
-import { getToolEngineId, ROOM_MCP_ID } from "@/utility/mcp-utils";
+} from "../../connectors/connector.catalog";
+import { getToolEngineId, ROOM_MCP_ID } from "../../mcp/mcp-utils";
 import { isFolderToolName } from "./folder-tools";
 
 type ToolCall = PixelMessageToolCallPart["toolCall"];

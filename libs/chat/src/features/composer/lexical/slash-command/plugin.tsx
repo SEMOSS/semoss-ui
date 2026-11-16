@@ -1,8 +1,8 @@
 import type React from "react";
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { MentionPlugin } from "@/components/common/lexical/mention-plugin";
-import { useChatConfig } from "@/features/chat-config/use-chat-config";
+import { useChatConfig } from "../../../chat-config/use-chat-config";
+import { MentionPlugin } from "../mention-plugin";
 import { useSlashCommands } from "./context";
 import { filterSlashCommands, SlashCommandMenu } from "./menu";
 import type { SlashCommand } from "./types";

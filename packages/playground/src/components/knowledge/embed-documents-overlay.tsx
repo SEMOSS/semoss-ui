@@ -2,6 +2,7 @@
 
 import { FileIcon, XIcon } from "lucide-react";
 import { useId, useState } from "react";
+import { throwOnPixelErrors } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import { useSessionInsight } from "@semoss/sdk/react";
 import {
@@ -14,7 +15,6 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
-import { throwOnPixelErrors } from "@/utility/pixel-errors";
 
 type EmbedDocumentsOverlayProps = {
 	open: boolean;

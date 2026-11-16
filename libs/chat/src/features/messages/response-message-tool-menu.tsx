@@ -9,9 +9,9 @@ import {
 	DropdownMenuTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { decideAgentToolAction } from "@/stores/message/agent-harness";
-import type { ResponseMessageStore } from "@/stores/message/response-message.store";
-import type { ToolStore } from "@/stores/tool/tool.store";
+import { decideAgentToolAction } from "./agent-harness";
+import type { ResponseMessageStore } from "./response-message.store";
+import type { ToolStore } from "./tool.store";
 
 interface ResponseMessageToolMenuProps {
 	message: ResponseMessageStore;

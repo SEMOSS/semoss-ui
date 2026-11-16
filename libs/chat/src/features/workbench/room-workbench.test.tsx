@@ -4,12 +4,12 @@ import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import type { FileExplorerHost } from "@semoss/panels";
-import { DEFAULT_CHAT_THEME } from "@/features/chat-config/chat-theme";
-import { NextMessageRoomProvider } from "@/features/conversation/next-message-room.context";
-import { RoomLayout } from "@/features/conversation/room-layout";
-import { WorkbenchToggleButton } from "@/features/workbench/workbench-toggle-button";
-import { RoomStore } from "@/stores/room/room.store";
+import { DEFAULT_CHAT_THEME } from "../chat-config/chat-theme";
+import { NextMessageRoomProvider } from "../conversation/next-message-room.context";
+import { RoomLayout } from "../conversation/room-layout";
+import { RoomStore } from "../room/room.store";
 import { RoomWorkbench } from "./room-workbench";
+import { WorkbenchToggleButton } from "./workbench-toggle-button";
 
 const mocks = vi.hoisted(() => ({
 	explorerHost: vi.fn<(host: FileExplorerHost) => void>(),

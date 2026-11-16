@@ -2,8 +2,8 @@ import { runInAction } from "mobx";
 import { beforeEach, expect, test, vi } from "vitest";
 import { FILE_PANEL_TYPES } from "@semoss/panels";
 import type { ThemeMap } from "@semoss/shared";
-import { ROOM_PANEL_COMPONENTS } from "@/components/room/panels/room-panel.components";
-import { ToolStore } from "@/stores/tool/tool.store";
+import { ToolStore } from "../messages/tool.store";
+import { ROOM_PANEL_COMPONENTS } from "../workbench/room-panel.components";
 import { RoomStore } from "./room.store";
 import { ROOM_PANEL_TYPES } from "./room-sidebar";
 

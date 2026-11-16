@@ -11,7 +11,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { isRemovableToolbox } from "@/utility/mcp-utils";
+import { isRemovableToolbox } from "../mcp/mcp-utils";
 
 interface RoomSelectedResourcesProps {
 	/** The selected knowledge, never the entire catalog. */

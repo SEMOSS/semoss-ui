@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import type { RoomStore } from "@/stores/room/room.store";
-import type { ToolStore } from "@/stores/tool/tool.store";
-import type { PixelMessageToolCallPart } from "@/types";
+import type { PixelMessageToolCallPart } from "../../types";
+import type { ToolStore } from "../messages/tool.store";
+import type { RoomStore } from "../room/room.store";
 import { ChatToolsStore } from "./chat-tools.store";
 import { FOLDER_TOOL_NAMES } from "./tools/folder-tools";
 

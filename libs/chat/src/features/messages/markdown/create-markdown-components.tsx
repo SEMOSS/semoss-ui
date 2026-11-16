@@ -17,7 +17,7 @@ import {
 } from "@semoss/ui/next";
 import { downloadBlob } from "@semoss/utility/browser";
 import { escapeCsvValue } from "@semoss/utility/csv";
-import type { RoomStore } from "@/stores/room/room.store";
+import type { RoomStore } from "../../room/room.store";
 import { BlockHeader } from "./block-header";
 import { CodePreviewBlock } from "./code-preview-block";
 import { KNOWN_SHIKI_LANGS } from "./constants";

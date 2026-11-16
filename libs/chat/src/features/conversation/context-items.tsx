@@ -2,8 +2,8 @@ import { FileIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "@semoss/i18n";
 import { ConnectorBrandIcon } from "@semoss/shared";
-import { FilePreviewTile } from "@/components/common/file-preview-tile";
-import { findConnectorSource } from "@/features/connectors/sources/connector-sources";
+import { FilePreviewTile } from "../composer/file-preview-tile";
+import { findConnectorSource } from "../connectors/sources/connector-sources";
 import type { ContextItemsStore } from "./context-items.store";
 
 /** Props for {@link ContextItems}. */

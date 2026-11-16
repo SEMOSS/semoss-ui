@@ -1,5 +1,5 @@
 import { createContext, type ReactNode, useContext } from "react";
-import type { RoomStore } from "@/stores/room/room.store";
+import type { RoomStore } from "../room/room.store";
 
 /**
  * The room whose next message the sidebar's viewers add to, when it is not

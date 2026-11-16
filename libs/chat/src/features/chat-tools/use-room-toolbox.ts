@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from "react";
-import type { RoomStore } from "@/stores/room/room.store";
-import { readRoomToolFile } from "@/stores/room/room-tool-file";
+import type { RoomStore } from "../room/room.store";
+import { readRoomToolFile } from "../room/room-tool-file";
 import { type ToolsRead, useToolsRead } from "./use-tools-read";
 
 /**

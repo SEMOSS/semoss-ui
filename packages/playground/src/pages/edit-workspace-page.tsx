@@ -2,6 +2,7 @@ import { UsersRound } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
+import { useChatSession } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import { useConfig, useSessionPixel } from "@semoss/sdk/react";
 import {
@@ -21,7 +22,6 @@ import {
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import { getPlaygroundAgentLinks } from "@/features/agents/agent-links";
-import { useChatSession } from "@/hooks/use-chat-session";
 import { useRoot } from "@/hooks/use-root";
 
 /** The values the form was seeded with, and the agent they belong to. */

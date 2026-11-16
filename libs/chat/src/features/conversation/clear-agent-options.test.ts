@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import type { RoomStore } from "@/stores/room/room.store";
+import type { RoomStore } from "../room/room.store";
 import { clearAgentOptions } from "./clear-agent-options";
 
 test("removing a saved agent strips its defaults while retaining local Knowledge and Tools", () => {

@@ -13,6 +13,7 @@ import {
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router";
+import { throwOnPixelErrors } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import {
 	addEngineUserPermissions,
@@ -62,7 +63,6 @@ import { getFileExtension } from "@semoss/utility/file";
 import { getImageMimeType } from "@semoss/utility/image";
 import { EmbedDocumentsOverlay } from "@/components/knowledge/embed-documents-overlay";
 import { NewKnowledgeOverlay } from "@/components/knowledge/new-knowledge-mcp-overlay";
-import { throwOnPixelErrors } from "@/utility/pixel-errors";
 
 type KnowledgeEngine = {
 	engine_id: string;

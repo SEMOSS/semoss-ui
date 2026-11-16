@@ -26,7 +26,7 @@ vi.mock("@semoss/sdk/react", () => ({
 		reset: mocks.reset,
 	}),
 }));
-vi.mock("@/hooks/use-chat-session", () => ({
+vi.mock("../chat/use-chat-session", () => ({
 	useChatSession: () => ({
 		chat: {
 			keys: { roomCounter: 0 },
@@ -36,7 +36,7 @@ vi.mock("@/hooks/use-chat-session", () => ({
 		},
 	}),
 }));
-vi.mock("@/features/chat-config/use-chat-config", () => ({
+vi.mock("../chat-config/use-chat-config", () => ({
 	useChatConfig: () => ({
 		theme: { featureFlags: {}, sidebar: { chatHistoryDate: false } },
 		navigation: {

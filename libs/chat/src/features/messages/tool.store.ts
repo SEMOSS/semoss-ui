@@ -1,17 +1,17 @@
 import { makeAutoObservable } from "mobx";
 import type { PendingAgentAction } from "@semoss/sdk";
-import { MCP_EXECUTION_ASK } from "@/constants";
-import type { InputMessageStore } from "@/stores/message/input-message.store";
-import { ResponseMessageStore } from "@/stores/message/response-message.store";
-import type { RoomStore } from "@/stores/room/room.store";
 import type {
 	PixelMessageToolCallPart,
 	PixelMessageToolResultPart,
-} from "@/types";
-import { getToolAppId } from "@/utility/mcp-utils";
+} from "../../types";
+import { MCP_EXECUTION_ASK } from "../mcp/mcp-constants";
+import { getToolAppId } from "../mcp/mcp-utils";
+import type { RoomStore } from "../room/room.store";
 // direct, not through the barrel: these are plain constants, and the barrel
 // re-enters this module
 import { ROOM_PANEL_TYPES } from "../room/room-sidebar";
+import type { InputMessageStore } from "./input-message.store";
+import { ResponseMessageStore } from "./response-message.store";
 
 /**
  * Build a synthetic toolCall payload for server tools (e.g. provider-side

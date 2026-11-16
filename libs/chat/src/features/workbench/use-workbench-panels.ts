@@ -13,10 +13,10 @@ import type {
 	WorkbenchPanelParams,
 	WorkbenchPanelType,
 } from "@semoss/workbench";
-import type { ConnectorsStore } from "@/features/connectors/connectors.store";
-import { RoomLayoutActionsContext } from "@/features/conversation/room-layout-actions.context";
-import type { RoomStore } from "@/stores/room/room.store";
-import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
+import type { ConnectorsStore } from "../connectors/connectors.store";
+import { RoomLayoutActionsContext } from "../conversation/room-layout-actions.context";
+import type { RoomStore } from "../room/room.store";
+import { ROOM_PANEL_TYPES } from "../room/room-sidebar";
 
 interface WorkbenchPanelOptionBase {
 	/** Stable key; also the panel's slash command id. */

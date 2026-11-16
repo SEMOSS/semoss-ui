@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import type { CSSProperties } from "react";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { mergeChatTheme as mergePlaygroundTheme } from "@/features/chat-config/chat-theme";
+import { mergeChatTheme as mergePlaygroundTheme } from "@semoss/chat";
 import { withPlaygroundDefaults } from "@/stores/root/playground-theme";
 import { MainLayout } from "./main-layout";
 
@@ -14,14 +14,9 @@ const theme = vi.hoisted(() => ({ current: null as unknown }));
 vi.mock("@/hooks/use-playground-theme", () => ({
 	usePlaygroundTheme: () => theme.current,
 }));
-vi.mock("@/stores/chat/chat.store", () => ({
-	ChatStore: class {
-		initialize = vi.fn();
-		embeddedPageMap = {};
-	},
-}));
-vi.mock("@/components/room/panels/room-panel.components", () => ({
-	ROOM_PANEL_COMPONENTS: {},
+vi.mock("@semoss/chat", async (original) => ({
+	...(await original<typeof import("@semoss/chat")>()),
+	useCreateChatStore: () => ({ embeddedPageMap: {} }),
 }));
 vi.mock("@/components/common/global-nav", () => ({ GlobalNav: () => null }));
 vi.mock("@/components/common/global-footer", () => ({

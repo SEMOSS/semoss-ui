@@ -1,8 +1,8 @@
 import { renderHook } from "@testing-library/react";
 import { expect, test, vi } from "vitest";
-import { DEFAULT_CHAT_THEME } from "@/features/chat-config/chat-theme";
-import type { NewRoomWorkbenchPanels } from "@/features/workbench/use-workbench-panels";
-import { RoomStore } from "@/stores/room/room.store";
+import { DEFAULT_CHAT_THEME } from "../chat-config/chat-theme";
+import { RoomStore } from "../room/room.store";
+import type { NewRoomWorkbenchPanels } from "../workbench/use-workbench-panels";
 import { useRoomSlashCommands } from "./use-room-slash-commands";
 
 vi.mock("@semoss/i18n", () => ({

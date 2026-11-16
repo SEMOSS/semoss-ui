@@ -1,7 +1,7 @@
 import { runInAction } from "mobx";
 import type { ToolViewProps } from "@semoss/shared";
-import { decideAgentToolAction } from "@/stores/message/agent-harness";
-import type { ToolStore } from "@/stores/tool/tool.store";
+import { decideAgentToolAction } from "../messages/agent-harness";
+import type { ToolStore } from "../messages/tool.store";
 
 /** How a `component://` view decides its call. */
 type ToolViewDecisions = Pick<

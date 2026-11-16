@@ -8,21 +8,21 @@ import type {
 } from "@semoss/sdk";
 import { AgentStore, getSubagentRuns } from "@semoss/sdk";
 import { toError } from "@semoss/utility/error";
+import type {
+	PixelMessageSubagentPart,
+	PixelMessageToolCallPart,
+	ResponsePixelMessage,
+} from "../../types";
 import {
 	MCP_EXECUTION_AGENT_ASK,
 	MCP_EXECUTION_AGENT_AUTO,
 	MCP_EXECUTION_ASK,
 	STREAMING_PLACEHOLDER_ID,
-} from "@/constants";
-import type {
-	PixelMessageSubagentPart,
-	PixelMessageToolCallPart,
-	ResponsePixelMessage,
-} from "@/types";
+} from "../mcp/mcp-constants";
 import type { RoomStore } from "../room/room.store";
-import type { ToolStore } from "../tool/tool.store";
 import { InputMessageStore } from "./input-message.store";
 import { ResponseMessageStore } from "./response-message.store";
+import type { ToolStore } from "./tool.store";
 
 /**
  * Agent harness type sent to the backend RunAgent reactor.

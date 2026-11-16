@@ -25,20 +25,6 @@ import {
 	type WorkbenchSnapshot,
 	type WorkbenchState,
 } from "@semoss/workbench";
-import { STREAMING_PLACEHOLDER_ID } from "@/constants";
-import { ChatToolsStore } from "@/features/chat-tools/chat-tools.store";
-import { ConnectorsStore } from "@/features/connectors/connectors.store";
-import { CONNECTOR_SOURCES } from "@/features/connectors/sources/connector-sources";
-import { ContextItemsStore } from "@/features/conversation/context-items.store";
-import type { AbstractMessageStore } from "@/stores/message/abstract-message.store";
-import {
-	reconnectAgentRun,
-	reconstructAllSubagents,
-} from "@/stores/message/agent-harness";
-import { InputMessageStore } from "@/stores/message/input-message.store";
-import { ResponseMessageStore } from "@/stores/message/response-message.store";
-import { createMessageStore } from "@/stores/message/utility";
-import { ToolStore } from "@/stores/tool/tool.store";
 import type {
 	Engine,
 	InputPixelMessage,
@@ -50,7 +36,21 @@ import type {
 	Prompt,
 	ResponsePixelMessage,
 	Workspace,
-} from "@/types";
+} from "../../types";
+import { ChatToolsStore } from "../chat-tools/chat-tools.store";
+import { ConnectorsStore } from "../connectors/connectors.store";
+import { CONNECTOR_SOURCES } from "../connectors/sources/connector-sources";
+import { ContextItemsStore } from "../conversation/context-items.store";
+import { STREAMING_PLACEHOLDER_ID } from "../mcp/mcp-constants";
+import type { AbstractMessageStore } from "../messages/abstract-message.store";
+import {
+	reconnectAgentRun,
+	reconstructAllSubagents,
+} from "../messages/agent-harness";
+import { InputMessageStore } from "../messages/input-message.store";
+import { ResponseMessageStore } from "../messages/response-message.store";
+import { ToolStore } from "../messages/tool.store";
+import { createMessageStore } from "../messages/utility";
 import {
 	createRoomSidebarLayout,
 	getPanelFileMode,

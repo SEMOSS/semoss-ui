@@ -8,6 +8,7 @@ import {
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router";
+import { useChatSession, type Workspace } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import { getUserProjectPermission, type Role } from "@semoss/sdk";
 import { useSessionPixel } from "@semoss/sdk/react";
@@ -34,9 +35,7 @@ import {
 import { getErrorMessage } from "@semoss/utility/error";
 import { WorkspaceChatList } from "@/components/workspace/workspace-chat-list";
 import { getPlaygroundAgentLinks } from "@/features/agents/agent-links";
-import { useChatSession } from "@/hooks/use-chat-session";
 import { useRoot } from "@/hooks/use-root";
-import type { Workspace } from "@/types";
 
 /**
  * Renders the Workspace (Agent) Detail Page.

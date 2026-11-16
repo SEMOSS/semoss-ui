@@ -10,7 +10,7 @@ export const useChatConfig = (): ChatConfig => {
 	const config = useContext(ChatConfigContext);
 	if (!config) {
 		throw new Error(
-			"useChatConfig must be used within a ChatConfigContext",
+			"useChatConfig must be used within Chat.ConfigProvider",
 		);
 	}
 	return config;

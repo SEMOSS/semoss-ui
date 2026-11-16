@@ -12,9 +12,9 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useChatSession } from "@/hooks/use-chat-session";
-import type { RoomStore } from "@/stores/room/room.store";
-import { throwOnPixelErrors } from "@/utility/pixel-errors";
+import { throwOnPixelErrors } from "../chat/pixel-errors";
+import { useChatSession } from "../chat/use-chat-session";
+import type { RoomStore } from "../room/room.store";
 
 interface LLMOutput {
 	response?: string;

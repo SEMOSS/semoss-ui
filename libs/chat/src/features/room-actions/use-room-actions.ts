@@ -3,9 +3,9 @@ import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import { useChatConfig } from "@/features/chat-config/use-chat-config";
-import { useChatSession } from "@/hooks/use-chat-session";
-import type { ChatStore } from "@/stores/chat/chat.store";
+import type { ChatStore } from "../chat/chat.store";
+import { useChatSession } from "../chat/use-chat-session";
+import { useChatConfig } from "../chat-config/use-chat-config";
 
 /** Translates a `sidebar` key. */
 type Translate = (key: string) => string;
