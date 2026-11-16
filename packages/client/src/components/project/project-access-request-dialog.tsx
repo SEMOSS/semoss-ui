@@ -158,7 +158,7 @@ export const ProjectAccessRequestDialog = ({
 			const response = await runPixel(
 				`META | RequestEngine(engine=['${depId}'], permission=['${requestedPermission}']${
 					roleChangeComment
-						? `, comment=['${roleChangeComment}']`
+						? `, comment=["<encode>${roleChangeComment}</encode>"]`
 						: ""
 				})`,
 			);
@@ -211,7 +211,7 @@ export const ProjectAccessRequestDialog = ({
 			for (const dep of dependenciesToRequest) {
 				pixel += `META | RequestEngine(engine=['${dep.engine_id}'], permission=['${requestedPermission}']${
 					roleChangeComment
-						? `, comment=['${roleChangeComment}']`
+						? `, comment=["<encode>${roleChangeComment}</encode>"]`
 						: ""
 				})`;
 			}
@@ -265,7 +265,7 @@ export const ProjectAccessRequestDialog = ({
 			setIsLoading(true);
 
 			const response = await runPixel(
-				`RequestProject(project=['${id}'], permission=['${requested}'], comment=['${comment}'])`,
+				`RequestProject(project=['${id}'], permission=['${requested}'], comment=["<encode>${comment}</encode>"])`,
 			);
 
 			const { operationType, output } = response.pixelReturn[0];
