@@ -10,6 +10,7 @@ vi.mock("@semoss/i18n", async (importOriginal) => ({
 	getI18n: () => ({ t: (key: string) => key }),
 }));
 
+/** A tool call as a message part holds it. */
 type ToolCall = PixelMessageToolCallPart["toolCall"];
 
 /**

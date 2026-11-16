@@ -13,7 +13,7 @@ import type { UseConnectionsResult } from "./use-connections";
  * @param connect - Signs in to a provider from the click: `signInToProvider`,
  * or `connect` from {@link useConnections}.
  * @param onConnected - Called once a provider is connected, after the toast.
- * @return The handler. It starts the popup synchronously, so call it from the
+ * @returns The handler. It starts the popup synchronously, so call it from the
  * click itself, and resolves to whether the provider is connected afterwards.
  * It never rejects; a failure is told to the user and resolves to false.
  */

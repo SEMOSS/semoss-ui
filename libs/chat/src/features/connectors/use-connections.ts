@@ -17,6 +17,7 @@ import { signInToProvider } from "./connector-sign-in";
 
 /** Where one provider stands for the current session. */
 export interface ProviderConnection {
+	/** The provider's catalog entry. */
 	provider: ConnectorProvider;
 	/** Whether this deployment offers signing in with the provider. */
 	isAvailable: boolean;
@@ -80,7 +81,7 @@ export interface UseConnectionsResult {
  * whether a provider is connected comes from the session's logins, a read the
  * whole page shares, which is taken again after every sign in.
  *
- * @return The providers' state and the actions that change it.
+ * @returns The providers' state and the actions that change it.
  */
 export const useConnections = (): UseConnectionsResult => {
 	// the SDK keeps the logins current, reading them again on mount and focus
@@ -108,6 +109,7 @@ export const useConnections = (): UseConnectionsResult => {
 		};
 	}, []);
 
+	/** Reads the logins again, past any cached read. */
 	const refresh = useCallback(async (): Promise<void> => {
 		try {
 			await refreshLogins({ maxAgeMs: 0 });
@@ -116,6 +118,7 @@ export const useConnections = (): UseConnectionsResult => {
 		}
 	}, [refreshLogins]);
 
+	/** Signs in to a provider, marking it as connecting until it settles. */
 	const connect = useCallback(
 		async (providerId: ConnectorProviderId): Promise<boolean> => {
 			setConnectingProviderId(providerId);
@@ -131,6 +134,7 @@ export const useConnections = (): UseConnectionsResult => {
 		[],
 	);
 
+	/** Signs out of a provider, marking it as disconnecting until it settles. */
 	const disconnect = useCallback(
 		async (providerId: ConnectorProviderId): Promise<void> => {
 			setDisconnectingProviderId(providerId);
@@ -159,6 +163,12 @@ export const useConnections = (): UseConnectionsResult => {
 			primaryLogin !== provider.loginKey,
 	}));
 
+	/**
+	 * Whether a service's provider is connected.
+	 *
+	 * @param serviceId - The service.
+	 * @returns False for an unknown service.
+	 */
 	const isServiceReady = (serviceId: ConnectorServiceId): boolean => {
 		const service = getConnectorService(serviceId);
 		return (
@@ -171,10 +181,17 @@ export const useConnections = (): UseConnectionsResult => {
 		);
 	};
 
+	/**
+	 * Whether the server lets the sign in cover a service.
+	 *
+	 * @param serviceId - The service.
+	 * @returns True while the server does not say.
+	 */
 	const isServiceCovered = (serviceId: ConnectorServiceId): boolean =>
 		isCoveredByServer(serviceId, connectorAccess);
 
 	return {
+		// the SDK's upper-case status, in this hook's lower-case form
 		status: status.toLowerCase() as UseConnectionsResult["status"],
 		connections: connections,
 		connectingProviderId: connectingProviderId,

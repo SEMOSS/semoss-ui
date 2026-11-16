@@ -26,27 +26,16 @@ import {
 /**
  * Whether two provider lists, or the null that stands for "not known yet",
  * name the same providers in the same order.
+ *
+ * @param a - One list.
+ * @param b - The other.
+ * @returns True when they match.
  */
 const isSameProviderList = (
 	a: readonly ConnectorProviderId[] | null,
 	b: readonly ConnectorProviderId[] | null,
 ): boolean => a === b || (a !== null && b !== null && isSameArray(a, b));
 
-/**
- * One room's connectors: the Microsoft 365 and Google Workspace services
- * switched on, and the accounts they sign in with.
- *
- * The connectors are the user's, not the room's: they live in the user's own
- * folder (`mcp/playground_connector_mcp.json`), stamped
- * `SMSS_MCP_GENERATOR: PlaygroundConnectors`, and each room holds a copy in
- * its tool file, made before its first message and brought up to date
- * whenever it loads.
- *
- * Owned by the room store, and so as long lived as the room. The new-chat page
- * drafts one on its temporary room; the room it creates takes the user's
- * connectors through {@link ConnectorsStore.adopt}. React reads it with
- * `useConnectors`.
- */
 /** What {@link ConnectorsStore} holds. */
 export interface ConnectorsSnapshot {
 	/** The connector services switched on for the user, in every chat. */
@@ -76,6 +65,7 @@ export interface ConnectorsSnapshot {
 	readonly dismissedScopeNotices: readonly ConnectorProviderId[];
 }
 
+/** A room's connectors before anything is read: none switched on, nothing known. */
 const INITIAL: ConnectorsSnapshot = {
 	services: [],
 	isSavingConnectors: false,
@@ -86,10 +76,38 @@ const INITIAL: ConnectorsSnapshot = {
 	dismissedScopeNotices: [],
 };
 
+/**
+ * One room's connectors: the Microsoft 365 and Google Workspace services
+ * switched on, and the accounts they sign in with.
+ *
+ * The connectors are the user's, not the room's: they live in the user's own
+ * folder (`mcp/playground_connector_mcp.json`), stamped
+ * `SMSS_MCP_GENERATOR: PlaygroundConnectors`, and each room holds a copy in
+ * its tool file, made before its first message and brought up to date
+ * whenever it loads.
+ *
+ * Owned by the room store, and so as long lived as the room. The new-chat page
+ * drafts one on its temporary room; the room it creates takes the user's
+ * connectors through {@link ConnectorsStore.adopt}. React reads it with
+ * `useConnectors`.
+ */
 export class ConnectorsStore {
+	/** The store's state; only its own actions write it. */
 	private readonly state = new StoreState<ConnectorsSnapshot>(INITIAL);
 
+	/**
+	 * The current snapshot.
+	 *
+	 * @returns What the store holds now.
+	 */
 	getSnapshot = (): ConnectorsSnapshot => this.state.getSnapshot();
+
+	/**
+	 * Hear about every change.
+	 *
+	 * @param listener - Called after each change.
+	 * @returns Stops listening.
+	 */
 	subscribe = (listener: () => void): (() => void) =>
 		this.state.subscribe(listener);
 
@@ -128,6 +146,7 @@ export class ConnectorsStore {
 		return this.state.getSnapshot().dismissedScopeNotices;
 	}
 
+	/** The room whose tool file holds the copy and whose sidebar shows the viewers. */
 	private readonly room: RoomStore;
 
 	/**
@@ -163,7 +182,7 @@ export class ConnectorsStore {
 	}
 
 	/**
-	 * The viewers the plus menu offers: each needs its connector switched on
+	 * The viewers the Workbench rail and the slash menu offer: each needs its connector switched on
 	 * for the chat, its account signed in, and the permission it reads with in
 	 * the account's sign in, so the viewers show what the assistant can reach.
 	 * Until the logins have been read, a switched on connector is enough, since
@@ -293,7 +312,7 @@ export class ConnectorsStore {
 	 *
 	 * @param options - `isNew`: the room was just created, so it has no copy
 	 * yet; {@link ConnectorsStore.adopt} makes it before the first message.
-	 * @return Settles when all is in place. Never rejects.
+	 * @returns Settles when all is in place. Never rejects.
 	 */
 	restore = async ({
 		isNew = false,
@@ -314,7 +333,7 @@ export class ConnectorsStore {
 	 * Read the user's connectors for the new-chat page's draft, which has no
 	 * room to copy them into yet.
 	 *
-	 * @return Settles once they are read. Never rejects.
+	 * @returns Settles once they are read. Never rejects.
 	 */
 	loadUserConnectors = async (): Promise<void> => {
 		const version = this.stateVersion;
@@ -420,7 +439,7 @@ export class ConnectorsStore {
 	 * is not known.
 	 *
 	 * @param providerId - The provider.
-	 * @return False only when the server is known not to offer it.
+	 * @returns False only when the server is known not to offer it.
 	 */
 	isProviderOffered = (providerId: ConnectorProviderId): boolean =>
 		this.offeredProviders === null ||
@@ -432,13 +451,13 @@ export class ConnectorsStore {
 	 * is not known.
 	 *
 	 * @param serviceId - The service.
-	 * @return False only when the server says the sign in cannot cover it.
+	 * @returns False only when the server says the sign in cannot cover it.
 	 */
 	isServiceCovered = (serviceId: ConnectorServiceId): boolean =>
 		isCoveredByServer(serviceId, this.connectorAccess);
 
 	/**
-	 * Show a Microsoft 365 viewer in the room's sidebar.
+	 * Show a Microsoft 365 or Google Workspace viewer in the room's sidebar.
 	 *
 	 * @param service - The viewer to show.
 	 */

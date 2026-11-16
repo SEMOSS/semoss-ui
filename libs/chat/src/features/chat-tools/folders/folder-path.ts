@@ -10,6 +10,9 @@ const REGEXP_SPECIAL_CHARACTERS = /[.+^${}()|[\]\\]/g;
  * written for the model, which reads it back as the tool result.
  */
 class FolderPathError extends Error {
+	/**
+	 * @param message - Why the path is refused, written for the model.
+	 */
 	constructor(message: string) {
 		super(message);
 		this.name = "FolderPathError";

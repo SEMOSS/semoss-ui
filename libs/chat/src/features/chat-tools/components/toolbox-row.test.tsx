@@ -21,6 +21,7 @@ beforeEach(() => {
 	mockGetMcpTools.mockReset();
 });
 
+/** Render the row in a list, removable when `onRemove` is given. */
 const renderRow = (onRemove?: () => void) =>
 	render(
 		<ul>
@@ -28,6 +29,7 @@ const renderRow = (onRemove?: () => void) =>
 		</ul>,
 	);
 
+/** The row's open and close toggle. */
 const toggle = () => screen.getByRole("button", { name: /Web Search/ });
 
 test("reads its tools only once it is first opened, and shows what each does", async () => {

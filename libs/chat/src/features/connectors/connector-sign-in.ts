@@ -17,7 +17,7 @@ const SIGN_IN_FAILURE =
  * its saved response tells.
  *
  * @param response - The call's saved response or error.
- * @return True when signing in again is what the call needs.
+ * @returns True when signing in again is what the call needs.
  */
 export const isSignInFailure = (response: string | undefined): boolean =>
 	!!response && SIGN_IN_FAILURE.test(response);
@@ -28,7 +28,7 @@ export const isSignInFailure = (response: string | undefined): boolean =>
  * in popup opens before anything is awaited.
  *
  * @param providerId - The provider.
- * @return Whether the session holds the provider's login afterwards.
+ * @returns Whether the session holds the provider's login afterwards.
  * @throws PopupBlockedError when the browser blocks the sign in window.
  */
 export const signInToProvider = (

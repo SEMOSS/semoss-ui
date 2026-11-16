@@ -23,6 +23,7 @@ import type { MCPConfig } from "../../types";
 import { useChatConfig } from "../chat-config/use-chat-config";
 import { FilePreviewGrid } from "../composer/file-preview-grid";
 
+/** Props for {@link NewKnowledgeForm}. */
 interface NewKnowledgeFormProps {
 	/**
 	 * Form id. An external submit button can target this form via
@@ -39,12 +40,14 @@ interface NewKnowledgeFormProps {
 	 * this to disable their close affordances and footer buttons while the
 	 * pixel calls are in flight.
 	 */
-	onLoadingChange?: (loading: boolean) => void;
+	onLoadingChange?: (isLoading: boolean) => void;
 }
 
 /**
- * Form fields + create flow for a new VECTOR knowledge store. Renders only the
- * field grid; chrome (title, footer buttons) is provided by the parent.
+ * Form fields and create flow for a new VECTOR knowledge store: it creates the
+ * engine, uploads the files, embeds them, and, when the theme turns it on,
+ * makes the engine an MCP. Renders only the field grid; chrome (title, footer
+ * buttons) is provided by the parent.
  */
 export const NewKnowledgeForm = ({
 	formId,
@@ -60,9 +63,10 @@ export const NewKnowledgeForm = ({
 		"common",
 	]);
 
-	const showEmbeddingOptions = theme.featureFlags?.allowEmbeddingOptions;
+	const shouldShowEmbeddingOptions =
+		theme.featureFlags?.allowEmbeddingOptions;
 	const defaultEmbedderId = theme.defaultEmbedderId ?? "";
-	const runMCP = theme.featureFlags?.enableKnowledgeMCP;
+	const shouldMakeMcp = theme.featureFlags?.enableKnowledgeMCP;
 
 	const id = useId();
 	const form = useForm({
@@ -81,11 +85,18 @@ export const NewKnowledgeForm = ({
 	const [embeddingEngine, setEmbeddingEngine] = useState<Engine | null>(null);
 	const [files, setFiles] = useState<File[]>([]);
 
+	// the parent's buttons live outside the form, so it is told when to disable them
 	useEffect(() => {
 		onLoadingChange?.(isLoading);
 	}, [isLoading, onLoadingChange]);
 
-	const submitForm = async ({
+	/**
+	 * Create the knowledge store from the validated fields. A failure is shown
+	 * as the form's server error rather than thrown.
+	 *
+	 * @param values - The name and description entered.
+	 */
+	const handleSubmit = async ({
 		name,
 		description,
 	}: {
@@ -95,14 +106,15 @@ export const NewKnowledgeForm = ({
 		form.clearErrors("root.server");
 		let engineId: string;
 		try {
-			let embedderId = showEmbeddingOptions
+			let embedderId = shouldShowEmbeddingOptions
 				? embeddingEngine?.engine_id
 				: defaultEmbedderId;
-			if (!embedderId && !showEmbeddingOptions) {
-				const res = await run<[Engine[]]>(
+			// with no embedder chosen or configured, use the first one the user has
+			if (!embedderId && !shouldShowEmbeddingOptions) {
+				const embedders = await run<[Engine[]]>(
 					`MyEngines(engineTypes=["MODEL"], metaFilters=[{"tag":"embeddings"}], limit=[1], offset=[0]);`,
 				).then(throwOnPixelErrors);
-				embedderId = res.pixelReturn[0].output[0]?.engine_id;
+				embedderId = embedders.pixelReturn[0].output[0]?.engine_id;
 			}
 			if (!embedderId) {
 				form.setError("root.server", {
@@ -118,14 +130,14 @@ export const NewKnowledgeForm = ({
 				return;
 			}
 
-			const createVectorEngine = await run<
+			const created = await run<
 				[{ engine_id: string }]
 			>(`CreateVectorDatabaseEngine(
 				catalogName=["${name}"],
 				conDetails=[{"VECTOR_TYPE": "FAISS", "EMBEDDER_ENGINE_ID": "${embedderId}","DESCRIPTION":"${description}","TAGS":""}]
 			);`).then(throwOnPixelErrors);
 
-			engineId = createVectorEngine.pixelReturn[0].output.engine_id;
+			engineId = created.pixelReturn[0].output.engine_id;
 			if (!engineId) {
 				throw new Error(t("notifications:knowledge.createError"));
 			}
@@ -143,16 +155,16 @@ export const NewKnowledgeForm = ({
 			);`,
 			).then(throwOnPixelErrors);
 
-			if (runMCP) {
+			if (shouldMakeMcp) {
 				await run<[{ success: boolean }]>(
 					`MakeEngineMCP("${engineId}");`,
 				).then(throwOnPixelErrors);
 			}
-		} catch (e) {
+		} catch (error) {
 			form.setError("root.server", {
 				message:
-					e instanceof Error
-						? e.message
+					error instanceof Error
+						? error.message
 						: t("notifications:knowledge.createError"),
 			});
 			return;
@@ -165,7 +177,7 @@ export const NewKnowledgeForm = ({
 		<Form
 			form={form}
 			id={formId}
-			onSubmit={submitForm}
+			onSubmit={handleSubmit}
 			noValidate
 			aria-busy={isLoading}
 		>
@@ -216,7 +228,7 @@ export const NewKnowledgeForm = ({
 					disabled={isLoading}
 					required
 				/>
-				{showEmbeddingOptions && (
+				{shouldShowEmbeddingOptions && (
 					<Field>
 						<FieldLabel htmlFor={`${id}-embedding`}>
 							{t("knowledge:form.embeddingLabel")}
@@ -232,7 +244,7 @@ export const NewKnowledgeForm = ({
 							value={embeddingEngine?.engine_id || ""}
 							engineTypes={["MODEL"]}
 							metaFilters={[{ tag: "embeddings" }]}
-							onChange={(e) => setEmbeddingEngine(e)}
+							onChange={(engine) => setEmbeddingEngine(engine)}
 							popoverContentProps={{
 								align: "start",
 							}}
@@ -251,8 +263,8 @@ export const NewKnowledgeForm = ({
 						type="file"
 						multiple
 						accept=".pdf,.txt,.docx,.doc,.md"
-						onChange={(e) => {
-							const next = e.target.files;
+						onChange={(event) => {
+							const next = event.target.files;
 							if (next) {
 								setFiles(Array.from(next));
 							}

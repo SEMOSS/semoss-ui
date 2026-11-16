@@ -1,6 +1,7 @@
 import type { MCPConfig } from "@semoss/shared";
 import { MCP_EXECUTION_AGENT_ASK, MCP_EXECUTION_ASK } from "./mcp-constants";
 
+// Kept here for the chat's existing imports; both live in @semoss/shared.
 export { isKnowledgeMcp, splitMcpByType } from "@semoss/shared";
 
 /**
@@ -8,6 +9,9 @@ export { isKnowledgeMcp, splitMcpByType } from "@semoss/shared";
  * covering both the legacy ask flow and an agent-run tool awaiting approval
  * (which carries agent-ask instead of ask, since agent-run tools are never
  * client-dispatched — see MCP_EXECUTION_AGENT_ASK).
+ *
+ * @param execution - The tool's `SMSS_MCP_EXECUTION`.
+ * @returns Whether the call waits for the user.
  */
 export const isAskExecutionMode = (execution: string | undefined): boolean =>
 	execution === MCP_EXECUTION_ASK || execution === MCP_EXECUTION_AGENT_ASK;
@@ -17,7 +21,7 @@ export const isAskExecutionMode = (execution: string | undefined): boolean =>
  * added, not one the room's agent brings or the room's own toolbox.
  *
  * @param item - A toolbox or knowledge selection in the room's options.
- * @return Whether it can be removed.
+ * @returns Whether it can be removed.
  */
 export const isRemovableToolbox = (
 	item: Pick<MCPConfig, "fromWorkspace" | "fromRoom" | "type">,
@@ -42,6 +46,9 @@ type ToolOwnerMeta = {
  * SMSS_ENGINE_ID is the canonical key and is set for every engine type; the
  * deprecated SMSS_PROJECT_ID is only a fallback for older tool definitions. The
  * room sentinel is kept because the backend resolves room tools by it.
+ *
+ * @param meta - The tool's `_meta`.
+ * @returns The owning app's id, or empty when the tool names none.
  */
 export const getToolEngineId = (meta: ToolOwnerMeta | undefined): string =>
 	meta?.SMSS_ENGINE_ID || meta?.SMSS_PROJECT_ID || "";
@@ -51,6 +58,9 @@ export const getToolEngineId = (meta: ToolOwnerMeta | undefined): string =>
  * has to be a real catalog entry. Same preference as {@link getToolEngineId},
  * except the room sentinel resolves to empty so callers skip the lookup rather
  * than asking the catalog for an id that cannot exist.
+ *
+ * @param meta - The tool's `_meta`.
+ * @returns The owning app's catalog id, or empty for none or the room.
  */
 export const getToolAppId = (meta: ToolOwnerMeta | undefined): string => {
 	const engineId = getToolEngineId(meta);

@@ -6,6 +6,7 @@ import type { MCPConfig } from "@semoss/shared";
 import type { Workspace } from "../../types";
 import { MCPOverlay } from "./mcp-overlay";
 
+/** The picked agent's `GetWorkspace` read, changed per test. */
 const query = vi.hoisted(() => ({
 	status: "INITIAL",
 	data: null as Workspace | null,
@@ -37,6 +38,7 @@ vi.mock("@semoss/shared", () => ({
 vi.mock("../knowledge/new-knowledge-form", () => ({
 	NewKnowledgeForm: () => null,
 }));
+// Buttons stand in for the agent picker's choices
 vi.mock("./agent-selector", () => ({
 	AgentSelector: ({
 		onChange,
@@ -95,6 +97,7 @@ vi.mock("./agent-selector", () => ({
 		</>
 	),
 }));
+/** Knowledge the user added themselves, which survives an agent change. */
 const local: MCPConfig = {
 	id: "local",
 	name: "Local handbook",
@@ -276,19 +279,20 @@ test("busy conversations cannot save an open overlay", () => {
 });
 
 test("returns keyboard focus to the Settings Add button after Cancel", async () => {
+	/** Opens the overlay from a button, as Settings' Add does. */
 	function SettingsPicker() {
-		const [open, setOpen] = useState(false);
+		const [isOpen, setIsOpen] = useState(false);
 		return (
 			<>
-				<button type="button" onClick={() => setOpen(true)}>
+				<button type="button" onClick={() => setIsOpen(true)}>
 					Add knowledge
 				</button>
 				<MCPOverlay
-					open={open}
+					open={isOpen}
 					defaultTab="AGENT"
 					values={[]}
 					agentEditable
-					onClose={() => setOpen(false)}
+					onClose={() => setIsOpen(false)}
 				/>
 			</>
 		);

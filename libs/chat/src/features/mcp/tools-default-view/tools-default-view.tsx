@@ -21,20 +21,22 @@ import { ToolInspector } from "../../tool-inspector/tool-inspector";
 import { getToolEngineId, isAskExecutionMode } from "../mcp-utils";
 import { ToolField } from "./tool-field";
 
+/** Props for {@link ToolsDefaultView}. */
 interface ToolsDefaultViewProps {
-	/** Room */
+	/** The room the call belongs to. */
 	room: RoomStore;
 
-	/** Id of the app */
+	/** Id of the app (project or engine) whose tools hold the call's schema. */
 	app: string;
 
-	/** Id of the message */
+	/** Id of the message that made the call. */
 	message: string;
 
-	/** Connected tool */
+	/** The tool call. */
 	tool: ToolStore;
 }
 
+/** The JSON schema of one tool parameter, as `GetMCPTools` returns it. */
 interface FieldSchema {
 	type?: string;
 	enum?: string[];
@@ -49,6 +51,12 @@ interface FieldSchema {
 	description?: string;
 }
 
+/**
+ * The default view of an MCP tool call: a form built from the tool's input
+ * schema (read with `GetMCPTools`) until the call has run, then the inspector's
+ * read-only record. Executing runs the tool, decides an agent run's pending
+ * action, or hands a recorded Playwright script to the browser extension.
+ */
 export const ToolsDefaultView = ({
 	room,
 	app,
@@ -56,7 +64,7 @@ export const ToolsDefaultView = ({
 	tool,
 }: ToolsDefaultViewProps) => {
 	const { t } = useTranslation("tool");
-	// the call's json reads the room's options too
+	// The call's json reads the room's options too, so select through the room
 	const { status, metadataOriginalName, originalName, title, execution } =
 		useRoomSelector(tool.room, () => {
 			const json = tool.json;
@@ -71,9 +79,6 @@ export const ToolsDefaultView = ({
 			};
 		});
 
-	/*
-	 * Library hooks
-	 */
 	const getMCP = usePixel<{
 		tools: {
 			name: string;
@@ -98,23 +103,23 @@ export const ToolsDefaultView = ({
 		},
 	});
 
-	/*
-	 * State
-	 */
 	const [data, setData] = useState<Record<string, unknown>>(
 		tool.parameters || {},
 	);
 	const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-	const [showOptional, setShowOptional] = useState<boolean>(false);
-	const [showExtensionDialog, setShowExtensionDialog] =
+	const [isOptionalShown, setIsOptionalShown] = useState<boolean>(false);
+	const [isExtensionDialogOpen, setIsExtensionDialogOpen] =
 		useState<boolean>(false);
-	const [extensionCheckRetrying, setExtensionCheckRetrying] =
+	const [isRetryingExtensionCheck, setIsRetryingExtensionCheck] =
 		useState<boolean>(false);
-	const extensionIsOpen = useRef<boolean>(false);
+	// Whether the browser extension's panel last said it is open
+	const isExtensionOpenRef = useRef<boolean>(false);
 
+	// A browser automation tool names its recorded Playwright script here
 	const scriptForBrowserAutomation =
 		typeof data.recordedFile === "string" ? data.recordedFile : "";
 
+	// Follow the extension's panel opening and closing
 	useEffect(() => {
 		const handleMessage = (event: MessageEvent) => {
 			if (event.origin !== window.location.origin) {
@@ -122,11 +127,11 @@ export const ToolsDefaultView = ({
 			}
 
 			if (event.data?.type === "SMSS_EXTENSION_OPENED") {
-				extensionIsOpen.current = true;
+				isExtensionOpenRef.current = true;
 			}
 
 			if (event.data?.type === "SMSS_EXTENSION_CLOSED") {
-				extensionIsOpen.current = false;
+				isExtensionOpenRef.current = false;
 			}
 		};
 
@@ -137,12 +142,8 @@ export const ToolsDefaultView = ({
 		};
 	}, []);
 
-	/*
-	 * Constants
-	 */
-	// Separate required and optional fields
-	const showResponse = status === "SUCCESS";
-	const toolFailed = status === "ERROR" || status === "CANCELLED";
+	const hasResponse = status === "SUCCESS";
+	const hasFailed = status === "ERROR" || status === "CANCELLED";
 	const foundTool =
 		getMCP.status === "SUCCESS"
 			? getMCP.data.tools.find(
@@ -165,17 +166,23 @@ export const ToolsDefaultView = ({
 
 	// The call is over (succeeded or not), so the form is no longer actionable
 	// and the arguments it ran with become part of the record to display.
-	const hasExecuted = showResponse || toolFailed;
+	const hasExecuted = hasResponse || hasFailed;
 
-	/*
-	 * Functions
+	/**
+	 * Sets one parameter in the form's draft.
+	 *
+	 * @param field - The parameter's name.
+	 * @param value - Its next value.
 	 */
-	const handleChange = (field: string, value: unknown) => {
+	const handleChange = (field: string, value: unknown): void => {
 		setData((prev) => ({ ...prev, [field]: value }));
 	};
 
 	/**
-	 * Check if extension panel is open by actively pinging it
+	 * Checks that the browser extension's panel is open by pinging it, since a
+	 * Playwright script can only run there.
+	 *
+	 * @returns Whether it answered within two seconds; true when the call has no script.
 	 */
 	const checkExtensionAvailable = async (): Promise<boolean> => {
 		if (!scriptForBrowserAutomation) {
@@ -226,14 +233,14 @@ export const ToolsDefaultView = ({
 		});
 	};
 
-	// Tool Execution
-	const handleSubmit = async () => {
+	/** Runs the call with the form's parameters and records its result on the room. */
+	const handleSubmit = async (): Promise<void> => {
 		// Check if extension is available for Playwright scripts BEFORE setting isSubmitting
 		if (scriptForBrowserAutomation) {
 			const extensionAvailable = await checkExtensionAvailable();
 
 			if (!extensionAvailable) {
-				setShowExtensionDialog(true);
+				setIsExtensionDialogOpen(true);
 				return; // Stop execution until user opens extension
 			}
 		}
@@ -275,8 +282,6 @@ export const ToolsDefaultView = ({
 				);
 				const scriptJson = scriptResponse.pixelReturn[0].output;
 
-				// Log the fetched script to console
-
 				// Send script to browser extension
 				window.postMessage(
 					{
@@ -310,13 +315,13 @@ export const ToolsDefaultView = ({
 			output = (error as Error).toString();
 			success = false;
 		}
-		const m = room.getMessage(message);
+		const responseMessage = room.getMessage(message);
 		// Only process the tool response if the tool is still open
-		if (m && m instanceof ResponseMessageStore && tool.isOpen) {
+		if (responseMessage instanceof ResponseMessageStore && tool.isOpen) {
 			// The store owns the response and the executed parameters from
 			// here on, so this view renders straight off the tool.
 			room.processTool(
-				m.id,
+				responseMessage.id,
 				tool.id,
 				output,
 				success ? "success" : "error",
@@ -326,15 +331,22 @@ export const ToolsDefaultView = ({
 		setIsSubmitting(false);
 	};
 
-	// Completed calls use the inspector's read-only payload view.
+	/**
+	 * Draws a list of the form's fields. Completed calls use the inspector's
+	 * read-only payload view instead.
+	 *
+	 * @param fields - The parameters to draw, each with its schema.
+	 * @param required - Whether these are the tool's required parameters.
+	 * @returns One `ToolField` per parameter.
+	 */
 	const renderFields = (fields: [string, FieldSchema][], required: boolean) =>
 		fields.map(([fieldName, fieldSchema]) => (
 			<ToolField
 				key={fieldName}
 				fieldName={fieldName}
 				fieldSchema={fieldSchema}
-				required={required && !showResponse && !isAutoExecuting}
-				disabled={showResponse || !!isAutoExecuting}
+				required={required && !hasResponse && !isAutoExecuting}
+				disabled={hasResponse || !!isAutoExecuting}
 				value={data[fieldName] ?? ""}
 				onChange={(val) => handleChange(fieldName, val)}
 			/>
@@ -415,14 +427,14 @@ export const ToolsDefaultView = ({
 													variant="outline"
 													size="sm"
 													onClick={() =>
-														setShowOptional(
-															!showOptional,
+														setIsOptionalShown(
+															!isOptionalShown,
 														)
 													}
 													className="w-full"
 												>
 													{t(
-														showOptional
+														isOptionalShown
 															? "form.hideOptionalFields"
 															: "form.showOptionalFields",
 														{
@@ -430,7 +442,7 @@ export const ToolsDefaultView = ({
 														},
 													)}
 												</Button>
-												{showOptional &&
+												{isOptionalShown &&
 													renderFields(
 														optionalFields,
 														false,
@@ -475,8 +487,8 @@ export const ToolsDefaultView = ({
 
 			{/* Extension Not Available Dialog */}
 			<Dialog
-				open={showExtensionDialog}
-				onOpenChange={setShowExtensionDialog}
+				open={isExtensionDialogOpen}
+				onOpenChange={setIsExtensionDialogOpen}
 			>
 				<DialogContent>
 					<DialogHeader>
@@ -503,19 +515,19 @@ export const ToolsDefaultView = ({
 					<DialogFooter className="gap-2">
 						<Button
 							variant="outline"
-							onClick={() => setShowExtensionDialog(false)}
+							onClick={() => setIsExtensionDialogOpen(false)}
 						>
 							{t("extension.cancel")}
 						</Button>
 						<Button
 							onClick={async () => {
-								setExtensionCheckRetrying(true);
+								setIsRetryingExtensionCheck(true);
 								const available =
 									await checkExtensionAvailable();
-								setExtensionCheckRetrying(false);
+								setIsRetryingExtensionCheck(false);
 
 								if (available) {
-									setShowExtensionDialog(false);
+									setIsExtensionDialogOpen(false);
 									// Retry the execution
 									handleSubmit();
 								} else {
@@ -525,9 +537,9 @@ export const ToolsDefaultView = ({
 									);
 								}
 							}}
-							disabled={extensionCheckRetrying}
+							disabled={isRetryingExtensionCheck}
 						>
-							{extensionCheckRetrying ? (
+							{isRetryingExtensionCheck ? (
 								<>
 									<Loader2 className="me-2 h-4 w-4 animate-spin" />
 									{t("extension.checking")}

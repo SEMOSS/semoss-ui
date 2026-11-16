@@ -5,6 +5,7 @@ import {
 	groupConnectorTools,
 } from "./group-connector-tools";
 
+/** A toolbox tool that runs `reactor`. */
 const tool = (reactor: string, title = reactor): ToolboxTool => ({
 	name: reactor,
 	reactor: reactor,
@@ -14,6 +15,7 @@ const tool = (reactor: string, title = reactor): ToolboxTool => ({
 	parameters: [],
 });
 
+/** Connector access with every provider offered, covered, and signed in. */
 const access = (overrides: Partial<ConnectorAccess> = {}): ConnectorAccess => ({
 	isProviderOffered: () => true,
 	isServiceCovered: () => true,
@@ -21,6 +23,7 @@ const access = (overrides: Partial<ConnectorAccess> = {}): ConnectorAccess => ({
 	...overrides,
 });
 
+/** A service label the test can predict. */
 const label = (service: { id: string }): string => `name:${service.id}`;
 
 describe("groupConnectorTools", () => {

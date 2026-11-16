@@ -33,18 +33,22 @@ export interface ConnectorTool {
 
 /** An app within a provider, and the tools it brings. */
 export interface ConnectorService {
+	/** The service. */
 	id: ConnectorServiceId;
+	/** The account it signs in with. */
 	provider: ConnectorProviderId;
 	/**
 	 * Key `connectorAccess` in `/api/config` reports the service under, within
 	 * its provider.
 	 */
 	accessKey: string;
+	/** The reactors it exposes as tools, with how each runs. */
 	tools: readonly ConnectorTool[];
 }
 
 /** How the UI and the backend refer to a provider. */
 export interface ConnectorProvider {
+	/** The provider. */
 	id: ConnectorProviderId;
 	/** Key `/api/auth/logins` reports the provider's session login under. */
 	loginKey: string;
@@ -59,14 +63,23 @@ export interface ConnectorProvider {
 }
 
 /**
- * Read tools run on their own. Anything that sends, invites, shares, uploads,
- * moves, or deletes asks first, so the assistant can prepare it but never do it
- * behind the user's back.
+ * A tool that runs on its own. Read tools run on their own; anything that
+ * sends, invites, shares, uploads, moves, or deletes asks first, so the
+ * assistant can prepare it but never do it behind the user's back.
+ *
+ * @param reactor - The reactor the tool runs.
+ * @returns The tool.
  */
 const auto = (reactor: string): ConnectorTool => ({
 	reactor: reactor,
 	execution: "auto",
 });
+/**
+ * A tool that waits for the user to approve each call.
+ *
+ * @param reactor - The reactor the tool runs.
+ * @returns The tool.
+ */
 const ask = (reactor: string): ConnectorTool => ({
 	reactor: reactor,
 	execution: "ask",
@@ -116,7 +129,7 @@ const CALENDAR_OPERATIONS: readonly ConnectorOperation[] = [
  *
  * @param prefix - What the app's reactor names start with, such as `GoogleGmail`.
  * @param operations - The operations the app offers.
- * @return The app's tools.
+ * @returns The app's tools.
  */
 const operationTools = (
 	prefix: string,
@@ -249,10 +262,12 @@ export const CONNECTOR_PROVIDERS: readonly ConnectorProvider[] = [
 	},
 ];
 
+/** Each service by its id. */
 const SERVICES_BY_ID = new Map(
 	CONNECTOR_SERVICES.map((service) => [service.id, service]),
 );
 
+/** Each connector tool, with its service, by the reactor it runs. */
 const TOOLS_BY_REACTOR = new Map(
 	CONNECTOR_SERVICES.flatMap((service) =>
 		service.tools.map((tool) => [tool.reactor, { service, tool }] as const),
@@ -275,7 +290,7 @@ export const CONNECTORS_GENERATOR = "PlaygroundConnectors";
  * A service by id.
  *
  * @param id - The service.
- * @return Its catalog entry, or undefined for an unknown id.
+ * @returns Its catalog entry, or undefined for an unknown id.
  */
 export const getConnectorService = (id: string): ConnectorService | undefined =>
 	SERVICES_BY_ID.get(id as ConnectorServiceId);
@@ -287,7 +302,7 @@ export const getConnectorService = (id: string): ConnectorService | undefined =>
  * @param availableProviders - The deployment's providers, from the SDK's
  * system config.
  * @param provider - The provider to look for.
- * @return True when the provider can be signed in to.
+ * @returns True when the provider can be signed in to.
  */
 export const isProviderOffered = (
 	availableProviders:
@@ -305,7 +320,7 @@ export const isProviderOffered = (
  * A provider by id.
  *
  * @param id - The provider.
- * @return Its catalog entry.
+ * @returns Its catalog entry.
  */
 export const getConnectorProvider = (
 	id: ConnectorProviderId,
@@ -323,16 +338,12 @@ export const getConnectorProvider = (
  * The service and policy behind a connector tool.
  *
  * @param reactor - The reactor a tool runs.
- * @return The catalog entry, or undefined when the reactor is not a connector.
+ * @returns The catalog entry, or undefined when the reactor is not a connector.
  */
 export const findConnectorTool = (
 	reactor: string | undefined,
 ): { service: ConnectorService; tool: ConnectorTool } | undefined =>
 	reactor ? TOOLS_BY_REACTOR.get(reactor) : undefined;
-
-/** A reactor's words: `MicrosoftOutlookListMail` is Microsoft Outlook List Mail. */
-const splitReactorWords = (reactor: string): string[] =>
-	reactor.split(/(?<=[a-z0-9])(?=[A-Z])/);
 
 /**
  * What each connector tool does, without the provider and app its service
@@ -341,8 +352,9 @@ const splitReactorWords = (reactor: string): string[] =>
  */
 const ACTIONS_BY_REACTOR = new Map(
 	CONNECTOR_SERVICES.flatMap((service) => {
+		// each reactor's words: `MicrosoftOutlookListMail` is Microsoft Outlook List Mail
 		const words = service.tools.map((tool) =>
-			splitReactorWords(tool.reactor),
+			tool.reactor.split(/(?<=[a-z0-9])(?=[A-Z])/),
 		);
 		if (words.length === 0) {
 			return [];
@@ -369,7 +381,7 @@ const ACTIONS_BY_REACTOR = new Map(
  *
  * @param reactor - The reactor the tool runs.
  * @param title - The tool's title.
- * @return The title to show.
+ * @returns The title to show.
  */
 export const getConnectorToolTitle = (
 	reactor: string,
@@ -383,7 +395,7 @@ export const getConnectorToolTitle = (
  * Keep only known service ids, in catalog order and without repeats.
  *
  * @param ids - Candidate ids, possibly from storage.
- * @return The known ids.
+ * @returns The known ids.
  */
 export const sanitizeConnectorServices = (
 	ids: readonly unknown[],
@@ -397,6 +409,12 @@ export const sanitizeConnectorServices = (
 /** One tool in an MCP definition file. */
 export type McpTool = Record<string, unknown>;
 
+/**
+ * A tool's `_meta`, where its reactor, generator, and execution are kept.
+ *
+ * @param tool - A tool from an MCP definition file.
+ * @returns Its metadata, or null when it has none.
+ */
 const getToolMeta = (tool: McpTool): Record<string, unknown> | null =>
 	isRecord(tool._meta) ? tool._meta : null;
 
@@ -404,7 +422,7 @@ const getToolMeta = (tool: McpTool): Record<string, unknown> | null =>
  * The tools an MCP definition file holds.
  *
  * @param mcpJson - The parsed file, or anything else when there is none.
- * @return Its tools; none for a missing or malformed file.
+ * @returns Its tools; none for a missing or malformed file.
  */
 export const readMcpTools = (mcpJson: unknown): McpTool[] =>
 	isRecord(mcpJson) && Array.isArray(mcpJson.tools)
@@ -416,7 +434,7 @@ export const readMcpTools = (mcpJson: unknown): McpTool[] =>
  * {@link CONNECTORS_GENERATOR}.
  *
  * @param mcpJson - The parsed file.
- * @return The connector tools, in the file's order.
+ * @returns The connector tools, in the file's order.
  */
 export const readConnectorTools = (mcpJson: unknown): McpTool[] =>
 	readMcpTools(mcpJson).filter(
@@ -430,7 +448,7 @@ export const readConnectorTools = (mcpJson: unknown): McpTool[] =>
  * were kept for the user, a tool a connector service runs.
  *
  * @param tool - A tool from a room's file.
- * @return True for a connector tool.
+ * @returns True for a connector tool.
  */
 const isConnectorTool = (tool: McpTool): boolean => {
 	const meta = getToolMeta(tool);
@@ -449,7 +467,7 @@ const isConnectorTool = (tool: McpTool): boolean => {
  * `disabled`.
  *
  * @param tools - Tools from an MCP definition file.
- * @return The services, in catalog order.
+ * @returns The services, in catalog order.
  */
 export const getConnectorServices = (
 	tools: readonly McpTool[],
@@ -480,7 +498,7 @@ export const getConnectorServices = (
  * @param roomMcpJson - The room's parsed `mcp/pixel_mcp.json`, or null when it
  * has none.
  * @param userTools - The user's connector tools.
- * @return The file to write, or null when the room already holds exactly the
+ * @returns The file to write, or null when the room already holds exactly the
  * user's connector tools.
  */
 export const mergeUserConnectorTools = (
@@ -515,7 +533,7 @@ export const mergeUserConnectorTools = (
  * approval card sits next to the message that proposed them.
  *
  * @param services - The services to switch on.
- * @return The tools to write with `MakeUserPixelMCP`.
+ * @returns The tools to write with `MakeUserPixelMCP`.
  */
 export const buildUserConnectorTools = (
 	services: readonly ConnectorServiceId[],

@@ -3,6 +3,7 @@ import { isAskExecutionMode } from "../../mcp/mcp-utils";
 
 /** One argument a tool takes, as its input schema describes it. */
 export interface ChatToolParameter {
+	/** The argument's name, as the model passes it. */
 	name: string;
 	/** What the schema says the argument is for, or `""`. */
 	description: string;
@@ -20,6 +21,7 @@ export interface ChatToolInfo {
 	description: string;
 	/** Whether a call runs on its own or waits for the user. */
 	execution: "auto" | "ask";
+	/** The arguments the tool takes, required ones first. */
 	parameters: ChatToolParameter[];
 }
 

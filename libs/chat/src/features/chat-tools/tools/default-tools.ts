@@ -27,7 +27,14 @@ export const DEFAULT_TOOL_MODES: readonly DefaultToolMode[] = [
 	"disabled",
 ];
 
-const isMode = (value: unknown): value is DefaultToolMode =>
+/**
+ * Whether a value is a default tool mode, such as a stored setting or what a
+ * select reports.
+ *
+ * @param value - The value to check.
+ * @return Whether it is `auto`, `ask`, or `disabled`.
+ */
+export const isDefaultToolMode = (value: unknown): value is DefaultToolMode =>
 	DEFAULT_TOOL_MODES.includes(value as DefaultToolMode);
 
 /**
@@ -45,7 +52,9 @@ export const getDefaultToolMode = (
 	name: FolderToolName,
 ): DefaultToolMode => {
 	const stored = isRecord(setting) ? setting[name] : undefined;
-	return isMode(stored) ? stored : getUsualFolderToolExecution(name);
+	return isDefaultToolMode(stored)
+		? stored
+		: getUsualFolderToolExecution(name);
 };
 
 /**

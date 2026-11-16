@@ -36,8 +36,11 @@ const UNSAFE_ASSET_PATH = /["\\]/;
 
 /** One row of a `Browse*Assets` listing. */
 interface AssetRow {
+	/** The entry's own name. */
 	name?: unknown;
+	/** `directory` for a folder; anything else is a file. */
 	type?: unknown;
+	/** When the entry last changed, as the server reports it. */
 	lastModified?: unknown;
 }
 
@@ -62,6 +65,12 @@ export class AssetFolderProvider implements WorkFolderProvider {
 		readonly root: string,
 	) {}
 
+	/**
+	 * List a directory's direct children, leaving out reserved entries.
+	 *
+	 * @param path - A normalized directory path; `""` is the root.
+	 * @return The entries.
+	 */
 	async list(path: string): Promise<FolderEntry[]> {
 		const output = await this.run(
 			this.space.assets.browse(this.toAssetPath(path, true)),
@@ -91,6 +100,13 @@ export class AssetFolderProvider implements WorkFolderProvider {
 		}, []);
 	}
 
+	/**
+	 * Read a file's bytes.
+	 *
+	 * @param path - A normalized file path.
+	 * @return The file's contents.
+	 * @throws FolderToolError when the contents do not come back as base64.
+	 */
 	async readFile(path: string): Promise<Blob> {
 		const output = await this.run(
 			this.space.assets.read(this.toAssetPath(path, false), true),
@@ -108,6 +124,12 @@ export class AssetFolderProvider implements WorkFolderProvider {
 		return new Blob([bytes.slice()]);
 	}
 
+	/**
+	 * Create a file, or replace its contents, with text.
+	 *
+	 * @param path - A normalized file path.
+	 * @param content - The file's new contents.
+	 */
 	async writeText(path: string, content: string): Promise<void> {
 		// base64 carries any text, including a literal closing encode marker
 		// that would end a plain `<encode>` block early
@@ -121,12 +143,24 @@ export class AssetFolderProvider implements WorkFolderProvider {
 		);
 	}
 
+	/**
+	 * Create a directory and any missing parents.
+	 *
+	 * @param path - A normalized directory path.
+	 */
 	async createDirectory(path: string): Promise<void> {
 		await this.run(
 			this.space.assets.createDirectory(this.toAssetPath(path, false)),
 		);
 	}
 
+	/**
+	 * Move or rename an entry.
+	 *
+	 * @param from - The entry's normalized path.
+	 * @param to - Where it goes; nothing may exist there.
+	 * @throws FolderToolError when `from` is missing or `to` is taken.
+	 */
 	async move(from: string, to: string): Promise<void> {
 		const source = await this.stat(from);
 		if (!source) {
@@ -145,12 +179,24 @@ export class AssetFolderProvider implements WorkFolderProvider {
 		);
 	}
 
+	/**
+	 * Delete an entry, a folder with everything in it.
+	 *
+	 * @param path - The entry's normalized path.
+	 * @param _recursive - Unused: the tool layer checks it before calling.
+	 */
 	async remove(path: string, _recursive: boolean): Promise<void> {
 		// the reactor deletes folders with their contents; the tool layer has
 		// already confirmed a non-empty folder was meant to go
 		await this.run(this.space.assets.remove(this.toAssetPath(path, false)));
 	}
 
+	/**
+	 * Describe one entry, found by listing its parent.
+	 *
+	 * @param path - A normalized path; `""` is the folder root.
+	 * @return The entry, or null when it does not exist or is reserved.
+	 */
 	async stat(path: string): Promise<FolderEntry | null> {
 		if (!path) {
 			return {

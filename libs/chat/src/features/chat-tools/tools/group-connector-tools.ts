@@ -43,7 +43,9 @@ interface ConnectorToolGroup {
 
 /** One account's problem, naming every app in the toolbox it stops. */
 interface ConnectorAccessNotice {
+	/** The account, such as Microsoft. */
 	providerId: ConnectorProviderId;
+	/** What stops the account's apps. */
 	issue: ConnectorAccessIssue;
 	/** The names of the services it stops, in display order. */
 	serviceNames: string[];

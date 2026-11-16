@@ -12,7 +12,7 @@ import {
  *
  * @param connectorAccess - The config's `connectorAccess`.
  * @param providerId - The provider.
- * @return Whether each app can work, by the app's access key, or null when
+ * @returns Whether each app can work, by the app's access key, or null when
  * the config does not say.
  */
 export const getProviderAccess = (
@@ -42,7 +42,7 @@ export const getProviderAccess = (
  *
  * @param serviceId - The service.
  * @param connectorAccess - The config's `connectorAccess`.
- * @return False only when the server says the sign in cannot cover it.
+ * @returns False only when the server says the sign in cannot cover it.
  */
 export const isServiceCovered = (
 	serviceId: ConnectorServiceId,

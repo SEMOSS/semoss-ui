@@ -12,23 +12,14 @@ import { listToolParameters } from "../tools/chat-tool-info";
 import {
 	DEFAULT_TOOL_MODES,
 	DEFAULT_TOOL_NAMES,
-	type DefaultToolMode,
 	getDefaultToolMode,
+	isDefaultToolMode,
 	setDefaultToolMode,
 } from "../tools/default-tools";
 import { buildFolderToolDefinitions } from "../tools/folder-tools";
 import { ChatToolRow, MODE_COLUMN_CLASS_NAME } from "./chat-tool-row";
 import { RoomToolsSection } from "./room-tools-section";
 import { ToolList } from "./tool-list";
-
-/**
- * Whether a select's value is a default tool mode.
- *
- * @param value - The value the select reports.
- * @return Whether it is `auto`, `ask`, or `disabled`.
- */
-const isMode = (value: string): value is DefaultToolMode =>
-	(DEFAULT_TOOL_MODES as readonly string[]).includes(value);
 
 /** What the model is told about each default tool, whatever its mode. */
 const DEFAULT_TOOL_DEFINITIONS = new Map(
@@ -101,7 +92,10 @@ export const RoomToolsDefaultSection = ({
 									disabled={disabled}
 									value={mode}
 									onValueChange={(value) => {
-										if (!disabled && isMode(value)) {
+										if (
+											!disabled &&
+											isDefaultToolMode(value)
+										) {
 											onChange(
 												setDefaultToolMode(
 													defaultTools,

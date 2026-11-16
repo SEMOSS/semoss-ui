@@ -28,7 +28,9 @@ import {
 	ROOM_FILES_NAME,
 } from "./tools/folder-tools";
 
+/** A tool call as a message part holds it. */
 type ToolCall = PixelMessageToolCallPart["toolCall"];
+/** The metadata a tool call carries. */
 type ToolCallMeta = NonNullable<ToolCall["_meta"]>;
 
 /** What the model reads back when the user declines a change. */
@@ -88,6 +90,7 @@ const toToolResponseText = (outcome: FolderToolOutcome): string =>
  * message. Owned by the room store, and so as long lived as the room.
  */
 export class ChatToolsStore {
+	/** The room these tools belong to. */
 	private readonly room: RoomStore;
 
 	/** The chat's own files, where the default tools read and write. */
@@ -156,7 +159,7 @@ export class ChatToolsStore {
 	 */
 	decorateToolCall = (call: ToolCall): ToolCall => {
 		if (isFolderToolCall(call) && isFolderToolName(call.name)) {
-			const holdsForUser = this.getDefaultToolMode(call.name) !== "auto";
+			const shouldAskUser = this.getDefaultToolMode(call.name) !== "auto";
 
 			return {
 				...call,
@@ -168,17 +171,18 @@ export class ChatToolsStore {
 				_meta: {
 					...EMPTY_ENGINE_META,
 					...call._meta,
-					SMSS_MCP_EXECUTION: holdsForUser
+					SMSS_MCP_EXECUTION: shouldAskUser
 						? MCP_EXECUTION_ASK
 						: MCP_EXECUTION_AUTO,
 					SMSS_CLIENT_TOOL: true,
-					SMSS_MCP_UI: holdsForUser
+					SMSS_MCP_UI: shouldAskUser
 						? { displayLocation: "inline", autoOpen: true }
 						: { displayLocation: "sidebar" },
 				},
 			};
 		}
 
+		// a connector call keeps its metadata, and only says where it opens
 		if (call._meta && getConnectorToolService(call)) {
 			const isAsk = isAskExecutionMode(call._meta.SMSS_MCP_EXECUTION);
 			return {

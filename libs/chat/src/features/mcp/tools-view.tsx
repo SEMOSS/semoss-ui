@@ -15,10 +15,10 @@ import { decideAgentToolAction } from "../messages/agent-harness";
 import type { ToolStore } from "../messages/tool.store";
 import type { RoomStore } from "../room/room.store";
 import { useRoomSelector } from "../room/use-room-selector";
+import { ToolInspector } from "../tool-inspector/tool-inspector";
 import { ComponentToolView } from "../tool-views/component-tool-view";
 import { isAskExecutionMode } from "./mcp-utils";
 import { ToolsDefaultView } from "./tools-default-view/tools-default-view";
-import { ToolsServerView } from "./tools-server-view";
 
 /**
  * A tool whose UI ships with the web app declares it as
@@ -30,7 +30,10 @@ const SYSTEM_APP_URI = /^system:\/\/([a-zA-Z0-9._-]+)(\/.*)?$/;
 
 /**
  * Resolves a `system://` resourceURI to a path relative to this app's own
- * build output. Returns null when the URI is not a system app URI.
+ * build output.
+ *
+ * @param resourceURI - The tool's `SMSS_MCP_UI.resourceURI`, if any.
+ * @returns The app's path, or null when the URI is not a system app URI.
  */
 const resolveSystemAppUrl = (
 	resourceURI: string | undefined,
@@ -56,20 +59,26 @@ interface ToolsViewCall {
 	hasPendingAction: boolean;
 }
 
+/** Props for {@link ToolsView}. */
 interface ToolsViewProps {
-	/** Room */
+	/** The room the call belongs to. */
 	room: RoomStore;
 
-	/** Id of the app */
+	/** Id of the app (project or engine) that owns the tool, or empty for none. */
 	app: string;
 
-	/** Id of the message */
+	/** Id of the message that made the call. */
 	message: string;
 
-	/** Id of the tool */
+	/** Id of the tool call in the room. */
 	toolId: string;
 }
 
+/**
+ * Draws one tool call in the Workspace: its component view, its chat tool card,
+ * its app's page in a frame, a request for the user's input, or the default form.
+ * The call is read from the room by id, so the view follows it as it changes.
+ */
 export const ToolsView = ({ room, app, message, toolId }: ToolsViewProps) => {
 	const { platformUrl } = useChatConfig();
 	const liveTool = useRoomSelector(room, (current) =>
@@ -85,17 +94,10 @@ export const ToolsView = ({ room, app, message, toolId }: ToolsViewProps) => {
 			hasPendingAction: !!liveTool?.pendingAction,
 		}));
 
-	/**
-	 * State
-	 */
 	const iframeRef = useRef<HTMLIFrameElement>(null);
 	const iframeReadyRef = useRef(false);
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 	const [url, setUrl] = useState("");
-
-	/**
-	 * Library Hooks
-	 */
 
 	// A system app UI is resolved entirely from _meta, so skip the metadata
 	// lookup below: there may be no project or engine behind the tool at all.
@@ -127,13 +129,7 @@ export const ToolsView = ({ room, app, message, toolId }: ToolsViewProps) => {
 		},
 	);
 
-	/**
-	 * Functions
-	 */
-
-	/**
-	 * Process iframe on load
-	 */
+	/** Posts the call to the framed app, which waits for it before it draws. */
 	const sendToolContext = useCallback(() => {
 		const targetOrigin = url
 			? new URL(url, window.location.origin).origin
@@ -160,18 +156,16 @@ export const ToolsView = ({ room, app, message, toolId }: ToolsViewProps) => {
 		);
 	}, [message, room.roomId, tool, toolParameters, toolResponse, url]);
 
-	const handleOnLoad = () => {
+	/** Marks the frame ready and hands it the call. */
+	const handleIframeLoad = (): void => {
 		iframeReadyRef.current = true;
 		sendToolContext();
 	};
 
-	/**
-	 * Effects
-	 */
-
+	// Pick what to draw: a frame URL, or none for the card or the form.
 	useEffect(() => {
 		const chooseUrl = async () => {
-			// Ignore if no tool
+			// No call yet
 			if (!tool) {
 				setUrl("");
 				setIsLoading(false);
@@ -186,7 +180,7 @@ export const ToolsView = ({ room, app, message, toolId }: ToolsViewProps) => {
 				return;
 			}
 
-			// Auto-executing tool that hasn't completed yet — show default view
+			// Auto-executing tool that hasn't completed yet: show the default view
 			if (
 				!isAskExecutionMode(tool._meta?.SMSS_MCP_EXECUTION) &&
 				!toolResponse
@@ -296,6 +290,7 @@ export const ToolsView = ({ room, app, message, toolId }: ToolsViewProps) => {
 		platformUrl,
 	]);
 
+	// Re-send the call to a loaded frame whenever it changes.
 	useEffect(() => {
 		if (iframeReadyRef.current) {
 			sendToolContext();
@@ -338,9 +333,9 @@ export const ToolsView = ({ room, app, message, toolId }: ToolsViewProps) => {
 	}
 
 	// Server tools (e.g. provider-side web_search) have no MCP project to
-	// fetch a schema from — render the generic read-only result view.
+	// fetch a schema from, so show their parameters and result read-only.
 	if (tool.server_tool && liveTool) {
-		return <ToolsServerView tool={liveTool} />;
+		return <ToolInspector tool={liveTool} />;
 	}
 
 	return (
@@ -352,7 +347,7 @@ export const ToolsView = ({ room, app, message, toolId }: ToolsViewProps) => {
 					title="Tool"
 					ref={iframeRef}
 					src={url}
-					onLoad={() => handleOnLoad()}
+					onLoad={handleIframeLoad}
 				/>
 			)}
 			{!url &&

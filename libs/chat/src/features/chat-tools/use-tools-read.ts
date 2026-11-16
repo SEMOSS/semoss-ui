@@ -11,9 +11,13 @@ export interface ToolsRead {
 	load: () => void;
 }
 
+/** What {@link useToolsRead} keeps between renders. */
 interface ToolsReadState {
+	/** The source the status and tools were read for. */
 	source: string;
+	/** How the last read for `source` went. */
 	status: ToolsRead["status"];
+	/** The tools last read for `source`. */
 	tools: ToolboxTool[];
 }
 
@@ -38,11 +42,18 @@ export const useToolsRead = (
 		status: "idle",
 		tools: [],
 	});
+	// counts reads, so a read that a newer one overtook can tell it is stale
 	const latestRequest = useRef(0);
 
 	const load = useCallback(() => {
 		latestRequest.current += 1;
 		const request = latestRequest.current;
+		/**
+		 * Record how this read ended, unless a newer read has started.
+		 *
+		 * @param status - How the read ended.
+		 * @param tools - The tools read; left out to keep the last ones.
+		 */
 		const settle = (
 			status: "ready" | "error",
 			tools?: ToolboxTool[],
@@ -68,6 +79,7 @@ export const useToolsRead = (
 			);
 	}, [source, read]);
 
+	// the source changed since the last read: nothing has been read for it yet
 	if (state.source !== source) {
 		return { status: "idle", tools: [], load: load };
 	}

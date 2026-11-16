@@ -155,8 +155,10 @@ export const ChatToolCard = ({ tool, variant }: ChatToolCardProps) => {
 		}
 	};
 
-	// folder calls only come from chat turns: an agent run brings its own
-	// file tools
+	/**
+	 * Allow the waiting call. Folder calls only come from chat turns: an agent
+	 * run brings its own file tools.
+	 */
 	const handleAllow = () =>
 		runDecision("allow", () => {
 			if (isFolder) {
@@ -167,6 +169,7 @@ export const ChatToolCard = ({ tool, variant }: ChatToolCardProps) => {
 				: room.chatTools.approveConnectorChatTool(tool);
 		});
 
+	/** Deny the waiting call, in chat or for the agent run. */
 	const handleDeny = () =>
 		runDecision("deny", () =>
 			isAgentRoom
@@ -174,6 +177,7 @@ export const ChatToolCard = ({ tool, variant }: ChatToolCardProps) => {
 				: room.chatTools.declineChatTool(tool),
 		);
 
+	// the badge in the header: waiting beats the call's own status
 	const status = isWaiting
 		? {
 				label: t("card.status.waiting"),
@@ -209,6 +213,12 @@ export const ChatToolCard = ({ tool, variant }: ChatToolCardProps) => {
 								icon: <HourglassIcon aria-hidden />,
 							};
 
+	/**
+	 * What a folder call acts on, laid out for its tool: the file and the new
+	 * text for a write or an edit, both paths for a move, and so on.
+	 *
+	 * @return The details, or nothing for a name that is not a folder tool.
+	 */
 	const renderFolderDetails = (): ReactNode => {
 		if (!isFolderToolName(name)) {
 			return null;
@@ -281,6 +291,8 @@ export const ChatToolCard = ({ tool, variant }: ChatToolCardProps) => {
 					/>
 				);
 			default:
+				// list, read, and create directory: the decorated call's
+				// description is already the path it acts on
 				return (
 					<ToolValueRow
 						label={t("card.path")}
@@ -290,6 +302,12 @@ export const ChatToolCard = ({ tool, variant }: ChatToolCardProps) => {
 		}
 	};
 
+	/**
+	 * A connector call's arguments, each a value row, or a text block when it
+	 * is long or runs over several lines.
+	 *
+	 * @return The arguments, or a note that there are none.
+	 */
 	const renderArguments = (): ReactNode => {
 		const entries = Object.entries(args);
 		if (entries.length === 0) {
@@ -311,6 +329,7 @@ export const ChatToolCard = ({ tool, variant }: ChatToolCardProps) => {
 		});
 	};
 
+	// a call that has not finished has nothing to show yet
 	const hasResult =
 		!!response &&
 		(toolStatus === "SUCCESS" ||
@@ -323,6 +342,7 @@ export const ChatToolCard = ({ tool, variant }: ChatToolCardProps) => {
 			? service.provider
 			: null;
 
+	// the service or Room Files icon, the call's name and source, and its status
 	const header = (
 		<div className="flex min-w-0 items-start gap-3">
 			<div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
@@ -355,6 +375,7 @@ export const ChatToolCard = ({ tool, variant }: ChatToolCardProps) => {
 		</div>
 	);
 
+	// a sign in for a failed connector call, and Allow and Deny while waiting
 	const footer =
 		isWaiting || signInProvider ? (
 			<div className="flex flex-col gap-3">
@@ -443,41 +464,37 @@ export const ChatToolCard = ({ tool, variant }: ChatToolCardProps) => {
 		);
 	}
 
-	const body = (
-		<div className="flex min-w-0 flex-col gap-3">
-			{header}
-
-			{isWaiting ? (
-				<Small className="text-muted-foreground">
-					{isFolder
-						? t("card.folderApproval")
-						: t("card.connectorApproval")}
-				</Small>
-			) : null}
-
-			<div className="flex min-w-0 flex-col gap-3">
-				{isFolder ? renderFolderDetails() : renderArguments()}
-			</div>
-
-			{hasResult ? (
-				<ToolTextBlock
-					label={
-						toolStatus === "ERROR"
-							? t("card.error")
-							: t("card.result")
-					}
-				>
-					{formatResponse(response)}
-				</ToolTextBlock>
-			) : null}
-
-			{footer}
-		</div>
-	);
-
 	return (
 		<div className="rounded-md border border-border bg-background p-3">
-			{body}
+			<div className="flex min-w-0 flex-col gap-3">
+				{header}
+
+				{isWaiting ? (
+					<Small className="text-muted-foreground">
+						{isFolder
+							? t("card.folderApproval")
+							: t("card.connectorApproval")}
+					</Small>
+				) : null}
+
+				<div className="flex min-w-0 flex-col gap-3">
+					{isFolder ? renderFolderDetails() : renderArguments()}
+				</div>
+
+				{hasResult ? (
+					<ToolTextBlock
+						label={
+							toolStatus === "ERROR"
+								? t("card.error")
+								: t("card.result")
+						}
+					>
+						{formatResponse(response)}
+					</ToolTextBlock>
+				) : null}
+
+				{footer}
+			</div>
 		</div>
 	);
 };

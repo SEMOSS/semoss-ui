@@ -10,6 +10,7 @@ import { useState } from "react";
 import { beforeEach, expect, test, vi } from "vitest";
 import { AgentSelector } from "./agent-selector";
 
+/** The agent catalog the selector reads, changed per test. */
 const catalog = vi.hoisted(() => ({
 	data: [
 		{
@@ -33,6 +34,7 @@ vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
 vi.mock("@semoss/shared", () => ({ AppCatalogAvatar: () => null }));
+/** Holds the picked agent, as the overlay does, so a choice shows as checked. */
 function Picker({ disabled = false }: { disabled?: boolean }) {
 	const [value, setValue] = useState<{
 		workspace_id: string;

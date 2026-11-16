@@ -19,6 +19,7 @@ const deferred = () => {
 	return { promise: promise, resolve: resolve };
 };
 
+/** An MCP document holding one tool. */
 const toolsNamed = (name: string) => ({ tools: [{ name: name }] });
 
 beforeEach(() => {

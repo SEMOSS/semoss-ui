@@ -1,12 +1,7 @@
-import { ChevronDown } from "lucide-react";
-import type { ReactNode } from "react";
-import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Badge,
-	Button,
 	Checkbox,
-	cn,
 	Input,
 	Label,
 	Select,
@@ -16,64 +11,14 @@ import {
 	SelectValue,
 	Textarea,
 } from "@semoss/ui/next";
+import { CollapsibleField } from "./collapsible-field";
 import { JSONEditor } from "./json-editor";
 
-/**
- * Wraps a field that can render a lot of content (a multiline string, an
- * array, or an object) with a collapse toggle, so a card with several long
- * fields can be scanned/scrolled without paging through all of them.
- */
-const CollapsibleField = ({
-	fieldName,
-	required,
-	badge,
-	children,
-}: {
-	fieldName: string;
-	required?: boolean;
-	badge: string;
-	children: ReactNode;
-}) => {
-	const { t } = useTranslation("mcp");
-	const [collapsed, setCollapsed] = useState(false);
-
-	return (
-		<div className="space-y-1">
-			<div className="mb-2 flex items-center gap-2">
-				<Button
-					type="button"
-					variant="ghost"
-					size="icon"
-					className="h-6 w-6 shrink-0 text-muted-foreground"
-					onClick={() => setCollapsed((prev) => !prev)}
-					aria-label={t(
-						collapsed ? "tools.expandField" : "tools.collapseField",
-					)}
-				>
-					<ChevronDown
-						className={cn(
-							"size-4 transition-transform",
-							collapsed && "-rotate-90",
-						)}
-					/>
-				</Button>
-				<Label htmlFor={fieldName} className="font-semibold">
-					{fieldName}
-					{required && <span className="text-destructive"> *</span>}
-				</Label>
-				<Badge variant="outline" className="text-xs">
-					{badge}
-				</Badge>
-			</div>
-			{!collapsed && children}
-		</div>
-	);
-};
-
+/** Props for {@link ToolField}. */
 interface ToolFieldProps<T = unknown> {
-	/** The name of the field */
+	/** The parameter's name, shown as is and used as the input's id. */
 	fieldName: string;
-	/** JSON schema definition for the field */
+	/** JSON schema definition for the field. */
 	fieldSchema: {
 		/** JSON schema type (string, number, boolean, array, object, etc.) */
 		type?: string;
@@ -98,20 +43,21 @@ interface ToolFieldProps<T = unknown> {
 		/** Human-readable description of the field */
 		description?: string;
 	};
-	/** Whether this field is required */
+	/** Whether this field is required, which marks its label. */
 	required?: boolean;
-	/** Whether the field is disabled */
+	/** Whether the field is read-only. */
 	disabled?: boolean;
-	/** Current value of the field */
+	/** Current value of the field. */
 	value: T;
-	/** Callback fired when the field value changes */
+	/** Called with the field's next value as the user edits it. */
 	onChange: (value: T) => void;
 }
 
 /**
- * A dynamic form field component that renders different input types based on JSON schema
- *
- * @component
+ * One parameter of a tool call's default form, drawn by its JSON schema type: a
+ * select for an enum, a text input or a collapsible textarea for a string, a
+ * number input, a checkbox, a collapsible textarea for an array, and a JSON
+ * editor for an object.
  */
 export const ToolField = ({
 	fieldName,
@@ -122,7 +68,7 @@ export const ToolField = ({
 	onChange,
 }: ToolFieldProps) => {
 	const { t } = useTranslation("mcp");
-	// Use the raw parameter name so the default view shows exact keys for debugging. Otherwise it is a huge pain to debug
+	// Show the raw parameter name, so the default view shows the exact keys to debug with
 	const displayName = fieldName;
 
 	switch (fieldSchema.type) {
@@ -175,13 +121,15 @@ export const ToolField = ({
 
 			const stringValue = typeof value === "string" ? value : "";
 			const lineCount = stringValue.split("\n").length;
-			const useTextarea =
+			// Long or multiline text gets a textarea
+			const isMultiline =
 				lineCount > 1 ||
 				stringValue.length > 100 ||
 				(fieldSchema.maxLength !== undefined &&
 					fieldSchema.maxLength > 100);
 
-			if (useTextarea) {
+			if (isMultiline) {
+				// A read-only textarea grows to its text, within limits
 				const rows = disabled
 					? Math.min(12, Math.max(3, lineCount))
 					: 4;
@@ -353,7 +301,7 @@ export const ToolField = ({
 			);
 
 		case "object": {
-			// treat object as arbitrary JSON (may be nested) — use JSONEditor for full flexibility
+			// An object may hold any JSON, nested or not, so it gets the JSON editor
 			const obj =
 				value && typeof value === "object"
 					? (value as Record<string, unknown>)

@@ -39,9 +39,13 @@ export type FolderToolExecution = "auto" | "ask";
 
 /** A tool definition in the MCP shape the room accepts in `paramValues.tools`. */
 export interface FolderToolDefinition {
+	/** What the model calls. */
 	name: FolderToolName;
+	/** The tool's title. */
 	title: string;
+	/** What the model is told the tool does. */
 	description: string;
+	/** The JSON schema of the tool's arguments. */
 	inputSchema: {
 		type: "object";
 		properties: Record<string, Record<string, unknown>>;
@@ -59,8 +63,10 @@ export interface FolderToolOutcome {
 	changes: FolderChange[];
 }
 
+/** Every folder tool's name, for matching names the model calls. */
 const ALL_FOLDER_TOOLS: readonly string[] = Object.values(FOLDER_TOOL_NAMES);
 
+/** The tools that only read, which run on their own unless set otherwise. */
 const READ_TOOLS: ReadonlySet<FolderToolName> = new Set([
 	FOLDER_TOOL_NAMES.LIST,
 	FOLDER_TOOL_NAMES.READ,
@@ -81,17 +87,29 @@ const SKIPPED_DIRECTORIES = new Set([
 	"node_modules",
 ]);
 
+/** Most entries one listing returns. */
 const MAX_LIST_ENTRIES = 500;
+/** Most levels one listing descends. */
 const MAX_LIST_DEPTH = 3;
+/** Lines one read returns unless it asks for fewer. */
 const DEFAULT_READ_LINES = 2000;
+/** Most characters one read returns. */
 const MAX_READ_CHARS = 60_000;
+/** Largest file a read opens. */
 const MAX_READ_BYTES = 10 * 1024 * 1024;
+/** Matches one search returns unless it asks for another number. */
 const DEFAULT_SEARCH_RESULTS = 50;
+/** Most matches one search returns. */
 const MAX_SEARCH_RESULTS = 200;
+/** Most entries one search looks at before it stops. */
 const MAX_SEARCH_SCANNED_ENTRIES = 5000;
+/** Most files one content search opens. */
 const MAX_CONTENT_SEARCH_FILES = 300;
+/** Largest file a content search opens. */
 const MAX_CONTENT_SEARCH_BYTES = 1024 * 1024;
+/** Longest preview of a matching line. */
 const MAX_CONTENT_PREVIEW_CHARS = 200;
+/** Longest text one write takes. */
 const MAX_WRITE_CHARS = 2_000_000;
 
 /**
@@ -136,6 +154,7 @@ const FOLDER_DESCRIPTION = `${ROOM_FILES_NAME} (this room's own files)`;
 const FOLDER_SCOPE =
 	"These are the same files the user uploads and saves to the chat, and the chat's other tools read and write them too, so a file written here is where those tools look.";
 
+/** The schema of a path argument, which each tool may describe further. */
 const PATH_PROPERTY = {
 	type: "string",
 	description:
@@ -486,6 +505,11 @@ const toResultRow = (entry: FolderEntry): Record<string, unknown> => ({
 	...(entry.modified ? { modified: entry.modified } : {}),
 });
 
+/**
+ * The current time, for a change's `at`.
+ *
+ * @return The time as an ISO string.
+ */
 const now = (): string => new Date().toISOString();
 
 /**
@@ -545,6 +569,14 @@ export const executeFolderTool = async (
 	}
 };
 
+/**
+ * `folder_list`: a folder's entries, a few levels deep when `depth` asks.
+ *
+ * @param provider - The folder.
+ * @param args - The call's arguments.
+ * @param folderName - The folder's name, echoed in the result.
+ * @return The listing.
+ */
 const listFolder = async (
 	provider: WorkFolderProvider,
 	args: Record<string, unknown>,
@@ -564,12 +596,18 @@ const listFolder = async (
 	}
 
 	const entries: FolderEntry[] = [];
-	let truncated = false;
+	let isTruncated = false;
 
+	/**
+	 * Add a directory's entries, then its subfolders' up to `depth`.
+	 *
+	 * @param directory - The directory to list.
+	 * @param level - How deep it is, the listed folder being 1.
+	 */
 	const walk = async (directory: string, level: number): Promise<void> => {
 		for (const entry of await provider.list(directory)) {
 			if (entries.length >= MAX_LIST_ENTRIES) {
-				truncated = true;
+				isTruncated = true;
 				return;
 			}
 			entries.push(entry);
@@ -590,8 +628,8 @@ const listFolder = async (
 			folder: folderName,
 			path: path || "/",
 			entries: entries.map(toResultRow),
-			truncated: truncated,
-			...(truncated
+			truncated: isTruncated,
+			...(isTruncated
 				? {
 						note: `Only the first ${MAX_LIST_ENTRIES} entries are shown. List a subfolder to see more.`,
 					}
@@ -601,6 +639,13 @@ const listFolder = async (
 	};
 };
 
+/**
+ * `folder_read`: a window of lines from a text file.
+ *
+ * @param provider - The folder.
+ * @param args - The call's arguments.
+ * @return The lines, and where to continue when there are more.
+ */
 const readFile = async (
 	provider: WorkFolderProvider,
 	args: Record<string, unknown>,
@@ -624,8 +669,8 @@ const readFile = async (
 			total_lines: slice.totalLines,
 			start_line: slice.startLine,
 			end_line: slice.endLine,
-			truncated: slice.truncated,
-			...(slice.truncated
+			truncated: slice.isTruncated,
+			...(slice.isTruncated
 				? {
 						note: `Call folder_read with offset ${slice.endLine + 1} to continue.`,
 					}
@@ -636,6 +681,14 @@ const readFile = async (
 	};
 };
 
+/**
+ * `folder_search`: entries whose names match the query, and with `content`
+ * text files that contain it, searched breadth first.
+ *
+ * @param provider - The folder.
+ * @param args - The call's arguments.
+ * @return The matches.
+ */
 const searchFolder = async (
 	provider: WorkFolderProvider,
 	args: Record<string, unknown>,
@@ -645,7 +698,7 @@ const searchFolder = async (
 		throw new FolderToolError("query cannot be empty.");
 	}
 	const path = normalizeFolderPath(args.path);
-	const searchContent = readBoolean(args.content);
+	const shouldSearchContent = readBoolean(args.content);
 	const limit = readInteger(
 		args.limit,
 		DEFAULT_SEARCH_RESULTS,
@@ -659,9 +712,9 @@ const searchFolder = async (
 	const queue: string[] = [path];
 	let scanned = 0;
 	let contentFilesRead = 0;
-	let truncated = false;
+	let isTruncated = false;
 
-	while (queue.length > 0 && !truncated) {
+	while (queue.length > 0 && !isTruncated) {
 		const directory = queue.shift() ?? "";
 		for (const entry of await provider.list(directory)) {
 			scanned++;
@@ -669,14 +722,14 @@ const searchFolder = async (
 				scanned > MAX_SEARCH_SCANNED_ENTRIES ||
 				matches.length >= limit
 			) {
-				truncated = true;
+				isTruncated = true;
 				break;
 			}
 
 			if (matchesName(entry.name)) {
 				matches.push(toResultRow(entry));
 			} else if (
-				searchContent &&
+				shouldSearchContent &&
 				entry.kind === "file" &&
 				!isBinaryFileName(entry.name) &&
 				(entry.size === undefined ||
@@ -684,6 +737,7 @@ const searchFolder = async (
 				contentFilesRead < MAX_CONTENT_SEARCH_FILES
 			) {
 				contentFilesRead++;
+				// a file that cannot be read is not a match, not a failure
 				const blob = await provider
 					.readFile(entry.path)
 					.catch(() => null);
@@ -723,8 +777,8 @@ const searchFolder = async (
 			query: query,
 			path: path || "/",
 			matches: matches,
-			truncated: truncated,
-			...(truncated
+			truncated: isTruncated,
+			...(isTruncated
 				? {
 						note: "The search stopped early. Narrow it with a more specific query or path.",
 					}
@@ -734,6 +788,13 @@ const searchFolder = async (
 	};
 };
 
+/**
+ * `folder_write`: create a text file or replace its contents.
+ *
+ * @param provider - The folder.
+ * @param args - The call's arguments.
+ * @return What was written, and whether the file is new.
+ */
 const writeFile = async (
 	provider: WorkFolderProvider,
 	args: Record<string, unknown>,
@@ -766,6 +827,13 @@ const writeFile = async (
 	};
 };
 
+/**
+ * `folder_edit`: replace exact text in a text file.
+ *
+ * @param provider - The folder.
+ * @param args - The call's arguments.
+ * @return How many replacements were made.
+ */
 const editFile = async (
 	provider: WorkFolderProvider,
 	args: Record<string, unknown>,
@@ -786,6 +854,13 @@ const editFile = async (
 	};
 };
 
+/**
+ * `folder_create_directory`: create a folder, doing nothing when it exists.
+ *
+ * @param provider - The folder.
+ * @param args - The call's arguments.
+ * @return Whether the folder was created.
+ */
 const createDirectory = async (
 	provider: WorkFolderProvider,
 	args: Record<string, unknown>,
@@ -813,6 +888,13 @@ const createDirectory = async (
 	};
 };
 
+/**
+ * `folder_move`: move or rename an entry.
+ *
+ * @param provider - The folder.
+ * @param args - The call's arguments.
+ * @return Where the entry went.
+ */
 const moveEntry = async (
 	provider: WorkFolderProvider,
 	args: Record<string, unknown>,
@@ -832,6 +914,14 @@ const moveEntry = async (
 	};
 };
 
+/**
+ * `folder_delete`: delete a file, or a folder once `recursive` confirms a
+ * folder with contents was meant to go.
+ *
+ * @param provider - The folder.
+ * @param args - The call's arguments.
+ * @return What was deleted.
+ */
 const deleteEntry = async (
 	provider: WorkFolderProvider,
 	args: Record<string, unknown>,

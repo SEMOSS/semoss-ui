@@ -56,6 +56,9 @@ const SNIFF_BYTES = 8192;
  * such as an edit whose text does not match. Its message is the tool result.
  */
 export class FolderToolError extends Error {
+	/**
+	 * @param message - Why the request is refused, written for the model.
+	 */
 	constructor(message: string) {
 		super(message);
 		this.name = "FolderToolError";
@@ -86,6 +89,7 @@ export const decodeTextFile = (
 	bytes: Uint8Array,
 	isPartial = false,
 ): string | null => {
+	// a NUL byte is the surest sign of a binary file, and text never has one
 	const sniff = bytes.subarray(0, SNIFF_BYTES);
 	for (let index = 0; index < sniff.length; index++) {
 		if (sniff[index] === 0) {
@@ -111,7 +115,7 @@ interface TextFileSlice {
 	/** Last line in the window, counting from 1. */
 	endLine: number;
 	/** Whether the file continues past the window. */
-	truncated: boolean;
+	isTruncated: boolean;
 }
 
 /**
@@ -131,6 +135,8 @@ export const sliceTextLines = (
 	limit: number,
 	maxChars: number,
 ): TextFileSlice => {
+	// split after each line break, so every line keeps its own and joining
+	// them gives back the file as it was
 	const lines = text.split(/(?<=\n)/);
 	const totalLines = lines.length === 1 && lines[0] === "" ? 0 : lines.length;
 	const startIndex = Math.max(0, offset - 1);
@@ -141,7 +147,7 @@ export const sliceTextLines = (
 			totalLines: 0,
 			startLine: 0,
 			endLine: 0,
-			truncated: false,
+			isTruncated: false,
 		};
 	}
 	if (startIndex >= totalLines) {
@@ -173,7 +179,7 @@ export const sliceTextLines = (
 		totalLines,
 		startLine: startIndex + 1,
 		endLine: endIndex,
-		truncated: endIndex < totalLines || isLineCut,
+		isTruncated: endIndex < totalLines || isLineCut,
 	};
 };
 

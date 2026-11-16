@@ -1,25 +1,23 @@
 import { useEffect, useState } from "react";
 import { Button, Textarea } from "@semoss/ui/next";
 
+/** Props for {@link JSONEditor}. */
 interface JSONEditorProps {
-	/** The JSON value to edit */
+	/** The JSON value to edit. */
 	value: unknown;
-	/** Callback fired when the JSON value changes */
+	/** Called with the parsed value when the user applies valid JSON. */
 	onChange: (v: unknown) => void;
-	/** Whether the editor is disabled */
+	/** Whether the editor is read-only, which also hides Apply and Reset. */
 	disabled?: boolean;
 }
 
 /**
- * A JSON editor component with validation and formatting
- *
- * @component
+ * Edits a JSON value as formatted text. The text is parsed only on Apply, which
+ * shows the parse error instead of calling `onChange` when the text is invalid;
+ * Reset puts the current value back.
  */
 export const JSONEditor = ({ value, onChange, disabled }: JSONEditorProps) => {
-	/**
-	 * State
-	 */
-	// Text representation of the JSON value
+	// The value as the user is editing it
 	const [text, setText] = useState(() => {
 		try {
 			return JSON.stringify(value ?? {}, null, 2);
@@ -27,13 +25,10 @@ export const JSONEditor = ({ value, onChange, disabled }: JSONEditorProps) => {
 			return "";
 		}
 	});
-	// Validation error message
+	// The last Apply's parse error
 	const [error, setError] = useState<string | null>(null);
 
-	/**
-	 * Effects
-	 */
-	// Sync text state when value prop changes
+	// A new value from outside replaces the text being edited
 	useEffect(() => {
 		try {
 			setText(JSON.stringify(value ?? {}, null, 2));

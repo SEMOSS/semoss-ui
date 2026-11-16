@@ -32,7 +32,8 @@ interface RoomConnectorHost
 }
 
 /**
- * What the room gives a Microsoft 365 viewer in its sidebar.
+ * What the room gives a connector viewer in its sidebar, or a connector's
+ * tool view.
  *
  * Saved items land in the chat's own files, the same place uploads go and
  * the room's apps work, and the chat files explorer is refreshed to show
@@ -41,7 +42,7 @@ interface RoomConnectorHost
  * session in a popup.
  *
  * @param providerId - The account the viewer reads with.
- * @return The viewer's host props.
+ * @returns The viewer's host props.
  */
 export const useRoomConnectorHost = (
 	providerId: ConnectorProviderId,
@@ -53,7 +54,7 @@ export const useRoomConnectorHost = (
 	const { t: tRoom } = useTranslation("room");
 	const chatFilesName = tRoom("menuFileExplorer.name");
 
-	const onSaved = useCallback(
+	const handleSaved = useCallback(
 		(file: RoomSavedFile) => {
 			room.refreshSidebarFileExplorer();
 			toast.success(
@@ -69,9 +70,10 @@ export const useRoomConnectorHost = (
 		[chatFilesName, room, t],
 	);
 
-	const onAddToContext = useCallback(
+	const handleAddToContext = useCallback(
 		(file: RoomSavedFile) => {
 			room.refreshSidebarFileExplorer();
+			// the file is saved either way; only one the model can read is queued
 			if (!nextMessageRoom.shouldAttachToModel(file.name)) {
 				toast.error(
 					t("sources.notAccepted", {
@@ -87,7 +89,7 @@ export const useRoomConnectorHost = (
 		[chatFilesName, nextMessageRoom, room, t],
 	);
 
-	const onSignIn = useCallback(async (): Promise<boolean> => {
+	const handleSignIn = useCallback(async (): Promise<boolean> => {
 		const provider = getConnectorProvider(providerId);
 		const name = t(`providers.${provider.id}.name`);
 		// no await before this call: the popup has to open inside the click
@@ -113,8 +115,8 @@ export const useRoomConnectorHost = (
 
 	return {
 		saveTargetName: chatFilesName,
-		onSaved: onSaved,
-		onAddToContext: onAddToContext,
-		onSignIn: onSignIn,
+		onSaved: handleSaved,
+		onAddToContext: handleAddToContext,
+		onSignIn: handleSignIn,
 	};
 };

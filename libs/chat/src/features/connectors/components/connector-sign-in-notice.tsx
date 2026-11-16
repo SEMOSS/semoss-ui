@@ -36,9 +36,10 @@ export const ConnectorSignInNotice = ({
 	useConnectorLogins(connectors);
 	useConnectors(connectors);
 
-	const list = new Intl.ListFormat(i18n.language, {
+	const listFormatter = new Intl.ListFormat(i18n.language, {
 		type: "conjunction",
 	});
+	// read through the store's getters; useConnectors above renders on each change
 	const missing = connectors.missingSignIns;
 	const unoffered = connectors.unofferedProviders;
 	const uncovered = connectors.uncoveredConnectors;
@@ -54,10 +55,10 @@ export const ConnectorSignInNotice = ({
 	 * The names of the chat's switched on connectors for an account.
 	 *
 	 * @param providerId - The account.
-	 * @return The names, joined for a sentence.
+	 * @returns The names, joined for a sentence.
 	 */
 	const listServices = (providerId: (typeof missing)[number]): string =>
-		list.format(
+		listFormatter.format(
 			getConnectorProvider(providerId)
 				.services.filter((service) =>
 					connectors.services.includes(service),
@@ -150,7 +151,7 @@ export const ConnectorSignInNotice = ({
 						<span className="min-w-0 flex-1 text-sm">
 							{t("scopes.notice", {
 								account: account,
-								services: list.format(
+								services: listFormatter.format(
 									services.map((service) =>
 										t(`services.${service}.name`),
 									),

@@ -32,11 +32,16 @@ import { NewKnowledgeForm } from "../knowledge/new-knowledge-form";
 import { AgentSelector } from "./agent-selector";
 import { splitMcpByType } from "./mcp-utils";
 
+/** A tab of the overlay. */
 type Tab = "AGENT" | "TOOLBOX" | "KNOWLEDGE";
+
+/** The agent (workspace) the overlay picks: its id, and its name when known. */
 type WorkspaceRef = Pick<Workspace, "workspace_id"> &
 	Partial<Pick<Workspace, "name">>;
 
+/** What the overlay hands back when the user saves. */
 interface MCPOverlaySave {
+	/** Every knowledge and toolbox selection, the agent's included. */
 	mcp: MCPConfig[];
 	/** Only present when the overlay was opened with an `workspace` prop. */
 	workspace?: WorkspaceRef | null;
@@ -44,11 +49,12 @@ interface MCPOverlaySave {
 	isDefaultAgent?: boolean;
 }
 
+/** Props for {@link MCPOverlay}. */
 interface MCPOverlayProps {
-	/** Open */
+	/** Whether the dialog is open. */
 	open: boolean;
 
-	/** Which tab is active when the overlay opens */
+	/** Which tab is active when the overlay opens. */
 	defaultTab: Tab;
 
 	/** Full MCP list (any types). The overlay splits these into the two tabs. */
@@ -67,14 +73,18 @@ interface MCPOverlayProps {
 	 * omitted entirely (existing rooms have their workspace baked in).
 	 */
 	agentEditable?: boolean;
+
+	/** Whether the Agent tab offers Default Agent. */
 	allowDefaultAgent?: boolean;
+
 	/**
 	 * Whether Default Agent is picked. Passing it offers Default Agent and No
 	 * agent as separate choices in the Agent tab, and the save reports
 	 * `isDefaultAgent`.
 	 */
 	isDefaultAgent?: boolean;
-	/** Keep selections visible when the conversation becomes busy. */
+
+	/** Keeps selections visible but read-only while the conversation is busy. */
 	disabled?: boolean;
 
 	/**
@@ -84,6 +94,11 @@ interface MCPOverlayProps {
 	onClose: (next?: MCPOverlaySave) => void;
 }
 
+/**
+ * The dialog that picks a room's agent, knowledge, and toolboxes. It edits
+ * drafts and hands them back on save; while open, picking another agent swaps
+ * that agent's selections into the drafts. Knowledge can also be created here.
+ */
 export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 	open,
 	defaultTab,
@@ -194,6 +209,7 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 		mergedWorkspaceId.current = draftId;
 	}, [workspaceDraft?.workspace_id, getWorkspace.status, getWorkspace.data]);
 
+	// The element focused before the dialog opened, focused again on close.
 	const returnFocus = useRef<HTMLElement | null>(null);
 	const needsAgentLoad =
 		!!workspaceDraft &&

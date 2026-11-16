@@ -24,7 +24,7 @@ const USER_ASSETS = getFileExplorerAdapter({ type: "USER" });
 /**
  * The user's connector tools, from their own file.
  *
- * @return The tools, or null when the user has not chosen connectors yet.
+ * @returns The tools, or null when the user has not chosen connectors yet.
  * @throws Error when the file is there but cannot be read.
  */
 export const readUserConnectorTools = async (): Promise<McpTool[] | null> => {
@@ -52,7 +52,7 @@ const userConnectorToolsListeners = new Set<
  * away.
  *
  * @param listener - Called with the tools the user's file now holds.
- * @return Stops listening.
+ * @returns Stops listening.
  */
 export const subscribeUserConnectorTools = (
 	listener: (tools: readonly McpTool[]) => void,
@@ -68,7 +68,7 @@ export const subscribeUserConnectorTools = (
  * into their own file, which every chat of theirs copies.
  *
  * @param services - The services to switch on.
- * @return The connector tools the file now holds.
+ * @returns The connector tools the file now holds.
  * @throws Error when the backend refuses the change.
  */
 export const writeUserConnectorTools = async (
@@ -116,7 +116,7 @@ export const syncRoomConnectorTools = async (
  * connectors yet and so keeps the ones it has.
  *
  * @param room - A room bound to its insight.
- * @return The tools; none when the room has no file.
+ * @returns The tools; none when the room has no file.
  * @throws Error when the room's file cannot be read.
  */
 export const loadRoomTools = async (room: RoomStore): Promise<McpTool[]> =>

@@ -172,6 +172,8 @@ export function AgentSelector({
 							</Label>
 						</div>
 					)}
+					{/* The picked agent stays choosable when the search or
+					    the loaded pages leave it out. */}
 					{value &&
 						!getWorkspaces.data.some(
 							(item) => item.project_id === value.workspace_id,

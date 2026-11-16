@@ -6,6 +6,7 @@ import {
 import { getToolEngineId, ROOM_MCP_ID } from "../../mcp/mcp-utils";
 import { isFolderToolName } from "./folder-tools";
 
+/** A tool call as a message part holds it. */
 type ToolCall = PixelMessageToolCallPart["toolCall"];
 
 /**

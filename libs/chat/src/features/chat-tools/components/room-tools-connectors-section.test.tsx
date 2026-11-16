@@ -26,6 +26,7 @@ vi.mock("../use-room-toolbox", () => ({ useRoomToolbox: vi.fn() }));
 
 const mockUseRoomToolbox = vi.mocked(useRoomToolbox);
 
+/** A room whose connectors are all on hand, with nothing switched on. */
 const room = {
 	connectors: {
 		// a fixed store: its snapshot is itself
@@ -41,6 +42,7 @@ const room = {
 	},
 } as unknown as RoomStore;
 
+/** What `useRoomToolbox` returns, read and empty unless overridden. */
 const toolboxState = (state: Partial<ToolsRead>): ToolsRead => ({
 	status: "ready",
 	tools: [],

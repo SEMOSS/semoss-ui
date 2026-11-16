@@ -23,7 +23,7 @@ import { ConnectorViewerPanel } from "./connector-viewer-panel";
  * @param service - The viewer's service.
  * @param render - Shows the shared viewer with the props the room gives it.
  * @param name - The tab's default name; the room passes a translated one.
- * @return The blueprint.
+ * @returns The blueprint.
  */
 const createViewerPanel = (
 	service: ConnectorViewerService,

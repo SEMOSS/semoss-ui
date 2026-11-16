@@ -7,6 +7,7 @@ import {
 	sliceTextLines,
 } from "./folder-text";
 
+/** Text as UTF-8 bytes. */
 const encode = (text: string): Uint8Array => new TextEncoder().encode(text);
 
 describe("decodeTextFile", () => {
@@ -46,7 +47,7 @@ describe("sliceTextLines", () => {
 			totalLines: 4,
 			startLine: 1,
 			endLine: 4,
-			truncated: false,
+			isTruncated: false,
 		});
 	});
 
@@ -55,19 +56,19 @@ describe("sliceTextLines", () => {
 		expect(slice.content).toBe("two\nthree\n");
 		expect(slice.startLine).toBe(2);
 		expect(slice.endLine).toBe(3);
-		expect(slice.truncated).toBe(true);
+		expect(slice.isTruncated).toBe(true);
 	});
 
 	test("stops at the character budget", () => {
 		const slice = sliceTextLines(text, 1, 100, 9);
 		expect(slice.content).toBe("one\ntwo\n");
-		expect(slice.truncated).toBe(true);
+		expect(slice.isTruncated).toBe(true);
 	});
 
 	test("cuts a single line longer than the budget", () => {
 		const slice = sliceTextLines("abcdefghij", 1, 100, 4);
 		expect(slice.content).toBe("abcd");
-		expect(slice.truncated).toBe(true);
+		expect(slice.isTruncated).toBe(true);
 	});
 
 	test("handles an empty file", () => {

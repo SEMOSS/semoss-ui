@@ -8,6 +8,7 @@ import type {
 
 /** A viewer the room sidebar can show. */
 export interface ConnectorSource {
+	/** The service the shared viewer shows. */
 	service: ConnectorViewerService;
 	/** The account it reads with. */
 	provider: ConnectorProviderId;
@@ -19,15 +20,15 @@ export interface ConnectorSource {
 	/** The sidebar panel that shows it. */
 	panelType: string;
 	/**
-	 * The app whose logo stands for it: on its tab, in the plus menu, and on
-	 * what it adds to context.
+	 * The app whose logo stands for it: on its tab, on the Workbench rail, and
+	 * on what it adds to context.
 	 */
 	brand: ConnectorBrand;
 	/** Its name, in the shared `connectors` namespace. */
 	nameKey: string;
 }
 
-/** The viewers, in the order the plus menu lists them. */
+/** The viewers, in the order the Workbench rail and the slash menu list them. */
 export const CONNECTOR_SOURCES: readonly ConnectorSource[] = [
 	{
 		service: "onedrive",
@@ -111,6 +112,7 @@ export const CONNECTOR_SOURCES: readonly ConnectorSource[] = [
 	},
 ];
 
+/** Each viewer by the service it shows. */
 const SOURCES_BY_SERVICE = new Map(
 	CONNECTOR_SOURCES.map((source) => [source.service, source]),
 );
@@ -119,7 +121,7 @@ const SOURCES_BY_SERVICE = new Map(
  * A viewer by the service it shows, when the room has one for it.
  *
  * @param service - The service.
- * @return Its entry, or undefined.
+ * @returns Its entry, or undefined.
  */
 export const findConnectorSource = (
 	service: ConnectorViewerService,
@@ -129,7 +131,7 @@ export const findConnectorSource = (
  * A viewer by the service it shows.
  *
  * @param service - The service.
- * @return Its entry.
+ * @returns Its entry.
  * @throws Error for a service without a viewer.
  */
 export const getConnectorSource = (

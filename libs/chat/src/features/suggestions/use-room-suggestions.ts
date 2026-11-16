@@ -6,7 +6,14 @@ import { useConnectors } from "../connectors/use-connectors";
 import type { RoomStore } from "../room/room.store";
 import { useRoomSelector } from "../room/use-room-selector";
 
-/** Validate the default suggestion response before rendering clickable messages. */
+/**
+ * Validate the default suggestion response before rendering clickable messages.
+ * Anything but exactly three distinct, short strings shows no suggestions at
+ * all, rather than a partial or oversized set.
+ *
+ * @param data - The pixel's output.
+ * @returns The suggestions, or none when the response is not usable.
+ */
 const readSuggestions = (data: unknown): string[] => {
 	if (
 		!isRecord(data) ||
@@ -59,6 +66,8 @@ const buildSuggestionsPixel = (room: RoomStore): string => {
 	if (!isReady) {
 		return "";
 	}
+	// tools the server should not suggest: their account is not offered, not
+	// covered, or not signed in
 	const unavailableReactors = CONNECTOR_SERVICES.filter(
 		(service) =>
 			!connectors.isProviderOffered(service.provider) ||
