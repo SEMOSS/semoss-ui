@@ -335,7 +335,6 @@ export const WorkspaceChatList = ({
 												{g.rooms.map((room) => (
 													<WorkspaceChatRow
 														key={room.room_id}
-														t={t}
 														room={
 															renamedMap[
 																room.room_id

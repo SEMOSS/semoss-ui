@@ -7,6 +7,7 @@ import {
 	XIcon,
 } from "lucide-react";
 import { Link } from "react-router";
+import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	cn,
@@ -28,8 +29,6 @@ export interface WorkspaceChatRoom {
 
 /** Props for {@link WorkspaceChatRow}. */
 interface WorkspaceChatRowProps {
-	/** The list's translator, so the row reads the same namespaces. */
-	t: (key: string, params?: Record<string, unknown>) => string;
 	/** The room, with any rename made here already applied. */
 	room: WorkspaceChatRoom;
 	/** Whether the room is pinned. */
@@ -59,7 +58,6 @@ interface WorkspaceChatRowProps {
  * delete actions, or, while renaming, the inline name field.
  */
 export const WorkspaceChatRow = ({
-	t,
 	room,
 	isFavorite,
 	isEditing,
@@ -72,6 +70,7 @@ export const WorkspaceChatRow = ({
 	onTogglePin,
 	onRequestDelete,
 }: WorkspaceChatRowProps) => {
+	const { t } = useTranslation(["workspace", "sidebar"]);
 	if (isEditing) {
 		return (
 			<div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">

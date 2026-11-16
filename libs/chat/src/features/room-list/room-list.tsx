@@ -97,6 +97,15 @@ export const RoomList = ({
 	onSearch,
 }: RoomListProps) => {
 	const { t } = useTranslation("sidebar");
+
+	/**
+	 * The label of an agent group's link to its agent.
+	 *
+	 * @param name - The agent's name, if it has one.
+	 * @returns "Open <name>", or the unnamed agent's label.
+	 */
+	const getAgentLinkLabel = (name: string | undefined): string =>
+		t("groups.openAgent", { name: name || t("groups.unnamedAgent") });
 	const { theme, navigation } = useChatConfig();
 	const [downloadRoomId, setDownloadRoomId] = useState<string | null>(null);
 	const { view, isCustomized, setView } = useRoomListView();
@@ -492,25 +501,14 @@ export const RoomList = ({
 												)}
 												target="_blank"
 												rel="noopener noreferrer"
-												aria-label={t(
-													"groups.openAgent",
-													{
-														name:
-															section.heading
-																.workspaceName ||
-															t(
-																"groups.unnamedAgent",
-															),
-													},
+												aria-label={getAgentLinkLabel(
+													section.heading
+														.workspaceName,
 												)}
-												title={t("groups.openAgent", {
-													name:
-														section.heading
-															.workspaceName ||
-														t(
-															"groups.unnamedAgent",
-														),
-												})}
+												title={getAgentLinkLabel(
+													section.heading
+														.workspaceName,
+												)}
 												// beside the heading, not in it: the heading is the collapse button
 												className="absolute end-7 top-1.5 flex size-5 items-center justify-center rounded-md text-muted-foreground opacity-0 outline-hidden ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:opacity-100 focus-visible:ring-2 group-hover/section:opacity-100 max-md:opacity-100"
 											>

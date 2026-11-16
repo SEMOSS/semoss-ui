@@ -1,5 +1,3 @@
-"use client";
-
 import { LanguagesIcon, LogOutIcon, MapIcon, SettingsIcon } from "lucide-react";
 import { useNavigate } from "react-router";
 import { LANGUAGES, useTranslation } from "@semoss/i18n";
