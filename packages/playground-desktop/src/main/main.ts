@@ -24,7 +24,8 @@ const CONTENT_SECURITY_POLICY = [
 	"img-src 'self' data: blob: https: http:",
 	"font-src 'self' data: https://fonts.gstatic.com",
 	"media-src 'self' data: blob:",
-	"connect-src 'self' ws: wss: data: blob:",
+	// the PowerPoint viewer fetches its fallback fonts' stylesheet
+	"connect-src 'self' ws: wss: data: blob: https://fonts.googleapis.com https://fonts.gstatic.com",
 	"frame-src 'self' blob: data: https: http:",
 	"object-src 'none'",
 	"base-uri 'self'",
@@ -81,6 +82,8 @@ if (!app.requestSingleInstanceLock()) {
 		await mainWindow.loadURL(`${appOrigin}/`);
 
 		app.on("before-quit", () => {
+			// cookies are written lazily; keep the session for the next launch
+			void session.defaultSession.cookies.flushStore();
 			void localServer.close();
 		});
 	});

@@ -52,21 +52,30 @@ const CONTENT_TYPES: Readonly<Record<string, string>> = {
 	".map": "application/json",
 };
 
+/** How long a server's browser-session cookie lasts here: the server's own session timeout still ends it. */
+const SESSION_COOKIE_MAX_AGE_S = 30 * 24 * 60 * 60;
+
 /**
- * Make a server's cookies work on the local origin: the browser sees plain
+ * Make a server's cookies work on the local origin. The browser sees plain
  * http on 127.0.0.1, so a `Secure` cookie would be dropped and `SameSite=None`
- * needs `Secure`. The proxy still talks to the server over its own https.
+ * needs `Secure`; the proxy still talks to the server over its own https. A
+ * cookie with no lifetime, such as the server's session, would end when the app
+ * quits, signing the user out on every restart, so it is given one.
  *
  * @param cookie - One `Set-Cookie` value.
  * @returns The value the local origin keeps.
  */
-export const localizeCookie = (cookie: string): string =>
-	cookie
+export const localizeCookie = (cookie: string): string => {
+	const parts = cookie
 		.split(";")
 		.map((part) => part.trim())
-		.filter((part) => !/^secure$/i.test(part))
-		.map((part) => (/^samesite=none$/i.test(part) ? "SameSite=Lax" : part))
-		.join("; ");
+		.filter((part) => part && !/^secure$/i.test(part))
+		.map((part) => (/^samesite=none$/i.test(part) ? "SameSite=Lax" : part));
+	if (!parts.some((part) => /^(expires|max-age)=/i.test(part))) {
+		parts.push(`Max-Age=${SESSION_COOKIE_MAX_AGE_S}`);
+	}
+	return parts.join("; ");
+};
 
 const listen = (server: Server, port: number): Promise<number> =>
 	new Promise((resolvePort, reject) => {

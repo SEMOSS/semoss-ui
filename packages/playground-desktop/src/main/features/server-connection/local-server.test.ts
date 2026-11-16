@@ -123,7 +123,7 @@ describe("startLocalServer", () => {
 		expect(body.path).toBe("/Monolith/api/config?x=1");
 		expect(body.host).toBe(new URL(server?.url ?? "").host);
 		expect(reply.headers["set-cookie"]).toEqual([
-			"JSESSIONID=abc; Path=/Monolith; HttpOnly; SameSite=Lax",
+			"JSESSIONID=abc; Path=/Monolith; HttpOnly; SameSite=Lax; Max-Age=2592000",
 		]);
 	});
 
@@ -185,11 +185,23 @@ describe("startLocalServer", () => {
 
 describe("localizeCookie", () => {
 	test("drops Secure and relaxes SameSite=None for the local origin", () => {
-		expect(localizeCookie("a=1; Path=/; Secure; SameSite=None")).toBe(
-			"a=1; Path=/; SameSite=Lax",
+		expect(
+			localizeCookie("a=1; Path=/; Secure; SameSite=None; Max-Age=60"),
+		).toBe("a=1; Path=/; SameSite=Lax; Max-Age=60");
+		expect(localizeCookie("a=1; SameSite=Strict; Max-Age=60")).toBe(
+			"a=1; SameSite=Strict; Max-Age=60",
 		);
-		expect(localizeCookie("a=1; SameSite=Strict")).toBe(
-			"a=1; SameSite=Strict",
+	});
+
+	test("keeps a session cookie across restarts, and leaves deletions alone", () => {
+		expect(localizeCookie("monolith=abc; Path=/Monolith; HttpOnly")).toBe(
+			"monolith=abc; Path=/Monolith; HttpOnly; Max-Age=2592000",
 		);
+		expect(localizeCookie("monolith=; Path=/Monolith; Max-Age=0")).toBe(
+			"monolith=; Path=/Monolith; Max-Age=0",
+		);
+		expect(
+			localizeCookie("a=; Expires=Thu, 01 Jan 1970 00:00:00 GMT"),
+		).toBe("a=; Expires=Thu, 01 Jan 1970 00:00:00 GMT");
 	});
 });
