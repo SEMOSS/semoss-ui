@@ -1,5 +1,6 @@
 {
     "name": "@semoss/client",
+    "private": true,
     "scripts": {
         "dev": "vite --configLoader runner --mode development",
         "build": "vite build --configLoader runner --mode production",

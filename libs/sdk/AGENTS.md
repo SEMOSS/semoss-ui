@@ -146,10 +146,15 @@ tests are not backend authority; retain its compatibility caveats until verified
 Session state lives in three framework-free stores. Every status they and their hooks report is
 upper case, like the rest of the SDK's states: `Session` `INITIALIZING | UNAUTHENTICATED |
 AUTHENTICATED | ERROR`, `Config` `IDLE | LOADING | READY | ERROR`, `useSessionPermissions`
-`IDLE | LOADING | READY | ERROR`, and `LoginsStore` `LOADING | READY | ERROR`. Each holds a private `Observable` from
-`@semoss/utility/observable` (an immutable snapshot) and exposes typed `getSnapshot` and
-`subscribe`, read in React through `useSyncExternalStore`. They compose it rather than extend it,
-so their public types never name a utility type.
+`IDLE | LOADING | READY | ERROR`, and `LoginsStore` `LOADING | READY | ERROR`. Each holds a private `StoreState` from
+`@semoss/utility/store` (an immutable snapshot) and exposes typed `getSnapshot` and
+`subscribe`, read in React through `useStoreSelector`. They compose it rather than extend it,
+so their public types never name a utility type. These stores are the reference implementation
+of the repo's [state management direction](../../skills/state-management.skill.md); load that
+skill before adding or changing a store here. `InsightStore`, `AgentStore`, `RoomStore`, and
+`Env` are a different kind of object and are not part of that migration: they hold plain
+private state and expose it through getters and actions, with no snapshot to subscribe to. Do
+not convert them to `StoreState`.
 
 - [`ConfigStore`](./src/stores/config/config.store.ts) (`Config`) reads `/api/config` once
   per page and needs no session. `load({ force })` joins a read in flight and reuses a known
@@ -177,7 +182,7 @@ so their public types never name a utility type.
   the insight needs no explicit drop. `canPerform` combines `isAdmin` with the config's admin-only flags;
   guardrails have no flags and are always admin-only.
 - [`SessionInsightStore`](./src/stores/session/session-insight.store.ts) (`Session.insight`)
-  is the session's own insight: `{ insightId }` in an `Observable`, with `run`, `runAsync`,
+  is the session's own insight: `{ insightId }` in a `StoreState`, with `run`, `runAsync`,
   `upload`, `download`, `withInsight(task)`, `ensure` and `clear`. It is made on first use and shared by
   every caller. `withInsight` runs a request in `"new"` when there is no insight yet and keeps
   the `insightId` it returns (so the first check is one `GetUserInfo` request), falling back to
@@ -194,8 +199,11 @@ so their public types never name a utility type.
   (`{ isRetrying, retry }` over the snapshot's `isChecking` and `refresh`), under an optional
   `SessionProvider`. Each finds its session through the internal `useSessionStore` in
   `hooks/use-session.ts`: the nearest provider's, else `Session`. Selectors may build objects;
-  equal selections do not render. `useSessionStore`, `SessionContext` and the selector cache
-  (`js-frameworks/react/utility/store-selector.ts`) are not exported.
+  equal selections do not render. These hooks read through `useStoreSelector` from
+  `@semoss/utility/react/use-store-selector`, the same hook applications use for their own
+  stores, and hand selectors the store's actions with `pickActions`
+  (`js-frameworks/react/utility/pick-actions.ts`). `useSessionStore`, `SessionContext` and
+  `pickActions` are not exported.
 - `InsightStore` reads its config through `Config.load`, so `system.config` is the same
   normalized copy (meta keys sorted by `display_order`, lists never missing), and fills
   `Session.logins`. Its lifecycle remains explicit: initialize, use, then destroy when the

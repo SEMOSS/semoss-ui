@@ -1,7 +1,7 @@
 import { toError } from "@semoss/utility/error";
 import { tryParseJson } from "@semoss/utility/json";
 import { isRecord } from "@semoss/utility/object";
-import { Observable } from "@semoss/utility/observable";
+import { StoreState } from "@semoss/utility/store";
 import { getSystemConfig } from "../../api";
 import { Env } from "../../env";
 
@@ -138,7 +138,7 @@ export class ConfigStore {
 	 * The config, starting with nothing read; call `load` to read it. Held privately so the
 	 * store's public types do not depend on how it is kept.
 	 */
-	private readonly state = new Observable<typeof EMPTY_SNAPSHOT>(
+	private readonly state = new StoreState<typeof EMPTY_SNAPSHOT>(
 		EMPTY_SNAPSHOT,
 	);
 

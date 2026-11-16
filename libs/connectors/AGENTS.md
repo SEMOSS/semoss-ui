@@ -337,6 +337,11 @@ keyboard focus.
 `package.json` `exports` point at `src/`, so consuming apps compile the TypeScript themselves.
 Keep the source type-clean and Biome-clean.
 
+It has no state library. Shared state that outlives a component uses a `StoreState`-backed
+store per the [state management skill](../../skills/state-management.skill.md). The module-level
+listener sets in `mail/mail-compose-outcomes.ts` and `mail/use-mail-picture-preference.ts`
+predate it; move them onto `StoreState` when you touch them.
+
 | Import | Resolves to |
 |--------|-------------|
 | `@semoss/connectors` | `src/index.ts` |

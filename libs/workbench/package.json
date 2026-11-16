@@ -1,5 +1,6 @@
 {
 	"name": "@semoss/workbench",
+	"private": true,
 	"version": "1.0.0-beta.1",
 	"exports": {
 		"./globals.css": "./src/styles/globals.css",
