@@ -24,7 +24,10 @@ So the layering is one direction, three layers:
 
 Nothing here may import from a host (`packages/*`). `zustand` is a **peer** dependency,
 matching the dock. Hosts supply a compatible version and explicitly share the intended
-store instances; a peer declaration alone does not guarantee shared state.
+store instances; a peer declaration alone does not guarantee shared state. The peer exists for
+the dock's store and goes away when the dock moves off Zustand; state this package owns itself follows the
+[state management skill](../../skills/state-management.skill.md) and uses an
+`StoreState`-backed store, not a new Zustand one.
 
 ## Layout
 

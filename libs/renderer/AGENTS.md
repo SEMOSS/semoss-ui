@@ -45,7 +45,7 @@ This library retains its package layout (no `pages/` or router):
 | `components/` | `blocks/`, `block-defaults/`, `cell-defaults/`, `shared/` — the block system |
 | `contexts/` | React contexts (`<name>.context.tsx`) |
 | `hooks/` | React hooks (`use-<name>.ts`) |
-| `store/` | State (note: this lib currently uses singular `store/`; new stores follow `<name>.store.ts`) |
+| `store/` | State, on MobX (note: this lib currently uses singular `store/`; new stores follow `<name>.store.ts`) |
 | `types/` | TypeScript types (`<name>.types.ts`) |
 | `utility/` | Utility functions |
 | `testing/` | Test helpers/fixtures |
@@ -85,6 +85,14 @@ Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling
   MINDFUL OF WHAT WE EXPORT"). Only export what consumers truly need.
 - **`vite.config.ts`** — build configuration (`createViteLibConfig`).
 - **Block/cell definition contracts** — apps depend on their shapes at runtime.
+- **State (`src/store/`)** — MobX, with `mobx` and `mobx-react-lite` as peers. The repo is
+  moving to `StoreState` stores (see the
+  [state management skill](../../skills/state-management.skill.md)), and this library moves
+  last. `StateStore` mutates block state in place behind `dispatch`, and blocks read it through
+  `observer` and `computed(() => ...).get()`, in this package and in `@semoss/client`. Moving it
+  needs an agreed design for immutable, structurally shared block updates and a profile of
+  large apps first. Until then keep new block and cell state on the existing store and its
+  `dispatch` actions; do not add a second state mechanism beside it.
 
 ### When Adding a Block or Cell
 

@@ -185,3 +185,40 @@ it.each(["flat", "bubbles"] as const)(
 		).toBeVisible();
 	},
 );
+
+it("renders a marked user table with keyboard scrolling and leaves assistant prose unconstrained", () => {
+	const message: ConversationMessage = {
+		id: "pasted-table",
+		role: "user",
+		parts: [
+			{
+				type: "text",
+				contentFormat: "html-v1",
+				text: "<table><tr><th scope=col>Quarter</th><td>Q1</td></tr></table>",
+			},
+		],
+	};
+	const { rerender } = render(
+		<MessageTimelineEntry message={message} agent={agent} />,
+	);
+	expect(
+		screen.getByRole("columnheader", { name: "Quarter" }),
+	).toHaveAttribute("scope", "col");
+	expect(
+		screen.getByRole("region", { name: "Pasted table" }),
+	).toHaveAttribute("tabindex", "0");
+	expect(screen.getByRole("table").closest(".max-w-prose")).not.toBeNull();
+	rerender(
+		<MessageTimelineEntry
+			message={{
+				id: "answer",
+				role: "assistant",
+				parts: [{ type: "text", text: "Assistant response" }],
+			}}
+			agent={agent}
+		/>,
+	);
+	expect(
+		screen.getByText("Assistant response").closest(".max-w-prose"),
+	).toBeNull();
+});

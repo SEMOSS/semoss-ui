@@ -800,12 +800,24 @@ importers:
       '@semoss/config':
         specifier: workspace:*
         version: link:../config
+      '@testing-library/react':
+        specifier: ^16.3.0
+        version: 16.3.0(@testing-library/dom@10.4.1)(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@types/node':
         specifier: ^26.0.0
         version: 26.6.6
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.18
       jsdom:
         specifier: ~22.1.0
         version: 22.1.0(supports-color@8.1.1)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.8
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.8(react@19.2.8)
       typescript:
         specifier: ~6.0.0
         version: 6.0.3

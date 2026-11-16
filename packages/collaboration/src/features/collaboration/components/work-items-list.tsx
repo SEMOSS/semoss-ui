@@ -19,10 +19,12 @@ import {
 	Tags,
 	Users,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
 import {
+	Alert,
+	AlertDescription,
 	Button,
 	cn,
 	Dialog,
@@ -39,6 +41,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 	H3,
+	Label,
 	P,
 	Progress,
 	Select,
@@ -54,6 +57,7 @@ import {
 	TabsTrigger,
 	toast,
 } from "@semoss/ui/next";
+import type { Room } from "@/features/collaboration/state/collaboration.types";
 import { BriefPanel } from "@/features/dashboard/brief-panel";
 import { MailCheckStatus } from "@/features/dashboard/mail-check-status";
 import { givenFirst } from "@/lib/person-name";
@@ -103,6 +107,7 @@ interface Item {
 	topic?: string;
 	topicId?: string;
 	roomId?: string;
+	rooms?: Room[];
 	due?: string;
 	/** When the item or one of its steps last changed. */
 	updatedAt?: string;
@@ -113,6 +118,14 @@ const str = (value: unknown): string =>
 	typeof value === "string" ? value : "";
 const list = (value: unknown): Row[] =>
 	Array.isArray(value) ? (value as Row[]) : [];
+
+function toRoom(row: Row): Room {
+	return {
+		id: str(row.id),
+		title: str(row.title) || undefined,
+		lastActivity: str(row.lastActivity),
+	};
+}
 
 function toStep(row: Row): Step {
 	return {
@@ -139,6 +152,7 @@ function toItem(row: Row): Item {
 		topic: primary ? str(primary.name) : undefined,
 		topicId: primary ? str(primary.id) : undefined,
 		roomId: str(row.roomId) || undefined,
+		rooms: list(row.rooms).map(toRoom),
 		due: str(row.due) || undefined,
 		updatedAt: str(row.updatedAt) || undefined,
 		openSteps: list(row.openSteps).map(toStep),
@@ -295,6 +309,25 @@ export function useWorkItems() {
 		},
 		[actions, load, markWorkChanged, runAll],
 	);
+	const mergeChats = useCallback(
+		async (
+			taskId: string,
+			roomId: string,
+			intoRoomId: string,
+		): Promise<void> => {
+			try {
+				await runBatch(actions, [
+					pixel("WorkMergeRooms", { taskId, roomId, intoRoomId }),
+				]);
+				await load();
+			} catch (cause) {
+				const message = errorText(cause);
+				setError(message);
+				throw new Error(message);
+			}
+		},
+		[actions, load],
+	);
 
 	const isMine = useCallback(
 		(step: Step) =>
@@ -311,12 +344,22 @@ export function useWorkItems() {
 		busyStepId,
 		error,
 		run,
+		mergeChats,
 		runAll,
 		changeStep,
 		selfId,
 		isMine,
 	};
 }
+
+/** An item's chats, newest first; an older server reports only its one room. */
+export function roomsOf(item: Item): Room[] {
+	if (item.rooms?.length) return item.rooms;
+	return item.roomId ? [{ id: item.roomId, lastActivity: "" }] : [];
+}
+
+const chatLabel = (room: Room, index: number, total: number) =>
+	room.title || `Chat ${total - index}`;
 
 /** The owner's next step: theirs first, then one nobody was named for (a group ask on their item). */
 export function mineNext(item: Item, isMine: (step: Step) => boolean) {
@@ -330,9 +373,12 @@ function nextStep(item: Item, isMine: (step: Step) => boolean) {
 	return mineNext(item, isMine) ?? item.openSteps[0];
 }
 
-/** Where an item is worked: its room, or the item page until it has one. */
-export const itemPath = (item: Item) =>
-	item.roomId ? roomPath(item.roomId) : `/work/item/${item.id}`;
+/** Where an item is worked: its newest room, legacy room, or the item page until it has one. */
+export const itemPath = (item: Item) => {
+	const room = item.rooms?.[0]; // Newest first
+	const roomId = room?.id || item.roomId;
+	return roomId ? roomPath(roomId) : `/work/item/${item.id}`;
+};
 
 /** The first open step someone else owes the owner. */
 export function waitingOn(item: Item, isMine: (step: Step) => boolean) {
@@ -344,6 +390,7 @@ function ItemRow({
 	item,
 	isMine,
 	showTopic,
+	onRequestMerge,
 	onDragStart,
 	onDragOver,
 	onDragEnd,
@@ -355,6 +402,8 @@ function ItemRow({
 	isMine: (step: Step) => boolean;
 	/** Off when the card already names the one topic every row shares. */
 	showTopic: boolean;
+	/** Opens the merge dialog for an item with several chats. */
+	onRequestMerge?: (item: Item) => void;
 	/** Given for the owner's own rows, which can be put in order. */
 	onDragStart?: () => void;
 	onDragOver?: () => void;
@@ -371,6 +420,7 @@ function ItemRow({
 	const next = mineNext(item, isMine);
 	const waiting = waitingOn(item, isMine);
 	const owed = item.openSteps.filter((step) => !isMine(step)).length;
+	const rooms = roomsOf(item);
 
 	return (
 		<li
@@ -403,7 +453,7 @@ function ItemRow({
 						</Link>
 						{showTopic ? <ItemTopicChip item={item} /> : null}
 					</div>
-					{draggable ? (
+					{draggable || rooms.length > 0 ? (
 						// dragging needs another way to reorder (WCAG 2.5.7), so the menu moves the row too
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
@@ -420,19 +470,66 @@ function ItemRow({
 								<DropdownMenuItem asChild>
 									<Link to={itemPath(item)}>Open room</Link>
 								</DropdownMenuItem>
-								<DropdownMenuSeparator />
-								<DropdownMenuItem
-									disabled={!onMoveUp}
-									onSelect={onMoveUp}
-								>
-									Move up
-								</DropdownMenuItem>
-								<DropdownMenuItem
-									disabled={!onMoveDown}
-									onSelect={onMoveDown}
-								>
-									Move down
-								</DropdownMenuItem>
+								{rooms.length > 0 ? (
+									<>
+										<DropdownMenuItem asChild>
+											<Link
+												to={`/work/item/${encodeURIComponent(item.id)}`}
+											>
+												New chat
+											</Link>
+										</DropdownMenuItem>
+										<DropdownMenuSeparator />
+										<DropdownMenuLabel className="font-normal text-muted-foreground text-xs">
+											Chats
+										</DropdownMenuLabel>
+										{rooms.map((room, index) => (
+											<DropdownMenuItem
+												key={room.id}
+												asChild
+											>
+												<Link to={roomPath(room.id)}>
+													<span className="truncate">
+														{chatLabel(
+															room,
+															index,
+															rooms.length,
+														)}
+													</span>
+												</Link>
+											</DropdownMenuItem>
+										))}
+										{onRequestMerge && rooms.length > 1 ? (
+											<>
+												<DropdownMenuSeparator />
+												<DropdownMenuItem
+													onSelect={() =>
+														onRequestMerge(item)
+													}
+												>
+													Merge chats...
+												</DropdownMenuItem>
+											</>
+										) : null}
+									</>
+								) : null}
+								{draggable ? (
+									<>
+										<DropdownMenuSeparator />
+										<DropdownMenuItem
+											disabled={!onMoveUp}
+											onSelect={onMoveUp}
+										>
+											Move up
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											disabled={!onMoveDown}
+											onSelect={onMoveDown}
+										>
+											Move down
+										</DropdownMenuItem>
+									</>
+								) : null}
 								{onClose ? (
 									<>
 										<DropdownMenuSeparator />
@@ -1168,6 +1265,7 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 		busyStepId,
 		error,
 		run,
+		mergeChats,
 		runAll,
 		changeStep,
 		selfId,
@@ -1178,6 +1276,13 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 	const [showOthers, setShowOthers] = useState(false);
 	const [view, setView] = useState<View>("all");
 	const waitingTab = useRef<HTMLButtonElement>(null);
+	const [mergeItemId, setMergeItemId] = useState<string | null>(null);
+	const [fromRoomId, setFromRoomId] = useState("");
+	const [intoRoomId, setIntoRoomId] = useState("");
+	const [isMerging, setIsMerging] = useState(false);
+	const [mergeError, setMergeError] = useState("");
+	const fromFieldId = useId();
+	const intoFieldId = useId();
 
 	if (items === null) {
 		return error ? (
@@ -1193,6 +1298,31 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 	}
 	const { review, proposed, mine, others, needsYou, alsoAsked } =
 		split(items);
+	const mergeItem = items.find((item) => item.id === mergeItemId);
+	const mergeRooms = mergeItem ? roomsOf(mergeItem) : [];
+	const closeMerge = () => {
+		setMergeItemId(null);
+		setFromRoomId("");
+		setIntoRoomId("");
+		setMergeError("");
+	};
+	const handleRequestMerge = (item: Item) => {
+		closeMerge();
+		setMergeItemId(item.id);
+	};
+	const handleMerge = async () => {
+		if (!mergeItemId || !fromRoomId || !intoRoomId || isMerging) return;
+		setIsMerging(true);
+		setMergeError("");
+		try {
+			await mergeChats(mergeItemId, fromRoomId, intoRoomId);
+			closeMerge();
+		} catch (cause) {
+			setMergeError(errorText(cause));
+		} finally {
+			setIsMerging(false);
+		}
+	};
 
 	if (reviewing) {
 		return (
@@ -1342,6 +1472,7 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 						onMoveDown={
 							after ? () => move(item.id, after.id) : undefined
 						}
+						onRequestMerge={handleRequestMerge}
 						onClose={(status) => void close(item, status)}
 					/>
 				);
@@ -1603,6 +1734,9 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 													item={item}
 													isMine={isMine}
 													showTopic
+													onRequestMerge={
+														handleRequestMerge
+													}
 												/>
 											))}
 										</ul>
@@ -1649,6 +1783,112 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 					? `Connected to your ${sources}`
 					: "Connect your mail and chats to find work items"}
 			</Link>
+			<Dialog
+				open={mergeItem !== undefined}
+				onOpenChange={(open) => {
+					if (!open && !isMerging) closeMerge();
+				}}
+			>
+				<DialogContent
+					showCloseButton={!isMerging}
+					onEscapeKeyDown={(event) => {
+						if (isMerging) event.preventDefault();
+					}}
+					onInteractOutside={(event) => {
+						if (isMerging) event.preventDefault();
+					}}
+				>
+					<DialogHeader>
+						<DialogTitle>Merge chats</DialogTitle>
+						<DialogDescription>
+							The messages of the first chat are added to the end
+							of the second, and the first chat is removed from{" "}
+							{mergeItem?.title}.
+						</DialogDescription>
+					</DialogHeader>
+					<div className="space-y-2">
+						<Label htmlFor={fromFieldId}>Chat to merge</Label>
+						<Select
+							value={fromRoomId}
+							onValueChange={setFromRoomId}
+							disabled={isMerging}
+						>
+							<SelectTrigger id={fromFieldId} className="w-full">
+								<SelectValue placeholder="Choose a chat" />
+							</SelectTrigger>
+							<SelectContent>
+								{mergeRooms.map((room, index) =>
+									room.id === intoRoomId ? null : (
+										<SelectItem
+											key={room.id}
+											value={room.id}
+										>
+											{chatLabel(
+												room,
+												index,
+												mergeRooms.length,
+											)}
+										</SelectItem>
+									),
+								)}
+							</SelectContent>
+						</Select>
+					</div>
+					<div className="space-y-2">
+						<Label htmlFor={intoFieldId}>Merge into</Label>
+						<Select
+							value={intoRoomId}
+							onValueChange={setIntoRoomId}
+							disabled={isMerging}
+						>
+							<SelectTrigger id={intoFieldId} className="w-full">
+								<SelectValue placeholder="Choose a chat" />
+							</SelectTrigger>
+							<SelectContent>
+								{mergeRooms.map((room, index) =>
+									room.id === fromRoomId ? null : (
+										<SelectItem
+											key={room.id}
+											value={room.id}
+										>
+											{chatLabel(
+												room,
+												index,
+												mergeRooms.length,
+											)}
+										</SelectItem>
+									),
+								)}
+							</SelectContent>
+						</Select>
+					</div>
+					<P className="text-muted-foreground text-sm">
+						This merge cannot be undone.
+					</P>
+					{mergeError ? (
+						<Alert variant="destructive">
+							<AlertDescription>{mergeError}</AlertDescription>
+						</Alert>
+					) : null}
+					<DialogFooter className="flex-col sm:flex-row">
+						<Button
+							type="button"
+							variant="outline"
+							disabled={isMerging}
+							onClick={closeMerge}
+						>
+							Cancel
+						</Button>
+						<Button
+							type="button"
+							disabled={!fromRoomId || !intoRoomId || isMerging}
+							onClick={() => void handleMerge()}
+						>
+							{isMerging ? "Merging..." : "Merge chats"}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</>
 	);
 }
