@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { teamsMessageTitle, teamsThreadToMarkdown } from "./microsoft.markdown";
+import {
+	teamsChatToMarkdown,
+	teamsMessageTitle,
+	teamsThreadToMarkdown,
+} from "./microsoft.markdown";
 import type { TeamsMessage } from "./microsoft.types";
 
 /*
@@ -42,6 +46,22 @@ describe("teamsThreadToMarkdown", () => {
 			),
 		);
 		expect(markdown).toMatch(/## Grace\n\n\*\*Sent:\*\* [^\n]+\n\nYes/);
+	});
+});
+
+describe("teamsChatToMarkdown", () => {
+	it("writes the messages oldest first whatever order they come in", () => {
+		const markdown = teamsChatToMarkdown({ id: "c", hasUnread: false }, [
+			{
+				...reply("later", "Second"),
+				createdDateTime: "2026-09-28T12:00:00Z",
+			},
+			reply("earlier", "First"),
+		]);
+		expect(markdown.indexOf("First")).toBeGreaterThan(-1);
+		expect(markdown.indexOf("First")).toBeLessThan(
+			markdown.indexOf("Second"),
+		);
 	});
 });
 

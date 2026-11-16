@@ -1,5 +1,9 @@
 import { renderHook } from "@testing-library/react";
 import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
+import {
+	saveEmailDraft,
+	sendEmailDraft,
+} from "@/features/connectors/api/microsoft";
 import type { ConversationMessage } from "@/features/messages/types/message";
 import { composeEmailPart } from "@/features/thread-assistant/compose-email.test-fixtures";
 import {
@@ -7,9 +11,23 @@ import {
 	threadCommand,
 } from "@/features/thread-assistant/thread-context";
 import { composeDraftId } from "@/features/thread-assistant/thread-draft-proposal";
+import type { InsightActions } from "@/lib/pixel";
 import { idleEmailTurn } from "./room-email.test-fixtures";
 import { RoomEmailStore } from "./room-email-store";
 import { useRoomEmailProposals } from "./use-room-email-proposals";
+
+vi.mock("@/features/connectors/api/microsoft", async (original) => ({
+	...(await original<typeof import("@/features/connectors/api/microsoft")>()),
+	saveEmailDraft: vi.fn(),
+	sendEmailDraft: vi.fn(),
+}));
+
+const noteFile = {
+	path: ".email-attachments/file/note.txt",
+	name: "note.txt",
+	size: 4,
+	sha256: "a".repeat(64),
+};
 
 function setup() {
 	const thread = {
@@ -98,7 +116,21 @@ it("adds files from all completed compose calls to the open email without replac
 			},
 		},
 	};
-	const view = renderHook(useRoomEmailProposals, { initialProps: props });
+	const view = renderHook(useRoomEmailProposals, {
+		initialProps: { ...base, loadAttachment },
+	});
+	view.rerender({
+		...props,
+		snapshot: {
+			turn: {
+				...props.snapshot.turn,
+				isRunning: true,
+				phase: "streaming",
+				settlementVersion: 0,
+			},
+		},
+	});
+	view.rerender(props);
 	await vi.waitFor(() =>
 		expect(
 			composer.getSnapshot().emailDrafts[0]?.getSnapshot().values.files,
@@ -129,6 +161,242 @@ it("adds files from all completed compose calls to the open email without replac
 	});
 	expect(loadAttachment).toHaveBeenCalledTimes(2);
 	failed.unmount();
+});
+
+it("leaves earlier runs' attachment results alone after a reload, so no banner shows and the restored draft saves and sends", async () => {
+	const { base, composer } = setup();
+	vi.mocked(saveEmailDraft).mockResolvedValue({ savedDraftId: "saved-1" });
+	vi.mocked(sendEmailDraft).mockResolvedValue({
+		sent: true,
+		draftId: "saved-1",
+	});
+	const history: ConversationMessage[] = [
+		{
+			id: "first",
+			role: "assistant",
+			parts: [
+				// asked for a file, but the call did not confirm it
+				composeEmailPart(
+					{
+						to: "ryan@example.com",
+						subject: "Report",
+						message: "Here is the report.",
+						attachments: ["report.pdf"],
+					},
+					"first-call",
+				),
+			],
+		},
+		{
+			id: "ask",
+			role: "user",
+			parts: [{ type: "text", text: "Attach it" }],
+		},
+		{
+			id: "second",
+			role: "assistant",
+			parts: [
+				// for an Outlook draft that was open before the reload
+				composeEmailPart(
+					{
+						openEmailId: "outlook-draft",
+						attachments: [noteFile.name],
+					},
+					"gone-call",
+					"COMPLETED",
+					{ shown: true, attachments: [noteFile] },
+				),
+			],
+		},
+	];
+	const loadAttachment = vi.fn(async () => new File(["note"], "note.txt"));
+	const props = {
+		...base,
+		thread: { ...base.thread, source: undefined },
+		allowedSources: new Set<string>(),
+		loadAttachment,
+	};
+	const reloaded = {
+		...base.snapshot.turn,
+		phase: "completed" as const,
+		settlementVersion: 1,
+		messages: history,
+	};
+	const view = renderHook(useRoomEmailProposals, {
+		initialProps: { ...props, snapshot: { turn: reloaded } },
+	});
+	const [draft] = composer.getSnapshot().emailDrafts;
+	expect({
+		banner: view.result.current,
+		attachmentError: draft.getSnapshot().attachmentError,
+	}).toEqual({ banner: "", attachmentError: "" });
+	const actions = {} as InsightActions;
+	await expect(
+		draft.save(actions, draft.getSnapshot().values),
+	).resolves.toEqual({ savedDraftId: "saved-1" });
+	await expect(draft.send(actions, draft.getSnapshot().values)).resolves.toBe(
+		true,
+	);
+	// the next turn does not replay them either
+	const asked = [
+		...history,
+		{
+			id: "ask-2",
+			role: "user" as const,
+			parts: [{ type: "text" as const, text: "Thanks" }],
+		},
+	];
+	const running = {
+		...reloaded,
+		isRunning: true,
+		phase: "streaming" as const,
+		messages: asked,
+	};
+	view.rerender({ ...props, snapshot: { turn: running } });
+	view.rerender({
+		...props,
+		snapshot: {
+			turn: {
+				...running,
+				isRunning: false,
+				phase: "completed",
+				settlementVersion: 2,
+				messages: [
+					...asked,
+					{
+						id: "reply",
+						role: "assistant",
+						parts: [{ type: "text", text: "You're welcome." }],
+					},
+				],
+			},
+		},
+	});
+	expect(view.result.current).toBe("");
+	expect(loadAttachment).not.toHaveBeenCalled();
+});
+
+it("still adds a finished run's files, and says when their email is gone", async () => {
+	const { base, composer } = setup();
+	const open = composer.requestEmailDraft({
+		id: "open-email",
+		mode: "new",
+		to: "recipient@example.com",
+		body: "Mine",
+	});
+	const loadAttachment = vi.fn(async () => new File(["note"], "note.txt"));
+	const ask: ConversationMessage = {
+		id: "ask",
+		role: "user",
+		parts: [{ type: "text", text: "Attach my notes" }],
+	};
+	const running = {
+		...base.snapshot.turn,
+		isRunning: true,
+		phase: "streaming" as const,
+		messages: [ask],
+	};
+	const view = renderHook(useRoomEmailProposals, {
+		initialProps: { ...base, loadAttachment },
+	});
+	view.rerender({ ...base, loadAttachment, snapshot: { turn: running } });
+	view.rerender({
+		...base,
+		loadAttachment,
+		snapshot: {
+			turn: {
+				...running,
+				isRunning: false,
+				phase: "completed",
+				settlementVersion: 1,
+				messages: [
+					ask,
+					{
+						id: "answer",
+						role: "assistant",
+						parts: ["open-email", "closed-email"].map((id) =>
+							composeEmailPart(
+								{
+									openEmailId: id,
+									attachments: [noteFile.name],
+								},
+								`attach-${id}`,
+								"COMPLETED",
+								{ shown: true, attachments: [noteFile] },
+							),
+						),
+					},
+				],
+			},
+		},
+	});
+	await vi.waitFor(() =>
+		expect(open.getSnapshot().values.files).toHaveLength(1),
+	);
+	expect(view.result.current).toContain("no longer open");
+});
+
+it("adds a paused send's files to its email before the owner approves it", async () => {
+	const { base, composer } = setup();
+	const open = composer.requestEmailDraft({
+		id: "open-email",
+		mode: "new",
+		to: "recipient@example.com",
+		body: "Mine",
+	});
+	const loadAttachment = vi.fn(async () => new File(["note"], "note.txt"));
+	const messages: ConversationMessage[] = [
+		{
+			id: "ask",
+			role: "user",
+			parts: [{ type: "text", text: "Attach and send" }],
+		},
+		{
+			id: "answer",
+			role: "assistant",
+			runStatus: "INPUT_REQUIRED",
+			parts: [
+				composeEmailPart(
+					{ openEmailId: "open-email", attachments: [noteFile.name] },
+					"attach",
+					"COMPLETED",
+					{ shown: true, attachments: [noteFile] },
+				),
+				{
+					type: "tool",
+					tool: {
+						id: "send",
+						parentMessageId: "answer",
+						name: "SendEmail",
+						title: "Send email",
+						status: "INPUT_REQUIRED",
+						arguments: { openEmailId: "open-email" },
+						metadata: { SMSS_MCP_UI: { component: "email-send" } },
+					},
+				},
+			],
+		},
+	];
+	const turn = {
+		...base.snapshot.turn,
+		phase: "awaiting_approval" as const,
+		isRunning: true,
+		messages,
+		pendingApprovals: [
+			{
+				toolId: "send",
+				parentMessageId: "answer",
+				toolName: "SendEmail",
+				arguments: { openEmailId: "open-email" },
+			},
+		],
+	};
+	renderHook(useRoomEmailProposals, {
+		initialProps: { ...base, loadAttachment, snapshot: { turn } },
+	});
+	await vi.waitFor(() =>
+		expect(open.getSnapshot().values.files).toHaveLength(1),
+	);
 });
 
 it("retains a completed proposal without activating it and preserves edits through reconciliation", () => {

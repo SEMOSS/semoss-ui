@@ -9,7 +9,11 @@ import {
 	P,
 	Spinner,
 } from "@semoss/ui/next";
-import { threadFromMessages } from "@/features/messages/utils/thread-items";
+import { formatMessageTime } from "@/features/messages/utils/message-metadata";
+import {
+	savedTimestamp,
+	threadFromMessages,
+} from "@/features/messages/utils/thread-items";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
 import { useRunDetail } from "../api/use-run-detail";
 import { ChildAgentRunCard } from "./child-agent-run-card";
@@ -89,9 +93,13 @@ export function RunDetails({
 						</Muted>
 						{run.startedAt && (
 							<Muted className="block text-xs">
-								Started: {run.startedAt}
+								Started:{" "}
+								{formatMessageTime(
+									savedTimestamp(run.startedAt),
+									true,
+								) || run.startedAt}
 								{run.completedAt
-									? ` · Finished: ${run.completedAt}`
+									? ` · Finished: ${formatMessageTime(savedTimestamp(run.completedAt), true) || run.completedAt}`
 									: ""}
 							</Muted>
 						)}

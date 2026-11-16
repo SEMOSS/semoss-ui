@@ -1,7 +1,7 @@
 import { getStatusClasses } from "../domain/automation-display";
 import { StatusIcon } from "./status-icon";
 
-export interface StatusBadgeProps {
+interface StatusBadgeProps {
 	/** Run/node status to render (e.g. RUNNING, SUCCESS, FAILED) */
 	status: string;
 }

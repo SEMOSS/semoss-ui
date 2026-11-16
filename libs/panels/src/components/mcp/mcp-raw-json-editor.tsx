@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { Button, Textarea } from "@semoss/ui/next";
 import { locateJsonError } from "@semoss/utility/json";
 
-export interface MCPRawJsonEditorProps {
+interface MCPRawJsonEditorProps {
 	value: string;
 
 	/** Parse error for the current text, if any */

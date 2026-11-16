@@ -12,6 +12,7 @@ import type { WorkbenchPanelRecord } from "@semoss/workbench";
 export const WORKBENCH_COMPONENTS = {
 	...FILE_PANEL_TYPES,
 	AGENT_EDITOR: "project-agent-editor",
+	AGENT_FILES: "project-agent-files",
 	ASSISTANT: "workbench-assistant",
 	BLOCKS_DESIGNER: "blocks-designer",
 	BLOCKS_EXPORT: "blocks-export",
@@ -63,12 +64,6 @@ export const WORKBENCH_EVENTS = {
 	GIT_STATUS_CHANGED: "git:status-changed",
 } as const;
 
-/** What each topic carries. */
-export interface WorkbenchEventPayloads {
-	[WORKBENCH_EVENTS.APP_PUBLISHED]: { projectId: string };
-	[WORKBENCH_EVENTS.GIT_STATUS_CHANGED]: { scope: string };
-}
-
 /**
  * Shared panel instance records, keyed by role.
  *
@@ -83,6 +78,13 @@ export const WORKBENCH_PANEL_RECORDS = {
 		type: WORKBENCH_COMPONENTS.AGENT_EDITOR,
 		name: "Agent",
 		helpText: "Agent Editor",
+		canClose: false,
+	},
+	AGENT_FILES: {
+		id: WORKBENCH_COMPONENTS.AGENT_FILES,
+		type: WORKBENCH_COMPONENTS.AGENT_FILES,
+		name: "Agent Files",
+		helpText: "Files the agent can read in every chat",
 		canClose: false,
 	},
 	ASSISTANT: {

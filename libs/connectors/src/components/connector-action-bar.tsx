@@ -11,15 +11,21 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { ConnectorSavedMark } from "./connector-saved-mark";
 
 /** Props for {@link ConnectorActionBar}. */
-export interface ConnectorActionBarProps {
+interface ConnectorActionBarProps {
 	/** Adds what is open to the conversation. Left out when not given. */
 	onAddToContext?: () => void;
 	/** Saves what is open into the insight's files. */
 	onSave: () => void;
 	/** The save action's label, such as `Save to Chat files`. */
 	saveLabel: string;
+	/**
+	 * Set when the host already holds what is open, such as `In your Digital
+	 * Twin`: the bar says so in place of its save button.
+	 */
+	savedLabel?: string;
 	/** Opens it in its own app. */
 	webUrl?: string;
 	/** The app's name, for the open action. */
@@ -33,11 +39,13 @@ export interface ConnectorActionBarProps {
 /**
  * The actions for an open email, thread, chat, or event: add it to the
  * conversation, save it into the insight's files, or open it in its own app.
+ * What the host already holds says so where it would be saved.
  */
 export const ConnectorActionBar = ({
 	onAddToContext,
 	onSave,
 	saveLabel,
+	savedLabel,
 	webUrl,
 	serviceName,
 	isBusy = false,
@@ -58,16 +66,24 @@ export const ConnectorActionBar = ({
 					{t("actions.addToContext")}
 				</Button>
 			) : null}
-			<Button
-				variant="outline"
-				size="sm"
-				className="h-8 px-2 text-xs shadow-none aria-disabled:opacity-50"
-				aria-disabled={isBusy || undefined}
-				onClick={isBusy ? undefined : onSave}
-			>
-				<DownloadIcon aria-hidden />
-				{saveLabel}
-			</Button>
+			{savedLabel ? (
+				// as tall as the button it stands in for
+				<span className="flex h-8 items-center gap-1.5 rounded-md bg-primary/10 px-2 font-medium text-xs">
+					<ConnectorSavedMark />
+					{savedLabel}
+				</span>
+			) : (
+				<Button
+					variant="outline"
+					size="sm"
+					className="h-8 px-2 text-xs shadow-none aria-disabled:opacity-50"
+					aria-disabled={isBusy || undefined}
+					onClick={isBusy ? undefined : onSave}
+				>
+					<DownloadIcon aria-hidden />
+					{saveLabel}
+				</Button>
+			)}
 			{webUrl ? (
 				<Tooltip disableHoverableContent={false}>
 					<TooltipTrigger asChild>

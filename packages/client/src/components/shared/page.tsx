@@ -3,7 +3,7 @@ import { Sidebar } from "./app-sidebar";
 import { Navbar } from "./navbar";
 import { PlatformMessages } from "./platform-messages";
 
-export interface PageProps {
+interface PageProps {
 	/** Content to include in the main section of the page */
 	children: React.ReactNode;
 }

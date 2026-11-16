@@ -8,7 +8,7 @@ import type {
  * A file in the chat's own files, waiting to go with the next message, such
  * as an email a Microsoft 365 viewer saved there.
  */
-export interface ContextItem {
+interface ContextItem {
 	/** Identifies the item in the list; the file's path. */
 	id: string;
 	/** The file's name, shown on its chip. */

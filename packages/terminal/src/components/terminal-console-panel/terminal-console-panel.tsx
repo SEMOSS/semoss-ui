@@ -23,7 +23,7 @@ interface Tab {
 export interface TerminalConsolePanelProps {
 	/**
 	 * App/project to scope each terminal's insight + reactor catalog to. When
-	 * set, every tab opens an app-scoped insight (SetContext runs via
+	 * set, every tab opens an app-scoped insight (LoadApp runs via
 	 * InsightProvider) and reactors are fetched for that project.
 	 */
 	appId?: string;

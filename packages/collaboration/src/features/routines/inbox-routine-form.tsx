@@ -3,6 +3,7 @@ import {
 	Card,
 	CardContent,
 	Field,
+	FieldDescription,
 	FieldError,
 	FieldGroup,
 	FieldLabel,
@@ -36,6 +37,7 @@ import { INBOX_RESULT_COPY } from "./routine-copy";
 import { RoutineFlowSection } from "./routine-flow-section";
 import { RoutineNextRun } from "./routine-next-run";
 import { RoutineResult } from "./routine-result";
+import { RoutineRunNowButton } from "./routine-run-now-button";
 import { RoutineSaveStatus } from "./routine-save-status";
 import {
 	ROUTINE_DAY_NAMES,
@@ -131,10 +133,16 @@ interface InboxRoutineFormProps {
 	routine: InboxRoutine;
 	/** Saves the complete schedule; rejected writes leave the draft intact. */
 	onSave: (values: InboxRoutineSettings) => Promise<InboxRoutine>;
+	/** Starts a brief now and returns the routine as it reads after. */
+	onRunNow: () => Promise<InboxRoutine>;
 }
 
 /** A single opt-in form owns the schedule, inbox scope, and save lifecycle. */
-export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
+export function InboxRoutineForm({
+	routine,
+	onSave,
+	onRunNow,
+}: InboxRoutineFormProps) {
 	const id = useId();
 	const form = useForm<RoutineFormValues>({
 		resolver: zodResolver(formSchema),
@@ -148,7 +156,7 @@ export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
 		routine.assistantAvailable &&
 		routine.mailboxAvailable;
 
-	const { status, handleSubmit, retry } = useRoutineAutosave({
+	const { status, handleSubmit, retry, flush } = useRoutineAutosave({
 		form,
 		onSave: async (values) => {
 			if (values.enabled && !isAvailable) {
@@ -177,6 +185,11 @@ export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
 			return formValues(saved, lookbackUnit);
 		},
 	});
+	// the run reads the saved routine, so an edit still waiting to save goes first
+	const handleRunNow = async () => {
+		await flush();
+		return onRunNow();
+	};
 
 	return (
 		<div className="flex min-w-0 flex-col gap-3">
@@ -220,6 +233,10 @@ export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
 										</span>
 									</span>
 								}
+							/>
+							<RoutineRunNowButton
+								routine={routine}
+								onRunNow={handleRunNow}
 							/>
 							<Separator />
 							<FormField
@@ -316,6 +333,11 @@ export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
 										label={INBOX_SECTION_LABELS[section]}
 									/>
 								))}
+								<FieldDescription>
+									To add a section of your own, create a
+									routine under New routine and choose "Add to
+									my daily brief" as where its result goes.
+								</FieldDescription>
 							</fieldset>
 							<FormInput
 								name="priorityAmount"
@@ -330,7 +352,7 @@ export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
 							<FormTextarea
 								name="preferences"
 								label="Preferences (optional)"
-								description="How you like reply drafts and meeting notes written, such as: keep drafts to three sentences, sign off with my first name, skip newsletters."
+								description="What your brief should show and how it reads, such as: start with a countdown to my vacation, leave out other people's time off, put meetings first, keep reply drafts to three sentences."
 								rows={3}
 								maxLength={ROUTINE_PREFERENCES_LIMIT}
 							/>
@@ -339,6 +361,7 @@ export function InboxRoutineForm({ routine, onSave }: InboxRoutineFormProps) {
 							<RoutineResult
 								routine={routine}
 								copy={INBOX_RESULT_COPY}
+								onRunNow={handleRunNow}
 							/>
 						</div>
 					</CardContent>

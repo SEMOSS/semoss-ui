@@ -5,7 +5,7 @@ import type { ConnectorService } from "../connector.catalog";
 import { ConnectorServiceIcon } from "./connector-service-icon";
 
 /** Props for {@link ConnectorServiceRow}. */
-export interface ConnectorServiceRowProps {
+interface ConnectorServiceRowProps {
 	/** The service. */
 	service: ConnectorService;
 	/** Whether the service is switched on. */

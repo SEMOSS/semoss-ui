@@ -7,7 +7,7 @@ import {
 import { type BuiltInRules, toBuiltInRulesByPolicy } from "./sql-query-policy";
 
 /** Options for {@link useSqlPolicyBuiltIns}. */
-export interface UseSqlPolicyBuiltInsOptions {
+interface UseSqlPolicyBuiltInsOptions {
 	/** The SQL_DIALECT whose built-in rules are read. */
 	dialect: string;
 	/** The insight the read runs in. */
@@ -21,7 +21,7 @@ export interface UseSqlPolicyBuiltInsOptions {
 }
 
 /** What {@link useSqlPolicyBuiltIns} returns. */
-export interface SqlPolicyBuiltIns {
+interface SqlPolicyBuiltIns {
 	/** The built-in rules the lists show, by identifier policy. */
 	builtIns: BuiltInRules;
 	/**

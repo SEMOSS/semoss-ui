@@ -1,7 +1,7 @@
 import type { FC } from "react";
 import { Button } from "@semoss/ui/next";
 
-export interface WorkbenchPanelErrorProps {
+interface WorkbenchPanelErrorProps {
 	/** The detail. Multi-line text keeps its line breaks. */
 	message: string;
 	/** Omit to show the message with no retry action. */

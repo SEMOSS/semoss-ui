@@ -35,6 +35,7 @@ it("loads headers, then selected text, and imports only after an explicit action
 	const onImport = vi.fn();
 	const mail = {
 		uid: "native-mail",
+		messageId: "<native-mail@example.com>",
 		subject: "Today note",
 		from: "sender@example.com",
 		unread: true,

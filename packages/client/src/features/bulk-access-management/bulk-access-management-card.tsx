@@ -2,7 +2,7 @@ import { SlidersHorizontal } from "lucide-react";
 import { Link } from "react-router";
 import { P } from "@semoss/ui/next";
 
-export interface BulkAccessManagementCardProps {
+interface BulkAccessManagementCardProps {
 	/** Where Bulk Access Management is, relative to the page the card is on */
 	to: string;
 	/** What it changes access to, such as "app" or "engine" or "team" */

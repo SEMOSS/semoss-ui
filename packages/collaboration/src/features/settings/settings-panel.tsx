@@ -8,6 +8,7 @@ import { EmailSettings } from "./email-settings";
 import { RulesSettings } from "./rules-settings";
 import { SettingsTabBar } from "./settings-navigation";
 import { settingsSections } from "./settings-sections";
+import { SkillsSettings } from "./skills-settings";
 
 /** Route-driven categories keep form drafts mounted until the user leaves Settings. */
 export function SettingsPanel() {
@@ -32,6 +33,7 @@ export function SettingsPanel() {
 					<div hidden={selected !== "rules"}>
 						<RulesSettings />
 					</div>
+					{selected === "skills" && <SkillsSettings />}
 					{selected === "email" && <EmailSettings />}
 					{selected === "data" && <DataSettings />}
 				</div>

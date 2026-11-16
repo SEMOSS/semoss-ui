@@ -19,7 +19,7 @@ import { EngineModelSettingsPage } from "./engine-model-settings-page";
 import { EngineTagsSettingsPage } from "./engine-tags-settings-page";
 
 /** One section of an engine's Settings tab. */
-export interface EngineSettingsSection extends CatalogSettingsPanelSection {
+interface EngineSettingsSection extends CatalogSettingsPanelSection {
 	/**
 	 * Whether a viewer sees the section on an engine of a type
 	 *

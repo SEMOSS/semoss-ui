@@ -51,7 +51,7 @@ export interface DesignerStoreInterface {
 	};
 }
 
-export interface DesignerConfigInterface {
+interface DesignerConfigInterface {
 	/** Current rendered block */
 	rendered: string;
 }

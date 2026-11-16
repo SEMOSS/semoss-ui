@@ -6,7 +6,7 @@ import { LinkPlugin } from "@lexical/react/LexicalLinkPlugin";
 import { ListPlugin } from "@lexical/react/LexicalListPlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { TablePlugin } from "@lexical/react/LexicalTablePlugin";
-import type { Ref } from "react";
+import type { CSSProperties, Ref } from "react";
 import {
 	EMAIL_HTML_CONFIG,
 	EMAIL_NODES,
@@ -30,6 +30,8 @@ interface EmailEditorProps {
 	required?: boolean;
 	/** Only an explicit same-document revision belongs in existing Undo history. */
 	bodyReplacement?: number;
+	/** The owner's draft font, so the text reads as it will in Outlook. */
+	contentStyle?: CSSProperties;
 }
 
 /** Form-compatible HTML editor sharing the inline composer's nodes, toolbar and serialization. */
@@ -44,6 +46,7 @@ export function EmailEditor({
 	disabled,
 	required,
 	bodyReplacement,
+	contentStyle,
 }: EmailEditorProps) {
 	return (
 		<div className="flex min-h-48 min-w-0 flex-1 flex-col bg-background">
@@ -70,6 +73,7 @@ export function EmailEditor({
 							aria-required={required}
 							onBlur={onBlur}
 							aria-multiline="true"
+							style={contentStyle}
 							className="min-h-48 min-w-0 flex-1 break-words px-4 py-3 text-base leading-relaxed outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
 						/>
 					}

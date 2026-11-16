@@ -1,6 +1,6 @@
 import type { AutomationScopeEntry } from "../../domain/automation-inspector";
 
-export interface AutomationVariableDisplay {
+interface AutomationVariableDisplay {
 	label: string;
 	description?: string;
 	valueType?: string;

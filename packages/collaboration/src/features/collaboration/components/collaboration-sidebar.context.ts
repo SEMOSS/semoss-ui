@@ -5,7 +5,7 @@ export interface CollaborationSidebar {
 	open: (trigger: HTMLElement | null) => void;
 }
 
-export interface CollaborationSidebarContextValue {
+interface CollaborationSidebarContextValue {
 	sidebar: CollaborationSidebar | null;
 	registerSidebar: (sidebar: CollaborationSidebar) => () => void;
 }

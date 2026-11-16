@@ -76,7 +76,7 @@ export type ModelMetadata = {
  * A single published benchmark result. Only `name` and `score` are guaranteed;
  * every qualifier below is optional and frequently missing.
  */
-export interface ModelBenchmark {
+interface ModelBenchmark {
 	name: string;
 	score: number;
 	metric?: string;
@@ -379,18 +379,6 @@ export type StaticModelMetadata = {
 	max_output_tokens?: number | null;
 	reasoning?: boolean | null;
 };
-
-/**
- * Whether the catalog actually knows this model. The pixel answers with an
- * empty map for a model it has never heard of, which is the signal that none
- * of the advisory checks below can say anything.
- */
-export const hasCatalogEntry = (
-	metadata: StaticModelMetadata | undefined,
-): boolean =>
-	!!metadata &&
-	typeof metadata === "object" &&
-	Object.keys(metadata).length > 0;
 
 /**
  * Modalities the curated catalog is capable of expressing. VECTOR and FILE
@@ -1012,7 +1000,7 @@ const BADGE_TONES = {
 		"border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400/40 dark:bg-emerald-400/10 dark:text-emerald-300",
 } as const;
 
-export type BadgeTone = keyof typeof BADGE_TONES;
+type BadgeTone = keyof typeof BADGE_TONES;
 
 /**
  * Render a list of values as outline badges, or the shared empty state.

@@ -29,7 +29,7 @@ export const getAuthorInitials = (name: string): string => {
 };
 
 /** Props for {@link ConnectorAuthorAvatar}. */
-export interface ConnectorAuthorAvatarProps {
+interface ConnectorAuthorAvatarProps {
 	/** Who wrote the message. */
 	name: string;
 }

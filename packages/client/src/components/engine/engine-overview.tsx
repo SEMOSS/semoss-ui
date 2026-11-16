@@ -1,11 +1,10 @@
 import { useMemo } from "react";
-import { usePixel } from "@semoss/sdk/react";
+import { useConfig, usePixel } from "@semoss/sdk/react";
 import type { Engine } from "@semoss/shared";
 import { Badge, Markdown, Separator, Spinner } from "@semoss/ui/next";
 import { formatLocalDateTime } from "@semoss/utility/date";
-import { CatalogOverview } from "@/components/catalog";
-import { useConfig } from "@/hooks";
-import { normalizeTagArray } from "@/utility";
+import { CatalogOverview } from "@/components/catalog/catalog-overview";
+import { normalizeTagArray } from "@/utility/tags";
 import {
 	formatServingProviderLabel,
 	type ModelMetadata,
@@ -37,7 +36,7 @@ const getModelOverviewDescription = (
  */
 export const EngineOverview = ({ engine }: EngineOverviewProps) => {
 	const databaseMetaKeys = useConfig(
-		(state) => state.config.databaseMetaKeys,
+		(state) => state.config?.databaseMetaKeys ?? [],
 	);
 	const isModel = engine.engine_type === "MODEL";
 

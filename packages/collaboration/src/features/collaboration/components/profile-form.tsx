@@ -2,7 +2,6 @@ import {
 	Button,
 	Form,
 	FormInput,
-	FormTextarea,
 	Small,
 	useForm,
 	z,
@@ -22,10 +21,9 @@ const schema = z.object({
 		}
 	}, "Enter a valid time zone, such as America/New_York."),
 	workingHours: z.string(),
-	style: z.string(),
 });
 
-/** Explicit profile save prevents drafts from becoming context before confirmation. */
+/** Role, time zone, and working hours; how you write is reviewed and confirmed in StyleSettings. */
 export function ProfileForm({
 	profile,
 	target,
@@ -40,7 +38,6 @@ export function ProfileForm({
 			role: profile.role.value,
 			timezone: profile.timezone,
 			workingHours: profile.workingHours,
-			style: profile.style.summary,
 		},
 		resetOptions: { keepDirtyValues: true },
 	});
@@ -56,12 +53,6 @@ export function ProfileForm({
 						role: { value: values.role, source: "you" },
 						timezone: values.timezone,
 						workingHours: values.workingHours,
-						style: {
-							...profile.style,
-							summary: values.style,
-							source: "you",
-							confirmed: true,
-						},
 					},
 				});
 				form.reset(values);
@@ -70,11 +61,6 @@ export function ProfileForm({
 			<FormInput name="role" label="Role" />
 			<FormInput name="timezone" label="Time zone" />
 			<FormInput name="workingHours" label="Working hours" />
-			<FormTextarea
-				name="style"
-				label="How you write"
-				description="Your confirmed writing preferences can be used when drafting."
-			/>
 			<Button type="submit">Save profile for this session</Button>
 			{Object.keys(form.formState.dirtyFields).length > 0 && (
 				<Small className="text-muted-foreground">

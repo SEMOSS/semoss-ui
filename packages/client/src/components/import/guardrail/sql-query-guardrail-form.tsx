@@ -1,5 +1,6 @@
 import { ChevronsDownUp, ChevronsUpDown } from "lucide-react";
 import { useState } from "react";
+import { useSessionInsight } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -23,7 +24,7 @@ import {
 import { getErrorMessage } from "@semoss/utility/error";
 import { createGuardrailEngine } from "@/api/guardrails";
 import { EngineFormHeader } from "@/components/import/shared/engine-form-header";
-import { useSession } from "@/hooks/use-session";
+import { CATALOG_NAME_KEY } from "@/components/import/shared/import-form.constants";
 import { SqlPolicyRulesField } from "./sql-policy-rules-field";
 import {
 	type BuiltInRules,
@@ -79,7 +80,7 @@ const nonNegativeIntegerSchema = z
 	.refine((value) => Number(value) <= 2_147_483_647, "Value is too large");
 
 const sqlQueryGuardrailSchema = z.object({
-	MODEL_NAME: z
+	[CATALOG_NAME_KEY]: z
 		.string()
 		.trim()
 		.min(1, "Catalog name is required")
@@ -116,8 +117,9 @@ const sqlQueryGuardrailSchema = z.object({
 
 type SqlQueryGuardrailFormValues = z.infer<typeof sqlQueryGuardrailSchema>;
 
+/** The values the form starts with, before the chosen dialect's built-in rules are read. */
 export const SQL_QUERY_GUARDRAIL_DEFAULTS: SqlQueryGuardrailFormValues = {
-	MODEL_NAME: "",
+	[CATALOG_NAME_KEY]: "",
 	SQL_DIALECT: "GENERIC",
 	SQUARE_BRACKET_QUOTATION: "AUTO",
 	PARSER_FAILURE_POLICY: "DENY",
@@ -154,7 +156,7 @@ export const toSqlQueryGuardrailDetails = (
 	values: SqlQueryGuardrailFormValues,
 	builtIns: BuiltInRules = {},
 ): Record<string, string> => {
-	const { MODEL_NAME: _modelName, ...configuration } = values;
+	const { [CATALOG_NAME_KEY]: _catalogName, ...configuration } = values;
 	const policyBuiltIns: Partial<Record<string, readonly PolicyRule[]>> =
 		builtIns;
 	return {
@@ -172,7 +174,7 @@ export const toSqlQueryGuardrailDetails = (
 };
 
 /** Props for {@link SqlQueryGuardrailForm}. */
-export interface SqlQueryGuardrailFormProps {
+interface SqlQueryGuardrailFormProps {
 	/** The guardrail type's logo, shown beside the form's title. */
 	icon?: string;
 	/** Called with the new guardrail's id once it is created, or with none on cancel. */
@@ -188,7 +190,7 @@ export const SqlQueryGuardrailForm = ({
 	icon,
 	onSubmit,
 }: SqlQueryGuardrailFormProps) => {
-	const insightID = useSession((state) => state.insightID);
+	const { insightId } = useSessionInsight();
 	const form = useForm<SqlQueryGuardrailFormValues>({
 		resolver: zodResolver(sqlQueryGuardrailSchema),
 		defaultValues: SQL_QUERY_GUARDRAIL_DEFAULTS,
@@ -200,7 +202,7 @@ export const SqlQueryGuardrailForm = ({
 	// take the place of the previous dialect's; the user's own rules stay
 	const policyBuiltIns = useSqlPolicyBuiltIns({
 		dialect,
-		insightId: insightID,
+		insightId: insightId,
 		onChange: (next, previous) => {
 			for (const field of IDENTIFIER_POLICY_FIELDS) {
 				form.setValue(
@@ -270,8 +272,8 @@ export const SqlQueryGuardrailForm = ({
 		let engineId: string;
 		try {
 			engineId = await createGuardrailEngine(
-				insightID,
-				values.MODEL_NAME,
+				insightId,
+				values[CATALOG_NAME_KEY],
 				toSqlQueryGuardrailDetails(values, builtIns),
 			);
 		} catch (error: unknown) {
@@ -322,7 +324,7 @@ export const SqlQueryGuardrailForm = ({
 						</div>
 						<div className="flex flex-2 flex-col gap-2">
 							<FormInput
-								name="MODEL_NAME"
+								name={CATALOG_NAME_KEY}
 								label="Catalog name"
 								description="Name used to identify this guardrail in the catalog."
 								disabled={isSubmitting}

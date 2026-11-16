@@ -10,6 +10,7 @@ import {
 	setRoomForInsight,
 	updateRoomOptions,
 } from "../../api/chat";
+import { readPixelStreamChunk } from "../../api/pixel-stream";
 import type {
 	AgentRunSnapshot,
 	RoomAskAgentOptions,
@@ -120,22 +121,14 @@ export class RoomStore {
 
 			if (onChunk) {
 				for (const chunk of message) {
-					if (chunk.stream_type === "content" && chunk.data.content) {
-						onChunk({
-							type: "content",
-							content: chunk.data.content,
-						});
-					} else if (
-						chunk.stream_type === "thinking" &&
-						chunk.data.thinking
-					) {
-						onChunk({
-							type: "thinking",
-							thinking: chunk.data.thinking,
-						});
-					} else if (chunk.stream_type === "tool") {
-						onChunk({ type: "tool", toolData: chunk.data });
-					}
+					readPixelStreamChunk(chunk, {
+						onText: (content) =>
+							onChunk({ type: "content", content }),
+						onThinking: (thinking) =>
+							onChunk({ type: "thinking", thinking }),
+						onTool: (toolData) =>
+							onChunk({ type: "tool", toolData }),
+					});
 				}
 			}
 

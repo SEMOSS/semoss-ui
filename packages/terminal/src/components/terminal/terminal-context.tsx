@@ -7,7 +7,6 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { AccessStoreProvider, createAccessStore } from "@semoss/panels";
 import type {
 	AppRef,
 	ConsoleContext,
@@ -18,18 +17,17 @@ import type {
 	TerminalView,
 } from "../../types";
 
-export interface SubmitToConsoleOptions {
+interface SubmitToConsoleOptions {
 	/** What appears as the "(Px) > ..." line in the transcript. */
 	displayInput: string;
 	/** Which persona to label the transcript entry with. */
 	context: ConsoleContext;
 }
 
-export type SubmitToConsoleFn = (
-	pixel: string,
-	opts: SubmitToConsoleOptions,
-) => void;
+/** A console's handler for a pixel submitted through its transcript. */
+type SubmitToConsoleFn = (pixel: string, opts: SubmitToConsoleOptions) => void;
 
+/** The save dialog: whether it is open, and the file it saves. */
 interface SaveModalState {
 	open: boolean;
 	name: string;
@@ -37,12 +35,14 @@ interface SaveModalState {
 	selected: Partial<SelectedFile>;
 }
 
+/** The upload dialog: whether it is open, and the files it uploads. */
 interface UploadModalState {
 	open: boolean;
 	files: File[];
 	comment: string;
 }
 
+/** Everything the terminal's panes share through {@link TerminalProvider}. */
 interface TerminalContextValue {
 	location: TerminalLocation;
 	mode: TerminalMode;
@@ -154,16 +154,25 @@ const TerminalContextInternal = createContext<TerminalContextValue | undefined>(
 );
 
 interface TerminalProviderProps {
+	/** The terminal's panes. */
 	children: ReactNode;
+	/** Where the terminal is mounted, which picks its initial mode. */
 	location?: TerminalLocation;
+	/** The mode to start in, over the one `location` picks. */
 	initialMode?: TerminalMode;
+	/** The view to start in. */
 	initialView?: TerminalView;
+	/** Shows an alert to the embedder; without it, alerts are logged. */
 	onAlert?: (
 		level: "info" | "warn" | "error" | "success",
 		text: string,
 	) => void;
 }
 
+/**
+ * The single root every terminal pane hangs off: its mode and view, the save
+ * and upload dialogs, the consoles and their insights, and the file scope.
+ */
 export const TerminalProvider = ({
 	children,
 	location = "workspace",
@@ -175,12 +184,6 @@ export const TerminalProvider = ({
 	const [view, setView] = useState<TerminalView>(initialView);
 	const [title, setTitle] = useState("");
 	const [open, setOpen] = useState(true);
-
-	// The file panels resolve resource permissions off a host-supplied cache.
-	// The terminal has no session store of its own, so it mounts one here — the
-	// provider is the single root every terminal surface hangs off, which is
-	// what keeps two panes from disagreeing about the same resource.
-	const [accessStore] = useState(createAccessStore);
 
 	const [save, setSaveState] = useState<SaveModalState>({
 		open: false,
@@ -407,13 +410,17 @@ export const TerminalProvider = ({
 
 	return (
 		<TerminalContextInternal.Provider value={value}>
-			<AccessStoreProvider store={accessStore}>
-				{children}
-			</AccessStoreProvider>
+			{children}
 		</TerminalContextInternal.Provider>
 	);
 };
 
+/**
+ * Read the nearest terminal's shared state.
+ *
+ * @returns The value {@link TerminalProvider} shares.
+ * @throws Outside a `TerminalProvider`.
+ */
 export const useTerminal = (): TerminalContextValue => {
 	const ctx = useContext(TerminalContextInternal);
 	if (!ctx) {
@@ -423,15 +430,17 @@ export const useTerminal = (): TerminalContextValue => {
 };
 
 /**
- * Compute the initial terminal mode the same way the legacy directive did:
- * - workspace/popup → user-saved or "repl"
- * - pipeline → "asset"
- * - everything else → "repl"
+ * Hold the terminal's mode, starting where the legacy directive did:
+ * `initialMode` when given, `"asset"` in a pipeline, else `"repl"`.
+ *
+ * @param location - Where the terminal is mounted.
+ * @param initialMode - The mode to start in, over the one `location` picks.
+ * @returns The mode and its setter.
  */
 const useStateMode = (
 	location: TerminalLocation,
 	initialMode?: TerminalMode,
-) => {
+): { value: TerminalMode; set: (mode: TerminalMode) => void } => {
 	const [value, setValue] = useState<TerminalMode>(() => {
 		if (initialMode) return initialMode;
 		if (location === "pipeline") return "asset";

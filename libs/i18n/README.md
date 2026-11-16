@@ -73,7 +73,7 @@ function MyComponent() {
 Create the instance via `I18nBuilder`, passing the app's lazy resource config. Languages load on demand (one chunk per language) — await `ready` before the first render.
 
 ```typescript
-// packages/client/src/App.tsx
+// packages/client/src/app.tsx
 import { I18nBuilder, clientResources } from "@semoss/i18n";
 
 const builder = new I18nBuilder(clientResources, { lockToEnglish: true });

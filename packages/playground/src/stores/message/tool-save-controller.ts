@@ -10,7 +10,7 @@ import {
 import type { ToolStore } from "@/stores";
 import type { InputPixelMessage, ResponsePixelMessage } from "@/types";
 import { ResponseMessageStore } from "./response-message.store";
-import { applyToolStreamChunk } from "./tool-stream";
+import { applyResponseStreamChunk } from "./response-stream";
 import { type CancelCommitOutput, spliceHiddenMessages } from "./utility";
 
 /** A tool result waiting to be written to room history via the save queue. */
@@ -372,32 +372,13 @@ export class ToolSaveController {
 				pixel,
 				{
 					onEmit: (chunk) => {
-						runInAction(() => {
-							if (chunk.stream_type === "content") {
-								if (chunk.data.content) {
-									responseMessage.savePart({
-										type: "TEXT",
-										text: chunk.data.content,
-										uiText: chunk.data.content,
-									});
-								}
-							} else if (chunk.stream_type === "thinking") {
-								if (chunk.data.thinking) {
-									responseMessage.savePart({
-										type: "THINKING",
-										thinking: chunk.data.thinking,
-									});
-								}
-							} else if (chunk.stream_type === "tool") {
-								applyToolStreamChunk(
-									responseMessage,
-									toolStreamIndexToId,
-									chunk.data,
-								);
-							} else {
-								console.error(`Unknown stream type`, chunk);
-							}
-						});
+						runInAction(() =>
+							applyResponseStreamChunk(
+								responseMessage,
+								toolStreamIndexToId,
+								chunk,
+							),
+						);
 					},
 					onResult: ({ results }) => {
 						const modelReply = this.reconcile(batch, results);

@@ -12,7 +12,7 @@ type VisioSnapshotSource = Pick<
 >;
 
 /** An immutable document identity, including replacement by the same model. */
-export interface VisioSaveSnapshot {
+interface VisioSaveSnapshot {
 	document: ViewerController["state"]["document"];
 	generation: number;
 }

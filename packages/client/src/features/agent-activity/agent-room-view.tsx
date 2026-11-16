@@ -22,7 +22,7 @@ import {
 } from "./agent-room-markdown";
 import { AgentRunGraph } from "./agent-run-graph";
 
-export interface AgentRoomViewProps {
+interface AgentRoomViewProps {
 	/** The room shown */
 	roomId: string;
 	/** The room's name, shown over its id; "Untitled room" when it has none */

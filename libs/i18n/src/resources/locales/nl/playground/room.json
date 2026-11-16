@@ -4,10 +4,7 @@
 		"title": "Voorgestelde vervolgberichten"
 	},
 	"settings": {
-		"title": "Kamerinstellingen",
-		"description": "Werk de kamerinstellingen bij en pas het gedrag van de chat aan",
-		"open": "Instellingen openen",
-		"close": "Sluiten",
+		"description": "Model, instructies, kennis en tools voor deze kamer.",
 		"compact": "Gesprek comprimeren",
 		"compactSuccess": "Gesprek succesvol gecomprimeerd",
 		"compactSkipped": "Niets te comprimeren — het gesprek is al beknopt",
@@ -28,20 +25,18 @@
 			"TOOL_PRUNE": "Verwijdert uitgebreide toolresultaten uit de gespreksgeschiedenis. Het beste wanneer tooloutputs groot zijn en de details niet meer nodig zijn.",
 			"AUTO": "Kiest samenvatten of tools opschonen op basis van het huidige gesprek."
 		},
-		"panelTitle": "Instellingen",
 		"noKnowledge": "Geen kennis geselecteerd.",
-		"noTools": "Geen tools geselecteerd.",
 		"fromRoom": "Van de chatruimte",
 		"inheritedSelection": "Overgenomen selecties kunnen niet uit deze chat worden verwijderd.",
 		"removeSelection": "{{name}} verwijderen",
-		"agentLoadError": "De agent kon niet worden geladen. Probeer opnieuw of kies een andere agent."
+		"agentLoadError": "De agent kon niet worden geladen. Probeer opnieuw of kies een andere agent.",
+		"toolsTitle": "Tools"
 	},
 	"form": {
 		"modelLabel": "Model",
 		"instructionsLabel": "Instructies",
 		"agentLabel": "Agent",
 		"knowledgeLabel": "Kennis",
-		"toolboxLabel": "Toolboxes",
 		"temperatureLabel": "Temperatuur"
 	},
 	"modes": {
@@ -53,7 +48,7 @@
 		"noAgent": "Geen agent"
 	},
 	"workspace": {
-		"publishTooltip": "Publiceren als agent",
+		"publish": "Publiceren als agent",
 		"publishTitle": "Agent publiceren",
 		"publishDescription": "Publiceer een nieuwe agent met de huidige kamerconfiguratie, inclusief instructies en MCP's.",
 		"nameLabel": "Naam *",
@@ -71,7 +66,7 @@
 		"ariaPlaceholder": "Voer tekst in",
 		"thinking": "Bezig met denken...",
 		"menuPrompt": "Hoe kan ik je vandaag helpen?",
-		"openSettings": "Voeg toe aan je chat",
+		"addToChat": "Voeg toe aan je chat",
 		"recordLabel": "Het model opnemen",
 		"stopRecording": "Opname stoppen",
 		"record": "Opnemen",
@@ -120,9 +115,7 @@
 		"attachDocument": "Bestanden bijvoegen"
 	},
 	"menuFileExplorer": {
-		"name": "Chatbestanden",
-		"open": "Chatbestanden tonen",
-		"close": "Chatbestanden verbergen"
+		"name": "Kamerbestanden"
 	},
 	"errors": {
 		"createRoom": "Er is een fout opgetreden bij het aanmaken van de kamer. Fout: {{message}}",
@@ -146,18 +139,12 @@
 	"studio": {
 		"views": "Gespreksweergaven",
 		"chat": "Chat",
-		"openWorkArea": "Werkruimte openen",
-		"workArea": "Werkruimte",
-		"toolsCount": "Tools, {{count}} geselecteerd",
-		"tools": "Tools",
+		"workspace": "Werkruimte",
 		"toolsLocked": "Tools kunnen niet worden gewijzigd terwijl een antwoord wordt gemaakt.",
 		"toolsHint": "Selecties gelden voor je volgende bericht.",
-		"toolsTitle": "Tools en kennis",
-		"toolsDescription": "Kies de tools en kennis die beschikbaar zijn voor dit gesprek.",
 		"moreActions": "Meer acties",
 		"prompts": "Prompts",
 		"removeFile": "{{name}} verwijderen",
-		"thinking": "Redenering",
 		"errorTitle": "Er is iets misgegaan",
 		"errorDescription": "Vernieuw de pagina of ga terug naar de startpagina en probeer het opnieuw.",
 		"backHome": "Terug naar start",
@@ -166,16 +153,21 @@
 		"exportCsv": "Exporteren als CSV",
 		"exportPdf": "Exporteren als PDF",
 		"closeWorkspace": "Werkruimte sluiten",
+		"openWorkspace": "Werkruimte openen",
 		"preparingWorkspace": "Werkruimte voorbereiden…",
-		"activityLog": "Activiteitenlogboek",
 		"prepareError": "De werkruimte kon niet worden voorbereid. Je concept is bewaard.",
 		"retry": "Opnieuw proberen"
 	},
 	"workspacePlaces": {
 		"files": "Bestanden",
-		"tools": "Tools",
+		"openPanel": "Een paneel openen",
 		"activity": "Activiteit",
-		"settings": "Instellingen"
+		"settings": "Instellingen",
+		"descriptions": {
+			"files": "Bestanden die je hier uploadt en alles wat de tools van de kamer maken",
+			"settings": "Het model, de instructies, kennis en tools van deze kamer",
+			"activity": "Elke toolaanroep en wijziging in deze kamer"
+		}
 	},
 	"optimizer": {
 		"optimize": "Prompt optimaliseren",
@@ -191,5 +183,71 @@
 	"contextItems": {
 		"label": "Toegevoegd aan je volgende bericht",
 		"remove": "{{name}} uit je volgende bericht verwijderen"
+	},
+	"header": {
+		"untitled": "Naamloze kamer",
+		"renameLabel": "Naam van de kamer",
+		"roomSection": "Kamer"
+	},
+	"slash": {
+		"empty": "Geen opdrachten gevonden",
+		"openPlace": "{{name}} openen in de werkruimte",
+		"groups": {
+			"chat": "Chat",
+			"workspace": "Werkruimte",
+			"room": "Kamer",
+			"prompts": "Prompts"
+		},
+		"commands": {
+			"attach": {
+				"label": "Bestanden bijvoegen",
+				"description": "Voeg bestanden toe aan je volgende bericht"
+			},
+			"knowledge": {
+				"label": "Kennis toevoegen",
+				"description": "Laat de assistent in je kennisbronnen zoeken"
+			},
+			"toolbox": {
+				"label": "Tools toevoegen",
+				"description": "Voeg toolboxes toe die de assistent kan gebruiken"
+			},
+			"agent": {
+				"label": "Agent kiezen",
+				"description": "Kies de agent die deze kamer uitvoert"
+			},
+			"agent-harness": {
+				"label": "Overschakelen naar agent",
+				"description": "Voer deze kamer uit met een agent"
+			},
+			"chat-mode": {
+				"label": "Overschakelen naar chat",
+				"description": "Voer deze kamer uit zonder agent"
+			},
+			"compact": {
+				"label": "Comprimeren",
+				"description": "Vat het gesprek samen om context vrij te maken"
+			},
+			"close-workspace": {
+				"description": "Verberg de werkruimte en behoud de tabbladen"
+			},
+			"favorite": {
+				"description": "Zet deze kamer bovenaan je lijst"
+			},
+			"unfavorite": {
+				"description": "Haal deze kamer weg bovenaan je lijst"
+			},
+			"rename": {
+				"description": "Wijzig de naam van deze kamer"
+			},
+			"download": {
+				"description": "Sla dit gesprek op als Word of PDF"
+			},
+			"delete": {
+				"description": "Verwijder deze kamer en het gesprek"
+			},
+			"publish": {
+				"description": "Sla de instructies en tools van deze kamer op als agent"
+			}
+		}
 	}
 }

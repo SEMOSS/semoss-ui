@@ -1,36 +1,4 @@
-import { copyTextToClipboard as copyText } from "@semoss/utility";
-import type { SerializedState } from "../store";
-
-export {
-	capitalizeFirstLetter,
-	isOutputJSON,
-	splitAtPeriod,
-} from "@semoss/utility";
-
-/**
- * @desc Checks if output and verify if its a JSON object
- */
-/**
- * @desc Copies string to clipboard
- */
-export const copyTextToClipboard = async (
-	text: string,
-	notificationService,
-): Promise<void> => {
-	try {
-		await copyText(text);
-
-		notificationService.add({
-			color: "success",
-			message: "Successfully copied to clipboard",
-		});
-	} catch (error) {
-		notificationService.add({
-			color: "error",
-			message: error instanceof Error ? error.message : String(error),
-		});
-	}
-};
+export { deepCopy as copy } from "@semoss/utility/object";
 
 /**
  * Ignore the result of a promise
@@ -104,50 +72,6 @@ export const syncronousPromise = <R>(
 };
 
 /**
- * Deep copy an object
- *
- * @param instance - instance of the object that we want to copy
- * @param intercept - intercept method
- *
- * @returns a copied object
- */
-export const copy = <T>(
-	instance: T,
-	intercept: (instance: unknown) => unknown = (instance) => instance,
-): T => {
-	// intercept the instance and update it if relevant
-	instance = intercept(instance) as T;
-
-	if (!instance) {
-		return instance;
-	}
-
-	if (instance instanceof Date) {
-		return new Date(instance.getTime()) as unknown as T;
-	}
-
-	if (instance instanceof Array) {
-		return instance.map((c) => {
-			return copy(c, intercept);
-		}) as unknown as T;
-	}
-
-	if (instance instanceof Object) {
-		const copied: { [key: string]: unknown } = {};
-		for (const k in instance) {
-			copied[k] = copy(
-				(instance as Record<string, unknown>)[k],
-				intercept,
-			);
-		}
-
-		return copied as unknown as T;
-	}
-
-	return instance;
-};
-
-/**
  * Set a value from an object based on the path. This will generate partials.
  *
  * @param target - target object to set the value on
@@ -218,24 +142,4 @@ export const getValueByPath = <T extends object>(target: T, path: string) => {
 	}
 
 	return target;
-};
-
-export const getHomePage = (state: SerializedState) => {
-	let active = "";
-	const blocks = state.blocks;
-
-	Object.entries(blocks).forEach((kv) => {
-		const id = kv[0];
-		const json = kv[1] as { widget: string };
-
-		if (json.widget === "page") {
-			active = id;
-		}
-	});
-
-	if (active) {
-		return active;
-	}
-
-	return "page-1";
 };

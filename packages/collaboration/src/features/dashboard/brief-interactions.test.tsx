@@ -1,8 +1,7 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
-import { createMemoryRouter, MemoryRouter, RouterProvider } from "react-router";
-import { WorkUpdatesContext } from "@/features/collaboration/live/work-updates.context";
+import { createMemoryRouter, RouterProvider } from "react-router";
 import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
 import type {
 	CollaborationState,
@@ -15,7 +14,6 @@ import {
 } from "@/features/collaboration/state/collaboration-session.context";
 import type { InsightActions } from "@/lib/pixel";
 import { DashboardPage } from "@/pages/dashboard.page";
-import { BriefNeeds } from "./brief-needs";
 import { DashboardContext } from "./dashboard.context";
 import { useDashboardLayout } from "./use-dashboard-layout";
 
@@ -24,6 +22,61 @@ vi.mock("@/features/daily-chat/landing-chat-composer", () => ({
 		<section aria-label="Start a conversation">Chat composer</section>
 	),
 }));
+// opening a file's room has its own tests; here only that a row asks for it
+const fileRoom = vi.hoisted(() => ({ open: vi.fn(), openingId: "" }));
+vi.mock("./use-open-file-room", () => ({
+	useOpenFileRoom: () => ({
+		open: fileRoom.open,
+		openingId: fileRoom.openingId,
+	}),
+}));
+// Today reads the onboarding flag, the owner's work items and their recently changed files from
+// the server; one actions object, since those reads rerun whenever it changes
+const insight = vi.hoisted(() => ({
+	workItems: [] as Record<string, unknown>[],
+	workError: "",
+	recentFiles: [] as Record<string, unknown>[],
+	filesError: "",
+	actions: {
+		run: vi.fn(async (statement: string) => {
+			const isFiles = statement.startsWith(
+				"MicrosoftOneDriveListRecentFiles",
+			);
+			const failure = isFiles ? insight.filesError : insight.workError;
+			const output = isFiles
+				? {
+						count: insight.recentFiles.length,
+						files: insight.recentFiles,
+					}
+				: { selfId: "me", workItems: insight.workItems };
+			return {
+				pixelReturn: [
+					(isFiles || statement.startsWith("WorkListMyWork")) &&
+					!failure
+						? { output, operationType: ["OPERATION"] }
+						: // an unread connection keeps Today, as a server without the onboarding flag does
+							{
+								output: failure || "Not read in these tests",
+								operationType: ["ERROR"],
+							},
+				],
+			};
+		}),
+	},
+}));
+vi.mock("@semoss/sdk/react", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
+	useInsight: () => insight,
+}));
+
+/** A work item as WorkListMyWork returns it. */
+const workItem = (index: number) => ({
+	id: `task-${index}`,
+	title: `Work item ${index}`,
+	state: "active",
+	mine: true,
+	openSteps: [],
+});
 
 const storageKey = "brief-interaction-layout";
 const request = vi.fn((): never => {
@@ -150,6 +203,7 @@ function BriefHarness({
 						rooms: [],
 						closedRoomIds: [],
 						setRoomClosed: vi.fn(),
+						renameRoom: vi.fn(),
 						closeError: "",
 						isLoading: false,
 						error: "",
@@ -201,16 +255,6 @@ function renderBrief(state = createBriefState(), calendarError = "") {
 	return { ...result, router, onChange };
 }
 
-function workCard(title: string): HTMLElement {
-	const card = within(
-		screen.getByRole("region", { name: "When you're ready" }),
-	)
-		.getByRole("link", { name: title })
-		.closest("article");
-	if (!card) throw new Error(`Missing work card: ${title}`);
-	return card;
-}
-
 beforeAll(() => {
 	// JSDOM does not provide the pointer-capture APIs used by the shared Select.
 	HTMLElement.prototype.hasPointerCapture = () => false;
@@ -221,9 +265,14 @@ afterEach(() => {
 	cleanup();
 	localStorage.clear();
 	vi.clearAllMocks();
+	insight.workItems = [];
+	insight.workError = "";
+	insight.recentFiles = [];
+	insight.filesError = "";
+	fileRoom.openingId = "";
 });
 
-it("shows Today as greeting, ask box, the short list and Your day without setup panels", () => {
+it("shows Today as greeting, ask box, your work, Your day and Recent activity without setup panels", () => {
 	const { container } = renderBrief();
 	expect(
 		[
@@ -237,7 +286,12 @@ it("shows Today as greeting, ask box, the short list and Your day without setup 
 					region.getAttribute("aria-labelledby") || "",
 				)?.textContent,
 		),
-	).toEqual(["Start a conversation", "When you're ready", "Your day"]);
+	).toEqual([
+		"Start a conversation",
+		"Your work",
+		"Your day",
+		"Recent activity",
+	]);
 	for (const name of ["Brain wants to check", "Handled", "Needs you"]) {
 		expect(screen.queryByRole("region", { name })).not.toBeInTheDocument();
 	}
@@ -297,7 +351,7 @@ it("greets by the given name for first-last and last-first profile names", () =>
 	expect(screen.getByText("Nothing is due today.")).toBeVisible();
 });
 
-it("puts overdue and due-today work first and counts it in the headline", () => {
+it("counts overdue and due-today work in the headline", () => {
 	const state = createBriefState();
 	const now = Date.now();
 	state.items = state.items.map((item) =>
@@ -309,83 +363,214 @@ it("puts overdue and due-today work first and counts it in the headline", () => 
 	);
 	renderBrief(state);
 	expect(screen.getByText("2 things are due today.")).toBeVisible();
-	const today = within(
-		screen.getByRole("region", { name: "When you're ready" }),
-	);
-	expect(
-		today
-			.getAllByRole("heading", { level: 3 })
-			.map((heading) => heading.textContent),
-	).toEqual([
-		"Choose support tier",
-		"Review the sprint backlog",
-		"Confirm revised pricing",
-	]);
 });
 
-it("shows the five-task limit without another click and keeps the rest behind See everything", () => {
+it("shows six work items without another click and keeps the rest behind Work", async () => {
+	insight.workItems = Array.from({ length: 7 }, (_, index) =>
+		workItem(index),
+	);
+	renderBrief();
+	const work = await screen.findByRole("list", { name: "Your work items" });
+	expect(within(work).getAllByRole("listitem")).toHaveLength(6);
+	expect(
+		screen.queryByRole("button", { name: "Work item 6" }),
+	).not.toBeInTheDocument();
+	expect(screen.getByRole("link", { name: "See all 7" })).toHaveAttribute(
+		"href",
+		"/work",
+	);
+	expect(
+		screen.getByRole("link", { name: "All work items" }),
+	).toHaveAttribute("href", "/work");
+});
+
+it("lists each work item with its next step or who it waits on, above what waits for review", async () => {
+	insight.workItems = [
+		{
+			...workItem(0),
+			title: "Set up GPU capacity",
+			openSteps: [
+				{ id: "s1", text: "Pick the instance type", status: "open" },
+				{
+					id: "s2",
+					text: "Ask AWS for quota",
+					status: "open",
+					kind: "waiting_on",
+					assigneeId: "kunal",
+					assigneeName: "Patel, Kunal",
+				},
+			],
+		},
+		{
+			...workItem(1),
+			openSteps: [
+				{
+					id: "s3",
+					text: "Send the approval policy",
+					status: "open",
+					kind: "waiting_on",
+					assigneeId: "priya",
+					assigneeName: "Shah, Priya",
+				},
+			],
+		},
+		{ ...workItem(2), state: "proposed" },
+	];
+	renderBrief();
+	const work = within(
+		await screen.findByRole("list", { name: "Your work items" }),
+	);
+	expect(
+		work.getByRole("link", { name: "Set up GPU capacity" }),
+	).toHaveAttribute("href", "/work/item/task-0");
+	// the owner's own step leads; who they wait on shows only when nothing is theirs
+	expect(work.getByText("Next: Pick the instance type")).toBeVisible();
+	expect(
+		work.getByText("Waiting on Priya Shah: Send the approval policy"),
+	).toBeVisible();
+	expect(work.queryByText(/Ask AWS for quota/)).not.toBeInTheDocument();
+	expect(
+		screen.getByRole("link", { name: /^1 new work item/ }),
+	).toHaveAttribute("href", "/work/review");
+});
+
+it("lists the newest conversations under Recent activity and leaves out muted and automated ones", () => {
 	const state = createBriefState();
-	const [first] = state.items;
-	if (!first) throw new Error("Missing sample item");
-	state.items = [
-		...state.items,
-		...Array.from({ length: 4 }, (_, index) => ({
-			...first,
-			id: `extra-${index}`,
-			title: `Extra task ${index}`,
-			score: 10 - index,
-		})),
+	const edits: Partial<Thread>[] = [
+		{ subject: "Older mail", lastAt: "2026-10-05T09:00:00.000Z" },
+		{
+			subject: "Newer chat",
+			channel: "teams",
+			lastAt: "2026-10-06T09:00:00.000Z",
+		},
+		{
+			subject: "Muted mail",
+			muted: true,
+			lastAt: "2026-10-07T09:00:00.000Z",
+		},
+		{
+			subject: "Newsletter",
+			automated: true,
+			lastAt: "2026-10-07T10:00:00.000Z",
+		},
+	];
+	state.threads = state.threads.map((thread, index) => ({
+		...thread,
+		...edits[index],
+	}));
+	renderBrief(state);
+	const activity = within(
+		screen.getByRole("region", { name: "Recent activity" }),
+	);
+	expect(
+		activity.getAllByRole("link").map((link) => link.textContent),
+	).toEqual(["Teams: Newer chat", "Email: Older mail"]);
+	expect(
+		activity.getByRole("link", { name: "Teams: Newer chat" }),
+	).toHaveAttribute("href", "/thread/support-thread");
+});
+
+it("mixes the owner's recently changed OneDrive files into Recent activity once Microsoft 365 is connected, each opening in its room", async () => {
+	const user = userEvent.setup();
+	const state = createBriefState();
+	state.settings.sourcesJson.email = true;
+	// the conversations were all last active on Oct 6
+	insight.recentFiles = [
+		{
+			id: "f1",
+			driveId: "d1",
+			name: "Q1 Business Review.pptx",
+			webUrl: "https://contoso-my.sharepoint.com/personal/riley/Documents/Q1%20Business%20Review.pptx",
+			lastModifiedDateTime: "2026-10-07T09:00:00Z",
+		},
+		{
+			id: "f2",
+			name: "Old notes.docx",
+			lastModifiedDateTime: "2026-10-01T09:00:00Z",
+		},
 	];
 	renderBrief(state);
-	const today = within(
-		screen.getByRole("region", { name: "When you're ready" }),
+	const activity = within(
+		screen.getByRole("region", { name: "Recent activity" }),
 	);
-	expect(today.getAllByRole("article")).toHaveLength(5);
+	const deck = await activity.findByRole("button", {
+		name: "File: Q1 Business Review.pptx",
+	});
+	expect(insight.actions.run).toHaveBeenCalledWith(
+		"MicrosoftOneDriveListRecentFiles(limit=[3]);",
+	);
+	// newest first across both kinds
 	expect(
-		today.queryByRole("button", { name: /Show .* more/ }),
-	).not.toBeInTheDocument();
+		activity
+			.getAllByRole("listitem")
+			.map((row) => row.textContent?.split(":")[0]),
+	).toEqual(["File", "Email", "Email", "Email", "Email", "File"]);
+	// a file is not a link out to OneDrive: it opens in a room here
+	expect(activity.getAllByRole("link")).toHaveLength(4);
+	await user.click(deck);
+	expect(fileRoom.open).toHaveBeenCalledWith({
+		id: "f1",
+		driveId: "d1",
+		name: "Q1 Business Review.pptx",
+		lastModifiedDateTime: "2026-10-07T09:00:00Z",
+	});
+});
+
+it("shows which file's room is opening and holds the other files until it has", async () => {
+	const state = createBriefState();
+	state.settings.sourcesJson.calendar = true;
+	insight.recentFiles = [
+		{
+			id: "f1",
+			name: "Q1 Business Review.pptx",
+			lastModifiedDateTime: "2026-10-07T09:00:00Z",
+		},
+		{
+			id: "f2",
+			name: "Old notes.docx",
+			lastModifiedDateTime: "2026-10-01T09:00:00Z",
+		},
+	];
+	fileRoom.openingId = "f1";
+	renderBrief(state);
+	const activity = within(
+		screen.getByRole("region", { name: "Recent activity" }),
+	);
+	const deck = await activity.findByRole("button", {
+		name: "File: Q1 Business Review.pptx",
+	});
+	expect(deck).toHaveAttribute("aria-busy", "true");
+	expect(deck).toBeDisabled();
 	expect(
-		today.getByRole("link", { name: "See everything (7)" }),
-	).toHaveAttribute("href", "/work/all");
-	expect(today.getByRole("link", { name: "1 done" })).toHaveAttribute(
-		"href",
-		"/work/done",
+		activity.getByRole("button", { name: "File: Old notes.docx" }),
+	).toBeDisabled();
+	expect(activity.getAllByRole("status", { name: "Opening" })).toHaveLength(
+		1,
 	);
 });
 
-it("previews context and keeps one main action and Done visible, with details in the menu", async () => {
-	const user = userEvent.setup();
-	const { onChange } = renderBrief();
-	const card = workCard("Confirm revised pricing");
-	expect(within(card).getByRole("link", { name: "Open" })).toHaveAttribute(
-		"href",
-		"/thread/pricing-thread",
+it("keeps the conversations when the recent files cannot be read, and does not read them with Microsoft 365 off", async () => {
+	insight.filesError = "OneDrive is unavailable.";
+	renderBrief();
+	const activity = within(
+		screen.getByRole("region", { name: "Recent activity" }),
+	);
+	expect(activity.getAllByRole("link")).toHaveLength(4);
+	expect(insight.actions.run).not.toHaveBeenCalledWith(
+		expect.stringMatching(/^MicrosoftOneDrive/),
+	);
+	cleanup();
+	const state = createBriefState();
+	state.settings.sourcesJson.teams = true;
+	renderBrief(state);
+	const connected = within(
+		screen.getByRole("region", { name: "Recent activity" }),
 	);
 	expect(
-		within(card).getByText("Review the conversation before replying."),
+		await connected.findByText("OneDrive is unavailable."),
 	).toBeVisible();
-	await user.click(
-		within(card).getByRole("button", {
-			name: "Thread actions for Confirm revised pricing",
-		}),
-	);
-	await user.click(screen.getByRole("button", { name: "Show details" }));
-	expect(
-		within(card).getAllByText("Review the conversation before replying."),
-	).toHaveLength(2);
-	expect(
-		within(card).getByRole("link", { name: "Ask about this" }),
-	).toBeVisible();
-	await user.click(within(card).getByRole("button", { name: "Done" }));
-	expect(onChange.mock.lastCall?.[0].commands).toEqual([
-		{ type: "item.update", itemId: "pricing", changes: { status: "done" } },
-	]);
-	expect(
-		within(
-			screen.getByRole("region", { name: "When you're ready" }),
-		).queryByRole("link", { name: "Confirm revised pricing" }),
-	).not.toBeInTheDocument();
-	expect(screen.getByRole("link", { name: "2 done" })).toBeVisible();
+	expect(connected.getByRole("button", { name: "Retry" })).toBeVisible();
+	expect(connected.getAllByRole("link")).toHaveLength(4);
 });
 
 it("fills the ask box from a suggestion without sending it", async () => {
@@ -400,46 +585,16 @@ it("fills the ask box from a suggestion without sending it", async () => {
 	expect(request).not.toHaveBeenCalled();
 });
 
-it("keeps a failed empty work refresh distinct from being caught up and offers retry", async () => {
-	const user = userEvent.setup();
-	const state = createBriefState();
-	state.items = [];
-	const refresh = vi.fn();
-	const content = (error: string) => (
-		<MemoryRouter>
-			<CollaborationSessionProvider initialState={state}>
-				<WorkUpdatesContext.Provider
-					value={{
-						isRefreshing: false,
-						lastUpdated: null,
-						error,
-						lastMailCheck: null,
-						refresh,
-						refreshTopicGoal: vi.fn(),
-						refreshTopic: vi.fn(),
-						isSyncing: false,
-						lastSync: null,
-						syncError: "",
-						syncMail: vi.fn(),
-						serverId: async (id: string) => id,
-						localId: (id: string) => id,
-					}}
-				>
-					<BriefNeeds />
-				</WorkUpdatesContext.Provider>
-			</CollaborationSessionProvider>
-		</MemoryRouter>
-	);
-	const { rerender } = render(content("Could not refresh your work."));
-	expect(screen.getByRole("alert")).toHaveTextContent(
-		"Could not refresh your work.",
-	);
-	expect(screen.queryByText(/You're all caught up/)).not.toBeInTheDocument();
-	await user.click(screen.getByRole("button", { name: "Retry" }));
-	expect(refresh).toHaveBeenCalledTimes(1);
-	rerender(content(""));
-	expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+it("keeps a failed work load distinct from having no work", async () => {
+	insight.workError = "Could not load your work.";
+	renderBrief();
+	expect(await screen.findByText("Could not load your work.")).toBeVisible();
+	expect(screen.queryByText(/^No work items yet/)).not.toBeInTheDocument();
+	cleanup();
+	insight.workError = "";
+	renderBrief();
+	expect(await screen.findByText(/^No work items yet/)).toBeVisible();
 	expect(
-		screen.getByText("You're all caught up. Nothing needs you right now."),
-	).toBeVisible();
+		screen.queryByText("Could not load your work."),
+	).not.toBeInTheDocument();
 });

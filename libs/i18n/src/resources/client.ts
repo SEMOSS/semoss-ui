@@ -15,6 +15,7 @@ export const clientResources: LazyResources = {
 		"auditlog",
 		"members",
 		"agent",
+		"transcript",
 		"githubApp",
 	],
 	load: {
@@ -28,6 +29,8 @@ export const clientResources: LazyResources = {
 		auditlog: (l) => import(`./locales/${l}/shared/auditlog.json`),
 		members: (l) => import(`./locales/${l}/shared/members.json`),
 		agent: (l) => import(`./locales/${l}/shared/agent.json`),
+		// how a chat reply's reasoning and tool calls read, in every chat
+		transcript: (l) => import(`./locales/${l}/shared/transcript.json`),
 		// client
 		githubApp: (l) => import(`./locales/${l}/client/githubApp.json`),
 		// Microsoft 365 and Google Workspace viewers, fetched when a viewer

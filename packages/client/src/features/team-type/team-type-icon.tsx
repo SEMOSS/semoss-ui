@@ -4,7 +4,7 @@ import { buildInitials } from "@semoss/utility/text";
 import { CUSTOM_TEAM_TYPE } from "./team-type";
 import { useLoginProviderLogo } from "./use-login-provider-logo";
 
-export interface TeamTypeIconProps {
+interface TeamTypeIconProps {
 	/** CUSTOM, or the login provider's label or key */
 	type: string;
 	/** The provider's display name, for its initials when it has no logo */

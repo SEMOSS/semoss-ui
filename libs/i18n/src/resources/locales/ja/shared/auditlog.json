@@ -68,7 +68,8 @@
 		},
 		"guardrailActions": {
 			"MASK": "マスク済み",
-			"BLOCK": "ブロック済み"
+			"BLOCK": "ブロック済み",
+			"TIMEOUT": "タイムアウト"
 		},
 		"groupRequest": "リクエスト",
 		"groupSpan": "スパン",
@@ -151,6 +152,7 @@
 	},
 	"layout": {
 		"appName": "監査ログ",
-		"appDescription": "監査ログアプリ"
+		"appDescription": "監査ログアプリ",
+		"loadFailed": "監査ログを読み込めませんでした。もう一度お試しください。問題が解決しない場合は、サポートにお問い合わせください。"
 	}
 }

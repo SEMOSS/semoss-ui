@@ -60,13 +60,19 @@
 	"onedrive": {
 		"viewLabel": "क्या दिखाना है",
 		"mine": "मेरी फ़ाइलें",
-		"shared": "मेरे साथ साझा"
+		"shared": "मेरे साथ साझा",
+		"sharedNote": "आपके साथ साझा की गई फ़ाइलें Microsoft की खोज से मिलती हैं, इसलिए हाल ही में साझा की गई फ़ाइल को यहाँ दिखने में कुछ समय लग सकता है।"
 	},
 	"mail": {
 		"folder": "मेल फ़ोल्डर",
+		"folderPicker": "मेल फ़ोल्डर: {{folder}}",
+		"unreadCount_one": "{{count}} अपठित",
+		"unreadCount_other": "{{count}} अपठित",
 		"inbox": "इनबॉक्स",
 		"unreadOnly": "अपठित",
-		"searchPlaceholder": "विषयों में खोजें",
+		"searchPlaceholder": "मेल खोजें",
+		"searchHintOutlook": "शब्द प्रेषक, विषय या मुख्य भाग से मिलाए जाते हैं। from:, to:, cc:, subject: या body: से किसी एक को सीमित करें, और वाक्यांश के लिए उद्धरण चिह्नों का उपयोग करें।",
+		"searchHintGmail": "शब्द पूरे ईमेल में कहीं भी मिलाए जाते हैं। from:, to:, cc: या subject: से किसी एक को सीमित करें, और वाक्यांश के लिए उद्धरण चिह्नों का उपयोग करें।",
 		"empty": "इस फ़ोल्डर में कोई ईमेल नहीं है",
 		"noUnread": "इस फ़ोल्डर में कोई अपठित ईमेल नहीं है",
 		"unknownSender": "अज्ञात प्रेषक",
@@ -102,7 +108,25 @@
 		"hideQuoted": "उद्धृत ईमेल छिपाएं",
 		"filters": "फ़िल्टर",
 		"pageError": "और संदेश लोड नहीं हो सके।",
-		"emptyPage": "मेलबॉक्स ने खाली पृष्ठ लौटाया। फिर से कोशिश करें।"
+		"emptyPage": "मेलबॉक्स ने खाली पृष्ठ लौटाया। फिर से कोशिश करें।",
+		"picturesHidden": "आपकी गोपनीयता की सुरक्षा के लिए वेब की तस्वीरें छिपाई गई हैं।",
+		"showWebPictures": "वेब की तस्वीरें दिखाएं",
+		"showEmbeddedPictures": "एम्बेड की गई तस्वीरें दिखाएं",
+		"loadingPictures": "तस्वीरें लोड हो रही हैं...",
+		"embeddedPicturesHidden": "इस ईमेल में एम्बेड की गई तस्वीरें छिपाई गई हैं।",
+		"embeddedPicturesLoading": "इस ईमेल में एम्बेड की गई तस्वीरें लोड हो रही हैं...",
+		"embeddedPicturesFailed": "इस ईमेल में एम्बेड की गई तस्वीरें लोड नहीं हो सकीं।",
+		"embeddedPicturesOmitted_one": "एम्बेड की गई {{count}} तस्वीर नहीं दिखाई जा सकी।",
+		"embeddedPicturesOmitted_other": "एम्बेड की गई {{count}} तस्वीरें नहीं दिखाई जा सकीं।",
+		"pictureSettings": "तस्वीर सेटिंग",
+		"picturesInEmails": "ईमेल में तस्वीरें",
+		"picturesAsk": "हर बार पूछें",
+		"picturesEmbedded": "एम्बेड की गई तस्वीरें हमेशा दिखाएं",
+		"picturesAll": "सभी तस्वीरें हमेशा दिखाएं",
+		"remoteImage": "वेब की तस्वीर",
+		"embeddedImage": "एम्बेड की गई तस्वीर या फ़ाइल",
+		"image": "तस्वीर",
+		"htmlFrame": "{{from}} का ईमेल"
 	},
 	"calendar": {
 		"range": "{{start}} से {{end}}",
@@ -162,6 +186,7 @@
 		"openCalendar": "कैलेंडर खोलें"
 	},
 	"teams": {
+		"pageError": "और संदेश लोड नहीं हो सके।",
 		"team": "टीम",
 		"channel": "चैनल",
 		"chooseTeam": "एक टीम चुनें",
@@ -199,7 +224,12 @@
 		"changeLocation": "टीम या चैनल बदलें: {{team}}, {{channel}}",
 		"postsLabel": "पोस्ट",
 		"filesLabel": "फ़ाइलें",
-		"chatsLabel": "आपकी चैट"
+		"chatsLabel": "आपकी चैट",
+		"searchMessages": "संदेश खोजें",
+		"searchResultIn": "{{chat}} में {{author}}",
+		"openSearchResult": "{{author}} का संदेश खोलें: {{text}}",
+		"searchMatch": "आपकी खोज में मिला",
+		"searchMatchNotShown": "आपकी खोज में मिला संदेश यहाँ दिखाए गए संदेशों से पुराना है। और पुराने संदेश पढ़ने के लिए Teams में चैट खोलें।"
 	},
 	"accounts": {
 		"microsoft": "Microsoft 365",

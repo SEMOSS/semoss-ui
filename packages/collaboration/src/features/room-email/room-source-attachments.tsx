@@ -23,7 +23,7 @@ import { type RoomEmailSession, useRoomEmail } from "./room-email.context";
  * @param threadId - The room's source thread.
  * @param messageId - The email the file is on.
  * @param attachment - The file.
- * @param includeText - Also write a text copy of an Office or mail file; Brain mail only.
+ * @param includeText - Also write a text copy of an Office or mail file.
  * @returns The staged file.
  */
 export function stageSourceAttachment(
@@ -49,6 +49,7 @@ export function stageSourceAttachment(
 				messageId,
 				attachment.id,
 				attachment.name,
+				includeText,
 			);
 }
 

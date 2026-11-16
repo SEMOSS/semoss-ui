@@ -12,7 +12,7 @@ import {
 	useFormContext,
 } from "@semoss/ui/next";
 
-export interface GuardrailDurationFieldProps {
+interface GuardrailDurationFieldProps {
 	/** What the duration is, shown at the top of its box, such as "Lock the user out for" */
 	legend: string;
 

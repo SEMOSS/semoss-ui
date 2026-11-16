@@ -1,11 +1,16 @@
 import { useEffect } from "react";
 import { LoadingScreen } from "@semoss/ui/next";
-import { Router } from "@/pages";
-import { CookieWrapper } from "./components/cookies";
-import { useConfig } from "./hooks";
+import { usePlatformTheme } from "@/hooks/use-platform-theme";
+import { Router } from "@/pages/router";
+import { CookieWrapper } from "./components/cookies/cookie-wrapper";
 
+/**
+ * The app's root below the providers: sets the page title and favicon from the
+ * platform theme, and renders the routes behind the loading screen and the
+ * cookie banner.
+ */
 export const AppWrapper = () => {
-	const theme = useConfig((state) => state.theme);
+	const theme = usePlatformTheme();
 
 	useEffect(() => {
 		try {

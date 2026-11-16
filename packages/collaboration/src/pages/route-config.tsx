@@ -39,8 +39,50 @@ export const routes: RouteObject[] = [
 									).RoutinesPage,
 								}),
 							},
+							{
+								path: "twins",
+								id: "twins",
+								lazy: async () => ({
+									Component: (
+										await import("@/pages/twins.page")
+									).TwinsPage,
+								}),
+							},
+							{
+								path: "twins/mine",
+								id: "twins/mine",
+								lazy: async () => ({
+									Component: (
+										await import(
+											"@/pages/twin-settings.page"
+										)
+									).TwinSettingsPage,
+								}),
+							},
+							{
+								path: "twins/mine/contents",
+								id: "twins/mine/contents",
+								lazy: async () => ({
+									Component: (
+										await import(
+											"@/pages/twin-contents.page"
+										)
+									).TwinContentsPage,
+								}),
+							},
+							{
+								path: "twins/chat",
+								id: "twins/chat",
+								lazy: async () => ({
+									Component: (
+										await import("@/pages/twin-chat.page")
+									).TwinChatPage,
+								}),
+							},
 							...[
 								"work",
+								"work/topics",
+								"work/review",
 								"work/all",
 								"work/waiting",
 								"work/done",
@@ -60,6 +102,26 @@ export const routes: RouteObject[] = [
 									Component: (
 										await import("@/pages/topic.page")
 									).TopicPage,
+								}),
+							},
+							{
+								path: "topics/:topicId/contents",
+								id: "topic-contents",
+								lazy: async () => ({
+									Component: (
+										await import(
+											"@/pages/topic-contents.page"
+										)
+									).TopicContentsPage,
+								}),
+							},
+							{
+								path: "work/item/:taskId",
+								id: "work/item/:taskId",
+								lazy: async () => ({
+									Component: (
+										await import("@/pages/work-item.page")
+									).WorkItemPage,
 								}),
 							},
 							...[

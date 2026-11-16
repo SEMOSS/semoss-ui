@@ -1,34 +1,41 @@
 import { type ReactNode, useId } from "react";
-import { Card, cn, H2 } from "@semoss/ui/next";
+import { Card, H2 } from "@semoss/ui/next";
 
-/** A quiet section: the same heading style as Today's list, content in one card. */
+/** One card of a hero page: its title, a count and a detail on the first line, the content below. */
 export function BriefPanel({
 	title,
+	count,
 	detail,
 	children,
-	className,
 }: {
 	title: string;
+	/** How many things the card holds, shown beside the title. */
+	count?: number;
 	detail?: ReactNode;
 	children: ReactNode;
-	className?: string;
 }) {
 	const titleId = useId();
 	return (
-		<section aria-labelledby={titleId} className="min-w-0">
-			<header className="mb-3 flex min-h-8 items-center justify-between gap-3 px-1">
-				<H2 id={titleId} className="font-display font-semibold text-lg">
-					{title}
-				</H2>
-				{detail !== undefined && detail !== null && (
-					<span className="text-muted-foreground text-sm">
-						{detail}
-					</span>
-				)}
-			</header>
-			<Card
-				className={cn("min-w-0 gap-0 px-5 py-1 shadow-none", className)}
-			>
+		// as tall as its row, so the cards beside it end on one line
+		<section aria-labelledby={titleId} className="h-full min-w-0">
+			<Card className="h-full min-w-0 gap-4 p-6 shadow-xs">
+				<header className="flex min-h-8 flex-wrap items-center justify-between gap-x-3 gap-y-2">
+					<div className="flex items-center gap-3">
+						<H2 id={titleId} className="text-xl leading-tight">
+							{title}
+						</H2>
+						{count !== undefined && (
+							<span className="rounded-md bg-muted px-2 py-0.5 font-medium text-muted-foreground text-sm tabular-nums">
+								{count}
+							</span>
+						)}
+					</div>
+					{detail !== undefined && detail !== null && (
+						<span className="flex shrink-0 items-center gap-2 text-muted-foreground text-sm">
+							{detail}
+						</span>
+					)}
+				</header>
 				{children}
 			</Card>
 		</section>

@@ -6,7 +6,7 @@ import { Field, FieldDescription, FieldLabel } from "@semoss/ui/next";
 const NO_DEFAULT_LABEL = "No default";
 
 /** Props for {@link DefaultModelField}. */
-export interface DefaultModelFieldProps {
+interface DefaultModelFieldProps {
 	/** The field's label, such as Text Generation Model. */
 	label: string;
 	/** What the default is used for, shown under the picker. */

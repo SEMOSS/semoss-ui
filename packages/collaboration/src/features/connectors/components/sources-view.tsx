@@ -7,7 +7,7 @@ import { EmailDraftDialog } from "./email-draft-dialog";
 import { MailSearchForm } from "./mail-search-form";
 import { SourcePreview } from "./source-preview";
 
-export interface SourcesViewProps {
+interface SourcesViewProps {
 	/** Adds a selected, validated source to the shared session; no fixture substitution. */
 	onImport: (source: ImportedSource) => void;
 	onDraftReply?: (source: ImportedSource) => void;

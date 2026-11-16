@@ -12,6 +12,7 @@ import {
 	createRoomSession,
 	getRoomSession,
 	type RoomSession,
+	renameRoomSessions,
 } from "./room-session";
 import type { RoomSource } from "./source-import/room-source";
 
@@ -88,6 +89,14 @@ function own(session: RoomSession): RoomSession {
 function draft(): RoomSession {
 	return own(createRoomSession(crypto.randomUUID()));
 }
+/** What `SaveInsightAssetsBase64` returns when the source file is overwritten. */
+const savedSourceFile = [
+	{
+		requestedPath: source.file.fileLocation,
+		savedPath: source.file.fileLocation,
+		renamed: false,
+	},
+];
 function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
 	let resolve: (value: T) => void = () => undefined;
 	const promise = new Promise<T>((done) => {
@@ -102,7 +111,7 @@ beforeEach(() => {
 	setThreadAgent(null);
 	transport.options.clear();
 	transport.failOptions = false;
-	transport.fileSave.mockResolvedValue("Success!");
+	transport.fileSave.mockResolvedValue(savedSourceFile);
 	transport.run.mockImplementation(
 		async (_insightId: string, statement: string) => {
 			const roomId = JSON.parse(
@@ -667,7 +676,7 @@ it("serializes source revisions and retains the session while a file save is pen
 	await session.create("Imported");
 	await session.setSource(source);
 	session.removeContextFile(source.file.fileLocation);
-	const pending = deferred<string>();
+	const pending = deferred<typeof savedSourceFile>();
 	transport.fileSave.mockReturnValueOnce(pending.promise);
 	const first = session.updateSourceFile(source, "# First revision");
 	const refreshed = { ...source, title: "Latest subject" };
@@ -675,7 +684,7 @@ it("serializes source revisions and retains the session while a file save is pen
 	await vi.waitFor(() => expect(transport.fileSave).toHaveBeenCalledTimes(1));
 	expect(session.getSnapshot().source).toEqual(source);
 	expect(session.canEvict()).toBe(false);
-	pending.resolve("Success!");
+	pending.resolve(savedSourceFile);
 	await Promise.all([first, second]);
 	expect(transport.fileSave).toHaveBeenCalledTimes(2);
 	expect(session.getSnapshot().source).toEqual(refreshed);
@@ -724,6 +733,85 @@ it("preserves the draft and source file when cancelled before the run is submitt
 		contextFiles: [source.file],
 		hasUnconfirmedSubmission: false,
 		turn: { phase: "cancelled", isRunning: false },
+	});
+});
+
+it("sends an Office file as its text copy and other files as they are", async () => {
+	const session = draft();
+	await session.create("Plan");
+	const plan = new File(["docx"], "plan.docx");
+	const chart = new File(["png"], "chart.png", { type: "image/png" });
+	session.setComposerDraft({
+		document: null,
+		text: "Summarize",
+		files: [plan, chart],
+	});
+	vi.mocked(uploadRoomFiles).mockImplementation(async (_insightId, files) =>
+		files.map((file) => ({
+			fileName: file.name,
+			fileLocation: `/${file.name}`,
+		})),
+	);
+	const room = transport.run.getMockImplementation();
+	transport.run.mockImplementation(
+		async (insightId: string, statement: string) =>
+			statement.startsWith("WorkAttachmentText")
+				? {
+						pixelReturn: [
+							{
+								output: { textPath: "/plan.docx.txt" },
+								operationType: [],
+							},
+						],
+					}
+				: room?.(insightId, statement),
+	);
+	await session.send({ text: "Summarize", files: [plan, chart] });
+	expect(transport.run).toHaveBeenCalledWith(
+		session.insight.insightId,
+		'WorkAttachmentText(filePath=["/plan.docx"]);',
+	);
+	expect(runApi.startAgentRun).toHaveBeenCalledExactlyOnceWith(
+		session.insight.insightId,
+		expect.objectContaining({ media: ["/chart.png", "/plan.docx.txt"] }),
+	);
+	expect(session.getSnapshot().composerDraft).toMatchObject({
+		text: "",
+		files: [],
+	});
+});
+
+it("keeps the draft and starts no run when an Office file's text cannot be read", async () => {
+	const session = draft();
+	await session.create("Pay");
+	const pay = new File(["docx"], "pay.docx");
+	session.setComposerDraft({
+		document: null,
+		text: "Summarize",
+		files: [pay],
+	});
+	vi.mocked(uploadRoomFiles).mockResolvedValue([
+		{ fileName: "pay.docx", fileLocation: "/pay.docx" },
+	]);
+	const reason =
+		"pay.docx is password protected, so its text could not be read.";
+	const room = transport.run.getMockImplementation();
+	transport.run.mockImplementation(
+		async (insightId: string, statement: string) => {
+			if (statement.startsWith("WorkAttachmentText"))
+				throw new Error(reason);
+			return room?.(insightId, statement);
+		},
+	);
+	await expect(
+		session.send({ text: "Summarize", files: [pay] }),
+	).rejects.toThrow(reason);
+	expect(runApi.startAgentRun).not.toHaveBeenCalled();
+	expect(session.getSnapshot()).toMatchObject({
+		composerDraft: { text: "Summarize", files: [pay] },
+		submissionError: reason,
+		hasUnconfirmedSubmission: false,
+		turn: { messages: [], isRunning: false },
 	});
 });
 
@@ -835,3 +923,14 @@ it.each([false, true])(
 		});
 	},
 );
+
+it("retitles every loaded session of a renamed room and leaves other rooms alone", () => {
+	const room = own(getRoomSession(crypto.randomUUID(), "renamed-room"));
+	const sameRoom = own(getRoomSession(crypto.randomUUID(), "renamed-room"));
+	const other = own(getRoomSession(crypto.randomUUID(), "other-room"));
+	const otherTitle = other.getSnapshot().title;
+	renameRoomSessions("renamed-room", "Q3 pricing");
+	expect(room.getSnapshot().title).toBe("Q3 pricing");
+	expect(sameRoom.getSnapshot().title).toBe("Q3 pricing");
+	expect(other.getSnapshot().title).toBe(otherTitle);
+});

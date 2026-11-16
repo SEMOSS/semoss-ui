@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
-import { useInsight } from "@semoss/sdk/react";
+import { Session, useInsight } from "@semoss/sdk/react";
 import { useCacheData } from "@semoss/ui/next";
 import type {
 	WorkbenchLayout,
@@ -14,16 +14,18 @@ import {
 	WorkbenchCommandMenuButton,
 	WorkbenchResetButton,
 } from "@semoss/workbench";
-import { ASSISTANT_PANEL } from "@/components/assistant";
-import { AssistantStoreProvider } from "@/contexts";
+import { ASSISTANT_PANEL } from "@/components/assistant/assistant-view";
+import { AssistantStoreProvider } from "@/contexts/assistant.context";
 import { ASSISTANT_TOOL_PANEL } from "@/features/assistant-tools/assistant-tool-panel";
 import { ASSISTANT_TOOL_PANEL_TYPE } from "@/features/assistant-tools/assistant-tool-ui";
-import { useAssistantStore, useProject, useSession } from "@/hooks";
+import { useAssistantStore } from "@/hooks/use-assistant-store";
+import { useProject } from "@/hooks/use-project";
 import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,
-} from "@/stores/workbench";
-import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
+} from "@/stores/workbench/workbench.constants";
+import { GIT_DIFF_PANEL } from "../../git/git-diff-panel";
+import { GIT_VERSION_PANEL } from "../../git/git-version-panel";
 import { useAssistantFilesChanged } from "../../use-assistant-files-changed";
 import {
 	createFileCommands,
@@ -39,12 +41,16 @@ import {
 } from "../project-settings-toggle";
 import { PROJECT_TERMINAL_PANEL } from "../project-terminal-panel";
 import { AGENT_EDITOR_PANEL } from "./agent-editor-panel";
+import { AGENT_FILES_PANEL, AGENT_FILES_PATH } from "./agent-files-panel";
 
 /**
- * The default arrangement: the agent editor front and centre, files (and, for
- * editors, version control) on a collapsed left rail and the terminal on a
- * collapsed bottom rail, so they don't take space away from the editor on
- * first load.
+ * The default arrangement: the agent editor front and centre, the agent's own
+ * files (and, for editors, version control) on a collapsed left rail and the
+ * terminal on a collapsed bottom rail, so they don't take space away from the
+ * editor on first load.
+ *
+ * There is no project-wide Files panel here on purpose: a chat reads only the
+ * agent's own files, so those are the only files the workbench offers.
  */
 const createAgentWorkbenchLayout = (
 	projectId: string,
@@ -62,9 +68,12 @@ const createAgentWorkbenchLayout = (
 		panels: {
 			[WORKBENCH_PANEL_RECORDS.AGENT_EDITOR.id]:
 				WORKBENCH_PANEL_RECORDS.AGENT_EDITOR,
-			[WORKBENCH_PANEL_RECORDS.FILE_EXPLORER.id]: {
-				...WORKBENCH_PANEL_RECORDS.FILE_EXPLORER,
-				config: { mode: { type: "APP", app: projectId } },
+			[WORKBENCH_PANEL_RECORDS.AGENT_FILES.id]: {
+				...WORKBENCH_PANEL_RECORDS.AGENT_FILES,
+				config: {
+					mode: { type: "APP", app: projectId },
+					rootPath: AGENT_FILES_PATH,
+				},
 			},
 			[WORKBENCH_PANEL_RECORDS.ASSISTANT.id]:
 				WORKBENCH_PANEL_RECORDS.ASSISTANT,
@@ -82,7 +91,7 @@ const createAgentWorkbenchLayout = (
 		borders: {
 			left: {
 				panelIds: [
-					WORKBENCH_COMPONENTS.FILE_EXPLORER,
+					WORKBENCH_COMPONENTS.AGENT_FILES,
 					...(!readOnly ? [WORKBENCH_COMPONENTS.GIT_VERSION] : []),
 				],
 				activeId: null,
@@ -108,6 +117,7 @@ export const AGENT_WORKBENCH_COMPONENTS: Record<
 	WorkbenchPanelConfigAny
 > = {
 	[WORKBENCH_COMPONENTS.AGENT_EDITOR]: AGENT_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.AGENT_FILES]: AGENT_FILES_PANEL,
 	...FILE_PANEL_COMPONENTS,
 	[WORKBENCH_COMPONENTS.GIT_VERSION]: GIT_VERSION_PANEL,
 	[WORKBENCH_COMPONENTS.GIT_DIFF]: GIT_DIFF_PANEL,
@@ -152,12 +162,9 @@ export const AgentWorkbench: React.FC = () => {
 		: project.project_id;
 
 	const [snapshot, onSnapshotChange] = useCacheData<WorkbenchSnapshot>(
-		`workbench-layout--${workbenchId}--2`,
+		`workbench-layout--${workbenchId}--4`,
 		workbenchLayout,
 	);
-
-	const syncPermission = useSession((s) => s.syncPermission);
-	const refreshPermission = useSession((s) => s.refreshPermission);
 
 	const assistantStore = useAssistantStore(workbenchId);
 
@@ -170,10 +177,10 @@ export const AgentWorkbench: React.FC = () => {
 	useEffect(() => {
 		const name = project.project_display_name || project.project_name;
 
-		syncPermission("PROJECT", project.project_id, permission);
-		void refreshPermission("PROJECT", project.project_id).catch(
-			() => undefined,
-		);
+		Session.permissions.sync("PROJECT", project.project_id, permission);
+		void Session.permissions
+			.refresh("PROJECT", project.project_id)
+			.catch(() => undefined);
 
 		assistantStore.getState().configure({
 			onRunCompleted: filesChanged,
@@ -190,8 +197,6 @@ export const AgentWorkbench: React.FC = () => {
 	}, [
 		filesChanged,
 		assistantStore,
-		syncPermission,
-		refreshPermission,
 		permission,
 		project.project_display_name,
 		project.project_id,
@@ -200,7 +205,10 @@ export const AgentWorkbench: React.FC = () => {
 
 	useWorkbenchCommands([
 		createReconnectCommand(insight),
-		...createFileCommands({ readOnly: readOnly }),
+		...createFileCommands({
+			explorerId: WORKBENCH_COMPONENTS.AGENT_FILES,
+			readOnly: readOnly,
+		}),
 		createOpenPanelCommand({
 			id: "workbench.project-agent-editor.open",
 			label: "Open Agent Editor",

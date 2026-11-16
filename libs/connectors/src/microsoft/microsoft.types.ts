@@ -91,10 +91,44 @@ export interface TeamsChat {
 	chatType?: string;
 	/** The topic, or else the other members' names. */
 	displayName?: string;
+	/** When the chat was renamed or its members changed, not its last message. */
 	lastUpdatedDateTime?: string;
 	/** Opens the chat in Teams. */
 	webUrl?: string;
 	hasUnread: boolean;
 	/** A short copy of the newest message. */
 	lastMessage?: TeamsMessage;
+}
+
+/** A Teams message a search found, in a chat or a channel. */
+export interface TeamsMessageSearchHit {
+	id: string;
+	/** Where it was posted: `chat` or `channel`. */
+	kind: "chat" | "channel";
+	/** The chat holding it, for a chat message. */
+	chatId?: string;
+	/** The team and channel holding it, for a channel post. */
+	teamId?: string;
+	channelId?: string;
+	fromName?: string;
+	fromEmail?: string;
+	createdDateTime?: string;
+	subject?: string;
+	/** Plain text around what the search matched, not the whole message. */
+	summary: string;
+	/** Opens the message in Teams, when Microsoft gives a link. */
+	webUrl?: string;
+}
+
+/** One read of `MicrosoftTeamsSearchMessages`, or the pages of one search so far. */
+export interface TeamsMessageSearchPage {
+	/** The messages found, newest first. */
+	hits: TeamsMessageSearchHit[];
+	/** Whether Microsoft holds more matches than were read. */
+	hasMore: boolean;
+	/**
+	 * Where the next page starts. The reactor counts every match it read,
+	 * channel posts it left out included, so it is not the number of hits.
+	 */
+	nextOffset?: number;
 }

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { StoreApi } from "zustand";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
-import { useInsight } from "@semoss/sdk/react";
+import { Session, useInsight } from "@semoss/sdk/react";
 import { useCacheData } from "@semoss/ui/next";
 import type {
 	WorkbenchLayout,
@@ -17,22 +17,24 @@ import {
 	WorkbenchResetButton,
 } from "@semoss/workbench";
 import { makeEngineRoomMcp } from "@/api/rooms";
-import { ASSISTANT_PANEL } from "@/components/assistant";
-import { AssistantStoreProvider } from "@/contexts";
+import { ASSISTANT_PANEL } from "@/components/assistant/assistant-view";
+import { AssistantStoreProvider } from "@/contexts/assistant.context";
 import { DatabaseWorkbenchStoreProvider } from "@/contexts/database-workbench.context";
 import { ASSISTANT_TOOL_PANEL } from "@/features/assistant-tools/assistant-tool-panel";
 import { ASSISTANT_TOOL_PANEL_TYPE } from "@/features/assistant-tools/assistant-tool-ui";
-import { useAssistantStore, useEngine, useSession } from "@/hooks";
+import { useAssistantStore } from "@/hooks/use-assistant-store";
+import { useEngine } from "@/hooks/useEngine";
 import { DATABASE_EXPLORER_AGENT } from "@/stores/assistant/assistant-agents";
-import {
-	WORKBENCH_COMPONENTS,
-	WORKBENCH_PANEL_RECORDS,
-} from "@/stores/workbench";
 import {
 	createDatabaseWorkbenchStore,
 	type DatabaseWorkbenchState,
-} from "@/stores/workbench/database";
-import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
+} from "@/stores/workbench/database/database-workbench.store";
+import {
+	WORKBENCH_COMPONENTS,
+	WORKBENCH_PANEL_RECORDS,
+} from "@/stores/workbench/workbench.constants";
+import { GIT_DIFF_PANEL } from "../../git/git-diff-panel";
+import { GIT_VERSION_PANEL } from "../../git/git-version-panel";
 import { TERMINAL_PANEL } from "../../terminal/terminal-panel";
 import { useAssistantFilesChanged } from "../../use-assistant-files-changed";
 import {
@@ -192,9 +194,6 @@ export const DatabaseWorkbench: React.FC = () => {
 		void databaseStore.getState().initialize(engine.engine_id);
 	}, [engine.engine_id, databaseStore]);
 
-	const syncPermission = useSession((s) => s.syncPermission);
-	const refreshPermission = useSession((s) => s.refreshPermission);
-
 	const assistantStore = useAssistantStore(workbenchId);
 
 	// Revalidate the engine's permission and keep the assistant prompt and
@@ -205,10 +204,10 @@ export const DatabaseWorkbench: React.FC = () => {
 	});
 
 	useEffect(() => {
-		syncPermission("ENGINE", engine.engine_id, permission);
-		void refreshPermission("ENGINE", engine.engine_id).catch(
-			() => undefined,
-		);
+		Session.permissions.sync("ENGINE", engine.engine_id, permission);
+		void Session.permissions
+			.refresh("ENGINE", engine.engine_id)
+			.catch(() => undefined);
 
 		assistantStore.getState().configure({
 			defaultAgent: DATABASE_EXPLORER_AGENT,
@@ -220,8 +219,6 @@ export const DatabaseWorkbench: React.FC = () => {
 	}, [
 		filesChanged,
 		assistantStore,
-		syncPermission,
-		refreshPermission,
 		engine.engine_display_name,
 		engine.engine_id,
 		engine.engine_name,

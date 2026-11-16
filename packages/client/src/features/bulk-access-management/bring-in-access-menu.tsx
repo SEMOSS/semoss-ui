@@ -23,7 +23,7 @@ export interface BringInAccessItem {
 	isNewGroup?: boolean;
 }
 
-export interface BringInAccessMenuProps {
+interface BringInAccessMenuProps {
 	/** The ways to bring access in, in order */
 	items: BringInAccessItem[];
 	/** Disables the whole menu */

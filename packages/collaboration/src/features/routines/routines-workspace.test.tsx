@@ -4,11 +4,14 @@ import {
 	fireEvent,
 	render,
 	screen,
+	waitFor,
 	within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ROUTINE_RUN_DELETED } from "./api/delete-routine-run";
+import { SKILL_CATALOG_PIXEL } from "./custom-routine-api";
 import { InboxRoutineForm } from "./inbox-routine-form";
 import type {
 	InboxRoutine,
@@ -21,6 +24,7 @@ import { RoutinesWorkspace } from "./routines-workspace";
 const service = vi.hoisted(() => ({
 	actions: { run: vi.fn() },
 	save: vi.fn<(settings: InboxRoutineSettings) => Promise<InboxRoutine>>(),
+	saveCustom: vi.fn(),
 	usePixel: vi.fn(),
 	result: {
 		status: "SUCCESS",
@@ -38,6 +42,10 @@ vi.mock("@semoss/sdk/react", () => ({
 vi.mock("./inbox-routine-api", () => ({
 	saveInboxRoutine: (_actions: unknown, settings: InboxRoutineSettings) =>
 		service.save(settings),
+}));
+vi.mock("./custom-routine-api", async (importOriginal) => ({
+	...(await importOriginal<typeof import("./custom-routine-api")>()),
+	saveCustomRoutine: service.saveCustom,
 }));
 
 const routine: InboxRoutine = {
@@ -67,16 +75,77 @@ function renderForm(record: InboxRoutine = routine) {
 		...settings,
 		configured: true,
 	}));
+	const onRunNow = vi.fn(async () => record);
 	render(
 		<MemoryRouter>
-			<InboxRoutineForm routine={record} onSave={onSave} />
+			<InboxRoutineForm
+				routine={record}
+				onSave={onSave}
+				onRunNow={onRunNow}
+			/>
 		</MemoryRouter>,
 	);
 	return {
 		user: userEvent.setup(),
 		onSave,
+		onRunNow,
 	};
 }
+
+describe("Run now for the inbox brief", () => {
+	it("starts a brief from its card, only while the routine is on and idle", async () => {
+		const { user, onRunNow } = renderForm({ ...routine, enabled: true });
+		await user.click(screen.getByRole("button", { name: "Run now" }));
+		expect(onRunNow).toHaveBeenCalledTimes(1);
+		cleanup();
+		renderForm({ ...routine, enabled: false });
+		expect(screen.getByRole("button", { name: "Run now" })).toBeDisabled();
+		cleanup();
+		renderForm({
+			...routine,
+			enabled: true,
+			lastRun: {
+				status: "running",
+				startedAt: "2026-10-15T12:00:00Z",
+				finishedAt: null,
+				roomId: null,
+				summary: null,
+				error: null,
+			},
+		});
+		expect(screen.getByRole("button", { name: "Run now" })).toBeDisabled();
+	});
+
+	it("saves a lookback still waiting to save before Retry runs the brief again", async () => {
+		const { user, onSave, onRunNow } = renderForm({
+			...routine,
+			enabled: true,
+			configured: true,
+			lookbackHours: 168,
+			lastRun: {
+				status: "failed",
+				startedAt: "2026-11-05T13:00:00Z",
+				finishedAt: "2026-11-05T13:10:00Z",
+				roomId: null,
+				summary: null,
+				error: "Ask it for less, then run it again.",
+			},
+		});
+		const lookback = screen.getByRole("spinbutton", {
+			name: "Email lookback (required)",
+		});
+		await user.clear(lookback);
+		await user.type(lookback, "1");
+		await user.click(screen.getByRole("button", { name: "Retry" }));
+		await waitFor(() => expect(onRunNow).toHaveBeenCalledOnce());
+		expect(onSave).toHaveBeenCalledExactlyOnceWith(
+			expect.objectContaining({ lookbackHours: 24 }),
+		);
+		expect(onSave.mock.invocationCallOrder[0]).toBeLessThan(
+			onRunNow.mock.invocationCallOrder[0] ?? 0,
+		);
+	});
+});
 
 /** Settle the debounce while preserving the real timers used by user-event. */
 async function autosave(milliseconds = 800): Promise<void> {
@@ -166,7 +235,9 @@ describe("InboxRoutineForm", () => {
 		await user.clear(lookback);
 		await user.type(lookback, "4");
 		await autosave();
-		expect(onSave).toHaveBeenCalledExactlyOnceWith({
+		// real timers: under load a pause between edits can outlast the debounce and save part way (the single save
+		// of a burst is covered with fake timers in use-routine-autosave.test.tsx); what lands last is the whole form
+		expect(onSave).toHaveBeenLastCalledWith({
 			enabled: true,
 			time: "09:15",
 			days: ["TUE", "THU"],
@@ -555,6 +626,44 @@ describe("RoutinesWorkspace", () => {
 		);
 	});
 
+	it("re-reads the routine in place after one of its runs is deleted", async () => {
+		service.result.data = {
+			...routine,
+			lastRun: {
+				status: "completed",
+				startedAt: "2026-10-15T12:00:00Z",
+				finishedAt: "2026-10-15T12:01:00Z",
+				roomId: "brief-room",
+				summary: "Reply to Dana before Thursday.",
+				error: null,
+			},
+		};
+		service.actions.run.mockResolvedValue({
+			pixelReturn: [
+				{
+					output: { ...routine, lastRun: null },
+					operationType: ["OPERATION"],
+				},
+			],
+		});
+		render(
+			<MemoryRouter>
+				<RoutinesWorkspace />
+			</MemoryRouter>,
+		);
+		act(() => {
+			window.dispatchEvent(new Event(ROUTINE_RUN_DELETED));
+		});
+		await waitFor(() =>
+			expect(service.result.update).toHaveBeenCalledWith(
+				expect.objectContaining({ lastRun: null }),
+			),
+		);
+		expect(service.actions.run).toHaveBeenCalledWith(
+			"WorkGetInboxRoutine();",
+		);
+	});
+
 	it("keeps a pending inbox autosave when picking another routine", async () => {
 		const user = userEvent.setup();
 		render(
@@ -645,8 +754,8 @@ describe("RoutinesWorkspace", () => {
 							],
 						},
 					}
-				: statement === "WorkListMySkills();"
-					? { ...service.result, data: { skills: [] } }
+				: statement === SKILL_CATALOG_PIXEL
+					? { ...service.result, data: [] }
 					: service.result,
 		);
 		render(
@@ -664,6 +773,98 @@ describe("RoutinesWorkspace", () => {
 		expect(
 			within(mine).getByRole("button", { name: "Client asks digest" }),
 		).not.toHaveAttribute("aria-current");
+	});
+
+	it("creates a routine in the New routine tab and opens it in My routines", async () => {
+		const created = {
+			enabled: true,
+			prompt: "Give me my top five priorities.",
+			time: "07:30",
+			days: ["MON"],
+			timezone: "America/New_York",
+			delivery: "teams",
+			skills: [],
+			tools: [],
+			agentId: "",
+			configured: true,
+			nextRunAt: null,
+			schedulerAvailable: true,
+			assistantAvailable: true,
+			mailboxAvailable: true,
+			availabilityMessage: null,
+			lastRun: null,
+			id: "custom-3",
+			name: "Monday priorities",
+		};
+		service.saveCustom.mockResolvedValue(created);
+		// the server's list after the save
+		service.usePixel.mockImplementation((statement: string) =>
+			statement === "WorkListCustomRoutines();"
+				? { ...service.result, data: { routines: [created] } }
+				: statement === SKILL_CATALOG_PIXEL
+					? { ...service.result, data: [] }
+					: service.result,
+		);
+		const user = userEvent.setup();
+		render(
+			<MemoryRouter initialEntries={["/routines"]}>
+				<RoutinesWorkspace />
+			</MemoryRouter>,
+		);
+		await user.click(screen.getByRole("tab", { name: "New routine" }));
+		await user.click(
+			screen.getByRole("button", { name: "Monday priorities" }),
+		);
+		await user.click(
+			screen.getByRole("button", { name: "Create routine" }),
+		);
+
+		expect(service.saveCustom).toHaveBeenCalledWith(
+			service.actions,
+			expect.objectContaining({
+				name: "Monday priorities",
+				delivery: "teams",
+			}),
+		);
+		// the save resolves first, then the address names the new routine
+		await waitFor(() =>
+			expect(
+				screen.getByRole("tab", { name: "My routines" }),
+			).toHaveAttribute("aria-selected", "true"),
+		);
+		const mine = await screen.findByRole("navigation", {
+			name: "My routines",
+		});
+		expect(
+			within(mine).getByRole("button", { name: "Monday priorities" }),
+		).toHaveAttribute("aria-current", "true");
+	});
+
+	it("points an empty My routines to the New routine tab", async () => {
+		service.usePixel.mockImplementation((statement: string) =>
+			statement === "WorkListCustomRoutines();"
+				? { ...service.result, data: { routines: [] } }
+				: statement === SKILL_CATALOG_PIXEL
+					? { ...service.result, data: [] }
+					: service.result,
+		);
+		const user = userEvent.setup();
+		render(
+			<MemoryRouter initialEntries={["/routines"]}>
+				<RoutinesWorkspace />
+			</MemoryRouter>,
+		);
+		await user.click(screen.getByRole("tab", { name: "My routines" }));
+		expect(
+			screen.getByRole("heading", { name: "No routines yet" }),
+		).toBeVisible();
+		await user.click(screen.getByRole("button", { name: "New routine" }));
+		expect(
+			screen.getByRole("tab", { name: "New routine" }),
+		).toHaveAttribute("aria-selected", "true");
+		expect(
+			screen.getByRole("heading", { name: "Start with an idea" }),
+		).toBeVisible();
 	});
 
 	it.each(["running", "failed", "completed"] as const)(

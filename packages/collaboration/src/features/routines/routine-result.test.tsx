@@ -177,6 +177,9 @@ describe("RoutineResult email panel", () => {
 			"href",
 			"/thread/room%3Asource-room",
 		);
+		expect(
+			screen.queryByRole("button", { name: "Ask Assistant" }),
+		).toBeNull();
 	});
 
 	it("does not link the room of a built-in routine's run", async () => {
@@ -202,6 +205,39 @@ describe("RoutineResult email panel", () => {
 		expect(
 			screen.getByRole("link", { name: "Manage inbox connection" }),
 		).toBeVisible();
+	});
+
+	it("offers Retry on a failed run and Run again on a stopped one, only while the routine is on", async () => {
+		const onRunNow = vi.fn().mockResolvedValue(undefined);
+		const failed = {
+			...completedRun,
+			status: "failed",
+			errorCause: "agent",
+		} satisfies NonNullable<RoutineStatus["lastRun"]>;
+		const view = (lastRun: RoutineStatus["lastRun"], enabled = true) => (
+			<MemoryRouter>
+				<RoutineResult
+					copy={INBOX_RESULT_COPY}
+					routine={{
+						id: "inbox-daily-brief",
+						enabled,
+						timezone: "UTC",
+						lastRun,
+					}}
+					onRunNow={onRunNow}
+				/>
+			</MemoryRouter>
+		);
+		const { rerender } = render(view(failed));
+		await act(async () => {
+			fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+		});
+		expect(onRunNow).toHaveBeenCalledTimes(1);
+		rerender(view({ ...failed, errorCause: "cancelled" }));
+		expect(screen.getByRole("button", { name: "Run again" })).toBeVisible();
+		// an off routine cannot run, so it offers neither
+		rerender(view(failed, false));
+		expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
 	});
 
 	it("shows how long a run has been going", async () => {

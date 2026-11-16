@@ -3,7 +3,7 @@ import { tryParseJson } from "@semoss/utility/json";
 import type { RoomStore } from "./room.store";
 
 /** Where a room keeps its own toolbox, in its insight's assets. */
-export const ROOM_TOOL_FILE_PATH = "/mcp/pixel_mcp.json";
+const ROOM_TOOL_FILE_PATH = "/mcp/pixel_mcp.json";
 
 /** How the asset reactors answer for a file that is not there. */
 const MISSING_FILE = /does not exist/i;

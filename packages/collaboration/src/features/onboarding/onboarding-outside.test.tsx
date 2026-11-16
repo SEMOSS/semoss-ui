@@ -17,9 +17,19 @@ const people = [
 		email: "ana@deloitte.com",
 		relationship: "colleague",
 	},
+	{
+		id: "sam-1",
+		name: "Sam Partner",
+		email: "sam@partner.org",
+		relationship: "external",
+	},
 ];
 
-function session() {
+function session(
+	saveAccount = async (): Promise<Record<string, unknown>> => ({
+		id: "account-1",
+	}),
+) {
 	const onNext = vi.fn();
 	const run = vi.fn(async (statement: string) => {
 		let output: Record<string, unknown>;
@@ -28,7 +38,7 @@ function session() {
 		} else if (statement.startsWith("BrainListPeople(")) {
 			output = { items: people };
 		} else if (statement.startsWith("BrainSaveAccount(")) {
-			output = { id: "account-1" };
+			output = await saveAccount();
 		} else if (statement.startsWith("BrainSavePerson(")) {
 			output = {};
 		} else {
@@ -95,5 +105,38 @@ describe("onboarding outside", () => {
 			screen.queryByRole("button", { name: /^Keep Ana/ }),
 		).not.toBeInTheDocument();
 		expect(statements(run, "BrainSaveAccount(")).toHaveLength(0);
+	});
+
+	it("gives each kept person one organization when Keep is retried after a failure", async () => {
+		let made = 0;
+		const { run, onNext } = session(async () => {
+			made += 1;
+			if (made === 2) throw new Error("Connection lost");
+			return { id: `account-${made}` };
+		});
+		const user = userEvent.setup();
+		await screen.findByText("No outside organisations found.");
+		const input = screen.getByLabelText("Outside email to keep");
+		await user.type(input, "jane.client@gmail.com{Enter}");
+		await screen.findByRole("button", { name: "Keep Jane Client" });
+		await user.type(input, "sam@partner.org{Enter}");
+		await screen.findByRole("button", { name: "Keep Sam Partner" });
+
+		const keep = screen.getByRole("button", {
+			name: /Keep 2 and continue/,
+		});
+		await user.click(keep);
+		expect(await screen.findByRole("alert")).toHaveTextContent(
+			"Connection lost",
+		);
+		await user.click(keep);
+		await waitFor(() => expect(onNext).toHaveBeenCalled());
+		// Jane was kept before the failure, so only Sam is saved again
+		expect(statements(run, "BrainSaveAccount(")).toHaveLength(3);
+		expect(
+			statements(run, "BrainSavePerson(").filter((save) =>
+				save.includes("jane-1"),
+			),
+		).toHaveLength(1);
 	});
 });

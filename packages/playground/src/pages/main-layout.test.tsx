@@ -1,20 +1,21 @@
-import { act, render, screen } from "@testing-library/react";
-import { isObservableObject, runInAction } from "mobx";
+import { render, screen } from "@testing-library/react";
 import type { CSSProperties } from "react";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { RootContext } from "@/contexts/root-context";
-import { RootStore } from "@/stores/root/root.store";
+import {
+	mergePlaygroundTheme,
+	withPlaygroundDefaults,
+} from "@/stores/root/playground-theme";
 import { MainLayout } from "./main-layout";
 
-// Keep the real observable theme, layout, and UI primitives; isolate network-backed children.
+// Keep the real layout and UI primitives; isolate network-backed children.
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
-vi.mock("@semoss/sdk/react", () => {
-	const actions = {};
-	return { useInsight: () => ({ actions }) };
-});
+const theme = vi.hoisted(() => ({ current: null as unknown }));
+vi.mock("@/hooks/use-playground-theme", () => ({
+	usePlaygroundTheme: () => theme.current,
+}));
 vi.mock("@/stores/chat/chat.store", () => ({
 	ChatStore: class {
 		initialize = vi.fn();
@@ -50,17 +51,16 @@ test.each([
 	{ name: "default", style: {} },
 	{ name: "custom", style: { padding: 8 } },
 ] satisfies { name: string; style: CSSProperties }[])(
-	"renders $name observable theme overrides and reacts to edits without freezing the store",
-	async ({ style }) => {
-		const root = new RootStore();
-		await root.initialize({ overrides: { "main-layout": style } });
-		const overrides = root.theme.overrides["main-layout"];
-		expect(isObservableObject(overrides)).toBe(true);
+	"renders $name theme overrides without freezing the theme",
+	({ style }) => {
+		const defaults = withPlaygroundDefaults(null);
+		const overrides: CSSProperties = { ...style };
+		theme.current = mergePlaygroundTheme(defaults, {
+			overrides: { "main-layout": overrides },
+		});
 		render(
 			<MemoryRouter>
-				<RootContext.Provider value={{ root }}>
-					<MainLayout />
-				</RootContext.Provider>
+				<MainLayout />
 			</MemoryRouter>,
 		);
 		const layout = screen.getByTestId("main-layout");
@@ -71,23 +71,15 @@ test.each([
 		expect(
 			screen.queryByRole("button", { name: /toggle sidebar/i }),
 		).not.toBeInTheDocument();
+		// the navigation starts open, so the page has no button to open it
 		expect(
 			screen.queryByRole("button", { name: "actions.openNavigation" }),
 		).not.toBeInTheDocument();
+		// the page keeps the button's room either way, so it never shifts
+		expect(layout).toHaveClass("md:pt-10");
 		expect(layout.style.padding).toBe(style.padding ? "8px" : "");
+		// React freezes style props in development; the theme's own copy stays
+		// mutable for whoever else reads it
 		expect(Object.isFrozen(overrides)).toBe(false);
-
-		act(() =>
-			runInAction(() => {
-				overrides.padding = 16;
-			}),
-		);
-		expect(layout).toHaveStyle({ padding: "16px" });
-		act(() =>
-			runInAction(() => {
-				delete overrides.padding;
-			}),
-		);
-		expect(layout.style.padding).toBe("");
 	},
 );

@@ -15,7 +15,7 @@ import {
 import { formatDurationMs } from "@semoss/utility/date";
 import type { AutomationNode, AutomationNodeType } from "./automation.types";
 
-export const STEP_TYPES: {
+const STEP_TYPES: {
 	type: AutomationNodeType;
 	label: string;
 	description: string;
@@ -84,7 +84,7 @@ export const STEP_TYPES: {
 // backend (PENDING, RUNNING, SUCCESS, FAILED, SKIPPED, INTERRUPTED, CANCELLED);
 // lowercase keys match the FE-only StepRunStatus used during live poll (idle,
 // running, waiting, success, error). getStatusClasses() handles both.
-export const STATUS_STYLES: Record<string, string> = {
+const STATUS_STYLES: Record<string, string> = {
 	PENDING: "bg-muted text-muted-foreground",
 	RUNNING: "bg-primary/10 text-primary",
 	WAITING_FOR_INPUT: "bg-warning/10 text-warning",
@@ -102,7 +102,7 @@ export const STATUS_STYLES: Record<string, string> = {
 	idle: "bg-muted text-muted-foreground",
 };
 
-export const TYPE_DISPLAY_META: Record<
+const TYPE_DISPLAY_META: Record<
 	string,
 	{
 		label: string;

@@ -3,7 +3,7 @@ import { cn } from "@semoss/ui/next";
 import { TeamTypeIcon } from "./team-type-icon";
 import { useTeamTypeName } from "./use-team-type-name";
 
-export interface IdentityIconProps {
+interface IdentityIconProps {
 	/** A person or a team */
 	category: "USER" | "TEAM";
 	/** The person's login type, or the team's type */

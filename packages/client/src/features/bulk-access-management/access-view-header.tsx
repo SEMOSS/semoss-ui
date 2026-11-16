@@ -11,15 +11,18 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 
-export interface AccessViewHeaderProps {
+interface AccessViewHeaderProps {
 	/** The view's title, such as "Bulk Access Management" */
 	title: string;
 	/** What the view is for, under the title */
 	description: ReactNode;
-	/** Where the page the view was opened from is, relative to the view */
-	backTo: string;
+	/**
+	 * Where the page the view was opened from is, relative to the view. A view
+	 * that sits in its page, rather than opening from it, has no back button.
+	 */
+	backTo?: string;
 	/** What going back is called, such as "Back to Members" */
-	backLabel: string;
+	backLabel?: string;
 	/** Buttons beside the title, such as Refresh and Review */
 	actions?: ReactNode;
 	/** The title's heading level: 3 when the view sits under a page's own heading */
@@ -44,25 +47,27 @@ export const AccessViewHeader = ({
 		<div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-6">
 			<div className="flex min-w-0 flex-1 items-start gap-2">
 				{/* the back button is centered on the title's first line, 28px tall at both heading levels */}
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<Button
-							asChild
-							variant="ghost"
-							size="icon-sm"
-							className="-my-0.5"
-						>
-							<Link
-								to={backTo}
-								relative="path"
-								aria-label={backLabel}
+				{backTo ? (
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								asChild
+								variant="ghost"
+								size="icon-sm"
+								className="-my-0.5"
 							>
-								<ArrowLeft className="size-4" aria-hidden />
-							</Link>
-						</Button>
-					</TooltipTrigger>
-					<TooltipContent>{backLabel}</TooltipContent>
-				</Tooltip>
+								<Link
+									to={backTo}
+									relative="path"
+									aria-label={backLabel}
+								>
+									<ArrowLeft className="size-4" aria-hidden />
+								</Link>
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>{backLabel}</TooltipContent>
+					</Tooltip>
+				) : null}
 				<div className="flex min-w-0 flex-col gap-1">
 					<Heading
 						className={

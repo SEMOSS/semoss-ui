@@ -68,7 +68,7 @@ export function TopicOrganizationPreviewDialog({
 							On final save, combine{" "}
 							{group.impact.linkedConversations} saved
 							conversation links, {group.impact.people} people
-							references, {group.impact.notes} notes/goals and{" "}
+							references, {group.impact.notes} notes and{" "}
 							{group.impact.rules} rules into the retained topic.
 							Update topic references on {group.impact.workItems}{" "}
 							Work items and {group.impact.steps} checklist steps.

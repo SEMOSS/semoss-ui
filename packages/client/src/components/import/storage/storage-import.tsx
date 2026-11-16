@@ -5,6 +5,7 @@
 import { Search, Upload } from "lucide-react";
 import type React from "react";
 import { useMemo, useRef, useState } from "react";
+import { useSessionInsight } from "@semoss/sdk/react";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -24,23 +25,32 @@ import {
 	TabsTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useSession } from "@/hooks";
+import { NavbarHeader } from "@/components/shared/navbar-header";
+import { NavbarLeft } from "@/components/shared/navbar-left";
 import { useNavigate } from "@/hooks/useNavigate";
 import { STORAGE_CONNECTIONS, type Storage } from "./storage-import.constants";
 import { StorageForm } from "./storage-import-form";
 import { StorageTitleCard } from "./storage-title-card";
 
-export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
+interface StorageImportProps {
+	/** The catalog the page opened from, named in the first breadcrumb, such as "Storage". */
+	name: string;
+}
+
+/**
+ * The Connect to Storage Database page: the storage types to connect to, by
+ * tab when there are several, and the chosen one's form. An exported storage
+ * engine can also be uploaded as a zip.
+ */
+export const StorageImport: React.FC<StorageImportProps> = ({ name }) => {
 	const navigate = useNavigate();
-	const runPixel = useSession((state) => state.runPixel);
-	const upload = useSession((state) => state.upload);
+	const { run: runPixel, upload } = useSessionInsight();
 	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState("");
 	const [selectedTab, setSelectedTab] = useState("0");
 	const [selectedEngine, setSelectedEngine] = useState<Storage | null>(null);
 	const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false);
-	const [filedata, setFiledata] = useState(null);
+	const [filedata, setFiledata] = useState<File | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	const StorageOptions = STORAGE_CONNECTIONS;
@@ -73,7 +83,7 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 		);
 	}
 
-	const onSubmit = async (data) => {
+	const onSubmit = async (data: File) => {
 		setLoading(true);
 		try {
 			const uploadedFiles = await upload([data]);
@@ -98,7 +108,9 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 					return;
 				}
 				toast.success("Successfully Created Storage Database");
-				navigate(`/storage/${output.database_id}`);
+				navigate(
+					`/storage/${(output as { database_id?: string }).database_id}`,
+				);
 			}
 		} catch {
 			toast.error("Upload failed or returned invalid response.");

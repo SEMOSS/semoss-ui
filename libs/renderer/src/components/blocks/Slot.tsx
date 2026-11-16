@@ -2,7 +2,7 @@ import { observer } from "mobx-react-lite";
 import type { Block, BlockDef } from "../../store";
 import { RendererEngine } from "./RendererEngine";
 
-export interface SlotProps<W extends BlockDef> {
+interface SlotProps<W extends BlockDef> {
 	/** Slot to Fill */
 	slot: Block<W>["slots"][keyof Block<W>["slots"]];
 }

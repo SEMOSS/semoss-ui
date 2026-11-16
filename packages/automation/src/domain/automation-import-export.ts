@@ -14,7 +14,7 @@ import {
 	parseN8nWorkflowJson,
 } from "./n8n-import-adapter";
 
-export interface NativeAutomationExport extends AutomationWorkflowDocument {
+interface NativeAutomationExport extends AutomationWorkflowDocument {
 	nodeSources: AutomationNodeSources;
 }
 
@@ -29,7 +29,7 @@ export interface AutomationImportOptions {
 	conversionModel?: N8nImportConversionModel;
 }
 
-export interface AutomationImportSaveAggregate {
+interface AutomationImportSaveAggregate {
 	definitionJson: string;
 	nodeSourcesJson: string;
 }
@@ -54,7 +54,7 @@ function isN8nWorkflow(value: unknown): boolean {
 	);
 }
 
-export function buildNativeAutomationExport(
+function buildNativeAutomationExport(
 	workflowDocument: AutomationWorkflowDocument,
 	nodeSources: AutomationNodeSources,
 ): NativeAutomationExport {

@@ -51,7 +51,7 @@ const PAGE_SIZE = 20;
 const STATUS_CLASS =
 	"flex items-center justify-center gap-2 px-3 py-6 text-center text-muted-foreground text-sm";
 
-export interface AddTeamResourceAccessDialogProps {
+interface AddTeamResourceAccessDialogProps {
 	/** Whether the dialog is open */
 	open: boolean;
 	/** Projects or engines */

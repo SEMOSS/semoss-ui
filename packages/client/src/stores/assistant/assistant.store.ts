@@ -402,7 +402,7 @@ export interface AssistantState {
 }
 
 /** Everything one assistant instance is wired to. */
-export interface AssistantStoreDeps {
+interface AssistantStoreDeps {
 	/**
 	 * Which workbench this assistant belongs to. Persisted onto room options
 	 * and used to scope conversation history, so the value reaches the server:

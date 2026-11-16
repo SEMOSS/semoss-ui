@@ -3,7 +3,7 @@ import { Bot, Eye, Save, Share2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { type SerializedState, useBlocks } from "@semoss/renderer";
-import { runPixel } from "@semoss/sdk/react";
+import { runPixel, useSessionInsight } from "@semoss/sdk/react";
 import {
 	Button,
 	Dialog,
@@ -13,15 +13,22 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
+import { isRecord } from "@semoss/utility/object";
 import { ShareAppDialog } from "@/components/ui/share/share-app-dialog";
-import { PreviewDialog } from "@/components/workspace";
-import { useProject, useSession, useWorkspace } from "@/hooks";
-import { LLMSelectDialog } from "../llms";
+import { PreviewDialog } from "@/components/workspace/preview-dialog";
+import { useProject } from "@/hooks/use-project";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import { LLMSelectDialog } from "../llms/llm-select-dialog";
 
+/**
+ * The blocks workspace's header actions: pick the agent's model, preview, share
+ * and save the app. Ctrl or Command + S also saves.
+ */
 export const BlocksWorkspaceActions = observer(() => {
 	const { state } = useBlocks();
 
-	const sessionRunPixel = useSession((state) => state.runPixel);
+	const { run: sessionRunPixel } = useSessionInsight();
 	const { workspace } = useWorkspace();
 	const { permission, project } = useProject();
 
@@ -52,7 +59,7 @@ export const BlocksWorkspaceActions = observer(() => {
 	 * TODO: We should probably just make this call in workspace so it persists across app
 	 */
 	const selectModel = async () => {
-		let modelList = [];
+		let modelList: Record<string, string>[] = [];
 		if (permission === "OWNER" || permission === "EDIT") {
 			const pixel = `MyEngines(engineTypes=["MODEL"])`;
 			const res = await runPixel(pixel);
@@ -89,7 +96,7 @@ export const BlocksWorkspaceActions = observer(() => {
 			setPreviewDialogOpen(true);
 		} catch (e) {
 			console.error(e);
-			toast.error(e.message);
+			toast.error(getErrorMessage(e));
 		}
 	};
 
@@ -106,8 +113,9 @@ export const BlocksWorkspaceActions = observer(() => {
 		// remove the visual from the json
 		Object.keys(json?.blocks).forEach((key) => {
 			if (key.startsWith("e-chart")) {
-				if (json?.blocks[key]?.data?.option?.visual) {
-					json.blocks[key].data.option.visual = false;
+				const option = json?.blocks[key]?.data?.option;
+				if (isRecord(option) && option.visual) {
+					option.visual = false;
 				}
 			}
 		});
@@ -128,7 +136,7 @@ export const BlocksWorkspaceActions = observer(() => {
 			);
 		} catch (e) {
 			console.error(e);
-			toast.error(e.message);
+			toast.error(getErrorMessage(e));
 		} finally {
 			// turn of loading
 			workspace.setLoading(false);
@@ -166,7 +174,7 @@ export const BlocksWorkspaceActions = observer(() => {
 			setShareOpen(true);
 		} catch (e) {
 			console.error(e);
-			toast.error(e.message);
+			toast.error(getErrorMessage(e));
 		} finally {
 			// turn of loading
 			workspace.setLoading(false);

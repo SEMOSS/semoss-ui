@@ -7,7 +7,7 @@ import {
 import { UsageLimitSettingsCard } from "@/components/settings/usage-limit-settings-card";
 import { useStoredUsageLimit } from "@/components/settings/use-stored-usage-limit";
 
-export interface TeamTotalCardProps {
+interface TeamTotalCardProps {
 	/** The team's name, which is also its id */
 	id: string;
 	/** CUSTOM, or the login provider whose group the team mirrors */

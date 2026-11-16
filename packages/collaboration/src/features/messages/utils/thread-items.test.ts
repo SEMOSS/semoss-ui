@@ -69,7 +69,7 @@ describe("threadFromMessages", () => {
 		expect(thread[0]?.parentMessageId).toBe("user-1");
 		expect(toolsFromMessages(thread)["tool-1"]).toMatchObject({
 			parentMessageId: "assistant-1",
-			title: "Search documents",
+			title: "Search Documents",
 			status: "COMPLETED",
 			output: "Found 3 documents",
 		});
@@ -111,7 +111,7 @@ describe("threadFromMessages", () => {
 		};
 		const tool = toolsFromMessages([], [approval])["tool-2"];
 		expect(tool).toMatchObject({
-			title: "Send email",
+			title: "Send Email",
 			status: "INPUT_REQUIRED",
 		});
 
@@ -182,6 +182,42 @@ describe("mergeTranscript", () => {
 			"a1",
 			"u2",
 		]);
+	});
+
+	it("puts an earlier run's card after the saved message it names, which the turn does not hold", () => {
+		const history = [
+			message("u1", "user"),
+			message("a1"),
+			message("u2", "user"),
+			message("a2"),
+		];
+		const card: ConversationMessage = {
+			id: "child-run:c1",
+			role: "assistant",
+			parentMessageId: "a1",
+			parts: [
+				{
+					type: "run",
+					run: {
+						runId: "c1",
+						status: "COMPLETED",
+						pendingActions: [],
+					},
+				},
+			],
+		};
+		// a message the room has not saved yet stays with the turn, whatever its parent
+		const reply = { ...message("u3", "user"), parentMessageId: "a1" };
+		expect(
+			ids(
+				mergeTranscript(history, [
+					message("u2", "user"),
+					message("a2"),
+					card,
+					reply,
+				]),
+			),
+		).toEqual(["u1", "a1", "child-run:c1", "u2", "a2", "u3"]);
 	});
 
 	it("uses the turn's copy of a saved message in its saved position", () => {

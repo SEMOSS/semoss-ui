@@ -20,7 +20,7 @@ export const createGuardrailEngine = async (
 	name: string,
 	details: Record<string, unknown>,
 ): Promise<string> => {
-	const pixel = `CreateGuardrailEngine(guardrail=[${JSON.stringify(name)}],guardrailDetails=[${JSON.stringify(details)}]);`;
+	const pixel = `CreateGuardrailEngine(catalogName=[${JSON.stringify(name)}],guardrailDetails=[${JSON.stringify(details)}]);`;
 	const response = await runPixel<[CreateGuardrailEngineOutput]>(
 		pixel,
 		insightId,
@@ -46,7 +46,7 @@ export const createGuardrailEngine = async (
  * property, such as FUNCTION_POLICY: each name or pattern to the access it
  * requires.
  */
-export type SqlQueryPolicyDefaults = Record<string, Record<string, string>>;
+type SqlQueryPolicyDefaults = Record<string, Record<string, string>>;
 
 /**
  * The pixel that reads the SQL query policy guardrail's built-in identifier

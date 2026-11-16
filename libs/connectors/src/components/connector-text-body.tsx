@@ -4,7 +4,7 @@ import { Markdown, Muted } from "@semoss/ui/next";
 import { toMarkdownText } from "../core/connector-rich-text";
 
 /** Props for {@link ConnectorTextBody}. */
-export interface ConnectorTextBodyProps {
+interface ConnectorTextBodyProps {
 	/** The text, as the backend read it. */
 	text?: string;
 	/** Whether the backend cut the text short. */

@@ -5,9 +5,16 @@ import {
 	WorkUpdatesContext,
 	type WorkUpdatesStatus,
 } from "@/features/collaboration/live/work-updates.context";
+import type { Topic } from "@/features/collaboration/state/collaboration.types";
+import { listRoomsPage } from "@/features/rooms/api/list-rooms";
 import { readRoomSourceAssociation } from "@/features/rooms/api/read-room-source-association";
 import type { RoomRow } from "@/features/rooms/api/room-schemas";
-import { listRoomTopics } from "@/features/rooms/api/room-topics";
+import {
+	linkRoomTopic,
+	listRoomTopics,
+	listTopicRooms,
+} from "@/features/rooms/api/room-topics";
+import { ChatSource } from "@/features/topic-contents/chat-source";
 import { RoomSourceAssociationsProvider } from "./room-source-associations-provider";
 import { TopicSessions } from "./topic-sessions";
 
@@ -27,6 +34,14 @@ vi.mock("@/features/rooms/api/read-room-source-association", () => ({
 }));
 vi.mock("@/features/rooms/api/room-topics", () => ({
 	listRoomTopics: vi.fn(),
+	listTopicRooms: vi.fn(),
+	linkRoomTopic: vi.fn(),
+}));
+vi.mock("@/features/rooms/api/list-rooms", async (importOriginal) => ({
+	...(await importOriginal<
+		typeof import("@/features/rooms/api/list-rooms")
+	>()),
+	listRoomsPage: vi.fn(),
 }));
 vi.mock("@/features/collaboration/state/collaboration-session.context", () => ({
 	useCollaborationSession: () => ({
@@ -53,6 +68,7 @@ vi.mock("@/features/collaboration/state/collaboration-session.context", () => ({
 }));
 vi.mock("./dashboard.context", () => ({
 	useDashboard: () => ({
+		actions: mocks.actions,
 		history: {
 			rooms: mocks.rooms,
 			isLoading: mocks.isLoading,
@@ -68,16 +84,20 @@ vi.mock("./dashboard.context", () => ({
 
 const read = vi.mocked(readRoomSourceAssociation);
 const readTopics = vi.mocked(listRoomTopics);
+const readLinked = vi.mocked(listTopicRooms);
+const saveLink = vi.mocked(linkRoomTopic);
 const rows = (count: number): RoomRow[] =>
 	Array.from({ length: count }, (_, index) => ({
 		roomId: `room-${index}`,
 		roomName: `Session ${index}`,
 	}));
 
+/** The Chats tab, or with a view the add-or-remove page's chat list, which shares the tab's hook. */
 function content(
 	isActive = true,
 	owner = "account-one",
 	topicId = "topic-one",
+	chatView?: "all" | "topic",
 ) {
 	return (
 		<MemoryRouter>
@@ -85,7 +105,13 @@ function content(
 				key={owner}
 				actions={mocks.actions as never}
 			>
-				{isActive ? (
+				{chatView ? (
+					<ChatSource
+						// the list reads only the topic's id
+						topic={{ id: topicId } as Topic}
+						view={chatView}
+					/>
+				) : isActive ? (
 					<TopicSessions topicId={topicId} />
 				) : (
 					<p>Actions tab</p>
@@ -105,6 +131,10 @@ beforeEach(() => {
 	read.mockResolvedValue({ threadId: null, isDelegation: false });
 	readTopics.mockReset();
 	readTopics.mockResolvedValue([]);
+	readLinked.mockReset();
+	readLinked.mockResolvedValue([]);
+	saveLink.mockReset();
+	saveLink.mockResolvedValue([]);
 });
 
 it("reads no metadata before activation and inspects only 25 already-loaded rooms per batch", async () => {
@@ -365,9 +395,15 @@ it("discards pending topic links when the account/insight owner changes", async 
 	expect(screen.queryByRole("link", { name: /^Old topic chat/ })).toBeNull();
 });
 
-it("keeps history failure distinct from an empty linked-session result", () => {
+it("keeps history failure distinct from an empty linked-session result", async () => {
 	mocks.error = "Saved sessions could not be loaded.";
 	render(content());
+	// once the topic's own chats are read, only the history failure explains the empty list
+	await waitFor(() =>
+		expect(
+			screen.queryByText("Checking linked sessions…"),
+		).not.toBeInTheDocument(),
+	);
 	expect(screen.getByRole("alert")).toHaveTextContent(mocks.error);
 	expect(
 		screen.queryByText(
@@ -492,7 +528,6 @@ it("lists a chat linked to a topic made on this page, which the chat knows by it
 		error: "",
 		lastMailCheck: null,
 		refresh: vi.fn(),
-		refreshTopicGoal: vi.fn(),
 		refreshTopic: vi.fn(),
 		isSyncing: false,
 		lastSync: null,
@@ -508,5 +543,190 @@ it("lists a chat linked to a topic made on this page, which the chat knows by it
 	);
 	expect(
 		await screen.findByRole("link", { name: /^Registration deadline/ }),
+	).toBeVisible();
+});
+
+it("lists the topic's linked chats from the server, including ones older than the loaded history", async () => {
+	mocks.rooms = [
+		{ roomId: "recent", roomName: "Recent chat" },
+		{ roomId: "linked-recent", roomName: "Renamed since" },
+	];
+	readLinked.mockResolvedValue([
+		{ roomId: "linked-recent", roomName: "Old name", origin: "you" },
+		{
+			roomId: "linked-old",
+			roomName: "Old chat",
+			dateUpdated: "2026-01-05T10:00:00Z",
+			origin: "brain",
+		},
+	]);
+	render(content());
+	// the history row wins where both know the chat, so a rename shows
+	expect(
+		await screen.findByRole("link", { name: /^Renamed since/ }),
+	).toBeVisible();
+	expect(screen.getByRole("link", { name: /^Old chat/ })).toBeVisible();
+	expect(screen.getAllByRole("link")).toHaveLength(2);
+	expect(readLinked).toHaveBeenCalledWith(mocks.actions, "topic-one");
+});
+
+it("leaves out a chat from one of the topic's threads once the topic was taken off it", async () => {
+	mocks.rooms = ["kept", "taken-off"].map((roomId) => ({
+		roomId,
+		roomName: roomId,
+	}));
+	read.mockResolvedValue({ threadId: "source-one", isDelegation: false });
+	readTopics.mockImplementation(async (_actions, roomId) =>
+		roomId === "taken-off"
+			? [{ topicId: "topic-one", state: "dismissed" }]
+			: [],
+	);
+	render(content());
+	await screen.findByText("Checked 2 saved sessions.");
+	expect(screen.getAllByRole("link")).toHaveLength(1);
+	expect(screen.getByRole("link", { name: /^kept/ })).toBeVisible();
+});
+
+it("says when the topic's chats could not be read, and reads them again on retry", async () => {
+	readLinked.mockRejectedValueOnce(new Error("Offline"));
+	render(content());
+	expect(await screen.findByRole("alert")).toHaveTextContent(
+		"Could not load this topic's chats.",
+	);
+	expect(
+		screen.queryByText(/^No linked chats in the history/),
+	).not.toBeInTheDocument();
+	readLinked.mockResolvedValue([
+		{ roomId: "linked", roomName: "Linked chat", origin: "you" },
+	]);
+	await userEvent
+		.setup()
+		.click(screen.getByRole("button", { name: "Retry topic chats" }));
+	expect(
+		await screen.findByRole("link", { name: /^Linked chat/ }),
+	).toBeVisible();
+	expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+});
+
+it("adds and removes chats by hand, saving each change before the row shows it", async () => {
+	mocks.rooms = [
+		{ roomId: "alpha", roomName: "Alpha" },
+		{ roomId: "beta", roomName: "Beta" },
+		{ roomId: "gamma", roomName: "Gamma" },
+	];
+	readLinked.mockResolvedValue([
+		{ roomId: "beta", roomName: "Beta", origin: "you" },
+	]);
+	// Gamma is in the topic only because its source thread is
+	read.mockImplementation(async (_actions, roomId) => ({
+		threadId: roomId === "gamma" ? "source-one" : null,
+		isDelegation: false,
+	}));
+	const user = userEvent.setup();
+	const view = render(content(true, "account-one", "topic-one", "all"));
+	const box = (name: string) => screen.getByRole("checkbox", { name });
+	// the list says these are the assistant's chats, which a Teams chat is easily taken for
+	expect(
+		await screen.findByRole("heading", { name: "Assistant chats" }),
+	).toBeVisible();
+	expect(
+		screen.getByText(
+			"Your chats with the assistant in this app. These are not Teams chats.",
+		),
+	).toBeVisible();
+	// every chat, with the topic's own checked
+	await waitFor(() => expect(box("Gamma")).toBeChecked());
+	expect(box("Alpha")).not.toBeChecked();
+	expect(box("Beta")).toBeChecked();
+	expect(box("Gamma")).toHaveAccessibleDescription(
+		"From one of this topic's threads",
+	);
+
+	let finishSave: (topics: []) => void = () => undefined;
+	saveLink.mockImplementationOnce(
+		() =>
+			new Promise((resolve) => {
+				finishSave = resolve;
+			}),
+	);
+	await user.click(box("Alpha"));
+	expect(saveLink).toHaveBeenLastCalledWith(
+		mocks.actions,
+		"alpha",
+		"topic-one",
+		false,
+	);
+	// not shown as added until the server has it
+	expect(box("Alpha")).not.toBeChecked();
+	expect(box("Alpha")).toHaveAttribute("aria-busy", "true");
+	await act(async () => finishSave([]));
+	expect(box("Alpha")).toBeChecked();
+	expect(screen.getByRole("status")).toHaveTextContent(
+		'Added "Alpha" to this topic.',
+	);
+
+	await user.click(box("Gamma"));
+	expect(saveLink).toHaveBeenLastCalledWith(
+		mocks.actions,
+		"gamma",
+		"topic-one",
+		true,
+	);
+	await waitFor(() => expect(box("Gamma")).not.toBeChecked());
+
+	// the topic's own list has what is in it now, then the chat just taken off it
+	view.rerender(content(true, "account-one", "topic-one", "topic"));
+	expect(
+		screen.getAllByRole("checkbox").map((item) => {
+			const id = item.getAttribute("aria-labelledby");
+			return `${id ? document.getElementById(id)?.textContent : ""}:${item.getAttribute("aria-checked")}`;
+		}),
+	).toEqual(["Alpha:true", "Beta:true", "Gamma:false"]);
+});
+
+it("leaves a chat as it was when the save fails", async () => {
+	mocks.rooms = [{ roomId: "alpha", roomName: "Alpha" }];
+	saveLink.mockRejectedValueOnce(new Error("Chat not found"));
+	const user = userEvent.setup();
+	render(content(true, "account-one", "topic-one", "all"));
+	const alpha = await screen.findByRole("checkbox", { name: "Alpha" });
+	await user.click(alpha);
+	await waitFor(() => expect(alpha).not.toHaveAttribute("aria-busy"));
+	expect(alpha).not.toBeChecked();
+	// no change to report: the hint stays
+	expect(screen.getByRole("status")).toHaveTextContent(
+		"Check chats to add them to this topic.",
+	);
+});
+
+it("finds a chat outside the loaded history by name", async () => {
+	mocks.rooms = [{ roomId: "alpha", roomName: "Alpha" }];
+	vi.mocked(listRoomsPage).mockResolvedValue({
+		rooms: [{ roomId: "old", roomName: "Hiring plan" }],
+		hasMore: true,
+		nextOffset: 25,
+	});
+	const user = userEvent.setup();
+	render(content(true, "account-one", "topic-one", "all"));
+	await user.type(
+		await screen.findByRole("searchbox", {
+			name: "Search Assistant chats",
+		}),
+		"hiring",
+	);
+	expect(
+		await screen.findByRole("checkbox", { name: "Hiring plan" }),
+	).not.toBeChecked();
+	expect(screen.queryByRole("checkbox", { name: "Alpha" })).toBeNull();
+	// one search for what was typed, not one per keystroke
+	expect(listRoomsPage).toHaveBeenCalledExactlyOnceWith(
+		mocks.actions,
+		0,
+		"hiring",
+	);
+	expect(
+		screen.getByText(
+			"Showing the first matches. Keep typing to narrow it down.",
+		),
 	).toBeVisible();
 });

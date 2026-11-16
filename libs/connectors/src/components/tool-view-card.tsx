@@ -3,7 +3,7 @@ import { type ConnectorBrand, ConnectorBrandIcon } from "@semoss/shared";
 import { H4, Muted } from "@semoss/ui/next";
 
 /** Props for {@link ToolViewCard}. */
-export interface ToolViewCardProps {
+interface ToolViewCardProps {
 	/** The app the call acts in, whose logo heads the card. */
 	brand: ConnectorBrand;
 	/** What the call does, such as `Send an email`. */

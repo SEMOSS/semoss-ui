@@ -194,7 +194,7 @@ const MetadataHelpContent: React.FC = () => (
 	</div>
 );
 
-export interface MetadataHelpDialogProps {
+interface MetadataHelpDialogProps {
 	/** Render a borderless ghost button, for inline placement near a field */
 	compact?: boolean;
 

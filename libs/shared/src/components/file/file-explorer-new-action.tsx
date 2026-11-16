@@ -7,6 +7,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { canCreateItems } from "./file-explorer.adapters";
 import type { FileExplorerActionProps } from "./file-explorer.types";
 
 /**
@@ -14,7 +15,7 @@ import type { FileExplorerActionProps } from "./file-explorer.types";
  *
  * No action is preselected, so the overlay opens on its action picker and the
  * user chooses upload / new file / new folder there. Renders nothing when the
- * explorer cannot mutate its tree.
+ * explorer cannot create in its tree.
  */
 export const FileExplorerNewAction: React.FC<FileExplorerActionProps> = ({
 	explorer,
@@ -26,7 +27,7 @@ export const FileExplorerNewAction: React.FC<FileExplorerActionProps> = ({
 		path: explorer.header.path,
 	});
 
-	if (!explorer.capabilities.mutate) {
+	if (!canCreateItems(explorer.capabilities)) {
 		return null;
 	}
 

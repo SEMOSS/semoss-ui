@@ -4,7 +4,7 @@ import { Markdown, Spinner } from "@semoss/ui/next";
 import { useProject } from "@/hooks";
 import { CLIENT_AGENT_LINKS } from "@/utility";
 
-export interface AgentDefinitionViewProps {
+interface AgentDefinitionViewProps {
 	/** The agent's `GetWorkspace` response. */
 	workspace: AgentWorkspace;
 	/** Extra classes for the root. */

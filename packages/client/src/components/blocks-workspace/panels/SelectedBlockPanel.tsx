@@ -32,11 +32,6 @@ import { useDesigner } from "@/hooks/useDesigner";
 import { BlockSettingsRegistry } from "../blocks";
 import { PanelEmptyState } from "./panel-empty-state";
 
-export interface SelectedBlocksProps {
-	/** Title to render in the menu */
-	title: string;
-}
-
 export const SelectedBlockPanel = observer(() => {
 	const { designer } = useDesigner();
 	const { state } = useBlocks();

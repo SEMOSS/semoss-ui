@@ -8,7 +8,7 @@ function commaSeparatedList(value: string): string[] {
 	return value.split(",").map((item) => item.trim());
 }
 
-export interface VectorEngineFormProps {
+interface VectorEngineFormProps {
 	/** Current node config */
 	config: VectorEngineConfig;
 	/** Output variable names produced by upstream nodes, offered as autocomplete */

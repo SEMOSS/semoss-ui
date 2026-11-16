@@ -53,7 +53,7 @@ describe("importing updated fixtures after a completed import", () => {
 			"BrainImportMail(days=[30], teams=[true]);",
 		);
 		expect(
-			screen.getByRole("button", { name: "Starting import…" }),
+			screen.getByRole("button", { name: "Starting import..." }),
 		).toBeDisabled();
 		expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled();
 		expect(onNext).not.toHaveBeenCalled();

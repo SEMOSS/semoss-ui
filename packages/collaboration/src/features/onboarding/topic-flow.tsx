@@ -16,10 +16,8 @@ import { listPeople, type OnboardingPerson } from "./onboarding-api";
 import type { OnboardingStepProps } from "./onboarding-step-props";
 import { Failure, message, StepActions, StepHeader } from "./onboarding-ui";
 import { TopicAreasStage } from "./topic-areas-stage";
-import { TopicConversationsStage } from "./topic-conversations-stage";
 import { TopicDoneStage } from "./topic-done-stage";
 import { TopicOrganizationPreviewDialog } from "./topic-organization-preview-dialog";
-import { TopicPeopleStage } from "./topic-people-stage";
 import {
 	applyTopicReview,
 	reviewDraft,
@@ -40,19 +38,7 @@ const STAGES = [
 		key: "areas",
 		label: "Topics",
 		title: "Your main areas of work",
-		intro: "Keep the ones that are your work. Show more if something is missing.",
-	},
-	{
-		key: "people",
-		label: "People",
-		title: "Who belongs on each topic",
-		intro: "Click a name to take that person off a topic. Add anyone who is missing.",
-	},
-	{
-		key: "conversations",
-		label: "Conversations",
-		title: "Check the conversations",
-		intro: "Uncheck anything that does not belong, or move it to the right topic.",
+		intro: "Pick a topic to see what is in it. Tick two or more to combine them.",
 	},
 	{
 		key: "done",
@@ -93,14 +79,12 @@ export function TopicFlow({
 		changes,
 	);
 	const [stage, setStage] = useState<TopicStage>("areas");
-	const [revealed, setRevealed] = useState(5);
 	const [contacts, setContacts] = useState<OnboardingPerson[]>([]);
 	const [addedNames, setAddedNames] = useState<Record<string, string>>({});
 	const [isChatOpen, setIsChatOpen] = useState(false);
 	const [isRegrouping, setIsRegrouping] = useState(false);
 	const [isGoingBack, setIsGoingBack] = useState(false);
 	const [isReloading, setIsReloading] = useState(false);
-	const [navSlot, setNavSlot] = useState<HTMLDivElement | null>(null);
 	const chatTriggerId = useId();
 	const { queueDraft } = controller;
 	const values = form.watch();
@@ -272,6 +256,31 @@ export function TopicFlow({
 		return key;
 	};
 
+	// kept topics into one, keeping a saved topic's profile when there is one; opens a preview first
+	const combineTopics = (
+		topicKeys: string[],
+		name = "",
+		description = "",
+	): Promise<boolean> => {
+		const keys = topicKeys.filter((key) => keptKeys.includes(key));
+		if (keys.length < 2) return Promise.resolve(false);
+		const targetKey =
+			keys.find(
+				(key) =>
+					review.draft.topics.find((t) => t.key === key)?.accepted,
+			) ?? keys[0];
+		const target = form.getValues(`topics.${indexOf(targetKey)}`);
+		return organization.openPreview([
+			{
+				topicKeys: keys,
+				targetKey,
+				name: name || target.name,
+				description: description || target.description,
+				terms: target.terms,
+			},
+		]);
+	};
+
 	// a chat proposal becomes an ordinary draft edit the owner can still change
 	const applyChange = async (change: SetupChange): Promise<boolean> => {
 		if (change.type === "add_topic") {
@@ -285,28 +294,12 @@ export function TopicFlow({
 			});
 			return true;
 		}
-		if (change.type === "combine") {
-			const keys = change.topicKeys.filter((key) =>
-				keptKeys.includes(key),
+		if (change.type === "combine")
+			return combineTopics(
+				change.topicKeys,
+				change.name,
+				change.description,
 			);
-			if (keys.length < 2) return false;
-			const targetKey =
-				keys.find(
-					(key) =>
-						review.draft.topics.find((t) => t.key === key)
-							?.accepted,
-				) ?? keys[0];
-			const target = form.getValues(`topics.${indexOf(targetKey)}`);
-			return organization.openPreview([
-				{
-					topicKeys: keys,
-					targetKey,
-					name: change.name || target.name,
-					description: change.description || target.description,
-					terms: target.terms,
-				},
-			]);
-		}
 		const index = indexOf(change.topicKey);
 		if (index < 0 || combined.has(change.topicKey)) return false;
 		if (change.type === "keep" || change.type === "skip") {
@@ -493,39 +486,21 @@ export function TopicFlow({
 					/>
 				) : stage === "areas" ? (
 					<TopicAreasStage
+						actions={actions}
+						contacts={contacts}
+						changes={changes}
+						onSave={() => controller.flushDraft(form.getValues())}
 						review={review}
 						values={values}
-						revealed={revealed}
+						addedNames={addedNames}
 						isBusy={isBusy}
-						onReveal={setRevealed}
 						onRegroup={(areaKey, split) =>
 							void regroup(areaKey, split)
 						}
+						onCombine={(keys) => void combineTopics(keys)}
 						onAddTopic={(name) => addTopic({ name })}
-					/>
-				) : stage === "people" ? (
-					<TopicPeopleStage
-						actions={actions}
-						review={review}
-						values={values}
-						keys={keptKeys}
-						contacts={contacts}
-						addedNames={addedNames}
-						isBusy={isBusy}
-						onAdd={addPeople}
-						onRemove={removePeople}
-					/>
-				) : stage === "conversations" ? (
-					<TopicConversationsStage
-						actions={actions}
-						review={review}
-						values={values}
-						keys={keptKeys}
-						isBusy={isBusy}
-						changes={changes}
-						onSave={() => controller.flushDraft(form.getValues())}
-						onDone={() => setStage("done")}
-						navSlot={navSlot}
+						onRemovePeople={removePeople}
+						onRestorePeople={addPeople}
 					/>
 				) : (
 					<TopicDoneStage
@@ -605,7 +580,7 @@ export function TopicFlow({
 								: `Save ${keptKeys.length} ${keptKeys.length === 1 ? "topic" : "topics"}`}
 							<ArrowRight aria-hidden="true" />
 						</Button>
-					) : stage !== "conversations" ? (
+					) : (
 						<Button
 							type="button"
 							disabled={isBusy || noSuggestions}
@@ -614,11 +589,6 @@ export function TopicFlow({
 							Next: {STAGES[stageIndex + 1].label.toLowerCase()}
 							<ArrowRight aria-hidden="true" />
 						</Button>
-					) : (
-						<div
-							ref={setNavSlot}
-							className="flex flex-wrap gap-2"
-						/>
 					)}
 				</StepActions>
 			</Form>

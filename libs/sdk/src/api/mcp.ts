@@ -85,3 +85,32 @@ export const runMcpTool = async (
 	// a tool that returns nothing stringifies to undefined
 	return JSON.stringify(result.output) ?? "";
 };
+
+/**
+ * The tool definitions an MCP server offers (GetMCPTools), such as a toolbox
+ * a room uses: each tool's name, title, description, input schema, and
+ * `_meta`, such as how it runs. A toolbox hosted by a project is read by its
+ * project; every other catalog type is an engine.
+ *
+ * @param params.id - The project or engine that holds the tools.
+ * @param params.type - Its catalog type, such as `PROJECT` or `FUNCTION`.
+ * @returns The MCP document as the backend returns it, with its `tools`.
+ * @throws Error when the backend cannot list the tools.
+ */
+export const getMcpTools = async (params: {
+	id: string;
+	type: string;
+}): Promise<unknown> => {
+	const { id, type } = params;
+	const owner = type === "PROJECT" ? "project" : "engine";
+
+	const response = await runPixel<[unknown]>(
+		`GetMCPTools(${owner}=${JSON.stringify([id])});`,
+	);
+
+	if (response.errors.length > 0) {
+		throw new Error(response.errors.join(""));
+	}
+
+	return response.pixelReturn[0]?.output;
+};

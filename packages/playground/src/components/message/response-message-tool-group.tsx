@@ -20,7 +20,7 @@ import type { ToolStore } from "@/stores/tool/tool.store";
 import { isAskExecutionMode } from "@/utility/mcp-utils";
 import { ResponseMessageTool } from "./response-message-tool";
 
-export interface ResponseMessageToolGroupProps {
+interface ResponseMessageToolGroupProps {
 	/** Consecutive tools in transcript order. */
 	tools: ToolStore[];
 }

@@ -54,7 +54,7 @@ const RUN_STATUS_CLASSES: Record<StepRunStatus, string> = {
 		"border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
 	error: "border-destructive/30 bg-destructive/5 text-destructive",
 };
-export interface NodeEditDrawerProps {
+interface NodeEditDrawerProps {
 	step: AutomationNode;
 	appId: string;
 	upstreamVars: string[];

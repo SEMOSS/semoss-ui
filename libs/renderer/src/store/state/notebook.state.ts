@@ -3,7 +3,7 @@ import { setValueByPath } from "../../utility";
 import { CellState, type CellStateConfig } from "./cell.state";
 import type { StateStore } from "./state.store";
 
-export interface NotebookStateStoreInterface {
+interface NotebookStateStoreInterface {
 	/** Id of the query */
 	id: string;
 

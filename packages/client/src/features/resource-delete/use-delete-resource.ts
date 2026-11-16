@@ -1,21 +1,26 @@
 import { useState } from "react";
+import { useSessionInsight } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
-import { useSession } from "@/hooks/use-session";
-import type { ALL_TYPES } from "@/types";
+import type { ALL_TYPES } from "@/types/types";
 import { getDeleteRequest } from "./delete-request";
 
 /** The resource {@link useDeleteResource} deletes. */
-export interface DeleteResourceTarget {
+interface DeleteResourceTarget {
 	/** The resource's type: an engine type, or PROJECT */
 	type: ALL_TYPES;
 	/** The resource's id */
 	id: string;
 	/** For a project, its project type, which picks the delete pixel */
 	projectType?: string;
+	/**
+	 * Whether the delete is made in admin mode, where an admin can delete any
+	 * engine or project; outside it the user deletes what they own
+	 */
+	admin?: boolean;
 }
 
 /** What {@link useDeleteResource} gives its caller. */
-export interface UseDeleteResourceResult {
+interface UseDeleteResourceResult {
 	/** What the product calls the resource, such as "engine" or "agent" */
 	entityLabel: string;
 	/** Whether a delete is running */
@@ -29,8 +34,8 @@ export interface UseDeleteResourceResult {
 }
 
 /**
- * Deletes an engine or a project with the pixel its type takes, tracking
- * whether the delete is running.
+ * Deletes an engine or a project with the pixel its type takes, or the admin
+ * pixel in admin mode, tracking whether the delete is running.
  *
  * @param target - The resource to delete.
  * @returns The delete action and its state.
@@ -39,10 +44,11 @@ export const useDeleteResource = ({
 	type,
 	id,
 	projectType,
+	admin = false,
 }: DeleteResourceTarget): UseDeleteResourceResult => {
-	const runPixel = useSession((state) => state.runPixel);
+	const { run: runPixel } = useSessionInsight();
 	const [isDeleting, setIsDeleting] = useState(false);
-	const request = getDeleteRequest(type, id, projectType);
+	const request = getDeleteRequest(type, id, projectType, admin);
 
 	const deleteResource = async (): Promise<boolean> => {
 		if (!request) {

@@ -7,9 +7,11 @@ import { createInitialCollaborationState } from "../state/collaboration.fixtures
 import { CollaborationSessionProvider } from "../state/collaboration-session.context";
 import { CollaborationProfileMenu } from "./collaboration-profile-menu";
 
-const logout = vi.hoisted(() => vi.fn<() => Promise<boolean>>());
+const logout = vi.hoisted(() => vi.fn<() => Promise<void>>());
+// the menu signs out the page's session, which the login gate reads
 vi.mock("@semoss/sdk/react", () => ({
-	useInsight: () => ({ actions: { logout } }),
+	useSession: <T,>(selector: (state: { logout: typeof logout }) => T) =>
+		selector({ logout }),
 }));
 
 /** Render account actions with real menu and routing behavior. */
@@ -39,7 +41,7 @@ function renderMenu() {
 
 beforeEach(() => {
 	logout.mockReset();
-	logout.mockResolvedValue(true);
+	logout.mockResolvedValue(undefined);
 });
 afterEach(cleanup);
 
@@ -67,10 +69,10 @@ it("shows the current account and supports keyboard dismissal and Settings navig
 });
 
 it("waits for logout success and prevents repeated submissions", async () => {
-	let finishLogout: (value: boolean) => void = () => {
+	let finishLogout: () => void = () => {
 		throw new Error("Logout promise not initialized");
 	};
-	const pending = new Promise<boolean>((resolve) => {
+	const pending = new Promise<void>((resolve) => {
 		finishLogout = resolve;
 	});
 	logout.mockReturnValue(pending);
@@ -83,27 +85,21 @@ it("waits for logout success and prevents repeated submissions", async () => {
 	expect(logout).toHaveBeenCalledOnce();
 	await user.click(screen.getByRole("menuitem", { name: "Settings" }));
 	expect(router.state.location.pathname).toBe("/");
-	await act(async () => finishLogout(true));
+	await act(async () => finishLogout());
 	await waitFor(() => expect(router.state.location.pathname).toBe("/login"));
 	expect(router.state.historyAction).toBe("REPLACE");
 });
 
-it.each(["false", "rejection"])(
-	"retains the session and allows retry after a %s result",
-	async (failure) => {
-		if (failure === "false") logout.mockResolvedValueOnce(false);
-		else logout.mockRejectedValueOnce(new Error("Offline"));
-		const { router, user } = renderMenu();
-		await user.click(screen.getByRole("button", { name: /Account menu/ }));
-		await user.click(screen.getByRole("menuitem", { name: "Log out" }));
-		expect(await screen.findByRole("alert")).toHaveTextContent(
-			"Could not log out. Please try again.",
-		);
-		expect(router.state.location.pathname).toBe("/");
-		await user.click(screen.getByRole("menuitem", { name: "Log out" }));
-		await waitFor(() =>
-			expect(router.state.location.pathname).toBe("/login"),
-		);
-		expect(logout).toHaveBeenCalledTimes(2);
-	},
-);
+it("retains the session and allows retry after a refused logout", async () => {
+	logout.mockRejectedValueOnce(new Error("Offline"));
+	const { router, user } = renderMenu();
+	await user.click(screen.getByRole("button", { name: /Account menu/ }));
+	await user.click(screen.getByRole("menuitem", { name: "Log out" }));
+	expect(await screen.findByRole("alert")).toHaveTextContent(
+		"Could not log out. Please try again.",
+	);
+	expect(router.state.location.pathname).toBe("/");
+	await user.click(screen.getByRole("menuitem", { name: "Log out" }));
+	await waitFor(() => expect(router.state.location.pathname).toBe("/login"));
+	expect(logout).toHaveBeenCalledTimes(2);
+});

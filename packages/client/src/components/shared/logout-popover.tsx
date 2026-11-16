@@ -1,0 +1,234 @@
+import {
+	ChevronRight,
+	CircleUserRound,
+	LogOut,
+	Monitor,
+	Moon,
+	Sun,
+} from "lucide-react";
+import type React from "react";
+import { useState } from "react";
+import { useConfig, useSession } from "@semoss/sdk/react";
+import {
+	Avatar,
+	AvatarFallback,
+	Button,
+	DropdownMenu,
+	DropdownMenuCheckboxItem,
+	DropdownMenuContent,
+	DropdownMenuTrigger,
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+	Spinner,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+	useTheme,
+} from "@semoss/ui/next";
+import { isRecord } from "@semoss/utility/object";
+import { usePlatformTheme } from "@/hooks/use-platform-theme";
+
+interface LogoutPopoverProps {
+	/** Content to popover */
+	children?: React.ReactNode;
+	/** Called when popover open state changes */
+	onOpenChange?: (open: boolean) => void;
+}
+
+/**
+ * The account popover: the signed in user's name and last login, the color
+ * mode (when the theme allows dark mode), Logout, and the platform's version.
+ * Opens from `children`, or from an account button when there are none.
+ */
+export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
+	const { children, onOpenChange } = props;
+
+	const appTheme = usePlatformTheme();
+	const version = useConfig(
+		(state) => state.config?.version ?? { version: "", datetime: "" },
+	);
+	const userName = useSession((state) => state.user?.name ?? "");
+	const lastLogin = useSession((state) => state.user?.lastLogin);
+	const logout = useSession((state) => state.logout);
+	const { theme, setTheme } = useTheme();
+	const [loggingOut, setLoggingOut] = useState(false);
+	const [open, setOpen] = useState(false);
+	const featureFlags = appTheme.featureFlags;
+	const darkModeEnabled =
+		!isRecord(featureFlags) || featureFlags.enableDarkMode !== false;
+
+	const handleOpenChange = (next: boolean) => {
+		setOpen(next);
+		onOpenChange?.(next);
+	};
+
+	const handleLogout = async () => {
+		// immediately close the popover when the user clicks logout
+		handleOpenChange(false);
+		try {
+			setLoggingOut(true);
+			await logout();
+		} catch (error) {
+			console.error(error);
+			throw error;
+		} finally {
+			setLoggingOut(false);
+		}
+	};
+
+	return (
+		<>
+			{loggingOut && (
+				<div className="fixed inset-0 z-[1501] flex flex-col items-center justify-center bg-background/50">
+					<Spinner className="size-8" />
+					<p className="mt-2 text-foreground text-sm">Logging out</p>
+				</div>
+			)}
+
+			<Popover open={open} onOpenChange={handleOpenChange}>
+				<Tooltip disableHoverableContent={false}>
+					<TooltipTrigger asChild>
+						<PopoverTrigger asChild>
+							{children || (
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									aria-label="Account options"
+								>
+									<CircleUserRound className="size-4" />
+								</Button>
+							)}
+						</PopoverTrigger>
+					</TooltipTrigger>
+					<TooltipContent>Account options</TooltipContent>
+				</Tooltip>
+
+				<PopoverContent
+					side="right"
+					align="end"
+					sideOffset={8}
+					aria-label="Account options"
+					className="w-60 p-0"
+				>
+					{/* User info row */}
+					<div className="flex items-center gap-3 border-border border-b px-4 py-3">
+						{userName ? (
+							<Avatar>
+								<AvatarFallback>{userName[0]}</AvatarFallback>
+							</Avatar>
+						) : null}
+						<span className="max-w-[9rem] truncate font-medium text-foreground text-sm">
+							{userName}
+						</span>
+					</div>
+					{lastLogin && lastLogin !== "null" && (
+						<div className="flex items-center justify-center border-border border-b px-4 py-2">
+							<span className="text-muted-foreground text-xs">
+								Last login: {lastLogin} UTC
+							</span>
+						</div>
+					)}
+					{darkModeEnabled && (
+						<div className="border-border border-b px-4 py-2">
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button
+										variant="ghost"
+										type="button"
+										className="flex w-full items-center rounded-md px-2 py-2 text-sm hover:bg-accent"
+									>
+										{theme === "dark" ? (
+											<Moon className="size-4" />
+										) : theme === "system" ? (
+											<Monitor className="size-4" />
+										) : (
+											<Sun className="size-4" />
+										)}
+										<span className="ml-2">
+											{theme === "dark"
+												? "Dark"
+												: theme === "system"
+													? "System"
+													: "Light"}
+										</span>
+										{(theme === "dark" ||
+											theme === "system") && (
+											<span className="ms-1 self-center rounded border px-1 py-0.5 font-medium text-xs leading-none">
+												BETA
+											</span>
+										)}
+										<ChevronRight className="ml-auto size-4 opacity-70" />
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent
+									side="right"
+									align="start"
+									sideOffset={8}
+								>
+									<DropdownMenuCheckboxItem
+										checked={theme === "light"}
+										onCheckedChange={() =>
+											setTheme("light")
+										}
+									>
+										<Sun className="size-4" />
+										Light
+									</DropdownMenuCheckboxItem>
+									<DropdownMenuCheckboxItem
+										checked={theme === "dark"}
+										onCheckedChange={() => setTheme("dark")}
+									>
+										<Moon className="size-4" />
+										Dark
+										<span className="ms-auto self-center rounded border px-1 py-0.5 font-medium text-xs leading-none">
+											BETA
+										</span>
+									</DropdownMenuCheckboxItem>
+									<DropdownMenuCheckboxItem
+										checked={theme === "system"}
+										onCheckedChange={() =>
+											setTheme("system")
+										}
+									>
+										<Monitor className="size-4" />
+										System
+										<span className="ms-auto self-center rounded border px-1 py-0.5 font-medium text-xs leading-none">
+											BETA
+										</span>
+									</DropdownMenuCheckboxItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
+						</div>
+					)}
+					{/* Logout button row */}
+					<div className="flex items-center justify-center border-border border-b px-4 py-3">
+						<Button
+							variant="default"
+							className="w-full"
+							onClick={handleLogout}
+							disabled={loggingOut}
+						>
+							{loggingOut ? (
+								<Spinner className="size-4" />
+							) : (
+								<LogOut className="size-4" />
+							)}
+							Logout
+						</Button>
+					</div>
+
+					{/* Version info row */}
+					<div className="flex flex-col items-center gap-0.5 px-4 py-3">
+						<span className="truncate text-muted-foreground text-xs">
+							{version.version}
+						</span>
+						<span className="truncate text-muted-foreground text-xs">
+							{version.datetime}
+						</span>
+					</div>
+				</PopoverContent>
+			</Popover>
+		</>
+	);
+};

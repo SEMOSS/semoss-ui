@@ -1,7 +1,7 @@
 import { LogOut, Settings } from "lucide-react";
 import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { useInsight } from "@semoss/sdk/react";
+import { useSession } from "@semoss/sdk/react";
 import {
 	Button,
 	DropdownMenu,
@@ -30,7 +30,7 @@ export function CollaborationProfileMenu({
 	onNavigate,
 }: CollaborationProfileMenuProps) {
 	const { state } = useCollaborationSession();
-	const { actions } = useInsight();
+	const logout = useSession((state) => state.logout);
 	const navigate = useNavigate();
 	const [isOpen, setIsOpen] = useState(false);
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -47,7 +47,8 @@ export function CollaborationProfileMenu({
 		setIsLoggingOut(true);
 		setError("");
 		try {
-			if (!(await actions.logout())) throw new Error("Logout failed");
+			// throws when refused; the login page then reads the signed out session
+			await logout();
 			await navigate("/login", { replace: true });
 		} catch {
 			setError("Could not log out. Please try again.");

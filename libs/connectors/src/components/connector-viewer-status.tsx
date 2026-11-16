@@ -30,7 +30,7 @@ const SKELETON_ROWS = [
 ];
 
 /** Props for {@link ConnectorViewerStatus}. */
-export interface ConnectorViewerStatusProps {
+interface ConnectorViewerStatusProps {
 	/** The read to explain. Only loading, signed out, and failed reads show. */
 	query: Pick<ConnectorQuery<unknown>, "status" | "error" | "reload">;
 	/** The app's name, for the messages. */

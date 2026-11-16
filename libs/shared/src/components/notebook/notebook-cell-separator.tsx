@@ -2,7 +2,7 @@ import { PlusIcon } from "lucide-react";
 import { Button } from "@semoss/ui/next";
 import type { JupyterCellType } from "./notebook.types";
 
-export interface NotebookCellSeparatorProps {
+interface NotebookCellSeparatorProps {
 	/** Insert a new cell of `type` right at this gap. */
 	onInsert: (type: JupyterCellType) => void;
 	/** Disable inserting while the notebook is busy. */

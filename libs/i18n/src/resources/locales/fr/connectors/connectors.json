@@ -60,13 +60,19 @@
 	"onedrive": {
 		"viewLabel": "Affichage",
 		"mine": "Mes fichiers",
-		"shared": "Partagés avec moi"
+		"shared": "Partagés avec moi",
+		"sharedNote": "Les fichiers partagés avec vous sont trouvés par la recherche Microsoft : un fichier partagé récemment peut donc mettre un moment à apparaître ici."
 	},
 	"mail": {
 		"folder": "Dossier de courrier",
+		"folderPicker": "Dossier de messagerie : {{folder}}",
+		"unreadCount_one": "{{count}} non lu",
+		"unreadCount_other": "{{count}} non lus",
 		"inbox": "Boîte de réception",
 		"unreadOnly": "Non lus",
-		"searchPlaceholder": "Rechercher dans les objets",
+		"searchPlaceholder": "Rechercher des e-mails",
+		"searchHintOutlook": "Les mots portent sur l'expéditeur, l'objet ou le corps. Limitez-en un avec from:, to:, cc:, subject: ou body:, et utilisez des guillemets pour une expression.",
+		"searchHintGmail": "Les mots portent sur tout l'e-mail. Limitez-en un avec from:, to:, cc: ou subject:, et utilisez des guillemets pour une expression.",
 		"empty": "Aucun e-mail dans ce dossier",
 		"noUnread": "Aucun e-mail non lu dans ce dossier",
 		"unknownSender": "Expéditeur inconnu",
@@ -102,7 +108,25 @@
 		"hideQuoted": "Masquer les e-mails cités",
 		"filters": "Filtres",
 		"pageError": "Impossible de charger davantage de messages.",
-		"emptyPage": "La boîte mail a renvoyé une page vide. Réessayez."
+		"emptyPage": "La boîte mail a renvoyé une page vide. Réessayez.",
+		"picturesHidden": "Les images provenant du web sont masquées pour protéger votre vie privée.",
+		"showWebPictures": "Afficher les images du web",
+		"showEmbeddedPictures": "Afficher les images intégrées",
+		"loadingPictures": "Chargement des images...",
+		"embeddedPicturesHidden": "Les images intégrées à cet e-mail sont masquées.",
+		"embeddedPicturesLoading": "Chargement des images intégrées à cet e-mail...",
+		"embeddedPicturesFailed": "Les images intégrées à cet e-mail n'ont pas pu être chargées.",
+		"embeddedPicturesOmitted_one": "{{count}} image intégrée n'a pas pu être affichée.",
+		"embeddedPicturesOmitted_other": "{{count}} images intégrées n'ont pas pu être affichées.",
+		"pictureSettings": "Paramètres des images",
+		"picturesInEmails": "Images dans les e-mails",
+		"picturesAsk": "Demander à chaque fois",
+		"picturesEmbedded": "Toujours afficher les images intégrées",
+		"picturesAll": "Toujours afficher toutes les images",
+		"remoteImage": "Image provenant du web",
+		"embeddedImage": "Image ou fichier intégré",
+		"image": "Image",
+		"htmlFrame": "E-mail de {{from}}"
 	},
 	"calendar": {
 		"range": "Du {{start}} au {{end}}",
@@ -162,6 +186,7 @@
 		"openCalendar": "Ouvrir le calendrier"
 	},
 	"teams": {
+		"pageError": "Impossible de charger davantage de messages.",
 		"team": "Équipe",
 		"channel": "Canal",
 		"chooseTeam": "Choisissez une équipe",
@@ -199,7 +224,12 @@
 		"changeLocation": "Changer d’équipe ou de canal : {{team}}, {{channel}}",
 		"postsLabel": "Publications",
 		"filesLabel": "Fichiers",
-		"chatsLabel": "Vos conversations"
+		"chatsLabel": "Vos conversations",
+		"searchMessages": "Rechercher des messages",
+		"searchResultIn": "{{author}} dans {{chat}}",
+		"openSearchResult": "Ouvrir le message de {{author}} : {{text}}",
+		"searchMatch": "Trouvé par votre recherche",
+		"searchMatchNotShown": "Le message trouvé par votre recherche est plus ancien que les messages affichés ici. Ouvrez la conversation dans Teams pour remonter plus loin."
 	},
 	"accounts": {
 		"microsoft": "Microsoft 365",

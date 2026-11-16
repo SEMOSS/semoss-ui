@@ -1,5 +1,5 @@
 /** Props for {@link TeamsViewLabel}. */
-export interface TeamsViewLabelProps {
+interface TeamsViewLabelProps {
 	/** What the view lists. */
 	label: string;
 }

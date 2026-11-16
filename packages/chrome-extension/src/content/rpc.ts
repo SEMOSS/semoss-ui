@@ -13,14 +13,14 @@ import ripple from "./ripple";
 /**
  * Get unique CSS selector for an element by its data-id
  */
-export function getUniqueElementSelector(elementId: number): string {
+function getUniqueElementSelector(elementId: number): string {
 	return `[data-id="${elementId}"]`;
 }
 
 /**
  * Available RPC methods that can be called from background script
  */
-export const rpcMethods = {
+const rpcMethods = {
 	/**
 	 * Get unique selector for an element
 	 */
@@ -32,7 +32,7 @@ export const rpcMethods = {
 	ripple,
 } as const;
 
-export type RPCMethods = typeof rpcMethods;
+type RPCMethods = typeof rpcMethods;
 type MethodName = keyof RPCMethods;
 type Payload<T extends MethodName> = Parameters<RPCMethods[T]>;
 type MethodRT<T extends MethodName> = ReturnType<RPCMethods[T]>;
@@ -133,5 +133,3 @@ export const initializeRPC = () => {
 		},
 	);
 };
-
-export { sleep } from "@semoss/utility/async";

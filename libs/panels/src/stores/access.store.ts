@@ -6,12 +6,11 @@ import {
 } from "../types/access.types";
 
 /**
- * A standalone permission cache, for a host that has no session store to fold
- * it into.
+ * A standalone permission cache in a store of its own.
  *
- * The client wires `createPermissionCache` into its session store instead, so
- * permissions live beside the user they belong to and are cleared on logout. A
- * host without that — the playground, or a test — gets the cache on its own.
+ * @deprecated The file panels read the SDK session's `Session.permissions`,
+ * which a sign in or out clears, so nothing in them reads a store made here.
+ * Read permissions with `useSessionPermissions` from `@semoss/sdk/react`.
  *
  * @return A store satisfying `PermissionCache`.
  */

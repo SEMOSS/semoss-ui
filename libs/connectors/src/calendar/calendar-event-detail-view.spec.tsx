@@ -217,6 +217,7 @@ it("preserves complete-summary tool details and their inline actions", async () 
 				saver={{
 					saveLabel: "Save",
 					isBusy: () => false,
+					savedLabel: () => undefined,
 					save: vi.fn(),
 					addToContext: vi.fn(),
 				}}

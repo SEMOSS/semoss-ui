@@ -15,7 +15,9 @@ Helpers live in flat files under `src/`, grouped by function. Import from the
 matching category, such as `@semoss/utility/text` or `@semoss/utility/date`.
 Reuse existing helpers before adding new ones, and keep abstractions simple.
 
-This package is source-only; consuming applications compile it. The root also
+This package is source-only; consuming applications compile it. `@semoss/sdk` bundles
+the categories it imports into its published build, so every helper must stay
+runtime-independent and free of framework imports. The root also
 exports the public helpers. See the [README](./README.md) for import examples.
 
 ## Available utilities
@@ -26,7 +28,8 @@ exports the public helpers. See the [README](./README.md) for import examples.
 | `identifier` | Identifier labels, slugs, validation, and unique names |
 | `date` | Date/time formatting, durations, local dates, and date buckets |
 | `array` | Array comparison |
-| `object` | Object checks and copying |
+| `object` | Object checks, copying, and shallow equality |
+| `observable` | Immutable-snapshot state holder for vanilla stores |
 | `json` | JSON parsing and formatting, key-sorted serialization, tabular detection, and error locations |
 | `file` | File extensions and filename sanitization |
 | `encoding` | Base64 encoding and decoding |

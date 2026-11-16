@@ -110,7 +110,7 @@ export interface ModelLimitEntry {
 }
 
 /** What copying found */
-export interface CopyResult {
+interface CopyResult {
 	/** People new to the batch, to add */
 	additions: BatchEdit[];
 	/** People the batch already gives different access */
@@ -161,9 +161,7 @@ export const isSameGrant = (a: PermissionGrant, b: PermissionGrant): boolean =>
  * @param grant - a grant
  * @returns the grant without a model usage limit, for a target that has none
  */
-export const withoutModelLimits = (
-	grant: PermissionGrant,
-): PermissionGrant => ({
+const withoutModelLimits = (grant: PermissionGrant): PermissionGrant => ({
 	level: grant.level,
 	endDate: grant.endDate ?? null,
 });

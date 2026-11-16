@@ -8,7 +8,7 @@ import {
 
 /**
  * The tools every chat offers the model unless its settings disable them:
- * the folder tools, which this browser runs in Chat Files.
+ * the folder tools, which this browser runs in Room Files.
  */
 export const DEFAULT_TOOL_NAMES: readonly FolderToolName[] =
 	Object.values(FOLDER_TOOL_NAMES);

@@ -1,4 +1,12 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
+import type { ReactElement } from "react";
+import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	getTeamResourceCount,
@@ -34,6 +42,20 @@ const PIPELINE: TeamResource = {
 	dateCreated: null,
 };
 
+/** An engine the team can use at the Editor level */
+const SALES_DB: TeamResource = {
+	id: "eid1",
+	name: "Sales DB",
+	resourceType: "DATABASE",
+	subtype: "H2_DB",
+	permission: 2,
+	dateCreated: null,
+};
+
+/** The panel's names link to pages, so it renders inside a router */
+const renderPanel = (panel: ReactElement) =>
+	render(<MemoryRouter>{panel}</MemoryRouter>);
+
 describe("TeamResourceAccessPanel", () => {
 	beforeEach(() => {
 		vi.mocked(getTeamResources).mockReset().mockResolvedValue([PIPELINE]);
@@ -45,7 +67,7 @@ describe("TeamResourceAccessPanel", () => {
 	});
 
 	it("shows a team's managers its projects without ways to change them", async () => {
-		render(
+		renderPanel(
 			<TeamResourceAccessPanel kind="PROJECT" group={TEAM} readOnly />,
 		);
 
@@ -86,7 +108,9 @@ describe("TeamResourceAccessPanel", () => {
 	it("has no add button when a read-only team has no engines", async () => {
 		vi.mocked(getTeamResources).mockResolvedValue([]);
 		vi.mocked(getTeamResourceCount).mockResolvedValue(0);
-		render(<TeamResourceAccessPanel kind="ENGINE" group={TEAM} readOnly />);
+		renderPanel(
+			<TeamResourceAccessPanel kind="ENGINE" group={TEAM} readOnly />,
+		);
 
 		expect(
 			await screen.findByText("This team cannot use any engines yet"),
@@ -97,7 +121,7 @@ describe("TeamResourceAccessPanel", () => {
 	});
 
 	it("lets admins add, change and remove access", async () => {
-		render(<TeamResourceAccessPanel kind="PROJECT" group={TEAM} />);
+		renderPanel(<TeamResourceAccessPanel kind="PROJECT" group={TEAM} />);
 
 		expect(await screen.findByText("Pipeline")).toBeTruthy();
 		expect(
@@ -119,5 +143,50 @@ describe("TeamResourceAccessPanel", () => {
 				true,
 			),
 		);
+	});
+
+	it("links each project and engine to its page in a new tab", async () => {
+		renderPanel(
+			<TeamResourceAccessPanel kind="PROJECT" group={TEAM} readOnly />,
+		);
+		const project = await screen.findByRole("link", {
+			name: "Pipeline (opens in a new tab)",
+		});
+		expect(project.getAttribute("href")).toBe("/app/pid1");
+		expect(project.getAttribute("target")).toBe("_blank");
+		expect(project.getAttribute("rel")).toBe("noopener noreferrer");
+		cleanup();
+
+		vi.mocked(getTeamResources).mockResolvedValue([
+			SALES_DB,
+			{ ...SALES_DB, id: "eid2", name: "Mystery", resourceType: null },
+		]);
+		renderPanel(
+			<TeamResourceAccessPanel kind="ENGINE" group={TEAM} readOnly />,
+		);
+		const engine = await screen.findByRole("link", {
+			name: "Sales DB (opens in a new tab)",
+		});
+		expect(engine.getAttribute("href")).toBe("/database/eid1");
+		expect(screen.getByText("Mystery").closest("a")).toBeNull();
+	});
+
+	it("copies a project's id", async () => {
+		const writeText = vi.fn().mockResolvedValue(undefined);
+		Object.defineProperty(navigator, "clipboard", {
+			value: { writeText },
+			configurable: true,
+		});
+		renderPanel(
+			<TeamResourceAccessPanel kind="PROJECT" group={TEAM} readOnly />,
+		);
+
+		fireEvent.click(
+			await screen.findByRole("button", {
+				name: "Copy the id of Pipeline",
+			}),
+		);
+
+		await waitFor(() => expect(writeText).toHaveBeenCalledWith("pid1"));
 	});
 });

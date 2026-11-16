@@ -4,13 +4,13 @@ import { H4, ScrollArea } from "@semoss/ui/next";
 import { ConnectorIconButton } from "./connector-icon-button";
 
 /** One labelled value under an open item's heading, such as its sender. */
-export interface ConnectorDetailField {
+interface ConnectorDetailField {
 	label: string;
 	value: string;
 }
 
 /** Props for {@link ConnectorDetailView}. */
-export interface ConnectorDetailViewProps {
+interface ConnectorDetailViewProps {
 	/** Hidden retained details must not move focus. Defaults to true. */
 	isVisible?: boolean;
 	/** Changes whenever the host explicitly opens or reopens this detail. */

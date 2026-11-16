@@ -8,7 +8,7 @@ import type { RoomStore } from "@/stores/room/room.store";
 const NextMessageRoomContext = createContext<RoomStore | null>(null);
 
 /** Props for {@link NextMessageRoomProvider}. */
-export interface NextMessageRoomProviderProps {
+interface NextMessageRoomProviderProps {
 	/** The room whose input shows what is added, and sends it. */
 	room: RoomStore;
 	/** The views whose viewers queue on that room. */

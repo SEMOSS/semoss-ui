@@ -1,12 +1,10 @@
 import { useMemo } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { useInsight } from "@semoss/sdk/react";
 import { Spinner } from "@semoss/ui/next";
 import { RootContext } from "@/contexts";
 import { RootStore } from "@/stores";
 
 export const RootLayout = ({ children }) => {
-	const _insight = useInsight();
 	const { t } = useTranslation("auditlog");
 
 	// set up the store

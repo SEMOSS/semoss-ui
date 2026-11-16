@@ -7,7 +7,7 @@ import { downloadMailAttachmentIsolated } from "../api/mail-attachment-download"
 import { stageMailAttachment } from "../api/microsoft";
 import type { SourceAttachment, StagedSourceAttachment } from "../types";
 
-export interface MailAttachmentListProps {
+interface MailAttachmentListProps {
 	sourceUid: string;
 	attachments: SourceAttachment[];
 	/** Override when a thread owns a separate insight from the page shell. */

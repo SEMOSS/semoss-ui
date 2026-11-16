@@ -25,7 +25,7 @@ import {
 import { getErrorMessage } from "@semoss/utility/error";
 import type { UseStoredUsageLimitResult } from "./use-stored-usage-limit";
 
-export interface UsageLimitSettingsCardProps {
+interface UsageLimitSettingsCardProps {
 	/** The card's title, such as "General Platform Limit" */
 	title: string;
 	/** Who the limit applies to, under the title */

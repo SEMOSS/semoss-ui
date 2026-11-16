@@ -4,7 +4,7 @@ import { type ConnectorBrand, ConnectorBrandIcon } from "@semoss/shared";
 import { Small } from "@semoss/ui/next";
 
 /** Props for {@link ConnectorViewerHeader}. */
-export interface ConnectorViewerHeaderProps {
+interface ConnectorViewerHeaderProps {
 	/** The app's icon. */
 	icon: LucideIcon;
 	/** The service logo, when this header identifies a connector. */

@@ -9,7 +9,7 @@ export interface SourceSelection {
 	kind: "email" | "calendar";
 	id: string;
 }
-export interface DashboardContextValue {
+interface DashboardContextValue {
 	actions: InsightActions;
 	layout: ReturnType<typeof useDashboardLayout>;
 	history: ChatHistory;

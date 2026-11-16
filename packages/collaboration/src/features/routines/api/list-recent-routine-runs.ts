@@ -14,7 +14,12 @@ const recentRoutinesSchema = z.object({
 				.array(
 					z.object({
 						runId: z.string().min(1),
-						status: z.enum(["running", "completed", "failed"]),
+						status: z.enum([
+							"running",
+							"completed",
+							"failed",
+							"stopped",
+						]),
 						startedAt: z.iso.datetime(),
 						finishedAt: z.iso.datetime().nullish().default(null),
 						// where a running run of the owner's own routine can be watched
@@ -26,11 +31,7 @@ const recentRoutinesSchema = z.object({
 	),
 });
 
-export type RecentRoutine = z.infer<
-	typeof recentRoutinesSchema
->["routines"][number];
-
-export type RecentRoutineRun = RecentRoutine["runs"][number];
+type RecentRoutine = z.infer<typeof recentRoutinesSchema>["routines"][number];
 
 /** The routines the owner ran last, newest first, each with its latest runs. */
 export async function listRecentRoutineRuns(

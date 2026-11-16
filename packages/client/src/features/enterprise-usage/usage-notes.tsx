@@ -11,7 +11,7 @@ import {
 } from "@semoss/ui/next";
 
 /** Props for {@link UsageNotes}. */
-export interface UsageNotesProps {
+interface UsageNotesProps {
 	/** What the notes are about, which names the button and the popover, such as "Activity Log" */
 	title: string;
 	/** How to read it, one short point each */

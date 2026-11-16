@@ -32,6 +32,7 @@ const stagedThreadAttachmentSchema = z.object({
 	textPath: z.string().min(1).optional(),
 	textTruncated: z.boolean().optional(),
 	textError: z.string().optional(),
+	alreadyInChat: z.boolean().optional(),
 });
 
 /**
@@ -114,11 +115,12 @@ export async function stageThreadAttachment(
 		}),
 		stagedThreadAttachmentSchema,
 	);
+	// a file the chat already holds comes back under the name it was first staged with
 	if (
 		receipt.threadId !== threadId ||
 		receipt.messageId !== attachment.messageId ||
 		receipt.attachmentId !== attachment.id ||
-		receipt.filePath !== fileName
+		(receipt.filePath !== fileName && !receipt.alreadyInChat)
 	)
 		throw new Error(
 			"The attachment receipt does not match the selected file.",

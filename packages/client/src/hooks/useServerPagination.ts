@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-export interface UseServerPaginationOptions {
+interface UseServerPaginationOptions {
 	totalCount: number;
 	initialRowsPerPage?: number;
 	initialPage?: number;

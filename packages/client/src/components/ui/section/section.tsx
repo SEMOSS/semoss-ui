@@ -6,7 +6,7 @@ import {
 } from "react";
 import { cn } from "@semoss/ui/next";
 
-export type SectionProps = ComponentPropsWithRef<"section">;
+type SectionProps = ComponentPropsWithRef<"section">;
 
 const _Section = (
 	props: SectionProps,

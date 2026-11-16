@@ -1,6 +1,6 @@
 import type React from "react";
 import { useMemo, useState } from "react";
-import { usePixel } from "@semoss/sdk/react";
+import { usePixel, useSessionInsight } from "@semoss/sdk/react";
 import {
 	Button,
 	Checkbox,
@@ -18,7 +18,6 @@ import {
 	ScrollArea,
 	Spinner,
 } from "@semoss/ui/next";
-import { useSession } from "@/hooks";
 
 interface SyncExternalDatabaseOverlayProps {
 	/** engine to load */
@@ -40,10 +39,15 @@ interface SyncExternalDatabaseOverlayProps {
 	) => void;
 }
 
+/**
+ * Picks the tables and views of an external database to sync with its
+ * changes. Lists what the database has now, keeping the given selection where
+ * it still exists.
+ */
 export const SyncExternalDatabaseOverlay: React.FC<
 	SyncExternalDatabaseOverlayProps
 > = ({ engine, tables = [], views = [], open, onClose }) => {
-	const insightID = useSession((state) => state.insightID);
+	const { insightId } = useSessionInsight();
 
 	const [tableSearch, setTableSearch] = useState("");
 	const [viewSearch, setViewSearch] = useState("");
@@ -66,7 +70,7 @@ export const SyncExternalDatabaseOverlay: React.FC<
 				setSelectedViews(v);
 			},
 		},
-		insightID,
+		insightId,
 	);
 
 	const filteredTables = useMemo(() => {

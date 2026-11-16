@@ -13,7 +13,7 @@ const roomRowSchema = z
 	.catchall(z.unknown());
 
 /** The uppercase row returned by `GetPlaygroundRooms`. */
-export type PlaygroundRoomRow = z.infer<typeof roomRowSchema>;
+type PlaygroundRoomRow = z.infer<typeof roomRowSchema>;
 
 /** A normalized room record used by collaboration. */
 export interface RoomRow {

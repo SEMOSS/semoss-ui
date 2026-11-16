@@ -7,11 +7,11 @@ import type { StepRunStatus } from "../../domain/automation.types";
  */
 
 /** Blue used wherever a step or edge sits on the path leading to the selected node. */
-export const PATH_HIGHLIGHT_COLOR = "var(--primary)";
+const PATH_HIGHLIGHT_COLOR = "var(--primary)";
 export const LOOP_PATH_HIGHLIGHT_COLOR = "var(--chart-2)";
 
 /** Tailwind border class matching `PATH_HIGHLIGHT_COLOR`, for node cards. */
-export const PATH_HIGHLIGHT_BORDER_CLASS = "border-primary/60";
+const PATH_HIGHLIGHT_BORDER_CLASS = "border-primary/60";
 export const LOOP_PATH_HIGHLIGHT_BORDER_CLASS = "border-chart-2/70";
 
 const RUN_STATUS_COLOR: Partial<Record<StepRunStatus, string>> = {

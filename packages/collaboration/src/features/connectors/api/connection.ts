@@ -24,6 +24,8 @@ const connectionSchema = z.object({
 			lastSync: z.string().nullish(),
 		}),
 	),
+	// a finished import, so sources can be switched on and off
+	imported: z.boolean().optional(),
 	// which Outlook folders mail is read from; known is false before the first import reads them
 	folders: z
 		.object({

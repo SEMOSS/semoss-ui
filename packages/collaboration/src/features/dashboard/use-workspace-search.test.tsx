@@ -13,6 +13,7 @@ vi.mock("@/features/rooms/api/search-room-messages", () => ({
 const actions = {} as InsightActions;
 const message = {
 	uid: "mail-1",
+	messageId: "<mail-1@example.com>",
 	subject: "Renewal",
 	from: "vip@example.com",
 	unread: true,

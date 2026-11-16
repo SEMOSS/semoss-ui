@@ -1,4 +1,5 @@
 import { runPixel } from "@semoss/sdk";
+import { isRecord } from "@semoss/utility/object";
 import type {
 	AutomationNodeResult,
 	AutomationRunDetail,
@@ -272,10 +273,6 @@ function throwPixelErrors(errors: string[]): void {
 	if (errors.length > 0) {
 		throw new Error(errors.join("\n"));
 	}
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === "object" && value !== null;
 }
 
 function isSavedResultPage(

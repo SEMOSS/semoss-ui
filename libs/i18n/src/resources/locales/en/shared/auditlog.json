@@ -68,7 +68,8 @@
 		},
 		"guardrailActions": {
 			"MASK": "Masked",
-			"BLOCK": "Blocked"
+			"BLOCK": "Blocked",
+			"TIMEOUT": "Timed Out"
 		},
 		"groupRequest": "Request",
 		"groupSpan": "Span",
@@ -151,6 +152,7 @@
 	},
 	"layout": {
 		"appName": "Audit Log",
-		"appDescription": "Audit log app"
+		"appDescription": "Audit log app",
+		"loadFailed": "We couldn't load the Audit Log. Try again, and if the issue persists, please contact support."
 	}
 }

@@ -7,7 +7,7 @@ import {
 	useUsageLimitPath,
 } from "./use-usage-limit-path";
 
-export interface UsageLimitPathPanelProps {
+interface UsageLimitPathPanelProps {
 	/** Whose path to show on which model, or null to show nothing */
 	request: UsageLimitPathRequest | null;
 	/** The path view's section headings' level, under the host's own title */

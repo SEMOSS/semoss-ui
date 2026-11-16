@@ -39,7 +39,7 @@ export interface MailComposeValues {
 }
 
 /** The messages the compose form shows when a value cannot be sent. */
-export interface MailComposeMessages {
+interface MailComposeMessages {
 	/** An address list holds something that is not an address. */
 	addresses: string;
 	/** An email to send has no recipient. */

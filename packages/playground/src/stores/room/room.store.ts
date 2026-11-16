@@ -1,9 +1,8 @@
-import { makeAutoObservable, observable, runInAction } from "mobx";
+import { makeAutoObservable, observable, reaction, runInAction } from "mobx";
 import type { StoreApi } from "zustand";
 import { getI18n } from "@semoss/i18n";
 import {
 	FILE_PANEL_TYPES,
-	type FilePanelMode,
 	type FilePanelValue,
 	getFilePanelType,
 	isFilePanelType,
@@ -29,6 +28,7 @@ import {
 import { STREAMING_PLACEHOLDER_ID } from "@/constants";
 import { ChatToolsStore } from "@/features/chat-tools/chat-tools.store";
 import { ConnectorsStore } from "@/features/connectors/connectors.store";
+import { CONNECTOR_SOURCES } from "@/features/connectors/sources/connector-sources";
 import { ContextItemsStore } from "@/features/conversation/context-items.store";
 import type { AbstractMessageStore } from "@/stores/message/abstract-message.store";
 import {
@@ -52,9 +52,10 @@ import type {
 	Workspace,
 } from "@/types";
 import {
+	createRoomSidebarLayout,
+	getPanelFileMode,
 	getRoomFileMode,
 	ROOM_PANEL_TYPES,
-	ROOM_SIDEBAR_LAYOUT,
 } from "./room-sidebar";
 import {
 	type StreamHandlers,
@@ -260,7 +261,10 @@ export class RoomStore {
 	readonly workbench: StoreApi<WorkbenchState>;
 
 	/** Stable initialization reference shared by the store and every sidebar mount. */
-	sidebarSnapshot: WorkbenchSnapshot = ROOM_SIDEBAR_LAYOUT;
+	sidebarSnapshot: WorkbenchSnapshot;
+
+	/** Whether the Workspace's rail offers Files; a new chat's draft does not. */
+	private readonly _includesFiles: boolean;
 	/**
 	 * The default tools the room's chat sends and the user's decisions on the
 	 * calls that wait for them. Its own store with its own observability, like
@@ -285,13 +289,34 @@ export class RoomStore {
 		 * down.
 		 */
 		panelComponents: Record<string, WorkbenchPanelConfigAny>;
+		/**
+		 * Whether the Workspace's rail offers Files. A new chat's draft has no
+		 * insight for Files to read, so it leaves Files out until it prepares
+		 * the room that takes its arrangement.
+		 */
+		includeFiles?: boolean;
 	}) {
-		const { theme, roomId, insightId = "new", panelComponents } = options;
+		const {
+			theme,
+			roomId,
+			insightId = "new",
+			panelComponents,
+			includeFiles = true,
+		} = options;
 		this._theme = theme;
 		// register the roomId, insightId, and actions
 		this._store.roomId = roomId;
 		this._store.insightId = insightId;
 
+		this._includesFiles = includeFiles;
+		this.sidebarSnapshot = createRoomSidebarLayout({
+			fileMode: includeFiles ? this.fileMode : null,
+			filesName: this._getDefaultPanelName("files", panelComponents),
+			settingsName: this._getDefaultPanelName(
+				"settings",
+				panelComponents,
+			),
+		});
 		this.workbench = createWorkbenchStore({ components: panelComponents });
 		this.workbench
 			.getState()
@@ -313,15 +338,46 @@ export class RoomStore {
 		});
 
 		this._watchSidebar();
+		// a viewer closes when its connector can no longer be shown
+		reaction(
+			() =>
+				this.connectors.availableSources
+					.map((source) => source.service)
+					.join(),
+			() => this._closeHiddenConnectorPanels(),
+			{ fireImmediately: true },
+		);
 	}
 
 	/**
-	 * Return tools inline when their tabs close, and close the sidebar when
-	 * it has no panels left.
+	 * A default panel's tab label. There are no translations outside the app,
+	 * as in tests, so it falls back to the blueprint's own name.
+	 */
+	private _getDefaultPanelName = (
+		panel: "files" | "settings",
+		panelComponents: Record<string, WorkbenchPanelConfigAny>,
+	): string => {
+		const type =
+			panel === "files"
+				? FILE_PANEL_TYPES.FILE_EXPLORER
+				: ROOM_PANEL_TYPES.CONFIGURATION;
+		return (
+			getI18n()?.t(`room:workspacePlaces.${panel}`) ??
+			panelComponents[type]?.name ??
+			panel
+		);
+	};
+
+	/**
+	 * Return tools inline when their tabs close.
 	 *
 	 * This is the replacement for the FlexLayout change listener, and the reason
-	 * the room store holds the dock: both reactions have to fire whether the
-	 * close came from the tab's × or from `closeTool`.
+	 * the room store holds the dock: the reaction has to fire whether the close
+	 * came from the tab's × or from `closeTool`. There is no "closed the last
+	 * tab" rule any more — every tab closes, including Files and Settings, and
+	 * an empty Workspace still shows its rail, which reopens any of them. It
+	 * closes from the header toggle, the slash command, or dragging the divider
+	 * to the edge.
 	 */
 	private _watchSidebar = (): void => {
 		let previous = this.workbench.getState().layout.panels;
@@ -346,13 +402,6 @@ export class RoomStore {
 				if (tool?.isOpen && tool.display === "sidebar") {
 					tool.openTool("inline");
 				}
-			}
-
-			if (
-				this._store.sidebar.isOpen &&
-				state.layout.openPanelIds.length === 0
-			) {
-				this.closeSidebar();
 			}
 		});
 	};
@@ -1089,20 +1138,63 @@ export class RoomStore {
 			.layout.actions.selectPanel(type, config, name ? { name } : {});
 	};
 
-	/** Adopt a draft's arrangement before mounting this room's first sidebar. */
+	/**
+	 * Adopt a draft's arrangement before mounting this room's first sidebar.
+	 *
+	 * A draft is built without Files, having no insight for it to read, so the
+	 * room it prepares gains it here — behind whatever tab the draft was on.
+	 */
 	restoreSidebarLayout = (snapshot: WorkbenchSnapshot): void => {
 		this.sidebarSnapshot = snapshot;
-		this.workbench.getState().layout.actions.loadSnapshot(snapshot);
-	};
-
-	/** Restore the existing work area, or open Room settings when it is empty. */
-	openSidebar = (): void => {
-		if (this.workbench.getState().layout.openPanelIds.length === 0) {
-			this.openSidebarPanel(ROOM_PANEL_TYPES.CONFIGURATION);
+		const { actions } = this.workbench.getState().layout;
+		actions.loadSnapshot(snapshot);
+		this._syncSidebarFileMode();
+		const hasFiles = actions.findPanels(
+			(record) =>
+				record.type === FILE_PANEL_TYPES.FILE_EXPLORER &&
+				// a connector's work folder is another explorer, not Files
+				getPanelFileMode(record)?.type === "INSIGHT",
+		).length;
+		if (!this._includesFiles || hasFiles) {
 			return;
 		}
+		const selected = this.workbench.getState().layout.selection.panel;
+		actions.spawnPanel(FILE_PANEL_TYPES.FILE_EXPLORER, {
+			config: { mode: this.fileMode },
+			name: this._getDefaultPanelName(
+				"files",
+				this.workbench.getState().layout.components,
+			),
+		});
+		if (selected) {
+			actions.navigatePanel(selected);
+		}
+	};
 
+	/** Open the Workspace as it was left, its panel rail always beside it. */
+	openSidebar = (): void => {
 		this._store.sidebar.isOpen = true;
+	};
+
+	/**
+	 * Close any connector viewer the chat can no longer show, the panels
+	 * having been opened on demand from the Workspace's rail.
+	 */
+	private _closeHiddenConnectorPanels = (): void => {
+		const { actions } = this.workbench.getState().layout;
+		const availableTypes = new Set(
+			this.connectors.availableSources.map((source) => source.panelType),
+		);
+		for (const record of actions.findPanels(
+			(candidate) =>
+				!availableTypes.has(candidate.type) &&
+				CONNECTOR_SOURCES.some(
+					(source) => source.panelType === candidate.type,
+				),
+		)) {
+			actions.updatePanel(record.id, { canClose: true });
+			actions.closePanel(record.id);
+		}
 	};
 
 	/**
@@ -1152,9 +1244,7 @@ export class RoomStore {
 		const mode = this.fileMode;
 
 		for (const record of actions.findPanels((candidate) => {
-			const panelMode = (
-				candidate.config as { mode?: FilePanelMode } | undefined
-			)?.mode;
+			const panelMode = getPanelFileMode(candidate);
 			return (
 				isFilePanelType(candidate.type) &&
 				panelMode?.type === "INSIGHT" &&
@@ -1189,7 +1279,7 @@ export class RoomStore {
 			FILE_PANEL_TYPES.FILE_EXPLORER,
 			{ mode: this.fileMode },
 			// no translations outside the app, as in tests; the blueprint names it
-			name ?? getI18n()?.t("room:menuFileExplorer.name"),
+			name ?? getI18n()?.t("room:workspacePlaces.files"),
 		);
 
 		if (initialPath) {

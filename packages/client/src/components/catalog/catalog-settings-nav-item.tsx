@@ -16,7 +16,7 @@ export const getCatalogSettingsNavItemClassName = (isActive: boolean): string =>
 			: "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
 	);
 
-export interface CatalogSettingsNavItemContentProps {
+interface CatalogSettingsNavItemContentProps {
 	/** The section the entry opens */
 	section: CatalogSettingsSection;
 }

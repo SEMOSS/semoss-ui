@@ -1,3 +1,4 @@
+import { useConfig } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -24,7 +25,6 @@ import { addTeam, editTeam, type TeamSummary } from "@/api/teams";
 import { CUSTOM_TEAM_TYPE } from "@/features/team-type/team-type";
 import { TeamTypeIcon } from "@/features/team-type/team-type-icon";
 import { useTeamTypeName } from "@/features/team-type/use-team-type-name";
-import { useConfig } from "@/hooks";
 
 /** Native logins have no groups, so a team cannot mirror one */
 const NATIVE_PROVIDER = "NATIVE";
@@ -57,7 +57,7 @@ const buildSchema = (currentName?: string) =>
 
 type TeamFormValues = z.infer<ReturnType<typeof buildSchema>>;
 
-export interface TeamFormDialogProps {
+interface TeamFormDialogProps {
 	/** Whether the dialog is open */
 	open: boolean;
 	/** The team to edit, or null to create one */
@@ -76,7 +76,7 @@ export const TeamFormDialog = ({
 	onClose,
 }: TeamFormDialogProps) => {
 	const availableProviders = useConfig(
-		(state) => state.config.availableProviders,
+		(state) => state.config?.availableProviders ?? [],
 	);
 	const isEdit = team !== null;
 	const form = useForm<TeamFormValues>({

@@ -7,6 +7,7 @@ import {
 } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
+import { runBatch } from "@/features/collaboration/live/live-state";
 import { useRecordIds } from "@/features/collaboration/live/work-updates.context";
 import { linkRoomTopic } from "@/features/rooms/api/room-topics";
 import type {
@@ -17,6 +18,7 @@ import type {
 	ComposerSubmission,
 	RoomSettings,
 } from "@/features/rooms/types/room";
+import { pixel } from "@/lib/pixel";
 import { roomPath } from "@/lib/workspace-paths";
 import {
 	getHistoryChatDraft,
@@ -26,7 +28,7 @@ import {
 	subscribeNewChatDrafts,
 } from "./new-chat-drafts";
 
-export interface NewChatController {
+interface NewChatController {
 	draftId: string;
 	session: RoomSession;
 	snapshot: RoomSessionSnapshot;
@@ -41,6 +43,7 @@ export interface NewChatController {
 export function useNewChatController(
 	navigationState: unknown,
 	topicId?: string,
+	taskId?: string,
 ): NewChatController {
 	const request =
 		typeof navigationState === "object" && navigationState !== null
@@ -131,6 +134,11 @@ export function useNewChatController(
 						"Could not attach this chat to the topic. Try sending again.",
 					);
 			}
+			// a chat opened from a work item: its assistant sees the item every turn
+			if (taskId)
+				await runBatch(session.insight.actions, [
+					pixel("WorkLinkRoomItem", { taskId, roomId }),
+				]);
 			const submitted = session.send(submission, {}, submittedDraft);
 			if (active.current === entryToken) void navigate(roomPath(roomId));
 			markNewChatDraftStarted(scope, draft, roomId);

@@ -7,6 +7,7 @@ import type {
 	PendingAgentAction,
 } from "@semoss/sdk";
 import { AgentStore, getSubagentRuns } from "@semoss/sdk";
+import { toError } from "@semoss/utility/error";
 import {
 	MCP_EXECUTION_AGENT_ASK,
 	MCP_EXECUTION_AGENT_AUTO,
@@ -545,6 +546,11 @@ export const runAgentMessage = async (
 		// remove message if we failed
 		message.removeChild(inputMessage);
 
+		// A chat turn's stream sets the room error itself; nothing does for a
+		// run, and a new chat sends its first message without awaiting it, so
+		// without this the failure is never shown.
+		room.setError(toError(e));
+
 		throw e;
 	} finally {
 		runInAction(() => {
@@ -680,6 +686,7 @@ export const reconnectAgentRun = (responseMessage: ResponseMessageStore) => {
 			await watchAgentRun(agent, responseMessage, inputMessage);
 		} catch (e) {
 			console.error("Failed to reconnect to agent run", e);
+			room.setError(toError(e));
 		} finally {
 			runInAction(() => {
 				responseMessage.isThinking = false;

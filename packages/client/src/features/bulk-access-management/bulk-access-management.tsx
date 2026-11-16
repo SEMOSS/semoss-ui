@@ -109,15 +109,18 @@ interface NewTeamMembers {
 const getNewMemberKey = (teamId: string, person: AccessPerson): string =>
 	`NEW_TEAM_MEMBER:${teamId}:${getSubjectKey(person)}`;
 
-export interface BulkAccessManagementProps {
+interface BulkAccessManagementProps {
 	/** The project or engine being changed */
 	target: PermissionTargetResource;
 	/** Its name */
 	name: string;
 	/** What it is called in sentences, such as "app" or "engine" */
 	noun: string;
-	/** Where its access page is, relative to Bulk Access Management */
-	backTo: string;
+	/**
+	 * Where its access page is, relative to Bulk Access Management; left out
+	 * when the view sits in a page, such as Resource Governance, with no back
+	 */
+	backTo?: string;
 	/**
 	 * Whether in admin mode, where an admin can make any change and make a team
 	 * from the people in the batch; outside it an admin has only their own permissions
@@ -606,7 +609,8 @@ export const BulkAccessManagement = ({
 	};
 
 	return (
-		<div className="flex w-full flex-col gap-6">
+		// the two columns follow the view's own width, so it also fits beside a list
+		<div className="@container flex w-full flex-col gap-6">
 			<AccessViewHeader
 				headingLevel={headingLevel}
 				title="Bulk Access Management"
@@ -706,7 +710,7 @@ export const BulkAccessManagement = ({
 				</output>
 			) : allowedChanges ? (
 				// the list's column stretches to the card's height, so the two end together
-				<div className="flex flex-col gap-6 md:flex-row">
+				<div className="flex @3xl:flex-row flex-col gap-6">
 					<div className="flex min-w-0 flex-1 flex-col gap-6">
 						{hasConflicts ? (
 							<PermissionBatchConflicts
@@ -743,7 +747,7 @@ export const BulkAccessManagement = ({
 
 					{/* the search stays in view while the list scrolls */}
 					<AddPeopleCard
-						className="md:sticky md:top-4 md:w-80 md:shrink-0 md:self-start lg:w-96"
+						className="@3xl:sticky @3xl:top-4 @3xl:w-80 @5xl:w-96 @3xl:shrink-0 @3xl:self-start"
 						description="Add people one by one, or use Bring In Access to copy people from an app, engine or team, or to give a whole team access."
 						menuItems={bringInItems}
 						isDirectoryAvailable={isDirectoryAvailable}

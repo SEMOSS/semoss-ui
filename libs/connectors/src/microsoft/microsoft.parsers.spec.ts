@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
 	parseChannelMessages,
+	parseChatDetail,
 	parseChatMessages,
 	parseChats,
 	parseMicrosoftDownload,
 	parseOneDriveFolder,
-	parseOneDriveResults,
 	parseTeams,
 	parseTeamsFolder,
+	parseTeamsMessageSearch,
 } from "./microsoft.parsers";
 
 describe("OneDrive listings", () => {
@@ -29,16 +30,6 @@ describe("OneDrive listings", () => {
 		]);
 		expect(items[0]).toMatchObject({ isFolder: true, childCount: 2 });
 		expect(items[2].size).toBe(10);
-	});
-
-	it("keeps the backend's ranking for results", () => {
-		const items = parseOneDriveResults({
-			files: [
-				{ id: "b", name: "b.txt", isFolder: false },
-				{ id: "a", name: "a", isFolder: true },
-			],
-		});
-		expect(items.map((item) => item.id)).toEqual(["b", "a"]);
 	});
 
 	it("reads a Teams channel folder, which is a bare list", () => {
@@ -111,14 +102,46 @@ describe("Teams", () => {
 		]);
 	});
 
-	it("puts a chat's messages oldest first", () => {
+	it("puts a chat's messages newest first", () => {
 		const { messages } = parseChatMessages({
 			messages: [
-				{ id: "b", createdDateTime: "2026-09-02T00:00:00Z", body: "b" },
 				{ id: "a", createdDateTime: "2026-09-01T00:00:00Z", body: "a" },
+				{ id: "c", createdDateTime: "2026-09-03T00:00:00Z", body: "c" },
+				{ id: "b", createdDateTime: "2026-09-02T00:00:00Z", body: "b" },
 			],
 		});
-		expect(messages.map((message) => message.id)).toEqual(["a", "b"]);
+		expect(messages.map((message) => message.id)).toEqual(["c", "b", "a"]);
+	});
+
+	it("orders chats by their newest message rather than their last edit", () => {
+		const chats = parseChats({
+			chats: [
+				{
+					id: "renamed",
+					lastUpdatedDateTime: "2026-09-05T00:00:00Z",
+					lastMessage: {
+						id: "m1",
+						createdDateTime: "2026-09-01T00:00:00Z",
+					},
+				},
+				{
+					id: "busy",
+					lastUpdatedDateTime: "2026-08-01T00:00:00Z",
+					lastMessage: {
+						id: "m2",
+						createdDateTime: "2026-09-04T00:00:00Z",
+					},
+				},
+			],
+		});
+		expect(chats.map((chat) => chat.id)).toEqual(["busy", "renamed"]);
+	});
+
+	it("reads one chat", () => {
+		expect(
+			parseChatDetail({ id: "19:abc", topic: "Launch", webUrl: "u" }),
+		).toMatchObject({ id: "19:abc", displayName: "Launch", webUrl: "u" });
+		expect(() => parseChatDetail({ topic: "no id" })).toThrow();
 	});
 
 	it("lists chats by recent activity and names them by topic", () => {
@@ -143,6 +166,62 @@ describe("Teams", () => {
 		expect(chats[1].displayName).toBe("Launch");
 		expect(chats[0].lastMessage?.fromName).toBe("Ada");
 		expect(chats[0].hasUnread).toBe(true);
+	});
+});
+
+describe("Teams message search", () => {
+	it("reads hits newest first and drops ones that cannot be opened", () => {
+		const page = parseTeamsMessageSearch({
+			search: "budget",
+			hasMore: true,
+			nextOffset: 25,
+			messages: [
+				{
+					id: "old",
+					kind: "chat",
+					chatId: "19:a",
+					createdDateTime: "2026-09-01T00:00:00Z",
+					summary: "the budget",
+					fromName: "Ada",
+				},
+				{
+					id: "post",
+					kind: "channel",
+					teamId: "t",
+					channelId: "c",
+					createdDateTime: "2026-09-03T00:00:00Z",
+				},
+				{ id: "lost", kind: "chat" },
+				{ id: "half", kind: "channel", teamId: "t" },
+				{ kind: "chat", chatId: "19:b" },
+			],
+		});
+
+		expect(page.hits.map((hit) => hit.id)).toEqual(["post", "old"]);
+		expect(page.hits[1]).toMatchObject({
+			kind: "chat",
+			chatId: "19:a",
+			summary: "the budget",
+			fromName: "Ada",
+		});
+		expect(page.hits[0].summary).toBe("");
+		expect(page.hasMore).toBe(true);
+		expect(page.nextOffset).toBe(25);
+	});
+
+	it("reads a missing or malformed next offset as unknown", () => {
+		for (const nextOffset of [undefined, -1, 2.5, "25"]) {
+			expect(
+				parseTeamsMessageSearch({
+					messages: [],
+					nextOffset: nextOffset,
+				}).nextOffset,
+			).toBeUndefined();
+		}
+	});
+
+	it("refuses a response without messages", () => {
+		expect(() => parseTeamsMessageSearch({ count: 0 })).toThrow();
 	});
 });
 

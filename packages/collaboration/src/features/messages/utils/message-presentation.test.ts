@@ -60,7 +60,7 @@ it("folds tool continuations across message boundaries without mutating their ow
 	expect(entries[0].createdAt).toBe(first.createdAt);
 });
 
-it("keeps text, thinking, media, user turns and delegation boundaries in order", () => {
+it("keeps text, media, user turns and delegation boundaries in order, folding thinking between tools", () => {
 	const parts = [
 		tool("one"),
 		{ type: "text", text: "Update" } as const,
@@ -74,7 +74,7 @@ it("keeps text, thinking, media, user turns and delegation boundaries in order",
 		messagePartBlocks(ownedMessageParts(message("parts", parts))).map(
 			(block) => block.type,
 		),
-	).toEqual(["tools", "part", "tools", "part", "tools", "part", "tools"]);
+	).toEqual(["tools", "part", "tools", "part", "tools"]);
 	const user = {
 		...message("user", [{ type: "text", text: "Next question" }]),
 		role: "user" as const,

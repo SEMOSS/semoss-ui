@@ -408,3 +408,44 @@ export const oauth = async (
 	}
 	throw new Error("Unable to login");
 };
+
+/**
+ * Whether the signed in user is an admin. The backend answers a signed in
+ * non admin with false rather than refusing.
+ *
+ * @returns True for an admin.
+ * @throws When the backend cannot say, such as when no one is signed in: the
+ * call needs a session, so the backend then sends the request away to sign
+ * in.
+ */
+export const isAdminUser = async (): Promise<boolean> => {
+	const response = await get<boolean>(
+		`${Env.MODULE}/api/auth/admin/user/isAdminUser`,
+	);
+	return response.data === true;
+};
+
+/**
+ * Create a native account. It does not sign the person in. Needs no session.
+ *
+ * @param details - What the person signs up with, sent as the backend's form
+ * fields.
+ * @returns True once the account is created.
+ * @throws When the backend refuses the account: native login or registration
+ * is off, the user name or email is taken, or the password breaks a rule. The
+ * error carries the backend's message.
+ */
+export const registerUser = async (details: {
+	/** The person's display name. */
+	name: string;
+	/** The name they sign in with; it also becomes their id. */
+	username: string;
+	email: string;
+	password: string;
+	phone: string;
+	phoneextension: string;
+	countrycode: string;
+}): Promise<boolean> => {
+	await post(`${Env.MODULE}/api/auth/createUser`, { ...details });
+	return true;
+};

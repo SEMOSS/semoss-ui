@@ -1,12 +1,9 @@
-import type { CSSProperties } from "react";
 import type { BlockConfig } from "../../../store";
 import { BLOCK_TYPE_ACTION } from "../block-defaults.constants";
 import {
 	ToggleButtonBlock,
 	type ToggleButtonBlockDef,
 } from "./ToggleButtonBlock";
-
-export const DefaultStyles: CSSProperties = {};
 
 // export the config for the block
 export const config: BlockConfig<ToggleButtonBlockDef> = {

@@ -5,7 +5,7 @@ import { getFlowBorderClass } from "../flow-colors";
 
 type OptionalTriggerMode = "schedule" | "event-based";
 
-export type TriggerNodeData = {
+type TriggerNodeData = {
 	label: string;
 	description?: string;
 	devMode?: boolean;

@@ -28,7 +28,7 @@ export interface WorkbenchState {
 }
 
 /** What one workbench store is built with. */
-export type WorkbenchStoreOptions = WorkbenchLayoutSliceOptions;
+type WorkbenchStoreOptions = WorkbenchLayoutSliceOptions;
 
 /**
  * Creates an isolated vanilla Zustand store for one workbench. Domain

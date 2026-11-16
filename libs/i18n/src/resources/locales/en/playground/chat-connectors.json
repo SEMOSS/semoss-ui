@@ -66,29 +66,29 @@
 	},
 	"connectors": {
 		"saveError": "Could not update the connectors. {{message}}",
-		"adoptError": "The chat started, but its connectors could not be switched on. {{message}}"
+		"adoptError": "The room started, but its connectors could not be switched on. {{message}}"
 	},
 	"connections": {
 		"appsDescription": "Signing in links the account to your session. The assistant only sees what that account can see.",
-		"appsHint": "Switching an app on or off here changes it in all your chats, new and existing. A chat's plus menu opens the same settings.",
+		"appsHint": "Switching an app on or off here changes it in all your chats, new and existing. A room's plus menu opens the same settings.",
 		"settingsError": "Could not read your connector settings."
 	},
 	"sources": {
 		"saved": "Saved {{name}} to {{target}}",
 		"show": "Show",
 		"added": "{{name}} will go with your next message",
-		"notAccepted": "{{name}} was saved to {{target}}, but this chat does not accept that kind of file in a message."
+		"notAccepted": "{{name}} was saved to {{target}}, but this room does not accept that kind of file in a message."
 	},
 	"signIn": {
-		"notice": "{{account}} is not signed in, so {{services}} cannot run in this chat.",
+		"notice": "{{account}} is not signed in, so {{services}} cannot run in this room.",
 		"action": "Sign In",
 		"dismiss": "Hide the {{account}} sign in notice",
 		"toolFailed": "This call could not run because {{account}} is not signed in. Sign in, then ask again.",
 		"toolAction": "Sign In to {{account}}",
-		"notOffered": "This server does not offer signing in with {{account}}, so {{services}} cannot run in this chat."
+		"notOffered": "This server does not offer signing in with {{account}}, so {{services}} cannot run in this room."
 	},
 	"scopes": {
-		"notice": "This server's {{account}} sign in does not allow {{services}}, so they cannot run in this chat. Ask your administrator to add the permission they need.",
+		"notice": "This server's {{account}} sign in does not allow {{services}}, so they cannot run in this room. Ask your administrator to add the permission they need.",
 		"dismiss": "Hide the {{account}} permissions notice",
 		"serviceBlocked": "Not available: this server's sign in does not include the permission it needs. Ask your administrator to add it."
 	}

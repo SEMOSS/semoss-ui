@@ -7,7 +7,7 @@ import {
 import { useBlock, type useFrame } from "../../../hooks";
 import type { EchartVisualizationBlockDef } from "./VisualizationBlock";
 
-export interface VizBlockContextMenuProps {
+interface VizBlockContextMenuProps {
 	/** ID of the block */
 	id: string;
 

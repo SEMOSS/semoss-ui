@@ -10,10 +10,6 @@
 			"label": "Agents",
 			"tooltip": "Agents"
 		},
-		"allChats": {
-			"label": "All Chats",
-			"tooltip": "All Chats"
-		},
 		"agentsWorkspaces": {
 			"tooltip": "Agents/Workspaces - Access your workspaces or create new AI agents."
 		},
@@ -54,35 +50,17 @@
 		"openInline": "Open in-line",
 		"minimize": "Minimize",
 		"maximize": "Maximize",
-		"close": "Close"
+		"close": "Close",
+		"roomActions": "Room actions"
 	},
 	"toasts": {
-		"failedToPin": "Failed to pin room",
-		"failedToUnpin": "Failed to unpin room",
+		"failedToPin": "Could not add the room to favorites",
+		"failedToUnpin": "Could not remove the room from favorites",
 		"roomNameEmpty": "Room name cannot be empty",
-		"roomRenamedSuccess": "Room renamed successfully",
-		"failedToRename": "Failed to rename room",
-		"roomDeletedSuccess": "Room deleted successfully"
-	},
-	"workbench": {
-		"view": "View",
-		"navigate": "Navigate",
-		"commandPalette": "Open Command Palette…",
-		"layout": "Arrange Panels",
-		"single": "Combine into One Group",
-		"columns": "Split into Two Columns",
-		"rows": "Split into Two Rows",
-		"balance": "Balance Pane Sizes",
-		"left": "Show Left Area",
-		"right": "Show Right Area",
-		"top": "Show Top Area",
-		"bottom": "Show Bottom Area",
-		"previous": "Go to Previous Panel",
-		"next": "Go to Next Panel",
-		"openPanels": "Open Panels",
-		"noPanels": "No open panels",
-		"maximize": "Maximize Workspace",
-		"restore": "Restore Workspace"
+		"roomRenamedSuccess": "Room renamed",
+		"failedToRename": "Could not rename the room",
+		"roomDeletedSuccess": "Room deleted",
+		"failedToDelete": "Could not delete the room"
 	},
 	"userMenu": {
 		"settings": "Settings",
@@ -106,7 +84,66 @@
 			},
 			"language": "Language",
 			"languageDescription": "The language the app is shown in.",
-			"version": "Version {{version}}"
+			"version": "Version {{version}}",
+			"newChat": {
+				"title": "Chat",
+				"default": "Default",
+				"model": "Model",
+				"modelDescription": "The model a new chat uses.",
+				"unavailableModel": "Unavailable model",
+				"mode": "Mode",
+				"modeDescription": "Whether a new chat starts as a chat or with an agent.",
+				"modes": {
+					"chat": "Chat",
+					"agent": "Agent"
+				},
+				"agent": "Agent",
+				"agentDescription": "The agent a new chat in agent mode runs.",
+				"saveError": "Could not save your preference: {{message}}"
+			}
 		}
+	},
+	"download": {
+		"title": "Download conversation",
+		"description": "Choose a format for your download.",
+		"word": "Word document",
+		"pdf": "PDF document",
+		"success": "Conversation downloaded as {{format}}",
+		"failed": "Could not download the conversation"
+	},
+	"chats": "Chats",
+	"view": {
+		"button": "Sort and group chats",
+		"customized": "custom order",
+		"sortBy": "Sort by",
+		"groupBy": "Group by",
+		"sort": {
+			"recent": "Most recent",
+			"oldest": "Oldest",
+			"nameAsc": "Name (A–Z)",
+			"nameDesc": "Name (Z–A)"
+		},
+		"group": {
+			"date": "Date",
+			"agent": "Agent"
+		}
+	},
+	"groups": {
+		"all": "All chats",
+		"noAgent": "No agent",
+		"unnamedAgent": "Untitled agent",
+		"openAgent": "Open {{name}} in a new tab"
+	},
+	"searchChats": {
+		"label": "Search chats",
+		"title": "Search chats",
+		"description": "Find a chat by its name or by what was said in it.",
+		"placeholder": "Search chats…",
+		"loading": "Searching…",
+		"empty": "No chats match “{{query}}”",
+		"recent": "Recent",
+		"allAgents": "All agents",
+		"results": "Results",
+		"matchedMessage": "Matched in messages"
 	}
 }

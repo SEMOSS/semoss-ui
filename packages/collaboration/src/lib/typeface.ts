@@ -5,7 +5,7 @@ export const TYPEFACES = ["calm", "standard"] as const;
 export type Typeface = (typeof TYPEFACES)[number];
 
 // Change this one line to put every browser without a saved choice back on Geist
-export const DEFAULT_TYPEFACE: Typeface = "calm";
+const DEFAULT_TYPEFACE: Typeface = "calm";
 
 const TYPEFACE_KEY = "collaboration.typeface";
 const listeners = new Set<() => void>();
@@ -15,7 +15,7 @@ function isTypeface(value: unknown): value is Typeface {
 }
 
 /** The font this browser picked in Settings, or the default. */
-export function readTypeface(): Typeface {
+function readTypeface(): Typeface {
 	try {
 		const saved = window.localStorage.getItem(TYPEFACE_KEY);
 		return isTypeface(saved) ? saved : DEFAULT_TYPEFACE;

@@ -22,6 +22,7 @@ const filters: MailSearchFilters = {
 };
 const mail = {
 	uid: "mail",
+	messageId: "<mail@example.com>",
 	body: "Actual body",
 	unread: false,
 	hasAttachments: false,

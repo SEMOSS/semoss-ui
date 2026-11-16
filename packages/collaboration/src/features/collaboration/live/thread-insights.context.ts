@@ -6,7 +6,7 @@ export interface ThreadInsightsRun {
 	error: string;
 }
 
-export interface ThreadInsightsStatus {
+interface ThreadInsightsStatus {
 	/** Runs this page started or joined, by thread id. */
 	runs: Record<string, ThreadInsightsRun>;
 	/**

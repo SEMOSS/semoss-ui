@@ -9,7 +9,8 @@ Use the narrowest public category subpath. Hosts compile this source-only packag
 | `/identifier` | Identifier labels, slugs, validation, collision suffixes |
 | `/date` | Date/time and duration formatting, timestamp normalization, local-day calculations, relative date buckets |
 | `/array` | Ordered item-by-item array comparison |
-| `/object` | Date-preserving copying and non-null, non-array object detection |
+| `/object` | Date-preserving copying, non-null, non-array object detection, and shallow equality |
+| `/observable` | `Observable`, an immutable-snapshot state holder with subscribe, for vanilla stores |
 | `/json` | Strict and tolerant parsing, string-array parsing, formatting, key-sorted serialization, tabular detection, parse-error locations |
 | `/file` | File extensions and filename-stem sanitization |
 | `/encoding` | Byte/UTF-8 Base64 encoding and strict decoding |
@@ -35,6 +36,12 @@ import { formatTextByteSize, hashString } from "@semoss/utility/text";
 
 The root also exports these helpers. Existing `/string` and `/file-extension`
 category paths remain available; prefer the defining categories above for new code.
+
+`isShallowEqual` compares plain records (including null-prototype records) and
+ordinary arrays by their own enumerable string-keyed entries, with matching
+prototypes and array lengths. Nested values use identity. Other objects, such as
+errors, dates, maps, sets, and class instances, compare by identity rather than
+their enumerable fields.
 
 Add a helper here only when it has multiple consumers and a stable, generic
 contract. Keep feature-specific adapters and UI composition in the owning

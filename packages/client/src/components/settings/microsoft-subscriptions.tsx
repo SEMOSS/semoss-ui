@@ -33,7 +33,7 @@ import {
 } from "@/api/ms-graph";
 
 /** Props for {@link MicrosoftSubscriptions}. */
-export interface MicrosoftSubscriptionsProps {
+interface MicrosoftSubscriptionsProps {
 	/**
 	 * Whether the signed-in user has a Microsoft login. The section renders
 	 * nothing when they do not, since there is nothing they could subscribe with.

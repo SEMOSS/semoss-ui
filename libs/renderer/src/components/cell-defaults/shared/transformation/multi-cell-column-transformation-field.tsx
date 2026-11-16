@@ -28,7 +28,7 @@ interface FrameHeaderInfo {
 	}[];
 }
 
-export type MultiCellColumnTransformationFieldComponent = (props: {
+type MultiCellColumnTransformationFieldComponent = (props: {
 	cell: CellState;
 	cellTarget: unknown;
 	selectedColumns: ColumnInfo[] | ColumnInfo;

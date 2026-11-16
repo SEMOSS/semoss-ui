@@ -17,7 +17,7 @@ export interface AgentRoomExportDetail {
 }
 
 /** What a room export is made from */
-export interface AgentRoomExport {
+interface AgentRoomExport {
 	roomId: string;
 	roomName: string | null;
 	/** The room's runs, each with its messages and subagent tree */

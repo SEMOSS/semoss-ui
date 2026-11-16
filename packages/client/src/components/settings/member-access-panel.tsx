@@ -32,7 +32,7 @@ import { MemberProfileForm } from "./member-profile-form";
 import { MemberResourceAccess } from "./member-resource-access";
 import type { SETTINGS_MEMBER } from "./settings.types";
 
-type VIEW = "PROFILE" | "APP" | "ENGINE" | "INSIGHT";
+type VIEW = "PROFILE" | "PROJECT" | "ENGINE" | "INSIGHT";
 
 /** Page size for the Insights app combobox. */
 const APP_PAGE_SIZE = 25;
@@ -209,7 +209,7 @@ export const MemberAccessPanel = ({
 			>
 				<TabsList className="w-fit max-w-full flex-wrap">
 					<TabsTrigger value="PROFILE">Profile</TabsTrigger>
-					<TabsTrigger value="APP">Apps</TabsTrigger>
+					<TabsTrigger value="PROJECT">Projects</TabsTrigger>
 					<TabsTrigger value="ENGINE">Engines</TabsTrigger>
 					<TabsTrigger value="INSIGHT">Insights</TabsTrigger>
 				</TabsList>
@@ -228,8 +228,8 @@ export const MemberAccessPanel = ({
 					</div>
 				) : null}
 
-				{view === "APP" ? (
-					<MemberResourceAccess kind="APP" userId={member.id} />
+				{view === "PROJECT" ? (
+					<MemberResourceAccess kind="PROJECT" userId={member.id} />
 				) : null}
 
 				{view === "ENGINE" ? (
@@ -240,7 +240,7 @@ export const MemberAccessPanel = ({
 					<div className="flex min-h-0 flex-1 flex-col gap-3">
 						<div className="flex shrink-0 flex-col gap-1.5">
 							<Label className="text-muted-foreground text-sm">
-								App
+								Project
 							</Label>
 							<Popover
 								open={appOpen}
@@ -274,7 +274,7 @@ export const MemberAccessPanel = ({
 											</div>
 										) : (
 											<span className="flex w-full items-center text-muted-foreground">
-												Select an app to manage its
+												Select a project to manage its
 												insights
 												<ChevronDown className="ms-auto size-4 shrink-0 opacity-70" />
 											</span>
@@ -287,7 +287,7 @@ export const MemberAccessPanel = ({
 								>
 									<Command shouldFilter={false}>
 										<CommandInput
-											placeholder="Search apps"
+											placeholder="Search projects"
 											value={appSearch}
 											onValueChange={setAppSearch}
 										/>
@@ -300,7 +300,7 @@ export const MemberAccessPanel = ({
 														<Spinner />
 													</div>
 												) : (
-													"No apps found"
+													"No projects found"
 												)}
 											</CommandEmpty>
 											<CommandGroup>
@@ -391,7 +391,7 @@ export const MemberAccessPanel = ({
 							/>
 						) : (
 							<div className="flex h-24 items-center justify-center text-muted-foreground text-sm">
-								Select an app to view and edit its insight
+								Select a project to view and edit its insight
 								access
 							</div>
 						)}

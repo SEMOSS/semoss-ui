@@ -10,7 +10,7 @@ import {
 import { copyTextToClipboard } from "@semoss/utility/clipboard";
 import type { GuardrailFileStatus } from "./engine-guardrail-settings.constants";
 
-export interface GuardrailConfigStatusProps {
+interface GuardrailConfigStatusProps {
 	/** State of the stored pipeline file, as reported by the backend. */
 	status: GuardrailFileStatus;
 

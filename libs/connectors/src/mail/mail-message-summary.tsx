@@ -6,7 +6,7 @@ import { parseMailMessageDetail } from "./mail.parsers";
 import type { MailApp } from "./mail-apps";
 
 /** Props for {@link MailMessageSummary}. */
-export interface MailMessageSummaryProps {
+interface MailMessageSummaryProps {
 	/** The mailbox the email is in. */
 	app: MailApp;
 	/** The email. */

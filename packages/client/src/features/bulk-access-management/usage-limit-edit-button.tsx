@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Button, cn } from "@semoss/ui/next";
 
 /** Props for {@link UsageLimitEditButton}. */
-export interface UsageLimitEditButtonProps {
+interface UsageLimitEditButtonProps {
 	/**
 	 * Whose limit it is, said before the summary to screen readers only, such
 	 * as "Usage limit for Data" or "Model Total". The button's name is this and

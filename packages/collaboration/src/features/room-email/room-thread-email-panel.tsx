@@ -1,10 +1,12 @@
-import { Mail } from "lucide-react";
-import { createElement, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
+	useWorkbench,
 	useWorkbenchPanel,
 	type WorkbenchPanelConfig,
+	type WorkbenchPanelIconProps,
 	type WorkbenchPanelProps,
 } from "@semoss/workbench";
+import { OutlookIcon, TeamsIcon } from "@/components/common/app-icons";
 import { readThreadMessagesPage } from "@/features/collaboration/live/live-state";
 import type { WorkspaceMessage } from "@/features/collaboration/state/collaboration.types";
 import { useOptionalCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
@@ -147,11 +149,26 @@ export function RoomThreadEmailPanel({ id }: WorkbenchPanelProps) {
 	);
 }
 
+/** The tab wears the logo of the app its thread came from, as its name does. */
+function ThreadPanelIcon({ id, className }: WorkbenchPanelIconProps) {
+	// a narrow selector, as the workbench's own icon uses: the whole panel
+	// changes on every value write, which would redraw the logo
+	const source = useWorkbench(
+		(state) =>
+			(
+				state.layout.panels[id]?.config as
+					| Partial<RoomThreadEmailPanelConfig>
+					| undefined
+			)?.source,
+	);
+	const Icon = source === "teams" ? TeamsIcon : OutlookIcon;
+	return <Icon className={className} />;
+}
+
 const ROOM_THREAD_EMAIL_PANEL: WorkbenchPanelConfig<RoomThreadEmailPanelConfig> =
 	{
 		name: "Email",
-		icon: ({ className }) =>
-			createElement(Mail, { className, "aria-hidden": true }),
+		icon: ThreadPanelIcon,
 		content: RoomThreadEmailPanel,
 		mount: "keepAlive",
 		canRename: false,

@@ -31,18 +31,3 @@ export const runPixel = async <O = unknown>(
 		return null;
 	}
 };
-
-/**
- * Wrap a string of pixel code with the encode delimiters used by the legacy
- * terminal for shipping multi-line scripts inside R/Py/Command calls.
- */
-export const wrapEncoded = (
-	fn: "R" | "Py" | "Command",
-	content: string,
-): string => {
-	if (fn === "Command") {
-		const cleaned = content.trim().replace(/"/g, '\\"');
-		return `Command("${cleaned}");`;
-	}
-	return `${fn}("<encode>${content.trim()}</encode>");`;
-};

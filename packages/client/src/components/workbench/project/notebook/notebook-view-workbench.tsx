@@ -100,7 +100,7 @@ export const NOTEBOOK_VIEW_WORKBENCH_COMPONENTS: Record<
 	[WORKBENCH_COMPONENTS.PROJECT_TERMINAL]: PROJECT_TERMINAL_PANEL,
 };
 
-export interface NotebookViewWorkbenchProps {
+interface NotebookViewWorkbenchProps {
 	/**
 	 * Which mount this is. The notebook's own view page and the share page
 	 * render the same dock and keep separate arrangements, and nothing inside

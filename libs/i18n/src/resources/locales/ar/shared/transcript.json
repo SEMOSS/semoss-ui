@@ -1,0 +1,8 @@
+{
+	"reasoning": "التفكير",
+	"toolStatus": {
+		"running": "قيد التشغيل",
+		"completed": "مكتمل",
+		"failed": "فشل"
+	}
+}

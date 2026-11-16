@@ -16,6 +16,7 @@ on automatic discovery.
 | [Mobile development](./mobile-development.skill.md) | Working on responsive layouts, small screens, touch interaction, viewport handling, or mobile navigation |
 | [React form builder](./react-form-builder.skill.md) | Creating or touching forms, including fields, validation, submission, and modal form behavior |
 | [SDK chat](./sdk-chat.skill.md) | Rooms, AskRoom/RunAgent messages, tool approvals, streaming/polling lifecycle, and room configuration |
+| [SDK session](../libs/sdk/skills/session.skill.md) | Sign in and out, the signed in user and their metadata, `useSession`/`useConfig`/`useSessionPermissions`/`useLogins`, and which insight a pixel runs in |
 
 Loading the React standard is mandatory for React work; apply individual rules
 to the work they govern, including applicable TypeScript rules for non-React

@@ -1,0 +1,8 @@
+{
+	"reasoning": "Raisonnement",
+	"toolStatus": {
+		"running": "En cours d'exécution",
+		"completed": "Terminé",
+		"failed": "Échoué"
+	}
+}

@@ -27,7 +27,7 @@ export type RouterEngineRole =
 	| "embeddings";
 
 /** Props for {@link RouterEngineSelect}. */
-export interface RouterEngineSelectProps {
+interface RouterEngineSelectProps {
 	/** Associates the owning field's label with this picker. */
 	id: string;
 	/** The chosen model's engine id, or empty for none. */

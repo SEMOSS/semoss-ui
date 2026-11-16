@@ -2,7 +2,7 @@ import type { AutomationNode, LoopConfig } from "../../domain/automation.types";
 import type { AutomationScopeEntry } from "../../domain/automation-inspector";
 import { getLoopBodyUpstreamVariables } from "./loop-body-graph";
 
-export interface LoopContextVariable {
+interface LoopContextVariable {
 	label: string;
 	name: string;
 }

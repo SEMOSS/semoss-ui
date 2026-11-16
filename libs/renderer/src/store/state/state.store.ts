@@ -56,7 +56,7 @@ interface StateStoreInterface {
 	executionOrder: string[];
 }
 
-export class StateStoreConfig {
+class StateStoreConfig {
 	/** Mode */
 	mode: "interactive" | "static";
 

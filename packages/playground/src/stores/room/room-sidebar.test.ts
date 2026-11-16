@@ -1,10 +1,11 @@
 import { runInAction } from "mobx";
 import { beforeEach, expect, test, vi } from "vitest";
+import { FILE_PANEL_TYPES } from "@semoss/panels";
 import type { ThemeMap } from "@semoss/shared";
 import { ROOM_PANEL_COMPONENTS } from "@/components/room/panels/room-panel.components";
 import { ToolStore } from "@/stores/tool/tool.store";
 import { RoomStore } from "./room.store";
-import { ROOM_PANEL_TYPES, ROOM_SIDEBAR_LAYOUT } from "./room-sidebar";
+import { ROOM_PANEL_TYPES } from "./room-sidebar";
 
 vi.mock("@semoss/sdk/react", () => ({
 	console: vi.fn(),
@@ -21,13 +22,42 @@ const THEME = {} as ThemeMap["playground"];
  * without them the dock falls back to a shallow compare of config and every
  * dedupe assertion below would pass for the wrong reason.
  */
-const createRoom = (roomId: string, insightId = "insight-1") =>
+const createRoom = (
+	roomId: string,
+	insightId = "insight-1",
+	includeFiles = true,
+) =>
 	new RoomStore({
 		theme: THEME,
 		roomId,
 		insightId,
 		panelComponents: ROOM_PANEL_COMPONENTS,
+		includeFiles,
 	});
+
+/** The panels open in the Workspace's main area. */
+const mainPanelIds = (room: RoomStore) =>
+	room.workbench
+		.getState()
+		.layout.tabsets.flatMap((tabset) => tabset.panelIds);
+
+/** The panel types open in the Workspace's main area, in order. */
+const mainPanelTypes = (room: RoomStore) => {
+	const { panels } = room.workbench.getState().layout;
+	return mainPanelIds(room).map((pid) => panels[pid]?.type);
+};
+
+/** The panels a test opened, leaving out the Files and Settings every room starts with. */
+const openedPanelIds = (room: RoomStore) => {
+	const { panels } = room.workbench.getState().layout;
+	return mainPanelIds(room).filter((pid) => {
+		const record = panels[pid];
+		if (!record) return false;
+		if (record.type === ROOM_PANEL_TYPES.CONFIGURATION) return false;
+		// a file panel a test opened is an editor, never the room's explorer
+		return record.type !== FILE_PANEL_TYPES.FILE_EXPLORER;
+	});
+};
 
 beforeEach(() => {
 	localStorage.clear();
@@ -47,7 +77,7 @@ test("opening the same tool twice reveals one panel", () => {
 	);
 
 	expect(second).toBe(first);
-	expect(room.workbench.getState().layout.openPanelIds).toHaveLength(1);
+	expect(openedPanelIds(room)).toHaveLength(1);
 	expect(room.sidebar.isOpen).toBe(true);
 });
 
@@ -59,22 +89,30 @@ test("two files open as two panels, and reopening one reveals it", () => {
 
 	expect(script).not.toBe(readme);
 	expect(room.openFileSidebarPanel("/README.md")).toBe(readme);
-	expect(room.workbench.getState().layout.openPanelIds).toHaveLength(2);
+	expect(openedPanelIds(room)).toHaveLength(2);
 });
 
-test("closing the last panel closes the sidebar", () => {
-	const room = createRoom("room-autoclose");
+test("every tab closes, Files and Settings included, and the rail reopens them", () => {
+	const room = createRoom("room-close-all");
 
-	room.openSidebarPanel(ROOM_PANEL_TYPES.CONFIGURATION);
 	room.openSidebarPanel(ROOM_PANEL_TYPES.AUDIT_LOG);
+	room.openFileSidebarPanel("/README.md");
 	expect(room.sidebar.isOpen).toBe(true);
 
 	const { actions } = room.workbench.getState().layout;
-	for (const pid of [...room.workbench.getState().layout.openPanelIds]) {
+	for (const pid of mainPanelIds(room)) {
 		actions.closePanel(pid);
 	}
+	expect(mainPanelTypes(room)).toEqual([]);
 
-	expect(room.sidebar.isOpen).toBe(false);
+	// the arrangement survives its last close, so the rail can fill it again
+	expect(room.workbench.getState().layout.tabsets).toHaveLength(1);
+	room.openSidebarFileExplorer();
+	room.openSidebarPanel(ROOM_PANEL_TYPES.CONFIGURATION);
+	expect(mainPanelTypes(room)).toEqual([
+		FILE_PANEL_TYPES.FILE_EXPLORER,
+		ROOM_PANEL_TYPES.CONFIGURATION,
+	]);
 });
 
 test("reopening restores existing panels without duplicating them", async () => {
@@ -85,18 +123,83 @@ test("reopening restores existing panels without duplicating them", async () => 
 	room.openSidebar();
 
 	expect(room.sidebar.isOpen).toBe(true);
-	expect(room.workbench.getState().layout.openPanelIds).toEqual([panelId]);
+	expect(openedPanelIds(room)).toEqual([panelId]);
 });
 
-test("opening an empty sidebar defaults to Room settings", () => {
+test("opening the sidebar shows Files and Settings as tabs, Files in front", () => {
 	const room = createRoom("room-default-panel");
 
 	room.openSidebar();
 
-	const panels = Object.values(room.workbench.getState().layout.panels);
+	const { panels, tabsets, borders, selection } =
+		room.workbench.getState().layout;
 	expect(room.sidebar.isOpen).toBe(true);
-	expect(panels).toHaveLength(1);
-	expect(panels[0]?.type).toBe(ROOM_PANEL_TYPES.CONFIGURATION);
+	// Files is the first tab, Settings the second
+	expect(mainPanelTypes(room)).toEqual([
+		FILE_PANEL_TYPES.FILE_EXPLORER,
+		ROOM_PANEL_TYPES.CONFIGURATION,
+	]);
+	// and the room lands on Files: the front tab and the selected panel
+	expect(panels[tabsets[0]?.activeId ?? ""]?.type).toBe(
+		FILE_PANEL_TYPES.FILE_EXPLORER,
+	);
+	expect(panels[selection.panel ?? ""]?.type).toBe(
+		FILE_PANEL_TYPES.FILE_EXPLORER,
+	);
+	// the panel rail is the host's own chrome; nothing docks in a border
+	for (const border of Object.values(borders)) {
+		expect(border.panelIds).toEqual([]);
+	}
+	// both close like any other tab; the rail is how they come back
+	for (const pid of mainPanelIds(room)) {
+		expect(panels[pid]?.canClose).not.toBe(false);
+	}
+});
+
+test("a draft opens with Settings alone", () => {
+	const room = createRoom("temp", "new", false);
+
+	expect(mainPanelTypes(room)).toEqual([ROOM_PANEL_TYPES.CONFIGURATION]);
+});
+
+test("Files and Settings select their open tabs rather than adding another", () => {
+	const room = createRoom("room-tab-reveal");
+	const [files, settings] = mainPanelIds(room);
+
+	expect(room.openSidebarFileExplorer()).toBe(files);
+	expect(room.workbench.getState().layout.selection.panel).toBe(files);
+
+	expect(room.openSidebarPanel(ROOM_PANEL_TYPES.CONFIGURATION)).toBe(
+		settings,
+	);
+	expect(room.workbench.getState().layout.selection.panel).toBe(settings);
+	expect(openedPanelIds(room)).toEqual([]);
+});
+
+test("a connector viewer opens as a tab and closes with its connector", () => {
+	const room = createRoom("room-connector-viewer");
+
+	runInAction(() => {
+		room.connectors.services = ["onedrive"];
+	});
+	// a viewer is not opened until it is asked for
+	expect(mainPanelTypes(room)).toEqual([
+		FILE_PANEL_TYPES.FILE_EXPLORER,
+		ROOM_PANEL_TYPES.CONFIGURATION,
+	]);
+
+	// as the panel rail opens it; `openSourcePanel` only adds the viewer's name
+	room.openSidebarPanel(ROOM_PANEL_TYPES.ONEDRIVE, {}, "OneDrive");
+	expect(mainPanelTypes(room)).toContain(ROOM_PANEL_TYPES.ONEDRIVE);
+
+	runInAction(() => {
+		room.connectors.services = [];
+	});
+
+	expect(mainPanelTypes(room)).toEqual([
+		FILE_PANEL_TYPES.FILE_EXPLORER,
+		ROOM_PANEL_TYPES.CONFIGURATION,
+	]);
 });
 
 test("closing a tool's tab returns it inline", () => {
@@ -114,8 +217,9 @@ test("closing a tool's tab returns it inline", () => {
 
 	expect(tool.isOpen).toBe(true);
 	expect(tool.display).toBe("inline");
-	expect(room.sidebar.isOpen).toBe(false);
-	expect(room.workbench.getState().layout.openPanelIds).toHaveLength(0);
+	// the Workspace stays open on Files and Settings
+	expect(room.sidebar.isOpen).toBe(true);
+	expect(openedPanelIds(room)).toHaveLength(0);
 });
 
 test("closing Workspace returns all its tools inline and retains file panels", async () => {
@@ -135,7 +239,7 @@ test("closing Workspace returns all its tools inline and retains file panels", a
 		expect(tool.display).toBe("inline");
 	}
 	expect(room.sidebar.isOpen).toBe(false);
-	expect(room.workbench.getState().layout.openPanelIds).toEqual([filePanel]);
+	expect(openedPanelIds(room)).toEqual([filePanel]);
 });
 
 test("moving the last sidebar tool inline leaves it open once", () => {
@@ -148,8 +252,7 @@ test("moving the last sidebar tool inline leaves it open once", () => {
 
 	expect(tool.isOpen).toBe(true);
 	expect(tool.display).toBe("inline");
-	expect(room.sidebar.isOpen).toBe(false);
-	expect(room.workbench.getState().layout.openPanelIds).toHaveLength(0);
+	expect(openedPanelIds(room)).toHaveLength(0);
 });
 
 test("explicitly closing a cancelled tool does not reopen it inline", () => {
@@ -164,19 +267,17 @@ test("explicitly closing a cancelled tool does not reopen it inline", () => {
 	tool.closeTool();
 
 	expect(tool.isOpen).toBe(false);
-	expect(room.sidebar.isOpen).toBe(false);
-	expect(room.workbench.getState().layout.openPanelIds).toHaveLength(0);
+	expect(openedPanelIds(room)).toHaveLength(0);
 });
 
 test("the sidebar's default arrangement survives its last panel closing", () => {
 	const room = createRoom("room-empty");
-	const pid = room.openSidebarPanel(ROOM_PANEL_TYPES.CONFIGURATION);
+	const pid = room.openSidebarPanel(ROOM_PANEL_TYPES.AUDIT_LOG);
 	room.workbench.getState().layout.actions.closePanel(pid);
 
 	// the dock prunes an empty tabset unless it opts out, and a sidebar with no
 	// tabset has nowhere to put the next panel
 	expect(room.workbench.getState().layout.tabsets).toHaveLength(1);
-	expect(ROOM_SIDEBAR_LAYOUT.panels).toEqual({});
 });
 
 test("a room whose sidebar never mounted still dedupes", () => {
@@ -190,25 +291,30 @@ test("a room whose sidebar never mounted still dedupes", () => {
 	room.openSidebarFileExplorer();
 	room.openSidebarFileExplorer();
 
-	expect(Object.keys(room.workbench.getState().layout.panels)).toHaveLength(
-		1,
-	);
+	const explorers = Object.values(
+		room.workbench.getState().layout.panels,
+	).filter((record) => record.type === FILE_PANEL_TYPES.FILE_EXPLORER);
+	expect(explorers).toHaveLength(1);
 });
 
 test("a prepared layout retains its tabs through sidebar mounts and later opens", () => {
-	const draft = createRoom("temp");
-	const settings = draft.openSidebarPanel(ROOM_PANEL_TYPES.CONFIGURATION);
+	const draft = createRoom("temp", "new", false);
+	const log = draft.openSidebarPanel(ROOM_PANEL_TYPES.AUDIT_LOG);
 	const snapshot = draft.workbench.getState().layout.actions.getSnapshot();
 	const room = createRoom("prepared");
 	room.restoreSidebarLayout(snapshot);
 	expect(room.sidebarSnapshot).toBe(snapshot);
+	// the draft had no Files; the prepared room gains it, behind the draft's tab
+	expect(mainPanelTypes(room)).toEqual([
+		ROOM_PANEL_TYPES.CONFIGURATION,
+		ROOM_PANEL_TYPES.AUDIT_LOG,
+		FILE_PANEL_TYPES.FILE_EXPLORER,
+	]);
+	expect(room.workbench.getState().layout.selection.panel).toBe(log);
 	const files = room.openSidebarFileExplorer();
 	const { actions } = room.workbench.getState().layout;
 	// Every shell mount, including navigation after submission, uses this reference.
 	actions.loadSnapshot(room.sidebarSnapshot);
-	expect(room.workbench.getState().layout.openPanelIds).toEqual([
-		settings,
-		files,
-	]);
+	expect(openedPanelIds(room)).toEqual([log]);
 	expect(room.workbench.getState().layout.selection.panel).toBe(files);
 });

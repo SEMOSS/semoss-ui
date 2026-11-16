@@ -25,13 +25,6 @@ export interface Account {
 	color: string;
 }
 
-export interface TopicGoal {
-	noteId: string;
-	text: string;
-	status: "open" | "done";
-	resolution?: string;
-}
-
 interface TopicPerson {
 	personId: string;
 	role: string;
@@ -41,6 +34,19 @@ interface TopicPerson {
 	reason?: string;
 	/** VIP in this topic only: their mail here ranks higher and files here more readily. Members only. */
 	vip?: boolean;
+}
+
+/** A OneDrive or Teams file linked to a topic; the file stays where it is in Microsoft 365. */
+export interface TopicFile {
+	/** The file's id in its drive, which with the drive's id is how Microsoft 365 finds it again. */
+	itemId: string;
+	driveId?: string;
+	/** As Microsoft 365 named it when it was linked. */
+	name: string;
+	/** The app it was picked in. */
+	source: "onedrive" | "teams";
+	/** Opens it in its own app; as it was when the file was linked. */
+	webUrl?: string;
 }
 
 export interface Topic {
@@ -53,11 +59,12 @@ export interface Topic {
 	status: TopicStatus;
 	description: string;
 	keywords: string[];
-	goals: TopicGoal[];
 	people: TopicPerson[];
 	calendarSeries: string[];
 	/** Outlook folders the topic stands for; mail in them is filed under it. */
 	folders?: { id: string; path: string; origin?: string | null }[];
+	/** OneDrive and Teams files the owner linked to the topic. */
+	files?: TopicFile[];
 	stats: { threads: number; openItems: number; lastActivity: string };
 	isSample: boolean;
 }
@@ -221,12 +228,36 @@ export interface Profile {
 	timezone: string;
 	workingHours: string;
 	vips: string[];
-	style: {
-		summary: string;
-		source: "learned" | "you";
-		confirmed: boolean;
-		examples: string[];
-	};
+	style: ProfileStyle;
+}
+
+/** Who a writing-style variant is for: everyone addressed is in the owner's organisation, or someone is outside it. */
+export type StyleAudience = "internal" | "external";
+
+export interface StyleVariant {
+	summary: string;
+	examples: string[];
+}
+
+/** A style the owner has not agreed to yet. The server never uses it when drafting. */
+export interface StyleProposal {
+	summary: string;
+	examples: string[];
+	variants: Partial<Record<StyleAudience, StyleVariant>>;
+	learnedAt?: string;
+	sample?: { emails: number; chats: number; windowDays: number };
+}
+
+export interface ProfileStyle {
+	summary: string;
+	source: "learned" | "you";
+	confirmed: boolean;
+	examples: string[];
+	/** Agreed audience-specific styles; absent on profiles saved before variants existed. */
+	variants?: Partial<Record<StyleAudience, StyleVariant>>;
+	/** The learned proposal waiting for the owner's review. */
+	pending?: StyleProposal | null;
+	learnedAt?: string;
 }
 
 export interface Settings {
@@ -239,8 +270,15 @@ export interface Settings {
 	/** The Outlook folder drafts are left in; blank means the mailbox's own Drafts. */
 	draftFolderId: string;
 	draftFolderName: string;
+	/** How drafts look: font, size in pt, and the signature copied from sent mail. */
+	draftFont: string;
+	draftFontSize: number;
+	draftSignatureHtml: string;
+	draftSignatureOn: boolean;
 	/** Minutes between background syncs while the app is closed; 0 turns them off. */
 	syncEveryMinutes: number;
+	/** Read-only: the server has an image model set for Digital Twin avatar options. */
+	avatarGeneration: boolean;
 	version: number;
 }
 
@@ -374,7 +412,6 @@ interface WorkspaceDraft {
 }
 
 export interface ThreadWorkspace {
-	goal: string;
 	messages: WorkspaceMessage[];
 	steps: WorkspaceStep[];
 	assets: WorkspaceAsset[];
@@ -458,13 +495,6 @@ export type CollaborationCommand =
 			/** A topic made outside this page, such as by the assistant; added only when the page lacks it. */
 			topic: Topic;
 	  }
-	| {
-			type: "topic.goal.server";
-			topicId: string;
-			/** Goal before the read; newer local changes take precedence over its result. */
-			before?: TopicGoal;
-			goal: TopicGoal;
-	  }
 	| { type: "topic.merge"; sourceId: string; targetId: string }
 	| { type: "topic.delete"; topicId: string }
 	| {
@@ -475,16 +505,6 @@ export type CollaborationCommand =
 			role?: string;
 			/** Omitted keeps a member's topic VIP; any state but member clears it. */
 			vip?: boolean;
-	  }
-	| {
-			/** A topic goal; topic notes are memories about the topic. */
-			type: "topic.note";
-			topicId: string;
-			kind: "goal";
-			operation: "save" | "remove";
-			noteId?: string;
-			text?: string;
-			status?: "open" | "done";
 	  }
 	| {
 			type: "thread.link";
@@ -499,7 +519,6 @@ export type CollaborationCommand =
 			included: boolean;
 	  }
 	| { type: "thread.mute"; threadId: string; muted: boolean }
-	| { type: "thread.goal"; threadId: string; goal: string }
 	| {
 			type: "person.save";
 			personId: string;
@@ -571,6 +590,11 @@ export type CollaborationCommand =
 	  }
 	| { type: "source.status"; source: SourceStatus }
 	| { type: "live-profile.set"; profile: Profile | null }
+	| {
+			/** The style as the server holds it after learning, which the saver must not write back. */
+			type: "profile.style.server";
+			style: ProfileStyle;
+	  }
 	| { type: "snooze.expire" };
 
 export interface ThreadContext {
@@ -578,13 +602,11 @@ export interface ThreadContext {
 	subject?: string;
 	channel?: Channel;
 	isSample: boolean;
-	goal: string;
 	profile: Profile | null;
 	topics: {
 		id: string;
 		name: string;
 		description: string;
-		goals: TopicGoal[];
 		/** The topic's account, for memories about the account. */
 		account?: { id: string; name: string };
 	}[];

@@ -6,7 +6,6 @@ import {
 	CONNECTORS_GENERATOR,
 	findConnectorTool,
 	getConnectorServices,
-	isConnectorTool,
 	mergeUserConnectorTools,
 	readConnectorTools,
 	sanitizeConnectorServices,
@@ -157,8 +156,6 @@ describe("a room's copy of the user's connector tools", () => {
 		expect(merged?._meta).toEqual({
 			last_modified_date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
 		});
-		expect(isConnectorTool(custom)).toBe(false);
-		expect(isConnectorTool(playwright)).toBe(false);
 	});
 
 	test("is only written when the room does not hold the user's tools", () => {

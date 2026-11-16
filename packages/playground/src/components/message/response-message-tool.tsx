@@ -8,7 +8,7 @@ import {
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { useToolView } from "@semoss/shared";
+import { useLoadingMessage, useToolView } from "@semoss/shared";
 import {
 	Button,
 	cn,
@@ -25,7 +25,6 @@ import {
 	isFolderToolCall,
 } from "@/features/chat-tools/tools/chat-tool-kind";
 import { ComponentToolView } from "@/features/tool-views/component-tool-view";
-import { useLoadingMessage } from "@/hooks/use-loading-message";
 import { useSidebarPanelActive } from "@/hooks/use-sidebar-panel-active";
 import { decideAgentToolAction } from "@/stores/message/agent-harness";
 import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
@@ -36,7 +35,7 @@ import { RoomInlineTool } from "../room/room-inline-tool";
 import { ResponseMessageToolMenu } from "./response-message-tool-menu";
 import { ResponseMessageToolStreaming } from "./response-message-tool-streaming";
 
-export interface ResponseMessageToolProps {
+interface ResponseMessageToolProps {
 	/** Tool activity to display and open. */
 	tool: ToolStore;
 	/** Frame pending decisions when they are shown inline. */

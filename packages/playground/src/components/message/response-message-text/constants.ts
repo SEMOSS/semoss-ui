@@ -11,8 +11,6 @@ export const RESPONSE_BLOCK_MAX_HEIGHT = "62.5dvh";
 /** Floor for the same blocks, so a nearly empty preview is still usable. */
 export const RESPONSE_BLOCK_MIN_HEIGHT = "8rem";
 
-export const FENCED_HTML_RE = /```html[ \t]*\n([\s\S]*?)(?:\n```|$)/i;
-
 export const KNOWN_SHIKI_LANGS = new Set([
 	"c",
 	"r",

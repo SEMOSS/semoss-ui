@@ -126,10 +126,12 @@ describe("routine flow sections", () => {
 				<InboxRoutineForm
 					routine={{ ...inboxRoutine, flow }}
 					onSave={saveInbox}
+					onRunNow={vi.fn()}
 				/>
 				<AgendaRoutineForm
 					routine={{ ...agendaRoutine, flow: agendaFlow }}
 					onSave={saveAgenda}
+					onRunNow={vi.fn()}
 				/>
 			</MemoryRouter>,
 		);

@@ -16,6 +16,7 @@ const METADATA = {
 };
 
 vi.mock("@semoss/sdk/react", () => ({
+	useSessionInsight: () => ({ run: async () => ({}) }),
 	usePixel: (pixel: string) => {
 		if (pixel.startsWith("GetModelMetadata")) {
 			return { status: "SUCCESS", data: METADATA, refresh: () => {} };
@@ -29,10 +30,6 @@ vi.mock("@semoss/sdk/react", () => ({
 		}
 		return { status: "INITIAL", data: undefined, refresh: () => {} };
 	},
-}));
-
-vi.mock("@/hooks", () => ({
-	useSession: () => ({ runPixel: async () => ({}) }),
 }));
 
 const { EngineModelSettings } = await import("./engine-model-settings");

@@ -73,6 +73,8 @@ export const foldersSchema = z.object({
 		z.object({
 			id: z.string().min(1),
 			name: optionalText,
+			/** Nested folders follow their parent, named from the top of the mailbox. */
+			path: optionalText,
 			totalCount: z.number().optional(),
 		}),
 	),
@@ -146,6 +148,20 @@ export const eventsSchema = z.object({
 	count: z.number().int().nonnegative(),
 	events: z.array(eventSchema),
 });
+
+// when a file last changed is what places it among recent activity, so it is required
+export const recentFilesSchema = z.object({
+	files: z.array(
+		z.object({
+			id: z.string().min(1),
+			// with the id, what a download or a topic's link names the file by
+			driveId: optionalText,
+			name: z.string().min(1),
+			lastModifiedDateTime: date,
+		}),
+	),
+});
+export type RecentFile = z.infer<typeof recentFilesSchema>["files"][number];
 
 // A saved draft answers with `draft: true` and the draft's own id, which is what
 // sends it; a sent message answers with `sent: true` instead.

@@ -16,13 +16,7 @@ import {
 	DropdownMenuContent,
 	DropdownMenuTrigger,
 	Muted,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
 	Toggle,
-	useDebouncedValue,
 } from "@semoss/ui/next";
 import { ConnectorIconButton } from "../components/connector-icon-button";
 import { ConnectorItemRow } from "../components/connector-item-row";
@@ -34,38 +28,40 @@ import { formatListDate } from "../core/connector.format";
 import type {
 	ConnectorAccount,
 	ConnectorFocusRequest,
+	ConnectorSavedItemsProps,
 	ConnectorViewerProps,
 } from "../core/connector.types";
 import { runConnectorPixel } from "../core/connector-pixel";
 import { useConnectorControls } from "../core/use-connector-controls";
 import { useConnectorFocus } from "../core/use-connector-focus";
-import { useConnectorQuery } from "../core/use-connector-query";
 import {
 	type ConnectorSaveRequest,
 	useConnectorSaver,
 } from "../core/use-connector-saver";
+import { useConnectorSearch } from "../core/use-connector-search";
 import { useReturnFocus } from "../core/use-return-focus";
+import { getMailFolderLabel, INBOX } from "./mail.folders";
 import { mailMessageFileName, mailMessageToMarkdown } from "./mail.markdown";
-import { parseMailFolders, parseMailMessageDetail } from "./mail.parsers";
+import { parseMailMessageDetail } from "./mail.parsers";
 import {
 	groupMailByConversation,
 	type MailConversation,
+	mailSaveKey,
 	normalizeMailSubject,
 } from "./mail.threads";
 import type { MailMessage } from "./mail.types";
 import { MAIL_APPS } from "./mail-apps";
 import { MailCompactRow } from "./mail-compact-row";
 import type { MailSelection } from "./mail-detail-view";
+import { MailFolderPicker } from "./mail-folder-picker";
 import { MailMessageView } from "./mail-message-view";
 import {
 	MailThreadView,
 	readConversation,
 	threadSaveRequest,
 } from "./mail-thread-view";
+import { useMailFolders } from "./use-mail-folders";
 import { useMailPages } from "./use-mail-pages";
-
-/** The inbox's well known name, which every mailbox takes in place of its id. */
-const INBOX = "inbox";
 
 /**
  * Whether a thread can be read as a whole: only when the backend reports
@@ -80,7 +76,9 @@ const isWholeThread = (
 	!!conversation.conversationId;
 
 /** Props for {@link MailboxView}. */
-export interface MailboxViewProps extends ConnectorViewerProps {
+export interface MailboxViewProps
+	extends ConnectorViewerProps,
+		ConnectorSavedItemsProps {
 	/** The account whose mailbox is read: Outlook for `microsoft`, Gmail for `google`. */
 	provider: ConnectorAccount;
 	/** The logo the header shows. Defaults to the mailbox's own. */
@@ -94,10 +92,10 @@ export interface MailboxViewProps extends ConnectorViewerProps {
 }
 
 /**
- * Read the user's mail, in Outlook or Gmail: pick a folder or label, find
- * emails by subject, and bring an email, a whole thread, or an attachment into
- * the insight. Every mailbox reads the same way; only the reactors it calls
- * and the names it shows differ.
+ * Read the user's mail, in Outlook or Gmail: pick a folder or label, search it
+ * the way its own app does, by sender, subject, or body, and bring an email, a
+ * whole thread, or an attachment into the insight. Every mailbox reads the
+ * same way; only the reactors it calls and the names it shows differ.
  *
  * Emails of one thread share a row, so a busy conversation reads as one line
  * with a count. Opening it shows the whole thread from every folder, the
@@ -121,36 +119,25 @@ export const MailboxView = (props: MailboxViewProps) => {
 	const { insightId } = useInsight();
 	const saver = useConnectorSaver(app.service, props);
 	const [folder, setFolder] = useState(INBOX);
-	const [search, setSearch] = useState("");
+	const { text: search, setText: setSearch, searched } = useConnectorSearch();
 	const [isUnreadOnly, setIsUnreadOnly] = useState(false);
 	const [isGrouped, setIsGrouped] = useState(true);
 	const [openConversation, setOpenConversation] =
 		useState<MailConversation | null>(null);
-	const debouncedSubject = useDebouncedValue(search.trim());
-	// clearing the search takes effect at once rather than after the delay
-	const subject = search.trim() === "" ? "" : debouncedSubject;
 	const { listRef, rememberItem } = useReturnFocus(openConversation !== null);
 	const serviceName = t(app.nameKey);
 
-	const foldersQuery = useConnectorQuery(
-		app.pixels.listFolders(),
-		parseMailFolders,
-	);
-	// the inbox is offered under its well known name, so its own entry is
-	// left out rather than listed twice
-	const folders = [
-		{ id: INBOX, name: t("mail.inbox") },
-		...(foldersQuery.data ?? []).filter(
-			(entry) => entry.name.toLowerCase() !== INBOX,
-		),
-	];
-	const folderName =
-		folders.find((entry) => entry.id === folder)?.name ?? t("mail.inbox");
+	const foldersQuery = useMailFolders(provider);
+	const { folders } = foldersQuery;
+	const selectedFolder = folders.find((entry) => entry.id === folder);
+	const folderName = selectedFolder
+		? getMailFolderLabel(selectedFolder)
+		: t("mail.inbox");
 
 	const query = useMailPages({
 		provider,
 		folder,
-		subject,
+		search: searched,
 		unreadOnly: isUnreadOnly,
 		isGrouped,
 	});
@@ -211,13 +198,15 @@ export const MailboxView = (props: MailboxViewProps) => {
 		title: string,
 	): ConnectorSaveRequest => {
 		// a row with conversations off stands for one email, which still
-		// belongs to a thread; saving takes the whole thread either way
+		// belongs to a thread; saving takes the whole thread either way, so
+		// every row of the thread is saving, and held, together
+		const key = mailSaveKey(conversation.latest);
 		const conversationId =
 			conversation.conversationId ?? conversation.latest.conversationId;
 		if (conversationId) {
 			return threadSaveRequest(
 				app,
-				conversation.key,
+				key,
 				title,
 				conversation.latest.subject,
 				() => readConversation(app, read, conversationId),
@@ -225,7 +214,7 @@ export const MailboxView = (props: MailboxViewProps) => {
 		}
 		const email: MailMessage = conversation.latest;
 		return {
-			key: conversation.key,
+			key: key,
 			name: title,
 			source: {
 				kind: "text",
@@ -280,22 +269,12 @@ export const MailboxView = (props: MailboxViewProps) => {
 				<div className="flex flex-col gap-1.5 border-border border-b bg-muted/10 px-3 py-2">
 					{/* the toggles move under the folder when the panel is narrow */}
 					<div className="flex flex-wrap items-center gap-2">
-						<Select value={folder} onValueChange={setFolder}>
-							<SelectTrigger
-								size="sm"
-								className="h-8 min-w-24 max-w-full flex-1 bg-background shadow-none"
-								aria-label={t("mail.folder")}
-							>
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								{folders.map((entry) => (
-									<SelectItem key={entry.id} value={entry.id}>
-										{entry.name}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+						<MailFolderPicker
+							folders={folders}
+							value={folder}
+							label={folderName}
+							onValueChange={setFolder}
+						/>
 						{presentation === "compact" ? (
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
@@ -350,6 +329,11 @@ export const MailboxView = (props: MailboxViewProps) => {
 					<ConnectorSearchField
 						value={search}
 						placeholder={t("mail.searchPlaceholder")}
+						description={
+							search.trim() === ""
+								? undefined
+								: t(app.searchHintKey)
+						}
 						onChange={setSearch}
 					/>
 				</div>
@@ -358,13 +342,13 @@ export const MailboxView = (props: MailboxViewProps) => {
 					query={{ ...conversationsQuery, reload: reload }}
 					serviceName={serviceName}
 					account={app.account}
-					onClearSearch={subject ? () => setSearch("") : undefined}
+					onClearSearch={searched ? () => setSearch("") : undefined}
 					onSignIn={onSignIn}
 					listRef={listRef}
 					isFull={query.hasMore && !query.pageError}
 					emptyText={
-						subject
-							? t("common.noResults", { query: subject })
+						searched
+							? t("common.noResults", { query: searched })
 							: isUnreadOnly
 								? t("mail.noUnread")
 								: t("mail.empty")
@@ -460,6 +444,9 @@ export const MailboxView = (props: MailboxViewProps) => {
 										itemName: title,
 										serviceName: serviceName,
 										saveLabel: saver.saveLabel,
+										savedLabel: saver.savedLabel(
+											request.key,
+										),
 										isBusy: isBusy,
 										onAddToContext: saver.addToContext
 											? () =>

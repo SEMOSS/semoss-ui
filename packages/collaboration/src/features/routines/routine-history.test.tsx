@@ -1,4 +1,11 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+	act,
+	cleanup,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -77,6 +84,81 @@ describe("RoutineHistory", () => {
 				"run-2",
 			),
 		);
+	});
+
+	it("deletes a finished run, then re-reads the list in place with focus on Refresh", async () => {
+		const update = vi.fn();
+		const running = {
+			runId: "run-3",
+			startedAt: "2026-10-28T12:00:00Z",
+			finishedAt: null,
+			status: "running",
+			trigger: "scheduled",
+			durationMs: null,
+			hasOutput: false,
+		};
+		service.usePixel.mockReturnValue({
+			status: "SUCCESS",
+			error: null,
+			refresh: vi.fn(),
+			update,
+			data: {
+				runs: [
+					running,
+					{
+						runId: "run-2",
+						startedAt: "2026-10-27T12:00:00Z",
+						finishedAt: "2026-10-27T12:04:12Z",
+						status: "completed",
+						trigger: "manual",
+						durationMs: 252000,
+						hasOutput: true,
+					},
+				],
+			},
+		});
+		service.actions.run.mockImplementation(async (statement: string) => ({
+			pixelReturn: [
+				{
+					output: statement.startsWith("WorkDeleteRoutineRun")
+						? { deleted: true, roomIds: ["run-chat"] }
+						: { runs: [running] },
+					operationType: ["OPERATION"],
+				},
+			],
+		}));
+		render(
+			<MemoryRouter>
+				<RoutineHistory routineId="event-planning" timezone="UTC" />
+			</MemoryRouter>,
+		);
+		const user = userEvent.setup();
+		// a run still going has nothing to delete yet
+		const menus = screen.getAllByRole("button", {
+			name: /^More actions for the Event planning agent run from /,
+		});
+		expect(menus).toHaveLength(1);
+		act(() => menus[0]?.focus());
+		await user.keyboard("{Enter}");
+		await user.click(
+			await screen.findByRole("menuitem", { name: "Delete run" }),
+		);
+		const dialog = await screen.findByRole("dialog", {
+			name: "Delete this run?",
+		});
+		await user.click(
+			within(dialog).getByRole("button", { name: "Delete run" }),
+		);
+		await waitFor(() =>
+			expect(update).toHaveBeenCalledExactlyOnceWith({ runs: [running] }),
+		);
+		expect(service.actions.run).toHaveBeenCalledWith(
+			'WorkDeleteRoutineRun(routineId=["event-planning"], runId=["run-2"]);',
+		);
+		expect(service.actions.run).toHaveBeenLastCalledWith(
+			'WorkListRoutineRuns(routineId=["event-planning"]);',
+		);
+		expect(screen.getByRole("button", { name: "Refresh" })).toHaveFocus();
 	});
 
 	it("formats run lengths", () => {

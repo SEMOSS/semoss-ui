@@ -1,5 +1,5 @@
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import { $getRoot, COMMAND_PRIORITY_LOW, PASTE_COMMAND } from "lexical";
+import { COMMAND_PRIORITY_LOW, PASTE_COMMAND } from "lexical";
 import { useEffect, useRef } from "react";
 
 export function AutoScrollOnPastePlugin(props: {
@@ -18,10 +18,7 @@ export function AutoScrollOnPastePlugin(props: {
 					if (!didPasteRef.current) return;
 					didPasteRef.current = false;
 
-					editor.update(() => {
-						$getRoot().selectEnd();
-					});
-
+					// Scroll to bottom without moving the cursor
 					const el = props.scrollContainerRef.current;
 					if (el) el.scrollTop = el.scrollHeight;
 				});

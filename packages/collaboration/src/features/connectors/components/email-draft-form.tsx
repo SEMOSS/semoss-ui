@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { Button, Form, P, Spinner, type UseFormReturn } from "@semoss/ui/next";
 import { EmailAddressRow } from "@/features/email/email-address-row";
 import type { EmailDraftValues } from "../api/email-draft-values";
@@ -34,6 +34,9 @@ interface EmailDraftFormProps {
 	/** Contextual controls share the compose surface's single scroll region. */
 	assistantContent?: ReactNode;
 	feedbackContent?: ReactNode;
+	/** The owner's draft font, and what Outlook adds below the body (their signature). */
+	bodyStyle?: CSSProperties;
+	afterBody?: ReactNode;
 	saveLabel?: string;
 	saveVariant?: "default" | "outline";
 	bodyReplacement?: number;
@@ -68,6 +71,8 @@ export function EmailDraftForm({
 	requiresAcceptance = false,
 	assistantContent,
 	feedbackContent,
+	bodyStyle,
+	afterBody,
 	saveLabel = "Save Draft",
 	saveVariant = "default",
 	bodyReplacement,
@@ -177,7 +182,9 @@ export function EmailDraftForm({
 					}
 					required={mode === "reply"}
 					disabled={fieldsDisabled}
+					contentStyle={bodyStyle}
 				/>
+				{afterBody}
 				<div className="shrink-0 px-4 pb-2">
 					<DraftAttachmentField disabled={fieldsDisabled} />
 				</div>

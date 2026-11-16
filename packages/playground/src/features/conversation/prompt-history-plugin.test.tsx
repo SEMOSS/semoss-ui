@@ -13,10 +13,6 @@ import {
 	type LexicalEditor,
 } from "lexical";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import {
-	$createSlashCommandNode,
-	SlashCommandNode,
-} from "@/components/common/lexical/slash-command/node";
 import { isAtEditorLineBoundary } from "./editor-line-boundary";
 import { RESET_PROMPT_HISTORY_COMMAND } from "./prompt-history";
 import { PromptHistoryPlugin } from "./prompt-history-plugin";
@@ -89,7 +85,6 @@ beforeEach(async () => {
 	document.body.append(root);
 	editor = createEditor({
 		namespace: "history-test",
-		nodes: [SlashCommandNode],
 		onError: (error) => {
 			throw error;
 		},
@@ -120,7 +115,7 @@ test("replaces text newest-first, preserves edits, stops at oldest, and restores
 	expect((await press("down")).defaultPrevented).toBe(false);
 });
 
-test("Escape restores the complete draft including slash nodes and selection", async () => {
+test("Escape restores the complete draft and selection", async () => {
 	await act(async () =>
 		editor.update(
 			() => {
@@ -128,8 +123,7 @@ test("Escape restores the complete draft including slash nodes and selection", a
 					.clear()
 					.append(
 						$createParagraphNode().append(
-							$createSlashCommandNode("toolbox", "Tools"),
-							$createTextNode(" draft"),
+							$createTextNode("Tools draft"),
 						),
 					);
 				$getRoot().selectEnd();

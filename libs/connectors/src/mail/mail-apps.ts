@@ -19,6 +19,8 @@ export interface MailApp {
 	appNameKey: string;
 	/** The app's name in saved files, which are written in English. */
 	sourceName: string;
+	/** The string key of how its search reads what is typed, shown while searching. */
+	searchHintKey: string;
 	/** The mailbox's reactor calls. */
 	pixels: MailPixels;
 }
@@ -32,6 +34,7 @@ export const MAIL_APPS: Record<ConnectorAccount, MailApp> = {
 		nameKey: "services.outlookMail",
 		appNameKey: "services.outlook",
 		sourceName: "Outlook",
+		searchHintKey: "mail.searchHintOutlook",
 		pixels: mailPixels("MicrosoftOutlook"),
 	},
 	google: {
@@ -41,6 +44,7 @@ export const MAIL_APPS: Record<ConnectorAccount, MailApp> = {
 		nameKey: "services.gmail",
 		appNameKey: "services.gmail",
 		sourceName: "Gmail",
+		searchHintKey: "mail.searchHintGmail",
 		pixels: mailPixels("GoogleGmail"),
 	},
 };

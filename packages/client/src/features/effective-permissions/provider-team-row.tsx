@@ -9,7 +9,7 @@ import { Avatar, TableCell, TableRow } from "@semoss/ui/next";
 import { getLevelLabel } from "@/features/bulk-access-management/permission-batch";
 import { useTeamTypeName } from "@/features/team-type/use-team-type-name";
 
-export interface ProviderTeamRowProps {
+interface ProviderTeamRowProps {
 	/** The team, which mirrors a group in a login provider */
 	team: UnlistedTeam;
 	/** Whether the target is a model, so the row shows the team limit */

@@ -1,7 +1,8 @@
 import DOMPurify from "dompurify";
-import { Eye, FileText } from "lucide-react";
-import { useId } from "react";
+import { Eye, FileText, RotateCw, Square } from "lucide-react";
+import { useId, useState } from "react";
 import { Link } from "react-router";
+import { useInsight } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -14,10 +15,15 @@ import {
 	P,
 	ScrollArea,
 	Small,
+	Spinner,
+	toast,
 } from "@semoss/ui/next";
 import { EmailBody } from "@/features/email/email-body";
 import { MESSAGE_PROSE_CLASS_NAME } from "@/features/messages/components/message-prose.styles";
 import { roomPath } from "@/lib/workspace-paths";
+import { ROUTINE_RUN_DELETED } from "./api/delete-routine-run";
+import { ROUTINE_RUNS_CHANGED } from "./api/list-recent-routine-runs";
+import { stopRoutineRun } from "./api/stop-routine-run";
 import { RoutineChatButton } from "./routine-chat-button";
 import { RoutineRunning } from "./routine-running";
 import type { RoutineId, RoutineStatus } from "./routine-schema";
@@ -49,6 +55,8 @@ interface RoutineResultProps {
 	canOpenRun?: boolean;
 	/** Hide the heading when something else already names the section, such as a tab. */
 	showTitle?: boolean;
+	/** Starts the routine now; given, a failed run offers Retry and a stopped one Run again. */
+	onRunNow?: () => Promise<unknown>;
 }
 
 /** Opens the run's own room, where its steps show, live while it runs. */
@@ -71,13 +79,97 @@ function OpenRunButton({
 	);
 }
 
+/** Stops the running run; the routine then reads as stopped and Run now starts it again. */
+function StopRunButton({ routineId }: { routineId: string }) {
+	const { actions } = useInsight();
+	const [isStopping, setIsStopping] = useState(false);
+	const stop = async (): Promise<void> => {
+		setIsStopping(true);
+		try {
+			await stopRoutineRun(actions, routineId);
+			toast.success("Run stopped.");
+			// re-read as after a delete, so the result, History and the sidebar show the stop
+			window.dispatchEvent(new Event(ROUTINE_RUN_DELETED));
+			window.dispatchEvent(new Event(ROUTINE_RUNS_CHANGED));
+		} catch (cause) {
+			toast.error(
+				cause instanceof Error
+					? cause.message
+					: "The run could not be stopped. Try again.",
+			);
+		} finally {
+			setIsStopping(false);
+		}
+	};
+	return (
+		<Button
+			type="button"
+			variant="outline"
+			size="sm"
+			disabled={isStopping}
+			onClick={() => void stop()}
+		>
+			{isStopping ? (
+				<Spinner aria-hidden="true" data-icon="inline-start" />
+			) : (
+				<Square aria-hidden="true" data-icon="inline-start" />
+			)}
+			{isStopping ? "Stopping…" : "Stop run"}
+		</Button>
+	);
+}
+
+/** Starts the routine again after a failed or stopped run; a refusal shows as a toast, as Stop's does. */
+function RunAgainButton({
+	label,
+	onRunNow,
+}: {
+	label: string;
+	onRunNow: () => Promise<unknown>;
+}) {
+	const [isStarting, setIsStarting] = useState(false);
+	const start = async (): Promise<void> => {
+		setIsStarting(true);
+		try {
+			await onRunNow();
+		} catch (cause) {
+			toast.error(
+				cause instanceof Error
+					? cause.message
+					: "The run did not start. Try again.",
+			);
+		} finally {
+			setIsStarting(false);
+		}
+	};
+	return (
+		<Button
+			type="button"
+			variant="outline"
+			size="sm"
+			disabled={isStarting}
+			onClick={() => void start()}
+		>
+			{isStarting ? (
+				<Spinner aria-hidden="true" data-icon="inline-start" />
+			) : (
+				<RotateCw aria-hidden="true" data-icon="inline-start" />
+			)}
+			{label}
+		</Button>
+	);
+}
+
 /** Displays the saved result, distinguishing first run, progress, and failures. */
 export function RoutineResult({
 	routine,
 	copy,
 	canOpenRun = false,
 	showTitle = true,
+	onRunNow,
 }: RoutineResultProps) {
+	// only a routine that is on can run; the server refuses the rest
+	const runAgain = routine.enabled ? onRunNow : undefined;
 	const headingId = useId();
 	const run = routine.lastRun;
 	const html = run?.html?.trim();
@@ -118,13 +210,16 @@ export function RoutineResult({
 					{runRoomId && run?.status !== "running" && (
 						<OpenRunButton roomId={runRoomId} />
 					)}
-					{run?.status === "completed" && run.summary?.trim() && (
-						<RoutineChatButton
-							key={`${routine.id}:${run.startedAt}`}
-							routineId={routine.id}
-							startedAt={run.startedAt}
-						/>
-					)}
+					{/* the run's own room holds its output, so a chat would open that same room */}
+					{run?.status === "completed" &&
+						run.summary?.trim() &&
+						!runRoomId && (
+							<RoutineChatButton
+								key={`${routine.id}:${run.startedAt}`}
+								routineId={routine.id}
+								startedAt={run.startedAt}
+							/>
+						)}
 				</div>
 			</div>
 			{/* The frame grows to the bottom of a column beside taller settings and is never shorter than before.
@@ -138,13 +233,16 @@ export function RoutineResult({
 								message={copy.running}
 								startedAt={run.startedAt}
 								action={
-									runRoomId ? (
-										<OpenRunButton
-											roomId={runRoomId}
-											live
-											variant="default"
-										/>
-									) : null
+									<div className="flex flex-wrap justify-center gap-2">
+										{runRoomId && (
+											<OpenRunButton
+												roomId={runRoomId}
+												live
+												variant="default"
+											/>
+										)}
+										<StopRunButton routineId={routine.id} />
+									</div>
 								}
 							/>
 						</div>
@@ -176,6 +274,25 @@ export function RoutineResult({
 											</P>
 										</div>
 									</div>
+								) : run.status === "failed" &&
+									run.errorCause === "cancelled" ? (
+									<div className="p-4">
+										<Alert>
+											<AlertTitle>Run stopped</AlertTitle>
+											<AlertDescription>
+												{run.error ||
+													"You stopped this run. Run it again when you are ready."}
+												{runAgain && (
+													<div className="flex flex-wrap gap-2">
+														<RunAgainButton
+															label="Run again"
+															onRunNow={runAgain}
+														/>
+													</div>
+												)}
+											</AlertDescription>
+										</Alert>
+									</div>
 								) : run.status === "failed" ? (
 									<div className="p-4">
 										<Alert variant="destructive">
@@ -186,6 +303,12 @@ export function RoutineResult({
 												{run.error ||
 													"Check your inbox connection and assistant configuration before the next scheduled run."}
 												<div className="flex flex-wrap gap-2">
+													{runAgain && (
+														<RunAgainButton
+															label="Retry"
+															onRunNow={runAgain}
+														/>
+													)}
 													{/* the other causes open the run from the header */}
 													{(run.errorCause ===
 														"connection" ||

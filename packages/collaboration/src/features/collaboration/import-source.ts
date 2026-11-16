@@ -146,7 +146,6 @@ export function importSourceCommand(
 			},
 		},
 		workspace: {
-			goal: "Review this conversation and decide the next step",
 			messages,
 			assets: source.attachments.map((attachment) => ({
 				id: `${id}:attachment:${attachment.id}`,

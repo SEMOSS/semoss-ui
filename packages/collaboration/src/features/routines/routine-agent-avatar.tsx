@@ -1,5 +1,6 @@
 import { type ReactNode, useId } from "react";
 import { cn } from "@semoss/ui/next";
+import { hashString } from "@semoss/utility/text";
 
 interface AgentArt {
 	/** The tile's chart color, which tells the agents apart. */
@@ -58,14 +59,36 @@ const AGENT_ART = {
 	},
 } satisfies Record<string, AgentArt>;
 
+const SYSTEM_ART: Partial<Record<string, AgentArt>> = AGENT_ART;
+
+// an owner's own routine has the plain robot; its id picks the tile color, so a routine keeps its color
+const OWN_TILES = [
+	"fill-chart-1",
+	"fill-chart-2",
+	"fill-chart-3",
+	"fill-chart-4",
+	"fill-chart-5",
+] as const;
+
+function agentArt(routineId: string): AgentArt {
+	return (
+		SYSTEM_ART[routineId] ?? {
+			tileClassName:
+				OWN_TILES[hashString(routineId) % OWN_TILES.length] ??
+				"fill-chart-1",
+			props: () => null,
+		}
+	);
+}
+
 interface RoutineAgentAvatarProps {
-	/** The system routine whose agent to draw. */
-	routineId: keyof typeof AGENT_ART;
+	/** A system routine draws its own agent; any other id is one of the owner's routines or a starting idea. */
+	routineId: string;
 	className?: string;
 }
 
 /**
- * A system routine's agent: a capsule-eyed robot, after the Grok bot mascot, in soft 3D on a tile in the agent's chart color.
+ * A routine's agent: a capsule-eyed robot, after the Grok bot mascot, in soft 3D on a tile in the agent's chart color.
  * Decorative; it fills its container, so size it with the slot it sits in.
  */
 export function RoutineAgentAvatar({
@@ -74,7 +97,7 @@ export function RoutineAgentAvatar({
 }: RoutineAgentAvatarProps) {
 	// url(#...) finds gradients by id, so every avatar needs its own; useId's punctuation is dropped to keep the reference plain
 	const id = useId().replace(/[^\w-]/g, "");
-	const art = AGENT_ART[routineId];
+	const art = agentArt(routineId);
 	// lines that would have no width or height, like the ear cups, can't take a gradient, so only the filled shapes use it
 	const clay = `url(#${id}-clay)`;
 	return (

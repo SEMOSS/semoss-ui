@@ -60,13 +60,19 @@
 	"onedrive": {
 		"viewLabel": "表示する内容",
 		"mine": "マイファイル",
-		"shared": "共有アイテム"
+		"shared": "共有アイテム",
+		"sharedNote": "共有されたファイルは Microsoft の検索で取得されるため、最近共有されたファイルがここに表示されるまで時間がかかることがあります。"
 	},
 	"mail": {
 		"folder": "メール フォルダー",
+		"folderPicker": "メールフォルダー: {{folder}}",
+		"unreadCount_one": "未読 {{count}} 件",
+		"unreadCount_other": "未読 {{count}} 件",
 		"inbox": "受信トレイ",
 		"unreadOnly": "未読",
-		"searchPlaceholder": "件名を検索",
+		"searchPlaceholder": "メールを検索",
+		"searchHintOutlook": "語句は差出人、件名、本文から検索されます。from:、to:、cc:、subject:、body: で対象を絞り込み、フレーズは引用符で囲みます。",
+		"searchHintGmail": "語句はメール全体から検索されます。from:、to:、cc:、subject: で対象を絞り込み、フレーズは引用符で囲みます。",
 		"empty": "このフォルダーにメールはありません",
 		"noUnread": "このフォルダーに未読のメールはありません",
 		"unknownSender": "不明な差出人",
@@ -102,7 +108,25 @@
 		"hideQuoted": "引用されたメールを非表示",
 		"filters": "フィルター",
 		"pageError": "追加のメッセージを読み込めませんでした。",
-		"emptyPage": "メールボックスから空のページが返されました。もう一度お試しください。"
+		"emptyPage": "メールボックスから空のページが返されました。もう一度お試しください。",
+		"picturesHidden": "プライバシー保護のため、Web 上の画像は非表示になっています。",
+		"showWebPictures": "Web 上の画像を表示",
+		"showEmbeddedPictures": "埋め込み画像を表示",
+		"loadingPictures": "画像を読み込み中...",
+		"embeddedPicturesHidden": "このメールに埋め込まれた画像は非表示になっています。",
+		"embeddedPicturesLoading": "このメールに埋め込まれた画像を読み込んでいます...",
+		"embeddedPicturesFailed": "このメールに埋め込まれた画像を読み込めませんでした。",
+		"embeddedPicturesOmitted_one": "{{count}} 件の埋め込み画像を表示できませんでした。",
+		"embeddedPicturesOmitted_other": "{{count}} 件の埋め込み画像を表示できませんでした。",
+		"pictureSettings": "画像の設定",
+		"picturesInEmails": "メール内の画像",
+		"picturesAsk": "毎回確認する",
+		"picturesEmbedded": "埋め込み画像を常に表示",
+		"picturesAll": "すべての画像を常に表示",
+		"remoteImage": "Web 上の画像",
+		"embeddedImage": "埋め込まれた画像またはファイル",
+		"image": "画像",
+		"htmlFrame": "{{from}} からのメール"
 	},
 	"calendar": {
 		"range": "{{start}} から {{end}}",
@@ -162,6 +186,7 @@
 		"openCalendar": "カレンダーを開く"
 	},
 	"teams": {
+		"pageError": "追加のメッセージを読み込めませんでした。",
 		"team": "チーム",
 		"channel": "チャネル",
 		"chooseTeam": "チームを選択",
@@ -199,7 +224,12 @@
 		"changeLocation": "チームまたはチャネルを変更: {{team}}、{{channel}}",
 		"postsLabel": "投稿",
 		"filesLabel": "ファイル",
-		"chatsLabel": "あなたのチャット"
+		"chatsLabel": "あなたのチャット",
+		"searchMessages": "メッセージを検索",
+		"searchResultIn": "{{chat}} の {{author}}",
+		"openSearchResult": "{{author}} からのメッセージを開く: {{text}}",
+		"searchMatch": "検索で見つかったメッセージ",
+		"searchMatchNotShown": "検索で見つかったメッセージは、ここに表示されているメッセージより前のものです。さらに前を読むには、Teams でチャットを開いてください。"
 	},
 	"accounts": {
 		"microsoft": "Microsoft 365",

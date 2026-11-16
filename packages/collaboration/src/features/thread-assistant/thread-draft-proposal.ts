@@ -55,8 +55,8 @@ const proposalSchema = z
 			("mode" in proposal && proposal.mode === "forward"),
 	);
 
-export type ThreadDraftProposal = z.infer<typeof proposalSchema>;
-export type SourcedDraftProposal = z.infer<typeof replySchema>;
+type ThreadDraftProposal = z.infer<typeof proposalSchema>;
+type SourcedDraftProposal = z.infer<typeof replySchema>;
 
 /** A reply or forward of an email in the thread, rather than a new email. */
 export function isSourcedProposal(
@@ -64,17 +64,6 @@ export function isSourcedProposal(
 ): proposal is SourcedDraftProposal {
 	return "sourceMessageId" in proposal;
 }
-
-/**
- * Draft rules sent with rooms created before the backend prompt owned them (Semoss
- * CollaborationPrompts DRAFTS); kept verbatim so those rooms are still recognized.
- */
-export const LEGACY_DRAFT_PROPOSAL_INSTRUCTIONS = [
-	"When asked to draft or revise an email reply, produce a local proposal for review, never call an email save, reply, forward, or send tool.",
-	'Put exactly one JSON object in a fenced semoss-email-draft block: {"sourceMessageId":"the included source email id","body":"the complete reply as plain text with newline escapes"}.',
-	"Use selectedSourceMessageId when the request specifies it; otherwise use an included source email identity from the Work context. Never invent an identity, use excluded sources, include quoted source history in the body, or claim the draft is saved. If there is insufficient information, ask a question instead.",
-	"When emailDraft is present in the request context, revise its current body using the user's instructions. Return the complete replacement body, preserving facts and intent unless asked to change them. The user reviews it in the same reply editor and chooses Save to Outlook. Never save it with a tool.",
-].join("\n");
 
 // ComposeEmail (Semoss WorkComposeEmailReactor) names the body "message", the
 // email it answers "replyTo" and the email it forwards "forward"

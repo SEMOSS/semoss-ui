@@ -89,17 +89,7 @@ export async function createRoom(
 	);
 	if (!updated) throw new Error("SEMOSS did not save the room options.");
 
-	if (options.name) {
-		const renamed = await callPixel(
-			actions,
-			pixel("SetRoomName", {
-				roomId,
-				roomName: options.name,
-			}),
-			roomWriteSchema,
-		);
-		if (!renamed) throw new Error("SEMOSS did not save the room name.");
-	}
+	if (options.name) await saveRoomName(actions, roomId, options.name);
 
 	const bound = await callPixel(
 		actions,
@@ -110,4 +100,18 @@ export async function createRoom(
 		throw new Error("SEMOSS did not bind the room to this insight.");
 
 	return roomId;
+}
+
+/** Save a room's name; the server only renames rooms the signed-in user owns. */
+export async function saveRoomName(
+	actions: InsightActions,
+	roomId: string,
+	roomName: string,
+): Promise<void> {
+	const renamed = await callPixel(
+		actions,
+		pixel("SetRoomName", { roomId, roomName }),
+		roomWriteSchema,
+	);
+	if (!renamed) throw new Error("SEMOSS did not save the room name.");
 }

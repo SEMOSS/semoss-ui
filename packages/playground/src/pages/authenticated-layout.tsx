@@ -1,17 +1,24 @@
 import { Navigate, Outlet, useLocation } from "react-router";
-import { useInsight } from "@semoss/sdk/react";
+import { useSession, useSessionRetry } from "@semoss/sdk/react";
+import { ErrorPage } from "./error-page";
 
 /**
- * Wrap the database routes and add additional funcitonality
+ * Layout for the routes that need a signed in user: a signed out user goes to
+ * the login page, which returns them here after signing in. When the config
+ * or the user could not be read, for any reason other than a signed out user,
+ * these routes show the error page with Retry; the login page still renders.
  */
 export const AuthenticatedLayout = () => {
-	const { isAuthorized } = useInsight();
-
-	// track the location
+	const status = useSession((state) => state.status);
+	const { isRetrying, retry } = useSessionRetry();
 	const location = useLocation();
 
-	if (!isAuthorized) {
+	if (status === "UNAUTHENTICATED") {
 		return <Navigate to="/login" state={{ from: location }} replace />;
+	}
+
+	if (status === "ERROR") {
+		return <ErrorPage onRetry={retry} isRetrying={isRetrying} />;
 	}
 
 	return <Outlet />;

@@ -13,7 +13,8 @@ export function AgentAvatar({
 	shape = "circle",
 }: {
 	agent: AvatarAgent;
-	size?: "xs" | "sm" | "md" | "lg";
+	/** `xl` is the portrait of a scene the agent is the subject of. */
+	size?: "xs" | "sm" | "md" | "lg" | "xl";
 	/** Keeps conversational avatars circular while allowing directory portraits. */
 	shape?: "circle" | "rounded";
 }) {
@@ -29,6 +30,7 @@ export function AgentAvatar({
 					"size-8": size === "sm",
 					"size-10": size === "md",
 					"size-16": size === "lg",
+					"size-24": size === "xl",
 				},
 			)}
 		>
@@ -40,8 +42,17 @@ export function AgentAvatar({
 					onError={() => setFailed(agent.avatar ?? "")}
 				/>
 			) : (
-				<span className={size === "lg" ? "text-lg" : "text-xs"}>
-					{buildInitials(agent.name) || "?"}
+				<span
+					className={
+						size === "xl"
+							? "text-3xl"
+							: size === "lg"
+								? "text-lg"
+								: "text-xs"
+					}
+				>
+					{/* two letters fit every size; a long name's would spill out of the circle */}
+					{buildInitials(agent.name, 2) || "?"}
 				</span>
 			)}
 		</span>

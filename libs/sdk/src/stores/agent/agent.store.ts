@@ -17,7 +17,7 @@ import type {
 } from "../../types";
 
 /** Handlers passed to {@link AgentStore.watch}. */
-export interface AgentWatchHandlers {
+interface AgentWatchHandlers {
 	/** Fires per new item event (deduped, in order), with the items-state already updated. */
 	onEvent: (event: AgentRunItemEvent, items: AgentRunItemsState) => void;
 	/** Fires on every successful poll with the run's current durable snapshot and the count of events the backend evicted before this drain (`meta.droppedEvents`) — nonzero means the feed has gaps a durable reconcile would fill. */
@@ -34,7 +34,7 @@ export interface AgentWatchHandlers {
 }
 
 /** Options passed to {@link AgentStore.watch}. */
-export interface AgentWatchOptions {
+interface AgentWatchOptions {
 	/** Base delay between polls in ms. Defaults to 500. */
 	pollIntervalMs?: number;
 	/** Multiplier on pollIntervalMs while INPUT_REQUIRED. Defaults to 3. */

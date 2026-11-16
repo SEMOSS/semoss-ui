@@ -23,7 +23,7 @@ const MODEL_META_FILTERS = [{ tag: "text-generation" }];
 const getModelName = (model: Engine) =>
 	model.engine_display_name || model.engine_name;
 
-export interface AgentModelFieldProps {
+interface AgentModelFieldProps {
 	/** React Hook Form control for the shared agent form. */
 	control: Control<AgentFormValues>;
 	/** Locks the picker and closes its portal while saving. */

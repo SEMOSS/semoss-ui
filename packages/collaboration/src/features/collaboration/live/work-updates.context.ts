@@ -9,11 +9,6 @@ export interface WorkUpdatesStatus {
 	lastMailCheck: MailCheck | null;
 	/** Re-read Brain and Work from the database (on focus, and while a sync or its summaries finish). */
 	refresh: () => void;
-	/** Re-read a goal after its assistant approval without replacing open editors. */
-	refreshTopicGoal: (
-		topic: { topicId?: string; topic?: string },
-		noteId: string,
-	) => void;
 	/** After an assistant topic change: add the topic when this page lacks it, then re-read threads for its emails. */
 	refreshTopic: (topic: { topicId?: string; topic?: string }) => void;
 	isSyncing: boolean;

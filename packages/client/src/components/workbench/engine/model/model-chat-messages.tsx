@@ -5,9 +5,14 @@ import { submitLlmFeedback } from "@/api/rooms";
 import { useModelChat } from "@/hooks";
 import { ModelChatMessage } from "./model-chat-message";
 
+/** How close to the bottom still counts as reading the newest message, in pixels. */
+const FOLLOW_THRESHOLD = 24;
+
 /**
- * The model chat transcript: a centered, scrolling message column that sticks
- * to the bottom while a turn streams in.
+ * The model chat transcript: a centered, scrolling message column, as wide as
+ * the playground's, that follows a streaming turn while the reader is at the
+ * bottom. Scrolling up to read stops the follow, scrolling back down resumes
+ * it, and a new turn starts it again.
  *
  * @name ModelChatMessages
  * @return The transcript.
@@ -25,19 +30,44 @@ export const ModelChatMessages = () => {
 		Record<string, "true" | "false" | null>
 	>({});
 	const bottomRef = useRef<HTMLDivElement>(null);
+	const [viewport, setViewport] = useState<HTMLDivElement | null>(null);
+	const isFollowingRef = useRef(true);
+	const messageCountRef = useRef(messages.length);
 
 	// Ratings are per conversation: the panel is keepAlive, so without this
-	// they would outlive the room they were given in.
+	// they would outlive the room they were given in. Another conversation
+	// also opens at its newest message, even when it has fewer messages.
 	// biome-ignore lint/correctness/useExhaustiveDependencies: roomId is the reset trigger, not a value the effect reads
 	useEffect(() => {
 		setFeedback({});
+		isFollowingRef.current = true;
 	}, [roomId]);
 
-	// Chase the bottom on every transcript change — streaming updates the last
-	// message in place, so a length check would miss all but the first chunk.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: messages is the scroll trigger, not a value the effect reads
 	useEffect(() => {
-		bottomRef.current?.scrollIntoView({ block: "end" });
+		if (!viewport) return;
+		const handleScroll = () => {
+			isFollowingRef.current =
+				viewport.scrollHeight -
+					viewport.scrollTop -
+					viewport.clientHeight <=
+				FOLLOW_THRESHOLD;
+		};
+		viewport.addEventListener("scroll", handleScroll, { passive: true });
+		return () => viewport.removeEventListener("scroll", handleScroll);
+	}, [viewport]);
+
+	// Run on every transcript change, since streaming updates the last message
+	// in place: a new message means a new turn or another conversation, which
+	// always starts at the bottom; otherwise follow only while the reader is
+	// there.
+	useEffect(() => {
+		if (messages.length > messageCountRef.current) {
+			isFollowingRef.current = true;
+		}
+		messageCountRef.current = messages.length;
+		if (isFollowingRef.current) {
+			bottomRef.current?.scrollIntoView({ block: "end" });
+		}
 	}, [messages]);
 
 	/**
@@ -96,12 +126,13 @@ export const ModelChatMessages = () => {
 
 	return (
 		<ScrollArea
+			viewportRef={setViewport}
 			type="always"
 			className="[&_[data-slot=scroll-area-viewport]>div]:block! min-h-0 flex-1"
 			data-testid="model-chat-messages-scroller"
 		>
 			<div
-				className="mx-auto flex w-full max-w-[1120px] flex-col gap-2 px-4 py-6 sm:px-8 lg:px-16"
+				className="mx-auto box-content flex max-w-3xl flex-col gap-4 px-4 py-6 sm:px-6"
 				aria-live="polite"
 			>
 				{messages.map((message) => (

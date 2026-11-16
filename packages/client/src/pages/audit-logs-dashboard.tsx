@@ -3,6 +3,7 @@ import { Download, RefreshCw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router";
 import { download } from "@semoss/sdk";
+import { useSessionInsight } from "@semoss/sdk/react";
 import {
 	AppCatalogAvatar,
 	AuditLogFilter,
@@ -31,10 +32,11 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useSession } from "@/hooks";
+import { NavbarHeader } from "@/components/shared/navbar-header";
+import { NavbarLeft } from "@/components/shared/navbar-left";
 
 interface AuditLogsDashboardProps {
+	/** The catalog the logs are for, such as "Apps" or an engine catalog's name */
 	catalogName: string;
 	/**
 	 * When rendered inside the app/engine detail tabs (not as a standalone page),
@@ -71,17 +73,15 @@ type ContextEntity =
 	  };
 
 /**
- * A component for displaying the audit logs dashboard for a given catalog.
- *
- * @param {string} catalogName - The name of the catalog.
- * @returns {JSX.Element} - A JSX element containing the audit logs dashboard.
+ * The audit logs dashboard: a summary, a timeline and a table of the audit
+ * events matching the filter, with CSV and PDF export. On an app's or engine's
+ * route it shows only that resource's events.
  */
 export const AuditLogsDashboard = ({
 	catalogName,
 	embedded = false,
 }: AuditLogsDashboardProps) => {
-	const runPixel = useSession((state) => state.runPixel);
-	const insightID = useSession((state) => state.insightID);
+	const { run: runPixel, insightId } = useSessionInsight();
 	const { appId, engineId } = useParams();
 	const [logs, setLogs] = useState<EventData[]>([]);
 	const [page, setPage] = useState(0);
@@ -270,7 +270,7 @@ export const AuditLogsDashboard = ({
 			const { operationType, output } = response.pixelReturn[0];
 			if (operationType.indexOf("ERROR") > -1)
 				throw new Error(`API Error: ${output}`);
-			await download(insightID, output as unknown as string);
+			await download(insightId, output as unknown as string);
 		} catch (error) {
 			toast.error(`Error exporting logs: ${error}`);
 			console.error("Error exporting logs:", error);
@@ -377,7 +377,7 @@ export const AuditLogsDashboard = ({
 		<div className="flex w-full flex-wrap items-center gap-2">
 			<AuditLogFilter
 				updateLogs={updateLogs}
-				insightId={insightID}
+				insightId={insightId}
 				parent={isContextualDashboard ? "client" : null}
 				scope={routeScope}
 				actions={headerActions}

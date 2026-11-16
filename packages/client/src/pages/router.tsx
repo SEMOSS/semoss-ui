@@ -1,20 +1,21 @@
 import { createHashRouter, Navigate } from "react-router";
 import { RouterProvider } from "react-router/dom";
+import { useSession } from "@semoss/sdk/react";
 import { Spinner } from "@semoss/ui/next";
-import { useSession } from "@/hooks";
-import { AuthenticatedLayout } from "./authenticated-layout";
-import { CookieNoticePage } from "./cookie-notice-page";
-import { ENGINE_ROUTES, EngineRedirect } from "./engine";
-import { LandingPage } from "./landing-page";
-import { LoginPage } from "./login-page";
+import { AuthenticatedLayout } from "./authenticated.layout";
+import { CookieNoticePage } from "./cookie-notice.page";
+import { ENGINE_ROUTES } from "./engine/engine.routes";
+import { EngineRedirect } from "./engine/engine-redirect";
+import { LandingPage } from "./landing.page";
+import { LoginPage } from "./login.page";
 import { PageLayout } from "./page-layout";
-import { PrivacyNoticePage } from "./privacy-notice-page";
-import { PROJECT_ROUTES } from "./project";
-import { ProjectLayout } from "./project/project-layout";
+import { PrivacyNoticePage } from "./privacy-notice.page";
+import { ProjectLayout } from "./project/project.layout";
+import { PROJECT_ROUTES } from "./project/project.routes";
 import { PROMPT_ROUTE } from "./prompt/prompt.routes";
 import { SETTINGS_ROUTE } from "./settings/settings.routes";
 import { SharePage } from "./share-page";
-import { TemplatePage } from "./template-page";
+import { TemplatePage } from "./template.page";
 
 const router = createHashRouter([
 	{

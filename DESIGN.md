@@ -308,7 +308,7 @@ currently processed by a design linter. Never use an unexplained disable.
 3. **ECharts:** canvas option objects may require resolved color strings. Read chart tokens
   through one shared adapter and reuse its `chart-1`…`chart-5` values; never free-hand a
   literal map in a feature file.
-4. **Third-party style bridges:** adapter CSS such as FlexLayout may map the library's custom
+4. **Third-party style bridges:** adapter CSS for a third-party library may map the library's custom
   properties to SEMOSS semantic variables. A literal required by an external API needs a
   line-level suppression naming that constraint.
 5. **Host-controlled extension UI:** VS Code webviews should use `--vscode-*` host variables,

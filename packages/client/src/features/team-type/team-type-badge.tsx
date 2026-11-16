@@ -3,7 +3,7 @@ import { CUSTOM_TEAM_TYPE } from "./team-type";
 import { TeamTypeIcon } from "./team-type-icon";
 import { useTeamTypeName } from "./use-team-type-name";
 
-export interface TeamTypeBadgeProps {
+interface TeamTypeBadgeProps {
 	/** CUSTOM, or the login provider the team's members come from */
 	type: string;
 	/** Classes for the badge */

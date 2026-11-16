@@ -2,10 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { getErrorMessage } from "@semoss/utility/error";
 
 /** A decision a tool view makes about its call. */
-export type ToolDecisionKind = "approve" | "deny" | "alternative" | "respond";
+type ToolDecisionKind = "approve" | "deny" | "alternative" | "respond";
 
 /** What {@link useToolDecision} returns. */
-export interface ToolDecision {
+interface ToolDecision {
 	/** The decision being made, if one is. Every action waits for it. */
 	pending: ToolDecisionKind | null;
 	/** Why the last decision failed, for the view to show. */

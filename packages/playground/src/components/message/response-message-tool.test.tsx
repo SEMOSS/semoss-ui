@@ -17,7 +17,8 @@ vi.mock("@semoss/ui/next", async (original) => ({
 	useIsMobile: () => mocks.isMobile,
 	toast: { error: mocks.error },
 }));
-vi.mock("@/hooks/use-loading-message", () => ({
+vi.mock("@semoss/shared", async (original) => ({
+	...(await original<typeof import("@semoss/shared")>()),
 	useLoadingMessage: () => ({ loadingMessage: "Running" }),
 }));
 vi.mock("@/hooks/use-sidebar-panel-active", () => ({

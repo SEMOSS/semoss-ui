@@ -5,10 +5,18 @@ import {
 } from "@semoss/sdk";
 import { getErrorMessage } from "@semoss/utility/error";
 
-/** Kinds of resource a permission can be resolved for. */
+/**
+ * Kinds of resource a permission can be resolved for: the SDK session's
+ * `Session.permissions` vocabulary.
+ */
 export type ResourceType = "ENGINE" | "PROJECT" | "INSIGHT";
 
-/** One resource's cached permission, plus how the last fetch went. */
+/**
+ * One resource's cached permission, plus how the last fetch went.
+ *
+ * @deprecated Part of {@link PermissionCache}; the session's entries have the
+ * same shape (`Session.permissions.get(type, id)`).
+ */
 export interface AccessEntry {
 	status: "LOADING" | "SUCCESS" | "ERROR";
 	permission?: Role;
@@ -16,10 +24,17 @@ export interface AccessEntry {
 }
 
 /** Stable key for one resource's permission entry. */
-export const getPermissionKey = (type: ResourceType, id: string): string =>
+const getPermissionKey = (type: ResourceType, id: string): string =>
 	`${type}:${id}`;
 
-/** The permission half of the session store. */
+/**
+ * A host-owned permission cache, which the file panels used to read through
+ * `AccessStoreProvider`.
+ *
+ * @deprecated The file panels read the SDK session's `Session.permissions`,
+ * which has the same entries and actions (`sync`, `load`, `refresh`, `clear`)
+ * and is cleared on every sign in and out.
+ */
 export interface PermissionCache {
 	/** Every resolved or in-flight resource permission, by `getPermissionKey`. */
 	permissions: Record<string, AccessEntry>;
@@ -34,13 +49,15 @@ export interface PermissionCache {
 }
 
 /**
- * Creates the session's resource-permission cache.
+ * Creates a resource-permission cache to fold into a host's store.
  *
- * This is session state rather than workbench state because a permission is a
- * fact about (user, resource): two workbenches open on the same project must
- * never disagree about whether it is editable, which a per-workbench cache
- * allows. It also means the cache outlives every workbench, so the session is
- * responsible for clearing it on logout — see `clearPermissions`.
+ * A permission is a fact about (user, resource), so the cache outlives every
+ * workbench and whoever owns it must clear it on logout — see
+ * `clearPermissions`.
+ *
+ * @deprecated The file panels read the SDK session's `Session.permissions`,
+ * which already is this cache, shared by every view and cleared on every sign
+ * in and out; nothing in them reads a cache made here.
  *
  * @name createPermissionCache
  * @param setPermissions - Commit a new permissions map onto the session state.

@@ -18,7 +18,7 @@ import {
 	slugifyIdentifier,
 } from "../../utility/mcp-json-utils";
 
-export interface AddToolDialogProps {
+interface AddToolDialogProps {
 	open: boolean;
 
 	/** Names already used in this file, so a duplicate is caught before it lands */

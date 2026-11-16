@@ -1,51 +1,16 @@
-import { expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { InsightActions } from "@/lib/pixel";
-import { createInitialCollaborationState } from "../state/collaboration.fixtures";
 import {
 	loadLiveState,
-	loadThreadMessages,
+	localDue,
 	mapMemory,
+	mapStyle,
 	readThreadInsights,
 	readThreadMessagesPage,
-	readTopicGoals,
 	readWorkUpdates,
 	summarizeThread,
 	syncMail,
 } from "./live-state";
-
-it("reads authoritative goals with optional resolutions and rejects invalid topic results", async () => {
-	const topic = {
-		id: "topic",
-		goals: [
-			{
-				noteId: "goal",
-				text: "Get room code for Florida",
-				status: "done",
-				resolution: "Florida room code is 444553",
-			},
-			{ noteId: "next", text: "Book the room", status: "open" },
-		],
-	};
-	const run = vi
-		.fn()
-		.mockResolvedValueOnce({ pixelReturn: [{ output: topic }] })
-		.mockResolvedValueOnce({
-			pixelReturn: [
-				{
-					output: {
-						...topic,
-						goals: [{ ...topic.goals[0], status: "closed" }],
-					},
-				},
-			],
-		});
-	const actions = { run } as unknown as InsightActions;
-	expect(await readTopicGoals(actions, { topic: "Launch" })).toEqual(topic);
-	expect(run).toHaveBeenCalledWith('BrainListTopics(topic=["Launch"]);');
-	await expect(readTopicGoals(actions, { topicId: "topic" })).rejects.toThrow(
-		"unexpected shape",
-	);
-});
 
 it("uses only native source ids provided by BrainListThreads", async () => {
 	const run = vi.fn().mockResolvedValue({
@@ -105,18 +70,7 @@ it("uses only native source ids provided by BrainListThreads", async () => {
 
 it("loads each topic once when the list contains duplicate records", async () => {
 	const topics = [
-		{
-			id: "one",
-			name: "First",
-			goals: [
-				{
-					noteId: "goal",
-					text: "Get room code for Florida",
-					status: "done",
-					resolution: "Florida room code is 444553",
-				},
-			],
-		},
+		{ id: "one", name: "First" },
 		{ id: "two", name: "Second" },
 	];
 	const response = (outputs: unknown[]) => ({
@@ -137,7 +91,6 @@ it("loads each topic once when the list contains duplicate records", async () =>
 		'BrainGetTopic(topicId=["one"]); BrainGetTopic(topicId=["two"]);',
 	);
 	expect(state.topics).toMatchObject(topics);
-	expect(state.topics[1].goals).toEqual([]);
 });
 
 it("requests optional display bodies while preserving exclusions, links and legacy text", async () => {
@@ -165,21 +118,17 @@ it("requests optional display bodies while preserving exclusions, links and lega
 			},
 		],
 	});
-	const attach = await loadThreadMessages(
+	const { messages } = await readThreadMessagesPage(
 		{ run } as unknown as InsightActions,
 		"thread",
 	);
-	const thread = createInitialCollaborationState().threads[0];
-	const command = attach(thread);
 	expect(run.mock.calls[0]?.[0]).toContain("includeDisplayBody=[true]");
-	if (command.type !== "source.import")
-		throw new Error("Expected source import");
-	expect(command.workspace?.messages?.[0]).toMatchObject({
+	expect(messages[0]).toMatchObject({
 		displayBody,
 		excluded: true,
 		webLink: "https://outlook.office.com/mail/rich",
 	});
-	expect(command.workspace?.messages?.[1]).toMatchObject({
+	expect(messages[1]).toMatchObject({
 		text: "Old server",
 		displayBody: undefined,
 	});
@@ -288,6 +237,14 @@ it("surfaces a failed mail sync instead of reporting success", async () => {
 	).rejects.toThrow("Microsoft login expired");
 });
 
+it("reads a due day saved as midnight UTC at local midnight, so it shows on that day in any zone", () => {
+	const shown = localDue("2026-11-06T00:00:00Z");
+	expect(shown).toBe("2026-11-06T00:00");
+	expect(new Date(shown ?? "").getDate()).toBe(6);
+	expect(localDue("2026-11-06T16:30:00Z")).toBe("2026-11-06T16:30:00Z");
+	expect(localDue(null)).toBeNull();
+});
+
 it("reads Brain's summary runs with generated steps and plain due days", async () => {
 	const run = vi.fn().mockResolvedValue({
 		pixelReturn: [
@@ -380,5 +337,47 @@ it("maps a server memory and drops links it does not know", () => {
 		kind: "fact",
 		state: "dismissed",
 		origin: "you",
+	});
+});
+
+describe("mapStyle", () => {
+	it("maps agreed variants and a pending proposal, and ignores malformed ones", () => {
+		const style = mapStyle({
+			summary: "Short",
+			source: "you",
+			confirmed: true,
+			examples: ["Hi", 3],
+			variants: {
+				internal: { summary: "Casual", examples: ["Hey"] },
+				external: { summary: "  " },
+			},
+			pending: {
+				summary: "Warm",
+				examples: ["Thanks"],
+				variants: { external: { summary: "Formal", examples: [] } },
+				learnedAt: "2026-10-29T10:00:00Z",
+				sample: { emails: 4, chats: 2, windowDays: 30 },
+			},
+		});
+		expect(style.examples).toEqual(["Hi"]);
+		expect(Object.keys(style.variants ?? {})).toEqual(["internal"]);
+		expect(style.pending?.variants.external?.summary).toBe("Formal");
+		expect(style.pending?.sample).toEqual({
+			emails: 4,
+			chats: 2,
+			windowDays: 30,
+		});
+	});
+
+	it("reads a profile saved before variants and proposals existed", () => {
+		const style = mapStyle({ summary: "Plain", confirmed: false });
+		expect(style).toMatchObject({
+			summary: "Plain",
+			source: "learned",
+			confirmed: false,
+			examples: [],
+			variants: {},
+			pending: null,
+		});
 	});
 });

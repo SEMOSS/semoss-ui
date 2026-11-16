@@ -46,12 +46,28 @@ Work, Brain, and Settings share the Brief's page canvas, reading width, heading
 scale, responsive spacing, and quiet card treatment. Directories retain their
 grouped rows and filters; contextual panels become drawers on narrower screens.
 
-The global landing page places one compact composer beneath its greeting and
-status links. At desktop widths, Your day and Handled sit on the left, Needs you
-in the center, and Brain on the right. The mobile reading and keyboard order is
-composer, Needs you, Brain, Your day, and Handled. Saved sessions remain available
-from the sidebar. Brain includes pending decisions, draft notes, and directory
-links. The overview has no topic filter or separate chat mode.
+The global landing page (Today) opens with its greeting over a decorative hero
+photo, shown only on wide windows in the light theme, then one compact composer
+and three starter questions. Three cards follow: Your work, Your day, and Recent
+activity, which lists the newest mail, chat, and meeting conversations with the
+files changed lately in the owner's OneDrive. A file opens in a room of its own,
+which joins the topics the file is linked to. They share
+a row on wide windows and stack in that order on narrow ones, which is also the
+reading and keyboard order. On desktop the page scrolls together with the shell
+header so the photo runs behind the search box; on smaller screens the header
+stays pinned. Saved sessions remain available from the sidebar. The overview has
+no topic filter or separate chat mode.
+
+Work, its review, and its topic index open on the same hero photo and scroll
+the same way; a route does so when `isHeroPath` lists it and its page renders
+`CollaborationHeroPage`. The sidebar lists Topics under Work and marks it on
+the index and on each topic's page. Settings shows the same topic list under
+its own tab bar, without the hero. Work shows what waits for review in a banner, then the
+owner's list as Your priorities, with views for every item, the ones with a
+next step of the owner's, and the ones waiting on someone, beside a Waiting on
+card that lists each handoff. Rows drag into order, and each row's menu moves
+it too. The review lists inferred items to add, merge, or dismiss, with a topic
+filter, Expand all, and a count of how many were handled.
 
 New conversations start from the landing composer. Settings and Files open an
 inline workbench beneath that composer without navigating away or replacing the
@@ -284,6 +300,33 @@ Source readers retain explicit attachment downloads through the existing
 Microsoft APIs. Source snapshot imports include attachment names only. Files
 chosen for a room's composer use the room's ordinary upload and submission flow.
 
+## Writing style
+
+Settings → About you holds **How you write**. Drafts use only the style the owner has confirmed; an
+unconfirmed or still-pending style never reaches the assistant, the frontend context, or the server prompt.
+
+- **Learn from my writing** starts the `BrainLearnStyle` job (followed with `BrainGetJob(kind="style")`). It samples up
+  to 50 emails from the Sent folder and the owner's own chat messages from the last 30 days, skips forwards and anything
+  the owner's Brain rules keep out, and asks the classifier model (`COLLAB_CLASSIFIER_ENGINE_ID`) to keep only messages
+  written by a person. The text model (`COLLAB_LLM_ENGINE_ID`) then returns a summary, short excerpts and internal and
+  external variants. Excerpts must be found in the named sample, and a variant needs at least three samples.
+- The result is stored as a **pending proposal** (`style.pending`). The owner edits the summary, examples, and variants,
+  then confirms it (saved with `source: "learned"`) or discards it. Only the agreed content is retained.
+- **Audience variants** follow the recipients: an email is internal when every recipient belongs to the owner's
+  organisation (`BrainOrgDomains`) and external when any recipient is outside it. Before composing an email, the assistant
+  calls `GetWritingStyle` with the recipients and uses the returned confirmed style for that audience. Pending proposals
+  are excluded; the frontend does not inject a profile/style snapshot into each request.
+- **Re-learning** is manual. Learning again replaces only the pending proposal and never overwrites the confirmed style.
+- The general summary is optional. Saving a style with no summary, examples, or variants, or pressing **Reset style**
+  (with a confirmation), removes the whole style and any proposal; drafts then use no style.
+- Style changes are saved directly and awaited (`useStyleSave`), not through the background saver. Each save sends the
+  whole style, the session takes the style the server returns (`profile.style.server`), a success toast confirms it,
+  and a failure stays visible in the form with the owner's entries kept. The proposal is written by the server alone;
+  reviewing it clears it with `pending: null`.
+- The assistant reads `GetWritingStyle` before generating an email and calling `ComposeEmail`. Generic messages,
+  Teams chats, summaries, and factual lookups do not trigger email-style retrieval. A newly saved style is available
+  on the next tool call; existing drafts retain their text until edited or regenerated.
+
 ## Routes and ownership
 
 | Routes | Feature |
@@ -292,6 +335,7 @@ chosen for a room's composer use the room's ordinary upload and submission flow.
 | `/work` | Topic overview |
 | `/work/all`, `/work/waiting`, `/work/done` | Global work lists |
 | `/topics/:topicId` | Shared topic actions, threads, sessions, and editable context |
+| `/topics/:topicId/contents` | Full-screen page for adding and removing a topic's emails and chats by hand: the Outlook folder tree, what Brain has read, and the assistant chats |
 | `/work/topic/:topicId`, `/brain/topics/:topicId` | Redirects to the shared topic workspace |
 | `/thread/:id` | Source import bridge, or saved room when the identity starts with `room:` |
 | `/brain`, `/brain/sources` | Review and source readers/imports |

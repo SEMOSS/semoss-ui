@@ -1,8 +1,8 @@
 import { Menu, Plus } from "lucide-react";
-import { useEffect, useMemo, useRef } from "react";
-import { Button, z } from "@semoss/ui/next";
-import { tryParseJson } from "@semoss/utility/json";
+import { useMemo } from "react";
+import { Button } from "@semoss/ui/next";
 import { EmptyView } from "@/components/common/empty-view";
+import { useTaskContext } from "@/features/collaboration/components/task-context";
 import { useWorkUpdates } from "@/features/collaboration/live/work-updates.context";
 import { toolMessageTimestamps } from "@/features/messages/utils/message-metadata";
 import { toolsFromMessages } from "@/features/messages/utils/thread-items";
@@ -20,6 +20,8 @@ import { ToolWorkbenchProvider } from "@/features/tools/components/tool-workbenc
 import { TOOL_WORKBENCH_COMPONENTS } from "@/features/tools/tool-workbench.components";
 import { ROOM_SETTINGS_PANEL_COMPONENTS } from "./room-settings-panel";
 import { RoomSettingsPanelContext } from "./room-settings-panel.context";
+import { ROOM_TASK_PANEL_COMPONENTS } from "./room-task-panel";
+import { RoomTaskContext } from "./room-task-panel.context";
 import { RoomWorkspace } from "./room-workspace";
 
 const ROOM_COMPONENTS = {
@@ -31,12 +33,8 @@ const ROOM_COMPONENTS = {
 	...ROOM_TEAMS_CHAT_PANEL_COMPONENTS,
 	...ROOM_THREAD_EMAIL_PANEL_COMPONENTS,
 	...ROOM_SETTINGS_PANEL_COMPONENTS,
+	...ROOM_TASK_PANEL_COMPONENTS,
 };
-
-const completedGoalResultSchema = z.object({
-	changes: z.array(z.string()),
-	topic: z.object({ id: z.string().min(1) }),
-});
 
 export function RoomView({
 	roomSession,
@@ -76,6 +74,7 @@ export function RoomView({
 	onOpenRooms,
 }: RoomViewProps) {
 	const updates = useWorkUpdates();
+	const roomTask = useTaskContext({ roomId: sessionId });
 	const handleApproveTool: RoomViewProps["onApproveTool"] = async (
 		approval,
 		parameters,
@@ -95,11 +94,6 @@ export function RoomView({
 					? parameters.topic
 					: undefined;
 		if (!topicId && !topic) return;
-		const goalId =
-			typeof parameters.completeGoalId === "string"
-				? parameters.completeGoalId.trim()
-				: "";
-		if (goalId) updates?.refreshTopicGoal({ topicId, topic }, goalId);
 		// a topic the assistant made, and emails it put in one, show without a reload
 		updates?.refreshTopic({ topicId, topic });
 	};
@@ -111,35 +105,6 @@ export function RoomView({
 		}),
 		[thread, pendingApprovals, toolStates],
 	);
-	const refreshedGoals = useRef(new Set<string>());
-	const refreshTopicGoal = updates?.refreshTopicGoal;
-	useEffect(() => {
-		if (!refreshTopicGoal) return;
-		for (const tool of Object.values(tools)) {
-			const key = `${sessionId}:${tool.id}`;
-			if (
-				tool.name !== "CompleteGoal" ||
-				tool.status !== "COMPLETED" ||
-				tool.error ||
-				refreshedGoals.current.has(key)
-			)
-				continue;
-			const result = completedGoalResultSchema.safeParse(
-				tryParseJson(tool.output ?? ""),
-			);
-			const goalId = tool.arguments.goalId;
-			if (
-				!result.success ||
-				!result.data.changes.includes("goal completed") ||
-				typeof goalId !== "string" ||
-				!goalId.trim()
-			)
-				continue;
-			refreshedGoals.current.add(key);
-			refreshTopicGoal({ topicId: result.data.topic.id }, goalId.trim());
-		}
-	}, [refreshTopicGoal, sessionId, tools]);
-
 	const workspace = session ? (
 		<RoomWorkspace
 			roomSession={roomSession}
@@ -180,7 +145,15 @@ export function RoomView({
 						key={sessionId}
 						autoReveal={false}
 						components={ROOM_COMPONENTS}
-						createLayout={createRoomConnectorLayout}
+						createLayout={(id) =>
+							createRoomConnectorLayout(
+								id,
+								true,
+								Boolean(roomTask.task),
+							)
+						}
+						// the task loads after mount; its rail joins without remounting the room
+						layoutKey={roomTask.task ? "task" : "plain"}
 						roomId={sessionId}
 						insightId={insightId}
 						tools={tools}
@@ -189,36 +162,40 @@ export function RoomView({
 						onApproveTool={handleApproveTool}
 						onRejectTool={onRejectTool}
 					>
-						<RoomConnectorsProvider session={roomSession}>
-							<RoomSettingsPanelContext.Provider
-								value={{
-									agentName: agent.name,
-									agent,
-									modelId,
-									modelName,
-									settings: roomSettings,
-									inheritedMcp: agent.mcp,
-									isReadOnly:
-										isSending || isRunning || isModelSaving,
-									isModelLocked,
-									onSave: onSaveRoomSettings,
-								}}
-							>
-								{roomSession && roomSnapshot ? (
-									<RoomEmailProvider
-										session={roomSession}
-										roomId={sessionId}
-										source={roomSnapshot.source}
-										turn={roomSnapshot.turn}
-										isReady={roomSnapshot.isReady}
-									>
-										{workspace}
-									</RoomEmailProvider>
-								) : (
-									workspace
-								)}
-							</RoomSettingsPanelContext.Provider>
-						</RoomConnectorsProvider>
+						<RoomTaskContext.Provider value={roomTask}>
+							<RoomConnectorsProvider session={roomSession}>
+								<RoomSettingsPanelContext.Provider
+									value={{
+										agentName: agent.name,
+										agent,
+										modelId,
+										modelName,
+										settings: roomSettings,
+										inheritedMcp: agent.mcp,
+										isReadOnly:
+											isSending ||
+											isRunning ||
+											isModelSaving,
+										isModelLocked,
+										onSave: onSaveRoomSettings,
+									}}
+								>
+									{roomSession && roomSnapshot ? (
+										<RoomEmailProvider
+											session={roomSession}
+											roomId={sessionId}
+											source={roomSnapshot.source}
+											turn={roomSnapshot.turn}
+											isReady={roomSnapshot.isReady}
+										>
+											{workspace}
+										</RoomEmailProvider>
+									) : (
+										workspace
+									)}
+								</RoomSettingsPanelContext.Provider>
+							</RoomConnectorsProvider>
+						</RoomTaskContext.Provider>
 					</ToolWorkbenchProvider>
 				</div>
 			) : (

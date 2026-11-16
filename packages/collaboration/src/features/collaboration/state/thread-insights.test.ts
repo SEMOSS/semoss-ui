@@ -32,7 +32,6 @@ it("applies Brain's steps while keeping edits made after the read and the owner'
 		step("local-step-9", "My unsaved reminder"),
 	];
 	state.threads[0].summaryPending = true;
-	const before = state.workspaces[id];
 	state = apply(state, {
 		type: "thread.insights",
 		threadId: id,
@@ -63,7 +62,6 @@ it("applies Brain's steps while keeping edits made after the read and the owner'
 		summaryCurrent: true,
 	});
 	expect(state.threads[0].summaryPending).toBeUndefined();
-	expect(state.workspaces[id].goal).toBe(before.goal);
 });
 it("keeps a newer summary over one read before it landed", () => {
 	const state = createInitialCollaborationState();

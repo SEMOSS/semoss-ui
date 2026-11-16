@@ -69,7 +69,9 @@ export function MailSearchForm({
 				<FormSelect name="folder" label="Folder" disabled={isLoading}>
 					{choices.map((folder) => (
 						<SelectItem key={folder.id} value={folder.id}>
-							{folder.name || "Unnamed folder"}
+							{("path" in folder && folder.path) ||
+								folder.name ||
+								"Unnamed folder"}
 						</SelectItem>
 					))}
 				</FormSelect>

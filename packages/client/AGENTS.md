@@ -39,7 +39,7 @@ Run these from `packages/client`, or use `pnpm --filter @semoss/client <command>
 
 ### Path Alias
 
-- `@/` → `./src/` (e.g. `import { useSession } from "@/hooks/use-session"`)
+- `@/` → `./src/` (e.g. `import { usePlatformTheme } from "@/hooks/use-platform-theme"`)
 
 ## Structure
 
@@ -53,18 +53,19 @@ application features; this inventory does not require moving existing features.
 | `assets/` | Images and static files |
 | `components/` | Components grouped by feature area (`project/`, `engine/`, `settings/`, …) |
 | `contexts/` | React contexts (`<name>.context.tsx`) |
-| `features/` | Application features, one folder per concern (for example `team-list/`, `team-type/`, `team-members/`, `team-resource-access/`, `group-managers/`, `bulk-access-management/`, `usage-limit-path/`, `platform-default-limit/`, `team-usage-limit/`, `model-usage-limits/`, `my-model-usage/`) |
+| `features/` | Application features, one folder per concern (for example `team-list/`, `team-type/`, `team-members/`, `team-resource-access/`, `group-managers/`, `bulk-access-management/`, `usage-limit-path/`, `platform-default-limit/`, `team-usage-limit/`, `model-usage-limits/`, `engine-app-permissions/`, `my-model-usage/`, `my-access-request/`) |
 | `hooks/` | React hooks (`use-<name>.ts`) |
 | `pages/` | Routing tree (see below) |
-| `stores/` | State owners (`assistant/`, `config/`, `designer/`, `page/`, `session/`, `workbench/`, `workspace/`) |
+| `stores/` | State owners (`assistant/`, `designer/`, `page/`, `session/`, `workbench/`, `workspace/`) |
 | `types/` | TypeScript types (`<name>.types.ts`) |
 | `utility/` | Client-specific adapters and compatibility exports; generic helpers live in `@semoss/utility` |
-| `main.tsx`, `App.tsx`, `index.css` | App entry files |
+| `main.tsx`, `app.tsx`, `index.css` | App entry files |
 
 Client `api/` modules contain application-specific requests. LinOTP login/OTP
 confirmation, file upload/download, engine-member listing, logout, and bulk
-permission changes use the owning `@semoss/sdk` APIs; logout is exposed through
-the session store. Reuse those APIs instead of restoring duplicate client wrappers.
+permission changes use the owning `@semoss/sdk` APIs; sign in, sign out and registration
+are the SDK session's `login`, `logout` and `register`. Reuse those APIs instead of
+restoring duplicate client wrappers.
 Database catalogs use paginated `MyEngines`/`AdminMyEngines` reactors. Audit reads
 and exports use the audit API builders backed by `AdminUserAuditEvents`.
 
@@ -114,7 +115,8 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   with the team view.
 - **How Usage Limits Work.** Every place a usage limit is set or shown has the shared
   `UsageLimitGuideButton` beside it, opening the guide at the section that matters there: the
-  Model Usage Limits card, the Teams table and Give a Team Access (Team Limits), the members
+  Model Usage Limits card, the Teams table and Give a Team Access (Team Limits), the Apps table
+  and Add App (What Rules Count), the members
   dialogs (No Limit Defined, Unlimited and Rules), Effective Permissions, Bulk Access Management
   (Who Sets Each Limit), a person's path sheet, the admin limit cards and the User's Total Model
   Limit fields, and My Profile's Model Usage (the person's own view). Each host passes what the
@@ -173,6 +175,50 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   the limits again. Editors see both read-only, with "Only owners can set usage limits".
   `model-usage-limits.ts` also holds the names (`MODEL_LIMIT_NAMES`) and descriptions Bulk Access
   Management uses for the same two limits.
+- **`features/my-access-request/`** shows the signed in user their own access request on an engine or a
+  project that waits for its owners' decision, below the header of the engine's or project's page
+  (`my-access-request-notice.tsx`): the level asked for, when, and the reason, with Change Request,
+  which opens the page's request dialog starting from that level and reason, and Withdraw Request
+  after a confirmation. The page's layout reads it once (`use-my-access-request.ts`, through
+  `getMyAccessRequest` and `withdrawMyAccessRequest` in `api/user-access.ts`, the pixels
+  `GetMyEngineAccessRequest`, `GetMyProjectAccessRequest`, `WithdrawMyEngineAccessRequest` and
+  `WithdrawMyProjectAccessRequest`) and hands it to the header's request button, which reads
+  Change Request while one waits. Asking again replaces the waiting request.
+- **`features/engine-app-permissions/`** is the Apps table (`engine-apps-table.tsx`) under Teams
+  on an engine's Access Control tab, and on the Apps tab of an engine in Resource Governance in
+  admin mode: the apps the engine gives a permission to, whose custom
+  reactors use the engine with it for people who have no access to the engine themselves. It
+  reads `getResourcePermissions` on the engine (`use-engine-app-permissions.ts`: `projects`,
+  `canChangeProjects`, `addsAreAdminOnly`, `canChangeModelLimits` and `costLimitsAvailable`, in
+  admin mode when the table's `admin` is set). Only the engine's editors and owners see the apps,
+  and admins in admin mode: the Access Control tab mounts the table for an editor or owner
+  only, and the backend sends anyone else an empty `projects`. It shows each app with its
+  image, name (the app's display name when it has one) and id
+  (`components/shared/resource-id.tsx`), its level, and an Ends column when an app has an end
+  date. The controls follow `canChangeProjects` from the backend, which is true for the
+  engine's owners and in admin mode, and not the page's permission: owners change a level in
+  place between Read-Only and Editor (an app is never an Author), take an app's access away
+  after a confirmation, and add one with Add App; editors see each level in a disabled select.
+  Where `addsAreAdminOnly` is set, an owner outside admin mode has no Add App and sees that only
+  admins give apps access, from admin mode, while changing and removing still work. On a model the table has a Usage Limit column: for someone who can change both the
+  apps and the model's limits the summary is the same `usage-limit-edit-button.tsx` and opens
+  `usage-limit-dialog.tsx` with `source="APP"`, whose rules are Shared by the App or For Each
+  User, and everyone else sees the summary with "Only owners can set usage limits". Every
+  change is one permission batch on the engine with one `PROJECT` change
+  (`engine-app-permissions.ts`: `toAddAppBatch`, `toAppLevelBatch`, `toAppLimitBatch` and
+  `toRemoveAppBatch`), saved at once through `savePermissionBatches`; a `CHANGE` sets the whole
+  grant, so it carries the app's level, end date and usage limit through `toSentGrant`. A saved
+  change shows a toast and reads the apps again, and a row's controls stay disabled until that
+  read lands, so the next change carries the grant as it is. A refused change shows the
+  backend's reason where the user acted: in the dialog, which stays open, or above the table
+  for a level changed in place. `add-engine-app-dialog.tsx` is Add App: the shared
+  `ProjectSelect` over the apps the user can see, or every app in admin mode, of the types the
+  catalog lists as apps (`ENGINE_APP_PROJECT_TYPES`: `CODE` and `BLOCKS`), the level, starting
+  at Read-Only, and on a model the App Limit, starting at No Limit Defined. The backend takes a
+  project of any type, and the table lists every project the engine gives a permission to. Authorize Access stays enabled: pressed
+  with no app it shows "Pick an app" under the field, and with an App Limit that is not
+  complete it shows the editor's problems, both from then on. Bulk Access Management works on
+  an engine's people and teams, and its apps are managed in this table.
 - **Nothing is lost by accident.** Load Latest Access reads the access again and keeps the
   staged changes. Both views ask before Discard Changes drops them, and
   `use-unsaved-changes-guard.ts` warns before leaving the page with changes that are not saved
@@ -183,11 +229,15 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   also act as an ordinary user. The Access Control tab, My Teams and their Bulk Access
   Management views call `/auth/permissionBatch` with the user's permissions. Admin mode calls
   `/auth/admin/permissionBatch` (each SDK call takes `admin`): Team Permissions' Bulk Access
-  Management, and the Bulk Access Management and Effective Permissions opened from an app's or
-  engine's settings page in admin mode, at
-  `settings/<app or engine type>/:id/bulk-access-management` and `.../effective-permissions`
-  (`ADMIN_ACCESS_SETTINGS_PAGES` in `settings.constants.ts`). Making a team from the people in
-  the batch is admin mode only.
+  Management, and Resource Governance's Access, Apps and Effective Permissions tabs. Admin mode
+  also calls the admin pixel or endpoint for everything else it does to someone else's engine
+  or project, since on the backend an admin has more than their own permissions only through
+  an `Admin*` reactor or `/auth/admin/...` endpoint: reading and saving the SMSS
+  (`AdminGetEngineSMSS`, `AdminGetProjectSMSS`, `auth/admin/engine/updateSmssFile`,
+  `auth/admin/project/updateSmssFile`), reading access requests
+  (`AdminGetEngineUserAccessRequest`, `AdminGetProjectUserAccessRequest`) and deleting
+  (`AdminDeleteEngine`, `AdminDeleteProject`, `AdminDeleteWorkspace`, `AdminDeleteSkill`). Making a team
+  from the people in the batch is admin mode only.
 - **Layout.** Both views and Effective Permissions open with `access-view-header.tsx` (a back
   button beside the title). Both views list the people on the left and put
   `add-people-card.tsx` on the right: the app's people, listed from the start and paged as they
@@ -247,7 +297,8 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   admins can see them.
 - **Limits that belong to no grant.** `components/settings/usage-limit-settings-card.tsx` and
   `use-stored-usage-limit.ts` edit one stored limit with Reset and Save: the General Platform Limit
-  card (`features/platform-default-limit/`) on the admin Model Settings page, each person's own rules
+  card (`features/platform-default-limit/`) on the admin Configuration page's Usage Limits tab,
+  each person's own rules
   across all models, and the admin-only Team Total card (`features/team-details/team-total-card.tsx`)
   on a team's admin page, shared rules across all models. The SDK's set calls resolve with the
   limit the backend saved, which the card shows and its editor starts again from. Save stays
@@ -283,6 +334,50 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   list with its search and scroll kept. A resource's owners may read them even before the team
   has access to it (its editors only once it does). In admin mode they are read as an admin.
 
+### Settings Page
+
+- **`pages/settings/settings-index-page.tsx`** lists a tile for each page in `SETTINGS_ROUTES`
+  under its `group`'s heading (`SETTINGS_GROUPS`: Your Account, Resources & Access, Monitoring,
+  Platform), in route order. A heading with no tile for the viewer, or none matching the search,
+  is left out. Apps and engines are managed from their catalog pages; admins manage any of them
+  in Resource Governance.
+
+### Resource Governance
+
+- **`features/resource-governance/`** is Resource Governance at `settings/resources`, for admins
+  in admin mode. An admin chooses a project or engine type at the top of the list
+  (`governance-type-select.tsx`; `GOVERNANCE_TYPES`: every project type, insights included, then
+  every engine type, from `ALL_PROJECT_TYPES` and `ALL_ENGINE_TYPES` in `utility/catalog.ts`),
+  then sees that type's resources beside the one open, as Member Settings shows members. It opens
+  on the first type in the dropdown. The list
+  reads `AdminMyProjects` with `projectType` or `AdminMyEngines` with `engineTypes`, a page at a
+  time as it scrolls (`use-governance-resources.ts`). The type, the resource and the tab are in
+  the address: `settings/resources/:type/:id?tab=`. The page scrolls rather than the details: the
+  header scrolls away, the details take the page's height, and the list stays in view beside them
+  (`GOVERNANCE_PANEL_CLASS`, sticky below the navbar).
+- **Deleting many.** Each row has a checkbox beside it, and Select all shown checks every row read
+  so far. Delete (N) confirms with `delete-governance-resources-dialog.tsx`, which names each
+  one, then deletes them one after another with the admin mode pixel each type takes
+  (`getDeleteRequest` with `admin`, through `use-delete-governance-resources.ts`), so one that
+  fails does not stop the rest. The
+  ones that could not be deleted stay checked, with the reasons in a toast. The list reads again,
+  and the open resource closes when it was deleted.
+- **The details** (`governance-resource-details.tsx`) open with the resource's logo, name, id with
+  Copy ID (`components/shared/resource-id.tsx`), type, who created it and when, and Open, which
+  opens its own page in a new tab (`getResourcePagePath`). The tabs are Access (Bulk Access
+  Management, without its back button: add many people at one access level, change or remove
+  access, and apply everything after one review), Apps for engines (the Apps table of
+  `features/engine-app-permissions/` in admin mode, where an admin gives any app a permission
+  on the engine), Effective Permissions, Requests, Visibility (the
+  settings tiles, delete included), Audit Trail (the resource's audit trail, which admins can
+  read), SMSS, and Usage Limits for models.
+- **Staged access changes are applied or discarded before moving on.** Access stays mounted on every
+  tab, so its staged changes survive a look at another tab. Opening another resource or type is a
+  move to another address, which Bulk Access Management's unsaved changes guard asks about first.
+- Bulk Access Management and Effective Permissions take `backTo` only when they open from an access
+  page. Bulk Access Management's two columns follow its own width (container queries), so it fits
+  beside the list.
+
 ### Audit Trail
 
 - **`features/audit-trail/`** is the audit trail: the admin Audit Trail at `settings/audit-trail`
@@ -299,7 +394,9 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   outcome and severity as `AuditStatusBadge` and `AuditSeverityBadge` (an icon or a dot in the
   status color beside the word). `audit-labels.ts` holds the words for the backend's event types,
   statuses, severities, categories and target types (`AuditEventType` and its siblings in SEMOSS);
-  a value it does not know is shown in words. The details sheet (`audit-event-details.tsx`) shows
+  a value it does not know is shown in words. Access SEMOSS removed because its end date passed
+  (the action `PERMISSION_EXPIRED`) reads Access Ended, and an ended place in a team reads Team
+  Membership Ended, with SEMOSS as the actor. The details sheet (`audit-event-details.tsx`) shows
   only the fields an event recorded, JSON as a tree. Enterprise Usage's Access, Settings & Limits
   tab uses the same pieces, and counts app and engine setting changes
   (`AuditEventType.SETTING_CHANGES`) beside access and usage limit changes.
@@ -365,9 +462,9 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   the text and code generation models the user's requests use, kept in their metadata as
   `text-generation-model` and `code-generation-model`. Each is a `default-model-field.tsx`, the
   shared `EngineSelect` over the models `getEngines` lists (without the EMBEDDED subtype), with No
-  default first. A pick saves at once through `setUserDefaultModel` in `api/auth.ts`
-  (`SetUserMetadata`); No default sends an empty list, which deletes the key, so a removed default
-  is gone rather than blank. A default the list no longer offers stays shown, marked unavailable,
+  default first. It reads `user.defaultModels` from `useSession`, and a pick saves at once through
+  the session's `setMetadata`, which shows it at once and puts it back when refused; No default
+  sends an empty value, which deletes the key, so a removed default is gone rather than blank. A default the list no longer offers stays shown, marked unavailable,
   so it can be removed.
 
 ### Workbench Terminal
@@ -392,6 +489,23 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
 - A workbench's cached layout replaces its default. A change to a default layout bumps the
   version at the end of that workbench's cache name (`workbench-layout--<id>--<version>`), or
   people who already opened it never see the change.
+
+### Agent Files
+
+- An agent's own files are the files in its project's `public` assets folder
+  (`AGENT_FILES_PATH`), the folder someone with only view access may read. A chat run reads them
+  in place as `agent:/<path>` and never writes them; the backend offers a run nothing else from
+  the agent's project.
+- `components/workbench/project/agent/agent-files-panel.tsx` is the Agent Files panel
+  (`AGENT_FILES_PANEL`, type `project-agent-files`), the only file panel on the agent workbench:
+  it has no project-wide Files panel, so a file cannot be uploaded where the agent would not see
+  it. The panel wraps the shared file explorer under its own type with `rootPath` set to that
+  folder (see [libs/panels/AGENTS.md](../../libs/panels/AGENTS.md)), so the folder is the
+  explorer's whole tree and uploads, renames and deletes are the explorer's. The File commands
+  in the palette drive this panel. It reads the project's top folder to learn whether the folder
+  exists: when it does not, someone who can edit the agent gets Add Files, which creates it, and
+  anyone else is told the agent has no files. The folder is never created just by opening the
+  panel.
 
 ### Database Workbench
 
@@ -509,6 +623,20 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   logo, name and id. The role decides the models offered: only `TYPESAFE` models decide, and they
   never answer, classify by chat or embed.
 
+### Catalog name in the import forms
+
+- Every engine import form keeps the catalog name under `CATALOG_NAME_KEY`
+  (`components/import/shared/import-form.constants.ts`), for every engine type. The backend
+  reserves the key (`UploadUtilities.CATALOG_NAME_KEY` in SEMOSS) and drops it from the engine
+  details before it writes the engine's smss, so no form field uses it for an engine setting. A
+  setting such as the model a Gliner or Prompt Injection guardrail loads has a key of its own
+  (`MODEL_NAME`).
+- Every engine and project create pixel takes the name as `catalogName` (`CreateModelEngine`,
+  `CreateGuardrailEngine`, `CreateProject`, `CreateNotebook`, `CreateSkill`, `CloneEngine` and the
+  rest). The file upload database pixels (`RdbmsUploadTableData`, `RdbmsUploadExcelData`,
+  `RdfLoaderSheetUpload` and the others) and `RdbmsExternalUpload` take `database`, which holds the
+  new database's name or, with `existing`, the id of the database to add to.
+
 ### Engine fields in the import forms
 
 - A field that picks another engine, such as a vector database's embeddings model or a
@@ -531,16 +659,16 @@ restart and reload on every server in a cluster.
   click or a key opened moves focus into it, and back to the button when it closes. Each menu
   lists its actions with the roles the backend lets run them:
   - `features/engine-actions/engine-actions-menu.tsx`, in the engine header
-    (`engine-tabs-layout.tsx`): Clone, Export and Restart, all for owners.
+    (`engine-tabs.layout.tsx`): Clone, Export and Restart, all for owners.
   - `features/project-actions/project-actions-menu.tsx`, in the project header
-    (`project-tabs-layout.tsx`): Clone for the project's owners and for anyone who can
+    (`project-tabs.layout.tsx`): Clone for the project's owners and for anyone who can
     see a template (`project_is_template`), the backend's `userCanCloneProject`, and Export
     for the owners of an app type (`APP_SETTINGS_TYPES`), an agent or a skill, through
     `features/app-export/use-app-export.ts`, which the Import and Export section uses too.
 - **`features/engine-export/`** exports an engine (`ExportEngine`) and downloads the zip
-  (`use-engine-export.ts`), from the menu and from the Export section of Settings. An H2
-  database asks whether to include its data: `export-engine-dialog.tsx` from the menu, a switch
-  in the Settings section.
+  (`use-engine-export.ts`), from the menu and from the Export section of Settings, with no
+  questions. The zip holds the engine's folder, so an engine that keeps its data in files, such
+  as an H2 or RDF database, comes with its data.
 - **`features/engine-clone/`** is `clone-engine-dialog.tsx`: it asks for the clone's name,
   starting from the engine's name followed by "Copy", and clones it (`CloneEngine`) into a private
   engine the user owns, with a copy of its files, settings, metadata and image. Its access is not
@@ -550,7 +678,7 @@ restart and reload on every server in a cluster.
   engine (`CloseEngine`), which stops the python process it owns, so its next use starts it with
   its current files.
 - **`features/app-python-reload/`** is the Python card in the Python and Reactors section of an
-  app's Settings (`pages/app/app-python-reactors-settings-page.tsx`). Reload Python Files
+  app's Settings (`pages/app/app-python-reactors-settings.page.tsx`). Reload Python Files
   (`ReloadProject`) clears the app modules python has cached, so the next run imports the current
   .py files without restarting python.
 
@@ -579,8 +707,11 @@ read that list:
 - **Dangerous** holds the delete, `features/resource-delete/delete-resource-card.tsx`, which
   confirms with `DeleteEntityDialog` and goes back to the catalog after; the Access Control tab
   has no delete. `use-delete-resource.ts` picks the pixel from the type
-  (`delete-request.ts`) and is shared with `SettingsTiles`, whose delete tile stays on the admin
-  settings pages.
+  (`delete-request.ts`) and is shared with `SettingsTiles`, whose delete tile is on Resource
+  Governance's Visibility tab. In admin mode (`admin`, which `SettingsTiles` takes from
+  `adminMode`) each delete is the pixel of the same name with `Admin` in front
+  (`AdminDeleteEngine`, `AdminDeleteProject`, `AdminDeleteWorkspace`, `AdminDeleteSkill`), which
+  deletes any engine or project for an admin; the ordinary pixels delete what the user owns.
 - **Every section card looks the same.** A `Card` whose `CardHeader` holds a plain `CardTitle`
   (no heading element inside it), a `CardDescription` and the card's actions in a `CardAction`
   with `self-center`. The header has `border-b` when the card has a `CardContent` below it, and
@@ -610,9 +741,20 @@ read that list:
 
 ## State Management
 
-- **Application state** is split among the existing stores, including session and config.
-  Use their owning hooks, such as `hooks/use-session.ts` and `hooks/use-config.ts`; there is
-  no `stores/root`, `stores/monolith`, or `useRootStore` entry to extend.
+- **Session and config** belong to `@semoss/sdk` (see its
+  [session guide](../../libs/sdk/skills/session.skill.md)). `main.tsx` calls
+  `Session.initialize()` once, after setting the server module and any embed sign in, and
+  `Router` waits on its status (a spinner while `INITIALIZING`); `AuthenticatedLayout` shows Retry
+  on `ERROR`, so the login and notice pages still render. Read the user
+  with `useSession`, the server config with `useConfig`, and run session pixels, uploads and
+  downloads with `useSessionInsight` (all from `@semoss/sdk/react`); the client keeps no copy of
+  either store. `usePlatformTheme` (`hooks/use-platform-theme.ts`) lays the client's theme
+  defaults under the config's theme. Workbenches seed a route's permission with
+  `Session.permissions.sync` and `refresh`; the file panels' `useAccess` reads the same
+  `Session.permissions`, so a panel and a workbench on one resource share one read and a sign in
+  or out clears both. Mount no `AccessStoreProvider`: it is deprecated and reads nothing.
+- **Other application state** is split among the existing stores; there is no `stores/root`,
+  `stores/monolith`, or `useRootStore` entry to extend.
 - **Domain state** uses its existing context/store contract. See the
   [client workbench components](./src/components/workbench/) and
   [domain stores](./src/stores/workbench/) for their owning implementations. General local-state and orchestration rules
@@ -641,7 +783,6 @@ Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling
 ### Be Cautious With
 
 - **`vite.config.ts`** — dev server, build, and test configuration.
-- **`stores/session/`** — shared session state and permission ownership affect multiple surfaces.
 
 ### Known Gotchas
 

@@ -3,7 +3,7 @@ import { UsageLimitEditButton } from "@/features/bulk-access-management/usage-li
 import { UsageLimitSummary } from "@/features/bulk-access-management/usage-limit-summary";
 
 /** Props for {@link TeamUsageLimitCell}. */
-export interface TeamUsageLimitCellProps {
+interface TeamUsageLimitCellProps {
 	/** The team's name, for the button's accessible name */
 	teamName: string;
 	/** The team's access on the model, with its limit, or null when it is not known */

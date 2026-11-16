@@ -8,7 +8,7 @@ import {
 import { getErrorMessage } from "@semoss/utility/error";
 
 /** A model's total and public use limit, and what the user may change */
-export interface ModelUsageLimits {
+interface ModelUsageLimits {
 	/** The model total, or null until it is read and after a read fails */
 	modelTotal: ModelTotal | null;
 	/** The public use limit and whether the model is public, or null until it is read */

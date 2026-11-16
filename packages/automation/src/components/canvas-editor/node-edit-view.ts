@@ -3,7 +3,7 @@ import type { AutomationJsonValue } from "../../domain/automation-workflow.types
 
 export type NodeEditorMode = "form" | "python";
 
-export interface NodePythonViewState {
+interface NodePythonViewState {
 	isCustomSource: boolean;
 	isDeveloperPython: boolean;
 	isJavaOwnedControl: boolean;
