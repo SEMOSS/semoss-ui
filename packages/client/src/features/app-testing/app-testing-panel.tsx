@@ -16,6 +16,7 @@ import {
 	zodResolver,
 } from "@semoss/ui/next";
 import { useAppFrame } from "./app-frame-registry";
+import { EngineTestConfigurationForm } from "./engine-test-configuration-form";
 import { useAppTesting } from "./use-app-testing";
 
 const schema = z.object({
@@ -53,7 +54,7 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 			name: `Recording ${new Date().toLocaleString()}`,
 			description: "",
 		});
-		state.startRecording();
+		void state.startRecording();
 	};
 	const handleSave = async ({
 		name,
@@ -92,6 +93,47 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 			aria-label="App recording and tests"
 			className="h-full overflow-y-auto bg-background p-3"
 		>
+			{state.engineConfigurationError ? (
+				<Alert variant="destructive">
+					<AlertDescription>
+						{state.engineConfigurationError}
+					</AlertDescription>
+				</Alert>
+			) : state.isLoadingEngineConfiguration ? (
+				<p className="text-muted-foreground text-sm">
+					Loading test database configuration…
+				</p>
+			) : (
+				<EngineTestConfigurationForm
+					key={`${state.engineConfiguration?.id || "new"}:${state.engineConfiguration?.updatedAt || ""}`}
+					appId={appId}
+					configuration={state.engineConfiguration}
+					isLocked={
+						state.isRecording ||
+						state.isPreparingRecording ||
+						hasDraft ||
+						state.isRunning ||
+						state.isTestDatabaseMode
+					}
+					onChanged={state.refreshEngineConfiguration}
+				/>
+			)}
+			{state.isTestDatabaseMode && (
+				<div className="mb-3 flex flex-wrap items-center gap-2 text-sm">
+					<span>Preview uses test databases</span>
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						disabled={
+							state.isRecording || state.isPreparingRecording
+						}
+						onClick={() => void state.exitTestDatabaseMode()}
+					>
+						Exit test database mode
+					</Button>
+				</div>
+			)}
 			<Form
 				form={form}
 				onSubmit={handleSave}
@@ -128,12 +170,17 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 							onClick={handleRecord}
 							disabled={
 								!state.isAccessible ||
+								state.isPreparingRecording ||
+								state.isLoadingEngineConfiguration ||
+								Boolean(state.engineConfigurationError) ||
 								hasDraft ||
 								state.isRunning ||
 								state.isSaving
 							}
 						>
-							Record
+							{state.isPreparingRecording
+								? "Preparing recording…"
+								: "Record"}
 						</Button>
 					)}
 					{(state.isRecording || hasDraft) && (
@@ -320,6 +367,13 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 				)}
 				{state.run && (
 					<div className="flex flex-col gap-2">
+						{state.run.databaseMode && (
+							<p className="text-muted-foreground text-sm">
+								{state.run.databaseMode === "TEST"
+									? "Test databases used"
+									: "App's normal database connections used"}
+							</p>
+						)}
 						{state.run.coverageWarning && (
 							<p className="text-muted-foreground text-sm">
 								{state.run.coverageWarning}

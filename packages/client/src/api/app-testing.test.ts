@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+	beginAppTestSession,
 	getAppTestRun,
 	parseAppTestRecordings,
+	parseEngineTestConfiguration,
 	runAppTests,
 	saveAppTestRecording,
 } from "./app-testing";
@@ -110,5 +112,44 @@ describe("app recording transport", () => {
 		await expect(getAppTestRun("app", "run")).rejects.toThrow(
 			"target changed",
 		);
+	});
+});
+
+describe("engine test configuration transport", () => {
+	it("distinguishes a missing profile from an invalid or wrong-target profile", () => {
+		expect(
+			parseEngineTestConfiguration("app", {
+				target: "app",
+				configuration: null,
+			}),
+		).toBeNull();
+		expect(() =>
+			parseEngineTestConfiguration("app", {
+				target: "app",
+				configuration: {},
+			}),
+		).toThrow();
+		expect(() =>
+			parseEngineTestConfiguration("app", {
+				target: "another",
+				configuration: null,
+			}),
+		).toThrow("target changed");
+	});
+	it("rejects session tokens returned for another target", async () => {
+		transport.mockResolvedValue({
+			errors: [],
+			pixelReturn: [
+				{
+					output: {
+						target: "another",
+						sessionToken: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+						configurationId: "profile",
+						expiresAt: "2026-11-17T15:00:00Z",
+					},
+				},
+			],
+		});
+		await expect(beginAppTestSession("app")).rejects.toThrow();
 	});
 });
