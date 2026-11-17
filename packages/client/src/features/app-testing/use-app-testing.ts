@@ -38,7 +38,7 @@ interface AppTestingState {
 	startRecording: () => void;
 	stopRecording: () => void;
 	addCheck: () => void;
-	save: (name: string) => Promise<void>;
+	save: (name: string, description: string) => Promise<void>;
 	startRun: (repeat?: number) => Promise<void>;
 	refreshRun: () => Promise<void>;
 	discard: () => void;
@@ -216,7 +216,7 @@ export const useAppTesting = (
 		recorder.current?.addCheck();
 	};
 
-	const save = async (name: string): Promise<void> => {
+	const save = async (name: string, description: string): Promise<void> => {
 		if (weakSteps > 0) {
 			throw new Error(
 				`${weakSteps} step${weakSteps === 1 ? " has" : "s have"} no unique data-testid. Ask the assistant to add test ids to those elements, then record again.`,
@@ -228,6 +228,7 @@ export const useAppTesting = (
 		try {
 			const result = await saveAppTestRecording(appId, {
 				name,
+				description,
 				startPath,
 				steps,
 			});

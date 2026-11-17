@@ -4,6 +4,7 @@ import {
 	Button,
 	Form,
 	FormInput,
+	FormTextarea,
 	Select,
 	SelectContent,
 	SelectItem,
@@ -23,6 +24,11 @@ const schema = z.object({
 		.trim()
 		.min(1, "Name is required")
 		.max(80, "Use at most 80 characters"),
+	description: z
+		.string()
+		.trim()
+		.min(1, "Describe the workflow and expected outcome")
+		.max(2000, "Use at most 2000 characters"),
 });
 
 interface AppTestingPanelProps {
@@ -36,21 +42,25 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 	const state = useAppTesting(appId, frame);
 	const form = useForm<z.infer<typeof schema>>({
 		resolver: zodResolver(schema),
-		defaultValues: { name: "" },
+		defaultValues: { name: "", description: "" },
 	});
 	const hasDraft = state.steps.length > 0;
 	const checkCount = state.steps.filter((step) =>
 		step.type.startsWith("ASSERT_"),
 	).length;
 	const handleRecord = (): void => {
-		form.reset({ name: `Recording ${new Date().toLocaleString()}` });
+		form.reset({
+			name: `Recording ${new Date().toLocaleString()}`,
+			description: "",
+		});
 		state.startRecording();
 	};
 	const handleSave = async ({
 		name,
+		description,
 	}: z.infer<typeof schema>): Promise<void> => {
 		try {
-			await state.save(name);
+			await state.save(name, description);
 		} catch (failure: unknown) {
 			form.setError("root.server", {
 				type: "server",
@@ -63,6 +73,9 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 	};
 	const error = state.error || form.formState.errors.root?.server?.message;
 	const summary = state.run?.summary;
+	const selectedDescription = state.recordings.find(
+		(recording) => recording.id === state.selectedId,
+	)?.description;
 	const runLabels: Record<string, string> = {
 		RUNNING: "Running",
 		QUEUED: "Queued",
@@ -206,6 +219,11 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 						</>
 					)}
 				</div>
+				{!state.isRecording && !hasDraft && selectedDescription && (
+					<p className="whitespace-pre-wrap text-muted-foreground text-sm">
+						{selectedDescription}
+					</p>
+				)}
 				{!frame ? (
 					<p className="text-muted-foreground text-sm">
 						Open the App preview to record a workflow.
@@ -238,6 +256,16 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 								name="name"
 								label="Recording name"
 								required
+								disabled={state.isSaving}
+							/>
+						</div>
+						<div className="w-full">
+							<FormTextarea
+								name="description"
+								label="Test description (required)"
+								description="Describe the workflow and the expected result this test verifies."
+								required
+								maxLength={2000}
 								disabled={state.isSaving}
 							/>
 						</div>

@@ -28,6 +28,8 @@ export interface AppTestStep {
 export interface AppTestRecording {
 	id: string;
 	name: string;
+	/** The workflow and expected behavior this test verifies. */
+	description: string;
 	startPath: string;
 	steps: AppTestStep[];
 	version: number;
@@ -37,7 +39,7 @@ export interface AppTestRecording {
 /** Unsaved browser actions and explicit outcome checks. */
 export type AppTestDraft = Pick<
 	AppTestRecording,
-	"name" | "startPath" | "steps"
+	"name" | "description" | "startPath" | "steps"
 >;
 
 /** The subset of the runner report displayed in the app viewer. */
@@ -51,6 +53,7 @@ export interface AppTestRun {
 	error?: string;
 	tests?: {
 		name: string;
+		description?: string;
 		status: string;
 		reason?: string;
 		classification?: string;

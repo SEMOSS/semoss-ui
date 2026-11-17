@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	getAppTestRun,
+	parseAppTestRecordings,
 	runAppTests,
 	saveAppTestRecording,
 } from "./app-testing";
@@ -13,6 +14,8 @@ describe("app recording transport", () => {
 	it("sends an explicit app ID and escaped recording values", async () => {
 		const draft = {
 			name: 'A "quoted" workflow',
+			description:
+				'Click Save and check "Saved" appears.\nKeep the expected outcome.',
 			startPath: "",
 			steps: [
 				{
@@ -35,7 +38,8 @@ describe("app recording transport", () => {
 				},
 			],
 		});
-		await saveAppTestRecording("edited-app", draft);
+		const result = await saveAppTestRecording("edited-app", draft);
+		expect(result.description).toBe(draft.description);
 		expect(transport.mock.calls[0][0]).toContain('project=["edited-app"]');
 		expect(transport.mock.calls[0][0]).toContain(JSON.stringify([draft]));
 	});
@@ -47,10 +51,35 @@ describe("app recording transport", () => {
 		await expect(
 			saveAppTestRecording("app", {
 				name: "Draft",
+				description: "Verify that the draft can be saved.",
 				startPath: "",
 				steps: [],
 			}),
 		).rejects.toThrow("Permission denied");
+	});
+	it("retains descriptions when listing tests and accepts older server responses", () => {
+		const recording = {
+			id: "recording",
+			name: "Save",
+			startPath: "",
+			steps: [],
+			version: 1,
+			updatedAt: "2026-11-17T12:00:00Z",
+			description: "Check saving an entry.",
+		};
+		expect(
+			parseAppTestRecordings("app", {
+				target: "app",
+				recordings: [recording],
+			})[0].description,
+		).toBe(recording.description);
+		const { description: _description, ...legacy } = recording;
+		expect(
+			parseAppTestRecordings("app", {
+				target: "app",
+				recordings: [legacy],
+			})[0].description,
+		).toBe("");
 	});
 	it("never requests a mock scenario when starting a real run", async () => {
 		transport.mockResolvedValue({

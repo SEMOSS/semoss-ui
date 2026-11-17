@@ -33,6 +33,7 @@ const stepSchema = z.object({
 const recordingSchema = z.object({
 	id: z.string(),
 	name: z.string(),
+	description: z.string().default(""),
 	startPath: z.string(),
 	steps: z.array(stepSchema),
 	version: z.number(),
@@ -63,6 +64,7 @@ const runSchema = z.object({
 		.array(
 			z.object({
 				name: z.string(),
+				description: z.string().optional(),
 				status: z.string(),
 				reason: z.string().optional(),
 				classification: z.string().optional(),
