@@ -52,9 +52,8 @@ export interface TwinProfile {
 }
 
 /**
- * A create that made the twin but could not finish setting it up. The server
- * refuses a second twin, so the caller saves the rest as an edit of `twinId`
- * instead of creating again.
+ * A create that made the twin but could not finish setting it up. The caller
+ * finishes `twinId` on retry instead of creating a duplicate.
  */
 export class TwinSetupError extends Error {
 	readonly twinId: string;
@@ -77,7 +76,7 @@ const TWIN_FILTER = {
 };
 const MY_TWIN_PIXEL = pixel("MyProjects", {
 	...TWIN_FILTER,
-	// 1 is owner: the twin this person created and still owns
+	// 1 is owner: the twins this person created and still owns
 	effectivePermissions: 1,
 	createdByMe: true,
 });
@@ -112,7 +111,7 @@ async function listTwinTop(
 }
 
 // What is still on its way into each twin. A twin's list of sources is read, changed and saved whole, so
-// one change at a time; a person has one twin, so this holds one entry.
+// one change at a time per twin.
 const TWIN_QUEUES = new Map<string, Promise<unknown>>();
 
 /** Run after everything already queued for the twin, whether or not that worked. */
@@ -152,31 +151,53 @@ async function readTwinSources(
 	return sources.success ? sources.data : {};
 }
 
-/** The signed-in person's own twin, or null when they have none. */
+/** All twins the signed-in person created and still owns. */
+async function listMyTwins(actions: InsightActions): Promise<DigitalTwin[]> {
+	return (await callPixel(actions, MY_TWIN_PIXEL, projectListSchema)).map(
+		toTwin,
+	);
+}
+
+/** An owned twin by id; older links without an id work only when there is at most one. */
 export async function getMyTwin(
 	actions: InsightActions,
+	twinId?: string,
 ): Promise<DigitalTwin | null> {
-	const [row] = await callPixel(actions, MY_TWIN_PIXEL, projectListSchema);
-	return row ? toTwin(row) : null;
+	const twins = await listMyTwins(actions);
+	if (twinId !== undefined) {
+		const twin = twins.find((entry) => entry.id === twinId);
+		if (!twin)
+			throw new Error(
+				"This Digital Twin is unavailable or is not yours to manage.",
+			);
+		return twin;
+	}
+	if (twins.length > 1) {
+		throw new Error(
+			"You have more than one Digital Twin. Go back to Digital Twins and choose one.",
+		);
+	}
+	return twins[0] ?? null;
 }
 
 /** The signed-in person's own twin with its full configuration, or null when they have none. */
-export async function getMyTwinAgent(actions: InsightActions) {
-	const twin = await getMyTwin(actions);
+export async function getMyTwinAgent(actions: InsightActions, twinId?: string) {
+	const twin = await getMyTwin(actions, twinId);
 	return twin ? getAgent(actions, twin.id) : null;
 }
 
-/** The signed-in person's own twin, and the twins other people shared with them. */
+/** The signed-in person's own twins, and the twins other people shared with them. */
 export async function listTwins(
 	actions: InsightActions,
-): Promise<{ mine: DigitalTwin | null; shared: DigitalTwin[] }> {
+): Promise<{ mine: DigitalTwin[]; shared: DigitalTwin[] }> {
 	const [mine, all] = await Promise.all([
-		getMyTwin(actions),
+		listMyTwins(actions),
 		callPixel(actions, TWINS_PIXEL, projectListSchema),
 	]);
+	const mineIds = new Set(mine.map((twin) => twin.id));
 	return {
 		mine,
-		shared: all.filter((row) => row.project_id !== mine?.id).map(toTwin),
+		shared: all.filter((row) => !mineIds.has(row.project_id)).map(toTwin),
 	};
 }
 

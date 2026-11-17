@@ -2,10 +2,9 @@ import { CalendarClock, House, Layers, Tags, UsersRound } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { cn, Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 import { ChatHistoryList } from "@/features/dashboard/chat-history-list";
-import { selectToday } from "@/features/dashboard/today-selectors";
+import { useDueToday } from "@/features/dashboard/use-due-today";
 import { RoutineRecentRuns } from "@/features/routines/routine-recent-runs";
 import { lexicon } from "@/lib/lexicon";
-import { useCollaborationSession } from "../state/collaboration-session.context";
 import {
 	CollaborationNavigationHeader,
 	type NavigationToggle,
@@ -34,8 +33,8 @@ export function CollaborationNavigation({
 	onNavigate,
 	toggle,
 }: CollaborationNavigationProps) {
-	const { state } = useCollaborationSession();
 	const { pathname } = useLocation();
+	const dueToday = useDueToday();
 	// filing and setup stay reachable from Settings and search; Topics sits under Work because the owner
 	// opens it often, and Routines stays here because it is the proactive part
 	const links = [
@@ -44,7 +43,7 @@ export function CollaborationNavigation({
 			label: lexicon.today,
 			icon: House,
 			// only what is due today, so the badge stays meaningful
-			count: selectToday(state).due,
+			count: dueToday,
 			isActive: pathname === "/",
 		},
 		{

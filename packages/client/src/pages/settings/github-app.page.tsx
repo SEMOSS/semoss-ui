@@ -14,7 +14,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Navigate, useSearchParams } from "react-router";
 import { useTranslation } from "@semoss/i18n";
-import { Env, useSession } from "@semoss/sdk/react";
+import { Env, getCsrfHeaders, useSession } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -282,6 +282,7 @@ export const GitHubAppPage = () => {
 				credentials: "include",
 				headers: {
 					Accept: "application/json",
+					...(await getCsrfHeaders()),
 				},
 			});
 

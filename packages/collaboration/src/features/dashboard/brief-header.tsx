@@ -5,7 +5,7 @@ import { useDashboard } from "./dashboard.context";
 import { dashboardTimeZone, eventStart, isAllDay } from "./dashboard-calendar";
 import { dayKey } from "./dashboard-selectors";
 import { MailCheckStatus } from "./mail-check-status";
-import { selectToday } from "./today-selectors";
+import { useDueToday } from "./use-due-today";
 
 /** One line: what is due today and when the next meeting starts. */
 export function BriefHeader() {
@@ -33,7 +33,7 @@ export function BriefHeader() {
 			: hour < 18
 				? "Good afternoon"
 				: "Good evening";
-	const { due } = selectToday(state, now);
+	const due = useDueToday(now);
 	const next = (calendar.data ?? [])
 		.flatMap((event) => {
 			const start = eventStart(event);

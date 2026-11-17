@@ -1,24 +1,34 @@
-import { CheckCircle2, ChevronRight, Circle, Clock } from "lucide-react";
-import { type ReactNode, useEffect, useState } from "react";
+import { ChevronRight } from "lucide-react";
+import {
+	type FormEvent,
+	type ReactNode,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 import { Link } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
-import { cn, P, Progress, Small } from "@semoss/ui/next";
+import { Button, cn, Input, P, Progress, Small, toast } from "@semoss/ui/next";
 import { OutlookIcon, TeamsIcon } from "@/components/common/app-icons";
 import { pixel } from "@/lib/pixel";
 import { threadPath } from "@/lib/workspace-paths";
+import { updateWorkItem, type WorkItemChange } from "../api/work-items";
+import {
+	addWorkStep,
+	updateWorkStep,
+	type WorkStepChange,
+} from "../api/work-steps";
 import { runBatch } from "../live/live-state";
-import { PersonAvatar } from "./person-avatar";
+import { threadPeople } from "../state/collaboration.selectors";
+import {
+	useCollaborationSession,
+	useWorkChanged,
+} from "../state/collaboration-session.context";
+import { offerStepUndo } from "../work-item-actions";
+import { TaskItemControls } from "./task-item-controls";
+import { type TaskStep, TaskStepRow, toTaskStep } from "./task-step-row";
 
 type Row = Record<string, unknown>;
-
-interface TaskStep {
-	id: string;
-	text: string;
-	kind: string;
-	status: string;
-	assigneeId: string;
-	assigneeName: string;
-}
 
 interface TaskThread {
 	id: string;
@@ -29,6 +39,10 @@ interface TaskThread {
 interface TaskView {
 	id: string;
 	title: string;
+	status: string;
+	due: string;
+	priority: string;
+	ongoing: boolean;
 	steps: TaskStep[];
 	threads: TaskThread[];
 	timeline: { id: string; text: string }[];
@@ -47,41 +61,89 @@ async function loadTask(
 		pixel("WorkListMyWork"),
 	])) as Row[];
 	const selfId = str(list?.selfId);
-	const taskId =
+	let taskId =
 		key.taskId ??
 		str(
 			rows(list?.workItems).find((i) => str(i.roomId) === key.roomId)?.id,
 		);
+	if (!taskId && key.roomId) {
+		// a finished item is not in the open list; its room still belongs to it
+		const [all] = (await runBatch(actions, [
+			pixel("WorkListMyWork", { status: "all" }),
+		])) as Row[];
+		taskId = str(
+			rows(all?.workItems).find((i) => str(i.roomId) === key.roomId)?.id,
+		);
+	}
 	if (!taskId) return null;
 	const [work] = (await runBatch(actions, [
 		pixel("WorkGetWork", { taskId }),
 	])) as Row[];
+	const threads = rows(work?.threads).map((t) => ({
+		id: str(t.threadId),
+		subject: str(t.subject) || "(no subject)",
+		source: str(t.source),
+	}));
 	return {
 		id: taskId,
 		title: str(work?.title),
+		status: str(work?.status),
+		due: str(work?.due),
+		priority: str(work?.priority),
+		ongoing: work?.ongoing === true,
 		selfId,
-		steps: rows(work?.steps).map((s) => ({
-			id: str(s.id),
-			text: str(s.text),
-			kind: str(s.kind),
-			status: str(s.status),
-			assigneeId: str(s.assigneeId),
-			assigneeName: str(s.assigneeName),
-		})),
-		threads: rows(work?.threads).map((t) => ({
-			id: str(t.threadId),
-			subject: str(t.subject) || "(no subject)",
-			source: str(t.source),
-		})),
+		steps: rows(work?.steps).map((row) => {
+			const step = toTaskStep(row);
+			const subject = threads.find(
+				(t) => t.id === step.threadId,
+			)?.subject;
+			return subject ? { ...step, threadSubject: subject } : step;
+		}),
+		threads,
 		timeline: rows(work?.timeline)
 			.slice(0, 5)
 			.map((u) => ({ id: str(u.id), text: str(u.text) })),
 	};
 }
 
-/** The task a room belongs to (or the task itself): steps, threads and updates. */
-export function useTaskContext(key: { taskId?: string; roomId?: string }) {
+/** The owner's changes to a task's steps; each saves, then the task is read again. */
+export interface TaskStepActions {
+	change: (stepId: string, change: WorkStepChange) => void;
+	add: (text: string) => void;
+	/** A change is being saved. */
+	isBusy: boolean;
+	/** Why the last change did not save, or "". */
+	error: string;
+}
+
+/** The owner's changes to the work item itself; each saves, then the task is read again. */
+export interface TaskItemActions {
+	change: (change: WorkItemChange) => void;
+	/** A change is being saved. */
+	isBusy: boolean;
+	/** Why the last change did not save, or "". */
+	error: string;
+}
+
+/** What {@link useTaskContext} gives a view. */
+export interface TaskContext {
+	task: TaskView | null;
+	loading: boolean;
+	error: string;
+	steps: TaskStepActions;
+	item: TaskItemActions;
+}
+
+/** The task a room belongs to (or the task itself): steps, threads and updates, and the owner's step changes. */
+export function useTaskContext(key: {
+	taskId?: string;
+	roomId?: string;
+}): TaskContext {
 	const { actions } = useInsight();
+	const { workVersion, markWorkChanged } = useWorkChanged();
+	// the version this view's own change made, whose reload it has already done
+	const ownVersion = useRef(-1);
+	const seenVersion = useRef(workVersion);
 	const { taskId, roomId } = key;
 	const current = `${taskId ?? ""}|${roomId ?? ""}`;
 	// results are tagged with their key so a new room never shows the last room's task
@@ -90,7 +152,16 @@ export function useTaskContext(key: { taskId?: string; roomId?: string }) {
 		task: TaskView | null;
 		error: string;
 	} | null>(null);
+	const [saving, setSaving] = useState({
+		isBusy: false,
+		error: "",
+		from: "" as "" | "steps" | "item",
+	});
 	useEffect(() => {
+		// another view changed work (this view's own change was read again when it saved)
+		const isNewVersion = seenVersion.current !== workVersion;
+		seenVersion.current = workVersion;
+		if (isNewVersion && ownVersion.current === workVersion) return;
 		let live = true;
 		const key = `${taskId ?? ""}|${roomId ?? ""}`;
 		loadTask(actions, { taskId, roomId })
@@ -107,12 +178,99 @@ export function useTaskContext(key: { taskId?: string; roomId?: string }) {
 		return () => {
 			live = false;
 		};
-	}, [actions, taskId, roomId]);
+	}, [actions, taskId, roomId, workVersion]);
 	const fresh = result?.key === current ? result : null;
+	// saves a change, then reads the task again; the result is tagged, so one for another room is ignored
+	const save = (
+		from: "steps" | "item",
+		work: Promise<void>,
+		onSaved?: () => void,
+	) => {
+		setSaving({ isBusy: true, error: "", from });
+		work.then(() => loadTask(actions, { taskId, roomId })).then(
+			(task) => {
+				setSaving({ isBusy: false, error: "", from });
+				setResult({ key: current, task, error: "" });
+				// the list and the cards read their own copy of work
+				ownVersion.current = markWorkChanged();
+				onSaved?.();
+			},
+			(e) =>
+				setSaving({
+					isBusy: false,
+					error: e instanceof Error ? e.message : String(e),
+					from,
+				}),
+		);
+	};
+	// a failure shows where the change was made
+	const errorFor = (from: "steps" | "item") =>
+		saving.from === from ? saving.error : "";
+	const openTaskId = fresh?.task?.id;
 	return {
 		task: fresh?.task ?? null,
 		loading: !fresh,
 		error: fresh?.error ?? "",
+		steps: {
+			change: (stepId, change) =>
+				save("steps", updateWorkStep(actions, stepId, change), () =>
+					offerStepUndo(change, () =>
+						save(
+							"steps",
+							updateWorkStep(actions, stepId, {
+								status: "open",
+								// "not mine" was only the reason it was set aside
+								note:
+									change.note === undefined ? undefined : "",
+							}),
+						),
+					),
+				),
+			add: (text) => {
+				if (openTaskId)
+					save("steps", addWorkStep(actions, openTaskId, text));
+			},
+			isBusy: saving.isBusy,
+			error: errorFor("steps"),
+		},
+		item: {
+			change: (change) => {
+				if (!openTaskId) return;
+				save(
+					"item",
+					updateWorkItem(actions, openTaskId, change),
+					() => {
+						if (
+							change.status === "done" ||
+							change.status === "dropped"
+						)
+							toast(
+								change.status === "done"
+									? "Work item marked done."
+									: "Work item dropped.",
+								{
+									action: {
+										label: "Undo",
+										onClick: () =>
+											save(
+												"item",
+												updateWorkItem(
+													actions,
+													openTaskId,
+													{
+														status: "active",
+													},
+												),
+											),
+									},
+								},
+							);
+					},
+				);
+			},
+			isBusy: saving.isBusy,
+			error: errorFor("item"),
+		},
 	};
 }
 
@@ -143,63 +301,30 @@ function Section({
 	);
 }
 
-function StepRow({
-	step,
-	state,
-}: {
-	step: TaskStep;
-	state: "mine" | "waiting" | "done";
-}) {
-	const Icon =
-		state === "done" ? CheckCircle2 : state === "waiting" ? Clock : Circle;
-	return (
-		<li className="flex items-start gap-2.5 px-3 py-2">
-			<Icon
-				aria-hidden="true"
-				className={cn(
-					"mt-0.5 size-4 shrink-0",
-					state === "done" && "text-success",
-					state === "mine" && "text-primary",
-					state === "waiting" && "text-muted-foreground",
-				)}
-			/>
-			<div className="min-w-0 flex-1 text-sm">
-				<span
-					className={cn(
-						"break-words",
-						state === "done" &&
-							"text-muted-foreground line-through decoration-muted-foreground/40",
-					)}
-				>
-					{step.text}
-				</span>
-				{state === "waiting" ? (
-					<span className="mt-1 flex items-center gap-1.5 text-muted-foreground text-xs">
-						{step.assigneeName ? (
-							<PersonAvatar
-								name={step.assigneeName}
-								className="size-4 text-[0.5rem]"
-							/>
-						) : null}
-						Waiting on {step.assigneeName || "someone"}
-					</span>
-				) : null}
-			</div>
-		</li>
-	);
-}
-
 function StepList({
 	steps,
 	state,
+	selfId,
+	actions,
 }: {
 	steps: TaskStep[];
 	state: "mine" | "waiting" | "done";
+	selfId: string;
+	actions?: TaskStepActions;
 }) {
+	const { state: session } = useCollaborationSession();
 	return (
 		<ul className="divide-y divide-border overflow-hidden rounded-lg border bg-background">
 			{steps.map((s) => (
-				<StepRow key={s.id} step={s} state={state} />
+				<TaskStepRow
+					key={s.id}
+					step={s}
+					state={state}
+					selfId={selfId}
+					people={threadPeople(session, s.threadId)}
+					onChange={actions?.change}
+					isBusy={actions?.isBusy}
+				/>
 			))}
 		</ul>
 	);
@@ -209,6 +334,10 @@ interface TaskContextViewProps {
 	task: TaskView;
 	/** Show the task name (the room and page headers already do). */
 	showTitle?: boolean;
+	/** The owner's step changes (from {@link useTaskContext}); without them the steps are read-only. */
+	steps?: TaskStepActions;
+	/** The owner's changes to the work item itself; without them the item is read-only. */
+	item?: TaskItemActions;
 	/** Open a thread beside the chat; without it a thread is a link. */
 	onOpenThread?: (thread: TaskThread) => void;
 	className?: string;
@@ -218,9 +347,20 @@ interface TaskContextViewProps {
 export function TaskContextView({
 	task,
 	showTitle,
+	steps,
+	item,
 	onOpenThread,
 	className,
 }: TaskContextViewProps) {
+	const [newStep, setNewStep] = useState("");
+	const [showRemoved, setShowRemoved] = useState(false);
+	const handleAdd = (event: FormEvent) => {
+		event.preventDefault();
+		const text = newStep.trim();
+		if (!text) return;
+		steps?.add(text);
+		setNewStep("");
+	};
 	const open = task.steps.filter(
 		(s) => s.status === "open" || s.status === "waiting",
 	);
@@ -232,6 +372,7 @@ export function TaskContextView({
 	);
 	const mine = open.filter((s) => !waiting.includes(s));
 	const done = task.steps.filter((s) => s.status === "done");
+	const removed = task.steps.filter((s) => s.status === "dropped");
 	const total = open.length + done.length;
 	return (
 		<div className={cn("space-y-5 p-4", className)}>
@@ -256,18 +397,65 @@ export function TaskContextView({
 					) : null}
 				</div>
 			) : null}
+			{item ? (
+				<div className="space-y-2">
+					<TaskItemControls
+						item={task}
+						onChange={item.change}
+						isBusy={item.isBusy}
+					/>
+					{item.error ? (
+						<P role="alert" className="text-destructive text-sm">
+							That change was not saved: {item.error}
+						</P>
+					) : null}
+				</div>
+			) : null}
 			<Section title="Your steps" count={mine.length}>
 				{mine.length ? (
-					<StepList steps={mine} state="mine" />
+					<StepList
+						steps={mine}
+						state="mine"
+						selfId={task.selfId}
+						actions={steps}
+					/>
 				) : (
 					<P className="text-muted-foreground text-sm">
 						Nothing left for you.
 					</P>
 				)}
+				{steps ? (
+					<form className="flex gap-2" onSubmit={handleAdd}>
+						<Input
+							aria-label="Add a step"
+							placeholder="Add a step"
+							value={newStep}
+							onChange={(event) => setNewStep(event.target.value)}
+						/>
+						<Button
+							type="submit"
+							size="sm"
+							variant="outline"
+							disabled={steps.isBusy || !newStep.trim()}
+						>
+							Add
+						</Button>
+					</form>
+				) : null}
+				{steps?.error ? (
+					<P role="alert" className="text-destructive text-sm">
+						That change was not saved: {steps.error}
+					</P>
+				) : null}
 			</Section>
 			{waiting.length ? (
 				<Section title="Waiting on others" count={waiting.length}>
-					<StepList steps={waiting} state="waiting" />
+					<StepList
+						steps={waiting}
+						state="waiting"
+						selfId={task.selfId}
+						actions={steps}
+					/>
 				</Section>
 			) : null}
 			{task.threads.length ? (
@@ -340,9 +528,74 @@ export function TaskContextView({
 					</ol>
 				</Section>
 			) : null}
+			{removed.length ? (
+				<section aria-label="Removed steps">
+					<button
+						type="button"
+						aria-expanded={showRemoved}
+						onClick={() => setShowRemoved((v) => !v)}
+						className="flex items-center gap-2 rounded-sm text-muted-foreground text-sm hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+					>
+						<ChevronRight
+							aria-hidden="true"
+							className={cn(
+								"size-4 transition-transform motion-reduce:transition-none",
+								showRemoved && "rotate-90",
+							)}
+						/>
+						Removed steps ({removed.length})
+					</button>
+					{showRemoved ? (
+						<ul className="mt-2 divide-y divide-border overflow-hidden rounded-lg border bg-background">
+							{removed.map((s) => (
+								<li
+									key={s.id}
+									className="flex items-start gap-2.5 px-3 py-2 text-sm"
+								>
+									<div className="min-w-0 flex-1">
+										<span className="break-words text-muted-foreground line-through decoration-muted-foreground/40">
+											{s.text}
+										</span>
+										{s.note === "not mine" ? (
+											<span className="mt-1 block text-muted-foreground text-xs">
+												Set aside: not mine
+											</span>
+										) : null}
+									</div>
+									{steps ? (
+										<Button
+											type="button"
+											size="sm"
+											variant="outline"
+											disabled={steps.isBusy}
+											aria-label={`Put back: ${s.text}`}
+											onClick={() =>
+												steps.change(s.id, {
+													status: "open",
+													note:
+														s.note === "not mine"
+															? ""
+															: undefined,
+												})
+											}
+										>
+											Put back
+										</Button>
+									) : null}
+								</li>
+							))}
+						</ul>
+					) : null}
+				</section>
+			) : null}
 			{done.length ? (
 				<Section title="Done" count={done.length}>
-					<StepList steps={done} state="done" />
+					<StepList
+						steps={done}
+						state="done"
+						selfId={task.selfId}
+						actions={steps}
+					/>
 				</Section>
 			) : null}
 		</div>

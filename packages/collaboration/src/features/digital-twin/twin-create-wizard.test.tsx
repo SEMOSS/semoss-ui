@@ -193,6 +193,44 @@ async function reachKnowledge(user: User) {
 const create = (user: User) =>
 	user.click(screen.getByRole("button", { name: "Create Digital Twin" }));
 
+it("creates a skill during setup and carries its selection and name through review into the twin", async () => {
+	answers.CreateSkill = { project_id: "skill-new", name: "Brief replies" };
+	const { user } = renderWizard();
+	await user.type(nameField(), "Robin Twin");
+	await user.click(next("Voice"));
+	await user.click(next("Abilities"));
+	await user.click(screen.getByRole("button", { name: "Create skill" }));
+	const dialog = within(screen.getByRole("dialog", { name: "Create skill" }));
+	await user.type(
+		dialog.getByLabelText("Skill name (required)"),
+		"Brief replies",
+	);
+	await user.type(
+		dialog.getByLabelText("Description (required)"),
+		"For questions",
+	);
+	await user.type(
+		dialog.getByLabelText("Skill instructions (required)"),
+		"Use three bullets.",
+	);
+	await user.click(dialog.getByRole("button", { name: "Create skill" }));
+	expect(
+		await screen.findByRole("button", { name: "View Brief replies" }),
+	).toBeVisible();
+	expect(ran()).toEqual(["CreateSkill"]);
+	expect(next("Knowledge")).toBeVisible();
+	await user.click(next("Knowledge"));
+	await user.click(next("Review"));
+	expect(reviewOf("Skills and toolboxes")).toHaveTextContent("Brief replies");
+	await create(user);
+	await vi.waitFor(() => expect(ran()).toContain("AddDigitalTwin"));
+	expect(
+		insight.actions.run.mock.calls.find(([statement]) =>
+			String(statement).startsWith("AddDigitalTwin"),
+		)?.[0],
+	).toContain('skills=["skill-new"]');
+});
+
 it("starts on who the twin is, one step of five, with nothing sent or read", () => {
 	renderWizard();
 	expect(
@@ -462,13 +500,16 @@ it("makes the twin step by step once the review is confirmed, copies in what was
 	);
 	expect(
 		screen.getByRole("link", { name: "Add to what it knows" }),
-	).toHaveAttribute("href", "/twins/mine/contents");
+	).toHaveAttribute("href", "/twins/mine/contents?twinId=twin-1");
 	expect(screen.getByRole("link", { name: "Chat with it" })).toHaveAttribute(
 		"href",
 		"/twins/chat?agentId=twin-1",
 	);
 	const share = screen.getByRole("link", { name: "Share it with people" });
-	expect(share).toHaveAttribute("href", "/twins/mine?tab=people");
+	expect(share).toHaveAttribute(
+		"href",
+		"/twins/mine?twinId=twin-1&tab=people",
+	);
 	expect(onOpenSettings).not.toHaveBeenCalled();
 	await user.click(share);
 	expect(onOpenSettings).toHaveBeenCalledOnce();
@@ -585,13 +626,15 @@ it("says which chosen item could not be added, and on the next try copies only t
 });
 
 it("keeps a refused create a create, so it can be tried again", async () => {
-	answers.AddDigitalTwin = new Error("You already have a Digital Twin");
+	answers.AddDigitalTwin = new Error(
+		"You are not allowed to create an agent",
+	);
 	const { user } = renderWizard();
 	await reachKnowledge(user);
 	await user.click(next("Review"));
 	await create(user);
 	expect(await screen.findByRole("alert")).toHaveTextContent(
-		/^You already have a Digital Twin$/,
+		/^You are not allowed to create an agent$/,
 	);
 	expect(
 		screen.getByRole("button", { name: "Create Digital Twin" }),

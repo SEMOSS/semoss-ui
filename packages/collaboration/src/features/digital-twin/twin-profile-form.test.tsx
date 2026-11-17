@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
@@ -35,7 +35,8 @@ beforeEach(() => {
 	};
 	insight.actions.run.mockReset();
 	insight.actions.run.mockImplementation(async (statement: string) => {
-		const answer = answers[statement.slice(0, statement.indexOf("("))];
+		const answer =
+			await answers[statement.slice(0, statement.indexOf("("))];
 		if (answer instanceof Error) throw answer;
 		return {
 			pixelReturn: [
@@ -98,6 +99,110 @@ function renderForm(canGenerate = false) {
 }
 
 const nameField = () => screen.getByLabelText("Name (required)");
+
+it("creates and selects a skill without saving the twin or losing its draft", async () => {
+	answers.CreateSkill = { project_id: "skill-new", name: "Brief replies" };
+	const { user, onSaved } = renderForm();
+	await user.type(screen.getByLabelText("Greeting"), " there");
+	const trigger = screen.getByRole("button", { name: "Create skill" });
+	await user.click(trigger);
+	const dialog = within(screen.getByRole("dialog", { name: "Create skill" }));
+	await user.type(
+		dialog.getByLabelText("Skill name (required)"),
+		"Brief replies",
+	);
+	await user.type(
+		dialog.getByLabelText("Description (required)"),
+		"For questions",
+	);
+	await user.type(
+		dialog.getByLabelText("Skill instructions (required)"),
+		"Answer in **three** bullets.",
+	);
+	await user.click(dialog.getByRole("button", { name: "Create skill" }));
+	expect(
+		await screen.findByRole("button", { name: "View Brief replies" }),
+	).toBeVisible();
+	expect(ran()).toEqual(["CreateSkill"]);
+	expect(onSaved).not.toHaveBeenCalled();
+	expect(screen.getByLabelText("Greeting")).toHaveValue("Hello there");
+	await vi.waitFor(() => expect(trigger).toHaveFocus());
+	await user.click(screen.getByRole("button", { name: "Save" }));
+	await vi.waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
+	expect(insight.actions.run.mock.calls.at(-1)?.[0]).toContain(
+		'skills=["skill-1","skill-gone","skill-new"]',
+	);
+});
+
+it("validates a skill, retains failed input, and blocks dismissal while creating", async () => {
+	const { user, onSaved } = renderForm();
+	await user.click(screen.getByRole("button", { name: "Create skill" }));
+	const dialog = within(screen.getByRole("dialog", { name: "Create skill" }));
+	await user.click(dialog.getByRole("button", { name: "Create skill" }));
+	expect(await dialog.findByText("Name is required")).toBeVisible();
+	expect(insight.actions.run).not.toHaveBeenCalled();
+	await user.type(
+		dialog.getByLabelText("Skill name (required)"),
+		"Brief replies",
+	);
+	await user.type(
+		dialog.getByLabelText("Description (required)"),
+		"For questions",
+	);
+	await user.type(
+		dialog.getByLabelText("Skill instructions (required)"),
+		"Use three bullets.",
+	);
+	answers.CreateSkill = new Error("Skill creation is unavailable");
+	await user.click(dialog.getByRole("button", { name: "Create skill" }));
+	expect(await dialog.findByRole("alert")).toHaveTextContent(
+		"Skill creation is unavailable",
+	);
+	expect(dialog.getByLabelText("Skill instructions (required)")).toHaveValue(
+		"Use three bullets.",
+	);
+	let finish = (_value: unknown): void => undefined;
+	answers.CreateSkill = new Promise((resolve) => {
+		finish = resolve;
+	});
+	await user.click(dialog.getByRole("button", { name: "Create skill" }));
+	expect(dialog.getByRole("button", { name: "Creating…" })).toBeDisabled();
+	expect(dialog.getByRole("button", { name: "Cancel" })).toBeDisabled();
+	await user.keyboard("{Escape}");
+	expect(screen.getByRole("dialog", { name: "Create skill" })).toBeVisible();
+	finish({ project_id: "skill-new", name: "Brief replies" });
+	expect(
+		await screen.findByRole("button", { name: "View Brief replies" }),
+	).toBeVisible();
+	expect(ran()).toEqual(["CreateSkill", "CreateSkill"]);
+	expect(onSaved).not.toHaveBeenCalled();
+});
+
+it("reads full skill content on demand, retries failures, and returns focus to View", async () => {
+	const { user } = renderForm();
+	const trigger = screen.getByRole("button", { name: "View Client summary" });
+	expect(insight.actions.run).not.toHaveBeenCalled();
+	answers.ReadSkillFile = new Error("The skill is temporarily unavailable");
+	await user.click(trigger);
+	const dialog = within(
+		screen.getByRole("dialog", { name: "Client summary" }),
+	);
+	expect(await dialog.findByRole("alert")).toHaveTextContent(
+		"The skill is temporarily unavailable",
+	);
+	answers.ReadSkillFile =
+		"---\nname: client-summary\n---\n\nUse one section per client.\nKeep all details.";
+	await user.click(dialog.getByRole("button", { name: "Try again" }));
+	expect(await dialog.findByText(/Keep all details/)).toHaveTextContent(
+		"name: client-summary",
+	);
+	expect(insight.actions.run.mock.calls.at(-1)?.[0]).toBe(
+		'ReadSkillFile(project=["skill-1"], filePath=["SKILL.md"]);',
+	);
+	await user.keyboard("{Escape}");
+	await vi.waitFor(() => expect(trigger).toHaveFocus());
+	expect(screen.queryByRole("dialog")).toBeNull();
+});
 
 it("opens on what is saved, with a skill the owner lost named as such, and saves without creating", async () => {
 	const { onSaved, user } = renderForm();
