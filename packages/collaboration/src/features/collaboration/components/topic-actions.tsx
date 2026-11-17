@@ -23,6 +23,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { topicPath } from "@/lib/workspace-paths";
+import { topicChangeToastId } from "../live/topic-undo";
 import type { Topic } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 
@@ -155,7 +156,8 @@ export function TopicActions({
 						</Select>
 					</div>
 					<P className="text-muted-foreground text-sm">
-						This merge cannot be undone.
+						Right after, the notice has an Undo that puts it back,
+						if nothing else changed meanwhile.
 					</P>
 					<DialogFooter>
 						<Button type="button" variant="outline" onClick={close}>
@@ -174,6 +176,7 @@ export function TopicActions({
 								close();
 								toast.success(
 									`Merged ${topic.name} into ${target.name}.`,
+									{ id: topicChangeToastId(topic.id) },
 								);
 								navigate(topicPath(target.id));
 							}}
@@ -199,7 +202,8 @@ export function TopicActions({
 						</DialogDescription>
 					</DialogHeader>
 					<P className="text-muted-foreground text-sm">
-						This deletion cannot be undone.
+						Right after, the notice has an Undo that puts it back,
+						if nothing else changed meanwhile.
 					</P>
 					<DialogFooter>
 						<Button type="button" variant="outline" onClick={close}>
@@ -214,7 +218,9 @@ export function TopicActions({
 									topicId: topic.id,
 								});
 								close();
-								toast.success(`Deleted ${topic.name}.`);
+								toast.success(`Deleted ${topic.name}.`, {
+									id: topicChangeToastId(topic.id),
+								});
 								navigate("/work/topics");
 							}}
 						>

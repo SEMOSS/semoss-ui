@@ -11,6 +11,8 @@ import { CapabilitySection } from "@/features/agents/components/capability-secti
 import type { CatalogSkill } from "@/features/routines/custom-routine-schema";
 import type { TwinProfile } from "./api/digital-twin";
 import { TwinImageField } from "./twin-image-field";
+import { TwinSkillCreate } from "./twin-skill-create";
+import { TwinSkillView } from "./twin-skill-view";
 
 /** The profile's fields, as the create flow splits them over its steps. */
 export type TwinFieldGroup = "identity" | "voice" | "abilities";
@@ -20,6 +22,8 @@ interface TwinProfileFieldsProps {
 	group?: TwinFieldGroup;
 	/** The owner's skill catalog; the twin can follow any of them. */
 	skills: CatalogSkill[];
+	/** Keep a created skill available through every step and after saving. */
+	onSkillCreated: (skill: CatalogSkill) => void;
 	/** The saved twin's image, shown until another is chosen. */
 	imageUrl?: string;
 }
@@ -32,6 +36,7 @@ interface TwinProfileFieldsProps {
 export function TwinProfileFields({
 	group,
 	skills,
+	onSkillCreated,
 	imageUrl,
 }: TwinProfileFieldsProps) {
 	const form = useFormContext<TwinProfile>();
@@ -106,6 +111,21 @@ export function TwinProfileFields({
 									icon={Sparkles}
 									items={attached}
 									disabled={isSubmitting}
+									actions={
+										<TwinSkillCreate
+											disabled={isSubmitting}
+											onCreated={(skill) => {
+												onSkillCreated(skill);
+												field.onChange([
+													...form.getValues("skills"),
+													skill.id,
+												]);
+											}}
+										/>
+									}
+									itemAction={(skill) => (
+										<TwinSkillView skill={skill} />
+									)}
 									onRemove={(skillId) =>
 										field.onChange(
 											field.value.filter(
@@ -116,6 +136,7 @@ export function TwinProfileFields({
 								>
 									<CapabilityPicker
 										kind="SKILL"
+										disabled={isSubmitting}
 										values={attached}
 										onChange={(values) =>
 											field.onChange(

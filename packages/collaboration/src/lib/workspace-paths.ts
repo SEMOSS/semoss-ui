@@ -35,10 +35,20 @@ export function twinChatPath(agentId: string): string {
 	return `/twins/chat?${new URLSearchParams({ agentId })}`;
 }
 
-/** The full page of what the owner's Digital Twin knows, opened on a place such as "outlook". */
-export function twinContentsPath(place?: string): string {
+/** Manage a particular Digital Twin, optionally opening its People tab. */
+export function twinSettingsPath(twinId: string, tab?: "people"): string {
+	const search = new URLSearchParams({ twinId });
+	if (tab) search.set("tab", tab);
+	return `/twins/mine?${search}`;
+}
+
+/** What a Digital Twin knows. The optional id keeps older single-twin links working. */
+export function twinContentsPath(place?: string, twinId?: string): string {
 	const path = "/twins/mine/contents";
-	return place ? `${path}?${new URLSearchParams({ in: place })}` : path;
+	const search = new URLSearchParams();
+	if (twinId !== undefined) search.set("twinId", twinId);
+	if (place) search.set("in", place);
+	return search.size ? `${path}?${search}` : path;
 }
 
 /** Pages that open on the hero photo; the shell scrolls them together with its header so the photo runs behind it. */

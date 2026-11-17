@@ -11,6 +11,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { safeHttpsUrl } from "@semoss/utility/browser";
 import { ConnectorSavedMark } from "./connector-saved-mark";
 
 /** Props for {@link ConnectorActionBar}. */
@@ -26,7 +27,7 @@ interface ConnectorActionBarProps {
 	 * Twin`: the bar says so in place of its save button.
 	 */
 	savedLabel?: string;
-	/** Opens it in its own app. */
+	/** Opens it in its own app. Shown only when it is an absolute HTTPS URL. */
 	webUrl?: string;
 	/** The app's name, for the open action. */
 	serviceName: string;
@@ -52,6 +53,7 @@ export const ConnectorActionBar = ({
 	children,
 }: ConnectorActionBarProps) => {
 	const { t } = useTranslation("connectors");
+	const href = safeHttpsUrl(webUrl);
 
 	return (
 		<div className="flex flex-wrap items-center gap-1">
@@ -84,7 +86,7 @@ export const ConnectorActionBar = ({
 					{saveLabel}
 				</Button>
 			)}
-			{webUrl ? (
+			{href ? (
 				<Tooltip disableHoverableContent={false}>
 					<TooltipTrigger asChild>
 						<Button
@@ -94,7 +96,7 @@ export const ConnectorActionBar = ({
 							asChild
 						>
 							<a
-								href={webUrl}
+								href={href}
 								target="_blank"
 								rel="noopener noreferrer"
 							>

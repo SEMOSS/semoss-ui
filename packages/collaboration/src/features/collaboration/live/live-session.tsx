@@ -3,16 +3,19 @@ import {
 	useCallback,
 	useEffect,
 	useMemo,
+	useRef,
 	useState,
 } from "react";
 import { useInsight } from "@semoss/sdk/react";
-import { Button, toast } from "@semoss/ui/next";
+import { Button } from "@semoss/ui/next";
 import type { CollaborationState } from "../state/collaboration.types";
 import { CollaborationSessionProvider } from "../state/collaboration-session.context";
 import { loadLiveState } from "./live-state";
-import { createLiveSync } from "./live-sync";
+import { createLiveSync, type LiveSync } from "./live-sync";
+import { recoverFromFailedSave } from "./sync-recovery";
 import { ThreadHistoryProvider } from "./thread-history-provider";
 import { ThreadInsightsProvider } from "./thread-insights-provider";
+import { offerTopicUndo, undoTopicChange } from "./topic-undo";
 import { WorkUpdatesProvider } from "./work-updates-provider";
 
 /** Loads the owner's Collaboration data before rendering the app. */
@@ -41,19 +44,32 @@ function LiveSessionProvider({ children }: { children: ReactNode }) {
 	useEffect(() => {
 		load();
 	}, [load]);
-	// the page and the server can disagree after a failed save, so offer a reload
-	const sync = useMemo(
-		() =>
-			createLiveSync(actions, (message) =>
-				toast.error(`Could not save: ${message}`, {
-					action: {
-						label: "Reload",
-						onClick: () => window.location.reload(),
-					},
-				}),
-			),
-		[actions],
-	);
+	// a new copy of the saved data replaces the page's: after a refused save, and after an undo
+	const [generation, setGeneration] = useState(0);
+	const syncRef = useRef<LiveSync | null>(null);
+	const reload = useCallback(async () => {
+		await syncRef.current?.settled();
+		setState(await loadLiveState(actions));
+		setGeneration((value) => value + 1);
+	}, [actions]);
+	const sync = useMemo(() => {
+		const created = createLiveSync(
+			actions,
+			(message) =>
+				void recoverFromFailedSave(
+					message,
+					() => created.settled(),
+					reload,
+				),
+			(change) =>
+				offerTopicUndo(
+					change,
+					() => void undoTopicChange(actions, change, reload),
+				),
+		);
+		syncRef.current = created;
+		return created;
+	}, [actions, reload]);
 
 	if (error)
 		return (
@@ -76,7 +92,11 @@ function LiveSessionProvider({ children }: { children: ReactNode }) {
 			</div>
 		);
 	return (
-		<CollaborationSessionProvider initialState={state} onChange={sync}>
+		<CollaborationSessionProvider
+			key={generation}
+			initialState={state}
+			onChange={sync}
+		>
 			<WorkUpdatesProvider actions={actions} sync={sync}>
 				<ThreadHistoryProvider actions={actions}>
 					<ThreadInsightsProvider actions={actions} sync={sync}>

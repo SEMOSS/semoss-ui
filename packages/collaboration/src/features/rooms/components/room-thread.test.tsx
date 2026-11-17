@@ -54,6 +54,58 @@ afterEach(() => {
 });
 
 describe("RoomThread", () => {
+	it("shows the enabled greeting before and after the first message without adding it to history", () => {
+		const twin = {
+			...agent,
+			config_json: {
+				greeting_enabled: true,
+				greeting: "Welcome to **my twin**.",
+			},
+		};
+		const thread: ConversationMessage[] = [];
+		const props = {
+			agent: twin,
+			roomId: "twin-chat",
+			thread,
+			isLoadingHistory: false,
+		};
+		const { rerender } = render(<RoomThread {...props} />);
+		expect(
+			screen.getByRole("region", { name: `Greeting from ${agent.name}` }),
+		).toHaveTextContent("Welcome to my twin.");
+		expect(screen.getByText("my twin").tagName).toBe("STRONG");
+		expect(screen.queryByText(/A fresh start/)).toBeNull();
+		expect(thread).toEqual([]);
+		rerender(
+			<RoomThread {...props} thread={[message("first", "Hello")]} />,
+		);
+		expect(screen.getAllByText("my twin")).toHaveLength(1);
+		expect(screen.getByText("Hello")).toBeVisible();
+	});
+
+	it.each([
+		{ greeting_enabled: false, greeting: "Hidden greeting" },
+		{ greeting_enabled: true, greeting: "   " },
+	])(
+		"keeps the ordinary empty state when the greeting is disabled or blank",
+		(config_json) => {
+			render(
+				<RoomThread
+					agent={{ ...agent, config_json }}
+					roomId="room-1"
+					thread={[]}
+					isLoadingHistory={false}
+				/>,
+			);
+			expect(
+				screen.queryByRole("region", {
+					name: `Greeting from ${agent.name}`,
+				}),
+			).toBeNull();
+			expect(screen.getByText(/A fresh start/)).toBeVisible();
+		},
+	);
+
 	it("cancels an in-flight follow animation immediately on upward input and does not resume on completion", () => {
 		const layout = observeLayout();
 		const props = {

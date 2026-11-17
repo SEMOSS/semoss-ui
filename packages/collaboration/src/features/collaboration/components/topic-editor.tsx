@@ -72,7 +72,8 @@ export function TopicEditor({
 						{topic ? "Edit topic" : "New topic"}
 					</DialogTitle>
 					<DialogDescription>
-						Topics and edits are saved for this session.
+						A topic gathers the conversations, people and work about
+						one thing.
 					</DialogDescription>
 				</DialogHeader>
 				<Form

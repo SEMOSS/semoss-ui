@@ -19,4 +19,16 @@ describe("hasItemActions", () => {
 		expect(hasItemActions(base)).toBe(false);
 		expect(hasItemActions(null)).toBe(false);
 	});
+
+	it.each([
+		"javascript:alert(1)",
+		"http://teams.example/chat",
+		"/l/chat/1",
+		"//teams.example/chat",
+	])(
+		"is false when its only action is a link that is not absolute HTTPS: %s",
+		(webUrl) => {
+			expect(hasItemActions({ ...base, webUrl })).toBe(false);
+		},
+	);
 });

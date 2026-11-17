@@ -8,6 +8,7 @@ import {
 	deleteTwin,
 	generateTwinAvatar,
 	getMyTwin,
+	getMyTwinAgent,
 	hasTwinFolder,
 	listTwins,
 	readTwinHoldings,
@@ -131,12 +132,14 @@ describe("finding twins", () => {
 		});
 	});
 
-	it("lists the twins shared with me without my own", async () => {
+	it("lists all my twins separately from the twins shared with me", async () => {
 		const mine = { project_id: "twin-1", project_name: "Robin Twin" };
+		const other = { project_id: "twin-3", project_name: "Research Twin" };
 		const { actions, ran } = transport({
-			[MINE]: [mine],
+			[MINE]: [mine, other],
 			[ALL]: [
 				mine,
+				other,
 				{
 					project_id: "twin-2",
 					project_name: "dana",
@@ -145,11 +148,42 @@ describe("finding twins", () => {
 			],
 		});
 		expect(await listTwins(actions)).toEqual({
-			mine: { id: "twin-1", name: "Robin Twin" },
+			mine: [
+				{ id: "twin-1", name: "Robin Twin" },
+				{ id: "twin-3", name: "Research Twin" },
+			],
 			shared: [{ id: "twin-2", name: "Dana Ortiz Twin" }],
 		});
 		expect([...ran()].sort()).toEqual([ALL, MINE].sort());
 	});
+
+	it("reads the selected twin instead of whichever twin is first", async () => {
+		const { actions, ran } = transport({
+			[MINE]: [
+				{ project_id: "first", project_name: "First Twin" },
+				{ project_id: "twin-1", project_name: "Robin Twin" },
+			],
+			GetWorkspace: WORKSPACE,
+		});
+		expect(await getMyTwinAgent(actions, "twin-1")).toMatchObject({
+			workspace_id: "twin-1",
+		});
+		expect(ran()).toEqual([MINE, 'GetWorkspace(workspaceId=["twin-1"]);']);
+		await expect(getMyTwin(actions)).rejects.toThrow("choose one");
+	});
+
+	it.each(["shared-twin", "deleted-twin", ""])(
+		"does not fall back to an owned twin when %s is requested",
+		async (id) => {
+			const { actions, ran } = transport({
+				[MINE]: [{ project_id: "twin-1", project_name: "Robin Twin" }],
+			});
+			await expect(getMyTwinAgent(actions, id)).rejects.toThrow(
+				"not yours to manage",
+			);
+			expect(ran()).toEqual([MINE]);
+		},
+	);
 
 	it("rejects a list of the wrong shape", async () => {
 		await expect(
@@ -345,14 +379,14 @@ describe("creating a twin", () => {
 
 	it("fails as an ordinary error when the twin was not made, so it can be created again", async () => {
 		const { actions, ran } = transport({
-			AddDigitalTwin: new Error("You already have a Digital Twin"),
+			AddDigitalTwin: new Error("You are not allowed to create an agent"),
 		});
 		const failure = await createTwin(actions, PROFILE).catch(
 			(cause: unknown) => cause,
 		);
 		expect(failure).not.toBeInstanceOf(TwinSetupError);
 		expect(failure).toMatchObject({
-			message: "You already have a Digital Twin",
+			message: "You are not allowed to create an agent",
 		});
 		expect(ran()).toHaveLength(1);
 	});

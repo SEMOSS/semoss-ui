@@ -384,10 +384,28 @@ export class RoomSession {
 	}
 	refreshHistory = async (): Promise<void> => {
 		if (!this.snapshot.roomId || !this.controller) return;
-		const messages = await getRoomMessages(
-			this.insight.actions,
-			this.snapshot.roomId,
-		);
+		const previousTitle = this.snapshot.title;
+		const [messages, envelope] = await Promise.all([
+			getRoomMessages(this.insight.actions, this.snapshot.roomId),
+			// RunAgent names the room asynchronously; refreshing messages must also refresh its name.
+			callPixel(
+				this.insight.actions,
+				pixel("GetRoomOptions", { roomId: this.snapshot.roomId }),
+				roomOptionsEnvelopeSchema,
+			)
+				// A failed metadata read must not hide a recovered transcript; retry with the next refresh.
+				.catch(() => null),
+		]);
+		const title = readableRoomName(envelope?.ROOM_NAME);
+		if (this.isDisposed) return;
+		if (
+			title &&
+			this.snapshot.title === previousTitle &&
+			title !== previousTitle
+		) {
+			this.setTitle(title);
+			this.notifyHistory();
+		}
 		this.history = threadFromMessages(messages);
 		this.controller.reconcileHistory(messages);
 		this.publishTurn(this.controller.getSnapshot());
@@ -858,7 +876,7 @@ export function createRoomSession(scope: string): RoomSession {
 	return new RoomSession(scope);
 }
 
-/** Retitle every loaded session of a renamed room; they only read the name when they first load. */
+/** Publish a manual rename to every loaded session without waiting for its next history refresh. */
 export function renameRoomSessions(roomId: string, title: string): void {
 	for (const session of sessions.values())
 		if (session.getSnapshot().roomId === roomId) session.setTitle(title);

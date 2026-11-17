@@ -1,4 +1,5 @@
 import {
+	act,
 	cleanup,
 	render,
 	screen,
@@ -15,7 +16,7 @@ import type {
 	ConnectorViewerService,
 } from "@semoss/connectors";
 import { toast } from "@semoss/ui/next";
-import { TwinContents } from "./twin-contents";
+import { TwinContentsPage } from "@/pages/twin-contents.page";
 
 // one insight: the viewer saves into it and the copy has to run in the same one
 const insight = vi.hoisted(() => ({
@@ -106,15 +107,15 @@ let answers: Record<string, unknown>;
 const ran = (): string[] =>
 	insight.actions.run.mock.calls.map(([statement]) => String(statement));
 
-function renderContents(place = "") {
+function renderContents(place = "", twinId?: string) {
 	const router = createMemoryRouter(
 		[
-			{ path: "/twins/mine/contents", element: <TwinContents /> },
+			{ path: "/twins/mine/contents", element: <TwinContentsPage /> },
 			{ path: "/twins/mine", element: <p>The twin's own page</p> },
 		],
 		{
 			initialEntries: [
-				`/twins/mine/contents${place ? `?in=${place}` : ""}`,
+				`/twins/mine/contents?${new URLSearchParams({ ...(twinId === undefined ? {} : { twinId }), ...(place ? { in: place } : {}) })}`,
 			],
 		},
 	);
@@ -181,10 +182,64 @@ it("opens on the twin's own files, kept to the folder a chat reads, and names ev
 	for (const name of ["Back to your Digital Twin", "Done"])
 		expect(screen.getByRole("link", { name })).toHaveAttribute(
 			"href",
-			"/twins/mine",
+			"/twins/mine?twinId=twin-1",
 		);
 	// nothing is made just by opening the page
 	expect(ran()).not.toContain(NEW_FOLDER);
+});
+
+it("copies to the selected twin and keeps it selected when changing places", async () => {
+	answers.MyProjects = [
+		{ project_id: "first", project_name: "First Twin" },
+		{ project_id: "twin-1", project_name: "Robin Twin" },
+	];
+	const { router, user } = renderContents("outlook", "twin-1");
+	await user.click(
+		await screen.findByRole("button", { name: "Save to Digital Twin" }),
+	);
+	await waitFor(() => expect(ran()).toContain(SAVE_RECORD));
+	expect(ran().find((statement) => statement.startsWith("Copy("))).toContain(
+		'target=["twin-1"]',
+	);
+	await user.click(
+		within(
+			screen.getByRole("navigation", { name: "What to list" }),
+		).getByRole("button", { name: "Files" }),
+	);
+	expect(router.state.location.search).toBe("?twinId=twin-1&in=files");
+	expect(await screen.findByText(/The file dock on/)).toHaveTextContent(
+		'"app":"twin-1"',
+	);
+	expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+		"What Robin Twin knows",
+	);
+});
+
+it("does not carry copied-item markers to another twin", async () => {
+	answers.MyProjects = [
+		{ project_id: "twin-1", project_name: "Robin Twin" },
+		{ project_id: "twin-2", project_name: "Research Twin" },
+	];
+	const { router, user } = renderContents("outlook", "twin-1");
+	await user.click(
+		await screen.findByRole("button", { name: "Save to Digital Twin" }),
+	);
+	await waitFor(() => expect(ran()).toContain(SAVE_RECORD));
+	expect(screen.getByText("In your Digital Twin")).toBeVisible();
+	await act(async () => {
+		await router.navigate("/twins/mine/contents?twinId=twin-2&in=outlook");
+	});
+	expect(
+		await screen.findByRole("button", { name: "Save to Digital Twin" }),
+	).toBeVisible();
+	expect(screen.queryByText("In your Digital Twin")).toBeNull();
+	expect(ran()).toContain(
+		'BrowseAppAssets(filePath=["/"], project=["twin-2"]);',
+	);
+	expect(screen.getByRole("link", { name: "Done" })).toHaveAttribute(
+		"href",
+		"/twins/mine?twinId=twin-2",
+	);
 });
 
 it.each([

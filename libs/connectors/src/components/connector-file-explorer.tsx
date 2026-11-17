@@ -15,6 +15,7 @@ import {
 	useFileExplorer,
 } from "@semoss/shared";
 import { Spinner } from "@semoss/ui/next";
+import { safeHttpsUrl } from "@semoss/utility/browser";
 import type { ConnectorAccount } from "../core/connector.types";
 import {
 	classifyConnectorError,
@@ -51,7 +52,10 @@ interface ConnectorFileExplorerProps {
 	 * cannot be saved, such as a folder.
 	 */
 	getSaveRequest: (item: FileItem) => ConnectorSaveRequest | undefined;
-	/** Where a row opens in its own app, when it does. */
+	/**
+	 * Where a row opens in its own app, when it does. Offered only when it is
+	 * an absolute HTTPS URL.
+	 */
 	getWebUrl: (item: FileItem) => string | undefined;
 	/**
 	 * The host's own action on a row, for a host that does something else with
@@ -148,7 +152,7 @@ export const ConnectorFileExplorer = ({
 
 	const itemActions = (item: FileItem): FileExplorerItemActions => {
 		const request = getSaveRequest(item);
-		const webUrl = getWebUrl(item);
+		const webUrl = safeHttpsUrl(getWebUrl(item));
 		const openIn = webUrl
 			? {
 					name: t("actions.openIn", { service: serviceName }),
