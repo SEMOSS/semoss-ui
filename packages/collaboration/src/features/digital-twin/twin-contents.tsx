@@ -1,5 +1,5 @@
 import { ArrowLeft, File, FolderPlus } from "lucide-react";
-import { type ReactNode, useId, useState } from "react";
+import { type ReactNode, useCallback, useId, useState } from "react";
 import { Link, Navigate, useSearchParams } from "react-router";
 import type { ConnectorSavedFile } from "@semoss/connectors";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
@@ -23,6 +23,7 @@ import {
 	type TopicPlaceGroup,
 } from "@/features/topic-contents/topic-contents-nav";
 import type { InsightActions } from "@/lib/pixel";
+import { twinSettingsPath } from "@/lib/workspace-paths";
 import {
 	copyToTwin,
 	createTwinFolder,
@@ -64,12 +65,6 @@ const GROUPS: TopicPlaceGroup[] = [
 	},
 ];
 
-/** The owner's twin and what it holds, or null when they have no twin. */
-const readContents = async (actions: InsightActions) => {
-	const twin = await getMyTwin(actions);
-	return twin && { ...twin, ...(await readTwinHoldings(actions, twin.id)) };
-};
-
 /**
  * A full page for choosing what the owner's Digital Twin knows: its own files,
  * and the owner's Outlook, Teams chats, OneDrive and Teams files to add from.
@@ -82,6 +77,19 @@ export function TwinContents() {
 	const { actions } = useInsight();
 	const [params, setParams] = useSearchParams();
 	const labelId = useId();
+	const requestedTwinId = params.get("twinId") ?? undefined;
+	const readContents = useCallback(
+		async (actions: InsightActions) => {
+			const twin = await getMyTwin(actions, requestedTwinId);
+			return (
+				twin && {
+					...twin,
+					...(await readTwinHoldings(actions, twin.id)),
+				}
+			);
+		},
+		[requestedTwinId],
+	);
 	const contents = useTwinRead(readContents);
 	// set once the folder is known to be there: added here, or made by a copy
 	const [isFolderAdded, setIsFolderAdded] = useState(false);
@@ -146,7 +154,9 @@ export function TwinContents() {
 			);
 		}
 		// replaced, so Back leaves the page instead of walking the places
-		setParams({ in: next }, { replace: true });
+		const search = new URLSearchParams(params);
+		search.set("in", next);
+		setParams(search, { replace: true });
 	};
 	const handleAddFolder = async (twinId: string): Promise<void> => {
 		setIsAddingFolder(true);
@@ -246,7 +256,7 @@ export function TwinContents() {
 					className="pointer-coarse:size-11 shrink-0"
 				>
 					<Link
-						to="/twins/mine"
+						to={twin ? twinSettingsPath(twin.id) : "/twins"}
 						aria-label="Back to your Digital Twin"
 					>
 						<ArrowLeft aria-hidden="true" />
@@ -254,7 +264,9 @@ export function TwinContents() {
 				</Button>
 				<div className="min-w-0 flex-1">
 					<H1 className="wrap-anywhere font-medium text-base leading-snug tracking-normal sm:text-lg">
-						What your Digital Twin knows
+						{twin
+							? `What ${twin.name} knows`
+							: "What your Digital Twin knows"}
 					</H1>
 					{/* a phone keeps the room for the list; each place says what it holds */}
 					<P className="hidden text-muted-foreground text-sm sm:block">
@@ -264,7 +276,9 @@ export function TwinContents() {
 					</P>
 				</div>
 				<Button asChild className="pointer-coarse:min-h-11 shrink-0">
-					<Link to="/twins/mine">Done</Link>
+					<Link to={twin ? twinSettingsPath(twin.id) : "/twins"}>
+						Done
+					</Link>
 				</Button>
 			</header>
 			<div className="flex min-h-0 flex-1 flex-col md:flex-row">
