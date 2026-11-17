@@ -22,6 +22,7 @@ describe("UsageLimitGuide", () => {
 		const expected = [
 			"Direct Limit",
 			"Team Limit",
+			"App Limit",
 			"Public Use Limit",
 			"User's Total Model Limit",
 			"General Platform Limit",
@@ -59,14 +60,14 @@ describe("UsageLimitGuide", () => {
 				viewer={{ canSetModelLimits: true }}
 			/>,
 		);
-		// the Model Total, Direct Limit, Team Limit and Public Use Limit
-		expect(screen.getAllByText(USAGE_LIMIT_CAN_SET_LABEL)).toHaveLength(4);
+		// the Model Total, Direct Limit, Team Limit, Public Use Limit and App Limit
+		expect(screen.getAllByText(USAGE_LIMIT_CAN_SET_LABEL)).toHaveLength(5);
 		expect(screen.getByText(USAGE_LIMIT_VIEWER_NOTES.owner)).toBeTruthy();
 	});
 
 	it("marks every limit for an admin in admin mode", () => {
 		render(<UsageLimitGuide viewer={{ isAdminMode: true }} />);
-		expect(screen.getAllByText(USAGE_LIMIT_CAN_SET_LABEL)).toHaveLength(7);
+		expect(screen.getAllByText(USAGE_LIMIT_CAN_SET_LABEL)).toHaveLength(8);
 	});
 
 	it("tells an editor that only owners set limits, and marks none", () => {

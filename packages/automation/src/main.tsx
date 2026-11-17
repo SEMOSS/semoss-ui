@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client";
 import { clientResources, I18nBuilder, I18nextProvider } from "@semoss/i18n";
 import { InsightProvider } from "@semoss/sdk/react";
 import { ThemeProvider, Toaster } from "@semoss/ui/next";
-import App from "./App";
+import { App } from "./App";
 import "./index.css";
 
 const root = document.getElementById("root");

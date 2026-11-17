@@ -8,12 +8,15 @@ interface LandingChatComposerProps {
 	topicId?: string;
 	/** Link the first conversation to this work item. */
 	taskId?: string;
+	/** Today's ask box: lifted off the hero photo, with wording for the whole workspace. */
+	isHero?: boolean;
 }
 
 /** Start a conversation in place without opening a room yet. */
 export function LandingChatComposer({
 	topicId,
 	taskId,
+	isHero,
 }: LandingChatComposerProps) {
 	const location = useLocation();
 	const controller = useNewChatController(location.state, topicId, taskId);
@@ -24,7 +27,7 @@ export function LandingChatComposer({
 			snapshot={controller.snapshot}
 			onSaveSettings={controller.onSaveSettings}
 		>
-			<NewChatWorkspace {...controller} />
+			<NewChatWorkspace {...controller} isHero={isHero} />
 		</NewChatWorkbenchProvider>
 	);
 }

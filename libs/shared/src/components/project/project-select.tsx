@@ -27,6 +27,10 @@ export interface ProjectSelectProps {
 	id?: string;
 	/** Field description announced when the trigger receives focus. */
 	"aria-describedby"?: string;
+	/** Whether the field has a problem, for assistive technology. */
+	"aria-invalid"?: boolean;
+	/** Focuses the trigger, as a form does for a field with a problem. */
+	ref?: React.Ref<HTMLButtonElement>;
 	/** CSS classes for styling customization. */
 	className?: string;
 	/** Whether the select is disabled. */
@@ -41,6 +45,11 @@ export interface ProjectSelectProps {
 	projectTypes?: Project["project_type"][];
 	/** Additional metadata filters for the project query. */
 	metaFilters?: unknown[];
+	/**
+	 * Lists every project through the admin read, for an admin in admin mode.
+	 * Outside it the list is the projects the user can see.
+	 */
+	admin?: boolean;
 	/** Props forwarded to the PopoverContent component. */
 	popoverContentProps?: React.ComponentProps<typeof PopoverContent>;
 	/** Show the project ID under the project name instead of the description. */
@@ -67,8 +76,9 @@ export interface ProjectSelectProps {
 }
 
 /**
- * Searchable, paginated project picker backed by MyProjects. The list is read
- * in the session's insight, so the picker works outside any `InsightProvider`.
+ * Searchable, paginated project picker backed by MyProjects, or by
+ * AdminMyProjects in admin mode. The list is read in the session's insight, so
+ * the picker works outside any `InsightProvider`.
  *
  * @name ProjectSelect
  * @return A project selector with filtering and infinite scrolling.
@@ -76,6 +86,8 @@ export interface ProjectSelectProps {
 export const ProjectSelect = ({
 	id,
 	"aria-describedby": ariaDescribedBy,
+	"aria-invalid": ariaInvalid,
+	ref,
 	className,
 	disabled,
 	name,
@@ -83,6 +95,7 @@ export const ProjectSelect = ({
 	onChange,
 	projectTypes,
 	metaFilters,
+	admin = false,
 	popoverContentProps = {},
 	showProjectId,
 	showProjectImage = false,
@@ -96,7 +109,7 @@ export const ProjectSelect = ({
 	const getProjects = useSessionIteratorPixel<Project[], Project>(
 		(limit, offset) =>
 			open
-				? `META | MyProjects(${
+				? `META | ${admin ? "AdminMyProjects" : "MyProjects"}(${
 						debouncedSearch
 							? `filterWord=${JSON.stringify(debouncedSearch)}, `
 							: ""
@@ -115,6 +128,7 @@ export const ProjectSelect = ({
 		{ limit: 15 },
 		[
 			open,
+			admin,
 			debouncedSearch,
 			JSON.stringify(projectTypes),
 			JSON.stringify(metaFilters),
@@ -143,8 +157,10 @@ export const ProjectSelect = ({
 		<Popover open={open && !disabled} onOpenChange={setOpen} modal={modal}>
 			<PopoverTrigger asChild>
 				<Button
+					ref={ref}
 					id={id}
 					aria-describedby={ariaDescribedBy}
+					aria-invalid={ariaInvalid}
 					variant="outline"
 					role="combobox"
 					aria-expanded={open}

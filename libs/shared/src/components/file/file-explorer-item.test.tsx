@@ -1,5 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { TreeView } from "@semoss/ui/next";
 import type { FileItem } from "./file.types";
 import type { FileExplorerApi } from "./file-explorer.types";
@@ -75,6 +75,10 @@ const renderRow = ({
 };
 
 describe("FileExplorerItem", () => {
+	afterEach(() => {
+		cleanup();
+	});
+
 	it("opens the row's menu from its More actions button", () => {
 		const openContextMenu = renderRow();
 
@@ -92,10 +96,11 @@ describe("FileExplorerItem", () => {
 
 	it("opens the row's menu with Shift+F10 and with the menu key", () => {
 		const openContextMenu = renderRow();
-		const name = screen.getByRole("button", { name: "notes.md" });
+		// the keys act on the focused row, which TreeViewItem keeps focus on
+		const row = screen.getByRole("treeitem");
 
-		fireEvent.keyDown(name, { key: "F10", shiftKey: true });
-		fireEvent.keyDown(name, { key: "ContextMenu" });
+		fireEvent.keyDown(row, { key: "F10", shiftKey: true });
+		fireEvent.keyDown(row, { key: "ContextMenu" });
 
 		expect(openContextMenu).toHaveBeenCalledTimes(2);
 		expect(openContextMenu).toHaveBeenLastCalledWith(
@@ -109,9 +114,7 @@ describe("FileExplorerItem", () => {
 	it("leaves other keys to the tree", () => {
 		const openContextMenu = renderRow();
 
-		fireEvent.keyDown(screen.getByRole("button", { name: "notes.md" }), {
-			key: "F10",
-		});
+		fireEvent.keyDown(screen.getByRole("treeitem"), { key: "F10" });
 
 		expect(openContextMenu).not.toHaveBeenCalled();
 	});

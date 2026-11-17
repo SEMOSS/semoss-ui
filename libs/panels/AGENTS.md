@@ -24,7 +24,10 @@ So the layering is one direction, three layers:
 
 Nothing here may import from a host (`packages/*`). `zustand` is a **peer** dependency,
 matching the dock. Hosts supply a compatible version and explicitly share the intended
-store instances; a peer declaration alone does not guarantee shared state.
+store instances; a peer declaration alone does not guarantee shared state. The peer exists for
+the dock's store and goes away when the dock moves off Zustand; state this package owns itself follows the
+[state management skill](../../skills/state-management.skill.md) and uses an
+`StoreState`-backed store, not a new Zustand one.
 
 ## Layout
 
@@ -77,6 +80,16 @@ children and nothing reads a store made by the others. Do not use them in new co
 The playground adds Add to Context to Chat Files this way. Entries with `placement: "end"` are
 listed after every standard entry. Keep the host object's identity stable: it is a dependency of
 every row's actions.
+
+## A host can keep the explorer to one folder
+
+A `FILE_EXPLORER_PANEL` instance whose config has `rootPath`, such as `/public`, treats that
+folder as its whole tree: nothing above it is browsed, searched or written to. The panel builds
+its explorer on `scopeFileExplorerAdapter` (`@semoss/shared`) and resolves every path that leaves
+the explorer (an opened file, a rename or delete that open tabs follow, a drag, a toolbox path, a
+host's row entries) back to its place in the source, so open panels and events still speak source
+paths. `initialPath` is then a path inside the folder. The client's Agent Files panel is built
+this way.
 
 ## A view renders a file; a host draws its actions
 

@@ -33,7 +33,7 @@ export function DashboardResourceStatus({
 }) {
 	if (disconnected)
 		return (
-			<div className="space-y-3 py-4 text-muted-foreground text-sm">
+			<div className="space-y-3 text-muted-foreground text-sm">
 				<p>{disconnected}</p>
 				<Button asChild variant="outline" size="sm">
 					<Link to="/brain/sources">Manage connections</Link>
@@ -43,7 +43,7 @@ export function DashboardResourceStatus({
 	const readable = error ? readError(error) : null;
 	if (readable?.signIn)
 		return (
-			<div className="space-y-3 py-4 text-muted-foreground text-sm">
+			<div className="space-y-3 text-muted-foreground text-sm">
 				<p>Sign in to Microsoft to see this.</p>
 				<Button asChild variant="outline" size="sm">
 					<Link to="/brain/sources">Manage connections</Link>
@@ -63,7 +63,7 @@ export function DashboardResourceStatus({
 		);
 	if (loading)
 		return (
-			<output className="block space-y-3 py-3">
+			<output className="block space-y-3">
 				<span className="sr-only">Loading this section</span>
 				<Skeleton className="h-16 w-full" />
 				<Skeleton className="h-16 w-full" />

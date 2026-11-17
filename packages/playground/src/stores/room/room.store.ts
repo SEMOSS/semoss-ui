@@ -21,7 +21,6 @@ import {
 	type WorkbenchPanelConfigAny,
 	type WorkbenchPanelId,
 	type WorkbenchPanelParams,
-	type WorkbenchPanelRecord,
 	type WorkbenchPanelType,
 	type WorkbenchSnapshot,
 	type WorkbenchState,
@@ -56,9 +55,7 @@ import {
 	createRoomSidebarLayout,
 	getPanelFileMode,
 	getRoomFileMode,
-	hasMainAreaTabs,
 	ROOM_PANEL_TYPES,
-	ROOM_SIDEBAR_RAIL_SIZE,
 } from "./room-sidebar";
 import {
 	type StreamHandlers,
@@ -314,8 +311,11 @@ export class RoomStore {
 		this._includesFiles = includeFiles;
 		this.sidebarSnapshot = createRoomSidebarLayout({
 			fileMode: includeFiles ? this.fileMode : null,
-			filesName: this._getRailPanelName("files", panelComponents),
-			settingsName: this._getRailPanelName("settings", panelComponents),
+			filesName: this._getDefaultPanelName("files", panelComponents),
+			settingsName: this._getDefaultPanelName(
+				"settings",
+				panelComponents,
+			),
 		});
 		this.workbench = createWorkbenchStore({ components: panelComponents });
 		this.workbench
@@ -338,22 +338,22 @@ export class RoomStore {
 		});
 
 		this._watchSidebar();
-		// the rail offers each connector viewer the chat can show
+		// a viewer closes when its connector can no longer be shown
 		reaction(
 			() =>
 				this.connectors.availableSources
 					.map((source) => source.service)
 					.join(),
-			() => this._syncSidebarRail(),
+			() => this._closeHiddenConnectorPanels(),
 			{ fireImmediately: true },
 		);
 	}
 
 	/**
-	 * A rail panel's tab label. There are no translations outside the app, as
-	 * in tests, so it falls back to the blueprint's own name.
+	 * A default panel's tab label. There are no translations outside the app,
+	 * as in tests, so it falls back to the blueprint's own name.
 	 */
-	private _getRailPanelName = (
+	private _getDefaultPanelName = (
 		panel: "files" | "settings",
 		panelComponents: Record<string, WorkbenchPanelConfigAny>,
 	): string => {
@@ -369,13 +369,15 @@ export class RoomStore {
 	};
 
 	/**
-	 * Return tools inline when their tabs close, and close the sidebar when
-	 * a close leaves nothing in front: no tab in the main area and no rail
-	 * panel open.
+	 * Return tools inline when their tabs close.
 	 *
 	 * This is the replacement for the FlexLayout change listener, and the reason
-	 * the room store holds the dock: both reactions have to fire whether the
-	 * close came from the tab's × or from `closeTool`.
+	 * the room store holds the dock: the reaction has to fire whether the close
+	 * came from the tab's × or from `closeTool`. There is no "closed the last
+	 * tab" rule any more — every tab closes, including Files and Settings, and
+	 * an empty Workspace still shows its rail, which reopens any of them. It
+	 * closes from the header toggle, the slash command, or dragging the divider
+	 * to the edge.
 	 */
 	private _watchSidebar = (): void => {
 		let previous = this.workbench.getState().layout.panels;
@@ -400,15 +402,6 @@ export class RoomStore {
 				if (tool?.isOpen && tool.display === "sidebar") {
 					tool.openTool("inline");
 				}
-			}
-
-			const isEmpty =
-				!hasMainAreaTabs(state.layout) &&
-				Object.values(state.layout.borders).every(
-					(border) => border.activeId === null,
-				);
-			if (closed.length > 0 && this._store.sidebar.isOpen && isEmpty) {
-				this.closeSidebar();
 			}
 		});
 	};
@@ -1145,107 +1138,62 @@ export class RoomStore {
 			.layout.actions.selectPanel(type, config, name ? { name } : {});
 	};
 
-	/** Adopt a draft's arrangement before mounting this room's first sidebar. */
+	/**
+	 * Adopt a draft's arrangement before mounting this room's first sidebar.
+	 *
+	 * A draft is built without Files, having no insight for it to read, so the
+	 * room it prepares gains it here — behind whatever tab the draft was on.
+	 */
 	restoreSidebarLayout = (snapshot: WorkbenchSnapshot): void => {
 		this.sidebarSnapshot = snapshot;
-		this.workbench.getState().layout.actions.loadSnapshot(snapshot);
+		const { actions } = this.workbench.getState().layout;
+		actions.loadSnapshot(snapshot);
 		this._syncSidebarFileMode();
-		// a draft's arrangement has no Files; this room has one to read
-		this._syncSidebarRail();
+		const hasFiles = actions.findPanels(
+			(record) =>
+				record.type === FILE_PANEL_TYPES.FILE_EXPLORER &&
+				// a connector's work folder is another explorer, not Files
+				getPanelFileMode(record)?.type === "INSIGHT",
+		).length;
+		if (!this._includesFiles || hasFiles) {
+			return;
+		}
+		const selected = this.workbench.getState().layout.selection.panel;
+		actions.spawnPanel(FILE_PANEL_TYPES.FILE_EXPLORER, {
+			config: { mode: this.fileMode },
+			name: this._getDefaultPanelName(
+				"files",
+				this.workbench.getState().layout.components,
+			),
+		});
+		if (selected) {
+			actions.navigatePanel(selected);
+		}
 	};
 
-	/** Open the Workspace as it was left, its rail always beside it. */
+	/** Open the Workspace as it was left, its panel rail always beside it. */
 	openSidebar = (): void => {
 		this._store.sidebar.isOpen = true;
 	};
 
 	/**
-	 * Keep the Workspace's left rail offering the room's panels: Files (unless
-	 * this is a draft), Settings, and each connector viewer the chat can show.
-	 * A panel already open anywhere in the dock is left where it is, and a
-	 * viewer the chat can no longer show leaves the rail. Additions stay
-	 * collapsed and do not take the selection.
+	 * Close any connector viewer the chat can no longer show, the panels
+	 * having been opened on demand from the Workspace's rail.
 	 */
-	private _syncSidebarRail = (): void => {
+	private _closeHiddenConnectorPanels = (): void => {
 		const { actions } = this.workbench.getState().layout;
-		const railPanels: {
-			type: WorkbenchPanelType;
-			config: WorkbenchPanelParams;
-			name: string;
-			/** Whether an open panel of this type already offers it. */
-			isOffered?: (record: WorkbenchPanelRecord) => boolean;
-		}[] = [];
-		const panelComponents = this.workbench.getState().layout.components;
-		if (this._includesFiles) {
-			railPanels.push({
-				type: FILE_PANEL_TYPES.FILE_EXPLORER,
-				config: { mode: this.fileMode },
-				name: this._getRailPanelName("files", panelComponents),
-				// a connector's work folder is another explorer, not Files
-				isOffered: (record) =>
-					getPanelFileMode(record)?.type === "INSIGHT",
-			});
-		}
-		railPanels.push({
-			type: ROOM_PANEL_TYPES.CONFIGURATION,
-			config: {},
-			name: this._getRailPanelName("settings", panelComponents),
-		});
-		const available = this.connectors.availableSources;
-		for (const source of available) {
-			railPanels.push({
-				type: source.panelType,
-				config: {},
-				name: getI18n()?.t(source.nameKey) ?? source.service,
-			});
-		}
-
-		for (const panel of railPanels) {
-			// one of each panel, wherever it was moved to
-			const isOffered = panel.isOffered ?? (() => true);
-			if (
-				actions.findPanels(
-					(record) => record.type === panel.type && isOffered(record),
-				).length > 0
-			) {
-				continue;
-			}
-			const before = this.workbench.getState().layout;
-			const activeId = before.borders.left.activeId;
-			const selected = before.selection.panel;
-			actions.spawnPanel(panel.type, {
-				config: panel.config,
-				name: panel.name,
-				canClose: false,
-				minWidth: ROOM_SIDEBAR_RAIL_SIZE,
-				target: { kind: "border", side: "left" },
-			});
-			// spawning into a border opens it; the rail stays as it was
-			if (activeId) {
-				actions.activatePanel({ kind: "border", id: "left" }, activeId);
-			} else {
-				actions.collapseBorder("left");
-			}
-			actions.setSelectedPanel(selected);
-		}
-
 		const availableTypes = new Set(
-			available.map((source) => source.panelType),
+			this.connectors.availableSources.map((source) => source.panelType),
 		);
-		const { borders, panels } = this.workbench.getState().layout;
-		for (const pid of borders.left.panelIds) {
-			const record = panels[pid];
-			if (
-				!record ||
-				availableTypes.has(record.type) ||
-				!CONNECTOR_SOURCES.some(
-					(source) => source.panelType === record.type,
-				)
-			) {
-				continue;
-			}
-			actions.updatePanel(pid, { canClose: true });
-			actions.closePanel(pid);
+		for (const record of actions.findPanels(
+			(candidate) =>
+				!availableTypes.has(candidate.type) &&
+				CONNECTOR_SOURCES.some(
+					(source) => source.panelType === candidate.type,
+				),
+		)) {
+			actions.updatePanel(record.id, { canClose: true });
+			actions.closePanel(record.id);
 		}
 	};
 

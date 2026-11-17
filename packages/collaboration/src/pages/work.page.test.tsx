@@ -19,6 +19,10 @@ const sessions = vi.hoisted(() => ({ mounted: vi.fn() }));
 vi.mock("@/features/daily-chat/landing-chat-composer", () => ({
 	LandingChatComposer: () => null,
 }));
+// the Work hero's mail check reads the shell's dashboard, which these page tests do not mount
+vi.mock("@/features/dashboard/mail-check-status", () => ({
+	MailCheckStatus: () => null,
+}));
 vi.mock("@/features/dashboard/topic-sessions", () => ({
 	TopicSessions: ({ topicId }: { topicId: string }) => {
 		sessions.mounted(topicId);
@@ -271,12 +275,17 @@ it.each(["/work", "/work/all", "/work/waiting", "/work/done"])(
 	async (path) => {
 		const { router } = renderWork(path);
 		expect(
-			await screen.findByRole("button", {
+			await screen.findByRole("link", {
 				name: "Ship the Alpha launch",
 			}),
-		).toBeVisible();
+		).toHaveAttribute("href", "/work/item/launch");
 		expect(router.state.location.pathname).toBe("/work");
-		expect(screen.getByRole("heading", { name: "Work" })).toBeVisible();
+		expect(
+			screen.getByRole("heading", { name: "Your work, in focus." }),
+		).toBeVisible();
+		expect(
+			screen.getByRole("region", { name: "Your priorities" }),
+		).toBeVisible();
 		expect(screen.getByRole("link", { name: "Topics" })).toHaveAttribute(
 			"href",
 			"/work/topics",
@@ -286,7 +295,8 @@ it.each(["/work", "/work/all", "/work/waiting", "/work/done"])(
 
 it("opens the Work topic index with selector-based counts and the existing new-topic dialog", async () => {
 	const { user } = renderWork("/work/topics");
-	expect(screen.getByRole("heading", { name: "Work" })).toBeVisible();
+	expect(screen.getByRole("heading", { name: "Your topics." })).toBeVisible();
+	expect(screen.getByRole("region", { name: "All topics" })).toBeVisible();
 	const index = screen.getByRole("list", { name: "Work topics" });
 	const alpha = within(index).getByRole("link", { name: /Alpha launch/ });
 	expect(alpha).toHaveAttribute("href", "/topics/alpha");

@@ -1,7 +1,13 @@
-import { ArrowRight, Inbox } from "lucide-react";
+import {
+	ArrowRight,
+	CircleDashed,
+	CornerDownRight,
+	Hourglass,
+	Inbox,
+} from "lucide-react";
 import type { FocusEvent, PointerEvent, ReactNode } from "react";
 import { Link } from "react-router";
-import { cn, P, Progress, Skeleton } from "@semoss/ui/next";
+import { cn, P, Skeleton } from "@semoss/ui/next";
 import {
 	dueLabel,
 	itemPath,
@@ -12,7 +18,6 @@ import {
 } from "@/features/collaboration/components/work-items-list";
 import { givenFirst } from "@/lib/person-name";
 import { BriefPanel } from "./brief-panel";
-import { BriefWorkStage } from "./brief-work-stage";
 
 /** How many of the owner's items Today shows; the rest wait behind Work. */
 const SHOWN = 6;
@@ -36,33 +41,30 @@ function hideGlide(event: { currentTarget: HTMLElement }) {
 		?.removeAttribute("data-glide");
 }
 
-/** Today's view of Work (D25): the owner's top item on a lit stage, the next few below, and what waits for review. */
+/** Today's view of Work (D25): what waits for review, then the owner's top items with whose move each one is. */
 export function BriefWork() {
 	const { items, error, isMine } = useWorkItems();
 	const { review, mine } = split(items ?? []);
-	const [top, ...rest] = mine.slice(0, SHOWN);
+	const shown = mine.slice(0, SHOWN);
 
 	let content: ReactNode;
 	if (items === null) {
 		content = error ? (
-			<P
-				role="alert"
-				className="px-4 py-6 text-destructive text-sm sm:px-6"
-			>
+			<P role="alert" className="text-destructive text-sm">
 				{error}
 			</P>
 		) : (
-			<output className="block space-y-3 px-4 py-6 sm:px-6">
+			<output className="block space-y-3">
 				<span className="sr-only">Loading your work</span>
-				<Skeleton className="h-7 w-3/4" />
+				<Skeleton className="h-5 w-3/4" />
 				<Skeleton className="h-4 w-2/5" />
-				<Skeleton className="h-4 w-full" />
+				<Skeleton className="h-5 w-full" />
 				<Skeleton className="h-4 w-5/6" />
 			</output>
 		);
-	} else if (!top) {
+	} else if (!shown.length) {
 		content = (
-			<P className="px-4 py-8 text-muted-foreground text-sm sm:px-6">
+			<P className="text-muted-foreground text-sm">
 				{review.length
 					? "Review the new items to start your list."
 					: "No work items yet. They come from your mail and chats, or ask in chat to add one."}
@@ -72,9 +74,7 @@ export function BriefWork() {
 		content = (
 			<>
 				{error ? (
-					<P className="px-4 pt-4 text-destructive text-sm sm:px-6">
-						{error}
-					</P>
+					<P className="text-destructive text-sm">{error}</P>
 				) : null}
 				<div data-glide-track className="relative">
 					<span
@@ -93,65 +93,58 @@ export function BriefWork() {
 								hideGlide(event);
 						}}
 					>
-						<BriefWorkStage item={top} isMine={isMine} />
-						{rest.map((item, index) => {
+						{shown.map((item) => {
 							const next = mineNext(item, isMine);
 							const wait = waitingOn(item, isMine);
 							const due = dueLabel(item.due);
-							const total = item.stepCount ?? 0;
+							// whose move it is; the line under the title says the same in words
+							const MoveIcon = next
+								? CornerDownRight
+								: wait
+									? Hourglass
+									: CircleDashed;
 							return (
 								<li
 									key={item.id}
-									className="relative flex items-center gap-3 px-4 py-3 sm:gap-4 sm:px-6"
+									className="group relative flex gap-3"
 									onPointerEnter={glideTo}
 									onFocus={glideTo}
 								>
-									<span
+									<MoveIcon
 										aria-hidden="true"
-										className="w-6 shrink-0 self-start text-muted-foreground text-sm tabular-nums leading-6"
-									>
-										{String(index + 2).padStart(2, "0")}
-									</span>
-									<div className="min-w-0 flex-1">
-										{/* stretched over the row, so the whole row opens it */}
-										<Link
-											to={itemPath(item)}
-											title={item.title}
-											className="line-clamp-2 font-medium after:absolute after:inset-x-2 after:inset-y-0 after:rounded-lg focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-ring sm:line-clamp-1"
-										>
-											{item.title}
-										</Link>
-										<P className="truncate text-muted-foreground text-sm">
-											{next
-												? `Next: ${next.text}`
-												: wait
-													? `Waiting on ${wait.assigneeName ? givenFirst(wait.assigneeName) : "someone"}: ${wait.text}`
-													: "No open steps"}
-										</P>
+										className="mt-4 size-4 shrink-0 text-muted-foreground"
+									/>
+									{/* the rule starts at the text, not under the icon */}
+									<div className="flex min-w-0 flex-1 items-baseline gap-3 border-b py-3 group-last:border-b-0">
+										<div className="min-w-0 flex-1">
+											{/* stretched over the row, so the whole row opens it */}
+											<Link
+												to={itemPath(item)}
+												title={item.title}
+												className="after:-inset-x-2 line-clamp-2 font-medium after:absolute after:inset-y-0 after:rounded-lg focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-ring"
+											>
+												{item.title}
+											</Link>
+											<P className="truncate text-muted-foreground text-sm">
+												{next
+													? `Next: ${next.text}`
+													: wait
+														? `Waiting on ${wait.assigneeName ? givenFirst(wait.assigneeName) : "someone"}: ${wait.text}`
+														: "No open steps"}
+											</P>
+										</div>
+										{due ? (
+											<span
+												className={cn(
+													"shrink-0 text-muted-foreground text-sm tabular-nums",
+													due.soon &&
+														"text-destructive",
+												)}
+											>
+												{due.text}
+											</span>
+										) : null}
 									</div>
-									{total > 0 ? (
-										<Progress
-											aria-label="Steps done"
-											getValueLabel={(value, max) =>
-												`${value} of ${max}`
-											}
-											value={Math.max(
-												total - item.openSteps.length,
-												0,
-											)}
-											max={total}
-											className="hidden h-1 w-10 shrink-0 bg-border sm:block"
-										/>
-									) : null}
-									{/* always there, so the progress bars line up */}
-									<span
-										className={cn(
-											"w-14 shrink-0 text-right text-muted-foreground text-sm tabular-nums",
-											due?.soon && "text-destructive",
-										)}
-									>
-										{due?.text}
-									</span>
 								</li>
 							);
 						})}
@@ -160,7 +153,7 @@ export function BriefWork() {
 				{mine.length > SHOWN ? (
 					<Link
 						to="/work"
-						className="group flex items-center gap-1 border-t px-4 py-3 text-muted-foreground text-sm hover:text-foreground sm:px-6"
+						className="group flex items-center gap-1 self-start rounded-sm text-muted-foreground text-sm hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
 					>
 						See all {mine.length}
 						<ArrowRight
@@ -177,46 +170,38 @@ export function BriefWork() {
 		<BriefPanel
 			title="Your work"
 			detail={
-				<Link to="/work" className="text-foreground hover:underline">
+				<Link
+					to="/work"
+					className="flex items-center gap-1 rounded-sm font-medium text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
+				>
 					All work items
+					<ArrowRight aria-hidden="true" className="size-4" />
 				</Link>
 			}
-			className="overflow-hidden p-0"
 		>
 			{review.length ? (
-				// above the top item's stage light, which reaches up behind it
-				<div className="relative z-10 p-3">
-					{/* the light circling the pill marks items Brain found that nobody has looked at yet */}
-					<Link
-						to="/work/review"
-						className="group relative block rounded-full bg-border p-px focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
-					>
-						<span aria-hidden="true" className="work-beam" />
-						<span className="relative flex items-center gap-3 rounded-full bg-card py-2 pr-3 pl-4 text-sm transition-colors group-hover:bg-accent">
-							<Inbox
-								aria-hidden="true"
-								className="size-4 shrink-0 text-primary"
-							/>
-							<span className="min-w-0 flex-1 text-muted-foreground">
-								<span className="font-medium text-foreground">
-									{review.length} new work item
-									{review.length === 1 ? "" : "s"}
-								</span>
-								<span className="hidden sm:inline">
-									{" "}
-									from your mail and chats
-								</span>
-							</span>
-							<span className="flex shrink-0 items-center gap-1 font-medium text-primary">
-								Review
-								<ArrowRight
-									aria-hidden="true"
-									className="size-4 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
-								/>
-							</span>
-						</span>
-					</Link>
-				</div>
+				// items Brain found that nobody has looked at yet
+				<Link
+					to="/work/review"
+					className="group flex items-center gap-3 rounded-lg bg-primary/10 py-2 pr-2 pl-4 text-sm focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
+				>
+					<Inbox aria-hidden="true" className="size-4 shrink-0" />
+					<span className="min-w-0 flex-1">
+						<span className="font-bold">
+							{review.length} new work item
+							{review.length === 1 ? "" : "s"}
+						</span>{" "}
+						from your mail and chats
+					</span>
+					{/* the blue is too dim to read on the dark card */}
+					<span className="flex shrink-0 items-center gap-1 rounded-md bg-card px-3 py-1.5 font-medium text-primary dark:text-foreground">
+						Review
+						<ArrowRight
+							aria-hidden="true"
+							className="size-4 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
+						/>
+					</span>
+				</Link>
 			) : null}
 			{content}
 		</BriefPanel>

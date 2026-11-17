@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "@semoss/config": "workspace:*",
-    "@types/node": "^24.3.1",
+    "@types/node": "^26.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "typescript": "~6.0.0",

@@ -7,7 +7,12 @@ import {
 import { useContext } from "react";
 import type { ConnectorViewerService } from "@semoss/connectors";
 import { useTranslation } from "@semoss/i18n";
+import { FILE_PANEL_TYPES } from "@semoss/panels";
 import type { ConnectorBrand } from "@semoss/shared";
+import type {
+	WorkbenchPanelParams,
+	WorkbenchPanelType,
+} from "@semoss/workbench";
 import type { ConnectorsStore } from "@/features/connectors/connectors.store";
 import { RoomLayoutActionsContext } from "@/features/conversation/room-layout-actions.context";
 import type { RoomStore } from "@/stores/room/room.store";
@@ -16,8 +21,12 @@ import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
 interface WorkbenchPanelOptionBase {
 	/** Stable key; also the panel's slash command id. */
 	id: string;
-	/** Visible name, short; the same in the header, tabs, and slash menu. */
+	/** Visible name, short; the same on the rail, its tab, and the slash menu. */
 	label: string;
+	/** Which blueprint it opens, for a caller that docks it itself. */
+	panelType: WorkbenchPanelType;
+	/** The parameters it is opened with, and what it dedupes on. */
+	panelConfig: WorkbenchPanelParams;
 	/** What the panel holds, shown on hover. */
 	description?: string;
 	/** Whether the panel cannot open yet. */
@@ -94,6 +103,8 @@ export const useWorkbenchPanels = (
 			label: t("workspacePlaces.files"),
 			description: t("workspacePlaces.descriptions.files"),
 			icon: FolderTreeIcon,
+			panelType: FILE_PANEL_TYPES.FILE_EXPLORER,
+			panelConfig: { mode: room.fileMode },
 			isDisabled: isWaiting("files"),
 			isLoading: isWaiting("files"),
 			onOpen: open({ kind: "files" }, () =>
@@ -106,6 +117,8 @@ export const useWorkbenchPanels = (
 			label: t("workspacePlaces.settings"),
 			description: t("workspacePlaces.descriptions.settings"),
 			icon: Settings2Icon,
+			panelType: ROOM_PANEL_TYPES.CONFIGURATION,
+			panelConfig: {},
 			isDisabled: isWaiting("settings"),
 			isLoading: false,
 			onOpen: open({ kind: "settings" }, room.chatTools.openRoomSettings),
@@ -118,6 +131,8 @@ export const useWorkbenchPanels = (
 			label: t("workspacePlaces.activity"),
 			description: t("workspacePlaces.descriptions.activity"),
 			icon: ScrollTextIcon,
+			panelType: ROOM_PANEL_TYPES.AUDIT_LOG,
+			panelConfig: {},
 			isDisabled: isWaiting("activity"),
 			isLoading: false,
 			onOpen: open({ kind: "activity" }, () =>
@@ -135,6 +150,8 @@ export const useWorkbenchPanels = (
 			id: source.service,
 			label: t(source.nameKey),
 			brand: source.brand,
+			panelType: source.panelType,
+			panelConfig: {},
 			// a draft prepares its room first, so one preparation at a time
 			isDisabled: isWaiting("connector"),
 			isLoading: false,

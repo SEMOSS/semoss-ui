@@ -11,6 +11,8 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { safeHttpsUrl } from "@semoss/utility/browser";
+import { ConnectorSavedMark } from "./connector-saved-mark";
 
 /** Props for {@link ConnectorActionBar}. */
 interface ConnectorActionBarProps {
@@ -20,7 +22,12 @@ interface ConnectorActionBarProps {
 	onSave: () => void;
 	/** The save action's label, such as `Save to Chat files`. */
 	saveLabel: string;
-	/** Opens it in its own app. */
+	/**
+	 * Set when the host already holds what is open, such as `In your Digital
+	 * Twin`: the bar says so in place of its save button.
+	 */
+	savedLabel?: string;
+	/** Opens it in its own app. Shown only when it is an absolute HTTPS URL. */
 	webUrl?: string;
 	/** The app's name, for the open action. */
 	serviceName: string;
@@ -33,17 +40,20 @@ interface ConnectorActionBarProps {
 /**
  * The actions for an open email, thread, chat, or event: add it to the
  * conversation, save it into the insight's files, or open it in its own app.
+ * What the host already holds says so where it would be saved.
  */
 export const ConnectorActionBar = ({
 	onAddToContext,
 	onSave,
 	saveLabel,
+	savedLabel,
 	webUrl,
 	serviceName,
 	isBusy = false,
 	children,
 }: ConnectorActionBarProps) => {
 	const { t } = useTranslation("connectors");
+	const href = safeHttpsUrl(webUrl);
 
 	return (
 		<div className="flex flex-wrap items-center gap-1">
@@ -58,17 +68,25 @@ export const ConnectorActionBar = ({
 					{t("actions.addToContext")}
 				</Button>
 			) : null}
-			<Button
-				variant="outline"
-				size="sm"
-				className="h-8 px-2 text-xs shadow-none aria-disabled:opacity-50"
-				aria-disabled={isBusy || undefined}
-				onClick={isBusy ? undefined : onSave}
-			>
-				<DownloadIcon aria-hidden />
-				{saveLabel}
-			</Button>
-			{webUrl ? (
+			{savedLabel ? (
+				// as tall as the button it stands in for
+				<span className="flex h-8 items-center gap-1.5 rounded-md bg-primary/10 px-2 font-medium text-xs">
+					<ConnectorSavedMark />
+					{savedLabel}
+				</span>
+			) : (
+				<Button
+					variant="outline"
+					size="sm"
+					className="h-8 px-2 text-xs shadow-none aria-disabled:opacity-50"
+					aria-disabled={isBusy || undefined}
+					onClick={isBusy ? undefined : onSave}
+				>
+					<DownloadIcon aria-hidden />
+					{saveLabel}
+				</Button>
+			)}
+			{href ? (
 				<Tooltip disableHoverableContent={false}>
 					<TooltipTrigger asChild>
 						<Button
@@ -78,7 +96,7 @@ export const ConnectorActionBar = ({
 							asChild
 						>
 							<a
-								href={webUrl}
+								href={href}
 								target="_blank"
 								rel="noopener noreferrer"
 							>

@@ -29,3 +29,31 @@ export function newRoomPath(agentId?: string, modelId?: string) {
 	const query = search.toString();
 	return query ? `/?${query}` : "/";
 }
+
+/** The page that starts a chat with a Digital Twin, the signed-in person's own or one shared with them. */
+export function twinChatPath(agentId: string): string {
+	return `/twins/chat?${new URLSearchParams({ agentId })}`;
+}
+
+/** Manage a particular Digital Twin, optionally opening its People tab. */
+export function twinSettingsPath(twinId: string, tab?: "people"): string {
+	const search = new URLSearchParams({ twinId });
+	if (tab) search.set("tab", tab);
+	return `/twins/mine?${search}`;
+}
+
+/** What a Digital Twin knows. The optional id keeps older single-twin links working. */
+export function twinContentsPath(place?: string, twinId?: string): string {
+	const path = "/twins/mine/contents";
+	const search = new URLSearchParams();
+	if (twinId !== undefined) search.set("twinId", twinId);
+	if (place) search.set("in", place);
+	return search.size ? `${path}?${search}` : path;
+}
+
+/** Pages that open on the hero photo; the shell scrolls them together with its header so the photo runs behind it. */
+export function isHeroPath(pathname: string): boolean {
+	return ["/", "/work", "/work/review", "/work/topics"].includes(
+		pathname.replace(/\/$/, "") || "/",
+	);
+}

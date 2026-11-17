@@ -40,7 +40,7 @@ provider parsing, calendar view rules, and presentation remain here.
 | `microsoft/` | Microsoft 365 apps without a shared counterpart: their reactor output types, parsers, pixels, and saved files, with a folder per app (`onedrive/`, `teams/`) |
 | `google/` | Google Workspace: the same, with a folder per app (`docs/`, `drive/`) |
 | `styles/globals.css` | Tailwind source discovery for the host's stylesheet |
-| `index.ts` | The public entry point: the viewers, their props, the host contract, and `ConnectorBrandIcon`, the apps' logos, re-exported from `@semoss/shared`, which keeps the logo files so every package can show them |
+| `index.ts` | The public entry point: the viewers, their props, the host contract, saving an item by its ids (`saveMicrosoftItem`), and `ConnectorBrandIcon`, the apps' logos, re-exported from `@semoss/shared`, which keeps the logo files so every package can show them |
 
 A new provider gets its own folder beside `microsoft/` and `google/`, built on `core/` and
 `components/`. A new mailbox or calendar is a descriptor in `mail-apps.ts` or
@@ -75,6 +75,25 @@ code may import from `core/` and `components/`; those two never import from them
 - **`onAddToContext` is the host's.** The viewer saves the item, then hands the saved file over;
   the action only shows when the host passes the callback. `onSaved` replaces the viewer's own
   confirmation, and `onSignIn` opens the account's sign in, which must happen inside the click.
+- **A host can mark what it already holds.** `MailboxView`, `TeamsChatViewer`, `OneDriveViewer`,
+  and `TeamsFilesViewer` take `savedItems` (`{ isSaved(itemKey), label }`). The file `onSaved`
+  is handed names its item in `itemKey`, which is the save request's key, so the host answers
+  `isSaved` from what it kept. A held item says the host's `label` where it would be offered for
+  saving, with a filled check (`ConnectorSavedMark`): on its row, which is filled too, and on the
+  bar above it once it is open. Its right-click menu still saves, since the host may have let
+  its copy go. Mail is keyed by thread (`mailSaveKey`), since a save takes the whole thread, so
+  every row of a thread is held together whether or not the list groups them. Collaboration's
+  Digital Twin pages use it.
+- **A host can save an item it found itself.** `saveMicrosoftItem(insightId, item)`
+  (`microsoft/microsoft-item-save.ts`) saves one of the user's Outlook threads, Teams chats or
+  drive files by its ids (`MicrosoftItemRef`), for a host that found it some other way than in a
+  viewer's list, as Collaboration's Digital Twin search does. It writes the same file the
+  item's viewer writes, with the same Markdown writers and download reactor, and answers the
+  saved file with the `itemKey` that viewer would give it; `microsoftItemKey(item)` is that key
+  without saving, so one `savedItems` answers for the host's own list and the viewers' lists
+  alike. An email thread that is gone by then is refused, not saved as an empty file. Keep the
+  keys in step with the viewers: mail goes through `mailSaveKey`, a chat is its id, a file its
+  drive item id. `ConnectorSavedMark` is exported for a host's own list of held items.
 - **Save preparation belongs to the originating host.** Optional
   `prepareSave?: () => Promise<void | (() => void)>` runs before saving. A returned release
   function runs in `finally`, after save callbacks, including failures and navigation away.
@@ -305,7 +324,13 @@ equivalents. Only visible viewers publish (`isVisible` defaults to true); hosts 
 scoped to their provider/tab and own registration, retention, and navigation. Omitting the callback restores existing viewer
 controls, including in compact host layouts. Mail detail links use only a matching loaded
 message, or the newest loaded matching thread message, validated as an absolute HTTPS URL;
-there is no mailbox-home fallback. Retained detail `focusRequestId` values request heading
+there is no mailbox-home fallback. Every link out to a service's own app passes through
+`safeHttpsUrl` and is shown only when it is an absolute HTTPS URL: the `ConnectorActionBar`,
+`ConnectorItemMenu` (and `hasItemActions`), `ConnectorFileExplorer` and `ToolOutcomePanel`
+check the `webUrl` they are given, `useConnectorControls` publishes only such an `openIn`, and
+an event's Join Meeting link and a compose receipt's link are checked where they are drawn.
+So Teams chats, channel threads, message search hits and files, OneDrive, mail and calendar
+all share the one check. Retained detail `focusRequestId` values request heading
 focus on each open/reopen, while browser `focusItem` restores the originating row or focuses
 the list when the row is gone (the browser container in empty/error states). Hidden viewers
 do not move focus. Omitting these optional host APIs preserves inline detail
@@ -327,6 +352,11 @@ keyboard focus.
 `@semoss/connectors` is **source-only**, like `@semoss/shared`: no bundler and no `dist/`. Its
 `package.json` `exports` point at `src/`, so consuming apps compile the TypeScript themselves.
 Keep the source type-clean and Biome-clean.
+
+It has no state library. Shared state that outlives a component uses a `StoreState`-backed
+store per the [state management skill](../../skills/state-management.skill.md). The module-level
+listener sets in `mail/mail-compose-outcomes.ts` and `mail/use-mail-picture-preference.ts`
+predate it; move them onto `StoreState` when you touch them.
 
 | Import | Resolves to |
 |--------|-------------|

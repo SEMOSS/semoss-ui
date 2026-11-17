@@ -11,7 +11,8 @@ import {
 	ToggleGroupItem,
 	useTheme,
 } from "@semoss/ui/next";
-import { useRoot } from "@/hooks";
+import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
+import { NewChatSettings } from "./new-chat-settings";
 import { SettingsRow } from "./settings-row";
 
 type ThemeMode = ReturnType<typeof useTheme>["theme"];
@@ -28,12 +29,13 @@ const isThemeMode = (value: string): value is ThemeMode =>
 
 /**
  * The General page of the settings dialog: the color theme, when the
- * deployment turns dark mode on, and the language the app is shown in.
+ * deployment turns dark mode on, the language the app is shown in, and what
+ * a new chat starts with.
  */
 export const GeneralSettings = () => {
 	const { t, i18n } = useTranslation("sidebar");
-	const { theme, setTheme } = useTheme();
-	const { root } = useRoot();
+	const { theme: colorMode, setTheme } = useTheme();
+	const theme = usePlaygroundTheme();
 	const headingId = useId();
 	const themeLabelId = useId();
 	const languageId = useId();
@@ -42,66 +44,75 @@ export const GeneralSettings = () => {
 		LANGUAGES.find((lang) => lang.code === i18n.language)?.code ?? "";
 
 	return (
-		<section aria-labelledby={headingId} className="flex flex-col">
-			<h3 id={headingId} className="font-semibold text-base">
-				{t("settings.general.appearance")}
-			</h3>
-			{root.theme.featureFlags?.enableDarkMode ? (
-				<SettingsRow
-					label={t("settings.general.theme")}
-					labelId={themeLabelId}
-					description={t("settings.general.themeDescription")}
-				>
-					<ToggleGroup
-						type="single"
-						variant="outline"
-						size="sm"
-						aria-labelledby={themeLabelId}
-						value={theme}
-						// radix clears a single group to "" when the active item is
-						// clicked again; a theme is always chosen
-						onValueChange={(value) => {
-							if (isThemeMode(value)) {
-								setTheme(value);
-							}
-						}}
+		<>
+			<section aria-labelledby={headingId} className="flex flex-col">
+				<h3 id={headingId} className="font-semibold text-base">
+					{t("settings.general.appearance")}
+				</h3>
+				{theme.featureFlags?.enableDarkMode ? (
+					<SettingsRow
+						label={t("settings.general.theme")}
+						labelId={themeLabelId}
+						description={t("settings.general.themeDescription")}
 					>
-						{THEME_OPTIONS.map(({ value, icon: Icon }) => (
-							<ToggleGroupItem
-								key={value}
-								value={value}
-								aria-label={t(
-									`settings.general.themes.${value}`,
-								)}
-								title={t(`settings.general.themes.${value}`)}
-							>
-								<Icon aria-hidden />
-							</ToggleGroupItem>
-						))}
-					</ToggleGroup>
-				</SettingsRow>
-			) : null}
-			<SettingsRow
-				label={t("settings.general.language")}
-				controlId={languageId}
-				description={t("settings.general.languageDescription")}
-			>
-				<Select
-					value={selectedLanguage}
-					onValueChange={(code) => void i18n.changeLanguage(code)}
+						<ToggleGroup
+							type="single"
+							variant="outline"
+							size="sm"
+							aria-labelledby={themeLabelId}
+							value={colorMode}
+							// radix clears a single group to "" when the active item is
+							// clicked again; a theme is always chosen
+							onValueChange={(value) => {
+								if (isThemeMode(value)) {
+									setTheme(value);
+								}
+							}}
+						>
+							{THEME_OPTIONS.map(({ value, icon: Icon }) => (
+								<ToggleGroupItem
+									key={value}
+									value={value}
+									aria-label={t(
+										`settings.general.themes.${value}`,
+									)}
+									title={t(
+										`settings.general.themes.${value}`,
+									)}
+								>
+									<Icon aria-hidden />
+								</ToggleGroupItem>
+							))}
+						</ToggleGroup>
+					</SettingsRow>
+				) : null}
+				<SettingsRow
+					label={t("settings.general.language")}
+					controlId={languageId}
+					description={t("settings.general.languageDescription")}
 				>
-					<SelectTrigger id={languageId} size="sm" className="w-40">
-						<SelectValue />
-					</SelectTrigger>
-					<SelectContent>
-						{LANGUAGES.map((lang) => (
-							<SelectItem key={lang.code} value={lang.code}>
-								{lang.label}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
-			</SettingsRow>
-		</section>
+					<Select
+						value={selectedLanguage}
+						onValueChange={(code) => void i18n.changeLanguage(code)}
+					>
+						<SelectTrigger
+							id={languageId}
+							size="sm"
+							className="w-40"
+						>
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							{LANGUAGES.map((lang) => (
+								<SelectItem key={lang.code} value={lang.code}>
+									{lang.label}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</SettingsRow>
+			</section>
+			<NewChatSettings />
+		</>
 	);
 };

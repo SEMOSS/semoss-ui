@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Env } from "../env";
 import { UnauthorizedError } from "./error";
-import { CSRF, get, post } from "./fetch";
+import { CSRF, get, getCsrfHeaders, post } from "./fetch";
 
 const createJsonResponse = (
 	data: unknown,
@@ -252,6 +252,54 @@ describe("fetch utility", () => {
 		expect(
 			(postRequest?.headers as Record<string, string>)["X-CSRF-Token"],
 		).toBe("csrf-token-1");
+	});
+
+	it("sends no CSRF token on GET when enabled", async () => {
+		CSRF.isEnabled = true;
+
+		const fetchMock = vi.mocked(fetch);
+		fetchMock.mockResolvedValueOnce(createJsonResponse({ ok: true }));
+
+		await get("/api/read");
+
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+		expect(
+			(fetchMock.mock.calls[0][1]?.headers as Record<string, string>)[
+				"X-CSRF-Token"
+			],
+		).toBeUndefined();
+	});
+
+	it("gives no CSRF headers, without asking the server, when CSRF is off", async () => {
+		await expect(getCsrfHeaders()).resolves.toEqual({});
+		expect(fetch).not.toHaveBeenCalled();
+	});
+
+	it("reads the CSRF token once and reuses it for later headers", async () => {
+		Env.update({ CSRF: true, MODULE: "/module" });
+
+		const fetchMock = vi.mocked(fetch);
+		fetchMock.mockResolvedValueOnce(
+			createJsonResponse(
+				{},
+				{ headers: { "X-CSRF-Token": "csrf-token-2" } },
+			),
+		);
+
+		await expect(getCsrfHeaders()).resolves.toEqual({
+			"X-CSRF-Token": "csrf-token-2",
+		});
+		await expect(getCsrfHeaders()).resolves.toEqual({
+			"X-CSRF-Token": "csrf-token-2",
+		});
+
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+		expect(fetchMock.mock.calls[0][0]).toBe("/module/api/config/fetchCsrf");
+		expect(
+			(fetchMock.mock.calls[0][1]?.headers as Record<string, string>)[
+				"X-CSRF-Token"
+			],
+		).toBe("fetch");
 	});
 
 	it("throws UnauthorizedError when backend responds with redirect header", async () => {

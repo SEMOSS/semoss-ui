@@ -61,7 +61,7 @@ export function ProfileForm({
 			<FormInput name="role" label="Role" />
 			<FormInput name="timezone" label="Time zone" />
 			<FormInput name="workingHours" label="Working hours" />
-			<Button type="submit">Save profile for this session</Button>
+			<Button type="submit">Save profile</Button>
 			{Object.keys(form.formState.dirtyFields).length > 0 && (
 				<Small className="text-muted-foreground">
 					Unsaved profile edits

@@ -521,7 +521,7 @@ export function JobsPage() {
 
 	const getStats = (window: "24h" | "7d" | "30d" = statsWindow) => {
 		setStatsLoading(true);
-		const pixel = `META|SchedulerStats(window=["${window}"])`;
+		const pixel = `META|AdminSchedulerStats(window=["${window}"])`;
 		sessionRunPixel<[SchedulerStats]>(pixel)
 			.then((response) => {
 				const type = response.pixelReturn[0].operationType[0];

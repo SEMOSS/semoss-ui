@@ -1,97 +1,81 @@
 import { LockKeyhole, RefreshCcw } from "lucide-react";
-import { useState } from "react";
 import type { Role } from "@semoss/sdk";
-import { usePixel } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
 import { Button, Spinner } from "@semoss/ui/next";
+import type { MyAccessRequest } from "@/api/user-access";
 import { ProjectAccessRequestDialog } from "./project-access-request-dialog";
 
-interface ProjectAccessRequestButtonProps {
+/** Props for {@link ProjectAccessRequestButton}. */
+export interface ProjectAccessRequestButtonProps {
 	/** Project details */
 	project: Project;
-
 	/** Current role of the user */
 	permission: Role;
-
-	/** Callback fired when the access request dialog is successful */
+	/** The user's own request that waits for a decision, or null */
+	request: MyAccessRequest | null;
+	/** Whether the user's request is still being read */
+	isRequestLoading: boolean;
+	/** Whether the request dialog is open */
+	open: boolean;
+	/** Opens or closes the request dialog */
+	onOpenChange: (open: boolean) => void;
+	/** Called after the user asks for access, or changes what they asked for */
 	onSuccess: () => void;
 }
 
+/**
+ * Asks for access to the project, or for a change to the user's access. With
+ * a request waiting, it changes that request: the dialog starts from the level
+ * and reason the user gave, and asking again replaces it.
+ */
 export const ProjectAccessRequestButton = ({
 	project,
 	permission,
+	request,
+	isRequestLoading,
+	open,
+	onOpenChange,
 	onSuccess,
 }: ProjectAccessRequestButtonProps) => {
-	const [open, setOpen] = useState(false);
-
-	// get the current access request
-	const getCurrentAccessRequest = usePixel<
-		{
-			PERMISSION: number;
-			REQUEST_TIMESTAMP: string;
-			APPROVER_DECISION: string;
-			EMAIL: string;
-			NAME: string;
-			PROJECTID: string;
-			USERNAME: string;
-			REQUEST_USERID: string;
-			REQUEST_TYPE: string;
-			ID: string;
-		}[]
-	>(
-		project.project_id
-			? `GetProjectUserAccessRequest(project='${project.project_id}', isSpecificUser=true)`
-			: "",
-		{ data: [] },
-	);
-
-	const hasPendingRequest =
-		getCurrentAccessRequest.status === "SUCCESS" &&
-		Array.isArray(getCurrentAccessRequest.data) &&
-		getCurrentAccessRequest.data.length > 0;
+	let label =
+		permission === "DISCOVERABLE" ? "Request Access" : "Change Access";
+	if (request) {
+		label = "Change Request";
+	}
 
 	return (
 		<>
 			<Button
-				disabled={
-					getCurrentAccessRequest.status === "LOADING" ||
-					hasPendingRequest
+				disabled={isRequestLoading}
+				variant={
+					permission === "DISCOVERABLE" && !request
+						? "default"
+						: "outline"
 				}
-				variant={permission === "DISCOVERABLE" ? "default" : "outline"}
 				className="gap-2"
-				onClick={() => setOpen(true)}
+				onClick={() => onOpenChange(true)}
 				data-testid={"appDetail-access-btn"}
 			>
-				{getCurrentAccessRequest.status === "LOADING" ? (
-					<Spinner className="size-4" />
-				) : null}
-				{permission === "DISCOVERABLE" ? (
+				{isRequestLoading ? <Spinner className="size-4" /> : null}
+				{permission === "DISCOVERABLE" && !request ? (
 					<LockKeyhole className="size-4" />
 				) : (
 					<RefreshCcw className="size-4" />
 				)}
-
-				{hasPendingRequest
-					? "Pending Access"
-					: permission === "DISCOVERABLE"
-						? "Request Access"
-						: "Change Access"}
+				{label}
 			</Button>
 
 			<ProjectAccessRequestDialog
 				open={open}
 				onClose={(success) => {
-					// refresh the current acces
 					if (success) {
-						getCurrentAccessRequest.refresh();
 						onSuccess();
 					}
-
-					// close it
-					setOpen(false);
+					onOpenChange(false);
 				}}
 				project={project}
 				permission={permission}
+				request={request}
 			/>
 		</>
 	);

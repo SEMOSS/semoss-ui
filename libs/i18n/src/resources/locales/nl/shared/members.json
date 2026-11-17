@@ -45,6 +45,19 @@
 		"yearly": "Jaarlijks",
 		"allTime": "Altijd"
 	},
+	"usageLimit": {
+		"notDefinedHint": {
+			"APP": "Mensen die het model via deze app gebruiken, vallen onder de limiet voor openbaar gebruik, hun eigen totale modellimiet of de algemene platformlimiet."
+		},
+		"unlimitedHint": {
+			"APP": "Geen plafond voor de aanroepen die de aangepaste reactors van deze app met de machtiging van de app doen. Het modeltotaal blijft gelden."
+		},
+		"counts": {
+			"appShared": "Gedeeld door de app",
+			"appEach": "Voor elke gebruiker"
+		},
+		"eachUserNote": "Regels voor elke gebruiker tellen alleen de aanroepen waarop de limiet van deze app van toepassing is."
+	},
 	"footer": {
 		"add": "Toevoegen",
 		"addWithCount": "Toevoegen ({{count}})"

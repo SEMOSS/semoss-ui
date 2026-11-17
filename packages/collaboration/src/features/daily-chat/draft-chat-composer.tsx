@@ -26,6 +26,8 @@ interface DraftChatComposerProps {
 	onSelectAgent: (agentId: string) => Promise<void>;
 	/** The overview composer is compact and never steals initial page focus. */
 	isCompact?: boolean;
+	/** Today's ask box: a compact composer lifted off the hero photo behind it. */
+	isHero?: boolean;
 	panelActions: readonly ComposerPanelAction[];
 }
 
@@ -40,6 +42,7 @@ export function DraftChatComposer({
 	onSaveSettings,
 	onSelectAgent,
 	isCompact = false,
+	isHero = false,
 	panelActions,
 }: DraftChatComposerProps) {
 	const actionsTriggerId = `new-chat-${draftId}-composer-actions`;
@@ -81,8 +84,20 @@ export function DraftChatComposer({
 			<RoomComposer
 				key={`${draftId}:${snapshot.composerResetKey}`}
 				autoFocus={!isCompact}
-				inputClassName={isCompact ? "min-h-10" : undefined}
-				placeholder={isCompact ? "Ask anything…" : undefined}
+				// the root's own background would show as square corners over the photo
+				className={isHero ? "bg-transparent" : undefined}
+				surfaceClassName={isHero ? "shadow-lg" : undefined}
+				// the hero's longer placeholder wraps on a phone, so it keeps the full height there
+				inputClassName={
+					isHero ? "sm:min-h-14" : isCompact ? "min-h-10" : undefined
+				}
+				placeholder={
+					isHero
+						? "Ask anything, search your work, or take action…"
+						: isCompact
+							? "Ask anything…"
+							: undefined
+				}
 				initialDraft={snapshot.composerDraft}
 				onDraftChange={session.setComposerDraft}
 				retainUntilSent

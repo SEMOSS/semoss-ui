@@ -1,5 +1,5 @@
+import { useStoreSelector } from "@semoss/utility/react/use-store-selector";
 import type { SessionInsightStore } from "../../../stores/session/session-insight.store";
-import { useStoreSelector } from "../utility/store-selector";
 import { useSessionStore } from "./use-session";
 
 /**

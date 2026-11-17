@@ -17,7 +17,7 @@ interface RoomHeaderProps {
 /**
  * One narrow row above a room's conversation and Workbench: the room's name
  * (inside a `RoomActionsProvider`; a new chat has none), then the Workbench
- * toggle. The More actions menu sits on the Workbench rail. Inside that
+ * toggle. The Workbench's panels sit on its own rail. Inside that
  * layout it starts with the button that opens the hidden navigation, in place
  * of the layout's floating one; the open navigation keeps its own toggle.
  */

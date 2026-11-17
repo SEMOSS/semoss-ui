@@ -409,9 +409,6 @@ test("has one add menu and no standalone tools or mode chip", () => {
 	expect(
 		screen.queryByRole("button", { name: "menuUpload.attachDocument" }),
 	).toBeNull();
-	expect(
-		screen.queryByRole("button", { name: "studio.moreActions" }),
-	).toBeNull();
 	expect(screen.queryByText("modes.agent")).toBeNull();
 	expect(screen.queryByText("studio.tools")).toBeNull();
 	expect(screen.getByRole("button", { name: "input.record" })).toBeVisible();

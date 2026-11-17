@@ -41,12 +41,16 @@ import {
 } from "../project-settings-toggle";
 import { PROJECT_TERMINAL_PANEL } from "../project-terminal-panel";
 import { AGENT_EDITOR_PANEL } from "./agent-editor-panel";
+import { AGENT_FILES_PANEL, AGENT_FILES_PATH } from "./agent-files-panel";
 
 /**
- * The default arrangement: the agent editor front and centre, files (and, for
- * editors, version control) on a collapsed left rail and the terminal on a
- * collapsed bottom rail, so they don't take space away from the editor on
- * first load.
+ * The default arrangement: the agent editor front and centre, the agent's own
+ * files (and, for editors, version control) on a collapsed left rail and the
+ * terminal on a collapsed bottom rail, so they don't take space away from the
+ * editor on first load.
+ *
+ * There is no project-wide Files panel here on purpose: a chat reads only the
+ * agent's own files, so those are the only files the workbench offers.
  */
 const createAgentWorkbenchLayout = (
 	projectId: string,
@@ -64,9 +68,12 @@ const createAgentWorkbenchLayout = (
 		panels: {
 			[WORKBENCH_PANEL_RECORDS.AGENT_EDITOR.id]:
 				WORKBENCH_PANEL_RECORDS.AGENT_EDITOR,
-			[WORKBENCH_PANEL_RECORDS.FILE_EXPLORER.id]: {
-				...WORKBENCH_PANEL_RECORDS.FILE_EXPLORER,
-				config: { mode: { type: "APP", app: projectId } },
+			[WORKBENCH_PANEL_RECORDS.AGENT_FILES.id]: {
+				...WORKBENCH_PANEL_RECORDS.AGENT_FILES,
+				config: {
+					mode: { type: "APP", app: projectId },
+					rootPath: AGENT_FILES_PATH,
+				},
 			},
 			[WORKBENCH_PANEL_RECORDS.ASSISTANT.id]:
 				WORKBENCH_PANEL_RECORDS.ASSISTANT,
@@ -84,7 +91,7 @@ const createAgentWorkbenchLayout = (
 		borders: {
 			left: {
 				panelIds: [
-					WORKBENCH_COMPONENTS.FILE_EXPLORER,
+					WORKBENCH_COMPONENTS.AGENT_FILES,
 					...(!readOnly ? [WORKBENCH_COMPONENTS.GIT_VERSION] : []),
 				],
 				activeId: null,
@@ -110,6 +117,7 @@ export const AGENT_WORKBENCH_COMPONENTS: Record<
 	WorkbenchPanelConfigAny
 > = {
 	[WORKBENCH_COMPONENTS.AGENT_EDITOR]: AGENT_EDITOR_PANEL,
+	[WORKBENCH_COMPONENTS.AGENT_FILES]: AGENT_FILES_PANEL,
 	...FILE_PANEL_COMPONENTS,
 	[WORKBENCH_COMPONENTS.GIT_VERSION]: GIT_VERSION_PANEL,
 	[WORKBENCH_COMPONENTS.GIT_DIFF]: GIT_DIFF_PANEL,
@@ -154,7 +162,7 @@ export const AgentWorkbench: React.FC = () => {
 		: project.project_id;
 
 	const [snapshot, onSnapshotChange] = useCacheData<WorkbenchSnapshot>(
-		`workbench-layout--${workbenchId}--2`,
+		`workbench-layout--${workbenchId}--4`,
 		workbenchLayout,
 	);
 
@@ -197,7 +205,10 @@ export const AgentWorkbench: React.FC = () => {
 
 	useWorkbenchCommands([
 		createReconnectCommand(insight),
-		...createFileCommands({ readOnly: readOnly }),
+		...createFileCommands({
+			explorerId: WORKBENCH_COMPONENTS.AGENT_FILES,
+			readOnly: readOnly,
+		}),
 		createOpenPanelCommand({
 			id: "workbench.project-agent-editor.open",
 			label: "Open Agent Editor",

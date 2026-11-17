@@ -27,7 +27,7 @@ jobs:
         runs-on: codebuild-semoss-github-runner-${{ github.run_id }}-${{ github.run_attempt }}
         if: ${{ vars.RELEASE != 'TRUE'  && (github.event_name =='push' || github.event_name =='pull_request')  }}
         container:
-            image: public.ecr.aws/docker/library/node:24-bookworm
+            image: public.ecr.aws/docker/library/node:26-bookworm
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
@@ -40,11 +40,11 @@ jobs:
             - name: Install n (Node version manager)
               run: npm install -g n
 
-            # ---------- Build semoss-ui (Node 24) -----------                
+            # ---------- Build semoss-ui (Node 26) -----------                
             - name: Install pnpm
               uses: pnpm/action-setup@v4
               with:
-                version: 10.13.1
+                version: 12.18.0
 
             - name: Install pnpm dependencies
               run: |
@@ -180,7 +180,7 @@ jobs:
         runs-on: codebuild-semoss-github-runner-${{ github.run_id }}-${{ github.run_attempt }}
         if: ${{ vars.RELEASE != 'TRUE'  && github.event_name =='workflow_dispatch' }}
         container:
-            image: public.ecr.aws/docker/library/node:24-bookworm
+            image: public.ecr.aws/docker/library/node:26-bookworm
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
@@ -232,11 +232,11 @@ jobs:
             - name: Install n (Node version manager)
               run: npm install -g n
 
-            # ---------- Build semoss-ui (Node 24) -----------                
+            # ---------- Build semoss-ui (Node 26) -----------                
             - name: Install pnpm
               uses: pnpm/action-setup@v4
               with:
-                version: 10.13.1
+                version: 12.18.0
 
             - name: Install npm dependencies
               run: |
@@ -419,7 +419,7 @@ jobs:
         runs-on: codebuild-semoss-github-runner-${{ github.run_id }}-${{ github.run_attempt }}
         if: ${{ vars.RELEASE == 'TRUE' && github.event_name == 'workflow_dispatch' && (github.ref_name == 'main' || github.ref_name == 'dev') }}
         container:
-            image: public.ecr.aws/docker/library/node:24-bookworm
+            image: public.ecr.aws/docker/library/node:26-bookworm
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
@@ -468,11 +468,11 @@ jobs:
             - name: Install n (Node version manager)
               run: npm install -g n
 
-            # ---------- Build semoss-ui (Node 24) -----------                
+            # ---------- Build semoss-ui (Node 26) -----------                
             - name: Install pnpm
               uses: pnpm/action-setup@v4
               with:
-                version: 10.13.1
+                version: 12.18.0
 
             - name: Install npm dependencies
               run: |

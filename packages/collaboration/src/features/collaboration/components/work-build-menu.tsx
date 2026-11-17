@@ -1,4 +1,4 @@
-import { RefreshCw } from "lucide-react";
+import { Mail, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useInsight } from "@semoss/sdk/react";
 import {
@@ -14,6 +14,7 @@ import {
 } from "@semoss/ui/next";
 import { pixel } from "@/lib/pixel";
 import { runBatch } from "../live/live-state";
+import { useWorkChanged } from "../state/collaboration-session.context";
 
 // The owner builds work items from their recent mail and chats, and sees the run's progress.
 
@@ -37,8 +38,10 @@ function progress(status: Status): string {
 	}
 }
 
-export function WorkBuildMenu({ onDone }: { onDone: () => void }) {
+/** "Build from mail": starts a build, shows its progress, and tells every view of work when it is done. */
+export function WorkBuildMenu({ onDone }: { onDone?: () => void }) {
 	const { actions } = useInsight();
+	const { markWorkChanged } = useWorkChanged();
 	const [status, setStatus] = useState<Status | null>(null);
 	const timer = useRef<number | undefined>(undefined);
 	const busy = Boolean(status && ACTIVE.has(String(status.state)));
@@ -54,14 +57,17 @@ export function WorkBuildMenu({ onDone }: { onDone: () => void }) {
 				timer.current = window.setTimeout(() => void poll(), 3000);
 				return;
 			}
-			if (next.state === "done") onDone();
+			if (next.state === "done") {
+				markWorkChanged();
+				onDone?.();
+			}
 			if (next.state === "error")
 				toast.error(String(next.error ?? "Building work items failed"));
 		} catch {
 			// a failed status check leaves the button usable
 			setStatus(null);
 		}
-	}, [actions, onDone]);
+	}, [actions, markWorkChanged, onDone]);
 
 	// a build already running (from another tab or a sync) shows its progress
 	useEffect(() => {
@@ -89,22 +95,26 @@ export function WorkBuildMenu({ onDone }: { onDone: () => void }) {
 
 	return (
 		<div className="flex items-center gap-3">
-			{busy && status ? (
-				<Small className="text-muted-foreground tabular-nums">
-					{progress(status)}
-				</Small>
-			) : null}
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
-					<Button variant="outline" size="sm" disabled={busy}>
-						<RefreshCw
-							aria-hidden="true"
-							className={busy ? "animate-spin" : undefined}
-						/>
+					<Button
+						variant="ghost"
+						size="sm"
+						disabled={busy}
+						className="pointer-coarse:min-h-11 text-foreground"
+					>
+						{busy ? (
+							<RefreshCw
+								aria-hidden="true"
+								className="animate-spin"
+							/>
+						) : (
+							<Mail aria-hidden="true" />
+						)}
 						Build from mail
 					</Button>
 				</DropdownMenuTrigger>
-				<DropdownMenuContent align="end">
+				<DropdownMenuContent align="start">
 					<DropdownMenuLabel className="font-normal text-muted-foreground text-xs">
 						Read your threads and add work items
 					</DropdownMenuLabel>
@@ -125,6 +135,12 @@ export function WorkBuildMenu({ onDone }: { onDone: () => void }) {
 					</DropdownMenuItem>
 				</DropdownMenuContent>
 			</DropdownMenu>
+			{/* after the button, which sits at the start of the page's action line */}
+			{busy && status ? (
+				<Small className="text-muted-foreground tabular-nums">
+					{progress(status)}
+				</Small>
+			) : null}
 		</div>
 	);
 }

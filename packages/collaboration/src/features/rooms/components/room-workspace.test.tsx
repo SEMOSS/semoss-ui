@@ -16,6 +16,7 @@ import {
 } from "@/features/collaboration/state/collaboration-session.context";
 import type { ConversationMessage } from "@/features/messages/types/message";
 import type { Session } from "@/types/session";
+import { showFileOnOpen } from "../room-file-to-show";
 import { RoomSession } from "../room-session";
 import { RoomWorkspace } from "./room-workspace";
 
@@ -348,6 +349,24 @@ describe("RoomWorkspace", () => {
 		expect(workbenchState.openFile).toHaveBeenCalledWith(
 			"/Q3 (draft).pptx",
 			"Q3 (draft).pptx",
+		);
+	});
+
+	it("shows the file a room was opened for, once, when the room comes on screen", () => {
+		showFileOnOpen("another-room", {
+			path: "other.docx",
+			name: "other.docx",
+		});
+		showFileOnOpen(session.id, {
+			path: "Q1 Review.pptx",
+			name: "Q1 Review.pptx",
+		});
+		const { rerender } = render(<RoomWorkspace {...defaultProps} />);
+		rerender(<RoomWorkspace {...defaultProps} thread={[]} />);
+		expect(workbenchState.openFile).toHaveBeenCalledTimes(1);
+		expect(workbenchState.openFile).toHaveBeenCalledWith(
+			"Q1 Review.pptx",
+			"Q1 Review.pptx",
 		);
 	});
 

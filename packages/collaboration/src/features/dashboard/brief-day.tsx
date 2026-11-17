@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button, cn, P } from "@semoss/ui/next";
+import { TeamsIcon } from "@/components/common/app-icons";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import { givenFirst } from "@/lib/person-name";
 import { BriefPanel } from "./brief-panel";
@@ -9,7 +10,7 @@ import { DashboardResourceStatus } from "./dashboard-resource-status";
 import { dayKey } from "./dashboard-selectors";
 
 /** Today's calendar, with a live time marker and source-backed meeting details. */
-export function BriefDay({ compact = false }: { compact?: boolean }) {
+export function BriefDay() {
 	const { state } = useCollaborationSession();
 	const { calendar, setSource } = useDashboard();
 	const [now, setNow] = useState(() => new Date());
@@ -73,9 +74,9 @@ export function BriefDay({ compact = false }: { compact?: boolean }) {
 						return (
 							<li key={entry?.event.id ?? "end"}>
 								{index === markerIndex && (
-									<div className="flex items-center gap-4 py-4 text-primary">
+									<div className="flex items-center gap-4 py-3 text-primary">
 										<time
-											className="w-12 shrink-0 text-xs tabular-nums"
+											className="w-12 shrink-0 text-sm tabular-nums"
 											dateTime={now.toISOString()}
 										>
 											{time.format(now)}
@@ -88,8 +89,7 @@ export function BriefDay({ compact = false }: { compact?: boolean }) {
 								{entry && (
 									<div
 										className={cn(
-											"flex gap-4 py-4",
-											compact && "gap-3 py-3",
+											"flex gap-4 py-3",
 											index > 0 &&
 												index !== markerIndex &&
 												"border-t",
@@ -104,7 +104,7 @@ export function BriefDay({ compact = false }: { compact?: boolean }) {
 													? entry.event.start
 													: entry.start.toISOString()
 											}
-											className="w-12 shrink-0 pt-0.5 text-sm tabular-nums"
+											className="w-12 shrink-0 font-medium text-sm tabular-nums leading-6"
 										>
 											{entry.allDay
 												? "All day"
@@ -113,11 +113,7 @@ export function BriefDay({ compact = false }: { compact?: boolean }) {
 										<div className="min-w-0 flex-1">
 											<Button
 												variant="link"
-												className={cn(
-													"wrap-anywhere h-auto max-w-full justify-start whitespace-normal p-0 text-left font-medium text-current text-sm leading-5",
-													compact &&
-														"block truncate whitespace-nowrap",
-												)}
+												className="wrap-anywhere h-auto max-w-full justify-start whitespace-normal p-0 text-left font-medium text-base text-current leading-6"
 												title={
 													entry.event.subject ||
 													"Untitled meeting"
@@ -132,14 +128,7 @@ export function BriefDay({ compact = false }: { compact?: boolean }) {
 												{entry.event.subject ||
 													"Untitled meeting"}
 											</Button>
-											<P
-												className={cn(
-													"wrap-anywhere mt-1 text-muted-foreground text-xs leading-5",
-													compact
-														? "truncate"
-														: "line-clamp-2",
-												)}
-											>
+											<P className="wrap-anywhere line-clamp-2 text-muted-foreground text-sm">
 												{entry.event.attendees
 													.slice(0, 2)
 													.map(
@@ -158,23 +147,27 @@ export function BriefDay({ compact = false }: { compact?: boolean }) {
 													? ` · ${entry.event.location}`
 													: ""}
 											</P>
-											{index === nextIndex &&
-												!compact && (
-													<Button
-														size="sm"
-														variant="secondary"
-														className="mt-2 h-7 rounded-md px-2 font-normal text-xs"
-														onClick={() =>
-															setSource({
-																kind: "calendar",
-																id: entry.event
-																	.id,
-															})
-														}
-													>
-														Prepare for meeting
-													</Button>
-												)}
+											{index === nextIndex && (
+												<Button
+													size="sm"
+													variant="outline"
+													className="mt-3"
+													onClick={() =>
+														setSource({
+															kind: "calendar",
+															id: entry.event.id,
+														})
+													}
+												>
+													{/teams/i.test(
+														entry.event.location ??
+															"",
+													) && (
+														<TeamsIcon aria-hidden="true" />
+													)}
+													Prepare for meeting
+												</Button>
+											)}
 										</div>
 									</div>
 								)}
@@ -184,7 +177,7 @@ export function BriefDay({ compact = false }: { compact?: boolean }) {
 				</ol>
 			)}
 			{hasCalendar && !events.length && (
-				<P className="py-4 text-muted-foreground text-sm">
+				<P className="text-muted-foreground text-sm">
 					No meetings today. A little room to focus.
 				</P>
 			)}

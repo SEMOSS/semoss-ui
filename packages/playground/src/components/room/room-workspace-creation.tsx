@@ -28,7 +28,7 @@ interface SaveWorkspaceDialogProps {
 	systemPrompt: string;
 	/** MCPs to include in the saved agent. */
 	mcps: MCPConfig[];
-	/** Whether the dialog is open; a menu such as More actions opens it. */
+	/** Whether the dialog is open; Publish as Agent opens it. */
 	open: boolean;
 	/** Called as the dialog opens or closes. */
 	onOpenChange: (open: boolean) => void;

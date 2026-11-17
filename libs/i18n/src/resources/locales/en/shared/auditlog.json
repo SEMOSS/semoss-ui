@@ -68,7 +68,8 @@
 		},
 		"guardrailActions": {
 			"MASK": "Masked",
-			"BLOCK": "Blocked"
+			"BLOCK": "Blocked",
+			"TIMEOUT": "Timed Out"
 		},
 		"groupRequest": "Request",
 		"groupSpan": "Span",

@@ -61,8 +61,8 @@ interface RoomOptionsFormProps {
 }
 
 /**
- * A room's settings: its agent, model, instructions, knowledge, and every
- * tool the assistant has. Changes apply as they are made.
+ * A room's settings: its agent, model, instructions, knowledge, every tool the
+ * assistant has. Changes apply as they are made.
  */
 export const RoomOptionsForm = observer(
 	({

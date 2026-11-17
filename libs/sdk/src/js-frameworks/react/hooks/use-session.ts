@@ -1,10 +1,11 @@
 import { useContext, useEffect } from "react";
+import { useStoreSelector } from "@semoss/utility/react/use-store-selector";
 import {
 	Session,
 	type SessionStore,
 } from "../../../stores/session/session.store";
 import { SessionContext } from "../contexts/session.context";
-import { pickActions, useStoreSelector } from "../utility/store-selector";
+import { pickActions } from "../utility/pick-actions";
 
 /** The session's actions, handed to selectors beside its state. */
 const SESSION_ACTIONS = [

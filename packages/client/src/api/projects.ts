@@ -236,17 +236,30 @@ export const uploadImage = async (
 	return response.data;
 };
 
+/**
+ * Saves new SMSS content for a project, which opens again with it.
+ *
+ * @param projectId - The project's id.
+ * @param smssProps - The new content of the SMSS file.
+ * @param admin - Whether to save in admin mode, where an admin can update any
+ * project; outside it the user must own the project.
+ * @returns The response, whose `success` says the save went through.
+ */
 export const updateProjectSmssProperties = async (
 	projectId: string,
 	smssProps: string,
+	admin = false,
 ) => {
 	return await post<{
 		success: boolean;
 	}>(
-		`${Env.MODULE}/api/project-${projectId}/updateSmssFile`,
+		admin
+			? `${Env.MODULE}/api/auth/admin/project/updateSmssFile`
+			: `${Env.MODULE}/api/project-${projectId}/updateSmssFile`,
 		{
 			smss: smssProps,
 			engineId: projectId,
+			projectId,
 		},
 		{},
 	);
