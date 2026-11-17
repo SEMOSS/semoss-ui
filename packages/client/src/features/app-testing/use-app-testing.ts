@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSessionPixel } from "@semoss/sdk/react";
 import {
+	deleteAppTestRecording,
 	getAppTestRun,
 	parseAppTestRecordings,
 	runAppTests,
@@ -25,6 +26,7 @@ interface AppTestingState {
 	isRecording: boolean;
 	isPickingCheck: boolean;
 	isSaving: boolean;
+	isDeleting: boolean;
 	isRunning: boolean;
 	isAccessible: boolean;
 	selectedId: string;
@@ -39,8 +41,9 @@ interface AppTestingState {
 	stopRecording: () => void;
 	addCheck: () => void;
 	save: (name: string) => Promise<void>;
-	startRun: (repeat?: number) => Promise<void>;
+	startRun: () => Promise<void>;
 	refreshRun: () => Promise<void>;
+	deleteRecording: (id: string) => Promise<void>;
 	discard: () => void;
 }
 
@@ -71,6 +74,7 @@ export const useAppTesting = (
 	const [isRecording, setIsRecording] = useState(false);
 	const [isPickingCheck, setIsPickingCheck] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
+	const [isDeleting, setIsDeleting] = useState(false);
 	const [isStartingRun, setIsStartingRun] = useState(false);
 	const [isAccessible, setIsAccessible] = useState(false);
 	const [selectedId, setSelectedId] = useState("__platform_smoke__");
@@ -248,7 +252,7 @@ export const useAppTesting = (
 		}
 	};
 
-	const startRun = async (repeat = 1): Promise<void> => {
+	const startRun = async (): Promise<void> => {
 		if (!selectedId || isRunning) return;
 		const signal = lifetime.current?.signal;
 		setIsStartingRun(true);
@@ -256,7 +260,7 @@ export const useAppTesting = (
 		setRun(null);
 		runStartedAt.current = Date.now();
 		try {
-			const result = await runAppTests(appId, selectedId, repeat);
+			const result = await runAppTests(appId, selectedId);
 			if (!signal?.aborted) setRun(result);
 		} catch (failure: unknown) {
 			if (!signal?.aborted)
@@ -289,12 +293,34 @@ export const useAppTesting = (
 		}
 	};
 
+	const deleteRecording = async (id: string): Promise<void> => {
+		const signal = lifetime.current?.signal;
+		setIsDeleting(true);
+		setError("");
+		try {
+			await deleteAppTestRecording(appId, id);
+			if (signal?.aborted) return;
+			if (selectedId === id) setSelectedId("__platform_smoke__");
+			query.refresh();
+		} catch (failure: unknown) {
+			if (!signal?.aborted)
+				setError(
+					failure instanceof Error
+						? failure.message
+						: "Could not delete the recording",
+				);
+		} finally {
+			if (!signal?.aborted) setIsDeleting(false);
+		}
+	};
+
 	return {
 		steps,
 		weakSteps,
 		isRecording,
 		isPickingCheck,
 		isSaving,
+		isDeleting,
 		isRunning,
 		isAccessible,
 		selectedId,
@@ -311,6 +337,7 @@ export const useAppTesting = (
 		save,
 		startRun,
 		refreshRun,
+		deleteRecording,
 		discard: () => {
 			setSteps([]);
 			setNotice("");

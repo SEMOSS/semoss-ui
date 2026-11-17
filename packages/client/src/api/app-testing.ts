@@ -111,12 +111,10 @@ export const saveAppTestRecording = async (
 export const runAppTests = async (
 	appId: string,
 	recordingId: string,
-	repeat = 1,
 ): Promise<AppTestRun> => {
-	const repeatArgument = repeat > 1 ? `, repeat=[${repeat}]` : "";
 	const result = runSchema.parse(
 		await callAppTestPixel(
-			`RunAppTests(project=${JSON.stringify([appId])}, suite=${JSON.stringify([recordingId])}${repeatArgument});`,
+			`RunAppTests(project=${JSON.stringify([appId])}, suite=${JSON.stringify([recordingId])});`,
 		),
 	);
 	if (result.target !== appId) throw new Error("The app test target changed");

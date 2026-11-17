@@ -1,3 +1,5 @@
+import { Trash2Icon } from "lucide-react";
+import { useState } from "react";
 import {
 	Alert,
 	AlertDescription,
@@ -10,6 +12,9 @@ import {
 	SelectTrigger,
 	SelectValue,
 	Spinner,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	useForm,
 	z,
 	zodResolver,
@@ -42,6 +47,15 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 	const checkCount = state.steps.filter((step) =>
 		step.type.startsWith("ASSERT_"),
 	).length;
+	const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+	const selectedRecording = state.recordings.find(
+		(recording) => recording.id === state.selectedId,
+	);
+	const handleDelete = async (): Promise<void> => {
+		if (!selectedRecording) return;
+		await state.deleteRecording(selectedRecording.id);
+		setIsConfirmingDelete(false);
+	};
 	const handleRecord = (): void => {
 		form.reset({ name: `Recording ${new Date().toLocaleString()}` });
 		state.startRecording();
@@ -133,37 +147,107 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 					)}
 					{!state.isRecording && !hasDraft && (
 						<>
-							<Select
-								value={state.selectedId}
-								onValueChange={state.setSelectedId}
-								disabled={state.isLoading || state.isRunning}
-							>
-								<SelectTrigger
-									aria-label="Saved app recording"
-									className="w-full"
+							<div className="flex w-full items-center gap-2">
+								<Select
+									value={state.selectedId}
+									onValueChange={(id) => {
+										setIsConfirmingDelete(false);
+										state.setSelectedId(id);
+									}}
+									disabled={
+										state.isLoading ||
+										state.isRunning ||
+										state.isDeleting
+									}
 								>
-									<SelectValue
-										placeholder={
-											state.isLoading
-												? "Loading recordings…"
-												: "Select a recording"
-										}
-									/>
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="__platform_smoke__">
-										Page visibility check
-									</SelectItem>
-									{state.recordings.map((recording) => (
-										<SelectItem
-											key={recording.id}
-											value={recording.id}
-										>
-											{recording.name}
+									<SelectTrigger
+										aria-label="Saved app recording"
+										className="min-w-0 flex-1"
+									>
+										<SelectValue
+											placeholder={
+												state.isLoading
+													? "Loading recordings…"
+													: "Select a recording"
+											}
+										/>
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="__platform_smoke__">
+											Page visibility check
 										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
+										{state.recordings.map((recording) => (
+											<SelectItem
+												key={recording.id}
+												value={recording.id}
+											>
+												{recording.name}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											type="button"
+											variant="ghost"
+											size="icon-sm"
+											aria-label="Delete recording"
+											onClick={() =>
+												setIsConfirmingDelete(true)
+											}
+											disabled={
+												!selectedRecording ||
+												state.isRunning ||
+												state.isDeleting
+											}
+										>
+											<Trash2Icon aria-hidden />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>
+										Delete recording
+									</TooltipContent>
+								</Tooltip>
+							</div>
+							{isConfirmingDelete && selectedRecording && (
+								<div
+									role="alert"
+									className="flex w-full flex-col gap-2 rounded-md border p-3"
+								>
+									<p className="text-sm">
+										Delete “{selectedRecording.name}”? This
+										cannot be undone.
+									</p>
+									<div className="flex gap-2">
+										<Button
+											type="button"
+											size="sm"
+											variant="outline"
+											onClick={() =>
+												setIsConfirmingDelete(false)
+											}
+											disabled={state.isDeleting}
+										>
+											Cancel
+										</Button>
+										<Button
+											type="button"
+											size="sm"
+											variant="destructive"
+											onClick={() => void handleDelete()}
+											disabled={state.isDeleting}
+										>
+											{state.isDeleting && (
+												<Spinner className="size-4" />
+											)}
+											{state.isDeleting
+												? "Deleting…"
+												: "Delete"}
+										</Button>
+									</div>
+								</div>
+							)}
 							<Button
 								type="button"
 								size="sm"
@@ -187,21 +271,6 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 									<Spinner className="size-4" />
 								)}
 								{state.isRunning ? "Running…" : "Run test"}
-							</Button>
-							<Button
-								type="button"
-								size="sm"
-								variant="outline"
-								title="Replays the recording three times in fresh browsers; it passes only if every replay passes"
-								onClick={() => void state.startRun(3)}
-								disabled={
-									!state.selectedId ||
-									state.selectedId === "__platform_smoke__" ||
-									state.isRunning ||
-									state.isLoading
-								}
-							>
-								Verify (3 replays)
 							</Button>
 						</>
 					)}
