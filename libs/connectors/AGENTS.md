@@ -40,7 +40,7 @@ provider parsing, calendar view rules, and presentation remain here.
 | `microsoft/` | Microsoft 365 apps without a shared counterpart: their reactor output types, parsers, pixels, and saved files, with a folder per app (`onedrive/`, `teams/`) |
 | `google/` | Google Workspace: the same, with a folder per app (`docs/`, `drive/`) |
 | `styles/globals.css` | Tailwind source discovery for the host's stylesheet |
-| `index.ts` | The public entry point: the viewers, their props, the host contract, and `ConnectorBrandIcon`, the apps' logos, re-exported from `@semoss/shared`, which keeps the logo files so every package can show them |
+| `index.ts` | The public entry point: the viewers, their props, the host contract, saving an item by its ids (`saveMicrosoftItem`), and `ConnectorBrandIcon`, the apps' logos, re-exported from `@semoss/shared`, which keeps the logo files so every package can show them |
 
 A new provider gets its own folder beside `microsoft/` and `google/`, built on `core/` and
 `components/`. A new mailbox or calendar is a descriptor in `mail-apps.ts` or
@@ -84,6 +84,16 @@ code may import from `core/` and `components/`; those two never import from them
   its copy go. Mail is keyed by thread (`mailSaveKey`), since a save takes the whole thread, so
   every row of a thread is held together whether or not the list groups them. Collaboration's
   Digital Twin pages use it.
+- **A host can save an item it found itself.** `saveMicrosoftItem(insightId, item)`
+  (`microsoft/microsoft-item-save.ts`) saves one of the user's Outlook threads, Teams chats or
+  drive files by its ids (`MicrosoftItemRef`), for a host that found it some other way than in a
+  viewer's list, as Collaboration's Digital Twin search does. It writes the same file the
+  item's viewer writes, with the same Markdown writers and download reactor, and answers the
+  saved file with the `itemKey` that viewer would give it; `microsoftItemKey(item)` is that key
+  without saving, so one `savedItems` answers for the host's own list and the viewers' lists
+  alike. An email thread that is gone by then is refused, not saved as an empty file. Keep the
+  keys in step with the viewers: mail goes through `mailSaveKey`, a chat is its id, a file its
+  drive item id. `ConnectorSavedMark` is exported for a host's own list of held items.
 - **Save preparation belongs to the originating host.** Optional
   `prepareSave?: () => Promise<void | (() => void)>` runs before saving. A returned release
   function runs in `finally`, after save callbacks, including failures and navigation away.

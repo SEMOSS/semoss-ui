@@ -1,15 +1,25 @@
 import { ListChecks, Upload, X } from "lucide-react";
 import { useId, useState } from "react";
 import { useInsight } from "@semoss/sdk/react";
-import { Button, FileDropzone, H3, P, Spinner, toast } from "@semoss/ui/next";
+import {
+	Button,
+	cn,
+	FileDropzone,
+	H3,
+	P,
+	Spinner,
+	toast,
+} from "@semoss/ui/next";
 import { uploadRoomFiles } from "@/features/rooms/api/upload-room-files";
 import {
 	TopicContentsNav,
 	type TopicPlaceGroup,
 } from "@/features/topic-contents/topic-contents-nav";
 import type { TwinSource } from "./api/digital-twin";
+import { TwinKnowledgeFinder } from "./twin-knowledge-finder";
 import { TwinSourceViewer } from "./twin-source-viewer";
 import {
+	TWIN_FINDER,
 	TWIN_SOURCES,
 	type TwinSourceId,
 	twinSourceKind,
@@ -41,9 +51,10 @@ interface TwinKnowledgeStepProps {
 /**
  * The step of creating a Digital Twin that chooses what it knows: the
  * owner's Outlook, Teams chats, OneDrive, Teams files and computer to pick
- * from, and the list of what was picked. There is no twin yet to copy into,
- * so each pick only waits in the page's files for the create that copies it,
- * marked in the list it was picked from until it is taken back out.
+ * from, a search that suggests what to pick from a description, and the list
+ * of what was picked. There is no twin yet to copy into, so each pick only
+ * waits in the page's files for the create that copies it, marked in the list
+ * it was picked from until it is taken back out.
  */
 export function TwinKnowledgeStep({
 	items,
@@ -92,6 +103,7 @@ export function TwinKnowledgeStep({
 		{
 			title: "Add from",
 			places: [
+				TWIN_FINDER,
 				...Object.entries(TWIN_SOURCES).map(([id, source]) => ({
 					id,
 					...source,
@@ -100,11 +112,20 @@ export function TwinKnowledgeStep({
 			],
 		},
 	];
-	const current = isSource(place)
-		? TWIN_SOURCES[place]
-		: place === "upload"
-			? UPLOAD
-			: CHOSEN;
+	const isFinding = place === TWIN_FINDER.id;
+	const current = isFinding
+		? TWIN_FINDER
+		: isSource(place)
+			? TWIN_SOURCES[place]
+			: place === "upload"
+				? UPLOAD
+				: CHOSEN;
+	// what a list marks as chosen, by what its viewer knows each item by
+	const savedItems = {
+		isSaved: (itemKey: string) =>
+			items.some((item) => item.itemKey === itemKey),
+		label: "Chosen for your Digital Twin",
+	};
 	return (
 		<div className="flex min-w-0 flex-col overflow-hidden rounded-lg border md:h-128 md:flex-row">
 			<TopicContentsNav
@@ -127,21 +148,30 @@ export function TwinKnowledgeStep({
 						{current.description}
 					</P>
 				</div>
+				{/* not one of the places that start fresh: what it found is still there when the owner comes back to it */}
+				<div
+					className={cn(
+						"h-96 min-h-0 md:h-auto md:flex-1",
+						!isFinding && "hidden",
+					)}
+				>
+					<TwinKnowledgeFinder
+						savedItems={savedItems}
+						onSaved={handleAdd}
+					/>
+				</div>
 				{/* each place starts fresh, as the places of the twin's own contents page do */}
 				<div
 					key={place}
-					className="h-96 min-h-0 overflow-y-auto md:h-auto md:flex-1"
+					className={cn(
+						"h-96 min-h-0 overflow-y-auto md:h-auto md:flex-1",
+						isFinding && "hidden",
+					)}
 				>
-					{isSource(place) ? (
+					{isFinding ? null : isSource(place) ? (
 						<TwinSourceViewer
 							source={place}
-							savedItems={{
-								isSaved: (itemKey) =>
-									items.some(
-										(item) => item.itemKey === itemKey,
-									),
-								label: "Chosen for your Digital Twin",
-							}}
+							savedItems={savedItems}
 							onSaved={handleAdd}
 						/>
 					) : place === "upload" ? (
@@ -219,7 +249,9 @@ export function TwinKnowledgeStep({
 				{/* always there, so the first pick does not move the list; the count beside What you chose changes with it */}
 				<output className="wrap-anywhere line-clamp-2 shrink-0 border-t px-4 py-2 text-muted-foreground text-sm">
 					{status ||
-						"Save an item to choose it for your Digital Twin."}
+						(isFinding
+							? "Add a suggestion to choose it for your Digital Twin."
+							: "Save an item to choose it for your Digital Twin.")}
 				</output>
 			</section>
 		</div>
