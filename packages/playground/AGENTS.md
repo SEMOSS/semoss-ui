@@ -25,10 +25,31 @@ added: backend calls apps share live in `libs/sdk/src/api/` (for example `runMcp
 `@semoss/shared` (`getFileExplorerAdapter`). A room's own tool file is read and written by
 `@semoss/chat`'s `features/room/store/room-tool-file.ts`.
 
+## Routes
+
+`pages/router.tsx` builds one hash router at module load:
+
+| Path | Page | Notes |
+|---|---|---|
+| `/new` | `NewRoomPage` | `NewChat`; `?prompt=`, `?workspaceId=`, `?knowledgeId=`, and the theme's `altLandingKey` |
+| `/room/:roomId` | `RoomPage` | `RoomScope` around `RoomFrame`, `RoomHeader`, `RoomWorkbench`, `RoomConversation` |
+| `/agent`, `/agent/new`, `/agent/:workspaceId`, `/agent/:workspaceId/edit` | `features/agents/` | The catalog, create, detail, and edit pages |
+| `/knowledge`, `/knowledge/:knowledgeId` | `features/knowledge/` | The library and a knowledge base's detail |
+| `/embed/*` | `EmbedPage` | A page embedded from the chat store's `embeddedPageMap`, kept mounted by `MainLayout` |
+| `/login` | `LoginPage` | Outside `AuthenticatedLayout` |
+| anything else | | `/new` when signed in, else `/login` |
+
+The layouts nest `InitializedLayout` (waits for the session, provides the theme through
+`RootLayout`) → `AuthenticatedLayout` → `MainLayout` (the chat's providers, the settings dialog,
+the tour, and `GlobalNav`). `ErrorPage` catches errors in the layouts, and again inside
+`MainLayout` (`isInnerComponent`) so the navigation stays beside a failed page.
+
 ## Session, config and insights
 
-- **Sign in, the user and the config come from the SDK.** `main.tsx` calls `Session.initialize()`
-  once, after embed authentication and before the first render. `InitializedLayout` waits while
+- **Sign in, the user and the config come from the SDK.** `app.tsx` sets `Env.MODULE` (the
+  server's `semoss-env` tag wins, then `.env`'s `MODULE`, then `/Monolith`), and `main.tsx` calls
+  `Session.initialize()` once, after embed authentication (`waitForEmbedAuth`) and the active
+  language, and before the first render. `InitializedLayout` waits while
   `useSession` is `INITIALIZING`. `AuthenticatedLayout` sends `UNAUTHENTICATED` to `/login`, and
   shows `ErrorPage` with Retry (`useSessionRetry` from `@semoss/sdk/react`) on `ERROR`, so `/login` still renders.
   The shared `LoginForm` signs in through `useSession`, and `NavUser` signs out the same way.
@@ -37,8 +58,7 @@ added: backend calls apps share live in `libs/sdk/src/api/` (for example `runMcp
 - **The theme is `usePlaygroundTheme()`** (`features/theme/use-playground-theme.ts`): the server's
   `THEME_MAP` `playground` entry over `VITE_THEME`, `VITE_NAME` and the defaults. These are laid
   together by `withPlaygroundDefaults` in `features/theme/playground-theme.ts`, over the chat's
-  `DEFAULT_CHAT_THEME`,, which returns the
-  same object for the same server theme.
+  `DEFAULT_CHAT_THEME`, which returns the same object for the same server theme.
 - **Only rooms are insights.** The app has no `InsightProvider` of its own. `RoomScope`, and a
   new chat's prepared room, mount one with `options={{ insightId: room.insightId }}` and
   `destroyOnUnmount={false}`, since `RoomStore` owns that insight. Pixels that belong to no
@@ -50,9 +70,8 @@ added: backend calls apps share live in `libs/sdk/src/api/` (for example `runMcp
   `StoreState`-backed store per the
   [state management skill](../../skills/state-management.skill.md), never in a new
   MobX or zustand store. The chat's stores live in
-  `@semoss/chat`, whose [guide](../../libs/chat/AGENTS.md#state) says where each stands.
-  `ChatStore.user` is a thin, deprecated adapter over the SDK (use `useSession`); do not add
-  consumers.
+  `@semoss/chat`, whose [guide](../../libs/chat/AGENTS.md#state) says where each stands. The
+  user is the SDK's (`useSession`); the chat store keeps no copy.
 - **A new chat's model, mode and agent follow one order.** Each takes the first that is set:
   1. what this login session last used, kept in memory and never in `sessionStorage` (the model is
      `ChatStore`'s selected model; the mode and agent are held by `new-chat-preferences.ts`, by
@@ -131,6 +150,10 @@ Mode-specific files are optional; never edit local override files as part of rep
 
 The dev server proxies API requests to the backend:
 
+`vite.config.ts` builds on `createViteConfig` from `@semoss/config` with
+`port: DEV_SERVER_PORTS.playground` (5174) and `proxy: { ws: true }`. The shared config turns
+that into a proxy of `MODULE` to `ENDPOINT`, WebSockets included:
+
 ```typescript
 server: {
   port: 5174,
@@ -139,10 +162,15 @@ server: {
       target: ENDPOINT,
       changeOrigin: true,
       secure: false,
+      ws: true,
     },
   },
 }
 ```
+
+The config also adds the dock's wiring (`aiSdkStubAlias`, `scopePptxViewerCssPlugin`), the
+`monaco-editor` alias, the per-language chunks (`localeManualChunks`), and defines `ACCESS_KEY`
+and `SECRET_KEY` in development builds only.
 
 ### Path Aliases
 
@@ -159,6 +187,7 @@ server: {
 
 The setup file includes:
 - `@testing-library/jest-dom` matchers
+- A `ResizeObserver` stub, which jsdom lacks
 - Canvas mock for components using `<canvas>`
 
 ### Coverage
@@ -188,12 +217,26 @@ process running; use the root `pnpm dev:playground` command for dependency orche
 
 The chat itself (rooms, messages, tools, the Workspace, the room list, and the new-chat screen)
 is [`@semoss/chat`](../../libs/chat/AGENTS.md); read its guide for the glossary, the room
-Workspace, chat tools, the slash menu, tool views, the next message's files, and connectors. The
-playground composes its pieces: `MainLayout` makes the chat store (`useCreateChatStore`) and
-provides it with `ChatSessionProvider`, `PlaygroundChatConfigProvider`
-(`features/chat/config/`) gives the theme, the env's defaults and the routes through
-`ChatConfigProvider`, `pages/room.page.tsx` lays out `RoomScope`, and
-`pages/new-room.page.tsx` renders `NewChat`.
+Workspace, chat tools, the slash menu, tool views, the next message's files, and connectors, and
+its [README](../../libs/chat/README.md) for how a host composes it. The playground composes its
+pieces:
+
+- `MainLayout` makes the chat store (`useCreateChatStore(theme, NEW_CHAT_BUILD_DEFAULTS)`) and
+  provides it with `ChatSessionProvider`. It uses the split providers rather than `ChatProvider`
+  because the settings dialog sits between them: it reads the store (the models in Settings >
+  General's Chat section), and its `SettingsDialogProvider` provides the `openSettings` the config
+  hands chat UI.
+- `PlaygroundChatConfigProvider` (`features/chat-config/playground-chat-config-provider.tsx`)
+  gives `ChatConfigProvider` the theme, the env's defaults (`new-chat-build-defaults.ts`), the
+  platform URL (`platform-url.ts`, from `VITE_PLATFORM_URL`), and the routes: `openRoom`,
+  `roomHref`, `agentHref`, `openNewChat`, `onRoomDeleted`, and `openSettings`.
+- `pages/room.page.tsx` lays out `RoomScope`, and `pages/new-room.page.tsx` renders `NewChat`;
+  both put `PageHeaderNavigation` at the start of the header.
+- `WorkspaceNavigationContext` (from `@semoss/chat`) carries `useWorkspaceNavigation`'s
+  `setWorkAreaOpen`, so opening a room's Workspace folds the navigation.
+- `GlobalNav` holds `RoomList` and `RoomSearchDialog`; `NavUser` opens the settings dialog
+  (General and Connectors, `features/settings/`), whose Connectors page is
+  `features/connectors/`.
 
 ## Navigation
 
@@ -229,7 +272,9 @@ visual sandbox; use the [root skills](../../skills/README.md) for UI behavior an
 ### When Adding Features
 
 Follow the [React standard](../../skills/react-standard.skill.md) for new-feature layout,
-direct internal imports, state ownership, and tests. Preserve the room sidebar contracts above.
+direct internal imports, state ownership, and tests. If the desktop app needs the feature too, it
+belongs in `@semoss/chat`; preserve the room Workspace contracts in
+[its guide](../../libs/chat/AGENTS.md#the-room-workspace).
 
 ### Testing Changes
 

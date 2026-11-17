@@ -11,7 +11,8 @@
 list, and the new-chat screen, with their stores. Both chat apps build on it:
 [`@semoss/playground`](../../packages/playground/AGENTS.md) (web) and
 [`@semoss/playground-desktop`](../../packages/playground-desktop/AGENTS.md) (Electron). It is
-source-exported (`.` and `./globals.css`), private, and has no build step.
+source-exported (`.` and `./globals.css`), private, and has no build step. How a host uses it is
+in the [README](./README.md); this guide is for changing it.
 
 **The boundary.** If both apps need it to chat, it lives here; if only one does, it stays in that
 app. Library code never imports `react-router`, Electron, `window.semossDesktop`, or
@@ -49,15 +50,17 @@ and types. A host lays the pieces out however it likes:
   dialog reads the store but provides `openSettings` to the config) uses `ChatSessionProvider`
   and `ChatConfigProvider` instead.
 - **`RoomScope`** opens a room by id (from the store's cache at once, else by loading it), and
-  provides its insight, the room, its tool views and its actions. A room that cannot load calls
-  `navigation.openNewChat`. Inside it, `RoomHeader`, `RoomWorkbench`, `RoomConversation`,
+  provides its insight (`InsightProvider`), the room (`RoomProvider`), its tool views
+  (`ToolViewProvider`) and its actions (`RoomActionsProvider`). A room that cannot load shows a
+  toast and calls `navigation.openNewChat`. Inside it, `RoomHeader`, `RoomWorkbench`, `RoomConversation`,
   `RoomMessages` and `RoomComposer` read the room from context; each still takes a `room` prop,
   which `NewChat` uses for its draft.
 - **`RoomFrame`** lays out the open room's conversation beside its Workspace, which opens,
   closes, and collapses with the room. `RoomLayout` is the same layout for any room passed in.
 - **`NewChat`** is the new-chat screen: the landing, the composer, and a draft Workspace. Its
-  route inputs (`initialPrompt`, `workspaceId`, `knowledgeId`, `showAltLanding`) are props, and
-  its first message opens the created room through `navigation.openRoom`.
+  route inputs (`initialPrompt`, `workspaceId`, `knowledgeId`, `showAltLanding`) are props, as is
+  `headerLeading` (the host's controls at the start of its header), and its first message opens
+  the created room through `navigation.openRoom`.
 - **`ChatConfig`** (`features/chat/config/chat-config.context.tsx`): the theme (`ChatTheme`; merge
   a server theme over `DEFAULT_CHAT_THEME` with `mergeChatTheme`), the build's `newChatDefaults`,
   the `platformUrl` tool views and catalog links use, and `navigation`: `openRoom`, `roomHref`
@@ -86,19 +89,39 @@ the glossary. A file lives in the domain whose code uses it, its test beside it:
 `MentionMenuPortal`, and the line boundary helper. The composer builds the slash menu on them.
 Nothing here imports from `features/`.
 
+`src/types.ts` holds the backend's shapes (`App`, `MCPConfig`, `Workspace`, ...), and `src/test/`
+the test helpers (`fake-store.ts`, `pixel-transport.ts`).
+
+## Commands
+
+Run from `libs/chat`, or with `pnpm --filter @semoss/chat <command>`:
+
+| Command | Description |
+|---|---|
+| `pnpm test` | Run the tests once (Vitest, jsdom) |
+| `pnpm test:watch` | Run the tests in watch mode |
+| `pnpm check-types` | TypeScript type checking |
+
+There is no build: the hosts compile the source. Try a change in a host with the root
+`pnpm dev:playground`.
+
 ## What a host has to wire up
 
 - **Styles.** Import `@semoss/chat/globals.css` next to `@semoss/shared/globals.css`, with the
   [panels](../panels/AGENTS.md#what-a-host-has-to-wire-up) and
   [connectors](../connectors/AGENTS.md#what-a-host-has-to-wire-up) stylesheets. Without it, none of
   the chat's Tailwind classes are generated.
-- **Strings.** Load `chatResources` from `@semoss/i18n` (`locales/*/chat/`), or a map built on it
-  (`playgroundResources`, `desktopResources`). Namespace names are unchanged: `room`, `chat`,
-  `tool`, `chatTools`, `chatConnectors`, `mcp`, `knowledge`, `workspace`, `sidebar`.
+- **Strings.** Load `chatResources` from `@semoss/i18n` (`resources/chat.ts`), or a map built on
+  it (`playgroundResources`, `desktopResources`). It loads the chat's own namespaces
+  (`locales/*/chat/`: `room`, `chat`, `tool`, `chatTools`, `chatConnectors`, `mcp`, `knowledge`,
+  `workspace`, `sidebar`) with the shared ones its pieces read (`common`, `notifications`,
+  `validation`, `prompts`, `auditlog`, `members`, `agent`, `transcript`, `connectors`). A string
+  the chat adds goes in its namespace in every locale.
 - **Vite.** The dock's wiring from `@semoss/panels/vite` (`aiSdkStubAlias`,
   `scopePptxViewerCssPlugin`) and the `monaco-editor` alias, as the playground's `vite.config.ts`.
 - **The SDK.** Set `Env.MODULE` and start `Session.initialize()` before rendering chat UI; the
-  chat's calls are same-origin `${MODULE}/...`.
+  chat's calls are same-origin `${MODULE}/...`. Render chat UI only once the session is
+  `AUTHENTICATED`: `ChatStore.initialize` reads the user's models and rooms.
 
 ## State
 
@@ -242,10 +265,10 @@ code and are easy to undo by accident:
 - **The Workspace opens on its share of the row.** `RoomLayout` gives it
   `WORKBENCH_DEFAULT_SIZE`; once the user drags the divider, the pane keeps their size for as
   long as the page is mounted. There is no fit-to-content width any more — the main area always
-  holds tabs. Both pages pass `RoomLayout` the room's `sidebar.isOpen` and `closeSidebar`
-  directly.
+  holds tabs. `RoomFrame` (an open room) and `NewChat` (its draft) pass `RoomLayout` the room's
+  `sidebar.isOpen` and `closeSidebar` directly.
 - **Dragging the divider to the right edge closes the Workspace.** `RoomLayout`'s
-  `onWorkbenchCollapse`, which both pages point at `room.closeSidebar()`, closes it, and
+  `onWorkbenchCollapse`, which `RoomFrame` and `NewChat` point at `room.closeSidebar()`, closes it, and
   it reopens on its share again. The conversation does not collapse.
 - **The Workspace has no top strip.** `RoomWorkbench` passes the workbench one border slot, the
   panel rail on the right, so its tab row is its top edge. The mobile layout has no rails, so
@@ -382,9 +405,11 @@ and `features/tools/settings/` the Tools section of Settings.
 `/` in the composer lists every action (`features/conversation/composer/use-room-slash-commands.tsx`), by
 group: Chat (attach, knowledge, tools, agent, mode, compact), Workspace (each of
 `useWorkbenchPanels`' panels that can open now, its connector viewers, and Close Workspace), Room
-(`useRoomActionItems`, inside `RoomActionsProvider`, which wraps `RoomScope`), and Prompts (the room's predefined prompts). It
-matches the query against each command's id, label, and keywords, which keep the old command
-names. `excludeCommandIds` still removes commands by id, as `RoomScope` does for mode changes.
+(`useRoomActionItems`, inside the `RoomActionsProvider` that `RoomScope` mounts), and Prompts (the
+room's predefined prompts). It matches the query against each command's id, label, and keywords,
+which keep the old command names. `excludeCommandIds` still removes commands by id: `RoomComposer`
+drops `agent-harness`, since a room keeps its mode, and `NewChat` drops `agent-harness` and
+`chat-mode` when the theme does not offer the choice (`canChooseAgentMode`).
 
 ## Tool views
 
