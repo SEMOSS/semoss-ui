@@ -65,3 +65,26 @@ export function forgetBackgroundAccess(
 		connectionSchema,
 	);
 }
+
+const newTopicsSchema = z.object({
+	topics: z.array(z.unknown()).optional(),
+	modelError: z.string().optional(),
+});
+
+/** How a look for new topics ended: how many were found, or why none could be. */
+export interface NewTopicsResult {
+	found: number;
+	error: string;
+}
+
+/** Look now, in recent mail no topic holds, for a new project or event. Each find comes back as a question. */
+export async function lookForNewTopics(
+	actions: InsightActions,
+): Promise<NewTopicsResult> {
+	const out = await callPixel(
+		actions,
+		pixel("BrainSuggestTopics", { fresh: true }),
+		newTopicsSchema,
+	);
+	return { found: out.topics?.length ?? 0, error: out.modelError ?? "" };
+}

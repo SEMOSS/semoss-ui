@@ -103,7 +103,7 @@ export function BrainReview() {
 					)}
 					{!open.length && !suggestions.length && (
 						<P className="p-6 text-muted-foreground">
-							All caught up. No pending review in this session.
+							All caught up. Nothing is waiting for your review.
 						</P>
 					)}
 				</TabsContent>

@@ -124,8 +124,8 @@ export function RulesEditor() {
 			<section className="space-y-4 border-border border-t pt-6">
 				<H3 className="font-medium text-base">Filing preferences</H3>
 				<P className="text-base text-muted-foreground">
-					These thresholds are session preferences. Automatic
-					classification and ingestion are not connected.
+					How sure the sorter must be before it files a conversation
+					under a topic by itself, and before it asks you.
 				</P>
 				<Form
 					form={settingsForm}
