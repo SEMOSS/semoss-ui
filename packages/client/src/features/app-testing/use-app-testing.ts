@@ -4,13 +4,16 @@ import {
 	deleteAppTestRecording,
 	getAppTestRun,
 	parseAppTestRecordings,
+	parseEngineTestConfiguration,
 	runAppTests,
 	saveAppTestRecording,
 } from "@/api/app-testing";
+import { getAppFrameTestMode, useAppFrameTestMode } from "./app-frame-registry";
 import type {
 	AppTestRecording,
 	AppTestRun,
 	AppTestStep,
+	EngineTestConfiguration,
 } from "./app-test.types";
 import type { IframeRecorder } from "./iframe-recorder";
 import {
@@ -18,12 +21,18 @@ import {
 	attachIframeRecorder,
 	isStableSelector,
 } from "./iframe-recorder";
+import {
+	enterTestPreview,
+	exitTestPreview,
+	withoutTestRouting,
+} from "./test-preview";
 
 interface AppTestingState {
 	steps: AppTestStep[];
 	/** Steps whose target has no unique data-testid; a recording with any cannot be saved. */
 	weakSteps: number;
 	isRecording: boolean;
+	isPreparingRecording: boolean;
 	isPickingCheck: boolean;
 	isSaving: boolean;
 	isDeleting: boolean;
@@ -37,14 +46,20 @@ interface AppTestingState {
 	recordings: AppTestRecording[];
 	isLoading: boolean;
 	refreshRecordings: () => void;
-	startRecording: () => void;
+	startRecording: () => Promise<void>;
 	stopRecording: () => void;
 	addCheck: () => void;
-	save: (name: string) => Promise<void>;
+	save: (name: string, description: string) => Promise<void>;
 	startRun: () => Promise<void>;
 	refreshRun: () => Promise<void>;
 	deleteRecording: (id: string) => Promise<void>;
 	discard: () => void;
+	engineConfiguration: EngineTestConfiguration | null;
+	isLoadingEngineConfiguration: boolean;
+	engineConfigurationError: string;
+	refreshEngineConfiguration: () => void;
+	isTestDatabaseMode: boolean;
+	exitTestDatabaseMode: () => Promise<void>;
 }
 
 /** Own recording listeners, draft lifetime, saves and bounded result polling. */
@@ -55,6 +70,39 @@ export const useAppTesting = (
 	const query = useSessionPixel<unknown>(
 		`META | ListAppTestRecordings(project=${JSON.stringify([appId])});`,
 	);
+	const configurationQuery = useSessionPixel<unknown>(
+		`META | GetEngineTestConfiguration(project=${JSON.stringify([appId])});`,
+	);
+	const testMode = useAppFrameTestMode(appId);
+	const engineProfile = useMemo(() => {
+		if (configurationQuery.status !== "SUCCESS")
+			return {
+				configuration: null,
+				error: configurationQuery.error?.message || "",
+			};
+		try {
+			return {
+				configuration: parseEngineTestConfiguration(
+					appId,
+					configurationQuery.data,
+				),
+				error: "",
+			};
+		} catch {
+			return {
+				configuration: null,
+				error: "The engine test configuration could not be read. Recording is blocked until it is repaired.",
+			};
+		}
+	}, [
+		appId,
+		configurationQuery.data,
+		configurationQuery.status,
+		configurationQuery.error,
+	]);
+	const isLoadingEngineConfiguration =
+		configurationQuery.status === "INITIAL" ||
+		configurationQuery.status === "LOADING";
 	const parsed = useMemo(() => {
 		if (query.status !== "SUCCESS") return { recordings: [], error: "" };
 		try {
@@ -71,7 +119,11 @@ export const useAppTesting = (
 	}, [appId, query.data, query.status]);
 	const [steps, setSteps] = useState<AppTestStep[]>([]);
 	const [startPath, setStartPath] = useState("");
+	const [draftConfigurationId, setDraftConfigurationId] = useState<
+		string | undefined
+	>();
 	const [isRecording, setIsRecording] = useState(false);
+	const [isPreparingRecording, setIsPreparingRecording] = useState(false);
 	const [isPickingCheck, setIsPickingCheck] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
@@ -170,21 +222,45 @@ export const useAppTesting = (
 		setIsPickingCheck(false);
 	};
 
-	const startRecording = (): void => {
-		if (!frame || !isAccessible) return;
+	const startRecording = async (): Promise<void> => {
+		if (
+			!frame ||
+			!isAccessible ||
+			isPreparingRecording ||
+			isLoadingEngineConfiguration
+		)
+			return;
+		if (engineProfile.error) {
+			setError(engineProfile.error);
+			return;
+		}
+		setIsPreparingRecording(true);
 		try {
-			const actual = new URL(frame.contentDocument?.URL ?? "");
+			if (engineProfile.configuration)
+				await enterTestPreview(appId, frame, lifetime.current?.signal);
+			if (lifetime.current?.signal.aborted) return;
+			const actual = withoutTestRouting(
+				new URL(frame.contentDocument?.URL ?? ""),
+			);
 			const base = new URL(frame.src, window.location.href);
+			setDraftConfigurationId(
+				getAppFrameTestMode(appId)?.session.configurationId,
+			);
 			setStartPath(
 				actual.pathname.slice(base.pathname.length) +
 					actual.search +
 					actual.hash,
 			);
-		} catch {
+		} catch (failure: unknown) {
 			setError(
-				"The app document cannot be recorded. Reload it and try again.",
+				failure instanceof Error
+					? failure.message
+					: "The app document cannot be recorded. Reload it and try again.",
 			);
 			return;
+		} finally {
+			if (!lifetime.current?.signal.aborted)
+				setIsPreparingRecording(false);
 		}
 		setError("");
 		setNotice("");
@@ -220,7 +296,7 @@ export const useAppTesting = (
 		recorder.current?.addCheck();
 	};
 
-	const save = async (name: string): Promise<void> => {
+	const save = async (name: string, description: string): Promise<void> => {
 		if (weakSteps > 0) {
 			throw new Error(
 				`${weakSteps} step${weakSteps === 1 ? " has" : "s have"} no unique data-testid. Ask the assistant to add test ids to those elements, then record again.`,
@@ -232,8 +308,12 @@ export const useAppTesting = (
 		try {
 			const result = await saveAppTestRecording(appId, {
 				name,
+				description,
 				startPath,
 				steps,
+				...(draftConfigurationId
+					? { engineTestConfigurationId: draftConfigurationId }
+					: {}),
 			});
 			if (signal?.aborted) return;
 			setSelectedId(result.id);
@@ -318,6 +398,7 @@ export const useAppTesting = (
 		steps,
 		weakSteps,
 		isRecording,
+		isPreparingRecording,
 		isPickingCheck,
 		isSaving,
 		isDeleting,
@@ -341,6 +422,23 @@ export const useAppTesting = (
 		discard: () => {
 			setSteps([]);
 			setNotice("");
+		},
+		engineConfiguration: engineProfile.configuration,
+		isLoadingEngineConfiguration,
+		engineConfigurationError: engineProfile.error,
+		refreshEngineConfiguration: configurationQuery.refresh,
+		isTestDatabaseMode: testMode !== null,
+		exitTestDatabaseMode: async () => {
+			stopRecording();
+			try {
+				await exitTestPreview(appId);
+			} catch (failure: unknown) {
+				setError(
+					failure instanceof Error
+						? failure.message
+						: "Could not exit test database mode",
+				);
+			}
 		},
 	};
 };

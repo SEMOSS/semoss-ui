@@ -4,6 +4,8 @@ import type {
 	AppTestDraft,
 	AppTestRecording,
 	AppTestRun,
+	AppTestSession,
+	EngineTestConfiguration,
 } from "@/features/app-testing/app-test.types";
 
 const stepSchema = z.object({
@@ -33,6 +35,8 @@ const stepSchema = z.object({
 const recordingSchema = z.object({
 	id: z.string(),
 	name: z.string(),
+	description: z.string().default(""),
+	engineTestConfigurationId: z.string().optional(),
 	startPath: z.string(),
 	steps: z.array(stepSchema),
 	version: z.number(),
@@ -59,10 +63,18 @@ const runSchema = z.object({
 	coverageWarning: z.string().optional(),
 	summary: z.record(z.string(), z.number()).optional(),
 	error: z.string().optional(),
+	databaseMode: z.string().optional(),
+	engineTestConfiguration: z
+		.object({
+			configurationId: z.string(),
+			mappings: z.record(z.string(), z.string()),
+		})
+		.optional(),
 	tests: z
 		.array(
 			z.object({
 				name: z.string(),
+				description: z.string().optional(),
 				status: z.string(),
 				reason: z.string().optional(),
 				classification: z.string().optional(),
@@ -145,6 +157,112 @@ export const deleteAppTestRecording = async (
 	z.object({ deleted: z.literal(true) }).parse(
 		await callAppTestPixel(
 			`DeleteAppTestRecording(project=${JSON.stringify([appId])}, recordingId=${JSON.stringify([recordingId])});`,
+		),
+	);
+};
+
+const engineConfigurationSchema = z.object({
+	id: z.string(),
+	version: z.number(),
+	name: z.string(),
+	mappings: z.array(
+		z.object({ realEngineId: z.string(), testEngineId: z.string() }),
+	),
+	denyUnmappedDatabases: z.boolean(),
+	updatedAt: z.string(),
+});
+
+/** Parse configuration reads without silently treating a corrupt profile as absent. */
+export const parseEngineTestConfiguration = (
+	appId: string,
+	value: unknown,
+): EngineTestConfiguration | null => {
+	const result = z
+		.object({
+			target: z.string(),
+			configuration: engineConfigurationSchema.nullable(),
+		})
+		.parse(value);
+	if (result.target !== appId) throw new Error("The app test target changed");
+	return result.configuration;
+};
+
+/** Read the optional app-owned database profile. */
+export const getEngineTestConfiguration = async (
+	appId: string,
+): Promise<EngineTestConfiguration | null> =>
+	parseEngineTestConfiguration(
+		appId,
+		await callAppTestPixel(
+			`GetEngineTestConfiguration(project=${JSON.stringify([appId])});`,
+		),
+	);
+
+/** Save mappings; backend validates permissions and dedicated file-backed test storage. */
+export const saveEngineTestConfiguration = async (
+	appId: string,
+	configuration: Pick<EngineTestConfiguration, "name" | "mappings"> & {
+		id?: string;
+	},
+): Promise<EngineTestConfiguration> =>
+	engineConfigurationSchema.parse(
+		await callAppTestPixel(
+			`SaveEngineTestConfiguration(project=${JSON.stringify([appId])}, configuration=${JSON.stringify([configuration])});`,
+		),
+	);
+
+/** Remove the profile without deleting its databases. Referencing recordings remain protected. */
+export const deleteEngineTestConfiguration = async (
+	appId: string,
+): Promise<void> => {
+	z.object({ target: z.literal(appId), deleted: z.literal(true) }).parse(
+		await callAppTestPixel(
+			`DeleteEngineTestConfiguration(project=${JSON.stringify([appId])});`,
+		),
+	);
+};
+
+/** Provision an empty private database through normal SEMOSS creation policies. */
+export const createAppTestDatabase = async (
+	appId: string,
+	name: string,
+	rdbmsType: "H2_DB" | "SQLITE",
+): Promise<string> => {
+	const result = z
+		.object({ target: z.literal(appId), engineId: z.string() })
+		.parse(
+			await callAppTestPixel(
+				`CreateAppTestDatabase(project=${JSON.stringify([appId])}, name=${JSON.stringify([name])}, rdbmsType=${JSON.stringify([rdbmsType])});`,
+			),
+		);
+	return result.engineId;
+};
+
+/** Begin isolation before the preview is reloaded; this does not affect ordinary tabs. */
+export const beginAppTestSession = async (
+	appId: string,
+): Promise<AppTestSession> =>
+	z
+		.object({
+			target: z.literal(appId),
+			sessionToken: z.string().uuid(),
+			configurationId: z.string(),
+			expiresAt: z.string(),
+		})
+		.parse(
+			await callAppTestPixel(
+				`BeginAppTestSession(project=${JSON.stringify([appId])});`,
+			),
+		);
+
+/** End routing on the backend; the preview bridge separately restores normal browsing. */
+export const endAppTestSession = async (
+	appId: string,
+	sessionToken: string,
+): Promise<void> => {
+	z.object({ target: z.literal(appId), ended: z.literal(true) }).parse(
+		await callAppTestPixel(
+			`EndAppTestSession(project=${JSON.stringify([appId])}, sessionToken=${JSON.stringify([sessionToken])});`,
 		),
 	);
 };
