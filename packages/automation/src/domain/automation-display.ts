@@ -143,7 +143,7 @@ export const TYPE_DISPLAY_META: Record<
  * DB timestamps come back as "YYYY-MM-DD HH:MM:SS.s" with no timezone marker but
  * are stored as UTC. Appending "Z" tells JS to interpret them as UTC, not local time.
  */
-function parseUtcDate(iso: string): Date {
+export function parseUtcDate(iso: string): Date {
 	if (!iso) return new Date(Number.NaN);
 	const s = iso.trim();
 	// Already has timezone info — trust it

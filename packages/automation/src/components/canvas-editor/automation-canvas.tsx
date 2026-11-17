@@ -427,8 +427,6 @@ export interface AutomationCanvasHandle {
 	 * than using `applyInspectorAction`, since the tab need not be the inspected step. No-ops for
 	 * unknown, removed, or typed nodes. */
 	syncPythonSource: (stepId: string, source: string) => void;
-	/** Starts the same run the editor's Run button starts (saves a draft, prompts for inputs). */
-	run: () => Promise<void>;
 }
 
 type TriggerAutomationOutput = AutomationRunDetail;
@@ -2607,8 +2605,6 @@ export const AutomationCanvasContent = forwardRef<
 		[readOnly, steps, updateStep, viewingHistory],
 	);
 
-	const runRef = useRef<() => Promise<void>>(() => Promise.resolve());
-
 	useImperativeHandle(
 		ref,
 		() => ({
@@ -2618,7 +2614,6 @@ export const AutomationCanvasContent = forwardRef<
 			viewHistoricalRun,
 			exitHistoricalView,
 			syncPythonSource,
-			run: () => runRef.current(),
 		}),
 		[
 			applyInspectorAction,
@@ -3121,11 +3116,6 @@ export const AutomationCanvasContent = forwardRef<
 		},
 		[run],
 	);
-
-	// The imperative handle is created before `run` is declared, so it reaches `run` through a ref.
-	useEffect(() => {
-		runRef.current = run;
-	}, [run]);
 
 	const handleDoneReturnToChat = useCallback(async () => {
 		if (readOnly || saving) return;

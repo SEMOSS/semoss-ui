@@ -79,6 +79,7 @@ export const AUDIT_EVENT_LABELS: Readonly<Record<string, string>> = {
 	AUTOMATION_RUN_END: "Automation Run Ended",
 	AUTOMATION_RUN_CANCEL: "Automation Run Cancelled",
 	AUTOMATION_RUN_RESUME: "Automation Run Resumed",
+	AUTOMATION_RUN_RERUN: "Automation Nodes Re-run",
 	AUTOMATION_ACTION_RESOLVE: "Automation Action Resolved",
 	AUTOMATION_AGENT_STOP: "Automation Agent Stopped",
 	SKILL_CREATE: "Skill Created",

@@ -295,6 +295,71 @@ export async function cancelAutomationRun(
 	return output as unknown as AutomationCancelResult;
 }
 
+export interface LoopIterationTarget {
+	loopNodeId: string;
+	/** Zero-based, as the server counts iterations. */
+	iteration: number;
+}
+
+type StartedRun = Pick<AutomationRunSummary, "RUN_ID" | "STATUS">;
+
+/**
+ * Starts a new run that reprocesses a finished one, leaving the finished run as it ran.
+ * The server answers with the new run, so a reply that names the original run did not
+ * start anything.
+ */
+async function startReprocessRun(
+	appId: string,
+	runId: string,
+	args: string,
+): Promise<StartedRun> {
+	const response = await runPixel(
+		`RerunAutomationNodes(project=${JSON.stringify([appId])}, runId=${JSON.stringify([runId])}, ${args});`,
+	);
+	throwPixelErrors(response.errors);
+	const output = response.pixelReturn?.[0]?.output;
+	if (
+		!isRecord(output) ||
+		typeof output.RUN_ID !== "string" ||
+		output.RUN_ID === runId
+	) {
+		throw new Error("The server did not confirm a new run was started.");
+	}
+	return output as unknown as StartedRun;
+}
+
+/**
+ * Runs the chosen top-level nodes of a finished run again as a new run, using the
+ * automation's current settings for them and the finished run's recorded results for the
+ * rest. With {@link LoopIterationTarget}, the nodes are body nodes of that one loop pass.
+ */
+export async function rerunAutomationNodes(
+	appId: string,
+	runId: string,
+	nodeIds: string[],
+	loop?: LoopIterationTarget,
+): Promise<StartedRun> {
+	if (nodeIds.length === 0) {
+		throw new Error("Select at least one node to re-run.");
+	}
+	const loopArgs = loop
+		? `, loopNodeId=${JSON.stringify([loop.loopNodeId])}, iteration=${JSON.stringify([String(loop.iteration)])}`
+		: "";
+	return startReprocessRun(
+		appId,
+		runId,
+		`nodeIds=${JSON.stringify(nodeIds)}${loopArgs}`,
+	);
+}
+
+/** Runs the whole automation again from its trigger as a new run, using its current variable defaults. */
+export async function reprocessWholeAutomationRun(
+	appId: string,
+	runId: string,
+): Promise<StartedRun> {
+	return startReprocessRun(appId, runId, 'wholeRun=["true"]');
+}
+
 function throwPixelErrors(errors: string[]): void {
 	if (errors.length > 0) {
 		throw new Error(errors.join("\n"));
