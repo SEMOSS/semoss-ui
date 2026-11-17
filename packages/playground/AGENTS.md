@@ -23,7 +23,7 @@ imports another feature, or anything outside its own folder, through `@/`, and t
 added: backend calls apps share live in `libs/sdk/src/api/` (for example `runMcpTool` and
 `makeUserPixelMcp` in `mcp.ts`), and asset pixels come from the file explorer adapter in
 `@semoss/shared` (`getFileExplorerAdapter`). A room's own tool file is read and written by
-`@semoss/chat`'s `features/room/room-tool-file.ts`.
+`@semoss/chat`'s `features/room/store/room-tool-file.ts`.
 
 ## Session, config and insights
 
@@ -69,7 +69,7 @@ added: backend calls apps share live in `libs/sdk/src/api/` (for example `runMcp
 
   A mode is always chat where agent mode is not offered, an agent link (`?workspaceId=`) wins over
   steps 1 to 3, and an agent from them that the user can no longer open gives way to Default Agent.
-  The rules live in `@semoss/chat`'s `features/new-chat-preferences/new-chat-preferences.ts`. Playground does not
+  The rules live in `@semoss/chat`'s `features/chat/config/new-chat-preferences.ts`. Playground does not
   read the platform's `text-generation-model`.
 
 ## Build System
@@ -191,7 +191,7 @@ is [`@semoss/chat`](../../libs/chat/AGENTS.md); read its guide for the glossary,
 Workspace, chat tools, the slash menu, tool views, the next message's files, and connectors. The
 playground composes its pieces: `MainLayout` makes the chat store (`useCreateChatStore`) and
 provides it with `ChatSessionProvider`, `PlaygroundChatConfigProvider`
-(`features/chat-config/`) gives the theme, the env's defaults and the routes through
+(`features/chat/config/`) gives the theme, the env's defaults and the routes through
 `ChatConfigProvider`, `pages/room.page.tsx` lays out `RoomScope`, and
 `pages/new-room.page.tsx` renders `NewChat`.
 

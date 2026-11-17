@@ -58,12 +58,33 @@ and types. A host lays the pieces out however it likes:
 - **`NewChat`** is the new-chat screen: the landing, the composer, and a draft Workspace. Its
   route inputs (`initialPrompt`, `workspaceId`, `knowledgeId`, `showAltLanding`) are props, and
   its first message opens the created room through `navigation.openRoom`.
-- **`ChatConfig`** (`features/chat-config/chat-config.context.tsx`): the theme (`ChatTheme`; merge
+- **`ChatConfig`** (`features/chat/config/chat-config.context.tsx`): the theme (`ChatTheme`; merge
   a server theme over `DEFAULT_CHAT_THEME` with `mergeChatTheme`), the build's `newChatDefaults`,
   the `platformUrl` tool views and catalog links use, and `navigation`: `openRoom`, `roomHref`
   (links keep their middle click), `openNewChat`, `onRoomDeleted`, and the optional `agentHref`
   and `openSettings` (without them, chat UI shows no agent links or Manage Connectors).
 - Every piece is a named export, so a host bundles only the pieces it imports.
+
+## Layout
+
+`src/features/` holds one folder per domain, each with one level of subfolders named for a part in
+the glossary. A file lives in the domain whose code uses it, its test beside it:
+
+| Domain | Subfolders |
+|---|---|
+| `chat/`, the session | `store/` (`ChatStore`), `provider/`, `config/` (`ChatConfig`, the theme, new chat preferences) |
+| `room/`, one open room | `store/` (`RoomStore`, its sidebar and tool file, the stream jobs), `scope/`, `layout/`, `header/` (with the room name), `actions/`, `settings/` |
+| `room-list/` | `list/`, `search/` |
+| `conversation/` | `store/` (the message and tool call stores, the harness, the save controller), `messages/` (with `markdown/`), `composer/` (with `slash-command/`), `attachments/`, `suggestions/` |
+| `tools/` | `default-tools/`, `folders/`, `settings/`, `mcp/`, `views/`, `inspector/` |
+| `connectors/` | `store/`, `accounts/`, `viewers/` |
+| `workbench/` | `panels/`, `rail/` |
+| `new-chat/`, `knowledge/` | none |
+
+`src/components/` holds pieces that know nothing of the chat: `lexical/` has the editor plugins
+(enter, backspace, focus, auto scroll on paste), the trigger menu `MentionPlugin` and its
+`MentionMenuPortal`, and the line boundary helper. The composer builds the slash menu on them.
+Nothing here imports from `features/`.
 
 ## What a host has to wire up
 
@@ -114,7 +135,7 @@ Each keeps its getters, which read its snapshot; React reads them through a sele
 
 A new chat's model, mode and agent follow the order described in the
 [playground guide](../../packages/playground/AGENTS.md#session-config-and-insights); the rules live
-in `features/new-chat-preferences/new-chat-preferences.ts`, and the build's own defaults arrive as
+in `features/chat/config/new-chat-preferences.ts`, and the build's own defaults arrive as
 `ChatConfig.newChatDefaults`.
 
 ## Glossary
@@ -123,15 +144,15 @@ One name per part of the playground, in code, comments, tests, and these notes:
 
 | Part | Name in code | Notes |
 |---|---|---|
-| An open room, and a new chat | **room** (`RoomScope`, `RoomScope`), **new chat** (`NewChat`, `NewChat`) | The hosts' route pages compose them |
+| An open room, and a new chat | **room** (`RoomScope`), **new chat** (`NewChat`) | The hosts' route pages compose them |
 | Messages and composer, the left column | **conversation** (`RoomConversation`) | "Chat" is the chat *mode* and the narrow-screen tab label |
-| The right-hand dock | **Workbench** (`RoomWorkbench`, `RoomWorkbenchToggle`) | A `@semoss/workbench` dock, called **Workspace** in user-facing copy. `RoomStore` still calls it the sidebar (`room.sidebar`, `openSidebar*`, `features/room/room-sidebar.ts`): a legacy name kept on purpose |
+| The right-hand dock | **Workbench** (`RoomWorkbench`, `RoomWorkbenchToggle`) | A `@semoss/workbench` dock, called **Workspace** in user-facing copy. `RoomStore` still calls it the sidebar (`room.sidebar`, `openSidebar*`, `features/room/store/room-sidebar.ts`): a legacy name kept on purpose |
 | The layout holding both | **room layout** (`RoomLayout`, `RoomLayoutActionsContext`) | |
 | The Workbench's icon rail, on its left edge | **Workbench rail** (`RoomWorkbenchRail`) | A host-owned toolbar in `@semoss/workbench`'s left border slot, not a docked panel: the room's cog menu over one icon per panel |
 | An entry of the rail, and of Open a Panel | **Workbench panel** (`WorkbenchPanelOption`, `useWorkbenchPanels`, `WorkbenchPanelIcon`) | Selects its open tab, or adds one to the main area |
 | The top row | **room header** (`RoomHeader`) | The room's name (`RoomTitle`) and the Workbench toggle |
-| A room's name, double-click to rename | **room name** (`RoomName`, `RoomNameField`) | `features/room-name/`; the same in the sidebar (`RoomList`) and the header |
-| Favorite, Rename, Publish, Download, Delete | **room actions** (`RoomActionsProvider`, `useRoomActionItems`) | `features/room-actions/`; the rail's cog menu (`RoomWorkbenchRail`) and the slash menu |
+| A room's name, double-click to rename | **room name** (`RoomName`, `RoomNameField`) | `features/room/header/`; the same in the sidebar (`RoomList`) and the header |
+| Favorite, Rename, Publish, Download, Delete | **room actions** (`RoomActionsProvider`, `useRoomActionItems`) | `features/room/actions/`; the rail's cog menu (`RoomWorkbenchRail`) and the slash menu |
 | A new chat before its first message | **new room** (`newRoom`, `NewRoomWorkbenchPanels`, `NewRoomPanelRequest`); once created lazily, **prepared room** | |
 | Settings → Tools groups | **room tools** (`RoomToolsSection`, `RoomToolsDefaultSection`, `RoomToolsConnectorsSection`, `RoomToolsToolboxesSection`) | Default, Connectors, Agent and Toolboxes |
 | The room's own folder | **Room Files** | The Files panel shows it |
@@ -175,7 +196,7 @@ code and are easy to undo by accident:
   `ConnectorsStore` (`_closeHiddenConnectorPanels`) closes a viewer whose connector the chat can
   no longer show.
 - **Every panel opens from the Workspace's panel rail.** `RoomWorkbenchRail`
-  (`features/workbench/room-workbench-rail.tsx`) is the host's own chrome in the dock's **left**
+  (`features/workbench/rail/room-workbench-rail.tsx`) is the host's own chrome in the dock's **left**
   border slot (`borderSlots.left.before`): the room's cog menu, a divider, then one icon per entry
   of `useWorkbenchPanels`, each with its label on hover. Its `side` prop is `"right"` on that rail,
   so labels and the menu open into the dock rather than over the conversation. A click goes through the option's
@@ -206,12 +227,12 @@ code and are easy to undo by accident:
   only once it is a room.
   The per-panel control — "open inline" — is registered by the tool panel with
   `useWorkbenchControl`.
-- **The room header holds the room's name.** `features/room-header/room-header.tsx` is
+- **The room header holds the room's name.** `features/room/header/room-header.tsx` is
   one narrow row in `RoomLayout`'s `header` slot. It floats over the top of the
   conversation with no border, blurring what scrolls beneath it once the conversation reports
   it has scrolled (`ConversationScrollContext`), so an open Workspace takes the full height beside it;
   on narrow screens with the Workspace open it sits above both panes. At its start a room's name (`RoomTitle`, which renders `RoomName`); its actions (Favorite, Rename, Publish,
-  Download, Delete, listed once by `useRoomActionItems` in `features/room-actions/`) are a row of
+  Download, Delete, listed once by `useRoomActionItems` in `features/room/actions/`) are a row of
   the cog menu at the head of the Workspace's rail (drawn by `RoomWorkbenchRail` itself, which
   leaves out Rename and draws no cog outside a `RoomActionsProvider`, which is how a new chat
   leaves it out);
@@ -221,7 +242,7 @@ code and are easy to undo by accident:
   through `RoomActionsProvider.startRenaming`. A new chat has no title and no Room section. Before the name it holds the
   host's `leading` controls: the playground puts its navigation button there
   (`PageHeaderNavigation`), the desktop app its sidebar toggle.
-- **The header has no quick icons, and there is no ⋯ menu.** `features/room-header/room-header.tsx`
+- **The header has no quick icons, and there is no ⋯ menu.** `features/room/header/room-header.tsx`
   ends the header with the Workspace toggle alone. What the menu used to hold now lives where it
   belongs: the panels are the rail, the room's own actions are the cog at its head, and the
   settings dialog's Connectors page is reached from Settings' Connectors section (Manage
@@ -245,7 +266,7 @@ A draft's mode is the user's choice from the composer menu (the `enableAgentHarn
 unless the theme's `modeFollowsAgent` flag is on. Then the agent picker decides it: a saved agent
 or Default Agent runs in agent mode, and No Agent runs in chat mode, so picking No Agent is how
 Default Agent is removed. The menu shows no Chat and Agent choice and the `/agent-harness`
-command is left out (`canChooseAgentMode`, `features/conversation/agent-mode-choice.ts`). The
+command is left out (`canChooseAgentMode`, `features/conversation/composer/agent-mode-choice.ts`). The
 new chat page turns the flag on by passing `onDefaultAgentChange` to `RoomInput` and the draft
 Settings form; with it, `MCPOverlay` and `AgentSelector` offer No Agent and Default Agent as
 separate choices. A room keeps the mode it was created with.
@@ -255,14 +276,15 @@ shows a Default Agent chip beside the add button: editable in a new chat, where 
 agent picker and the menu's agent item reads "Agent: Default Agent", and read-only in an
 existing room.
 
-Panel ids and the sidebar's default layout live in `features/room/room-sidebar.ts`; the room's own
+Panel ids and the sidebar's default layout live in `features/room/store/room-sidebar.ts`; the room's own
 blueprints live in `features/workbench/`, and a feature's (the connector viewers) live in its
-folder. `features/workbench/room-panel.components.ts` registers them all. Changing a panel type string
+folder. `features/workbench/panels/room-panel.components.ts` registers them all. Changing a panel type string
 affects only the current room instance.
 
 ## Chat tools
 
-`features/chat-tools/` gives a chat its default file tools and the Tools section of Settings.
+`features/tools/default-tools/` and `features/tools/folders/` give a chat its default file tools,
+and `features/tools/settings/` the Tools section of Settings.
 `RoomStore.chatTools` (`ChatToolsStore`) owns them per room. These details are easy to break:
 
 - **Room Files is the only file space.** It is the room's own folder: uploads, connector
@@ -271,7 +293,7 @@ affects only the current room instance.
   `FileExplorerHostProvider` and queues on `useNextMessageRoom() ?? room`, so files selected from
   a prepared new room appear in the new chat's composer and transfer before its first message.
 - **A chat gets default tools; an agent brings its own.** In chat mode every message carries the
-  default tools, the `folder_*` tools the browser runs in Room Files (`tools/default-tools.ts`).
+  default tools, the `folder_*` tools the browser runs in Room Files (`default-tools/default-tools.ts`).
   Room Settings sets each to Auto, Ask, or Disabled (room option `defaultTools`; reads are Auto
   and changes Ask unless set); a disabled tool is not sent. The option is saved with the room's
   other options as the next message starts (`RoomStore.updateRoomOptions` skips a save the
@@ -313,7 +335,7 @@ affects only the current room instance.
 
 ## Slash menu
 
-`/` in the composer lists every action (`features/conversation/use-room-slash-commands.tsx`), by
+`/` in the composer lists every action (`features/conversation/composer/use-room-slash-commands.tsx`), by
 group: Chat (attach, knowledge, tools, agent, mode, compact), Workspace (each of
 `useWorkbenchPanels`' panels that can open now, its connector viewers, and Close Workspace), Room
 (`useRoomActionItems`, inside `RoomActionsProvider`, which wraps `RoomScope`), and Prompts (the room's predefined prompts). It
@@ -322,7 +344,7 @@ names. `excludeCommandIds` still removes commands by id, as `RoomScope` does for
 
 ## Tool views
 
-`features/tool-views/` draws tool calls whose `SMSS_MCP_UI.resourceURI` is
+`features/tools/views/` draws tool calls whose `SMSS_MCP_UI.resourceURI` is
 `component://<library>/<view>`, with the views `@semoss/connectors` provides
 (`TOOL_VIEW_LIBRARIES`: `mail` and `calendar`), in the page and never in a frame. `RoomScope`
 mounts `ToolViewProvider` around the conversation workspace, so the conversation and the sidebar
@@ -351,7 +373,7 @@ both find them.
 
 ## Files queued for the next message
 
-`RoomStore.contextItems` (`ContextItemsStore`, `features/conversation/context-items.store.ts`)
+`RoomStore.contextItems` (`ContextItemsStore`, `features/conversation/attachments/context-items.store.ts`)
 holds the files queued for the room's next message, each already in Room Files: a connector viewer
 saved it there, or the user picked it in Room Files. `ContextItems` shows them as chips in the
 input. `RoomStore.askMessage` sends them as `media` with the next message the user sends, and puts
@@ -397,17 +419,17 @@ account is not connected shows its switch in gray with a warning mark. These det
 - **The connector viewers come from `@semoss/connectors`.** OneDrive, Teams channels, files, and
   chats, Google Drive and Docs, and one mailbox and one calendar view for both accounts are its
   viewers (`libs/connectors/`). The room mounts each as a sidebar panel
-  (`features/connectors/components/connector-viewer-panels.tsx`) with `showHeader={false}`, since its tab already names
+  (`features/connectors/viewers/connector-viewer-panels.tsx`) with `showHeader={false}`, since its tab already names
   it; the Outlook and Gmail panels both render `MailboxView`, and the two calendar panels
   `CalendarAgendaView`, each with its `provider`. The tab, the Workbench rail, and context chips show the app's logo from the source's `brand`
-  (`sources/connector-sources.ts`); a panel opened with `{ brand }` in its config shows that logo
-  instead and gets a tab of its own (`components/connector-panel-icon.tsx`), so one viewer can
+  (`viewers/connector-sources.ts`); a panel opened with `{ brand }` in its config shows that logo
+  instead and gets a tab of its own (`viewers/connector-panel-icon.tsx`), so one viewer can
   stand for more than one app. The room wires each viewer with
-  `sources/use-room-connector-host.ts`: saves land at the top of chat files, and Add to context
+  `viewers/use-room-connector-host.ts`: saves land at the top of chat files, and Add to context
   also queues the file in `RoomStore.contextItems`.
 - **A viewer shows once its connector is on.** The Workbench rail and the slash menu
   list `ConnectorsStore.availableSources` with the Workspace's panels (the plus menu does not): a viewer needs its connector switched
-  on for the chat (`requires` in `sources/connector-sources.ts`) and its account signed in.
+  on for the chat (`requires` in `viewers/connector-sources.ts`) and its account signed in.
 - **A chat says when its connectors cannot run.** Inside the input box, `ConnectorSignInNotice`
   lists every account the chat's switched on connectors need but the session is not signed in to
   (`ConnectorsStore.missingSignIns`, read again whenever the window regains focus), with a Sign In
@@ -428,5 +450,5 @@ account is not connected shows its switch in gray with a warning mark. These det
   [the SDK guide](../../libs/sdk/AGENTS.md#session-logins).
 - **Connector files are pixel calls, not session state.** `connector-tools.ts` reads the user's
   connector file with the file explorer adapter's asset pixels, writes it with the SDK's
-  `makeUserPixelMcp`, and keeps each room's copy through `features/room/room-tool-file.ts`. It holds
+  `makeUserPixelMcp`, and keeps each room's copy through `features/room/store/room-tool-file.ts`. It holds
   no login code.
