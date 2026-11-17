@@ -1,4 +1,4 @@
-import { Env } from "@semoss/sdk/react";
+import { Env, getCsrfHeaders } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
 
 /**
@@ -307,7 +307,7 @@ export const selectRepo = async (input: {
 	const response = await fetch(buildUrl("/github/install/select", params), {
 		method: "POST",
 		credentials: "include",
-		headers: { Accept: "application/json" },
+		headers: { Accept: "application/json", ...(await getCsrfHeaders()) },
 	});
 	const body = (await readJson(response)) as
 		| (GithubErrorBody & { repoFullName?: string })
@@ -323,7 +323,10 @@ export const disconnectProject = async (projectId: string): Promise<void> => {
 		{
 			method: "DELETE",
 			credentials: "include",
-			headers: { Accept: "application/json" },
+			headers: {
+				Accept: "application/json",
+				...(await getCsrfHeaders()),
+			},
 		},
 	);
 	const body = (await readJson(response)) as GithubErrorBody | null;
@@ -343,7 +346,10 @@ export const setProjectBranch = async (
 		{
 			method: "POST",
 			credentials: "include",
-			headers: { Accept: "application/json" },
+			headers: {
+				Accept: "application/json",
+				...(await getCsrfHeaders()),
+			},
 		},
 	);
 	const body = (await readJson(response)) as

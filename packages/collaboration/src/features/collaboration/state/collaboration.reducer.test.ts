@@ -652,6 +652,34 @@ describe("shared collaboration session", () => {
 		).toBeUndefined();
 	});
 
+	it("clears the automated mark when the owner says a person writes there", () => {
+		const threadId = "th-geng-review";
+		const initial = createInitialCollaborationState();
+		const flagged = {
+			...initial,
+			threads: initial.threads.map((thread) =>
+				thread.id === threadId
+					? { ...thread, automated: true }
+					: thread,
+			),
+		};
+		const find = (value: CollaborationState) =>
+			value.threads.find((thread) => thread.id === threadId);
+		const state = apply(flagged, {
+			type: "thread.notAutomated",
+			threadId,
+			notAutomated: true,
+		});
+		expect(find(state)?.automated).toBeUndefined();
+		expect(find(state)?.notAutomated).toBe(true);
+		const back = apply(state, {
+			type: "thread.notAutomated",
+			threadId,
+			notAutomated: false,
+		});
+		expect(find(back)?.notAutomated).toBeUndefined();
+	});
+
 	it("retains the current state for unchanged commands and snooze checks", () => {
 		const threadId = "th-geng-review";
 		const command: CollaborationCommand = {

@@ -1,6 +1,19 @@
 import { FolderPlus, MessagesSquare, UserRoundPlus } from "lucide-react";
+import { useState } from "react";
 import { Link } from "react-router";
-import { Badge, Button, cn, P, Small } from "@semoss/ui/next";
+import {
+	Badge,
+	Button,
+	cn,
+	P,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	Small,
+} from "@semoss/ui/next";
+import { dateLabel } from "../date-label";
 import { topicChoiceCandidates } from "../state/collaboration.selectors";
 import type { ReviewEntry } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
@@ -31,6 +44,17 @@ export function ReviewCard({
 			: review.kind === "add_person"
 				? "Person"
 				: "Topic choice";
+	// a new topic can instead go into a topic that is already in use
+	const mergeTargets =
+		review.kind === "new_topic"
+			? state.topics.filter(
+					(topic) =>
+						topic.status === "active" && topic.id !== review.refId,
+				)
+			: [];
+	const [mergeTarget, setMergeTarget] = useState(
+		review.candidate?.mergeCandidate ?? "",
+	);
 	const actionClassName = compact ? "h-7 px-2.5" : undefined;
 	const choices =
 		review.kind === "topic_choice" && thread
@@ -41,6 +65,52 @@ export function ReviewCard({
 					return topic ? [topic] : [];
 				})
 			: [];
+	// any other topic in use: the question's candidates are not the only answer
+	const otherTopics =
+		review.kind === "topic_choice" && thread
+			? state.topics.filter(
+					(topic) =>
+						topic.status === "active" &&
+						topic.isSample === thread.isSample &&
+						!choices.some((choice) => choice.id === topic.id),
+				)
+			: [];
+	// who is on the conversation, so "Quick question" can be answered without opening it
+	const who = thread
+		? thread.participants
+				.map((participant) => ({
+					participant,
+					person: state.people.find(
+						(person) => person.id === participant.personId,
+					),
+				}))
+				.filter(({ person }) => person?.relationship !== "self")
+				.map(
+					({ participant, person }) =>
+						person?.name ?? participant.name,
+				)
+				.filter((name): name is string => !!name)
+		: [];
+	const fileElsewhere = (topicId: string): void => {
+		if (!thread) return;
+		dispatch({
+			type: "review.resolve",
+			reviewId: review.id,
+			decision: "dismiss",
+		});
+		dispatch({
+			type: "thread.link",
+			threadId: thread.id,
+			topicId,
+			operation: "add",
+		});
+		dispatch({
+			type: "thread.link",
+			threadId: thread.id,
+			topicId,
+			operation: "primary",
+		});
+	};
 	const resolve = (
 		decision: "accept" | "dismiss" | "both" | "merge",
 		targetTopicId?: string,
@@ -108,6 +178,19 @@ export function ReviewCard({
 				{review.detail && (
 					<Small className="font-normal text-muted-foreground text-xs leading-5">
 						{review.detail}
+					</Small>
+				)}
+				{review.kind === "topic_choice" && thread && !compact && (
+					<Small className="block font-normal text-muted-foreground text-xs leading-5">
+						{[
+							who.length
+								? `With ${who.slice(0, 3).join(", ")}${who.length > 3 ? ` and ${who.length - 3} more` : ""}`
+								: "",
+							dateLabel(thread.lastAt),
+							`${thread.messageCount} message${thread.messageCount === 1 ? "" : "s"}`,
+						]
+							.filter(Boolean)
+							.join(" \u00b7 ")}
 					</Small>
 				)}
 				{/* what the thread is about, so the owner can answer without opening it */}
@@ -205,24 +288,66 @@ export function ReviewCard({
 									: "Add person"}
 							</Button>
 						)}
-						{review.candidate?.mergeCandidate && (
-							<Button
-								variant="outline"
-								size="sm"
-								className={cn(actionClassName, "font-normal")}
-								aria-label="Merge into existing topic"
-								onClick={() =>
-									resolve(
-										"merge",
-										review.candidate?.mergeCandidate ??
-											undefined,
-									)
-								}
-							>
-								{compact
-									? "Merge"
-									: "Merge into existing topic"}
-							</Button>
+						{mergeTargets.length > 0 && (
+							<div className="flex items-center gap-2">
+								<Select
+									value={mergeTarget}
+									onValueChange={setMergeTarget}
+								>
+									<SelectTrigger
+										aria-label="Existing topic"
+										size="sm"
+										className="w-48"
+									>
+										<SelectValue placeholder="An existing topic" />
+									</SelectTrigger>
+									<SelectContent>
+										{mergeTargets.map((topic) => (
+											<SelectItem
+												key={topic.id}
+												value={topic.id}
+											>
+												{topic.short || topic.name}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+								<Button
+									variant="outline"
+									size="sm"
+									className={cn(
+										actionClassName,
+										"font-normal",
+									)}
+									disabled={!mergeTarget}
+									onClick={() =>
+										resolve("merge", mergeTarget)
+									}
+								>
+									Add to an existing topic
+								</Button>
+							</div>
+						)}
+						{otherTopics.length > 0 && (
+							<Select value="" onValueChange={fileElsewhere}>
+								<SelectTrigger
+									aria-label={`Another topic for ${thread?.subject ?? "this conversation"}`}
+									size="sm"
+									className="w-44"
+								>
+									<SelectValue placeholder="Another topic" />
+								</SelectTrigger>
+								<SelectContent>
+									{otherTopics.map((topic) => (
+										<SelectItem
+											key={topic.id}
+											value={topic.id}
+										>
+											{topic.short || topic.name}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
 						)}
 						<Button
 							variant="ghost"
@@ -241,6 +366,28 @@ export function ReviewCard({
 						</Button>
 					</div>
 				)}
+				{review.status !== "open" &&
+					(review.kind === "topic_choice" ||
+						review.kind === "add_person") && (
+						<div className="pt-1">
+							<Button
+								variant="ghost"
+								size="sm"
+								className={cn(
+									actionClassName,
+									"font-normal text-muted-foreground",
+								)}
+								onClick={() =>
+									dispatch({
+										type: "review.reopen",
+										reviewId: review.id,
+									})
+								}
+							>
+								Undo
+							</Button>
+						</div>
+					)}
 			</div>
 		</article>
 	);

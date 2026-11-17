@@ -156,6 +156,8 @@ export interface Thread {
 	participants: Participant[];
 	muted: boolean;
 	automated?: boolean;
+	/** You said a person writes here; the sort never marks it automated again. */
+	notAutomated?: boolean;
 	messageCount: number;
 	lastAt: string;
 	roomId: string | null;
@@ -171,6 +173,12 @@ export interface Thread {
 	conflict?: string;
 	source?: SourceReference;
 	isSample: boolean;
+}
+
+export interface Room {
+	id: string;
+	title?: string;
+	lastActivity: string;
 }
 
 export interface WorkItem {
@@ -193,6 +201,10 @@ export interface WorkItem {
 	closedReason?: string;
 	snoozeUntil?: string;
 	snoozedFrom?: "open" | "waiting";
+	/** Legacy single room; prefer rooms array for multiple chats. */
+	roomId?: string;
+	/** Multiple chat rooms linked to this work item, newest first. */
+	rooms?: Room[];
 	isSample: boolean;
 }
 
@@ -300,6 +312,10 @@ export interface Settings {
 	syncEveryMinutes: number;
 	/** Read-only: the server has an image model set for Digital Twin avatar options. */
 	avatarGeneration: boolean;
+	/** Hours between looks for new topics in mail no topic holds: 0 never, 24 daily, 72 every 3 days, 168 weekly. */
+	newTopicsEveryHours: number;
+	/** Whether a message in one conversation of a topic may close a step from another. */
+	closeAcrossThreads: boolean;
 	version: number;
 }
 
@@ -540,6 +556,7 @@ export type CollaborationCommand =
 			included: boolean;
 	  }
 	| { type: "thread.mute"; threadId: string; muted: boolean }
+	| { type: "thread.notAutomated"; threadId: string; notAutomated: boolean }
 	| {
 			type: "person.save";
 			personId: string;
@@ -572,6 +589,7 @@ export type CollaborationCommand =
 			changes: Partial<Profile>;
 			target?: "sample" | "live";
 	  }
+	| { type: "review.reopen"; reviewId: string }
 	| { type: "settings.save"; changes: Partial<Settings> }
 	| { type: "rule.add"; rule: Omit<Rule, "id" | "createdBy" | "createdAt"> }
 	| { type: "rule.remove"; ruleId: string }
