@@ -23,18 +23,18 @@ import {
 } from "@semoss/ui/next";
 import type {
 	App,
+	CatalogDependency,
 	Engine,
 	MCP,
 	MCPConfig,
-	ProjectDependency,
 } from "../../types";
 import { MCPCard } from "./mcp-card";
 import { MCPListItem } from "./mcp-list-item";
 import {
+	catalogDependencyToMCP,
 	engineProjectToMCP,
 	getDepEffectivePermission,
 	getMcpTypeIcon,
-	projectDependencyToMCP,
 } from "./mcp-utils";
 
 interface MCPSelectorProps {
@@ -94,7 +94,7 @@ interface MCPSelectorProps {
 	 */
 	getPlatformUrl?: (mcp: MCP) => string;
 
-	/** Optional workspace ID — when provided, GetProjectDependencies is fetched
+	/** Optional workspace ID — when provided, GetCatalogDependencies is fetched
 	 *  and any configured deps the user cannot access are injected into the grid. */
 	workspaceId?: string;
 }
@@ -207,11 +207,11 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 	const hasMore = getEngines.hasMore || getProjects.hasMore;
 
 	const getDependencies = usePixel<{
-		engines: ProjectDependency[];
-		dependencies: string[];
+		dependencies: CatalogDependency[];
+		dependencyIds: string[];
 	}>(
 		workspaceId
-			? `GetProjectDependencies(project=["${workspaceId}"]);`
+			? `GetCatalogDependencies(catalogId=${JSON.stringify(workspaceId)}, catalogType="WORKSPACE");`
 			: "",
 	);
 
@@ -235,15 +235,15 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 
 	const inaccessibleDeps = (() => {
 		if (!getDependencies.data || isInitialLoading) return [];
-		const topLevelIds = new Set(getDependencies.data.dependencies ?? []);
-		return (getDependencies.data.engines ?? [])
-			.filter((dep) => topLevelIds.has(dep.engine_id))
+		const topLevelIds = new Set(getDependencies.data.dependencyIds ?? []);
+		return (getDependencies.data.dependencies ?? [])
+			.filter((dep) => topLevelIds.has(dep.catalog_id))
 			.filter((dep) =>
 				type === "KNOWLEDGE"
-					? dep.engine_type === "VECTOR"
-					: dep.engine_type !== "VECTOR",
+					? dep.catalog_type === "VECTOR"
+					: dep.catalog_type !== "VECTOR",
 			)
-			.filter((dep) => !accessibleIds.has(dep.engine_id));
+			.filter((dep) => !accessibleIds.has(dep.catalog_id));
 	})();
 
 	/**
@@ -280,7 +280,7 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 		const query = search.trim().toLocaleLowerCase();
 		const catalog = new Map([
 			...inaccessibleDeps.map(
-				(dep) => [dep.engine_id, projectDependencyToMCP(dep)] as const,
+				(dep) => [dep.catalog_id, catalogDependencyToMCP(dep)] as const,
 			),
 			...combinedData.map((item) => [item.id, item] as const),
 		]);
@@ -295,7 +295,7 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 		const renderItem = (item: MCPConfig, isSelected: boolean) => {
 			const entry = catalog.get(item.id);
 			const dependency = inaccessibleDeps.find(
-				(dep) => dep.engine_id === item.id,
+				(dep) => dep.catalog_id === item.id,
 			);
 			return (
 				<MCPListItem
@@ -479,13 +479,13 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 					<>
 						<div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3">
 							{inaccessibleDeps.map((dep) => {
-								const mcp = projectDependencyToMCP(dep);
+								const mcp = catalogDependencyToMCP(dep);
 								return (
 									<MCPCard
-										key={dep.engine_id}
+										key={dep.catalog_id}
 										m={mcp}
 										type={type}
-										selected={!!selected[dep.engine_id]}
+										selected={!!selected[dep.catalog_id]}
 										onClick={
 											disabled
 												? undefined

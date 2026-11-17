@@ -440,18 +440,46 @@ export interface Skill {
  */
 export type SkillConfig = Pick<Skill, "id" | "name">;
 
-export interface ProjectDependency {
-	engine_type: Project["project_type"] | Engine["engine_type"] | "PROJECT";
-	engine_id: string;
-	engine_name: string;
-	engine_subtype?: string;
-	description?: string;
-	engine_discoverable?: boolean;
+/**
+ * The specific type of any catalog item: every engine type and every project
+ * type. Catalog dependencies store both their owner and their target with this
+ * type, never a generic ENGINE or PROJECT. The backend spells the insight
+ * project type INSIGHTS where the UI's `Project` says INSIGHT, so both appear.
+ */
+export type CatalogType =
+	| Engine["engine_type"]
+	| Project["project_type"]
+	| "INSIGHTS";
+
+/**
+ * One catalog item another engine or project depends on, as
+ * `GetCatalogDependencies` returns it.
+ */
+export interface CatalogDependency {
+	/** The dependency's id */
+	catalog_id: string;
+	/** The dependency's specific type, such as MODEL or SKILL */
+	catalog_type: CatalogType;
+	/** The dependency's name */
+	catalog_name: string;
+	/** The engine's subtype, such as OPEN_AI; projects have none */
+	catalog_subtype?: string;
+	catalog_date_created?: string;
+	catalog_discoverable?: boolean;
+	catalog_global?: boolean;
+	/** The user's permission level on the dependency, if any */
+	permission?: number;
+	/** The user's role on the dependency, if any */
 	permission_name?: Role;
-	engine_global?: boolean;
+	/** The permission level the user has requested, if any */
 	access_permission?: number;
+	description?: string;
+	/** Comma separated tags */
 	tags?: string;
+	/** Whether the user can view every dependency of this dependency */
 	can_view_dependencies?: boolean;
+	/** Ids of the dependency's own dependencies */
+	dependencies?: string[];
 }
 
 export interface Prompt {

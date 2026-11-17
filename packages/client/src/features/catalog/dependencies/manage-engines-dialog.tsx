@@ -1,7 +1,7 @@
 import { CheckIcon, SearchIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSessionInsight } from "@semoss/sdk/react";
-import type { Engine, ProjectDependency } from "@semoss/shared";
+import type { CatalogDependency, CatalogType, Engine } from "@semoss/shared";
 import { EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Button,
@@ -21,39 +21,43 @@ import {
 import { getErrorMessage } from "@semoss/utility/error";
 import {
 	CATEGORY_META,
-	toDependencyPayload,
-} from "./project-engines-panel.constants";
+	toCatalogDependencyPayload,
+} from "./catalog-dependency";
 
 /** Rows fetched per search in the manage dialog. */
 const MANAGE_FETCH_LIMIT = 50;
 
 interface ManageEnginesDialogProps {
 	/** Engine category being managed */
-	category: string;
-	/** Project whose dependencies are edited */
-	appId: string;
-	/** The project's current dependencies (all kinds) */
-	dependencies: ProjectDependency[];
+	category: Engine["engine_type"];
+	/** The owner whose dependencies are edited */
+	catalogId: string;
+	/** The owner's specific type */
+	catalogType: CatalogType;
+	/** The owner's current dependencies (all kinds) */
+	dependencies: CatalogDependency[];
 	/** Called on close; true when a save succeeded */
 	onClose: (saved: boolean) => void;
 }
 
 /**
  * Category-scoped engine picker: searches the user's engines of one category,
- * toggles selections, and saves the project's dependency list with every
+ * toggles selections, and saves the owner's dependency list with every
  * other category (and project-kind dependency) preserved. The backend
  * refreshes the agent's engine context from the saved list.
  *
  * @name ManageEnginesDialog
  * @param category - Engine category being managed.
- * @param appId - Project whose dependencies are edited.
- * @param dependencies - The project's current dependencies.
+ * @param catalogId - The owner whose dependencies are edited.
+ * @param catalogType - The owner's specific type.
+ * @param dependencies - The owner's current dependencies.
  * @param onClose - Called on close; true when a save succeeded.
  * @return The manage dialog.
  */
 export const ManageEnginesDialog = ({
 	category,
-	appId,
+	catalogId,
+	catalogType,
 	dependencies,
 	onClose,
 }: ManageEnginesDialogProps) => {
@@ -61,7 +65,7 @@ export const ManageEnginesDialog = ({
 	const meta = CATEGORY_META[category];
 
 	const [search, setSearch] = useState("");
-	const [options, setOptions] = useState<ProjectDependency[]>([]);
+	const [options, setOptions] = useState<CatalogDependency[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [isSaving, setIsSaving] = useState(false);
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(
@@ -69,11 +73,9 @@ export const ManageEnginesDialog = ({
 			new Set(
 				dependencies
 					.filter(
-						(dependency) =>
-							(dependency.engine_type ?? "").toUpperCase() ===
-							category,
+						(dependency) => dependency.catalog_type === category,
 					)
-					.map((dependency) => dependency.engine_id),
+					.map((dependency) => dependency.catalog_id),
 			),
 	);
 
@@ -96,11 +98,11 @@ export const ManageEnginesDialog = ({
 				if (cancelled) return;
 				setOptions(
 					response.pixelReturn[0].output.map((engine) => ({
-						engine_id: engine.engine_id,
-						engine_name:
+						catalog_id: engine.engine_id,
+						catalog_name:
 							engine.engine_display_name || engine.engine_name,
-						engine_type: engine.engine_type,
-						engine_subtype: engine.engine_subtype,
+						catalog_type: engine.engine_type,
+						catalog_subtype: engine.engine_subtype,
 					})),
 				);
 			} catch (error) {
@@ -136,15 +138,14 @@ export const ManageEnginesDialog = ({
 		try {
 			// Everything that is not this category is preserved verbatim.
 			const others = dependencies.filter(
-				(dependency) =>
-					(dependency.engine_type ?? "").toUpperCase() !== category,
+				(dependency) => dependency.catalog_type !== category,
 			);
 			const payload = [
-				...others.map(toDependencyPayload),
+				...others.map(toCatalogDependencyPayload),
 				...[...selectedIds].map((id) => ({ id, type: category })),
 			];
-			const response = await runPixel<string[]>(
-				`SetProjectDependencies(project="${appId}", dependencies=${JSON.stringify(payload)})`,
+			const response = await runPixel<[unknown]>(
+				`SetCatalogDependencies(catalogId="${catalogId}", catalogType="${catalogType}", dependencies=${JSON.stringify(payload)});`,
 			);
 			if (response.errors.length > 0) {
 				throw new Error(response.errors.join(""));
@@ -192,10 +193,10 @@ export const ManageEnginesDialog = ({
 						<ul className="flex flex-col p-1">
 							{options.map((option) => {
 								const selected = selectedIds.has(
-									option.engine_id,
+									option.catalog_id,
 								);
 								return (
-									<li key={option.engine_id}>
+									<li key={option.catalog_id}>
 										<button
 											type="button"
 											className={cn(
@@ -203,23 +204,23 @@ export const ManageEnginesDialog = ({
 												selected && "bg-accent/50",
 											)}
 											onClick={() =>
-												toggleEngine(option.engine_id)
+												toggleEngine(option.catalog_id)
 											}
 										>
 											<span className="flex size-5 shrink-0 items-center justify-center">
 												<EngineSubtypeIcon
 													engineType={
-														option.engine_type
+														option.catalog_type
 													}
 													engineSubtype={
-														option.engine_subtype
+														option.catalog_subtype
 													}
-													alt={option.engine_name}
+													alt={option.catalog_name}
 													className="size-full object-contain"
 												/>
 											</span>
 											<span className="min-w-0 flex-1 truncate">
-												{option.engine_name}
+												{option.catalog_name}
 											</span>
 											{selected ? (
 												<CheckIcon className="size-4 shrink-0 text-primary" />

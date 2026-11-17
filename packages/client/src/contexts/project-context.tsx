@@ -1,6 +1,6 @@
 import { createContext } from "react";
 import type { Role } from "@semoss/sdk";
-import type { Project, ProjectDependency } from "@semoss/shared";
+import type { CatalogDependency, Project } from "@semoss/shared";
 
 export type ProjectContextType = {
 	/** Type of the project */
@@ -17,7 +17,8 @@ export type ProjectContextType = {
 
 	project: Project;
 	permission: Role;
-	dependencies: ProjectDependency[];
+	/** The project's dependencies, as `GetCatalogDependencies` returns them */
+	dependencies: CatalogDependency[];
 	refresh: () => void;
 
 	/** Merges fields into the loaded project without reloading it */

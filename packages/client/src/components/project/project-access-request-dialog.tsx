@@ -3,7 +3,7 @@ import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import type { Role } from "@semoss/sdk";
 import { runPixel, usePixel } from "@semoss/sdk/react";
-import type { Project, ProjectDependency } from "@semoss/shared";
+import type { CatalogDependency, Project } from "@semoss/shared";
 import {
 	Badge,
 	Button,
@@ -30,7 +30,8 @@ import {
 import { getErrorMessage } from "@semoss/utility/error";
 import type { MyAccessRequest } from "@/api/user-access";
 import OPEN_AI from "@/assets/img/OPEN_AI.svg";
-import { PERMISSION_DESCRIPTION_MAP, TYPE_TO_ROUTE } from "@/constants";
+import { PERMISSION_DESCRIPTION_MAP } from "@/constants";
+import { getDependencyTypeConfig } from "@/features/catalog/dependencies/catalog-dependency";
 
 interface ProjectAccessRequestDialogProps {
 	/** Project details */
@@ -123,20 +124,25 @@ export const ProjectAccessRequestDialog = ({
 	const [isLoading, setIsLoading] = useState(false);
 
 	const getDependencies = usePixel<{
-		engines: ProjectDependency[];
-		dependencies: string[];
-	}>(open ? `GetProjectDependencies(project="${project.project_id}")` : "", {
-		data: {
-			engines: [],
-			dependencies: [],
+		dependencies: CatalogDependency[];
+		dependencyIds: string[];
+	}>(
+		open
+			? `GetCatalogDependencies(catalogId="${project.project_id}", catalogType="${project.project_type}");`
+			: "",
+		{
+			data: {
+				dependencies: [],
+				dependencyIds: [],
+			},
 		},
-	});
+	);
+	const dependencies: CatalogDependency[] =
+		getDependencies.data?.dependencies ?? [];
 
 	const isAllRequested = useMemo(() => {
-		return getDependencies.data.engines.every((dep) =>
-			requestedDeps.has(dep.engine_id),
-		);
-	}, [getDependencies.data.engines, requestedDeps]);
+		return dependencies.every((dep) => requestedDeps.has(dep.catalog_id));
+	}, [dependencies, requestedDeps]);
 
 	/**
 	 * Request access for a single dependency.
@@ -196,10 +202,10 @@ export const ProjectAccessRequestDialog = ({
 				return;
 			}
 
-			const dependenciesToRequest = getDependencies.data.engines.filter(
+			const dependenciesToRequest = dependencies.filter(
 				(dep) =>
 					dep.permission_name !== requestedPermission &&
-					!requestedDeps.has(dep.engine_id),
+					!requestedDeps.has(dep.catalog_id),
 			);
 
 			if (dependenciesToRequest.length === 0) {
@@ -209,7 +215,7 @@ export const ProjectAccessRequestDialog = ({
 
 			let pixel = ``;
 			for (const dep of dependenciesToRequest) {
-				pixel += `META | RequestEngine(engine=['${dep.engine_id}'], permission=['${requestedPermission}']${
+				pixel += `META | RequestEngine(engine=['${dep.catalog_id}'], permission=['${requestedPermission}']${
 					roleChangeComment
 						? `, comment=["<encode>${roleChangeComment}</encode>"]`
 						: ""
@@ -223,15 +229,15 @@ export const ProjectAccessRequestDialog = ({
 				if (r.operationType.indexOf("ERROR") === -1) {
 					setRequestedDeps((prev) =>
 						new Set(prev).add(
-							dependenciesToRequest[rIdx].engine_id,
+							dependenciesToRequest[rIdx].catalog_id,
 						),
 					);
 					toast.success(
-						`Dependency ${dependenciesToRequest[rIdx].engine_id}: ${r.output}`,
+						`Dependency ${dependenciesToRequest[rIdx].catalog_id}: ${r.output}`,
 					);
 				} else {
 					toast.error(
-						`Dependency ${dependenciesToRequest[rIdx].engine_id}: ${r.output}`,
+						`Dependency ${dependenciesToRequest[rIdx].catalog_id}: ${r.output}`,
 					);
 				}
 			}
@@ -421,7 +427,7 @@ export const ProjectAccessRequestDialog = ({
 									disabled={
 										isAllRequested ||
 										isLoading ||
-										getDependencies.data.engines.some(
+										dependencies.some(
 											(dep) => dep.access_permission,
 										)
 									}
@@ -433,25 +439,25 @@ export const ProjectAccessRequestDialog = ({
 							</div>
 
 							<div className="space-y-3">
-								{getDependencies.data.engines.map((dep) => (
+								{dependencies.map((dep) => (
 									<div
-										key={dep.engine_id}
+										key={dep.catalog_id}
 										className="flex flex-col gap-3 rounded-xl border bg-background p-4"
 									>
 										<div className="flex flex-wrap items-start justify-between gap-4">
 											<div className="flex items-start gap-4">
 												<img
 													src={OPEN_AI}
-													alt={dep.engine_name}
+													alt={dep.catalog_name}
 													className="h-12 w-12 rounded-lg object-cover"
 												/>
 												<div className="space-y-1">
 													<Link
-														to={`${TYPE_TO_ROUTE[dep.engine_type as keyof typeof TYPE_TO_ROUTE]}/${dep.engine_id}`}
+														to={`${getDependencyTypeConfig(dep.catalog_type).route}/${dep.catalog_id}`}
 														className="text-primary"
 													>
 														<p className="font-medium text-sm">
-															{dep.engine_name}
+															{dep.catalog_name}
 														</p>
 													</Link>
 													<PermissionBadge
@@ -463,11 +469,11 @@ export const ProjectAccessRequestDialog = ({
 											</div>
 
 											<div className="flex flex-wrap items-center gap-2">
-												{dep.engine_global ? (
+												{dep.catalog_global ? (
 													<Badge variant="outline">
 														Public
 													</Badge>
-												) : dep.engine_discoverable ? (
+												) : dep.catalog_discoverable ? (
 													<Badge variant="outline">
 														Discoverable
 													</Badge>
@@ -482,7 +488,11 @@ export const ProjectAccessRequestDialog = ({
 													</>
 												)}
 												<Badge variant="outline">
-													{dep.engine_type}
+													{
+														getDependencyTypeConfig(
+															dep.catalog_type,
+														).label
+													}
 												</Badge>
 											</div>
 										</div>
@@ -495,7 +505,9 @@ export const ProjectAccessRequestDialog = ({
 
 										<div className="flex justify-end">
 											{dep.access_permission ||
-											requestedDeps.has(dep.engine_id) ? (
+											requestedDeps.has(
+												dep.catalog_id,
+											) ? (
 												<Button
 													variant="outline"
 													disabled
@@ -507,7 +519,7 @@ export const ProjectAccessRequestDialog = ({
 													variant="outline"
 													onClick={() =>
 														handleSingleDependencyRequest(
-															dep.engine_id,
+															dep.catalog_id,
 														)
 													}
 												>
@@ -518,7 +530,7 @@ export const ProjectAccessRequestDialog = ({
 													variant="outline"
 													onClick={() =>
 														handleSingleDependencyRequest(
-															dep.engine_id,
+															dep.catalog_id,
 														)
 													}
 												>

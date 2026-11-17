@@ -40,8 +40,8 @@ vi.mock("@/pages/app/app-smss-page", () => ({ AppSmssPage: () => null }));
 vi.mock("@/pages/project/agent/agent-activity-page", () => ({
 	AgentActivityPage: () => null,
 }));
-vi.mock("@/pages/project/project-dependencies-page", () => ({
-	ProjectDependenciesPage: () => null,
+vi.mock("@/pages/project/project-dependencies.page", () => ({
+	ProjectCatalogDependenciesPage: () => null,
 }));
 vi.mock("@/features/audit-trail/resource-audit-trail", () => ({
 	ResourceAuditTrail: (props: unknown) => {

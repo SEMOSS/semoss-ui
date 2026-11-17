@@ -19,6 +19,7 @@ import { ASSISTANT_PANEL } from "@/components/assistant/assistant-view";
 import { AssistantStoreProvider } from "@/contexts/assistant.context";
 import { ASSISTANT_TOOL_PANEL } from "@/features/assistant-tools/assistant-tool-panel";
 import { ASSISTANT_TOOL_PANEL_TYPE } from "@/features/assistant-tools/assistant-tool-ui";
+import { CATALOG_ENGINES_PANEL } from "@/features/catalog/dependencies/catalog-engines-panel";
 import { useAssistantStore } from "@/hooks/use-assistant-store";
 import { useProject } from "@/hooks/use-project";
 import type { BuildRun } from "@/stores/assistant/assistant.runs";
@@ -40,7 +41,6 @@ import {
 	createOpenPanelCommand,
 	createReconnectCommand,
 } from "../../workbench.presets";
-import { PROJECT_ENGINES_PANEL } from "../project-engines-panel";
 import { PROJECT_INSIGHT_EXPLORER_PANEL } from "../project-insight-explorer-panel";
 import { ProjectPublishButton } from "../project-publish-button";
 import {
@@ -137,7 +137,7 @@ export const CODE_WORKBENCH_COMPONENTS: Record<
 	[WORKBENCH_COMPONENTS.GIT_DIFF]: GIT_DIFF_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER]:
 		PROJECT_INSIGHT_EXPLORER_PANEL,
-	[WORKBENCH_COMPONENTS.PROJECT_ENGINES]: PROJECT_ENGINES_PANEL,
+	[WORKBENCH_COMPONENTS.PROJECT_ENGINES]: CATALOG_ENGINES_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_TERMINAL]: PROJECT_TERMINAL_PANEL,
 	// PROJECT_SETTINGS_TABS plus Dependencies and Settings, inserted at two
 	// different points — written out rather than nested `withTab` calls, where

@@ -8,12 +8,13 @@ import {
 	type LucideIcon,
 	Sigma,
 } from "lucide-react";
+import { isProjectCatalogType } from "../../constants/catalog-types.constants";
 import type {
 	App,
+	CatalogDependency,
 	Engine,
 	MCP,
 	MCPConfig,
-	ProjectDependency,
 	Prompt,
 } from "../../types";
 
@@ -84,22 +85,14 @@ export const engineProjectToMCP = (tool: Engine | App): MCP => {
 };
 
 /**
- * Convert a ProjectDependency (from GetProjectDependencies) to the MCP shape.
+ * Convert a CatalogDependency (from GetCatalogDependencies) to the MCP shape.
+ * Every project type collapses to the MCP's PROJECT type.
  */
-export const projectDependencyToMCP = (dep: ProjectDependency): MCP => ({
-	id: dep.engine_id,
-	name: dep.engine_name,
-	type:
-		dep.engine_type === "SKILL" ||
-		dep.engine_type === "WORKSPACE" ||
-		dep.engine_type === "BLOCKS" ||
-		dep.engine_type === "CODE" ||
-		dep.engine_type === "INSIGHT" ||
-		dep.engine_type === "NOTEBOOK" ||
-		dep.engine_type === "AUTOMATION"
-			? "PROJECT"
-			: dep.engine_type,
-	subtype: dep.engine_subtype,
+export const catalogDependencyToMCP = (dep: CatalogDependency): MCP => ({
+	id: dep.catalog_id,
+	name: dep.catalog_name,
+	type: isProjectCatalogType(dep.catalog_type) ? "PROJECT" : dep.catalog_type,
+	subtype: dep.catalog_subtype,
 	description: dep.description ?? "",
 	tags: dep.tags
 		? dep.tags
@@ -114,12 +107,12 @@ export const projectDependencyToMCP = (dep: ProjectDependency): MCP => ({
 });
 
 /**
- * Derive the effective permission for a ProjectDependency, including
+ * Derive the effective permission for a CatalogDependency, including
  * inaccessible states (DISCOVERABLE, FULLY_PRIVATE, REQUESTED) that
  * the base MCP.permission type doesn't cover.
  */
 export const getDepEffectivePermission = (
-	dep: ProjectDependency,
+	dep: CatalogDependency,
 ):
 	| "READ_ONLY"
 	| "EDIT"
@@ -128,8 +121,8 @@ export const getDepEffectivePermission = (
 	| "DISCOVERABLE"
 	| "FULLY_PRIVATE" => {
 	if (dep.permission_name) return dep.permission_name;
-	if (dep.engine_global) return "READ_ONLY";
-	if (dep.engine_discoverable) {
+	if (dep.catalog_global) return "READ_ONLY";
+	if (dep.catalog_discoverable) {
 		return typeof dep.access_permission === "number"
 			? "REQUESTED"
 			: "DISCOVERABLE";

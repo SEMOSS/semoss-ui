@@ -1,20 +1,20 @@
 import { XIcon } from "lucide-react";
-import type { ProjectDependency } from "@semoss/shared";
+import type { CatalogDependency, Engine } from "@semoss/shared";
 import { EngineSubtypeIcon } from "@semoss/shared";
 import { Button } from "@semoss/ui/next";
-import { CATEGORY_META } from "./project-engines-panel.constants";
+import { CATEGORY_META } from "./catalog-dependency";
 
 interface EngineCategoryCardProps {
 	/** Engine category the card shows */
-	category: string;
+	category: Engine["engine_type"];
 	/** Selected engines of this category */
-	engines: ProjectDependency[];
+	engines: CatalogDependency[];
 	/** Whether the user can manage/remove engines */
 	canEdit: boolean;
 	/** Opens the manage dialog for this category */
 	onManage: () => void;
-	/** Removes one engine from the project's dependencies */
-	onRemove: (engine: ProjectDependency) => void;
+	/** Removes one engine from the owner's dependencies */
+	onRemove: (engine: CatalogDependency) => void;
 	/** Disables the remove buttons while a removal is saving */
 	isRemoving: boolean;
 }
@@ -29,7 +29,7 @@ interface EngineCategoryCardProps {
  * @param engines - Selected engines of this category.
  * @param canEdit - Whether the user can manage/remove engines.
  * @param onManage - Opens the manage dialog for this category.
- * @param onRemove - Removes one engine from the project's dependencies.
+ * @param onRemove - Removes one engine from the owner's dependencies.
  * @param isRemoving - Disables the remove buttons while a removal is saving.
  * @return The category card.
  */
@@ -77,26 +77,26 @@ export const EngineCategoryCard = ({
 					<ul className="flex flex-wrap gap-1.5">
 						{engines.map((engine) => (
 							<li
-								key={engine.engine_id}
+								key={engine.catalog_id}
 								className="flex items-center gap-1.5 rounded-full border border-border bg-background py-1 ps-1.5 pe-2 text-xs"
-								title={engine.engine_name}
+								title={engine.catalog_name}
 							>
 								<span className="flex size-4 shrink-0 items-center justify-center">
 									<EngineSubtypeIcon
-										engineType={engine.engine_type}
-										engineSubtype={engine.engine_subtype}
-										alt={engine.engine_name}
+										engineType={engine.catalog_type}
+										engineSubtype={engine.catalog_subtype}
+										alt={engine.catalog_name}
 										className="size-full object-contain"
 									/>
 								</span>
 								<span className="max-w-40 truncate">
-									{engine.engine_name}
+									{engine.catalog_name}
 								</span>
 								{canEdit ? (
 									<button
 										type="button"
 										disabled={isRemoving}
-										aria-label={`Remove ${engine.engine_name}`}
+										aria-label={`Remove ${engine.catalog_name}`}
 										className="shrink-0 text-muted-foreground hover:text-foreground"
 										onClick={() => onRemove(engine)}
 									>

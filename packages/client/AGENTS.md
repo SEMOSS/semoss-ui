@@ -54,7 +54,7 @@ application features; this inventory does not require moving existing features.
 | `assets/` | Images and static files |
 | `components/` | Components grouped by feature area (`project/`, `engine/`, `settings/`, …) |
 | `contexts/` | React contexts (`<name>.context.tsx`) |
-| `features/` | Application features, one folder per concern (for example `team-list/`, `team-type/`, `team-members/`, `team-resource-access/`, `group-managers/`, `bulk-access-management/`, `usage-limit-path/`, `platform-default-limit/`, `team-usage-limit/`, `model-usage-limits/`, `engine-app-permissions/`, `my-model-usage/`, `my-access-request/`) |
+| `features/` | Application features, one folder per concern (for example `team-list/`, `team-type/`, `team-members/`, `team-resource-access/`, `group-managers/`, `bulk-access-management/`, `usage-limit-path/`, `platform-default-limit/`, `team-usage-limit/`, `model-usage-limits/`, `engine-app-permissions/`, `my-model-usage/`, `my-access-request/`, `catalog/dependencies/`) |
 | `hooks/` | React hooks (`use-<name>.ts`) |
 | `pages/` | Routing tree (see below) |
 | `stores/` | State owners (`assistant/`, `designer/`, `page/`, `session/`, `workbench/`, `workspace/`) |
