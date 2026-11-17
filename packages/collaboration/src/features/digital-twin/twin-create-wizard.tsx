@@ -28,7 +28,11 @@ import { sleep } from "@semoss/utility/async";
 import { AgentAvatar } from "@/components/common/agent-avatar";
 import { CollaborationPageHeader } from "@/features/collaboration/components/collaboration-page-header";
 import type { CatalogSkill } from "@/features/routines/custom-routine-schema";
-import { twinChatPath, twinContentsPath } from "@/lib/workspace-paths";
+import {
+	twinChatPath,
+	twinContentsPath,
+	twinSettingsPath,
+} from "@/lib/workspace-paths";
 import {
 	addTwinKnowledge,
 	createTwin,
@@ -124,8 +128,7 @@ interface TwinCreateWizardProps {
  * with it next. Nothing is created before the review's Create; what the owner
  * chose for it to know waits in the page's files until then. A create that
  * makes the twin and then fails says which part, keeps what was entered, and
- * finishes on the next try instead of creating a second twin, which the server
- * refuses, or copying anything twice.
+ * finishes on the next try instead of creating a duplicate or copying anything twice.
  */
 export function TwinCreateWizard({
 	ownerName,
@@ -133,6 +136,8 @@ export function TwinCreateWizard({
 	onOpenSettings,
 }: TwinCreateWizardProps) {
 	const { actions } = useInsight();
+	const [createdSkills, setCreatedSkills] = useState<CatalogSkill[]>([]);
+	const availableSkills = [...skills, ...createdSkills];
 	const id = useId();
 	const form = useForm<TwinProfile>({
 		resolver: zodResolver(twinProfileSchema),
@@ -232,7 +237,7 @@ export function TwinCreateWizard({
 				});
 			}
 		} catch (cause) {
-			// the twin exists now, and the server refuses a second one: the next try finishes this one
+			// The next try finishes the twin that exists already.
 			if (cause instanceof TwinSetupError) setTwinId(cause.twinId);
 			setSetup(null);
 			form.setError("root.server", {
@@ -261,7 +266,9 @@ export function TwinCreateWizard({
 
 	const name = values.name.trim() || "Your Digital Twin";
 	const copied = knowledge.filter((item) => item.isCopied).length;
-	const skillNames = new Map(skills.map((skill) => [skill.id, skill.name]));
+	const skillNames = new Map(
+		availableSkills.map((skill) => [skill.id, skill.name]),
+	);
 	const summary = [
 		{
 			term: "Name and image",
@@ -313,17 +320,26 @@ export function TwinCreateWizard({
 	];
 	// where to go from the new twin, the thing it needs next last, as the one to press
 	const share = {
-		to: "/twins/mine?tab=people",
+		to: twinSettingsPath(twinId ?? "", "people"),
 		label: "Share it with people",
 		onClick: onOpenSettings,
 	};
 	const nextMoves: { to: string; label: string; onClick?: () => void }[] = [
 		{ to: twinChatPath(twinId ?? ""), label: "Chat with it" },
 		...(copied > 0
-			? [{ to: twinContentsPath(), label: "Add to what it knows" }, share]
+			? [
+					{
+						to: twinContentsPath(undefined, twinId),
+						label: "Add to what it knows",
+					},
+					share,
+				]
 			: [
 					share,
-					{ to: twinContentsPath(), label: "Choose what it knows" },
+					{
+						to: twinContentsPath(undefined, twinId),
+						label: "Choose what it knows",
+					},
 				]),
 	];
 	// one step of the flow: its title, which takes focus when the step opens, then what the step holds
@@ -347,7 +363,7 @@ export function TwinCreateWizard({
 							"motion-safe:slide-in-from-start-6",
 					)}
 				>
-					<div className="space-y-1">
+					<div className="flex flex-col gap-1">
 						<H2
 							id={`${id}-${entry.id}`}
 							ref={(node) => {
@@ -466,7 +482,7 @@ export function TwinCreateWizard({
 							</span>
 						</span>
 					}
-					description="An AI that answers questions about you from the emails, Teams chats and files you copy into it. Only the people you name can chat with it, and you can have one."
+					description="An AI that answers questions about you from the emails, Teams chats and files you copy into it. Each twin has its own knowledge and the people you choose to share it with."
 				/>
 				<ol
 					aria-label="Steps to create your Digital Twin"
@@ -598,7 +614,15 @@ export function TwinCreateWizard({
 										) : (
 											<TwinProfileFields
 												group={entry.id}
-												skills={skills}
+												skills={availableSkills}
+												onSkillCreated={(skill) =>
+													setCreatedSkills(
+														(current) => [
+															...current,
+															skill,
+														],
+													)
+												}
 											/>
 										),
 									),

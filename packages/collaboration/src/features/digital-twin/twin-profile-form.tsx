@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	Alert,
@@ -37,6 +38,7 @@ export function TwinProfileForm({
 	onSaved,
 }: TwinProfileFormProps) {
 	const { actions } = useInsight();
+	const [createdSkills, setCreatedSkills] = useState<CatalogSkill[]>([]);
 	const form = useForm<TwinProfile>({
 		resolver: zodResolver(twinProfileSchema),
 		defaultValues: { ...twin.profile, image: null },
@@ -70,7 +72,13 @@ export function TwinProfileForm({
 			aria-busy={isSubmitting}
 			className="flex min-w-0 max-w-3xl flex-col gap-8"
 		>
-			<TwinProfileFields skills={skills} imageUrl={imageUrl} />
+			<TwinProfileFields
+				skills={[...skills, ...createdSkills]}
+				onSkillCreated={(skill) =>
+					setCreatedSkills((current) => [...current, skill])
+				}
+				imageUrl={imageUrl}
+			/>
 			{errors.root?.server?.message && (
 				<Alert variant="destructive">
 					<AlertDescription>
