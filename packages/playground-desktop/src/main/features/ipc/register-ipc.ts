@@ -13,7 +13,7 @@ interface RegisterIpcOptions {
 	readonly settings: SettingsFile;
 	/** The browser session, cleared when the server changes. */
 	readonly session: Session;
-	/** The app's window, reloaded onto a newly saved server. */
+	/** The app's window, loaded afresh onto a newly saved server. */
 	readonly getWindow: () => BrowserWindow | null;
 }
 
@@ -46,7 +46,9 @@ export const registerIpc = ({
 		) {
 			await session.clearStorageData();
 		}
-		getWindow()?.webContents.reload();
+		// load the root, not reload: a reload keeps the `#/server` route and
+		// lands back on this form
+		await getWindow()?.loadURL(`${appOrigin}/`);
 	});
 
 	handleIpc("shell:open-external", appOrigin, async (url) => {

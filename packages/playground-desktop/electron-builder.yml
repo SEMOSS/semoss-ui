@@ -4,6 +4,8 @@
 # builds are unsigned, which is fine for local use.
 appId: org.semoss.chat
 productName: SEMOSS Chat
+# names every installer by its architecture, so testers pick the right one
+artifactName: SEMOSS-Chat-${version}-${os}-${arch}.${ext}
 directories:
   output: release
   buildResources: resources

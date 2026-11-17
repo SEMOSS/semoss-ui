@@ -10,6 +10,7 @@
 		"preview": "electron-vite preview",
 		"package": "electron-vite build && electron-builder --dir",
 		"dist": "electron-vite build && electron-builder",
+		"release": "bash scripts/release.sh",
 		"test": "vitest run --configLoader runner",
 		"type-check": "tsc --pretty --noEmit -p tsconfig.json && tsc --pretty --noEmit -p tsconfig.node.json"
 	},

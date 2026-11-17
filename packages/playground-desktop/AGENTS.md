@@ -135,6 +135,16 @@ Main → renderer messages are `DesktopCommand`s on `COMMAND_CHANNEL`, heard wit
 
 The root `pnpm dev:playground-desktop` runs `dev` with its dependencies.
 
+**Releasing a test build (temporary).** Bump `version` here, then run `pnpm release` in this
+package (`scripts/release.sh`). It builds installers for the current OS (macOS: arm64 and x64),
+offers to push the branch, and attaches them to the GitHub pre-release `desktop-v<version>`;
+re-running for the same version replaces its files. `--draft` makes a draft release and
+`--skip-build` re-uploads what is in `release/`.
+
+**The app icon** is `resources/icon.png` (1024×1024), electron-builder's build resources folder,
+from which it makes the macOS, Windows, and Linux icons. Edit `resources/icon.svg` (the SEMOSS mark
+on a macOS-style tile) and regenerate the PNG with the command in its header.
+
 `electron.vite.config.ts` imports `@semoss/config` and `@semoss/panels/vite` by path: electron-vite
 bundles its config but leaves packages external, and Node cannot run the workspace's TypeScript
 sources. That is why the shared config's build plugins are dev dependencies here, and why the
@@ -144,7 +154,7 @@ sources. That is why the shared config's build plugins are dev dependencies here
 
 - **Signing and notarization** come only from the environment (`CSC_LINK`, `CSC_KEY_PASSWORD`,
   `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID`, `WIN_CSC_LINK`); without them builds
-  are unsigned. There is no app icon yet (`resources/`), and no CI job builds the app.
+  are unsigned. No CI job builds the app.
 - **Auto update**: add `electron-updater` in `main/features/updates/` with a generic feed.
 - **Deep links** (`semoss-playground://`): register the protocol in `main/features/menu` or a new
   `commands` feature, and send `DesktopCommand`s like the menu does.
