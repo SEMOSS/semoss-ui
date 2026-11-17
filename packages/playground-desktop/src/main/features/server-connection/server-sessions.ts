@@ -11,10 +11,11 @@ export interface ServerSessions {
 	 * The session for a partition, set up on first use: sign ins come back
 	 * through the app, and downloads open the save dialog.
 	 *
-	 * @param partition - The server's partition; `""` is the default session.
+	 * @param partition - The server's partition, or null before any server is
+	 * saved: the default session, which only shows the connect screen.
 	 * @returns The session.
 	 */
-	get: (partition: string) => Session;
+	get: (partition: string | null) => Session;
 	/** Write every used session's cookies to disk, before quitting. */
 	flush: () => Promise<void>;
 }

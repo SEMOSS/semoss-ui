@@ -37,14 +37,6 @@ const CONTENT_SECURITY_POLICY = [
 /** The app's window, once the app is ready. */
 let windows: AppWindowHost | null = null;
 
-// The app is named Playground (`productName`), but its data stays in the folder
-// it was first given, so the rename signs no one out and a folder named only
-// "Playground" cannot clash with another app's. Set before anything reads it.
-app.setPath(
-	"userData",
-	join(app.getPath("appData"), "@semoss", "playground-desktop"),
-);
-
 // one app at a time: a second launch quits and focuses the first one's window
 if (!app.requestSingleInstanceLock()) {
 	app.quit();

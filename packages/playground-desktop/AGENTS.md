@@ -25,8 +25,7 @@ src/
                            COMMAND_CHANNEL, DesktopBridge, ServerCheckResult, SavedServers
     server-connection.ts   ServerConfig, DEFAULT_MODULE, parseServerConfig, parseServerAddress,
                            formatServerAddress, isSameServer, isModulePath
-  main/         Node: main.ts only wires the features below (and holds the production CSP and
-                the userData path)
+  main/         Node: main.ts only wires the features below (and holds the production CSP)
     features/server-connection/   desktop-config (smss-desktop-config.json, below), server-sessions
                                   (one browser session per server), local-server (static files +
                                   proxy), check-server
@@ -114,19 +113,17 @@ src/
 
 ## What it saves
 
-Everything lives in `userData`, pinned in `main.ts` to
-`~/Library/Application Support/@semoss/playground-desktop` (macOS; `%APPDATA%` and `~/.config`
-elsewhere) for dev and the packaged app alike, so renaming the app never moves anyone's data.
+Everything lives in Electron's `userData` folder, named after the app:
+`~/Library/Application Support/Playground` on macOS (`%APPDATA%\Playground` on Windows,
+`~/.config/Playground` on Linux), shared by dev and the packaged app.
 
-- **`smss-desktop-config.json`** (`desktop-config.ts`, written atomically): `version` (2),
+- **`smss-desktop-config.json`** (`desktop-config.ts`, written atomically): `version` (1),
   `servers` (each `url`, `module`, `partition`), `active` (the active server's partition), `port`,
-  and `window` (bounds, maximized). No credentials. A version 1 `desktop-settings.json` is read
-  once, rewritten under the new name, and deleted; its server keeps the default session (`""`),
-  which already holds its sign in.
-- **The default session** (the folder's own `Cookies`, `Local Storage`, …): the migrated server,
-  and the connect screen before any server is saved.
-- **`Partitions/server-<uuid>/`**: each added server's cookies, local and session storage, and
+  and `window` (bounds, maximized). No credentials.
+- **`Partitions/server-<uuid>/`**: each saved server's cookies, local and session storage, and
   caches.
+- **The default session** (the folder's own `Cookies`, `Local Storage`, …): only the connect
+  screen, before any server is saved; no server signs in with it.
 
 ## Security
 
@@ -140,11 +137,10 @@ Monaco, Mermaid and the Office viewers need it, which is why Electron's dev buil
 insecure. A second launch focuses the running window.
 
 The packaged app encrypts its cookie store (`electronFuses.enableCookieEncryption` in
-`electron-builder.yml`), with a key in the OS keychain (macOS: "Playground Safe
-Storage", from the app's name). The fuse is one way: turning it off leaves saved cookies unreadable. Cookies saved
-before it was on stay plaintext until they are written again (the next sign in). `pnpm dev` runs
-Electron's own binary, whose fuses are not flipped, so dev cookies stay plaintext. Dev and the
-packaged app share one data folder (above).
+`electron-builder.yml`), with a key in the OS keychain (macOS: "Playground Safe Storage", from
+the app's name). The fuse is one way: turning it off leaves saved cookies unreadable. `pnpm dev`
+runs Electron's own binary, whose fuses are not flipped, so dev cookies stay plaintext. Dev and
+the packaged app share one data folder (above).
 
 ## Adding an IPC channel
 

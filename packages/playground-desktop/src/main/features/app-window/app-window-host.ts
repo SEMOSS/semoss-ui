@@ -41,7 +41,7 @@ export const createAppWindowHost = ({
 	let current: BrowserWindow | null = null;
 
 	const open = async (): Promise<void> => {
-		const serverSession = sessions.get(config.server?.partition ?? "");
+		const serverSession = sessions.get(config.server?.partition ?? null);
 		const previous = current;
 		if (previous && previous.webContents.session === serverSession) {
 			// load the root, not reload: a reload keeps the `#/server` route

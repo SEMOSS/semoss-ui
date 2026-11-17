@@ -1,13 +1,7 @@
 // @vitest-environment node
 
 import { describe, expect, test, vi } from "vitest";
-import {
-	existsSync,
-	mkdirSync,
-	mkdtempSync,
-	readFileSync,
-	writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { isExternalLink, isSignInPopup } from "./app-window/window-security";
@@ -115,20 +109,27 @@ describe("toLocalModuleUrl", () => {
 describe("parseDesktopConfig", () => {
 	/** A second hosted server. */
 	const OTHER = { url: "https://other.example", module: "/team/Monolith" };
-	/** A partition the app would make. */
-	const PARTITION = "persist:server-00000000-0000-4000-8000-000000000000";
+	/** Partitions the app would make. */
+	const FIRST = "persist:server-00000000-0000-4000-8000-000000000001";
+	const SECOND = "persist:server-00000000-0000-4000-8000-000000000002";
 
 	test("falls back to defaults for a corrupt or tampered file", () => {
 		expect(parseDesktopConfig("{nope").servers).toEqual([]);
 		expect(
 			parseDesktopConfig(
-				JSON.stringify({ server: { url: "http://evil.example" } }),
+				JSON.stringify({
+					servers: [{ url: "http://evil.example", partition: FIRST }],
+				}),
 			).servers,
 		).toEqual([]);
+		// only the app's own partitions; not the default session or another app's
 		expect(
 			parseDesktopConfig(
 				JSON.stringify({
-					servers: [{ ...SERVER, partition: "persist:anything" }],
+					servers: [
+						{ ...SERVER, partition: "" },
+						{ ...OTHER, partition: "persist:anything" },
+					],
 				}),
 			).servers,
 		).toEqual([]);
@@ -137,16 +138,18 @@ describe("parseDesktopConfig", () => {
 		).toBeNull();
 	});
 
-	test("moves a version 1 server onto the default session", () => {
+	test("reads a valid file", () => {
 		const config = parseDesktopConfig(
 			JSON.stringify({
-				server: SERVER,
+				version: 1,
+				servers: [{ ...SERVER, partition: FIRST }],
+				active: FIRST,
 				port: 4321,
 				window: { width: 900, height: 700, isMaximized: true },
 			}),
 		);
-		expect(config.servers).toEqual([{ ...SERVER, partition: "" }]);
-		expect(config.active).toBe("");
+		expect(config.servers).toEqual([{ ...SERVER, partition: FIRST }]);
+		expect(config.active).toBe(FIRST);
 		expect(config.port).toBe(4321);
 		expect(config.window).toEqual({
 			x: undefined,
@@ -157,40 +160,26 @@ describe("parseDesktopConfig", () => {
 		});
 	});
 
-	test("reads several servers, dropping duplicates and a lost active", () => {
+	test("drops duplicates, and a lost active falls back to the first", () => {
 		const config = parseDesktopConfig(
 			JSON.stringify({
 				servers: [
-					{ ...SERVER, partition: "" },
-					{ ...OTHER, partition: PARTITION },
-					{ ...OTHER, partition: "" },
+					{ ...SERVER, partition: FIRST },
+					{ ...OTHER, partition: SECOND },
+					{ ...OTHER, partition: FIRST },
 				],
 				active: "persist:server-gone",
 			}),
 		);
 		expect(config.servers).toEqual([
-			{ ...SERVER, partition: "" },
-			{ ...OTHER, partition: PARTITION },
+			{ ...SERVER, partition: FIRST },
+			{ ...OTHER, partition: SECOND },
 		]);
-		expect(config.active).toBe("");
+		expect(config.active).toBe(FIRST);
 	});
 });
 
 describe("openDesktopConfig", () => {
-	test("renames the old settings file and keeps its server", () => {
-		const folder = mkdtempSync(join(tmpdir(), "smss-desktop-"));
-		writeFileSync(
-			join(folder, "desktop-settings.json"),
-			JSON.stringify({ server: SERVER, port: 4321 }),
-		);
-		const config = openDesktopConfig(folder);
-		expect(config.server).toEqual({ ...SERVER, partition: "" });
-		expect(existsSync(join(folder, "desktop-settings.json"))).toBe(false);
-		expect(
-			JSON.parse(readFileSync(join(folder, CONFIG_FILE_NAME), "utf8")),
-		).toMatchObject({ version: 2, active: "", port: 4321 });
-	});
-
 	test("keeps a sign in per server, and forgetting one hands over", () => {
 		const folder = mkdtempSync(join(tmpdir(), "smss-desktop-"));
 		const config = openDesktopConfig(folder);
@@ -210,6 +199,9 @@ describe("openDesktopConfig", () => {
 		expect(config.server).toEqual(second);
 		expect(config.forgetServer(SERVER)).toBeNull();
 		// what was saved is what the next launch reads
+		expect(
+			JSON.parse(readFileSync(join(folder, CONFIG_FILE_NAME), "utf8")),
+		).toMatchObject({ version: 1, active: second.partition });
 		expect(openDesktopConfig(folder).servers).toEqual([second]);
 	});
 });
