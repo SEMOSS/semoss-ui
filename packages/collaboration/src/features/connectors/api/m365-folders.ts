@@ -19,6 +19,7 @@ export type TopicM365Folder = z.infer<typeof topicM365FolderSchema>;
 const folderPointerSchema = z.object({
 	kind: z.enum(["drive_folder", "channel_files"]),
 	displayName: z.string(),
+	linkId: z.string().optional(),
 	driveId: z.string().optional(),
 	itemId: z.string().optional(),
 	teamId: z.string().optional(),
@@ -82,7 +83,7 @@ export async function listTopicM365Folders(
 	return (
 		await callPixel(
 			actions,
-			pixel("BrainListTopicM365Folders", { topicId }),
+			pixel("ListTopicM365Folders", { topicId }),
 			listLinksSchema,
 		)
 	).folders;
@@ -93,11 +94,7 @@ export async function listAvailableOneDriveFolders(
 	actions: InsightActions,
 ): Promise<OneDriveFolder[]> {
 	return (
-		await callPixel(
-			actions,
-			pixel("MicrosoftOneDriveListFiles"),
-			oneDriveFoldersSchema,
-		)
+		await callPixel(actions, pixel("ListDriveFiles"), oneDriveFoldersSchema)
 	).files;
 }
 
@@ -105,13 +102,8 @@ export async function listAvailableOneDriveFolders(
 export async function listAvailableTeams(
 	actions: InsightActions,
 ): Promise<Team[]> {
-	return (
-		await callPixel(
-			actions,
-			pixel("MicrosoftTeamsListTeams"),
-			teamsListSchema,
-		)
-	).teams;
+	return (await callPixel(actions, pixel("ListTeams"), teamsListSchema))
+		.teams;
 }
 
 /** List channels in a Microsoft Teams team. */
@@ -122,7 +114,7 @@ export async function listTeamChannels(
 	return (
 		await callPixel(
 			actions,
-			pixel("MicrosoftTeamsListChannels", { teamId }),
+			pixel("ListChannels", { teamId }),
 			channelsListSchema,
 		)
 	).channels;
@@ -136,7 +128,7 @@ export function linkTopicM365Folder(
 ): Promise<TopicM365Folder[]> {
 	return callPixel(
 		actions,
-		pixel("BrainLinkTopicM365Folder", { topicId, ...folder }),
+		pixel("LinkTopicM365Folder", { topicId, ...folder }),
 		linkResultSchema,
 	).then((result) => result.folders);
 }
