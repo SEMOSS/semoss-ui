@@ -22,6 +22,8 @@ const insight = vi.hoisted(() => ({
 }));
 const upload = vi.hoisted(() => vi.fn());
 const uploadToPage = vi.hoisted(() => vi.fn());
+// saving a found item reads the owner's Microsoft 365, which is the library's own to do
+const saveItem = vi.hoisted(() => vi.fn());
 
 vi.mock("@semoss/sdk/react", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
@@ -84,6 +86,7 @@ vi.mock("@semoss/connectors", async (importOriginal) => {
 			"teams-files",
 			"Roadmap.pptx",
 		),
+		saveMicrosoftItem: saveItem,
 	};
 });
 vi.mock("@/features/connectors/api/microsoft", () => ({
@@ -139,6 +142,7 @@ beforeEach(() => {
 	upload.mockReset();
 	upload.mockResolvedValue({});
 	uploadToPage.mockReset();
+	saveItem.mockReset();
 	// jsdom has no object URLs; the preview only needs an address
 	URL.createObjectURL = vi.fn(() => "blob:preview");
 	URL.revokeObjectURL = vi.fn();
@@ -410,6 +414,79 @@ it("chooses emails, Teams chats and files for the twin, and lets one be taken ba
 	expect(reviewOf("What it knows")).toHaveTextContent(
 		"1 email, 1 Teams chat, 2 files",
 	);
+});
+
+it("finds what to choose from a description, and chooses a suggestion as a viewer's pick is chosen", async () => {
+	answers.WorkSuggestTwinKnowledge = {
+		suggestions: [
+			{
+				kind: "email",
+				id: "conv-1",
+				title: "Apollo cutover",
+				from: "Sam Lee",
+				date: "2026-11-03T09:00:00Z",
+				preview: "Confirmed for the 14th",
+				reason: "Sets the cutover date",
+			},
+		],
+		notes: [],
+	};
+	saveItem.mockResolvedValue({
+		path: "Apollo cutover.md",
+		name: "Apollo cutover.md",
+		service: "outlook-mail",
+		itemKey: "conversation:conv-1",
+	});
+	const { user } = renderWizard();
+	await reachKnowledge(user);
+	await user.click(place("Find with AI"));
+	expect(
+		screen.getByText(
+			"Add a suggestion to choose it for your Digital Twin.",
+		),
+	).toBeVisible();
+	const question = () =>
+		screen.getByRole("textbox", {
+			name: "What should your Digital Twin know?",
+		});
+	await user.type(question(), "The Apollo cutover");
+	await user.click(screen.getByRole("button", { name: "Find suggestions" }));
+	// searching is the one thing here that leaves the page before the twin is made
+	expect(ran()).toEqual(["WorkSuggestTwinKnowledge"]);
+	await user.click(
+		await screen.findByRole("button", { name: "Add Apollo cutover" }),
+	);
+
+	expect(
+		await screen.findByText(
+			'Chose "Apollo cutover.md". It is added when your Digital Twin is created.',
+		),
+	).toBeVisible();
+	expect(saveItem).toHaveBeenCalledExactlyOnceWith("insight-1", {
+		kind: "email",
+		conversationId: "conv-1",
+		subject: "Apollo cutover",
+	});
+	// marked where it was found, in place of being offered again
+	expect(
+		within(screen.getByRole("region", { name: "Emails 1" })).getByRole(
+			"listitem",
+		),
+	).toHaveTextContent("Chosen for your Digital Twin");
+	expect(
+		screen.queryByRole("button", { name: "Add Apollo cutover" }),
+	).toBeNull();
+
+	// it waits with what the viewers picked, and what was asked is still there on coming back
+	await user.click(place(/What you chose/));
+	expect(place(/What you chose/)).toHaveTextContent("1");
+	expect(
+		screen.getByRole("button", { name: "Remove Apollo cutover.md" }),
+	).toBeVisible();
+	await user.click(place("Find with AI"));
+	expect(question()).toHaveValue("The Apollo cutover");
+	await user.click(next("Review"));
+	expect(reviewOf("What it knows")).toHaveTextContent("1 email");
 });
 
 it("makes the twin step by step once the review is confirmed, copies in what was chosen, then shows it with where to go next", async () => {
