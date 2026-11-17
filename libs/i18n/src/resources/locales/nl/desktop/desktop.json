@@ -7,7 +7,10 @@
 		"submit": "Verbinden",
 		"checking": "Server wordt gecontroleerd…",
 		"cancel": "Annuleren",
-		"current": "Verbonden met {{server}}"
+		"current": "Verbonden met {{server}}",
+		"titleSaved": "Servers",
+		"descriptionSaved": "Wissel tussen je opgeslagen servers of voeg er een toe. Elke server houdt zijn eigen aanmelding.",
+		"addTitle": "Een server toevoegen"
 	},
 	"nav": {
 		"newChat": "Nieuwe chat"
@@ -15,12 +18,24 @@
 	"account": {
 		"menu": "Account",
 		"changeServer": "Server wijzigen",
-		"signOut": "Afmelden"
+		"signOut": "Afmelden",
+		"switchServer": "Andere server"
 	},
 	"unreachable": {
 		"title": "Server niet bereikbaar",
 		"description": "{{server}} reageerde niet. Probeer het opnieuw of maak verbinding met een andere server.",
 		"descriptionNoServer": "De server reageerde niet. Probeer het opnieuw of maak verbinding met een andere server.",
 		"changeServer": "Andere server gebruiken"
+	},
+	"servers": {
+		"listLabel": "Opgeslagen servers",
+		"current": "In gebruik",
+		"switch": "Wisselen",
+		"switchLabel": "Wisselen naar {{server}}",
+		"removeLabel": "{{server}} verwijderen",
+		"removeTitle": "Deze server verwijderen?",
+		"removeDescription": "Je wordt afgemeld bij {{server}} en wat deze app ervoor op deze computer heeft opgeslagen, wordt verwijderd. Je chats blijven op de server.",
+		"removeConfirm": "Server verwijderen",
+		"failed": "Kan niet van server wisselen: {{message}}"
 	}
 }

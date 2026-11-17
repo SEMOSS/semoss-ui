@@ -6,8 +6,9 @@
 
 ## Overview
 
-The SEMOSS chat as an Electron app ("SEMOSS Chat", `org.semoss.chat`). It ships the chat's UI and
-signs in to a hosted SEMOSS server, which the user picks on first launch. Its renderer composes
+The SEMOSS chat as an Electron app named "Playground" (`productName`, `org.semoss.chat`). It ships
+the chat's UI and signs in to hosted SEMOSS servers: the user adds the first on first launch, and
+can save more, each with its own sign in. Its renderer composes
 `@semoss/chat`'s pieces as the playground does (see the chat's [README](../../libs/chat/README.md)),
 so rooms, the room list, search, and new chats behave the same, and a room made in one app shows
 in the other's list. Every dependency is a dev dependency: electron-vite bundles them.
@@ -21,13 +22,16 @@ feature keeps its name across them:
 src/
   contract/     types, constants and pure functions every process imports (no electron, no react)
     ipc-contract.ts        IpcContract (channel → request/response), IPC_CHANNELS, DesktopCommand,
-                           COMMAND_CHANNEL, DesktopBridge, ServerCheckResult
+                           COMMAND_CHANNEL, DesktopBridge, ServerCheckResult, SavedServers
     server-connection.ts   ServerConfig, DEFAULT_MODULE, parseServerConfig, parseServerAddress,
-                           formatServerAddress, isModulePath
-  main/         Node: main.ts only wires the features below (and holds the production CSP)
-    features/server-connection/   settings-file (userData/desktop-settings.json: server, port,
-                                  window), local-server (static files + proxy), check-server
-    features/app-window/          main-window (remembered bounds), window-security
+                           formatServerAddress, isSameServer, isModulePath
+  main/         Node: main.ts only wires the features below (and holds the production CSP and
+                the userData path)
+    features/server-connection/   desktop-config (smss-desktop-config.json, below), server-sessions
+                                  (one browser session per server), local-server (static files +
+                                  proxy), check-server
+    features/app-window/          app-window-host (the window, on the active server's session),
+                                  main-window (remembered bounds), window-security
     features/auth/                sign-in-redirect
     features/ipc/                 handle-ipc (sender check), register-ipc
     features/downloads/           the save dialog, starting in Downloads
@@ -63,11 +67,14 @@ src/
   with `openRoom`, `roomHref` (`#/room/<id>`), `openNewChat` and `onRoomDeleted`; no `agentHref`
   or `openSettings`.
 - **`DesktopSidebar`**: New chat, `RoomList` and `RoomSearchDialog` (Cmd/Ctrl+K through
-  `useRoomSearchShortcut`), and the account menu (Change server, Sign out). Room and new-chat
+  `useRoomSearchShortcut`), and the account menu (Switch server, when more than one is saved;
+  Change server; Sign out). Room and new-chat
   headers start with its `SidebarTrigger`.
-- **The server form** (`ServerConnectView`) takes one address, such as
-  `https://semoss.example.com/Monolith`: `parseServerAddress` splits it into the origin and the
-  module (no path means `/Monolith`), the main process checks it, then saves it. The login page
+- **The server screen** (`ServerConnectView` on `/server`, and alone on first launch) lists the saved
+  servers (`SavedServerList`: Switch, and Remove after a confirm dialog) above a form that adds
+  one. The form takes one address, such as `https://semoss.example.com/Monolith`:
+  `parseServerAddress` splits it into the origin and the module (no path means `/Monolith`), the
+  main process checks it, then saves it and switches to it. `useSavedServers` reads the list. The login page
   names the saved server and links to `/server`, since a wrong address only shows up there.
 
 ## How it reaches the server
@@ -77,7 +84,7 @@ src/
   the server's module path (`/Monolith` by default), HTTP and WebSocket, to the saved server with
   `http-proxy-3`. The SDK's same-origin `${MODULE}/...` calls, cookies, and the insight socket work
   unchanged; the SDK needs no desktop code.
-- **The port is saved** in the settings file and reused, since cookies and storage belong to the
+- **The port is saved** in the config file and reused, since cookies and storage belong to the
   origin, port included. A taken port gets a new one, which costs a sign in.
 - **Cookies and redirects** (`localizeCookie`). The proxy drops the server's cookie `Domain` and
   `Secure`, and turns `SameSite=None` into `Lax` (the browser sees plain http on loopback; the
@@ -93,11 +100,33 @@ src/
 - **Checking a server** (`checkServer`) fetches its `/api/config` without cookies, without
   following redirects, and with a 10 second timeout; anything but a JSON object is refused with a
   message naming the URL.
-- **Changing servers** (File > Change Server…, the account menu, the login page, or the session
-  error screen, all on `/server`) checks the new server, saves it, clears the browser session's
-  storage and cookies when the server differs from the saved one, and reloads.
+- **Several servers, one sign in each.** Every saved server has its own Electron session
+  partition (`persist:server-<uuid>`), so its cookies and storage, theme and room list choices
+  included, never mix with another's. A window's session is fixed when it is made, so switching
+  (`server-connection:set`) opens a new window where the old one was and closes the old one; the
+  proxy and the sign-in redirect follow the active server. Switching back needs no sign in.
+- **Removing a server** (`server-connection:forget`) drops it from the config and clears its
+  session's storage and cache; removing the active one first switches to the next saved server,
+  or the connect screen. Its emptied `Partitions/server-<uuid>` folder is deleted on the next
+  launch (`removeUnusedPartitions`), since Electron holds it while running.
 - **Before a server is saved**, module requests answer 503 and the renderer shows the connect
   screen.
+
+## What it saves
+
+Everything lives in `userData`, pinned in `main.ts` to
+`~/Library/Application Support/@semoss/playground-desktop` (macOS; `%APPDATA%` and `~/.config`
+elsewhere) for dev and the packaged app alike, so renaming the app never moves anyone's data.
+
+- **`smss-desktop-config.json`** (`desktop-config.ts`, written atomically): `version` (2),
+  `servers` (each `url`, `module`, `partition`), `active` (the active server's partition), `port`,
+  and `window` (bounds, maximized). No credentials. A version 1 `desktop-settings.json` is read
+  once, rewritten under the new name, and deleted; its server keeps the default session (`""`),
+  which already holds its sign in.
+- **The default session** (the folder's own `Cookies`, `Local Storage`, …): the migrated server,
+  and the connect screen before any server is saved.
+- **`Partitions/server-<uuid>/`**: each added server's cookies, local and session storage, and
+  caches.
 
 ## Security
 
@@ -109,6 +138,13 @@ machine, and a module path is plain path segments, so the proxy never forwards o
 Production HTML carries a Content-Security-Policy (`main.ts`); it allows `'unsafe-eval'` because
 Monaco, Mermaid and the Office viewers need it, which is why Electron's dev build warns that it is
 insecure. A second launch focuses the running window.
+
+The packaged app encrypts its cookie store (`electronFuses.enableCookieEncryption` in
+`electron-builder.yml`), with a key in the OS keychain (macOS: "Playground Safe
+Storage", from the app's name). The fuse is one way: turning it off leaves saved cookies unreadable. Cookies saved
+before it was on stay plaintext until they are written again (the next sign in). `pnpm dev` runs
+Electron's own binary, whose fuses are not flipped, so dev cookies stay plaintext. Dev and the
+packaged app share one data folder (above).
 
 ## Adding an IPC channel
 
@@ -137,7 +173,7 @@ The root `pnpm dev:playground-desktop` runs `dev` with its dependencies.
 
 **Releasing a test build (temporary).** Bump `version` here, then run `pnpm release` in this
 package (`scripts/release.sh`). It builds installers for the current OS (macOS: arm64 and x64),
-offers to push the branch, and attaches them to the GitHub pre-release `desktop-v<version>`;
+offers to push the branch, and attaches them to the GitHub pre-release `desktop-v<version>`, titled `Playground ( <version> )`, with installers named the same way (`Playground ( <version> ) mac-arm64.dmg`, labelled with that name since GitHub turns spaces into dots);
 re-running for the same version replaces its files. `--draft` makes a draft release and
 `--skip-build` re-uploads what is in `release/`.
 

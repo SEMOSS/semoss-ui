@@ -1,9 +1,9 @@
-import { BrowserWindow, screen } from "electron";
+import { BrowserWindow, type Session, screen } from "electron";
 import { join } from "node:path";
 import type {
-	SettingsFile,
+	DesktopConfigFile,
 	WindowState,
-} from "../server-connection/settings-file";
+} from "../server-connection/desktop-config";
 
 /** The first launch's window size. */
 const DEFAULT_SIZE = { width: 1280, height: 820 };
@@ -31,11 +31,15 @@ const isOnScreen = ({ x, y, width, height }: WindowState): boolean =>
  * Open the app's window where it last was, and remember where it is as it
  * moves, resizes, and closes.
  *
- * @param settings - Where the window's state is kept.
+ * @param config - Where the window's state is kept.
+ * @param serverSession - The browser session of the server it shows.
  * @returns The window, not yet showing a page.
  */
-export const createMainWindow = (settings: SettingsFile): BrowserWindow => {
-	const saved = settings.window;
+export const createMainWindow = (
+	config: DesktopConfigFile,
+	serverSession: Session,
+): BrowserWindow => {
+	const saved = config.window;
 	const placement =
 		saved && isOnScreen(saved)
 			? {
@@ -56,9 +60,10 @@ export const createMainWindow = (settings: SettingsFile): BrowserWindow => {
 		minWidth: 480,
 		minHeight: 360,
 		show: false,
-		title: "SEMOSS Chat",
+		title: "Playground",
 		backgroundColor: "#ffffff",
 		webPreferences: {
+			session: serverSession,
 			preload: join(__dirname, "../preload/preload.js"),
 			contextIsolation: true,
 			sandbox: true,
@@ -73,7 +78,7 @@ export const createMainWindow = (settings: SettingsFile): BrowserWindow => {
 	let timer: NodeJS.Timeout | undefined;
 	const save = (): void => {
 		const bounds = window.getNormalBounds();
-		settings.setWindow({ ...bounds, isMaximized: window.isMaximized() });
+		config.setWindow({ ...bounds, isMaximized: window.isMaximized() });
 	};
 	const saveSoon = (): void => {
 		clearTimeout(timer);

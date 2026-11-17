@@ -7,7 +7,10 @@
 		"submit": "اتصال",
 		"checking": "جارٍ التحقق من الخادم…",
 		"cancel": "إلغاء",
-		"current": "متصل بـ {{server}}"
+		"current": "متصل بـ {{server}}",
+		"titleSaved": "الخوادم",
+		"descriptionSaved": "بدّل بين خوادمك المحفوظة، أو أضف خادمًا آخر. يحتفظ كل خادم بتسجيل الدخول الخاص به.",
+		"addTitle": "إضافة خادم"
 	},
 	"nav": {
 		"newChat": "محادثة جديدة"
@@ -15,12 +18,24 @@
 	"account": {
 		"menu": "الحساب",
 		"changeServer": "تغيير الخادم",
-		"signOut": "تسجيل الخروج"
+		"signOut": "تسجيل الخروج",
+		"switchServer": "تبديل الخادم"
 	},
 	"unreachable": {
 		"title": "تعذّر الوصول إلى الخادم",
 		"description": "لم يستجب {{server}}. أعد المحاولة أو اتصل بخادم آخر.",
 		"descriptionNoServer": "لم يستجب الخادم. أعد المحاولة أو اتصل بخادم آخر.",
 		"changeServer": "استخدام خادم آخر"
+	},
+	"servers": {
+		"listLabel": "الخوادم المحفوظة",
+		"current": "قيد الاستخدام",
+		"switch": "تبديل",
+		"switchLabel": "التبديل إلى {{server}}",
+		"removeLabel": "إزالة {{server}}",
+		"removeTitle": "إزالة هذا الخادم؟",
+		"removeDescription": "سيؤدي هذا إلى تسجيل خروجك من {{server}} وحذف ما حفظه هذا التطبيق له على هذا الكمبيوتر. تبقى محادثاتك على الخادم.",
+		"removeConfirm": "إزالة الخادم",
+		"failed": "تعذر تغيير الخادم: {{message}}"
 	}
 }

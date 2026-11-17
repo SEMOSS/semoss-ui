@@ -1,13 +1,34 @@
 // @vitest-environment node
+
 import { describe, expect, test, vi } from "vitest";
+import {
+	existsSync,
+	mkdirSync,
+	mkdtempSync,
+	readFileSync,
+	writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { isExternalLink, isSignInPopup } from "./app-window/window-security";
 import { toLocalModuleUrl } from "./auth/sign-in-redirect";
 import { isTrustedSender } from "./ipc/handle-ipc";
 import { checkServer } from "./server-connection/check-server";
-import { parseSettings } from "./server-connection/settings-file";
+import {
+	CONFIG_FILE_NAME,
+	openDesktopConfig,
+	parseDesktopConfig,
+} from "./server-connection/desktop-config";
+import { removeUnusedPartitions } from "./server-connection/server-sessions";
 
 // the modules under test import electron for their wiring, not for these helpers
-vi.mock("electron", () => ({ ipcMain: {}, shell: {}, app: {}, screen: {} }));
+vi.mock("electron", () => ({
+	ipcMain: {},
+	shell: {},
+	app: {},
+	screen: {},
+	session: {},
+}));
 
 /** The app's local origin. */
 const APP = "http://127.0.0.1:4321";
@@ -91,34 +112,125 @@ describe("toLocalModuleUrl", () => {
 	});
 });
 
-describe("parseSettings", () => {
+describe("parseDesktopConfig", () => {
+	/** A second hosted server. */
+	const OTHER = { url: "https://other.example", module: "/team/Monolith" };
+	/** A partition the app would make. */
+	const PARTITION = "persist:server-00000000-0000-4000-8000-000000000000";
+
 	test("falls back to defaults for a corrupt or tampered file", () => {
-		expect(parseSettings("{nope").server).toBeNull();
+		expect(parseDesktopConfig("{nope").servers).toEqual([]);
 		expect(
-			parseSettings(
+			parseDesktopConfig(
 				JSON.stringify({ server: { url: "http://evil.example" } }),
-			).server,
+			).servers,
+		).toEqual([]);
+		expect(
+			parseDesktopConfig(
+				JSON.stringify({
+					servers: [{ ...SERVER, partition: "persist:anything" }],
+				}),
+			).servers,
+		).toEqual([]);
+		expect(
+			parseDesktopConfig(JSON.stringify({ port: 99_999 })).port,
 		).toBeNull();
-		expect(parseSettings(JSON.stringify({ port: 99_999 })).port).toBeNull();
 	});
 
-	test("reads a valid file", () => {
-		const settings = parseSettings(
+	test("moves a version 1 server onto the default session", () => {
+		const config = parseDesktopConfig(
 			JSON.stringify({
 				server: SERVER,
 				port: 4321,
 				window: { width: 900, height: 700, isMaximized: true },
 			}),
 		);
-		expect(settings.server).toEqual(SERVER);
-		expect(settings.port).toBe(4321);
-		expect(settings.window).toEqual({
+		expect(config.servers).toEqual([{ ...SERVER, partition: "" }]);
+		expect(config.active).toBe("");
+		expect(config.port).toBe(4321);
+		expect(config.window).toEqual({
 			x: undefined,
 			y: undefined,
 			width: 900,
 			height: 700,
 			isMaximized: true,
 		});
+	});
+
+	test("reads several servers, dropping duplicates and a lost active", () => {
+		const config = parseDesktopConfig(
+			JSON.stringify({
+				servers: [
+					{ ...SERVER, partition: "" },
+					{ ...OTHER, partition: PARTITION },
+					{ ...OTHER, partition: "" },
+				],
+				active: "persist:server-gone",
+			}),
+		);
+		expect(config.servers).toEqual([
+			{ ...SERVER, partition: "" },
+			{ ...OTHER, partition: PARTITION },
+		]);
+		expect(config.active).toBe("");
+	});
+});
+
+describe("openDesktopConfig", () => {
+	test("renames the old settings file and keeps its server", () => {
+		const folder = mkdtempSync(join(tmpdir(), "smss-desktop-"));
+		writeFileSync(
+			join(folder, "desktop-settings.json"),
+			JSON.stringify({ server: SERVER, port: 4321 }),
+		);
+		const config = openDesktopConfig(folder);
+		expect(config.server).toEqual({ ...SERVER, partition: "" });
+		expect(existsSync(join(folder, "desktop-settings.json"))).toBe(false);
+		expect(
+			JSON.parse(readFileSync(join(folder, CONFIG_FILE_NAME), "utf8")),
+		).toMatchObject({ version: 2, active: "", port: 4321 });
+	});
+
+	test("keeps a sign in per server, and forgetting one hands over", () => {
+		const folder = mkdtempSync(join(tmpdir(), "smss-desktop-"));
+		const config = openDesktopConfig(folder);
+		const first = config.useServer(SERVER);
+		const second = config.useServer({
+			url: "https://other.example",
+			module: "/Monolith",
+		});
+		expect(first.partition).toMatch(/^persist:server-/);
+		expect(second.partition).not.toBe(first.partition);
+		expect(config.server).toEqual(second);
+		// switching back reuses the first server's partition
+		expect(config.useServer(SERVER)).toEqual(first);
+		expect(config.servers).toHaveLength(2);
+
+		expect(config.forgetServer(SERVER)).toEqual(first);
+		expect(config.server).toEqual(second);
+		expect(config.forgetServer(SERVER)).toBeNull();
+		// what was saved is what the next launch reads
+		expect(openDesktopConfig(folder).servers).toEqual([second]);
+	});
+});
+
+describe("removeUnusedPartitions", () => {
+	test("deletes only forgotten servers' folders", () => {
+		const folder = mkdtempSync(join(tmpdir(), "smss-desktop-"));
+		const kept = "server-00000000-0000-4000-8000-000000000001";
+		const gone = "server-00000000-0000-4000-8000-000000000002";
+		for (const name of [kept, gone, "other-app"]) {
+			mkdirSync(join(folder, "Partitions", name), { recursive: true });
+		}
+		removeUnusedPartitions(folder, ["", `persist:${kept}`]);
+		expect(existsSync(join(folder, "Partitions", kept))).toBe(true);
+		expect(existsSync(join(folder, "Partitions", gone))).toBe(false);
+		expect(existsSync(join(folder, "Partitions", "other-app"))).toBe(true);
+	});
+
+	test("does nothing before any server has a partition", () => {
+		const folder = mkdtempSync(join(tmpdir(), "smss-desktop-"));
+		expect(() => removeUnusedPartitions(folder, [])).not.toThrow();
 	});
 });
 

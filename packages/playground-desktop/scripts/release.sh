@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TEMPORARY: publishes a test build of SEMOSS Chat from the current branch to a
+# TEMPORARY: publishes a test build of Playground from the current branch to a
 # GitHub release until there is a CI job for it. Builds installers for this
 # machine's OS only (macOS: arm64 + x64).
 #
@@ -93,6 +93,13 @@ FILES=("$RELEASE_DIR"/*.dmg "$RELEASE_DIR"/*.zip "$RELEASE_DIR"/*.exe "$RELEASE_
 shopt -u nullglob
 [ "${#FILES[@]}" -gt 0 ] || fail "no installers found in $RELEASE_DIR"
 
+# GitHub turns spaces in an uploaded file's name into dots, so each file is
+# labelled with its real name, such as "Playground ( 1.0.0 ) mac-arm64.dmg"
+ASSETS=()
+for f in "${FILES[@]}"; do
+	ASSETS+=("$f#$(basename "$f")")
+done
+
 step "Installers"
 for f in "${FILES[@]}"; do
 	printf '  %s (%s)\n' "$(basename "$f")" "$(du -h "$f" | cut -f1 | tr -d ' ')"
@@ -101,23 +108,23 @@ done
 # ---------- publish ----------
 if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
 	step "Release $TAG exists; uploading and replacing files"
-	gh release upload "$TAG" "${FILES[@]}" --repo "$REPO" --clobber
+	gh release upload "$TAG" "${ASSETS[@]}" --repo "$REPO" --clobber
 else
 	step "Creating release $TAG"
 	FLAGS=(--prerelease)
 	[ "$DRAFT" = true ] && FLAGS+=(--draft)
-	NOTES="Test build of SEMOSS Chat from \`$BRANCH\` at $SHA.
+	NOTES="Test build of Playground ( $VERSION ) from \`$BRANCH\` at $SHA.
 
 Download the \`.dmg\` for your Mac: \`mac-arm64\` for Apple silicon (M1 and later), \`mac-x64\` for Intel.
 
 **These builds are unsigned.**
-- **macOS:** right-click the app and choose **Open**, or run \`xattr -dr com.apple.quarantine \"/Applications/SEMOSS Chat.app\"\`.
+- **macOS:** right-click the app and choose **Open**, or run \`xattr -dr com.apple.quarantine \"/Applications/Playground.app\"\`.
 - **Windows:** at the SmartScreen warning, choose **More info → Run anyway**.
 - **Linux:** \`chmod +x\` the AppImage, then run it."
-	gh release create "$TAG" "${FILES[@]}" \
+	gh release create "$TAG" "${ASSETS[@]}" \
 		--repo "$REPO" \
 		--target "$SHA" \
-		--title "SEMOSS Chat Desktop $VERSION" \
+		--title "Playground ( $VERSION )" \
 		--notes "$NOTES" \
 		"${FLAGS[@]}"
 fi

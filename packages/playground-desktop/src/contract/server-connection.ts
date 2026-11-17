@@ -98,6 +98,17 @@ export const formatServerAddress = (server: ServerConfig): string =>
 	`${server.url}${server.module}`;
 
 /**
+ * Whether two configs are the same server: the same origin and module. Each
+ * saved server is one of these, with its own sign in.
+ *
+ * @param a - One config.
+ * @param b - The other.
+ * @returns True for the same server.
+ */
+export const isSameServer = (a: ServerConfig, b: ServerConfig): boolean =>
+	a.url === b.url && a.module === b.module;
+
+/**
  * Whether a request path belongs to the server's module, which the app
  * forwards to the server.
  *

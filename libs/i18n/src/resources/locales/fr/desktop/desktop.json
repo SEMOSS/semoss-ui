@@ -7,7 +7,10 @@
 		"submit": "Se connecter",
 		"checking": "Vérification du serveur…",
 		"cancel": "Annuler",
-		"current": "Connecté à {{server}}"
+		"current": "Connecté à {{server}}",
+		"titleSaved": "Serveurs",
+		"descriptionSaved": "Passez d'un serveur enregistré à l'autre ou ajoutez-en un. Chacun conserve sa propre connexion.",
+		"addTitle": "Ajouter un serveur"
 	},
 	"nav": {
 		"newChat": "Nouvelle discussion"
@@ -15,12 +18,24 @@
 	"account": {
 		"menu": "Compte",
 		"changeServer": "Changer de serveur",
-		"signOut": "Se déconnecter"
+		"signOut": "Se déconnecter",
+		"switchServer": "Changer de serveur"
 	},
 	"unreachable": {
 		"title": "Impossible de joindre le serveur",
 		"description": "{{server}} n'a pas répondu. Réessayez ou connectez-vous à un autre serveur.",
 		"descriptionNoServer": "Le serveur n'a pas répondu. Réessayez ou connectez-vous à un autre serveur.",
 		"changeServer": "Utiliser un autre serveur"
+	},
+	"servers": {
+		"listLabel": "Serveurs enregistrés",
+		"current": "En cours",
+		"switch": "Basculer",
+		"switchLabel": "Basculer vers {{server}}",
+		"removeLabel": "Supprimer {{server}}",
+		"removeTitle": "Supprimer ce serveur ?",
+		"removeDescription": "Vous serez déconnecté de {{server}} et les données que cette application a enregistrées pour lui sur cet ordinateur seront supprimées. Vos conversations restent sur le serveur.",
+		"removeConfirm": "Supprimer le serveur",
+		"failed": "Impossible de changer de serveur : {{message}}"
 	}
 }

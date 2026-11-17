@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
 	status: "AUTHENTICATED",
 	rooms: [] as { ROOM_ID: string; ROOM_NAME: string; DATE_CREATED: string }[],
 	commandListener: null as ((command: DesktopCommand) => void) | null,
+	invoke: null as ReturnType<typeof vi.fn> | null,
 	// a fixed chat store: its snapshot is itself
 	chat: {
 		keys: { roomCounter: 0 },
@@ -66,6 +67,11 @@ vi.mock("@semoss/chat", async (original) => {
 	};
 });
 
+/** The server in use. */
+const ACTIVE = { url: "https://semoss.example.com", module: "/Monolith" };
+/** Another saved server, with its own sign in. */
+const OTHER = { url: "https://other.example.com", module: "/team/Monolith" };
+
 beforeEach(() => {
 	mocks.status = "AUTHENTICATED";
 	mocks.rooms = [
@@ -75,12 +81,17 @@ beforeEach(() => {
 			DATE_CREATED: new Date().toISOString(),
 		},
 	];
+	// two saved servers; the first is in use
+	const invoke = vi.fn(async (channel: string) => {
+		if (channel === "server-connection:get") return ACTIVE;
+		if (channel === "server-connection:list") {
+			return { servers: [ACTIVE, OTHER], active: ACTIVE };
+		}
+		return undefined;
+	});
+	mocks.invoke = invoke;
 	const bridge: DesktopBridge = {
-		// the saved server, for the screens that name it
-		invoke: vi.fn().mockResolvedValue({
-			url: "https://semoss.example.com",
-			module: "/Monolith",
-		}),
+		invoke: invoke as DesktopBridge["invoke"],
 		onCommand: (listener) => {
 			mocks.commandListener = listener;
 			return () => {
@@ -165,4 +176,50 @@ test("the sign in page names the server and offers a different one", async () =>
 		screen.getByRole("button", { name: "account.changeServer" }),
 	);
 	expect(router.state.location.pathname).toBe("/server");
+});
+
+test("the server page lists saved servers and switches to one", async () => {
+	const user = userEvent.setup();
+	renderAt("/server");
+
+	const list = await screen.findByRole("list");
+	const items = within(list).getAllByRole("listitem");
+	expect(items).toHaveLength(2);
+	expect(within(items[0]).getByText("servers.current")).toBeVisible();
+
+	await user.click(
+		within(items[1]).getByRole("button", { name: "servers.switchLabel" }),
+	);
+	expect(mocks.invoke).toHaveBeenCalledWith("server-connection:set", OTHER);
+});
+
+test("removing a server asks first, then forgets it", async () => {
+	const user = userEvent.setup();
+	renderAt("/server");
+
+	const items = within(await screen.findByRole("list")).getAllByRole(
+		"listitem",
+	);
+	await user.click(
+		within(items[1]).getByRole("button", { name: "servers.removeLabel" }),
+	);
+	const dialog = await screen.findByRole("dialog");
+	expect(mocks.invoke).not.toHaveBeenCalledWith(
+		"server-connection:forget",
+		expect.anything(),
+	);
+
+	await user.click(
+		within(dialog).getByRole("button", { name: "servers.removeConfirm" }),
+	);
+	expect(mocks.invoke).toHaveBeenCalledWith(
+		"server-connection:forget",
+		OTHER,
+	);
+	// the list is read again once it is forgotten
+	expect(
+		mocks.invoke.mock.calls.filter(
+			([channel]) => channel === "server-connection:list",
+		).length,
+	).toBeGreaterThan(1);
 });

@@ -7,7 +7,10 @@
 		"submit": "接続",
 		"checking": "サーバーを確認しています…",
 		"cancel": "キャンセル",
-		"current": "{{server}} に接続中"
+		"current": "{{server}} に接続中",
+		"titleSaved": "サーバー",
+		"descriptionSaved": "保存済みのサーバーを切り替えるか、新しいサーバーを追加します。サーバーごとにサインイン状態が保持されます。",
+		"addTitle": "サーバーを追加"
 	},
 	"nav": {
 		"newChat": "新しいチャット"
@@ -15,12 +18,24 @@
 	"account": {
 		"menu": "アカウント",
 		"changeServer": "サーバーを変更",
-		"signOut": "サインアウト"
+		"signOut": "サインアウト",
+		"switchServer": "サーバーを切り替え"
 	},
 	"unreachable": {
 		"title": "サーバーに接続できません",
 		"description": "{{server}} から応答がありません。再試行するか、別のサーバーに接続してください。",
 		"descriptionNoServer": "サーバーから応答がありません。再試行するか、別のサーバーに接続してください。",
 		"changeServer": "別のサーバーを使用"
+	},
+	"servers": {
+		"listLabel": "保存済みのサーバー",
+		"current": "使用中",
+		"switch": "切り替え",
+		"switchLabel": "{{server}} に切り替え",
+		"removeLabel": "{{server}} を削除",
+		"removeTitle": "このサーバーを削除しますか？",
+		"removeDescription": "{{server}} からサインアウトし、このアプリがこのコンピューターに保存したデータを削除します。チャットはサーバーに残ります。",
+		"removeConfirm": "サーバーを削除",
+		"failed": "サーバーを切り替えられませんでした: {{message}}"
 	}
 }

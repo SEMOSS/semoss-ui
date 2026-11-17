@@ -7,7 +7,10 @@
 		"submit": "Connect",
 		"checking": "Checking the server…",
 		"cancel": "Cancel",
-		"current": "Connected to {{server}}"
+		"current": "Connected to {{server}}",
+		"titleSaved": "Servers",
+		"descriptionSaved": "Switch between your saved servers, or add another. Each one keeps its own sign-in.",
+		"addTitle": "Add a server"
 	},
 	"nav": {
 		"newChat": "New chat"
@@ -15,12 +18,24 @@
 	"account": {
 		"menu": "Account",
 		"changeServer": "Change server",
-		"signOut": "Sign out"
+		"signOut": "Sign out",
+		"switchServer": "Switch server"
 	},
 	"unreachable": {
 		"title": "Can't reach the server",
 		"description": "{{server}} didn't answer. Retry, or connect to a different server.",
 		"descriptionNoServer": "The server didn't answer. Retry, or connect to a different server.",
 		"changeServer": "Use a different server"
+	},
+	"servers": {
+		"listLabel": "Saved servers",
+		"current": "In use",
+		"switch": "Switch",
+		"switchLabel": "Switch to {{server}}",
+		"removeLabel": "Remove {{server}}",
+		"removeTitle": "Remove this server?",
+		"removeDescription": "This signs you out of {{server}} and deletes what this app saved for it on this computer. Your chats stay on the server.",
+		"removeConfirm": "Remove server",
+		"failed": "Couldn't change servers: {{message}}"
 	}
 }

@@ -75,6 +75,8 @@ export const secureWindow = (
 					parent: window,
 					autoHideMenuBar: true,
 					webPreferences: {
+						// the server's own session, so the sign in lands in it
+						session: webContents.session,
 						contextIsolation: true,
 						sandbox: true,
 						nodeIntegration: false,

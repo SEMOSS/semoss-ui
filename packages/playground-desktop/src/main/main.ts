@@ -1,13 +1,16 @@
-import { app, type BrowserWindow, session } from "electron";
+import { app } from "electron";
 import { join } from "node:path";
-import { createMainWindow } from "./features/app-window/main-window";
-import { secureWindow } from "./features/app-window/window-security";
-import { routeSignInsThroughApp } from "./features/auth/sign-in-redirect";
-import { handleDownloads } from "./features/downloads/downloads";
+import {
+	type AppWindowHost,
+	createAppWindowHost,
+} from "./features/app-window/app-window-host";
 import { registerIpc } from "./features/ipc/register-ipc";
-import { setAppMenu } from "./features/menu/app-menu";
+import { openDesktopConfig } from "./features/server-connection/desktop-config";
 import { startLocalServer } from "./features/server-connection/local-server";
-import { openSettingsFile } from "./features/server-connection/settings-file";
+import {
+	createServerSessions,
+	removeUnusedPartitions,
+} from "./features/server-connection/server-sessions";
 
 /**
  * The production page's Content-Security-Policy: scripts and workers from the
@@ -31,21 +34,34 @@ const CONTENT_SECURITY_POLICY = [
 	"base-uri 'self'",
 ].join("; ");
 
-/** The app's one window, or null before it opens and after it closes. */
-let mainWindow: BrowserWindow | null = null;
+/** The app's window, once the app is ready. */
+let windows: AppWindowHost | null = null;
+
+// The app is named Playground (`productName`), but its data stays in the folder
+// it was first given, so the rename signs no one out and a folder named only
+// "Playground" cannot clash with another app's. Set before anything reads it.
+app.setPath(
+	"userData",
+	join(app.getPath("appData"), "@semoss", "playground-desktop"),
+);
 
 // one app at a time: a second launch quits and focuses the first one's window
 if (!app.requestSingleInstanceLock()) {
 	app.quit();
 } else {
 	app.on("second-instance", () => {
+		const mainWindow = windows?.getWindow();
 		if (!mainWindow) return;
 		if (mainWindow.isMinimized()) mainWindow.restore();
 		mainWindow.focus();
 	});
 
 	void app.whenReady().then(async () => {
-		const settings = openSettingsFile(app.getPath("userData"));
+		const config = openDesktopConfig(app.getPath("userData"));
+		removeUnusedPartitions(
+			app.getPath("userData"),
+			config.servers.map((server) => server.partition),
+		);
 		const devUrl = process.env.ELECTRON_RENDERER_URL;
 
 		// one origin, in development and production: the page, its calls, and
@@ -53,39 +69,24 @@ if (!app.requestSingleInstanceLock()) {
 		const localServer = await startLocalServer({
 			rootDir: join(__dirname, "../renderer"),
 			devUrl,
-			preferredPort: settings.port,
-			getServer: () => settings.server,
+			preferredPort: config.port,
+			getServer: () => config.server,
 			contentSecurityPolicy: devUrl ? undefined : CONTENT_SECURITY_POLICY,
 		});
-		if (settings.port !== localServer.port) {
-			settings.setPort(localServer.port);
+		if (config.port !== localServer.port) {
+			config.setPort(localServer.port);
 		}
 		const appOrigin = localServer.origin;
 
-		routeSignInsThroughApp(
-			session.defaultSession,
-			() => settings.server,
-			appOrigin,
-		);
-		handleDownloads(session.defaultSession);
-		registerIpc({
-			appOrigin,
-			settings,
-			session: session.defaultSession,
-			getWindow: () => mainWindow,
-		});
-
-		mainWindow = createMainWindow(settings);
-		secureWindow(mainWindow, appOrigin, () => settings.server?.module);
-		setAppMenu(mainWindow);
-		mainWindow.on("closed", () => {
-			mainWindow = null;
-		});
-		await mainWindow.loadURL(`${appOrigin}/`);
+		// each saved server signs in with its own browser session
+		const sessions = createServerSessions(appOrigin, () => config.server);
+		windows = createAppWindowHost({ appOrigin, config, sessions });
+		registerIpc({ appOrigin, config, sessions, windows });
+		await windows.open();
 
 		app.on("before-quit", () => {
-			// cookies are written lazily; keep the session for the next launch
-			void session.defaultSession.cookies.flushStore();
+			// cookies are written lazily; keep every session for the next launch
+			void sessions.flush();
 			void localServer.close();
 		});
 	});

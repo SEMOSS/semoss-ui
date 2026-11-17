@@ -1,21 +1,38 @@
-import { type BrowserWindow, type Session, shell } from "electron";
-import { parseServerConfig } from "../../../contract/server-connection";
+import { shell } from "electron";
+import {
+	isSameServer,
+	parseServerConfig,
+	type ServerConfig,
+} from "../../../contract/server-connection";
+import type { AppWindowHost } from "../app-window/app-window-host";
 import { isExternalLink } from "../app-window/window-security";
 import { checkServer } from "../server-connection/check-server";
-import type { SettingsFile } from "../server-connection/settings-file";
+import type { DesktopConfigFile } from "../server-connection/desktop-config";
+import type { ServerSessions } from "../server-connection/server-sessions";
 import { handleIpc } from "./handle-ipc";
 
 /** What the IPC handlers act on. */
 interface RegisterIpcOptions {
 	/** The app's origin, the only one allowed to call. */
 	readonly appOrigin: string;
-	/** The saved settings, which hold the server. */
-	readonly settings: SettingsFile;
-	/** The browser session, cleared when the server changes. */
-	readonly session: Session;
-	/** The app's window, loaded afresh onto a newly saved server. */
-	readonly getWindow: () => BrowserWindow | null;
+	/** The saved config, which holds the servers. */
+	readonly config: DesktopConfigFile;
+	/** The servers' browser sessions, one per saved server. */
+	readonly sessions: ServerSessions;
+	/** The app's window, opened afresh on the server in use. */
+	readonly windows: AppWindowHost;
 }
+
+/**
+ * A saved server as the page sees it: no partition, which is main's own.
+ *
+ * @param server - The saved server.
+ * @returns Its origin and module.
+ */
+const toConfig = ({ url, module }: ServerConfig): ServerConfig => ({
+	url,
+	module,
+});
 
 /**
  * Wire every IpcContract channel to the main process's features. Each handler
@@ -25,30 +42,41 @@ interface RegisterIpcOptions {
  */
 export const registerIpc = ({
 	appOrigin,
-	settings,
-	session,
-	getWindow,
+	config,
+	sessions,
+	windows,
 }: RegisterIpcOptions): void => {
-	handleIpc("server-connection:get", appOrigin, () => settings.server);
-
-	handleIpc("server-connection:check", appOrigin, (config) =>
-		checkServer(parseServerConfig(config)),
+	handleIpc("server-connection:get", appOrigin, () =>
+		config.server ? toConfig(config.server) : null,
 	);
 
-	handleIpc("server-connection:set", appOrigin, async (config) => {
-		const server = parseServerConfig(config);
-		const previous = settings.server;
-		settings.setServer(server);
-		// the old server's session and storage must not follow the user over
-		if (
-			previous &&
-			(previous.url !== server.url || previous.module !== server.module)
-		) {
-			await session.clearStorageData();
+	handleIpc("server-connection:list", appOrigin, () => ({
+		servers: config.servers.map(toConfig),
+		active: config.server ? toConfig(config.server) : null,
+	}));
+
+	handleIpc("server-connection:check", appOrigin, (server) =>
+		checkServer(parseServerConfig(server)),
+	);
+
+	handleIpc("server-connection:set", appOrigin, async (server) => {
+		config.useServer(parseServerConfig(server));
+		await windows.open();
+	});
+
+	handleIpc("server-connection:forget", appOrigin, async (server) => {
+		const target = parseServerConfig(server);
+		const wasActive =
+			config.server !== null && isSameServer(config.server, target);
+		const forgotten = config.forgetServer(target);
+		if (!forgotten) {
+			throw new Error("That server is not saved");
 		}
-		// load the root, not reload: a reload keeps the `#/server` route and
-		// lands back on this form
-		await getWindow()?.loadURL(`${appOrigin}/`);
+		// leave its session before deleting what it holds
+		if (wasActive) await windows.open();
+		const forgottenSession = sessions.get(forgotten.partition);
+		await forgottenSession.clearStorageData();
+		await forgottenSession.clearCache();
 	});
 
 	handleIpc("shell:open-external", appOrigin, async (url) => {

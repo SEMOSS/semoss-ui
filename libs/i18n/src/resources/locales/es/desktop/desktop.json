@@ -7,7 +7,10 @@
 		"submit": "Conectar",
 		"checking": "Comprobando el servidor…",
 		"cancel": "Cancelar",
-		"current": "Conectado a {{server}}"
+		"current": "Conectado a {{server}}",
+		"titleSaved": "Servidores",
+		"descriptionSaved": "Cambia entre tus servidores guardados o añade otro. Cada uno conserva su propio inicio de sesión.",
+		"addTitle": "Añadir un servidor"
 	},
 	"nav": {
 		"newChat": "Nuevo chat"
@@ -15,12 +18,24 @@
 	"account": {
 		"menu": "Cuenta",
 		"changeServer": "Cambiar servidor",
-		"signOut": "Cerrar sesión"
+		"signOut": "Cerrar sesión",
+		"switchServer": "Cambiar de servidor"
 	},
 	"unreachable": {
 		"title": "No se puede conectar con el servidor",
 		"description": "{{server}} no respondió. Vuelve a intentarlo o conéctate a otro servidor.",
 		"descriptionNoServer": "El servidor no respondió. Vuelve a intentarlo o conéctate a otro servidor.",
 		"changeServer": "Usar otro servidor"
+	},
+	"servers": {
+		"listLabel": "Servidores guardados",
+		"current": "En uso",
+		"switch": "Cambiar",
+		"switchLabel": "Cambiar a {{server}}",
+		"removeLabel": "Quitar {{server}}",
+		"removeTitle": "¿Quitar este servidor?",
+		"removeDescription": "Se cerrará tu sesión en {{server}} y se eliminará lo que esta aplicación guardó para él en este equipo. Tus chats siguen en el servidor.",
+		"removeConfirm": "Quitar servidor",
+		"failed": "No se pudo cambiar de servidor: {{message}}"
 	}
 }

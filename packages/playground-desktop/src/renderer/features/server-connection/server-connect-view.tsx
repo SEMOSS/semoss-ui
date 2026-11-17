@@ -13,12 +13,15 @@ import {
 	z,
 	zodResolver,
 } from "@semoss/ui/next";
-import type { DesktopBridge } from "../../../contract/ipc-contract";
+import type {
+	DesktopBridge,
+	SavedServers,
+} from "../../../contract/ipc-contract";
 import {
-	formatServerAddress,
 	parseServerAddress,
 	type ServerConfig,
 } from "../../../contract/server-connection";
+import { SavedServerList } from "./saved-server-list";
 
 /**
  * The form's shape: one address, such as
@@ -34,31 +37,46 @@ type ServerConnectValues = z.infer<typeof schema>;
 
 /** Props for {@link ServerConnectView}. */
 interface ServerConnectViewProps {
-	/** The bridge that checks and saves the server. */
+	/** The bridge that checks, saves, switches, and forgets servers. */
 	bridge: DesktopBridge;
-	/** The server in use, when changing it; none on first launch. */
-	current?: ServerConfig | null;
+	/** The saved servers, listed above the form; none on first launch. */
+	saved?: SavedServers;
+	/** Read the saved servers again, after one is forgotten. */
+	onServersChange?: () => Promise<void>;
 	/** Leave without changing the server; none on first launch. */
 	onCancel?: () => void;
 }
 
 /**
- * Pick the SEMOSS server the app signs in to: its address and module path.
- * The server is checked before it is saved; saving reloads the app on it.
+ * Pick the SEMOSS server the app signs in to. Saved servers are listed with
+ * Switch and Remove; the form adds one by its address and module path. A new
+ * server is checked before it is saved, and every saved server keeps its own
+ * sign in, so switching back needs none.
  */
 export const ServerConnectView = ({
 	bridge,
-	current,
+	saved,
+	onServersChange,
 	onCancel,
 }: ServerConnectViewProps) => {
 	const { t } = useTranslation("desktop");
 	const form = useForm<ServerConnectValues>({
 		resolver: zodResolver(schema),
-		defaultValues: {
-			address: current ? formatServerAddress(current) : "",
-		},
+		defaultValues: { address: "" },
 	});
 	const { errors, isSubmitting } = form.formState;
+	const hasSaved = saved !== undefined && saved.servers.length > 0;
+
+	/**
+	 * Forget a server, then list what is left. Forgetting the one in use
+	 * opens the window on another, so this page goes with it.
+	 *
+	 * @param server - The server.
+	 */
+	const handleForget = async (server: ServerConfig): Promise<void> => {
+		await bridge.invoke("server-connection:forget", server);
+		await onServersChange?.();
+	};
 
 	/**
 	 * Validate, check, then save the server; a failure shows on the form.
@@ -84,64 +102,82 @@ export const ServerConnectView = ({
 			});
 			return;
 		}
-		// saving reloads the window onto the server
+		// saving opens the window on the server
 		await bridge.invoke("server-connection:set", server);
 	};
 
 	return (
-		<main className="flex min-h-svh items-center justify-center bg-muted/30 p-6">
-			<div className="flex w-full max-w-md flex-col gap-6 rounded-xl border bg-card p-6 shadow-sm">
-				<div className="flex flex-col gap-1">
-					<H1 className="text-2xl">{t("connect.title")}</H1>
-					<Muted>
-						{current
-							? t("connect.current", {
-									server: formatServerAddress(current),
-								})
-							: t("connect.description")}
-					</Muted>
-				</div>
-				<Form
-					form={form}
-					onSubmit={handleSubmit}
-					noValidate
-					aria-busy={isSubmitting}
-					className="flex flex-col gap-4"
-				>
-					<FormInput
-						name="address"
-						label={t("connect.urlLabel")}
-						description={t("connect.urlHint")}
-						placeholder="https://semoss.example.com/Monolith"
-						type="url"
-						autoComplete="url"
-						required
-						autoFocus
-						disabled={isSubmitting}
-					/>
-					{errors.root?.server?.message ? (
-						<Alert variant="destructive" role="alert">
-							<AlertDescription>
-								{errors.root.server.message}
-							</AlertDescription>
-						</Alert>
-					) : null}
-					<output aria-live="polite" className="sr-only">
-						{isSubmitting ? t("connect.checking") : ""}
-					</output>
-					{onCancel ? (
-						<FormActions
-							isSubmitting={isSubmitting}
-							onCancel={onCancel}
-							submitLabel={t("connect.submit")}
+		<main className="h-full overflow-y-auto bg-muted/30">
+			<div className="flex min-h-full items-center justify-center p-6">
+				<div className="flex w-full max-w-lg flex-col gap-6 rounded-xl border bg-card p-6 shadow-sm">
+					<div className="flex flex-col gap-1">
+						<H1 className="text-2xl">
+							{hasSaved
+								? t("connect.titleSaved")
+								: t("connect.title")}
+						</H1>
+						<Muted>
+							{hasSaved
+								? t("connect.descriptionSaved")
+								: t("connect.description")}
+						</Muted>
+					</div>
+					{hasSaved ? (
+						<SavedServerList
+							saved={saved}
+							onSwitch={(server) =>
+								bridge.invoke("server-connection:set", server)
+							}
+							onForget={handleForget}
 						/>
-					) : (
-						<Button type="submit" disabled={isSubmitting}>
-							{isSubmitting ? <Spinner aria-hidden /> : null}
-							{t("connect.submit")}
-						</Button>
-					)}
-				</Form>
+					) : null}
+					{hasSaved ? (
+						<h2 className="font-medium text-sm">
+							{t("connect.addTitle")}
+						</h2>
+					) : null}
+					<Form
+						form={form}
+						onSubmit={handleSubmit}
+						noValidate
+						aria-busy={isSubmitting}
+						className="flex flex-col gap-4"
+					>
+						<FormInput
+							name="address"
+							label={t("connect.urlLabel")}
+							description={t("connect.urlHint")}
+							placeholder="https://semoss.example.com/Monolith"
+							type="url"
+							autoComplete="url"
+							required
+							autoFocus={!hasSaved}
+							disabled={isSubmitting}
+						/>
+						{errors.root?.server?.message ? (
+							<Alert variant="destructive" role="alert">
+								<AlertDescription>
+									{errors.root.server.message}
+								</AlertDescription>
+							</Alert>
+						) : null}
+						<output aria-live="polite" className="sr-only">
+							{isSubmitting ? t("connect.checking") : ""}
+						</output>
+						{onCancel ? (
+							<FormActions
+								isSubmitting={isSubmitting}
+								onCancel={onCancel}
+								submitLabel={t("connect.submit")}
+							/>
+						) : (
+							<Button type="submit" disabled={isSubmitting}>
+								{isSubmitting ? <Spinner aria-hidden /> : null}
+								{t("connect.submit")}
+							</Button>
+						)}
+					</Form>
+				</div>
 			</div>
 		</main>
 	);

@@ -1,0 +1,297 @@
+import { randomUUID } from "node:crypto";
+import {
+	existsSync,
+	mkdirSync,
+	readFileSync,
+	renameSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
+import { dirname, join } from "node:path";
+import {
+	isSameServer,
+	parseServerConfig,
+	type ServerConfig,
+} from "../../../contract/server-connection";
+
+/** The app's one config file, in its user data folder. */
+export const CONFIG_FILE_NAME = "smss-desktop-config.json";
+
+/** What the config file was called before; read once and replaced. */
+const LEGACY_CONFIG_FILE_NAME = "desktop-settings.json";
+
+/** Where and how big the window was when it last closed. */
+export interface WindowState {
+	/** The left edge; none until the window has been placed. */
+	readonly x?: number;
+	/** The top edge; none until the window has been placed. */
+	readonly y?: number;
+	/** The unmaximized width. */
+	readonly width: number;
+	/** The unmaximized height. */
+	readonly height: number;
+	/** Whether it was maximized. */
+	readonly isMaximized: boolean;
+}
+
+/**
+ * A saved server and the browser storage that holds its sign in. Each server
+ * has its own partition, so its cookies and storage never mix with another's.
+ */
+export interface SavedServer extends ServerConfig {
+	/**
+	 * The Electron session partition: `persist:server-<uuid>`, or `""` (the
+	 * default session) for the server saved before servers had their own.
+	 */
+	readonly partition: string;
+}
+
+/** What the app keeps between launches, in its user data folder. */
+interface DesktopConfig {
+	/** The file format's version. Version 1 held one `server`. */
+	readonly version: 2;
+	/** Every saved server, in the order they were added. */
+	readonly servers: readonly SavedServer[];
+	/** The partition of the server in use; null only when none is saved. */
+	readonly active: string | null;
+	/** The local origin's port. Cookies and storage belong to it, so it is reused. */
+	readonly port: number | null;
+	/** Where the window last was; null before it first closes. */
+	readonly window: WindowState | null;
+}
+
+/** The config before anything is saved, and the fallback for a bad file. */
+const DEFAULT_CONFIG: DesktopConfig = {
+	version: 2,
+	servers: [],
+	active: null,
+	port: null,
+	window: null,
+};
+
+/** A partition this app made: the default session, or one per server. */
+const PARTITION_PATTERN = /^(|persist:server-[0-9a-f-]{36})$/;
+
+/** The app's saved config, read once and written through on every change. */
+export interface DesktopConfigFile {
+	/** The server in use; null until the user picks one. */
+	readonly server: SavedServer | null;
+	/** Every saved server, in the order they were added. */
+	readonly servers: readonly SavedServer[];
+	/** The saved local port; null before the first launch. */
+	readonly port: number | null;
+	/** The saved window state; null before the window first closes. */
+	readonly window: WindowState | null;
+	/**
+	 * Use a server, saving it with a new partition when it is not saved yet.
+	 *
+	 * @returns The server as saved, with its partition.
+	 */
+	useServer: (server: ServerConfig) => SavedServer;
+	/**
+	 * Forget a saved server. When it was in use, the first one left takes over.
+	 *
+	 * @returns The forgotten server, or null when it was not saved.
+	 */
+	forgetServer: (server: ServerConfig) => SavedServer | null;
+	/** Save the local port. */
+	setPort: (port: number) => void;
+	/** Save the window state. */
+	setWindow: (window: WindowState) => void;
+}
+
+/**
+ * Whether a value is a usable TCP port.
+ *
+ * @param value - The saved value.
+ * @returns True for an integer from 1 to 65535.
+ */
+const isPort = (value: unknown): value is number =>
+	typeof value === "number" &&
+	Number.isInteger(value) &&
+	value > 0 &&
+	value < 65536;
+
+/**
+ * Read a saved window state, held to the window's minimum size.
+ *
+ * @param value - The saved value.
+ * @returns The state, or null when it is missing or invalid.
+ */
+const parseWindow = (value: unknown): WindowState | null => {
+	if (typeof value !== "object" || value === null) return null;
+	const { x, y, width, height, isMaximized } = value as Record<
+		string,
+		unknown
+	>;
+	if (typeof width !== "number" || typeof height !== "number") return null;
+	return {
+		x: typeof x === "number" ? x : undefined,
+		y: typeof y === "number" ? y : undefined,
+		width: Math.max(480, width),
+		height: Math.max(360, height),
+		isMaximized: isMaximized === true,
+	};
+};
+
+/**
+ * Read one saved server and its partition.
+ *
+ * @param value - The saved value.
+ * @param partition - Its partition, when the value does not carry one.
+ * @returns The server, or null when it is invalid.
+ */
+const parseSavedServer = (
+	value: unknown,
+	partition?: string,
+): SavedServer | null => {
+	let config: ServerConfig;
+	try {
+		config = parseServerConfig(value);
+	} catch {
+		return null;
+	}
+	const saved =
+		partition ?? (value as Record<string, unknown>).partition ?? null;
+	if (typeof saved !== "string" || !PARTITION_PATTERN.test(saved)) {
+		return null;
+	}
+	return { ...config, partition: saved };
+};
+
+/**
+ * Read a saved config file. Anything missing, corrupt, or invalid falls back
+ * to the defaults rather than stopping the app. A version 1 file's one server
+ * keeps the default session, which already holds its sign in.
+ *
+ * @param text - The file's contents.
+ * @returns The config.
+ */
+export const parseDesktopConfig = (text: string): DesktopConfig => {
+	let raw: unknown;
+	try {
+		raw = JSON.parse(text);
+	} catch {
+		return DEFAULT_CONFIG;
+	}
+	if (typeof raw !== "object" || raw === null) return DEFAULT_CONFIG;
+	const { server, servers, active, port, window } = raw as Record<
+		string,
+		unknown
+	>;
+
+	const candidates = Array.isArray(servers)
+		? servers.map((value) => parseSavedServer(value))
+		: [server ? parseSavedServer(server, "") : null];
+	// one entry per server and per partition; a duplicate is dropped
+	const kept: SavedServer[] = [];
+	for (const candidate of candidates) {
+		if (
+			candidate &&
+			!kept.some(
+				(saved) =>
+					isSameServer(saved, candidate) ||
+					saved.partition === candidate.partition,
+			)
+		) {
+			kept.push(candidate);
+		}
+	}
+
+	const activeServer =
+		kept.find((saved) => saved.partition === active) ?? kept[0];
+	return {
+		version: 2,
+		servers: kept,
+		active: activeServer?.partition ?? null,
+		port: isPort(port) ? port : null,
+		window: parseWindow(window),
+	};
+};
+
+/**
+ * Open the config file in a folder, normally Electron's `userData`. A config
+ * still under its old name (`desktop-settings.json`) is read, rewritten under
+ * the new one, and the old file removed.
+ *
+ * @param folder - The folder that holds {@link CONFIG_FILE_NAME}.
+ * @returns The config, saved atomically on every change.
+ */
+export const openDesktopConfig = (folder: string): DesktopConfigFile => {
+	const path = join(folder, CONFIG_FILE_NAME);
+	const legacyPath = join(folder, LEGACY_CONFIG_FILE_NAME);
+
+	// write a temporary file and rename it, so a crash never leaves half a file
+	const write = (next: DesktopConfig): void => {
+		config = next;
+		mkdirSync(dirname(path), { recursive: true });
+		const temp = `${path}.tmp`;
+		writeFileSync(temp, JSON.stringify(next, null, 2), "utf8");
+		renameSync(temp, path);
+	};
+
+	let config = DEFAULT_CONFIG;
+	try {
+		if (existsSync(path)) {
+			config = parseDesktopConfig(readFileSync(path, "utf8"));
+		} else if (existsSync(legacyPath)) {
+			write(parseDesktopConfig(readFileSync(legacyPath, "utf8")));
+			rmSync(legacyPath, { force: true });
+		}
+	} catch {
+		// an unreadable file starts from the defaults, as a first launch does
+	}
+
+	const find = (server: ServerConfig): SavedServer | undefined =>
+		config.servers.find((saved) => isSameServer(saved, server));
+
+	return {
+		get server() {
+			return (
+				config.servers.find(
+					(saved) => saved.partition === config.active,
+				) ?? null
+			);
+		},
+		get servers() {
+			return config.servers;
+		},
+		get port() {
+			return config.port;
+		},
+		get window() {
+			return config.window;
+		},
+		useServer: (server) => {
+			const saved = find(server) ?? {
+				url: server.url,
+				module: server.module,
+				partition: `persist:server-${randomUUID()}`,
+			};
+			write({
+				...config,
+				servers: find(server)
+					? config.servers
+					: [...config.servers, saved],
+				active: saved.partition,
+			});
+			return saved;
+		},
+		forgetServer: (server) => {
+			const saved = find(server);
+			if (!saved) return null;
+			const servers = config.servers.filter((item) => item !== saved);
+			write({
+				...config,
+				servers,
+				active:
+					config.active === saved.partition
+						? (servers[0]?.partition ?? null)
+						: config.active,
+			});
+			return saved;
+		},
+		setPort: (port) => write({ ...config, port }),
+		setWindow: (window) => write({ ...config, window }),
+	};
+};
