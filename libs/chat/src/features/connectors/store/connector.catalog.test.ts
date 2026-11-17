@@ -1,15 +1,17 @@
 import { describe, expect, test } from "vitest";
 import {
-	buildUserConnectorTools,
 	CONNECTOR_PROVIDERS,
 	CONNECTOR_SERVICES,
 	CONNECTORS_GENERATOR,
 	findConnectorTool,
+	sanitizeConnectorServices,
+} from "./connector.catalog";
+import {
+	buildUserConnectorTools,
 	getConnectorServices,
 	mergeUserConnectorTools,
 	readConnectorTools,
-	sanitizeConnectorServices,
-} from "./connector.catalog";
+} from "./connector-tools";
 
 /** A tool as a generator writes it into an MCP definition file. */
 const tool = (reactor: string, generator: string, execution = "auto") => ({

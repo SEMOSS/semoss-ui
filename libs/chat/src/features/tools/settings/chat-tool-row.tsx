@@ -2,13 +2,15 @@ import { ChevronRightIcon } from "lucide-react";
 import { type ReactNode, useId } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
+	Badge,
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
 	cn,
+	Muted,
+	Small,
 } from "@semoss/ui/next";
 import type { ChatToolInfo } from "../default-tools/chat-tool-info";
-import { ChatToolDetails } from "./chat-tool-details";
 
 /**
  * A row of a bordered tool list that opens. The ring is inset, since the list
@@ -54,6 +56,56 @@ export const ChatToolRow = ({ tool, renderMode }: ChatToolRowProps) => {
 	const { t } = useTranslation("chatTools");
 	const titleId = useId();
 
+	// what the model is told about the tool: the name it calls, what the tool
+	// does, and the arguments it takes, indented to line up with the title,
+	// past its chevron
+	const details = (
+		<div className="flex flex-col gap-3 ps-10 pe-3 pb-3">
+			<code className="break-all text-muted-foreground text-xs">
+				{tool.name}
+			</code>
+			{tool.description ? (
+				<Muted className="font-normal">{tool.description}</Muted>
+			) : null}
+			<div className="flex flex-col gap-1.5">
+				<Small>{t("details.parameters")}</Small>
+				{tool.parameters.length === 0 ? (
+					<Muted className="font-normal">
+						{t("details.noParameters")}
+					</Muted>
+				) : (
+					<ul className="flex flex-col gap-1.5">
+						{tool.parameters.map((parameter) => (
+							<li
+								key={parameter.name}
+								className="flex min-w-0 flex-col gap-0.5"
+							>
+								<span className="flex min-w-0 items-center gap-2">
+									<code className="break-all text-xs">
+										{parameter.name}
+									</code>
+									{parameter.isRequired ? (
+										<Badge
+											variant="outline"
+											className="shrink-0"
+										>
+											{t("details.required")}
+										</Badge>
+									) : null}
+								</span>
+								{parameter.description ? (
+									<Muted className="font-normal">
+										{parameter.description}
+									</Muted>
+								) : null}
+							</li>
+						))}
+					</ul>
+				)}
+			</div>
+		</div>
+	);
+
 	return (
 		// relative, so a select's hidden native control is placed inside the
 		// row: placed against a scroll area's root instead, it stretches the
@@ -92,13 +144,7 @@ export const ChatToolRow = ({ tool, renderMode }: ChatToolRowProps) => {
 						)}
 					</div>
 				</div>
-				<CollapsibleContent>
-					<ChatToolDetails
-						name={tool.name}
-						description={tool.description}
-						parameters={tool.parameters}
-					/>
-				</CollapsibleContent>
+				<CollapsibleContent>{details}</CollapsibleContent>
 			</Collapsible>
 		</li>
 	);

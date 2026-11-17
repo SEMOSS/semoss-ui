@@ -75,8 +75,7 @@ export const SaveFileDialog = ({
 			setIsSaving(true);
 			await room.runRoomPixel(
 				`SaveInsightAssets(filePath=[${JSON.stringify(filePath)}], content=["<encode>${content}</encode>"]);`,
-				false,
-				false,
+				{ showLoading: false, setErrorOnFail: false },
 			);
 			room.openFileSidebarPanel(filePath, undefined, { refresh: true });
 			toast.success(t("notifications.savedInRoom", { filePath }));

@@ -26,7 +26,7 @@ export const RoomFrame = ({ header, workbench, children }: RoomFrameProps) => {
 	return (
 		<RoomLayout
 			isWorkbenchOpen={isWorkbenchOpen}
-			onWorkbenchCollapse={() => void room.closeSidebar()}
+			onWorkbenchCollapse={() => room.closeSidebar()}
 			header={header}
 			workbench={workbench}
 		>

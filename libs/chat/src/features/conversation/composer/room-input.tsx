@@ -1,4 +1,3 @@
-/// <reference path="../../../speech-recognition.d.ts" />
 import { AutoFocusPlugin } from "@lexical/react/LexicalAutoFocusPlugin";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
@@ -7,12 +6,7 @@ import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { PlainTextPlugin } from "@lexical/react/LexicalPlainTextPlugin";
-import {
-	$createParagraphNode,
-	$createTextNode,
-	$getRoot,
-	type LexicalEditor,
-} from "lexical";
+import { $getRoot, type LexicalEditor } from "lexical";
 import {
 	ArrowUpIcon,
 	BookOpenIcon,
@@ -22,14 +16,7 @@ import {
 	Square,
 } from "lucide-react";
 import type React from "react";
-import {
-	useCallback,
-	useEffect,
-	useId,
-	useMemo,
-	useRef,
-	useState,
-} from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { EngineSelect } from "@semoss/shared";
 import {
@@ -45,49 +32,40 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
-	toast,
 } from "@semoss/ui/next";
 import { AutoScrollOnPastePlugin } from "../../../components/lexical/auto-scroll-on-paste-plugin";
 import { BackspacePlugin } from "../../../components/lexical/backspace-plugin";
 import { EnterPlugin } from "../../../components/lexical/enter-plugin";
 import { FocusPlugin } from "../../../components/lexical/focus-plugin";
-import type { Engine, MCPConfig, Workspace } from "../../../types";
 import { useChatConfig } from "../../chat/config/use-chat-config";
 import { ConnectorSignInNotice } from "../../connectors/accounts/connector-sign-in-notice";
 import { useUserConnectorsSync } from "../../connectors/accounts/use-user-connectors-sync";
 import type { RoomStore } from "../../room/store/room.store";
+import type { CompactionStrategy } from "../../room/store/room-compaction";
 import { useRoomSelector } from "../../room/store/use-room-selector";
 import { MCPOverlay } from "../../tools/mcp/mcp-overlay";
+import type { MCPOverlayTab } from "../../tools/mcp/mcp-overlay-picker";
+import { getAgentLabel, runsDefaultAgent } from "../../tools/mcp/mcp-utils";
 import type { NewRoomWorkbenchPanels } from "../../workbench/rail/use-workbench-panels";
 import { ContextItems } from "../attachments/context-items";
 import { useFileDrop } from "../attachments/file-drop.context";
 import { FilePreviewGrid } from "../attachments/file-preview-grid";
 import { useContextItems } from "../attachments/use-context-items";
 import { AGENT_HARNESS_TYPE } from "../store/agent-harness";
-import { canChooseAgentMode } from "./agent-mode-choice";
-import {
-	getPromptHistory,
-	RESET_PROMPT_HISTORY_COMMAND,
-} from "./prompt-history";
+import { filterPastedFiles } from "./filter-pasted-files";
+import { getPromptHistory } from "./prompt-history";
 import { PromptHistoryPlugin } from "./prompt-history-plugin";
-import {
-	PromptLibraryDialog,
-	type PromptLibraryItem,
-} from "./prompt-library-dialog";
+import { PromptLibraryDialog } from "./prompt-library-dialog";
 import { PromptOptimizer } from "./prompt-optimizer";
-import {
-	RoomComposerMenu,
-	type RoomComposerMenuProps,
-} from "./room-composer-menu";
+import { $setRootText, replaceEditorText } from "./replace-editor-text";
+import { RoomComposerMenu } from "./room-composer-menu";
 import { RoomContextUsageIndicator } from "./room-context-usage-indicator";
 import { SlashCommandProvider } from "./slash-command/context";
 import { SlashCommandPlugin } from "./slash-command/plugin";
-import { useGracefulErrors } from "./use-graceful-errors";
+import { type ComposerSession, saveAgentOverlay } from "./use-composer-session";
+import { useComposerSubmit } from "./use-composer-submit";
 import { useRoomSlashCommands } from "./use-room-slash-commands";
-
-/** The agent the input shows and the picker returns: its id, and its name when known. */
-type WorkspaceRef = Pick<Workspace, "workspace_id"> &
-	Partial<Pick<Workspace, "name">>;
+import { useSpeechToText } from "./use-speech-to-text";
 
 /** Whether the chat runs in a frame; a frame without access to its parent counts. */
 let isIframed = false;
@@ -109,99 +87,55 @@ try {
  */
 export type SendButtonState = "send" | "stop" | "loading";
 
+/**
+ * Which composer this is. An open room's stops and compacts its turns; a new
+ * chat's picks its mode, opens its draft's panels, and can start from a prompt.
+ */
+export type RoomInputVariant =
+	| {
+			readonly kind: "room";
+			/** Cancels the turn in flight, from the button's "stop" state. */
+			readonly onStop: () => void;
+			/** Compacts the conversation, also from the slash menu. */
+			readonly onCompact: (strategy?: CompactionStrategy) => void;
+			/** Whether a tool call waits for the user, which holds sending. */
+			readonly hasOutstandingTools: boolean;
+	  }
+	| {
+			readonly kind: "draft";
+			/** Switches the draft to agent mode, from the + menu and the slash menu. */
+			readonly onSwitchToAgentHarness: () => void;
+			/** Switches the draft back to chat mode, likewise. */
+			readonly onExitAgentHarness: () => void;
+			/** Where the slash menu's Workspace panels open: the draft's room and its panel actions. */
+			readonly workbenchPanels: {
+				readonly room: RoomStore;
+				readonly newRoomPanels: NewRoomWorkbenchPanels;
+			};
+			/** Text the editor starts with; a different one needs a new `key`. */
+			readonly initialValue?: string;
+			/** Holds sending while the draft's agent settings are resolved. */
+			readonly isSubmitDisabled: boolean;
+	  };
+
 /** Props for {@link RoomInput}. */
 interface RoomInputProps {
 	/** Classes to override */
 	className?: string;
-
-	/** Track if it is loading */
+	/** Whether the chat is busy, which holds sending and shows "thinking". */
 	isLoading?: boolean;
-	/** Prevent sending while draft agent settings are being resolved. */
-	isSubmitDisabled?: boolean;
-
-	/** Model of the room */
-	model: Engine | null;
-
-	/** Called with the model the user picks in the model select. */
-	onModelChange: (model: Engine) => void;
-
-	/** Menu component for + button dropdown */
-	MenuComponent?: React.ComponentType<RoomComposerMenuProps>;
-
-	/**
-	 * Callback when the full MCP list changes (e.g. via the MCP overlay's
-	 * Save button). Receives the next merged `mcp` array.
-	 */
-	onMcpChange?: (mcp: MCPConfig[]) => void;
-
-	/**
-	 * When provided, the MCP overlay grows an Agent tab and this callback
-	 * fires when the user changes the selected agent. Opting in by passing
-	 * this prop is the signal that the caller supports agent selection
-	 * (today: new-room flow only).
-	 */
-	onWorkspaceChange?: (next: WorkspaceRef | null) => void;
-
-	/** Room options containing MCP configurations for slash menu */
-	options: RoomStore["options"];
-
-	/** Callback triggered to process the prompt. Throw an error if necessary */
+	/** The room's or the draft's model, options and agent, and how they change. */
+	session: ComposerSession;
+	/** The room the composer sends to, or a new chat's draft. */
+	room: RoomStore;
+	/** Sends a prompt and its files. Throw, or return false, when it fails. */
 	onPrompt: (prompt: string, files: File[]) => Promise<boolean>;
-
-	/** Has outstanding tools */
-	hasOutstandingTools?: boolean;
-
 	/** Appearance of the send/stop button. Defaults to "send". */
 	sendState?: SendButtonState;
-
-	/** Cancel the in-flight turn — invoked when the button is in its "stop"
-	 *  state. */
-	onStop?: () => void;
-
-	/** Predefined prompts shown in prompt library */
-	predefinedPrompts?: PromptLibraryItem[];
-
-	/** Initial value from prompt library */
-	initialValue?: string;
-
-	/** Room store for prompt optimizer and context usage indicator */
-	room: RoomStore;
-
-	/** Callback to compact conversation; also passed through to the slash menu */
-	onCompact?: (strategy?: "TOOL_PRUNE" | "SUMMARY" | "AUTO") => void;
-
 	/** Command IDs to suppress from the slash menu */
 	excludeCommandIds?: string[];
-
-	/**
-	 * Where the slash menu's Workspace panels open: a new chat's prepared or
-	 * new room and its own panel actions. Defaults to `room`.
-	 */
-	workbenchPanels?: {
-		room: RoomStore;
-		newRoomPanels?: NewRoomWorkbenchPanels;
-	};
-
-	/**
-	 * Callback for the /agent-harness slash command. Defaults to switching
-	 * `room` into agent mode directly — override on the new-room page, where
-	 * mode lives in local state until the room is actually created.
-	 */
-	onSwitchToAgentHarness?: () => void;
-
-	/**
-	 * Switches back to chat mode, from the + menu and the slash menu. Only
-	 * passed on the new-room page — once a room exists its harness type is a
-	 * persisted, committed choice, not something to back out of inline.
-	 */
-	onExitAgentHarness?: () => void;
-
-	/**
-	 * Offers Default Agent beside No Agent in the agent picker, and is called
-	 * with whether Default Agent is picked. Only the new chat page passes it,
-	 * when the theme lets the agent choice decide the mode.
-	 */
-	onDefaultAgentChange?: (isDefaultAgent: boolean) => void;
+	/** An open room's composer, or a new chat's. */
+	variant: RoomInputVariant;
 }
 
 /**
@@ -219,46 +153,36 @@ interface RoomInputProps {
  */
 export const RoomInput = ({
 	className,
-	isLoading,
-	isSubmitDisabled = false,
-	model,
-	onModelChange,
-	MenuComponent = RoomComposerMenu,
-	options,
-	onPrompt,
-	onMcpChange,
-	onWorkspaceChange,
-	hasOutstandingTools = false,
-	sendState = "send",
-	onStop,
-	predefinedPrompts = [],
-	initialValue,
+	isLoading = false,
+	session,
 	room,
-	onCompact,
+	onPrompt,
+	sendState = "send",
 	excludeCommandIds,
-	workbenchPanels,
-	onSwitchToAgentHarness,
-	onExitAgentHarness,
-	onDefaultAgentChange,
+	variant,
 }: RoomInputProps) => {
 	const { t } = useTranslation("room");
 	const modelSelectId = useId();
-	const { getGracefulErrorMessage } = useGracefulErrors();
+	const { model, options, agentTools, isAgentMode, agent } = session;
+	const draft = variant.kind === "draft" ? variant : null;
+	const hasOutstandingTools =
+		variant.kind === "room" && variant.hasOutstandingTools;
+	const onCompact = variant.kind === "room" ? variant.onCompact : undefined;
+	const isSubmitDisabled = draft?.isSubmitDisabled ?? false;
+	const predefinedPrompts = options.predefinedPrompts;
 
 	// Editor state
-	const [isEmpty, setIsEmpty] = useState(true);
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 	const [isScrollable, setIsScrollable] = useState(false);
-	const [inputText, setInputText] = useState("");
+	const [inputText, setInputText] = useState(draft?.initialValue ?? "");
+	const isEmpty = inputText.length === 0;
 	const { theme } = useChatConfig();
-	const canChooseMode = canChooseAgentMode(theme.featureFlags);
 	// connectors switched on or off in settings reach this chat at once
 	useUserConnectorsSync(room.connectors);
 	const history = useRoomSelector(room, (current) => current.history);
-	const { mode, roomId, latestResponseHasTools } = useRoomSelector(
+	const { roomId, latestResponseHasTools } = useRoomSelector(
 		room,
 		(current) => ({
-			mode: current.mode,
 			roomId: current.roomId,
 			// Whether the latest response has unfinished tools — compaction
 			// can't touch a response until all tool calls have resolved
@@ -268,52 +192,48 @@ export const RoomInput = ({
 	);
 	// runs once the plus menu has closed and given focus back, as opening a picker
 	const afterMenuCloseRef = useRef<(() => void) | null>(null);
+	const isBusy = isLoading || hasOutstandingTools || sendState !== "send";
 
 	// MCP overlay state — managed here so the overlay renders outside the DropdownMenu's React subtree
 	const [mcpOverlay, setMcpOverlay] = useState<{
 		open: boolean;
-		defaultTab: "AGENT" | "TOOLBOX" | "KNOWLEDGE";
+		defaultTab: MCPOverlayTab;
 	}>({ open: false, defaultTab: "KNOWLEDGE" });
 
 	/** Open the knowledge, toolbox, or agent picker, after the plus menu closes when it is open. */
-	const handleOpenMcpOverlay = useCallback(
-		(defaultTab: "AGENT" | "TOOLBOX" | "KNOWLEDGE") => {
-			if (isLoading || hasOutstandingTools || sendState !== "send")
-				return;
-			const open = () => setMcpOverlay({ open: true, defaultTab });
-			if (isMenuOpen) {
-				afterMenuCloseRef.current = open;
-				setIsMenuOpen(false);
-			} else open();
-		},
-		[isLoading, hasOutstandingTools, sendState, isMenuOpen],
-	);
+	const handleOpenMcpOverlay = (defaultTab: MCPOverlayTab) => {
+		if (isBusy) return;
+		const open = () => setMcpOverlay({ open: true, defaultTab });
+		if (isMenuOpen) {
+			afterMenuCloseRef.current = open;
+			setIsMenuOpen(false);
+		} else open();
+	};
 
-	// Default for an already-created room: flip mode now (takes effect on the
-	// next message) and persist harnessType so it survives a reload.
+	// An open room flips its mode now (taking effect on the next message) and
+	// persists harnessType so it survives a reload.
 	const handleSwitchToAgentHarness =
-		onSwitchToAgentHarness ??
+		draft?.onSwitchToAgentHarness ??
 		(() => {
 			room.setMode("agent");
-			(async () => {
-				try {
-					await room.updateRoomOptions({
-						...room.options,
-						harnessType: AGENT_HARNESS_TYPE,
-					});
-				} catch (e) {
-					console.error("Failed to persist agent harness mode", e);
-				}
-			})();
+			room.updateRoomOptions({
+				...room.options,
+				harnessType: AGENT_HARNESS_TYPE,
+			}).catch((e: unknown) => {
+				console.error("Failed to persist agent harness mode", e);
+			});
 		});
 
 	const agentChipWorkspace = options.workspace ?? null;
-	// agent mode with no saved agent runs the default agent
-	const isDefaultAgent = mode === "agent" && !agentChipWorkspace;
-	const agentName =
-		agentChipWorkspace?.name ||
-		agentChipWorkspace?.workspace_id ||
-		(isDefaultAgent ? t("modes.defaultAgent") : "");
+	const isDefaultAgent = runsDefaultAgent({
+		workspace: agentChipWorkspace,
+		isAgentMode,
+	});
+	const agentName = getAgentLabel({
+		workspace: agentChipWorkspace,
+		isAgentMode,
+		defaultAgentLabel: t("modes.defaultAgent"),
+	});
 	const modelName = model?.engine_display_name || model?.app_name || "";
 	const historyEntries = useMemo(() => getPromptHistory(history), [history]);
 	// a new room or branch starts a fresh prompt history session
@@ -321,14 +241,21 @@ export const RoomInput = ({
 		roomId,
 		history.map((message) => message.id),
 	]);
-	const isBusy = !!isLoading || hasOutstandingTools || sendState !== "send";
 
 	// Refs for DOM elements and Lexical editor
-	const containerRef = useRef<HTMLDivElement>(null);
 	const editorRef = useRef<LexicalEditor>(null);
-	const isSubmittingRef = useRef(false);
 	const contentEditableRef = useRef<HTMLDivElement>(null);
 	const scrollViewportRef = useRef<HTMLElement | null>(null);
+	// the scroll check waits for the browser to lay out the new content
+	const scrollCheckRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	useEffect(
+		() => () => {
+			if (scrollCheckRef.current !== null) {
+				clearTimeout(scrollCheckRef.current);
+			}
+		},
+		[],
+	);
 
 	// Bridge setInput() (PromptOptimizer) -> Lexical editor content
 	const setInputFromOptimizer: React.Dispatch<
@@ -337,11 +264,7 @@ export const RoomInput = ({
 		const next =
 			typeof nextValue === "function" ? nextValue(inputText) : nextValue;
 		setInputText(next);
-		editorRef.current?.update(() => {
-			const root = $getRoot();
-			root.clear();
-			root.append($createParagraphNode().append($createTextNode(next)));
-		});
+		replaceEditorText(editorRef.current, next);
 		editorRef.current?.focus();
 	};
 
@@ -354,133 +277,34 @@ export const RoomInput = ({
 	);
 	const hasAttachments = files.length > 0 || queuedFileCount > 0;
 
-	// Speech-to-text
-	const [canListen, setCanListen] = useState(false);
-	const [isListening, setIsListening] = useState(false);
+	const speech = useSpeechToText(editorRef);
 	const [isPromptLibraryOpen, setIsPromptLibraryOpen] = useState(false);
-
-	/**
-	 * Send a predefined prompt as is, leaving the draft alone.
-	 *
-	 * @param prompt - The prompt's text.
-	 */
-	const runPredefinedPrompt = async (prompt: string) => {
-		if (isBusy || isSubmitDisabled) {
-			return;
-		}
-		editorRef.current?.dispatchCommand(
-			RESET_PROMPT_HISTORY_COMMAND,
-			undefined,
-		);
-
-		try {
-			const success = await onPrompt(prompt, []);
-			if (!success) {
-				throw new Error(t("errors.processingChat"));
-			}
-		} catch (e) {
-			toast.error(getGracefulErrorMessage(e as Error));
-		}
-	};
-	const recognitionRef = useRef<SpeechRecognition | null>(null);
+	const { submit, runPrompt } = useComposerSubmit({
+		editorRef,
+		onPrompt,
+		files,
+		addFiles,
+		clearFiles,
+		isLoading,
+		isSubmitDisabled,
+		hasOutstandingTools,
+		isBusy,
+	});
 
 	const slashCommands = useRoomSlashCommands({
 		room: room,
-		workbenchRoom: workbenchPanels?.room,
-		newRoomPanels: workbenchPanels?.newRoomPanels,
+		workbenchRoom: draft?.workbenchPanels.room,
+		newRoomPanels: draft?.workbenchPanels.newRoomPanels,
 		onOpenMcpOverlay: handleOpenMcpOverlay,
 		onAttachFiles: openFilePicker,
 		onCompact: onCompact,
 		onSwitchToAgent: handleSwitchToAgentHarness,
-		onSwitchToChat: onExitAgentHarness,
-		canChooseAgent: Boolean(onWorkspaceChange),
+		onSwitchToChat: draft?.onExitAgentHarness,
+		canChooseAgent: agent.kind !== "fixed",
 		prompts: predefinedPrompts,
-		onRunPrompt: (prompt) => void runPredefinedPrompt(prompt.context),
+		onRunPrompt: (prompt) => void runPrompt(prompt.context),
 	});
 
-	// set up speech-to-text where the browser offers it
-	useEffect(() => {
-		// Check browser support for Web Speech API
-		const SpeechRecognition =
-			window.SpeechRecognition || window.webkitSpeechRecognition;
-
-		if (SpeechRecognition) {
-			setCanListen(true);
-
-			const recognition = new SpeechRecognition();
-			recognition.continuous = true; // Keep listening until stopped
-			recognition.interimResults = true; // Get real-time results
-			recognition.lang = "en-US";
-
-			recognition.onstart = () => {
-				setIsListening(true);
-			};
-
-			recognition.onresult = (event) => {
-				let transcript = "";
-
-				// Collect only finalized transcription results
-				for (let i = event.resultIndex; i < event.results.length; i++) {
-					if (event.results[i].isFinal) {
-						transcript += event.results[i][0].transcript;
-					}
-				}
-
-				transcript = transcript.trim();
-				if (transcript) {
-					// Update Lexical editor with appended transcribed text
-					editorRef.current?.update(() => {
-						const root = $getRoot();
-						const currentText = root.getTextContent();
-
-						root.clear();
-
-						// Append new transcript to existing text
-						const paragraphNode = $createParagraphNode();
-						const textNode = $createTextNode(
-							currentText
-								? `${currentText} ${transcript}`
-								: transcript,
-						);
-						paragraphNode.append(textNode);
-						root.append(paragraphNode);
-					});
-				}
-			};
-
-			recognition.onerror = (event) => {
-				console.error(event);
-				setIsListening(false);
-				editorRef.current?.focus();
-			};
-
-			recognition.onend = () => {
-				setIsListening(false);
-				editorRef.current?.focus();
-			};
-
-			recognitionRef.current = recognition;
-		} else {
-			setCanListen(false);
-		}
-
-		// Cleanup: stop recognition when component unmounts
-		return () => {
-			recognitionRef.current?.stop();
-		};
-	}, []);
-
-	// fill the editor with a prompt handed in, such as from a route
-	useEffect(() => {
-		if (!initialValue) return;
-		editorRef.current?.update(() => {
-			const root = $getRoot();
-			root.clear();
-			const paragraph = $createParagraphNode();
-			paragraph.append($createTextNode(initialValue));
-			root.append(paragraph);
-		});
-	}, [initialValue]);
 	// Find and cache the ScrollArea viewport element
 	useEffect(() => {
 		if (contentEditableRef.current) {
@@ -491,88 +315,6 @@ export const RoomInput = ({
 		}
 	}, []);
 
-	/**
-	 * Submit the current prompt to the AI model
-	 *
-	 * Behavior:
-	 * - Extracts text from editor and captures files
-	 * - Clears editor optimistically before sending
-	 * - On success: clears files
-	 * - On failure: restores editor content and files for retry
-	 */
-	const promptModel = async () => {
-		if (isSubmittingRef.current) return;
-		// Extract current text from Lexical editor, one line per paragraph.
-		let userInput = "";
-		editorRef.current?.getEditorState().read(() => {
-			userInput = $getRoot()
-				.getChildren()
-				.map((paragraph) => paragraph.getTextContent())
-				.join("\n");
-		});
-
-		// Capture files before clearing (for potential restore on error)
-		const userFiles = [...files];
-
-		// Guard: prevent submission if empty, loading, or waiting for tool response
-		if (
-			!userInput ||
-			isLoading ||
-			isSubmitDisabled ||
-			hasOutstandingTools
-		) {
-			return;
-		}
-
-		try {
-			isSubmittingRef.current = true;
-			editorRef.current?.dispatchCommand(
-				RESET_PROMPT_HISTORY_COMMAND,
-				undefined,
-			);
-			// Optimistically clear editor and files before sending
-			editorRef.current?.update(() => {
-				const root = $getRoot();
-				root.clear();
-				const paragraphNode = $createParagraphNode();
-				root.append(paragraphNode);
-			});
-			clearFiles();
-
-			// Submit to parent handler
-			const result = Boolean(await onPrompt(userInput, userFiles));
-			if (!result) {
-				throw new Error(t("errors.processingChat"));
-			}
-		} catch (e) {
-			// Show error to user
-			toast.error(
-				(e as Error)?.name === "UploadError"
-					? t("errors.fileInUse")
-					: getGracefulErrorMessage(e as Error),
-			);
-
-			// Restore files for retry
-			addFiles(userFiles);
-
-			// Keep anything typed while the request was in flight. The failed
-			// message is restored before that draft instead of overwriting it.
-			editorRef.current?.update(() => {
-				const root = $getRoot();
-				const paragraph = $createParagraphNode();
-				paragraph.append($createTextNode(userInput));
-				if (root.getTextContent().trim()) {
-					root.getFirstChild()?.insertBefore(paragraph);
-				} else {
-					root.clear();
-					root.append(paragraph);
-				}
-			});
-		} finally {
-			isSubmittingRef.current = false;
-		}
-	};
-
 	// Button appearance is fully decided by sendState (computed by the
 	// parent from the turn + cancel state); only the idle "send" case needs
 	// the local editor/tool signals to decide enablement + tooltip.
@@ -582,9 +324,9 @@ export const RoomInput = ({
 			(isEmpty || isSubmitDisabled || hasOutstandingTools));
 	const handleSendClick = () => {
 		if (sendState === "stop") {
-			onStop?.();
+			if (variant.kind === "room") variant.onStop();
 		} else if (sendState === "send") {
-			promptModel();
+			void submit();
 		}
 	};
 	const sendTooltip =
@@ -595,13 +337,10 @@ export const RoomInput = ({
 				: hasOutstandingTools
 					? t("input.completeTool")
 					: t("input.ask");
+	const initialValue = draft?.initialValue;
 
 	return (
-		<div
-			className="relative w-full"
-			ref={containerRef}
-			data-tour="tour-input"
-		>
+		<div className="relative w-full" data-tour="tour-input">
 			<SlashCommandProvider
 				commands={slashCommands}
 				excludeCommandIds={excludeCommandIds}
@@ -610,6 +349,10 @@ export const RoomInput = ({
 					initialConfig={{
 						namespace: "RoomInput",
 						theme: {},
+						// a prompt handed in, such as from a route
+						editorState: initialValue
+							? () => $setRootText(initialValue)
+							: undefined,
 						onError: (error) => {
 							console.error(error);
 						},
@@ -706,79 +449,13 @@ export const RoomInput = ({
 												)}
 												placeholder={<div />}
 												onPaste={(e) => {
-													const clipboardFiles =
-														Array.from(
-															e.clipboardData
-																.files,
+													const pasted =
+														filterPastedFiles(
+															e.clipboardData,
 														);
-
-													// Microsoft apps (Word, Outlook, etc.) include an image
-													// representation alongside text in the clipboard. If text
-													// content is present, filter out those images so the text
-													// is pasted normally instead of attaching a screenshot.
-													//
-													// Exception: Microsoft Teams copies images with a
-													// text/html entry that is just an <img> wrapper with no
-													// real text content. In that case we should keep the
-													// image files and let them be attached.
-													const hasPlainText =
-														e.clipboardData
-															.getData(
-																"text/plain",
-															)
-															.trim().length > 0;
-
-													// text/html is only "real text" if it contains
-													// meaningful content beyond just an <img> tag
-													// (Teams wraps copied images in bare <img> html).
-													// Parsed with DOMParser into an inert, disconnected
-													// document (no browsing context) so any <img> tags
-													// never load and their attribute handlers never run.
-													const htmlHasMeaningfulText =
-														(() => {
-															const html =
-																e.clipboardData.getData(
-																	"text/html",
-																);
-															if (!html)
-																return false;
-															const parsed =
-																new DOMParser().parseFromString(
-																	html,
-																	"text/html",
-																);
-															parsed.body
-																.querySelectorAll(
-																	"img",
-																)
-																.forEach(
-																	(img) => {
-																		img.remove();
-																	},
-																);
-															return (
-																(parsed.body.textContent?.trim()
-																	.length ??
-																	0) > 0
-															);
-														})();
-
-													const hasText =
-														hasPlainText ||
-														htmlHasMeaningfulText;
-
-													const updated = hasText
-														? clipboardFiles.filter(
-																(f) =>
-																	!f.type.startsWith(
-																		"image/",
-																	),
-															)
-														: clipboardFiles;
-
-													if (updated.length > 0) {
+													if (pasted.length > 0) {
 														e.preventDefault();
-														addFiles(updated);
+														addFiles(pasted);
 													}
 												}}
 											/>
@@ -855,21 +532,18 @@ export const RoomInput = ({
 												action();
 											}}
 										>
-											<MenuComponent
+											<RoomComposerMenu
 												options={options}
+												agentTools={agentTools}
 												disabled={isBusy}
-												mode={mode}
+												isAgentMode={isAgentMode}
 												onSelectChat={
-													onExitAgentHarness
+													draft?.onExitAgentHarness
 												}
 												onSelectAgent={
 													handleSwitchToAgentHarness
 												}
-												isAgentEditable={
-													!!onWorkspaceChange
-												}
-												canChooseMode={canChooseMode}
-												isDefaultAgent={isDefaultAgent}
+												agent={agent}
 												onOpenChange={setIsMenuOpen}
 												onOpenMcpOverlay={
 													handleOpenMcpOverlay
@@ -881,7 +555,7 @@ export const RoomInput = ({
 								{(agentChipWorkspace || isDefaultAgent) && (
 									<Tooltip disableHoverableContent={false}>
 										<TooltipTrigger asChild>
-											{onWorkspaceChange ? (
+											{agent.kind !== "fixed" ? (
 												<Button
 													type="button"
 													variant="outline"
@@ -974,24 +648,21 @@ export const RoomInput = ({
 													variant="ghost"
 													size="icon-sm"
 													className="rounded-full"
-													disabled={!canListen}
-													aria-pressed={isListening}
+													disabled={!speech.canListen}
+													aria-pressed={
+														speech.isListening
+													}
 													aria-label={t(
-														isListening
+														speech.isListening
 															? "input.stopRecording"
 															: "input.record",
 													)}
-													onClick={() => {
-														if (isListening)
-															recognitionRef.current?.stop();
-														else
-															recognitionRef.current?.start();
-													}}
+													onClick={speech.toggle}
 												>
 													<MicIcon
 														aria-hidden="true"
 														className={cn(
-															isListening &&
+															speech.isListening &&
 																"text-destructive",
 														)}
 													/>
@@ -1000,9 +671,9 @@ export const RoomInput = ({
 										</TooltipTrigger>
 										<TooltipContent>
 											{t(
-												!canListen
+												!speech.canListen
 													? "input.recordUnavailable"
-													: isListening
+													: speech.isListening
 														? "input.stopRecording"
 														: "input.record",
 											)}
@@ -1025,7 +696,7 @@ export const RoomInput = ({
 												</Label>
 												<EngineSelect
 													id={modelSelectId}
-													className="h-8 w-auto max-w-44 gap-1 rounded-full border-none bg-transparent px-2 text-[11px] shadow-none hover:bg-accent"
+													className="h-8 w-auto max-w-44 gap-1 rounded-full border-none bg-transparent px-2 text-xs shadow-none hover:bg-accent"
 													name={modelName}
 													value={model?.app_id || ""}
 													engineTypes={["MODEL"]}
@@ -1034,7 +705,9 @@ export const RoomInput = ({
 															tag: "text-generation",
 														},
 													]}
-													onChange={onModelChange}
+													onChange={
+														session.onModelChange
+													}
 													popoverContentProps={{
 														align: "end",
 													}}
@@ -1086,13 +759,15 @@ export const RoomInput = ({
 							editorState.read(() => {
 								const root = $getRoot();
 
-								// Track empty state to disable send button
-								const text = root.getTextContent();
-								setIsEmpty(text.length === 0);
-								setInputText(text);
+								// the text, which also disables send while empty
+								setInputText(root.getTextContent());
 
 								// Check if content is scrollable
-								setTimeout(() => {
+								if (scrollCheckRef.current !== null) {
+									clearTimeout(scrollCheckRef.current);
+								}
+								scrollCheckRef.current = setTimeout(() => {
+									scrollCheckRef.current = null;
 									const viewport = scrollViewportRef.current;
 									if (viewport) {
 										// Check if content is scrollable
@@ -1109,7 +784,7 @@ export const RoomInput = ({
 					<AutoFocusPlugin />
 					<FocusPlugin />
 					<EditorRefPlugin editorRef={editorRef} />
-					<EnterPlugin onEnter={() => promptModel()} />
+					<EnterPlugin onEnter={() => void submit()} />
 					<BackspacePlugin
 						onBackspace={(event) => {
 							if (!isEmpty || files.length === 0) {
@@ -1132,41 +807,24 @@ export const RoomInput = ({
 						onOpenChange={setIsPromptLibraryOpen}
 						prompts={predefinedPrompts}
 						isLoading={isLoading}
-						onSelectPrompt={(prompt) =>
-							runPredefinedPrompt(prompt.context)
-						}
+						onSelectPrompt={(prompt) => runPrompt(prompt.context)}
 					/>
 				</LexicalComposer>
 			</SlashCommandProvider>
-			{onMcpChange && (
-				<MCPOverlay
-					open={mcpOverlay.open}
-					defaultTab={mcpOverlay.defaultTab}
-					values={options.mcp}
-					workspace={agentChipWorkspace}
-					isAgentEditable={!!onWorkspaceChange}
-					allowDefaultAgent={canChooseMode}
-					isDefaultAgent={
-						onDefaultAgentChange ? isDefaultAgent : undefined
-					}
-					disabled={isBusy}
-					onClose={(next) => {
-						setMcpOverlay((prev) => ({ ...prev, open: false }));
-						editorRef.current?.focus();
-						if (!next || isBusy) return;
-						onMcpChange(next.mcp);
-						if (onWorkspaceChange && "workspace" in next) {
-							onWorkspaceChange(next.workspace ?? null);
-						}
-						if (
-							onDefaultAgentChange &&
-							next.isDefaultAgent !== undefined
-						) {
-							onDefaultAgentChange(next.isDefaultAgent);
-						}
-					}}
-				/>
-			)}
+			<MCPOverlay
+				open={mcpOverlay.open}
+				defaultTab={mcpOverlay.defaultTab}
+				values={options.mcp}
+				workspace={agentChipWorkspace}
+				agentTools={agentTools}
+				agent={agent}
+				disabled={isBusy}
+				onClose={(next) => {
+					setMcpOverlay((prev) => ({ ...prev, open: false }));
+					editorRef.current?.focus();
+					if (next && !isBusy) saveAgentOverlay(session, next);
+				}}
+			/>
 		</div>
 	);
 };

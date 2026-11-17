@@ -2,6 +2,7 @@ import type { RoomStore } from "../../room/store/room.store";
 import { isAskExecutionMode } from "../../tools/mcp/mcp-utils";
 import type { SendButtonState } from "../composer/room-input";
 import { ResponseMessageStore } from "../store/response-message.store";
+import { isToolSettled } from "../store/tool.store";
 
 /** Where a room's current turn stands, as its messages and composer show it. */
 export interface RoomTurnState {
@@ -37,7 +38,7 @@ export const readRoomTurnState = (room: RoomStore): RoomTurnState => {
 		(tool) =>
 			!!tool &&
 			tool.json._meta?.SMSS_MCP_EXECUTION === "auto" &&
-			(tool.status === "INITIAL" || tool.status === "LOADING"),
+			!isToolSettled(tool.status),
 	);
 
 	// not auto tools (they need no click), and not ask tools that already
@@ -50,9 +51,7 @@ export const readRoomTurnState = (room: RoomStore): RoomTurnState => {
 	).length;
 
 	const isBusy =
-		room.isLoading ||
-		room.latestResponseMessage.isThinking ||
-		isAutoExecutingTools;
+		room.isLoading || Boolean(latest?.isThinking) || isAutoExecutingTools;
 
 	// Its last part is text or reasoning, or a tool call still coming in (which
 	// shows its own spinner). Read off the tail rather than isThinking, which an

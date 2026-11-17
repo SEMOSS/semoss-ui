@@ -1,7 +1,8 @@
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { InsightProvider } from "@semoss/sdk/react";
 import { ToolViewProvider } from "@semoss/shared";
 import { Spinner, toast } from "@semoss/ui/next";
+import { useLatestRef } from "@semoss/utility/react/use-latest-ref";
 import type { Engine } from "../../../types";
 import { useChatConfig } from "../../chat/config/use-chat-config";
 import { useChatSession } from "../../chat/provider/use-chat-session";
@@ -44,16 +45,8 @@ export const RoomScope = ({ roomId, children }: RoomScopeProps) => {
 			insightId: current.insightId,
 		})) ?? {};
 	// refs, so a change of model or host navigation does not reload the room
-	const selectedModelRef = useRef<Engine>(selectedModel);
-	const openNewChatRef = useRef(navigation.openNewChat);
-
-	useEffect(() => {
-		selectedModelRef.current = selectedModel;
-	}, [selectedModel]);
-
-	useEffect(() => {
-		openNewChatRef.current = navigation.openNewChat;
-	}, [navigation.openNewChat]);
+	const selectedModelRef = useLatestRef<Engine>(selectedModel);
+	const openNewChatRef = useLatestRef(navigation.openNewChat);
 
 	useEffect(() => {
 		let isCurrent = true;

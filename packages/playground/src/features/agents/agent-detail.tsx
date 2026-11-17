@@ -7,13 +7,11 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router";
-import { useChatSession, type Workspace } from "@semoss/chat";
+import { deleteAgent, useAgentWorkspace } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import { getUserProjectPermission, type Role } from "@semoss/sdk";
-import { useSessionPixel } from "@semoss/sdk/react";
 import {
 	AgentDefinition,
-	type AgentWorkspace,
 	AppCatalogAvatar,
 	MembersTable,
 } from "@semoss/shared";
@@ -56,7 +54,6 @@ export const AgentDetail = ({ workspaceId }: AgentDetailProps) => {
 	const { t } = useTranslation(["workspace", "common"]);
 
 	const navigate = useNavigate();
-	const { chat } = useChatSession();
 	const theme = usePlaygroundTheme();
 
 	const [isDeleting, setIsDeleting] = useState(false);
@@ -87,37 +84,26 @@ export const AgentDetail = ({ workspaceId }: AgentDetailProps) => {
 	const canEdit = userPermission === "EDIT" || userPermission === "OWNER";
 	const canDelete = userPermission === "OWNER";
 
-	const workspacePixel = useSessionPixel<
-		AgentWorkspace & Pick<Workspace, "workspace_id">
-	>(workspaceId ? `GetWorkspace(workspaceId=["${workspaceId}"]);` : "", {
-		onError: (_d, e) => {
-			toast.error(
-				t("workspace:detail.failedToLoad", {
-					error: getErrorMessage(
-						e,
-						t("workspace:messages.unknownError"),
-					),
-				}),
-			);
-		},
-	});
+	const agent = useAgentWorkspace(workspaceId);
 
-	if (
-		workspacePixel.status === "LOADING" ||
-		(workspacePixel.status === "SUCCESS" && !workspacePixel.data)
-	) {
-		return (
-			<div className="flex h-full w-full items-center justify-center">
-				<Spinner />
-			</div>
+	// a failed read is announced once, as it lands
+	useEffect(() => {
+		if (!agent.error) return;
+		toast.error(
+			t("workspace:detail.failedToLoad", {
+				error: getErrorMessage(
+					agent.error,
+					t("workspace:messages.unknownError"),
+				),
+			}),
 		);
-	}
+	}, [agent.error, t]);
 
-	if (workspacePixel.status === "ERROR" || !workspaceId) {
+	if (agent.status === "ERROR" || !workspaceId) {
 		return <Navigate to="/agent" />;
 	}
 
-	const workspace = workspacePixel.data;
+	const workspace = agent.workspace;
 	if (!workspace) {
 		return (
 			<div className="flex h-full w-full items-center justify-center">
@@ -277,7 +263,7 @@ export const AgentDetail = ({ workspaceId }: AgentDetailProps) => {
 								e.stopPropagation();
 								setIsDeleting(true);
 								try {
-									await chat.deleteWorkspace(workspaceId);
+									await deleteAgent(workspaceId);
 									navigate("/agent");
 								} catch (err) {
 									toast.error(

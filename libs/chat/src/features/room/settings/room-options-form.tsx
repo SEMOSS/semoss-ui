@@ -1,7 +1,11 @@
 import { Bot, ChevronDown, PlusIcon } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { EngineSelect, EngineSubtypeIcon } from "@semoss/shared";
+import {
+	EngineSelect,
+	EngineSubtypeIcon,
+	splitMcpByType,
+} from "@semoss/shared";
 import {
 	Button,
 	Field,
@@ -18,13 +22,15 @@ import {
 	zodResolver,
 } from "@semoss/ui/next";
 import { useChatConfig } from "../../chat/config/use-chat-config";
-import { canChooseAgentMode } from "../../conversation/composer/agent-mode-choice";
+import {
+	type ComposerSession,
+	saveAgentOverlay,
+} from "../../conversation/composer/use-composer-session";
 import { MCPOverlay } from "../../tools/mcp/mcp-overlay";
-import { isRemovableToolbox, splitMcpByType } from "../../tools/mcp/mcp-utils";
+import { getAgentLabel, isRemovableToolbox } from "../../tools/mcp/mcp-utils";
 import { RoomToolsDefaultSection } from "../../tools/settings/room-tools-default-section";
 import { RoomToolsToolboxesSection } from "../../tools/settings/room-tools-toolboxes-section";
 import { SectionInfoTooltip } from "../../tools/settings/section-info-tooltip";
-import type { RoomStore } from "../store/room.store";
 import { RoomSelectedResources } from "./room-selected-resources";
 
 /** The one field the form itself validates; every other control saves as it changes. */
@@ -35,30 +41,15 @@ type InstructionsValues = z.infer<typeof instructionsSchema>;
 
 /** Props for {@link RoomOptionsForm}. */
 interface RoomOptionsFormProps {
-	/** The model the room answers with. */
-	model: RoomStore["model"];
-	/** Told when the user picks another model. */
-	onModelChange: (model: RoomStore["model"]) => void;
-	/** The room's options: instructions, knowledge, toolboxes, and tools. */
-	options: RoomStore["options"];
-	/** Told of each change to the options, with only the changed ones. */
-	onOptionsChange: (options: Partial<RoomStore["options"]>) => void;
-	/** Whether the user can pick the room's agent. */
-	isAgentEditable?: boolean;
+	/** The room's or the new chat's model, options and agent, and how they change. */
+	session: ComposerSession;
 	/** Lock every edit while the current turn is in progress. */
 	disabled?: boolean;
-	/** Agent runs supply their own tools instead of the chat's default tools. */
-	isAgentMode?: boolean;
 	/**
 	 * Settings' Connectors section, the room's own toolbox, listed under
 	 * Tools; left out for a new room, whose toolbox is not settled yet.
 	 */
 	connectorsSection?: ReactNode;
-	/**
-	 * Offers Default Agent beside No Agent in the agent picker, and is called
-	 * with whether Default Agent is picked.
-	 */
-	onDefaultAgentChange?: (isDefaultAgent: boolean) => void;
 }
 
 /**
@@ -66,16 +57,13 @@ interface RoomOptionsFormProps {
  * assistant has. Changes apply as they are made.
  */
 export const RoomOptionsForm = ({
-	model,
-	onModelChange,
-	options,
-	onOptionsChange,
-	isAgentEditable = false,
+	session,
 	disabled = false,
-	isAgentMode = false,
 	connectorsSection,
-	onDefaultAgentChange,
 }: RoomOptionsFormProps) => {
+	const { model, options, agentTools, isAgentMode, onOptionsChange } =
+		session;
+	const isAgentEditable = session.agent.kind !== "fixed";
 	const { t } = useTranslation(["room", "common", "chatTools"]);
 	const { theme } = useChatConfig();
 	const id = useId();
@@ -89,10 +77,15 @@ export const RoomOptionsForm = ({
 		isOpen: boolean;
 	}>({ type: "KNOWLEDGE", isOpen: false });
 	const { knowledge, toolbox: toolboxes } = splitMcpByType(options.mcp);
+	const { knowledge: agentKnowledge, toolbox: agentToolboxes } =
+		splitMcpByType(agentTools);
 	// the room's own toolbox shows under Connectors, so only the agent's
-	// toolboxes and the ones the user added are listed here
-	const agentToolboxes = toolboxes.filter((item) => item.fromWorkspace);
-	const addedToolboxes = toolboxes.filter(isRemovableToolbox);
+	// toolboxes and the ones the user added are listed here; one the agent
+	// also brings is listed as the agent's
+	const agentToolIds = new Set(agentTools.map((tool) => tool.id));
+	const addedToolboxes = toolboxes.filter(
+		(item) => isRemovableToolbox(item) && !agentToolIds.has(item.id),
+	);
 	/** Removes one knowledge source or toolbox from the room. */
 	const handleRemove = (item: (typeof options.mcp)[number]): void => {
 		if (!disabled) {
@@ -104,13 +97,11 @@ export const RoomOptionsForm = ({
 	// the agent the room runs; an agent run with none picked uses the
 	// default agent
 	const agentName =
-		options.workspace?.name ||
-		options.workspace?.workspace_id ||
-		t(
-			isAgentMode
-				? "room:modes.defaultAgent"
-				: "room:menuWorkspace.selectAgent",
-		);
+		getAgentLabel({
+			workspace: options.workspace,
+			isAgentMode,
+			defaultAgentLabel: t("room:modes.defaultAgent"),
+		}) || t("room:menuWorkspace.selectAgent");
 	/** Saves the instructions when the form is submitted. */
 	const handleSubmit = (values: InstructionsValues): void => {
 		if (!disabled) onOptionsChange(values);
@@ -180,7 +171,7 @@ export const RoomOptionsForm = ({
 							value={model?.app_id || ""}
 							engineTypes={["MODEL"]}
 							metaFilters={[{ tag: "text-generation" }]}
-							onChange={onModelChange}
+							onChange={session.onModelChange}
 							popoverContentProps={{ align: "start" }}
 							id={`${id}-model`}
 							disabled={disabled}
@@ -226,6 +217,7 @@ export const RoomOptionsForm = ({
 				/>
 				<RoomSelectedResources
 					items={knowledge}
+					agentItems={agentKnowledge}
 					disabled={disabled}
 					onAdd={() =>
 						setOverlay({ type: "KNOWLEDGE", isOpen: true })
@@ -316,31 +308,13 @@ export const RoomOptionsForm = ({
 			<MCPOverlay
 				open={overlay.isOpen}
 				disabled={disabled}
-				allowDefaultAgent={canChooseAgentMode(theme.featureFlags)}
-				isDefaultAgent={
-					onDefaultAgentChange
-						? isAgentMode && !options.workspace
-						: undefined
-				}
+				agent={session.agent}
 				defaultTab={overlay.type}
 				values={options.mcp}
 				workspace={options.workspace ?? null}
-				isAgentEditable={isAgentEditable}
+				agentTools={agentTools}
 				onClose={(next) => {
-					if (next && !disabled) {
-						onOptionsChange({
-							mcp: next.mcp,
-							...(isAgentEditable && "workspace" in next
-								? { workspace: next.workspace ?? undefined }
-								: {}),
-						});
-						if (
-							onDefaultAgentChange &&
-							next.isDefaultAgent !== undefined
-						) {
-							onDefaultAgentChange(next.isDefaultAgent);
-						}
-					}
+					if (next && !disabled) saveAgentOverlay(session, next);
 					setOverlay((current) => ({
 						...current,
 						isOpen: false,

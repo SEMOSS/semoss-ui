@@ -37,6 +37,7 @@ const room = fakeStore({
 	roomId: "r1",
 	metadata: { name: "Quarterly plan", dateCreated: "" },
 	options: { instructions: "", mcp: [] },
+	agentTools: [],
 	theme: { featureFlags: {} },
 }) as unknown as RoomStore;
 

@@ -1,4 +1,5 @@
 import { createContext, type ReactNode, useContext, useState } from "react";
+import { listRoomTools } from "../../tools/mcp/mcp-utils";
 import { SaveAgentDialog } from "../settings/save-agent-dialog";
 import type { RoomStore } from "../store/room.store";
 import { useRoomSelector } from "../store/use-room-selector";
@@ -52,11 +53,15 @@ export const RoomActionsProvider = ({
 	room,
 	children,
 }: RoomActionsProviderProps) => {
-	const { roomId, instructions, mcps } = useRoomSelector(room, (current) => ({
-		roomId: current.roomId,
-		instructions: current.options.instructions,
-		mcps: current.options.mcp,
-	}));
+	const { roomId, instructions, roomTools, agentTools } = useRoomSelector(
+		room,
+		(current) => ({
+			roomId: current.roomId,
+			instructions: current.options.instructions,
+			roomTools: current.options.mcp,
+			agentTools: current.agentTools,
+		}),
+	);
 	const actions = useRoomActions(roomId);
 	const [isRenaming, setIsRenaming] = useState(false);
 	const [isDownloadOpen, setIsDownloadOpen] = useState(false);
@@ -76,7 +81,7 @@ export const RoomActionsProvider = ({
 			{children}
 			<SaveAgentDialog
 				systemPrompt={instructions}
-				mcps={mcps}
+				mcps={listRoomTools(roomTools, agentTools)}
 				open={isPublishOpen}
 				onOpenChange={setIsPublishOpen}
 			/>

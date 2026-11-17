@@ -23,12 +23,6 @@ test("removing a saved agent strips its defaults while retaining local Knowledge
 		mcp: [
 			{ id: "local", name: "Handbook", type: "VECTOR" },
 			{ id: "tool", name: "Calculator", type: "FUNCTION" },
-			{
-				id: "inherited",
-				name: "Search",
-				type: "FUNCTION",
-				fromWorkspace: true,
-			},
 		],
 	};
 	expect(clearAgentOptions(options)).toEqual({
@@ -37,7 +31,7 @@ test("removing a saved agent strips its defaults while retaining local Knowledge
 		harnessType: undefined,
 		instructions: "",
 		predefinedPrompts: [],
-		mcp: options.mcp.slice(0, 2),
 	});
-	expect(options.mcp).toHaveLength(3);
+	// the knowledge and tools the user added are kept as they are
+	expect(clearAgentOptions(options).mcp).toBe(options.mcp);
 });

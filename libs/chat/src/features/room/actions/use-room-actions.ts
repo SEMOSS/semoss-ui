@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useTranslation } from "@semoss/i18n";
+import { getPlaygroundRoomsPixel } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
@@ -95,7 +96,7 @@ export const useRoomActions = (roomId: string): RoomActions => {
 	const { chat } = useChatSession();
 	const { navigation } = useChatConfig();
 	const pinnedRooms = usePixel<{ ROOM_ID: string }[]>(
-		`META | GetPlaygroundRooms(pinned=[true], sort=["DESC"]);`,
+		getPlaygroundRoomsPixel({ pinned: true, sort: "DESC" }),
 		{ data: [] },
 	);
 	const roomCounter = useChatSelector(

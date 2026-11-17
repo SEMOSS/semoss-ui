@@ -21,6 +21,11 @@ const mocks = vi.hoisted(() => ({
 	run: vi.fn(),
 	upload: vi.fn(),
 }));
+/** The session's insight, running each task in one insight. */
+const mockSessionInsight = vi.hoisted(() => ({
+	withInsight: (task: (insightId: string) => Promise<unknown>) =>
+		task("insight-1"),
+}));
 /** Answers each pixel the pages read with this test's fixtures. */
 const mockPixel = vi.hoisted(() => (pixel: string) => ({
 	status: "SUCCESS",
@@ -35,8 +40,20 @@ vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
 vi.mock("react-router", () => ({ useNavigate: () => mocks.navigate }));
+// the create page saves through the chat's agent actions
+vi.mock("@semoss/chat", async (original) => ({
+	...(await original<typeof import("@semoss/chat")>()),
+	createAgent: mocks.createAgent,
+}));
+// Publish as Agent runs AddWorkspace in the session's insight
+vi.mock("@semoss/sdk", async (original) => ({
+	...(await original<typeof import("@semoss/sdk")>()),
+	addWorkspace: (_insightId: string, params: unknown) =>
+		mocks.addWorkspace(params),
+}));
 vi.mock("@semoss/sdk/react", async (original) => ({
 	...(await original<typeof import("@semoss/sdk/react")>()),
+	Session: { insight: mockSessionInsight },
 	usePixel: mockPixel,
 	useSessionPixel: mockPixel,
 	useIteratorPixel: () => ({
@@ -56,14 +73,7 @@ vi.mock("@semoss/shared", async (original) => ({
 
 /** The chat providers the pages read from, over this test's stub chat store. */
 const chatWrapper = ({ children }: { children: ReactNode }) => (
-	<ChatSessionProvider
-		store={
-			{
-				addWorkspace: mocks.addWorkspace,
-				createAgent: mocks.createAgent,
-			} as unknown as ChatStore
-		}
-	>
+	<ChatSessionProvider store={{} as unknown as ChatStore}>
 		<ChatConfigProvider
 			config={
 				{
@@ -106,6 +116,8 @@ test("saving an agent from a conversation validates and retains the form after a
 		screen.getByRole("button", { name: "workspace.publishButton" }),
 	);
 	await screen.findByText("workspace.publishError");
+	// the save reached AddWorkspace, so the error is its own
+	expect(mocks.addWorkspace).toHaveBeenCalledTimes(1);
 	expect(screen.getByLabelText("workspace.nameLabel")).toHaveValue(
 		"Saved agent",
 	);

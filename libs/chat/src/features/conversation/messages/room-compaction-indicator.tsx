@@ -65,7 +65,7 @@ export const RoomCompactionIndicator = ({
 						<TooltipTrigger asChild>
 							<div className="relative flex h-6 w-full cursor-default items-center justify-center overflow-hidden rounded-sm">
 								<div
-									className="absolute inset-0 opacity-[0.18]"
+									className="absolute inset-0 opacity-18"
 									style={STRIPE_STYLE}
 								/>
 								<div className="relative z-10 flex items-center gap-1.5 rounded bg-background px-2 text-muted-foreground text-xs leading-normal">
@@ -81,7 +81,7 @@ export const RoomCompactionIndicator = ({
 				) : (
 					<div className="relative flex h-6 w-full items-center justify-center overflow-hidden rounded-sm">
 						<div
-							className="absolute inset-0 opacity-[0.18]"
+							className="absolute inset-0 opacity-18"
 							style={STRIPE_STYLE}
 						/>
 						<div className="relative z-10 flex items-center gap-1.5 rounded bg-background px-2 text-muted-foreground text-xs leading-normal">

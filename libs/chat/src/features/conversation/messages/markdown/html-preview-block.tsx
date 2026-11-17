@@ -22,6 +22,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { copyTextToClipboard } from "@semoss/utility/clipboard";
+import { useLatestRef } from "@semoss/utility/react/use-latest-ref";
 import type { RoomStore } from "../../../room/store/room.store";
 import { BlockHeader } from "./block-header";
 import {
@@ -146,18 +147,14 @@ export const HtmlPreviewBlock = ({
 	);
 	const latestSafeHtmlRef = useRef(streamedHtml);
 	const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-	const isLoadingRef = useRef(!!isLoading);
+	// the throttle's timer reads whether the block still streams when it fires
+	const isLoadingRef = useLatestRef(!!isLoading);
 	const isScrollingRef = useRef(false);
 	const scrollStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
 		null,
 	);
 	// HTML that arrived while the user scrolled the preview, applied once they stop
 	const pendingScrollHtmlRef = useRef<string | null>(null);
-
-	// the throttle's timer reads whether the block still streams when it fires
-	useEffect(() => {
-		isLoadingRef.current = !!isLoading;
-	}, [isLoading]);
 
 	// the preview reports its scrolls; hold new HTML until 150ms after the last
 	useEffect(() => {
@@ -358,7 +355,7 @@ export const HtmlPreviewBlock = ({
 							/>
 							{isLoading && (
 								<div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-									<div className="flex items-center gap-2 rounded-md border border-border/70 bg-background/75 px-3 py-1 font-medium text-[11px] text-muted-foreground uppercase tracking-[0.08em] shadow-sm">
+									<div className="flex items-center gap-2 rounded-md border border-border/70 bg-background/75 px-3 py-1 font-medium text-muted-foreground text-xs uppercase tracking-wider shadow-sm">
 										<Spinner className="size-3" />
 										{t("blocks.loadingPreview")}
 									</div>
@@ -370,7 +367,7 @@ export const HtmlPreviewBlock = ({
 			<Dialog open={isFullViewOpen} onOpenChange={setIsFullViewOpen}>
 				<DialogContent
 					showOverlay={false}
-					className="!inset-0 !top-0 !start-0 !flex !h-[100dvh] !max-h-[100dvh] !w-[100dvw] !max-w-[100dvw] !translate-x-0 !translate-y-0 !flex-col !gap-3 !overflow-hidden !rounded-none !border-0 !p-3 sm:!w-[100dvw] sm:!max-w-[100dvw]"
+					className="!inset-0 !top-0 !start-0 !flex !h-dvh !max-h-dvh !w-dvw !max-w-dvw !translate-x-0 !translate-y-0 !flex-col !gap-3 !overflow-hidden !rounded-none !border-0 !p-3 sm:!w-dvw sm:!max-w-dvw"
 				>
 					<DialogHeader className="shrink-0 pe-8">
 						<DialogTitle>{t("blocks.htmlPreview")}</DialogTitle>
@@ -385,7 +382,7 @@ export const HtmlPreviewBlock = ({
 						/>
 						{isLoading && (
 							<div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-								<div className="flex items-center gap-2 rounded-md border border-border/70 bg-background/75 px-3 py-1 font-medium text-[11px] text-muted-foreground uppercase tracking-[0.08em] shadow-sm">
+								<div className="flex items-center gap-2 rounded-md border border-border/70 bg-background/75 px-3 py-1 font-medium text-muted-foreground text-xs uppercase tracking-wider shadow-sm">
 									<Spinner className="size-3" />
 									{t("blocks.loadingPreview")}
 								</div>

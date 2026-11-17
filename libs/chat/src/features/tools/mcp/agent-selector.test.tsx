@@ -44,7 +44,7 @@ function Picker({ disabled = false }: { disabled?: boolean }) {
 		<AgentSelector
 			value={value}
 			onChange={setValue}
-			allowDefaultAgent
+			choice={{ kind: "saved", withModeChoice: true }}
 			disabled={disabled}
 		/>
 	);
@@ -86,7 +86,7 @@ test("offered beside No Agent, Default Agent is its own choice and a saved agent
 			<AgentSelector
 				value={value}
 				onChange={setValue}
-				isDefaultAgent={isDefaultAgent}
+				choice={{ kind: "savedOrDefault", isDefaultAgent }}
 				onDefaultAgentChange={(next) => {
 					onDefaultAgentChange(next);
 					setIsDefaultAgent(next);

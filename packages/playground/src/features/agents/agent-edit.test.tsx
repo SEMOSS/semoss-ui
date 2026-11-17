@@ -24,10 +24,15 @@ const mocks = vi.hoisted(() => ({
 	editWorkspace: vi.fn(),
 	navigate: vi.fn(),
 }));
+/** The session's insight, running each task in one insight. */
+const mockSessionInsight = vi.hoisted(() => ({
+	withInsight: (task: (insightId: string) => Promise<unknown>) =>
+		task("insight-1"),
+}));
 /** Answers each pixel the pages read with this test's fixtures. */
-const mockPixel = vi.hoisted(() => (pixel: string) => ({
+const mockPixel = vi.hoisted(() => () => ({
 	status: "SUCCESS",
-	data: pixel.startsWith("GetWorkspace") ? mocks.workspace : [],
+	data: [],
 }));
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({
@@ -40,14 +45,23 @@ vi.mock("react-router", async (original) => ({
 	useParams: () => ({ workspaceId: mocks.workspaceId }),
 	useNavigate: () => mocks.navigate,
 }));
+// the edit page saves through the chat's agent actions
+vi.mock("@semoss/chat", async (original) => ({
+	...(await original<typeof import("@semoss/chat")>()),
+	editAgent: mocks.editWorkspace,
+}));
 vi.mock("@semoss/sdk", async (original) => ({
 	...(await original<typeof import("@semoss/sdk")>()),
 	getUserProjectPermission: async () => "OWNER",
+	// the agent the pages read, as the SDK reads it
+	getWorkspace: async () => mocks.workspace,
 }));
 vi.mock("@semoss/sdk/react", async (original) => ({
 	...(await original<typeof import("@semoss/sdk/react")>()),
 	usePixel: mockPixel,
 	useSessionPixel: mockPixel,
+	// stable, as the SDK's is
+	useSessionInsight: () => mockSessionInsight,
 	useIteratorPixel: () => ({
 		data: [],
 		next: vi.fn(),
@@ -69,9 +83,7 @@ vi.mock("@/features/agents/workspace-chat-list", () => ({
 
 /** The chat providers the pages read from, over this test's stub chat store. */
 const chatWrapper = ({ children }: { children: ReactNode }) => (
-	<ChatSessionProvider
-		store={{ editWorkspace: mocks.editWorkspace } as unknown as ChatStore}
-	>
+	<ChatSessionProvider store={{} as unknown as ChatStore}>
 		<ChatConfigProvider
 			config={
 				{
@@ -138,7 +150,7 @@ test("the existing editor saves all agent settings, retains failed edits, and re
 		)
 		.mockResolvedValueOnce(undefined);
 	render(<AgentEditPage />, { wrapper: chatWrapper });
-	const name = screen.getByLabelText("form.name");
+	const name = await screen.findByLabelText("form.name");
 	expect(name).toHaveValue("Research agent");
 	expect(screen.getByLabelText("about.instructions")).toHaveValue(
 		"First\nSecond",
@@ -212,7 +224,7 @@ test("refreshes preserve dirty edits while switching agents resets the full conf
 		.mockImplementation(() => "warning");
 	mocks.editWorkspace.mockResolvedValue("Some resources were skipped");
 	const view = render(<AgentEditPage />, { wrapper: chatWrapper });
-	fireEvent.change(screen.getByLabelText("form.name"), {
+	fireEvent.change(await screen.findByLabelText("form.name"), {
 		target: { value: "Unsaved name" },
 	});
 	mocks.workspace = { ...mocks.workspace, name: "Refetched name" };
@@ -227,7 +239,9 @@ test("refreshes preserve dirty edits while switching agents resets the full conf
 		prompts: [],
 	};
 	view.rerender(<AgentEditPage />);
-	expect(screen.getByLabelText("form.name")).toHaveValue("Second agent");
+	await waitFor(() =>
+		expect(screen.getByLabelText("form.name")).toHaveValue("Second agent"),
+	);
 	expect(screen.getByLabelText("about.greeting")).toHaveValue("");
 	fireEvent.change(screen.getByLabelText("form.name"), {
 		target: { value: "Second edited" },

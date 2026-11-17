@@ -1,8 +1,8 @@
 import type { PendingAgentAction } from "@semoss/sdk";
-import { StoreState } from "@semoss/utility/store";
 import type {
 	PixelMessageToolCallPart,
 	PixelMessageToolResultPart,
+	ToolOutcome,
 } from "../../../types";
 import type { RoomStore } from "../../room/store/room.store";
 // direct, not through the barrel: these are plain constants, and the barrel
@@ -11,6 +11,7 @@ import { ROOM_PANEL_TYPES } from "../../room/store/room-sidebar";
 import { MCP_EXECUTION_ASK } from "../../tools/mcp/mcp-constants";
 import { getToolAppId } from "../../tools/mcp/mcp-utils";
 import type { InputMessageStore } from "./input-message.store";
+import type { MessageKey } from "./message-map";
 import { ResponseMessageStore } from "./response-message.store";
 
 /**
@@ -53,11 +54,37 @@ export type ToolStatus =
 	| "SUCCESS"
 	| "ERROR";
 
+/**
+ * The status a call that ended this way has. Anything but an error or a
+ * cancel counts as a success, as a server tool's result with no status does.
+ *
+ * @param outcome - How the call ended.
+ * @returns Its status.
+ */
+export const toToolStatus = (outcome: ToolOutcome): ToolStatus =>
+	outcome === "error"
+		? "ERROR"
+		: outcome === "cancelled"
+			? "CANCELLED"
+			: "SUCCESS";
+
+/**
+ * Whether a call has finished: it succeeded, failed, or was cancelled. A call
+ * that has yet to run or is running has not.
+ *
+ * @param status - Where the call stands.
+ * @returns Whether it has settled.
+ */
+export const isToolSettled = (status: ToolStatus): boolean =>
+	status === "SUCCESS" || status === "ERROR" || status === "CANCELLED";
+
 /** Where a tool call shows: in the conversation, in the Workspace, or not at all. */
 export type ToolDisplay = "inline" | "sidebar" | "hidden";
 
 /** What a tool call holds. Every field is readonly. */
-export interface ToolSnapshot {
+export interface ToolData {
+	/** The call's id. */
+	readonly id: string;
 	/** Where the call stands. */
 	readonly status: ToolStatus;
 	/** The call's arguments, as the model sent them or the user edited them. */
@@ -68,12 +95,6 @@ export interface ToolSnapshot {
 	 * agent-harness.ts). Null for every call outside an agent run.
 	 */
 	readonly pendingAction: PendingAgentAction | null;
-	/**
-	 * Whether the call is still streaming in (name and arguments arriving over
-	 * SSE). Until the final part syncs it has no `_meta`, title, or parsed
-	 * arguments and is not interactive.
-	 */
-	readonly argumentsStreaming: boolean;
 	/** The partial JSON of `arguments` streamed so far; cleared by the final sync. */
 	readonly argumentsBuffer: string;
 	/** The wire name from the stream, shown until the final part brings the title. */
@@ -85,6 +106,8 @@ export interface ToolSnapshot {
 	readonly isStreamingPlaceholder: boolean;
 	/** The TOOL_CALL part, once one has synced. */
 	readonly part: PixelMessageToolCallPart | null;
+	/** The key of the message whose `parts` holds the TOOL_CALL, once one has synced. */
+	readonly messageKey: MessageKey | null;
 	/** The call's result, once it has one. */
 	readonly response: string;
 	/** Whether the call is open, in the conversation or the Workspace by `display`. */
@@ -93,28 +116,94 @@ export interface ToolSnapshot {
 	readonly isExpanded: boolean;
 	/** Where the call shows when it is open. */
 	readonly display: ToolDisplay;
+	/**
+	 * The call as the views read it (see {@link toToolJson}). Worked out again
+	 * whenever its part or streamed name changes, and for every call when the
+	 * room's options change.
+	 */
+	readonly json: PixelMessageToolCallPart["toolCall"];
 }
 
-/** A call before anything has synced. */
-const INITIAL_TOOL: ToolSnapshot = {
-	status: "INITIAL",
-	parameters: {},
-	pendingAction: null,
-	argumentsStreaming: false,
-	argumentsBuffer: "",
-	streamingName: "",
-	isStreamingPlaceholder: false,
-	part: null,
-	response: "",
-	isOpen: false,
-	isExpanded: false,
-	display: "sidebar",
+/**
+ * The call as the views read it.
+ *
+ * @param data - The call's id, part, and streamed name.
+ * @param decorateToolCall - The room's chat tools, which fill in a work
+ * folder or connector call's metadata from the room's options.
+ * @returns Its part's call, filled in by the room's chat tools, or one made
+ * from the wire name while it streams in.
+ */
+export const toToolJson = (
+	{
+		id,
+		part,
+		isStreamingPlaceholder,
+		streamingName,
+	}: Pick<
+		ToolData,
+		"id" | "part" | "isStreamingPlaceholder" | "streamingName"
+	>,
+	decorateToolCall: (
+		call: PixelMessageToolCallPart["toolCall"],
+	) => PixelMessageToolCallPart["toolCall"],
+): PixelMessageToolCallPart["toolCall"] => {
+	const call = part?.toolCall;
+	// server tools (run by the model provider, e.g. web_search) have no MCP
+	// _meta; make one so every reader sees the same shape
+	if (call?.server_tool) {
+		return buildServerToolJson(call);
+	}
+	// work folder and connector calls get their metadata from the room's
+	// chat tools; every other final part comes back as it is
+	if (call && !isStreamingPlaceholder) {
+		return decorateToolCall(call);
+	}
+	return {
+		id,
+		title: streamingName,
+		_meta: {
+			SMSS_MCP_EXECUTION: MCP_EXECUTION_ASK,
+			SMSS_PROJECT_NAME: "",
+			SMSS_PROJECT_ID: "",
+		},
+		name: streamingName,
+		original_name: streamingName,
+		description: "",
+	} as PixelMessageToolCallPart["toolCall"];
+};
+
+/**
+ * A call before anything has synced.
+ *
+ * @param id - The call's id.
+ * @returns Its data.
+ */
+export const initialToolData = (id: string): ToolData => {
+	const data = {
+		id,
+		status: "INITIAL",
+		parameters: {},
+		pendingAction: null,
+		argumentsBuffer: "",
+		streamingName: "",
+		isStreamingPlaceholder: false,
+		part: null,
+		messageKey: null,
+		response: "",
+		isOpen: false,
+		isExpanded: false,
+		display: "sidebar",
+	} as const;
+	// with no part there is nothing to decorate
+	return { ...data, json: toToolJson(data, (call) => call) };
 };
 
 /**
  * One tool call in a room, from its first streamed chunk to its result.
  *
- * Its state is a `StoreState`; read it in React with `useTool`.
+ * A view over the room: its state is the entry under its id in the room's
+ * `tools`, and its actions write there through the room. The room makes one
+ * per call (`room.getOrCreateTool`); read it in React with `useTool`.
  */
 export class ToolStore {
 	/** The room the call is in. */
@@ -123,23 +212,8 @@ export class ToolStore {
 	/** The call's id. */
 	readonly id: string;
 
-	private readonly state = new StoreState<ToolSnapshot>(INITIAL_TOOL);
-
 	/**
-	 * The last `json` and what it was made from, so reading it again returns
-	 * the same object until the call or the room's options change.
-	 */
-	private jsonCache: {
-		snapshot: ToolSnapshot;
-		options: RoomStore["options"];
-		value: PixelMessageToolCallPart["toolCall"];
-	} | null = null;
-
-	/** The message whose `parts` holds this call's TOOL_CALL. */
-	private toolMessage: ResponseMessageStore | null = null;
-
-	/**
-	 * @param room - The room the call is in.
+	 * @param room - The room the call is in, which already holds its data.
 	 * @param toolId - The call's id.
 	 */
 	constructor(room: RoomStore, toolId: string) {
@@ -147,17 +221,33 @@ export class ToolStore {
 		this.id = toolId;
 	}
 
-	/** The call's current state. */
-	getSnapshot = (): ToolSnapshot => this.state.getSnapshot();
+	/** What the view reads once the room has deleted its call; made on first need. */
+	private _empty: ToolData | undefined;
 
 	/**
-	 * Listen for changes to the call.
+	 * The call's current data, from the room, or a call that has synced
+	 * nothing once the room has deleted it, so a view held elsewhere never
+	 * throws.
+	 *
+	 * @returns The data.
+	 */
+	getSnapshot = (): ToolData => {
+		const data = this.room.getSnapshot().tools[this.id];
+		if (data) {
+			return data;
+		}
+		this._empty ??= initialToolData(this.id);
+		return this._empty;
+	};
+
+	/**
+	 * Listen for changes to the room, which holds the call.
 	 *
 	 * @param listener - Called after each change.
 	 * @returns Stops listening.
 	 */
 	subscribe = (listener: () => void): (() => void) =>
-		this.state.subscribe(listener);
+		this.room.subscribe(listener);
 
 	/** Where the call stands. */
 	get status(): ToolStatus {
@@ -172,11 +262,6 @@ export class ToolStore {
 	/** The agent run's action paused on this call, or null. */
 	get pendingAction(): PendingAgentAction | null {
 		return this.getSnapshot().pendingAction;
-	}
-
-	/** Whether the call is still streaming in. */
-	get argumentsStreaming(): boolean {
-		return this.getSnapshot().argumentsStreaming;
 	}
 
 	/** The partial JSON of the arguments streamed so far. */
@@ -216,7 +301,10 @@ export class ToolStore {
 
 	/** The message whose `parts` holds this call's TOOL_CALL. */
 	get message(): ResponseMessageStore | null {
-		return this.toolMessage;
+		const { messageKey } = this.getSnapshot();
+		const message =
+			messageKey === null ? null : this.room.getMessageByKey(messageKey);
+		return message instanceof ResponseMessageStore ? message : null;
 	}
 
 	/**
@@ -234,16 +322,7 @@ export class ToolStore {
 
 	/** The call as the views read it. */
 	get json(): PixelMessageToolCallPart["toolCall"] {
-		const snapshot = this.state.getSnapshot();
-		// a work folder call's metadata follows the room's default tool modes
-		const options = this.room.options;
-		const cache = this.jsonCache;
-		if (cache?.snapshot === snapshot && cache.options === options) {
-			return cache.value;
-		}
-		const value = this.toJson(snapshot);
-		this.jsonCache = { snapshot, options, value };
-		return value;
+		return this.getSnapshot().json;
 	}
 
 	/**
@@ -251,9 +330,7 @@ export class ToolStore {
 	 * wire data (id, raw name, partial arguments), so the call renders as a
 	 * generic loading state rather than its raw wire name. Never keyed off a
 	 * display field such as `title`: MCP tools need not declare one.
-	 *
-	 * Distinct from `argumentsStreaming`, which is true only while deltas
-	 * arrive: a call stays unresolved through the gap between the last chunk
+	 * A call stays unresolved through the gap between the last streamed chunk
 	 * and the final sync, which keeps it from flickering there.
 	 */
 	get isResolved(): boolean {
@@ -296,21 +373,22 @@ export class ToolStore {
 			message instanceof ResponseMessageStore
 		) {
 			const isStreamingPlaceholder = options?.placeholder === true;
-			this.toolMessage = message;
-			this.state.update((current) => {
-				const next = { ...current, isStreamingPlaceholder, part };
+			this.room.updateToolData(this.id, (current) => {
+				const json = toToolJson(
+					{ ...current, isStreamingPlaceholder, part },
+					this.room.chatTools.decorateToolCall,
+				);
 				return {
 					isStreamingPlaceholder,
 					part,
+					messageKey: message.key,
+					json,
 					parameters: part.toolCall.arguments || {},
 					// the resolved json is where a work folder call gets its
 					// metadata; server tools have no SMSS_MCP_UI, so sidebar
 					display:
-						this.toJson(next)._meta?.SMSS_MCP_UI?.displayLocation ||
-						"sidebar",
+						json._meta?.SMSS_MCP_UI?.displayLocation || "sidebar",
 					// the final part ends the streaming bookkeeping
-					argumentsStreaming:
-						isStreamingPlaceholder && current.argumentsStreaming,
 					argumentsBuffer: isStreamingPlaceholder
 						? current.argumentsBuffer
 						: "",
@@ -321,26 +399,18 @@ export class ToolStore {
 			});
 		} else if (part.type === "TOOL_RESULT") {
 			const { output, toolParameterValues, toolStatus } = part.toolResult;
-			this.state.update((current) => ({
+			this.room.updateToolData(this.id, (current) => ({
 				// server tool results do not echo the arguments back; keep the
 				// ones the TOOL_CALL brought
 				parameters: toolParameterValues ?? current.parameters,
 				response: output,
 				// server tool results usually have no status and come only on
 				// success; "paused" is a retired status, shown as cancelled
-				status:
-					toolStatus === "error"
-						? "ERROR"
-						: toolStatus === "cancelled" || toolStatus === "paused"
-							? "CANCELLED"
-							: "SUCCESS",
+				status: toToolStatus(
+					toolStatus === "paused" ? "cancelled" : toolStatus,
+				),
 			}));
 		}
-	};
-
-	/** The first streamed chunk arrived: the call is streaming in. */
-	beginStreaming = (): void => {
-		this.state.update({ argumentsStreaming: true, argumentsBuffer: "" });
 	};
 
 	/**
@@ -349,7 +419,7 @@ export class ToolStore {
 	 * @param name - The name.
 	 */
 	setStreamingName = (name: string): void => {
-		this.state.update({ streamingName: name });
+		this.room.updateToolData(this.id, { streamingName: name });
 	};
 
 	/**
@@ -358,14 +428,9 @@ export class ToolStore {
 	 * @param delta - The next piece of the arguments' JSON.
 	 */
 	appendStreamingArguments = (delta: string): void => {
-		this.state.update((current) => ({
+		this.room.updateToolData(this.id, (current) => ({
 			argumentsBuffer: current.argumentsBuffer + delta,
 		}));
-	};
-
-	/** No more deltas are coming; the parsed `_meta` arrives with the final sync. */
-	endStreaming = (): void => {
-		this.state.update({ argumentsStreaming: false });
 	};
 
 	/**
@@ -374,7 +439,7 @@ export class ToolStore {
 	 * @param status - The status.
 	 */
 	setStatus = (status: ToolStatus): void => {
-		this.state.update({ status });
+		this.room.updateToolData(this.id, { status });
 	};
 
 	/**
@@ -394,7 +459,7 @@ export class ToolStore {
 		response: string;
 		parameters?: Readonly<Record<string, unknown>>;
 	}): void => {
-		this.state.update((current) => ({
+		this.room.updateToolData(this.id, (current) => ({
 			status,
 			response,
 			parameters: parameters ?? current.parameters,
@@ -407,7 +472,7 @@ export class ToolStore {
 	 * @param parameters - The arguments.
 	 */
 	setParameters = (parameters: Readonly<Record<string, unknown>>): void => {
-		this.state.update({ parameters });
+		this.room.updateToolData(this.id, { parameters });
 	};
 
 	/**
@@ -416,7 +481,7 @@ export class ToolStore {
 	 * @param pendingAction - The decision it waits for, or null.
 	 */
 	setPendingAction = (pendingAction: PendingAgentAction | null): void => {
-		this.state.update({ pendingAction });
+		this.room.updateToolData(this.id, { pendingAction });
 	};
 
 	/**
@@ -425,7 +490,7 @@ export class ToolStore {
 	 * @param isOpen - Whether it is open.
 	 */
 	setIsOpen = (isOpen: boolean): void => {
-		this.state.update({ isOpen });
+		this.room.updateToolData(this.id, { isOpen });
 	};
 
 	/**
@@ -434,7 +499,7 @@ export class ToolStore {
 	 * @param isExpanded - Whether it is expanded.
 	 */
 	setIsExpanded = (isExpanded: boolean): void => {
-		this.state.update({ isExpanded });
+		this.room.updateToolData(this.id, { isExpanded });
 	};
 
 	/**
@@ -444,7 +509,7 @@ export class ToolStore {
 	 * @param display - Where to show it; where it shows now when left out.
 	 */
 	openTool = (display?: ToolDisplay): void => {
-		const current = this.state.getSnapshot();
+		const current = this.getSnapshot();
 		if (
 			current.isOpen &&
 			display !== undefined &&
@@ -452,7 +517,7 @@ export class ToolStore {
 		) {
 			this.closeTool();
 		}
-		this.state.update({
+		this.room.updateToolData(this.id, {
 			isOpen: true,
 			display: display ?? current.display,
 		});
@@ -469,52 +534,12 @@ export class ToolStore {
 
 	/** Close the call where it shows. */
 	closeTool = (): void => {
-		this.state.update({ isOpen: false, isExpanded: false });
-		if (this.state.getSnapshot().display === "sidebar") {
+		this.room.updateToolData(this.id, { isOpen: false, isExpanded: false });
+		if (this.getSnapshot().display === "sidebar") {
 			this.room.closeSidebarPanel(
 				ROOM_PANEL_TYPES.TOOL,
 				this.panelConfig,
 			);
 		}
-	};
-
-	/**
-	 * The call as the views read it, from a snapshot.
-	 *
-	 * @param snapshot - The call's state.
-	 * @returns Its part's call, filled in by the room's chat tools, or one made
-	 * from the wire name while it streams in.
-	 */
-	private toJson = ({
-		part,
-		isStreamingPlaceholder,
-		streamingName,
-	}: Pick<
-		ToolSnapshot,
-		"part" | "isStreamingPlaceholder" | "streamingName"
-	>): PixelMessageToolCallPart["toolCall"] => {
-		const call = part?.toolCall;
-		// server tools (run by the model provider, e.g. web_search) have no MCP
-		// _meta; make one so every reader sees the same shape
-		if (call?.server_tool) {
-			return buildServerToolJson(call);
-		}
-		// work folder and connector calls get their metadata from the room's
-		// chat tools; every other final part comes back as it is
-		if (call && !isStreamingPlaceholder) {
-			return this.room.chatTools.decorateToolCall(call);
-		}
-		return {
-			id: this.id,
-			title: streamingName,
-			_meta: {
-				SMSS_MCP_EXECUTION: MCP_EXECUTION_ASK,
-				SMSS_PROJECT_NAME: "",
-				SMSS_PROJECT_ID: "",
-			},
-			name: streamingName,
-			original_name: streamingName,
-			description: "",
-		} as PixelMessageToolCallPart["toolCall"];
 	};
 }

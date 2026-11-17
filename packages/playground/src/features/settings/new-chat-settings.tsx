@@ -3,12 +3,11 @@ import {
 	isNewChatMode,
 	offersAgentMode,
 	readDeploymentNewChatDefaults,
+	useAgentWorkspace,
 	useChatSelector,
 	useChatSession,
-	type Workspace,
 } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
-import { useSessionPixel } from "@semoss/sdk/react";
 import { ProjectSelect } from "@semoss/shared";
 import {
 	cn,
@@ -60,16 +59,10 @@ export const NewChatSettings = () => {
 	const defaultLabel = t("settings.general.newChat.default");
 
 	// the saved agent's name, for the picker's trigger
-	const agentPixel = useSessionPixel<Workspace | null>(
-		isAgentDefault && preferences.agentId
-			? `GetWorkspace(${JSON.stringify(preferences.agentId)});`
-			: "",
-		{ data: null },
+	const { workspace: agent } = useAgentWorkspace(
+		isAgentDefault ? preferences.agentId : null,
 	);
-	const agentName =
-		agentPixel.data?.workspace_id === preferences.agentId
-			? agentPixel.data.display_name || agentPixel.data.name
-			: "";
+	const agentName = agent ? agent.display_name || agent.name : "";
 
 	// a default the user can no longer see still shows, so it can be changed
 	const isModelMissing =

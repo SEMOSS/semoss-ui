@@ -35,7 +35,7 @@ export const RoomWorkbenchToggle = ({
 
 	const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
 		if (isInView) {
-			void room.closeSidebar();
+			room.closeSidebar();
 			return;
 		}
 		if (newRoomPanels) newRoomPanels.onOpenPanel({ kind: "workbench" });

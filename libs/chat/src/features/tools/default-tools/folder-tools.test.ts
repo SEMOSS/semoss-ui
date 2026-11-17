@@ -1,10 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { Blob as NodeBlob } from "node:buffer";
 import { getFolderPathName, getParentFolderPath } from "../folders/folder-path";
-import type {
-	FolderEntry,
-	WorkFolderProvider,
-} from "../folders/work-folder.types";
+import type { FolderEntry, RoomFolder } from "../folders/room-folder";
 import {
 	buildFolderToolDefinitions,
 	executeFolderTool,
@@ -21,7 +18,7 @@ import {
 const createMemoryFolder = (
 	files: Record<string, string>,
 	directories: string[] = [],
-): WorkFolderProvider & {
+): RoomFolder & {
 	files: Map<string, string>;
 	directories: Set<string>;
 } => {
@@ -38,9 +35,7 @@ const createMemoryFolder = (
 	const exists = (path: string) =>
 		path === "" || fileMap.has(path) || directorySet.has(path);
 
-	return {
-		files: fileMap,
-		directories: directorySet,
+	const folder: Pick<RoomFolder, keyof RoomFolder> = {
 		list: async (path) => {
 			if (path && !directorySet.has(path)) {
 				throw new DOMException("missing", "NotFoundError");
@@ -124,6 +119,10 @@ const createMemoryFolder = (
 			return null;
 		},
 	};
+	return Object.assign(folder as RoomFolder, {
+		files: fileMap,
+		directories: directorySet,
+	});
 };
 
 describe("getUsualFolderToolExecution", () => {
@@ -211,7 +210,6 @@ describe("executeFolderTool", () => {
 			folder,
 			FOLDER_TOOL_NAMES.LIST,
 			{},
-			"Reports",
 		);
 		expect(shallow.isError).toBe(false);
 		expect(
@@ -220,12 +218,9 @@ describe("executeFolderTool", () => {
 			),
 		).toEqual(["docs", "a.md"]);
 
-		const deep = await executeFolderTool(
-			folder,
-			FOLDER_TOOL_NAMES.LIST,
-			{ depth: 3 },
-			"Reports",
-		);
+		const deep = await executeFolderTool(folder, FOLDER_TOOL_NAMES.LIST, {
+			depth: 3,
+		});
 		expect(
 			(deep.payload.entries as { path: string }[]).map((row) => row.path),
 		).toContain("docs/deep/c.md");
@@ -237,7 +232,6 @@ describe("executeFolderTool", () => {
 			folder,
 			FOLDER_TOOL_NAMES.READ,
 			{ path: "notes.txt", offset: 2, limit: 1 },
-			"Reports",
 		);
 		expect(outcome.isError).toBe(false);
 		expect(outcome.payload.content).toBe("two\n");
@@ -250,7 +244,6 @@ describe("executeFolderTool", () => {
 			folder,
 			FOLDER_TOOL_NAMES.READ,
 			{ path: "deck.pptx" },
-			"Reports",
 		);
 		expect(outcome.isError).toBe(true);
 		expect(String(outcome.payload.error)).toContain("attach");
@@ -262,7 +255,6 @@ describe("executeFolderTool", () => {
 			folder,
 			FOLDER_TOOL_NAMES.READ,
 			{ path: "../outside.md" },
-			"Reports",
 		);
 		expect(outcome.isError).toBe(true);
 		expect(String(outcome.payload.error)).toContain(
@@ -281,7 +273,6 @@ describe("executeFolderTool", () => {
 			folder,
 			FOLDER_TOOL_NAMES.SEARCH,
 			{ query: "budget" },
-			"Reports",
 		);
 		expect(
 			(byName.payload.matches as { path: string }[]).map(
@@ -293,7 +284,6 @@ describe("executeFolderTool", () => {
 			folder,
 			FOLDER_TOOL_NAMES.SEARCH,
 			{ query: "budget", content: true },
-			"Reports",
 		);
 		const paths = (byContent.payload.matches as { path: string }[]).map(
 			(row) => row.path,
@@ -308,29 +298,28 @@ describe("executeFolderTool", () => {
 			folder,
 			FOLDER_TOOL_NAMES.WRITE,
 			{ path: "out/summary.md", content: "# Summary" },
-			"Reports",
 		);
 		expect(created.isError).toBe(false);
-		expect(created.changes[0]?.kind).toBe("created");
+		expect(created.hasChanges).toBe(true);
+		expect(created.payload.created).toBe(true);
 		expect(folder.files.get("out/summary.md")).toBe("# Summary");
 
 		const modified = await executeFolderTool(
 			folder,
 			FOLDER_TOOL_NAMES.WRITE,
 			{ path: "out/summary.md", content: "# Summary v2" },
-			"Reports",
 		);
-		expect(modified.changes[0]?.kind).toBe("modified");
+		expect(modified.hasChanges).toBe(true);
+		expect(modified.payload.created).toBe(false);
 	});
 
 	test("edits exact text and refuses a missing match", async () => {
 		const folder = createMemoryFolder({ "a.md": "Hello World" });
-		const edited = await executeFolderTool(
-			folder,
-			FOLDER_TOOL_NAMES.EDIT,
-			{ path: "a.md", old_text: "World", new_text: "There" },
-			"Reports",
-		);
+		const edited = await executeFolderTool(folder, FOLDER_TOOL_NAMES.EDIT, {
+			path: "a.md",
+			old_text: "World",
+			new_text: "There",
+		});
 		expect(edited.isError).toBe(false);
 		expect(folder.files.get("a.md")).toBe("Hello There");
 
@@ -338,7 +327,6 @@ describe("executeFolderTool", () => {
 			folder,
 			FOLDER_TOOL_NAMES.EDIT,
 			{ path: "a.md", old_text: "World", new_text: "Again" },
-			"Reports",
 		);
 		expect(missing.isError).toBe(true);
 		expect(folder.files.get("a.md")).toBe("Hello There");
@@ -350,7 +338,6 @@ describe("executeFolderTool", () => {
 			folder,
 			FOLDER_TOOL_NAMES.DELETE,
 			{ path: "old" },
-			"Reports",
 		);
 		expect(refused.isError).toBe(true);
 		expect(folder.files.has("old/a.md")).toBe(true);
@@ -359,7 +346,6 @@ describe("executeFolderTool", () => {
 			folder,
 			FOLDER_TOOL_NAMES.DELETE,
 			{ path: "old", recursive: "true" },
-			"Reports",
 		);
 		expect(deleted.isError).toBe(false);
 		expect(folder.files.has("old/a.md")).toBe(false);
@@ -371,7 +357,6 @@ describe("executeFolderTool", () => {
 			folder,
 			FOLDER_TOOL_NAMES.DELETE,
 			{ path: "/" },
-			"Reports",
 		);
 		expect(outcome.isError).toBe(true);
 		expect(folder.files.has("a.md")).toBe(true);
@@ -383,14 +368,10 @@ describe("executeFolderTool", () => {
 			folder,
 			FOLDER_TOOL_NAMES.MOVE,
 			{ from: "draft.md", to: "final.md" },
-			"Reports",
 		);
 		expect(outcome.isError).toBe(false);
-		expect(outcome.changes[0]).toMatchObject({
-			kind: "moved",
-			from: "draft.md",
-			path: "final.md",
-		});
+		expect(outcome.hasChanges).toBe(true);
+		expect(outcome.payload).toEqual({ from: "draft.md", to: "final.md" });
 		expect(folder.files.has("final.md")).toBe(true);
 	});
 });

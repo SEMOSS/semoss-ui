@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { type ReactNode, useState } from "react";
 import { expect, test, vi } from "vitest";
+import type { AgentChoice } from "../../tools/mcp/agent-choice";
 import { RoomToolsConnectorsSection } from "../../tools/settings/room-tools-connectors-section";
 import { useRoomToolbox } from "../../tools/settings/use-room-toolbox";
 import type { RoomStore } from "../store/room.store";
@@ -28,13 +29,13 @@ vi.mock("../../tools/mcp/mcp-overlay", () => ({
 		open,
 		defaultTab,
 		values,
-		isDefaultAgent,
+		agent,
 		onClose,
 	}: {
 		open: boolean;
 		defaultTab: string;
 		values: RoomStore["options"]["mcp"];
-		isDefaultAgent?: boolean;
+		agent: AgentChoice;
 		onClose: (next?: {
 			mcp: RoomStore["options"]["mcp"];
 			workspace?: null;
@@ -45,7 +46,9 @@ vi.mock("../../tools/mcp/mcp-overlay", () => ({
 			<div
 				role="dialog"
 				aria-label={defaultTab}
-				data-default-agent={String(isDefaultAgent)}
+				data-default-agent={String(
+					agent.kind === "savedOrDefault" && agent.isDefaultAgent,
+				)}
 			>
 				<button type="button" onClick={() => onClose()}>
 					Cancel
@@ -77,54 +80,56 @@ vi.mock("../../tools/settings/use-room-toolbox", () => ({
 	useRoomToolbox: vi.fn(),
 }));
 
-/** Knowledge, an added toolbox, an agent's toolbox and knowledge, and the room's own. */
+/** Knowledge, an added toolbox, and the room's own. */
 const options: RoomStore["options"] = {
 	instructions: "Keep this instruction",
 	predefinedPrompts: [],
 	mcp: [
 		{ id: "knowledge", name: "Handbook", type: "VECTOR" },
 		{ id: "tool", name: "Calculator", type: "FUNCTION" },
-		{
-			id: "agent-tool",
-			name: "Agent search",
-			type: "FUNCTION",
-			fromWorkspace: true,
-		},
-		{
-			id: "agent",
-			name: "Inherited search",
-			type: "VECTOR",
-			fromWorkspace: true,
-		},
+		// the agent brings this one too, so it is listed as the agent's
+		{ id: "agent", name: "Room copy", type: "VECTOR" },
 		{ id: "room", name: "Room files", type: "ROOM", fromRoom: true },
 	],
 };
+
+/** The agent's toolbox and knowledge. */
+const agentTools: RoomStore["agentTools"] = [
+	{ id: "agent-tool", name: "Agent search", type: "FUNCTION" },
+	{ id: "agent", name: "Inherited search", type: "VECTOR" },
+];
 /** The form over local state, as a room keeps its options, reporting each change. */
 function Settings({
 	disabled = false,
 	isAgentMode = false,
 	initialOptions = options,
+	initialAgentTools = agentTools,
 	connectorsSection,
 	onOptionsChange,
 }: {
 	disabled?: boolean;
 	isAgentMode?: boolean;
 	initialOptions?: RoomStore["options"];
+	initialAgentTools?: RoomStore["agentTools"];
 	connectorsSection?: ReactNode;
 	onOptionsChange?: (next: Partial<RoomStore["options"]>) => void;
 }) {
 	const [value, setValue] = useState(initialOptions);
 	return (
 		<RoomOptionsForm
-			model={null}
-			onModelChange={vi.fn()}
-			options={value}
-			onOptionsChange={(next) => {
-				onOptionsChange?.(next);
-				setValue((previous) => ({ ...previous, ...next }));
+			session={{
+				model: null,
+				onModelChange: vi.fn(),
+				options: value,
+				agentTools: initialAgentTools,
+				onOptionsChange: (next) => {
+					onOptionsChange?.(next);
+					setValue((previous) => ({ ...previous, ...next }));
+				},
+				isAgentMode,
+				agent: { kind: "fixed" },
 			}}
 			disabled={disabled}
-			isAgentMode={isAgentMode}
 			connectorsSection={connectorsSection}
 		/>
 	);
@@ -142,6 +147,19 @@ test("lists separate selected resources and removes only the chosen local select
 		name: "sections.agent.title",
 	});
 	expect(within(knowledge).getByText("Handbook")).toBeVisible();
+	// the agent's knowledge comes first, and hides the room's of the same id
+	expect(
+		within(knowledge)
+			.getAllByRole("listitem")
+			.map((item) => item.textContent),
+	).toEqual([
+		expect.stringContaining("Inherited search"),
+		expect.stringContaining("Handbook"),
+	]);
+	expect(within(knowledge).queryByText("Room copy")).toBeNull();
+	expect(
+		within(knowledge).getByText("common:badges.fromAgent"),
+	).toBeVisible();
 	expect(within(toolboxes).getByText("Calculator")).toBeVisible();
 	expect(within(toolboxes).queryByText("Agent search")).toBeNull();
 	expect(within(agent).getByText("Agent search")).toBeVisible();
@@ -289,6 +307,7 @@ test("leaves out the Agent and Toolboxes sections when they hold nothing", () =>
 				...options,
 				mcp: [{ id: "knowledge", name: "Handbook", type: "VECTOR" }],
 			}}
+			initialAgentTools={[]}
 		/>,
 	);
 	expect(
@@ -363,15 +382,17 @@ test("the Connectors section's Refresh and Sign In never submit the form", () =>
 test("a new chat's Settings reports Default Agent and names it once picked", () => {
 	const onDefaultAgentChange = vi.fn();
 	const onOptionsChange = vi.fn();
-	const props = {
+	const session = {
 		model: null,
 		onModelChange: vi.fn(),
 		options,
+		agentTools: [],
 		onOptionsChange,
-		isAgentEditable: true,
+		isAgentMode: false,
+		agent: { kind: "savedOrDefault", isDefaultAgent: false } as const,
 		onDefaultAgentChange,
 	};
-	const { rerender } = render(<RoomOptionsForm {...props} />);
+	const { rerender } = render(<RoomOptionsForm session={session} />);
 	const agent = screen.getByRole("button", { name: "room:form.agentLabel" });
 	expect(agent).toHaveTextContent("room:menuWorkspace.selectAgent");
 	fireEvent.click(agent);
@@ -385,7 +406,15 @@ test("a new chat's Settings reports Default Agent and names it once picked", () 
 		workspace: undefined,
 	});
 	expect(onDefaultAgentChange).toHaveBeenCalledExactlyOnceWith(true);
-	rerender(<RoomOptionsForm {...props} isAgentMode />);
+	rerender(
+		<RoomOptionsForm
+			session={{
+				...session,
+				isAgentMode: true,
+				agent: { kind: "savedOrDefault", isDefaultAgent: true },
+			}}
+		/>,
+	);
 	expect(
 		screen.getByRole("button", { name: "room:form.agentLabel" }),
 	).toHaveTextContent("room:modes.defaultAgent");

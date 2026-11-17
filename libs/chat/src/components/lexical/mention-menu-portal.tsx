@@ -1,6 +1,7 @@
 import type React from "react";
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { useLatestRef } from "@semoss/utility/react/use-latest-ref";
 import type { MentionMenuPosition } from "./mention-plugin";
 
 /** The menu's width in px; matches its `w-72`. */
@@ -36,8 +37,7 @@ export const MentionMenuPortal: React.FC<MentionMenuPortalProps> = ({
 }) => {
 	const ref = useRef<HTMLDivElement>(null);
 	// Stable ref so the effect never needs to re-register
-	const onCloseRef = useRef(onClose);
-	onCloseRef.current = onClose;
+	const onCloseRef = useLatestRef(onClose);
 
 	useEffect(() => {
 		const handlePointerDown = (e: PointerEvent) => {

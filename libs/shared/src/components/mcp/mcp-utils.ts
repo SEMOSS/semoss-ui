@@ -141,7 +141,7 @@ export const isKnowledgeMcp = (mcp: Pick<MCPConfig, "type">): boolean =>
 	mcp.type === "VECTOR";
 
 export const splitMcpByType = (
-	mcps: MCPConfig[],
+	mcps: readonly MCPConfig[],
 ): { knowledge: MCPConfig[]; toolbox: MCPConfig[] } => {
 	const knowledge: MCPConfig[] = [];
 	const toolbox: MCPConfig[] = [];

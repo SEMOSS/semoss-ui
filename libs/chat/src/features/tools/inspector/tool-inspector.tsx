@@ -7,7 +7,10 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
-import type { ToolStore } from "../../conversation/store/tool.store";
+import {
+	isToolSettled,
+	type ToolStore,
+} from "../../conversation/store/tool.store";
 import { useTool } from "../../conversation/store/use-tool";
 import { useRoomSelector } from "../../room/store/use-room-selector";
 import { isAskExecutionMode } from "../mcp/mcp-utils";
@@ -58,7 +61,7 @@ export const ToolInspector = ({
 		execution: tool.json._meta?.SMSS_MCP_EXECUTION,
 	}));
 	const response = responseProp ?? toolResponse;
-	const isCompleted = ["SUCCESS", "ERROR", "CANCELLED"].includes(status);
+	const isCompleted = isToolSettled(status);
 	// until the user picks a tab, a finished call opens on its output
 	const activeTab = selectedTab ?? (isCompleted ? "output" : "inputs");
 	const statusLabel = t(

@@ -34,7 +34,17 @@ export { useChatConfig } from "./features/chat/config/use-chat-config";
 export { ChatProvider } from "./features/chat/provider/chat-provider";
 export { ChatSessionProvider } from "./features/chat/provider/chat-session-provider";
 export { useChatSession } from "./features/chat/provider/use-chat-session";
+// Agents: create, save, and delete one in the session's insight
+export {
+	createAgent,
+	deleteAgent,
+	editAgent,
+} from "./features/chat/store/agent-actions";
 export { ChatStore } from "./features/chat/store/chat.store";
+export {
+	type AgentWorkspaceRead,
+	useAgentWorkspace,
+} from "./features/chat/store/use-agent-workspace";
 export { useChatSelector } from "./features/chat/store/use-chat-selector";
 export { useCreateChatStore } from "./features/chat/store/use-create-chat-store";
 // Connectors: sign in, the catalog, the user's connector tools, and a service's icon
@@ -50,10 +60,10 @@ export {
 	type ConnectorServiceId,
 	getConnectorProvider,
 	getConnectorService,
-	getConnectorServices,
 	sanitizeConnectorServices,
 } from "./features/connectors/store/connector.catalog";
 export {
+	getConnectorServices,
 	readUserConnectorTools,
 	writeUserConnectorTools,
 } from "./features/connectors/store/connector-tools";

@@ -1,13 +1,10 @@
 import {
 	ChevronRightIcon,
-	DownloadIcon,
 	ExternalLinkIcon,
-	MoreVertical,
 	Search,
 	StarIcon,
-	TrashIcon,
 } from "lucide-react";
-import { type MouseEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useSessionIteratorPixel } from "@semoss/sdk/react";
 import {
@@ -16,10 +13,6 @@ import {
 	CollapsibleContent,
 	CollapsibleTrigger,
 	cn,
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
 	Muted,
 	ScrollArea,
 	SidebarContent,
@@ -27,8 +20,6 @@ import {
 	SidebarGroupContent,
 	SidebarGroupLabel,
 	SidebarMenu,
-	SidebarMenuButton,
-	SidebarMenuItem,
 	Spinner,
 	Tooltip,
 	TooltipContent,
@@ -37,28 +28,24 @@ import {
 	useCacheState,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
-import { parseTimestampWithUtcDefault } from "@semoss/utility/date";
+import { useLatestRef } from "@semoss/utility/react/use-latest-ref";
 import { useChatConfig } from "../../chat/config/use-chat-config";
 import { useChatSession } from "../../chat/provider/use-chat-session";
 import { useChatSelector } from "../../chat/store/use-chat-selector";
 import { DownloadConversationDialog } from "../../room/actions/download-conversation-dialog";
-import {
-	renameRoom,
-	toggleRoomFavorite,
-} from "../../room/actions/use-room-actions";
-import { RoomName } from "../../room/header/room-name";
 import { RoomAgentAvatar } from "./room-agent-avatar";
 import {
 	buildPlaygroundRoomsPixel,
-	getRoomDate,
 	groupRoomList,
 	type RoomListHeading,
 	type RoomListItem,
 } from "./room-list-groups";
+import { RoomListRow } from "./room-list-row";
 import {
 	ROOM_LIST_ACTION_CLASS,
 	RoomListViewMenu,
 } from "./room-list-view-menu";
+import { useRoomListScroll } from "./use-room-list-scroll";
 import { useRoomListView } from "./use-room-list-view";
 
 /** Whether the shortcut keys read ⌘ (Apple) or Ctrl. */
@@ -117,8 +104,6 @@ export const RoomList = ({
 	const collapsedKeys = new Set(
 		isStringList(storedCollapsed) ? storedCollapsed : [],
 	);
-	// the room whose actions menu is open, from its ⋯ button or a right click
-	const [menuRoomId, setMenuRoomId] = useState<string | null>(null);
 	const { chat } = useChatSession();
 	const { roomCounter, optimisticRoomMap } = useChatSelector(
 		chat,
@@ -128,16 +113,10 @@ export const RoomList = ({
 		}),
 	);
 	const isChatHistoryHidden = !!theme.featureFlags?.hideChatHistory;
-	// The last scroll position is kept in a ref, so scrolling never re-renders
-	// the nav, and put back only when the sidebar opens again.
-	const savedScrollRef = useRef(0);
-	const scrollElementRef = useRef<HTMLDivElement | null>(null);
-
 	// Which view the rows on screen were loaded for. Until the first page of a
 	// new view lands, the old rows stay, dimmed, and infinite scroll waits.
 	const viewKey = `${view.sortBy}:${view.sortDir}:${view.groupBy}`;
-	const viewKeyRef = useRef(viewKey);
-	viewKeyRef.current = viewKey;
+	const viewKeyRef = useLatestRef(viewKey);
 	const [loadedViewKey, setLoadedViewKey] = useState(viewKey);
 	const isViewLoading = loadedViewKey !== viewKey;
 
@@ -184,19 +163,6 @@ export const RoomList = ({
 		},
 	});
 
-	// one passive listener per viewport; it only records where the list is
-	useEffect(() => {
-		const element = scrollElementRef.current;
-		if (!element || !isVisible) {
-			return;
-		}
-		const handleScroll = () => {
-			savedScrollRef.current = element.scrollTop;
-		};
-		element.addEventListener("scroll", handleScroll, { passive: true });
-		return () => element.removeEventListener("scroll", handleScroll);
-	}, [isVisible]);
-
 	// Skip the reset on first mount — the iterators already fetch on
 	// init, so resetting here would cause a duplicate request. Subsequent
 	// runs (when `roomCounter` increments after a new chat is created)
@@ -210,25 +176,7 @@ export const RoomList = ({
 			return;
 		}
 		getRooms.reset();
-		if (scrollElementRef.current) {
-			scrollElementRef.current.scrollTop = 0;
-		}
-		savedScrollRef.current = 0;
 	}, [getRooms.reset, roomCounter]);
-
-	// A new order or grouping starts at the top; the iterator already reloads
-	// from its first page for the new view
-	const shownViewKeyRef = useRef(viewKey);
-	useEffect(() => {
-		if (shownViewKeyRef.current === viewKey) {
-			return;
-		}
-		shownViewKeyRef.current = viewKey;
-		if (scrollElementRef.current) {
-			scrollElementRef.current.scrollTop = 0;
-		}
-		savedScrollRef.current = 0;
-	}, [viewKey]);
 
 	// Once the refetch returns a room we were showing optimistically, drop the
 	// optimistic entry so the store's map doesn't grow unbounded across a
@@ -242,27 +190,12 @@ export const RoomList = ({
 		});
 	}, [getRooms.data, chat]);
 
-	// put the list back where it was when the sidebar opens again
-	useEffect(() => {
-		const scrollElement = scrollElementRef.current;
-		if (!scrollElement || !isVisible || savedScrollRef.current === 0) {
-			return;
-		}
-		const frame = requestAnimationFrame(() => {
-			scrollElement.scrollTop = savedScrollRef.current;
-		});
-		return () => cancelAnimationFrame(frame);
-	}, [isVisible]);
-
-	// Wire infinite scroll once the sidebar becomes visible. The
-	// viewportRef callback only fires on mount, so when the mobile
-	// Sheet opens after initial mount, this effect re-registers the
-	// scroll target with useInfiniteScroll.
-	useEffect(() => {
-		if (isVisible && scrollElementRef.current) {
-			setScroll(scrollElementRef.current);
-		}
-	}, [isVisible, setScroll]);
+	// a new view or a refetch starts the list at the top
+	const { viewportRef } = useRoomListScroll(
+		isVisible,
+		`${viewKey}#${roomCounter}`,
+		setScroll,
+	);
 
 	// Rooms optimistically shown before their first message has persisted.
 	// Drop any that the server has since returned (real data wins).
@@ -324,15 +257,6 @@ export const RoomList = ({
 		}
 	};
 
-	// toggleRoomFavorite bumps roomCounter, which the effect above watches to
-	// refetch the list
-	const handleToggleFavorite = (roomId: string, isFavorite: boolean) =>
-		toggleRoomFavorite(chat, roomId, isFavorite, t);
-
-	const handleStartRename = (roomId: string) => setEditingRoomId(roomId);
-
-	const handleStopRename = () => setEditingRoomId(null);
-
 	// the room leaves the list at once, and comes back if the delete fails
 	const handleDeleteRoom = async (roomId: string) => {
 		try {
@@ -360,29 +284,10 @@ export const RoomList = ({
 		}
 	};
 
-	// a plain click opens the room in place; a modified or middle click is the
-	// browser's, so the link still opens in a new tab
-	const handleOpenRoom = (
-		event: MouseEvent<HTMLAnchorElement>,
-		roomId: string,
-	) => {
-		if (
-			event.button !== 0 ||
-			event.metaKey ||
-			event.ctrlKey ||
-			event.shiftKey ||
-			event.altKey
-		) {
-			return;
-		}
-		event.preventDefault();
-		navigation.openRoom(roomId);
-	};
-
 	return (
 		<>
 			<SidebarContent
-				className="min-h-[120px] flex-1 overflow-hidden pe-2"
+				className="min-h-30 flex-1 overflow-hidden pe-2"
 				data-tour="tour-chat-history"
 			>
 				<div className="flex items-center justify-between gap-2 ps-6 pe-1 group-data-[collapsible=icon]:hidden">
@@ -423,20 +328,7 @@ export const RoomList = ({
 				</div>
 				<ScrollArea
 					className="[&_[data-slot=scroll-area-viewport]>div]:block! min-h-0 flex-1"
-					viewportRef={(ele) => {
-						if (ele) {
-							scrollElementRef.current = ele;
-							// Only wire infinite scroll when the sidebar is
-							// actually visible. On mobile the sidebar mounts
-							// inside a closed Sheet with 0-height viewport;
-							// the IntersectionObserver would see the sentinel
-							// as always-in-view and fire next() repeatedly,
-							// pulling every page in rapid succession.
-							if (isVisible) {
-								setScroll(ele);
-							}
-						}
-					}}
+					viewportRef={viewportRef}
 				>
 					{isVisible && getRooms.isError && (
 						<div className="px-2 py-4 text-center">
@@ -522,270 +414,50 @@ export const RoomList = ({
 									<CollapsibleContent>
 										<SidebarGroupContent>
 											<SidebarMenu className="gap-0">
-												{rooms.map((room) => {
-													const roomId = room.ROOM_ID;
-													const date = theme.sidebar
-														.chatHistoryDate
-														? parseTimestampWithUtcDefault(
-																getRoomDate(
-																	room,
-																),
-															)
-																.toDate()
-																.toLocaleString(
-																	undefined,
-																	{
-																		month: "numeric",
-																		day: "numeric",
-																		year: "numeric",
-																		hour: "numeric",
-																		minute: "2-digit",
-																		hour12: true,
-																	},
-																)
-														: null;
-													const isFavorite =
-														room.PINNED || false;
-													// grouped, favorites lead their group instead of a section
-													const shouldShowFavoriteMark =
-														isGrouped && isFavorite;
-													const isEditing =
-														editingRoomId ===
-														roomId;
-
-													// the same name, editable in place, whether or not it is being renamed
-													const roomName = (
-														<RoomName
-															name={
-																room.ROOM_NAME ??
-																""
+												{rooms.map((room) =>
+													// deleted here, waiting for the refetch to drop it
+													deletedRoomIds.has(
+														room.ROOM_ID,
+													) ? null : (
+														<RoomListRow
+															key={room.ROOM_ID}
+															room={room}
+															isActive={
+																activeRoomId ===
+																room.ROOM_ID
 															}
-															placeholder={t(
-																"messages.untitled",
-															)}
 															isRenaming={
-																isEditing
+																editingRoomId ===
+																room.ROOM_ID
+															}
+															// grouped, favorites lead their group instead of a section
+															shouldShowFavoriteMark={
+																isGrouped &&
+																!!room.PINNED
 															}
 															onStartRename={() =>
-																handleStartRename(
-																	roomId,
+																setEditingRoomId(
+																	room.ROOM_ID,
 																)
 															}
-															onRename={(
-																nextName,
-															) =>
-																renameRoom(
-																	chat,
-																	roomId,
-																	nextName,
-																	t,
+															onStopRename={() =>
+																setEditingRoomId(
+																	null,
 																)
 															}
-															onStopRename={
-																handleStopRename
+															onDownload={() =>
+																setDownloadRoomId(
+																	room.ROOM_ID,
+																)
 															}
-															className={
-																isEditing
-																	? "h-8 max-w-none flex-1"
-																	: "min-w-0 flex-1 font-medium text-sm leading-tight"
+															onDelete={() =>
+																void handleDeleteRoom(
+																	room.ROOM_ID,
+																)
 															}
 														/>
-													);
-
-													// deleted here, waiting for the refetch to drop it
-													if (
-														deletedRoomIds.has(
-															roomId,
-														)
-													) {
-														return null;
-													}
-
-													return (
-														<SidebarMenuItem
-															key={roomId}
-															className="group/room relative flex"
-														>
-															{isEditing ? (
-																roomName
-															) : (
-																<>
-																	<SidebarMenuButton
-																		asChild
-																		isActive={
-																			activeRoomId ===
-																			roomId
-																		}
-																	>
-																		<a
-																			className={cn(
-																				"flex h-auto flex-col items-start justify-center px-2 py-1",
-																				date &&
-																					"gap-1",
-																			)}
-																			href={navigation.roomHref(
-																				roomId,
-																			)}
-																			onClick={(
-																				event,
-																			) =>
-																				handleOpenRoom(
-																					event,
-																					roomId,
-																				)
-																			}
-																			onContextMenu={(
-																				event,
-																			) => {
-																				event.preventDefault();
-																				setMenuRoomId(
-																					roomId,
-																				);
-																			}}
-																			onKeyDown={(
-																				event,
-																			) => {
-																				if (
-																					event.key !==
-																					"F2"
-																				)
-																					return;
-																				event.preventDefault();
-																				handleStartRename(
-																					roomId,
-																				);
-																			}}
-																		>
-																			<span className="flex w-full min-w-0 items-center gap-1.5">
-																				{shouldShowFavoriteMark ? (
-																					<StarIcon
-																						className="size-3 shrink-0 fill-current text-muted-foreground"
-																						aria-hidden="true"
-																					/>
-																				) : null}
-																				{
-																					roomName
-																				}
-																			</span>
-																			{date && (
-																				<span className="text-muted-foreground text-xs leading-none">
-																					{
-																						date
-																					}
-																				</span>
-																			)}
-																		</a>
-																	</SidebarMenuButton>
-																	<DropdownMenu
-																		modal={
-																			false
-																		}
-																		open={
-																			menuRoomId ===
-																			roomId
-																		}
-																		onOpenChange={(
-																			isOpen,
-																		) =>
-																			setMenuRoomId(
-																				isOpen
-																					? roomId
-																					: null,
-																			)
-																		}
-																	>
-																		<DropdownMenuTrigger
-																			asChild
-																		>
-																			<Button
-																				variant="ghost"
-																				size="icon-sm"
-																				aria-label={t(
-																					"actions.roomActions",
-																				)}
-																				// shown on hover, keyboard focus, or while open; always on touch screens
-																				className="text-muted-foreground hover:text-sidebar-accent-foreground focus-visible:opacity-100 data-[state=open]:opacity-100 md:opacity-0 md:group-hover/room:opacity-100 md:group-focus-within/room:opacity-100"
-																				onClick={(
-																					e,
-																				) => {
-																					e.stopPropagation();
-																				}}
-																			>
-																				<MoreVertical className="size-4" />
-																			</Button>
-																		</DropdownMenuTrigger>
-																		<DropdownMenuContent
-																			align="start"
-																			side="right"
-																			sideOffset={
-																				5
-																			}
-																			className="w-40"
-																		>
-																			<DropdownMenuItem
-																				onClick={(
-																					e,
-																				) => {
-																					e.stopPropagation();
-																					handleToggleFavorite(
-																						roomId,
-																						isFavorite,
-																					);
-																				}}
-																			>
-																				<StarIcon
-																					className={cn(
-																						"me-2 size-4",
-																						isFavorite &&
-																							"fill-yellow-500 text-yellow-500",
-																					)}
-																				/>
-																				{isFavorite
-																					? t(
-																							"actions.unfavorite",
-																						)
-																					: t(
-																							"actions.favorite",
-																						)}
-																			</DropdownMenuItem>
-																			<DropdownMenuItem
-																				onClick={(
-																					e,
-																				) => {
-																					e.stopPropagation();
-																					setDownloadRoomId(
-																						roomId,
-																					);
-																				}}
-																			>
-																				<DownloadIcon className="me-2 size-4" />
-																				{t(
-																					"actions.download",
-																				)}
-																			</DropdownMenuItem>
-																			<DropdownMenuItem
-																				onClick={(
-																					e,
-																				) => {
-																					e.stopPropagation();
-																					void handleDeleteRoom(
-																						roomId,
-																					);
-																				}}
-																				className="text-destructive focus:text-destructive"
-																			>
-																				<TrashIcon className="me-2 size-4" />
-																				{t(
-																					"actions.delete",
-																				)}
-																			</DropdownMenuItem>
-																		</DropdownMenuContent>
-																	</DropdownMenu>
-																</>
-															)}
-														</SidebarMenuItem>
-													);
-												})}
+													),
+												)}
 											</SidebarMenu>
 										</SidebarGroupContent>
 									</CollapsibleContent>

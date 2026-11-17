@@ -20,7 +20,7 @@ import {
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import type { MCPConfig } from "../../../types";
-import { useChatSession } from "../../chat/provider/use-chat-session";
+import { addAgent } from "../../chat/store/agent-actions";
 
 /** Props for {@link SaveAgentDialog}. */
 interface SaveAgentDialogProps {
@@ -41,7 +41,6 @@ export const SaveAgentDialog = ({
 	open,
 	onOpenChange,
 }: SaveAgentDialogProps) => {
-	const { chat } = useChatSession();
 	const { t } = useTranslation("room");
 	const form = useForm({
 		resolver: zodResolver(
@@ -69,7 +68,7 @@ export const SaveAgentDialog = ({
 	}) => {
 		form.clearErrors("root.server");
 		try {
-			await chat.addWorkspace({
+			await addAgent({
 				name,
 				description,
 				system_prompt: systemPrompt,

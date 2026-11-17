@@ -1,78 +1,52 @@
 import type {
+	AgentRunItem,
 	AgentRunItemEvent,
 	AgentRunItemsState,
 	AgentRunSnapshot,
-	AgentRunStatusValue,
 	PendingAgentAction,
 } from "@semoss/sdk";
-import { AgentStore, getSubagentRuns } from "@semoss/sdk";
-import { toError } from "@semoss/utility/error";
+import { AgentStore, getSubagentRuns, isTerminalRunStatus } from "@semoss/sdk";
 import type {
 	PixelMessageSubagentPart,
 	PixelMessageToolCallPart,
-	ResponsePixelMessage,
 } from "../../../types";
 import type { RoomStore } from "../../room/store/room.store";
 import {
 	MCP_EXECUTION_AGENT_ASK,
 	MCP_EXECUTION_AGENT_AUTO,
 	MCP_EXECUTION_ASK,
-	STREAMING_PLACEHOLDER_ID,
 } from "../../tools/mcp/mcp-constants";
 import { InputMessageStore } from "./input-message.store";
+import type { ResponseMessageData } from "./message-map";
 import { ResponseMessageStore } from "./response-message.store";
-import type { ToolStore } from "./tool.store";
+import { readInputPayload } from "./response-placeholder";
+import { isToolSettled, type ToolStatus, type ToolStore } from "./tool.store";
+import { type Turn, type TurnRunner, trackTurn } from "./turn-runner";
 
 /**
  * Agent harness type sent to the backend RunAgent reactor.
  */
 export const AGENT_HARNESS_TYPE = "semoss";
 
-/**
- * Live AgentStores keyed by runId, so a decision made from the tool UI (which
- * only has the pendingAction, not the run's watcher) can poke the SAME
- * instance that's polling it, and reconnectAgentRun never mounts a second,
- * destructive poller on a run runAgentMessage (or an earlier reconnect) is
- * already watching.
- */
-const agentsByRunId = new Map<string, AgentStore>();
+/** A run's tool item, as the SDK types it. */
+type AgentToolItem = Extract<AgentRunItem, { kind: "tool" }>;
+
+/** A run's item that carries text: a message or a reasoning summary. */
+type AgentTextItem = Extract<AgentRunItem, { kind: "message" | "reasoning" }>;
 
 /**
- * Get the live AgentStore for a run if one is already being watched,
- * otherwise create (and register) a fresh, not-yet-watched one.
- *
- * @param roomId - The run's room.
- * @param insightId - The insight its pixels run in.
- * @param runId - The run's id.
- * @returns The run's agent store.
- */
-const getOrCreateAgent = (
-	roomId: string,
-	insightId: string,
-	runId: string,
-): AgentStore => {
-	const existing = agentsByRunId.get(runId);
-	if (existing) {
-		return existing;
-	}
-	const agent = new AgentStore(roomId, insightId, runId);
-	agentsByRunId.set(runId, agent);
-	return agent;
-};
-
-/**
- * QUEUED and INPUT_REQUIRED have no branch — they leave the tool at
- * ToolStore's own default "INITIAL" status, which renders as the ask/awaiting
- * card (see `needsDecision` in ResponseMessageTool and
+ * The call's status for a run's tool item status. QUEUED and INPUT_REQUIRED
+ * have none: they leave the call at its "INITIAL" status, which renders as
+ * the ask/awaiting card (see `needsDecision` in ResponseMessageTool and
  * ResponseMessageToolGroup, keyed off execution mode via isAskExecutionMode)
- * rather than a generic loading spinner.
+ * rather than a loading spinner.
  *
- * @param status - The agent run item's status.
+ * @param status - The tool item's status.
  * @returns The call's status, or null to leave it as it is.
  */
 const mapToolStatus = (
-	status: string,
-): "LOADING" | "SUCCESS" | "ERROR" | "CANCELLED" | null => {
+	status: AgentToolItem["status"],
+): Exclude<ToolStatus, "INITIAL"> | null => {
 	switch (status) {
 		case "RUNNING":
 			return "LOADING";
@@ -106,50 +80,65 @@ const toAgentExecutionMode = (originalExecution: unknown): string =>
 		: MCP_EXECUTION_AGENT_AUTO;
 
 /**
+ * The TOOL_CALL part for a run's call. `name` is the raw, engine-id-prefixed
+ * name the model called; it is never shown, the title is.
+ *
+ * @param call - The call's id, name, title, original name, arguments,
+ * `_meta`, and mode.
+ * @returns The part.
+ */
+const toolCallPart = (call: {
+	id: string;
+	name: string;
+	title: string;
+	originalName: string;
+	arguments: Record<string, unknown>;
+	meta: Record<string, unknown> | null | undefined;
+	execution: string;
+}): PixelMessageToolCallPart => ({
+	type: "TOOL_CALL",
+	toolCall: {
+		id: call.id,
+		type: "function",
+		name: call.name,
+		title: call.title,
+		arguments: call.arguments,
+		_tool_found: true,
+		original_name: call.originalName,
+		description: "",
+		_meta: {
+			SMSS_ENGINE_NAME: "",
+			SMSS_ENGINE_ID: "",
+			SMSS_ENGINE_TYPE: "",
+			SMSS_PROJECT_NAME: "",
+			SMSS_PROJECT_ID: "",
+			...call.meta,
+			SMSS_MCP_EXECUTION: call.execution,
+		},
+	} as PixelMessageToolCallPart["toolCall"],
+});
+
+/**
  * Agent-run tool items arrive fully parsed (no placeholder phase like the
- * OpenAI-delta tool stream in tool-stream.ts). `item.metadata` is the tool's
- * real `_meta` block, passed through as-is. `item.name` is the raw,
- * engine-id-prefixed LLM-facing name — never display it directly; prefer
- * `item.title` or `metadata.SMSS_ORIGINAL_TOOL_NAME`.
+ * OpenAI-delta tool stream in tool-stream.ts), with their real `_meta` in
+ * `metadata`. The title is `item.title`, else the tool's original name.
  *
  * @param item - The run's tool item.
  * @returns The TOOL_CALL part for it.
  */
-const buildToolCallPart = (item: {
-	id: string;
-	name: string;
-	title?: string;
-	arguments: Record<string, unknown>;
-	metadata?: Record<string, unknown>;
-}): PixelMessageToolCallPart => {
+const buildToolCallPart = (item: AgentToolItem): PixelMessageToolCallPart => {
 	const originalName =
 		(item.metadata?.SMSS_ORIGINAL_TOOL_NAME as string | undefined) ||
 		item.name;
-	const displayName = item.title || originalName;
-	return {
-		type: "TOOL_CALL",
-		toolCall: {
-			id: item.id,
-			type: "function",
-			name: item.name,
-			title: displayName,
-			arguments: item.arguments,
-			_tool_found: true,
-			original_name: originalName,
-			description: "",
-			_meta: {
-				SMSS_ENGINE_NAME: "",
-				SMSS_ENGINE_ID: "",
-				SMSS_ENGINE_TYPE: "",
-				SMSS_PROJECT_NAME: "",
-				SMSS_PROJECT_ID: "",
-				...item.metadata,
-				SMSS_MCP_EXECUTION: toAgentExecutionMode(
-					item.metadata?.SMSS_MCP_EXECUTION,
-				),
-			},
-		} as PixelMessageToolCallPart["toolCall"],
-	};
+	return toolCallPart({
+		id: item.id,
+		name: item.name,
+		title: item.title || originalName,
+		originalName: originalName,
+		arguments: item.arguments,
+		meta: item.metadata,
+		execution: toAgentExecutionMode(item.metadata?.SMSS_MCP_EXECUTION),
+	});
 };
 
 /**
@@ -159,6 +148,7 @@ const buildToolCallPart = (item: {
  * Always agent-ask: only ask tools ever become pending actions.
  *
  * @param action - The run's pending action.
+ * @param toolCallId - The call it pauses.
  * @returns The TOOL_CALL part for it.
  */
 const buildPendingToolCallPart = (
@@ -169,33 +159,19 @@ const buildPendingToolCallPart = (
 		(action.toolMeta?.SMSS_ORIGINAL_TOOL_NAME as string | undefined) ||
 		action.toolName ||
 		"";
-	return {
-		type: "TOOL_CALL",
-		toolCall: {
-			id: toolCallId,
-			type: "function",
-			name: action.toolName ?? "",
-			title: displayName,
-			arguments: action.toolArgs ?? {},
-			_tool_found: true,
-			original_name: displayName,
-			description: "",
-			_meta: {
-				SMSS_ENGINE_NAME: "",
-				SMSS_ENGINE_ID: "",
-				SMSS_ENGINE_TYPE: "",
-				SMSS_PROJECT_NAME: "",
-				SMSS_PROJECT_ID: "",
-				...action.toolMeta,
-				SMSS_MCP_EXECUTION: MCP_EXECUTION_AGENT_ASK,
-			},
-		} as PixelMessageToolCallPart["toolCall"],
-	};
+	return toolCallPart({
+		id: toolCallId,
+		name: action.toolName ?? "",
+		title: displayName,
+		originalName: displayName,
+		arguments: action.toolArgs ?? {},
+		meta: action.toolMeta,
+		execution: MCP_EXECUTION_AGENT_ASK,
+	});
 };
 
 /**
- * Find an already-pushed SUBAGENT part by its item id, for item.updated/
- * item.completed to change.
+ * Find an already-pushed SUBAGENT part by its item id.
  *
  * @param responseMessage - The response that holds it.
  * @param id - The subagent item's id.
@@ -211,77 +187,92 @@ const findSubagentPart = (
 	);
 
 /**
- * Change an already-pushed SUBAGENT part, found by its item id.
+ * The text a run's message or reasoning item carries.
  *
- * @param responseMessage - The response that holds it.
- * @param id - The subagent item's id.
- * @param changes - Its new status, preview, and error.
+ * @param item - The item, as the SDK merged it.
+ * @returns Its text, or an empty string for any other item.
  */
-const updateSubagentPart = (
-	responseMessage: ResponseMessageStore,
-	id: string,
-	changes: Pick<
-		PixelMessageSubagentPart["subagent"],
-		"status" | "resultPreview" | "error"
-	>,
-): void => {
-	responseMessage.updateParts(
-		(part): part is PixelMessageSubagentPart =>
-			part.type === "SUBAGENT" && part.subagent.id === id,
-		(part) => ({ ...part, subagent: { ...part.subagent, ...changes } }),
-	);
-};
+const readItemText = (item: AgentRunItem | undefined): string =>
+	item?.kind === "message"
+		? item.text
+		: item?.kind === "reasoning"
+			? item.summary
+			: "";
 
 /**
- * Apply one agent-run item event onto the response message. Tool status reads from `items` (the SDK's
- * already-merged state), not the raw event, so Playground never handles
- * patch merging itself. Text is read straight off the event.
+ * The text a TEXT or THINKING part shows.
  *
- * @param responseMessage - The response the run fills.
- * @param event - The item event.
- * @param items - The run's merged items.
+ * @param part - The part.
+ * @returns Its text, or undefined for any other part.
  */
-const applyAgentRunItem = (
-	responseMessage: ResponseMessageStore,
-	event: AgentRunItemEvent,
-	items: AgentRunItemsState,
-) => {
-	const room = responseMessage.room;
+const readPartText = (
+	part: ResponseMessageData["parts"][number] | undefined,
+): string | undefined =>
+	part?.type === "TEXT"
+		? part.text
+		: part?.type === "THINKING"
+			? part.thinking
+			: undefined;
 
-	if (event.type === "item.started") {
-		const { item } = event;
+/**
+ * Writes one run into the response it fills: its items as parts, its tools'
+ * statuses and results, and its pending actions. Text and status are read
+ * from the SDK's merged items, so a late delta lands on its own item's part
+ * and a tool's result is whatever the item holds. Parts the run writes are
+ * only ever appended, so each keeps its index for the run's life.
+ */
+class AgentRunWriter {
+	/** The part each message or reasoning item writes into, by item id. */
+	private readonly partIndexByItem = new Map<string, number>();
+
+	/** The items whose text makes up each part the run wrote, by part index, in order. */
+	private readonly itemsByPart = new Map<number, string[]>();
+
+	/** @param response - The response the run fills. */
+	constructor(private readonly response: ResponseMessageStore) {}
+
+	/**
+	 * Apply one item event.
+	 *
+	 * @param event - The event.
+	 * @param items - The run's items, with the event already merged in.
+	 */
+	apply(event: AgentRunItemEvent, items: AgentRunItemsState): void {
+		if (event.type === "item.started") {
+			this.startItem(event.item, items);
+		} else if (event.type === "item.updated") {
+			this.updateItem(event.itemId, items);
+		} else {
+			this.completeItem(event.item, items);
+		}
+	}
+
+	/**
+	 * Add a started item's part.
+	 *
+	 * @param item - The item as it started.
+	 * @param items - The run's merged items.
+	 */
+	private startItem(item: AgentRunItem, items: AgentRunItemsState): void {
+		const response = this.response;
 		// The sequential reveal queue (response-message.tsx) holds on the last
 		// part while isThinking is true, waiting for more content on that same
 		// part — fine for streamed deltas, but agent-run items arrive as
 		// one-shot bursts, so it would hang forever and hide every part after.
 		// room.isLoading already covers "run still in progress" for the input
 		// box, so it's safe to drop this once any real content exists.
-		responseMessage.setIsThinking(false);
-		if (item.kind === "message" && item.text) {
-			responseMessage.savePart({
-				type: "TEXT",
-				text: item.text,
-				uiText: item.text,
-			});
-		} else if (item.kind === "reasoning" && item.summary) {
-			responseMessage.savePart({
-				type: "THINKING",
-				thinking: item.summary,
-			});
+		response.setIsThinking(false);
+		if (item.kind === "message" || item.kind === "reasoning") {
+			this.writeText(item.id, items);
 		} else if (item.kind === "tool") {
 			const part = buildToolCallPart(item);
-			responseMessage.addPart(part);
-			room.syncTool(item.id, responseMessage, part);
-			// syncMessage's TOOL_CALL branch never sets status, so seed it here —
-			// otherwise a tool with no item.updated in between sits at "INITIAL"
-			// (no loading UI) until it jumps straight to item.completed's status.
-			const tool = room.getTool(item.id);
-			const status = mapToolStatus(item.status);
-			if (tool && status) {
-				tool.setStatus(status);
-			}
+			response.addPart(part);
+			response.room.syncTool(item.id, response, part);
+			// syncTool never sets a status, so seed it from the item: one that
+			// already ended settles with its result now
+			this.syncToolStatus(item.id, items, item);
 		} else if (item.kind === "subagent") {
-			responseMessage.addPart({
+			response.addPart({
 				type: "SUBAGENT",
 				subagent: {
 					id: item.id,
@@ -292,120 +283,394 @@ const applyAgentRunItem = (
 				},
 			});
 		}
-		return;
 	}
 
-	if (event.type === "item.updated") {
-		if (event.kind === "message" && event.delta) {
-			responseMessage.savePart({
-				type: "TEXT",
-				text: event.delta,
-				uiText: event.delta,
-			});
-		} else if (event.kind === "reasoning" && event.delta) {
-			responseMessage.savePart({
-				type: "THINKING",
-				thinking: event.delta,
-			});
-		} else if (event.kind === "tool") {
-			const tool = room.getTool(event.itemId);
-			const merged = items.itemsById[event.itemId];
-			const status =
-				merged?.kind === "tool" ? mapToolStatus(merged.status) : null;
+	/**
+	 * Follow an updated item: its text, its tool's status, or its subagent.
+	 *
+	 * @param itemId - The item's id.
+	 * @param items - The run's merged items.
+	 */
+	private updateItem(itemId: string, items: AgentRunItemsState): void {
+		const merged = items.itemsById[itemId];
+		if (merged?.kind === "message" || merged?.kind === "reasoning") {
+			this.writeText(itemId, items);
+		} else if (merged?.kind === "tool") {
+			const status = mapToolStatus(merged.status);
+			const tool = this.response.room.getTool(itemId);
 			if (tool && status) {
 				tool.setStatus(status);
 			}
-		} else if (event.kind === "subagent") {
-			const merged = items.itemsById[event.itemId];
-			const part = findSubagentPart(responseMessage, event.itemId);
-			if (part && merged?.kind === "subagent") {
-				updateSubagentPart(responseMessage, part.subagent.id, {
-					status: merged.status,
-					resultPreview: merged.resultPreview,
-					error: merged.error,
+		} else if (merged?.kind === "subagent") {
+			this.updateSubagent(merged);
+		}
+	}
+
+	/**
+	 * Settle a completed item: its text, its tool's result, or its subagent.
+	 *
+	 * @param item - The item as it completed.
+	 * @param items - The run's merged items.
+	 */
+	private completeItem(item: AgentRunItem, items: AgentRunItemsState): void {
+		if (item.kind === "message" || item.kind === "reasoning") {
+			this.writeText(item.id, items);
+		} else if (item.kind === "tool") {
+			const tool = this.response.room.getTool(item.id);
+			if (tool) {
+				tool.settle({
+					status: mapToolStatus(item.status) ?? tool.status,
+					response: item.output ?? item.error ?? "",
 				});
 			}
+		} else if (item.kind === "subagent") {
+			this.updateSubagent(item);
 		}
-		return;
 	}
 
-	// item.completed
-	const { item } = event;
-	if (item.kind === "tool") {
-		const tool = room.getTool(item.id);
-		if (!tool) {
+	/**
+	 * Seed a just-started tool call's status from its item. A call that has
+	 * already ended settles with its output, or its error.
+	 *
+	 * @param toolId - The call's id.
+	 * @param items - The run's merged items.
+	 * @param started - The item as it started, when it is not merged yet.
+	 */
+	private syncToolStatus(
+		toolId: string,
+		items: AgentRunItemsState,
+		started: AgentToolItem,
+	): void {
+		const tool = this.response.room.getTool(toolId);
+		const merged = items.itemsById[toolId];
+		const item = merged?.kind === "tool" ? merged : started;
+		const status = mapToolStatus(item.status);
+		if (!tool || !status) {
 			return;
 		}
-		tool.settle({
-			status: mapToolStatus(item.status) ?? tool.status,
-			response: item.output ?? item.error ?? "",
+		if (isToolSettled(status)) {
+			tool.settle({ status, response: item.output ?? item.error ?? "" });
+		} else {
+			tool.setStatus(status);
+		}
+	}
+
+	/**
+	 * Write a message or reasoning item's whole text into its part. Its first
+	 * text joins the part before it when that is the same kind and the run
+	 * wrote it, as consecutive items always have; else it starts a part.
+	 * Later text replaces the item's share of that part, wherever it is now.
+	 *
+	 * @param itemId - The item's id.
+	 * @param items - The run's merged items.
+	 */
+	private writeText(itemId: string, items: AgentRunItemsState): void {
+		const item = items.itemsById[itemId] as AgentTextItem | undefined;
+		const text = readItemText(item);
+		// an empty text never starts a part, nor erases one
+		if (!item || !text) {
+			return;
+		}
+		const type = item.kind === "message" ? "TEXT" : "THINKING";
+		const parts = this.response.parts;
+		let index = this.partIndexByItem.get(itemId);
+		if (index === undefined) {
+			const lastIndex = parts.length - 1;
+			const owners = this.itemsByPart.get(lastIndex);
+			if (owners && parts[lastIndex]?.type === type) {
+				index = lastIndex;
+				owners.push(itemId);
+			} else {
+				index = parts.length;
+				this.itemsByPart.set(index, [itemId]);
+			}
+			this.partIndexByItem.set(itemId, index);
+		}
+		const whole = (this.itemsByPart.get(index) ?? [itemId])
+			.map((id) => readItemText(items.itemsById[id]))
+			.join("");
+		const part: ResponseMessageData["parts"][number] =
+			type === "TEXT"
+				? { type, text: whole, uiText: whole }
+				: { type, thinking: whole };
+		if (index === parts.length) {
+			this.response.addPart(part);
+			return;
+		}
+		// a patch that left the text as it was changes nothing
+		if (readPartText(parts[index]) === whole) {
+			return;
+		}
+		const at = index;
+		this.response.room.updateMessageParts<ResponseMessageData["parts"]>(
+			this.response.key,
+			(current) =>
+				current.map((existing, i) => (i === at ? part : existing)),
+		);
+	}
+
+	/**
+	 * Follow a subagent item's status, preview and error on its part.
+	 *
+	 * @param item - The subagent item, as merged or completed.
+	 */
+	private updateSubagent(
+		item: Extract<AgentRunItem, { kind: "subagent" }>,
+	): void {
+		if (!findSubagentPart(this.response, item.id)) {
+			return;
+		}
+		this.response.updateParts(
+			(part): part is PixelMessageSubagentPart =>
+				part.type === "SUBAGENT" && part.subagent.id === item.id,
+			(part) => ({
+				...part,
+				subagent: {
+					...part.subagent,
+					status: item.status,
+					resultPreview: item.resultPreview,
+					error: item.error,
+				},
+			}),
+		);
+	}
+
+	/**
+	 * Sync each tool's pendingAction from the run's current snapshot. Matched by
+	 * toolCallId; a tool not in `pendingActions` is cleared (its decision has
+	 * been made, or it was never a pending call). An action whose call has no
+	 * part, because its item.started was missed, gets one.
+	 *
+	 * @param pendingActions - The run's pending actions.
+	 */
+	syncPendingActions(
+		pendingActions: readonly PendingAgentAction[] | undefined,
+	): void {
+		const response = this.response;
+		const room = response.room;
+		const byToolCallId = new Map<string, PendingAgentAction>();
+		for (const action of pendingActions ?? []) {
+			if (action.toolCallId) {
+				byToolCallId.set(action.toolCallId, action);
+			}
+		}
+		byToolCallId.forEach((action, toolCallId) => {
+			const hasPart = response.parts.some(
+				(part) =>
+					part.type === "TOOL_CALL" &&
+					part.toolCall.id === toolCallId,
+			);
+			if (!hasPart) {
+				const part = buildPendingToolCallPart(action, toolCallId);
+				response.addPart(part);
+				room.syncTool(toolCallId, response, part);
+			}
 		});
-	} else if (item.kind === "subagent") {
-		const part = findSubagentPart(responseMessage, item.id);
-		if (part) {
-			updateSubagentPart(responseMessage, part.subagent.id, {
-				status: item.status,
-				resultPreview: item.resultPreview,
-				error: item.error,
+		for (const part of response.parts) {
+			if (part.type !== "TOOL_CALL") {
+				continue;
+			}
+			const tool = room.getTool(part.toolCall.id);
+			tool?.setPendingAction(byToolCallId.get(tool.id) ?? null);
+		}
+	}
+
+	/**
+	 * Take a durable snapshot: the saved message ids, the final text when none
+	 * streamed, and the pending actions.
+	 *
+	 * @param snapshot - The run's snapshot.
+	 * @param input - The user's message, when there is one.
+	 */
+	reconcile(
+		snapshot: AgentRunSnapshot,
+		input: InputMessageStore | null,
+	): void {
+		const response = this.response;
+		if (input && snapshot.inputMessageId) {
+			input.setId(snapshot.inputMessageId);
+		}
+		if (snapshot.finalOutputMessageId) {
+			response.setId(snapshot.finalOutputMessageId);
+		}
+		const hasStreamedText = response.parts.some(
+			(part) => part.type === "TEXT" && part.text,
+		);
+		if (!hasStreamedText && snapshot.finalText) {
+			response.savePart({
+				type: "TEXT",
+				text: snapshot.finalText,
+				uiText: snapshot.finalText,
 			});
 		}
+		this.syncPendingActions(snapshot.pendingActions);
 	}
-	// message/reasoning completion carries no new text (see comment above).
-};
+}
 
 /**
- * Sync each tool's pendingAction from the run's current snapshot. Matched by
- * toolCallId; a tool not in `pendingActions` is cleared (its decision has
- * been made, or it was never a pending call).
- *
- * @param responseMessage - The response whose tool calls to sync.
- * @param pendingActions - The run's pending actions.
+ * Runs an agent room's turns through the server-side harness (RunAgent):
+ * submits without waiting, then follows the run with `AgentStore.watch`.
+ * Owns the room's live `AgentStore`s by run id, so a decision made from the
+ * tool UI (which only has the pending action) reaches the instance that is
+ * polling the run, and a reconnect joins the live watch instead of mounting a
+ * second, destructive poller.
  */
-const syncPendingActions = (
-	responseMessage: ResponseMessageStore,
-	pendingActions: readonly PendingAgentAction[] | undefined,
-) => {
-	const room = responseMessage.room;
-	const byToolCallId = new Map<string, PendingAgentAction>(
-		(pendingActions ?? [])
-			.filter(
-				(
-					action,
-				): action is PendingAgentAction & { toolCallId: string } =>
-					Boolean(action.toolCallId),
-			)
-			.map((action) => [action.toolCallId, action]),
-	);
+export class AgentTurnRunner implements TurnRunner {
+	/** The room's agent stores, by run id; forgotten once a watch on them settles. */
+	private readonly agents = new Map<string, AgentStore>();
 
-	byToolCallId.forEach((action, toolCallId) => {
-		const hasPart = responseMessage.parts.some(
-			(part) =>
-				part.type === "TOOL_CALL" && part.toolCall.id === toolCallId,
+	/** The live watch of each run, by run id, for a reconnect to join. */
+	private readonly watches = new Map<string, Promise<void>>();
+
+	/** @param room - The room whose turns it runs. */
+	constructor(private readonly room: RoomStore) {}
+
+	/**
+	 * Start the turn's run and follow it to its end. INPUT_REQUIRED keeps the
+	 * turn running; paused calls surface through `ToolStore.pendingAction`.
+	 *
+	 * @param turn - The turn.
+	 * @returns Once the run completes.
+	 * @throws When it cannot start, fails, or is cancelled.
+	 */
+	async run({ input, response }: Turn): Promise<void> {
+		const room = this.room;
+		// the text, and attachments uploaded to the room's insight, as
+		// AskPlayground sends them
+		const { text, media } = readInputPayload(input);
+		const agent = await AgentStore.start(
+			{
+				roomId: room.roomId,
+				command: text,
+				engine: room.model.engine_id,
+				harnessType: AGENT_HARNESS_TYPE,
+				agentId: room.options.workspace?.workspace_id,
+				media: media,
+			},
+			room.insightId,
 		);
-		if (hasPart) {
-			return;
-		}
-		const part = buildPendingToolCallPart(action, toolCallId);
-		responseMessage.addPart(part);
-		room.syncTool(toolCallId, responseMessage, part);
-	});
+		this.agents.set(agent.runId, agent);
+		await this.watch(agent, response, input);
+	}
 
-	responseMessage.parts.forEach((part) => {
-		if (part.type !== "TOOL_CALL") {
+	/**
+	 * Follow the run a response belongs to again after a page reload, or join
+	 * its watch when it is already followed. Fire-and-forget; a response that
+	 * is part of no run is left alone.
+	 *
+	 * @param response - The room's most recent response.
+	 */
+	reconnect(response: ResponseMessageStore): void {
+		const runId = response.agentRun?.runId;
+		if (!runId) {
 			return;
 		}
-		const tool = room.getTool(part.toolCall.id);
-		if (!tool) {
-			return;
+		const input =
+			response.parent instanceof InputMessageStore
+				? response.parent
+				: null;
+		const agent = this.getOrCreateAgent(runId);
+		trackTurn(response, () => this.watch(agent, response, input)).catch(
+			(e) => {
+				console.error("Failed to reconnect to agent run", e);
+			},
+		);
+	}
+
+	/**
+	 * The live AgentStore for a run if the room has one, otherwise a fresh,
+	 * not-yet-watched one, which the room keeps.
+	 *
+	 * @param runId - The run's id.
+	 * @returns The run's agent store.
+	 */
+	getOrCreateAgent(runId: string): AgentStore {
+		const existing = this.agents.get(runId);
+		if (existing) {
+			return existing;
 		}
-		tool.setPendingAction(byToolCallId.get(tool.id) ?? null);
-	});
-};
+		const agent = new AgentStore(
+			this.room.roomId,
+			this.room.insightId,
+			runId,
+		);
+		this.agents.set(runId, agent);
+		return agent;
+	}
+
+	/** Forget every run, for a room its owner dropped. Runs keep going. */
+	dispose(): void {
+		this.agents.clear();
+		this.watches.clear();
+	}
+
+	/**
+	 * Watch a run to its end, applying its events and snapshots to the
+	 * response, or join the run's live watch.
+	 *
+	 * @param agent - The run's agent store.
+	 * @param response - The response the run fills.
+	 * @param input - The user's message, when there is one.
+	 * @returns Resolves when the run completes; rejects when it fails or is cancelled.
+	 */
+	private watch(
+		agent: AgentStore,
+		response: ResponseMessageStore,
+		input: InputMessageStore | null,
+	): Promise<void> {
+		const { runId } = agent;
+		const live = this.watches.get(runId);
+		if (live) {
+			return live;
+		}
+		const writer = new AgentRunWriter(response);
+		const watching: Promise<void> = new Promise<void>((resolve, reject) => {
+			agent.watch({
+				onEvent: (event, items) => writer.apply(event, items),
+				onSnapshot: (snapshot) =>
+					writer.syncPendingActions(snapshot.pendingActions),
+				onReconcile: (snapshot) => {
+					writer.reconcile(snapshot, input);
+					if (!isTerminalRunStatus(snapshot.status)) {
+						return;
+					}
+					agent.stop();
+					// the harness's tools write Room Files server-side, so an
+					// open explorer misses the turn's files
+					this.room.refreshSidebarFileExplorer();
+					if (snapshot.status === "COMPLETED") {
+						resolve();
+						return;
+					}
+					reject(
+						new Error(
+							snapshot.errorMessage ||
+								`The agent run did not complete: ${snapshot.status}`,
+						),
+					);
+				},
+				onError: (e) => {
+					console.error("Agent run stream error", e);
+				},
+			});
+		}).finally(() => {
+			if (this.agents.get(runId) === agent) {
+				this.agents.delete(runId);
+			}
+			if (this.watches.get(runId) === watching) {
+				this.watches.delete(runId);
+			}
+		});
+		this.watches.set(runId, watching);
+		return watching;
+	}
+}
 
 /**
  * Resolve a tool call paused on a human decision. The legacy ask-tool paths
  * write straight into room history and never touch the AGENT_RUN_ACTION row,
- * so this is the only call that actually resumes the run. Thin wrapper over AgentStore.decide.
+ * so this is the only call that actually resumes the run. It goes to the
+ * room's live store for the run, which wakes its poller.
  *
  * @param tool - The paused call; a call with no pending action is left alone.
  * @param decision - Approve (`submit`), reject, or `respond` with what the
@@ -421,199 +686,8 @@ export const decideAgentToolAction = async (
 	if (!pendingAction) {
 		return;
 	}
-	const agent = getOrCreateAgent(
-		tool.room.roomId,
-		tool.room.insightId,
-		pendingAction.runId,
-	);
+	const agent = tool.room.agentTurns.getOrCreateAgent(pendingAction.runId);
 	await agent.decide(pendingAction, decision, paramValues);
-};
-
-/**
- * Poll a run to completion, applying its events/snapshots onto
- * responseMessage. Shared between a fresh submit (runAgentMessage) and
- * reconnecting to one already in progress after a page reload
- * (reconnectAgentRun) — the wiring is identical either way, only how the
- * `agent` was obtained differs.
- *
- * @param agent - The run's agent store.
- * @param responseMessage - The response the run fills.
- * @param inputMessage - The user's message, when there is one.
- * @returns Resolves when the run completes; rejects when it fails or is cancelled.
- */
-const watchAgentRun = (
-	agent: AgentStore,
-	responseMessage: ResponseMessageStore,
-	inputMessage: InputMessageStore | null,
-): Promise<void> =>
-	new Promise<void>((resolve, reject) => {
-		const settleTerminal = (snapshot: AgentRunSnapshot) => {
-			const status: AgentRunStatusValue = snapshot.status;
-			if (
-				status !== "COMPLETED" &&
-				status !== "FAILED" &&
-				status !== "CANCELLED"
-			) {
-				return;
-			}
-			agent.stop();
-			// the harness's tools write Chat Files server-side, so an open explorer misses the turn's files
-			responseMessage.room.refreshSidebarFileExplorer();
-			if (status !== "COMPLETED") {
-				reject(
-					new Error(
-						snapshot.errorMessage ||
-							`The agent run did not complete: ${status}`,
-					),
-				);
-				return;
-			}
-			resolve();
-		};
-
-		agent.watch({
-			onEvent: (event, items) => {
-				applyAgentRunItem(responseMessage, event, items);
-			},
-			onSnapshot: (snapshot) => {
-				syncPendingActions(responseMessage, snapshot.pendingActions);
-			},
-			onReconcile: (snapshot) => {
-				if (inputMessage && snapshot.inputMessageId) {
-					inputMessage.setId(snapshot.inputMessageId);
-				}
-				if (snapshot.finalOutputMessageId) {
-					responseMessage.setId(snapshot.finalOutputMessageId);
-				}
-
-				// if nothing streamed as visible text, fall back to finalText
-				const hasStreamedText = responseMessage.parts.some(
-					(part) => part.type === "TEXT" && part.text,
-				);
-				if (!hasStreamedText && snapshot.finalText) {
-					responseMessage.savePart({
-						type: "TEXT",
-						text: snapshot.finalText,
-						uiText: snapshot.finalText,
-					});
-				}
-
-				syncPendingActions(responseMessage, snapshot.pendingActions);
-
-				settleTerminal(snapshot);
-			},
-			onError: (e) => {
-				console.error("Agent run stream error", e);
-			},
-		});
-	}).finally(() => {
-		if (agentsByRunId.get(agent.runId) === agent) {
-			agentsByRunId.delete(agent.runId);
-		}
-	});
-
-/**
- * Run a user message through the server-side agent harness (RunAgent).
- *
- * Submits without waiting (wait=false), then drives the response via
- * AgentStore.watch. A non-COMPLETED terminal status rejects (caller removes
- * the optimistic input). INPUT_REQUIRED leaves the turn mounted and pending;
- * paused tool calls surface via ToolStore.pendingAction for the approval UI.
- *
- * @param message - The response the user's message answers.
- * @param inputMessage - The user's message.
- * @param existingResponse - A response placeholder already in the tree, to
- * fill instead of making one.
- */
-export const runAgentMessage = async (
-	message: ResponseMessageStore,
-	inputMessage: InputMessageStore,
-	existingResponse?: ResponseMessageStore,
-) => {
-	const room = message.room;
-
-	const modelName =
-		room.model.engine_display_name || room.model.engine_name || "";
-
-	// Create a placeholder response message to stream content into
-	const responseMessage =
-		existingResponse ??
-		new ResponseMessageStore(room, {
-			io: "OUTPUT",
-			messageId: STREAMING_PLACEHOLDER_ID,
-			visible: true,
-			platform_generated: true,
-			modelId: room.model.engine_id,
-			dateCreated: new Date().toISOString(),
-			parts: [],
-			tokens: 0,
-			ornaments: {
-				modelName,
-			},
-		} as ResponsePixelMessage);
-
-	// This path doesn't go through streamJob, so it owns isLoading itself.
-	room.setIsLoading(true);
-
-	try {
-		if (!existingResponse) {
-			// connect to the parent
-			message.addChild(inputMessage);
-
-			// Add placeholder as child of input to show streaming text
-			inputMessage.addChild(responseMessage);
-		}
-
-		// turn on thinking
-		responseMessage.setIsThinking(true);
-
-		// get the text
-		const text = inputMessage.parts.reduce((acc, part) => {
-			if (part.type === "TEXT") {
-				return acc + part.text;
-			}
-
-			return acc;
-		}, "");
-
-		// attachments uploaded to the room's insight, as AskPlayground sends them
-		const media = inputMessage.parts.reduce<string[]>((acc, part) => {
-			if (part.type === "MEDIA" && part.mediaInfo.fileLocation) {
-				acc.push(part.mediaInfo.fileLocation);
-			}
-			return acc;
-		}, []);
-
-		const handle = await AgentStore.start(
-			{
-				roomId: room.roomId,
-				command: text,
-				engine: room.model.engine_id,
-				harnessType: AGENT_HARNESS_TYPE,
-				agentId: room.options.workspace?.workspace_id,
-				media: media,
-			},
-			room.insightId,
-		);
-		agentsByRunId.set(handle.runId, handle);
-
-		await watchAgentRun(handle, responseMessage, inputMessage);
-	} catch (e) {
-		// remove message if we failed
-		message.removeChild(inputMessage);
-
-		// A chat turn's stream sets the room error itself; nothing does for a
-		// run, and a new chat sends its first message without awaiting it, so
-		// without this the failure is never shown.
-		room.setError(toError(e));
-
-		throw e;
-	} finally {
-		// turn off thinking
-		responseMessage.setIsThinking(false);
-
-		room.setIsLoading(false);
-	}
 };
 
 /**
@@ -714,42 +788,4 @@ export const reconstructAllSubagents = async (room: RoomStore) => {
 			console.error("Failed to reconstruct subagent runs", e);
 		}
 	}
-};
-
-/**
- * Re-establish live polling for a room's most recent agent run after a page
- * reload, since an AgentStore otherwise only ever starts watching from
- * runAgentMessage's own submit. Fire-and-forget; a no-op if the message was
- * never part of an agent run, or if it already settled.
- *
- * @param responseMessage - The room's most recent response.
- */
-export const reconnectAgentRun = (responseMessage: ResponseMessageStore) => {
-	const runId = responseMessage.agentRun?.runId;
-	if (!runId) {
-		return;
-	}
-
-	const room = responseMessage.room;
-	const inputMessage =
-		responseMessage.parent instanceof InputMessageStore
-			? responseMessage.parent
-			: null;
-
-	room.setIsLoading(true);
-	responseMessage.setIsThinking(true);
-
-	(async () => {
-		try {
-			const agent = getOrCreateAgent(room.roomId, room.insightId, runId);
-			await watchAgentRun(agent, responseMessage, inputMessage);
-		} catch (e) {
-			console.error("Failed to reconnect to agent run", e);
-			room.setError(toError(e));
-		} finally {
-			responseMessage.setIsThinking(false);
-
-			room.setIsLoading(false);
-		}
-	})();
 };

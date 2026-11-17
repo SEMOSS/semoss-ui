@@ -1,6 +1,22 @@
 import { isRecord } from "@semoss/utility/object";
 import { isAskExecutionMode } from "../mcp/mcp-utils";
 
+/** One tool in an MCP definition file, as written. */
+export type McpTool = Record<string, unknown>;
+
+/**
+ * The tools an MCP definition file holds, such as a room's tool file
+ * (`mcp/pixel_mcp.json`), the user's connector file, or what `GetMCPTools`
+ * returns for a toolbox.
+ *
+ * @param mcpJson - The parsed file, or anything else when there is none.
+ * @returns Its tools, as written; none for a missing or malformed file.
+ */
+export const readMcpTools = (mcpJson: unknown): McpTool[] =>
+	isRecord(mcpJson) && Array.isArray(mcpJson.tools)
+		? mcpJson.tools.filter(isRecord)
+		: [];
+
 /** One argument a tool takes, as its input schema describes it. */
 export interface ChatToolParameter {
 	/** The argument's name, as the model passes it. */
@@ -71,11 +87,9 @@ export const listToolParameters = (
  * @param mcpJson - The parsed MCP document, with its `tools`.
  * @returns The tools, each with the reactor it runs.
  */
-export const parseMcpTools = (mcpJson: unknown): ToolboxTool[] => {
-	const tools =
-		isRecord(mcpJson) && Array.isArray(mcpJson.tools) ? mcpJson.tools : [];
-	return tools.reduce<ToolboxTool[]>((offered, tool) => {
-		if (!isRecord(tool) || typeof tool.name !== "string") {
+export const parseMcpTools = (mcpJson: unknown): ToolboxTool[] =>
+	readMcpTools(mcpJson).reduce<ToolboxTool[]>((offered, tool) => {
+		if (typeof tool.name !== "string") {
 			return offered;
 		}
 		const meta = isRecord(tool._meta) ? tool._meta : {};
@@ -103,4 +117,3 @@ export const parseMcpTools = (mcpJson: unknown): ToolboxTool[] => {
 		});
 		return offered;
 	}, []);
-};

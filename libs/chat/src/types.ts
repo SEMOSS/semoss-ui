@@ -384,6 +384,16 @@ export interface PixelMessageToolCallPart {
 	};
 }
 
+/**
+ * How a room sends its messages.
+ * - "chat": standard streaming chat (AskPlayground)
+ * - "agent": server-side agent harness (RunAgent)
+ */
+export type ChatMode = "agent" | "chat";
+
+/** How a tool call ended. */
+export type ToolOutcome = "success" | "error" | "cancelled";
+
 /** A tool call's result. */
 export interface PixelMessageToolResultPart {
 	type: "TOOL_RESULT";
@@ -398,7 +408,7 @@ export interface PixelMessageToolResultPart {
 		/** The arguments the tool ran with. */
 		toolParameterValues: Record<string, unknown>;
 		/** How the call ended, or that it is paused for the user. */
-		toolStatus: "success" | "error" | "cancelled" | "paused";
+		toolStatus: ToolOutcome | "paused";
 	};
 }
 

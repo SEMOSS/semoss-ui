@@ -1,12 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { Env } from "../env";
+import { post } from "../utility";
 import { runPixel } from "./base";
-import { cloneEngine, restartEngine } from "./engine";
+import {
+	cloneEngine,
+	getEngineInfo,
+	getModel,
+	listModels,
+	restartEngine,
+	setEngineFavorite,
+} from "./engine";
 
 vi.mock("./base", () => ({
 	runPixel: vi.fn(),
 }));
+vi.mock("../utility", async (original) => ({
+	...(await original<typeof import("../utility")>()),
+	post: vi.fn(),
+}));
 
 const mockRunPixel = vi.mocked(runPixel);
+const mockPost = vi.mocked(post);
 
 /** A pixel response with the given statements and errors. */
 const answer = (
@@ -136,6 +150,103 @@ describe("restartEngine", () => {
 
 		await expect(restartEngine("engine-1")).rejects.toThrow(
 			"Not the owner",
+		);
+	});
+});
+
+describe("setEngineFavorite", () => {
+	it("posts the engine and whether it is a favorite", async () => {
+		mockPost.mockResolvedValue({
+			response: new Response(),
+			data: { success: true },
+		});
+
+		await setEngineFavorite("engine-1", true);
+
+		expect(mockPost).toHaveBeenCalledWith(
+			`${Env.MODULE}/api/auth/engine/setEngineFavorite`,
+			{ engineId: "engine-1", isFavorite: true },
+			{},
+		);
+	});
+
+	it("throws when the request fails", async () => {
+		mockPost.mockRejectedValue(new Error("Forbidden"));
+		await expect(setEngineFavorite("engine-1", false)).rejects.toThrow(
+			"Forbidden",
+		);
+	});
+});
+
+describe("listModels", () => {
+	it("lists the text generation models, all or by a word", async () => {
+		const models = [
+			{ engine_id: "m-1", engine_name: "A", engine_type: "MODEL" },
+		];
+		mockRunPixel.mockResolvedValue(answer([{ output: models }]));
+
+		await expect(listModels("insight-1")).resolves.toBe(models);
+		await listModels("insight-1", { filterWord: "m-1" });
+
+		expect(mockRunPixel.mock.calls).toEqual([
+			[
+				'META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);',
+				"insight-1",
+			],
+			[
+				'META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"], filterWord="m-1");',
+				"insight-1",
+			],
+		]);
+	});
+
+	it("reads no output as no models, and throws the backend's errors", async () => {
+		mockRunPixel.mockResolvedValueOnce(answer([]));
+		await expect(listModels("insight-1")).resolves.toEqual([]);
+
+		mockRunPixel.mockResolvedValueOnce(answer([], ["Denied"]));
+		await expect(listModels("insight-1")).rejects.toThrow("Denied");
+	});
+});
+
+describe("getModel", () => {
+	it("reads one model by its id, and nothing for another id", async () => {
+		const model = {
+			engine_id: "m-1",
+			engine_name: "A",
+			engine_type: "MODEL",
+		};
+		mockRunPixel.mockResolvedValue(answer([{ output: [model] }]));
+
+		await expect(getModel("insight-1", "m-1")).resolves.toBe(model);
+		await expect(getModel("insight-1", "m-2")).resolves.toBeUndefined();
+		expect(mockRunPixel).toHaveBeenCalledWith(
+			'META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"], engine=["m-1"]);',
+			"insight-1",
+		);
+	});
+});
+
+describe("getEngineInfo", () => {
+	it("reads an engine's details", async () => {
+		mockRunPixel.mockResolvedValue(
+			answer([{ output: { engine_type: "MODEL" } }]),
+		);
+
+		await expect(getEngineInfo("insight-1", "engine-1")).resolves.toEqual({
+			engine_type: "MODEL",
+		});
+		expect(mockRunPixel).toHaveBeenCalledWith(
+			'EngineInfo(engine=["engine-1"]);',
+			"insight-1",
+		);
+	});
+
+	it("throws the backend's errors", async () => {
+		mockRunPixel.mockResolvedValue(answer([], ["No access"]));
+
+		await expect(getEngineInfo("insight-1", "engine-1")).rejects.toThrow(
+			"No access",
 		);
 	});
 });

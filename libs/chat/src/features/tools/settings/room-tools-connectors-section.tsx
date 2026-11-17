@@ -26,6 +26,13 @@ import { ToolList } from "./tool-list";
 import { TooltipIconButton } from "./tooltip-icon-button";
 import { useRoomToolbox } from "./use-room-toolbox";
 
+/** The sentence for each reason a connector's tools cannot run, as the chat input's notice says it. */
+const ACCESS_ISSUE_KEYS: Record<ConnectorAccessIssue, string> = {
+	signIn: "chatConnectors:signIn.notice",
+	notOffered: "chatConnectors:signIn.notOffered",
+	notCovered: "chatConnectors:scopes.notice",
+};
+
 /** Props for {@link RoomToolsConnectorsSection}. */
 interface RoomToolsConnectorsSectionProps {
 	/** The room whose own toolbox is listed. */
@@ -67,24 +74,58 @@ export const RoomToolsConnectorsSection = ({
 	const list = new Intl.ListFormat(i18n.language, {
 		type: "conjunction",
 	});
-	const groupCount = groups.length + (otherTools.length > 0 ? 1 : 0);
+	// one row per connector service, then one for the rest of the toolbox
+	const groupRows = [
+		...groups.map((group) => ({
+			key: group.service.id,
+			label: group.label,
+			icon: (
+				<ConnectorServiceIcon
+					serviceId={group.service.id}
+					className="size-4 shrink-0"
+				/>
+			),
+			tools: group.tools,
+			issue: group.issue
+				? { issue: group.issue, providerId: group.service.provider }
+				: null,
+		})),
+		...(otherTools.length > 0
+			? [
+					{
+						key: "",
+						label: t("sections.connectors.otherTools"),
+						icon: (
+							<WrenchIcon
+								aria-hidden
+								className="size-4 shrink-0 text-muted-foreground"
+							/>
+						),
+						tools: otherTools,
+						issue: null,
+					},
+				]
+			: []),
+	];
+	const groupCount = groupRows.length;
 
-	/** The sentence the chat input's notice uses for the same problem. */
+	/**
+	 * The sentence the chat input's notice uses for the same problem.
+	 *
+	 * @param issue - Why the tools cannot run.
+	 * @param providerId - The account they need.
+	 * @param serviceNames - The connectors it affects.
+	 * @returns The sentence.
+	 */
 	const describeAccessIssue = (
 		issue: ConnectorAccessIssue,
 		providerId: ConnectorProviderId,
 		serviceNames: string[],
-	): string => {
-		const values = {
+	): string =>
+		t(ACCESS_ISSUE_KEYS[issue], {
 			account: t(`chatConnectors:providers.${providerId}.name`),
 			services: list.format(serviceNames),
-		};
-		return issue === "signIn"
-			? t("chatConnectors:signIn.notice", values)
-			: issue === "notOffered"
-				? t("chatConnectors:signIn.notOffered", values)
-				: t("chatConnectors:scopes.notice", values);
-	};
+		});
 
 	return (
 		<RoomToolsSection
@@ -161,54 +202,30 @@ export const RoomToolsConnectorsSection = ({
 				emptyMessage={t("sections.connectors.empty")}
 				onRetry={toolbox.load}
 			>
-				{groups.map((group) => (
+				{groupRows.map((row) => (
 					<ToolGroupRow
-						key={group.service.id}
-						label={group.label}
-						icon={
-							<ConnectorServiceIcon
-								serviceId={group.service.id}
-								className="size-4 shrink-0"
-							/>
-						}
-						count={group.tools.length}
+						key={row.key}
+						label={row.label}
+						icon={row.icon}
+						count={row.tools.length}
 						warning={
-							group.issue
+							row.issue
 								? describeAccessIssue(
-										group.issue,
-										group.service.provider,
-										[group.label],
+										row.issue.issue,
+										row.issue.providerId,
+										[row.label],
 									)
 								: undefined
 						}
 						defaultOpen={groupCount === 1}
 					>
 						<ToolList variant="group">
-							{group.tools.map((tool) => (
+							{row.tools.map((tool) => (
 								<ChatToolRow key={tool.name} tool={tool} />
 							))}
 						</ToolList>
 					</ToolGroupRow>
 				))}
-				{otherTools.length > 0 ? (
-					<ToolGroupRow
-						label={t("sections.connectors.otherTools")}
-						icon={
-							<WrenchIcon
-								aria-hidden
-								className="size-4 shrink-0 text-muted-foreground"
-							/>
-						}
-						count={otherTools.length}
-						defaultOpen={groupCount === 1}
-					>
-						<ToolList variant="group">
-							{otherTools.map((tool) => (
-								<ChatToolRow key={tool.name} tool={tool} />
-							))}
-						</ToolList>
-					</ToolGroupRow>
-				) : null}
 			</ToolList>
 		</RoomToolsSection>
 	);

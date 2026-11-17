@@ -141,6 +141,42 @@ tests are not backend authority; retain its compatibility caveats until verified
   `readPixelMessages` in [`api/pixel-messages.ts`](./src/api/pixel-messages.ts). A warning means
   the action ran here but the other servers in a cluster could not be told, for example.
 
+## Playground Rooms
+
+[`api/playground-room.ts`](./src/api/playground-room.ts) holds the SEMOSS chat apps' room calls,
+each run in the insight it is given: `loadPlaygroundRoom` (`GetPlaygroundMessages`,
+`GetRoomOptions` and `SetRoomForInsight` as one pixel, returning the insight the room is bound
+to), `getPlaygroundRoomOptions`, `getPlaygroundMessages`, `createPlaygroundRoom`,
+`compactPlaygroundRoom`, `submitLlmFeedback`, and the room list's `removeUserRoom`,
+`renameUserRoom` and `pinUserRoom`. `askPlaygroundPixel` (a chat turn) and
+`addPlaygroundToolExecutionPixel` (a tool result) build the pixels a chat streams itself; given a
+`PlaygroundStopCommit`, each saves the same call as stopped, with what streamed and a hidden
+note. `getPlaygroundRoomsPixel` and `getFollowUpQuestionsPixel`
+build pixels for callers that run them in a React read. A room's options are saved with
+`updateRoomOptions` in [`api/chat.ts`](./src/api/chat.ts), whose `getRoomOptions` and
+`setRoomForInsight` serve `InsightStore`'s rooms, which keep `GetRoomOptions`' output as it is.
+Around them: `listModels` and `getModel` (`MyEngines` over text generation models) and
+`getEngineInfo` in [`api/engine.ts`](./src/api/engine.ts); `getProjectInfo` and
+`isPortalPublished` in [`api/app.ts`](./src/api/app.ts), which reads the portal page with
+`getText`, the text read in [`utility/fetch.ts`](./src/utility/fetch.ts) that never takes a
+redirect for a sign out; `exportMarkdownDocument` (`ToDocx`/`ToPdf`) and `readUserAsset` in
+[`api/file.ts`](./src/api/file.ts); `dropInsight` in [`api/insight.ts`](./src/api/insight.ts);
+`getBrowserAutomationScript` in [`api/mcp.ts`](./src/api/mcp.ts); and `stopPixelJob` and
+`runPixelWithConsole` (a job's console read while it runs) in
+[`api/pixel-job.ts`](./src/api/pixel-job.ts). `stopPixelJob` returns false rather than throwing
+when the backend cannot stop a job, since a caller stopping it carries on either way.
+
+## Agents
+
+An agent is what the backend calls a workspace. [`api/workspace.ts`](./src/api/workspace.ts)
+holds its calls, each run in the insight it is given (normally the session's,
+`Session.insight.withInsight`): `getWorkspace` (`GetWorkspace`, typed `WorkspaceDetails`, its
+lists never missing and `config_json` parsed when it arrives as a string), `addWorkspace`,
+`editWorkspace` (which returns the partial-save warning, `readWorkspaceSaveWarning`),
+`deleteWorkspace`, and `getWorkspaceRooms`. `addWorkspacePixel`, `editWorkspacePixel` and
+`getWorkspaceRoomsPixel` build the same pixels for a caller that runs them itself, such as the
+shared agent form's builders and a paging hook.
+
 ## Session, Config and Permissions
 
 Session state lives in three framework-free stores. Every status they and their hooks report is

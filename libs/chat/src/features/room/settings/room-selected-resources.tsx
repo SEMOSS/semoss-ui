@@ -11,12 +11,14 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { isRemovableToolbox } from "../../tools/mcp/mcp-utils";
+import { isRemovableToolbox, listRoomTools } from "../../tools/mcp/mcp-utils";
 
 /** Props for {@link RoomSelectedResources}. */
 interface RoomSelectedResourcesProps {
-	/** The selected knowledge, never the entire catalog. */
+	/** The room's own selected knowledge, never the entire catalog. */
 	items: MCPConfig[];
+	/** The knowledge the room's agent brings, listed first and never removable. */
+	agentItems: MCPConfig[];
 	/** Locks adding and removing, as while a turn is running. */
 	disabled: boolean;
 	/** Opens the knowledge picker. */
@@ -28,18 +30,21 @@ interface RoomSelectedResourcesProps {
 /** The room's selected knowledge, with conversation-scoped removal and explicit ownership. */
 export function RoomSelectedResources({
 	items,
+	agentItems,
 	disabled,
 	onAdd,
 	onRemove,
 }: RoomSelectedResourcesProps) {
 	const { t } = useTranslation(["room", "common"]);
 	const id = useId();
+	const agentIds = new Set(agentItems.map((item) => item.id));
+	const shown = listRoomTools(items, agentItems);
 	return (
 		<section aria-labelledby={id} className="flex min-w-0 flex-col gap-3">
 			<div className="flex flex-wrap items-center justify-between gap-2">
 				<H4 id={id} className="flex items-center gap-2 text-base">
 					{t("room:form.knowledgeLabel")}
-					<Badge variant="secondary">{items.length}</Badge>
+					<Badge variant="secondary">{shown.length}</Badge>
 				</H4>
 				<Button
 					type="button"
@@ -52,13 +57,15 @@ export function RoomSelectedResources({
 					{t("room:menuKnowledge.addKnowledge")}
 				</Button>
 			</div>
-			{items.length === 0 ? (
+			{shown.length === 0 ? (
 				<Muted>{t("room:settings.noKnowledge")}</Muted>
 			) : (
 				<ul className="divide-y divide-border">
-					{items.map((item) => {
+					{shown.map((item) => {
 						// Knowledge from the agent or the room's own setup cannot be removed here.
-						const isInherited = !isRemovableToolbox(item);
+						const isFromAgent = agentIds.has(item.id);
+						const isInherited =
+							isFromAgent || !isRemovableToolbox(item);
 						return (
 							<li
 								key={item.id}
@@ -72,7 +79,7 @@ export function RoomSelectedResources({
 										<>
 											<Badge variant="outline">
 												{t(
-													item.fromWorkspace
+													isFromAgent
 														? "common:badges.fromAgent"
 														: "room:settings.fromRoom",
 												)}

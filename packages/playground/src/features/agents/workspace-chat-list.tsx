@@ -3,10 +3,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useChatSession } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import {
-	runPixel,
-	useSessionIteratorPixel,
-	useSessionPixel,
-} from "@semoss/sdk/react";
+	getPlaygroundRoomsPixel,
+	getWorkspaceRoomsPixel,
+	type WorkspaceRoom,
+	type WorkspaceRoomsPage,
+} from "@semoss/sdk";
+import { useSessionIteratorPixel, useSessionPixel } from "@semoss/sdk/react";
 import {
 	Button,
 	cn,
@@ -30,10 +32,7 @@ import {
 	getDateBucket,
 	parseTimestampWithUtcDefault,
 } from "@semoss/utility/date";
-import {
-	type WorkspaceChatRoom,
-	WorkspaceChatRow,
-} from "@/features/agents/workspace-chat-row";
+import { WorkspaceChatRow } from "@/features/agents/workspace-chat-row";
 
 /** Props for {@link WorkspaceChatList}. */
 interface WorkspaceChatListProps {
@@ -41,16 +40,6 @@ interface WorkspaceChatListProps {
 	 * Workspace (agent) id whose chats to render.
 	 */
 	workspaceId: string;
-
-	/**
-	 * Page size for the iterator. Default 25.
-	 */
-	limit?: number;
-
-	/**
-	 * Max height for the scrollable list area. Default `24rem` (`max-h-96`).
-	 */
-	maxHeightClassName?: string;
 }
 
 /** A pinned room, as `GetPlaygroundRooms` returns it. */
@@ -70,11 +59,7 @@ interface PinnedRoom {
  * date buckets. Each row supports favorite (pin), rename (inline),
  * and delete (confirmed), each applied optimistically over the list.
  */
-export const WorkspaceChatList = ({
-	workspaceId,
-	limit,
-	maxHeightClassName = "max-h-96",
-}: WorkspaceChatListProps) => {
+export const WorkspaceChatList = ({ workspaceId }: WorkspaceChatListProps) => {
 	const { t } = useTranslation(["workspace", "sidebar"]);
 	const { chat } = useChatSession();
 
@@ -83,8 +68,9 @@ export const WorkspaceChatList = ({
 	// Rooms deleted or renamed here, laid over the fetched pages so the list
 	// changes before it refetches
 	const [deletedSet, setDeletedSet] = useState<Set<string>>(new Set());
-	const [pendingDelete, setPendingDelete] =
-		useState<WorkspaceChatRoom | null>(null);
+	const [pendingDelete, setPendingDelete] = useState<WorkspaceRoom | null>(
+		null,
+	);
 	const [isDeleting, setIsDeleting] = useState(false);
 	const [pinnedSet, setPinnedSet] = useState<Set<string>>(new Set());
 	const [editingId, setEditingId] = useState<string | null>(null);
@@ -93,15 +79,17 @@ export const WorkspaceChatList = ({
 	const [renamedMap, setRenamedMap] = useState<Record<string, string>>({});
 
 	// One page of the agent's rooms at a time, restarted by a new search
-	const roomList = useSessionIteratorPixel<
-		{ total_count: number; rooms: WorkspaceChatRoom[] },
-		WorkspaceChatRoom
-	>(
+	const roomList = useSessionIteratorPixel<WorkspaceRoomsPage, WorkspaceRoom>(
 		(limit, offset) =>
-			`GetWorkspaceRooms(workspaceId=["${workspaceId}"], ${debouncedSearch ? `filters=[Filter(ROOM__ROOM_NAME ?like "<encode>${debouncedSearch}</encode>")],` : ""} limit=[${limit}], offset=[${offset}]);`,
+			getWorkspaceRoomsPixel({
+				workspaceId: workspaceId,
+				search: debouncedSearch,
+				limit: limit,
+				offset: offset,
+			}),
 		(response) => response.total_count,
 		(response) => response.rooms,
-		{ limit: limit ?? 25 },
+		{ limit: 25 },
 		[debouncedSearch, workspaceId],
 	);
 
@@ -112,7 +100,7 @@ export const WorkspaceChatList = ({
 
 	// Every pinned room, across agents; narrowed to this agent below
 	const pinnedRoomsPixel = useSessionPixel<PinnedRoom[]>(
-		`META | GetPlaygroundRooms(pinned=[true], sort=["DESC"]);`,
+		getPlaygroundRoomsPixel({ pinned: true, sort: "DESC" }),
 		{ data: [] },
 	);
 
@@ -134,7 +122,7 @@ export const WorkspaceChatList = ({
 
 	// Group rooms into date buckets, matching the sidebar.
 	const groups = useMemo(() => {
-		const byBucket = new Map<string, WorkspaceChatRoom[]>();
+		const byBucket = new Map<string, WorkspaceRoom[]>();
 		for (const room of visibleRooms) {
 			const d = parseTimestampWithUtcDefault(room.date_updated);
 			if (!d.isValid()) continue;
@@ -194,9 +182,8 @@ export const WorkspaceChatList = ({
 			return next;
 		});
 		try {
-			await runPixel(
-				`PinRoom(roomId=["${roomId}"], pinned=[${!wasFavorite}]);`,
-			);
+			// through the chat store, so the sidebar's favorites follow
+			await chat.pinRoom(roomId, !wasFavorite);
 		} catch {
 			// Revert on failure
 			setPinnedSet((prev) => {
@@ -216,7 +203,7 @@ export const WorkspaceChatList = ({
 	 *
 	 * @param room - The room to rename.
 	 */
-	const handleStartRename = (room: WorkspaceChatRoom) => {
+	const handleStartRename = (room: WorkspaceRoom) => {
 		setEditingId(room.room_id);
 		setEditingName(renamedMap[room.room_id] ?? room.room_name);
 	};
@@ -289,7 +276,7 @@ export const WorkspaceChatList = ({
 					ref={(el) => {
 						if (el) setScroll(el);
 					}}
-					className={cn("overflow-y-auto pe-1", maxHeightClassName)}
+					className="max-h-96 overflow-y-auto pe-1"
 				>
 					{showInitialLoading && renderState(<Spinner />)}
 					{showError &&

@@ -9,9 +9,10 @@ interface FakeStoreMethods {
 }
 
 /**
- * Give a test's fake store (a plain object cast as a `RoomStore`,
- * `ToolStore`, ...) what `useRoomSelector`, `useMessage`, and `useTool` read.
- * A test that changes a field afterwards calls `notify` so the component
+ * Give a test's fake store (a plain object cast as a `RoomStore`, ...) what
+ * `useRoomSelector` reads. `useMessage` and `useTool` read a message's or a
+ * call's `room`, so a fake message or call carries a fake room. A test that
+ * changes a field afterwards calls the room's `notify` so the component
  * renders again, as the real store's write would.
  *
  * @param fields - The fake's fields and methods.

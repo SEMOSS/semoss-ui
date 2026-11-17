@@ -1,7 +1,7 @@
 import { AlertCircle, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { runMcpTool, usePixel } from "@semoss/sdk/react";
+import { runMcpTool } from "@semoss/sdk/react";
 import {
 	Button,
 	Dialog,
@@ -19,7 +19,12 @@ import type { RoomStore } from "../../room/store/room.store";
 import { useRoomSelector } from "../../room/store/use-room-selector";
 import { ToolInspector } from "../inspector/tool-inspector";
 import { getToolEngineId, isAskExecutionMode } from "../mcp/mcp-utils";
+import {
+	pingBrowserExtension,
+	sendPlaywrightScript,
+} from "./browser-automation";
 import { ToolField, type ToolFieldSchema } from "./tool-field";
+import { useMcpToolDefinitions } from "./use-mcp-tool-definitions";
 
 /** Props for {@link ToolsDefaultView}. */
 interface ToolsDefaultViewProps {
@@ -50,43 +55,28 @@ export const ToolsDefaultView = ({
 }: ToolsDefaultViewProps) => {
 	const { t } = useTranslation("tool");
 	// The call's json reads the room's options too, so select through the room
-	const { status, metadataOriginalName, originalName, title, execution } =
-		useRoomSelector(tool.room, () => {
-			const json = tool.json;
-			return {
-				status: tool.status,
-				metadataOriginalName: json._meta?.SMSS_ORIGINAL_TOOL_NAME as
-					| string
-					| undefined,
-				originalName: json.original_name,
-				title: json.title,
-				execution: json._meta?.SMSS_MCP_EXECUTION,
-			};
-		});
-
-	const getMCP = usePixel<{
-		tools: {
-			name: string;
-			title?: string;
-			description?: string;
-			inputSchema: {
-				properties?: Record<string, ToolFieldSchema>;
-				required?: string[];
-			};
-		}[];
-	}>(`GetMCPTools(project=["${app}"]);`, {
-		data: {
-			tools: [
-				{
-					name: "",
-					inputSchema: {
-						properties: {},
-						required: [],
-					},
-				},
-			],
-		},
+	const {
+		status,
+		metadataOriginalName,
+		originalName,
+		title,
+		execution,
+		insightId,
+	} = useRoomSelector(tool.room, () => {
+		const json = tool.json;
+		return {
+			insightId: room.insightId,
+			status: tool.status,
+			metadataOriginalName: json._meta?.SMSS_ORIGINAL_TOOL_NAME as
+				| string
+				| undefined,
+			originalName: json.original_name,
+			title: json.title,
+			execution: json._meta?.SMSS_MCP_EXECUTION,
+		};
 	});
+
+	const getMCP = useMcpToolDefinitions(app, insightId);
 
 	const [data, setData] = useState<Record<string, unknown>>(
 		tool.parameters || {},
@@ -106,7 +96,7 @@ export const ToolsDefaultView = ({
 	const hasFailed = status === "ERROR" || status === "CANCELLED";
 	const foundTool =
 		getMCP.status === "SUCCESS"
-			? getMCP.data.tools.find(
+			? getMCP.tools.find(
 					(candidate) =>
 						candidate.name === metadataOriginalName ||
 						candidate.name === originalName ||
@@ -138,71 +128,12 @@ export const ToolsDefaultView = ({
 		setData((prev) => ({ ...prev, [field]: value }));
 	};
 
-	/**
-	 * Checks that the browser extension's panel is open by pinging it, since a
-	 * Playwright script can only run there.
-	 *
-	 * @returns Whether it answered within two seconds; true when the call has no script.
-	 */
-	const checkExtensionAvailable = async (): Promise<boolean> => {
-		if (!scriptForBrowserAutomation) {
-			return true;
-		}
-
-		// Active ping/pong validation with timeout
-		return new Promise<boolean>((resolve) => {
-			let timeoutId: ReturnType<typeof setTimeout> | null = null;
-			let resolved = false;
-
-			// Set up one-time listener for pong response
-			const handlePong = (event: MessageEvent) => {
-				if (event.origin !== window.location.origin) {
-					return;
-				}
-
-				if (event.data?.type === "SMSS_EXTENSION_PONG") {
-					if (!resolved) {
-						resolved = true;
-						if (timeoutId) clearTimeout(timeoutId);
-						window.removeEventListener("message", handlePong);
-						resolve(true);
-					}
-				}
-			};
-
-			// Add listener
-			window.addEventListener("message", handlePong);
-
-			// Set timeout for 2 seconds
-			timeoutId = setTimeout(() => {
-				if (!resolved) {
-					resolved = true;
-					window.removeEventListener("message", handlePong);
-					resolve(false);
-				}
-			}, 2000);
-
-			// Send ping
-			window.postMessage(
-				{
-					type: "SMSS_EXTENSION_PING",
-					timestamp: Date.now(),
-				},
-				"*",
-			);
-		});
-	};
-
 	/** Runs the call with the form's parameters and records its result on the room. */
 	const handleSubmit = async (): Promise<void> => {
-		// Check if extension is available for Playwright scripts BEFORE setting isSubmitting
-		if (scriptForBrowserAutomation) {
-			const extensionAvailable = await checkExtensionAvailable();
-
-			if (!extensionAvailable) {
-				setIsExtensionDialogOpen(true);
-				return; // Stop execution until user opens extension
-			}
+		// a Playwright script runs in the extension, so it has to be open first
+		if (scriptForBrowserAutomation && !(await pingBrowserExtension())) {
+			setIsExtensionDialogOpen(true);
+			return;
 		}
 
 		setIsSubmitting(true);
@@ -224,42 +155,13 @@ export const ToolsDefaultView = ({
 		let success = false;
 		let output = "";
 		try {
-			// Check if this is a Playwright script execution
 			if (scriptForBrowserAutomation) {
-				// Get session ID first
-				const sessionIdResponse = await room.runRoomPixel<[string]>(
-					"Session();",
-					false,
-					false,
+				output = await sendPlaywrightScript(
+					room,
+					app,
+					scriptForBrowserAutomation,
 				);
-				const sessionId = sessionIdResponse.pixelReturn[0].output;
-
-				// Fetch the complete Playwright script
-				const scriptResponse = await room.runRoomPixel<[unknown]>(
-					`GetAllSteps(project=["${app}"], sessionId=["${sessionId}"], fileName=["${scriptForBrowserAutomation}"]);`,
-					false,
-					false,
-				);
-				const scriptJson = scriptResponse.pixelReturn[0].output;
-
-				// Send script to browser extension
-				window.postMessage(
-					{
-						type: "SMSS_EXEC_PLAYWRIGHT_SCRIPT",
-						script: {
-							projectId: app,
-							name: scriptForBrowserAutomation,
-							autoExecute: false,
-							scriptContent: scriptJson,
-						},
-					},
-					"*",
-				);
-
-				output = `Successfully fetched Playwright script: ${scriptForBrowserAutomation}`;
-				success = true;
 			} else {
-				// Normal MCP tool execution for non-Playwright tools
 				output = await runMcpTool(
 					{
 						project: getToolEngineId(tool.json._meta) || app,
@@ -269,11 +171,10 @@ export const ToolsDefaultView = ({
 					},
 					room.insightId,
 				);
-				success = true;
 			}
+			success = true;
 		} catch (error) {
 			output = (error as Error).toString();
-			success = false;
 		}
 		const responseMessage = room.getMessage(message);
 		// Only process the tool response if the tool is still open
@@ -485,8 +386,7 @@ export const ToolsDefaultView = ({
 						<Button
 							onClick={async () => {
 								setIsRetryingExtensionCheck(true);
-								const available =
-									await checkExtensionAvailable();
+								const available = await pingBrowserExtension();
 								setIsRetryingExtensionCheck(false);
 
 								if (available) {

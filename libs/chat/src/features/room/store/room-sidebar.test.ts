@@ -1,7 +1,6 @@
 import { beforeEach, expect, test, vi } from "vitest";
 import { FILE_PANEL_TYPES } from "@semoss/panels";
 import type { ThemeMap } from "@semoss/shared";
-import { ToolStore } from "../../conversation/store/tool.store";
 import { ROOM_PANEL_COMPONENTS } from "../../workbench/panels/room-panel.components";
 import { RoomStore } from "./room.store";
 import { ROOM_PANEL_TYPES } from "./room-sidebar";
@@ -200,8 +199,7 @@ test("a connector viewer opens as a tab and closes with its connector", () => {
 
 test("closing a tool's tab returns it inline", () => {
 	const room = createRoom("room-tool-close");
-	const tool = new ToolStore(room, "t1");
-	room.tools.t1 = tool;
+	const tool = room.getOrCreateTool("t1");
 	tool.openTool("sidebar");
 
 	const pid = room.openSidebarPanel(
@@ -221,8 +219,7 @@ test("closing a tool's tab returns it inline", () => {
 test("closing Workspace returns all its tools inline and retains file panels", async () => {
 	const room = createRoom("room-tools-return-inline");
 	const tools = ["t1", "t2", "t3"].map((id) => {
-		const tool = new ToolStore(room, id);
-		room.tools[id] = tool;
+		const tool = room.getOrCreateTool(id);
 		tool.openTool("sidebar");
 		return tool;
 	});
@@ -240,8 +237,7 @@ test("closing Workspace returns all its tools inline and retains file panels", a
 
 test("moving the last sidebar tool inline leaves it open once", () => {
 	const room = createRoom("room-last-tool-inline");
-	const tool = new ToolStore(room, "t1");
-	room.tools.t1 = tool;
+	const tool = room.getOrCreateTool("t1");
 	tool.openTool("sidebar");
 
 	tool.openTool("inline");
@@ -253,8 +249,7 @@ test("moving the last sidebar tool inline leaves it open once", () => {
 
 test("explicitly closing a cancelled tool does not reopen it inline", () => {
 	const room = createRoom("room-cancelled-tool-close");
-	const tool = new ToolStore(room, "t1");
-	room.tools.t1 = tool;
+	const tool = room.getOrCreateTool("t1");
 	tool.openTool("sidebar");
 	tool.setStatus("CANCELLED");
 
@@ -315,8 +310,7 @@ test("a prepared layout retains its tabs through sidebar mounts and later opens"
 
 test("a disposed room no longer returns a closed tool's tab inline", () => {
 	const room = createRoom("room-disposed-tool");
-	const tool = new ToolStore(room, "t1");
-	room.tools.t1 = tool;
+	const tool = room.getOrCreateTool("t1");
 	tool.openTool("sidebar");
 	const pid = room.openSidebarPanel(
 		ROOM_PANEL_TYPES.TOOL,

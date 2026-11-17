@@ -45,19 +45,8 @@ export const applyToolStreamChunk = (
 	indexToToolId: Record<number, string>,
 	data: ToolStreamChunkData,
 ): void => {
-	// The terminal chunk has no index — flip the streaming flag off for every
-	// tool we've been tracking in this turn.
-	if (data.finish_reason) {
-		Object.values(indexToToolId).forEach((toolId) => {
-			const tool = message.room.getTool(toolId);
-			if (tool) {
-				tool.endStreaming();
-			}
-		});
-		return;
-	}
-
-	if (data.index === undefined) {
+	// The terminal chunk has no index; the final sync ends each call's streaming.
+	if (data.finish_reason || data.index === undefined) {
 		return;
 	}
 
@@ -95,10 +84,6 @@ export const applyToolStreamChunk = (
 		message.room.syncTool(data.id, message, placeholderPart, {
 			placeholder: true,
 		});
-		const tool = message.room.getTool(data.id);
-		if (tool) {
-			tool.beginStreaming();
-		}
 	}
 
 	const toolId = indexToToolId[data.index];

@@ -17,7 +17,7 @@ import {
 } from "@semoss/ui/next";
 import { useRoomSelector } from "../../room/store/use-room-selector";
 import { isAskExecutionMode } from "../../tools/mcp/mcp-utils";
-import type { ToolStore } from "../store/tool.store";
+import { isToolSettled, type ToolStore } from "../store/tool.store";
 import { ResponseMessageTool } from "./response-message-tool";
 
 /** Props for {@link ResponseMessageToolGroup}. */
@@ -68,10 +68,7 @@ export const ResponseMessageToolGroup = ({
 		const done = visible.filter((tool) => !needsDecision(tool));
 		return {
 			isRunning: visible.some(
-				(tool) =>
-					!tool.isResolved ||
-					tool.status === "LOADING" ||
-					tool.status === "INITIAL",
+				(tool) => !tool.isResolved || !isToolSettled(tool.status),
 			),
 			failedCount: done.filter((tool) => tool.status === "ERROR").length,
 			completedCount: done.filter((tool) => tool.status === "SUCCESS")

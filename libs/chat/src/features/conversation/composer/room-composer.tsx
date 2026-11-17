@@ -1,11 +1,12 @@
 import { useTranslation } from "@semoss/i18n";
 import { toast } from "@semoss/ui/next";
-import { useChatSession } from "../../chat/provider/use-chat-session";
 import { useRoomOrContext } from "../../room/scope/room.context";
 import type { RoomStore } from "../../room/store/room.store";
+import type { CompactionStrategy } from "../../room/store/room-compaction";
 import { useRoomSelector } from "../../room/store/use-room-selector";
 import { readRoomTurnState } from "../messages/room-turn-state";
 import { RoomInput } from "./room-input";
+import { useComposerSession } from "./use-composer-session";
 
 /** Props for {@link RoomComposer}. */
 interface RoomComposerProps {
@@ -16,17 +17,12 @@ interface RoomComposerProps {
 /** A room's composer: sends, stops, and compacts the room's turns. */
 export const RoomComposer = ({ room: roomProp }: RoomComposerProps) => {
 	const room = useRoomOrContext(roomProp);
-	const { chat } = useChatSession();
 	const { t } = useTranslation("room");
+	const session = useComposerSession(room);
 	const { isBusy, sendState } = useRoomSelector(room, readRoomTurnState);
-	const { options, model, hasOutstandingTools } = useRoomSelector(
+	const hasOutstandingTools = useRoomSelector(
 		room,
-		(current) => ({
-			options: current.options,
-			model: current.model,
-			hasOutstandingTools:
-				current.latestResponseMessage.hasUnfinishedTools,
-		}),
+		(current) => current.latestResponseMessage?.hasUnfinishedTools ?? false,
 	);
 
 	/**
@@ -60,9 +56,7 @@ export const RoomComposer = ({ room: roomProp }: RoomComposerProps) => {
 	 *
 	 * @param strategy - How to compact; the room's default when absent.
 	 */
-	const handleCompactMessages = async (
-		strategy?: "TOOL_PRUNE" | "SUMMARY" | "AUTO",
-	) => {
+	const handleCompactMessages = async (strategy?: CompactionStrategy) => {
 		try {
 			const result = await room.compactMessages(strategy);
 			if (result === "skipped") {
@@ -79,27 +73,18 @@ export const RoomComposer = ({ room: roomProp }: RoomComposerProps) => {
 		<div className="flex w-full shrink-0 flex-col @md:px-6 px-4 py-4">
 			<div className="mx-auto flex w-full max-w-3xl flex-col">
 				<RoomInput
-					predefinedPrompts={options.predefinedPrompts}
 					className="max-h-72 min-h-24"
 					isLoading={isBusy}
-					model={model}
+					session={session}
 					room={room}
-					onModelChange={(model) => {
-						room.setModel(model);
-						chat.setSelectedModel(model);
-					}}
-					options={options}
-					onMcpChange={(mcp) =>
-						room.setOptions({
-							...room.options,
-							mcp,
-						})
-					}
 					onPrompt={handlePrompt}
-					hasOutstandingTools={hasOutstandingTools}
 					sendState={sendState}
-					onStop={room.cancelActiveJob}
-					onCompact={handleCompactMessages}
+					variant={{
+						kind: "room",
+						onStop: room.cancelActiveJob,
+						onCompact: handleCompactMessages,
+						hasOutstandingTools,
+					}}
 					excludeCommandIds={[
 						// A room's mode is fixed at creation — never let an
 						// existing room switch into agent-harness mid-chat.

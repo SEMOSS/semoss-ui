@@ -1,12 +1,23 @@
 import { act, renderHook } from "@testing-library/react";
 import { expect, test, vi } from "vitest";
+import type { ThemeMap } from "@semoss/shared";
 import type { InputPixelMessage, ResponsePixelMessage } from "../../../types";
-import type { RoomStore } from "../../room/store/room.store";
-import { InputMessageStore } from "./input-message.store";
-import { ResponseMessageStore } from "./response-message.store";
+import { RoomStore } from "../../room/store/room.store";
 import { useMessage } from "./use-message";
 
-const room = { roomId: "room-1", syncTool: vi.fn() } as unknown as RoomStore;
+vi.mock("@semoss/sdk/react", () => ({
+	console: vi.fn(),
+	getPixelAsyncResult: vi.fn(),
+	runPixel: vi.fn(),
+	runPixelAsync: vi.fn(),
+	uploadInsight: vi.fn(),
+}));
+
+const room = new RoomStore({
+	theme: {} as ThemeMap["playground"],
+	roomId: "room-1",
+	panelComponents: {},
+});
 
 const pixel = {
 	visible: true,
@@ -21,7 +32,7 @@ const pixel = {
 
 /** A response store with no parts. */
 const response = (messageId: string) =>
-	new ResponseMessageStore(room, {
+	room.createMessage({
 		...pixel,
 		io: "OUTPUT",
 		messageId,
@@ -30,7 +41,7 @@ const response = (messageId: string) =>
 
 /** A user message store that says hi. */
 const input = (messageId: string) =>
-	new InputMessageStore(room, {
+	room.createMessage({
 		...pixel,
 		io: "INPUT",
 		type: "INPUT_TEXT",
@@ -107,20 +118,42 @@ test("useMessage renders on its own message's changes only", () => {
 	expect(result.current).toHaveLength(1);
 });
 
-test("a message's tree hears about changes below it until they are removed", () => {
+test("a change to one message keeps every other entry, and no change keeps the snapshot", () => {
 	const root = response("root");
-	const child = input("a");
-	const grandchild = response("b");
-	root.addChild(child);
-	child.addChild(grandchild);
+	const a = input("a");
+	const b = response("b");
+	root.addChild(a);
+	a.addChild(b);
 	const listener = vi.fn();
-	root.subscribeTree(listener);
+	const stop = room.subscribe(listener);
+	const before = room.getSnapshot();
 
-	grandchild.savePart({ type: "TEXT", text: "x", uiText: "x" });
+	b.savePart({ type: "TEXT", text: "x", uiText: "x" });
+	const after = room.getSnapshot();
 	expect(listener).toHaveBeenCalledTimes(1);
+	expect(after.messages[b.key]).not.toBe(before.messages[b.key]);
+	expect(after.messages[a.key]).toBe(before.messages[a.key]);
+	expect(after.messages[root.key]).toBe(before.messages[root.key]);
+	expect(after.tools).toBe(before.tools);
 
-	root.removeChild(child);
-	listener.mockClear();
-	grandchild.savePart({ type: "TEXT", text: "y", uiText: "y" });
-	expect(listener).not.toHaveBeenCalled();
+	b.setIsThinking(false);
+	b.updateParts(
+		(part): part is never => false,
+		(part) => part,
+	);
+	root.removeChild(b);
+	expect(room.getSnapshot()).toBe(after);
+	expect(listener).toHaveBeenCalledTimes(1);
+	stop();
+});
+
+test("a message is one view for its life, and its children keep their array", () => {
+	const root = response("root");
+	const a = input("a");
+	root.addChild(a);
+	expect(room.getMessageByKey(a.key)).toBe(a);
+	expect(a.parent).toBe(root);
+	const children = root.children;
+	a.addPart({ type: "TEXT", text: "more", uiText: "more" });
+	expect(root.children).toBe(children);
 });

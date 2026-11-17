@@ -1,110 +1,28 @@
-import { parseTimestampWithUtcDefault } from "@semoss/utility/date";
-import { StoreState } from "@semoss/utility/store";
 import type { AbstractPixelMessage, PixelMessage } from "../../../types";
 import type { RoomStore } from "../../room/store/room.store";
-
-/**
- * What every message holds. Every field is readonly.
- *
- * The tree links (`parent`, `children`) hold the other messages' stores: each
- * is a store of its own, and a change to the tree replaces the array, so a
- * reader of `children` sees it.
- */
-export interface MessageSnapshot {
-	/** The message's id. */
-	readonly id: string;
-	/** Whether the message is shown to the user. */
-	readonly visible: boolean;
-	/** The message above it in the tree, or null for the root. */
-	readonly parent: AbstractMessageStore | null;
-	/** Its index among its parent's children; -1 while it has no parent. */
-	readonly position: number;
-	/** The messages that answer it: each a branch of the conversation. */
-	readonly children: readonly AbstractMessageStore[];
-	/** Which child continues the conversation; -1 when it has none. */
-	readonly activeChildPosition: number;
-	/** What the message says, in order. */
-	readonly parts: readonly AbstractPixelMessage["parts"][number][];
-	/** The tokens the message used, for its cost. */
-	readonly tokens: number;
-	/** The model that answered, or the one the message was sent to. */
-	readonly modelId: string;
-	/** That model's type. */
-	readonly modelType: string;
-	/** The agent run the message belongs to, if any. */
-	readonly agentRun: AbstractPixelMessage["agentRun"] | undefined;
-	/** Extra properties that are not essential. */
-	readonly ornaments: AbstractPixelMessage["ornaments"];
-	/** When the message was created, once the backend has said. */
-	readonly dateCreated: Date | undefined;
-}
-
-/**
- * The agent run a pixel message names, in either of its two forms.
- *
- * @param message - The pixel message.
- * @returns Its run, from `agentRun` or its ornaments, or undefined.
- */
-const readAgentRun = (
-	message: AbstractPixelMessage,
-): AbstractPixelMessage["agentRun"] | undefined =>
-	message.agentRun ??
-	(message.ornaments?.agentRunId
-		? {
-				runId: message.ornaments.agentRunId,
-				role: message.ornaments.agentRunRole,
-			}
-		: undefined);
-
-/**
- * The ornaments a message keeps from a pixel message.
- *
- * @param message - The pixel message.
- * @returns Its model name and routing.
- */
-const readOrnaments = (
-	message: AbstractPixelMessage,
-): AbstractPixelMessage["ornaments"] => ({
-	modelName: message.ornaments?.modelName,
-	routing: message.ornaments?.routing,
-});
-
-/**
- * The fields every message starts with, from its pixel message.
- *
- * @param message - The pixel message.
- * @returns The common part of its snapshot.
- */
-export const initialMessageSnapshot = (
-	message: AbstractPixelMessage,
-): MessageSnapshot => ({
-	id: message.messageId,
-	visible: message.visible,
-	parent: null,
-	position: -1,
-	children: [],
-	activeChildPosition: -1,
-	parts: [],
-	tokens: message.tokens,
-	modelId: message.modelId,
-	modelType: message.modelType,
-	agentRun: readAgentRun(message),
-	ornaments: readOrnaments(message),
-	dateCreated: undefined,
-});
+import {
+	emptyMessageData,
+	type MessageData,
+	type MessageKey,
+	mergeMessage,
+	syncMessageData,
+} from "./message-map";
 
 /**
  * One message in a room's conversation tree: the root, a user's input, or a
  * response.
  *
- * Its state is a `StoreState`; read it in React with `useMessage`, or with
+ * A view over the room: its state is the entry under its key in the room's
+ * `messages`, and its actions write there through the room. The room keeps
+ * one view per key (`room.getMessageByKey`), so a view is the same object for
+ * the message's whole life. Read it in React with `useMessage`, or with
  * `useRoomSelector` for what depends on other messages or tool calls.
  */
 export abstract class AbstractMessageStore<
-	S extends MessageSnapshot = MessageSnapshot,
+	D extends MessageData = MessageData,
 > {
-	/** A unique React key for the message, only for rendering. */
-	readonly key: string;
+	/** The message's client key: its React key, and its entry in the room. */
+	readonly key: MessageKey;
 
 	/** The room the message is in. */
 	readonly room: RoomStore;
@@ -112,51 +30,47 @@ export abstract class AbstractMessageStore<
 	/** Whether it is the root, a plan, an input, or a response. */
 	abstract readonly type: "ROOT" | "PLAN" | "INPUT" | "OUTPUT";
 
-	/** The message's state; only its own actions and subclasses write it. */
-	protected readonly state: StoreState<S>;
-
-	/** Who hears about a change to this message or any message below it. */
-	private readonly treeListeners = new Set<() => void>();
-
-	/** Stops listening to each child's tree. */
-	private readonly childStops = new Map<AbstractMessageStore, () => void>();
-
 	/**
-	 * @param room - The room the message is in.
-	 * @param initial - Its first snapshot.
+	 * @param room - The room the message is in, which already holds its data.
+	 * @param key - The message's key.
 	 */
-	constructor(room: RoomStore, initial: S) {
+	constructor(room: RoomStore, key: MessageKey) {
 		this.room = room;
-		this.key = `room-${room.roomId}-${Date.now()}-${Math.floor(Math.random() * 100000000)}`;
-		this.state = new StoreState<S>(initial);
-		this.state.subscribe(this.notifyTree);
+		this.key = key;
 	}
 
-	/** The message's current state. */
-	getSnapshot = (): S => this.state.getSnapshot();
+	/** What the view reads once the room has deleted its entry; made on first need. */
+	private _empty: D | undefined;
 
 	/**
-	 * Listen for changes to this message alone.
+	 * The message's current data, from the room, or an empty, detached
+	 * message once the room has deleted it, so a view held elsewhere never
+	 * throws.
+	 *
+	 * @returns The data.
+	 */
+	getSnapshot = (): D => {
+		const data = this.room.getSnapshot().messages[this.key] as
+			| D
+			| undefined;
+		if (data) {
+			return data;
+		}
+		this._empty ??= emptyMessageData(
+			this.key,
+			this.type === "INPUT" ? "INPUT" : "OUTPUT",
+		) as D;
+		return this._empty;
+	};
+
+	/**
+	 * Listen for changes to the room, which holds the message.
 	 *
 	 * @param listener - Called after each change.
 	 * @returns Stops listening.
 	 */
 	subscribe = (listener: () => void): (() => void) =>
-		this.state.subscribe(listener);
-
-	/**
-	 * Hear about a change to this message or to any message below it, as the
-	 * room does to follow its whole conversation.
-	 *
-	 * @param listener - Called after each change.
-	 * @returns Stops listening.
-	 */
-	subscribeTree = (listener: () => void): (() => void) => {
-		this.treeListeners.add(listener);
-		return () => {
-			this.treeListeners.delete(listener);
-		};
-	};
+		this.room.subscribe(listener);
 
 	/** The message's id. */
 	get id(): string {
@@ -170,26 +84,35 @@ export abstract class AbstractMessageStore<
 
 	/** The message above it in the tree, or null for the root. */
 	get parent(): AbstractMessageStore | null {
-		return this.getSnapshot().parent;
+		const { parentKey } = this.getSnapshot();
+		return parentKey === null ? null : this.room.getMessageByKey(parentKey);
 	}
 
 	/** Its index among its parent's children; -1 while it has no parent. */
 	get position(): number {
-		return this.getSnapshot().position;
+		const { parentKey } = this.getSnapshot();
+		if (parentKey === null) {
+			return -1;
+		}
+		return (
+			this.room
+				.getSnapshot()
+				.messages[parentKey]?.childKeys.indexOf(this.key) ?? -1
+		);
 	}
 
 	/** The messages that answer it. */
 	get children(): readonly AbstractMessageStore[] {
-		return this.getSnapshot().children;
+		return this.room.getMessagesByKey(this.getSnapshot().childKeys);
 	}
 
 	/** Which child continues the conversation; -1 when it has none. */
 	get activeChildPosition(): number {
-		return this.getSnapshot().activeChildPosition;
+		return this.getSnapshot().activeChildIndex;
 	}
 
 	/** What the message says, in order. */
-	get parts(): S["parts"] {
+	get parts(): D["parts"] {
 		return this.getSnapshot().parts;
 	}
 
@@ -235,29 +158,26 @@ export abstract class AbstractMessageStore<
 
 	/** The sibling after it, or null. */
 	get nextSibling(): AbstractMessageStore | null {
-		return this.position < 0
-			? null
-			: (this.siblings[this.position + 1] ?? null);
+		const position = this.position;
+		return position < 0 ? null : (this.siblings[position + 1] ?? null);
 	}
 
 	/** The child that continues the conversation, or null. */
 	get activeChild(): AbstractMessageStore | null {
-		return this.children[this.activeChildPosition] ?? null;
+		const { childKeys, activeChildIndex } = this.getSnapshot();
+		const key = childKeys[activeChildIndex];
+		return key === undefined ? null : this.room.getMessageByKey(key);
 	}
 
 	/**
-	 * Take the backend's copy of the message.
+	 * Take the backend's copy of the message, and the tool calls and results
+	 * it holds.
 	 *
 	 * @param message - The pixel message.
 	 */
 	sync(message: PixelMessage): void {
-		this.updateMessage({
-			dateCreated: parseTimestampWithUtcDefault(
-				message.dateCreated,
-			).toDate(),
-			agentRun: readAgentRun(message),
-			ornaments: readOrnaments(message),
-		});
+		this.change((data) => syncMessageData(data, message));
+		this.room.syncMessageTools(this);
 	}
 
 	/**
@@ -266,7 +186,7 @@ export abstract class AbstractMessageStore<
 	 * @param id - The id.
 	 */
 	setId = (id: string): void => {
-		this.updateMessage({ id });
+		this.merge({ id } as Partial<D>);
 	};
 
 	/**
@@ -275,7 +195,7 @@ export abstract class AbstractMessageStore<
 	 * @param tokens - The count.
 	 */
 	setTokens = (tokens: number): void => {
-		this.updateMessage({ tokens });
+		this.merge({ tokens } as Partial<D>);
 	};
 
 	/**
@@ -283,8 +203,11 @@ export abstract class AbstractMessageStore<
 	 *
 	 * @param part - The part.
 	 */
-	addPart = (part: S["parts"][number]): void => {
-		this.setParts([...this.state.getSnapshot().parts, part]);
+	addPart = (part: D["parts"][number]): void => {
+		this.room.updateMessageParts<D["parts"]>(
+			this.key,
+			(parts) => [...parts, part] as D["parts"],
+		);
 	};
 
 	/**
@@ -293,36 +216,22 @@ export abstract class AbstractMessageStore<
 	 * @param matches - Which parts to change.
 	 * @param change - The next value of a matching part.
 	 */
-	updateParts = <P extends S["parts"][number]>(
-		matches: (part: S["parts"][number]) => part is P,
-		change: (part: P) => S["parts"][number],
+	updateParts = <P extends D["parts"][number]>(
+		matches: (part: D["parts"][number]) => part is P,
+		change: (part: P) => D["parts"][number],
 	): void => {
-		const current = this.state.getSnapshot().parts;
-		let isChanged = false;
-		const parts = current.map((part) => {
-			if (!matches(part)) {
-				return part;
-			}
-			const next = change(part);
-			isChanged ||= next !== part;
-			return next;
+		this.room.updateMessageParts<D["parts"]>(this.key, (current) => {
+			let isChanged = false;
+			const parts = current.map((part) => {
+				if (!matches(part)) {
+					return part;
+				}
+				const next = change(part);
+				isChanged ||= next !== part;
+				return next;
+			});
+			return (isChanged ? parts : current) as D["parts"];
 		});
-		if (isChanged) {
-			this.setParts(parts);
-		}
-	};
-
-	/**
-	 * Attach the message under a parent.
-	 *
-	 * @param parent - The parent, or null to detach it.
-	 * @param position - Its index among the parent's children.
-	 */
-	connectParent = (
-		parent: AbstractMessageStore | null,
-		position: number,
-	): void => {
-		this.updateMessage({ parent, position });
 	};
 
 	/**
@@ -331,12 +240,7 @@ export abstract class AbstractMessageStore<
 	 * @param message - The child.
 	 */
 	addChild = (message: AbstractMessageStore): void => {
-		const children = [...this.state.getSnapshot().children, message];
-		this.childStops.get(message)?.();
-		this.childStops.set(message, message.subscribeTree(this.notifyTree));
-		this.updateMessage({ children });
-		message.connectParent(this, children.length - 1);
-		message.activateMessage();
+		this.room.insertChildMessage(this.key, message.key);
 	};
 
 	/**
@@ -345,34 +249,9 @@ export abstract class AbstractMessageStore<
 	 * @param message - The child; nothing happens when it is not one.
 	 */
 	removeChild = (message: AbstractMessageStore | null): void => {
-		if (!message) {
-			return;
+		if (message) {
+			this.room.removeChildMessage(this.key, message.key);
 		}
-		const { children, activeChildPosition } = this.state.getSnapshot();
-		const index = children.findIndex((child) => child.id === message.id);
-		if (index === -1) {
-			return;
-		}
-
-		const remaining = children.filter((_, position) => position !== index);
-		const removed = children[index];
-		this.childStops.get(removed)?.();
-		this.childStops.delete(removed);
-		removed.connectParent(null, -1);
-		remaining.forEach((child, position) => {
-			child.connectParent(this, position);
-		});
-		this.updateMessage({
-			children: remaining,
-			activeChildPosition:
-				activeChildPosition === index
-					? remaining.length
-						? Math.min(index, remaining.length - 1)
-						: -1
-					: activeChildPosition > index
-						? activeChildPosition - 1
-						: activeChildPosition,
-		});
 	};
 
 	/** Make this message its parent's active child. */
@@ -386,49 +265,24 @@ export abstract class AbstractMessageStore<
 	 * @param activeChildPosition - The child's index.
 	 */
 	setActiveChildPosition = (activeChildPosition: number): void => {
-		this.updateMessage({ activeChildPosition });
-	};
-
-	/** Tell the tree's listeners about a change here or below. */
-	private notifyTree = (): void => {
-		for (const listener of [...this.treeListeners]) {
-			listener();
-		}
+		this.room.setActiveChildMessage(this.key, activeChildPosition);
 	};
 
 	/**
-	 * Change some of the common fields.
+	 * Replace the message's data with what `change` makes of it.
+	 *
+	 * @param change - The next data; the same object changes nothing.
+	 */
+	protected change = (change: (data: D) => D): void => {
+		this.room.updateMessageData(this.key, (data) => change(data as D));
+	};
+
+	/**
+	 * Change some fields, keeping the message when none would change.
 	 *
 	 * @param changes - The fields to change.
 	 */
-	protected updateMessage = (changes: Partial<MessageSnapshot>): void => {
-		this.merge(changes as Partial<S>);
-	};
-
-	/**
-	 * Replace the parts.
-	 *
-	 * @param parts - The parts.
-	 */
-	private setParts = (parts: S["parts"][number][]): void => {
-		// each subclass narrows the part type, which a generic Partial<S>
-		// cannot see from here
-		this.merge({ parts } as unknown as Partial<S>);
-	};
-
-	/**
-	 * Change some fields, keeping the snapshot when none would change, as
-	 * `StoreState.update` does (which the generic snapshot cannot type).
-	 *
-	 * @param changes - The fields to change.
-	 */
-	protected merge = (changes: Partial<S>): void => {
-		const current = this.state.getSnapshot();
-		const isChanged = (Object.keys(changes) as (keyof S)[]).some(
-			(key) => !Object.is(current[key], changes[key]),
-		);
-		if (isChanged) {
-			this.state.set({ ...current, ...changes });
-		}
+	protected merge = (changes: Partial<D>): void => {
+		this.change((data) => mergeMessage(data, changes));
 	};
 }

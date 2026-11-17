@@ -1,5 +1,7 @@
+import { TriangleAlertIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { ToolListStatus } from "./tool-list-status";
+import { useTranslation } from "@semoss/i18n";
+import { Button, Muted, Skeleton } from "@semoss/ui/next";
 import type { ToolsRead } from "./use-tools-read";
 
 /** The bordered list every section's rows sit in. */
@@ -12,6 +14,9 @@ const TOOL_LIST_CLASS_NAME =
  */
 const GROUP_LIST_CLASS_NAME =
 	"flex flex-col divide-y divide-border border-border border-t ps-7";
+
+/** Placeholder rows while a list loads. */
+const SKELETON_ROWS = ["a", "b", "c"];
 
 /** Props for {@link ToolList}. */
 interface ToolListProps {
@@ -47,24 +52,60 @@ export const ToolList = ({
 	onRetry,
 	variant = "section",
 	children,
-}: ToolListProps) => (
-	<ul
-		className={
-			variant === "section" ? TOOL_LIST_CLASS_NAME : GROUP_LIST_CLASS_NAME
-		}
-	>
-		{status === "error" ? (
-			<ToolListStatus
-				status="error"
-				message={errorMessage}
-				onRetry={onRetry}
-			/>
-		) : !isEmpty ? (
-			children
-		) : status === "ready" ? (
-			<ToolListStatus status="empty" message={emptyMessage} />
-		) : (
-			<ToolListStatus status="loading" />
-		)}
-	</ul>
-);
+}: ToolListProps) => {
+	const { t } = useTranslation(["common"]);
+
+	// the rows, or the row that stands in for them
+	let rows: ReactNode = children;
+	if (status === "error") {
+		rows = (
+			<li
+				role="alert"
+				className="flex min-w-0 items-center gap-3 px-3 py-2"
+			>
+				<TriangleAlertIcon
+					aria-hidden
+					className="size-4 shrink-0 text-destructive"
+				/>
+				<Muted className="min-w-0 flex-1 font-normal">
+					{errorMessage}
+				</Muted>
+				{onRetry ? (
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						className="shrink-0"
+						onClick={onRetry}
+					>
+						{t("common:buttons.retry")}
+					</Button>
+				) : null}
+			</li>
+		);
+	} else if (isEmpty && status === "ready") {
+		rows = (
+			<li className="px-3 py-2.5">
+				<Muted className="font-normal">{emptyMessage}</Muted>
+			</li>
+		);
+	} else if (isEmpty) {
+		rows = SKELETON_ROWS.map((row) => (
+			<li key={row} className="px-3 py-2">
+				<Skeleton className="h-6 w-full" />
+			</li>
+		));
+	}
+
+	return (
+		<ul
+			className={
+				variant === "section"
+					? TOOL_LIST_CLASS_NAME
+					: GROUP_LIST_CLASS_NAME
+			}
+		>
+			{rows}
+		</ul>
+	);
+};

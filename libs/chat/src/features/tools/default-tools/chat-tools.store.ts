@@ -3,7 +3,7 @@ import type { PixelMessageToolCallPart } from "../../../types";
 import type { ToolStore } from "../../conversation/store/tool.store";
 import type { RoomStore } from "../../room/store/room.store";
 import { ROOM_PANEL_TYPES } from "../../room/store/room-sidebar";
-import { RoomFolderProvider } from "../folders/room-folder";
+import { RoomFolder } from "../folders/room-folder";
 import { MCP_EXECUTION_ASK, MCP_EXECUTION_AUTO } from "../mcp/mcp-constants";
 import { isAskExecutionMode } from "../mcp/mcp-utils";
 import { getConnectorToolService, isFolderToolCall } from "./chat-tool-kind";
@@ -22,7 +22,6 @@ import {
 	type FolderToolName,
 	type FolderToolOutcome,
 	isFolderToolName,
-	ROOM_FILES_NAME,
 } from "./folder-tools";
 
 /** A tool call as a message part holds it. */
@@ -51,7 +50,7 @@ const EMPTY_ENGINE_META: Omit<ToolCallMeta, "SMSS_MCP_EXECUTION"> = {
 const failure = (message: string): FolderToolOutcome => ({
 	isError: true,
 	payload: { error: message },
-	changes: [],
+	hasChanges: false,
 });
 
 /**
@@ -91,14 +90,14 @@ export class ChatToolsStore {
 	private readonly room: RoomStore;
 
 	/** The chat's own files, where the default tools read and write. */
-	private readonly roomFiles: RoomFolderProvider;
+	private readonly roomFiles: RoomFolder;
 
 	/**
 	 * @param room - The room these tools belong to.
 	 */
 	constructor(room: RoomStore) {
 		this.room = room;
-		this.roomFiles = new RoomFolderProvider(this.runFolderPixel);
+		this.roomFiles = new RoomFolder(this.runFolderPixel);
 	}
 
 	/** Whether the room runs its messages through the agent harness. */
@@ -152,11 +151,17 @@ export class ChatToolsStore {
 	 * their approval card, rather than in the sidebar.
 	 *
 	 * @param call - The tool call as the room received it.
+	 * @param defaultTools - The room's `defaultTools` setting to follow; the
+	 * room's own by default, or the next one while the room changes it.
 	 * @returns The call to render and run. Other tools come back unchanged.
 	 */
-	decorateToolCall = (call: ToolCall): ToolCall => {
+	decorateToolCall = (
+		call: ToolCall,
+		defaultTools: unknown = this.room.options.defaultTools,
+	): ToolCall => {
 		if (isFolderToolCall(call) && isFolderToolName(call.name)) {
-			const shouldAskUser = this.getDefaultToolMode(call.name) !== "auto";
+			const shouldAskUser =
+				readDefaultToolMode(defaultTools, call.name) !== "auto";
 
 			return {
 				...call,
@@ -218,13 +223,8 @@ export class ChatToolsStore {
 			);
 		}
 
-		const outcome = await executeFolderTool(
-			this.roomFiles,
-			name,
-			args,
-			ROOM_FILES_NAME,
-		);
-		if (!outcome.isError && outcome.changes.length > 0) {
+		const outcome = await executeFolderTool(this.roomFiles, name, args);
+		if (!outcome.isError && outcome.hasChanges) {
 			this.room.refreshSidebarFileExplorer();
 		}
 		return outcome;
@@ -314,11 +314,10 @@ export class ChatToolsStore {
 	 * @returns The output.
 	 */
 	private runFolderPixel = async (pixel: string): Promise<unknown> => {
-		const response = await this.room.runRoomPixel<[unknown]>(
-			pixel,
-			false,
-			false,
-		);
+		const response = await this.room.runRoomPixel<[unknown]>(pixel, {
+			showLoading: false,
+			setErrorOnFail: false,
+		});
 		return response.pixelReturn[0]?.output;
 	};
 }

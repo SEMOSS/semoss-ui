@@ -1,9 +1,8 @@
 import { Bookmark, ChevronDown, Info, Search } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { useTranslation } from "@semoss/i18n";
-import { throwOnPixelErrors } from "@semoss/sdk";
-import { Env, post, useSessionInsight } from "@semoss/sdk/react";
+import { setEngineFavorite } from "@semoss/sdk";
 import {
 	Badge,
 	Button,
@@ -35,46 +34,25 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { formatLocalDateTime } from "@semoss/utility/date";
 import { NewKnowledgeOverlay } from "@/features/knowledge/new-knowledge-overlay";
+import {
+	readTags,
+	useKnowledgeSources,
+} from "@/features/knowledge/use-knowledge-sources";
 
 /** A knowledge source (a vector database), shaped for the library's list. */
 type DocumentLibraryEngine = {
 	/** The name shown: the display name, the engine name or a tag. */
 	name: string;
-	/** The engine's own name. */
-	subheader: string;
-	/** The engine's description metadata. */
-	description: string;
 	/** The engine's id. */
 	id: string;
-	/** The engine's name, or its tag when it has none. */
-	engine_name: string;
 	/** The engine's tags. */
 	tag: string[];
 	/** When the engine was created, as the server sends it. */
 	dateCreated: string;
 	/** Whether the user has favorited the engine, per the server. */
 	favorite: boolean;
-};
-
-/**
- * Formats a server timestamp, which is UTC without a zone, in the user's
- * locale.
- *
- * @param dateStr - The timestamp, as `yyyy-MM-dd HH:mm:ss`.
- * @returns The local date and time, or the input when it does not parse.
- */
-const formatDateTime = (dateStr: string): string => {
-	const d = new Date(`${dateStr.replace(" ", "T")}Z`);
-	if (Number.isNaN(d.getTime())) return dateStr;
-	return d.toLocaleString(undefined, {
-		month: "short",
-		day: "numeric",
-		year: "numeric",
-		hour: "numeric",
-		minute: "2-digit",
-		hour12: true,
-	});
 };
 
 /**
@@ -97,89 +75,36 @@ export const KnowledgeLibrary = () => {
 
 	const [favorites, setFavorites] = useState<Record<string, boolean>>({});
 
-	const { run } = useSessionInsight();
-	const [data, setData] = useState([]);
-	const [isLoading, setIsLoading] = useState(true);
-	const [hasLoadError, setHasLoadError] = useState(false);
-	const [reloadCount, setReloadCount] = useState(0);
-
-	// Load the knowledge sources, again on each Retry
-	// biome-ignore lint/correctness/useExhaustiveDependencies: explicit retry counter restarts this read after an error.
-	useEffect(() => {
-		let active = true;
-		const getEngines = async () => {
-			setIsLoading(true);
-			setHasLoadError(false);
-			try {
-				const result = await run(
-					`MyEngines ( engineTypes = [ 'VECTOR' ], metaKeys = ["description", "tag"])`,
-				).then(throwOnPixelErrors);
-
-				const pixelData = result?.pixelReturn?.[0];
-				if (!pixelData) {
-					console.warn("No pixelReturn data found.");
-					return;
-				}
-
-				const output = pixelData.output;
-				if (active) setData([output]);
-			} catch (error) {
-				console.error("Error retrieving vectors", error);
-				if (active) setHasLoadError(true);
-			} finally {
-				if (active) setIsLoading(false);
-			}
-		};
-
-		void getEngines();
-		return () => {
-			active = false;
-		};
-	}, [run, reloadCount]);
+	const { sources, status, retry, refresh } = useKnowledgeSources();
 
 	// Every tag across the sources, for the tag filter
 	const centers = useMemo(() => {
 		const tags = new Set<string>();
-		data[0]?.forEach((item) => {
-			const itemTags = Array.isArray(item?.tag)
-				? item.tag
-				: item?.tag
-					? [item.tag]
-					: [];
-			itemTags.forEach((tag) => {
-				if (tag) {
-					tags.add(String(tag));
-				}
-			});
-		});
+		for (const source of sources) {
+			for (const tag of readTags(source.tag)) {
+				if (tag) tags.add(String(tag));
+			}
+		}
 		return Array.from(tags).sort();
-	}, [data]);
+	}, [sources]);
 
-	const formatted: DocumentLibraryEngine[] =
-		data[0]?.reduce((acc, item) => {
-			const name =
-				item?.engine_display_name ||
-				item?.engine_name ||
-				item?.tag ||
-				t("knowledge:messages.untitled");
-			acc.push({
-				name,
-				subheader: item.engine_name || "",
-				description: item.description || "",
-				id: item.engine_id || "",
-				engine_name: item.engine_name || item.tag || "",
-				tag: Array.isArray(item?.tag)
-					? item.tag
-					: item?.tag
-						? [item.tag]
-						: [],
-				dateCreated: item.engine_date_created || "",
-				favorite: item.engine_favorite === 1,
-			});
+	const formatted = sources.map((item): DocumentLibraryEngine => {
+		const tags = readTags(item.tag);
+		return {
+			name:
+				item.engine_display_name ||
+				item.engine_name ||
+				tags[0] ||
+				t("knowledge:messages.untitled"),
+			id: item.engine_id || "",
+			tag: tags,
+			dateCreated: item.engine_date_created || "",
+			favorite: item.engine_favorite === 1,
+		};
+	});
 
-			return acc;
-		}, []) || [];
-
+	const query = search.toLowerCase();
+	const isSearchBlank = search.trim() === "";
 	const filteredItems = formatted
 		.filter((item) => {
 			// NOTE: Today we only have tags; until we have an explicit ownership/global flag,
@@ -190,10 +115,9 @@ export const KnowledgeLibrary = () => {
 				return true;
 			}
 
-			const tags = Array.isArray(item.tag) ? item.tag : [];
-			const lowerTags = tags
+			const lowerTags = item.tag
 				.filter(Boolean)
-				.map((t) => String(t).toLowerCase());
+				.map((tag) => String(tag).toLowerCase());
 
 			const isGlobal = lowerTags.includes("fda")
 				? true
@@ -203,36 +127,19 @@ export const KnowledgeLibrary = () => {
 		})
 		.filter((item) => {
 			const matchesSearch =
-				!search ||
-				search.trim() === "" ||
-				item?.tag?.some((a) =>
-					a?.toLowerCase()?.includes(search?.toLowerCase()),
+				isSearchBlank ||
+				item.tag.some((tag) => tag.toLowerCase().includes(query)) ||
+				item.name.toLowerCase().includes(query);
+
+			const matchesCenter =
+				centerFilter.length === 0 ||
+				centerFilter.some((filter) =>
+					item.tag.some((tag) =>
+						tag.toLowerCase().includes(filter.toLowerCase()),
+					),
 				);
 
-			let matchesCenter = true;
-			try {
-				matchesCenter =
-					centerFilter.length === 0 ||
-					centerFilter.some((filter) =>
-						item?.tag?.some((a) =>
-							a?.toLowerCase()?.includes(filter.toLowerCase()),
-						),
-					);
-			} catch (e) {
-				console.error(e);
-			}
-
-			let matchesName = true;
-
-			try {
-				matchesName = item?.name
-					?.toLowerCase()
-					?.includes(search?.toLowerCase());
-			} catch (e) {
-				console.error(e);
-			}
-
-			return (matchesSearch || matchesName) && matchesCenter;
+			return matchesSearch && matchesCenter;
 		})
 		.filter((item) => {
 			if (!showFavoritesOnly) return true;
@@ -258,11 +165,7 @@ export const KnowledgeLibrary = () => {
 		const next = !current;
 		setFavorites((prev) => ({ ...prev, [item.id]: next }));
 		try {
-			await post<{ success: boolean }>(
-				`${Env.MODULE}/api/auth/engine/setEngineFavorite`,
-				{ engineId: item.id, isFavorite: next },
-				{},
-			);
+			await setEngineFavorite(item.id, next);
 		} catch {
 			// Revert on failure
 			setFavorites((prev) => ({ ...prev, [item.id]: current }));
@@ -277,21 +180,10 @@ export const KnowledgeLibrary = () => {
 					onClose={(knowledge) => {
 						setIsNewKnowledgeOpen(false);
 
-						// Refresh the list once a knowledge source is created
+						// Refresh the list once a knowledge source is created,
+						// read by the known tags rather than in full
 						if (knowledge) {
-							void run(
-								`MyEngines ( engineTypes = [ 'VECTOR' ], metaKeys = ["description", "tag"],  metaFilters=[{"tag":${JSON.stringify(
-									["FDA", ...centers],
-								)}}])`,
-							)
-								.then(throwOnPixelErrors)
-								.then((result) => {
-									const pixelData = result?.pixelReturn?.[0];
-									if (!pixelData) {
-										return;
-									}
-									setData([pixelData.output]);
-								});
+							refresh(["FDA", ...centers]);
 						}
 					}}
 				/>
@@ -541,20 +433,17 @@ export const KnowledgeLibrary = () => {
 					</CardContent>
 				</Card>
 
-				{isLoading ? (
+				{status === "LOADING" ? (
 					<div className="flex justify-center p-8">
 						<Spinner />
 					</div>
-				) : hasLoadError ? (
+				) : status === "ERROR" ? (
 					<div
 						role="alert"
 						className="flex flex-col items-center gap-3 rounded-xl border p-6"
 					>
 						<p>{t("knowledge:studio.loadError")}</p>
-						<Button
-							variant="outline"
-							onClick={() => setReloadCount((value) => value + 1)}
-						>
+						<Button variant="outline" onClick={retry}>
 							{t("knowledge:studio.retry")}
 						</Button>
 					</div>
@@ -594,9 +483,9 @@ export const KnowledgeLibrary = () => {
 											</div>
 											{item.dateCreated && (
 												<p className="hidden shrink-0 text-end text-muted-foreground text-xs tabular-nums lg:block">
-													{formatDateTime(
+													{formatLocalDateTime(
 														item.dateCreated,
-													)}
+													) ?? item.dateCreated}
 												</p>
 											)}
 											<div className="flex shrink-0 items-center gap-2">

@@ -1,39 +1,33 @@
 import { getI18n } from "@semoss/i18n";
 import {
+	createPlaygroundRoom,
+	dropInsight,
+	exportMarkdownDocument,
+	getModel,
 	getModelContextWindow,
+	getPlaygroundMessages,
+	listModels,
 	pinUserRoom,
 	removeUserRoom,
 	renameUserRoom,
-	throwOnPixelErrors,
 } from "@semoss/sdk";
-import { download, runPixel, Session } from "@semoss/sdk/react";
-import {
-	type AgentFormValues,
-	agentNeedsFollowUpEdit,
-	buildAddWorkspacePixel,
-	buildEditWorkspacePixel,
-	getWorkspaceSaveWarning,
-	type ThemeMap,
-} from "@semoss/shared";
-import { toast } from "@semoss/ui/next";
-import { parseTimestampWithUtcDefault } from "@semoss/utility/date";
+import { download, Session } from "@semoss/sdk/react";
+import type { ThemeMap } from "@semoss/shared";
 import { StoreState } from "@semoss/utility/store";
 import type { WorkbenchPanelConfigAny } from "@semoss/workbench";
-import type {
-	AbstractPixelMessage,
-	Engine,
-	MCPConfig,
-	PixelMessageTextPart,
-	PixelMessageToolCallPart,
-	Workspace,
-} from "../../../types";
+import type { AbstractPixelMessage, ChatMode, Engine } from "../../../types";
 import { RoomStore } from "../../room/store/room.store";
+import {
+	NEW_INSIGHT_ID,
+	ROOT_PLACEHOLDER_ID,
+} from "../../tools/mcp/mcp-constants";
 import {
 	type NewChatBuildDefaults,
 	readDeploymentNewChatDefaults,
 	readNewChatPreferences,
 	resolveNewChatModel,
 } from "../config/new-chat-preferences";
+import { formatConversationMarkdown } from "./conversation-markdown";
 
 /**
  * Shape of a room row as rendered in the nav list. Matches the columns
@@ -51,6 +45,19 @@ interface OptimisticRoom {
 	WORKSPACE_ID?: string;
 	/** Whether the room is pinned. */
 	PINNED?: boolean;
+}
+
+/** A room `ChatStore.createRoom` made, and its first message. */
+interface CreatedRoom {
+	/** The new room, cached and shown in the nav. */
+	readonly room: RoomStore;
+	/**
+	 * Settles once the first message has sent, with null, or failed, with its
+	 * error (an `UploadError` when a file could not be uploaded). The chat has
+	 * already tidied its nav by then; showing the failure is the caller's.
+	 * Never rejects.
+	 */
+	readonly firstMessage: Promise<Error | null>;
 }
 
 /** What the chat holds. Every field is readonly. */
@@ -99,8 +106,10 @@ export interface ChatSnapshot {
 /**
  * The session's chat: its models, the rooms it has opened, the rooms shown
  * before their first message persists, and the pixels that create, rename,
- * pin, download, and remove rooms and agents. One per session, made by
- * `useCreateChatStore`; it owns every `RoomStore` it caches.
+ * pin, download, and remove rooms. One per session, made by
+ * `useCreateChatStore`; it owns every `RoomStore` it caches. Agents are
+ * created, saved, and deleted with the plain functions in `agent-actions.ts`,
+ * which hold no state.
  */
 export class ChatStore {
 	/** The deployment's theme, with every default filled in. */
@@ -252,18 +261,6 @@ export class ChatStore {
 	};
 
 	/**
-	 * Register a pre-created RoomStore in the local cache so it is
-	 * discoverable by loadRoom after navigation.  Used by consumers that
-	 * need a real insight before the first message is sent (e.g. the
-	 * file-explorer on the new-room page).
-	 *
-	 * @param room - The room to cache.
-	 */
-	registerRoom = (room: RoomStore): void => {
-		this.setCachedRoom(room.roomId, room);
-	};
-
-	/**
 	 * A room already held in the local cache, without loading it — so a page
 	 * can show a room it was just handed without waiting a render.
 	 *
@@ -304,37 +301,46 @@ export class ChatStore {
 	};
 
 	/**
-	 * Creates a room via CreatePlaygroundRoom and brings it to model/mode/name
-	 * ready state, without options, a message, or surfacing it anywhere.
-	 * Callers sequence initialize()/updateRoomOptions() themselves.
+	 * Create a room with CreatePlaygroundRoom, set its model, mode and name,
+	 * load it and save its options, then run the caller's setup.
 	 *
-	 * @param mode - Whether the room runs as an agent or a chat.
-	 * @param name - The room's name.
-	 * @param workspaceId - The agent the room runs, if any.
-	 * @returns The new room's store.
-	 * @throws When CreatePlaygroundRoom reports an error.
+	 * Which comes first, loading or saving, is the one difference between the
+	 * two ways a room starts, and the pixels each sends are tested in order:
+	 *
+	 * - `"initialize-first"`, a room with a first message: `initialize` reads
+	 *   the new room's empty options, then its options are saved, so nothing
+	 *   is read back and the first message waits on no agent lookup.
+	 * - `"save-first"`, a room with no message: its options, and with them its
+	 *   agent, are saved first, so `initialize` reads them back and finds the
+	 *   agent's greeting.
+	 *
+	 * Either way the mode set here holds: `RoomStore.initialize` only promotes
+	 * a room to agent mode from saved options, and never demotes it.
+	 *
+	 * @param room - The room's mode, name, options, agent, and setup, and
+	 * which of loading and saving comes first.
+	 * @returns The new room, not yet cached or shown anywhere.
+	 * @throws When CreatePlaygroundRoom, loading, saving, or the setup fails.
 	 */
-	private createRoomShell = async (
-		mode: "agent" | "chat",
-		name: string,
-		workspaceId?: string,
-	): Promise<RoomStore> => {
-		const { errors, pixelReturn, insightId } = await runPixel<
-			[
-				{
-					roomId: string;
-				},
-			]
-		>(
-			`CreatePlaygroundRoom(${workspaceId ? `workspaceId=${JSON.stringify(workspaceId)}` : ""})`,
-			"new",
+	private createReadyRoom = async ({
+		mode,
+		name,
+		options,
+		workspaceId,
+		prepareRoom,
+		order,
+	}: {
+		mode: ChatMode;
+		name: string;
+		options: RoomStore["options"];
+		workspaceId?: string;
+		prepareRoom?: (room: RoomStore) => Promise<void>;
+		order: "initialize-first" | "save-first";
+	}): Promise<RoomStore> => {
+		const { roomId, insightId } = await createPlaygroundRoom(
+			NEW_INSIGHT_ID,
+			workspaceId,
 		);
-
-		if (errors.length > 0) {
-			throw new Error(errors.join(""));
-		}
-
-		const roomId = pixelReturn[0].output.roomId;
 
 		const room = new RoomStore({
 			theme: this._theme,
@@ -347,6 +353,14 @@ export class ChatStore {
 		room.setMode(mode);
 		room.setMetadata({ name });
 
+		if (order === "initialize-first") {
+			await room.initialize({ isNew: true });
+			await room.updateRoomOptions(options);
+		} else {
+			await room.updateRoomOptions(options);
+			await room.initialize({ isNew: true });
+		}
+		await prepareRoom?.(room);
 		return room;
 	};
 
@@ -364,26 +378,26 @@ export class ChatStore {
 	 * @param prepareRoom - Runs once the room exists and before its first
 	 * message, for setup the message depends on, such as the connectors the
 	 * new-chat page drafted.
-	 * @returns The new room, once its first message has started.
+	 * @returns The new room, once its first message has started, and that
+	 * message.
 	 */
 	createRoom = async (
-		mode: "agent" | "chat",
+		mode: ChatMode,
 		prompt: string,
 		files: File[],
 		options: RoomStore["options"],
 		workspaceId?: string,
 		askOptions?: { visible?: boolean },
 		prepareRoom?: (room: RoomStore) => Promise<void>,
-	): Promise<RoomStore> => {
-		const room = await this.createRoomShell(
+	): Promise<CreatedRoom> => {
+		const room = await this.createReadyRoom({
 			mode,
-			prompt.substring(0, 15),
+			name: prompt.substring(0, 15),
+			options,
 			workspaceId,
-		);
-		// Order matters: see the harnessType comment in RoomStore.initialize().
-		await room.initialize({ isNew: true });
-		await room.updateRoomOptions(options);
-		await prepareRoom?.(room);
+			prepareRoom,
+			order: "initialize-first",
+		});
 		const roomId = room.roomId;
 
 		this.setCachedRoom(roomId, room);
@@ -399,25 +413,26 @@ export class ChatStore {
 
 		this.refreshRoomLists();
 
-		// ask the room — fire-and-forget so we return (and navigate) without
-		// waiting on the response
-		(async () => {
+		// ask the room without waiting, so the caller can navigate at once
+		const firstMessage = (async (): Promise<Error | null> => {
 			try {
 				await room.askMessage(prompt, files, askOptions);
 				// the room now has data, so the lists can fetch it
 				this.refreshRoomLists();
+				return null;
 			} catch (e) {
-				if ((e as Error)?.name === "UploadError") {
-					// Leave the optimistic room so the user can retry with a new message.
-					toast.error(getI18n().t("room:errors.fileInUse"));
-				} else {
-					// Any other error means the room has no data; drop it.
+				const error = e instanceof Error ? e : new Error(String(e));
+				// A failed upload leaves the optimistic room, so the user can
+				// retry with a new message; anything else means the room has
+				// no data, so it is dropped.
+				if (error.name !== "UploadError") {
 					this.removeOptimisticRoom(roomId);
 				}
+				return error;
 			}
 		})();
 
-		return room;
+		return { room, firstMessage };
 	};
 
 	/**
@@ -434,19 +449,21 @@ export class ChatStore {
 	 * @returns The new room.
 	 */
 	createEmptyRoom = async (
-		mode: "agent" | "chat",
+		mode: ChatMode,
 		name: string,
 		options: RoomStore["options"],
 		workspaceId?: string,
 		prepareRoom?: (room: RoomStore) => Promise<void>,
 	): Promise<RoomStore> => {
-		const room = await this.createRoomShell(mode, name, workspaceId);
-		// Reversed vs createRoom: the workspace must be persisted before
-		// initialize() reads it back to derive agentGreeting.
-		await room.updateRoomOptions(options);
-		await room.initialize({ isNew: true });
-		await prepareRoom?.(room);
-		this.registerRoom(room);
+		const room = await this.createReadyRoom({
+			mode,
+			name,
+			options,
+			workspaceId,
+			prepareRoom,
+			order: "save-first",
+		});
+		this.setCachedRoom(room.roomId, room);
 		return room;
 	};
 
@@ -463,12 +480,9 @@ export class ChatStore {
 		await Session.insight.withInsight((id) => removeUserRoom(id, roomId));
 
 		// only drop if the room was opened and has a real insightId
-		if (insightId && insightId !== "new") {
+		if (insightId && insightId !== NEW_INSIGHT_ID) {
 			try {
-				await runPixel<[Record<string, unknown>]>(
-					"DropInsight()",
-					insightId,
-				);
+				await dropInsight(insightId);
 			} catch (e) {
 				console.warn(e);
 			}
@@ -533,97 +547,41 @@ export class ChatStore {
 		roomId: string,
 		format: "word" | "pdf",
 	): Promise<void> => {
-		const messagesResponse = await runPixel<[AbstractPixelMessage[]]>(
-			`GetPlaygroundMessages(roomId=["${roomId}"]);`,
-			"new",
+		const conversation = await getPlaygroundMessages<AbstractPixelMessage>(
+			NEW_INSIGHT_ID,
+			roomId,
 		);
 
-		if (!messagesResponse?.pixelReturn?.[0]?.output) {
-			throw new Error("Failed to fetch conversation messages");
-		}
-
-		const messageOutput: AbstractPixelMessage[] =
-			messagesResponse.pixelReturn[0].output;
-
-		const formattedMessages = messageOutput
-			.map((message: AbstractPixelMessage) => {
-				const timestamp = message.dateCreated
-					? parseTimestampWithUtcDefault(message.dateCreated).format(
-							"MMM D, YYYY h:mm A",
-						)
-					: null;
-				const ts = timestamp ? `\n*${timestamp}*` : "";
-
-				if (message.io === "INPUT") {
-					const text = message.parts
-						?.filter(
-							(p): p is PixelMessageTextPart =>
-								p?.type === "TEXT",
-						)
-						.map((p) => p.text)
-						.join("");
-					return text ? `**You:**${ts}\n\n${text}` : null;
-				}
-				if (message.io === "OUTPUT") {
-					const text = message.parts
-						?.filter(
-							(p): p is PixelMessageTextPart =>
-								p?.type === "TEXT",
-						)
-						.map((p) => p.text)
-						.join("");
-					const tools: string[] =
-						message.parts
-							?.filter(
-								(p): p is PixelMessageToolCallPart =>
-									p?.type === "TOOL_CALL",
-							)
-							.map((p) => p.toolCall.title || p.toolCall.name)
-							.filter(Boolean) ?? [];
-					const toolLine =
-						tools.length > 0
-							? `\n\n*Tools used: ${tools.join(", ")}*`
-							: "";
-					return text || tools.length > 0
-						? `**Assistant:**${ts}\n\n${text}${toolLine}`
-						: null;
-				}
-				return null;
-			})
-			.filter(Boolean)
-			.join("\n\n---\n\n");
+		const formattedMessages = formatConversationMarkdown(
+			conversation.messages,
+		);
 
 		if (!formattedMessages) {
 			throw new Error(getI18n().t("sidebar:download.noContent"));
 		}
 
 		const appName = this._theme.name || "Chat";
-		const pixelCommand =
-			format === "word"
-				? `ToDocx(markdown=["<encode>${formattedMessages}</encode>"], fileName="${appName} Room Export");`
-				: `ToPdf(markdown=["<encode>${formattedMessages}</encode>"], fileName="${appName} Room Export");`;
-
-		const downloadResponse = await runPixel<[string]>(
-			pixelCommand,
-			messagesResponse.insightId,
+		const document = await exportMarkdownDocument(
+			conversation.insightId,
+			formattedMessages,
+			`${appName} Room Export`,
+			format,
 		);
 
-		if (!downloadResponse?.pixelReturn?.[0]) {
+		if (document.operationType === null) {
 			throw new Error(getI18n().t("sidebar:download.noResponse"));
 		}
 
-		const { operationType, output } = downloadResponse.pixelReturn[0];
-
-		if (!operationType?.includes("FILE_DOWNLOAD")) {
+		if (document.fileKey === null) {
 			throw new Error(
 				getI18n().t("sidebar:download.generateFailedWithType", {
 					format: format.toUpperCase(),
-					operationType,
+					operationType: document.operationType,
 				}),
 			);
 		}
 
-		download(downloadResponse.insightId, output);
+		download(document.insightId, document.fileKey);
 	};
 
 	/**
@@ -648,7 +606,7 @@ export class ChatStore {
 
 		// If the room has no messages or just the placeholder, it means it is a valid room but it is empty, so we can consider it as not found and throw an error
 		// This happens if CreateRoom succeeds but the first AskPlayground call fails
-		if (!room.tail || room.tail.id === "ROOT_PLACEHOLDER_ID") {
+		if (!room.tail || room.tail.id === ROOT_PLACEHOLDER_ID) {
 			throw new Error(getI18n().t("room:errors.roomNotFound"));
 		}
 
@@ -685,12 +643,8 @@ export class ChatStore {
 		}
 
 		try {
-			const { pixelReturn } = await this.run<[Engine[]]>(
-				`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"], engine=[${JSON.stringify(id)}]);`,
-			);
-
-			const model = pixelReturn[0].output?.find(
-				(m) => m.engine_id === id,
+			const model = await Session.insight.withInsight((insightId) =>
+				getModel<Engine>(insightId, id),
 			);
 			if (!model) {
 				return false;
@@ -723,159 +677,20 @@ export class ChatStore {
 	};
 
 	/**
-	 * Create an agent from its basics with AddWorkspace.
-	 *
-	 * @param data - The agent's name, prompt, description, tools, skills,
-	 * and prompts.
-	 * @returns The new agent's id.
-	 * @throws When the pixel fails.
+	 * Select the model a new chat starts with when nothing else names one,
+	 * as when its agent is cleared: the user's default (Settings > General),
+	 * then the deployment's, then the first the user can see. Does nothing
+	 * while model selection is off, since the deployment's model is always
+	 * used.
 	 */
-	addWorkspace = async (
-		data: Pick<
-			Workspace,
-			| "name"
-			| "system_prompt"
-			| "description"
-			| "mcp"
-			| "skills"
-			| "prompts"
-		>,
-	): Promise<string> => {
-		try {
-			const mcp = data.mcp.map(
-				({ name, id, type }): MCPConfig => ({ name, id, type }),
-			);
-			const skills = data.skills.map((s) => s.id);
-
-			const pixel = `AddWorkspace(name=${JSON.stringify(data.name)}, description="<encode>${data.description}</encode>", systemPrompt="<encode>${data.system_prompt}</encode>", mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)})`;
-			const { pixelReturn } = await this.run<[string]>(pixel);
-
-			return pixelReturn[0].output;
-		} catch (e) {
-			throw e instanceof Error ? e : new Error(String(e));
-		}
-	};
-
-	/**
-	 * Creates an agent from the shared agent form. AddWorkspace only takes the
-	 * basics, so everything else is saved with a follow-up EditWorkspace when
-	 * the form sets any of it.
-	 *
-	 * Resolves with the new agent's id, EditWorkspace's partial-save warning
-	 * (when there is one), and whether the follow-up save failed - the agent
-	 * exists either way.
-	 *
-	 * @param values - The agent form's values.
-	 * @returns The agent's id, and how its follow-up save went.
-	 * @throws When AddWorkspace returns no id.
-	 */
-	createAgent = async (
-		values: AgentFormValues,
-	): Promise<{
-		workspaceId: string;
-		warning?: string;
-		settingsFailed?: boolean;
-	}> => {
-		const { pixelReturn } = await this.run<[string]>(
-			buildAddWorkspacePixel(values),
-		);
-		const workspaceId = pixelReturn[0]?.output;
-		if (!workspaceId) {
-			throw new Error();
-		}
-		if (!agentNeedsFollowUpEdit(values)) {
-			return { workspaceId };
-		}
-		try {
-			const warning = await this.editWorkspace(workspaceId, values);
-			return { workspaceId, warning };
-		} catch (e) {
-			console.error(e);
-			return { workspaceId, settingsFailed: true };
-		}
-	};
-
-	/**
-	 * Saves an agent's full configuration from the shared agent form.
-	 *
-	 * @param workspaceId - The agent to save.
-	 * @param values - The agent form's values.
-	 * @returns EditWorkspace's partial-save warning, when there is one.
-	 * @throws When the pixel returns nothing.
-	 */
-	editWorkspace = async (
-		workspaceId: string,
-		values: AgentFormValues,
-	): Promise<string | undefined> => {
-		const { pixelReturn } = await this.run<[unknown]>(
-			buildEditWorkspacePixel(workspaceId, values),
-		);
-		const output = pixelReturn[0]?.output;
-		if (!output) {
-			throw new Error();
-		}
-		return getWorkspaceSaveWarning(output);
-	};
-
-	/**
-	 * Delete an agent. A failure is logged, not thrown.
-	 *
-	 * @param workspaceId - The agent to delete.
-	 */
-	deleteWorkspace = async (workspaceId: string) => {
-		try {
-			await this.run(`DeleteWorkspace(workspaceId=['${workspaceId}'])`);
-
-			return;
-		} catch (e) {
-			console.error(e);
-		}
-	};
-
-	// Helpers
-
-	/**
-	 * Run a pixel that belongs to no room in the session's own insight.
-	 *
-	 * @param pixel - The pixel to run.
-	 * @returns The pixel's returns.
-	 * @throws When any pixel reports an error.
-	 */
-	private run = async <O extends unknown[] | []>(pixel: string) =>
-		throwOnPixelErrors(await Session.insight.run<O>(pixel));
-
-	/** The deployment's default model id: the theme's, then the env's. */
-	private get deploymentDefaultModelId(): string {
-		return (
-			readDeploymentNewChatDefaults(this._theme, this._build).modelId ??
-			""
-		);
-	}
-
-	/**
-	 * The model a new chat starts with when the session has none: the user's
-	 * default (Settings > General), then the deployment's, then the first
-	 * the user can see.
-	 *
-	 * @returns The model, or undefined when the user can see none.
-	 */
-	private findNewChatDefaultModel = (): Engine | undefined =>
-		resolveNewChatModel(
+	selectNewChatDefaultModel = (): void => {
+		if (!this._theme.featureFlags?.enableModelSelect) return;
+		const model = resolveNewChatModel(
 			null,
 			readNewChatPreferences(Session.getSnapshot().user?.meta),
 			readDeploymentNewChatDefaults(this._theme, this._build),
 			this.snapshot.models.available,
 		);
-
-	/**
-	 * Select the model a new chat starts with when nothing else names one,
-	 * as when its agent is cleared: the user's default, then the
-	 * deployment's, then the first the user can see. Does nothing while
-	 * model selection is off, since the deployment's model is always used.
-	 */
-	selectNewChatDefaultModel = (): void => {
-		if (!this._theme.featureFlags?.enableModelSelect) return;
-		const model = this.findNewChatDefaultModel();
 		if (
 			model &&
 			model.engine_id !== this.snapshot.models.selected?.engine_id
@@ -893,7 +708,9 @@ export class ChatStore {
 		// with model selection off, every chat runs the deployment's model
 		if (!this._theme.featureFlags?.enableModelSelect) {
 			this.setSelectedModel({
-				engine_id: this.deploymentDefaultModelId,
+				engine_id:
+					readDeploymentNewChatDefaults(this._theme, this._build)
+						.modelId ?? "",
 				engine_name:
 					this._theme.defaultRoomSettings?.model
 						?.engine_display_name ||
@@ -905,16 +722,13 @@ export class ChatStore {
 			return;
 		}
 
-		const { pixelReturn } = await this.run<[Engine[]]>(
-			`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);`,
+		const available = await Session.insight.withInsight((insightId) =>
+			listModels<Engine>(insightId),
 		);
 
 		// kept so an id can be resolved to an Engine later
-		this.updateModels({ available: pixelReturn[0].output });
+		this.updateModels({ available });
 		// the session has read the user before any authenticated route mounts
-		const model = this.findNewChatDefaultModel();
-		if (model) {
-			this.setSelectedModel(model);
-		}
+		this.selectNewChatDefaultModel();
 	};
 }

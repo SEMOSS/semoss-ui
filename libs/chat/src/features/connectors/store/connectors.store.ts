@@ -3,6 +3,8 @@ import { getI18n } from "@semoss/i18n";
 import { isSameArray } from "@semoss/utility/array";
 import { StoreState } from "@semoss/utility/store";
 import type { RoomStore } from "../../room/store/room.store";
+import type { McpTool } from "../../tools/default-tools/chat-tool-info";
+import { NEW_INSIGHT_ID } from "../../tools/mcp/mcp-constants";
 import {
 	CONNECTOR_SOURCES,
 	type ConnectorSource,
@@ -12,12 +14,11 @@ import {
 	CONNECTOR_PROVIDERS,
 	type ConnectorProviderId,
 	type ConnectorServiceId,
-	getConnectorServices,
 	isProviderOffered as isOfferedByServer,
-	type McpTool,
 } from "./connector.catalog";
 import { isServiceCovered as isCoveredByServer } from "./connector-access";
 import {
+	getConnectorServices,
 	loadRoomTools,
 	readUserConnectorTools,
 	syncRoomConnectorTools,
@@ -178,7 +179,7 @@ export class ConnectorsStore {
 	 * draft has no insight, so nothing is persisted or written for it.
 	 */
 	get isDraft(): boolean {
-		return this.room.insightId === "new";
+		return this.room.insightId === NEW_INSIGHT_ID;
 	}
 
 	/**
@@ -412,11 +413,7 @@ export class ConnectorsStore {
 	 * @param providerId - The provider whose prompt to hide.
 	 */
 	dismissSignIn = (providerId: ConnectorProviderId): void => {
-		this.state.update((current) => ({
-			dismissedSignIns: current.dismissedSignIns.includes(providerId)
-				? current.dismissedSignIns
-				: [...current.dismissedSignIns, providerId],
-		}));
+		this.addUnique("dismissedSignIns", providerId);
 	};
 
 	/**
@@ -425,13 +422,7 @@ export class ConnectorsStore {
 	 * @param providerId - The provider whose notice to hide.
 	 */
 	dismissScopeNotice = (providerId: ConnectorProviderId): void => {
-		this.state.update((current) => ({
-			dismissedScopeNotices: current.dismissedScopeNotices.includes(
-				providerId,
-			)
-				? current.dismissedScopeNotices
-				: [...current.dismissedScopeNotices, providerId],
-		}));
+		this.addUnique("dismissedScopeNotices", providerId);
 	};
 
 	/**
@@ -467,6 +458,24 @@ export class ConnectorsStore {
 			source.panelType,
 			{},
 			getI18n().t(source.nameKey),
+		);
+	};
+
+	/**
+	 * Add a provider to one of the dismissed lists, keeping the list as it is
+	 * when the provider is already on it.
+	 *
+	 * @param field - The list.
+	 * @param providerId - The provider to add.
+	 */
+	private addUnique = (
+		field: "dismissedSignIns" | "dismissedScopeNotices",
+		providerId: ConnectorProviderId,
+	): void => {
+		this.state.set((current) =>
+			current[field].includes(providerId)
+				? current
+				: { ...current, [field]: [...current[field], providerId] },
 		);
 	};
 

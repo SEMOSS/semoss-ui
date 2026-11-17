@@ -1,3 +1,4 @@
+import { getPlaygroundRoomsPixel } from "@semoss/sdk";
 import {
 	type DateBucket,
 	getDateBucket,
@@ -102,41 +103,14 @@ export interface PlaygroundRoomsQuery {
  */
 export const buildPlaygroundRoomsPixel = (
 	view: RoomListView,
-	{
-		limit,
-		offset,
-		search,
-		searchMessages,
-		workspaceId,
-		roomIds,
-	}: PlaygroundRoomsQuery = {},
-): string => {
-	const keys = [
-		`sortBy=["${view.sortBy}"]`,
-		`sort=["${view.sortDir}"]`,
-		`groupBy=["${view.groupBy === "agent" ? "agent" : "none"}"]`,
-	];
-	if (search) {
-		// encoded, so quotes and brackets in the text cannot break the pixel
-		keys.push(`search=["<encode>${search}</encode>"]`);
-		if (searchMessages) {
-			keys.push("searchMessages=[true]");
-		}
-	}
-	if (workspaceId) {
-		keys.push(`workspaceId=${JSON.stringify([workspaceId])}`);
-	}
-	if (roomIds) {
-		keys.push(`roomIds=${JSON.stringify(roomIds)}`);
-	}
-	if (limit !== undefined) {
-		keys.push(`limit=[${limit}]`);
-	}
-	if (offset !== undefined) {
-		keys.push(`offset=[${offset}]`);
-	}
-	return `META | GetPlaygroundRooms(${keys.join(", ")});`;
-};
+	query: PlaygroundRoomsQuery = {},
+): string =>
+	getPlaygroundRoomsPixel({
+		...query,
+		sortBy: view.sortBy,
+		sort: view.sortDir,
+		groupBy: view.groupBy === "agent" ? "agent" : "none",
+	});
 
 /** A room's last activity, which date groups and the date sort use. */
 export const getRoomDate = (room: RoomListItem): string =>

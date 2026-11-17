@@ -1,7 +1,7 @@
+import { stopPixelJob, throwOnPixelErrors } from "@semoss/sdk";
 import {
 	getPixelAsyncResult,
 	getPixelJobStreaming,
-	runPixel,
 	runPixelAsync,
 } from "@semoss/sdk/react";
 
@@ -57,10 +57,8 @@ interface StreamJobDeps {
 	onChange: () => void;
 }
 
-/** A cancellable streaming job in flight — enough to abort it and commit. */
+/** A cancellable streaming job in flight — enough to commit once it is aborted. */
 interface ActiveJob {
-	/** The backend job to stop. */
-	jobId: string;
 	/** Records the cancelled turn once the job is stopped. */
 	onCancel: () => void | Promise<void>;
 }
@@ -176,7 +174,7 @@ export class StreamJobController {
 
 			if (isCancellable) {
 				trackedJobId = jobId;
-				this.activeJobs.set(jobId, { jobId, onCancel });
+				this.activeJobs.set(jobId, { onCancel });
 				this.deps.onChange();
 			}
 
@@ -236,11 +234,7 @@ export class StreamJobController {
 
 			const result = await getPixelAsyncResult<O>(jobId);
 
-			if (throwOnError && result.errors.length > 0) {
-				throw new Error(result.errors.join(""));
-			}
-
-			onResult(result);
+			onResult(throwOnError ? throwOnPixelErrors(result) : result);
 		} catch (e) {
 			// A stop that lands while a request is in flight surfaces here — unwind
 			// silently and let stop() fire onCancel, not the room error path.
@@ -287,15 +281,13 @@ export class StreamJobController {
 		this.deps.onChange();
 		// Snapshot before awaits: run()'s finally mutates activeJobs as loops
 		// unwind.
-		const jobs = [...this.activeJobs.values()];
+		const jobs = [...this.activeJobs];
 		this.pendingCancelCommits += jobs.length;
 		await Promise.all(
-			jobs.map(async ({ jobId, onCancel }) => {
+			jobs.map(async ([jobId, { onCancel }]) => {
 				try {
-					await runPixel(
-						`StopPixelExecution(id=["${jobId}"]);`,
-						this.deps.getInsightId(),
-					);
+					// a job the backend could not stop still commits as stopped
+					await stopPixelJob(this.deps.getInsightId(), jobId);
 					await onCancel();
 				} catch (e) {
 					console.error("Failed to persist cancelled turn", e);

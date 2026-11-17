@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { Badge, Button, Small, toast } from "@semoss/ui/next";
+import { Badge, Button, cn, Small, toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import { formatJson } from "@semoss/utility/json";
 import {
@@ -19,7 +19,11 @@ import {
 import { useConnectProvider } from "../../connectors/accounts/use-connect-provider";
 import { ConnectorServiceIcon } from "../../connectors/viewers/connector-service-icon";
 import { decideAgentToolAction } from "../../conversation/store/agent-harness";
-import type { ToolStore } from "../../conversation/store/tool.store";
+import {
+	isToolSettled,
+	type ToolStatus,
+	type ToolStore,
+} from "../../conversation/store/tool.store";
 import { useRoomSelector } from "../../room/store/use-room-selector";
 import {
 	getConnectorToolService,
@@ -27,14 +31,13 @@ import {
 } from "../default-tools/chat-tool-kind";
 import {
 	FOLDER_TOOL_NAMES,
+	type FolderToolName,
 	isFolderToolName,
 	readBoolean,
 } from "../default-tools/folder-tools";
 import { readToolResponseDetail } from "../default-tools/tool-response-detail";
 import { ToolInspector } from "../inspector/tool-inspector";
 import { isAskExecutionMode } from "../mcp/mcp-utils";
-import { ToolTextBlock } from "./tool-text-block";
-import { ToolValueRow } from "./tool-value-row";
 
 /** Props for {@link ChatToolCard}. */
 interface ChatToolCardProps {
@@ -55,6 +58,96 @@ const INLINE_VALUE_MAX = 80;
  */
 const toDisplayText = (value: unknown): string =>
 	typeof value === "string" ? value : JSON.stringify(value, null, 2);
+
+/** The header badge for each state a call can be in; waiting beats the call's own status. */
+const STATUS_BADGES: Record<
+	"waiting" | ToolStatus,
+	{ labelKey: string; icon: ReactNode }
+> = {
+	waiting: {
+		labelKey: "card.status.waiting",
+		icon: <HourglassIcon aria-hidden />,
+	},
+	LOADING: {
+		labelKey: "card.status.running",
+		icon: <LoaderCircleIcon aria-hidden className="animate-spin" />,
+	},
+	SUCCESS: { labelKey: "card.status.done", icon: <CheckIcon aria-hidden /> },
+	ERROR: {
+		labelKey: "card.status.failed",
+		icon: <CircleAlertIcon aria-hidden />,
+	},
+	CANCELLED: { labelKey: "card.status.notRun", icon: <XIcon aria-hidden /> },
+	INITIAL: {
+		labelKey: "card.status.queued",
+		icon: <HourglassIcon aria-hidden />,
+	},
+};
+
+/** One labelled value the card shows, such as a path or a file's new text. */
+interface CardField {
+	/** What the value is, such as "File"; an i18n key in {@link FOLDER_FIELDS}. */
+	label: string;
+	/** The raw value. */
+	value: unknown;
+	/** Whether it is a block of preformatted text rather than a single value. */
+	isBlock?: boolean;
+}
+
+/**
+ * What a folder call acts on, by tool: the file and the new text for a write
+ * or an edit, both paths for a move, and so on. List, read, and create
+ * directory are left out: the decorated call's description is already the
+ * path they act on.
+ */
+const FOLDER_FIELDS: Partial<
+	Record<FolderToolName, (args: Record<string, unknown>) => CardField[]>
+> = {
+	[FOLDER_TOOL_NAMES.WRITE]: (args) => [
+		{ label: "card.file", value: args.path },
+		{ label: "card.newContents", value: args.content ?? "", isBlock: true },
+	],
+	[FOLDER_TOOL_NAMES.EDIT]: (args) => [
+		{ label: "card.file", value: args.path },
+		{ label: "card.replace", value: args.old_text ?? "", isBlock: true },
+		{ label: "card.with", value: args.new_text ?? "", isBlock: true },
+	],
+	[FOLDER_TOOL_NAMES.MOVE]: (args) => [
+		{ label: "card.from", value: args.from },
+		{ label: "card.to", value: args.to },
+	],
+	[FOLDER_TOOL_NAMES.DELETE]: (args) => [
+		{ label: "card.path", value: args.path },
+	],
+	[FOLDER_TOOL_NAMES.SEARCH]: (args) => [
+		{ label: "card.query", value: args.query },
+	],
+};
+
+/**
+ * Draws one labelled value: a single value wraps anywhere rather than
+ * widening the card, and a block of text scrolls inside itself.
+ *
+ * @param field - The value, with its label already translated.
+ * @returns The field.
+ */
+const renderField = ({ label, value, isBlock }: CardField): ReactNode => (
+	<div
+		key={label}
+		className={cn("flex min-w-0 flex-col", isBlock ? "gap-1" : "gap-0.5")}
+	>
+		<Small className="text-muted-foreground">{label}</Small>
+		{isBlock ? (
+			<pre className="max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-md border border-border bg-muted/50 p-2 font-mono text-xs">
+				{toDisplayText(value)}
+			</pre>
+		) : (
+			<span className="break-all font-mono text-sm">
+				{toDisplayText(value)}
+			</span>
+		)}
+	</div>
+);
 
 /**
  * A saved tool response for display: the details without the model guidance
@@ -173,164 +266,45 @@ export const ChatToolCard = ({ tool, variant }: ChatToolCardProps) => {
 				: room.chatTools.declineChatTool(tool),
 		);
 
-	// the badge in the header: waiting beats the call's own status
-	const status = isWaiting
-		? {
-				label: t("card.status.waiting"),
-				icon: <HourglassIcon aria-hidden />,
-			}
-		: toolStatus === "LOADING"
-			? {
-					label: t("card.status.running"),
-					icon: (
-						<LoaderCircleIcon
-							aria-hidden
-							className="animate-spin"
-						/>
-					),
-				}
-			: toolStatus === "SUCCESS"
-				? {
-						label: t("card.status.done"),
-						icon: <CheckIcon aria-hidden />,
-					}
-				: toolStatus === "ERROR"
-					? {
-							label: t("card.status.failed"),
-							icon: <CircleAlertIcon aria-hidden />,
-						}
-					: toolStatus === "CANCELLED"
-						? {
-								label: t("card.status.notRun"),
-								icon: <XIcon aria-hidden />,
-							}
-						: {
-								label: t("card.status.queued"),
-								icon: <HourglassIcon aria-hidden />,
-							};
+	const status = STATUS_BADGES[isWaiting ? "waiting" : toolStatus];
 
-	/**
-	 * What a folder call acts on, laid out for its tool: the file and the new
-	 * text for a write or an edit, both paths for a move, and so on.
-	 *
-	 * @returns The details, or nothing for a name that is not a folder tool.
-	 */
-	const renderFolderDetails = (): ReactNode => {
-		if (!isFolderToolName(name)) {
-			return null;
-		}
-		switch (name) {
-			case FOLDER_TOOL_NAMES.WRITE:
-				return (
-					<>
-						<ToolValueRow
-							label={t("card.file")}
-							value={toDisplayText(args.path)}
-						/>
-						<ToolTextBlock label={t("card.newContents")}>
-							{toDisplayText(args.content ?? "")}
-						</ToolTextBlock>
-					</>
-				);
-			case FOLDER_TOOL_NAMES.EDIT:
-				return (
-					<>
-						<ToolValueRow
-							label={t("card.file")}
-							value={toDisplayText(args.path)}
-						/>
-						<ToolTextBlock label={t("card.replace")}>
-							{toDisplayText(args.old_text ?? "")}
-						</ToolTextBlock>
-						<ToolTextBlock label={t("card.with")}>
-							{toDisplayText(args.new_text ?? "")}
-						</ToolTextBlock>
-						{readBoolean(args.replace_all) ? (
-							<Small className="text-muted-foreground">
-								{t("card.replaceAll")}
-							</Small>
-						) : null}
-					</>
-				);
-			case FOLDER_TOOL_NAMES.MOVE:
-				return (
-					<>
-						<ToolValueRow
-							label={t("card.from")}
-							value={toDisplayText(args.from)}
-						/>
-						<ToolValueRow
-							label={t("card.to")}
-							value={toDisplayText(args.to)}
-						/>
-					</>
-				);
-			case FOLDER_TOOL_NAMES.DELETE:
-				return (
-					<>
-						<ToolValueRow
-							label={t("card.path")}
-							value={toDisplayText(args.path)}
-						/>
-						{readBoolean(args.recursive) ? (
-							<Small className="text-warning">
-								{t("card.deleteRecursive")}
-							</Small>
-						) : null}
-					</>
-				);
-			case FOLDER_TOOL_NAMES.SEARCH:
-				return (
-					<ToolValueRow
-						label={t("card.query")}
-						value={toDisplayText(args.query)}
-					/>
-				);
-			default:
-				// list, read, and create directory: the decorated call's
-				// description is already the path it acts on
-				return (
-					<ToolValueRow
-						label={t("card.path")}
-						value={jsonDescription || t("card.rootFolder")}
-					/>
-				);
-		}
-	};
+	// what a folder call acts on, laid out for its tool (nothing for a name
+	// that is not a folder tool), or a connector call's arguments, each a
+	// value, or a block when it is long or runs over several lines
+	const folderFields =
+		isFolder && isFolderToolName(name)
+			? (FOLDER_FIELDS[name]?.(args) ?? [
+					{
+						label: "card.path",
+						value: jsonDescription || t("card.rootFolder"),
+					},
+				])
+			: [];
+	const fields: CardField[] = isFolder
+		? folderFields.map((field) => ({ ...field, label: t(field.label) }))
+		: Object.entries(args).map(([key, value]) => {
+				const text = toDisplayText(value);
+				return {
+					label: key,
+					value: text,
+					isBlock:
+						text.length > INLINE_VALUE_MAX || text.includes("\n"),
+				};
+			});
 
-	/**
-	 * A connector call's arguments, each a value row, or a text block when it
-	 * is long or runs over several lines.
-	 *
-	 * @returns The arguments, or a note that there are none.
-	 */
-	const renderArguments = (): ReactNode => {
-		const entries = Object.entries(args);
-		if (entries.length === 0) {
-			return (
-				<Small className="text-muted-foreground">
-					{t("card.noArguments")}
-				</Small>
-			);
-		}
-		return entries.map(([key, value]) => {
-			const text = toDisplayText(value);
-			return text.length > INLINE_VALUE_MAX || text.includes("\n") ? (
-				<ToolTextBlock key={key} label={key}>
-					{text}
-				</ToolTextBlock>
-			) : (
-				<ToolValueRow key={key} label={key} value={text} />
-			);
-		});
-	};
+	// what the user is asked, and the warning a recursive delete carries
+	const approvalNotice = isWaiting ? (
+		<Small className="text-muted-foreground">
+			{isFolder ? t("card.folderApproval") : t("card.connectorApproval")}
+		</Small>
+	) : null;
+	const deleteWarning =
+		name === FOLDER_TOOL_NAMES.DELETE && readBoolean(args.recursive) ? (
+			<Small className="text-warning">{t("card.deleteRecursive")}</Small>
+		) : null;
 
 	// a call that has not finished has nothing to show yet
-	const hasResult =
-		!!response &&
-		(toolStatus === "SUCCESS" ||
-			toolStatus === "ERROR" ||
-			toolStatus === "CANCELLED");
+	const hasResult = !!response && isToolSettled(toolStatus);
 	// a connector call that failed for want of a sign in says so, with the
 	// way to sign in right there
 	const signInProvider =
@@ -366,7 +340,7 @@ export const ChatToolCard = ({ tool, variant }: ChatToolCardProps) => {
 			</div>
 			<Badge variant="outline" className="shrink-0">
 				{status.icon}
-				{status.label}
+				{t(status.labelKey)}
 			</Badge>
 		</div>
 	);
@@ -436,22 +410,10 @@ export const ChatToolCard = ({ tool, variant }: ChatToolCardProps) => {
 				description={definition?.description}
 				inputSchema={definition?.inputSchema}
 				footer={
-					isWaiting || signInProvider ? (
+					footer ? (
 						<div className="space-y-3">
-							{isWaiting && (
-								<Small className="text-muted-foreground">
-									{isFolder
-										? t("card.folderApproval")
-										: t("card.connectorApproval")}
-								</Small>
-							)}
-							{isWaiting &&
-								name === FOLDER_TOOL_NAMES.DELETE &&
-								readBoolean(args.recursive) && (
-									<Small className="text-warning">
-										{t("card.deleteRecursive")}
-									</Small>
-								)}
+							{approvalNotice}
+							{isWaiting ? deleteWarning : null}
 							{footer}
 						</div>
 					) : undefined
@@ -465,29 +427,35 @@ export const ChatToolCard = ({ tool, variant }: ChatToolCardProps) => {
 			<div className="flex min-w-0 flex-col gap-3">
 				{header}
 
-				{isWaiting ? (
-					<Small className="text-muted-foreground">
-						{isFolder
-							? t("card.folderApproval")
-							: t("card.connectorApproval")}
-					</Small>
-				) : null}
+				{approvalNotice}
 
 				<div className="flex min-w-0 flex-col gap-3">
-					{isFolder ? renderFolderDetails() : renderArguments()}
+					{fields.map(renderField)}
+					{!isFolder && fields.length === 0 ? (
+						<Small className="text-muted-foreground">
+							{t("card.noArguments")}
+						</Small>
+					) : null}
+					{isFolder &&
+					name === FOLDER_TOOL_NAMES.EDIT &&
+					readBoolean(args.replace_all) ? (
+						<Small className="text-muted-foreground">
+							{t("card.replaceAll")}
+						</Small>
+					) : null}
+					{deleteWarning}
 				</div>
 
-				{hasResult ? (
-					<ToolTextBlock
-						label={
-							toolStatus === "ERROR"
-								? t("card.error")
-								: t("card.result")
-						}
-					>
-						{formatResponse(response)}
-					</ToolTextBlock>
-				) : null}
+				{hasResult
+					? renderField({
+							label:
+								toolStatus === "ERROR"
+									? t("card.error")
+									: t("card.result"),
+							value: formatResponse(response),
+							isBlock: true,
+						})
+					: null}
 
 				{footer}
 			</div>

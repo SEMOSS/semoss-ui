@@ -1,4 +1,5 @@
 import type { ThemeMap } from "@semoss/shared";
+import type { ChatMode } from "../../../types";
 
 /**
  * What a new chat starts with. The model, the mode, and the agent each follow
@@ -23,15 +24,15 @@ export const NEW_CHAT_PREFERENCE_KEYS = {
 	agent: "playground--default-chat-agent",
 } as const;
 
-/** The modes a chat runs in. */
-export type NewChatMode = "chat" | "agent";
+/** The modes a chat runs in; the same as {@link ChatMode}. */
+export type NewChatMode = ChatMode;
 
 /** A set of defaults, the user's or the deployment's; null when unset. */
 export interface NewChatPreferences {
 	/** The default model's engine id. */
 	modelId: string | null;
 	/** The default mode. */
-	mode: NewChatMode | null;
+	mode: ChatMode | null;
 	/** The default saved agent's id. */
 	agentId: string | null;
 }
@@ -39,7 +40,7 @@ export interface NewChatPreferences {
 /** The chat last started in this login session. */
 export interface SessionNewChat {
 	/** The mode it ran in. */
-	mode: NewChatMode;
+	mode: ChatMode;
 	/** The saved agent it ran with; empty for none (Default Agent). */
 	agentId: string;
 }
@@ -56,7 +57,7 @@ let sessionNewChat: (SessionNewChat & { login: string }) | null = null;
  * @param value - The value to check.
  * @returns True for `chat` and `agent`.
  */
-export const isNewChatMode = (value: unknown): value is NewChatMode =>
+export const isNewChatMode = (value: unknown): value is ChatMode =>
 	value === "chat" || value === "agent";
 
 /**
@@ -165,7 +166,7 @@ export const resolveNewChatMode = (
 	preferences: NewChatPreferences,
 	deployment: NewChatPreferences,
 	offersAgentMode: boolean,
-): NewChatMode => {
+): ChatMode => {
 	if (!offersAgentMode) return "chat";
 	return session?.mode ?? preferences.mode ?? deployment.mode ?? "chat";
 };

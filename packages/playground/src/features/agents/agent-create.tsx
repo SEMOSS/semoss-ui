@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { useChatSession } from "@semoss/chat";
+import { createAgent } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import { useSessionPixel } from "@semoss/sdk/react";
 import {
@@ -34,7 +34,6 @@ export const AgentCreate = () => {
 		"agent",
 	]);
 	const navigate = useNavigate();
-	const { chat } = useChatSession();
 	const theme = usePlaygroundTheme();
 	const featureFlags = theme.featureFlags;
 
@@ -68,8 +67,10 @@ export const AgentCreate = () => {
 		setIsSaving(true);
 		setSaveError(null);
 		try {
-			const { workspaceId, warning, settingsFailed } =
-				await chat.createAgent({ ...formValues, name });
+			const { workspaceId, warning, settingsFailed } = await createAgent({
+				...formValues,
+				name,
+			});
 			if (settingsFailed) {
 				toast.error(t("agent:form.createSettingsFailed"));
 			} else if (warning) {

@@ -1,13 +1,12 @@
 import { UsersRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { useChatSession } from "@semoss/chat";
+import { editAgent, useAgentWorkspace } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
-import { useConfig, useSessionPixel } from "@semoss/sdk/react";
+import { useConfig } from "@semoss/sdk/react";
 import {
 	AgentForm,
 	type AgentFormValues,
-	type AgentWorkspace,
 	MembersTable,
 	toAgentFormValues,
 	toAgentPromptTitles,
@@ -51,7 +50,6 @@ export const AgentEdit = ({ workspaceId }: AgentEditProps) => {
 		(state) => state.config?.msGraphLookup === true,
 	);
 	const navigate = useNavigate();
-	const { chat } = useChatSession();
 	const theme = usePlaygroundTheme();
 	const featureFlags = theme.featureFlags;
 
@@ -61,34 +59,32 @@ export const AgentEdit = ({ workspaceId }: AgentEditProps) => {
 	const [saveError, setSaveError] = useState<string | null>(null);
 	const seededWorkspaceId = useRef<string | null>(null);
 
-	const workspacePixel = useSessionPixel<
-		AgentWorkspace & { workspace_id: string }
-	>(workspaceId ? `GetWorkspace(workspaceId=["${workspaceId}"]);` : "", {
-		data: null,
-		onError: (_d, e) => {
-			toast.error(
-				t("workspace:edit.failedToLoad", {
-					error: getErrorMessage(
-						e,
-						t("workspace:messages.unknownError"),
-					),
-				}),
-			);
-		},
-	});
+	const agent = useAgentWorkspace(workspaceId);
+
+	// a failed read is announced once, as it lands
+	useEffect(() => {
+		if (!agent.error) return;
+		toast.error(
+			t("workspace:edit.failedToLoad", {
+				error: getErrorMessage(
+					agent.error,
+					t("workspace:messages.unknownError"),
+				),
+			}),
+		);
+	}, [agent.error, t]);
 
 	// AgentForm reads its values once on mount, so it is seeded once per
 	// agent: a refetch never overwrites unsaved edits, and a different agent
 	// remounts the form with its own values
 	useEffect(() => {
+		const workspace = agent.workspace;
 		if (
-			workspacePixel.status !== "SUCCESS" ||
-			!workspacePixel.data ||
-			workspacePixel.data.workspace_id !== workspaceId ||
+			!workspaceId ||
+			!workspace ||
 			seededWorkspaceId.current === workspaceId
 		)
 			return;
-		const workspace = workspacePixel.data;
 		const values = {
 			...toAgentFormValues(workspace),
 			instructions: (workspace.system_prompt || "").replace(/\\n/g, "\n"),
@@ -97,12 +93,9 @@ export const AgentEdit = ({ workspaceId }: AgentEditProps) => {
 		setSeed({ workspaceId, values });
 		setFormValues(values);
 		setSaveError(null);
-	}, [workspaceId, workspacePixel.status, workspacePixel.data]);
+	}, [workspaceId, agent.workspace]);
 
-	if (
-		workspacePixel.status === "INITIAL" ||
-		workspacePixel.status === "LOADING"
-	) {
+	if (agent.status === "LOADING") {
 		return (
 			<div className="flex h-full w-full items-center justify-center">
 				<Spinner />
@@ -110,12 +103,7 @@ export const AgentEdit = ({ workspaceId }: AgentEditProps) => {
 		);
 	}
 
-	if (
-		workspacePixel.status === "ERROR" ||
-		!workspaceId ||
-		!workspacePixel.data ||
-		workspacePixel.data.workspace_id !== workspaceId
-	) {
+	if (!workspaceId || !agent.workspace) {
 		return (
 			<div className="@container relative h-full w-full overflow-hidden">
 				<div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-8 @3xl:px-12 @md:px-6 px-4 pt-8 pb-4">
@@ -153,7 +141,7 @@ export const AgentEdit = ({ workspaceId }: AgentEditProps) => {
 		setIsSaving(true);
 		setSaveError(null);
 		try {
-			const warning = await chat.editWorkspace(workspaceId, {
+			const warning = await editAgent(workspaceId, {
 				...formValues,
 				name,
 			});
@@ -218,9 +206,9 @@ export const AgentEdit = ({ workspaceId }: AgentEditProps) => {
 					data={seed.values}
 					onChange={setFormValues}
 					disabled={isSaving}
-					promptTitles={toAgentPromptTitles(workspacePixel.data)}
-					knownHookKinds={workspacePixel.data.known_hook_kinds ?? []}
-					defaultTools={workspacePixel.data.default_tools ?? []}
+					promptTitles={toAgentPromptTitles(agent.workspace)}
+					knownHookKinds={agent.workspace.known_hook_kinds ?? []}
+					defaultTools={agent.workspace.default_tools ?? []}
 					workspaceId={workspaceId}
 					links={getPlaygroundAgentLinks(
 						featureFlags?.showPlatformLinks,

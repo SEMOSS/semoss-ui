@@ -8,14 +8,10 @@ import {
 	replaceFileText,
 	sliceTextLines,
 } from "../folders/folder-text";
-import type {
-	FolderChange,
-	FolderEntry,
-	WorkFolderProvider,
-} from "../folders/work-folder.types";
+import type { FolderEntry, RoomFolder } from "../folders/room-folder";
 
 /**
- * The tools a work folder gives the assistant. The names are what the model
+ * The tools Room Files gives the assistant. The names are what the model
  * calls, so they are part of every conversation's history: renaming one
  * strands the calls already made under the old name.
  */
@@ -59,12 +55,13 @@ export interface FolderToolOutcome {
 	isError: boolean;
 	/** The result, or `{ error }` describing the failure. */
 	payload: Record<string, unknown>;
-	/** What the call changed in the folder. Empty for reads and failures. */
-	changes: FolderChange[];
+	/** Whether the call changed the folder. False for reads and failures. */
+	hasChanges: boolean;
 }
 
-/** Every folder tool's name, for matching names the model calls. */
-const ALL_FOLDER_TOOLS: readonly string[] = Object.values(FOLDER_TOOL_NAMES);
+/** Every folder tool's name, in the order the definitions list them. */
+const ALL_FOLDER_TOOLS: readonly FolderToolName[] =
+	Object.values(FOLDER_TOOL_NAMES);
 
 /** The tools that only read, which run on their own unless set otherwise. */
 const READ_TOOLS: ReadonlySet<FolderToolName> = new Set([
@@ -119,7 +116,7 @@ const MAX_WRITE_CHARS = 2_000_000;
  * @returns True for the folder tools.
  */
 export const isFolderToolName = (name: string): name is FolderToolName =>
-	ALL_FOLDER_TOOLS.includes(name);
+	(ALL_FOLDER_TOOLS as readonly string[]).includes(name);
 
 /**
  * How a folder tool runs when nothing says otherwise: reading on its own, and
@@ -135,15 +132,6 @@ export const getUsualFolderToolExecution = (
 /** How the tools name the chat's own files, the room's folder. */
 export const ROOM_FILES_NAME = "Room Files";
 
-/** What the definitions need to know. */
-interface FolderToolContext {
-	/**
-	 * How each tool runs, or null to leave it out of the definitions
-	 * altogether.
-	 */
-	executionOf: (name: FolderToolName) => FolderToolExecution | null;
-}
-
 /** The folder, the way the model should refer to it wherever a tool names it. */
 const FOLDER_DESCRIPTION = `${ROOM_FILES_NAME} (this room's own files)`;
 
@@ -154,12 +142,15 @@ const FOLDER_DESCRIPTION = `${ROOM_FILES_NAME} (this room's own files)`;
 const FOLDER_SCOPE =
 	"These are the same files the user uploads and saves to the chat, and the chat's other tools read and write them too, so a file written here is where those tools look.";
 
-/** The schema of a path argument, which each tool may describe further. */
-const PATH_PROPERTY = {
-	type: "string",
-	description:
-		"Path relative to the work folder root, using forward slashes, such as reports/q3.md.",
-};
+/**
+ * The schema of a path argument.
+ *
+ * @param description - What the path names, when the usual one does not say.
+ * @returns The property's schema.
+ */
+const pathProperty = (
+	description = "Path relative to the work folder root, using forward slashes, such as reports/q3.md.",
+): Record<string, unknown> => ({ type: "string", description: description });
 
 /**
  * What the model is told about a tool that waits for the user, so it keeps
@@ -175,198 +166,6 @@ const describeApproval = (name: FolderToolName): string => {
 	return READ_TOOLS.has(name)
 		? " The user approves each call before it runs."
 		: " The user reviews each change before it runs, so make one focused change per call.";
-};
-
-/**
- * The folder tools the model may call, each described the way it runs. The
- * browser decides which calls to run and which to hold for the user, so the
- * definitions carry no execution mode of their own.
- *
- * @param context - How each tool runs.
- * @returns The definitions to send with the turn.
- */
-export const buildFolderToolDefinitions = (
-	context: FolderToolContext,
-): FolderToolDefinition[] => {
-	const definitions: FolderToolDefinition[] = [
-		{
-			name: FOLDER_TOOL_NAMES.LIST,
-			title: "List Folder",
-			description: `List the files and folders in ${FOLDER_DESCRIPTION}. Paths are relative to the folder root and use forward slashes; leave path empty for the root. Set depth to 2 or 3 to include nested folders. ${FOLDER_SCOPE}`,
-			inputSchema: {
-				type: "object",
-				properties: {
-					path: {
-						...PATH_PROPERTY,
-						description:
-							"Folder to list, relative to the work folder root. Leave empty for the root.",
-					},
-					depth: {
-						type: "integer",
-						minimum: 1,
-						maximum: MAX_LIST_DEPTH,
-						description:
-							"How many levels to include. Defaults to 1.",
-					},
-				},
-				required: [],
-			},
-		},
-		{
-			name: FOLDER_TOOL_NAMES.READ,
-			title: "Read File",
-			description: `Read a text file from ${FOLDER_DESCRIPTION}. Returns up to ${DEFAULT_READ_LINES} lines per call; use offset and limit to read further. PDFs, images, and Office documents cannot be read as text, so ask the user to attach those to the chat instead.`,
-			inputSchema: {
-				type: "object",
-				properties: {
-					path: PATH_PROPERTY,
-					offset: {
-						type: "integer",
-						minimum: 1,
-						description: "First line to read, counting from 1.",
-					},
-					limit: {
-						type: "integer",
-						minimum: 1,
-						description: `Most lines to read. Defaults to ${DEFAULT_READ_LINES}.`,
-					},
-				},
-				required: ["path"],
-			},
-		},
-		{
-			name: FOLDER_TOOL_NAMES.SEARCH,
-			title: "Search Folder",
-			description: `Find files and folders in ${FOLDER_DESCRIPTION} whose names contain the query, ignoring case. Use * as a wildcard, for example *.md. Set content to true to also find text files that contain the query as plain text.`,
-			inputSchema: {
-				type: "object",
-				properties: {
-					query: {
-						type: "string",
-						description: "Text or wildcard pattern to look for.",
-					},
-					path: {
-						...PATH_PROPERTY,
-						description:
-							"Folder to search in, relative to the work folder root. Leave empty to search everything.",
-					},
-					content: {
-						type: "boolean",
-						description: "Also search inside text files.",
-					},
-					limit: {
-						type: "integer",
-						minimum: 1,
-						maximum: MAX_SEARCH_RESULTS,
-						description: `Most matches to return. Defaults to ${DEFAULT_SEARCH_RESULTS}.`,
-					},
-				},
-				required: ["query"],
-			},
-		},
-		{
-			name: FOLDER_TOOL_NAMES.WRITE,
-			title: "Write File",
-			description: `Create a text file in ${FOLDER_DESCRIPTION}, or replace the entire contents of an existing file. Missing parent folders are created. For a small change to an existing file, use folder_edit instead.`,
-			inputSchema: {
-				type: "object",
-				properties: {
-					path: PATH_PROPERTY,
-					content: {
-						type: "string",
-						description: "The complete contents of the file.",
-					},
-				},
-				required: ["path", "content"],
-			},
-		},
-		{
-			name: FOLDER_TOOL_NAMES.EDIT,
-			title: "Edit File",
-			description: `Replace exact text in a text file in ${FOLDER_DESCRIPTION}. old_text must match the file exactly, including whitespace and line breaks, and must appear once unless replace_all is true. Read the file before editing it.`,
-			inputSchema: {
-				type: "object",
-				properties: {
-					path: PATH_PROPERTY,
-					old_text: {
-						type: "string",
-						description: "The exact text to replace.",
-					},
-					new_text: {
-						type: "string",
-						description: "The text to put in its place.",
-					},
-					replace_all: {
-						type: "boolean",
-						description:
-							"Replace every occurrence instead of exactly one.",
-					},
-				},
-				required: ["path", "old_text", "new_text"],
-			},
-		},
-		{
-			name: FOLDER_TOOL_NAMES.CREATE_DIRECTORY,
-			title: "Create Folder",
-			description: `Create a folder in ${FOLDER_DESCRIPTION}, along with any missing parent folders.`,
-			inputSchema: {
-				type: "object",
-				properties: { path: PATH_PROPERTY },
-				required: ["path"],
-			},
-		},
-		{
-			name: FOLDER_TOOL_NAMES.MOVE,
-			title: "Move or Rename",
-			description: `Move or rename a file or folder within ${FOLDER_DESCRIPTION}. The destination must not already exist.`,
-			inputSchema: {
-				type: "object",
-				properties: {
-					from: {
-						...PATH_PROPERTY,
-						description: "Current path of the file or folder.",
-					},
-					to: {
-						...PATH_PROPERTY,
-						description: "New path, including the new name.",
-					},
-				},
-				required: ["from", "to"],
-			},
-		},
-		{
-			name: FOLDER_TOOL_NAMES.DELETE,
-			title: "Delete",
-			description: `Delete a file from ${FOLDER_DESCRIPTION}, or a folder when recursive is true.`,
-			inputSchema: {
-				type: "object",
-				properties: {
-					path: PATH_PROPERTY,
-					recursive: {
-						type: "boolean",
-						description:
-							"Required to delete a folder that still has contents.",
-					},
-				},
-				required: ["path"],
-			},
-		},
-	];
-
-	return definitions.reduce<FolderToolDefinition[]>((offered, definition) => {
-		const execution = context.executionOf(definition.name);
-		if (!execution) {
-			return offered;
-		}
-		offered.push({
-			...definition,
-			description:
-				execution === "ask"
-					? `${definition.description}${describeApproval(definition.name)}`
-					: definition.description,
-		});
-		return offered;
-	}, []);
 };
 
 /**
@@ -446,18 +245,23 @@ const readRequiredString = (
 };
 
 /**
- * Read a file as text for a tool, refusing binary files with a reason the
- * model can pass on.
+ * Read a file as text for a tool, refusing binary and oversized files with a
+ * reason the model can pass on.
  *
- * @param provider - The folder.
+ * @param folder - The folder.
  * @param path - A normalized file path.
+ * @param maxBytes - The largest file to open.
+ * @param known - The entry, when the caller has it already; otherwise it is
+ * looked up.
  * @returns The text.
  */
 const readTextFile = async (
-	provider: WorkFolderProvider,
+	folder: RoomFolder,
 	path: string,
+	maxBytes = MAX_READ_BYTES,
+	known?: FolderEntry,
 ): Promise<string> => {
-	const entry = await provider.stat(path);
+	const entry = known ?? (await folder.stat(path));
 	if (!entry) {
 		throw new FolderToolError(`No file exists at ${path}.`);
 	}
@@ -471,14 +275,14 @@ const readTextFile = async (
 			`${path} is a ${getFileExtension(path).toUpperCase()} file, which cannot be read as text. Ask the user to attach it to the chat so its contents are shared with you.`,
 		);
 	}
-	if (entry.size !== undefined && entry.size > MAX_READ_BYTES) {
+	if (entry.size !== undefined && entry.size > maxBytes) {
 		throw new FolderToolError(
 			`${path} is too large to read (${entry.size} bytes).`,
 		);
 	}
 
-	const blob = await provider.readFile(path);
-	if (blob.size > MAX_READ_BYTES) {
+	const blob = await folder.readFile(path);
+	if (blob.size > maxBytes) {
 		throw new FolderToolError(
 			`${path} is too large to read (${blob.size} bytes).`,
 		);
@@ -506,86 +310,32 @@ const toResultRow = (entry: FolderEntry): Record<string, unknown> => ({
 });
 
 /**
- * The current time, for a change's `at`.
+ * A call that worked.
  *
- * @returns The time as an ISO string.
- */
-const now = (): string => new Date().toISOString();
-
-/**
- * Turn whatever a tool call threw into a sentence the model can act on.
- *
- * @param error - What was thrown.
- * @returns The explanation.
- */
-const describeFolderError = (error: unknown): string =>
-	getErrorMessage(error, "") || "The operation failed.";
-
-/**
- * Run one folder tool call.
- *
- * Never throws: a failure comes back as an outcome with `isError`, carrying
- * an explanation the model reads as the tool result.
- *
- * @param provider - The folder to act on.
- * @param name - The tool the model called.
- * @param args - The call's arguments.
- * @param folderName - The folder's name, echoed in listings.
+ * @param payload - What the model reads back.
+ * @param hasChanges - Whether the call changed the folder.
  * @returns The outcome.
  */
-export const executeFolderTool = async (
-	provider: WorkFolderProvider,
-	name: FolderToolName,
-	args: Record<string, unknown>,
-	folderName: string,
-): Promise<FolderToolOutcome> => {
-	try {
-		switch (name) {
-			case FOLDER_TOOL_NAMES.LIST:
-				return await listFolder(provider, args, folderName);
-			case FOLDER_TOOL_NAMES.READ:
-				return await readFile(provider, args);
-			case FOLDER_TOOL_NAMES.SEARCH:
-				return await searchFolder(provider, args);
-			case FOLDER_TOOL_NAMES.WRITE:
-				return await writeFile(provider, args);
-			case FOLDER_TOOL_NAMES.EDIT:
-				return await editFile(provider, args);
-			case FOLDER_TOOL_NAMES.CREATE_DIRECTORY:
-				return await createDirectory(provider, args);
-			case FOLDER_TOOL_NAMES.MOVE:
-				return await moveEntry(provider, args);
-			case FOLDER_TOOL_NAMES.DELETE:
-				return await deleteEntry(provider, args);
-			default:
-				throw new FolderToolError(`Unknown tool ${name}.`);
-		}
-	} catch (error) {
-		return {
-			isError: true,
-			payload: { error: describeFolderError(error) },
-			changes: [],
-		};
-	}
-};
+const succeeded = (
+	payload: Record<string, unknown>,
+	hasChanges = false,
+): FolderToolOutcome => ({ isError: false, payload, hasChanges });
 
 /**
  * `folder_list`: a folder's entries, a few levels deep when `depth` asks.
  *
- * @param provider - The folder.
+ * @param folder - The folder.
  * @param args - The call's arguments.
- * @param folderName - The folder's name, echoed in the result.
  * @returns The listing.
  */
 const listFolder = async (
-	provider: WorkFolderProvider,
+	folder: RoomFolder,
 	args: Record<string, unknown>,
-	folderName: string,
 ): Promise<FolderToolOutcome> => {
 	const path = normalizeFolderPath(args.path);
 	const depth = readInteger(args.depth, 1, 1, MAX_LIST_DEPTH);
 
-	const root = await provider.stat(path);
+	const root = await folder.stat(path);
 	if (!root) {
 		throw new FolderToolError(`No folder exists at ${path}.`);
 	}
@@ -605,7 +355,7 @@ const listFolder = async (
 	 * @param level - How deep it is, the listed folder being 1.
 	 */
 	const walk = async (directory: string, level: number): Promise<void> => {
-		for (const entry of await provider.list(directory)) {
+		for (const entry of await folder.list(directory)) {
 			if (entries.length >= MAX_LIST_ENTRIES) {
 				isTruncated = true;
 				return;
@@ -622,32 +372,28 @@ const listFolder = async (
 	};
 	await walk(path, 1);
 
-	return {
-		isError: false,
-		payload: {
-			folder: folderName,
-			path: path || "/",
-			entries: entries.map(toResultRow),
-			truncated: isTruncated,
-			...(isTruncated
-				? {
-						note: `Only the first ${MAX_LIST_ENTRIES} entries are shown. List a subfolder to see more.`,
-					}
-				: {}),
-		},
-		changes: [],
-	};
+	return succeeded({
+		folder: ROOM_FILES_NAME,
+		path: path || "/",
+		entries: entries.map(toResultRow),
+		truncated: isTruncated,
+		...(isTruncated
+			? {
+					note: `Only the first ${MAX_LIST_ENTRIES} entries are shown. List a subfolder to see more.`,
+				}
+			: {}),
+	});
 };
 
 /**
  * `folder_read`: a window of lines from a text file.
  *
- * @param provider - The folder.
+ * @param folder - The folder.
  * @param args - The call's arguments.
  * @returns The lines, and where to continue when there are more.
  */
 const readFile = async (
-	provider: WorkFolderProvider,
+	folder: RoomFolder,
 	args: Record<string, unknown>,
 ): Promise<FolderToolOutcome> => {
 	const path = readRequiredPath(args, "path");
@@ -659,38 +405,34 @@ const readFile = async (
 		DEFAULT_READ_LINES,
 	);
 
-	const text = await readTextFile(provider, path);
+	const text = await readTextFile(folder, path);
 	const slice = sliceTextLines(text, offset, limit, MAX_READ_CHARS);
 
-	return {
-		isError: false,
-		payload: {
-			path: path,
-			total_lines: slice.totalLines,
-			start_line: slice.startLine,
-			end_line: slice.endLine,
-			truncated: slice.isTruncated,
-			...(slice.isTruncated
-				? {
-						note: `Call folder_read with offset ${slice.endLine + 1} to continue.`,
-					}
-				: {}),
-			content: slice.content,
-		},
-		changes: [],
-	};
+	return succeeded({
+		path: path,
+		total_lines: slice.totalLines,
+		start_line: slice.startLine,
+		end_line: slice.endLine,
+		truncated: slice.isTruncated,
+		...(slice.isTruncated
+			? {
+					note: `Call folder_read with offset ${slice.endLine + 1} to continue.`,
+				}
+			: {}),
+		content: slice.content,
+	});
 };
 
 /**
  * `folder_search`: entries whose names match the query, and with `content`
  * text files that contain it, searched breadth first.
  *
- * @param provider - The folder.
+ * @param folder - The folder.
  * @param args - The call's arguments.
  * @returns The matches.
  */
 const searchFolder = async (
-	provider: WorkFolderProvider,
+	folder: RoomFolder,
 	args: Record<string, unknown>,
 ): Promise<FolderToolOutcome> => {
 	const query = readRequiredString(args, "query").trim();
@@ -716,7 +458,7 @@ const searchFolder = async (
 
 	while (queue.length > 0 && !isTruncated) {
 		const directory = queue.shift() ?? "";
-		for (const entry of await provider.list(directory)) {
+		for (const entry of await folder.list(directory)) {
 			scanned++;
 			if (
 				scanned > MAX_SEARCH_SCANNED_ENTRIES ||
@@ -738,15 +480,12 @@ const searchFolder = async (
 			) {
 				contentFilesRead++;
 				// a file that cannot be read is not a match, not a failure
-				const blob = await provider
-					.readFile(entry.path)
-					.catch(() => null);
-				const text =
-					blob && blob.size <= MAX_CONTENT_SEARCH_BYTES
-						? decodeTextFile(
-								new Uint8Array(await blob.arrayBuffer()),
-							)
-						: null;
+				const text = await readTextFile(
+					folder,
+					entry.path,
+					MAX_CONTENT_SEARCH_BYTES,
+					entry,
+				).catch(() => null);
 				const lines = text?.split(/\r?\n/) ?? [];
 				const lineIndex = lines.findIndex((line) =>
 					line.toLowerCase().includes(needle),
@@ -771,32 +510,28 @@ const searchFolder = async (
 		}
 	}
 
-	return {
-		isError: false,
-		payload: {
-			query: query,
-			path: path || "/",
-			matches: matches,
-			truncated: isTruncated,
-			...(isTruncated
-				? {
-						note: "The search stopped early. Narrow it with a more specific query or path.",
-					}
-				: {}),
-		},
-		changes: [],
-	};
+	return succeeded({
+		query: query,
+		path: path || "/",
+		matches: matches,
+		truncated: isTruncated,
+		...(isTruncated
+			? {
+					note: "The search stopped early. Narrow it with a more specific query or path.",
+				}
+			: {}),
+	});
 };
 
 /**
  * `folder_write`: create a text file or replace its contents.
  *
- * @param provider - The folder.
+ * @param folder - The folder.
  * @param args - The call's arguments.
  * @returns What was written, and whether the file is new.
  */
 const writeFile = async (
-	provider: WorkFolderProvider,
+	folder: RoomFolder,
 	args: Record<string, unknown>,
 ): Promise<FolderToolOutcome> => {
 	const path = readRequiredPath(args, "path");
@@ -807,35 +542,32 @@ const writeFile = async (
 		);
 	}
 
-	const existing = await provider.stat(path);
+	const existing = await folder.stat(path);
 	if (existing?.kind === "directory") {
 		throw new FolderToolError(`${path} is a folder, not a file.`);
 	}
 
-	await provider.writeText(path, content);
+	await folder.writeText(path, content);
 
-	return {
-		isError: false,
-		payload: {
+	return succeeded(
+		{
 			path: path,
 			bytes: new TextEncoder().encode(content).length,
 			created: !existing,
 		},
-		changes: [
-			{ path: path, kind: existing ? "modified" : "created", at: now() },
-		],
-	};
+		true,
+	);
 };
 
 /**
  * `folder_edit`: replace exact text in a text file.
  *
- * @param provider - The folder.
+ * @param folder - The folder.
  * @param args - The call's arguments.
  * @returns How many replacements were made.
  */
 const editFile = async (
-	provider: WorkFolderProvider,
+	folder: RoomFolder,
 	args: Record<string, unknown>,
 ): Promise<FolderToolOutcome> => {
 	const path = readRequiredPath(args, "path");
@@ -843,60 +575,47 @@ const editFile = async (
 	const newText = readRequiredString(args, "new_text");
 	const replaceAll = readBoolean(args.replace_all);
 
-	const original = await readTextFile(provider, path);
+	const original = await readTextFile(folder, path);
 	const edited = replaceFileText(original, oldText, newText, replaceAll);
-	await provider.writeText(path, edited.content);
+	await folder.writeText(path, edited.content);
 
-	return {
-		isError: false,
-		payload: { path: path, replacements: edited.replacements },
-		changes: [{ path: path, kind: "modified", at: now() }],
-	};
+	return succeeded({ path: path, replacements: edited.replacements }, true);
 };
 
 /**
  * `folder_create_directory`: create a folder, doing nothing when it exists.
  *
- * @param provider - The folder.
+ * @param folder - The folder.
  * @param args - The call's arguments.
  * @returns Whether the folder was created.
  */
 const createDirectory = async (
-	provider: WorkFolderProvider,
+	folder: RoomFolder,
 	args: Record<string, unknown>,
 ): Promise<FolderToolOutcome> => {
 	const path = readRequiredPath(args, "path");
 
-	const existing = await provider.stat(path);
+	const existing = await folder.stat(path);
 	if (existing?.kind === "file") {
 		throw new FolderToolError(`${path} is already a file.`);
 	}
 	if (existing) {
-		return {
-			isError: false,
-			payload: { path: path, created: false },
-			changes: [],
-		};
+		return succeeded({ path: path, created: false });
 	}
 
-	await provider.createDirectory(path);
-
-	return {
-		isError: false,
-		payload: { path: path, created: true },
-		changes: [{ path: path, kind: "created", at: now() }],
-	};
+	await folder.createDirectory(path);
+	return succeeded({ path: path, created: true }, true);
 };
 
 /**
  * `folder_move`: move or rename an entry.
  *
- * @param provider - The folder.
+ * @param folder - The folder.
  * @param args - The call's arguments.
  * @returns Where the entry went.
  */
 const moveEntry = async (
-	provider: WorkFolderProvider,
+	folder: RoomFolder,
 	args: Record<string, unknown>,
 ): Promise<FolderToolOutcome> => {
 	const from = readRequiredPath(args, "from");
@@ -905,36 +624,31 @@ const moveEntry = async (
 		throw new FolderToolError("from and to are the same path.");
 	}
 
-	await provider.move(from, to);
-
-	return {
-		isError: false,
-		payload: { from: from, to: to },
-		changes: [{ path: to, kind: "moved", from: from, at: now() }],
-	};
+	await folder.move(from, to);
+	return succeeded({ from: from, to: to }, true);
 };
 
 /**
  * `folder_delete`: delete a file, or a folder once `recursive` confirms a
  * folder with contents was meant to go.
  *
- * @param provider - The folder.
+ * @param folder - The folder.
  * @param args - The call's arguments.
  * @returns What was deleted.
  */
 const deleteEntry = async (
-	provider: WorkFolderProvider,
+	folder: RoomFolder,
 	args: Record<string, unknown>,
 ): Promise<FolderToolOutcome> => {
 	const path = readRequiredPath(args, "path");
 	const recursive = readBoolean(args.recursive);
 
-	const entry = await provider.stat(path);
+	const entry = await folder.stat(path);
 	if (!entry) {
 		throw new FolderToolError(`Nothing exists at ${path}.`);
 	}
 	if (entry.kind === "directory" && !recursive) {
-		const children = await provider.list(path);
+		const children = await folder.list(path);
 		if (children.length > 0) {
 			throw new FolderToolError(
 				`${path} is a folder with ${children.length} entries. Set recursive to true to delete it with its contents.`,
@@ -942,11 +656,221 @@ const deleteEntry = async (
 		}
 	}
 
-	await provider.remove(path, recursive || entry.kind === "directory");
+	await folder.remove(path);
+	return succeeded({ path: path, deleted: true }, true);
+};
 
-	return {
-		isError: false,
-		payload: { path: path, deleted: true },
-		changes: [{ path: path, kind: "deleted", at: now() }],
-	};
+/** One folder tool: what the model is told about it, and what runs it. */
+interface FolderToolSpec {
+	/** The tool's title. */
+	title: string;
+	/** What the model is told the tool does, before any approval note. */
+	description: string;
+	/** The JSON schema of each argument. */
+	properties: Record<string, Record<string, unknown>>;
+	/** The arguments the model has to pass. */
+	required: string[];
+	/** Runs one call. May throw; {@link executeFolderTool} catches. */
+	run: (
+		folder: RoomFolder,
+		args: Record<string, unknown>,
+	) => Promise<FolderToolOutcome>;
+}
+
+/** Every folder tool, in the order the definitions list them. */
+const FOLDER_TOOLS: Record<FolderToolName, FolderToolSpec> = {
+	[FOLDER_TOOL_NAMES.LIST]: {
+		title: "List Folder",
+		description: `List the files and folders in ${FOLDER_DESCRIPTION}. Paths are relative to the folder root and use forward slashes; leave path empty for the root. Set depth to 2 or 3 to include nested folders. ${FOLDER_SCOPE}`,
+		properties: {
+			path: pathProperty(
+				"Folder to list, relative to the work folder root. Leave empty for the root.",
+			),
+			depth: {
+				type: "integer",
+				minimum: 1,
+				maximum: MAX_LIST_DEPTH,
+				description: "How many levels to include. Defaults to 1.",
+			},
+		},
+		required: [],
+		run: listFolder,
+	},
+	[FOLDER_TOOL_NAMES.READ]: {
+		title: "Read File",
+		description: `Read a text file from ${FOLDER_DESCRIPTION}. Returns up to ${DEFAULT_READ_LINES} lines per call; use offset and limit to read further. PDFs, images, and Office documents cannot be read as text, so ask the user to attach those to the chat instead.`,
+		properties: {
+			path: pathProperty(),
+			offset: {
+				type: "integer",
+				minimum: 1,
+				description: "First line to read, counting from 1.",
+			},
+			limit: {
+				type: "integer",
+				minimum: 1,
+				description: `Most lines to read. Defaults to ${DEFAULT_READ_LINES}.`,
+			},
+		},
+		required: ["path"],
+		run: readFile,
+	},
+	[FOLDER_TOOL_NAMES.SEARCH]: {
+		title: "Search Folder",
+		description: `Find files and folders in ${FOLDER_DESCRIPTION} whose names contain the query, ignoring case. Use * as a wildcard, for example *.md. Set content to true to also find text files that contain the query as plain text.`,
+		properties: {
+			query: {
+				type: "string",
+				description: "Text or wildcard pattern to look for.",
+			},
+			path: pathProperty(
+				"Folder to search in, relative to the work folder root. Leave empty to search everything.",
+			),
+			content: {
+				type: "boolean",
+				description: "Also search inside text files.",
+			},
+			limit: {
+				type: "integer",
+				minimum: 1,
+				maximum: MAX_SEARCH_RESULTS,
+				description: `Most matches to return. Defaults to ${DEFAULT_SEARCH_RESULTS}.`,
+			},
+		},
+		required: ["query"],
+		run: searchFolder,
+	},
+	[FOLDER_TOOL_NAMES.WRITE]: {
+		title: "Write File",
+		description: `Create a text file in ${FOLDER_DESCRIPTION}, or replace the entire contents of an existing file. Missing parent folders are created. For a small change to an existing file, use folder_edit instead.`,
+		properties: {
+			path: pathProperty(),
+			content: {
+				type: "string",
+				description: "The complete contents of the file.",
+			},
+		},
+		required: ["path", "content"],
+		run: writeFile,
+	},
+	[FOLDER_TOOL_NAMES.EDIT]: {
+		title: "Edit File",
+		description: `Replace exact text in a text file in ${FOLDER_DESCRIPTION}. old_text must match the file exactly, including whitespace and line breaks, and must appear once unless replace_all is true. Read the file before editing it.`,
+		properties: {
+			path: pathProperty(),
+			old_text: {
+				type: "string",
+				description: "The exact text to replace.",
+			},
+			new_text: {
+				type: "string",
+				description: "The text to put in its place.",
+			},
+			replace_all: {
+				type: "boolean",
+				description: "Replace every occurrence instead of exactly one.",
+			},
+		},
+		required: ["path", "old_text", "new_text"],
+		run: editFile,
+	},
+	[FOLDER_TOOL_NAMES.CREATE_DIRECTORY]: {
+		title: "Create Folder",
+		description: `Create a folder in ${FOLDER_DESCRIPTION}, along with any missing parent folders.`,
+		properties: { path: pathProperty() },
+		required: ["path"],
+		run: createDirectory,
+	},
+	[FOLDER_TOOL_NAMES.MOVE]: {
+		title: "Move or Rename",
+		description: `Move or rename a file or folder within ${FOLDER_DESCRIPTION}. The destination must not already exist.`,
+		properties: {
+			from: pathProperty("Current path of the file or folder."),
+			to: pathProperty("New path, including the new name."),
+		},
+		required: ["from", "to"],
+		run: moveEntry,
+	},
+	[FOLDER_TOOL_NAMES.DELETE]: {
+		title: "Delete",
+		description: `Delete a file from ${FOLDER_DESCRIPTION}, or a folder when recursive is true.`,
+		properties: {
+			path: pathProperty(),
+			recursive: {
+				type: "boolean",
+				description:
+					"Required to delete a folder that still has contents.",
+			},
+		},
+		required: ["path"],
+		run: deleteEntry,
+	},
+};
+
+/**
+ * The folder tools the model may call, each described the way it runs. The
+ * browser decides which calls to run and which to hold for the user, so the
+ * definitions carry no execution mode of their own.
+ *
+ * @param context - How each tool runs: `executionOf` gives its mode, or null
+ * to leave it out of the definitions altogether.
+ * @returns The definitions to send with the turn.
+ */
+export const buildFolderToolDefinitions = (context: {
+	executionOf: (name: FolderToolName) => FolderToolExecution | null;
+}): FolderToolDefinition[] =>
+	ALL_FOLDER_TOOLS.flatMap((name) => {
+		const execution = context.executionOf(name);
+		if (!execution) {
+			return [];
+		}
+		const { title, description, properties, required } = FOLDER_TOOLS[name];
+		return [
+			{
+				name: name,
+				title: title,
+				description:
+					execution === "ask"
+						? `${description}${describeApproval(name)}`
+						: description,
+				inputSchema: {
+					type: "object",
+					properties: properties,
+					required: required,
+				},
+			},
+		];
+	});
+
+/**
+ * Run one folder tool call in Room Files.
+ *
+ * Never throws: a failure comes back as an outcome with `isError`, carrying
+ * an explanation the model reads as the tool result.
+ *
+ * @param folder - Room Files.
+ * @param name - The tool the model called.
+ * @param args - The call's arguments.
+ * @returns The outcome.
+ */
+export const executeFolderTool = async (
+	folder: RoomFolder,
+	name: FolderToolName,
+	args: Record<string, unknown>,
+): Promise<FolderToolOutcome> => {
+	try {
+		const tool = FOLDER_TOOLS[name];
+		if (!tool) {
+			throw new FolderToolError(`Unknown tool ${name}.`);
+		}
+		return await tool.run(folder, args);
+	} catch (error) {
+		return {
+			isError: true,
+			payload: {
+				error: getErrorMessage(error, "") || "The operation failed.",
+			},
+			hasChanges: false,
+		};
+	}
 };

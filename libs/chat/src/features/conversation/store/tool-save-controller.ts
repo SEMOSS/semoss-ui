@@ -1,16 +1,25 @@
-import type { InputPixelMessage, ResponsePixelMessage } from "../../../types";
 import {
-	STREAMING_PLACEHOLDER_ID,
+	type AddPlaygroundToolExecutionParams,
+	addPlaygroundToolExecutionPixel,
+} from "@semoss/sdk";
+import { toError } from "@semoss/utility/error";
+import type {
+	InputPixelMessage,
+	ResponsePixelMessage,
+	ToolOutcome,
+} from "../../../types";
+import {
 	TOOL_CANCELLATION_PROMPT,
 	TOOL_ERROR_PROMPT,
 	TOOL_INTERRUPTED_PROMPT,
 	TOOL_OUTPUT_UNREADABLE_PROMPT,
 	TURN_CANCELLATION_PROMPT,
 } from "../../tools/mcp/mcp-constants";
-import { type CancelCommitOutput, spliceHiddenMessages } from "./message-tree";
-import { ResponseMessageStore } from "./response-message.store";
+import type { CancelCommitOutput } from "./message-map";
+import type { ResponseMessageStore } from "./response-message.store";
+import { createResponsePlaceholder } from "./response-placeholder";
 import { applyResponseStreamChunk } from "./response-stream";
-import type { ToolStore } from "./tool.store";
+import { isToolSettled, type ToolStore, toToolStatus } from "./tool.store";
 
 /** A tool result waiting to be written to room history via the save queue. */
 interface ToolSaveEntry {
@@ -19,7 +28,7 @@ interface ToolSaveEntry {
 	/** Already wrapped with the status guidance prompt. */
 	toolResponse: string;
 	/** How the call ended. */
-	toolStatus: "success" | "error" | "cancelled";
+	toolStatus: ToolOutcome;
 	/** The arguments it ran with. */
 	executedParameters: Record<string, unknown>;
 	/** Settles the caller's `save` once the batch carrying it is written. */
@@ -42,6 +51,22 @@ interface ToolExecModelReply {
  * reply once the last result completes the set.
  */
 type ToolExecOutput = string | { responseMessage: string } | ToolExecModelReply;
+
+/**
+ * Where the save queue stands: idle, writing one batch, or stopped, once a
+ * stop took the queue over (`cancelPending`) and nothing more is sent.
+ */
+type ToolSavePhase =
+	| { readonly status: "IDLE" }
+	| {
+			readonly status: "WRITING";
+			/** Settles once the batch has been written and reconciled. */
+			readonly batch: Promise<void>;
+	  }
+	| { readonly status: "STOPPED" };
+
+/** The queue's phase when nothing is being written. */
+const IDLE: ToolSavePhase = { status: "IDLE" };
 
 /** Minimal per-statement result shape shared by runRoomPixel + streaming. */
 interface StatementResult {
@@ -67,17 +92,22 @@ interface StatementResult {
 export class ToolSaveController {
 	/** Results waiting to be written. */
 	private queue: ToolSaveEntry[] = [];
-	/** True while a batch is being written; guards the drain loop. */
-	private isFlushing: boolean = false;
-	/** Once a stop takes over the queue, no more normal batches are sent. */
-	private isStopped: boolean = false;
-	/** Settles when the in-flight batch (if any) finishes; awaited by stop. */
-	private inFlight: Promise<void> = Promise.resolve();
-	/** Guards the cancel commit so a stopped turn is only persisted once. */
-	private isCancelCommitted: boolean = false;
+	/** Whether a batch is being written, or the queue has stopped. */
+	private phase: ToolSavePhase = IDLE;
+	/**
+	 * The model's reply to the results, while it streams: made by the final
+	 * batch, reused by a retried one and by a stop, and cleared once the reply
+	 * (or the stop) is committed, or given up on.
+	 */
+	private pendingReply: ResponseMessageStore | null = null;
 
 	/** @param message - The response whose tool results this writes. */
 	constructor(private readonly message: ResponseMessageStore) {}
+
+	/** The model's reply to the results while it streams, or null. */
+	get toolResponseMessage(): ResponseMessageStore | null {
+		return this.pendingReply;
+	}
 
 	/**
 	 * Queue a tool result to be written to room history.
@@ -97,16 +127,12 @@ export class ToolSaveController {
 	save = (
 		tool: ToolStore,
 		toolResponse: string,
-		toolStatus: "success" | "error" | "cancelled" = "success",
+		toolStatus: ToolOutcome = "success",
 		executedParameters: Record<string, unknown>,
 		errorDuringSaving: boolean = false,
 	): Promise<void> => {
 		// skip if the tool is already completed — an outdated/duplicate call
-		if (
-			tool.status === "SUCCESS" ||
-			tool.status === "CANCELLED" ||
-			tool.status === "ERROR"
-		) {
+		if (isToolSettled(tool.status)) {
 			return Promise.resolve();
 		}
 
@@ -119,12 +145,7 @@ export class ToolSaveController {
 		}
 
 		tool.settle({
-			status:
-				toolStatus === "success"
-					? "SUCCESS"
-					: toolStatus === "cancelled"
-						? "CANCELLED"
-						: "ERROR",
+			status: toToolStatus(toolStatus),
 			response: wrapped,
 			parameters: executedParameters,
 		});
@@ -153,54 +174,77 @@ export class ToolSaveController {
 	 * branch and notes the stop for the next turn.
 	 */
 	cancelPending = async (): Promise<void> => {
-		const message = this.message;
-		const room = message.room;
+		// no more normal batches, and let the one in flight finish so we don't
+		// write concurrently with it
+		const writing =
+			this.phase.status === "WRITING" ? this.phase.batch : undefined;
+		this.phase = { status: "STOPPED" };
+		await writing;
 
-		// Take over the queue: no more normal batches, and let the in-flight one
-		// finish so we don't write concurrently with it.
-		this.isStopped = true;
-		await this.inFlight;
+		// results that were queued but not yet sent still deserve recording
+		const entries = [
+			...this.queue.splice(0, this.queue.length),
+			...this.cancelUnfinishedTools(),
+		];
+		if (entries.length > 0) {
+			await this.commitStop(entries);
+		}
+	};
 
-		// Results that were queued but not yet sent still deserve to be recorded.
-		const entries: ToolSaveEntry[] = this.queue.splice(
-			0,
-			this.queue.length,
-		);
-
-		// Mark the still-pending tools CANCELLED and add them to the commit.
-		message.parts.forEach((part) => {
+	/**
+	 * Mark the response's unfinished calls CANCELLED, to be committed as
+	 * interrupted.
+	 *
+	 * @returns Their entries; nobody waits on them.
+	 */
+	private cancelUnfinishedTools = (): ToolSaveEntry[] => {
+		const room = this.message.room;
+		const entries: ToolSaveEntry[] = [];
+		for (const part of this.message.parts) {
 			if (part.type !== "TOOL_CALL") {
-				return;
+				continue;
 			}
 			const tool = room.getTool(part.toolCall.id);
-			if (
-				tool &&
-				(tool.status === "INITIAL" || tool.status === "LOADING")
-			) {
-				tool.settle({
-					status: "CANCELLED",
-					response: TOOL_INTERRUPTED_PROMPT,
-				});
-				entries.push({
-					tool,
-					toolResponse: TOOL_INTERRUPTED_PROMPT,
-					toolStatus: "cancelled",
-					executedParameters: {},
-					resolve: () => {},
-					reject: () => {},
-				});
+			if (!tool || isToolSettled(tool.status)) {
+				continue;
 			}
-		});
-
-		if (entries.length === 0) {
-			return;
+			tool.settle({
+				status: "CANCELLED",
+				response: TOOL_INTERRUPTED_PROMPT,
+			});
+			entries.push({
+				tool,
+				toolResponse: TOOL_INTERRUPTED_PROMPT,
+				toolStatus: "cancelled",
+				executedParameters: {},
+				resolve: () => {},
+				reject: () => {},
+			});
 		}
+		return entries;
+	};
 
+	/**
+	 * Commit a stopped tool phase in one pixel, its last statement saving an
+	 * empty reply and the hidden note, and keep the tree where the backend's
+	 * history ends.
+	 *
+	 * @param entries - The results to commit, in order.
+	 */
+	private commitStop = async (entries: ToolSaveEntry[]): Promise<void> => {
+		const message = this.message;
+		const room = message.room;
 		const pixel = entries
 			.map((entry, i) =>
-				i === entries.length - 1
-					? `AddPlaygroundToolExecution(${this.buildParams(entry)}, responseParts=[], hiddenMessage=["<encode>${TURN_CANCELLATION_PROMPT}</encode>"]);`
-					: `AddPlaygroundToolExecution(${this.buildParams(entry)});`,
+				addPlaygroundToolExecutionPixel(
+					this.toolExecutionParams(entry),
+					i === entries.length - 1
+						? {
+								responseParts: [],
+								hiddenMessage: TURN_CANCELLATION_PROMPT,
+							}
+						: undefined,
+				),
 			)
 			.join("\n");
 
@@ -214,39 +258,24 @@ export class ToolSaveController {
 			// so tail — and the next message's parent — stays aligned with the
 			// backend's provider history.
 			const followUp =
-				message.toolResponseMessage ??
-				new ResponseMessageStore(room, {
-					io: "OUTPUT",
-					messageId: STREAMING_PLACEHOLDER_ID,
-					visible: true,
-					platform_generated: true,
-					modelId: room.model.engine_id,
-					dateCreated: new Date().toISOString(),
-					parts: [],
-					tokens: 0,
-					ornaments: {
-						modelName:
-							room.model.engine_display_name ||
-							room.model.app_name,
-					},
-				} as ResponsePixelMessage);
-			if (!message.toolResponseMessage) {
+				this.pendingReply ?? createResponsePlaceholder(room);
+			if (!this.pendingReply) {
 				message.addChild(followUp);
 			}
 			followUp.sync(output.responseMessage);
 			followUp.setIsThinking(false);
-			spliceHiddenMessages(followUp, output.extraMessages);
-			message.setToolResponseMessage(null);
+			room.spliceHiddenMessages(followUp, output.extraMessages);
+			this.pendingReply = null;
 
-			entries.forEach((entry) => {
+			for (const entry of entries) {
 				entry.resolve();
-			});
+			}
 		} catch (e) {
 			console.error("Failed to cancel pending tools", e);
-			room.setError(e as Error);
-			entries.forEach((entry) => {
+			room.setError(toError(e));
+			for (const entry of entries) {
 				entry.reject(e);
-			});
+			}
 		}
 	};
 
@@ -258,130 +287,152 @@ export class ToolSaveController {
 	 * arrived mid-write get sent next.
 	 */
 	private flush = (): void => {
-		if (this.isFlushing || this.isStopped || this.queue.length === 0) {
+		if (this.phase.status !== "IDLE" || this.queue.length === 0) {
 			return;
 		}
-		this.isFlushing = true;
-
-		const message = this.message;
-		const room = message.room;
 		const batch = this.queue.splice(0, this.queue.length);
 		// Writes are serialized, so if nothing is unfinished after this batch it
 		// is the one that completes the set — the model-invoking write.
-		const isFinal = !message.hasUnfinishedTools;
-
-		// Refresh room options once the tool phase wraps up, so anything a tool
-		// changed (e.g. one that writes tool definitions into the room folder)
-		// shows up in the MCP indicator and is available to the next
-		// AskPlayground call, without a full page refresh. Gated to the final
-		// batch and skipped if nothing could have changed, rather than firing
-		// per tool — a turn with several tools would otherwise send that many
-		// redundant GetRoomOptions calls.
-		if (
-			isFinal &&
-			message.parts.some((part) => {
-				if (part.type !== "TOOL_CALL") return false;
-				const status = room.getTool(part.toolCall.id)?.status;
-				return status === "SUCCESS" || status === "CANCELLED";
-			})
-		) {
-			(async () => {
-				try {
-					// A successful sync clears the room's error state, so skip it
-					// if something has already failed — a later cancel-commit
-					// failure on this same batch shouldn't get wiped by this.
-					if (!room.error) {
-						await room.syncRoomOptions();
-					}
-				} catch (e) {
-					console.error("Failed to sync room options", e);
-				}
-			})();
-		}
-
-		// Assigned synchronously so cancelPending can await the in-flight batch.
-		// sendBatch reconciles each statement's outcome itself; a throw here is a
-		// whole-call failure (network / job error) with no per-statement detail,
-		// so fall back to the coarse re-record.
-		this.inFlight = (async () => {
-			try {
-				await this.sendBatch(batch, isFinal);
-			} catch (error) {
-				batch.forEach((entry) => {
-					this.retryEntryAsError(entry, error);
-				});
-			} finally {
-				this.isFlushing = false;
-				this.flush();
-			}
-		})();
+		const isFinal = !this.message.hasUnfinishedTools;
+		// set at once, so cancelPending can wait for the batch in flight
+		this.phase = {
+			status: "WRITING",
+			batch: this.writeBatch(batch, isFinal),
+		};
 	};
 
 	/**
-	 * Send one batch as a single pixel. A non-final batch is a plain
-	 * (non-streaming) write. The final batch's last statement completes the set
-	 * and invokes the model, whose reply streams into the response placeholder
-	 * and is the only write that carries an onCancel. Both paths read the
-	 * per-statement results (throwOnError: false) and reconcile them, so a
-	 * mid-batch commit failure retries only that tool.
+	 * Write one batch, then the next. sendBatch reconciles each statement's
+	 * outcome itself; a throw is a whole-call failure (network / job error)
+	 * with no per-statement detail, so every result is re-recorded. A reply
+	 * that is left with nothing more to write, because its results were given
+	 * up on, leaves the tree; a stopped one is the stop's to commit. The final
+	 * batch, once nothing more is re-sent, refreshes the room's options.
 	 *
 	 * @param batch - The results to write, in order.
 	 * @param isFinal - Whether the batch completes the tool set.
 	 */
-	private sendBatch = async (
+	private writeBatch = async (
 		batch: ToolSaveEntry[],
 		isFinal: boolean,
 	): Promise<void> => {
-		const message = this.message;
-		const room = message.room;
-		const pixel = batch
-			.map(
-				(entry) =>
-					`AddPlaygroundToolExecution(${this.buildParams(entry)});`,
-			)
-			.join("\n");
+		let wasStopped = false;
+		try {
+			wasStopped = await this.sendBatch(batch, isFinal);
+		} catch (error) {
+			for (const entry of batch) {
+				this.retryEntryAsError(entry, error);
+			}
+		} finally {
+			if (this.phase.status === "WRITING") {
+				this.phase = IDLE;
+			}
+			this.flush();
+			// idle with a reply still waiting: no write will fill it
+			if (
+				!wasStopped &&
+				this.phase.status === "IDLE" &&
+				this.pendingReply
+			) {
+				this.message.removeChild(this.pendingReply);
+				this.pendingReply = null;
+			}
+			// the final batch, with nothing re-sent, ends the tool phase
+			if (isFinal && this.phase.status === "IDLE") {
+				this.refreshRoomOptions();
+			}
+		}
+	};
 
-		if (!isFinal) {
-			const response = await room.runRoomPixel<ToolExecOutput[]>(
-				pixel,
-				false,
-				false,
-				false,
-			);
-			this.reconcile(batch, response.pixelReturn);
-			// keep RunMCPTool concurrency saturated for any still-queued auto tools
-			message.continueToolExecution();
+	/**
+	 * Refresh room options once the tool phase wraps up, so anything a tool
+	 * changed (e.g. one that writes tool definitions into the room folder)
+	 * shows up in the MCP indicator and is available to the next AskPlayground
+	 * call, without a full page refresh. Run once the final batch is written
+	 * and skipped if nothing could have changed, rather than firing per tool —
+	 * a turn with several tools would otherwise send that many redundant
+	 * GetRoomOptions calls.
+	 */
+	private refreshRoomOptions = (): void => {
+		const room = this.message.room;
+		const mayHaveChanged = this.message.parts.some((part) => {
+			if (part.type !== "TOOL_CALL") return false;
+			const status = room.getTool(part.toolCall.id)?.status;
+			return status === "SUCCESS" || status === "CANCELLED";
+		});
+		// A successful sync clears the room's error state, so skip it if
+		// something has already failed — a later cancel-commit failure on this
+		// same batch shouldn't get wiped by this.
+		if (!mayHaveChanged || room.error) {
 			return;
 		}
+		room.syncRoomOptions().catch((e) => {
+			console.error("Failed to sync room options", e);
+		});
+	};
 
-		// Final batch — create the placeholder the model reply streams into.
-		const responseMessage =
-			message.toolResponseMessage ??
-			new ResponseMessageStore(room, {
-				io: "OUTPUT",
-				messageId: STREAMING_PLACEHOLDER_ID,
-				visible: true,
-				platform_generated: true,
-				modelId: room.model.engine_id,
-				dateCreated: new Date().toISOString(),
-				parts: [],
-				tokens: 0,
-				ornaments: {
-					modelName:
-						room.model.engine_display_name || room.model.app_name,
-				},
-			} as ResponsePixelMessage);
-		if (!message.toolResponseMessage) {
-			message.setToolResponseMessage(responseMessage);
-			message.addChild(responseMessage);
+	/**
+	 * Send one batch as a single pixel: a plain write, or for the final batch
+	 * the write that streams the model's reply. Both read the per-statement
+	 * results and reconcile them, so a mid-batch commit failure retries only
+	 * that tool.
+	 *
+	 * @param batch - The results to write, in order.
+	 * @param isFinal - Whether the batch completes the tool set.
+	 * @returns Whether the user stopped the reply.
+	 */
+	private sendBatch = async (
+		batch: ToolSaveEntry[],
+		isFinal: boolean,
+	): Promise<boolean> => {
+		const params = batch.map(this.toolExecutionParams);
+		const pixel = params
+			.map((entry) => addPlaygroundToolExecutionPixel(entry))
+			.join("\n");
+		if (isFinal) {
+			return this.streamFinalBatch(
+				batch,
+				pixel,
+				params[params.length - 1],
+			);
 		}
-		responseMessage.setIsThinking(true);
+		const response = await this.message.room.runRoomPixel<ToolExecOutput[]>(
+			pixel,
+			{ showLoading: false, setErrorOnFail: false, throwOnError: false },
+		);
+		this.reconcile(batch, response.pixelReturn);
+		// keep RunMCPTool concurrency saturated for any still-queued auto tools
+		this.message.continueToolExecution();
+		return false;
+	};
 
-		// The finalizing (model-invoking) result is the last statement, and the
-		// only one the backend leaves uncommitted when its stream is aborted; its
-		// params drive the cancel-commit replay if the reply is stopped.
-		const finalizerParams = this.buildParams(batch[batch.length - 1]);
+	/**
+	 * Send the final batch, streaming the model's reply into its placeholder.
+	 * The finalizing (model-invoking) result is the last statement, and the
+	 * only one the backend leaves uncommitted when its stream is aborted; its
+	 * params drive the commit if the reply is stopped.
+	 *
+	 * @param batch - The results to write, in order.
+	 * @param pixel - The batch's pixel.
+	 * @param finalizer - The last result's params.
+	 * @returns Whether the user stopped the reply: the stream ended with no
+	 * result.
+	 */
+	private streamFinalBatch = async (
+		batch: ToolSaveEntry[],
+		pixel: string,
+		finalizer: AddPlaygroundToolExecutionParams,
+	): Promise<boolean> => {
+		const message = this.message;
+		const room = message.room;
+		const reply = this.pendingReply ?? createResponsePlaceholder(room);
+		if (!this.pendingReply) {
+			this.pendingReply = reply;
+			message.addChild(reply);
+		}
+		reply.setIsThinking(true);
 		const toolStreamIndexToId: Record<number, string> = {};
+		let hasResult = false;
 
 		try {
 			await room.runRoomPixelStreaming<ToolExecOutput[]>(
@@ -389,38 +440,38 @@ export class ToolSaveController {
 				{
 					onEmit: (chunk) => {
 						applyResponseStreamChunk(
-							responseMessage,
+							reply,
 							toolStreamIndexToId,
 							chunk,
 						);
 					},
 					onResult: ({ results }) => {
+						hasResult = true;
 						const modelReply = this.reconcile(batch, results);
+						// without one, a commit in this batch failed and the set
+						// never completed: reconcile re-queued the failed writes,
+						// and the retried final batch reuses the placeholder
 						if (modelReply) {
-							responseMessage.sync(modelReply.responseMessage);
+							reply.sync(modelReply.responseMessage);
 							// No INPUT_TOOL_EXEC store exists; stamp the server's
 							// cumulative input token count as a proxy so tokensUsed()
 							// finds a (cumulative, incremental) pair walking back.
 							message.setTokens(modelReply.inputMessage.tokens);
-							responseMessage.continueToolExecution();
-							message.setToolResponseMessage(null);
+							reply.continueToolExecution();
+							this.pendingReply = null;
 						}
-						// The else case — a commit in this batch failed, so the
-						// set never completed and no reply streamed — needs no
-						// action: reconcile already re-queued the failed writes
-						// via retryEntryAsError, and leaving toolResponseMessage
-						// set lets the retried final batch reuse the placeholder.
 					},
-					// The user stopped the model reply mid-stream: persist what
-					// streamed rather than treating it as a result or error.
+					// the user stopped the reply: persist what streamed
 					onCancel: () =>
 						this.recordCancelledToolExecution(
-							finalizerParams,
-							responseMessage,
+							finalizer,
+							reply,
+							batch,
 						),
 				},
 				{ setErrorOnFail: false, throwOnError: false },
 			);
+			return !hasResult;
 		} finally {
 			// turn off thinking unless the reply spawned tools that are running
 			const hasRunningTools = message.parts.some(
@@ -429,7 +480,7 @@ export class ToolSaveController {
 					room.getTool(part.toolCall.id)?.status === "LOADING",
 			);
 			if (!hasRunningTools) {
-				responseMessage.setIsThinking(false);
+				reply.setIsThinking(false);
 			}
 		}
 	};
@@ -484,7 +535,9 @@ export class ToolSaveController {
 		detail: unknown,
 	): void => {
 		if (entry.toolStatus !== "success") {
+			// given up: the model never hears of it, so the user must
 			entry.tool.setStatus("ERROR");
+			this.message.room.setError(toError(detail));
 			entry.reject(detail);
 			return;
 		}
@@ -511,61 +564,73 @@ export class ToolSaveController {
 	 * final batch except the finalizer's, whose statement was aborted mid-stream,
 	 * so this replays only that write plus responseParts (what streamed) and a
 	 * hiddenMessage note; commits an empty response when the user stopped before
-	 * anything streamed. The single-commit guard protects against duplicate stop
-	 * delivery.
+	 * anything streamed. The batch's saves settle with the commit. A reply
+	 * already committed, or already answered, is not committed again.
 	 *
-	 * @param toolExecParams - The finalizing write's parameters, to replay.
-	 * @param responseMessage - The reply that was streaming.
+	 * @param finalizer - The finalizing write's params, to replay.
+	 * @param reply - The reply that was streaming.
+	 * @param batch - The final batch, whose saves wait on the commit.
+	 * @throws When the commit fails; the stream job then shows it on the room,
+	 * the user's only sign the stopped reply was not saved.
 	 */
 	private recordCancelledToolExecution = async (
-		toolExecParams: string,
-		responseMessage: ResponseMessageStore,
+		finalizer: AddPlaygroundToolExecutionParams,
+		reply: ResponseMessageStore,
+		batch: ToolSaveEntry[],
 	): Promise<void> => {
-		if (this.isCancelCommitted) {
+		if (this.pendingReply !== reply) {
 			return;
 		}
-		this.isCancelCommitted = true;
+		this.pendingReply = null;
 
 		const message = this.message;
 		const room = message.room;
-
 		try {
 			const response = await room.runRoomPixel<[CancelCommitOutput]>(
-				`AddPlaygroundToolExecution(${toolExecParams}, responseParts=${JSON.stringify(responseMessage.parts)}, hiddenMessage=["<encode>${TURN_CANCELLATION_PROMPT}</encode>"]);`,
+				addPlaygroundToolExecutionPixel(finalizer, {
+					responseParts: reply.parts,
+					hiddenMessage: TURN_CANCELLATION_PROMPT,
+				}),
 			);
-
 			const { output } = response.pixelReturn[0];
-
-			responseMessage.sync(output.responseMessage);
+			reply.sync(output.responseMessage);
 			message.setTokens(output.inputMessage.tokens);
-
-			spliceHiddenMessages(responseMessage, output.extraMessages);
-
-			message.setToolResponseMessage(null);
+			room.spliceHiddenMessages(reply, output.extraMessages);
+			for (const entry of batch) {
+				entry.resolve();
+			}
 		} catch (e) {
-			// Rethrown so stop() (StreamJobController), which awaits this as the
-			// job's onCancel, surfaces the failure as a room error — this is the
-			// user's only signal that the cancelled tool turn didn't actually
-			// persist.
 			console.error("Failed to record cancelled tool execution", e);
+			for (const entry of batch) {
+				entry.reject(e);
+			}
 			throw e;
 		}
 	};
 
 	/**
-	 * Inner AddPlaygroundToolExecution params (no wrapper) for a save entry.
-	 * The work folder's tools go out again here: the model's follow up call
-	 * only adds the room's own tools, so without them the folder would vanish
-	 * from the model halfway through a task.
+	 * What a save entry sends `AddPlaygroundToolExecution`. The work folder's
+	 * tools go out again here: the model's follow up call only adds the room's
+	 * own tools, so without them the folder would vanish from the model halfway
+	 * through a task.
+	 *
+	 * @param entry - The result.
+	 * @returns Its params.
 	 */
-	private buildParams = (entry: ToolSaveEntry): string =>
-		`engine=["${this.message.room.model.engine_id}"],
-roomId=["${this.message.room.roomId}"],
-${this.message.id ? `parentMessageId=["${this.message.id}"],` : ""}
-toolId=["${entry.tool.id}"],
-toolName=["${entry.tool.json.name}"],
-toolExecutionResponse=["<encode>${entry.toolResponse}</encode>"],
-paramValues=[${JSON.stringify(this.message.room.chatTools.chatParamValues)}],
-mcpToolStatus=${JSON.stringify(entry.toolStatus)},
-toolParameterValues=[${JSON.stringify(entry.executedParameters ?? {})}]`;
+	private toolExecutionParams = (
+		entry: ToolSaveEntry,
+	): AddPlaygroundToolExecutionParams => {
+		const room = this.message.room;
+		return {
+			engineId: room.model.engine_id,
+			roomId: room.roomId,
+			parentMessageId: this.message.id,
+			toolId: entry.tool.id,
+			toolName: entry.tool.json.name,
+			toolExecutionResponse: entry.toolResponse,
+			paramValues: room.chatTools.chatParamValues,
+			mcpToolStatus: entry.toolStatus,
+			toolParameterValues: entry.executedParameters ?? {},
+		};
+	};
 }

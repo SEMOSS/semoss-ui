@@ -84,7 +84,9 @@ const RoomAuditLogPanel = () => {
 			});
 			const response = await room.runRoomPixel<
 				[{ logs?: EventData[]; totalCount?: number }]
-			>(buildAuditLogReportPixel(params, limit, offset), false);
+			>(buildAuditLogReportPixel(params, limit, offset), {
+				showLoading: false,
+			});
 			const { operationType, output } = response.pixelReturn[0];
 			if (operationType.indexOf("ERROR") > -1)
 				throw new Error(`API Error: ${output}`);
@@ -122,7 +124,7 @@ const RoomAuditLogPanel = () => {
 			const exportLimit = totalCount > 0 ? totalCount : rowsPerPage;
 			const response = await room.runRoomPixel<[string]>(
 				buildExportAuditLogReportPixel(params, exportLimit, 0, pdf),
-				false,
+				{ showLoading: false },
 			);
 			const { operationType, output } = response.pixelReturn[0];
 			if (operationType.indexOf("ERROR") > -1)
@@ -199,7 +201,10 @@ const RoomAuditLogPanel = () => {
 					hideDateFilter
 					actions={actions}
 					runFilterPixel={(pixel) =>
-						room.runRoomPixel(pixel, false, false)
+						room.runRoomPixel(pixel, {
+							showLoading: false,
+							setErrorOnFail: false,
+						})
 					}
 				/>
 			</div>

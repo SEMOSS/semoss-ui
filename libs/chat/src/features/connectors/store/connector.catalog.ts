@@ -1,6 +1,3 @@
-import type { UserPixelMcpTool } from "@semoss/sdk";
-import { isRecord } from "@semoss/utility/object";
-
 /** An account system the connectors sign in to. */
 export type ConnectorProviderId = "MICROSOFT" | "GOOGLE";
 
@@ -63,29 +60,11 @@ export interface ConnectorProvider {
 }
 
 /**
- * A tool that runs on its own. Read tools run on their own; anything that
- * sends, invites, shares, uploads, moves, or deletes asks first, so the
- * assistant can prepare it but never do it behind the user's back.
- *
- * @param reactor - The reactor the tool runs.
- * @returns The tool.
+ * One operation a service offers, and whether it asks first. Read tools run on
+ * their own; anything that sends, invites, shares, uploads, moves, or deletes
+ * asks first, so the assistant can prepare it but never do it behind the
+ * user's back.
  */
-const auto = (reactor: string): ConnectorTool => ({
-	reactor: reactor,
-	execution: "auto",
-});
-/**
- * A tool that waits for the user to approve each call.
- *
- * @param reactor - The reactor the tool runs.
- * @returns The tool.
- */
-const ask = (reactor: string): ConnectorTool => ({
-	reactor: reactor,
-	execution: "ask",
-});
-
-/** An operation every mailbox or calendar offers, and whether it asks first. */
 type ConnectorOperation = readonly [
 	operation: string,
 	execution: ConnectorToolExecution,
@@ -129,16 +108,19 @@ const CALENDAR_OPERATIONS: readonly ConnectorOperation[] = [
  *
  * @param prefix - What the app's reactor names start with, such as `GoogleGmail`.
  * @param operations - The operations the app offers.
+ * @param declaresView - Whether the reactors name their own view, as every
+ * mail and calendar reactor does.
  * @returns The app's tools.
  */
 const operationTools = (
 	prefix: string,
 	operations: readonly ConnectorOperation[],
+	declaresView = false,
 ): ConnectorTool[] =>
 	operations.map(([operation, execution]) => ({
 		reactor: `${prefix}${operation}`,
 		execution: execution,
-		declaresView: true,
+		...(declaresView ? { declaresView: true } : {}),
 	}));
 
 /**
@@ -153,92 +135,92 @@ export const CONNECTOR_SERVICES: readonly ConnectorService[] = [
 		id: "outlook",
 		provider: "MICROSOFT",
 		accessKey: "outlook",
-		tools: operationTools("MicrosoftOutlook", MAIL_OPERATIONS),
+		tools: operationTools("MicrosoftOutlook", MAIL_OPERATIONS, true),
 	},
 	{
 		id: "outlook-calendar",
 		provider: "MICROSOFT",
 		accessKey: "calendar",
-		tools: operationTools("MicrosoftCalendar", CALENDAR_OPERATIONS),
+		tools: operationTools("MicrosoftCalendar", CALENDAR_OPERATIONS, true),
 	},
 	{
 		id: "onedrive",
 		provider: "MICROSOFT",
 		accessKey: "onedrive",
-		tools: [
-			auto("MicrosoftOneDriveListDrives"),
-			auto("MicrosoftOneDriveListFiles"),
-			auto("MicrosoftOneDriveListSharedFiles"),
-			auto("MicrosoftOneDriveSearchFiles"),
-			auto("MicrosoftOneDriveGetFile"),
-			auto("MicrosoftOneDriveDownloadFile"),
-			ask("MicrosoftOneDriveCreateFolder"),
-			ask("MicrosoftOneDriveUploadFile"),
-			ask("MicrosoftOneDriveShareFile"),
-			ask("MicrosoftOneDriveDeleteFile"),
-		],
+		tools: operationTools("MicrosoftOneDrive", [
+			["ListDrives", "auto"],
+			["ListFiles", "auto"],
+			["ListSharedFiles", "auto"],
+			["SearchFiles", "auto"],
+			["GetFile", "auto"],
+			["DownloadFile", "auto"],
+			["CreateFolder", "ask"],
+			["UploadFile", "ask"],
+			["ShareFile", "ask"],
+			["DeleteFile", "ask"],
+		]),
 	},
 	{
 		id: "teams",
 		provider: "MICROSOFT",
 		accessKey: "teams",
-		tools: [
-			auto("MicrosoftTeamsListTeams"),
-			auto("MicrosoftTeamsListChannels"),
-			auto("MicrosoftTeamsListFiles"),
-			auto("MicrosoftTeamsDownloadFile"),
-			auto("MicrosoftTeamsListChats"),
-			auto("MicrosoftTeamsGetChat"),
-			auto("MicrosoftTeamsListChatMessages"),
-			auto("MicrosoftTeamsSearchMessages"),
-			auto("MicrosoftTeamsGetChatMessage"),
-			auto("MicrosoftTeamsListChannelMessages"),
-			auto("MicrosoftTeamsGetChannelMessage"),
-			auto("MicrosoftTeamsDownloadMessageAttachment"),
-			ask("MicrosoftTeamsUploadFile"),
-			ask("MicrosoftTeamsCreateChat"),
-			ask("MicrosoftTeamsSendChatMessage"),
-			ask("MicrosoftTeamsSendChannelMessage"),
-			ask("MicrosoftTeamsDeleteChatMessage"),
-			ask("MicrosoftTeamsDeleteChannelMessage"),
-		],
+		tools: operationTools("MicrosoftTeams", [
+			["ListTeams", "auto"],
+			["ListChannels", "auto"],
+			["ListFiles", "auto"],
+			["DownloadFile", "auto"],
+			["ListChats", "auto"],
+			["GetChat", "auto"],
+			["ListChatMessages", "auto"],
+			["SearchMessages", "auto"],
+			["GetChatMessage", "auto"],
+			["ListChannelMessages", "auto"],
+			["GetChannelMessage", "auto"],
+			["DownloadMessageAttachment", "auto"],
+			["UploadFile", "ask"],
+			["CreateChat", "ask"],
+			["SendChatMessage", "ask"],
+			["SendChannelMessage", "ask"],
+			["DeleteChatMessage", "ask"],
+			["DeleteChannelMessage", "ask"],
+		]),
 	},
 	{
 		id: "gmail",
 		provider: "GOOGLE",
 		accessKey: "gmail",
 		tools: [
-			...operationTools("GoogleGmail", MAIL_OPERATIONS),
-			auto("GoogleGmailProfileById"),
+			...operationTools("GoogleGmail", MAIL_OPERATIONS, true),
+			...operationTools("GoogleGmail", [["ProfileById", "auto"]]),
 		],
 	},
 	{
 		id: "google-calendar",
 		provider: "GOOGLE",
 		accessKey: "calendar",
-		tools: operationTools("GoogleCalendar", CALENDAR_OPERATIONS),
+		tools: operationTools("GoogleCalendar", CALENDAR_OPERATIONS, true),
 	},
 	{
 		id: "google-drive",
 		provider: "GOOGLE",
 		accessKey: "drive",
-		tools: [
-			auto("GoogleDriveList"),
-			auto("GoogleDriveRead"),
-			ask("GoogleDriveDelete"),
-		],
+		tools: operationTools("GoogleDrive", [
+			["List", "auto"],
+			["Read", "auto"],
+			["Delete", "ask"],
+		]),
 	},
 	{
 		id: "google-docs",
 		provider: "GOOGLE",
 		accessKey: "docs",
-		tools: [
-			auto("GoogleDocsList"),
-			auto("GoogleDocsRead"),
-			ask("GoogleDocsCreate"),
-			ask("GoogleDocsUpdate"),
-			ask("GoogleDocsDelete"),
-		],
+		tools: operationTools("GoogleDocs", [
+			["List", "auto"],
+			["Read", "auto"],
+			["Create", "ask"],
+			["Update", "ask"],
+			["Delete", "ask"],
+		]),
 	},
 ];
 
@@ -405,154 +387,3 @@ export const sanitizeConnectorServices = (
 		(service) => service.id,
 	);
 };
-
-/** One tool in an MCP definition file. */
-export type McpTool = Record<string, unknown>;
-
-/**
- * A tool's `_meta`, where its reactor, generator, and execution are kept.
- *
- * @param tool - A tool from an MCP definition file.
- * @returns Its metadata, or null when it has none.
- */
-const getToolMeta = (tool: McpTool): Record<string, unknown> | null =>
-	isRecord(tool._meta) ? tool._meta : null;
-
-/**
- * The tools an MCP definition file holds.
- *
- * @param mcpJson - The parsed file, or anything else when there is none.
- * @returns Its tools; none for a missing or malformed file.
- */
-export const readMcpTools = (mcpJson: unknown): McpTool[] =>
-	isRecord(mcpJson) && Array.isArray(mcpJson.tools)
-		? mcpJson.tools.filter(isRecord)
-		: [];
-
-/**
- * The connector tools in an MCP definition file: those stamped with
- * {@link CONNECTORS_GENERATOR}.
- *
- * @param mcpJson - The parsed file.
- * @returns The connector tools, in the file's order.
- */
-export const readConnectorTools = (mcpJson: unknown): McpTool[] =>
-	readMcpTools(mcpJson).filter(
-		(tool) =>
-			getToolMeta(tool)?.SMSS_MCP_GENERATOR === CONNECTORS_GENERATOR,
-	);
-
-/**
- * Whether a room's tool is one of the connectors': stamped with
- * {@link CONNECTORS_GENERATOR}, or, in a room written before the connectors
- * were kept for the user, a tool a connector service runs.
- *
- * @param tool - A tool from a room's file.
- * @returns True for a connector tool.
- */
-const isConnectorTool = (tool: McpTool): boolean => {
-	const meta = getToolMeta(tool);
-	if (!meta) {
-		return false;
-	}
-	return (
-		meta.SMSS_MCP_GENERATOR === CONNECTORS_GENERATOR ||
-		(typeof meta.SMSS_FUNCTION_NAME === "string" &&
-			findConnectorTool(meta.SMSS_FUNCTION_NAME) !== undefined)
-	);
-};
-
-/**
- * Which services some tools switch on: those with a tool present and not
- * `disabled`.
- *
- * @param tools - Tools from an MCP definition file.
- * @returns The services, in catalog order.
- */
-export const getConnectorServices = (
-	tools: readonly McpTool[],
-): ConnectorServiceId[] => {
-	const enabled = new Set<ConnectorServiceId>();
-	for (const tool of tools) {
-		const meta = getToolMeta(tool);
-		const reactor = meta?.SMSS_FUNCTION_NAME;
-		if (
-			!meta ||
-			typeof reactor !== "string" ||
-			meta.SMSS_MCP_EXECUTION === "disabled"
-		) {
-			continue;
-		}
-		const connector = findConnectorTool(reactor);
-		if (connector) {
-			enabled.add(connector.service.id);
-		}
-	}
-	return sanitizeConnectorServices([...enabled]);
-};
-
-/**
- * A room's tool file with its connector tools replaced by the user's, and every
- * other tool kept as it is.
- *
- * @param roomMcpJson - The room's parsed `mcp/pixel_mcp.json`, or null when it
- * has none.
- * @param userTools - The user's connector tools.
- * @returns The file to write, or null when the room already holds exactly the
- * user's connector tools.
- */
-export const mergeUserConnectorTools = (
-	roomMcpJson: unknown,
-	userTools: readonly McpTool[],
-): Record<string, unknown> | null => {
-	const roomTools = readMcpTools(roomMcpJson);
-	const current = roomTools.filter(isConnectorTool);
-	if (JSON.stringify(current) === JSON.stringify(userTools)) {
-		return null;
-	}
-	const file = isRecord(roomMcpJson) ? roomMcpJson : {};
-	return {
-		...file,
-		tools: [
-			...userTools,
-			...roomTools.filter((tool) => !isConnectorTool(tool)),
-		],
-		_meta: {
-			...(isRecord(file._meta) ? file._meta : {}),
-			last_modified_date: new Date().toISOString().slice(0, 10),
-		},
-	};
-};
-
-/**
- * The tools the user's connector file holds for the services switched on:
- * every tool of each service, with how it runs. Nothing switched on gives no
- * tools, which empties the connectors out of the file.
- *
- * Tools that ask first are shown inline in the conversation, where their
- * approval card sits next to the message that proposed them.
- *
- * @param services - The services to switch on.
- * @returns The tools to write with `MakeUserPixelMCP`.
- */
-export const buildUserConnectorTools = (
-	services: readonly ConnectorServiceId[],
-): UserPixelMcpTool[] =>
-	CONNECTOR_SERVICES.filter((service) =>
-		services.includes(service.id),
-	).flatMap((service) =>
-		service.tools.map((tool) => ({
-			reactor: tool.reactor,
-			// a reactor that names its own view keeps where it shows it; the rest show
-			// a call that asks inline, where its Allow is
-			metadata: tool.declaresView
-				? { SMSS_MCP_EXECUTION: tool.execution }
-				: {
-						SMSS_MCP_EXECUTION: tool.execution,
-						SMSS_MCP_UI: {
-							displayLocation:
-								tool.execution === "ask" ? "inline" : "sidebar",
-						},
-					},
-		})),
-	);

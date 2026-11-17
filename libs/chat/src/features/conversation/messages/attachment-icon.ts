@@ -12,7 +12,9 @@ import {
 	FileTypeIcon,
 	FileVideoIcon,
 } from "lucide-react";
-import { getFileExtension } from "@semoss/utility/file-extension";
+import { getFileExtension } from "@semoss/utility/file";
+import { getImageMimeType } from "@semoss/utility/image";
+import type { PixelMessageMediaPart } from "../../../types";
 
 /**
  * The icon for an attachment that shows no preview, picked by its extension.
@@ -55,4 +57,74 @@ export const getAttachmentIcon = (fileName: string) => {
 	if (["doc", "docx", "msg", "txt"].includes(ext))
 		return { Icon: FileTextIcon, ext };
 	return { Icon: FileIcon, ext };
+};
+
+/** What a message knows of an attached file. */
+type AttachmentMediaInfo = PixelMessageMediaPart["mediaInfo"];
+
+/** Extensions shown as images when a file names no image MIME type. */
+const IMAGE_EXTENSIONS = new Set([
+	"png",
+	"jpg",
+	"jpeg",
+	"gif",
+	"webp",
+	"svg",
+	"bmp",
+	"img",
+]);
+
+/**
+ * The image MIME type an attachment shows with: its own when that is an
+ * image's, else the one its extension names.
+ *
+ * @param mediaInfo - The attachment.
+ * @returns The MIME type, or null when the attachment is no image.
+ */
+export const getAttachmentImageMimeType = (
+	mediaInfo: AttachmentMediaInfo,
+): string | null => {
+	if (mediaInfo.mimeType?.startsWith("image/")) return mediaInfo.mimeType;
+	const ext = getFileExtension(mediaInfo.fileName);
+	return IMAGE_EXTENSIONS.has(ext) ? getImageMimeType(ext) : null;
+};
+
+/** An inline attachment opened in {@link AttachmentPreviewDialog}. */
+export type AttachmentPreview =
+	| {
+			kind: "image";
+			fileName: string;
+			/** The image's data URI. */
+			src: string;
+	  }
+	| {
+			kind: "pdf";
+			fileName: string;
+			/** The document's data URI. */
+			src: string;
+	  };
+
+/**
+ * How an attachment sent inline previews: as an image when it is one, else
+ * as a PDF.
+ *
+ * @param mediaInfo - The attachment.
+ * @returns The preview, or null when the attachment carries no bytes.
+ */
+export const readAttachmentPreview = (
+	mediaInfo: AttachmentMediaInfo,
+): AttachmentPreview | null => {
+	if (!mediaInfo.base64Data) return null;
+	const imageMimeType = getAttachmentImageMimeType(mediaInfo);
+	return imageMimeType
+		? {
+				kind: "image",
+				fileName: mediaInfo.fileName,
+				src: `data:${imageMimeType};base64,${mediaInfo.base64Data}`,
+			}
+		: {
+				kind: "pdf",
+				fileName: mediaInfo.fileName,
+				src: `data:application/pdf;base64,${mediaInfo.base64Data}`,
+			};
 };

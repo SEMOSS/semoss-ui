@@ -21,6 +21,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { useLatestRef } from "@semoss/utility/react/use-latest-ref";
 
 /** Where the menu anchors: the caret's rectangle when the trigger was typed, in viewport px. */
 export interface MentionMenuPosition {
@@ -111,14 +112,10 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 	const isExplicitlyClosedRef = useRef(false);
 
 	// Stable refs so key-command handlers don't need to re-register on every render
-	const queryRef = useRef(query);
-	queryRef.current = query;
-	const selectedIndexRef = useRef(selectedIndex);
-	selectedIndexRef.current = selectedIndex;
-	const onAcceptRef = useRef(onAccept);
-	onAcceptRef.current = onAccept;
-	const onTabCompleteRef = useRef(onTabComplete);
-	onTabCompleteRef.current = onTabComplete;
+	const queryRef = useLatestRef(query);
+	const selectedIndexRef = useLatestRef(selectedIndex);
+	const onAcceptRef = useLatestRef(onAccept);
+	const onTabCompleteRef = useLatestRef(onTabComplete);
 	const itemCountRef = useRef(0);
 
 	// Reset selection when the filtered list changes (new query = start from top)

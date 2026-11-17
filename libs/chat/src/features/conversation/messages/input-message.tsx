@@ -1,10 +1,8 @@
-import { CopyIcon, FileBadgeIcon, ImageIcon } from "lucide-react";
+import { CopyIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
-	Dialog,
-	DialogContent,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -12,12 +10,15 @@ import {
 } from "@semoss/ui/next";
 import { copyTextToClipboard } from "@semoss/utility/clipboard";
 import { getErrorMessage } from "@semoss/utility/error";
-import { getFileExtension } from "@semoss/utility/file";
-import { getImageMimeType } from "@semoss/utility/image";
 import type { RoomStore } from "../../room/store/room.store";
 import type { InputMessageStore } from "../store/input-message.store";
 import { useMessage } from "../store/use-message";
-import { getAttachmentIcon } from "./attachment-icon";
+import {
+	type AttachmentPreview,
+	getAttachmentIcon,
+	readAttachmentPreview,
+} from "./attachment-icon";
+import { AttachmentPreviewDialog } from "./attachment-preview-dialog";
 import { MessageActions } from "./message-actions";
 
 /** Props for {@link InputMessage}. */
@@ -36,15 +37,9 @@ interface InputMessageProps {
  */
 export const InputMessage = ({ room, message }: InputMessageProps) => {
 	const { t } = useTranslation("chat");
-	const [previewPdf, setPreviewPdf] = useState<{
-		fileName: string;
-		base64Data: string;
-	} | null>(null);
-	const [previewImage, setPreviewImage] = useState<{
-		fileName: string;
-		base64Data: string;
-		mimeType: string;
-	} | null>(null);
+	const [openPreview, setOpenPreview] = useState<AttachmentPreview | null>(
+		null,
+	);
 
 	const { id, parts, dateCreated } = useMessage(message, (current) => ({
 		id: current.id,
@@ -60,6 +55,36 @@ export const InputMessage = ({ room, message }: InputMessageProps) => {
 		p.type === "TEXT" ? [{ p, i }] : [],
 	);
 
+	/** Copy the message as text, its files and tool results by name. */
+	const handleCopy = async () => {
+		const text = message.parts
+			.map((part) => {
+				if (part.type === "TEXT") {
+					return part.text;
+				} else if (part.type === "MEDIA") {
+					return `<${part.mediaInfo.fileName}>`;
+				} else if (part.type === "TOOL_RESULT") {
+					return `<${part.toolResult.toolName}>`;
+				}
+
+				return "";
+			})
+			.join("\n");
+
+		if (!text) {
+			toast.warning(t("notifications.noCopyContent"));
+			return;
+		}
+
+		try {
+			await copyTextToClipboard(text);
+
+			toast.success(t("notifications.copySuccess"));
+		} catch (e) {
+			toast.error(getErrorMessage(e));
+		}
+	};
+
 	return (
 		<>
 			<div className="group/message relative ms-auto flex max-w-full flex-col items-end">
@@ -70,6 +95,9 @@ export const InputMessage = ({ room, message }: InputMessageProps) => {
 								const { Icon, ext } = getAttachmentIcon(
 									p.mediaInfo.fileName,
 								);
+								const preview = readAttachmentPreview(
+									p.mediaInfo,
+								);
 								return (
 									<Tooltip key={`${id}-media-${i}`}>
 										<TooltipTrigger asChild>
@@ -77,6 +105,7 @@ export const InputMessage = ({ room, message }: InputMessageProps) => {
 												type="button"
 												className="group relative flex size-22 shrink-0 cursor-pointer flex-col items-center justify-center gap-1 overflow-hidden rounded-md border border-border bg-muted"
 												onClick={() => {
+													// a saved file opens where it is stored
 													if (
 														p.mediaInfo.fileLocation
 													) {
@@ -86,72 +115,8 @@ export const InputMessage = ({ room, message }: InputMessageProps) => {
 															p.mediaInfo
 																.fileName,
 														);
-													} else if (
-														p.mediaInfo.base64Data
-													) {
-														const isImg =
-															p.mediaInfo.mimeType?.startsWith(
-																"image/",
-															) ||
-															[
-																"png",
-																"jpg",
-																"jpeg",
-																"gif",
-																"webp",
-																"svg",
-																"bmp",
-																"img",
-															].includes(
-																p.mediaInfo.fileName
-																	?.split(".")
-																	.pop()
-																	?.toLowerCase() ??
-																	"",
-															);
-														if (isImg) {
-															const imgExt =
-																p.mediaInfo.fileName
-																	?.split(".")
-																	.pop()
-																	?.toLowerCase() ??
-																"png";
-															const mimeMap: Record<
-																string,
-																string
-															> = {
-																jpg: "image/jpeg",
-																jpeg: "image/jpeg",
-																gif: "image/gif",
-																webp: "image/webp",
-																svg: "image/svg+xml",
-																bmp: "image/bmp",
-															};
-															setPreviewImage({
-																fileName:
-																	p.mediaInfo
-																		.fileName,
-																base64Data:
-																	p.mediaInfo
-																		.base64Data,
-																mimeType:
-																	p.mediaInfo
-																		.mimeType ||
-																	mimeMap[
-																		imgExt
-																	] ||
-																	"image/png",
-															});
-														} else {
-															setPreviewPdf({
-																fileName:
-																	p.mediaInfo
-																		.fileName,
-																base64Data:
-																	p.mediaInfo
-																		.base64Data,
-															});
-														}
+													} else if (preview) {
+														setOpenPreview(preview);
 													}
 												}}
 												aria-label={t(
@@ -162,29 +127,10 @@ export const InputMessage = ({ room, message }: InputMessageProps) => {
 													},
 												)}
 											>
-												{p.mediaInfo.base64Data &&
-												(p.mediaInfo.mimeType?.startsWith(
-													"image/",
-												) ||
-													[
-														"png",
-														"jpg",
-														"jpeg",
-														"gif",
-														"webp",
-														"svg",
-														"bmp",
-														"img",
-													].includes(
-														p.mediaInfo.fileName
-															?.split(".")
-															.pop()
-															?.toLowerCase() ??
-															"",
-													)) ? (
+												{preview?.kind === "image" ? (
 													<img
 														className="h-full w-full object-cover"
-														src={`data:${p.mediaInfo.mimeType?.startsWith("image/") ? p.mediaInfo.mimeType : getImageMimeType(getFileExtension(p.mediaInfo.fileName))};base64,${p.mediaInfo.base64Data}`}
+														src={preview.src}
 														alt={
 															p.mediaInfo.fileName
 														}
@@ -192,6 +138,7 @@ export const InputMessage = ({ room, message }: InputMessageProps) => {
 												) : (
 													<>
 														<Icon
+															aria-hidden="true"
 															className="size-8 shrink-0 text-muted-foreground"
 															strokeWidth={1.25}
 														/>
@@ -232,40 +179,7 @@ export const InputMessage = ({ room, message }: InputMessageProps) => {
 								size="icon"
 								aria-label={t("input.copyMessage")}
 								disabled={parts.length === 0}
-								onClick={async () => {
-									const text = message.parts
-										.map((part) => {
-											if (part.type === "TEXT") {
-												return part.text;
-											} else if (part.type === "MEDIA") {
-												return `<${part.mediaInfo.fileName}?`;
-											} else if (
-												part.type === "TOOL_RESULT"
-											) {
-												return `<${part.toolResult.toolName}?`;
-											}
-
-											return "";
-										})
-										.join("\n");
-
-									if (!text) {
-										toast.warning(
-											t("notifications.noCopyContent"),
-										);
-										return;
-									}
-
-									try {
-										await copyTextToClipboard(text);
-
-										toast.success(
-											t("notifications.copySuccess"),
-										);
-									} catch (e) {
-										toast.error(getErrorMessage(e));
-									}
-								}}
+								onClick={handleCopy}
 							>
 								<CopyIcon aria-hidden="true" />
 							</Button>
@@ -277,68 +191,10 @@ export const InputMessage = ({ room, message }: InputMessageProps) => {
 				</MessageActions>
 			</div>
 
-			<Dialog
-				open={previewPdf !== null}
-				onOpenChange={(open) => {
-					if (!open) setPreviewPdf(null);
-				}}
-			>
-				<DialogContent className="flex h-[80vh] max-w-4xl flex-col gap-3 p-4">
-					<div className="flex items-center gap-2 border-b pb-3">
-						<div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted">
-							<FileBadgeIcon className="size-4 text-muted-foreground" />
-						</div>
-						<span
-							className="truncate text-muted-foreground text-sm"
-							title={previewPdf?.fileName}
-						>
-							{previewPdf?.fileName}
-						</span>
-					</div>
-					{previewPdf && (
-						<object
-							className="flex-1"
-							data={`data:application/pdf;base64,${previewPdf.base64Data}`}
-							type="application/pdf"
-							aria-label={t("attachments.previewOf", {
-								name: previewPdf.fileName,
-							})}
-						>
-							<p className="p-4 text-muted-foreground text-sm">
-								{t("common:fileExplorer.pdfNotSupported")}
-							</p>
-						</object>
-					)}
-				</DialogContent>
-			</Dialog>
-
-			<Dialog
-				open={previewImage !== null}
-				onOpenChange={(open) => {
-					if (!open) setPreviewImage(null);
-				}}
-			>
-				<DialogContent className="flex max-h-[90vh] max-w-4xl flex-col gap-3 p-4">
-					<div className="flex items-center gap-2 border-b pb-3">
-						<div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted">
-							<ImageIcon className="size-4 text-muted-foreground" />
-						</div>
-						<span
-							className="truncate text-muted-foreground text-sm"
-							title={previewImage?.fileName}
-						>
-							{previewImage?.fileName}
-						</span>
-					</div>
-					{previewImage && (
-						<img
-							className="max-h-[78vh] max-w-full rounded object-contain"
-							src={`data:${previewImage.mimeType};base64,${previewImage.base64Data}`}
-							alt={previewImage.fileName}
-						/>
-					)}
-				</DialogContent>
-			</Dialog>
+			<AttachmentPreviewDialog
+				preview={openPreview}
+				onClose={() => setOpenPreview(null)}
+			/>
 		</>
 	);
 };

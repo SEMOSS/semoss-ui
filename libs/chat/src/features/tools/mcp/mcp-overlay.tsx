@@ -1,53 +1,8 @@
-import { BookOpenIcon, Bot, CheckIcon, HammerIcon } from "lucide-react";
-import type React from "react";
-import { useEffect, useId, useRef, useState } from "react";
-import { useTranslation } from "@semoss/i18n";
-import { useSessionPixel } from "@semoss/sdk/react";
-import {
-	createMcpPlatformUrl,
-	type MCPConfig,
-	MCPSelector,
-} from "@semoss/shared";
-import {
-	Alert,
-	AlertDescription,
-	Badge,
-	Button,
-	cn,
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-	Spinner,
-	Tabs,
-	TabsContent,
-	TabsList,
-	TabsTrigger,
-} from "@semoss/ui/next";
-import type { Workspace } from "../../../types";
-import { useChatConfig } from "../../chat/config/use-chat-config";
-import { NewKnowledgeForm } from "../../knowledge/new-knowledge-form";
-import { AgentSelector } from "./agent-selector";
-import { splitMcpByType } from "./mcp-utils";
-
-/** A tab of the overlay. */
-type Tab = "AGENT" | "TOOLBOX" | "KNOWLEDGE";
-
-/** The agent (workspace) the overlay picks: its id, and its name when known. */
-type WorkspaceRef = Pick<Workspace, "workspace_id"> &
-	Partial<Pick<Workspace, "name">>;
-
-/** What the overlay hands back when the user saves. */
-interface MCPOverlaySave {
-	/** Every knowledge and toolbox selection, the agent's included. */
-	mcp: MCPConfig[];
-	/** Only present when the overlay was opened with an `workspace` prop. */
-	workspace?: WorkspaceRef | null;
-	/** Only present when the overlay was opened with an `isDefaultAgent` prop. */
-	isDefaultAgent?: boolean;
-}
+import { useRef, useState } from "react";
+import type { MCPConfig } from "@semoss/shared";
+import { Dialog, DialogContent } from "@semoss/ui/next";
+import type { AgentChoice, AgentOverlaySave, AgentRef } from "./agent-choice";
+import { MCPOverlayPicker, type MCPOverlayTab } from "./mcp-overlay-picker";
 
 /** Props for {@link MCPOverlay}. */
 interface MCPOverlayProps {
@@ -55,34 +10,22 @@ interface MCPOverlayProps {
 	open: boolean;
 
 	/** Which tab is active when the overlay opens. */
-	defaultTab: Tab;
+	defaultTab: MCPOverlayTab;
 
-	/** Full MCP list (any types). The overlay splits these into the two tabs. */
+	/** The room's own MCPs (any types). The overlay splits these into the two tabs. */
 	values: MCPConfig[];
 
-	/**
-	 * Currently-selected agent (workspace), if any. When `isAgentEditable` is
-	 * true this hydrates the Agent tab; either way it's used to merge the
-	 * agent's MCPs into the drafts as `fromWorkspace` entries.
-	 */
-	workspace?: WorkspaceRef | null;
+	/** The agent the room runs, if any, which the Agent tab starts on. */
+	workspace?: AgentRef | null;
 
 	/**
-	 * Whether the user can change the agent inside the overlay. Defaults to
-	 * `false` — callers must explicitly opt in. When false the Agent tab is
-	 * omitted entirely (existing rooms have their workspace baked in).
+	 * The tools and knowledge `workspace` brings. Listed beside the room's own,
+	 * where they cannot be removed; picking another agent lists its tools.
 	 */
-	isAgentEditable?: boolean;
+	agentTools: readonly MCPConfig[];
 
-	/** Whether the Agent tab offers Default Agent. */
-	allowDefaultAgent?: boolean;
-
-	/**
-	 * Whether Default Agent is picked. Passing it offers Default Agent and No
-	 * agent as separate choices in the Agent tab, and the save reports
-	 * `isDefaultAgent`.
-	 */
-	isDefaultAgent?: boolean;
+	/** How the chat offers its agent; a `fixed` agent has no Agent tab. */
+	agent: AgentChoice;
 
 	/** Keeps selections visible but read-only while the conversation is busy. */
 	disabled?: boolean;
@@ -91,133 +34,34 @@ interface MCPOverlayProps {
 	 * Fired when the overlay closes. Receives the next draft state when the
 	 * user saves, or `undefined` when they cancel.
 	 */
-	onClose: (next?: MCPOverlaySave) => void;
+	onClose: (next?: AgentOverlaySave) => void;
 }
 
 /**
- * The dialog that picks a room's agent, knowledge, and toolboxes. It edits
- * drafts and hands them back on save; while open, picking another agent swaps
- * that agent's selections into the drafts. Knowledge can also be created here.
+ * The dialog that picks a room's agent, knowledge, and toolboxes. Each open
+ * starts a fresh picker on the props it opened with, so edits made to them
+ * while it is open do not discard the user's, and a cancelled draft is gone
+ * when it opens again. Knowledge can also be created here.
  */
-export const MCPOverlay: React.FC<MCPOverlayProps> = ({
+export const MCPOverlay = ({
 	open,
 	defaultTab,
 	values,
 	workspace,
-	isAgentEditable = false,
-	allowDefaultAgent = false,
-	isDefaultAgent,
+	agentTools,
+	agent,
 	disabled = false,
 	onClose,
-}) => {
-	const { t } = useTranslation(["mcp", "knowledge", "common", "room"]);
-	const { theme, platformUrl } = useChatConfig();
-
-	const [knowledge, setKnowledge] = useState<MCPConfig[]>(
-		() => splitMcpByType(values).knowledge,
-	);
-	const [toolbox, setToolbox] = useState<MCPConfig[]>(
-		() => splitMcpByType(values).toolbox,
-	);
-	const [workspaceDraft, setWorkspaceDraft] = useState<WorkspaceRef | null>(
-		workspace ?? null,
-	);
-	const offersDefaultAgent = isDefaultAgent !== undefined;
-	const [defaultAgentDraft, setDefaultAgentDraft] = useState(
-		isDefaultAgent ?? false,
-	);
-	const [activeTab, setActiveTab] = useState<Tab>(defaultTab);
-
-	// Routed view inside the overlay. "list" shows tabs + selectors; "create"
-	// swaps the body for the create-knowledge form so we don't stack Dialogs.
-	const [view, setView] = useState<"list" | "create">("list");
+}: MCPOverlayProps) => {
+	// Every open is a session of its own; the picker is keyed on it. Kept as
+	// state from the last render, so it holds through the closing animation.
+	const [session, setSession] = useState({ open, id: 0 });
+	if (open !== session.open) {
+		setSession({ open, id: open ? session.id + 1 : session.id });
+	}
 	const [isCreating, setIsCreating] = useState(false);
-	const createFormId = useId();
-
-	// Tracks which workspace's MCPs are currently merged into the drafts.
-	// Used to detect when the user picks a different agent (or clears it)
-	// inside the modal so we can swap workspace MCPs in/out of the drafts
-	// live, rather than waiting for the room to refetch after save.
-	const mergedWorkspaceId = useRef<string | null>(
-		workspace?.workspace_id ?? null,
-	);
-
-	// Reset drafts on the closed → open transition only. Mutations to props
-	// while the dialog is already open would otherwise discard the user's
-	// in-progress edits.
-	const wasOpen = useRef(open);
-	useEffect(() => {
-		if (open && !wasOpen.current) {
-			const next = splitMcpByType(values);
-			setKnowledge(next.knowledge);
-			setToolbox(next.toolbox);
-			setWorkspaceDraft(workspace ?? null);
-			setDefaultAgentDraft(isDefaultAgent ?? false);
-			setActiveTab(defaultTab);
-			setView("list");
-			mergedWorkspaceId.current = workspace?.workspace_id ?? null;
-		}
-		wasOpen.current = open;
-	}, [open, values, defaultTab, workspace, isDefaultAgent]);
-
-	// Fetch the selected agent's MCPs whenever the user picks one in the
-	// modal. Empty string disables the call (per the usePixel convention).
-	const getWorkspace = useSessionPixel<Workspace | null>(
-		open && workspaceDraft?.workspace_id
-			? `GetWorkspace(${JSON.stringify(workspaceDraft.workspace_id)});`
-			: "",
-		{ data: null },
-	);
-
-	// When the selected agent changes (including to null), strip any
-	// fromWorkspace MCPs from the drafts. The follow-up effect below will
-	// then merge in the new agent's MCPs once the pixel resolves.
-	useEffect(() => {
-		const draftId = workspaceDraft?.workspace_id ?? null;
-		if (draftId === mergedWorkspaceId.current) return;
-		setKnowledge((prev) => prev.filter((m) => !m.fromWorkspace));
-		setToolbox((prev) => prev.filter((m) => !m.fromWorkspace));
-		mergedWorkspaceId.current = null;
-	}, [workspaceDraft?.workspace_id]);
-
-	// Merge the loaded workspace's MCPs into the drafts as fromWorkspace
-	// entries. Guards against stale pixel responses for a previously
-	// selected agent.
-	useEffect(() => {
-		const draftId = workspaceDraft?.workspace_id ?? null;
-		if (!draftId) return;
-		if (mergedWorkspaceId.current === draftId) return;
-		if (getWorkspace.status !== "SUCCESS" || !getWorkspace.data) return;
-		if (getWorkspace.data.workspace_id !== draftId) return;
-
-		const workspaceMcps: MCPConfig[] = (getWorkspace.data.mcp || []).map(
-			(m) => ({ ...m, fromWorkspace: true }),
-		);
-		const { knowledge: wsK, toolbox: wsT } = splitMcpByType(workspaceMcps);
-		const wsKnowledgeIds = new Set(wsK.map((m) => m.id));
-		const wsToolboxIds = new Set(wsT.map((m) => m.id));
-		setKnowledge((prev) => [
-			...wsK,
-			...prev.filter(
-				(m) => !m.fromWorkspace && !wsKnowledgeIds.has(m.id),
-			),
-		]);
-		setToolbox((prev) => [
-			...wsT,
-			...prev.filter((m) => !m.fromWorkspace && !wsToolboxIds.has(m.id)),
-		]);
-		mergedWorkspaceId.current = draftId;
-	}, [workspaceDraft?.workspace_id, getWorkspace.status, getWorkspace.data]);
-
 	// The element focused before the dialog opened, focused again on close.
 	const returnFocus = useRef<HTMLElement | null>(null);
-	const needsAgentLoad =
-		!!workspaceDraft &&
-		mergedWorkspaceId.current !== workspaceDraft.workspace_id;
-	const agentLoadFailed =
-		needsAgentLoad &&
-		(getWorkspace.status === "ERROR" ||
-			(getWorkspace.status === "SUCCESS" && !getWorkspace.data));
 
 	return (
 		<Dialog
@@ -257,269 +101,18 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 					}
 				}}
 			>
-				{view === "create" ? (
-					<>
-						<DialogHeader>
-							<DialogTitle>
-								{t("knowledge:newSource.title")}
-							</DialogTitle>
-							<DialogDescription>
-								{t("knowledge:newSource.description")}
-							</DialogDescription>
-						</DialogHeader>
-
-						{/* px-1 py-1: overflow-y-auto implicitly clips overflow-x,
-						    which trims the focus ring on the inputs at the edges.
-						    A tiny inset gives the rings room. */}
-						<div className="min-h-0 flex-1 overflow-y-auto px-1 py-1">
-							<NewKnowledgeForm
-								formId={createFormId}
-								onLoadingChange={setIsCreating}
-								onSuccess={(next) => {
-									setKnowledge((prev) =>
-										prev.some((m) => m.id === next.id)
-											? prev
-											: [...prev, next],
-									);
-									setView("list");
-									setActiveTab("KNOWLEDGE");
-								}}
-							/>
-						</div>
-
-						<DialogFooter>
-							<Button
-								variant="ghost"
-								disabled={isCreating}
-								onClick={() => setView("list")}
-							>
-								{t("common:buttons.back")}
-							</Button>
-							<Button
-								type="submit"
-								form={createFormId}
-								variant="default"
-								disabled={isCreating}
-							>
-								{isCreating ? (
-									<Spinner />
-								) : (
-									t("common:buttons.create")
-								)}
-							</Button>
-						</DialogFooter>
-					</>
-				) : (
-					<>
-						<DialogHeader>
-							<DialogTitle>{t("overlay.title")}</DialogTitle>
-							<DialogDescription>
-								{t("overlay.description")}
-							</DialogDescription>
-						</DialogHeader>
-
-						<Tabs
-							value={activeTab}
-							onValueChange={(value) => {
-								if (
-									value === "AGENT" ||
-									value === "TOOLBOX" ||
-									value === "KNOWLEDGE"
-								)
-									setActiveTab(value);
-							}}
-							className="flex min-h-0 flex-1 flex-col gap-3"
-						>
-							<TabsList
-								className={cn(
-									"grid h-auto w-full p-1",
-									isAgentEditable
-										? "grid-cols-3"
-										: "grid-cols-2",
-								)}
-							>
-								{isAgentEditable && (
-									<TabsTrigger
-										value="AGENT"
-										className="relative h-full min-w-0 flex-wrap gap-1 whitespace-normal py-2 sm:gap-2"
-									>
-										<Bot
-											aria-hidden="true"
-											className="hidden size-4 sm:block"
-										/>
-										<span className="min-w-0 break-words">
-											{t("overlay.tabAgent")}
-										</span>
-										{/* Absolutely positioned so the centered label
-										    doesn't shift when the indicator appears. */}
-										{workspaceDraft ||
-										(offersDefaultAgent &&
-											defaultAgentDraft) ? (
-											<CheckIcon className="absolute end-2.5 size-3.5 text-primary" />
-										) : null}
-									</TabsTrigger>
-								)}
-								<TabsTrigger
-									value="KNOWLEDGE"
-									className="h-full min-w-0 flex-wrap gap-1 whitespace-normal py-2 sm:gap-2"
-								>
-									<BookOpenIcon
-										aria-hidden="true"
-										className="hidden size-4 sm:block"
-									/>
-									<span className="min-w-0 break-words">
-										{t("overlay.tabKnowledge")}
-									</span>
-									<Badge variant="outline" className="ms-1">
-										{knowledge.length}
-									</Badge>
-								</TabsTrigger>
-								<TabsTrigger
-									value="TOOLBOX"
-									className="h-full min-w-0 flex-wrap gap-1 whitespace-normal py-2 sm:gap-2"
-								>
-									<HammerIcon
-										aria-hidden="true"
-										className="hidden size-4 sm:block"
-									/>
-									<span className="min-w-0 break-words">
-										{t("overlay.tabToolbox")}
-									</span>
-									<Badge variant="outline" className="ms-1">
-										{toolbox.length}
-									</Badge>
-								</TabsTrigger>
-							</TabsList>
-
-							{isAgentEditable && (
-								<TabsContent
-									value="AGENT"
-									className="flex min-h-0 flex-1 flex-col"
-								>
-									{activeTab === "AGENT" && (
-										<AgentSelector
-											allowDefaultAgent={
-												allowDefaultAgent
-											}
-											disabled={disabled}
-											value={workspaceDraft}
-											onChange={setWorkspaceDraft}
-											isDefaultAgent={defaultAgentDraft}
-											onDefaultAgentChange={
-												offersDefaultAgent
-													? setDefaultAgentDraft
-													: undefined
-											}
-										/>
-									)}
-								</TabsContent>
-							)}
-							<TabsContent
-								value="KNOWLEDGE"
-								className="flex min-h-0 flex-1 flex-col"
-							>
-								{activeTab === "KNOWLEDGE" && (
-									<MCPSelector
-										disabled={disabled}
-										type="KNOWLEDGE"
-										values={knowledge}
-										onChange={setKnowledge}
-										onRequestCreateKnowledge={() => {
-											if (!disabled) setView("create");
-										}}
-										autoFocus
-										enableKnowledgeMCP={
-											theme.featureFlags
-												?.enableKnowledgeMCP
-										}
-										getPlatformUrl={
-											theme.featureFlags
-												?.showPlatformLinks
-												? createMcpPlatformUrl(
-														platformUrl,
-													)
-												: undefined
-										}
-									/>
-								)}
-							</TabsContent>
-							<TabsContent
-								value="TOOLBOX"
-								className="flex min-h-0 flex-1 flex-col"
-							>
-								{activeTab === "TOOLBOX" && (
-									<MCPSelector
-										disabled={disabled}
-										type="TOOLBOX"
-										values={toolbox}
-										onChange={setToolbox}
-										autoFocus
-										enableKnowledgeMCP={
-											theme.featureFlags
-												?.enableKnowledgeMCP
-										}
-										showSystemTools={
-											theme.featureFlags?.showSystemTools
-										}
-										getPlatformUrl={
-											theme.featureFlags
-												?.showPlatformLinks
-												? createMcpPlatformUrl(
-														platformUrl,
-													)
-												: undefined
-										}
-									/>
-								)}
-							</TabsContent>
-						</Tabs>
-
-						{agentLoadFailed && (
-							<Alert variant="destructive">
-								<AlertDescription>
-									{t("room:settings.agentLoadError")}
-								</AlertDescription>
-								<Button
-									type="button"
-									variant="outline"
-									size="sm"
-									onClick={getWorkspace.refresh}
-								>
-									{t("room:studio.retry")}
-								</Button>
-							</Alert>
-						)}
-						<DialogFooter>
-							<Button
-								type="button"
-								variant="ghost"
-								onClick={() => onClose()}
-							>
-								{t("buttons.cancel")}
-							</Button>
-							<Button
-								variant="default"
-								disabled={disabled || needsAgentLoad}
-								onClick={() =>
-									!disabled &&
-									!needsAgentLoad &&
-									onClose({
-										mcp: [...knowledge, ...toolbox],
-										workspace: workspaceDraft,
-										...(offersDefaultAgent
-											? {
-													isDefaultAgent:
-														defaultAgentDraft,
-												}
-											: {}),
-									})
-								}
-							>
-								{t("buttons.save")}
-							</Button>
-						</DialogFooter>
-					</>
-				)}
+				<MCPOverlayPicker
+					key={session.id}
+					defaultTab={defaultTab}
+					values={values}
+					workspace={workspace ?? null}
+					agentTools={agentTools}
+					agent={agent}
+					disabled={disabled}
+					isCreating={isCreating}
+					onCreatingChange={setIsCreating}
+					onClose={onClose}
+				/>
 			</DialogContent>
 		</Dialog>
 	);

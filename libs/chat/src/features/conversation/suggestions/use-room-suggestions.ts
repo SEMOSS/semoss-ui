@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { getFollowUpQuestionsPixel } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
 import { isRecord } from "@semoss/utility/object";
 import { CONNECTOR_SERVICES } from "../../connectors/store/connector.catalog";
 import { useConnectors } from "../../connectors/store/use-connectors";
 import type { RoomStore } from "../../room/store/room.store";
 import { useRoomSelector } from "../../room/store/use-room-selector";
+import { listRoomTools } from "../../tools/mcp/mcp-utils";
 
 /**
  * Validate the default suggestion response before rendering clickable messages.
@@ -76,14 +78,19 @@ const buildSuggestionsPixel = (room: RoomStore): string => {
 				!connectors.connectedProviders.includes(service.provider)),
 	).flatMap((service) => service.tools.map((tool) => tool.reactor));
 	const suggestionContext = {
-		mcp: room.options.mcp,
+		mcp: listRoomTools(room.options.mcp, room.agentTools),
 		tools: room.chatTools.chatToolDefinitions.map((tool) => ({
 			name: tool.name,
 			description: tool.description,
 		})),
 		unavailableReactors,
 	};
-	return `GenerateFollowUpQuestions(engine=${JSON.stringify([room.model.engine_id])}, roomId=${JSON.stringify([room.roomId])}, parentMessageId=${JSON.stringify([room.tail.id])}, suggestionContext=[${JSON.stringify(suggestionContext)}]);`;
+	return getFollowUpQuestionsPixel({
+		engineId: room.model.engine_id,
+		roomId: room.roomId,
+		parentMessageId: room.tail.id,
+		suggestionContext: suggestionContext,
+	});
 };
 
 /**

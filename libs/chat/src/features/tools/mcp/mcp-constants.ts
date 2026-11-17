@@ -16,6 +16,18 @@ export const MCP_EXECUTION_AGENT_AUTO = "agent-auto";
 /** Id of the response message shown while a reply streams, before it has its own. */
 export const STREAMING_PLACEHOLDER_ID = "STREAMING_PLACEHOLDER_ID";
 
+/** Id of the hidden root message every conversation in a room hangs from. */
+export const ROOT_PLACEHOLDER_ID = "ROOT_PLACEHOLDER_ID";
+
+/** Id of the user's message shown while it is sent, before it has its own. */
+export const ASK_PLACEHOLDER_ID = "ASK_PLACEHOLDER_ID";
+
+/** Id of the rewritten message shown while a rewrite runs, before it has its own. */
+export const REWRITE_PLACEHOLDER_ID = "REWRITE_PLACEHOLDER_ID";
+
+/** The insight a room runs in before the backend binds it to its own. */
+export const NEW_INSIGHT_ID = "new";
+
 /** Sent to the model as a tool's result when the user cancels the call. */
 export const TOOL_CANCELLATION_PROMPT = `The user cancelled this tool. It may or may not have already run, so its effect is uncertain and its result is unavailable. Guidance:
 1. Don't make a point of the cancellation on your own — just respond naturally to what the user says next. If they ask, keep it plain and everyday; don't explain whether or not it ran unless they want specifics.

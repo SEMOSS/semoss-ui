@@ -1,6 +1,7 @@
 import { beforeEach, expect, test, vi } from "vitest";
 import { runPixel, runPixelAsync, uploadInsight } from "@semoss/sdk/react";
 import type { ThemeMap } from "@semoss/shared";
+import { servePixelTransport } from "../../../test/pixel-transport";
 import { RoomStore } from "./room.store";
 
 vi.mock("@semoss/sdk/react", () => ({
@@ -10,6 +11,12 @@ vi.mock("@semoss/sdk/react", () => ({
 	runPixelAsync: vi.fn(),
 	uploadInsight: vi.fn(),
 }));
+
+// the SDK's own calls go out over HTTP; answer them from the mocks above
+servePixelTransport({
+	runPixel: vi.mocked(runPixel),
+	runPixelAsync: vi.mocked(runPixelAsync),
+});
 
 vi.mock("../../connectors/store/connector-tools", async (importOriginal) => ({
 	...(await importOriginal<

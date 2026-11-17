@@ -94,8 +94,7 @@ export const MermaidBlock = ({ code, isLoading, room }: MermaidBlockProps) => {
 			setIsSavingToRoom(true);
 			await room.runRoomPixel(
 				`SaveInsightAssets(filePath=[${JSON.stringify(filePath)}], content=["<encode>${code}</encode>"]);`,
-				false,
-				false,
+				{ showLoading: false, setErrorOnFail: false },
 			);
 			toast.success(t("notifications.savedInRoom", { filePath }));
 		} catch (error) {

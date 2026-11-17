@@ -1,9 +1,6 @@
 import type { MCPConfig } from "@semoss/shared";
 import { MCP_EXECUTION_AGENT_ASK, MCP_EXECUTION_ASK } from "./mcp-constants";
 
-// Kept here for the chat's existing imports; both live in @semoss/shared.
-export { isKnowledgeMcp, splitMcpByType } from "@semoss/shared";
-
 /**
  * Whether a tool's execution mode means "needs an interactive decision",
  * covering both the legacy ask flow and an agent-run tool awaiting approval
@@ -18,14 +15,76 @@ export const isAskExecutionMode = (execution: string | undefined): boolean =>
 
 /**
  * Whether the user can take a selection out of a room in Settings: one they
- * added, not one the room's agent brings or the room's own toolbox.
+ * added, not the room's own toolbox. The agent's tools are never in the
+ * room's options, so they never reach this check.
  *
  * @param item - A toolbox or knowledge selection in the room's options.
  * @returns Whether it can be removed.
  */
 export const isRemovableToolbox = (
-	item: Pick<MCPConfig, "fromWorkspace" | "fromRoom" | "type">,
-): boolean => !item.fromWorkspace && !item.fromRoom && item.type !== "ROOM";
+	item: Pick<MCPConfig, "fromRoom" | "type">,
+): boolean => !item.fromRoom && item.type !== "ROOM";
+
+/**
+ * Every tool and knowledge source a room has, as one list, each id once, as the
+ * backend reads them: its agent's first, then the room's own whose id is not
+ * one of the agent's. A room tool listed twice keeps its first place and its
+ * last entry.
+ *
+ * @param roomTools - The room's own, its `options.mcp`.
+ * @param agentTools - Its agent's.
+ * @returns The combined list.
+ */
+export const listRoomTools = <T extends Pick<MCPConfig, "id">>(
+	roomTools: readonly T[],
+	agentTools: readonly T[],
+): T[] => {
+	const agentIds = new Set(agentTools.map((tool) => tool.id));
+	const roomById = new Map<string, T>();
+	for (const tool of roomTools) {
+		if (!agentIds.has(tool.id)) roomById.set(tool.id, tool);
+	}
+	return [...agentTools, ...roomById.values()];
+};
+
+/** What {@link getAgentLabel} names. */
+export interface AgentLabelInput {
+	/** The saved agent the room runs, if any. */
+	workspace?: { workspace_id: string; name?: string } | null;
+	/** Whether the room runs in agent mode, where no saved agent means Default Agent. */
+	isAgentMode?: boolean;
+	/** The translated name of Default Agent (`room:modes.defaultAgent`). */
+	defaultAgentLabel?: string;
+}
+
+/**
+ * The Default Agent rule: a chat in agent mode with no saved agent runs
+ * Default Agent.
+ *
+ * @param input - The agent and the room's mode.
+ * @returns True when the chat runs Default Agent.
+ */
+export const runsDefaultAgent = ({
+	workspace,
+	isAgentMode = false,
+}: Pick<AgentLabelInput, "workspace" | "isAgentMode">): boolean =>
+	isAgentMode && !workspace;
+
+/**
+ * The name of the agent a room runs: the saved agent's name, else its id, else
+ * Default Agent by {@link runsDefaultAgent}.
+ *
+ * @param input - The agent, the room's mode, and Default Agent's name.
+ * @returns The name, or an empty string for a chat that runs no agent.
+ */
+export const getAgentLabel = ({
+	workspace,
+	isAgentMode = false,
+	defaultAgentLabel = "",
+}: AgentLabelInput): string =>
+	workspace?.name ||
+	workspace?.workspace_id ||
+	(runsDefaultAgent({ workspace, isAgentMode }) ? defaultAgentLabel : "");
 
 /**
  * Reserved id the backend puts on SMSS_ENGINE_ID for room scoped tools. There is

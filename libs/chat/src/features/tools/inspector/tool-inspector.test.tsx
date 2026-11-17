@@ -37,21 +37,21 @@ vi.mock("../../conversation/store/agent-harness", () => ({
 vi.mock("../../conversation/store/response-message.store", () => ({
 	ResponseMessageStore: class {},
 }));
-vi.mock("@semoss/sdk/react", () => ({
-	usePixel: () => ({
-		status: "SUCCESS",
-		data: {
-			tools: [
-				{
-					name: "example_tool",
-					description: "The declared tool description.",
-					inputSchema: {
-						properties: { subject: { type: "string" } },
-						required: ["subject"],
-					},
+vi.mock("@semoss/sdk/react", () => ({}));
+// the default form's schema, as GetMCPTools reads it
+vi.mock("@semoss/sdk", async (original) => ({
+	...(await original<typeof import("@semoss/sdk")>()),
+	getMcpTools: async () => ({
+		tools: [
+			{
+				name: "example_tool",
+				description: "The declared tool description.",
+				inputSchema: {
+					properties: { subject: { type: "string" } },
+					required: ["subject"],
 				},
-			],
-		},
+			},
+		],
 	}),
 }));
 vi.mock("../../connectors/accounts/use-connect-provider", () => ({
@@ -105,7 +105,7 @@ const createTool = (status: ToolStore["status"] = "SUCCESS") =>
 				SMSS_PROJECT_NAME: "Example toolbox",
 			},
 		},
-	}) as unknown as ToolStore & { notify: () => void };
+	}) as unknown as ToolStore & { room: { notify: () => void } };
 
 beforeEach(() => vi.clearAllMocks());
 afterEach(cleanup);
@@ -148,7 +148,7 @@ test("results automatically appear unless the user has chosen a tab", async () =
 	).toHaveAttribute("aria-selected", "true");
 	act(() => {
 		Object.assign(tool, { status: "SUCCESS" });
-		tool.notify();
+		tool.room.notify();
 	});
 	expect(screen.getByRole("tab", { name: "tabs.output" })).toHaveAttribute(
 		"aria-selected",
@@ -160,7 +160,7 @@ test("results automatically appear unless the user has chosen a tab", async () =
 	await user.click(screen.getByRole("tab", { name: "inspector.info" }));
 	act(() => {
 		Object.assign(pendingTool, { status: "SUCCESS" });
-		pendingTool.notify();
+		pendingTool.room.notify();
 	});
 	expect(screen.getByRole("tab", { name: "inspector.info" })).toHaveAttribute(
 		"aria-selected",
@@ -348,7 +348,8 @@ test("the editable default form survives tab changes and submits through the age
 			message="message-1"
 		/>,
 	);
-	fireEvent.change(screen.getByRole("textbox", { name: /subject/ }), {
+	// the schema is read once the form mounts
+	fireEvent.change(await screen.findByRole("textbox", { name: /subject/ }), {
 		target: { value: "Edited subject" },
 	});
 	await user.click(screen.getByRole("tab", { name: "inspector.info" }));

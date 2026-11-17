@@ -36,10 +36,13 @@ vi.mock("../../chat/provider/use-chat-session", async () => {
 		keys: { roomCounter: 0 },
 		pinRoom: mocks.pinRoom,
 		closeRoom: mocks.closeRoom,
-		addWorkspace: mocks.addWorkspace,
 	});
 	return { useChatSession: () => ({ chat }) };
 });
+// Publish as Agent saves through the agent actions, not the chat store
+vi.mock("../../chat/store/agent-actions", () => ({
+	addAgent: mocks.addWorkspace,
+}));
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 	getI18n: () => ({ t: (key: string) => key }),

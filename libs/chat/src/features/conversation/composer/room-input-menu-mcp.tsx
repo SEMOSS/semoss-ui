@@ -1,8 +1,9 @@
 import { BookOpenIcon, HammerIcon } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
+import { isKnowledgeMcp, type MCPConfig } from "@semoss/shared";
 import { Badge, DropdownMenuItem } from "@semoss/ui/next";
 import type { RoomStore } from "../../room/store/room.store";
-import { isKnowledgeMcp } from "../../tools/mcp/mcp-utils";
+import { listRoomTools } from "../../tools/mcp/mcp-utils";
 
 /** Props for {@link RoomInputMenuMCP}. */
 interface RoomInputMenuMCPProps {
@@ -10,6 +11,8 @@ interface RoomInputMenuMCPProps {
 	type: "KNOWLEDGE" | "TOOLBOX";
 	/** The room's options, whose selections the badge counts. */
 	options: RoomStore["options"];
+	/** The tools and knowledge the room's agent brings, counted too. */
+	agentTools: readonly MCPConfig[];
 	/** Opens the picker. */
 	onSelect: () => void;
 	/** Locks the item, as while a turn is running. */
@@ -20,12 +23,13 @@ interface RoomInputMenuMCPProps {
 export const RoomInputMenuMCP = ({
 	type,
 	options,
+	agentTools,
 	onSelect,
 	disabled = false,
 }: RoomInputMenuMCPProps) => {
 	const { t } = useTranslation("room");
 
-	const items = options.mcp.filter((mcp) =>
+	const items = listRoomTools(options.mcp, agentTools).filter((mcp) =>
 		type === "KNOWLEDGE" ? isKnowledgeMcp(mcp) : !isKnowledgeMcp(mcp),
 	);
 

@@ -73,9 +73,9 @@ the glossary. A file lives in the domain whose code uses it, its test beside it:
 | Domain | Subfolders |
 |---|---|
 | `chat/`, the session | `store/` (`ChatStore`), `provider/`, `config/` (`ChatConfig`, the theme, new chat preferences) |
-| `room/`, one open room | `store/` (`RoomStore`, its sidebar and tool file, the stream jobs), `scope/`, `layout/`, `header/` (with the room name), `actions/`, `settings/` |
+| `room/`, one open room | `store/` (`RoomStore` and its collaborators: the message tree, the sidebar controller, options persistence, agent tools, requests, the stream jobs, loading and compaction helpers; the sidebar's layout and the tool file), `scope/`, `layout/`, `header/` (with the room name), `actions/`, `settings/` |
 | `room-list/` | `list/`, `search/` |
-| `conversation/` | `store/` (the message and tool call stores, the harness, the save controller), `messages/` (with `markdown/`), `composer/` (with `slash-command/`), `attachments/`, `suggestions/` |
+| `conversation/` | `store/` (the message map, the message and tool call views, the turn runners, the save controller), `messages/` (with `markdown/`), `composer/` (with `slash-command/`), `attachments/`, `suggestions/` |
 | `tools/` | `default-tools/`, `folders/`, `settings/`, `mcp/`, `views/`, `inspector/` |
 | `connectors/` | `store/`, `accounts/`, `viewers/` |
 | `workbench/` | `panels/`, `rail/` |
@@ -109,9 +109,9 @@ Each keeps its getters, which read its snapshot; React reads them through a sele
 | Store | Hook | Hears about |
 |---|---|---|
 | `ChatStore` (`useChatSession()`) | `useChatSelector(chat, (chat) => …)` | its models, cached and optimistic rooms, and the room list counter |
-| `RoomStore` | `useRoomSelector(room, (room) => …)` | the room, and every change to its messages and tool calls (its `revision`) |
-| `ResponseMessageStore`, `InputMessageStore` | `useMessage(message, (message) => …)` | that message alone, so a streamed token renders only its message |
-| `ToolStore` | `useTool(tool, (tool) => …)` | that call alone |
+| `RoomStore` | `useRoomSelector(room, (room) => …)` | the room, which holds its whole conversation and every tool call |
+| `ResponseMessageStore`, `InputMessageStore` (views over the room) | `useMessage(message, (message) => …)` | the room; the component renders only when what it selects from its message changes |
+| `ToolStore` (a view over the room) | `useTool(tool, (tool) => …)` | the room, likewise for that call |
 | `ConnectorsStore` | `useConnectors(room.connectors)` | the room's connectors |
 | `ContextItemsStore` | `useContextItems(room.contextItems, (snapshot) => …)` | the next message's queue |
 
@@ -123,15 +123,45 @@ Each keeps its getters, which read its snapshot; React reads them through a sele
   `updateParts` build a message's next parts; tool calls change through their actions
   (`setStatus`, `settle`, `setParameters`, `setPendingAction`); the room's tools map and sidebar
   are new objects on each change.
-- **The tree tells the room.** A message tells its tree listeners (`subscribeTree`) about a change
-  to it or any message below it; the room follows its root and every tool call it creates, and
-  stops in `dispose()`.
+- **The room holds the conversation as plain data.** Its snapshot has `messages`, every message on
+  every branch by client key (`MessageKey`, the message's `key`, not the backend id, which
+  placeholders share), `rootKey`, and `tools`, every call by id. A message's `MessageData`
+  (`conversation/store/message-map.ts`) links the tree by keys (`parentKey`, `childKeys`,
+  `activeChildIndex`); a call's `ToolData` names its message by `messageKey` and holds its `json`,
+  worked out when its part syncs and again for every call when the room's options change.
+- **A change replaces only its own entry.** The pure helpers in `message-map.ts` (`insertChild`,
+  `removeChild`, `setActiveChild`, `updateMessage`, `updateParts`, `spliceHiddenMessages`,
+  `buildMessageTree`) copy the entries they change and the map, and keep every other reference,
+  so a streamed token leaves every other message's selection as it was and renders only its own.
+  Removing a child deletes it, everything below it and the tool calls they made (`removeSubtree`),
+  and a load replaces the map; a view whose entry is gone reads an empty message or call
+  (`emptyMessageData`, `initialToolData`) and never throws.
+- **Messages and calls are views.** `ResponseMessageStore`, `InputMessageStore` and `ToolStore` hold
+  their key (or id) and their room, read their entry, and write through room actions
+  (`updateMessageData`, `insertChildMessage`, `updateToolData`, ...). The room keeps one view per
+  key, so `room.getMessage`, `history`, `children` and `getTool` return the same object every time.
+  Make a message with `room.createMessage(pixelMessage)` and a call with `room.getOrCreateTool(id)`;
+  never construct a view. The empty reply a model streams into comes from
+  `createResponsePlaceholder(room)` (`conversation/store/response-placeholder.ts`), which also has
+  `readInputPayload`, the text and media a user's message sends. A reply streaming after tool
+  results is the save controller's own field (`toolResponseMessage`), not state.
+- **A turn runs through the room's `TurnRunner`** (`conversation/store/turn-runner.ts`).
+  `ResponseMessageStore.runMessage` calls `runTurn`, which owns what every turn shares: the
+  placeholder and its place in the tree, `isThinking`, the room's loading and error, and taking
+  the user's message back out when the turn fails. `room.turnRunner` picks the runner by mode:
+  `room.chatTurns` (`ChatTurnRunner`: the `AskPlayground` stream, the stopped turn's replay, and
+  the auto tool loop) or `room.agentTurns` (`AgentTurnRunner`, `agent-harness.ts`: RunAgent, its
+  watch, and the reconnect after a reload). The agent runner keeps the room's live `AgentStore`s
+  by run id, so a decision reaches the store that polls the run and a reconnect joins the live
+  watch; `RoomStore.dispose` forgets them. The pixels come from the SDK's
+  `askPlaygroundPixel` and `addPlaygroundToolExecutionPixel`.
 - `ChatToolsStore` holds no state; `StreamJobController` is a plain class that tells the room
   when its cancel state changes. `ChatStore` owns every `RoomStore` (a reply keeps streaming while
   another room is open) and calls `RoomStore.dispose()` when it drops one. `room.workbench` is the
   dock's zustand store until `@semoss/workbench` moves.
 - Tests give a fake store what the hooks read with `fakeStore` (`src/test/fake-store.ts`), and
-  call its `notify()` after changing a field.
+  call its `notify()` after changing a field. `useMessage` and `useTool` listen to the message's or
+  call's `room`, so a fake message or call carries a fake room, and the test notifies the room.
 
 A new chat's model, mode and agent follow the order described in the
 [playground guide](../../packages/playground/AGENTS.md#session-config-and-insights); the rules live
@@ -167,8 +197,9 @@ code and are easy to undo by accident:
 
 - **The dock store belongs to `RoomStore`, not to `<Workbench>`.** Tools open panels from outside
   React and while the sidebar is closed, and the arrangement has to survive closing it — which
-  unmounts the shell. `RoomStore` builds the store and restores its arrangement in its
-  constructor; `<WorkbenchProvider store={room.workbench}>` only hands it down.
+  unmounts the shell. `RoomStore`'s sidebar controller (`RoomSidebar`) builds the store and
+  restores its arrangement when the room is built; `<WorkbenchProvider store={room.workbench}>`
+  only hands it down.
 - **Blueprints are handed to `RoomStore`, not registered later.** They reach into the chat's
   components, which import its stores, so the store cannot import them without closing a module
   cycle. The
@@ -184,7 +215,8 @@ code and are easy to undo by accident:
   owned by the room instance and is not persisted between room sessions.
 - **A restored file panel is re-pointed at the room's live insight.** A room binds to a fresh
   insight on every load, and a file panel's `mode.insightId` is what its reads and saves run
-  against. `_syncSidebarFileMode` rewrites them once, before anything mounts.
+  against. `RoomSidebar.syncFileMode` (`room-sidebar-controller.ts`) rewrites them once, before
+  anything mounts.
 - **The Workspace opens on Files and Settings, as tabs.** `createRoomSidebarLayout` seeds its
   main tabset with the two of them, Files in front. Both close like any other tab — the rail
   reopens them — which is why the tabset sets `enableDeleteWhenEmpty: false`: the dock would
@@ -193,7 +225,7 @@ code and are easy to undo by accident:
   four borders hold no panels at all. A new chat's draft is built with `includeFiles: false`,
   since it has no insight for Files to read; the room it prepares gains Files in
   `RoomStore.restoreSidebarLayout`, behind whatever tab the draft was on. A subscription to
-  `ConnectorsStore` (`_closeHiddenConnectorPanels`) closes a viewer whose connector the chat can
+  `ConnectorsStore` (`RoomSidebar.closeHiddenConnectorPanels`) closes a viewer whose connector the chat can
   no longer show.
 - **Every panel opens from the Workspace's panel rail.** `RoomWorkbenchRail`
   (`features/workbench/rail/room-workbench-rail.tsx`) is the host's own chrome in the dock's **left**
@@ -266,10 +298,14 @@ A draft's mode is the user's choice from the composer menu (the `enableAgentHarn
 unless the theme's `modeFollowsAgent` flag is on. Then the agent picker decides it: a saved agent
 or Default Agent runs in agent mode, and No Agent runs in chat mode, so picking No Agent is how
 Default Agent is removed. The menu shows no Chat and Agent choice and the `/agent-harness`
-command is left out (`canChooseAgentMode`, `features/conversation/composer/agent-mode-choice.ts`). The
-new chat page turns the flag on by passing `onDefaultAgentChange` to `RoomInput` and the draft
-Settings form; with it, `MCPOverlay` and `AgentSelector` offer No Agent and Default Agent as
-separate choices. A room keeps the mode it was created with.
+command is left out (`canChooseAgentMode`, `features/conversation/composer/agent-mode-choice.ts`).
+The composer, Settings and the picker all take the chat's `ComposerSession`
+(`conversation/composer/use-composer-session.ts`): a room's from `useComposerSession`, a new chat's
+from `useDraftAgent` (`new-chat/use-draft-agent.ts`). Its `agent` is an `AgentChoice`
+(`tools/mcp/agent-choice.ts`): `fixed` in a room, `saved` in a new chat, and `savedOrDefault`
+with the flag, where `MCPOverlay` and `AgentSelector` offer No Agent and Default Agent as separate
+choices. A picker's save reaches either through `applyAgentOverlaySave`. A room keeps the mode it
+was created with.
 
 Whatever the theme, a chat in agent mode with no saved agent runs Default Agent, and the input
 shows a Default Agent chip beside the add button: editable in a new chat, where it opens the
@@ -305,15 +341,16 @@ and `features/tools/settings/` the Tools section of Settings.
 - **Chat turns send the tools in `paramValues.tools`, twice.** `AskPlayground` carries them, and so
   does every `AddPlaygroundToolExecution` (`tool-save-controller.ts`): the model's follow up call
   only re-adds the room's own tools, so leaving them off drops them mid-task. The model's calls
-  come back with no `_meta`; `ToolStore.json` gets it from `ChatToolsStore.decorateToolCall`, and
-  `runToolExecution` hands folder calls to `ChatToolsStore.runChatTool` instead of `RunMCPTool`.
+  come back with no `_meta`; a call's `json` gets it from `ChatToolsStore.decorateToolCall`, and
+  `ChatTurnRunner`'s tool loop hands folder calls to `ChatToolsStore.runChatTool` instead of
+  `RunMCPTool`.
 - **Settings shows what the assistant has.** Its Tools section (`RoomOptionsForm`) has Add
   Tools beside its heading, then up to four groups that all work the same way
   (`RoomToolsSection`: a collapsible header with an info tooltip in place of a description, the
   number of rows, and any actions, over one bordered list). Every tool is the same row
   (`ChatToolRow`: title, opening to its definition and parameters, with a fixed-width mode column
   at the end); group rows (`ToolGroupRow`) keep an action slot so counts line up, and loading,
-  error, and empty states are list rows in a `ToolList` (`ToolListStatus`). **Default** sets each default
+  error, and empty states are list rows in a `ToolList`. **Default** sets each default
   tool's mode in its rows' mode column, or notes that an agent room's runs bring their own. **Connectors** is the room's own
   toolbox (`RoomToolsConnectorsSection`, read from `mcp/pixel_mcp.json`, by connector service, with sign
   in notices and Manage Connectors, which opens the settings dialog). **Agent** and **Toolboxes**
@@ -321,8 +358,15 @@ and `features/tools/settings/` the Tools section of Settings.
   `GetMCPTools` the first time it opens (`useToolboxTools`); either is left out when empty, and the
   room's own toolbox entry is never listed there. Settings opens through
   `ChatToolsStore.openRoomSettings`; there is no separate Chat Tools panel.
+- **An agent's tools are never in the room's options.** The backend adds them to every turn
+  from the room's `options.workspace`, so `options.mcp` holds only the room's own, and
+  `RoomStore.agentTools` holds the agent's, read with `getWorkspace` when the room loads and
+  whenever its agent changes (a draft, which has no insight, is handed them by `NewChat` through
+  `setAgentTools`). Where the UI lists both, it builds the list with `listRoomTools`
+  (`tools/mcp/mcp-utils.ts`): the agent's first, then the room's whose id is not the agent's.
+  Components read an agent with `useAgentWorkspace` (`chat/store/use-agent-workspace.ts`).
 - **Never send `DeleteInsightAssets` an empty path.** With no path it clears the whole space.
-  `AssetFolderProvider` refuses to address its root for writes, moves, and deletes. The room
+  `RoomFolder` (`tools/folders/room-folder.ts`) refuses to address its root for writes, moves, and deletes. The room
   folder also hides and refuses its `mcp` folder, where the room's tools are kept: rewriting it
   would switch the chat's tools and connectors off.
 - **Room tools that ask need the chat tool card.** `GetMCPTools` cannot resolve the room toolbox,
@@ -449,6 +493,6 @@ account is not connected shows its switch in gray with a warning mark. These det
   `Session.logins.connect`: a fresh sign in that never signs out the session's own login. See
   [the SDK guide](../../libs/sdk/AGENTS.md#session-logins).
 - **Connector files are pixel calls, not session state.** `connector-tools.ts` reads the user's
-  connector file with the file explorer adapter's asset pixels, writes it with the SDK's
+  connector file with the SDK's `readUserAsset`, writes it with the SDK's
   `makeUserPixelMcp`, and keeps each room's copy through `features/room/store/room-tool-file.ts`. It holds
   no login code.

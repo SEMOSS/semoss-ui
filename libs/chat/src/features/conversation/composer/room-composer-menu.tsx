@@ -1,5 +1,6 @@
 import { BotIcon, MessageCircleIcon } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
+import type { MCPConfig } from "@semoss/shared";
 import {
 	DropdownMenuItem,
 	DropdownMenuRadioGroup,
@@ -7,6 +8,8 @@ import {
 	DropdownMenuSeparator,
 } from "@semoss/ui/next";
 import type { RoomStore } from "../../room/store/room.store";
+import type { AgentChoice } from "../../tools/mcp/agent-choice";
+import { getAgentLabel } from "../../tools/mcp/mcp-utils";
 import { RoomInputMenuMCP } from "./room-input-menu-mcp";
 import { RoomInputMenuUpload } from "./room-input-menu-upload";
 
@@ -18,20 +21,21 @@ export interface RoomComposerMenuProps {
 	onOpenMcpOverlay: (tab: "AGENT" | "KNOWLEDGE" | "TOOLBOX") => void;
 	/** The room's options, for the selected agent and the resource counts. */
 	options: RoomStore["options"];
+	/** The tools and knowledge the room's agent brings, counted with the room's own. */
+	agentTools: readonly MCPConfig[];
 	/** Only mutations are locked while a turn is running. */
 	disabled: boolean;
 	/** Present only while creating a chat. */
 	onSelectChat?: () => void;
 	/** Changes execution mode while keeping the selected saved agent. */
 	onSelectAgent?: () => void;
-	/** The room's mode, checked in the Chat and Agent choice. */
-	mode?: "chat" | "agent" | "workspace";
-	/** Shows the agent picker; true only while creating a chat. */
-	isAgentEditable?: boolean;
-	/** Shows the Chat and Agent choice. */
-	canChooseMode?: boolean;
-	/** Default Agent is picked, so the agent item names it. */
-	isDefaultAgent?: boolean;
+	/** Whether the chat runs in agent mode, checked in the Chat and Agent choice. */
+	isAgentMode: boolean;
+	/**
+	 * How the chat offers its agent: a new chat's lists the agent picker, and
+	 * the Chat and Agent choice when it is `saved` `withModeChoice`.
+	 */
+	agent: AgentChoice;
 }
 
 /**
@@ -43,13 +47,12 @@ export function RoomComposerMenu({
 	onOpenChange,
 	onOpenMcpOverlay,
 	options,
+	agentTools,
 	disabled,
 	onSelectChat,
 	onSelectAgent,
-	mode,
-	isAgentEditable,
-	canChooseMode,
-	isDefaultAgent,
+	isAgentMode,
+	agent,
 }: RoomComposerMenuProps) {
 	const { t } = useTranslation("room");
 	const close = () => onOpenChange(false);
@@ -58,35 +61,39 @@ export function RoomComposerMenu({
 		onOpenMcpOverlay(tab);
 		close();
 	};
-	const agentLabel = options.workspace
-		? t("modes.selectedAgent", {
-				name: options.workspace.name || options.workspace.workspace_id,
-			})
-		: isDefaultAgent
-			? t("modes.selectedAgent", { name: t("modes.defaultAgent") })
-			: t("menuWorkspace.selectAgent");
+	const canChooseMode = agent.kind === "saved" && agent.withModeChoice;
+	const agentName = getAgentLabel({
+		workspace: options.workspace,
+		isAgentMode,
+		defaultAgentLabel: t("modes.defaultAgent"),
+	});
+	const agentLabel = agentName
+		? t("modes.selectedAgent", { name: agentName })
+		: t("menuWorkspace.selectAgent");
 	return (
 		<>
 			<RoomInputMenuUpload disabled={disabled} onSelect={close} />
 			<RoomInputMenuMCP
 				type="KNOWLEDGE"
 				options={options}
+				agentTools={agentTools}
 				disabled={disabled}
 				onSelect={() => openPicker("KNOWLEDGE")}
 			/>
 			<RoomInputMenuMCP
 				type="TOOLBOX"
 				options={options}
+				agentTools={agentTools}
 				disabled={disabled}
 				onSelect={() => openPicker("TOOLBOX")}
 			/>
-			{isAgentEditable && (
+			{agent.kind !== "fixed" && (
 				<>
 					<DropdownMenuSeparator />
 					{canChooseMode && (
 						<DropdownMenuRadioGroup
 							aria-label={`${t("modes.ask")} / ${t("modes.agent")}`}
-							value={mode === "agent" ? "agent" : "chat"}
+							value={isAgentMode ? "agent" : "chat"}
 						>
 							<DropdownMenuRadioItem
 								value="chat"

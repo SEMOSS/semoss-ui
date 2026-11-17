@@ -26,9 +26,7 @@ describe("a room's tool file", () => {
 		await expect(readRoomToolFile(room)).resolves.toEqual({ tools: [] });
 		expect(room.runRoomPixel).toHaveBeenCalledWith(
 			`GetInsightAssets(filePath=["${ROOM_TOOL_FILE_PATH}"]);`,
-			false,
-			false,
-			false,
+			{ showLoading: false, setErrorOnFail: false, throwOnError: false },
 		);
 	});
 
@@ -49,9 +47,7 @@ describe("a room's tool file", () => {
 		await saveRoomToolFile(room, { note: "</encode>" });
 		expect(room.runRoomPixel).toHaveBeenCalledWith(
 			`SaveInsightAssets(filePath=["${ROOM_TOOL_FILE_PATH}"], content=["<encode>{\n    "note": "<\\/encode>"\n}</encode>"]);`,
-			false,
-			false,
-			true,
+			{ showLoading: false, setErrorOnFail: false },
 		);
 	});
 });

@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router";
 import { useTranslation } from "@semoss/i18n";
+import type { WorkspaceRoom } from "@semoss/sdk";
 import {
 	Button,
 	cn,
@@ -17,20 +18,10 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 
-/** A room in an agent's chat list, as `GetWorkspaceRooms` returns it. */
-export interface WorkspaceChatRoom {
-	/** The room's id. */
-	room_id: string;
-	/** The room's name. */
-	room_name: string;
-	/** When the room last changed, the timestamp it is grouped by. */
-	date_updated: string;
-}
-
 /** Props for {@link WorkspaceChatRow}. */
 interface WorkspaceChatRowProps {
 	/** The room, with any rename made here already applied. */
-	room: WorkspaceChatRoom;
+	room: WorkspaceRoom;
 	/** Whether the room is pinned. */
 	isFavorite: boolean;
 	/** Whether the row shows the inline rename. */
@@ -144,9 +135,9 @@ export const WorkspaceChatRow = ({
 								isFavorite ? t("chat.unpin") : t("chat.pin")
 							}
 							className={cn(
-								"hover:text-yellow-500",
+								"hover:text-warning",
 								isFavorite
-									? "text-yellow-500"
+									? "text-warning"
 									: "text-muted-foreground",
 							)}
 							onClick={(e) => {
@@ -159,7 +150,7 @@ export const WorkspaceChatRow = ({
 							<StarIcon
 								className={cn(
 									"size-4",
-									isFavorite && "fill-yellow-500",
+									isFavorite && "fill-warning",
 								)}
 							/>
 						</Button>

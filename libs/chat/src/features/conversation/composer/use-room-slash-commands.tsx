@@ -177,7 +177,7 @@ export const useRoomSlashCommands = ({
 				"close-workspace",
 				"workspace",
 				<PanelRightCloseIcon className="rtl:-scale-x-100" />,
-				() => void workbenchRoom.closeSidebar(),
+				() => workbenchRoom.closeSidebar(),
 				{ label: t("studio.closeWorkspace") },
 			),
 		);

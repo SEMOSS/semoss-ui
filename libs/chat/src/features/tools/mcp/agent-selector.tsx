@@ -25,50 +25,49 @@ import {
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
-import type { App, Workspace } from "../../../types";
-
-type WorkspaceRef = Pick<Workspace, "workspace_id"> &
-	Partial<Pick<Workspace, "name">>;
+import type { App } from "../../../types";
+import type { AgentChoice, AgentRef } from "./agent-choice";
+import { getAgentLabel } from "./mcp-utils";
 
 /** Radio value of the Default Agent choice; agent ids are never this. */
 const DEFAULT_AGENT_VALUE = "default-agent";
 
+/** Props for {@link AgentSelector}. */
 interface AgentSelectorProps {
 	/** The saved agent picked, or null when none is. */
-	value: WorkspaceRef | null;
+	value: AgentRef | null;
 	/** Called with the saved agent picked, or null when none is. */
-	onChange: (next: WorkspaceRef | null) => void;
+	onChange: (next: AgentRef | null) => void;
+	/**
+	 * How the chat offers its agent. `savedOrDefault` lists No Agent and
+	 * Default Agent apart, its `isDefaultAgent` checking the latter.
+	 */
+	choice: Exclude<AgentChoice, { kind: "fixed" }>;
+	/** Called with whether Default Agent is picked, as a `savedOrDefault` choice changes. */
+	onDefaultAgentChange?: (isDefaultAgent: boolean) => void;
 	/** Keeps the choices visible but locked while the conversation is busy. */
 	disabled?: boolean;
 	/** Classes for the picker's outer layout. */
 	className?: string;
-	/** Harness-enabled rooms can run without a saved agent. */
-	allowDefaultAgent?: boolean;
-	/** Whether Default Agent is picked, when it is offered beside No Agent. */
-	isDefaultAgent?: boolean;
-	/**
-	 * Offers No Agent and Default Agent as separate choices, and is called
-	 * with whether Default Agent is picked each time the choice changes.
-	 */
-	onDefaultAgentChange?: (isDefaultAgent: boolean) => void;
 }
 
 /** Searchable, keyboard-accessible agent selection with a deliberate default. */
 export function AgentSelector({
 	value,
 	onChange,
+	choice,
+	onDefaultAgentChange,
 	disabled,
 	className,
-	allowDefaultAgent = false,
-	isDefaultAgent = false,
-	onDefaultAgentChange,
 }: AgentSelectorProps) {
 	const { t } = useTranslation(["mcp", "workspace", "room", "common"]);
 	const id = useId();
-	const offersDefaultAgent = onDefaultAgentChange !== undefined;
+	const offersDefaultAgent = choice.kind === "savedOrDefault";
 	const selectedValue =
 		value?.workspace_id ??
-		(offersDefaultAgent && isDefaultAgent ? DEFAULT_AGENT_VALUE : "");
+		(choice.kind === "savedOrDefault" && choice.isDefaultAgent
+			? DEFAULT_AGENT_VALUE
+			: "");
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebouncedValue(search);
 	const getWorkspaces = useSessionIteratorPixel<App[], App>(
@@ -125,7 +124,7 @@ export function AgentSelector({
 							onDefaultAgentChange?.(true);
 							return;
 						}
-						onDefaultAgentChange?.(false);
+						if (offersDefaultAgent) onDefaultAgentChange?.(false);
 						if (!next) {
 							onChange(null);
 							return;
@@ -151,7 +150,7 @@ export function AgentSelector({
 						>
 							<Bot aria-hidden="true" className="size-4" />
 							{t(
-								allowDefaultAgent && !offersDefaultAgent
+								choice.kind === "saved" && choice.withModeChoice
 									? "room:modes.defaultAgent"
 									: "room:modes.noAgent",
 							)}
@@ -187,7 +186,7 @@ export function AgentSelector({
 									htmlFor={`${id}-selected`}
 									className="break-words"
 								>
-									{value.name || value.workspace_id}
+									{getAgentLabel({ workspace: value })}
 								</Label>
 							</div>
 						)}

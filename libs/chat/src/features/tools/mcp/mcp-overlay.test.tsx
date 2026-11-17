@@ -2,20 +2,35 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { beforeEach, expect, test, vi } from "vitest";
+import type { WorkspaceDetails } from "@semoss/sdk";
 import type { MCPConfig } from "@semoss/shared";
-import type { Workspace } from "../../../types";
+import type { AgentChoice } from "./agent-choice";
 import { MCPOverlay } from "./mcp-overlay";
 
-/** The picked agent's `GetWorkspace` read, changed per test. */
-const query = vi.hoisted(() => ({
-	status: "INITIAL",
-	data: null as Workspace | null,
+/** The read of an agent picked in the overlay, changed per test, and the agent last asked for. */
+const read = vi.hoisted(() => ({
+	status: "LOADING" as "IDLE" | "LOADING" | "READY" | "ERROR",
+	workspace: null as WorkspaceDetails | null,
+	error: null,
 	refresh: vi.fn(),
+	requested: [] as (string | null | undefined)[],
 }));
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
-vi.mock("@semoss/sdk/react", () => ({ useSessionPixel: () => query }));
+vi.mock("../../chat/store/use-agent-workspace", () => ({
+	useAgentWorkspace: (workspaceId: string | null | undefined) => {
+		read.requested.push(workspaceId);
+		return workspaceId
+			? read
+			: {
+					status: "IDLE",
+					workspace: null,
+					error: null,
+					refresh: read.refresh,
+				};
+	},
+}));
 vi.mock("../../chat/config/use-chat-config", () => ({
 	useChatConfig: () => ({ theme: { featureFlags: {} } }),
 }));
@@ -42,10 +57,10 @@ vi.mock("../../knowledge/new-knowledge-form", () => ({
 vi.mock("./agent-selector", () => ({
 	AgentSelector: ({
 		onChange,
-		allowDefaultAgent,
+		choice,
 		onDefaultAgentChange,
 	}: {
-		allowDefaultAgent: boolean;
+		choice: AgentChoice;
 		onChange: (
 			value: { workspace_id: string; name: string } | null,
 		) => void;
@@ -67,12 +82,12 @@ vi.mock("./agent-selector", () => ({
 			>
 				Select Beta
 			</button>
-			{allowDefaultAgent && (
+			{choice.kind === "saved" && choice.withModeChoice && (
 				<button type="button" onClick={() => onChange(null)}>
 					Default agent
 				</button>
 			)}
-			{onDefaultAgentChange && (
+			{choice.kind === "savedOrDefault" && onDefaultAgentChange && (
 				<>
 					<button
 						type="button"
@@ -104,9 +119,10 @@ const local: MCPConfig = {
 	type: "VECTOR",
 };
 beforeEach(() => {
-	query.status = "INITIAL";
-	query.data = null;
-	query.refresh.mockClear();
+	read.status = "LOADING";
+	read.workspace = null;
+	read.refresh.mockClear();
+	read.requested = [];
 });
 
 test("cancel discards the agent draft and reopening restores committed values", () => {
@@ -115,8 +131,8 @@ test("cancel discards the agent draft and reopening restores committed values", 
 		open: true,
 		defaultTab: "AGENT" as const,
 		values: [local],
-		isAgentEditable: true,
-		allowDefaultAgent: true,
+		agentTools: [],
+		agent: { kind: "saved", withModeChoice: true } as const,
 		onClose,
 	};
 	const { rerender } = render(<MCPOverlay {...props} />);
@@ -132,79 +148,99 @@ test("cancel discards the agent draft and reopening restores committed values", 
 	});
 });
 
-test("waits for the current agent, rejects stale results, and exposes retry on failure", async () => {
+test("waits for the picked agent, lists its tools as the agent's, and exposes retry on failure", async () => {
 	const onClose = vi.fn();
 	const props = {
 		open: true,
 		defaultTab: "AGENT" as const,
 		values: [local],
-		isAgentEditable: true,
-		allowDefaultAgent: true,
+		agentTools: [],
+		agent: { kind: "saved", withModeChoice: true } as const,
 		onClose,
 	};
 	const { rerender } = render(<MCPOverlay {...props} />);
+	// the room's own agent, none here, is not read
+	expect(read.requested.at(-1)).toBeNull();
 	fireEvent.click(screen.getByRole("button", { name: "Select Alpha" }));
+	expect(read.requested.at(-1)).toBe("alpha");
 	expect(screen.getByRole("button", { name: "buttons.save" })).toBeDisabled();
 	fireEvent.click(screen.getByRole("button", { name: "Select Beta" }));
-	query.status = "SUCCESS";
-	query.data = {
-		workspace_id: "alpha",
-		mcp: [{ id: "old", name: "Old tool", type: "FUNCTION" }],
-	} as Workspace;
-	rerender(<MCPOverlay {...props} />);
-	expect(screen.getByRole("button", { name: "buttons.save" })).toBeDisabled();
-	query.status = "ERROR";
-	query.data = null;
+	expect(read.requested.at(-1)).toBe("beta");
+	read.status = "ERROR";
 	rerender(<MCPOverlay {...props} />);
 	expect(screen.getByRole("alert")).toHaveTextContent(
 		"room:settings.agentLoadError",
 	);
 	fireEvent.click(screen.getByRole("button", { name: "room:studio.retry" }));
-	expect(query.refresh).toHaveBeenCalledTimes(1);
-	query.status = "SUCCESS";
-	query.data = {
+	expect(read.refresh).toHaveBeenCalledTimes(1);
+	read.status = "READY";
+	read.workspace = {
 		workspace_id: "beta",
 		mcp: [{ id: "new", name: "New tool", type: "FUNCTION" }],
-	} as Workspace;
+	} as WorkspaceDetails;
 	rerender(<MCPOverlay {...props} />);
 	await waitFor(() =>
 		expect(
 			screen.getByRole("button", { name: "buttons.save" }),
 		).toBeEnabled(),
 	);
+	// the agent's tool is listed beside the room's, and not saved as the room's
+	fireEvent.mouseDown(
+		screen.getByRole("tab", { name: /overlay.tabToolbox/ }),
+		{ button: 0, ctrlKey: false },
+	);
+	expect(screen.getByText("New tool")).toBeInTheDocument();
 	fireEvent.click(screen.getByRole("button", { name: "buttons.save" }));
 	expect(onClose).toHaveBeenCalledWith({
 		workspace: { workspace_id: "beta", name: "Beta" },
-		mcp: [
-			local,
-			{
-				id: "new",
-				name: "New tool",
-				type: "FUNCTION",
-				fromWorkspace: true,
-			},
-		],
+		mcp: [local],
 	});
 });
 
-test("Default agent removes inherited resources but retains local selections", () => {
+test("lists the agent's knowledge first and hides a room selection of the same id", () => {
+	const onClose = vi.fn();
+	const roomCopy: MCPConfig = {
+		id: "shared",
+		name: "Room copy",
+		type: "VECTOR",
+	};
+	render(
+		<MCPOverlay
+			open
+			defaultTab="KNOWLEDGE"
+			values={[local, roomCopy]}
+			workspace={{ workspace_id: "alpha", name: "Alpha" }}
+			agentTools={[{ id: "shared", name: "Agent copy", type: "VECTOR" }]}
+			agent={{ kind: "fixed" }}
+			onClose={onClose}
+		/>,
+	);
+	// the room's own agent is known, so it is not read again
+	expect(read.requested.every((id) => !id)).toBe(true);
+	expect(screen.getByText("Agent copy")).toBeInTheDocument();
+	expect(screen.queryByText("Room copy")).toBeNull();
+	expect(
+		screen.getByRole("tab", { name: /overlay.tabKnowledge/ }),
+	).toHaveTextContent("2");
+	fireEvent.click(screen.getByRole("button", { name: "buttons.save" }));
+	expect(onClose).toHaveBeenCalledWith({
+		mcp: [local, roomCopy],
+		workspace: { workspace_id: "alpha", name: "Alpha" },
+	});
+});
+
+test("Default agent drops the agent's resources but retains local selections", () => {
 	const onClose = vi.fn();
 	render(
 		<MCPOverlay
 			open
 			defaultTab="AGENT"
-			values={[
-				local,
-				{
-					id: "inherited",
-					name: "Agent tool",
-					type: "FUNCTION",
-					fromWorkspace: true,
-				},
-			]}
+			values={[local]}
 			workspace={{ workspace_id: "alpha", name: "Alpha" }}
-			isAgentEditable
-			allowDefaultAgent
+			agentTools={[
+				{ id: "inherited", name: "Agent tool", type: "FUNCTION" },
+			]}
+			agent={{ kind: "saved", withModeChoice: true }}
 			onClose={onClose}
 		/>,
 	);
@@ -222,11 +258,14 @@ test("with isDefaultAgent, the save reports Default Agent, and No Agent removes 
 		open: true,
 		defaultTab: "AGENT" as const,
 		values: [local],
-		isAgentEditable: true,
+		agentTools: [],
 		onClose,
 	};
 	const { rerender } = render(
-		<MCPOverlay {...props} isDefaultAgent={false} />,
+		<MCPOverlay
+			{...props}
+			agent={{ kind: "savedOrDefault", isDefaultAgent: false }}
+		/>,
 	);
 	fireEvent.click(screen.getByRole("button", { name: "Pick Default Agent" }));
 	fireEvent.click(screen.getByRole("button", { name: "buttons.save" }));
@@ -235,8 +274,12 @@ test("with isDefaultAgent, the save reports Default Agent, and No Agent removes 
 		workspace: null,
 		isDefaultAgent: true,
 	});
-	rerender(<MCPOverlay {...props} open={false} isDefaultAgent />);
-	rerender(<MCPOverlay {...props} isDefaultAgent />);
+	const defaultAgent = {
+		kind: "savedOrDefault",
+		isDefaultAgent: true,
+	} as const;
+	rerender(<MCPOverlay {...props} open={false} agent={defaultAgent} />);
+	rerender(<MCPOverlay {...props} agent={defaultAgent} />);
 	fireEvent.click(screen.getByRole("button", { name: "Pick No Agent" }));
 	fireEvent.click(screen.getByRole("button", { name: "buttons.save" }));
 	expect(onClose).toHaveBeenLastCalledWith({
@@ -252,8 +295,8 @@ test("without isDefaultAgent, No Agent and Default Agent are not separate choice
 			open
 			defaultTab="AGENT"
 			values={[local]}
-			isAgentEditable
-			allowDefaultAgent
+			agentTools={[]}
+			agent={{ kind: "saved", withModeChoice: true }}
 			onClose={vi.fn()}
 		/>,
 	);
@@ -270,6 +313,8 @@ test("busy conversations cannot save an open overlay", () => {
 			disabled
 			defaultTab="KNOWLEDGE"
 			values={[local]}
+			agentTools={[]}
+			agent={{ kind: "fixed" }}
 			onClose={onClose}
 		/>,
 	);
@@ -291,7 +336,8 @@ test("returns keyboard focus to the Settings Add button after Cancel", async () 
 					open={isOpen}
 					defaultTab="AGENT"
 					values={[]}
-					isAgentEditable
+					agentTools={[]}
+					agent={{ kind: "saved", withModeChoice: false }}
 					onClose={() => setIsOpen(false)}
 				/>
 			</>
@@ -315,8 +361,8 @@ test("choosing Default agent from another overlay tab explicitly commits Agent m
 			open
 			defaultTab="KNOWLEDGE"
 			values={[local]}
-			isAgentEditable
-			allowDefaultAgent
+			agentTools={[]}
+			agent={{ kind: "saved", withModeChoice: true }}
 			onClose={onClose}
 		/>,
 	);
@@ -328,6 +374,40 @@ test("choosing Default agent from another overlay tab explicitly commits Agent m
 	fireEvent.click(screen.getByRole("button", { name: "buttons.save" }));
 	expect(onClose).toHaveBeenCalledWith({
 		mcp: [local],
+		workspace: null,
+	});
+});
+
+test("values changed while open keep the draft, and the next open starts from them", () => {
+	const onClose = vi.fn();
+	const other: MCPConfig = { id: "other", name: "Other", type: "VECTOR" };
+	const props = {
+		open: true,
+		defaultTab: "AGENT" as const,
+		agentTools: [],
+		agent: { kind: "saved", withModeChoice: true } as const,
+		onClose,
+	};
+	const { rerender } = render(<MCPOverlay {...props} values={[local]} />);
+	fireEvent.click(screen.getByRole("button", { name: "Select Alpha" }));
+	// the room's options change underneath, as a response saving them does
+	rerender(<MCPOverlay {...props} values={[local, other]} />);
+	read.status = "READY";
+	read.workspace = {
+		workspace_id: "alpha",
+		mcp: [],
+	} as unknown as WorkspaceDetails;
+	rerender(<MCPOverlay {...props} values={[local, other]} />);
+	fireEvent.click(screen.getByRole("button", { name: "buttons.save" }));
+	expect(onClose).toHaveBeenLastCalledWith({
+		mcp: [local],
+		workspace: { workspace_id: "alpha", name: "Alpha" },
+	});
+	rerender(<MCPOverlay {...props} open={false} values={[local, other]} />);
+	rerender(<MCPOverlay {...props} values={[local, other]} />);
+	fireEvent.click(screen.getByRole("button", { name: "buttons.save" }));
+	expect(onClose).toHaveBeenLastCalledWith({
+		mcp: [local, other],
 		workspace: null,
 	});
 });

@@ -138,8 +138,7 @@ export const SaveCodeNotebookDialog = ({
 		if (!room) return;
 		await room.runRoomPixel(
 			`SaveInsightAssets(filePath=[${JSON.stringify(path)}], content=["<encode>${content}</encode>"]);`,
-			false,
-			false,
+			{ showLoading: false, setErrorOnFail: false },
 		);
 		room.openFileSidebarPanel(path, undefined, { refresh: true });
 	};
@@ -166,8 +165,7 @@ export const SaveCodeNotebookDialog = ({
 				// Explicitly selected from the list — must load successfully.
 				const loadResponse = await room.runRoomPixel<[string]>(
 					`GetInsightAssets(filePath=[${JSON.stringify(targetPath)}]);`,
-					false,
-					false,
+					{ showLoading: false, setErrorOnFail: false },
 				);
 				const existingContent =
 					loadResponse.pixelReturn[0]?.output ?? "";
@@ -187,8 +185,7 @@ export const SaveCodeNotebookDialog = ({
 				try {
 					const loadResponse = await room.runRoomPixel<[string]>(
 						`GetInsightAssets(filePath=[${JSON.stringify(targetPath)}]);`,
-						false,
-						false,
+						{ showLoading: false, setErrorOnFail: false },
 					);
 					const existingContent =
 						loadResponse.pixelReturn[0]?.output ?? "";

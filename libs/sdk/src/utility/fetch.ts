@@ -243,6 +243,45 @@ export const get = async <O>(path: string, options: RequestInit = {}) => {
 };
 
 /**
+ * Read a page the backend serves, such as a published portal, as text. The
+ * request carries the same credentials as {@link get}, but a redirect is read
+ * as the page it lands on: a page is not an API call, so being sent elsewhere
+ * says nothing about the session and never navigates the window.
+ *
+ * @param path - The page's path.
+ * @param options - Options to pass to fetch.
+ * @returns The response and its text.
+ * @throws When the request fails or the backend answers with an error status.
+ */
+export const getText = async (path: string, options: RequestInit = {}) => {
+	options = {
+		method: "GET",
+
+		...options,
+	};
+
+	if (interceptors.request) {
+		options = await interceptors.request(options);
+	}
+
+	const response = await fetch(`${path}`, options);
+	captureHeadlessCookie(response);
+
+	if (!response.ok) {
+		throw new HttpError(
+			`Request failed with status ${response.status}`,
+			response.status,
+			null,
+		);
+	}
+
+	return {
+		response: response,
+		data: await response.text(),
+	};
+};
+
+/**
  * Make a post call to the backend
  * @param path - path
  * @param body - body to pass in

@@ -29,6 +29,7 @@ import {
 } from "@semoss/ui/next";
 import { copyTextToClipboard } from "@semoss/utility/clipboard";
 import type { RoomStore } from "../../../room/store/room.store";
+import { NEW_INSIGHT_ID } from "../../../tools/mcp/mcp-constants";
 import { BlockHeader } from "./block-header";
 import { SaveFileDialog } from "./save-file-dialog";
 
@@ -90,7 +91,7 @@ export const NotebookPreviewBlock = ({
 
 	// cells run in the room's insight, which a new chat's draft does not have
 	// until it is prepared, so it shows the JSON until then
-	const hasInsight = !!room && room.insightId !== "new";
+	const hasInsight = !!room && room.insightId !== NEW_INSIGHT_ID;
 	const shouldShowNotebook = isValidNotebook && hasInsight && !isRaw;
 	const isRunning = shouldShowNotebook && notebookState.isRunning;
 

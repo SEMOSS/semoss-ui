@@ -1,4 +1,5 @@
 import { beforeEach, expect, test, vi } from "vitest";
+import { servePixelTransport } from "../../../test/pixel-transport";
 import type { Engine } from "../../../types";
 import { DEFAULT_CHAT_THEME } from "../config/chat-theme";
 import { ChatStore } from "./chat.store";
@@ -42,6 +43,9 @@ vi.mock("@semoss/sdk/react", async (original) => ({
 		},
 	},
 }));
+
+// the SDK's own calls go out over HTTP; answer them from the mocks above
+servePixelTransport({ runPixel: (pixel) => mocks.run(pixel) });
 
 /** The models the user can see, in the order MyEngines returns them. */
 const MODELS: Engine[] = [

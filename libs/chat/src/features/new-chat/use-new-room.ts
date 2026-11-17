@@ -1,9 +1,10 @@
 import { type RefObject, useEffect, useRef, useState } from "react";
+import type { ChatMode } from "../../types";
 import { useChatSession } from "../chat/provider/use-chat-session";
 import type { RoomStore } from "../room/store/room.store";
 
 /** What {@link useNewRoom} returns. */
-interface NewRoomPreparation {
+export interface NewRoomPreparation {
 	/** The prepared room, once there is one. */
 	room: RoomStore | null;
 	/** Whether the room is being prepared. */
@@ -25,7 +26,7 @@ interface NewRoomPreparation {
  */
 export function useNewRoom(
 	draft: RoomStore,
-	mode: "chat" | "agent",
+	mode: ChatMode,
 	hasSubmitted: RefObject<boolean>,
 ): NewRoomPreparation {
 	const { chat } = useChatSession();

@@ -1,7 +1,7 @@
 import { SearchIcon } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { type App, useChatSession } from "@semoss/chat";
+import { type App, deleteAgent } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import { useSessionIteratorPixel } from "@semoss/sdk/react";
 import {
@@ -135,7 +135,6 @@ export const AgentCatalog = () => {
 	const [sort, setSort] = useState<SortOption>("name");
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebouncedValue(search);
-	const { chat } = useChatSession();
 
 	// One page of agents at a time; the list restarts when a filter, the
 	// search or the sort changes
@@ -288,9 +287,7 @@ export const AgentCatalog = () => {
 									dateCreated={w.project_date_created}
 									onDelete={async () => {
 										try {
-											await chat.deleteWorkspace(
-												w.project_id,
-											);
+											await deleteAgent(w.project_id);
 
 											agentList.reset();
 										} catch (e) {

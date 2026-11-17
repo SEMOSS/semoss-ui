@@ -10,8 +10,8 @@ const NO_ROOM = {
 /**
  * Read a room and re-render when what you read changes. The selector reads
  * through the room's getters (`room.isLoading`, `room.history`,
- * `room.canCancel`), and runs again on every change to the room, its
- * messages, and its tool calls; the component renders only when the value it
+ * `room.canCancel`), and runs again on every change to the room, which holds
+ * its messages and tool calls; the component renders only when the value it
  * returns changes (compared one level deep). Read one message's streamed
  * content with `useMessage`, so a token renders only that message.
  *

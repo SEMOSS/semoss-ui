@@ -19,8 +19,10 @@ interface ToolInfoProps {
 export const ToolInfo = ({ tool, description, inputSchema }: ToolInfoProps) => {
 	const { t } = useTranslation("tool");
 	// the schema and metadata viewers mount only once their section is opened
-	const [isMetadataOpen, setIsMetadataOpen] = useState(false);
-	const [isSchemaOpen, setIsSchemaOpen] = useState(false);
+	const [openSections, setOpenSections] = useState({
+		schema: false,
+		metadata: false,
+	});
 	// the call's json reads the room's options too; a decorated call's json
 	// is a new object on every read, so select its values
 	const { toolName, source, execution, toolDescription } = useRoomSelector(
@@ -46,6 +48,21 @@ export const ToolInfo = ({ tool, description, inputSchema }: ToolInfoProps) => {
 		[t("inspector.source"), source],
 		[t("inspector.execution"), execution],
 	];
+	// the input schema and the call's metadata, each when there is one
+	const sections = [
+		{
+			key: "schema" as const,
+			label: t("inspector.inputSchema"),
+			value: inputSchema,
+			isShown: inputSchema != null,
+		},
+		{
+			key: "metadata" as const,
+			label: t("inspector.metadata"),
+			value: meta,
+			isShown: !!meta && Object.keys(meta).length > 0,
+		},
+	].filter((section) => section.isShown);
 
 	return (
 		<div className="h-full min-w-0 overflow-auto px-1 pb-2">
@@ -72,44 +89,30 @@ export const ToolInfo = ({ tool, description, inputSchema }: ToolInfoProps) => {
 							</div>
 						))}
 				</dl>
-				{inputSchema != null && (
+				{sections.map((section) => (
 					<details
-						onToggle={(event) =>
-							setIsSchemaOpen(event.currentTarget.open)
-						}
+						key={section.key}
+						onToggle={(event) => {
+							const isOpen = event.currentTarget.open;
+							setOpenSections((current) => ({
+								...current,
+								[section.key]: isOpen,
+							}));
+						}}
 					>
 						<summary className="cursor-pointer rounded-sm py-2 font-medium focus-visible:outline-ring">
-							{t("inspector.inputSchema")}
+							{section.label}
 						</summary>
-						{isSchemaOpen && (
+						{openSections[section.key] && (
 							<div className="h-72">
 								<ToolDataView
-									value={inputSchema}
-									label={t("inspector.inputSchema")}
+									value={section.value}
+									label={section.label}
 								/>
 							</div>
 						)}
 					</details>
-				)}
-				{meta && Object.keys(meta).length > 0 && (
-					<details
-						onToggle={(event) =>
-							setIsMetadataOpen(event.currentTarget.open)
-						}
-					>
-						<summary className="cursor-pointer rounded-sm py-2 font-medium focus-visible:outline-ring">
-							{t("inspector.metadata")}
-						</summary>
-						{isMetadataOpen && (
-							<div className="h-72">
-								<ToolDataView
-									value={meta}
-									label={t("inspector.metadata")}
-								/>
-							</div>
-						)}
-					</details>
-				)}
+				))}
 			</div>
 		</div>
 	);

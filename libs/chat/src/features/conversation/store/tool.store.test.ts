@@ -1,16 +1,32 @@
 import { act, renderHook } from "@testing-library/react";
-import { expect, test, vi } from "vitest";
-import type { PixelMessageToolCallPart } from "../../../types";
-import type { RoomStore } from "../../room/store/room.store";
-import { ResponseMessageStore } from "./response-message.store";
-import { ToolStore } from "./tool.store";
+import { beforeEach, expect, test, vi } from "vitest";
+import type { ThemeMap } from "@semoss/shared";
+import type {
+	PixelMessageToolCallPart,
+	ResponsePixelMessage,
+} from "../../../types";
+import { RoomStore } from "../../room/store/room.store";
 import { useTool } from "./use-tool";
 
-const room = {
-	chatTools: { decorateToolCall: (call: unknown) => call },
-	openSidebarPanel: vi.fn(),
-	closeSidebarPanel: vi.fn(),
-} as unknown as RoomStore;
+vi.mock("@semoss/sdk/react", () => ({
+	console: vi.fn(),
+	getPixelAsyncResult: vi.fn(),
+	runPixel: vi.fn(),
+	runPixelAsync: vi.fn(),
+	uploadInsight: vi.fn(),
+}));
+
+let room: RoomStore;
+
+beforeEach(() => {
+	room = new RoomStore({
+		theme: {} as ThemeMap["playground"],
+		roomId: "room-1",
+		panelComponents: {},
+	});
+	vi.spyOn(room, "openSidebarPanel").mockReturnValue("panel-1");
+	vi.spyOn(room, "closeSidebarPanel").mockImplementation(() => undefined);
+});
 
 /** A TOOL_CALL part that shows where `display` says. */
 const callPart = (
@@ -38,14 +54,24 @@ const callPart = (
 	},
 });
 
-/** A response that holds the call, with nothing behind it but its id. */
+/** A response in the room, to hold the call. */
 const message = () =>
-	Object.create(ResponseMessageStore.prototype, {
-		id: { value: "message-1" },
-	}) as ResponseMessageStore;
+	room.createMessage({
+		io: "OUTPUT",
+		messageId: "message-1",
+		visible: true,
+		platform_generated: false,
+		modelId: "model-1",
+		modelType: "",
+		dateCreated: "2026-01-01 00:00:00",
+		parts: [],
+		tokens: 0,
+		ornaments: {},
+		pruneToolsAbove: false,
+	} as ResponsePixelMessage);
 
 test("a write that changes nothing keeps the snapshot and tells no one", () => {
-	const tool = new ToolStore(room, "call-1");
+	const tool = room.getOrCreateTool("call-1");
 	const listener = vi.fn();
 	tool.subscribe(listener);
 	const before = tool.getSnapshot();
@@ -61,8 +87,7 @@ test("a write that changes nothing keeps the snapshot and tells no one", () => {
 });
 
 test("streams in, then takes the final part and its result", () => {
-	const tool = new ToolStore(room, "call-1");
-	tool.beginStreaming();
+	const tool = room.getOrCreateTool("call-1");
 	tool.setStreamingName("search");
 	tool.appendStreamingArguments('{"query":');
 	tool.appendStreamingArguments('"plans"}');
@@ -77,7 +102,6 @@ test("streams in, then takes the final part and its result", () => {
 	expect(tool.display).toBe("inline");
 	expect(tool.displayName).toBe("Search");
 	expect(tool.getSnapshot()).toMatchObject({
-		argumentsStreaming: false,
 		argumentsBuffer: "",
 		streamingName: "",
 		parameters: { query: "plans" },
@@ -94,7 +118,7 @@ test("streams in, then takes the final part and its result", () => {
 });
 
 test("settles with its outcome, keeping the arguments unless given", () => {
-	const tool = new ToolStore(room, "call-1");
+	const tool = room.getOrCreateTool("call-1");
 	tool.setParameters({ query: "plans" });
 	tool.settle({ status: "CANCELLED", response: "stopped" });
 	expect(tool.getSnapshot()).toMatchObject({
@@ -111,7 +135,7 @@ test("settles with its outcome, keeping the arguments unless given", () => {
 });
 
 test("opens in the Workspace, and moves when asked to show elsewhere", () => {
-	const tool = new ToolStore(room, "call-1");
+	const tool = room.getOrCreateTool("call-1");
 	tool.syncMessage(message(), callPart());
 	tool.openTool();
 	expect(tool.isOpen).toBe(true);
@@ -131,7 +155,7 @@ test("opens in the Workspace, and moves when asked to show elsewhere", () => {
 });
 
 test("useTool renders on a change to what it selects, not on others", () => {
-	const tool = new ToolStore(room, "call-1");
+	const tool = room.getOrCreateTool("call-1");
 	let renders = 0;
 	const { result } = renderHook(() => {
 		renders += 1;

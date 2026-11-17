@@ -2,7 +2,7 @@ import { Settings2Icon } from "lucide-react";
 import { useContext } from "react";
 import { ScrollArea } from "@semoss/ui/next";
 import type { WorkbenchPanelConfig } from "@semoss/workbench";
-import { useChatSession } from "../../chat/provider/use-chat-session";
+import { useComposerSession } from "../../conversation/composer/use-composer-session";
 import { DraftSettingsContext } from "../../new-chat/draft-settings.context";
 import { useRoom } from "../../room/scope/room.context";
 import { RoomOptionsForm } from "../../room/settings/room-options-form";
@@ -17,47 +17,34 @@ import { RoomToolsConnectorsSection } from "../../tools/settings/room-tools-conn
  */
 const RoomConfigurationPanel = () => {
 	const room = useRoom();
-	const { chat } = useChatSession();
-	const { isBusy, model, options, isAgentMode } = useRoomSelector(
+	const roomSession = useComposerSession(room);
+	const isBusy = useRoomSelector(
 		room,
-		(current) => ({
-			isBusy:
-				current.isLoading ||
+		(current) =>
+			current.isLoading ||
+			Boolean(
 				current.latestResponseMessage?.isThinking ||
-				current.latestResponseMessage?.hasUnfinishedTools,
-			model: current.model,
-			options: current.options,
-			isAgentMode: current.mode === "agent",
-		}),
+					current.latestResponseMessage?.hasUnfinishedTools,
+			),
 	);
 	// a new chat's draft Settings, which replace the room's below
 	const draftSettings = useContext(DraftSettingsContext);
 	return (
 		<ScrollArea className="h-full w-full">
-			<RoomOptionsForm
-				disabled={isBusy}
-				model={model}
-				options={options}
-				isAgentMode={isAgentMode}
-				onModelChange={(model) => {
-					if (model) {
-						// the pick also becomes the chat's selected model
-						room.setModel(model);
-						chat.setSelectedModel(model);
-					}
-				}}
-				onOptionsChange={(options) => {
-					if (options) {
-						room.setOptions(options);
-					}
-				}}
-				connectorsSection={
-					draftSettings ? undefined : (
+			{draftSettings ? (
+				<RoomOptionsForm
+					session={draftSettings.session}
+					disabled={draftSettings.disabled}
+				/>
+			) : (
+				<RoomOptionsForm
+					session={roomSession}
+					disabled={isBusy}
+					connectorsSection={
 						<RoomToolsConnectorsSection room={room} />
-					)
-				}
-				{...draftSettings}
-			/>
+					}
+				/>
+			)}
 		</ScrollArea>
 	);
 };

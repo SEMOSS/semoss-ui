@@ -64,7 +64,7 @@ All functions in this table are exported from `@semoss/sdk`.
 | `getRoomOptions(insightId, roomId)` | `Promise<RoomOptions>` |
 | `getRoomForInsight(insightId)` | `Promise<RoomRecord \| null>` |
 | `setRoomForInsight(insightId, roomId)` | `Promise<void>`; throws on returned pixel errors |
-| `updateRoomOptions(insightId, roomId, roomOptions)` | `Promise<void>`; serializes a `RoomOptions[]`, without merging or returning server options |
+| `updateRoomOptions(insightId, roomId, roomOptions)` | `Promise<void>`; serializes a `RoomOptions[]` (or a chat's own options objects), without merging or returning server options |
 
 The raw update wrapper does not establish server-side replace/merge semantics.
 Fetch the current options before assembling an update when preservation matters.
@@ -295,7 +295,7 @@ with no statement; submit that failure with `mcpToolStatus: "error"`. Use
 `decideAgentRunAction` instead for a paused agent run's tool.
 `makeUserPixelMcp({ filePath, generator, tools })` writes a generator's tools
 into a pixel MCP file in the user's own assets.
-`getMcpTools({ id, type })` calls GetMCPTools and returns the MCP document as
+`getMcpTools({ id, type }, insightId?)` calls GetMCPTools and returns the MCP document as
 the backend returns it, with its `tools` (each tool's definition and `_meta`).
 A `PROJECT` is read by project and every other catalog type by engine. It
 rejects when the pixel fails.
@@ -349,7 +349,8 @@ validation to equal `"SUBMITTED"`.
 optional fields are `inputMessageId`, `finalOutputMessageId`, `finalText`,
 and `errorMessage`. Status values are `SUBMITTED`, `RUNNING`,
 `INPUT_REQUIRED`, `COMPLETED`, `FAILED`, and `CANCELLED`. `INPUT_REQUIRED` is a
-pause, not a terminal success. Do not infer durable success from streamed text.
+pause, not a terminal success; `isTerminalRunStatus(status)` is true for the other
+three. Do not infer durable success from streamed text.
 `getAgentRun` and `stopAgentRun` normalize missing `pendingActions` to `[]`;
 `pollAgentRun` returns the endpoint payload without that normalization.
 

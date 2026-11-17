@@ -7,9 +7,8 @@ import { fakeStore } from "../../../test/fake-store";
 import type { RoomStore } from "../../room/store/room.store";
 import type { MCPOverlay } from "../../tools/mcp/mcp-overlay";
 import { ContextItemsStore } from "../attachments/context-items.store";
-import { RoomInput } from "./room-input";
-import { RoomInputMenuMCP } from "./room-input-menu-mcp";
-import { RoomInputMenuUpload } from "./room-input-menu-upload";
+import { RoomInput, type RoomInputVariant } from "./room-input";
+import type { ComposerSession } from "./use-composer-session";
 
 // ---------------------------------------------------------------------------
 // Fake editor state shared between mocks
@@ -127,15 +126,20 @@ vi.mock("../../tools/mcp/mcp-overlay", () => ({
 		defaultTab,
 		onClose,
 		values,
-		allowDefaultAgent,
-		isDefaultAgent,
+		agent,
 	}: React.ComponentProps<typeof MCPOverlay>) =>
 		open ? (
 			<div
 				role="dialog"
 				aria-label={defaultTab}
-				data-allow-default-agent={String(Boolean(allowDefaultAgent))}
-				data-default-agent={String(isDefaultAgent)}
+				data-allow-default-agent={String(
+					agent.kind === "saved" && agent.withModeChoice,
+				)}
+				data-default-agent={String(
+					agent.kind === "savedOrDefault"
+						? agent.isDefaultAgent
+						: undefined,
+				)}
 			>
 				<button type="button" onClick={() => onClose()}>
 					Close picker
@@ -262,43 +266,97 @@ vi.mock("../../../components/lexical/enter-plugin", () => ({
 // Helpers
 // ---------------------------------------------------------------------------
 
+/** Only these room fields are consumed by the composer in this test. */
+const room = fakeStore({
+	chatTools: {
+		isAgentMode: false,
+	},
+	connectors: {
+		// a fixed store: its snapshot is itself
+		getSnapshot() {
+			return this;
+		},
+		subscribe: () => () => {},
+		services: [],
+		availableSources: [],
+		openSourcePanel: vi.fn(),
+		missingSignIns: [],
+		uncoveredConnectors: [],
+		unofferedProviders: [],
+		setSessionLogins: vi.fn(),
+	},
+	contextItems: new ContextItemsStore(),
+	roomId: "room",
+	history: [],
+	options: {},
+	agentTools: [],
+	mode: "agent",
+}) as unknown as RoomStore;
+
+/**
+ * A composer session, as an open room hands one in: an agent run with no
+ * saved agent, which runs Default Agent, unless the overrides say otherwise.
+ *
+ * @param overrides - The fields that differ.
+ */
+function sessionWith(
+	overrides: Partial<ComposerSession> = {},
+): ComposerSession {
+	return {
+		model: null,
+		options: {
+			instructions: "",
+			mcp: [],
+			predefinedPrompts: [],
+		},
+		agentTools: [],
+		isAgentMode: true,
+		agent: { kind: "fixed" },
+		onModelChange: vi.fn(),
+		onOptionsChange: vi.fn(),
+		...overrides,
+	};
+}
+
+/** An open room's composer. */
+const roomVariant: RoomInputVariant = {
+	kind: "room",
+	onStop: vi.fn(),
+	onCompact: vi.fn(),
+	hasOutstandingTools: false,
+};
+
+/**
+ * A new chat's composer.
+ *
+ * @param overrides - The mode switches the test watches.
+ */
+function draftVariant(
+	overrides: Partial<Extract<RoomInputVariant, { kind: "draft" }>> = {},
+): RoomInputVariant {
+	return {
+		kind: "draft",
+		onSwitchToAgentHarness: vi.fn(),
+		onExitAgentHarness: vi.fn(),
+		workbenchPanels: {
+			room,
+			newRoomPanels: {
+				onOpenPanel: vi.fn(),
+				isBusy: false,
+				connectors: room.connectors,
+			},
+		},
+		isSubmitDisabled: false,
+		...overrides,
+	};
+}
+
 const defaultProps = {
 	isLoading: false,
 	onPrompt: vi.fn(() => Promise.resolve(true)),
-	model: null,
-	onModelChange: vi.fn(),
-	MenuComponent: () => React.createElement("div", null),
-	options: {
-		instructions: "",
-		mcp: [],
-		workspace: null,
-		predefinedPrompts: [],
-	},
-	// Only these room fields are consumed by the composer in this test.
-	room: fakeStore({
-		chatTools: {
-			isAgentMode: false,
-		},
-		connectors: {
-			// a fixed store: its snapshot is itself
-			getSnapshot() {
-				return this;
-			},
-			subscribe: () => () => {},
-			services: [],
-			availableSources: [],
-			openSourcePanel: vi.fn(),
-			missingSignIns: [],
-			uncoveredConnectors: [],
-			unofferedProviders: [],
-			setSessionLogins: vi.fn(),
-		},
-		contextItems: new ContextItemsStore(),
-		roomId: "room",
-		history: [],
-		options: {},
-		mode: "agent",
-	}) as unknown as RoomStore,
+	session: sessionWith(),
+	room,
+	variant: roomVariant,
 };
 
 /** Set fake editor text and trigger the OnChangePlugin callback to update isEmpty */
@@ -312,6 +370,12 @@ beforeEach(() => {
 	fakeEditorText = "";
 	triggerOnChange = null;
 	for (const flag of Object.keys(featureFlags)) delete featureFlags[flag];
+});
+
+/** A saved agent, as the input shows one. */
+const savedAgentOptions = (name: string) => ({
+	...sessionWith().options,
+	workspace: { workspace_id: "agent", name },
 });
 
 // ---------------------------------------------------------------------------
@@ -398,7 +462,7 @@ test("stop delegates cancellation and never submits a message", () => {
 			{...defaultProps}
 			onPrompt={onPrompt}
 			sendState="stop"
-			onStop={onStop}
+			variant={{ ...roomVariant, onStop }}
 		/>,
 	);
 	fireEvent.click(screen.getByLabelText("input.stopLabel"));
@@ -423,12 +487,11 @@ test("shows only a selected agent next to add and opens its picker when editable
 	render(
 		<RoomInput
 			{...defaultProps}
-			options={{
-				...defaultProps.options,
-				workspace: { workspace_id: "agent", name: "Example agent" },
-			}}
-			onMcpChange={vi.fn()}
-			onWorkspaceChange={vi.fn()}
+			session={sessionWith({
+				options: savedAgentOptions("Example agent"),
+				agent: { kind: "saved", withModeChoice: false },
+			})}
+			variant={draftVariant()}
 		/>,
 	);
 	const agent = screen.getByRole("button", { name: "Example agent" });
@@ -442,11 +505,9 @@ test("keeps an existing room's agent read-only", () => {
 	render(
 		<RoomInput
 			{...defaultProps}
-			options={{
-				...defaultProps.options,
-				workspace: { workspace_id: "agent", name: "Locked agent" },
-			}}
-			onMcpChange={vi.fn()}
+			session={sessionWith({
+				options: savedAgentOptions("Locked agent"),
+			})}
 		/>,
 	);
 	const agent = screen.getByRole("button", { name: "Locked agent" });
@@ -456,13 +517,7 @@ test("keeps an existing room's agent read-only", () => {
 });
 
 test("an existing agent room without a saved agent shows a read-only Default Agent pill", () => {
-	const { rerender } = render(
-		<RoomInput
-			{...defaultProps}
-			room={{ ...defaultProps.room, mode: "agent" } as RoomStore}
-			onMcpChange={vi.fn()}
-		/>,
-	);
+	const { rerender } = render(<RoomInput {...defaultProps} />);
 	const pill = screen.getByRole("button", { name: "modes.defaultAgent" });
 	expect(pill).toHaveAttribute("aria-disabled", "true");
 	fireEvent.click(pill);
@@ -470,8 +525,7 @@ test("an existing agent room without a saved agent shows a read-only Default Age
 	rerender(
 		<RoomInput
 			{...defaultProps}
-			room={{ ...defaultProps.room, mode: "chat" } as RoomStore}
-			onMcpChange={vi.fn()}
+			session={sessionWith({ isAgentMode: false })}
 		/>,
 	);
 	expect(
@@ -483,9 +537,10 @@ test("a new chat in agent mode without a saved agent shows an editable Default A
 	render(
 		<RoomInput
 			{...defaultProps}
-			room={{ ...defaultProps.room, mode: "agent" } as RoomStore}
-			onMcpChange={vi.fn()}
-			onWorkspaceChange={vi.fn()}
+			session={sessionWith({
+				agent: { kind: "saved", withModeChoice: false },
+			})}
+			variant={draftVariant()}
 		/>,
 	);
 	const pill = screen.getByRole("button", { name: "modes.defaultAgent" });
@@ -512,33 +567,7 @@ test("keeps optimizer beside the editor after typing and disables it while busy"
 
 test("routes file and tool actions from the single add menu", async () => {
 	const user = userEvent.setup();
-	render(
-		<RoomInput
-			{...defaultProps}
-			onMcpChange={vi.fn()}
-			MenuComponent={({ onOpenChange, onOpenMcpOverlay }) => (
-				<>
-					<RoomInputMenuUpload onSelect={() => onOpenChange(false)} />
-					<RoomInputMenuMCP
-						type="TOOLBOX"
-						options={defaultProps.options}
-						onSelect={() => {
-							onOpenChange(false);
-							onOpenMcpOverlay("TOOLBOX");
-						}}
-					/>
-					<RoomInputMenuMCP
-						type="KNOWLEDGE"
-						options={defaultProps.options}
-						onSelect={() => {
-							onOpenChange(false);
-							onOpenMcpOverlay("KNOWLEDGE");
-						}}
-					/>
-				</>
-			)}
-		/>,
-	);
+	render(<RoomInput {...defaultProps} />);
 	const add = screen.getByRole("button", { name: "input.addToChat" });
 	await user.click(add);
 	await user.click(
@@ -560,13 +589,19 @@ test("opens prompts from the inline action before the microphone", async () => {
 	render(
 		<RoomInput
 			{...defaultProps}
-			predefinedPrompts={[
-				{
-					id: "prompt",
-					title: "Example prompt",
-					context: "Example text",
+			session={sessionWith({
+				options: {
+					...sessionWith().options,
+					// only what the prompt library shows
+					predefinedPrompts: [
+						{
+							id: "prompt",
+							title: "Example prompt",
+							context: "Example text",
+						} as RoomStore["options"]["predefinedPrompts"][number],
+					],
 				},
-			]}
+			})}
 		/>,
 	);
 	const prompts = screen.getByRole("button", { name: "studio.prompts" });
@@ -586,13 +621,7 @@ test("opens prompts from the inline action before the microphone", async () => {
 
 test("locks mutating menu actions during a turn", async () => {
 	const user = userEvent.setup();
-	render(
-		<RoomInput
-			{...defaultProps}
-			MenuComponent={undefined}
-			sendState="stop"
-		/>,
-	);
+	render(<RoomInput {...defaultProps} sendState="stop" />);
 	await user.click(screen.getByRole("button", { name: "input.addToChat" }));
 	for (const name of [
 		"menuUpload.attachDocument",
@@ -609,21 +638,23 @@ test("locks mutating menu actions during a turn", async () => {
 test("new chats choose execution mode separately from the saved agent", async () => {
 	featureFlags.enableAgentHarness = true;
 	const user = userEvent.setup();
-	const onWorkspaceChange = vi.fn();
+	const onOptionsChange = vi.fn();
 	const onSwitchToAgentHarness = vi.fn();
 	const onExitAgentHarness = vi.fn();
-	const props = {
-		...defaultProps,
-		MenuComponent: undefined,
-		onMcpChange: vi.fn(),
-		onWorkspaceChange,
+	const variant = draftVariant({
 		onSwitchToAgentHarness,
 		onExitAgentHarness,
-	};
+	});
+	const agent = { kind: "saved", withModeChoice: true } as const;
 	const { rerender } = render(
 		<RoomInput
-			{...props}
-			room={{ ...defaultProps.room, mode: "chat" } as RoomStore}
+			{...defaultProps}
+			variant={variant}
+			session={sessionWith({
+				agent,
+				isAgentMode: false,
+				onOptionsChange,
+			})}
 		/>,
 	);
 	setEditorText("Keep composed text");
@@ -636,10 +667,16 @@ test("new chats choose execution mode separately from the saved agent", async ()
 		screen.getByRole("menuitemradio", { name: "modes.agent" }),
 	);
 	expect(onSwitchToAgentHarness).toHaveBeenCalledTimes(1);
-	expect(onWorkspaceChange).not.toHaveBeenCalled();
+	expect(onOptionsChange).not.toHaveBeenCalled();
 	expect(screen.queryByRole("dialog")).toBeNull();
 	expect(add).toHaveFocus();
-	rerender(<RoomInput {...props} room={defaultProps.room} />);
+	rerender(
+		<RoomInput
+			{...defaultProps}
+			variant={variant}
+			session={sessionWith({ agent, onOptionsChange })}
+		/>,
+	);
 	// agent mode with no saved agent runs Default Agent, which the pill names
 	expect(
 		screen.getByRole("button", { name: "modes.defaultAgent" }),
@@ -656,7 +693,7 @@ test("new chats choose execution mode separately from the saved agent", async ()
 	);
 	expect(screen.getByRole("dialog", { name: "AGENT" })).toBeVisible();
 	await user.click(screen.getByRole("button", { name: "Close picker" }));
-	expect(onWorkspaceChange).not.toHaveBeenCalled();
+	expect(onOptionsChange).not.toHaveBeenCalled();
 	expect(onSwitchToAgentHarness).toHaveBeenCalledTimes(1);
 	expect(onExitAgentHarness).toHaveBeenCalledTimes(1);
 	expect(fakeEditorText).toBe("Keep composed text");
@@ -667,18 +704,24 @@ test.each([true, false])(
 	async (enableAgentHarness) => {
 		featureFlags.enableAgentHarness = enableAgentHarness;
 		const user = userEvent.setup();
-		const onWorkspaceChange = vi.fn();
+		const onOptionsChange = vi.fn();
 		const onSwitchToAgentHarness = vi.fn();
 		const onExitAgentHarness = vi.fn();
 		render(
 			<RoomInput
 				{...defaultProps}
-				room={{ ...defaultProps.room, mode: "chat" } as RoomStore}
-				MenuComponent={undefined}
-				onMcpChange={vi.fn()}
-				onWorkspaceChange={onWorkspaceChange}
-				onSwitchToAgentHarness={onSwitchToAgentHarness}
-				onExitAgentHarness={onExitAgentHarness}
+				session={sessionWith({
+					isAgentMode: false,
+					agent: {
+						kind: "saved",
+						withModeChoice: enableAgentHarness,
+					},
+					onOptionsChange,
+				})}
+				variant={draftVariant({
+					onSwitchToAgentHarness,
+					onExitAgentHarness,
+				})}
 			/>,
 		);
 		await user.click(
@@ -691,9 +734,9 @@ test.each([true, false])(
 			screen.getByRole("menuitem", { name: "menuWorkspace.selectAgent" }),
 		);
 		await user.click(screen.getByRole("button", { name: "Save agent" }));
-		expect(onWorkspaceChange).toHaveBeenCalledExactlyOnceWith({
-			workspace_id: "alpha",
-			name: "Alpha",
+		expect(onOptionsChange).toHaveBeenCalledExactlyOnceWith({
+			mcp: [],
+			workspace: { workspace_id: "alpha", name: "Alpha" },
 		});
 		expect(onSwitchToAgentHarness).not.toHaveBeenCalled();
 		expect(onExitAgentHarness).not.toHaveBeenCalled();
@@ -704,19 +747,20 @@ test("when the agent decides the mode, new chats pick a saved agent, Default Age
 	featureFlags.enableAgentHarness = true;
 	featureFlags.modeFollowsAgent = true;
 	const user = userEvent.setup();
-	const onWorkspaceChange = vi.fn();
+	const onOptionsChange = vi.fn();
 	const onDefaultAgentChange = vi.fn();
-	const props = {
-		...defaultProps,
-		MenuComponent: undefined,
-		onMcpChange: vi.fn(),
-		onWorkspaceChange,
-		onDefaultAgentChange,
-	};
+	const draftSession = (isDefaultAgent: boolean) =>
+		sessionWith({
+			isAgentMode: isDefaultAgent,
+			agent: { kind: "savedOrDefault", isDefaultAgent },
+			onOptionsChange,
+			onDefaultAgentChange,
+		});
 	const { rerender } = render(
 		<RoomInput
-			{...props}
-			room={{ ...defaultProps.room, mode: "chat" } as RoomStore}
+			{...defaultProps}
+			session={draftSession(false)}
+			variant={draftVariant()}
 		/>,
 	);
 	const add = screen.getByRole("button", { name: "input.addToChat" });
@@ -729,9 +773,9 @@ test("when the agent decides the mode, new chats pick a saved agent, Default Age
 	expect(picker).toHaveAttribute("data-allow-default-agent", "false");
 	expect(picker).toHaveAttribute("data-default-agent", "false");
 	await user.click(screen.getByRole("button", { name: "Save agent" }));
-	expect(onWorkspaceChange).toHaveBeenCalledExactlyOnceWith({
-		workspace_id: "alpha",
-		name: "Alpha",
+	expect(onOptionsChange).toHaveBeenCalledExactlyOnceWith({
+		mcp: [],
+		workspace: { workspace_id: "alpha", name: "Alpha" },
 	});
 	expect(onDefaultAgentChange).not.toHaveBeenCalled();
 
@@ -742,14 +786,18 @@ test("when the agent decides the mode, new chats pick a saved agent, Default Age
 	await user.click(
 		screen.getByRole("button", { name: "Save Default Agent" }),
 	);
-	expect(onWorkspaceChange).toHaveBeenLastCalledWith(null);
+	expect(onOptionsChange).toHaveBeenLastCalledWith({
+		mcp: [],
+		workspace: undefined,
+	});
 	expect(onDefaultAgentChange).toHaveBeenCalledExactlyOnceWith(true);
 
 	// the draft now runs Default Agent: the chip and the menu name it
 	rerender(
 		<RoomInput
-			{...props}
-			room={{ ...defaultProps.room, mode: "agent" } as RoomStore}
+			{...defaultProps}
+			session={draftSession(true)}
+			variant={draftVariant()}
 		/>,
 	);
 	const chip = screen.getByRole("button", { name: "modes.defaultAgent" });
@@ -772,11 +820,11 @@ test("connector attachments stay visible and removable without an uploaded file"
 		path: "email.md",
 		service: "gmail",
 	});
-	const room = {
+	const withContext = {
 		...defaultProps.room,
 		contextItems,
 	} as unknown as RoomStore;
-	render(<RoomInput {...defaultProps} room={room} />);
+	render(<RoomInput {...defaultProps} room={withContext} />);
 	expect(screen.getByText("Email summary.md")).toBeVisible();
 	fireEvent.click(
 		screen.getByRole("button", { name: "contextItems.remove" }),

@@ -1,56 +1,24 @@
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo } from "react";
 import { useTranslation } from "@semoss/i18n";
-import {
-	InsightProvider,
-	useSession,
-	useSessionPixel,
-} from "@semoss/sdk/react";
-import {
-	Alert,
-	AlertDescription,
-	Button,
-	H2,
-	Muted,
-	toast,
-	useTheme,
-} from "@semoss/ui/next";
-import { getErrorMessage } from "@semoss/utility/error";
-import type { MCPConfig, Prompt, Workspace } from "../../types";
-import {
-	readDeploymentNewChatDefaults,
-	readNewChatPreferences,
-	readSessionNewChat,
-	resolveNewChatAgentId,
-	resolveNewChatMode,
-	writeSessionNewChat,
-} from "../chat/config/new-chat-preferences";
+import { InsightProvider, useSessionPixel } from "@semoss/sdk/react";
+import { Alert, AlertDescription, Button } from "@semoss/ui/next";
 import { useChatConfig } from "../chat/config/use-chat-config";
-import { useChatSession } from "../chat/provider/use-chat-session";
-import { useChatSelector } from "../chat/store/use-chat-selector";
 import { FileDropProvider } from "../conversation/attachments/file-drop.context";
 import { NextMessageRoomProvider } from "../conversation/attachments/next-message-room.context";
-import {
-	canChooseAgentMode,
-	offersAgentMode,
-} from "../conversation/composer/agent-mode-choice";
+import { canChooseAgentMode } from "../conversation/composer/agent-mode-choice";
 import { RoomInput } from "../conversation/composer/room-input";
-import { DropHighlight } from "../conversation/drop-highlight";
-import { RoomGreeting } from "../conversation/messages/room-greeting";
 import { RoomHeader } from "../room/header/room-header";
 import { RoomLayout } from "../room/layout/room-layout";
 import { RoomStore } from "../room/store/room.store";
-import { ROOM_PANEL_TYPES } from "../room/store/room-sidebar";
 import { useRoomSelector } from "../room/store/use-room-selector";
 import { ROOM_PANEL_COMPONENTS } from "../workbench/panels/room-panel.components";
-import {
-	NEW_ROOM_READY_PANEL_KINDS,
-	type NewRoomPanelRequest,
-	type NewRoomWorkbenchPanels,
-} from "../workbench/rail/use-workbench-panels";
 import { RoomWorkbench } from "../workbench/room-workbench";
-import { clearAgentOptions } from "./clear-agent-options";
 import { DraftSettingsContext } from "./draft-settings.context";
-import { useNewRoom } from "./use-new-room";
+import { NewChatBanner } from "./new-chat-banner";
+import { NewChatLanding } from "./new-chat-landing";
+import { useCreateRoomFromDraft } from "./use-create-room-from-draft";
+import { useDraftAgent } from "./use-draft-agent";
+import { useNewRoomPanels } from "./use-new-room-panels";
 
 /** Props for {@link NewChat}. */
 interface NewChatProps {
@@ -72,195 +40,76 @@ interface NewChatProps {
  */
 export const NewChat = ({
 	initialPrompt = "",
-	workspaceId: workspaceIdSearchParams = null,
+	workspaceId = null,
 	knowledgeId = null,
 	showAltLanding = false,
 	headerLeading,
 }: NewChatProps) => {
-	const { t } = useTranslation([
-		"room",
-		"workspace",
-		"common",
-		"chat",
-		"chatConnectors",
-	]);
-	const { theme, newChatDefaults, navigation } = useChatConfig();
-	const { theme: colorMode } = useTheme();
+	const { t } = useTranslation("room");
+	const { theme } = useChatConfig();
 
-	const isDark =
-		colorMode === "dark" ||
-		(colorMode === "system" &&
-			window.matchMedia("(prefers-color-scheme: dark)").matches);
+	// The new room holds the new chat's options until its first message,
+	// starting from the theme's defaults
+	const newRoom = useMemo(() => {
+		const room = new RoomStore({
+			theme: theme,
+			roomId: "temp",
+			panelComponents: ROOM_PANEL_COMPONENTS,
+			// no insight for Files to read until the draft prepares its room
+			includeFiles: false,
+		});
+		room.setOptions({
+			instructions: "",
+			mcp: [...(theme.defaultTools || [])],
+			workspace: undefined,
+			predefinedPrompts: [],
+			temperature: theme.featureFlags?.enableTemperature
+				? (theme.defaultRoomSettings?.temperature ?? 0)
+				: undefined,
+		});
+		return room;
+	}, [theme]);
 
-	const landingSrc = isDark ? theme.images.landingDark : theme.images.landing;
-
-	const { chat } = useChatSession();
-	const userName = useSession((state) => state.user?.name) ?? "";
-	const lastLogin = useSession((state) => state.user?.lastLogin);
-	const userMeta = useSession((state) => state.user?.meta);
-
-	// The new room holds the new chat's options until its first message
-	const newRoom = useMemo(
-		() =>
-			new RoomStore({
-				theme: theme,
-				roomId: "temp",
-				panelComponents: ROOM_PANEL_COMPONENTS,
-				// no insight for Files to read until the draft prepares its room
-				includeFiles: false,
-			}),
-		[theme],
-	);
-	const newRoomOptions = useRoomSelector(
+	const draft = useDraftAgent(newRoom, workspaceId);
+	const { session, agent } = draft;
+	// an agent link's agent can greet the user, in a room of its own
+	const linkAgent = draft.isAgentFromLink ? agent.workspace : null;
+	const greeting = linkAgent?.config_json?.greeting_enabled
+		? (linkAgent.config_json.greeting ?? "")
+		: "";
+	const created = useCreateRoomFromDraft(newRoom, {
+		mode: draft.mode,
+		isAgentOptionsPending: draft.isAgentOptionsPending,
+		greetingAgent:
+			linkAgent && greeting
+				? {
+						id: draft.agentId,
+						name: linkAgent.display_name || linkAgent.name,
+					}
+				: null,
+	});
+	const { isPreparing, hasError: hasPreparationError } = created.preparation;
+	const isBusy = created.isLoading || isPreparing;
+	const { workbenchRoom, newRoomPanels, retryPreparation } = useNewRoomPanels(
 		newRoom,
-		(current) => current.options,
+		created.preparation,
+		created.isLoading,
 	);
-	const selectedModel = useChatSelector(
-		chat,
-		(current) => current.models.selected,
+	const isWorkbenchOpen = useRoomSelector(
+		workbenchRoom,
+		(current) => current.sidebar.isOpen,
 	);
-	// Remember manual provenance when an agent also supplies the same resource.
-	const manualMcpRef = useRef(
-		new Map(
-			newRoomOptions.mcp
-				.filter((item) => !item.fromWorkspace)
-				.map((item) => [item.id, item]),
-		),
+	const preparedRoomIds = useRoomSelector(
+		created.preparation.room,
+		(current) => ({ roomId: current.roomId, insightId: current.insightId }),
 	);
+
+	// the draft starts with the user's connectors switched on
 	useEffect(() => {
-		const next = new Map<string, MCPConfig>();
-		for (const item of newRoomOptions.mcp) {
-			const manual = item.fromWorkspace
-				? manualMcpRef.current.get(item.id)
-				: item;
-			if (manual) next.set(item.id, manual);
-		}
-		manualMcpRef.current = next;
-	}, [newRoomOptions.mcp]);
-	const bannerRef = useRef<HTMLDivElement>(null);
+		void newRoom.connectors.loadUserConnectors();
+	}, [newRoom]);
 
-	// open the theme banner's links in a new tab
-	useEffect(() => {
-		if (!bannerRef.current) return;
-		// The url stripping here is primarily due to a BE theme bug where single quote apostrophes get serial added when saving
-		const urls = (theme.banner ?? "").match(/https?:\/\/[^\s'"<>]+/g) ?? [];
-		bannerRef.current
-			.querySelectorAll("a")
-			.forEach((a: HTMLAnchorElement, i: number) => {
-				a.target = "_blank";
-				a.rel = "noopener noreferrer";
-				if (urls[i]) a.setAttribute("href", urls[i]);
-			});
-	}, [theme.banner]);
-
-	const [isLoading, setIsLoading] = useState(false);
-	const hasSubmittedRef = useRef(false);
-	// the agent whose greeting room was started, so it starts once
-	const greetingRoomStartedForRef = useRef<string>("");
-	// A new chat starts as the last chat started in this login session did,
-	// else as the user's defaults say (Settings > General), else as the
-	// deployment's do. Read once: a default changed meanwhile applies to the
-	// next new chat.
-	const [initialChat] = useState(() => {
-		const session = readSessionNewChat(lastLogin);
-		const preferences = readNewChatPreferences(userMeta);
-		const deployment = readDeploymentNewChatDefaults(
-			theme,
-			newChatDefaults,
-		);
-		const initialMode = resolveNewChatMode(
-			session,
-			preferences,
-			deployment,
-			offersAgentMode(theme.featureFlags),
-		);
-		return {
-			mode: initialMode,
-			// an agent link names its own agent
-			agentId:
-				initialMode === "agent" && !workspaceIdSearchParams
-					? resolveNewChatAgentId(session, preferences, deployment)
-					: "",
-		};
-	});
-	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>(
-		initialChat.agentId,
-	);
-	const [chosenMode, setChosenMode] = useState<"chat" | "agent">(
-		initialChat.mode,
-	);
-	// The agent the defaults picked: one the user can no longer open is
-	// dropped quietly, for Default Agent, rather than shown as an error.
-	const defaultAgentIdRef = useRef(initialChat.agentId);
-	// With modeFollowsAgent the agent picker decides the mode: a saved agent
-	// or Default Agent runs in agent mode, No Agent in chat mode.
-	const modeFollowsAgent = !!theme.featureFlags?.modeFollowsAgent;
-	const mode: "chat" | "agent" =
-		modeFollowsAgent && selectedWorkspaceId ? "agent" : chosenMode;
-	const {
-		room: preparedRoom,
-		isPreparing,
-		hasError: hasPreparationError,
-		prepare,
-	} = useNewRoom(newRoom, mode, hasSubmittedRef);
-	// the room whose Workspace shows: the prepared room once there is one
-	const workbenchRoom = preparedRoom ?? newRoom;
-	// what Retry opens again after a failed preparation
-	const pendingPanelRef = useRef<NewRoomPanelRequest>({
-		kind: "workbench",
-	});
-
-	// newRoom is only created once (createRoom below builds the real,
-	// separate room), so RoomInput's agent-harness chip — keyed off
-	// room.mode — needs this synced explicitly rather than reading straight
-	// off local mode state.
-	useEffect(() => {
-		newRoom.setMode(mode);
-	}, [mode, newRoom]);
-	// The agent whose default model has already been applied to the picker
-	const appliedAgentModelRef = useRef<string>("");
-	// The agent whose options have already been merged into the new room
-	const appliedAgentOptionsRef = useRef<string>("");
-	// the ids of the agent's predefined prompts, loaded below
-	const [prompts, setPrompts] = useState<string[]>([]);
-	const previewPrompts = useMemo(
-		() => newRoomOptions.predefinedPrompts.slice(0, 5),
-		[newRoomOptions.predefinedPrompts],
-	);
-
-	const getWorkspace = useSessionPixel<Workspace | null>(
-		selectedWorkspaceId
-			? `GetWorkspace(${JSON.stringify(selectedWorkspaceId)});`
-			: "",
-		{
-			data: null,
-		},
-	);
-
-	// the picked agent's options have not reached the new room yet, so sending waits
-	const isAgentOptionsPending = Boolean(
-		selectedWorkspaceId &&
-			appliedAgentOptionsRef.current !== selectedWorkspaceId,
-	);
-	const hasAgentLoadFailed =
-		isAgentOptionsPending &&
-		(getWorkspace.status === "ERROR" ||
-			(getWorkspace.status === "SUCCESS" && !getWorkspace.data));
-
-	// Direct/shared agent link, rather than the in-room "+" modal.
-	const isWorkspaceFromUrl =
-		!!workspaceIdSearchParams &&
-		workspaceIdSearchParams === selectedWorkspaceId;
-
-	// Only visible for the moment the greeting room below is being created.
-	const agentGreeting =
-		isWorkspaceFromUrl &&
-		getWorkspace.data?.workspace_id === selectedWorkspaceId &&
-		getWorkspace.data?.config_json?.greeting_enabled
-			? (getWorkspace.data?.config_json?.greeting ?? "")
-			: "";
-
-	// Fetch knowledge vector engine if knowledgeId is provided
+	// a knowledge base the link names joins the draft's own, once read
 	const getKnowledge = useSessionPixel<
 		| {
 				engine_id: string;
@@ -274,577 +123,46 @@ export const NewChat = ({
 			: "",
 		{ data: null },
 	);
-
-	// the agent's predefined prompts
-	const getPrompts = useSessionPixel<Prompt[]>(
-		selectedWorkspaceId && prompts.length > 0
-			? `META | ListPrompt(filters=[Filter( (PROMPT__ID == [${prompts.map((p) => `"${p}"`).join(", ")}]) )])`
-			: "",
-		{
-			data: [],
-		},
-	);
-	// the draft starts with the user's connectors switched on
 	useEffect(() => {
-		void newRoom.connectors.loadUserConnectors();
-	}, [newRoom]);
-
-	// On initial load, set the default options from the theme
-	useEffect(() => {
+		const engine = getKnowledge.data?.[0];
+		if (!knowledgeId || getKnowledge.status !== "SUCCESS" || !engine) {
+			return;
+		}
+		const { mcp } = newRoom.options;
+		if (
+			mcp.some(
+				(item) => item.id === knowledgeId && item.type === "VECTOR",
+			)
+		) {
+			return;
+		}
 		newRoom.setOptions({
-			instructions: "",
-			mcp: [...(theme.defaultTools || [])],
-			workspace: undefined,
-			predefinedPrompts: [],
-			temperature: theme.featureFlags?.enableTemperature
-				? (theme.defaultRoomSettings?.temperature ?? 0)
-				: undefined,
-		});
-	}, [newRoom, theme]);
-
-	/**
-	 * Options shared by every room-creation path: current MCPs, the agent
-	 * harness selection, and the selected workspace (if any).
-	 */
-	const buildRoomOptions = (): RoomStore["options"] => {
-		const options = {
-			...newRoom.options,
-			mcp: newRoom.options.mcp,
-			// Persisted so agent mode survives a reload.
-			harnessType: mode === "agent" ? "semoss" : undefined,
-		};
-
-		return options;
-	};
-
-	/** Transfer queued context and copy connectors before the first message. */
-	const prepareRoom = async (room: RoomStore): Promise<void> => {
-		room.contextItems.adopt(newRoom.contextItems);
-		try {
-			await room.connectors.adopt(newRoom.connectors);
-		} catch (error) {
-			toast.error(
-				t("chatConnectors:connectors.adoptError", {
-					message: getErrorMessage(error, ""),
-				}),
-			);
-		}
-	};
-
-	/** Remember the chat started, so the next new chat starts as it did. */
-	const rememberChat = (options: RoomStore["options"]): void => {
-		writeSessionNewChat(lastLogin, {
-			mode: mode,
-			agentId: options.workspace?.workspace_id ?? "",
-		});
-	};
-
-	/** Shared error handling for every room-creation path below. */
-	const handleCreateRoomError = (error: unknown) => {
-		const sdkError = error as { message: string; code?: number };
-		if (
-			sdkError.code !== undefined &&
-			(sdkError.code === 403 || sdkError.code === 302)
-		) {
-			// User is unauthorized, likely due to expired session. Prompt them to log in again.
-			toast.error(t("chat:gracefulErrors.inactivity"));
-			return;
-		}
-
-		toast.error(t("room:errors.createRoom", { message: sdkError.message }));
-	};
-
-	/**
-	 * Create the room with its first message and open it. Uses the prepared
-	 * room when one exists, so its files and panels carry over.
-	 *
-	 * @param prompt - The prompt to ask.
-	 * @param files - The files to upload.
-	 * @param askOptions - Options for the kickoff message (e.g. visible: false).
-	 * @returns True once the room is created; false when busy or creation failed.
-	 */
-	const createRoom = async (
-		prompt: string,
-		files: File[],
-		askOptions?: { visible?: boolean },
-	) => {
-		// ignore if loading
-		if (isLoading || isPreparing || isAgentOptionsPending) {
-			return false;
-		}
-
-		try {
-			// turn the loading screen
-			setIsLoading(true);
-
-			const options = buildRoomOptions();
-
-			if (preparedRoom) {
-				// Room was pre-created so files could be uploaded to its insight.
-				// Sync final mode/options, fire askMessage, then navigate.
-				// Files from the file explorer are already in the insight —
-				// only RoomInput drag/drop/paste attachments are passed here.
-				preparedRoom.setModel(chat.models.selected);
-				preparedRoom.setMode(mode === "agent" ? "agent" : "chat");
-				preparedRoom.setMetadata({ name: prompt.substring(0, 15) });
-				await preparedRoom.updateRoomOptions(options);
-				await prepareRoom(preparedRoom);
-				// Optimistically surface the room in the nav — GetPlaygroundRooms
-				// won't return it until its first message has data.
-				chat.addOptimisticRoom({
-					ROOM_ID: preparedRoom.roomId,
-					ROOM_NAME: prompt.substring(0, 100),
-					DATE_CREATED: new Date().toISOString(),
-					WORKSPACE_ID: options.workspace?.workspace_id,
-				});
-				// Fire-and-forget so we navigate without waiting on the response.
-				(async () => {
-					try {
-						await preparedRoom.askMessage(
-							prompt,
-							files,
-							askOptions,
-						);
-						chat.refreshRoomLists();
-					} catch (e) {
-						if ((e as Error)?.name === "UploadError") {
-							toast.error(t("room:errors.fileInUse"));
-						}
-						chat.removeOptimisticRoom(preparedRoom.roomId);
-					}
-				})();
-				hasSubmittedRef.current = true;
-				rememberChat(options);
-				navigation.openRoom(preparedRoom.roomId);
-			} else {
-				// Standard flow — create room and send first message together.
-				const room = await chat.createRoom(
-					mode === "agent" ? "agent" : "chat",
-					prompt,
-					files,
-					options,
-					options.workspace?.workspace_id,
-					askOptions,
-					prepareRoom,
-				);
-				hasSubmittedRef.current = true;
-				rememberChat(options);
-				navigation.openRoom(room.roomId);
-			}
-			return true;
-		} catch (error: unknown) {
-			handleCreateRoomError(error);
-			return false;
-		} finally {
-			setIsLoading(false);
-		}
-	};
-
-	/**
-	 * Start a message-less room for an agent's scripted greeting. No pixel
-	 * ever writes a message, so the greeting never reaches the model as
-	 * context. URL-routed workspaces only.
-	 */
-	const startAgentGreetingRoom = async (
-		workspaceId: string,
-		name: string,
-	) => {
-		if (isLoading || isPreparing) {
-			return;
-		}
-
-		// Claimed here, not in the effect, so bailing above stays retryable.
-		greetingRoomStartedForRef.current = workspaceId;
-
-		try {
-			setIsLoading(true);
-
-			const options = buildRoomOptions();
-			const room = await chat.createEmptyRoom(
-				mode === "agent" ? "agent" : "chat",
-				name,
-				options,
-				workspaceId,
-				prepareRoom,
-			);
-			hasSubmittedRef.current = true;
-			rememberChat(options);
-			navigation.openRoom(room.roomId);
-		} catch (error: unknown) {
-			handleCreateRoomError(error);
-		} finally {
-			setIsLoading(false);
-		}
-	};
-
-	// an agent link picks its agent
-	useEffect(() => {
-		if (workspaceIdSearchParams) {
-			setSelectedWorkspaceId(workspaceIdSearchParams);
-		}
-	}, [workspaceIdSearchParams]);
-
-	// merge the picked agent's instructions, toolboxes, prompts, and model into the new room
-	useEffect(() => {
-		if (!selectedWorkspaceId) {
-			// clearing the agent clears the guard below, so picking the same
-			// agent again applies its default model again
-			appliedAgentModelRef.current = "";
-			appliedAgentOptionsRef.current = "";
-			return;
-		}
-		if (getWorkspace.status !== "SUCCESS" || !getWorkspace.data) {
-			return;
-		}
-		// Switching agents changes selectedWorkspaceId a render before the
-		// pixel catches up, so this effect fires once holding the outgoing
-		// agent's data. Applying it would merge the wrong agent's settings and,
-		// worse, mark the incoming agent as already handled below.
-		if (getWorkspace.data.workspace_id !== selectedWorkspaceId) {
-			return;
-		}
-
-		if (appliedAgentOptionsRef.current === selectedWorkspaceId) return;
-		appliedAgentOptionsRef.current = selectedWorkspaceId;
-		// Sync options
-		// Add workspace MCPs with fromWorkspace flag to the mcp array
-		const workspaceMCPs = (getWorkspace.data.mcp || []).map((mcp) => ({
-			...mcp,
-			fromWorkspace: true,
-		}));
-
-		// Preserve existing tools that are not from workspace
-		const nonWorkspaceMCPs = newRoom.options.mcp.filter(
-			(mcp) => !mcp.fromWorkspace,
-		);
-
-		// Combine and deduplicate by ID (workspace MCPs take precedence)
-		const allMCPs = [...workspaceMCPs, ...nonWorkspaceMCPs];
-		const mcpMap = new Map<string, MCPConfig>();
-		for (const mcp of allMCPs) {
-			// Only add if not already in map (workspace MCPs added first, so they take precedence)
-			if (!mcpMap.has(mcp.id)) {
-				mcpMap.set(mcp.id, mcp);
-			}
-		}
-
-		// An agent that names a default model switches the picker to it, once
-		// per selection - the ref keeps a refetch from overriding a model the
-		// user picked by hand afterwards. An agent with no default leaves the
-		// current model alone.
-		const agentModelId = getWorkspace.data.config_json?.model_id ?? "";
-		if (
-			agentModelId &&
-			appliedAgentModelRef.current !== selectedWorkspaceId
-		) {
-			appliedAgentModelRef.current = selectedWorkspaceId;
-			void chat.selectModelById(agentModelId);
-		}
-
-		setPrompts(
-			Array.isArray(getWorkspace.data.prompts)
-				? getWorkspace.data.prompts.map((p) =>
-						typeof p === "string" ? p : (p as { id: string }).id,
-					)
-				: [],
-		);
-		newRoom.setOptions({
-			...newRoom.options,
-			instructions: getWorkspace.data.system_prompt || "",
-			mcp: Array.from(mcpMap.values()),
-			workspace: {
-				workspace_id: getWorkspace.data.workspace_id,
-				name: getWorkspace.data.display_name || getWorkspace.data.name,
-			},
-		});
-	}, [
-		selectedWorkspaceId,
-		getWorkspace.status,
-		getWorkspace.data,
-		newRoom,
-		chat,
-	]);
-
-	// A default agent the user can no longer open gives way to Default Agent
-	useEffect(() => {
-		if (
-			!hasAgentLoadFailed ||
-			!defaultAgentIdRef.current ||
-			selectedWorkspaceId !== defaultAgentIdRef.current
-		) {
-			return;
-		}
-		defaultAgentIdRef.current = "";
-		setSelectedWorkspaceId("");
-	}, [hasAgentLoadFailed, selectedWorkspaceId]);
-
-	// A URL-routed agent with a greeting drops straight into a room with it
-	// already rendered, instead of the landing page.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: greetingRoomStartedForRef guards re-fires; re-listing the rest would re-run this every render
-	useEffect(() => {
-		if (!isWorkspaceFromUrl) {
-			return;
-		}
-		if (
-			!selectedWorkspaceId ||
-			getWorkspace.status !== "SUCCESS" ||
-			!getWorkspace.data
-		) {
-			return;
-		}
-		// Same outgoing-agent-data guard as the effect above.
-		if (getWorkspace.data.workspace_id !== selectedWorkspaceId) {
-			return;
-		}
-		if (greetingRoomStartedForRef.current === selectedWorkspaceId) {
-			return;
-		}
-
-		const cfg = getWorkspace.data.config_json;
-		if (!cfg?.greeting_enabled || !cfg.greeting) {
-			return;
-		}
-
-		void startAgentGreetingRoom(
-			selectedWorkspaceId,
-			getWorkspace.data.display_name || getWorkspace.data.name,
-		);
-	}, [
-		isWorkspaceFromUrl,
-		selectedWorkspaceId,
-		getWorkspace.status,
-		getWorkspace.data,
-	]);
-
-	// Handle knowledge vector engine from URL parameter
-	useEffect(() => {
-		if (
-			!knowledgeId ||
-			getKnowledge.status !== "SUCCESS" ||
-			!getKnowledge.data?.[0]
-		) {
-			return;
-		}
-
-		// Add the knowledge MCP to options
-		// Check if this knowledge MCP already exists
-		const existingMcp = newRoom.options.mcp.find(
-			(mcp) => mcp.id === knowledgeId && mcp.type === "VECTOR",
-		);
-
-		// If it already exists, don't add it again
-		if (existingMcp) {
-			return;
-		}
-
-		// Add the knowledge MCP
-		const knowledgeMcp = {
-			id: knowledgeId,
-			type: "VECTOR" as const,
-			name:
-				getKnowledge.data[0].engine_display_name ||
-				getKnowledge.data[0].engine_name ||
-				knowledgeId,
-		};
-
-		newRoom.setOptions({
-			...newRoom.options,
-			mcp: [...newRoom.options.mcp, knowledgeMcp],
+			mcp: [
+				...mcp,
+				{
+					id: knowledgeId,
+					type: "VECTOR",
+					name:
+						engine.engine_display_name ||
+						engine.engine_name ||
+						knowledgeId,
+				},
+			],
 		});
 	}, [knowledgeId, getKnowledge.status, getKnowledge.data, newRoom]);
-
-	// put the agent's loaded prompts on the new room
-	useEffect(() => {
-		if (
-			!selectedWorkspaceId ||
-			prompts.length === 0 ||
-			getPrompts.status !== "SUCCESS" ||
-			!getPrompts.data?.length
-		) {
-			return;
-		}
-
-		const loadedPrompts: Prompt[] = getPrompts.data
-			.filter((prompt) => prompts.includes(prompt.id))
-			.map((p) => ({
-				id: p.id,
-				title: p.title,
-				context: p.context,
-				tags: p.tags,
-				version: p.version,
-				intent: p.intent,
-				// TODO: figure out why this is done this way
-				createdBy: (p as unknown as { created_by: string }).created_by,
-				dateCreated: (p as unknown as { date_created: string })
-					.date_created,
-				global: false, // TODO: figure out if this is needed
-			}));
-
-		newRoom.setOptions({
-			...newRoom.options,
-			predefinedPrompts: loadedPrompts,
-		});
-	}, [
-		selectedWorkspaceId,
-		prompts,
-		getPrompts.status,
-		getPrompts.data,
-		newRoom,
-	]);
-
-	/**
-	 * Pick an agent, or none. A different agent's options replace the last
-	 * one's, keeping the knowledge and tools the user added by hand.
-	 *
-	 * @param next - The agent, or null for none.
-	 */
-	const handleAgentChange = (
-		next: RoomStore["options"]["workspace"] | null,
-	) => {
-		if (isLoading || isPreparing) return;
-		defaultAgentIdRef.current = "";
-		if (next?.workspace_id !== newRoom.options.workspace?.workspace_id) {
-			// an agent's model gives way to the new chat's default with it
-			if (!next && appliedAgentModelRef.current) {
-				chat.selectNewChatDefaultModel();
-			}
-			appliedAgentOptionsRef.current = "";
-			appliedAgentModelRef.current = "";
-			setPrompts([]);
-			const cleared = clearAgentOptions(newRoom.options);
-			newRoom.setOptions({
-				...cleared,
-				mcp: Array.from(
-					new Map(
-						[...manualMcpRef.current.values(), ...cleared.mcp].map(
-							(item) => [item.id, item],
-						),
-					).values(),
-				),
-				workspace: next ?? undefined,
-			});
-		}
-		setSelectedWorkspaceId(next?.workspace_id ?? "");
-	};
-	/** Switch the new chat to chat mode. */
-	const handleSelectChat = () => {
-		setChosenMode("chat");
-	};
-	/**
-	 * With `modeFollowsAgent`, picking Default Agent runs agent mode and No Agent chat mode.
-	 *
-	 * @param isDefaultAgent - Whether Default Agent is picked.
-	 */
-	const handleDefaultAgentChange = (isDefaultAgent: boolean) => {
-		if (isLoading || isPreparing) return;
-		setChosenMode(isDefaultAgent ? "agent" : "chat");
-	};
-	/**
-	 * Show the Workspace, or one of its panels, in a room.
-	 *
-	 * @param room - The draft or the prepared room.
-	 * @param request - What to show.
-	 */
-	const showPanel = (room: RoomStore, request: NewRoomPanelRequest): void => {
-		switch (request.kind) {
-			case "workbench":
-				room.openSidebar();
-				return;
-			case "settings":
-				room.chatTools.openRoomSettings();
-				return;
-			case "files":
-				room.openSidebarFileExplorer();
-				return;
-			case "activity":
-				room.openSidebarPanel(
-					ROOM_PANEL_TYPES.AUDIT_LOG,
-					{},
-					t("room:workspacePlaces.activity"),
-				);
-				return;
-			case "connector":
-				room.connectors.openSourcePanel(request.service);
-		}
-	};
-
-	/**
-	 * Opens the Workspace or one of its panels, preparing the draft's room for
-	 * it. Every request shares preparation, layout transfer, and
-	 * abandoned-draft cleanup. The Workspace and Settings show on the draft at
-	 * once and carry over to the room, unless closed meanwhile; Files, the
-	 * activity log, and the viewers read the room's insight, so they wait for
-	 * it. A failure shows in the Workspace, where Retry opens the same panel.
-	 *
-	 * @param request - What to open.
-	 */
-	const openPanel = async (request: NewRoomPanelRequest): Promise<void> => {
-		// submitting builds its own room
-		if (isLoading) return;
-		if (preparedRoom) {
-			showPanel(preparedRoom, request);
-			return;
-		}
-		pendingPanelRef.current = request;
-		const isReady = NEW_ROOM_READY_PANEL_KINDS.has(request.kind);
-		if (isReady) showPanel(newRoom, request);
-		const room = await prepare();
-		if (!room) {
-			if (!isReady) newRoom.openSidebar();
-			return;
-		}
-		if (!isReady) showPanel(room, request);
-		else if (newRoom.sidebar.isOpen) room.openSidebar();
-	};
-
-	/** Prepare the room again, for the panel that asked last. */
-	const handleRetryPreparation = () => {
-		void openPanel(pendingPanelRef.current);
-	};
-
-	// the draft's own way to open panels, for the rail, the header, and the slash menu
-	const newRoomPanels: NewRoomWorkbenchPanels = {
-		onOpenPanel: (request) => void openPanel(request),
-		isBusy: isPreparing || isLoading,
-		connectors: newRoom.connectors,
-	};
-
-	const isWorkbenchOpen = useRoomSelector(
-		workbenchRoom,
-		(current) => current.sidebar.isOpen,
-	);
-	const preparedRoomIds = useRoomSelector(preparedRoom, (current) => ({
-		roomId: current.roomId,
-		insightId: current.insightId,
-	}));
 
 	const workbench = (
 		<RoomWorkbench room={workbenchRoom} newRoomPanels={newRoomPanels} />
 	);
+	const predefinedPrompts = session.options.predefinedPrompts;
 
 	return (
 		<div className="flex h-full w-full flex-col overflow-hidden">
-			{theme.banner ? (
-				<div
-					ref={bannerRef}
-					className="w-full shrink-0 px-4 py-2 text-center text-sm [&_a]:underline"
-					style={{
-						backgroundColor:
-							theme.bannerBackgroundColor || "var(--primary)",
-						color:
-							theme.bannerTextColor ||
-							"var(--primary-foreground)",
-					}}
-					// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
-					dangerouslySetInnerHTML={{ __html: theme.banner }}
-				/>
-			) : null}
+			<NewChatBanner />
 			<div className="min-h-0 flex-1">
 				<RoomLayout
 					isWorkbenchOpen={isWorkbenchOpen}
-					onWorkbenchCollapse={() =>
-						void workbenchRoom.closeSidebar()
-					}
+					onWorkbenchCollapse={() => workbenchRoom.closeSidebar()}
 					header={
 						<RoomHeader
 							room={workbenchRoom}
@@ -855,30 +173,8 @@ export const NewChat = ({
 					workbench={
 						<DraftSettingsContext.Provider
 							value={{
-								disabled:
-									isLoading ||
-									isPreparing ||
-									isAgentOptionsPending,
-								model: selectedModel,
-								options: newRoomOptions,
-								onModelChange: (model) => {
-									if (model) chat.setSelectedModel(model);
-								},
-								isAgentEditable: true,
-								isAgentMode: mode === "agent",
-								onDefaultAgentChange: modeFollowsAgent
-									? handleDefaultAgentChange
-									: undefined,
-								onOptionsChange: (opts) => {
-									if ("workspace" in opts)
-										handleAgentChange(
-											opts.workspace ?? null,
-										);
-									newRoom.setOptions({
-										...newRoom.options,
-										...opts,
-									});
-								},
+								session,
+								disabled: isBusy || draft.isAgentOptionsPending,
 							}}
 						>
 							<div className="flex h-full min-h-0 flex-col">
@@ -893,7 +189,7 @@ export const NewChat = ({
 												type="button"
 												variant="outline"
 												size="sm"
-												onClick={handleRetryPreparation}
+												onClick={retryPreparation}
 											>
 												{t("room:studio.retry")}
 											</Button>
@@ -925,139 +221,82 @@ export const NewChat = ({
 					}
 				>
 					<FileDropProvider>
-						{landingSrc && (
-							<img
-								src={landingSrc}
-								alt=""
-								className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover"
-							/>
-						)}
-						<DropHighlight className="flex h-full flex-col items-center overflow-auto px-4 py-8 sm:px-6">
-							<div className="relative z-10 mx-auto my-auto flex w-full max-w-3xl flex-col gap-6 py-6">
-								{theme.landing ? (
-									<div
-										className="mx-auto flex max-w-xl"
-										// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
-										dangerouslySetInnerHTML={{
-											__html:
-												showAltLanding &&
-												theme.altLanding
-													? theme.altLanding
-													: theme.landing,
-										}}
-									/>
-								) : (
-									<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
-										<H2 className="text-center">
-											{t("room:welcome", {
-												name: userName,
-											})}
-										</H2>
-										{theme.description ? (
-											<Muted className="text-center">
-												{theme.description}
-											</Muted>
-										) : null}
-									</div>
-								)}
-								{agentGreeting && (
-									<RoomGreeting
-										room={workbenchRoom}
-										greeting={agentGreeting}
-									/>
-								)}
-								{hasAgentLoadFailed && (
-									<Alert variant="destructive">
-										<AlertDescription>
-											{t("room:settings.agentLoadError")}
-										</AlertDescription>
-										<Button
-											type="button"
-											variant="outline"
-											size="sm"
-											onClick={getWorkspace.refresh}
-										>
-											{t("room:studio.retry")}
-										</Button>
-									</Alert>
-								)}
-								<RoomInput
-									predefinedPrompts={
-										newRoomOptions.predefinedPrompts
-									}
-									className="max-h-72"
-									isLoading={isLoading || isPreparing}
-									isSubmitDisabled={isAgentOptionsPending}
-									initialValue={initialPrompt}
-									model={selectedModel}
-									room={newRoom}
-									onModelChange={(m) => {
-										chat.setSelectedModel(m);
-									}}
-									options={newRoomOptions}
-									onMcpChange={(mcp) =>
-										newRoom.setOptions({
-											...newRoom.options,
-											mcp,
-										})
-									}
-									onWorkspaceChange={handleAgentChange}
-									onPrompt={createRoom}
-									excludeCommandIds={
-										canChooseAgentMode(theme.featureFlags)
-											? []
-											: ["agent-harness", "chat-mode"]
-									}
-									onSwitchToAgentHarness={() =>
-										setChosenMode("agent")
-									}
-									onExitAgentHarness={handleSelectChat}
-									onDefaultAgentChange={
-										modeFollowsAgent
-											? handleDefaultAgentChange
-											: undefined
-									}
-									// The new-room flow has no cancellable turn, so
-									// it's only ever busy (spinner) or idle (send).
-									sendState={
-										isLoading || isPreparing
-											? "loading"
-											: "send"
-									}
-									workbenchPanels={{
+						<NewChatLanding
+							showAltLanding={showAltLanding}
+							greeting={greeting}
+							room={workbenchRoom}
+						>
+							{draft.hasAgentLoadFailed && (
+								<Alert variant="destructive">
+									<AlertDescription>
+										{t("room:settings.agentLoadError")}
+									</AlertDescription>
+									<Button
+										type="button"
+										variant="outline"
+										size="sm"
+										onClick={agent.refresh}
+									>
+										{t("room:studio.retry")}
+									</Button>
+								</Alert>
+							)}
+							<RoomInput
+								// a different prompt handed in starts the editor again
+								key={initialPrompt}
+								className="max-h-72"
+								isLoading={isBusy}
+								session={session}
+								room={newRoom}
+								onPrompt={created.createRoom}
+								excludeCommandIds={
+									canChooseAgentMode(theme.featureFlags)
+										? []
+										: ["agent-harness", "chat-mode"]
+								}
+								// The new-room flow has no cancellable turn, so
+								// it's only ever busy (spinner) or idle (send).
+								sendState={isBusy ? "loading" : "send"}
+								variant={{
+									kind: "draft",
+									onSwitchToAgentHarness: () =>
+										draft.chooseMode("agent"),
+									onExitAgentHarness: () =>
+										draft.chooseMode("chat"),
+									workbenchPanels: {
 										room: workbenchRoom,
 										newRoomPanels: newRoomPanels,
-									}}
-								/>
-								{newRoomOptions.predefinedPrompts.length > 0 ? (
-									<div className="mx-auto flex w-full flex-col items-center gap-3">
-										<div className="flex w-full flex-wrap justify-center gap-2">
-											{previewPrompts.map((prompt) => {
-												return (
-													<Button
-														key={prompt.id}
-														variant="outline"
-														className="h-auto min-h-10 max-w-full gap-2 whitespace-normal rounded-xl px-4 py-2 text-start"
-														disabled={
-															isLoading ||
-															isPreparing
-														}
-														onClick={() =>
-															createRoom(
-																prompt.context,
-																[],
-															)
-														}
-													>
-														{prompt.title}
-													</Button>
-												);
-											})}
-										</div>
+									},
+									initialValue: initialPrompt,
+									isSubmitDisabled:
+										draft.isAgentOptionsPending,
+								}}
+							/>
+							{predefinedPrompts.length > 0 ? (
+								<div className="mx-auto flex w-full flex-col items-center gap-3">
+									<div className="flex w-full flex-wrap justify-center gap-2">
+										{predefinedPrompts
+											.slice(0, 5)
+											.map((prompt) => (
+												<Button
+													key={prompt.id}
+													variant="outline"
+													className="h-auto min-h-10 max-w-full gap-2 whitespace-normal rounded-xl px-4 py-2 text-start"
+													disabled={isBusy}
+													onClick={() =>
+														created.createRoom(
+															prompt.context,
+															[],
+														)
+													}
+												>
+													{prompt.title}
+												</Button>
+											))}
 									</div>
-								) : null}
-							</div>
-						</DropHighlight>
+								</div>
+							) : null}
+						</NewChatLanding>
 					</FileDropProvider>
 				</RoomLayout>
 			</div>

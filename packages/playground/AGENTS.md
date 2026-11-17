@@ -259,7 +259,8 @@ agent remounts it through `key`. The edit and detail pages turn the escaped line
 `GetWorkspace` returns in the instructions back into newlines. A failed save shows inline and the form keeps
 its values for a retry. Creation reads
 `GetAgentFormOptions` for deployment catalogs and submits the full configuration to
-`ChatStore.createAgent`; a failed follow-up settings save still opens the created agent and
+`createAgent` (`@semoss/chat`, with `editAgent` and `deleteAgent`, plain functions over the
+session's insight); a failed follow-up settings save still opens the created agent and
 shows its warning, avoiding duplicate creation. The agent catalog keeps the existing card
 actions and responsive grid while adding access filters and sorting. Card permissions use the
 backend's effective `permission`, including group grants.

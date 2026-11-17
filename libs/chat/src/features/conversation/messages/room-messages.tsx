@@ -1,7 +1,6 @@
 import { MoveDownIcon, MoveUpIcon, TriangleAlertIcon } from "lucide-react";
-import React, { useCallback, useContext, useEffect, useState } from "react";
+import { Fragment, useContext } from "react";
 import { useTranslation } from "@semoss/i18n";
-import type { MCPToolResponse } from "@semoss/sdk";
 import { ChatGeneratingIndicator } from "@semoss/shared";
 import {
 	Button,
@@ -18,7 +17,6 @@ import type { RoomStore } from "../../room/store/room.store";
 import { useRoomSelector } from "../../room/store/use-room-selector";
 import { useGracefulErrors } from "../composer/use-graceful-errors";
 import { ConversationScrollContext } from "../conversation-scroll.context";
-import { decideAgentToolAction } from "../store/agent-harness";
 import type { InputMessageStore } from "../store/input-message.store";
 import { ResponseMessageStore } from "../store/response-message.store";
 import { RoomSuggestions } from "../suggestions/room-suggestions";
@@ -28,9 +26,8 @@ import { ResponseMessage } from "./response-message";
 import { RoomCompactionIndicator } from "./room-compaction-indicator";
 import { RoomGreeting } from "./room-greeting";
 import { readRoomTurnState } from "./room-turn-state";
-
-/** How far from the top or bottom, in px, the scroll buttons appear and auto-scroll stops. */
-const SCROLL_THRESHOLD = 150;
+import { useStickToBottomScroll } from "./use-stick-to-bottom-scroll";
+import { useToolViewMessageBridge } from "./use-tool-view-message-bridge";
 
 /** A message in the room's history. */
 type RoomMessage = InputMessageStore | ResponseMessageStore;
@@ -84,7 +81,7 @@ const isPendingResponse = (m: RoomMessage): boolean =>
 const selectHistoryRows = (room: RoomStore): unknown[] => {
 	const rows: unknown[] = [];
 	let hasAnchor = false;
-	const { root } = room.getSnapshot();
+	const root = room.root;
 	// the nearest ancestor that is visible, and the nearest with a model
 	let visibleAncestor: RoomMessage | null = null;
 	let modelAncestorId: string | null = root?.modelId || null;
@@ -174,12 +171,6 @@ export const RoomMessages = ({ room: roomProp }: RoomMessagesProps) => {
 	const { t } = useTranslation("room");
 	const { t: tChat } = useTranslation("chat");
 	const { getGracefulErrorMessage } = useGracefulErrors();
-	const [scrollEle, setScrollEle] = useState<HTMLDivElement | null>(null);
-	const [contentEle, setContentEle] = useState<HTMLDivElement | null>(null);
-	const [contentHeight, setContentHeight] = useState(0);
-	const [isScrollUpShown, setIsScrollUpShown] = useState(false);
-	const [isScrollDownShown, setIsScrollDownShown] = useState(false);
-	const [isScrollLocked, setIsScrollLocked] = useState(false);
 	const { isBusy, isStreamingContent, waitingAskToolCount } = useRoomSelector(
 		room,
 		readRoomTurnState,
@@ -197,216 +188,18 @@ export const RoomMessages = ({ room: roomProp }: RoomMessagesProps) => {
 
 	// the room header floats over the conversation and blurs once it scrolls
 	const reportConversationScrolled = useContext(ConversationScrollContext);
-
-	/**
-	 * Read the scroll position: report it to the header, show the scroll
-	 * buttons, and lock auto-scroll while the user is away from the bottom.
-	 */
-	const handleScroll = useCallback(() => {
-		// the effect that calls this only does so once the element exists
-		if (!scrollEle) return;
-
-		reportConversationScrolled?.(scrollEle.scrollTop > 0);
-
-		// show scroll up once away from the top
-		if (scrollEle.scrollTop > SCROLL_THRESHOLD) {
-			setIsScrollUpShown(true);
-		} else {
-			setIsScrollUpShown(false);
-		}
-
-		// Check if user is at the bottom
-		const isAtBottom =
-			scrollEle.scrollHeight -
-				scrollEle.scrollTop -
-				scrollEle.clientHeight <=
-			SCROLL_THRESHOLD;
-
-		// show scroll down if not at bottom
-		if (isAtBottom) {
-			setIsScrollDownShown(false);
-			// Unlock scroll when user scrolls back to bottom
-			setIsScrollLocked(false);
-		} else {
-			setIsScrollDownShown(true);
-			// Lock scroll when user scrolls away from bottom
-			setIsScrollLocked(true);
-		}
-	}, [scrollEle, reportConversationScrolled]);
-
-	/**
-	 * Smoothly scroll the conversation.
-	 *
-	 * @param target - The offset from the top to scroll to, in px.
-	 */
-	const scrollToTarget = useCallback(
-		(target: number = 0) => {
-			if (!scrollEle) {
-				return;
-			}
-
-			scrollEle.scrollTo({
-				top: target,
-				behavior: "smooth",
-			});
-		},
-		[scrollEle],
+	const {
+		viewportRef,
+		contentRef,
+		isScrollUpShown,
+		isAwayFromBottom,
+		scrollToTop,
+		scrollToBottom,
+	} = useStickToBottomScroll(
+		isAnyMessageStreaming,
+		reportConversationScrolled,
 	);
-
-	// run the tool results that tool views post to the window
-	useEffect(() => {
-		const handleMessage = async (
-			event: MessageEvent<{
-				type: "SMSS_EXEC_TOOL";
-				tool: MCPToolResponse;
-			}>,
-		) => {
-			try {
-				if (!event.data || event.data.type !== "SMSS_EXEC_TOOL") {
-					return;
-				}
-
-				const tool = event.data.tool;
-
-				// An agent-run tool paused on a decision must resume through
-				// the AGENT_RUN_ACTION row, not room.processTool's legacy
-				// room-write path — see decideAgentToolAction.
-				const liveTool = room.getTool(tool.id);
-				if (liveTool?.pendingAction) {
-					const isCancelled =
-						tool.tool_status === "cancelled" ||
-						tool.tool_status === "paused";
-					await decideAgentToolAction(
-						liveTool,
-						isCancelled ? "reject" : "submit",
-						tool.executedParameters ?? {},
-					);
-					return;
-				}
-
-				room.processTool(
-					tool.message,
-					tool.id,
-					tool.response,
-					// "paused" is retired — fold any legacy iframe status into cancelled
-					tool.tool_status === "paused"
-						? "cancelled"
-						: tool.tool_status,
-					tool.executedParameters ?? {},
-				);
-			} catch {
-				// a malformed or failed post must not break the listener
-			}
-		};
-
-		window.addEventListener("message", handleMessage);
-
-		return () => {
-			window.removeEventListener("message", handleMessage);
-		};
-	}, [room]);
-
-	// Initial scroll to bottom when scroll element is first available
-	useEffect(() => {
-		if (!scrollEle) {
-			return;
-		}
-
-		setIsScrollLocked(false);
-		requestAnimationFrame(() => {
-			scrollEle.scrollTop = scrollEle.scrollHeight;
-		});
-	}, [scrollEle]);
-
-	// Scroll once when an active stream settles. Scheduling from the transition
-	// itself prevents a stale completion request from being consumed by a later,
-	// unrelated resize such as the user opening a grouped tool.
-	const wasMessageStreamingRef = React.useRef(false);
-	useEffect(() => {
-		const wasMessageStreaming = wasMessageStreamingRef.current;
-		wasMessageStreamingRef.current = isAnyMessageStreaming;
-
-		if (isAnyMessageStreaming || !wasMessageStreaming || !scrollEle) {
-			return;
-		}
-
-		setIsScrollLocked(false);
-		const frame = requestAnimationFrame(() => {
-			scrollEle.scrollTo({
-				top: scrollEle.scrollHeight,
-				behavior: "smooth",
-			});
-		});
-
-		return () => cancelAnimationFrame(frame);
-	}, [isAnyMessageStreaming, scrollEle]);
-
-	// Auto-scroll to bottom when content grows (streaming), unless user has scrolled away intentionally
-	// biome-ignore lint/correctness/useExhaustiveDependencies: contentHeight is used as a trigger
-	useEffect(() => {
-		if (!scrollEle || isScrollLocked) {
-			return;
-		}
-
-		// Only auto-scroll if actively streaming to avoid jumping after completion
-		if (!isAnyMessageStreaming) {
-			return;
-		}
-
-		requestAnimationFrame(() => {
-			scrollEle.scrollTop = scrollEle.scrollHeight;
-		});
-	}, [scrollEle, isScrollLocked, contentHeight, isAnyMessageStreaming]);
-
-	// listen for scrolling, at most once a frame
-	useEffect(() => {
-		if (!scrollEle) {
-			return;
-		}
-
-		let isTicking = false;
-
-		const throttledHandleScroll = () => {
-			if (!isTicking) {
-				requestAnimationFrame(() => {
-					handleScroll();
-					isTicking = false;
-				});
-				isTicking = true;
-			}
-		};
-
-		scrollEle.addEventListener("scroll", throttledHandleScroll, {
-			passive: true,
-		});
-
-		// Initial check
-		handleScroll();
-
-		return () => {
-			scrollEle.removeEventListener("scroll", throttledHandleScroll);
-		};
-	}, [scrollEle, handleScroll]);
-
-	// track the content's height, which drives auto-scroll while streaming
-	useEffect(() => {
-		if (!contentEle) {
-			return;
-		}
-
-		// observe content height changes
-		const observer = new ResizeObserver(() => {
-			if (contentEle) {
-				setContentHeight(contentEle.clientHeight);
-			}
-		});
-
-		observer.observe(contentEle);
-
-		return () => {
-			observer.disconnect();
-		};
-	}, [contentEle]);
+	useToolViewMessageBridge(room);
 
 	const roomHistoryEntries = toHistoryEntries(historyRows);
 
@@ -415,15 +208,9 @@ export const RoomMessages = ({ room: roomProp }: RoomMessagesProps) => {
 			<ScrollArea
 				// Force Radix's table-display viewport wrapper to block so wide content can't push the column past the viewport width
 				className="[&_[data-slot=scroll-area-viewport]>div]:block! h-full w-full overflow-hidden"
-				viewportRef={(ele) => {
-					setScrollEle(ele);
-				}}
+				viewportRef={viewportRef}
 			>
-				<div
-					ref={(ele) => {
-						setContentEle(ele);
-					}}
-				>
+				<div ref={contentRef}>
 					<div className="mx-auto box-content flex max-w-3xl flex-col gap-4 @md:px-6 px-4 pt-20 pb-6 md:pt-17">
 						{agentGreeting && (
 							<RoomGreeting
@@ -438,7 +225,7 @@ export const RoomMessages = ({ room: roomProp }: RoomMessagesProps) => {
 								shouldShowModelName,
 							}) => {
 								return (
-									<React.Fragment key={m.key}>
+									<Fragment key={m.key}>
 										{shouldShowModelName && (
 											<div className="relative mb-4 flex flex-col items-center justify-center">
 												<Muted className="z-10 bg-background px-2 text-xs leading-normal">
@@ -483,7 +270,7 @@ export const RoomMessages = ({ room: roomProp }: RoomMessagesProps) => {
 												message={m}
 											/>
 										)}
-									</React.Fragment>
+									</Fragment>
 								);
 							},
 						)}
@@ -525,7 +312,7 @@ export const RoomMessages = ({ room: roomProp }: RoomMessagesProps) => {
 							<Button
 								size="icon-sm"
 								variant={"outline"}
-								onClick={() => scrollToTarget(0)}
+								onClick={scrollToTop}
 								aria-label={t("content.scrollToTop")}
 								className="shadow-lg"
 							>
@@ -537,16 +324,14 @@ export const RoomMessages = ({ room: roomProp }: RoomMessagesProps) => {
 				</Tooltip>
 			)}
 
-			{isScrollDownShown && (
+			{isAwayFromBottom && (
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<span className="absolute end-4 bottom-4 z-50">
 							<Button
 								size="icon-sm"
 								variant={"outline"}
-								onClick={() => {
-									scrollToTarget(contentHeight);
-								}}
+								onClick={scrollToBottom}
 								aria-label={t("content.scrollToBottom")}
 								className="shadow-lg"
 							>

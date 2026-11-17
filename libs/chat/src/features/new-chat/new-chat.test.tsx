@@ -31,13 +31,37 @@ const mocks = vi.hoisted(() => ({
 	selectModelById: vi.fn(),
 	workspaceStatus: "SUCCESS",
 	refreshWorkspace: vi.fn(),
-	pixel: (pixel: string) => ({
-		status: pixel.includes("GetWorkspace")
-			? mocks.workspaceStatus
-			: "INITIAL",
-		refresh: mocks.refreshWorkspace,
-		data: pixel.includes('"alpha"') ? mocks.alpha : null,
-	}),
+	pixel: (_pixel: string) =>
+		({
+			status: "INITIAL",
+			refresh: vi.fn(),
+			data: null,
+		}) as { status: string; refresh: () => void; data: unknown },
+	/** The agent's read: alpha is the only agent there is. */
+	agentWorkspace: (workspaceId: string | null | undefined) => {
+		if (!workspaceId) {
+			return {
+				workspace: null,
+				status: "IDLE",
+				error: null,
+				refresh: mocks.refreshWorkspace,
+			};
+		}
+		const status =
+			mocks.workspaceStatus === "SUCCESS"
+				? workspaceId === "alpha"
+					? "READY"
+					: "ERROR"
+				: mocks.workspaceStatus === "ERROR"
+					? "ERROR"
+					: "LOADING";
+		return {
+			workspace: status === "READY" ? mocks.alpha : null,
+			status,
+			error: status === "ERROR" ? new Error("No agent") : null,
+			refresh: mocks.refreshWorkspace,
+		};
+	},
 	alpha: null as unknown,
 	searchParams: new URLSearchParams(),
 	session: {
@@ -104,11 +128,14 @@ vi.mock("@semoss/sdk/react", async (original) => ({
 	InsightProvider: ({ children }: { children: ReactNode }) => children,
 	// the session's logins, without reading them from a server
 	useLogins: () => mocks.logins,
-	usePixel: mocks.pixel,
-	useSessionPixel: mocks.pixel,
+	usePixel: (pixel: string) => mocks.pixel(pixel),
+	useSessionPixel: (pixel: string) => mocks.pixel(pixel),
 	// a signed in user, with any new chat defaults a test gives them
 	useSession: <T,>(selector: (state: typeof mocks.session) => T) =>
 		selector(mocks.session),
+}));
+vi.mock("../chat/store/use-agent-workspace", () => ({
+	useAgentWorkspace: mocks.agentWorkspace,
 }));
 vi.mock("../chat/config/use-chat-config", () => ({
 	useChatConfig: () => ({
@@ -204,15 +231,13 @@ vi.mock("../room/layout/room-layout", () => ({
 }));
 vi.mock("../room/settings/room-options-form", () => ({
 	RoomOptionsForm: ({
-		options,
-		onOptionsChange,
-		onDefaultAgentChange,
+		session: { options, onOptionsChange, agent, onDefaultAgentChange },
 	}: ComponentProps<typeof RoomOptionsForm>) => (
 		<>
-			{onDefaultAgentChange && (
+			{agent.kind === "savedOrDefault" && (
 				<button
 					type="button"
-					onClick={() => onDefaultAgentChange(true)}
+					onClick={() => onDefaultAgentChange?.(true)}
 				>
 					Pick Default Agent in Settings
 				</button>
@@ -249,39 +274,48 @@ vi.mock("../room/settings/room-options-form", () => ({
 }));
 vi.mock("../conversation/composer/room-input", async () => {
 	const { useRoomSelector } = await import("../room/store/use-room-selector");
+	const { listRoomTools } = await import("../tools/mcp/mcp-utils");
+	const { saveAgentOverlay } = await import(
+		"../conversation/composer/use-composer-session"
+	);
 	return {
 		RoomInput: ({
-			options,
+			session,
 			room,
-			onMcpChange,
-			onWorkspaceChange,
-			onExitAgentHarness,
-			onSwitchToAgentHarness,
-			onDefaultAgentChange,
 			onPrompt,
-			workbenchPanels,
+			variant,
 		}: ComponentProps<typeof RoomInput>) => {
-			// the draft's mode, read as the real input does
+			const { options } = session;
+			const draft = variant.kind === "draft" ? variant : null;
+			/** Save the agent picker as the real one does. */
+			const save = (
+				workspace: { workspace_id: string; name: string } | null,
+				isDefaultAgent?: boolean,
+			) =>
+				saveAgentOverlay(session, {
+					mcp: options.mcp,
+					workspace,
+					isDefaultAgent,
+				});
+			// the draft's mode and agent tools, read as the real input does
 			const mode = useRoomSelector(room, (current) => current.mode);
+			const agentTools = useRoomSelector(
+				room,
+				(current) => current.agentTools,
+			);
 			return (
 				<>
-					{onDefaultAgentChange && (
+					{session.agent.kind === "savedOrDefault" && (
 						<>
 							<button
 								type="button"
-								onClick={() => {
-									onWorkspaceChange?.(null);
-									onDefaultAgentChange(true);
-								}}
+								onClick={() => save(null, true)}
 							>
 								Pick Default Agent
 							</button>
 							<button
 								type="button"
-								onClick={() => {
-									onWorkspaceChange?.(null);
-									onDefaultAgentChange(false);
-								}}
+								onClick={() => save(null, false)}
 							>
 								Pick No Agent
 							</button>
@@ -296,7 +330,7 @@ vi.mock("../conversation/composer/room-input", async () => {
 					<button
 						type="button"
 						onClick={() =>
-							workbenchPanels?.newRoomPanels?.onOpenPanel({
+							draft?.workbenchPanels.newRoomPanels.onOpenPanel({
 								kind: "connector",
 								service: "gmail",
 							})
@@ -308,15 +342,23 @@ vi.mock("../conversation/composer/room-input", async () => {
 						{options.workspace?.name ?? "Default"}
 					</output>
 					<output aria-label="Resources">
-						{options.mcp.map((item) => item.id).join(",")}
+						{listRoomTools(options.mcp, agentTools)
+							.map((item) => item.id)
+							.join(",")}
 					</output>
 					<button
 						type="button"
 						onClick={() =>
-							onMcpChange?.([
-								...options.mcp,
-								{ id: "local", type: "VECTOR", name: "Local" },
-							])
+							session.onOptionsChange({
+								mcp: [
+									...options.mcp,
+									{
+										id: "local",
+										type: "VECTOR",
+										name: "Local",
+									},
+								],
+							})
 						}
 					>
 						Add local
@@ -324,24 +366,21 @@ vi.mock("../conversation/composer/room-input", async () => {
 					<button
 						type="button"
 						onClick={() =>
-							onWorkspaceChange?.({
-								workspace_id: "alpha",
-								name: "Alpha",
-							})
+							save({ workspace_id: "alpha", name: "Alpha" })
 						}
 					>
 						Save Alpha
 					</button>
-					<button
-						type="button"
-						onClick={() => onWorkspaceChange?.(null)}
-					>
+					<button type="button" onClick={() => save(null)}>
 						Save default
 					</button>
-					<button type="button" onClick={onSwitchToAgentHarness}>
+					<button
+						type="button"
+						onClick={draft?.onSwitchToAgentHarness}
+					>
 						Agent
 					</button>
-					<button type="button" onClick={onExitAgentHarness}>
+					<button type="button" onClick={draft?.onExitAgentHarness}>
 						Chat
 					</button>
 					<button type="button" onClick={() => onPrompt("Hello", [])}>
@@ -390,7 +429,10 @@ beforeEach(() => {
 	forgetSessionNewChat();
 	root.theme.featureFlags.enableAgentHarness = true;
 	root.theme.featureFlags.modeFollowsAgent = false;
-	mocks.createRoom.mockResolvedValue({ roomId: "sent" });
+	mocks.createRoom.mockResolvedValue({
+		room: { roomId: "sent" },
+		firstMessage: Promise.resolve(null),
+	});
 	// preparing fails unless a test hands over a room, so sending creates one
 	mocks.createEmptyRoom.mockReset().mockRejectedValue(new Error("Offline"));
 });
@@ -480,10 +522,8 @@ test("selecting an agent and changing modes preserves its settings and the compo
 				workspace: { workspace_id: "alpha", name: "Alpha" },
 				instructions: "Edited instructions",
 				harnessType: undefined,
-				mcp: expect.arrayContaining([
-					expect.objectContaining({ id: "agent-tool" }),
-					expect.objectContaining({ id: "local" }),
-				]),
+				// the room's own; the backend adds the agent's
+				mcp: [expect.objectContaining({ id: "local" })],
 			}),
 			"alpha",
 			undefined,
@@ -573,10 +613,15 @@ test.each(["chat", "agent"] as const)(
 					instructions: "After opening files",
 					workspace: { workspace_id: "alpha", name: "Alpha" },
 					harnessType: mode === "agent" ? "semoss" : undefined,
-					mcp: [expect.objectContaining({ id: "agent-tool" })],
+					// the room's own, none left; the agent's are its agent tools
+					mcp: [],
 				}),
 			),
 		);
+		expect(room.agentTools.map((tool) => tool.id)).toEqual([
+			"agent-tool",
+			"local",
+		]);
 		expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(1);
 		expect(mocks.createRoom).not.toHaveBeenCalled();
 		expect(room.mode).toBe(mode);
@@ -596,7 +641,10 @@ test("a pending agent stays selected in Chat, and removing it ignores its late r
 	expect(mocks.createRoom).not.toHaveBeenCalled();
 	mocks.workspaceStatus = "ERROR";
 	fireEvent.click(screen.getByRole("button", { name: "Add local" }));
-	fireEvent.click(screen.getByRole("button", { name: "room:studio.retry" }));
+	// the failed preparation renders its Retry after the rejection settles
+	fireEvent.click(
+		await screen.findByRole("button", { name: "room:studio.retry" }),
+	);
 	expect(mocks.refreshWorkspace).toHaveBeenCalledTimes(1);
 	fireEvent.click(screen.getByRole("button", { name: "Save default" }));
 	mocks.workspaceStatus = "SUCCESS";
@@ -833,7 +881,10 @@ test("Retry after a failed preparation reopens the Workspace in the prepared roo
 		screen.getByRole("button", { name: "studio.openWorkspace" }),
 	);
 	await screen.findByRole("alert");
-	fireEvent.click(screen.getByRole("button", { name: "room:studio.retry" }));
+	// the failed preparation renders its Retry after the rejection settles
+	fireEvent.click(
+		await screen.findByRole("button", { name: "room:studio.retry" }),
+	);
 	await screen.findByRole("tab", { name: "room:workspacePlaces.files" });
 	expect(room.sidebar.isOpen).toBe(true);
 	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(2);
@@ -897,7 +948,10 @@ test("failed preparation keeps draft settings usable, and Retry reopens Settings
 		target: { value: "Keep after retry" },
 	});
 	mocks.createEmptyRoom.mockResolvedValueOnce(room);
-	fireEvent.click(screen.getByRole("button", { name: "room:studio.retry" }));
+	// the failed preparation renders its Retry after the rejection settles
+	fireEvent.click(
+		await screen.findByRole("button", { name: "room:studio.retry" }),
+	);
 	await screen.findByRole("tab", { name: "room:workspacePlaces.files" });
 	expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 	expect(
@@ -965,7 +1019,10 @@ test("retrying failed source preparation reopens the requested viewer", async ()
 	fireEvent.click(screen.getByRole("button", { name: "Open Gmail" }));
 	await waitFor(() => expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(2));
 	mocks.createEmptyRoom.mockResolvedValueOnce(createPreparedRoom());
-	fireEvent.click(screen.getByRole("button", { name: "room:studio.retry" }));
+	// the failed preparation renders its Retry after the rejection settles
+	fireEvent.click(
+		await screen.findByRole("button", { name: "room:studio.retry" }),
+	);
 	await screen.findByRole("tab", { name: "connectors:services.gmail" });
 	// the prepared room offers Files on its rail without opening it
 	expect(
@@ -978,7 +1035,10 @@ test("Activity prepares the room and opens its log, and Retry after a failure op
 	selectWorkspaceItem("workspacePlaces.activity");
 	await waitFor(() => expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(2));
 	mocks.createEmptyRoom.mockResolvedValueOnce(createPreparedRoom());
-	fireEvent.click(screen.getByRole("button", { name: "room:studio.retry" }));
+	// the failed preparation renders its Retry after the rejection settles
+	fireEvent.click(
+		await screen.findByRole("button", { name: "room:studio.retry" }),
+	);
 	await screen.findByRole("tab", { name: "room:workspacePlaces.activity" });
 	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(3);
 	// the prepared room offers Files on its rail without opening it
@@ -1085,5 +1145,71 @@ test("with no session chat or user default, the theme's mode and agent apply", a
 		expect(screen.getByLabelText("Mode")).toHaveTextContent("agent");
 	} finally {
 		root.theme.defaultRoomSettings = settings;
+	}
+});
+
+test("a link's knowledge joins the theme's default tools", async () => {
+	const pixel = mocks.pixel;
+	const defaultTools = root.theme.defaultTools;
+	const engine = [{ engine_id: "kb", engine_name: "Handbook" }];
+	mocks.pixel = (request) =>
+		request.startsWith("MyEngines")
+			? { status: "SUCCESS", refresh: vi.fn(), data: engine }
+			: pixel(request);
+	root.theme.defaultTools = [
+		{ id: "theme-tool", name: "Theme tool", type: "FUNCTION" },
+	];
+	mocks.searchParams = new URLSearchParams("knowledgeId=kb");
+	try {
+		render(<NewChatFromLink />);
+		await waitFor(() =>
+			expect(screen.getByLabelText("Resources")).toHaveTextContent(
+				"theme-tool,kb",
+			),
+		);
+	} finally {
+		mocks.pixel = pixel;
+		root.theme.defaultTools = defaultTools;
+	}
+});
+
+test("a theme that arrives after the page opens keeps the agent the chat starts with", async () => {
+	preferAgent("alpha");
+	const theme = root.theme;
+	const { rerender } = render(<NewChatFromLink />);
+	await waitFor(() =>
+		expect(screen.getByLabelText("Selected agent")).toHaveTextContent(
+			"Alpha",
+		),
+	);
+	// a server theme rebuilds the draft from its defaults
+	root.theme = { ...theme };
+	try {
+		rerender(<NewChatFromLink />);
+		await waitFor(() =>
+			expect(screen.getByLabelText("Selected agent")).toHaveTextContent(
+				"Alpha",
+			),
+		);
+		expect(screen.getByLabelText("Resources")).toHaveTextContent(
+			"agent-tool,local",
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Send" }));
+		await waitFor(() =>
+			expect(mocks.createRoom).toHaveBeenCalledWith(
+				"agent",
+				"Hello",
+				[],
+				expect.objectContaining({
+					workspace: { workspace_id: "alpha", name: "Alpha" },
+					instructions: "Agent instructions",
+				}),
+				"alpha",
+				undefined,
+				expect.any(Function),
+			),
+		);
+	} finally {
+		root.theme = theme;
 	}
 });

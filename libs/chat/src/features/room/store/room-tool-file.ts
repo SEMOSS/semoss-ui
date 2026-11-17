@@ -43,9 +43,7 @@ export const parseMcpFile = (output: unknown): unknown => {
 export const readRoomToolFile = async (room: RoomStore): Promise<unknown> => {
 	const response = await room.runRoomPixel<[unknown]>(
 		INSIGHT_ASSETS.read(ROOM_TOOL_FILE_PATH),
-		false,
-		false,
-		false,
+		{ showLoading: false, setErrorOnFail: false, throwOnError: false },
 	);
 	if (response.errors.length > 0) {
 		if (response.errors.some(isMissingFileError)) {
@@ -73,10 +71,8 @@ export const saveRoomToolFile = async (
 		/<\/encode>/gi,
 		"<\\/encode>",
 	);
-	await room.runRoomPixel(
-		INSIGHT_ASSETS.save(ROOM_TOOL_FILE_PATH, text),
-		false,
-		false,
-		true,
-	);
+	await room.runRoomPixel(INSIGHT_ASSETS.save(ROOM_TOOL_FILE_PATH, text), {
+		showLoading: false,
+		setErrorOnFail: false,
+	});
 };

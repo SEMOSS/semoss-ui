@@ -2,6 +2,7 @@ import { Env } from "../env";
 import { post } from "../utility";
 import { runPixel } from "./base";
 import { type PixelMessages, readPixelMessages } from "./pixel-messages";
+import { throwOnPixelErrors } from "./playground-room";
 
 /**
  * Upload file(s) to an engine
@@ -132,4 +133,116 @@ export const restartEngine = async (
 	}
 
 	return readPixelMessages(response.pixelReturn[0]);
+};
+
+/**
+ * Favorite an engine for the signed in user, or unfavorite it
+ * (`/api/auth/engine/setEngineFavorite`).
+ *
+ * @param engineId - The engine.
+ * @param isFavorite - Whether it is a favorite.
+ * @throws When the request fails.
+ */
+export const setEngineFavorite = async (
+	engineId: string,
+	isFavorite: boolean,
+): Promise<void> => {
+	await post<{ success: boolean }>(
+		`${Env.MODULE}/api/auth/engine/setEngineFavorite`,
+		{ engineId: engineId, isFavorite: isFavorite },
+		{},
+	);
+};
+
+/** A model the signed in user can use, as `MyEngines` lists it. Field names are the backend's. */
+export interface ModelEngine {
+	/** The model's id. */
+	engine_id: string;
+	/** The model's name. */
+	engine_name: string;
+	/** The name to show, when it differs from `engine_name`. */
+	engine_display_name?: string;
+	/** The engine's type, `MODEL`. */
+	engine_type: string;
+}
+
+/**
+ * The pixel that reads the text generation models the user can use.
+ *
+ * @param filter - A clause that narrows the list, such as `engine=["id"]`.
+ * @returns The pixel.
+ */
+const listModelsPixel = (filter?: string): string =>
+	`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]${filter ? `, ${filter}` : ""});`;
+
+/**
+ * Read the text generation models the signed in user can use (`MyEngines`
+ * over MODEL engines tagged `text-generation`).
+ *
+ * @param insightId - The insight to run in.
+ * @param options.filterWord - Only the models whose name or id matches it.
+ * @returns The models, in the order the backend lists them.
+ * @throws When the backend reports an error.
+ */
+export const listModels = async <Model extends ModelEngine = ModelEngine>(
+	insightId: string,
+	options: { filterWord?: string } = {},
+): Promise<Model[]> => {
+	const { filterWord } = options;
+	const { pixelReturn } = throwOnPixelErrors(
+		await runPixel<[Model[]]>(
+			listModelsPixel(
+				filterWord === undefined
+					? undefined
+					: `filterWord=${JSON.stringify(filterWord)}`,
+			),
+			insightId,
+		),
+	);
+	return pixelReturn[0]?.output ?? [];
+};
+
+/**
+ * Read one text generation model the signed in user can use, by its id.
+ *
+ * @param insightId - The insight to run in.
+ * @param engineId - The model's id.
+ * @returns The model, or undefined when the user cannot use one with that id.
+ * @throws When the backend reports an error.
+ */
+export const getModel = async <Model extends ModelEngine = ModelEngine>(
+	insightId: string,
+	engineId: string,
+): Promise<Model | undefined> => {
+	const { pixelReturn } = throwOnPixelErrors(
+		await runPixel<[Model[]]>(
+			listModelsPixel(`engine=${JSON.stringify([engineId])}`),
+			insightId,
+		),
+	);
+	return pixelReturn[0]?.output?.find(
+		(model) => model.engine_id === engineId,
+	);
+};
+
+/**
+ * Read an engine's details (`EngineInfo`), such as a model's, a database's or
+ * a function's.
+ *
+ * @param insightId - The insight to run in.
+ * @param engineId - The engine.
+ * @returns Its details, field names as the backend sends them.
+ * @throws When the backend reports an error, as when the user cannot see it.
+ */
+export const getEngineInfo = async (
+	insightId: string,
+	engineId: string,
+): Promise<Record<string, unknown>> => {
+	const { pixelReturn } = throwOnPixelErrors(
+		await runPixel<[Record<string, unknown>]>(
+			`EngineInfo(engine=["${engineId}"]);`,
+			insightId,
+		),
+	);
+	return pixelReturn[0]?.output ?? {};
 };

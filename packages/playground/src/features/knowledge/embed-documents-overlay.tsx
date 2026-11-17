@@ -3,7 +3,7 @@
 import { FileIcon, XIcon } from "lucide-react";
 import { useId, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { throwOnPixelErrors } from "@semoss/sdk";
+import { createEmbeddingsFromDocuments } from "@semoss/sdk";
 import { useSessionInsight } from "@semoss/sdk/react";
 import {
 	Button,
@@ -36,7 +36,7 @@ export const EmbedDocumentsOverlay = ({
 	onClose,
 }: EmbedDocumentsOverlayProps) => {
 	const { t } = useTranslation(["knowledge", "common"]);
-	const { run, upload } = useSessionInsight();
+	const { withInsight, upload } = useSessionInsight();
 	const fileInputId = useId();
 	const [files, setFiles] = useState<File[]>([]);
 	const [isEmbedding, setIsEmbedding] = useState(false);
@@ -72,28 +72,16 @@ export const EmbedDocumentsOverlay = ({
 			return;
 		}
 
-		// Kept outside the try so a failure can log what the pixel returned
-		let embeddingsResponse: Awaited<ReturnType<typeof run>> | undefined;
 		setIsEmbedding(true);
 		try {
-			// Upload the files
 			const uploaded = await upload(files);
-
-			// Create the embeddings
-			const filePaths = uploaded
-				.map(({ fileLocation }) => `"${fileLocation}"`)
-				.join(", ");
-
-			embeddingsResponse = await run<
-				[
-					{
-						database_id: string;
-					},
-				]
-			>(`CreateEmbeddingsFromDocuments(
-				engine=["${knowledgeId}"],
-				filePaths=[${filePaths}]
-			);`).then(throwOnPixelErrors);
+			await withInsight((insightId) =>
+				createEmbeddingsFromDocuments(
+					insightId,
+					knowledgeId,
+					uploaded.map(({ fileLocation }) => fileLocation),
+				),
+			);
 
 			toast.success(t("embedMessages.embedSuccess"));
 			setFiles([]);
@@ -101,7 +89,6 @@ export const EmbedDocumentsOverlay = ({
 		} catch (e) {
 			toast.error(t("embedMessages.embedFailed"));
 			console.error(e);
-			console.log(embeddingsResponse?.pixelReturn[0]?.output);
 		} finally {
 			setIsEmbedding(false);
 		}
@@ -193,7 +180,7 @@ export const EmbedDocumentsOverlay = ({
 						</button>
 
 						{files.length > 0 && (
-							<div className="mt-3 max-h-[200px] overflow-y-auto pe-2 w-full">
+							<div className="mt-3 max-h-50 overflow-y-auto pe-2 w-full">
 								<div className="space-y-2">
 									{files.map((file, index) => (
 										<div
