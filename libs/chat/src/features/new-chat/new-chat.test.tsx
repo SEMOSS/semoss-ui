@@ -9,18 +9,18 @@ import {
 import type { ComponentProps, ReactNode } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { fakeStore } from "../../test/fake-store";
-import { DEFAULT_CHAT_THEME } from "../chat-config/chat-theme";
-import type { RoomInput } from "../composer/room-input";
-import type { ContextItemsStore } from "../conversation/context-items.store";
-import { useContextItems } from "../conversation/use-context-items";
+import { DEFAULT_CHAT_THEME } from "../chat/config/chat-theme";
 import {
 	forgetSessionNewChat,
 	readSessionNewChat,
 	writeSessionNewChat,
-} from "../new-chat-preferences/new-chat-preferences";
-import { RoomStore } from "../room/room.store";
-import type { RoomOptionsForm } from "../room-settings/room-options-form";
-import { ROOM_PANEL_COMPONENTS } from "../workbench/room-panel.components";
+} from "../chat/config/new-chat-preferences";
+import type { ContextItemsStore } from "../conversation/attachments/context-items.store";
+import { useContextItems } from "../conversation/attachments/use-context-items";
+import type { RoomInput } from "../conversation/composer/room-input";
+import type { RoomOptionsForm } from "../room/settings/room-options-form";
+import { RoomStore } from "../room/store/room.store";
+import { ROOM_PANEL_COMPONENTS } from "../workbench/panels/room-panel.components";
 import { NewChat } from "./new-chat";
 
 const mocks = vi.hoisted(() => ({
@@ -94,8 +94,8 @@ vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 	getI18n: () => ({ t: (key: string) => key }),
 }));
-vi.mock("../connectors/connector-tools", async (original) => ({
-	...(await original<typeof import("../connectors/connector-tools")>()),
+vi.mock("../connectors/store/connector-tools", async (original) => ({
+	...(await original<typeof import("../connectors/store/connector-tools")>()),
 	readUserConnectorTools: vi.fn().mockResolvedValue(null),
 	syncRoomConnectorTools: vi.fn().mockResolvedValue(undefined),
 }));
@@ -110,7 +110,7 @@ vi.mock("@semoss/sdk/react", async (original) => ({
 	useSession: <T,>(selector: (state: typeof mocks.session) => T) =>
 		selector(mocks.session),
 }));
-vi.mock("../chat-config/use-chat-config", () => ({
+vi.mock("../chat/config/use-chat-config", () => ({
 	useChatConfig: () => ({
 		theme: root.theme,
 		navigation: {
@@ -118,21 +118,21 @@ vi.mock("../chat-config/use-chat-config", () => ({
 		},
 	}),
 }));
-vi.mock("../chat/use-chat-session", () => ({
+vi.mock("../chat/provider/use-chat-session", () => ({
 	useChatSession: () => ({ chat }),
 }));
 vi.mock("@semoss/ui/next", async (original) => ({
 	...(await original<typeof import("@semoss/ui/next")>()),
 	useTheme: () => ({ theme: "light" }),
 }));
-vi.mock("../workbench/room-panel.components", async () => {
-	const { ROOM_PANEL_TYPES } = await import("../room/room-sidebar");
+vi.mock("../workbench/panels/room-panel.components", async () => {
+	const { ROOM_PANEL_TYPES } = await import("../room/store/room-sidebar");
 	const { ROOM_CONFIGURATION_PANEL } = await import(
-		"../workbench/room-configuration-panel"
+		"../workbench/panels/room-configuration-panel"
 	);
 	const { FILE_PANEL_TYPES } = await import("@semoss/panels");
 	const { useNextMessageRoom } = await import(
-		"../conversation/next-message-room.context"
+		"../conversation/attachments/next-message-room.context"
 	);
 	const Source = () => {
 		const draft = useNextMessageRoom();
@@ -177,13 +177,13 @@ vi.mock("../workbench/room-panel.components", async () => {
 		},
 	};
 });
-vi.mock("../composer/file-drop.context", () => ({
+vi.mock("../conversation/attachments/file-drop.context", () => ({
 	FileDropProvider: ({ children }: { children: ReactNode }) => children,
 }));
 vi.mock("../conversation/drop-highlight", () => ({
 	DropHighlight: ({ children }: { children: ReactNode }) => children,
 }));
-vi.mock("../conversation/room-layout", () => ({
+vi.mock("../room/layout/room-layout", () => ({
 	RoomLayout: ({
 		children,
 		workbench,
@@ -202,7 +202,7 @@ vi.mock("../conversation/room-layout", () => ({
 		</>
 	),
 }));
-vi.mock("../room-settings/room-options-form", () => ({
+vi.mock("../room/settings/room-options-form", () => ({
 	RoomOptionsForm: ({
 		options,
 		onOptionsChange,
@@ -247,8 +247,8 @@ vi.mock("../room-settings/room-options-form", () => ({
 		</>
 	),
 }));
-vi.mock("../composer/room-input", async () => {
-	const { useRoomSelector } = await import("../room/use-room-selector");
+vi.mock("../conversation/composer/room-input", async () => {
+	const { useRoomSelector } = await import("../room/store/use-room-selector");
 	return {
 		RoomInput: ({
 			options,

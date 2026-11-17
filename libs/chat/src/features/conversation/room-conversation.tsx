@@ -1,9 +1,9 @@
 import { cn } from "@semoss/ui/next";
-import { useFileDrop } from "../composer/file-drop.context";
-import { RoomComposer } from "../composer/room-composer";
-import { useRoomOrContext } from "../room/room.context";
-import type { RoomStore } from "../room/room.store";
-import { RoomMessages } from "./room-messages";
+import { useRoomOrContext } from "../room/scope/room.context";
+import type { RoomStore } from "../room/store/room.store";
+import { useFileDrop } from "./attachments/file-drop.context";
+import { RoomComposer } from "./composer/room-composer";
+import { RoomMessages } from "./messages/room-messages";
 
 /** Props for {@link RoomConversation}. */
 interface RoomConversationProps {

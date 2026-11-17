@@ -3,13 +3,13 @@ import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import type { FileExplorerHost } from "@semoss/panels";
-import { DEFAULT_CHAT_THEME } from "../chat-config/chat-theme";
-import { NextMessageRoomProvider } from "../conversation/next-message-room.context";
-import { RoomLayout } from "../conversation/room-layout";
-import { RoomStore } from "../room/room.store";
-import { useRoomSelector } from "../room/use-room-selector";
+import { DEFAULT_CHAT_THEME } from "../chat/config/chat-theme";
+import { NextMessageRoomProvider } from "../conversation/attachments/next-message-room.context";
+import { RoomLayout } from "../room/layout/room-layout";
+import { RoomStore } from "../room/store/room.store";
+import { useRoomSelector } from "../room/store/use-room-selector";
+import { RoomWorkbenchToggle } from "./rail/room-workbench-toggle";
 import { RoomWorkbench } from "./room-workbench";
-import { RoomWorkbenchToggle } from "./room-workbench-toggle";
 
 const mocks = vi.hoisted(() => ({
 	explorerHost: vi.fn<(host: FileExplorerHost) => void>(),

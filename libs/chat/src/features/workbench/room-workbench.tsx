@@ -6,13 +6,13 @@ import {
 } from "@semoss/panels";
 import { useIsMobile } from "@semoss/ui/next";
 import { Workbench, WorkbenchProvider } from "@semoss/workbench";
-import { normalizeFolderPath } from "../chat-tools/folders/folder-path";
-import { useNextMessageRoom } from "../conversation/next-message-room.context";
-import { RoomProvider, useRoomOrContext } from "../room/room.context";
-import type { RoomStore } from "../room/room.store";
-import { useRoomSelector } from "../room/use-room-selector";
-import { RoomWorkbenchRail } from "./room-workbench-rail";
-import type { NewRoomWorkbenchPanels } from "./use-workbench-panels";
+import { useNextMessageRoom } from "../conversation/attachments/next-message-room.context";
+import { RoomProvider, useRoomOrContext } from "../room/scope/room.context";
+import type { RoomStore } from "../room/store/room.store";
+import { useRoomSelector } from "../room/store/use-room-selector";
+import { normalizeFolderPath } from "../tools/folders/folder-path";
+import { RoomWorkbenchRail } from "./rail/room-workbench-rail";
+import type { NewRoomWorkbenchPanels } from "./rail/use-workbench-panels";
 
 /** Props for {@link RoomWorkbench}. */
 interface RoomWorkbenchProps {

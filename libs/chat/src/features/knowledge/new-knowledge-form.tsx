@@ -20,8 +20,8 @@ import {
 	zodResolver,
 } from "@semoss/ui/next";
 import type { MCPConfig } from "../../types";
-import { useChatConfig } from "../chat-config/use-chat-config";
-import { FilePreviewGrid } from "../composer/file-preview-grid";
+import { useChatConfig } from "../chat/config/use-chat-config";
+import { FilePreviewGrid } from "../conversation/attachments/file-preview-grid";
 
 /** Props for {@link NewKnowledgeForm}. */
 interface NewKnowledgeFormProps {

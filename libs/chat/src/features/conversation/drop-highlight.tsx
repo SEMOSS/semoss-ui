@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@semoss/ui/next";
-import { useFileDrop } from "../composer/file-drop.context";
+import { useFileDrop } from "./attachments/file-drop.context";
 
 /** Props for {@link DropHighlight}. */
 interface DropHighlightProps {
