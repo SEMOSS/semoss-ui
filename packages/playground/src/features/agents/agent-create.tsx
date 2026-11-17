@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { createAgent } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import { useSessionPixel } from "@semoss/sdk/react";
 import {
@@ -16,6 +15,7 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
+import { createAgent } from "@/features/agents/agent-actions";
 import { getPlaygroundAgentLinks } from "@/features/agents/agent-links";
 import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 

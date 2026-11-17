@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { decideAgentToolAction } from "../../conversation/store/agent-harness";
-import type { ToolStore } from "../../conversation/store/tool.store";
+import type { ToolStore } from "../../room/store/tool.store";
+import { decideAgentToolAction } from "../../room/turns/agent-turn-runner";
 import { createToolViewDecisions } from "./tool-view-decisions";
 
-vi.mock("../../conversation/store/agent-harness", () => ({
+vi.mock("../../room/turns/agent-turn-runner", () => ({
 	decideAgentToolAction: vi.fn(),
 }));
 

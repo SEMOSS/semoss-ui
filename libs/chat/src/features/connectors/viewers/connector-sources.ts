@@ -1,12 +1,12 @@
 import type { ConnectorViewerService } from "@semoss/connectors";
 import type { ConnectorBrand } from "@semoss/shared";
-import { ROOM_PANEL_TYPES } from "../../room/store/room-sidebar";
+import { ROOM_PANEL_TYPES } from "../../room/store/room-workbench-layout";
 import type {
 	ConnectorProviderId,
 	ConnectorServiceId,
-} from "../store/connector.catalog";
+} from "../store/connector-catalog";
 
-/** A viewer the room sidebar can show. */
+/** A viewer the room Workbench can show. */
 export interface ConnectorSource {
 	/** The service the shared viewer shows. */
 	service: ConnectorViewerService;
@@ -17,7 +17,7 @@ export interface ConnectorSource {
 	 * is offered, so the viewers match what the assistant can reach.
 	 */
 	requires: ConnectorServiceId;
-	/** The sidebar panel that shows it. */
+	/** The Workbench panel that shows it. */
 	panelType: string;
 	/**
 	 * The app whose logo stands for it: on its tab, on the Workbench rail, and

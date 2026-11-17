@@ -7,6 +7,7 @@ import {
 	DropdownMenuRadioItem,
 	DropdownMenuSeparator,
 } from "@semoss/ui/next";
+import { useChatCustomization } from "../../chat/config/use-chat-customization";
 import type { RoomStore } from "../../room/store/room.store";
 import type { AgentChoice } from "../../tools/mcp/agent-choice";
 import { getAgentLabel } from "../../tools/mcp/mcp-utils";
@@ -14,7 +15,7 @@ import { RoomInputMenuAttachFolder } from "./room-input-menu-attach-folder";
 import { RoomInputMenuMCP } from "./room-input-menu-mcp";
 import { RoomInputMenuUpload } from "./room-input-menu-upload";
 
-/** Props for {@link RoomComposerMenu}, also the props of a host's replacement menu. */
+/** Props for {@link RoomComposerMenu}, also what a host's `customize.composerMenu` is handed. */
 export interface RoomComposerMenuProps {
 	/** Opens or closes the menu. */
 	onOpenChange: (isOpen: boolean) => void;
@@ -50,22 +51,26 @@ export interface RoomComposerMenuProps {
  * The items of the composer's plus menu, shared by a new chat and an open
  * room: upload, a folder from the user's machine where the host can reach
  * one, knowledge, and toolboxes, then, while creating a chat, the
- * Chat and Agent choice and the agent picker.
+ * Chat and Agent choice and the agent picker. The host's
+ * `ChatConfig.customize.composerMenu` is handed these items and returns the
+ * menu's.
  */
-export function RoomComposerMenu({
-	onOpenChange,
-	onOpenMcpOverlay,
-	options,
-	agentTools,
-	disabled,
-	onSelectChat,
-	onSelectAgent,
-	isAgentMode,
-	agent,
-	onAttachFolder,
-	isAttachingFolder = false,
-}: RoomComposerMenuProps) {
+export function RoomComposerMenu(props: RoomComposerMenuProps) {
+	const {
+		onOpenChange,
+		onOpenMcpOverlay,
+		options,
+		agentTools,
+		disabled,
+		onSelectChat,
+		onSelectAgent,
+		isAgentMode,
+		agent,
+		onAttachFolder,
+		isAttachingFolder = false,
+	} = props;
 	const { t } = useTranslation("room");
+	const customize = useChatCustomization().composerMenu;
 	const close = () => onOpenChange(false);
 	// Close the menu as the picker opens, so focus moves to the picker.
 	const openPicker = (tab: "AGENT" | "KNOWLEDGE" | "TOOLBOX") => {
@@ -81,7 +86,7 @@ export function RoomComposerMenu({
 	const agentLabel = agentName
 		? t("modes.selectedAgent", { name: agentName })
 		: t("menuWorkspace.selectAgent");
-	return (
+	const items = (
 		<>
 			<RoomInputMenuUpload disabled={disabled} onSelect={close} />
 			{onAttachFolder ? (
@@ -151,4 +156,5 @@ export function RoomComposerMenu({
 			)}
 		</>
 	);
+	return customize ? customize(items, props) : items;
 }

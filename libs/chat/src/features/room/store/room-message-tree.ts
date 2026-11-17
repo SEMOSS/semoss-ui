@@ -7,8 +7,9 @@ import type {
 	ResponsePixelMessage,
 	ToolOutcome,
 } from "../../../types";
-import type { AbstractMessageStore } from "../../conversation/store/abstract-message.store";
-import { InputMessageStore } from "../../conversation/store/input-message.store";
+import { STREAMING_PLACEHOLDER_ID } from "../../tools/mcp/mcp-constants";
+import type { AbstractMessageStore } from "./abstract-message.store";
+import { InputMessageStore } from "./input-message.store";
 import {
 	addMessages,
 	buildMessageTree,
@@ -25,19 +26,18 @@ import {
 	toMessageData,
 	updateMessage,
 	updateParts,
-} from "../../conversation/store/message-map";
-import { ResponseMessageStore } from "../../conversation/store/response-message.store";
-import {
-	initialToolData,
-	isToolSettled,
-	type ToolData,
-	ToolStore,
-	toToolJson,
-} from "../../conversation/store/tool.store";
-import { STREAMING_PLACEHOLDER_ID } from "../../tools/mcp/mcp-constants";
+} from "./message-map";
+import { ResponseMessageStore } from "./response-message.store";
 import type { RoomStore } from "./room.store";
 import { createRootMessage } from "./room-load";
 import type { RoomSnapshot } from "./room-snapshot";
+import {
+	initialToolData,
+	type ToolData,
+	ToolStore,
+	toToolJson,
+} from "./tool.store";
+import { isToolSettled } from "./tool-status";
 
 /** Counts the messages made in this page, so every key is new. */
 let messageKeyCount = 0;

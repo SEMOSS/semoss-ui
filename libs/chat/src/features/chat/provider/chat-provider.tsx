@@ -13,17 +13,15 @@ interface ChatProviderProps {
 }
 
 /**
- * Everything chat UI needs, for a host that has nothing to put between the
- * session and the config: it makes the chat store and provides both.
+ * Everything chat UI needs: it makes the chat store from the host's config
+ * and provides both. A host that reads the store in the same component that
+ * provides it calls `useCreateChatStore(config)` and renders
+ * `ChatSessionProvider` and `ChatConfigProvider` itself.
  *
  * @returns The chat store's and the config's providers around `children`.
  */
 export const ChatProvider = ({ config, children }: ChatProviderProps) => {
-	const store = useCreateChatStore(
-		config.theme,
-		config.newChatDefaults,
-		config.localFolders,
-	);
+	const store = useCreateChatStore(config);
 	return (
 		<ChatSessionProvider store={store}>
 			<ChatConfigProvider config={config}>{children}</ChatConfigProvider>

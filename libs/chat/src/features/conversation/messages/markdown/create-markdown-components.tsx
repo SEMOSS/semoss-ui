@@ -135,7 +135,7 @@ export const createMarkdownComponents = (
 						type="button"
 						className="cursor-pointer font-medium text-base text-primary underline underline-offset-1"
 						onClick={() => {
-							room.openSidebarFileExplorer(path);
+							room.openWorkbenchFileExplorer(path);
 						}}
 					>
 						{children}
@@ -150,8 +150,8 @@ export const createMarkdownComponents = (
 					type="button"
 					className="cursor-pointer font-medium text-base text-primary underline underline-offset-1"
 					onClick={() => {
-						room.openSidebarFileExplorer();
-						room.openFileSidebarPanel(path, filename);
+						room.openWorkbenchFileExplorer();
+						room.openWorkbenchFilePanel(path, filename);
 					}}
 				>
 					{children}

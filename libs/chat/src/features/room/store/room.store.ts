@@ -30,29 +30,33 @@ import type {
 } from "../../../types";
 import { ConnectorsStore } from "../../connectors/store/connectors.store";
 import { ContextItemsStore } from "../../conversation/attachments/context-items.store";
-import type { AbstractMessageStore } from "../../conversation/store/abstract-message.store";
+import { RoomLocalFoldersStore } from "../../local-folders/store/room-local-folders.store";
+import { ChatTools } from "../../tools/chat-tools/chat-tools";
+import { mergeRoomClientTools } from "../../tools/chat-tools/room-client-tools";
+import { NEW_INSIGHT_ID } from "../../tools/mcp/mcp-constants";
 import {
 	AgentTurnRunner,
 	reconstructAllSubagents,
-} from "../../conversation/store/agent-harness";
-import { ChatTurnRunner } from "../../conversation/store/chat-turn-runner";
-import { InputMessageStore } from "../../conversation/store/input-message.store";
+} from "../turns/agent-turn-runner";
+import { ChatTurnRunner } from "../turns/chat-turn-runner";
+import {
+	type StreamHandlers,
+	StreamJobController,
+	type StreamOptions,
+} from "../turns/stream-job-controller";
+import type { TurnRunner } from "../turns/turn-runner";
+import type { AbstractMessageStore } from "./abstract-message.store";
+import { InputMessageStore } from "./input-message.store";
 import type {
 	CancelCommitOutput,
 	MessageData,
 	MessageKey,
-} from "../../conversation/store/message-map";
-import type { ResponseMessageStore } from "../../conversation/store/response-message.store";
+} from "./message-map";
+import type { ResponseMessageStore } from "./response-message.store";
 import {
 	createInputPlaceholder,
 	createResponsePlaceholder,
-} from "../../conversation/store/response-placeholder";
-import type { ToolData, ToolStore } from "../../conversation/store/tool.store";
-import type { TurnRunner } from "../../conversation/store/turn-runner";
-import { RoomLocalFoldersStore } from "../../local-folders/store/room-local-folders.store";
-import { mergeRoomClientTools } from "../../tools/client-tools/room-client-tools";
-import { ChatToolsStore } from "../../tools/default-tools/chat-tools.store";
-import { NEW_INSIGHT_ID } from "../../tools/mcp/mcp-constants";
+} from "./response-placeholder";
 import { RoomAgentTools } from "./room-agent-tools";
 import {
 	type CompactionStrategy,
@@ -61,10 +65,6 @@ import {
 import { findActiveModelId, mergeAgentIntoRoom } from "./room-load";
 import { RoomMessageTree, redecorateTools } from "./room-message-tree";
 import { RoomRequests } from "./room-requests";
-import {
-	createRoomSidebarSnapshot,
-	RoomSidebar,
-} from "./room-sidebar-controller";
 import {
 	INITIAL_ROOM,
 	type RoomOptions,
@@ -80,10 +80,10 @@ import {
 	uploadTurnFiles,
 } from "./room-turn-files";
 import {
-	type StreamHandlers,
-	StreamJobController,
-	type StreamOptions,
-} from "./stream-job-controller";
+	createRoomWorkbenchSnapshot,
+	RoomWorkbenchController,
+} from "./room-workbench-controller";
+import type { ToolData, ToolStore } from "./tool.store";
 
 export type { RoomSnapshot, RoomStoreOptions } from "./room-snapshot";
 
@@ -92,7 +92,7 @@ export type { RoomSnapshot, RoomStoreOptions } from "./room-snapshot";
  * that load it, send its messages, and run its pixels. Read it in React with
  * `useRoomSelector`. The room owns one snapshot and its collaborators, each
  * writing only its part through the room: the message tree and its views
- * (`RoomMessageTree`), the Workspace dock (`RoomSidebar`), the options'
+ * (`RoomMessageTree`), the Workspace dock (`RoomWorkbenchController`), the options'
  * persistence (`RoomStoredOptions`), the agent's tools (`RoomAgentTools`),
  * and its requests (`RoomRequests`, `StreamJobController`). The room keeps
  * every public name, as a delegate where the work moved.
@@ -132,7 +132,7 @@ export class RoomStore {
 	});
 
 	/** The room's Workspace dock and the panels it opens. */
-	private readonly sidebarController: RoomSidebar;
+	private readonly workbenchController: RoomWorkbenchController;
 
 	/** Reads the tools the room's agent brings whenever its agent changes. */
 	private readonly agentToolsSync = new RoomAgentTools({
@@ -159,7 +159,7 @@ export class RoomStore {
 	 * calls that wait for them. Its own store with its own subscribers, like
 	 * the dock, and so are the two below.
 	 */
-	readonly chatTools: ChatToolsStore;
+	readonly chatTools: ChatTools;
 
 	/** The connectors switched on for the room and the accounts they sign in with. */
 	readonly connectors: ConnectorsStore;
@@ -195,7 +195,7 @@ export class RoomStore {
 			localFolders,
 		} = options;
 		this._theme = theme;
-		const sidebarSnapshot = createRoomSidebarSnapshot({
+		const workbenchSnapshot = createRoomWorkbenchSnapshot({
 			insightId,
 			includeFiles,
 			panelComponents,
@@ -204,9 +204,9 @@ export class RoomStore {
 			...INITIAL_ROOM,
 			roomId,
 			insightId,
-			sidebarSnapshot,
+			workbenchSnapshot,
 		});
-		this.chatTools = new ChatToolsStore(this);
+		this.chatTools = new ChatTools(this);
 		this.connectors = new ConnectorsStore(this);
 		this.contextItems = new ContextItemsStore();
 		this.localFolders = localFolders
@@ -226,28 +226,28 @@ export class RoomStore {
 					onFilesChanged: this.handleLocalFilesChanged,
 				})
 			: null;
-		this.sidebarController = new RoomSidebar(
+		this.workbenchController = new RoomWorkbenchController(
 			{
 				getInsightId: () => this.snapshot.insightId,
 				getTools: () => this.snapshot.tools,
 				getTool: (toolId) => this.getTool(toolId),
-				setOpen: (isOpen) => this._setSidebarOpen(isOpen),
+				setOpen: (isOpen) => this._setWorkbenchOpen(isOpen),
 				setSnapshot: (snapshot) =>
-					this.state.update({ sidebarSnapshot: snapshot }),
+					this.state.update({ workbenchSnapshot: snapshot }),
 				connectors: this.connectors,
 			},
-			{ snapshot: sidebarSnapshot, panelComponents, includeFiles },
+			{ snapshot: workbenchSnapshot, panelComponents, includeFiles },
 		);
 	}
 
 	/**
-	 * Stop the room's own subscriptions: the sidebar and connector watchers,
+	 * Stop the room's own subscriptions: the Workbench and connector watchers,
 	 * and forget its agent runs. The owner calls it once it drops the room; a
 	 * disposed room no longer reacts to its dock or its connectors. A running
 	 * reply is not stopped.
 	 */
 	dispose = (): void => {
-		this.sidebarController.dispose();
+		this.workbenchController.dispose();
 		this.agentTurns.dispose();
 		this.localFolders?.dispose();
 	};
@@ -330,21 +330,21 @@ export class RoomStore {
 	}
 
 	/**
-	 * The dock backing the sidebar, owned by the room so panels open from
-	 * outside React and survive the sidebar closing. Read it to drive the
-	 * sidebar from React (`useStore(room.workbench, …)`).
+	 * The dock backing the Workbench, owned by the room so panels open from
+	 * outside React and survive the Workbench closing. Read it to drive the
+	 * Workbench from React (`useStore(room.workbench, …)`).
 	 */
 	get workbench(): StoreApi<WorkbenchState> {
-		return this.sidebarController.workbench;
+		return this.workbenchController.workbench;
 	}
 
 	/**
-	 * The arrangement shared by the store and every sidebar mount: the shell
+	 * The arrangement shared by the store and every Workbench mount: the shell
 	 * must start from this same reference, so mounting it does not reset tabs
 	 * opened since.
 	 */
-	get sidebarSnapshot(): WorkbenchSnapshot {
-		return this.snapshot.sidebarSnapshot;
+	get workbenchSnapshot(): WorkbenchSnapshot {
+		return this.snapshot.workbenchSnapshot;
 	}
 
 	/** The room's id. */
@@ -487,8 +487,8 @@ export class RoomStore {
 	}
 
 	/** The Workspace's on-screen state. */
-	get sidebar() {
-		return this.snapshot.sidebar;
+	get workbenchPane() {
+		return this.snapshot.workbenchPane;
 	}
 
 	// Setters
@@ -579,7 +579,7 @@ export class RoomStore {
 				{ showLoading: false },
 			);
 			this.state.update({ insightId: loaded.insightId });
-			this.sidebarController.syncFileMode();
+			this.workbenchController.syncFileMode();
 			// the room's tool file can be read now, unless it was just created
 			void this.connectors.restore({ isNew: isNew });
 
@@ -772,68 +772,69 @@ export class RoomStore {
 	): PixelMessageSubagentPart["subagent"] | undefined =>
 		this.tree.getSubagentPart(subagentId);
 
-	// Sidebar: the dock is the sidebar controller's (`RoomSidebar`)
+	// Workbench: the dock is the Workbench controller's (`RoomWorkbenchController`)
 
-	/** The file scope every file panel in this sidebar is opened in. */
+	/** The file scope every file panel in this Workbench is opened in. */
 	get fileMode() {
-		return this.sidebarController.fileMode;
+		return this.workbenchController.fileMode;
 	}
 
-	/** Reveal a sidebar panel, opening the sidebar; see `RoomSidebar.openPanel`. */
-	openSidebarPanel = (
+	/** Reveal a Workbench panel, opening the Workbench; see `RoomWorkbenchController.openPanel`. */
+	openWorkbenchPanel = (
 		type: WorkbenchPanelType,
 		config: WorkbenchPanelParams = {},
 		name?: string,
-	): WorkbenchPanelId => this.sidebarController.openPanel(type, config, name);
+	): WorkbenchPanelId =>
+		this.workbenchController.openPanel(type, config, name);
 
-	/** Adopt a draft's arrangement before the first mount; see `RoomSidebar.restoreLayout`. */
-	restoreSidebarLayout = (snapshot: WorkbenchSnapshot): void =>
-		this.sidebarController.restoreLayout(snapshot);
+	/** Adopt a draft's arrangement before the first mount; see `RoomWorkbenchController.restoreLayout`. */
+	restoreWorkbenchLayout = (snapshot: WorkbenchSnapshot): void =>
+		this.workbenchController.restoreLayout(snapshot);
 
 	/** Open the Workspace as it was left, its panel rail always beside it. */
-	openSidebar = (): void => this._setSidebarOpen(true);
+	openWorkbench = (): void => this._setWorkbenchOpen(true);
 
 	/**
 	 * Show or hide the Workspace.
 	 *
 	 * @param isOpen - Whether it is on screen.
 	 */
-	private _setSidebarOpen = (isOpen: boolean): void => {
+	private _setWorkbenchOpen = (isOpen: boolean): void => {
 		this.state.update((current) => ({
-			sidebar:
-				current.sidebar.isOpen === isOpen
-					? current.sidebar
-					: { ...current.sidebar, isOpen },
+			workbenchPane:
+				current.workbenchPane.isOpen === isOpen
+					? current.workbenchPane
+					: { ...current.workbenchPane, isOpen },
 		}));
 	};
 
-	/** Reveal the sidebar's editor for a file; see `RoomSidebar.openFilePanel`. */
-	openFileSidebarPanel = (
+	/** Reveal the Workbench's editor for a file; see `RoomWorkbenchController.openFilePanel`. */
+	openWorkbenchFilePanel = (
 		path: string,
 		name?: string,
 		options?: { refresh?: boolean },
 	): WorkbenchPanelId =>
-		this.sidebarController.openFilePanel(path, name, options);
+		this.workbenchController.openFilePanel(path, name, options);
 
-	/** Reveal the sidebar's file explorer; see `RoomSidebar.openFileExplorer`. */
-	openSidebarFileExplorer = (
+	/** Reveal the Workbench's file explorer; see `RoomWorkbenchController.openFileExplorer`. */
+	openWorkbenchFileExplorer = (
 		initialPath?: string,
 		name?: string,
 	): WorkbenchPanelId =>
-		this.sidebarController.openFileExplorer(initialPath, name);
+		this.workbenchController.openFileExplorer(initialPath, name);
 
 	/** Reload the chat files explorer, if it is open. */
-	refreshSidebarFileExplorer = (): void =>
-		this.sidebarController.refreshFileExplorer();
+	refreshWorkbenchFileExplorer = (): void =>
+		this.workbenchController.refreshFileExplorer();
 
-	/** Close a sidebar panel matching `config`, if one is open. */
-	closeSidebarPanel = (
+	/** Close a Workbench panel matching `config`, if one is open. */
+	closeWorkbenchPanel = (
 		type: WorkbenchPanelType,
 		config: WorkbenchPanelParams = {},
-	): void => this.sidebarController.closePanel(type, config);
+	): void => this.workbenchController.closePanel(type, config);
 
-	/** Close the sidebar and return its open tools inline. */
-	closeSidebar = (): void => this.sidebarController.close();
+	/** Close the Workbench and return its open tools inline. */
+	closeWorkbench = (): void => this.workbenchController.close();
 
 	// Helpers
 
@@ -902,7 +903,7 @@ export class RoomStore {
 		inputMessage.addChild(uploadPlaceholder);
 		uploadPlaceholder.setIsThinking(true);
 
-		// files queued from the sidebar are already in the room's folder, so
+		// files queued from the Workbench are already in the room's folder, so
 		// they go with the message as they are; a silent turn leaves them queued
 		const queuedFiles = visible ? this.contextItems.take() : [];
 		try {

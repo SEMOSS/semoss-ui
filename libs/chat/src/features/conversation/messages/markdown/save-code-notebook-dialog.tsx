@@ -140,7 +140,7 @@ export const SaveCodeNotebookDialog = ({
 			`SaveInsightAssets(filePath=[${JSON.stringify(path)}], content=["<encode>${content}</encode>"]);`,
 			{ showLoading: false, setErrorOnFail: false },
 		);
-		room.openFileSidebarPanel(path, undefined, { refresh: true });
+		room.openWorkbenchFilePanel(path, undefined, { refresh: true });
 	};
 
 	/** Appends the code (with its execution outputs) as a new cell to the target notebook. */

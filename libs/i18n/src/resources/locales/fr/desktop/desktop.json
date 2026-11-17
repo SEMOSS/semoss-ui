@@ -18,8 +18,7 @@
 	"account": {
 		"menu": "Compte",
 		"changeServer": "Changer de serveur",
-		"signOut": "Se déconnecter",
-		"switchServer": "Changer de serveur"
+		"signOut": "Se déconnecter"
 	},
 	"unreachable": {
 		"title": "Impossible de joindre le serveur",
@@ -30,8 +29,8 @@
 	"servers": {
 		"listLabel": "Serveurs enregistrés",
 		"current": "En cours",
-		"switch": "Basculer",
-		"switchLabel": "Basculer vers {{server}}",
+		"switch": "Activer",
+		"switchLabel": "Activer {{server}}",
 		"removeLabel": "Supprimer {{server}}",
 		"removeTitle": "Supprimer ce serveur ?",
 		"removeDescription": "Vous serez déconnecté de {{server}} et les données que cette application a enregistrées pour lui sur cet ordinateur seront supprimées. Vos conversations restent sur le serveur.",

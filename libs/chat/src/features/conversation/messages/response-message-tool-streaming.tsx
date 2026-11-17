@@ -3,8 +3,8 @@ import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { cn, Spinner } from "@semoss/ui/next";
 import { formatJson } from "@semoss/utility/json";
-import type { ToolStore } from "../store/tool.store";
-import { useTool } from "../store/use-tool";
+import type { ToolStore } from "../../room/store/tool.store";
+import { useTool } from "../../room/store/use-tool";
 
 /** Props for {@link ResponseMessageToolStreaming}. */
 interface ResponseMessageToolStreamingProps {

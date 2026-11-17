@@ -15,7 +15,7 @@ import {
 import {
 	type McpTool,
 	readMcpTools,
-} from "../../tools/default-tools/chat-tool-info";
+} from "../../tools/chat-tools/chat-tool-info";
 import {
 	CONNECTOR_SERVICES,
 	CONNECTORS_GENERATOR,
@@ -23,7 +23,7 @@ import {
 	findConnectorTool,
 	sanitizeConnectorServices,
 	USER_CONNECTORS_PATH,
-} from "./connector.catalog";
+} from "./connector-catalog";
 
 /**
  * A tool's `_meta`, where its reactor, generator, and execution are kept.

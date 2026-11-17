@@ -3,7 +3,7 @@ import { Navigate, useNavigate, useParams } from "react-router";
 import { useChatSelector, useChatSession } from "@semoss/chat";
 
 /**
- * The route for an embedded page (`/embed/<path>`). `MainLayout` already keeps
+ * The route for an embedded page (`/embed/<path>`). `EmbeddedPages` already keeps
  * that page's iframe mounted and shows it, so this route only sends an unknown
  * path home and turns the iframe's messages into navigation.
  */
@@ -49,7 +49,7 @@ export const EmbedPage: React.FC = () => {
 		return <Navigate to="/" replace />;
 	}
 
-	// MainLayout has already pre-loaded this iframe and will show it on top —
+	// EmbeddedPages has already pre-loaded this iframe and will show it on top —
 	// render nothing here to avoid running a duplicate instance of the app.
 	return null;
 };

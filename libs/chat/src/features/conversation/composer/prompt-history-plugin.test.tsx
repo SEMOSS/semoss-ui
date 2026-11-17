@@ -13,7 +13,7 @@ import {
 	type LexicalEditor,
 } from "lexical";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { isAtEditorLineBoundary } from "../../../components/lexical/editor-line-boundary";
+import { isAtEditorLineBoundary } from "./editor/editor-line-boundary";
 import { RESET_PROMPT_HISTORY_COMMAND } from "./prompt-history";
 import { PromptHistoryPlugin } from "./prompt-history-plugin";
 
@@ -29,7 +29,7 @@ vi.mock("@semoss/i18n", () => ({
 			values ? `${key}: ${values.index}/${values.total}` : key,
 	}),
 }));
-vi.mock("../../../components/lexical/editor-line-boundary", () => ({
+vi.mock("./editor/editor-line-boundary", () => ({
 	isAtEditorLineBoundary: vi.fn(() => true),
 }));
 

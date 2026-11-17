@@ -73,7 +73,7 @@ vi.mock("./composer/use-graceful-errors", () => ({
 		getGracefulErrorMessage: (error: unknown) => String(error),
 	}),
 }));
-vi.mock("./store/response-message.store", () => ({
+vi.mock("../room/store/response-message.store", () => ({
 	ResponseMessageStore: mocks.MockResponseMessageStore,
 }));
 
@@ -148,7 +148,7 @@ test("finishes the stream scroll before a later grouped-tool resize", () => {
 		isCancelling: false,
 		canCancel: false,
 		getTool: vi.fn(() => undefined),
-		openSidebarPanel: vi.fn(),
+		openWorkbenchPanel: vi.fn(),
 		setModel: vi.fn(),
 		setOptions: vi.fn(),
 		updateRoomOptions: vi.fn(),

@@ -18,19 +18,19 @@ import {
 	toast,
 	useIsMobile,
 } from "@semoss/ui/next";
-import { ROOM_PANEL_TYPES } from "../../room/store/room-sidebar";
+import { ROOM_PANEL_TYPES } from "../../room/store/room-workbench-layout";
+import type { ToolStore } from "../../room/store/tool.store";
 import { useRoomSelector } from "../../room/store/use-room-selector";
+import { decideAgentToolAction } from "../../room/turns/agent-turn-runner";
 import {
 	isChatToolCall,
 	isFolderToolCall,
-} from "../../tools/default-tools/chat-tool-kind";
+} from "../../tools/chat-tools/chat-tool-kind";
 import { getToolAppId, isAskExecutionMode } from "../../tools/mcp/mcp-utils";
-import { ChatToolCard } from "../../tools/settings/chat-tool-card";
+import { ChatToolCard } from "../../tools/views/chat-tool-card";
 import { ComponentToolView } from "../../tools/views/component-tool-view";
 import { ToolsView } from "../../tools/views/tools-view";
-import { useSidebarPanelActive } from "../../workbench/rail/use-sidebar-panel-active";
-import { decideAgentToolAction } from "../store/agent-harness";
-import type { ToolStore } from "../store/tool.store";
+import { useWorkbenchPanelActive } from "../../workbench/rail/use-workbench-panel-active";
 import { ResponseMessageToolMenu } from "./response-message-tool-menu";
 import { ResponseMessageToolStreaming } from "./response-message-tool-streaming";
 import { RoomInlineTool } from "./room-inline-tool";
@@ -53,9 +53,13 @@ export const ResponseMessageTool = ({
 	const isMobile = useIsMobile();
 	const [isCancelling, setIsCancelling] = useState(false);
 	const [isDecisionCollapsed, setIsDecisionCollapsed] = useState(false);
-	const isSidebarActive = useSidebarPanelActive(room, ROOM_PANEL_TYPES.TOOL, {
-		toolId: tool.id,
-	});
+	const isWorkbenchActive = useWorkbenchPanelActive(
+		room,
+		ROOM_PANEL_TYPES.TOOL,
+		{
+			toolId: tool.id,
+		},
+	);
 	// the call's json reads the room's options too, and its cancel the
 	// run mode; a decorated call's json is a new object on every read, so
 	// select its values
@@ -121,22 +125,22 @@ export const ResponseMessageTool = ({
 	const needsDecision =
 		hasPendingAction ||
 		(toolStatus === "INITIAL" && isAskExecutionMode(execution));
-	const isOpenInSidebar = isOpen && display === "sidebar";
-	// Keep pending decisions inline until their tool is opened in the sidebar.
+	const isOpenInWorkbench = isOpen && display === "sidebar";
+	// Keep pending decisions inline until their tool is opened in the Workbench.
 	const shouldShowInlineDecision = Boolean(
-		isLarge && needsDecision && !isOpenInSidebar,
+		isLarge && needsDecision && !isOpenInWorkbench,
 	);
 	const isFailed = toolStatus === "ERROR";
 	const isCancelled = toolStatus === "CANCELLED";
 	const isRunning = toolStatus === "LOADING";
 	const isSucceeded = toolStatus === "SUCCESS";
-	// the arrow shows or hides the tool in the chat; the sidebar button moves it out and back
+	// the arrow shows or hides the tool in the chat; the Workbench button moves it out and back
 	const isOpenInline = isOpen && display === "inline";
 	const shouldShowDecision = shouldShowInlineDecision && !isDecisionCollapsed;
 	const isExpanded = isOpenInline || shouldShowDecision;
-	const isActive = isExpanded || (isOpenInSidebar && isSidebarActive);
+	const isActive = isExpanded || (isOpenInWorkbench && isWorkbenchActive);
 	// mobile keeps tools inline, but a tool already in the drawer can come back
-	const canUseSidebar = !isMobile || isOpenInSidebar;
+	const canUseWorkbench = !isMobile || isOpenInWorkbench;
 	// Agent runs own their cancellation lifecycle. Never write a legacy tool result into an active run.
 	const canCancel =
 		!isSucceeded &&
@@ -157,7 +161,7 @@ export const ResponseMessageTool = ({
 	const openAction = isExpanded
 		? t("actions.collapse")
 		: t("actions.openInline");
-	const sidebarAction = isOpenInSidebar
+	const workbenchAction = isOpenInWorkbench
 		? t("actions.openInline")
 		: t("actions.openInSidebar");
 	/** Reject the run's pending action, or save the chat call as cancelled, then close it. */
@@ -189,9 +193,9 @@ export const ResponseMessageTool = ({
 		// a pending decision already renders inline once it is uncollapsed
 		if (!shouldShowInlineDecision) tool.openTool("inline");
 	};
-	/** Move the call into the sidebar, or back into the conversation. */
-	const handleSidebar = () => {
-		if (isOpenInSidebar) {
+	/** Move the call into the Workbench, or back into the conversation. */
+	const handleWorkbench = () => {
+		if (isOpenInWorkbench) {
 			setIsDecisionCollapsed(false);
 			tool.openTool("inline");
 		} else {
@@ -259,7 +263,7 @@ export const ResponseMessageTool = ({
 						)}
 					/>
 				</Button>
-				{canUseSidebar && (
+				{canUseWorkbench && (
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<Button
@@ -267,14 +271,14 @@ export const ResponseMessageTool = ({
 								variant="ghost"
 								size="icon-sm"
 								className="shrink-0 text-muted-foreground"
-								aria-label={sidebarAction}
-								aria-pressed={isOpenInSidebar}
-								onClick={handleSidebar}
+								aria-label={workbenchAction}
+								aria-pressed={isOpenInWorkbench}
+								onClick={handleWorkbench}
 							>
 								<PanelRightIcon aria-hidden="true" />
 							</Button>
 						</TooltipTrigger>
-						<TooltipContent>{sidebarAction}</TooltipContent>
+						<TooltipContent>{workbenchAction}</TooltipContent>
 					</Tooltip>
 				)}
 				{canCancel && !needsDecision && (

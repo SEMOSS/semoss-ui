@@ -1,7 +1,7 @@
 import { UsersRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { editAgent, useAgentWorkspace } from "@semoss/chat";
+import { useAgentWorkspace } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import { useConfig } from "@semoss/sdk/react";
 import {
@@ -19,6 +19,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
+import { editAgent } from "@/features/agents/agent-actions";
 import { getPlaygroundAgentLinks } from "@/features/agents/agent-links";
 import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 

@@ -1,40 +1,39 @@
-# Getting Started
+# @semoss/playground
 
-1. Run `pnpm install` in root directory.
+The SEMOSS chat's web app: the shell (routing, navigation, agents, knowledge) around
+[`@semoss/chat`](../../libs/chat/README.md).
 
-2. Launch the dev-server, by running `pnpm run dev:playground`.
+## Getting started
 
-Note: If you have a custom setup, create a `.env.local` to configure your environment. 
+1. Run `pnpm install` in the repository root.
+2. Run `pnpm dev:playground` there. It starts the dev server on http://localhost:5174 with the
+   libraries it depends on.
 
-```.env.local
-    # development
-    # path to server
-    ENDPOINT=http://localhost:9090
+The dev server proxies to a SEMOSS backend at `http://localhost:9090/Monolith`. To use another,
+create `packages/playground/.env.local` (gitignored) instead of editing `.env`:
 
-    # name of deployed instance
-    MODULE=/Monolith
+```bash
+# path to the server
+ENDPOINT=http://localhost:9090
+
+# name of the deployed instance
+MODULE=/Monolith
 ```
 
-**Do not change the .env**
+## Tests
 
-# Notes on Naming
+Tests sit next to the file they cover, named `*.test.ts` or `*.test.tsx`. From
+`packages/playground`:
 
-1. "WORKSPACE" = Collection of "Toolbox, Knowledge, Prompt"
-
-2. "Toolbox" = Collection of "Tools"
-
-# Unit Testing with Vitest
-
-Add unit tests for @semoss/playground next to the corresponding file. Files should be in a .test file format.
-
-## Running tests:
-
-To run tests use the following (to run a specific file add the file name to the end):
-```
+```bash
 pnpm test
 ```
 
-This will run the following script:
+```bash
+pnpm type-check
 ```
-vitest run
-```
+
+## Changing the app
+
+[AGENTS.md](./AGENTS.md) says where each kind of change goes. Anything inside a room, a new chat,
+the room list or the settings dialog is in `@semoss/chat`, not here.

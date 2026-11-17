@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { PixelMessageTextPart } from "../../../types";
-import type { ResponseMessageStore } from "../store/response-message.store";
+import type { ResponseMessageStore } from "../../room/store/response-message.store";
 import { parseChunks } from "./markdown/parse-chunks";
 import { ResponseMessageTextHtml } from "./markdown/response-message-text-html";
 import { ResponseMessageTextMd } from "./markdown/response-message-text-md";

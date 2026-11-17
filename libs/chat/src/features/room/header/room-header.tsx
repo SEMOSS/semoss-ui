@@ -13,17 +13,20 @@ interface RoomHeaderProps {
 	newRoomPanels?: NewRoomWorkbenchPanels;
 	/** The host's controls before the name, such as a navigation button. */
 	leading?: ReactNode;
+	/** The host's controls after the name, before the Workbench toggle. */
+	trailing?: ReactNode;
 }
 
 /**
  * One narrow row above a room's conversation and Workbench: the host's leading
  * controls, the room's name (inside a `RoomActionsProvider`; a new chat has
- * none), then the Workbench toggle. The Workbench's panels sit on its own rail.
+ * none), the host's trailing controls, then the Workbench toggle. The Workbench's panels sit on its own rail.
  */
 export const RoomHeader = ({
 	room: roomProp,
 	newRoomPanels,
 	leading,
+	trailing,
 }: RoomHeaderProps) => {
 	const room = useRoomOrContext(roomProp);
 	return (
@@ -33,6 +36,7 @@ export const RoomHeader = ({
 				<RoomTitle />
 			</div>
 			<div className="flex shrink-0 items-center gap-0.5">
+				{trailing}
 				<RoomWorkbenchToggle
 					room={room}
 					newRoomPanels={newRoomPanels}

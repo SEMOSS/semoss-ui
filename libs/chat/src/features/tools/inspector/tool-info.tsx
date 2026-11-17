@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import type { ToolStore } from "../../conversation/store/tool.store";
-import { useTool } from "../../conversation/store/use-tool";
+import type { ToolStore } from "../../room/store/tool.store";
 import { useRoomSelector } from "../../room/store/use-room-selector";
+import { useTool } from "../../room/store/use-tool";
 import { ToolDataView } from "./tool-data-view";
 
 /** Props for {@link ToolInfo}. */

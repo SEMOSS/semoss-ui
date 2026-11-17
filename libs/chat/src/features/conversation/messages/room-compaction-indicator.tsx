@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useLoadingMessage } from "@semoss/shared";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
-import type { ResponseMessageStore } from "../store/response-message.store";
-import { useMessage } from "../store/use-message";
+import type { ResponseMessageStore } from "../../room/store/response-message.store";
+import { useMessage } from "../../room/store/use-message";
 
 /** How long compaction must last before the bar shows, so a quick one does not flash. */
 const APPEAR_DELAY_MS = 150;

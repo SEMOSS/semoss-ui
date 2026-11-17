@@ -1,21 +1,22 @@
 # @semoss/chat
 
 The SEMOSS chat as composable React pieces: rooms, messages, tools, the composer, the room's
-Workspace, the room list and search, and the new-chat screen, with the stores behind them.
+Workspace, the room list and search, the new-chat screen, and the user's settings dialog, with
+the stores behind them.
 
 It is what the two chat apps are made of:
 [`@semoss/playground`](../../packages/playground) (web) and
 [`@semoss/playground-desktop`](../../packages/playground-desktop) (Electron). A host gives it
 navigation and a theme, and lays the pieces out however it likes.
 
-- **Private and source-exported.** Two entries, `@semoss/chat` (`src/index.ts`) and
-  `@semoss/chat/globals.css`. There is no build: the host's Vite compiles the source.
+- **Private and source-exported.** One code entry, `@semoss/chat` (`src/index.ts`), and one
+  stylesheet, `@semoss/chat/globals.css`. There is no build: the host's Vite compiles the source.
 - **Router-free.** The chat never routes itself. It asks the host to open a room or a new chat
   through `ChatConfig.navigation`, so it works under any router, or none.
 - **Named exports only.** A host bundles only the pieces it imports.
 
-Changing the library? Read its [AGENTS.md](./AGENTS.md) instead: it has the layout, the stores,
-the glossary, and the contracts that are easy to break.
+Changing the library? Read its [AGENTS.md](./AGENTS.md) instead: it maps where each change
+goes, and names the rules that say what a change can break.
 
 ## Setting up a host
 
@@ -42,9 +43,9 @@ everything, like the desktop app):
 
 ### 2. Styles
 
-The chat's stylesheet only tells Tailwind to scan the chat's sources; without it none of the
-chat's classes are generated. Import it with the other libraries' stylesheets, in the host's
-Tailwind entry:
+The chat's stylesheet holds only the chat's own: it tells Tailwind to scan the chat's sources,
+and without it none of the chat's classes are generated. The host imports it with the stylesheet
+of each library it mounts, in this order, then adds its own sources:
 
 ```css
 @import "@semoss/ui/globals.css";
@@ -56,6 +57,8 @@ Tailwind entry:
 
 @source "./**/*.{ts,tsx}";
 ```
+
+The chat mounts pieces from all five of those libraries, so a chat host needs every line.
 
 ### 3. Translations
 
@@ -142,14 +145,19 @@ while it is `INITIALIZING`, send `UNAUTHENTICATED` to a page with `LoginForm` fr
 
 ### The config
 
-`ChatConfig` is everything chat UI needs from the host:
+`ChatConfig` is the host's whole contract with the chat. Build one object and give it to the
+chat store and to chat UI (`ChatProvider` does both):
 
 | Field | What it is |
 |---|---|
-| `theme` | A `ChatTheme`: the deployment's theme with every default filled in. Merge a server theme over `DEFAULT_CHAT_THEME` with `mergeChatTheme`. |
-| `newChatDefaults` | The build's `NewChatBuildDefaults` (`modelId`, `modelName`, `mode`, `agentId`), used below the theme's `defaultRoomSettings`. `{}` for none. |
+| `theme` | A `ChatTheme`: the deployment's theme with every default filled in. `useServerChatTheme()` reads the server's over `DEFAULT_CHAT_THEME`, or over a base theme you pass. |
+| `newChatDefaults` | The build's `NewChatBuildDefaults` (`modelId`, `modelName`, `mode`, `agentId`), used below the theme's `defaultRoomSettings`. An empty object for none; keep it the same object. |
 | `platformUrl` | Where the SEMOSS platform app is served, for catalog links and tool views that load a platform app. `""` for none. |
 | `navigation` | A `ChatNavigation`, below. |
+| `localFolders?` | A `LocalFoldersHost`, for a host that can reach the user's own files (the desktop app). |
+| `onWorkbenchOpenChange?(isOpen)` | A room's Workspace opened or closed, so the host can make room for it (the playground folds its navigation). |
+| `workbenchPanelComponents?` | Every panel a Workspace can open, by panel type. See [Customizing the chat](#customizing-the-chat). |
+| `customize?` | The host's changes to the lists chat UI builds. See [Customizing the chat](#customizing-the-chat). |
 
 | `navigation` | When the chat calls it |
 |---|---|
@@ -158,7 +166,7 @@ while it is `INITIALIZING`, send `UNAUTHENTICATED` to a page with `LoginForm` fr
 | `openNewChat()` | A new chat should open, as when a room cannot load. |
 | `onRoomDeleted(roomId)` | A room was deleted from chat UI. |
 | `agentHref?(workspaceId)` | An agent's link. Without it, chat UI shows no agent links. |
-| `openSettings?("connectors")` | The host's settings, on its Connectors page. Without it, chat UI shows no Manage Connectors. |
+| `openSettings?(section?)` | Open the settings dialog, on a page when one is named. Without it, chat UI shows no Manage Connectors. |
 
 Build it in a hook, memoized so chat UI only rerenders when the theme or the routes change.
 With `react-router` and a hash router:
@@ -166,46 +174,38 @@ With `react-router` and a hash router:
 ```tsx
 import { useMemo } from "react";
 import { useNavigate } from "react-router";
-import {
-	type ChatConfig,
-	type ChatTheme,
-	DEFAULT_CHAT_THEME,
-	mergeChatTheme,
-} from "@semoss/chat";
-import { useConfig } from "@semoss/sdk/react";
-import { isRecord } from "@semoss/utility/object";
+import { type ChatConfig, useServerChatTheme } from "@semoss/chat";
+
+/** No build defaults; one object, so the chat store is not remade. */
+const NO_NEW_CHAT_DEFAULTS = {};
 
 /**
- * The chat's config: the server's playground theme over the chat's defaults,
- * and this app's routes.
+ * The chat's config: the server's theme over the chat's defaults, and this
+ * app's routes.
  *
+ * @param openSettings - Opens the settings dialog. Keep its identity stable.
  * @returns The config, the same object while the theme and router are unchanged.
  */
-export const useMyChatConfig = (): ChatConfig => {
-	const serverTheme = useConfig((state) => state.theme);
+export const useMyChatConfig = (
+	openSettings: (section?: string) => void,
+): ChatConfig => {
+	const theme = useServerChatTheme();
 	const navigate = useNavigate();
-
-	const theme = useMemo<ChatTheme>(() => {
-		// the server's THEME_MAP keeps the chat's theme under `playground`
-		const playground = isRecord(serverTheme?.playground)
-			? (serverTheme.playground as Partial<ChatTheme>)
-			: undefined;
-		return mergeChatTheme(DEFAULT_CHAT_THEME, playground);
-	}, [serverTheme]);
 
 	return useMemo<ChatConfig>(
 		() => ({
 			theme,
-			newChatDefaults: {},
+			newChatDefaults: NO_NEW_CHAT_DEFAULTS,
 			platformUrl: "",
 			navigation: {
 				openRoom: (roomId) => navigate(`/room/${roomId}`),
 				roomHref: (roomId) => `#/room/${roomId}`,
 				openNewChat: () => navigate("/new"),
 				onRoomDeleted: () => navigate("/new"),
+				openSettings,
 			},
 		}),
-		[theme, navigate],
+		[theme, navigate, openSettings],
 	);
 };
 ```
@@ -234,22 +234,45 @@ export const ChatLayout = () => {
 };
 ```
 
-When something has to sit between the store and the config (the playground's settings dialog
-reads the store and gives the config its `openSettings`), make the store yourself and use the two
-providers `ChatProvider` is made of:
+A host that reads the store in the same component that provides it makes the store itself and
+uses the two providers `ChatProvider` is made of. Both get the same config:
 
 ```tsx
-const store = useCreateChatStore(config.theme, config.newChatDefaults);
+const store = useCreateChatStore(config);
 
 <ChatSessionProvider store={store}>
-	<SomethingThatReadsTheStore>
-		<ChatConfigProvider config={config}>{children}</ChatConfigProvider>
-	</SomethingThatReadsTheStore>
+	<ChatConfigProvider config={config}>{children}</ChatConfigProvider>
 </ChatSessionProvider>;
 ```
 
-`useCreateChatStore` returns the same store while the theme and defaults are the same object;
-a new theme makes a new store, so keep both stable.
+`useCreateChatStore` returns the same store while the config's `theme`, `newChatDefaults`,
+`localFolders` and `workbenchPanelComponents` are the same objects; a new one of any makes a new
+store, so keep them stable. The rest of the config can change freely.
+
+### The settings dialog
+
+`UserSettingsDialog` is the user's settings: General (theme, language, new chat defaults) and
+Connectors. The host holds its state with `useUserSettingsDialog`, renders the dialog inside the
+chat's providers, and hands `openSettings` to its config, which is how chat UI (Manage
+Connectors) and the host's own menus open it:
+
+```tsx
+const settings = useUserSettingsDialog();
+const config = useMyChatConfig(settings.openSettings);
+
+<ChatProvider config={config}>
+	<UserSettingsDialog
+		open={settings.isOpen}
+		onOpenChange={settings.setIsOpen}
+		section={settings.section}
+		onSectionChange={settings.setSection}
+	/>
+	{children}
+</ChatProvider>;
+```
+
+Anything inside the providers opens it with `useChatConfig().navigation.openSettings?.()`, or
+`openSettings?.("connectors")` for one page.
 
 ### The room list and search
 
@@ -377,16 +400,82 @@ deployment's (`theme.defaultRoomSettings`, then `newChatDefaults`), and the firs
 
 ### The Workspace and the navigation
 
-Opening a room's Workspace asks the host to make room for it through
-`WorkspaceNavigationContext`. Provide a function there to fold your navigation while the
-Workspace is open (the playground passes `setWorkAreaOpen` from its `useWorkspaceNavigation`);
-without a provider nothing happens.
+Opening a room's Workspace tells the host through `ChatConfig.onWorkbenchOpenChange`, so it can
+fold its navigation while the Workspace is open (the playground passes `setWorkbenchOpen` from
+its `useWorkbenchNavigation`). Without it nothing happens.
+
+## Customizing the chat
+
+A host changes the chat in two ways, and only these two.
+
+**Layout and controls are composition.** Place the pieces where you want them and fill their
+slots with your own components:
+
+| Slot | Where |
+|---|---|
+| `RoomHeader`'s `leading`, `trailing` | Before the room's name; after it, before the Workspace toggle. |
+| `NewChat`'s `headerLeading` | At the start of a new chat's header. |
+| `RoomFrame`'s `header`, `workbench`, children | The room's three regions. Leave one out, or pass your own. |
+| `RoomConversation`, or `RoomMessages` and `RoomComposer` apart | Put your own content between the messages and the composer. |
+
+**Lists are customization.** For each list chat UI builds, `ChatConfig.customize` has a function
+that is handed the chat's own list and returns the one to show: the same list, one with entries
+added, or one with entries removed. With none, the chat shows its own.
+
+| `customize` | The list | An entry |
+|---|---|---|
+| `workbenchPanels(defaults, room)` | The Workspace's panels: the rail's icons and the slash menu's Workspace group. | `WorkbenchPanelOption` |
+| `roomActions(defaults, room)` | A room's actions: the rail's cog menu and the slash menu's Room group. | `RoomActionItem` |
+| `slashCommands(defaults, room)` | Every command of the composer's "/" menu, after the two lists above are in it. | `SlashCommand` |
+| `composerMenu(defaults, props)` | The composer's plus menu. `defaults` is the chat's items, already rendered. | `DropdownMenuItem`s |
+| `settingsSections(defaults)` | The pages of the settings dialog. | `UserSettingsSection` |
 
 ```tsx
-<WorkspaceNavigationContext.Provider value={(isOpen) => setIsNavFolded(isOpen)}>
-	{children}
-</WorkspaceNavigationContext.Provider>
+import {
+	type ChatConfig,
+	DEFAULT_WORKBENCH_PANEL_COMPONENTS,
+} from "@semoss/chat";
+
+/** Module scope: a new object makes a new chat store and remounts panels. */
+const PANEL_COMPONENTS = {
+	...DEFAULT_WORKBENCH_PANEL_COMPONENTS,
+	"my-notes": MY_NOTES_PANEL,
+};
+
+const config: ChatConfig = {
+	// ...theme, navigation
+	workbenchPanelComponents: PANEL_COMPONENTS,
+	customize: {
+		// remove the activity log, add a panel of our own
+		workbenchPanels: (defaults, room) => [
+			...defaults.filter((panel) => panel.id !== "activity"),
+			{
+				kind: "room",
+				id: "my-notes",
+				label: "Notes",
+				icon: NotebookIcon,
+				panelType: "my-notes",
+				panelConfig: {},
+				isDisabled: false,
+				isLoading: false,
+				onOpen: () => room.openWorkbenchPanel("my-notes", {}, "Notes"),
+			},
+		],
+		// remove a command from the slash menu
+		slashCommands: (defaults) =>
+			defaults.filter((command) => command.id !== "compact"),
+		// add a page to the settings dialog
+		settingsSections: (defaults) => [...defaults, myAccountSection],
+	},
+};
 ```
+
+- Each function runs during render: keep it pure and cheap, and build the `customize` object
+  inside the config's `useMemo`.
+- A panel a host adds needs its blueprint in `workbenchPanelComponents` under the same panel
+  type. In a new chat it opens on the draft, before the room exists.
+- The desktop app's `use-desktop-chat-config.ts` adds its Server page to the settings dialog
+  this way.
 
 ## Reading chat state
 
@@ -427,30 +516,28 @@ export const RoomStatus = () => {
 | `useChatConfig()` | The host's `ChatConfig`. |
 | `useAgentWorkspace(workspaceId)` | An agent's definition: `{ workspace, status, error, refresh }`. |
 
-Change state through the stores' actions (`room.closeSidebar()`, `chat.setSelectedModel(model)`,
+Change state through the stores' actions (`room.closeWorkbench()`, `chat.setSelectedModel(model)`,
 ...), never by writing to a snapshot.
 
 ## Other exports
 
 | Export | What it is |
 |---|---|
-| `createAgent`, `editAgent`, `deleteAgent` | Create, save, and delete an agent in the session's insight. |
 | `SaveAgentDialog` | Publish a room as an agent. |
 | `NewKnowledgeForm` | Create a knowledge base. |
-| `useConnections`, `useConnectProvider`, `ConnectorServiceIcon` | The Microsoft 365 and Google Workspace accounts, for a Connectors settings page. |
-| `readUserConnectorTools`, `writeUserConnectorTools`, `getConnectorServices` | The user's connector choices, shared by all their chats. |
-| `getConnectorProvider`, `getConnectorService`, `sanitizeConnectorServices` | The connector catalog. |
-| `readNewChatPreferences`, `readDeploymentNewChatDefaults`, `NEW_CHAT_PREFERENCE_KEYS`, `isNewChatMode` | New chat preferences, for a settings page that sets the user's defaults. |
-| `offersAgentMode` | Whether the theme offers agent mode. |
+| `RoomComposerMenu`, `RoomComposerMenuProps` | The composer's plus menu, for a host's `customize.composerMenu`. |
+| `resolveServerChatTheme`, `mergeChatTheme`, `DEFAULT_CHAT_THEME` | The theme, for a host that lays its own base under the server's. |
 | `App`, `MCPConfig`, `Workspace` | Backend types. |
 
-The playground's `features/settings/` and `features/connectors/` show these in use.
+Creating, editing and deleting agents is the web app's (`packages/playground/src/features/agents/`),
+which is the only host with agent pages.
 
 ## Rules for hosts
 
-- Import only from `@semoss/chat` and `@semoss/chat/globals.css`, never from `src/`.
+- Import only from `@semoss/chat` and its stylesheets, never from `src/`.
 - Keep chat behavior in the library. If both apps need it, add it here; if only one does, keep it
-  in that app and pass it in through a slot (`leading`, `headerLeading`) or `ChatConfig`.
+  in that app and pass it in through a slot or `ChatConfig`
+  ([Customizing the chat](#customizing-the-chat)).
 - The library never imports a router, Electron, `import.meta.env`, or anything from `packages/*`;
   don't make it.
 

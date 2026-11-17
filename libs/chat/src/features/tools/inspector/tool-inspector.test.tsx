@@ -11,9 +11,9 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import type { CodeEditorProps } from "@semoss/ui/next";
 import { fakeStore } from "../../../test/fake-store";
-import type { ToolStore } from "../../conversation/store/tool.store";
 import type { RoomStore } from "../../room/store/room.store";
-import { ChatToolCard } from "../settings/chat-tool-card";
+import type { ToolStore } from "../../room/store/tool.store";
+import { ChatToolCard } from "../views/chat-tool-card";
 import { ToolsDefaultView } from "../views/tools-default-view";
 import { ToolDataView } from "./tool-data-view";
 import { ToolInspector } from "./tool-inspector";
@@ -31,10 +31,10 @@ vi.mock("@semoss/i18n", () => ({
 		i18n: { dir: () => "ltr" },
 	}),
 }));
-vi.mock("../../conversation/store/agent-harness", () => ({
+vi.mock("../../room/turns/agent-turn-runner", () => ({
 	decideAgentToolAction: mocks.decideAgent,
 }));
-vi.mock("../../conversation/store/response-message.store", () => ({
+vi.mock("../../room/store/response-message.store", () => ({
 	ResponseMessageStore: class {},
 }));
 vi.mock("@semoss/sdk/react", () => ({}));

@@ -2,7 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vitest";
 import { DEFAULT_CHAT_THEME } from "../chat/config/chat-theme";
 import { RoomStore } from "../room/store/room.store";
-import { ROOM_PANEL_TYPES } from "../room/store/room-sidebar";
+import { ROOM_PANEL_TYPES } from "../room/store/room-workbench-layout";
 import { useNewRoom } from "./use-new-room";
 
 const chat = vi.hoisted(() => ({
@@ -54,7 +54,11 @@ test("prepares only on demand, shares concurrent requests, and disposes an aband
 		undefined,
 	);
 	await act(async () => {
-		draft.openSidebarPanel(ROOM_PANEL_TYPES.CONFIGURATION, {}, "Settings");
+		draft.openWorkbenchPanel(
+			ROOM_PANEL_TYPES.CONFIGURATION,
+			{},
+			"Settings",
+		);
 		resolve(prepared);
 		await first;
 	});

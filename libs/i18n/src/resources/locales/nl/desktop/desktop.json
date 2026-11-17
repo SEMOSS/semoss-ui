@@ -18,8 +18,7 @@
 	"account": {
 		"menu": "Account",
 		"changeServer": "Server wijzigen",
-		"signOut": "Afmelden",
-		"switchServer": "Andere server"
+		"signOut": "Afmelden"
 	},
 	"unreachable": {
 		"title": "Server niet bereikbaar",
@@ -30,8 +29,8 @@
 	"servers": {
 		"listLabel": "Opgeslagen servers",
 		"current": "In gebruik",
-		"switch": "Wisselen",
-		"switchLabel": "Wisselen naar {{server}}",
+		"switch": "Activeren",
+		"switchLabel": "{{server}} activeren",
 		"removeLabel": "{{server}} verwijderen",
 		"removeTitle": "Deze server verwijderen?",
 		"removeDescription": "Je wordt afgemeld bij {{server}} en wat deze app ervoor op deze computer heeft opgeslagen, wordt verwijderd. Je chats blijven op de server.",

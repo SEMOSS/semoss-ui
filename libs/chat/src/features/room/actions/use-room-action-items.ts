@@ -7,12 +7,21 @@ import {
 	TrashIcon,
 } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
+import { useChatCustomization } from "../../chat/config/use-chat-customization";
 import { useRoomActionsContext } from "./room-actions.context";
 
+/** The ids of the room actions the chat itself lists. */
+export type DefaultRoomActionId =
+	| "favorite"
+	| "rename"
+	| "publish"
+	| "download"
+	| "delete";
+
 /** One of a room's actions, as a menu item or a slash command shows it. */
-interface RoomActionItem {
-	/** Stable key; also the slash command's id. */
-	id: "favorite" | "rename" | "publish" | "download" | "delete";
+export interface RoomActionItem {
+	/** Stable key; also the slash command's id. A host's own action names its own. */
+	id: DefaultRoomActionId | (string & {});
 	/** The action's icon. */
 	icon: LucideIcon;
 	/** Its name, the same in the rail's cog menu and the slash menu. */
@@ -36,11 +45,13 @@ interface RoomActionItem {
  * double-click on the name renames it; the slash menu lists it. Call it inside
  * a `RoomActionsProvider`.
  *
- * @returns The actions, or an empty list outside a room.
+ * @returns The actions, as the host's `ChatConfig.customize.roomActions`
+ * leaves them, or an empty list outside a room.
  */
 export const useRoomActionItems = (): RoomActionItem[] => {
 	const { t } = useTranslation(["room", "sidebar"]);
 	const context = useRoomActionsContext();
+	const customize = useChatCustomization().roomActions;
 	if (!context) return [];
 	const { room, actions } = context;
 	const items: RoomActionItem[] = [];
@@ -94,5 +105,5 @@ export const useRoomActionItems = (): RoomActionItem[] => {
 			onSelect: () => void actions.remove(),
 		},
 	);
-	return items;
+	return customize ? customize(items, room) : items;
 };

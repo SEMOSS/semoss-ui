@@ -1,6 +1,6 @@
 import type { ToolViewProps } from "@semoss/shared";
-import { decideAgentToolAction } from "../../conversation/store/agent-harness";
-import type { ToolStore } from "../../conversation/store/tool.store";
+import type { ToolStore } from "../../room/store/tool.store";
+import { decideAgentToolAction } from "../../room/turns/agent-turn-runner";
 
 /** How a `component://` view decides its call. */
 type ToolViewDecisions = Pick<

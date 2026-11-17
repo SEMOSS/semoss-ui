@@ -13,7 +13,7 @@ import { signInToProvider } from "../accounts/connector-sign-in";
 import {
 	type ConnectorProviderId,
 	getConnectorProvider,
-} from "../store/connector.catalog";
+} from "../store/connector-catalog";
 
 /**
  * A file saved into the chat's files. A connector's tool view may not say
@@ -32,7 +32,7 @@ interface RoomConnectorHost
 }
 
 /**
- * What the room gives a connector viewer in its sidebar, or a connector's
+ * What the room gives a connector viewer in its Workbench, or a connector's
  * tool view.
  *
  * Saved items land in the chat's own files, the same place uploads go and
@@ -56,13 +56,13 @@ export const useRoomConnectorHost = (
 
 	const handleSaved = useCallback(
 		(file: RoomSavedFile) => {
-			room.refreshSidebarFileExplorer();
+			room.refreshWorkbenchFileExplorer();
 			toast.success(
 				t("sources.saved", { name: file.name, target: chatFilesName }),
 				{
 					action: {
 						label: t("sources.show"),
-						onClick: () => room.openSidebarFileExplorer("/"),
+						onClick: () => room.openWorkbenchFileExplorer("/"),
 					},
 				},
 			);
@@ -72,7 +72,7 @@ export const useRoomConnectorHost = (
 
 	const handleAddToContext = useCallback(
 		(file: RoomSavedFile) => {
-			room.refreshSidebarFileExplorer();
+			room.refreshWorkbenchFileExplorer();
 			// the file is saved either way; only one the model can read is queued
 			if (!nextMessageRoom.shouldAttachToModel(file.name)) {
 				toast.error(

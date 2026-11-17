@@ -36,8 +36,8 @@ interface SavedServerListProps {
 }
 
 /**
- * The servers the app keeps a sign in for: the one in use, a Switch for each
- * of the others, and a Remove for every one, which asks first since it signs
+ * The servers the app keeps a sign in for: the one in use, an Activate for
+ * each of the others, and a Remove for every one, which asks first since it signs
  * the user out of that server.
  */
 export const SavedServerList = ({
@@ -135,6 +135,7 @@ export const SavedServerList = ({
 									<Button
 										size="icon-sm"
 										variant="ghost"
+										className="text-destructive hover:bg-destructive/10 hover:text-destructive"
 										disabled={pending !== null}
 										aria-label={t("servers.removeLabel", {
 											server: address,

@@ -23,6 +23,7 @@ src/
   contract/     types, constants and pure functions every process imports (no electron, no react)
     ipc-contract.ts        IpcContract (channel → request/response), IPC_CHANNELS, DesktopCommand,
                            COMMAND_CHANNEL, DesktopBridge, ServerCheckResult, SavedServers
+    local-folders.ts       LocalFolderGrant, LocalFolderRef and the local file shapes
     server-connection.ts   ServerConfig, DEFAULT_MODULE, parseServerConfig, parseServerAddress,
                            formatServerAddress, isSameServer, isModulePath
   main/         Node: main.ts only wires the features below (and holds the production CSP)
@@ -42,8 +43,8 @@ src/
     main.tsx      the connect screen until a server is saved, else Env.MODULE, Session.initialize()
                   and the router
     app.tsx       translations (desktopResources), theme, toasts; no session
-    pages/        router, session-layout, desktop-layout, login, server, new-room, room
-    features/     chat-config, commands, desktop-bridge, local-folders, server-connection, sidebar
+    pages/        router, session-layout, app-layout, login, server, new-room, room
+    features/     chat-config, commands, desktop-bridge, local-folders, navigation, server-connection
 ```
 
 `@/` is `src/renderer/`. The renderer reaches main only through `getDesktopBridge()`
@@ -51,7 +52,7 @@ src/
 
 ## The renderer
 
-- **Routes** (`pages/router.tsx`, a hash router): `SessionLayout` → `DesktopLayout` hold `/new`
+- **Routes** (`pages/router.tsx`, a hash router): `SessionLayout` → `AppLayout` hold `/new`
   (`NewChat`, with `?prompt=`, `?workspaceId=`, `?knowledgeId=`) and `/room/:roomId` (`RoomScope`
   around `RoomFrame`, `RoomHeader`, `RoomWorkbench`, `RoomConversation`). `/login` and `/server`
   are outside the session gate, so both open signed out or when the server cannot be read;
@@ -59,21 +60,31 @@ src/
 - **`SessionLayout`** waits while the session is `INITIALIZING`, sends `UNAUTHENTICATED` to
   `/login` (and back after), and on `ERROR` names the saved server and offers Retry
   (`useSessionRetry`) or Change server.
-- **`DesktopLayout`** makes the chat store (`useCreateChatStore`) and provides it with
-  `ChatSessionProvider` and `ChatConfigProvider`, around `DesktopSidebar` and the route, and routes
-  the menu's `DesktopCommand`s (`useDesktopCommands`: `new-chat` → `/new`, `change-server` →
-  `/server`).
-- **`useDesktopChatConfig`** is the chat's config: the server's `THEME_MAP` `playground` entry over
-  `DEFAULT_CHAT_THEME`, no new-chat defaults of its own, an empty `platformUrl`, and navigation
-  with `openRoom`, `roomHref` (`#/room/<id>`), `openNewChat` and `onRoomDeleted`; no `agentHref`
-  or `openSettings`.
-- **`DesktopSidebar`**: New chat, `RoomList` and `RoomSearchDialog` (Cmd/Ctrl+K through
-  `useRoomSearchShortcut`), and the account menu (Switch server, when more than one is saved;
-  Change server; Sign out). Room and new-chat
-  headers start with its `SidebarTrigger`.
-- **The server screen** (`ServerConnectView` on `/server`, and alone on first launch) lists the saved
-  servers (`SavedServerList`: Switch, and Remove after a confirm dialog) above a form that adds
-  one. The form takes one address, such as `https://semoss.example.com/Monolith`:
+- **`AppLayout`** builds the chat's config (`useDesktopChatConfig`), makes the chat store from
+  it (`useCreateChatStore(config)`), and provides both with `ChatSessionProvider` and
+  `ChatConfigProvider`, around the settings dialog, `DesktopSidebar` and the route. It holds the
+  dialog's state (`useUserSettingsDialog`), and routes the menu's `DesktopCommand`s
+  (`useDesktopCommands`: `new-chat` → `/new`, `change-server` → `/server`). The web app's
+  `AppLayout` is its counterpart.
+- **`useDesktopChatConfig`** is the chat's config: the server's theme over the chat's defaults
+  (`useServerChatTheme`), no new-chat defaults of its own, an empty `platformUrl`, the folders
+  host, and navigation with `openRoom`, `roomHref` (`#/room/<id>`), `openNewChat`,
+  `onRoomDeleted` and `openSettings`; no `agentHref`. Its `customize.settingsSections` adds the
+  app's Server page after the chat's own.
+- **The settings dialog** is the chat's `UserSettingsDialog`: General, Connectors, and
+  **Servers** (`features/server-connection/use-server-settings-section.tsx`), which lists the
+  saved servers and adds one. To add another page, add a section there or beside it; see
+  [Customizing the chat](../../libs/chat/README.md#customizing-the-chat).
+- **`DesktopSidebar`** (`features/navigation/`): New chat, `RoomList` and `RoomSearchDialog`
+  (Cmd/Ctrl+K through `useRoomSearchShortcut`), and the account menu: Settings and Sign out.
+  Servers are managed on the settings dialog's Servers page, not from the menu. Room and
+  new-chat headers start with its `SidebarTrigger`.
+- **The server screen** (`ServerConnectView` on `/server`, and alone on first launch) is the
+  page for when there is no session: before a server is saved, signed out, or when the server
+  cannot be read. It and the settings dialog's Servers page both render `ServerSettings`: the
+  saved servers (`SavedServerList`: Activate, and Remove after a confirm dialog) above a form that
+  adds one. The dialog's page passes `layout="section"`, which makes Connect small and puts it
+  at the form's end. The form takes one address, such as `https://semoss.example.com/Monolith`:
   `parseServerAddress` splits it into the origin and the module (no path means `/Monolith`), the
   main process checks it, then saves it and switches to it. `useSavedServers` reads the list. The login page
   names the saved server and links to `/server`, since a wrong address only shows up there.
@@ -149,7 +160,7 @@ the packaged app share one data folder (above).
 
 ## Local folders
 
-A room can attach folders from this machine (the chat's [desktop folders](../../libs/chat/AGENTS.md#desktop-folders)).
+A room can attach folders from this machine (the chat's [desktop folders](../../libs/chat/docs/tools.md#desktop-folders)).
 `renderer/features/local-folders/desktop-folders-host.ts` is the chat's `LocalFoldersHost` over
 the `local-folders:*` and `local-fs:*` channels, made once per window in `useDesktopChatConfig`.
 
@@ -168,10 +179,12 @@ the `local-folders:*` and `local-fs:*` channels, made once per window in `useDes
 
 ## Adding an IPC channel
 
-1. Add the channel to `IpcContract` and `IPC_CHANNELS` (`contract/ipc-contract.ts`); the preload
-   allowlists that array.
-2. Register it in `main/features/ipc/register-ipc.ts` with `handleIpc`, validating every argument:
-   they arrive as `unknown`.
+1. Add the channel to `IpcContract` and to `IPC_CHANNEL_LIST` below it
+   (`contract/ipc-contract.ts`); the compiler fails until both have it, and the preload allowlists
+   the list.
+2. Register it with `handleIpc`, validating every argument, since they arrive as `unknown`: in
+   `main/features/ipc/register-ipc.ts`, or `main/features/local-folders/register-local-folders.ts`
+   for a `local-folders:*` or `local-fs:*` channel.
 3. Call it from the renderer with `getDesktopBridge().invoke(channel, ...)`.
 
 Main → renderer messages are `DesktopCommand`s on `COMMAND_CHANNEL`, heard with
@@ -190,12 +203,6 @@ Main → renderer messages are `DesktopCommand`s on `COMMAND_CHANNEL`, heard wit
 | `pnpm type-check` | The renderer (`tsconfig.json`), then main/preload/contract under `strict` (`tsconfig.node.json`) |
 
 The root `pnpm dev:playground-desktop` runs `dev` with its dependencies.
-
-**Releasing a test build (temporary).** Bump `version` here, then run `pnpm release` in this
-package (`scripts/release.sh`). It builds installers for the current OS (macOS: arm64 and x64),
-offers to push the branch, and attaches them to the GitHub pre-release `desktop-v<version>`, titled `Playground ( <version> )`, with installers named the same way (`Playground ( <version> ) mac-arm64.dmg`, labelled with that name since GitHub turns spaces into dots);
-re-running for the same version replaces its files. `--draft` makes a draft release and
-`--skip-build` re-uploads what is in `release/`.
 
 **The app icon** is `resources/icon.png` (1024×1024), electron-builder's build resources folder,
 from which it makes the macOS, Windows, and Linux icons. Edit `resources/icon.svg` (the SEMOSS mark
@@ -216,8 +223,9 @@ sources. That is why the shared config's build plugins are dev dependencies here
   `commands` feature, and send `DesktopCommand`s like the menu does.
 - **The platform URL** is empty, so tool views that load a BLOCKS app from the platform show their
   default form; forward the platform's path like the module, or make it a server setting.
-- **No agent pages, knowledge pages, or settings dialog**: chat UI hides their links
-  (`agentHref`, `openSettings`), so connectors are switched on from the web app.
+- **No agent or knowledge pages**: chat UI hides agent links (no `agentHref`). The settings
+  dialog is here, so connectors are switched on in the app; signing in to a connector from the
+  desktop app has not been tried against a real server.
 - **Offline mode and local MCP over stdio** would live in the main process, behind new
   `IpcContract` channels, with the chat reaching them through `ChatConfig`, as the local folders
   do.

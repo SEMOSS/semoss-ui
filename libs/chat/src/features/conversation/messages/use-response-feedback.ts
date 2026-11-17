@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import type { ResponseMessageStore } from "../store/response-message.store";
+import type { ResponseMessageStore } from "../../room/store/response-message.store";
 
 /** What {@link useResponseFeedback} returns. */
 interface UseResponseFeedbackReturn {

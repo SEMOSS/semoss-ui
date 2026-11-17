@@ -9,9 +9,9 @@ import type {
 	PixelMessage,
 	ResponsePixelMessage,
 } from "../../../types";
+import type { InputMessageStore } from "../../room/store/input-message.store";
+import type { ResponseMessageStore } from "../../room/store/response-message.store";
 import { RoomStore } from "../../room/store/room.store";
-import type { InputMessageStore } from "../store/input-message.store";
-import type { ResponseMessageStore } from "../store/response-message.store";
 import { RoomMessages } from "./room-messages";
 
 const mocks = vi.hoisted(() => ({

@@ -47,7 +47,7 @@ vi.mock("../../room/store/room-tool-file", async (importOriginal) => {
 });
 
 vi.mock("./connector-tools", async (importOriginal) => {
-	const catalog = await import("./connector.catalog");
+	const catalog = await import("./connector-catalog");
 	return {
 		...(await importOriginal<typeof import("./connector-tools")>()),
 		readUserConnectorTools: vi.fn(async () => null),
@@ -76,7 +76,7 @@ const createRoom = () => {
 		roomId: "room-1",
 		insightId: "insight-1",
 		syncRoomOptions: vi.fn(async () => undefined),
-		openSidebarPanel: vi.fn(),
+		openWorkbenchPanel: vi.fn(),
 	};
 	return room as unknown as RoomStore;
 };
@@ -146,11 +146,11 @@ describe("ConnectorsStore", () => {
 		expect(readRoomToolFile).toHaveBeenCalledWith(room);
 	});
 
-	test("opens a viewer in the sidebar under its name", () => {
+	test("opens a viewer in the Workbench under its name", () => {
 		const room = createRoom();
 		const store = new ConnectorsStore(room);
 		store.openSourcePanel("teams-channels");
-		expect(room.openSidebarPanel).toHaveBeenCalledWith(
+		expect(room.openWorkbenchPanel).toHaveBeenCalledWith(
 			"room-teams-channels",
 			{},
 			"connectors:services.teamsChannels",

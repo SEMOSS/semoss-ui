@@ -16,7 +16,7 @@ import { RoomProvider, useRoomOrContext } from "../room/scope/room.context";
 import type { RoomStore } from "../room/store/room.store";
 import { uploadTurnFiles } from "../room/store/room-turn-files";
 import { useRoomSelector } from "../room/store/use-room-selector";
-import { normalizeFolderPath } from "../tools/folders/folder-path";
+import { normalizeFolderPath } from "../tools/chat-tools/folder-path";
 import { RoomWorkbenchRail } from "./rail/room-workbench-rail";
 import type { NewRoomWorkbenchPanels } from "./rail/use-workbench-panels";
 
@@ -41,9 +41,9 @@ export const RoomWorkbench = ({
 	newRoomPanels,
 }: RoomWorkbenchProps) => {
 	const room = useRoomOrContext(roomProp);
-	const sidebarSnapshot = useRoomSelector(
+	const workbenchSnapshot = useRoomSelector(
 		room,
-		(current) => current.sidebarSnapshot,
+		(current) => current.workbenchSnapshot,
 	);
 	const { t } = useTranslation("connectors");
 	const { t: tRoom } = useTranslation("room");
@@ -156,7 +156,7 @@ export const RoomWorkbench = ({
 										path: uploaded.fileLocation,
 										name: uploaded.fileName,
 									});
-									room.refreshSidebarFileExplorer();
+									room.refreshWorkbenchFileExplorer();
 								}
 							}),
 					},
@@ -176,7 +176,7 @@ export const RoomWorkbench = ({
 	);
 	const workbench = (
 		<Workbench
-			snapshot={sidebarSnapshot}
+			snapshot={workbenchSnapshot}
 			borderSlots={
 				isMobile
 					? { top: { before: panelRail } }

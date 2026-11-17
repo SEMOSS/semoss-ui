@@ -18,8 +18,7 @@
 	"account": {
 		"menu": "खाता",
 		"changeServer": "सर्वर बदलें",
-		"signOut": "साइन आउट करें",
-		"switchServer": "सर्वर बदलें"
+		"signOut": "साइन आउट करें"
 	},
 	"unreachable": {
 		"title": "सर्वर तक नहीं पहुंच सके",
@@ -30,8 +29,8 @@
 	"servers": {
 		"listLabel": "सहेजे गए सर्वर",
 		"current": "उपयोग में",
-		"switch": "स्विच करें",
-		"switchLabel": "{{server}} पर स्विच करें",
+		"switch": "सक्रिय करें",
+		"switchLabel": "{{server}} को सक्रिय करें",
 		"removeLabel": "{{server}} हटाएं",
 		"removeTitle": "यह सर्वर हटाएं?",
 		"removeDescription": "इससे आप {{server}} से साइन आउट हो जाएंगे और इस ऐप ने इस कंप्यूटर पर उसके लिए जो सहेजा है वह हट जाएगा। आपकी चैट सर्वर पर रहेंगी।",

@@ -11,7 +11,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import type { ResponseMessageStore } from "../store/response-message.store";
+import type { ResponseMessageStore } from "../../room/store/response-message.store";
 
 /** A document format a response downloads as. */
 type DownloadFormat = "word" | "pdf";

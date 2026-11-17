@@ -13,12 +13,12 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { useRoomOrContext } from "../../room/scope/room.context";
+import type { InputMessageStore } from "../../room/store/input-message.store";
+import { ResponseMessageStore } from "../../room/store/response-message.store";
 import type { RoomStore } from "../../room/store/room.store";
 import { useRoomSelector } from "../../room/store/use-room-selector";
 import { useGracefulErrors } from "../composer/use-graceful-errors";
 import { ConversationScrollContext } from "../conversation-scroll.context";
-import type { InputMessageStore } from "../store/input-message.store";
-import { ResponseMessageStore } from "../store/response-message.store";
 import { RoomSuggestions } from "../suggestions/room-suggestions";
 import { InputMessage } from "./input-message";
 import { ModelRouterAttribution } from "./model-router-attribution";

@@ -65,7 +65,7 @@ export const SaveFileDialog = ({
 		}
 	}, [open]);
 
-	/** Save the file to the room and open it in the sidebar. */
+	/** Save the file to the room and open it in the Workbench. */
 	const handleSave = async () => {
 		if (!room || !content || !fileName.trim()) return;
 
@@ -77,7 +77,7 @@ export const SaveFileDialog = ({
 				`SaveInsightAssets(filePath=[${JSON.stringify(filePath)}], content=["<encode>${content}</encode>"]);`,
 				{ showLoading: false, setErrorOnFail: false },
 			);
-			room.openFileSidebarPanel(filePath, undefined, { refresh: true });
+			room.openWorkbenchFilePanel(filePath, undefined, { refresh: true });
 			toast.success(t("notifications.savedInRoom", { filePath }));
 			onClose(true);
 		} catch (error) {

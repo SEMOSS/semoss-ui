@@ -78,7 +78,7 @@ export function useNewRoom(
 					return null;
 				}
 				// Carry over the draft's Workspace arrangement before it first mounts.
-				next.restoreSidebarLayout(
+				next.restoreWorkbenchLayout(
 					draft.workbench.getState().layout.actions.getSnapshot(),
 				);
 				prepared.current = next;

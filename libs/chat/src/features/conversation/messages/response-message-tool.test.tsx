@@ -1,14 +1,14 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vitest";
 import { fakeStore } from "../../../test/fake-store";
-import type { ToolStore } from "../store/tool.store";
+import type { ToolStore } from "../../room/store/tool.store";
 import { ResponseMessageTool } from "./response-message-tool";
 
 const mocks = vi.hoisted(() => ({
 	decide: vi.fn(),
 	error: vi.fn(),
 	isMobile: false,
-	isSidebarActive: false,
+	isWorkbenchActive: false,
 }));
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
@@ -22,10 +22,10 @@ vi.mock("@semoss/shared", async (original) => ({
 	...(await original<typeof import("@semoss/shared")>()),
 	useLoadingMessage: () => ({ loadingMessage: "Running" }),
 }));
-vi.mock("../../workbench/rail/use-sidebar-panel-active", () => ({
-	useSidebarPanelActive: () => mocks.isSidebarActive,
+vi.mock("../../workbench/rail/use-workbench-panel-active", () => ({
+	useWorkbenchPanelActive: () => mocks.isWorkbenchActive,
 }));
-vi.mock("../store/agent-harness", () => ({
+vi.mock("../../room/turns/agent-turn-runner", () => ({
 	decideAgentToolAction: mocks.decide,
 }));
 vi.mock("../../tools/views/tools-view", () => ({
@@ -64,7 +64,7 @@ function createTool(
 		json: { id: "tool-1", _meta: {} },
 		room: fakeStore({
 			mode,
-			sidebar: { isOpen: false },
+			workbenchPane: { isOpen: false },
 		}),
 		message: {
 			id: "message-1",
@@ -78,7 +78,7 @@ function createTool(
 beforeEach(() => {
 	vi.clearAllMocks();
 	mocks.isMobile = false;
-	mocks.isSidebarActive = false;
+	mocks.isWorkbenchActive = false;
 });
 
 test("the card expands and collapses an inline tool in place", () => {
@@ -127,7 +127,7 @@ test("the arrow collapses and expands a pending decision without moving it", () 
 	expect(tool.closeTool).not.toHaveBeenCalled();
 });
 
-test("the sidebar button shows when the tool is in the sidebar", () => {
+test("the Workbench button shows when the tool is in the Workbench", () => {
 	const tool = createTool("chat", false, {
 		display: "sidebar",
 		isOpen: true,
@@ -147,7 +147,7 @@ test.each([
 	["inline", "actions.openInSidebar", "sidebar"],
 	["sidebar", "actions.openInline", "inline"],
 ] as const)(
-	"the sidebar button takes an open %s tool to the other location",
+	"the Workbench button takes an open %s tool to the other location",
 	(display, label, target) => {
 		const tool = createTool("chat", false, { display, isOpen: true });
 		render(<ResponseMessageTool tool={tool} />);
@@ -159,18 +159,18 @@ test.each([
 
 test("mobile opens tools inline and only offers moving out of the drawer", () => {
 	mocks.isMobile = true;
-	mocks.isSidebarActive = true;
-	const sidebarTool = createTool("chat", false, {
+	mocks.isWorkbenchActive = true;
+	const workbenchTool = createTool("chat", false, {
 		display: "sidebar",
 		isOpen: true,
 	});
-	const { rerender } = render(<ResponseMessageTool tool={sidebarTool} />);
+	const { rerender } = render(<ResponseMessageTool tool={workbenchTool} />);
 	fireEvent.click(
 		screen.getByRole("button", {
 			name: "Search: Running. actions.openInline",
 		}),
 	);
-	expect(sidebarTool.openTool).toHaveBeenCalledWith("inline");
+	expect(workbenchTool.openTool).toHaveBeenCalledWith("inline");
 	expect(
 		screen.getByRole("button", { name: "actions.openInline" }),
 	).toBeInTheDocument();
@@ -188,7 +188,7 @@ test("mobile opens tools inline and only offers moving out of the drawer", () =>
 	).toBeNull();
 });
 
-test("a pending decision shows inline once and steps aside for the sidebar", () => {
+test("a pending decision shows inline once and steps aside for the Workbench", () => {
 	const inlineTool = createTool("agent", true, {
 		display: "inline",
 		isOpen: true,

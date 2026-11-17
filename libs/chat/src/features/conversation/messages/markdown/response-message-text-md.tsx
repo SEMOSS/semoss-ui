@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { Markdown } from "@semoss/ui/next";
 import { useChatConfig } from "../../../chat/config/use-chat-config";
-import type { ResponseMessageStore } from "../../store/response-message.store";
+import type { ResponseMessageStore } from "../../../room/store/response-message.store";
 import type { ChunkStatus } from "../use-active-index";
 import { useMarkdownTypewriter } from "../use-markdown-typewriter";
 import {

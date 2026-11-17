@@ -18,8 +18,7 @@
 	"account": {
 		"menu": "الحساب",
 		"changeServer": "تغيير الخادم",
-		"signOut": "تسجيل الخروج",
-		"switchServer": "تبديل الخادم"
+		"signOut": "تسجيل الخروج"
 	},
 	"unreachable": {
 		"title": "تعذّر الوصول إلى الخادم",
@@ -30,8 +29,8 @@
 	"servers": {
 		"listLabel": "الخوادم المحفوظة",
 		"current": "قيد الاستخدام",
-		"switch": "تبديل",
-		"switchLabel": "التبديل إلى {{server}}",
+		"switch": "تفعيل",
+		"switchLabel": "تفعيل {{server}}",
 		"removeLabel": "إزالة {{server}}",
 		"removeTitle": "إزالة هذا الخادم؟",
 		"removeDescription": "سيؤدي هذا إلى تسجيل خروجك من {{server}} وحذف ما حفظه هذا التطبيق له على هذا الكمبيوتر. تبقى محادثاتك على الخادم.",

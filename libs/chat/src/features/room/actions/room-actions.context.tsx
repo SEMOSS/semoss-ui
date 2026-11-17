@@ -1,9 +1,9 @@
 import { createContext, type ReactNode, useContext, useState } from "react";
 import { listRoomTools } from "../../tools/mcp/mcp-utils";
-import { SaveAgentDialog } from "../settings/save-agent-dialog";
 import type { RoomStore } from "../store/room.store";
 import { useRoomSelector } from "../store/use-room-selector";
 import { DownloadConversationDialog } from "./download-conversation-dialog";
+import { SaveAgentDialog } from "./save-agent-dialog";
 import { type RoomActions, useRoomActions } from "./use-room-actions";
 
 /** One room's actions, shared by its name, the Workbench rail's cog menu, and the composer's slash menu. */

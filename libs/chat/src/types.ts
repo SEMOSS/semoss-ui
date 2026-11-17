@@ -413,7 +413,7 @@ export interface PixelMessageToolResultPart {
 }
 
 /**
- * A subagent spawned by an agent-run turn — see agent-harness.ts. WIP: status
+ * A subagent spawned by an agent-run turn — see agent-turn-runner.ts. WIP: status
  * only, no alias/result/error rendering yet.
  */
 export interface PixelMessageSubagentPart {

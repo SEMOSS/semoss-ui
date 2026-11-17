@@ -48,7 +48,10 @@ function NotesEditor() {
 
 /** A room page in brief: the header's toggle, a draft, and the Workspace. */
 const RoomLayoutTest = ({ room }: { room: RoomStore }) => {
-	const isOpen = useRoomSelector(room, (current) => current.sidebar.isOpen);
+	const isOpen = useRoomSelector(
+		room,
+		(current) => current.workbenchPane.isOpen,
+	);
 	return (
 		<RoomLayout
 			isWorkbenchOpen={isOpen}
@@ -68,7 +71,7 @@ function createRoom(): RoomStore {
 		panelComponents: { notes: { name: "Notes", content: NotesEditor } },
 	});
 	room.setOptions({ instructions: "Original instructions", mcp: [] });
-	room.openSidebarPanel("notes");
+	room.openWorkbenchPanel("notes");
 	return room;
 }
 
@@ -119,10 +122,10 @@ test("closing from the header and reopening retain drafts and panels and restore
 	await user.click(
 		screen.getByRole("button", { name: "studio.closeWorkspace" }),
 	);
-	expect(room.sidebar.isOpen).toBe(false);
+	expect(room.workbenchPane.isOpen).toBe(false);
 	await waitFor(() => expect(draft).toHaveFocus());
 	act(() => {
-		room.openSidebarPanel("notes");
+		room.openWorkbenchPanel("notes");
 	});
 	expect(room.workbench.getState().layout.panels).toBe(originalPanels);
 	expect(screen.getByLabelText("Draft")).toBe(draft);

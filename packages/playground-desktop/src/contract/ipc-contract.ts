@@ -140,31 +140,38 @@ export interface IpcContract {
 /** A renderer → main channel. */
 export type IpcChannel = keyof IpcContract;
 
-/** Runtime allowlist the preload checks; lists every IpcContract key. */
-export const IPC_CHANNELS = [
-	"server-connection:get",
-	"server-connection:list",
-	"server-connection:check",
-	"server-connection:set",
-	"server-connection:forget",
-	"shell:open-external",
-	"local-folders:list",
-	"local-folders:pick",
-	"local-folders:detach",
-	"local-folders:watch",
-	"local-folders:unwatch",
-	"local-fs:list",
-	"local-fs:stat",
-	"local-fs:read",
-	"local-fs:write",
-	"local-fs:create-file",
-	"local-fs:create-directory",
-	"local-fs:move",
-	"local-fs:copy",
-	"local-fs:remove",
-	"local-fs:open",
-	"local-fs:reveal",
-] as const satisfies readonly IpcChannel[];
+/**
+ * Every channel, as an object so the compiler checks the list: a channel
+ * added to {@link IpcContract} and left out here fails to compile, and so
+ * does one listed here that the contract does not have.
+ */
+const IPC_CHANNEL_LIST: Record<IpcChannel, true> = {
+	"server-connection:get": true,
+	"server-connection:list": true,
+	"server-connection:check": true,
+	"server-connection:set": true,
+	"server-connection:forget": true,
+	"shell:open-external": true,
+	"local-folders:list": true,
+	"local-folders:pick": true,
+	"local-folders:detach": true,
+	"local-folders:watch": true,
+	"local-folders:unwatch": true,
+	"local-fs:list": true,
+	"local-fs:stat": true,
+	"local-fs:read": true,
+	"local-fs:write": true,
+	"local-fs:create-file": true,
+	"local-fs:create-directory": true,
+	"local-fs:move": true,
+	"local-fs:copy": true,
+	"local-fs:remove": true,
+	"local-fs:open": true,
+	"local-fs:reveal": true,
+};
+
+/** Runtime allowlist the preload checks: every {@link IpcContract} key. */
+export const IPC_CHANNELS = Object.keys(IPC_CHANNEL_LIST) as IpcChannel[];
 
 /** Main → renderer: what the app menu asks the page to do, and what it hears from the machine. */
 export type DesktopCommand =

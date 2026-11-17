@@ -16,10 +16,10 @@ import type {
 	PixelMessage,
 	ResponsePixelMessage,
 } from "../../../types";
+import type { InputMessageStore } from "../../room/store/input-message.store";
+import type { ResponseMessageStore } from "../../room/store/response-message.store";
 import { RoomStore } from "../../room/store/room.store";
-import type { InputMessageStore } from "../store/input-message.store";
-import type { ResponseMessageStore } from "../store/response-message.store";
-import type { ToolStore } from "../store/tool.store";
+import type { ToolStore } from "../../room/store/tool.store";
 import { ResponseMessage } from "./response-message";
 
 const mocks = vi.hoisted(() => ({
@@ -346,7 +346,7 @@ test("an image previews, a stored file opens in the Workspace, and an inline fil
 		]),
 	]);
 	const openFile = vi
-		.spyOn(room, "openFileSidebarPanel")
+		.spyOn(room, "openWorkbenchFilePanel")
 		.mockReturnValue("panel-1");
 	render(
 		<ResponseMessage

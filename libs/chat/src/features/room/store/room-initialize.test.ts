@@ -17,15 +17,15 @@ import type {
 	PixelMessage,
 	ResponsePixelMessage,
 } from "../../../types";
+import { MCP_EXECUTION_AUTO } from "../../tools/mcp/mcp-constants";
+import { listRoomTools } from "../../tools/mcp/mcp-utils";
+import { DEFAULT_WORKBENCH_PANEL_COMPONENTS } from "../../workbench/panels/room-panel-components";
 import {
 	AgentTurnRunner,
 	reconstructAllSubagents,
-} from "../../conversation/store/agent-harness";
-import { InputMessageStore } from "../../conversation/store/input-message.store";
-import { ResponseMessageStore } from "../../conversation/store/response-message.store";
-import { MCP_EXECUTION_AUTO } from "../../tools/mcp/mcp-constants";
-import { listRoomTools } from "../../tools/mcp/mcp-utils";
-import { ROOM_PANEL_COMPONENTS } from "../../workbench/panels/room-panel.components";
+} from "../turns/agent-turn-runner";
+import { InputMessageStore } from "./input-message.store";
+import { ResponseMessageStore } from "./response-message.store";
 import { RoomStore } from "./room.store";
 
 vi.mock("@semoss/sdk", async (original) => ({
@@ -48,10 +48,8 @@ servePixelTransport({ runPixel: vi.mocked(runPixel) });
 
 // the agent run's own polling is the harness's to test; here only whether
 // the room picks it up
-vi.mock("../../conversation/store/agent-harness", async (importOriginal) => ({
-	...(await importOriginal<
-		typeof import("../../conversation/store/agent-harness")
-	>()),
+vi.mock("../turns/agent-turn-runner", async (importOriginal) => ({
+	...(await importOriginal<typeof import("../turns/agent-turn-runner")>()),
 	reconstructAllSubagents: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -171,7 +169,7 @@ const createRoom = (insightId = "insight-1") => {
 		theme: {} as ThemeMap["playground"],
 		roomId: "room-1",
 		insightId,
-		panelComponents: ROOM_PANEL_COMPONENTS,
+		panelComponents: DEFAULT_WORKBENCH_PANEL_COMPONENTS,
 	});
 	const restore = vi
 		.spyOn(room.connectors, "restore")

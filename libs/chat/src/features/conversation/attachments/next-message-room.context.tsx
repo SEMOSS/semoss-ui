@@ -2,8 +2,8 @@ import { createContext, type ReactNode, useContext } from "react";
 import type { RoomStore } from "../../room/store/room.store";
 
 /**
- * The room whose next message the sidebar's viewers add to, when it is not
- * the sidebar's own room.
+ * The room whose next message the Workbench's viewers add to, when it is not
+ * the Workbench's own room.
  */
 const NextMessageRoomContext = createContext<RoomStore | null>(null);
 
@@ -17,7 +17,7 @@ interface NextMessageRoomProviderProps {
 
 /**
  * Have the viewers below queue what they add to context on another room than
- * the one whose sidebar they are in. The new-chat page queues on its draft,
+ * the one whose Workbench they are in. The new-chat page queues on its draft,
  * whose input shows the queue, while the viewers run in the room it created
  * early; the room takes the queue when the first message is sent.
  */
@@ -31,9 +31,9 @@ export const NextMessageRoomProvider = ({
 );
 
 /**
- * The room a viewer should queue on, when it is not the sidebar's own.
+ * The room a viewer should queue on, when it is not the Workbench's own.
  *
- * @returns The room, or null for the sidebar's own.
+ * @returns The room, or null for the Workbench's own.
  */
 export const useNextMessageRoom = (): RoomStore | null =>
 	useContext(NextMessageRoomContext);

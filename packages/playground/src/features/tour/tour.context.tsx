@@ -10,7 +10,7 @@ export type TourContextValue = {
 	stopTour: () => void;
 };
 
-/** The landing tour's state, provided by `MainLayout`; read it with `useTour`. */
+/** The landing tour's state, provided by `AppLayout`; read it with `useTour`. */
 export const TourContext = createContext<TourContextValue | undefined>(
 	undefined,
 );

@@ -18,8 +18,7 @@
 	"account": {
 		"menu": "Cuenta",
 		"changeServer": "Cambiar servidor",
-		"signOut": "Cerrar sesión",
-		"switchServer": "Cambiar de servidor"
+		"signOut": "Cerrar sesión"
 	},
 	"unreachable": {
 		"title": "No se puede conectar con el servidor",
@@ -30,8 +29,8 @@
 	"servers": {
 		"listLabel": "Servidores guardados",
 		"current": "En uso",
-		"switch": "Cambiar",
-		"switchLabel": "Cambiar a {{server}}",
+		"switch": "Activar",
+		"switchLabel": "Activar {{server}}",
 		"removeLabel": "Quitar {{server}}",
 		"removeTitle": "¿Quitar este servidor?",
 		"removeDescription": "Se cerrará tu sesión en {{server}} y se eliminará lo que esta aplicación guardó para él en este equipo. Tus chats siguen en el servidor.",

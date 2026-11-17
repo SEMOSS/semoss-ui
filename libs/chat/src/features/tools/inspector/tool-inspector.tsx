@@ -7,12 +7,10 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
-import {
-	isToolSettled,
-	type ToolStore,
-} from "../../conversation/store/tool.store";
-import { useTool } from "../../conversation/store/use-tool";
+import type { ToolStore } from "../../room/store/tool.store";
+import { isToolSettled } from "../../room/store/tool-status";
 import { useRoomSelector } from "../../room/store/use-room-selector";
+import { useTool } from "../../room/store/use-tool";
 import { isAskExecutionMode } from "../mcp/mcp-utils";
 import { ToolDataView } from "./tool-data-view";
 import { ToolInfo } from "./tool-info";

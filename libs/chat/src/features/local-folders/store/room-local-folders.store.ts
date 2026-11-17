@@ -1,7 +1,7 @@
 import type { FileSource } from "@semoss/shared";
 import { getErrorMessage } from "@semoss/utility/error";
 import { StoreState } from "@semoss/utility/store";
-import { DesktopFolders } from "./desktop-folders";
+import { DesktopFolders } from "../../tools/chat-tools/desktop-folders";
 import type { LocalFolder, LocalFoldersHost } from "./local-folders-host";
 
 /** A room's folders from the user's machine. Every field is readonly. */

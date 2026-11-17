@@ -65,8 +65,8 @@ Libraries:
   generic helpers and `StoreState` — deliberately domain-agnostic, so it can never import sdk,
   shared or i18n)
 - `@semoss/panels` → File panels for the dock (depends on i18n, sdk, shared, ui, utility, workbench)
-- `@semoss/chat` → The chat: rooms, messages, tools, the composer, the room list and new chat, as named
-  composable pieces (depends on connectors, i18n, panels, sdk, shared, ui, utility,
+- `@semoss/chat` → The chat: rooms, messages, tools, the composer, the room list, new chat and the
+  user's settings dialog, as named composable pieces a host lays out and customizes (depends on connectors, i18n, panels, sdk, shared, ui, utility,
   workbench; never on `packages/*`, a router, Electron, or `import.meta.env`)
 - `@semoss/config` → Shared Vite/Vitest config and `tsconfig.base.json` (private, not published;
   dev dependency of every library and application)
@@ -95,8 +95,9 @@ Applications:
 `aiSdkStubAlias` + `scopePptxViewerCssPlugin` from `@semoss/panels/vite`. See
 [libs/panels/AGENTS.md](./libs/panels/AGENTS.md#what-a-host-has-to-wire-up).
 
-**Every host that mounts chat UI** imports `@semoss/chat/globals.css` and loads `chatResources` (or a
-map built on it). See [libs/chat/AGENTS.md](./libs/chat/AGENTS.md#what-a-host-has-to-wire-up).
+**Every host that mounts chat UI** imports `@semoss/chat/globals.css` beside the stylesheets of the libraries it mounts, loads `chatResources` (or a
+map built on it), and gives the chat one `ChatConfig`. See
+[libs/chat/README.md](./libs/chat/README.md#setting-up-a-host).
 
 **Every host that mounts a connector viewer** imports `@semoss/connectors/globals.css` and loads
 the `connectors` i18n namespace. See
@@ -148,6 +149,7 @@ semoss/
 | `pnpm dev` | Run all packages in dev mode |
 | `pnpm dev:client` | Run client with dependencies |
 | `pnpm dev:playground` | Run playground with dependencies |
+| `pnpm dev:playground-desktop` | Run the desktop app with dependencies |
 | `pnpm dev:collaboration` | Run collaboration with dependencies |
 | `pnpm dev:terminal` | Run terminal with dependencies |
 | `pnpm build` | Production build all packages |
@@ -258,7 +260,7 @@ For validation and handoff, follow the React skill's
 - [libs/i18n/AGENTS.md](./libs/i18n/AGENTS.md) - Internationalization library specifics
 - [libs/workbench/AGENTS.md](./libs/workbench/AGENTS.md) - Workbench dock shell specifics
 - [libs/panels/AGENTS.md](./libs/panels/AGENTS.md) - File panels for the dock
-- [libs/chat/AGENTS.md](./libs/chat/AGENTS.md) - The chat's pieces, its stores, and what a host wires up
+- [libs/chat/AGENTS.md](./libs/chat/AGENTS.md) - Where a change to the chat goes, and the rules that say what it can break
 
 **Applications** (`packages/*`):
 - [packages/client/AGENTS.md](./packages/client/AGENTS.md) - Main web application specifics

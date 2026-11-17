@@ -18,8 +18,7 @@
 	"account": {
 		"menu": "アカウント",
 		"changeServer": "サーバーを変更",
-		"signOut": "サインアウト",
-		"switchServer": "サーバーを切り替え"
+		"signOut": "サインアウト"
 	},
 	"unreachable": {
 		"title": "サーバーに接続できません",
@@ -30,8 +29,8 @@
 	"servers": {
 		"listLabel": "保存済みのサーバー",
 		"current": "使用中",
-		"switch": "切り替え",
-		"switchLabel": "{{server}} に切り替え",
+		"switch": "有効化",
+		"switchLabel": "{{server}} を有効化",
 		"removeLabel": "{{server}} を削除",
 		"removeTitle": "このサーバーを削除しますか？",
 		"removeDescription": "{{server}} からサインアウトし、このアプリがこのコンピューターに保存したデータを削除します。チャットはサーバーに残ります。",

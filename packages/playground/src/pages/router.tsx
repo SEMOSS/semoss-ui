@@ -10,10 +10,10 @@ import { NewRoomPage } from "@/pages/new-room.page";
 import { RoomPage } from "@/pages/room.page";
 import { AgentDetailPage } from "./agent-detail.page";
 import { AgentEditPage } from "./agent-edit.page";
+import { AppLayout } from "./app-layout";
 import { AuthenticatedLayout } from "./authenticated-layout";
 import { InitializedLayout } from "./initialized-layout";
 import { KnowledgeDetailPage } from "./knowledge-detail.page";
-import { MainLayout } from "./main-layout";
 
 /** Every route, built once at module load so a rerender never resets navigation. */
 const router = createHashRouter([
@@ -26,7 +26,7 @@ const router = createHashRouter([
 				element: <AuthenticatedLayout />,
 				children: [
 					{
-						element: <MainLayout />,
+						element: <AppLayout />,
 						children: [
 							{
 								// catches errors in the pages, keeping the navigation beside them

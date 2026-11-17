@@ -24,11 +24,11 @@ import {
 	TabsTrigger,
 } from "@semoss/ui/next";
 import { useChatConfig } from "../../chat/config/use-chat-config";
-import { useAgentWorkspace } from "../../chat/store/use-agent-workspace";
 import { NewKnowledgeForm } from "../../knowledge/new-knowledge-form";
 import type { AgentChoice, AgentOverlaySave, AgentRef } from "./agent-choice";
 import { AgentSelector } from "./agent-selector";
 import { listRoomTools } from "./mcp-utils";
+import { useAgentWorkspace } from "./use-agent-workspace";
 
 /** A tab of the agent picker. */
 export type MCPOverlayTab = "AGENT" | "TOOLBOX" | "KNOWLEDGE";

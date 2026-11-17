@@ -20,12 +20,12 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
+import { ChatConfigContext } from "../../chat/config/chat-config.context";
 import { ConversationScrollContext } from "../../conversation/conversation-scroll.context";
 import {
 	type RoomLayoutActions,
 	RoomLayoutActionsContext,
 } from "./room-layout-actions.context";
-import { WorkspaceNavigationContext } from "./workspace-navigation.context";
 
 /** Props for {@link RoomLayout}. */
 export interface RoomLayoutProps {
@@ -73,7 +73,9 @@ export function RoomLayout({
 }: RoomLayoutProps) {
 	const { t } = useTranslation("room");
 	const id = useId();
-	const setNavigationWorkspaceOpen = useContext(WorkspaceNavigationContext);
+	// read without `useChatConfig`, so the layout also renders with no host config
+	const onWorkbenchOpenChange =
+		useContext(ChatConfigContext)?.onWorkbenchOpenChange;
 	const containerRef = useRef<HTMLDivElement>(null);
 	const headerRef = useRef<HTMLDivElement>(null);
 	const conversationRef = useRef<HTMLDivElement>(null);
@@ -123,9 +125,9 @@ export function RoomLayout({
 
 	// tell the host's shell, and report closed once the layout unmounts
 	useEffect(() => {
-		setNavigationWorkspaceOpen?.(isOpen);
-		return () => setNavigationWorkspaceOpen?.(false);
-	}, [isOpen, setNavigationWorkspaceOpen]);
+		onWorkbenchOpenChange?.(isOpen);
+		return () => onWorkbenchOpenChange?.(false);
+	}, [isOpen, onWorkbenchOpenChange]);
 
 	// the row's width decides the narrow layout, not the viewport's
 	useEffect(() => {

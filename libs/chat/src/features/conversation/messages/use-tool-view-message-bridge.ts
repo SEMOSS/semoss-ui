@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import type { MCPToolResponse } from "@semoss/sdk";
 import type { RoomStore } from "../../room/store/room.store";
-import { decideAgentToolAction } from "../store/agent-harness";
+import { decideAgentToolAction } from "../../room/turns/agent-turn-runner";
 
 /** What a framed tool view posts to the window when the user runs its tool. */
 interface ExecToolMessage {

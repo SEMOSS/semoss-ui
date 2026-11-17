@@ -3,9 +3,9 @@ import { useTranslation } from "@semoss/i18n";
 import type { AgentRunStatusValue } from "@semoss/sdk";
 import { cn, Spinner } from "@semoss/ui/next";
 import type { PixelMessageSubagentPart } from "../../../types";
-import { ROOM_PANEL_TYPES } from "../../room/store/room-sidebar";
-import { useSidebarPanelActive } from "../../workbench/rail/use-sidebar-panel-active";
-import type { ResponseMessageStore } from "../store/response-message.store";
+import type { ResponseMessageStore } from "../../room/store/response-message.store";
+import { ROOM_PANEL_TYPES } from "../../room/store/room-workbench-layout";
+import { useWorkbenchPanelActive } from "../../workbench/rail/use-workbench-panel-active";
 
 /**
  * How a subagent's card shows its status.
@@ -71,8 +71,8 @@ interface ResponseMessageSubagentProps {
 
 /**
  * A spawned subagent, styled to match the "large" ask-mode tool card. Click
- * opens a sidebar panel with its response/error -- see RoomSubagent. No
- * cancel action -- see agent-harness.ts's item.kind === "subagent" handling
+ * opens a Workbench panel with its response/error -- see RoomSubagent. No
+ * cancel action -- see agent-turn-runner.ts's item.kind === "subagent" handling
  * for what's actually tracked.
  */
 export const ResponseMessageSubagent = ({
@@ -84,15 +84,15 @@ export const ResponseMessageSubagent = ({
 	const { subagent } = part;
 	const state = getSubagentCardState(subagent.status, subagent, t);
 	const panelConfig = { subagentId: subagent.id };
-	const isActive = useSidebarPanelActive(
+	const isActive = useWorkbenchPanelActive(
 		room,
 		ROOM_PANEL_TYPES.SUBAGENT,
 		panelConfig,
 	);
 
-	/** Open the subagent's panel in the sidebar. */
+	/** Open the subagent's panel in the Workbench. */
 	const handleClick = () => {
-		room.openSidebarPanel(
+		room.openWorkbenchPanel(
 			ROOM_PANEL_TYPES.SUBAGENT,
 			panelConfig,
 			subagent.alias || t("subagent.title"),

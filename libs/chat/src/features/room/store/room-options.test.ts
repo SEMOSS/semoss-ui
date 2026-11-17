@@ -8,8 +8,8 @@ import {
 import type { ThemeMap } from "@semoss/shared";
 import { servePixelTransport } from "../../../test/pixel-transport";
 import type { Engine, MCPConfig, PixelMessage } from "../../../types";
-import type { ResponseMessageStore } from "../../conversation/store/response-message.store";
-import { ROOM_PANEL_COMPONENTS } from "../../workbench/panels/room-panel.components";
+import { DEFAULT_WORKBENCH_PANEL_COMPONENTS } from "../../workbench/panels/room-panel-components";
+import type { ResponseMessageStore } from "./response-message.store";
 import { RoomStore } from "./room.store";
 
 vi.mock("@semoss/sdk", async (original) => ({
@@ -103,7 +103,7 @@ const createRoom = async (messages: PixelMessage[] = []) => {
 		theme: {} as ThemeMap["playground"],
 		roomId: "room-1",
 		insightId: "insight-1",
-		panelComponents: ROOM_PANEL_COMPONENTS,
+		panelComponents: DEFAULT_WORKBENCH_PANEL_COMPONENTS,
 	});
 	vi.spyOn(room.connectors, "restore").mockResolvedValue(undefined);
 	room.setModel(MODEL);
@@ -222,7 +222,7 @@ test("a draft reads no agent; it is handed the agent's tools", () => {
 	const draft = new RoomStore({
 		theme: {} as ThemeMap["playground"],
 		roomId: "temp",
-		panelComponents: ROOM_PANEL_COMPONENTS,
+		panelComponents: DEFAULT_WORKBENCH_PANEL_COMPONENTS,
 	});
 	draft.setAgentTools("agent-1", [mcp("agent-tool")]);
 	draft.setOptions({ workspace: { workspace_id: "agent-1" } });
@@ -470,7 +470,7 @@ test("compacting fails when every method fails, a response has tools, or the roo
 	const unloaded = new RoomStore({
 		theme: {} as ThemeMap["playground"],
 		roomId: "room-2",
-		panelComponents: ROOM_PANEL_COMPONENTS,
+		panelComponents: DEFAULT_WORKBENCH_PANEL_COMPONENTS,
 	});
 	await expect(unloaded.compactMessages()).rejects.toThrow(
 		"No response message to compact",

@@ -16,6 +16,8 @@ const mocks = vi.hoisted(() => ({
 	// a fixed chat store: its snapshot is itself
 	chat: {
 		keys: { roomCounter: 0 },
+		// what the settings dialog's General page reads
+		models: { available: [], selected: null },
 		optimisticRooms: {},
 		removeOptimisticRoom: () => {},
 		getSnapshot() {
@@ -26,7 +28,11 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@semoss/i18n", () => ({
-	useTranslation: () => ({ t: (key: string) => key }),
+	LANGUAGES: [{ code: "en", label: "English" }],
+	useTranslation: () => ({
+		t: (key: string) => key,
+		i18n: { language: "en", changeLanguage: vi.fn() },
+	}),
 }));
 vi.mock("@semoss/sdk/react", () => ({
 	useSession: <T,>(
@@ -42,6 +48,7 @@ vi.mock("@semoss/sdk/react", () => ({
 			logout: vi.fn(),
 		}),
 	useSessionRetry: () => ({ isRetrying: false, retry: vi.fn() }),
+	useSessionInsight: () => ({ run: vi.fn(), upload: vi.fn() }),
 	useConfig: <T,>(selector: (state: { theme: null }) => T) =>
 		selector({ theme: null }),
 	useSessionPixel: () => ({ data: [], status: "SUCCESS", refresh: vi.fn() }),
@@ -222,4 +229,52 @@ test("removing a server asks first, then forgets it", async () => {
 			([channel]) => channel === "server-connection:list",
 		).length,
 	).toBeGreaterThan(1);
+});
+
+test("the account menu opens Settings, where the Servers page is", async () => {
+	const user = userEvent.setup();
+	const router = renderAt("/room/room-1");
+
+	await user.click(screen.getByRole("button", { name: "account.menu" }));
+	// the menu holds Settings and Sign out; servers are managed in Settings
+	expect(
+		screen.getAllByRole("menuitem").map((item) => item.textContent),
+	).toEqual(["sidebar:userMenu.settings", "account.signOut"]);
+	await user.click(
+		screen.getByRole("menuitem", { name: "sidebar:userMenu.settings" }),
+	);
+
+	// the dialog opens over the room, which stays where it is
+	const dialog = await screen.findByRole("dialog");
+	expect(router.state.location.pathname).toBe("/room/room-1");
+	// the chat's own pages, then the desktop's
+	const pages = within(
+		within(dialog).getByRole("navigation", { name: "settings.title" }),
+	).getAllByRole("button");
+	expect(pages.map((button) => button.textContent)).toEqual([
+		"settings.sections.general",
+		"settings.sections.connectors",
+		"connect.titleSaved",
+	]);
+
+	await user.click(pages[2]);
+	expect(
+		within(dialog).getByRole("heading", { name: "connect.titleSaved" }),
+	).toBeVisible();
+	// the saved servers: the other one can be activated
+	expect(
+		await within(dialog).findByText(
+			"https://other.example.com/team/Monolith",
+		),
+	).toBeVisible();
+	expect(
+		within(dialog).getByRole("button", { name: "servers.switchLabel" }),
+	).toHaveTextContent("servers.switch");
+	// and the form that adds one, with a small Connect at its end
+	expect(
+		within(dialog).getByRole("textbox", { name: /connect.urlLabel/ }),
+	).toBeVisible();
+	expect(
+		within(dialog).getByRole("button", { name: "connect.submit" }),
+	).toHaveClass("self-end");
 });

@@ -4,7 +4,7 @@ import { toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import { useChatConfig } from "../chat/config/use-chat-config";
 import type { RoomStore } from "../room/store/room.store";
-import { ROOM_PANEL_TYPES } from "../room/store/room-sidebar";
+import { ROOM_PANEL_TYPES } from "../room/store/room-workbench-layout";
 import {
 	NEW_ROOM_READY_PANEL_KINDS,
 	type NewRoomPanelRequest,
@@ -36,16 +36,16 @@ const showPanel = (
 ): void => {
 	switch (request.kind) {
 		case "workbench":
-			room.openSidebar();
+			room.openWorkbench();
 			return;
 		case "settings":
 			room.chatTools.openRoomSettings();
 			return;
 		case "files":
-			room.openSidebarFileExplorer();
+			room.openWorkbenchFileExplorer();
 			return;
 		case "activity":
-			room.openSidebarPanel(
+			room.openWorkbenchPanel(
 				ROOM_PANEL_TYPES.AUDIT_LOG,
 				{},
 				activityTitle,
@@ -93,11 +93,11 @@ export const useNewRoomPanels = (
 		if (isReady) showPanel(newRoom, request, activityTitle);
 		const room = await prepare();
 		if (!room) {
-			if (!isReady) newRoom.openSidebar();
+			if (!isReady) newRoom.openWorkbench();
 			return;
 		}
 		if (!isReady) showPanel(room, request, activityTitle);
-		else if (newRoom.sidebar.isOpen) room.openSidebar();
+		else if (newRoom.workbenchPane.isOpen) room.openWorkbench();
 	};
 
 	/**
@@ -108,7 +108,7 @@ export const useNewRoomPanels = (
 		if (isLoading) return;
 		const room = preparedRoom ?? (await prepare());
 		if (!room?.localFolders) {
-			if (!room) newRoom.openSidebar();
+			if (!room) newRoom.openWorkbench();
 			return;
 		}
 		try {

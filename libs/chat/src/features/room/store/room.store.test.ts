@@ -2,14 +2,14 @@ import { act, renderHook } from "@testing-library/react";
 import { expect, test, vi } from "vitest";
 import type { ThemeMap } from "@semoss/shared";
 import type { InputPixelMessage, ResponsePixelMessage } from "../../../types";
-import { FOLDER_TOOL_NAMES } from "../../tools/default-tools/folder-tools";
+import { FOLDER_TOOL_NAMES } from "../../tools/chat-tools/folder-tools";
 import {
 	MCP_EXECUTION_ASK,
 	MCP_EXECUTION_AUTO,
 } from "../../tools/mcp/mcp-constants";
-import { ROOM_PANEL_COMPONENTS } from "../../workbench/panels/room-panel.components";
+import { DEFAULT_WORKBENCH_PANEL_COMPONENTS } from "../../workbench/panels/room-panel-components";
 import { RoomStore } from "./room.store";
-import { ROOM_PANEL_TYPES } from "./room-sidebar";
+import { ROOM_PANEL_TYPES } from "./room-workbench-layout";
 import { useRoomSelector } from "./use-room-selector";
 
 // a folder call's title is translated
@@ -32,7 +32,7 @@ const createRoom = () =>
 		theme: {} as ThemeMap["playground"],
 		roomId: "room-1",
 		insightId: "insight-1",
-		panelComponents: ROOM_PANEL_COMPONENTS,
+		panelComponents: DEFAULT_WORKBENCH_PANEL_COMPONENTS,
 	});
 
 test("writes replace what they change and keep the rest", () => {
@@ -47,11 +47,11 @@ test("writes replace what they change and keep the rest", () => {
 	expect(before.options.instructions).toBe("");
 	// siblings keep their references
 	expect(after.metadata).toBe(before.metadata);
-	expect(after.sidebar).toBe(before.sidebar);
+	expect(after.workbenchPane).toBe(before.workbenchPane);
 	expect(listener).toHaveBeenCalledTimes(1);
 
 	room.setIsLoading(false);
-	room.closeSidebar();
+	room.closeWorkbench();
 	expect(room.getSnapshot()).toBe(after);
 	expect(listener).toHaveBeenCalledTimes(1);
 });
@@ -60,9 +60,9 @@ test("opening a panel opens the Workspace once", () => {
 	const room = createRoom();
 	const listener = vi.fn();
 	room.subscribe(listener);
-	room.openSidebarPanel(ROOM_PANEL_TYPES.CONFIGURATION);
-	room.openSidebar();
-	expect(room.sidebar.isOpen).toBe(true);
+	room.openWorkbenchPanel(ROOM_PANEL_TYPES.CONFIGURATION);
+	room.openWorkbench();
+	expect(room.workbenchPane.isOpen).toBe(true);
 	expect(listener).toHaveBeenCalledTimes(1);
 });
 

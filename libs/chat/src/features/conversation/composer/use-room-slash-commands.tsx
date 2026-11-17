@@ -10,6 +10,7 @@ import {
 	TextQuoteIcon,
 } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
+import { useChatCustomization } from "../../chat/config/use-chat-customization";
 import { useRoomActionsContext } from "../../room/actions/room-actions.context";
 import { useRoomActionItems } from "../../room/actions/use-room-action-items";
 import type { RoomStore } from "../../room/store/room.store";
@@ -20,7 +21,7 @@ import {
 } from "../../workbench/rail/use-workbench-panels";
 import { WorkbenchPanelIcon } from "../../workbench/rail/workbench-panel-icon";
 import type { PromptLibraryItem } from "./prompt-library-dialog";
-import type { SlashCommand } from "./slash-command/types";
+import type { SlashCommand } from "./slash-command/slash-command";
 
 /** Other words a Workspace panel's command is found by, such as old names. */
 const PANEL_KEYWORDS: Readonly<Record<string, string[]>> = {
@@ -68,7 +69,8 @@ interface RoomSlashCommandsOptions {
  * with Settings' Room section, so a command is found by the name it has there.
  *
  * @param options - The composer's room and its actions.
- * @returns The commands, by group.
+ * @returns The commands, by group, as the host's
+ * `ChatConfig.customize.slashCommands` leaves them.
  */
 export const useRoomSlashCommands = ({
 	room,
@@ -87,6 +89,7 @@ export const useRoomSlashCommands = ({
 	const panels = useWorkbenchPanels(workbenchRoom, newRoomPanels);
 	const roomActions = useRoomActionsContext();
 	const roomActionItems = useRoomActionItems();
+	const customize = useChatCustomization().slashCommands;
 	const isAgentMode = useRoomSelector(
 		room,
 		(current) => current.mode === "agent",
@@ -171,13 +174,13 @@ export const useRoomSlashCommands = ({
 			),
 		);
 	}
-	if (workbenchRoom.sidebar.isOpen) {
+	if (workbenchRoom.workbenchPane.isOpen) {
 		commands.push(
 			command(
 				"close-workspace",
 				"workspace",
 				<PanelRightCloseIcon className="rtl:-scale-x-100" />,
-				() => workbenchRoom.closeSidebar(),
+				() => workbenchRoom.closeWorkbench(),
 				{ label: t("studio.closeWorkspace") },
 			),
 		);
@@ -220,5 +223,5 @@ export const useRoomSlashCommands = ({
 		);
 	}
 
-	return commands;
+	return customize ? customize(commands, room) : commands;
 };

@@ -1,7 +1,7 @@
 import { type ReactNode, useState } from "react";
 import { type ResolvedToolView, ToolViewRenderer } from "@semoss/shared";
 import { cn, Skeleton } from "@semoss/ui/next";
-import type { ToolStore } from "../../conversation/store/tool.store";
+import type { ToolStore } from "../../room/store/tool.store";
 import { useRoomSelector } from "../../room/store/use-room-selector";
 import { toToolViewCall, toToolViewMode } from "./tool-view-call";
 import { createToolViewDecisions } from "./tool-view-decisions";
@@ -32,7 +32,7 @@ interface ComponentToolViewProps {
 	view: ResolvedToolView;
 	/**
 	 * `inline` sits in the conversation, where a result is kept to a bounded
-	 * height and an approval sizes to its form; `panel` fills a sidebar tab.
+	 * height and an approval sizes to its form; `panel` fills a Workbench tab.
 	 */
 	variant: "inline" | "panel";
 	/** Shown if the view fails, such as the call's generic card. */

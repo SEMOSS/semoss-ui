@@ -4,12 +4,9 @@ import type {
 	WorkbenchSnapshot,
 } from "@semoss/workbench";
 import type { ChatMode, Engine, MCPConfig, Prompt } from "../../../types";
-import type {
-	MessageKey,
-	MessageMap,
-} from "../../conversation/store/message-map";
-import type { ToolData } from "../../conversation/store/tool.store";
 import type { LocalFoldersHost } from "../../local-folders/store/local-folders-host";
+import type { MessageKey, MessageMap } from "./message-map";
+import type { ToolData } from "./tool.store";
 
 /** No agent tools; one array, so a room without an agent keeps its snapshot. */
 export const NO_AGENT_TOOLS: readonly MCPConfig[] = [];
@@ -118,7 +115,7 @@ export interface RoomSnapshot {
 	};
 
 	/** The Workspace's on-screen state. */
-	readonly sidebar: {
+	readonly workbenchPane: {
 		/**
 		 * Whether the Workspace is open.
 		 *
@@ -128,8 +125,8 @@ export interface RoomSnapshot {
 		isOpen: boolean;
 	};
 
-	/** The arrangement the room's first sidebar mount starts from; see `sidebarSnapshot`. */
-	readonly sidebarSnapshot: WorkbenchSnapshot;
+	/** The arrangement the room's first Workbench mount starts from; see `workbenchSnapshot`. */
+	readonly workbenchSnapshot: WorkbenchSnapshot;
 
 	/** Whether a cancellable streaming job is in flight and not yet stopped. */
 	readonly canCancelJob: boolean;
@@ -147,7 +144,7 @@ export interface RoomSnapshot {
 /** A room before it loads; the constructor adds its ids and arrangement. */
 export const INITIAL_ROOM: Omit<
 	RoomSnapshot,
-	"roomId" | "insightId" | "sidebarSnapshot"
+	"roomId" | "insightId" | "workbenchSnapshot"
 > = {
 	isLoading: false,
 	mode: "chat",
@@ -167,7 +164,7 @@ export const INITIAL_ROOM: Omit<
 		mcp: [],
 		temperature: undefined,
 	},
-	sidebar: {
+	workbenchPane: {
 		isOpen: false,
 	},
 	canCancelJob: false,
@@ -187,7 +184,7 @@ export interface RoomStoreOptions {
 	/** The insight to start on; "new" until the room loads. */
 	insightId?: string;
 	/**
-	 * The sidebar's panel blueprints. Handed in rather than imported: they
+	 * The Workbench's panel blueprints. Handed in rather than imported: they
 	 * render the chat's components, which import the room's store, so
 	 * importing them there would close a module cycle. The composition root
 	 * passes them down.

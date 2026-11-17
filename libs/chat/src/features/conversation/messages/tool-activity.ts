@@ -1,4 +1,4 @@
-import type { ResponseMessageStore } from "../store/response-message.store";
+import type { ResponseMessageStore } from "../../room/store/response-message.store";
 
 /**
  * Group a response's consecutive tool calls, in transcript order. A run of

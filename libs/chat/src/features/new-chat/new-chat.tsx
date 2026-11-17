@@ -3,6 +3,7 @@ import { useTranslation } from "@semoss/i18n";
 import { InsightProvider, useSessionPixel } from "@semoss/sdk/react";
 import { Alert, AlertDescription, Button } from "@semoss/ui/next";
 import { useChatConfig } from "../chat/config/use-chat-config";
+import { useChatSession } from "../chat/provider/use-chat-session";
 import { FileDropProvider } from "../conversation/attachments/file-drop.context";
 import { NextMessageRoomProvider } from "../conversation/attachments/next-message-room.context";
 import { canChooseAgentMode } from "../conversation/composer/agent-mode-choice";
@@ -11,9 +12,8 @@ import { RoomHeader } from "../room/header/room-header";
 import { RoomLayout } from "../room/layout/room-layout";
 import { RoomStore } from "../room/store/room.store";
 import { useRoomSelector } from "../room/store/use-room-selector";
-import { ROOM_PANEL_COMPONENTS } from "../workbench/panels/room-panel.components";
+import { DraftSettingsContext } from "../room-settings/draft-settings.context";
 import { RoomWorkbench } from "../workbench/room-workbench";
-import { DraftSettingsContext } from "./draft-settings.context";
 import { NewChatBanner } from "./new-chat-banner";
 import { NewChatLanding } from "./new-chat-landing";
 import { useCreateRoomFromDraft } from "./use-create-room-from-draft";
@@ -47,6 +47,8 @@ export const NewChat = ({
 }: NewChatProps) => {
 	const { t } = useTranslation("room");
 	const { theme } = useChatConfig();
+	// the store's blueprints, so a draft opens the same panels as a room
+	const { panelComponents } = useChatSession().chat;
 
 	// The new room holds the new chat's options until its first message,
 	// starting from the theme's defaults
@@ -54,7 +56,7 @@ export const NewChat = ({
 		const room = new RoomStore({
 			theme: theme,
 			roomId: "temp",
-			panelComponents: ROOM_PANEL_COMPONENTS,
+			panelComponents,
 			// no insight for Files to read until the draft prepares its room
 			includeFiles: false,
 		});
@@ -68,7 +70,7 @@ export const NewChat = ({
 				: undefined,
 		});
 		return room;
-	}, [theme]);
+	}, [theme, panelComponents]);
 
 	const draft = useDraftAgent(newRoom, workspaceId);
 	const { session, agent } = draft;
@@ -97,7 +99,7 @@ export const NewChat = ({
 	);
 	const isWorkbenchOpen = useRoomSelector(
 		workbenchRoom,
-		(current) => current.sidebar.isOpen,
+		(current) => current.workbenchPane.isOpen,
 	);
 	const preparedRoomIds = useRoomSelector(
 		created.preparation.room,
@@ -162,7 +164,7 @@ export const NewChat = ({
 			<div className="min-h-0 flex-1">
 				<RoomLayout
 					isWorkbenchOpen={isWorkbenchOpen}
-					onWorkbenchCollapse={() => workbenchRoom.closeSidebar()}
+					onWorkbenchCollapse={() => workbenchRoom.closeWorkbench()}
 					header={
 						<RoomHeader
 							room={workbenchRoom}

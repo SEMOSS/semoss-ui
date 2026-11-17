@@ -39,7 +39,7 @@ export const ResponseMessageMedia = ({
 		if (preview?.kind === "image") {
 			setOpenPreview(preview);
 		} else if (mediaInfo.fileLocation) {
-			room.openFileSidebarPanel(
+			room.openWorkbenchFilePanel(
 				mediaInfo.fileLocation,
 				mediaInfo.fileName,
 			);

@@ -45,9 +45,8 @@ vi.mock("react-router", async (original) => ({
 	useParams: () => ({ workspaceId: mocks.workspaceId }),
 	useNavigate: () => mocks.navigate,
 }));
-// the edit page saves through the chat's agent actions
-vi.mock("@semoss/chat", async (original) => ({
-	...(await original<typeof import("@semoss/chat")>()),
+// the edit page saves through the agent actions
+vi.mock("@/features/agents/agent-actions", () => ({
 	editAgent: mocks.editWorkspace,
 }));
 vi.mock("@semoss/sdk", async (original) => ({

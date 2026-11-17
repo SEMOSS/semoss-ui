@@ -62,14 +62,14 @@ test("the toggle opens the Workspace as it was left and closes it", () => {
 	expect(toggle).toHaveAttribute("aria-pressed", "false");
 
 	fireEvent.click(toggle);
-	expect(room.sidebar.isOpen).toBe(true);
+	expect(room.workbenchPane.isOpen).toBe(true);
 	expect(toggle).toHaveAttribute("aria-label", "studio.closeWorkspace");
 	expect(toggle).toHaveAttribute("aria-pressed", "true");
 	// the rail stays collapsed: nothing is opened for the user
 	expect(room.workbench.getState().layout.borders.left.activeId).toBeNull();
 
 	fireEvent.click(toggle);
-	expect(room.sidebar.isOpen).toBe(false);
+	expect(room.workbenchPane.isOpen).toBe(false);
 	expect(toggle).toHaveAttribute("aria-label", "studio.openWorkspace");
 });
 
@@ -83,7 +83,7 @@ test("inside a room, the header finds its room without a prop", () => {
 	fireEvent.click(
 		screen.getByRole("button", { name: "studio.openWorkspace" }),
 	);
-	expect(room.sidebar.isOpen).toBe(true);
+	expect(room.workbenchPane.isOpen).toBe(true);
 });
 
 test("without a room or a prop, the header says where it belongs", () => {

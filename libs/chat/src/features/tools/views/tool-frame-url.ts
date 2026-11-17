@@ -1,9 +1,6 @@
 import { isToolViewUri } from "@semoss/shared";
 import type { PixelMessageToolCallPart } from "../../../types";
-import {
-	isChatToolCall,
-	isFolderToolCall,
-} from "../default-tools/chat-tool-kind";
+import { isChatToolCall, isFolderToolCall } from "../chat-tools/chat-tool-kind";
 import { isAskExecutionMode } from "../mcp/mcp-utils";
 import type { ToolAppInfo } from "./use-tool-app-info";
 

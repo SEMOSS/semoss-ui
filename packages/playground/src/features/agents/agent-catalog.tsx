@@ -1,7 +1,7 @@
 import { SearchIcon } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { type App, deleteAgent } from "@semoss/chat";
+import type { App } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import { useSessionIteratorPixel } from "@semoss/sdk/react";
 import {
@@ -23,6 +23,7 @@ import {
 	useInfiniteScroll,
 	useTheme,
 } from "@semoss/ui/next";
+import { deleteAgent } from "@/features/agents/agent-actions";
 import { WorkspaceCard } from "@/features/agents/workspace-card";
 import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 

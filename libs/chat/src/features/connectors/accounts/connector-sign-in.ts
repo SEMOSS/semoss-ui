@@ -2,7 +2,7 @@ import { Session } from "@semoss/sdk";
 import {
 	type ConnectorProviderId,
 	getConnectorProvider,
-} from "../store/connector.catalog";
+} from "../store/connector-catalog";
 
 /**
  * How the backend says a connector call needs its account signed in: the

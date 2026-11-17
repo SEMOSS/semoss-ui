@@ -21,12 +21,12 @@ export const RoomFrame = ({ header, workbench, children }: RoomFrameProps) => {
 	const room = useRoom();
 	const isWorkbenchOpen = useRoomSelector(
 		room,
-		(current) => current.sidebar.isOpen,
+		(current) => current.workbenchPane.isOpen,
 	);
 	return (
 		<RoomLayout
 			isWorkbenchOpen={isWorkbenchOpen}
-			onWorkbenchCollapse={() => room.closeSidebar()}
+			onWorkbenchCollapse={() => room.closeWorkbench()}
 			header={header}
 			workbench={workbench}
 		>

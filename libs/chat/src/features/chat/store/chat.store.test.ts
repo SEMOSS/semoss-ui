@@ -90,7 +90,7 @@ beforeEach(() => {
  * @returns The initialized store.
  */
 const createStore = async () => {
-	const store = new ChatStore(DEFAULT_CHAT_THEME, {});
+	const store = new ChatStore({ theme: DEFAULT_CHAT_THEME });
 	await store.initialize();
 	return store;
 };
@@ -108,15 +108,14 @@ test("reads the user's new chat default model from the session", async () => {
 test("falls back to the deployment's default, then the first model", async () => {
 	mocks.snapshot = { status: "AUTHENTICATED", user: mocks.user("gone") };
 	const theme = DEFAULT_CHAT_THEME;
-	const store = new ChatStore(
-		{
+	const store = new ChatStore({
+		theme: {
 			...theme,
 			defaultRoomSettings: {
 				model: MODELS[2],
 			},
 		},
-		{},
-	);
+	});
 	await store.initialize();
 
 	expect(store.models.selected.engine_id).toBe("model-c");

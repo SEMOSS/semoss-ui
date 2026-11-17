@@ -6,8 +6,8 @@ import { FILE_PANEL_TYPES } from "@semoss/panels";
 import { DEFAULT_CHAT_THEME } from "../../chat/config/chat-theme";
 import { RoomActionsProvider } from "../../room/actions/room-actions.context";
 import { RoomStore } from "../../room/store/room.store";
-import { ROOM_PANEL_TYPES } from "../../room/store/room-sidebar";
-import { ROOM_PANEL_COMPONENTS } from "../panels/room-panel.components";
+import { ROOM_PANEL_TYPES } from "../../room/store/room-workbench-layout";
+import { DEFAULT_WORKBENCH_PANEL_COMPONENTS } from "../panels/room-panel-components";
 import { RoomWorkbenchRail } from "./room-workbench-rail";
 import type { NewRoomWorkbenchPanels } from "./use-workbench-panels";
 
@@ -40,7 +40,7 @@ vi.mock("../../chat/provider/use-chat-session", async () => {
 	return { useChatSession: () => ({ chat }) };
 });
 // Publish as Agent saves through the agent actions, not the chat store
-vi.mock("../../chat/store/agent-actions", () => ({
+vi.mock("../../room/actions/add-agent", () => ({
 	addAgent: mocks.addWorkspace,
 }));
 vi.mock("@semoss/i18n", () => ({
@@ -75,7 +75,7 @@ function createRoom(): RoomStore {
 	const room = new RoomStore({
 		theme: DEFAULT_CHAT_THEME,
 		roomId: "panel-rail",
-		panelComponents: ROOM_PANEL_COMPONENTS,
+		panelComponents: DEFAULT_WORKBENCH_PANEL_COMPONENTS,
 	});
 	room.connectors.setServices(["onedrive"]);
 	return room;

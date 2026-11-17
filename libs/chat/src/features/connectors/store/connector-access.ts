@@ -2,7 +2,7 @@ import {
 	type ConnectorProviderId,
 	type ConnectorServiceId,
 	getConnectorService,
-} from "./connector.catalog";
+} from "./connector-catalog";
 
 /**
  * Which of a provider's apps its sign in lets the connectors use, from

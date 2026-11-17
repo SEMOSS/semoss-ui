@@ -102,8 +102,8 @@ vi.mock("../../chat/provider/use-chat-session", () => ({
 	// a fixed chat store: its snapshot is itself
 	useChatSession: () => ({ chat: CHAT }),
 }));
-vi.mock("../../workbench/rail/use-sidebar-panel-active", () => ({
-	useSidebarPanelActive: () => false,
+vi.mock("../../workbench/rail/use-workbench-panel-active", () => ({
+	useWorkbenchPanelActive: () => false,
 }));
 vi.mock("./prompt-optimizer", () => ({
 	PromptOptimizer: ({
@@ -246,7 +246,7 @@ vi.mock("@lexical/react/LexicalOnChangePlugin", () => ({
 }));
 
 // Mock EnterPlugin to listen for keydown directly (bypasses Lexical command system)
-vi.mock("../../../components/lexical/enter-plugin", () => ({
+vi.mock("./editor/enter-plugin", () => ({
 	EnterPlugin: ({ onEnter }: { onEnter: () => void }) => {
 		React.useEffect(() => {
 			const handler = (e: KeyboardEvent) => {

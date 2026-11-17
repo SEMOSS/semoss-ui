@@ -13,11 +13,12 @@ import type {
 	WorkbenchPanelParams,
 	WorkbenchPanelType,
 } from "@semoss/workbench";
+import { useChatCustomization } from "../../chat/config/use-chat-customization";
 import type { ConnectorsStore } from "../../connectors/store/connectors.store";
 import { useConnectors } from "../../connectors/store/use-connectors";
 import { RoomLayoutActionsContext } from "../../room/layout/room-layout-actions.context";
 import type { RoomStore } from "../../room/store/room.store";
-import { ROOM_PANEL_TYPES } from "../../room/store/room-sidebar";
+import { ROOM_PANEL_TYPES } from "../../room/store/room-workbench-layout";
 import { useRoomSelector } from "../../room/store/use-room-selector";
 
 /** What every Workspace panel option has, whatever its kind. */
@@ -85,7 +86,8 @@ export interface NewRoomWorkbenchPanels {
  *
  * @param room - The room whose Workspace shows the panels.
  * @param newRoomPanels - A new chat's own panel actions, until its first message.
- * @returns The room's panels, then the connector viewers.
+ * @returns The room's panels, then the connector viewers, as the host's
+ * `ChatConfig.customize.workbenchPanels` leaves them.
  */
 export const useWorkbenchPanels = (
 	room: RoomStore,
@@ -93,6 +95,7 @@ export const useWorkbenchPanels = (
 ): WorkbenchPanelOption[] => {
 	const { t } = useTranslation(["room", "connectors"]);
 	const roomLayout = useContext(RoomLayoutActionsContext);
+	const customize = useChatCustomization().workbenchPanels;
 	const connectors = newRoomPanels?.connectors ?? room.connectors;
 	// the viewers on offer follow the connectors switched on and signed in
 	useConnectors(connectors);
@@ -121,7 +124,7 @@ export const useWorkbenchPanels = (
 			isDisabled: isWaiting("files"),
 			isLoading: isWaiting("files"),
 			onOpen: openPanel({ kind: "files" }, () =>
-				room.openSidebarFileExplorer(),
+				room.openWorkbenchFileExplorer(),
 			),
 		},
 		{
@@ -152,7 +155,7 @@ export const useWorkbenchPanels = (
 			isDisabled: isWaiting("activity"),
 			isLoading: false,
 			onOpen: openPanel({ kind: "activity" }, () =>
-				room.openSidebarPanel(
+				room.openWorkbenchPanel(
 					ROOM_PANEL_TYPES.AUDIT_LOG,
 					{},
 					t("workspacePlaces.activity"),
@@ -177,5 +180,5 @@ export const useWorkbenchPanels = (
 			),
 		});
 	}
-	return panels;
+	return customize ? customize(panels, room) : panels;
 };

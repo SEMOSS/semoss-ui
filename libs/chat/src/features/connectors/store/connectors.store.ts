@@ -3,20 +3,20 @@ import { getI18n } from "@semoss/i18n";
 import { isSameArray } from "@semoss/utility/array";
 import { StoreState } from "@semoss/utility/store";
 import type { RoomStore } from "../../room/store/room.store";
-import type { McpTool } from "../../tools/default-tools/chat-tool-info";
+import type { McpTool } from "../../tools/chat-tools/chat-tool-info";
 import { NEW_INSIGHT_ID } from "../../tools/mcp/mcp-constants";
 import {
 	CONNECTOR_SOURCES,
 	type ConnectorSource,
 	getConnectorSource,
 } from "../viewers/connector-sources";
+import { isServiceCovered as isCoveredByServer } from "./connector-access";
 import {
 	CONNECTOR_PROVIDERS,
 	type ConnectorProviderId,
 	type ConnectorServiceId,
 	isProviderOffered as isOfferedByServer,
-} from "./connector.catalog";
-import { isServiceCovered as isCoveredByServer } from "./connector-access";
+} from "./connector-catalog";
 import {
 	getConnectorServices,
 	loadRoomTools,
@@ -147,7 +147,7 @@ export class ConnectorsStore {
 		return this.state.getSnapshot().dismissedScopeNotices;
 	}
 
-	/** The room whose tool file holds the copy and whose sidebar shows the viewers. */
+	/** The room whose tool file holds the copy and whose Workbench shows the viewers. */
 	private readonly room: RoomStore;
 
 	/**
@@ -448,13 +448,13 @@ export class ConnectorsStore {
 		isCoveredByServer(serviceId, this.connectorAccess);
 
 	/**
-	 * Show a Microsoft 365 or Google Workspace viewer in the room's sidebar.
+	 * Show a Microsoft 365 or Google Workspace viewer in the room's Workbench.
 	 *
 	 * @param service - The viewer to show.
 	 */
 	openSourcePanel = (service: ConnectorViewerService): void => {
 		const source = getConnectorSource(service);
-		this.room.openSidebarPanel(
+		this.room.openWorkbenchPanel(
 			source.panelType,
 			{},
 			getI18n().t(source.nameKey),

@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLogins } from "@semoss/sdk/react";
 import {
+	getProviderAccess,
+	isServiceCovered as isCoveredByServer,
+} from "../store/connector-access";
+import {
 	CONNECTOR_PROVIDERS,
 	type ConnectorProvider,
 	type ConnectorProviderId,
@@ -8,11 +12,7 @@ import {
 	getConnectorProvider,
 	getConnectorService,
 	isProviderOffered,
-} from "../store/connector.catalog";
-import {
-	getProviderAccess,
-	isServiceCovered as isCoveredByServer,
-} from "../store/connector-access";
+} from "../store/connector-catalog";
 import { signInToProvider } from "./connector-sign-in";
 
 /** Where one provider stands for the current session. */

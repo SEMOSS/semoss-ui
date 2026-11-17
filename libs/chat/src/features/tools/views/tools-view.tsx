@@ -12,12 +12,12 @@ import {
 import { getErrorMessage } from "@semoss/utility/error";
 import { useStoreSelector } from "@semoss/utility/react/use-store-selector";
 import { useChatConfig } from "../../chat/config/use-chat-config";
-import { decideAgentToolAction } from "../../conversation/store/agent-harness";
-import type { ToolStore } from "../../conversation/store/tool.store";
 import type { RoomStore } from "../../room/store/room.store";
+import type { ToolStore } from "../../room/store/tool.store";
 import { useRoomSelector } from "../../room/store/use-room-selector";
+import { decideAgentToolAction } from "../../room/turns/agent-turn-runner";
 import { ToolInspector } from "../inspector/tool-inspector";
-import { ChatToolCard } from "../settings/chat-tool-card";
+import { ChatToolCard } from "./chat-tool-card";
 import { ComponentToolView } from "./component-tool-view";
 import { resolveSystemAppUrl, resolveToolFrameUrl } from "./tool-frame-url";
 import { ToolsDefaultView } from "./tools-default-view";

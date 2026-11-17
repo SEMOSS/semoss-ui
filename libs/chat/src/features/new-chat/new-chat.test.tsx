@@ -18,9 +18,9 @@ import {
 import type { ContextItemsStore } from "../conversation/attachments/context-items.store";
 import { useContextItems } from "../conversation/attachments/use-context-items";
 import type { RoomInput } from "../conversation/composer/room-input";
-import type { RoomOptionsForm } from "../room/settings/room-options-form";
 import { RoomStore } from "../room/store/room.store";
-import { ROOM_PANEL_COMPONENTS } from "../workbench/panels/room-panel.components";
+import type { RoomSettingsForm } from "../room-settings/room-settings-form";
+import { DEFAULT_WORKBENCH_PANEL_COMPONENTS } from "../workbench/panels/room-panel-components";
 import { NewChat } from "./new-chat";
 
 const mocks = vi.hoisted(() => ({
@@ -113,6 +113,10 @@ const chat = fakeStore({
 	addOptimisticRoom: vi.fn(),
 	removeOptimisticRoom: vi.fn(),
 	keys: { roomCounter: 0 },
+	// read when the draft is made, after the panels module below is mocked
+	get panelComponents() {
+		return DEFAULT_WORKBENCH_PANEL_COMPONENTS;
+	},
 });
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
@@ -134,7 +138,7 @@ vi.mock("@semoss/sdk/react", async (original) => ({
 	useSession: <T,>(selector: (state: typeof mocks.session) => T) =>
 		selector(mocks.session),
 }));
-vi.mock("../chat/store/use-agent-workspace", () => ({
+vi.mock("../tools/mcp/use-agent-workspace", () => ({
 	useAgentWorkspace: mocks.agentWorkspace,
 }));
 vi.mock("../chat/config/use-chat-config", () => ({
@@ -152,10 +156,12 @@ vi.mock("@semoss/ui/next", async (original) => ({
 	...(await original<typeof import("@semoss/ui/next")>()),
 	useTheme: () => ({ theme: "light" }),
 }));
-vi.mock("../workbench/panels/room-panel.components", async () => {
-	const { ROOM_PANEL_TYPES } = await import("../room/store/room-sidebar");
+vi.mock("../workbench/panels/room-panel-components", async () => {
+	const { ROOM_PANEL_TYPES } = await import(
+		"../room/store/room-workbench-layout"
+	);
 	const { ROOM_CONFIGURATION_PANEL } = await import(
-		"../workbench/panels/room-configuration-panel"
+		"../room-settings/room-settings-panel"
 	);
 	const { FILE_PANEL_TYPES } = await import("@semoss/panels");
 	const { useNextMessageRoom } = await import(
@@ -179,7 +185,7 @@ vi.mock("../workbench/panels/room-panel.components", async () => {
 		);
 	};
 	return {
-		ROOM_PANEL_COMPONENTS: {
+		DEFAULT_WORKBENCH_PANEL_COMPONENTS: {
 			[ROOM_PANEL_TYPES.GMAIL]: {
 				name: "Gmail",
 				mount: "keepAlive",
@@ -229,10 +235,10 @@ vi.mock("../room/layout/room-layout", () => ({
 		</>
 	),
 }));
-vi.mock("../room/settings/room-options-form", () => ({
-	RoomOptionsForm: ({
+vi.mock("../room-settings/room-settings-form", () => ({
+	RoomSettingsForm: ({
 		session: { options, onOptionsChange, agent, onDefaultAgentChange },
-	}: ComponentProps<typeof RoomOptionsForm>) => (
+	}: ComponentProps<typeof RoomSettingsForm>) => (
 		<>
 			{agent.kind === "savedOrDefault" && (
 				<button
@@ -469,7 +475,7 @@ function createPreparedRoom(): RoomStore {
 		theme: root.theme,
 		roomId: "prepared",
 		insightId: "insight",
-		panelComponents: ROOM_PANEL_COMPONENTS,
+		panelComponents: DEFAULT_WORKBENCH_PANEL_COMPONENTS,
 	});
 }
 
@@ -812,7 +818,7 @@ test("Settings prepares the room, and the toggle closes and reopens it on the sa
 		name: "room:workspacePlaces.settings",
 	});
 	expect(settings).toHaveAttribute("aria-selected", "true");
-	expect(room.sidebar.isOpen).toBe(true);
+	expect(room.workbenchPane.isOpen).toBe(true);
 	fireEvent.click(
 		screen.getByRole("button", { name: "studio.closeWorkspace" }),
 	);
@@ -838,14 +844,14 @@ test("opening the Workspace on a new chat prepares its room once", async () => {
 		screen.getByRole("button", { name: "studio.closeWorkspace" }),
 	).toBeInTheDocument();
 	await screen.findByRole("tab", { name: "room:workspacePlaces.files" });
-	expect(room.sidebar.isOpen).toBe(true);
+	expect(room.workbenchPane.isOpen).toBe(true);
 	fireEvent.click(
 		screen.getByRole("button", { name: "studio.closeWorkspace" }),
 	);
 	fireEvent.click(
 		screen.getByRole("button", { name: "studio.openWorkspace" }),
 	);
-	expect(room.sidebar.isOpen).toBe(true);
+	expect(room.workbenchPane.isOpen).toBe(true);
 	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(1);
 });
 
@@ -868,7 +874,7 @@ test("closing the Workspace while the room prepares leaves it closed", async () 
 	resolvePreparation(room);
 	await waitFor(() => expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(1));
 	await screen.findByRole("button", { name: "studio.openWorkspace" });
-	expect(room.sidebar.isOpen).toBe(false);
+	expect(room.workbenchPane.isOpen).toBe(false);
 });
 
 test("Retry after a failed preparation reopens the Workspace in the prepared room", async () => {
@@ -886,7 +892,7 @@ test("Retry after a failed preparation reopens the Workspace in the prepared roo
 		await screen.findByRole("button", { name: "room:studio.retry" }),
 	);
 	await screen.findByRole("tab", { name: "room:workspacePlaces.files" });
-	expect(room.sidebar.isOpen).toBe(true);
+	expect(room.workbenchPane.isOpen).toBe(true);
 	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(2);
 });
 
@@ -960,7 +966,7 @@ test("failed preparation keeps draft settings usable, and Retry reopens Settings
 	expect(screen.getByLabelText("Instructions")).toHaveValue(
 		"Keep after retry",
 	);
-	expect(room.sidebar.isOpen).toBe(true);
+	expect(room.workbenchPane.isOpen).toBe(true);
 	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(2);
 });
 

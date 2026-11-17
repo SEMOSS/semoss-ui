@@ -1,8 +1,8 @@
+import { ResponseMessageStore } from "../../room/store/response-message.store";
 import type { RoomStore } from "../../room/store/room.store";
+import { isToolSettled } from "../../room/store/tool-status";
 import { isAskExecutionMode } from "../../tools/mcp/mcp-utils";
 import type { SendButtonState } from "../composer/room-input";
-import { ResponseMessageStore } from "../store/response-message.store";
-import { isToolSettled } from "../store/tool.store";
 
 /** Where a room's current turn stands, as its messages and composer show it. */
 export interface RoomTurnState {

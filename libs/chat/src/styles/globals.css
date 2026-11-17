@@ -1,6 +1,7 @@
 /*
  * Tailwind has to scan this package's sources, or none of the chat's classes
- * are generated in the host's stylesheet. A host imports this file next to
- * `@semoss/shared/globals.css`.
+ * are generated in the host's stylesheet. Like every library's `globals.css`
+ * it holds only its own: a host imports it with the stylesheets of the other
+ * libraries it mounts (see the README's "Styles").
  */
 @source "../**/*.{ts,tsx}";

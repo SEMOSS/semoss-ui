@@ -12,11 +12,11 @@ import {
 	DialogTitle,
 	toast,
 } from "@semoss/ui/next";
-import { decideAgentToolAction } from "../../conversation/store/agent-harness";
-import { ResponseMessageStore } from "../../conversation/store/response-message.store";
-import type { ToolStore } from "../../conversation/store/tool.store";
+import { ResponseMessageStore } from "../../room/store/response-message.store";
 import type { RoomStore } from "../../room/store/room.store";
+import type { ToolStore } from "../../room/store/tool.store";
 import { useRoomSelector } from "../../room/store/use-room-selector";
+import { decideAgentToolAction } from "../../room/turns/agent-turn-runner";
 import { ToolInspector } from "../inspector/tool-inspector";
 import { getToolEngineId, isAskExecutionMode } from "../mcp/mcp-utils";
 import {

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { getFollowUpQuestionsPixel } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
 import { isRecord } from "@semoss/utility/object";
-import { CONNECTOR_SERVICES } from "../../connectors/store/connector.catalog";
+import { CONNECTOR_SERVICES } from "../../connectors/store/connector-catalog";
 import { useConnectors } from "../../connectors/store/use-connectors";
 import type { RoomStore } from "../../room/store/room.store";
 import { useRoomSelector } from "../../room/store/use-room-selector";

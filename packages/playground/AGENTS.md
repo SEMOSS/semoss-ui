@@ -1,29 +1,37 @@
 # AGENTS.md - @semoss/playground
 
-This document provides context for AI coding assistants working with the SEMOSS Playground application.
+> **Inherits from:** [root AGENTS.md](../../AGENTS.md). Read the
+> [React standard](../../skills/react-standard.skill.md) before changing React code, and the
+> [chat guide](../../libs/chat/AGENTS.md) before changing how the app composes the chat.
 
-> **Inherits from:** [root AGENTS.md](../../AGENTS.md). Load the applicable
-> [root skills](../../skills/README.md), including the [React standard](../../skills/react-standard.skill.md)
-> and [SDK chat skill](../../skills/sdk-chat.skill.md) for room work.
+`@semoss/playground` is the SEMOSS chat's web app, private and not published. It is the shell
+around [`@semoss/chat`](../../libs/chat/AGENTS.md): routing, the global navigation, the theme,
+agents, knowledge, embedded pages and the tour. The desktop app
+([`@semoss/playground-desktop`](../playground-desktop/AGENTS.md)) composes the same library.
 
-## Overview
+**If the desktop app needs it too, it belongs in `@semoss/chat`.** The chat, the room list, the
+Workspace and the settings dialog are the library's; this app only places them.
 
-`@semoss/playground` is the SEMOSS chat's web app. It is private (not published): the shell
-(routing, navigation, settings, agents, knowledge, the tour) around the chat in
-[`@semoss/chat`](../../libs/chat/AGENTS.md), which the desktop app shares.
+## Where a change goes
 
-## Structure & Conventions
+| You are changing | Where |
+|---|---|
+| A route, or which layout wraps it | `src/pages/router.tsx` |
+| The signed in shell: providers, navigation beside the route | `src/pages/app-layout.tsx` (`AppLayout`) |
+| What the chat is given: routes, env defaults, platform URL | `src/features/chat-config/` (`usePlaygroundChatConfig`) |
+| The global navigation, the user menu, the open-navigation button | `src/features/navigation/` |
+| The build's and server's theme, the tab title | `src/features/theme/` |
+| Agent catalog, create, detail, edit; creating and deleting agents | `src/features/agents/` |
+| The knowledge library and a knowledge base's detail | `src/features/knowledge/` |
+| Pages the theme embeds in iframes | `src/features/embed/`, `src/pages/embed.page.tsx` |
+| The landing tour | `src/features/tour/` |
+| The welcome dialog, footer, language direction | `src/features/app-shell/` |
+| Anything inside a room, a new chat, the room list, or the settings dialog | [`@semoss/chat`](../../libs/chat/AGENTS.md#where-a-change-goes) |
 
-Code lives in `src/features/<feature>/` (agents, app-shell, chat-config, connectors, knowledge,
-navigation, settings, theme, tour); `src/pages/` holds the router, the layouts, and thin
-`<name>.page.tsx` route pages. Follow the React skill's
-[architecture policy](../../skills/react-standard.skill.md#architecture-and-exports); a feature
-imports another feature, or anything outside its own folder, through `@/`, and the chat through
-`@semoss/chat`. The playground has no `api` folder, and none should be
-added: backend calls apps share live in `libs/sdk/src/api/` (for example `runMcpTool` and
-`makeUserPixelMcp` in `mcp.ts`), and asset pixels come from the file explorer adapter in
-`@semoss/shared` (`getFileExplorerAdapter`). A room's own tool file is read and written by
-`@semoss/chat`'s `features/room/store/room-tool-file.ts`.
+`src/pages/` holds the router, the layouts, and thin `<name>.page.tsx` route pages; everything
+else is in `src/features/<feature>/`. A feature imports another through `@/`, and the chat through
+`@semoss/chat`. There is no `api` folder and none should be added: backend calls live in
+`libs/sdk/src/api/`.
 
 ## Routes
 
@@ -35,285 +43,116 @@ added: backend calls apps share live in `libs/sdk/src/api/` (for example `runMcp
 | `/room/:roomId` | `RoomPage` | `RoomScope` around `RoomFrame`, `RoomHeader`, `RoomWorkbench`, `RoomConversation` |
 | `/agent`, `/agent/new`, `/agent/:workspaceId`, `/agent/:workspaceId/edit` | `features/agents/` | The catalog, create, detail, and edit pages |
 | `/knowledge`, `/knowledge/:knowledgeId` | `features/knowledge/` | The library and a knowledge base's detail |
-| `/embed/*` | `EmbedPage` | A page embedded from the chat store's `embeddedPageMap`, kept mounted by `MainLayout` |
+| `/embed/*` | `EmbedPage` | A page from the chat store's `embeddedPageMap`, kept mounted by `EmbeddedPages` |
 | `/login` | `LoginPage` | Outside `AuthenticatedLayout` |
 | anything else | | `/new` when signed in, else `/login` |
 
 The layouts nest `InitializedLayout` (waits for the session, provides the theme through
-`RootLayout`) → `AuthenticatedLayout` → `MainLayout` (the chat's providers, the settings dialog,
-the tour, and `GlobalNav`). `ErrorPage` catches errors in the layouts, and again inside
-`MainLayout` (`isInnerComponent`) so the navigation stays beside a failed page.
+`RootLayout`) → `AuthenticatedLayout` → `AppLayout`. `ErrorPage` catches errors in the layouts,
+and again inside `AppLayout` (`isInnerComponent`) so the navigation stays beside a failed page.
+
+## How the app composes the chat
+
+- **`AppLayout`** builds the chat's config (`usePlaygroundChatConfig`), makes the store from it
+  (`useCreateChatStore(config)`), and provides both. It holds the settings dialog's state
+  (`useUserSettingsDialog`) and renders `UserSettingsDialog`; the config carries `openSettings`,
+  so `NavUser` and chat UI open it the same way. It also provides the tour (`useLandingTour`) and
+  renders `EmbeddedPages`.
+- **`usePlaygroundChatConfig`** gives the chat the theme, the env's defaults
+  (`new-chat-build-defaults.ts`), the platform URL (`platform-url.ts`, from `VITE_PLATFORM_URL`),
+  the routes (`openRoom`, `roomHref`, `agentHref`, `openNewChat`, `onRoomDeleted`,
+  `openSettings`), and `onWorkbenchOpenChange`, which folds the navigation while a room's
+  Workspace is open (`useWorkbenchNavigation`).
+- **`pages/room.page.tsx`** lays out `RoomScope`, and **`pages/new-room.page.tsx`** renders
+  `NewChat`; both put `PageHeaderNavigation` at the start of the header.
+- **`GlobalNav`** holds `RoomList` and `RoomSearchDialog`.
+
+To add a panel, a slash command, a room action, a composer menu item or a settings page, see
+[Customizing the chat](../../libs/chat/README.md#customizing-the-chat).
 
 ## Session, config and insights
 
 - **Sign in, the user and the config come from the SDK.** `app.tsx` sets `Env.MODULE` (the
   server's `semoss-env` tag wins, then `.env`'s `MODULE`, then `/Monolith`), and `main.tsx` calls
   `Session.initialize()` once, after embed authentication (`waitForEmbedAuth`) and the active
-  language, and before the first render. `InitializedLayout` waits while
-  `useSession` is `INITIALIZING`. `AuthenticatedLayout` sends `UNAUTHENTICATED` to `/login`, and
-  shows `ErrorPage` with Retry (`useSessionRetry` from `@semoss/sdk/react`) on `ERROR`, so `/login` still renders.
-  The shared `LoginForm` signs in through `useSession`, and `NavUser` signs out the same way.
-  Read the user with `useSession((state) => state.user)` and config values with
-  `useConfig((state) => state.config?.x)`. See [the SDK session guide](../../libs/sdk/skills/session.skill.md).
-- **The theme is `usePlaygroundTheme()`** (`features/theme/use-playground-theme.ts`): the server's
-  `THEME_MAP` `playground` entry over `VITE_THEME`, `VITE_NAME` and the defaults. These are laid
-  together by `withPlaygroundDefaults` in `features/theme/playground-theme.ts`, over the chat's
-  `DEFAULT_CHAT_THEME`, which returns the same object for the same server theme.
-- **Only rooms are insights.** The app has no `InsightProvider` of its own. `RoomScope`, and a
-  new chat's prepared room, mount one with `options={{ insightId: room.insightId }}` and
-  `destroyOnUnmount={false}`, since `RoomStore` owns that insight. Pixels that belong to no
-  room run in the session's insight: `useSessionPixel` for reads, `useSessionIteratorPixel` for
-  lists that page, `useSessionInsight().run` / `upload` / `download`, or
-  `Session.insight.run` outside React. `run` returns `errors` rather than throwing, so wrap it in
-  `throwOnPixelErrors` (exported by `@semoss/sdk`) where a caller expects a throw.
-- **Moving off MobX and zustand.** Put new state in hooks over the SDK's stores, or in an
-  `StoreState`-backed store per the
-  [state management skill](../../skills/state-management.skill.md), never in a new
-  MobX or zustand store. The chat's stores live in
-  `@semoss/chat`, whose [guide](../../libs/chat/AGENTS.md#state) says where each stands. The
-  user is the SDK's (`useSession`); the chat store keeps no copy.
-- **A new chat's model, mode and agent follow one order.** Each takes the first that is set:
-  1. what this login session last used, kept in memory and never in `sessionStorage` (the model is
-     `ChatStore`'s selected model; the mode and agent are held by `new-chat-preferences.ts`, by
-     `lastLogin`), so a reload starts again at 2;
-  2. the user's default, their metadata `playground--default-input-text-model`,
-     `playground--default-chat-mode` and `playground--default-chat-agent`, saved with
-     `Session.setMetadata` from Settings > General's Chat section
-     (`features/settings/new-chat-settings.tsx`), where the model and agent rows' **Default** choice clears it;
-  3. the deployment's default: the theme's `defaultRoomSettings` (`model`, `mode`, `agentId`),
-     then `VITE_DEFAUlT_MODEL_ID`, `VITE_DEFAULT_CHAT_MODE` and `VITE_DEFAULT_CHAT_AGENT_ID`
-     (read in `features/chat-config/new-chat-build-defaults.ts` and given to the chat as
-     `ChatConfig.newChatDefaults`);
-  4. the first available: the first model, chat mode, and Default Agent.
-
-  A mode is always chat where agent mode is not offered, an agent link (`?workspaceId=`) wins over
-  steps 1 to 3, and an agent from them that the user can no longer open gives way to Default Agent.
-  The rules live in `@semoss/chat`'s `features/chat/config/new-chat-preferences.ts`. Playground does not
-  read the platform's `text-generation-model`.
-
-## Build System
-
-- **Bundler**: Vite 8
-- **Framework**: React 19 with TypeScript
-- **Styling**: Tailwind CSS v4
-- **Testing**: Vitest with jsdom
-
-### Commands
-
-| Command | Description |
-|---------|-------------|
-| `pnpm dev` | Start dev server on port 5174 |
-| `pnpm build` | Production build |
-| `pnpm build:dev` | Development build |
-| `pnpm test` | Run tests once |
-| `pnpm test:watch` | Run tests in watch mode |
-| `pnpm test:ui` | Run tests with Vitest UI |
-| `pnpm test:coverage` | Run tests with coverage report |
-| `pnpm type-check` | TypeScript type checking |
-
-Run these from `packages/playground`, or use `pnpm --filter @semoss/playground <command>`.
-
-## Environment Variables
-
-### `.env` (Development Defaults)
-
-```bash
-# Server proxy configuration
-ENDPOINT=http://localhost:9090    # Backend server URL
-MODULE=/Monolith                   # Deployed instance path
-
-# Platform
-VITE_PLATFORM_URL="../../client/dist"
-
-# Theming
-VITE_NAME="Playground"
-VITE_THEME="{}"
-
-# Model configuration
-VITE_DEFAUlT_MODEL_ID=""
-VITE_DEFAUlT_MODEL_NAME=""
-
-# New chat defaults (chat or agent, and a saved agent id)
-VITE_DEFAULT_CHAT_MODE=""
-VITE_DEFAULT_CHAT_AGENT_ID=""
-```
-
-### Environment File Precedence
-
-Highest to lowest priority for development: existing process environment,
-`.env.development.local`, `.env.development`, `.env.local`, then `.env`.
-Mode-specific files are optional; never edit local override files as part of repository work.
-
-## Vite Configuration
-
-### Proxy Setup
-
-The dev server proxies API requests to the backend:
-
-`vite.config.ts` builds on `createViteConfig` from `@semoss/config` with
-`port: DEV_SERVER_PORTS.playground` (5174) and `proxy: { ws: true }`. The shared config turns
-that into a proxy of `MODULE` to `ENDPOINT`, WebSockets included:
-
-```typescript
-server: {
-  port: 5174,
-  proxy: {
-    [MODULE]: {
-      target: ENDPOINT,
-      changeOrigin: true,
-      secure: false,
-      ws: true,
-    },
-  },
-}
-```
-
-The config also adds the dock's wiring (`aiSdkStubAlias`, `scopePptxViewerCssPlugin`), the
-`monaco-editor` alias, the per-language chunks (`localeManualChunks`), and defines `ACCESS_KEY`
-and `SECRET_KEY` in development builds only.
-
-### Path Aliases
-
-- `@/` → `./src/` (e.g., `import { GlobalNav } from "@/features/navigation/global-nav"`)
-
-## Testing Configuration
-
-### Vitest Setup
-
-- **Environment**: jsdom
-- **Pool**: vmForks (for isolation)
-- **Timeout**: 10 seconds
-- **Setup file**: `vitest.setup.ts`
-
-The setup file includes:
-- `@testing-library/jest-dom` matchers
-- A `ResizeObserver` stub, which jsdom lacks
-- Canvas mock for components using `<canvas>`
-
-### Coverage
-
-Coverage reports output to `./coverage/packages/playground/` and include only `src/features/`.
-
-## Workspace Dependencies
-
-```json
-{
-  "@semoss/chat": "workspace:*",
-  "@semoss/connectors": "workspace:*",
-  "@semoss/i18n": "workspace:*",
-  "@semoss/panels": "workspace:*",
-  "@semoss/sdk": "workspace:*",
-  "@semoss/shared": "workspace:*",
-  "@semoss/ui": "workspace:*",
-  "@semoss/utility": "workspace:*",
-  "@semoss/workbench": "workspace:*"
-}
-```
-
-Source-only libraries are compiled by the app. Built libraries need their build/watch
-process running; use the root `pnpm dev:playground` command for dependency orchestration.
-
-## The chat
-
-The chat itself (rooms, messages, tools, the Workspace, the room list, and the new-chat screen)
-is [`@semoss/chat`](../../libs/chat/AGENTS.md); read its guide for the glossary, the room
-Workspace, chat tools, the slash menu, tool views, the next message's files, and connectors, and
-its [README](../../libs/chat/README.md) for how a host composes it. The playground composes its
-pieces:
-
-- `MainLayout` makes the chat store (`useCreateChatStore(theme, NEW_CHAT_BUILD_DEFAULTS)`) and
-  provides it with `ChatSessionProvider`. It uses the split providers rather than `ChatProvider`
-  because the settings dialog sits between them: it reads the store (the models in Settings >
-  General's Chat section), and its `SettingsDialogProvider` provides the `openSettings` the config
-  hands chat UI.
-- `PlaygroundChatConfigProvider` (`features/chat-config/playground-chat-config-provider.tsx`)
-  gives `ChatConfigProvider` the theme, the env's defaults (`new-chat-build-defaults.ts`), the
-  platform URL (`platform-url.ts`, from `VITE_PLATFORM_URL`), and the routes: `openRoom`,
-  `roomHref`, `agentHref`, `openNewChat`, `onRoomDeleted`, and `openSettings`.
-- `pages/room.page.tsx` lays out `RoomScope`, and `pages/new-room.page.tsx` renders `NewChat`;
-  both put `PageHeaderNavigation` at the start of the header.
-- `WorkspaceNavigationContext` (from `@semoss/chat`) carries `useWorkspaceNavigation`'s
-  `setWorkAreaOpen`, so opening a room's Workspace folds the navigation.
-- `GlobalNav` holds `RoomList` and `RoomSearchDialog`; `NavUser` opens the settings dialog
-  (General and Connectors, `features/settings/`), whose Connectors page is
-  `features/connectors/`.
+  language, and before the first render. `InitializedLayout` waits while `useSession` is
+  `INITIALIZING`. `AuthenticatedLayout` sends `UNAUTHENTICATED` to `/login`, and shows `ErrorPage`
+  with Retry (`useSessionRetry`) on `ERROR`, so `/login` still renders. See
+  [the SDK session guide](../../libs/sdk/skills/session.skill.md).
+- **The theme is `usePlaygroundTheme()`**: the server's `THEME_MAP` `playground` entry
+  (`useServerChatTheme` from `@semoss/chat`) over the build's theme (`VITE_THEME`, `VITE_NAME`,
+  read once in `features/theme/playground-theme.ts`) and the chat's defaults.
+- **Only rooms are insights.** The app has no `InsightProvider` of its own. Pixels that belong
+  to no room run in the session's insight: `useSessionPixel` for reads,
+  `useSessionIteratorPixel` for lists that page, `useSessionInsight().run` / `upload` /
+  `download`, or `Session.insight.run` outside React. `run` returns `errors` rather than
+  throwing, so wrap it in `throwOnPixelErrors` where a caller expects a throw.
+- **The app has no stores of its own.** New shared state goes in a `StoreState`-backed store per
+  the [state management skill](../../skills/state-management.skill.md).
+- **A new chat's model, mode and agent** follow the order in the chat's
+  [state notes](../../libs/chat/docs/state.md#a-new-chats-defaults). This app supplies step 3's
+  env values.
 
 ## Navigation
 
 The global navigation (`GlobalNav`) is an offcanvas `Sidebar`: collapsed, it is hidden
 completely. It starts open (the theme's `sidebar.expandedByDefault` defaults to true), and
-Cmd/Ctrl+B toggles it; it has no edge rail. While it is open, its own header holds
-the toggle (`NavigationToggle`) on every route. While it is hidden, a `NavigationButton` opens
-it: on a route with its own header (the room and new-chat pages register one with
-`PageHeaderContext`), inline before the room's name; elsewhere floating, with `MainLayout`
-padding the page for it. On mobile, the button opens the sheet. Opening the Workspace folds
-the navigation without changing the saved preference (`useWorkspaceNavigation`).
+Cmd/Ctrl+B toggles it; it has no edge rail. While it is open, its own header holds the toggle
+(`NavigationToggle`) on every route. While it is hidden, a `NavigationButton` opens it: on a
+route with its own header (the room and new-chat pages register one with `PageHeaderContext`),
+inline before the room's name; elsewhere floating, with `AppLayout` padding the page for it. On
+mobile, the button opens the sheet. Opening the Workspace folds the navigation without changing
+the saved preference.
 
-## Design-System Notes
+## Agent pages
 
-Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling) rules and
-[DESIGN.md](../../DESIGN.md). The playground is an operational chat application, not a
-visual sandbox; use the [root skills](../../skills/README.md) for UI behavior and validation.
+The agent pages render the same shared components as the client: the create and edit pages put
+`AgentForm` under a sticky Cancel/Create or Save header, and the detail page renders
+`AgentDefinition`. Change the shared component, not a copy here.
 
-## Agent Guardrails
+- The edit page seeds `AgentForm` once per agent, because the form reads its values only on
+  mount: a refetch must not overwrite unsaved edits, and a different agent remounts it through
+  `key`.
+- The edit and detail pages turn the escaped line breaks `GetWorkspace` returns in the
+  instructions back into newlines.
+- `createAgent`, `editAgent` and `deleteAgent` (`features/agents/agent-actions.ts`) are plain
+  functions over the session's insight. A failed follow-up settings save still opens the created
+  agent and shows its warning, avoiding duplicate creation.
+- Card permissions use the backend's effective `permission`, including group grants.
 
-### Do Not Modify
+## Commands and environment
 
-- **`.env.local`** / **`.env.*.local`** - Local developer overrides (gitignored)
-- **Proxy target URLs** in committed `.env` - May contain sensitive endpoints
-- **`ACCESS_KEY`** / **`SECRET_KEY`** - Credentials (only in local env files)
+Run from `packages/playground`, or with `pnpm --filter @semoss/playground <command>`:
 
-### Be Cautious With
+| Command | Description |
+|---------|-------------|
+| `pnpm dev` | Start dev server on port 5174 |
+| `pnpm build` / `pnpm build:dev` | Production / development build |
+| `pnpm test` / `pnpm test:watch` | Run tests once / in watch mode |
+| `pnpm type-check` | TypeScript type checking |
 
-- **`vite.config.ts`** - Affects dev server, build, and test configuration
-- **Proxy configuration** - Changes affect how API requests are routed
-- **`vitest.setup.ts`** - Changes affect all tests
+The root `pnpm dev:playground` runs `dev` with its dependencies. To use a local backend, start it
+on port 9090 (or set `ENDPOINT` in `.env.local`) and open http://localhost:5174.
 
-### When Adding Features
+| Variable | What it sets |
+|---|---|
+| `ENDPOINT`, `MODULE` | The backend the dev server proxies to, and its module path |
+| `VITE_PLATFORM_URL` | Where the platform app is served (`ChatConfig.platformUrl`) |
+| `VITE_NAME`, `VITE_THEME` | The build's app name and theme JSON |
+| `VITE_DEFAUlT_MODEL_ID`, `VITE_DEFAUlT_MODEL_NAME` | The build's default model (the lowercase `l` is in deployed env files; do not fix it) |
+| `VITE_DEFAULT_CHAT_MODE`, `VITE_DEFAULT_CHAT_AGENT_ID` | The build's default mode and agent |
 
-Follow the [React standard](../../skills/react-standard.skill.md) for new-feature layout,
-direct internal imports, state ownership, and tests. If the desktop app needs the feature too, it
-belongs in `@semoss/chat`; preserve the room Workspace contracts in
-[its guide](../../libs/chat/AGENTS.md#the-room-workspace).
+`vite.config.ts` builds on `createViteConfig` from `@semoss/config`, which proxies `MODULE` to
+`ENDPOINT` (WebSockets included), and adds the dock's wiring from `@semoss/panels/vite`. `@/` is
+`./src/`.
 
-### Testing Changes
+## Guardrails
 
-```bash
-pnpm test           # Run tests
-pnpm type-check     # Verify TypeScript
-pnpm dev            # Manual testing
-```
-
-### Running with Backend
-
-To connect to a local SEMOSS backend:
-
-1. Start the backend on port 9090 (or update `ENDPOINT` in `.env.local`)
-2. Run `pnpm dev`
-3. Access at http://localhost:5174
-
-
-### Agent forms and catalog
-
-The agent pages render the same shared components as the client: the create and edit pages
-put `AgentForm` under a sticky Cancel/Create or Save header, and the detail page renders
-`AgentDefinition`. Playground keeps no agent field or resource list of its own; change the
-shared component instead. The edit page seeds `AgentForm` once per agent, because the form
-reads its values only on mount: a refetch must not overwrite unsaved edits, and a different
-agent remounts it through `key`. The edit and detail pages turn the escaped line breaks
-`GetWorkspace` returns in the instructions back into newlines. A failed save shows inline and the form keeps
-its values for a retry. Creation reads
-`GetAgentFormOptions` for deployment catalogs and submits the full configuration to
-`createAgent` (`@semoss/chat`, with `editAgent` and `deleteAgent`, plain functions over the
-session's insight); a failed follow-up settings save still opens the created agent and
-shows its warning, avoiding duplicate creation. The agent catalog keeps the existing card
-actions and responsive grid while adding access filters and sorting. Card permissions use the
-backend's effective `permission`, including group grants.
-
-## Generic utilities
-
-Import reusable helpers from `@semoss/utility/<category>`, a direct workspace dependency.
-Follow the [utility guide](../../libs/utility/AGENTS.md). Keep domain policy and
-UI behavior here, and preserve public compatibility adapters when moving helpers.
-Date buckets, their order, and timestamp normalization come directly from
-`@semoss/utility/date`. Keep sidebar translations and the favorites group here.
+- **Do not modify** `.env.local` / `.env.*.local`, proxy target URLs in the committed `.env`, or
+  `ACCESS_KEY` / `SECRET_KEY`.
+- **Be cautious with** `vite.config.ts` and `vitest.setup.ts`: they affect the dev server, the
+  build, and every test.
+- Follow [DESIGN.md](../../DESIGN.md). The playground is an operational chat application, not a
+  visual sandbox.
+- Import generic helpers from `@semoss/utility/<category>`; see the
+  [utility guide](../../libs/utility/AGENTS.md).

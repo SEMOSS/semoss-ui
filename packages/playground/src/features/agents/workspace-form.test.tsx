@@ -40,9 +40,8 @@ vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
 vi.mock("react-router", () => ({ useNavigate: () => mocks.navigate }));
-// the create page saves through the chat's agent actions
-vi.mock("@semoss/chat", async (original) => ({
-	...(await original<typeof import("@semoss/chat")>()),
+// the create page saves through the agent actions
+vi.mock("@/features/agents/agent-actions", () => ({
 	createAgent: mocks.createAgent,
 }));
 // Publish as Agent runs AddWorkspace in the session's insight

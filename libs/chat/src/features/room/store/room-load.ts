@@ -5,13 +5,13 @@ import type {
 	PixelMessage,
 	ResponsePixelMessage,
 } from "../../../types";
+import { ROOT_PLACEHOLDER_ID } from "../../tools/mcp/mcp-constants";
 import {
 	type MessageData,
 	type MessageKey,
 	toMessageData,
-} from "../../conversation/store/message-map";
-import { getModelOrnamentName } from "../../conversation/store/response-placeholder";
-import { ROOT_PLACEHOLDER_ID } from "../../tools/mcp/mcp-constants";
+} from "./message-map";
+import { getModelOrnamentName } from "./response-placeholder";
 import { NO_AGENT_TOOLS, type RoomOptions } from "./room-snapshot";
 
 /**

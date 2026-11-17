@@ -104,13 +104,28 @@ export interface ChatSnapshot {
 	>;
 }
 
+/** What a {@link ChatStore} is made with. */
+export interface ChatStoreOptions {
+	/** The deployment's theme, with every default filled in. */
+	readonly theme: ThemeMap["playground"];
+	/**
+	 * The Workspace blueprints every room it creates is built with. Passed in
+	 * rather than imported: they import the chat's components, which import
+	 * its stores, so importing them here would close a module cycle.
+	 */
+	readonly panelComponents?: Record<string, WorkbenchPanelConfigAny>;
+	/** The build's new-chat defaults, read from its env by the host. */
+	readonly newChatDefaults?: NewChatBuildDefaults;
+	/** The host's way to the user's own files (the desktop app). */
+	readonly localFolders?: LocalFoldersHost;
+}
+
 /**
  * The session's chat: its models, the rooms it has opened, the rooms shown
  * before their first message persists, and the pixels that create, rename,
  * pin, download, and remove rooms. One per session, made by
- * `useCreateChatStore`; it owns every `RoomStore` it caches. Agents are
- * created, saved, and deleted with the plain functions in `agent-actions.ts`,
- * which hold no state.
+ * `useCreateChatStore`; it owns every `RoomStore` it caches. It holds no
+ * agents: Publish as Agent is `addAgent` in `room/actions/add-agent.ts`.
  */
 export class ChatStore {
 	/** The deployment's theme, with every default filled in. */
@@ -118,32 +133,30 @@ export class ChatStore {
 	/** The Workspace blueprints each room is built with. */
 	private _panelComponents: Record<string, WorkbenchPanelConfigAny>;
 	/** The build's new-chat defaults. */
-	private _build: NewChatBuildDefaults;
+	private _newChatDefaults: NewChatBuildDefaults;
 	/** The host's way to the user's own files, which every room it creates gets. */
 	private _localFolders: LocalFoldersHost | undefined;
 	/** The chat's state. Only the store's own actions write it. */
 	private readonly state: StoreState<ChatSnapshot>;
 
+	/** The Workspace blueprints every room is built with, a new chat's draft included. */
+	get panelComponents(): Record<string, WorkbenchPanelConfigAny> {
+		return this._panelComponents;
+	}
+
 	/**
-	 * @param theme - The deployment's theme.
-	 * @param panelComponents - The Workspace blueprints every room it creates
-	 * is built with. Passed in rather than imported: they import the chat's
-	 * components, which import its stores, so importing them here would close
-	 * a module cycle.
-	 * @param build - The build's new-chat defaults, read from its env by the
-	 * host.
-	 * @param host - What only the host can do: `localFolders`, its way to the
-	 * user's own files (the desktop app).
+	 * @param options - The host's theme, new-chat defaults and local folders,
+	 * and the Workspace blueprints every room is built with.
 	 */
-	constructor(
-		theme: ThemeMap["playground"],
-		panelComponents: Record<string, WorkbenchPanelConfigAny>,
-		build: NewChatBuildDefaults = {},
-		host: { localFolders?: LocalFoldersHost } = {},
-	) {
+	constructor({
+		theme,
+		panelComponents = {},
+		newChatDefaults = {},
+		localFolders,
+	}: ChatStoreOptions) {
 		this._theme = theme;
-		this._build = build;
-		this._localFolders = host.localFolders;
+		this._newChatDefaults = newChatDefaults;
+		this._localFolders = localFolders;
 		this._panelComponents = panelComponents;
 		// Only items that embed a page are kept, so a path lookup finds them.
 		const embeddedPageMap = [
@@ -697,7 +710,7 @@ export class ChatStore {
 		const model = resolveNewChatModel(
 			null,
 			readNewChatPreferences(Session.getSnapshot().user?.meta),
-			readDeploymentNewChatDefaults(this._theme, this._build),
+			readDeploymentNewChatDefaults(this._theme, this._newChatDefaults),
 			this.snapshot.models.available,
 		);
 		if (
@@ -718,13 +731,15 @@ export class ChatStore {
 		if (!this._theme.featureFlags?.enableModelSelect) {
 			this.setSelectedModel({
 				engine_id:
-					readDeploymentNewChatDefaults(this._theme, this._build)
-						.modelId ?? "",
+					readDeploymentNewChatDefaults(
+						this._theme,
+						this._newChatDefaults,
+					).modelId ?? "",
 				engine_name:
 					this._theme.defaultRoomSettings?.model
 						?.engine_display_name ||
 					this._theme.defaultRoomSettings?.model?.engine_name ||
-					this._build.modelName ||
+					this._newChatDefaults.modelName ||
 					"",
 				engine_type: "MODEL",
 			});

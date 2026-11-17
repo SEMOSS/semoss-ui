@@ -1,7 +1,7 @@
 import { LogInIcon, ShieldAlertIcon, XIcon } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
 import { Button } from "@semoss/ui/next";
-import { getConnectorProvider } from "../store/connector.catalog";
+import { getConnectorProvider } from "../store/connector-catalog";
 import type { ConnectorsStore } from "../store/connectors.store";
 import { useConnectors } from "../store/use-connectors";
 import { signInToProvider } from "./connector-sign-in";

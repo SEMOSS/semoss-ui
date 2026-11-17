@@ -28,18 +28,21 @@ export const RoomWorkbenchToggle = ({
 }: RoomWorkbenchToggleProps) => {
 	const { t } = useTranslation("room");
 	const roomLayout = useContext(RoomLayoutActionsContext);
-	const isOpen = useRoomSelector(room, (current) => current.sidebar.isOpen);
+	const isOpen = useRoomSelector(
+		room,
+		(current) => current.workbenchPane.isOpen,
+	);
 	// open but behind the narrow Chat tab counts as out of view
 	const isInView = isOpen && (roomLayout?.isWorkbenchVisible ?? true);
 	const Icon = isInView ? PanelRightCloseIcon : PanelRightOpenIcon;
 
 	const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
 		if (isInView) {
-			room.closeSidebar();
+			room.closeWorkbench();
 			return;
 		}
 		if (newRoomPanels) newRoomPanels.onOpenPanel({ kind: "workbench" });
-		else room.openSidebar();
+		else room.openWorkbench();
 		roomLayout?.revealWorkbench(event.currentTarget);
 	};
 

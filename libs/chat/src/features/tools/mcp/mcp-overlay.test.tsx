@@ -18,7 +18,7 @@ const read = vi.hoisted(() => ({
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
-vi.mock("../../chat/store/use-agent-workspace", () => ({
+vi.mock("./use-agent-workspace", () => ({
 	useAgentWorkspace: (workspaceId: string | null | undefined) => {
 		read.requested.push(workspaceId);
 		return workspaceId

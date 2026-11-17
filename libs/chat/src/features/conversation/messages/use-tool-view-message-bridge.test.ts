@@ -1,11 +1,11 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vitest";
 import type { RoomStore } from "../../room/store/room.store";
-import { decideAgentToolAction } from "../store/agent-harness";
-import type { ToolStore } from "../store/tool.store";
+import type { ToolStore } from "../../room/store/tool.store";
+import { decideAgentToolAction } from "../../room/turns/agent-turn-runner";
 import { useToolViewMessageBridge } from "./use-tool-view-message-bridge";
 
-vi.mock("../store/agent-harness", () => ({
+vi.mock("../../room/turns/agent-turn-runner", () => ({
 	decideAgentToolAction: vi.fn(),
 }));
 

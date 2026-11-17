@@ -3,7 +3,7 @@ import { useTranslation } from "@semoss/i18n";
 import { PopupBlockedError } from "@semoss/sdk";
 import { toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import type { ConnectorProviderId } from "../store/connector.catalog";
+import type { ConnectorProviderId } from "../store/connector-catalog";
 import type { UseConnectionsResult } from "./use-connections";
 
 /**

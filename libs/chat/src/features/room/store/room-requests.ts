@@ -1,6 +1,6 @@
 import { throwOnPixelErrors } from "@semoss/sdk";
 import { runPixel } from "@semoss/sdk/react";
-import type { StreamOptions } from "./stream-job-controller";
+import type { StreamOptions } from "../turns/stream-job-controller";
 
 /** Loading and error behavior for a request whose failures throw on their own. */
 export type RoomRequestOptions = Omit<StreamOptions, "throwOnError">;

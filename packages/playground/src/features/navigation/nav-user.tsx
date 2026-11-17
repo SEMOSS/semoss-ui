@@ -1,5 +1,6 @@
 import { LanguagesIcon, LogOutIcon, MapIcon, SettingsIcon } from "lucide-react";
 import { useNavigate } from "react-router";
+import { useChatConfig } from "@semoss/chat";
 import { LANGUAGES, useTranslation } from "@semoss/i18n";
 import { useSession } from "@semoss/sdk/react";
 import {
@@ -21,7 +22,6 @@ import {
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import { buildInitials } from "@semoss/utility/text";
-import { useSettingsDialog } from "@/features/settings/settings-dialog.context";
 import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 import { useTour } from "@/features/tour/use-tour";
 
@@ -37,7 +37,7 @@ export const NavUser = () => {
 	const logout = useSession((state) => state.logout);
 	const theme = usePlaygroundTheme();
 	const { startTour } = useTour();
-	const { openSettings } = useSettingsDialog();
+	const { openSettings } = useChatConfig().navigation;
 
 	const navigate = useNavigate();
 
@@ -80,7 +80,7 @@ export const NavUser = () => {
 				align="end"
 				sideOffset={4}
 			>
-				<DropdownMenuItem onSelect={() => openSettings()}>
+				<DropdownMenuItem onSelect={() => openSettings?.()}>
 					<SettingsIcon />
 					{t("sidebar:userMenu.settings")}
 				</DropdownMenuItem>

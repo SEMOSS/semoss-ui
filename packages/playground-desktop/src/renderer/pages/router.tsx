@@ -4,7 +4,7 @@ import {
 	type RouteObject,
 	RouterProvider,
 } from "react-router";
-import { DesktopLayout } from "./desktop-layout";
+import { AppLayout } from "./app-layout";
 import { LoginPage } from "./login.page";
 import { NewRoomPage } from "./new-room.page";
 import { RoomPage } from "./room.page";
@@ -17,7 +17,7 @@ export const routes: RouteObject[] = [
 		element: <SessionLayout />,
 		children: [
 			{
-				element: <DesktopLayout />,
+				element: <AppLayout />,
 				children: [
 					{ path: "new", element: <NewRoomPage /> },
 					{ path: "room/:roomId", element: <RoomPage /> },

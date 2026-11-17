@@ -3,8 +3,8 @@ import type {
 	ToolViewCallStatus,
 	ToolViewMode,
 } from "@semoss/shared";
-import type { ToolStore } from "../../conversation/store/tool.store";
-import { readToolResponseDetail } from "../default-tools/tool-response-detail";
+import type { ToolStore } from "../../room/store/tool.store";
+import { readToolResponseDetail } from "../chat-tools/tool-response-detail";
 import { isAskExecutionMode } from "../mcp/mcp-utils";
 
 /** A tool's status, as a tool view reads it. */

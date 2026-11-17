@@ -18,8 +18,7 @@
 	"account": {
 		"menu": "Account",
 		"changeServer": "Change server",
-		"signOut": "Sign out",
-		"switchServer": "Switch server"
+		"signOut": "Sign out"
 	},
 	"unreachable": {
 		"title": "Can't reach the server",
@@ -30,8 +29,8 @@
 	"servers": {
 		"listLabel": "Saved servers",
 		"current": "In use",
-		"switch": "Switch",
-		"switchLabel": "Switch to {{server}}",
+		"switch": "Activate",
+		"switchLabel": "Activate {{server}}",
 		"removeLabel": "Remove {{server}}",
 		"removeTitle": "Remove this server?",
 		"removeDescription": "This signs you out of {{server}} and deletes what this app saved for it on this computer. Your chats stay on the server.",

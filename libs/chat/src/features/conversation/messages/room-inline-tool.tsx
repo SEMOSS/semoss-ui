@@ -12,12 +12,12 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import type { ResponseMessageStore } from "../../room/store/response-message.store";
 import type { RoomStore } from "../../room/store/room.store";
+import type { ToolStore } from "../../room/store/tool.store";
+import { useTool } from "../../room/store/use-tool";
 import { getToolAppId } from "../../tools/mcp/mcp-utils";
 import { ToolsView } from "../../tools/views/tools-view";
-import type { ResponseMessageStore } from "../store/response-message.store";
-import type { ToolStore } from "../store/tool.store";
-import { useTool } from "../store/use-tool";
 
 /** Props for {@link RoomInlineTool}. */
 interface RoomInlineToolProps {

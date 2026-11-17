@@ -17,7 +17,7 @@ import { getConnectorSource } from "./connector-sources";
 import { ConnectorViewerPanel } from "./connector-viewer-panel";
 
 /**
- * The sidebar blueprint for one viewer: one instance per room, kept alive so
+ * The Workbench blueprint for one viewer: one instance per room, kept alive so
  * the viewer holds its place while other tabs are in front.
  *
  * @param service - The viewer's service.

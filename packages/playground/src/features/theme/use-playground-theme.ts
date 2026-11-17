@@ -1,7 +1,7 @@
-import { useConfig } from "@semoss/sdk/react";
+import { useServerChatTheme } from "@semoss/chat";
 import {
+	ENV_THEME,
 	type PlaygroundTheme,
-	withPlaygroundDefaults,
 } from "@/features/theme/playground-theme";
 
 /**
@@ -14,4 +14,4 @@ import {
  * @returns The theme; the same object while the server's theme is unchanged.
  */
 export const usePlaygroundTheme = (): PlaygroundTheme =>
-	useConfig((state) => withPlaygroundDefaults(state.theme));
+	useServerChatTheme(ENV_THEME);

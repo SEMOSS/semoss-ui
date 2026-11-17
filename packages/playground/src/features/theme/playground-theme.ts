@@ -2,6 +2,7 @@ import {
 	type ChatTheme,
 	DEFAULT_CHAT_THEME,
 	mergeChatTheme,
+	resolveServerChatTheme,
 } from "@semoss/chat";
 import { isRecord } from "@semoss/utility/object";
 
@@ -40,10 +41,7 @@ const readEnvTheme = (): PlaygroundTheme => {
 };
 
 /** The build's theme, read once: the base for every server theme. */
-const ENV_THEME = readEnvTheme();
-
-/** One merged theme per server theme, so a selector returns the same object. */
-const themeCache = new WeakMap<Record<string, unknown>, PlaygroundTheme>();
+export const ENV_THEME = readEnvTheme();
 
 /**
  * Lay the playground's defaults and the build's theme under the server's.
@@ -55,21 +53,7 @@ const themeCache = new WeakMap<Record<string, unknown>, PlaygroundTheme>();
  */
 export const withPlaygroundDefaults = (
 	serverTheme: Record<string, unknown> | null,
-): PlaygroundTheme => {
-	if (!serverTheme || !isRecord(serverTheme.playground)) {
-		return ENV_THEME;
-	}
-	const cached = themeCache.get(serverTheme);
-	if (cached) {
-		return cached;
-	}
-	const theme = mergeChatTheme(
-		ENV_THEME,
-		serverTheme.playground as Partial<PlaygroundTheme>,
-	);
-	themeCache.set(serverTheme, theme);
-	return theme;
-};
+): PlaygroundTheme => resolveServerChatTheme(serverTheme, ENV_THEME);
 
 /**
  * Apply the theme's colors to the document root.

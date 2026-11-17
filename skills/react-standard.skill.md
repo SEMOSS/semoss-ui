@@ -55,8 +55,19 @@ repository, including outside `libs/*/src/` and `packages/*/src/`.
   public exports, prefer direct re-exports from defining files. Do not delete
   public API surface or claim barrels inherently prevent tree shaking.
 - Put new application features in `src/features/<feature>/`, colocating their
-  components, hooks, and helpers as needed. Keep routing under `pages/`, with
-  thin route pages composing features. Existing features remain where they are
+  components, hooks, and helpers as needed. A feature may nest one level of
+  folders named for its parts (`room/store/`, `room/header/`); a part that
+  grows its own parts becomes a feature. Keep routing under `pages/`, with
+  thin route pages composing features.
+- In a feature, a `store/` folder (and any other folder of non-visual logic,
+  such as `turns/`) holds no components and imports no React; only its
+  `use-*.ts` hooks do. Logic that needs something from UI takes it as an
+  argument. A package may enforce this with a test, as `@semoss/chat` does.
+- A library that hosts compose exposes two kinds of extension and no others:
+  composition (named pieces and slots the host fills) for layout and controls,
+  and one config object for data the host owns, including functions that are
+  handed the library's default list and return the host's. Do not add boolean
+  props that hide parts, or a second channel for host data. Existing features remain where they are
   unless migration is explicitly scoped; `@semoss/ui`, `@semoss/sdk` and non-react libraries retain their package layout.
 - Reuse existing shared types/utilities without violating dependency boundaries.
   Keep single-use types near their owner; extract shared types only when useful.
@@ -174,10 +185,15 @@ repository, including outside `libs/*/src/` and `packages/*/src/`.
   use `onX`, internal handlers `handleX`, and owned booleans `is`/`has`/`should`
   prefixes. Preserve native/library/API contracts such as `disabled`, `checked`,
   `open`, and backend field names.
-- Use existing kebab-case and dot role-suffix file naming, such as
-  `project.page.tsx`, `workspace.context.tsx`, and `config.store.ts`. Hooks use
-  `use-<name>.ts` and export `useName`. Do not mass-rename legacy files or invent
-  role suffixes for files without a defined role.
+- Use existing kebab-case and dot role-suffix file naming. The role suffixes
+  are `.page.tsx`, `.context.tsx`, `.store.ts` (holds state), and
+  `.test.ts(x)`; hooks use `use-<name>.ts` and export `useName`. Every other
+  file is named in kebab-case for its main export (`room-header.tsx` exports
+  `RoomHeader`). Do not mass-rename legacy files or invent role suffixes for
+  files without a defined role.
+- Use one word per concept across code, comments, tests, and guides, and name
+  the same thing the same way in sibling packages. Where a package keeps a
+  glossary, follow it; a name ending in `Store` holds state.
 
 ## Tailwind and Styling
 

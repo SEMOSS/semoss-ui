@@ -230,7 +230,7 @@ const RoomAuditLogPanel = () => {
 	);
 };
 
-/** The room's activity log. One per sidebar. */
+/** The room's activity log. One per Workbench. */
 export const ROOM_AUDIT_LOG_PANEL: WorkbenchPanelConfig = {
 	name: "Activity",
 	icon: ({ className }) => <ScrollTextIcon className={className} />,

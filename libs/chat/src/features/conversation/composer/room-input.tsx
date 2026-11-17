@@ -33,10 +33,6 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { AutoScrollOnPastePlugin } from "../../../components/lexical/auto-scroll-on-paste-plugin";
-import { BackspacePlugin } from "../../../components/lexical/backspace-plugin";
-import { EnterPlugin } from "../../../components/lexical/enter-plugin";
-import { FocusPlugin } from "../../../components/lexical/focus-plugin";
 import { useChatConfig } from "../../chat/config/use-chat-config";
 import { ConnectorSignInNotice } from "../../connectors/accounts/connector-sign-in-notice";
 import { useUserConnectorsSync } from "../../connectors/accounts/use-user-connectors-sync";
@@ -44,6 +40,7 @@ import { useAttachLocalFolder } from "../../local-folders/explorer/use-attach-lo
 import type { RoomStore } from "../../room/store/room.store";
 import type { CompactionStrategy } from "../../room/store/room-compaction";
 import { useRoomSelector } from "../../room/store/use-room-selector";
+import { AGENT_HARNESS_TYPE } from "../../room/turns/agent-turn-runner";
 import { MCPOverlay } from "../../tools/mcp/mcp-overlay";
 import type { MCPOverlayTab } from "../../tools/mcp/mcp-overlay-picker";
 import { getAgentLabel, runsDefaultAgent } from "../../tools/mcp/mcp-utils";
@@ -52,8 +49,12 @@ import { ContextItems } from "../attachments/context-items";
 import { useFileDrop } from "../attachments/file-drop.context";
 import { FilePreviewGrid } from "../attachments/file-preview-grid";
 import { useContextItems } from "../attachments/use-context-items";
-import { AGENT_HARNESS_TYPE } from "../store/agent-harness";
+import { AutoScrollOnPastePlugin } from "./editor/auto-scroll-on-paste-plugin";
+import { BackspacePlugin } from "./editor/backspace-plugin";
+import { EnterPlugin } from "./editor/enter-plugin";
+import { FocusPlugin } from "./editor/focus-plugin";
 import { filterPastedFiles } from "./filter-pasted-files";
+import { isIframed } from "./is-iframed";
 import { getPromptHistory } from "./prompt-history";
 import { PromptHistoryPlugin } from "./prompt-history-plugin";
 import { PromptLibraryDialog } from "./prompt-library-dialog";
@@ -61,20 +62,12 @@ import { PromptOptimizer } from "./prompt-optimizer";
 import { $setRootText, replaceEditorText } from "./replace-editor-text";
 import { RoomComposerMenu } from "./room-composer-menu";
 import { RoomContextUsageIndicator } from "./room-context-usage-indicator";
-import { SlashCommandProvider } from "./slash-command/context";
-import { SlashCommandPlugin } from "./slash-command/plugin";
+import { SlashCommandProvider } from "./slash-command/slash-command.context";
+import { SlashCommandPlugin } from "./slash-command/slash-command-plugin";
 import { type ComposerSession, saveAgentOverlay } from "./use-composer-session";
 import { useComposerSubmit } from "./use-composer-submit";
 import { useRoomSlashCommands } from "./use-room-slash-commands";
 import { useSpeechToText } from "./use-speech-to-text";
-
-/** Whether the chat runs in a frame; a frame without access to its parent counts. */
-let isIframed = false;
-try {
-	isIframed = window.self !== window.top;
-} catch {
-	isIframed = true;
-}
 
 /**
  * Appearance of the send/stop button, computed by the parent from the turn +

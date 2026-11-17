@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ToolStore } from "../../conversation/store/tool.store";
+import type { ToolStore } from "../../room/store/tool.store";
 import { toToolViewCall, toToolViewMode } from "./tool-view-call";
 
 /**

@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import type { ResponseMessageStore } from "../store/response-message.store";
+import type { ResponseMessageStore } from "../../room/store/response-message.store";
 import { groupToolActivity } from "./tool-activity";
 
 test("groups consecutive calls but preserves intervening assistant content", () => {

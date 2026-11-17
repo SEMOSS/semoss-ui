@@ -10,10 +10,6 @@ import {
 } from "../chat/config/new-chat-preferences";
 import { useChatConfig } from "../chat/config/use-chat-config";
 import { useChatSession } from "../chat/provider/use-chat-session";
-import {
-	type AgentWorkspaceRead,
-	useAgentWorkspace,
-} from "../chat/store/use-agent-workspace";
 import { useChatSelector } from "../chat/store/use-chat-selector";
 import {
 	canChooseAgentMode,
@@ -24,6 +20,10 @@ import type { RoomStore } from "../room/store/room.store";
 import { useRoomSelector } from "../room/store/use-room-selector";
 import type { AgentChoice, AgentRef } from "../tools/mcp/agent-choice";
 import { runsDefaultAgent } from "../tools/mcp/mcp-utils";
+import {
+	type AgentWorkspaceRead,
+	useAgentWorkspace,
+} from "../tools/mcp/use-agent-workspace";
 import { clearAgentOptions } from "./clear-agent-options";
 
 /** What {@link useDraftAgent} returns. */

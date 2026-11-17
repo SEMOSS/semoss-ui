@@ -10,9 +10,9 @@ import {
 } from "@semoss/ui/next";
 import { copyTextToClipboard } from "@semoss/utility/clipboard";
 import { getErrorMessage } from "@semoss/utility/error";
+import type { InputMessageStore } from "../../room/store/input-message.store";
 import type { RoomStore } from "../../room/store/room.store";
-import type { InputMessageStore } from "../store/input-message.store";
-import { useMessage } from "../store/use-message";
+import { useMessage } from "../../room/store/use-message";
 import {
 	type AttachmentPreview,
 	getAttachmentIcon,
@@ -23,7 +23,7 @@ import { MessageActions } from "./message-actions";
 
 /** Props for {@link InputMessage}. */
 interface InputMessageProps {
-	/** The room the message is in, which opens a saved attachment in its sidebar. */
+	/** The room the message is in, which opens a saved attachment in its Workbench. */
 	room: RoomStore;
 
 	/** The user's message to render. */
@@ -32,7 +32,7 @@ interface InputMessageProps {
 
 /**
  * A message the user sent: its attachments, its text, and a Copy action. An
- * attachment saved to the room opens in the sidebar; one sent inline opens in
+ * attachment saved to the room opens in the Workbench; one sent inline opens in
  * a preview dialog, as an image or a PDF.
  */
 export const InputMessage = ({ room, message }: InputMessageProps) => {
@@ -109,7 +109,7 @@ export const InputMessage = ({ room, message }: InputMessageProps) => {
 													if (
 														p.mediaInfo.fileLocation
 													) {
-														room.openFileSidebarPanel(
+														room.openWorkbenchFilePanel(
 															p.mediaInfo
 																.fileLocation,
 															p.mediaInfo

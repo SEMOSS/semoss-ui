@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router";
-import { deleteAgent, useAgentWorkspace } from "@semoss/chat";
+import { useAgentWorkspace } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import { getUserProjectPermission, type Role } from "@semoss/sdk";
 import {
@@ -30,6 +30,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
+import { deleteAgent } from "@/features/agents/agent-actions";
 import { getPlaygroundAgentLinks } from "@/features/agents/agent-links";
 import { WorkspaceChatList } from "@/features/agents/workspace-chat-list";
 import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";

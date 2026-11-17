@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { ConnectorViewerProps } from "@semoss/connectors";
-import type { ConnectorProviderId } from "../store/connector.catalog";
+import type { ConnectorProviderId } from "../store/connector-catalog";
 import { useRoomConnectorHost } from "./use-room-connector-host";
 
 /** Props for {@link ConnectorViewerPanel}. */
@@ -15,7 +15,7 @@ interface ConnectorViewerPanelProps {
 }
 
 /**
- * A shared connector viewer in the room's sidebar, wired to the room: it
+ * A shared connector viewer in the room's Workbench, wired to the room: it
  * saves into the chat's files and adds to the next message. Its tab already
  * names it and shows its logo, so the viewer leaves its own header out.
  */

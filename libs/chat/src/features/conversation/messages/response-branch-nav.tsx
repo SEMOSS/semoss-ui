@@ -7,9 +7,9 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import type { InputMessageStore } from "../../room/store/input-message.store";
 import type { RoomStore } from "../../room/store/room.store";
 import { useRoomSelector } from "../../room/store/use-room-selector";
-import type { InputMessageStore } from "../store/input-message.store";
 
 /** Props for {@link ResponseBranchNav}. */
 interface ResponseBranchNavProps {

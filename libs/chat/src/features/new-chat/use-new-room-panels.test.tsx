@@ -24,10 +24,10 @@ const createRoom = (attach = vi.fn(async () => undefined)) => {
 	};
 	return {
 		localFolders,
-		openSidebar: vi.fn(),
-		openSidebarFileExplorer: vi.fn(),
+		openWorkbench: vi.fn(),
+		openWorkbenchFileExplorer: vi.fn(),
 		connectors: {},
-		sidebar: { isOpen: false },
+		workbenchPane: { isOpen: false },
 	} as unknown as RoomStore & { localFolders: typeof localFolders };
 };
 
@@ -75,7 +75,7 @@ describe("a new chat's Attach Folder", () => {
 
 		expect(prepare).toHaveBeenCalledTimes(1);
 		expect(room.localFolders.attach).toHaveBeenCalledTimes(1);
-		expect(room.openSidebarFileExplorer).toHaveBeenCalledTimes(1);
+		expect(room.openWorkbenchFileExplorer).toHaveBeenCalledTimes(1);
 	});
 
 	test("uses the room already prepared", async () => {
@@ -105,6 +105,6 @@ describe("a new chat's Attach Folder", () => {
 			result.current.newRoomPanels.onAttachFolder?.();
 		});
 
-		expect(draft.openSidebar).toHaveBeenCalledTimes(1);
+		expect(draft.openWorkbench).toHaveBeenCalledTimes(1);
 	});
 });

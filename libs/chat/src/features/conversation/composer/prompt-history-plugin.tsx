@@ -14,7 +14,7 @@ import {
 } from "lexical";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { isAtEditorLineBoundary } from "../../../components/lexical/editor-line-boundary";
+import { isAtEditorLineBoundary } from "./editor/editor-line-boundary";
 import {
 	type PromptHistoryEntry,
 	RESET_PROMPT_HISTORY_COMMAND,
