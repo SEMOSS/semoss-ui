@@ -351,18 +351,17 @@ it("greets by the given name for first-last and last-first profile names", () =>
 	expect(screen.getByText("Nothing is due today.")).toBeVisible();
 });
 
-it("counts overdue and due-today work in the headline", () => {
-	const state = createBriefState();
+it("counts the listed work items due today or overdue in the headline", async () => {
 	const now = Date.now();
-	state.items = state.items.map((item) =>
-		item.id === "support"
-			? { ...item, due: new Date(now - 86_400_000).toISOString() }
-			: item.id === "sprint"
-				? { ...item, due: new Date(now).toISOString() }
-				: item,
-	);
-	renderBrief(state);
-	expect(screen.getByText("2 things are due today.")).toBeVisible();
+	insight.workItems = [
+		{ ...workItem(0), due: new Date(now - 86_400_000).toISOString() },
+		{ ...workItem(1), due: new Date(now).toISOString() },
+		{ ...workItem(2), due: new Date(now + 3 * 86_400_000).toISOString() },
+		{ ...workItem(3) },
+	];
+	renderBrief();
+	await screen.findByRole("list", { name: "Your work items" });
+	expect(await screen.findByText("2 things are due today.")).toBeVisible();
 });
 
 it("shows six work items without another click and keeps the rest behind Work", async () => {

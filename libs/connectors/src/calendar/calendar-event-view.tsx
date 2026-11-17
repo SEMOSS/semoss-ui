@@ -77,6 +77,7 @@ export const CalendarEventView = ({
 	const serviceName = t(app.nameKey);
 	const title = shown.subject || t("calendar.noTitle");
 	const webUrl = safeHttpsUrl(event?.webLink);
+	const joinUrl = safeHttpsUrl(event?.joinUrl);
 	const { addToContext } = saver;
 	const isEventBusy = saver.isBusy(summary.id);
 
@@ -162,10 +163,10 @@ export const CalendarEventView = ({
 						}
 						onSave={() => saver.save(request(event))}
 					>
-						{event.joinUrl ? (
+						{joinUrl ? (
 							<Button variant="ghost" size="sm" asChild>
 								<a
-									href={event.joinUrl}
+									href={joinUrl}
 									target="_blank"
 									rel="noopener noreferrer"
 								>

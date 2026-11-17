@@ -6,6 +6,7 @@ import {
 	useEffect,
 	useReducer,
 	useRef,
+	useState,
 } from "react";
 import {
 	collaborationReducer,
@@ -19,6 +20,10 @@ import type {
 interface CollaborationSession {
 	state: CollaborationState;
 	dispatch: (command: CollaborationCommand) => void;
+	/** Counts up each time the owner changes work (a step, an item, a build); views that show work reload when it moves. */
+	workVersion: number;
+	/** Says work changed. Returns the new {@link workVersion}, so the caller can tell its own change from another's. */
+	markWorkChanged: () => number;
 }
 
 /** One settled state change and the commands behind it. */
@@ -56,6 +61,14 @@ export function CollaborationSessionProvider({
 		reconcileCollaborationState,
 	);
 	const pending = useRef<CollaborationCommand[]>([]);
+	// kept outside the reducer: it is a signal, not saved Work or Brain state
+	const [workVersion, setWorkVersion] = useState(0);
+	const latestWorkVersion = useRef(0);
+	const markWorkChanged = useCallback(() => {
+		latestWorkVersion.current += 1;
+		setWorkVersion(latestWorkVersion.current);
+		return latestWorkVersion.current;
+	}, []);
 	const settled = useRef(state);
 	const dispatch = useCallback((command: CollaborationCommand) => {
 		pending.current.push(command);
@@ -89,6 +102,8 @@ export function CollaborationSessionProvider({
 			value={{
 				state,
 				dispatch,
+				workVersion,
+				markWorkChanged,
 			}}
 		>
 			{children}
@@ -109,4 +124,18 @@ export function useCollaborationSession(): CollaborationSession {
 /** Optional host integration for connector previews used outside the Work shell. */
 export function useOptionalCollaborationSession(): CollaborationSession | null {
 	return useContext(CollaborationSessionContext);
+}
+
+/** Seen when there is no session (isolated surfaces): nothing changes, so nothing reloads. */
+const NO_WORK_SIGNAL = { workVersion: 0, markWorkChanged: () => -1 };
+
+/**
+ * The shared "work changed" signal. Mutating paths call `markWorkChanged`; views that show work reload when
+ * `workVersion` moves. A view that made the change keeps the number it got back and skips that one reload.
+ */
+export function useWorkChanged(): Pick<
+	CollaborationSession,
+	"workVersion" | "markWorkChanged"
+> {
+	return useContext(CollaborationSessionContext) ?? NO_WORK_SIGNAL;
 }

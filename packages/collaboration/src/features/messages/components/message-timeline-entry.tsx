@@ -58,7 +58,7 @@ export function MessageTimelineEntry({
 				"group/message relative flex min-w-0 gap-3",
 				!isWork && "mt-6 flex-col first:mt-0",
 				!isWork && isUser
-					? "ms-auto max-w-prose items-end"
+					? "ms-auto w-fit max-w-full items-end"
 					: !isBubble && "w-full",
 				isBubble &&
 					"w-fit @md/conversation:max-w-prose max-w-full flex-col",
@@ -78,7 +78,12 @@ export function MessageTimelineEntry({
 						size="sm"
 					/>
 				))}
-			<div className="flex min-w-0 max-w-full flex-1 flex-col gap-2">
+			<div
+				className={cn(
+					"flex min-w-0 max-w-full flex-1 flex-col gap-2",
+					!isWork && isUser && "w-full max-w-prose",
+				)}
+			>
 				{!isDelegation && (!isUser || isFlat) && (
 					<div className="flex min-h-6 min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
 						{isBubble

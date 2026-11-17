@@ -844,7 +844,7 @@ describe("collaboration Work and Brain integration", () => {
 		await user.type(workingHours, "9 to 5");
 		await user.click(
 			screen.getByRole("button", {
-				name: "Save profile for this session",
+				name: "Save profile",
 			}),
 		);
 		await user.clear(role);

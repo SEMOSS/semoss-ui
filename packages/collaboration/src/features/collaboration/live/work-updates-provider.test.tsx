@@ -16,6 +16,7 @@ import type { Topic } from "../state/collaboration.types";
 import {
 	CollaborationSessionProvider,
 	useCollaborationSession,
+	useWorkChanged,
 } from "../state/collaboration-session.context";
 import { memoriesAbout } from "../state/memory";
 import {
@@ -202,6 +203,59 @@ it("pulls new mail before reloading when Refresh is pressed, and shows sync fail
 		expect(screen.getByText("Microsoft login expired")).toBeInTheDocument(),
 	);
 	expect(screen.getByRole("button", { name: "Try again" })).toBeEnabled();
+});
+
+it("tells Work and Today when a sync brought in mail, once, without reading twice for its own signal", async () => {
+	vi.mocked(syncMail).mockReset();
+	const state = createInitialCollaborationState();
+	vi.mocked(readWorkUpdates).mockResolvedValue({
+		threads: state.threads,
+		items: [],
+		workspaces: {},
+		memories: [],
+		lastMailCheck: null,
+	});
+	vi.mocked(syncMail)
+		.mockResolvedValueOnce({
+			newMessages: 0,
+			closedByReply: 0,
+			outcomes: {},
+			changes: [],
+		})
+		.mockResolvedValueOnce({
+			newMessages: 0,
+			closedByReply: 1,
+			outcomes: {},
+			changes: [],
+		});
+	function Version() {
+		return (
+			<output aria-label="version">{useWorkChanged().workVersion}</output>
+		);
+	}
+	render(
+		<MemoryRouter>
+			<CollaborationSessionProvider initialState={state}>
+				<WorkUpdatesProvider actions={{} as InsightActions}>
+					<WorkRefreshStatus />
+					<Version />
+				</WorkUpdatesProvider>
+			</CollaborationSessionProvider>
+		</MemoryRouter>,
+	);
+	const version = () => screen.getByLabelText("version").textContent;
+	fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
+	await waitFor(() => expect(syncMail).toHaveBeenCalledTimes(1));
+	// nothing new: nothing to tell
+	await new Promise((resolve) => setTimeout(resolve, 30));
+	expect(version()).toBe("0");
+	const reads = vi.mocked(readWorkUpdates).mock.calls.length;
+	fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
+	await waitFor(() => expect(version()).toBe("1"));
+	await new Promise((resolve) => setTimeout(resolve, 50));
+	// its own signal did not start another read, and nothing looped
+	expect(version()).toBe("1");
+	expect(vi.mocked(readWorkUpdates).mock.calls.length).toBe(reads + 1);
 });
 
 it("syncs once shortly after a reply is sent from the app", async () => {
@@ -641,4 +695,23 @@ it("reloads again after the running reload when another is asked for meanwhile",
 	expect(readWorkUpdates).toHaveBeenCalledTimes(1);
 	await act(async () => running.resolve(updates));
 	await waitFor(() => expect(readWorkUpdates).toHaveBeenCalledTimes(2));
+});
+
+it("reads the work cards again when the owner changes work in another view", async () => {
+	const state = createInitialCollaborationState();
+	const updates = {
+		threads: state.threads,
+		items: [],
+		workspaces: {},
+		memories: [],
+		lastMailCheck: null,
+	};
+	vi.mocked(readWorkUpdates).mockReset().mockResolvedValue(updates);
+	const { result } = renderUpdates(state);
+	// nothing changed yet, so nothing is read on mount
+	expect(readWorkUpdates).not.toHaveBeenCalled();
+	act(() => {
+		result.current.markWorkChanged();
+	});
+	await waitFor(() => expect(readWorkUpdates).toHaveBeenCalledTimes(1));
 });

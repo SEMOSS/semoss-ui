@@ -15,6 +15,7 @@ on automatic discovery.
 | [Accessibility](./accessibility.skill.md) | Building or reviewing interactive UI, forms, dialogs, menus, tables, filters, navigation, or accessible behavior |
 | [Mobile development](./mobile-development.skill.md) | Working on responsive layouts, small screens, touch interaction, viewport handling, or mobile navigation |
 | [React form builder](./react-form-builder.skill.md) | Creating or touching forms, including fields, validation, submission, and modal form behavior |
+| [State management](./state-management.skill.md) | Creating, editing, migrating, or reviewing a store or shared application state: `*.store.ts`, `StoreState` from `@semoss/utility/store`, `useStoreSelector`, and existing MobX or Zustand stores and their consumers |
 | [SDK chat](./sdk-chat.skill.md) | Rooms, AskRoom/RunAgent messages, tool approvals, streaming/polling lifecycle, and room configuration |
 | [SDK session](../libs/sdk/skills/session.skill.md) | Sign in and out, the signed in user and their metadata, `useSession`/`useConfig`/`useSessionPermissions`/`useLogins`, and which insight a pixel runs in |
 

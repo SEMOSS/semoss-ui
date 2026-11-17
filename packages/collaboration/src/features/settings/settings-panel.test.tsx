@@ -166,18 +166,14 @@ it("redirects the old profile link, validates profile fields, and saves only con
 	const timezone = screen.getByRole("textbox", { name: "Time zone" });
 	await user.clear(timezone);
 	await user.type(timezone, "Invalid/Zone");
-	await user.click(
-		screen.getByRole("button", { name: "Save profile for this session" }),
-	);
+	await user.click(screen.getByRole("button", { name: "Save profile" }));
 	expect(timezone).toHaveAccessibleDescription(
 		"Enter a valid time zone, such as America/New_York.",
 	);
 	expect(onChange).not.toHaveBeenCalled();
 	await user.clear(timezone);
 	await user.type(timezone, "Europe/London");
-	await user.click(
-		screen.getByRole("button", { name: "Save profile for this session" }),
-	);
+	await user.click(screen.getByRole("button", { name: "Save profile" }));
 	await waitFor(() => expect(onChange).toHaveBeenCalled());
 	expect(onChange.mock.lastCall?.[0].next.liveProfile.timezone).toBe(
 		"Europe/London",

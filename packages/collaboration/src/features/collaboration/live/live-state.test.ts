@@ -245,6 +245,12 @@ it("reads a due day saved as midnight UTC at local midnight, so it shows on that
 	expect(localDue(null)).toBeNull();
 });
 
+it("reads a due the server stored at noon UTC as that day, and keeps a real time as it is", () => {
+	expect(localDue("2026-11-20T12:00:00Z")).toBe("2026-11-20T00:00");
+	expect(localDue("2026-11-20T12:00:00.000Z")).toBe("2026-11-20T00:00");
+	expect(localDue("2026-11-20T15:30:00Z")).toBe("2026-11-20T15:30:00Z");
+});
+
 it("reads Brain's summary runs with generated steps and plain due days", async () => {
 	const run = vi.fn().mockResolvedValue({
 		pixelReturn: [
