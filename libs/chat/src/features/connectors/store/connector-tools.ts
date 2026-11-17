@@ -10,7 +10,7 @@ import {
 	isMissingFileError,
 	parseMcpFile,
 	readRoomToolFile,
-	saveRoomToolFile,
+	updateRoomToolFile,
 } from "../../room/store/room-tool-file";
 import {
 	type McpTool,
@@ -240,15 +240,12 @@ export const syncRoomConnectorTools = async (
 	room: RoomStore,
 	userTools: readonly McpTool[],
 ): Promise<void> => {
-	const next = mergeUserConnectorTools(
-		await readRoomToolFile(room),
-		userTools,
+	const isWritten = await updateRoomToolFile(room, (file) =>
+		mergeUserConnectorTools(file, userTools),
 	);
-	if (!next) {
-		return;
+	if (isWritten) {
+		await room.syncRoomOptions();
 	}
-	await saveRoomToolFile(room, next);
-	await room.syncRoomOptions();
 };
 
 /**

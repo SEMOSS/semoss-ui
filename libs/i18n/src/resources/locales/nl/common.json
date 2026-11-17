@@ -78,6 +78,7 @@
 		"moreActionsFor": "Meer acties voor {{name}}",
 		"toggleMenu": "Menu in-/uitschakelen",
 		"resizeDateColumn": "Datumkolom vergroten/verkleinen",
+		"resizeSections": "Formaat van {{above}} en {{below}} wijzigen",
 		"failedToLoadFiles": "Bestanden laden mislukt",
 		"pdfNotSupported": "Uw browser ondersteunt het weergeven van PDF's niet.",
 		"binaryView": {

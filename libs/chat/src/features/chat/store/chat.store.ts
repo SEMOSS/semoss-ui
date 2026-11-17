@@ -16,6 +16,7 @@ import type { ThemeMap } from "@semoss/shared";
 import { StoreState } from "@semoss/utility/store";
 import type { WorkbenchPanelConfigAny } from "@semoss/workbench";
 import type { AbstractPixelMessage, ChatMode, Engine } from "../../../types";
+import type { LocalFoldersHost } from "../../local-folders/store/local-folders-host";
 import { RoomStore } from "../../room/store/room.store";
 import {
 	NEW_INSIGHT_ID,
@@ -118,6 +119,8 @@ export class ChatStore {
 	private _panelComponents: Record<string, WorkbenchPanelConfigAny>;
 	/** The build's new-chat defaults. */
 	private _build: NewChatBuildDefaults;
+	/** The host's way to the user's own files, which every room it creates gets. */
+	private _localFolders: LocalFoldersHost | undefined;
 	/** The chat's state. Only the store's own actions write it. */
 	private readonly state: StoreState<ChatSnapshot>;
 
@@ -129,14 +132,18 @@ export class ChatStore {
 	 * a module cycle.
 	 * @param build - The build's new-chat defaults, read from its env by the
 	 * host.
+	 * @param host - What only the host can do: `localFolders`, its way to the
+	 * user's own files (the desktop app).
 	 */
 	constructor(
 		theme: ThemeMap["playground"],
 		panelComponents: Record<string, WorkbenchPanelConfigAny>,
 		build: NewChatBuildDefaults = {},
+		host: { localFolders?: LocalFoldersHost } = {},
 	) {
 		this._theme = theme;
 		this._build = build;
+		this._localFolders = host.localFolders;
 		this._panelComponents = panelComponents;
 		// Only items that embed a page are kept, so a path lookup finds them.
 		const embeddedPageMap = [
@@ -347,6 +354,7 @@ export class ChatStore {
 			roomId,
 			insightId,
 			panelComponents: this._panelComponents,
+			localFolders: this._localFolders,
 		});
 
 		room.setModel(this.models.selected);
@@ -601,6 +609,7 @@ export class ChatStore {
 			theme: this._theme,
 			roomId,
 			panelComponents: this._panelComponents,
+			localFolders: this._localFolders,
 		});
 		await room.initialize();
 

@@ -19,7 +19,11 @@ interface ChatProviderProps {
  * @returns The chat store's and the config's providers around `children`.
  */
 export const ChatProvider = ({ config, children }: ChatProviderProps) => {
-	const store = useCreateChatStore(config.theme, config.newChatDefaults);
+	const store = useCreateChatStore(
+		config.theme,
+		config.newChatDefaults,
+		config.localFolders,
+	);
 	return (
 		<ChatSessionProvider store={store}>
 			<ChatConfigProvider config={config}>{children}</ChatConfigProvider>

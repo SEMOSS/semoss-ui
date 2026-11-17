@@ -1,5 +1,6 @@
 import { createContext } from "react";
 import type { ThemeMap } from "@semoss/shared";
+import type { LocalFoldersHost } from "../../local-folders/store/local-folders-host";
 import type { NewChatBuildDefaults } from "./new-chat-preferences";
 
 /**
@@ -31,6 +32,13 @@ export interface ChatConfig {
 	readonly newChatDefaults: NewChatBuildDefaults;
 	/** Where the SEMOSS platform app is served, for catalog links and tool UIs. */
 	readonly platformUrl: string;
+	/**
+	 * The host's way to the user's own files, such as the desktop app's
+	 * attached folders. Without it, chat UI offers no folders to attach. A
+	 * host that makes its chat store itself passes the same object to
+	 * `useCreateChatStore`. Keep its identity stable.
+	 */
+	readonly localFolders?: LocalFoldersHost;
 }
 
 /**

@@ -5,6 +5,8 @@ import {
 	createAppWindowHost,
 } from "./features/app-window/app-window-host";
 import { registerIpc } from "./features/ipc/register-ipc";
+import { openFolderGrants } from "./features/local-folders/folder-grants";
+import { createFolderWatchers } from "./features/local-folders/folder-watchers";
 import { openDesktopConfig } from "./features/server-connection/desktop-config";
 import { startLocalServer } from "./features/server-connection/local-server";
 import {
@@ -73,12 +75,16 @@ if (!app.requestSingleInstanceLock()) {
 		// each saved server signs in with its own browser session
 		const sessions = createServerSessions(appOrigin, () => config.server);
 		windows = createAppWindowHost({ appOrigin, config, sessions });
-		registerIpc({ appOrigin, config, sessions, windows });
+		// the folders the user attached to rooms, kept beside the config
+		const grants = openFolderGrants(app.getPath("userData"));
+		const watchers = createFolderWatchers();
+		registerIpc({ appOrigin, config, sessions, windows, grants, watchers });
 		await windows.open();
 
 		app.on("before-quit", () => {
 			// cookies are written lazily; keep every session for the next launch
 			void sessions.flush();
+			watchers.closeAll();
 			void localServer.close();
 		});
 	});

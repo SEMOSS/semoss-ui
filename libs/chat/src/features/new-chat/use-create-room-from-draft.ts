@@ -139,6 +139,11 @@ export const useCreateRoomFromDraft = (
 				);
 				await preparedRoom.updateRoomOptions(options);
 				await prepareRoom(preparedRoom);
+				// folders attached before the first message, for an agent run,
+				// which reads them from the room's toolbox
+				await preparedRoom.syncClientTools().catch((error: unknown) => {
+					console.error("Could not add the client tools", error);
+				});
 				// Optimistically surface the room in the nav — GetPlaygroundRooms
 				// won't return it until its first message has data.
 				chat.addOptimisticRoom({

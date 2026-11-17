@@ -78,6 +78,7 @@
 		"moreActionsFor": "Más acciones para {{name}}",
 		"toggleMenu": "Alternar menú",
 		"resizeDateColumn": "Redimensionar columna de fecha",
+		"resizeSections": "Cambiar el tamaño de {{above}} y {{below}}",
 		"failedToLoadFiles": "Error al cargar los archivos",
 		"pdfNotSupported": "Tu navegador no admite la visualización de PDF.",
 		"binaryView": {

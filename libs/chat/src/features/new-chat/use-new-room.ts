@@ -43,6 +43,12 @@ export function useNewRoom(
 		return () => {
 			isMounted.current = false;
 			if (prepared.current && !hasSubmitted.current) {
+				// folders attached to the room it is dropping are detached,
+				// so nothing is kept for a room that is gone
+				const localFolders = prepared.current.localFolders;
+				for (const folder of localFolders?.folders ?? []) {
+					void localFolders?.detach(folder.id).catch(console.error);
+				}
 				void chat
 					.closeRoom(prepared.current.roomId)
 					.catch(console.error);

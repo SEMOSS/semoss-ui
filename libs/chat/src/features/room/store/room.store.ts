@@ -1,5 +1,6 @@
 import type { StoreApi } from "zustand";
 import { getI18n } from "@semoss/i18n";
+import { FILE_PANEL_EVENTS, getFilePanelScope } from "@semoss/panels";
 import {
 	getWorkspace,
 	listModels,
@@ -48,6 +49,8 @@ import {
 } from "../../conversation/store/response-placeholder";
 import type { ToolData, ToolStore } from "../../conversation/store/tool.store";
 import type { TurnRunner } from "../../conversation/store/turn-runner";
+import { RoomLocalFoldersStore } from "../../local-folders/store/room-local-folders.store";
+import { mergeRoomClientTools } from "../../tools/client-tools/room-client-tools";
 import { ChatToolsStore } from "../../tools/default-tools/chat-tools.store";
 import { NEW_INSIGHT_ID } from "../../tools/mcp/mcp-constants";
 import { RoomAgentTools } from "./room-agent-tools";
@@ -69,6 +72,7 @@ import {
 	type RoomStoreOptions,
 } from "./room-snapshot";
 import { RoomStoredOptions } from "./room-stored-options";
+import { updateRoomToolFile } from "./room-tool-file";
 import {
 	createUploadError,
 	isAttachedToModel,
@@ -163,6 +167,12 @@ export class RoomStore {
 	/** The files queued for the room's next message. */
 	readonly contextItems: ContextItemsStore;
 
+	/**
+	 * The folders from the user's machine attached to the room, where the host
+	 * can reach them (the desktop app); null everywhere else.
+	 */
+	readonly localFolders: RoomLocalFoldersStore | null;
+
 	/** Runs the room's chat turns and their tool calls. */
 	readonly chatTurns: ChatTurnRunner = new ChatTurnRunner(this);
 
@@ -182,6 +192,7 @@ export class RoomStore {
 			insightId = NEW_INSIGHT_ID,
 			panelComponents,
 			includeFiles = true,
+			localFolders,
 		} = options;
 		this._theme = theme;
 		const sidebarSnapshot = createRoomSidebarSnapshot({
@@ -198,6 +209,23 @@ export class RoomStore {
 		this.chatTools = new ChatToolsStore(this);
 		this.connectors = new ConnectorsStore(this);
 		this.contextItems = new ContextItemsStore();
+		this.localFolders = localFolders
+			? new RoomLocalFoldersStore({
+					host: localFolders,
+					getRoomId: () => this.snapshot.roomId,
+					// an agent room keeps its client tools in its toolbox, so
+					// they follow the folders there
+					onFoldersChanged: () => {
+						this.syncClientTools().catch((error: unknown) => {
+							console.error(
+								"Could not update the client tools",
+								error,
+							);
+						});
+					},
+					onFilesChanged: this.handleLocalFilesChanged,
+				})
+			: null;
 		this.sidebarController = new RoomSidebar(
 			{
 				getInsightId: () => this.snapshot.insightId,
@@ -221,6 +249,62 @@ export class RoomStore {
 	dispose = (): void => {
 		this.sidebarController.dispose();
 		this.agentTurns.dispose();
+		this.localFolders?.dispose();
+	};
+
+	/**
+	 * Bring an agent room's toolbox in line with its client tools, since its
+	 * runs bring no tools from the browser, then refresh its options. A chat
+	 * room sends them with each turn instead, so nothing is written for one.
+	 * A new chat whose prepared room becomes an agent room as it sends calls
+	 * this first, so the run starts with them.
+	 *
+	 * @throws Error when the room's tool file cannot be read or written.
+	 */
+	syncClientTools = async (): Promise<void> => {
+		if (
+			!this.localFolders ||
+			this.mode !== "agent" ||
+			this.snapshot.insightId === NEW_INSIGHT_ID
+		) {
+			return;
+		}
+		const definitions = this.chatTools.clientToolDefinitions;
+		const isWritten = await updateRoomToolFile(this, (file) =>
+			mergeRoomClientTools(file, definitions),
+		);
+		if (isWritten) {
+			await this.syncRoomOptions();
+		}
+	};
+
+	/**
+	 * Tell every attached folder's explorer and panels that its files may
+	 * have changed, such as after a client tool wrote one.
+	 */
+	refreshLocalFolderPanels = (): void => {
+		for (const folder of this.localFolders?.folders ?? []) {
+			this.handleLocalFilesChanged(folder.id);
+		}
+	};
+
+	/**
+	 * A folder changed outside the chat: tell its explorer and the panels
+	 * showing its files.
+	 *
+	 * @param folderId - The attachment.
+	 * @param paths - What changed, when the host can tell.
+	 */
+	private handleLocalFilesChanged = (
+		folderId: string,
+		paths?: string[],
+	): void => {
+		this.workbench
+			.getState()
+			.events.actions.emit(FILE_PANEL_EVENTS.FILES_CHANGED, {
+				scope: getFilePanelScope({ type: "MOUNT", mountId: folderId }),
+				paths: paths,
+			});
 	};
 
 	/**
@@ -505,6 +589,8 @@ export class RoomStore {
 			if (loaded.options?.harnessType) {
 				this.setMode("agent");
 			}
+			// once the mode is known, which decides where the desktop tools go
+			void this.localFolders?.load();
 			// before the agent and model round trips, which it does not need
 			this._reconnectTurn();
 

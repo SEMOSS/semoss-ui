@@ -253,5 +253,21 @@
 				"description": "Sla de instructies en tools van deze kamer op als agent"
 			}
 		}
+	},
+	"localFolders": {
+		"roomFiles": "Ruimtebestanden",
+		"desktop": "Bureaublad",
+		"attach": "Map toevoegen",
+		"attachDescription": "Een map van deze computer toevoegen",
+		"empty": "Voeg een map van deze computer toe om hier met de bestanden te werken. Wijzigingen worden op je schijf opgeslagen.",
+		"folderActions": "Acties voor {{name}}",
+		"reveal": "Tonen in {{fileManager}}",
+		"openWithApp": "Openen met standaardapp",
+		"detach": "Loskoppelen",
+		"detached": "{{name}} losgekoppeld. De bestanden staan nog op je computer.",
+		"attachFailed": "De map kon niet worden toegevoegd. {{message}}",
+		"detachFailed": "De map kon niet worden losgekoppeld. {{message}}",
+		"openFailed": "Dat is niet gelukt. {{message}}",
+		"notHere": "Deze map is niet toegevoegd op deze computer."
 	}
 }

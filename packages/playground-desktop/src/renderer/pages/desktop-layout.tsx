@@ -17,7 +17,11 @@ import { DesktopSidebar } from "@/features/sidebar/desktop-sidebar";
  */
 export const DesktopLayout = () => {
 	const config = useDesktopChatConfig();
-	const store = useCreateChatStore(config.theme, config.newChatDefaults);
+	const store = useCreateChatStore(
+		config.theme,
+		config.newChatDefaults,
+		config.localFolders,
+	);
 	useDesktopCommands(getDesktopBridge());
 
 	return (

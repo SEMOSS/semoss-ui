@@ -53,7 +53,15 @@
 			"folder_edit": "फ़ाइल संपादित करें",
 			"folder_create_directory": "फ़ोल्डर बनाएं",
 			"folder_move": "स्थानांतरित करें या नाम बदलें",
-			"folder_delete": "हटाएं"
+			"folder_delete": "हटाएं",
+			"desktop_list": "डेस्कटॉप फ़ोल्डर की सूची",
+			"desktop_read": "डेस्कटॉप फ़ाइल पढ़ें",
+			"desktop_search": "डेस्कटॉप में खोजें",
+			"desktop_write": "डेस्कटॉप फ़ाइल लिखें",
+			"desktop_edit": "डेस्कटॉप फ़ाइल संपादित करें",
+			"desktop_create_directory": "डेस्कटॉप पर फ़ोल्डर बनाएँ",
+			"desktop_move": "डेस्कटॉप पर ले जाएँ या नाम बदलें",
+			"desktop_delete": "डेस्कटॉप से हटाएँ"
 		}
 	},
 	"card": {

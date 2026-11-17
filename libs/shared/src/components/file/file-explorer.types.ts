@@ -4,6 +4,8 @@ import type {
 	FileExplorerAdapter,
 	FileExplorerCapabilities,
 } from "./file-explorer.adapters";
+import type { FileExplorerTransferDrag } from "./file-explorer-transfer";
+import type { FileSource } from "./file-source";
 
 /** What the new-file overlay is being asked to do. */
 export type NewFileAction = "upload" | "add_file" | "add_directory";
@@ -214,6 +216,18 @@ export interface FileExplorerDndState {
 	onRootDragOver(e: DragEvent<HTMLElement>): void;
 	onRootDragLeave(e: DragEvent<HTMLElement>): void;
 	onRootDrop(e: DragEvent<HTMLElement>): void;
+	/**
+	 * A row drag from another explorer on the page that this one can copy in,
+	 * if one is in flight.
+	 */
+	getIncomingTransfer(): FileExplorerTransferDrag | null;
+	/** Copy a drag from another explorer into one of this one's directories. */
+	receiveTransfer(
+		drag: FileExplorerTransferDrag,
+		targetDirectory: string,
+	): Promise<void>;
+	/** Forget the row drag in flight, for a row whose drag ended. */
+	endTransfer(): void;
 }
 
 /** The injected new-file overlay's open state. */
@@ -245,7 +259,9 @@ export interface FileExplorerApi {
 	instanceId: string;
 	mode: FileMode;
 	adapter: FileExplorerAdapter;
-	/** The adapter's capabilities after `readOnly` is applied. */
+	/** The host's own source, when the tree is not reached through Pixels. */
+	source: FileSource | null;
+	/** The source's or adapter's capabilities after `readOnly` is applied. */
 	capabilities: FileExplorerCapabilities;
 	header: FileExplorerHeaderState;
 	tree: FileExplorerTreeState;
@@ -282,6 +298,13 @@ export interface FileExplorerOptions {
 	 * listing.
 	 */
 	adapter?: FileExplorerAdapter;
+	/**
+	 * A tree the browser reaches without Pixels, such as a folder on the
+	 * user's machine. Every listing and change goes through it, and its
+	 * capabilities replace the adapter's. Keep its identity stable: a new
+	 * source reloads the listing.
+	 */
+	source?: FileSource;
 	/** Directory to open at. Defaults to `"/"`. */
 	initialPath?: string;
 	/**
@@ -329,6 +352,11 @@ export interface FileExplorerNewFileOverlayProps {
 	 * insight. Left out, the overlay uses the mode's.
 	 */
 	adapter?: FileExplorerAdapter;
+	/**
+	 * The explorer's own source, when it has one: the overlay then creates and
+	 * uploads through it rather than through Pixels.
+	 */
+	source?: FileSource | null;
 	/**
 	 * The directory to create in, trailing-slashed. This is the *initial*
 	 * destination only — the overlay may let the user retarget it, and reports

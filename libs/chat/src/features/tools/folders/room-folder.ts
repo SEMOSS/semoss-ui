@@ -1,6 +1,9 @@
 import { decodeBase64Asset, getFileExplorerAdapter } from "@semoss/shared";
 import { encodeBytesToBase64 } from "@semoss/utility/encoding";
-import { ROOM_FILES_NAME } from "../default-tools/folder-tools";
+import {
+	type FolderToolPrefix,
+	ROOM_FILES_NAME,
+} from "../default-tools/folder-tools";
 import {
 	getFolderPathName,
 	getParentFolderPath,
@@ -21,6 +24,64 @@ export interface FolderEntry {
 	size?: number;
 	/** Last modified time as the source reports it, when known. */
 	modified?: string;
+}
+
+/**
+ * A folder the chat's file tools work in: Room Files, or the folders attached
+ * from the user's machine. Every path is relative to the folder root, with `/`
+ * separators and no leading slash, and normalized before it reaches the
+ * folder, so it never climbs out.
+ */
+export interface ToolFolder {
+	/** How the tools name the folder to the model, such as Room Files. */
+	readonly displayName: string;
+	/** What its tools are called before their operation, such as `folder`. */
+	readonly toolPrefix: FolderToolPrefix;
+	/**
+	 * List a directory's direct children.
+	 *
+	 * @param path - A directory; `""` is the root.
+	 */
+	list(path: string): Promise<FolderEntry[]>;
+	/**
+	 * Read a file's bytes.
+	 *
+	 * @param path - A file.
+	 */
+	readFile(path: string): Promise<Blob>;
+	/**
+	 * Create or replace a text file, making its folders.
+	 *
+	 * @param path - A file.
+	 * @param content - Its text.
+	 */
+	writeText(path: string, content: string): Promise<void>;
+	/**
+	 * Create a directory and its parents.
+	 *
+	 * @param path - The directory.
+	 */
+	createDirectory(path: string): Promise<void>;
+	/**
+	 * Move or rename an entry.
+	 *
+	 * @param from - Where it is.
+	 * @param to - Where it goes.
+	 */
+	move(from: string, to: string): Promise<void>;
+	/**
+	 * Delete an entry, a directory with what it holds.
+	 *
+	 * @param path - The entry.
+	 */
+	remove(path: string): Promise<void>;
+	/**
+	 * Look up one entry.
+	 *
+	 * @param path - The entry; `""` is the root.
+	 * @returns The entry, or null when nothing is there.
+	 */
+	stat(path: string): Promise<FolderEntry | null>;
 }
 
 /**
@@ -81,7 +142,10 @@ interface AssetRow {
  * without a path clears the whole space, so an empty path must never reach
  * it. The reserved top level entries are hidden from listings and refused.
  */
-export class RoomFolder {
+export class RoomFolder implements ToolFolder {
+	readonly displayName = ROOM_FILES_NAME;
+	readonly toolPrefix = "folder";
+
 	/**
 	 * @param run - Runs the insight asset pixels against the room's insight.
 	 */

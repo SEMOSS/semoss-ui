@@ -1,5 +1,8 @@
 import { useRef } from "react";
 import { useTranslation } from "@semoss/i18n";
+import { toast } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
+import { useChatConfig } from "../chat/config/use-chat-config";
 import type { RoomStore } from "../room/store/room.store";
 import { ROOM_PANEL_TYPES } from "../room/store/room-sidebar";
 import {
@@ -72,6 +75,7 @@ export const useNewRoomPanels = (
 	isLoading: boolean,
 ): NewRoomPanels => {
 	const { t } = useTranslation("room");
+	const { localFolders } = useChatConfig();
 	const { room: preparedRoom, isPreparing, prepare } = preparation;
 	// what Retry opens again after a failed preparation; read only by Retry
 	const pendingPanelRef = useRef<NewRoomPanelRequest>({ kind: "workbench" });
@@ -96,12 +100,41 @@ export const useNewRoomPanels = (
 		else if (newRoom.sidebar.isOpen) room.openSidebar();
 	};
 
+	/**
+	 * Attach folders to the room the draft prepares, which keeps them, and
+	 * show them in its Files. The first message then carries their tools.
+	 */
+	const attachFolder = async (): Promise<void> => {
+		if (isLoading) return;
+		const room = preparedRoom ?? (await prepare());
+		if (!room?.localFolders) {
+			if (!room) newRoom.openSidebar();
+			return;
+		}
+		try {
+			await room.localFolders.attach();
+		} catch (error) {
+			toast.error(
+				t("localFolders.attachFailed", {
+					message: getErrorMessage(error, ""),
+				}),
+			);
+			return;
+		}
+		if (room.localFolders.folders.length > 0) {
+			showPanel(room, { kind: "files" }, activityTitle);
+		}
+	};
+
 	return {
 		workbenchRoom: preparedRoom ?? newRoom,
 		newRoomPanels: {
 			onOpenPanel: (request) => void openPanel(request),
 			isBusy: isPreparing || isLoading,
 			connectors: newRoom.connectors,
+			onAttachFolder: localFolders
+				? () => void attachFolder()
+				: undefined,
 		},
 		retryPreparation: () => void openPanel(pendingPanelRef.current),
 	};

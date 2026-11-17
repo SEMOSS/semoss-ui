@@ -81,6 +81,10 @@ The playground adds Add to Context to Chat Files this way. Entries with `placeme
 listed after every standard entry. Keep the host object's identity stable: it is a dependency of
 every row's actions.
 
+The same host can add buttons to an open file's tab controls (`fileActions(file)`), drawn by
+`FileViewControl` after Refresh and Save and disabled while the view is busy. The chat adds Open
+with Default App to files from an attached Desktop folder this way.
+
 ## A host can keep the explorer to one folder
 
 A `FILE_EXPLORER_PANEL` instance whose config has `rootPath`, such as `/public`, treats that
@@ -90,6 +94,35 @@ the explorer (an opened file, a rename or delete that open tabs follow, a drag, 
 host's row entries) back to its place in the source, so open panels and events still speak source
 paths. `initialPath` is then a path inside the folder. The client's Agent Files panel is built
 this way.
+
+## A host can mount its own trees beside the explorer
+
+A tree the browser reaches without Pixels, such as a folder on the user's machine, is a
+`FileSource` (`@semoss/shared`) that the host registers under an id with `FileSourcesProvider`
+(`contexts/file-sources.context.tsx`). A file panel opened from it has the mode
+`{ type: "MOUNT", mountId }` (scope `MOUNT:<id>`), and `useFilePanel` reads and saves it through
+the source rather than Pixels (`hooks/use-mount-file.ts`), so every view works on it unchanged.
+A mount has no resource of its own, so `useAccess` treats it as editable; its source refuses
+what it cannot do. A panel restored while its mount is not here shows the host's
+`missingMountMessage`.
+
+A `FILE_EXPLORER_PANEL` whose mode the host's `isShownIn` accepts lists the mounts below its own
+tree: its own tree under `primaryLabel`, then one heading per `FileMountGroup` (Desktop now, a
+storage group later) with each mount as a collapsible section of its own explorer
+(`FileMountSection`). A group with no mounts shows its `emptyState`, or hides without one, so a
+host with nothing mounted keeps the plain panel. Every explorer in the panel, its own and each
+mount's, is wired into the dock the same way by `useDockFileExplorer`.
+
+The top-level sections (the panel's own tree and each group) can be dragged by their heading, or
+moved with Alt+Up and Alt+Down on it, and the line between two open sections resizes them
+(`useFileExplorerSections`). Order and sizes are flex weights kept in the panel's config as
+`sections`, so they last with the layout; which sections are collapsed is not kept.
+
+Dragging rows from one explorer into another copies them, folders with everything in them, and
+replaces a name that is already there. Each `useFileExplorer` registers how its tree is read
+(`file-explorer-transfer.ts` in `@semoss/shared`), so the explorer that takes the drop reads
+through the other's insight or source and writes through its own. A copy needs the receiving
+tree's `upload` capability; dragging within one explorer still moves.
 
 ## A view renders a file; a host draws its actions
 

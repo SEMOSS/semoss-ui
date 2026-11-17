@@ -1,3 +1,8 @@
+import type {
+	LocalFileEntry,
+	LocalFolderGrant,
+	LocalFolderRef,
+} from "./local-folders";
 import type { ServerConfig } from "./server-connection";
 
 /** What checking a server found: success, or a message saying why not. */
@@ -46,6 +51,90 @@ export interface IpcContract {
 	};
 	/** Open a link in the system browser. */
 	"shell:open-external": { request: [url: string]; response: undefined };
+	/** The folders attached to a room on the server in use. */
+	"local-folders:list": {
+		request: [roomId: string];
+		response: LocalFolderGrant[];
+	};
+	/**
+	 * Ask the user for folders with the system's folder picker and attach
+	 * them to a room. The only way a folder is attached: the page never names
+	 * a path on the machine.
+	 */
+	"local-folders:pick": {
+		request: [roomId: string];
+		response: LocalFolderGrant[];
+	};
+	/** Detach a folder from a room, leaving the folder as it is. */
+	"local-folders:detach": {
+		request: [ref: LocalFolderRef];
+		response: LocalFolderGrant[];
+	};
+	/** Send `local-folders-changed` commands while the folder changes. Counted: one unwatch each. */
+	"local-folders:watch": {
+		request: [ref: LocalFolderRef];
+		response: undefined;
+	};
+	/** Stop one watch. */
+	"local-folders:unwatch": {
+		request: [ref: LocalFolderRef];
+		response: undefined;
+	};
+	/** A folder's entries; paths are inside the attached folder, `/` being it. */
+	"local-fs:list": {
+		request: [ref: LocalFolderRef, path: string];
+		response: LocalFileEntry[];
+	};
+	/** One entry, or null when nothing is there. */
+	"local-fs:stat": {
+		request: [ref: LocalFolderRef, path: string];
+		response: LocalFileEntry | null;
+	};
+	/** A file's bytes. */
+	"local-fs:read": {
+		request: [ref: LocalFolderRef, path: string];
+		response: Uint8Array;
+	};
+	/** Replace a file's bytes, making it and its folders when missing. */
+	"local-fs:write": {
+		request: [ref: LocalFolderRef, path: string, bytes: Uint8Array];
+		response: undefined;
+	};
+	/** Make an empty file; fails when it exists. */
+	"local-fs:create-file": {
+		request: [ref: LocalFolderRef, path: string];
+		response: undefined;
+	};
+	/** Make a folder and its parents. */
+	"local-fs:create-directory": {
+		request: [ref: LocalFolderRef, path: string];
+		response: undefined;
+	};
+	/** Move or rename an entry; fails when the destination exists. */
+	"local-fs:move": {
+		request: [ref: LocalFolderRef, from: string, to: string];
+		response: undefined;
+	};
+	/** Copy an entry, a folder with what it holds; fails when the destination exists. */
+	"local-fs:copy": {
+		request: [ref: LocalFolderRef, from: string, to: string];
+		response: undefined;
+	};
+	/** Move an entry to the system's trash. */
+	"local-fs:remove": {
+		request: [ref: LocalFolderRef, path: string];
+		response: undefined;
+	};
+	/** Open an entry with the app the system opens it with. */
+	"local-fs:open": {
+		request: [ref: LocalFolderRef, path: string];
+		response: undefined;
+	};
+	/** Show an entry in the system's file manager. */
+	"local-fs:reveal": {
+		request: [ref: LocalFolderRef, path: string];
+		response: undefined;
+	};
 }
 
 /** A renderer → main channel. */
@@ -59,12 +148,36 @@ export const IPC_CHANNELS = [
 	"server-connection:set",
 	"server-connection:forget",
 	"shell:open-external",
+	"local-folders:list",
+	"local-folders:pick",
+	"local-folders:detach",
+	"local-folders:watch",
+	"local-folders:unwatch",
+	"local-fs:list",
+	"local-fs:stat",
+	"local-fs:read",
+	"local-fs:write",
+	"local-fs:create-file",
+	"local-fs:create-directory",
+	"local-fs:move",
+	"local-fs:copy",
+	"local-fs:remove",
+	"local-fs:open",
+	"local-fs:reveal",
 ] as const satisfies readonly IpcChannel[];
 
-/** Main → renderer: what the app menu asks the page to do. */
+/** Main → renderer: what the app menu asks the page to do, and what it hears from the machine. */
 export type DesktopCommand =
 	| { readonly type: "new-chat" }
-	| { readonly type: "change-server" };
+	| { readonly type: "change-server" }
+	| {
+			/** A watched folder changed outside the app. */
+			readonly type: "local-folders-changed";
+			readonly roomId: string;
+			readonly folderId: string;
+			/** What changed, inside the folder; none when the system could not say. */
+			readonly paths?: readonly string[];
+	  };
 
 /** The channel main sends {@link DesktopCommand}s on. */
 export const COMMAND_CHANNEL = "app:command";

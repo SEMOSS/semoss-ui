@@ -76,3 +76,37 @@ export const saveRoomToolFile = async (
 		setErrorOnFail: false,
 	});
 };
+
+/** Each room's tool file update in flight, so updates run one at a time. */
+const pendingUpdates = new WeakMap<RoomStore, Promise<unknown>>();
+
+/**
+ * Change a room's own tool file: read it, let `change` build the next one, and
+ * write that. Updates to one room run one after another, so two writers (the
+ * connectors and the desktop folders) never read the same file and each
+ * write over the other's change.
+ *
+ * @param room - A room bound to its insight.
+ * @param change - Builds the next file from the current one (null when the
+ * room has none), or returns null to leave it as it is.
+ * @returns Whether a file was written.
+ * @throws Error when the file cannot be read or written.
+ */
+export const updateRoomToolFile = (
+	room: RoomStore,
+	change: (file: unknown) => Record<string, unknown> | null,
+): Promise<boolean> => {
+	const previous = pendingUpdates.get(room) ?? Promise.resolve();
+	const update = previous
+		.catch(() => undefined)
+		.then(async () => {
+			const next = change(await readRoomToolFile(room));
+			if (!next) {
+				return false;
+			}
+			await saveRoomToolFile(room, next);
+			return true;
+		});
+	pendingUpdates.set(room, update);
+	return update;
+};

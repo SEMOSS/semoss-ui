@@ -78,6 +78,7 @@
 		"moreActionsFor": "{{name}} のその他の操作",
 		"toggleMenu": "メニューを切り替え",
 		"resizeDateColumn": "日付列のサイズを変更",
+		"resizeSections": "{{above}} と {{below}} のサイズを変更",
 		"failedToLoadFiles": "ファイルの読み込みに失敗しました",
 		"pdfNotSupported": "お使いのブラウザは PDF の表示に対応していません。",
 		"binaryView": {

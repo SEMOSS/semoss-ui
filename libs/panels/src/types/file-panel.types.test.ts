@@ -95,3 +95,30 @@ describe("matchesFilePanel", () => {
 		expect(matchesFilePanel({}, { mode: APP, path: "/a" })).toBe(false);
 	});
 });
+
+describe("a host's mount", () => {
+	const MOUNT: FilePanelMode = { type: "MOUNT", mountId: "m1" };
+
+	it("has its own scope, so its renames reach only its panels", () => {
+		expect(getFilePanelScope(MOUNT)).toBe("MOUNT:m1");
+	});
+
+	it("has no resource of its own to check access against", () => {
+		expect(getFilePanelResource(MOUNT)).toBeNull();
+	});
+
+	it("matches only the same mount", () => {
+		expect(sameFileMode(MOUNT, { type: "MOUNT", mountId: "m1" })).toBe(
+			true,
+		);
+		expect(sameFileMode(MOUNT, { type: "MOUNT", mountId: "m2" })).toBe(
+			false,
+		);
+		expect(
+			matchesFilePanel(
+				{ mode: MOUNT, path: "/a.md" },
+				{ mode: { type: "MOUNT", mountId: "m1" }, path: "/a.md" },
+			),
+		).toBe(true);
+	});
+});

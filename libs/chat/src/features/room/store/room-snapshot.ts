@@ -9,6 +9,7 @@ import type {
 	MessageMap,
 } from "../../conversation/store/message-map";
 import type { ToolData } from "../../conversation/store/tool.store";
+import type { LocalFoldersHost } from "../../local-folders/store/local-folders-host";
 
 /** No agent tools; one array, so a room without an agent keeps its snapshot. */
 export const NO_AGENT_TOOLS: readonly MCPConfig[] = [];
@@ -198,4 +199,9 @@ export interface RoomStoreOptions {
 	 * room that takes its arrangement.
 	 */
 	includeFiles?: boolean;
+	/**
+	 * The host's way to the user's own files, where it has one (the desktop
+	 * app); the room then keeps the folders attached to it.
+	 */
+	localFolders?: LocalFoldersHost;
 }

@@ -69,6 +69,12 @@ export interface NewRoomWorkbenchPanels {
 	isBusy: boolean;
 	/** The draft's connectors, whose viewers are offered. */
 	connectors: ConnectorsStore;
+	/**
+	 * Attach folders from the user's machine: prepares the draft's room, which
+	 * keeps them, then opens its Files. Only where the host can reach the
+	 * user's files.
+	 */
+	onAttachFolder?: () => void;
 }
 
 /**

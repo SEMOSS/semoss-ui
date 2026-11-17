@@ -453,7 +453,9 @@ owning run, not a room ID. `toolArgs`, `editedArgs`, `toolMeta`, `toolCallId`,
     omitted or JSON-equal parameters to `approve`, changed parameters to `edit`.
 - `await agent.decide(action, "reject")` rejects that action.
 - `await agent.decide(action, "respond", answers)` JSON-stringifies the answer
-    object as `mcpToolResult`, for tools such as RequestUserInput.
+    object as `mcpToolResult`, for tools such as RequestUserInput. The backend takes
+    `respond` for any paused tool, so a client can run an `ask` tool itself and resume
+    the run with its result; `@semoss/chat` does this for the desktop folder tools.
 - Raw `decideAgentRunAction({ actionId, decision, paramValues?, mcpToolResult? }, insightId?)`
     returns `Promise<string>` and calls RunMCPTool. Raw decisions are `approve`,
     `edit`, `reject`, or `respond`, not `submit`. Supply arguments for `edit` and a

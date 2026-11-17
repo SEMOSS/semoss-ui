@@ -8,7 +8,7 @@ import {
 	replaceFileText,
 	sliceTextLines,
 } from "../folders/folder-text";
-import type { FolderEntry, RoomFolder } from "../folders/room-folder";
+import type { FolderEntry, ToolFolder } from "../folders/room-folder";
 
 /**
  * The tools Room Files gives the assistant. The names are what the model
@@ -30,13 +30,47 @@ export const FOLDER_TOOL_NAMES = {
 export type FolderToolName =
 	(typeof FOLDER_TOOL_NAMES)[keyof typeof FOLDER_TOOL_NAMES];
 
+/**
+ * The same tools over the folders attached from the user's machine. Their
+ * own names keep them apart from Room Files' tools and from an agent's own
+ * file tools; like those, renaming one strands the calls already made.
+ */
+export const DESKTOP_TOOL_NAMES = {
+	LIST: "desktop_list",
+	READ: "desktop_read",
+	SEARCH: "desktop_search",
+	WRITE: "desktop_write",
+	EDIT: "desktop_edit",
+	CREATE_DIRECTORY: "desktop_create_directory",
+	MOVE: "desktop_move",
+	DELETE: "desktop_delete",
+} as const;
+
+/** One of the desktop folder tools. */
+export type DesktopToolName =
+	(typeof DESKTOP_TOOL_NAMES)[keyof typeof DESKTOP_TOOL_NAMES];
+
+/** What a folder tool does, whichever folder it works in. */
+export type FolderToolOperation =
+	| "list"
+	| "read"
+	| "search"
+	| "write"
+	| "edit"
+	| "create_directory"
+	| "move"
+	| "delete";
+
+/** What the tools that work in a folder are called before their operation. */
+export type FolderToolPrefix = "folder" | "desktop";
+
 /** How a tool call runs: on its own, or once the user approves it. */
 export type FolderToolExecution = "auto" | "ask";
 
 /** A tool definition in the MCP shape the room accepts in `paramValues.tools`. */
 export interface FolderToolDefinition {
 	/** What the model calls. */
-	name: FolderToolName;
+	name: FolderToolName | DesktopToolName;
 	/** The tool's title. */
 	title: string;
 	/** What the model is told the tool does. */
@@ -63,11 +97,15 @@ export interface FolderToolOutcome {
 const ALL_FOLDER_TOOLS: readonly FolderToolName[] =
 	Object.values(FOLDER_TOOL_NAMES);
 
-/** The tools that only read, which run on their own unless set otherwise. */
-const READ_TOOLS: ReadonlySet<FolderToolName> = new Set([
-	FOLDER_TOOL_NAMES.LIST,
-	FOLDER_TOOL_NAMES.READ,
-	FOLDER_TOOL_NAMES.SEARCH,
+/** Every desktop tool's name, in the same order. */
+const ALL_DESKTOP_TOOLS: readonly DesktopToolName[] =
+	Object.values(DESKTOP_TOOL_NAMES);
+
+/** The operations that only read, which run on their own unless set otherwise. */
+const READ_OPERATIONS: ReadonlySet<FolderToolOperation> = new Set([
+	"list",
+	"read",
+	"search",
 ]);
 
 /**
@@ -119,6 +157,37 @@ export const isFolderToolName = (name: string): name is FolderToolName =>
 	(ALL_FOLDER_TOOLS as readonly string[]).includes(name);
 
 /**
+ * Whether a tool call name is one of the desktop folder tools.
+ *
+ * @param name - The name the model called.
+ * @returns True for the desktop tools.
+ */
+export const isDesktopToolName = (name: string): name is DesktopToolName =>
+	(ALL_DESKTOP_TOOLS as readonly string[]).includes(name);
+
+/**
+ * What a folder or desktop tool does.
+ *
+ * @param name - A folder or desktop tool.
+ * @returns Its operation, such as `read`.
+ */
+export const getFolderToolOperation = (
+	name: FolderToolName | DesktopToolName,
+): FolderToolOperation =>
+	name.slice(name.indexOf("_") + 1) as FolderToolOperation;
+
+/**
+ * The Room Files tool whose setting a tool follows: itself, or for a desktop
+ * tool the Room Files tool that does the same.
+ *
+ * @param name - A folder or desktop tool.
+ * @returns The matching Room Files tool.
+ */
+export const getMatchingFolderTool = (
+	name: FolderToolName | DesktopToolName,
+): FolderToolName => `folder_${getFolderToolOperation(name)}` as FolderToolName;
+
+/**
  * How a folder tool runs when nothing says otherwise: reading on its own, and
  * every change once the user approves it.
  *
@@ -126,21 +195,34 @@ export const isFolderToolName = (name: string): name is FolderToolName =>
  * @returns The execution mode.
  */
 export const getUsualFolderToolExecution = (
-	name: FolderToolName,
-): FolderToolExecution => (READ_TOOLS.has(name) ? "auto" : "ask");
+	name: FolderToolName | DesktopToolName,
+): FolderToolExecution =>
+	READ_OPERATIONS.has(getFolderToolOperation(name)) ? "auto" : "ask";
 
 /** How the tools name the chat's own files, the room's folder. */
 export const ROOM_FILES_NAME = "Room Files";
 
-/** The folder, the way the model should refer to it wherever a tool names it. */
-const FOLDER_DESCRIPTION = `${ROOM_FILES_NAME} (this room's own files)`;
+/** How the desktop tools name the folders attached from the user's machine. */
+export const DESKTOP_FOLDERS_NAME = "Desktop folders";
 
-/**
- * How the folder relates to the files the chat's other tools use, so the
- * model knows they see what it writes.
- */
-const FOLDER_SCOPE =
-	"These are the same files the user uploads and saves to the chat, and the chat's other tools read and write them too, so a file written here is where those tools look.";
+/** How one set of tools describes the folder it works in. */
+interface FolderSpace {
+	prefix: FolderToolPrefix;
+	/** The folder, the way the model should refer to it wherever a tool names it. */
+	description: string;
+	/**
+	 * How the folder relates to the files the chat's other tools use, so the
+	 * model knows what sees what it writes.
+	 */
+	scope: string;
+}
+
+/** Room Files, as its tools describe it. */
+const ROOM_FILES_SPACE: FolderSpace = {
+	prefix: "folder",
+	description: `${ROOM_FILES_NAME} (this room's own files)`,
+	scope: "These are the same files the user uploads and saves to the chat, and the chat's other tools read and write them too, so a file written here is where those tools look.",
+};
 
 /**
  * The schema of a path argument.
@@ -156,14 +238,14 @@ const pathProperty = (
  * What the model is told about a tool that waits for the user, so it keeps
  * each such call small and expects a person in the loop.
  *
- * @param name - A folder tool that asks first.
+ * @param operation - What a tool that asks first does.
  * @returns The sentence to add to its description.
  */
-const describeApproval = (name: FolderToolName): string => {
-	if (name === FOLDER_TOOL_NAMES.DELETE) {
+const describeApproval = (operation: FolderToolOperation): string => {
+	if (operation === "delete") {
 		return " The user approves every deletion before it happens.";
 	}
-	return READ_TOOLS.has(name)
+	return READ_OPERATIONS.has(operation)
 		? " The user approves each call before it runs."
 		: " The user reviews each change before it runs, so make one focused change per call.";
 };
@@ -256,7 +338,7 @@ const readRequiredString = (
  * @returns The text.
  */
 const readTextFile = async (
-	folder: RoomFolder,
+	folder: ToolFolder,
 	path: string,
 	maxBytes = MAX_READ_BYTES,
 	known?: FolderEntry,
@@ -267,7 +349,7 @@ const readTextFile = async (
 	}
 	if (entry.kind === "directory") {
 		throw new FolderToolError(
-			`${path} is a folder. Use folder_list to see what it holds.`,
+			`${path} is a folder. Use ${folder.toolPrefix}_list to see what it holds.`,
 		);
 	}
 	if (isBinaryFileName(path)) {
@@ -329,7 +411,7 @@ const succeeded = (
  * @returns The listing.
  */
 const listFolder = async (
-	folder: RoomFolder,
+	folder: ToolFolder,
 	args: Record<string, unknown>,
 ): Promise<FolderToolOutcome> => {
 	const path = normalizeFolderPath(args.path);
@@ -341,7 +423,7 @@ const listFolder = async (
 	}
 	if (root.kind !== "directory") {
 		throw new FolderToolError(
-			`${path} is a file. Use folder_read to read it.`,
+			`${path} is a file. Use ${folder.toolPrefix}_read to read it.`,
 		);
 	}
 
@@ -373,7 +455,7 @@ const listFolder = async (
 	await walk(path, 1);
 
 	return succeeded({
-		folder: ROOM_FILES_NAME,
+		folder: folder.displayName,
 		path: path || "/",
 		entries: entries.map(toResultRow),
 		truncated: isTruncated,
@@ -393,7 +475,7 @@ const listFolder = async (
  * @returns The lines, and where to continue when there are more.
  */
 const readFile = async (
-	folder: RoomFolder,
+	folder: ToolFolder,
 	args: Record<string, unknown>,
 ): Promise<FolderToolOutcome> => {
 	const path = readRequiredPath(args, "path");
@@ -416,7 +498,7 @@ const readFile = async (
 		truncated: slice.isTruncated,
 		...(slice.isTruncated
 			? {
-					note: `Call folder_read with offset ${slice.endLine + 1} to continue.`,
+					note: `Call ${folder.toolPrefix}_read with offset ${slice.endLine + 1} to continue.`,
 				}
 			: {}),
 		content: slice.content,
@@ -432,7 +514,7 @@ const readFile = async (
  * @returns The matches.
  */
 const searchFolder = async (
-	folder: RoomFolder,
+	folder: ToolFolder,
 	args: Record<string, unknown>,
 ): Promise<FolderToolOutcome> => {
 	const query = readRequiredString(args, "query").trim();
@@ -531,7 +613,7 @@ const searchFolder = async (
  * @returns What was written, and whether the file is new.
  */
 const writeFile = async (
-	folder: RoomFolder,
+	folder: ToolFolder,
 	args: Record<string, unknown>,
 ): Promise<FolderToolOutcome> => {
 	const path = readRequiredPath(args, "path");
@@ -567,7 +649,7 @@ const writeFile = async (
  * @returns How many replacements were made.
  */
 const editFile = async (
-	folder: RoomFolder,
+	folder: ToolFolder,
 	args: Record<string, unknown>,
 ): Promise<FolderToolOutcome> => {
 	const path = readRequiredPath(args, "path");
@@ -590,7 +672,7 @@ const editFile = async (
  * @returns Whether the folder was created.
  */
 const createDirectory = async (
-	folder: RoomFolder,
+	folder: ToolFolder,
 	args: Record<string, unknown>,
 ): Promise<FolderToolOutcome> => {
 	const path = readRequiredPath(args, "path");
@@ -615,7 +697,7 @@ const createDirectory = async (
  * @returns Where the entry went.
  */
 const moveEntry = async (
-	folder: RoomFolder,
+	folder: ToolFolder,
 	args: Record<string, unknown>,
 ): Promise<FolderToolOutcome> => {
 	const from = readRequiredPath(args, "from");
@@ -637,7 +719,7 @@ const moveEntry = async (
  * @returns What was deleted.
  */
 const deleteEntry = async (
-	folder: RoomFolder,
+	folder: ToolFolder,
 	args: Record<string, unknown>,
 ): Promise<FolderToolOutcome> => {
 	const path = readRequiredPath(args, "path");
@@ -672,16 +754,23 @@ interface FolderToolSpec {
 	required: string[];
 	/** Runs one call. May throw; {@link executeFolderTool} catches. */
 	run: (
-		folder: RoomFolder,
+		folder: ToolFolder,
 		args: Record<string, unknown>,
 	) => Promise<FolderToolOutcome>;
 }
 
-/** Every folder tool, in the order the definitions list them. */
-const FOLDER_TOOLS: Record<FolderToolName, FolderToolSpec> = {
-	[FOLDER_TOOL_NAMES.LIST]: {
+/**
+ * Every folder tool's spec, described for the folder it works in.
+ *
+ * @param space - The folder, as its tools describe it.
+ * @returns Each operation's spec.
+ */
+const createFolderToolSpecs = (
+	space: FolderSpace,
+): Record<FolderToolOperation, FolderToolSpec> => ({
+	list: {
 		title: "List Folder",
-		description: `List the files and folders in ${FOLDER_DESCRIPTION}. Paths are relative to the folder root and use forward slashes; leave path empty for the root. Set depth to 2 or 3 to include nested folders. ${FOLDER_SCOPE}`,
+		description: `List the files and folders in ${space.description}. Paths are relative to the folder root and use forward slashes; leave path empty for the root. Set depth to 2 or 3 to include nested folders. ${space.scope}`,
 		properties: {
 			path: pathProperty(
 				"Folder to list, relative to the work folder root. Leave empty for the root.",
@@ -696,9 +785,9 @@ const FOLDER_TOOLS: Record<FolderToolName, FolderToolSpec> = {
 		required: [],
 		run: listFolder,
 	},
-	[FOLDER_TOOL_NAMES.READ]: {
+	read: {
 		title: "Read File",
-		description: `Read a text file from ${FOLDER_DESCRIPTION}. Returns up to ${DEFAULT_READ_LINES} lines per call; use offset and limit to read further. PDFs, images, and Office documents cannot be read as text, so ask the user to attach those to the chat instead.`,
+		description: `Read a text file from ${space.description}. Returns up to ${DEFAULT_READ_LINES} lines per call; use offset and limit to read further. PDFs, images, and Office documents cannot be read as text, so ask the user to attach those to the chat instead.`,
 		properties: {
 			path: pathProperty(),
 			offset: {
@@ -715,9 +804,9 @@ const FOLDER_TOOLS: Record<FolderToolName, FolderToolSpec> = {
 		required: ["path"],
 		run: readFile,
 	},
-	[FOLDER_TOOL_NAMES.SEARCH]: {
+	search: {
 		title: "Search Folder",
-		description: `Find files and folders in ${FOLDER_DESCRIPTION} whose names contain the query, ignoring case. Use * as a wildcard, for example *.md. Set content to true to also find text files that contain the query as plain text.`,
+		description: `Find files and folders in ${space.description} whose names contain the query, ignoring case. Use * as a wildcard, for example *.md. Set content to true to also find text files that contain the query as plain text.`,
 		properties: {
 			query: {
 				type: "string",
@@ -740,9 +829,9 @@ const FOLDER_TOOLS: Record<FolderToolName, FolderToolSpec> = {
 		required: ["query"],
 		run: searchFolder,
 	},
-	[FOLDER_TOOL_NAMES.WRITE]: {
+	write: {
 		title: "Write File",
-		description: `Create a text file in ${FOLDER_DESCRIPTION}, or replace the entire contents of an existing file. Missing parent folders are created. For a small change to an existing file, use folder_edit instead.`,
+		description: `Create a text file in ${space.description}, or replace the entire contents of an existing file. Missing parent folders are created. For a small change to an existing file, use ${space.prefix}_edit instead.`,
 		properties: {
 			path: pathProperty(),
 			content: {
@@ -753,9 +842,9 @@ const FOLDER_TOOLS: Record<FolderToolName, FolderToolSpec> = {
 		required: ["path", "content"],
 		run: writeFile,
 	},
-	[FOLDER_TOOL_NAMES.EDIT]: {
+	edit: {
 		title: "Edit File",
-		description: `Replace exact text in a text file in ${FOLDER_DESCRIPTION}. old_text must match the file exactly, including whitespace and line breaks, and must appear once unless replace_all is true. Read the file before editing it.`,
+		description: `Replace exact text in a text file in ${space.description}. old_text must match the file exactly, including whitespace and line breaks, and must appear once unless replace_all is true. Read the file before editing it.`,
 		properties: {
 			path: pathProperty(),
 			old_text: {
@@ -774,16 +863,16 @@ const FOLDER_TOOLS: Record<FolderToolName, FolderToolSpec> = {
 		required: ["path", "old_text", "new_text"],
 		run: editFile,
 	},
-	[FOLDER_TOOL_NAMES.CREATE_DIRECTORY]: {
+	create_directory: {
 		title: "Create Folder",
-		description: `Create a folder in ${FOLDER_DESCRIPTION}, along with any missing parent folders.`,
+		description: `Create a folder in ${space.description}, along with any missing parent folders.`,
 		properties: { path: pathProperty() },
 		required: ["path"],
 		run: createDirectory,
 	},
-	[FOLDER_TOOL_NAMES.MOVE]: {
+	move: {
 		title: "Move or Rename",
-		description: `Move or rename a file or folder within ${FOLDER_DESCRIPTION}. The destination must not already exist.`,
+		description: `Move or rename a file or folder within ${space.description}. The destination must not already exist.`,
 		properties: {
 			from: pathProperty("Current path of the file or folder."),
 			to: pathProperty("New path, including the new name."),
@@ -791,9 +880,9 @@ const FOLDER_TOOLS: Record<FolderToolName, FolderToolSpec> = {
 		required: ["from", "to"],
 		run: moveEntry,
 	},
-	[FOLDER_TOOL_NAMES.DELETE]: {
+	delete: {
 		title: "Delete",
-		description: `Delete a file from ${FOLDER_DESCRIPTION}, or a folder when recursive is true.`,
+		description: `Delete a file from ${space.description}, or a folder when recursive is true.`,
 		properties: {
 			path: pathProperty(),
 			recursive: {
@@ -805,7 +894,10 @@ const FOLDER_TOOLS: Record<FolderToolName, FolderToolSpec> = {
 		required: ["path"],
 		run: deleteEntry,
 	},
-};
+});
+
+/** Room Files' specs, which also say how every operation runs. */
+const ROOM_FILES_TOOLS = createFolderToolSpecs(ROOM_FILES_SPACE);
 
 /**
  * The folder tools the model may call, each described the way it runs. The
@@ -819,19 +911,63 @@ const FOLDER_TOOLS: Record<FolderToolName, FolderToolSpec> = {
 export const buildFolderToolDefinitions = (context: {
 	executionOf: (name: FolderToolName) => FolderToolExecution | null;
 }): FolderToolDefinition[] =>
-	ALL_FOLDER_TOOLS.flatMap((name) => {
-		const execution = context.executionOf(name);
+	buildDefinitions(ROOM_FILES_TOOLS, ALL_FOLDER_TOOLS, context.executionOf);
+
+/**
+ * The desktop tools the model may call, over the folders attached from the
+ * user's machine, each described the way it runs. None when nothing is
+ * attached. The chat offers them as client tools.
+ *
+ * @param context - The attached folders' names, each a top level entry, and
+ * how each tool runs: `executionOf` gives its mode, or null to leave it out.
+ * @returns The definitions.
+ */
+export const buildDesktopToolDefinitions = ({
+	folderNames,
+	executionOf,
+}: {
+	folderNames: readonly string[];
+	executionOf: (name: DesktopToolName) => FolderToolExecution | null;
+}): FolderToolDefinition[] => {
+	if (folderNames.length === 0) {
+		return [];
+	}
+	const example = JSON.stringify(`${folderNames[0]}/notes.md`);
+	const specs = createFolderToolSpecs({
+		prefix: "desktop",
+		description: `${DESKTOP_FOLDERS_NAME} (folders on the user's own computer that they attached to this chat; changes are saved straight to their disk)`,
+		scope: `Each attached folder is a top level entry named after it: ${folderNames.map((name) => JSON.stringify(name)).join(", ")}. Start every path with one of them, such as ${example}. These are not Room Files; to share one of these files with a tool that reads Room Files, write a copy there.`,
+	});
+	return buildDefinitions(specs, ALL_DESKTOP_TOOLS, executionOf);
+};
+
+/**
+ * One set of tools' definitions.
+ *
+ * @param specs - Each operation's spec, described for the set's folder.
+ * @param names - The set's names, in operation order.
+ * @param executionOf - How each tool runs, or null to leave it out.
+ * @returns The definitions.
+ */
+const buildDefinitions = <N extends FolderToolName | DesktopToolName>(
+	specs: Record<FolderToolOperation, FolderToolSpec>,
+	names: readonly N[],
+	executionOf: (name: N) => FolderToolExecution | null,
+): FolderToolDefinition[] =>
+	names.flatMap((name) => {
+		const execution = executionOf(name);
 		if (!execution) {
 			return [];
 		}
-		const { title, description, properties, required } = FOLDER_TOOLS[name];
+		const operation = getFolderToolOperation(name);
+		const { title, description, properties, required } = specs[operation];
 		return [
 			{
 				name: name,
 				title: title,
 				description:
 					execution === "ask"
-						? `${description}${describeApproval(name)}`
+						? `${description}${describeApproval(operation)}`
 						: description,
 				inputSchema: {
 					type: "object",
@@ -843,23 +979,27 @@ export const buildFolderToolDefinitions = (context: {
 	});
 
 /**
- * Run one folder tool call in Room Files.
+ * Run one folder tool call in its folder: Room Files for a `folder_*` call,
+ * the attached desktop folders for a `desktop_*` call.
  *
  * Never throws: a failure comes back as an outcome with `isError`, carrying
  * an explanation the model reads as the tool result.
  *
- * @param folder - Room Files.
+ * @param folder - The folder the tool works in.
  * @param name - The tool the model called.
  * @param args - The call's arguments.
  * @returns The outcome.
  */
 export const executeFolderTool = async (
-	folder: RoomFolder,
-	name: FolderToolName,
+	folder: ToolFolder,
+	name: FolderToolName | DesktopToolName,
 	args: Record<string, unknown>,
 ): Promise<FolderToolOutcome> => {
 	try {
-		const tool = FOLDER_TOOLS[name];
+		const tool =
+			isFolderToolName(name) || isDesktopToolName(name)
+				? ROOM_FILES_TOOLS[getFolderToolOperation(name)]
+				: undefined;
 		if (!tool) {
 			throw new FolderToolError(`Unknown tool ${name}.`);
 		}

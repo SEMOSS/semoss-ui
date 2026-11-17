@@ -3,8 +3,10 @@ import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import type { FileExplorerHost } from "@semoss/panels";
+import { createMemoryFileSource } from "../../test/memory-file-source";
 import { DEFAULT_CHAT_THEME } from "../chat/config/chat-theme";
 import { NextMessageRoomProvider } from "../conversation/attachments/next-message-room.context";
+import type { LocalFoldersHost } from "../local-folders/store/local-folders-host";
 import { RoomLayout } from "../room/layout/room-layout";
 import { RoomStore } from "../room/store/room.store";
 import { useRoomSelector } from "../room/store/use-room-selector";
@@ -165,3 +167,58 @@ test.each([false, true])(
 		if (isDraft) expect(room.contextItems.items).toEqual([]);
 	},
 );
+
+test("an open Desktop file offers Open with Default App, and Room Files do not", async () => {
+	const open = vi.fn(async () => undefined);
+	const localFolders: LocalFoldersHost = {
+		fileManagerName: "Finder",
+		list: vi.fn(async () => []),
+		pick: vi.fn(async () => []),
+		detach: vi.fn(async () => []),
+		source: vi.fn(() => createMemoryFileSource()),
+		open: open,
+		reveal: vi.fn(async () => undefined),
+		watch: vi.fn(() => () => undefined),
+	};
+	const room = new RoomStore({
+		theme: DEFAULT_CHAT_THEME,
+		roomId: "room-desktop",
+		panelComponents: {},
+		localFolders: localFolders,
+	});
+	render(<RoomWorkbench room={room} />);
+	const host = mocks.explorerHost.mock.lastCall?.[0];
+
+	const actions =
+		host?.fileActions?.({
+			mode: { type: "MOUNT", mountId: "f1" },
+			path: "/notes.md",
+			name: "notes.md",
+		}) ?? [];
+	expect(actions.map((action) => action.name)).toEqual([
+		"localFolders.openWithApp",
+	]);
+	await act(() => actions[0].action());
+	expect(open).toHaveBeenCalledWith("room-desktop", "f1", "/notes.md");
+
+	expect(
+		host?.fileActions?.({
+			mode: { type: "INSIGHT", insightId: "room-desktop" },
+			path: "/notes.md",
+			name: "notes.md",
+		}),
+	).toEqual([]);
+});
+
+test("without desktop folders an open file gets no extra button", () => {
+	render(<RoomWorkbench room={createRoom()} />);
+	const host = mocks.explorerHost.mock.lastCall?.[0];
+
+	expect(
+		host?.fileActions?.({
+			mode: { type: "MOUNT", mountId: "f1" },
+			path: "/notes.md",
+			name: "notes.md",
+		}),
+	).toEqual([]);
+});

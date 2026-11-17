@@ -20,6 +20,9 @@ export const useDesktopCommands = (bridge: DesktopBridge): void => {
 					case "change-server":
 						navigate("/server");
 						return;
+					// heard by the rooms that watch the folder
+					case "local-folders-changed":
+						return;
 				}
 			}),
 		[bridge, navigate],

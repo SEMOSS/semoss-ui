@@ -40,6 +40,7 @@ import { FocusPlugin } from "../../../components/lexical/focus-plugin";
 import { useChatConfig } from "../../chat/config/use-chat-config";
 import { ConnectorSignInNotice } from "../../connectors/accounts/connector-sign-in-notice";
 import { useUserConnectorsSync } from "../../connectors/accounts/use-user-connectors-sync";
+import { useAttachLocalFolder } from "../../local-folders/explorer/use-attach-local-folder";
 import type { RoomStore } from "../../room/store/room.store";
 import type { CompactionStrategy } from "../../room/store/room-compaction";
 import { useRoomSelector } from "../../room/store/use-room-selector";
@@ -165,6 +166,11 @@ export const RoomInput = ({
 	const modelSelectId = useId();
 	const { model, options, agentTools, isAgentMode, agent } = session;
 	const draft = variant.kind === "draft" ? variant : null;
+	// an open room attaches folders to itself; a new chat to the room it prepares
+	const roomFolders = useAttachLocalFolder(draft ? null : room.localFolders);
+	const onAttachFolder =
+		draft?.workbenchPanels.newRoomPanels.onAttachFolder ??
+		roomFolders.attach;
 	const hasOutstandingTools =
 		variant.kind === "room" && variant.hasOutstandingTools;
 	const onCompact = variant.kind === "room" ? variant.onCompact : undefined;
@@ -544,6 +550,15 @@ export const RoomInput = ({
 													handleSwitchToAgentHarness
 												}
 												agent={agent}
+												onAttachFolder={onAttachFolder}
+												isAttachingFolder={
+													roomFolders.isPicking ||
+													Boolean(
+														draft?.workbenchPanels
+															.newRoomPanels
+															.isBusy,
+													)
+												}
 												onOpenChange={setIsMenuOpen}
 												onOpenMcpOverlay={
 													handleOpenMcpOverlay

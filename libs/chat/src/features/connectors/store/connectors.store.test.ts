@@ -16,13 +16,35 @@ vi.mock("@semoss/i18n", async (importOriginal) => ({
 // the user's connector file comes from the server, and so does the room's
 // tool file, which the tests leave out. The session's logins come from the
 // SDK, which the tests set through setSessionLogins.
-vi.mock("../../room/store/room-tool-file", async (importOriginal) => ({
-	...(await importOriginal<
-		typeof import("../../room/store/room-tool-file")
-	>()),
-	readRoomToolFile: vi.fn(async () => null),
-	saveRoomToolFile: vi.fn(async () => undefined),
-}));
+vi.mock("../../room/store/room-tool-file", async (importOriginal) => {
+	const readRoomToolFile = vi.fn(
+		async (_room: unknown): Promise<unknown> => null,
+	);
+	const saveRoomToolFile = vi.fn(
+		async (_room: unknown, _file: unknown) => undefined,
+	);
+	return {
+		...(await importOriginal<
+			typeof import("../../room/store/room-tool-file")
+		>()),
+		readRoomToolFile: readRoomToolFile,
+		saveRoomToolFile: saveRoomToolFile,
+		// the queue reads and writes through the mocks above
+		updateRoomToolFile: vi.fn(
+			async (
+				room: unknown,
+				change: (file: unknown) => Record<string, unknown> | null,
+			) => {
+				const next = change(await readRoomToolFile(room));
+				if (!next) {
+					return false;
+				}
+				await saveRoomToolFile(room, next);
+				return true;
+			},
+		),
+	};
+});
 
 vi.mock("./connector-tools", async (importOriginal) => {
 	const catalog = await import("./connector.catalog");

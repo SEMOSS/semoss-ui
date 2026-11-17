@@ -466,13 +466,20 @@ class AgentRunWriter {
 				room.syncTool(toolCallId, response, part);
 			}
 		});
+		const paused: ToolStore[] = [];
 		for (const part of response.parts) {
 			if (part.type !== "TOOL_CALL") {
 				continue;
 			}
 			const tool = room.getTool(part.toolCall.id);
 			tool?.setPendingAction(byToolCallId.get(tool.id) ?? null);
+			if (tool?.pendingAction) {
+				paused.push(tool);
+			}
 		}
+		// the client tool calls run in this browser, so it answers the ones that
+		// do not wait for the user
+		room.chatTools.answerAgentClientCalls(paused);
 	}
 
 	/**

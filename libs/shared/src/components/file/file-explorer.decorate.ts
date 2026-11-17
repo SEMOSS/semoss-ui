@@ -12,6 +12,7 @@ const EXPLORER_SLICES = [
 	"instanceId",
 	"mode",
 	"adapter",
+	"source",
 	"capabilities",
 	"header",
 	"tree",

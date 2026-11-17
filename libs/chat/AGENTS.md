@@ -79,7 +79,8 @@ the glossary. A file lives in the domain whose code uses it, its test beside it:
 | `room/`, one open room | `store/` (`RoomStore` and its collaborators: the message tree, the sidebar controller, options persistence, agent tools, requests, the stream jobs, loading and compaction helpers; the sidebar's layout and the tool file), `scope/`, `layout/`, `header/` (with the room name), `actions/`, `settings/` |
 | `room-list/` | `list/`, `search/` |
 | `conversation/` | `store/` (the message map, the message and tool call views, the turn runners, the save controller), `messages/` (with `markdown/`), `composer/` (with `slash-command/`), `attachments/`, `suggestions/` |
-| `tools/` | `default-tools/`, `folders/`, `settings/`, `mcp/`, `views/`, `inspector/` |
+| `tools/` | `default-tools/`, `client-tools/` (the agent room's tool file), `folders/`, `settings/`, `mcp/`, `views/`, `inspector/` |
+| `local-folders/` | `store/` (the host contract, `RoomLocalFoldersStore`, `DesktopFolders`), `explorer/` (the Files panel's Desktop section and Attach Folder) |
 | `connectors/` | `store/`, `accounts/`, `viewers/` |
 | `workbench/` | `panels/`, `rail/` |
 | `new-chat/`, `knowledge/` | none |
@@ -137,6 +138,7 @@ Each keeps its getters, which read its snapshot; React reads them through a sele
 | `ToolStore` (a view over the room) | `useTool(tool, (tool) => …)` | the room, likewise for that call |
 | `ConnectorsStore` | `useConnectors(room.connectors)` | the room's connectors |
 | `ContextItemsStore` | `useContextItems(room.contextItems, (snapshot) => …)` | the next message's queue |
+| `RoomLocalFoldersStore` (`room.localFolders`, null without a host) | `useLocalFolders(room.localFolders, (snapshot) => …)` | the room's desktop folders |
 
 - **Select through the store**, the least a component needs. A selector runs again on every change
   its store hears about and the component renders only when what it returns changes (one level
@@ -209,6 +211,7 @@ One name per part of the playground, in code, comments, tests, and these notes:
 | A new chat before its first message | **new room** (`newRoom`, `NewRoomWorkbenchPanels`, `NewRoomPanelRequest`); once created lazily, **prepared room** | |
 | Settings → Tools groups | **room tools** (`RoomToolsSection`, `RoomToolsDefaultSection`, `RoomToolsConnectorsSection`, `RoomToolsToolboxesSection`) | Default, Connectors, Agent and Toolboxes |
 | The room's own folder | **Room Files** | The Files panel shows it |
+| Folders from the user's machine attached to a room | **desktop folders** (`room.localFolders`, `LocalFoldersHost`) | Only where the host can reach them (the desktop app); the Files panel's Desktop section |
 
 Ids and i18n keys tied to user-facing copy keep "workspace": the slash group `workspace`, the
 `close-workspace` command, and `room:studio.workspace` / `workspacePlaces.*`.
@@ -346,7 +349,7 @@ affects only the current room instance.
 and `features/tools/settings/` the Tools section of Settings.
 `RoomStore.chatTools` (`ChatToolsStore`) owns them per room. These details are easy to break:
 
-- **Room Files is the only file space.** It is the room's own folder: uploads, connector
+- **Room Files is the room's file space; desktop folders sit beside it.** Room Files is the room's own folder: uploads, connector
   downloads, and everything the room's apps (MCP tools) and the default tools read and write. Files in
   the room header opens the file explorer on it. Its Add to Context action uses
   `FileExplorerHostProvider` and queues on `useNextMessageRoom() ?? room`, so files selected from
@@ -399,6 +402,52 @@ and `features/tools/settings/` the Tools section of Settings.
   `ResponseMessageStore.runMcpToolCall`, the same run and save the tool loop uses for every MCP
   tool. In an agent room a connector call's Allow and every Deny go to `decideAgentToolAction`
   instead, since the paused run resumes on the decision.
+
+## Desktop folders
+
+A host that can reach the user's own files passes a `LocalFoldersHost` as
+`ChatConfig.localFolders` and to `useCreateChatStore`, which hands it to every `RoomStore`
+(`RoomStoreOptions.localFolders`). Only the desktop app does; elsewhere `room.localFolders` is
+null and nothing below renders. These details are easy to break:
+
+- **The chat never sees a path on the machine.** A folder is a `LocalFolder` (`id`, `name`) the
+  host attached through its own picker (`pick`) and keeps per room; a file is a path inside it.
+  `RoomLocalFoldersStore` loads them with the room, once its mode is known, and listens to each
+  (`watch`), so a change made in another app emits `FILES_CHANGED` for the folder's `MOUNT` scope.
+- **Files lists them under Desktop.** `RoomWorkbench` wraps the dock in `FileSourcesProvider`
+  with `useRoomFileSources`: Room Files' own tree, then a Desktop group (Attach Folder, and each
+  folder's menu: Show in Finder, Detach). Desktop files' rows add Open with Default App, Show in
+  Finder, and Add to Context, which uploads a copy to Room Files, since a message's `media` is a
+  path there. The composer's plus menu has Attach Folder too. In a new chat it prepares the
+  draft's room, as Files does (`useNewRoomPanels`' `onAttachFolder`), attaches to it, and opens
+  its Files; the first message carries the folders' tools (an agent room's are written with
+  `RoomStore.syncClientTools` before it sends), and a draft left unsent detaches them with its room.
+- **The tools are `desktop_*`, offered as client tools.** The same operations, limits and edit
+  logic as `folder_*` (`folder-tools.ts`, over a `ToolFolder`), on `DesktopFolders`, where each
+  folder is a top level entry by its name. A tool never writes, moves or deletes a folder itself,
+  nor moves between folders. Each follows the room's `defaultTools` setting for the `folder_*`
+  tool that does the same (`getMatchingFolderTool`), so reads run on their own and changes ask
+  unless set. The rest of the chat treats them as client tools (below).
+
+## Client tools
+
+A client tool is one a host runs in this browser rather than on the server: today the desktop
+app's `desktop_*` tools; a host such as the Chrome extension adds its own the same way. Names in
+the chat say "client" (`clientToolDefinitions`, `syncClientTools`, `answerAgentClientCalls`,
+`tools/client-tools/`); a host's own tools keep its name (`desktop_*`, `DesktopFolders`).
+
+- **A chat room sends them; an agent room keeps them in its toolbox.** A room keeps its mode, so
+  each uses one way: a chat turn sends `ChatToolsStore.clientToolDefinitions` in
+  `paramValues.tools` with the default tools and the browser runs them like the folder tools.
+  An agent run brings no browser tools but offers the room's own toolbox, so
+  `RoomStore.syncClientTools` writes them into `mcp/pixel_mcp.json` (`mergeRoomClientTools`),
+  stamped `PlaygroundClientTools`, each `ask` with `SMSS_CLIENT_TOOL`, through
+  `updateRoomToolFile`, which runs one write at a time with the connectors'. The run pauses on
+  every call; `ChatToolsStore.answerAgentClientCalls` runs the ones the settings let run on
+  their own and resumes the run with `respond`, and Allow does the same for the rest. Each paused
+  call is answered once.
+- **A room opened where its host is not** (the web app, another machine) answers a client tool
+  call with an error saying so, so an agent run never waits on it.
 
 ## Slash menu
 

@@ -36,6 +36,8 @@ const createMemoryFolder = (
 		path === "" || fileMap.has(path) || directorySet.has(path);
 
 	const folder: Pick<RoomFolder, keyof RoomFolder> = {
+		displayName: "Room Files",
+		toolPrefix: "folder",
 		list: async (path) => {
 			if (path && !directorySet.has(path)) {
 				throw new DOMException("missing", "NotFoundError");

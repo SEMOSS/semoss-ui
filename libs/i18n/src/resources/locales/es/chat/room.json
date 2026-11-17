@@ -249,5 +249,21 @@
 				"description": "Guarda las instrucciones y herramientas de esta sala como un agente"
 			}
 		}
+	},
+	"localFolders": {
+		"roomFiles": "Archivos de la sala",
+		"desktop": "Escritorio",
+		"attach": "Adjuntar carpeta",
+		"attachDescription": "Adjuntar una carpeta de este equipo",
+		"empty": "Adjunta una carpeta de este equipo para trabajar aquí con sus archivos. Los cambios se guardan en tu disco.",
+		"folderActions": "Acciones de {{name}}",
+		"reveal": "Mostrar en {{fileManager}}",
+		"openWithApp": "Abrir con la aplicación predeterminada",
+		"detach": "Quitar",
+		"detached": "Se quitó {{name}}. Sus archivos siguen en tu equipo.",
+		"attachFailed": "No se pudo adjuntar la carpeta. {{message}}",
+		"detachFailed": "No se pudo quitar la carpeta. {{message}}",
+		"openFailed": "No funcionó. {{message}}",
+		"notHere": "Esta carpeta no está adjunta en este equipo."
 	}
 }

@@ -253,5 +253,21 @@
 				"description": "このルームの指示とツールをエージェントとして保存します"
 			}
 		}
+	},
+	"localFolders": {
+		"roomFiles": "ルームのファイル",
+		"desktop": "デスクトップ",
+		"attach": "フォルダーを添付",
+		"attachDescription": "このコンピューターのフォルダーを添付",
+		"empty": "このコンピューターのフォルダーを添付すると、ここでそのファイルを扱えます。変更はディスクに保存されます。",
+		"folderActions": "{{name}} の操作",
+		"reveal": "{{fileManager}} で表示",
+		"openWithApp": "既定のアプリで開く",
+		"detach": "添付を解除",
+		"detached": "{{name}} の添付を解除しました。ファイルはコンピューターに残っています。",
+		"attachFailed": "フォルダーを添付できませんでした。{{message}}",
+		"detachFailed": "フォルダーの添付を解除できませんでした。{{message}}",
+		"openFailed": "うまくいきませんでした。{{message}}",
+		"notHere": "このフォルダーはこのコンピューターでは添付されていません。"
 	}
 }

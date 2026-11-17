@@ -6,6 +6,9 @@ import {
 } from "../../../contract/server-connection";
 import type { AppWindowHost } from "../app-window/app-window-host";
 import { isExternalLink } from "../app-window/window-security";
+import type { FolderGrants } from "../local-folders/folder-grants";
+import type { FolderWatchers } from "../local-folders/folder-watchers";
+import { registerLocalFolders } from "../local-folders/register-local-folders";
 import { checkServer } from "../server-connection/check-server";
 import type { DesktopConfigFile } from "../server-connection/desktop-config";
 import type { ServerSessions } from "../server-connection/server-sessions";
@@ -21,6 +24,10 @@ interface RegisterIpcOptions {
 	readonly sessions: ServerSessions;
 	/** The app's window, opened afresh on the server in use. */
 	readonly windows: AppWindowHost;
+	/** The folders attached to rooms. */
+	readonly grants: FolderGrants;
+	/** The attached folders being watched. */
+	readonly watchers: FolderWatchers;
 }
 
 /**
@@ -45,6 +52,8 @@ export const registerIpc = ({
 	config,
 	sessions,
 	windows,
+	grants,
+	watchers,
 }: RegisterIpcOptions): void => {
 	handleIpc("server-connection:get", appOrigin, () =>
 		config.server ? toConfig(config.server) : null,
@@ -61,6 +70,8 @@ export const registerIpc = ({
 
 	handleIpc("server-connection:set", appOrigin, async (server) => {
 		config.useServer(parseServerConfig(server));
+		// the new window's rooms watch their own folders
+		watchers.closeAll();
 		await windows.open();
 	});
 
@@ -72,6 +83,9 @@ export const registerIpc = ({
 		if (!forgotten) {
 			throw new Error("That server is not saved");
 		}
+		// its rooms' folders are detached; the folders themselves stay
+		watchers.closeMatching(`${forgotten.partition}|`);
+		grants.forgetServer(forgotten.partition);
 		// leave its session before deleting what it holds
 		if (wasActive) await windows.open();
 		const forgottenSession = sessions.get(forgotten.partition);
@@ -84,5 +98,13 @@ export const registerIpc = ({
 			throw new Error("Refused to open that link");
 		}
 		await shell.openExternal(url);
+	});
+
+	registerLocalFolders({
+		appOrigin,
+		grants,
+		watchers,
+		getPartition: () => config.server?.partition ?? null,
+		getWindow: () => windows.getWindow(),
 	});
 };

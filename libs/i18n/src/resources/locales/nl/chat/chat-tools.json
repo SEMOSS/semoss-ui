@@ -53,7 +53,15 @@
 			"folder_edit": "Bestand bewerken",
 			"folder_create_directory": "Map maken",
 			"folder_move": "Verplaatsen of hernoemen",
-			"folder_delete": "Verwijderen"
+			"folder_delete": "Verwijderen",
+			"desktop_list": "Bureaubladmap weergeven",
+			"desktop_read": "Bureaubladbestand lezen",
+			"desktop_search": "Zoeken op bureaublad",
+			"desktop_write": "Bureaubladbestand schrijven",
+			"desktop_edit": "Bureaubladbestand bewerken",
+			"desktop_create_directory": "Map maken op bureaublad",
+			"desktop_move": "Verplaatsen of hernoemen op bureaublad",
+			"desktop_delete": "Verwijderen van bureaublad"
 		}
 	},
 	"card": {

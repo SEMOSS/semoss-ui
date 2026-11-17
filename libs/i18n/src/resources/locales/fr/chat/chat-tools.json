@@ -53,7 +53,15 @@
 			"folder_edit": "Modifier le fichier",
 			"folder_create_directory": "Créer un dossier",
 			"folder_move": "Déplacer ou renommer",
-			"folder_delete": "Supprimer"
+			"folder_delete": "Supprimer",
+			"desktop_list": "Lister un dossier du bureau",
+			"desktop_read": "Lire un fichier du bureau",
+			"desktop_search": "Rechercher sur le bureau",
+			"desktop_write": "Écrire un fichier du bureau",
+			"desktop_edit": "Modifier un fichier du bureau",
+			"desktop_create_directory": "Créer un dossier sur le bureau",
+			"desktop_move": "Déplacer ou renommer sur le bureau",
+			"desktop_delete": "Supprimer du bureau"
 		}
 	},
 	"card": {

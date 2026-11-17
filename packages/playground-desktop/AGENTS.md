@@ -34,6 +34,8 @@ src/
     features/auth/                sign-in-redirect
     features/ipc/                 handle-ipc (sender check), register-ipc
     features/downloads/           the save dialog, starting in Downloads
+    features/local-folders/       folder-grants (smss-desktop-folders.json), local-fs (file calls kept
+                                  inside each folder), folder-watchers, register-local-folders
     features/menu/                File (New Chat, Change Server…), Edit, View, Window
   preload/      preload.ts: an allowlisted invoke and the menu's commands, nothing else
   renderer/     the browser
@@ -41,7 +43,7 @@ src/
                   and the router
     app.tsx       translations (desktopResources), theme, toasts; no session
     pages/        router, session-layout, desktop-layout, login, server, new-room, room
-    features/     chat-config, commands, desktop-bridge, server-connection, sidebar
+    features/     chat-config, commands, desktop-bridge, local-folders, server-connection, sidebar
 ```
 
 `@/` is `src/renderer/`. The renderer reaches main only through `getDesktopBridge()`
@@ -122,6 +124,9 @@ Everything lives in Electron's `userData` folder, named after the app:
   and `window` (bounds, maximized). No credentials.
 - **`Partitions/server-<uuid>/`**: each saved server's cookies, local and session storage, and
   caches.
+- **`smss-desktop-folders.json`** (`folder-grants.ts`, written atomically): the folders attached
+  to rooms, `{ version: 1, servers: { [partition]: { [roomId]: [{ id, name, path }] } } }`.
+  Removing a server forgets its folders; the folders themselves are never touched.
 - **The default session** (the folder's own `Cookies`, `Local Storage`, …): only the connect
   screen, before any server is saved; no server signs in with it.
 
@@ -141,6 +146,25 @@ The packaged app encrypts its cookie store (`electronFuses.enableCookieEncryptio
 the app's name). The fuse is one way: turning it off leaves saved cookies unreadable. `pnpm dev`
 runs Electron's own binary, whose fuses are not flipped, so dev cookies stay plaintext. Dev and
 the packaged app share one data folder (above).
+
+## Local folders
+
+A room can attach folders from this machine (the chat's [desktop folders](../../libs/chat/AGENTS.md#desktop-folders)).
+`renderer/features/local-folders/desktop-folders-host.ts` is the chat's `LocalFoldersHost` over
+the `local-folders:*` and `local-fs:*` channels, made once per window in `useDesktopChatConfig`.
+
+- **Only the system's folder picker attaches a folder** (`local-folders:pick`, parented to the
+  window). The page never sends a path on the machine: a file call names `{ roomId, folderId }`
+  and a path inside the folder, for the server in use.
+- **Every path stays inside its folder** (`resolveInsideFolder`): leading slashes are dropped,
+  `..` and other drives are refused, symbolic links are followed as far as the path exists and
+  refused when they lead out, and `.git` is hidden and refused. The folder itself is never
+  written, moved or deleted. Reads stop at 50 MB.
+- **Deleting moves to the trash** (`shell.trashItem`). Open and Show in Finder go through
+  `shell.openPath` and `shell.showItemInFolder`.
+- **Watching** (`local-folders:watch`, counted, one `unwatch` each) sends
+  `local-folders-changed` `DesktopCommand`s, gathered for 200 ms. Switching or removing a server
+  closes its watchers.
 
 ## Adding an IPC channel
 
@@ -195,4 +219,5 @@ sources. That is why the shared config's build plugins are dev dependencies here
 - **No agent pages, knowledge pages, or settings dialog**: chat UI hides their links
   (`agentHref`, `openSettings`), so connectors are switched on from the web app.
 - **Offline mode and local MCP over stdio** would live in the main process, behind new
-  `IpcContract` channels, with the chat reaching them through `ChatConfig`.
+  `IpcContract` channels, with the chat reaching them through `ChatConfig`, as the local folders
+  do.

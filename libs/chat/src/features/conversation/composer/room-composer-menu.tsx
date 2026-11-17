@@ -10,6 +10,7 @@ import {
 import type { RoomStore } from "../../room/store/room.store";
 import type { AgentChoice } from "../../tools/mcp/agent-choice";
 import { getAgentLabel } from "../../tools/mcp/mcp-utils";
+import { RoomInputMenuAttachFolder } from "./room-input-menu-attach-folder";
 import { RoomInputMenuMCP } from "./room-input-menu-mcp";
 import { RoomInputMenuUpload } from "./room-input-menu-upload";
 
@@ -36,11 +37,19 @@ export interface RoomComposerMenuProps {
 	 * the Chat and Agent choice when it is `saved` `withModeChoice`.
 	 */
 	agent: AgentChoice;
+	/**
+	 * Attach folders from the user's machine, where the host can reach them;
+	 * the menu then offers Attach Folder. A new chat's prepares its room.
+	 */
+	onAttachFolder?: (() => void) | null;
+	/** Whether the folder picker is open, which locks Attach Folder. */
+	isAttachingFolder?: boolean;
 }
 
 /**
  * The items of the composer's plus menu, shared by a new chat and an open
- * room: upload, knowledge, and toolboxes, then, while creating a chat, the
+ * room: upload, a folder from the user's machine where the host can reach
+ * one, knowledge, and toolboxes, then, while creating a chat, the
  * Chat and Agent choice and the agent picker.
  */
 export function RoomComposerMenu({
@@ -53,6 +62,8 @@ export function RoomComposerMenu({
 	onSelectAgent,
 	isAgentMode,
 	agent,
+	onAttachFolder,
+	isAttachingFolder = false,
 }: RoomComposerMenuProps) {
 	const { t } = useTranslation("room");
 	const close = () => onOpenChange(false);
@@ -73,6 +84,13 @@ export function RoomComposerMenu({
 	return (
 		<>
 			<RoomInputMenuUpload disabled={disabled} onSelect={close} />
+			{onAttachFolder ? (
+				<RoomInputMenuAttachFolder
+					onAttach={onAttachFolder}
+					disabled={disabled || isAttachingFolder}
+					onSelect={close}
+				/>
+			) : null}
 			<RoomInputMenuMCP
 				type="KNOWLEDGE"
 				options={options}

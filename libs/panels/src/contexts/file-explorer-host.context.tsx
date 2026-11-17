@@ -1,8 +1,30 @@
-import { createContext, type ReactNode, useContext } from "react";
+import {
+	type ComponentType,
+	createContext,
+	type ReactNode,
+	useContext,
+} from "react";
 import type { FileExplorerSecondaryAction, FileItem } from "@semoss/shared";
 import type { FilePanelMode } from "../types/file-panel.types";
 
-/** What a host adds to the file explorer panels below it. */
+/** A button a host adds to an open file's tab controls. */
+export interface FileViewHostAction {
+	/** Its accessible name and tooltip, such as Open with Default App. */
+	name: string;
+	/** Its glyph. */
+	icon: ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
+	/** What it does. Report a failure itself; nothing else will. */
+	action: () => Promise<void>;
+}
+
+/** The file an open file panel shows, as a host's actions get it. */
+export interface FileViewHostFile {
+	mode: FilePanelMode;
+	path: string;
+	name: string;
+}
+
+/** What a host adds to the file explorer and file panels below it. */
 export interface FileExplorerHost {
 	/**
 	 * Extra right-click entries for one item, such as the playground's Add to
@@ -16,6 +38,14 @@ export interface FileExplorerHost {
 		item: FileItem,
 		mode: FilePanelMode,
 	) => FileExplorerSecondaryAction[];
+	/**
+	 * Extra buttons in an open file's tab controls, after Refresh and Save,
+	 * such as the desktop app's Open with Default App.
+	 *
+	 * @param file - The file the panel shows.
+	 * @return The buttons; none when the host has nothing for the file.
+	 */
+	fileActions?: (file: FileViewHostFile) => FileViewHostAction[];
 }
 
 const FileExplorerHostContext = createContext<FileExplorerHost | null>(null);

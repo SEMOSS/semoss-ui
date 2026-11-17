@@ -79,6 +79,10 @@ export { useMessage } from "./features/conversation/store/use-message";
 export { useTool } from "./features/conversation/store/use-tool";
 // Knowledge
 export { NewKnowledgeForm } from "./features/knowledge/new-knowledge-form";
+export type {
+	LocalFolder,
+	LocalFoldersHost,
+} from "./features/local-folders/store/local-folders-host";
 // The new chat before its first message
 export { NewChat } from "./features/new-chat/new-chat";
 // An open room: its header, layout, scope, publishing, and the hooks that read it

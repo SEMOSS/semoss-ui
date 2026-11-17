@@ -11,5 +11,7 @@ export * from "./file-explorer-header";
 export * from "./file-explorer-item";
 export * from "./file-explorer-new-action";
 export * from "./file-explorer-refresh-action";
+export * from "./file-source";
 export * from "./new-file-overlay";
 export * from "./use-file-explorer";
+export * from "./use-file-listing";
