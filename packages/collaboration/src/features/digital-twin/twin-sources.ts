@@ -1,4 +1,4 @@
-import { File } from "lucide-react";
+import { File, Sparkles } from "lucide-react";
 import {
 	type AppIcon,
 	OneDriveIcon,
@@ -42,6 +42,18 @@ export const TWIN_SOURCES = {
 
 /** One of the places in {@link TWIN_SOURCES}. */
 export type TwinSourceId = keyof typeof TWIN_SOURCES;
+
+/**
+ * The place that finds a twin's knowledge from a description of it, in place
+ * of browsing for it. The rail lists it first among the places to add from.
+ */
+export const TWIN_FINDER = {
+	id: "find",
+	label: "Find with AI",
+	icon: Sparkles,
+	description:
+		"Describe what your Digital Twin should know. Your Outlook, Teams chats and OneDrive are searched, and the emails, chats and files that fit are suggested for you to add.",
+} as const;
 
 /** What a chosen item is and where it came from, for a list of them. */
 export function twinSourceKind(source: TwinSource): {

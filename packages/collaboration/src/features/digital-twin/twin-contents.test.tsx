@@ -23,6 +23,8 @@ const insight = vi.hoisted(() => ({
 	actions: { run: vi.fn() },
 	insightId: "insight-1",
 }));
+// saving a found item reads the owner's Microsoft 365, which is the library's own to do
+const saveItem = vi.hoisted(() => vi.fn());
 vi.mock("@semoss/sdk/react", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
 	useInsight: () => insight,
@@ -68,6 +70,7 @@ vi.mock("@semoss/connectors", async (importOriginal) => {
 		TeamsChatViewer: viewer("The Teams chat list", "teams-chats"),
 		OneDriveViewer: viewer("The OneDrive explorer", "onedrive"),
 		TeamsFilesViewer: viewer("The Teams files explorer", "teams-files"),
+		saveMicrosoftItem: saveItem,
 	};
 });
 // the dock talks to SEMOSS; where it is pointed is what this page decides
@@ -131,6 +134,7 @@ beforeEach(() => {
 		],
 		Copy: { targetFilePath: "public/emails/Budget review.md" },
 	};
+	saveItem.mockReset();
 	insight.actions.run.mockReset();
 	insight.actions.run.mockImplementation(async (statement: string) => {
 		const answer = answers[statement.slice(0, statement.indexOf("("))];
@@ -173,7 +177,14 @@ it("opens on the twin's own files, kept to the folder a chat reads, and names ev
 		within(rail)
 			.getAllByRole("button")
 			.map((place) => place.textContent),
-	).toEqual(["Files", "Outlook", "Teams chats", "OneDrive", "Teams files"]);
+	).toEqual([
+		"Files",
+		"Find with AI",
+		"Outlook",
+		"Teams chats",
+		"OneDrive",
+		"Teams files",
+	]);
 	expect(within(rail).getByRole("button", { name: "Files" })).toHaveAttribute(
 		"aria-current",
 		"true",
@@ -286,6 +297,77 @@ it.each([
 		).not.toBeInTheDocument();
 	},
 );
+
+it("finds what to add from a description, copies an added suggestion into the twin, and keeps what it found", async () => {
+	answers.WorkSuggestTwinKnowledge = {
+		suggestions: [
+			{
+				kind: "email",
+				id: "conv-1",
+				title: "Apollo cutover",
+				from: "Sam Lee",
+				date: "2026-11-03T09:00:00Z",
+				preview: "Confirmed for the 14th",
+				reason: "Sets the cutover date",
+			},
+		],
+		notes: [],
+	};
+	answers.Copy = { targetFilePath: "public/emails/Apollo cutover.md" };
+	saveItem.mockResolvedValue({
+		path: "Apollo cutover.md",
+		name: "Apollo cutover.md",
+		service: "outlook-mail",
+		itemKey: "conversation:conv-1",
+	});
+	const { user } = renderContents("find");
+	expect(
+		await screen.findByRole("heading", { level: 2, name: "Find with AI" }),
+	).toBeVisible();
+	expect(
+		screen.getByText("Add a suggestion to copy it into your Digital Twin."),
+	).toBeVisible();
+	const question = () =>
+		screen.getByRole("textbox", {
+			name: "What should your Digital Twin know?",
+		});
+	await user.type(question(), "The Apollo cutover");
+	await user.click(screen.getByRole("button", { name: "Find suggestions" }));
+	await user.click(
+		await screen.findByRole("button", { name: "Add Apollo cutover" }),
+	);
+
+	// saved into the page's files as its own viewer saves it, then copied into the twin from there
+	await waitFor(() =>
+		expect(toast.success).toHaveBeenCalledWith(
+			'Added "Apollo cutover.md" to your Digital Twin.',
+		),
+	);
+	expect(saveItem).toHaveBeenCalledExactlyOnceWith("insight-1", {
+		kind: "email",
+		conversationId: "conv-1",
+		subject: "Apollo cutover",
+	});
+	expect(ran().find((statement) => statement.startsWith("Copy("))).toBe(
+		'Copy(sourceType=["INSIGHT"], sourceFilePath=["Apollo cutover.md"], target=["twin-1"], targetType=["PROJECT"], targetFilePath=["public/emails/Apollo cutover.md"]);',
+	);
+	const found = () =>
+		within(screen.getByRole("region", { name: "Emails 1" })).getByRole(
+			"listitem",
+		);
+	expect(found()).toHaveTextContent("In your Digital Twin");
+	expect(within(found()).queryByRole("button")).toBeNull();
+
+	// a look at another place does not lose what was asked or what was found
+	const rail = screen.getByRole("navigation", { name: "What to list" });
+	await user.click(within(rail).getByRole("button", { name: "Outlook" }));
+	expect(await screen.findByText(/The Outlook mailbox/)).toBeVisible();
+	await user.click(
+		within(rail).getByRole("button", { name: "Find with AI" }),
+	);
+	expect(question()).toHaveValue("The Apollo cutover");
+	expect(found()).toHaveTextContent("Sets the cutover date");
+});
 
 it("marks what the twin already holds when the page opens, and offers a copy the owner deleted again", async () => {
 	holdCopy();
