@@ -1,5 +1,5 @@
 import { ArrowLeft, Trash2 } from "lucide-react";
-import { useId, useState } from "react";
+import { useCallback, useId, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { useConfig, useInsight } from "@semoss/sdk/react";
 import { MembersTable } from "@semoss/shared";
@@ -31,6 +31,7 @@ import { CollaborationPageHeader } from "@/features/collaboration/components/col
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import { useSkillCatalog } from "@/features/routines/use-skill-catalog";
 import { givenFirst } from "@/lib/person-name";
+import type { InsightActions } from "@/lib/pixel";
 import { twinChatPath, twinContentsPath } from "@/lib/workspace-paths";
 import { deleteTwin, getMyTwinAgent } from "./api/digital-twin";
 import { TwinCreateWizard } from "./twin-create-wizard";
@@ -39,9 +40,8 @@ import { useTwinPeopleSource } from "./use-twin-people-source";
 import { useTwinRead } from "./use-twin-read";
 
 /**
- * The owner's own Digital Twin: the steps that create it while they have none,
- * and then its profile, the people it is shared with, and its delete. A link
- * with `?tab=people` opens on the people.
+ * Create a Digital Twin with `?create=true`, or manage the one named by
+ * `?twinId=...`. `tab=people` opens its sharing settings.
  */
 export function TwinSettings() {
 	const { actions } = useInsight();
@@ -49,7 +49,17 @@ export function TwinSettings() {
 	const navigate = useNavigate();
 	const [params, setParams] = useSearchParams();
 	const deleteId = useId();
-	const twin = useTwinRead(getMyTwinAgent);
+	const requestedTwinId = params.get("twinId") ?? undefined;
+	const isCreating =
+		params.get("create") === "true" && requestedTwinId === undefined;
+	const readTwin = useCallback(
+		(actions: InsightActions) =>
+			isCreating
+				? Promise.resolve(null)
+				: getMyTwinAgent(actions, requestedTwinId),
+		[isCreating, requestedTwinId],
+	);
+	const twin = useTwinRead(readTwin);
 	const catalog = useSkillCatalog();
 	const isDirectoryAvailable = useConfig(
 		(config) => config.config?.msGraphLookup === true,
@@ -180,7 +190,9 @@ export function TwinSettings() {
 							variant="outline"
 							className="pointer-coarse:min-h-11"
 						>
-							<Link to={twinContentsPath()}>What it knows</Link>
+							<Link to={twinContentsPath(undefined, twinId)}>
+								What it knows
+							</Link>
 						</Button>
 						<Button
 							asChild
@@ -195,11 +207,12 @@ export function TwinSettings() {
 			<Tabs
 				// the address holds the tab, so a link can open on the people whenever it arrives
 				value={params.get("tab") === "people" ? "people" : "profile"}
-				onValueChange={(tab) =>
-					setParams(tab === "people" ? { tab } : {}, {
-						replace: true,
-					})
-				}
+				onValueChange={(tab) => {
+					const next = new URLSearchParams(params);
+					if (tab === "people") next.set("tab", tab);
+					else next.delete("tab");
+					setParams(next, { replace: true });
+				}}
 				className="gap-6"
 			>
 				<TabsList className="w-full sm:w-fit">

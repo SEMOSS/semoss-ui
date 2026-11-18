@@ -7,6 +7,7 @@ import {
 	threadCommand,
 } from "@/features/thread-assistant/thread-context";
 import * as runApi from "./api/agent-run-api";
+import { ROOM_HISTORY_CHANGED } from "./api/list-rooms";
 import { uploadRoomFiles } from "./api/upload-room-files";
 import {
 	createRoomSession,
@@ -177,6 +178,82 @@ beforeEach(() => {
 afterEach(() => {
 	for (const session of instances.splice(0)) session.dispose();
 	setThreadAgent(null);
+});
+
+it("publishes the generated room title after a turn settles without reloading settings or rebinding", async () => {
+	transport.options.set("twin-chat", {
+		modelId: "model-one",
+		workspace: { workspace_id: "twin-1", name: "Robin Twin" },
+	});
+	const session = own(getRoomSession(crypto.randomUUID(), "twin-chat"));
+	await session.initialize();
+	const settings = session.getSnapshot().settings;
+	const changed = vi.fn();
+	const stop = session.subscribe(changed);
+	const history = vi.fn();
+	window.addEventListener(ROOM_HISTORY_CHANGED, history);
+	transport.run.mockResolvedValueOnce({
+		pixelReturn: [
+			{ output: { ROOM_NAME: "Quarterly roadmap", OPTIONS: {} } },
+		],
+	});
+	const completed = {
+		runId: "run-twin-chat",
+		roomId: "twin-chat",
+		status: "COMPLETED" as const,
+		pendingActions: [],
+		messages: [],
+	};
+	vi.mocked(runApi.pollRun).mockResolvedValue({
+		run: completed,
+		events: [],
+		droppedEvents: 0,
+	});
+	vi.mocked(runApi.readRun).mockResolvedValue(completed);
+	await session.send({ text: "Review next quarter", files: [] });
+	await vi.waitFor(() =>
+		expect(session.getSnapshot().title).toBe("Quarterly roadmap"),
+	);
+	expect(session.getSnapshot().title).toBe("Quarterly roadmap");
+	expect(session.getSnapshot().settings).toBe(settings);
+	expect(changed).toHaveBeenCalled();
+	expect(history).toHaveBeenCalledWith(
+		expect.objectContaining({
+			detail: expect.objectContaining({ roomName: "Quarterly roadmap" }),
+		}),
+	);
+	expect(
+		transport.run.mock.calls.filter(([, statement]) =>
+			String(statement).startsWith("SetRoomForInsight"),
+		),
+	).toHaveLength(1);
+	stop();
+	window.removeEventListener(ROOM_HISTORY_CHANGED, history);
+});
+
+it("keeps a manual rename when an earlier title read arrives late", async () => {
+	const session = own(getRoomSession(crypto.randomUUID(), "renamed-chat"));
+	await session.initialize();
+	const pending = deferred<unknown>();
+	transport.run.mockReturnValueOnce(pending.promise);
+	const refresh = session.refreshHistory();
+	renameRoomSessions("renamed-chat", "My title");
+	pending.resolve({
+		pixelReturn: [
+			{ output: { ROOM_NAME: "Generated title", OPTIONS: {} } },
+		],
+	});
+	await refresh;
+	expect(session.getSnapshot().title).toBe("My title");
+});
+
+it("still restores messages when a title refresh fails", async () => {
+	const session = own(getRoomSession(crypto.randomUUID(), "twin-chat"));
+	await session.initialize();
+	transport.run.mockRejectedValueOnce(new Error("Metadata unavailable"));
+	await expect(session.refreshHistory()).resolves.toBeUndefined();
+	expect(session.getSnapshot().title).toBe("Saved room");
+	expect(session.getSnapshot().error).toBeNull();
 });
 
 it("loads the actual room and its queued source without allocating or sending", async () => {

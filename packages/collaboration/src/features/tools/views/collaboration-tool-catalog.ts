@@ -33,6 +33,7 @@ export const COLLABORATION_TOOL_VIEWS = {
 		family: "calendar",
 		view: "calendar/event",
 	},
+	GetMeetingTranscript: { title: "Meeting transcript", family: "calendar" },
 	GetSchedule: {
 		title: "Availability",
 		family: "calendar",

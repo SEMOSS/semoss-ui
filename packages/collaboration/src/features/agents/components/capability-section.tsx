@@ -28,6 +28,10 @@ interface CapabilitySectionBaseProps {
 	items: CapabilitySectionItem[];
 	disabled?: boolean;
 	onRemove: (id: string) => void;
+	/** Additional actions beside the catalog picker. */
+	actions?: ReactNode;
+	/** Optional content or details action for an attached resource. */
+	itemAction?: (item: CapabilitySectionItem) => ReactNode;
 }
 
 type CapabilitySectionProps = CapabilitySectionBaseProps &
@@ -55,6 +59,8 @@ export function CapabilitySection({
 	items,
 	disabled,
 	onRemove,
+	actions,
+	itemAction,
 	onAdd,
 	addButtonRef,
 	children,
@@ -86,37 +92,41 @@ export function CapabilitySection({
 						{description}
 					</P>
 				</div>
-				{onAdd ? (
-					<Button
-						ref={(element) => {
-							addButton.current = element;
-							if (addButtonRef) addButtonRef.current = element;
-						}}
-						type="button"
-						size="sm"
-						variant="outline"
-						className="min-h-9"
-						aria-label={`Add ${title.toLowerCase()}`}
-						disabled={disabled}
-						onClick={onAdd}
-					>
-						<Plus aria-hidden="true" /> Add
-					</Button>
-				) : (
-					<DialogTrigger asChild>
+				<div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+					{actions}
+					{onAdd ? (
 						<Button
-							ref={addButton}
+							ref={(element) => {
+								addButton.current = element;
+								if (addButtonRef)
+									addButtonRef.current = element;
+							}}
 							type="button"
 							size="sm"
 							variant="outline"
 							className="min-h-9"
 							aria-label={`Add ${title.toLowerCase()}`}
 							disabled={disabled}
+							onClick={onAdd}
 						>
 							<Plus aria-hidden="true" /> Add
 						</Button>
-					</DialogTrigger>
-				)}
+					) : (
+						<DialogTrigger asChild>
+							<Button
+								ref={addButton}
+								type="button"
+								size="sm"
+								variant="outline"
+								className="min-h-9"
+								aria-label={`Add ${title.toLowerCase()}`}
+								disabled={disabled}
+							>
+								<Plus aria-hidden="true" /> Add
+							</Button>
+						</DialogTrigger>
+					)}
+				</div>
 			</div>
 			{items.length === 0 ? (
 				<P className="mt-4 rounded-md border border-dashed px-4 py-3 text-muted-foreground text-sm">
@@ -136,6 +146,7 @@ export function CapabilitySection({
 							<Small className="wrap-anywhere min-w-0 flex-1 leading-5">
 								{item.name}
 							</Small>
+							{itemAction?.(item)}
 							{item.readOnly ? (
 								<Badge variant="outline">
 									{item.sourceLabel ?? "Included"}

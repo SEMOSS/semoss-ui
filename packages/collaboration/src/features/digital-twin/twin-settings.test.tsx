@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createMemoryRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
@@ -6,7 +6,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { MembersTableProps } from "@semoss/shared";
 import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
 import { CollaborationSessionProvider } from "@/features/collaboration/state/collaboration-session.context";
-import { TwinSettings } from "./twin-settings";
+import { TwinSettingsPage } from "@/pages/twin-settings.page";
 
 // one actions object, as the provider gives; a new one per render would read again forever
 const insight = vi.hoisted(() => ({ actions: { run: vi.fn() } }));
@@ -60,7 +60,7 @@ const ran = (): string[] =>
 function renderSettings(search = "") {
 	const router = createMemoryRouter(
 		[
-			{ path: "/twins/mine", element: <TwinSettings /> },
+			{ path: "/twins/mine", element: <TwinSettingsPage /> },
 			{ path: "/twins", element: <p>The hub</p> },
 		],
 		{ initialEntries: [`/twins/mine${search}`] },
@@ -116,10 +116,94 @@ it("is the steps that create a twin for someone who has none, starting from thei
 	expect(screen.queryByRole("button", { name: /Delete/ })).toBeNull();
 });
 
-it("keeps a twin just made on its own scene, and opens its people when the owner goes on to share it", async () => {
-	answers.MyProjects = [];
+it("opens creation even when the owner already has a twin", async () => {
+	renderSettings("?create=true");
+	expect(
+		await screen.findByRole("heading", {
+			level: 1,
+			name: "Create your Digital Twin",
+		}),
+	).toBeVisible();
+	expect(
+		ran().some((statement) => statement.startsWith("GetWorkspace")),
+	).toBe(false);
+	expect(
+		screen.queryByRole("button", { name: "Delete Digital Twin" }),
+	).toBeNull();
+});
+
+it("keeps the chosen twin through tab changes and deletes only that twin", async () => {
+	answers.MyProjects = [
+		{ project_id: "first", project_name: "First Twin" },
+		{ project_id: "twin-1", project_name: "Robin Twin" },
+	];
+	const { router, user } = renderSettings("?twinId=twin-1");
+	await screen.findByRole("heading", { name: "Robin Twin", level: 1 });
+	expect(ran()).toContain('GetWorkspace(workspaceId=["twin-1"]);');
+	await user.type(screen.getByLabelText("Greeting"), " again");
+	await user.click(screen.getByRole("tab", { name: "People" }));
+	expect(router.state.location.search).toBe("?twinId=twin-1&tab=people");
+	await user.click(screen.getByRole("tab", { name: "Profile" }));
+	expect(router.state.location.search).toBe("?twinId=twin-1");
+	expect(screen.getByLabelText("Greeting")).toHaveValue("Hello again");
+	await user.click(
+		screen.getByRole("button", { name: "Delete Digital Twin" }),
+	);
+	await user.click(
+		within(screen.getByRole("dialog")).getByRole("button", {
+			name: "Delete",
+		}),
+	);
+	await screen.findByText("The hub");
+	expect(
+		ran().filter((statement) => statement.startsWith("DeleteWorkspace")),
+	).toEqual(['DeleteWorkspace(workspaceId=["twin-1"]);']);
+});
+
+it("starts with the new twin's form and closes the old delete dialog when switching twins", async () => {
+	answers.MyProjects = [
+		{ project_id: "twin-1", project_name: "Robin Twin" },
+		{ project_id: "twin-2", project_name: "Research Twin" },
+	];
+	const { router, user } = renderSettings("?twinId=twin-1");
+	await user.type(await screen.findByLabelText("Greeting"), " unsaved");
+	await user.click(
+		screen.getByRole("button", { name: "Delete Digital Twin" }),
+	);
+	answers.GetWorkspace = {
+		...TWIN,
+		workspace_id: "twin-2",
+		name: "Research Twin",
+	};
+	await act(async () => {
+		await router.navigate("/twins/mine?twinId=twin-2");
+	});
+	expect(await screen.findByLabelText("Name (required)")).toHaveValue(
+		"Research Twin",
+	);
+	expect(screen.getByLabelText("Greeting")).toHaveValue("Hello");
+	expect(screen.queryByRole("dialog")).toBeNull();
+});
+
+it("does not turn an unavailable twin into a blank create form", async () => {
+	renderSettings("?twinId=missing");
+	expect(await screen.findByRole("alert")).toHaveTextContent(
+		"not yours to manage",
+	);
+	expect(screen.queryByLabelText("Name (required)")).toBeNull();
+	expect(
+		ran().some((statement) => statement.startsWith("GetWorkspace")),
+	).toBe(false);
+});
+
+it("creates another twin and opens that new twin's people after setup", async () => {
+	const existing = {
+		project_id: "existing-twin",
+		project_name: "Existing Twin",
+	};
+	answers.MyProjects = [existing];
 	answers.AddDigitalTwin = "twin-1";
-	const { user } = renderSettings();
+	const { router, user } = renderSettings("?create=true");
 	await user.type(
 		await screen.findByLabelText("Name (required)"),
 		"Robin Twin",
@@ -140,7 +224,10 @@ it("keeps a twin just made on its own scene, and opens its people when the owner
 	// the twin exists now, yet its page waits for the owner
 	expect(screen.queryByRole("tab")).toBeNull();
 
-	answers.MyProjects = [{ project_id: "twin-1", project_name: "Robin Twin" }];
+	answers.MyProjects = [
+		existing,
+		{ project_id: "twin-1", project_name: "Robin Twin" },
+	];
 	await user.click(
 		screen.getByRole("link", { name: "Share it with people" }),
 	);
@@ -153,6 +240,10 @@ it("keeps a twin just made on its own scene, and opens its people when the owner
 		"aria-selected",
 		"true",
 	);
+	expect(router.state.location.search).toBe("?twinId=twin-1&tab=people");
+	expect(
+		ran().filter((statement) => statement.startsWith("GetWorkspace")),
+	).toEqual(['GetWorkspace(workspaceId=["twin-1"]);']);
 });
 
 it("shows the owner's twin with its profile, its people and the ways on from it", async () => {
@@ -162,7 +253,7 @@ it("shows the owner's twin with its profile, its people and the ways on from it"
 	).toBeVisible();
 	expect(screen.getByRole("link", { name: "What it knows" })).toHaveAttribute(
 		"href",
-		"/twins/mine/contents",
+		"/twins/mine/contents?twinId=twin-1",
 	);
 	expect(screen.getByRole("link", { name: "Chat" })).toHaveAttribute(
 		"href",

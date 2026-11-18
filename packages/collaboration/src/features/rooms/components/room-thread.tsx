@@ -1,9 +1,18 @@
 import { ArrowDown, ShieldCheck } from "lucide-react";
 import { Fragment, type ReactNode, useContext } from "react";
-import { Button, Muted, Separator, Spinner } from "@semoss/ui/next";
+import {
+	Button,
+	cn,
+	Markdown,
+	Muted,
+	P,
+	Separator,
+	Spinner,
+} from "@semoss/ui/next";
 import { EmptyView } from "@/components/common/empty-view";
 import type { AgentConfiguration } from "@/features/agents/types/agent";
 import { MessageActivityPart } from "@/features/messages/components/message-activity-part";
+import { MESSAGE_PROSE_CLASS_NAME } from "@/features/messages/components/message-prose.styles";
 import { MessageTimelineEntry } from "@/features/messages/components/message-timeline-entry";
 import { useFollowScroll } from "@/features/messages/hooks/use-follow-scroll";
 import type {
@@ -40,6 +49,9 @@ export function RoomThread({
 	const scroll = useFollowScroll({ resetKey: roomId, resumeSignal });
 	const workbench = useContext(ToolWorkbenchContext);
 	const source = useContext(RoomEmailContext)?.source;
+	const greeting = agent.config_json?.greeting_enabled
+		? agent.config_json.greeting?.trim()
+		: "";
 	const entries = presentMessages(thread, workbench?.tools);
 	const latestMessage = thread.at(-1);
 	const liveMessage = latestMessage?.live ? latestMessage : undefined;
@@ -84,8 +96,26 @@ export function RoomThread({
 							</Muted>
 						</output>
 					)}
+					{!isLoadingHistory && greeting && (
+						<section
+							aria-label={`Greeting from ${agent.name}`}
+							className="min-w-0 space-y-2 py-4"
+						>
+							<P className="font-medium text-sm">{agent.name}</P>
+							<Markdown
+								dir="auto"
+								className={cn(
+									"min-w-0",
+									MESSAGE_PROSE_CLASS_NAME,
+								)}
+							>
+								{greeting}
+							</Markdown>
+						</section>
+					)}
 					{thread.length === 0 &&
 						!isLoadingHistory &&
+						(!greeting || source) &&
 						(source ? (
 							<RoomSourceWelcome source={source} />
 						) : (
