@@ -5,15 +5,25 @@ import { useTheme } from "@semoss/ui/next";
 interface CodeRendererProps {
 	/** Id of the app to render */
 	appId: string;
+	/** Receives the app iframe when it mounts and null when it unmounts. */
+	onFrame?: (frame: HTMLIFrameElement | null) => void;
 }
 
 /**
  * Render an app based on an id
  */
 export const CodeRenderer = (props: CodeRendererProps) => {
-	const { appId } = props;
+	const { appId, onFrame } = props;
 	const iframeRef = useRef<HTMLIFrameElement | null>(null);
 	const { resolvedTheme } = useTheme();
+
+	const setFrame = useCallback(
+		(frame: HTMLIFrameElement | null) => {
+			iframeRef.current = frame;
+			onFrame?.(frame);
+		},
+		[onFrame],
+	);
 
 	const syncEmbeddedTheme = useCallback(() => {
 		const iframe = iframeRef.current;
@@ -51,7 +61,7 @@ export const CodeRenderer = (props: CodeRendererProps) => {
 	// return the app
 	return (
 		<iframe
-			ref={iframeRef}
+			ref={setFrame}
 			className="h-full w-full flex-1 border-none"
 			src={`${Env.MODULE}/public_home/${appId}/portals/`}
 			data-test={`iframe--${appId}`}
