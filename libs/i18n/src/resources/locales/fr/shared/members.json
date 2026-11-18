@@ -48,16 +48,21 @@
 	},
 	"usageLimit": {
 		"notDefinedHint": {
-			"APP": "Les personnes qui utilisent le modèle via cette application relèvent de la limite d'utilisation publique, de leur limite totale de modèles ou de la limite générale de la plateforme."
+			"APP": "Les personnes qui utilisent le modèle via cette application relèvent de la limite d'utilisation publique, de leur limite totale de modèles ou de la limite générale de la plateforme.",
+			"ENGINE": "Les personnes qui utilisent le modèle via ce moteur relèvent de la limite d'utilisation publique, de leur limite totale de modèles ou de la limite générale de la plateforme."
 		},
 		"unlimitedHint": {
-			"APP": "Aucun plafond pour les appels que les réacteurs personnalisés de cette application effectuent avec son autorisation. Le total du modèle s'applique toujours."
+			"APP": "Aucun plafond pour les appels que les réacteurs personnalisés de cette application effectuent avec son autorisation. Le total du modèle s'applique toujours.",
+			"ENGINE": "Aucun plafond pour les appels que le code propre de ce moteur effectue avec son autorisation. Le total du modèle s'applique toujours."
 		},
 		"counts": {
 			"appShared": "Partagé par l'application",
-			"appEach": "Pour chaque utilisateur"
+			"appEach": "Pour chaque utilisateur",
+			"engineShared": "Partagé par le moteur",
+			"engineEach": "Pour chaque utilisateur"
 		},
-		"eachUserNote": "Les règles pour chaque utilisateur ne comptent que les appels auxquels s'applique la limite de cette application."
+		"eachUserNote": "Les règles pour chaque utilisateur ne comptent que les appels auxquels s'applique la limite de cette application.",
+		"eachEngineUserNote": "Les règles pour chaque utilisateur ne comptent que les appels auxquels s'applique la limite de ce moteur."
 	},
 	"footer": {
 		"add": "Ajouter",

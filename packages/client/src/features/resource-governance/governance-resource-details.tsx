@@ -21,6 +21,7 @@ import { BulkAccessManagement } from "@/features/bulk-access-management/bulk-acc
 import { useAdminResourceName } from "@/features/bulk-access-management/use-admin-resource-name";
 import { EffectivePermissions } from "@/features/effective-permissions/effective-permissions";
 import { EngineAppsTable } from "@/features/engine-app-permissions/engine-apps-table";
+import { EngineEnginesTable } from "@/features/engine-engine-permissions/engine-engines-table";
 import { ModelUsageLimitsCard } from "@/features/model-usage-limits/model-usage-limits-card";
 import { getResourcePagePath } from "@/utility/catalog";
 import { GovernanceResourceIcon } from "./governance-resource-icon";
@@ -42,6 +43,11 @@ const TABS: readonly GovernanceTab[] = [
 	{
 		value: "apps",
 		label: "Apps",
+		isAvailable: (entry) => entry.kind === "ENGINE",
+	},
+	{
+		value: "engines",
+		label: "Engines",
 		isAvailable: (entry) => entry.kind === "ENGINE",
 	},
 	{ value: "effective-permissions", label: "Effective Permissions" },
@@ -205,6 +211,16 @@ export const GovernanceResourceDetails = ({
 					{entry.kind === "ENGINE" ? (
 						<TabsContent value="apps">
 							<EngineAppsTable
+								key={resourceId}
+								id={resourceId}
+								type={entry.type}
+								admin
+							/>
+						</TabsContent>
+					) : null}
+					{entry.kind === "ENGINE" ? (
+						<TabsContent value="engines">
+							<EngineEnginesTable
 								key={resourceId}
 								id={resourceId}
 								type={entry.type}
