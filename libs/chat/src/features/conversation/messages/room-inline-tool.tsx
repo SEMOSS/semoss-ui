@@ -7,6 +7,7 @@ import {
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
+	cn,
 	Separator,
 	Tooltip,
 	TooltipContent,
@@ -29,6 +30,13 @@ interface RoomInlineToolProps {
 
 	/** The tool call to show. */
 	tool: ToolStore;
+
+	/**
+	 * How it sits in the conversation: a pending decision fills a box under
+	 * its row, an open call is a panel of its own. Only the styling changes,
+	 * so a framed page keeps its state when its call is decided.
+	 */
+	variant?: "decision" | "open";
 }
 
 /**
@@ -39,6 +47,7 @@ export const RoomInlineTool = ({
 	room,
 	message,
 	tool,
+	variant = "open",
 }: RoomInlineToolProps) => {
 	const { t } = useTranslation("room");
 	const { isExpanded, app, toolId } = useTool(tool, (current) => ({
@@ -46,20 +55,32 @@ export const RoomInlineTool = ({
 		app: getToolAppId(current.json._meta),
 		toolId: current.json.id,
 	}));
+	const isPanel = isExpanded || variant === "open";
 
 	return (
-		<div className="relative h-[60vh] w-full overflow-hidden">
+		<div
+			className={cn(
+				"relative w-full overflow-hidden",
+				variant === "decision" ? "h-80" : "h-[60vh]",
+			)}
+		>
 			{/* Backdrop for maximized state */}
 			<div
-				className={`fixed inset-0 z-50 bg-black/50 transition-opacity duration-200 ${
+				className={cn(
+					"fixed inset-0 z-50 bg-black/50 transition-opacity duration-200",
 					isExpanded
 						? "pointer-events-auto opacity-100"
-						: "pointer-events-none hidden opacity-0"
-				}`}
+						: "pointer-events-none hidden opacity-0",
+				)}
 			/>
 
 			<div
-				className={`flex flex-col overflow-hidden rounded-lg border border-border bg-secondary-background shadow-sm transition-all duration-200 ease-in-out ${isExpanded ? "fixed inset-4 z-50" : "h-full w-full"}`}
+				className={cn(
+					"flex flex-col overflow-hidden transition-all duration-200 ease-in-out",
+					isPanel &&
+						"rounded-lg border border-border bg-secondary-background shadow-sm",
+					isExpanded ? "fixed inset-4 z-50" : "h-full w-full",
+				)}
 			>
 				{isExpanded && (
 					<div className="flex h-12.5 w-full flex-row items-center justify-end gap-1.5 overflow-hidden border-b border-b-input pe-2">

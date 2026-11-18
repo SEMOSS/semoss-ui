@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vitest";
 import { fakeStore } from "../../../test/fake-store";
 import type { ToolStore } from "../../room/store/tool.store";
@@ -32,9 +38,6 @@ vi.mock("../../tools/views/tools-view", () => ({
 	ToolsView: () => (
 		<textarea aria-label="Approval parameters" defaultValue="Keep edits" />
 	),
-}));
-vi.mock("./room-inline-tool", () => ({
-	RoomInlineTool: () => null,
 }));
 
 /**
@@ -208,6 +211,34 @@ test("a pending decision shows inline once and steps aside for the Workbench", (
 		/>,
 	);
 	expect(screen.queryByLabelText("Approval parameters")).toBeNull();
+});
+
+test("deciding an open call keeps its view mounted, so a framed page keeps its state", () => {
+	const tool = createTool("agent", true, { display: "inline", isOpen: true });
+	render(<ResponseMessageTool tool={tool} isLarge />);
+	const view = screen.getByLabelText("Approval parameters");
+	fireEvent.change(view, { target: { value: "Edited in the page" } });
+
+	// the run takes the decision: the call runs, then completes
+	const decided = tool as unknown as {
+		status: string;
+		pendingAction: unknown;
+		room: { notify: () => void };
+	};
+	decided.pendingAction = undefined;
+	decided.status = "LOADING";
+	act(() => decided.room.notify());
+	decided.status = "SUCCESS";
+	act(() => decided.room.notify());
+
+	expect(
+		screen.getByRole("button", {
+			name: "Search: status.completed. actions.collapse",
+		}),
+	).toBeInTheDocument();
+	// the same element, not a new one: a new frame would load its page again
+	expect(screen.getByLabelText("Approval parameters")).toBe(view);
+	expect(view).toHaveValue("Edited in the page");
 });
 
 test("the actions menu only appears when a decision can be cancelled", () => {

@@ -26,10 +26,9 @@ import {
 	isChatToolCall,
 	isFolderToolCall,
 } from "../../tools/chat-tools/chat-tool-kind";
-import { getToolAppId, isAskExecutionMode } from "../../tools/mcp/mcp-utils";
+import { isAskExecutionMode } from "../../tools/mcp/mcp-utils";
 import { ChatToolCard } from "../../tools/views/chat-tool-card";
 import { ComponentToolView } from "../../tools/views/component-tool-view";
-import { ToolsView } from "../../tools/views/tools-view";
 import { useWorkbenchPanelActive } from "../../workbench/rail/use-workbench-panel-active";
 import { ResponseMessageToolMenu } from "./response-message-tool-menu";
 import { ResponseMessageToolStreaming } from "./response-message-tool-streaming";
@@ -70,8 +69,6 @@ export const ResponseMessageTool = ({
 		execution,
 		isFolder,
 		isChatTool,
-		appId,
-		jsonId,
 		isResolved,
 		display,
 		isOpen,
@@ -90,8 +87,6 @@ export const ResponseMessageTool = ({
 			execution: json._meta?.SMSS_MCP_EXECUTION,
 			isFolder: isFolderToolCall(json),
 			isChatTool: isChatToolCall(json),
-			appId: getToolAppId(json._meta),
-			jsonId: json.id,
 			isResolved: tool.isResolved,
 			display: tool.display,
 			isOpen: tool.isOpen,
@@ -299,47 +294,33 @@ export const ResponseMessageTool = ({
 					/>
 				)}
 			</div>
-			{shouldShowDecision ? (
-				componentView ? (
-					<div className="min-w-0 border-t p-2">
+			{/* One slot for a pending decision and an open call, so a framed
+			    page keeps its state, and is not reloaded, once it is decided */}
+			{isExpanded && (
+				<div
+					className={cn(
+						shouldShowDecision ? "min-w-0 border-t" : "p-2 pt-0",
+						shouldShowDecision && componentView && "p-2",
+					)}
+				>
+					{componentView ? (
 						<ComponentToolView
 							tool={tool}
 							view={componentView}
 							variant="inline"
 							fallback={fallbackView}
 						/>
-					</div>
-				) : (
-					<div className="h-80 min-w-0 overflow-auto border-t">
-						<ToolsView
+					) : isChatTool && !shouldShowDecision ? (
+						<ChatToolCard tool={tool} variant="inline" />
+					) : (
+						<RoomInlineTool
 							room={room}
-							app={appId}
-							message={message.id}
-							toolId={jsonId}
+							message={message}
+							tool={tool}
+							variant={shouldShowDecision ? "decision" : "open"}
 						/>
-					</div>
-				)
-			) : (
-				isOpenInline && (
-					<div className="p-2 pt-0">
-						{componentView ? (
-							<ComponentToolView
-								tool={tool}
-								view={componentView}
-								variant="inline"
-								fallback={fallbackView}
-							/>
-						) : isChatTool ? (
-							<ChatToolCard tool={tool} variant="inline" />
-						) : (
-							<RoomInlineTool
-								room={room}
-								message={message}
-								tool={tool}
-							/>
-						)}
-					</div>
-				)
+					)}
+				</div>
 			)}
 		</div>
 	);
