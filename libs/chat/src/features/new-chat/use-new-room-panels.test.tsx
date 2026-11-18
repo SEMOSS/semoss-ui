@@ -65,7 +65,7 @@ describe("a new chat's prepareRoom", () => {
 		expect(prepared).toBe(room);
 	});
 
-	test("shows the Workspace's error when the room cannot be prepared", async () => {
+	test("leaves the Workspace closed when the room cannot be prepared", async () => {
 		const prepare = vi.fn(async () => null);
 		const { result, draft } = render({
 			room: null,
@@ -74,11 +74,13 @@ describe("a new chat's prepareRoom", () => {
 			prepare,
 		});
 
+		let prepared: RoomStore | null = createRoom();
 		await act(async () => {
-			await result.current.newRoomPanels.prepareRoom();
+			prepared = await result.current.newRoomPanels.prepareRoom();
 		});
 
-		expect(draft.openWorkbench).toHaveBeenCalledTimes(1);
+		expect(prepared).toBeNull();
+		expect(draft.openWorkbench).not.toHaveBeenCalled();
 	});
 
 	test("prepares nothing while the first message creates the room", async () => {

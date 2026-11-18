@@ -53,8 +53,6 @@ export interface Composer {
 	 * @returns The room, or null when it cannot be prepared now.
 	 */
 	readonly prepareRoom: () => Promise<RoomStore | null>;
-	/** Show the room's Files in its Workspace. */
-	readonly openFiles: () => void;
 }
 
 /** Where the composer's "/" menu opens Workspace panels. */

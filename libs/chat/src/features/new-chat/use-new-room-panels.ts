@@ -104,9 +104,7 @@ export const useNewRoomPanels = (
 			connectors: newRoom.connectors,
 			prepareRoom: async () => {
 				if (isLoading) return null;
-				const room = preparedRoom ?? (await prepare());
-				if (!room) newRoom.openWorkbench();
-				return room;
+				return preparedRoom ?? prepare();
 			},
 		},
 		retryPreparation: () => void openPanel(pendingPanelRef.current),

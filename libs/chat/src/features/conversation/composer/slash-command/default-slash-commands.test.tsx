@@ -53,7 +53,6 @@ const createComposer = (
 	prompts: [],
 	runPrompt: vi.fn(),
 	prepareRoom: vi.fn(async () => room),
-	openFiles: vi.fn(),
 	...overrides,
 });
 

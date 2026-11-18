@@ -72,6 +72,7 @@ export interface NewRoomWorkbenchPanels {
 	/**
 	 * Prepares the draft's room, once, for something a host keeps for it
 	 * before the first message, such as the desktop app's attached folders.
+	 * It opens nothing: a failure is the caller's to report.
 	 *
 	 * @returns The room, or null when it cannot be prepared now.
 	 */

@@ -1,4 +1,4 @@
-import { type CSSProperties, useMemo } from "react";
+import { type CSSProperties, useMemo, useState } from "react";
 import { Outlet } from "react-router";
 import {
 	ChatConfigProvider,
@@ -13,16 +13,23 @@ import { useDesktopChatConfig } from "@/features/chat-config/use-desktop-chat-co
 import { useDesktopCommands } from "@/features/commands/use-desktop-commands";
 import { getDesktopBridge } from "@/features/desktop-bridge/desktop-bridge";
 import { DesktopSidebar } from "@/features/navigation/desktop-sidebar";
+import { useWorkbenchNavigation } from "@/features/navigation/use-workbench-navigation";
 import { useServerSettingsSection } from "@/features/server-connection/use-server-settings-section";
 
 /**
  * The signed in app: the chat's providers around the settings dialog, the
- * sidebar and the route.
+ * sidebar and the route. The sidebar folds while a room's Workspace is open.
  * Menu commands from the main process route into it.
  */
 export const AppLayout = () => {
 	const settings = useUserSettingsDialog();
-	const config = useDesktopChatConfig(settings.openSettings);
+	// the sidebar folds while a room's Workspace is open, as the web app's does
+	const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+	const navigation = useWorkbenchNavigation(isSidebarOpen, setIsSidebarOpen);
+	const config = useDesktopChatConfig({
+		onOpenSettings: settings.openSettings,
+		onWorkbenchOpenChange: navigation.setWorkbenchOpen,
+	});
 	const store = useCreateChatStore(config);
 	useDesktopCommands(getDesktopBridge());
 	// the chat's pages, then the app's Server page
@@ -44,6 +51,8 @@ export const AppLayout = () => {
 					pages={pages}
 				/>
 				<SidebarProvider
+					open={navigation.isNavigationOpen}
+					onOpenChange={navigation.setNavigationOpen}
 					style={{ "--sidebar-width": "16rem" } as CSSProperties}
 					className="h-dvh"
 				>

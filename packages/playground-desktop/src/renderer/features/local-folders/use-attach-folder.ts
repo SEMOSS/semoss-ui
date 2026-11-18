@@ -7,7 +7,7 @@ import { useLocalFolders } from "./use-local-folders";
 
 /** What {@link useAttachFolder} gives the composer's Attach Folder. */
 interface AttachFolder {
-	/** Open the folder picker, attach what the user picks, and show Files. */
+	/** Open the folder picker and attach what the user picks. */
 	attach: () => void;
 	/** Whether the picker is open or a turn is running, which locks it. */
 	isLocked: boolean;
@@ -16,14 +16,14 @@ interface AttachFolder {
 /**
  * Attach folders from this machine to the composer's room: an open room
  * attaches to itself, and a new chat to the room it prepares, which keeps
- * them; the first message then carries their tools. Files shows them once
- * they are attached.
+ * them; the first message then carries their tools. It leaves the Workspace
+ * as it is; the folders show in Files when the user opens it.
  *
  * @returns The action and whether it is locked.
  */
 export const useAttachFolder = (): AttachFolder => {
 	const { t } = useTranslation("desktop");
-	const { room, isNewChat, isBusy, prepareRoom, openFiles } = useComposer();
+	const { room, isNewChat, isBusy, prepareRoom } = useComposer();
 	const tools = useDesktopTools();
 	// a new chat's draft has no folders; the room it prepares does
 	const isPicking = useLocalFolders(
@@ -33,7 +33,10 @@ export const useAttachFolder = (): AttachFolder => {
 
 	const attach = async (): Promise<void> => {
 		const target = await prepareRoom();
-		if (!target) return;
+		if (!target) {
+			toast.error(t("localFolders.attachFailed", { message: "" }));
+			return;
+		}
 		const folders = tools.foldersFor(target.roomId);
 		try {
 			await folders.attach();
@@ -43,9 +46,7 @@ export const useAttachFolder = (): AttachFolder => {
 					message: getErrorMessage(error, ""),
 				}),
 			);
-			return;
 		}
-		if (folders.folders.length > 0) openFiles();
 	};
 
 	return { attach: () => void attach(), isLocked: isBusy || isPicking };

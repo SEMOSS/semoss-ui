@@ -16,7 +16,7 @@ import {
 	Square,
 } from "lucide-react";
 import type React from "react";
-import { useContext, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { EngineSelect } from "@semoss/shared";
 import {
@@ -36,7 +36,6 @@ import {
 import { useChatConfig } from "../../chat/config/use-chat-config";
 import { ConnectorSignInNotice } from "../../connectors/accounts/connector-sign-in-notice";
 import { useUserConnectorsSync } from "../../connectors/accounts/use-user-connectors-sync";
-import { RoomLayoutActionsContext } from "../../room/layout/room-layout-actions.context";
 import type { RoomStore } from "../../room/store/room.store";
 import type { CompactionStrategy } from "../../room/store/room-compaction";
 import { useRoomSelector } from "../../room/store/use-room-selector";
@@ -175,7 +174,6 @@ export const RoomInput = ({
 	const { theme, components } = useChatConfig();
 	const PlusMenu = components?.PlusMenu ?? DefaultPlusMenu;
 	const SlashCommands = components?.SlashCommands ?? DefaultSlashCommands;
-	const roomLayout = useContext(RoomLayoutActionsContext);
 	// connectors switched on or off in settings reach this chat at once
 	useUserConnectorsSync(room.connectors);
 	const history = useRoomSelector(room, (current) => current.history);
@@ -310,11 +308,6 @@ export const RoomInput = ({
 		prepareRoom: newRoomPanels
 			? newRoomPanels.prepareRoom
 			: () => Promise.resolve(room),
-		openFiles: () => {
-			if (newRoomPanels) newRoomPanels.onOpenPanel({ kind: "files" });
-			else room.openWorkbenchFileExplorer();
-			roomLayout?.revealWorkbench();
-		},
 	};
 
 	// Find and cache the ScrollArea viewport element

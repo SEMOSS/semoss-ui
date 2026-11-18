@@ -71,7 +71,9 @@ src/
 - **`useDesktopChatConfig`** is the chat's config: the server's theme over the chat's defaults
   (`useServerChatTheme`); `options` with `roomHref` (`#/room/<id>`) and the tool frame origin,
   and no new-chat defaults, platform URL or `agentHref`; `callbacks` with `onOpenRoom`,
-  `onOpenNewChat` and `onOpenSettings`; `tools`, the desktop's tools host over the folders the
+  `onOpenNewChat`, `onOpenSettings`, and `onWorkbenchOpenChange`, which folds the sidebar while a
+  room's Workspace is open (`features/navigation/use-workbench-navigation.ts`, as the web app
+  does); `tools`, the desktop's tools host over the folders the
   user attaches (one per window); and `components`: `DesktopPlusMenu` (the chat's items, with
   Attach Folder under Attach Files) and `DesktopSlashCommands` (the chat's commands, then Attach
   Folder), each in its own file in `features/chat-config/`.
@@ -201,8 +203,8 @@ A room can attach folders from this machine. The app gives them to the chat as
   (`desktop-host-files.tsx`: Attach Folder, Show in Finder, Open with Default App, Detach), and
   detaches a new chat's folders when it is left before its first message.
 - Attach Folder in the plus menu (`AttachFolderMenuItem`) and "/" (`AttachFolderCommand`) attach
-  to an open room, or to the room a new chat prepares (`useComposer().prepareRoom()`), then show
-  Files.
+  to an open room, or to the room a new chat prepares (`useComposer().prepareRoom()`). They leave
+  the Workspace as it is; the folders show in Files when the user opens it.
 - Its strings are in the `desktop` namespace, under `localFolders`.
 
 - **Only the system's folder picker attaches a folder** (`local-folders:pick`, parented to the

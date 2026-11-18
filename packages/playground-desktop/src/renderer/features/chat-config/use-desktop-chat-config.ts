@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import {
+	type ChatCallbacks,
 	type ChatComponents,
 	type ChatConfig,
 	useServerChatTheme,
@@ -25,13 +26,17 @@ const DESKTOP_CHAT_COMPONENTS: ChatComponents = {
  * so a tool's page cannot reach the desktop bridge. The desktop has no agent
  * pages, so chat UI shows no links to them.
  *
- * @param openSettings - Opens the settings dialog, for chat UI's links to it
- * and the account menu. Keep its identity stable.
+ * @param host - What the layout gives the chat: how to open the settings
+ * dialog, for chat UI's links to it and the account menu, and what to do when
+ * a room's Workspace opens or closes. Keep both stable.
  * @returns The config, the same object while the theme and router are unchanged.
  */
-export const useDesktopChatConfig = (
-	openSettings: (page?: string) => void,
-): ChatConfig => {
+export const useDesktopChatConfig = ({
+	onOpenSettings,
+	onWorkbenchOpenChange,
+}: Required<
+	Pick<ChatCallbacks, "onOpenSettings" | "onWorkbenchOpenChange">
+>): ChatConfig => {
 	const theme = useServerChatTheme();
 	const navigate = useNavigate();
 	const bridge = getDesktopBridge();
@@ -51,11 +56,19 @@ export const useDesktopChatConfig = (
 			callbacks: {
 				onOpenRoom: (roomId) => navigate(`/room/${roomId}`),
 				onOpenNewChat: () => navigate("/new"),
-				onOpenSettings: openSettings,
+				onOpenSettings,
+				onWorkbenchOpenChange,
 			},
 			tools: tools,
 			components: DESKTOP_CHAT_COMPONENTS,
 		}),
-		[theme, navigate, tools, toolFrameOrigin, openSettings],
+		[
+			theme,
+			navigate,
+			tools,
+			toolFrameOrigin,
+			onOpenSettings,
+			onWorkbenchOpenChange,
+		],
 	);
 };
