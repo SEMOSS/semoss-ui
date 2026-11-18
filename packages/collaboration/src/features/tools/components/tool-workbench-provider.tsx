@@ -34,7 +34,34 @@ import {
 	shouldAutoOpenTool,
 } from "../utils/tool-metadata";
 
-interface ToolWorkbenchProviderProps {
+// Issue 3857: remember the sub-agent run the person has open, per conversation, so a
+// page refresh reopens the same one in the side panel instead of dropping them back to
+// the chat. sessionStorage keeps it to this tab and clears when the tab closes; every
+// access is guarded because storage can be blocked or empty (private mode, previews).
+const OPEN_RUN_KEY_PREFIX = "semoss.workbench.openRun.";
+
+function openRunStorageKey(insightId: string): string {
+	return `${OPEN_RUN_KEY_PREFIX}${insightId}`;
+}
+
+function rememberOpenRun(insightId: string, runId: string | null): void {
+	try {
+		if (runId) sessionStorage.setItem(openRunStorageKey(insightId), runId);
+		else sessionStorage.removeItem(openRunStorageKey(insightId));
+	} catch {
+		// storage unavailable; the panel still works for this session.
+	}
+}
+
+function recallOpenRun(insightId: string): string | null {
+	try {
+		return sessionStorage.getItem(openRunStorageKey(insightId));
+	} catch {
+		return null;
+	}
+}
+
+export interface ToolWorkbenchProviderProps {
 	/** Host-specific panels and initial arrangement; supplied before store creation. */
 	components?: Record<string, WorkbenchPanelConfigAny>;
 	createLayout?: (insightId: string) => WorkbenchLayout;
@@ -262,9 +289,31 @@ export function ToolWorkbenchProvider({
 				},
 			);
 			setIsOpen(true);
+			// so a refresh reopens this same sub-agent
+			rememberOpenRun(insightId, runId);
 		},
-		[isOpen, store, panelTarget],
+		[isOpen, store, panelTarget, insightId],
 	);
+
+	// Issue 3857: after a refresh, reopen the sub-agent the person had open. Runs once
+	// per conversation, and only when nothing is open yet, so it never fights a live
+	// selection. The panel reopens without stealing focus, since no one clicked.
+	const restoredRunFor = useRef<string | null>(null);
+	useEffect(() => {
+		if (restoredRunFor.current === insightId) return;
+		restoredRunFor.current = insightId;
+		const runId = recallOpenRun(insightId);
+		if (!runId || store.getState().layout.selection.panel) return;
+		store.getState().layout.actions.selectPanel(
+			RUN_PANEL_TYPE,
+			{ runId },
+			{
+				name: "Agent run",
+				target: panelTarget?.(store.getState().layout),
+			},
+		);
+		setIsOpen(true);
+	}, [insightId, store, panelTarget]);
 
 	const openFile = useCallback(
 		(path: string, name: string, fileInsightId?: string) => {
@@ -335,6 +384,8 @@ export function ToolWorkbenchProvider({
 
 	const closeWorkbench = useCallback(() => {
 		setIsOpen(false);
+		// an explicit close should not reopen on the next refresh
+		rememberOpenRun(insightId, null);
 		if (workbenchTriggerId.current) {
 			const triggerId = workbenchTriggerId.current;
 			window.requestAnimationFrame(() =>
@@ -344,7 +395,7 @@ export function ToolWorkbenchProvider({
 			return true;
 		} else if (activeToolId) focusToolTrigger(activeToolId);
 		return false;
-	}, [activeToolId, focusToolTrigger]);
+	}, [activeToolId, focusToolTrigger, insightId]);
 
 	useEffect(() => {
 		if (!autoReveal) return;

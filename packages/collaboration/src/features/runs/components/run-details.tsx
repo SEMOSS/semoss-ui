@@ -18,6 +18,7 @@ import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
 import { useRunDetail } from "../api/use-run-detail";
 import { ChildAgentRunCard } from "./child-agent-run-card";
 import { RunInspectorMessage } from "./run-inspector-message";
+import { runStatusWord, subAgentName } from "./run-status-word";
 
 /** Durable run details shared by inline child runs and the workbench inspector. */
 export function RunDetails({
@@ -72,9 +73,11 @@ export function RunDetails({
 					{!isInline && (
 						<div className="flex flex-wrap items-center justify-between gap-2">
 							<H4>
-								{run.workspaceName ||
-									run.executorLabel ||
-									"Agent run"}
+								{run.parentRunId
+									? subAgentName(run)
+									: run.workspaceName ||
+										run.executorLabel ||
+										"Agent run"}
 							</H4>
 							<Badge
 								variant={
@@ -83,7 +86,7 @@ export function RunDetails({
 										: "outline"
 								}
 							>
-								{run.status.toLowerCase().replaceAll("_", " ")}
+								{runStatusWord(run.status)}
 							</Badge>
 						</div>
 					)}

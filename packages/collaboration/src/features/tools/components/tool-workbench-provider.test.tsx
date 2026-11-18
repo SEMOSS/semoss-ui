@@ -69,6 +69,18 @@ function CaptureWorkbench() {
 	return null;
 }
 
+/** Opens a fixed sub-agent run, so the same id survives a provider remount. */
+function StableRunHarness({ runId }: { runId: string }) {
+	const { isOpen, openRun } = useToolWorkbench();
+	return isOpen ? (
+		<span>run open</span>
+	) : (
+		<button type="button" onClick={() => openRun(runId)}>
+			Inspect child
+		</button>
+	);
+}
+
 function RunFocusHarness() {
 	const { isOpen, openRun, closeWorkbench } = useToolWorkbench();
 	const runId = useId();
@@ -138,6 +150,11 @@ describe("ToolWorkbenchProvider", () => {
 	});
 
 	beforeEach(() => {
+		try {
+			sessionStorage.clear();
+		} catch {
+			// ignore
+		}
 		Object.defineProperty(window, "matchMedia", {
 			writable: true,
 			value: vi.fn().mockImplementation((query: string) => ({
@@ -217,6 +234,53 @@ describe("ToolWorkbenchProvider", () => {
 				screen.getByRole("button", { name: "Inspect child" }),
 			).toHaveFocus(),
 		);
+	});
+
+	it("reopens the same sub-agent after a refresh", async () => {
+		const provider = (
+			<ToolWorkbenchProvider
+				roomId="room-1"
+				insightId="insight-1"
+				tools={{}}
+				pendingApprovals={[]}
+				onApproveTool={vi.fn()}
+				onRejectTool={vi.fn()}
+			>
+				<StableRunHarness runId="child-7" />
+			</ToolWorkbenchProvider>
+		);
+		const view = render(provider);
+		fireEvent.click(screen.getByRole("button", { name: "Inspect child" }));
+		expect(await screen.findByText("run open")).toBeInTheDocument();
+		// a refresh is a fresh mount of the provider for the same conversation
+		view.unmount();
+		render(provider);
+		expect(await screen.findByText("run open")).toBeInTheDocument();
+	});
+
+	it("does not reopen a sub-agent the person has closed", async () => {
+		const provider = (
+			<ToolWorkbenchProvider
+				roomId="room-1"
+				insightId="insight-1"
+				tools={{}}
+				pendingApprovals={[]}
+				onApproveTool={vi.fn()}
+				onRejectTool={vi.fn()}
+			>
+				<RunFocusHarness />
+			</ToolWorkbenchProvider>
+		);
+		const view = render(provider);
+		fireEvent.click(screen.getByRole("button", { name: "Inspect child" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Back to conversation" }),
+		);
+		view.unmount();
+		render(provider);
+		expect(
+			screen.getByRole("button", { name: "Inspect child" }),
+		).toBeInTheDocument();
 	});
 
 	it("keeps the selected panel when the workbench shell mounts", async () => {
