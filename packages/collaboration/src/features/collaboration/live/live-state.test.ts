@@ -93,6 +93,82 @@ it("loads each topic once when the list contains duplicate records", async () =>
 	expect(state.topics).toMatchObject(topics);
 });
 
+it("keeps the evidence Brain stored with topic links and topic-choice reviews", async () => {
+	const stored = {
+		version: 1,
+		keywordMatches: [{ keyword: "budget", field: "subject" }],
+		matchedSenderIds: ["p1"],
+		baseConfidence: 72,
+		finalConfidence: 82,
+		topicVipApplied: true,
+		topicVipPoints: 10,
+	};
+	const page = (items: unknown[]) => ({ items });
+	const outputs = [
+		{},
+		{},
+		page([]),
+		page([]),
+		page([]),
+		page([
+			{
+				id: "th-1",
+				topicLinks: [
+					{ topicId: "t1", source: "confirmed", signals: stored },
+					// legacy payloads and owner-made links carry nothing to show
+					{
+						topicId: "t2",
+						source: "suggested",
+						signals: { topics: { t2: 0.5 }, fyi: 0, raw: {} },
+					},
+					{ topicId: "t3", source: "you", signals: null },
+				],
+			},
+		]),
+		page([]),
+		page([
+			{
+				id: "r-new",
+				kind: "topic_choice",
+				refId: "th-1",
+				data: {
+					candidates: ["t1", "t2"],
+					candidateSignals: { t1: stored },
+				},
+			},
+			{ id: "r-old", kind: "topic_choice", refId: "th-1", data: {} },
+			{
+				id: "r-person",
+				kind: "add_person",
+				refId: "p1",
+				data: { candidateSignals: { t1: stored } },
+			},
+		]),
+		...Array.from({ length: 6 }, () => page([])),
+	];
+	const run = vi.fn().mockResolvedValue({
+		pixelReturn: outputs.map((output) => ({ output, operationType: [] })),
+	});
+	const state = await loadLiveState({ run } as unknown as InsightActions);
+	const [kept, legacy, owner] = state.threads[0].topicLinks;
+	expect(kept.signals).toEqual({
+		keywordMatches: [{ keyword: "budget", field: "subject" }],
+		matchedSenderIds: ["p1"],
+		baseConfidence: 72,
+		finalConfidence: 82,
+		topicVipApplied: true,
+		topicVipPoints: 10,
+	});
+	expect(legacy.signals).toBeUndefined();
+	expect(owner.signals).toBeUndefined();
+	const reviews = new Map(state.reviews.map((review) => [review.id, review]));
+	expect(Object.keys(reviews.get("r-new")?.candidateSignals ?? {})).toEqual([
+		"t1",
+	]);
+	expect(reviews.get("r-old")?.candidateSignals).toBeUndefined();
+	expect(reviews.get("r-person")?.candidateSignals).toBeUndefined();
+});
+
 it("requests optional display bodies while preserving exclusions, links and legacy text", async () => {
 	const displayBody = {
 		contentType: "html",
