@@ -9,14 +9,14 @@ import {
 import type { ReactNode } from "react";
 import { Link, Navigate, useParams, useSearchParams } from "react-router";
 import { type MailFolder, useMailFolders } from "@semoss/connectors";
-import { Button, cn, H1, P } from "@semoss/ui/next";
+import { Button, P } from "@semoss/ui/next";
 import {
 	OneDriveIcon,
 	TeamsFilesIcon,
 	TeamsIcon,
 } from "@/components/common/app-icons";
+import { TopicDot } from "@/features/collaboration/components/topic-dot";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
-import { topicTone } from "@/features/collaboration/topic-tone";
 import { topicPath } from "@/lib/workspace-paths";
 import { ChatSource } from "./chat-source";
 import { FileSource } from "./file-source";
@@ -255,12 +255,10 @@ export function TopicContents() {
 				</Button>
 				<div className="min-w-0 flex-1">
 					<H1 className="flex min-w-0 items-start gap-2 font-medium text-base leading-snug tracking-normal sm:text-lg">
-						<span
-							aria-hidden="true"
-							className={cn(
-								"mt-1.5 size-2.5 shrink-0 rounded-full",
-								topicTone(topic.id),
-							)}
+						<TopicDot
+							topic={topic}
+							size="size-2.5"
+							className="mt-1.5 rounded-full"
 						/>
 						<span className="wrap-anywhere line-clamp-2 min-w-0">
 							Emails, chats and files in {topic.name}

@@ -286,7 +286,7 @@ export function mapTopic(row: Row): Topic {
 		short: str(row.short, str(row.name)),
 		accountId: opt(row.accountId) ?? null,
 		kind: (row.kind as Topic["kind"]) ?? "internal",
-		color: str(row.color, "#8a9099"),
+		color: str(row.color),
 		status: (row.status as Topic["status"]) ?? "active",
 		description: str(row.description),
 		keywords: list<string>(row.keywords),

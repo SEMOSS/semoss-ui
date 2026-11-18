@@ -17,7 +17,7 @@ import { dateLabel } from "../date-label";
 import { topicChoiceCandidates } from "../state/collaboration.selectors";
 import type { ReviewEntry } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
-import { topicTone } from "../topic-tone";
+import { TopicDot } from "./topic-dot";
 
 /** Resolves review intentions by record identity, independently of button copy. */
 export function ReviewCard({
@@ -214,13 +214,7 @@ export function ReviewCard({
 											resolve("accept", topic.id)
 										}
 									>
-										<span
-											aria-hidden="true"
-											className={cn(
-												"size-2 shrink-0 rounded-xs",
-												topicTone(topic.id),
-											)}
-										/>
+										<TopicDot topic={topic} />
 										{choices.length === 1
 											? `File under ${topic.short}`
 											: topic.short}

@@ -5,6 +5,7 @@ import {
 	localDue,
 	mapMemory,
 	mapStyle,
+	mapTopic,
 	readThreadInsights,
 	readThreadMessagesPage,
 	readWorkUpdates,
@@ -384,6 +385,50 @@ describe("mapStyle", () => {
 			examples: [],
 			variants: {},
 			pending: null,
+		});
+	});
+});
+
+describe("mapTopic", () => {
+	it("maps a custom color when present", () => {
+		const topic = mapTopic({
+			id: "topic-1",
+			name: "Project A",
+			color: "#ff0000",
+		});
+		expect(topic.color).toBe("#ff0000");
+	});
+
+	it("maps to empty string when color is unset (not a default grey)", () => {
+		const topic = mapTopic({
+			id: "topic-1",
+			name: "Project A",
+		});
+		expect(topic.color).toBe("");
+	});
+
+	it("maps to empty string when color is explicitly empty", () => {
+		const topic = mapTopic({
+			id: "topic-1",
+			name: "Project A",
+			color: "",
+		});
+		expect(topic.color).toBe("");
+	});
+
+	it("maps required fields with defaults", () => {
+		const topic = mapTopic({
+			id: "topic-1",
+			name: "Project A",
+		});
+		expect(topic).toMatchObject({
+			id: "topic-1",
+			name: "Project A",
+			short: "Project A",
+			kind: "internal",
+			status: "active",
+			color: "",
+			isSample: false,
 		});
 	});
 });

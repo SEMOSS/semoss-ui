@@ -19,6 +19,7 @@ import {
 } from "@semoss/ui/next";
 import type { Topic } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
+import { TopicColorPicker } from "./topic-color-picker";
 
 const schema = z.object({
 	name: z.string().trim().min(1, "Name is required."),
@@ -26,6 +27,7 @@ const schema = z.object({
 	description: z.string(),
 	kind: z.enum(["client", "internal", "event", "personal"]),
 	accountId: z.string(),
+	color: z.string(),
 });
 
 /** Creates or edits a topic in the current session. */
@@ -50,6 +52,7 @@ export function TopicEditor({
 			description: topic?.description ?? "",
 			kind: topic?.kind ?? "internal",
 			accountId: topic?.accountId ?? "none",
+			color: topic?.color ?? "",
 		},
 	});
 	const errorId = useId();
@@ -144,6 +147,13 @@ export function TopicEditor({
 							</SelectItem>
 						))}
 					</FormSelect>
+					<TopicColorPicker
+						value={form.watch("color")}
+						topicId={topic?.id ?? "new"}
+						onChange={(color) => form.setValue("color", color)}
+						label="Color"
+						disabled={false}
+					/>
 					<DialogFooter>
 						<Button
 							type="button"

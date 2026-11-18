@@ -42,7 +42,6 @@ import { WorkRefreshStatus } from "../live/work-refresh-status";
 import { useWorkUpdates } from "../live/work-updates.context";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { memoriesAbout } from "../state/memory";
-import { topicTone } from "../topic-tone";
 import { CollaborationPage } from "./collaboration-page";
 import { CollaborationPageHeader } from "./collaboration-page-header";
 import { CollaborationSurface } from "./collaboration-surface";
@@ -52,6 +51,7 @@ import { PersonAvatar } from "./person-avatar";
 import { PersonGlobalBadges } from "./person-global-badges";
 import { TextEntryForm } from "./text-entry-form";
 import { TopicActions } from "./topic-actions";
+import { TopicDot } from "./topic-dot";
 import { TopicEditor } from "./topic-editor";
 import { TopicFiles } from "./topic-files";
 import { TopicFolders } from "./topic-folders";
@@ -197,12 +197,10 @@ export function TopicDetail() {
 				layoutClassName="flex-col md:flex-row"
 				title={
 					<span className="flex min-w-0 items-center gap-3">
-						<span
-							aria-hidden="true"
-							className={cn(
-								"mt-2.5 size-3 shrink-0 self-start rounded-full",
-								topicTone(topic.id),
-							)}
+						<TopicDot
+							topic={topic}
+							size="size-3"
+							className="mt-2.5 self-start rounded-full"
 						/>
 						<span className="min-w-0 break-words">
 							{topic.name}

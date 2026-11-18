@@ -1,0 +1,46 @@
+.topic-color-swatch {
+	width: 2.5rem;
+	height: 2.5rem;
+	border-radius: 9999px;
+	border: 2px solid hsl(var(--input));
+	cursor: pointer;
+	padding: 0 !important;
+	margin: 0;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+	background: none;
+	box-sizing: border-box;
+}
+
+/* Chrome, Safari, Edge */
+.topic-color-swatch::-webkit-color-swatch-wrapper {
+	padding: 0 !important;
+	margin: 0;
+}
+
+.topic-color-swatch::-webkit-color-swatch {
+	border: none;
+	border-radius: 9999px;
+	margin: 0;
+	padding: 0;
+}
+
+/* Firefox */
+.topic-color-swatch::-moz-color-swatch {
+	border: none;
+	border-radius: 9999px;
+	margin: 0;
+	padding: 0;
+}
+
+.topic-color-swatch::-moz-color-swatch-wrapper {
+	padding: 0 !important;
+	margin: 0;
+}
+
+.topic-color-swatch:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+

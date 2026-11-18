@@ -8,11 +8,11 @@ import { topicPath } from "@/lib/workspace-paths";
 import { WorkRefreshStatus } from "../live/work-refresh-status";
 import { selectWorkItems } from "../state/collaboration.selectors";
 import { useCollaborationSession } from "../state/collaboration-session.context";
-import { topicTone } from "../topic-tone";
 import { CollaborationHeroHeader } from "./collaboration-hero-header";
 import { CollaborationHeroPage } from "./collaboration-hero-page";
 import { CollaborationPageHeader } from "./collaboration-page-header";
 import { CollaborationSurface } from "./collaboration-surface";
+import { TopicDot } from "./topic-dot";
 import { TopicEditor } from "./topic-editor";
 
 interface WorkTopicsProps {
@@ -61,15 +61,8 @@ export function WorkTopics({ settings }: WorkTopicsProps) {
 						>
 							<div className="min-w-0 flex-1 space-y-2">
 								<div className="flex flex-wrap items-center gap-2">
+									<TopicDot topic={topic} />
 									<Small className="break-words font-medium text-base">
-										{/* inside the name's first line, so a long name wraps beside its dot, not under it */}
-										<span
-											aria-hidden="true"
-											className={cn(
-												"mr-2 inline-block size-2 rounded-full align-middle",
-												topicTone(topic.id),
-											)}
-										/>
 										{topic.name}
 									</Small>
 									<Badge

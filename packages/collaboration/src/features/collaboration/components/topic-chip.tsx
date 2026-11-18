@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { Badge, cn } from "@semoss/ui/next";
 import { topicPath } from "@/lib/workspace-paths";
 import type { Topic } from "../state/collaboration.types";
-import { topicTone } from "../topic-tone";
+import { TopicDot } from "./topic-dot";
 
 /** Consistent topic identity using shared semantic data colors; with onRemove, an x inside the pill removes it. */
 export function TopicChip({
@@ -24,13 +24,7 @@ export function TopicChip({
 	);
 	const label = (
 		<>
-			<span
-				aria-hidden="true"
-				className={cn(
-					"size-2 shrink-0 rounded-xs",
-					topicTone(topic.id),
-				)}
-			/>
+			<TopicDot topic={topic} size="size-2" />
 			{topic.short}
 			{suggested ? "?" : ""}
 		</>
