@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	deleteAppTestRecording,
+	getAppTestRecording,
 	getAppTestRun,
 	parseAppTestRecordings,
 	runAppTests,
@@ -91,7 +92,7 @@ describe("app recording transport", () => {
 		});
 		await runAppTests("app", "selected-recording");
 		expect(transport.mock.calls[0][0]).toBe(
-			'META | RunAppTests(project=["app"], suite=["selected-recording"]);',
+			'META | RunAppTests(project=["app"], recordingIds=["selected-recording"]);',
 		);
 		expect(transport.mock.calls[0][0]).not.toContain("scenario");
 	});
@@ -138,4 +139,69 @@ it("updates the existing test id and deletes only the requested app recording", 
 	expect(transport.mock.calls[1][0]).toBe(
 		'META | DeleteAppTestRecording(project=["app"], recordingId=["existing-id"]);',
 	);
+});
+
+it("returns only discovery metadata, even from an older complete list response", () => {
+	const result = parseAppTestRecordings("app", {
+		target: "app",
+		recordings: [
+			{
+				id: "id",
+				name: "Save",
+				description: "Verify Save.",
+				steps: [{ type: "FILL", value: "not needed in discovery" }],
+			},
+		],
+	});
+	expect(result).toEqual([
+		{ id: "id", name: "Save", description: "Verify Save." },
+	]);
+});
+
+it("reads exactly one file and rejects a response for another file or app", async () => {
+	const recording = {
+		id: "one",
+		name: "Save",
+		description: "Verify Save.",
+		version: 1,
+		updatedAt: "2026-11-18",
+		startPath: "",
+		steps: [{ type: "ASSERT_VISIBLE", selector: "#done" }],
+	};
+	transport.mockResolvedValueOnce({
+		errors: [],
+		pixelReturn: [{ output: { target: "app", recording } }],
+	});
+	expect(await getAppTestRecording("app", "one")).toEqual(recording);
+	expect(transport.mock.calls[0][0]).toBe(
+		'META | GetAppTestRecording(project=["app"], recordingId=["one"]);',
+	);
+	for (const output of [
+		{ target: "other", recording },
+		{ target: "app", recording: { ...recording, id: "two" } },
+	]) {
+		transport.mockResolvedValueOnce({
+			errors: [],
+			pixelReturn: [{ output }],
+		});
+		await expect(getAppTestRecording("app", "one")).rejects.toThrow(
+			"changed",
+		);
+	}
+});
+
+it("keeps smoke checks explicit and rejects an empty UI selection", async () => {
+	transport.mockResolvedValueOnce({
+		errors: [],
+		pixelReturn: [
+			{ output: { target: "app", runId: "run", status: "RUNNING" } },
+		],
+	});
+	await runAppTests("app", "__platform_smoke__");
+	expect(transport.mock.calls[0][0]).toBe(
+		'META | RunAppTests(project=["app"], suite=["__platform_smoke__"]);',
+	);
+	transport.mockClear();
+	await expect(runAppTests("app", "")).rejects.toThrow("Choose a test");
+	expect(transport).not.toHaveBeenCalled();
 });

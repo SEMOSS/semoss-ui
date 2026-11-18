@@ -11,12 +11,16 @@ import {
 	TableHeader,
 	TableRow,
 } from "@semoss/ui/next";
-import type { AppTestRecording } from "./app-test.types";
+import type {
+	AppTestRecording,
+	AppTestRecordingSummary,
+} from "./app-test.types";
 import { AppTestFileDialog } from "./app-test-file-dialog";
 
 interface AppTestFilesProps {
-	/** Validated saved JSON files for the app being edited. */
-	recordings: AppTestRecording[];
+	/** Metadata-only entries for the app being edited. */
+	recordings: AppTestRecordingSummary[];
+	appId: string;
 	isLoading: boolean;
 	/** Mutations are disabled while a replay, save or recording is in progress. */
 	isBusy: boolean;
@@ -29,6 +33,7 @@ interface AppTestFilesProps {
 
 /** A compact file listing with standard view, edit, and delete actions. */
 export const AppTestFiles = ({
+	appId,
 	recordings,
 	isLoading,
 	isBusy,
@@ -41,7 +46,7 @@ export const AppTestFiles = ({
 	const opener = useRef<HTMLButtonElement | null>(null);
 	const refreshButton = useRef<HTMLButtonElement | null>(null);
 	const [opened, setOpened] = useState<{
-		recording: AppTestRecording;
+		recording: AppTestRecordingSummary;
 		mode: "view" | "edit" | "delete";
 	} | null>(null);
 	const hasOpenedFile =
@@ -176,6 +181,7 @@ export const AppTestFiles = ({
 			)}
 			{opened && hasOpenedFile && (
 				<AppTestFileDialog
+					appId={appId}
 					key={`${opened.recording.id}-${opened.mode}`}
 					recording={opened.recording}
 					mode={opened.mode}

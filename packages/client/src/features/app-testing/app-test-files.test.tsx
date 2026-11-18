@@ -5,11 +5,21 @@ import {
 	screen,
 	waitFor,
 } from "@testing-library/react";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { AppTestRecording } from "./app-test.types";
 import { AppTestFiles } from "./app-test-files";
 
+const fileQuery = vi.hoisted(() => ({
+	status: "SUCCESS",
+	data: null as unknown,
+	error: undefined as { message: string } | undefined,
+	refresh: vi.fn(),
+}));
+const readPixel = vi.hoisted(() => vi.fn((_pixel: string) => fileQuery));
+vi.mock("@semoss/sdk/react", () => ({ useSessionPixel: readPixel }));
+
 const fileActions = {
+	appId: "app",
 	isBusy: false,
 	selectedId: "example-test",
 	onRefresh: vi.fn(),
@@ -39,6 +49,12 @@ const recording: AppTestRecording = {
 		},
 	],
 };
+beforeEach(() => {
+	fileQuery.status = "SUCCESS";
+	fileQuery.data = { target: "app", recording };
+	fileQuery.error = undefined;
+	readPixel.mockClear();
+});
 afterEach(cleanup);
 
 it("lists each saved file with its description and opens complete read-only JSON", async () => {
@@ -265,4 +281,74 @@ it("blocks duplicate writes and dismissal while a save is pending", async () => 
 	expect(screen.getByRole("dialog")).toBeTruthy();
 	finish?.();
 	await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+});
+
+it("fetches one definition only after opening it and does not read on delete", async () => {
+	const summary = {
+		id: recording.id,
+		name: recording.name,
+		description: recording.description,
+	};
+	render(
+		<AppTestFiles
+			{...fileActions}
+			recordings={[summary]}
+			isLoading={false}
+			onSelect={vi.fn()}
+		/>,
+	);
+	expect(readPixel).not.toHaveBeenCalled();
+	fireEvent.click(
+		screen.getByRole("button", { name: "Open Checkout to orders" }),
+	);
+	await screen.findByRole("textbox", { name: "Test file JSON" });
+	expect(
+		readPixel.mock.calls.every(
+			(call) =>
+				call[0] ===
+				'META | GetAppTestRecording(project=["app"], recordingId=["example-test"]);',
+		),
+	).toBe(true);
+	fireEvent.click(screen.getByRole("button", { name: "Close file" }));
+	await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+	readPixel.mockClear();
+	fireEvent.click(
+		screen.getByRole("button", { name: "Delete Checkout to orders" }),
+	);
+	await screen.findByRole("dialog", { name: "Delete test file" });
+	expect(readPixel.mock.calls.every((call) => call[0] === "")).toBe(true);
+});
+
+it("shows loading and recoverable read errors without exposing an empty editor", async () => {
+	fileQuery.status = "LOADING";
+	const props = {
+		...fileActions,
+		recordings: [recording],
+		isLoading: false,
+		onSelect: vi.fn(),
+	};
+	const view = render(<AppTestFiles {...props} />);
+	fireEvent.click(
+		screen.getByRole("button", { name: "Edit Checkout to orders" }),
+	);
+	await screen.findByText("Loading test file…");
+	expect(
+		screen.queryByRole("textbox", { name: "Test file JSON" }),
+	).toBeNull();
+	expect(screen.queryByRole("button", { name: "Save changes" })).toBeNull();
+	fileQuery.status = "ERROR";
+	fileQuery.error = { message: "Read failed" };
+	view.rerender(<AppTestFiles {...props} />);
+	await screen.findByText("Read failed");
+	fireEvent.click(screen.getByRole("button", { name: "Retry reading file" }));
+	expect(fileQuery.refresh).toHaveBeenCalled();
+	fileQuery.status = "SUCCESS";
+	fileQuery.error = undefined;
+	view.rerender(<AppTestFiles {...props} />);
+	const editor = await screen.findByRole("textbox", {
+		name: "Test file JSON",
+	});
+	expect(JSON.parse((editor as HTMLTextAreaElement).value)).toEqual(
+		recording,
+	);
 });

@@ -9,6 +9,7 @@ import {
 } from "@/api/app-testing";
 import type {
 	AppTestRecording,
+	AppTestRecordingSummary,
 	AppTestRun,
 	AppTestStep,
 } from "./app-test.types";
@@ -33,7 +34,7 @@ interface AppTestingState {
 	run: AppTestRun | null;
 	notice: string;
 	error: string;
-	recordings: AppTestRecording[];
+	recordings: AppTestRecordingSummary[];
 	isLoading: boolean;
 	refreshRecordings: () => void;
 	startRecording: () => void;

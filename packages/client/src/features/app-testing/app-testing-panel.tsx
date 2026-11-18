@@ -379,6 +379,7 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 				)}
 			</Form>
 			<AppTestFiles
+				appId={appId}
 				recordings={state.recordings}
 				isLoading={state.isLoading}
 				onSelect={state.setSelectedId}

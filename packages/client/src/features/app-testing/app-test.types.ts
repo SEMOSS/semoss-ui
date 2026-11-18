@@ -38,6 +38,12 @@ export interface AppTestRecording {
 	updatedAt: string;
 }
 
+/** Small discovery payload; full test steps are fetched individually. */
+export type AppTestRecordingSummary = Pick<
+	AppTestRecording,
+	"id" | "name" | "description"
+>;
+
 /** Unsaved browser actions and explicit outcome checks. */
 export type AppTestDraft = Pick<
 	AppTestRecording,

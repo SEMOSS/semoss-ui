@@ -3,6 +3,7 @@ import { Session } from "@semoss/sdk";
 import type {
 	AppTestDraft,
 	AppTestRecording,
+	AppTestRecordingSummary,
 	AppTestRun,
 } from "@/features/app-testing/app-test.types";
 
@@ -90,9 +91,21 @@ export const parseAppTestRecordingFile = (
 export const parseAppTestRecordings = (
 	appId: string,
 	value: unknown,
-): AppTestRecording[] => {
+): AppTestRecordingSummary[] => {
 	const result = z
-		.object({ target: z.string(), recordings: z.array(recordingSchema) })
+		.object({
+			target: z.string(),
+			recordings: z.array(
+				recordingFieldsSchema
+					.pick({ id: true, name: true, description: true })
+					.transform((recording) => ({
+						...recording,
+						description:
+							recording.description ??
+							`Replays the recorded workflow: ${recording.name}.`,
+					})),
+			),
+		})
 		.parse(value);
 	if (result.target !== appId) throw new Error("The app test target changed");
 	return result.recordings;
@@ -135,7 +148,7 @@ const callAppTestPixel = async (pixel: string): Promise<unknown> => {
 /** List platform recordings for one explicit app. */
 export const listAppTestRecordings = async (
 	appId: string,
-): Promise<AppTestRecording[]> => {
+): Promise<AppTestRecordingSummary[]> => {
 	return parseAppTestRecordings(
 		appId,
 		await callAppTestPixel(
@@ -143,6 +156,34 @@ export const listAppTestRecordings = async (
 		),
 	);
 };
+
+/** Validate an individual definition against both requested identities. */
+export const parseAppTestRecording = (
+	appId: string,
+	recordingId: string,
+	value: unknown,
+): AppTestRecording => {
+	const result = z
+		.object({ target: z.string(), recording: recordingSchema })
+		.parse(value);
+	if (result.target !== appId || result.recording.id !== recordingId) {
+		throw new Error("The app test target or recording changed");
+	}
+	return result.recording;
+};
+
+/** Read only the one definition needed for inspection or editing. */
+export const getAppTestRecording = async (
+	appId: string,
+	recordingId: string,
+): Promise<AppTestRecording> =>
+	parseAppTestRecording(
+		appId,
+		recordingId,
+		await callAppTestPixel(
+			`GetAppTestRecording(project=${JSON.stringify([appId])}, recordingId=${JSON.stringify([recordingId])});`,
+		),
+	);
 
 /** Create or update a declarative JSON test in the app's non-public assets. */
 export const saveAppTestRecording = async (
@@ -161,10 +202,16 @@ export const runAppTests = async (
 	recordingId: string,
 	repeat = 1,
 ): Promise<AppTestRun> => {
+	if (!recordingId.trim())
+		throw new Error("Choose a test recording before running it");
+	const selectionArgument =
+		recordingId === "__platform_smoke__"
+			? `suite=${JSON.stringify([recordingId])}`
+			: `recordingIds=${JSON.stringify([recordingId])}`;
 	const repeatArgument = repeat > 1 ? `, repeat=[${repeat}]` : "";
 	const result = runSchema.parse(
 		await callAppTestPixel(
-			`RunAppTests(project=${JSON.stringify([appId])}, suite=${JSON.stringify([recordingId])}${repeatArgument});`,
+			`RunAppTests(project=${JSON.stringify([appId])}, ${selectionArgument}${repeatArgument});`,
 		),
 	);
 	if (result.target !== appId) throw new Error("The app test target changed");

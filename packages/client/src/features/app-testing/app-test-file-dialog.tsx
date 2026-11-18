@@ -1,3 +1,4 @@
+import { useSessionPixel } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -15,14 +16,21 @@ import {
 	z,
 	zodResolver,
 } from "@semoss/ui/next";
-import { parseAppTestRecordingFile } from "@/api/app-testing";
-import type { AppTestRecording } from "./app-test.types";
+import {
+	parseAppTestRecording,
+	parseAppTestRecordingFile,
+} from "@/api/app-testing";
+import type {
+	AppTestRecording,
+	AppTestRecordingSummary,
+} from "./app-test.types";
 
 const schema = z.object({ content: z.string().min(1) });
 
 interface AppTestFileDialogProps {
-	/** Snapshot at open time; background refreshes must not overwrite edits. */
-	recording: AppTestRecording;
+	/** Summary selected from the listing; full content is read only when opened. */
+	recording: AppTestRecordingSummary;
+	appId: string;
 	mode: "view" | "edit" | "delete";
 	onSave: (recording: AppTestRecording) => Promise<void>;
 	onDelete: (id: string) => Promise<void>;
@@ -32,6 +40,7 @@ interface AppTestFileDialogProps {
 
 /** View, edit, or confirm deletion while keeping failed writes recoverable. */
 export const AppTestFileDialog = ({
+	appId,
 	recording,
 	mode,
 	onSave,
@@ -39,15 +48,40 @@ export const AppTestFileDialog = ({
 	onClose,
 	onReturnFocus,
 }: AppTestFileDialogProps) => {
+	const query = useSessionPixel<unknown>(
+		mode === "delete"
+			? ""
+			: `META | GetAppTestRecording(project=${JSON.stringify([appId])}, recordingId=${JSON.stringify([recording.id])});`,
+	);
+	let definition: AppTestRecording | null = null;
+	let readError = query.error?.message || "";
+	if (mode !== "delete" && query.status === "SUCCESS") {
+		try {
+			definition = parseAppTestRecording(appId, recording.id, query.data);
+		} catch (failure: unknown) {
+			readError =
+				failure instanceof Error
+					? failure.message
+					: "Could not read this test file";
+		}
+	}
+	const isReady = mode === "delete" || definition !== null;
+	const content = JSON.stringify(
+		mode === "delete" ? recording : definition,
+		null,
+		2,
+	);
 	const form = useForm<z.infer<typeof schema>>({
 		resolver: zodResolver(schema),
-		defaultValues: { content: JSON.stringify(recording, null, 2) },
+		defaultValues: { content: "" },
+		values: { content: isReady ? content : "" },
+		resetOptions: { keepDirtyValues: true },
 	});
-	const { isSubmitting, errors } = form.formState;
+	const { isSubmitting, errors, dirtyFields } = form.formState;
 	const handleSubmit = async ({
 		content,
 	}: z.infer<typeof schema>): Promise<void> => {
-		if (mode === "view") return;
+		if (mode === "view" || !isReady) return;
 		try {
 			if (mode === "delete") await onDelete(recording.id);
 			else await onSave(parseAppTestRecordingFile(content, recording.id));
@@ -111,6 +145,17 @@ export const AppTestFileDialog = ({
 							Delete “{recording.name}”? The test definition will
 							be removed. Previous run reports will be kept.
 						</p>
+					) : !isReady ? (
+						readError ? (
+							<Alert variant="destructive">
+								<AlertDescription>{readError}</AlertDescription>
+							</Alert>
+						) : (
+							<output className="flex items-center gap-2 text-sm">
+								<Spinner className="size-4" />
+								Loading test file…
+							</output>
+						)
 					) : (
 						<FormTextarea
 							name="content"
@@ -126,6 +171,11 @@ export const AppTestFileDialog = ({
 							className="min-w-0 [&_textarea]:font-mono [&_textarea]:text-xs"
 							spellCheck={false}
 						/>
+					)}
+					{mode === "edit" && dirtyFields.content && (
+						<p className="text-muted-foreground text-xs">
+							Unsaved changes
+						</p>
 					)}
 					{errors.root?.server?.message && (
 						<Alert variant="destructive">
@@ -143,7 +193,16 @@ export const AppTestFileDialog = ({
 						>
 							{mode === "view" ? "Close file" : "Cancel"}
 						</Button>
-						{mode !== "view" && (
+						{readError && !isReady && (
+							<Button
+								type="button"
+								variant="outline"
+								onClick={query.refresh}
+							>
+								Retry reading file
+							</Button>
+						)}
+						{mode !== "view" && isReady && (
 							<Button
 								type="submit"
 								variant={
