@@ -43,10 +43,12 @@ const getMailDate = (message: MailMessage): string =>
  * thread, or the email itself when it belongs to none. Every row of a thread
  * shares it, whether or not the list groups them.
  *
- * @param message - The email.
+ * @param message - The email, or just its ids.
  * @return The key.
  */
-export const mailSaveKey = (message: MailMessage): string =>
+export const mailSaveKey = (
+	message: Pick<MailMessage, "id" | "conversationId">,
+): string =>
 	message.conversationId
 		? `conversation:${message.conversationId}`
 		: `message:${message.id}`;
