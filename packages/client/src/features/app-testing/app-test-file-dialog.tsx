@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { useSessionPixel } from "@semoss/sdk/react";
 import {
 	Alert,
@@ -10,22 +11,27 @@ import {
 	DialogHeader,
 	DialogTitle,
 	Form,
+	FormInput,
 	FormTextarea,
 	Spinner,
+	Textarea,
+	useFieldArray,
 	useForm,
-	z,
 	zodResolver,
 } from "@semoss/ui/next";
-import {
-	parseAppTestRecording,
-	parseAppTestRecordingFile,
-} from "@/api/app-testing";
+import { parseAppTestRecording } from "@/api/app-testing";
 import type {
 	AppTestRecording,
 	AppTestRecordingSummary,
 } from "./app-test.types";
-
-const schema = z.object({ content: z.string().min(1) });
+import {
+	type AppTestRecordingFormValues,
+	appTestRecordingFormSchema,
+	fromAppTestFormValues,
+	newAppTestStep,
+	toAppTestFormValues,
+} from "./app-test-recording-form";
+import { AppTestStepFields } from "./app-test-step-fields";
 
 interface AppTestFileDialogProps {
 	/** Summary selected from the listing; full content is read only when opened. */
@@ -66,25 +72,28 @@ export const AppTestFileDialog = ({
 		}
 	}
 	const isReady = mode === "delete" || definition !== null;
-	const content = JSON.stringify(
-		mode === "delete" ? recording : definition,
-		null,
-		2,
-	);
-	const form = useForm<z.infer<typeof schema>>({
-		resolver: zodResolver(schema),
-		defaultValues: { content: "" },
-		values: { content: isReady ? content : "" },
+	const form = useForm<AppTestRecordingFormValues>({
+		resolver:
+			mode === "edit"
+				? zodResolver(appTestRecordingFormSchema)
+				: undefined,
+		defaultValues: { name: "", description: "", startPath: "", steps: [] },
+		values: toAppTestFormValues(
+			definition ?? { ...recording, startPath: "", steps: [] },
+		),
 		resetOptions: { keepDirtyValues: true },
 	});
+	const addStepButton = useRef<HTMLButtonElement | null>(null);
+	const steps = useFieldArray({ control: form.control, name: "steps" });
 	const { isSubmitting, errors, dirtyFields } = form.formState;
-	const handleSubmit = async ({
-		content,
-	}: z.infer<typeof schema>): Promise<void> => {
+	const handleSubmit = async (
+		values: AppTestRecordingFormValues,
+	): Promise<void> => {
 		if (mode === "view" || !isReady) return;
 		try {
 			if (mode === "delete") await onDelete(recording.id);
-			else await onSave(parseAppTestRecordingFile(content, recording.id));
+			else if (definition)
+				await onSave(fromAppTestFormValues(definition, values));
 		} catch (failure: unknown) {
 			form.setError("root.server", {
 				type: "server",
@@ -156,23 +165,127 @@ export const AppTestFileDialog = ({
 								Loading test file…
 							</output>
 						)
-					) : (
-						<FormTextarea
-							name="content"
-							label="Test file JSON"
-							description={
-								mode === "edit"
-									? "Keep the file id and version unchanged. A description and at least one step are required."
-									: "Read-only test definition."
-							}
-							readOnly={mode === "view"}
-							disabled={isSubmitting}
+					) : mode === "view" ? (
+						<Textarea
+							aria-label="Test file JSON"
+							value={JSON.stringify(definition, null, 2)}
+							readOnly
 							rows={16}
-							className="min-w-0 [&_textarea]:font-mono [&_textarea]:text-xs"
-							spellCheck={false}
+							className="font-mono text-xs"
 						/>
+					) : (
+						<>
+							<FormInput
+								name="name"
+								label="Test name (required)"
+								required
+								maxLength={120}
+								disabled={isSubmitting}
+							/>
+							<FormTextarea
+								name="description"
+								label="Description (required)"
+								description="Describe the workflow and expected result."
+								required
+								maxLength={2000}
+								disabled={isSubmitting}
+							/>
+							<FormInput
+								name="startPath"
+								label="Start page"
+								description="Relative to this app. Leave empty for the app home page."
+								disabled={isSubmitting}
+							/>
+							<fieldset className="flex min-w-0 flex-col gap-4">
+								<legend className="mb-2 font-medium text-sm">
+									Steps
+								</legend>
+								{steps.fields.map((step, index) => (
+									<fieldset
+										key={step.id}
+										className="flex min-w-0 flex-col gap-3 border-t pt-3"
+									>
+										<legend className="font-medium text-sm">
+											Step {index + 1}
+										</legend>
+										<AppTestStepFields index={index} />
+										<div className="flex flex-wrap gap-2">
+											<Button
+												type="button"
+												size="sm"
+												variant="outline"
+												disabled={
+													isSubmitting || index === 0
+												}
+												onClick={() =>
+													steps.move(index, index - 1)
+												}
+												aria-label={`Move step ${index + 1} up`}
+											>
+												Move up
+											</Button>
+											<Button
+												type="button"
+												size="sm"
+												variant="outline"
+												disabled={
+													isSubmitting ||
+													index ===
+														steps.fields.length - 1
+												}
+												onClick={() =>
+													steps.move(index, index + 1)
+												}
+												aria-label={`Move step ${index + 1} down`}
+											>
+												Move down
+											</Button>
+											<Button
+												type="button"
+												size="sm"
+												variant="ghost"
+												disabled={
+													isSubmitting ||
+													steps.fields.length <= 1
+												}
+												onClick={() => {
+													steps.remove(index);
+													addStepButton.current?.focus();
+												}}
+												aria-label={`Remove step ${index + 1}`}
+											>
+												Remove step
+											</Button>
+										</div>
+									</fieldset>
+								))}
+								<Button
+									ref={addStepButton}
+									type="button"
+									size="sm"
+									variant="outline"
+									className="self-start"
+									disabled={
+										isSubmitting ||
+										steps.fields.length >= 300
+									}
+									onClick={() =>
+										steps.append(newAppTestStep())
+									}
+								>
+									Add step
+								</Button>
+								{errors.steps?.message && (
+									<Alert variant="destructive">
+										<AlertDescription>
+											{errors.steps.message}
+										</AlertDescription>
+									</Alert>
+								)}
+							</fieldset>
+						</>
 					)}
-					{mode === "edit" && dirtyFields.content && (
+					{mode === "edit" && Object.keys(dirtyFields).length > 0 && (
 						<p className="text-muted-foreground text-xs">
 							Unsaved changes
 						</p>

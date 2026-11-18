@@ -4,10 +4,17 @@ import {
 	render,
 	screen,
 	waitFor,
+	within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { AppTestRecording } from "./app-test.types";
 import { AppTestFiles } from "./app-test-files";
+
+class ResizeObserverMock {
+	observe() {}
+	unobserve() {}
+	disconnect() {}
+}
 
 const fileQuery = vi.hoisted(() => ({
 	status: "SUCCESS",
@@ -50,12 +57,16 @@ const recording: AppTestRecording = {
 	],
 };
 beforeEach(() => {
+	vi.stubGlobal("ResizeObserver", ResizeObserverMock);
 	fileQuery.status = "SUCCESS";
 	fileQuery.data = { target: "app", recording };
 	fileQuery.error = undefined;
 	readPixel.mockClear();
 });
-afterEach(cleanup);
+afterEach(() => {
+	cleanup();
+	vi.unstubAllGlobals();
+});
 
 it("lists each saved file with its description and opens complete read-only JSON", async () => {
 	const select = vi.fn();
@@ -130,64 +141,68 @@ it("does not show stale JSON after a file disappears on refresh", async () => {
 	await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 });
 
-it("edits JSON, requires a description, and retains edits across refresh and a rejected write", async () => {
+it("edits fields, requires a description, and retains edits across refresh and a rejected write", async () => {
 	const save = vi
 		.fn()
 		.mockRejectedValueOnce(new Error("Storage unavailable"))
 		.mockResolvedValue(undefined);
-	const view = render(
-		<AppTestFiles
-			{...fileActions}
-			recordings={[recording]}
-			isLoading={false}
-			onSelect={vi.fn()}
-			onSave={save}
-		/>,
-	);
+	const props = {
+		...fileActions,
+		recordings: [recording],
+		isLoading: false,
+		onSelect: vi.fn(),
+		onSave: save,
+	};
+	const view = render(<AppTestFiles {...props} />);
 	fireEvent.click(
 		screen.getByRole("button", { name: "Edit Checkout to orders" }),
 	);
-	const editor = await screen.findByRole("textbox", {
-		name: "Test file JSON",
+	const description = await screen.findByRole("textbox", {
+		name: "Description (required)",
 	});
-	const changed = { ...recording, description: "" };
-	fireEvent.change(editor, { target: { value: JSON.stringify(changed) } });
+	expect(
+		screen.queryByRole("textbox", { name: "Test file JSON" }),
+	).toBeNull();
+	for (const name of ["ID", "Version", "Last edit", "updatedAt"])
+		expect(screen.queryByRole("textbox", { name })).toBeNull();
+	fireEvent.change(description, { target: { value: "" } });
 	fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
-	await screen.findByText(/A test description is required/);
+	await screen.findByText("A test description is required");
 	expect(save).not.toHaveBeenCalled();
-	changed.description = "Verify the edited order total.";
-	fireEvent.change(editor, { target: { value: JSON.stringify(changed) } });
-	view.rerender(
-		<AppTestFiles
-			{...fileActions}
-			recordings={[]}
-			isLoading={true}
-			onSelect={vi.fn()}
-			onSave={save}
-		/>,
+	const errorId = description
+		.getAttribute("aria-describedby")
+		?.split(" ")
+		.find((id) => id.endsWith("-error"));
+	expect(errorId && document.getElementById(errorId)?.textContent).toBe(
+		"A test description is required",
 	);
+	fireEvent.change(description, {
+		target: { value: "Verify the edited order total." },
+	});
+	view.rerender(<AppTestFiles {...props} recordings={[]} isLoading={true} />);
 	expect(
 		(
 			screen.getByRole("textbox", {
-				name: "Test file JSON",
+				name: "Description (required)",
 			}) as HTMLTextAreaElement
 		).value,
-	).toBe(JSON.stringify(changed));
-	view.rerender(
-		<AppTestFiles
-			{...fileActions}
-			recordings={[recording]}
-			isLoading={false}
-			onSelect={vi.fn()}
-			onSave={save}
-		/>,
-	);
+	).toBe("Verify the edited order total.");
+	view.rerender(<AppTestFiles {...props} />);
 	fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 	await screen.findByText("Storage unavailable");
-	expect((editor as HTMLTextAreaElement).value).toBe(JSON.stringify(changed));
+	expect((description as HTMLTextAreaElement).value).toBe(
+		"Verify the edited order total.",
+	);
 	fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 	await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-	expect(save).toHaveBeenLastCalledWith(changed);
+	expect(save).toHaveBeenLastCalledWith(
+		expect.objectContaining({
+			id: recording.id,
+			version: recording.version,
+			updatedAt: recording.updatedAt,
+			description: "Verify the edited order total.",
+		}),
+	);
 });
 
 it("confirms deletion, retains a failure, and resets focus after the file is removed", async () => {
@@ -220,7 +235,7 @@ it("confirms deletion, retains a failure, and resets focus after the file is rem
 	expect(remove).toHaveBeenLastCalledWith(recording.id);
 });
 
-it("rejects malformed JSON and a changed file id without writing", async () => {
+it("validates the start page and each action's required fields", async () => {
 	const save = vi.fn();
 	render(
 		<AppTestFiles
@@ -234,19 +249,22 @@ it("rejects malformed JSON and a changed file id without writing", async () => {
 	fireEvent.click(
 		screen.getByRole("button", { name: "Edit Checkout to orders" }),
 	);
-	const editor = await screen.findByRole("textbox", {
-		name: "Test file JSON",
-	});
-	fireEvent.change(editor, { target: { value: "{" } });
+	fireEvent.change(
+		await screen.findByRole("textbox", { name: "Start page" }),
+		{ target: { value: "https://another-app.example/" } },
+	);
+	fireEvent.change(
+		within(screen.getByRole("group", { name: "Step 1" })).getByRole(
+			"textbox",
+			{ name: "Target selector (required)" },
+		),
+		{ target: { value: "" } },
+	);
 	fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
-	await screen.findByText("Enter valid JSON before saving.");
-	fireEvent.change(editor, {
-		target: {
-			value: JSON.stringify({ ...recording, id: "a-different-file" }),
-		},
-	});
-	fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
-	await screen.findByText(/id:/);
+	await screen.findByText("A target selector is required");
+	expect(
+		screen.getByText(/Use a relative page inside this app/),
+	).toBeTruthy();
 	expect(save).not.toHaveBeenCalled();
 });
 
@@ -345,10 +363,102 @@ it("shows loading and recoverable read errors without exposing an empty editor",
 	fileQuery.status = "SUCCESS";
 	fileQuery.error = undefined;
 	view.rerender(<AppTestFiles {...props} />);
-	const editor = await screen.findByRole("textbox", {
-		name: "Test file JSON",
+	const nameField = await screen.findByRole("textbox", {
+		name: "Test name (required)",
 	});
-	expect(JSON.parse((editor as HTMLTextAreaElement).value)).toEqual(
-		recording,
+	expect((nameField as HTMLInputElement).value).toBe(recording.name);
+});
+
+it("updates outcome checks and reorders, adds and removes steps", async () => {
+	const save = vi.fn().mockResolvedValue(undefined);
+	render(
+		<AppTestFiles
+			{...fileActions}
+			recordings={[recording]}
+			isLoading={false}
+			onSelect={vi.fn()}
+			onSave={save}
+		/>,
 	);
+	fireEvent.click(
+		screen.getByRole("button", { name: "Edit Checkout to orders" }),
+	);
+	await screen.findByRole("textbox", { name: "Test name (required)" });
+	fireEvent.change(
+		screen.getByRole("textbox", { name: "Expected text (required)" }),
+		{ target: { value: "50" } },
+	);
+	fireEvent.click(screen.getByRole("button", { name: "Move step 2 up" }));
+	expect(
+		(
+			within(screen.getByRole("group", { name: "Step 1" })).getByRole(
+				"textbox",
+				{ name: "Expected text (required)" },
+			) as HTMLTextAreaElement
+		).value,
+	).toBe("50");
+	fireEvent.click(screen.getByRole("button", { name: "Add step" }));
+	const third = screen.getByRole("group", { name: "Step 3" });
+	fireEvent.change(
+		within(third).getByRole("textbox", {
+			name: "Target selector (required)",
+		}),
+		{ target: { value: '[data-testid="finish"]' } },
+	);
+	fireEvent.click(screen.getByRole("button", { name: "Remove step 2" }));
+	expect(document.activeElement).toBe(
+		screen.getByRole("button", { name: "Add step" }),
+	);
+	fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+	await waitFor(() => expect(save).toHaveBeenCalled());
+	expect(save.mock.calls[0][0].steps).toEqual([
+		{ ...recording.steps[1], text: "50", framePath: [] },
+		{ type: "CLICK", selector: '[data-testid="finish"]', framePath: [] },
+	]);
+});
+
+it("keeps nested iframe targets and route waits with their step when reordering", async () => {
+	const save = vi.fn().mockResolvedValue(undefined);
+	render(
+		<AppTestFiles
+			{...fileActions}
+			recordings={[recording]}
+			isLoading={false}
+			onSelect={vi.fn()}
+			onSave={save}
+		/>,
+	);
+	fireEvent.click(
+		screen.getByRole("button", { name: "Edit Checkout to orders" }),
+	);
+	const first = await screen.findByRole("group", { name: "Step 1" });
+	fireEvent.click(
+		within(first).getByRole("button", { name: "Add iframe target" }),
+	);
+	fireEvent.change(
+		within(first).getByRole("textbox", {
+			name: "Frame 1 selector (required)",
+		}),
+		{ target: { value: "#outer-frame" } },
+	);
+	fireEvent.change(
+		within(first).getByRole("textbox", { name: "Expected page" }),
+		{ target: { value: "" } },
+	);
+	fireEvent.click(screen.getByRole("button", { name: "Move step 1 down" }));
+	const moved = screen.getByRole("group", { name: "Step 2" });
+	expect(
+		(
+			within(moved).getByRole("textbox", {
+				name: "Frame 1 selector (required)",
+			}) as HTMLInputElement
+		).value,
+	).toBe("#outer-frame");
+	fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+	await waitFor(() => expect(save).toHaveBeenCalled());
+	expect(save.mock.calls[0][0].steps[1]).toEqual({
+		...recording.steps[0],
+		pagePath: "",
+		framePath: ["#outer-frame"],
+	});
 });
