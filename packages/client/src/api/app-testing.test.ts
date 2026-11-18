@@ -123,6 +123,9 @@ describe("engine test configuration transport", () => {
 				configuration: null,
 			}),
 		).toBeNull();
+		expect(
+			parseEngineTestConfiguration("app", { target: "app" }),
+		).toBeNull();
 		expect(() =>
 			parseEngineTestConfiguration("app", {
 				target: "app",

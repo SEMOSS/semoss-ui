@@ -180,11 +180,11 @@ export const parseEngineTestConfiguration = (
 	const result = z
 		.object({
 			target: z.string(),
-			configuration: engineConfigurationSchema.nullable(),
+			configuration: engineConfigurationSchema.nullish(),
 		})
 		.parse(value);
 	if (result.target !== appId) throw new Error("The app test target changed");
-	return result.configuration;
+	return result.configuration ?? null;
 };
 
 /** Read the optional app-owned database profile. */
