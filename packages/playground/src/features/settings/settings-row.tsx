@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Label, Muted } from "@semoss/ui/next";
 
 /** Props for {@link SettingsRow}. */
-export interface SettingsRowProps {
+interface SettingsRowProps {
 	/** What the setting is called. */
 	label: string;
 	/** Id of the label, for a control that names itself with `aria-labelledby`. */

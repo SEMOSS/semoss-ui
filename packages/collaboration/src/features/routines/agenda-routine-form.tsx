@@ -29,6 +29,7 @@ import { AGENDA_RESULT_COPY } from "./routine-copy";
 import { RoutineFlowSection } from "./routine-flow-section";
 import { RoutineNextRun } from "./routine-next-run";
 import { RoutineResult } from "./routine-result";
+import { RoutineRunNowButton } from "./routine-run-now-button";
 import { RoutineSaveStatus } from "./routine-save-status";
 import {
 	ROUTINE_DAY_NAMES,
@@ -58,10 +59,16 @@ interface AgendaRoutineFormProps {
 	routine: AgendaRoutine;
 	/** Saves the complete schedule and meeting list; rejected writes leave the draft intact. */
 	onSave: (values: AgendaRoutineSettings) => Promise<AgendaRoutine>;
+	/** Starts the agendas now and returns the routine as it reads after. */
+	onRunNow: () => Promise<AgendaRoutine>;
 }
 
 /** The weekly agenda opt-in: schedule, the meetings to prepare, and the save lifecycle. */
-export function AgendaRoutineForm({ routine, onSave }: AgendaRoutineFormProps) {
+export function AgendaRoutineForm({
+	routine,
+	onSave,
+	onRunNow,
+}: AgendaRoutineFormProps) {
 	const id = useId();
 	const form = useForm<AgendaRoutineSettings>({
 		resolver: zodResolver(agendaRoutineSettingsSchema),
@@ -75,7 +82,7 @@ export function AgendaRoutineForm({ routine, onSave }: AgendaRoutineFormProps) {
 		routine.assistantAvailable &&
 		routine.mailboxAvailable;
 
-	const { status, handleSubmit, retry } = useRoutineAutosave({
+	const { status, handleSubmit, retry, flush } = useRoutineAutosave({
 		form,
 		onSave: async (values) => {
 			if (values.enabled && !isAvailable) {
@@ -87,6 +94,11 @@ export function AgendaRoutineForm({ routine, onSave }: AgendaRoutineFormProps) {
 			return formValues(await onSave(values));
 		},
 	});
+	// the run reads the saved routine, so an edit still waiting to save goes first
+	const handleRunNow = async () => {
+		await flush();
+		return onRunNow();
+	};
 
 	return (
 		<div className="flex min-w-0 flex-col gap-3">
@@ -130,6 +142,10 @@ export function AgendaRoutineForm({ routine, onSave }: AgendaRoutineFormProps) {
 										</span>
 									</span>
 								}
+							/>
+							<RoutineRunNowButton
+								routine={routine}
+								onRunNow={handleRunNow}
 							/>
 							<Separator />
 							<FormField
@@ -224,6 +240,7 @@ export function AgendaRoutineForm({ routine, onSave }: AgendaRoutineFormProps) {
 							<RoutineResult
 								routine={routine}
 								copy={AGENDA_RESULT_COPY}
+								onRunNow={handleRunNow}
 							/>
 						</div>
 					</CardContent>

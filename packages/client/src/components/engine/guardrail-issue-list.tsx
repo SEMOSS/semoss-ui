@@ -2,7 +2,7 @@ import { AlertTriangle, Info } from "lucide-react";
 import { cn } from "@semoss/ui/next";
 import type { GuardrailConfigIssue } from "./engine-guardrail-settings.constants";
 
-export interface GuardrailIssueListProps {
+interface GuardrailIssueListProps {
 	/** Problems found in the current editor value. */
 	issues: GuardrailConfigIssue[];
 

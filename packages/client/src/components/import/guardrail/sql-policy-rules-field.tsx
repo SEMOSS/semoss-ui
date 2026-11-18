@@ -23,7 +23,7 @@ import {
 } from "./sql-query-policy";
 
 /** Props for {@link SqlPolicyRulesField}. */
-export interface SqlPolicyRulesFieldProps {
+interface SqlPolicyRulesFieldProps {
 	/** The policy's list of rules in the form. */
 	name: PolicyField;
 	/** What the policy controls, as its heading. */

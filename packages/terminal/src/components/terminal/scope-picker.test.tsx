@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { act } from "react";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
@@ -15,10 +14,6 @@ vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
 vi.mock("@semoss/shared", () => ({ AppCatalogAvatar: () => null }));
-vi.mock("@semoss/panels", () => ({
-	createAccessStore: () => ({}),
-	AccessStoreProvider: ({ children }: { children: ReactNode }) => children,
-}));
 
 /** Exercise context updates from sibling panes with the real terminal provider. */
 function ScopeControls() {

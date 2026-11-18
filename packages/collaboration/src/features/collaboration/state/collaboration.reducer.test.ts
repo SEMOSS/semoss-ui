@@ -458,6 +458,34 @@ describe("shared collaboration session", () => {
 		}
 	});
 
+	it("keeps a topic's linked files, and carries them to the topic it is merged into", () => {
+		const file = (itemId: string) => ({
+			itemId,
+			name: `${itemId}.docx`,
+			source: "onedrive" as const,
+		});
+		let state = createInitialCollaborationState();
+		state = apply(state, {
+			type: "topic.save",
+			topic: { id: "t-geng", files: [file("a"), file("b")] },
+		});
+		state = apply(state, {
+			type: "topic.save",
+			topic: { id: "t-gsales", files: [file("b")] },
+		});
+		state = apply(state, {
+			type: "topic.merge",
+			sourceId: "t-geng",
+			targetId: "t-gsales",
+		});
+		// a file on both topics is linked once
+		expect(
+			state.topics
+				.find((topic) => topic.id === "t-gsales")
+				?.files?.map((entry) => entry.itemId),
+		).toEqual(["b", "a"]);
+	});
+
 	it("merges topic links, memories, members, rules and Work associations atomically", () => {
 		let state = createInitialCollaborationState();
 		state = apply(state, {
@@ -622,6 +650,34 @@ describe("shared collaboration session", () => {
 		expect(
 			state.items.find((item) => item.id === "i12")?.snoozeUntil,
 		).toBeUndefined();
+	});
+
+	it("clears the automated mark when the owner says a person writes there", () => {
+		const threadId = "th-geng-review";
+		const initial = createInitialCollaborationState();
+		const flagged = {
+			...initial,
+			threads: initial.threads.map((thread) =>
+				thread.id === threadId
+					? { ...thread, automated: true }
+					: thread,
+			),
+		};
+		const find = (value: CollaborationState) =>
+			value.threads.find((thread) => thread.id === threadId);
+		const state = apply(flagged, {
+			type: "thread.notAutomated",
+			threadId,
+			notAutomated: true,
+		});
+		expect(find(state)?.automated).toBeUndefined();
+		expect(find(state)?.notAutomated).toBe(true);
+		const back = apply(state, {
+			type: "thread.notAutomated",
+			threadId,
+			notAutomated: false,
+		});
+		expect(find(back)?.notAutomated).toBeUndefined();
 	});
 
 	it("retains the current state for unchanged commands and snooze checks", () => {

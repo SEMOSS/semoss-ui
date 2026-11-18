@@ -921,7 +921,7 @@ const LEGEND_ITEMS: { label: string; className: string }[] = [
 
 // COMPONENT
 
-export interface AgentRunGraphProps {
+interface AgentRunGraphProps {
 	/** The room the runs are in */
 	roomId: string;
 	/** The room's name, when it has one */

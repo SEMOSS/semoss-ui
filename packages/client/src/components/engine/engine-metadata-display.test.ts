@@ -11,7 +11,6 @@ import {
 	getReasoningSupportWarning,
 	getTokenLimitWarning,
 	getUnlistedModalities,
-	hasCatalogEntry,
 	type ModelSettingsValues,
 	normalizeCatalogModalities,
 	normalizeCatalogTokenLimit,
@@ -125,17 +124,6 @@ describe("getTokenLimitWarning", () => {
 	it("says nothing without a catalog limit or a usable value", () => {
 		expect(getTokenLimitWarning("max output", "999999", null)).toBe("");
 		expect(getTokenLimitWarning("max output", "", 64000)).toBe("");
-	});
-});
-
-describe("hasCatalogEntry", () => {
-	it("treats an empty map as no entry", () => {
-		expect(hasCatalogEntry({})).toBe(false);
-		expect(hasCatalogEntry(undefined)).toBe(false);
-	});
-
-	it("treats any populated entry as a hit", () => {
-		expect(hasCatalogEntry({ id: "gpt-5" })).toBe(true);
 	});
 });
 

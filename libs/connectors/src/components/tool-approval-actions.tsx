@@ -3,7 +3,7 @@ import { useTranslation } from "@semoss/i18n";
 import { Alert, AlertDescription, Button, Spinner } from "@semoss/ui/next";
 
 /** Props for {@link ToolApprovalActions}. */
-export interface ToolApprovalActionsProps {
+interface ToolApprovalActionsProps {
 	/** The approve button's label, which says what runs, such as `Send`. */
 	approveLabel: string;
 	/**

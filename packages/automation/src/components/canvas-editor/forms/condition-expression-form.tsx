@@ -20,7 +20,7 @@ import {
 } from "../../../domain/branch-condition";
 import { PillInput } from "./pill-input";
 
-export interface ConditionExpressionFormProps {
+interface ConditionExpressionFormProps {
 	condition: string;
 	onChange: (condition: string) => void;
 	upstreamVars: string[];

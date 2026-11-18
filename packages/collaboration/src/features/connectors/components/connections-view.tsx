@@ -16,12 +16,19 @@ import {
 	Small,
 	Switch,
 } from "@semoss/ui/next";
+import {
+	type AppIcon,
+	OutlookCalendarIcon,
+	OutlookIcon,
+	TeamsIcon,
+} from "@/components/common/app-icons";
 import { WorkRefreshStatus } from "@/features/collaboration/live/work-refresh-status";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import {
 	type Connection,
 	forgetBackgroundAccess,
 	getConnection,
+	lookForNewTopics,
 	saveBackgroundAccess,
 } from "../api/connection";
 import { connectMicrosoft } from "../api/microsoft";
@@ -60,6 +67,13 @@ function folderDetail(folders: NonNullable<Connection["folders"]>): string {
 // pilot sources the Brain actually reads today
 const SHOWN_SOURCES = new Set(["email", "calendar", "teams"]);
 
+// the app each shown source is read from, drawn at the start of its row
+const SOURCE_ICONS: Record<string, AppIcon> = {
+	email: OutlookIcon,
+	calendar: OutlookCalendarIcon,
+	teams: TeamsIcon,
+};
+
 // what each switch does, on and off; mail and Teams feed threads, topics and work, calendar is read live (no last item)
 const SOURCE_DETAIL: Record<string, { on: string; off: string }> = {
 	email: {
@@ -85,14 +99,25 @@ const SYNC_CHOICES = [
 	{ minutes: 0, label: "Off" },
 ] as const;
 
+// how often new topics may be proposed from mail that fits none; the server accepts only these hours
+const NEW_TOPIC_CHOICES = [
+	{ hours: 0, label: "Never" },
+	{ hours: 24, label: "Daily" },
+	{ hours: 72, label: "Every 3 days" },
+	{ hours: 168, label: "Weekly" },
+] as const;
+
 /** One row: what it is, its state, and the one action that changes it. */
 function Row({
+	icon: Icon,
 	title,
 	titleId,
 	detail,
 	state,
 	action,
 }: {
+	/** The app the row is about, when it is about one. */
+	icon?: AppIcon;
 	title: string;
 	/** Id for the title, so a control in the row can be named by it. */
 	titleId?: string;
@@ -103,7 +128,12 @@ function Row({
 	return (
 		<div className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
 			<div className="min-w-0 flex-1">
-				<Small id={titleId} className="font-medium text-sm">
+				{/* the logo sits in the title line, so the text keeps its full width on a phone */}
+				<Small
+					id={titleId}
+					className="flex items-center gap-2 font-medium text-sm"
+				>
+					{Icon && <Icon />}
 					{title}
 				</Small>
 				{detail && (
@@ -123,9 +153,13 @@ export function ConnectionsView() {
 	const { actions } = useInsight();
 	const { state, dispatch } = useCollaborationSession();
 	const syncTitleId = useId();
+	const newTopicsTitleId = useId();
+	const acrossTitleId = useId();
 	const [connection, setConnection] = useState<Connection | null>(null);
 	const [busy, setBusy] = useState<string | null>(null);
 	const [error, setError] = useState("");
+	const [looking, setLooking] = useState(false);
+	const [lookResult, setLookResult] = useState("");
 
 	const load = useCallback(async () => {
 		setError("");
@@ -161,7 +195,28 @@ export function ConnectionsView() {
 	const hasBackgroundAccess =
 		background?.saved === true && background.renewable;
 	const syncEveryMinutes = state.settings.syncEveryMinutes;
+	const { newTopicsEveryHours, closeAcrossThreads } = state.settings;
 	const enabled = state.settings.sourcesJson;
+
+	async function lookNow() {
+		setLooking(true);
+		setLookResult("");
+		setError("");
+		try {
+			const result = await lookForNewTopics(actions);
+			setLookResult(
+				result.error
+					? "Could not look for new topics right now. Try again later."
+					: result.found === 0
+						? "Nothing new. No recent conversation points to a new topic."
+						: `Found ${result.found} new ${result.found === 1 ? "topic" : "topics"}. ${result.found === 1 ? "A question was" : "Questions were"} added to Review.`,
+			);
+		} catch (cause: unknown) {
+			setError(message(cause, "Could not look for new topics."));
+		} finally {
+			setLooking(false);
+		}
+	}
 
 	function toggleSource(id: string, on: boolean) {
 		if (
@@ -222,6 +277,7 @@ export function ConnectionsView() {
 				<div className="divide-y">
 					{connection?.folders?.known && (
 						<Row
+							icon={OutlookIcon}
 							title="Outlook folders"
 							detail={folderDetail(connection.folders)}
 							state={
@@ -269,6 +325,7 @@ export function ConnectionsView() {
 						return (
 							<Row
 								key={source.id}
+								icon={SOURCE_ICONS[source.id]}
 								title={source.label}
 								titleId={titleId}
 								detail={detail}
@@ -434,6 +491,77 @@ export function ConnectionsView() {
 									))}
 								</SelectContent>
 							</Select>
+						}
+					/>
+					<Row
+						title="Suggest new topics"
+						titleId={newTopicsTitleId}
+						detail="How often new topics may be proposed from incoming mail that fits no topic."
+						action={
+							<div className="flex flex-wrap items-center gap-2">
+								<Select
+									value={String(newTopicsEveryHours)}
+									onValueChange={(value) =>
+										dispatch({
+											type: "settings.save",
+											changes: {
+												newTopicsEveryHours:
+													Number(value),
+											},
+										})
+									}
+								>
+									<SelectTrigger
+										aria-labelledby={newTopicsTitleId}
+										className="w-44"
+									>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										{NEW_TOPIC_CHOICES.map((choice) => (
+											<SelectItem
+												key={choice.hours}
+												value={String(choice.hours)}
+											>
+												{choice.label}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									disabled={looking}
+									onClick={() => void lookNow()}
+								>
+									{looking
+										? "Looking..."
+										: "Look for new topics now"}
+								</Button>
+							</div>
+						}
+					/>
+					{lookResult && (
+						<output className="block pb-3 text-muted-foreground text-sm">
+							{lookResult}
+						</output>
+					)}
+					<Row
+						title="Close steps across conversations"
+						titleId={acrossTitleId}
+						detail="A message in one conversation of a topic may mark a step from another conversation done. Each closed step shows the message that closed it and can be reopened."
+						action={
+							<Switch
+								aria-labelledby={acrossTitleId}
+								checked={closeAcrossThreads}
+								onCheckedChange={(next) =>
+									dispatch({
+										type: "settings.save",
+										changes: { closeAcrossThreads: next },
+									})
+								}
+							/>
 						}
 					/>
 				</div>

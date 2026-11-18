@@ -10,7 +10,7 @@ export interface ChatToolParameter {
 	isRequired: boolean;
 }
 
-/** A tool the assistant can use, as the Chat Tools panel shows it. */
+/** A tool the assistant can use, as Settings' Tools shows it. */
 export interface ChatToolInfo {
 	/** What the model calls. */
 	name: string;
@@ -22,6 +22,9 @@ export interface ChatToolInfo {
 	execution: "auto" | "ask";
 	parameters: ChatToolParameter[];
 }
+
+/** A tool in a toolbox, with the reactor it runs. */
+export type ToolboxTool = ChatToolInfo & { reactor: string };
 
 /**
  * The arguments an input schema lists, required ones first.
@@ -58,51 +61,44 @@ export const listToolParameters = (
 };
 
 /**
- * The tools a room's toolbox offers the assistant, from the tool file
- * `MakeRoomPixelMCP` keeps in the room's folder. Tools written as `disabled`,
- * which the file holds only because the reactor needs at least one, are left
- * out: the assistant is never offered them.
+ * The tools an MCP document offers the assistant, such as a room's tool file
+ * (`mcp/pixel_mcp.json`) or what `GetMCPTools` returns for a toolbox. Tools written as `disabled`,
+ * which a room's file holds only because the reactor needs at least one, are
+ * left out: the assistant is never offered them.
  *
- * @param mcpJson - The parsed `mcp/pixel_mcp.json`.
+ * @param mcpJson - The parsed MCP document, with its `tools`.
  * @return The tools, each with the reactor it runs.
  */
-export const parseRoomToolbox = (
-	mcpJson: unknown,
-): (ChatToolInfo & { reactor: string })[] => {
+export const parseMcpTools = (mcpJson: unknown): ToolboxTool[] => {
 	const tools =
 		isRecord(mcpJson) && Array.isArray(mcpJson.tools) ? mcpJson.tools : [];
-	return tools.reduce<(ChatToolInfo & { reactor: string })[]>(
-		(offered, tool) => {
-			if (!isRecord(tool) || typeof tool.name !== "string") {
-				return offered;
-			}
-			const meta = isRecord(tool._meta) ? tool._meta : {};
-			const execution =
-				typeof meta.SMSS_MCP_EXECUTION === "string"
-					? meta.SMSS_MCP_EXECUTION
-					: undefined;
-			if (execution === "disabled") {
-				return offered;
-			}
-			offered.push({
-				name: tool.name,
-				reactor:
-					typeof meta.SMSS_FUNCTION_NAME === "string"
-						? meta.SMSS_FUNCTION_NAME
-						: tool.name,
-				title:
-					typeof tool.title === "string" && tool.title
-						? tool.title
-						: tool.name,
-				description:
-					typeof tool.description === "string"
-						? tool.description
-						: "",
-				execution: isAskExecutionMode(execution) ? "ask" : "auto",
-				parameters: listToolParameters(tool.inputSchema),
-			});
+	return tools.reduce<ToolboxTool[]>((offered, tool) => {
+		if (!isRecord(tool) || typeof tool.name !== "string") {
 			return offered;
-		},
-		[],
-	);
+		}
+		const meta = isRecord(tool._meta) ? tool._meta : {};
+		const execution =
+			typeof meta.SMSS_MCP_EXECUTION === "string"
+				? meta.SMSS_MCP_EXECUTION
+				: undefined;
+		if (execution === "disabled") {
+			return offered;
+		}
+		offered.push({
+			name: tool.name,
+			reactor:
+				typeof meta.SMSS_FUNCTION_NAME === "string"
+					? meta.SMSS_FUNCTION_NAME
+					: tool.name,
+			title:
+				typeof tool.title === "string" && tool.title
+					? tool.title
+					: tool.name,
+			description:
+				typeof tool.description === "string" ? tool.description : "",
+			execution: isAskExecutionMode(execution) ? "ask" : "auto",
+			parameters: listToolParameters(tool.inputSchema),
+		});
+		return offered;
+	}, []);
 };

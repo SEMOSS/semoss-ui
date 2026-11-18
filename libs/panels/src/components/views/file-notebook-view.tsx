@@ -203,11 +203,7 @@ export const FileNotebookView = ({
 						key={reloadToken}
 						ref={notebookRef}
 						content={buffer.content}
-						insightId={
-							config.mode.type === "INSIGHT"
-								? panel.targetInsightId
-								: undefined
-						}
+						insightId={panel.targetInsightId ?? ""}
 						onChange={(nextContent) => {
 							// the marker only — writing the buffer here would
 							// re-render the parent on every cell keystroke

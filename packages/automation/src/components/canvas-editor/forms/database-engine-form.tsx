@@ -18,7 +18,7 @@ interface TableStructure {
 	columns: { column: string; type: string }[];
 }
 
-export interface DatabaseEngineFormProps {
+interface DatabaseEngineFormProps {
 	/** Current node config */
 	config: DatabaseEngineConfig;
 	/** Output variable names produced by upstream nodes, offered as autocomplete */

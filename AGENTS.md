@@ -34,7 +34,11 @@ skills supplement the standard; they do not waive reading it for React work.
 - [Accessibility](./skills/accessibility.skill.md): interactive UI and accessible behavior.
 - [Mobile development](./skills/mobile-development.skill.md): responsive and touch interfaces.
 - [React form builder](./skills/react-form-builder.skill.md): form fields, validation, and submission.
+- [State management](./skills/state-management.skill.md): stores, shared application state,
+  `StoreState`, `useStoreSelector`, and work in or migration of MobX and Zustand stores.
 - [SDK chat](./skills/sdk-chat.skill.md): rooms, messages, agent runs, approvals, and polling lifecycle.
+- [SDK session](./libs/sdk/skills/session.skill.md): sign in, the user, config, permissions, and
+  which insight a pixel runs in.
 - [Design rulebook](./DESIGN.md): UI composition and styling.
 
 Lint and formatting configuration lives in [biome.json](./biome.json).
@@ -48,25 +52,30 @@ SEMOSS is a React-based analytics platform built as a pnpm monorepo with Turbore
 These summaries include declared internal dependencies and peers. Package manifests
 and the owning guides define the exact public entry points and architectural boundaries.
 
-Libraries (`libs/*`, publishable):
+Libraries:
 - `@semoss/utility` → Generic text, date, object, JSON, file, encoding, browser, and other functional helpers
-- `@semoss/sdk` → Core SDK (no internal dependencies)
+- `@semoss/sdk` → Core SDK (bundles `@semoss/utility`; no runtime dependencies)
 - `@semoss/ui` → Component library (no internal dependencies)
 - `@semoss/i18n` → Internationalization library (no internal dependencies)
 - `@semoss/shared` → Shared utilities (depends on i18n, sdk, ui, utility)
 - `@semoss/connectors` → Microsoft 365 and Google Workspace viewers (depends on i18n, sdk,
   shared, ui, utility)
 - `@semoss/renderer` → Visualization components (depends on sdk, shared, ui)
-- `@semoss/workbench` → Multi-panel dock shell (depends on ui only — deliberately
-  domain-agnostic, so it can never import sdk, shared or i18n)
+- `@semoss/workbench` → Multi-panel dock shell (depends on ui, and may depend on utility for
+  generic helpers and `StoreState` — deliberately domain-agnostic, so it can never import sdk,
+  shared or i18n)
 - `@semoss/panels` → File panels for the dock (depends on i18n, sdk, shared, ui, utility, workbench)
+- `@semoss/config` → Shared Vite/Vitest config and `tsconfig.base.json` (private, not published;
+  dev dependency of every library and application)
 
 The dock and the panels are two layers, in one direction:
 `@semoss/ui ← @semoss/workbench ← @semoss/panels → @semoss/shared → @semoss/sdk`.
 
-Applications (`packages/*`, not published):
+Applications:
 - `@semoss/client` → Main web application (depends on automation, i18n, panels, renderer, sdk, shared, terminal, ui, utility, workbench)
 - `@semoss/playground` → Chat (depends on connectors, i18n, panels, sdk, shared, ui, utility, workbench)
+- `@semoss/collaboration` → Collaboration workspace: work, rooms, connectors, routines (depends on
+  automation, connectors, i18n, panels, sdk, shared, ui, utility, workbench)
 - `@semoss/terminal` → Embedded terminal (depends on i18n, panels, sdk, shared, ui, workbench)
 - `@semoss/auditlog-package` → Audit log dashboard (depends on i18n, sdk, shared, ui)
 - `@semoss/automation` → Automation workspace app (depends on i18n, sdk, shared, ui, utility;
@@ -88,7 +97,7 @@ the `connectors` i18n namespace. See
 
 ```
 semoss/
-├── libs/           # Shared libraries (publishable)
+├── libs/           # Shared libraries
 │   ├── utility/    # Generic cross-package utility functions
 │   ├── sdk/        # @semoss/sdk - Core SDK
 │   ├── ui/         # @semoss/ui - Component library
@@ -97,16 +106,17 @@ semoss/
 │   ├── connectors/ # @semoss/connectors - Microsoft 365 and Google Workspace viewers
 │   ├── renderer/   # @semoss/renderer - Visualization components
 │   ├── workbench/  # @semoss/workbench - Multi-panel dock shell
-│   └── panels/     # @semoss/panels - File panels for the dock
+│   ├── panels/     # @semoss/panels - File panels for the dock
+│   └── config/     # @semoss/config - Shared Vite/Vitest/tsconfig (private)
 ├── packages/       # Applications (not published)
 │   ├── client/                     # @semoss/client - Main web application
 │   ├── playground/                 # @semoss/playground - Chat
+│   ├── collaboration/              # @semoss/collaboration - Collaboration workspace
 │   ├── terminal/                   # @semoss/terminal - Embedded terminal app
 │   ├── auditlog/                   # @semoss/auditlog-package - Audit log dashboard
 │   ├── automation/                 # @semoss/automation - Automation workspace app
 │   ├── browser-automation/         # @semoss/browser-automation - Browser automation harness
 │   ├── chrome-extension/           # Chrome extension for browser automation
-│   ├── vscode-extension/           # semoss-vscode - VSCode extension
 │   └── cli/                        # @semoss/cli - CLI tooling
 ├── skills/         # Provider-neutral *.skill.md guidance
 ├── pnpm-workspace.yaml
@@ -116,8 +126,8 @@ semoss/
 
 ## Requirements
 
-- **Node.js**: >=24.4.0 <25 (see `.nvmrc`)
-- **pnpm**: ~10.13.0 (see `engines`; `packageManager` pins `pnpm@10.13.1`)
+- **Node.js**: >=26.0.0 <27 (see `.nvmrc`)
+- **pnpm**: ~12.18.0 (see `engines`; `packageManager` pins `pnpm@12.18.0`)
 
 ## Build Commands
 
@@ -127,6 +137,7 @@ semoss/
 | `pnpm dev` | Run all packages in dev mode |
 | `pnpm dev:client` | Run client with dependencies |
 | `pnpm dev:playground` | Run playground with dependencies |
+| `pnpm dev:collaboration` | Run collaboration with dependencies |
 | `pnpm dev:terminal` | Run terminal with dependencies |
 | `pnpm build` | Production build all packages |
 | `pnpm build:dev` | Development build all packages |
@@ -134,10 +145,48 @@ semoss/
 | `pnpm test:watch` | Run tests in watch mode |
 | `pnpm check` | Run Biome linting/formatting check |
 | `pnpm fix` | Auto-fix Biome issues |
+| `pnpm clean` | Run Knip to find unused files, dependencies, and exports |
+
+Name test files `*.test.ts` / `*.test.tsx`, never `*.spec.ts`. Existing `*.spec.ts` files
+are not renamed.
 
 ## Design System & Styling
 
 See [DESIGN.md](./DESIGN.md) and the [UI component catalog](./libs/ui/AGENTS.md).
+
+## State Management
+
+Shared application state is moving to framework-free stores built on `StoreState` from
+`@semoss/utility/store`, read in React through `useStoreSelector`. MobX, Zustand, and
+hand-rolled listener sets are legacy. Load the
+[state management skill](./skills/state-management.skill.md) before creating, editing,
+migrating, or reviewing a store; it owns the store shape, update, async, React, and migration
+rules.
+
+- **New shared state** uses a `StoreState`-backed store. Do not add a MobX or Zustand store, an
+  `observer` component over new state, a hand-rolled listener set, or another state library.
+- **React reads stores** with `useStoreSelector` from
+  `@semoss/utility/react/use-store-selector`, never by calling `useSyncExternalStore` on a store
+  directly. React code in `@semoss/utility` lives only under `src/react/`, one hook per file.
+- **Existing stores keep their contracts.** The migration is incremental, one store per scoped
+  change. Do not rewrite a legacy store as a side effect of other work.
+- **Dependency boundaries still hold.** `@semoss/ui`, `@semoss/i18n`, and `@semoss/cli` cannot
+  import `@semoss/utility`; none of them owns a store today. Do not add the dependency to follow
+  this direction. `@semoss/workbench` may depend on `@semoss/utility`, so the dock's store can
+  move; it still may not import sdk, shared, or i18n.
+
+Where each package stands:
+
+| Package | Today | Direction |
+|---------|-------|-----------|
+| `@semoss/sdk` | Session, config, logins, permissions, and session insight on `StoreState` | Reference implementation; `InsightStore`, `AgentStore`, `RoomStore`, and `Env` are out of scope |
+| `@semoss/collaboration`, `@semoss/connectors`, `@semoss/shared` | Hand-rolled `getSnapshot`/`subscribe` stores and module listener sets | Adopt `StoreState` when touched |
+| `@semoss/client` | MobX (designer, workspace) and Zustand (assistant, page, workbench domains) | New state on `StoreState`; migrate per store |
+| `@semoss/playground` | MobX (root, chat, room, message, tool) plus the dock's Zustand store | New state on `StoreState` or SDK hooks; migrate per store |
+| `@semoss/renderer` | MobX block and notebook state | Last to move; needs a structural-sharing design first |
+| `@semoss/auditlog-package` | One MobX root store | Migrate as one change |
+| `@semoss/workbench`, `@semoss/panels`, `@semoss/terminal` | The dock's Zustand store and its peer | The dock's store migrates as one scoped change; hosts and the peer follow it |
+| `@semoss/automation`, `@semoss/browser-automation` | React state and module listener sets | `StoreState` for any new shared state |
 
 ## Incremental Migration
 
@@ -162,7 +211,10 @@ package guide below.
   use different names or syntax.
 - Keep feature policy, UI composition, SDK transport, and orchestration in their
   owning packages. Preserve dependency boundaries: this does not authorize adding
-  utility dependencies to SDK, UI, i18n, workbench, or CLI.
+  utility dependencies to UI, i18n, or CLI; workbench may depend on utility. The SDK may import utility
+  category subpaths only as a devDependency that its build bundles into `dist`, and
+  its public types must not reference utility types, since its declarations are
+  not bundled.
 - Preserve whitespace, timezone, rounding, null/fallback, filename, and error behavior.
   Use compatibility re-exports or small adapters for existing public contracts.
 - Prefer native operations over unnecessary wrappers. Do not add option-heavy

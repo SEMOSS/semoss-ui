@@ -51,7 +51,7 @@ export const playgroundResources: LazyResources = {
 		tour: (l) => import(`./locales/${l}/playground/tour.json`),
 		workspace: (l) => import(`./locales/${l}/playground/workspace.json`),
 		mobile: (l) => import(`./locales/${l}/playground/mobile.json`),
-		// the default tools and the Chat Tools panel
+		// the default tools and the Tools section of Settings
 		chatTools: (l) => import(`./locales/${l}/playground/chat-tools.json`),
 		// the Microsoft 365 and Google Workspace connectors in a chat
 		chatConnectors: (l) =>

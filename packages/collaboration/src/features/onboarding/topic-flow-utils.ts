@@ -3,7 +3,7 @@ import type { ReviewTopic, TopicDraft } from "./topic-review-api";
 // a middle dot, kept out of the source as a literal
 export const DOT = String.fromCharCode(183);
 
-export interface TopicPerson {
+interface TopicPerson {
 	id: string;
 	name: string;
 }

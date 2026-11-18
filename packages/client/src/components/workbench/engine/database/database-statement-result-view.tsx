@@ -29,7 +29,7 @@ const STATUS_LABELS: Record<DatabaseStatementResult["status"], string> = {
 };
 
 /** Props for {@link DatabaseStatementResultView}. */
-export interface DatabaseStatementResultViewProps {
+interface DatabaseStatementResultViewProps {
 	/** Parsed and eagerly collected result for one statement in a SQL batch. */
 	result: DatabaseStatementResult;
 	/** Whether CSV export is supported by the current database workbench mode. */

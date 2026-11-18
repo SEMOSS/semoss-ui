@@ -18,7 +18,7 @@ import {
 import type { JevPolicyGuardrailFormValues } from "./jev-policy-guardrail";
 
 /** Props for {@link JevPolicyChoicesField}. */
-export interface JevPolicyChoicesFieldProps {
+interface JevPolicyChoicesFieldProps {
 	/** Whether the choices are locked, as they are while the form saves. */
 	disabled?: boolean;
 }

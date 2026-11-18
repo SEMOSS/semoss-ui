@@ -23,17 +23,33 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { topicPath } from "@/lib/workspace-paths";
+import { topicChangeToastId } from "../live/topic-undo";
 import type { Topic } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 
-/** Confirm merging this topic into another one or deleting it, or open its conversation review. */
+/** Confirm merging this topic into another one or deleting it, or open its checklists and conversation review. */
 export function TopicActions({
 	topic,
 	threadCount,
+	onEdit,
+	onManageThreads,
+	onManageChats,
+	onManageFiles,
+	onResort,
 	onFindConversations,
 }: {
 	topic: Topic;
 	threadCount: number;
+	/** Opens the topic editor: name, description, kind and account. */
+	onEdit?: () => void;
+	/** Opens the checklist of the topic's threads, for adding and removing them by hand. */
+	onManageThreads?: () => void;
+	/** The same for its chats; absent where no server can save a chat's topic. */
+	onManageChats?: () => void;
+	/** The same for its OneDrive and Teams files; absent where no server can keep the links. */
+	onManageFiles?: () => void;
+	/** Re-checks the conversations already in the topic, for after narrowing it. */
+	onResort?: () => void;
 	/** Opens the review of existing conversations that fit; absent where no server can check them. */
 	onFindConversations?: () => void;
 }) {
@@ -65,9 +81,34 @@ export function TopicActions({
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="end">
+					{onEdit && (
+						<DropdownMenuItem onSelect={onEdit}>
+							Edit topic...
+						</DropdownMenuItem>
+					)}
+					{onManageThreads && (
+						<DropdownMenuItem onSelect={onManageThreads}>
+							Add or remove emails and Teams chats...
+						</DropdownMenuItem>
+					)}
+					{onManageChats && (
+						<DropdownMenuItem onSelect={onManageChats}>
+							Add or remove assistant chats...
+						</DropdownMenuItem>
+					)}
+					{onManageFiles && (
+						<DropdownMenuItem onSelect={onManageFiles}>
+							Add or remove files...
+						</DropdownMenuItem>
+					)}
 					{onFindConversations && (
 						<DropdownMenuItem onSelect={onFindConversations}>
 							Find conversations...
+						</DropdownMenuItem>
+					)}
+					{onResort && (
+						<DropdownMenuItem onSelect={onResort}>
+							Re-sort conversations...
 						</DropdownMenuItem>
 					)}
 					<DropdownMenuItem
@@ -115,7 +156,8 @@ export function TopicActions({
 						</Select>
 					</div>
 					<P className="text-muted-foreground text-sm">
-						This merge cannot be undone.
+						Right after, the notice has an Undo that puts it back,
+						if nothing else changed meanwhile.
 					</P>
 					<DialogFooter>
 						<Button type="button" variant="outline" onClick={close}>
@@ -134,6 +176,7 @@ export function TopicActions({
 								close();
 								toast.success(
 									`Merged ${topic.name} into ${target.name}.`,
+									{ id: topicChangeToastId(topic.id) },
 								);
 								navigate(topicPath(target.id));
 							}}
@@ -159,7 +202,8 @@ export function TopicActions({
 						</DialogDescription>
 					</DialogHeader>
 					<P className="text-muted-foreground text-sm">
-						This deletion cannot be undone.
+						Right after, the notice has an Undo that puts it back,
+						if nothing else changed meanwhile.
 					</P>
 					<DialogFooter>
 						<Button type="button" variant="outline" onClick={close}>
@@ -174,7 +218,9 @@ export function TopicActions({
 									topicId: topic.id,
 								});
 								close();
-								toast.success(`Deleted ${topic.name}.`);
+								toast.success(`Deleted ${topic.name}.`, {
+									id: topicChangeToastId(topic.id),
+								});
 								navigate("/work/topics");
 							}}
 						>

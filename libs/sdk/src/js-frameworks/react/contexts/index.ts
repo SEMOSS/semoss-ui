@@ -1,1 +1,2 @@
-export * from "./Insight.context";
+export * from "./insight.context";
+export { SessionProvider } from "./session.context";

@@ -1,5 +1,5 @@
 import DOMPurify from "dompurify";
-import { Eye, FileText, Square } from "lucide-react";
+import { Eye, FileText, RotateCw, Square } from "lucide-react";
 import { useId, useState } from "react";
 import { Link } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
@@ -55,6 +55,8 @@ interface RoutineResultProps {
 	canOpenRun?: boolean;
 	/** Hide the heading when something else already names the section, such as a tab. */
 	showTitle?: boolean;
+	/** Starts the routine now; given, a failed run offers Retry and a stopped one Run again. */
+	onRunNow?: () => Promise<unknown>;
 }
 
 /** Opens the run's own room, where its steps show, live while it runs. */
@@ -117,13 +119,57 @@ function StopRunButton({ routineId }: { routineId: string }) {
 	);
 }
 
+/** Starts the routine again after a failed or stopped run; a refusal shows as a toast, as Stop's does. */
+function RunAgainButton({
+	label,
+	onRunNow,
+}: {
+	label: string;
+	onRunNow: () => Promise<unknown>;
+}) {
+	const [isStarting, setIsStarting] = useState(false);
+	const start = async (): Promise<void> => {
+		setIsStarting(true);
+		try {
+			await onRunNow();
+		} catch (cause) {
+			toast.error(
+				cause instanceof Error
+					? cause.message
+					: "The run did not start. Try again.",
+			);
+		} finally {
+			setIsStarting(false);
+		}
+	};
+	return (
+		<Button
+			type="button"
+			variant="outline"
+			size="sm"
+			disabled={isStarting}
+			onClick={() => void start()}
+		>
+			{isStarting ? (
+				<Spinner aria-hidden="true" data-icon="inline-start" />
+			) : (
+				<RotateCw aria-hidden="true" data-icon="inline-start" />
+			)}
+			{label}
+		</Button>
+	);
+}
+
 /** Displays the saved result, distinguishing first run, progress, and failures. */
 export function RoutineResult({
 	routine,
 	copy,
 	canOpenRun = false,
 	showTitle = true,
+	onRunNow,
 }: RoutineResultProps) {
+	// only a routine that is on can run; the server refuses the rest
+	const runAgain = routine.enabled ? onRunNow : undefined;
 	const headingId = useId();
 	const run = routine.lastRun;
 	const html = run?.html?.trim();
@@ -236,6 +282,14 @@ export function RoutineResult({
 											<AlertDescription>
 												{run.error ||
 													"You stopped this run. Run it again when you are ready."}
+												{runAgain && (
+													<div className="flex flex-wrap gap-2">
+														<RunAgainButton
+															label="Run again"
+															onRunNow={runAgain}
+														/>
+													</div>
+												)}
 											</AlertDescription>
 										</Alert>
 									</div>
@@ -249,6 +303,12 @@ export function RoutineResult({
 												{run.error ||
 													"Check your inbox connection and assistant configuration before the next scheduled run."}
 												<div className="flex flex-wrap gap-2">
+													{runAgain && (
+														<RunAgainButton
+															label="Retry"
+															onRunNow={runAgain}
+														/>
+													)}
 													{/* the other causes open the run from the header */}
 													{(run.errorCause ===
 														"connection" ||

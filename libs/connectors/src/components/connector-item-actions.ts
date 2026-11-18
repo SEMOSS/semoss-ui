@@ -1,3 +1,5 @@
+import { safeHttpsUrl } from "@semoss/utility/browser";
+
 /**
  * What can be done with an item in a viewer's list: add it to the
  * conversation, save it into the insight's files, or open it in its own app.
@@ -13,7 +15,12 @@ export interface ConnectorItemActions {
 	onSave?: () => void;
 	/** The save action's label, such as `Save to Chat files`. */
 	saveLabel: string;
-	/** Opens the item in its own app. */
+	/**
+	 * Set when the host already holds the item, such as `In your Digital
+	 * Twin`: the row says so in place of its save button.
+	 */
+	savedLabel?: string;
+	/** Opens the item in its own app. Offered only when it is an absolute HTTPS URL. */
 	webUrl?: string;
 	/** The app's name, for the open action. */
 	serviceName: string;
@@ -31,4 +38,6 @@ export const hasItemActions = (
 	actions: ConnectorItemActions | null | undefined,
 ): actions is ConnectorItemActions =>
 	!!actions &&
-	(!!actions.onAddToContext || !!actions.onSave || !!actions.webUrl);
+	(!!actions.onAddToContext ||
+		!!actions.onSave ||
+		!!safeHttpsUrl(actions.webUrl));

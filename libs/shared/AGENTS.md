@@ -15,8 +15,33 @@ Generic functions belong in [@semoss/utility](../utility/AGENTS.md); consume the
 category subpaths instead of duplicating them inside components.
 
 It is the home of large shared building blocks such as the file explorer, the Monaco
-editor wrappers, the FlexLayout wrapper, the shared login page, engine/MCP/prompt/skill UI,
+editor wrappers, the shared login page, engine/MCP/prompt/skill UI,
 forms, and the workbench primitives.
+
+### Sign in (`components/login-page.tsx`, `components/form/login-form.tsx`)
+
+`LoginForm` reads the sign in providers from the SDK's config
+(`useConfig((state) => state.config?.availableProviders)`, with a stable empty fallback) and
+signs in through the session (`useSession((state) => state.login)` / `requestOTP`); it never
+uses an insight's `actions.login`. `login()` resolves whether the session is signed in and
+throws when refused; the OAuth success toast shows only when it resolves true. `LoginPage` is a
+gate on `useSession((state) => state.status)`: a spinner while `INITIALIZING`, its children when
+`AUTHENTICATED`, and the form when `UNAUTHENTICATED` or `ERROR`. Neither needs an
+`<InsightProvider>`; a host must call `Session.initialize()` once from its entry point (after
+`Env.update` and any `waitForEmbedAuth()`) and mount its workspace `InsightProvider` inside
+the gate, so the insight is made after sign in.
+
+An app that gates its own routes takes its Retry for the `ERROR` status from the SDK's
+`useSessionRetry()` (`{ isRetrying, retry }`, from the session's `isChecking` and `refresh`).
+`InsightReadyGate` (`components/insight-ready-gate.tsx`) is for an app that still keeps an
+app-wide `InsightProvider`: it goes inside it and holds its views until the insight is made
+(`isReady`), showing the app's `errorFallback` when it cannot be. It is not a sign in check;
+sign in is the session's. Prefer running pixels outside a workspace in the session's insight,
+which needs neither.
+
+`Notebook` (`components/notebook/`) runs every cell in its required `insightId` prop and reads
+no context, so it renders outside any `InsightProvider`. The caller names the insight: the
+file panel's `targetInsightId`, or the room's insight in the playground.
 
 ### The file explorer (`components/file/`)
 
@@ -38,9 +63,19 @@ other than an asset tree, such as a connector's drive: the adapter builds each l
 maps the output to `FileItem`s (`mapEntries(raw, path)` is handed the folder it listed, for a
 source whose entries carry no path), and says what the source can do. A source keeps anything
 its rows need in `FileItem.data`; `itemActions` adds the host's row button and context-menu
-entries, `renderError` draws a failed listing the host's way, and `searchScope: false` hides the
-scope choice for a search that always covers everything. `@semoss/connectors`' drive views are
-built this way.
+entries, and fills a row the host marks (`isMarked`), `renderError` draws a failed listing the host's way, `listingNote` puts a line under a
+listing (the current folder's and each open one's), such as that its source stopped at a limit,
+and `searchScope: false` hides the scope choice for a search that always covers everything. A source that can make files and
+folders but not rename, move, or copy them sets `create` alone: `canCreateItems` reads it,
+falling back to `mutate`, and it shows New, New File, and New Folder without the rest.
+`FileExplorer` hands the overlay the explorer's `adapter`, so it creates in that source rather
+than in the mode's asset tree. `@semoss/connectors`' drive views are built this way.
+
+**A source can be kept to one folder.** `scopeFileExplorerAdapter(adapter, root)` returns an
+adapter that sees `root` as `/`: the explorer lists, searches, creates and uploads there and
+reaches nothing above it, a typed `..` included. Item paths are then relative to the folder, so a
+host resolves a path it takes out of the explorer with `resolveScopedFilePath(root, path)` before
+opening it. `@semoss/panels`' file explorer panel does both when it is given a `rootPath`.
 
 **Every row's menu has three ways in.** Right-click, the row's More actions button, and
 Shift+F10 or the menu key on a focused row open the same menu, so the context-menu entries a
@@ -141,7 +176,7 @@ anyone else the list's Delete button and selection box are disabled on those row
 usage limit") under the list.
 
 `useIsCurrentLogin()` (`hooks/use-is-current-login.ts`) checks a person's login type and id
-against the account ids the SDK's `Logins` holds, reading them as they are so every row can call
+against the account ids the SDK's `Session.logins` holds, reading them as they are so every row can call
 it. A lone login logo, outside an avatar, gets `CurrentLoginStar` (`components/current-login-star.tsx`)
 at its corner. The members table also stars its host's `currentUserId` when the login type is not
 known, and keeps a Login Type column with `LoginTypeLabel` (`components/login-type-label.tsx`):
@@ -178,8 +213,8 @@ Every place a model usage limit is set or shown uses these, so limits read the s
 
 - `ModelUsageLimitEditor` edits one limit: No Limit Defined (with what applies instead, or the
   host's `notDefinedHint`), Unlimited, or Rules. Each rule (`ModelUsageRuleRow`) has an amount, a
-  measure (Tokens, Cost in US dollars, Compute Time), a window from minute to year and, for a team
-  or public use, Shared or For Each Member / For Each Person. Each select gives its `SelectValue`
+  measure (Tokens, Cost in US dollars, Compute Time), a window from minute to year and, for a team,
+  an app or public use, Shared or For Each Member / For Each User / For Each Person. Each select gives its `SelectValue`
   the chosen option's label. Whole amounts are written with ASCII digits and comma separators
   (`toLocaleString("en-US")`) whatever the browser's locale, so they read back as typed. A minute or hour window has a length
   input beside it, so the rule reads "Every [10] Minutes": 1 to 59 minutes or 1 to 24 hours,
@@ -197,8 +232,17 @@ Every place a model usage limit is set or shown uses these, so limits read the s
   just opened or a rule just added is not red; from then on the problems follow the edits, and
   with no rules the hint to add one turns red. Warnings and notes show from the start.
 - `source` (`ModelUsageLimitSource`: `DIRECT`, `TEAM`, `PUBLIC`, `MODEL_TOTAL`, `ALL_MODELS`,
-  `PLATFORM`, `TEAM_TOTAL`) decides the counts offered and whether Unlimited is: a total and the
+  `PLATFORM`, `TEAM_TOTAL`, `APP`) decides the counts offered and whether Unlimited is: a total and the
   platform default have none.
+- `APP` is the limit on the permission a model gives an app, which covers the calls the app's
+  custom reactors make to the model for people whose only way to it is the app, and comes after
+  Team Limits and before the Public Use Limit in the guide's order. It works like a team's: it offers
+  Unlimited and both counts, named Shared by the App and For Each User in the editor, and its
+  summaries end in "shared" or "for each user" (`describeModelUsageRule`). The first rule added
+  to a limit starts shared and later ones for each user. With a rule for each user, the editor
+  notes that it counts only the calls the app's limit applies to. The client's Apps table on a
+  model's Access Control tab and its Add App dialog, labelled App Limit, are its hosts, and What
+  Rules Count in the guide names its counts.
 - `findModelUsageLimitProblem` says why a limit cannot be saved. Hosts keep Save enabled (except
   while saving) and check it when Save is pressed: on a problem they do not save, set the
   editor's `shouldShowProblems`, and call `focusFirstProblem()` through its `ref`
@@ -286,7 +330,6 @@ Key `exports`:
 |--------|-------------|
 | `@semoss/shared` | `src/index.ts` (main barrel) |
 | `@semoss/shared/globals.css` | `src/styles/globals.css` |
-| `@semoss/shared/flexlayout.css` | `src/components/flex-layout/flexlayout.css` |
 | `@semoss/shared/assets/img/*` | `src/assets/img/*` |
 
 `sideEffects` is limited to `**/*.css`; consuming bundlers can tree-shake unused code.
@@ -298,7 +341,7 @@ This library retains its package layout (no `pages/` or router):
 | Folder / file | Purpose |
 |---------------|---------|
 | `assets/` | Images and static files. `assets/img/connectors/` holds each Microsoft 365 and Google Workspace app's logo as an SVG named by app (`outlook.svg`, `gmail.svg`, ...), except Teams, which is `assets/img/MS_TEAMS.svg`; `ConnectorBrandIcon` shows them, and draws the Teams views (`teams-channels`, `teams-files`, `teams-chats`) as the Teams logo with a badge for what each shows, never altering the logo. Any package can import them as `@semoss/shared/assets/img/connectors/*` |
-| `components/` | Shared components, one folder per feature (file, monaco, flex-layout, mcp, prompts, skills, settings, engine, form, members, …) |
+| `components/` | Shared components, one folder per feature (file, monaco, mcp, prompts, skills, settings, engine, form, members, …) |
 | `constants/` | Shared constant values |
 | `contexts/` | React contexts (`<name>.context.tsx`) |
 | `hooks/` | React hooks (`use-<name>.ts`) |
@@ -310,8 +353,10 @@ This library retains its package layout (no `pages/` or router):
 ## Key Dependencies
 
 - `@semoss/sdk`, `@semoss/ui`, `@semoss/i18n`, `@semoss/utility` — workspace libs
+- No state library. Shared state that outlives a component uses a `StoreState`-backed store
+  per the [state management skill](../../skills/state-management.skill.md); move a module-level
+  listener set such as the one in `hooks/use-catalog-image.ts` onto it when you touch it
 - `monaco-editor` / `@monaco-editor/react` — code editor
-- `flexlayout-react` — dockable layout
 - `echarts` — charts
 - `@iconify/react`, `lucide-react` — icons
 
@@ -326,15 +371,13 @@ Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling
    Application-specific composition stays in its owning package.
 - `src/styles/globals.css` supplies Tailwind source discovery only. Do not add design tokens
    there; token ownership remains in `@semoss/ui`.
-- `flex-layout/flexlayout.css` is a third-party style bridge. Map its variables to semantic UI
-   tokens and use the reason-bearing external-constraint carve-out for unavoidable literals.
 
 ## Agent Guardrails
 
 ### Do Not Modify
 
-- **`exports` paths in `package.json`** — the `globals.css` / `flexlayout.css` subpaths
-  are imported by name across the monorepo; renaming a file requires updating the export.
+- **`exports` paths in `package.json`** — the `globals.css` subpath
+  is imported by name across the monorepo; renaming a file requires updating the export.
 
 ### Be Cautious With
 

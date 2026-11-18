@@ -1,8 +1,6 @@
 import { getRoomMessages } from "@/features/messages/api/get-room-messages";
 import { createRoom } from "./create-room";
-import { deleteRoom } from "./delete-room";
-import { listRooms } from "./list-rooms";
-import { renameRoom } from "./rename-room";
+import { listRoomsPage } from "./list-rooms";
 
 function pixelResponse(output: unknown) {
 	return {
@@ -168,7 +166,7 @@ describe("playground room APIs", () => {
 		]);
 	});
 
-	it("lists playground rooms once and maps uppercase fields", async () => {
+	it("lists a page of playground rooms and maps uppercase fields", async () => {
 		const run = vi.fn().mockResolvedValue(
 			pixelResponse([
 				{
@@ -180,7 +178,8 @@ describe("playground room APIs", () => {
 				},
 			]),
 		);
-		await expect(listRooms({ run } as never)).resolves.toEqual([
+		const { rooms } = await listRoomsPage({ run } as never);
+		expect(rooms).toEqual([
 			{
 				roomId: "room-1",
 				roomName: "Review",
@@ -190,54 +189,6 @@ describe("playground room APIs", () => {
 			},
 		]);
 		expect(run).toHaveBeenCalledOnce();
-		expect(run).toHaveBeenCalledWith(
-			'META | GetPlaygroundRooms(sort=["DESC"], mode=["collaboration"]);',
-		);
-	});
-
-	it("renames and deletes rooms with validated write responses", async () => {
-		const run = vi.fn().mockResolvedValue(pixelResponse(true));
-
-		await expect(
-			renameRoom({ run } as never, "room-1", 'Quarterly "review"'),
-		).resolves.toBeUndefined();
-		await expect(
-			deleteRoom({ run } as never, "room-1"),
-		).resolves.toBeUndefined();
-
-		expect(run.mock.calls.map(([statement]) => statement)).toEqual([
-			'SetRoomName(roomId=["room-1"], roomName=["Quarterly \\"review\\""]);',
-			'RemoveUserRoom(roomId=["room-1"]);',
-		]);
-	});
-
-	it("rejects unconfirmed and malformed room writes", async () => {
-		const rejectedRun = vi.fn().mockResolvedValue(pixelResponse(false));
-		await expect(
-			renameRoom({ run: rejectedRun } as never, "room-1", "Review"),
-		).rejects.toThrow("SEMOSS did not rename the room.");
-		await expect(
-			deleteRoom({ run: rejectedRun } as never, "room-1"),
-		).rejects.toThrow("SEMOSS did not delete the room.");
-
-		const malformedRun = vi.fn().mockResolvedValue(pixelResponse({}));
-		await expect(
-			renameRoom({ run: malformedRun } as never, "room-1", "Review"),
-		).rejects.toThrow("SEMOSS returned an unexpected shape");
-		await expect(
-			deleteRoom({ run: malformedRun } as never, "room-1"),
-		).rejects.toThrow("SEMOSS returned an unexpected shape");
-	});
-
-	it("preserves room write transport failures", async () => {
-		const run = vi.fn().mockRejectedValue(new Error("Network unavailable"));
-
-		await expect(
-			renameRoom({ run } as never, "room-1", "Review"),
-		).rejects.toThrow("Network unavailable");
-		await expect(deleteRoom({ run } as never, "room-1")).rejects.toThrow(
-			"Network unavailable",
-		);
 	});
 
 	it("loads playground message visibility", async () => {

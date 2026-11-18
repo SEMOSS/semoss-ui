@@ -21,7 +21,7 @@ import {
 } from "./guardrail-hit-limit";
 import { GuardrailHitLimitField } from "./guardrail-hit-limit-field";
 
-export interface GuardrailHitLimitsFieldProps {
+interface GuardrailHitLimitsFieldProps {
 	/** The limits, as the form holds them now */
 	value: GuardrailHitLimitFormValue[];
 

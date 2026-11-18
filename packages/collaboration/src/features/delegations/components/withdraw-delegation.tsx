@@ -2,7 +2,20 @@ import { useState } from "react";
 import { useInsight } from "@semoss/sdk/react";
 import { Button, Spinner, toast } from "@semoss/ui/next";
 import { toError } from "@semoss/utility";
-import { cancelRun } from "@/features/rooms/api/agent-run-api";
+import {
+	type AgentRun,
+	cancelRun,
+	isTerminalRun,
+} from "@/features/rooms/api/agent-run-api";
+
+/** What became of a request the person settled before the stop reached it. */
+function settledFirst(run: AgentRun, assignee: string): string {
+	if (run.status === "COMPLETED")
+		return `${assignee} already responded, so nothing was withdrawn.`;
+	return run.errorMessage?.startsWith("Declined")
+		? `${assignee} already declined it, so nothing was withdrawn.`
+		: "This request had already ended, so nothing was withdrawn.";
+}
 
 /** Lets the requester take back a request the person has not answered yet. */
 export function WithdrawDelegation({
@@ -20,10 +33,18 @@ export function WithdrawDelegation({
 	const withdraw = async () => {
 		setStep("busy");
 		try {
-			// Stopping the waiting run also closes the person's request.
-			await cancelRun(insightId, runId);
+			// Stopping the waiting run also closes the person's request, unless they settled it first.
+			const run = await cancelRun(insightId, runId);
+			if (!isTerminalRun(run))
+				throw new Error(
+					`The request to ${assignee} could not be withdrawn. Please try again.`,
+				);
 			setStep("done");
-			toast.success(`Withdrawn. ${assignee} will see it was withdrawn.`);
+			if (run.status === "CANCELLED")
+				toast.success(
+					`Withdrawn. ${assignee} will see it was withdrawn.`,
+				);
+			else toast.info(settledFirst(run, assignee));
 		} catch (cause) {
 			setStep("confirm");
 			toast.error(toError(cause).message);

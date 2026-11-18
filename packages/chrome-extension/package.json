@@ -1,5 +1,6 @@
 {
   "name": "workshop-automation-extension",
+  "private": true,
   "version": "1.0.0",
   "description": "Chrome extension for browser automation using SEMOSS platform",
   "scripts": {
@@ -9,7 +10,6 @@
   },
   "dependencies": {
     "@semoss/utility": "workspace:*",
-    "@semoss/sdk": "workspace:*",
     "@semoss/ui": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

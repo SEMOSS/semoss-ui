@@ -110,6 +110,10 @@ it("deletes the run and its chats, then moves focus before the lists re-read", a
 	await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 	expect(toast.success).toHaveBeenCalledWith("Run deleted.");
 	expect(chats).toHaveBeenCalledOnce();
+	// the chat list drops these rooms, which a reset load alone would keep
+	expect(chats.mock.calls[0]?.[0]).toMatchObject({
+		detail: { deletedRoomIds: ["agent-room", "run-chat"] },
+	});
 	expect(onDeleted).toHaveBeenCalledOnce();
 	expect(changed).toHaveBeenCalledOnce();
 	expect(deleted).toHaveBeenCalledOnce();

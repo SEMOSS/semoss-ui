@@ -16,7 +16,7 @@ const roomContentMatchSchema = z
 const roomContentMatchesSchema = z.array(roomContentMatchSchema);
 
 /** Room metadata returned for a message-content match. */
-export interface RoomContentMatch {
+interface RoomContentMatch {
 	roomId: string;
 	roomName: string;
 	dateCreated?: string;

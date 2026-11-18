@@ -1,4 +1,5 @@
 import {
+	act,
 	cleanup,
 	render,
 	screen,
@@ -9,6 +10,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { InsightActions } from "@/lib/pixel";
 import { PeopleStep } from "./onboarding-steps";
+import { deferred } from "./topic-review.test-fixtures";
 
 const person = {
 	id: "person-1",
@@ -29,18 +31,42 @@ const automated = {
 	strength: 90,
 };
 
-function session({ hasAutomated = true, failCorrection = false } = {}) {
+const owner = {
+	id: "owner-1",
+	name: "Owner",
+	email: "owner@example.com",
+	relationship: "self",
+};
+
+function session({
+	hasAutomated = true,
+	failCorrection = false,
+	selfEmail = "owner@example.com",
+	search,
+}: {
+	hasAutomated?: boolean;
+	failCorrection?: boolean;
+	selfEmail?: string;
+	/** Answers a people search by its query. */
+	search?: (query: string) => Promise<unknown[]>;
+} = {}) {
 	const run = vi.fn(async (statement: string) => {
 		let output: Record<string, unknown>;
 		if (statement.startsWith("BrainListPeople(")) {
+			const query = statement.match(/query=\["([^"]*)"\]/)?.[1];
 			output = {
-				items: statement.includes('relationship=["automated"]')
-					? hasAutomated
-						? [automated]
-						: []
-					: statement.includes('follow=["suggested"]')
-						? []
-						: [person],
+				items:
+					query !== undefined
+						? ((await search?.(query)) ?? [])
+						: statement.includes('relationship=["self"]')
+							? [owner]
+							: statement.includes('relationship=["automated"]')
+								? hasAutomated
+									? [automated]
+									: []
+								: statement.includes('follow=["suggested"]')
+									? []
+									: [person],
 			};
 		} else if (statement.startsWith("BrainSavePerson(")) {
 			if (failCorrection) throw new Error("Unable to update sender");
@@ -56,7 +82,7 @@ function session({ hasAutomated = true, failCorrection = false } = {}) {
 			actions={actions}
 			eyebrow="Step 4 of 8"
 			onNext={vi.fn()}
-			selfEmail="owner@example.com"
+			selfEmail={selfEmail}
 			managerId="person-1"
 		/>,
 	);
@@ -165,6 +191,63 @@ describe("onboarding people", () => {
 		expect(
 			screen.getByRole("button", { name: "Review ignored senders (1)" }),
 		).toHaveAttribute("aria-expanded", "true");
+	});
+
+	it("tells a colleague from an outside sender when setup resumed past the mailbox step", async () => {
+		// a reload resumes on a later step, so the mailbox step never gave the owner's address
+		const { run } = session({ selfEmail: "" });
+		const user = userEvent.setup();
+		await user.click(
+			await screen.findByRole("button", {
+				name: "Review ignored senders (1)",
+			}),
+		);
+		await user.click(
+			screen.getByRole("button", {
+				name: "Treat as person: Platform Notifications",
+			}),
+		);
+		await waitFor(() =>
+			expect(run).toHaveBeenCalledWith(
+				'BrainSavePerson(person=[{"id":"automated-1","relationship":"colleague"}]);',
+			),
+		);
+	});
+
+	it("shows search results for the latest query only", async () => {
+		const older = deferred<unknown[]>();
+		const match = (name: string, email: string) => ({
+			...person,
+			id: email,
+			name,
+			email,
+			follow: null,
+			vip: false,
+		});
+		const { run } = session({
+			search: async (query) =>
+				query === "ja"
+					? older.promise
+					: [match("Jamal Reed", "jamal@example.com")],
+		});
+		const user = userEvent.setup();
+		await screen.findByText("Ana Lima");
+		const input = screen.getByRole("textbox", {
+			name: "Search people to follow",
+		});
+		await user.type(input, "ja");
+		await waitFor(() =>
+			expect(run).toHaveBeenCalledWith(
+				expect.stringContaining('query=["ja"]'),
+			),
+		);
+		await user.type(input, "m");
+		expect(await screen.findByText("Jamal Reed")).toBeVisible();
+		await act(async () =>
+			older.resolve([match("Jade Old", "jade@example.com")]),
+		);
+		expect(screen.queryByText("Jade Old")).not.toBeInTheDocument();
+		expect(screen.getByText("Jamal Reed")).toBeVisible();
 	});
 
 	it("shows the policy but no review control when no automated senders were found", async () => {

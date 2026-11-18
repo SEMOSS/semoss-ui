@@ -1,4 +1,4 @@
-import { Check, ChevronDown } from "lucide-react";
+import { ChevronDown, ListChecks } from "lucide-react";
 import { Button, cn, Muted } from "@semoss/ui/next";
 import { ToolFailureTooltip } from "@/features/tools/components/tool-failure-tooltip";
 import type { OwnedMessagePart } from "../utils/message-presentation";
@@ -21,6 +21,9 @@ export function MessageToolSummary({
 	const failureCount = tools.filter(
 		(tool) => tool.status === "FAILED",
 	).length;
+	const completedCount = tools.filter(
+		(tool) => tool.status === "COMPLETED",
+	).length;
 	return (
 		<ToolFailureTooltip tools={tools}>
 			<Button
@@ -31,12 +34,17 @@ export function MessageToolSummary({
 				aria-controls={controls}
 				onClick={onToggle}
 			>
-				<Check aria-hidden="true" className="size-4 shrink-0" />
-				<Muted className="wrap-anywhere min-w-0 text-sm">
-					{failureCount > 0
-						? `${tools.length} tools used`
-						: `${tools.length} tools completed`}
-				</Muted>
+				<ListChecks aria-hidden="true" className="size-4 shrink-0" />
+				<span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-1">
+					<Muted className="wrap-anywhere text-sm">
+						{tools.length} tool{" "}
+						{tools.length === 1 ? "call" : "calls"}
+					</Muted>
+					<Muted className="wrap-anywhere text-xs">
+						{completedCount} completed
+						{failureCount > 0 && ` · ${failureCount} unsuccessful`}
+					</Muted>
+				</span>
 				<Muted className="ms-auto shrink-0 text-xs">
 					{isExpanded ? "Hide steps" : "View steps"}
 				</Muted>

@@ -20,6 +20,8 @@ interface RoutineAutosave<T extends FieldValues> {
 	/** Revalidates the latest draft, including after a native submission's async validation. */
 	handleSubmit: (values: T) => Promise<void>;
 	retry: () => void;
+	/** Saves the draft now, after any write in flight; rejects when the draft is invalid or does not save. */
+	flush: () => Promise<void>;
 }
 
 /** Debounces routine edits, serializes writes, and flushes valid edits on unmount. */
@@ -32,9 +34,12 @@ export function useRoutineAutosave<T extends FieldValues>({
 	const observed = useRef(values);
 	const saved = useRef(values);
 	const failed = useRef<string | null>(null);
+	const failure = useRef("");
 	const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 	const isMounted = useRef(false);
 	const isSaving = useRef(false);
+	// settles when the write in flight, and any edit queued behind it, is done
+	const saving = useRef<Promise<void>>(Promise.resolve());
 	const isQueued = useRef(false);
 	const save = useRef(onSave);
 	useEffect(() => {
@@ -57,6 +62,10 @@ export function useRoutineAutosave<T extends FieldValues>({
 				return;
 			}
 			isSaving.current = true;
+			let settle = (): void => undefined;
+			saving.current = new Promise((resolve) => {
+				settle = resolve;
+			});
 			failed.current = null;
 			if (isMounted.current) {
 				form.clearErrors("root.server");
@@ -91,13 +100,14 @@ export function useRoutineAutosave<T extends FieldValues>({
 				)();
 			} catch (error: unknown) {
 				failed.current = submitted;
+				failure.current =
+					error instanceof Error
+						? error.message
+						: "Your routine could not be saved. Please try again.";
 				if (isMounted.current) {
 					form.setError("root.server", {
 						type: "server",
-						message:
-							error instanceof Error
-								? error.message
-								: "Your routine could not be saved. Please try again.",
+						message: failure.current,
 					});
 					setStatus("error");
 				}
@@ -109,6 +119,7 @@ export function useRoutineAutosave<T extends FieldValues>({
 						await submit();
 					}
 				}
+				settle();
 			}
 		},
 		[form],
@@ -117,6 +128,21 @@ export function useRoutineAutosave<T extends FieldValues>({
 	const retry = useCallback((): void => {
 		void handleSubmit();
 	}, [handleSubmit]);
+
+	const flush = useCallback(async (): Promise<void> => {
+		clearTimeout(timer.current);
+		while (isSaving.current) await saving.current;
+		if (JSON.stringify(form.getValues()) !== saved.current) {
+			await handleSubmit();
+		}
+		const draft = JSON.stringify(form.getValues());
+		if (draft === saved.current) return;
+		throw new Error(
+			draft === failed.current
+				? `Your changes did not save, so the run did not start. ${failure.current}`
+				: "Fix the highlighted settings, then run it again.",
+		);
+	}, [form, handleSubmit]);
 
 	useEffect(() => {
 		isMounted.current = true;
@@ -148,5 +174,5 @@ export function useRoutineAutosave<T extends FieldValues>({
 		return () => clearTimeout(timer.current);
 	}, [form, retry, values]);
 
-	return { status, handleSubmit, retry };
+	return { status, handleSubmit, retry, flush };
 }

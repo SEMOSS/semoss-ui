@@ -25,8 +25,8 @@ const searchPageSchema = z.object({
 });
 export type SearchKind = z.infer<typeof searchKindSchema>;
 export type SearchEntry = z.infer<typeof searchEntrySchema>;
-export type SearchPage = z.infer<typeof searchPageSchema>;
-export const SEARCH_PAGE_SIZE = 30;
+type SearchPage = z.infer<typeof searchPageSchema>;
+const SEARCH_PAGE_SIZE = 30;
 
 /** Searches all saved metadata; the server determines record access. */
 export async function searchCollaboration(

@@ -847,7 +847,7 @@ export interface GuardrailConfigIssue {
 
 /** Backend knowledge that lets validation flag method and argument names the
  * runtime will not resolve. Absent when the backend did not report them. */
-export interface GuardrailValidationContext {
+interface GuardrailValidationContext {
 	/** Methods the engine can intercept. */
 	methods?: InterceptableMethod[];
 

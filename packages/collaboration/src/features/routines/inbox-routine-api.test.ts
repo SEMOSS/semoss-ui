@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { InsightActions } from "@/lib/pixel";
-import { saveInboxRoutine } from "./inbox-routine-api";
+import { runInboxRoutineNow, saveInboxRoutine } from "./inbox-routine-api";
 import {
 	INBOX_SECTIONS,
 	type InboxRoutine,
@@ -39,6 +39,40 @@ function transport(output: unknown, operationType: string[] = []) {
 	});
 	return { actions: { run } as unknown as InsightActions, run };
 }
+
+describe("Run now for the inbox brief", () => {
+	it("starts a brief on the scheduler, then reads the routine again", async () => {
+		const run = vi
+			.fn()
+			.mockResolvedValueOnce({
+				pixelReturn: [
+					{ output: { status: "started" }, operationType: [] },
+				],
+			})
+			.mockResolvedValueOnce({
+				pixelReturn: [
+					{
+						output: {
+							...routine,
+							lastRun: {
+								status: "running",
+								startedAt: "2026-10-12T12:00:00Z",
+							},
+						},
+						operationType: [],
+					},
+				],
+			});
+		const next = await runInboxRoutineNow({
+			run,
+		} as unknown as InsightActions);
+		expect(run.mock.calls.map(([statement]) => statement)).toEqual([
+			"WorkRunInboxRoutine(now=[true]);",
+			"WorkGetInboxRoutine();",
+		]);
+		expect(next.lastRun?.status).toBe("running");
+	});
+});
 
 describe("inbox routine settings", () => {
 	it("normalizes omitted Gson null fields in a first-time routine", () => {

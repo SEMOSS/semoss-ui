@@ -6,7 +6,7 @@ import {
 	type ModelUsageLimitSource,
 } from "@semoss/shared";
 
-export interface UsageLimitSummaryProps {
+interface UsageLimitSummaryProps {
 	/** The limit after the batch is saved, or null for no limit defined */
 	limit: ModelUsageLimit | null | undefined;
 	/** The limit now, shown as "Was ..." when the batch changes it */

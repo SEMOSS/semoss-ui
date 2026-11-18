@@ -16,6 +16,8 @@ sockets for Playwright/automation scenarios and exposes a SEMOSS MCP surface. It
 
 - **Bundler**: Vite 8 + React 19
 - **Styling**: Tailwind CSS v4
+- **State**: React state and hooks; no state library. Any shared store uses `StoreState` per
+  the [state management skill](../../skills/state-management.skill.md)
 
 ### Commands
 
@@ -25,7 +27,6 @@ sockets for Playwright/automation scenarios and exposes a SEMOSS MCP surface. It
 | `pnpm build` | Production build |
 | `pnpm build:dev` | Development build |
 | `pnpm type-check` | `tsc --noEmit` type check |
-| `pnpm lint` | Declared ESLint command; missing configuration (see below) |
 | `pnpm test` | Vitest (`--passWithNoTests`; success may mean no tests ran) |
 | `pnpm preview` | Preview the production build |
 
@@ -35,9 +36,8 @@ Run these from `packages/browser-automation`, or use
 ### Linting
 
 Follow the [React validation guidance](../../skills/react-standard.skill.md#validation).
-The manifest declares `lint: eslint .`, but this package has no `eslint.config.js` and no
-repository-root config to inherit. Treat ESLint validation as blocked until the package
-configuration is repaired in a separately authorized change; do not report it as passing.
+Linting and formatting use Biome from the repository root (`pnpm check`); this package has
+no local lint configuration.
 
 ## Structure
 
@@ -74,16 +74,14 @@ Follow the root [Design System & Styling](../../AGENTS.md#design-system--styling
 
 - **`vite.config.ts`** — dev server and build configuration.
 - **`mcp/pixel_mcp.json`** — the MCP surface definition.
-- **The declared `lint` script** — its missing configuration is a known validation gap.
 
 ### Testing Changes
 
 ```bash
+pnpm check
 pnpm --filter @semoss/browser-automation type-check
 pnpm --filter @semoss/browser-automation build
 ```
-
-Report the ESLint gap above separately from the checks that can run.
 
 ## Generic utilities
 

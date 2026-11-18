@@ -13,7 +13,7 @@ export const TEAM_LIMIT_DESCRIPTION =
 	"The team limit on this model. Shared rules count every call the team limit applies to, together; rules for each member count each member's own calls.";
 
 /** A team, by its name and type */
-export interface TeamLimitKey {
+interface TeamLimitKey {
 	/** The team's name */
 	id: string;
 	/** The team's type, such as CUSTOM */

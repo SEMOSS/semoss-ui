@@ -1,6 +1,5 @@
 import { FILE_PANEL_COMPONENTS, FILE_PANEL_TYPES } from "@semoss/panels";
 import type { WorkbenchPanelConfigAny } from "@semoss/workbench";
-import { CHAT_TOOLS_PANEL } from "@/features/chat-tools/components/chat-tools-panel";
 import {
 	GMAIL_PANEL,
 	GOOGLE_CALENDAR_PANEL,
@@ -20,9 +19,8 @@ import { ROOM_SUBAGENT_PANEL } from "./room-subagent-panel";
 import { ROOM_TOOL_PANEL } from "./room-tool-panel";
 
 /**
- * Every panel the room sidebar can open: the room's own, "Chat Tools", the
- * Microsoft 365 and Google Workspace viewers, plus the shared file explorer
- * and editors.
+ * Every panel the room sidebar can open: the room's own, the Microsoft 365
+ * and Google Workspace viewers, plus the shared file explorer and editors.
  *
  * Module scope matters — blueprint identity churn remounts panels.
  */
@@ -38,7 +36,6 @@ export const ROOM_PANEL_COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 	[ROOM_PANEL_TYPES.SUBAGENT]: ROOM_SUBAGENT_PANEL,
 	[ROOM_PANEL_TYPES.CONFIGURATION]: ROOM_CONFIGURATION_PANEL,
 	[ROOM_PANEL_TYPES.AUDIT_LOG]: ROOM_AUDIT_LOG_PANEL,
-	[ROOM_PANEL_TYPES.CHAT_TOOLS]: CHAT_TOOLS_PANEL,
 	[ROOM_PANEL_TYPES.ONEDRIVE]: ONEDRIVE_PANEL,
 	[ROOM_PANEL_TYPES.OUTLOOK_MAIL]: OUTLOOK_MAIL_PANEL,
 	[ROOM_PANEL_TYPES.OUTLOOK_CALENDAR]: OUTLOOK_CALENDAR_PANEL,

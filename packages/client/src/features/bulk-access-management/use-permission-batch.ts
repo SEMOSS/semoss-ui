@@ -36,14 +36,14 @@ const MODEL_LIMIT_CATEGORIES: readonly ModelLimitCategory[] = [
 ];
 
 /** A person or team to add to a permission batch */
-export interface BatchAddition {
+interface BatchAddition {
 	/** Who */
 	subject: PermissionSubject;
 	/** A person's name and email, or null for a team */
 	person: AccessPerson | null;
 }
 
-export interface UsePermissionBatchResult {
+interface UsePermissionBatchResult {
 	/** Everyone in the batch, with their access now and after it is saved */
 	entries: BatchEntry[];
 	/** On a model, its total and its public use limit, now and after the batch is saved */

@@ -68,7 +68,8 @@
 		},
 		"guardrailActions": {
 			"MASK": "Masqué",
-			"BLOCK": "Bloqué"
+			"BLOCK": "Bloqué",
+			"TIMEOUT": "Délai dépassé"
 		},
 		"groupRequest": "Requête",
 		"groupSpan": "Span",
@@ -151,6 +152,7 @@
 	},
 	"layout": {
 		"appName": "Journal d'audit",
-		"appDescription": "Application de journal d'audit"
+		"appDescription": "Application de journal d'audit",
+		"loadFailed": "Impossible de charger le journal d'audit. Réessayez et, si le problème persiste, contactez le support."
 	}
 }

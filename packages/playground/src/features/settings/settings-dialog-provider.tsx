@@ -7,7 +7,7 @@ import {
 } from "./settings-dialog.context";
 
 /** Props for {@link SettingsDialogProvider}. */
-export interface SettingsDialogProviderProps {
+interface SettingsDialogProviderProps {
 	/** The layout that can open the dialog. */
 	children: ReactNode;
 }

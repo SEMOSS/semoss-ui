@@ -6,7 +6,7 @@ import { formatFullDate } from "../core/connector.format";
 import type { MailMessage } from "./mail.types";
 
 /** Props for {@link MailMessageHeader}. */
-export interface MailMessageHeaderProps {
+interface MailMessageHeaderProps {
 	/** The email. */
 	message: MailMessage;
 	/** Small controls for the email, such as its picture settings, beside the date. */

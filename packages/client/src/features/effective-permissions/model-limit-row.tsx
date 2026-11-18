@@ -3,7 +3,7 @@ import { ModelUsageLimitRules } from "@semoss/shared";
 import { TableCell, TableRow } from "@semoss/ui/next";
 import { AccessIdentity } from "@/features/bulk-access-management/access-identity";
 
-export interface ModelLimitRowProps {
+interface ModelLimitRowProps {
 	/** The model total, a ceiling on every call, or the public use limit */
 	limitType: "MODEL_TOTAL" | "PUBLIC";
 	/** Its limit, or null for no limit defined */

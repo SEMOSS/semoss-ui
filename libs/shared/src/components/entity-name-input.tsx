@@ -8,7 +8,7 @@ import {
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 
-export interface EntityNameInputProps {
+interface EntityNameInputProps {
 	/** Current name. The input starts with it, and saving it unchanged is skipped. */
 	name: string;
 	/** Accessible name for the input. */

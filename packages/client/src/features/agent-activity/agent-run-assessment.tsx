@@ -79,7 +79,7 @@ const BulletSection = ({ title, items }: { title: string; items: string[] }) =>
 		</div>
 	) : null;
 
-export interface AnalyzeRunPanelProps {
+interface AnalyzeRunPanelProps {
 	/** The run the assessment targets. Key the panel by its runId. */
 	run: AgentRunDetail;
 	/** Model engine id -> display info resolved via GetEngineMetadata. */

@@ -15,7 +15,7 @@ import {
 import { getErrorMessage } from "@semoss/utility/error";
 import { deleteTeam, type GroupKey } from "@/api/teams";
 
-export interface DeleteTeamDialogProps {
+interface DeleteTeamDialogProps {
 	/** The team to delete, or null when the dialog is closed */
 	team: GroupKey | null;
 	/** Called when the dialog closes, with true after the team was deleted */

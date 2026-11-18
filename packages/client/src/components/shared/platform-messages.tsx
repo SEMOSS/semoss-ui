@@ -1,5 +1,6 @@
 import type React from "react";
 import { useEffect, useState } from "react";
+import { useSession } from "@semoss/sdk/react";
 import {
 	Button,
 	Dialog,
@@ -8,23 +9,48 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@semoss/ui/next";
-import { useConfig, useSession } from "@/hooks/";
+import { tryParseJson } from "@semoss/utility/json";
+import { isRecord } from "@semoss/utility/object";
+import { usePlatformTheme } from "@/hooks/use-platform-theme";
+import { RawHtml } from "./raw-html";
 
-const RawHtml = ({ html }: { html: string }) => {
-	return (
-		<div
-			className="[&_a:hover]:opacity-80 [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4"
-			// biome-ignore lint/security/noDangerouslySetInnerHtml: server-controlled terms content
-			dangerouslySetInnerHTML={{ __html: html }}
-		/>
-	);
+/**
+ * The storage key for the user's answer to the terms. Each sign in has its own
+ * epoch, so the terms are asked again after the next sign in.
+ *
+ * @param userEpoch - The signed in user's epoch.
+ * @returns The key.
+ */
+const getTermsKey = (userEpoch: string): string => `smss--terms--${userEpoch}`;
+
+/**
+ * Read whether the terms were accepted, as stored by {@link PlatformMessages}
+ * (`{ state: true }`). Corrupt or unavailable storage counts as not accepted,
+ * so the terms are shown again.
+ *
+ * @param key - The storage key.
+ * @returns True when the stored answer accepts the terms.
+ */
+const readAcceptedTerms = (key: string): boolean => {
+	try {
+		const item = localStorage.getItem(key);
+		if (!item) {
+			return false;
+		}
+		const stored = tryParseJson(item);
+		return isRecord(stored) && stored.state === true;
+	} catch {
+		return false;
+	}
 };
 
+/**
+ * Shows the platform's terms, from the theme, until the signed in user accepts
+ * them. The answer is kept in local storage for the current sign in.
+ */
 export const PlatformMessages: React.FC = () => {
-	const termsHeaderReact = useConfig((state) => state.theme.termsHeaderReact);
-	const termsReact = useConfig((state) => state.theme.termsReact);
-	const config = useConfig((state) => state.config);
-	const userEpoch = useSession((state) => state.userEpoch);
+	const { termsHeaderReact, termsReact } = usePlatformTheme();
+	const userEpoch = useSession((state) => state.user?.userEpoch ?? "");
 	const [acceptedTerms, setAcceptedTerms] = useState<boolean | null>(null);
 
 	const terms = {
@@ -32,24 +58,23 @@ export const PlatformMessages: React.FC = () => {
 		text: termsReact,
 	};
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional - config is used for side effects only
 	useEffect(() => {
 		if (userEpoch) {
-			const key = `smss--terms--${userEpoch}`;
-			const item = localStorage.getItem(key);
-			if (item) {
-				const d = JSON.parse(item);
-				setAcceptedTerms(d.state);
-			} else {
-				setAcceptedTerms(false);
-			}
+			setAcceptedTerms(readAcceptedTerms(getTermsKey(userEpoch)));
 		}
-	}, [userEpoch, config]);
+	}, [userEpoch]);
 
 	const acceptTerms = () => {
 		if (userEpoch) {
-			const key = `smss--terms--${userEpoch}`;
-			localStorage.setItem(key, JSON.stringify({ state: true }));
+			try {
+				localStorage.setItem(
+					getTermsKey(userEpoch),
+					JSON.stringify({ state: true }),
+				);
+			} catch (error) {
+				// still accepted for this visit; they are asked again next time
+				console.error(error);
+			}
 		}
 		setAcceptedTerms(true);
 	};

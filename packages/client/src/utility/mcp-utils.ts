@@ -11,11 +11,11 @@ import {
  */
 const PLATFORM_URL = ".";
 
-export const mcpToPlatformUrl = createMcpPlatformUrl(PLATFORM_URL);
-export const promptToPlatformUrl = createPromptPlatformUrl(PLATFORM_URL);
-export const skillToPlatformUrl = (skill: { id: string }): string =>
+const mcpToPlatformUrl = createMcpPlatformUrl(PLATFORM_URL);
+const promptToPlatformUrl = createPromptPlatformUrl(PLATFORM_URL);
+const skillToPlatformUrl = (skill: { id: string }): string =>
 	`${PLATFORM_URL}/#/skill/${skill.id}/view`;
-export const agentToPlatformUrl = (agent: { id: string }): string =>
+const agentToPlatformUrl = (agent: { id: string }): string =>
 	`${PLATFORM_URL}/#/agent/${agent.id}`;
 
 /** The client's links for an agent's attached resources, used by the shared agent views. */

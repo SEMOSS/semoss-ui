@@ -9,7 +9,7 @@ const isActiveRun = (run: AutomationRunSummary): boolean =>
 	run.STATUS === "RUNNING" || run.STATUS === "WAITING_FOR_INPUT";
 
 /** Run and selection state shared by the Automation workbench panels. */
-export interface AutomationWorkbenchState {
+interface AutomationWorkbenchState {
 	traceSnapshot: AutomationTraceSnapshot | null;
 	activeRuns: AutomationRunSummary[];
 	followedRunId: string | null;

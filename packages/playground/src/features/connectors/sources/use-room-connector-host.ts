@@ -23,7 +23,7 @@ export type RoomSavedFile = Pick<ConnectorSavedFile, "path" | "name"> &
 	Partial<Pick<ConnectorSavedFile, "service">>;
 
 /** What the room gives a connector viewer, or a connector's tool view. */
-export interface RoomConnectorHost
+interface RoomConnectorHost
 	extends Omit<ConnectorViewerProps, "onSaved" | "onAddToContext"> {
 	/** Called once an item is saved into the chat's files. */
 	onSaved: (file: RoomSavedFile) => void;

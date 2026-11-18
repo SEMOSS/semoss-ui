@@ -44,7 +44,7 @@ const PAGE_SIZE = 25;
 /** Wire permission values that count as "has access". */
 const HAS_ACCESS = new Set<string>(["OWNER", "EDIT", "READ_ONLY"]);
 
-export interface MemberResourceAccessProps {
+interface MemberResourceAccessProps {
 	/** The user whose access is being managed */
 	userId: string;
 	/** Which kind of resource this section manages */

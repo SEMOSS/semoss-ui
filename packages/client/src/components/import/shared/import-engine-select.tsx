@@ -2,7 +2,7 @@ import { type Ref, useState } from "react";
 import { type Engine, EngineSelect, EngineSubtypeIcon } from "@semoss/shared";
 
 /** Props for {@link ImportEngineSelect}. */
-export interface ImportEngineSelectProps {
+interface ImportEngineSelectProps {
 	/** Associates the field's label with the picker. */
 	id: string;
 	/** Focuses the picker, as a form does for a field with a problem. */

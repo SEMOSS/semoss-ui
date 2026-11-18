@@ -60,7 +60,8 @@
 	"onedrive": {
 		"viewLabel": "Wat tonen",
 		"mine": "Mijn bestanden",
-		"shared": "Gedeeld met mij"
+		"shared": "Gedeeld met mij",
+		"sharedNote": "Bestanden die met je zijn gedeeld worden gevonden via de zoekfunctie van Microsoft, dus een onlangs gedeeld bestand kan hier even op zich laten wachten."
 	},
 	"mail": {
 		"folder": "Mailmap",

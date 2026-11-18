@@ -123,18 +123,3 @@ export function saveDashboardPreferences(
 		JSON.stringify(preferencesSchema.parse(preferences)),
 	);
 }
-
-/** Reordering is shared by drag gestures and explicit move buttons. */
-export function moveWidget(
-	widgets: DashboardWidget[],
-	id: string,
-	targetId: string,
-): DashboardWidget[] {
-	const from = widgets.findIndex((widget) => widget.id === id);
-	const to = widgets.findIndex((widget) => widget.id === targetId);
-	if (from < 0 || to < 0 || from === to) return widgets;
-	const next = [...widgets];
-	const [widget] = next.splice(from, 1);
-	if (widget) next.splice(to, 0, widget);
-	return next;
-}

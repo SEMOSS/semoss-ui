@@ -4,10 +4,7 @@ import type {
 	StyleVariant,
 } from "./collaboration.types";
 
-export const styleAudiences: readonly StyleAudience[] = [
-	"internal",
-	"external",
-];
+const styleAudiences: readonly StyleAudience[] = ["internal", "external"];
 
 /** What a draft may use: the agreed summary, examples, and variants, never a proposal still to review. */
 export function agreedStyle(style: ProfileStyle): ProfileStyle {

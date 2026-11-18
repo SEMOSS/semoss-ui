@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
-import { useInsight } from "@semoss/sdk/react";
+import { Session, useInsight } from "@semoss/sdk/react";
 import { useCacheData } from "@semoss/ui/next";
 import type {
 	WorkbenchLayout,
@@ -14,16 +14,18 @@ import {
 	WorkbenchCommandMenuButton,
 	WorkbenchResetButton,
 } from "@semoss/workbench";
-import { ASSISTANT_PANEL } from "@/components/assistant";
-import { AssistantStoreProvider } from "@/contexts";
+import { ASSISTANT_PANEL } from "@/components/assistant/assistant-view";
+import { AssistantStoreProvider } from "@/contexts/assistant.context";
 import { ASSISTANT_TOOL_PANEL } from "@/features/assistant-tools/assistant-tool-panel";
 import { ASSISTANT_TOOL_PANEL_TYPE } from "@/features/assistant-tools/assistant-tool-ui";
-import { useAssistantStore, useProject, useSession } from "@/hooks";
+import { useAssistantStore } from "@/hooks/use-assistant-store";
+import { useProject } from "@/hooks/use-project";
 import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_PANEL_RECORDS,
-} from "@/stores/workbench";
-import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
+} from "@/stores/workbench/workbench.constants";
+import { GIT_DIFF_PANEL } from "../../git/git-diff-panel";
+import { GIT_VERSION_PANEL } from "../../git/git-version-panel";
 import { useAssistantFilesChanged } from "../../use-assistant-files-changed";
 import {
 	createFileCommands,
@@ -159,9 +161,6 @@ export const SkillWorkbench: React.FC = () => {
 		workbenchLayout,
 	);
 
-	const syncPermission = useSession((s) => s.syncPermission);
-	const refreshPermission = useSession((s) => s.refreshPermission);
-
 	const assistantStore = useAssistantStore(workbenchId);
 
 	// keep the assistant's system prompt/tools in sync with the active skill
@@ -173,10 +172,10 @@ export const SkillWorkbench: React.FC = () => {
 	useEffect(() => {
 		const name = project.project_display_name || project.project_name;
 
-		syncPermission("PROJECT", project.project_id, permission);
-		void refreshPermission("PROJECT", project.project_id).catch(
-			() => undefined,
-		);
+		Session.permissions.sync("PROJECT", project.project_id, permission);
+		void Session.permissions
+			.refresh("PROJECT", project.project_id)
+			.catch(() => undefined);
 
 		assistantStore.getState().configure({
 			onRunCompleted: filesChanged,
@@ -193,8 +192,6 @@ export const SkillWorkbench: React.FC = () => {
 	}, [
 		filesChanged,
 		assistantStore,
-		syncPermission,
-		refreshPermission,
 		permission,
 		project.project_display_name,
 		project.project_id,

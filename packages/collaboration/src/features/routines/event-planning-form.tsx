@@ -1,9 +1,5 @@
-import { Play } from "lucide-react";
-import { useId, useState } from "react";
+import { useId } from "react";
 import {
-	Alert,
-	AlertDescription,
-	Button,
 	Card,
 	CardContent,
 	Field,
@@ -33,6 +29,7 @@ import { EVENT_PLANNING_RESULT_COPY } from "./routine-copy";
 import { RoutineFlowSection } from "./routine-flow-section";
 import { RoutineNextRun } from "./routine-next-run";
 import { RoutineResult } from "./routine-result";
+import { RoutineRunNowButton } from "./routine-run-now-button";
 import { RoutineSaveStatus } from "./routine-save-status";
 import {
 	ROUTINE_DAY_NAMES,
@@ -73,8 +70,6 @@ export function EventPlanningForm({
 	onRunNow,
 }: EventPlanningFormProps) {
 	const id = useId();
-	const [isStarting, setIsStarting] = useState(false);
-	const [runError, setRunError] = useState("");
 	const form = useForm<EventPlanningSettings>({
 		resolver: zodResolver(eventPlanningSettingsSchema),
 		defaultValues: formValues(routine),
@@ -87,7 +82,7 @@ export function EventPlanningForm({
 		routine.assistantAvailable &&
 		routine.mailboxAvailable;
 
-	const { status, handleSubmit, retry } = useRoutineAutosave({
+	const { status, handleSubmit, retry, flush } = useRoutineAutosave({
 		form,
 		onSave: async (values) => {
 			if (values.enabled && !isAvailable) {
@@ -99,21 +94,10 @@ export function EventPlanningForm({
 			return formValues(await onSave(values));
 		},
 	});
-
-	const runNow = async () => {
-		setIsStarting(true);
-		setRunError("");
-		try {
-			await onRunNow();
-		} catch (cause) {
-			setRunError(
-				cause instanceof Error
-					? cause.message
-					: "The run did not start.",
-			);
-		} finally {
-			setIsStarting(false);
-		}
+	// the run reads the saved routine, so an edit still waiting to save goes first
+	const handleRunNow = async () => {
+		await flush();
+		return onRunNow();
 	};
 
 	return (
@@ -161,33 +145,10 @@ export function EventPlanningForm({
 									</span>
 								}
 							/>
-							<div className="flex flex-col gap-2">
-								<Button
-									type="button"
-									variant="outline"
-									size="sm"
-									className="w-fit"
-									disabled={
-										isStarting ||
-										!routine.enabled ||
-										routine.lastRun?.status === "running"
-									}
-									onClick={() => void runNow()}
-								>
-									<Play
-										aria-hidden="true"
-										data-icon="inline-start"
-									/>
-									Run now
-								</Button>
-								{runError && (
-									<Alert variant="destructive">
-										<AlertDescription>
-											{runError}
-										</AlertDescription>
-									</Alert>
-								)}
-							</div>
+							<RoutineRunNowButton
+								routine={routine}
+								onRunNow={handleRunNow}
+							/>
 							<Separator />
 							<FormField
 								control={form.control}
@@ -280,6 +241,7 @@ export function EventPlanningForm({
 							<RoutineResult
 								routine={routine}
 								copy={EVENT_PLANNING_RESULT_COPY}
+								onRunNow={handleRunNow}
 							/>
 						</div>
 					</CardContent>

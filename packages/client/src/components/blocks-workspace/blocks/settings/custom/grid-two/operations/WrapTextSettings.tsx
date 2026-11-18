@@ -26,7 +26,7 @@ import {
 } from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks/useBlockSettings";
 
-export interface TitleStylingProps<D extends BlockDef = GridBlockDef> {
+interface TitleStylingProps<D extends BlockDef = GridBlockDef> {
 	id: string;
 	path: Paths<Block<D>["data"], 4>;
 }

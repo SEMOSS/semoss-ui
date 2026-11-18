@@ -28,7 +28,7 @@ import {
 	subscribeNewChatDrafts,
 } from "./new-chat-drafts";
 
-export interface NewChatController {
+interface NewChatController {
 	draftId: string;
 	session: RoomSession;
 	snapshot: RoomSessionSnapshot;

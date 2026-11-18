@@ -61,7 +61,7 @@ import { AddTeamResourceAccessDialog } from "./add-team-resource-access-dialog";
 import { TeamResourceName } from "./team-resource-name";
 import { TEAM_RESOURCE_NOUNS } from "./team-resource-nouns";
 
-export interface TeamResourceAccessPanelProps {
+interface TeamResourceAccessPanelProps {
 	/** Projects or engines */
 	kind: GroupAccessResource;
 	/** The team. Keep the object stable, such as with useMemo, so it does not reload. */

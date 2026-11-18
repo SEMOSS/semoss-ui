@@ -26,7 +26,7 @@ import {
 import { CalendarEventSummary } from "./calendar-event-summary";
 
 /** Props for {@link CalendarEventForm}. */
-export interface CalendarEventFormProps {
+interface CalendarEventFormProps {
 	/** The calendar the event is on. */
 	app: CalendarApp;
 	/** Whether the call creates an event or changes one. */

@@ -52,7 +52,7 @@ export async function createDraftFolder(
 }
 
 /** What the owner's recent sent mail uses; blank fields when it shows none. */
-export interface LearnedDraftFormat {
+interface LearnedDraftFormat {
 	signatureHtml: string;
 	font: string;
 	fontSize: number | null;

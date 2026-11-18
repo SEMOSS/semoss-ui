@@ -14,6 +14,7 @@ import {
 } from "@semoss/ui/next";
 import { threadPath } from "@/lib/workspace-paths";
 import { dateLabel } from "../date-label";
+import { localDue } from "../live/live-state";
 import { selectTopicIgnores } from "../state/collaboration.selectors";
 import { isFollowed } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
@@ -160,7 +161,7 @@ export function PersonDetail() {
 								</Link>
 								<Small className="font-normal text-muted-foreground text-xs">
 									{item.due
-										? `Due ${dateLabel(item.due)}`
+										? `Due ${dateLabel(localDue(item.due), undefined, "date")}`
 										: dateLabel(item.received)}
 								</Small>
 							</div>

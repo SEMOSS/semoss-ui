@@ -23,7 +23,7 @@ import {
 import { Panel } from "@/components/workspace";
 import { useDesigner } from "@/hooks";
 
-export interface GridBlockColumn {
+interface GridBlockColumn {
 	name: string;
 	width?: string;
 	selector: string;

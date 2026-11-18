@@ -64,7 +64,10 @@ code may import from `core/` and `components/`; those two never import from them
 
 - **Saving goes into the insight's files, at the top level.** The download reactors always write
   there and replace a file of the same name, so `saveToInsight` picks a free name first and runs
-  one download at a time per insight. Emails, threads, chats, events, and documents have no file
+  one download at a time per insight. The OneDrive download does not always use that name: a copy
+  of the same file that is already in the insight, and was not changed there, is brought up to
+  date in place and its path is answered instead, so adding or opening a file twice leaves one
+  copy. Read the saved path from the response, as `readSavedPath` does; never assume it. Emails, threads, chats, events, and documents have no file
   of their own; they are written out as Markdown (`mail/mail.markdown.ts`,
   `calendar/calendar.markdown.ts`, `microsoft/microsoft.markdown.ts`,
   `google/google.markdown.ts`) and uploaded. The top level matters: a message's `media` is copied
@@ -72,6 +75,15 @@ code may import from `core/` and `components/`; those two never import from them
 - **`onAddToContext` is the host's.** The viewer saves the item, then hands the saved file over;
   the action only shows when the host passes the callback. `onSaved` replaces the viewer's own
   confirmation, and `onSignIn` opens the account's sign in, which must happen inside the click.
+- **A host can mark what it already holds.** `MailboxView`, `TeamsChatViewer`, `OneDriveViewer`,
+  and `TeamsFilesViewer` take `savedItems` (`{ isSaved(itemKey), label }`). The file `onSaved`
+  is handed names its item in `itemKey`, which is the save request's key, so the host answers
+  `isSaved` from what it kept. A held item says the host's `label` where it would be offered for
+  saving, with a filled check (`ConnectorSavedMark`): on its row, which is filled too, and on the
+  bar above it once it is open. Its right-click menu still saves, since the host may have let
+  its copy go. Mail is keyed by thread (`mailSaveKey`), since a save takes the whole thread, so
+  every row of a thread is held together whether or not the list groups them. Collaboration's
+  Digital Twin pages use it.
 - **Save preparation belongs to the originating host.** Optional
   `prepareSave?: () => Promise<void | (() => void)>` runs before saving. A returned release
   function runs in `finally`, after save callbacks, including failures and navigation away.
@@ -178,9 +190,32 @@ code may import from `core/` and `components/`; those two never import from them
   My Files and a channel's files are browsed by path, while Shared with Me reaches each folder by
   the ids it was listed with, remembered under the path it is shown at. The rows carry their
   drive item in `FileItem.data` for the connector's actions: the row button adds a file to
-  context, and the menu saves it to the chat's files or opens it in its app. A new drive, such
-  as Google Drive, needs only an adapter and those two callbacks. Because the explorer is
+  context, and the menu saves it to the chat's files or opens it in its app. A host that does
+  something else with a file passes `getFileAction` to `OneDriveViewer` or `TeamsFilesViewer`,
+  as Collaboration's topic page does to link a file to a topic: that action is then the row's
+  button and leads its menu, in place of adding to context and saving, and folders get none.
+  A new drive, such
+  as Google Drive, needs only an adapter and those two callbacks. My Files also writes: its
+  adapter sets `create` and `upload`, so the explorer shows its New button, the menu's New File
+  and New Folder, and takes files dropped on it. New File and New Folder run
+  `MicrosoftOneDriveCreateFile` (an empty file) and `MicrosoftOneDriveCreateFolder` in the
+  drive, never in the chat's files, and a name already taken fails. An upload from the computer
+  has to pass through the insight's files, which is where `MicrosoftOneDriveUploadFile` reads
+  from: it goes into a `.onedrive-upload-*` folder of its own, reaches the drive under the name
+  it has on the computer (the server escapes the name of its copy), and the folder is removed
+  whether or not the upload worked. A name already taken keeps both files. The removal names
+  its folder in a pixel written out by hand, never with `call`: `DeleteInsightAssets` with no
+  path deletes every file in the insight. Shared with Me and channel files stay browse only,
+  since writing to them needs the `Files.ReadWrite.All` scope. Because the explorer is
   rendered, the tests alias `monaco-editor` the way every host that renders a file panel does.
+- **A drive changes behind its viewer.** Nothing tells the viewer, so `ConnectorFileExplorer`
+  reads the listing again when the user comes back to it, to the window or to the viewer's tab
+  (`isVisible`), once the listing is half a minute old, and whenever the host raises
+  `refreshRequestId`, as Collaboration does when a run finishes, since the assistant may have
+  written to the drive. A listing that reaches `DRIVE_LIST_LIMIT` says so under it through the
+  explorer's `listingNote`, in the current folder and in each open one, so a file past the limit
+  is not taken for missing. Shared with Me's top listing also says its files come from
+  Microsoft's search, which lists a new share late.
 - **Teams chats read newest first, by when each message was sent.** `MicrosoftTeamsListChats`
   answers each chat with its last message, and the chat list orders and dates chats by that
   message (`teamsChatActivityDate`); a chat's `lastUpdatedDateTime` is when it was renamed or
@@ -267,13 +302,25 @@ provider captured in that selection. `CalendarAgendaView` accepts `onOpenEvent`,
 below 640px of its own container and restores the chosen grid when wider. The default
 presentation preserves Playground's existing calendar/list behavior.
 
+A host that lays a mailbox out itself, with its folders beside the list as a mail app has
+them, builds it from the same parts `MailboxView` uses: `useMailFolders` (the listing, ordered
+inbox first), `buildMailFolderTree`, `useMailPages`, `groupMailByConversation`, and
+`normalizeMailSubject`. Collaboration's topic contents page does, so each email can show
+whether it is in the topic.
+
 Optional `onControlsChange(ConnectorViewerControls)` publishes refresh, external-link,
 internal Open calendar, and mail/event Add to Context actions instead of showing their inline
 equivalents. Only visible viewers publish (`isVisible` defaults to true); hosts keep callbacks
 scoped to their provider/tab and own registration, retention, and navigation. Omitting the callback restores existing viewer
 controls, including in compact host layouts. Mail detail links use only a matching loaded
 message, or the newest loaded matching thread message, validated as an absolute HTTPS URL;
-there is no mailbox-home fallback. Retained detail `focusRequestId` values request heading
+there is no mailbox-home fallback. Every link out to a service's own app passes through
+`safeHttpsUrl` and is shown only when it is an absolute HTTPS URL: the `ConnectorActionBar`,
+`ConnectorItemMenu` (and `hasItemActions`), `ConnectorFileExplorer` and `ToolOutcomePanel`
+check the `webUrl` they are given, `useConnectorControls` publishes only such an `openIn`, and
+an event's Join Meeting link and a compose receipt's link are checked where they are drawn.
+So Teams chats, channel threads, message search hits and files, OneDrive, mail and calendar
+all share the one check. Retained detail `focusRequestId` values request heading
 focus on each open/reopen, while browser `focusItem` restores the originating row or focuses
 the list when the row is gone (the browser container in empty/error states). Hidden viewers
 do not move focus. Omitting these optional host APIs preserves inline detail
@@ -295,6 +342,11 @@ keyboard focus.
 `@semoss/connectors` is **source-only**, like `@semoss/shared`: no bundler and no `dist/`. Its
 `package.json` `exports` point at `src/`, so consuming apps compile the TypeScript themselves.
 Keep the source type-clean and Biome-clean.
+
+It has no state library. Shared state that outlives a component uses a `StoreState`-backed
+store per the [state management skill](../../skills/state-management.skill.md). The module-level
+listener sets in `mail/mail-compose-outcomes.ts` and `mail/use-mail-picture-preference.ts`
+predate it; move them onto `StoreState` when you touch them.
 
 | Import | Resolves to |
 |--------|-------------|

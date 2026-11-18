@@ -10,7 +10,11 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "@semoss/i18n";
-import { runPixel, useIteratorPixel, usePixel } from "@semoss/sdk/react";
+import {
+	runPixel,
+	useSessionIteratorPixel,
+	useSessionPixel,
+} from "@semoss/sdk/react";
 import {
 	Button,
 	cn,
@@ -96,7 +100,7 @@ export const WorkspaceChatList = ({
 	const [isRenaming, setIsRenaming] = useState(false);
 	const [renamedMap, setRenamedMap] = useState<Record<string, string>>({});
 
-	const getWorkspaceRooms = useIteratorPixel<
+	const getWorkspaceRooms = useSessionIteratorPixel<
 		{ total_count: number; rooms: Room[] },
 		Room
 	>(
@@ -114,7 +118,7 @@ export const WorkspaceChatList = ({
 	});
 
 	// Cross-workspace pinned-rooms query — filtered locally to this workspace
-	const getPinnedRooms = usePixel<PinnedRoom[]>(
+	const getPinnedRooms = useSessionPixel<PinnedRoom[]>(
 		`META | GetPlaygroundRooms(pinned=[true], sort=["DESC"]);`,
 		{ data: [] },
 	);

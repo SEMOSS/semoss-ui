@@ -19,7 +19,7 @@ import {
 import { AutomationVariableContext } from "../automation-variable-context";
 import { getAutomationVariableDisplay } from "../automation-variable-display";
 
-export interface PillInputProps {
+interface PillInputProps {
 	/** Field label */
 	label: string;
 	/** Current string value — may contain `${varName}` references */
@@ -697,5 +697,4 @@ export function PillInput({
 	);
 }
 
-export type { PillInputProps as BoundInputProps };
 export { PillInput as BoundInput };

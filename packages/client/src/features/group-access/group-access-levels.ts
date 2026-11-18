@@ -1,7 +1,7 @@
 import type { Role } from "@semoss/sdk";
 
 /** An access level a team can have to a project or engine */
-export interface GroupAccessLevel {
+interface GroupAccessLevel {
 	/** The permission the owner endpoints take */
 	value: Role;
 	/** The number a team's access row carries */

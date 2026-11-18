@@ -56,9 +56,6 @@ const baseConfig = createViteConfig({
 		) {
 			return "icon-assets";
 		}
-		if (id.includes("/node_modules/flexlayout-react/")) {
-			return "vendor-flexlayout";
-		}
 		if (
 			id.includes("/node_modules/@xyflow/react/") ||
 			id.includes("/node_modules/@xyflow/system/")

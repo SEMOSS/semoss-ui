@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import type { GroupAccessResource, TeamResource } from "@/api/teams";
 import { getTeamResourcePath } from "./team-resource-path";
 
-export interface TeamResourceNameProps {
+interface TeamResourceNameProps {
 	/** Projects or engines. */
 	kind: GroupAccessResource;
 	/** The project or engine. */

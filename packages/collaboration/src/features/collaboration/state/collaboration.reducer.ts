@@ -195,6 +195,14 @@ function mergeTopics(
 	target.calendarSeries = [
 		...new Set([...target.calendarSeries, ...source.calendarSeries]),
 	];
+	// a file on both stays linked once, as the server leaves it
+	const targetFiles = target.files ?? [];
+	target.files = [
+		...targetFiles,
+		...(source.files ?? []).filter(
+			(file) => !targetFiles.some((kept) => kept.itemId === file.itemId),
+		),
+	];
 	for (const thread of state.threads) {
 		const sourceLink = thread.topicLinks.find(
 			(link) => link.topicId === sourceId,
@@ -462,7 +470,10 @@ export function collaborationReducer(
 					});
 				else if (
 					command.operation === "confirm" ||
-					command.operation === "add"
+					command.operation === "add" ||
+					// live sync never saves a suggested link, so starring one confirms it
+					(command.operation === "primary" &&
+						existing.source === "suggested")
 				)
 					existing.source = "confirmed";
 				if (command.operation === "primary")
@@ -500,6 +511,16 @@ export function collaborationReducer(
 				(candidate) => candidate.id === command.threadId,
 			);
 			if (thread) thread.muted = command.muted;
+			break;
+		}
+		case "thread.notAutomated": {
+			const thread = state.threads.find(
+				(candidate) => candidate.id === command.threadId,
+			);
+			if (thread) {
+				thread.notAutomated = command.notAutomated || undefined;
+				if (command.notAutomated) thread.automated = undefined;
+			}
 			break;
 		}
 		case "person.save": {
@@ -611,7 +632,8 @@ export function collaborationReducer(
 					!state.topics.some(
 						(topic) =>
 							topic.id === command.targetTopicId &&
-							topic.isSample,
+							topic.id !== review.refId &&
+							topic.status === "active",
 					)
 				)
 					break;
@@ -631,7 +653,8 @@ export function collaborationReducer(
 									)?.kind === "internal"
 										? "internal"
 										: "client",
-								isSample: true,
+								// sample data only where there is no live mailbox
+								isSample: !state.liveProfile,
 							},
 							now,
 						),
@@ -685,6 +708,28 @@ export function collaborationReducer(
 			}
 			review.status = "accepted";
 			review.resolvedAt = now;
+			break;
+		}
+		case "review.reopen": {
+			const review = state.reviews.find(
+				(candidate) => candidate.id === command.reviewId,
+			);
+			// a new topic's answer cannot be taken back: a no removed the topic, a yes made it a real one
+			if (
+				!review ||
+				review.status === "open" ||
+				review.kind === "new_topic"
+			)
+				break;
+			review.status = "open";
+			review.resolvedAt = undefined;
+			const thread =
+				review.kind === "topic_choice"
+					? state.threads.find(
+							(candidate) => candidate.id === review.refId,
+						)
+					: undefined;
+			if (thread) thread.needsTopicChoice = true;
 			break;
 		}
 		case "profile.save": {

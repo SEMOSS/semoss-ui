@@ -28,7 +28,7 @@ import {
 } from "../../../domain/branch-condition";
 import { PillInput } from "./pill-input";
 
-export interface BranchConditionBuilderProps {
+interface BranchConditionBuilderProps {
 	/** Ordered conditional routes evaluated before the final Else path. */
 	clauses: AutomationBranchClause[];
 	onChange: (clauses: AutomationBranchClause[]) => void;

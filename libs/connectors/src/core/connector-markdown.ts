@@ -158,7 +158,7 @@ export const toPerson = (
 };
 
 /** A header's value: text, or a link that shows only its site. */
-export type FieldValue = string | { link: string | undefined } | undefined;
+type FieldValue = string | { link: string | undefined } | undefined;
 
 /**
  * Header lines such as `**From:** Ada`, one to a line, leaving out values

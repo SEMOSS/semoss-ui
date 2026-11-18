@@ -17,6 +17,7 @@ import {
 	canEvictRoomEmailStore,
 	disposeRoomEmailStore,
 } from "@/features/room-email/room-email-store";
+import { sendsAsText } from "@/features/thread-assistant/api/thread-attachments";
 import { resolveThreadModel } from "@/features/thread-assistant/api/thread-model";
 import {
 	getThreadAgent,
@@ -48,6 +49,7 @@ import {
 } from "./api/room-schemas";
 import { saveRoomSourceFile } from "./api/save-room-source-file";
 import type { UploadedRoomFile } from "./api/upload-room-files";
+import { uploadRoomTextCopies } from "./api/upload-room-text-copies";
 import type { ComposerDraft } from "./components/room-composer.types";
 import { removeSubmittedComposerDraft } from "./components/submitted-composer-draft";
 import { type RoomSource, roomSourceSchema } from "./source-import/room-source";
@@ -229,6 +231,10 @@ export class RoomSession {
 	setComposerDraft = (composerDraft: ComposerDraft): void => {
 		this.update({ composerDraft });
 	};
+	/** Show a name the server already saved, such as a rename from the chat list. */
+	setTitle = (title: string): void => {
+		this.update({ title });
+	};
 	/** Queue a saved file once without replacing an existing submission's entry. */
 	addContextFile = (file: UploadedRoomFile): void => {
 		if (
@@ -378,10 +384,28 @@ export class RoomSession {
 	}
 	refreshHistory = async (): Promise<void> => {
 		if (!this.snapshot.roomId || !this.controller) return;
-		const messages = await getRoomMessages(
-			this.insight.actions,
-			this.snapshot.roomId,
-		);
+		const previousTitle = this.snapshot.title;
+		const [messages, envelope] = await Promise.all([
+			getRoomMessages(this.insight.actions, this.snapshot.roomId),
+			// RunAgent names the room asynchronously; refreshing messages must also refresh its name.
+			callPixel(
+				this.insight.actions,
+				pixel("GetRoomOptions", { roomId: this.snapshot.roomId }),
+				roomOptionsEnvelopeSchema,
+			)
+				// A failed metadata read must not hide a recovered transcript; retry with the next refresh.
+				.catch(() => null),
+		]);
+		const title = readableRoomName(envelope?.ROOM_NAME);
+		if (this.isDisposed) return;
+		if (
+			title &&
+			this.snapshot.title === previousTitle &&
+			title !== previousTitle
+		) {
+			this.setTitle(title);
+			this.notifyHistory();
+		}
 		this.history = threadFromMessages(messages);
 		this.controller.reconcileHistory(messages);
 		this.publishTurn(this.controller.getSnapshot());
@@ -688,7 +712,9 @@ export class RoomSession {
 					"Check room settings.",
 			);
 		const userText =
-			submission.text.trim() || "Please review the attached files.";
+			submission.userContentFormat === "html-v1" && submission.userContent
+				? submission.userContent
+				: submission.text.trim() || "Please review the attached files.";
 		const command = threadCommand(context, userText);
 		// an identical earlier message must not confirm this one after a lost response
 		const matchesBefore = this.countSent(command);
@@ -713,13 +739,28 @@ export class RoomSession {
 		try {
 			if (this.snapshot.options?.modelId !== this.snapshot.modelId)
 				await this.updateOptions({ modelId: this.snapshot.modelId });
+			const files = submittedDraft.composer.files;
+			const textFiles = files.filter((file) => sendsAsText(file.name));
+			// awaited only when needed, so any other send starts its turn, and its Stop, at once
+			const textCopies = textFiles.length
+				? await uploadRoomTextCopies(
+						this.insight.actions,
+						this.insight.insightId,
+						textFiles,
+					)
+				: [];
+			for (const copy of textCopies)
+				existingMedia.push({
+					...copy,
+					insightId: this.insight.insightId,
+				});
 			requested = true;
 			const accepted = await this.controller.send(
 				{
 					...submission,
 					text: command,
 					userText,
-					files: submittedDraft.composer.files,
+					files: files.filter((file) => !sendsAsText(file.name)),
 					existingMedia,
 				},
 				this.config(),
@@ -833,6 +874,12 @@ function registerRoomSession(session: RoomSession): void {
 /** Create an unallocated draft; it joins the room registry as soon as allocation succeeds. */
 export function createRoomSession(scope: string): RoomSession {
 	return new RoomSession(scope);
+}
+
+/** Publish a manual rename to every loaded session without waiting for its next history refresh. */
+export function renameRoomSessions(roomId: string, title: string): void {
+	for (const session of sessions.values())
+		if (session.getSnapshot().roomId === roomId) session.setTitle(title);
 }
 
 /** Resolve only by actual room identity, never by source/thread association. */

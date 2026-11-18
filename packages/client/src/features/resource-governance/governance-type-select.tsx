@@ -14,7 +14,7 @@ const GROUPS = [
 	{ kind: "ENGINE", label: "Engines" },
 ] as const;
 
-export interface GovernanceTypeSelectProps {
+interface GovernanceTypeSelectProps {
 	/** The type chosen, or undefined before one is */
 	value?: string;
 	/** Called with the type chosen */

@@ -15,7 +15,7 @@ import { formatLocalDateTime } from "@semoss/utility/date";
 import { formatToDataTestId } from "@semoss/utility/text";
 import { getTagBadgeStyle } from "@/utility";
 
-export interface TemplateCardProps extends React.ComponentProps<typeof Card> {
+interface TemplateCardProps extends React.ComponentProps<typeof Card> {
 	/** Unique template / project ID */
 	id?: string;
 	/** Display name */

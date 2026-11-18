@@ -1,319 +1,731 @@
-import { Pencil, Plus } from "lucide-react";
-import { type ReactNode, useId, useState } from "react";
+import { Check, ChevronDown, Pencil, Plus, Undo2, X } from "lucide-react";
+import { useId, useState } from "react";
 import {
+	Badge,
 	Button,
+	Checkbox,
 	cn,
 	FormCheckbox,
-	FormInput,
 	Input,
 	Label,
 	P,
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
 	useFormContext,
 } from "@semoss/ui/next";
-import { DOT, topicSummary } from "./topic-flow-utils";
+import { peoplePickerContentClassName } from "@/features/collaboration/components/people-picker-panel";
+import { givenFirst } from "@/lib/person-name";
+import type { InsightActions } from "@/lib/pixel";
+import type { OnboardingPerson } from "./onboarding-api";
+import { TopicConversationsPanel } from "./topic-conversations-panel";
+import { DOT, topicPeople, topicSummary } from "./topic-flow-utils";
+import { TopicPeoplePicker } from "./topic-people-picker";
 import type {
+	ReviewTopic,
 	TopicArea,
 	TopicReview,
 	TopicReviewDraft,
 } from "./topic-review-api";
-
-const MORE = 5;
+import type { useTopicReviewChanges } from "./use-topic-review-changes";
 
 interface TopicAreasStageProps {
+	actions: InsightActions;
+	contacts: OnboardingPerson[];
+	changes: ReturnType<typeof useTopicReviewChanges>;
+	/** Save the draft before reading or changing conversations. */
+	onSave: () => Promise<TopicReview>;
 	review: TopicReview;
 	values: TopicReviewDraft;
-	/** How many areas are on screen; the rest wait behind Show more. */
-	revealed: number;
+	addedNames: Record<string, string>;
 	isBusy: boolean;
-	onReveal: (count: number) => void;
 	onRegroup: (areaKey: string, split: boolean) => void;
-	onAddTopic: (name: string) => void;
+	onCombine: (keys: string[]) => void;
+	onAddTopic: (name: string) => string;
+	onRemovePeople: (key: string, ids: string[]) => void;
+	onRestorePeople: (
+		key: string,
+		people: { id: string; name: string }[],
+	) => void;
 }
 
-/** A few areas of work at a time; each can be kept whole or as its smaller topics. */
+/** One row in the list: a topic, or an area still shown as one topic. */
+interface Entry {
+	key: string;
+	area?: TopicArea;
+	/** keys of the topics folded into this row while its area is whole */
+	parts: string[];
+	/** the area this topic was split out of */
+	splitFrom?: TopicArea;
+}
+
+/** Topics as a short list; pick one to see and change what is in it. */
 export function TopicAreasStage({
+	actions,
+	contacts,
+	changes,
+	onSave,
 	review,
 	values,
-	revealed,
+	addedNames,
 	isBusy,
-	onReveal,
 	onRegroup,
+	onCombine,
 	onAddTopic,
+	onRemovePeople,
+	onRestorePeople,
 }: TopicAreasStageProps) {
 	const form = useFormContext<TopicReviewDraft>();
 	const addId = useId();
 	const [newName, setNewName] = useState("");
-	const [renaming, setRenaming] = useState<string | null>(null);
-	const areas = review.draft.areas;
+	const [picked, setPicked] = useState<string[]>([]);
+	const [showOthers, setShowOthers] = useState(false);
+	const evidenceOf = (key: string) =>
+		review.draft.topics.find((topic) => topic.key === key);
 	const indexOf = (key: string) =>
 		values.topics.findIndex((topic) => topic.key === key);
-	const isKept = (area: TopicArea) =>
-		area.topicKeys.some(
-			(key) =>
-				values.topics[indexOf(key)]?.keep &&
-				!review.draft.topics.find((t) => t.key === key)?.mergedIntoKey,
-		);
-	// an area the owner kept never hides behind Show more
-	const lastKept = areas.reduce(
-		(last, area, index) => (isKept(area) ? index : last),
-		-1,
-	);
-	const shown = Math.min(areas.length, Math.max(revealed, lastKept + 1));
-	const inArea = new Set(areas.flatMap((area) => area.topicKeys));
-	// a topic folded into another is shown through that one
 	const merged = new Set(
 		review.draft.topics
 			.filter((topic) => topic.mergedIntoKey)
 			.map((topic) => topic.key),
 	);
-	const saved = values.topics.filter(
-		(topic) =>
-			!inArea.has(topic.key) &&
-			!topic.key.startsWith("added-") &&
-			!merged.has(topic.key),
-	);
-	const added = values.topics.filter((topic) =>
-		topic.key.startsWith("added-"),
+	const inArea = new Set(
+		review.draft.areas.flatMap((area) => area.topicKeys),
 	);
 
-	const reveal = () => {
-		const next = Math.min(areas.length, shown + MORE);
-		// newly shown areas you take part in start kept, like the first ones
-		for (const area of areas.slice(shown, next)) {
-			if (!area.suggested || area.split) continue;
-			const index = indexOf(area.topicKeys[0]);
-			if (index >= 0)
-				form.setValue(`topics.${index}.keep`, true, {
-					shouldDirty: true,
-				});
-		}
-		onReveal(next);
-	};
+	const entries: Entry[] = [
+		...values.topics
+			.filter((t) => !inArea.has(t.key) && !t.key.startsWith("added-"))
+			.map((t) => ({ key: t.key, parts: [] })),
+		...review.draft.areas.flatMap((area): Entry[] =>
+			area.topicKeys.length > 1 && !area.split
+				? [{ key: area.topicKeys[0], area, parts: area.topicKeys }]
+				: area.topicKeys.map((key) => ({
+						key,
+						area,
+						parts: [],
+						splitFrom: area.topicKeys.length > 1 ? area : undefined,
+					})),
+		),
+		...values.topics
+			.filter((t) => t.key.startsWith("added-"))
+			.map((t) => ({ key: t.key, parts: [] })),
+	].filter((entry) => !merged.has(entry.key) && indexOf(entry.key) >= 0);
+	const kept = entries.filter((e) => values.topics[indexOf(e.key)]?.keep);
+	const others = entries.filter((e) => !values.topics[indexOf(e.key)]?.keep);
+	const [selected, setSelected] = useState<string | null>(null);
+	const current =
+		entries.find((e) => e.key === selected) ?? kept[0] ?? entries[0];
+
+	const setKeep = (key: string, keep: boolean) =>
+		form.setValue(`topics.${indexOf(key)}.keep`, keep, {
+			shouldDirty: true,
+		});
+
+	const togglePick = (key: string) =>
+		setPicked((list) =>
+			list.includes(key) ? list.filter((k) => k !== key) : [...list, key],
+		);
 
 	const add = () => {
-		if (!newName.trim()) return;
-		onAddTopic(newName.trim());
+		const name = newName.trim();
+		if (!name) return;
+		setSelected(onAddTopic(name));
 		setNewName("");
 	};
 
-	const row = (key: string, extra?: ReactNode) => {
-		const index = indexOf(key);
-		const value = values.topics[index];
-		if (!value) return null;
-		const evidence = review.draft.topics.find((topic) => topic.key === key);
-		const isRenaming = renaming === key;
+	const row = (entry: Entry) => {
+		const value = values.topics[indexOf(entry.key)];
+		const evidence = evidenceOf(entry.key);
+		const count = evidence?.threadIds.length ?? 0;
+		const isCurrent = entry.key === current?.key;
 		return (
-			<div className="flex min-w-0 flex-col gap-1">
-				<div className="flex min-w-0 items-start justify-between gap-2">
-					{isRenaming ? (
-						<FormInput
-							name={`topics.${index}.name`}
-							aria-label="Topic name"
-							className="max-w-sm"
-							autoFocus
-							onBlur={() => setRenaming(null)}
-							onKeyDown={(event) => {
-								if (event.key === "Enter") {
-									event.preventDefault();
-									setRenaming(null);
-								}
-							}}
-						/>
-					) : (
-						<FormCheckbox
-							name={`topics.${index}.keep`}
-							label={
-								<span className="font-medium">
-									{value.name || "New topic"}
-								</span>
-							}
-							disabled={isBusy || evidence?.accepted}
-						/>
+			<li key={entry.key}>
+				<div
+					className={cn(
+						"flex items-center gap-2.5 px-3 py-2.5 text-sm",
+						isCurrent
+							? "bg-primary/10 shadow-[inset_3px_0_0] shadow-primary"
+							: "hover:bg-muted/50",
 					)}
-					{!isRenaming && (
-						<Button
-							type="button"
-							variant="ghost"
-							size="icon"
-							className="size-7 shrink-0"
+				>
+					{value.keep && (
+						<Checkbox
+							aria-label={`Select ${value.name || "new topic"} to combine`}
+							checked={picked.includes(entry.key)}
 							disabled={isBusy}
-							aria-label={`Rename ${value.name || "new topic"}`}
-							onClick={() => setRenaming(key)}
-						>
-							<Pencil className="size-3.5" aria-hidden="true" />
-						</Button>
+							onCheckedChange={() => togglePick(entry.key)}
+						/>
 					)}
+					<button
+						type="button"
+						className={cn(
+							"flex min-w-0 flex-1 items-center gap-2 text-left",
+							!value.keep && "text-muted-foreground",
+						)}
+						aria-current={isCurrent ? "true" : undefined}
+						onClick={() => setSelected(entry.key)}
+					>
+						<span className="min-w-0 flex-1 truncate font-medium">
+							{value.name || "New topic"}
+						</span>
+						{entry.parts.length > 1 && (
+							<Badge variant="outline" className="font-normal">
+								{entry.parts.length} parts
+							</Badge>
+						)}
+						<span className="text-muted-foreground text-xs tabular-nums">
+							{count || ""}
+						</span>
+					</button>
 				</div>
-				<P className="pl-6 text-muted-foreground text-xs">
-					{topicSummary(evidence, value) ||
-						(evidence?.accepted
-							? "Already saved"
-							: "No conversations yet")}
-				</P>
-				{value.keep && (evidence?.folderIds.length ?? 0) > 0 && (
-					<div className="pl-6">
-						<FormCheckbox
-							name={`topics.${index}.fileFromFolder`}
-							label={
-								<span className="text-muted-foreground text-xs">
-									File new mail from{" "}
-									{evidence?.folders.join(", ")} here
-								</span>
-							}
-							disabled={isBusy}
-						/>
-					</div>
-				)}
-				{form.formState.errors.topics?.[index]?.name && (
-					<P className="pl-6 text-destructive text-xs" role="alert">
-						Name this topic or turn off Keep.
-					</P>
-				)}
-				{extra}
-			</div>
+			</li>
 		);
 	};
 
+	// the latest conversation or grouping change can be taken back
+	const lastChange = review.draft.lastChange
+		? review.draft.history?.find(
+				(item) => item.id === review.draft.lastChange,
+			)
+		: undefined;
+
 	return (
-		<div className="flex flex-col gap-2">
-			{saved.length > 0 && (
-				<ul className="divide-y rounded-lg border">
-					{saved.map((topic) => (
-						<li key={topic.key} className="px-3 py-2.5">
-							{row(topic.key)}
-						</li>
-					))}
-				</ul>
-			)}
-			{areas.length > 0 && (
-				<ul className="divide-y rounded-lg border">
-					{areas.slice(0, shown).map((area) => {
-						const parts = area.topicKeys.map((key) =>
-							review.draft.topics.find(
-								(topic) => topic.key === key,
-							),
-						);
-						const partNames = parts.map((part, index) =>
-							index === 0
-								? (part?.own?.name ?? part?.name ?? "")
-								: (part?.name ?? ""),
-						);
-						const isGroup = area.topicKeys.length > 1;
-						return (
-							<li
-								key={area.key}
-								className={cn(
-									"px-3 py-2.5",
-									!isKept(area) && "bg-muted/30",
-								)}
-							>
-								{!isGroup ? (
-									row(area.topicKeys[0])
-								) : !area.split ? (
-									row(
-										area.topicKeys[0],
-										<div className="flex flex-wrap items-center gap-x-2 pl-6 text-xs">
-											<span className="text-muted-foreground">
-												Includes{" "}
-												{partNames.join(` ${DOT} `)}
-											</span>
-											<Button
-												type="button"
-												variant="link"
-												size="sm"
-												className="h-auto p-0 text-xs"
-												disabled={isBusy}
-												onClick={() =>
-													onRegroup(area.key, true)
-												}
-											>
-												Keep these separate
-											</Button>
-										</div>,
-									)
-								) : (
-									<div className="flex flex-col gap-2">
-										<div className="flex flex-wrap items-center justify-between gap-2">
-											<P className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
-												{area.name}
-											</P>
-											<Button
-												type="button"
-												variant="link"
-												size="sm"
-												className="h-auto p-0 text-xs"
-												disabled={isBusy}
-												onClick={() =>
-													onRegroup(area.key, false)
-												}
-											>
-												Combine into one topic
-											</Button>
-										</div>
-										<ul className="flex flex-col gap-2 border-l pl-3">
-											{area.topicKeys.map((key) => (
-												<li key={key}>{row(key)}</li>
-											))}
-										</ul>
-									</div>
-								)}
-							</li>
-						);
-					})}
-				</ul>
-			)}
-			{shown < areas.length && (
-				<Button
-					type="button"
-					variant="outline"
-					className="self-start"
-					disabled={isBusy}
-					onClick={reveal}
-				>
-					Show {Math.min(MORE, areas.length - shown)} more
-					<span className="text-muted-foreground">
-						({areas.length - shown} left)
-					</span>
-				</Button>
-			)}
-			{added.length > 0 && (
-				<ul className="divide-y rounded-lg border">
-					{added.map((topic) => (
-						<li key={topic.key} className="px-3 py-2.5">
-							{row(topic.key)}
-						</li>
-					))}
-				</ul>
-			)}
-			<div className="flex max-w-md items-end gap-2 pt-2">
-				<div className="flex-1 space-y-1">
-					<Label htmlFor={addId} className="text-sm">
-						Add a topic
-					</Label>
-					<Input
-						id={addId}
-						value={newName}
-						maxLength={255}
-						placeholder="For example, Hiring"
+		<div className="flex min-w-0 flex-col gap-3">
+			{lastChange && (
+				<output className="flex flex-wrap items-center gap-2 self-start rounded-md bg-muted px-3 py-1.5 text-sm">
+					{lastChange.summary}
+					<Button
+						type="button"
+						variant="link"
+						size="sm"
+						className="h-auto p-0"
 						disabled={isBusy}
-						onChange={(event) => setNewName(event.target.value)}
-						onKeyDown={(event) => {
-							if (event.key === "Enter") {
-								event.preventDefault();
-								add();
-							}
-						}}
-					/>
+						onClick={() =>
+							void changes.change({
+								type: "undo",
+								changeId: lastChange.id,
+							})
+						}
+					>
+						<Undo2 aria-hidden="true" /> Undo
+					</Button>
+				</output>
+			)}
+			<div className="grid min-w-0 grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] xl:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
+				<div className="flex min-w-0 flex-col overflow-hidden rounded-lg border lg:sticky lg:top-4 lg:max-h-[calc(100dvh-9rem)]">
+					<div className="flex items-center justify-between border-b px-3 py-2 text-muted-foreground text-xs">
+						<span>
+							{kept.length}{" "}
+							{kept.length === 1 ? "topic" : "topics"} kept
+						</span>
+						<span>conversations</span>
+					</div>
+					{picked.length >= 2 && (
+						<div className="flex flex-wrap items-center gap-2 border-b bg-primary/5 px-3 py-2 text-sm">
+							<span className="font-medium">
+								{picked.length} selected
+							</span>
+							<Button
+								type="button"
+								size="sm"
+								disabled={isBusy}
+								onClick={() => {
+									onCombine(picked);
+									setPicked([]);
+								}}
+							>
+								Combine into one
+							</Button>
+							<Button
+								type="button"
+								size="sm"
+								variant="ghost"
+								onClick={() => setPicked([])}
+							>
+								Clear
+							</Button>
+						</div>
+					)}
+					<div className="min-h-0 flex-1 overflow-y-auto">
+						<ul className="divide-y">{kept.map(row)}</ul>
+						{others.length > 0 && (
+							<>
+								<button
+									type="button"
+									className="flex w-full items-center justify-between border-t bg-muted/40 px-3 py-2 text-left text-muted-foreground text-xs uppercase tracking-wide"
+									aria-expanded={showOthers}
+									onClick={() =>
+										setShowOthers((open) => !open)
+									}
+								>
+									Also found, not kept ({others.length})
+									<ChevronDown
+										className={cn(
+											"size-3.5 transition-transform",
+											showOthers && "rotate-180",
+										)}
+										aria-hidden="true"
+									/>
+								</button>
+								{showOthers && (
+									<ul className="divide-y border-t">
+										{others.map(row)}
+									</ul>
+								)}
+							</>
+						)}
+					</div>
+					<div className="flex shrink-0 items-end gap-2 border-t p-3">
+						<div className="flex-1 space-y-1">
+							<Label htmlFor={addId} className="text-xs">
+								Add a topic
+							</Label>
+							<Input
+								id={addId}
+								value={newName}
+								maxLength={255}
+								placeholder="For example, Hiring"
+								disabled={isBusy}
+								onChange={(event) =>
+									setNewName(event.target.value)
+								}
+								onKeyDown={(event) => {
+									if (event.key === "Enter") {
+										event.preventDefault();
+										add();
+									}
+								}}
+							/>
+						</div>
+						<Button
+							type="button"
+							variant="outline"
+							size="icon"
+							aria-label="Add topic"
+							disabled={isBusy || !newName.trim()}
+							onClick={add}
+						>
+							<Plus aria-hidden="true" />
+						</Button>
+					</div>
 				</div>
-				<Button
-					type="button"
-					variant="outline"
-					disabled={isBusy || !newName.trim()}
-					onClick={add}
-				>
-					<Plus aria-hidden="true" /> Add
-				</Button>
+				{current ? (
+					<TopicDetail
+						key={current.key}
+						actions={actions}
+						contacts={contacts}
+						changes={changes}
+						onSave={onSave}
+						others={kept
+							.filter((other) => other.key !== current.key)
+							.map((other) => ({
+								key: other.key,
+								name:
+									values.topics[indexOf(other.key)]?.name ||
+									"New topic",
+							}))}
+						entry={current}
+						review={review}
+						values={values}
+						addedNames={addedNames}
+						isBusy={isBusy}
+						evidenceOf={evidenceOf}
+						indexOf={indexOf}
+						onKeep={setKeep}
+						onRegroup={onRegroup}
+						onRemovePeople={onRemovePeople}
+						onRestorePeople={onRestorePeople}
+					/>
+				) : (
+					<P className="text-muted-foreground text-sm">
+						No topics yet. Add one on the left.
+					</P>
+				)}
 			</div>
 		</div>
+	);
+}
+
+interface TopicDetailProps {
+	actions: InsightActions;
+	contacts: OnboardingPerson[];
+	changes: ReturnType<typeof useTopicReviewChanges>;
+	/** Save the draft before reading or changing conversations. */
+	onSave: () => Promise<TopicReview>;
+	/** Kept topics a conversation can move to. */
+	others: { key: string; name: string }[];
+	entry: Entry;
+	review: TopicReview;
+	values: TopicReviewDraft;
+	addedNames: Record<string, string>;
+	isBusy: boolean;
+	evidenceOf: (key: string) => ReviewTopic | undefined;
+	indexOf: (key: string) => number;
+	onKeep: (key: string, keep: boolean) => void;
+	onRegroup: (areaKey: string, split: boolean) => void;
+	onRemovePeople: (key: string, ids: string[]) => void;
+	onRestorePeople: (
+		key: string,
+		people: { id: string; name: string }[],
+	) => void;
+}
+
+/** Everything about one topic: its name, what it is made of, sample conversations and people. */
+function TopicDetail({
+	actions,
+	contacts,
+	changes,
+	onSave,
+	others,
+	entry,
+	review,
+	values,
+	addedNames,
+	isBusy,
+	evidenceOf,
+	indexOf,
+	onKeep,
+	onRegroup,
+	onRemovePeople,
+	onRestorePeople,
+}: TopicDetailProps) {
+	const form = useFormContext<TopicReviewDraft>();
+	const index = indexOf(entry.key);
+	const value = values.topics[index];
+	const evidence = evidenceOf(entry.key);
+	const [renaming, setRenaming] = useState(false);
+	const [draftName, setDraftName] = useState("");
+	const [isAdding, setIsAdding] = useState(false);
+	const { suggested, added } = topicPeople(evidence, value, addedNames);
+	const isGroup = entry.parts.length > 1;
+	const about = (isGroup ? entry.area?.about : "") || value.description;
+	const count = evidence?.threadIds.length ?? 0;
+
+	const saveName = () => {
+		const name = draftName.trim();
+		if (!name) return;
+		form.setValue(`topics.${index}.name`, name, {
+			shouldDirty: true,
+			shouldValidate: true,
+		});
+		setRenaming(false);
+	};
+
+	return (
+		<section
+			aria-label={value.name || "New topic"}
+			className="flex min-w-0 flex-col gap-4 rounded-lg border p-4 sm:p-5"
+		>
+			<div className="flex flex-wrap items-center gap-2">
+				{renaming ? (
+					<>
+						<Input
+							aria-label="Topic name"
+							className="min-w-0 max-w-md flex-1 font-semibold"
+							value={draftName}
+							maxLength={255}
+							autoFocus
+							onChange={(event) =>
+								setDraftName(event.target.value)
+							}
+							onKeyDown={(event) => {
+								if (event.key === "Enter") {
+									event.preventDefault();
+									saveName();
+								} else if (event.key === "Escape") {
+									event.preventDefault();
+									setRenaming(false);
+								}
+							}}
+						/>
+						<Button
+							type="button"
+							size="sm"
+							disabled={!draftName.trim()}
+							onClick={saveName}
+						>
+							<Check aria-hidden="true" /> Save
+						</Button>
+						<Button
+							type="button"
+							size="sm"
+							variant="ghost"
+							onClick={() => setRenaming(false)}
+						>
+							<X aria-hidden="true" /> Cancel
+						</Button>
+					</>
+				) : (
+					<>
+						<h2 className="min-w-0 flex-1 truncate font-semibold text-lg">
+							{value.name || "New topic"}
+						</h2>
+						<Button
+							type="button"
+							size="sm"
+							variant="outline"
+							disabled={isBusy}
+							onClick={() => {
+								setDraftName(value.name);
+								setRenaming(true);
+							}}
+						>
+							<Pencil aria-hidden="true" /> Rename
+						</Button>
+						<Button
+							type="button"
+							size="sm"
+							variant={value.keep ? "outline" : "default"}
+							disabled={
+								isBusy || (value.keep && evidence?.accepted)
+							}
+							onClick={() => onKeep(entry.key, !value.keep)}
+						>
+							{value.keep ? "Not my work" : "Keep this topic"}
+						</Button>
+					</>
+				)}
+			</div>
+			{form.formState.errors.topics?.[index]?.name && (
+				<P className="text-destructive text-xs" role="alert">
+					Name this topic or mark it Not my work.
+				</P>
+			)}
+			<div className="space-y-1">
+				{about && <P className="text-sm">{about}</P>}
+				<P className="text-muted-foreground text-xs">
+					{count
+						? `${count} ${count === 1 ? "conversation" : "conversations"}`
+						: evidence?.accepted
+							? "Already saved"
+							: "No conversations yet"}
+					{evidence?.folders.length
+						? ` ${DOT} mostly in ${evidence.folders.join(", ")}`
+						: ""}
+				</P>
+			</div>
+
+			{isGroup && entry.area && (
+				<Block
+					title={`Made of ${entry.parts.length} parts`}
+					action={
+						<Button
+							type="button"
+							variant="link"
+							size="sm"
+							className="h-auto p-0 text-xs"
+							disabled={isBusy}
+							onClick={() =>
+								onRegroup(entry.area?.key ?? "", true)
+							}
+						>
+							Keep these separate
+						</Button>
+					}
+				>
+					<ul className="flex flex-col gap-1.5">
+						{entry.parts.map((key, position) => {
+							const part = evidenceOf(key);
+							const name =
+								position === 0
+									? (part?.own?.name ?? part?.name)
+									: part?.name;
+							return (
+								<li
+									key={key}
+									className="rounded-md border px-3 py-2 text-sm"
+								>
+									<span className="font-medium">{name}</span>
+									{part?.sampleSubjects[0] && (
+										<span className="block truncate text-muted-foreground text-xs">
+											e.g. {part.sampleSubjects[0]}
+										</span>
+									)}
+								</li>
+							);
+						})}
+					</ul>
+				</Block>
+			)}
+			{entry.splitFrom && (
+				<div className="flex flex-wrap items-center gap-2 rounded-md bg-muted/40 px-3 py-2 text-xs">
+					<span className="text-muted-foreground">
+						Split out of {entry.splitFrom.name}
+					</span>
+					<Button
+						type="button"
+						variant="link"
+						size="sm"
+						className="h-auto p-0 text-xs"
+						disabled={isBusy}
+						onClick={() =>
+							onRegroup(entry.splitFrom?.key ?? "", false)
+						}
+					>
+						<Undo2 aria-hidden="true" /> Combine back into one topic
+					</Button>
+				</div>
+			)}
+
+			<Block
+				title="People"
+				action={
+					<Popover open={isAdding} onOpenChange={setIsAdding}>
+						<PopoverTrigger asChild>
+							<Button
+								type="button"
+								variant="link"
+								size="sm"
+								className="h-auto p-0 text-xs"
+								disabled={isBusy}
+							>
+								<Plus aria-hidden="true" /> Add person
+							</Button>
+						</PopoverTrigger>
+						<PopoverContent
+							align="end"
+							sideOffset={8}
+							collisionPadding={16}
+							className={peoplePickerContentClassName}
+						>
+							<TopicPeoplePicker
+								actions={actions}
+								contacts={contacts}
+								taken={
+									new Set([
+										...suggested.map((person) => person.id),
+										...added.map((person) => person.id),
+									])
+								}
+								disabled={isBusy}
+								onAdd={(person) =>
+									onRestorePeople(entry.key, [person])
+								}
+							/>
+						</PopoverContent>
+					</Popover>
+				}
+			>
+				{suggested.length + added.length ? (
+					<div className="flex flex-wrap gap-1.5">
+						{suggested.map((person) => (
+							<PersonChip
+								key={person.id}
+								name={person.name}
+								removed={person.removed}
+								disabled={isBusy}
+								onToggle={() =>
+									person.removed
+										? onRestorePeople(entry.key, [person])
+										: onRemovePeople(entry.key, [person.id])
+								}
+							/>
+						))}
+						{added.map((person) => (
+							<PersonChip
+								key={person.id}
+								name={person.name}
+								removed={false}
+								disabled={isBusy}
+								onToggle={() =>
+									onRemovePeople(entry.key, [person.id])
+								}
+							/>
+						))}
+					</div>
+				) : (
+					<P className="text-muted-foreground text-sm">
+						No regular people yet.
+					</P>
+				)}
+			</Block>
+
+			<TopicConversationsPanel
+				actions={actions}
+				review={review}
+				topicKey={entry.key}
+				others={others}
+				isBusy={isBusy}
+				changes={changes}
+				onSave={onSave}
+			/>
+
+			{value.keep && (evidence?.folderIds.length ?? 0) > 0 && (
+				<FormCheckbox
+					name={`topics.${index}.fileFromFolder`}
+					label={
+						<span className="text-muted-foreground text-xs">
+							File new mail from {evidence?.folders.join(", ")}{" "}
+							here
+						</span>
+					}
+					disabled={isBusy}
+				/>
+			)}
+			<P className="sr-only">
+				{topicSummary(evidence, value, addedNames)}
+			</P>
+		</section>
+	);
+}
+
+function Block({
+	title,
+	action,
+	children,
+}: {
+	title: string;
+	action?: React.ReactNode;
+	children: React.ReactNode;
+}) {
+	return (
+		<div className="flex flex-col gap-2">
+			<div className="flex flex-wrap items-center justify-between gap-2">
+				<P className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+					{title}
+				</P>
+				{action}
+			</div>
+			{children}
+		</div>
+	);
+}
+
+function PersonChip({
+	name,
+	removed,
+	disabled,
+	onToggle,
+}: {
+	name: string;
+	removed: boolean;
+	disabled: boolean;
+	onToggle: () => void;
+}) {
+	return (
+		<span
+			className={cn(
+				"inline-flex items-center gap-1 rounded-full border py-0.5 pr-1 pl-2.5 text-sm",
+				removed && "text-muted-foreground line-through",
+			)}
+		>
+			{givenFirst(name)}
+			<Button
+				type="button"
+				variant="ghost"
+				size="icon"
+				className="size-5"
+				disabled={disabled}
+				aria-label={removed ? `Put ${name} back` : `Take ${name} off`}
+				onClick={onToggle}
+			>
+				{removed ? (
+					<Undo2 className="size-3" aria-hidden="true" />
+				) : (
+					<X className="size-3" aria-hidden="true" />
+				)}
+			</Button>
+		</span>
 	);
 }

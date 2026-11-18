@@ -51,22 +51,3 @@ export async function chatTopicSetup(
 		chatResultSchema,
 	);
 }
-
-const reachSchema = z.object({
-	threads: z.number().int().nonnegative(),
-	together: z.number().int().nonnegative(),
-	samples: z.array(z.string()),
-});
-export type TopicReach = z.infer<typeof reachSchema>;
-
-/** How many conversations involve these people. */
-export async function previewTopicReach(
-	actions: InsightActions,
-	people: string[],
-): Promise<TopicReach> {
-	return callPixel(
-		actions,
-		pixel("BrainPreviewTopicReach", { reach: { people } }),
-		reachSchema,
-	);
-}

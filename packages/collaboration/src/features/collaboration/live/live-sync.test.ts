@@ -15,15 +15,17 @@ function fakeActions() {
 		return {
 			pixelReturn: statements.map((statement) => ({
 				operationType: ["OPERATION"],
-				output: /^WorkCreateItem\(/.test(statement)
-					? { id: "wi-new" }
-					: /^WorkSaveStep\(/.test(statement)
-						? { id: "server-step" }
-						: /^BrainSaveMemory\(/.test(statement)
-							? { id: "server-memory" }
-							: /^BrainSaveRule\(/.test(statement)
-								? { id: "server-rule" }
-								: true,
+				output: /^Brain(Merge|Delete)Topics?\(/.test(statement)
+					? { changeId: "change-1" }
+					: /^WorkCreateItem\(/.test(statement)
+						? { id: "wi-new" }
+						: /^WorkSaveStep\(/.test(statement)
+							? { id: "server-step" }
+							: /^BrainSaveMemory\(/.test(statement)
+								? { id: "server-memory" }
+								: /^BrainSaveRule\(/.test(statement)
+									? { id: "server-rule" }
+									: true,
 			})),
 		};
 	});
@@ -66,6 +68,67 @@ it("a background sync choice saves only that setting", async () => {
 	]);
 });
 
+it("merging a new topic into an existing one keeps it, then merges it", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	const merge = step({
+		type: "review.resolve",
+		reviewId: "r1",
+		decision: "merge",
+		targetTopicId: "t-gsales",
+	});
+	sync(merge);
+	await sync.settled();
+	expect(sent).toEqual([
+		'BrainResolveReview(reviewId=["r1"], action=["merge"], paramValues=[{"topicId":"t-gsales"}]);',
+		'BrainMergeTopics(sourceTopicId=["st-gsec"], targetTopicId=["t-gsales"]);',
+	]);
+	expect(merge.next.topics.some((topic) => topic.id === "st-gsec")).toBe(
+		false,
+	);
+	expect(merge.next.reviews.find((r) => r.id === "r1")?.status).toBe(
+		"accepted",
+	);
+});
+
+it("undoing an answered question sends BrainReopenReview", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	const answered = step({
+		type: "review.resolve",
+		reviewId: "r2",
+		decision: "dismiss",
+	});
+	const undo = {
+		previous: answered.next,
+		next: collaborationReducer(
+			answered.next,
+			{ type: "review.reopen", reviewId: "r2" },
+			NOW,
+		),
+		commands: [{ type: "review.reopen", reviewId: "r2" } as const],
+	};
+	sync(undo);
+	await sync.settled();
+	expect(sent).toEqual(['BrainReopenReview(reviewId=["r2"]);']);
+	expect(undo.next.reviews.find((r) => r.id === "r2")?.status).toBe("open");
+});
+
+it("a new-topic choice and the closing setting save with their keys", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	sync(
+		step({
+			type: "settings.save",
+			changes: { newTopicsEveryHours: 72, closeAcrossThreads: false },
+		}),
+	);
+	await sync.settled();
+	expect(sent).toEqual([
+		'BrainSaveSettings(settings=[{"newTopicsEveryHours":72,"closeAcrossThreads":false}]);',
+	]);
+});
+
 it("a rename saves the changed topic name", async () => {
 	const { actions, sent } = fakeActions();
 	const sync = createLiveSync(actions, vi.fn());
@@ -78,6 +141,24 @@ it("a rename saves the changed topic name", async () => {
 	expect(sent).toEqual([
 		'BrainSaveTopic(topic=[{"id":"t-geng","name":"Renamed"}]);',
 	]);
+});
+
+it("the files linked to a topic are the server's already, so the page's copy of them is not saved", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	sync(
+		step({
+			type: "topic.save",
+			topic: {
+				id: "t-geng",
+				files: [
+					{ itemId: "item-1", name: "Plan.docx", source: "onedrive" },
+				],
+			},
+		}),
+	);
+	await sync.settled();
+	expect(sent).toEqual([]);
 });
 
 it("a topic VIP saves on the person's membership", async () => {
@@ -119,6 +200,30 @@ it("ignoring someone in a topic saves that topic's exclude_topic rule", async ()
 		'BrainSaveRule(rule=[{"kind":"exclude_topic","value":"","topicId":"t-geng","personId":"p-ava"}]);',
 	]);
 	expect(onError).not.toHaveBeenCalled();
+});
+
+it("starring a suggested topic confirms it and saves it as the main topic", async () => {
+	const { actions, sent } = fakeActions();
+	const sync = createLiveSync(actions, vi.fn());
+	const star = step({
+		type: "thread.link",
+		threadId: "th-geng-review",
+		topicId: "t-trip",
+		operation: "primary",
+	});
+	sync(star);
+	await sync.settled();
+	// the new primary demotes the old one on the server
+	expect(sent).toEqual([
+		'BrainLinkThreadTopic(threadId=["th-geng-review"], topicId=["t-trip"], primary=[true]);',
+	]);
+	expect(
+		star.next.threads.find((thread) => thread.id === "th-geng-review")
+			?.topicLinks,
+	).toMatchObject([
+		{ topicId: "t-geng", source: "confirmed", primary: false },
+		{ topicId: "t-trip", source: "confirmed", primary: true },
+	]);
 });
 
 it("a delete sends one BrainDeleteTopic operation", async () => {
@@ -653,4 +758,52 @@ it("does not save a topic the assistant made again, even beside an owner edit", 
 		`BrainSaveTopic(topic=[{"id":"${other.id}","description":"Edited by the owner"}]);`,
 	]);
 	expect(onError).not.toHaveBeenCalled();
+});
+
+it("a saved merge or delete hands back the id that undoes it", async () => {
+	const { actions } = fakeActions();
+	const changes: unknown[] = [];
+	const sync = createLiveSync(actions, vi.fn(), (change) =>
+		changes.push(change),
+	);
+	const previous = createInitialCollaborationState();
+	const [source, target] = previous.topics;
+	if (!source || !target) throw new Error("Missing sample topics");
+	sync(
+		step({ type: "topic.merge", sourceId: source.id, targetId: target.id }),
+	);
+	sync(step({ type: "topic.delete", topicId: source.id }));
+	await sync.settled();
+	expect(changes).toEqual([
+		{
+			kind: "merge",
+			changeId: "change-1",
+			topicId: source.id,
+			name: source.name,
+			intoName: target.name,
+		},
+		{
+			kind: "delete",
+			changeId: "change-1",
+			topicId: source.id,
+			name: source.name,
+		},
+	]);
+});
+
+it("a failed save reports the error and offers no undo", async () => {
+	const run = vi.fn(async () => ({
+		pixelReturn: [{ operationType: ["ERROR"], output: "denied" }],
+	}));
+	const onError = vi.fn();
+	const onTopicChange = vi.fn();
+	const sync = createLiveSync(
+		{ run } as unknown as InsightActions,
+		onError,
+		onTopicChange,
+	);
+	sync(step({ type: "topic.delete", topicId: "t-geng" }));
+	await sync.settled();
+	expect(onError).toHaveBeenCalledWith("denied");
+	expect(onTopicChange).not.toHaveBeenCalled();
 });

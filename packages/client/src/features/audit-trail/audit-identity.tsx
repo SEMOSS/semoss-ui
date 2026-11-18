@@ -10,7 +10,7 @@ const AGENT_ACTOR = "AGENT";
 /** A detail line under the name */
 const DETAIL_CLASS = "truncate text-muted-foreground text-xs";
 
-export interface AuditIdentityProps {
+interface AuditIdentityProps {
 	/** The person's user id, the agent's id, or SYSTEM */
 	id: string;
 	/** The person's login type, such as NATIVE, or SYSTEM or AGENT */

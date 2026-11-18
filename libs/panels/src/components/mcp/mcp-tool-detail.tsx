@@ -24,7 +24,7 @@ import { slugifyIdentifier, TYPE_OPTIONS } from "../../utility/mcp-json-utils";
 import { MCPMetadataEditor } from "./mcp-metadata-editor";
 import { MCPParameterCard } from "./mcp-parameter-card";
 
-export interface MCPToolDetailProps {
+interface MCPToolDetailProps {
 	entry: EditorTool;
 
 	/** Names of the other tools in the file, used to reject duplicate renames */

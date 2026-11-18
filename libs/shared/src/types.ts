@@ -208,6 +208,16 @@ export interface ThemeMap {
 			model?: Engine;
 			/** Default temperature for new rooms (0–1). Only used when enableTemperature is true. */
 			temperature?: number;
+			/**
+			 * The mode a new chat starts in when neither the session nor the user
+			 * names one. Only used where agent mode is offered.
+			 */
+			mode?: "chat" | "agent";
+			/**
+			 * The saved agent a new chat in agent mode starts with when neither
+			 * the session nor the user names one.
+			 */
+			agentId?: string;
 		};
 
 		/**
@@ -337,10 +347,13 @@ export interface ThemeMap {
 		 */
 		featureFlags?: {
 			enableModelSelect?: boolean;
+			/** Whether to show the Agents link in the sidebar navigation. Agents stay available everywhere else, such as the agent picker in a new chat. */
 			enableAgent?: boolean;
 			enableSuggestions?: boolean;
 			/** Whether to enable the server-side agent harness mode (RunAgent) in the chat input. */
 			enableAgentHarness?: boolean;
+			/** Whether the agent picker decides a new chat's mode: a saved agent or Default Agent runs in agent mode, No Agent in chat mode. Users get no Chat and Agent choice. Defaults to false. */
+			modeFollowsAgent?: boolean;
 			enableRewrite?: boolean;
 			enableDarkMode?: boolean;
 			enablePromptOptimizer?: boolean;

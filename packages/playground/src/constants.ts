@@ -1,5 +1,3 @@
-export const MODEL_KEY = "SMSS-SELECTED-MODEL-V3";
-
 export const SYSTEM__PLAYGROUND = "SYSTEM__PLAYGROUND";
 
 export const MCP_EXECUTION_AUTO = "auto";
@@ -13,10 +11,6 @@ export const MCP_EXECUTION_ASK = "ask";
  */
 export const MCP_EXECUTION_AGENT_ASK = "agent-ask";
 export const MCP_EXECUTION_AGENT_AUTO = "agent-auto";
-
-export const MCP_DISPLAY_INLINE = "inline";
-export const MCP_DISPLAY_SIDEBAR = "sidebar";
-export const MCP_DISPLAY_HIDDEN = "hidden";
 
 export const STREAMING_PLACEHOLDER_ID = "STREAMING_PLACEHOLDER_ID";
 

@@ -14,7 +14,7 @@ import type { GitCommit } from "./git.types";
 import type { GitDataStatus } from "./git-commit-row";
 
 /** Props for standalone Git commit history. */
-export interface GitHistoryProps {
+interface GitHistoryProps {
 	/** Commits to display. */
 	commits?: GitCommit[];
 	/** Current state of the history request. */

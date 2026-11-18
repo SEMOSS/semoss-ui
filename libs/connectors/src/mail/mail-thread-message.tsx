@@ -20,7 +20,7 @@ import { MailPicturesMenu } from "./mail-pictures-menu";
 import { useMailEmbeddedImagesReader } from "./use-mail-embedded-images-reader";
 
 /** Props for {@link MailThreadMessage}. */
-export interface MailThreadMessageProps {
+interface MailThreadMessageProps {
 	/** The mailbox the email is in. */
 	app: MailApp;
 	/** The email, read with its body. */

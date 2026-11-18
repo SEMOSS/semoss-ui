@@ -16,6 +16,7 @@ import {
 	TreeView,
 } from "@semoss/ui/next";
 import type { FileItem } from "./file.types";
+import { canCreateItems } from "./file-explorer.adapters";
 import type {
 	FileExplorerApi,
 	FileExplorerItemActions,
@@ -61,6 +62,14 @@ export interface FileExplorerProps {
 		error: Error | undefined,
 		retry: () => void,
 	) => React.ReactNode;
+
+	/**
+	 * A line to show under a listing, such as that its source stopped at a
+	 * limit and holds more. Called with the items of the current directory and
+	 * of each expanded one, and the directory they were listed in; return
+	 * undefined for a listing with nothing to say.
+	 */
+	listingNote?: (items: FileItem[], path: string) => string | undefined;
 }
 
 /**
@@ -84,6 +93,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 	newFileOverlay: NewFileOverlayComponent,
 	itemActions,
 	renderError,
+	listingNote,
 }) => {
 	const { t } = useTranslation("common");
 	const { capabilities, commands, dnd, newFile, tree } = explorer;
@@ -99,6 +109,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 		!showFullSpinner &&
 		!tree.isUploading &&
 		(tree.status === "SUCCESS" || tree.status === "LOADING");
+	const rootNote = showTree ? listingNote?.(tree.items, path) : undefined;
 
 	const handleKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
 		if (e.key !== "Escape") return;
@@ -269,6 +280,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 									explorer={explorer}
 									item={item}
 									itemActions={itemActions}
+									listingNote={listingNote}
 								/>
 							))}
 						</TreeView>
@@ -283,6 +295,15 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 							</Muted>
 						</div>
 					)}
+
+					{rootNote ? (
+						<Muted
+							data-testid="file-explorer-listing-note"
+							className="flex items-center justify-center px-3 py-2 text-center text-xs"
+						>
+							{rootNote}
+						</Muted>
+					) : null}
 					<ScrollBar orientation="horizontal" />
 				</ScrollArea>
 			</div>
@@ -299,10 +320,11 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 			)}
 
 			{NewFileOverlayComponent &&
-				(capabilities.mutate || capabilities.upload) && (
+				(canCreateItems(capabilities) || capabilities.upload) && (
 					<NewFileOverlayComponent
 						key={newFile.instance}
 						mode={explorer.mode}
+						adapter={explorer.adapter}
 						path={newFile.path}
 						open={newFile.isOpen}
 						action={newFile.action}

@@ -2,7 +2,7 @@ import { Bookmark, ChevronDown, Info, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { useTranslation } from "@semoss/i18n";
-import { Env, post, useInsight } from "@semoss/sdk/react";
+import { Env, post, useSessionInsight } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -41,6 +41,7 @@ import {
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import { NewKnowledgeOverlay } from "@/components/knowledge/new-knowledge-mcp-overlay";
+import { throwOnPixelErrors } from "@/utility/pixel-errors";
 
 type DocumentLibraryEngine = {
 	name: string;
@@ -96,7 +97,7 @@ export const DocumentLibrary = () => {
 	const [assetsError, setAssetsError] = useState<string | null>(null);
 	const [favorites, setFavorites] = useState<Record<string, boolean>>({});
 
-	const { actions } = useInsight();
+	const { run } = useSessionInsight();
 	const [data, setData] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [loadError, setLoadError] = useState(false);
@@ -109,9 +110,9 @@ export const DocumentLibrary = () => {
 			setLoading(true);
 			setLoadError(false);
 			try {
-				const result = await actions.run(
+				const result = await run(
 					`MyEngines ( engineTypes = [ 'VECTOR' ], metaKeys = ["description", "tag"])`,
-				);
+				).then(throwOnPixelErrors);
 
 				const pixelData = result?.pixelReturn?.[0];
 				if (!pixelData) {
@@ -133,7 +134,7 @@ export const DocumentLibrary = () => {
 		return () => {
 			active = false;
 		};
-	}, [actions, reload]);
+	}, [run, reload]);
 
 	const centers = useMemo(() => {
 		const tags = new Set<string>();
@@ -162,10 +163,10 @@ export const DocumentLibrary = () => {
 		setAssetsError(null);
 		setEngineAssets([]);
 
-		void actions
-			.run<
-				{ fileName: string; lastModified: string; fileSize: string }[]
-			>(`ListDocumentsInVectorDatabase(engine=["${selectedEngine.id}"]);`)
+		void run<
+			{ fileName: string; lastModified: string; fileSize: string }[]
+		>(`ListDocumentsInVectorDatabase(engine=["${selectedEngine.id}"]);`)
+			.then(throwOnPixelErrors)
 			.then((result) => {
 				if (cancelled) {
 					return;
@@ -193,7 +194,7 @@ export const DocumentLibrary = () => {
 		return () => {
 			cancelled = true;
 		};
-	}, [actions, documentsModalOpen, selectedEngine?.id]);
+	}, [run, documentsModalOpen, selectedEngine?.id]);
 
 	const formatted: DocumentLibraryEngine[] =
 		data[0]?.reduce((acc, item) => {
@@ -332,12 +333,12 @@ export const DocumentLibrary = () => {
 
 						// refresh list if a knowledge source was created
 						if (knowledge) {
-							void actions
-								.run(
-									`MyEngines ( engineTypes = [ 'VECTOR' ], metaKeys = ["description", "tag"],  metaFilters=[{"tag":${JSON.stringify(
-										["FDA", ...centers],
-									)}}])`,
-								)
+							void run(
+								`MyEngines ( engineTypes = [ 'VECTOR' ], metaKeys = ["description", "tag"],  metaFilters=[{"tag":${JSON.stringify(
+									["FDA", ...centers],
+								)}}])`,
+							)
+								.then(throwOnPixelErrors)
 								.then((result) => {
 									const pixelData = result?.pixelReturn?.[0];
 									if (!pixelData) {

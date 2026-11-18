@@ -11,20 +11,19 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { isRemovableToolbox } from "@/utility/mcp-utils";
 
 interface RoomSelectedResourcesProps {
-	/** Selected values for exactly one section, never the entire catalog. */
+	/** The selected knowledge, never the entire catalog. */
 	items: MCPConfig[];
-	type: "KNOWLEDGE" | "TOOLBOX";
 	disabled: boolean;
 	onAdd: () => void;
 	onRemove: (item: MCPConfig) => void;
 }
 
-/** Visible selections with conversation-scoped removal and explicit ownership. */
+/** The room's selected knowledge, with conversation-scoped removal and explicit ownership. */
 export function RoomSelectedResources({
 	items,
-	type,
 	disabled,
 	onAdd,
 	onRemove,
@@ -35,11 +34,7 @@ export function RoomSelectedResources({
 		<section aria-labelledby={id} className="flex min-w-0 flex-col gap-3">
 			<div className="flex flex-wrap items-center justify-between gap-2">
 				<H4 id={id} className="flex items-center gap-2 text-base">
-					{t(
-						type === "KNOWLEDGE"
-							? "room:form.knowledgeLabel"
-							: "room:studio.tools",
-					)}
+					{t("room:form.knowledgeLabel")}
 					<Badge variant="secondary">{items.length}</Badge>
 				</H4>
 				<Button
@@ -50,28 +45,15 @@ export function RoomSelectedResources({
 					onClick={onAdd}
 				>
 					<PlusIcon aria-hidden="true" />
-					{t(
-						type === "KNOWLEDGE"
-							? "room:menuKnowledge.addKnowledge"
-							: "room:menuToolbox.addToolbox",
-					)}
+					{t("room:menuKnowledge.addKnowledge")}
 				</Button>
 			</div>
 			{items.length === 0 ? (
-				<Muted>
-					{t(
-						type === "KNOWLEDGE"
-							? "room:settings.noKnowledge"
-							: "room:settings.noTools",
-					)}
-				</Muted>
+				<Muted>{t("room:settings.noKnowledge")}</Muted>
 			) : (
 				<ul className="divide-y divide-border">
 					{items.map((item) => {
-						const inherited =
-							item.fromWorkspace ||
-							item.fromRoom ||
-							item.type === "ROOM";
+						const inherited = !isRemovableToolbox(item);
 						return (
 							<li
 								key={item.id}

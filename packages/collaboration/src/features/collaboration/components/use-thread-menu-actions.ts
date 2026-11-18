@@ -2,6 +2,7 @@ import {
 	Bell,
 	BellOff,
 	BookOpen,
+	Bot,
 	Check,
 	Clock,
 	ExternalLink,
@@ -12,6 +13,7 @@ import {
 	Plus,
 	RotateCcw,
 	Sparkles,
+	UserCheck,
 	X,
 } from "lucide-react";
 import { type RefObject, useContext } from "react";
@@ -25,6 +27,7 @@ import type { Thread, WorkItem } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import {
 	ignoreThread,
+	markNotAutomated,
 	noResponseNeeded,
 	resumeThread,
 } from "../work-item-actions";
@@ -161,6 +164,32 @@ export function useThreadMenuActions({
 							? resumeThread(dispatch, thread)
 							: ignoreThread(dispatch, thread),
 				},
+				...(thread.automated
+					? [
+							{
+								id: "not-automated",
+								label: "Not automated",
+								icon: UserCheck,
+								onSelect: () =>
+									markNotAutomated(dispatch, thread),
+							},
+						]
+					: []),
+				...(thread.notAutomated
+					? [
+							{
+								id: "allow-automated",
+								label: "Let it be marked automated again",
+								icon: Bot,
+								onSelect: () =>
+									dispatch({
+										type: "thread.notAutomated",
+										threadId: thread.id,
+										notAutomated: false,
+									}),
+							},
+						]
+					: []),
 			],
 		},
 	];

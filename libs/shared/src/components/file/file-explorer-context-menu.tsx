@@ -7,6 +7,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@semoss/ui/next";
+import { canCreateItems } from "./file-explorer.adapters";
 import type {
 	FileExplorerApi,
 	FileExplorerContextMenuState,
@@ -190,7 +191,7 @@ export const FileExplorerContextMenu: FC<FileExplorerContextMenuProps> = ({
 		});
 	}
 
-	if (canMutate) {
+	if (canCreateItems(capabilities)) {
 		entries.push({
 			key: "new-file",
 			label: t("fileExplorer.contextMenu.newFile"),

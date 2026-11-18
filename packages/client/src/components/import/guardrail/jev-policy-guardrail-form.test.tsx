@@ -26,6 +26,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@semoss/sdk/react", () => ({
 	usePixel: mocks.usePixel,
+	useSessionInsight: () => ({ insightId: "insight-1" }),
 	// the judge picker lists the models it is given, so it reads no pages
 	useIteratorPixel: () => ({
 		data: [],
@@ -36,10 +37,6 @@ vi.mock("@semoss/sdk/react", () => ({
 }));
 vi.mock("@/api/guardrails", () => ({
 	createGuardrailEngine: mocks.createGuardrailEngine,
-}));
-vi.mock("@/hooks/use-session", () => ({
-	useSession: (selector: (state: { insightID: string }) => unknown) =>
-		selector({ insightID: "insight-1" }),
 }));
 
 const MODELS = [

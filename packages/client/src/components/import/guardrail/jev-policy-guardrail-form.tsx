@@ -1,5 +1,5 @@
 import { useId } from "react";
-import { usePixel } from "@semoss/sdk/react";
+import { usePixel, useSessionInsight } from "@semoss/sdk/react";
 import { type Engine, EngineSelect, EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Alert,
@@ -29,7 +29,7 @@ import {
 import { getErrorMessage } from "@semoss/utility/error";
 import { createGuardrailEngine } from "@/api/guardrails";
 import { EngineFormHeader } from "@/components/import/shared/engine-form-header";
-import { useSession } from "@/hooks/use-session";
+import { CATALOG_NAME_KEY } from "@/components/import/shared/import-form.constants";
 import { JevPolicyChoicesField } from "./jev-policy-choices-field";
 import {
 	JEV_JUDGE_SUBTYPE,
@@ -44,7 +44,7 @@ import {
 const MODELS_PIXEL = 'META | MyEngines(engineTypes=["MODEL"], noMeta=[true]);';
 
 /** Props for {@link JevPolicyGuardrailForm}. */
-export interface JevPolicyGuardrailFormProps {
+interface JevPolicyGuardrailFormProps {
 	/** The guardrail type's logo, shown beside the form's title. */
 	icon?: string;
 	/** Called with the new guardrail's id once it is created, or with none on cancel. */
@@ -61,7 +61,7 @@ export const JevPolicyGuardrailForm = ({
 	icon,
 	onSubmit,
 }: JevPolicyGuardrailFormProps) => {
-	const insightID = useSession((state) => state.insightID);
+	const { insightId } = useSessionInsight();
 	const form = useForm<JevPolicyGuardrailFormValues>({
 		resolver: zodResolver(jevPolicyGuardrailSchema),
 		defaultValues: JEV_POLICY_GUARDRAIL_DEFAULTS,
@@ -69,7 +69,7 @@ export const JevPolicyGuardrailForm = ({
 	const { errors, isSubmitting } = form.formState;
 	const questionType = form.watch("QUESTION_TYPE");
 
-	const models = usePixel<Engine[]>(MODELS_PIXEL, { data: [] }, insightID);
+	const models = usePixel<Engine[]>(MODELS_PIXEL, { data: [] }, insightId);
 	const areModelsLoading =
 		models.status === "INITIAL" || models.status === "LOADING";
 	const judgeModels = (Array.isArray(models.data) ? models.data : []).filter(
@@ -91,8 +91,8 @@ export const JevPolicyGuardrailForm = ({
 		let engineId: string;
 		try {
 			engineId = await createGuardrailEngine(
-				insightID,
-				values.MODEL_NAME,
+				insightId,
+				values[CATALOG_NAME_KEY],
 				toJevPolicyGuardrailDetails(values),
 			);
 		} catch (error: unknown) {
@@ -139,7 +139,7 @@ export const JevPolicyGuardrailForm = ({
 						</div>
 						<div className="flex flex-2 flex-col gap-2">
 							<FormInput
-								name="MODEL_NAME"
+								name={CATALOG_NAME_KEY}
 								label="Catalog Name"
 								description="Name used to identify this guardrail in the catalog."
 								disabled={isSubmitting}

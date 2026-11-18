@@ -65,7 +65,7 @@ import {
 	type RunNodeContentView,
 } from "./run-node-view-state";
 
-export interface RunsTabSnapshot {
+interface RunsTabSnapshot {
 	running: boolean;
 	latestRunStatus: RunStatus | null;
 	aiRunSummary: string | null;

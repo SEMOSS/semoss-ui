@@ -47,7 +47,7 @@ type McpToolResponse = {
 // `platform__browser-automation` project, but only the backend and the
 // Playground need to know that: tool definitions resolve through _meta on the
 // Playground side, and everything this app runs is room or insight scoped.
-// Setting APP would make the SDK prepend SetContext("browser-automation") to
+// Setting APP would make the SDK prepend LoadApp("browser-automation") to
 // initialize(), which hard-fails the whole app whenever that project is missing
 // or not yet readable by the user.
 //
@@ -61,7 +61,7 @@ if (!Env.MODULE) {
 	});
 }
 
-export const insight = new Insight();
+const insight = new Insight();
 
 let initialized = false;
 let toolContext = normalizeToolContext((Env as EnvWithTool).TOOL);
@@ -173,10 +173,6 @@ export async function initSemoss(): Promise<McpToolContext | null> {
 		initialized = true;
 	}
 
-	return toolContext;
-}
-
-export function getMcpToolContext(): McpToolContext | null {
 	return toolContext;
 }
 

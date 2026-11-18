@@ -30,7 +30,7 @@ export type GuardrailParametersStatus =
 	| "loaded";
 
 /** The parameters and load state for one guardrail engine. */
-export interface GuardrailEngineParameters {
+interface GuardrailEngineParameters {
 	options: GuardrailParameterOption[];
 	status: GuardrailParametersStatus;
 }

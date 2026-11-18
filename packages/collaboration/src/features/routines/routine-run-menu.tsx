@@ -79,7 +79,11 @@ export function RoutineRunMenu({
 		setIsConfirming(false);
 		toast.success("Run deleted.");
 		// its chats leave the chat list, and one that is open closes, as a closed chat does
-		window.dispatchEvent(new Event(ROOM_HISTORY_CHANGED));
+		window.dispatchEvent(
+			new CustomEvent(ROOM_HISTORY_CHANGED, {
+				detail: { deletedRoomIds: roomIds },
+			}),
+		);
 		if (roomIds.some((roomId) => pathname === roomPath(roomId)))
 			void navigate("/");
 	};

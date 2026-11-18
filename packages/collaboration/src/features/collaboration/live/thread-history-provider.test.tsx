@@ -5,6 +5,7 @@ import {
 	screen,
 	waitFor,
 } from "@testing-library/react";
+import { useContext } from "react";
 import type { InsightActions } from "@/lib/pixel";
 import { createInitialCollaborationState } from "../state/collaboration.fixtures";
 import {
@@ -12,7 +13,10 @@ import {
 	useCollaborationSession,
 } from "../state/collaboration-session.context";
 import { readThreadMessagesPage, type ThreadMessagePage } from "./live-state";
-import { useThreadHistory } from "./thread-history.context";
+import {
+	EMPTY_THREAD_HISTORY,
+	ThreadHistoryContext,
+} from "./thread-history.context";
 import { ThreadHistoryProvider } from "./thread-history-provider";
 
 vi.mock("./live-state", () => ({ readThreadMessagesPage: vi.fn() }));
@@ -35,7 +39,8 @@ const page = (
 });
 
 function HistoryHarness({ threadId }: { threadId: string }) {
-	const history = useThreadHistory(threadId);
+	const context = useContext(ThreadHistoryContext);
+	const history = context?.pages[threadId] ?? EMPTY_THREAD_HISTORY;
 	const { state, dispatch } = useCollaborationSession();
 	return (
 		<>
@@ -48,14 +53,29 @@ function HistoryHarness({ threadId }: { threadId: string }) {
 			<button
 				type="button"
 				disabled={history.isLoading}
-				onClick={history.loadOlder}
+				onClick={() => {
+					if (history.nextCursor)
+						context?.load(threadId, history.nextCursor);
+				}}
 			>
 				Older
 			</button>
-			<button type="button" onClick={history.refresh}>
+			<button
+				type="button"
+				onClick={() => context?.load(threadId, undefined, true)}
+			>
 				Refresh
 			</button>
-			<button type="button" onClick={history.retry}>
+			<button
+				type="button"
+				onClick={() =>
+					context?.load(
+						threadId,
+						history.retryRefresh ? undefined : history.nextCursor,
+						history.retryRefresh,
+					)
+				}
+			>
 				Retry
 			</button>
 			<button

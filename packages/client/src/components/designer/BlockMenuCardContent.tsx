@@ -1,6 +1,6 @@
 import { formatToDataTestId } from "@/utility";
 
-export interface BlockCardContentProps {
+interface BlockCardContentProps {
 	name?: string;
 	image?: string;
 	width?: string | number;

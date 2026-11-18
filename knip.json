@@ -1,0 +1,37 @@
+{
+	"$schema": "https://unpkg.com/knip@5/schema.json",
+	"ignoreExportsUsedInFile": true,
+	"ignoreIssues": {
+		"**/vitest.setup.ts": ["files"],
+		"**/*.test-fixtures.ts": ["files"],
+		"**/*.fixtures.ts": ["files"],
+		"**/test-utils/**": ["files"],
+		"libs/renderer/src/testing/**": ["files"],
+		"packages/collaboration/dev-server.ts": ["files"],
+		"libs/ui/src/{hooks,next}/**": ["exports", "types"]
+	},
+	"workspaces": {
+		"packages/chrome-extension": {
+			"entry": [
+				"src/background/index.ts!",
+				"src/content/index.ts!",
+				"src/panel/index.tsx!",
+				"src/devtools/devtools.js!",
+				"src/options/options.js!"
+			],
+			"ignoreBinaries": ["vite"]
+		},
+		"packages/cli": {
+			"entry": ["bin/*.js!", "src/commands/**/*.ts!"],
+			"ignoreDependencies": [
+				"@oclif/plugin-help",
+				"@oclif/plugin-plugins",
+				"ts-node"
+			]
+		},
+		"libs/panels": {
+			"entry": ["src/vite/ai-sdk-stub.ts!"]
+		}
+	},
+	"ignoreDependencies": ["@vitest/coverage-v8"]
+}

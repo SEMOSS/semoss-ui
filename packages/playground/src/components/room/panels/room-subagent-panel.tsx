@@ -11,7 +11,7 @@ import { getSubagentState } from "@/components/message/response-message-subagent
 import { useRoom } from "@/contexts";
 
 /** Which subagent a panel is showing. `subagentId` is what dedupes it. */
-export interface RoomSubagentParams {
+interface RoomSubagentParams {
 	subagentId: string;
 }
 

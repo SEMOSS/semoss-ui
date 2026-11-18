@@ -28,24 +28,25 @@ import { formatListDate } from "../core/connector.format";
 import type {
 	ConnectorAccount,
 	ConnectorFocusRequest,
+	ConnectorSavedItemsProps,
 	ConnectorViewerProps,
 } from "../core/connector.types";
 import { runConnectorPixel } from "../core/connector-pixel";
 import { useConnectorControls } from "../core/use-connector-controls";
 import { useConnectorFocus } from "../core/use-connector-focus";
-import { useConnectorQuery } from "../core/use-connector-query";
 import {
 	type ConnectorSaveRequest,
 	useConnectorSaver,
 } from "../core/use-connector-saver";
 import { useConnectorSearch } from "../core/use-connector-search";
 import { useReturnFocus } from "../core/use-return-focus";
-import { getMailFolderLabel, INBOX, orderMailFolders } from "./mail.folders";
+import { getMailFolderLabel, INBOX } from "./mail.folders";
 import { mailMessageFileName, mailMessageToMarkdown } from "./mail.markdown";
-import { parseMailFolders, parseMailMessageDetail } from "./mail.parsers";
+import { parseMailMessageDetail } from "./mail.parsers";
 import {
 	groupMailByConversation,
 	type MailConversation,
+	mailSaveKey,
 	normalizeMailSubject,
 } from "./mail.threads";
 import type { MailMessage } from "./mail.types";
@@ -59,6 +60,7 @@ import {
 	readConversation,
 	threadSaveRequest,
 } from "./mail-thread-view";
+import { useMailFolders } from "./use-mail-folders";
 import { useMailPages } from "./use-mail-pages";
 
 /**
@@ -74,7 +76,9 @@ const isWholeThread = (
 	!!conversation.conversationId;
 
 /** Props for {@link MailboxView}. */
-export interface MailboxViewProps extends ConnectorViewerProps {
+export interface MailboxViewProps
+	extends ConnectorViewerProps,
+		ConnectorSavedItemsProps {
 	/** The account whose mailbox is read: Outlook for `microsoft`, Gmail for `google`. */
 	provider: ConnectorAccount;
 	/** The logo the header shows. Defaults to the mailbox's own. */
@@ -123,11 +127,8 @@ export const MailboxView = (props: MailboxViewProps) => {
 	const { listRef, rememberItem } = useReturnFocus(openConversation !== null);
 	const serviceName = t(app.nameKey);
 
-	const foldersQuery = useConnectorQuery(
-		app.pixels.listFolders(),
-		parseMailFolders,
-	);
-	const folders = orderMailFolders(foldersQuery.data ?? [], t("mail.inbox"));
+	const foldersQuery = useMailFolders(provider);
+	const { folders } = foldersQuery;
 	const selectedFolder = folders.find((entry) => entry.id === folder);
 	const folderName = selectedFolder
 		? getMailFolderLabel(selectedFolder)
@@ -197,13 +198,15 @@ export const MailboxView = (props: MailboxViewProps) => {
 		title: string,
 	): ConnectorSaveRequest => {
 		// a row with conversations off stands for one email, which still
-		// belongs to a thread; saving takes the whole thread either way
+		// belongs to a thread; saving takes the whole thread either way, so
+		// every row of the thread is saving, and held, together
+		const key = mailSaveKey(conversation.latest);
 		const conversationId =
 			conversation.conversationId ?? conversation.latest.conversationId;
 		if (conversationId) {
 			return threadSaveRequest(
 				app,
-				conversation.key,
+				key,
 				title,
 				conversation.latest.subject,
 				() => readConversation(app, read, conversationId),
@@ -211,7 +214,7 @@ export const MailboxView = (props: MailboxViewProps) => {
 		}
 		const email: MailMessage = conversation.latest;
 		return {
-			key: conversation.key,
+			key: key,
 			name: title,
 			source: {
 				kind: "text",
@@ -441,6 +444,9 @@ export const MailboxView = (props: MailboxViewProps) => {
 										itemName: title,
 										serviceName: serviceName,
 										saveLabel: saver.saveLabel,
+										savedLabel: saver.savedLabel(
+											request.key,
+										),
 										isBusy: isBusy,
 										onAddToContext: saver.addToContext
 											? () =>

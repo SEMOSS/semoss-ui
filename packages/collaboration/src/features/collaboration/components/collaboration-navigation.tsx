@@ -1,11 +1,10 @@
-import { CalendarClock, Inbox, ListChecks } from "lucide-react";
+import { CalendarClock, House, Layers, Tags, UsersRound } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { cn, Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 import { ChatHistoryList } from "@/features/dashboard/chat-history-list";
-import { selectToday } from "@/features/dashboard/today-selectors";
+import { useDueToday } from "@/features/dashboard/use-due-today";
 import { RoutineRecentRuns } from "@/features/routines/routine-recent-runs";
 import { lexicon } from "@/lib/lexicon";
-import { useCollaborationSession } from "../state/collaboration-session.context";
 import {
 	CollaborationNavigationHeader,
 	type NavigationToggle,
@@ -26,7 +25,7 @@ interface CollaborationNavigationProps {
 	toggle?: NavigationToggle;
 }
 
-/** One quiet navigation follows the daily brief and conversations; topics live in Settings. */
+/** One quiet navigation follows the daily brief, the work and its topics, and conversations. */
 export function CollaborationNavigation({
 	isCollapsed = false,
 	isSessionsOpen,
@@ -34,26 +33,47 @@ export function CollaborationNavigation({
 	onNavigate,
 	toggle,
 }: CollaborationNavigationProps) {
-	const { state } = useCollaborationSession();
 	const { pathname } = useLocation();
-	// Work, filing and setup stay reachable from Today, Settings and search;
-	// Routines stays here because it is the proactive part
+	const dueToday = useDueToday();
+	// filing and setup stay reachable from Settings and search; Topics sits under Work because the owner
+	// opens it often, and Routines stays here because it is the proactive part
 	const links = [
 		{
 			to: "/",
 			label: lexicon.today,
-			icon: Inbox,
+			icon: House,
 			// only what is due today, so the badge stays meaningful
-			count: selectToday(state).due,
+			count: dueToday,
 			isActive: pathname === "/",
 		},
 		{
 			to: "/work",
 			label: "Work",
-			icon: ListChecks,
+			icon: Layers,
 			count: 0,
-			isActive: pathname.startsWith("/work"),
+			// its topic index has a link of its own
+			isActive:
+				pathname.startsWith("/work") &&
+				!pathname.startsWith("/work/topics"),
 		},
+		{
+			to: "/work/topics",
+			label: "Topics",
+			icon: Tags,
+			count: 0,
+			// the index and each topic's own page
+			isActive:
+				pathname.startsWith("/work/topics") ||
+				pathname.startsWith("/topics/"),
+		},
+		{
+			to: "/twins",
+			label: "Digital Twins",
+			icon: UsersRound,
+			count: 0,
+			isActive: pathname.startsWith("/twins"),
+		},
+		// last: its recent runs lead the scroller below and read as its own only right under it
 		{
 			to: "/routines",
 			label: "Routines",
@@ -62,6 +82,51 @@ export function CollaborationNavigation({
 			isActive: pathname === "/routines",
 		},
 	];
+	const renderLink = ({
+		to,
+		label,
+		icon: Icon,
+		count,
+		isActive,
+	}: (typeof links)[number]) => (
+		// a fresh tooltip per rail state: hovered while expanded (no label drawn) it never closes, so collapsing would
+		// show every label hovered before
+		<Tooltip key={`${to}:${isCollapsed}`} disableHoverableContent={false}>
+			<TooltipTrigger asChild>
+				<Link
+					to={to}
+					aria-current={isActive ? "page" : undefined}
+					onClick={onNavigate}
+					aria-label={label}
+					className={cn(
+						"flex min-h-8 pointer-coarse:min-h-11 items-center gap-2 rounded-lg px-2 py-1 font-normal text-xs hover:bg-sidebar-accent focus-visible:outline-2 focus-visible:outline-ring aria-[current=page]:bg-sidebar-accent aria-[current=page]:font-medium",
+						isCollapsed && "justify-center px-0",
+					)}
+				>
+					<Icon
+						className="size-4 shrink-0 text-muted-foreground"
+						aria-hidden="true"
+					/>
+					{!isCollapsed && (
+						<>
+							<span className="truncate">{label}</span>
+							{count > 0 && (
+								<span className="ml-auto shrink-0 font-normal text-muted-foreground text-xs tabular-nums">
+									{count}
+								</span>
+							)}
+						</>
+					)}
+				</Link>
+			</TooltipTrigger>
+			{isCollapsed && (
+				<TooltipContent side="right">
+					{label}
+					{count > 0 ? ` \u00b7 ${count}` : ""}
+				</TooltipContent>
+			)}
+		</Tooltip>
+	);
 	return (
 		<div className="flex h-full min-h-0 flex-col">
 			<div className="shrink-0 p-2 pr-3 pb-0">
@@ -75,50 +140,7 @@ export function CollaborationNavigation({
 				aria-label="Main"
 				className="flex shrink-0 flex-col gap-0.5 px-2 pt-2 pr-3 pb-0.5"
 			>
-				{links.map(({ to, label, icon: Icon, count, isActive }) => (
-					// a fresh tooltip per rail state: hovered while expanded (no label drawn) it never closes, so collapsing would
-					// show every label hovered before
-					<Tooltip
-						key={`${to}:${isCollapsed}`}
-						disableHoverableContent={false}
-					>
-						<TooltipTrigger asChild>
-							<Link
-								to={to}
-								aria-current={isActive ? "page" : undefined}
-								onClick={onNavigate}
-								aria-label={label}
-								className={cn(
-									"flex min-h-8 pointer-coarse:min-h-11 items-center gap-2 rounded-lg px-2 py-1 font-normal text-xs hover:bg-sidebar-accent focus-visible:outline-2 focus-visible:outline-ring aria-[current=page]:bg-sidebar-accent aria-[current=page]:font-medium",
-									isCollapsed && "justify-center px-0",
-								)}
-							>
-								<Icon
-									className="size-4 shrink-0 text-muted-foreground"
-									aria-hidden="true"
-								/>
-								{!isCollapsed && (
-									<>
-										<span className="truncate">
-											{label}
-										</span>
-										{count > 0 && (
-											<span className="ml-auto shrink-0 font-normal text-muted-foreground text-xs tabular-nums">
-												{count}
-											</span>
-										)}
-									</>
-								)}
-							</Link>
-						</TooltipTrigger>
-						{isCollapsed && (
-							<TooltipContent side="right">
-								{label}
-								{count > 0 ? ` \u00b7 ${count}` : ""}
-							</TooltipContent>
-						)}
-					</Tooltip>
-				))}
+				{links.map(renderLink)}
 			</nav>
 			<div className="flex min-h-0 flex-1 flex-col pr-1">
 				<div

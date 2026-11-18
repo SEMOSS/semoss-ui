@@ -25,7 +25,7 @@ const afterDecision =
 	};
 
 /** Props for {@link ComponentToolView}. */
-export interface ComponentToolViewProps {
+interface ComponentToolViewProps {
 	/** The call. */
 	tool: ToolStore;
 	/** The view its `component://` URI names, from `useToolView`. */

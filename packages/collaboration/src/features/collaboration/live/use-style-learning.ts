@@ -5,7 +5,7 @@ import { useCollaborationSession } from "../state/collaboration-session.context"
 import { readServerStyle, startStyleLearning } from "./style-api";
 
 /** Learning the owner's writing style in the background, and handing its proposal to the session. */
-export interface StyleLearning {
+interface StyleLearning {
 	/** True from pressing Learn until the job and the read of its proposal finish. */
 	isLearning: boolean;
 	/** Where the running job is, for a progress label. */

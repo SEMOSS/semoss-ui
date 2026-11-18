@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { InsightActions } from "@/lib/pixel";
+import { getJob } from "./onboarding-api";
 import { message } from "./onboarding-ui";
 import { getTopicReview } from "./topic-review-api";
 
@@ -20,11 +21,26 @@ interface OnboardingProgress {
 	back: () => void;
 }
 
-/** Check for a saved review only after Start setup, so reload can resume without reimporting. */
+/** Without a saved review: a finished sort resumes on Topics, a finished import on the step after Import. */
+async function savedStep(
+	actions: InsightActions,
+	topicsStep: number,
+	afterImport: number,
+): Promise<number> {
+	const [sort, imported] = await Promise.all([
+		getJob(actions, "classify", undefined, "sort"),
+		getJob(actions, "import"),
+	]);
+	if (sort.status === "done") return topicsStep;
+	return imported.status === "done" ? afterImport : 0;
+}
+
+/** Check for saved progress only after Start setup, so reload can resume without reimporting. */
 export function useOnboardingProgress(
 	actions: InsightActions,
 	initialStep: number,
 	lastStep: number,
+	afterImport: number,
 ): OnboardingProgress {
 	const [state, setState] = useState<ProgressState>({
 		actions,
@@ -54,7 +70,8 @@ export function useOnboardingProgress(
 				? review.appliedRevision === review.revision
 					? lastStep
 					: lastStep - 1
-				: 0;
+				: await savedStep(actions, lastStep - 1, afterImport);
+			if (ticket !== request.current) return;
 			setState({ actions, step, status: "ready", error: null });
 		} catch (cause: unknown) {
 			if (ticket !== request.current) return;
@@ -67,7 +84,7 @@ export function useOnboardingProgress(
 		} finally {
 			if (ticket === request.current) inFlight.current = null;
 		}
-	}, [actions, lastStep]);
+	}, [actions, lastStep, afterImport]);
 	const next = useCallback((): void => {
 		setState((previous) =>
 			previous.actions === actions

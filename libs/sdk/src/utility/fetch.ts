@@ -26,6 +26,45 @@ const captureHeadlessCookie = (response: Response) => {
 	CSRF.cookie = setCookieHeaders.map((c) => c.split(";")[0]).join("; ");
 };
 
+/** The methods the server's CSRF filter accepts without a token. */
+const CSRF_EXEMPT_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+
+/**
+ * The header a request that changes something sends so the server's CSRF
+ * filter accepts it. The session's token is read from the server the first
+ * time and kept. When the server does not ask for a token there is nothing to
+ * send.
+ *
+ * `post` sends it already; a call made with `fetch` directly spreads it into
+ * its own headers.
+ *
+ * @returns `X-CSRF-Token` with the session's token, or no headers.
+ */
+export const getCsrfHeaders = async (): Promise<Record<string, string>> => {
+	if (!CSRF.isEnabled && !Env.CSRF) {
+		return {};
+	}
+
+	if (!CSRF.token) {
+		const response = await fetch(`${Env.MODULE}/api/config/fetchCsrf`, {
+			headers: {
+				"X-CSRF-Token": "fetch",
+				...(Env.HEADLESS && CSRF.cookie ? { cookie: CSRF.cookie } : {}),
+			},
+		});
+
+		// not sure why the proxy server is sending it as lowercase, preserving headers doesn't fix it
+		CSRF.token =
+			response.headers.get("X-CSRF-Token") ||
+			response.headers.get("x-csrf-token") ||
+			"";
+
+		captureHeadlessCookie(response);
+	}
+
+	return CSRF.token ? { "X-CSRF-Token": CSRF.token } : {};
+};
+
 const getAbsoluteUrl = (url: string): string | null => {
 	if (typeof window === "undefined") {
 		return null;
@@ -70,6 +109,25 @@ const handleHeaderRedirect = (response: Response): boolean => {
 	return false;
 };
 
+/** Everyone told when the backend sends a request away to sign in. */
+const unauthorizedListeners = new Set<(error: UnauthorizedError) => void>();
+
+/**
+ * Hear when the backend sends a request away to sign in, which means the
+ * session has ended. The request still throws its error afterwards.
+ *
+ * @param listener - Called with the error, before it is thrown.
+ * @returns Stops listening.
+ */
+export const onUnauthorized = (
+	listener: (error: UnauthorizedError) => void,
+): (() => void) => {
+	unauthorizedListeners.add(listener);
+	return () => {
+		unauthorizedListeners.delete(listener);
+	};
+};
+
 /**
  * Store the interceptors to modify any fetch command
  */
@@ -107,55 +165,18 @@ const interceptors: {
 			};
 		}
 
+		if (!CSRF_EXEMPT_METHODS.has((options.method ?? "GET").toUpperCase())) {
+			options.headers = {
+				...options.headers,
+				...(await getCsrfHeaders()),
+			};
+		}
+
 		if (Env.HEADLESS && CSRF.cookie) {
 			options.headers = {
 				...options.headers,
 				cookie: CSRF.cookie,
 			};
-		}
-
-		// only set if enabled
-		if (CSRF.isEnabled || Env.CSRF) {
-			if (options.method === "POST") {
-				// use the token if it is there otherwise fetch it
-				if (!CSRF.token) {
-					const response = await fetch(
-						`${Env.MODULE}/api/config/fetchCsrf`,
-						{
-							headers: {
-								"X-CSRF-Token": "fetch",
-								...(Env.HEADLESS && CSRF.cookie
-									? { cookie: CSRF.cookie }
-									: {}),
-							},
-						},
-					);
-
-					// not sure why the proxy server is sending it as lowercase, preserving headers doesn't fix it
-					CSRF.token =
-						response.headers.get("X-CSRF-Token") ||
-						response.headers.get("x-csrf-token") ||
-						"";
-
-					captureHeadlessCookie(response);
-
-					// resend in case this call is what just set the cookie
-					if (Env.HEADLESS && CSRF.cookie) {
-						options.headers = {
-							...options.headers,
-							cookie: CSRF.cookie,
-						};
-					}
-				}
-
-				// add the token
-				if (CSRF.token) {
-					options.headers = {
-						...options.headers,
-						"X-CSRF-Token": CSRF.token,
-					};
-				}
-			}
 		}
 
 		return options;
@@ -164,10 +185,14 @@ const interceptors: {
 		captureHeadlessCookie(response);
 
 		if (handleHeaderRedirect(response)) {
-			throw new UnauthorizedError(
+			const error = new UnauthorizedError(
 				"Redirecting from header direct value",
 				302,
 			);
+			for (const listener of unauthorizedListeners) {
+				listener(error);
+			}
+			throw error;
 		}
 	},
 };

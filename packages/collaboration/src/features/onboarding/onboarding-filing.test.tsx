@@ -34,7 +34,8 @@ function session(review: ReviewWire) {
 			};
 			review.filingJobId = "job-retry";
 			output = { exists: true, review };
-		} else throw new Error(`Unexpected request: ${statement}`);
+		} else if (statement === "BrainFinishSetup();") output = {};
+		else throw new Error(`Unexpected request: ${statement}`);
 		return { pixelReturn: [{ output, operationType: ["MAP"] }] };
 	});
 	return { actions: { run } as unknown as InsightActions, run };
@@ -53,7 +54,10 @@ beforeEach(() => {
 	read.error = undefined;
 	read.refresh.mockReset();
 });
-afterEach(cleanup);
+afterEach(() => {
+	cleanup();
+	window.location.hash = "";
+});
 
 describe("onboarding completion", () => {
 	it("keeps Open Work disabled while the saved review is loading", () => {
@@ -85,6 +89,17 @@ describe("onboarding completion", () => {
 		expect(
 			screen.getByText("Moving Northwind to the new platform."),
 		).toBeVisible();
+	});
+
+	it("records that setup is done when the owner opens Work", async () => {
+		const source = session(applyReceipt(makeReview()));
+		const user = userEvent.setup();
+		render(view(source.actions));
+		const open = screen.getByRole("button", { name: "Open Work" });
+		await waitFor(() => expect(open).toBeEnabled());
+		await user.click(open);
+		await waitFor(() => expect(window.location.hash).toBe("#/work"));
+		expect(source.run).toHaveBeenCalledWith("BrainFinishSetup();");
 	});
 
 	it.each(["failed", "wrong-review", "wrong-mode", "missing-summary"])(

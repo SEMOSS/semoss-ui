@@ -8,7 +8,10 @@ import {
 import { MAIL_SENT_EVENT } from "@/features/connectors/api/microsoft";
 import type { InsightActions } from "@/lib/pixel";
 import type { Topic } from "../state/collaboration.types";
-import { useCollaborationSession } from "../state/collaboration-session.context";
+import {
+	useCollaborationSession,
+	useWorkChanged,
+} from "../state/collaboration-session.context";
 import {
 	type MailCheck,
 	type MailSyncResult,
@@ -62,7 +65,7 @@ export function WorkUpdatesProvider({
 		syncError: "",
 	});
 	const pending = useRef(false);
-	// a reload asked for while one is in flight (a finished sync, an assistant's topic change) runs right after it
+	// a reload asked for while one is in flight runs right after it
 	const queued = useRef(false);
 	const syncing = useRef(false);
 	const lastMailAttempt = useRef(0);
@@ -74,7 +77,10 @@ export function WorkUpdatesProvider({
 	);
 	const generation = useRef(0);
 	const refresh = useCallback(() => {
-		if (pending.current) return;
+		if (pending.current) {
+			queued.current = true;
+			return;
+		}
 		const token = generation.current;
 		const requestedState = latest.current;
 		pending.current = true;
@@ -138,6 +144,14 @@ export function WorkUpdatesProvider({
 						memories: updates.memories.map((memory) => ({
 							...memory,
 							id: localId(memory.id),
+							replacesId: memory.replacesId
+								? localId(memory.replacesId)
+								: null,
+							about: memory.about.map((ref) =>
+								ref.type === "topic"
+									? { ...ref, id: localId(ref.id) }
+									: ref,
+							),
 						})),
 						keepItemIds: changedSince(
 							requestedState.items,
@@ -190,6 +204,14 @@ export function WorkUpdatesProvider({
 	}, [actions, dispatch, sync]);
 	const refreshRef = useRef(refresh);
 	refreshRef.current = refresh;
+	// the owner changed a step or item somewhere: the cards here (WorkListItems) are read again too
+	const { workVersion, markWorkChanged } = useWorkChanged();
+	const seenWorkVersion = useRef(workVersion);
+	useEffect(() => {
+		if (seenWorkVersion.current === workVersion) return;
+		seenWorkVersion.current = workVersion;
+		refreshRef.current();
+	}, [workVersion]);
 	const refreshTopic = useCallback(
 		(topic: { topicId?: string; topic?: string }) => {
 			const token = generation.current;
@@ -214,8 +236,7 @@ export function WorkUpdatesProvider({
 				.finally(() => {
 					if (token !== generation.current) return;
 					// its emails come back on the threads; a reload already running read them too early
-					if (pending.current) queued.current = true;
-					else refreshRef.current();
+					refreshRef.current();
 				});
 		},
 		[actions, dispatch, sync],
@@ -242,8 +263,11 @@ export function WorkUpdatesProvider({
 			.then((result) => {
 				if (token !== generation.current) return;
 				setMail({ isSyncing: false, lastSync: result, syncError: "" });
-				if (pending.current) queued.current = true;
-				else refreshRef.current();
+				// Work and Today read their own copy: tell them when the sync changed anything. The version is
+				// taken as seen so this provider's own listener does not read a second time.
+				if (result.newMessages > 0 || result.closedByReply > 0)
+					seenWorkVersion.current = markWorkChanged();
+				refreshRef.current();
 			})
 			.catch((cause: unknown) => {
 				if (token !== generation.current) return;
@@ -259,7 +283,7 @@ export function WorkUpdatesProvider({
 			.finally(() => {
 				if (token === generation.current) syncing.current = false;
 			});
-	}, [actions]);
+	}, [actions, markWorkChanged]);
 	// a reply sent from the app reaches Sent Items a moment later; sync it in so the card it answered closes
 	useEffect(() => {
 		let timer: number | undefined;

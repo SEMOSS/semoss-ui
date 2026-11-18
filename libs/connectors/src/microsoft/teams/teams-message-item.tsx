@@ -12,7 +12,7 @@ import type {
 import type { TeamsAttachment, TeamsMessage } from "../microsoft.types";
 
 /** Props for {@link TeamsMessageItem}. */
-export interface TeamsMessageItemProps {
+interface TeamsMessageItemProps {
 	/** The message. */
 	message: TeamsMessage;
 	/** Saves the message's attachments into the insight. */
@@ -106,6 +106,9 @@ export const TeamsMessageItem = ({
 												itemName: name,
 												serviceName: serviceName,
 												saveLabel: saver.saveLabel,
+												savedLabel: saver.savedLabel(
+													request.key,
+												),
 												isBusy: isBusy,
 												onAddToContext:
 													saver.addToContext

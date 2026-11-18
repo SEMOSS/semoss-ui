@@ -21,7 +21,7 @@ export interface UsePagedListOptions<T> {
 	refreshKey?: number;
 }
 
-export interface UsePagedListResult<T> {
+interface UsePagedListResult<T> {
 	/** The rows on the current page */
 	rows: T[];
 	/** How many rows the query has in all */

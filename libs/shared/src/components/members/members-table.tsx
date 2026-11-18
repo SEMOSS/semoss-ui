@@ -8,8 +8,8 @@ import {
 	type ModelUsageLimit,
 	type PostUser,
 	type Role,
-	runPixel,
 } from "@semoss/sdk";
+import { useSession } from "@semoss/sdk/react";
 import {
 	Button,
 	Dialog,
@@ -128,8 +128,8 @@ export const MembersTable = ({
 	const [searchKey, setSearchKey] = useState<string>("");
 	const debouncedValue = useDebouncedValue(searchKey, 300);
 
-	// Self-fetch current user's ID and permission
-	const [myUserId, setMyUserId] = useState<string>("");
+	// the signed in user, and their permission on the resource
+	const myUserId = useSession((state) => state.user?.id) ?? "";
 	const [myPermission, setMyPermission] = useState<string>("");
 	const effectiveIsOwner = isOwner || myPermission === "OWNER";
 	const effectiveCurrentUserId = currentUserId ?? myUserId;
@@ -139,19 +139,6 @@ export const MembersTable = ({
 		isModel && id ? id : null,
 		adminMode,
 	);
-
-	useEffect(() => {
-		runPixel<[Record<string, { id: string; name: string; email: string }>]>(
-			"META | GetUserInfo();",
-		)
-			.then((result) => {
-				if (!result) return;
-				const output = result.pixelReturn[0]?.output ?? {};
-				const providerData = output[Object.keys(output)[0]];
-				if (providerData?.id) setMyUserId(providerData.id);
-			})
-			.catch(() => undefined);
-	}, []);
 
 	useEffect(() => {
 		// a host's members have no project or engine permission to read

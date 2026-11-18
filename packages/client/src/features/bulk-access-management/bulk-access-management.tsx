@@ -109,7 +109,7 @@ interface NewTeamMembers {
 const getNewMemberKey = (teamId: string, person: AccessPerson): string =>
 	`NEW_TEAM_MEMBER:${teamId}:${getSubjectKey(person)}`;
 
-export interface BulkAccessManagementProps {
+interface BulkAccessManagementProps {
 	/** The project or engine being changed */
 	target: PermissionTargetResource;
 	/** Its name */

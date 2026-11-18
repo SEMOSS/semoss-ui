@@ -60,7 +60,8 @@
 	"onedrive": {
 		"viewLabel": "What to Show",
 		"mine": "My Files",
-		"shared": "Shared with Me"
+		"shared": "Shared with Me",
+		"sharedNote": "Files shared with you are found through Microsoft's search, so one shared recently can take a while to appear here."
 	},
 	"mail": {
 		"folder": "Mail Folder",

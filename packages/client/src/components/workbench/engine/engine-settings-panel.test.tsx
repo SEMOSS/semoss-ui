@@ -17,20 +17,25 @@ vi.mock("@/hooks/useEngine", () => ({
 		permission: mocks.permission,
 	}),
 }));
-vi.mock("@/hooks/use-session", () => ({ useSession: () => mocks.admin }));
+vi.mock("@semoss/sdk/react", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
+	useSession: (
+		selector: (state: { user: { isAdmin: boolean } }) => unknown,
+	) => selector({ user: { isAdmin: mocks.admin } }),
+}));
 vi.mock("@/pages/engine/engine-activity-page", () => ({
 	EngineActivityPage: () => null,
 }));
-vi.mock("@/pages/engine/engine-mcp-usage-page", () => ({
+vi.mock("@/pages/engine/engine-mcp-usage.page", () => ({
 	EngineMcpUsagePage: () => null,
 }));
-vi.mock("@/pages/engine/engine-metadata-page", () => ({
+vi.mock("@/pages/engine/engine-metadata.page", () => ({
 	EngineMetadataPage: () => null,
 }));
 vi.mock("@/pages/engine/engine-overview-page", () => ({
 	EngineOverviewPage: () => null,
 }));
-vi.mock("@/pages/engine/engine-settings-page", () => ({
+vi.mock("@/pages/engine/engine-settings.page", () => ({
 	EngineSettingsPage: () => null,
 }));
 vi.mock("@/pages/engine/engine-smss-page", () => ({
@@ -78,13 +83,20 @@ describe("engine workbench audit tab", () => {
 			expect(mocks.audit).not.toHaveBeenCalled();
 		},
 	);
-	it("allows admins and removes the audit view when authorization is revoked", () => {
+	it("hides audit history from an admin who does not own the engine", () => {
 		mocks.permission = "READ_ONLY";
 		mocks.admin = true;
+		render(<SettingsFixture />);
+		expect(
+			screen.queryByRole("tab", { name: "Audit Trail" }),
+		).not.toBeInTheDocument();
+		expect(mocks.audit).not.toHaveBeenCalled();
+	});
+	it("removes the audit view once the user no longer owns the engine", () => {
 		const view = render(<SettingsFixture />);
 		fireEvent.click(screen.getByRole("tab", { name: "Audit Trail" }));
 		expect(screen.getByText("Engine audit history")).toBeInTheDocument();
-		mocks.admin = false;
+		mocks.permission = "READ_ONLY";
 		view.rerender(<SettingsFixture />);
 		expect(
 			screen.queryByText("Engine audit history"),

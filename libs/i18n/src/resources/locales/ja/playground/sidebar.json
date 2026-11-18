@@ -10,10 +10,6 @@
 			"label": "エージェント",
 			"tooltip": "エージェント"
 		},
-		"allChats": {
-			"label": "すべてのチャット",
-			"tooltip": "すべてのチャット"
-		},
 		"agentsWorkspaces": {
 			"tooltip": "エージェント/ワークスペース - ワークスペースにアクセスしたり、新しいAIエージェントを作成します。"
 		},
@@ -53,7 +49,8 @@
 		"openInline": "インラインで開く",
 		"minimize": "最小化",
 		"maximize": "最大化",
-		"close": "閉じる"
+		"close": "閉じる",
+		"roomActions": "チャットの操作"
 	},
 	"toasts": {
 		"failedToPin": "ルームの固定に失敗しました",
@@ -61,27 +58,8 @@
 		"roomNameEmpty": "ルーム名を空にすることはできません",
 		"roomRenamedSuccess": "ルーム名を正常に変更しました",
 		"failedToRename": "ルーム名の変更に失敗しました",
-		"roomDeletedSuccess": "ルームを正常に削除しました"
-	},
-	"workbench": {
-		"view": "表示",
-		"navigate": "移動",
-		"commandPalette": "コマンドパレットを開く…",
-		"layout": "パネルを配置",
-		"single": "1つのグループにまとめる",
-		"columns": "2列に分割",
-		"rows": "2行に分割",
-		"balance": "ペインのサイズを均等にする",
-		"left": "左側の領域を表示",
-		"right": "右側の領域を表示",
-		"top": "上側の領域を表示",
-		"bottom": "下側の領域を表示",
-		"previous": "前のパネルに移動",
-		"next": "次のパネルに移動",
-		"openPanels": "開いているパネル",
-		"noPanels": "開いているパネルはありません",
-		"maximize": "ワークスペースを最大化",
-		"restore": "ワークスペースを元に戻す"
+		"roomDeletedSuccess": "ルームを正常に削除しました",
+		"failedToDelete": "ルームを削除できませんでした"
 	},
 	"userMenu": {
 		"settings": "設定",
@@ -105,7 +83,66 @@
 			},
 			"language": "言語",
 			"languageDescription": "アプリの表示言語。",
-			"version": "バージョン {{version}}"
+			"version": "バージョン {{version}}",
+			"newChat": {
+				"title": "チャット",
+				"default": "既定",
+				"model": "モデル",
+				"modelDescription": "新しいチャットで使うモデル。",
+				"unavailableModel": "利用できないモデル",
+				"mode": "モード",
+				"modeDescription": "新しいチャットをチャットとして開始するか、エージェントで開始するか。",
+				"modes": {
+					"chat": "チャット",
+					"agent": "エージェント"
+				},
+				"agent": "エージェント",
+				"agentDescription": "エージェントモードの新しいチャットで実行するエージェント。",
+				"saveError": "設定を保存できませんでした: {{message}}"
+			}
 		}
+	},
+	"download": {
+		"title": "会話をダウンロード",
+		"description": "ダウンロードの形式を選んでください。",
+		"word": "Word 文書",
+		"pdf": "PDF 文書",
+		"success": "会話を {{format}} としてダウンロードしました",
+		"failed": "会話をダウンロードできませんでした"
+	},
+	"chats": "チャット",
+	"view": {
+		"button": "チャットの並べ替えとグループ化",
+		"customized": "カスタムの並び順",
+		"sortBy": "並べ替え",
+		"groupBy": "グループ化",
+		"sort": {
+			"recent": "新しい順",
+			"oldest": "古い順",
+			"nameAsc": "名前（A–Z）",
+			"nameDesc": "名前（Z–A）"
+		},
+		"group": {
+			"date": "日付",
+			"agent": "エージェント"
+		}
+	},
+	"groups": {
+		"all": "すべてのチャット",
+		"noAgent": "エージェントなし",
+		"unnamedAgent": "無題のエージェント",
+		"openAgent": "{{name}} を新しいタブで開く"
+	},
+	"searchChats": {
+		"label": "チャットを検索",
+		"title": "チャットを検索",
+		"description": "名前や会話の内容からチャットを探します。",
+		"placeholder": "チャットを検索…",
+		"loading": "検索中…",
+		"empty": "「{{query}}」に一致するチャットはありません",
+		"recent": "最近",
+		"allAgents": "すべてのエージェント",
+		"results": "結果",
+		"matchedMessage": "メッセージに一致"
 	}
 }

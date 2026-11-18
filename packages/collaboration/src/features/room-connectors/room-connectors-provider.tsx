@@ -6,6 +6,7 @@ import {
 	useCalendarWindow,
 } from "@semoss/connectors";
 import { useTranslation } from "@semoss/i18n";
+import { FILE_PANEL_EVENTS, getFilePanelScope } from "@semoss/panels";
 import type { RoomSession } from "../rooms/room-session";
 import { useToolWorkbench } from "../tools/tool-workbench.context";
 import {
@@ -62,6 +63,27 @@ export function RoomConnectorsProvider({
 				t("calendar.title"),
 			);
 	}, [store, t]);
+	// A run writes files behind every open panel and tells nobody: into the
+	// chat's files, and sometimes into the drive. So each finished run says the
+	// chat's files changed, without naming any, and the explorer, the open file
+	// tabs, and the drive viewers read again.
+	useEffect(() => {
+		if (!session) return;
+		let settled = session.getSnapshot().turn.settlementVersion;
+		return session.subscribe(() => {
+			const next = session.getSnapshot().turn.settlementVersion;
+			if (next === settled) return;
+			settled = next;
+			store
+				.getState()
+				.events.actions.emit(FILE_PANEL_EVENTS.FILES_CHANGED, {
+					scope: getFilePanelScope({
+						type: "INSIGHT",
+						insightId: session.insight.insightId,
+					}),
+				});
+		});
+	}, [session, store]);
 	const activate = useCallback(
 		(id: string) => {
 			store

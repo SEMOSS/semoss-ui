@@ -29,6 +29,8 @@ interface NewChatWorkspaceProps {
 	onSend: (submission: ComposerSubmission) => Promise<void>;
 	onSaveSettings: (settings: RoomSettings) => Promise<void>;
 	onSelectAgent: (agentId: string) => Promise<void>;
+	/** Today's ask box, drawn over the hero photo. */
+	isHero?: boolean;
 }
 
 /** Compact overview composer with its tools available without leaving the page. */
@@ -41,6 +43,7 @@ export function NewChatWorkspace({
 	onSend,
 	onSaveSettings,
 	onSelectAgent,
+	isHero,
 }: NewChatWorkspaceProps) {
 	useShowCurrentChat(session);
 	const workbench = useToolWorkbench();
@@ -107,6 +110,7 @@ export function NewChatWorkspace({
 				onSaveSettings={onSaveSettings}
 				onSelectAgent={onSelectAgent}
 				isCompact
+				isHero={isHero}
 				panelActions={[
 					{
 						id: "settings",

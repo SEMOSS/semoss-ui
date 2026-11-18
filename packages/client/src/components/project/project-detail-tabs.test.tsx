@@ -14,16 +14,23 @@ vi.mock("@/hooks/use-project", () => ({
 		permission: mocks.permission,
 	}),
 }));
-vi.mock("@/hooks/use-session", () => ({ useSession: () => mocks.admin }));
-vi.mock("@/components/project", () => ({
+vi.mock("@semoss/sdk/react", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
+	useSession: (
+		selector: (state: { user: { isAdmin: boolean } }) => unknown,
+	) => selector({ user: { isAdmin: mocks.admin } }),
+}));
+vi.mock("@/components/project/project-overview", () => ({
 	ProjectOverview: () => null,
+}));
+vi.mock("@/components/project/project-access-control", () => ({
 	ProjectAccessControl: () => null,
 }));
 vi.mock("@/pages/app/app-activity-page", () => ({
 	AppActivityPage: () => <div>App activity log</div>,
 }));
-vi.mock("@/pages/app/app-github-page", () => ({ AppGithubPage: () => null }));
-vi.mock("@/pages/app/app-mcp-usage-page", () => ({
+vi.mock("@/pages/app/app-github.page", () => ({ AppGithubPage: () => null }));
+vi.mock("@/pages/app/app-mcp-usage.page", () => ({
 	AppMcpUsagePage: () => null,
 }));
 vi.mock("@/components/project/project-settings-panel", () => ({
@@ -79,15 +86,22 @@ describe("workbench project audit tab", () => {
 			expect(mocks.audit).not.toHaveBeenCalled();
 		},
 	);
-	it("permits admins without an owner role and stops rendering after access is revoked", () => {
+	it("hides audit history from an admin who does not own the project", () => {
 		mocks.permission = "READ_ONLY";
 		mocks.admin = true;
+		render(<ProjectDetailTabs tabs={tabs} />);
+		expect(
+			screen.queryByRole("tab", { name: "Audit Trail" }),
+		).not.toBeInTheDocument();
+		expect(mocks.audit).not.toHaveBeenCalled();
+	});
+	it("stops rendering audit history once the user no longer owns the project", () => {
 		const view = render(<ProjectDetailTabs tabs={tabs} />);
 		fireEvent.click(screen.getByRole("tab", { name: "Audit Trail" }));
 		expect(
 			screen.getByText("Automation audit history"),
 		).toBeInTheDocument();
-		mocks.admin = false;
+		mocks.permission = "READ_ONLY";
 		view.rerender(<ProjectDetailTabs tabs={tabs} />);
 		expect(
 			screen.queryByText("Automation audit history"),

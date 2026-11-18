@@ -6,7 +6,6 @@ import {
 	parseChats,
 	parseMicrosoftDownload,
 	parseOneDriveFolder,
-	parseOneDriveResults,
 	parseTeams,
 	parseTeamsFolder,
 	parseTeamsMessageSearch,
@@ -31,16 +30,6 @@ describe("OneDrive listings", () => {
 		]);
 		expect(items[0]).toMatchObject({ isFolder: true, childCount: 2 });
 		expect(items[2].size).toBe(10);
-	});
-
-	it("keeps the backend's ranking for results", () => {
-		const items = parseOneDriveResults({
-			files: [
-				{ id: "b", name: "b.txt", isFolder: false },
-				{ id: "a", name: "a", isFolder: true },
-			],
-		});
-		expect(items.map((item) => item.id)).toEqual(["b", "a"]);
 	});
 
 	it("reads a Teams channel folder, which is a bare list", () => {

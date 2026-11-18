@@ -76,7 +76,7 @@ it.each([
 		const navigation = within(
 			screen.getByRole("navigation", { name: "Settings" }),
 		);
-		expect(navigation.getAllByRole("link")).toHaveLength(11);
+		expect(navigation.getAllByRole("link")).toHaveLength(12);
 		for (const label of [
 			"About you",
 			"Connections",
@@ -86,6 +86,7 @@ it.each([
 			"Conversations",
 			"People",
 			"Memory",
+			"Skills",
 			"Rules",
 			"Appearance",
 			"Data",

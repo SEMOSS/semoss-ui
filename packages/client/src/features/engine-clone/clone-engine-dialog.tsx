@@ -1,4 +1,5 @@
 import { cloneEngine } from "@semoss/sdk";
+import { useSessionInsight } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -18,7 +19,6 @@ import {
 	zodResolver,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import { useSession } from "@/hooks/use-session";
 
 /** Added to the engine's name for the name the clone starts with */
 const DEFAULT_NAME_SUFFIX = " Copy";
@@ -38,7 +38,7 @@ const schema = z.object({
 
 type CloneEngineValues = z.infer<typeof schema>;
 
-export interface CloneEngineDialogProps {
+interface CloneEngineDialogProps {
 	/** Whether the dialog is open */
 	open: boolean;
 	/** The engine to clone */
@@ -63,7 +63,7 @@ export const CloneEngineDialog = ({
 	engineLabel,
 	onSubmit,
 }: CloneEngineDialogProps) => {
-	const insightID = useSession((state) => state.insightID);
+	const { insightId } = useSessionInsight();
 	const form = useForm<CloneEngineValues>({
 		resolver: zodResolver(schema),
 		defaultValues: { name: `${engineName}${DEFAULT_NAME_SUFFIX}` },
@@ -77,7 +77,7 @@ export const CloneEngineDialog = ({
 		try {
 			const clone = await cloneEngine(
 				{ engineId, name: values.name },
-				insightID,
+				insightId,
 			);
 			cloneId = clone.engineId;
 			cloneName = clone.name || values.name;

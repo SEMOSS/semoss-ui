@@ -11,13 +11,14 @@ import {
 	ContextMenuItem,
 	ContextMenuTrigger,
 } from "@semoss/ui/next";
+import { safeHttpsUrl } from "@semoss/utility/browser";
 import {
 	type ConnectorItemActions,
 	hasItemActions,
 } from "./connector-item-actions";
 
 /** Props for {@link ConnectorItemMenu}. */
-export interface ConnectorItemMenuProps {
+interface ConnectorItemMenuProps {
 	/** The item's actions, or nothing for an item without any. */
 	actions?: ConnectorItemActions | null;
 	/** What the menu opens on, such as the item's row. */
@@ -47,6 +48,7 @@ export const ConnectorItemMenu = ({
 		serviceName,
 		isBusy = false,
 	} = actions;
+	const href = safeHttpsUrl(webUrl);
 
 	return (
 		<ContextMenu>
@@ -67,10 +69,10 @@ export const ConnectorItemMenu = ({
 						{saveLabel}
 					</ContextMenuItem>
 				) : null}
-				{webUrl ? (
+				{href ? (
 					<ContextMenuItem asChild>
 						<a
-							href={webUrl}
+							href={href}
 							target="_blank"
 							rel="noopener noreferrer"
 						>

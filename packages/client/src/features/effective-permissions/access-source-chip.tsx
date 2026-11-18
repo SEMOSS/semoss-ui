@@ -7,7 +7,7 @@ import { CUSTOM_TEAM_TYPE } from "@/features/team-type/team-type";
 import { TeamTypeIcon } from "@/features/team-type/team-type-icon";
 import { useTeamTypeName } from "@/features/team-type/use-team-type-name";
 
-export interface AccessSourceChipProps {
+interface AccessSourceChipProps {
 	/** Where part of a person's access comes from */
 	source: PermissionSource;
 	/** Whether this source gives the person the access they end up with */

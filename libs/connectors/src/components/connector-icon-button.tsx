@@ -8,7 +8,7 @@ import {
 } from "@semoss/ui/next";
 
 /** Props for {@link ConnectorIconButton}. */
-export interface ConnectorIconButtonProps {
+interface ConnectorIconButtonProps {
 	/** The button's icon. */
 	icon: LucideIcon;
 	/** What the button does, shown as its tooltip. */

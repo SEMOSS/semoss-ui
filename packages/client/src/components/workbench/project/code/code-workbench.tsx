@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import type { Role } from "@semoss/sdk";
-import { useInsight } from "@semoss/sdk/react";
+import { Session, useInsight } from "@semoss/sdk/react";
 import { toast, useCacheData } from "@semoss/ui/next";
 import type {
 	WorkbenchLayout,
@@ -15,19 +15,21 @@ import {
 	WorkbenchCommandMenuButton,
 	WorkbenchResetButton,
 } from "@semoss/workbench";
-import { ASSISTANT_PANEL } from "@/components/assistant";
-import { AssistantStoreProvider } from "@/contexts";
+import { ASSISTANT_PANEL } from "@/components/assistant/assistant-view";
+import { AssistantStoreProvider } from "@/contexts/assistant.context";
 import { ASSISTANT_TOOL_PANEL } from "@/features/assistant-tools/assistant-tool-panel";
 import { ASSISTANT_TOOL_PANEL_TYPE } from "@/features/assistant-tools/assistant-tool-ui";
-import { useAssistantStore, useProject, useSession } from "@/hooks";
-import type { BuildRun } from "@/stores/assistant";
+import { useAssistantStore } from "@/hooks/use-assistant-store";
+import { useProject } from "@/hooks/use-project";
+import type { BuildRun } from "@/stores/assistant/assistant.runs";
 import { APP_BUILDER_AGENT } from "@/stores/assistant/assistant-agents";
 import {
 	WORKBENCH_COMPONENTS,
 	WORKBENCH_EVENTS,
 	WORKBENCH_PANEL_RECORDS,
-} from "@/stores/workbench";
-import { GIT_DIFF_PANEL, GIT_VERSION_PANEL } from "../../git";
+} from "@/stores/workbench/workbench.constants";
+import { GIT_DIFF_PANEL } from "../../git/git-diff-panel";
+import { GIT_VERSION_PANEL } from "../../git/git-version-panel";
 import {
 	runTreeTools,
 	useAssistantFilesChanged,
@@ -183,7 +185,7 @@ export const CODE_WORKBENCH_COMPONENTS: Record<
  * Code workbench — the editable surface for a CODE project. Shows a live
  * preview of the published app alongside the project file explorer, the
  * terminal's insight file explorer, a Pixel terminal, and the shared assistant
- * assistant panel.
+ * panel.
  */
 export const CodeWorkbench: React.FC = () => {
 	const emit = useWorkbench((s) => s.events.actions.emit);
@@ -259,19 +261,16 @@ export const CodeWorkbench: React.FC = () => {
 		toast.success("App rebuilt and published.");
 	}, [readOnly, insight.actions, project.project_id, announcePublished]);
 
-	const syncPermission = useSession((s) => s.syncPermission);
-	const refreshPermission = useSession((s) => s.refreshPermission);
-
 	const assistantStore = useAssistantStore(workbenchId);
 
 	// keep the assistant's system prompt/tools in sync with the active app
 	useEffect(() => {
 		const name = project.project_display_name || project.project_name;
 
-		syncPermission("PROJECT", project.project_id, permission);
-		void refreshPermission("PROJECT", project.project_id).catch(
-			() => undefined,
-		);
+		Session.permissions.sync("PROJECT", project.project_id, permission);
+		void Session.permissions
+			.refresh("PROJECT", project.project_id)
+			.catch(() => undefined);
 
 		assistantStore.getState().configure({
 			defaultAgent: APP_BUILDER_AGENT,
@@ -291,8 +290,6 @@ export const CodeWorkbench: React.FC = () => {
 	}, [
 		assistantStore,
 		readOnly,
-		syncPermission,
-		refreshPermission,
 		handleRebuild,
 		handleRunCompleted,
 		permission,

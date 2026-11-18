@@ -1,7 +1,13 @@
 import { Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
-import { useIteratorPixel, usePixel } from "@semoss/sdk/react";
+import {
+	useConfig,
+	useIteratorPixel,
+	usePixel,
+	useSession,
+	useSessionInsight,
+} from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
 import {
 	Button,
@@ -11,24 +17,22 @@ import {
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
-import { setProjectFavorite, setProjectGlobal } from "@/api";
-import { SystemAppGridItem } from "@/components/app";
-import {
-	CatalogGrid,
-	CatalogLayout,
-	CatalogSearchBar,
-	CatalogTabs,
-} from "@/components/catalog";
+import { setProjectFavorite, setProjectGlobal } from "@/api/projects";
+import { SystemAppGridItem } from "@/components/app/system-app-grid-item";
 import { CatalogFilterBox } from "@/components/catalog/catalog-filter-box";
+import { CatalogGrid } from "@/components/catalog/catalog-grid";
+import { CatalogLayout } from "@/components/catalog/catalog-layout";
+import { CatalogSearchBar } from "@/components/catalog/catalog-search-bar";
+import { CatalogTabs } from "@/components/catalog/catalog-tabs";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
-import { useConfig, useSession } from "@/hooks";
 import {
 	buildAccessFilterParams,
 	type CatalogAccessFilter,
 	getProjectLabel,
 	isOwnerPermission,
 } from "@/utility/catalog";
-import { NavbarHeader, NavbarLeft } from "../shared";
+import { NavbarHeader } from "../shared/navbar-header";
+import { NavbarLeft } from "../shared/navbar-left";
 import { CloneProjectDialog } from "./clone-project-dialog";
 import { ProjectGridItem } from "./project-grid-item";
 
@@ -144,19 +148,25 @@ const SYSTEM_APPS: {
 ];
 
 interface ProjectCatalogProps {
+	/** The kind of project the catalog lists; CODE lists code and blocks apps */
 	type: Project["project_type"];
 }
 
+/**
+ * A project catalog: the user's projects, bookmarked first, the ones they can
+ * discover, and for apps the system apps, with search, sort, filters and a
+ * page at a time as the page scrolls.
+ */
 export const ProjectCatalog = ({ type }: ProjectCatalogProps) => {
 	const config = CATALOG_CONFIG[type as keyof typeof CATALOG_CONFIG];
-	const projectMetaKeys = useConfig((state) => state.config.projectMetaKeys);
+	const projectMetaKeys = useConfig(
+		(state) => state.config?.projectMetaKeys ?? [],
+	);
 	const adminOnlyViewMenuBarFlag = useConfig(
-		(state) => state.config.adminOnlyViewMenuBarFlag,
+		(state) => state.config?.adminOnlyViewMenuBarFlag ?? false,
 	);
-	const runPixel = useSession((state) => state.runPixel);
-	const isEngineOperationAvailable = useSession(
-		(state) => state.isEngineOperationAvailable,
-	);
+	const { run: runPixel } = useSessionInsight();
+	const canPerform = useSession((state) => state.canPerform);
 
 	// get metakeys of the ones we want
 	const metaKeys = projectMetaKeys
@@ -428,7 +438,7 @@ export const ProjectCatalog = ({ type }: ProjectCatalogProps) => {
 				}
 				description={config.description}
 				headerActions={
-					isEngineOperationAvailable(
+					canPerform(
 						CATALOG_PERMISSION_TYPE[
 							type as keyof typeof CATALOG_PERMISSION_TYPE
 						],
@@ -507,7 +517,7 @@ export const ProjectCatalog = ({ type }: ProjectCatalogProps) => {
 				}
 				filterBox={
 					!adminOnlyViewMenuBarFlag &&
-					isEngineOperationAvailable(
+					canPerform(
 						CATALOG_PERMISSION_TYPE[
 							type as keyof typeof CATALOG_PERMISSION_TYPE
 						],

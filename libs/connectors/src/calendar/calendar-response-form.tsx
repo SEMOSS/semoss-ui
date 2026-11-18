@@ -57,7 +57,7 @@ const readResponse = (value: string): string => {
 };
 
 /** Props for {@link CalendarResponseForm}. */
-export interface CalendarResponseFormProps {
+interface CalendarResponseFormProps {
 	/** The calendar the invitation is on. */
 	app: CalendarApp;
 	/** The call, waiting for the user. */

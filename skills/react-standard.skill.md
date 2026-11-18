@@ -25,8 +25,10 @@ repository, including outside `libs/*/src/` and `packages/*/src/`.
   and enumerated design exceptions. `@semoss/ui/next` is the design authority.
 - Load the [accessibility skill](./accessibility.skill.md) for UI,
   the [mobile skill](./mobile-development.skill.md) for responsive
-  and touch work, and the [form skill](./react-form-builder.skill.md)
-  whenever a form is created or touched. Those skills own their specialized requirements.
+  and touch work, the [form skill](./react-form-builder.skill.md)
+  whenever a form is created or touched, and the
+  [state management skill](./state-management.skill.md) whenever a store or shared
+  application state is created or touched. Those skills own their specialized requirements.
 - Preserve existing public contracts. Full-file review is not permission to
   remove exports, relocate existing features, or refactor unrelated consumers.
   Report migrations that require a larger scope and obtain agreement first.
@@ -39,7 +41,9 @@ repository, including outside `libs/*/src/` and `packages/*/src/`.
 - Keep one component per file; `@semoss/ui` may colocate related primitives.
   Favor readable composition, slots, and discriminated unions over conflicting
   boolean variants. Share state/context when justified, not to remove every prop.
-  There is no mandatory line limit or presenter/container split.
+  There is no mandatory line limit or presenter/container split. A file per
+  component does not mean a component per JSX block; see
+  [Fold Single-Use Pieces](#fold-single-use-pieces).
 - Use named exports in application/library source. Tool configuration files may
   use default exports when their tool requires them; this is not an application
   escape hatch.
@@ -61,6 +65,25 @@ repository, including outside `libs/*/src/` and `packages/*/src/`.
 - Avoid deprecated APIs and migrate touched deprecated usage to the documented
   replacement within scope. Report any migration blocked by wider dependencies.
 
+### Fold Single-Use Pieces
+
+- Before creating a component, hook, helper, constant, type, or file, check how
+  many consumers it will have. Fold a single-use piece into its consumer when it
+  is short, stateless, and reads naturally in place: a wrapper that only forwards
+  props, a one-line helper, a constant used once, a props type for an inline
+  callback, or a file that re-exports a single name.
+- Keep it separate when it owns state, hooks, effects, or refs; is a memo,
+  Suspense, or error boundary or a lazy-loaded chunk; is tested on its own; is a
+  public export; or when folding would leave the consumer deeply nested or hard
+  to scan.
+- When a piece only needs a name, use a descriptive local variable or an
+  early-return branch in the parent instead of a new component. Folding never
+  means defining a second component in the file.
+- Prefer fewer, cohesive files over many tiny ones. Judge by readability of the
+  result, not by line or file counts.
+- Fold only pieces within the task's scope. Do not fold existing exports consumed
+  by untouched code.
+
 ## Logic, State, and Effects
 
 - Use single responsibilities, early returns, and the simplest adequate design.
@@ -69,8 +92,16 @@ repository, including outside `libs/*/src/` and `packages/*/src/`.
   React orchestration; keep simple local UI state and handlers in components.
 - React props and state are immutable. Use a pure functional state updater when
   the next value depends on previous state; direct replacements from arguments
-  are fine. Preserve sanctioned MobX/store actions rather than rewriting stores
-  to imitate React state.
+  are fine. Preserve existing MobX and Zustand store actions rather than rewriting
+  stores to imitate React state.
+- Shared application state belongs in a framework-free store built on `StoreState`
+  from `@semoss/utility/store`, read through `useStoreSelector`. Do not add
+  a MobX or Zustand store, an `observer` component over new state, or another state
+  library; existing ones migrate one store at a time. The
+  [state management skill](./state-management.skill.md) owns these rules.
+- Read a store with `useStoreSelector` from
+  `@semoss/utility/react/use-store-selector`, selecting the least the component
+  needs. Do not call `useSyncExternalStore` on a store directly.
 - Derive values during render; keep interaction-triggered work in event handlers.
   Effects synchronize external systems, not duplicate derived state. Include
   every dependency actually read; do not omit dependencies or hide them in refs
@@ -92,8 +123,9 @@ repository, including outside `libs/*/src/` and `packages/*/src/`.
 - Extract repeated stateful behavior, complex React workflows, data orchestration,
   and state-machine coordination into hooks named for their purpose. A single
   consumer can justify extraction when it makes a cohesive workflow easier to
-  understand and test. Do not extract every state variable or event handler, or
-  create a catch-all hook merely to shorten a component.
+  understand and test; apply the [fold criteria](#fold-single-use-pieces) first.
+  Do not extract every state variable or event handler, or create a catch-all
+  hook merely to shorten a component.
 - Search existing SDK, shared, and feature hooks before adding one. Compose
   focused hooks rather than duplicating subscriptions or request orchestration.
   Colocate feature-specific hooks with their feature; promote genuinely shared
@@ -111,7 +143,8 @@ repository, including outside `libs/*/src/` and `packages/*/src/`.
   static rather than passing hooks as props or dynamically selecting them.
 - Hooks share logic, not local state: each invocation owns its own state and
   effects. To share state, lift it to a common owner or use the established
-  context/store/query abstraction. Extraction alone does not deduplicate requests
+  context/store/query abstraction; new stores follow the
+  [state management skill](./state-management.skill.md). Extraction alone does not deduplicate requests
   or subscriptions, isolate rerenders, or improve performance.
 - Treat a hook's render-time code as part of its consumer's render: keep it pure
   and accept current reactive inputs explicitly. Apply the effect, cleanup,
@@ -132,8 +165,8 @@ repository, including outside `libs/*/src/` and `packages/*/src/`.
 - A reason-bearing `@ts-expect-error` is allowed only for a type-negative test or
   a narrowly documented external typing defect. Never automatically substitute
   it for `@ts-ignore` merely to silence an error.
-- Use type/interface contracts, with explicit interfaces for stores and config
-  objects. Declare return types on authored custom hooks and complex mapping
+- Use type/interface contracts, with explicit interfaces for stores, store
+  snapshots (with `readonly` fields), and config objects. Declare return types on authored custom hooks and complex mapping
   functions; trivial inline callbacks need not all have annotations. Use
   `as const`/`satisfies` for finite maps when useful; `as const` does not freeze
   objects at runtime.
@@ -156,9 +189,10 @@ repository, including outside `libs/*/src/` and `packages/*/src/`.
 - Prefer the existing type scale, spacing scale, radii, and control sizes. Avoid
   arbitrary values such as `text-[13px]`, `p-[17px]`, `z-[999]`, or one-off pixel
   dimensions unless the owning design rule explicitly requires them.
-- Keep utility composition readable. Extract a repeated or conditional class group
-  into a named component or local constant and use the repository's `cn()` helper
-  rather than concatenating classes or allowing conflicting utilities to accumulate.
+- Keep utility composition readable. Extract a repeated class group into a named
+  component or local constant; keep a single-use conditional group inline. Use the
+  repository's `cn()` helper rather than concatenating classes or allowing
+  conflicting utilities to accumulate.
 - Write the base layout for the narrowest supported viewport, then add responsive
   utilities only where the content needs them. Do not hide essential actions,
   reorder content away from DOM order, or create horizontal page overflow.
@@ -339,7 +373,9 @@ working-tree check does not validate them. Do not stage another person's changes
     Do not expand into unrelated migrations to satisfy full-file review.
 3. Check hook/state semantics and applicable [Hooks Pattern](#hooks-pattern)
    boundaries, error/loading/empty states, SDK boundaries, naming,
-   exports, explicit returns, suppression reasons, and deprecated usage. For UI,
+   exports, explicit returns, suppression reasons, deprecated usage, and
+   single-use components, helpers, and files that meet the
+   [fold criteria](#fold-single-use-pieces). For UI,
    check accessible names, keyboard operation, visible focus, overlay focus
    management, and meaningful status announcements without redundant ARIA.
     Prefer semantic roles and accessible names for test selectors; use stable IDs

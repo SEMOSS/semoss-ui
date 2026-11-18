@@ -8,6 +8,8 @@ import { getFileExtension as legacyExtension } from "@semoss/utility/file-extens
 import * as json from "@semoss/utility/json";
 import * as markdown from "@semoss/utility/markdown";
 import * as object from "@semoss/utility/object";
+import * as storeSelector from "@semoss/utility/react/use-store-selector";
+import * as store from "@semoss/utility/store";
 import * as string from "@semoss/utility/string";
 import * as text from "@semoss/utility/text";
 import { toError } from "./error";
@@ -18,6 +20,9 @@ it("exports the canonical helper names through their categories and root", () =>
 	expect(utility).toMatchObject({
 		isSameArray: array.isSameArray,
 		deepCopy: object.deepCopy,
+		isShallowEqual: object.isShallowEqual,
+		isPlainObject: object.isPlainObject,
+		StoreState: store.StoreState,
 		formatTextByteSize: text.formatTextByteSize,
 		readNonBlankString: text.readNonBlankString,
 		stripAnsiStyleCodes: text.stripAnsiStyleCodes,
@@ -93,4 +98,9 @@ it("imports the public root and browser helpers without a DOM", () => {
 	expect(utility.downloadBlob).toBeTypeOf("function");
 	expect(utility.setFavicon).toBeTypeOf("function");
 	expect(utility.copyTextToClipboard).toBeTypeOf("function");
+});
+
+it("keeps React out of the root and exports its hooks from their own files", () => {
+	expect(storeSelector.useStoreSelector).toBeTypeOf("function");
+	expect(utility).not.toHaveProperty("useStoreSelector");
 });

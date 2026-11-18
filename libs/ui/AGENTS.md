@@ -231,6 +231,10 @@ Run these commands from `libs/ui`, or use `pnpm --filter @semoss/ui <command>` f
   light + dark values and an `@theme inline` mapping
 - **`vite.config.ts`** - Build configuration
 - **`components.json`** - shadcn CLI configuration
+- **State** - components keep their own state in React (`useState`, context, controlled props).
+  This package has no store and cannot import `@semoss/utility`, so the repo's
+  [`StoreState` stores](../../skills/state-management.skill.md) belong to consumers. Do not add
+  a state library here.
 
 ### When Adding Components
 

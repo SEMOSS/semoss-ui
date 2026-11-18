@@ -64,7 +64,7 @@ const toPerson = (result: UserSearchResult): AccessPerson | null =>
 			}
 		: null;
 
-export interface AccessPersonSearchProps {
+interface AccessPersonSearchProps {
 	/** Whether the organization's Microsoft directory can be searched too */
 	isDirectoryAvailable: boolean;
 	/** Whether the changes already list a person, so they cannot be added twice */

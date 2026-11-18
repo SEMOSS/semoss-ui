@@ -7,7 +7,7 @@ import { isRecord } from "@semoss/utility/object";
  */
 
 /** A reactor's output read as a record. */
-export type RawRecord = Record<string, unknown>;
+type RawRecord = Record<string, unknown>;
 
 /**
  * @param value - A value from a reactor's output.
@@ -43,7 +43,7 @@ export const readBody = (
  * @param value - A value from a reactor's output.
  * @return The value when it is a list, or an empty list.
  */
-export const readList = (value: unknown): unknown[] =>
+const readList = (value: unknown): unknown[] =>
 	Array.isArray(value) ? value : [];
 
 /**

@@ -53,7 +53,7 @@ export interface PlaywrightScript {
 }
 
 // Google Recorder Types
-export interface GoogleRecorderStep {
+interface GoogleRecorderStep {
 	type:
 		| "setViewport"
 		| "navigate"
@@ -82,7 +82,7 @@ export interface GoogleRecorderStep {
 	y?: number;
 }
 
-export interface GoogleRecorderScript {
+interface GoogleRecorderScript {
 	title: string;
 	steps: GoogleRecorderStep[];
 }

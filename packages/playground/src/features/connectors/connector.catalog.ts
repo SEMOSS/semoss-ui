@@ -16,7 +16,7 @@ export type ConnectorServiceId =
 	| "google-docs";
 
 /** How a connector tool runs: on its own, or once the user approves it. */
-export type ConnectorToolExecution = "auto" | "ask";
+type ConnectorToolExecution = "auto" | "ask";
 
 /** One reactor a service exposes as a tool. */
 export interface ConnectorTool {
@@ -432,7 +432,7 @@ export const readConnectorTools = (mcpJson: unknown): McpTool[] =>
  * @param tool - A tool from a room's file.
  * @return True for a connector tool.
  */
-export const isConnectorTool = (tool: McpTool): boolean => {
+const isConnectorTool = (tool: McpTool): boolean => {
 	const meta = getToolMeta(tool);
 	if (!meta) {
 		return false;

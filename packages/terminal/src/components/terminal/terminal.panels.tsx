@@ -150,7 +150,7 @@ const TerminalFileExplorerPane = ({ id }: { id: WorkbenchPanelId }) => {
 };
 
 /** The Files border panel. Pinned open-or-closed by the rail, never closable. */
-export const TERMINAL_FILE_EXPLORER_PANEL: WorkbenchPanelConfig<
+const TERMINAL_FILE_EXPLORER_PANEL: WorkbenchPanelConfig<
 	WorkbenchPanelParams,
 	FileExplorerApi
 > = {
@@ -198,22 +198,21 @@ const TerminalFileEditorIcon = ({ id, className }: WorkbenchPanelIconProps) => {
 };
 
 /** One open file. Dedupes on (scope, path), the way the tab ids used to. */
-export const TERMINAL_FILE_EDITOR_PANEL: WorkbenchPanelConfig<FileEditorTabConfig> =
-	{
-		name: "File",
-		canRename: false,
-		mount: "keepAlive",
-		matches: (a, b) =>
-			Boolean(a.mode) &&
-			Boolean(b.mode) &&
-			modeKey(a.mode as FileMode) === modeKey(b.mode as FileMode) &&
-			a.path === b.path,
-		icon: TerminalFileEditorIcon,
-		content: TerminalFileEditorPanel,
-	};
+const TERMINAL_FILE_EDITOR_PANEL: WorkbenchPanelConfig<FileEditorTabConfig> = {
+	name: "File",
+	canRename: false,
+	mount: "keepAlive",
+	matches: (a, b) =>
+		Boolean(a.mode) &&
+		Boolean(b.mode) &&
+		modeKey(a.mode as FileMode) === modeKey(b.mode as FileMode) &&
+		a.path === b.path,
+	icon: TerminalFileEditorIcon,
+	content: TerminalFileEditorPanel,
+};
 
 /** Which terminal this is, and whether the dock offers to add another. */
-export interface TerminalReplParams {
+interface TerminalReplParams {
 	n: number;
 	/**
 	 * Whether to draw the "+". Carried per panel rather than read from a
@@ -301,7 +300,7 @@ const TerminalReplPanel = ({ id }: WorkbenchPanelProps) => {
 };
 
 /** One terminal session. */
-export const TERMINAL_REPL_PANEL: WorkbenchPanelConfig<TerminalReplParams> = {
+const TERMINAL_REPL_PANEL: WorkbenchPanelConfig<TerminalReplParams> = {
 	name: "Terminal",
 	canRename: false,
 	mount: "keepAlive",

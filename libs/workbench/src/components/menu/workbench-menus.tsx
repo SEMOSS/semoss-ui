@@ -127,7 +127,7 @@ export function WorkbenchMenus({
 		},
 		{
 			id: "workbench.menus.previous",
-			category: "Go to",
+			category: t("goTo"),
 			label: t("previous"),
 			visible: ids.length > 1,
 			handler: () => {
@@ -137,7 +137,7 @@ export function WorkbenchMenus({
 		},
 		{
 			id: "workbench.menus.next",
-			category: "Go to",
+			category: t("goTo"),
 			label: t("next"),
 			visible: ids.length > 1,
 			handler: () => {

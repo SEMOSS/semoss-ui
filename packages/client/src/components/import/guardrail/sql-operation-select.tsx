@@ -13,7 +13,7 @@ import {
 import { ALL_OPERATIONS, OPERATION_GROUPS } from "./sql-query-policy";
 
 /** Props for {@link SqlOperationSelect}. */
-export interface SqlOperationSelectProps
+interface SqlOperationSelectProps
 	extends Omit<ComponentProps<typeof SelectTrigger>, "children"> {
 	/** The operation, group or * the rule applies to; empty when none is chosen. */
 	value: string;

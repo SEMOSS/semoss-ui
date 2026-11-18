@@ -199,7 +199,7 @@ export interface DatabaseWorkbenchState {
 }
 
 /** Dependencies injected into the database store. */
-export interface DatabaseWorkbenchStoreDeps {
+interface DatabaseWorkbenchStoreDeps {
 	/** The scoped workbench store this domain drives panels through. */
 	workbench: StoreApi<WorkbenchState>;
 }
@@ -417,7 +417,7 @@ export const parseTransactionResult = (
 };
 
 /** What one run of a query panel sends. */
-export interface DatabaseQueryRequest {
+interface DatabaseQueryRequest {
 	/** The workbench mode, which picks the pixel. */
 	mode: DatabaseWorkbenchMode;
 	/** The database the query runs on. */

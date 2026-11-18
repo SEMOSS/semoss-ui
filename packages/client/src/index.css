@@ -3,7 +3,6 @@
 @import "@semoss/renderer/globals.css";
 @import "@semoss/workbench/globals.css";
 @import "@semoss/panels/globals.css";
-@import "@semoss/shared/flexlayout.css";
 
 @source "./**/*.{ts,tsx}";
 @source "../../terminal/src/**/*.{ts,tsx}";

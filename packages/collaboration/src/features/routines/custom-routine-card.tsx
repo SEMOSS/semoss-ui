@@ -83,7 +83,7 @@ export function CustomRoutineCard({
 		routine.schedulerAvailable &&
 		routine.assistantAvailable &&
 		routine.mailboxAvailable;
-	const { status, handleSubmit, retry } = useRoutineAutosave({
+	const { status, handleSubmit, retry, flush } = useRoutineAutosave({
 		form,
 		onSave: async (values) => {
 			if (values.enabled && !isAvailable) {
@@ -104,9 +104,11 @@ export function CustomRoutineCard({
 	const handleRunNow = async (): Promise<void> => {
 		setIsStarting(true);
 		setRunError("");
-		// the run shows on the result, live
-		setTab("result");
 		try {
+			// the run reads the saved routine, so an edit still waiting to save goes first
+			await flush();
+			// the run shows on the result, live
+			setTab("result");
 			await manageCustomRoutine(actions, routine.id, "run");
 			onRefresh();
 		} catch (cause) {

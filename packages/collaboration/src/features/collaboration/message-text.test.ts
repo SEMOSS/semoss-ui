@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-	foldedRange,
 	isLongText,
 	linkLabel,
 	messageSegments,
@@ -76,10 +75,5 @@ describe("folding", () => {
 		expect(isLongText("short")).toBe(false);
 		expect(isLongText("x".repeat(1300))).toBe(true);
 		expect(isLongText(Array(20).fill("line").join("\n"))).toBe(true);
-	});
-
-	it("folds only threads longer than the first and newest few", () => {
-		expect(foldedRange(5)).toBeNull();
-		expect(foldedRange(6)).toEqual({ head: 1, tail: 3 });
 	});
 });

@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
 import { computed } from "mobx";

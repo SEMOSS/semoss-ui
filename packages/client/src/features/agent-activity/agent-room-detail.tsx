@@ -39,7 +39,7 @@ export interface AgentRoomSource extends AgentRoomRunsSource {
 	) => Promise<AgentRunRoomClosure>;
 }
 
-export interface AgentRoomDetailProps {
+interface AgentRoomDetailProps {
 	/** The room shown, as the list has it */
 	room: AgentRunRoom;
 	/** The one run to load first, such as from a link to it, or null for every run */

@@ -1,5 +1,6 @@
 import { ExternalLink } from "lucide-react";
 import { Link, useSearchParams } from "react-router";
+import { useConfig } from "@semoss/sdk/react";
 import {
 	Button,
 	Card,
@@ -19,8 +20,8 @@ import { ResourceAuditTrail } from "@/features/audit-trail/resource-audit-trail"
 import { BulkAccessManagement } from "@/features/bulk-access-management/bulk-access-management";
 import { useAdminResourceName } from "@/features/bulk-access-management/use-admin-resource-name";
 import { EffectivePermissions } from "@/features/effective-permissions/effective-permissions";
+import { EngineAppsTable } from "@/features/engine-app-permissions/engine-apps-table";
 import { ModelUsageLimitsCard } from "@/features/model-usage-limits/model-usage-limits-card";
-import { useConfig } from "@/hooks/use-config";
 import { getResourcePagePath } from "@/utility/catalog";
 import { GovernanceResourceIcon } from "./governance-resource-icon";
 import { GOVERNANCE_NOUNS, type GovernanceType } from "./governance-types";
@@ -28,7 +29,9 @@ import type { GovernanceResource } from "./use-governance-resources";
 
 /** A tab of the details, and which resources have it. */
 interface GovernanceTab {
+	/** The tab's value, kept in the address as `tab` */
 	value: string;
+	/** The tab's label */
 	label: string;
 	/** Whether a resource of this type has the tab */
 	isAvailable?: (entry: GovernanceType) => boolean;
@@ -36,6 +39,11 @@ interface GovernanceTab {
 
 const TABS: readonly GovernanceTab[] = [
 	{ value: "access", label: "Access" },
+	{
+		value: "apps",
+		label: "Apps",
+		isAvailable: (entry) => entry.kind === "ENGINE",
+	},
 	{ value: "effective-permissions", label: "Effective Permissions" },
 	{ value: "requests", label: "Requests" },
 	{ value: "visibility", label: "Visibility" },
@@ -48,7 +56,7 @@ const TABS: readonly GovernanceTab[] = [
 	},
 ];
 
-export interface GovernanceResourceDetailsProps {
+interface GovernanceResourceDetailsProps {
 	/** The resource's type */
 	entry: GovernanceType;
 	/** The resource's id */
@@ -61,9 +69,10 @@ export interface GovernanceResourceDetailsProps {
 
 /**
  * Everything about one project or engine for an admin: who can use it, with
- * changes for many people staged and saved together, its effective
- * permissions, requests, visibility, audit trail and SMSS, and a model's usage
- * limits. The tab is kept in the address, so a link opens it.
+ * changes for many people staged and saved together, the apps an engine gives
+ * a permission to, its effective permissions, requests, visibility, audit
+ * trail and SMSS, and a model's usage limits. The tab is kept in the address,
+ * so a link opens it.
  */
 export const GovernanceResourceDetails = ({
 	entry,
@@ -73,7 +82,7 @@ export const GovernanceResourceDetails = ({
 }: GovernanceResourceDetailsProps) => {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const isDirectoryAvailable = useConfig(
-		(state) => state.config.msGraphLookup === true,
+		(state) => state.config?.msGraphLookup === true,
 	);
 	// a link straight to a resource opens before the list has read it
 	const fetchedName = useAdminResourceName(
@@ -193,6 +202,16 @@ export const GovernanceResourceDetails = ({
 							headingLevel={3}
 						/>
 					</TabsContent>
+					{entry.kind === "ENGINE" ? (
+						<TabsContent value="apps">
+							<EngineAppsTable
+								key={resourceId}
+								id={resourceId}
+								type={entry.type}
+								admin
+							/>
+						</TabsContent>
+					) : null}
 					<TabsContent value="effective-permissions">
 						<EffectivePermissions
 							key={resourceId}

@@ -48,7 +48,7 @@ const useDebounce = <T,>(value: T, delay = 300): T => {
 	return debounced;
 };
 
-export interface MCPJsonEditorProps {
+interface MCPJsonEditorProps {
 	dataMap: {
 		initialData: MCPJsonData;
 		onSave?: (data: MCPJsonData, path: string) => void;

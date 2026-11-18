@@ -31,11 +31,7 @@ const recentRoutinesSchema = z.object({
 	),
 });
 
-export type RecentRoutine = z.infer<
-	typeof recentRoutinesSchema
->["routines"][number];
-
-export type RecentRoutineRun = RecentRoutine["runs"][number];
+type RecentRoutine = z.infer<typeof recentRoutinesSchema>["routines"][number];
 
 /** The routines the owner ran last, newest first, each with its latest runs. */
 export async function listRecentRoutineRuns(

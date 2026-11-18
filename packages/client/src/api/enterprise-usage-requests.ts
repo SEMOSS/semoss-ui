@@ -12,7 +12,7 @@ import type {
 
 const dayMs = 86_400_000;
 export const USAGE_PAGE_SIZE = 25;
-export const USAGE_EXPORT_LIMIT = 5000;
+const USAGE_EXPORT_LIMIT = 5000;
 
 /** Requests a bounded catalog page or resolves a selected identity by exact ID. */
 export function usageFilterOptionsPixel(

@@ -15,7 +15,7 @@ import {
 import { getErrorMessage } from "@semoss/utility/error";
 import type { AgentRunRoomClosure } from "@/api/agent-runs";
 
-export interface CloseAgentRoomDialogProps {
+interface CloseAgentRoomDialogProps {
 	/** Whether the dialog is open */
 	open: boolean;
 	/** The room to close */

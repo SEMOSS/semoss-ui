@@ -8,7 +8,7 @@ import {
 import { formatMetric } from "./usage-metrics";
 
 /** Props for {@link UsageShareBar}. */
-export interface UsageShareBarProps {
+interface UsageShareBarProps {
 	/** Whom the bar is for, in its accessible name and tooltip */
 	name: string;
 	/** What the bar measures, in its accessible name, such as "Tokens" or "Cost" */

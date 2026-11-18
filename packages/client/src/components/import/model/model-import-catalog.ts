@@ -28,7 +28,7 @@ export interface CatalogModelEntry {
 	toolCall?: boolean;
 }
 
-export type CatalogModelsByHost = Record<string, CatalogModelEntry[]>;
+type CatalogModelsByHost = Record<string, CatalogModelEntry[]>;
 
 /**
  * Which catalog serving host feeds each Add-Model provider tab. Tabs not

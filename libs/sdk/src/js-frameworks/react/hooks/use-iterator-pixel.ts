@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { usePixel } from "./usePixel";
+import { usePixel } from "./use-pixel";
 
-interface UseIteratorPixelOptions<T> {
+export interface UseIteratorPixelOptions<T> {
 	/** Number of items to fetch per page */
 	limit?: number;
 
-	/** Insight ID to use for pixel calls; defaults to the app's shared insight */
+	/**
+	 * Insight ID to use for pixel calls; defaults to the nearest
+	 * `InsightProvider`'s. For reads outside a workspace, use
+	 * `useSessionIteratorPixel`.
+	 */
 	insightId?: string;
 
 	/** Callback when data is successfully loaded */
@@ -15,7 +19,7 @@ interface UseIteratorPixelOptions<T> {
 	onError?: (error: Error) => void;
 }
 
-interface UseIteratorPixelReturn<T> {
+export interface UseIteratorPixelReturn<T> {
 	/** Current accumulated data */
 	data: T[];
 

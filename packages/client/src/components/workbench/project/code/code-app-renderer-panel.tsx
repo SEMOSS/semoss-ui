@@ -14,7 +14,7 @@ import { WORKBENCH_EVENTS } from "@/stores/workbench";
 import { CodeAppRendererRefreshControl } from "./code-app-renderer-refresh-control";
 
 /** The config an app-preview instance is opened with. */
-export type CodeAppRendererConfig = Record<string, never>;
+type CodeAppRendererConfig = Record<string, never>;
 
 // `value` is the reload counter: the chrome control bumps it for a manual
 // refresh — the panel cannot share a setter with a control, which draws in the

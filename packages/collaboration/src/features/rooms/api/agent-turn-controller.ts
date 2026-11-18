@@ -5,6 +5,7 @@ import type {
 	ConversationToolStates,
 	PlaygroundTurnPhase,
 } from "@/features/messages/types/message";
+import { hasVisibleTaskOutcome } from "@/features/messages/utils/task-outcome";
 import {
 	optimisticUserMessage,
 	threadFromMessages,
@@ -131,7 +132,8 @@ export class AgentTurnController {
 	/** Reconnect from server-owned run records, never from old tool-call history. */
 	reconnect = async (): Promise<void> => {
 		if (this.restoring) return this.restoring;
-		if (this.observing) {
+		// a send in flight observes its own run; restoring now would drop the message it shows
+		if (this.observing || this.snapshot.isSubmitting) {
 			this.wake?.();
 			return;
 		}
@@ -230,7 +232,9 @@ export class AgentTurnController {
 				"An attachment belongs to a different conversation. Attach it again before sending.",
 			);
 		const command =
-			submission.text.trim() ||
+			(submission.userContentFormat === "html-v1" && !submission.userText
+				? submission.userContent
+				: submission.text.trim()) ||
 			(submission.files.length || existingMedia.length
 				? "Please review the attached files."
 				: "");
@@ -253,7 +257,11 @@ export class AgentTurnController {
 		this.lastChildrenRead = 0;
 		this.cancelRequested = false;
 		this.terminalReconciled = false;
-		this.optimistic = optimisticUserMessage(command, submission.files);
+		this.optimistic = optimisticUserMessage(
+			submission.userText ?? submission.userContent ?? command,
+			submission.files,
+			submission.userContentFormat,
+		);
 		this.optimistic.parts.push(
 			...existingMedia.map((file) => ({
 				type: "media" as const,
@@ -291,7 +299,9 @@ export class AgentTurnController {
 				agentId: config.agentId,
 				engine: config.engine,
 				command,
-				userText: submission.userText,
+				userText: submission.userText ?? submission.userContent,
+				userContent: submission.userContent,
+				userContentFormat: submission.userContentFormat,
 				media: [
 					...files.map((file) => file.fileLocation),
 					...existingMedia.map((file) => file.fileLocation),
@@ -685,14 +695,18 @@ export class AgentTurnController {
 			const parent = this.historyRuns.find(
 				(entry) => entry.runId === child.parentRunId,
 			);
+			const anchor =
+				parent?.finalOutputMessageId ||
+				parent?.inputMessageId ||
+				undefined;
 			const parentIndex = messages.findIndex(
-				(message) =>
-					message.id === parent?.finalOutputMessageId ||
-					message.id === parent?.inputMessageId,
+				(message) => message.id === anchor,
 			);
 			const card: ConversationMessage = {
 				id: `child-run:${child.runId}`,
 				role: "assistant",
+				// after a reload only the latest run is in view, so the merge with room history places the card
+				parentMessageId: anchor,
 				parts: [
 					{
 						type: "run",
@@ -734,6 +748,7 @@ export class AgentTurnController {
 				live: {
 					phase,
 					hasObservationIssue: !!this.snapshot.transportError,
+					activity: run.progress?.activity,
 				},
 			});
 		if (
@@ -753,6 +768,24 @@ export class AgentTurnController {
 				parts: [{ type: "text", text: run.finalText }],
 			});
 		}
+		if (
+			terminal &&
+			hasVisibleTaskOutcome(run.taskOutcome) &&
+			!messages.some(
+				(message) =>
+					message.role === "assistant" &&
+					message.visible !== false &&
+					message.runId === run.runId,
+			)
+		) {
+			messages.push({
+				id: `agent-outcome:${run.runId}`,
+				runId: run.runId,
+				role: "assistant",
+				parts: [],
+				taskOutcome: run.taskOutcome,
+			});
+		}
 		const settled = finished && this.settledRunId !== run.runId;
 		if (settled) this.settledRunId = run.runId;
 		const runStates = new Map(
@@ -761,12 +794,17 @@ export class AgentTurnController {
 				...this.historicalChildren.values(),
 				...this.children.values(),
 				run,
-			].map((entry) => [entry.runId, entry.status]),
+			].map((entry) => [entry.runId, entry]),
 		);
 		this.update({
 			messages: messages.map((message) =>
 				message.runId
-					? { ...message, runStatus: runStates.get(message.runId) }
+					? {
+							...message,
+							runStatus: runStates.get(message.runId)?.status,
+							taskOutcome: runStates.get(message.runId)
+								?.taskOutcome,
+						}
 					: message,
 			),
 			toolStates,
@@ -774,7 +812,7 @@ export class AgentTurnController {
 			phase,
 			isRunning: !finished,
 			turnError:
-				run.status === "FAILED"
+				run.status === "FAILED" && run.taskOutcome?.status !== "PARTIAL"
 					? run.errorMessage || "The agent run failed."
 					: null,
 			settlementVersion:

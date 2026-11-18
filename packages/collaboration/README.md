@@ -46,12 +46,28 @@ Work, Brain, and Settings share the Brief's page canvas, reading width, heading
 scale, responsive spacing, and quiet card treatment. Directories retain their
 grouped rows and filters; contextual panels become drawers on narrower screens.
 
-The global landing page places one compact composer beneath its greeting and
-status links. At desktop widths, Your day and Handled sit on the left, Needs you
-in the center, and Brain on the right. The mobile reading and keyboard order is
-composer, Needs you, Brain, Your day, and Handled. Saved sessions remain available
-from the sidebar. Brain includes pending decisions, draft notes, and directory
-links. The overview has no topic filter or separate chat mode.
+The global landing page (Today) opens with its greeting over a decorative hero
+photo, shown only on wide windows in the light theme, then one compact composer
+and three starter questions. Three cards follow: Your work, Your day, and Recent
+activity, which lists the newest mail, chat, and meeting conversations with the
+files changed lately in the owner's OneDrive. A file opens in a room of its own,
+which joins the topics the file is linked to. They share
+a row on wide windows and stack in that order on narrow ones, which is also the
+reading and keyboard order. On desktop the page scrolls together with the shell
+header so the photo runs behind the search box; on smaller screens the header
+stays pinned. Saved sessions remain available from the sidebar. The overview has
+no topic filter or separate chat mode.
+
+Work, its review, and its topic index open on the same hero photo and scroll
+the same way; a route does so when `isHeroPath` lists it and its page renders
+`CollaborationHeroPage`. The sidebar lists Topics under Work and marks it on
+the index and on each topic's page. Settings shows the same topic list under
+its own tab bar, without the hero. Work shows what waits for review in a banner, then the
+owner's list as Your priorities, with views for every item, the ones with a
+next step of the owner's, and the ones waiting on someone, beside a Waiting on
+card that lists each handoff. Rows drag into order, and each row's menu moves
+it too. The review lists inferred items to add, merge, or dismiss, with a topic
+filter, Expand all, and a count of how many were handled.
 
 New conversations start from the landing composer. Settings and Files open an
 inline workbench beneath that composer without navigating away or replacing the
@@ -319,6 +335,7 @@ unconfirmed or still-pending style never reaches the assistant, the frontend con
 | `/work` | Topic overview |
 | `/work/all`, `/work/waiting`, `/work/done` | Global work lists |
 | `/topics/:topicId` | Shared topic actions, threads, sessions, and editable context |
+| `/topics/:topicId/contents` | Full-screen page for adding and removing a topic's emails and chats by hand: the Outlook folder tree, what Brain has read, and the assistant chats |
 | `/work/topic/:topicId`, `/brain/topics/:topicId` | Redirects to the shared topic workspace |
 | `/thread/:id` | Source import bridge, or saved room when the identity starts with `room:` |
 | `/brain`, `/brain/sources` | Review and source readers/imports |

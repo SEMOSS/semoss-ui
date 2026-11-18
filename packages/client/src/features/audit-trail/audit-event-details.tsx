@@ -126,7 +126,7 @@ function recordedFields(
 	);
 }
 
-export interface AuditEventDetailsProps {
+interface AuditEventDetailsProps {
 	/** Complete admin event or reduced resource-owner projection. */
 	event: Partial<AuditEvent>;
 	/** Omit administrative request, source, and failure diagnostics. */

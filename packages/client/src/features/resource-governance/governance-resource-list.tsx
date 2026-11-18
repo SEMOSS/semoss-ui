@@ -35,7 +35,7 @@ const SORT_OPTIONS: readonly { value: GovernanceSort; label: string }[] = [
 	{ value: "OLDEST", label: "Oldest First" },
 ];
 
-export interface GovernanceResourceListProps {
+interface GovernanceResourceListProps {
 	/** The type whose projects or engines are listed */
 	entry: GovernanceType;
 	/** The type dropdown, shown at the top of the list */

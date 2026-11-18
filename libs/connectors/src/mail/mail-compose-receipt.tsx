@@ -2,6 +2,7 @@ import { ExternalLinkIcon } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
 import type { ToolViewCall } from "@semoss/shared";
 import { Button, Muted } from "@semoss/ui/next";
+import { safeHttpsUrl } from "@semoss/utility/browser";
 import { ConnectorTextBody } from "../components/connector-text-body";
 import { ToolViewCard } from "../components/tool-view-card";
 import { toPlainText } from "../core/connector.format";
@@ -10,7 +11,7 @@ import { parseMailReceipt } from "./mail.parsers";
 import type { MailApp } from "./mail-apps";
 
 /** Props for {@link MailComposeReceipt}. */
-export interface MailComposeReceiptProps {
+interface MailComposeReceiptProps {
 	/** The mailbox the email went out from. */
 	app: MailApp;
 	/** The call, which succeeded. */
@@ -37,6 +38,7 @@ export const MailComposeReceipt = ({ app, call }: MailComposeReceiptProps) => {
 		);
 	}
 
+	const webUrl = safeHttpsUrl(receipt.webLink);
 	const fields = [
 		{ label: t("mail.to"), value: receipt.to.join(", ") },
 		{ label: t("mail.cc"), value: receipt.cc.join(", ") },
@@ -91,11 +93,11 @@ export const MailComposeReceipt = ({ app, call }: MailComposeReceiptProps) => {
 					})}
 				</Muted>
 			) : null}
-			{receipt.webLink ? (
+			{webUrl ? (
 				<div className="flex justify-end">
 					<Button variant="ghost" size="sm" asChild>
 						<a
-							href={receipt.webLink}
+							href={webUrl}
 							target="_blank"
 							rel="noopener noreferrer"
 						>

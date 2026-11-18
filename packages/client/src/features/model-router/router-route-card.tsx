@@ -27,7 +27,7 @@ import {
 } from "./router-engine-select";
 
 /** Props for {@link RouterRouteCard}. */
-export interface RouterRouteCardProps {
+interface RouterRouteCardProps {
 	/** The route shown. */
 	route: RouterRouteFormValue;
 	/** The route's place in the list, from 0; routes are tried in this order. */

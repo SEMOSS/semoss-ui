@@ -15,7 +15,7 @@ import type {
 import type { TeamsChat, TeamsMessageSearchPage } from "../microsoft.types";
 
 /** Props for {@link TeamsMessageSearchList}. */
-export interface TeamsMessageSearchListProps {
+interface TeamsMessageSearchListProps {
 	/** What was searched, for the empty state. */
 	search: string;
 	/** The read of the messages found. */
@@ -135,6 +135,7 @@ export const TeamsMessageSearchList = ({
 									serviceName: t("services.teams"),
 									webUrl: chat.webUrl ?? hit.webUrl,
 									saveLabel: saver.saveLabel,
+									savedLabel: saver.savedLabel(request.key),
 									isBusy: isBusy,
 									onAddToContext: saver.addToContext
 										? () => saver.addToContext?.(request)

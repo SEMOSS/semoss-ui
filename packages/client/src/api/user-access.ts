@@ -1,4 +1,5 @@
 import {
+	type AccessLevel,
 	addEngineUserPermissions,
 	addProjectUserPermissions,
 	editEngineUserPermissions,
@@ -7,7 +8,8 @@ import {
 	removeEngineUserPermissions,
 	removeProjectUserPermissions,
 } from "@semoss/sdk";
-import { Env, get, post } from "@semoss/sdk/react";
+import { Env, get, post, runPixel } from "@semoss/sdk/react";
+import { isRecord } from "@semoss/utility/object";
 import {
 	addInsightUserPermissions,
 	editInsightUserPermissions,
@@ -257,6 +259,7 @@ export const getUserProjectsNoCredentials = async (
 
 /**
  * List the insights within a project along with a given user's permission.
+ * @public Called by name through `useAPI`.
  */
 export const getAllProjectInsightUsers = async (
 	admin: boolean,
@@ -405,5 +408,119 @@ export const revokeUserAccess = async (
 					projectId ?? "",
 				),
 			);
+	}
+};
+
+/** What a user asks for access to */
+export type AccessRequestTarget = "ENGINE" | "PROJECT";
+
+/** The signed in user's own access request that waits for an owner's decision */
+export interface MyAccessRequest {
+	/** The request's id */
+	id: string;
+	/** The level asked for */
+	permission: AccessLevel;
+	/** The reason given, or null */
+	comment: string | null;
+	/** When it was asked, in UTC (ISO 8601), or null */
+	requestedAt: string | null;
+}
+
+/** The pixels that read and withdraw a user's own request, and their key */
+const MY_REQUEST_PIXELS: Record<
+	AccessRequestTarget,
+	{ read: string; withdraw: string; key: string }
+> = {
+	ENGINE: {
+		read: "GetMyEngineAccessRequest",
+		withdraw: "WithdrawMyEngineAccessRequest",
+		key: "engine",
+	},
+	PROJECT: {
+		read: "GetMyProjectAccessRequest",
+		withdraw: "WithdrawMyProjectAccessRequest",
+		key: "project",
+	},
+};
+
+/** The levels a request can ask for */
+const REQUESTABLE_LEVELS: readonly AccessLevel[] = [
+	"OWNER",
+	"EDIT",
+	"READ_ONLY",
+];
+
+/**
+ * Reads a waiting request from what the backend returned.
+ *
+ * @param value - the pixel's output
+ * @returns the request, or null when there is none or it cannot be read
+ */
+const readMyAccessRequest = (value: unknown): MyAccessRequest | null => {
+	if (!isRecord(value) || typeof value.id !== "string") {
+		return null;
+	}
+	const permission = REQUESTABLE_LEVELS.find(
+		(level) => level === value.permission,
+	);
+	if (!permission) {
+		return null;
+	}
+	return {
+		id: value.id,
+		permission,
+		comment: typeof value.comment === "string" ? value.comment : null,
+		requestedAt:
+			typeof value.requestedAt === "string" ? value.requestedAt : null,
+	};
+};
+
+/**
+ * Reads the signed in user's own access request on an engine or a project
+ * that waits for a decision.
+ *
+ * @param insightId - the insight the pixel runs in
+ * @param target - whether the id is an engine's or a project's
+ * @param id - the engine or project id
+ * @returns the request, or null when the user has none waiting
+ * @throws Error with the backend's reason when it cannot be read
+ */
+export const getMyAccessRequest = async (
+	insightId: string,
+	target: AccessRequestTarget,
+	id: string,
+): Promise<MyAccessRequest | null> => {
+	const { read, key } = MY_REQUEST_PIXELS[target];
+	const response = await runPixel<[unknown]>(
+		`${read}(${key}=[${JSON.stringify(id)}]);`,
+		insightId,
+	);
+	if (response.errors.length > 0) {
+		throw new Error(response.errors.join(""));
+	}
+	return readMyAccessRequest(response.pixelReturn[0]?.output);
+};
+
+/**
+ * Withdraws the signed in user's own access request on an engine or a project
+ * that waits for a decision.
+ *
+ * @param insightId - the insight the pixel runs in
+ * @param target - whether the id is an engine's or a project's
+ * @param id - the engine or project id
+ * @throws Error with the backend's reason, such as no request waiting
+ */
+export const withdrawMyAccessRequest = async (
+	insightId: string,
+	target: AccessRequestTarget,
+	id: string,
+): Promise<void> => {
+	const { withdraw, key } = MY_REQUEST_PIXELS[target];
+	const response = await runPixel<[boolean]>(
+		`${withdraw}(${key}=[${JSON.stringify(id)}]);`,
+		insightId,
+	);
+	if (response.errors.length > 0) {
+		throw new Error(response.errors.join(""));
 	}
 };

@@ -2,7 +2,11 @@ import { useContext } from "react";
 import { RootContext } from "@/contexts";
 
 /**
- * Get the root store
+ * Get the root store.
+ *
+ * @deprecated Read the theme with `usePlaygroundTheme()` from
+ * `@/hooks/use-playground-theme`. Kept until the playground's stores move off
+ * MobX.
  */
 export const useRoot = () => {
 	const context = useContext(RootContext);

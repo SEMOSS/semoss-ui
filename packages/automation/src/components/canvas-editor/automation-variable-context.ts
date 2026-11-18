@@ -1,7 +1,7 @@
 import { createContext } from "react";
 import type { AutomationScopeEntry } from "../../domain/automation-inspector";
 
-export interface AutomationVariableContextValue {
+interface AutomationVariableContextValue {
 	entries: AutomationScopeEntry[];
 	devMode: boolean;
 }

@@ -10,23 +10,29 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
-import { useConfig } from "@/hooks";
+import { usePlatformTheme } from "@/hooks/use-platform-theme";
 
 interface PrivacyPreferenceCenterProps {
 	/** determines if the modal is displayed or not */
 	isOpen: boolean;
 
 	/** function called when the user attempts to close the modal. */
-	onClose: (boolean) => void;
+	onClose: (open: boolean) => void;
 }
 
+/**
+ * The theme's cookie policies, a tab for each in the theme's order, or its
+ * modal body when it lists none.
+ */
 export const PrivacyPreferenceCenterModal = (
 	props: PrivacyPreferenceCenterProps,
 ) => {
 	const { isOpen, onClose } = props;
-	const theme = useConfig((state) => state.theme);
+	const theme = usePlatformTheme();
 	const [cookiePolicyOrder, setCookiePolicyOrder] = useState<string[]>([]);
-	const [cookiePolicies, setCookiePolicies] = useState({});
+	const [cookiePolicies, setCookiePolicies] = useState<
+		Record<string, unknown>
+	>({});
 	const [cookiePolicyModalHeader, setCookiePolicyModalHeader] = useState("");
 	const [cookiePolicyModalBody, setCookiePolicyModalBody] = useState("");
 	const [selectedTab, setTab] = useState<string>("0");
@@ -61,6 +67,8 @@ export const PrivacyPreferenceCenterModal = (
 			cookiePolicyOrder.length > 0 &&
 			Object.keys(cookiePolicies).length > 0
 		) {
+			const policy =
+				cookiePolicies[cookiePolicyOrder[Number(selectedTab)]];
 			return (
 				<div className="grid grid-cols-[250px_1fr] gap-6">
 					<Tabs
@@ -88,10 +96,7 @@ export const PrivacyPreferenceCenterModal = (
 						id="modal-content"
 						// biome-ignore lint/security/noDangerouslySetInnerHtml: third-party cookie script content
 						dangerouslySetInnerHTML={{
-							__html:
-								cookiePolicies[
-									cookiePolicyOrder[Number(selectedTab)]
-								] || "",
+							__html: typeof policy === "string" ? policy : "",
 						}}
 					/>
 				</div>

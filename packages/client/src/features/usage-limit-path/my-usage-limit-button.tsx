@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@semoss/ui/next";
 import { UsageLimitPathSheet } from "./usage-limit-path-sheet";
 
-export interface MyUsageLimitButtonProps {
+interface MyUsageLimitButtonProps {
 	/** The model */
 	engineId: string;
 	/** Its name */

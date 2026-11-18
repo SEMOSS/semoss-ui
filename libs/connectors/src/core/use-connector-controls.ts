@@ -1,7 +1,12 @@
 import { useEffect } from "react";
+import { safeHttpsUrl } from "@semoss/utility/browser";
 import type { ConnectorViewerControls } from "./connector.types";
 
-/** Publish visible viewer actions without clearing another retained viewer's controls. */
+/**
+ * Publish visible viewer actions without clearing another retained viewer's
+ * controls. An `openIn` link is published only when it is an absolute HTTPS
+ * URL.
+ */
 export const useConnectorControls = (
 	controls: ConnectorViewerControls,
 	onControlsChange: ((controls: ConnectorViewerControls) => void) | undefined,
@@ -12,7 +17,7 @@ export const useConnectorControls = (
 	const onOpenCalendar = controls.onOpenCalendar;
 	const onAddToContext = controls.addToContext?.onAddToContext;
 	const isBusy = controls.addToContext?.isBusy;
-	const href = controls.openIn?.href;
+	const href = safeHttpsUrl(controls.openIn?.href);
 	const label = controls.openIn?.label;
 	useEffect(() => {
 		if (!isVisible || !onControlsChange) return;

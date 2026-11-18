@@ -372,7 +372,7 @@ export const toFileText = (output: unknown): string | null => {
 	return null;
 };
 
-export type LoadedMCPFile = {
+type LoadedMCPFile = {
 	initialData: MCPJsonData;
 	rawContent: string;
 	/** Set when the file exists but is not valid JSON. */
@@ -402,6 +402,3 @@ export const titleForPath = (path: string): string => {
 		? `${label} - MCP Tool Editor`
 		: `${fileName.toUpperCase()} Tool Editor`;
 };
-
-export { uniqueName, validateIdentifier } from "@semoss/utility/identifier";
-export { locateJsonError } from "@semoss/utility/json";

@@ -1,6 +1,6 @@
-import { useContext, useState } from "react";
+import { useState } from "react";
+import { useSessionInsight } from "@semoss/sdk/react";
 import { Button, toast } from "@semoss/ui/next";
-import { SessionStoreContext } from "@/contexts";
 import { useNavigate } from "@/hooks/useNavigate";
 import {
 	INPUT_TYPE_DATABASE,
@@ -19,8 +19,8 @@ import type {
 	ConstraintSettings,
 	Token,
 } from "../prompt.types";
-import { PromptBuilderStep } from "./step";
-import { PromptBuilderSummary } from "./summary";
+import { PromptBuilderStep } from "./step/prompt-builder-step";
+import { PromptBuilderSummary } from "./summary/prompt-builder-summary";
 
 const initialBuilder: Builder = {
 	title: {
@@ -61,9 +61,12 @@ const initialBuilder: Builder = {
 	},
 };
 
+/**
+ * Step-by-step builder for a prompt app: the context, inputs, input types and
+ * constraints, then a preview, and finally the app it creates.
+ */
 export const PromptBuilder = () => {
-	// imperative snapshot only, not a reactive read - avoids re-rendering on every session change
-	const sessionStoreApi = useContext(SessionStoreContext);
+	const { run: runPixel } = useSessionInsight();
 	const [builder, setBuilder] = useState<Builder>(initialBuilder);
 	const [currentBuilderStep, changeBuilderStep] = useState<number>(1);
 	const [createAppLoading, setCreateAppLoading] = useState<boolean>(false);
@@ -86,7 +89,7 @@ export const PromptBuilder = () => {
 				? "Preview"
 				: "Create App";
 
-	const checkForInputTypesSkipped = (errorMessage) => {
+	const checkForInputTypesSkipped = (errorMessage: string) => {
 		if (
 			errorMessage ===
 			"Cannot read properties of undefined (reading 'type')"
@@ -101,11 +104,7 @@ export const PromptBuilder = () => {
 		if (currentBuilderStep === PROMPT_BUILDER_PREVIEW_STEP) {
 			setCreateAppLoading(true);
 			try {
-				await setBlocksAndOpenUIBuilder(
-					builder,
-					sessionStoreApi.getState(),
-					navigate,
-				);
+				await setBlocksAndOpenUIBuilder(builder, runPixel, navigate);
 			} catch (e) {
 				toast.error(checkForInputTypesSkipped(e.message));
 				setCreateAppLoading(false);

@@ -1,7 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 
 /** Props for {@link ToolViewBoundary}. */
-export interface ToolViewBoundaryProps {
+interface ToolViewBoundaryProps {
 	/** Shown in place of a view that failed to load or render. */
 	fallback: ReactNode;
 	/** The view. */

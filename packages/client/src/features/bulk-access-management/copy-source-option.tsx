@@ -11,7 +11,7 @@ import {
 } from "@semoss/ui/next";
 import { type CopySource, canCopyFrom } from "./use-team-people-to-copy";
 
-export interface CopySourceOptionProps {
+interface CopySourceOptionProps {
 	/** One of the chosen team's lists */
 	source: CopySource;
 	/** The id of its radio, unique in the dialog */

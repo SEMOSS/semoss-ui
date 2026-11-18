@@ -39,7 +39,7 @@ import { PanelSearch } from "./panel-search";
 type MODE = "COMMUNITY" | "SYSTEM";
 type CommunityBlockItem = DesignerMenuItem & { id?: string };
 
-export interface AddBlocksMenuProps {
+interface AddBlocksMenuProps {
 	/** Items to add to show in the menu.  */
 	items: DesignerMenuItem[];
 
@@ -104,16 +104,16 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 	 */
 	const deleteBlock = (blockId: string) => {
 		setCommunityBlock(communityBlock.filter((item) => item.id !== blockId));
-		runPixel(`DeleteBlock(blockId = "${blockId}", hardDelete = true)`).then(
-			(res) => {
-				const { errors } = res;
-				if (errors.length || !res.pixelReturn[0].output) {
-					toast.error(errors.join("") ?? "Error deleting block");
-				} else {
-					toast.success("Block deleted successfully");
-				}
-			},
-		);
+		runPixel(
+			`AdminDeleteBlock(blockId = "${blockId}", hardDelete = true)`,
+		).then((res) => {
+			const { errors } = res;
+			if (errors.length || !res.pixelReturn[0].output) {
+				toast.error(errors.join("") ?? "Error deleting block");
+			} else {
+				toast.success("Block deleted successfully");
+			}
+		});
 		setDeleteDialogOpen(false);
 		setDeleteBlockId(null);
 	};

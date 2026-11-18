@@ -1,7 +1,7 @@
 import { RotateCcw } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { Role } from "@semoss/sdk";
-import { usePixel } from "@semoss/sdk/react";
+import { usePixel, useSessionInsight } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -41,7 +41,6 @@ import type {
 	CatalogMatchSuggestion,
 } from "@/components/import/model/model-catalog-match";
 import { ModelCatalogMatch } from "@/components/import/model/model-catalog-match";
-import { useSession } from "@/hooks";
 import {
 	MODEL_PROVIDER_OPTIONS,
 	SERVING_PROVIDER_OPTIONS,
@@ -82,12 +81,7 @@ import {
 	toModelSettingsValues,
 	toReasoningConfig,
 } from "./engine-metadata-display";
-
-/**
- * Radix Select rejects empty item values, so the nullable columns need a
- * sentinel for their "Not set" option.
- */
-const VALUE_NONE = "__none__";
+import { EngineProviderField, VALUE_NONE } from "./engine-provider-field";
 
 /**
  * Reader-facing names for the metadata fields ApplyModelCatalogMetadata can
@@ -131,12 +125,9 @@ const sortCatalogFields = (fields: string[]) => {
 	return [...fields].sort((a, b) => orderOf(a) - orderOf(b));
 };
 
-/** The catalog entry name as a small inline code chip. */
-const CatalogEntryName = ({ name }: { name: string | null }) => (
-	<span className="rounded bg-muted px-1.5 py-0.5 font-mono text-foreground text-xs">
-		{name}
-	</span>
-);
+/** Classes that show a catalog entry name as a small inline code chip. */
+const CATALOG_ENTRY_NAME_CLASS =
+	"rounded bg-muted px-1.5 py-0.5 font-mono text-foreground text-xs";
 
 /** What ApplyModelCatalogMetadata's dry run reported for a pending action. */
 type CatalogApplyDryRun =
@@ -173,49 +164,6 @@ const parseOptionalPositiveInteger = (label: string, value: string) => {
 	return parsed;
 };
 
-/**
- * Select for one of the nullable provider columns. Both are free to be unset,
- * so "Not set" is always offered alongside the curated list.
- */
-const ProviderField = ({
-	label,
-	description,
-	value,
-	options,
-	format,
-	onChange,
-	testId,
-}: {
-	label: string;
-	description: string;
-	value: string;
-	options: string[];
-	format: (value: string) => string;
-	onChange: (value: string) => void;
-	testId: string;
-}) => (
-	<Field>
-		<FieldLabel>{label}</FieldLabel>
-		<Select
-			value={value !== "" ? value : VALUE_NONE}
-			onValueChange={(next) => onChange(next === VALUE_NONE ? "" : next)}
-		>
-			<SelectTrigger className="w-full" data-testid={testId}>
-				<SelectValue placeholder={`Select a ${label.toLowerCase()}`} />
-			</SelectTrigger>
-			<SelectContent>
-				<SelectItem value={VALUE_NONE}>Not set</SelectItem>
-				{options.map((option) => (
-					<SelectItem key={option} value={option}>
-						{format(option)}
-					</SelectItem>
-				))}
-			</SelectContent>
-		</Select>
-		<FieldDescription>{description}</FieldDescription>
-	</Field>
-);
-
 interface EngineModelSettingsProps {
 	/** Id of the model engine */
 	engineId: string;
@@ -236,7 +184,7 @@ export const EngineModelSettings = ({
 	permission,
 	onUpdated,
 }: EngineModelSettingsProps) => {
-	const runPixel = useSession((state) => state.runPixel);
+	const { run: runPixel } = useSessionInsight();
 
 	const fieldId = useId();
 	const modelIdFieldId = `${fieldId}-model-id`;
@@ -880,7 +828,7 @@ export const EngineModelSettings = ({
 							</Field>
 
 							<div className="grid gap-7 sm:grid-cols-2 sm:gap-4">
-								<ProviderField
+								<EngineProviderField
 									label="Model provider"
 									description="Organization that created the model."
 									value={form.modelProvider}
@@ -894,7 +842,7 @@ export const EngineModelSettings = ({
 									}
 									testId="engine-model-settings--model-provider"
 								/>
-								<ProviderField
+								<EngineProviderField
 									label="Serving provider"
 									description="Platform serving the model."
 									value={form.servingProvider}
@@ -1315,16 +1263,18 @@ export const EngineModelSettings = ({
 							{catalogApply?.kind === "reset" ? (
 								<>
 									The metadata the model catalog holds for{" "}
-									<CatalogEntryName name={resetEntry} /> will
-									overwrite these model settings and be saved
-									immediately.
+									<span className={CATALOG_ENTRY_NAME_CLASS}>
+										{resetEntry}
+									</span>{" "}
+									will overwrite these model settings and be
+									saved immediately.
 								</>
 							) : catalogApply?.kind === "clear" ? (
 								<>
 									The match to{" "}
-									<CatalogEntryName
-										name={storedCatalogKey || null}
-									/>{" "}
+									<span className={CATALOG_ENTRY_NAME_CLASS}>
+										{storedCatalogKey || null}
+									</span>{" "}
 									will be removed. The settings keep their
 									current values, but they will no longer be
 									checked against this entry, and resetting to
@@ -1334,9 +1284,9 @@ export const EngineModelSettings = ({
 							) : (
 								<>
 									This model will be matched to{" "}
-									<CatalogEntryName
-										name={catalogApply?.catalogKey ?? null}
-									/>
+									<span className={CATALOG_ENTRY_NAME_CLASS}>
+										{catalogApply?.catalogKey ?? null}
+									</span>
 									, and the catalog metadata for that entry
 									will overwrite these model settings and be
 									saved immediately.

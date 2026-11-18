@@ -7,7 +7,7 @@ import type { ConnectorQuery } from "../core/use-connector-query";
 import { ConnectorViewerStatus } from "./connector-viewer-status";
 
 /** Props for {@link ConnectorList}. */
-export interface ConnectorListProps<T> {
+interface ConnectorListProps<T> {
 	/** The read behind the list. */
 	query: ConnectorQuery<T[]>;
 	/** The app's name, for the messages. */

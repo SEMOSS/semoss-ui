@@ -88,8 +88,9 @@ export function BrainReview() {
 									Suggested memories
 								</Small>
 								<P className="text-muted-foreground text-xs leading-5">
-									From your finished chats. The assistant does
-									not use them until you keep them.
+									From your chats. The assistant asks before
+									it changes a memory you wrote or confirmed,
+									and does not use these until you keep them.
 								</P>
 								{suggestions.map((memory) => (
 									<MemoryRow
@@ -102,7 +103,7 @@ export function BrainReview() {
 					)}
 					{!open.length && !suggestions.length && (
 						<P className="p-6 text-muted-foreground">
-							All caught up. No pending review in this session.
+							All caught up. Nothing is waiting for your review.
 						</P>
 					)}
 				</TabsContent>

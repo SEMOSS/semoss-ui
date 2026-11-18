@@ -113,6 +113,8 @@ export function TopicSetupChat({
 			);
 			return;
 		}
+		// this only opened a combination's preview, which the owner can still close
+		if (apply && change.type === "combine") return;
 		setMessages((current) =>
 			current.map((item, index) =>
 				index === messageIndex
@@ -211,7 +213,8 @@ export function TopicSetupChat({
 						)}
 						{item.changes?.map((change, changeIndex) => {
 							const isHandled =
-								item.handled?.includes(changeIndex) ?? false;
+								item.handled?.includes(changeIndex) ||
+								isCombined(change, topics);
 							return (
 								<div
 									// biome-ignore lint/suspicious/noArrayIndexKey: changes are fixed per reply
@@ -319,6 +322,16 @@ function title(change: SetupChange, topics: { key: string; name: string }[]) {
 		case "combine":
 			return `Combine ${change.topicKeys.map(nameOf).join(", ")}${change.name ? ` into ${change.name}` : ""}`;
 	}
+}
+
+/** A combination is done once its preview is used: a combined topic leaves the list, which nothing else does. */
+function isCombined(change: SetupChange, topics: { key: string }[]): boolean {
+	return (
+		change.type === "combine" &&
+		change.topicKeys.some(
+			(key) => !topics.some((topic) => topic.key === key),
+		)
+	);
 }
 
 function details(change: SetupChange): string[] {

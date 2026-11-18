@@ -8,16 +8,23 @@ import {
 import { type ReactNode, useState } from "react";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ModelImportPage } from "./model-import-page";
+import { ModelImportPage } from "./model-import.page";
 
 const { runPixel, navigate } = vi.hoisted(() => ({
 	runPixel: vi.fn(),
 	navigate: vi.fn(),
 }));
 
-vi.mock("@/hooks", () => ({
-	useSession: (selector: (state: { runPixel: typeof runPixel }) => unknown) =>
-		selector({ runPixel }),
+vi.mock("@semoss/sdk/react", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
+	useSessionInsight: () => ({
+		run: runPixel,
+		upload: vi.fn(),
+		insightId: "",
+	}),
+}));
+
+vi.mock("@/hooks/useStepper", () => ({
 	useStepper: () => {
 		const [isLoading, setIsLoading] = useState(false);
 		return { isLoading, setIsLoading };
@@ -25,8 +32,10 @@ vi.mock("@/hooks", () => ({
 }));
 
 vi.mock("@/hooks/useNavigate", () => ({ useNavigate: () => navigate }));
-vi.mock("@/components/shared", () => ({
+vi.mock("@/components/shared/navbar-header", () => ({
 	NavbarHeader: () => null,
+}));
+vi.mock("@/components/shared/navbar-left", () => ({
 	NavbarLeft: ({ children }: { children: ReactNode }) => children,
 }));
 
@@ -133,7 +142,7 @@ describe("Jev model import", () => {
 		expect(details).toBeDefined();
 		const payload = JSON.parse(details ?? "{}");
 		expect(payload).toMatchObject({
-			NAME: "Jev Test",
+			CATALOG_NAME: "Jev Test",
 			MODEL: "jev-custom-version",
 			MODEL_TYPE: "TYPESAFE",
 			MODEL_BRAND: "TYPESAFE",

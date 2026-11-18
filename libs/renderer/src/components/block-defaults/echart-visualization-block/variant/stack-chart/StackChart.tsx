@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { BarChart } from "echarts/charts";
 import { TooltipComponent } from "echarts/components";
 import * as echarts from "echarts/core";
@@ -10,12 +8,13 @@ import { useRef, useState } from "react";
 import { useBlock, useFrame } from "../../../../../hooks";
 import type { BlockComponent, ListenerActions } from "../../../../../store";
 import { ChartContextMenu } from "../bar-chart/ChartContextMenu";
-export interface EChartColumns {
+
+interface EChartColumns {
 	name: string;
 	selector: string;
 	width: string;
 }
-export interface EchartVisualizationBlockDef {
+interface EchartVisualizationBlockDef {
 	widget: "e-chart";
 	data: {
 		// biome-ignore lint/suspicious/noExplicitAny: echart option structure is dynamic

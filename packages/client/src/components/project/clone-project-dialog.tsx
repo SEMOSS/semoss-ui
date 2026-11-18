@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useSessionInsight } from "@semoss/sdk/react";
 import type { Project } from "@semoss/shared";
 import {
 	Button,
@@ -19,7 +20,6 @@ import {
 	z,
 	zodResolver,
 } from "@semoss/ui/next";
-import { useSession } from "@/hooks";
 
 const schema = z.object({
 	name: z.string().min(1, "Name is required"),
@@ -30,7 +30,7 @@ const schema = z.object({
 type FormInputValues = z.input<typeof schema>;
 type FormValues = z.output<typeof schema>;
 
-export interface CloneProjectDialogProps {
+interface CloneProjectDialogProps {
 	/** Track if the dialog is open */
 	open: boolean;
 	/** Full project object to clone (picks project_id and project_type) */
@@ -39,9 +39,13 @@ export interface CloneProjectDialogProps {
 	onClose: (projectId?: string) => void;
 }
 
+/**
+ * Clones a project template into a new project with a name, an optional
+ * description and, except for a skill, whether it is public.
+ */
 export const CloneProjectDialog = (props: CloneProjectDialogProps) => {
 	const { open, project, onClose } = props;
-	const runPixel = useSession((state) => state.runPixel);
+	const { run: runPixel } = useSessionInsight();
 
 	const label =
 		project.project_type === "SKILL"
@@ -83,7 +87,7 @@ export const CloneProjectDialog = (props: CloneProjectDialogProps) => {
 
 			if (project.project_type === "SKILL") {
 				const { errors, pixelReturn } = await runPixel(
-					`CloneSkill(skillId=["${project.project_id}"], name=["${escapePixelString(values.name.trim())}"]);`,
+					`CloneSkill(skillId=["${project.project_id}"], catalogName=["${escapePixelString(values.name.trim())}"]);`,
 				);
 
 				if (errors.length > 0) {
@@ -96,7 +100,7 @@ export const CloneProjectDialog = (props: CloneProjectDialogProps) => {
 				);
 			} else {
 				const { errors, pixelReturn } = await runPixel(
-					`CreateAppFromTemplate(project=["${escapePixelString(values.name.trim())}"], projectTemplate=["${project.project_id}"], global=["${values.isGlobal}"]);`,
+					`CreateAppFromTemplate(catalogName=["${escapePixelString(values.name.trim())}"], projectTemplate=["${project.project_id}"], global=["${values.isGlobal}"]);`,
 				);
 
 				if (errors.length > 0) {

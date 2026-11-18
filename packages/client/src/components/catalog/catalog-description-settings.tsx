@@ -35,7 +35,7 @@ const toForm = (
 	...(showAbout ? { markdown: String(metadata.markdown || "") } : {}),
 });
 
-export interface CatalogDescriptionSettingsProps {
+interface CatalogDescriptionSettingsProps {
 	/** The entry's current metadata (an engine or project record). */
 	metadata: Record<string, unknown>;
 	/** User's permission for the entry. */

@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FILE_PANEL_COMPONENTS, FILE_PANEL_TYPES } from "@semoss/panels";
 import { useWorkbenchPanel, type WorkbenchPanelProps } from "@semoss/workbench";
 import { RoutineDocuments } from "./routine-documents";
+import { RoutineDocumentsDock } from "./routine-documents-dock";
 
 const api = vi.hoisted(() => ({
 	open: vi.fn<
@@ -29,10 +30,10 @@ vi.mock("./custom-routine-api", () => ({
 
 // the real explorer talks to SEMOSS; the dock around it is what this tests. The
 // stub publishes an explorer api the way the real pane does, so the dock's own
-// upload button has something to open.
+// upload button has something to open, and says what files it was opened on.
 const openNewFile = vi.fn();
 function StubExplorer({ id }: WorkbenchPanelProps) {
-	const { setValue } = useWorkbenchPanel(id);
+	const { config, setValue } = useWorkbenchPanel(id);
 	useEffect(
 		() =>
 			setValue({
@@ -41,7 +42,12 @@ function StubExplorer({ id }: WorkbenchPanelProps) {
 			}),
 		[setValue],
 	);
-	return <p>Routine files</p>;
+	return (
+		<>
+			<p>Routine files</p>
+			<p>Opened on {JSON.stringify(config)}</p>
+		</>
+	);
 }
 const components = {
 	[FILE_PANEL_TYPES.FILE_EXPLORER]: {
@@ -74,6 +80,12 @@ describe("RoutineDocuments", () => {
 		expect(screen.getByText("Opening documents...")).toBeInTheDocument();
 		expect(await screen.findByText("Routine files")).toBeInTheDocument();
 		expect(api.open).toHaveBeenCalledWith(expect.anything(), "r1");
+		// the owner's own files, starting in the routine's folder
+		expect(
+			screen.getByText(
+				'Opened on {"mode":{"type":"USER"},"initialPath":"/collaboration/routines/r1"}',
+			),
+		).toBeInTheDocument();
 		expect(
 			screen.queryByText("Opening documents..."),
 		).not.toBeInTheDocument();
@@ -93,6 +105,26 @@ describe("RoutineDocuments", () => {
 			undefined,
 			"upload",
 		);
+	});
+
+	it("opens its explorer on the files it is given, such as an agent's folder it is kept to", async () => {
+		render(
+			<RoutineDocumentsDock
+				config={{
+					mode: { type: "APP", app: "twin-1" },
+					rootPath: "/public",
+				}}
+				components={components}
+			/>,
+		);
+		expect(
+			await screen.findByText(
+				'Opened on {"mode":{"type":"APP","app":"twin-1"},"rootPath":"/public"}',
+			),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Upload documents" }),
+		).toBeInTheDocument();
 	});
 
 	it("reports when the folder cannot be opened", async () => {

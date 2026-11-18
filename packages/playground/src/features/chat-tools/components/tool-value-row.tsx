@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Small } from "@semoss/ui/next";
 
 /** Props for {@link ToolValueRow}. */
-export interface ToolValueRowProps {
+interface ToolValueRowProps {
 	/** What the value is, such as "File". */
 	label: string;
 	/** The value, such as a path. */

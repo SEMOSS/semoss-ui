@@ -4,7 +4,8 @@
 
 import { GitCompare, Search, Upload } from "lucide-react";
 import type React from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { useSessionInsight } from "@semoss/sdk/react";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -24,13 +25,14 @@ import {
 	TabsTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useSession } from "@/hooks";
+import { NavbarHeader } from "@/components/shared/navbar-header";
+import { NavbarLeft } from "@/components/shared/navbar-left";
 import { useNavigate } from "@/hooks/useNavigate";
 import {
 	CATEGORY_DESCRIPTIONS,
 	DATABASE_CONNECTION,
 } from "./database.constants";
+import { DatabaseCard } from "./database-card";
 import { DatabaseForm } from "./database-form";
 
 interface database {
@@ -41,86 +43,28 @@ interface database {
 	disable: boolean;
 }
 
-const DatabaseCard = ({
-	database,
-	onSelect,
-}: {
-	database: database;
-	onSelect: () => void;
+interface DatabasePageContentProps {
+	/** The catalog the page opened from, named in the first breadcrumb, such as "Database". */
+	name: string;
+}
+
+/**
+ * The Connect to Database page: the database types to connect to or upload, by
+ * tab, and the chosen one's form. An exported database can also be uploaded as
+ * a zip.
+ */
+export const DatabasePageContent: React.FC<DatabasePageContentProps> = ({
+	name,
 }) => {
-	const textRef = useRef<HTMLParagraphElement>(null);
-	const [isTruncated, setIsTruncated] = useState(false);
-
-	useEffect(() => {
-		if (textRef.current) {
-			setIsTruncated(
-				textRef.current.scrollWidth > textRef.current.clientWidth,
-			);
-		}
-	}, []);
-
-	const cardContent = (
-		<div
-			data-testid={`database-card-${database.name}`}
-			className={`flex w-full flex-col items-start justify-start gap-2 rounded-lg border border-border bg-card p-4 transition-all sm:w-[215px] ${
-				database.disable
-					? "cursor-auto opacity-60"
-					: "cursor-pointer hover:border-[1.5px] hover:border-primary hover:bg-accent/50"
-			}
-            `}
-			onClick={!database.disable ? onSelect : undefined}
-		>
-			{database.disable ? (
-				<div className="flex w-full flex-row items-center gap-2">
-					<img
-						src={database.icon}
-						alt={database.name}
-						className="h-[30px] w-[30px] rounded-lg object-cover"
-					/>
-					<span className="ml-auto whitespace-nowrap rounded-2xl bg-muted px-2.5 py-1 text-[13px] text-muted-foreground">
-						Coming Soon
-					</span>
-				</div>
-			) : (
-				<img
-					src={database.icon}
-					alt={database.name}
-					className="h-[30px] w-[30px] rounded-lg object-cover"
-				/>
-			)}
-			<p
-				ref={textRef}
-				data-testid={`database-name-${database.name}`}
-				className="m-0 overflow-hidden text-ellipsis whitespace-nowrap text-card-foreground text-sm"
-			>
-				{database.name}
-			</p>
-		</div>
-	);
-
-	return isTruncated ? (
-		<div className="group relative block w-full sm:w-[215px]">
-			{cardContent}
-			<div className="pointer-events-none absolute bottom-full left-0 mb-2 hidden rounded-md bg-popover px-3 py-1.5 text-popover-foreground text-sm shadow-md group-hover:block">
-				{database.name}
-			</div>
-		</div>
-	) : (
-		cardContent
-	);
-};
-
-export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 	const navigate = useNavigate();
-	const runPixel = useSession((state) => state.runPixel);
-	const upload = useSession((state) => state.upload);
+	const { run: runPixel, upload } = useSessionInsight();
 	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState("");
 	const [selectedTab, setSelectedTab] = useState(0);
 	const [selectedEngine, setSelectedEngine] = useState<database | null>(null);
 
 	const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false);
-	const [filedata, setFiledata] = useState(null);
+	const [filedata, setFiledata] = useState<File | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	const DatabaseOptions = DATABASE_CONNECTION;
@@ -153,7 +97,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 		);
 	}
 
-	const onSubmit = async (data) => {
+	const onSubmit = async (data: File) => {
 		setLoading(true);
 		try {
 			const uploadedFiles = await upload([data]);

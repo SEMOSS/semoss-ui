@@ -1,4 +1,11 @@
-import { act, cleanup, render, screen, within } from "@testing-library/react";
+import {
+	act,
+	cleanup,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -105,6 +112,37 @@ describe("A custom routine", () => {
 		expect(onRefresh).toHaveBeenCalled();
 	});
 
+	it("saves an edit still waiting to save before it runs now", async () => {
+		const { user } = renderCard();
+		api.saveCustomRoutine.mockImplementation(
+			async (_actions: unknown, settings: object) => ({
+				...routine,
+				...settings,
+			}),
+		);
+		api.manageCustomRoutine.mockResolvedValue(undefined);
+		// Setup stays mounted behind the result tab
+		const name = screen.getByLabelText("Name (required)");
+		await user.clear(name);
+		await user.type(name, "Client asks");
+		await user.click(screen.getByRole("button", { name: "Run now" }));
+		await waitFor(() =>
+			expect(api.manageCustomRoutine).toHaveBeenCalledWith(
+				insight.actions,
+				"routine-1",
+				"run",
+			),
+		);
+		expect(api.saveCustomRoutine).toHaveBeenCalledExactlyOnceWith(
+			insight.actions,
+			expect.objectContaining({ name: "Client asks" }),
+			"routine-1",
+		);
+		expect(api.saveCustomRoutine.mock.invocationCallOrder[0]).toBeLessThan(
+			api.manageCustomRoutine.mock.invocationCallOrder[0] ?? 0,
+		);
+	});
+
 	it("says when it is off, and cannot run now then", () => {
 		renderCard({ ...routine, enabled: false, nextRunAt: null });
 		expect(
@@ -116,6 +154,15 @@ describe("A custom routine", () => {
 		expect(
 			screen.getByRole("switch", { name: "Routine on" }),
 		).not.toBeChecked();
+	});
+
+	it("says a section of the daily brief runs with the brief, on no schedule of its own", () => {
+		renderCard({ ...routine, delivery: "brief", nextRunAt: null });
+		expect(
+			screen.getByText(
+				/^Runs with your daily brief · Shown as a section of the brief$/,
+			),
+		).toBeVisible();
 	});
 
 	it("deletes only after confirming, and keeps the dialog open with the reason when it cannot", async () => {

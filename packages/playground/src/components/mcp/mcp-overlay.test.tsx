@@ -14,7 +14,7 @@ const query = vi.hoisted(() => ({
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
-vi.mock("@semoss/sdk/react", () => ({ usePixel: () => query }));
+vi.mock("@semoss/sdk/react", () => ({ useSessionPixel: () => query }));
 vi.mock("@/hooks/use-root", () => ({
 	useRoot: () => ({ root: { theme: { featureFlags: {} } } }),
 }));
@@ -41,11 +41,13 @@ vi.mock("./agent-selector", () => ({
 	AgentSelector: ({
 		onChange,
 		allowDefaultAgent,
+		onDefaultAgentChange,
 	}: {
 		allowDefaultAgent: boolean;
 		onChange: (
 			value: { workspace_id: string; name: string } | null,
 		) => void;
+		onDefaultAgentChange?: (isDefaultAgent: boolean) => void;
 	}) => (
 		<>
 			<input aria-label="Search agents" />
@@ -67,6 +69,28 @@ vi.mock("./agent-selector", () => ({
 				<button type="button" onClick={() => onChange(null)}>
 					Default agent
 				</button>
+			)}
+			{onDefaultAgentChange && (
+				<>
+					<button
+						type="button"
+						onClick={() => {
+							onChange(null);
+							onDefaultAgentChange(true);
+						}}
+					>
+						Pick Default Agent
+					</button>
+					<button
+						type="button"
+						onClick={() => {
+							onChange(null);
+							onDefaultAgentChange(false);
+						}}
+					>
+						Pick No Agent
+					</button>
+				</>
 			)}
 		</>
 	),
@@ -187,6 +211,52 @@ test("Default agent removes inherited resources but retains local selections", (
 		mcp: [local],
 		workspace: null,
 	});
+});
+
+test("with isDefaultAgent, the save reports Default Agent, and No Agent removes it", () => {
+	const onClose = vi.fn();
+	const props = {
+		open: true,
+		defaultTab: "AGENT" as const,
+		values: [local],
+		agentEditable: true,
+		onClose,
+	};
+	const { rerender } = render(
+		<MCPOverlay {...props} isDefaultAgent={false} />,
+	);
+	fireEvent.click(screen.getByRole("button", { name: "Pick Default Agent" }));
+	fireEvent.click(screen.getByRole("button", { name: "buttons.save" }));
+	expect(onClose).toHaveBeenLastCalledWith({
+		mcp: [local],
+		workspace: null,
+		isDefaultAgent: true,
+	});
+	rerender(<MCPOverlay {...props} open={false} isDefaultAgent />);
+	rerender(<MCPOverlay {...props} isDefaultAgent />);
+	fireEvent.click(screen.getByRole("button", { name: "Pick No Agent" }));
+	fireEvent.click(screen.getByRole("button", { name: "buttons.save" }));
+	expect(onClose).toHaveBeenLastCalledWith({
+		mcp: [local],
+		workspace: null,
+		isDefaultAgent: false,
+	});
+});
+
+test("without isDefaultAgent, No Agent and Default Agent are not separate choices", () => {
+	render(
+		<MCPOverlay
+			open
+			defaultTab="AGENT"
+			values={[local]}
+			agentEditable
+			allowDefaultAgent
+			onClose={vi.fn()}
+		/>,
+	);
+	expect(
+		screen.queryByRole("button", { name: "Pick Default Agent" }),
+	).toBeNull();
 });
 
 test("busy conversations cannot save an open overlay", () => {

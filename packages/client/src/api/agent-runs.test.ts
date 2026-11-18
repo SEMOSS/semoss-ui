@@ -4,7 +4,6 @@ import {
 	buildAgentRunRoomsPixel,
 	closeAdminAgentRunRoom,
 	closeAgentRoom,
-	EMPTY_AGENT_RUN_ROOM_FILTERS,
 	getAdminAgentRunAgents,
 	getAdminAgentRunUsers,
 	getAgentRun,
@@ -13,6 +12,14 @@ import {
 	getSubagentRuns,
 	parseAgentRunRooms,
 } from "./agent-runs";
+
+const EMPTY_FILTERS: Parameters<typeof buildAdminAgentRunRoomsPixel>[0] = {
+	agentId: "",
+	userId: "",
+	userType: "",
+	search: "",
+	status: "all",
+};
 
 const mocks = vi.hoisted(() => ({
 	runPixel: vi.fn(),
@@ -39,9 +46,9 @@ afterEach(() => {
 
 describe("buildAdminAgentRunRoomsPixel", () => {
 	it("reads the first page of every room with no filters", () => {
-		expect(
-			buildAdminAgentRunRoomsPixel(EMPTY_AGENT_RUN_ROOM_FILTERS, 0),
-		).toBe("AdminGetAgentRunRooms(limit=[25], offset=[0]);");
+		expect(buildAdminAgentRunRoomsPixel(EMPTY_FILTERS, 0)).toBe(
+			"AdminGetAgentRunRooms(limit=[25], offset=[0]);",
+		);
 	});
 
 	it("narrows to an agent, a user and the statuses of runs still going", () => {
@@ -64,7 +71,7 @@ describe("buildAdminAgentRunRoomsPixel", () => {
 	it("narrows to a user's id alone when their login type is not known", () => {
 		expect(
 			buildAdminAgentRunRoomsPixel(
-				{ ...EMPTY_AGENT_RUN_ROOM_FILTERS, userId: "alice" },
+				{ ...EMPTY_FILTERS, userId: "alice" },
 				0,
 			),
 		).toBe(
@@ -75,7 +82,7 @@ describe("buildAdminAgentRunRoomsPixel", () => {
 	it("sends no login type without a user", () => {
 		expect(
 			buildAdminAgentRunRoomsPixel(
-				{ ...EMPTY_AGENT_RUN_ROOM_FILTERS, userType: "NATIVE" },
+				{ ...EMPTY_FILTERS, userType: "NATIVE" },
 				0,
 			),
 		).toBe("AdminGetAgentRunRooms(limit=[25], offset=[0]);");
@@ -84,16 +91,16 @@ describe("buildAdminAgentRunRoomsPixel", () => {
 	it("keeps preprocessor markup out of an argument", () => {
 		expect(
 			buildAdminAgentRunRoomsPixel(
-				{ ...EMPTY_AGENT_RUN_ROOM_FILTERS, userId: "<encode>x" },
+				{ ...EMPTY_FILTERS, userId: "<encode>x" },
 				0,
 			),
 		).toContain('userId=["\\u003cencode>x"]');
 	});
 
 	it("refuses a page that is not a whole number", () => {
-		expect(() =>
-			buildAdminAgentRunRoomsPixel(EMPTY_AGENT_RUN_ROOM_FILTERS, -1),
-		).toThrow("Invalid agent runs page.");
+		expect(() => buildAdminAgentRunRoomsPixel(EMPTY_FILTERS, -1)).toThrow(
+			"Invalid agent runs page.",
+		);
 	});
 });
 

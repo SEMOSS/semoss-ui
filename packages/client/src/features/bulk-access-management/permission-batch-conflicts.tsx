@@ -39,7 +39,7 @@ const describeGrant = (
 		.join(", ");
 };
 
-export interface PermissionBatchConflictsProps {
+interface PermissionBatchConflictsProps {
 	/** The conflicts to settle */
 	conflicts: BatchConflict[];
 	/** Called to settle one: true takes the copied access, false keeps the batch's */

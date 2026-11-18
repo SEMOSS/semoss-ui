@@ -8,7 +8,7 @@ import {
 	DialogTitle,
 } from "@semoss/ui/next";
 
-export interface ConfirmDialogProps {
+interface ConfirmDialogProps {
 	open: boolean;
 
 	title: string;

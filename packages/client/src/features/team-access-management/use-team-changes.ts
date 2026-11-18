@@ -20,7 +20,7 @@ const NO_CHANGES_ALLOWED: Readonly<Record<TeamRole, boolean>> = {
 	MANAGERS: false,
 };
 
-export interface UseTeamChangesResult {
+interface UseTeamChangesResult {
 	/** The team's members and managers now */
 	people: TeamPeopleByRole;
 	/** Whether the signed in user can change each list */

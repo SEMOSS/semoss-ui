@@ -91,7 +91,7 @@ const SUMMARY_KPIS = [
 	},
 ] as const;
 
-export interface UsageChangesProps {
+interface UsageChangesProps {
 	/** Shared scope; the user filter matches who made a change or was denied, or whom a change was for. */
 	filters: UsageFilters;
 }

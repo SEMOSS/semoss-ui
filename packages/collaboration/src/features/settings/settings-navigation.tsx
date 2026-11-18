@@ -8,7 +8,7 @@ import { suggestedMemories } from "@/features/collaboration/state/memory";
 
 // Old Brain routes stay as they are so links and bookmarks keep working.
 // Order: your account and connections, then what the assistant knows, then the app itself.
-export const SETUP_DESTINATIONS: {
+const SETUP_DESTINATIONS: {
 	to: string;
 	label: string;
 	count?: (state: CollaborationState) => number;
@@ -43,7 +43,7 @@ export const SETUP_DESTINATIONS: {
 ];
 
 /** Everything the owner sets up once, in one tab bar shared by Settings and the setup pages. */
-export function SettingsNavigation({
+function SettingsNavigation({
 	onNavigate,
 }: {
 	/** Runs after choosing a destination. */

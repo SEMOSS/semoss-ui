@@ -14,7 +14,7 @@ import { MICROSOFT_PIXELS } from "../microsoft.pixels";
 import type { TeamsMessageSearchPage } from "../microsoft.types";
 
 /** How many messages each read of a search holds. */
-export const TEAMS_SEARCH_PAGE_SIZE = 25;
+const TEAMS_SEARCH_PAGE_SIZE = 25;
 
 /** What {@link useTeamsMessageSearch} returns. */
 export interface TeamsMessageSearch {

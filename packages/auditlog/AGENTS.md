@@ -14,7 +14,10 @@ logs. It is a **private** package built with Vite, MobX, and `react-router`.
 ## Build System
 
 - **Bundler**: Vite 8
-- **State**: MobX (`mobx` + `mobx-react-lite`)
+- **State**: MobX (`mobx` + `mobx-react-lite`), legacy. `stores/root.store.ts` is the only
+  store; new shared state uses a `StoreState`-backed store per the
+  [state management skill](../../skills/state-management.skill.md), and the root store
+  migrates as one scoped change.
 - **Routing**: `react-router` 8
 - **Styling**: Tailwind CSS v4
 
@@ -25,7 +28,6 @@ logs. It is a **private** package built with Vite, MobX, and `react-router`.
 | `pnpm dev` | Start dev server |
 | `pnpm build` | Production build |
 | `pnpm test` | Vitest (`--passWithNoTests`; success may mean no tests ran) |
-| `pnpm lint` | **ESLint** (see Linting below) |
 | `pnpm preview` | Preview the production build |
 
 Run these from `packages/auditlog`, or use `pnpm --filter @semoss/auditlog-package <command>`.
@@ -33,13 +35,8 @@ Run these from `packages/auditlog`, or use `pnpm --filter @semoss/auditlog-packa
 ### Linting
 
 Follow the [React validation guidance](../../skills/react-standard.skill.md#validation).
-This package additionally ships `eslint.config.js` with React hooks/refresh plugins; run
-its local check alongside the applicable root check:
-
-```bash
-pnpm check                          # Biome (repo-wide)
-pnpm --filter @semoss/auditlog-package lint   # ESLint (react hooks/refresh)
-```
+Linting and formatting use Biome from the repository root (`pnpm check`); this package has
+no local lint configuration.
 
 ## Structure
 
@@ -54,9 +51,20 @@ do not relocate existing features without explicit migration scope.
 | `contexts/` | React contexts (`<name>.context.tsx`) |
 | `hooks/` | React hooks (`use-<name>.ts`) |
 | `pages/` | Routing tree — `router.tsx`, layouts, pages |
-| `stores/` | MobX stores (`<name>.store.ts`) |
+| `stores/` | Stores (`<name>.store.ts`); MobX today, `StoreState` for new ones |
 | `types.d.ts` | Ambient TypeScript types |
 | `app.tsx`, `main.tsx`, `index.css` | App entry files |
+
+### Sign in
+
+Sign in is the SDK's `Session`, not an insight. `main.tsx` calls `void Session.initialize()`
+before the first render (after `app.tsx` set the module). `pages/AuthenticatedLayout.tsx`
+gates on `useSession((state) => state.status)`: a spinner while `INITIALIZING`, `/login` when
+`UNAUTHENTICATED`, and `layout.loadFailed` with Retry (`useSessionRetry` from `@semoss/sdk/react`) on `ERROR`. Once
+`AUTHENTICATED` it renders the pages. The app has no `InsightProvider`: the audit log page
+runs its report and export in the session's own insight (`useSessionInsight()`), so nothing
+here calls `useInsight()`. `LoginPage` renders the shared `LoginForm` and redirects once
+`AUTHENTICATED`.
 
 > Some page files retain legacy names. Apply the React skill's
 > [naming policy](../../skills/react-standard.skill.md#types-and-naming) without unrelated renames.
@@ -72,11 +80,10 @@ composition; responsive and accessible behavior follow the [root skills](../../s
 ### Be Cautious With
 
 - **`vite.config.ts`** — dev server and build configuration.
-- **`eslint.config.js`** — local lint rules for this package.
 
 ### Testing Changes
 
 ```bash
-pnpm --filter @semoss/auditlog-package lint
+pnpm check
 pnpm --filter @semoss/auditlog-package build
 ```

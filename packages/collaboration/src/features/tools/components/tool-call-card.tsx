@@ -6,7 +6,6 @@ import {
 	FileText,
 	Hourglass,
 	Mail,
-	MessagesSquare,
 } from "lucide-react";
 import { useContext, useId, useMemo, useRef, useState } from "react";
 import {
@@ -19,6 +18,7 @@ import {
 	useIsMobile,
 } from "@semoss/ui/next";
 import { asString } from "@semoss/utility";
+import { OutlookIcon, TeamsIcon } from "@/components/common/app-icons";
 import {
 	DelegationRequestApproval,
 	isDelegationRequest,
@@ -78,7 +78,7 @@ function statusDetails(status: ConversationTool["status"]) {
 			return {
 				icon: CircleX,
 				label: "Failed",
-				iconClassName: "text-destructive",
+				iconClassName: "text-muted-foreground",
 			};
 		case "REJECTED":
 		case "CANCELLED":
@@ -111,8 +111,8 @@ const SUBMIT_LABELS: Partial<Record<ConversationTool["status"], string>> = {
 
 /** What a found item is called and drawn as on its card. */
 const SHOWN_KINDS = {
-	email: { label: "email", icon: Mail },
-	chat: { label: "Teams chat", icon: MessagesSquare },
+	email: { label: "email", icon: OutlookIcon },
+	chat: { label: "Teams chat", icon: TeamsIcon },
 	file: { label: "file", icon: FileText },
 } as const;
 
@@ -327,7 +327,7 @@ function GenericToolCallCard({
 		draftPreview?.status ??
 		(isSubmit || isRequest
 			? (tool.statusLabel ?? outcome ?? details.label)
-			: tool.status === "RUNNING"
+			: tool.status === "RUNNING" || tool.status === "QUEUED"
 				? getToolLoadingMessage(tool)
 				: details.label);
 
@@ -408,8 +408,7 @@ function GenericToolCallCard({
 									!isDraftPreparing &&
 									"bg-success/10 text-success",
 								roomEmail &&
-									(tool.status === "FAILED" ||
-										isDraftUnavailable) &&
+									isDraftUnavailable &&
 									"bg-destructive/10 text-destructive",
 								roomEmail &&
 									tool.status === "INPUT_REQUIRED" &&
@@ -444,9 +443,7 @@ function GenericToolCallCard({
 										!isDraftUnavailable &&
 										!isDraftPreparing &&
 										"text-success",
-									(tool.status === "FAILED" ||
-										isDraftUnavailable) &&
-										"text-destructive",
+									isDraftUnavailable && "text-destructive",
 									tool.status === "INPUT_REQUIRED" &&
 										"text-warning",
 								)}

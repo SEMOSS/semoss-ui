@@ -1,7 +1,7 @@
 import { Badge } from "@semoss/ui/next";
 import { getTagBadgeStyle, normalizeTagArray } from "@/utility";
 
-export interface CatalogTagsProps {
+interface CatalogTagsProps {
 	/** Tags to render as badges */
 	tags?: string[] | string;
 	/** Empty-state text when no tags exist */

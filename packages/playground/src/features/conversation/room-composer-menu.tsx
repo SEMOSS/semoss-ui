@@ -1,10 +1,4 @@
-import {
-	BlocksIcon,
-	BotIcon,
-	MessageCircleIcon,
-	PanelRightOpenIcon,
-} from "lucide-react";
-import type { ConnectorViewerService } from "@semoss/connectors";
+import { BotIcon, MessageCircleIcon } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	DropdownMenuItem,
@@ -14,49 +8,45 @@ import {
 } from "@semoss/ui/next";
 import { RoomInputMenuMCP } from "@/components/room/room-input-menu-mcp";
 import { RoomInputMenuUpload } from "@/components/room/room-input-menu-upload";
-import { ConnectorSourcesMenuItem } from "@/features/connectors/components/connector-sources-menu-item";
-import { useSettingsDialog } from "@/features/settings/settings-dialog.context";
 import type { RoomStore } from "@/stores/room/room.store";
 
 export interface RoomComposerMenuProps {
-	/** Owns the connector configuration and context queue. */
-	room: RoomStore;
-	/** Drafts prepare a room before opening a connector viewer. */
-	onOpenSource?: (service: ConnectorViewerService) => void;
-	/** Retained for custom composer menus. */
-	isOpen: boolean;
+	/** Opens or closes the menu. */
 	onOpenChange: (isOpen: boolean) => void;
+	/** Opens the picker on the given tab. */
 	onOpenMcpOverlay: (tab: "AGENT" | "KNOWLEDGE" | "TOOLBOX") => void;
+	/** The room's options, for the selected agent and the resource counts. */
 	options: RoomStore["options"];
 	/** Only mutations are locked while a turn is running. */
 	disabled: boolean;
-	onOpenWorkspace: () => void;
 	/** Present only while creating a chat. */
 	onSelectChat?: () => void;
 	/** Changes execution mode while keeping the selected saved agent. */
 	onSelectAgent?: () => void;
+	/** The room's mode, checked in the Chat and Agent choice. */
 	mode?: "chat" | "agent" | "workspace";
+	/** Shows the agent picker; true only while creating a chat. */
 	agentEditable?: boolean;
-	enableAgentHarness?: boolean;
+	/** Shows the Chat and Agent choice. */
+	canChooseMode?: boolean;
+	/** Default Agent is picked, so the agent item names it. */
+	isDefaultAgent?: boolean;
 }
 
 /** Stable composer actions shared by draft and existing conversations. */
 export function RoomComposerMenu({
-	room,
-	onOpenSource,
 	onOpenChange,
 	onOpenMcpOverlay,
 	options,
 	disabled,
-	onOpenWorkspace,
 	onSelectChat,
 	onSelectAgent,
 	mode,
 	agentEditable,
-	enableAgentHarness,
+	canChooseMode,
+	isDefaultAgent,
 }: RoomComposerMenuProps) {
-	const { t } = useTranslation(["room", "sidebar"]);
-	const { openSettings } = useSettingsDialog();
+	const { t } = useTranslation("room");
 	const close = () => onOpenChange(false);
 	const openPicker = (tab: "AGENT" | "KNOWLEDGE" | "TOOLBOX") => {
 		onOpenMcpOverlay(tab);
@@ -66,7 +56,9 @@ export function RoomComposerMenu({
 		? t("modes.selectedAgent", {
 				name: options.workspace.name || options.workspace.workspace_id,
 			})
-		: t("menuWorkspace.selectAgent");
+		: isDefaultAgent
+			? t("modes.selectedAgent", { name: t("modes.defaultAgent") })
+			: t("menuWorkspace.selectAgent");
 	return (
 		<>
 			<RoomInputMenuUpload disabled={disabled} onSelect={close} />
@@ -82,24 +74,10 @@ export function RoomComposerMenu({
 				disabled={disabled}
 				onSelect={() => openPicker("TOOLBOX")}
 			/>
-			<DropdownMenuItem
-				onSelect={() => {
-					openSettings("connectors");
-					close();
-				}}
-			>
-				<BlocksIcon aria-hidden="true" />
-				{t("sidebar:settings.sections.connectors")}
-			</DropdownMenuItem>
-			<ConnectorSourcesMenuItem
-				connectors={room.connectors}
-				onOpenSource={onOpenSource}
-				onSelect={close}
-			/>
 			{agentEditable && (
 				<>
 					<DropdownMenuSeparator />
-					{enableAgentHarness && (
+					{canChooseMode && (
 						<DropdownMenuRadioGroup
 							aria-label={`${t("modes.ask")} / ${t("modes.agent")}`}
 							value={mode === "agent" ? "agent" : "chat"}
@@ -128,7 +106,7 @@ export function RoomComposerMenu({
 							</DropdownMenuRadioItem>
 						</DropdownMenuRadioGroup>
 					)}
-					{enableAgentHarness && <DropdownMenuSeparator />}
+					{canChooseMode && <DropdownMenuSeparator />}
 					<DropdownMenuItem
 						disabled={disabled}
 						onSelect={() => openPicker("AGENT")}
@@ -140,16 +118,6 @@ export function RoomComposerMenu({
 					</DropdownMenuItem>
 				</>
 			)}
-			<DropdownMenuSeparator />
-			<DropdownMenuItem
-				onSelect={() => {
-					onOpenWorkspace();
-					close();
-				}}
-			>
-				<PanelRightOpenIcon aria-hidden="true" />
-				{t("studio.openWorkArea")}
-			</DropdownMenuItem>
 		</>
 	);
 }

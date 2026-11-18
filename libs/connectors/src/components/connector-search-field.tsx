@@ -10,7 +10,7 @@ import {
 } from "@semoss/ui/next";
 
 /** Props for {@link ConnectorSearchField}. */
-export interface ConnectorSearchFieldProps {
+interface ConnectorSearchFieldProps {
 	/** What is typed. */
 	value: string;
 	/** Called as the user types. */

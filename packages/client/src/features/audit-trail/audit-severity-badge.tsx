@@ -10,7 +10,7 @@ const SEVERITY_DOTS: Readonly<Record<string, string>> = {
 	CRITICAL: "bg-destructive",
 };
 
-export interface AuditSeverityBadgeProps {
+interface AuditSeverityBadgeProps {
 	/** The stored severity: LOW, MEDIUM, HIGH or CRITICAL */
 	severity: unknown;
 }

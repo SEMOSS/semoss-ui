@@ -43,7 +43,7 @@ export function formatCost(micros: number | null): string {
 }
 
 /** A part of a message's tokens, such as its cache-read tokens. */
-export interface MessageTokenPart {
+interface MessageTokenPart {
 	/** What the part is */
 	label: string;
 	/** Its tokens */
@@ -154,7 +154,7 @@ export function fillUsageDays(
 	return filled;
 }
 
-export interface UsageKpi {
+interface UsageKpi {
 	label: string;
 	value: string;
 	description: string;

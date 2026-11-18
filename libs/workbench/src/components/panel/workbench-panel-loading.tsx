@@ -1,7 +1,7 @@
 import type { FC } from "react";
 import { Spinner } from "@semoss/ui/next";
 
-export interface WorkbenchPanelLoadingProps {
+interface WorkbenchPanelLoadingProps {
 	/**
 	 * What is being waited on, announced to a screen reader. The dock does not
 	 * know why a panel is waiting, so a caller that does (resource access, a

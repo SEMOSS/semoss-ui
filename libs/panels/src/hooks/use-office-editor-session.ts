@@ -10,7 +10,7 @@ import { toast } from "@semoss/ui/next";
 import { encodeBytesToBase64 } from "@semoss/utility/encoding";
 
 /** The public save/load surface shared by the Word and Excel elements. */
-export interface OfficeEditorElement extends HTMLElement {
+interface OfficeEditorElement extends HTMLElement {
 	fileName: string;
 	readonly dirty: boolean;
 	load(bytes: Uint8Array | ArrayBuffer, fileName?: string): Promise<void>;

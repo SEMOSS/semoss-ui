@@ -60,7 +60,7 @@ const PAGE_SIZE = 200;
 /** Which changes the list shows */
 type ReviewFilter = "ALL" | PermissionChange["action"] | "BLOCKED";
 
-export interface PermissionBatchReviewDialogProps {
+interface PermissionBatchReviewDialogProps {
 	/** Whether the dialog is open */
 	open: boolean;
 	/** The batches to validate and save; make them with useMemo so they are validated once */

@@ -11,7 +11,7 @@ import {
 	useFormContext,
 } from "@semoss/ui/next";
 
-export interface DraftAttachment {
+interface DraftAttachment {
 	id: string;
 	file: File;
 }

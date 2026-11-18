@@ -1,4 +1,5 @@
 import {
+	act,
 	fireEvent,
 	render,
 	screen,
@@ -12,6 +13,11 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { ROOM_PANEL_COMPONENTS } from "@/components/room/panels/room-panel.components";
 import type { RoomInput } from "@/components/room/room-input";
 import type { RoomOptionsForm } from "@/components/room/room-options-form";
+import {
+	forgetSessionNewChat,
+	readSessionNewChat,
+	writeSessionNewChat,
+} from "@/features/new-chat-preferences/new-chat-preferences";
 import { RoomStore } from "@/stores/room/room.store";
 import { RootStore } from "@/stores/root/root.store";
 import { NewRoomPage } from "./new-room-page";
@@ -24,6 +30,23 @@ const mocks = vi.hoisted(() => ({
 	selectModelById: vi.fn(),
 	workspaceStatus: "SUCCESS",
 	refreshWorkspace: vi.fn(),
+	pixel: (pixel: string) => ({
+		status: pixel.includes("GetWorkspace")
+			? mocks.workspaceStatus
+			: "INITIAL",
+		refresh: mocks.refreshWorkspace,
+		data: pixel.includes('"alpha"') ? mocks.alpha : null,
+	}),
+	alpha: null as unknown,
+	searchParams: new URLSearchParams(),
+	session: {
+		status: "AUTHENTICATED",
+		user: {
+			name: "Tester",
+			lastLogin: "login-1",
+			meta: {} as Record<string, string[]>,
+		},
+	},
 	// stable, as the SDK's are, so views keep the same logins between renders
 	logins: {
 		logins: {},
@@ -48,10 +71,11 @@ const alpha = {
 	prompts: [],
 	config_json: {},
 };
+mocks.alpha = alpha;
 const root = {
 	theme: {
 		...new RootStore().theme,
-		featureFlags: { enableAgentHarness: true },
+		featureFlags: { enableAgentHarness: true, modeFollowsAgent: false },
 		banner: "",
 		landing: "",
 	},
@@ -59,17 +83,18 @@ const root = {
 const chat = {
 	...mocks,
 	models: { selected: null },
-	user: { name: "Tester" },
-	profileDefaultModelId: "default-model",
-	refreshProfileDefaultModel: vi.fn(),
+	selectNewChatDefaultModel: vi.fn(),
 	setSelectedModel: vi.fn(),
 	addOptimisticRoom: vi.fn(),
 	removeOptimisticRoom: vi.fn(),
 	keys: { roomCounter: 0 },
 };
+vi.mock("@/features/settings/settings-dialog.context", () => ({
+	useSettingsDialog: () => ({ openSettings: vi.fn() }),
+}));
 vi.mock("react-router", () => ({
 	useNavigate: () => mocks.navigate,
-	useSearchParams: () => [new URLSearchParams()],
+	useSearchParams: () => [mocks.searchParams],
 }));
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
@@ -87,15 +112,16 @@ vi.mock("@semoss/sdk/react", async (original) => ({
 	InsightProvider: ({ children }: { children: ReactNode }) => children,
 	// the session's logins, without reading them from a server
 	useLogins: () => mocks.logins,
-	usePixel: (pixel: string) => ({
-		status: pixel.includes("GetWorkspace")
-			? mocks.workspaceStatus
-			: "INITIAL",
-		refresh: mocks.refreshWorkspace,
-		data: pixel.includes('"alpha"') ? alpha : null,
-	}),
+	usePixel: mocks.pixel,
+	useSessionPixel: mocks.pixel,
+	// a signed in user, with any new chat defaults a test gives them
+	useSession: <T,>(selector: (state: typeof mocks.session) => T) =>
+		selector(mocks.session),
 }));
 vi.mock("@/hooks/use-root", () => ({ useRoot: () => ({ root }) }));
+vi.mock("@/hooks/use-playground-theme", () => ({
+	usePlaygroundTheme: () => root.theme,
+}));
 vi.mock("@/hooks/use-chat", () => ({ useChat: () => ({ chat }) }));
 vi.mock("@semoss/ui/next", async (original) => ({
 	...(await original<typeof import("@semoss/ui/next")>()),
@@ -138,6 +164,11 @@ vi.mock("@/components/room/panels/room-panel.components", async () => {
 			[FILE_PANEL_TYPES.FILE_EXPLORER]: {
 				name: "Files",
 				mount: "keepAlive",
+				// one explorer per scope, as the real blueprint dedupes
+				matches: (
+					a: { mode?: { insightId?: string } },
+					b: { mode?: { insightId?: string } },
+				) => a.mode?.insightId === b.mode?.insightId,
 				content: () => (
 					<textarea
 						aria-label="File draft"
@@ -148,33 +179,28 @@ vi.mock("@/components/room/panels/room-panel.components", async () => {
 		},
 	};
 });
-vi.mock("@/components/room/room-workspace-creation", () => ({
-	SaveWorkspaceDialog: () => <button type="button">Publish</button>,
-}));
 vi.mock("@/contexts/file-drag-context", () => ({
 	FileDragProvider: ({ children }: { children: ReactNode }) => children,
 }));
 vi.mock("@/features/conversation/drop-highlight", () => ({
 	DropHighlight: ({ children }: { children: ReactNode }) => children,
 }));
-vi.mock("@/features/conversation/conversation-workspace", () => ({
-	ConversationWorkspace: ({
+vi.mock("@/features/conversation/room-layout", () => ({
+	RoomLayout: ({
 		children,
-		panel,
-		isOpen,
-		onOpenWorkArea,
+		workbench,
+		isWorkbenchOpen,
+		header,
 	}: {
 		children: ReactNode;
-		panel: ReactNode;
-		isOpen: boolean;
-		onOpenWorkArea: () => void;
+		workbench: ReactNode;
+		isWorkbenchOpen: boolean;
+		header: ReactNode;
 	}) => (
 		<>
+			{header}
 			{children}
-			<button type="button" onClick={onOpenWorkArea}>
-				Open Workspace
-			</button>
-			<div hidden={!isOpen}>{panel}</div>
+			<div hidden={!isWorkbenchOpen}>{workbench}</div>
 		</>
 	),
 }));
@@ -182,8 +208,17 @@ vi.mock("@/components/room/room-options-form", () => ({
 	RoomOptionsForm: ({
 		options,
 		onOptionsChange,
+		onDefaultAgentChange,
 	}: ComponentProps<typeof RoomOptionsForm>) => (
 		<>
+			{onDefaultAgentChange && (
+				<button
+					type="button"
+					onClick={() => onDefaultAgentChange(true)}
+				>
+					Pick Default Agent in Settings
+				</button>
+			)}
 			<input
 				aria-label="Instructions"
 				value={options.instructions}
@@ -223,10 +258,33 @@ vi.mock("@/components/room/room-input", () => ({
 			onWorkspaceChange,
 			onExitAgentHarness,
 			onSwitchToAgentHarness,
+			onDefaultAgentChange,
 			onPrompt,
-			onOpenSource,
+			workbenchPanels,
 		}: ComponentProps<typeof RoomInput>) => (
 			<>
+				{onDefaultAgentChange && (
+					<>
+						<button
+							type="button"
+							onClick={() => {
+								onWorkspaceChange?.(null);
+								onDefaultAgentChange(true);
+							}}
+						>
+							Pick Default Agent
+						</button>
+						<button
+							type="button"
+							onClick={() => {
+								onWorkspaceChange?.(null);
+								onDefaultAgentChange(false);
+							}}
+						>
+							Pick No Agent
+						</button>
+					</>
+				)}
 				<input
 					aria-label="Message draft"
 					defaultValue="Keep this draft"
@@ -235,7 +293,15 @@ vi.mock("@/components/room/room-input", () => ({
 				<output aria-label="Queued context">
 					{room.contextItems.items.map((item) => item.name).join(",")}
 				</output>
-				<button type="button" onClick={() => onOpenSource?.("gmail")}>
+				<button
+					type="button"
+					onClick={() =>
+						workbenchPanels?.newRoomPanels?.onOpenPanel({
+							kind: "connector",
+							service: "gmail",
+						})
+					}
+				>
 					Open Gmail
 				</button>
 				<output aria-label="Selected agent">
@@ -298,27 +364,40 @@ beforeEach(() => {
 		new DOMRect(0, 0, 800, 600),
 	);
 	mocks.workspaceStatus = "SUCCESS";
+	mocks.searchParams = new URLSearchParams();
+	mocks.session.user.meta = {};
+	forgetSessionNewChat();
 	root.theme.featureFlags.enableAgentHarness = true;
+	root.theme.featureFlags.modeFollowsAgent = false;
 	mocks.createRoom.mockResolvedValue({ roomId: "sent" });
+	// preparing fails unless a test hands over a room, so sending creates one
+	mocks.createEmptyRoom.mockReset().mockRejectedValue(new Error("Offline"));
 });
 afterEach(() => {
 	vi.restoreAllMocks();
 	vi.unstubAllGlobals();
 });
 
-/** Start the local workspace through its normal opener. */
-function renderWorkspace() {
-	const result = render(<NewRoomPage />);
-	fireEvent.click(screen.getByRole("button", { name: "Open Workspace" }));
-	return result;
+/**
+ * Open a panel from the Workspace's rail, opening the Workspace from the
+ * header first when it is closed — while it is, the whole pane is hidden, and
+ * a role query skips it. A rail entry is a button; its tab is a tab.
+ */
+function selectWorkspaceItem(name: string) {
+	const toggle = screen.queryByRole("button", {
+		name: "studio.openWorkspace",
+	});
+	if (toggle) fireEvent.click(toggle);
+	fireEvent.click(screen.getByRole("button", { name }));
 }
 
-/** Select a place from the real workbench View menu. */
-function selectWorkspaceItem(name: string) {
-	fireEvent.keyDown(screen.getByRole("button", { name: "workbench.view" }), {
-		key: "Enter",
-	});
-	fireEvent.click(screen.getByRole("menuitem", { name }));
+/** Open Settings, which prepares the room, and let the preparation settle. */
+async function renderWorkspace() {
+	const result = render(<NewRoomPage />);
+	selectWorkspaceItem("workspacePlaces.settings");
+	await waitFor(() => expect(mocks.createEmptyRoom).toHaveBeenCalled());
+	await act(async () => {});
+	return result;
 }
 
 /** Prepare a file-capable room without backend calls in this integration test. */
@@ -332,7 +411,7 @@ function createPreparedRoom(): RoomStore {
 }
 
 test("selecting an agent and changing modes preserves its settings and the composer draft", async () => {
-	renderWorkspace();
+	await renderWorkspace();
 	fireEvent.click(screen.getByRole("button", { name: "Add local" }));
 	fireEvent.click(screen.getByRole("button", { name: "Save Alpha" }));
 	await waitFor(() =>
@@ -393,7 +472,7 @@ test("selecting an agent and changing modes preserves its settings and the compo
 });
 
 test("Agent mode survives selecting and removing a saved agent", async () => {
-	renderWorkspace();
+	await renderWorkspace();
 	fireEvent.click(screen.getByRole("button", { name: "Add local" }));
 	fireEvent.click(screen.getByRole("button", { name: "Agent" }));
 	fireEvent.click(screen.getByRole("button", { name: "Save Alpha" }));
@@ -445,7 +524,7 @@ test.each(["chat", "agent"] as const)(
 				.mockResolvedValue();
 		});
 		mocks.createEmptyRoom.mockResolvedValue(room);
-		renderWorkspace();
+		await renderWorkspace();
 		fireEvent.click(screen.getByRole("button", { name: "Add local" }));
 		fireEvent.click(screen.getByRole("button", { name: "Save Alpha" }));
 		await waitFor(() =>
@@ -459,7 +538,7 @@ test.each(["chat", "agent"] as const)(
 			target: { value: "Before opening files" },
 		});
 		selectWorkspaceItem("workspacePlaces.files");
-		await screen.findByRole("tab", { name: "room:menuFileExplorer.name" });
+		await screen.findByRole("tab", { name: "room:workspacePlaces.files" });
 		expect(screen.getAllByRole("tab")).toHaveLength(2);
 		selectWorkspaceItem("workspacePlaces.settings");
 		expect(screen.getByLabelText("Instructions")).toHaveValue(
@@ -488,7 +567,9 @@ test.each(["chat", "agent"] as const)(
 
 test("a pending agent stays selected in Chat, and removing it ignores its late response", async () => {
 	mocks.workspaceStatus = "LOADING";
-	const { rerender } = renderWorkspace();
+	// a prepared room, so the only Retry is the agent's
+	mocks.createEmptyRoom.mockResolvedValue(createPreparedRoom());
+	const { rerender } = await renderWorkspace();
 	fireEvent.click(screen.getByRole("button", { name: "Agent" }));
 	fireEvent.click(screen.getByRole("button", { name: "Save Alpha" }));
 	fireEvent.click(screen.getByRole("button", { name: "Chat" }));
@@ -510,7 +591,7 @@ test("a pending agent stays selected in Chat, and removing it ignores its late r
 test.each(["chat", "agent"] as const)(
 	"selecting an agent in Settings preserves %s mode",
 	async (mode) => {
-		renderWorkspace();
+		await renderWorkspace();
 		if (mode === "agent")
 			fireEvent.click(screen.getByRole("button", { name: "Agent" }));
 		fireEvent.click(
@@ -530,7 +611,7 @@ test.each(["chat", "agent"] as const)(
 
 test("without the harness flag saved agents retain chat behavior", async () => {
 	root.theme.featureFlags.enableAgentHarness = false;
-	renderWorkspace();
+	await renderWorkspace();
 	fireEvent.click(screen.getByRole("button", { name: "Save Alpha" }));
 	await waitFor(() =>
 		expect(screen.getByLabelText("Selected agent")).toHaveTextContent(
@@ -543,37 +624,229 @@ test("without the harness flag saved agents retain chat behavior", async () => {
 	);
 });
 
-test("Settings opens locally, deduplicates, and returns when the workspace is empty", () => {
-	renderWorkspace();
+test("when the agent decides the mode, a chat with an agent runs in agent mode", async () => {
+	root.theme.featureFlags.modeFollowsAgent = true;
+	await renderWorkspace();
+	expect(screen.getByLabelText("Mode")).toHaveTextContent("chat");
+	fireEvent.click(screen.getByRole("button", { name: "Save Alpha" }));
+	await waitFor(() =>
+		expect(screen.getByLabelText("Instructions")).toHaveValue(
+			"Agent instructions",
+		),
+	);
+	await waitFor(() =>
+		expect(screen.getByLabelText("Mode")).toHaveTextContent("agent"),
+	);
+	fireEvent.click(screen.getByRole("button", { name: "Chat" }));
+	expect(screen.getByLabelText("Mode")).toHaveTextContent("agent");
+	fireEvent.click(screen.getByRole("button", { name: "Send" }));
+	await waitFor(() =>
+		expect(mocks.createRoom).toHaveBeenCalledWith(
+			"agent",
+			"Hello",
+			[],
+			expect.objectContaining({
+				harnessType: "semoss",
+				workspace: { workspace_id: "alpha", name: "Alpha" },
+			}),
+			"alpha",
+			undefined,
+			expect.any(Function),
+		),
+	);
+});
+
+test("when the agent decides the mode, Default Agent runs in agent mode and No Agent removes it", async () => {
+	root.theme.featureFlags.modeFollowsAgent = true;
+	await renderWorkspace();
+	expect(screen.getByLabelText("Mode")).toHaveTextContent("chat");
+	fireEvent.click(screen.getByRole("button", { name: "Pick Default Agent" }));
+	await waitFor(() =>
+		expect(screen.getByLabelText("Mode")).toHaveTextContent("agent"),
+	);
+	fireEvent.click(screen.getByRole("button", { name: "Pick No Agent" }));
+	await waitFor(() =>
+		expect(screen.getByLabelText("Mode")).toHaveTextContent("chat"),
+	);
+	fireEvent.click(
+		screen.getByRole("button", { name: "Pick Default Agent in Settings" }),
+	);
+	await waitFor(() =>
+		expect(screen.getByLabelText("Mode")).toHaveTextContent("agent"),
+	);
+	fireEvent.click(screen.getByRole("button", { name: "Send" }));
+	await waitFor(() =>
+		expect(mocks.createRoom).toHaveBeenCalledWith(
+			"agent",
+			"Hello",
+			[],
+			expect.objectContaining({
+				harnessType: "semoss",
+				workspace: undefined,
+			}),
+			undefined,
+			undefined,
+			expect.any(Function),
+		),
+	);
+});
+
+test("when the agent decides the mode, No Agent after a saved agent runs in chat mode", async () => {
+	root.theme.featureFlags.modeFollowsAgent = true;
+	await renderWorkspace();
+	fireEvent.click(screen.getByRole("button", { name: "Save Alpha" }));
+	await waitFor(() =>
+		expect(screen.getByLabelText("Mode")).toHaveTextContent("agent"),
+	);
+	fireEvent.click(screen.getByRole("button", { name: "Pick No Agent" }));
+	await waitFor(() =>
+		expect(screen.getByLabelText("Mode")).toHaveTextContent("chat"),
+	);
+	expect(screen.getByLabelText("Selected agent")).toHaveTextContent(
+		"Default",
+	);
+	fireEvent.click(screen.getByRole("button", { name: "Send" }));
+	await waitFor(() =>
+		expect(mocks.createRoom).toHaveBeenCalledWith(
+			"chat",
+			"Hello",
+			[],
+			expect.objectContaining({
+				harnessType: undefined,
+				workspace: undefined,
+			}),
+			undefined,
+			undefined,
+			expect.any(Function),
+		),
+	);
+});
+
+test("without the flag, No Agent and Default Agent are not separate choices", async () => {
+	await renderWorkspace();
+	expect(
+		screen.queryByRole("button", { name: "Pick Default Agent" }),
+	).toBeNull();
+	expect(
+		screen.queryByRole("button", {
+			name: "Pick Default Agent in Settings",
+		}),
+	).toBeNull();
+});
+
+test("Settings prepares the room, and the toggle closes and reopens it on the same tab", async () => {
+	const room = createPreparedRoom();
+	mocks.createEmptyRoom.mockResolvedValue(room);
+	await renderWorkspace();
+	// the prepared room adds Files to the rail and keeps Settings in front
+	expect(
+		screen.getByRole("tab", { name: "room:workspacePlaces.files" }),
+	).toHaveAttribute("aria-selected", "false");
 	const settings = screen.getByRole("tab", {
-		name: "room:settings.panelTitle",
+		name: "room:workspacePlaces.settings",
 	});
 	expect(settings).toHaveAttribute("aria-selected", "true");
-	expect(
-		screen.queryByRole("button", { name: "Publish" }),
-	).not.toBeInTheDocument();
-	selectWorkspaceItem("workspacePlaces.settings");
-	expect(screen.getAllByRole("tab")).toHaveLength(1);
-	expect(screen.getByRole("tab", { name: "room:settings.panelTitle" })).toBe(
-		settings,
+	expect(room.sidebar.isOpen).toBe(true);
+	fireEvent.click(
+		screen.getByRole("button", { name: "studio.closeWorkspace" }),
 	);
-	fireEvent.click(within(settings).getByRole("button", { name: /close/i }));
-	fireEvent.click(screen.getByRole("button", { name: "Open Workspace" }));
-	expect(screen.getAllByRole("tab")).toHaveLength(1);
+	fireEvent.click(
+		screen.getByRole("button", { name: "studio.openWorkspace" }),
+	);
 	expect(
-		screen.getByRole("tab", { name: "room:settings.panelTitle" }),
-	).toHaveAttribute("aria-selected", "true");
-	expect(mocks.createEmptyRoom).not.toHaveBeenCalled();
+		screen.getByRole("tab", { name: "room:workspacePlaces.settings" }),
+	).toBe(settings);
+	expect(settings).toHaveAttribute("aria-selected", "true");
+	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(1);
 	expect(mocks.createRoom).not.toHaveBeenCalled();
 });
 
-test("reopening restores Files and tab changes preserve both the form and editor", async () => {
+test("opening the Workspace on a new chat prepares its room once", async () => {
 	const room = createPreparedRoom();
 	mocks.createEmptyRoom.mockResolvedValue(room);
-	renderWorkspace();
+	render(<NewRoomPage />);
+	fireEvent.click(
+		screen.getByRole("button", { name: "studio.openWorkspace" }),
+	);
+	expect(
+		screen.getByRole("button", { name: "studio.closeWorkspace" }),
+	).toBeInTheDocument();
+	await screen.findByRole("tab", { name: "room:workspacePlaces.files" });
+	expect(room.sidebar.isOpen).toBe(true);
+	fireEvent.click(
+		screen.getByRole("button", { name: "studio.closeWorkspace" }),
+	);
+	fireEvent.click(
+		screen.getByRole("button", { name: "studio.openWorkspace" }),
+	);
+	expect(room.sidebar.isOpen).toBe(true);
+	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(1);
+});
+
+test("closing the Workspace while the room prepares leaves it closed", async () => {
+	const room = createPreparedRoom();
+	let resolvePreparation: (room: RoomStore) => void = () => {};
+	mocks.createEmptyRoom.mockImplementationOnce(
+		() =>
+			new Promise<RoomStore>((resolve) => {
+				resolvePreparation = resolve;
+			}),
+	);
+	render(<NewRoomPage />);
+	fireEvent.click(
+		screen.getByRole("button", { name: "studio.openWorkspace" }),
+	);
+	fireEvent.click(
+		screen.getByRole("button", { name: "studio.closeWorkspace" }),
+	);
+	resolvePreparation(room);
+	await waitFor(() => expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(1));
+	await screen.findByRole("button", { name: "studio.openWorkspace" });
+	expect(room.sidebar.isOpen).toBe(false);
+});
+
+test("Retry after a failed preparation reopens the Workspace in the prepared room", async () => {
+	const room = createPreparedRoom();
+	mocks.createEmptyRoom
+		.mockRejectedValueOnce(new Error("Offline"))
+		.mockResolvedValueOnce(room);
+	render(<NewRoomPage />);
+	fireEvent.click(
+		screen.getByRole("button", { name: "studio.openWorkspace" }),
+	);
+	await screen.findByRole("alert");
+	fireEvent.click(screen.getByRole("button", { name: "room:studio.retry" }));
+	await screen.findByRole("tab", { name: "room:workspacePlaces.files" });
+	expect(room.sidebar.isOpen).toBe(true);
+	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(2);
+});
+
+test("a new chat's header has its toggle but no title, and its rail lists panels", () => {
+	render(<NewRoomPage />);
+	const header = screen.getByRole("banner");
+	expect(header).not.toHaveTextContent("header.newChat");
+	expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
+	fireEvent.click(
+		screen.getByRole("button", { name: "studio.openWorkspace" }),
+	);
+	const rail = document.querySelector<HTMLElement>("[data-rail]");
+	if (!rail) throw new Error("the panel rail did not render");
+	expect(
+		within(rail).getByRole("button", { name: "workspacePlaces.settings" }),
+	).toBeVisible();
+	// a draft is not a room yet: no room actions anywhere
+	expect(
+		screen.queryByRole("button", { name: "sidebar:actions.rename" }),
+	).toBeNull();
+});
+
+test("reopening keeps Files, and tab changes preserve both the form and editor", async () => {
+	const room = createPreparedRoom();
+	mocks.createEmptyRoom.mockResolvedValue(room);
+	await renderWorkspace();
 	selectWorkspaceItem("workspacePlaces.files");
 	const files = await screen.findByRole("tab", {
-		name: "room:menuFileExplorer.name",
+		name: "room:workspacePlaces.files",
 	});
 	const editor = screen.getByLabelText("File draft");
 	fireEvent.change(editor, { target: { value: "Keep file edits" } });
@@ -584,37 +857,38 @@ test("reopening restores Files and tab changes preserve both the form and editor
 	fireEvent.click(
 		screen.getByRole("button", { name: "studio.closeWorkspace" }),
 	);
-	fireEvent.click(screen.getByRole("button", { name: "Open Workspace" }));
-	expect(files).toHaveAttribute("aria-selected", "true");
-	expect(screen.getByLabelText("File draft")).toBe(editor);
-	expect(editor).toHaveValue("Keep file edits");
+	// this test's Files blueprint has no matcher, so reopen through Settings
 	selectWorkspaceItem("workspacePlaces.settings");
 	expect(screen.getByLabelText("Instructions")).toBe(instructions);
 	expect(instructions).toHaveValue("Keep settings");
+	fireEvent.keyDown(files, { key: "Enter" });
+	expect(files).toHaveAttribute("aria-selected", "true");
+	expect(screen.getByLabelText("File draft")).toBe(editor);
+	expect(editor).toHaveValue("Keep file edits");
 	expect(screen.getByLabelText("Message draft")).toHaveValue(
 		"Keep this draft",
 	);
 	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(1);
 });
 
-test("failed file preparation keeps draft settings usable and supports retry", async () => {
+test("failed preparation keeps draft settings usable, and Retry reopens Settings in the room", async () => {
 	const room = createPreparedRoom();
-	mocks.createEmptyRoom
-		.mockRejectedValueOnce(new Error("Offline"))
-		.mockResolvedValueOnce(room);
-	renderWorkspace();
-	selectWorkspaceItem("workspacePlaces.files");
+	await renderWorkspace();
 	await screen.findByRole("alert");
 	fireEvent.change(screen.getByLabelText("Instructions"), {
 		target: { value: "Keep after retry" },
 	});
+	mocks.createEmptyRoom.mockResolvedValueOnce(room);
 	fireEvent.click(screen.getByRole("button", { name: "room:studio.retry" }));
-	await screen.findByRole("tab", { name: "room:menuFileExplorer.name" });
+	await screen.findByRole("tab", { name: "room:workspacePlaces.files" });
 	expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-	selectWorkspaceItem("workspacePlaces.settings");
+	expect(
+		screen.getByRole("tab", { name: "room:workspacePlaces.settings" }),
+	).toHaveAttribute("aria-selected", "true");
 	expect(screen.getByLabelText("Instructions")).toHaveValue(
 		"Keep after retry",
 	);
+	expect(room.sidebar.isOpen).toBe(true);
 	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(2);
 });
 
@@ -634,16 +908,19 @@ test("connector viewers share the prepared room and transfer draft context befor
 			.mockResolvedValue();
 		room.askMessage = askMessage;
 	});
-	renderWorkspace();
+	render(<NewRoomPage />);
+	selectWorkspaceItem("workspacePlaces.settings");
 	fireEvent.change(screen.getByLabelText("Instructions"), {
 		target: { value: "Keep draft settings" },
 	});
+	// Settings and both viewer opens share one preparation
 	fireEvent.click(screen.getByRole("button", { name: "Open Gmail" }));
 	fireEvent.click(screen.getByRole("button", { name: "Open Gmail" }));
 	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(1);
 	resolvePreparation(room);
 	await screen.findByRole("tab", { name: "connectors:services.gmail" });
-	expect(screen.getAllByRole("tab")).toHaveLength(2);
+	// Settings and the Files the prepared room adds to the rail, then Gmail
+	expect(screen.getAllByRole("tab")).toHaveLength(3);
 	fireEvent.click(
 		screen.getByRole("button", { name: "Add email to context" }),
 	);
@@ -652,7 +929,7 @@ test("connector viewers share the prepared room and transfer draft context befor
 	);
 	expect(room.contextItems.items).toHaveLength(0);
 	selectWorkspaceItem("workspacePlaces.files");
-	await screen.findByRole("tab", { name: "room:menuFileExplorer.name" });
+	await screen.findByRole("tab", { name: "room:workspacePlaces.files" });
 	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(1);
 	selectWorkspaceItem("workspacePlaces.settings");
 	expect(screen.getByLabelText("Instructions")).toHaveValue(
@@ -667,30 +944,129 @@ test("connector viewers share the prepared room and transfer draft context befor
 });
 
 test("retrying failed source preparation reopens the requested viewer", async () => {
-	mocks.createEmptyRoom
-		.mockRejectedValueOnce(new Error("Offline"))
-		.mockResolvedValueOnce(createPreparedRoom());
-	renderWorkspace();
+	await renderWorkspace();
 	fireEvent.click(screen.getByRole("button", { name: "Open Gmail" }));
-	await screen.findByRole("alert");
+	await waitFor(() => expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(2));
+	mocks.createEmptyRoom.mockResolvedValueOnce(createPreparedRoom());
 	fireEvent.click(screen.getByRole("button", { name: "room:studio.retry" }));
 	await screen.findByRole("tab", { name: "connectors:services.gmail" });
+	// the prepared room offers Files on its rail without opening it
 	expect(
-		screen.queryByRole("tab", { name: "room:menuFileExplorer.name" }),
-	).toBeNull();
+		screen.getByRole("tab", { name: "room:workspacePlaces.files" }),
+	).toHaveAttribute("aria-selected", "false");
 });
 
 test("Activity prepares the room and opens its log, and Retry after a failure opens it again", async () => {
-	mocks.createEmptyRoom
-		.mockRejectedValueOnce(new Error("Offline"))
-		.mockResolvedValueOnce(createPreparedRoom());
-	renderWorkspace();
+	await renderWorkspace();
 	selectWorkspaceItem("workspacePlaces.activity");
-	await screen.findByRole("alert");
+	await waitFor(() => expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(2));
+	mocks.createEmptyRoom.mockResolvedValueOnce(createPreparedRoom());
 	fireEvent.click(screen.getByRole("button", { name: "room:studio.retry" }));
-	await screen.findByRole("tab", { name: "room:studio.activityLog" });
-	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(2);
+	await screen.findByRole("tab", { name: "room:workspacePlaces.activity" });
+	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(3);
+	// the prepared room offers Files on its rail without opening it
 	expect(
-		screen.queryByRole("tab", { name: "room:menuFileExplorer.name" }),
-	).toBeNull();
+		screen.getByRole("tab", { name: "room:workspacePlaces.files" }),
+	).toHaveAttribute("aria-selected", "false");
+});
+
+/** Give the user a default of agent mode with this agent. */
+function preferAgent(agentId: string) {
+	mocks.session.user.meta = {
+		"playground--default-chat-mode": ["agent"],
+		"playground--default-chat-agent": [agentId],
+	};
+}
+
+test("a new chat starts with the user's default mode and agent, and remembers the chat sent", async () => {
+	preferAgent("alpha");
+	render(<NewRoomPage />);
+	await waitFor(() =>
+		expect(screen.getByLabelText("Selected agent")).toHaveTextContent(
+			"Alpha",
+		),
+	);
+	expect(screen.getByLabelText("Mode")).toHaveTextContent("agent");
+
+	fireEvent.click(screen.getByRole("button", { name: "Save default" }));
+	fireEvent.click(screen.getByRole("button", { name: "Send" }));
+	await waitFor(() => expect(mocks.createRoom).toHaveBeenCalled());
+	expect(readSessionNewChat("login-1")).toEqual({
+		mode: "agent",
+		agentId: "",
+	});
+});
+
+test("the chat last started in this session beats the user's defaults", async () => {
+	preferAgent("alpha");
+	writeSessionNewChat("login-1", { mode: "chat", agentId: "" });
+	render(<NewRoomPage />);
+	await act(async () => {});
+
+	expect(screen.getByLabelText("Mode")).toHaveTextContent("chat");
+	expect(screen.getByLabelText("Selected agent")).toHaveTextContent(
+		"Default",
+	);
+});
+
+test("a default agent the user can no longer open gives way to Default Agent", async () => {
+	preferAgent("gone");
+	render(<NewRoomPage />);
+
+	await waitFor(() =>
+		expect(screen.getByLabelText("Mode")).toHaveTextContent("agent"),
+	);
+	await act(async () => {});
+	expect(screen.getByLabelText("Selected agent")).toHaveTextContent(
+		"Default",
+	);
+	expect(
+		screen.queryByText("room:settings.agentLoadError"),
+	).not.toBeInTheDocument();
+	fireEvent.click(screen.getByRole("button", { name: "Send" }));
+	await waitFor(() =>
+		expect(mocks.createRoom).toHaveBeenCalledWith(
+			"agent",
+			"Hello",
+			[],
+			expect.objectContaining({ workspace: undefined }),
+			undefined,
+			undefined,
+			expect.any(Function),
+		),
+	);
+});
+
+test("an agent link wins over the user's default agent", async () => {
+	preferAgent("gone");
+	mocks.searchParams = new URLSearchParams("workspaceId=alpha");
+	render(<NewRoomPage />);
+
+	await waitFor(() =>
+		expect(screen.getByLabelText("Selected agent")).toHaveTextContent(
+			"Alpha",
+		),
+	);
+	expect(screen.getByLabelText("Mode")).toHaveTextContent("agent");
+});
+
+test("with no session chat or user default, the theme's mode and agent apply", async () => {
+	const settings = root.theme.defaultRoomSettings;
+	root.theme.defaultRoomSettings = {
+		...settings,
+		mode: "agent",
+		agentId: "alpha",
+	};
+	try {
+		render(<NewRoomPage />);
+
+		await waitFor(() =>
+			expect(screen.getByLabelText("Selected agent")).toHaveTextContent(
+				"Alpha",
+			),
+		);
+		expect(screen.getByLabelText("Mode")).toHaveTextContent("agent");
+	} finally {
+		root.theme.defaultRoomSettings = settings;
+	}
 });

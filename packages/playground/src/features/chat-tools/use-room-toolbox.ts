@@ -1,16 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import type { RoomStore } from "@/stores/room/room.store";
 import { readRoomToolFile } from "@/stores/room/room-tool-file";
-import { type ChatToolInfo, parseRoomToolbox } from "./tools/chat-tool-info";
-
-/** What {@link useRoomToolbox} returns. */
-export interface UseRoomToolboxResult {
-	status: "loading" | "ready" | "error";
-	/** The toolbox's tools, each with the reactor it runs. */
-	tools: (ChatToolInfo & { reactor: string })[];
-	/** Read the toolbox again. */
-	reload: () => void;
-}
+import { type ToolsRead, useToolsRead } from "./use-tools-read";
 
 /**
  * The tools in a room's own toolbox, read from its tool file. Read again
@@ -19,46 +10,21 @@ export interface UseRoomToolboxResult {
  *
  * @param room - The room.
  * @param revision - Changes whenever the toolbox may have.
- * @return The tools and how the read went.
+ * @return The tools, how the read went, and a way to read them again.
  */
 export const useRoomToolbox = (
 	room: RoomStore,
-	revision: unknown,
-): UseRoomToolboxResult => {
-	// read in render so a room bound to another insight reads its file again
+	revision: string,
+): ToolsRead => {
 	const { insightId } = room;
-	const [status, setStatus] =
-		useState<UseRoomToolboxResult["status"]>("loading");
-	const [tools, setTools] = useState<UseRoomToolboxResult["tools"]>([]);
-	const [reloadCount, setReloadCount] = useState(0);
+	const read = useCallback(() => readRoomToolFile(room), [room]);
+	const toolbox = useToolsRead(insightId, read);
+	const { load } = toolbox;
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: insightId, revision, and reloadCount only ask for a new read
+	// biome-ignore lint/correctness/useExhaustiveDependencies: revision only signals that the tool file may have changed
 	useEffect(() => {
-		let isCancelled = false;
-		setStatus("loading");
-		readRoomToolFile(room)
-			.then(parseRoomToolbox)
-			.then(
-				(next) => {
-					if (!isCancelled) {
-						setTools(next);
-						setStatus("ready");
-					}
-				},
-				() => {
-					if (!isCancelled) {
-						setStatus("error");
-					}
-				},
-			);
-		return () => {
-			isCancelled = true;
-		};
-	}, [room, insightId, revision, reloadCount]);
+		load();
+	}, [load, revision]);
 
-	const reload = useCallback(() => {
-		setReloadCount((count) => count + 1);
-	}, []);
-
-	return { status: status, tools: tools, reload: reload };
+	return toolbox;
 };

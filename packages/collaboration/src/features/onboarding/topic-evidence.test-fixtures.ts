@@ -64,7 +64,7 @@ function evidenceItem(number: number): TopicEvidence["items"][number] {
 	};
 }
 
-export function twoTopics(): ReviewWire {
+function twoTopics(): ReviewWire {
 	const review = makeReview();
 	review.draft.topics.push({
 		...structuredClone(review.draft.topics[0]),

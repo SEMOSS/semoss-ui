@@ -1,7 +1,7 @@
 import { makeAutoObservable } from "mobx";
 import type { StateStore } from "../state";
 
-export interface NotebookStoreInterface {
+interface NotebookStoreInterface {
 	/** Current selected query */
 	selectedQueryId: string;
 

@@ -4,7 +4,7 @@ import { toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 
 /** What {@link useAppExport} gives its caller. */
-export interface UseAppExportResult {
+interface UseAppExportResult {
 	/** Whether an export is running */
 	isExporting: boolean;
 	/** Exports the app as a zip and downloads it, reporting a failure in a toast */

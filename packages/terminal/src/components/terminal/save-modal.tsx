@@ -28,7 +28,6 @@ export const SaveModal = () => {
 				}),
 			});
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [terminal.save.open]);
 
 	if (!terminal.save.open) return null;

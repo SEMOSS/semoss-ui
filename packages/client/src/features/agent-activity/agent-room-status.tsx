@@ -1,7 +1,7 @@
 import { Lock } from "lucide-react";
 import { Badge } from "@semoss/ui/next";
 
-export interface AgentRoomStatusProps {
+interface AgentRoomStatusProps {
 	/** Runs not yet finished: submitted, running or waiting for input */
 	activeRunCount: number;
 	/** Runs that failed */

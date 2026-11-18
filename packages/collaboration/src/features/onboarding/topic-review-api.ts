@@ -113,7 +113,7 @@ export const topicLinkSchema = z.object({
 	primary: z.boolean(),
 });
 
-export const topicCorrectionSchema = z.object({
+const topicCorrectionSchema = z.object({
 	threadId: z.string().min(1),
 	topicKey: z.string().min(1),
 	state: z.enum(["include", "exclude"]),
@@ -272,7 +272,7 @@ export type TopicReview = z.infer<typeof topicReviewSchema>;
 export type ReviewTopic = z.infer<typeof reviewTopicSchema>;
 
 /** The saved draft, or the background job still grouping and naming topics. */
-export type TopicReviewStart =
+type TopicReviewStart =
 	| { review: TopicReview; job: null }
 	| { review: null; job: Job };
 

@@ -2,13 +2,18 @@ import { getAgent } from "@/features/agents/api/get-agent";
 import { getHistoryChatDraft } from "@/features/daily-chat/new-chat-drafts";
 import { getRoomMessages } from "@/features/messages/api/get-room-messages";
 import { resolveThreadModel } from "@/features/thread-assistant/api/thread-model";
-import { setThreadAgent } from "@/features/thread-assistant/thread-context";
+import {
+	setThreadAgent,
+	threadCommand,
+} from "@/features/thread-assistant/thread-context";
 import * as runApi from "./api/agent-run-api";
+import { ROOM_HISTORY_CHANGED } from "./api/list-rooms";
 import { uploadRoomFiles } from "./api/upload-room-files";
 import {
 	createRoomSession,
 	getRoomSession,
 	type RoomSession,
+	renameRoomSessions,
 } from "./room-session";
 import type { RoomSource } from "./source-import/room-source";
 
@@ -85,6 +90,14 @@ function own(session: RoomSession): RoomSession {
 function draft(): RoomSession {
 	return own(createRoomSession(crypto.randomUUID()));
 }
+/** What `SaveInsightAssetsBase64` returns when the source file is overwritten. */
+const savedSourceFile = [
+	{
+		requestedPath: source.file.fileLocation,
+		savedPath: source.file.fileLocation,
+		renamed: false,
+	},
+];
 function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
 	let resolve: (value: T) => void = () => undefined;
 	const promise = new Promise<T>((done) => {
@@ -99,7 +112,7 @@ beforeEach(() => {
 	setThreadAgent(null);
 	transport.options.clear();
 	transport.failOptions = false;
-	transport.fileSave.mockResolvedValue("Success!");
+	transport.fileSave.mockResolvedValue(savedSourceFile);
 	transport.run.mockImplementation(
 		async (_insightId: string, statement: string) => {
 			const roomId = JSON.parse(
@@ -165,6 +178,82 @@ beforeEach(() => {
 afterEach(() => {
 	for (const session of instances.splice(0)) session.dispose();
 	setThreadAgent(null);
+});
+
+it("publishes the generated room title after a turn settles without reloading settings or rebinding", async () => {
+	transport.options.set("twin-chat", {
+		modelId: "model-one",
+		workspace: { workspace_id: "twin-1", name: "Robin Twin" },
+	});
+	const session = own(getRoomSession(crypto.randomUUID(), "twin-chat"));
+	await session.initialize();
+	const settings = session.getSnapshot().settings;
+	const changed = vi.fn();
+	const stop = session.subscribe(changed);
+	const history = vi.fn();
+	window.addEventListener(ROOM_HISTORY_CHANGED, history);
+	transport.run.mockResolvedValueOnce({
+		pixelReturn: [
+			{ output: { ROOM_NAME: "Quarterly roadmap", OPTIONS: {} } },
+		],
+	});
+	const completed = {
+		runId: "run-twin-chat",
+		roomId: "twin-chat",
+		status: "COMPLETED" as const,
+		pendingActions: [],
+		messages: [],
+	};
+	vi.mocked(runApi.pollRun).mockResolvedValue({
+		run: completed,
+		events: [],
+		droppedEvents: 0,
+	});
+	vi.mocked(runApi.readRun).mockResolvedValue(completed);
+	await session.send({ text: "Review next quarter", files: [] });
+	await vi.waitFor(() =>
+		expect(session.getSnapshot().title).toBe("Quarterly roadmap"),
+	);
+	expect(session.getSnapshot().title).toBe("Quarterly roadmap");
+	expect(session.getSnapshot().settings).toBe(settings);
+	expect(changed).toHaveBeenCalled();
+	expect(history).toHaveBeenCalledWith(
+		expect.objectContaining({
+			detail: expect.objectContaining({ roomName: "Quarterly roadmap" }),
+		}),
+	);
+	expect(
+		transport.run.mock.calls.filter(([, statement]) =>
+			String(statement).startsWith("SetRoomForInsight"),
+		),
+	).toHaveLength(1);
+	stop();
+	window.removeEventListener(ROOM_HISTORY_CHANGED, history);
+});
+
+it("keeps a manual rename when an earlier title read arrives late", async () => {
+	const session = own(getRoomSession(crypto.randomUUID(), "renamed-chat"));
+	await session.initialize();
+	const pending = deferred<unknown>();
+	transport.run.mockReturnValueOnce(pending.promise);
+	const refresh = session.refreshHistory();
+	renameRoomSessions("renamed-chat", "My title");
+	pending.resolve({
+		pixelReturn: [
+			{ output: { ROOM_NAME: "Generated title", OPTIONS: {} } },
+		],
+	});
+	await refresh;
+	expect(session.getSnapshot().title).toBe("My title");
+});
+
+it("still restores messages when a title refresh fails", async () => {
+	const session = own(getRoomSession(crypto.randomUUID(), "twin-chat"));
+	await session.initialize();
+	transport.run.mockRejectedValueOnce(new Error("Metadata unavailable"));
+	await expect(session.refreshHistory()).resolves.toBeUndefined();
+	expect(session.getSnapshot().title).toBe("Saved room");
+	expect(session.getSnapshot().error).toBeNull();
 });
 
 it("loads the actual room and its queued source without allocating or sending", async () => {
@@ -664,7 +753,7 @@ it("serializes source revisions and retains the session while a file save is pen
 	await session.create("Imported");
 	await session.setSource(source);
 	session.removeContextFile(source.file.fileLocation);
-	const pending = deferred<string>();
+	const pending = deferred<typeof savedSourceFile>();
 	transport.fileSave.mockReturnValueOnce(pending.promise);
 	const first = session.updateSourceFile(source, "# First revision");
 	const refreshed = { ...source, title: "Latest subject" };
@@ -672,7 +761,7 @@ it("serializes source revisions and retains the session while a file save is pen
 	await vi.waitFor(() => expect(transport.fileSave).toHaveBeenCalledTimes(1));
 	expect(session.getSnapshot().source).toEqual(source);
 	expect(session.canEvict()).toBe(false);
-	pending.resolve("Success!");
+	pending.resolve(savedSourceFile);
 	await Promise.all([first, second]);
 	expect(transport.fileSave).toHaveBeenCalledTimes(2);
 	expect(session.getSnapshot().source).toEqual(refreshed);
@@ -724,6 +813,85 @@ it("preserves the draft and source file when cancelled before the run is submitt
 	});
 });
 
+it("sends an Office file as its text copy and other files as they are", async () => {
+	const session = draft();
+	await session.create("Plan");
+	const plan = new File(["docx"], "plan.docx");
+	const chart = new File(["png"], "chart.png", { type: "image/png" });
+	session.setComposerDraft({
+		document: null,
+		text: "Summarize",
+		files: [plan, chart],
+	});
+	vi.mocked(uploadRoomFiles).mockImplementation(async (_insightId, files) =>
+		files.map((file) => ({
+			fileName: file.name,
+			fileLocation: `/${file.name}`,
+		})),
+	);
+	const room = transport.run.getMockImplementation();
+	transport.run.mockImplementation(
+		async (insightId: string, statement: string) =>
+			statement.startsWith("WorkAttachmentText")
+				? {
+						pixelReturn: [
+							{
+								output: { textPath: "/plan.docx.txt" },
+								operationType: [],
+							},
+						],
+					}
+				: room?.(insightId, statement),
+	);
+	await session.send({ text: "Summarize", files: [plan, chart] });
+	expect(transport.run).toHaveBeenCalledWith(
+		session.insight.insightId,
+		'WorkAttachmentText(filePath=["/plan.docx"]);',
+	);
+	expect(runApi.startAgentRun).toHaveBeenCalledExactlyOnceWith(
+		session.insight.insightId,
+		expect.objectContaining({ media: ["/chart.png", "/plan.docx.txt"] }),
+	);
+	expect(session.getSnapshot().composerDraft).toMatchObject({
+		text: "",
+		files: [],
+	});
+});
+
+it("keeps the draft and starts no run when an Office file's text cannot be read", async () => {
+	const session = draft();
+	await session.create("Pay");
+	const pay = new File(["docx"], "pay.docx");
+	session.setComposerDraft({
+		document: null,
+		text: "Summarize",
+		files: [pay],
+	});
+	vi.mocked(uploadRoomFiles).mockResolvedValue([
+		{ fileName: "pay.docx", fileLocation: "/pay.docx" },
+	]);
+	const reason =
+		"pay.docx is password protected, so its text could not be read.";
+	const room = transport.run.getMockImplementation();
+	transport.run.mockImplementation(
+		async (insightId: string, statement: string) => {
+			if (statement.startsWith("WorkAttachmentText"))
+				throw new Error(reason);
+			return room?.(insightId, statement);
+		},
+	);
+	await expect(
+		session.send({ text: "Summarize", files: [pay] }),
+	).rejects.toThrow(reason);
+	expect(runApi.startAgentRun).not.toHaveBeenCalled();
+	expect(session.getSnapshot()).toMatchObject({
+		composerDraft: { text: "Summarize", files: [pay] },
+		submissionError: reason,
+		hasUnconfirmedSubmission: false,
+		turn: { messages: [], isRunning: false },
+	});
+});
+
 it("keeps later draft edits when reconnect confirms an earlier uncertain request", async () => {
 	const session = draft();
 	await session.create("Imported");
@@ -761,49 +929,85 @@ it("keeps later draft edits when reconnect confirms an earlier uncertain request
 	});
 });
 
-it("does not mistake an earlier identical message for a newly uncertain submission", async () => {
-	const session = draft();
-	await session.create("Repeated requests");
-	session.setComposerDraft({
-		document: null,
-		text: "Check again",
-		files: [],
-	});
-	vi.mocked(runApi.startAgentRun).mockRejectedValueOnce(
-		new Error("Disconnected"),
-	);
-	await expect(
-		session.send({ text: "Check again", files: [] }),
-	).rejects.toThrow("Disconnected");
-	const previousCommand = vi.mocked(runApi.startAgentRun).mock.calls[0][1]
-		.command;
-	vi.mocked(getRoomMessages).mockResolvedValue([
-		{
-			messageId: "previous-request",
-			type: "INPUT_TEXT",
-			parts: [{ type: "TEXT", text: previousCommand }],
-		},
-	]);
-	await session.reconnect();
-	session.setComposerDraft({
-		document: null,
-		text: "Check again",
-		files: [],
-	});
-	vi.mocked(runApi.startAgentRun).mockRejectedValueOnce(
-		new Error("Disconnected again"),
-	);
-	await expect(
-		session.send({ text: "Check again", files: [] }),
-	).rejects.toThrow("Disconnected again");
-	expect(vi.mocked(runApi.startAgentRun).mock.calls[1][1].command).toBe(
-		previousCommand,
-	);
-	await session.reconnect();
-	expect(session.getSnapshot()).toMatchObject({
-		hasUnconfirmedSubmission: false,
-		composerDraft: { text: "Check again" },
-		submissionNotice:
-			"Your last message was not found. You can try sending it again.",
-	});
+it.each([false, true])(
+	"does not mistake an earlier identical message for a newly uncertain submission (rich: %s)",
+	async (isRich) => {
+		const html =
+			"<table><tbody><tr><td>Check again</td></tr></tbody></table>";
+		const submission = {
+			text: "Check again",
+			files: [],
+			...(isRich
+				? { userContent: html, userContentFormat: "html-v1" as const }
+				: {}),
+		};
+		const context = { selectedSourceMessageId: "selected-email" };
+		const session = draft();
+		await session.create("Repeated requests");
+		session.setComposerDraft({
+			document: null,
+			text: "Check again",
+			files: [],
+		});
+		vi.mocked(runApi.startAgentRun).mockRejectedValueOnce(
+			new Error("Disconnected"),
+		);
+		await expect(session.send(submission, context)).rejects.toThrow(
+			"Disconnected",
+		);
+		const previousCommand = vi.mocked(runApi.startAgentRun).mock.calls[0][1]
+			.command;
+		expect(previousCommand).toBe(
+			threadCommand(context, isRich ? html : "Check again"),
+		);
+		if (isRich)
+			expect(runApi.startAgentRun).toHaveBeenLastCalledWith(
+				session.insight.insightId,
+				expect.objectContaining({
+					userText: html,
+					userContent: html,
+					userContentFormat: "html-v1",
+				}),
+			);
+		vi.mocked(getRoomMessages).mockResolvedValue([
+			{
+				messageId: "previous-request",
+				type: "INPUT_TEXT",
+				parts: [{ type: "TEXT", text: previousCommand }],
+			},
+		]);
+		await session.reconnect();
+		session.setComposerDraft({
+			document: null,
+			text: "Check again",
+			files: [],
+		});
+		vi.mocked(runApi.startAgentRun).mockRejectedValueOnce(
+			new Error("Disconnected again"),
+		);
+		await expect(session.send(submission, context)).rejects.toThrow(
+			"Disconnected again",
+		);
+		expect(vi.mocked(runApi.startAgentRun).mock.calls[1][1].command).toBe(
+			previousCommand,
+		);
+		await session.reconnect();
+		expect(session.getSnapshot()).toMatchObject({
+			hasUnconfirmedSubmission: false,
+			composerDraft: { text: "Check again" },
+			submissionNotice:
+				"Your last message was not found. You can try sending it again.",
+		});
+	},
+);
+
+it("retitles every loaded session of a renamed room and leaves other rooms alone", () => {
+	const room = own(getRoomSession(crypto.randomUUID(), "renamed-room"));
+	const sameRoom = own(getRoomSession(crypto.randomUUID(), "renamed-room"));
+	const other = own(getRoomSession(crypto.randomUUID(), "other-room"));
+	const otherTitle = other.getSnapshot().title;
+	renameRoomSessions("renamed-room", "Q3 pricing");
+	expect(room.getSnapshot().title).toBe("Q3 pricing");
+	expect(sameRoom.getSnapshot().title).toBe("Q3 pricing");
+	expect(other.getSnapshot().title).toBe(otherTitle);
 });

@@ -14,6 +14,7 @@ import { givenFirst } from "@/lib/person-name";
 import { threadPath } from "@/lib/workspace-paths";
 import { channelMeta } from "../channel-meta";
 import { dateLabel } from "../date-label";
+import { localDue } from "../live/live-state";
 import { selectThreadContext } from "../state/collaboration.selectors";
 import type { WorkItem } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
@@ -203,7 +204,12 @@ export function WorkItemCard({
 											"text-destructive",
 									)}
 								>
-									Due {dateLabel(item.due, undefined, "date")}
+									Due{" "}
+									{dateLabel(
+										localDue(item.due),
+										undefined,
+										"date",
+									)}
 								</span>
 							)}
 							{item.reasons

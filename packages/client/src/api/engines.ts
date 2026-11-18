@@ -1,5 +1,6 @@
 import { Env, get, post, runPixel } from "@semoss/sdk/react";
 
+/** @public Called by name through `useAPI`. */
 export const getEngines = async (
 	admin: boolean,
 	search: string,

@@ -138,7 +138,7 @@ export const policyRulesSchema = z
 	});
 
 /** Whether two rule keys name the same thing, as the guardrail reads them. */
-export const isSameRuleKey = (left: string, right: string): boolean =>
+const isSameRuleKey = (left: string, right: string): boolean =>
 	left.trim().toUpperCase() === right.trim().toUpperCase();
 
 /** The guardrail's built-in rules for the chosen dialect, by identifier policy. */

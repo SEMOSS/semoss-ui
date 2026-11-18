@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-export interface TypewriterTextProps {
+interface TypewriterTextProps {
 	/** Text to render; reveals character-by-character whenever this value changes */
 	text: string;
 	className?: string;

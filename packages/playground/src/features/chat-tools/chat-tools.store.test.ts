@@ -70,7 +70,7 @@ describe("ChatToolsStore", () => {
 			description: string;
 		}[];
 		expect(list.description).toContain(
-			"Chat Files (this chat's own files)",
+			"Room Files (this room's own files)",
 		);
 
 		room.setOptions({
@@ -197,7 +197,7 @@ describe("ChatToolsStore", () => {
 		expect(room.runRoomPixel).not.toHaveBeenCalled();
 	});
 
-	test("a change a folder tool makes refreshes Chat Files", async () => {
+	test("a change a folder tool makes refreshes Room Files", async () => {
 		const room = createRoom();
 		chatTools = new ChatToolsStore(room);
 		const outcome = await chatTools.runFolderCall(FOLDER_TOOL_NAMES.WRITE, {

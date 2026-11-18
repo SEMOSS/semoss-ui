@@ -30,7 +30,7 @@ const STANDING_CLASSES: Readonly<Record<ModelUsageStanding, string>> = {
 	NO_LIMIT: "text-muted-foreground",
 };
 
-export interface MyModelUsageRowProps {
+interface MyModelUsageRowProps {
 	/** The model's summary */
 	model: ModelUsageSummary;
 	/** Called to open the model's details */

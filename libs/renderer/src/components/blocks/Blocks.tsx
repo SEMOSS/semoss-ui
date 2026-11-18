@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { BlocksContext } from "../../contexts";
 import { NotebookStore, type Registry, type StateStore } from "../../store";
 
-export interface BlocksProps<R extends Registry> {
+interface BlocksProps<R extends Registry> {
 	/** Content to render  */
 	children: React.ReactNode;
 

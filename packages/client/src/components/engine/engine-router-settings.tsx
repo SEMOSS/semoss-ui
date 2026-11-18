@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Role } from "@semoss/sdk";
-import { usePixel } from "@semoss/sdk/react";
+import { usePixel, useSessionInsight } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -22,9 +22,8 @@ import {
 	routerConfigToJson,
 	validateRouterConfig,
 } from "@/components/import/model/router-config-field";
-import { useSession } from "@/hooks";
 
-export interface EngineRouterSettingsProps {
+interface EngineRouterSettingsProps {
 	/** Id of the model router engine */
 	engineId: string;
 
@@ -46,7 +45,7 @@ export const EngineRouterSettings: React.FC<EngineRouterSettingsProps> = ({
 	permission,
 	onUpdated,
 }) => {
-	const runPixel = useSession((state) => state.runPixel);
+	const { run: runPixel } = useSessionInsight();
 	const isEditable = permission === "OWNER" || permission === "EDIT";
 
 	const getConfig = usePixel<string>(

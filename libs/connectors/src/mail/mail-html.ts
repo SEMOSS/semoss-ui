@@ -137,7 +137,7 @@ export interface MailHtmlOptions {
 }
 
 /** An email as a document of its own, for a sandboxed frame. */
-export interface MailHtmlDocument {
+interface MailHtmlDocument {
 	/** The document's markup, sanitized, with a policy that blocks loading. */
 	html: string;
 	/** Whether it has anything to show, text or pictures. */

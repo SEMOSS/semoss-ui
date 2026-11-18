@@ -5,7 +5,7 @@ import type { AutomationNode } from "../../../domain/automation.types";
 import type { AutomationNodeGroup } from "../../../domain/automation-workflow.types";
 import { getWorkflowNodeDisplay } from "../../../domain/automation-workflow-display";
 
-export interface AutomationNodeGroupData extends Record<string, unknown> {
+interface AutomationNodeGroupData extends Record<string, unknown> {
 	group: AutomationNodeGroup;
 	collapsed: boolean;
 	members: AutomationNode[];

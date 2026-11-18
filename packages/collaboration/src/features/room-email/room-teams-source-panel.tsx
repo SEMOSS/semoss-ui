@@ -1,17 +1,17 @@
-import { MessagesSquare } from "lucide-react";
 import { createElement } from "react";
 import { P } from "@semoss/ui/next";
 import type {
 	WorkbenchPanelConfig,
 	WorkbenchPanelProps,
 } from "@semoss/workbench";
+import { TeamsIcon } from "@/components/common/app-icons";
 import { useRoomEmail } from "./room-email.context";
 import { LIVE_TEAMS_NOTICE, RoomTeamsReader } from "./room-teams-reader";
 
 export const ROOM_TEAMS_SOURCE_PANEL_TYPE = "collaboration-teams-source";
 
 /** Read the Teams chat a room was opened from, oldest message first. */
-export function RoomTeamsSourcePanel(_props: WorkbenchPanelProps) {
+function RoomTeamsSourcePanel(_props: WorkbenchPanelProps) {
 	const {
 		source,
 		sourceMessages,
@@ -40,8 +40,7 @@ export function RoomTeamsSourcePanel(_props: WorkbenchPanelProps) {
 
 const ROOM_TEAMS_SOURCE_PANEL: WorkbenchPanelConfig<Record<string, never>> = {
 	name: "Teams chat",
-	icon: ({ className }) =>
-		createElement(MessagesSquare, { className, "aria-hidden": true }),
+	icon: ({ className }) => createElement(TeamsIcon, { className }),
 	content: RoomTeamsSourcePanel,
 	mount: "keepAlive",
 	canRename: false,
