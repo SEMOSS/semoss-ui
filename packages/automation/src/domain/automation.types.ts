@@ -286,6 +286,8 @@ export interface AutomationRunSummary {
 	FAILED_NODE_ID?: string;
 	ERROR_MESSAGE?: string | null;
 	RESULT_SUMMARY?: string | null;
+	/** The finished run this run reprocesses, when it was started by a reprocess. */
+	REPROCESSED_FROM_RUN_ID?: string | null;
 	DEFINITION_VERSION?: number;
 	DEFINITION_HASH?: string;
 }
@@ -329,6 +331,12 @@ export interface AutomationNodeResult {
 	NODE_ID: string;
 	NODE_LABEL: string;
 	STATUS: NodeStatus;
+	/** UTC; null until the node starts, and replaced when the node is reprocessed. */
+	STARTED_AT?: string | null;
+	/** UTC; null until the node finishes, and replaced when the node is reprocessed. */
+	COMPLETED_AT?: string | null;
+	/** True while the node still holds the result copied from the run this one reprocesses. */
+	CARRIED_OVER?: boolean;
 	DURATION_MS: number;
 	OUTPUT_PREVIEW: string | null;
 	OUTPUT_VALUE?: string | null;
@@ -342,6 +350,18 @@ export interface AutomationNodeResult {
 		};
 	};
 	ERROR_MESSAGE: string | null;
+	/**
+	 * The node's config after scope-reference ("${...}") substitution - the
+	 * "message" sent into the node, mirrored from Mirth Connect's per-connector
+	 * message view. Serialized JSON string; parse before rendering.
+	 */
+	inputPayload?: string | null;
+	/**
+	 * Every variable in the run scope at the moment this node finished, for
+	 * point-in-time variable inspection in the run history. Serialized JSON
+	 * string; parse before rendering.
+	 */
+	scopeSnapshot?: string | null;
 	trace?: AutomationNodeTrace;
 	iterations?: AutomationNodeIteration[];
 }

@@ -8,7 +8,7 @@ import {
 	getAsyncViewerState,
 	getRunNodeDataSource,
 	getRunNodeOccurrenceKey,
-	getVisibleRunNodeContentView,
+	getRunScopeVariableRows,
 	mapSavedResultPage,
 	RUN_NODE_VIEW_LABELS,
 	RUN_RESULTS_LAYOUT_CLASSES,
@@ -104,6 +104,95 @@ describe("run node occurrence identity", () => {
 	});
 });
 
+describe("run scope variable rows", () => {
+	it("returns null when there is no retained snapshot", () => {
+		expect(getRunScopeVariableRows(null)).toBeNull();
+		expect(getRunScopeVariableRows(undefined)).toBeNull();
+		expect(getRunScopeVariableRows("")).toBeNull();
+	});
+
+	it("returns null when the snapshot is not valid JSON", () => {
+		expect(getRunScopeVariableRows("{not valid json")).toBeNull();
+	});
+
+	it("returns null when the snapshot is not a plain object", () => {
+		expect(getRunScopeVariableRows("42")).toBeNull();
+		expect(getRunScopeVariableRows('"a string"')).toBeNull();
+		expect(getRunScopeVariableRows("null")).toBeNull();
+		expect(getRunScopeVariableRows("[1,2,3]")).toBeNull();
+	});
+
+	it("turns each top-level variable into a ${name} row", () => {
+		const rows = getRunScopeVariableRows(
+			JSON.stringify({ greeting: "hi", count: 2 }),
+		);
+
+		expect(rows).toEqual([
+			{ name: "${greeting}", value: "hi" },
+			{ name: "${count}", value: "2" },
+		]);
+	});
+
+	it("formats non-string values as pretty-printed JSON", () => {
+		const rows = getRunScopeVariableRows(
+			JSON.stringify({ user: { name: "Ada" }, tags: ["a", "b"] }),
+		);
+
+		expect(rows).toEqual([
+			{
+				name: "${user}",
+				value: JSON.stringify({ name: "Ada" }, null, 2),
+			},
+			{ name: "${tags}", value: JSON.stringify(["a", "b"], null, 2) },
+		]);
+	});
+
+	it("breaks a loop's own context entry into one row per whitelisted field", () => {
+		const rows = getRunScopeVariableRows(
+			JSON.stringify({
+				my_loop: {
+					item: "Ada",
+					batch: ["Ada", "Grace"],
+					index: 0,
+					number: 1,
+					total: 2,
+					maximum: 2,
+					isFirst: true,
+					isLast: false,
+					extra: "should be dropped",
+				},
+			}),
+		);
+
+		expect(rows).toEqual([
+			{ name: "${my_loop.item}", value: "Ada" },
+			{
+				name: "${my_loop.batch}",
+				value: JSON.stringify(["Ada", "Grace"], null, 2),
+			},
+			{ name: "${my_loop.index}", value: "0" },
+			{ name: "${my_loop.number}", value: "1" },
+			{ name: "${my_loop.total}", value: "2" },
+			{ name: "${my_loop.maximum}", value: "2" },
+			{ name: "${my_loop.isFirst}", value: "true" },
+			{ name: "${my_loop.isLast}", value: "false" },
+		]);
+	});
+
+	it("does not treat a plain nested object lacking loop-context keys as a loop entry", () => {
+		const rows = getRunScopeVariableRows(
+			JSON.stringify({ user: { index: 0, name: "Ada" } }),
+		);
+
+		expect(rows).toEqual([
+			{
+				name: "${user}",
+				value: JSON.stringify({ index: 0, name: "Ada" }, null, 2),
+			},
+		]);
+	});
+});
+
 describe("run node viewer states and invariants", () => {
 	it("distinguishes loading, error, empty, and ready states", () => {
 		expect(getAsyncViewerState(true, null, false, false)).toBe("loading");
@@ -114,20 +203,12 @@ describe("run node viewer states and invariants", () => {
 		expect(getAsyncViewerState(false, null, true, false)).toBe("ready");
 	});
 
-	it("shows implementation details only in developer mode", () => {
-		expect(getVisibleRunNodeContentView("source", false)).toBe("output");
-		expect(getVisibleRunNodeContentView("source", true)).toBe("source");
-		expect(getVisibleRunNodeContentView("output", true)).toBe("output");
-	});
-
 	it("provides explicit accessible names for detail and recovery controls", () => {
 		expect(RUN_NODE_VIEW_LABELS).toMatchObject({
 			navigation: "Run nodes",
 			detailView: "Run node detail view",
 			output: "Output",
-			source: "Implementation",
 			retryData: "Retry loading node data",
-			retrySource: "Retry loading executed implementation",
 		});
 	});
 

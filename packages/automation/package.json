@@ -25,6 +25,7 @@
     "@semoss/shared": "workspace:*",
     "@semoss/ui": "workspace:*",
     "@semoss/utility": "workspace:*",
+    "@tanstack/react-virtual": "^3.14.26",
     "@xyflow/react": "^12.3.6",
     "lucide-react": "^0.545.0",
     "react": "^19.0.0",
