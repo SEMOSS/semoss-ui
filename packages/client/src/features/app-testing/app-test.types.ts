@@ -26,7 +26,7 @@ export interface AppTestStep {
 	pagePath?: string;
 }
 
-/** A declarative JSON file under the app's non-public assets/app-tests/recordings. */
+/** A declarative JSON file under the app's non-public assets/app-tests/tests. */
 export interface AppTestRecording {
 	id: string;
 	name: string;

@@ -4,6 +4,8 @@ import {
 	deleteAppTestRecording,
 	getAppTestRun,
 	parseAppTestRecordings,
+	parseAppTestUpload,
+	runAllAppTests,
 	runAppTests,
 	saveAppTestRecording,
 } from "@/api/app-testing";
@@ -43,7 +45,9 @@ interface AppTestingState {
 	save: (name: string, description: string) => Promise<void>;
 	updateRecording: (recording: AppTestRecording) => Promise<void>;
 	deleteRecording: (id: string) => Promise<void>;
-	startRun: (repeat?: number) => Promise<void>;
+	startRun: (recordingId: string) => Promise<void>;
+	runAll: () => Promise<void>;
+	uploadTest: (file: File) => Promise<void>;
 	refreshRun: () => Promise<void>;
 	discard: () => void;
 }
@@ -66,7 +70,7 @@ export const useAppTesting = (
 		} catch {
 			return {
 				recordings: [],
-				error: "The saved recordings could not be read.",
+				error: "The saved tests could not be read.",
 			};
 		}
 	}, [appId, query.data, query.status]);
@@ -280,15 +284,19 @@ export const useAppTesting = (
 		}
 	};
 
-	const startRun = async (repeat = 1): Promise<void> => {
-		if (!selectedId || isRunning) return;
+	const startRun = async (recordingId: string | null): Promise<void> => {
+		if (isRunning || isSaving || isRecording) return;
 		const signal = lifetime.current?.signal;
 		setIsStartingRun(true);
 		setError("");
 		setRun(null);
+		setSelectedId(recordingId ?? "");
 		runStartedAt.current = Date.now();
 		try {
-			const result = await runAppTests(appId, selectedId, repeat);
+			const result =
+				recordingId === null
+					? await runAllAppTests(appId)
+					: await runAppTests(appId, recordingId);
 			if (!signal?.aborted) setRun(result);
 		} catch (failure: unknown) {
 			if (!signal?.aborted)
@@ -299,6 +307,38 @@ export const useAppTesting = (
 				);
 		} finally {
 			if (!signal?.aborted) setIsStartingRun(false);
+		}
+	};
+
+	const uploadTest = async (file: File): Promise<void> => {
+		if (isSaving || isRunning || isRecording || steps.length > 0) return;
+		const signal = lifetime.current?.signal;
+		setIsSaving(true);
+		setError("");
+		setNotice("");
+		setRun(null);
+		try {
+			if (file.size === 0 || file.size > 256000)
+				throw new Error(
+					"Choose a non-empty test JSON file up to 256 KB.",
+				);
+			const draft = parseAppTestUpload(await file.text());
+			if (signal?.aborted) return;
+			const saved = await saveAppTestRecording(appId, draft);
+			if (!signal?.aborted) {
+				setSelectedId(saved.id);
+				setNotice(`Imported ${saved.name}.`);
+				query.refresh();
+			}
+		} catch (failure: unknown) {
+			if (!signal?.aborted)
+				setError(
+					failure instanceof Error
+						? failure.message
+						: "Could not import this test",
+				);
+		} finally {
+			if (!signal?.aborted) setIsSaving(false);
 		}
 	};
 
@@ -344,6 +384,8 @@ export const useAppTesting = (
 		updateRecording,
 		deleteRecording,
 		startRun,
+		runAll: () => startRun(null),
+		uploadTest,
 		refreshRun,
 		discard: () => {
 			setSteps([]);

@@ -140,7 +140,7 @@ export const AppTestFileDialog = ({
 					</DialogDescription>
 				</DialogHeader>
 				<p className="break-all font-mono text-muted-foreground text-xs">
-					assets/app-tests/recordings/{recording.id}.json
+					assets/app-tests/tests/{recording.id}.json
 				</p>
 				<Form
 					form={form}

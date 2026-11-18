@@ -196,6 +196,58 @@ export const saveAppTestRecording = async (
 		),
 	);
 
+/** Import a saved definition or draft as a new test, never overwriting an uploaded id. */
+export const parseAppTestUpload = (content: string): AppTestDraft => {
+	let value: unknown;
+	try {
+		value = JSON.parse(content);
+	} catch {
+		throw new Error("Choose a valid test JSON file.");
+	}
+	const parsed = recordingFieldsSchema
+		.extend({
+			id: z.string().optional(),
+			version: z.literal(1).optional(),
+			updatedAt: z.string().optional(),
+			name: z.string().trim().min(1).max(120),
+			description: z
+				.string()
+				.trim()
+				.min(1, "A test description is required")
+				.max(2000),
+			startPath: z.string().default(""),
+			steps: z.array(stepSchema.strict()).min(1).max(300),
+		})
+		.strict()
+		.safeParse(value);
+	if (!parsed.success)
+		throw new Error(
+			parsed.error.issues
+				.map(
+					(issue) =>
+						`${issue.path.join(".") || "File"}: ${issue.message}`,
+				)
+				.join("\n"),
+		);
+	return {
+		name: parsed.data.name,
+		description: parsed.data.description,
+		startPath: parsed.data.startPath,
+		steps: parsed.data.steps,
+	};
+};
+
+/** An intentional whole-app run; never used as the default for an omitted UUID. */
+export const runAllAppTests = async (appId: string): Promise<AppTestRun> => {
+	const result = runSchema.parse(
+		await callAppTestPixel(
+			`RunAppTests(project=${JSON.stringify([appId])}, all=[true]);`,
+		),
+	);
+	if (result.target !== appId) throw new Error("The app test target changed");
+	return result;
+};
+
 /** Start actual replay of a selected recording for the edited app. */
 export const runAppTests = async (
 	appId: string,

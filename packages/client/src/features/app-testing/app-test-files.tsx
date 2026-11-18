@@ -1,4 +1,9 @@
-import { FileJsonIcon, FolderIcon, RefreshCwIcon } from "lucide-react";
+import {
+	FileJsonIcon,
+	FolderIcon,
+	PlayIcon,
+	RefreshCwIcon,
+} from "lucide-react";
 import { useRef, useState } from "react";
 import {
 	Button,
@@ -27,6 +32,8 @@ interface AppTestFilesProps {
 	selectedId: string;
 	onSelect: (id: string) => void;
 	onRefresh: () => void;
+	onRun: (id: string) => void;
+	onRunAll: () => void;
 	onSave: (recording: AppTestRecording) => Promise<void>;
 	onDelete: (id: string) => Promise<void>;
 }
@@ -40,6 +47,8 @@ export const AppTestFiles = ({
 	selectedId,
 	onSelect,
 	onRefresh,
+	onRun,
+	onRunAll,
 	onSave,
 	onDelete,
 }: AppTestFilesProps) => {
@@ -62,21 +71,34 @@ export const AppTestFiles = ({
 		>
 			<div className="flex flex-wrap items-center justify-between gap-2 py-2">
 				<H4>Test files</H4>
-				<Button
-					ref={refreshButton}
-					type="button"
-					variant="ghost"
-					size="sm"
-					onClick={onRefresh}
-					disabled={isLoading || isBusy}
-				>
-					<RefreshCwIcon aria-hidden="true" className="size-4" />
-					Refresh recordings
-				</Button>
+				<div className="flex flex-wrap items-center gap-2">
+					<Button
+						ref={refreshButton}
+						type="button"
+						variant="ghost"
+						size="sm"
+						onClick={onRefresh}
+						disabled={isLoading || isBusy}
+					>
+						<RefreshCwIcon aria-hidden="true" className="size-4" />
+						Refresh tests
+					</Button>
+					<Button
+						type="button"
+						size="sm"
+						disabled={
+							isLoading || isBusy || recordings.length === 0
+						}
+						onClick={onRunAll}
+					>
+						<PlayIcon aria-hidden="true" className="size-4" />
+						Run all
+					</Button>
+				</div>
 			</div>
 			<p className="mb-2 flex min-w-0 items-center gap-2 break-all font-mono text-muted-foreground text-xs">
 				<FolderIcon aria-hidden="true" className="size-4 shrink-0" />
-				assets / app-tests / recordings
+				assets / app-tests / tests
 			</p>
 			{isLoading ? (
 				<output className="flex items-center gap-2 py-4 text-muted-foreground text-sm">
@@ -86,7 +108,7 @@ export const AppTestFiles = ({
 			) : recordings.length === 0 ? (
 				<p className="py-4 text-muted-foreground text-sm">
 					No saved test files. Record a workflow and add a check to
-					create one.
+					create one, or upload a test JSON file.
 				</p>
 			) : (
 				<section
@@ -147,6 +169,22 @@ export const AppTestFiles = ({
 									</TableCell>
 									<TableCell>
 										<div className="flex gap-1">
+											<Button
+												type="button"
+												size="sm"
+												variant="outline"
+												disabled={isBusy || isLoading}
+												aria-label={`Run test ${recording.name}`}
+												onClick={() =>
+													onRun(recording.id)
+												}
+											>
+												<PlayIcon
+													aria-hidden="true"
+													className="size-4"
+												/>
+												Run test
+											</Button>
 											{(["edit", "delete"] as const).map(
 												(mode) => (
 													<Button

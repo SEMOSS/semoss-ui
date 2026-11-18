@@ -6,6 +6,7 @@ import {
 	waitFor,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { AppTestRecordingSummary } from "./app-test.types";
 import { AppTestingPanel } from "./app-testing-panel";
 
 const state = vi.hoisted(() => ({
@@ -23,7 +24,7 @@ const state = vi.hoisted(() => ({
 	run: null,
 	notice: "",
 	error: "",
-	recordings: [],
+	recordings: [] as AppTestRecordingSummary[],
 	updateRecording: vi.fn(),
 	deleteRecording: vi.fn(),
 	isLoading: false,
@@ -33,6 +34,8 @@ const state = vi.hoisted(() => ({
 	addCheck: vi.fn(),
 	save: vi.fn(),
 	startRun: vi.fn(),
+	runAll: vi.fn(),
+	uploadTest: vi.fn(),
 	refreshRun: vi.fn(),
 	discard: vi.fn(),
 }));
@@ -102,14 +105,42 @@ describe("recording descriptions", () => {
 	});
 });
 
-it("groups recording and replay controls and starts only one replay", () => {
+it("runs from file rows without a saved-test dropdown", () => {
+	const previous = state.steps;
+	state.steps = [];
+	state.recordings = [
+		{
+			id: "test-id",
+			name: "Save entry",
+			description: "Verify the saved entry.",
+		},
+	];
+	render(<AppTestingPanel appId="app" />);
+	expect(screen.queryByRole("combobox")).toBeNull();
+	fireEvent.click(
+		screen.getByRole("button", { name: "Run test Save entry" }),
+	);
+	expect(state.startRun).toHaveBeenLastCalledWith("test-id");
+	fireEvent.click(screen.getByRole("button", { name: "Run all" }));
+	expect(state.runAll).toHaveBeenCalledTimes(1);
+	state.steps = previous;
+	state.recordings = [];
+});
+
+it("offers recording and upload from the plus menu and forwards the chosen JSON file", async () => {
 	const previous = state.steps;
 	state.steps = [];
 	render(<AppTestingPanel appId="app" />);
-	expect(screen.getByRole("group", { name: "Record workflow" })).toBeTruthy();
-	expect(screen.getByRole("group", { name: "Run saved test" })).toBeTruthy();
-	expect(screen.queryByRole("button", { name: /3 replays/ })).toBeNull();
-	fireEvent.click(screen.getByRole("button", { name: "Run test" }));
-	expect(state.startRun).toHaveBeenLastCalledWith();
+	const add = screen.getByRole("button", { name: "Add test" });
+	fireEvent.keyDown(add, { key: "ArrowDown" });
+	await screen.findByRole("menuitem", { name: "Record workflow" });
+	fireEvent.click(screen.getByRole("menuitem", { name: "Upload test" }));
+	const file = new File(['{"name":"Test"}'], "test.json", {
+		type: "application/json",
+	});
+	fireEvent.change(screen.getByLabelText("Upload test JSON"), {
+		target: { files: [file] },
+	});
+	expect(state.uploadTest).toHaveBeenLastCalledWith(file);
 	state.steps = previous;
 });

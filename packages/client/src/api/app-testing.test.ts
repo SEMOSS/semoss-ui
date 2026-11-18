@@ -4,6 +4,8 @@ import {
 	getAppTestRecording,
 	getAppTestRun,
 	parseAppTestRecordings,
+	parseAppTestUpload,
+	runAllAppTests,
 	runAppTests,
 	saveAppTestRecording,
 } from "./app-testing";
@@ -204,4 +206,42 @@ it("keeps smoke checks explicit and rejects an empty UI selection", async () => 
 	transport.mockClear();
 	await expect(runAppTests("app", "")).rejects.toThrow("Choose a test");
 	expect(transport).not.toHaveBeenCalled();
+});
+
+it("imports a described JSON definition as a new draft without its source identity", () => {
+	const input = {
+		id: "source-id",
+		version: 1,
+		updatedAt: "2026-11-18",
+		name: "Imported",
+		description: "Verify imported behavior.",
+		steps: [{ type: "ASSERT_VISIBLE", selector: "#result" }],
+	};
+	const draft = parseAppTestUpload(JSON.stringify(input));
+	expect(draft).toEqual({
+		name: input.name,
+		description: input.description,
+		startPath: "",
+		steps: input.steps,
+	});
+	for (const value of [
+		"not JSON",
+		JSON.stringify({ ...input, description: "" }),
+		JSON.stringify({ ...input, engineTestConfigurationId: "experimental" }),
+		JSON.stringify({ ...input, version: 2 }),
+	])
+		expect(() => parseAppTestUpload(value)).toThrow();
+});
+
+it("runs all tests only by sending explicit all=true for the current app", async () => {
+	transport.mockResolvedValueOnce({
+		errors: [],
+		pixelReturn: [
+			{ output: { runId: "run", target: "app", status: "RUNNING" } },
+		],
+	});
+	await runAllAppTests("app");
+	expect(transport.mock.calls[0][0]).toBe(
+		'META | RunAppTests(project=["app"], all=[true]);',
+	);
 });

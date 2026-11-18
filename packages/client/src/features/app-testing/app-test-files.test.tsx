@@ -30,6 +30,8 @@ const fileActions = {
 	isBusy: false,
 	selectedId: "example-test",
 	onRefresh: vi.fn(),
+	onRun: vi.fn(),
+	onRunAll: vi.fn(),
 	onSave: vi.fn().mockResolvedValue(undefined),
 	onDelete: vi.fn().mockResolvedValue(undefined),
 };
@@ -229,7 +231,7 @@ it("confirms deletion, retains a failure, and resets focus after the file is rem
 	await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 	await waitFor(() =>
 		expect(document.activeElement).toBe(
-			screen.getByRole("button", { name: "Refresh recordings" }),
+			screen.getByRole("button", { name: "Refresh tests" }),
 		),
 	);
 	expect(remove).toHaveBeenLastCalledWith(recording.id);
@@ -461,4 +463,30 @@ it("keeps nested iframe targets and route waits with their step when reordering"
 		pagePath: "",
 		framePath: ["#outer-frame"],
 	});
+});
+
+it("runs one file without reading its definition and offers explicit Run all beside refresh", () => {
+	const one = vi.fn(),
+		all = vi.fn();
+	render(
+		<AppTestFiles
+			{...fileActions}
+			recordings={[recording]}
+			isLoading={false}
+			onSelect={vi.fn()}
+			onRun={one}
+			onRunAll={all}
+		/>,
+	);
+	fireEvent.click(
+		screen.getByRole("button", { name: "Run test Checkout to orders" }),
+	);
+	expect(one).toHaveBeenCalledWith(recording.id);
+	expect(readPixel).not.toHaveBeenCalled();
+	fireEvent.click(screen.getByRole("button", { name: "Run all" }));
+	expect(all).toHaveBeenCalledTimes(1);
+	expect(
+		screen.getByRole("button", { name: "Refresh tests" }).parentElement,
+	).toBe(screen.getByRole("button", { name: "Run all" }).parentElement);
+	expect(screen.getByText("assets / app-tests / tests")).toBeTruthy();
 });

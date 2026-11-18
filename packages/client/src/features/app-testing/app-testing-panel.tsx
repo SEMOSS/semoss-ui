@@ -1,17 +1,16 @@
-import { CircleIcon, PlayIcon, SquareIcon } from "lucide-react";
-import { useId } from "react";
+import { CircleIcon, PlusIcon, SquareIcon, UploadIcon } from "lucide-react";
+import { useRef } from "react";
 import {
 	Alert,
 	AlertDescription,
 	Button,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
 	Form,
 	FormInput,
 	FormTextarea,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
 	Spinner,
 	useForm,
 	z,
@@ -41,7 +40,7 @@ interface AppTestingPanelProps {
 
 /** Record workflows and manage saved test definitions without changing application code. */
 export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
-	const replaySelectId = useId();
+	const uploadInput = useRef<HTMLInputElement | null>(null);
 	const frame = useAppFrame(appId);
 	const state = useAppTesting(appId, frame);
 	const form = useForm<z.infer<typeof schema>>({
@@ -77,9 +76,6 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 	};
 	const error = state.error || form.formState.errors.root?.server?.message;
 	const summary = state.run?.summary;
-	const selectedDescription = state.recordings.find(
-		(recording) => recording.id === state.selectedId,
-	)?.description;
 	const runLabels: Record<string, string> = {
 		RUNNING: "Running",
 		QUEUED: "Queued",
@@ -96,6 +92,18 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 			aria-label="App recording and tests"
 			className="h-full min-w-0 overflow-y-auto bg-background p-3"
 		>
+			<input
+				ref={uploadInput}
+				type="file"
+				accept=".json,application/json"
+				aria-label="Upload test JSON"
+				hidden
+				onChange={(event) => {
+					const file = event.currentTarget.files?.[0];
+					event.currentTarget.value = "";
+					if (file) void state.uploadTest(file);
+				}}
+			/>
 			<Form
 				form={form}
 				onSubmit={handleSave}
@@ -104,7 +112,7 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 			>
 				<fieldset className="flex min-w-0 flex-col gap-2 border-b pb-4">
 					<legend className="mb-2 font-medium text-sm">
-						Record workflow
+						Add test
 					</legend>
 					<div className="flex flex-wrap items-center gap-2">
 						{state.isRecording ? (
@@ -133,24 +141,50 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 								</Button>
 							</>
 						) : (
-							<Button
-								type="button"
-								size="sm"
-								variant="outline"
-								onClick={handleRecord}
-								disabled={
-									!state.isAccessible ||
-									hasDraft ||
-									state.isRunning ||
-									state.isSaving
-								}
-							>
-								<CircleIcon
-									aria-hidden="true"
-									className="size-4"
-								/>
-								Record
-							</Button>
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button
+										type="button"
+										size="sm"
+										variant="outline"
+										aria-label="Add test"
+										title="Add test"
+										disabled={
+											hasDraft ||
+											state.isRunning ||
+											state.isSaving
+										}
+									>
+										<PlusIcon
+											aria-hidden="true"
+											className="size-4"
+										/>
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="start">
+									<DropdownMenuItem
+										disabled={!state.isAccessible}
+										onSelect={handleRecord}
+									>
+										<CircleIcon
+											aria-hidden="true"
+											className="size-4"
+										/>
+										Record workflow
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										onSelect={() =>
+											uploadInput.current?.click()
+										}
+									>
+										<UploadIcon
+											aria-hidden="true"
+											className="size-4"
+										/>
+										Upload test
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
 						)}
 						{(state.isRecording || hasDraft) && (
 							<output
@@ -162,81 +196,6 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 						)}
 					</div>
 				</fieldset>
-				{!state.isRecording && !hasDraft && (
-					<fieldset className="flex min-w-0 flex-col gap-2 py-2">
-						<legend className="font-medium text-sm">
-							Run saved test
-						</legend>
-						<label htmlFor={replaySelectId} className="text-sm">
-							Test file
-						</label>
-						<div className="flex min-w-0 flex-wrap items-center gap-2">
-							<Select
-								value={state.selectedId}
-								onValueChange={state.setSelectedId}
-								disabled={
-									state.isLoading ||
-									state.isRunning ||
-									state.isSaving
-								}
-							>
-								<SelectTrigger
-									id={replaySelectId}
-									className="w-full min-w-0 flex-1"
-								>
-									<SelectValue
-										placeholder={
-											state.isLoading
-												? "Loading recordings…"
-												: "Select a recording"
-										}
-									/>
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="__platform_smoke__">
-										Page visibility check
-									</SelectItem>
-									{state.recordings.map((recording) => (
-										<SelectItem
-											key={recording.id}
-											value={recording.id}
-										>
-											{recording.name}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-							<Button
-								type="button"
-								size="sm"
-								onClick={() => void state.startRun()}
-								disabled={
-									!state.selectedId ||
-									state.isRunning ||
-									state.isLoading ||
-									state.isSaving
-								}
-							>
-								{state.isRunning ? (
-									<Spinner className="size-4" />
-								) : (
-									<PlayIcon
-										aria-hidden="true"
-										className="size-4"
-									/>
-								)}
-								{state.isRunning ? "Running…" : "Run test"}
-							</Button>
-						</div>
-						<p className="whitespace-pre-wrap break-words text-muted-foreground text-sm">
-							{selectedDescription ||
-								"Checks that the app displays content without immediate JavaScript errors. No workflow is tested."}
-						</p>
-						<p className="text-muted-foreground text-xs">
-							Runs once in a background browser.
-						</p>
-					</fieldset>
-				)}
 				{!frame ? (
 					<p className="text-muted-foreground text-sm">
 						Open the App preview to record a workflow.
@@ -322,10 +281,17 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 					state.recordings.length === 0 &&
 					!error && (
 						<p className="text-muted-foreground text-sm">
-							No recordings yet. Run a page visibility check, or
-							record a workflow and add a check to test it later.
+							No tests yet. Run a page visibility check, or record
+							a workflow and add a check to test it later.
 						</p>
 					)}
+				{((state.isSaving && !hasDraft) ||
+					(state.isRunning && !state.run)) && (
+					<output className="flex items-center gap-2 text-sm">
+						<Spinner className="size-4" />
+						{state.isSaving ? "Saving test…" : "Starting test run…"}
+					</output>
+				)}
 				{error && (
 					<Alert variant="destructive">
 						<AlertDescription>{error}</AlertDescription>
@@ -383,12 +349,41 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 				recordings={state.recordings}
 				isLoading={state.isLoading}
 				onSelect={state.setSelectedId}
-				isBusy={state.isSaving || state.isRunning || state.isRecording}
+				isBusy={
+					state.isSaving ||
+					state.isRunning ||
+					state.isRecording ||
+					hasDraft
+				}
 				selectedId={state.selectedId}
 				onRefresh={state.refreshRecordings}
+				onRun={(id) => void state.startRun(id)}
+				onRunAll={() => void state.runAll()}
 				onSave={state.updateRecording}
 				onDelete={state.deleteRecording}
 			/>
+			<div className="mt-3 flex flex-col gap-1 border-t pt-3">
+				<Button
+					type="button"
+					size="sm"
+					variant="ghost"
+					className="self-start"
+					disabled={
+						state.isRunning ||
+						state.isSaving ||
+						state.isRecording ||
+						hasDraft
+					}
+					onClick={() => void state.startRun("__platform_smoke__")}
+				>
+					Page visibility check
+				</Button>
+				<p className="text-muted-foreground text-xs">
+					Checks visible content and immediate JavaScript errors only.
+					Test runs replay each selected test once in a background
+					browser.
+				</p>
+			</div>
 		</section>
 	);
 };
