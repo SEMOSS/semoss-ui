@@ -108,7 +108,9 @@ src/
   the server's session cookie belongs to it. The provider calls back to the server's registered
   address, which `routeSignInsThroughApp` (`webRequest.onBeforeRequest`) redirects to the same path
   on the local origin, so the callback carries that session. The popup is a sandboxed child
-  window (`isSignInPopup`), which the SDK watches as it does on the web.
+  window (`isSignInPopup`, or `isConnectPopup` for a connector's sign in, which the SDK opens
+  blank as `semoss-connect` before sending it to the sign in), which the SDK watches as it does
+  on the web.
 - **Checking a server** (`checkServer`) fetches its `/api/config` without cookies, without
   following redirects, and with a 10 second timeout; anything but a JSON object is refused with a
   message naming the URL.

@@ -4,7 +4,11 @@ import { describe, expect, test, vi } from "vitest";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { isExternalLink, isSignInPopup } from "./app-window/window-security";
+import {
+	isConnectPopup,
+	isExternalLink,
+	isSignInPopup,
+} from "./app-window/window-security";
 import { toLocalModuleUrl } from "./auth/sign-in-redirect";
 import { isTrustedSender } from "./ipc/handle-ipc";
 import { checkServer } from "./server-connection/check-server";
@@ -68,6 +72,16 @@ describe("window policy", () => {
 		expect(
 			isSignInPopup(`${APP}/Monolith/api/auth/login/ms`, APP, undefined),
 		).toBe(false);
+	});
+
+	test("knows the SDK's connector popup, which opens blank", () => {
+		expect(isConnectPopup("about:blank", "semoss-connect")).toBe(true);
+		expect(isConnectPopup("", "semoss-connect")).toBe(true);
+		expect(isConnectPopup("about:blank", "")).toBe(false);
+		expect(isConnectPopup("about:blank", "other")).toBe(false);
+		expect(isConnectPopup("https://evil.example/", "semoss-connect")).toBe(
+			false,
+		);
 	});
 });
 

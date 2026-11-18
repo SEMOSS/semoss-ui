@@ -43,10 +43,26 @@ export const isSignInPopup = (
 	}
 };
 
+/** The window name the SDK's `connectLogin` gives its popup. */
+const CONNECT_POPUP_NAME = "semoss-connect";
+
+/**
+ * Whether a new window is the SDK's connector sign in popup. `connectLogin`
+ * opens it blank, signs out any stale login, and only then sends it to the
+ * sign in, so it starts on `about:blank` under its own name.
+ *
+ * @param url - The window's first URL.
+ * @param frameName - The name `window.open` gave it.
+ * @returns True for a connector sign in popup.
+ */
+export const isConnectPopup = (url: string, frameName: string): boolean =>
+	frameName === CONNECT_POPUP_NAME && (url === "" || url === "about:blank");
+
 /**
  * Keep the app's window on its own origin. A link elsewhere opens in the
- * system browser; a sign in popup opens as a sandboxed child window, the
- * handle the SDK watches to know when the sign in is done.
+ * system browser; a sign in popup, whether it starts on the sign in or blank
+ * for a connector, opens as a sandboxed child window, the handle the SDK
+ * watches to know when the sign in is done.
  *
  * @param window - The app's window.
  * @param appOrigin - The app's origin.
@@ -65,8 +81,11 @@ export const secureWindow = (
 		if (isExternalLink(url)) void shell.openExternal(url);
 	});
 
-	webContents.setWindowOpenHandler(({ url }) => {
-		if (isSignInPopup(url, appOrigin, getModule())) {
+	webContents.setWindowOpenHandler(({ url, frameName }) => {
+		if (
+			isSignInPopup(url, appOrigin, getModule()) ||
+			isConnectPopup(url, frameName)
+		) {
 			return {
 				action: "allow",
 				overrideBrowserWindowOptions: {
