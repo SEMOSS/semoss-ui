@@ -16,7 +16,7 @@ import {
 	Square,
 } from "lucide-react";
 import type React from "react";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { EngineSelect } from "@semoss/shared";
 import {
@@ -36,7 +36,7 @@ import {
 import { useChatConfig } from "../../chat/config/use-chat-config";
 import { ConnectorSignInNotice } from "../../connectors/accounts/connector-sign-in-notice";
 import { useUserConnectorsSync } from "../../connectors/accounts/use-user-connectors-sync";
-import { useAttachLocalFolder } from "../../local-folders/explorer/use-attach-local-folder";
+import { RoomLayoutActionsContext } from "../../room/layout/room-layout-actions.context";
 import type { RoomStore } from "../../room/store/room.store";
 import type { CompactionStrategy } from "../../room/store/room-compaction";
 import { useRoomSelector } from "../../room/store/use-room-selector";
@@ -49,24 +49,29 @@ import { ContextItems } from "../attachments/context-items";
 import { useFileDrop } from "../attachments/file-drop.context";
 import { FilePreviewGrid } from "../attachments/file-preview-grid";
 import { useContextItems } from "../attachments/use-context-items";
+import {
+	type Composer,
+	ComposerContext,
+	ComposerWorkbenchContext,
+} from "./composer.context";
 import { AutoScrollOnPastePlugin } from "./editor/auto-scroll-on-paste-plugin";
 import { BackspacePlugin } from "./editor/backspace-plugin";
 import { EnterPlugin } from "./editor/enter-plugin";
 import { FocusPlugin } from "./editor/focus-plugin";
 import { filterPastedFiles } from "./filter-pasted-files";
 import { isIframed } from "./is-iframed";
+import { DefaultPlusMenu } from "./plus-menu/default-plus-menu";
 import { getPromptHistory } from "./prompt-history";
 import { PromptHistoryPlugin } from "./prompt-history-plugin";
 import { PromptLibraryDialog } from "./prompt-library-dialog";
 import { PromptOptimizer } from "./prompt-optimizer";
 import { $setRootText, replaceEditorText } from "./replace-editor-text";
-import { RoomComposerMenu } from "./room-composer-menu";
 import { RoomContextUsageIndicator } from "./room-context-usage-indicator";
-import { SlashCommandProvider } from "./slash-command/slash-command.context";
+import { DefaultSlashCommands } from "./slash-command/default-slash-commands";
 import { SlashCommandPlugin } from "./slash-command/slash-command-plugin";
+import { SlashCommandRegistryProvider } from "./slash-command/slash-command-registry";
 import { type ComposerSession, saveAgentOverlay } from "./use-composer-session";
 import { useComposerSubmit } from "./use-composer-submit";
-import { useRoomSlashCommands } from "./use-room-slash-commands";
 import { useSpeechToText } from "./use-speech-to-text";
 
 /**
@@ -126,8 +131,6 @@ interface RoomInputProps {
 	onPrompt: (prompt: string, files: File[]) => Promise<boolean>;
 	/** Appearance of the send/stop button. Defaults to "send". */
 	sendState?: SendButtonState;
-	/** Command IDs to suppress from the slash menu */
-	excludeCommandIds?: string[];
 	/** An open room's composer, or a new chat's. */
 	variant: RoomInputVariant;
 }
@@ -152,18 +155,12 @@ export const RoomInput = ({
 	room,
 	onPrompt,
 	sendState = "send",
-	excludeCommandIds,
 	variant,
 }: RoomInputProps) => {
 	const { t } = useTranslation("room");
 	const modelSelectId = useId();
 	const { model, options, agentTools, isAgentMode, agent } = session;
 	const draft = variant.kind === "draft" ? variant : null;
-	// an open room attaches folders to itself; a new chat to the room it prepares
-	const roomFolders = useAttachLocalFolder(draft ? null : room.localFolders);
-	const onAttachFolder =
-		draft?.workbenchPanels.newRoomPanels.onAttachFolder ??
-		roomFolders.attach;
 	const hasOutstandingTools =
 		variant.kind === "room" && variant.hasOutstandingTools;
 	const onCompact = variant.kind === "room" ? variant.onCompact : undefined;
@@ -175,7 +172,10 @@ export const RoomInput = ({
 	const [isScrollable, setIsScrollable] = useState(false);
 	const [inputText, setInputText] = useState(draft?.initialValue ?? "");
 	const isEmpty = inputText.length === 0;
-	const { theme } = useChatConfig();
+	const { theme, components } = useChatConfig();
+	const PlusMenu = components?.PlusMenu ?? DefaultPlusMenu;
+	const SlashCommands = components?.SlashCommands ?? DefaultSlashCommands;
+	const roomLayout = useContext(RoomLayoutActionsContext);
 	// connectors switched on or off in settings reach this chat at once
 	useUserConnectorsSync(room.connectors);
 	const history = useRoomSelector(room, (current) => current.history);
@@ -268,8 +268,7 @@ export const RoomInput = ({
 	};
 
 	// File handling
-	const { files, addFiles, removeFile, clearFiles, openFilePicker } =
-		useFileDrop();
+	const { files, addFiles, removeFile, clearFiles } = useFileDrop();
 	const queuedFileCount = useContextItems(
 		room.contextItems,
 		(state) => state.items.length,
@@ -290,19 +289,33 @@ export const RoomInput = ({
 		isBusy,
 	});
 
-	const slashCommands = useRoomSlashCommands({
+	const workbenchRoom = draft?.workbenchPanels.room ?? room;
+	const newRoomPanels = draft?.workbenchPanels.newRoomPanels;
+	// what the plus menu's items and the "/" menu's commands act through
+	const composer: Composer = {
 		room: room,
-		workbenchRoom: draft?.workbenchPanels.room,
-		newRoomPanels: draft?.workbenchPanels.newRoomPanels,
-		onOpenMcpOverlay: handleOpenMcpOverlay,
-		onAttachFiles: openFilePicker,
-		onCompact: onCompact,
-		onSwitchToAgent: handleSwitchToAgentHarness,
-		onSwitchToChat: draft?.onExitAgentHarness,
-		canChooseAgent: agent.kind !== "fixed",
+		isNewChat: draft !== null,
+		isBusy: isBusy,
+		options: options,
+		agentTools: agentTools,
+		isAgentMode: isAgentMode,
+		agent: agent,
+		closeMenu: () => setIsMenuOpen(false),
+		openPicker: handleOpenMcpOverlay,
+		switchToAgent: handleSwitchToAgentHarness,
+		switchToChat: draft?.onExitAgentHarness ?? null,
+		compact: onCompact ? () => onCompact() : null,
 		prompts: predefinedPrompts,
-		onRunPrompt: (prompt) => void runPrompt(prompt.context),
-	});
+		runPrompt: (prompt) => void runPrompt(prompt.context),
+		prepareRoom: newRoomPanels
+			? newRoomPanels.prepareRoom
+			: () => Promise.resolve(room),
+		openFiles: () => {
+			if (newRoomPanels) newRoomPanels.onOpenPanel({ kind: "files" });
+			else room.openWorkbenchFileExplorer();
+			roomLayout?.revealWorkbench();
+		},
+	};
 
 	// Find and cache the ScrollArea viewport element
 	useEffect(() => {
@@ -340,485 +353,529 @@ export const RoomInput = ({
 
 	return (
 		<div className="relative w-full" data-tour="tour-input">
-			<SlashCommandProvider
-				commands={slashCommands}
-				excludeCommandIds={excludeCommandIds}
-			>
-				<LexicalComposer
-					initialConfig={{
-						namespace: "RoomInput",
-						theme: {},
-						// a prompt handed in, such as from a route
-						editorState: initialValue
-							? () => $setRootText(initialValue)
-							: undefined,
-						onError: (error) => {
-							console.error(error);
-						},
+			<ComposerContext.Provider value={composer}>
+				<ComposerWorkbenchContext.Provider
+					value={{
+						room: workbenchRoom,
+						newRoomPanels: newRoomPanels,
 					}}
 				>
-					<div
-						className={cn(
-							"flex w-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20",
-							className,
-						)}
-					>
-						<div className="max-h-24 shrink-0 overflow-y-auto">
-							<ConnectorSignInNotice
-								connectors={room.connectors}
-							/>
-						</div>
-						{hasAttachments && (
-							// Need pb-1 for scroll bar
-							<div className="max-h-24 shrink-0 overflow-y-auto bg-card p-3 pb-1">
-								{files.length > 0 &&
-									theme.fileDragDisclaimer && (
-										<P className="-mt-1 pb-2 text-muted-foreground text-xs">
-											{theme.fileDragDisclaimer}
-										</P>
-									)}
-								<FilePreviewGrid
-									files={files}
-									onRemoveFile={removeFile}
-									leading={
-										<ContextItems
-											contextItems={room.contextItems}
-										/>
-									}
-								/>
-							</div>
-						)}
-						<div className="flex min-h-0 min-w-0 flex-1 items-stretch overflow-hidden">
-							{theme.featureFlags?.enablePromptOptimizer && (
-								<div
-									className={cn(
-										"shrink-0 ps-2",
-										hasAttachments ? "pt-0" : "pt-3",
-									)}
-								>
-									<PromptOptimizer
-										input={inputText}
-										onInputChange={setInputFromOptimizer}
-										disabled={isBusy}
-										modelId={
-											model?.engine_id ||
-											model?.app_id ||
-											undefined
-										}
-										room={room}
+					<SlashCommandRegistryProvider commands={<SlashCommands />}>
+						<LexicalComposer
+							initialConfig={{
+								namespace: "RoomInput",
+								theme: {},
+								// a prompt handed in, such as from a route
+								editorState: initialValue
+									? () => $setRootText(initialValue)
+									: undefined,
+								onError: (error) => {
+									console.error(error);
+								},
+							}}
+						>
+							<div
+								className={cn(
+									"flex w-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20",
+									className,
+								)}
+							>
+								<div className="max-h-24 shrink-0 overflow-y-auto">
+									<ConnectorSignInNotice
+										connectors={room.connectors}
 									/>
 								</div>
-							)}
-							<PlainTextPlugin
-								contentEditable={
-									<ScrollArea
-										type="always"
-										className={cn(
-											"flex min-h-0 min-w-0 flex-1 flex-col bg-card *:data-[slot=scroll-area-viewport]:min-h-0 *:data-[slot=scroll-area-viewport]:flex-1",
-											isScrollable && "me-1",
-										)}
-										onClick={() =>
-											editorRef.current?.focus()
-										}
-									>
-										{/* Grid overlap: editor + our own placeholder
+								{hasAttachments && (
+									// Need pb-1 for scroll bar
+									<div className="max-h-24 shrink-0 overflow-y-auto bg-card p-3 pb-1">
+										{files.length > 0 &&
+											theme.fileDragDisclaimer && (
+												<P className="-mt-1 pb-2 text-muted-foreground text-xs">
+													{theme.fileDragDisclaimer}
+												</P>
+											)}
+										<FilePreviewGrid
+											files={files}
+											onRemoveFile={removeFile}
+											leading={
+												<ContextItems
+													contextItems={
+														room.contextItems
+													}
+												/>
+											}
+										/>
+									</div>
+								)}
+								<div className="flex min-h-0 min-w-0 flex-1 items-stretch overflow-hidden">
+									{theme.featureFlags
+										?.enablePromptOptimizer && (
+										<div
+											className={cn(
+												"shrink-0 ps-2",
+												hasAttachments
+													? "pt-0"
+													: "pt-3",
+											)}
+										>
+											<PromptOptimizer
+												input={inputText}
+												onInputChange={
+													setInputFromOptimizer
+												}
+												disabled={isBusy}
+												modelId={
+													model?.engine_id ||
+													model?.app_id ||
+													undefined
+												}
+												room={room}
+											/>
+										</div>
+									)}
+									<PlainTextPlugin
+										contentEditable={
+											<ScrollArea
+												type="always"
+												className={cn(
+													"flex min-h-0 min-w-0 flex-1 flex-col bg-card *:data-[slot=scroll-area-viewport]:min-h-0 *:data-[slot=scroll-area-viewport]:flex-1",
+													isScrollable && "me-1",
+												)}
+												onClick={() =>
+													editorRef.current?.focus()
+												}
+											>
+												{/* Grid overlap: editor + our own placeholder
 									    share one grid cell so the cell sizes to
 									    the larger of the two. Lexical's built-in
 									    placeholder is absolute and can't push
 									    editor height, which causes the
 									    placeholder to overflow into the buttons
 									    row when the input is narrow. */}
-										<div className="grid">
-											<ContentEditable
-												ref={contentEditableRef}
-												className={cn(
-													"col-start-1 row-start-1 min-h-16 px-4 pb-3 text-base leading-relaxed outline-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
-													theme.featureFlags
-														?.enablePromptOptimizer &&
-														"ps-2",
-													hasAttachments
-														? "pt-0"
-														: "pt-4",
-												)}
-												aria-label={t(
-													"input.ariaPlaceholder",
-												)}
-												aria-placeholder={t(
-													"input.ariaPlaceholder",
-												)}
-												placeholder={<div />}
-												onPaste={(e) => {
-													const pasted =
-														filterPastedFiles(
-															e.clipboardData,
-														);
-													if (pasted.length > 0) {
-														e.preventDefault();
-														addFiles(pasted);
-													}
-												}}
-											/>
-											{isEmpty && (
-												<div
-													className={cn(
-														"pointer-events-none col-start-1 row-start-1 select-none px-4 pb-3 text-base text-muted-foreground",
-														theme.featureFlags
-															?.enablePromptOptimizer &&
-															"ps-2",
-														hasAttachments
-															? "pt-0"
-															: "pt-4",
-													)}
-												>
-													{isLoading
-														? t("input.thinking")
-														: t("input.menuPrompt")}
-												</div>
-											)}
-										</div>
-									</ScrollArea>
-								}
-								ErrorBoundary={LexicalErrorBoundary}
-							/>
-						</div>
-						<PromptHistoryPlugin
-							key={historyKey}
-							entries={historyEntries}
-						/>
-						<div className="flex shrink-0 flex-wrap items-center gap-1 p-2">
-							<div className="flex min-w-0 max-w-full items-center gap-1">
-								{!(
-									theme.featureFlags?.hideToolsInIframe &&
-									isIframed
-								) && (
-									<DropdownMenu
-										open={isMenuOpen}
-										onOpenChange={setIsMenuOpen}
-									>
-										<Tooltip
-											disableHoverableContent={false}
-										>
-											<TooltipTrigger asChild>
-												<DropdownMenuTrigger asChild>
-													<Button
-														type="button"
-														variant="ghost"
-														size="icon-sm"
-														className="shrink-0 rounded-full"
-														aria-label={t(
-															"input.addToChat",
-														)}
-														data-tour="tour-input-menu"
-													>
-														<PlusIcon aria-hidden="true" />
-													</Button>
-												</DropdownMenuTrigger>
-											</TooltipTrigger>
-											<TooltipContent>
-												{t("input.addToChat")}
-											</TooltipContent>
-										</Tooltip>
-										<DropdownMenuContent
-											align="start"
-											className="w-72"
-											onCloseAutoFocus={(event) => {
-												const action =
-													afterMenuCloseRef.current;
-												if (!action) return;
-												event.preventDefault();
-												afterMenuCloseRef.current =
-													null;
-												action();
-											}}
-										>
-											<RoomComposerMenu
-												options={options}
-												agentTools={agentTools}
-												disabled={isBusy}
-												isAgentMode={isAgentMode}
-												onSelectChat={
-													draft?.onExitAgentHarness
-												}
-												onSelectAgent={
-													handleSwitchToAgentHarness
-												}
-												agent={agent}
-												onAttachFolder={onAttachFolder}
-												isAttachingFolder={
-													roomFolders.isPicking ||
-													Boolean(
-														draft?.workbenchPanels
-															.newRoomPanels
-															.isBusy,
-													)
-												}
-												onOpenChange={setIsMenuOpen}
-												onOpenMcpOverlay={
-													handleOpenMcpOverlay
-												}
-											/>
-										</DropdownMenuContent>
-									</DropdownMenu>
-								)}
-								{(agentChipWorkspace || isDefaultAgent) && (
-									<Tooltip disableHoverableContent={false}>
-										<TooltipTrigger asChild>
-											{agent.kind !== "fixed" ? (
-												<Button
-													type="button"
-													variant="outline"
-													size="sm"
-													className="min-w-0 max-w-48 gap-2 rounded-full"
-													disabled={isBusy}
-													onClick={() =>
-														handleOpenMcpOverlay(
-															"AGENT",
-														)
-													}
-												>
-													<Bot
-														aria-hidden="true"
-														className="size-4 shrink-0"
-													/>
-													<span className="truncate">
-														{agentName}
-													</span>
-												</Button>
-											) : (
-												<Button
-													type="button"
-													variant="outline"
-													size="sm"
-													aria-disabled="true"
-													className="inline-flex h-8 min-w-0 max-w-48 items-center gap-2 rounded-full px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-												>
-													<Bot
-														aria-hidden="true"
-														className="size-4 shrink-0"
-													/>
-													<span className="truncate">
-														{agentName}
-													</span>
-												</Button>
-											)}
-										</TooltipTrigger>
-										<TooltipContent>
-											{agentName}
-										</TooltipContent>
-									</Tooltip>
-								)}
-							</div>
-							<div className="ms-auto flex min-w-0 max-w-full flex-wrap items-center justify-end gap-1">
-								<div
-									className="flex items-center gap-1"
-									data-tour="tour-input-more"
-								>
-									<RoomContextUsageIndicator
-										room={room}
-										onCompact={onCompact}
-										isLoading={isLoading}
-									/>
-									{predefinedPrompts.length > 0 && (
-										<Tooltip
-											disableHoverableContent={false}
-										>
-											<TooltipTrigger asChild>
-												<Button
-													type="button"
-													variant="ghost"
-													size="icon-sm"
-													className="rounded-full"
-													aria-label={t(
-														"studio.prompts",
-													)}
-													onClick={() =>
-														setIsPromptLibraryOpen(
-															true,
-														)
-													}
-												>
-													<BookOpenIcon aria-hidden="true" />
-												</Button>
-											</TooltipTrigger>
-											<TooltipContent>
-												{t("studio.prompts")}
-											</TooltipContent>
-										</Tooltip>
-									)}
-									<Tooltip disableHoverableContent={false}>
-										<TooltipTrigger asChild>
-											<span
-												className="inline-flex"
-												data-tour="tour-record"
-											>
-												<Button
-													type="button"
-													variant="ghost"
-													size="icon-sm"
-													className="rounded-full"
-													disabled={!speech.canListen}
-													aria-pressed={
-														speech.isListening
-													}
-													aria-label={t(
-														speech.isListening
-															? "input.stopRecording"
-															: "input.record",
-													)}
-													onClick={speech.toggle}
-												>
-													<MicIcon
-														aria-hidden="true"
+												<div className="grid">
+													<ContentEditable
+														ref={contentEditableRef}
 														className={cn(
-															speech.isListening &&
-																"text-destructive",
+															"col-start-1 row-start-1 min-h-16 px-4 pb-3 text-base leading-relaxed outline-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
+															theme.featureFlags
+																?.enablePromptOptimizer &&
+																"ps-2",
+															hasAttachments
+																? "pt-0"
+																: "pt-4",
 														)}
+														aria-label={t(
+															"input.ariaPlaceholder",
+														)}
+														aria-placeholder={t(
+															"input.ariaPlaceholder",
+														)}
+														placeholder={<div />}
+														onPaste={(e) => {
+															const pasted =
+																filterPastedFiles(
+																	e.clipboardData,
+																);
+															if (
+																pasted.length >
+																0
+															) {
+																e.preventDefault();
+																addFiles(
+																	pasted,
+																);
+															}
+														}}
 													/>
-												</Button>
-											</span>
-										</TooltipTrigger>
-										<TooltipContent>
-											{t(
-												!speech.canListen
-													? "input.recordUnavailable"
-													: speech.isListening
-														? "input.stopRecording"
-														: "input.record",
-											)}
-										</TooltipContent>
-									</Tooltip>
+													{isEmpty && (
+														<div
+															className={cn(
+																"pointer-events-none col-start-1 row-start-1 select-none px-4 pb-3 text-base text-muted-foreground",
+																theme
+																	.featureFlags
+																	?.enablePromptOptimizer &&
+																	"ps-2",
+																hasAttachments
+																	? "pt-0"
+																	: "pt-4",
+															)}
+														>
+															{isLoading
+																? t(
+																		"input.thinking",
+																	)
+																: t(
+																		"input.menuPrompt",
+																	)}
+														</div>
+													)}
+												</div>
+											</ScrollArea>
+										}
+										ErrorBoundary={LexicalErrorBoundary}
+									/>
 								</div>
-								{theme.featureFlags?.enableModelSelect && (
-									<Tooltip disableHoverableContent={false}>
-										<TooltipTrigger asChild>
-											<span
-												className="inline-flex min-w-0"
-												data-tour="tour-model"
+								<PromptHistoryPlugin
+									key={historyKey}
+									entries={historyEntries}
+								/>
+								<div className="flex shrink-0 flex-wrap items-center gap-1 p-2">
+									<div className="flex min-w-0 max-w-full items-center gap-1">
+										{!(
+											theme.featureFlags
+												?.hideToolsInIframe && isIframed
+										) && (
+											<DropdownMenu
+												open={isMenuOpen}
+												onOpenChange={setIsMenuOpen}
 											>
-												<Label
-													htmlFor={modelSelectId}
-													className="sr-only"
-												>
-													{t("form.modelLabel")}{" "}
-													{modelName}
-												</Label>
-												<EngineSelect
-													id={modelSelectId}
-													className="h-8 w-auto max-w-44 gap-1 rounded-full border-none bg-transparent px-2 text-xs shadow-none hover:bg-accent"
-													name={modelName}
-													value={model?.app_id || ""}
-													engineTypes={["MODEL"]}
-													metaFilters={[
-														{
-															tag: "text-generation",
-														},
-													]}
-													onChange={
-														session.onModelChange
+												<Tooltip
+													disableHoverableContent={
+														false
 													}
-													popoverContentProps={{
-														align: "end",
+												>
+													<TooltipTrigger asChild>
+														<DropdownMenuTrigger
+															asChild
+														>
+															<Button
+																type="button"
+																variant="ghost"
+																size="icon-sm"
+																className="shrink-0 rounded-full"
+																aria-label={t(
+																	"input.addToChat",
+																)}
+																data-tour="tour-input-menu"
+															>
+																<PlusIcon aria-hidden="true" />
+															</Button>
+														</DropdownMenuTrigger>
+													</TooltipTrigger>
+													<TooltipContent>
+														{t("input.addToChat")}
+													</TooltipContent>
+												</Tooltip>
+												<DropdownMenuContent
+													align="start"
+													className="w-72"
+													onCloseAutoFocus={(
+														event,
+													) => {
+														const action =
+															afterMenuCloseRef.current;
+														if (!action) return;
+														event.preventDefault();
+														afterMenuCloseRef.current =
+															null;
+														action();
 													}}
-												/>
-											</span>
-										</TooltipTrigger>
-										<TooltipContent>
-											{modelName || t("form.modelLabel")}
-										</TooltipContent>
-									</Tooltip>
-								)}
-								<Tooltip disableHoverableContent={false}>
-									<TooltipTrigger asChild>
-										<span data-tour="tour-send">
-											<Button
-												variant="default"
-												size="icon"
-												className="rounded-full"
-												aria-label={t(
-													sendState === "stop"
-														? "input.stopLabel"
-														: "input.askLabel",
-												)}
-												disabled={isSendDisabled}
-												onClick={handleSendClick}
+												>
+													<PlusMenu />
+												</DropdownMenuContent>
+											</DropdownMenu>
+										)}
+										{(agentChipWorkspace ||
+											isDefaultAgent) && (
+											<Tooltip
+												disableHoverableContent={false}
 											>
-												{sendState === "stop" ? (
-													<Square
-														aria-hidden="true"
-														className="size-3 fill-current"
-													/>
-												) : sendState === "loading" ? (
-													<Spinner />
-												) : (
-													<ArrowUpIcon aria-hidden="true" />
-												)}
-											</Button>
-										</span>
-									</TooltipTrigger>
-									<TooltipContent>
-										{sendTooltip}
-									</TooltipContent>
-								</Tooltip>
+												<TooltipTrigger asChild>
+													{agent.kind !== "fixed" ? (
+														<Button
+															type="button"
+															variant="outline"
+															size="sm"
+															className="min-w-0 max-w-48 gap-2 rounded-full"
+															disabled={isBusy}
+															onClick={() =>
+																handleOpenMcpOverlay(
+																	"AGENT",
+																)
+															}
+														>
+															<Bot
+																aria-hidden="true"
+																className="size-4 shrink-0"
+															/>
+															<span className="truncate">
+																{agentName}
+															</span>
+														</Button>
+													) : (
+														<Button
+															type="button"
+															variant="outline"
+															size="sm"
+															aria-disabled="true"
+															className="inline-flex h-8 min-w-0 max-w-48 items-center gap-2 rounded-full px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+														>
+															<Bot
+																aria-hidden="true"
+																className="size-4 shrink-0"
+															/>
+															<span className="truncate">
+																{agentName}
+															</span>
+														</Button>
+													)}
+												</TooltipTrigger>
+												<TooltipContent>
+													{agentName}
+												</TooltipContent>
+											</Tooltip>
+										)}
+									</div>
+									<div className="ms-auto flex min-w-0 max-w-full flex-wrap items-center justify-end gap-1">
+										<div
+											className="flex items-center gap-1"
+											data-tour="tour-input-more"
+										>
+											<RoomContextUsageIndicator
+												room={room}
+												onCompact={onCompact}
+												isLoading={isLoading}
+											/>
+											{predefinedPrompts.length > 0 && (
+												<Tooltip
+													disableHoverableContent={
+														false
+													}
+												>
+													<TooltipTrigger asChild>
+														<Button
+															type="button"
+															variant="ghost"
+															size="icon-sm"
+															className="rounded-full"
+															aria-label={t(
+																"studio.prompts",
+															)}
+															onClick={() =>
+																setIsPromptLibraryOpen(
+																	true,
+																)
+															}
+														>
+															<BookOpenIcon aria-hidden="true" />
+														</Button>
+													</TooltipTrigger>
+													<TooltipContent>
+														{t("studio.prompts")}
+													</TooltipContent>
+												</Tooltip>
+											)}
+											<Tooltip
+												disableHoverableContent={false}
+											>
+												<TooltipTrigger asChild>
+													<span
+														className="inline-flex"
+														data-tour="tour-record"
+													>
+														<Button
+															type="button"
+															variant="ghost"
+															size="icon-sm"
+															className="rounded-full"
+															disabled={
+																!speech.canListen
+															}
+															aria-pressed={
+																speech.isListening
+															}
+															aria-label={t(
+																speech.isListening
+																	? "input.stopRecording"
+																	: "input.record",
+															)}
+															onClick={
+																speech.toggle
+															}
+														>
+															<MicIcon
+																aria-hidden="true"
+																className={cn(
+																	speech.isListening &&
+																		"text-destructive",
+																)}
+															/>
+														</Button>
+													</span>
+												</TooltipTrigger>
+												<TooltipContent>
+													{t(
+														!speech.canListen
+															? "input.recordUnavailable"
+															: speech.isListening
+																? "input.stopRecording"
+																: "input.record",
+													)}
+												</TooltipContent>
+											</Tooltip>
+										</div>
+										{theme.featureFlags
+											?.enableModelSelect && (
+											<Tooltip
+												disableHoverableContent={false}
+											>
+												<TooltipTrigger asChild>
+													<span
+														className="inline-flex min-w-0"
+														data-tour="tour-model"
+													>
+														<Label
+															htmlFor={
+																modelSelectId
+															}
+															className="sr-only"
+														>
+															{t(
+																"form.modelLabel",
+															)}{" "}
+															{modelName}
+														</Label>
+														<EngineSelect
+															id={modelSelectId}
+															className="h-8 w-auto max-w-44 gap-1 rounded-full border-none bg-transparent px-2 text-xs shadow-none hover:bg-accent"
+															name={modelName}
+															value={
+																model?.app_id ||
+																""
+															}
+															engineTypes={[
+																"MODEL",
+															]}
+															metaFilters={[
+																{
+																	tag: "text-generation",
+																},
+															]}
+															onChange={
+																session.onModelChange
+															}
+															popoverContentProps={{
+																align: "end",
+															}}
+														/>
+													</span>
+												</TooltipTrigger>
+												<TooltipContent>
+													{modelName ||
+														t("form.modelLabel")}
+												</TooltipContent>
+											</Tooltip>
+										)}
+										<Tooltip
+											disableHoverableContent={false}
+										>
+											<TooltipTrigger asChild>
+												<span data-tour="tour-send">
+													<Button
+														variant="default"
+														size="icon"
+														className="rounded-full"
+														aria-label={t(
+															sendState === "stop"
+																? "input.stopLabel"
+																: "input.askLabel",
+														)}
+														disabled={
+															isSendDisabled
+														}
+														onClick={
+															handleSendClick
+														}
+													>
+														{sendState ===
+														"stop" ? (
+															<Square
+																aria-hidden="true"
+																className="size-3 fill-current"
+															/>
+														) : sendState ===
+															"loading" ? (
+															<Spinner />
+														) : (
+															<ArrowUpIcon aria-hidden="true" />
+														)}
+													</Button>
+												</span>
+											</TooltipTrigger>
+											<TooltipContent>
+												{sendTooltip}
+											</TooltipContent>
+										</Tooltip>
+									</div>
+								</div>
 							</div>
-						</div>
-					</div>
-					<OnChangePlugin
-						onChange={(editorState) => {
-							editorState.read(() => {
-								const root = $getRoot();
+							<OnChangePlugin
+								onChange={(editorState) => {
+									editorState.read(() => {
+										const root = $getRoot();
 
-								// the text, which also disables send while empty
-								setInputText(root.getTextContent());
+										// the text, which also disables send while empty
+										setInputText(root.getTextContent());
 
-								// Check if content is scrollable
-								if (scrollCheckRef.current !== null) {
-									clearTimeout(scrollCheckRef.current);
-								}
-								scrollCheckRef.current = setTimeout(() => {
-									scrollCheckRef.current = null;
-									const viewport = scrollViewportRef.current;
-									if (viewport) {
 										// Check if content is scrollable
-										setIsScrollable(
-											viewport.scrollHeight >
-												viewport.clientHeight,
+										if (scrollCheckRef.current !== null) {
+											clearTimeout(
+												scrollCheckRef.current,
+											);
+										}
+										scrollCheckRef.current = setTimeout(
+											() => {
+												scrollCheckRef.current = null;
+												const viewport =
+													scrollViewportRef.current;
+												if (viewport) {
+													// Check if content is scrollable
+													setIsScrollable(
+														viewport.scrollHeight >
+															viewport.clientHeight,
+													);
+												}
+											},
+											0,
 										);
+									});
+								}}
+							/>
+							<HistoryPlugin />
+							<AutoFocusPlugin />
+							<FocusPlugin />
+							<EditorRefPlugin editorRef={editorRef} />
+							<EnterPlugin onEnter={() => void submit()} />
+							<BackspacePlugin
+								onBackspace={(event) => {
+									if (!isEmpty || files.length === 0) {
+										return false;
 									}
-								}, 0);
-							});
-						}}
-					/>
-					<HistoryPlugin />
-					<AutoFocusPlugin />
-					<FocusPlugin />
-					<EditorRefPlugin editorRef={editorRef} />
-					<EnterPlugin onEnter={() => void submit()} />
-					<BackspacePlugin
-						onBackspace={(event) => {
-							if (!isEmpty || files.length === 0) {
-								return false;
-							}
-							event.preventDefault();
-							removeFile(files.length - 1);
-							return true;
-						}}
-					/>
-					<AutoScrollOnPastePlugin
-						scrollContainerRef={scrollViewportRef}
-					/>
-					<SlashCommandPlugin
-						isLoading={isLoading}
-						hasTools={latestResponseHasTools}
-					/>
-					<PromptLibraryDialog
-						open={isPromptLibraryOpen}
-						onOpenChange={setIsPromptLibraryOpen}
-						prompts={predefinedPrompts}
-						isLoading={isLoading}
-						onSelectPrompt={(prompt) => runPrompt(prompt.context)}
-					/>
-				</LexicalComposer>
-			</SlashCommandProvider>
+									event.preventDefault();
+									removeFile(files.length - 1);
+									return true;
+								}}
+							/>
+							<AutoScrollOnPastePlugin
+								scrollContainerRef={scrollViewportRef}
+							/>
+							<SlashCommandPlugin
+								isLoading={isLoading}
+								hasTools={latestResponseHasTools}
+							/>
+							<PromptLibraryDialog
+								open={isPromptLibraryOpen}
+								onOpenChange={setIsPromptLibraryOpen}
+								prompts={predefinedPrompts}
+								isLoading={isLoading}
+								onSelectPrompt={(prompt) =>
+									runPrompt(prompt.context)
+								}
+							/>
+						</LexicalComposer>
+					</SlashCommandRegistryProvider>
+				</ComposerWorkbenchContext.Provider>
+			</ComposerContext.Provider>
 			<MCPOverlay
 				open={mcpOverlay.open}
 				defaultTab={mcpOverlay.defaultTab}

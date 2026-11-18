@@ -19,9 +19,11 @@ is in the [README](./README.md).
 - **If both apps need it, it lives here. If only one does, it stays in that app.**
 - Library code never imports `react-router`, Electron, `window.semossDesktop`, `import.meta.env`,
   or anything from `packages/*`.
-- What only the host knows (routes, the theme, env defaults, the platform's URL, its own panels and
-  menu entries) arrives through one object, `ChatConfig`
-  (`features/chat/config/chat-config.context.tsx`).
+- What only the host knows (routes, the theme, env defaults, the platform's URL, the tools it runs
+  in the browser, its own panels and menu entries) arrives through one object, `ChatConfig`
+  (`features/chat/config/chat-config.context.tsx`): `theme`, `options`, `callbacks` (every name
+  starts with `on`), `tools` and `components`. What only one app does, such as the desktop app's
+  folders, lives in that app and reaches the chat through `tools` and `components`.
 - `src/index.ts` is the only code entry; `./globals.css` holds only the chat's own styles, and a host imports it beside the other libraries'. A name a host needs is
   exported there, from its defining file.
 
@@ -29,7 +31,7 @@ is in the [README](./README.md).
 
 | You are changing | Folder under `src/features/` | Read first |
 |---|---|---|
-| What a host passes in, the theme, new-chat defaults, customization | `chat/config/` | [README](./README.md) |
+| What a host passes in: the theme, options, callbacks, tools, components | `chat/config/` | [README](./README.md) |
 | The providers | `chat/provider/` | |
 | The session: models, the room cache, creating and deleting rooms | `chat/store/` (`ChatStore`) | [State](./docs/state.md) |
 | One room's state: options, messages, tool calls, the Workbench controller | `room/store/` (`RoomStore`) | [State](./docs/state.md) |
@@ -38,17 +40,18 @@ is in the [README](./README.md).
 | Favorite, Rename, Publish as Agent, Download, Delete | `room/actions/` | |
 | The room's Settings panel, its Tools section | `room-settings/`, `room-settings/tools/` | [Tools](./docs/tools.md) |
 | Messages and markdown | `conversation/messages/` | |
-| The composer, its plus menu, the slash menu, the editor plugins | `conversation/composer/` (`slash-command/`, `editor/`) | [Workspace](./docs/workbench.md#slash-menu) |
+| The composer and the editor plugins; `useComposer` | `conversation/composer/` (`editor/`) | |
+| The plus menu's items and `DefaultPlusMenu` | `conversation/composer/plus-menu/` | [README](./README.md#customizing-the-chat) |
+| The "/" menu: `SlashCommand`, its registry, `DefaultSlashCommands` | `conversation/composer/slash-command/` | [Workspace](./docs/workbench.md#slash-menu) |
 | Files queued for the next message, file drop | `conversation/attachments/` | [Tools](./docs/tools.md#files-queued-for-the-next-message) |
-| Default folder tools, client tools, Room Files, desktop folders as tools | `tools/chat-tools/` | [Tools](./docs/tools.md) |
+| Default folder tools, Room Files, a host's client tools (`ToolsHost`) | `tools/chat-tools/` | [Tools](./docs/tools.md) |
 | How a tool call is drawn; its inspector | `tools/views/`, `tools/inspector/` | [Tools](./docs/tools.md#tool-views) |
 | The agent, knowledge and toolbox picker | `tools/mcp/` | |
-| The Workspace's panels and rail | `workbench/panels/`, `workbench/rail/` | [Workspace](./docs/workbench.md) |
+| The Workspace's panels and rail (`RailItem`, `DefaultWorkbenchRail`, `useWorkbench`) | `workbench/panels/`, `workbench/rail/` | [Workspace](./docs/workbench.md) |
 | Connector catalog, the user's tools file, sign in, viewers, the Connectors settings page | `connectors/store/`, `accounts/`, `viewers/`, `settings/` | [Connectors](./docs/connectors.md) |
-| Folders from the user's machine: the host contract, the Files panel's Desktop section | `local-folders/` | [Tools](./docs/tools.md#desktop-folders) |
 | The room list and search | `room-list/` | |
 | The new-chat screen and its draft room | `new-chat/` | [Workspace](./docs/workbench.md) |
-| The user's settings dialog: General, and the list of pages | `user-settings/` | |
+| The user's settings dialog, and the chat's pages (`useDefaultSettingsPages`) | `user-settings/` | |
 | Backend shapes | `src/types.ts` | |
 
 Tests sit beside their source. Test helpers are in `src/test/`.
@@ -61,11 +64,14 @@ Tests sit beside their source. Test helpers are in `src/test/`.
    fails when this is broken. So a change in a `store/` or `turns/` file can break any UI, and a
    change in UI cannot break a store.
 2. **A host changes the chat in two ways only.** Layout and controls are composition: the host
-   places pieces and fills slots (`leading`, `trailing`, `header`, `workbench`, children). Lists
-   are customization: `ChatConfig.customize` is handed the chat's own list and returns the host's
-   (`workbenchPanels`, `roomActions`, `slashCommands`, `composerMenu`, `settingsSections`), and
-   `ChatConfig.workbenchPanelComponents` replaces the panel blueprints. Do not add a boolean prop
-   to hide a part, or a second way to pass host data.
+   places pieces and fills slots (`leading`, `trailing`, `header`, `workbench`, children), and
+   hands `UserSettingsDialog` its `pages`. The chat's places are components:
+   `ChatConfig.components` holds the host's `PlusMenu`, `SlashCommands`, `WorkbenchRail` (plain
+   components with no props, made of the chat's exported items) and `WorkbenchPanels` (the panel
+   blueprints), and the chat renders each inside its own frame, or its default. An item reads its
+   place's hook (`useComposer`, `useWorkbench`), hides itself where it cannot run and locks itself
+   while a turn runs. Do not add a boolean prop to hide a part, a list function beside a slot, or
+   a second way to pass host data. The room menu and the message actions are not slots yet.
 3. **One config.** The host's `ChatConfig` feeds the store (`useCreateChatStore(config)`) and chat
    UI (`ChatConfigProvider`). A new host input is a `ChatConfig` field, never a second argument.
 4. **Every store is on `StoreState`** and is read through its selector hook:
@@ -77,9 +83,9 @@ Tests sit beside their source. Test helpers are in `src/test/`.
    | `ResponseMessageStore`, `InputMessageStore`, `ToolStore` (views over the room) | `useMessage`, `useTool` |
    | `ConnectorsStore` | `useConnectors` |
    | `ContextItemsStore` | `useContextItems` |
-   | `RoomLocalFoldersStore` | `useLocalFolders` |
 
-   `room.workbench` is the dock's Zustand store until `@semoss/workbench` moves.
+   `room.workbench` is the dock's Zustand store until `@semoss/workbench` moves. The "/" menu's
+   registry is a `StoreState` the composer holds (`slash-command-registry.tsx`).
 5. **Never send `DeleteInsightAssets` an empty path**: it clears the room's whole file space. See
    [Tools](./docs/tools.md#chat-tools).
 
@@ -96,7 +102,7 @@ Tests sit beside their source. Test helpers are in `src/test/`.
   | The room's Settings panel | room settings (`RoomSettingsForm`, `RoomSettingsPanel`) | Settings |
   | The user's settings dialog | user settings (`UserSettingsDialog`) | Settings |
   | The room's own folder | Room Files | Room Files |
-  | Folders attached from the user's machine | desktop folders (`room.localFolders`) | Desktop |
+  | Tools a host runs in the browser | client tools (`room.toolsHost`, `ToolsHost`) | |
   | A tool the host runs in the browser | client tool | |
 
   `Workspace` in `src/types.ts` is the backend's agent type, and `"sidebar"` is the backend's

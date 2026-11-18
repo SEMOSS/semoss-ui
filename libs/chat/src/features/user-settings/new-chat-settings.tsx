@@ -40,7 +40,7 @@ export const NewChatSettings = () => {
 	const { t } = useTranslation("sidebar");
 	const { chat } = useChatSession();
 	const models = useChatSelector(chat, (chat) => chat.models.available);
-	const { theme, newChatDefaults } = useChatConfig();
+	const { theme, options } = useChatConfig();
 	const preferences = useNewChatPreferences();
 	const headingId = useId();
 	const modelSelectId = useId();
@@ -52,7 +52,7 @@ export const NewChatSettings = () => {
 	// the mode a new chat would start in, which the agent row follows
 	const startMode =
 		preferences.mode ??
-		readDeploymentNewChatDefaults(theme, newChatDefaults).mode ??
+		readDeploymentNewChatDefaults(theme, options.new).mode ??
 		"chat";
 	const isAgentDefault = canUseAgentMode && startMode === "agent";
 	const defaultLabel = t("settings.general.newChat.default");

@@ -1,8 +1,13 @@
+import {
+	type FolderEntry,
+	FolderToolError,
+	splitFolderPath,
+	type ToolFolder,
+} from "@semoss/chat";
 import type { FileItem, FileSource } from "@semoss/shared";
-import { splitFolderPath } from "./folder-path";
-import { FolderToolError } from "./folder-text";
-import { DESKTOP_FOLDERS_NAME, type FolderToolPrefix } from "./folder-tools";
-import type { FolderEntry, ToolFolder } from "./room-folder";
+
+/** How the desktop tools name the folders attached from the user's machine. */
+export const DESKTOP_FOLDERS_NAME = "Desktop folders";
 
 /** One attached folder, as the tools reach it. */
 export interface DesktopFolder {
@@ -28,7 +33,7 @@ interface ResolvedPath {
  */
 export class DesktopFolders implements ToolFolder {
 	readonly displayName = DESKTOP_FOLDERS_NAME;
-	readonly toolPrefix: FolderToolPrefix = "desktop";
+	readonly toolPrefix = "desktop";
 
 	/**
 	 * @param folders - The attached folders, each with its own name.

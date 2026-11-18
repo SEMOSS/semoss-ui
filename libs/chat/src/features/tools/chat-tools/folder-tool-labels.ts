@@ -1,10 +1,6 @@
 import { getI18n } from "@semoss/i18n";
 import { normalizeFolderPath } from "./folder-path";
-import {
-	type DesktopToolName,
-	type FolderToolName,
-	getFolderToolOperation,
-} from "./folder-tools";
+import { type FolderToolName, getFolderToolOperation } from "./folder-tools";
 
 /**
  * A path argument for display. Falls back to the raw text when it does not
@@ -25,25 +21,24 @@ const displayPath = (value: unknown): string => {
 };
 
 /**
- * The name the user sees for a folder or desktop tool, such as "Read File".
+ * The name the user sees for a Room Files tool, such as "Read File".
  *
- * @param name - A folder or desktop tool.
+ * @param name - A Room Files tool.
  * @returns Its translated title.
  */
-export const getFolderToolTitle = (
-	name: FolderToolName | DesktopToolName,
-): string => getI18n().t(`chatTools:tools.titles.${name}`);
+export const getFolderToolTitle = (name: FolderToolName): string =>
+	getI18n().t(`chatTools:tools.titles.${name}`);
 
 /**
  * A one-line summary of what a call acts on, such as `reports/q3.md`, shown
  * beside the tool's title while it waits and in its approval card.
  *
- * @param name - A folder tool.
+ * @param name - A folder tool, whatever its prefix.
  * @param args - The call's arguments.
  * @returns The summary.
  */
 export const summarizeFolderToolCall = (
-	name: FolderToolName | DesktopToolName,
+	name: string,
 	args: Record<string, unknown>,
 ): string => {
 	switch (getFolderToolOperation(name)) {

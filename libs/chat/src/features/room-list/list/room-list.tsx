@@ -93,7 +93,7 @@ export const RoomList = ({
 	 */
 	const getAgentLinkLabel = (name: string | undefined): string =>
 		t("groups.openAgent", { name: name || t("groups.unnamedAgent") });
-	const { theme, navigation } = useChatConfig();
+	const { theme, options, callbacks } = useChatConfig();
 	const [downloadRoomId, setDownloadRoomId] = useState<string | null>(null);
 	const { view, isCustomized, setView } = useRoomListView();
 	// section keys the user collapsed, kept across reloads
@@ -264,7 +264,7 @@ export const RoomList = ({
 			await chat.closeRoom(roomId);
 			toast.success(t("toasts.roomDeletedSuccess"));
 			if (activeRoomId === roomId) {
-				navigation.onRoomDeleted(roomId);
+				callbacks.onOpenNewChat();
 			}
 			getRooms.reset();
 		} catch (e) {
@@ -386,9 +386,9 @@ export const RoomList = ({
 											</CollapsibleTrigger>
 										</SidebarGroupLabel>
 										{section.heading.type === "agent" &&
-										navigation.agentHref ? (
+										options.agentHref ? (
 											<a
-												href={navigation.agentHref(
+												href={options.agentHref(
 													section.heading.workspaceId,
 												)}
 												target="_blank"

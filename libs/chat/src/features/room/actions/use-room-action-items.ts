@@ -7,21 +7,15 @@ import {
 	TrashIcon,
 } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
-import { useChatCustomization } from "../../chat/config/use-chat-customization";
 import { useRoomActionsContext } from "./room-actions.context";
 
-/** The ids of the room actions the chat itself lists. */
-export type DefaultRoomActionId =
-	| "favorite"
-	| "rename"
-	| "publish"
-	| "download"
-	| "delete";
+/** The ids of a room's actions. */
+type RoomActionId = "favorite" | "rename" | "publish" | "download" | "delete";
 
 /** One of a room's actions, as a menu item or a slash command shows it. */
 export interface RoomActionItem {
-	/** Stable key; also the slash command's id. A host's own action names its own. */
-	id: DefaultRoomActionId | (string & {});
+	/** Stable key; also the slash command's id. */
+	id: RoomActionId;
 	/** The action's icon. */
 	icon: LucideIcon;
 	/** Its name, the same in the rail's cog menu and the slash menu. */
@@ -40,18 +34,16 @@ export interface RoomActionItem {
 
 /**
  * The room's own actions in the order every menu lists them: Favorite,
- * Rename, Publish as Agent, Download, and Delete. Favorite is left out where
+ * Publish as Agent, Rename, Download, and Delete. Favorite is left out where
  * the chat history is hidden. The rail's cog menu leaves out Rename, since a
  * double-click on the name renames it; the slash menu lists it. Call it inside
  * a `RoomActionsProvider`.
  *
- * @returns The actions, as the host's `ChatConfig.customize.roomActions`
- * leaves them, or an empty list outside a room.
+ * @returns The actions, or an empty list outside a room.
  */
 export const useRoomActionItems = (): RoomActionItem[] => {
 	const { t } = useTranslation(["room", "sidebar"]);
 	const context = useRoomActionsContext();
-	const customize = useChatCustomization().roomActions;
 	if (!context) return [];
 	const { room, actions } = context;
 	const items: RoomActionItem[] = [];
@@ -105,5 +97,5 @@ export const useRoomActionItems = (): RoomActionItem[] => {
 			onSelect: () => void actions.remove(),
 		},
 	);
-	return customize ? customize(items, room) : items;
+	return items;
 };

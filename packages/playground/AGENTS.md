@@ -55,14 +55,16 @@ and again inside `AppLayout` (`isInnerComponent`) so the navigation stays beside
 
 - **`AppLayout`** builds the chat's config (`usePlaygroundChatConfig`), makes the store from it
   (`useCreateChatStore(config)`), and provides both. It holds the settings dialog's state
-  (`useUserSettingsDialog`) and renders `UserSettingsDialog`; the config carries `openSettings`,
+  (`useUserSettingsDialog`) and renders `UserSettingsDialog` with the chat's pages
+  (`useDefaultSettingsPages`); the config carries `openSettings` as `callbacks.onOpenSettings`,
   so `NavUser` and chat UI open it the same way. It also provides the tour (`useLandingTour`) and
   renders `EmbeddedPages`.
-- **`usePlaygroundChatConfig`** gives the chat the theme, the env's defaults
-  (`new-chat-build-defaults.ts`), the platform URL (`platform-url.ts`, from `VITE_PLATFORM_URL`),
-  the routes (`openRoom`, `roomHref`, `agentHref`, `openNewChat`, `onRoomDeleted`,
-  `openSettings`), and `onWorkbenchOpenChange`, which folds the navigation while a room's
-  Workspace is open (`useWorkbenchNavigation`).
+- **`usePlaygroundChatConfig`** gives the chat the theme; `options`: the links (`roomHref`,
+  `agentHref`), the env's defaults (`new`, from `new-chat-build-defaults.ts`) and the platform
+  URL (`platformUrl`, from `platform-url.ts` and `VITE_PLATFORM_URL`); and `callbacks`:
+  `onOpenRoom`, `onOpenNewChat`, `onOpenSettings`, and `onWorkbenchOpenChange`, which folds the
+  navigation while a room's Workspace is open (`useWorkbenchNavigation`). It passes no `tools`
+  or `components`, so the chat shows its own menus and rail.
 - **`pages/room.page.tsx`** lays out `RoomScope`, and **`pages/new-room.page.tsx`** renders
   `NewChat`; both put `PageHeaderNavigation` at the start of the header.
 - **`GlobalNav`** holds `RoomList` and `RoomSearchDialog`.
@@ -137,7 +139,7 @@ on port 9090 (or set `ENDPOINT` in `.env.local`) and open http://localhost:5174.
 | Variable | What it sets |
 |---|---|
 | `ENDPOINT`, `MODULE` | The backend the dev server proxies to, and its module path |
-| `VITE_PLATFORM_URL` | Where the platform app is served (`ChatConfig.platformUrl`) |
+| `VITE_PLATFORM_URL` | Where the platform app is served (`ChatConfig.options.platformUrl`) |
 | `VITE_NAME`, `VITE_THEME` | The build's app name and theme JSON |
 | `VITE_DEFAUlT_MODEL_ID`, `VITE_DEFAUlT_MODEL_NAME` | The build's default model (the lowercase `l` is in deployed env files; do not fix it) |
 | `VITE_DEFAULT_CHAT_MODE`, `VITE_DEFAULT_CHAT_AGENT_ID` | The build's default mode and agent |

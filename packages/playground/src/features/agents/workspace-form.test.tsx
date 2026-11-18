@@ -77,9 +77,8 @@ const chatWrapper = ({ children }: { children: ReactNode }) => (
 			config={
 				{
 					theme: { featureFlags: {}, defaultEmbedderId: "embedder" },
-					navigation: {},
-					newChatDefaults: {},
-					platformUrl: "",
+					options: {},
+					callbacks: {},
 				} as unknown as ChatConfig
 			}
 		>

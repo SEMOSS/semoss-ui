@@ -94,7 +94,7 @@ export interface RoomActions {
 export const useRoomActions = (roomId: string): RoomActions => {
 	const { t } = useTranslation("sidebar");
 	const { chat } = useChatSession();
-	const { navigation } = useChatConfig();
+	const { callbacks } = useChatConfig();
 	const pinnedRooms = usePixel<{ ROOM_ID: string }[]>(
 		getPlaygroundRoomsPixel({ pinned: true, sort: "DESC" }),
 		{ data: [] },
@@ -126,12 +126,12 @@ export const useRoomActions = (roomId: string): RoomActions => {
 	/** Renames the room; a blank name is refused. */
 	const rename = (name: string) => renameRoom(chat, roomId, name, t);
 
-	/** Deletes the room, then tells the host so it can leave the room's page. */
+	/** Deletes the room, then leaves it for a new chat. */
 	const remove = async () => {
 		try {
 			await chat.closeRoom(roomId);
 			toast.success(t("toasts.roomDeletedSuccess"));
-			navigation.onRoomDeleted(roomId);
+			callbacks.onOpenNewChat();
 		} catch (e) {
 			toast.error(getErrorMessage(e) || t("toasts.failedToDelete"));
 		}

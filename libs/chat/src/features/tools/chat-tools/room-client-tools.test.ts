@@ -1,13 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { buildDesktopToolDefinitions } from "./folder-tools";
+import { describeFolderTool, FOLDER_TOOL_OPERATIONS } from "./folder-tools";
 import {
 	CLIENT_TOOLS_GENERATOR,
 	mergeRoomClientTools,
 } from "./room-client-tools";
 
-const DEFINITIONS = buildDesktopToolDefinitions({
-	folderNames: ["notes"],
-	executionOf: () => "auto",
+const DEFINITIONS = FOLDER_TOOL_OPERATIONS.map((operation) => {
+	const { name, title, description, inputSchema } = describeFolderTool(
+		{ prefix: "desktop", description: "notes", scope: "" },
+		operation,
+	);
+	return { name, title, description, inputSchema };
 });
 
 const CONNECTOR_TOOL = {

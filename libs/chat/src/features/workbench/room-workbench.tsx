@@ -1,9 +1,9 @@
-import { ExternalLinkIcon } from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	type FileExplorerHost,
 	FileExplorerHostProvider,
+	type FileSources,
 	FileSourcesProvider,
 } from "@semoss/panels";
 import type { FileExplorerSecondaryAction } from "@semoss/shared";
@@ -11,7 +11,6 @@ import { toast, useIsMobile } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import { Workbench, WorkbenchProvider } from "@semoss/workbench";
 import { useNextMessageRoom } from "../conversation/attachments/next-message-room.context";
-import { useRoomFileSources } from "../local-folders/explorer/use-room-file-sources";
 import { RoomProvider, useRoomOrContext } from "../room/scope/room.context";
 import type { RoomStore } from "../room/store/room.store";
 import { uploadTurnFiles } from "../room/store/room-turn-files";
@@ -50,20 +49,56 @@ export const RoomWorkbench = ({
 	const isMobile = useIsMobile();
 	// a new chat queues Add to Context on its draft, not the room it prepared
 	const nextMessageRoom = useNextMessageRoom() ?? room;
-	const localFolders = room.localFolders;
-	const fileSources = useRoomFileSources(localFolders);
+	// the host's own sources, such as the desktop app's folders, read again
+	// whenever the room changes, as when the host says they changed
+	// (`toolsHostVersion`); the host returns the same object while they are
+	const hostFiles = useRoomSelector(
+		room,
+		(current) => room.toolsHost?.files?.(current.roomId) ?? null,
+	);
+	const fileSources = useMemo<FileSources | null>(
+		() =>
+			hostFiles
+				? {
+						primaryLabel: tRoom("files.roomFiles"),
+						// the room's own Files, not another explorer such as a connector's
+						isShownIn: (mode) => mode.type === "INSIGHT",
+						missingMountMessage: hostFiles.missingMountMessage,
+						groups: hostFiles.groups,
+						mounts: hostFiles.mounts,
+					}
+				: null,
+		[hostFiles, tRoom],
+	);
 	const explorerHost = useMemo<FileExplorerHost>(() => {
 		/**
-		 * Run a desktop action, telling the user when it fails.
+		 * Copy a file from one of the host's mounts to Room Files and queue
+		 * it for the next message: a message's media is a path in Room Files.
 		 *
-		 * @param run - The action.
+		 * @param mountId - The mount.
+		 * @param item - The file.
 		 */
-		const report = async (run: () => Promise<void>) => {
+		const addMountFileToContext = async (
+			mountId: string,
+			item: { path: string; name: string },
+		): Promise<void> => {
+			const mount = hostFiles?.mounts.find(({ id }) => id === mountId);
+			if (!mount) return;
 			try {
-				await run();
+				const bytes = await mount.source.read(item.path);
+				const [uploaded] = await uploadTurnFiles(room.insightId, [
+					new File([new Uint8Array(bytes)], item.name),
+				]);
+				if (uploaded) {
+					nextMessageRoom.contextItems.add({
+						path: uploaded.fileLocation,
+						name: uploaded.fileName,
+					});
+					room.refreshWorkbenchFileExplorer();
+				}
 			} catch (error) {
 				toast.error(
-					tRoom("localFolders.openFailed", {
+					tRoom("files.actionFailed", {
 						message: getErrorMessage(error, ""),
 					}),
 				);
@@ -71,20 +106,9 @@ export const RoomWorkbench = ({
 		};
 
 		return {
-			// an open Desktop file opens in place, so what the other app
-			// saves comes back to the tab through the folder's watch
-			fileActions: ({ mode, path }) =>
-				mode.type === "MOUNT" && localFolders
-					? [
-							{
-								name: tRoom("localFolders.openWithApp"),
-								icon: ExternalLinkIcon,
-								action: () =>
-									report(() =>
-										localFolders.open(mode.mountId, path),
-									),
-							},
-						]
+			fileActions: (context) =>
+				context.mode.type === "MOUNT"
+					? (hostFiles?.fileActions?.(context) ?? [])
 					: [],
 			secondaryActions: (item, mode) => {
 				if (mode.type !== "MOUNT") {
@@ -105,65 +129,20 @@ export const RoomWorkbench = ({
 								},
 							];
 				}
-				if (!localFolders) {
-					return [];
-				}
-				const folderId = mode.mountId;
 				const actions: FileExplorerSecondaryAction[] = [
-					{
-						name: tRoom("localFolders.reveal", {
-							fileManager: localFolders.fileManagerName,
-						}),
-						action: () =>
-							report(() =>
-								localFolders.reveal(folderId, item.path),
-							),
-					},
+					...(hostFiles?.secondaryActions?.(item, mode) ?? []),
 				];
-				if (item.type === "directory") {
-					return actions;
-				}
-				return [
-					{
-						name: tRoom("localFolders.openWithApp"),
-						action: () =>
-							report(() =>
-								localFolders.open(folderId, item.path),
-							),
-					},
-					...actions,
-					{
-						// a message's media is a path in Room Files, so the
-						// file goes there as a copy first
+				if (item.type !== "directory") {
+					actions.push({
 						name: t("actions.addToContext"),
 						placement: "end",
-						action: () =>
-							report(async () => {
-								const bytes = await localFolders
-									.sourceFor(folderId)
-									.read(item.path);
-								const [uploaded] = await uploadTurnFiles(
-									room.insightId,
-									[
-										new File(
-											[new Uint8Array(bytes)],
-											item.name,
-										),
-									],
-								);
-								if (uploaded) {
-									nextMessageRoom.contextItems.add({
-										path: uploaded.fileLocation,
-										name: uploaded.fileName,
-									});
-									room.refreshWorkbenchFileExplorer();
-								}
-							}),
-					},
-				];
+						action: () => addMountFileToContext(mode.mountId, item),
+					});
+				}
+				return actions;
 			},
 		};
-	}, [localFolders, nextMessageRoom, room, t, tRoom]);
+	}, [hostFiles, nextMessageRoom, room, t, tRoom]);
 	// The rail, drawn in whichever border slot holds it. A left rail opens its
 	// labels and menu into the dock; the mobile toolbar sits above the tabs,
 	// so there they open downward.

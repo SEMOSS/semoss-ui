@@ -7,7 +7,7 @@ import {
 	splitFolderPath,
 } from "./folder-path";
 import { FolderToolError } from "./folder-text";
-import { type FolderToolPrefix, ROOM_FILES_NAME } from "./folder-tools";
+import { ROOM_FILES_NAME } from "./folder-tools";
 
 /** One entry in Room Files. */
 export interface FolderEntry {
@@ -33,7 +33,7 @@ export interface ToolFolder {
 	/** How the tools name the folder to the model, such as Room Files. */
 	readonly displayName: string;
 	/** What its tools are called before their operation, such as `folder`. */
-	readonly toolPrefix: FolderToolPrefix;
+	readonly toolPrefix: string;
 	/**
 	 * List a directory's direct children.
 	 *

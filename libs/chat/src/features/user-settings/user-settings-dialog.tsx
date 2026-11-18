@@ -9,7 +9,7 @@ import {
 	DialogDescription,
 	DialogTitle,
 } from "@semoss/ui/next";
-import { useUserSettingsSections } from "./use-user-settings-sections";
+import type { UserSettingsSection } from "./user-settings-section";
 
 /** Props for {@link UserSettingsDialog}. */
 interface UserSettingsDialogProps {
@@ -21,6 +21,11 @@ interface UserSettingsDialogProps {
 	section: string | undefined;
 	/** Show another page. */
 	onSectionChange: (section: string) => void;
+	/**
+	 * The pages, in navigation order: the chat's own
+	 * (`useDefaultSettingsPages`) and the host's.
+	 */
+	pages: readonly UserSettingsSection[];
 }
 
 /**
@@ -30,9 +35,9 @@ interface UserSettingsDialogProps {
  * page. A page can have a footer bar, as General has for the instance's
  * version. Only the page scrolls; the header and footer stay put. Pages mount
  * only while shown, so Connectors reads the session's logins each time it
- * opens. The pages come from `useUserSettingsSections`, which a host
- * customizes. Hold its state with `useUserSettingsDialog`, and render it
- * inside the chat's providers.
+ * opens. The host hands it the pages: the chat's own, from
+ * `useDefaultSettingsPages`, and its own. Hold its state with
+ * `useUserSettingsDialog`, and render it inside the chat's providers.
  *
  * On open, focus goes to the dialog itself rather than its first page button,
  * so no focus ring shows until the user moves through it with the keyboard.
@@ -42,9 +47,9 @@ export const UserSettingsDialog = ({
 	onOpenChange,
 	section,
 	onSectionChange,
+	pages: sections,
 }: UserSettingsDialogProps) => {
 	const { t } = useTranslation("sidebar");
-	const sections = useUserSettingsSections();
 	const current = sections.find((item) => item.id === section) ?? sections[0];
 
 	return (

@@ -14,7 +14,6 @@ Each keeps its getters, which read its snapshot; React reads them through a sele
 | `ToolStore` (a view over the room) | `useTool(tool, (tool) => …)` | the room, likewise for that call |
 | `ConnectorsStore` | `useConnectors(room.connectors)` | the room's connectors |
 | `ContextItemsStore` | `useContextItems(room.contextItems, (snapshot) => …)` | the next message's queue |
-| `RoomLocalFoldersStore` (`room.localFolders`, null without a host) | `useLocalFolders(room.localFolders, (snapshot) => …)` | the room's desktop folders |
 
 - **Select through the store**, the least a component needs. A selector runs again on every change
   its store hears about and the component renders only when what it returns changes (one level
@@ -78,7 +77,7 @@ A new chat's model, mode and agent follow one order. Each takes the first that i
 3. the deployment's default: the theme's `defaultRoomSettings` (`model`, `mode`, `agentId`),
    then `VITE_DEFAUlT_MODEL_ID`, `VITE_DEFAULT_CHAT_MODE` and `VITE_DEFAULT_CHAT_AGENT_ID`
    (read by the web app in its `features/chat-config/new-chat-build-defaults.ts` and given to
-   the chat as `ChatConfig.newChatDefaults`);
+   the chat as `ChatConfig.options.new`);
 4. the first available: the first model, chat mode, and Default Agent.
 
 A mode is always chat where agent mode is not offered, an agent link (`?workspaceId=`) wins over

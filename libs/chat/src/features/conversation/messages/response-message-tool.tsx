@@ -23,8 +23,8 @@ import type { ToolStore } from "../../room/store/tool.store";
 import { useRoomSelector } from "../../room/store/use-room-selector";
 import { decideAgentToolAction } from "../../room/turns/agent-turn-runner";
 import {
+	isBrowserToolCall,
 	isChatToolCall,
-	isFolderToolCall,
 } from "../../tools/chat-tools/chat-tool-kind";
 import { isAskExecutionMode } from "../../tools/mcp/mcp-utils";
 import { ChatToolCard } from "../../tools/views/chat-tool-card";
@@ -85,7 +85,7 @@ export const ResponseMessageTool = ({
 			loadingMessageText: ui?.loadingMessage,
 			autoOpen: ui?.autoOpen,
 			execution: json._meta?.SMSS_MCP_EXECUTION,
-			isFolder: isFolderToolCall(json),
+			isFolder: isBrowserToolCall(json),
 			isChatTool: isChatToolCall(json),
 			isResolved: tool.isResolved,
 			display: tool.display,

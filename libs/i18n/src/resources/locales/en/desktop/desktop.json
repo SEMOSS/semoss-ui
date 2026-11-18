@@ -36,5 +36,30 @@
 		"removeDescription": "This signs you out of {{server}} and deletes what this app saved for it on this computer. Your chats stay on the server.",
 		"removeConfirm": "Remove server",
 		"failed": "Couldn't change servers: {{message}}"
+	},
+	"localFolders": {
+		"desktop": "Desktop",
+		"attach": "Attach Folder",
+		"attachDescription": "Attach a folder from this computer",
+		"empty": "Attach a folder from this computer to work on its files here. Changes are saved to your disk.",
+		"folderActions": "{{name}} actions",
+		"reveal": "Show in {{fileManager}}",
+		"openWithApp": "Open with Default App",
+		"detach": "Detach",
+		"detached": "{{name}} detached. Its files are still on your computer.",
+		"attachFailed": "The folder could not be attached. {{message}}",
+		"detachFailed": "The folder could not be detached. {{message}}",
+		"openFailed": "That did not work. {{message}}",
+		"notHere": "This folder is not attached on this computer.",
+		"titles": {
+			"list": "List Desktop Folder",
+			"read": "Read Desktop File",
+			"search": "Search Desktop",
+			"write": "Write Desktop File",
+			"edit": "Edit Desktop File",
+			"create_directory": "Create Desktop Folder",
+			"move": "Move or Rename on Desktop",
+			"delete": "Delete from Desktop"
+		}
 	}
 }

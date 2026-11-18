@@ -13,7 +13,7 @@ import type { RoomListItem } from "./room-list-groups";
 
 const mocks = vi.hoisted(() => ({
 	openRoom: vi.fn(),
-	onRoomDeleted: vi.fn(),
+	onOpenNewChat: vi.fn(),
 	closeRoom: vi.fn(),
 	renameRoom: vi.fn(),
 	pinRoom: vi.fn(),
@@ -55,10 +55,10 @@ vi.mock("../../chat/provider/use-chat-session", async () => {
 vi.mock("../../chat/config/use-chat-config", () => ({
 	useChatConfig: () => ({
 		theme: { featureFlags: {}, sidebar: { chatHistoryDate: false } },
-		navigation: {
-			openRoom: mocks.openRoom,
-			roomHref: (roomId: string) => `#/room/${roomId}`,
-			onRoomDeleted: mocks.onRoomDeleted,
+		options: { roomHref: (roomId: string) => `#/room/${roomId}` },
+		callbacks: {
+			onOpenRoom: mocks.openRoom,
+			onOpenNewChat: mocks.onOpenNewChat,
 		},
 	}),
 }));
@@ -66,7 +66,7 @@ vi.mock("../../chat/config/use-chat-config", () => ({
 beforeEach(() => {
 	for (const mock of [
 		mocks.openRoom,
-		mocks.onRoomDeleted,
+		mocks.onOpenNewChat,
 		mocks.closeRoom,
 		mocks.renameRoom,
 		mocks.pinRoom,
@@ -152,11 +152,11 @@ test("deleting the open room tells the host; another room does not", async () =>
 	await user.click(otherRoomMenu);
 	await user.click(screen.getByRole("menuitem", { name: "actions.delete" }));
 	expect(mocks.closeRoom).toHaveBeenCalledWith("room-2");
-	expect(mocks.onRoomDeleted).not.toHaveBeenCalled();
+	expect(mocks.onOpenNewChat).not.toHaveBeenCalled();
 
 	await user.click(openRoomMenu);
 	await user.click(screen.getByRole("menuitem", { name: "actions.delete" }));
-	expect(mocks.onRoomDeleted).toHaveBeenCalledWith("room-1");
+	expect(mocks.onOpenNewChat).toHaveBeenCalledTimes(1);
 });
 
 test("a double-click on a name, or F2 on its row, renames the room in place", async () => {

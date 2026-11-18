@@ -6,7 +6,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import type { RoomLocalFoldersStore } from "../store/room-local-folders.store";
+import type { RoomLocalFoldersStore } from "./room-local-folders.store";
 import { useAttachLocalFolder } from "./use-attach-local-folder";
 
 /** Props for {@link AttachFolderButton}. */
@@ -28,7 +28,7 @@ export const AttachFolderButton = ({
 	store,
 	isLabelled = false,
 }: AttachFolderButtonProps) => {
-	const { t } = useTranslation("room");
+	const { t } = useTranslation("desktop");
 	const { attach, isPicking } = useAttachLocalFolder(store);
 	const handleClick = () => attach?.();
 	const label = t("localFolders.attach");

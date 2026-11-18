@@ -75,7 +75,7 @@ export function RoomLayout({
 	const id = useId();
 	// read without `useChatConfig`, so the layout also renders with no host config
 	const onWorkbenchOpenChange =
-		useContext(ChatConfigContext)?.onWorkbenchOpenChange;
+		useContext(ChatConfigContext)?.callbacks.onWorkbenchOpenChange;
 	const containerRef = useRef<HTMLDivElement>(null);
 	const headerRef = useRef<HTMLDivElement>(null);
 	const conversationRef = useRef<HTMLDivElement>(null);

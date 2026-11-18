@@ -3,8 +3,8 @@ import { useChatConfig } from "../../../chat/config/use-chat-config";
 import { MentionMenuPortal } from "../editor/mention-menu-portal";
 import { MentionPlugin } from "../editor/mention-plugin";
 import { isIframed } from "../is-iframed";
-import type { SlashCommand } from "./slash-command";
 import { useSlashCommands } from "./slash-command.context";
+import type { SlashCommandEntry } from "./slash-command-entry";
 import { filterSlashCommands, SlashCommandMenu } from "./slash-command-menu";
 
 /** Props for {@link SlashCommandPlugin}. */
@@ -37,7 +37,7 @@ export const SlashCommandPlugin: React.FC<SlashCommandPluginProps> = ({
 	 * @param cmd - The command.
 	 * @returns Whether it ran.
 	 */
-	const runCommand = (cmd: SlashCommand): boolean => {
+	const runCommand = (cmd: SlashCommandEntry): boolean => {
 		if (cmd.isLockedWhileBusy && isBusy) return false;
 		cmd.onExecute();
 		return true;

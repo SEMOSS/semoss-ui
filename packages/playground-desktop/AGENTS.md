@@ -69,14 +69,17 @@ src/
   (`useDesktopCommands`: `new-chat` → `/new`, `change-server` → `/server`). The web app's
   `AppLayout` is its counterpart.
 - **`useDesktopChatConfig`** is the chat's config: the server's theme over the chat's defaults
-  (`useServerChatTheme`), no new-chat defaults of its own, an empty `platformUrl`, the folders
-  host, and navigation with `openRoom`, `roomHref` (`#/room/<id>`), `openNewChat`,
-  `onRoomDeleted` and `openSettings`; no `agentHref`. Its `customize.settingsSections` adds the
-  app's Server page after the chat's own.
-- **The settings dialog** is the chat's `UserSettingsDialog`: General, Connectors, and
-  **Servers** (`features/server-connection/use-server-settings-section.tsx`), which lists the
-  saved servers and adds one. To add another page, add a section there or beside it; see
-  [Customizing the chat](../../libs/chat/README.md#customizing-the-chat).
+  (`useServerChatTheme`); `options` with `roomHref` (`#/room/<id>`) and the tool frame origin,
+  and no new-chat defaults, platform URL or `agentHref`; `callbacks` with `onOpenRoom`,
+  `onOpenNewChat` and `onOpenSettings`; `tools`, the desktop's tools host over the folders the
+  user attaches (one per window); and `components`: `DesktopPlusMenu` (the chat's items, with
+  Attach Folder under Attach Files) and `DesktopSlashCommands` (the chat's commands, then Attach
+  Folder), each in its own file in `features/chat-config/`.
+- **The settings dialog** is the chat's `UserSettingsDialog`, which `AppLayout` hands its pages:
+  the chat's own (`useDefaultSettingsPages`: General, Connectors), then **Servers**
+  (`features/server-connection/use-server-settings-section.tsx`), which lists the saved servers
+  and adds one. To add another page, add it to that list; see
+  [The settings dialog](../../libs/chat/README.md#the-settings-dialog).
 - **`DesktopSidebar`** (`features/navigation/`): New chat, `RoomList` and `RoomSearchDialog`
   (Cmd/Ctrl+K through `useRoomSearchShortcut`), and the account menu: Settings and Sign out.
   Servers are managed on the settings dialog's Servers page, not from the menu. Room and
@@ -184,9 +187,23 @@ the packaged app share one data folder (above).
 
 ## Local folders
 
-A room can attach folders from this machine (the chat's [desktop folders](../../libs/chat/docs/tools.md#desktop-folders)).
-`renderer/features/local-folders/desktop-folders-host.ts` is the chat's `LocalFoldersHost` over
-the `local-folders:*` and `local-fs:*` channels, made once per window in `useDesktopChatConfig`.
+A room can attach folders from this machine. The app gives them to the chat as
+[client tools](../../libs/chat/docs/tools.md#client-tools), all in
+`renderer/features/local-folders/`:
+
+- `desktop-folders-host.ts` is the `LocalFoldersHost` (`local-folders-host.ts`) over the
+  `local-folders:*` and `local-fs:*` channels.
+- `desktop-tools-host.ts` (`createDesktopToolsHost`) is the chat's `ToolsHost`, made once per
+  window in `useDesktopChatConfig`. It keeps a `RoomLocalFoldersStore` per room the chat has
+  open, offers the `desktop_*` tools over the room's folders (`DesktopFolders`, each folder a
+  top level entry, with the chat's `describeFolderTool` and `executeFolderTool`; each follows the
+  `folder_*` setting that does the same), lists the folders in Files under Desktop
+  (`desktop-host-files.tsx`: Attach Folder, Show in Finder, Open with Default App, Detach), and
+  detaches a new chat's folders when it is left before its first message.
+- Attach Folder in the plus menu (`AttachFolderMenuItem`) and "/" (`AttachFolderCommand`) attach
+  to an open room, or to the room a new chat prepares (`useComposer().prepareRoom()`), then show
+  Files.
+- Its strings are in the `desktop` namespace, under `localFolders`.
 
 - **Only the system's folder picker attaches a folder** (`local-folders:pick`, parented to the
   window). The page never sends a path on the machine: a file call names `{ roomId, folderId }`

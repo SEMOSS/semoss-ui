@@ -51,7 +51,7 @@ export const RoomSearchDialog = ({
 	onOpenChange,
 }: RoomSearchDialogProps) => {
 	const { t } = useTranslation("sidebar");
-	const { navigation } = useChatConfig();
+	const { callbacks } = useChatConfig();
 	const [query, setQuery] = useState("");
 	const [agent, setAgent] = useState<AgentChoice | null>(null);
 	const debouncedQuery = useDebouncedValue(query);
@@ -76,7 +76,7 @@ export const RoomSearchDialog = ({
 
 	const handleSelect = (roomId: string) => {
 		handleOpenChange(false);
-		navigation.openRoom(roomId);
+		callbacks.onOpenRoom(roomId);
 	};
 
 	return (

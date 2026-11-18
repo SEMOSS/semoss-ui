@@ -57,7 +57,7 @@ export const RoomToolsConnectorsSection = ({
 		"common",
 	]);
 	const handleSignIn = useConnectProvider(signInToProvider);
-	const { openSettings } = useChatConfig().navigation;
+	const { onOpenSettings } = useChatConfig().callbacks;
 	// sign ins made or lost in another tab show up when the window is focused
 	useConnectorLogins(connectors);
 	useConnectors(connectors);
@@ -139,12 +139,12 @@ export const RoomToolsConnectorsSection = ({
 						icon={<RefreshCwIcon aria-hidden />}
 						onClick={toolbox.load}
 					/>
-					{openSettings ? (
+					{onOpenSettings ? (
 						<Button
 							type="button"
 							variant="ghost"
 							size="sm"
-							onClick={() => openSettings("connectors")}
+							onClick={() => onOpenSettings("connectors")}
 						>
 							<Settings2Icon aria-hidden />
 							{t("sections.connectors.manage")}

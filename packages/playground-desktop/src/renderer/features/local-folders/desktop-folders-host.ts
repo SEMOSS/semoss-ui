@@ -1,10 +1,10 @@
-import type { LocalFolder, LocalFoldersHost } from "@semoss/chat";
 import type { FileItem, FileSource } from "@semoss/shared";
 import type { DesktopBridge } from "../../../contract/ipc-contract";
 import type {
 	LocalFileEntry,
 	LocalFolderRef,
 } from "../../../contract/local-folders";
+import type { LocalFolder, LocalFoldersHost } from "./local-folders-host";
 
 /** What an attached folder can do in the explorer: everything but download, since it is already here. */
 const FOLDER_CAPABILITIES: FileSource["capabilities"] = {

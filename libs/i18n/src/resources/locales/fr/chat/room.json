@@ -254,20 +254,8 @@
 			}
 		}
 	},
-	"localFolders": {
+	"files": {
 		"roomFiles": "Fichiers du salon",
-		"desktop": "Bureau",
-		"attach": "Joindre un dossier",
-		"attachDescription": "Joindre un dossier de cet ordinateur",
-		"empty": "Joignez un dossier de cet ordinateur pour travailler ici sur ses fichiers. Les modifications sont enregistrées sur votre disque.",
-		"folderActions": "Actions de {{name}}",
-		"reveal": "Afficher dans {{fileManager}}",
-		"openWithApp": "Ouvrir avec l’application par défaut",
-		"detach": "Détacher",
-		"detached": "{{name}} détaché. Ses fichiers sont toujours sur votre ordinateur.",
-		"attachFailed": "Le dossier n’a pas pu être joint. {{message}}",
-		"detachFailed": "Le dossier n’a pas pu être détaché. {{message}}",
-		"openFailed": "Cela n’a pas fonctionné. {{message}}",
-		"notHere": "Ce dossier n’est pas joint sur cet ordinateur."
+		"actionFailed": "Cela n’a pas fonctionné. {{message}}"
 	}
 }

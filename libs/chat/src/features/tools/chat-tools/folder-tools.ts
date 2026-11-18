@@ -30,39 +30,20 @@ export const FOLDER_TOOL_NAMES = {
 export type FolderToolName =
 	(typeof FOLDER_TOOL_NAMES)[keyof typeof FOLDER_TOOL_NAMES];
 
-/**
- * The same tools over the folders attached from the user's machine. Their
- * own names keep them apart from Room Files' tools and from an agent's own
- * file tools; like those, renaming one strands the calls already made.
- */
-export const DESKTOP_TOOL_NAMES = {
-	LIST: "desktop_list",
-	READ: "desktop_read",
-	SEARCH: "desktop_search",
-	WRITE: "desktop_write",
-	EDIT: "desktop_edit",
-	CREATE_DIRECTORY: "desktop_create_directory",
-	MOVE: "desktop_move",
-	DELETE: "desktop_delete",
-} as const;
-
-/** One of the desktop folder tools. */
-export type DesktopToolName =
-	(typeof DESKTOP_TOOL_NAMES)[keyof typeof DESKTOP_TOOL_NAMES];
+/** What a folder tool does, whichever folder it works in, in definition order. */
+export const FOLDER_TOOL_OPERATIONS = [
+	"list",
+	"read",
+	"search",
+	"write",
+	"edit",
+	"create_directory",
+	"move",
+	"delete",
+] as const;
 
 /** What a folder tool does, whichever folder it works in. */
-export type FolderToolOperation =
-	| "list"
-	| "read"
-	| "search"
-	| "write"
-	| "edit"
-	| "create_directory"
-	| "move"
-	| "delete";
-
-/** What the tools that work in a folder are called before their operation. */
-export type FolderToolPrefix = "folder" | "desktop";
+export type FolderToolOperation = (typeof FOLDER_TOOL_OPERATIONS)[number];
 
 /** How a tool call runs: on its own, or once the user approves it. */
 export type FolderToolExecution = "auto" | "ask";
@@ -70,7 +51,7 @@ export type FolderToolExecution = "auto" | "ask";
 /** A tool definition in the MCP shape the room accepts in `paramValues.tools`. */
 export interface FolderToolDefinition {
 	/** What the model calls. */
-	name: FolderToolName | DesktopToolName;
+	name: string;
 	/** The tool's title. */
 	title: string;
 	/** What the model is told the tool does. */
@@ -96,10 +77,6 @@ export interface FolderToolOutcome {
 /** Every folder tool's name, in the order the definitions list them. */
 const ALL_FOLDER_TOOLS: readonly FolderToolName[] =
 	Object.values(FOLDER_TOOL_NAMES);
-
-/** Every desktop tool's name, in the same order. */
-const ALL_DESKTOP_TOOLS: readonly DesktopToolName[] =
-	Object.values(DESKTOP_TOOL_NAMES);
 
 /** The operations that only read, which run on their own unless set otherwise. */
 const READ_OPERATIONS: ReadonlySet<FolderToolOperation> = new Set([
@@ -157,57 +134,42 @@ export const isFolderToolName = (name: string): name is FolderToolName =>
 	(ALL_FOLDER_TOOLS as readonly string[]).includes(name);
 
 /**
- * Whether a tool call name is one of the desktop folder tools.
+ * What a folder tool does, from its name: the part after its prefix, such as
+ * `read` in `folder_read`, whatever folder the tool works in.
  *
- * @param name - The name the model called.
- * @returns True for the desktop tools.
- */
-export const isDesktopToolName = (name: string): name is DesktopToolName =>
-	(ALL_DESKTOP_TOOLS as readonly string[]).includes(name);
-
-/**
- * What a folder or desktop tool does.
- *
- * @param name - A folder or desktop tool.
- * @returns Its operation, such as `read`.
+ * @param name - A tool name.
+ * @returns Its operation, or null for a name that is not a folder tool's.
  */
 export const getFolderToolOperation = (
-	name: FolderToolName | DesktopToolName,
-): FolderToolOperation =>
-	name.slice(name.indexOf("_") + 1) as FolderToolOperation;
-
-/**
- * The Room Files tool whose setting a tool follows: itself, or for a desktop
- * tool the Room Files tool that does the same.
- *
- * @param name - A folder or desktop tool.
- * @returns The matching Room Files tool.
- */
-export const getMatchingFolderTool = (
-	name: FolderToolName | DesktopToolName,
-): FolderToolName => `folder_${getFolderToolOperation(name)}` as FolderToolName;
+	name: string,
+): FolderToolOperation | null => {
+	const operation = name.slice(name.indexOf("_") + 1);
+	return (FOLDER_TOOL_OPERATIONS as readonly string[]).includes(operation)
+		? (operation as FolderToolOperation)
+		: null;
+};
 
 /**
  * How a folder tool runs when nothing says otherwise: reading on its own, and
  * every change once the user approves it.
  *
- * @param name - A folder tool.
+ * @param name - A folder tool, whatever its prefix.
  * @returns The execution mode.
  */
 export const getUsualFolderToolExecution = (
-	name: FolderToolName | DesktopToolName,
-): FolderToolExecution =>
-	READ_OPERATIONS.has(getFolderToolOperation(name)) ? "auto" : "ask";
+	name: string,
+): FolderToolExecution => {
+	const operation = getFolderToolOperation(name);
+	return operation && READ_OPERATIONS.has(operation) ? "auto" : "ask";
+};
 
 /** How the tools name the chat's own files, the room's folder. */
 export const ROOM_FILES_NAME = "Room Files";
 
-/** How the desktop tools name the folders attached from the user's machine. */
-export const DESKTOP_FOLDERS_NAME = "Desktop folders";
-
 /** How one set of tools describes the folder it works in. */
-interface FolderSpace {
-	prefix: FolderToolPrefix;
+export interface FolderSpace {
+	/** What its tools are called before their operation, such as `folder`. */
+	prefix: string;
 	/** The folder, the way the model should refer to it wherever a tool names it. */
 	description: string;
 	/**
@@ -241,7 +203,9 @@ const pathProperty = (
  * @param operation - What a tool that asks first does.
  * @returns The sentence to add to its description.
  */
-const describeApproval = (operation: FolderToolOperation): string => {
+export const describeFolderToolApproval = (
+	operation: FolderToolOperation,
+): string => {
 	if (operation === "delete") {
 		return " The user approves every deletion before it happens.";
 	}
@@ -914,31 +878,39 @@ export const buildFolderToolDefinitions = (context: {
 	buildDefinitions(ROOM_FILES_TOOLS, ALL_FOLDER_TOOLS, context.executionOf);
 
 /**
- * The desktop tools the model may call, over the folders attached from the
- * user's machine, each described the way it runs. None when nothing is
- * attached. The chat offers them as client tools.
+ * One folder tool, described for the folder it works in, for a host that
+ * offers a folder of its own as client tools.
  *
- * @param context - The attached folders' names, each a top level entry, and
- * how each tool runs: `executionOf` gives its mode, or null to leave it out.
- * @returns The definitions.
+ * @param space - The folder, as its tools describe it.
+ * @param operation - What the tool does.
+ * @returns Its name, title, description, schema, how it usually runs, and
+ * what the model is told when it waits for the user.
  */
-export const buildDesktopToolDefinitions = ({
-	folderNames,
-	executionOf,
-}: {
-	folderNames: readonly string[];
-	executionOf: (name: DesktopToolName) => FolderToolExecution | null;
-}): FolderToolDefinition[] => {
-	if (folderNames.length === 0) {
-		return [];
-	}
-	const example = JSON.stringify(`${folderNames[0]}/notes.md`);
-	const specs = createFolderToolSpecs({
-		prefix: "desktop",
-		description: `${DESKTOP_FOLDERS_NAME} (folders on the user's own computer that they attached to this chat; changes are saved straight to their disk)`,
-		scope: `Each attached folder is a top level entry named after it: ${folderNames.map((name) => JSON.stringify(name)).join(", ")}. Start every path with one of them, such as ${example}. These are not Room Files; to share one of these files with a tool that reads Room Files, write a copy there.`,
-	});
-	return buildDefinitions(specs, ALL_DESKTOP_TOOLS, executionOf);
+export const describeFolderTool = (
+	space: FolderSpace,
+	operation: FolderToolOperation,
+): {
+	name: string;
+	title: string;
+	description: string;
+	inputSchema: FolderToolDefinition["inputSchema"];
+	usualMode: FolderToolExecution;
+	approvalNote: string;
+} => {
+	const { title, description, properties, required } =
+		createFolderToolSpecs(space)[operation];
+	return {
+		name: `${space.prefix}_${operation}`,
+		title: title,
+		description: description,
+		inputSchema: {
+			type: "object",
+			properties: properties,
+			required: required,
+		},
+		usualMode: READ_OPERATIONS.has(operation) ? "auto" : "ask",
+		approvalNote: describeFolderToolApproval(operation).trim(),
+	};
 };
 
 /**
@@ -949,7 +921,7 @@ export const buildDesktopToolDefinitions = ({
  * @param executionOf - How each tool runs, or null to leave it out.
  * @returns The definitions.
  */
-const buildDefinitions = <N extends FolderToolName | DesktopToolName>(
+const buildDefinitions = <N extends FolderToolName>(
 	specs: Record<FolderToolOperation, FolderToolSpec>,
 	names: readonly N[],
 	executionOf: (name: N) => FolderToolExecution | null,
@@ -959,7 +931,7 @@ const buildDefinitions = <N extends FolderToolName | DesktopToolName>(
 		if (!execution) {
 			return [];
 		}
-		const operation = getFolderToolOperation(name);
+		const operation = getFolderToolOperation(name) ?? "read";
 		const { title, description, properties, required } = specs[operation];
 		return [
 			{
@@ -967,7 +939,7 @@ const buildDefinitions = <N extends FolderToolName | DesktopToolName>(
 				title: title,
 				description:
 					execution === "ask"
-						? `${description}${describeApproval(operation)}`
+						? `${description}${describeFolderToolApproval(operation)}`
 						: description,
 				inputSchema: {
 					type: "object",
@@ -979,8 +951,8 @@ const buildDefinitions = <N extends FolderToolName | DesktopToolName>(
 	});
 
 /**
- * Run one folder tool call in its folder: Room Files for a `folder_*` call,
- * the attached desktop folders for a `desktop_*` call.
+ * Run one folder tool call in its folder, whatever the tool's prefix: the
+ * operation is read from its name.
  *
  * Never throws: a failure comes back as an outcome with `isError`, carrying
  * an explanation the model reads as the tool result.
@@ -992,14 +964,12 @@ const buildDefinitions = <N extends FolderToolName | DesktopToolName>(
  */
 export const executeFolderTool = async (
 	folder: ToolFolder,
-	name: FolderToolName | DesktopToolName,
+	name: string,
 	args: Record<string, unknown>,
 ): Promise<FolderToolOutcome> => {
 	try {
-		const tool =
-			isFolderToolName(name) || isDesktopToolName(name)
-				? ROOM_FILES_TOOLS[getFolderToolOperation(name)]
-				: undefined;
+		const operation = getFolderToolOperation(name);
+		const tool = operation ? ROOM_FILES_TOOLS[operation] : undefined;
 		if (!tool) {
 			throw new FolderToolError(`Unknown tool ${name}.`);
 		}

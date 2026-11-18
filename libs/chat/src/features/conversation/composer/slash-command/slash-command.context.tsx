@@ -1,11 +1,12 @@
 import type React from "react";
 import { createContext, useContext } from "react";
-import type { SlashCommand } from "./slash-command";
+import type { StoreState } from "@semoss/utility/store";
+import type { SlashCommandEntry } from "./slash-command-entry";
 
 /** What {@link useSlashCommands} reads. */
 interface SlashCommandContextValue {
-	/** Every command offered, after `excludeCommandIds` is applied. */
-	commands: SlashCommand[];
+	/** Every command offered, in the order the composer lists them. */
+	commands: SlashCommandEntry[];
 }
 
 /** The composer's slash commands; empty outside a provider. */
@@ -24,9 +25,7 @@ export const useSlashCommands = (): SlashCommandContextValue =>
 /** Props for {@link SlashCommandProvider}. */
 interface SlashCommandProviderProps {
 	/** Every command the composer offers. */
-	commands: SlashCommand[];
-	/** Ids of commands to leave out. */
-	excludeCommandIds?: string[];
+	commands: SlashCommandEntry[];
 	/** The composer, whose slash menu reads the commands. */
 	children: React.ReactNode;
 }
@@ -37,16 +36,27 @@ interface SlashCommandProviderProps {
  * `useSlashCommands()`.
  */
 export const SlashCommandProvider: React.FC<SlashCommandProviderProps> = ({
-	commands: all,
-	excludeCommandIds,
+	commands,
 	children,
-}) => {
-	const commands = excludeCommandIds?.length
-		? all.filter((cmd) => !excludeCommandIds.includes(cmd.id))
-		: all;
-	return (
-		<SlashCommandContext.Provider value={{ commands }}>
-			{children}
-		</SlashCommandContext.Provider>
-	);
-};
+}) => (
+	<SlashCommandContext.Provider value={{ commands }}>
+		{children}
+	</SlashCommandContext.Provider>
+);
+
+/** One command a `SlashCommand` registered, and where it is in the page. */
+export interface RegisteredSlashCommand {
+	/** The command. */
+	readonly entry: SlashCommandEntry;
+	/** The command's place among the others: the menu lists them in this order. */
+	readonly marker: HTMLElement;
+}
+
+/** The commands the composer's "/" slot registers, by each one's own key. */
+export type SlashCommandRegistry = StoreState<
+	ReadonlyMap<string, RegisteredSlashCommand>
+>;
+
+/** Where a `SlashCommand` registers itself; null outside the composer. */
+export const SlashCommandRegistryContext =
+	createContext<SlashCommandRegistry | null>(null);

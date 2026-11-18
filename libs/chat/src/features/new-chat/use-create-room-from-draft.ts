@@ -56,7 +56,7 @@ export const useCreateRoomFromDraft = (
 	{ mode, isAgentOptionsPending, greetingAgent }: DraftRoomInput,
 ): DraftRoomCreation => {
 	const { t } = useTranslation(["room", "chat", "chatConnectors"]);
-	const { navigation } = useChatConfig();
+	const { callbacks } = useChatConfig();
 	const { chat } = useChatSession();
 	const lastLogin = useSession((state) => state.user?.lastLogin);
 	const [isLoading, setIsLoading] = useState(false);
@@ -100,7 +100,7 @@ export const useCreateRoomFromDraft = (
 			mode: mode,
 			agentId: options.workspace?.workspace_id ?? "",
 		});
-		navigation.openRoom(roomId);
+		callbacks.onOpenRoom(roomId);
 	};
 
 	/** Shared error handling for every room-creation path below. */

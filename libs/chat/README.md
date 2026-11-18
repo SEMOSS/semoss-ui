@@ -7,12 +7,13 @@ the stores behind them.
 It is what the two chat apps are made of:
 [`@semoss/playground`](../../packages/playground) (web) and
 [`@semoss/playground-desktop`](../../packages/playground-desktop) (Electron). A host gives it
-navigation and a theme, and lays the pieces out however it likes.
+one config (its theme, options, callbacks, and its own tools and components) and lays the
+pieces out however it likes.
 
 - **Private and source-exported.** One code entry, `@semoss/chat` (`src/index.ts`), and one
   stylesheet, `@semoss/chat/globals.css`. There is no build: the host's Vite compiles the source.
 - **Router-free.** The chat never routes itself. It asks the host to open a room or a new chat
-  through `ChatConfig.navigation`, so it works under any router, or none.
+  through `ChatConfig.callbacks`, so it works under any router, or none.
 - **Named exports only.** A host bundles only the pieces it imports.
 
 Changing the library? Read its [AGENTS.md](./AGENTS.md) instead: it maps where each change
@@ -151,23 +152,25 @@ chat store and to chat UI (`ChatProvider` does both):
 | Field | What it is |
 |---|---|
 | `theme` | A `ChatTheme`: the deployment's theme with every default filled in. `useServerChatTheme()` reads the server's over `DEFAULT_CHAT_THEME`, or over a base theme you pass. |
-| `newChatDefaults` | The build's `NewChatBuildDefaults` (`modelId`, `modelName`, `mode`, `agentId`), used below the theme's `defaultRoomSettings`. An empty object for none; keep it the same object. |
-| `platformUrl` | Where the SEMOSS platform app is served, for catalog links and tool views that load a platform app. `""` for none. |
-| `toolFrameOrigin?` | The origin tool views frame an app's pages from, put before a relative module path, so a tool's page is on another origin than chat UI and cannot script it (the desktop app's second local origin). Without it, pages are framed from the module as it is. |
-| `navigation` | A `ChatNavigation`, below. |
-| `localFolders?` | A `LocalFoldersHost`, for a host that can reach the user's own files (the desktop app). |
-| `onWorkbenchOpenChange?(isOpen)` | A room's Workspace opened or closed, so the host can make room for it (the playground folds its navigation). |
-| `workbenchPanelComponents?` | Every panel a Workspace can open, by panel type. See [Customizing the chat](#customizing-the-chat). |
-| `customize?` | The host's changes to the lists chat UI builds. See [Customizing the chat](#customizing-the-chat). |
+| `options` | What the chat is configured with, below. |
+| `callbacks` | What the chat tells the host, below. Every name starts with `on`. |
+| `tools?` | A `ToolsHost`: tools the host runs in the browser, such as the desktop app's folders. See [Host tools](#host-tools). |
+| `components?` | The host's own components in the chat's places. See [Customizing the chat](#customizing-the-chat). |
 
-| `navigation` | When the chat calls it |
+| `options` | What it is |
 |---|---|
-| `openRoom(roomId)` | A room should open, as when a new chat's first message creates one. |
 | `roomHref(roomId)` | A room's link, so a middle click opens it in a new tab. |
-| `openNewChat()` | A new chat should open, as when a room cannot load. |
-| `onRoomDeleted(roomId)` | A room was deleted from chat UI. |
 | `agentHref?(workspaceId)` | An agent's link. Without it, chat UI shows no agent links. |
-| `openSettings?(section?)` | Open the settings dialog, on a page when one is named. Without it, chat UI shows no Manage Connectors. |
+| `new?` | The build's `NewChatBuildDefaults` (`modelId`, `modelName`, `mode`, `agentId`), used below the theme's `defaultRoomSettings`. Keep it the same object. |
+| `platformUrl?` | Where the SEMOSS platform app is served, for catalog links and tool views that load a platform app. |
+| `toolFrameOrigin?` | The origin tool views frame an app's pages from, put before a relative module path, so a tool's page is on another origin than chat UI and cannot script it (the desktop app's second local origin). Without it, pages are framed from the module as it is. |
+
+| `callbacks` | When the chat calls it |
+|---|---|
+| `onOpenRoom(roomId)` | A room should open, as when a new chat's first message creates one. |
+| `onOpenNewChat()` | A new chat should open: when a room cannot load, and after the open room is deleted. |
+| `onOpenSettings?(page?)` | Open the settings dialog, on a page when one is named. Without it, chat UI shows no Manage Connectors. |
+| `onWorkbenchOpenChange?(isOpen)` | A room's Workspace opened or closed, so the host can make room for it (the playground folds its navigation). |
 
 Build it in a hook, memoized so chat UI only rerenders when the theme or the routes change.
 With `react-router` and a hash router:
@@ -177,18 +180,15 @@ import { useMemo } from "react";
 import { useNavigate } from "react-router";
 import { type ChatConfig, useServerChatTheme } from "@semoss/chat";
 
-/** No build defaults; one object, so the chat store is not remade. */
-const NO_NEW_CHAT_DEFAULTS = {};
-
 /**
  * The chat's config: the server's theme over the chat's defaults, and this
  * app's routes.
  *
- * @param openSettings - Opens the settings dialog. Keep its identity stable.
+ * @param onOpenSettings - Opens the settings dialog. Keep its identity stable.
  * @returns The config, the same object while the theme and router are unchanged.
  */
 export const useMyChatConfig = (
-	openSettings: (section?: string) => void,
+	onOpenSettings: (page?: string) => void,
 ): ChatConfig => {
 	const theme = useServerChatTheme();
 	const navigate = useNavigate();
@@ -196,17 +196,14 @@ export const useMyChatConfig = (
 	return useMemo<ChatConfig>(
 		() => ({
 			theme,
-			newChatDefaults: NO_NEW_CHAT_DEFAULTS,
-			platformUrl: "",
-			navigation: {
-				openRoom: (roomId) => navigate(`/room/${roomId}`),
-				roomHref: (roomId) => `#/room/${roomId}`,
-				openNewChat: () => navigate("/new"),
-				onRoomDeleted: () => navigate("/new"),
-				openSettings,
+			options: { roomHref: (roomId) => `#/room/${roomId}` },
+			callbacks: {
+				onOpenRoom: (roomId) => navigate(`/room/${roomId}`),
+				onOpenNewChat: () => navigate("/new"),
+				onOpenSettings,
 			},
 		}),
-		[theme, navigate, openSettings],
+		[theme, navigate, onOpenSettings],
 	);
 };
 ```
@@ -246,20 +243,25 @@ const store = useCreateChatStore(config);
 </ChatSessionProvider>;
 ```
 
-`useCreateChatStore` returns the same store while the config's `theme`, `newChatDefaults`,
-`localFolders` and `workbenchPanelComponents` are the same objects; a new one of any makes a new
-store, so keep them stable. The rest of the config can change freely.
+`useCreateChatStore` returns the same store while the config's `theme`, `options.new`, `tools`
+and `components.WorkbenchPanels` are the same objects; a new one of any makes a new store, so
+keep them stable. The rest of the config can change freely.
 
 ### The settings dialog
 
-`UserSettingsDialog` is the user's settings: General (theme, language, new chat defaults) and
-Connectors. The host holds its state with `useUserSettingsDialog`, renders the dialog inside the
-chat's providers, and hands `openSettings` to its config, which is how chat UI (Manage
-Connectors) and the host's own menus open it:
+`UserSettingsDialog` is the user's settings. The host hands it its pages: the chat's own, from
+`useDefaultSettingsPages()` (General, with theme, language and new chat defaults, then
+Connectors), and any of its own. Each page is a `UserSettingsSection`: `{ id, label, icon,
+content, footer? }`. The host holds the dialog's state with `useUserSettingsDialog`, renders it
+inside the chat's providers, and hands `openSettings` to its config as `callbacks.onOpenSettings`,
+which is how chat UI (Manage Connectors) and the host's own menus open it:
 
 ```tsx
 const settings = useUserSettingsDialog();
 const config = useMyChatConfig(settings.openSettings);
+const chatPages = useDefaultSettingsPages();
+// the chat's pages, then the host's own
+const pages = useMemo(() => [...chatPages, myAccountPage], [chatPages]);
 
 <ChatProvider config={config}>
 	<UserSettingsDialog
@@ -267,13 +269,14 @@ const config = useMyChatConfig(settings.openSettings);
 		onOpenChange={settings.setIsOpen}
 		section={settings.section}
 		onSectionChange={settings.setSection}
+		pages={pages}
 	/>
 	{children}
 </ChatProvider>;
 ```
 
-Anything inside the providers opens it with `useChatConfig().navigation.openSettings?.()`, or
-`openSettings?.("connectors")` for one page.
+Anything inside the providers opens it with `useChatConfig().callbacks.onOpenSettings?.()`, or
+`onOpenSettings?.("connectors")` for one page. An unknown page shows the first.
 
 ### The room list and search
 
@@ -349,7 +352,7 @@ export const RoomPage = () => {
 
 | Piece | What it is |
 |---|---|
-| `RoomScope` | Opens the room (at once from the store's cache, else by loading it) and provides it. A room that cannot load shows a toast and calls `navigation.openNewChat`. |
+| `RoomScope` | Opens the room (at once from the store's cache, else by loading it) and provides it. A room that cannot load shows a toast and calls `callbacks.onOpenNewChat`. |
 | `RoomFrame` | The conversation beside the Workspace, which opens, closes, and collapses with the room. Leave out `workbench` for no Workspace. |
 | `RoomLayout` | The same layout for a room you pass in, with `isWorkbenchOpen` and `onWorkbenchCollapse` in your hands. |
 | `RoomHeader` | The room's name (double-click to rename) and the Workspace toggle; `leading` holds your controls before the name. |
@@ -366,7 +369,7 @@ Every piece inside `RoomScope` reads the room from context; `RoomHeader`, `RoomW
 ### A new chat
 
 `NewChat` is the whole new-chat screen: the landing, the composer, and a draft Workspace. Its
-first message creates the room and calls `navigation.openRoom`.
+first message creates the room and calls `callbacks.onOpenRoom`.
 
 ```tsx
 import { useSearchParams } from "react-router";
@@ -397,11 +400,11 @@ export const NewRoomPage = () => {
 
 The model, mode and agent a new chat starts with come, in order, from what this login session
 last used, the user's default (their metadata, set in the playground's Settings > General), the
-deployment's (`theme.defaultRoomSettings`, then `newChatDefaults`), and the first available.
+deployment's (`theme.defaultRoomSettings`, then `options.new`), and the first available.
 
 ### The Workspace and the navigation
 
-Opening a room's Workspace tells the host through `ChatConfig.onWorkbenchOpenChange`, so it can
+Opening a room's Workspace tells the host through `callbacks.onWorkbenchOpenChange`, so it can
 fold its navigation while the Workspace is open (the playground passes `setWorkbenchOpen` from
 its `useWorkbenchNavigation`). Without it nothing happens.
 
@@ -419,64 +422,158 @@ slots with your own components:
 | `RoomFrame`'s `header`, `workbench`, children | The room's three regions. Leave one out, or pass your own. |
 | `RoomConversation`, or `RoomMessages` and `RoomComposer` apart | Put your own content between the messages and the composer. |
 
-**Lists are customization.** For each list chat UI builds, `ChatConfig.customize` has a function
-that is handed the chat's own list and returns the one to show: the same list, one with entries
-added, or one with entries removed. With none, the chat shows its own.
+**Places are components.** `ChatConfig.components` holds the host's own component for each
+place it changes. Each is a plain component with no props; the chat draws the frame (the menu,
+the rail) and renders the host's component inside it, or its own default. A default is only a
+list of exported items, so a host starts from it, adds its own, or lists the items it keeps.
+The room menu (the cog and the room list's menu) and the message actions are the chat's own.
 
-| `customize` | The list | An entry |
-|---|---|---|
-| `workbenchPanels(defaults, room)` | The Workspace's panels: the rail's icons and the slash menu's Workspace group. | `WorkbenchPanelOption` |
-| `roomActions(defaults, room)` | A room's actions: the rail's cog menu and the slash menu's Room group. | `RoomActionItem` |
-| `slashCommands(defaults, room)` | Every command of the composer's "/" menu, after the two lists above are in it. | `SlashCommand` |
-| `composerMenu(defaults, props)` | The composer's plus menu. `defaults` is the chat's items, already rendered. | `DropdownMenuItem`s |
-| `settingsSections(defaults)` | The pages of the settings dialog. | `UserSettingsSection` |
+| `components` | The place | The default | Built from |
+|---|---|---|---|
+| `PlusMenu` | The composer's plus menu | `DefaultPlusMenu` | `AttachFilesItem`, `KnowledgeItem`, `ToolsItem`, `ModeChoiceItem`, `ChooseAgentItem`, and the host's `DropdownMenuItem`s; `useComposer()` for the room and its actions |
+| `SlashCommands` | The composer's "/" menu | `DefaultSlashCommands` | `SlashCommand`s; `useComposer()` |
+| `WorkbenchRail` | The Workspace rail's icons, after its cog | `DefaultWorkbenchRail` | `RailItem`s; `useWorkbench()` for the room and the chat's panels |
+| `WorkbenchPanels` | Every panel a Workspace can open, by panel type | `DEFAULT_WORKBENCH_PANEL_COMPONENTS` | The panels' blueprints. Keep the object the same: a new one makes a new chat store and remounts panels. |
+
+Declare the components at module scope, so the config keeps them across renders:
 
 ```tsx
 import {
-	type ChatConfig,
+	type ChatComponents,
 	DEFAULT_WORKBENCH_PANEL_COMPONENTS,
+	DefaultPlusMenu,
+	DefaultSlashCommands,
+	DefaultWorkbenchRail,
+	RailItem,
+	SlashCommand,
+	useComposer,
+	useWorkbench,
 } from "@semoss/chat";
+import { DropdownMenuItem } from "@semoss/ui/next";
 
-/** Module scope: a new object makes a new chat store and remounts panels. */
-const PANEL_COMPONENTS = {
-	...DEFAULT_WORKBENCH_PANEL_COMPONENTS,
-	"my-notes": MY_NOTES_PANEL,
+/** The chat's plus menu, then Templates. */
+const MyPlusMenu = () => {
+	const { closeMenu, room } = useComposer();
+	return (
+		<>
+			<DefaultPlusMenu />
+			<DropdownMenuItem
+				onSelect={() => {
+					openTemplates(room.roomId);
+					closeMenu();
+				}}
+			>
+				<LayoutTemplateIcon aria-hidden="true" />
+				Templates
+			</DropdownMenuItem>
+		</>
+	);
 };
 
-const config: ChatConfig = {
-	// ...theme, navigation
-	workbenchPanelComponents: PANEL_COMPONENTS,
-	customize: {
-		// remove the activity log, add a panel of our own
-		workbenchPanels: (defaults, room) => [
-			...defaults.filter((panel) => panel.id !== "activity"),
-			{
-				kind: "room",
-				id: "my-notes",
-				label: "Notes",
-				icon: NotebookIcon,
-				panelType: "my-notes",
-				panelConfig: {},
-				isDisabled: false,
-				isLoading: false,
-				onOpen: () => room.openWorkbenchPanel("my-notes", {}, "Notes"),
-			},
-		],
-		// remove a command from the slash menu
-		slashCommands: (defaults) =>
-			defaults.filter((command) => command.id !== "compact"),
-		// add a page to the settings dialog
-		settingsSections: (defaults) => [...defaults, myAccountSection],
+/** The chat's "/" commands, then Templates in the Chat group. */
+const MySlashCommands = () => {
+	const { room } = useComposer();
+	return (
+		<>
+			<DefaultSlashCommands />
+			<SlashCommand
+				name="templates"
+				group="chat"
+				label="Templates"
+				description="Start from a template"
+				icon={<LayoutTemplateIcon />}
+				onSelect={() => openTemplates(room.roomId)}
+			/>
+		</>
+	);
+};
+
+/** The chat's rail icons, then Notes, which opens the host's own panel. */
+const MyWorkbenchRail = () => {
+	const { room } = useWorkbench();
+	return (
+		<>
+			<DefaultWorkbenchRail />
+			<RailItem
+				label="Notes"
+				icon={<NotebookIcon className="size-4" />}
+				onOpen={() => room.openWorkbenchPanel("my-notes", {}, "Notes")}
+				panel={{ type: "my-notes", config: {} }}
+			/>
+		</>
+	);
+};
+
+const MY_COMPONENTS: ChatComponents = {
+	PlusMenu: MyPlusMenu,
+	SlashCommands: MySlashCommands,
+	WorkbenchRail: MyWorkbenchRail,
+	WorkbenchPanels: {
+		...DEFAULT_WORKBENCH_PANEL_COMPONENTS,
+		"my-notes": MY_NOTES_PANEL,
 	},
+};
+
+// in the config: components: MY_COMPONENTS
+```
+
+- An item hides itself where it cannot run (the agent picker in an open room, Compact in a new
+  chat) and locks itself while a turn runs (`useComposer().isBusy`).
+- A `SlashCommand` draws nothing: it adds itself to the "/" menu while it is mounted, in the
+  order it is placed, and the menu searches and groups them. Return null for a command that
+  cannot run.
+- A panel a host adds needs its blueprint in `WorkbenchPanels` under the same panel type.
+- The settings dialog's pages are composed, not configured: see
+  [The settings dialog](#the-settings-dialog).
+- The desktop app adds Attach Folder to the plus menu and "/" this way
+  (`desktop-plus-menu.tsx`, `desktop-slash-commands.tsx`).
+
+### Host tools
+
+`ChatConfig.tools` is a `ToolsHost`: tools the host runs in the browser for a room, such as the
+desktop app's tools over the folders the user attaches from the machine. It is framework-free,
+since the room store uses it. The chat:
+
+- offers a room's tools (`list(roomId)`) to the model with every chat turn, and keeps them in an
+  agent room's toolbox, again whenever the host calls `subscribe`'s listener with no argument;
+- runs a call with the tool's `run(args)`, at once or once the user allows it, as the room's
+  `defaultTools` setting under the tool's `modeKey` (its name by default) says, else its
+  `usualMode`;
+- answers an agent run's paused call the same way, and with `unavailableMessage` when the room
+  does not have the tool here;
+- marks the calls the host `owns` as its own by name, so past calls render before it loads;
+- lists `files(roomId)` in the Files panel beside Room Files, with the host's actions on its
+  files and the chat's Add to Context, and refreshes a mount's explorer when the listener is
+  called with `{ mountId }`;
+- calls `load(roomId)` once a room is open, and `discard(roomId)` when a new chat is left
+  before its first message.
+
+```ts
+import type { ClientTool, ToolsHost } from "@semoss/chat";
+
+/** One tool that has nothing to do with files. */
+const CLOCK: ClientTool = {
+	name: "host_now",
+	title: "Current Time",
+	description: "The time on the user's machine.",
+	inputSchema: { type: "object", properties: {}, required: [] },
+	usualMode: "auto",
+	run: async () => ({ isError: false, payload: { now: new Date().toISOString() } }),
+};
+
+/** Module scope, or made once per window: a new host makes a new chat store. */
+export const MY_TOOLS: ToolsHost = {
+	owns: (name) => name.startsWith("host_"),
+	list: () => [CLOCK],
+	subscribe: () => () => undefined,
+	unavailableMessage: "This tool runs only in the desktop app.",
 };
 ```
 
-- Each function runs during render: keep it pure and cheap, and build the `customize` object
-  inside the config's `useMemo`.
-- A panel a host adds needs its blueprint in `workbenchPanelComponents` under the same panel
-  type. In a new chat it opens on the draft, before the room exists.
-- The desktop app's `use-desktop-chat-config.ts` adds its Server page to the settings dialog
-  this way.
+A host that offers a folder of its own as tools reuses the chat's folder tools:
+`describeFolderTool(space, operation)` for each of `FOLDER_TOOL_OPERATIONS`, and
+`executeFolderTool(folder, name, args)` to run one against a `ToolFolder`. The desktop app's
+`features/local-folders/desktop-tools-host.ts` is the reference.
 
 ## Reading chat state
 
@@ -526,7 +623,6 @@ Change state through the stores' actions (`room.closeWorkbench()`, `chat.setSele
 |---|---|
 | `SaveAgentDialog` | Publish a room as an agent. |
 | `NewKnowledgeForm` | Create a knowledge base. |
-| `RoomComposerMenu`, `RoomComposerMenuProps` | The composer's plus menu, for a host's `customize.composerMenu`. |
 | `resolveServerChatTheme`, `mergeChatTheme`, `DEFAULT_CHAT_THEME` | The theme, for a host that lays its own base under the server's. |
 | `App`, `MCPConfig`, `Workspace` | Backend types. |
 

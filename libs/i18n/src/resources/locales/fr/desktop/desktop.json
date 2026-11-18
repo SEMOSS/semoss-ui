@@ -36,5 +36,30 @@
 		"removeDescription": "Vous serez déconnecté de {{server}} et les données que cette application a enregistrées pour lui sur cet ordinateur seront supprimées. Vos conversations restent sur le serveur.",
 		"removeConfirm": "Supprimer le serveur",
 		"failed": "Impossible de changer de serveur : {{message}}"
+	},
+	"localFolders": {
+		"desktop": "Bureau",
+		"attach": "Joindre un dossier",
+		"attachDescription": "Joindre un dossier de cet ordinateur",
+		"empty": "Joignez un dossier de cet ordinateur pour travailler ici sur ses fichiers. Les modifications sont enregistrées sur votre disque.",
+		"folderActions": "Actions de {{name}}",
+		"reveal": "Afficher dans {{fileManager}}",
+		"openWithApp": "Ouvrir avec l’application par défaut",
+		"detach": "Détacher",
+		"detached": "{{name}} détaché. Ses fichiers sont toujours sur votre ordinateur.",
+		"attachFailed": "Le dossier n’a pas pu être joint. {{message}}",
+		"detachFailed": "Le dossier n’a pas pu être détaché. {{message}}",
+		"openFailed": "Cela n’a pas fonctionné. {{message}}",
+		"notHere": "Ce dossier n’est pas joint sur cet ordinateur.",
+		"titles": {
+			"list": "Lister un dossier du bureau",
+			"read": "Lire un fichier du bureau",
+			"search": "Rechercher sur le bureau",
+			"write": "Écrire un fichier du bureau",
+			"edit": "Modifier un fichier du bureau",
+			"create_directory": "Créer un dossier sur le bureau",
+			"move": "Déplacer ou renommer sur le bureau",
+			"delete": "Supprimer du bureau"
+		}
 	}
 }

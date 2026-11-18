@@ -28,7 +28,7 @@ interface RoomScopeProps {
  */
 export const RoomScope = ({ roomId, children }: RoomScopeProps) => {
 	const { chat } = useChatSession();
-	const { navigation } = useChatConfig();
+	const { callbacks } = useChatConfig();
 	const [room, setRoom] = useState<RoomStore | null>(() =>
 		roomId ? chat.getCachedRoom(roomId) : null,
 	);
@@ -44,9 +44,9 @@ export const RoomScope = ({ roomId, children }: RoomScopeProps) => {
 			roomKey: current.roomId,
 			insightId: current.insightId,
 		})) ?? {};
-	// refs, so a change of model or host navigation does not reload the room
+	// refs, so a change of model or host callback does not reload the room
 	const selectedModelRef = useLatestRef<Engine>(selectedModel);
-	const openNewChatRef = useLatestRef(navigation.openNewChat);
+	const openNewChatRef = useLatestRef(callbacks.onOpenNewChat);
 
 	useEffect(() => {
 		let isCurrent = true;

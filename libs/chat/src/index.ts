@@ -9,13 +9,14 @@
  * folder, each with a comment on its first export.
  */
 
-// The host's contract: its config, the theme, and how it customizes the chat's lists
+// The host's contract: its config, the theme, and the components it draws in the chat's places
 export type {
+	ChatCallbacks,
+	ChatComponents,
 	ChatConfig,
-	ChatNavigation,
+	ChatOptions,
 } from "./features/chat/config/chat-config.context";
 export { ChatConfigProvider } from "./features/chat/config/chat-config-provider";
-export type { ChatCustomization } from "./features/chat/config/chat-customization";
 export {
 	type ChatTheme,
 	DEFAULT_CHAT_THEME,
@@ -39,30 +40,29 @@ export {
 } from "./features/chat/store/use-create-chat-store";
 // The conversation: its file drop, composer, and messages
 export { FileDropProvider } from "./features/conversation/attachments/file-drop.context";
+// The composer's plus menu and "/" menu, for a host that draws its own
+export type { Composer } from "./features/conversation/composer/composer.context";
+export { AttachFilesItem } from "./features/conversation/composer/plus-menu/attach-files-item";
+export { ChooseAgentItem } from "./features/conversation/composer/plus-menu/choose-agent-item";
+export { DefaultPlusMenu } from "./features/conversation/composer/plus-menu/default-plus-menu";
+export { KnowledgeItem } from "./features/conversation/composer/plus-menu/knowledge-item";
+export { ModeChoiceItem } from "./features/conversation/composer/plus-menu/mode-choice-item";
+export { ToolsItem } from "./features/conversation/composer/plus-menu/tools-item";
 export { RoomComposer } from "./features/conversation/composer/room-composer";
-// The composer's plus menu and a slash command, for a host that customizes them
+export { DefaultSlashCommands } from "./features/conversation/composer/slash-command/default-slash-commands";
 export {
-	RoomComposerMenu,
-	type RoomComposerMenuProps,
-} from "./features/conversation/composer/room-composer-menu";
-export type { SlashCommand } from "./features/conversation/composer/slash-command/slash-command";
+	SlashCommand,
+	type SlashCommandProps,
+} from "./features/conversation/composer/slash-command/slash-command";
+export { useComposer } from "./features/conversation/composer/use-composer";
 export { RoomMessages } from "./features/conversation/messages/room-messages";
 export { RoomConversation } from "./features/conversation/room-conversation";
 // Knowledge
 export { NewKnowledgeForm } from "./features/knowledge/new-knowledge-form";
-// Folders on the user's machine, for a host that can reach them
-export type {
-	LocalFolder,
-	LocalFoldersHost,
-} from "./features/local-folders/store/local-folders-host";
 // The new chat before its first message
 export { NewChat } from "./features/new-chat/new-chat";
-// A room's actions: Publish as Agent's dialog, and an action a host adds or removes
+// A room's actions: Publish as Agent's dialog
 export { SaveAgentDialog } from "./features/room/actions/save-agent-dialog";
-export type {
-	DefaultRoomActionId,
-	RoomActionItem,
-} from "./features/room/actions/use-room-action-items";
 // An open room: its header, layout, scope, and the hooks that read it
 export { RoomHeader } from "./features/room/header/room-header";
 export { RoomTitle } from "./features/room/header/room-title";
@@ -79,19 +79,49 @@ export { useTool } from "./features/room/store/use-tool";
 export { RoomList } from "./features/room-list/list/room-list";
 export { RoomSearchDialog } from "./features/room-list/search/room-search-dialog";
 export { useRoomSearchShortcut } from "./features/room-list/search/use-room-search-shortcut";
+// Tools a host runs in the browser, and the folder tools a host offers over a folder of its own
+export { splitFolderPath } from "./features/tools/chat-tools/folder-path";
+export { FolderToolError } from "./features/tools/chat-tools/folder-text";
+export { summarizeFolderToolCall } from "./features/tools/chat-tools/folder-tool-labels";
+export {
+	describeFolderTool,
+	executeFolderTool,
+	FOLDER_TOOL_OPERATIONS,
+	type FolderSpace,
+	type FolderToolOperation,
+} from "./features/tools/chat-tools/folder-tools";
+export type {
+	FolderEntry,
+	ToolFolder,
+} from "./features/tools/chat-tools/room-folder";
+export type {
+	ClientTool,
+	ClientToolExecution,
+	ClientToolOutcome,
+	HostFiles,
+	ToolsHost,
+	ToolsHostChange,
+} from "./features/tools/chat-tools/tools-host";
 // Reading one agent
 export { useAgentWorkspace } from "./features/tools/mcp/use-agent-workspace";
-// The user's settings dialog: General and Connectors, plus the host's own pages
+// The user's settings dialog: the chat's pages, which a host hands it beside its own
+export { useDefaultSettingsPages } from "./features/user-settings/use-default-settings-pages";
 export {
 	type UseUserSettingsDialogReturn,
 	useUserSettingsDialog,
 } from "./features/user-settings/use-user-settings-dialog";
 export { UserSettingsDialog } from "./features/user-settings/user-settings-dialog";
 export type { UserSettingsSection } from "./features/user-settings/user-settings-section";
-// The room's Workspace: its panel blueprints, toggle, and a panel a host adds or removes
+// The room's Workspace: its panel blueprints, toggle, and rail, for a host that draws its own icons
 export { DEFAULT_WORKBENCH_PANEL_COMPONENTS } from "./features/workbench/panels/room-panel-components";
+export { DefaultWorkbenchRail } from "./features/workbench/rail/default-workbench-rail";
+export {
+	RailItem,
+	type RailItemProps,
+} from "./features/workbench/rail/rail-item";
 export { RoomWorkbenchToggle } from "./features/workbench/rail/room-workbench-toggle";
-export type { WorkbenchPanelOption } from "./features/workbench/rail/use-workbench-panels";
+export { useWorkbench } from "./features/workbench/rail/use-workbench";
+export type { WorkbenchRail } from "./features/workbench/rail/workbench-rail.context";
 export { RoomWorkbench } from "./features/workbench/room-workbench";
 // Backend types
 export type { App, MCPConfig, Workspace } from "./types";

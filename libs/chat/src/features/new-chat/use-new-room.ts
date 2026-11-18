@@ -43,15 +43,11 @@ export function useNewRoom(
 		return () => {
 			isMounted.current = false;
 			if (prepared.current && !hasSubmitted.current) {
-				// folders attached to the room it is dropping are detached,
-				// so nothing is kept for a room that is gone
-				const localFolders = prepared.current.localFolders;
-				for (const folder of localFolders?.folders ?? []) {
-					void localFolders?.detach(folder.id).catch(console.error);
-				}
-				void chat
-					.closeRoom(prepared.current.roomId)
-					.catch(console.error);
+				// the host lets go of what it keeps for the room it is
+				// dropping, such as the desktop app's attached folders
+				const { roomId, toolsHost } = prepared.current;
+				void toolsHost?.discard?.(roomId).catch(console.error);
+				void chat.closeRoom(roomId).catch(console.error);
 			}
 		};
 	}, [chat, hasSubmitted]);

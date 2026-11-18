@@ -7,7 +7,7 @@
 sign in with, per room. The Connectors page of the user's settings dialog
 (`features/connectors/settings/`, shown by `UserSettingsDialog`, which a host opens from its user
 menu, or chat UI from Manage Connectors in Settings' Connectors section through
-`navigation.openSettings("connectors")`) connects accounts and switches the
+`callbacks.onOpenSettings("connectors")`) connects accounts and switches the
 user's apps on or off for all their chats; it is the only place connectors are switched. An app switched on whose
 account is not connected shows its switch in gray with a warning mark. These details are easy to break:
 

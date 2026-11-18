@@ -17,7 +17,7 @@ vi.mock("@semoss/i18n", () => ({
 vi.mock("../chat/config/use-chat-config", () => ({
 	useChatConfig: () => ({
 		theme: { featureFlags: {} },
-		navigation: { openSettings: vi.fn() },
+		callbacks: { onOpenSettings: vi.fn() },
 	}),
 }));
 vi.mock("@semoss/shared", async (original) => ({

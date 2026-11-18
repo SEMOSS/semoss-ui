@@ -16,8 +16,8 @@ import type { ThemeMap } from "@semoss/shared";
 import { StoreState } from "@semoss/utility/store";
 import type { WorkbenchPanelConfigAny } from "@semoss/workbench";
 import type { AbstractPixelMessage, ChatMode, Engine } from "../../../types";
-import type { LocalFoldersHost } from "../../local-folders/store/local-folders-host";
 import { RoomStore } from "../../room/store/room.store";
+import type { ToolsHost } from "../../tools/chat-tools/tools-host";
 import {
 	NEW_INSIGHT_ID,
 	ROOT_PLACEHOLDER_ID,
@@ -116,8 +116,8 @@ export interface ChatStoreOptions {
 	readonly panelComponents?: Record<string, WorkbenchPanelConfigAny>;
 	/** The build's new-chat defaults, read from its env by the host. */
 	readonly newChatDefaults?: NewChatBuildDefaults;
-	/** The host's way to the user's own files (the desktop app). */
-	readonly localFolders?: LocalFoldersHost;
+	/** The tools the host runs in the browser, which every room it creates gets. */
+	readonly tools?: ToolsHost;
 }
 
 /**
@@ -134,8 +134,8 @@ export class ChatStore {
 	private _panelComponents: Record<string, WorkbenchPanelConfigAny>;
 	/** The build's new-chat defaults. */
 	private _newChatDefaults: NewChatBuildDefaults;
-	/** The host's way to the user's own files, which every room it creates gets. */
-	private _localFolders: LocalFoldersHost | undefined;
+	/** The tools the host runs in the browser, which every room it creates gets. */
+	private _tools: ToolsHost | undefined;
 	/** The chat's state. Only the store's own actions write it. */
 	private readonly state: StoreState<ChatSnapshot>;
 
@@ -145,18 +145,18 @@ export class ChatStore {
 	}
 
 	/**
-	 * @param options - The host's theme, new-chat defaults and local folders,
+	 * @param options - The host's theme, new-chat defaults and tools,
 	 * and the Workspace blueprints every room is built with.
 	 */
 	constructor({
 		theme,
 		panelComponents = {},
 		newChatDefaults = {},
-		localFolders,
+		tools,
 	}: ChatStoreOptions) {
 		this._theme = theme;
 		this._newChatDefaults = newChatDefaults;
-		this._localFolders = localFolders;
+		this._tools = tools;
 		this._panelComponents = panelComponents;
 		// Only items that embed a page are kept, so a path lookup finds them.
 		const embeddedPageMap = [
@@ -367,7 +367,7 @@ export class ChatStore {
 			roomId,
 			insightId,
 			panelComponents: this._panelComponents,
-			localFolders: this._localFolders,
+			toolsHost: this._tools,
 		});
 
 		room.setModel(this.models.selected);
@@ -622,7 +622,7 @@ export class ChatStore {
 			theme: this._theme,
 			roomId,
 			panelComponents: this._panelComponents,
-			localFolders: this._localFolders,
+			toolsHost: this._tools,
 		});
 		await room.initialize();
 

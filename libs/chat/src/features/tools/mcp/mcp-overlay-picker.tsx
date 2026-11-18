@@ -72,7 +72,8 @@ export const MCPOverlayPicker = ({
 	onClose,
 }: MCPOverlayPickerProps) => {
 	const { t } = useTranslation(["mcp", "knowledge", "common", "room"]);
-	const { theme, platformUrl } = useChatConfig();
+	const { theme, options } = useChatConfig();
+	const platformUrl = options.platformUrl ?? "";
 
 	const [knowledge, setKnowledge] = useState<MCPConfig[]>(
 		() => splitMcpByType(values).knowledge,

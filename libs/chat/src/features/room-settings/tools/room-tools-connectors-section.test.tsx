@@ -14,7 +14,7 @@ vi.mock("@semoss/i18n", () => ({
 	}),
 }));
 vi.mock("../../chat/config/use-chat-config", () => ({
-	useChatConfig: () => ({ navigation: { openSettings } }),
+	useChatConfig: () => ({ callbacks: { onOpenSettings: openSettings } }),
 }));
 vi.mock("../../connectors/accounts/use-connector-logins", () => ({
 	useConnectorLogins: vi.fn(),

@@ -144,8 +144,9 @@ vi.mock("../tools/mcp/use-agent-workspace", () => ({
 vi.mock("../chat/config/use-chat-config", () => ({
 	useChatConfig: () => ({
 		theme: root.theme,
-		navigation: {
-			openRoom: (roomId: string) => mocks.navigate(`/room/${roomId}`),
+		options: {},
+		callbacks: {
+			onOpenRoom: (roomId: string) => mocks.navigate(`/room/${roomId}`),
 		},
 	}),
 }));

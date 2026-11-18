@@ -58,7 +58,7 @@ export const RoomListRow = ({
 	onDelete,
 }: RoomListRowProps) => {
 	const { t } = useTranslation("sidebar");
-	const { theme, navigation } = useChatConfig();
+	const { theme, options, callbacks } = useChatConfig();
 	const { chat } = useChatSession();
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 	const roomId = room.ROOM_ID;
@@ -93,7 +93,7 @@ export const RoomListRow = ({
 			return;
 		}
 		event.preventDefault();
-		navigation.openRoom(roomId);
+		callbacks.onOpenRoom(roomId);
 	};
 
 	// the same name, editable in place, whether or not it is being renamed
@@ -129,7 +129,7 @@ export const RoomListRow = ({
 						"flex h-auto flex-col items-start justify-center px-2 py-1",
 						date && "gap-1",
 					)}
-					href={navigation.roomHref(roomId)}
+					href={options.roomHref(roomId)}
 					onClick={handleOpen}
 					onContextMenu={(event) => {
 						event.preventDefault();

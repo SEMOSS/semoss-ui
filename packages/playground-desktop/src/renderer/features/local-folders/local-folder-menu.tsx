@@ -9,8 +9,8 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import type { LocalFolder } from "../store/local-folders-host";
-import type { RoomLocalFoldersStore } from "../store/room-local-folders.store";
+import type { LocalFolder } from "./local-folders-host";
+import type { RoomLocalFoldersStore } from "./room-local-folders.store";
 
 /** Props for {@link LocalFolderMenu}. */
 interface LocalFolderMenuProps {
@@ -29,7 +29,7 @@ interface LocalFolderMenuProps {
  * @returns The menu.
  */
 export const LocalFolderMenu = ({ store, folder }: LocalFolderMenuProps) => {
-	const { t } = useTranslation("room");
+	const { t } = useTranslation("desktop");
 
 	const handleReveal = () => {
 		store.reveal(folder.id, "/").catch((error: unknown) => {

@@ -24,7 +24,7 @@ import { useRoomSelector } from "../../room/store/use-room-selector";
 import { decideAgentToolAction } from "../../room/turns/agent-turn-runner";
 import {
 	getConnectorToolService,
-	isFolderToolCall,
+	isBrowserToolCall,
 } from "../chat-tools/chat-tool-kind";
 import {
 	FOLDER_TOOL_NAMES,
@@ -187,7 +187,7 @@ export const ChatToolCard = ({ tool, variant }: ChatToolCardProps) => {
 		displayName,
 	} = useRoomSelector(room, (current) => {
 		const json = tool.json;
-		const isFolderCall = isFolderToolCall(json);
+		const isFolderCall = isBrowserToolCall(json);
 		const isAgent = current.mode === "agent";
 		return {
 			name: json.name,

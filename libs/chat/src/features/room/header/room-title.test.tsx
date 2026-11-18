@@ -8,7 +8,7 @@ import type { RoomStore } from "../store/room.store";
 import { RoomTitle } from "./room-title";
 
 const mocks = vi.hoisted(() => ({
-	onRoomDeleted: vi.fn(),
+	onOpenNewChat: vi.fn(),
 	renameRoom: vi.fn(),
 }));
 
@@ -17,7 +17,7 @@ vi.mock("@semoss/i18n", () => ({
 }));
 vi.mock("../../chat/config/use-chat-config", () => ({
 	useChatConfig: () => ({
-		navigation: { openRoom: vi.fn(), onRoomDeleted: mocks.onRoomDeleted },
+		callbacks: { onOpenRoom: vi.fn(), onOpenNewChat: mocks.onOpenNewChat },
 	}),
 }));
 vi.mock("@semoss/sdk/react", () => ({
@@ -42,7 +42,7 @@ const room = fakeStore({
 }) as unknown as RoomStore;
 
 beforeEach(() => {
-	mocks.onRoomDeleted.mockReset();
+	mocks.onOpenNewChat.mockReset();
 	mocks.renameRoom.mockReset().mockResolvedValue(undefined);
 });
 

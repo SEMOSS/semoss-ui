@@ -53,15 +53,7 @@
 			"folder_edit": "Edit File",
 			"folder_create_directory": "Create Folder",
 			"folder_move": "Move or Rename",
-			"folder_delete": "Delete",
-			"desktop_list": "List Desktop Folder",
-			"desktop_read": "Read Desktop File",
-			"desktop_search": "Search Desktop",
-			"desktop_write": "Write Desktop File",
-			"desktop_edit": "Edit Desktop File",
-			"desktop_create_directory": "Create Desktop Folder",
-			"desktop_move": "Move or Rename on Desktop",
-			"desktop_delete": "Delete from Desktop"
+			"folder_delete": "Delete"
 		}
 	},
 	"card": {

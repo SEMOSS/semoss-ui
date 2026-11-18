@@ -36,5 +36,30 @@
 		"removeDescription": "Se cerrará tu sesión en {{server}} y se eliminará lo que esta aplicación guardó para él en este equipo. Tus chats siguen en el servidor.",
 		"removeConfirm": "Quitar servidor",
 		"failed": "No se pudo cambiar de servidor: {{message}}"
+	},
+	"localFolders": {
+		"desktop": "Escritorio",
+		"attach": "Adjuntar carpeta",
+		"attachDescription": "Adjuntar una carpeta de este equipo",
+		"empty": "Adjunta una carpeta de este equipo para trabajar aquí con sus archivos. Los cambios se guardan en tu disco.",
+		"folderActions": "Acciones de {{name}}",
+		"reveal": "Mostrar en {{fileManager}}",
+		"openWithApp": "Abrir con la aplicación predeterminada",
+		"detach": "Quitar",
+		"detached": "Se quitó {{name}}. Sus archivos siguen en tu equipo.",
+		"attachFailed": "No se pudo adjuntar la carpeta. {{message}}",
+		"detachFailed": "No se pudo quitar la carpeta. {{message}}",
+		"openFailed": "No funcionó. {{message}}",
+		"notHere": "Esta carpeta no está adjunta en este equipo.",
+		"titles": {
+			"list": "Listar carpeta del escritorio",
+			"read": "Leer archivo del escritorio",
+			"search": "Buscar en el escritorio",
+			"write": "Escribir archivo del escritorio",
+			"edit": "Editar archivo del escritorio",
+			"create_directory": "Crear carpeta en el escritorio",
+			"move": "Mover o renombrar en el escritorio",
+			"delete": "Eliminar del escritorio"
+		}
 	}
 }

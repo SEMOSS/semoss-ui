@@ -30,9 +30,12 @@ import type {
 } from "../../../types";
 import { ConnectorsStore } from "../../connectors/store/connectors.store";
 import { ContextItemsStore } from "../../conversation/attachments/context-items.store";
-import { RoomLocalFoldersStore } from "../../local-folders/store/room-local-folders.store";
 import { ChatTools } from "../../tools/chat-tools/chat-tools";
 import { mergeRoomClientTools } from "../../tools/chat-tools/room-client-tools";
+import type {
+	ToolsHost,
+	ToolsHostChange,
+} from "../../tools/chat-tools/tools-host";
 import { NEW_INSIGHT_ID } from "../../tools/mcp/mcp-constants";
 import {
 	AgentTurnRunner,
@@ -167,11 +170,11 @@ export class RoomStore {
 	/** The files queued for the room's next message. */
 	readonly contextItems: ContextItemsStore;
 
-	/**
-	 * The folders from the user's machine attached to the room, where the host
-	 * can reach them (the desktop app); null everywhere else.
-	 */
-	readonly localFolders: RoomLocalFoldersStore | null;
+	/** The tools the host runs in the browser for its rooms; null without one. */
+	readonly toolsHost: ToolsHost | null;
+
+	/** Stops hearing the host's changes for this room. */
+	private readonly stopToolsHost: () => void;
 
 	/** Runs the room's chat turns and their tool calls. */
 	readonly chatTurns: ChatTurnRunner = new ChatTurnRunner(this);
@@ -192,7 +195,7 @@ export class RoomStore {
 			insightId = NEW_INSIGHT_ID,
 			panelComponents,
 			includeFiles = true,
-			localFolders,
+			toolsHost,
 		} = options;
 		this._theme = theme;
 		const workbenchSnapshot = createRoomWorkbenchSnapshot({
@@ -209,23 +212,10 @@ export class RoomStore {
 		this.chatTools = new ChatTools(this);
 		this.connectors = new ConnectorsStore(this);
 		this.contextItems = new ContextItemsStore();
-		this.localFolders = localFolders
-			? new RoomLocalFoldersStore({
-					host: localFolders,
-					getRoomId: () => this.snapshot.roomId,
-					// an agent room keeps its client tools in its toolbox, so
-					// they follow the folders there
-					onFoldersChanged: () => {
-						this.syncClientTools().catch((error: unknown) => {
-							console.error(
-								"Could not update the client tools",
-								error,
-							);
-						});
-					},
-					onFilesChanged: this.handleLocalFilesChanged,
-				})
-			: null;
+		this.toolsHost = toolsHost ?? null;
+		this.stopToolsHost =
+			toolsHost?.subscribe(roomId, this.handleToolsHostChange) ??
+			(() => undefined);
 		this.workbenchController = new RoomWorkbenchController(
 			{
 				getInsightId: () => this.snapshot.insightId,
@@ -249,7 +239,7 @@ export class RoomStore {
 	dispose = (): void => {
 		this.workbenchController.dispose();
 		this.agentTurns.dispose();
-		this.localFolders?.dispose();
+		this.stopToolsHost();
 	};
 
 	/**
@@ -263,7 +253,7 @@ export class RoomStore {
 	 */
 	syncClientTools = async (): Promise<void> => {
 		if (
-			!this.localFolders ||
+			!this.toolsHost ||
 			this.mode !== "agent" ||
 			this.snapshot.insightId === NEW_INSIGHT_ID
 		) {
@@ -279,32 +269,32 @@ export class RoomStore {
 	};
 
 	/**
-	 * Tell every attached folder's explorer and panels that its files may
-	 * have changed, such as after a client tool wrote one.
-	 */
-	refreshLocalFolderPanels = (): void => {
-		for (const folder of this.localFolders?.folders ?? []) {
-			this.handleLocalFilesChanged(folder.id);
-		}
-	};
-
-	/**
-	 * A folder changed outside the chat: tell its explorer and the panels
-	 * showing its files.
+	 * The host reported a change. Files in one of its mounts tell that
+	 * mount's explorer and panels; any other change means the room's client
+	 * tools or Files sources changed, so chat UI reads them again and an agent
+	 * room's toolbox follows them.
 	 *
-	 * @param folderId - The attachment.
-	 * @param paths - What changed, when the host can tell.
+	 * @param change - The mount whose files changed, or none.
 	 */
-	private handleLocalFilesChanged = (
-		folderId: string,
-		paths?: string[],
-	): void => {
-		this.workbench
-			.getState()
-			.events.actions.emit(FILE_PANEL_EVENTS.FILES_CHANGED, {
-				scope: getFilePanelScope({ type: "MOUNT", mountId: folderId }),
-				paths: paths,
-			});
+	private handleToolsHostChange = (change?: ToolsHostChange): void => {
+		if (change) {
+			this.workbench
+				.getState()
+				.events.actions.emit(FILE_PANEL_EVENTS.FILES_CHANGED, {
+					scope: getFilePanelScope({
+						type: "MOUNT",
+						mountId: change.mountId,
+					}),
+					paths: change.paths,
+				});
+			return;
+		}
+		this.state.update(({ toolsHostVersion }) => ({
+			toolsHostVersion: toolsHostVersion + 1,
+		}));
+		this.syncClientTools().catch((error: unknown) => {
+			console.error("Could not update the client tools", error);
+		});
 	};
 
 	/**
@@ -589,8 +579,8 @@ export class RoomStore {
 			if (loaded.options?.harnessType) {
 				this.setMode("agent");
 			}
-			// once the mode is known, which decides where the desktop tools go
-			void this.localFolders?.load();
+			// once the mode is known, which decides where the client tools go
+			void this.toolsHost?.load?.(this.snapshot.roomId);
 			// before the agent and model round trips, which it does not need
 			this._reconnectTurn();
 

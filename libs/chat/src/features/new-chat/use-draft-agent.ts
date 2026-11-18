@@ -79,7 +79,7 @@ export const useDraftAgent = (
 	newRoom: RoomStore,
 	linkAgentId: string | null,
 ): DraftAgent => {
-	const { theme, newChatDefaults } = useChatConfig();
+	const { theme, options: chatOptions } = useChatConfig();
 	const { chat } = useChatSession();
 	const lastLogin = useSession((state) => state.user?.lastLogin);
 	const userMeta = useSession((state) => state.user?.meta);
@@ -89,7 +89,7 @@ export const useDraftAgent = (
 		const preferences = readNewChatPreferences(userMeta);
 		const deployment = readDeploymentNewChatDefaults(
 			theme,
-			newChatDefaults,
+			chatOptions.new,
 		);
 		const mode = resolveNewChatMode(
 			session,

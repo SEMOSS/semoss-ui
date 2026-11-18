@@ -1,10 +1,11 @@
-import type { CSSProperties } from "react";
+import { type CSSProperties, useMemo } from "react";
 import { Outlet } from "react-router";
 import {
 	ChatConfigProvider,
 	ChatSessionProvider,
 	UserSettingsDialog,
 	useCreateChatStore,
+	useDefaultSettingsPages,
 	useUserSettingsDialog,
 } from "@semoss/chat";
 import { SidebarInset, SidebarProvider } from "@semoss/ui/next";
@@ -12,6 +13,7 @@ import { useDesktopChatConfig } from "@/features/chat-config/use-desktop-chat-co
 import { useDesktopCommands } from "@/features/commands/use-desktop-commands";
 import { getDesktopBridge } from "@/features/desktop-bridge/desktop-bridge";
 import { DesktopSidebar } from "@/features/navigation/desktop-sidebar";
+import { useServerSettingsSection } from "@/features/server-connection/use-server-settings-section";
 
 /**
  * The signed in app: the chat's providers around the settings dialog, the
@@ -23,6 +25,13 @@ export const AppLayout = () => {
 	const config = useDesktopChatConfig(settings.openSettings);
 	const store = useCreateChatStore(config);
 	useDesktopCommands(getDesktopBridge());
+	// the chat's pages, then the app's Server page
+	const chatPages = useDefaultSettingsPages();
+	const serverPage = useServerSettingsSection();
+	const pages = useMemo(
+		() => [...chatPages, serverPage],
+		[chatPages, serverPage],
+	);
 
 	return (
 		<ChatSessionProvider store={store}>
@@ -32,6 +41,7 @@ export const AppLayout = () => {
 					onOpenChange={settings.setIsOpen}
 					section={settings.section}
 					onSectionChange={settings.setSection}
+					pages={pages}
 				/>
 				<SidebarProvider
 					style={{ "--sidebar-width": "16rem" } as CSSProperties}

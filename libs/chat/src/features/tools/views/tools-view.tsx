@@ -60,7 +60,7 @@ interface ToolsViewProps {
  */
 export const ToolsView = ({ room, app, message, toolId }: ToolsViewProps) => {
 	const { t } = useTranslation("tool");
-	const { platformUrl, toolFrameOrigin } = useChatConfig();
+	const { platformUrl = "", toolFrameOrigin } = useChatConfig().options;
 	const liveTool = useRoomSelector(room, (current) =>
 		current.getTool(toolId),
 	);

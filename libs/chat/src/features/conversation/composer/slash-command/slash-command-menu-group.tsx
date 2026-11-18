@@ -1,17 +1,20 @@
 import { useTranslation } from "@semoss/i18n";
 import { CommandGroup, CommandItem } from "@semoss/ui/next";
-import type { SlashCommand, SlashCommandGroup } from "./slash-command";
+import type {
+	SlashCommandEntry,
+	SlashCommandGroup,
+} from "./slash-command-entry";
 
 /** Props for {@link SlashCommandMenuGroup}. */
 interface SlashCommandMenuGroupProps {
 	/** The group. */
 	group: SlashCommandGroup;
 	/** Its commands, in the order the menu lists them. */
-	items: SlashCommand[];
+	items: SlashCommandEntry[];
 	/** Whether commands locked while busy are disabled. */
 	isBusy: boolean;
 	/** Runs a command the user picked. */
-	onSelect: (cmd: SlashCommand) => void;
+	onSelect: (cmd: SlashCommandEntry) => void;
 }
 
 /** One group of the slash menu under its heading. */

@@ -6,7 +6,6 @@ import { useChatConfig } from "../chat/config/use-chat-config";
 import { useChatSession } from "../chat/provider/use-chat-session";
 import { FileDropProvider } from "../conversation/attachments/file-drop.context";
 import { NextMessageRoomProvider } from "../conversation/attachments/next-message-room.context";
-import { canChooseAgentMode } from "../conversation/composer/agent-mode-choice";
 import { RoomInput } from "../conversation/composer/room-input";
 import { RoomHeader } from "../room/header/room-header";
 import { RoomLayout } from "../room/layout/room-layout";
@@ -251,11 +250,6 @@ export const NewChat = ({
 								session={session}
 								room={newRoom}
 								onPrompt={created.createRoom}
-								excludeCommandIds={
-									canChooseAgentMode(theme.featureFlags)
-										? []
-										: ["agent-harness", "chat-mode"]
-								}
 								// The new-room flow has no cancellable turn, so
 								// it's only ever busy (spinner) or idle (send).
 								sendState={isBusy ? "loading" : "send"}

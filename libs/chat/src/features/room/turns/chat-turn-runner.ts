@@ -2,7 +2,7 @@ import { type AskPlaygroundParams, askPlaygroundPixel } from "@semoss/sdk";
 import { runMcpTool } from "@semoss/sdk/react";
 import { getErrorMessage } from "@semoss/utility/error";
 import type { InputPixelMessage, ResponsePixelMessage } from "../../../types";
-import { isFolderToolCall } from "../../tools/chat-tools/chat-tool-kind";
+import { isBrowserToolCall } from "../../tools/chat-tools/chat-tool-kind";
 import {
 	MCP_EXECUTION_AUTO,
 	TURN_CANCELLATION_PROMPT,
@@ -181,7 +181,7 @@ export class ChatTurnRunner implements TurnRunner {
 		) {
 			return;
 		}
-		if (isFolderToolCall(tool.json)) {
+		if (isBrowserToolCall(tool.json)) {
 			await this.room.chatTools.runChatTool(tool);
 			return;
 		}

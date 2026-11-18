@@ -4,7 +4,7 @@ import type {
 	WorkbenchSnapshot,
 } from "@semoss/workbench";
 import type { ChatMode, Engine, MCPConfig, Prompt } from "../../../types";
-import type { LocalFoldersHost } from "../../local-folders/store/local-folders-host";
+import type { ToolsHost } from "../../tools/chat-tools/tools-host";
 import type { MessageKey, MessageMap } from "./message-map";
 import type { ToolData } from "./tool.store";
 
@@ -139,6 +139,11 @@ export interface RoomSnapshot {
 	 * calls), where there is no stream job to track.
 	 */
 	readonly isCancellingTools: boolean;
+	/**
+	 * Counts the host's changes to the room's client tools and Files
+	 * sources, so chat UI reads them again.
+	 */
+	readonly toolsHostVersion: number;
 }
 
 /** A room before it loads; the constructor adds its ids and arrangement. */
@@ -170,6 +175,7 @@ export const INITIAL_ROOM: Omit<
 	canCancelJob: false,
 	isCancellingJob: false,
 	isCancellingTools: false,
+	toolsHostVersion: 0,
 };
 
 /** The room's settings, sent with each message and saved on the backend. */
@@ -196,9 +202,6 @@ export interface RoomStoreOptions {
 	 * room that takes its arrangement.
 	 */
 	includeFiles?: boolean;
-	/**
-	 * The host's way to the user's own files, where it has one (the desktop
-	 * app); the room then keeps the folders attached to it.
-	 */
-	localFolders?: LocalFoldersHost;
+	/** The tools the host runs in the browser for its rooms, where it has any. */
+	toolsHost?: ToolsHost;
 }

@@ -2,8 +2,11 @@ import type React from "react";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { Command, CommandEmpty, CommandList } from "@semoss/ui/next";
-import { SLASH_COMMAND_GROUPS, type SlashCommand } from "./slash-command";
 import { useSlashCommands } from "./slash-command.context";
+import {
+	SLASH_COMMAND_GROUPS,
+	type SlashCommandEntry,
+} from "./slash-command-entry";
 import { SlashCommandMenuGroup } from "./slash-command-menu-group";
 
 /** How many prompts the menu lists before anything is typed. */
@@ -21,7 +24,7 @@ const WORD_PATTERN = /[\s\-_/]+/;
  * @param query - The lowercased, trimmed query.
  * @returns The rank; lower is closer.
  */
-const rankSlashCommand = (cmd: SlashCommand, query: string): number => {
+const rankSlashCommand = (cmd: SlashCommandEntry, query: string): number => {
 	const terms = [cmd.id, cmd.label, ...(cmd.keywords ?? [])].map((term) =>
 		term.toLowerCase(),
 	);
@@ -47,9 +50,9 @@ const rankSlashCommand = (cmd: SlashCommand, query: string): number => {
  * @returns The commands to list, in the order the menu shows them.
  */
 export const filterSlashCommands = (
-	commands: SlashCommand[],
+	commands: SlashCommandEntry[],
 	query: string,
-): SlashCommand[] => {
+): SlashCommandEntry[] => {
 	const lowerQuery = query.trim().toLowerCase();
 	const ranked = commands.flatMap((cmd, index) => {
 		if (!lowerQuery) return [{ cmd, rank: 0, index }];
@@ -85,7 +88,7 @@ interface SlashCommandMenuProps {
 	/** Syncs hover / cmdk-driven selection back to the parent */
 	onSelectedIndexChange: (index: number) => void;
 	/** Runs a command picked by click or keyboard, and closes the menu. */
-	onCommandSelect: (cmd: SlashCommand) => void;
+	onCommandSelect: (cmd: SlashCommandEntry) => void;
 	/** Whether commands locked while busy are disabled. */
 	isBusy: boolean;
 }

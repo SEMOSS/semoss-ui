@@ -1,7 +1,7 @@
 import type { FileSource } from "@semoss/shared";
 import { getErrorMessage } from "@semoss/utility/error";
 import { StoreState } from "@semoss/utility/store";
-import { DesktopFolders } from "../../tools/chat-tools/desktop-folders";
+import { DesktopFolders } from "./desktop-folders";
 import type { LocalFolder, LocalFoldersHost } from "./local-folders-host";
 
 /** A room's folders from the user's machine. Every field is readonly. */
@@ -41,10 +41,10 @@ const INITIAL: RoomLocalFoldersSnapshot = {
 };
 
 /**
- * The folders from the user's machine attached to one room, for a host that
- * can reach them (the desktop app). Owned by the room, which loads them when
- * it loads and disposes them with it. While a folder is attached, the store
- * listens for changes made to it outside the chat.
+ * The folders from the user's machine attached to one room. The desktop's
+ * tools host keeps one per room the chat has open, loads it when the room
+ * loads, and disposes it once the chat lets go of the room. While a folder is
+ * attached, the store listens for changes made to it outside the chat.
  */
 export class RoomLocalFoldersStore {
 	private readonly state = new StoreState<RoomLocalFoldersSnapshot>(INITIAL);

@@ -5,6 +5,7 @@ import {
 	ChatSessionProvider,
 	UserSettingsDialog,
 	useCreateChatStore,
+	useDefaultSettingsPages,
 	useUserSettingsDialog,
 } from "@semoss/chat";
 import {
@@ -56,8 +57,9 @@ export const AppLayout = () => {
 	const { tour, acknowledgeWelcome } = useLandingTour(theme);
 
 	const settings = useUserSettingsDialog();
+	const settingsPages = useDefaultSettingsPages();
 	const chatConfig = usePlaygroundChatConfig({
-		openSettings: settings.openSettings,
+		onOpenSettings: settings.openSettings,
 		onWorkbenchOpenChange: navigation.setWorkbenchOpen,
 	});
 	const chatStore = useCreateChatStore(chatConfig);
@@ -78,6 +80,7 @@ export const AppLayout = () => {
 						onOpenChange={settings.setIsOpen}
 						section={settings.section}
 						onSectionChange={settings.setSection}
+						pages={settingsPages}
 					/>
 					<LandingTour />
 

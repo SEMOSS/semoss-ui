@@ -53,15 +53,7 @@
 			"folder_edit": "تعديل ملف",
 			"folder_create_directory": "إنشاء مجلد",
 			"folder_move": "نقل أو إعادة تسمية",
-			"folder_delete": "حذف",
-			"desktop_list": "عرض مجلد سطح المكتب",
-			"desktop_read": "قراءة ملف سطح المكتب",
-			"desktop_search": "البحث في سطح المكتب",
-			"desktop_write": "كتابة ملف سطح المكتب",
-			"desktop_edit": "تعديل ملف سطح المكتب",
-			"desktop_create_directory": "إنشاء مجلد على سطح المكتب",
-			"desktop_move": "نقل أو إعادة تسمية على سطح المكتب",
-			"desktop_delete": "حذف من سطح المكتب"
+			"folder_delete": "حذف"
 		}
 	},
 	"card": {

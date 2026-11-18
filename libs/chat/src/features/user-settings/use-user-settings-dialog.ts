@@ -21,7 +21,7 @@ export interface UseUserSettingsDialogReturn {
 /**
  * The user's settings dialog's state, held by the host's layout: it renders
  * `UserSettingsDialog` with it inside the chat's providers, and hands
- * `openSettings` to the chat's config (`navigation.openSettings`), which is
+ * `openSettings` to the chat's config (`callbacks.onOpenSettings`), which is
  * how chat UI and the host's own menus open the dialog.
  *
  * @returns The dialog's state and the action that opens it.

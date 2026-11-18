@@ -37,7 +37,7 @@ export const NavUser = () => {
 	const logout = useSession((state) => state.logout);
 	const theme = usePlaygroundTheme();
 	const { startTour } = useTour();
-	const { openSettings } = useChatConfig().navigation;
+	const { onOpenSettings } = useChatConfig().callbacks;
 
 	const navigate = useNavigate();
 
@@ -80,7 +80,7 @@ export const NavUser = () => {
 				align="end"
 				sideOffset={4}
 			>
-				<DropdownMenuItem onSelect={() => openSettings?.()}>
+				<DropdownMenuItem onSelect={() => onOpenSettings?.()}>
 					<SettingsIcon />
 					{t("sidebar:userMenu.settings")}
 				</DropdownMenuItem>

@@ -53,15 +53,7 @@
 			"folder_edit": "ファイルの編集",
 			"folder_create_directory": "フォルダーの作成",
 			"folder_move": "移動または名前の変更",
-			"folder_delete": "削除",
-			"desktop_list": "デスクトップのフォルダーを一覧",
-			"desktop_read": "デスクトップのファイルを読む",
-			"desktop_search": "デスクトップを検索",
-			"desktop_write": "デスクトップのファイルを書く",
-			"desktop_edit": "デスクトップのファイルを編集",
-			"desktop_create_directory": "デスクトップにフォルダーを作成",
-			"desktop_move": "デスクトップで移動・名前変更",
-			"desktop_delete": "デスクトップから削除"
+			"folder_delete": "削除"
 		}
 	},
 	"card": {

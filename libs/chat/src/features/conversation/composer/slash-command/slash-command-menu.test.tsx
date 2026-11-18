@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
-import type { SlashCommand } from "./slash-command";
 import { SlashCommandProvider } from "./slash-command.context";
+import type { SlashCommandEntry } from "./slash-command-entry";
 import { filterSlashCommands, SlashCommandMenu } from "./slash-command-menu";
 
 vi.mock("@semoss/i18n", () => ({
@@ -11,10 +11,10 @@ vi.mock("@semoss/i18n", () => ({
 /** A command with only what the menu reads. */
 const command = (
 	id: string,
-	group: SlashCommand["group"],
+	group: SlashCommandEntry["group"],
 	label: string,
-	extra: Partial<SlashCommand> = {},
-): SlashCommand => ({
+	extra: Partial<SlashCommandEntry> = {},
+): SlashCommandEntry => ({
 	id: id,
 	group: group,
 	label: label,
@@ -23,7 +23,7 @@ const command = (
 	...extra,
 });
 
-const COMMANDS: SlashCommand[] = [
+const COMMANDS: SlashCommandEntry[] = [
 	command("attach", "chat", "Attach files", {
 		keywords: ["file", "document"],
 	}),
@@ -43,7 +43,7 @@ afterEach(() => {
 });
 
 /** The commands' ids, in order. */
-const ids = (commands: SlashCommand[]) => commands.map((cmd) => cmd.id);
+const ids = (commands: SlashCommandEntry[]) => commands.map((cmd) => cmd.id);
 
 test("lists every group in order before anything is typed, with only the first prompts", () => {
 	expect(ids(filterSlashCommands(COMMANDS, ""))).toEqual([
@@ -91,7 +91,9 @@ test("the menu lists matches under their group headings, and locks busy commands
 	Element.prototype.scrollIntoView ??= () => {};
 	vi.spyOn(Element.prototype, "scrollIntoView").mockImplementation(() => {});
 	render(
-		<SlashCommandProvider commands={COMMANDS} excludeCommandIds={["files"]}>
+		<SlashCommandProvider
+			commands={COMMANDS.filter((command) => command.id !== "files")}
+		>
 			<SlashCommandMenu
 				query=""
 				selectedIndex={0}

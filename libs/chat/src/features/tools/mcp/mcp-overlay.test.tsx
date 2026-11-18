@@ -32,7 +32,7 @@ vi.mock("./use-agent-workspace", () => ({
 	},
 }));
 vi.mock("../../chat/config/use-chat-config", () => ({
-	useChatConfig: () => ({ theme: { featureFlags: {} } }),
+	useChatConfig: () => ({ theme: { featureFlags: {} }, options: {} }),
 }));
 vi.mock("@semoss/shared", () => ({
 	MCPSelector: ({ values }: { values: MCPConfig[] }) => (

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router";
-import type { ChatConfig } from "@semoss/chat";
+import type { ChatCallbacks, ChatConfig } from "@semoss/chat";
 import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 import { NEW_CHAT_BUILD_DEFAULTS } from "./new-chat-build-defaults";
 import { PLATFORM_URL } from "./platform-url";
@@ -15,11 +15,10 @@ import { PLATFORM_URL } from "./platform-url";
  * @returns The config, the same object while the theme and router are unchanged.
  */
 export const usePlaygroundChatConfig = ({
-	openSettings,
+	onOpenSettings,
 	onWorkbenchOpenChange,
 }: Required<
-	Pick<ChatConfig["navigation"], "openSettings"> &
-		Pick<ChatConfig, "onWorkbenchOpenChange">
+	Pick<ChatCallbacks, "onOpenSettings" | "onWorkbenchOpenChange">
 >): ChatConfig => {
 	const theme = usePlaygroundTheme();
 	const navigate = useNavigate();
@@ -28,18 +27,19 @@ export const usePlaygroundChatConfig = ({
 	return useMemo<ChatConfig>(
 		() => ({
 			theme,
-			newChatDefaults: NEW_CHAT_BUILD_DEFAULTS,
-			platformUrl: PLATFORM_URL,
-			onWorkbenchOpenChange,
-			navigation: {
-				openRoom: (roomId) => navigate(`/room/${roomId}`),
+			options: {
 				roomHref: (roomId) => `#/room/${roomId}`,
 				agentHref: (workspaceId) => `#/agent/${workspaceId}`,
-				openNewChat: () => navigate("/"),
-				onRoomDeleted: () => navigate("/"),
-				openSettings,
+				new: NEW_CHAT_BUILD_DEFAULTS,
+				platformUrl: PLATFORM_URL,
+			},
+			callbacks: {
+				onOpenRoom: (roomId) => navigate(`/room/${roomId}`),
+				onOpenNewChat: () => navigate("/"),
+				onOpenSettings,
+				onWorkbenchOpenChange,
 			},
 		}),
-		[theme, navigate, openSettings, onWorkbenchOpenChange],
+		[theme, navigate, onOpenSettings, onWorkbenchOpenChange],
 	);
 };

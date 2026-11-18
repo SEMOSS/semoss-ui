@@ -1,6 +1,9 @@
 import { isToolViewUri } from "@semoss/shared";
 import type { PixelMessageToolCallPart } from "../../../types";
-import { isChatToolCall, isFolderToolCall } from "../chat-tools/chat-tool-kind";
+import {
+	isBrowserToolCall,
+	isChatToolCall,
+} from "../chat-tools/chat-tool-kind";
 import { isAskExecutionMode } from "../mcp/mcp-utils";
 import type { ToolAppInfo } from "./use-tool-app-info";
 
@@ -104,7 +107,7 @@ export const resolveToolFrameUrl = ({
 		return { kind: "none" };
 	}
 	// work folder calls keep their card, even when they name a view
-	if (hasComponentView && !isFolderToolCall(tool)) {
+	if (hasComponentView && !isBrowserToolCall(tool)) {
 		return {
 			kind: "component",
 			fallback: isChatToolCall(tool) ? "card" : "form",

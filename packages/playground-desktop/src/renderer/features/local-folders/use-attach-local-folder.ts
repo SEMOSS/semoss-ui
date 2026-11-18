@@ -2,8 +2,8 @@ import { useCallback } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import type { RoomLocalFoldersStore } from "../store/room-local-folders.store";
-import { useLocalFolders } from "../store/use-local-folders";
+import type { RoomLocalFoldersStore } from "./room-local-folders.store";
+import { useLocalFolders } from "./use-local-folders";
 
 /** What {@link useAttachLocalFolder} gives a button or menu item. */
 export interface AttachLocalFolder {
@@ -24,7 +24,7 @@ export interface AttachLocalFolder {
 export const useAttachLocalFolder = (
 	store: RoomLocalFoldersStore | null,
 ): AttachLocalFolder => {
-	const { t } = useTranslation("room");
+	const { t } = useTranslation("desktop");
 	const isPicking = useLocalFolders(store, (snapshot) => snapshot.isPicking);
 	const attach = useCallback(() => {
 		store?.attach().catch((error: unknown) => {

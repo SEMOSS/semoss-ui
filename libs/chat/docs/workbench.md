@@ -14,7 +14,7 @@ code and are easy to undo by accident:
   components, which import its stores, so the store cannot import them without closing a module
   cycle. The
   composition root passes them instead: `useCreateChatStore` (the host's
-  `ChatConfig.workbenchPanelComponents`, or `DEFAULT_WORKBENCH_PANEL_COMPONENTS`) → `ChatStore` →
+  `ChatConfig.components.WorkbenchPanels`, or `DEFAULT_WORKBENCH_PANEL_COMPONENTS`) → `ChatStore` →
   `RoomStore`, and `NewChat` builds its draft with the store's (`chat.panelComponents`). They have
   to be in place before the first `openWorkbenchPanel`, which for a streaming tool is long before
   anything mounts — without them the dock falls back to a shallow compare of config, and since a
@@ -40,14 +40,16 @@ code and are easy to undo by accident:
   no longer show.
 - **Every panel opens from the Workspace's panel rail.** `RoomWorkbenchRail`
   (`features/workbench/rail/room-workbench-rail.tsx`) is the host's own chrome in the dock's **left**
-  border slot (`borderSlots.left.before`): the room's cog menu, a divider, then one icon per entry
-  of `useWorkbenchPanels`, each with its label on hover. Its `side` prop is `"right"` on that rail,
+  border slot (`borderSlots.left.before`): the room's cog menu, a divider, then the icons of
+  `ChatConfig.components.WorkbenchRail`, or `DefaultWorkbenchRail`: one `RailItem` per entry of
+  `useWorkbenchPanels`, each with its label on hover. A host's rail reads the room and those
+  panels with `useWorkbench()`. Its `side` prop is `"right"` on that rail,
   so labels and the menu open into the dock rather than over the conversation. A click goes through the option's
   `onOpen` → `openWorkbenchFileExplorer` / `openRoomSettings` / `openSourcePanel` / `openWorkbenchPanel`
   → `selectPanel`, which **selects** the panel when it is already open anywhere in the dock and
   **adds** a tab to the main area when it is not. Connector viewers are not opened in advance;
   they open the first time they are asked for. An icon is also a **drag source**
-  (`writeSpawnDragSpec`, from each option's `panelType`/`panelConfig`), so dropping one on the
+  (`writeSpawnDragSpec`, from a `RailItem`'s `panel`), so dropping one on the
   dock opens that panel where it lands — the centre, or beside a tab as a split. A new chat's
   rail does not drag: its panels have to prepare the draft's room first, which only `onOpen` does.
 - **The Workspace opens on its share of the row.** `RoomLayout` gives it
@@ -130,13 +132,15 @@ affects only the current room instance.
 
 ## Slash menu
 
-`/` in the composer lists every action (`features/conversation/composer/use-room-slash-commands.tsx`), by
-group: Chat (attach, knowledge, tools, agent, mode, compact), Workspace (each of
-`useWorkbenchPanels`' panels that can open now, its connector viewers, and Close Workspace), Room
-(`useRoomActionItems`, inside the `RoomActionsProvider` that `RoomScope` mounts), and Prompts (the
-room's predefined prompts). It matches the query against each command's id, label, and keywords,
-which keep the old command names. `excludeCommandIds` still removes commands by id: `RoomComposer`
-drops `agent-harness`, since a room keeps its mode, and `NewChat` drops `agent-harness` and
-`chat-mode` when the theme does not offer the choice (`canChooseAgentMode`). A host changes the
-list with `ChatConfig.customize.slashCommands`, and the panels and room actions in it with
-`customize.workbenchPanels` and `customize.roomActions`.
+`/` in the composer lists the commands its slot places (`features/conversation/composer/slash-command/`):
+the host's `ChatConfig.components.SlashCommands`, or `DefaultSlashCommands`. Each command is a
+`SlashCommand`, which draws nothing and registers itself while it is mounted; the composer's
+`SlashCommandRegistryProvider` keeps them in a `StoreState` and lists them in the order they are
+placed. The default's groups are Chat (`ComposerCommands`: attach, knowledge, tools, agent, mode,
+compact), Workspace (`WorkspaceCommands`: each of `useWorkbenchPanels`' panels that can open now,
+its connector viewers, and Close Workspace), Room (`RoomCommands`: `useRoomActionItems`, inside
+the `RoomActionsProvider` that `RoomScope` mounts), and Prompts (the room's predefined prompts).
+It matches the query against each command's name, label, and keywords, which keep the old
+command names, and sorts by group. A command that cannot run is not placed: the mode commands
+show only in a new chat whose theme offers the choice (`canChooseAgentMode`), since a room keeps
+its mode, and Compact only in a room. Commands read the composer with `useComposer()`.

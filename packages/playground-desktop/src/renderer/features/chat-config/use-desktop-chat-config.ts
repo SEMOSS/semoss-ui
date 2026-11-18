@@ -1,63 +1,61 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { type ChatConfig, useServerChatTheme } from "@semoss/chat";
+import {
+	type ChatComponents,
+	type ChatConfig,
+	useServerChatTheme,
+} from "@semoss/chat";
 import { getDesktopBridge } from "../desktop-bridge/desktop-bridge";
 import { createDesktopFoldersHost } from "../local-folders/desktop-folders-host";
-import { useServerSettingsSection } from "../server-connection/use-server-settings-section";
+import { createDesktopToolsHost } from "../local-folders/desktop-tools-host";
+import { DesktopPlusMenu } from "./desktop-plus-menu";
+import { DesktopSlashCommands } from "./desktop-slash-commands";
 
-/** The desktop build sets no new-chat defaults; one object, so the chat store is not remade. */
-const NO_NEW_CHAT_DEFAULTS = {};
+/** The desktop's own components in the chat's places. One object, so the chat store is not remade. */
+const DESKTOP_CHAT_COMPONENTS: ChatComponents = {
+	PlusMenu: DesktopPlusMenu,
+	SlashCommands: DesktopSlashCommands,
+};
 
 /**
  * The chat's config on the desktop: the server's playground theme over the
- * chat's defaults, the app's routes, the folders the user attaches from this
- * machine, tool views framed from the main process's second local origin
- * (so a tool's page cannot reach the desktop bridge), and the settings dialog with the app's Server page after the
- * chat's own. The desktop has no agent pages, so chat UI shows no links to
- * them.
+ * chat's defaults, the app's routes, the tools it runs over the folders the
+ * user attaches from this machine, and the plus menu and "/" menu with Attach
+ * Folder. Tool views are framed from the main process's second local origin,
+ * so a tool's page cannot reach the desktop bridge. The desktop has no agent
+ * pages, so chat UI shows no links to them.
  *
  * @param openSettings - Opens the settings dialog, for chat UI's links to it
  * and the account menu. Keep its identity stable.
  * @returns The config, the same object while the theme and router are unchanged.
  */
 export const useDesktopChatConfig = (
-	openSettings: (section?: string) => void,
+	openSettings: (page?: string) => void,
 ): ChatConfig => {
 	const theme = useServerChatTheme();
 	const navigate = useNavigate();
-	const serverSection = useServerSettingsSection();
 	const bridge = getDesktopBridge();
 	// one per window, so each folder's source keeps its identity
-	const [localFolders] = useState(() => createDesktopFoldersHost(bridge));
+	const [tools] = useState(() =>
+		createDesktopToolsHost(createDesktopFoldersHost(bridge)),
+	);
 	const { toolFrameOrigin } = bridge;
 
 	return useMemo<ChatConfig>(
 		() => ({
 			theme,
-			// the desktop build sets no new-chat defaults of its own
-			newChatDefaults: NO_NEW_CHAT_DEFAULTS,
-			platformUrl: "",
-			toolFrameOrigin: toolFrameOrigin,
-			localFolders: localFolders,
-			navigation: {
-				openRoom: (roomId) => navigate(`/room/${roomId}`),
+			options: {
 				roomHref: (roomId) => `#/room/${roomId}`,
-				openNewChat: () => navigate("/new"),
-				onRoomDeleted: () => navigate("/new"),
-				openSettings,
+				toolFrameOrigin: toolFrameOrigin,
 			},
-			customize: {
-				// the chat's pages, then the app's own
-				settingsSections: (defaults) => [...defaults, serverSection],
+			callbacks: {
+				onOpenRoom: (roomId) => navigate(`/room/${roomId}`),
+				onOpenNewChat: () => navigate("/new"),
+				onOpenSettings: openSettings,
 			},
+			tools: tools,
+			components: DESKTOP_CHAT_COMPONENTS,
 		}),
-		[
-			theme,
-			navigate,
-			localFolders,
-			toolFrameOrigin,
-			openSettings,
-			serverSection,
-		],
+		[theme, navigate, tools, toolFrameOrigin, openSettings],
 	);
 };

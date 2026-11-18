@@ -2,12 +2,14 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { beforeEach, expect, test, vi } from "vitest";
-import { toast } from "@semoss/ui/next";
+import { DropdownMenuItem, toast } from "@semoss/ui/next";
 import { fakeStore } from "../../../test/fake-store";
 import type { RoomStore } from "../../room/store/room.store";
 import type { MCPOverlay } from "../../tools/mcp/mcp-overlay";
 import { ContextItemsStore } from "../attachments/context-items.store";
+import { AttachFilesItem } from "./plus-menu/attach-files-item";
 import { RoomInput, type RoomInputVariant } from "./room-input";
+import { useComposer } from "./use-composer";
 import type { ComposerSession } from "./use-composer-session";
 
 // ---------------------------------------------------------------------------
@@ -34,8 +36,8 @@ let triggerOnChange: (() => void) | null = null;
 // ---------------------------------------------------------------------------
 
 // the slash menu's commands have their own tests; the composer only hands them on
-vi.mock("./use-room-slash-commands", () => ({
-	useRoomSlashCommands: () => [],
+vi.mock("./slash-command/default-slash-commands", () => ({
+	DefaultSlashCommands: () => null,
 }));
 
 // the session's logins, without reading them from a server
@@ -81,9 +83,13 @@ vi.mock("../attachments/file-drop.context", async (importOriginal) => {
 });
 
 const featureFlags: Record<string, boolean> = {};
+// the host's own components, which a test sets and the next one clears
+const components: { PlusMenu?: () => React.ReactNode } = {};
 vi.mock("../../chat/config/use-chat-config", () => ({
 	useChatConfig: () => ({
 		theme: { featureFlags, defaultCompactionStrategy: "AUTO" },
+		options: {},
+		components: components,
 	}),
 }));
 vi.mock("./use-graceful-errors", () => ({
@@ -344,6 +350,7 @@ function draftVariant(
 				onOpenPanel: vi.fn(),
 				isBusy: false,
 				connectors: room.connectors,
+				prepareRoom: vi.fn(async () => null),
 			},
 		},
 		isSubmitDisabled: false,
@@ -617,6 +624,43 @@ test("opens prompts from the inline action before the microphone", async () => {
 	expect(
 		screen.getByRole("button", { name: "Example prompt Example text" }),
 	).toBeVisible();
+});
+
+test("a host's plus menu replaces the chat's, with the chat's items and its own", async () => {
+	const user = userEvent.setup();
+	const onTemplates = vi.fn();
+	/** A host's plus menu: the chat's Attach item, then its own. */
+	const HostPlusMenu = () => {
+		const { closeMenu } = useComposer();
+		return (
+			<>
+				<AttachFilesItem />
+				<DropdownMenuItem
+					onSelect={() => {
+						onTemplates();
+						closeMenu();
+					}}
+				>
+					Templates
+				</DropdownMenuItem>
+			</>
+		);
+	};
+	components.PlusMenu = HostPlusMenu;
+	try {
+		render(<RoomInput {...defaultProps} />);
+		await user.click(
+			screen.getByRole("button", { name: "input.addToChat" }),
+		);
+		expect(
+			screen.getAllByRole("menuitem").map((item) => item.textContent),
+		).toEqual(["menuUpload.attachDocument", "Templates"]);
+		await user.click(screen.getByRole("menuitem", { name: "Templates" }));
+		expect(onTemplates).toHaveBeenCalledTimes(1);
+		expect(screen.queryByRole("menuitem")).toBeNull();
+	} finally {
+		delete components.PlusMenu;
+	}
 });
 
 test("locks mutating menu actions during a turn", async () => {

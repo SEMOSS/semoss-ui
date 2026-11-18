@@ -85,11 +85,6 @@ export const RoomComposer = ({ room: roomProp }: RoomComposerProps) => {
 						onCompact: handleCompactMessages,
 						hasOutstandingTools,
 					}}
-					excludeCommandIds={[
-						// A room's mode is fixed at creation — never let an
-						// existing room switch into agent-harness mid-chat.
-						"agent-harness",
-					]}
 				/>
 			</div>
 		</div>

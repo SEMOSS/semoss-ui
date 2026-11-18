@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createMemoryFileSource } from "../../../test/memory-file-source";
+import { createMemoryFileSource } from "../../test/memory-file-source";
 import type { LocalFolder, LocalFoldersHost } from "./local-folders-host";
 import { RoomLocalFoldersStore } from "./room-local-folders.store";
 

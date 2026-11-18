@@ -20,8 +20,8 @@ const EMPTY_SNAPSHOT: RoomLocalFoldersSnapshot = {
 /**
  * Read a room's attached folders.
  *
- * @param store - The room's `localFolders`, or null where the host cannot
- * reach the user's files; then the selector reads an empty, idle snapshot.
+ * @param store - The room's folders, or null for none; then the selector
+ * reads an empty, idle snapshot.
  * @param selector - What to read.
  * @returns The selection.
  */

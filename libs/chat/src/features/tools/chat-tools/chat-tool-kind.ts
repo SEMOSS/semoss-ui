@@ -4,50 +4,57 @@ import {
 	findConnectorTool,
 } from "../../connectors/store/connector-catalog";
 import { getToolEngineId, ROOM_MCP_ID } from "../mcp/mcp-utils";
-import {
-	type DesktopToolName,
-	type FolderToolName,
-	isDesktopToolName,
-	isFolderToolName,
-} from "./folder-tools";
+import { type FolderToolName, isFolderToolName } from "./folder-tools";
 
 /** A tool call as a message part holds it. */
 type ToolCall = PixelMessageToolCallPart["toolCall"];
 
 /**
- * Which of the browser's file tools a call is: a Room Files tool or a client
- * (desktop) tool. Read from the name the model called, or, for a tool from
- * the room's own toolbox, whose name the model may be shown changed, from the
- * function its metadata names.
+ * The name of the tool a call ran, when it is one `matches` accepts. Read from
+ * the name the model called, or, for a tool from the room's own toolbox,
+ * whose name the model may be shown changed, from the function its metadata
+ * names.
+ *
+ * @param call - The tool call.
+ * @param matches - Which names to accept.
+ * @returns The name, or undefined when none is accepted.
+ */
+export const findToolCallName = (
+	call: ToolCall,
+	matches: (name: string) => boolean,
+): string | undefined =>
+	[
+		call.name,
+		call._meta?.SMSS_FUNCTION_NAME,
+		call._meta?.SMSS_ORIGINAL_TOOL_NAME,
+	].find(
+		(candidate): candidate is string =>
+			typeof candidate === "string" && matches(candidate),
+	);
+
+/**
+ * Which Room Files tool a call is.
  *
  * @param call - The tool call.
  * @returns The tool, or undefined for every other call.
  */
 export const getFolderToolCallName = (
 	call: ToolCall,
-): FolderToolName | DesktopToolName | undefined =>
-	[
-		call.name,
-		call._meta?.SMSS_FUNCTION_NAME,
-		call._meta?.SMSS_ORIGINAL_TOOL_NAME,
-	].find(
-		(candidate): candidate is FolderToolName | DesktopToolName =>
-			typeof candidate === "string" &&
-			(isFolderToolName(candidate) || isDesktopToolName(candidate)),
-	);
+): FolderToolName | undefined =>
+	findToolCallName(call, isFolderToolName) as FolderToolName | undefined;
 
 /**
- * Whether a tool call is one of the work folder tools the browser runs: Room
- * Files' or the client tools.
+ * Whether the browser runs a tool call: a Room Files tool, or a client tool
+ * the host runs, which the room marks with the client tool flag as it reads
+ * the call.
  *
- * Matched by name as well as by the client tool flag: a chat turn's calls come
- * back from the model with no metadata at all, while an agent run's carry the
- * metadata the harness was given.
+ * Room Files calls are matched by name as well: a chat turn's calls come back
+ * from the model with no metadata at all.
  *
  * @param call - The tool call.
- * @returns True for work folder calls.
+ * @returns True for the calls the browser runs.
  */
-export const isFolderToolCall = (call: ToolCall): boolean =>
+export const isBrowserToolCall = (call: ToolCall): boolean =>
 	getFolderToolCallName(call) !== undefined ||
 	call._meta?.SMSS_CLIENT_TOOL === true;
 
@@ -70,7 +77,7 @@ export const getConnectorToolService = (
  * generic tool view.
  *
  * @param call - The tool call.
- * @returns True for folder and connector calls.
+ * @returns True for the calls the browser runs, and connector calls.
  */
 export const isChatToolCall = (call: ToolCall): boolean =>
-	isFolderToolCall(call) || !!getConnectorToolService(call);
+	isBrowserToolCall(call) || !!getConnectorToolService(call);

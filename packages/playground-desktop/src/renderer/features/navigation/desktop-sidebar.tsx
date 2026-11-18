@@ -35,7 +35,7 @@ import {
  */
 export const DesktopSidebar = () => {
 	const { t } = useTranslation(["desktop", "sidebar"]);
-	const { openSettings } = useChatConfig().navigation;
+	const { onOpenSettings } = useChatConfig().callbacks;
 	const { open, openMobile, isMobile } = useSidebar();
 	const [isSearchOpen, setIsSearchOpen] = useState(false);
 	const roomMatch = useMatch("/room/:roomId");
@@ -93,7 +93,7 @@ export const DesktopSidebar = () => {
 									className="w-56"
 								>
 									<DropdownMenuItem
-										onSelect={() => openSettings?.()}
+										onSelect={() => onOpenSettings?.()}
 									>
 										<SettingsIcon aria-hidden />
 										{t("sidebar:userMenu.settings")}

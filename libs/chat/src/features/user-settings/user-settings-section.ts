@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 /** One page of the user's settings dialog. */
 export interface UserSettingsSection {
-	/** Stable key, which `navigation.openSettings(id)` opens the dialog on. */
+	/** Stable key, which `callbacks.onOpenSettings(id)` opens the dialog on. */
 	id: string;
 	/** The page's name, in the dialog's navigation and as the page's heading. */
 	label: string;

@@ -6,10 +6,10 @@ import type { FileExplorerHost } from "@semoss/panels";
 import { createMemoryFileSource } from "../../test/memory-file-source";
 import { DEFAULT_CHAT_THEME } from "../chat/config/chat-theme";
 import { NextMessageRoomProvider } from "../conversation/attachments/next-message-room.context";
-import type { LocalFoldersHost } from "../local-folders/store/local-folders-host";
 import { RoomLayout } from "../room/layout/room-layout";
 import { RoomStore } from "../room/store/room.store";
 import { useRoomSelector } from "../room/store/use-room-selector";
+import type { ToolsHost } from "../tools/chat-tools/tools-host";
 import { RoomWorkbenchToggle } from "./rail/room-workbench-toggle";
 import { RoomWorkbench } from "./room-workbench";
 
@@ -171,38 +171,48 @@ test.each([false, true])(
 	},
 );
 
-test("an open Desktop file offers Open with Default App, and Room Files do not", async () => {
+test("a host's mount gets the host's file actions and Add to Context; Room Files do not", async () => {
 	const open = vi.fn(async () => undefined);
-	const localFolders: LocalFoldersHost = {
-		fileManagerName: "Finder",
-		list: vi.fn(async () => []),
-		pick: vi.fn(async () => []),
-		detach: vi.fn(async () => []),
-		source: vi.fn(() => createMemoryFileSource()),
-		open: open,
-		reveal: vi.fn(async () => undefined),
-		watch: vi.fn(() => () => undefined),
+	const source = createMemoryFileSource({ "/notes.md": "# Notes" });
+	const toolsHost: ToolsHost = {
+		owns: () => false,
+		list: () => [],
+		files: () => ({
+			groups: [{ id: "desktop", label: "Desktop" }],
+			mounts: [{ id: "f1", name: "notes", group: "desktop", source }],
+			missingMountMessage: "Not here",
+			fileActions: () => [
+				{ name: "Open with App", icon: () => null, action: open },
+			],
+			secondaryActions: () => [
+				{ name: "Show in Finder", action: async () => undefined },
+			],
+		}),
+		subscribe: () => () => undefined,
+		unavailableMessage: "",
 	};
 	const room = new RoomStore({
 		theme: DEFAULT_CHAT_THEME,
 		roomId: "room-desktop",
 		panelComponents: {},
-		localFolders: localFolders,
+		toolsHost: toolsHost,
 	});
 	render(<RoomWorkbench room={room} />);
 	const host = mocks.explorerHost.mock.lastCall?.[0];
+	const mode = { type: "MOUNT", mountId: "f1" } as const;
 
 	const actions =
-		host?.fileActions?.({
-			mode: { type: "MOUNT", mountId: "f1" },
-			path: "/notes.md",
-			name: "notes.md",
-		}) ?? [];
-	expect(actions.map((action) => action.name)).toEqual([
-		"localFolders.openWithApp",
-	]);
+		host?.fileActions?.({ mode, path: "/notes.md", name: "notes.md" }) ??
+		[];
+	expect(actions.map((action) => action.name)).toEqual(["Open with App"]);
 	await act(() => actions[0].action());
-	expect(open).toHaveBeenCalledWith("room-desktop", "f1", "/notes.md");
+	expect(open).toHaveBeenCalled();
+
+	expect(
+		host
+			?.secondaryActions?.({ name: "notes.md", path: "/notes.md" }, mode)
+			.map((action) => action.name),
+	).toEqual(["Show in Finder", "actions.addToContext"]);
 
 	expect(
 		host?.fileActions?.({
@@ -213,7 +223,7 @@ test("an open Desktop file offers Open with Default App, and Room Files do not",
 	).toEqual([]);
 });
 
-test("without desktop folders an open file gets no extra button", () => {
+test("without a host's files an open file gets no extra button", () => {
 	render(<RoomWorkbench room={createRoom()} />);
 	const host = mocks.explorerHost.mock.lastCall?.[0];
 

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { Blob as NodeBlob } from "node:buffer";
-import { createMemoryFileSource } from "../../../test/memory-file-source";
+import { createMemoryFileSource } from "../../test/memory-file-source";
 import { DesktopFolders } from "./desktop-folders";
 
 // jsdom's Blob has no arrayBuffer; browsers and Electron do

@@ -13,7 +13,6 @@ import type {
 	WorkbenchPanelParams,
 	WorkbenchPanelType,
 } from "@semoss/workbench";
-import { useChatCustomization } from "../../chat/config/use-chat-customization";
 import type { ConnectorsStore } from "../../connectors/store/connectors.store";
 import { useConnectors } from "../../connectors/store/use-connectors";
 import { RoomLayoutActionsContext } from "../../room/layout/room-layout-actions.context";
@@ -71,11 +70,12 @@ export interface NewRoomWorkbenchPanels {
 	/** The draft's connectors, whose viewers are offered. */
 	connectors: ConnectorsStore;
 	/**
-	 * Attach folders from the user's machine: prepares the draft's room, which
-	 * keeps them, then opens its Files. Only where the host can reach the
-	 * user's files.
+	 * Prepares the draft's room, once, for something a host keeps for it
+	 * before the first message, such as the desktop app's attached folders.
+	 *
+	 * @returns The room, or null when it cannot be prepared now.
 	 */
-	onAttachFolder?: () => void;
+	prepareRoom: () => Promise<RoomStore | null>;
 }
 
 /**
@@ -86,8 +86,7 @@ export interface NewRoomWorkbenchPanels {
  *
  * @param room - The room whose Workspace shows the panels.
  * @param newRoomPanels - A new chat's own panel actions, until its first message.
- * @returns The room's panels, then the connector viewers, as the host's
- * `ChatConfig.customize.workbenchPanels` leaves them.
+ * @returns The room's panels, then the connector viewers.
  */
 export const useWorkbenchPanels = (
 	room: RoomStore,
@@ -95,7 +94,6 @@ export const useWorkbenchPanels = (
 ): WorkbenchPanelOption[] => {
 	const { t } = useTranslation(["room", "connectors"]);
 	const roomLayout = useContext(RoomLayoutActionsContext);
-	const customize = useChatCustomization().workbenchPanels;
 	const connectors = newRoomPanels?.connectors ?? room.connectors;
 	// the viewers on offer follow the connectors switched on and signed in
 	useConnectors(connectors);
@@ -180,5 +178,5 @@ export const useWorkbenchPanels = (
 			),
 		});
 	}
-	return customize ? customize(panels, room) : panels;
+	return panels;
 };

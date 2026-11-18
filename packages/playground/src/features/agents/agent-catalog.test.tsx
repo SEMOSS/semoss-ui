@@ -69,9 +69,8 @@ const chatWrapper = ({ children }: { children: ReactNode }) => (
 			config={
 				{
 					theme: { featureFlags: {}, images: {} },
-					navigation: {},
-					newChatDefaults: {},
-					platformUrl: "",
+					options: {},
+					callbacks: {},
 				} as unknown as ChatConfig
 			}
 		>

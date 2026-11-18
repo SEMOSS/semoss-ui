@@ -1,4 +1,6 @@
 import { getI18n } from "@semoss/i18n";
+import { getErrorMessage } from "@semoss/utility/error";
+import { isRecord } from "@semoss/utility/object";
 import type { PixelMessageToolCallPart } from "../../../types";
 import type { RoomStore } from "../../room/store/room.store";
 import { ROOM_PANEL_TYPES } from "../../room/store/room-workbench-layout";
@@ -11,12 +13,13 @@ import {
 } from "../mcp/mcp-constants";
 import { isAskExecutionMode } from "../mcp/mcp-utils";
 import {
+	findToolCallName,
 	getConnectorToolService,
 	getFolderToolCallName,
-	isFolderToolCall,
 } from "./chat-tool-kind";
 import {
 	type DefaultToolMode,
+	isDefaultToolMode,
 	getDefaultToolMode as readDefaultToolMode,
 } from "./default-tools";
 import {
@@ -24,19 +27,15 @@ import {
 	summarizeFolderToolCall,
 } from "./folder-tool-labels";
 import {
-	buildDesktopToolDefinitions,
 	buildFolderToolDefinitions,
-	type DesktopToolName,
 	executeFolderTool,
 	type FolderToolDefinition,
 	type FolderToolExecution,
 	type FolderToolName,
-	type FolderToolOutcome,
-	getMatchingFolderTool,
-	isDesktopToolName,
 	isFolderToolName,
 } from "./folder-tools";
 import { RoomFolder } from "./room-folder";
+import type { ClientTool, ClientToolOutcome } from "./tools-host";
 
 /** A tool call as a message part holds it. */
 type ToolCall = PixelMessageToolCallPart["toolCall"];
@@ -46,9 +45,18 @@ type ToolCallMeta = NonNullable<ToolCall["_meta"]>;
 /** What the model reads back when the user declines a change. */
 const DECLINED_RESULT = "The user declined this change, so it did not run.";
 
-/** What the model reads back for a client tool call where its host is not. */
+/** What the model reads back for a client tool call where no host runs it. */
 const CLIENT_TOOLS_UNAVAILABLE =
-	"Desktop folders are only available in the desktop app where they were attached. Tell the user to open this chat there, or attach the folders again.";
+	"This tool runs only in the app it was offered in. Tell the user to open this chat there.";
+
+/**
+ * What the model reads back for a call to a tool the room's settings disable.
+ *
+ * @param name - The tool.
+ * @returns The message.
+ */
+const disabledMessage = (name: string): string =>
+	`${name} is disabled in this chat's settings. Ask the user to allow it in Settings if they want this done.`;
 
 /** The engine fields a folder tool's metadata leaves empty. */
 const EMPTY_ENGINE_META: Omit<ToolCallMeta, "SMSS_MCP_EXECUTION"> = {
@@ -65,10 +73,9 @@ const EMPTY_ENGINE_META: Omit<ToolCallMeta, "SMSS_MCP_EXECUTION"> = {
  * @param message - Why it failed.
  * @returns The outcome.
  */
-const failure = (message: string): FolderToolOutcome => ({
+const failure = (message: string): ClientToolOutcome => ({
 	isError: true,
 	payload: { error: message },
-	hasChanges: false,
 });
 
 /**
@@ -82,7 +89,7 @@ const failure = (message: string): FolderToolOutcome => ({
  * @param outcome - The tool call's outcome.
  * @returns The text to save.
  */
-const toToolResponseText = (outcome: FolderToolOutcome): string =>
+const toToolResponseText = (outcome: ClientToolOutcome): string =>
 	(outcome.isError
 		? String(outcome.payload.error)
 		: JSON.stringify(outcome.payload)
@@ -139,13 +146,23 @@ export class ChatTools {
 	 * @param name - The tool.
 	 * @returns `auto`, `ask`, or `disabled`.
 	 */
-	getDefaultToolMode = (
-		name: FolderToolName | DesktopToolName,
-	): DefaultToolMode =>
-		readDefaultToolMode(
-			this.room.options.defaultTools,
-			getMatchingFolderTool(name),
-		);
+	getDefaultToolMode = (name: FolderToolName): DefaultToolMode =>
+		readDefaultToolMode(this.room.options.defaultTools, name);
+
+	/**
+	 * How the chat runs one of the host's client tools, from the room's
+	 * settings: the setting it follows, or its usual way when none is stored.
+	 *
+	 * @param tool - The tool.
+	 * @returns `auto`, `ask`, or `disabled`.
+	 */
+	getClientToolMode = (tool: ClientTool): DefaultToolMode => {
+		const setting = this.room.options.defaultTools;
+		const stored = isRecord(setting)
+			? setting[tool.modeKey ?? tool.name]
+			: undefined;
+		return isDefaultToolMode(stored) ? stored : tool.usualMode;
+	};
 
 	/**
 	 * How a tool is offered to the model, from the room's settings.
@@ -154,7 +171,7 @@ export class ChatTools {
 	 * @returns Its execution, or null to leave a disabled tool out.
 	 */
 	private executionOf = (
-		name: FolderToolName | DesktopToolName,
+		name: FolderToolName,
 	): FolderToolExecution | null => {
 		const mode = this.getDefaultToolMode(name);
 		return mode === "disabled" ? null : mode;
@@ -176,22 +193,33 @@ export class ChatTools {
 		];
 	}
 
+	/** The client tools the host runs for this room now; none without a host. */
+	get clientTools(): readonly ClientTool[] {
+		return this.room.toolsHost?.list(this.room.roomId) ?? [];
+	}
+
 	/**
-	 * The client tools: the ones a host runs in this browser, today the
-	 * desktop app's `desktop_*` tools over the folders attached from the
-	 * user's machine. Each follows the room's setting for the Room Files tool
-	 * that does the same. None where the host has none or nothing is
-	 * attached. A chat turn sends them; an agent room keeps them in its own
+	 * The client tools the room's settings do not disable, each described the
+	 * way it runs. A chat turn sends them; an agent room keeps them in its own
 	 * toolbox (`RoomStore.syncClientTools`).
 	 */
 	get clientToolDefinitions(): FolderToolDefinition[] {
-		const localFolders = this.room.localFolders;
-		if (!localFolders) {
-			return [];
-		}
-		return buildDesktopToolDefinitions({
-			folderNames: localFolders.toolFolder.folderNames,
-			executionOf: this.executionOf,
+		return this.clientTools.flatMap((tool) => {
+			const mode = this.getClientToolMode(tool);
+			if (mode === "disabled") {
+				return [];
+			}
+			return [
+				{
+					name: tool.name,
+					title: tool.title,
+					description:
+						mode === "ask" && tool.approvalNote
+							? `${tool.description} ${tool.approvalNote}`
+							: tool.description,
+					inputSchema: tool.inputSchema,
+				},
+			];
 		});
 	}
 
@@ -206,13 +234,48 @@ export class ChatTools {
 	}
 
 	/**
+	 * The host's client tool a call is to, from its name, whether or not the
+	 * room has it now.
+	 *
+	 * @param call - The tool call.
+	 * @returns The tool's name, or undefined for a call that is not the host's.
+	 */
+	private getClientToolCallName = (call: ToolCall): string | undefined => {
+		const host = this.room.toolsHost;
+		return host
+			? findToolCallName(call, (name) => host.owns(name))
+			: undefined;
+	};
+
+	/**
+	 * The client tool the room has now under a name.
+	 *
+	 * @param name - The tool's name.
+	 * @returns The tool, or undefined when the room does not have it.
+	 */
+	private findClientTool = (name: string): ClientTool | undefined =>
+		this.clientTools.find((tool) => tool.name === name);
+
+	/**
+	 * The tool a call the browser runs is to: a Room Files tool or a client tool.
+	 *
+	 * @param call - The tool call.
+	 * @returns Its name, as the call has it when neither matches.
+	 */
+	private getBrowserToolCallName = (call: ToolCall): string =>
+		getFolderToolCallName(call) ??
+		this.getClientToolCallName(call) ??
+		call._meta?.SMSS_FUNCTION_NAME ??
+		call.name;
+
+	/**
 	 * Fill in what the model does not send back with a tool call, so the tool
 	 * renders and runs like any other.
 	 *
-	 * A chat folder call arrives with no metadata, since the backend does not
-	 * know the tool; it runs the way the room's settings say.
-	 * Folder calls and connector calls that wait for the user open inline, in
-	 * their approval card, rather than in the Workbench.
+	 * A chat folder or client tool call arrives with no metadata, since the
+	 * backend does not know the tool; it runs the way the room's settings say.
+	 * Folder, client and connector calls that wait for the user open inline,
+	 * in their approval card, rather than in the Workbench.
 	 *
 	 * @param call - The tool call as the room received it.
 	 * @param defaultTools - The room's `defaultTools` setting to follow; the
@@ -223,13 +286,18 @@ export class ChatTools {
 		call: ToolCall,
 		defaultTools: unknown = this.room.options.defaultTools,
 	): ToolCall => {
-		const name = getFolderToolCallName(call);
-		if (isFolderToolCall(call) && name) {
-			const shouldAskUser =
-				readDefaultToolMode(
-					defaultTools,
-					getMatchingFolderTool(name),
-				) !== "auto";
+		const folderName = getFolderToolCallName(call);
+		const clientName = folderName
+			? undefined
+			: this.getClientToolCallName(call);
+		if (folderName || clientName) {
+			const args = call.arguments ?? {};
+			const clientTool = clientName
+				? this.findClientTool(clientName)
+				: undefined;
+			const shouldAskUser = folderName
+				? readDefaultToolMode(defaultTools, folderName) !== "auto"
+				: !clientTool || this.getClientToolMode(clientTool) !== "auto";
 			// an agent run's call keeps the run's own execution, which the
 			// chat's tool loop never runs, and only says whether it asks
 			const executionMode = call._meta?.SMSS_MCP_EXECUTION;
@@ -242,11 +310,12 @@ export class ChatTools {
 
 			return {
 				...call,
-				title: getFolderToolTitle(name),
-				description: summarizeFolderToolCall(
-					name,
-					call.arguments ?? {},
-				),
+				title: folderName
+					? getFolderToolTitle(folderName)
+					: (clientTool?.title ?? clientName),
+				description: folderName
+					? summarizeFolderToolCall(folderName, args)
+					: (clientTool?.summarize?.(args) ?? ""),
 				_meta: {
 					...EMPTY_ENGINE_META,
 					...call._meta,
@@ -279,9 +348,8 @@ export class ChatTools {
 	};
 
 	/**
-	 * Run a folder call against its folder: the chat's own files for a Room
-	 * Files tool, the attached desktop folders for a client tool. Never
-	 * throws.
+	 * Run a call the browser runs: a Room Files tool in the chat's own files,
+	 * or a client tool through its host. Never throws.
 	 *
 	 * @param name - The tool the model called.
 	 * @param args - The call's arguments.
@@ -290,43 +358,42 @@ export class ChatTools {
 	runFolderCall = async (
 		name: string,
 		args: Record<string, unknown>,
-	): Promise<FolderToolOutcome> => {
-		const isClientTool = isDesktopToolName(name);
-		if (!isFolderToolName(name) && !isClientTool) {
-			return failure(`Unknown tool ${name}.`);
-		}
-		if (this.getDefaultToolMode(name) === "disabled") {
-			return failure(
-				`${name} is disabled in this chat's settings. Ask the user to allow it in Settings if they want this done.`,
-			);
-		}
-		if (!isClientTool) {
+	): Promise<ClientToolOutcome> => {
+		if (isFolderToolName(name)) {
+			if (this.getDefaultToolMode(name) === "disabled") {
+				return failure(disabledMessage(name));
+			}
 			const outcome = await executeFolderTool(this.roomFiles, name, args);
 			if (outcome.hasChanges) {
 				this.room.refreshWorkbenchFileExplorer();
 			}
 			return outcome;
 		}
-		const localFolders = this.room.localFolders;
-		if (!localFolders || localFolders.folders.length === 0) {
-			return failure(CLIENT_TOOLS_UNAVAILABLE);
+		const tool = this.findClientTool(name);
+		if (!tool) {
+			return failure(
+				this.room.toolsHost?.unavailableMessage ??
+					CLIENT_TOOLS_UNAVAILABLE,
+			);
 		}
-		const outcome = await executeFolderTool(
-			localFolders.toolFolder,
-			name,
-			args,
-		);
-		if (outcome.hasChanges) {
-			this.room.refreshLocalFolderPanels();
+		if (this.getClientToolMode(tool) === "disabled") {
+			return failure(disabledMessage(name));
 		}
-		return outcome;
+		try {
+			return await tool.run(args);
+		} catch (error) {
+			return failure(
+				getErrorMessage(error, "") || "The operation failed.",
+			);
+		}
 	};
 
 	/**
-	 * Run a folder call from the chat tool loop and record its result on the
-	 * message that made it, which hands the result back to the model.
+	 * Run a call the browser runs from the chat tool loop and record its
+	 * result on the message that made it, which hands the result back to the
+	 * model.
 	 *
-	 * @param tool - A folder call that has not run yet.
+	 * @param tool - A call that has not run yet.
 	 */
 	runChatTool = async (tool: ToolStore): Promise<void> => {
 		// an agent run's client tool call is paused on the server, which takes
@@ -343,7 +410,7 @@ export class ChatTools {
 
 		tool.setStatus("LOADING");
 		const outcome = await this.runFolderCall(
-			getFolderToolCallName(tool.json) ?? tool.json.name,
+			this.getBrowserToolCallName(tool.json),
 			tool.parameters,
 		);
 		await message.saveToolExecution(
@@ -356,26 +423,30 @@ export class ChatTools {
 
 	/**
 	 * Answer the client tool calls an agent run paused on that the room's
-	 * settings let run on their own, and every one where its host is not here,
-	 * so a run never waits on a browser that cannot answer it. The rest wait
-	 * in their cards for the user. Each call is answered once.
+	 * settings let run on their own, and every one the room does not have
+	 * here, so a run never waits on a browser that cannot answer it. The rest
+	 * wait in their cards for the user. Each call is answered once.
 	 *
 	 * @param tools - The run's calls whose pending action just changed.
 	 */
 	answerAgentClientCalls = (tools: readonly ToolStore[]): void => {
-		const isHere = (this.room.localFolders?.folders.length ?? 0) > 0;
 		for (const tool of tools) {
 			const action = tool.pendingAction;
-			const name = getFolderToolCallName(tool.json);
+			const name =
+				this.getClientToolCallName(tool.json) ??
+				(tool.json._meta?.SMSS_CLIENT_TOOL === true
+					? this.getBrowserToolCallName(tool.json)
+					: undefined);
 			if (
 				!action ||
 				!name ||
-				!isDesktopToolName(name) ||
+				isFolderToolName(name) ||
 				this.failedActions.has(action.actionId)
 			) {
 				continue;
 			}
-			if (!isHere || this.getDefaultToolMode(name) === "auto") {
+			const clientTool = this.findClientTool(name);
+			if (!clientTool || this.getClientToolMode(clientTool) === "auto") {
 				this.answerAgentClientCall(tool).catch((error: unknown) => {
 					this.failedActions.add(action.actionId);
 					console.error(
@@ -401,7 +472,7 @@ export class ChatTools {
 		this.answeredActions.add(action.actionId);
 		try {
 			const outcome = await this.runFolderCall(
-				getFolderToolCallName(tool.json) ?? tool.json.name,
+				this.getBrowserToolCallName(tool.json),
 				action.editedArgs ?? action.toolArgs ?? tool.parameters,
 			);
 			// the room's live store for the run, which wakes its poller

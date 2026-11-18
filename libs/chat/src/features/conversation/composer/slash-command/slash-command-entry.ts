@@ -12,7 +12,7 @@ export const SLASH_COMMAND_GROUPS = [
 export type SlashCommandGroup = (typeof SLASH_COMMAND_GROUPS)[number];
 
 /** One action the composer's "/" menu offers. */
-export interface SlashCommand {
+export interface SlashCommandEntry {
 	/** Stable key, and what Tab completes the query to. */
 	id: string;
 	/** The command's name, as it is shown and matched. */

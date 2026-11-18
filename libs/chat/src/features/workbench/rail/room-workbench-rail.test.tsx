@@ -3,16 +3,22 @@ import userEvent from "@testing-library/user-event";
 import type { ReactElement } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { FILE_PANEL_TYPES } from "@semoss/panels";
+import {
+	type ChatConfig,
+	ChatConfigContext,
+} from "../../chat/config/chat-config.context";
 import { DEFAULT_CHAT_THEME } from "../../chat/config/chat-theme";
 import { RoomActionsProvider } from "../../room/actions/room-actions.context";
 import { RoomStore } from "../../room/store/room.store";
 import { ROOM_PANEL_TYPES } from "../../room/store/room-workbench-layout";
 import { DEFAULT_WORKBENCH_PANEL_COMPONENTS } from "../panels/room-panel-components";
+import { DefaultWorkbenchRail } from "./default-workbench-rail";
+import { RailItem } from "./rail-item";
 import { RoomWorkbenchRail } from "./room-workbench-rail";
 import type { NewRoomWorkbenchPanels } from "./use-workbench-panels";
 
 const mocks = vi.hoisted(() => ({
-	onRoomDeleted: vi.fn(),
+	onOpenNewChat: vi.fn(),
 	pinRoom: vi.fn(),
 	closeRoom: vi.fn(),
 	addWorkspace: vi.fn(),
@@ -21,7 +27,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("../../chat/config/use-chat-config", () => ({
 	useChatConfig: () => ({
-		navigation: { openRoom: vi.fn(), onRoomDeleted: mocks.onRoomDeleted },
+		callbacks: { onOpenRoom: vi.fn(), onOpenNewChat: mocks.onOpenNewChat },
 	}),
 }));
 // the cog's actions read the favorites and act on the chat store; the room
@@ -50,7 +56,7 @@ vi.mock("@semoss/i18n", () => ({
 
 // a desktop window: the rail's icons are the compact size
 beforeEach(() => {
-	for (const mock of [mocks.onRoomDeleted, mocks.pinRoom, mocks.closeRoom])
+	for (const mock of [mocks.onOpenNewChat, mocks.pinRoom, mocks.closeRoom])
 		mock.mockReset();
 	mocks.addWorkspace.mockReset().mockResolvedValue("saved-agent");
 	mocks.pinned = [];
@@ -191,6 +197,7 @@ test("a panel drags onto the dock, except in a new chat, which prepares first", 
 				onOpenPanel: vi.fn(),
 				isBusy: false,
 				connectors: room.connectors,
+				prepareRoom: vi.fn(async () => null),
 			}}
 			side="right"
 		/>,
@@ -206,6 +213,7 @@ test("a new chat's rail prepares its room, and waits while it does", () => {
 		onOpenPanel: vi.fn(),
 		isBusy: true,
 		connectors: room.connectors,
+		prepareRoom: vi.fn(async () => null),
 	};
 	const { rerender } = render(
 		<RoomWorkbenchRail
@@ -294,9 +302,7 @@ test("the cog's Delete removes the room and leaves its page", async () => {
 	);
 
 	expect(mocks.closeRoom).toHaveBeenCalledWith("panel-rail");
-	await waitFor(() =>
-		expect(mocks.onRoomDeleted).toHaveBeenCalledWith("panel-rail"),
-	);
+	await waitFor(() => expect(mocks.onOpenNewChat).toHaveBeenCalledTimes(1));
 });
 
 test("the cog's Publish as Agent saves the room's instructions and tools", async () => {
@@ -344,4 +350,38 @@ test("the cog leaves out Favorite where the chat history is hidden", async () =>
 	expect(
 		screen.getByRole("menuitem", { name: "room:workspace.publish" }),
 	).toBeVisible();
+});
+
+test("a host's rail replaces the chat's icons, with the chat's and its own", () => {
+	const onOpenLogs = vi.fn();
+	/** A host's rail: the chat's icons, then one of its own. */
+	const HostRail = () => (
+		<>
+			<DefaultWorkbenchRail />
+			<RailItem label="Server logs" icon={null} onOpen={onOpenLogs} />
+		</>
+	);
+	render(
+		<ChatConfigContext.Provider
+			value={
+				{
+					components: { WorkbenchRail: HostRail },
+				} as unknown as ChatConfig
+			}
+		>
+			<RoomWorkbenchRail room={createRoom()} side="right" />
+		</ChatConfigContext.Provider>,
+	);
+
+	expect(
+		screen.getAllByRole("button").map((b) => b.getAttribute("aria-label")),
+	).toEqual([
+		"workspacePlaces.files",
+		"workspacePlaces.settings",
+		"workspacePlaces.activity",
+		"connectors:services.onedrive",
+		"Server logs",
+	]);
+	fireEvent.click(screen.getByRole("button", { name: "Server logs" }));
+	expect(onOpenLogs).toHaveBeenCalledTimes(1);
 });
