@@ -83,7 +83,7 @@ export async function listTopicM365Folders(
 	return (
 		await callPixel(
 			actions,
-			pixel("ListTopicM365Folders", { topicId }),
+			pixel("BrainListTopicM365Folders", { topicId }),
 			listLinksSchema,
 		)
 	).folders;
@@ -94,7 +94,11 @@ export async function listAvailableOneDriveFolders(
 	actions: InsightActions,
 ): Promise<OneDriveFolder[]> {
 	return (
-		await callPixel(actions, pixel("ListDriveFiles"), oneDriveFoldersSchema)
+		await callPixel(
+			actions,
+			pixel("MicrosoftOneDriveListFiles"),
+			oneDriveFoldersSchema,
+		)
 	).files;
 }
 
@@ -102,8 +106,13 @@ export async function listAvailableOneDriveFolders(
 export async function listAvailableTeams(
 	actions: InsightActions,
 ): Promise<Team[]> {
-	return (await callPixel(actions, pixel("ListTeams"), teamsListSchema))
-		.teams;
+	return (
+		await callPixel(
+			actions,
+			pixel("MicrosoftTeamsListTeams"),
+			teamsListSchema,
+		)
+	).teams;
 }
 
 /** List channels in a Microsoft Teams team. */
@@ -114,7 +123,7 @@ export async function listTeamChannels(
 	return (
 		await callPixel(
 			actions,
-			pixel("ListChannels", { teamId }),
+			pixel("MicrosoftTeamsListChannels", { teamId }),
 			channelsListSchema,
 		)
 	).channels;
@@ -128,7 +137,7 @@ export function linkTopicM365Folder(
 ): Promise<TopicM365Folder[]> {
 	return callPixel(
 		actions,
-		pixel("LinkTopicM365Folder", { topicId, ...folder }),
+		pixel("BrainLinkTopicM365Folder", { topicId, ...folder }),
 		linkResultSchema,
 	).then((result) => result.folders);
 }
