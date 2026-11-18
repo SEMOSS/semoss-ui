@@ -43,35 +43,43 @@ it("offers to create a twin to someone who has none, and says nothing is shared 
 	renderHub();
 	expect(screen.getByText("Loading Digital Twins…")).toBeInTheDocument();
 	expect(
-		await screen.findByRole("link", { name: "Create your Digital Twin" }),
-	).toHaveAttribute("href", "/twins/mine");
+		await screen.findByRole("link", { name: "Create Digital Twin" }),
+	).toHaveAttribute("href", "/twins/mine?create=true");
 	expect(
 		screen.getByText(/No one has shared a Digital Twin with you yet/),
 	).toBeVisible();
 	expect(screen.queryByRole("link", { name: /Chat/ })).toBeNull();
 });
 
-it("shows the owner's twin with its three ways in, and each shared twin with its chat", async () => {
-	twins = { mine: [ROBIN], all: [ROBIN, DANA] };
+it("shows all the owner's twins with their own links, and each shared twin with its chat", async () => {
+	const research = { project_id: "twin-3", project_name: "Research Twin" };
+	twins = { mine: [ROBIN, research], all: [ROBIN, research, DANA] };
 	renderHub();
 	const mine = within(
-		await screen.findByRole("region", { name: "Your Digital Twin" }),
+		await screen.findByRole("region", { name: "Your Digital Twins" }),
 	);
 	expect(
 		mine.getByRole("heading", { level: 3, name: "Robin Twin" }),
 	).toBeVisible();
 	expect(
 		mine.getByRole("link", { name: "Manage: Robin Twin" }),
-	).toHaveAttribute("href", "/twins/mine");
+	).toHaveAttribute("href", "/twins/mine?twinId=twin-1");
 	expect(
 		mine.getByRole("link", { name: "What it knows: Robin Twin" }),
-	).toHaveAttribute("href", "/twins/mine/contents");
+	).toHaveAttribute("href", "/twins/mine/contents?twinId=twin-1");
 	expect(
 		mine.getByRole("link", { name: "Chat: Robin Twin" }),
 	).toHaveAttribute("href", "/twins/chat?agentId=twin-1");
 	expect(
-		screen.queryByRole("link", { name: "Create your Digital Twin" }),
-	).toBeNull();
+		screen.getByRole("link", { name: "Create Digital Twin" }),
+	).toHaveAttribute("href", "/twins/mine?create=true");
+	expect(mine.getAllByRole("listitem")).toHaveLength(2);
+	expect(
+		mine.getByRole("link", { name: "Manage: Research Twin" }),
+	).toHaveAttribute("href", "/twins/mine?twinId=twin-3");
+	expect(
+		mine.getByRole("link", { name: "What it knows: Research Twin" }),
+	).toHaveAttribute("href", "/twins/mine/contents?twinId=twin-3");
 
 	// the owner's own twin is not listed again among the shared ones
 	const shared = within(

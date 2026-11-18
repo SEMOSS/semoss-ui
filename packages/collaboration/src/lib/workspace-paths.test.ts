@@ -6,6 +6,7 @@ import {
 	topicPath,
 	twinChatPath,
 	twinContentsPath,
+	twinSettingsPath,
 } from "./workspace-paths";
 
 it("encodes a topic identity as one shared workspace route segment", () => {
@@ -41,6 +42,12 @@ it("names the twin to chat with, and the place its contents page opens on, in th
 	expect(twinContentsPath()).toBe("/twins/mine/contents");
 	expect(twinContentsPath("teams-chats")).toBe(
 		"/twins/mine/contents?in=teams-chats",
+	);
+	expect(twinContentsPath("teams-chats", "twin/one&two")).toBe(
+		"/twins/mine/contents?twinId=twin%2Fone%26two&in=teams-chats",
+	);
+	expect(twinSettingsPath("twin/one&two", "people")).toBe(
+		"/twins/mine?twinId=twin%2Fone%26two&tab=people",
 	);
 });
 
