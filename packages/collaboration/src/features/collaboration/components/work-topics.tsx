@@ -2,12 +2,17 @@ import { ArrowRight, Layers, Plus } from "lucide-react";
 import { useRef, useState } from "react";
 import { Link } from "react-router";
 import { Badge, Button, cn, P, Separator, Small } from "@semoss/ui/next";
+import {
+	formatDateToRelative,
+	parseTimestampWithUtcDefault,
+} from "@semoss/utility/date";
 import { BriefPanel } from "@/features/dashboard/brief-panel";
 import { MailCheckStatus } from "@/features/dashboard/mail-check-status";
 import { topicPath } from "@/lib/workspace-paths";
 import { WorkRefreshStatus } from "../live/work-refresh-status";
 import { selectWorkItems } from "../state/collaboration.selectors";
 import { useCollaborationSession } from "../state/collaboration-session.context";
+import { memoriesAbout } from "../state/memory";
 import { CollaborationHeroHeader } from "./collaboration-hero-header";
 import { CollaborationHeroPage } from "./collaboration-hero-page";
 import { CollaborationPageHeader } from "./collaboration-page-header";
@@ -18,6 +23,16 @@ import { TopicEditor } from "./topic-editor";
 interface WorkTopicsProps {
 	/** Given under Settings, where the list keeps that area's plain page header; without it the list opens on Work's hero. */
 	settings?: { title: string; description: string };
+}
+
+/** Helper to render stats label with count */
+function StatItem({ count, label }: { count: number; label: string }) {
+	const textClassName = count === 0 ? "text-muted-foreground/50" : "";
+	return (
+		<span className={`text-xs ${textClassName}`}>
+			{count} {label}
+		</span>
+	);
 }
 
 /** The topics that give each action its purpose, each opening its own page. */
@@ -47,12 +62,23 @@ export function WorkTopics({ settings }: WorkTopicsProps) {
 					topicId: topic.id,
 					view: "waiting",
 				}).total;
+				const memories = memoriesAbout(state.memories, {
+					type: "topic",
+					id: topic.id,
+				}).length;
+				const relativeDate = topic.stats.lastActivity
+					? formatDateToRelative(
+							parseTimestampWithUtcDefault(
+								topic.stats.lastActivity,
+							),
+						)
+					: "";
 				return (
 					<li key={topic.id}>
 						<Link
 							to={topicPath(topic.id)}
 							className={cn(
-								"flex min-w-0 flex-col gap-4 transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring sm:flex-row sm:items-center",
+								"flex min-w-0 flex-col gap-3 transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring sm:flex-row sm:items-start",
 								// Settings' card has no padding of its own; the hero's card does, so its rows only reach a little past the text
 								settings
 									? "focus-visible:-outline-offset-2 p-5 md:px-6"
@@ -80,14 +106,47 @@ export function WorkTopics({ settings }: WorkTopicsProps) {
 								<P className="max-w-prose break-words text-muted-foreground text-sm leading-relaxed">
 									{topic.description || "No description yet."}
 								</P>
+								<div className="flex flex-wrap gap-4 pt-1 text-muted-foreground text-xs">
+									<StatItem
+										count={topic.stats.threads}
+										label="Threads"
+									/>
+									<StatItem
+										count={topic.stats.chats}
+										label="Chats"
+									/>
+									<StatItem
+										count={topic.files?.length ?? 0}
+										label="Files"
+									/>
+									<StatItem
+										count={memories}
+										label="Memories"
+									/>
+								</div>
 							</div>
-							<div className="flex shrink-0 items-center gap-4 text-muted-foreground text-sm tabular-nums">
-								<span>{open} open</span>
-								<span>{waiting} waiting</span>
-								<ArrowRight
-									aria-hidden="true"
-									className="ml-auto size-4"
-								/>
+							<div className="flex shrink-0 flex-col items-end gap-2">
+								<div className="flex shrink-0 items-center gap-4 text-muted-foreground text-sm tabular-nums">
+									<span>{open} open</span>
+									<span>{waiting} waiting</span>
+									<ArrowRight
+										aria-hidden="true"
+										className="ml-auto size-4"
+									/>
+								</div>
+								{relativeDate && (
+									<div className="text-muted-foreground text-xs">
+										<span>Last activity </span>
+										<span
+											title={new Date(
+												topic.stats.lastActivity,
+											).toLocaleString()}
+											className="font-medium"
+										>
+											{relativeDate}
+										</span>
+									</div>
+								)}
 							</div>
 						</Link>
 					</li>

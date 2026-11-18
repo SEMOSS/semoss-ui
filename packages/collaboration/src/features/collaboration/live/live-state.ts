@@ -314,6 +314,7 @@ export function mapTopic(row: Row): Topic {
 		stats: {
 			threads: Number(stats.threads ?? 0),
 			openItems: Number(stats.openItems ?? 0),
+			chats: Number(stats.chats ?? 0),
 			lastActivity: str(stats.lastActivity),
 		},
 		isSample: false,
