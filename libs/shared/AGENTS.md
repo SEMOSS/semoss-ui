@@ -198,8 +198,9 @@ namespace, which every host that shows them loads. Each chat reads its stream wi
 
 ### Engine pickers (`components/engine/`)
 
-`EngineSelect` is the one engine picker. It reads its own pages of `MyEngines` (filtered by
-`engineTypes` and `metaFilters`, searched on the server), or, given `engines`, lists just those and
+`EngineSelect` is the one engine picker. It reads its own pages of `MyEngines`, or of
+`AdminMyEngines` for an admin in admin mode (`admin`), filtered by `engineTypes` and `metaFilters`
+and searched on the server, or, given `engines`, lists just those and
 searches their names and ids itself, for a picker the server cannot filter, such as one subtype.
 `noneOption` adds a choice of no engine first in the list, and `unavailable` keeps a chosen engine
 the list does not offer, disabled, with a note. Each engine in the list is an `EngineOption`: its
@@ -232,8 +233,8 @@ Every place a model usage limit is set or shown uses these, so limits read the s
   just opened or a rule just added is not red; from then on the problems follow the edits, and
   with no rules the hint to add one turns red. Warnings and notes show from the start.
 - `source` (`ModelUsageLimitSource`: `DIRECT`, `TEAM`, `PUBLIC`, `MODEL_TOTAL`, `ALL_MODELS`,
-  `PLATFORM`, `TEAM_TOTAL`, `APP`) decides the counts offered and whether Unlimited is: a total and the
-  platform default have none.
+  `PLATFORM`, `TEAM_TOTAL`, `APP`, `ENGINE`) decides the counts offered and whether Unlimited is: a
+  total and the platform default have none.
 - `APP` is the limit on the permission a model gives an app, which covers the calls the app's
   custom reactors make to the model for people whose only way to it is the app, and comes after
   Team Limits and before the Public Use Limit in the guide's order. It works like a team's: it offers
@@ -243,6 +244,15 @@ Every place a model usage limit is set or shown uses these, so limits read the s
   notes that it counts only the calls the app's limit applies to. The client's Apps table on a
   model's Access Control tab and its Add App dialog, labelled App Limit, are its hosts, and What
   Rules Count in the guide names its counts.
+- `ENGINE` is the limit on the permission a model gives another engine, which covers the calls the
+  engine's own code makes to the model, such as a vector database embedding or a guardrail asking
+  its judge, for people whose only way to the model is that engine. It comes right after the App
+  Limit in the guide's order and works the same way, with its counts named Shared by the Engine
+  and For Each User, and a note that a rule for each user counts only the calls the engine's limit
+  applies to. The client's Engines table on a model's Access Control tab and its Add Engine
+  dialog, labelled Engine Limit, are its hosts. `describeLoggedBilledTo` names a call the logs
+  record as billed to an `ENGINE` source the App Limit when its subject is a `PROJECT`, and the
+  Engine Limit otherwise.
 - `findModelUsageLimitProblem` says why a limit cannot be saved. Hosts keep Save enabled (except
   while saving) and check it when Save is pressed: on a problem they do not save, set the
   editor's `shouldShowProblems`, and call `focusFirstProblem()` through its `ref`

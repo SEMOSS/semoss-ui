@@ -1,7 +1,7 @@
 import type {
-	AppAccessChange,
-	AppSubject,
 	CurrentAccess,
+	EngineAccessChange,
+	EngineSubject,
 	ModelUsageLimit,
 	PermissionBatch,
 } from "@semoss/sdk";
@@ -20,8 +20,11 @@ export type EngineAppLevel = (typeof ENGINE_APP_LEVELS)[number];
 /** The level an app starts with when an engine gives it a permission */
 export const DEFAULT_ENGINE_APP_LEVEL: EngineAppLevel = "READ_ONLY";
 
-/** An app with the permission an engine gives it */
-export type EngineApp = CurrentAccess<AppSubject>;
+/** An app with the permission an engine gives it: a grantee of type PROJECT */
+export type EngineApp = CurrentAccess<EngineSubject>;
+
+/** The catalog type of a grantee that is an app */
+export const APP_GRANTEE_TYPE = "PROJECT";
 
 /**
  * The project types Add App offers: the ones the catalog lists as apps. An
@@ -55,7 +58,7 @@ export const isEngineAppLevel = (level: string): level is EngineAppLevel =>
  */
 const toAppBatch = (
 	engineId: string,
-	change: AppAccessChange,
+	change: EngineAccessChange,
 ): PermissionBatch => ({
 	target: { resourceType: "ENGINE", id: engineId },
 	changes: [change],
@@ -79,7 +82,7 @@ export const toAddAppBatch = (
 ): PermissionBatch =>
 	toAppBatch(engineId, {
 		action: "ADD",
-		subject: { category: "PROJECT", id: appId },
+		subject: { category: "ENGINE", id: appId, type: APP_GRANTEE_TYPE },
 		to: toSentGrant({ level, endDate: null, usageLimit }),
 	});
 
@@ -100,7 +103,11 @@ export const toAppLevelBatch = (
 ): PermissionBatch =>
 	toAppBatch(engineId, {
 		action: "CHANGE",
-		subject: { category: "PROJECT", id: app.subject.id },
+		subject: {
+			category: "ENGINE",
+			id: app.subject.id,
+			type: APP_GRANTEE_TYPE,
+		},
 		to: toSentGrant({ ...app.access, level }),
 	});
 
@@ -121,7 +128,11 @@ export const toAppLimitBatch = (
 ): PermissionBatch =>
 	toAppBatch(engineId, {
 		action: "CHANGE",
-		subject: { category: "PROJECT", id: app.subject.id },
+		subject: {
+			category: "ENGINE",
+			id: app.subject.id,
+			type: APP_GRANTEE_TYPE,
+		},
 		to: toSentGrant({ ...app.access, usageLimit }),
 	});
 
@@ -136,5 +147,5 @@ export const toRemoveAppBatch = (
 ): PermissionBatch =>
 	toAppBatch(engineId, {
 		action: "REMOVE",
-		subject: { category: "PROJECT", id: appId },
+		subject: { category: "ENGINE", id: appId, type: APP_GRANTEE_TYPE },
 	});
