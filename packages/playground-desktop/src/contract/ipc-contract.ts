@@ -51,6 +51,10 @@ export interface IpcContract {
 	};
 	/** Open a link in the system browser. */
 	"shell:open-external": { request: [url: string]; response: undefined };
+	/** The app's saved language, such as `en`, or null before one is saved. */
+	"language:get": { request: []; response: string | null };
+	/** Save the app's language, for every server and the connect screen. */
+	"language:set": { request: [language: string]; response: undefined };
 	/** The folders attached to a room on the server in use. */
 	"local-folders:list": {
 		request: [roomId: string];
@@ -152,6 +156,8 @@ const IPC_CHANNEL_LIST: Record<IpcChannel, true> = {
 	"server-connection:set": true,
 	"server-connection:forget": true,
 	"shell:open-external": true,
+	"language:get": true,
+	"language:set": true,
 	"local-folders:list": true,
 	"local-folders:pick": true,
 	"local-folders:detach": true,

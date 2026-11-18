@@ -45,6 +45,8 @@ interface DesktopConfig {
 	readonly port: number | null;
 	/** Where the window last was; null before it first closes. */
 	readonly window: WindowState | null;
+	/** The app's language, such as `en`; null until the first launch picks one. */
+	readonly language: string | null;
 }
 
 /** The config before anything is saved, and the fallback for a bad file. */
@@ -54,10 +56,23 @@ const DEFAULT_CONFIG: DesktopConfig = {
 	active: null,
 	port: null,
 	window: null,
+	language: null,
 };
 
 /** A partition this app made, one per server. */
 const PARTITION_PATTERN = /^persist:server-[0-9a-f-]{36}$/;
+
+/** A base language code, the only kind the app's translations are keyed by. */
+const LANGUAGE_PATTERN = /^[a-z]{2,3}$/;
+
+/**
+ * Whether a value is a language code the config can hold, such as `en`.
+ *
+ * @param value - The value.
+ * @returns True for two or three lower case letters.
+ */
+export const isLanguageCode = (value: unknown): value is string =>
+	typeof value === "string" && LANGUAGE_PATTERN.test(value);
 
 /** The app's saved config, read once and written through on every change. */
 export interface DesktopConfigFile {
@@ -69,6 +84,8 @@ export interface DesktopConfigFile {
 	readonly port: number | null;
 	/** The saved window state; null before the window first closes. */
 	readonly window: WindowState | null;
+	/** The saved language; null until the first launch picks one. */
+	readonly language: string | null;
 	/**
 	 * Use a server, saving it with a new partition when it is not saved yet.
 	 *
@@ -85,6 +102,8 @@ export interface DesktopConfigFile {
 	setPort: (port: number) => void;
 	/** Save the window state. */
 	setWindow: (window: WindowState) => void;
+	/** Save the language. */
+	setLanguage: (language: string) => void;
 }
 
 /**
@@ -156,7 +175,10 @@ export const parseDesktopConfig = (text: string): DesktopConfig => {
 		return DEFAULT_CONFIG;
 	}
 	if (typeof raw !== "object" || raw === null) return DEFAULT_CONFIG;
-	const { servers, active, port, window } = raw as Record<string, unknown>;
+	const { servers, active, port, window, language } = raw as Record<
+		string,
+		unknown
+	>;
 
 	// one entry per server and per partition; a duplicate is dropped
 	const kept: SavedServer[] = [];
@@ -183,6 +205,7 @@ export const parseDesktopConfig = (text: string): DesktopConfig => {
 		active: activeServer?.partition ?? null,
 		port: isPort(port) ? port : null,
 		window: parseWindow(window),
+		language: isLanguageCode(language) ? language : null,
 	};
 };
 
@@ -230,6 +253,9 @@ export const openDesktopConfig = (folder: string): DesktopConfigFile => {
 		get window() {
 			return config.window;
 		},
+		get language() {
+			return config.language;
+		},
 		useServer: (server) => {
 			const saved = find(server) ?? {
 				url: server.url,
@@ -261,5 +287,8 @@ export const openDesktopConfig = (folder: string): DesktopConfigFile => {
 		},
 		setPort: (port) => write({ ...config, port }),
 		setWindow: (window) => write({ ...config, window }),
+		setLanguage: (language) => {
+			if (language !== config.language) write({ ...config, language });
+		},
 	};
 };

@@ -10,7 +10,10 @@ import type { FolderGrants } from "../local-folders/folder-grants";
 import type { FolderWatchers } from "../local-folders/folder-watchers";
 import { registerLocalFolders } from "../local-folders/register-local-folders";
 import { checkServer } from "../server-connection/check-server";
-import type { DesktopConfigFile } from "../server-connection/desktop-config";
+import {
+	type DesktopConfigFile,
+	isLanguageCode,
+} from "../server-connection/desktop-config";
 import type { ServerSessions } from "../server-connection/server-sessions";
 import { handleIpc } from "./handle-ipc";
 
@@ -98,6 +101,15 @@ export const registerIpc = ({
 			throw new Error("Refused to open that link");
 		}
 		await shell.openExternal(url);
+	});
+
+	handleIpc("language:get", appOrigin, () => config.language);
+
+	handleIpc("language:set", appOrigin, (language) => {
+		if (!isLanguageCode(language)) {
+			throw new Error("That is not a language code");
+		}
+		config.setLanguage(language);
 	});
 
 	registerLocalFolders({

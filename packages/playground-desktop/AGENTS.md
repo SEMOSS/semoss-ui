@@ -44,7 +44,8 @@ src/
                   and the router
     app.tsx       translations (desktopResources), theme, toasts; no session
     pages/        router, session-layout, app-layout, login, server, new-room, room
-    features/     chat-config, commands, desktop-bridge, local-folders, navigation, server-connection
+    features/     chat-config, commands, desktop-bridge, language, local-folders, navigation,
+                  server-connection
 ```
 
 `@/` is `src/renderer/`. The renderer reaches main only through `getDesktopBridge()`
@@ -134,7 +135,11 @@ Everything lives in Electron's `userData` folder, named after the app:
 
 - **`smss-desktop-config.json`** (`desktop-config.ts`, written atomically): `version` (1),
   `servers` (each `url`, `module`, `partition`), `active` (the active server's partition), `port`,
-  and `window` (bounds, maximized). No credentials.
+  `window` (bounds, maximized), and `language` (a base code such as `en`). No credentials.
+  The renderer applies the saved language before the first paint and saves every switch
+  (`features/language/sync-language.ts`, over `language:get` and `language:set`), so every
+  server and the connect screen share one language rather than each partition's
+  `smss-language`.
 - **`Partitions/server-<uuid>/`**: each saved server's cookies, local and session storage, and
   caches.
 - **`smss-desktop-folders.json`** (`folder-grants.ts`, written atomically): the folders attached

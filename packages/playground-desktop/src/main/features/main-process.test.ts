@@ -150,6 +150,14 @@ describe("parseDesktopConfig", () => {
 		expect(
 			parseDesktopConfig(JSON.stringify({ port: 99_999 })).port,
 		).toBeNull();
+		for (const language of ["en-US", "<script>", 7, ""]) {
+			expect(
+				parseDesktopConfig(JSON.stringify({ language })).language,
+			).toBeNull();
+		}
+		expect(
+			parseDesktopConfig(JSON.stringify({ language: "ja" })).language,
+		).toBe("ja");
 	});
 
 	test("reads a valid file", () => {
@@ -217,6 +225,15 @@ describe("openDesktopConfig", () => {
 			JSON.parse(readFileSync(join(folder, CONFIG_FILE_NAME), "utf8")),
 		).toMatchObject({ version: 1, active: second.partition });
 		expect(openDesktopConfig(folder).servers).toEqual([second]);
+	});
+
+	test("keeps the language for the next launch", () => {
+		const folder = mkdtempSync(join(tmpdir(), "smss-desktop-"));
+		const config = openDesktopConfig(folder);
+		expect(config.language).toBeNull();
+		config.setLanguage("fr");
+		expect(config.language).toBe("fr");
+		expect(openDesktopConfig(folder).language).toBe("fr");
 	});
 });
 

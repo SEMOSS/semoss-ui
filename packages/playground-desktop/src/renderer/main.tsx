@@ -1,7 +1,8 @@
 import { createRoot } from "react-dom/client";
 import { Env, Session } from "@semoss/sdk/react";
-import { App, i18nReady } from "./app";
+import { App, i18n, i18nReady } from "./app";
 import { getDesktopBridge } from "./features/desktop-bridge/desktop-bridge";
+import { syncLanguage } from "./features/language/sync-language";
 import { ServerConnectView } from "./features/server-connection/server-connect-view";
 import { Router } from "./pages/router";
 import "./index.css";
@@ -21,7 +22,8 @@ const mount = async (): Promise<void> => {
 	const root = createRoot(container);
 	const [server] = await Promise.all([
 		bridge.invoke("server-connection:get"),
-		i18nReady,
+		// the saved language, shared by every server, before the first paint
+		i18nReady.then(() => syncLanguage(i18n, bridge)),
 	]);
 
 	if (!server) {
