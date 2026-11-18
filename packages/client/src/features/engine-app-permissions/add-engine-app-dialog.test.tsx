@@ -139,7 +139,11 @@ describe("AddEngineAppDialog", () => {
 					changes: [
 						{
 							action: "ADD",
-							subject: { category: "PROJECT", id: "app1" },
+							subject: {
+								category: "ENGINE",
+								id: "app1",
+								type: "PROJECT",
+							},
 							to: { level: "READ_ONLY", endDate: null },
 						},
 					],
@@ -165,7 +169,11 @@ describe("AddEngineAppDialog", () => {
 					changes: [
 						{
 							action: "ADD",
-							subject: { category: "PROJECT", id: "app1" },
+							subject: {
+								category: "ENGINE",
+								id: "app1",
+								type: "PROJECT",
+							},
 							to: { level: "EDIT", endDate: null },
 						},
 					],
@@ -230,7 +238,11 @@ describe("AddEngineAppDialog", () => {
 					changes: [
 						{
 							action: "ADD",
-							subject: { category: "PROJECT", id: "app1" },
+							subject: {
+								category: "ENGINE",
+								id: "app1",
+								type: "PROJECT",
+							},
 							to: {
 								level: "READ_ONLY",
 								endDate: null,
@@ -293,7 +305,11 @@ describe("AddEngineAppDialog", () => {
 					changes: [
 						{
 							action: "ADD",
-							subject: { category: "PROJECT", id: "app1" },
+							subject: {
+								category: "ENGINE",
+								id: "app1",
+								type: "PROJECT",
+							},
 							to: { level: "READ_ONLY", endDate: null },
 						},
 					],
