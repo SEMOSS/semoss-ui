@@ -195,6 +195,12 @@ export type DesktopCommand =
 /** The channel main sends {@link DesktopCommand}s on. */
 export const COMMAND_CHANNEL = "app:command";
 
+/**
+ * The window argument that hands the preload the tool frame origin, set by
+ * main when it makes the window, so the page cannot change it.
+ */
+export const TOOL_FRAME_ORIGIN_ARG = "--semoss-tool-frame-origin=";
+
 /** What the preload exposes as `window.semossDesktop`. */
 export interface DesktopBridge {
 	/** Call the main process on an allowlisted channel. */
@@ -204,4 +210,9 @@ export interface DesktopBridge {
 	) => Promise<IpcContract[C]["response"]>;
 	/** Hear the main process's commands; returns the unsubscribe. */
 	onCommand: (listener: (command: DesktopCommand) => void) => () => void;
+	/**
+	 * The origin tool views are framed from, such as `http://127.0.0.1:4322`:
+	 * another origin than the page's, so a tool's page cannot reach this bridge.
+	 */
+	readonly toolFrameOrigin: string;
 }

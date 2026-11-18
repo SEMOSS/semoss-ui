@@ -1,5 +1,6 @@
 import { BrowserWindow, type Session, screen } from "electron";
 import { join } from "node:path";
+import { TOOL_FRAME_ORIGIN_ARG } from "../../../contract/ipc-contract";
 import type {
 	DesktopConfigFile,
 	WindowState,
@@ -33,11 +34,14 @@ const isOnScreen = ({ x, y, width, height }: WindowState): boolean =>
  *
  * @param config - Where the window's state is kept.
  * @param serverSession - The browser session of the server it shows.
+ * @param toolFrameOrigin - The origin tool views are framed from, handed to
+ * the preload.
  * @returns The window, not yet showing a page.
  */
 export const createMainWindow = (
 	config: DesktopConfigFile,
 	serverSession: Session,
+	toolFrameOrigin: string,
 ): BrowserWindow => {
 	const saved = config.window;
 	const placement =
@@ -69,6 +73,7 @@ export const createMainWindow = (
 			sandbox: true,
 			nodeIntegration: false,
 			spellcheck: true,
+			additionalArguments: [`${TOOL_FRAME_ORIGIN_ARG}${toolFrameOrigin}`],
 		},
 	});
 	if (saved?.isMaximized) window.maximize();

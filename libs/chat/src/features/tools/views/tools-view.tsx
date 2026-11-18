@@ -60,7 +60,7 @@ interface ToolsViewProps {
  */
 export const ToolsView = ({ room, app, message, toolId }: ToolsViewProps) => {
 	const { t } = useTranslation("tool");
-	const { platformUrl } = useChatConfig();
+	const { platformUrl, toolFrameOrigin } = useChatConfig();
 	const liveTool = useRoomSelector(room, (current) =>
 		current.getTool(toolId),
 	);
@@ -104,6 +104,7 @@ export const ToolsView = ({ room, app, message, toolId }: ToolsViewProps) => {
 		appInfo: appInfo,
 		platformUrl: platformUrl,
 		module: Env.MODULE,
+		toolFrameOrigin: toolFrameOrigin,
 	});
 	// a legacy portal page is framed only once it is known to be published
 	const isPublished = usePortalPublished(
@@ -233,6 +234,7 @@ export const ToolsView = ({ room, app, message, toolId }: ToolsViewProps) => {
 					title={t("view.frameTitle")}
 					ref={iframeRef}
 					src={url}
+					data-tool-call-id={tool.id}
 					onLoad={handleIframeLoad}
 				/>
 			) : (

@@ -11,7 +11,8 @@ const NO_NEW_CHAT_DEFAULTS = {};
 /**
  * The chat's config on the desktop: the server's playground theme over the
  * chat's defaults, the app's routes, the folders the user attaches from this
- * machine, and the settings dialog with the app's Server page after the
+ * machine, tool views framed from the main process's second local origin
+ * (so a tool's page cannot reach the desktop bridge), and the settings dialog with the app's Server page after the
  * chat's own. The desktop has no agent pages, so chat UI shows no links to
  * them.
  *
@@ -25,10 +26,10 @@ export const useDesktopChatConfig = (
 	const theme = useServerChatTheme();
 	const navigate = useNavigate();
 	const serverSection = useServerSettingsSection();
+	const bridge = getDesktopBridge();
 	// one per window, so each folder's source keeps its identity
-	const [localFolders] = useState(() =>
-		createDesktopFoldersHost(getDesktopBridge()),
-	);
+	const [localFolders] = useState(() => createDesktopFoldersHost(bridge));
+	const { toolFrameOrigin } = bridge;
 
 	return useMemo<ChatConfig>(
 		() => ({
@@ -36,6 +37,7 @@ export const useDesktopChatConfig = (
 			// the desktop build sets no new-chat defaults of its own
 			newChatDefaults: NO_NEW_CHAT_DEFAULTS,
 			platformUrl: "",
+			toolFrameOrigin: toolFrameOrigin,
 			localFolders: localFolders,
 			navigation: {
 				openRoom: (roomId) => navigate(`/room/${roomId}`),
@@ -49,6 +51,13 @@ export const useDesktopChatConfig = (
 				settingsSections: (defaults) => [...defaults, serverSection],
 			},
 		}),
-		[theme, navigate, localFolders, openSettings, serverSection],
+		[
+			theme,
+			navigate,
+			localFolders,
+			toolFrameOrigin,
+			openSettings,
+			serverSection,
+		],
 	);
 };

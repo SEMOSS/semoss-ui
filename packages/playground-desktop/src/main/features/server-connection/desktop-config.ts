@@ -43,6 +43,8 @@ interface DesktopConfig {
 	readonly active: string | null;
 	/** The local origin's port. Cookies and storage belong to it, so it is reused. */
 	readonly port: number | null;
+	/** The tool frame origin's port. Tool views' storage belongs to it, so it is reused. */
+	readonly toolFramePort: number | null;
 	/** Where the window last was; null before it first closes. */
 	readonly window: WindowState | null;
 	/** The app's language, such as `en`; null until the first launch picks one. */
@@ -55,6 +57,7 @@ const DEFAULT_CONFIG: DesktopConfig = {
 	servers: [],
 	active: null,
 	port: null,
+	toolFramePort: null,
 	window: null,
 	language: null,
 };
@@ -82,6 +85,8 @@ export interface DesktopConfigFile {
 	readonly servers: readonly SavedServer[];
 	/** The saved local port; null before the first launch. */
 	readonly port: number | null;
+	/** The saved tool frame port; null before the first launch. */
+	readonly toolFramePort: number | null;
 	/** The saved window state; null before the window first closes. */
 	readonly window: WindowState | null;
 	/** The saved language; null until the first launch picks one. */
@@ -100,6 +105,8 @@ export interface DesktopConfigFile {
 	forgetServer: (server: ServerConfig) => SavedServer | null;
 	/** Save the local port. */
 	setPort: (port: number) => void;
+	/** Save the tool frame port. */
+	setToolFramePort: (port: number) => void;
 	/** Save the window state. */
 	setWindow: (window: WindowState) => void;
 	/** Save the language. */
@@ -175,10 +182,8 @@ export const parseDesktopConfig = (text: string): DesktopConfig => {
 		return DEFAULT_CONFIG;
 	}
 	if (typeof raw !== "object" || raw === null) return DEFAULT_CONFIG;
-	const { servers, active, port, window, language } = raw as Record<
-		string,
-		unknown
-	>;
+	const { servers, active, port, toolFramePort, window, language } =
+		raw as Record<string, unknown>;
 
 	// one entry per server and per partition; a duplicate is dropped
 	const kept: SavedServer[] = [];
@@ -204,6 +209,7 @@ export const parseDesktopConfig = (text: string): DesktopConfig => {
 		servers: kept,
 		active: activeServer?.partition ?? null,
 		port: isPort(port) ? port : null,
+		toolFramePort: isPort(toolFramePort) ? toolFramePort : null,
 		window: parseWindow(window),
 		language: isLanguageCode(language) ? language : null,
 	};
@@ -250,6 +256,9 @@ export const openDesktopConfig = (folder: string): DesktopConfigFile => {
 		get port() {
 			return config.port;
 		},
+		get toolFramePort() {
+			return config.toolFramePort;
+		},
 		get window() {
 			return config.window;
 		},
@@ -286,6 +295,8 @@ export const openDesktopConfig = (folder: string): DesktopConfigFile => {
 			return saved;
 		},
 		setPort: (port) => write({ ...config, port }),
+		setToolFramePort: (toolFramePort) =>
+			write({ ...config, toolFramePort }),
 		setWindow: (window) => write({ ...config, window }),
 		setLanguage: (language) => {
 			if (language !== config.language) write({ ...config, language });

@@ -42,6 +42,13 @@ export interface ChatConfig {
 	/** Where the SEMOSS platform app is served, for catalog links and tool UIs. */
 	readonly platformUrl: string;
 	/**
+	 * The origin tool views frame an app's pages from, such as the desktop
+	 * app's second local origin, so a tool's page is on another origin than
+	 * chat UI and cannot script it. Without it, they are framed from the
+	 * module as it is.
+	 */
+	readonly toolFrameOrigin?: string;
+	/**
 	 * The host's way to the user's own files, such as the desktop app's
 	 * attached folders. Without it, chat UI offers no folders to attach. Keep
 	 * its identity stable: a new one makes a new chat store.

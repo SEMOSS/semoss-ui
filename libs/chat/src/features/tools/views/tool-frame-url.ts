@@ -73,6 +73,11 @@ export interface ToolFrameInput {
 	readonly platformUrl: string;
 	/** The server's module path (`Env.MODULE`). */
 	readonly module: string;
+	/**
+	 * The origin an app's pages are framed from (`ChatConfig.toolFrameOrigin`),
+	 * put before a module path that has none.
+	 */
+	readonly toolFrameOrigin?: string;
 }
 
 /**
@@ -93,6 +98,7 @@ export const resolveToolFrameUrl = ({
 	appInfo,
 	platformUrl,
 	module,
+	toolFrameOrigin,
 }: ToolFrameInput): ToolFrameRoute => {
 	if (!tool) {
 		return { kind: "none" };
@@ -138,13 +144,18 @@ export const resolveToolFrameUrl = ({
 	if (appInfo.status === "ERROR") {
 		return { kind: "form" };
 	}
+	// an app's pages, from the tool frame origin when the host has one
+	const pagesUrl =
+		toolFrameOrigin && module.startsWith("/")
+			? `${toolFrameOrigin}${module}/public_home/${app}/portals`
+			: `${module}/public_home/${app}/portals`;
 	// legacy tools declare no UI: a low code app opens in the platform, any
 	// other app shows its portal, when it has one
 	if (!tool._meta?.SMSS_MCP_UI) {
 		if (appInfo.projectType === "BLOCKS") {
 			return { kind: "frame", url: `${platformUrl}/#/s/${app}/` };
 		}
-		return { kind: "portal", url: `${module}/public_home/${app}/portals/` };
+		return { kind: "portal", url: `${pagesUrl}/` };
 	}
 	// no UI, or a malformed system URI, which is no public_home path
 	if (!resourceURI || resourceURI.startsWith("system://")) {
@@ -156,8 +167,5 @@ export const resolveToolFrameUrl = ({
 			url: `${platformUrl}/#/s/${app}${resourceURI}`,
 		};
 	}
-	return {
-		kind: "frame",
-		url: `${module}/public_home/${app}/portals${resourceURI}`,
-	};
+	return { kind: "frame", url: `${pagesUrl}${resourceURI}` };
 };

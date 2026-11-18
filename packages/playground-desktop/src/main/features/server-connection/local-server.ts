@@ -14,13 +14,22 @@ import {
 	type ServerConfig,
 } from "../../../contract/server-connection";
 
-/** The app's own origin, on this machine. */
+/** The app's own origin, and the tool frame origin beside it, on this machine. */
 export interface LocalServer {
 	/** The origin the window loads, such as `http://127.0.0.1:4321`. */
 	readonly origin: string;
 	/** The port it listens on, saved so the next launch reuses it. */
 	readonly port: number;
-	/** Stop the proxy and the server. */
+	/**
+	 * The origin tool views are framed from, such as `http://127.0.0.1:4322`.
+	 * It forwards only the server's module, and being another origin, a tool's
+	 * page there cannot script the app's page or reach its bridge. Cookies
+	 * ignore the port, so the page is still signed in.
+	 */
+	readonly toolFrameOrigin: string;
+	/** The tool frame origin's port, saved so a tool's storage is kept. */
+	readonly toolFramePort: number;
+	/** Stop the proxy and both servers. */
 	close: () => Promise<void>;
 }
 
@@ -32,6 +41,8 @@ interface LocalServerOptions {
 	readonly devUrl?: string;
 	/** The port from the last launch; cookies and storage belong to it. */
 	readonly preferredPort: number | null;
+	/** The tool frame origin's port from the last launch; a tool's storage belongs to it. */
+	readonly preferredToolFramePort: number | null;
 	/** Read on every request, so a new server takes effect without a restart. */
 	readonly getServer: () => ServerConfig | null;
 	/** The page's Content-Security-Policy, set on production HTML. */
@@ -83,6 +94,58 @@ export const localizeCookie = (cookie: string): string => {
 };
 
 /**
+ * The policy every module response gets on the app's origin, except the
+ * server's sign in. A server page that renders there, as a frame, a popup or
+ * anything else, runs on an opaque origin: it can never script the app's page,
+ * which holds the bridge to the main process. Tool views are framed from the
+ * tool frame origin instead. Calls and scripts ignore the policy.
+ */
+export const MODULE_PAGE_SANDBOX =
+	"sandbox allow-scripts allow-forms allow-popups allow-downloads";
+
+/**
+ * The characters a sign in path may have. Nothing the server could read as
+ * another path: no `;` (Tomcat resolves `/..;/`), `%` (an encoded slash or
+ * dot) or `\`.
+ */
+const PLAIN_PATH = /^[\w\-./]+$/;
+
+/**
+ * Whether a request on the module is the server's sign in, which the SDK's
+ * popup watches on the app's origin, and so keeps its own origin.
+ *
+ * @param url - The request's path, with any query, as it arrived.
+ * @param module - The server's module path.
+ * @returns True for a plain path under the module's `/api/auth/`.
+ */
+export const isSignInPath = (url: string, module: string): boolean => {
+	// the path as it is forwarded, not as a parser would resolve it
+	const [path = ""] = url.split("?");
+	return (
+		path.startsWith(`${module}/api/auth/`) &&
+		PLAIN_PATH.test(path) &&
+		!path.split("/").includes("..")
+	);
+};
+
+/**
+ * Add a policy to a response's headers, beside any the server sent, which
+ * still apply.
+ *
+ * @param headers - The response's headers.
+ * @param policy - The policy to add.
+ */
+const addPolicy = (
+	headers: IncomingMessage["headers"],
+	policy: string,
+): void => {
+	const existing = headers["content-security-policy"];
+	headers["content-security-policy"] = existing
+		? [existing, policy].join(", ")
+		: policy;
+};
+
+/**
  * Listen on 127.0.0.1 only, so nothing else on the network reaches the app.
  *
  * @param server - The server.
@@ -109,7 +172,8 @@ const listen = (server: Server, port: number): Promise<number> =>
 /**
  * Serve the renderer and forward the server's module path (HTTP and
  * WebSocket) from one origin on this machine, so the chat's same-origin calls,
- * cookies, and sockets reach the hosted server unchanged.
+ * cookies, and sockets reach the hosted server unchanged. A second origin
+ * forwards only the module, for tool views (see {@link LocalServer}).
  *
  * @param options - Where the renderer is and which server to forward to.
  * @returns The running server.
@@ -118,9 +182,12 @@ export const startLocalServer = async ({
 	rootDir,
 	devUrl,
 	preferredPort,
+	preferredToolFramePort,
 	getServer,
 	contentSecurityPolicy,
 }: LocalServerOptions): Promise<LocalServer> => {
+	// module responses to the app's origin that run sandboxed there
+	const sandboxed = new WeakSet<IncomingMessage>();
 	const proxy = createProxyServer({
 		changeOrigin: true,
 		ws: true,
@@ -130,10 +197,13 @@ export const startLocalServer = async ({
 		protocolRewrite: "http",
 		cookieDomainRewrite: { "*": "" },
 	});
-	proxy.on("proxyRes", (proxyRes) => {
+	proxy.on("proxyRes", (proxyRes, request) => {
 		const cookies = proxyRes.headers["set-cookie"];
 		if (cookies) {
 			proxyRes.headers["set-cookie"] = cookies.map(localizeCookie);
+		}
+		if (sandboxed.has(request)) {
+			addPolicy(proxyRes.headers, MODULE_PAGE_SANDBOX);
 		}
 	});
 	proxy.on("error", (_error, _request, target) => {
@@ -200,16 +270,36 @@ export const startLocalServer = async ({
 		}
 	};
 
+	/**
+	 * Answer a module request when no server is saved yet.
+	 *
+	 * @param request - The request.
+	 * @param response - Its response.
+	 * @returns True when it was answered.
+	 */
+	const refuseUnsavedModule = (
+		request: IncomingMessage,
+		response: ServerResponse,
+	): boolean => {
+		// before a server is saved, the chat's calls have nowhere to go
+		if (getServer() || !isModulePath(request.url ?? "/", DEFAULT_MODULE)) {
+			return false;
+		}
+		response.writeHead(503, { "Content-Type": "text/plain" });
+		response.end("No SEMOSS server is set up yet");
+		return true;
+	};
+
 	const server = createServer((request, response) => {
 		const target = serverFor(request.url);
 		if (target) {
+			if (!isSignInPath(request.url ?? "/", target.module)) {
+				sandboxed.add(request);
+			}
 			proxy.web(request, response, { target: target.url });
 			return;
 		}
-		// before a server is saved, the chat's calls have nowhere to go
-		if (!getServer() && isModulePath(request.url ?? "/", DEFAULT_MODULE)) {
-			response.writeHead(503, { "Content-Type": "text/plain" });
-			response.end("No SEMOSS server is set up yet");
+		if (refuseUnsavedModule(request, response)) {
 			return;
 		}
 		if (devUrl) {
@@ -235,20 +325,62 @@ export const startLocalServer = async ({
 		socket.destroy();
 	});
 
+	// tool views: the module and nothing else, never the app's own files
+	const toolFrameServer = createServer((request, response) => {
+		const target = serverFor(request.url);
+		if (target) {
+			proxy.web(request, response, { target: target.url });
+			return;
+		}
+		if (refuseUnsavedModule(request, response)) {
+			return;
+		}
+		response.writeHead(404).end();
+	});
+
+	toolFrameServer.on("upgrade", (request, socket, head) => {
+		const target = serverFor(request.url);
+		if (target) {
+			proxy.ws(request, socket, head, { target: target.url });
+			return;
+		}
+		socket.destroy();
+	});
+
+	/**
+	 * Listen on the last launch's port, or any free one when it is taken.
+	 *
+	 * @param httpServer - The server.
+	 * @param preferred - The saved port, or null for any.
+	 * @returns The port it bound.
+	 */
+	const listenOnSaved = async (
+		httpServer: Server,
+		preferred: number | null,
+	): Promise<number> => {
+		try {
+			return await listen(httpServer, preferred ?? 0);
+		} catch {
+			return listen(httpServer, 0);
+		}
+	};
+
 	// the last launch's port keeps its cookies; a taken one costs a sign in
-	let port: number;
-	try {
-		port = await listen(server, preferredPort ?? 0);
-	} catch {
-		port = await listen(server, 0);
-	}
+	const port = await listenOnSaved(server, preferredPort);
+	const toolFramePort = await listenOnSaved(
+		toolFrameServer,
+		preferredToolFramePort === port ? null : preferredToolFramePort,
+	);
 
 	return {
 		origin: `http://127.0.0.1:${port}`,
 		port,
+		toolFrameOrigin: `http://127.0.0.1:${toolFramePort}`,
+		toolFramePort,
 		close: () =>
 			new Promise((resolveClose) => {
 				proxy.close();
+				toolFrameServer.close();
 				server.close(() => resolveClose());
 			}),
 	};

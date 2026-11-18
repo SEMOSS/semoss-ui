@@ -38,7 +38,8 @@ src/
     features/local-folders/       folder-grants (smss-desktop-folders.json), local-fs (file calls kept
                                   inside each folder), folder-watchers, register-local-folders
     features/menu/                File (New Chat, Change Server…), Edit, View, Window
-  preload/      preload.ts: an allowlisted invoke and the menu's commands, nothing else
+  preload/      preload.ts: an allowlisted invoke, the menu's commands and the tool frame origin,
+                nothing else
   renderer/     the browser
     main.tsx      the connect screen until a server is saved, else Env.MODULE, Session.initialize()
                   and the router
@@ -97,8 +98,21 @@ src/
   the server's module path (`/Monolith` by default), HTTP and WebSocket, to the saved server with
   `http-proxy-3`. The SDK's same-origin `${MODULE}/...` calls, cookies, and the insight socket work
   unchanged; the SDK needs no desktop code.
-- **The port is saved** in the config file and reused, since cookies and storage belong to the
-  origin, port included. A taken port gets a new one, which costs a sign in.
+- **Tool views are framed from a second origin.** A second listener on `127.0.0.1` (the tool
+  frame origin) forwards only the module, never the app's files. The preload hands its origin to
+  the page (`bridge.toolFrameOrigin`, from a window argument main sets), and the chat frames
+  portal and declared pages from it (`ChatConfig.toolFrameOrigin`). Being another origin, a
+  tool's page cannot script the app's page or reach `window.semossDesktop`; it talks to the chat
+  only by `postMessage` (`SMSS_INIT_TOOL`, `SMSS_EXEC_TOOL`). Cookies ignore the port, so it is
+  still signed in. `routeSignInsThroughApp` sends a frame's, or a tool view's, request for the
+  server back to this origin.
+- **Server pages are sandboxed on the app's origin.** Every module response there, except the
+  server's sign in under `${module}/api/auth/`, carries `Content-Security-Policy: sandbox ...`
+  (`MODULE_PAGE_SANDBOX`), so a server page that renders on it runs on an opaque origin. Calls
+  and scripts ignore the policy.
+- **The ports are saved** in the config file and reused, since cookies and storage belong to the
+  origin, port included. A taken port gets a new one, which costs a sign in (or, for the tool
+  frame port, tool views' storage).
 - **Cookies and redirects** (`localizeCookie`). The proxy drops the server's cookie `Domain` and
   `Secure`, and turns `SameSite=None` into `Lax` (the browser sees plain http on loopback; the
   proxy still uses the server's https). A cookie with no lifetime, such as the session, gets a
@@ -135,7 +149,7 @@ Everything lives in Electron's `userData` folder, named after the app:
 
 - **`smss-desktop-config.json`** (`desktop-config.ts`, written atomically): `version` (1),
   `servers` (each `url`, `module`, `partition`), `active` (the active server's partition), `port`,
-  `window` (bounds, maximized), and `language` (a base code such as `en`). No credentials.
+  `toolFramePort`, `window` (bounds, maximized), and `language` (a base code such as `en`). No credentials.
   The renderer applies the saved language before the first paint and saves every switch
   (`features/language/sync-language.ts`, over `language:get` and `language:set`), so every
   server and the connect screen share one language rather than each partition's
@@ -150,10 +164,13 @@ Everything lives in Electron's `userData` folder, named after the app:
 
 ## Security
 
-`contextIsolation` and `sandbox` on, `nodeIntegration` off. The main window stays on the local
-origin; other links open in the system browser (http, https, mailto only, `isExternalLink`).
-Every IPC handler checks the calling frame's origin (`isTrustedSender`) and validates its
-arguments (`parseServerConfig`, `isExternalLink`). A server is https, or http only on this
+`contextIsolation` and `sandbox` on, `nodeIntegration` off. The main window stays on the app's
+own page (`isAppPage`: `/` on the local origin, never a server page under the module); other
+links open in the system browser (http, https, mailto only, `isExternalLink`). Every IPC handler
+checks that the call comes from the app's page in its top frame (`isTrustedSender`) and validates
+its arguments (`parseServerConfig`, `isExternalLink`). No server page runs on the app's origin as
+that origin: tool views are framed from the tool frame origin, and anything else is sandboxed
+(see [How it reaches the server](#how-it-reaches-the-server)). A server is https, or http only on this
 machine, and a module path is plain path segments, so the proxy never forwards outside it.
 Production HTML carries a Content-Security-Policy (`main.ts`); it allows `'unsafe-eval'` because
 Monaco, Mermaid and the Office viewers need it, which is why Electron's dev build warns that it is

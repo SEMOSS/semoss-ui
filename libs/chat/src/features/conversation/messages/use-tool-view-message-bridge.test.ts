@@ -1,5 +1,5 @@
 import { renderHook, waitFor } from "@testing-library/react";
-import { beforeEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import type { RoomStore } from "../../room/store/room.store";
 import type { ToolStore } from "../../room/store/tool.store";
 import { decideAgentToolAction } from "../../room/turns/agent-turn-runner";
@@ -19,12 +19,32 @@ const room = {
 } as unknown as RoomStore & { processTool: ReturnType<typeof vi.fn> };
 
 /**
+ * Add a tool view frame, as `ToolsView` draws one, to the page.
+ *
+ * @param toolId - The call it shows.
+ * @returns The frame's window.
+ */
+const addToolFrame = (toolId: string): Window => {
+	const frame = document.createElement("iframe");
+	frame.dataset.toolCallId = toolId;
+	document.body.append(frame);
+	if (!frame.contentWindow) {
+		throw new Error("The test frame has no window");
+	}
+	return frame.contentWindow;
+};
+
+/** The frame showing `call-1`, which the posts come from unless a test says otherwise. */
+let toolFrame: Window;
+
+/**
  * Post a message to the window, as a framed tool view does.
  *
  * @param data - What it posts.
+ * @param source - The window it comes from; the frame showing `call-1` by default.
  */
-const post = (data: unknown) =>
-	window.dispatchEvent(new MessageEvent("message", { data }));
+const post = (data: unknown, source: Window | null = toolFrame) =>
+	window.dispatchEvent(new MessageEvent("message", { data, source }));
 
 /**
  * A tool result a view posts.
@@ -47,6 +67,11 @@ const execTool = (fields: Record<string, unknown>) => ({
 beforeEach(() => {
 	vi.clearAllMocks();
 	tools = {};
+	toolFrame = addToolFrame("call-1");
+});
+
+afterEach(() => {
+	document.body.replaceChildren();
 });
 
 test("a posted result is saved into the room, with a legacy pause as a cancel", () => {
@@ -106,6 +131,28 @@ test("other posts are ignored, and a failing one does not stop the listener", ()
 	expect(() => post(execTool({}))).not.toThrow();
 	post(execTool({}));
 	expect(room.processTool).toHaveBeenCalledTimes(2);
+});
+
+test("only the frame showing a call can post its result", () => {
+	const otherFrame = addToolFrame("call-2");
+	renderHook(() => useToolViewMessageBridge(room));
+
+	// the page itself, a frame showing another call, and no window at all
+	post(execTool({}), window);
+	post(execTool({}), otherFrame);
+	post(execTool({}), null);
+	// the right frame, naming a call it does not show
+	post(execTool({ id: "call-2" }));
+	expect(room.processTool).not.toHaveBeenCalled();
+
+	post(execTool({ id: "call-2" }), otherFrame);
+	expect(room.processTool).toHaveBeenCalledWith(
+		"message-1",
+		"call-2",
+		{ value: 42 },
+		"completed",
+		{ q: "x" },
+	);
 });
 
 test("unmounting, or a new room, stops the old room hearing posts", () => {

@@ -17,6 +17,28 @@ export const isExternalLink = (url: string): boolean => {
 	}
 };
 
+/** The paths the app's own page loads at; every route is in its hash. */
+const APP_PAGE_PATHS = new Set(["/", "/index.html"]);
+
+/**
+ * Whether a URL is the app's own page, the only page the bridge serves. A
+ * server page forwarded on the app's origin, under the module, is not.
+ *
+ * @param url - The URL.
+ * @param appOrigin - The app's origin.
+ * @returns True for the app's page, at any route.
+ */
+export const isAppPage = (url: string, appOrigin: string): boolean => {
+	try {
+		const parsed = new URL(url);
+		return (
+			parsed.origin === appOrigin && APP_PAGE_PATHS.has(parsed.pathname)
+		);
+	} catch {
+		return false;
+	}
+};
+
 /**
  * Whether a new window is the SDK's sign in popup, which starts on the app's
  * own origin at the module's `/api/auth/login/...`.
@@ -59,8 +81,9 @@ export const isConnectPopup = (url: string, frameName: string): boolean =>
 	frameName === CONNECT_POPUP_NAME && (url === "" || url === "about:blank");
 
 /**
- * Keep the app's window on its own origin. A link elsewhere opens in the
- * system browser; a sign in popup, whether it starts on the sign in or blank
+ * Keep the app's window on its own page, the one the preload exposes the
+ * bridge to; a server page, even on the app's origin, is refused. A link
+ * elsewhere opens in the system browser; a sign in popup, whether it starts on the sign in or blank
  * for a connector, opens as a sandboxed child window, the handle the SDK
  * watches to know when the sign in is done.
  *
@@ -76,9 +99,11 @@ export const secureWindow = (
 	const { webContents } = window;
 
 	webContents.on("will-navigate", (event, url) => {
-		if (new URL(url).origin === appOrigin) return;
+		if (isAppPage(url, appOrigin)) return;
 		event.preventDefault();
-		if (isExternalLink(url)) void shell.openExternal(url);
+		if (isExternalLink(url) && new URL(url).origin !== appOrigin) {
+			void shell.openExternal(url);
+		}
 	});
 
 	webContents.setWindowOpenHandler(({ url, frameName }) => {

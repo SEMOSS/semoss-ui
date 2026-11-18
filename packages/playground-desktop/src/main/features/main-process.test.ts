@@ -5,11 +5,12 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
+	isAppPage,
 	isConnectPopup,
 	isExternalLink,
 	isSignInPopup,
 } from "./app-window/window-security";
-import { toLocalModuleUrl } from "./auth/sign-in-redirect";
+import { pickLocalOrigin, toLocalModuleUrl } from "./auth/sign-in-redirect";
 import { isTrustedSender } from "./ipc/handle-ipc";
 import { checkServer } from "./server-connection/check-server";
 import {
@@ -30,16 +31,47 @@ vi.mock("electron", () => ({
 
 /** The app's local origin. */
 const APP = "http://127.0.0.1:4321";
+/** The local origin tool views are framed from. */
+const TOOL_FRAMES = "http://127.0.0.1:4322";
 /** The hosted server the app signs in to. */
 const SERVER = { url: "https://semoss.example", module: "/Monolith" };
 
 describe("isTrustedSender", () => {
-	test("accepts only the app's own origin", () => {
-		expect(isTrustedSender(`${APP}/#/new`, APP)).toBe(true);
-		expect(isTrustedSender("http://127.0.0.1:9999/", APP)).toBe(false);
-		expect(isTrustedSender("https://login.example/", APP)).toBe(false);
+	/**
+	 * A calling frame, a top one unless it has a parent.
+	 *
+	 * @param url - The frame's URL.
+	 * @param parent - Its parent frame, or null for a top frame.
+	 * @returns The frame, as the check reads it.
+	 */
+	const frame = (url: string, parent: object | null = null) =>
+		({ url, parent }) as Parameters<typeof isTrustedSender>[0];
+
+	test("accepts only the app's own page, in its top frame", () => {
+		expect(isTrustedSender(frame(`${APP}/#/new`), APP)).toBe(true);
+		expect(isTrustedSender(frame(`${APP}/index.html`), APP)).toBe(true);
+		expect(isTrustedSender(frame("http://127.0.0.1:9999/"), APP)).toBe(
+			false,
+		);
+		expect(isTrustedSender(frame("https://login.example/"), APP)).toBe(
+			false,
+		);
+		expect(isTrustedSender(frame("not a url"), APP)).toBe(false);
 		expect(isTrustedSender(undefined, APP)).toBe(false);
-		expect(isTrustedSender("not a url", APP)).toBe(false);
+		expect(isTrustedSender(null, APP)).toBe(false);
+	});
+
+	test("refuses a server page on the app's origin, and any child frame", () => {
+		expect(
+			isTrustedSender(
+				frame(`${APP}/Monolith/public_home/app/portals/x.html`),
+				APP,
+			),
+		).toBe(false);
+		expect(isTrustedSender(frame(`${APP}/`, frame(`${APP}/`)), APP)).toBe(
+			false,
+		);
+		expect(isTrustedSender(frame(`${TOOL_FRAMES}/`), APP)).toBe(false);
 	});
 });
 
@@ -49,6 +81,18 @@ describe("window policy", () => {
 		expect(isExternalLink("mailto:a@b.example")).toBe(true);
 		expect(isExternalLink("file:///etc/passwd")).toBe(false);
 		expect(isExternalLink("javascript:alert(1)")).toBe(false);
+	});
+
+	test("keeps the window on the app's own page", () => {
+		expect(isAppPage(`${APP}/`, APP)).toBe(true);
+		expect(isAppPage(`${APP}/?x=1#/room/1`, APP)).toBe(true);
+		expect(isAppPage(`${APP}/index.html`, APP)).toBe(true);
+		expect(isAppPage(`${APP}/Monolith/public_home/a/portals/`, APP)).toBe(
+			false,
+		);
+		expect(isAppPage(`${APP}/Monolith/api/auth/login/ms`, APP)).toBe(false);
+		expect(isAppPage(`${TOOL_FRAMES}/`, APP)).toBe(false);
+		expect(isAppPage("not a url", APP)).toBe(false);
 	});
 
 	test("knows the SDK's sign in popup", () => {
@@ -118,6 +162,28 @@ describe("toLocalModuleUrl", () => {
 			toLocalModuleUrl("https://semoss.example/Monolith/a", null, APP),
 		).toBeNull();
 	});
+
+	test("keeps frames and tool views' calls on the tool frame origin", () => {
+		const origins = { appOrigin: APP, toolFrameOrigin: TOOL_FRAMES };
+		expect(pickLocalOrigin({ resourceType: "subFrame" }, origins)).toBe(
+			TOOL_FRAMES,
+		);
+		expect(
+			pickLocalOrigin(
+				{ resourceType: "xhr", initiatorOrigin: TOOL_FRAMES },
+				origins,
+			),
+		).toBe(TOOL_FRAMES);
+		expect(pickLocalOrigin({ resourceType: "mainFrame" }, origins)).toBe(
+			APP,
+		);
+		expect(
+			pickLocalOrigin(
+				{ resourceType: "xhr", initiatorOrigin: APP },
+				origins,
+			),
+		).toBe(APP);
+	});
 });
 
 describe("parseDesktopConfig", () => {
@@ -150,6 +216,10 @@ describe("parseDesktopConfig", () => {
 		expect(
 			parseDesktopConfig(JSON.stringify({ port: 99_999 })).port,
 		).toBeNull();
+		expect(
+			parseDesktopConfig(JSON.stringify({ toolFramePort: "4322" }))
+				.toolFramePort,
+		).toBeNull();
 		for (const language of ["en-US", "<script>", 7, ""]) {
 			expect(
 				parseDesktopConfig(JSON.stringify({ language })).language,
@@ -167,12 +237,14 @@ describe("parseDesktopConfig", () => {
 				servers: [{ ...SERVER, partition: FIRST }],
 				active: FIRST,
 				port: 4321,
+				toolFramePort: 4322,
 				window: { width: 900, height: 700, isMaximized: true },
 			}),
 		);
 		expect(config.servers).toEqual([{ ...SERVER, partition: FIRST }]);
 		expect(config.active).toBe(FIRST);
 		expect(config.port).toBe(4321);
+		expect(config.toolFramePort).toBe(4322);
 		expect(config.window).toEqual({
 			x: undefined,
 			y: undefined,

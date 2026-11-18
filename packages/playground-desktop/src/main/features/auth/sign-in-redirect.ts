@@ -1,19 +1,19 @@
-import type { Session } from "electron";
+import type { OnBeforeRequestListenerDetails, Session } from "electron";
 import type { ServerConfig } from "../../../contract/server-connection";
 
 /**
  * Where a request for the server's own module goes instead: the same path on
- * the app's origin, so it carries the app's session cookies through the proxy.
+ * a local origin, so it carries the app's session cookies through the proxy.
  *
  * @param url - The request.
  * @param server - The current server.
- * @param appOrigin - The app's origin.
+ * @param localOrigin - The local origin to send it to.
  * @returns The local URL, or null for any other request.
  */
 export const toLocalModuleUrl = (
 	url: string,
 	server: ServerConfig | null,
-	appOrigin: string,
+	localOrigin: string,
 ): string | null => {
 	if (!server) return null;
 	let parsed: URL;
@@ -29,24 +29,54 @@ export const toLocalModuleUrl = (
 	) {
 		return null;
 	}
-	return `${appOrigin}${parsed.pathname}${parsed.search}`;
+	return `${localOrigin}${parsed.pathname}${parsed.search}`;
 };
+
+/** The local origins a server's requests are brought back to. */
+export interface LocalOrigins {
+	/** The app's origin, which holds its page. */
+	readonly appOrigin: string;
+	/** The origin tool views are framed from. */
+	readonly toolFrameOrigin: string;
+}
+
+/**
+ * Which local origin a request for the server's module goes to: a frame, or a
+ * call a tool view makes, stays on the tool frame origin, so a server page is
+ * never framed on the app's origin; anything else goes to the app's origin.
+ *
+ * @param details - The request's type and the origin that made it.
+ * @param origins - The local origins.
+ * @returns The origin to send it to.
+ */
+export const pickLocalOrigin = (
+	details: Pick<
+		OnBeforeRequestListenerDetails,
+		"resourceType" | "initiatorOrigin"
+	>,
+	{ appOrigin, toolFrameOrigin }: LocalOrigins,
+): string =>
+	details.resourceType === "subFrame" ||
+	details.initiatorOrigin === toolFrameOrigin
+		? toolFrameOrigin
+		: appOrigin;
 
 /**
  * Bring sign ins back to the app's session. A provider sends its callback to
  * the server's registered address, but the sign in started through the app's
  * origin, whose cookies hold the session it belongs to. Every request for the
  * server's module is sent to the same path on the app's origin, where the proxy
- * forwards it with those cookies.
+ * forwards it with those cookies. Cookies ignore the port, so the tool frame
+ * origin carries them too.
  *
  * @param session - The app's browser session.
  * @param getServer - The current server.
- * @param appOrigin - The app's origin.
+ * @param origins - The app's origin and the tool frame origin.
  */
 export const routeSignInsThroughApp = (
 	session: Session,
 	getServer: () => ServerConfig | null,
-	appOrigin: string,
+	origins: LocalOrigins,
 ): void => {
 	session.webRequest.onBeforeRequest(
 		{ urls: ["https://*/*", "http://*/*"] },
@@ -54,7 +84,7 @@ export const routeSignInsThroughApp = (
 			const redirectURL = toLocalModuleUrl(
 				details.url,
 				getServer(),
-				appOrigin,
+				pickLocalOrigin(details, origins),
 			);
 			callback(redirectURL ? { redirectURL } : {});
 		},

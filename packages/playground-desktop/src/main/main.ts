@@ -59,22 +59,37 @@ if (!app.requestSingleInstanceLock()) {
 		const devUrl = process.env.ELECTRON_RENDERER_URL;
 
 		// one origin, in development and production: the page, its calls, and
-		// its sockets all go through the local server
+		// its sockets all go through the local server; tool views are framed
+		// from a second one, so they cannot reach the page
 		const localServer = await startLocalServer({
 			rootDir: join(__dirname, "../renderer"),
 			devUrl,
 			preferredPort: config.port,
+			preferredToolFramePort: config.toolFramePort,
 			getServer: () => config.server,
 			contentSecurityPolicy: devUrl ? undefined : CONTENT_SECURITY_POLICY,
 		});
 		if (config.port !== localServer.port) {
 			config.setPort(localServer.port);
 		}
+		if (config.toolFramePort !== localServer.toolFramePort) {
+			config.setToolFramePort(localServer.toolFramePort);
+		}
 		const appOrigin = localServer.origin;
+		const { toolFrameOrigin } = localServer;
 
 		// each saved server signs in with its own browser session
-		const sessions = createServerSessions(appOrigin, () => config.server);
-		windows = createAppWindowHost({ appOrigin, config, sessions });
+		const sessions = createServerSessions(
+			appOrigin,
+			toolFrameOrigin,
+			() => config.server,
+		);
+		windows = createAppWindowHost({
+			appOrigin,
+			toolFrameOrigin,
+			config,
+			sessions,
+		});
 		// the folders the user attached to rooms, kept beside the config
 		const grants = openFolderGrants(app.getPath("userData"));
 		const watchers = createFolderWatchers();

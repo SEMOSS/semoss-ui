@@ -105,6 +105,7 @@ beforeEach(() => {
 				mocks.commandListener = null;
 			};
 		},
+		toolFrameOrigin: "http://127.0.0.1:4322",
 	};
 	window.semossDesktop = bridge;
 });

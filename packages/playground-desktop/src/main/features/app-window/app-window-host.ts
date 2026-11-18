@@ -21,6 +21,8 @@ export interface AppWindowHost {
 interface AppWindowHostOptions {
 	/** The app's origin, which the window loads. */
 	readonly appOrigin: string;
+	/** The origin tool views are framed from. */
+	readonly toolFrameOrigin: string;
 	/** The saved config: the server in use, and the window's state. */
 	readonly config: DesktopConfigFile;
 	/** The servers' browser sessions. */
@@ -30,11 +32,12 @@ interface AppWindowHostOptions {
 /**
  * Keep the app's window on the server in use.
  *
- * @param options - The origin, the config, and the sessions.
+ * @param options - The origins, the config, and the sessions.
  * @returns The window host.
  */
 export const createAppWindowHost = ({
 	appOrigin,
+	toolFrameOrigin,
 	config,
 	sessions,
 }: AppWindowHostOptions): AppWindowHost => {
@@ -56,7 +59,7 @@ export const createAppWindowHost = ({
 			});
 		}
 
-		const window = createMainWindow(config, serverSession);
+		const window = createMainWindow(config, serverSession, toolFrameOrigin);
 		secureWindow(window, appOrigin, () => config.server?.module);
 		setAppMenu(window);
 		current = window;

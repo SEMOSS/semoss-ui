@@ -136,6 +136,11 @@ both find them.
   `readToolResponseDetail`), and whether the call waits for the user.
 - **The host** (`use-room-tool-view-host.ts`). Saves land in Room Files and add to the next
   message through `useRoomConnectorHost`, signing in to the account the URI's `provider` names.
+- **Framed pages.** A portal or declared page is framed from `ChatConfig.toolFrameOrigin` when
+  the host gives one (the desktop app's second local origin), so the page cannot script chat UI.
+  It and chat UI talk only by `postMessage`: `ToolsView` sends the call (`SMSS_INIT_TOOL`), and
+  `useToolViewMessageBridge` takes a result (`SMSS_EXEC_TOOL`) only from the frame showing that
+  call, which `ToolsView` marks with `data-tool-call-id`.
 
 ## Files queued for the next message
 

@@ -8,8 +8,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ServerConfig } from "../../../contract/server-connection";
 import {
+	isSignInPath,
 	type LocalServer,
 	localizeCookie,
+	MODULE_PAGE_SANDBOX,
 	startLocalServer,
 } from "./local-server";
 
@@ -23,6 +25,14 @@ const startUpstream = (): Promise<Server> =>
 					Location: `http://127.0.0.1:${port}/Monolith/after`,
 				});
 				res.end();
+				return;
+			}
+			if (req.url?.startsWith("/Monolith/public_home/")) {
+				res.writeHead(200, {
+					"Content-Type": "text/html",
+					"Content-Security-Policy": "img-src *",
+				});
+				res.end("<html>portal</html>");
 				return;
 			}
 			res.writeHead(200, {
@@ -102,6 +112,7 @@ describe("startLocalServer", () => {
 		local = await startLocalServer({
 			rootDir,
 			preferredPort,
+			preferredToolFramePort: null,
 			getServer: () => server,
 			contentSecurityPolicy: "default-src 'self'",
 		});
@@ -139,11 +150,57 @@ describe("startLocalServer", () => {
 		]);
 	});
 
+	test("runs the server's pages sandboxed on the app's origin, except its sign in", async () => {
+		const { origin } = await start();
+		const page = await get(
+			origin,
+			"/Monolith/public_home/app/portals/x.html",
+		);
+		expect(page.status).toBe(200);
+		// the server's own policy still applies beside the sandbox
+		expect(page.headers["content-security-policy"]).toBe(
+			`img-src *, ${MODULE_PAGE_SANDBOX}`,
+		);
+		const call = await get(origin, "/Monolith/api/config");
+		expect(call.headers["content-security-policy"]).toBe(
+			MODULE_PAGE_SANDBOX,
+		);
+		const signIn = await get(origin, "/Monolith/api/auth/login/ms");
+		expect(signIn.headers["content-security-policy"]).toBeUndefined();
+	});
+
+	test("forwards only the module on the tool frame origin, unsandboxed", async () => {
+		const { origin, toolFrameOrigin, port, toolFramePort } = await start();
+		expect(toolFramePort).not.toBe(port);
+		expect(toolFrameOrigin).toBe(`http://127.0.0.1:${toolFramePort}`);
+		expect(toolFrameOrigin).not.toBe(origin);
+
+		const page = await get(
+			toolFrameOrigin,
+			"/Monolith/public_home/app/portals/x.html",
+		);
+		expect(page.status).toBe(200);
+		expect(page.body).toBe("<html>portal</html>");
+		expect(page.headers["content-security-policy"]).toBe("img-src *");
+		const call = await get(toolFrameOrigin, "/Monolith/api/config");
+		expect(JSON.parse(call.body)).toMatchObject({
+			path: "/Monolith/api/config",
+		});
+		// never the app's page, which holds the bridge
+		expect((await get(toolFrameOrigin, "/")).status).toBe(404);
+		expect((await get(toolFrameOrigin, "/app.js")).status).toBe(404);
+	});
+
 	test("brings the server's redirects back to the app's origin", async () => {
 		const { origin } = await start();
 		const reply = await get(origin, "/Monolith/redirect");
 		expect(reply.status).toBe(302);
 		expect(reply.headers.location).toBe(`${origin}/Monolith/after`);
+		const { toolFrameOrigin } = local ?? { toolFrameOrigin: "" };
+		const framed = await get(toolFrameOrigin, "/Monolith/redirect");
+		expect(framed.headers.location).toBe(
+			`${toolFrameOrigin}/Monolith/after`,
+		);
 	});
 
 	test("answers 503 for the module until a server is saved", async () => {
@@ -151,6 +208,10 @@ describe("startLocalServer", () => {
 		const { origin } = await start();
 		expect((await get(origin, "/Monolith/api/config")).status).toBe(503);
 		expect((await get(origin, "/")).status).toBe(200);
+		const { toolFrameOrigin } = local ?? { toolFrameOrigin: "" };
+		expect(
+			(await get(toolFrameOrigin, "/Monolith/api/config")).status,
+		).toBe(503);
 	});
 
 	test("forwards WebSocket upgrades on the module", async () => {
@@ -188,10 +249,39 @@ describe("startLocalServer", () => {
 		const other = await startLocalServer({
 			rootDir,
 			preferredPort: port,
+			preferredToolFramePort: null,
 			getServer: () => server,
 		});
 		expect(other.port).not.toBe(port);
 		await other.close();
+	});
+});
+
+describe("isSignInPath", () => {
+	test("keeps the server's sign in on the app's origin", () => {
+		expect(isSignInPath("/Monolith/api/auth/login/ms", "/Monolith")).toBe(
+			true,
+		);
+		expect(
+			isSignInPath(
+				"/Monolith/api/auth/login/ms?code=1&state=2",
+				"/Monolith",
+			),
+		).toBe(true);
+	});
+
+	test("refuses anything the server could read as another path", () => {
+		for (const path of [
+			"/Monolith/api/config",
+			"/Monolith/public_home/app/portals/x.html",
+			"/Monolith/api/auth/login/..;/..;/..;/public_home/app/portals/x.html",
+			"/Monolith/api/auth/login/..%2f..%2fpublic_home/app/portals/x.html",
+			"/Monolith/api/auth/login/%2e%2e/%2e%2e/public_home/x.html",
+			"/Monolith/api/auth/login\\..\\x.html",
+			"/MonolithX/api/auth/login/ms",
+		]) {
+			expect(isSignInPath(path, "/Monolith")).toBe(false);
+		}
 	});
 });
 

@@ -230,6 +230,41 @@ describe("resolveToolFrameUrl", () => {
 			},
 		],
 		[
+			"a legacy tool's portal, from the host's tool frame origin",
+			{ toolFrameOrigin: "http://127.0.0.1:4322" },
+			{
+				kind: "portal",
+				url: "http://127.0.0.1:4322/Monolith/public_home/app-1/portals/",
+			},
+		],
+		[
+			"a declared page, from the host's tool frame origin",
+			{
+				toolFrameOrigin: "http://127.0.0.1:4322",
+				tool: call({
+					_meta: {
+						SMSS_MCP_EXECUTION: "ask",
+						SMSS_MCP_UI: { resourceURI: "/tools/view.html" },
+					},
+				}),
+			},
+			{
+				kind: "frame",
+				url: "http://127.0.0.1:4322/Monolith/public_home/app-1/portals/tools/view.html",
+			},
+		],
+		[
+			"a module that names its own origin keeps it",
+			{
+				toolFrameOrigin: "http://127.0.0.1:4322",
+				module: "https://semoss.example/Monolith",
+			},
+			{
+				kind: "portal",
+				url: "https://semoss.example/Monolith/public_home/app-1/portals/",
+			},
+		],
+		[
 			"a declared page of a low code app",
 			{
 				tool: call({

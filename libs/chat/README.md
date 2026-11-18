@@ -153,6 +153,7 @@ chat store and to chat UI (`ChatProvider` does both):
 | `theme` | A `ChatTheme`: the deployment's theme with every default filled in. `useServerChatTheme()` reads the server's over `DEFAULT_CHAT_THEME`, or over a base theme you pass. |
 | `newChatDefaults` | The build's `NewChatBuildDefaults` (`modelId`, `modelName`, `mode`, `agentId`), used below the theme's `defaultRoomSettings`. An empty object for none; keep it the same object. |
 | `platformUrl` | Where the SEMOSS platform app is served, for catalog links and tool views that load a platform app. `""` for none. |
+| `toolFrameOrigin?` | The origin tool views frame an app's pages from, put before a relative module path, so a tool's page is on another origin than chat UI and cannot script it (the desktop app's second local origin). Without it, pages are framed from the module as it is. |
 | `navigation` | A `ChatNavigation`, below. |
 | `localFolders?` | A `LocalFoldersHost`, for a host that can reach the user's own files (the desktop app). |
 | `onWorkbenchOpenChange?(isOpen)` | A room's Workspace opened or closed, so the host can make room for it (the playground folds its navigation). |

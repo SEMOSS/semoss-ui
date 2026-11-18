@@ -56,11 +56,13 @@ export const removeUnusedPartitions = (
  * session, so each server keeps its own sign in and nothing crosses over.
  *
  * @param appOrigin - The app's origin.
+ * @param toolFrameOrigin - The origin tool views are framed from.
  * @param getServer - The server in use, which sign ins are routed to.
  * @returns The sessions.
  */
 export const createServerSessions = (
 	appOrigin: string,
+	toolFrameOrigin: string,
 	getServer: () => ServerConfig | null,
 ): ServerSessions => {
 	const used = new Set<Session>();
@@ -71,7 +73,10 @@ export const createServerSessions = (
 				? session.fromPartition(partition)
 				: session.defaultSession;
 			if (!used.has(serverSession)) {
-				routeSignInsThroughApp(serverSession, getServer, appOrigin);
+				routeSignInsThroughApp(serverSession, getServer, {
+					appOrigin,
+					toolFrameOrigin,
+				});
 				handleDownloads(serverSession);
 				used.add(serverSession);
 			}
