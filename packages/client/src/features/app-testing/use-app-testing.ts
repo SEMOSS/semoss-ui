@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSessionPixel } from "@semoss/sdk/react";
 import {
+	deleteAppTestRecording,
 	getAppTestRun,
 	parseAppTestRecordings,
 	runAppTests,
@@ -39,6 +40,8 @@ interface AppTestingState {
 	stopRecording: () => void;
 	addCheck: () => void;
 	save: (name: string, description: string) => Promise<void>;
+	updateRecording: (recording: AppTestRecording) => Promise<void>;
+	deleteRecording: (id: string) => Promise<void>;
 	startRun: (repeat?: number) => Promise<void>;
 	refreshRun: () => Promise<void>;
 	discard: () => void;
@@ -249,6 +252,33 @@ export const useAppTesting = (
 		}
 	};
 
+	const updateRecording = async (
+		recording: AppTestRecording,
+	): Promise<void> => {
+		const signal = lifetime.current?.signal;
+		setIsSaving(true);
+		try {
+			await saveAppTestRecording(appId, recording);
+			if (!signal?.aborted) query.refresh();
+		} finally {
+			if (!signal?.aborted) setIsSaving(false);
+		}
+	};
+
+	const deleteRecording = async (id: string): Promise<void> => {
+		const signal = lifetime.current?.signal;
+		setIsSaving(true);
+		try {
+			await deleteAppTestRecording(appId, id);
+			if (!signal?.aborted) {
+				if (selectedId === id) setSelectedId("__platform_smoke__");
+				query.refresh();
+			}
+		} finally {
+			if (!signal?.aborted) setIsSaving(false);
+		}
+	};
+
 	const startRun = async (repeat = 1): Promise<void> => {
 		if (!selectedId || isRunning) return;
 		const signal = lifetime.current?.signal;
@@ -310,6 +340,8 @@ export const useAppTesting = (
 		stopRecording,
 		addCheck,
 		save,
+		updateRecording,
+		deleteRecording,
 		startRun,
 		refreshRun,
 		discard: () => {

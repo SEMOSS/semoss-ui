@@ -1,130 +1,193 @@
+import { FileJsonIcon, FolderIcon, RefreshCwIcon } from "lucide-react";
 import { useRef, useState } from "react";
 import {
 	Button,
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
 	H4,
 	Spinner,
-	Textarea,
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
 } from "@semoss/ui/next";
 import type { AppTestRecording } from "./app-test.types";
+import { AppTestFileDialog } from "./app-test-file-dialog";
 
 interface AppTestFilesProps {
 	/** Validated saved JSON files for the app being edited. */
 	recordings: AppTestRecording[];
 	isLoading: boolean;
-	/** Selecting an opened file also makes it the next replay target. */
+	/** Mutations are disabled while a replay, save or recording is in progress. */
+	isBusy: boolean;
+	selectedId: string;
 	onSelect: (id: string) => void;
+	onRefresh: () => void;
+	onSave: (recording: AppTestRecording) => Promise<void>;
+	onDelete: (id: string) => Promise<void>;
 }
 
-/** Browse saved tests and read their complete definitions without changing their expectations. */
+/** A compact file listing with standard view, edit, and delete actions. */
 export const AppTestFiles = ({
 	recordings,
 	isLoading,
+	isBusy,
+	selectedId,
 	onSelect,
+	onRefresh,
+	onSave,
+	onDelete,
 }: AppTestFilesProps) => {
 	const opener = useRef<HTMLButtonElement | null>(null);
-	const [openedId, setOpenedId] = useState<string | null>(null);
-	const opened = recordings.find((recording) => recording.id === openedId);
+	const refreshButton = useRef<HTMLButtonElement | null>(null);
+	const [opened, setOpened] = useState<{
+		recording: AppTestRecording;
+		mode: "view" | "edit" | "delete";
+	} | null>(null);
+	const hasOpenedFile =
+		isLoading ||
+		(opened &&
+			recordings.some(
+				(recording) => recording.id === opened.recording.id,
+			));
 	return (
-		<div className="mt-4 flex min-w-0 flex-col gap-3 border-t pt-3">
-			<H4>Test files</H4>
+		<section
+			aria-label="Test files"
+			className="mt-4 flex min-w-0 flex-col border-t"
+		>
+			<div className="flex flex-wrap items-center justify-between gap-2 py-2">
+				<H4>Test files</H4>
+				<Button
+					ref={refreshButton}
+					type="button"
+					variant="ghost"
+					size="sm"
+					onClick={onRefresh}
+					disabled={isLoading || isBusy}
+				>
+					<RefreshCwIcon aria-hidden="true" className="size-4" />
+					Refresh recordings
+				</Button>
+			</div>
+			<p className="mb-2 flex min-w-0 items-center gap-2 break-all font-mono text-muted-foreground text-xs">
+				<FolderIcon aria-hidden="true" className="size-4 shrink-0" />
+				assets / app-tests / recordings
+			</p>
 			{isLoading ? (
-				<div className="flex items-center gap-2 text-muted-foreground text-sm">
+				<output className="flex items-center gap-2 py-4 text-muted-foreground text-sm">
 					<Spinner className="size-4" />
 					Loading test files…
-				</div>
+				</output>
 			) : recordings.length === 0 ? (
-				<p className="text-muted-foreground text-sm">
+				<p className="py-4 text-muted-foreground text-sm">
 					No saved test files. Record a workflow and add a check to
 					create one.
 				</p>
 			) : (
-				<ul className="flex min-w-0 flex-col divide-y">
-					{recordings.map((recording) => (
-						<li
-							key={recording.id}
-							className="flex min-w-0 flex-col gap-1 py-3"
-						>
-							<div className="flex flex-wrap items-center justify-between gap-2">
-								<span className="min-w-0 break-words font-medium text-sm">
-									{recording.name}
-								</span>
-								<Button
-									type="button"
-									variant="outline"
-									size="sm"
-									aria-label={`Open ${recording.name}`}
-									onClick={(event) => {
-										opener.current = event.currentTarget;
-										setOpenedId(recording.id);
-										onSelect(recording.id);
-									}}
-								>
-									Open file
-								</Button>
-							</div>
-							<p className="whitespace-pre-wrap break-words text-muted-foreground text-sm">
-								{recording.description}
-							</p>
-							<span className="break-all font-mono text-muted-foreground text-xs">
-								{recording.id}.json
-							</span>
-							<span className="text-muted-foreground text-xs">
-								{recording.steps.length} steps ·{" "}
-								{
-									recording.steps.filter((step) =>
-										step.type.startsWith("ASSERT_"),
-									).length
-								}{" "}
-								checks
-							</span>
-						</li>
-					))}
-				</ul>
-			)}
-			<Dialog
-				open={Boolean(opened)}
-				onOpenChange={(isOpen) => {
-					if (!isOpen) setOpenedId(null);
-				}}
-			>
-				<DialogContent
-					className="min-w-0 sm:max-w-3xl"
-					onCloseAutoFocus={(event) => {
-						event.preventDefault();
-						if (opener.current?.isConnected) opener.current.focus();
-					}}
+				<section
+					aria-label="Test file listing"
+					// biome-ignore lint/a11y/noNoninteractiveTabindex: keyboard users must be able to scroll the bounded table.
+					tabIndex={0}
+					className="min-w-0 overflow-x-auto focus-visible:outline-2 focus-visible:outline-ring"
 				>
-					<DialogHeader>
-						<DialogTitle>{opened?.name}</DialogTitle>
-						<DialogDescription className="whitespace-pre-wrap break-words">
-							{opened?.description}
-						</DialogDescription>
-					</DialogHeader>
-					{opened && (
-						<>
-							<p className="break-all font-mono text-muted-foreground text-xs">
-								app-tests/recordings/{opened.id}.json
-							</p>
-							<p className="text-muted-foreground text-sm">
-								Read-only test definition · Start page:{" "}
-								{opened.startPath || "App home"}
-							</p>
-							<Textarea
-								readOnly
-								aria-label="Test file JSON"
-								value={JSON.stringify(opened, null, 2)}
-								rows={14}
-								className="min-w-0 font-mono text-xs"
-							/>
-						</>
-					)}
-				</DialogContent>
-			</Dialog>
-		</div>
+					<Table wrapperClassName="overflow-visible">
+						<TableHeader>
+							<TableRow>
+								<TableHead scope="col">File</TableHead>
+								<TableHead scope="col">Description</TableHead>
+								<TableHead scope="col">Actions</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{recordings.map((recording) => (
+								<TableRow
+									key={recording.id}
+									data-state={
+										selectedId === recording.id
+											? "selected"
+											: undefined
+									}
+								>
+									<TableCell>
+										<Button
+											type="button"
+											variant="ghost"
+											size="sm"
+											className="h-auto min-h-8 max-w-64 whitespace-normal break-words text-start"
+											aria-label={`Open ${recording.name}`}
+											onClick={(event) => {
+												opener.current =
+													event.currentTarget;
+												setOpened({
+													recording,
+													mode: "view",
+												});
+												onSelect(recording.id);
+											}}
+										>
+											<FileJsonIcon
+												aria-hidden="true"
+												className="size-4"
+											/>
+											{recording.name}
+										</Button>
+										<div className="font-mono text-muted-foreground text-xs">
+											{recording.id}.json
+										</div>
+									</TableCell>
+									<TableCell className="min-w-40 max-w-64 whitespace-normal break-words">
+										<p className="line-clamp-2">
+											{recording.description}
+										</p>
+									</TableCell>
+									<TableCell>
+										<div className="flex gap-1">
+											{(["edit", "delete"] as const).map(
+												(mode) => (
+													<Button
+														key={mode}
+														type="button"
+														size="sm"
+														variant="ghost"
+														disabled={isBusy}
+														aria-label={`${mode === "edit" ? "Edit" : "Delete"} ${recording.name}`}
+														onClick={(event) => {
+															opener.current =
+																event.currentTarget;
+															setOpened({
+																recording,
+																mode,
+															});
+														}}
+													>
+														{mode === "edit"
+															? "Edit"
+															: "Delete"}
+													</Button>
+												),
+											)}
+										</div>
+									</TableCell>
+								</TableRow>
+							))}
+						</TableBody>
+					</Table>
+				</section>
+			)}
+			{opened && hasOpenedFile && (
+				<AppTestFileDialog
+					key={`${opened.recording.id}-${opened.mode}`}
+					recording={opened.recording}
+					mode={opened.mode}
+					onSave={onSave}
+					onDelete={onDelete}
+					onClose={() => setOpened(null)}
+					onReturnFocus={() => {
+						if (opener.current?.isConnected) opener.current.focus();
+						else refreshButton.current?.focus();
+					}}
+				/>
+			)}
+		</section>
 	);
 };

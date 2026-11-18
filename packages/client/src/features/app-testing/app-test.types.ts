@@ -26,7 +26,7 @@ export interface AppTestStep {
 	pagePath?: string;
 }
 
-/** A recording remains separate from the app's published files. */
+/** A declarative JSON file under the app's non-public assets/app-tests/recordings. */
 export interface AppTestRecording {
 	id: string;
 	name: string;
@@ -42,7 +42,7 @@ export interface AppTestRecording {
 export type AppTestDraft = Pick<
 	AppTestRecording,
 	"name" | "description" | "startPath" | "steps"
->;
+> & { id?: string };
 
 /** The subset of the runner report displayed in the app viewer. */
 export interface AppTestRun {

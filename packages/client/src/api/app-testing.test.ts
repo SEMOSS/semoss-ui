@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+	deleteAppTestRecording,
 	getAppTestRun,
 	parseAppTestRecordings,
 	runAppTests,
@@ -111,4 +112,30 @@ describe("app recording transport", () => {
 			"target changed",
 		);
 	});
+});
+
+it("updates the existing test id and deletes only the requested app recording", async () => {
+	const recording = {
+		id: "existing-id",
+		name: "Edited test",
+		description: "Verify the edited workflow.",
+		startPath: "",
+		steps: [{ type: "ASSERT_VISIBLE" as const, selector: "#result" }],
+		version: 1,
+		updatedAt: "2026-11-18T12:00:00Z",
+	};
+	transport.mockResolvedValueOnce({
+		errors: [],
+		pixelReturn: [{ output: recording }],
+	});
+	await saveAppTestRecording("app", recording);
+	expect(transport.mock.calls[0][0]).toContain(JSON.stringify([recording]));
+	transport.mockResolvedValueOnce({
+		errors: [],
+		pixelReturn: [{ output: { deleted: true } }],
+	});
+	await deleteAppTestRecording("app", recording.id);
+	expect(transport.mock.calls[1][0]).toBe(
+		'META | DeleteAppTestRecording(project=["app"], recordingId=["existing-id"]);',
+	);
 });

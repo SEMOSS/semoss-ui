@@ -24,6 +24,8 @@ const state = vi.hoisted(() => ({
 	notice: "",
 	error: "",
 	recordings: [],
+	updateRecording: vi.fn(),
+	deleteRecording: vi.fn(),
 	isLoading: false,
 	refreshRecordings: vi.fn(),
 	startRecording: vi.fn(),
@@ -98,4 +100,16 @@ describe("recording descriptions", () => {
 			"Verify the saved entry appears.",
 		);
 	});
+});
+
+it("groups recording and replay controls and starts only one replay", () => {
+	const previous = state.steps;
+	state.steps = [];
+	render(<AppTestingPanel appId="app" />);
+	expect(screen.getByRole("group", { name: "Record workflow" })).toBeTruthy();
+	expect(screen.getByRole("group", { name: "Run saved test" })).toBeTruthy();
+	expect(screen.queryByRole("button", { name: /3 replays/ })).toBeNull();
+	fireEvent.click(screen.getByRole("button", { name: "Run test" }));
+	expect(state.startRun).toHaveBeenLastCalledWith();
+	state.steps = previous;
 });

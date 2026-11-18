@@ -1,3 +1,5 @@
+import { CircleIcon, PlayIcon, SquareIcon } from "lucide-react";
+import { useId } from "react";
 import {
 	Alert,
 	AlertDescription,
@@ -37,8 +39,9 @@ interface AppTestingPanelProps {
 	appId: string;
 }
 
-/** Record workflows and explicit checks without changing the app's files. */
+/** Record workflows and manage saved test definitions without changing application code. */
 export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
+	const replaySelectId = useId();
 	const frame = useAppFrame(appId);
 	const state = useAppTesting(appId, frame);
 	const form = useForm<z.infer<typeof schema>>({
@@ -91,7 +94,7 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 	return (
 		<section
 			aria-label="App recording and tests"
-			className="h-full overflow-y-auto bg-background p-3"
+			className="h-full min-w-0 overflow-y-auto bg-background p-3"
 		>
 			<Form
 				form={form}
@@ -99,62 +102,87 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 				noValidate
 				className="flex flex-col gap-2"
 			>
-				<div className="flex flex-wrap items-center gap-2">
-					{state.isRecording ? (
-						<>
-							<Button
-								type="button"
-								size="sm"
-								onClick={state.stopRecording}
-							>
-								Stop recording
-							</Button>
+				<fieldset className="flex min-w-0 flex-col gap-2 border-b pb-4">
+					<legend className="mb-2 font-medium text-sm">
+						Record workflow
+					</legend>
+					<div className="flex flex-wrap items-center gap-2">
+						{state.isRecording ? (
+							<>
+								<Button
+									type="button"
+									size="sm"
+									onClick={state.stopRecording}
+								>
+									<SquareIcon
+										aria-hidden="true"
+										className="size-4"
+									/>
+									Stop recording
+								</Button>
+								<Button
+									type="button"
+									size="sm"
+									variant="outline"
+									onClick={state.addCheck}
+									disabled={!state.isAccessible}
+								>
+									{state.isPickingCheck
+										? "Cancel check"
+										: "Add check"}
+								</Button>
+							</>
+						) : (
 							<Button
 								type="button"
 								size="sm"
 								variant="outline"
-								onClick={state.addCheck}
-								disabled={!state.isAccessible}
+								onClick={handleRecord}
+								disabled={
+									!state.isAccessible ||
+									hasDraft ||
+									state.isRunning ||
+									state.isSaving
+								}
 							>
-								{state.isPickingCheck
-									? "Cancel check"
-									: "Add check"}
+								<CircleIcon
+									aria-hidden="true"
+									className="size-4"
+								/>
+								Record
 							</Button>
-						</>
-					) : (
-						<Button
-							type="button"
-							size="sm"
-							variant="outline"
-							onClick={handleRecord}
-							disabled={
-								!state.isAccessible ||
-								hasDraft ||
-								state.isRunning ||
-								state.isSaving
-							}
-						>
-							Record
-						</Button>
-					)}
-					{(state.isRecording || hasDraft) && (
-						<output
-							aria-live="polite"
-							className="text-muted-foreground text-sm"
-						>
-							{state.steps.length} steps · {checkCount} checks
-						</output>
-					)}
-					{!state.isRecording && !hasDraft && (
-						<>
+						)}
+						{(state.isRecording || hasDraft) && (
+							<output
+								aria-live="polite"
+								className="text-muted-foreground text-sm"
+							>
+								{state.steps.length} steps · {checkCount} checks
+							</output>
+						)}
+					</div>
+				</fieldset>
+				{!state.isRecording && !hasDraft && (
+					<fieldset className="flex min-w-0 flex-col gap-2 py-2">
+						<legend className="font-medium text-sm">
+							Run saved test
+						</legend>
+						<label htmlFor={replaySelectId} className="text-sm">
+							Test file
+						</label>
+						<div className="flex min-w-0 flex-wrap items-center gap-2">
 							<Select
 								value={state.selectedId}
 								onValueChange={state.setSelectedId}
-								disabled={state.isLoading || state.isRunning}
+								disabled={
+									state.isLoading ||
+									state.isRunning ||
+									state.isSaving
+								}
 							>
 								<SelectTrigger
-									aria-label="Saved app recording"
-									className="w-full"
+									id={replaySelectId}
+									className="w-full min-w-0 flex-1"
 								>
 									<SelectValue
 										placeholder={
@@ -181,49 +209,33 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 							<Button
 								type="button"
 								size="sm"
-								variant="outline"
-								onClick={state.refreshRecordings}
-								disabled={state.isLoading || state.isRunning}
-							>
-								Refresh recordings
-							</Button>
-							<Button
-								type="button"
-								size="sm"
 								onClick={() => void state.startRun()}
 								disabled={
 									!state.selectedId ||
 									state.isRunning ||
-									state.isLoading
+									state.isLoading ||
+									state.isSaving
 								}
 							>
-								{state.isRunning && (
+								{state.isRunning ? (
 									<Spinner className="size-4" />
+								) : (
+									<PlayIcon
+										aria-hidden="true"
+										className="size-4"
+									/>
 								)}
 								{state.isRunning ? "Running…" : "Run test"}
 							</Button>
-							<Button
-								type="button"
-								size="sm"
-								variant="outline"
-								title="Replays the recording three times in fresh browsers; it passes only if every replay passes"
-								onClick={() => void state.startRun(3)}
-								disabled={
-									!state.selectedId ||
-									state.selectedId === "__platform_smoke__" ||
-									state.isRunning ||
-									state.isLoading
-								}
-							>
-								Verify (3 replays)
-							</Button>
-						</>
-					)}
-				</div>
-				{!state.isRecording && !hasDraft && selectedDescription && (
-					<p className="whitespace-pre-wrap text-muted-foreground text-sm">
-						{selectedDescription}
-					</p>
+						</div>
+						<p className="whitespace-pre-wrap break-words text-muted-foreground text-sm">
+							{selectedDescription ||
+								"Checks that the app displays content without immediate JavaScript errors. No workflow is tested."}
+						</p>
+						<p className="text-muted-foreground text-xs">
+							Runs once in a background browser.
+						</p>
+					</fieldset>
 				)}
 				{!frame ? (
 					<p className="text-muted-foreground text-sm">
@@ -370,6 +382,11 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 				recordings={state.recordings}
 				isLoading={state.isLoading}
 				onSelect={state.setSelectedId}
+				isBusy={state.isSaving || state.isRunning || state.isRecording}
+				selectedId={state.selectedId}
+				onRefresh={state.refreshRecordings}
+				onSave={state.updateRecording}
+				onDelete={state.deleteRecording}
 			/>
 		</section>
 	);

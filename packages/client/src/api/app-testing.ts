@@ -31,22 +31,60 @@ const stepSchema = z.object({
 	pagePath: z.string().optional(),
 });
 
-const recordingSchema = z
-	.object({
-		id: z.string(),
-		name: z.string(),
-		description: z.string().trim().min(1).optional(),
-		startPath: z.string(),
-		steps: z.array(stepSchema),
-		version: z.number(),
-		updatedAt: z.string(),
-	})
-	.transform((recording) => ({
-		...recording,
-		description:
-			recording.description ??
-			`Replays the recorded workflow: ${recording.name}.`,
-	}));
+const recordingFieldsSchema = z.object({
+	id: z.string(),
+	name: z.string(),
+	description: z.string().trim().min(1).optional(),
+	startPath: z.string(),
+	steps: z.array(stepSchema),
+	version: z.number(),
+	updatedAt: z.string(),
+});
+
+const recordingSchema = recordingFieldsSchema.transform((recording) => ({
+	...recording,
+	description:
+		recording.description ??
+		`Replays the recorded workflow: ${recording.name}.`,
+}));
+
+/** Validate an edited file without silently removing unknown fields or changing its identity. */
+export const parseAppTestRecordingFile = (
+	content: string,
+	expectedId: string,
+): AppTestRecording => {
+	let value: unknown;
+	try {
+		value = JSON.parse(content);
+	} catch {
+		throw new Error("Enter valid JSON before saving.");
+	}
+	const parsed = recordingFieldsSchema
+		.extend({
+			id: z.literal(expectedId),
+			version: z.literal(1),
+			name: z.string().trim().min(1).max(120),
+			description: z
+				.string()
+				.trim()
+				.min(1, "A test description is required")
+				.max(2000),
+			steps: z.array(stepSchema.strict()).min(1).max(300),
+		})
+		.strict()
+		.safeParse(value);
+	if (!parsed.success) {
+		throw new Error(
+			parsed.error.issues
+				.map(
+					(issue) =>
+						`${issue.path.join(".") || "File"}: ${issue.message}`,
+				)
+				.join("\n"),
+		);
+	}
+	return parsed.data;
+};
 
 /** Validate list responses before a view uses persisted recording data. */
 export const parseAppTestRecordings = (
@@ -106,7 +144,7 @@ export const listAppTestRecordings = async (
 	);
 };
 
-/** Save a draft without writing into the target app. */
+/** Create or update a declarative JSON test in the app's non-public assets. */
 export const saveAppTestRecording = async (
 	appId: string,
 	draft: AppTestDraft,
