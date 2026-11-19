@@ -149,6 +149,15 @@ export const USAGE_LIMIT_ORDER: readonly UsageLimitGuideSource[] = [
 			"Skipped unless an app the model gives a permission to makes the call, and for a person with a grant of their own or a team's.",
 	},
 	{
+		source: "ENGINE",
+		label: getUsageSourceLabel("ENGINE"),
+		setBy: "OWNERS",
+		covers: "The calls another engine's own code makes to the model, such as a vector database embedding or a guardrail asking its judge, for people whose only way to the model is that engine: those with no grant of their own and none through a team.",
+		setIn: "On the model's Access Control tab, in Engines.",
+		skipped:
+			"Skipped unless an engine the model gives a permission to makes the call, and for a person with a grant of their own or a team's.",
+	},
+	{
 		source: "PUBLIC",
 		label: getUsageSourceLabel("PUBLIC"),
 		setBy: "OWNERS",
@@ -210,7 +219,7 @@ export const USAGE_LIMIT_RULE_TERMS: readonly UsageLimitGuideEntry[] = [
 	},
 	{
 		term: "Shared or each person",
-		text: "A Team Limit's rules are Shared by the Team, one total for all its members together, or For Each Member, the same amount for each. The Public Use Limit's rules are Shared by All Public Use or For Each Person. An App Limit, which covers the calls an app's custom reactors make to the model for people whose only way to it is the app, has rules that are Shared by the App or For Each User. A shared rule and a for each member rule together cap both the team and any one person; a for each member rule is a cap, not a share set aside. The Model Total and the Team Total are shared. Every other limit counts one person's own calls.",
+		text: "A Team Limit's rules are Shared by the Team, one total for all its members together, or For Each Member, the same amount for each. The Public Use Limit's rules are Shared by All Public Use or For Each Person. An App Limit, which covers the calls an app's custom reactors make to the model for people whose only way to it is the app, has rules that are Shared by the App or For Each User. An Engine Limit, which covers the calls another engine's own code makes to the model for people whose only way to it is that engine, has rules that are Shared by the Engine or For Each User. A shared rule and a for each member rule together cap both the team and any one person; a for each member rule is a cap, not a share set aside. The Model Total and the Team Total are shared. Every other limit counts one person's own calls.",
 	},
 	{
 		term: "Never past a limit",
@@ -228,7 +237,7 @@ export const USAGE_LIMIT_TEAM_RULES: readonly string[] = [
 
 /** Who sets each limit, and what that means for everyone else */
 export const USAGE_LIMIT_WHO_RULES: readonly string[] = [
-	"A model's owners set its limits: Direct Limits, Team Limits, the Public Use Limit, App Limits and the Model Total. Admins set the limits across all models: each person's User's Total Model Limit, Team Totals and the General Platform Limit. Admins in admin mode can also set any model's limits.",
+	"A model's owners set its limits: Direct Limits, Team Limits, the Public Use Limit, App Limits, Engine Limits and the Model Total. Admins set the limits across all models: each person's User's Total Model Limit, Team Totals and the General Platform Limit. Admins in admin mode can also set any model's limits.",
 	"Editors add people and change the level of Read-Only and Editor people, and each person's limit stays as it is. They see every limit, but only owners can set usage limits, and only owners can end or shorten the access of someone with a usage limit, since the limit goes with it.",
 	"Nobody is exempt by role: owners and editors are limited like anyone else. An owner who wants no cap sets their own Direct Limit to Unlimited.",
 	"A limit belongs to the grant it is set on, so removing the grant removes its limit.",
@@ -272,6 +281,10 @@ export const USAGE_LIMIT_SETUPS: readonly UsageLimitGuideEntry[] = [
 	{
 		term: "Let an app use a model for people with no access to it",
 		text: "Give the app a permission on the model, in Apps, with an App Limit: an amount shared by the app, an amount for each user, or both.",
+	},
+	{
+		term: "Let an engine use a model, such as a guardrail's judge",
+		text: "Give the engine a permission on the model, in Engines, with an Engine Limit: an amount shared by the engine, an amount for each user, or both.",
 	},
 	{
 		term: "Cap the whole model, whoever uses it",
