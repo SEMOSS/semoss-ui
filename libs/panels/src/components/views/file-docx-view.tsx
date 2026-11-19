@@ -1,26 +1,26 @@
-import type { EditorHandle } from "docx-react-viewer";
+import { type EditorHandle, WordEditor } from "docx-react-viewer";
 import { useEffect, useMemo, useState } from "react";
 import { decodeBase64Asset } from "@semoss/shared";
+import { useTheme } from "@semoss/ui/next";
 import { useFilePanel } from "../../hooks/use-file-panel";
 import { useFileViewControls } from "../../hooks/use-file-view-controls";
 import { useOfficeEditorSession } from "../../hooks/use-office-editor-session";
 import { useOfficeFileCommands } from "../../hooks/use-office-file-commands";
 import { getFilePanelScope } from "../../types/file-panel.types";
 import type { FileViewProps } from "../../types/file-view.types";
-import { DOCX_HIDDEN_ACTIONS } from "./office/docx-viewer-policy";
+import {
+	DOCX_HIDDEN_ACTIONS,
+	DOCX_VIEWER_CUSTOMIZATION,
+} from "./office/docx-viewer-policy";
 import { OfficeViewerError } from "./office/office-viewer-error";
 import { OfficeViewerFrame } from "./office/office-viewer-frame";
-import { WordSurface } from "./office/word-surface";
 
 /** Preview and edit a Word document from a project, engine, or user resource. */
 export const FileDocxView = ({ config, onControls }: FileViewProps) => {
+	const { resolvedTheme } = useTheme();
 	const panel = useFilePanel(config, { base64: true });
-	const [commandTarget, setCommandTarget] = useState<HTMLDivElement | null>(
-		null,
-	);
-	const [element, setElement] = useState<EditorHandle["element"] | null>(
-		null,
-	);
+	const [handle, setHandle] = useState<EditorHandle | null>(null);
+	const element = handle?.element ?? null;
 	const content = useMemo(
 		() => decodeBase64Asset(panel.read.data),
 		[panel.read.data],
@@ -56,7 +56,7 @@ export const FileDocxView = ({ config, onControls }: FileViewProps) => {
 		};
 	}, [element, panel.readOnly]);
 
-	useOfficeFileCommands(commandTarget, editor.save);
+	useOfficeFileCommands(element, editor.save);
 	useFileViewControls(onControls, {
 		canDownload: panel.access.status === "ready",
 		download: panel.download,
@@ -104,14 +104,15 @@ export const FileDocxView = ({ config, onControls }: FileViewProps) => {
 			label={`Word document: ${config.name}`}
 			className="semoss-docx-viewer"
 		>
-			<div ref={setCommandTarget} className="size-full min-h-0 min-w-0">
-				<WordSurface
-					key={`${getFilePanelScope(config.mode)}:${panel.read.revision}`}
-					fileName={config.name}
-					readOnly={panel.readOnly}
-					onElement={setElement}
-				/>
-			</div>
+			<WordEditor
+				ref={setHandle}
+				className="size-full"
+				readOnly={panel.readOnly}
+				showToolbar
+				hiddenActions={DOCX_HIDDEN_ACTIONS}
+				customization={DOCX_VIEWER_CUSTOMIZATION}
+				theme={resolvedTheme}
+			/>
 		</OfficeViewerFrame>
 	);
 };

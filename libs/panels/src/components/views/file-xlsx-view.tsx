@@ -1,6 +1,10 @@
-import type { EditorHandle } from "@christophervr/xlsx-react-viewer";
+import {
+	type EditorHandle,
+	SpreadsheetEditor,
+} from "@christophervr/xlsx-react-viewer";
 import { useEffect, useMemo, useState } from "react";
 import { decodeBase64Asset } from "@semoss/shared";
+import { useTheme } from "@semoss/ui/next";
 import { useFilePanel } from "../../hooks/use-file-panel";
 import { useFileViewControls } from "../../hooks/use-file-view-controls";
 import { useOfficeEditorSession } from "../../hooks/use-office-editor-session";
@@ -10,19 +14,18 @@ import { getFilePanelScope } from "../../types/file-panel.types";
 import type { FileViewProps } from "../../types/file-view.types";
 import { OfficeViewerError } from "./office/office-viewer-error";
 import { OfficeViewerFrame } from "./office/office-viewer-frame";
-import { SpreadsheetSurface } from "./office/spreadsheet-surface";
 import { XlsxFileAccessNotice } from "./office/xlsx-file-access-notice";
-import { XLSX_HIDDEN_ACTIONS } from "./office/xlsx-viewer-policy";
+import {
+	XLSX_HIDDEN_ACTIONS,
+	XLSX_VIEWER_CUSTOMIZATION,
+} from "./office/xlsx-viewer-policy";
 
 /** Preview and edit an Excel workbook from a project, engine, or user resource. */
 export const FileXlsxView = ({ config, onControls }: FileViewProps) => {
+	const { resolvedTheme } = useTheme();
 	const panel = useFilePanel(config, { base64: true });
-	const [commandTarget, setCommandTarget] = useState<HTMLDivElement | null>(
-		null,
-	);
-	const [element, setElement] = useState<EditorHandle["element"] | null>(
-		null,
-	);
+	const [handle, setHandle] = useState<EditorHandle | null>(null);
+	const element = handle?.element ?? null;
 	const resourceScope = getFilePanelScope(config.mode);
 	const fileAccess = useXlsxFileAccess({
 		element,
@@ -59,7 +62,7 @@ export const FileXlsxView = ({ config, onControls }: FileViewProps) => {
 		};
 	}, [element]);
 
-	useOfficeFileCommands(commandTarget, editor.save);
+	useOfficeFileCommands(element, editor.save);
 	useFileViewControls(onControls, {
 		canDownload: panel.access.status === "ready",
 		download: panel.download,
@@ -118,14 +121,17 @@ export const FileXlsxView = ({ config, onControls }: FileViewProps) => {
 						onUnlock={fileAccess.unlock}
 					/>
 				)}
-			<div ref={setCommandTarget} className="min-h-0 flex-1">
-				<SpreadsheetSurface
-					key={`${resourceScope}:${panel.read.revision}`}
-					fileName={config.name}
-					readOnly={readOnly}
-					onElement={setElement}
-				/>
-			</div>
+			<SpreadsheetEditor
+				ref={setHandle}
+				className="min-h-0 w-full flex-1"
+				fileName={config.name}
+				readOnly={readOnly}
+				showToolbar
+				showFormulaBar
+				hiddenActions={XLSX_HIDDEN_ACTIONS}
+				customization={XLSX_VIEWER_CUSTOMIZATION}
+				theme={resolvedTheme}
+			/>
 		</OfficeViewerFrame>
 	);
 };

@@ -1,0 +1,64 @@
+diff --git a/dist/visio.js b/dist/visio.js
+index 9a8b8ae0582f8edfe557df9f79aba8d85435fd0b..c53fa68888b03ad94537abca887cd4d1c0438a4f 100644
+--- a/dist/visio.js
++++ b/dist/visio.js
+@@ -4547,12 +4547,17 @@ var ViewerInlineText = class {
+       documentGeneration: alive ? this.controller.documentGeneration : -1,
+       ...session ? { pageId: session.pageId, shapeId: session.shapeId } : {}
+     };
+-    return {
++    const outcome = {
+       status: status2,
+       ...status2 === "unchanged" ? { reason: "no-draft" } : {},
+       ...generations,
+       ...extra
+     };
++    // Report every native commit path, including a blur that finishes before host Save.
++    this.viewport.dispatchEvent(new CustomEvent("visio-text-edit", {
++      detail: outcome, bubbles: true, composed: true
++    }));
++    return outcome;
+   }
+   async #commit(focusCanvas) {
+     const session = this.#session;
+@@ -4579,7 +4584,15 @@ var ViewerInlineText = class {
+       const rich = !!shape && shape.masterId === void 0 && shape.text.runs.length > 1;
+       const edit = visioTextDraftEdit(page3, session.shapeId, draft, rich ? { ranges: true } : {});
+       if (!edit) return this.#outcome("unchanged", { reason: "same-text" }, session);
+-      await this.controller.applyEdits([edit]);
++      try {
++        await this.controller.applyEdits([edit]);
++      } catch (error) {
++        // A single parsed run can still contain native formatting markers.
++        // Retry only the supported range edit; preserve every other refusal.
++        if (edit.type !== "replace-plain-text" || error?.code !== "UNSUPPORTED_TEXT_EDIT") throw error;
++        const rangeEdit = visioTextDraftEdit(page3, session.shapeId, draft, { ranges: true });
++        if (rangeEdit) await this.controller.applyEdits([rangeEdit]);
++      }
+       if (this.controller.sourceGeneration !== session.generation)
+         return this.#outcome("cancelled", { reason: "stale-document", text: draft }, session);
+       return this.#outcome("committed", { text: draft }, session);
+@@ -19090,6 +19103,7 @@ function attachVisioShare(setup) {
+     locale: () => setup.locale()
+   });
+   const run = () => {
++    if (element.customization?.capabilities?.share === false) return;
+     if (announceFileCommand(element, "share")) dialog.open();
+   };
+   actions.addEventListener("office-ribbon-share", run);
+@@ -19101,6 +19115,7 @@ function attachVisioShare(setup) {
+     dialog.relocalize();
+   };
+   const refresh = () => {
++    actions.noShare = element.customization?.capabilities?.share === false;
+     actions.sharePressed = share2.state.active;
+     dialog.refresh();
+   };
+@@ -31317,6 +31332,7 @@ var VisioViewerElement = class extends BaseElement {
+     if (!this.#custom.set(value ?? null)) return;
+     this.controller.setCapabilityReadOnly(!this.#custom.resolved.canEdit);
+     applyVisioCommandVisibility(this.#root, this.#custom.resolved);
++    this.#shareUi?.refresh();
+     this.#backstage.refreshCustomization();
+     renderTitleBar(
+       this.#titleBar,

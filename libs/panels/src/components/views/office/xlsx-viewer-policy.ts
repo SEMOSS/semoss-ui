@@ -1,8 +1,18 @@
-/**
- * XLSX hiddenActions disables commands and shortcuts as well as ribbon UI.
- * Keep formatting, structure, sort/filter, charts, protection and file.save enabled.
- * Fixed backstage/title actions and native context menus remain upstream gaps.
- */
+import type { ExcelCustomization } from "@christophervr/xlsx-react-viewer";
+
+/** Keep native editing while the host owns file lifecycle and sharing policy. */
+export const XLSX_VIEWER_CUSTOMIZATION = {
+	capabilities: {
+		share: false,
+		open: false,
+		export: false,
+		print: false,
+		settings: false,
+		comment: false,
+	},
+} satisfies ExcelCustomization;
+
+/** Additional unsupported or excluded commands, beyond capability-level policy. */
 export const XLSX_HIDDEN_ACTIONS: readonly string[] = [
 	"file.new",
 	"file.open",

@@ -1,10 +1,18 @@
-import type { RibbonActionInput } from "docx-react-viewer";
+import type { RibbonActionInput, WordCustomization } from "docx-react-viewer";
 
-/**
- * Keep formatting, tables, layout and insertion in the native ribbon, which
- * preserves active header/footer/note targets. This API hides only ribbon UI;
- * title actions, File and context menus still need upstream customization hooks.
- */
+/** Keep supported native editing controls; capabilities trim application workflows. */
+export const DOCX_VIEWER_CUSTOMIZATION = {
+	capabilities: {
+		share: false,
+		open: false,
+		export: false,
+		print: false,
+		settings: false,
+		comment: false,
+		review: false,
+	},
+} satisfies WordCustomization;
+
 export const DOCX_HIDDEN_ACTIONS = [
 	"document-themes",
 	"document-colors",

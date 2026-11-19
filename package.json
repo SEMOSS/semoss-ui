@@ -43,9 +43,8 @@
       "mocha>serialize-javascript": "7.0.5"
     },
     "patchedDependencies": {
-      "ooxml-ui@1.21.0": "patches/ooxml-ui@1.21.0.patch",
-      "pptx-react-viewer@4.45.0": "patches/pptx-react-viewer@4.45.0.patch",
-      "ooxml-core@1.22.0": "patches/ooxml-core@1.22.0.patch"
+      "ooxml-core@1.53.1": "patches/ooxml-core@1.53.1.patch",
+      "ooxml-ui@1.54.1": "patches/ooxml-ui@1.54.1.patch"
     }
   }
 }

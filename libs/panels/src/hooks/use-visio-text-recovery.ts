@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { ViewerHandle } from "visio-react-viewer";
+import type { ViewerController } from "visio-react-viewer";
 
 /** A refused text draft retained until corrected, dismissed or the file changes. */
 export interface VisioTextEditFailure {
@@ -14,9 +14,13 @@ interface VisioTextRecovery {
 	dismiss: (failure: VisioTextEditFailure) => void;
 }
 
-/** Retains refused drafts from the patched viewer without accepting unsafe edits. */
+/** Retains native text-commit outcomes without accepting refused or stale edits. */
 export const useVisioTextRecovery = (
-	element: ViewerHandle["element"] | null,
+	element:
+		| (HTMLElement & {
+				readonly controller: Pick<ViewerController, "sourceGeneration">;
+		  })
+		| null,
 	sourceKey: string,
 ): VisioTextRecovery => {
 	const [recovery, setRecovery] = useState<{
@@ -53,19 +57,21 @@ export const useVisioTextRecovery = (
 				!("text" in detail) ||
 				typeof detail.text !== "string" ||
 				!("status" in detail) ||
-				(detail.status !== "applied" && detail.status !== "rejected")
+				(detail.status !== "committed" &&
+					detail.status !== "refused" &&
+					detail.status !== "cancelled")
 			)
 				return;
 			const { pageId, shapeId, text, status } = detail;
 			if (
-				status === "rejected" &&
+				status === "refused" &&
 				(!("message" in detail) || typeof detail.message !== "string")
 			)
 				return;
 			const message =
 				"message" in detail && typeof detail.message === "string"
 					? detail.message
-					: "";
+					: "The text edit was cancelled. Your draft has been preserved.";
 			resetSource();
 			setRecovery((previous) => {
 				const failures =
@@ -78,7 +84,7 @@ export const useVisioTextRecovery = (
 				return {
 					sourceKey,
 					failures:
-						status === "applied"
+						status === "committed"
 							? remaining
 							: [
 									...remaining,
