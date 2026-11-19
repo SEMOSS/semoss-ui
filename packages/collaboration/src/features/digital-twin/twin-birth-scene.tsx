@@ -12,7 +12,7 @@ const RIPPLE_DELAYS = ["0s", "-1.2s", "-2.4s"];
 interface TwinBirthSceneProps {
 	/** The twin's name, as the headline says it. */
 	name: string;
-	/** The twin's image, if one was chosen. */
+	/** What stands at the centre: the twin's image if one was chosen, or a person's own photo in a scene about them. Without one, or when it cannot be loaded, the name's initials do. */
 	image?: string;
 	/** What the server is doing, in order; once every step is done the twin is ready. */
 	steps: { id: string; label: string; state: "done" | "active" | "todo" }[];

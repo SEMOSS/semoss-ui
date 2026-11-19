@@ -4,7 +4,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { ChoiceStep } from "./choice-step";
 import { ConfirmStep } from "./confirm-step";
 import { DialsStep } from "./dials-step";
-import { HandoffStep } from "./handoff-step";
 import { MirrorStep } from "./mirror-step";
 import { ProbeStep } from "./probe-step";
 import { RoundsStep } from "./rounds-step";
@@ -125,7 +124,7 @@ describe("replies to choose between", () => {
 				bIs: "soft",
 			},
 			{
-				id: "hard",
+				id: "t1",
 				from: "Jordan, from sales",
 				message: "Just say yes.",
 			},
@@ -174,7 +173,7 @@ describe("replies to choose between", () => {
 		expect(last(onChange)).toEqual({
 			rounds: {
 				r1: { pick: "own", text: "Not this week." },
-				hard: { pick: "own", text: "No. Friday is not real." },
+				t1: { pick: "own", text: "No. Friday is not real." },
 			},
 		});
 		rerender(<RoundsStep step={step} part={0} onChange={onChange} />);
@@ -235,57 +234,6 @@ describe("things to pick from", () => {
 		expect(cost).toHaveAttribute("aria-pressed", "true");
 		expect(cost.querySelector("svg")).not.toBeNull();
 		expect(screen.queryByRole("button", { name: "1 Cost" })).toBeNull();
-	});
-});
-
-describe("who to send people to", () => {
-	it("opens with a row for each thing left to the owner, and reports only rows that name someone", async () => {
-		const user = userEvent.setup();
-		const onChange = vi.fn();
-		render(
-			<HandoffStep
-				step={{
-					...base,
-					kind: "handoff",
-					topics: ["Budgets and pricing", "Hiring"],
-				}}
-				onChange={onChange}
-			/>,
-		);
-		expect(screen.getByLabelText("Topic 1")).toHaveValue(
-			"Budgets and pricing",
-		);
-		await user.type(
-			screen.getByLabelText("Who to ask about Budgets and pricing"),
-			" Dana Smith ",
-		);
-		expect(last(onChange)).toEqual({
-			rows: [{ topic: "Budgets and pricing", person: "Dana Smith" }],
-		});
-
-		await user.click(screen.getByRole("button", { name: "Add another" }));
-		await user.type(screen.getByLabelText("Topic 3"), "Contracts");
-		await user.type(
-			screen.getByLabelText("Who to ask about Contracts"),
-			"Legal",
-		);
-		await user.click(
-			screen.getByRole("button", { name: "Remove Budgets and pricing" }),
-		);
-		expect(last(onChange)).toEqual({
-			rows: [{ topic: "Contracts", person: "Legal" }],
-		});
-	});
-
-	it("opens with one empty row when nothing was left to the owner", () => {
-		render(
-			<HandoffStep
-				step={{ ...base, kind: "handoff", topics: [] }}
-				onChange={vi.fn()}
-			/>,
-		);
-		expect(screen.getByLabelText("Topic 1")).toHaveValue("");
-		expect(screen.getAllByRole("listitem")).toHaveLength(1);
 	});
 });
 
@@ -458,6 +406,8 @@ describe("the twin answering as the owner", () => {
 					verdict: "close",
 					flagged: ["Happy to discuss further."],
 					note: "Too chatty",
+					// which wording it is about: the server drops what was said of an earlier one
+					tries: 0,
 				},
 			},
 		});
@@ -511,5 +461,274 @@ describe("the twin answering as the owner", () => {
 			screen.getByRole("button", { name: "Try again" }),
 		).toBeDisabled();
 		expect(screen.getByText(/written again twice/)).toBeVisible();
+	});
+});
+
+describe("a step the owner comes back to", () => {
+	it("opens what was noticed with what they kept, dropped and put in their own words", () => {
+		render(
+			<ConfirmStep
+				step={{
+					...base,
+					kind: "confirm",
+					items: ["You answer in one line.", "You never say thanks."],
+				}}
+				initial={{
+					items: ["You answer in one line.", "No small talk"],
+				}}
+				onChange={vi.fn()}
+			/>,
+		);
+		expect(
+			screen.getByRole("button", {
+				name: "Keep: You answer in one line.",
+			}),
+		).toHaveAttribute("aria-pressed", "true");
+		expect(
+			screen.getByRole("button", { name: "Keep: You never say thanks." }),
+		).toHaveAttribute("aria-pressed", "false");
+		expect(screen.getByLabelText("What I noticed, 3 of 3")).toHaveValue(
+			"No small talk",
+		);
+	});
+
+	it("opens the dials where they were left, and where they were set when what came back is no stop", () => {
+		const step = {
+			...base,
+			kind: "dials" as const,
+			dials: [
+				{
+					key: "formal",
+					left: "Formal",
+					right: "Casual",
+					about: "Asking for a report",
+					samples: ["One", "Two", "Three", "Four", "Five"],
+					value: 2,
+				},
+			],
+		};
+		const { unmount } = render(
+			<DialsStep
+				step={step}
+				initial={{ values: { formal: 5 } }}
+				onChange={vi.fn()}
+			/>,
+		);
+		expect(
+			screen.getByRole("radio", {
+				name: "5 of 5, from Formal to Casual",
+			}),
+		).toBeChecked();
+		unmount();
+		render(
+			<DialsStep
+				step={step}
+				initial={{ values: { formal: 9 } }}
+				onChange={vi.fn()}
+			/>,
+		);
+		expect(
+			screen.getByRole("radio", {
+				name: "2 of 5, from Formal to Casual",
+			}),
+		).toBeChecked();
+	});
+
+	it("opens the replies with the one that was picked, or with the owner's own words", () => {
+		const step = {
+			...base,
+			kind: "rounds" as const,
+			rounds: [
+				{
+					id: "r1",
+					from: "Sam, a teammate",
+					message: "Can we move the date?",
+					a: "No.",
+					b: "Let us look at it.",
+				},
+				{
+					id: "r2",
+					from: "Priya, your manager",
+					message: "Can you take this on?",
+					a: "Yes.",
+					b: "Yes, happily.",
+				},
+			],
+		};
+		const initial = {
+			rounds: {
+				r1: { pick: "b" },
+				r2: { pick: "own", text: "Yes, later." },
+			},
+		};
+		const { rerender } = render(
+			<RoundsStep
+				step={step}
+				initial={initial}
+				part={0}
+				onChange={vi.fn()}
+			/>,
+		);
+		expect(
+			screen.getByRole("button", { name: "Reply B: Let us look at it." }),
+		).toHaveAttribute("aria-pressed", "true");
+		rerender(
+			<RoundsStep
+				step={step}
+				initial={initial}
+				part={1}
+				onChange={vi.fn()}
+			/>,
+		);
+		expect(
+			screen.getByLabelText("Neither? Write what you would send"),
+		).toHaveValue("Yes, later.");
+		expect(screen.queryByRole("button", { pressed: true })).toBeNull();
+	});
+
+	it("opens the picks in the order they were made with what was added, without what is no longer offered", async () => {
+		const user = userEvent.setup();
+		const onChange = vi.fn();
+		render(
+			<ChoiceStep
+				step={{
+					...base,
+					kind: "choice",
+					title: "What wins?",
+					options: ["Speed", "Quality", "Cost"],
+					ordered: true,
+				}}
+				initial={{
+					picked: ["Quality", "My personal life", "Speed"],
+					own: ["Trust"],
+				}}
+				onChange={onChange}
+			/>,
+		);
+		expect(screen.getByRole("button", { name: "1 Quality" })).toBeVisible();
+		expect(screen.getByRole("button", { name: "2 Speed" })).toBeVisible();
+		expect(
+			screen.getByRole("button", { name: "Remove Trust" }),
+		).toBeVisible();
+		// what was there stays in the answer as the owner goes on from it
+		await user.click(screen.getByRole("button", { name: "Cost" }));
+		expect(last(onChange)).toEqual({
+			picked: ["Quality", "Speed", "Cost"],
+			own: ["Trust"],
+		});
+	});
+
+	it("opens the standing answers that were given, and does not offer their questions again", async () => {
+		const user = userEvent.setup();
+		const onChange = vi.fn();
+		render(
+			<StandsStep
+				step={{
+					...base,
+					kind: "stands",
+					suggestions: ["When will it be done?", "Who owns this?"],
+				}}
+				initial={{
+					rows: [
+						{
+							question: "When will it be done?",
+							answer: "When it is tested.",
+						},
+					],
+				}}
+				onChange={onChange}
+			/>,
+		);
+		expect(
+			screen.getByLabelText("Your answer to When will it be done?"),
+		).toHaveValue("When it is tested.");
+		expect(
+			screen.queryByRole("button", { name: "When will it be done?" }),
+		).toBeNull();
+		// one added now sits beside the one that was there
+		await user.click(
+			screen.getByRole("button", { name: "Who owns this?" }),
+		);
+		await user.type(
+			screen.getByLabelText("Your answer to Who owns this?"),
+			"Ask the lead.",
+		);
+		expect(last(onChange)).toEqual({
+			rows: [
+				{
+					question: "When will it be done?",
+					answer: "When it is tested.",
+				},
+				{ question: "Who owns this?", answer: "Ask the lead." },
+			],
+		});
+	});
+
+	it("opens what did not add up as it was settled", () => {
+		render(
+			<ProbeStep
+				step={{
+					...base,
+					kind: "probe",
+					probes: [
+						{
+							id: "p1",
+							question:
+								"You set Blunt but picked the softer reply.",
+							a: "As blunt as the dial",
+							b: "Softer, like my picks",
+						},
+					],
+				}}
+				initial={{
+					probes: { p1: { pick: "both", note: "Who is asking" } },
+				}}
+				onChange={vi.fn()}
+			/>,
+		);
+		expect(screen.getByRole("radio", { name: "It depends" })).toBeChecked();
+		expect(screen.getByLabelText("What does it depend on?")).toHaveValue(
+			"Who is asking",
+		);
+	});
+
+	it("opens the twin's answers with what the owner said of them", () => {
+		render(
+			<MirrorStep
+				step={{
+					...base,
+					kind: "mirror",
+					rounds: [
+						{
+							id: "m1",
+							ask: "Should we add the export?",
+							reply: "Not before launch. Happy to discuss further.",
+							tries: 1,
+						},
+					],
+				}}
+				initial={{
+					rounds: {
+						m1: {
+							verdict: "no",
+							flagged: ["Happy to discuss further."],
+							note: "Too chatty",
+						},
+					},
+				}}
+				part={0}
+				onChange={vi.fn()}
+				onRewrite={vi.fn()}
+			/>,
+		);
+		expect(screen.getByRole("radio", { name: "Not me" })).toBeChecked();
+		expect(
+			screen.getByRole("button", {
+				name: "Happy to discuss further. (not me)",
+			}),
+		).toHaveAttribute("aria-pressed", "true");
+		expect(screen.getByLabelText("What is off? (optional)")).toHaveValue(
+			"Too chatty",
+		);
 	});
 });

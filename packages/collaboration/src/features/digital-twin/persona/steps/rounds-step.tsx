@@ -1,16 +1,24 @@
 import { useId, useState } from "react";
-import { cn, Label, P, Textarea } from "@semoss/ui/next";
+import { cn, Label, P, Textarea, z } from "@semoss/ui/next";
 import { AgentAvatar } from "@/components/common/agent-avatar";
 import { SelectCard } from "@/features/onboarding/onboarding-ui";
 import type { RoundsStep as RoundsStepData } from "../api/persona-interview";
 
-interface RoundAnswer {
-	pick: "a" | "b" | "own";
-	text?: string;
-}
+const repliedSchema = z.object({
+	rounds: z.record(
+		z.string(),
+		z.object({
+			pick: z.enum(["a", "b", "own"]),
+			text: z.string().optional(),
+		}),
+	),
+});
+type RoundAnswer = z.infer<typeof repliedSchema>["rounds"][string];
 
 interface RoundsStepProps {
 	step: RoundsStepData;
+	/** How the owner answered these rounds before, as this step sent it; anything else is ignored. */
+	initial?: unknown;
 	/** Which round is on screen, counted from 0. */
 	part: number;
 	/** Told every round answered so far, by the round's id, each time one changes. */
@@ -22,10 +30,18 @@ interface RoundsStepProps {
  * one of two replies to choose between, or their own words. A round that
  * offers no replies is answered in their own words only.
  */
-export function RoundsStep({ step, part, onChange }: RoundsStepProps) {
-	const [answers, setAnswers] = useState<Record<string, RoundAnswer>>({});
+export function RoundsStep({ step, initial, part, onChange }: RoundsStepProps) {
+	const [answers, setAnswers] = useState<Record<string, RoundAnswer>>(
+		() => repliedSchema.safeParse(initial).data?.rounds ?? {},
+	);
 	// what was typed for each round, kept while a reply is chosen instead
-	const [typed, setTyped] = useState<Record<string, string>>({});
+	const [typed, setTyped] = useState<Record<string, string>>(() =>
+		Object.fromEntries(
+			Object.entries(answers).flatMap(([id, answer]) =>
+				answer.text ? [[id, answer.text] as const] : [],
+			),
+		),
+	);
 	const ownId = useId();
 	const round = step.rounds[part];
 	if (!round) return null;

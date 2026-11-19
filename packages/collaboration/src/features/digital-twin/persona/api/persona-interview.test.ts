@@ -28,7 +28,7 @@ const SECTIONS = {
 	examples: "",
 };
 
-it("reads where the interview is with no argument, and starts, answers and wraps up with one each", async () => {
+it("reads where the interview is with no argument, and starts, answers, wraps up and goes back with one each", async () => {
 	const { actions, ran } = transport({ phase: "none" });
 	expect(await interviewStep(actions)).toEqual({ phase: "none" });
 	await interviewStep(actions, { sources: ["mail", "memory"] });
@@ -38,6 +38,7 @@ it("reads where the interview is with no argument, and starts, answers and wraps
 	});
 	await interviewStep(actions, { wrap: true });
 	await interviewStep(actions, { wrap: false });
+	await interviewStep(actions, { back: true });
 	expect(ran()).toEqual([
 		"WorkTwinPersonaInterview();",
 		'WorkTwinPersonaInterview(sources=["mail","memory"]);',
@@ -46,7 +47,33 @@ it("reads where the interview is with no argument, and starts, answers and wraps
 		'WorkTwinPersonaInterview(answer=[{"stepId":"limits","own":["Say \\"no\\""]}]);',
 		"WorkTwinPersonaInterview(wrap=[true]);",
 		"WorkTwinPersonaInterview(wrap=[false]);",
+		"WorkTwinPersonaInterview(back=[true]);",
 	]);
+});
+
+it("takes a step the owner came back to with what they answered there, whatever its kind keeps", async () => {
+	const step = {
+		id: "limits",
+		kind: "choice",
+		title: "A step",
+		detail: "What it asks",
+		options: ["Hiring"],
+		ordered: false,
+	};
+	const answer = await interviewStep(
+		transport({
+			phase: "asking",
+			step,
+			...SAID,
+			canBack: true,
+			previous: { picked: ["Hiring"], own: [] },
+		}).actions,
+		{ back: true },
+	);
+	expect(answer).toMatchObject({
+		canBack: true,
+		previous: { picked: ["Hiring"], own: [] },
+	});
 });
 
 it("takes each kind of step as the server sends it", async () => {
@@ -77,11 +104,11 @@ it("takes each kind of step as the server sends it", async () => {
 					b: "Let us look.",
 					bIs: "soft",
 				},
-				{ id: "hard", from: "Jordan", message: "Just say yes." },
+				// one with no replies is answered in the owner's own words
+				{ id: "t1", from: "Jordan", message: "Just say yes." },
 			],
 		},
 		{ kind: "choice", options: ["Hiring"], ordered: false },
-		{ kind: "handoff", topics: ["Hiring"] },
 		{ kind: "stands", suggestions: ["When will it be done?"] },
 		{
 			kind: "probe",

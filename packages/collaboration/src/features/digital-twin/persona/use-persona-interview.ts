@@ -40,6 +40,8 @@ interface PersonaInterview {
 	answer: (answer: Record<string, unknown>, line?: string) => void;
 	/** Go straight to the closing steps. */
 	wrapUp: () => void;
+	/** Go back to the step before the one that waits; what was answered since is kept. */
+	back: () => void;
 	/** Read where the interview is again, after a call that failed. */
 	reload: () => void;
 	/** Back to the question of what it may read, without changing anything yet. */
@@ -138,6 +140,7 @@ export function usePersonaInterview(shouldGoOn: boolean): PersonaInterview {
 				{ wrap: true },
 				view.phase === "asking" ? view.wrapWait : "",
 			),
+		back: () => void send({ back: true }, "Going back a step"),
 		reload: () => void send({}),
 		startOver: () => {
 			request.current += 1;

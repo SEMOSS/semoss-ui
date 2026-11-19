@@ -8,12 +8,23 @@ import {
 	P,
 	ToggleGroup,
 	ToggleGroupItem,
+	z,
 } from "@semoss/ui/next";
 import type { MirrorStep as MirrorStepData } from "../api/persona-interview";
 import { PRESSED_CLASS } from "./pressed";
 
 // an answer is written again at most this many times; the server holds the same limit
 const MAX_TRIES = 2;
+const judgedSchema = z.object({
+	rounds: z.record(
+		z.string(),
+		z.object({
+			verdict: z.enum(["yes", "close", "no"]),
+			flagged: z.array(z.string()),
+			note: z.string(),
+		}),
+	),
+});
 
 type Verdict = "yes" | "close" | "no";
 const VERDICTS: { verdict: Verdict; label: string }[] = [
@@ -32,10 +43,14 @@ interface MirrorAnswer {
 	verdict: Verdict;
 	flagged: string[];
 	note: string;
+	/** Which wording of the answer this is about, so the server drops what was said of an earlier one. */
+	tries: number;
 }
 
 interface MirrorStepProps {
 	step: MirrorStepData;
+	/** What the owner said of these answers before, as this step sent it; anything else is ignored. */
+	initial?: unknown;
 	/** Which answer is on screen, counted from 0. */
 	part: number;
 	/** Told what the owner said of each answer they gave a verdict on, by its id, each time one changes. */
@@ -51,12 +66,23 @@ interface MirrorStepProps {
  */
 export function MirrorStep({
 	step,
+	initial,
 	part,
 	onChange,
 	onRewrite,
 }: MirrorStepProps) {
 	// by answer and by how often it was written: a new wording starts unmarked
-	const [marks, setMarks] = useState<Record<string, Mark>>({});
+	const [marks, setMarks] = useState<Record<string, Mark>>(() => {
+		const judged = judgedSchema.safeParse(initial).data?.rounds ?? {};
+		return Object.fromEntries(
+			step.rounds.flatMap((entry) => {
+				const said = judged[entry.id];
+				return said
+					? [[`${entry.id}:${entry.tries}`, said] as const]
+					: [];
+			}),
+		);
+	});
 	const id = useId();
 	const round = step.rounds[part];
 	if (!round) return null;
@@ -74,6 +100,7 @@ export function MirrorStep({
 					verdict: given.verdict,
 					flagged: given.flagged,
 					note: given.note.trim(),
+					tries: entry.tries,
 				};
 		}
 		onChange({ rounds });

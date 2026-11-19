@@ -52,11 +52,6 @@ const choiceStepSchema = z.object({
 	options: z.array(z.string()),
 	ordered: z.boolean(),
 });
-const handoffStepSchema = z.object({
-	...step,
-	kind: z.literal("handoff"),
-	topics: z.array(z.string()),
-});
 const standsStepSchema = z.object({
 	...step,
 	kind: z.literal("stands"),
@@ -92,7 +87,6 @@ export type ConfirmStep = z.infer<typeof confirmStepSchema>;
 export type DialsStep = z.infer<typeof dialsStepSchema>;
 export type RoundsStep = z.infer<typeof roundsStepSchema>;
 export type ChoiceStep = z.infer<typeof choiceStepSchema>;
-export type HandoffStep = z.infer<typeof handoffStepSchema>;
 export type StandsStep = z.infer<typeof standsStepSchema>;
 export type ProbeStep = z.infer<typeof probeStepSchema>;
 export type MirrorStep = z.infer<typeof mirrorStepSchema>;
@@ -102,7 +96,6 @@ export type InterviewStep =
 	| DialsStep
 	| RoundsStep
 	| ChoiceStep
-	| HandoffStep
 	| StandsStep
 	| ProbeStep
 	| MirrorStep;
@@ -133,7 +126,6 @@ const interviewSchema = z.discriminatedUnion("phase", [
 			dialsStepSchema,
 			roundsStepSchema,
 			choiceStepSchema,
-			handoffStepSchema,
 			standsStepSchema,
 			probeStepSchema,
 			mirrorStepSchema,
@@ -143,6 +135,10 @@ const interviewSchema = z.discriminatedUnion("phase", [
 		checkpoint: z.boolean().optional(),
 		/** This step goes deeper than the essentials, so it can be left for the closing ones. */
 		canWrap: z.boolean().optional(),
+		/** There is a step before this one to go back to. */
+		canBack: z.boolean().optional(),
+		/** What the owner answered at this step before, as the step sent it; each step reads its own. */
+		previous: z.record(z.string(), z.unknown()).optional(),
 		/** What to say while an interview that is wrapped up moves to its closing steps. */
 		wrapWait: z.string(),
 	}),
@@ -171,6 +167,8 @@ export interface InterviewCall {
 	answer?: Record<string, unknown>;
 	/** True to go to the closing steps, false to go on after an interview that was wrapped up. */
 	wrap?: boolean;
+	/** True to wait on the step before the one that waits, with what was answered there. */
+	back?: boolean;
 	/** Starts the interview over, reading these first; `none` reads nothing. */
 	sources?: (InterviewSource | "none")[];
 }

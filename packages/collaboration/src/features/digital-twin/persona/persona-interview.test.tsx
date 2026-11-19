@@ -1,7 +1,15 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import {
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
+import { CollaborationSessionProvider } from "@/features/collaboration/state/collaboration-session.context";
 import { PersonaInterview } from "./persona-interview";
 
 // one actions object, as the provider gives; a new one per render would read again forever
@@ -42,9 +50,11 @@ const VOICE = {
 				b: "Let us look at it.",
 			},
 			{
-				id: "hard",
-				from: "Jordan, from sales",
-				message: "Just say yes.",
+				id: "r2",
+				from: "Priya, your manager",
+				message: "Can you take this on?",
+				a: "Yes.",
+				b: "Yes, happily.",
 			},
 		],
 	},
@@ -216,23 +226,30 @@ it("takes a step of several rounds one at a time, and sends them together after 
 	await user.click(next());
 	expect(ran()).toHaveLength(1);
 	expect(screen.getByText("Step 2 of 11, part 2 of 2")).toBeVisible();
-	expect(screen.getByText("Just say yes.")).toBeVisible();
+	expect(screen.getByText("Can you take this on?")).toBeVisible();
 	// the next round starts at the title again
 	expect(
 		screen.getByRole("heading", { level: 2, name: "Which is more you?" }),
 	).toHaveFocus();
 
-	await user.click(screen.getByRole("button", { name: "Previous" }));
+	// back inside a step is the round before, with nothing sent
+	await user.click(screen.getByRole("button", { name: "Back" }));
+	expect(ran()).toHaveLength(1);
 	expect(
 		screen.getByRole("button", { name: "Reply A: No." }),
 	).toHaveAttribute("aria-pressed", "true");
+	// the first round of the first step has nothing before it
+	expect(screen.queryByRole("button", { name: "Back" })).toBeNull();
 	await user.click(next());
-	await user.type(screen.getByLabelText("Write what you would send"), "No.");
+	await user.type(
+		screen.getByLabelText("Neither? Write what you would send"),
+		"No.",
+	);
 	answers.WorkTwinPersonaInterview = [LIMITS];
 	await user.click(next());
 	await screen.findByRole("heading", { level: 2, name: LIMITS.step.title });
 	expect(ran().at(-1)).toBe(
-		'WorkTwinPersonaInterview(answer=[{"rounds":{"r1":{"pick":"a"},"hard":{"pick":"own","text":"No."}},"stepId":"voice"}]);',
+		'WorkTwinPersonaInterview(answer=[{"rounds":{"r1":{"pick":"a"},"r2":{"pick":"own","text":"No."}},"stepId":"voice"}]);',
 	);
 });
 
@@ -419,4 +436,110 @@ it("says what could not be read where the interview starts, and lets the owner s
 	expect(screen.getByText("May I read how you write?")).toBeVisible();
 	// nothing is thrown away until the owner starts again
 	expect(ran()).toEqual(["WorkTwinPersonaInterview();"]);
+});
+
+it("goes back to the step before with what was answered there, and on from it unchanged when it is not touched", async () => {
+	answers.WorkTwinPersonaInterview = [{ ...PRIORITIES, canBack: true }];
+	const user = renderInterview();
+	// the question of whether to wrap up can be left backwards too
+	await screen.findByText("That is a solid start");
+	answers.WorkTwinPersonaInterview = [
+		{
+			...LIMITS,
+			canBack: true,
+			previous: { picked: ["Hiring"], own: ["Vendor names"] },
+		},
+	];
+	await user.click(screen.getByRole("button", { name: "Back" }));
+	expect(
+		await screen.findByRole("heading", {
+			level: 2,
+			name: LIMITS.step.title,
+		}),
+	).toHaveFocus();
+	expect(ran().at(-1)).toBe("WorkTwinPersonaInterview(back=[true]);");
+	expect(screen.getByRole("button", { name: "Hiring" })).toHaveAttribute(
+		"aria-pressed",
+		"true",
+	);
+	expect(
+		screen.getByRole("button", { name: "Remove Vendor names" }),
+	).toBeVisible();
+
+	answers.WorkTwinPersonaInterview = [PRIORITIES];
+	await user.click(next());
+	await screen.findByText("That is a solid start");
+	expect(ran().at(-1)).toBe(
+		'WorkTwinPersonaInterview(answer=[{"picked":["Hiring"],"own":["Vendor names"],"stepId":"limits"}]);',
+	);
+});
+
+it("opens a step of several rounds at its last round when it is come back to, with what was picked", async () => {
+	answers.WorkTwinPersonaInterview = [{ ...LIMITS, canBack: true }];
+	const user = renderInterview();
+	await screen.findByRole("heading", { level: 2, name: LIMITS.step.title });
+	answers.WorkTwinPersonaInterview = [
+		{
+			...VOICE,
+			canBack: true,
+			previous: { rounds: { r1: { pick: "a" }, r2: { pick: "b" } } },
+		},
+	];
+	await user.click(screen.getByRole("button", { name: "Back" }));
+	expect(await screen.findByText("Step 2 of 11, part 2 of 2")).toBeVisible();
+	expect(
+		screen.getByRole("button", { name: "Reply B: Yes, happily." }),
+	).toHaveAttribute("aria-pressed", "true");
+	const calls = ran().length;
+	await user.click(screen.getByRole("button", { name: "Back" }));
+	expect(screen.getByText("Step 2 of 11, part 1 of 2")).toBeVisible();
+	expect(
+		screen.getByRole("button", { name: "Reply A: No." }),
+	).toHaveAttribute("aria-pressed", "true");
+	expect(ran()).toHaveLength(calls);
+
+	// going on from it, the step that follows starts at its beginning
+	await user.click(next());
+	answers.WorkTwinPersonaInterview = [LIMITS];
+	await user.click(next());
+	await screen.findByRole("heading", { level: 2, name: LIMITS.step.title });
+	expect(ran().at(-1)).toBe(
+		'WorkTwinPersonaInterview(answer=[{"rounds":{"r1":{"pick":"a"},"r2":{"pick":"b"}},"stepId":"voice"}]);',
+	);
+});
+
+it("stands the owner's own Microsoft photo at the centre of a scene, and their initials when it cannot be loaded", async () => {
+	answers.WorkTwinPersonaInterview = [DONE];
+	answers.WorkSaveTwinPersona = {
+		exists: true,
+		sections: SECTIONS,
+		offTwins: [],
+	};
+	answers.MyProjects = [];
+	const state = createInitialCollaborationState();
+	state.liveProfile = {
+		...state.profile,
+		name: "Taylor Morgan",
+		email: "taylor@example.invalid",
+	};
+	render(
+		<CollaborationSessionProvider initialState={state}>
+			<MemoryRouter initialEntries={["/twins/persona/interview"]}>
+				<PersonaInterview />
+			</MemoryRouter>
+		</CollaborationSessionProvider>,
+	);
+	await userEvent
+		.setup()
+		.click(await screen.findByRole("button", { name: "Save my persona" }));
+	await screen.findByRole("heading", { level: 1, name: "Meet your persona" });
+	// the portrait is decoration to a screen reader, so it is found as an element
+	const photo = document.querySelector("img");
+	expect(photo?.getAttribute("src")).toContain(
+		"/msgraph/photo?email=taylor%40example.invalid",
+	);
+	expect(screen.queryByText("TM")).toBeNull();
+	if (photo) fireEvent.error(photo);
+	expect(document.querySelector("img")).toBeNull();
+	expect(screen.getByText("TM")).toBeInTheDocument();
 });

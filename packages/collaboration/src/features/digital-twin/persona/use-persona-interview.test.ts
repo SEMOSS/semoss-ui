@@ -24,7 +24,7 @@ const ASKING = {
 };
 const NEXT = {
 	...ASKING,
-	step: { ...STEP, id: "handoff", kind: "handoff", topics: [] },
+	step: { ...STEP, id: "priorities", ordered: true },
 };
 const running = (step: string) => ({
 	id: "job-1",
@@ -150,7 +150,7 @@ it("waits with what the step said it would, then shows the next step", async () 
 	await act(async () => finish(NEXT));
 	expect(result.current.view).toMatchObject({
 		phase: "asking",
-		step: { id: "handoff" },
+		step: { id: "priorities" },
 	});
 	expect(ran().at(-1)).toBe(
 		'WorkTwinPersonaInterview(answer=[{"stepId":"limits","picked":["Hiring"]}]);',
@@ -165,6 +165,32 @@ it("goes back to the step that was answered when the answer does not get there",
 	act(() => result.current.answer({ stepId: "limits" }));
 	await waitFor(() => expect(result.current.error).not.toBe(""));
 	expect(result.current.error).toBe("The server is restarting.");
+	expect(result.current.view).toMatchObject({
+		phase: "asking",
+		step: { id: "limits" },
+	});
+});
+
+it("goes back a step, and stays on the step it was on when that does not get there", async () => {
+	answers = [NEXT];
+	const { result } = renderHook(() => usePersonaInterview(false));
+	await waitFor(() => expect(result.current.view.phase).toBe("asking"));
+	answers = [{ ...ASKING, previous: { picked: ["Hiring"], own: [] } }];
+	act(() => result.current.back());
+	await waitFor(() =>
+		expect(result.current.view).toMatchObject({
+			phase: "asking",
+			step: { id: "limits" },
+			previous: { picked: ["Hiring"], own: [] },
+		}),
+	);
+	expect(ran().at(-1)).toBe("WorkTwinPersonaInterview(back=[true]);");
+
+	answers = [new Error("The server is restarting.")];
+	act(() => result.current.back());
+	await waitFor(() =>
+		expect(result.current.error).toBe("The server is restarting."),
+	);
 	expect(result.current.view).toMatchObject({
 		phase: "asking",
 		step: { id: "limits" },

@@ -1,11 +1,16 @@
 import { useState } from "react";
-import { P, RadioGroup, RadioGroupItem } from "@semoss/ui/next";
+import { P, RadioGroup, RadioGroupItem, z } from "@semoss/ui/next";
 import type { DialsStep as DialsStepData } from "../api/persona-interview";
 
 const STOPS = [1, 2, 3, 4, 5];
+const movedSchema = z.object({
+	values: z.record(z.string(), z.number().int().min(1).max(5)),
+});
 
 interface DialsStepProps {
 	step: DialsStepData;
+	/** Where the owner left the dials before, as this step sent it; anything else is ignored. */
+	initial?: unknown;
 	/** Told where every dial stands each time one is moved. */
 	onChange: (answer: { values: Record<string, number> }) => void;
 }
@@ -16,10 +21,16 @@ interface DialsStepProps {
  * open where the interview put them from what it read.
  */
 // five named stops and not a slider: the shared slider's thumb cannot be given a name
-export function DialsStep({ step, onChange }: DialsStepProps) {
-	const [values, setValues] = useState<Record<string, number>>(() =>
-		Object.fromEntries(step.dials.map((dial) => [dial.key, dial.value])),
-	);
+export function DialsStep({ step, initial, onChange }: DialsStepProps) {
+	const [values, setValues] = useState<Record<string, number>>(() => {
+		const moved = movedSchema.safeParse(initial).data?.values;
+		return Object.fromEntries(
+			step.dials.map((dial) => [
+				dial.key,
+				moved?.[dial.key] ?? dial.value,
+			]),
+		);
+	});
 
 	return (
 		<div className="flex min-w-0 flex-col gap-4">

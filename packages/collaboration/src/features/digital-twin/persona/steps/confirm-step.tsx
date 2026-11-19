@@ -1,10 +1,14 @@
 import { Check, Plus } from "lucide-react";
 import { useId, useState } from "react";
-import { Button, cn, Input, Label } from "@semoss/ui/next";
+import { Button, cn, Input, Label, z } from "@semoss/ui/next";
 import type { ConfirmStep as ConfirmStepData } from "../api/persona-interview";
+
+const keptSchema = z.object({ items: z.array(z.string()) });
 
 interface ConfirmStepProps {
 	step: ConfirmStepData;
+	/** What the owner kept here before, as this step sent it; anything else is ignored. */
+	initial?: unknown;
 	/** Told what the owner keeps, as they left it, each time that changes. */
 	onChange: (answer: { items: string[] }) => void;
 }
@@ -13,14 +17,25 @@ interface ConfirmStepProps {
  * What the interview noticed in what it read, for the owner to keep, drop or
  * put right, with room for what it missed. Everything starts kept.
  */
-export function ConfirmStep({ step, onChange }: ConfirmStepProps) {
-	const [items, setItems] = useState(() =>
-		step.items.map((text, index) => ({
-			id: `noticed-${index}`,
-			text,
-			isKept: true,
-		})),
-	);
+export function ConfirmStep({ step, initial, onChange }: ConfirmStepProps) {
+	const [items, setItems] = useState(() => {
+		const kept = keptSchema.safeParse(initial).data?.items;
+		return [
+			...step.items.map((text, index) => ({
+				id: `noticed-${index}`,
+				text,
+				isKept: kept ? kept.includes(text) : true,
+			})),
+			// what they kept that was not noticed in those words: something they put right or added
+			...(kept ?? [])
+				.filter((text) => !step.items.includes(text))
+				.map((text, index) => ({
+					id: `added-${index}`,
+					text,
+					isKept: true,
+				})),
+		];
+	});
 	const [missed, setMissed] = useState("");
 	const missedId = useId();
 

@@ -1,10 +1,13 @@
 import { Plus, X } from "lucide-react";
 import { useState } from "react";
-import { Button, Input, P, Textarea } from "@semoss/ui/next";
+import { Button, Input, P, Textarea, z } from "@semoss/ui/next";
 import type { StandsStep as StandsStepData } from "../api/persona-interview";
 
 // the server keeps this many standing answers
 const MAX_ANSWERS = 6;
+const answeredSchema = z.object({
+	rows: z.array(z.object({ question: z.string(), answer: z.string() })),
+});
 
 interface StandsRow {
 	id: number;
@@ -14,6 +17,8 @@ interface StandsRow {
 
 interface StandsStepProps {
 	step: StandsStepData;
+	/** The questions the owner answered here before, as this step sent it; anything else is ignored. */
+	initial?: unknown;
 	/** Told every question that has an answer, each time one changes. */
 	onChange: (answer: {
 		rows: { question: string; answer: string }[];
@@ -25,9 +30,14 @@ interface StandsStepProps {
  * always give. Suggested questions are added with a press, their own with
  * another, and a twin later gives these answers word for word.
  */
-export function StandsStep({ step, onChange }: StandsStepProps) {
-	const [rows, setRows] = useState<StandsRow[]>([]);
-	const [nextId, setNextId] = useState(0);
+export function StandsStep({ step, initial, onChange }: StandsStepProps) {
+	const [rows, setRows] = useState<StandsRow[]>(() =>
+		(answeredSchema.safeParse(initial).data?.rows ?? []).map((row, id) => ({
+			id,
+			...row,
+		})),
+	);
+	const [nextId, setNextId] = useState(rows.length);
 	const isFull = rows.length >= MAX_ANSWERS;
 
 	const change = (next: StandsRow[]): void => {

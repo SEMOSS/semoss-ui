@@ -64,7 +64,7 @@ export const PERSONA_SECTIONS: {
 	{
 		key: "limits",
 		label: "Leave to you",
-		hint: "What your twins stay out of, and who they send people to instead. They follow this to the letter.",
+		hint: "What your twins stay out of. They follow this to the letter.",
 	},
 	{
 		key: "examples",

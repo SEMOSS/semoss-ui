@@ -1,14 +1,29 @@
 import { useId, useState } from "react";
-import { Input, Label, P, RadioGroup, RadioGroupItem } from "@semoss/ui/next";
+import {
+	Input,
+	Label,
+	P,
+	RadioGroup,
+	RadioGroupItem,
+	z,
+} from "@semoss/ui/next";
 import type { ProbeStep as ProbeStepData } from "../api/persona-interview";
 
-interface ProbeAnswer {
-	pick: "a" | "b" | "both";
-	note?: string;
-}
+const settledSchema = z.object({
+	probes: z.record(
+		z.string(),
+		z.object({
+			pick: z.enum(["a", "b", "both"]),
+			note: z.string().optional(),
+		}),
+	),
+});
+type ProbeAnswer = z.infer<typeof settledSchema>["probes"][string];
 
 interface ProbeStepProps {
 	step: ProbeStepData;
+	/** How the owner settled these before, as this step sent it; anything else is ignored. */
+	initial?: unknown;
 	/** Told how each settled point was settled, by its id, each time one changes. */
 	onChange: (answer: { probes: Record<string, ProbeAnswer> }) => void;
 }
@@ -17,8 +32,10 @@ interface ProbeStepProps {
  * Where two of the owner's answers do not add up: which of the two readings
  * is them, or that it depends, with room to say on what.
  */
-export function ProbeStep({ step, onChange }: ProbeStepProps) {
-	const [answers, setAnswers] = useState<Record<string, ProbeAnswer>>({});
+export function ProbeStep({ step, initial, onChange }: ProbeStepProps) {
+	const [answers, setAnswers] = useState<Record<string, ProbeAnswer>>(
+		() => settledSchema.safeParse(initial).data?.probes ?? {},
+	);
 	const id = useId();
 
 	const settle = (probeId: string, next: ProbeAnswer): void => {

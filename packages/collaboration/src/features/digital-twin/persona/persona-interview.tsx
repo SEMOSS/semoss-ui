@@ -23,6 +23,7 @@ import {
 	Skeleton,
 	toast,
 } from "@semoss/ui/next";
+import { personPhotoUrl } from "@/features/collaboration/api/person-photo";
 import { CollaborationPage } from "@/features/collaboration/components/collaboration-page";
 import { CollaborationPageHeader } from "@/features/collaboration/components/collaboration-page-header";
 import { useOptionalCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
@@ -40,7 +41,6 @@ import { PersonaThinking } from "./persona-thinking";
 import { ChoiceStep } from "./steps/choice-step";
 import { ConfirmStep } from "./steps/confirm-step";
 import { DialsStep } from "./steps/dials-step";
-import { HandoffStep } from "./steps/handoff-step";
 import { MirrorStep } from "./steps/mirror-step";
 import { ProbeStep } from "./steps/probe-step";
 import { RoundsStep } from "./steps/rounds-step";
@@ -79,12 +79,17 @@ export function PersonaInterview() {
 				session?.state.profile.name.trim() ||
 				"",
 		) || "You";
+	// their own Microsoft photo stands at the centre of the scenes; without one, their initials do
+	const ownerEmail = session?.state.liveProfile?.email;
+	const ownerPhoto = ownerEmail ? personPhotoUrl(ownerEmail) : undefined;
 	// the answer to the step on screen, and which of its rounds is; each belongs to one step
 	const [draft, setDraft] = useState<{
 		stepId: string;
 		answer: Record<string, unknown>;
 	}>();
 	const [place, setPlace] = useState<{ stepId: string; part: number }>();
+	// a step come back to opens at its last round, as one reached going forward opens at its first
+	const [isReturning, setIsReturning] = useState(false);
 	const [isPastCheckpoint, setIsPastCheckpoint] = useState(false);
 	// set by the save: how many of the owner's twins use the persona, or null when that could not be read
 	const [saved, setSaved] = useState<{ using: number | null }>();
@@ -98,7 +103,15 @@ export function PersonaInterview() {
 				: null;
 	const step = asking?.step;
 	const parts = step && "rounds" in step ? step.rounds.length : 1;
-	const part = step && place?.stepId === step.id ? place.part : 0;
+	const part =
+		step && place?.stepId === step.id
+			? place.part
+			: isReturning
+				? parts - 1
+				: 0;
+	// what the step opens with: what was put in it on this visit, or what was answered at it before
+	const earlier =
+		step && draft?.stepId === step.id ? draft.answer : asking?.previous;
 	const isAtCheckpoint = asking?.checkpoint === true && !isPastCheckpoint;
 	// what the interview has to say of the owner so far, where it has anything
 	const told = asking ?? (view.phase === "done" ? view : null);
@@ -116,13 +129,20 @@ export function PersonaInterview() {
 			setPlace({ stepId: step.id, part: part + 1 });
 			return;
 		}
-		interview.answer(
-			{
-				...(draft?.stepId === step.id ? draft.answer : {}),
-				stepId: step.id,
-			},
-			step.wait,
-		);
+		// the round stays where it is if the answer does not get there
+		setPlace({ stepId: step.id, part });
+		setIsReturning(false);
+		interview.answer({ ...earlier, stepId: step.id }, step.wait);
+	};
+	const handleBack = (): void => {
+		if (!step) return;
+		if (part > 0) {
+			setPlace({ stepId: step.id, part: part - 1 });
+			return;
+		}
+		setPlace({ stepId: step.id, part: 0 });
+		setIsReturning(true);
+		interview.back();
 	};
 	const handleSave = async (
 		sections: PersonaSections,
@@ -160,6 +180,7 @@ export function PersonaInterview() {
 				{saved ? (
 					<TwinBirthScene
 						name={ownerName}
+						image={ownerPhoto}
 						steps={[]}
 						parts={WRITING_PARTS.map((entry) => ({
 							...entry,
@@ -201,6 +222,7 @@ export function PersonaInterview() {
 				) : scene ? (
 					<TwinBirthScene
 						name={ownerName}
+						image={ownerPhoto}
 						steps={[
 							{
 								id: "now",
@@ -280,7 +302,16 @@ export function PersonaInterview() {
 							</Alert>
 						)}
 						{view.phase === "none" && (
-							<PersonaSources onStart={interview.start} />
+							<PersonaSources
+								onStart={(sources) => {
+									// nothing put in or passed in the interview before this one carries over
+									setDraft(undefined);
+									setPlace(undefined);
+									setIsReturning(false);
+									setIsPastCheckpoint(false);
+									interview.start(sources);
+								}}
+							/>
 						)}
 						{view.phase === "unwritten" && (
 							<Alert variant="destructive">
@@ -373,6 +404,17 @@ export function PersonaInterview() {
 											whenever you like.
 										</P>
 										<div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+											{asking.canBack && (
+												<Button
+													type="button"
+													variant="ghost"
+													className="pointer-coarse:min-h-11 sm:me-auto"
+													onClick={handleBack}
+												>
+													<ArrowLeft aria-hidden="true" />
+													Back
+												</Button>
+											)}
 											<Button
 												type="button"
 												variant="outline"
@@ -416,18 +458,21 @@ export function PersonaInterview() {
 										{step.kind === "confirm" && (
 											<ConfirmStep
 												step={step}
+												initial={earlier}
 												onChange={handleChange}
 											/>
 										)}
 										{step.kind === "dials" && (
 											<DialsStep
 												step={step}
+												initial={earlier}
 												onChange={handleChange}
 											/>
 										)}
 										{step.kind === "rounds" && (
 											<RoundsStep
 												step={step}
+												initial={earlier}
 												part={part}
 												onChange={handleChange}
 											/>
@@ -435,30 +480,28 @@ export function PersonaInterview() {
 										{step.kind === "choice" && (
 											<ChoiceStep
 												step={step}
-												onChange={handleChange}
-											/>
-										)}
-										{step.kind === "handoff" && (
-											<HandoffStep
-												step={step}
+												initial={earlier}
 												onChange={handleChange}
 											/>
 										)}
 										{step.kind === "stands" && (
 											<StandsStep
 												step={step}
+												initial={earlier}
 												onChange={handleChange}
 											/>
 										)}
 										{step.kind === "probe" && (
 											<ProbeStep
 												step={step}
+												initial={earlier}
 												onChange={handleChange}
 											/>
 										)}
 										{step.kind === "mirror" && (
 											<MirrorStep
 												step={step}
+												initial={earlier}
 												part={part}
 												onChange={handleChange}
 												onRewrite={(
@@ -486,49 +529,51 @@ export function PersonaInterview() {
 											</Alert>
 										)}
 										<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-											{part > 0 ? (
+											{/* one way back: to the round before in a step that has rounds, else to the step before */}
+											{part > 0 || asking.canBack ? (
 												<Button
 													type="button"
 													variant="ghost"
 													className="pointer-coarse:min-h-11"
-													onClick={() =>
-														setPlace({
-															stepId: step.id,
-															part: part - 1,
-														})
-													}
+													onClick={handleBack}
 												>
 													<ArrowLeft aria-hidden="true" />
-													Previous
-												</Button>
-											) : parts === 1 ? (
-												<Button
-													type="button"
-													variant="ghost"
-													className="pointer-coarse:min-h-11"
-													onClick={() =>
-														interview.answer(
-															{
-																stepId: step.id,
-																skipped: true,
-															},
-															step.wait,
-														)
-													}
-												>
-													Skip
+													Back
 												</Button>
 											) : (
 												<span />
 											)}
-											<Button
-												type="button"
-												className="pointer-coarse:min-h-11"
-												onClick={handleNext}
-											>
-												Next
-												<ArrowRight aria-hidden="true" />
-											</Button>
+											<div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+												{parts === 1 && (
+													<Button
+														type="button"
+														variant="ghost"
+														className="pointer-coarse:min-h-11"
+														onClick={() => {
+															setIsReturning(
+																false,
+															);
+															interview.answer(
+																{
+																	stepId: step.id,
+																	skipped: true,
+																},
+																step.wait,
+															);
+														}}
+													>
+														Skip
+													</Button>
+												)}
+												<Button
+													type="button"
+													className="pointer-coarse:min-h-11"
+													onClick={handleNext}
+												>
+													Next
+													<ArrowRight aria-hidden="true" />
+												</Button>
+											</div>
 										</div>
 									</section>
 								)}

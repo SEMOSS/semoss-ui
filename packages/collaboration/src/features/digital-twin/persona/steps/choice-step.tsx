@@ -6,12 +6,20 @@ import {
 	Label,
 	ToggleGroup,
 	ToggleGroupItem,
+	z,
 } from "@semoss/ui/next";
 import type { ChoiceStep as ChoiceStepData } from "../api/persona-interview";
 import { PRESSED_CLASS } from "./pressed";
 
+const chosenSchema = z.object({
+	picked: z.array(z.string()),
+	own: z.array(z.string()),
+});
+
 interface ChoiceStepProps {
 	step: ChoiceStepData;
+	/** What the owner picked and added here before, as this step sent it; anything else is ignored. */
+	initial?: unknown;
 	/** Told what is picked, in the order it was picked, and what the owner added, each time either changes. */
 	onChange: (answer: { picked: string[]; own: string[] }) => void;
 }
@@ -20,9 +28,19 @@ interface ChoiceStepProps {
  * Things to pick from, any number of them, and room for the owner's own. A
  * step that asks for an order numbers the picks as they are made.
  */
-export function ChoiceStep({ step, onChange }: ChoiceStepProps) {
-	const [picked, setPicked] = useState<string[]>([]);
-	const [own, setOwn] = useState<string[]>([]);
+export function ChoiceStep({ step, initial, onChange }: ChoiceStepProps) {
+	// only what is still offered counts as picked
+	const [picked, setPicked] = useState<string[]>(
+		() =>
+			chosenSchema
+				.safeParse(initial)
+				.data?.picked.filter((option) =>
+					step.options.includes(option),
+				) ?? [],
+	);
+	const [own, setOwn] = useState<string[]>(
+		() => chosenSchema.safeParse(initial).data?.own ?? [],
+	);
 	const [draft, setDraft] = useState("");
 	const draftId = useId();
 
