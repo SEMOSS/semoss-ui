@@ -45,6 +45,12 @@ vi.mock("@semoss/sdk/react", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
 	useLogins: () => sessionLogins,
 }));
+// the agent's catalog image url, without the theme or the server's address
+vi.mock("@semoss/shared", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@semoss/shared")>()),
+	useCatalogImageUrl: (_resource: string, id: string) =>
+		id ? `/image/${id}` : "",
+}));
 vi.mock("@semoss/i18n", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("@semoss/i18n")>();
 	return {
@@ -875,4 +881,60 @@ test("connector attachments stay visible and removable without an uploaded file"
 	);
 	expect(screen.queryByText("Email summary.md")).toBeNull();
 	expect(contextItems.items).toEqual([]);
+});
+
+test("the agent chip shows the agent's image when it loads, and no icon otherwise", () => {
+	// the images the avatar loads, so the test decides whether each one exists
+	const images: EventTarget[] = [];
+	vi.stubGlobal(
+		"Image",
+		class extends EventTarget {
+			src = "";
+			complete = false;
+			naturalWidth = 0;
+			constructor() {
+				super();
+				images.push(this);
+			}
+		},
+	);
+	try {
+		const chipFor = (name: string) => screen.getByRole("button", { name });
+		const { rerender } = render(
+			<RoomInput
+				{...defaultProps}
+				session={sessionWith({ options: savedAgentOptions("Alpha") })}
+			/>,
+		);
+		// loading: no icon yet
+		expect(chipFor("Alpha").querySelector("img, svg")).toBeNull();
+		act(() => images.at(-1)?.dispatchEvent(new Event("load")));
+		expect(chipFor("Alpha").querySelector("img")).toHaveAttribute(
+			"src",
+			"/image/agent",
+		);
+
+		// an agent with no image keeps the chip text-only
+		rerender(
+			<RoomInput
+				{...defaultProps}
+				session={sessionWith({
+					options: {
+						...sessionWith().options,
+						workspace: { workspace_id: "beta", name: "Beta" },
+					},
+				})}
+			/>,
+		);
+		act(() => images.at(-1)?.dispatchEvent(new Event("error")));
+		expect(chipFor("Beta").querySelector("img, svg")).toBeNull();
+
+		// Default Agent has no image to load
+		rerender(<RoomInput {...defaultProps} session={sessionWith()} />);
+		expect(
+			chipFor("modes.defaultAgent").querySelector("img, svg"),
+		).toBeNull();
+	} finally {
+		vi.unstubAllGlobals();
+	}
 });

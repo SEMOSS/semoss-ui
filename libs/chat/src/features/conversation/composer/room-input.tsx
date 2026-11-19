@@ -10,7 +10,6 @@ import { $getRoot, type LexicalEditor } from "lexical";
 import {
 	ArrowUpIcon,
 	BookOpenIcon,
-	Bot,
 	MicIcon,
 	PlusIcon,
 	Square,
@@ -18,8 +17,10 @@ import {
 import type React from "react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { EngineSelect } from "@semoss/shared";
+import { EngineSelect, useCatalogImageUrl } from "@semoss/shared";
 import {
+	Avatar,
+	AvatarImage,
 	Button,
 	cn,
 	DropdownMenu,
@@ -231,6 +232,21 @@ export const RoomInput = ({
 		isAgentMode,
 		defaultAgentLabel: t("modes.defaultAgent"),
 	});
+	const agentImageUrl = useCatalogImageUrl(
+		"PROJECT",
+		agentChipWorkspace?.workspace_id ?? "",
+	);
+	// the agent's image once it loads; the avatar stays empty, and hidden, when
+	// the agent has none, and Default Agent has no image to load
+	const agentChipIcon = agentImageUrl ? (
+		<Avatar
+			key={agentImageUrl}
+			aria-hidden="true"
+			className="size-5 rounded-sm empty:hidden"
+		>
+			<AvatarImage src={agentImageUrl} alt="" className="object-cover" />
+		</Avatar>
+	) : null;
 	const modelName = model?.engine_display_name || model?.app_name || "";
 	const historyEntries = useMemo(() => getPromptHistory(history), [history]);
 	// a new room or branch starts a fresh prompt history session
@@ -587,10 +603,7 @@ export const RoomInput = ({
 																)
 															}
 														>
-															<Bot
-																aria-hidden="true"
-																className="size-4 shrink-0"
-															/>
+															{agentChipIcon}
 															<span className="truncate">
 																{agentName}
 															</span>
@@ -603,10 +616,7 @@ export const RoomInput = ({
 															aria-disabled="true"
 															className="inline-flex h-8 min-w-0 max-w-48 items-center gap-2 rounded-full px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 														>
-															<Bot
-																aria-hidden="true"
-																className="size-4 shrink-0"
-															/>
+															{agentChipIcon}
 															<span className="truncate">
 																{agentName}
 															</span>
