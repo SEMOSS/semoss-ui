@@ -1,5 +1,5 @@
 import { FolderOpen, Plus, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	Alert,
@@ -85,8 +85,10 @@ function LiveTopicM365Folders({
 }: TopicM365FoldersProps) {
 	const { actions } = useInsight();
 	const updates = useWorkUpdates();
-	// the page's copy until the next reload brings the saved links
-	const [linked, setLinked] = useState<TopicM365Folder[] | null>(null);
+	// Local state tracks changes after linking; initialized with the prop value from backend
+	const [linked, setLinked] = useState<TopicM365Folder[] | null>(
+		folders && folders.length > 0 ? folders : null,
+	);
 	const [teams, setTeams] = useState<Team[] | null>(null);
 	const [channels, setChannels] = useState<TeamChannel[] | null>(null);
 	const [onedriveFolders, setOnedriveFolders] = useState<
@@ -98,6 +100,13 @@ function LiveTopicM365Folders({
 	const [error, setError] = useState("");
 	const [note, setNote] = useState("");
 	const shown = linked ?? folders;
+
+	// Sync linked state when folders prop changes (e.g., after page reload with backend data)
+	useEffect(() => {
+		if (folders && folders.length > 0 && !linked) {
+			setLinked(folders);
+		}
+	}, [folders, linked]);
 
 	async function open(next: boolean) {
 		setIsOpen(next);
