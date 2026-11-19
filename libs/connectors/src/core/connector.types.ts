@@ -33,6 +33,12 @@ export interface ConnectorSavedFile {
 	 * `onSaved` is handed, so a host can mark the item through `savedItems`.
 	 */
 	itemKey?: string;
+	/**
+	 * The drive a drive file was saved from, when its viewer knows it; left
+	 * out for a file of the user's own drive read without one. A host that
+	 * reads the file again later needs it beside the item's id.
+	 */
+	driveId?: string;
 }
 
 /** Transient actions a host can display in its own viewer chrome. */

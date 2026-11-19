@@ -1,4 +1,4 @@
-import { ArrowLeft, FolderPlus } from "lucide-react";
+import { ArrowLeft, FolderPlus, RefreshCw } from "lucide-react";
 import { type ReactNode, useCallback, useId, useState } from "react";
 import { Link, Navigate, useSearchParams } from "react-router";
 import type { ConnectorSavedFile } from "@semoss/connectors";
@@ -18,6 +18,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { useOptionalCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
+import { useTwinUpdates } from "@/features/dashboard/dashboard.context";
 import { uploadRoomFiles } from "@/features/rooms/api/upload-room-files";
 import { RoutineDocumentsDock } from "@/features/routines/routine-documents-dock";
 import {
@@ -41,6 +42,7 @@ import { TwinFilesIcon } from "./twin-files-icon";
 import { TwinKnowledgeFinder } from "./twin-knowledge-finder";
 import { TwinSourceViewer } from "./twin-source-viewer";
 import { TWIN_FINDER, TWIN_SOURCES } from "./twin-sources";
+import { TwinUpdates } from "./twin-updates";
 import { useTwinIndex } from "./use-twin-index";
 import {
 	attachmentsSummary,
@@ -56,6 +58,12 @@ const PLACES = {
 		description:
 			"The copies your Digital Twin answers from. Upload more, or open, rename and delete what is here.",
 	},
+	updates: {
+		label: "Updates",
+		icon: RefreshCw,
+		description:
+			"What changed where it came from since you copied it. Nothing in your Digital Twin changes until you choose, and an update replaces the copy. Files you uploaded and attachments are not checked.",
+	},
 	[TWIN_FINDER.id]: TWIN_FINDER,
 	...TWIN_SOURCES,
 } as const;
@@ -66,7 +74,10 @@ const isPlace = (value: string | null): value is Place =>
 const GROUPS: TopicPlaceGroup[] = [
 	{
 		title: "In your twin",
-		places: [{ id: "files", ...PLACES.files }],
+		places: [
+			{ id: "files", ...PLACES.files },
+			{ id: "updates", ...PLACES.updates },
+		],
 	},
 	{
 		title: "Add from",
@@ -88,8 +99,9 @@ const GROUPS: TopicPlaceGroup[] = [
  * and the page then copies it into the twin. After an email, its attachments
  * can be added in one go, and after a meeting what was said in it, where the
  * server can read that. A list marks what the twin already holds a copy of,
- * whenever it was added. The copy is a snapshot: nothing here reads the
- * owner's account again later.
+ * whenever it was added. The copy is a snapshot: its Updates place lists the
+ * copies whose original has changed since, and nothing is written over one
+ * until the owner chooses.
  */
 export function TwinContents() {
 	const { actions, insightId } = useInsight();
@@ -111,6 +123,8 @@ export function TwinContents() {
 	const contents = useTwinRead(readContents);
 	// what each copy holds is described for the twin's chats a moment after the page opens and after each change here
 	const requestIndex = useTwinIndex(contents.data?.id);
+	// what a check found in the owner's twins, the read the sidebar and Today share
+	const twinUpdates = useTwinUpdates();
 	// set once the folder is known to be there: added here, or made by a copy
 	const [isFolderAdded, setIsFolderAdded] = useState(false);
 	const [isAddingFolder, setIsAddingFolder] = useState(false);
@@ -133,6 +147,21 @@ export function TwinContents() {
 	const requested = params.get("in");
 	const place = isPlace(requested) ? requested : "files";
 	const PlaceIcon = PLACES[place].icon;
+	// how many of this twin's copies wait for the owner, said in the rail only when some do
+	const waiting = (twinUpdates.data?.updates ?? []).filter(
+		(update) => update.twinId === twin?.id,
+	).length;
+	const groups =
+		waiting > 0
+			? GROUPS.map((group) => ({
+					...group,
+					places: group.places.map((entry) =>
+						entry.id === "updates"
+							? { ...entry, count: waiting }
+							: entry,
+					),
+				}))
+			: GROUPS;
 
 	const markHeld = (itemKey: string | undefined, isHeld: boolean): void => {
 		if (!itemKey) return;
@@ -332,6 +361,21 @@ export function TwinContents() {
 	} else if (place === TWIN_FINDER.id) {
 		// drawn beside the other places, where it is kept while they show
 		body = null;
+	} else if (place === "updates") {
+		body = (
+			<TwinUpdates
+				twinId={twin.id}
+				updates={twinUpdates}
+				onChanged={() => {
+					// a copy was written again or removed: it is described again, and what the lists mark is read again
+					requestIndex();
+					void readTwinHoldings(actions, twin.id).then(
+						(holdings) => setHeldKeys(holdings.itemKeys),
+						() => undefined,
+					);
+				}}
+			/>
+		);
 	} else if (place !== "files") {
 		body = (
 			<TwinSourceViewer
@@ -410,7 +454,7 @@ export function TwinContents() {
 			</header>
 			<div className="flex min-h-0 flex-1 flex-col md:flex-row">
 				<TopicContentsNav
-					groups={GROUPS}
+					groups={groups}
 					place={place}
 					onPlaceChange={handlePlaceChange}
 				/>
@@ -464,7 +508,7 @@ export function TwinContents() {
 					>
 						{body}
 					</div>
-					{place !== "files" && (
+					{place !== "files" && place !== "updates" && (
 						// always there and tall enough for its button, so neither the first result nor the offer moves the list
 						<div className="flex min-h-12 shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-t px-4 py-2">
 							{/* the toast announces each result */}

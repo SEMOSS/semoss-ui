@@ -362,3 +362,61 @@ it("opens the twin with its note locked when the twin's files cannot be read", a
 	expect(screen.getByLabelText("Name (required)")).toHaveValue("Robin Twin");
 	expect(screen.getByRole("tab", { name: "People" })).toBeVisible();
 });
+
+const PERSONA = {
+	exists: true,
+	sections: {
+		short: "Runs renewals.",
+		voice: "",
+		decide: "",
+		review: "",
+		stands: "",
+		people: "",
+		limits: "",
+		examples: "",
+	},
+	offTwins: [] as string[],
+};
+
+it("shows whether the twin uses its owner's persona, read with the twin", async () => {
+	answers.WorkGetTwinPersona = PERSONA;
+	renderSettings("?twinId=twin-1");
+	expect(
+		await screen.findByRole("switch", { name: "Use my persona" }),
+	).toBeChecked();
+	cleanup();
+
+	// switched off for this twin, and on for the rest
+	answers.WorkGetTwinPersona = { ...PERSONA, offTwins: ["twin-1"] };
+	renderSettings("?twinId=twin-1");
+	expect(
+		await screen.findByRole("switch", { name: "Use my persona" }),
+	).not.toBeChecked();
+});
+
+it("opens the twin without the switch when the persona cannot be read, and for someone with none", async () => {
+	answers.WorkGetTwinPersona = new Error("The server is restarting.");
+	renderSettings("?twinId=twin-1");
+	await screen.findByRole("heading", { name: "Robin Twin", level: 1 });
+	expect(screen.queryByRole("switch", { name: "Use my persona" })).toBeNull();
+	cleanup();
+
+	answers.WorkGetTwinPersona = { ...PERSONA, exists: false };
+	renderSettings("?twinId=twin-1");
+	await screen.findByRole("heading", { name: "Robin Twin", level: 1 });
+	expect(screen.queryByRole("switch", { name: "Use my persona" })).toBeNull();
+});
+
+it("starts a new twin without instructions for someone whose persona says how it sounds", async () => {
+	answers.WorkGetTwinPersona = PERSONA;
+	const { user } = renderSettings("?create=true");
+	await user.type(
+		await screen.findByLabelText("Name (required)"),
+		"Second Twin",
+	);
+	await user.click(screen.getByRole("button", { name: "Next: Voice" }));
+	expect(
+		screen.getByRole("switch", { name: "Use my persona" }),
+	).toBeChecked();
+	expect(screen.getByLabelText("Instructions")).toHaveValue("");
+});

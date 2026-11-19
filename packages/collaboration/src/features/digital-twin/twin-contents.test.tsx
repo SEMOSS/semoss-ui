@@ -103,6 +103,20 @@ vi.mock("./use-twin-index", () => ({
 		return index.request;
 	},
 }));
+// what a check found in the owner's twins, which the shell reads once for every page
+const twinUpdates = vi.hoisted(() => ({
+	found: null as unknown,
+	refresh: vi.fn(),
+}));
+vi.mock("@/features/dashboard/dashboard.context", () => ({
+	useTwinUpdates: () => ({
+		data: twinUpdates.found,
+		error: "",
+		isLoading: false,
+		checkedAt: null,
+		refresh: twinUpdates.refresh,
+	}),
+}));
 
 const BROWSE = 'BrowseAppAssets(filePath=["/"], project=["twin-1"]);';
 // the one item the viewers offer, as the twin records where a copy of it came from
@@ -203,6 +217,51 @@ beforeEach(() => {
 afterEach(() => {
 	cleanup();
 	vi.restoreAllMocks();
+	twinUpdates.found = null;
+	twinUpdates.refresh.mockReset();
+});
+
+it("lists the copies that wait under Updates, counts them in the rail, and reads what the twin holds again once one is removed", async () => {
+	holdCopy();
+	const waiting = {
+		id: "copy-1",
+		twinId: "twin-1",
+		kind: "email",
+		change: "gone",
+		path: "public/emails/Budget review.md",
+		key: "conversation:conv-1",
+	};
+	twinUpdates.found = {
+		// one of another twin's, which this page neither lists nor counts
+		updates: [waiting, { ...waiting, id: "copy-2", twinId: "twin-9" }],
+		lastCheck: null,
+	};
+	const { user } = renderContents("updates");
+
+	expect(
+		await screen.findByRole("heading", { level: 2, name: "Updates" }),
+	).toBeVisible();
+	const rail = screen.getByRole("navigation", { name: "What to list" });
+	expect(
+		within(rail).getByRole("button", { name: /^Updates/ }),
+	).toHaveTextContent(/^Updates1$/);
+	// nothing is saved from this place, so it has no line that says to
+	expect(screen.queryByText(/^Save an item/)).not.toBeInTheDocument();
+
+	insight.actions.run.mockClear();
+	await user.click(
+		screen.getByRole("button", { name: "Remove copy: Budget review.md" }),
+	);
+	await waitFor(() => expect(index.request).toHaveBeenCalled());
+	expect(ran()).toEqual(
+		expect.arrayContaining([
+			'DeleteAppAssets(project=["twin-1"], filePath=["/public/emails/Budget review.md"]);',
+			'WorkSettleTwinUpdate(updateId=["copy-1"], action=["dismissed"]);',
+			// what the lists mark as in the twin is read again
+			BROWSE,
+		]),
+	);
+	expect(twinUpdates.refresh).toHaveBeenCalled();
 });
 
 it("opens on the twin's own files, kept to the folder a chat reads, and names every place", async () => {
@@ -230,6 +289,8 @@ it("opens on the twin's own files, kept to the folder a chat reads, and names ev
 			.map((place) => place.textContent),
 	).toEqual([
 		"Files",
+		// no count beside it while nothing waits
+		"Updates",
 		"Find with AI",
 		"Outlook",
 		"Calendar",

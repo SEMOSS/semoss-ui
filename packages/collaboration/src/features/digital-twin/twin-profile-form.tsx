@@ -24,25 +24,33 @@ interface TwinProfileFormProps {
 	imageUrl: string;
 	/** The owner's note could not be read: the form shows none and leaves the twin's as it is. */
 	isNoteUnread?: boolean;
+	/** Whether the owner has a persona; without one the form shows no switch and leaves the twin's as it is. */
+	hasPersona?: boolean;
 	/** Called once everything is saved. */
 	onSaved: () => void;
 }
 
 /**
- * A saved Digital Twin's profile on one page: its image, name, instructions,
- * greeting, its owner's note, skills and toolboxes. Nothing is saved until
- * Save, and a save that fails says which part and keeps what was entered.
+ * A saved Digital Twin's profile on one page: its image, name, whether it
+ * uses its owner's persona, instructions, greeting, its owner's note, skills
+ * and toolboxes. Nothing is saved until Save, and a save that fails says
+ * which part and keeps what was entered.
  */
 export function TwinProfileForm({
 	twin,
 	skills,
 	imageUrl,
 	isNoteUnread = false,
+	hasPersona = false,
 	onSaved,
 }: TwinProfileFormProps) {
 	const { actions } = useInsight();
 	// the note the twin holds, so only a changed one is written; not known when it could not be read
 	const savedAbout = useRef(isNoteUnread ? undefined : twin.profile.about);
+	// whether the twin uses the owner's persona, so only a change is sent; not known for someone with none
+	const savedUsePersona = useRef(
+		hasPersona ? twin.profile.usePersona : undefined,
+	);
 	const [createdSkills, setCreatedSkills] = useState<CatalogSkill[]>([]);
 	const form = useForm<TwinProfile>({
 		resolver: zodResolver(twinProfileSchema),
@@ -52,7 +60,13 @@ export function TwinProfileForm({
 
 	const handleSubmit = async (values: TwinProfile): Promise<void> => {
 		try {
-			await saveTwin(actions, twin.id, values, savedAbout.current);
+			await saveTwin(
+				actions,
+				twin.id,
+				values,
+				savedAbout.current,
+				savedUsePersona.current,
+			);
 		} catch (cause) {
 			form.setError("root.server", {
 				type: "server",
@@ -64,6 +78,8 @@ export function TwinProfileForm({
 			return;
 		}
 		if (savedAbout.current !== undefined) savedAbout.current = values.about;
+		if (savedUsePersona.current !== undefined)
+			savedUsePersona.current = values.usePersona;
 		// what is saved is the form's new starting point; the image is uploaded, so none is waiting
 		form.reset({ ...values, image: null });
 		toast.success("Digital Twin saved");
@@ -85,6 +101,7 @@ export function TwinProfileForm({
 				}
 				imageUrl={imageUrl}
 				isNoteUnread={isNoteUnread}
+				hasPersona={hasPersona}
 			/>
 			{errors.root?.server?.message && (
 				<Alert variant="destructive">

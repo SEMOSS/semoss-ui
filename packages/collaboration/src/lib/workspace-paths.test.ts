@@ -6,6 +6,8 @@ import {
 	topicPath,
 	twinChatPath,
 	twinContentsPath,
+	twinPersonaInterviewPath,
+	twinPersonaPath,
 	twinSettingsPath,
 } from "./workspace-paths";
 
@@ -48,6 +50,11 @@ it("names the twin to chat with, and the place its contents page opens on, in th
 	);
 	expect(twinSettingsPath("twin/one&two", "people")).toBe(
 		"/twins/mine?twinId=twin%2Fone%26two&tab=people",
+	);
+	expect(twinPersonaPath()).toBe("/twins/persona");
+	expect(twinPersonaInterviewPath()).toBe("/twins/persona/interview");
+	expect(twinPersonaInterviewPath("more")).toBe(
+		"/twins/persona/interview?go=more",
 	);
 });
 

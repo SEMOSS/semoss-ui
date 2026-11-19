@@ -17,6 +17,7 @@ import { agentImageUrl } from "@/features/agents/api/agent-image";
 import { CollaborationPage } from "@/features/collaboration/components/collaboration-page";
 import { CollaborationPageHeader } from "@/features/collaboration/components/collaboration-page-header";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
+import { useTwinUpdates } from "@/features/dashboard/dashboard.context";
 import {
 	twinChatPath,
 	twinContentsPath,
@@ -24,7 +25,11 @@ import {
 } from "@/lib/workspace-paths";
 import { type DigitalTwin, listTwins } from "./api/digital-twin";
 import { readOpenedTwins } from "./opened-twins";
+import { PersonaCard } from "./persona/persona-card";
 import { useTwinRead } from "./use-twin-read";
+
+const updatesToReview = (count = 0): string =>
+	count === 1 ? "1 update to review" : `${count} updates to review`;
 
 /**
  * The signed-in person's twins and those shared with them, with a way to create more.
@@ -37,6 +42,11 @@ export function TwinHub() {
 	const [opened] = useState(() =>
 		readOpenedTwins(profile.email || profile.id),
 	);
+	// how many copies in each of the owner's twins wait for them: an original changed, is gone, or is copied twice
+	const twinUpdates = useTwinUpdates();
+	const waiting = new Map<string, number>();
+	for (const update of twinUpdates.data?.updates ?? [])
+		waiting.set(update.twinId, (waiting.get(update.twinId) ?? 0) + 1);
 
 	// a twin as a card: who it is, then what can be done with it
 	const renderTwin = (
@@ -58,6 +68,16 @@ export function TwinHub() {
 				</H3>
 				{isNew && <Badge className="ml-auto shrink-0">New</Badge>}
 			</div>
+			{waiting.has(twin.id) && (
+				<Link
+					to={twinContentsPath("updates", twin.id)}
+					// the name, so a list of twins does not read the same line for each
+					aria-label={`${updatesToReview(waiting.get(twin.id))}: ${twin.name}`}
+					className="inline-flex min-h-6 pointer-coarse:min-h-11 items-center self-start rounded-sm text-sm underline underline-offset-2 hover:text-primary focus-visible:outline-2 focus-visible:outline-ring"
+				>
+					{updatesToReview(waiting.get(twin.id))}
+				</Link>
+			)}
 			<div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
 				{links.map(({ to, label }) => (
 					<Button
@@ -94,6 +114,9 @@ export function TwinHub() {
 			/>
 			{twins.data ? (
 				<div className="flex min-w-0 flex-col gap-10">
+					<PersonaCard
+						twinIds={twins.data.mine.map((twin) => twin.id)}
+					/>
 					<section
 						aria-labelledby={mineId}
 						className="flex flex-col gap-4"

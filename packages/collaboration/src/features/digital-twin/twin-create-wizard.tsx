@@ -2,6 +2,7 @@ import {
 	ArrowLeft,
 	ArrowRight,
 	Check,
+	Fingerprint,
 	FolderOpen,
 	ImageIcon,
 	Library,
@@ -47,7 +48,11 @@ import {
 import { TwinBirthScene } from "./twin-birth-scene";
 import { TwinKnowledgeStep } from "./twin-knowledge-step";
 import { TwinProfileFields } from "./twin-profile-fields";
-import { newTwinProfile, twinProfileSchema } from "./twin-profile-schema";
+import {
+	newTwinInstructions,
+	newTwinProfile,
+	twinProfileSchema,
+} from "./twin-profile-schema";
 import { describeTwinSources, twinSourceKind } from "./twin-sources";
 import { useImagePreview } from "./use-image-preview";
 import { useTwinIndex } from "./use-twin-index";
@@ -68,7 +73,7 @@ const STEPS = [
 		title: "How should it answer?",
 		description:
 			"Say how it should sound and how it greets people, and tell it about yourself. You can change all of it later.",
-		fields: ["instructions", "greeting", "about"],
+		fields: ["usePersona", "instructions", "greeting", "about"],
 	},
 	{
 		id: "abilities",
@@ -108,6 +113,7 @@ const SETUP: Record<
 	greeting: { label: "Save its greeting", icon: MessageSquareText },
 	image: { label: "Upload its image", icon: ImageIcon },
 	note: { label: "Save your note", icon: NotebookPen },
+	persona: { label: "Switch your persona off for it", icon: Fingerprint },
 	knowledge: { label: "Add what you chose", icon: Library },
 	finish: { label: "Finish setting it up", icon: Sparkles },
 };
@@ -121,6 +127,8 @@ interface TwinCreateWizardProps {
 	ownerName: string;
 	/** The owner's skill catalog; the twin can follow any of them. */
 	skills: CatalogSkill[];
+	/** Whether the owner has a persona, which the new twin uses unless they switch it off here. */
+	hasPersona: boolean;
 	/** Called when the owner goes on from the new twin to its own page. */
 	onOpenSettings: () => void;
 }
@@ -136,6 +144,7 @@ interface TwinCreateWizardProps {
 export function TwinCreateWizard({
 	ownerName,
 	skills,
+	hasPersona,
 	onOpenSettings,
 }: TwinCreateWizardProps) {
 	const { actions } = useInsight();
@@ -144,7 +153,7 @@ export function TwinCreateWizard({
 	const id = useId();
 	const form = useForm<TwinProfile>({
 		resolver: zodResolver(twinProfileSchema),
-		defaultValues: newTwinProfile(ownerName),
+		defaultValues: newTwinProfile(ownerName, hasPersona),
 	});
 	const { errors, isSubmitting } = form.formState;
 	const values = form.watch();
@@ -178,11 +187,15 @@ export function TwinCreateWizard({
 		setReached((furthest) => Math.max(furthest, next));
 		setStep(next);
 	};
-	const handleSubmit = async (profile: TwinProfile): Promise<void> => {
+	const handleSubmit = async (entered: TwinProfile): Promise<void> => {
 		if (step < LAST_STEP) {
 			goTo(step + 1);
 			return;
 		}
+		const profile = {
+			...entered,
+			instructions: newTwinInstructions(entered, ownerName),
+		};
 		// no wait is added for someone who asked for less motion, or where that cannot be told
 		const pause =
 			window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ===
@@ -214,7 +227,14 @@ export function TwinCreateWizard({
 				});
 				await Promise.all([
 					// shortcut: the first try may have saved a note the owner has emptied since, and that one stays; the twin's Profile shows it, to clear there
-					saveTwin(actions, madeId, profile, ""),
+					// a twin just made uses its owner's persona, so switching it off is a change
+					saveTwin(
+						actions,
+						madeId,
+						profile,
+						"",
+						hasPersona ? true : undefined,
+					),
 					sleep(pause),
 				]);
 				if (pending.length) {
@@ -288,12 +308,23 @@ export function TwinCreateWizard({
 				</span>
 			),
 		},
+		...(hasPersona
+			? [
+					{
+						term: "Persona",
+						step: 1,
+						value: values.usePersona
+							? "It answers in your voice, as your persona describes it."
+							: "Off for this twin. It answers plainly.",
+					},
+				]
+			: []),
 		{
 			term: "Instructions",
 			step: 1,
 			value: (
 				<span className="line-clamp-3 whitespace-pre-line">
-					{values.instructions.trim() || "None"}
+					{newTwinInstructions(values, ownerName).trim() || "None"}
 				</span>
 			),
 		},
@@ -632,6 +663,7 @@ export function TwinCreateWizard({
 											<TwinProfileFields
 												group={entry.id}
 												skills={availableSkills}
+												hasPersona={hasPersona}
 												onSkillCreated={(skill) =>
 													setCreatedSkills(
 														(current) => [

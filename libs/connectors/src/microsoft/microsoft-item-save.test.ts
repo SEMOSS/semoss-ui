@@ -151,7 +151,11 @@ it("downloads a file from the drive it is in, under the name it is given", async
 		name: "Plan.docx",
 	});
 
-	expect(file).toMatchObject({ service: "onedrive", itemKey: "item-1" });
+	expect(file).toMatchObject({
+		service: "onedrive",
+		itemKey: "item-1",
+		driveId: "drive-9",
+	});
 	const { fileName, written } = await saved();
 	expect(fileName).toBe("Plan.docx");
 	expect(written).toContain("MicrosoftOneDriveDownloadFile");

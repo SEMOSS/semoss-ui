@@ -172,7 +172,7 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-function renderWizard() {
+function renderWizard(hasPersona = false) {
 	const onOpenSettings = vi.fn();
 	render(
 		<MemoryRouter>
@@ -185,6 +185,7 @@ function renderWizard() {
 						description: "One section per client",
 					},
 				]}
+				hasPersona={hasPersona}
 				onOpenSettings={onOpenSettings}
 			/>
 		</MemoryRouter>,
@@ -891,4 +892,94 @@ it("chooses a picked email's attachments with it, as files of their own", async 
 	await user.click(next("Review"));
 	// the viewer's pick and the found email are emails; what was attached counts as files
 	expect(reviewOf("What it knows")).toHaveTextContent("2 emails, 2 files");
+});
+
+it("makes a twin that uses its owner's persona without a step for it, and with no instructions of its own", async () => {
+	const { user } = renderWizard(true);
+	await user.type(nameField(), "Robin Twin");
+	await user.click(next("Voice"));
+	expect(
+		screen.getByRole("switch", { name: "Use my persona" }),
+	).toBeChecked();
+	// their persona says how it sounds, so no line about that is waiting in the box
+	expect(screen.getByLabelText("Instructions")).toHaveValue("");
+	await user.click(next("Abilities"));
+	await user.click(next("Knowledge"));
+	await user.click(next("Review"));
+	expect(reviewOf("Persona")).toHaveTextContent("It answers in your voice");
+	expect(reviewOf("Instructions")).toHaveTextContent("None");
+	await create(user);
+	expect(
+		await screen.findByRole("heading", {
+			level: 1,
+			name: "Meet Robin Twin",
+		}),
+	).toBeVisible();
+	expect(
+		insight.actions.run.mock.calls.map(([statement]) => statement),
+	).toEqual([
+		expect.stringContaining('systemPrompt=[""]'),
+		'NewAppAssetsDirectory(project=["twin-1"], filePath=["/public"]);',
+	]);
+});
+
+it("makes a plain twin for an owner who switches their persona off: it gets how to sound, and the persona is switched off for it", async () => {
+	const { user } = renderWizard(true);
+	await user.type(nameField(), "Robin Twin");
+	await user.click(next("Voice"));
+	await user.click(screen.getByRole("switch", { name: "Use my persona" }));
+	await user.click(next("Abilities"));
+	await user.click(next("Knowledge"));
+	await user.click(next("Review"));
+	expect(reviewOf("Persona")).toHaveTextContent("Off for this twin");
+	// with neither a persona nor instructions it would have nothing on how to sound
+	expect(reviewOf("Instructions")).toHaveTextContent(
+		"Answer the way Robin Reyes would explain it to a colleague",
+	);
+	// the switch is still being sent, so the scene can be looked at mid-way
+	let finishSwitch = (): void => undefined;
+	answers.WorkSetTwinPersona = new Promise<boolean>((resolve) => {
+		finishSwitch = () => resolve(true);
+	});
+	await create(user);
+	expect(
+		await screen.findByText("Step 3 of 3: Switch your persona off for it"),
+	).toBeInTheDocument();
+	finishSwitch();
+	await screen.findByRole("heading", { level: 1, name: "Meet Robin Twin" });
+	expect(
+		insight.actions.run.mock.calls.map(([statement]) => statement),
+	).toEqual([
+		expect.stringContaining(
+			'systemPrompt=["Answer the way Robin Reyes would explain it to a colleague: plainly and briefly. Lead with the answer."]',
+		),
+		'NewAppAssetsDirectory(project=["twin-1"], filePath=["/public"]);',
+		'WorkSetTwinPersona(project=["twin-1"], enabled=[false]);',
+	]);
+});
+
+it("keeps instructions an owner wrote whichever way the persona switch is, and shows no switch to someone with no persona", async () => {
+	const { user } = renderWizard(true);
+	await user.type(nameField(), "Robin Twin");
+	await user.click(next("Voice"));
+	await user.type(screen.getByLabelText("Instructions"), "Answer in Dutch.");
+	await user.click(screen.getByRole("switch", { name: "Use my persona" }));
+	await user.click(next("Abilities"));
+	await user.click(next("Knowledge"));
+	await user.click(next("Review"));
+	expect(reviewOf("Instructions")).toHaveTextContent("Answer in Dutch.");
+	cleanup();
+
+	const plain = renderWizard();
+	await plain.user.type(nameField(), "Robin Twin");
+	await plain.user.click(next("Voice"));
+	expect(screen.queryByRole("switch", { name: "Use my persona" })).toBeNull();
+	expect(screen.getByText(/You have no persona yet/)).toBeVisible();
+	// someone without one may still make a twin with no instructions, as before
+	await plain.user.clear(screen.getByLabelText("Instructions"));
+	await plain.user.click(next("Abilities"));
+	await plain.user.click(next("Knowledge"));
+	await plain.user.click(next("Review"));
+	expect(screen.queryByText("Persona", { selector: "dt" })).toBeNull();
+	expect(reviewOf("Instructions")).toHaveTextContent("None");
 });

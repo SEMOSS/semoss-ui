@@ -119,7 +119,11 @@ export const saveMicrosoftItem = async (
 			readSavedPath: readMicrosoftSavedPath,
 		});
 	}
-	return { ...saved, itemKey: microsoftItemKey(item) };
+	return {
+		...saved,
+		itemKey: microsoftItemKey(item),
+		...(item.kind === "file" && item.driveId && { driveId: item.driveId }),
+	};
 };
 
 /** The largest attachment {@link saveMailAttachments} takes: 25 MB. */

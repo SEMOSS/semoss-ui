@@ -33,6 +33,7 @@ import { givenFirst } from "@/lib/person-name";
 import type { InsightActions } from "@/lib/pixel";
 import { twinChatPath, twinContentsPath } from "@/lib/workspace-paths";
 import { deleteTwin, getMyTwinAgent, readTwinNote } from "./api/digital-twin";
+import { getTwinPersona } from "./persona/api/persona";
 import { TwinCreateWizard } from "./twin-create-wizard";
 import { TwinPeople } from "./twin-people";
 import { TwinProfileForm } from "./twin-profile-form";
@@ -54,23 +55,27 @@ export function TwinSettings() {
 		params.get("create") === "true" && requestedTwinId === undefined;
 	const readTwin = useCallback(
 		async (actions: InsightActions) => {
-			const agent = isCreating
-				? null
-				: await getMyTwinAgent(actions, requestedTwinId);
-			if (!agent) return null;
+			const [agent, persona] = await Promise.all([
+				isCreating ? null : getMyTwinAgent(actions, requestedTwinId),
+				// a persona that cannot be read is left as it is: null, and no switch for it is shown
+				getTwinPersona(actions).catch(() => null),
+			]);
+			if (!agent) return { agent: null, about: null, persona };
 			// a note that cannot be read is left as it is, not taken for none: null, and the form locks it
 			const about = await readTwinNote(actions, agent.workspace_id).catch(
 				() => null,
 			);
-			return { agent, about };
+			return { agent, about, persona };
 		},
 		[isCreating, requestedTwinId],
 	);
 	const twin = useTwinRead(readTwin);
 	const catalog = useSkillCatalog();
 	// undefined until it is read, null for someone with no twin
-	const agent = twin.data === null ? null : twin.data?.agent;
+	const agent = twin.data?.agent;
 	const about = twin.data?.about ?? null;
+	const persona = twin.data?.persona ?? null;
+	const hasPersona = persona?.exists === true;
 	// a changed note is described for the twin's chats a moment after it is saved
 	const requestIndex = useTwinIndex(agent?.workspace_id);
 	// the browser keeps the image it has for an address, so a new upload gets a new one
@@ -164,6 +169,7 @@ export function TwinSettings() {
 						) || "the person who made you"
 					}
 					skills={catalog.skills}
+					hasPersona={hasPersona}
 					// the new twin stays on its own scene until the owner moves on from it
 					onOpenSettings={twin.reload}
 				/>
@@ -250,11 +256,14 @@ export function TwinSettings() {
 										name,
 										type,
 									})),
+								usePersona:
+									persona?.offTwins.includes(twinId) !== true,
 							},
 						}}
 						skills={catalog.skills}
 						imageUrl={imageUrl}
 						isNoteUnread={about === null}
+						hasPersona={hasPersona}
 						onSaved={handleSaved}
 					/>
 				</TabsContent>

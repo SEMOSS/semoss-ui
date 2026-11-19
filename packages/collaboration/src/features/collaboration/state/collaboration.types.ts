@@ -297,6 +297,8 @@ export interface Settings {
 	newTopicsEveryHours: number;
 	/** Whether a message in one conversation of a topic may close a step from another. */
 	closeAcrossThreads: boolean;
+	/** Hours between checks of the owner's Digital Twins for copies whose original changed: 0 never, 1, 4, 24 daily. */
+	twinCheckEveryHours: number;
 	version: number;
 }
 

@@ -2,6 +2,7 @@ import { CalendarClock, House, Layers, Tags, UsersRound } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { cn, Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 import { ChatHistoryList } from "@/features/dashboard/chat-history-list";
+import { useTwinUpdates } from "@/features/dashboard/dashboard.context";
 import { useDueToday } from "@/features/dashboard/use-due-today";
 import { RoutineRecentRuns } from "@/features/routines/routine-recent-runs";
 import { lexicon } from "@/lib/lexicon";
@@ -35,6 +36,7 @@ export function CollaborationNavigation({
 }: CollaborationNavigationProps) {
 	const { pathname } = useLocation();
 	const dueToday = useDueToday();
+	const twinUpdates = useTwinUpdates();
 	// filing and setup stay reachable from Settings and search; Topics sits under Work because the owner
 	// opens it often, and Routines stays here because it is the proactive part
 	const links = [
@@ -75,7 +77,8 @@ export function CollaborationNavigation({
 			label: "Digital Twins",
 			icon: UsersRound,
 			iconClassName: "fill-assistant/15 text-assistant",
-			count: 0,
+			// the copies in the owner's twins that wait for them: an original changed, is gone, or is copied twice
+			count: twinUpdates.data?.updates.length ?? 0,
 			isActive: pathname.startsWith("/twins"),
 		},
 		// last: its recent runs lead the scroller below and read as its own only right under it

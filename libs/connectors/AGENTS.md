@@ -83,7 +83,10 @@ code may import from `core/` and `components/`; those two never import from them
   bar above it once it is open. Its right-click menu still saves, since the host may have let
   its copy go. Mail is keyed by thread (`mailSaveKey`), since a save takes the whole thread, so
   every row of a thread is held together whether or not the list groups them. Collaboration's
-  Digital Twin pages use it.
+  Digital Twin pages use it. A saved drive file also names its `driveId` when its viewer knows
+  it (OneDrive, Teams files and `saveMicrosoftItem` all do), since an item id alone cannot be
+  read again in a drive that is not the user's own; a host that will read the file later, as
+  those pages do to see whether it has changed, keeps it beside `itemKey`.
 - **A host can save an item it found itself.** `saveMicrosoftItem(insightId, item)`
   (`microsoft/microsoft-item-save.ts`) saves one of the user's Outlook threads, Teams chats or
   drive files by its ids (`MicrosoftItemRef`), for a host that found it some other way than in a
@@ -129,7 +132,10 @@ code may import from `core/` and `components/`; those two never import from them
   thread from every folder with `<prefix>ListMail(conversationId=...)`. Outlook reports each
   email's `uniqueBody`, its text without the history it quotes; `mail/mail.threads.ts` cuts
   quoted history itself when a body arrives without one, as every Gmail body does. Saving an
-  email, from its row or its own view, saves its whole thread.
+  email, from its row or its own view, saves its whole thread. A thread read from every folder
+  lists its drafts too, each marked `isDraft`: the views show them, and `mailThreadToMarkdown`
+  leaves them out of the saved file, which a host may put where other people read it, and
+  refuses a thread that holds nothing else.
 - **Folders are a tree.** `<prefix>ListMailFolders` returns nested folders too, each right after
   the folder it sits in, with `parentId`, `path` (`Inbox/Projects`), and `depth`: Outlook walks
   Graph's `childFolders`, and Gmail nests a label under the label its name continues. The

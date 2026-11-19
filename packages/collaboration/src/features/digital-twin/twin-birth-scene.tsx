@@ -20,6 +20,12 @@ interface TwinBirthSceneProps {
 	parts: { id: string; icon: ReactNode; isLanded: boolean }[];
 	/** Where to go from here, shown in place of the steps once the twin is ready. */
 	children: ReactNode;
+	/**
+	 * What the headline says while the steps run and once they are done, for a
+	 * scene that is not a twin being made. It is set in the page's own type,
+	 * without the display face a new twin is announced in.
+	 */
+	headline?: { working: string; ready: string };
 }
 
 /**
@@ -34,6 +40,7 @@ export function TwinBirthScene({
 	steps,
 	parts,
 	children,
+	headline,
 }: TwinBirthSceneProps) {
 	const heading = useRef<HTMLHeadingElement>(null);
 	// the button that started this is gone by now, so focus goes to what replaced it
@@ -128,9 +135,14 @@ export function TwinBirthScene({
 					<H1
 						ref={heading}
 						tabIndex={-1}
-						className="wrap-anywhere rounded-sm font-display font-medium text-3xl leading-tight focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-4"
+						className={cn(
+							"wrap-anywhere rounded-sm font-medium text-3xl leading-tight focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-4",
+							!headline && "font-display",
+						)}
 					>
-						{isReady ? `Meet ${name}` : `Bringing ${name} to life`}
+						{isReady
+							? (headline?.ready ?? `Meet ${name}`)
+							: (headline?.working ?? `Bringing ${name} to life`)}
 					</H1>
 					{activeIndex >= 0 && (
 						<span className="sr-only">

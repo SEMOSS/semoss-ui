@@ -1469,6 +1469,7 @@ const SAMPLE_STATE: CollaborationState = {
 		meetingTranscripts: false,
 		newTopicsEveryHours: 24,
 		closeAcrossThreads: true,
+		twinCheckEveryHours: 24,
 		version: 1,
 	},
 	rules: [

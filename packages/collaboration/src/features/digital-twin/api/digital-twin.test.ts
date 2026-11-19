@@ -81,6 +81,7 @@ const PROFILE: TwinProfile = {
 	skills: ["skill-2"],
 	toolboxes: [{ id: "db-2", name: "Pipeline", type: "DATABASE" }],
 	image: null,
+	usePersona: true,
 };
 
 /**
@@ -293,6 +294,42 @@ describe("creating a twin", () => {
 			"greeting",
 			"knowledge",
 		]);
+		// a new twin uses its owner's persona, so only switching it off is a step, before what it knows
+		expect(
+			twinSetupSteps({ ...PROFILE, usePersona: false }, [EMAIL]),
+		).toEqual(["twin", "folder", "greeting", "persona", "knowledge"]);
+	});
+
+	it("switches the owner's persona off for a new twin they made without it, and names it when that fails", async () => {
+		const OFF = 'WorkSetTwinPersona(project=["twin-9"], enabled=[false]);';
+		const made = transport({
+			AddDigitalTwin: "twin-9",
+			GetWorkspace: { ...WORKSPACE, workspace_id: "twin-9" },
+		});
+		await createTwin(made.actions, { ...PROFILE, usePersona: false });
+		expect(made.ran().at(-1)).toBe(OFF);
+		// with it left on nothing is sent: a twin uses its owner's persona until it is switched off
+		const kept = transport({
+			AddDigitalTwin: "twin-9",
+			GetWorkspace: { ...WORKSPACE, workspace_id: "twin-9" },
+		});
+		await createTwin(kept.actions, PROFILE);
+		expect(kept.ran().join("\n")).not.toContain("WorkSetTwinPersona");
+
+		const refused = transport({
+			AddDigitalTwin: "twin-9",
+			GetWorkspace: { ...WORKSPACE, workspace_id: "twin-9" },
+			WorkSetTwinPersona: new Error("It is not yours."),
+		});
+		const failure = await createTwin(refused.actions, {
+			...PROFILE,
+			usePersona: false,
+		}).catch((cause: unknown) => cause);
+		expect(failure).toBeInstanceOf(TwinSetupError);
+		expect((failure as TwinSetupError).twinId).toBe("twin-9");
+		expect((failure as TwinSetupError).message).toBe(
+			"Your Digital Twin was created, but your persona could not be switched off for it: It is not yours.",
+		);
 	});
 
 	it("copies what the owner chose last, once the twin is whole, and says each one as it lands", async () => {
@@ -573,6 +610,50 @@ describe("the owner's note about themself", () => {
 		]);
 	});
 
+	it("switches the owner's persona for the twin only when that changed, and never when it is not known", async () => {
+		const switches = (ran: () => string[]): string[] =>
+			ran().filter((statement) =>
+				statement.startsWith("WorkSetTwinPersona"),
+			);
+		const { actions, ran } = transport({ GetWorkspace: WORKSPACE });
+		// unchanged, and for someone with no persona or whose persona could not be read
+		await saveTwin(actions, "twin-1", PROFILE, undefined, true);
+		await saveTwin(actions, "twin-1", { ...PROFILE, usePersona: false });
+		expect(switches(ran)).toEqual([]);
+
+		await saveTwin(
+			actions,
+			"twin-1",
+			{ ...PROFILE, usePersona: false },
+			undefined,
+			true,
+		);
+		await saveTwin(actions, "twin-1", PROFILE, undefined, false);
+		expect(switches(ran)).toEqual([
+			'WorkSetTwinPersona(project=["twin-1"], enabled=[false]);',
+			'WorkSetTwinPersona(project=["twin-1"], enabled=[true]);',
+		]);
+	});
+
+	it("says the rest was saved when only the persona could not be switched", async () => {
+		const { actions } = transport({
+			GetWorkspace: WORKSPACE,
+			WorkSetTwinPersona: new Error("It is not yours."),
+		});
+		await expect(
+			saveTwin(
+				actions,
+				"twin-1",
+				{ ...PROFILE, usePersona: false },
+				undefined,
+				true,
+			),
+		).rejects.toThrow(
+			"Your changes were saved, but your persona could not be switched off for it: It is not yours.",
+		);
+		expect(upload).not.toHaveBeenCalled();
+	});
+
 	it("says the rest was saved when only the note could not be", async () => {
 		const { actions } = transport({
 			GetWorkspace: WORKSPACE,
@@ -740,6 +821,33 @@ describe("what a twin holds", () => {
 				"public/emails/B.md": "thread-b",
 			}),
 		]);
+	});
+
+	it("records the drive a file was saved from beside its id, and still knows what the twin holds", async () => {
+		const { actions, state } = twinServer();
+		await copyToTwin(actions, "twin-1", {
+			path: "Plan.docx",
+			name: "Plan.docx",
+			service: "teams-files",
+			itemKey: "item-1",
+			driveId: "b!drive",
+		});
+		// a file of the owner's own drive, read without one, records none
+		await copyToTwin(actions, "twin-1", {
+			path: "Mine.docx",
+			name: "Mine.docx",
+			service: "onedrive",
+			itemKey: "item-2",
+		});
+		expect(JSON.parse(state.record ?? "")).toEqual({
+			"public/files/Plan.docx": "item-1",
+			"drive:item-1": "b!drive",
+			"public/files/Mine.docx": "item-2",
+		});
+		// the drive's entry names no copy, so it marks nothing
+		expect([
+			...(await readTwinHoldings(actions, "twin-1")).itemKeys,
+		]).toEqual(["item-1", "item-2"]);
 	});
 
 	it("copies into one twin one at a time, so no record is saved over another", async () => {

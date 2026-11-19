@@ -182,6 +182,8 @@ function mapSettings(row: Row): Settings {
 		meetingTranscripts: row.meetingTranscripts === true,
 		newTopicsEveryHours: Number(row.newTopicsEveryHours ?? 24),
 		closeAcrossThreads: row.closeAcrossThreads !== false,
+		// older servers send none and check no twins
+		twinCheckEveryHours: Number(row.twinCheckEveryHours ?? 24),
 		version: Number(row.version ?? 0),
 	};
 }

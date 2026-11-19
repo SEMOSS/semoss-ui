@@ -3,7 +3,9 @@ import {
 	FieldGroup,
 	FormField,
 	FormInput,
+	FormSwitch,
 	FormTextarea,
+	P,
 	useFormContext,
 } from "@semoss/ui/next";
 import { CapabilityPicker } from "@/features/agents/components/capability-picker";
@@ -28,12 +30,14 @@ interface TwinProfileFieldsProps {
 	imageUrl?: string;
 	/** The owner's note could not be read: it is not shown, and cannot be changed until it can. */
 	isNoteUnread?: boolean;
+	/** Whether the owner has a persona, which this twin can then be switched off from using. */
+	hasPersona?: boolean;
 }
 
 /**
  * A Digital Twin's profile fields, for the form around them: who it is (image
- * and name), how it answers (instructions, greeting and its owner's note
- * about themself), and what it can use (skills and toolboxes).
+ * and name), how it answers (its owner's persona, instructions, greeting and
+ * their note about themself), and what it can use (skills and toolboxes).
  */
 export function TwinProfileFields({
 	group,
@@ -41,6 +45,7 @@ export function TwinProfileFields({
 	onSkillCreated,
 	imageUrl,
 	isNoteUnread = false,
+	hasPersona = false,
 }: TwinProfileFieldsProps) {
 	const form = useFormContext<TwinProfile>();
 	const { isSubmitting } = form.formState;
@@ -74,12 +79,30 @@ export function TwinProfileFields({
 					)}
 					{shows("voice") && (
 						<>
+							{hasPersona ? (
+								<FormSwitch
+									name="usePersona"
+									label="Use my persona"
+									disabled={isSubmitting}
+									description="On, this twin answers in your voice and can give its read of how you would see something. Off, it answers plainly from its copies."
+								/>
+							) : (
+								<P className="text-muted-foreground text-sm">
+									You have no persona yet. Write one from the
+									Digital Twins page, and every twin of yours
+									answers in your voice.
+								</P>
+							)}
 							<FormTextarea
 								name="instructions"
 								label="Instructions"
 								disabled={isSubmitting}
 								rows={10}
-								description="How your twin sounds and what it pays attention to. It always says it is an AI, answers only from what you gave it and names its sources, whatever is written here. The people you share it with can read these."
+								description={`${
+									hasPersona
+										? "Anything this twin should do besides what your persona says."
+										: "How your twin sounds and what it pays attention to."
+								} It always says it is an AI, answers only from what you gave it and names its sources, whatever is written here. The people you share it with can read these.`}
 							/>
 							<FormTextarea
 								name="greeting"

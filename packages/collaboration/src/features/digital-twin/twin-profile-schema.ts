@@ -44,22 +44,46 @@ export const twinProfileSchema = z.object({
 			const message = file && getCatalogImageValidationError(file);
 			if (message) context.addIssue({ code: "custom", message });
 		}),
+	usePersona: z.boolean(),
 });
 
 /**
  * The profile a new twin starts from: empty but for its instructions, which
- * tell it whose twin it is.
+ * say how it should sound. Someone with a persona starts without them, since
+ * their persona says that and the two would pull against each other.
  *
  * @param ownerName - The owner as the instructions name them.
+ * @param hasPersona - Whether the owner has a persona their twins use.
  */
-export function newTwinProfile(ownerName: string): TwinProfile {
+export function newTwinProfile(
+	ownerName: string,
+	hasPersona = false,
+): TwinProfile {
 	return {
 		name: "",
-		instructions: DEFAULT_INSTRUCTIONS.replaceAll("NAME", ownerName),
+		instructions: hasPersona
+			? ""
+			: DEFAULT_INSTRUCTIONS.replaceAll("NAME", ownerName),
 		greeting: "",
 		about: "",
 		skills: [],
 		toolboxes: [],
 		image: null,
+		usePersona: true,
 	};
+}
+
+/**
+ * The instructions a new twin is made with: what its owner wrote, or how to
+ * sound for a twin that would otherwise have neither that nor their persona.
+ *
+ * @param ownerName - The owner as the instructions name them.
+ */
+export function newTwinInstructions(
+	profile: Pick<TwinProfile, "instructions" | "usePersona">,
+	ownerName: string,
+): string {
+	return profile.instructions.trim() || profile.usePersona
+		? profile.instructions
+		: DEFAULT_INSTRUCTIONS.replaceAll("NAME", ownerName);
 }

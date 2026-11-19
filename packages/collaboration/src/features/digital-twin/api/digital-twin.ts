@@ -18,6 +18,7 @@ import {
 } from "@/features/agents/api/agent-schemas";
 import { getAgent } from "@/features/agents/api/get-agent";
 import { callPixel, type InsightActions, pixel } from "@/lib/pixel";
+import { setTwinPersona } from "../persona/api/persona";
 
 /**
  * The folder of a twin's project that holds what it knows. It is the agent
@@ -59,6 +60,8 @@ export interface TwinProfile {
 	toolboxes: Pick<MCPConfig, "id" | "name" | "type">[];
 	/** A new image to upload; without one the twin keeps the image it has. */
 	image?: File | null;
+	/** Whether the twin answers with its owner's persona. It does until they switch it off, and it means nothing for someone who has none. */
+	usePersona: boolean;
 }
 
 /**
@@ -218,7 +221,7 @@ export async function listTwins(
 export async function saveTwinProfile(
 	actions: InsightActions,
 	twinId: string,
-	profile: Omit<TwinProfile, "image" | "about">,
+	profile: Omit<TwinProfile, "image" | "about" | "usePersona">,
 ): Promise<void> {
 	const agent = await getAgent(actions, twinId);
 	const output = await callPixel(
@@ -302,17 +305,21 @@ export function saveTwinNote(
 }
 
 /**
- * Save an existing twin: its profile, then its owner's note when that
- * changed, then a newly chosen image.
+ * Save an existing twin: its profile, then its owner's note and whether it
+ * uses their persona when either changed, then a newly chosen image.
  *
  * @param savedAbout - The note the twin holds, as it was last read or saved.
  * Left out when that is not known, and the note is then left as it is.
+ * @param savedUsePersona - Whether the twin uses its owner's persona, as last
+ * read or saved. Left out when that is not known or they have none, and it is
+ * then left as it is.
  */
 export async function saveTwin(
 	actions: InsightActions,
 	twinId: string,
-	{ image, about, ...profile }: TwinProfile,
+	{ image, about, usePersona, ...profile }: TwinProfile,
 	savedAbout?: string,
+	savedUsePersona?: boolean,
 ): Promise<void> {
 	await saveTwinProfile(actions, twinId, profile);
 	// an unchanged note is not written again: its owner may have edited the file under Files since
@@ -326,6 +333,16 @@ export async function saveTwin(
 		} catch (cause) {
 			throw new Error(
 				`Your changes were saved, but your note could not be: ${reason(cause)}`,
+				{ cause },
+			);
+		}
+	}
+	if (savedUsePersona !== undefined && usePersona !== savedUsePersona) {
+		try {
+			await setTwinPersona(actions, twinId, usePersona);
+		} catch (cause) {
+			throw new Error(
+				`Your changes were saved, but your persona could not be switched ${usePersona ? "on" : "off"} for it: ${reason(cause)}`,
 				{ cause },
 			);
 		}
@@ -401,6 +418,8 @@ export interface TwinSource {
 	service?: ConnectorSavedFile["service"];
 	/** What that viewer knows the item by, so its list can mark it; an upload has none. */
 	itemKey?: string;
+	/** The drive a drive file was saved from, when its viewer knew it, so the file can be read again later. */
+	driveId?: string;
 }
 
 /** A copy made in a twin. */
@@ -430,13 +449,15 @@ export type TwinSetupStep =
 	| "greeting"
 	| "image"
 	| "note"
+	| "persona"
 	| "knowledge";
 
 /**
  * The steps creating this profile takes, in the order they run: the agent,
  * its files folder, then its greeting, its image and its owner's note when it
- * has them, none of which the create call takes, then the copies of what the
- * owner chose.
+ * has them, none of which the create call takes, then switching its owner's
+ * persona off for it when they chose that, then the copies of what the owner
+ * chose.
  */
 export function twinSetupSteps(
 	profile: TwinProfile,
@@ -448,6 +469,8 @@ export function twinSetupSteps(
 		...(profile.greeting ? (["greeting"] as const) : []),
 		...(profile.image ? (["image"] as const) : []),
 		...(profile.about.trim() ? (["note"] as const) : []),
+		// a new twin uses its owner's persona, so only switching it off is a step
+		...(profile.usePersona ? [] : (["persona"] as const)),
 		...(knowledge.length ? (["knowledge"] as const) : []),
 	];
 }
@@ -519,6 +542,10 @@ export async function createTwin(
 		note: {
 			failure: "your note could not be saved",
 			run: () => saveTwinNote(actions, twinId, profile.about),
+		},
+		persona: {
+			failure: "your persona could not be switched off for it",
+			run: () => setTwinPersona(actions, twinId, false),
 		},
 		knowledge: {
 			failure: "not everything you chose could be added",
@@ -723,7 +750,16 @@ export function copyToTwin(
 				actions,
 				twinFiles(twinId).save(
 					TWIN_SOURCES_PATH,
-					JSON.stringify({ ...sources, [path]: source.itemKey }),
+					JSON.stringify({
+						...sources,
+						[path]: source.itemKey,
+						// The drive a file is in, by the file's id: a check for a newer version cannot read a file
+						// of a shared or Teams drive without it. An entry of its own, so every value stays text
+						// and a window still on older code goes on reading the record, and keeps the entry.
+						...(source.driveId && {
+							[`drive:${source.itemKey}`]: source.driveId,
+						}),
+					}),
 				),
 				z.unknown(),
 			);

@@ -59,7 +59,11 @@ beforeEach(() => {
 afterEach(cleanup);
 
 /** The form, in a session whose server can make avatar options when `canGenerate` is set. */
-function renderForm(canGenerate = false, isNoteUnread = false) {
+function renderForm(
+	canGenerate = false,
+	isNoteUnread = false,
+	persona?: { isUsed: boolean },
+) {
 	const onSaved = vi.fn();
 	const session = createInitialCollaborationState();
 	const form = (
@@ -75,6 +79,7 @@ function renderForm(canGenerate = false, isNoteUnread = false) {
 					toolboxes: [
 						{ id: "db-1", name: "Sales", type: "DATABASE" },
 					],
+					usePersona: persona?.isUsed !== false,
 				},
 			}}
 			skills={[
@@ -86,6 +91,7 @@ function renderForm(canGenerate = false, isNoteUnread = false) {
 			]}
 			imageUrl="/twin.png"
 			isNoteUnread={isNoteUnread}
+			hasPersona={persona !== undefined}
 			onSaved={onSaved}
 		/>
 	);
@@ -432,4 +438,58 @@ it("locks a note that could not be read, and leaves the one the twin holds as it
 	await user.click(screen.getByRole("button", { name: "Save" }));
 	await vi.waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
 	expect(noteWrites()).toEqual([]);
+});
+
+it("switches the owner's persona for the twin with the rest of the form, and only when it changed", async () => {
+	const switches = (): string[] =>
+		insight.actions.run.mock.calls
+			.map(([statement]) => String(statement))
+			.filter((statement) => statement.startsWith("WorkSetTwinPersona"));
+	const { user, onSaved } = renderForm(false, false, { isUsed: true });
+	const persona = screen.getByRole("switch", { name: "Use my persona" });
+	expect(persona).toBeChecked();
+	expect(screen.queryByText(/You have no persona yet/)).toBeNull();
+
+	// nothing is sent for a switch that was not touched, and nothing before Save
+	await user.click(screen.getByRole("button", { name: "Save" }));
+	await vi.waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
+	await user.click(persona);
+	expect(persona).not.toBeChecked();
+	expect(switches()).toEqual([]);
+
+	await user.click(screen.getByRole("button", { name: "Save" }));
+	await vi.waitFor(() => expect(onSaved).toHaveBeenCalledTimes(2));
+	// what was saved is the new starting point: saving again does not send it again
+	await user.click(screen.getByRole("button", { name: "Save" }));
+	await vi.waitFor(() => expect(onSaved).toHaveBeenCalledTimes(3));
+	expect(switches()).toEqual([
+		'WorkSetTwinPersona(project=["twin-1"], enabled=[false]);',
+	]);
+});
+
+it("opens with the switch off for a twin its owner switched their persona off for", () => {
+	renderForm(false, false, { isUsed: false });
+	expect(
+		screen.getByRole("switch", { name: "Use my persona" }),
+	).not.toBeChecked();
+});
+
+it("shows no switch to someone with no persona, says where to write one, and leaves the twin's as it is", async () => {
+	const { user, onSaved } = renderForm();
+	expect(screen.queryByRole("switch", { name: "Use my persona" })).toBeNull();
+	expect(screen.getByText(/You have no persona yet/)).toBeVisible();
+	await user.click(screen.getByRole("button", { name: "Save" }));
+	await vi.waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
+	expect(ran()).not.toContain("WorkSetTwinPersona");
+});
+
+it("keeps the form open and says the rest was saved when only the persona could not be switched", async () => {
+	answers.WorkSetTwinPersona = new Error("It is not yours.");
+	const { user, onSaved } = renderForm(false, false, { isUsed: true });
+	await user.click(screen.getByRole("switch", { name: "Use my persona" }));
+	await user.click(screen.getByRole("button", { name: "Save" }));
+	expect(await screen.findByRole("alert")).toHaveTextContent(
+		"Your changes were saved, but your persona could not be switched off for it: It is not yours.",
+	);
+	expect(onSaved).not.toHaveBeenCalled();
 });
