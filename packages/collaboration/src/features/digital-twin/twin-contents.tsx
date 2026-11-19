@@ -1,9 +1,10 @@
-import { ArrowLeft, FolderPlus, RefreshCw } from "lucide-react";
-import { type ReactNode, useCallback, useId, useState } from "react";
+import { ArrowLeft, RefreshCw } from "lucide-react";
+import { type ReactNode, useCallback, useId, useRef, useState } from "react";
 import { Link, Navigate, useSearchParams } from "react-router";
 import type { ConnectorSavedFile } from "@semoss/connectors";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
 import { useInsight } from "@semoss/sdk/react";
+import type { FileExplorerApi, FileItem } from "@semoss/shared";
 import {
 	Alert,
 	AlertDescription,
@@ -38,6 +39,7 @@ import {
 	TWIN_FILES_PATH,
 	type TwinCopy,
 } from "./api/digital-twin";
+import { TwinDocumentLibrary } from "./twin-document-library";
 import { TwinFilesIcon } from "./twin-files-icon";
 import { TwinKnowledgeFinder } from "./twin-knowledge-finder";
 import { TwinSourceViewer } from "./twin-source-viewer";
@@ -125,8 +127,8 @@ export function TwinContents() {
 	const requestIndex = useTwinIndex(contents.data?.id);
 	// what a check found in the owner's twins, the read the sidebar and Today share
 	const twinUpdates = useTwinUpdates();
-	// set once the folder is known to be there: added here, or made by a copy
-	const [isFolderAdded, setIsFolderAdded] = useState(false);
+	// The folder can be added here, created by a copy, or removed outside the page.
+	const [folderExists, setFolderExists] = useState<boolean>();
 	const [isAddingFolder, setIsAddingFolder] = useState(false);
 	const [status, setStatus] = useState("");
 	// what a viewer's list marks as in the twin, by what the viewer knows each item by: what the page
@@ -142,6 +144,36 @@ export function TwinContents() {
 	const [meetings, setMeetings] = useState<string[]>([]);
 	const [isAddingTranscripts, setIsAddingTranscripts] = useState(false);
 	const twin = contents.data;
+	const twinId = twin?.id;
+	const hasFolder = folderExists ?? twin?.hasFolder;
+	const [listedFiles, setListedFiles] = useState<FileItem[]>();
+	const [libraryError, setLibraryError] = useState("");
+	const latestRead = useRef(0);
+	const refreshHoldings = useCallback((): void => {
+		if (!twinId) return;
+		const sequence = ++latestRead.current;
+		void readTwinHoldings(actions, twinId).then(
+			(holdings) => {
+				if (sequence !== latestRead.current) return;
+				setHeldKeys(holdings.itemKeys);
+				setListedFiles(holdings.files);
+				setFolderExists(holdings.hasFolder);
+				setLibraryError("");
+			},
+			(cause: unknown) => {
+				if (sequence !== latestRead.current) return;
+				setLibraryError(
+					cause instanceof Error
+						? cause.message
+						: "Please try again.",
+				);
+			},
+		);
+	}, [actions, twinId]);
+	const handleFilesChanged = useCallback((): void => {
+		refreshHoldings();
+		requestIndex();
+	}, [refreshHoldings, requestIndex]);
 	if (twin === null) return <Navigate to="/twins/mine" replace />;
 
 	const requested = params.get("in");
@@ -194,7 +226,7 @@ export function TwinContents() {
 		// again: what the twin holds may have been read while this copy was on its way
 		markHeld(file.itemKey, true);
 		// the copy makes the folders it lands in
-		setIsFolderAdded(true);
+		setFolderExists(true);
 		setStatus(`Added "${file.name}" to your Digital Twin.`);
 		toast.success(`Added "${file.name}" to your Digital Twin.`);
 		requestIndex();
@@ -299,15 +331,8 @@ export function TwinContents() {
 		);
 	};
 	const handlePlaceChange = (next: string): void => {
-		// the owner may have uploaded or deleted a copy among the files, so what the twin holds is read again
-		if (place === "files" && twin) {
-			void readTwinHoldings(actions, twin.id).then(
-				(holdings) => setHeldKeys(holdings.itemKeys),
-				// what is marked stays as it was
-				() => undefined,
-			);
-			requestIndex();
-		}
+		if (place === "files") handleFilesChanged();
+		else if (next === "files") refreshHoldings();
 		// replaced, so Back leaves the page instead of walking the places
 		const search = new URLSearchParams(params);
 		search.set("in", next);
@@ -319,7 +344,7 @@ export function TwinContents() {
 			// asked for a folder that is there, the server makes a numbered one beside it
 			if (!(await hasTwinFolder(actions, twinId)))
 				await createTwinFolder(actions, twinId);
-			setIsFolderAdded(true);
+			setFolderExists(true);
 		} catch (cause) {
 			toast.error("The files folder could not be added.", {
 				description: cause instanceof Error ? cause.message : undefined,
@@ -335,6 +360,25 @@ export function TwinContents() {
 			(heldKeys ?? twin?.itemKeys)?.has(itemKey) ?? false,
 		label: "In your Digital Twin",
 	};
+	const renderLibrary = (explorer?: FileExplorerApi): ReactNode =>
+		twin && (
+			<TwinDocumentLibrary
+				twin={twin}
+				files={listedFiles ?? twin.files}
+				onOpen={
+					explorer
+						? (item) => explorer.tree.selectItem(item)
+						: undefined
+				}
+				onPlaceChange={handlePlaceChange}
+				onAddFolder={
+					!hasFolder ? () => void handleAddFolder(twin.id) : undefined
+				}
+				isAddingFolder={isAddingFolder}
+				refreshError={libraryError}
+				onRefresh={refreshHoldings}
+			/>
+		);
 	let body: ReactNode;
 	if (!twin) {
 		body = contents.error ? (
@@ -366,14 +410,7 @@ export function TwinContents() {
 			<TwinUpdates
 				twinId={twin.id}
 				updates={twinUpdates}
-				onChanged={() => {
-					// a copy was written again or removed: it is described again, and what the lists mark is read again
-					requestIndex();
-					void readTwinHoldings(actions, twin.id).then(
-						(holdings) => setHeldKeys(holdings.itemKeys),
-						() => undefined,
-					);
-				}}
+				onChanged={handleFilesChanged}
 			/>
 		);
 	} else if (place !== "files") {
@@ -385,41 +422,22 @@ export function TwinContents() {
 				onSaved={(file) => void handleSaved(twin.id, file)}
 			/>
 		);
-	} else if (twin.hasFolder || isFolderAdded) {
+	} else if (hasFolder) {
 		body = (
-			<div className="flex h-full min-h-0 flex-col p-3">
+			<div className="flex h-full min-h-0 flex-col p-2 md:p-3">
 				<RoutineDocumentsDock
 					config={{
 						mode: { type: "APP", app: twin.id },
 						rootPath: TWIN_FILES_PATH,
 					}}
 					components={FILE_PANEL_COMPONENTS}
+					renderOverview={renderLibrary}
+					onRefresh={handleFilesChanged}
 				/>
 			</div>
 		);
 	} else {
-		body = (
-			<div className="flex flex-col items-start gap-3 p-4">
-				<P className="max-w-prose text-muted-foreground text-sm">
-					Your Digital Twin has no files folder yet. Add it to upload
-					files here. Saving something from Outlook, Teams or OneDrive
-					adds it too.
-				</P>
-				<Button
-					type="button"
-					className="pointer-coarse:min-h-11"
-					disabled={isAddingFolder}
-					onClick={() => void handleAddFolder(twin.id)}
-				>
-					{isAddingFolder ? (
-						<Spinner aria-hidden="true" />
-					) : (
-						<FolderPlus aria-hidden="true" />
-					)}
-					{isAddingFolder ? "Adding…" : "Add the files folder"}
-				</Button>
-			</div>
-		);
+		body = renderLibrary();
 	}
 
 	return (
@@ -466,7 +484,13 @@ export function TwinContents() {
 						place !== "files" && "xl:max-w-4xl xl:border-r",
 					)}
 				>
-					<div className="shrink-0 border-b px-4 py-3">
+					<div
+						className={
+							place === "files"
+								? "sr-only"
+								: "shrink-0 border-b px-4 py-3"
+						}
+					>
 						<H2
 							id={labelId}
 							className="flex items-center gap-2 font-medium text-base leading-snug tracking-normal"

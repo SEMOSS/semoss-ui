@@ -7,6 +7,7 @@ import {
 	within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ComponentProps } from "react";
 import { createMemoryRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -18,6 +19,7 @@ import type {
 import { toast } from "@semoss/ui/next";
 import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
 import { CollaborationSessionProvider } from "@/features/collaboration/state/collaboration-session.context";
+import type { RoutineDocumentsDock } from "@/features/routines/routine-documents-dock";
 import { TwinContentsPage } from "@/pages/twin-contents.page";
 
 // one insight: the viewer saves into it and the copy has to run in the same one
@@ -80,8 +82,18 @@ vi.mock("@semoss/connectors", async (importOriginal) => {
 });
 // the dock talks to SEMOSS; where it is pointed is what this page decides
 vi.mock("@/features/routines/routine-documents-dock", () => ({
-	RoutineDocumentsDock: ({ config }: { config: unknown }) => (
-		<p>The file dock on {JSON.stringify(config)}</p>
+	RoutineDocumentsDock: ({
+		config,
+		onRefresh,
+		renderOverview,
+	}: ComponentProps<typeof RoutineDocumentsDock>) => (
+		<div>
+			<p>The file dock on {JSON.stringify(config)}</p>
+			<button type="button" onClick={onRefresh}>
+				Refresh documents
+			</button>
+			{renderOverview?.(undefined)}
+		</div>
 	),
 }));
 vi.mock("@/features/connectors/api/microsoft", () => ({
@@ -193,6 +205,7 @@ beforeEach(() => {
 		BrowseAppAssets: [
 			{ name: "public", path: "/public", type: "directory" },
 		],
+		SearchAppAssets: [],
 		Copy: { targetFilePath: "public/emails/Budget review.md" },
 	};
 	saveItem.mockReset();
@@ -309,6 +322,27 @@ it("opens on the twin's own files, kept to the folder a chat reads, and names ev
 	expect(screen.queryByRole("link", { name: "Done" })).toBeNull();
 	// nothing is made just by opening the page
 	expect(ran()).not.toContain(NEW_FOLDER);
+});
+
+it("refreshes the library after file changes, retains its last listing on error, and retries", async () => {
+	holdCopy();
+	const { user } = renderContents();
+	expect(await screen.findByText("Budget review.md")).toBeVisible();
+
+	answers.SearchAppAssets = new Error("Project temporarily unavailable");
+	await user.click(screen.getByRole("button", { name: "Refresh documents" }));
+	expect(await screen.findByRole("alert")).toHaveTextContent(
+		"Project temporarily unavailable",
+	);
+	expect(screen.getByText("Budget review.md")).toBeVisible();
+	expect(index.request).toHaveBeenCalledOnce();
+
+	// The copy was renamed in the explorer while the original refresh failed.
+	answers.SearchAppAssets = [{ path: "/public/emails/Approved budget.md" }];
+	await user.click(screen.getByRole("button", { name: "Try again" }));
+	expect(await screen.findByText("Approved budget.md")).toBeVisible();
+	expect(screen.queryByText("Budget review.md")).toBeNull();
+	expect(screen.queryByRole("alert")).toBeNull();
 });
 
 it("copies to the selected twin and keeps it selected when changing places", async () => {

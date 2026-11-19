@@ -132,6 +132,9 @@ const copies = (): string[] =>
 beforeEach(() => {
 	answers = {
 		AddDigitalTwin: "twin-1",
+		BrowseAppAssets: [
+			{ name: "public", path: "/public/", type: "directory" },
+		],
 		GetWorkspace: {
 			workspace_id: "twin-1",
 			name: "Robin Twin",

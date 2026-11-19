@@ -1115,6 +1115,7 @@ describe("what a twin holds", () => {
 
 		const { actions } = transport({
 			Copy: { targetFilePath: "public/emails/A.md" },
+			[ROOT]: [],
 			SaveAppAssets: new Error("The disk is full."),
 		});
 		expect(
@@ -1151,19 +1152,79 @@ describe("what a twin holds", () => {
 		]).toEqual(["thread-a"]);
 	});
 
-	it("looks for no copies in a twin with no files folder or nothing recorded", async () => {
+	it("skips the search when there is no files folder and lists uploads without a source record", async () => {
 		const noFolder = transport({ [ROOT]: [] });
 		expect(await readTwinHoldings(noFolder.actions, "twin-1")).toEqual({
 			hasFolder: false,
+			files: [],
 			itemKeys: new Set(),
 		});
 		expect(noFolder.ran()).toEqual([ROOT]);
 
 		const nothingRecorded = twinServer();
+		nothingRecorded.state.copies.push("public/Plans/Trip.pdf");
 		expect(
 			await readTwinHoldings(nothingRecorded.actions, "twin-1"),
-		).toEqual({ hasFolder: true, itemKeys: new Set() });
-		expect(nothingRecorded.ran()).toEqual([ROOT]);
+		).toEqual({
+			hasFolder: true,
+			files: [{ path: "/Plans/Trip.pdf", name: "Trip.pdf" }],
+			itemKeys: new Set(),
+		});
+		expect(nothingRecorded.ran()).toEqual([ROOT, LIST]);
+	});
+
+	it("lists visible documents using their explorer paths, and excludes reserved files from the library and saved-item markers", async () => {
+		const modified = "11/19/2026 15:42:01";
+		const search = [
+			{ path: "/public/emails", type: "directory" },
+			{ path: "/public/emails/Kickoff.md", lastModified: modified },
+			{ path: "public/Trips/agent-files-index.json" },
+			{ path: "/public/agent-files-index.json" },
+			{ path: "/public/placeholder.txt" },
+			{ path: "/public/meetings/placeholder.txt" },
+			{ path: "/public/.drafts/notes.md" },
+			{ path: "/public/Trips/.source" },
+			{ path: "/public/../secret.md" },
+			{ path: "/outside.txt" },
+		];
+		const { actions } = transport({
+			[ROOT]: [
+				{ path: "/public/", name: "public", type: "directory" },
+				{ path: "/twin-sources.json", name: "twin-sources.json" },
+			],
+			[LIST]: search,
+			[READ]: {
+				"public/emails/Kickoff.md": "conversation:hello",
+				"public/placeholder.txt": "unused",
+			},
+		});
+		expect(await readTwinHoldings(actions, "twin-1")).toEqual({
+			hasFolder: true,
+			files: [
+				{
+					name: "Kickoff.md",
+					path: "/emails/Kickoff.md",
+					lastModified: modified,
+				},
+				{
+					name: "agent-files-index.json",
+					path: "/Trips/agent-files-index.json",
+				},
+			],
+			itemKeys: new Set(["conversation:hello"]),
+		});
+	});
+
+	it("reports an unreadable listing instead of an empty library", async () => {
+		const root = [{ name: "public", path: "/public/", type: "directory" }];
+		const unreadableRoot = transport({ [ROOT]: true });
+		await expect(
+			readTwinHoldings(unreadableRoot.actions, "twin-1"),
+		).rejects.toThrow();
+		for (const invalid of [null, true, [{}], new Error("Access denied")]) {
+			const { actions } = transport({ [ROOT]: root, [LIST]: invalid });
+			await expect(readTwinHoldings(actions, "twin-1")).rejects.toThrow();
+		}
 	});
 });
 

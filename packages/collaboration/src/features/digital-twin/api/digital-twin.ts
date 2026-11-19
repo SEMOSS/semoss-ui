@@ -148,7 +148,17 @@ async function listTwinTop(
 ): Promise<FileItem[]> {
 	const files = twinFiles(twinId);
 	return files.mapEntries(
-		await callPixel(actions, files.browse("/"), z.unknown()),
+		await callPixel(
+			actions,
+			files.browse("/"),
+			z.array(
+				z.object({
+					name: z.string(),
+					path: z.string(),
+					type: z.string().optional(),
+				}),
+			),
+		),
 		"/",
 	);
 }
@@ -592,6 +602,8 @@ export interface TwinCopy {
 export interface TwinHoldings {
 	/** Whether its files folder is there; a twin whose setup stopped early has none. */
 	hasFolder: boolean;
+	/** Documents the twin can answer from, with paths relative to its files folder. */
+	files: FileItem[];
 	/** The items it holds a copy of, by what their viewer knows them by. */
 	itemKeys: ReadonlySet<string>;
 }
@@ -767,9 +779,8 @@ export async function hasTwinFolder(
 }
 
 /**
- * What the twin holds: its files folder, and the items a viewer saved that it
- * still has a copy of. A copy the owner deleted since no longer counts, and
- * neither does one made before copies recorded where they came from.
+ * List the documents in the twin, including uploads and older copies. A saved
+ * source item is marked only when its recorded copy still exists.
  */
 export function readTwinHoldings(
 	actions: InsightActions,
@@ -779,12 +790,11 @@ export function readTwinHoldings(
 	return queueForTwin(twinId, async () => {
 		const top = await listTwinTop(actions, twinId);
 		const hasFolder = top.some(isFilesFolder);
-		// without the folder there is no copy, and without a record no copy to look for
-		if (!hasFolder || !top.some((item) => item.name === TWIN_SOURCES_FILE))
-			return { hasFolder, itemKeys: new Set<string>() };
+		const files: FileItem[] = [];
+		const itemKeys = new Set<string>();
+		if (!hasFolder) return { hasFolder, files, itemKeys };
 		const [sources, found] = await Promise.all([
 			readTwinSources(actions, twinId, top),
-			// every file under the folder, however deep; the pattern is any name
 			callPixel(
 				actions,
 				pixel("SearchAppAssets", {
@@ -793,21 +803,41 @@ export function readTwinHoldings(
 					search: ".",
 					options: ["regex"],
 				}),
-				z.array(z.object({ path: z.string() })),
+				z.array(
+					z.object({
+						path: z.string(),
+						type: z.string().optional(),
+						lastModified: z.string().nullish(),
+					}),
+				),
 			),
 		]);
-		// a listing starts its paths with a slash; a copy answers with its path without one
-		const held = new Set(
-			found.map((item) => item.path.replace(/^\/+/, "")),
-		);
-		return {
-			hasFolder,
-			itemKeys: new Set(
-				Object.entries(sources)
-					.filter(([path]) => held.has(path))
-					.map(([, itemKey]) => itemKey),
-			),
-		};
+		for (const item of found) {
+			const fullPath = `/${item.path.replace(/^\/+/, "")}`;
+			if (
+				item.type === "directory" ||
+				!fullPath.startsWith(`${TWIN_FILES_PATH}/`)
+			)
+				continue;
+			const path = fullPath.slice(TWIN_FILES_PATH.length);
+			const name = path.slice(path.lastIndexOf("/") + 1);
+			// Skip the reserved names excluded by the runtime's AgentFilesIndex.
+			if (
+				!name ||
+				path.includes("/.") ||
+				name === "placeholder.txt" ||
+				path === "/agent-files-index.json"
+			)
+				continue;
+			files.push({
+				name,
+				path,
+				lastModified: item.lastModified ?? undefined,
+			});
+			const key = sources[fullPath.slice(1)];
+			if (key) itemKeys.add(key);
+		}
+		return { hasFolder, files, itemKeys };
 	});
 }
 
