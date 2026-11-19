@@ -123,6 +123,11 @@ export const ModelUsageRuleRow = ({
 				? t("usageLimit.counts.appShared")
 				: t("usageLimit.counts.appEach");
 		}
+		if (source === "ENGINE") {
+			return counts === "SHARED"
+				? t("usageLimit.counts.engineShared")
+				: t("usageLimit.counts.engineEach");
+		}
 		return counts === "SHARED"
 			? t("usageLimit.counts.teamShared")
 			: t("usageLimit.counts.teamEach");

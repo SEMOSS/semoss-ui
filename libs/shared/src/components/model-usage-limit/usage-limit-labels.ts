@@ -29,6 +29,7 @@ const LIMIT_TYPE_LABELS: Readonly<Record<UsageLimitType, string>> = {
 	DIRECT: "Direct Limit",
 	TEAM: "Team Limit",
 	APP: "App Limit",
+	ENGINE: "Engine Limit",
 	PUBLIC: "Public Use Limit",
 	ALL_MODELS: "User's Total Model Limit",
 	PLATFORM: "General Platform Limit",
@@ -88,25 +89,46 @@ export const getUsageStepSource = (
 	step: Pick<UsageLimitPathStep, "limitType">,
 ): ModelUsageLimitSource => step.limitType;
 
-/** The type of usage limit of each source the logs record a call as billed to */
+/**
+ * The type of usage limit of each source the logs record a call as billed to.
+ * ENGINE is an app's or another engine's limit, told apart by the subject's
+ * catalog type; PROJECT is an app's, on calls logged with that source.
+ */
 const LOGGED_BILLED_SOURCES: Readonly<Record<string, UsageBilledLimitType>> = {
 	USER: "DIRECT",
 	TEAM: "TEAM",
 	PUBLIC: "PUBLIC",
+	ENGINE: "ENGINE",
 	PROJECT: "APP",
 	ALL_MODELS: "ALL_MODELS",
 	PLATFORM: "PLATFORM",
 };
 
 /**
+ * @param sourceType - the source the logs record a call as billed to
+ * @param subjectType - the matching login type, team type, or the app's or
+ * engine's catalog type
+ * @returns the type of usage limit it is, or undefined when it is not one this
+ * knows: an ENGINE source is an App Limit when its subject is a project
+ */
+const getLoggedLimitType = (
+	sourceType: string,
+	subjectType: unknown,
+): UsageBilledLimitType | undefined =>
+	sourceType === "ENGINE" && subjectType === "PROJECT"
+		? "APP"
+		: LOGGED_BILLED_SOURCES[sourceType];
+
+/**
  * Which usage limit a model call was billed to, as the inference and activity
  * logs record it (BILLED_SOURCE_TYPE, BILLED_SUBJECT_ID and
  * BILLED_SUBJECT_TYPE), such as "Direct Limit" or "Ops Team Limit"
  *
- * @param sourceType - the source billed: USER, TEAM, PUBLIC, PROJECT (an
- * app), ALL_MODELS or PLATFORM
- * @param subjectId - the person's login id, or the team or app billed
- * @param subjectType - the matching login type or team type
+ * @param sourceType - the source billed: USER, TEAM, PUBLIC, ENGINE (an app or
+ * another engine), PROJECT (an app), ALL_MODELS or PLATFORM
+ * @param subjectId - the person's login id, or the team, app or engine billed
+ * @param subjectType - the matching login type, team type, or the app's or
+ * engine's catalog type (PROJECT for an app)
  * @returns the limit, the source type itself when it is not one this knows, or
  * null when the logs record no source
  */
@@ -118,7 +140,7 @@ export const describeLoggedBilledTo = (
 	if (typeof sourceType !== "string" || !sourceType) {
 		return null;
 	}
-	const limitType = LOGGED_BILLED_SOURCES[sourceType];
+	const limitType = getLoggedLimitType(sourceType, subjectType);
 	if (!limitType) {
 		return sourceType;
 	}

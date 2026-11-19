@@ -28,7 +28,13 @@ const APP_LIMIT: ModelUsageLimit = {
 
 /** An app with an end date and a usage limit on a model */
 const INTAKE: EngineApp = {
-	subject: { category: "PROJECT", id: "app1", name: "Intake Form" },
+	subject: {
+		category: "ENGINE",
+		id: "app1",
+		type: "PROJECT",
+		name: "Intake Form",
+		subtype: null,
+	},
 	access: {
 		level: "READ_ONLY",
 		endDate: "2027-01-01T00:00:00Z",
@@ -57,7 +63,11 @@ describe("toAddAppBatch", () => {
 			changes: [
 				{
 					action: "ADD",
-					subject: { category: "PROJECT", id: "app1" },
+					subject: {
+						category: "ENGINE",
+						id: "app1",
+						type: "PROJECT",
+					},
 					to: { level: "EDIT", endDate: null },
 				},
 			],
@@ -73,7 +83,7 @@ describe("toAddAppBatch", () => {
 		).changes;
 		expect(withLimit).toEqual({
 			action: "ADD",
-			subject: { category: "PROJECT", id: "app1" },
+			subject: { category: "ENGINE", id: "app1", type: "PROJECT" },
 			to: { level: "READ_ONLY", endDate: null, usageLimit: APP_LIMIT },
 		});
 
@@ -85,7 +95,7 @@ describe("toAddAppBatch", () => {
 		).changes;
 		expect(withoutLimit).toEqual({
 			action: "ADD",
-			subject: { category: "PROJECT", id: "app1" },
+			subject: { category: "ENGINE", id: "app1", type: "PROJECT" },
 			to: { level: "READ_ONLY", endDate: null },
 		});
 	});
@@ -98,7 +108,11 @@ describe("toAppLevelBatch", () => {
 			changes: [
 				{
 					action: "CHANGE",
-					subject: { category: "PROJECT", id: "app1" },
+					subject: {
+						category: "ENGINE",
+						id: "app1",
+						type: "PROJECT",
+					},
 					to: {
 						level: "EDIT",
 						endDate: "2027-01-01T00:00:00Z",
@@ -120,7 +134,7 @@ describe("toAppLevelBatch", () => {
 		).changes;
 		expect(change).toEqual({
 			action: "CHANGE",
-			subject: { category: "PROJECT", id: "app1" },
+			subject: { category: "ENGINE", id: "app1", type: "PROJECT" },
 			to: { level: "READ_ONLY", endDate: null },
 		});
 	});
@@ -134,7 +148,11 @@ describe("toAppLimitBatch", () => {
 			changes: [
 				{
 					action: "CHANGE",
-					subject: { category: "PROJECT", id: "app1" },
+					subject: {
+						category: "ENGINE",
+						id: "app1",
+						type: "PROJECT",
+					},
 					to: {
 						level: "READ_ONLY",
 						endDate: "2027-01-01T00:00:00Z",
@@ -149,7 +167,7 @@ describe("toAppLimitBatch", () => {
 		const [change] = toAppLimitBatch("m1", INTAKE, null).changes;
 		expect(change).toEqual({
 			action: "CHANGE",
-			subject: { category: "PROJECT", id: "app1" },
+			subject: { category: "ENGINE", id: "app1", type: "PROJECT" },
 			to: { level: "READ_ONLY", endDate: "2027-01-01T00:00:00Z" },
 		});
 	});
@@ -162,7 +180,11 @@ describe("toRemoveAppBatch", () => {
 			changes: [
 				{
 					action: "REMOVE",
-					subject: { category: "PROJECT", id: "app1" },
+					subject: {
+						category: "ENGINE",
+						id: "app1",
+						type: "PROJECT",
+					},
 				},
 			],
 		});

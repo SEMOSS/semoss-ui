@@ -19,12 +19,20 @@ import {
 	Tags,
 	Users,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
 import {
+	Alert,
+	AlertDescription,
 	Button,
 	cn,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuGroup,
@@ -32,6 +40,8 @@ import {
 	DropdownMenuLabel,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
+	H3,
+	Label,
 	P,
 	Progress,
 	Select,
@@ -45,17 +55,28 @@ import {
 	TabsContent,
 	TabsList,
 	TabsTrigger,
+	toast,
 } from "@semoss/ui/next";
+import type { Room } from "@/features/collaboration/state/collaboration.types";
 import { BriefPanel } from "@/features/dashboard/brief-panel";
 import { MailCheckStatus } from "@/features/dashboard/mail-check-status";
 import { givenFirst } from "@/lib/person-name";
 import { pixel } from "@/lib/pixel";
 import { roomPath } from "@/lib/workspace-paths";
+import { updateWorkStep, type WorkStepChange } from "../api/work-steps";
 import { localDue, runBatch } from "../live/live-state";
-import { useCollaborationSession } from "../state/collaboration-session.context";
+import { threadPeople } from "../state/collaboration.selectors";
+import {
+	useCollaborationSession,
+	useWorkChanged,
+} from "../state/collaboration-session.context";
+import { offerStepUndo } from "../work-item-actions";
+import { ClosedForYou } from "./closed-for-you";
 import { CollaborationHeroHeader } from "./collaboration-hero-header";
 import { CollaborationHeroPage } from "./collaboration-hero-page";
+import { NewWorkItemDialog } from "./new-work-item-dialog";
 import { TaskContextView, useTaskContext } from "./task-context";
+import { type TaskStep, TaskStepRow, toTaskStep } from "./task-step-row";
 import { TopicChip as SharedTopicChip } from "./topic-chip";
 import { WorkBuildMenu } from "./work-build-menu";
 import { WorkWaitingOn } from "./work-waiting-on";
@@ -79,10 +100,17 @@ interface Item {
 	title: string;
 	proposed: boolean;
 	mine: boolean;
+	/** `active`, `waiting`, `blocked`, `done` or `dropped`. */
+	status: string;
+	/** The owner has an open step that is not from a conversation filed as for their information or waiting on someone else. */
+	needsYou: boolean;
 	topic?: string;
 	topicId?: string;
 	roomId?: string;
+	rooms?: Room[];
 	due?: string;
+	/** When the item or one of its steps last changed. */
+	updatedAt?: string;
 	openSteps: Step[];
 }
 
@@ -90,6 +118,14 @@ const str = (value: unknown): string =>
 	typeof value === "string" ? value : "";
 const list = (value: unknown): Row[] =>
 	Array.isArray(value) ? (value as Row[]) : [];
+
+function toRoom(row: Row): Room {
+	return {
+		id: str(row.id),
+		title: str(row.title) || undefined,
+		lastActivity: str(row.lastActivity),
+	};
+}
 
 function toStep(row: Row): Step {
 	return {
@@ -110,10 +146,15 @@ function toItem(row: Row): Item {
 		title: str(row.title),
 		proposed: str(row.state) === "proposed",
 		mine: row.mine === true,
+		status: str(row.status),
+		// an older server does not say, so every item of the owner's needs them
+		needsYou: row.needsYou !== false,
 		topic: primary ? str(primary.name) : undefined,
 		topicId: primary ? str(primary.id) : undefined,
 		roomId: str(row.roomId) || undefined,
+		rooms: list(row.rooms).map(toRoom),
 		due: str(row.due) || undefined,
+		updatedAt: str(row.updatedAt) || undefined,
 		openSteps: list(row.openSteps).map(toStep),
 	};
 }
@@ -132,6 +173,24 @@ export function dueLabel(due?: string): { text: string; soon: boolean } | null {
 	};
 }
 
+// an item nothing has touched for this long says so, with the way to close it one menu away
+const QUIET_DAYS = 21;
+
+/** How long ago the item last changed, when that is long enough to say; null otherwise. */
+export function quietLabel(
+	updatedAt?: string,
+	now = Date.now(),
+): string | null {
+	if (!updatedAt) return null;
+	const at = new Date(updatedAt.replace(" ", "T"));
+	if (Number.isNaN(at.getTime())) return null;
+	const days = Math.floor((now - at.getTime()) / 86_400_000);
+	if (days < QUIET_DAYS) return null;
+	return days < 60
+		? `Quiet for ${Math.floor(days / 7)} weeks`
+		: `Quiet for ${Math.floor(days / 30)} months`;
+}
+
 const errorText = (cause: unknown) =>
 	cause instanceof Error ? cause.message : String(cause);
 
@@ -148,19 +207,47 @@ function ItemTopicChip({ item }: { item: Item }) {
 	);
 }
 
+/** How many of what the server has were returned; a list is cut when a busy owner has more than it sends. */
+export interface WorkTotals {
+	workItems: number;
+	looseSteps: number;
+}
+
+const numberOf = (value: unknown, fallback: number): number =>
+	typeof value === "number" && Number.isFinite(value) ? value : fallback;
+
 /** The work list data and the owner's actions on it. */
 export function useWorkItems() {
 	const { actions } = useInsight();
 	const [items, setItems] = useState<Item[] | null>(null);
+	// steps that belong to no work item: a single ask on a conversation is usually one
+	const [looseSteps, setLooseSteps] = useState<TaskStep[]>([]);
+	const [totals, setTotals] = useState<WorkTotals>({
+		workItems: 0,
+		looseSteps: 0,
+	});
+	const [busyStepId, setBusyStepId] = useState("");
 	const [selfId, setSelfId] = useState("");
 	const [error, setError] = useState("");
+	const { workVersion, markWorkChanged } = useWorkChanged();
+	// the version this list's own change made, whose reload it has already done
+	const ownVersion = useRef(-1);
+	const seenVersion = useRef(workVersion);
 
 	const load = useCallback(async () => {
 		try {
+			// includeSuggested: the assistant's own loose steps are the owner's to see too
 			const [out] = (await runBatch(actions, [
-				pixel("WorkListMyWork"),
+				pixel("WorkListMyWork", { includeSuggested: true }),
 			])) as Row[];
-			setItems(list(out?.workItems).map(toItem));
+			const workItems = list(out?.workItems).map(toItem);
+			const loose = list(out?.looseSteps).map(toTaskStep);
+			setItems(workItems);
+			setLooseSteps(loose);
+			setTotals({
+				workItems: numberOf(out?.workItemTotal, workItems.length),
+				looseSteps: numberOf(out?.looseStepTotal, loose.length),
+			});
 			setSelfId(str(out?.selfId));
 			setError("");
 		} catch (cause) {
@@ -169,16 +256,74 @@ export function useWorkItems() {
 	}, [actions]);
 
 	useEffect(() => {
+		// another view changed work: read the list again
+		const isNewVersion = seenVersion.current !== workVersion;
+		seenVersion.current = workVersion;
+		if (isNewVersion && ownVersion.current === workVersion) return;
 		void load();
-	}, [load]);
+	}, [load, workVersion]);
 
-	const run = useCallback(
-		async (statement: string) => {
+	/** Runs the statements as one request, reads the list again, and tells the other views once. */
+	const runAll = useCallback(
+		async (statements: string[]): Promise<boolean> => {
 			try {
-				await runBatch(actions, [statement]);
+				await runBatch(actions, statements);
 				await load();
+				// the cards and other lists read their own copy of work
+				ownVersion.current = markWorkChanged();
+				return true;
 			} catch (cause) {
 				setError(errorText(cause));
+				return false;
+			}
+		},
+		[actions, load, markWorkChanged],
+	);
+	const run = useCallback(
+		(statement: string): Promise<boolean> => runAll([statement]),
+		[runAll],
+	);
+
+	/** The owner's change to one loose step; a step taken off the list can be put back from the toast. */
+	const changeStep = useCallback(
+		async (stepId: string, change: WorkStepChange) => {
+			setBusyStepId(stepId);
+			const isSaved = await runAll([
+				pixel("WorkUpdateStep", { stepId, ...change }),
+			]);
+			setBusyStepId("");
+			if (!isSaved) return;
+			offerStepUndo(change, async () => {
+				try {
+					await updateWorkStep(actions, stepId, {
+						status: "open",
+						// "not mine" was only the reason it was set aside
+						note: change.note === undefined ? undefined : "",
+					});
+					await load();
+					ownVersion.current = markWorkChanged();
+				} catch (cause) {
+					setError(errorText(cause));
+				}
+			});
+		},
+		[actions, load, markWorkChanged, runAll],
+	);
+	const mergeChats = useCallback(
+		async (
+			taskId: string,
+			roomId: string,
+			intoRoomId: string,
+		): Promise<void> => {
+			try {
+				await runBatch(actions, [
+					pixel("WorkMergeRooms", { taskId, roomId, intoRoomId }),
+				]);
+				await load();
+			} catch (cause) {
+				const message = errorText(cause);
+				setError(message);
+				throw new Error(message);
 			}
 		},
 		[actions, load],
@@ -191,8 +336,30 @@ export function useWorkItems() {
 		[selfId],
 	);
 
-	return { items, setItems, error, run, isMine };
+	return {
+		items,
+		setItems,
+		looseSteps,
+		totals,
+		busyStepId,
+		error,
+		run,
+		mergeChats,
+		runAll,
+		changeStep,
+		selfId,
+		isMine,
+	};
 }
+
+/** An item's chats, newest first; an older server reports only its one room. */
+export function roomsOf(item: Item): Room[] {
+	if (item.rooms?.length) return item.rooms;
+	return item.roomId ? [{ id: item.roomId, lastActivity: "" }] : [];
+}
+
+const chatLabel = (room: Room, index: number, total: number) =>
+	room.title || `Chat ${total - index}`;
 
 /** The owner's next step: theirs first, then one nobody was named for (a group ask on their item). */
 export function mineNext(item: Item, isMine: (step: Step) => boolean) {
@@ -206,9 +373,12 @@ function nextStep(item: Item, isMine: (step: Step) => boolean) {
 	return mineNext(item, isMine) ?? item.openSteps[0];
 }
 
-/** Where an item is worked: its room, or the item page until it has one. */
-export const itemPath = (item: Item) =>
-	item.roomId ? roomPath(item.roomId) : `/work/item/${item.id}`;
+/** Where an item is worked: its newest room, legacy room, or the item page until it has one. */
+export const itemPath = (item: Item) => {
+	const room = item.rooms?.[0]; // Newest first
+	const roomId = room?.id || item.roomId;
+	return roomId ? roomPath(roomId) : `/work/item/${item.id}`;
+};
 
 /** The first open step someone else owes the owner. */
 export function waitingOn(item: Item, isMine: (step: Step) => boolean) {
@@ -220,16 +390,20 @@ function ItemRow({
 	item,
 	isMine,
 	showTopic,
+	onRequestMerge,
 	onDragStart,
 	onDragOver,
 	onDragEnd,
 	onMoveUp,
 	onMoveDown,
+	onClose,
 }: {
 	item: Item;
 	isMine: (step: Step) => boolean;
 	/** Off when the card already names the one topic every row shares. */
 	showTopic: boolean;
+	/** Opens the merge dialog for an item with several chats. */
+	onRequestMerge?: (item: Item) => void;
 	/** Given for the owner's own rows, which can be put in order. */
 	onDragStart?: () => void;
 	onDragOver?: () => void;
@@ -237,12 +411,16 @@ function ItemRow({
 	/** Moves the row one place; absent at that end of the list. */
 	onMoveUp?: () => void;
 	onMoveDown?: () => void;
+	/** Closes the item as finished or as no longer wanted. */
+	onClose?: (status: "done" | "dropped") => void;
 }) {
 	const draggable = Boolean(onDragStart);
 	const due = dueLabel(item.due);
+	const quiet = quietLabel(item.updatedAt);
 	const next = mineNext(item, isMine);
 	const waiting = waitingOn(item, isMine);
 	const owed = item.openSteps.filter((step) => !isMine(step)).length;
+	const rooms = roomsOf(item);
 
 	return (
 		<li
@@ -275,7 +453,7 @@ function ItemRow({
 						</Link>
 						{showTopic ? <ItemTopicChip item={item} /> : null}
 					</div>
-					{draggable ? (
+					{draggable || rooms.length > 0 ? (
 						// dragging needs another way to reorder (WCAG 2.5.7), so the menu moves the row too
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
@@ -292,19 +470,81 @@ function ItemRow({
 								<DropdownMenuItem asChild>
 									<Link to={itemPath(item)}>Open room</Link>
 								</DropdownMenuItem>
-								<DropdownMenuSeparator />
-								<DropdownMenuItem
-									disabled={!onMoveUp}
-									onSelect={onMoveUp}
-								>
-									Move up
-								</DropdownMenuItem>
-								<DropdownMenuItem
-									disabled={!onMoveDown}
-									onSelect={onMoveDown}
-								>
-									Move down
-								</DropdownMenuItem>
+								{rooms.length > 0 ? (
+									<>
+										<DropdownMenuItem asChild>
+											<Link
+												to={`/work/item/${encodeURIComponent(item.id)}`}
+											>
+												New chat
+											</Link>
+										</DropdownMenuItem>
+										<DropdownMenuSeparator />
+										<DropdownMenuLabel className="font-normal text-muted-foreground text-xs">
+											Chats
+										</DropdownMenuLabel>
+										{rooms.map((room, index) => (
+											<DropdownMenuItem
+												key={room.id}
+												asChild
+											>
+												<Link to={roomPath(room.id)}>
+													<span className="truncate">
+														{chatLabel(
+															room,
+															index,
+															rooms.length,
+														)}
+													</span>
+												</Link>
+											</DropdownMenuItem>
+										))}
+										{onRequestMerge && rooms.length > 1 ? (
+											<>
+												<DropdownMenuSeparator />
+												<DropdownMenuItem
+													onSelect={() =>
+														onRequestMerge(item)
+													}
+												>
+													Merge chats...
+												</DropdownMenuItem>
+											</>
+										) : null}
+									</>
+								) : null}
+								{draggable ? (
+									<>
+										<DropdownMenuSeparator />
+										<DropdownMenuItem
+											disabled={!onMoveUp}
+											onSelect={onMoveUp}
+										>
+											Move up
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											disabled={!onMoveDown}
+											onSelect={onMoveDown}
+										>
+											Move down
+										</DropdownMenuItem>
+									</>
+								) : null}
+								{onClose ? (
+									<>
+										<DropdownMenuSeparator />
+										<DropdownMenuItem
+											onSelect={() => onClose("done")}
+										>
+											Mark done
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											onSelect={() => onClose("dropped")}
+										>
+											Drop
+										</DropdownMenuItem>
+									</>
+								) : null}
 							</DropdownMenuContent>
 						</DropdownMenu>
 					) : null}
@@ -361,6 +601,11 @@ function ItemRow({
 							Due {due.text}
 						</span>
 					) : null}
+					{quiet ? (
+						<span className="shrink-0 text-muted-foreground text-xs">
+							{quiet}
+						</span>
+					) : null}
 					{owed > 0 ? (
 						<span className="flex shrink-0 items-center gap-1.5 text-muted-foreground text-xs">
 							<Users aria-hidden="true" className="size-3.5" />
@@ -375,14 +620,14 @@ function ItemRow({
 
 // loads only once a row is opened
 function ExpandedTask({ taskId, id }: { taskId: string; id: string }) {
-	const { task, loading, error } = useTaskContext({ taskId });
+	const { task, loading, error, steps } = useTaskContext({ taskId });
 	return (
 		<div
 			id={id}
 			className="mt-3 overflow-hidden rounded-lg border bg-muted/30 sm:ml-6"
 		>
 			{task ? (
-				<TaskContextView task={task} />
+				<TaskContextView task={task} steps={steps} />
 			) : (
 				<P
 					role={error ? "alert" : undefined}
@@ -409,12 +654,22 @@ function ReviewList({
 	all,
 	isMine,
 	run,
+	runAll,
+	undoDismiss,
 }: {
 	items: Item[];
 	all: Item[];
 	isMine: (step: Step) => boolean;
-	run: (statement: string) => Promise<void>;
+	run: (statement: string) => Promise<boolean>;
+	/** Runs the statements as one request. */
+	runAll: (statements: string[]) => Promise<boolean>;
+	/** Puts a dismissed item back among the new ones. */
+	undoDismiss: (taskId: string) => void;
 }) {
+	// the row whose own request is in flight, so its buttons wait
+	const [busyId, setBusyId] = useState("");
+	const [pendingBatch, setPendingBatch] = useState<Item[] | null>(null);
+	const [isBatchSaving, setIsBatchSaving] = useState(false);
 	const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
 	const [topic, setTopic] = useState(ALL_TOPICS);
 	// handled items leave the list, so the most seen at once is how many there were to review
@@ -438,6 +693,24 @@ function ReviewList({
 			: items.filter((item) => item.topicId === shownTopic);
 	const isAllOpen =
 		shown.length > 0 && shown.every((item) => expanded.has(item.id));
+	const accept = (item: Item) =>
+		pixel("WorkSaveWork", { taskId: item.id, accept: true });
+	/** Runs one row's request with that row's buttons disabled meanwhile; resolves whether it saved. */
+	const act = async (id: string, statement: string): Promise<boolean> => {
+		setBusyId(id);
+		try {
+			return await run(statement);
+		} finally {
+			setBusyId("");
+		}
+	};
+	const handleAddAll = async () => {
+		if (!pendingBatch) return;
+		setIsBatchSaving(true);
+		await runAll(pendingBatch.map(accept));
+		setIsBatchSaving(false);
+		setPendingBatch(null);
+	};
 
 	return (
 		<BriefPanel
@@ -466,6 +739,24 @@ function ReviewList({
 									))}
 								</SelectContent>
 							</Select>
+						) : null}
+						<Button
+							size="sm"
+							variant="secondary"
+							className="pointer-coarse:min-h-11"
+							onClick={() => setPendingBatch(items)}
+						>
+							Add all {items.length} to my work
+						</Button>
+						{shownTopic !== ALL_TOPICS ? (
+							<Button
+								size="sm"
+								variant="secondary"
+								className="pointer-coarse:min-h-11"
+								onClick={() => setPendingBatch(shown)}
+							>
+								Add all in this topic
+							</Button>
 						) : null}
 						<Button
 							size="sm"
@@ -575,7 +866,15 @@ function ReviewList({
 													? ""
 													: "s"}
 											</span>
-											{item.mine ? null : (
+											{item.mine ? (
+												item.needsYou ? null : (
+													<span>
+														Set aside: for your
+														information, waiting, or
+														from someone new
+													</span>
+												)
+											) : (
 												<span>
 													None assigned to you
 												</span>
@@ -588,13 +887,9 @@ function ReviewList({
 											variant="secondary"
 											// a softer primary than the solid button, which would shout on every row; the label stays dark because the blue is too dim to read on the tint
 											className="pointer-coarse:min-h-11 bg-primary/10 text-foreground hover:bg-primary/20"
+											disabled={busyId === item.id}
 											onClick={() =>
-												void run(
-													pixel("WorkSaveWork", {
-														taskId: item.id,
-														accept: true,
-													}),
-												)
+												void act(item.id, accept(item))
 											}
 										>
 											<Plus
@@ -609,7 +904,10 @@ function ReviewList({
 													size="sm"
 													variant="ghost"
 													className="pointer-coarse:min-h-11"
-													disabled={!targets.length}
+													disabled={
+														!targets.length ||
+														busyId === item.id
+													}
 												>
 													Merge into
 													<ChevronDown aria-hidden="true" />
@@ -646,7 +944,8 @@ function ReviewList({
 																			}
 																			className="flex-col items-start gap-0.5"
 																			onSelect={() =>
-																				void run(
+																				void act(
+																					item.id,
 																					pixel(
 																						"WorkMergeItems",
 																						{
@@ -682,14 +981,30 @@ function ReviewList({
 											size="sm"
 											variant="ghost"
 											className="pointer-coarse:min-h-11 text-muted-foreground"
-											onClick={() =>
-												void run(
+											disabled={busyId === item.id}
+											onClick={async () => {
+												const isSaved = await act(
+													item.id,
 													pixel("WorkSaveWork", {
 														taskId: item.id,
 														status: "dropped",
 													}),
-												)
-											}
+												);
+												// a dismissed new item is dropped but still new, so active puts it back in review
+												if (isSaved)
+													toast(
+														"Work item dismissed.",
+														{
+															action: {
+																label: "Undo",
+																onClick: () =>
+																	undoDismiss(
+																		item.id,
+																	),
+															},
+														},
+													);
+											}}
 										>
 											Dismiss
 										</Button>
@@ -743,6 +1058,41 @@ function ReviewList({
 					</span>
 				</div>
 			) : null}
+			<Dialog
+				open={pendingBatch !== null}
+				onOpenChange={(open) => {
+					if (!open && !isBatchSaving) setPendingBatch(null);
+				}}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>
+							Add {pendingBatch?.length ?? 0} work item
+							{pendingBatch?.length === 1 ? "" : "s"} to your
+							list?
+						</DialogTitle>
+						<DialogDescription>
+							They move from review to your work. You can still
+							change or remove each one later.
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							disabled={isBatchSaving}
+							onClick={() => setPendingBatch(null)}
+						>
+							Cancel
+						</Button>
+						<Button
+							disabled={isBatchSaving}
+							onClick={() => void handleAddAll()}
+						>
+							{isBatchSaving ? "Adding..." : "Add to my work"}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</BriefPanel>
 	);
 }
@@ -751,14 +1101,20 @@ function ReviewList({
 export function split(items: Item[]) {
 	const kept = items.filter((i) => !i.proposed);
 	const proposed = items.filter((i) => i.proposed);
+	const mine = kept.filter((i) => i.mine);
 	return {
+		// the owner's items in two groups, each in the owner's order
+		needsYou: mine.filter((i) => i.needsYou),
+		alsoAsked: mine.filter((i) => !i.needsYou),
 		// the owner's own first, then the rest someone else is driving
 		review: [
-			...proposed.filter((i) => i.mine),
+			// what needs the owner first, then what the inbox filed as for their information or waiting
+			...proposed.filter((i) => i.mine && i.needsYou),
+			...proposed.filter((i) => i.mine && !i.needsYou),
 			...proposed.filter((i) => !i.mine),
 		],
 		proposed,
-		mine: kept.filter((i) => i.mine),
+		mine,
 		others: kept.filter((i) => !i.mine),
 	};
 }
@@ -783,15 +1139,150 @@ const EMPTY_VIEW: Record<View, string> = {
 	waiting: "You are not waiting on anyone.",
 };
 
+/** The quiet line under a list the server cut short. */
+function CutShort({ shown, total }: { shown: number; total: number }) {
+	return total > shown ? (
+		<P className="text-muted-foreground text-xs">
+			Showing the first {shown} of {total}.
+		</P>
+	) : null;
+}
+
+/** Finished work items, read when the owner opens the section; each can be reopened. */
+function DoneWork() {
+	const { actions } = useInsight();
+	const { workVersion, markWorkChanged } = useWorkChanged();
+	const [isOpen, setIsOpen] = useState(false);
+	const [done, setDone] = useState<Item[] | null>(null);
+	const [error, setError] = useState("");
+	const [busyId, setBusyId] = useState("");
+	useEffect(() => {
+		// reads again when work changes elsewhere while the section is open
+		if (!isOpen || workVersion < 0) return;
+		let live = true;
+		runBatch(actions, [pixel("WorkListMyWork", { status: "done" })])
+			.then(([out]) => {
+				if (!live) return;
+				// the server's closed list also holds dismissed items
+				setDone(
+					list((out as Row | undefined)?.workItems)
+						.map(toItem)
+						.filter((item) => item.status === "done"),
+				);
+				setError("");
+			})
+			.catch((cause) => live && setError(errorText(cause)));
+		return () => {
+			live = false;
+		};
+	}, [actions, isOpen, workVersion]);
+	const reopen = async (item: Item) => {
+		setBusyId(item.id);
+		try {
+			await runBatch(actions, [
+				pixel("WorkSaveWork", { taskId: item.id, status: "active" }),
+			]);
+			setDone(
+				(current) => current?.filter((d) => d.id !== item.id) ?? null,
+			);
+			markWorkChanged();
+		} catch (cause) {
+			setError(errorText(cause));
+		} finally {
+			setBusyId("");
+		}
+	};
+	return (
+		<section aria-label="Done work" className="mt-6 border-t">
+			<button
+				type="button"
+				aria-expanded={isOpen}
+				onClick={() => setIsOpen((v) => !v)}
+				className="flex w-full items-center gap-2 rounded-sm py-3 text-left text-muted-foreground text-sm hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+			>
+				<ChevronDown
+					aria-hidden="true"
+					className={cn(
+						"size-4 transition-transform motion-reduce:transition-none",
+						isOpen && "rotate-180",
+					)}
+				/>
+				Done
+			</button>
+			{isOpen ? (
+				error ? (
+					<P role="alert" className="text-destructive text-sm">
+						{error}
+					</P>
+				) : done === null ? (
+					<P className="text-muted-foreground text-sm">Loading...</P>
+				) : done.length ? (
+					<ul
+						aria-label="Done work items"
+						className="divide-y divide-border border-t"
+					>
+						{done.map((item) => (
+							<li
+								key={item.id}
+								className="flex items-center gap-3 py-3"
+							>
+								<Link
+									to={itemPath(item)}
+									className="wrap-anywhere min-w-0 flex-1 rounded-sm hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+								>
+									{item.title}
+								</Link>
+								<Button
+									size="sm"
+									variant="outline"
+									disabled={busyId === item.id}
+									aria-label={`Reopen ${item.title}`}
+									onClick={() => void reopen(item)}
+								>
+									Reopen
+								</Button>
+							</li>
+						))}
+					</ul>
+				) : (
+					<P className="text-muted-foreground text-sm">
+						Nothing finished yet.
+					</P>
+				)
+			) : null}
+		</section>
+	);
+}
+
 /** The owner's work items, or with review, the inferred ones waiting for the owner. */
 export function WorkItems({ review: reviewing }: { review?: boolean }) {
 	const { state } = useCollaborationSession();
-	const { items, setItems, error, run, isMine } = useWorkItems();
+	const {
+		items,
+		setItems,
+		looseSteps,
+		totals,
+		busyStepId,
+		error,
+		run,
+		mergeChats,
+		runAll,
+		changeStep,
+		selfId,
+		isMine,
+	} = useWorkItems();
 	const [dragId, setDragId] = useState<string | null>(null);
 	const dragFrom = useRef("");
 	const [showOthers, setShowOthers] = useState(false);
 	const [view, setView] = useState<View>("all");
 	const waitingTab = useRef<HTMLButtonElement>(null);
+	const [mergeItemId, setMergeItemId] = useState<string | null>(null);
+	const [fromRoomId, setFromRoomId] = useState("");
+	const [intoRoomId, setIntoRoomId] = useState("");
+	const [isMerging, setIsMerging] = useState(false);
+	const [mergeError, setMergeError] = useState("");
+	const fromFieldId = useId();
+	const intoFieldId = useId();
 
 	if (items === null) {
 		return error ? (
@@ -805,7 +1296,33 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 			</output>
 		);
 	}
-	const { review, proposed, mine, others } = split(items);
+	const { review, proposed, mine, others, needsYou, alsoAsked } =
+		split(items);
+	const mergeItem = items.find((item) => item.id === mergeItemId);
+	const mergeRooms = mergeItem ? roomsOf(mergeItem) : [];
+	const closeMerge = () => {
+		setMergeItemId(null);
+		setFromRoomId("");
+		setIntoRoomId("");
+		setMergeError("");
+	};
+	const handleRequestMerge = (item: Item) => {
+		closeMerge();
+		setMergeItemId(item.id);
+	};
+	const handleMerge = async () => {
+		if (!mergeItemId || !fromRoomId || !intoRoomId || isMerging) return;
+		setIsMerging(true);
+		setMergeError("");
+		try {
+			await mergeChats(mergeItemId, fromRoomId, intoRoomId);
+			closeMerge();
+		} catch (cause) {
+			setMergeError(errorText(cause));
+		} finally {
+			setIsMerging(false);
+		}
+	};
 
 	if (reviewing) {
 		return (
@@ -820,6 +1337,12 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 					all={items}
 					isMine={isMine}
 					run={run}
+					runAll={runAll}
+					undoDismiss={(taskId) =>
+						void run(
+							pixel("WorkSaveWork", { taskId, status: "active" }),
+						)
+					}
 				/>
 			</>
 		);
@@ -827,8 +1350,15 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 
 	const withNext = mine.filter((item) => mineNext(item, isMine));
 	const waiting = mine.filter((item) => waitingOn(item, isMine));
-	const shown =
-		view === "next" ? withNext : view === "waiting" ? waiting : mine;
+	/** The part of a group the chosen tab shows. */
+	const inView = (group: Item[]) =>
+		view === "next"
+			? group.filter((item) => mineNext(item, isMine))
+			: view === "waiting"
+				? group.filter((item) => waitingOn(item, isMine))
+				: group;
+	const shownNeedsYou = inView(needsYou);
+	const shownAlsoAsked = inView(alsoAsked);
 	const waits = mine.flatMap((item) =>
 		item.openSteps
 			.filter((step) => !isMine(step))
@@ -869,6 +1399,146 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 			pixel("WorkReorderItems", { taskIds: order.map((i) => i.id) }),
 		);
 	};
+
+	/** A group's heading with its count, and a line saying what it is when it needs one. */
+	const groupHeading = (title: string, count: number, note?: string) => (
+		<div className="pt-4">
+			<div className="flex items-center gap-3">
+				<H3 className="text-base leading-tight">{title}</H3>
+				<span className="rounded-md bg-muted px-2 py-0.5 font-medium text-muted-foreground text-sm tabular-nums">
+					{count}
+				</span>
+			</div>
+			{note ? (
+				<P className="mt-1 text-muted-foreground text-sm">{note}</P>
+			) : null}
+		</div>
+	);
+	/** Closes an item from its row; the toast puts it back. */
+	const close = async (item: Item, status: "done" | "dropped") => {
+		const isSaved = await run(
+			pixel("WorkSaveWork", { taskId: item.id, status }),
+		);
+		if (!isSaved) return;
+		toast(
+			status === "done"
+				? `"${item.title}" marked done.`
+				: `"${item.title}" dropped.`,
+			{
+				action: {
+					label: "Undo",
+					onClick: () =>
+						void run(
+							pixel("WorkSaveWork", {
+								taskId: item.id,
+								status: item.status || "active",
+							}),
+						),
+				},
+			},
+		);
+	};
+	/** One group's rows, which drag and move inside the group. */
+	const rows = (groupRows: Item[], label: string) => (
+		<ul aria-label={label} className="divide-y divide-border">
+			{groupRows.map((item, index) => {
+				const before = groupRows[index - 1];
+				const after = groupRows[index + 1];
+				return (
+					<ItemRow
+						key={item.id}
+						item={item}
+						isMine={isMine}
+						showTopic={!sharedTopic}
+						onDragStart={() => {
+							setDragId(item.id);
+							dragFrom.current = JSON.stringify(
+								mine.map((i) => i.id),
+							);
+						}}
+						onDragOver={() => {
+							// over itself nothing moves, and this fires many times a second
+							if (
+								dragId &&
+								dragId !== item.id &&
+								groupRows.some((row) => row.id === dragId)
+							)
+								show(placed(mine, dragId, item.id));
+						}}
+						onDragEnd={saveOrder}
+						onMoveUp={
+							before ? () => move(item.id, before.id) : undefined
+						}
+						onMoveDown={
+							after ? () => move(item.id, after.id) : undefined
+						}
+						onRequestMerge={handleRequestMerge}
+						onClose={(status) => void close(item, status)}
+					/>
+				);
+			})}
+		</ul>
+	);
+
+	/** One group of single steps, each with the same controls as a step inside a work item. */
+	const stepGroup = (title: string, steps: TaskStep[], note?: string) =>
+		steps.length ? (
+			<section aria-label={title}>
+				{groupHeading(title, steps.length, note)}
+				<ul
+					aria-label={`Single steps: ${title}`}
+					className="divide-y divide-border overflow-hidden rounded-lg border bg-background"
+				>
+					{steps.map((step) => (
+						<TaskStepRow
+							key={step.id}
+							step={{
+								...step,
+								threadSubject: state.threads.find(
+									(t) => t.id === step.threadId,
+								)?.subject,
+							}}
+							state="mine"
+							selfId={selfId}
+							people={threadPeople(state, step.threadId)}
+							onChange={(stepId, change) =>
+								void changeStep(stepId, change)
+							}
+							isBusy={busyStepId === step.id}
+							topicName={
+								step.topicId
+									? state.topics.find(
+											(t) => t.id === step.topicId,
+										)?.name
+									: undefined
+							}
+						/>
+					))}
+				</ul>
+			</section>
+		) : null;
+	const asideSteps = looseSteps.filter(
+		(step) =>
+			step.inbox === "fyi" ||
+			step.inbox === "waiting" ||
+			step.inbox === "outside",
+	);
+	const needSteps = looseSteps.filter((step) => !asideSteps.includes(step));
+	const singleSteps = looseSteps.length ? (
+		<section aria-label="Single steps" className="mt-6 space-y-2">
+			<H3 className="text-base leading-tight">Single steps</H3>
+			<P className="text-muted-foreground text-sm">
+				Asks that are not part of a work item.
+			</P>
+			{stepGroup("Needs you", needSteps)}
+			{stepGroup(
+				"Also asked of you",
+				asideSteps,
+				"From conversations filed as for your information or waiting on someone else, or from people you have not worked with.",
+			)}
+			<CutShort shown={looseSteps.length} total={totals.looseSteps} />
+		</section>
+	) : null;
 
 	return (
 		<>
@@ -912,195 +1582,189 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 			) : null}
 			<div className="grid @5xl:grid-cols-12 grid-cols-1 gap-6">
 				<div className="@5xl:col-span-8 min-w-0">
-					<BriefPanel
-						title="Your priorities"
-						count={mine.length}
-						detail={
-							sharedTopic ? (
-								<ItemTopicChip item={sharedTopic} />
-							) : undefined
-						}
-					>
-						{mine.length ? (
-							<Tabs
-								value={view}
-								onValueChange={(value) => {
-									if (
-										value === "all" ||
-										value === "next" ||
-										value === "waiting"
-									)
-										setView(value);
-								}}
-								className="gap-0"
-							>
-								<div className="flex items-end justify-between gap-4 border-b">
-									<TabsList className="h-auto justify-start gap-6 rounded-none bg-transparent p-0">
-										{(
-											[
-												["all", "All work", mine],
+					{/* its own block: the panel fills its parent, and the column also holds the lists below it */}
+					<div>
+						<BriefPanel
+							title="Your priorities"
+							count={mine.length}
+							detail={
+								sharedTopic ? (
+									<ItemTopicChip item={sharedTopic} />
+								) : undefined
+							}
+						>
+							{mine.length ? (
+								<Tabs
+									value={view}
+									onValueChange={(value) => {
+										if (
+											value === "all" ||
+											value === "next" ||
+											value === "waiting"
+										)
+											setView(value);
+									}}
+									className="gap-0"
+								>
+									<div className="flex items-end justify-between gap-4 border-b">
+										<TabsList className="h-auto justify-start gap-6 rounded-none bg-transparent p-0">
+											{(
 												[
-													"next",
-													"Next steps",
-													withNext,
-												],
-												["waiting", "Waiting", waiting],
-											] as const
-										).map(([value, label, rows]) => (
-											<TabsTrigger
-												key={value}
-												value={value}
-												ref={
-													value === "waiting"
-														? waitingTab
-														: undefined
-												}
-												// an underlined tab instead of the pill: the line sits on the rule under the row
-												className="-mb-px h-auto pointer-coarse:min-h-11 flex-none gap-2 rounded-none border-0 border-transparent border-b-2 px-0 pt-1 pb-3 font-normal text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:font-medium data-[state=active]:text-primary data-[state=active]:shadow-none dark:data-[state=active]:border-primary dark:data-[state=active]:bg-transparent dark:data-[state=active]:text-foreground"
-											>
-												{/* the space is for the tab's spoken name; the gap spaces them on screen */}
-												{label}{" "}
-												<span className="text-xs tabular-nums">
-													{rows.length}
-												</span>
-											</TabsTrigger>
-										))}
-									</TabsList>
-									<span className="hidden shrink-0 items-center gap-1.5 pb-3 text-muted-foreground text-xs sm:flex">
-										<ArrowUpDown
+													["all", "All work", mine],
+													[
+														"next",
+														"Next steps",
+														withNext,
+													],
+													[
+														"waiting",
+														"Waiting",
+														waiting,
+													],
+												] as const
+											).map(([value, label, rows]) => (
+												<TabsTrigger
+													key={value}
+													value={value}
+													ref={
+														value === "waiting"
+															? waitingTab
+															: undefined
+													}
+													// an underlined tab instead of the pill: the line sits on the rule under the row
+													className="-mb-px h-auto pointer-coarse:min-h-11 flex-none gap-2 rounded-none border-0 border-transparent border-b-2 px-0 pt-1 pb-3 font-normal text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:font-medium data-[state=active]:text-primary data-[state=active]:shadow-none dark:data-[state=active]:border-primary dark:data-[state=active]:bg-transparent dark:data-[state=active]:text-foreground"
+												>
+													{/* the space is for the tab's spoken name; the gap spaces them on screen */}
+													{label}{" "}
+													<span className="text-xs tabular-nums">
+														{rows.length}
+													</span>
+												</TabsTrigger>
+											))}
+										</TabsList>
+										<span className="hidden shrink-0 items-center gap-1.5 pb-3 text-muted-foreground text-xs sm:flex">
+											<ArrowUpDown
+												aria-hidden="true"
+												className="size-3.5"
+											/>
+											In your order
+										</span>
+									</div>
+									<TabsContent value={view}>
+										{shownNeedsYou.length ||
+										shownAlsoAsked.length ? (
+											<>
+												{shownNeedsYou.length ||
+												view === "all" ? (
+													<section aria-label="Needs you">
+														{groupHeading(
+															"Needs you",
+															shownNeedsYou.length,
+														)}
+														{shownNeedsYou.length ? (
+															rows(
+																shownNeedsYou,
+																"Your work items",
+															)
+														) : (
+															<P className="py-4 text-muted-foreground text-sm">
+																Nothing needs
+																you right now.
+															</P>
+														)}
+													</section>
+												) : null}
+												{shownAlsoAsked.length ? (
+													<section aria-label="Also asked of you">
+														{groupHeading(
+															"Also asked of you",
+															shownAlsoAsked.length,
+															"From conversations filed as for your information or waiting on someone else, or from people you have not worked with.",
+														)}
+														{rows(
+															shownAlsoAsked,
+															"Also asked of you",
+														)}
+													</section>
+												) : null}
+											</>
+										) : (
+											<P className="py-6 text-muted-foreground text-sm">
+												{EMPTY_VIEW[view]}
+											</P>
+										)}
+									</TabsContent>
+								</Tabs>
+							) : (
+								<P className="text-muted-foreground text-sm">
+									{review.length
+										? "Review the new items to start your list."
+										: looseSteps.length
+											? "No work items yet. Your single steps are below."
+											: "No work items yet. They come from your mail and chats, or ask in chat to add one."}
+								</P>
+							)}
+							{others.length ? (
+								<div className="border-t">
+									<button
+										type="button"
+										aria-expanded={showOthers}
+										onClick={() => setShowOthers((v) => !v)}
+										className="flex w-full items-center gap-2 rounded-sm py-3 text-left text-muted-foreground text-sm hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+									>
+										<ChevronDown
 											aria-hidden="true"
-											className="size-3.5"
+											className={cn(
+												"size-4 transition-transform motion-reduce:transition-none",
+												showOthers && "rotate-180",
+											)}
 										/>
-										In your order
+										{others.length} item
+										{others.length === 1 ? "" : "s"} other
+										people are driving
+									</button>
+									{showOthers ? (
+										<ul
+											aria-label="Work other people are driving"
+											className="divide-y divide-border border-t"
+										>
+											{others.map((item) => (
+												<ItemRow
+													key={item.id}
+													item={item}
+													isMine={isMine}
+													showTopic
+													onRequestMerge={
+														handleRequestMerge
+													}
+												/>
+											))}
+										</ul>
+									) : null}
+								</div>
+							) : null}
+							<CutShort
+								shown={items.length}
+								total={totals.workItems}
+							/>
+							{mine.length ? (
+								<div className="mt-auto flex flex-wrap justify-between gap-x-4 gap-y-1 border-t pt-4 text-muted-foreground text-xs">
+									<span>
+										{mine.length > 1
+											? "Drag the handle to arrange your priorities, or use a row's menu"
+											: ""}
+									</span>
+									<span className="tabular-nums">
+										{mine.length} active work item
+										{mine.length === 1 ? "" : "s"}
 									</span>
 								</div>
-								<TabsContent value={view}>
-									{shown.length ? (
-										<ul
-											aria-label="Your work items"
-											className="divide-y divide-border"
-										>
-											{shown.map((item, index) => {
-												const before = shown[index - 1];
-												const after = shown[index + 1];
-												return (
-													<ItemRow
-														key={item.id}
-														item={item}
-														isMine={isMine}
-														showTopic={!sharedTopic}
-														onDragStart={() => {
-															setDragId(item.id);
-															dragFrom.current =
-																JSON.stringify(
-																	mine.map(
-																		(i) =>
-																			i.id,
-																	),
-																);
-														}}
-														onDragOver={() => {
-															// over itself nothing moves, and this fires many times a second
-															if (
-																dragId &&
-																dragId !==
-																	item.id
-															)
-																show(
-																	placed(
-																		mine,
-																		dragId,
-																		item.id,
-																	),
-																);
-														}}
-														onDragEnd={saveOrder}
-														onMoveUp={
-															before
-																? () =>
-																		move(
-																			item.id,
-																			before.id,
-																		)
-																: undefined
-														}
-														onMoveDown={
-															after
-																? () =>
-																		move(
-																			item.id,
-																			after.id,
-																		)
-																: undefined
-														}
-													/>
-												);
-											})}
-										</ul>
-									) : (
-										<P className="py-6 text-muted-foreground text-sm">
-											{EMPTY_VIEW[view]}
-										</P>
-									)}
-								</TabsContent>
-							</Tabs>
-						) : (
-							<P className="text-muted-foreground text-sm">
-								{review.length
-									? "Review the new items to start your list."
-									: "No work items yet. They come from your mail and chats, or ask in chat to add one."}
-							</P>
-						)}
-						{others.length ? (
-							<div className="border-t">
-								<button
-									type="button"
-									aria-expanded={showOthers}
-									onClick={() => setShowOthers((v) => !v)}
-									className="flex w-full items-center gap-2 rounded-sm py-3 text-left text-muted-foreground text-sm hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
-								>
-									<ChevronDown
-										aria-hidden="true"
-										className={cn(
-											"size-4 transition-transform motion-reduce:transition-none",
-											showOthers && "rotate-180",
-										)}
-									/>
-									{others.length} item
-									{others.length === 1 ? "" : "s"} other
-									people are driving
-								</button>
-								{showOthers ? (
-									<ul
-										aria-label="Work other people are driving"
-										className="divide-y divide-border border-t"
-									>
-										{others.map((item) => (
-											<ItemRow
-												key={item.id}
-												item={item}
-												isMine={isMine}
-												showTopic
-											/>
-										))}
-									</ul>
-								) : null}
-							</div>
-						) : null}
-						{mine.length ? (
-							<div className="mt-auto flex flex-wrap justify-between gap-x-4 gap-y-1 border-t pt-4 text-muted-foreground text-xs">
-								<span>
-									{mine.length > 1
-										? "Drag the handle to arrange your priorities, or use a row's menu"
-										: ""}
-								</span>
-								<span className="tabular-nums">
-									{mine.length} active work item
-									{mine.length === 1 ? "" : "s"}
-								</span>
-							</div>
-						) : null}
-					</BriefPanel>
+							) : null}
+						</BriefPanel>
+					</div>
+					{singleSteps}
+					<DoneWork />
+					<ClosedForYou />
 				</div>
 				<div className="@5xl:col-span-4 min-w-0">
 					<WorkWaitingOn
@@ -1119,15 +1783,118 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 					? `Connected to your ${sources}`
 					: "Connect your mail and chats to find work items"}
 			</Link>
+			<Dialog
+				open={mergeItem !== undefined}
+				onOpenChange={(open) => {
+					if (!open && !isMerging) closeMerge();
+				}}
+			>
+				<DialogContent
+					showCloseButton={!isMerging}
+					onEscapeKeyDown={(event) => {
+						if (isMerging) event.preventDefault();
+					}}
+					onInteractOutside={(event) => {
+						if (isMerging) event.preventDefault();
+					}}
+				>
+					<DialogHeader>
+						<DialogTitle>Merge chats</DialogTitle>
+						<DialogDescription>
+							The messages of the first chat are added to the end
+							of the second, and the first chat is removed from{" "}
+							{mergeItem?.title}.
+						</DialogDescription>
+					</DialogHeader>
+					<div className="space-y-2">
+						<Label htmlFor={fromFieldId}>Chat to merge</Label>
+						<Select
+							value={fromRoomId}
+							onValueChange={setFromRoomId}
+							disabled={isMerging}
+						>
+							<SelectTrigger id={fromFieldId} className="w-full">
+								<SelectValue placeholder="Choose a chat" />
+							</SelectTrigger>
+							<SelectContent>
+								{mergeRooms.map((room, index) =>
+									room.id === intoRoomId ? null : (
+										<SelectItem
+											key={room.id}
+											value={room.id}
+										>
+											{chatLabel(
+												room,
+												index,
+												mergeRooms.length,
+											)}
+										</SelectItem>
+									),
+								)}
+							</SelectContent>
+						</Select>
+					</div>
+					<div className="space-y-2">
+						<Label htmlFor={intoFieldId}>Merge into</Label>
+						<Select
+							value={intoRoomId}
+							onValueChange={setIntoRoomId}
+							disabled={isMerging}
+						>
+							<SelectTrigger id={intoFieldId} className="w-full">
+								<SelectValue placeholder="Choose a chat" />
+							</SelectTrigger>
+							<SelectContent>
+								{mergeRooms.map((room, index) =>
+									room.id === fromRoomId ? null : (
+										<SelectItem
+											key={room.id}
+											value={room.id}
+										>
+											{chatLabel(
+												room,
+												index,
+												mergeRooms.length,
+											)}
+										</SelectItem>
+									),
+								)}
+							</SelectContent>
+						</Select>
+					</div>
+					<P className="text-muted-foreground text-sm">
+						This merge cannot be undone.
+					</P>
+					{mergeError ? (
+						<Alert variant="destructive">
+							<AlertDescription>{mergeError}</AlertDescription>
+						</Alert>
+					) : null}
+					<DialogFooter className="flex-col sm:flex-row">
+						<Button
+							type="button"
+							variant="outline"
+							disabled={isMerging}
+							onClick={closeMerge}
+						>
+							Cancel
+						</Button>
+						<Button
+							type="button"
+							disabled={!fromRoomId || !intoRoomId || isMerging}
+							onClick={() => void handleMerge()}
+						>
+							{isMerging ? "Merging..." : "Merge chats"}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</>
 	);
 }
 
 /** The Work page and its review: the hero heading, then the owner's list or the items waiting for them. */
 export function WorkItemsList({ review = false }: { review?: boolean }) {
-	// a finished build remounts the list so it loads the new items
-	const [version, setVersion] = useState(0);
-	const onBuilt = useCallback(() => setVersion((v) => v + 1), []);
 	return (
 		<CollaborationHeroPage>
 			{review ? (
@@ -1157,7 +1924,8 @@ export function WorkItemsList({ review = false }: { review?: boolean }) {
 						orientation="vertical"
 						className="data-[orientation=vertical]:h-4"
 					/>
-					<WorkBuildMenu onDone={onBuilt} />
+					<WorkBuildMenu />
+					<NewWorkItemDialog />
 					<Button
 						asChild
 						variant="ghost"
@@ -1171,7 +1939,7 @@ export function WorkItemsList({ review = false }: { review?: boolean }) {
 					</Button>
 				</CollaborationHeroHeader>
 			)}
-			<WorkItems key={version} review={review} />
+			<WorkItems review={review} />
 		</CollaborationHeroPage>
 	);
 }

@@ -22,6 +22,8 @@ const insight = vi.hoisted(() => ({
 }));
 const upload = vi.hoisted(() => vi.fn());
 const uploadToPage = vi.hoisted(() => vi.fn());
+// saving a found item reads the owner's Microsoft 365, which is the library's own to do
+const saveItem = vi.hoisted(() => vi.fn());
 
 vi.mock("@semoss/sdk/react", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
@@ -84,6 +86,7 @@ vi.mock("@semoss/connectors", async (importOriginal) => {
 			"teams-files",
 			"Roadmap.pptx",
 		),
+		saveMicrosoftItem: saveItem,
 	};
 });
 vi.mock("@/features/connectors/api/microsoft", () => ({
@@ -139,6 +142,7 @@ beforeEach(() => {
 	upload.mockReset();
 	upload.mockResolvedValue({});
 	uploadToPage.mockReset();
+	saveItem.mockReset();
 	// jsdom has no object URLs; the preview only needs an address
 	URL.createObjectURL = vi.fn(() => "blob:preview");
 	URL.revokeObjectURL = vi.fn();
@@ -192,6 +196,44 @@ async function reachKnowledge(user: User) {
 }
 const create = (user: User) =>
 	user.click(screen.getByRole("button", { name: "Create Digital Twin" }));
+
+it("creates a skill during setup and carries its selection and name through review into the twin", async () => {
+	answers.CreateSkill = { project_id: "skill-new", name: "Brief replies" };
+	const { user } = renderWizard();
+	await user.type(nameField(), "Robin Twin");
+	await user.click(next("Voice"));
+	await user.click(next("Abilities"));
+	await user.click(screen.getByRole("button", { name: "Create skill" }));
+	const dialog = within(screen.getByRole("dialog", { name: "Create skill" }));
+	await user.type(
+		dialog.getByLabelText("Skill name (required)"),
+		"Brief replies",
+	);
+	await user.type(
+		dialog.getByLabelText("Description (required)"),
+		"For questions",
+	);
+	await user.type(
+		dialog.getByLabelText("Skill instructions (required)"),
+		"Use three bullets.",
+	);
+	await user.click(dialog.getByRole("button", { name: "Create skill" }));
+	expect(
+		await screen.findByRole("button", { name: "View Brief replies" }),
+	).toBeVisible();
+	expect(ran()).toEqual(["CreateSkill"]);
+	expect(next("Knowledge")).toBeVisible();
+	await user.click(next("Knowledge"));
+	await user.click(next("Review"));
+	expect(reviewOf("Skills and toolboxes")).toHaveTextContent("Brief replies");
+	await create(user);
+	await vi.waitFor(() => expect(ran()).toContain("AddDigitalTwin"));
+	expect(
+		insight.actions.run.mock.calls.find(([statement]) =>
+			String(statement).startsWith("AddDigitalTwin"),
+		)?.[0],
+	).toContain('skills=["skill-new"]');
+});
 
 it("starts on who the twin is, one step of five, with nothing sent or read", () => {
 	renderWizard();
@@ -374,6 +416,79 @@ it("chooses emails, Teams chats and files for the twin, and lets one be taken ba
 	);
 });
 
+it("finds what to choose from a description, and chooses a suggestion as a viewer's pick is chosen", async () => {
+	answers.WorkSuggestTwinKnowledge = {
+		suggestions: [
+			{
+				kind: "email",
+				id: "conv-1",
+				title: "Apollo cutover",
+				from: "Sam Lee",
+				date: "2026-11-03T09:00:00Z",
+				preview: "Confirmed for the 14th",
+				reason: "Sets the cutover date",
+			},
+		],
+		notes: [],
+	};
+	saveItem.mockResolvedValue({
+		path: "Apollo cutover.md",
+		name: "Apollo cutover.md",
+		service: "outlook-mail",
+		itemKey: "conversation:conv-1",
+	});
+	const { user } = renderWizard();
+	await reachKnowledge(user);
+	await user.click(place("Find with AI"));
+	expect(
+		screen.getByText(
+			"Add a suggestion to choose it for your Digital Twin.",
+		),
+	).toBeVisible();
+	const question = () =>
+		screen.getByRole("textbox", {
+			name: "What should your Digital Twin know?",
+		});
+	await user.type(question(), "The Apollo cutover");
+	await user.click(screen.getByRole("button", { name: "Find suggestions" }));
+	// searching is the one thing here that leaves the page before the twin is made
+	expect(ran()).toEqual(["WorkSuggestTwinKnowledge"]);
+	await user.click(
+		await screen.findByRole("button", { name: "Add Apollo cutover" }),
+	);
+
+	expect(
+		await screen.findByText(
+			'Chose "Apollo cutover.md". It is added when your Digital Twin is created.',
+		),
+	).toBeVisible();
+	expect(saveItem).toHaveBeenCalledExactlyOnceWith("insight-1", {
+		kind: "email",
+		conversationId: "conv-1",
+		subject: "Apollo cutover",
+	});
+	// marked where it was found, in place of being offered again
+	expect(
+		within(screen.getByRole("region", { name: "Emails 1" })).getByRole(
+			"listitem",
+		),
+	).toHaveTextContent("Chosen for your Digital Twin");
+	expect(
+		screen.queryByRole("button", { name: "Add Apollo cutover" }),
+	).toBeNull();
+
+	// it waits with what the viewers picked, and what was asked is still there on coming back
+	await user.click(place(/What you chose/));
+	expect(place(/What you chose/)).toHaveTextContent("1");
+	expect(
+		screen.getByRole("button", { name: "Remove Apollo cutover.md" }),
+	).toBeVisible();
+	await user.click(place("Find with AI"));
+	expect(question()).toHaveValue("The Apollo cutover");
+	await user.click(next("Review"));
+	expect(reviewOf("What it knows")).toHaveTextContent("1 email");
+});
+
 it("makes the twin step by step once the review is confirmed, copies in what was chosen, then shows it with where to go next", async () => {
 	// the agent as it reads right after it is made
 	answers.GetWorkspace = {
@@ -462,13 +577,16 @@ it("makes the twin step by step once the review is confirmed, copies in what was
 	);
 	expect(
 		screen.getByRole("link", { name: "Add to what it knows" }),
-	).toHaveAttribute("href", "/twins/mine/contents");
+	).toHaveAttribute("href", "/twins/mine/contents?twinId=twin-1");
 	expect(screen.getByRole("link", { name: "Chat with it" })).toHaveAttribute(
 		"href",
 		"/twins/chat?agentId=twin-1",
 	);
 	const share = screen.getByRole("link", { name: "Share it with people" });
-	expect(share).toHaveAttribute("href", "/twins/mine?tab=people");
+	expect(share).toHaveAttribute(
+		"href",
+		"/twins/mine?twinId=twin-1&tab=people",
+	);
 	expect(onOpenSettings).not.toHaveBeenCalled();
 	await user.click(share);
 	expect(onOpenSettings).toHaveBeenCalledOnce();
@@ -585,13 +703,15 @@ it("says which chosen item could not be added, and on the next try copies only t
 });
 
 it("keeps a refused create a create, so it can be tried again", async () => {
-	answers.AddDigitalTwin = new Error("You already have a Digital Twin");
+	answers.AddDigitalTwin = new Error(
+		"You are not allowed to create an agent",
+	);
 	const { user } = renderWizard();
 	await reachKnowledge(user);
 	await user.click(next("Review"));
 	await create(user);
 	expect(await screen.findByRole("alert")).toHaveTextContent(
-		/^You already have a Digital Twin$/,
+		/^You are not allowed to create an agent$/,
 	);
 	expect(
 		screen.getByRole("button", { name: "Create Digital Twin" }),

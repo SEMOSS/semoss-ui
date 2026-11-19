@@ -15,13 +15,16 @@ import { AgentAvatar } from "@/components/common/agent-avatar";
 import { agentImageUrl } from "@/features/agents/api/agent-image";
 import { CollaborationPage } from "@/features/collaboration/components/collaboration-page";
 import { CollaborationPageHeader } from "@/features/collaboration/components/collaboration-page-header";
-import { twinChatPath, twinContentsPath } from "@/lib/workspace-paths";
+import {
+	twinChatPath,
+	twinContentsPath,
+	twinSettingsPath,
+} from "@/lib/workspace-paths";
 import { type DigitalTwin, listTwins } from "./api/digital-twin";
 import { useTwinRead } from "./use-twin-read";
 
 /**
- * Where Digital Twins start: the signed-in person's own twin, or the way to
- * make one, and the twins other people shared with them, each with its chat.
+ * The signed-in person's twins and those shared with them, with a way to create more.
  */
 export function TwinHub() {
 	const twins = useTwinRead(listTwins);
@@ -70,6 +73,15 @@ export function TwinHub() {
 			<CollaborationPageHeader
 				title="Digital Twins"
 				description="A Digital Twin answers questions about one person from the emails, Teams chats and files that person chose to copy into it. Only the people its owner names can chat with it."
+				layoutClassName="flex-col sm:flex-row"
+				actions={
+					<Button asChild className="pointer-coarse:min-h-11">
+						<Link to="/twins/mine?create=true">
+							<Plus aria-hidden="true" />
+							Create Digital Twin
+						</Link>
+					</Button>
+				}
 			/>
 			{twins.data ? (
 				<div className="flex min-w-0 flex-col gap-10">
@@ -78,38 +90,37 @@ export function TwinHub() {
 						className="flex flex-col gap-4"
 					>
 						<H2 id={mineId} className="font-medium text-lg">
-							Your Digital Twin
+							Your Digital Twins
 						</H2>
-						{twins.data.mine ? (
-							<ul className="grid gap-4 md:max-w-xl">
-								{renderTwin(twins.data.mine, [
-									{ to: "/twins/mine", label: "Manage" },
-									{
-										to: twinContentsPath(),
-										label: "What it knows",
-									},
-									{
-										to: twinChatPath(twins.data.mine.id),
-										label: "Chat",
-									},
-								])}
+						{twins.data.mine.length > 0 ? (
+							<ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+								{twins.data.mine.map((twin) =>
+									renderTwin(twin, [
+										{
+											to: twinSettingsPath(twin.id),
+											label: "Manage",
+										},
+										{
+											to: twinContentsPath(
+												undefined,
+												twin.id,
+											),
+											label: "What it knows",
+										},
+										{
+											to: twinChatPath(twin.id),
+											label: "Chat",
+										},
+									]),
+								)}
 							</ul>
 						) : (
 							<div className="flex flex-col items-start gap-4 rounded-xl border border-dashed p-6 md:max-w-xl">
 								<P className="text-muted-foreground text-sm">
-									You have no Digital Twin yet. Create one,
+									You have no Digital Twins yet. Create one,
 									choose what it knows, then name the people
 									who can ask it about you.
 								</P>
-								<Button
-									asChild
-									className="pointer-coarse:min-h-11"
-								>
-									<Link to="/twins/mine">
-										<Plus aria-hidden="true" />
-										Create your Digital Twin
-									</Link>
-								</Button>
 							</div>
 						)}
 					</section>

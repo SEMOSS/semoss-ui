@@ -140,6 +140,7 @@ export const ModelUsageLimitEditor = ({
 	);
 	const hasEachMemberRule = source === "TEAM" && hasEachPersonRule;
 	const hasEachUserRule = source === "APP" && hasEachPersonRule;
+	const hasEachEngineUserRule = source === "ENGINE" && hasEachPersonRule;
 	// each rule's problem, shown only once the host asks
 	const shownProblems = checks.map((check) =>
 		shouldShowProblems ? check.problem : null,
@@ -351,6 +352,11 @@ export const ModelUsageLimitEditor = ({
 						{hasEachUserRule ? (
 							<p className="text-muted-foreground text-xs">
 								{t("usageLimit.eachUserNote")}
+							</p>
+						) : null}
+						{hasEachEngineUserRule ? (
+							<p className="text-muted-foreground text-xs">
+								{t("usageLimit.eachEngineUserNote")}
 							</p>
 						) : null}
 						{isAcrossAllModels(source) &&

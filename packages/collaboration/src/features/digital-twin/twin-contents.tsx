@@ -1,5 +1,5 @@
 import { ArrowLeft, File, FolderPlus } from "lucide-react";
-import { type ReactNode, useId, useState } from "react";
+import { type ReactNode, useCallback, useId, useState } from "react";
 import { Link, Navigate, useSearchParams } from "react-router";
 import type { ConnectorSavedFile } from "@semoss/connectors";
 import { FILE_PANEL_COMPONENTS } from "@semoss/panels";
@@ -23,6 +23,7 @@ import {
 	type TopicPlaceGroup,
 } from "@/features/topic-contents/topic-contents-nav";
 import type { InsightActions } from "@/lib/pixel";
+import { twinSettingsPath } from "@/lib/workspace-paths";
 import {
 	copyToTwin,
 	createTwinFolder,
@@ -32,8 +33,9 @@ import {
 	TWIN_FILES_PATH,
 	type TwinCopy,
 } from "./api/digital-twin";
+import { TwinKnowledgeFinder } from "./twin-knowledge-finder";
 import { TwinSourceViewer } from "./twin-source-viewer";
-import { TWIN_SOURCES } from "./twin-sources";
+import { TWIN_FINDER, TWIN_SOURCES } from "./twin-sources";
 import { useTwinRead } from "./use-twin-read";
 
 // what each place is called in the rail, and what it says above its list
@@ -44,6 +46,7 @@ const PLACES = {
 		description:
 			"The copies your Digital Twin answers from. Upload more, or open, rename and delete what is here.",
 	},
+	[TWIN_FINDER.id]: TWIN_FINDER,
 	...TWIN_SOURCES,
 } as const;
 type Place = keyof typeof PLACES;
@@ -57,31 +60,42 @@ const GROUPS: TopicPlaceGroup[] = [
 	},
 	{
 		title: "Add from",
-		places: Object.entries(TWIN_SOURCES).map(([id, source]) => ({
-			id,
-			...source,
-		})),
+		places: [
+			TWIN_FINDER,
+			...Object.entries(TWIN_SOURCES).map(([id, source]) => ({
+				id,
+				...source,
+			})),
+		],
 	},
 ];
 
-/** The owner's twin and what it holds, or null when they have no twin. */
-const readContents = async (actions: InsightActions) => {
-	const twin = await getMyTwin(actions);
-	return twin && { ...twin, ...(await readTwinHoldings(actions, twin.id)) };
-};
-
 /**
  * A full page for choosing what the owner's Digital Twin knows: its own files,
- * and the owner's Outlook, Teams chats, OneDrive and Teams files to add from.
- * A viewer saves an item into the page's files, as it does in a chat, and the
- * page then copies it into the twin. A list marks what the twin already holds
- * a copy of, whenever it was added. The copy is a snapshot: nothing here
- * reads the owner's account again later.
+ * the owner's Outlook, Teams chats, OneDrive and Teams files to add from, and
+ * a search that suggests what to add from a description. A viewer, or the
+ * search, saves an item into the page's files, as a viewer does in a chat,
+ * and the page then copies it into the twin. A list marks what the twin
+ * already holds a copy of, whenever it was added. The copy is a snapshot:
+ * nothing here reads the owner's account again later.
  */
 export function TwinContents() {
 	const { actions } = useInsight();
 	const [params, setParams] = useSearchParams();
 	const labelId = useId();
+	const requestedTwinId = params.get("twinId") ?? undefined;
+	const readContents = useCallback(
+		async (actions: InsightActions) => {
+			const twin = await getMyTwin(actions, requestedTwinId);
+			return (
+				twin && {
+					...twin,
+					...(await readTwinHoldings(actions, twin.id)),
+				}
+			);
+		},
+		[requestedTwinId],
+	);
 	const contents = useTwinRead(readContents);
 	// set once the folder is known to be there: added here, or made by a copy
 	const [isFolderAdded, setIsFolderAdded] = useState(false);
@@ -146,7 +160,9 @@ export function TwinContents() {
 			);
 		}
 		// replaced, so Back leaves the page instead of walking the places
-		setParams({ in: next }, { replace: true });
+		const search = new URLSearchParams(params);
+		search.set("in", next);
+		setParams(search, { replace: true });
 	};
 	const handleAddFolder = async (twinId: string): Promise<void> => {
 		setIsAddingFolder(true);
@@ -162,6 +178,13 @@ export function TwinContents() {
 		} finally {
 			setIsAddingFolder(false);
 		}
+	};
+	const isFinding = place === TWIN_FINDER.id;
+	// what a list marks as in the twin, by what its viewer knows each item by
+	const savedItems = {
+		isSaved: (itemKey: string) =>
+			(heldKeys ?? twin?.itemKeys)?.has(itemKey) ?? false,
+		label: "In your Digital Twin",
 	};
 	let body: ReactNode;
 	if (!twin) {
@@ -186,15 +209,14 @@ export function TwinContents() {
 				<output className="sr-only">Loading your Digital Twin…</output>
 			</div>
 		);
+	} else if (place === TWIN_FINDER.id) {
+		// drawn beside the other places, where it is kept while they show
+		body = null;
 	} else if (place !== "files") {
 		body = (
 			<TwinSourceViewer
 				source={place}
-				savedItems={{
-					isSaved: (itemKey) =>
-						(heldKeys ?? twin.itemKeys).has(itemKey),
-					label: "In your Digital Twin",
-				}}
+				savedItems={savedItems}
 				// the viewer saved into this page's files; the copy reads them from the same insight
 				onSaved={(file) => void handleSaved(twin.id, file)}
 			/>
@@ -246,7 +268,7 @@ export function TwinContents() {
 					className="pointer-coarse:size-11 shrink-0"
 				>
 					<Link
-						to="/twins/mine"
+						to={twin ? twinSettingsPath(twin.id) : "/twins"}
 						aria-label="Back to your Digital Twin"
 					>
 						<ArrowLeft aria-hidden="true" />
@@ -254,7 +276,9 @@ export function TwinContents() {
 				</Button>
 				<div className="min-w-0 flex-1">
 					<H1 className="wrap-anywhere font-medium text-base leading-snug tracking-normal sm:text-lg">
-						What your Digital Twin knows
+						{twin
+							? `What ${twin.name} knows`
+							: "What your Digital Twin knows"}
 					</H1>
 					{/* a phone keeps the room for the list; each place says what it holds */}
 					<P className="hidden text-muted-foreground text-sm sm:block">
@@ -264,7 +288,9 @@ export function TwinContents() {
 					</P>
 				</div>
 				<Button asChild className="pointer-coarse:min-h-11 shrink-0">
-					<Link to="/twins/mine">Done</Link>
+					<Link to={twin ? twinSettingsPath(twin.id) : "/twins"}>
+						Done
+					</Link>
 				</Button>
 			</header>
 			<div className="flex min-h-0 flex-1 flex-col md:flex-row">
@@ -292,15 +318,40 @@ export function TwinContents() {
 							{PLACES[place].description}
 						</P>
 					</div>
+					{/* not one of the places that start fresh: what it found is still there when the owner comes back to it */}
+					{twin && (
+						<div
+							className={cn(
+								"min-h-0 flex-1",
+								!isFinding && "hidden",
+							)}
+						>
+							<TwinKnowledgeFinder
+								// another twin is asked for something else
+								key={twin.id}
+								savedItems={savedItems}
+								// saved into this page's files, as a viewer saves; busy until the copy is in the twin
+								onSaved={(file) => handleSaved(twin.id, file)}
+							/>
+						</div>
+					)}
 					{/* each place starts fresh, as a topic's places do */}
-					<div key={place} className="min-h-0 flex-1">
+					<div
+						key={place}
+						className={cn(
+							"min-h-0 flex-1",
+							twin && isFinding && "hidden",
+						)}
+					>
 						{body}
 					</div>
 					{place !== "files" && (
 						// always there, so the first result does not move the list; the toast announces it
 						<P className="wrap-anywhere line-clamp-2 shrink-0 border-t px-4 py-2 text-muted-foreground text-sm">
 							{status ||
-								"Save an item to copy it into your Digital Twin."}
+								(isFinding
+									? "Add a suggestion to copy it into your Digital Twin."
+									: "Save an item to copy it into your Digital Twin.")}
 						</P>
 					)}
 				</section>
