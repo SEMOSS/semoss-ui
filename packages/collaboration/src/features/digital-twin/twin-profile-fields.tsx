@@ -16,8 +16,13 @@ import { TwinImageField } from "./twin-image-field";
 import { TwinSkillCreate } from "./twin-skill-create";
 import { TwinSkillView } from "./twin-skill-view";
 
-/** The profile's fields, as the create flow splits them over its steps. */
-export type TwinFieldGroup = "identity" | "voice" | "abilities";
+/** Profile field groups used by the create flow and the saved profile editor. */
+export type TwinFieldGroup =
+	| "identity"
+	| "voice"
+	| "conversation"
+	| "about"
+	| "abilities";
 
 interface TwinProfileFieldsProps {
 	/** The fields to show: one group, as a step of the create flow does, or all of them when left out. */
@@ -48,7 +53,7 @@ export function TwinProfileFields({
 	hasPersona = false,
 }: TwinProfileFieldsProps) {
 	const form = useFormContext<TwinProfile>();
-	const { isSubmitting } = form.formState;
+	const isSubmitting = !imageUrl && form.formState.isSubmitting;
 	const shows = (candidate: TwinFieldGroup): boolean =>
 		!group || group === candidate;
 	const skillNames = new Map(skills.map((skill) => [skill.id, skill.name]));
@@ -63,7 +68,7 @@ export function TwinProfileFields({
 	};
 	return (
 		<div className="flex min-w-0 flex-col gap-8">
-			{(shows("identity") || shows("voice")) && (
+			{group !== "abilities" && (
 				<FieldGroup className="min-w-0">
 					{shows("identity") && (
 						<>
@@ -77,32 +82,37 @@ export function TwinProfileFields({
 							/>
 						</>
 					)}
-					{shows("voice") && (
+					{shows("voice") &&
+						(hasPersona ? (
+							<FormSwitch
+								name="usePersona"
+								label="Use my persona"
+								disabled={isSubmitting}
+								description="On, this twin answers in your voice and can give its read of how you would see something. Off, it answers plainly from its copies."
+							/>
+						) : (
+							<P className="text-muted-foreground text-sm">
+								You have no persona yet. Write one from the
+								Digital Twins page, and every twin of yours
+								answers in your voice.
+							</P>
+						))}
+					{(shows("voice") || group === "conversation") && (
 						<>
-							{hasPersona ? (
-								<FormSwitch
-									name="usePersona"
-									label="Use my persona"
-									disabled={isSubmitting}
-									description="On, this twin answers in your voice and can give its read of how you would see something. Off, it answers plainly from its copies."
-								/>
-							) : (
-								<P className="text-muted-foreground text-sm">
-									You have no persona yet. Write one from the
-									Digital Twins page, and every twin of yours
-									answers in your voice.
-								</P>
-							)}
 							<FormTextarea
 								name="instructions"
 								label="Instructions"
 								disabled={isSubmitting}
-								rows={10}
-								description={`${
-									hasPersona
-										? "Anything this twin should do besides what your persona says."
-										: "How your twin sounds and what it pays attention to."
-								} It always says it is an AI, answers only from what you gave it and names its sources, whatever is written here. The people you share it with can read these.`}
+								rows={group === "conversation" ? 4 : 10}
+								description={
+									group === "conversation"
+										? "Tell your twin what to focus on. People you share it with can read these instructions."
+										: `${
+												hasPersona
+													? "Anything this twin should do besides what your persona says."
+													: "How your twin sounds and what it pays attention to."
+											} It always says it is an AI, answers only from what you gave it and names its sources, whatever is written here. The people you share it with can read these.`
+								}
 							/>
 							<FormTextarea
 								name="greeting"
@@ -111,21 +121,25 @@ export function TwinProfileFields({
 								rows={3}
 								description="The first thing people see when they start a chat with your twin. Leave it empty for none."
 							/>
-							<FormTextarea
-								name="about"
-								label="About you"
-								disabled={isSubmitting || isNoteUnread}
-								rows={8}
-								placeholder={
-									"What I do:\nWhat I am working on:\nWho to ask instead:\nHow to reach me:"
-								}
-								description={
-									isNoteUnread
-										? "Your note could not be read just now, so it is not shown here and saving leaves it as it is. Reload the page to try again."
-										: "Optional. A note your twin reads with everything else it knows: what you do, what you are working on, who to ask instead and how to reach you. The people you share it with can open it."
-								}
-							/>
 						</>
+					)}
+					{(shows("voice") || group === "about") && (
+						<FormTextarea
+							name="about"
+							label="About you"
+							disabled={isSubmitting || isNoteUnread}
+							rows={group === "about" ? 5 : 8}
+							placeholder={
+								"What I do:\nWhat I am working on:\nWho to ask instead:\nHow to reach me:"
+							}
+							description={
+								isNoteUnread
+									? "Your note could not be read just now, so it is not shown here and saving leaves it as it is. Reload the page to try again."
+									: group === "about"
+										? "A note your twin reads about your work. People you share this twin with can open it."
+										: "Optional. A note your twin reads with everything else it knows: what you do, what you are working on, who to ask instead and how to reach you. The people you share it with can open it."
+							}
+						/>
 					)}
 				</FieldGroup>
 			)}

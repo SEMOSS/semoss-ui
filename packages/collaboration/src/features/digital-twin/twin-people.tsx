@@ -1,12 +1,17 @@
+import { CalendarDays, ChevronDown } from "lucide-react";
 import { useId, useRef, useState } from "react";
 import { useConfig } from "@semoss/sdk/react";
 import { type AddMembersCandidate, MembersTable } from "@semoss/shared";
 import {
 	Button,
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
 	Field,
 	FieldDescription,
 	FieldError,
 	FieldLabel,
+	H2,
 	Input,
 	P,
 } from "@semoss/ui/next";
@@ -63,34 +68,64 @@ export function TwinPeople({ twin }: TwinPeopleProps) {
 
 	return (
 		<>
-			<P className="max-w-prose text-muted-foreground text-sm">
-				The people who can chat with your Digital Twin. Each can also
-				open the copies it holds and read its instructions. Only you see
-				this list.
-			</P>
-			<Field data-invalid={isPast} className="max-w-md">
-				<FieldLabel htmlFor={endsId}>Access ends</FieldLabel>
-				<Input
-					id={endsId}
-					type="date"
-					min={today}
-					value={endDay}
-					aria-invalid={isPast}
-					aria-describedby={`${endsId}-hint${isPast ? ` ${endsId}-error` : ""}`}
-					onChange={(event) => setEndDay(event.target.value)}
-				/>
-				<FieldDescription id={`${endsId}-hint`}>
-					Optional. The people you add from now on keep their access
-					until the end of this day. Leave it empty for access that
-					does not end.
-				</FieldDescription>
-				{isPast && (
-					<FieldError id={`${endsId}-error`}>
-						This day has already passed. Choose today or a later
-						day.
-					</FieldError>
-				)}
-			</Field>
+			<div className="flex min-w-0 @3xl/twins:flex-row flex-col items-start justify-between gap-3">
+				<div className="min-w-0 space-y-1">
+					<H2 className="font-semibold text-xl tracking-tight">
+						People with access
+					</H2>
+					<P className="max-w-prose text-muted-foreground text-sm">
+						These people can chat with your twin and read its shared
+						files and instructions. Only you see this list.
+					</P>
+				</div>
+				<Collapsible className="@3xl/twins:w-auto w-full @3xl/twins:max-w-72">
+					<CollapsibleTrigger asChild>
+						<Button
+							type="button"
+							size="sm"
+							variant="outline"
+							className="group pointer-coarse:min-h-11"
+						>
+							<CalendarDays aria-hidden="true" />
+							{endDay
+								? `New access ends ${parseLocalWallClock(endDay)?.toLocaleDateString(undefined, { dateStyle: "medium" }) ?? endDay}`
+								: "Set an end date"}
+							<ChevronDown
+								aria-hidden="true"
+								className="group-data-[state=open]:rotate-180"
+							/>
+						</Button>
+					</CollapsibleTrigger>
+					<CollapsibleContent className="pt-3">
+						<Field data-invalid={isPast} className="max-w-md">
+							<FieldLabel htmlFor={endsId}>
+								Access ends
+							</FieldLabel>
+							<Input
+								id={endsId}
+								type="date"
+								min={today}
+								value={endDay}
+								aria-invalid={isPast}
+								aria-describedby={`${endsId}-hint${isPast ? ` ${endsId}-error` : ""}`}
+								onChange={(event) =>
+									setEndDay(event.target.value)
+								}
+							/>
+							<FieldDescription id={`${endsId}-hint`}>
+								New people keep access until the end of this
+								day. Leave blank for ongoing access.
+							</FieldDescription>
+							{isPast && (
+								<FieldError id={`${endsId}-error`}>
+									This day has already passed. Choose today or
+									a later day.
+								</FieldError>
+							)}
+						</Field>
+					</CollapsibleContent>
+				</Collapsible>
+			</div>
 			{added && (
 				<div className="flex flex-col items-start gap-3 rounded-xl border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
 					<output className="wrap-anywhere min-w-0 text-sm">

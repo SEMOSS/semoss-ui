@@ -9,6 +9,7 @@ import {
 	toAgentFormValues,
 } from "@semoss/shared";
 import { z } from "@semoss/ui/next";
+import { isSameArray } from "@semoss/utility/array";
 import { decodeBase64ToBytes } from "@semoss/utility/encoding";
 import { sanitizeFileNameStem } from "@semoss/utility/file";
 import { tryParseJson } from "@semoss/utility/json";
@@ -66,6 +67,20 @@ export interface TwinProfile {
 	image?: File | null;
 	/** Whether the twin answers with its owner's persona. It does until they switch it off, and it means nothing for someone who has none. */
 	usePersona: boolean;
+}
+
+type WorkspaceProfile = Omit<TwinProfile, "image" | "about" | "usePersona">;
+
+/** The last acknowledged writes for one editor. A null value needs reconciliation after a failure. */
+export interface TwinProfileCheckpoint {
+	profile: Partial<WorkspaceProfile> | null;
+	/** Leave absent when the owner’s note could not be read. */
+	about?: string | null;
+	/** Leave absent when the owner’s persona is unavailable. */
+	usePersona?: boolean | null;
+	image?: File | null;
+	/** A rename updates the workspace and the gallery display name separately. */
+	needsDisplayName?: boolean;
 }
 
 /**
@@ -279,27 +294,77 @@ export async function listTwins(
 export async function saveTwinProfile(
 	actions: InsightActions,
 	twinId: string,
-	profile: Omit<TwinProfile, "image" | "about" | "usePersona">,
+	profile: WorkspaceProfile,
 ): Promise<void> {
-	const agent = await getAgent(actions, twinId);
-	const output = await callPixel(
-		actions,
-		buildEditWorkspacePixel(twinId, {
-			...toAgentFormValues(agent),
-			name: profile.name,
-			instructions: profile.instructions,
-			greeting: profile.greeting,
-			greetingEnabled: profile.greeting !== "",
-			// only the ids are sent
-			skills: profile.skills.map((id) => ({ id, name: id })),
-			toolboxes: profile.toolboxes,
-		}),
-		z.unknown(),
-	);
-	// the greeting lives in the part this warning says was not written
-	const warning = getWorkspaceSaveWarning(output);
-	if (warning) throw new Error(warning);
-	if (agent.name !== profile.name) {
+	await saveWorkspaceChanges(actions, twinId, profile, { profile: null });
+}
+
+/** EditWorkspace replaces the configuration. Overlay just the owner's edits on its current values. */
+async function saveWorkspaceChanges(
+	actions: InsightActions,
+	twinId: string,
+	profile: WorkspaceProfile,
+	saved: TwinProfileCheckpoint,
+): Promise<boolean> {
+	const previous = saved.profile;
+	const changes: Partial<WorkspaceProfile> = {};
+	for (const key of ["name", "instructions", "greeting"] as const) {
+		if (profile[key] !== previous?.[key]) changes[key] = profile[key];
+	}
+	if (!previous?.skills || !isSameArray(profile.skills, previous.skills)) {
+		changes.skills = profile.skills;
+	}
+	if (
+		profile.toolboxes.length !== previous?.toolboxes?.length ||
+		profile.toolboxes.some(({ id, name, type }, index) => {
+			const other = previous?.toolboxes?.[index];
+			return (
+				!other ||
+				id !== other.id ||
+				name !== other.name ||
+				type !== other.type
+			);
+		})
+	) {
+		changes.toolboxes = profile.toolboxes;
+	}
+	const changed = Object.keys(changes) as (keyof WorkspaceProfile)[];
+	if (changed.length) {
+		const agent = await getAgent(actions, twinId);
+		const current = toAgentFormValues(agent);
+		if (
+			changes.name !== undefined &&
+			(changes.name !== agent.name || previous !== null)
+		) {
+			saved.needsDisplayName = true;
+		}
+		try {
+			const output = await callPixel(
+				actions,
+				buildEditWorkspacePixel(twinId, {
+					...current,
+					...changes,
+					greetingEnabled:
+						changes.greeting === undefined
+							? current.greetingEnabled
+							: Boolean(changes.greeting),
+					skills:
+						changes.skills?.map((id) => ({ id, name: id })) ??
+						current.skills,
+				}),
+				z.unknown(),
+			);
+			const warning = getWorkspaceSaveWarning(output);
+			if (warning) throw new Error(warning);
+		} catch (cause) {
+			// A lost reply or a partial CONFIG_JSON write may already have applied any attempted field.
+			saved.profile = { ...previous };
+			for (const key of changed) delete saved.profile[key];
+			throw cause;
+		}
+		saved.profile = { ...previous, ...changes };
+	}
+	if (saved.needsDisplayName) {
 		await callPixel(
 			actions,
 			pixel("SetProjectDisplayName", {
@@ -308,7 +373,10 @@ export async function saveTwinProfile(
 			}),
 			z.unknown(),
 		);
+		saved.needsDisplayName = false;
+		return true;
 	}
+	return changed.length > 0;
 }
 
 /**
@@ -375,43 +443,71 @@ export function saveTwinNote(
 export async function saveTwin(
 	actions: InsightActions,
 	twinId: string,
-	{ image, about, usePersona, ...profile }: TwinProfile,
+	profile: TwinProfile,
 	savedAbout?: string,
 	savedUsePersona?: boolean,
 ): Promise<void> {
-	await saveTwinProfile(actions, twinId, profile);
+	await saveTwinChanges(actions, twinId, profile, {
+		profile: null,
+		about: savedAbout,
+		usePersona: savedUsePersona,
+	});
+}
+
+/** Save a validated snapshot, recording each successful resource before starting the next one. */
+export async function saveTwinChanges(
+	actions: InsightActions,
+	twinId: string,
+	{ image, about, usePersona, ...profile }: TwinProfile,
+	saved: TwinProfileCheckpoint,
+): Promise<void> {
+	let hasSaved = await saveWorkspaceChanges(actions, twinId, profile, saved);
 	// an unchanged note is not written again: its owner may have edited the file under Files since
 	if (
-		savedAbout !== undefined &&
-		about !== savedAbout &&
-		(about.trim() || savedAbout.trim())
+		saved.about !== undefined &&
+		about !== saved.about &&
+		(saved.about === null || about.trim() || saved.about.trim())
 	) {
 		try {
-			await saveTwinNote(actions, twinId, about);
+			// Deleting a missing file fails. A previous delete may have landed before its reply was lost.
+			if (
+				saved.about !== null ||
+				about.trim() ||
+				(await readTwinNote(actions, twinId))
+			) {
+				await saveTwinNote(actions, twinId, about);
+			}
+			saved.about = about;
+			hasSaved = true;
 		} catch (cause) {
+			saved.about = null;
 			throw new Error(
-				`Your changes were saved, but your note could not be: ${reason(cause)}`,
+				`${hasSaved ? "Your changes were saved, but your note could not be" : "Your note could not be saved"}: ${reason(cause)}`,
 				{ cause },
 			);
 		}
 	}
-	if (savedUsePersona !== undefined && usePersona !== savedUsePersona) {
+	if (saved.usePersona !== undefined && usePersona !== saved.usePersona) {
 		try {
 			await setTwinPersona(actions, twinId, usePersona);
+			saved.usePersona = usePersona;
+			hasSaved = true;
 		} catch (cause) {
+			saved.usePersona = null;
 			throw new Error(
-				`Your changes were saved, but your persona could not be switched ${usePersona ? "on" : "off"} for it: ${reason(cause)}`,
+				`${hasSaved ? "Your changes were saved, but your" : "Your"} persona could not be switched ${usePersona ? "on" : "off"} for it: ${reason(cause)}`,
 				{ cause },
 			);
 		}
 	}
-	if (!image) return;
+	if (!image || image === saved.image) return;
 	try {
 		await uploadProjectImage(twinId, image);
+		saved.image = image;
 	} catch (cause) {
-		// the profile is saved by now, so say which part is not
+		saved.image = null;
 		throw new Error(
-			`Your changes were saved, but the image could not be uploaded: ${reason(cause)}`,
+			`${hasSaved ? "Your changes were saved, but the" : "The"} image could not be uploaded: ${reason(cause)}`,
 			{ cause },
 		);
 	}

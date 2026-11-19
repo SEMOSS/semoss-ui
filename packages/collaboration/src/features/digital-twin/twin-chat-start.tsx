@@ -13,25 +13,22 @@ import {
 	AlertTitle,
 	Button,
 	cn,
-	H1,
 	H2,
 	Markdown,
 	P,
 	Skeleton,
 } from "@semoss/ui/next";
-import { AgentAvatar } from "@/components/common/agent-avatar";
 import { agentImageUrl } from "@/features/agents/api/agent-image";
 import { CollaborationPage } from "@/features/collaboration/components/collaboration-page";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
-import { topicTone } from "@/features/collaboration/topic-tone";
 import { LandingChatComposer } from "@/features/daily-chat/landing-chat-composer";
 import { MESSAGE_PROSE_CLASS_NAME } from "@/features/messages/components/message-prose.styles";
 import type { InsightActions } from "@/lib/pixel";
 import { twinContentsPath } from "@/lib/workspace-paths";
 import { getTwinChatWelcome } from "./api/digital-twin";
 import { markTwinOpened } from "./opened-twins";
+import { TwinPageCover } from "./twin-page-cover";
 import { useTwinRead } from "./use-twin-read";
-import "./twin-gallery.css";
 
 interface TwinChatStartProps {
 	/** The twin to chat with. The composer reads the same id from the address. */
@@ -110,38 +107,17 @@ export function TwinChatStart({ agentId }: TwinChatStartProps) {
 				</Button>
 				{twin ? (
 					<>
-						<header className="twin-gallery-cover relative isolate @lg/twins:flex grid @3xl/twins:min-h-52 @lg/twins:min-h-48 min-w-0 grid-cols-[auto_1fr] items-center gap-x-3 gap-y-2 overflow-hidden rounded-xl border @lg/twins:border-0 bg-card @lg/twins:p-8 p-4">
-							<div
-								aria-hidden="true"
-								className={cn(
-									"twin-gallery-art -z-10 pointer-events-none absolute inset-0 @lg/twins:block hidden overflow-hidden",
-									topicTone(agentId),
-								)}
-							>
-								<span
-									className="twin-gallery-wash"
-									style={{
-										backgroundImage: `url("${portrait}")`,
-									}}
-								/>
-							</div>
-							<AgentAvatar
-								agent={{ name: twin.name, avatar: portrait }}
-								size="lg"
-								shape="rounded"
-								className="twin-gallery-portrait size-14 @lg/twins:max-w-56"
-							/>
-							<div className="@lg/twins:relative @lg/twins:z-10 @lg/twins:flex contents @lg/twins:w-3/5 @lg/twins:flex-col @lg/twins:gap-3 @lg/twins:text-primary-foreground">
-								<H1 className="wrap-anywhere min-w-0 font-display font-medium @3xl/twins:text-5xl @lg/twins:text-4xl text-3xl leading-none tracking-tight">
-									{twin.name}
-								</H1>
-								<P className="col-span-full max-w-prose @lg/twins:text-base @lg/twins:text-inherit text-muted-foreground text-sm leading-relaxed">
-									{canAdd
-										? "Your AI twin answers questions using the emails, chats, and files you’ve shared with it."
-										: "Ask this AI twin about the emails, chats, and files its owner chose to share."}
-								</P>
-							</div>
-						</header>
+						<TwinPageCover
+							twinId={agentId}
+							name={twin.name}
+							portrait={portrait}
+						>
+							<P className="col-span-full max-w-prose @lg/twins:text-base @lg/twins:text-inherit text-muted-foreground text-sm leading-relaxed">
+								{canAdd
+									? "Your AI twin answers questions using the emails, chats, and files you’ve shared with it."
+									: "Ask this AI twin about the emails, chats, and files its owner chose to share."}
+							</P>
+						</TwinPageCover>
 						<section
 							aria-label="Start a conversation"
 							className="flex min-w-0 flex-col gap-3"

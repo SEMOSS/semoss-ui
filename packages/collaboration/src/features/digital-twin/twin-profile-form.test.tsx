@@ -1,4 +1,5 @@
 import {
+	act,
 	cleanup,
 	fireEvent,
 	render,
@@ -6,6 +7,7 @@ import {
 	within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
 import { CollaborationSessionProvider } from "@/features/collaboration/state/collaboration-session.context";
@@ -29,6 +31,10 @@ const ran = (): string[] =>
 	);
 
 beforeEach(() => {
+	vi.useFakeTimers({
+		toFake: ["setTimeout", "clearTimeout"],
+		shouldAdvanceTime: true,
+	});
 	answers = {
 		GetWorkspace: {
 			workspace_id: "twin-1",
@@ -56,7 +62,26 @@ beforeEach(() => {
 	URL.createObjectURL = vi.fn(() => "blob:preview");
 	URL.revokeObjectURL = vi.fn();
 });
-afterEach(cleanup);
+afterEach(async () => {
+	await act(async () => cleanup());
+	vi.useRealTimers();
+});
+
+/** Allow the profile debounce and the resulting React updates to finish. */
+async function autosave(milliseconds = 750): Promise<void> {
+	await act(async () => {
+		await vi.advanceTimersByTimeAsync(milliseconds);
+	});
+}
+
+/** Hold a network write open while the owner continues editing. */
+function deferredWrite() {
+	let finish = (): void => undefined;
+	const promise = new Promise<void>((resolve) => {
+		finish = resolve;
+	});
+	return { promise, resolve: finish };
+}
 
 /** The form, in a session whose server can make avatar options when `canGenerate` is set. */
 function renderForm(
@@ -96,27 +121,133 @@ function renderForm(
 		/>
 	);
 	render(
-		canGenerate ? (
-			<CollaborationSessionProvider
-				initialState={{
-					...session,
-					settings: { ...session.settings, avatarGeneration: true },
-				}}
-			>
-				{form}
-			</CollaborationSessionProvider>
-		) : (
-			form
-		),
+		<MemoryRouter>
+			{canGenerate ? (
+				<CollaborationSessionProvider
+					initialState={{
+						...session,
+						settings: {
+							...session.settings,
+							avatarGeneration: true,
+						},
+					}}
+				>
+					{form}
+				</CollaborationSessionProvider>
+			) : (
+				form
+			)}
+		</MemoryRouter>,
 	);
-	return { onSaved, user: userEvent.setup() };
+	const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+	const edit = async (title: string): Promise<void> => {
+		await user.click(screen.getByRole("button", { name: title }));
+	};
+	return { onSaved, user, edit };
 }
 
 const nameField = () => screen.getByLabelText("Name (required)");
 
-it("creates and selects a skill without saving the twin or losing its draft", async () => {
+it("reads a short preview for a folded note and retains all of its original text", async () => {
+	const { edit } = renderForm();
+	const note = `My work\n\n${"🗓".repeat(140)}`;
+	await edit("About you");
+	fireEvent.change(screen.getByRole("textbox", { name: "About you" }), {
+		target: { value: note },
+	});
+	await edit("About you");
+	expect(
+		screen.getByRole("button", { name: "About you" }),
+	).toHaveAccessibleDescription(`My work ${"🗓".repeat(112)}…`);
+	await edit("About you");
+	expect(screen.getByRole("textbox", { name: "About you" })).toHaveValue(
+		note,
+	);
+});
+
+it("summarizes the draft and keeps the fields folded until their section is opened", async () => {
+	const { user, edit } = renderForm();
+	const identity = screen.getByRole("button", { name: "Name and portrait" });
+	expect(identity).toHaveAttribute("aria-expanded", "false");
+	expect(identity).toHaveAccessibleDescription("Robin Twin");
+	expect(screen.queryByRole("textbox")).toBeNull();
+	expect(
+		screen.getByRole("button", { name: "Skills and toolboxes" }),
+	).toHaveAccessibleDescription("2 skills · 1 toolbox");
+
+	await edit("Name and portrait");
+	await user.clear(nameField());
+	await user.type(nameField(), "Renewals Twin");
+	await edit("Name and portrait");
+	expect(identity).toHaveAccessibleDescription("Renewals Twin");
+	expect(screen.queryByRole("button", { name: "Save changes" })).toBeNull();
+	expect(insight.actions.run).not.toHaveBeenCalled();
+});
+
+it("debounces rapid edits, then saves the latest draft behind an in-flight write", async () => {
+	const { edit } = renderForm();
+	await edit("Instructions and greeting");
+	const greeting = screen.getByLabelText("Greeting");
+	const writes = () =>
+		insight.actions.run.mock.calls
+			.map(([statement]) => String(statement))
+			.filter((statement) => statement.startsWith("EditWorkspace("));
+	vi.useRealTimers();
+	vi.useFakeTimers();
+	const first = deferredWrite();
+	answers.EditWorkspace = first.promise;
+	await autosave(1000);
+	expect(writes()).toEqual([]);
+	fireEvent.change(greeting, { target: { value: "First" } });
+	await autosave(500);
+	fireEvent.change(greeting, { target: { value: "First greeting" } });
+	await autosave(749);
+	expect(writes()).toEqual([]);
+	await autosave(1);
+	expect(writes()).toHaveLength(1);
+	expect(writes()[0]).toContain("First greeting");
+	expect(
+		screen.getByRole("status", { name: "Save status" }),
+	).toHaveTextContent("Saving…");
+	expect(greeting).toBeEnabled();
+
+	fireEvent.change(greeting, { target: { value: "Latest greeting" } });
+	await autosave(1000);
+	expect(writes()).toHaveLength(1);
+	delete answers.EditWorkspace;
+	await act(async () => first.resolve());
+	await autosave(1000);
+	expect(writes()).toHaveLength(2);
+	expect(writes()[1]).toContain("Latest greeting");
+	expect(greeting).toHaveValue("Latest greeting");
+	expect(
+		screen.getByRole("status", { name: "Save status" }),
+	).toHaveTextContent("Saved");
+});
+
+it("preserves the space under the cursor when typing pauses between words", async () => {
+	const { user, edit } = renderForm();
+	await edit("Instructions and greeting");
+	const greeting = screen.getByLabelText("Greeting");
+	await user.type(greeting, " there ");
+	await autosave();
+	expect(greeting).toHaveValue("Hello there ");
+	expect(greeting).toHaveFocus();
+	expect(insight.actions.run.mock.calls.at(-1)?.[0]).toContain(
+		'greeting="Hello there"',
+	);
+	await user.keyboard("everyone");
+	await autosave();
+	expect(insight.actions.run.mock.calls.at(-1)?.[0]).toContain(
+		'greeting="Hello there everyone"',
+	);
+});
+
+it("creates a skill and automatically saves its selection alongside the greeting", async () => {
 	answers.CreateSkill = { project_id: "skill-new", name: "Brief replies" };
-	const { user, onSaved } = renderForm();
+	const { user, edit } = renderForm();
+	await edit("Instructions and greeting");
+	await edit("Skills and toolboxes");
 	await user.type(screen.getByLabelText("Greeting"), " there");
 	const trigger = screen.getByRole("button", { name: "Create skill" });
 	await user.click(trigger);
@@ -137,19 +268,18 @@ it("creates and selects a skill without saving the twin or losing its draft", as
 	expect(
 		await screen.findByRole("button", { name: "View Brief replies" }),
 	).toBeVisible();
-	expect(ran()).toEqual(["CreateSkill"]);
-	expect(onSaved).not.toHaveBeenCalled();
+	expect(ran()).toContain("CreateSkill");
 	expect(screen.getByLabelText("Greeting")).toHaveValue("Hello there");
 	await vi.waitFor(() => expect(trigger).toHaveFocus());
-	await user.click(screen.getByRole("button", { name: "Save" }));
-	await vi.waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
+	await autosave();
 	expect(insight.actions.run.mock.calls.at(-1)?.[0]).toContain(
 		'skills=["skill-1","skill-gone","skill-new"]',
 	);
 });
 
 it("validates a skill, retains failed input, and blocks dismissal while creating", async () => {
-	const { user, onSaved } = renderForm();
+	const { user, onSaved, edit } = renderForm();
+	await edit("Skills and toolboxes");
 	await user.click(screen.getByRole("button", { name: "Create skill" }));
 	const dialog = within(screen.getByRole("dialog", { name: "Create skill" }));
 	await user.click(dialog.getByRole("button", { name: "Create skill" }));
@@ -193,7 +323,8 @@ it("validates a skill, retains failed input, and blocks dismissal while creating
 });
 
 it("reads full skill content on demand, retries failures, and returns focus to View", async () => {
-	const { user } = renderForm();
+	const { user, edit } = renderForm();
+	await edit("Skills and toolboxes");
 	const trigger = screen.getByRole("button", { name: "View Client summary" });
 	expect(insight.actions.run).not.toHaveBeenCalled();
 	answers.ReadSkillFile = new Error("The skill is temporarily unavailable");
@@ -219,7 +350,10 @@ it("reads full skill content on demand, retries failures, and returns focus to V
 });
 
 it("opens on what is saved, with a skill the owner lost named as such, and saves without creating", async () => {
-	const { onSaved, user } = renderForm();
+	const { onSaved, user, edit } = renderForm();
+	await edit("Name and portrait");
+	await edit("Instructions and greeting");
+	await edit("Skills and toolboxes");
 	expect(nameField()).toHaveValue("Robin Twin");
 	expect(screen.getByLabelText("Instructions")).toHaveValue(
 		"Answer briefly.",
@@ -234,11 +368,12 @@ it("opens on what is saved, with a skill the owner lost named as such, and saves
 			name: "Remove A skill you can no longer use",
 		}),
 	);
-	await user.click(screen.getByRole("button", { name: "Save" }));
+	await autosave();
 	await vi.waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
 	expect(ran()).toEqual(["GetWorkspace", "EditWorkspace"]);
+	// The mock server now has no toolboxes. Removing a skill must preserve that concurrent change.
 	expect(insight.actions.run.mock.calls[1]?.[0]).toContain(
-		'mcp=[{"id":"db-1","name":"Sales","type":"DATABASE"}], skills=["skill-1"]',
+		'mcp=[], skills=["skill-1"]',
 	);
 	expect(upload).not.toHaveBeenCalled();
 });
@@ -250,54 +385,90 @@ it.each([
 		"Start with a letter, then use only letters, numbers, spaces, hyphens and underscores.",
 	],
 ])("refuses the name %j before anything is sent", async (name, problem) => {
-	const { onSaved, user } = renderForm();
+	const { onSaved, user, edit } = renderForm();
+	await edit("Name and portrait");
 	await user.clear(nameField());
 	if (name) await user.type(nameField(), name);
-	await user.click(screen.getByRole("button", { name: "Save" }));
-	expect(await screen.findByText(problem)).toBeVisible();
+	await edit("Instructions and greeting");
+	await user.click(screen.getByLabelText("Greeting"));
+	await autosave();
+	expect(screen.getByRole("alert")).toHaveTextContent(problem);
 	expect(nameField()).toBeInvalid();
+	expect(screen.getByLabelText("Greeting")).toHaveFocus();
 	expect(insight.actions.run).not.toHaveBeenCalled();
 	expect(onSaved).not.toHaveBeenCalled();
+	await user.clear(nameField());
+	await user.type(nameField(), "Renewals");
+	await autosave();
+	expect(onSaved).toHaveBeenCalledOnce();
+	expect(nameField()).toBeValid();
 });
 
-it("uploads a newly chosen image after the profile, then holds no file", async () => {
-	const { onSaved, user } = renderForm();
+it("uploads a newly chosen image once and clears the file picker", async () => {
+	const { onSaved, user, edit } = renderForm();
+	await edit("Name and portrait");
 	const image = new File(["x"], "robin.png", { type: "image/png" });
 	const input = screen.getByLabelText<HTMLInputElement>("Image");
 	await user.upload(input, image);
-	await user.click(screen.getByRole("button", { name: "Save" }));
+	await autosave();
 	await vi.waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
 	expect(upload).toHaveBeenCalledExactlyOnceWith("twin-1", image);
-	expect(upload.mock.invocationCallOrder[0]).toBeGreaterThan(
-		insight.actions.run.mock.invocationCallOrder[1] ?? 0,
-	);
-	// saved: a second Save must not upload the same file again
+	expect(ran()).toEqual([]);
 	expect(input.files).toHaveLength(0);
-	await user.click(screen.getByRole("button", { name: "Save" }));
-	await vi.waitFor(() => expect(onSaved).toHaveBeenCalledTimes(2));
+	await user.type(nameField(), " Updated");
+	await autosave();
+	expect(onSaved).toHaveBeenCalledTimes(2);
 	expect(upload).toHaveBeenCalledOnce();
 });
 
+it("keeps a replacement portrait selected while the previous file is uploading", async () => {
+	const { user, edit } = renderForm();
+	await edit("Name and portrait");
+	const input = screen.getByLabelText<HTMLInputElement>("Image");
+	const options = { type: "image/png", lastModified: 1234 };
+	const first = new File(["1"], "robin.png", options);
+	const next = new File(["2"], "robin.png", options);
+	const uploading = deferredWrite();
+	upload.mockReturnValueOnce(uploading.promise);
+	await user.upload(input, first);
+	await autosave();
+	expect(upload.mock.calls[0]?.[1]).toBe(first);
+	expect(input).toBeEnabled();
+	await user.upload(input, next);
+	await autosave();
+	expect(upload).toHaveBeenCalledTimes(1);
+	expect(input.files?.[0]).toBe(next);
+	await act(async () => uploading.resolve());
+	await vi.waitFor(() => expect(upload).toHaveBeenCalledTimes(2));
+	expect(upload.mock.calls[1]?.[1]).toBe(next);
+	expect(input.files).toHaveLength(0);
+});
+
 it("refuses an image the server would not take, and saves nothing", async () => {
-	renderForm();
+	const { edit } = renderForm();
+	await edit("Name and portrait");
 	// a file dragged onto the field gets past the picker's own filter
-	const user = userEvent.setup({ applyAccept: false });
+	const user = userEvent.setup({
+		applyAccept: false,
+		advanceTimers: vi.advanceTimersByTime,
+	});
 	await user.upload(
 		screen.getByLabelText("Image"),
 		new File(["x"], "robin.txt", { type: "text/plain" }),
 	);
-	await user.click(screen.getByRole("button", { name: "Save" }));
-	expect(
-		await screen.findByText("Choose a PNG, JPEG, or GIF image."),
-	).toBeVisible();
+	await autosave();
+	expect(screen.getByRole("alert")).toHaveTextContent(
+		"Choose a PNG, JPEG, or GIF image.",
+	);
 	expect(insight.actions.run).not.toHaveBeenCalled();
 });
 
 it("shows a save that failed, with what was entered still there, and saves on the next try", async () => {
 	answers.EditWorkspace = new Error("The agent is locked");
-	const { onSaved, user } = renderForm();
+	const { onSaved, user, edit } = renderForm();
+	await edit("Instructions and greeting");
 	await user.type(screen.getByLabelText("Greeting"), " there");
-	await user.click(screen.getByRole("button", { name: "Save" }));
+	await autosave();
 	expect(await screen.findByRole("alert")).toHaveTextContent(
 		"The agent is locked",
 	);
@@ -305,28 +476,32 @@ it("shows a save that failed, with what was entered still there, and saves on th
 	expect(onSaved).not.toHaveBeenCalled();
 
 	delete answers.EditWorkspace;
-	await user.click(screen.getByRole("button", { name: "Save" }));
+	await user.click(screen.getByRole("button", { name: /retry/i }));
 	await vi.waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
 	expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 });
 
-it("offers no generated options where the server cannot make them", () => {
-	renderForm();
+it("offers no generated options where the server cannot make them", async () => {
+	const { edit } = renderForm();
+	await edit("Name and portrait");
 	expect(
 		screen.queryByRole("button", { name: "Generate options" }),
 	).toBeNull();
-	expect(screen.getByText(/It is uploaded when you save/)).toBeVisible();
+	expect(screen.getByLabelText("Image")).toHaveAccessibleDescription(
+		"PNG, JPEG or GIF, up to 10 MiB.",
+	);
 });
 
 it("uploads a generated option the owner picked, as it does a chosen file", async () => {
 	// three bytes, as base64
 	answers.WorkGenerateTwinAvatar = { image: "AQID" };
-	const { onSaved, user } = renderForm(true);
+	const { onSaved, user, edit } = renderForm(true);
+	await edit("Name and portrait");
 	await user.click(screen.getByRole("button", { name: "Generate options" }));
 	await user.click(await screen.findByRole("radio", { name: "Option 2" }));
 	expect(screen.getByRole("radio", { name: "Option 2" })).toBeChecked();
 
-	await user.click(screen.getByRole("button", { name: "Save" }));
+	await autosave();
 	await vi.waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
 	expect(upload).toHaveBeenCalledOnce();
 	const [twinId, file] = upload.mock.calls[0];
@@ -339,7 +514,8 @@ it("uploads a generated option the owner picked, as it does a chosen file", asyn
 
 it("holds one image at a time: a picked option takes a chosen file's place, and a chosen file a picked option's", async () => {
 	answers.WorkGenerateTwinAvatar = { image: "AQID" };
-	const { user } = renderForm(true);
+	const { user, edit } = renderForm(true);
+	await edit("Name and portrait");
 	const input = screen.getByLabelText<HTMLInputElement>("Image");
 	await user.upload(
 		input,
@@ -357,7 +533,7 @@ it("holds one image at a time: a picked option takes a chosen file's place, and 
 	expect(input.files?.[0]).toBe(chosen);
 	expect(screen.getByRole("radio", { name: "Option 1" })).not.toBeChecked();
 
-	await user.click(screen.getByRole("button", { name: "Save" }));
+	await autosave();
 	await vi.waitFor(() =>
 		expect(upload).toHaveBeenCalledExactlyOnceWith("twin-1", chosen),
 	);
@@ -370,72 +546,98 @@ const noteWrites = (): string[] =>
 		.filter((statement) => statement.includes("About me.md"));
 
 it("saves the owner's note only when it changed, and takes the file away when it is emptied", async () => {
-	const { user, onSaved } = renderForm();
-	const about = screen.getByLabelText("About you");
+	const { user, onSaved, edit } = renderForm();
+	await edit("About you");
+	await edit("Instructions and greeting");
+	const about = screen.getByRole("textbox", { name: "About you" });
 	expect(about).toHaveValue("I run renewals.");
 	expect(about).toHaveAccessibleDescription(/A note your twin reads/);
 	// something else changed: the note is left as the twin holds it
 	await user.type(screen.getByLabelText("Greeting"), " there");
-	await user.click(screen.getByRole("button", { name: "Save" }));
+	await autosave();
 	await vi.waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
 	expect(noteWrites()).toEqual([]);
 
 	await user.type(about, " Ask Dana about billing.");
-	await user.click(screen.getByRole("button", { name: "Save" }));
+	await autosave();
 	await vi.waitFor(() => expect(onSaved).toHaveBeenCalledTimes(2));
-	// saved now, so saving again writes nothing more
-	await user.click(screen.getByRole("button", { name: "Save" }));
-	await vi.waitFor(() => expect(onSaved).toHaveBeenCalledTimes(3));
 	expect(noteWrites()).toEqual([
 		'SaveAppAssets(project=["twin-1"], filePath=["/public/About me.md"], content=["I run renewals. Ask Dana about billing."]);',
 	]);
 
 	await user.clear(about);
-	await user.click(screen.getByRole("button", { name: "Save" }));
-	await vi.waitFor(() => expect(onSaved).toHaveBeenCalledTimes(4));
+	await autosave();
+	await vi.waitFor(() => expect(onSaved).toHaveBeenCalledTimes(3));
 	expect(noteWrites().at(-1)).toBe(
 		'DeleteAppAssets(project=["twin-1"], filePath=["/public/About me.md"]);',
 	);
 });
 
-it("keeps the note and says the rest was saved when only the note could not be", async () => {
+it("retains the note when its write fails and retries on request", async () => {
 	answers.SaveAppAssets = new Error("The disk is full.");
-	const { user, onSaved } = renderForm();
-	await user.type(screen.getByLabelText("About you"), " More.");
-	await user.click(screen.getByRole("button", { name: "Save" }));
-	expect(await screen.findByRole("alert")).toHaveTextContent(
-		"Your changes were saved, but your note could not be: The disk is full.",
+	const { user, onSaved, edit } = renderForm();
+	await edit("About you");
+	await user.type(
+		screen.getByRole("textbox", { name: "About you" }),
+		" More.",
 	);
-	expect(screen.getByLabelText("About you")).toHaveValue(
+	await autosave();
+	expect(await screen.findByRole("alert")).toHaveTextContent(
+		"The disk is full.",
+	);
+	expect(screen.getByRole("textbox", { name: "About you" })).toHaveValue(
 		"I run renewals. More.",
 	);
 	expect(onSaved).not.toHaveBeenCalled();
-	// the next save tries the note again
 	answers.SaveAppAssets = undefined;
-	await user.click(screen.getByRole("button", { name: "Save" }));
+	await user.click(screen.getByRole("button", { name: /retry/i }));
 	await vi.waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
 	expect(noteWrites()).toHaveLength(2);
 });
 
+it("retries a failed portrait without rewriting the note that was already saved", async () => {
+	const { edit, user } = renderForm();
+	await edit("About you");
+	await edit("Name and portrait");
+	upload.mockRejectedValueOnce(new Error("Storage unavailable"));
+	const portrait = new File(["x"], "robin.png", { type: "image/png" });
+	await user.type(
+		screen.getByRole("textbox", { name: "About you" }),
+		" More.",
+	);
+	await user.upload(screen.getByLabelText("Image"), portrait);
+	await autosave();
+	expect(screen.getByRole("alert")).toHaveTextContent("Storage unavailable");
+	expect(noteWrites()).toHaveLength(1);
+	await user.click(screen.getByRole("button", { name: /retry/i }));
+	await vi.waitFor(() => expect(upload).toHaveBeenCalledTimes(2));
+	expect(screen.queryByRole("alert")).toBeNull();
+	expect(noteWrites()).toHaveLength(1);
+	expect(upload.mock.calls[1]?.[1]).toBe(portrait);
+});
+
 it("refuses a note longer than a twin can take, before anything is sent", async () => {
-	const { user } = renderForm();
-	fireEvent.change(screen.getByLabelText("About you"), {
+	const { edit } = renderForm();
+	await edit("About you");
+	fireEvent.change(screen.getByRole("textbox", { name: "About you" }), {
 		target: { value: "x".repeat(8001) },
 	});
-	await user.click(screen.getByRole("button", { name: "Save" }));
-	expect(
-		await screen.findByText("Keep the note to 8,000 characters or fewer."),
-	).toBeVisible();
+	await autosave();
+	expect(screen.getByRole("alert")).toHaveTextContent(
+		"Keep the note to 8,000 characters or fewer.",
+	);
 	expect(insight.actions.run).not.toHaveBeenCalled();
 });
 
 it("locks a note that could not be read, and leaves the one the twin holds as it is", async () => {
-	const { user, onSaved } = renderForm(false, true);
-	const about = screen.getByLabelText("About you");
+	const { user, onSaved, edit } = renderForm(false, true);
+	await edit("About you");
+	await edit("Instructions and greeting");
+	const about = screen.getByRole("textbox", { name: "About you" });
 	expect(about).toBeDisabled();
 	expect(about).toHaveAccessibleDescription(/could not be read just now/);
 	await user.type(screen.getByLabelText("Greeting"), " there");
-	await user.click(screen.getByRole("button", { name: "Save" }));
+	await autosave();
 	await vi.waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
 	expect(noteWrites()).toEqual([]);
 });
@@ -450,21 +652,18 @@ it("switches the owner's persona for the twin with the rest of the form, and onl
 	expect(persona).toBeChecked();
 	expect(screen.queryByText(/You have no persona yet/)).toBeNull();
 
-	// nothing is sent for a switch that was not touched, and nothing before Save
-	await user.click(screen.getByRole("button", { name: "Save" }));
-	await vi.waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
+	await autosave();
+	expect(insight.actions.run).not.toHaveBeenCalled();
 	await user.click(persona);
 	expect(persona).not.toBeChecked();
 	expect(switches()).toEqual([]);
 
-	await user.click(screen.getByRole("button", { name: "Save" }));
-	await vi.waitFor(() => expect(onSaved).toHaveBeenCalledTimes(2));
-	// what was saved is the new starting point: saving again does not send it again
-	await user.click(screen.getByRole("button", { name: "Save" }));
-	await vi.waitFor(() => expect(onSaved).toHaveBeenCalledTimes(3));
+	await autosave();
+	await vi.waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
 	expect(switches()).toEqual([
 		'WorkSetTwinPersona(project=["twin-1"], enabled=[false]);',
 	]);
+	expect(ran()).toEqual(["WorkSetTwinPersona"]);
 });
 
 it("opens with the switch off for a twin its owner switched their persona off for", () => {
@@ -475,21 +674,25 @@ it("opens with the switch off for a twin its owner switched their persona off fo
 });
 
 it("shows no switch to someone with no persona, says where to write one, and leaves the twin's as it is", async () => {
-	const { user, onSaved } = renderForm();
+	const { user, onSaved, edit } = renderForm();
 	expect(screen.queryByRole("switch", { name: "Use my persona" })).toBeNull();
-	expect(screen.getByText(/You have no persona yet/)).toBeVisible();
-	await user.click(screen.getByRole("button", { name: "Save" }));
+	expect(
+		screen.getByRole("link", { name: "Create your persona" }),
+	).toBeVisible();
+	await edit("Instructions and greeting");
+	await user.type(screen.getByLabelText("Greeting"), " there");
+	await autosave();
 	await vi.waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
 	expect(ran()).not.toContain("WorkSetTwinPersona");
 });
 
-it("keeps the form open and says the rest was saved when only the persona could not be switched", async () => {
+it("keeps the form open when the persona switch fails", async () => {
 	answers.WorkSetTwinPersona = new Error("It is not yours.");
 	const { user, onSaved } = renderForm(false, false, { isUsed: true });
 	await user.click(screen.getByRole("switch", { name: "Use my persona" }));
-	await user.click(screen.getByRole("button", { name: "Save" }));
+	await autosave();
 	expect(await screen.findByRole("alert")).toHaveTextContent(
-		"Your changes were saved, but your persona could not be switched off for it: It is not yours.",
+		"It is not yours.",
 	);
 	expect(onSaved).not.toHaveBeenCalled();
 });

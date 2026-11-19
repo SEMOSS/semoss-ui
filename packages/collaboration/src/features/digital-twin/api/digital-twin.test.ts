@@ -18,9 +18,11 @@ import {
 	readTwinHoldings,
 	readTwinNote,
 	saveTwin,
+	saveTwinChanges,
 	saveTwinNote,
 	saveTwinProfile,
 	type TwinProfile,
+	type TwinProfileCheckpoint,
 	TwinSetupError,
 	type TwinSource,
 	twinSetupSteps,
@@ -554,6 +556,152 @@ describe("creating a twin", () => {
 });
 
 describe("saving a twin", () => {
+	it("touches only edited resources and distinguishes portraits with identical file metadata", async () => {
+		const { actions, ran } = transport({});
+		const saved: TwinProfileCheckpoint = {
+			profile: PROFILE,
+			about: "",
+			usePersona: true,
+		};
+		const draft = {
+			...PROFILE,
+			skills: [...PROFILE.skills],
+			toolboxes: PROFILE.toolboxes.map((entry) => ({ ...entry })),
+		};
+		await saveTwinChanges(actions, "twin-1", draft, saved);
+		expect(ran()).toEqual([]);
+		const options = { type: "image/png", lastModified: 1 };
+		const first = new File(["x"], "portrait.png", options);
+		const second = new File(["y"], "portrait.png", options);
+		await saveTwinChanges(
+			actions,
+			"twin-1",
+			{ ...draft, image: first },
+			saved,
+		);
+		await saveTwinChanges(
+			actions,
+			"twin-1",
+			{ ...draft, image: first, usePersona: false },
+			saved,
+		);
+		await saveTwinChanges(
+			actions,
+			"twin-1",
+			{ ...draft, image: second, usePersona: false },
+			saved,
+		);
+		expect(upload.mock.calls).toEqual([
+			["twin-1", first],
+			["twin-1", second],
+		]);
+		expect(ran()).toEqual([
+			'WorkSetTwinPersona(project=["twin-1"], enabled=[false]);',
+		]);
+	});
+
+	it("overlays edits on the latest workspace settings if another window changed them", async () => {
+		const { actions, ran } = transport({ GetWorkspace: WORKSPACE });
+		const saved = { profile: PROFILE };
+		await saveTwinChanges(
+			actions,
+			"twin-1",
+			{ ...PROFILE, greeting: "Welcome back" },
+			saved,
+		);
+		expect(ran()).toHaveLength(2);
+		expect(ran()[1]).toContain(
+			'greeting="Welcome back", greetingEnabled=true',
+		);
+		expect(ran()[1]).toContain('name="Robin Twin"');
+		expect(ran()[1]).toContain('systemPrompt="Old instructions"');
+		expect(ran()[1]).toContain('skills=["skill-1"]');
+		expect(ran()[1]).toContain('"id":"db-1"');
+	});
+
+	it("finishes a partially saved rename without repeating the workspace edit", async () => {
+		const answers: Record<string, unknown> = {
+			GetWorkspace: WORKSPACE,
+			SetProjectDisplayName: new Error("catalog unavailable"),
+		};
+		const { actions, ran } = transport(answers);
+		const saved = { profile: PROFILE };
+		const draft = { ...PROFILE, name: "New name" };
+		await expect(
+			saveTwinChanges(actions, "twin-1", draft, saved),
+		).rejects.toThrow("catalog unavailable");
+		delete answers.SetProjectDisplayName;
+		await saveTwinChanges(actions, "twin-1", draft, saved);
+		expect(ran().map((call) => call.split("(")[0])).toEqual([
+			"GetWorkspace",
+			"EditWorkspace",
+			"SetProjectDisplayName",
+			"SetProjectDisplayName",
+		]);
+	});
+
+	it("restores the original values even after a partially applied edit or a lost reply", async () => {
+		const answers: Record<string, unknown> = {
+			GetWorkspace: WORKSPACE,
+			EditWorkspace: { warning: "CONFIG_JSON locked" },
+		};
+		const { actions, ran } = transport(answers);
+		const saved: TwinProfileCheckpoint = {
+			profile: PROFILE,
+			about: "",
+			usePersona: true,
+		};
+		const changed = {
+			...PROFILE,
+			instructions: "New instructions",
+			about: "New note",
+			usePersona: false,
+		};
+		await expect(
+			saveTwinChanges(actions, "twin-1", changed, saved),
+		).rejects.toThrow("CONFIG_JSON locked");
+		delete answers.EditWorkspace;
+		answers.WorkSetTwinPersona = new Error("lost reply");
+		await expect(
+			saveTwinChanges(
+				actions,
+				"twin-1",
+				{ ...changed, instructions: PROFILE.instructions },
+				saved,
+			),
+		).rejects.toThrow("lost reply");
+		expect(ran()[3]).toContain(
+			`systemPrompt=${JSON.stringify(PROFILE.instructions)}`,
+		);
+		delete answers.WorkSetTwinPersona;
+		const before = ran().length;
+		await saveTwinChanges(actions, "twin-1", PROFILE, saved);
+		expect(ran().slice(before)).toEqual([
+			'DeleteAppAssets(project=["twin-1"], filePath=["/public/About me.md"]);',
+			'WorkSetTwinPersona(project=["twin-1"], enabled=[true]);',
+		]);
+	});
+
+	it("reconciles a note deletion that succeeded before its reply was lost", async () => {
+		const { actions, ran } = transport({
+			DeleteAppAssets: new Error("lost reply"),
+			BrowseAppAssets: [],
+		});
+		const saved: TwinProfileCheckpoint = {
+			profile: PROFILE,
+			about: "Previous note",
+		};
+		await expect(
+			saveTwinChanges(actions, "twin-1", PROFILE, saved),
+		).rejects.toThrow("lost reply");
+		await saveTwinChanges(actions, "twin-1", PROFILE, saved);
+		expect(ran()).toEqual([
+			'DeleteAppAssets(project=["twin-1"], filePath=["/public/About me.md"]);',
+			'BrowseAppAssets(filePath=["/"], project=["twin-1"]);',
+		]);
+		expect(saved.about).toBe("");
+	});
+
 	it("saves the form's fields over the rest of the agent's configuration, and renames it", async () => {
 		const { actions, ran } = transport({ GetWorkspace: WORKSPACE });
 		await saveTwinProfile(actions, "twin-1", PROFILE);

@@ -89,6 +89,9 @@ it("says the list is the owner's alone, and keeps the people added next until th
 	expect(screen.getByText(/Only you see this list/)).toBeVisible();
 	expect(screen.queryByRole("button", { name: "Tell them" })).toBeNull();
 
+	const duration = screen.getByRole("button", { name: "Set an end date" });
+	expect(duration).toHaveAttribute("aria-expanded", "false");
+	await user.click(duration);
 	const ends = screen.getByLabelText("Access ends");
 	expect(ends).toHaveAccessibleDescription(/until the end of this day/);
 	fireEvent.change(ends, { target: { value: "2001-01-01" } });
@@ -105,6 +108,8 @@ it("says the list is the owner's alone, and keeps the people added next until th
 
 	fireEvent.change(ends, { target: { value: "2999-12-31" } });
 	expect(ends).toBeValid();
+	await user.click(duration);
+	expect(duration).toHaveAccessibleName(/New access ends/);
 	await user.click(
 		screen.getByRole("button", { name: "Add the picked people" }),
 	);

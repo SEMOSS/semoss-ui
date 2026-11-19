@@ -140,6 +140,9 @@ it("keeps the chosen twin through tab changes and deletes only that twin", async
 	const { router, user } = renderSettings("?twinId=twin-1");
 	await screen.findByRole("heading", { name: "Robin Twin", level: 1 });
 	expect(ran()).toContain('GetWorkspace(workspaceId=["twin-1"]);');
+	await user.click(
+		screen.getByRole("button", { name: "Instructions and greeting" }),
+	);
 	await user.type(screen.getByLabelText("Greeting"), " again");
 	await user.click(screen.getByRole("tab", { name: "People" }));
 	expect(router.state.location.search).toBe("?twinId=twin-1&tab=people");
@@ -160,12 +163,17 @@ it("keeps the chosen twin through tab changes and deletes only that twin", async
 	).toEqual(['DeleteWorkspace(workspaceId=["twin-1"]);']);
 });
 
-it("starts with the new twin's form and closes the old delete dialog when switching twins", async () => {
+it("flushes pending edits to their own twin and opens the next twin with its own profile", async () => {
 	answers.MyProjects = [
 		{ project_id: "twin-1", project_name: "Robin Twin" },
 		{ project_id: "twin-2", project_name: "Research Twin" },
 	];
 	const { router, user } = renderSettings("?twinId=twin-1");
+	await user.click(
+		await screen.findByRole("button", {
+			name: "Instructions and greeting",
+		}),
+	);
 	await user.type(await screen.findByLabelText("Greeting"), " unsaved");
 	await user.click(
 		screen.getByRole("button", { name: "Delete Digital Twin" }),
@@ -178,11 +186,28 @@ it("starts with the new twin's form and closes the old delete dialog when switch
 	await act(async () => {
 		await router.navigate("/twins/mine?twinId=twin-2");
 	});
+	await user.click(
+		await screen.findByRole("button", { name: "Name and portrait" }),
+	);
 	expect(await screen.findByLabelText("Name (required)")).toHaveValue(
 		"Research Twin",
 	);
+	await user.click(
+		screen.getByRole("button", { name: "Instructions and greeting" }),
+	);
 	expect(screen.getByLabelText("Greeting")).toHaveValue("Hello");
 	expect(screen.queryByRole("dialog")).toBeNull();
+	await vi.waitFor(
+		() => {
+			const edits = ran().filter((statement) =>
+				statement.startsWith("EditWorkspace("),
+			);
+			expect(edits).toHaveLength(1);
+			expect(edits[0]).toContain('workspaceId=["twin-1"]');
+			expect(edits[0]).toContain('greeting="Hello unsaved"');
+		},
+		{ timeout: 2500 },
+	);
 });
 
 it("does not turn an unavailable twin into a blank create form", async () => {
@@ -194,6 +219,44 @@ it("does not turn an unavailable twin into a blank create form", async () => {
 	expect(
 		ran().some((statement) => statement.startsWith("GetWorkspace")),
 	).toBe(false);
+});
+
+it("offers to keep failed edits or leave the page without sending another write", async () => {
+	answers.EditWorkspace = new Error("Workspace is offline");
+	const { router, user } = renderSettings("?twinId=twin-1");
+	await user.click(
+		await screen.findByRole("button", {
+			name: "Instructions and greeting",
+		}),
+	);
+	await user.type(screen.getByLabelText("Greeting"), " there");
+	const back = screen.getByRole("link", { name: "Digital Twins" });
+	await user.click(back);
+	const prompt = await screen.findByRole("dialog", {
+		name: "Leave with unsaved changes?",
+	});
+	expect(prompt).toHaveAccessibleDescription(/Workspace is offline/);
+	expect(router.state.location.pathname).toBe("/twins/mine");
+	const keepEditing = within(prompt).getByRole("button", {
+		name: "Keep editing",
+	});
+	expect(keepEditing).toHaveFocus();
+	await user.click(keepEditing);
+	await vi.waitFor(() => expect(back).toHaveFocus());
+	expect(screen.getByLabelText("Greeting")).toHaveValue("Hello there");
+	await user.click(back);
+	const leave = await screen.findByRole("button", {
+		name: "Leave without saving",
+	});
+	const beforeLeaving = ran().filter((statement) =>
+		statement.startsWith("EditWorkspace("),
+	);
+	expect(beforeLeaving.length).toBeGreaterThan(0);
+	await user.click(leave);
+	expect(await screen.findByText("The hub")).toBeVisible();
+	expect(
+		ran().filter((statement) => statement.startsWith("EditWorkspace(")),
+	).toEqual(beforeLeaving);
 });
 
 it("creates another twin and opens that new twin's people after setup", async () => {
@@ -259,9 +322,33 @@ it("shows the owner's twin with its profile, its people and the ways on from it"
 		"href",
 		"/twins/chat?agentId=twin-1",
 	);
+	for (const name of [
+		"Name and portrait",
+		"Instructions and greeting",
+		"About you",
+		"Skills and toolboxes",
+	]) {
+		expect(screen.getByRole("button", { name })).toHaveAttribute(
+			"aria-expanded",
+			"false",
+		);
+	}
+	expect(
+		screen.getByRole("button", { name: "Name and portrait" }),
+	).toHaveAccessibleDescription("Robin Twin");
+	expect(
+		screen.getByRole("button", { name: "Instructions and greeting" }),
+	).toHaveAccessibleDescription("Answer briefly.");
+	await user.click(screen.getByRole("button", { name: "Name and portrait" }));
 	expect(screen.getByLabelText("Name (required)")).toHaveValue("Robin Twin");
+	await user.click(
+		screen.getByRole("button", { name: "Instructions and greeting" }),
+	);
 	expect(screen.getByLabelText("Greeting")).toHaveValue("Hello");
 	// a knowledge base is not a toolbox; the form leaves it to the save to keep
+	await user.click(
+		screen.getByRole("button", { name: "Skills and toolboxes" }),
+	);
 	expect(screen.getByText("Sales")).toBeVisible();
 	expect(screen.queryByText("policies")).toBeNull();
 
@@ -272,7 +359,17 @@ it("shows the owner's twin with its profile, its people and the ways on from it"
 			'The people table, adding with "Add People" from the directory too',
 		),
 	).toBeVisible();
-	// the half-made change is still there after a look at People
+	await act(async () =>
+		vi.waitFor(
+			() =>
+				expect(
+					ran().filter((statement) =>
+						statement.startsWith("EditWorkspace("),
+					),
+				).toEqual([expect.stringContaining('greeting="Hello again"')]),
+			{ timeout: 2500 },
+		),
+	);
 	await user.click(screen.getByRole("tab", { name: "Profile" }));
 	expect(screen.getByLabelText("Greeting")).toHaveValue("Hello again");
 });
@@ -342,8 +439,9 @@ it("shows the owner's note with the profile, read from the twin's files", async 
 		{ name: "About me.md", path: "/public/About me.md" },
 	];
 	answers.GetAppAssets = "I run renewals.";
-	renderSettings();
-	expect(await screen.findByLabelText("About you")).toHaveValue(
+	const { user } = renderSettings();
+	await user.click(await screen.findByRole("button", { name: "About you" }));
+	expect(screen.getByRole("textbox", { name: "About you" })).toHaveValue(
 		"I run renewals.",
 	);
 	expect(ran()).toContain(
@@ -353,12 +451,14 @@ it("shows the owner's note with the profile, read from the twin's files", async 
 
 it("opens the twin with its note locked when the twin's files cannot be read", async () => {
 	answers.BrowseAppAssets = new Error("The server is restarting");
-	renderSettings();
-	const about = await screen.findByLabelText("About you");
+	const { user } = renderSettings();
+	await user.click(await screen.findByRole("button", { name: "About you" }));
+	const about = screen.getByRole("textbox", { name: "About you" });
 	expect(about).toBeDisabled();
 	expect(about).toHaveValue("");
 	expect(about).toHaveAccessibleDescription(/could not be read just now/);
 	// the rest of the page is there to use
+	await user.click(screen.getByRole("button", { name: "Name and portrait" }));
 	expect(screen.getByLabelText("Name (required)")).toHaveValue("Robin Twin");
 	expect(screen.getByRole("tab", { name: "People" })).toBeVisible();
 });
