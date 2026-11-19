@@ -334,3 +334,31 @@ it("says when the twin could not be read, and reads again on request", async () 
 		await screen.findByRole("heading", { level: 1, name: "Robin Twin" }),
 	).toBeVisible();
 });
+
+it("shows the owner's note with the profile, read from the twin's files", async () => {
+	// one listing answers for the project's top folder and for its files folder
+	answers.BrowseAppAssets = [
+		{ name: "public", path: "/public", type: "directory" },
+		{ name: "About me.md", path: "/public/About me.md" },
+	];
+	answers.GetAppAssets = "I run renewals.";
+	renderSettings();
+	expect(await screen.findByLabelText("About you")).toHaveValue(
+		"I run renewals.",
+	);
+	expect(ran()).toContain(
+		'GetAppAssets(filePath=["/public/About me.md"], project=["twin-1"]);',
+	);
+});
+
+it("opens the twin with its note locked when the twin's files cannot be read", async () => {
+	answers.BrowseAppAssets = new Error("The server is restarting");
+	renderSettings();
+	const about = await screen.findByLabelText("About you");
+	expect(about).toBeDisabled();
+	expect(about).toHaveValue("");
+	expect(about).toHaveAccessibleDescription(/could not be read just now/);
+	// the rest of the page is there to use
+	expect(screen.getByLabelText("Name (required)")).toHaveValue("Robin Twin");
+	expect(screen.getByRole("tab", { name: "People" })).toBeVisible();
+});

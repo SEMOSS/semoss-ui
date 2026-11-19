@@ -5,6 +5,10 @@ import {
 	mailThreadFileName,
 	mailThreadToMarkdown,
 } from "../mail/mail.markdown";
+import {
+	parseMailMessageDetail,
+	readMailSavedPath,
+} from "../mail/mail.parsers";
 import { mailSaveKey } from "../mail/mail.threads";
 import { MAIL_APPS } from "../mail/mail-apps";
 import { readConversation } from "../mail/mail-thread-view";
@@ -116,4 +120,72 @@ export const saveMicrosoftItem = async (
 		});
 	}
 	return { ...saved, itemKey: microsoftItemKey(item) };
+};
+
+/** The largest attachment {@link saveMailAttachments} takes: 25 MB. */
+const MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024;
+
+/** What {@link saveMailAttachments} did with a thread's attachments. */
+export interface SavedMailAttachments {
+	/**
+	 * The attachments now in the insight's files, each with the `itemKey` the
+	 * mail viewer's attachment list gives it: its email's id, a colon, its own.
+	 */
+	saved: ConnectorSavedFile[];
+	/** The names of the ones left out for being over 25 MB. */
+	skipped: string[];
+}
+
+/**
+ * Save the file attachments of every email in an Outlook thread into the
+ * insight's files, for a host that saved the thread and wants what was
+ * attached to it too. It takes what the mail viewer's own attachment list
+ * shows: files with bytes of their own, not pictures placed inside the text.
+ *
+ * @param insightId - The insight whose files receive them.
+ * @param conversationId - The thread.
+ * @return What was saved and what was left out; both empty for a thread with
+ * no attachments.
+ * @throws ConnectorSignInError when the account has to sign in, or Error when
+ * the thread or one of its attachments could not be read or saved. What was
+ * saved before that stays in the insight's files.
+ */
+export const saveMailAttachments = async (
+	insightId: string,
+	conversationId: string,
+): Promise<SavedMailAttachments> => {
+	const app = MAIL_APPS.microsoft;
+	const read = (pixel: string): Promise<unknown> =>
+		runConnectorPixel(pixel, insightId);
+	const saved: ConnectorSavedFile[] = [];
+	const skipped: string[] = [];
+	for (const listed of await readConversation(app, read, conversationId)) {
+		// a listed email only says whether it has any; opening it reads them
+		if (!listed.hasAttachments) continue;
+		const { attachments } = parseMailMessageDetail(
+			await read(app.pixels.getMail(listed.id)),
+		);
+		for (const attachment of attachments) {
+			if (attachment.kind !== "file" || attachment.isInline) continue;
+			if ((attachment.size ?? 0) > MAX_ATTACHMENT_BYTES) {
+				skipped.push(attachment.name);
+				continue;
+			}
+			saved.push({
+				...(await saveToInsight(insightId, app.service, {
+					kind: "download",
+					fileName: attachment.name,
+					buildPixel: (fileName) =>
+						app.pixels.downloadAttachment({
+							messageId: listed.id,
+							attachmentId: attachment.id,
+							fileName: fileName,
+						}),
+					readSavedPath: readMailSavedPath,
+				})),
+				itemKey: `${listed.id}:${attachment.id}`,
+			});
+		}
+	}
+	return { saved, skipped };
 };

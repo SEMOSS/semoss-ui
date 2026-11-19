@@ -1,5 +1,5 @@
 import { ArrowLeft } from "lucide-react";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { Link } from "react-router";
 import {
 	Alert,
@@ -16,9 +16,11 @@ import { AgentAvatar } from "@/components/common/agent-avatar";
 import { agentImageUrl } from "@/features/agents/api/agent-image";
 import { getAgent } from "@/features/agents/api/get-agent";
 import { CollaborationPage } from "@/features/collaboration/components/collaboration-page";
+import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import { LandingChatComposer } from "@/features/daily-chat/landing-chat-composer";
 import { MESSAGE_PROSE_CLASS_NAME } from "@/features/messages/components/message-prose.styles";
 import type { InsightActions } from "@/lib/pixel";
+import { markTwinOpened } from "./opened-twins";
 import { useTwinRead } from "./use-twin-read";
 
 interface TwinChatStartProps {
@@ -40,6 +42,13 @@ export function TwinChatStart({ agentId }: TwinChatStartProps) {
 		[agentId],
 	);
 	const twin = useTwinRead(read);
+	const { profile } = useCollaborationSession().state;
+	const person = profile.email || profile.id;
+	const isOpened = twin.data !== undefined;
+	useEffect(() => {
+		// the list of twins stops marking this one as new
+		if (isOpened) markTwinOpened(person, agentId);
+	}, [isOpened, person, agentId]);
 	const greeting = twin.data?.config_json?.greeting_enabled
 		? twin.data.config_json.greeting?.trim()
 		: "";
@@ -74,7 +83,8 @@ export function TwinChatStart({ agentId }: TwinChatStartProps) {
 								<P className="text-muted-foreground text-sm">
 									A Digital Twin: an AI, not the person. It
 									answers from the copies its owner put into
-									it.
+									it, and cannot see your mail, calendar or
+									files.
 								</P>
 							</div>
 						</header>
@@ -89,7 +99,8 @@ export function TwinChatStart({ agentId }: TwinChatStartProps) {
 								{greeting}
 							</Markdown>
 						)}
-						<LandingChatComposer />
+						{/* this page is the twin's own: the chat it starts stays with the twin */}
+						<LandingChatComposer isAgentLocked />
 					</>
 				) : twin.error ? (
 					<Alert variant="destructive">

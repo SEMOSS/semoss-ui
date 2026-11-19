@@ -1,8 +1,7 @@
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { useCallback, useId, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
-import { useConfig, useInsight } from "@semoss/sdk/react";
-import { MembersTable } from "@semoss/shared";
+import { useInsight } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -33,10 +32,11 @@ import { useSkillCatalog } from "@/features/routines/use-skill-catalog";
 import { givenFirst } from "@/lib/person-name";
 import type { InsightActions } from "@/lib/pixel";
 import { twinChatPath, twinContentsPath } from "@/lib/workspace-paths";
-import { deleteTwin, getMyTwinAgent } from "./api/digital-twin";
+import { deleteTwin, getMyTwinAgent, readTwinNote } from "./api/digital-twin";
 import { TwinCreateWizard } from "./twin-create-wizard";
+import { TwinPeople } from "./twin-people";
 import { TwinProfileForm } from "./twin-profile-form";
-import { useTwinPeopleSource } from "./use-twin-people-source";
+import { useTwinIndex } from "./use-twin-index";
 import { useTwinRead } from "./use-twin-read";
 
 /**
@@ -53,19 +53,26 @@ export function TwinSettings() {
 	const isCreating =
 		params.get("create") === "true" && requestedTwinId === undefined;
 	const readTwin = useCallback(
-		(actions: InsightActions) =>
-			isCreating
-				? Promise.resolve(null)
-				: getMyTwinAgent(actions, requestedTwinId),
+		async (actions: InsightActions) => {
+			const agent = isCreating
+				? null
+				: await getMyTwinAgent(actions, requestedTwinId);
+			if (!agent) return null;
+			// a note that cannot be read is left as it is, not taken for none: null, and the form locks it
+			const about = await readTwinNote(actions, agent.workspace_id).catch(
+				() => null,
+			);
+			return { agent, about };
+		},
 		[isCreating, requestedTwinId],
 	);
 	const twin = useTwinRead(readTwin);
 	const catalog = useSkillCatalog();
-	const isDirectoryAvailable = useConfig(
-		(config) => config.config?.msGraphLookup === true,
-	);
-	const agent = twin.data;
-	const people = useTwinPeopleSource(agent?.workspace_id ?? "");
+	// undefined until it is read, null for someone with no twin
+	const agent = twin.data === null ? null : twin.data?.agent;
+	const about = twin.data?.about ?? null;
+	// a changed note is described for the twin's chats a moment after it is saved
+	const requestIndex = useTwinIndex(agent?.workspace_id);
 	// the browser keeps the image it has for an address, so a new upload gets a new one
 	const [imageRevision, setImageRevision] = useState(0);
 	const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -73,6 +80,7 @@ export function TwinSettings() {
 	const [deleteError, setDeleteError] = useState("");
 
 	const handleSaved = (): void => {
+		requestIndex();
 		setImageRevision((revision) => revision + 1);
 		// the name above the form comes from the server
 		twin.reload();
@@ -232,6 +240,7 @@ export function TwinSettings() {
 								name: agent.name,
 								instructions: agent.system_prompt,
 								greeting: agent.config_json?.greeting ?? "",
+								about: about ?? "",
 								skills: agent.skills.map((skill) => skill.id),
 								// knowledge bases are not the form's; saving keeps them
 								toolboxes: agent.mcp
@@ -245,19 +254,12 @@ export function TwinSettings() {
 						}}
 						skills={catalog.skills}
 						imageUrl={imageUrl}
+						isNoteUnread={about === null}
 						onSaved={handleSaved}
 					/>
 				</TabsContent>
 				<TabsContent value="people" className="flex flex-col gap-4">
-					<P className="max-w-prose text-muted-foreground text-sm">
-						The people who can chat with your Digital Twin. Each can
-						also open the copies it holds, read its instructions and
-						see who else is on this list.
-					</P>
-					<MembersTable
-						source={people}
-						isDirectoryAvailable={isDirectoryAvailable}
-					/>
+					<TwinPeople twin={{ id: twinId, name: agent.name }} />
 				</TabsContent>
 			</Tabs>
 			<section

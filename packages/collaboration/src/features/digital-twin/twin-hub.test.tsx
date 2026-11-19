@@ -2,6 +2,9 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
+import { CollaborationSessionProvider } from "@/features/collaboration/state/collaboration-session.context";
+import { markTwinOpened } from "./opened-twins";
 import { TwinHub } from "./twin-hub";
 
 // one actions object, as the provider gives; a new one per render would read again forever
@@ -18,6 +21,7 @@ const DANA = {
 let twins: { mine: unknown; all: unknown };
 
 beforeEach(() => {
+	localStorage.clear();
 	twins = { mine: [], all: [] };
 	insight.actions.run.mockReset();
 	insight.actions.run.mockImplementation(async (statement: string) => {
@@ -32,11 +36,17 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
+const STATE = createInitialCollaborationState();
+/** Who the marks are kept for. */
+const PERSON = STATE.profile.email || STATE.profile.id;
+
 const renderHub = () =>
 	render(
-		<MemoryRouter>
-			<TwinHub />
-		</MemoryRouter>,
+		<CollaborationSessionProvider initialState={STATE}>
+			<MemoryRouter>
+				<TwinHub />
+			</MemoryRouter>
+		</CollaborationSessionProvider>,
 	);
 
 it("offers to create a twin to someone who has none, and says nothing is shared with them", async () => {
@@ -103,4 +113,34 @@ it("says when the twins could not be read, and reads again on request", async ()
 	expect(
 		await screen.findByRole("link", { name: "Chat: Dana Ortiz Twin" }),
 	).toBeVisible();
+});
+
+it("marks a twin shared with the person as new until its chat has been opened in this browser", async () => {
+	const lee = { project_id: "twin-4", project_name: "Lee Park Twin" };
+	twins = { mine: [ROBIN], all: [ROBIN, DANA, lee] };
+	markTwinOpened(PERSON, "twin-4");
+	// what someone else opened in this browser is theirs
+	markTwinOpened("someone-else@example.com", "twin-2");
+	renderHub();
+	const [dana, park] = within(
+		await screen.findByRole("region", { name: "Shared with you" }),
+	).getAllByRole("listitem");
+	expect(within(dana).getByText("New")).toBeVisible();
+	expect(within(park).queryByText("New")).toBeNull();
+	// the person's own twins are never new to them
+	expect(
+		within(
+			screen.getByRole("region", { name: "Your Digital Twins" }),
+		).queryByText("New"),
+	).toBeNull();
+});
+
+it("marks every shared twin as new when what this browser remembers cannot be read", async () => {
+	localStorage.setItem(
+		`semoss:collaboration:opened-twins:v1:${encodeURIComponent(PERSON)}`,
+		'{"version":1,"ids":"twin-2"}',
+	);
+	twins = { mine: [], all: [DANA] };
+	renderHub();
+	expect(await screen.findByText("New")).toBeVisible();
 });

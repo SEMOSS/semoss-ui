@@ -17,6 +17,8 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
+import { useOptionalCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
+import { uploadRoomFiles } from "@/features/rooms/api/upload-room-files";
 import { RoutineDocumentsDock } from "@/features/routines/routine-documents-dock";
 import {
 	TopicContentsNav,
@@ -29,6 +31,8 @@ import {
 	createTwinFolder,
 	getMyTwin,
 	hasTwinFolder,
+	meetingTranscriptFile,
+	readMeetingTranscript,
 	readTwinHoldings,
 	TWIN_FILES_PATH,
 	type TwinCopy,
@@ -38,6 +42,10 @@ import { TwinKnowledgeFinder } from "./twin-knowledge-finder";
 import { TwinSourceViewer } from "./twin-source-viewer";
 import { TWIN_FINDER, TWIN_SOURCES } from "./twin-sources";
 import { useTwinIndex } from "./use-twin-index";
+import {
+	attachmentsSummary,
+	useTwinMailAttachments,
+} from "./use-twin-mail-attachments";
 import { useTwinRead } from "./use-twin-read";
 
 // what each place is called in the rail, and what it says above its list
@@ -77,12 +85,14 @@ const GROUPS: TopicPlaceGroup[] = [
  * the owner's Outlook, Teams chats, OneDrive and Teams files to add from, and
  * a search that suggests what to add from a description. A viewer, or the
  * search, saves an item into the page's files, as a viewer does in a chat,
- * and the page then copies it into the twin. A list marks what the twin
- * already holds a copy of, whenever it was added. The copy is a snapshot:
- * nothing here reads the owner's account again later.
+ * and the page then copies it into the twin. After an email, its attachments
+ * can be added in one go, and after a meeting what was said in it, where the
+ * server can read that. A list marks what the twin already holds a copy of,
+ * whenever it was added. The copy is a snapshot: nothing here reads the
+ * owner's account again later.
  */
 export function TwinContents() {
-	const { actions } = useInsight();
+	const { actions, insightId } = useInsight();
 	const [params, setParams] = useSearchParams();
 	const labelId = useId();
 	const requestedTwinId = params.get("twinId") ?? undefined;
@@ -108,6 +118,15 @@ export function TwinContents() {
 	// what a viewer's list marks as in the twin, by what the viewer knows each item by: what the page
 	// read, until the page adds to it or reads it again
 	const [heldKeys, setHeldKeys] = useState<ReadonlySet<string>>();
+	// the emails added here, whose attachments can be added too
+	const attachments = useTwinMailAttachments();
+	// the meetings added here, whose transcripts can be added too: only where the server's Microsoft sign in
+	// asks for the scope one is read with, and never where no session is around the page
+	const canReadTranscripts =
+		useOptionalCollaborationSession()?.state.settings.meetingTranscripts ===
+		true;
+	const [meetings, setMeetings] = useState<string[]>([]);
+	const [isAddingTranscripts, setIsAddingTranscripts] = useState(false);
 	const twin = contents.data;
 	if (twin === null) return <Navigate to="/twins/mine" replace />;
 
@@ -124,10 +143,11 @@ export function TwinContents() {
 			return keys;
 		});
 	};
-	const handleSaved = async (
+	/** Copy a file in the page's files into the twin, saying how it went. Resolves to whether it is in. */
+	const addToTwin = async (
 		twinId: string,
 		file: ConnectorSavedFile,
-	): Promise<void> => {
+	): Promise<boolean> => {
 		// marked while the copy runs, so the same item is not asked for twice
 		markHeld(file.itemKey, true);
 		setStatus(`Copying "${file.name}" into your Digital Twin…`);
@@ -140,7 +160,7 @@ export function TwinContents() {
 			toast.error(`Could not add "${file.name}" to your Digital Twin.`, {
 				description: cause instanceof Error ? cause.message : undefined,
 			});
-			return;
+			return false;
 		}
 		// again: what the twin holds may have been read while this copy was on its way
 		markHeld(file.itemKey, true);
@@ -155,6 +175,99 @@ export function TwinContents() {
 				{ description: copy.recordError },
 			);
 		}
+		return true;
+	};
+	const handleSaved = async (
+		twinId: string,
+		file: ConnectorSavedFile,
+	): Promise<void> => {
+		if (!(await addToTwin(twinId, file))) return;
+		attachments.offer(file);
+		// the calendar knows a meeting by its event's id
+		const eventId = file.itemKey;
+		if (
+			canReadTranscripts &&
+			file.service === "outlook-calendar" &&
+			eventId
+		)
+			setMeetings((current) =>
+				current.includes(eventId) ? current : [...current, eventId],
+			);
+	};
+	const handleAddTranscripts = async (twinId: string): Promise<void> => {
+		setIsAddingTranscripts(true);
+		setStatus("Reading what was said…");
+		let added = 0;
+		// why a meeting has no transcript, in the server's words
+		const notes: string[] = [];
+		try {
+			for (const eventId of meetings) {
+				const transcript = await readMeetingTranscript(
+					actions,
+					eventId,
+				);
+				if ("message" in transcript) {
+					notes.push(transcript.message);
+				} else {
+					// into the page's files, as a viewer saves, then copied in beside its meeting
+					const [saved] = await uploadRoomFiles(insightId, [
+						meetingTranscriptFile(transcript),
+					]);
+					const isAdded =
+						saved !== undefined &&
+						(await addToTwin(twinId, {
+							path: saved.fileLocation,
+							name: saved.fileName,
+							service: "outlook-calendar",
+						}));
+					if (isAdded) added += 1;
+				}
+				// done with, whichever way it went, so a second try does not add it twice
+				setMeetings((current) =>
+					current.filter((id) => id !== eventId),
+				);
+			}
+			setStatus(
+				[
+					added > 0 &&
+						`Added ${added} ${added === 1 ? "transcript" : "transcripts"} to your Digital Twin.`,
+					...notes,
+				]
+					.filter(Boolean)
+					.join(" "),
+			);
+		} catch (cause) {
+			setStatus("The transcript was not added to your Digital Twin.");
+			toast.error("Could not add the transcript.", {
+				description: cause instanceof Error ? cause.message : undefined,
+			});
+		} finally {
+			setIsAddingTranscripts(false);
+		}
+	};
+	const handleAddAttachments = async (twinId: string): Promise<void> => {
+		setStatus("Looking for attachments…");
+		let found: Awaited<ReturnType<typeof attachments.save>>;
+		try {
+			found = await attachments.save();
+		} catch (cause) {
+			setStatus("The attachments were not added to your Digital Twin.");
+			toast.error("Could not add the attachments.", {
+				description: cause instanceof Error ? cause.message : undefined,
+			});
+			return;
+		}
+		let added = 0;
+		// one after another, as each says how it went
+		for (const file of found.saved)
+			if (await addToTwin(twinId, file)) added += 1;
+		setStatus(
+			attachmentsSummary(
+				added,
+				found.skipped,
+				(what) => `Added ${what} to your Digital Twin.`,
+			),
+		);
 	};
 	const handlePlaceChange = (next: string): void => {
 		// the owner may have uploaded or deleted a copy among the files, so what the twin holds is read again
@@ -352,13 +465,55 @@ export function TwinContents() {
 						{body}
 					</div>
 					{place !== "files" && (
-						// always there, so the first result does not move the list; the toast announces it
-						<P className="wrap-anywhere line-clamp-2 shrink-0 border-t px-4 py-2 text-muted-foreground text-sm">
-							{status ||
-								(isFinding
-									? "Add a suggestion to copy it into your Digital Twin."
-									: "Save an item to copy it into your Digital Twin.")}
-						</P>
+						// always there and tall enough for its button, so neither the first result nor the offer moves the list
+						<div className="flex min-h-12 shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-t px-4 py-2">
+							{/* the toast announces each result */}
+							{/* wide enough to read before a button is let onto its line */}
+							<P className="wrap-anywhere line-clamp-2 min-w-0 flex-1 basis-48 text-muted-foreground text-sm">
+								{status ||
+									(isFinding
+										? "Add a suggestion to copy it into your Digital Twin."
+										: "Save an item to copy it into your Digital Twin.")}
+							</P>
+							{twin && attachments.pending > 0 && (
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									className="pointer-coarse:min-h-11 shrink-0"
+									disabled={attachments.isSaving}
+									onClick={() =>
+										void handleAddAttachments(twin.id)
+									}
+								>
+									{attachments.isSaving && (
+										<Spinner aria-hidden="true" />
+									)}
+									{attachments.pending === 1
+										? "Add the email's attachments"
+										: `Add the attachments of ${attachments.pending} emails`}
+								</Button>
+							)}
+							{twin && meetings.length > 0 && (
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									className="pointer-coarse:min-h-11 shrink-0"
+									disabled={isAddingTranscripts}
+									onClick={() =>
+										void handleAddTranscripts(twin.id)
+									}
+								>
+									{isAddingTranscripts && (
+										<Spinner aria-hidden="true" />
+									)}
+									{meetings.length === 1
+										? "Add the meeting's transcript"
+										: `Add the transcripts of ${meetings.length} meetings`}
+								</Button>
+							)}
+						</div>
 					)}
 				</section>
 			</div>

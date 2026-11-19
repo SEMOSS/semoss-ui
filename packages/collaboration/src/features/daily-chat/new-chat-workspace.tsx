@@ -31,6 +31,8 @@ interface NewChatWorkspaceProps {
 	onSelectAgent: (agentId: string) => Promise<void>;
 	/** Today's ask box, drawn over the hero photo. */
 	isHero?: boolean;
+	/** The page is one agent's own, such as a Digital Twin's, so the agent cannot be changed. */
+	isAgentLocked?: boolean;
 }
 
 /** Compact overview composer with its tools available without leaving the page. */
@@ -44,6 +46,7 @@ export function NewChatWorkspace({
 	onSaveSettings,
 	onSelectAgent,
 	isHero,
+	isAgentLocked,
 }: NewChatWorkspaceProps) {
 	useShowCurrentChat(session);
 	const workbench = useToolWorkbench();
@@ -111,6 +114,7 @@ export function NewChatWorkspace({
 				onSelectAgent={onSelectAgent}
 				isCompact
 				isHero={isHero}
+				isAgentLocked={isAgentLocked}
 				panelActions={[
 					{
 						id: "settings",

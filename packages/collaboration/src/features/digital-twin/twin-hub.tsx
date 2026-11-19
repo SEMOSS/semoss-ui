@@ -1,10 +1,11 @@
 import { Plus } from "lucide-react";
-import { useId } from "react";
+import { useId, useState } from "react";
 import { Link } from "react-router";
 import {
 	Alert,
 	AlertDescription,
 	AlertTitle,
+	Badge,
 	Button,
 	H2,
 	H3,
@@ -15,12 +16,14 @@ import { AgentAvatar } from "@/components/common/agent-avatar";
 import { agentImageUrl } from "@/features/agents/api/agent-image";
 import { CollaborationPage } from "@/features/collaboration/components/collaboration-page";
 import { CollaborationPageHeader } from "@/features/collaboration/components/collaboration-page-header";
+import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import {
 	twinChatPath,
 	twinContentsPath,
 	twinSettingsPath,
 } from "@/lib/workspace-paths";
 import { type DigitalTwin, listTwins } from "./api/digital-twin";
+import { readOpenedTwins } from "./opened-twins";
 import { useTwinRead } from "./use-twin-read";
 
 /**
@@ -30,11 +33,16 @@ export function TwinHub() {
 	const twins = useTwinRead(listTwins);
 	const mineId = useId();
 	const sharedId = useId();
+	const { profile } = useCollaborationSession().state;
+	const [opened] = useState(() =>
+		readOpenedTwins(profile.email || profile.id),
+	);
 
 	// a twin as a card: who it is, then what can be done with it
 	const renderTwin = (
 		twin: DigitalTwin,
 		links: { to: string; label: string }[],
+		isNew = false,
 	) => (
 		<li
 			key={twin.id}
@@ -48,6 +56,7 @@ export function TwinHub() {
 				<H3 className="wrap-anywhere line-clamp-3 min-w-0 font-medium text-base leading-snug">
 					{twin.name}
 				</H3>
+				{isNew && <Badge className="ml-auto shrink-0">New</Badge>}
 			</div>
 			<div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
 				{links.map(({ to, label }) => (
@@ -134,12 +143,17 @@ export function TwinHub() {
 						{twins.data.shared.length > 0 ? (
 							<ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 								{twins.data.shared.map((twin) =>
-									renderTwin(twin, [
-										{
-											to: twinChatPath(twin.id),
-											label: "Chat",
-										},
-									]),
+									renderTwin(
+										twin,
+										[
+											{
+												to: twinChatPath(twin.id),
+												label: "Chat",
+											},
+										],
+										// new until its chat is opened in this browser
+										!opened.has(twin.id),
+									),
 								)}
 							</ul>
 						) : (

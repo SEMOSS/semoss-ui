@@ -1,5 +1,4 @@
 import {
-	act,
 	cleanup,
 	render,
 	screen,
@@ -149,46 +148,6 @@ beforeEach(() => {
 afterEach(() => {
 	cleanup();
 	vi.restoreAllMocks();
-	vi.unstubAllGlobals();
-});
-
-it("pauses the prompt glow offscreen or in a hidden tab and cleans up on unmount", () => {
-	let intersect: (entries: { isIntersecting: boolean }[]) => void = () => {};
-	const observe = vi.fn();
-	const disconnect = vi.fn();
-	vi.stubGlobal(
-		"IntersectionObserver",
-		vi.fn(function observePrompt(callback: typeof intersect) {
-			intersect = callback;
-			return { observe, disconnect };
-		}),
-	);
-	const hidden = vi.spyOn(document, "hidden", "get").mockReturnValue(false);
-	const removeListener = vi.spyOn(document, "removeEventListener");
-	const { container, unmount } = render(<Host />);
-	const finder = container.firstElementChild;
-	expect(observe).toHaveBeenCalledWith(
-		screen.getByRole("textbox", {
-			name: "What should your Digital Twin know?",
-		}),
-	);
-	expect(finder).toHaveAttribute("data-prompt-animating", "false");
-	act(() => intersect([{ isIntersecting: true }]));
-	expect(finder).toHaveAttribute("data-prompt-animating", "true");
-	hidden.mockReturnValue(true);
-	act(() => document.dispatchEvent(new Event("visibilitychange")));
-	expect(finder).toHaveAttribute("data-prompt-animating", "false");
-	hidden.mockReturnValue(false);
-	act(() => document.dispatchEvent(new Event("visibilitychange")));
-	expect(finder).toHaveAttribute("data-prompt-animating", "true");
-	act(() => intersect([{ isIntersecting: false }]));
-	expect(finder).toHaveAttribute("data-prompt-animating", "false");
-	unmount();
-	expect(disconnect).toHaveBeenCalledOnce();
-	expect(removeListener).toHaveBeenCalledWith(
-		"visibilitychange",
-		expect.any(Function),
-	);
 });
 
 it("asks what the twin should know before it searches anything", async () => {

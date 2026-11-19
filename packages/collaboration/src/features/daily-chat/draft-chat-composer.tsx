@@ -28,6 +28,8 @@ interface DraftChatComposerProps {
 	isCompact?: boolean;
 	/** Today's ask box: a compact composer lifted off the hero photo behind it. */
 	isHero?: boolean;
+	/** The page is one agent's own, such as a Digital Twin's, so the agent cannot be changed. */
+	isAgentLocked?: boolean;
 	panelActions: readonly ComposerPanelAction[];
 }
 
@@ -43,6 +45,7 @@ export function DraftChatComposer({
 	onSelectAgent,
 	isCompact = false,
 	isHero = false,
+	isAgentLocked = false,
 	panelActions,
 }: DraftChatComposerProps) {
 	const actionsTriggerId = `new-chat-${draftId}-composer-actions`;
@@ -166,6 +169,7 @@ export function DraftChatComposer({
 						session={session}
 						snapshot={snapshot}
 						onSelectAgent={onSelectAgent}
+						isAgentLocked={isAgentLocked}
 					/>
 				) : (
 					<div className="@md/composer:w-36 w-28 min-w-0 shrink-0">
@@ -174,6 +178,7 @@ export function DraftChatComposer({
 							value={snapshot.settings.agentId}
 							name={snapshot.agent?.name ?? "Assistant"}
 							disabled={
+								isAgentLocked ||
 								!snapshot.isReady ||
 								isBusy ||
 								snapshot.isSavingSettings

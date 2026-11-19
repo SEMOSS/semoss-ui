@@ -2,6 +2,7 @@ import { File } from "lucide-react";
 import {
 	type AppIcon,
 	OneDriveIcon,
+	OutlookCalendarIcon,
 	OutlookIcon,
 	TeamsChatsIcon,
 	TeamsFilesIcon,
@@ -20,6 +21,12 @@ export const TWIN_SOURCES = {
 		icon: OutlookIcon,
 		description:
 			"Your mailbox. Save an email to add its whole conversation to your Digital Twin.",
+	},
+	calendar: {
+		label: "Calendar",
+		icon: OutlookCalendarIcon,
+		description:
+			"Your Outlook calendar. Save a meeting to add when it was, who was invited and what it was about to your Digital Twin.",
 	},
 	"teams-chats": {
 		label: "Teams chats",
@@ -56,6 +63,13 @@ export const TWIN_FINDER = {
 		"Describe what your Digital Twin should know. Your Outlook, Teams chats and OneDrive are searched, and the emails, chats and files that fit are suggested for you to add.",
 } as const;
 
+// The mail viewer knows an email by its thread, or by itself when it has none, and a file attached to one by
+// the email's id and its own. One with no key is taken for an email, as it was before attachments were told apart.
+const isAttachment = (source: TwinSource): boolean =>
+	source.service === "outlook-mail" &&
+	source.itemKey !== undefined &&
+	!/^(conversation|message):/.test(source.itemKey);
+
 /** What a chosen item is and where it came from, for a list of them. */
 export function twinSourceKind(source: TwinSource): {
 	label: string;
@@ -63,7 +77,17 @@ export function twinSourceKind(source: TwinSource): {
 } {
 	switch (source.service) {
 		case "outlook-mail":
-			return { label: "Email from Outlook", icon: OutlookIcon };
+			return {
+				label: isAttachment(source)
+					? "Attachment from Outlook"
+					: "Email from Outlook",
+				icon: OutlookIcon,
+			};
+		case "outlook-calendar":
+			return {
+				label: "Meeting from your calendar",
+				icon: OutlookCalendarIcon,
+			};
 		case "teams-chats":
 			return { label: "Teams chat", icon: TeamsChatsIcon };
 		case "onedrive":
@@ -76,19 +100,24 @@ export function twinSourceKind(source: TwinSource): {
 }
 
 /**
- * How many emails, Teams chats and files a choice holds, in words, such as
- * "2 emails, 1 Teams chat"; empty when nothing is chosen.
+ * How many emails, meetings, Teams chats and files a choice holds, in words,
+ * such as "2 emails, 1 Teams chat"; empty when nothing is chosen.
  */
 export function describeTwinSources(sources: TwinSource[]): string {
+	// a file attached to an email is a file
 	const emails = sources.filter(
-		(source) => source.service === "outlook-mail",
+		(source) => source.service === "outlook-mail" && !isAttachment(source),
+	).length;
+	const meetings = sources.filter(
+		(source) => source.service === "outlook-calendar",
 	).length;
 	const chats = sources.filter(
 		(source) => source.service === "teams-chats",
 	).length;
-	const files = sources.length - emails - chats;
+	const files = sources.length - emails - meetings - chats;
 	return [
 		emails && `${emails} ${emails === 1 ? "email" : "emails"}`,
+		meetings && `${meetings} ${meetings === 1 ? "meeting" : "meetings"}`,
 		chats && `${chats} ${chats === 1 ? "Teams chat" : "Teams chats"}`,
 		files && `${files} ${files === 1 ? "file" : "files"}`,
 	]

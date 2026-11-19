@@ -66,6 +66,8 @@ export { type MailPages, useMailPages } from "./mail/use-mail-pages";
 export {
 	type MicrosoftItemRef,
 	microsoftItemKey,
+	type SavedMailAttachments,
+	saveMailAttachments,
 	saveMicrosoftItem,
 } from "./microsoft/microsoft-item-save";
 export {

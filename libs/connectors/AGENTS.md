@@ -94,6 +94,13 @@ code may import from `core/` and `components/`; those two never import from them
   alike. An email thread that is gone by then is refused, not saved as an empty file. Keep the
   keys in step with the viewers: mail goes through `mailSaveKey`, a chat is its id, a file its
   drive item id. `ConnectorSavedMark` is exported for a host's own list of held items.
+  `saveMailAttachments(insightId, conversationId)` saves what was attached to a thread's emails,
+  for a host that saved the thread and wants its files too. A listed email only says whether it
+  has attachments, so each one that does is opened with `GetMail`; it takes what
+  `MailAttachmentList` shows (`kind === "file"`, not inline), leaves out a file over 25 MB and
+  names it in `skipped`, and gives each saved file the attachment list's own key, the email's id,
+  a colon and the attachment's. It fails as a whole when a read or a download does, and what was
+  saved before stays in the insight's files.
 - **Save preparation belongs to the originating host.** Optional
   `prepareSave?: () => Promise<void | (() => void)>` runs before saving. A returned release
   function runs in `finally`, after save callbacks, including failures and navigation away.

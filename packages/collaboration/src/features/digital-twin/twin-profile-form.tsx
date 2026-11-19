@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	Alert,
@@ -22,22 +22,27 @@ interface TwinProfileFormProps {
 	skills: CatalogSkill[];
 	/** The twin's saved image, shown until another is chosen. */
 	imageUrl: string;
+	/** The owner's note could not be read: the form shows none and leaves the twin's as it is. */
+	isNoteUnread?: boolean;
 	/** Called once everything is saved. */
 	onSaved: () => void;
 }
 
 /**
  * A saved Digital Twin's profile on one page: its image, name, instructions,
- * greeting, skills and toolboxes. Nothing is saved until Save, and a save that
- * fails says which part and keeps what was entered.
+ * greeting, its owner's note, skills and toolboxes. Nothing is saved until
+ * Save, and a save that fails says which part and keeps what was entered.
  */
 export function TwinProfileForm({
 	twin,
 	skills,
 	imageUrl,
+	isNoteUnread = false,
 	onSaved,
 }: TwinProfileFormProps) {
 	const { actions } = useInsight();
+	// the note the twin holds, so only a changed one is written; not known when it could not be read
+	const savedAbout = useRef(isNoteUnread ? undefined : twin.profile.about);
 	const [createdSkills, setCreatedSkills] = useState<CatalogSkill[]>([]);
 	const form = useForm<TwinProfile>({
 		resolver: zodResolver(twinProfileSchema),
@@ -47,7 +52,7 @@ export function TwinProfileForm({
 
 	const handleSubmit = async (values: TwinProfile): Promise<void> => {
 		try {
-			await saveTwin(actions, twin.id, values);
+			await saveTwin(actions, twin.id, values, savedAbout.current);
 		} catch (cause) {
 			form.setError("root.server", {
 				type: "server",
@@ -58,6 +63,7 @@ export function TwinProfileForm({
 			});
 			return;
 		}
+		if (savedAbout.current !== undefined) savedAbout.current = values.about;
 		// what is saved is the form's new starting point; the image is uploaded, so none is waiting
 		form.reset({ ...values, image: null });
 		toast.success("Digital Twin saved");
@@ -78,6 +84,7 @@ export function TwinProfileForm({
 					setCreatedSkills((current) => [...current, skill])
 				}
 				imageUrl={imageUrl}
+				isNoteUnread={isNoteUnread}
 			/>
 			{errors.root?.server?.message && (
 				<Alert variant="destructive">

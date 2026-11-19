@@ -10,6 +10,7 @@ import {
 } from "@semoss/shared";
 import { z } from "@semoss/ui/next";
 import { decodeBase64ToBytes } from "@semoss/utility/encoding";
+import { sanitizeFileNameStem } from "@semoss/utility/file";
 import { tryParseJson } from "@semoss/utility/json";
 import {
 	type ProjectRow,
@@ -32,18 +33,27 @@ const TWIN_SOURCES_FILE = "twin-sources.json";
 const TWIN_SOURCES_PATH = `/${TWIN_SOURCES_FILE}`;
 const twinSourcesSchema = z.record(z.string(), z.string());
 
+// The note an owner writes about themself. It is a copy like any other: the twin reads it with the rest, the
+// people it is shared with can open it, and its owner can also edit it under Files.
+const TWIN_NOTE_FILE = "About me.md";
+const TWIN_NOTE_PATH = `${TWIN_FILES_PATH}/${TWIN_NOTE_FILE}`;
+/** The most an owner's note about themself can hold. */
+export const TWIN_NOTE_MAX_LENGTH = 8000;
+
 /** A Digital Twin as the lists show it. */
 export interface DigitalTwin {
 	id: string;
 	name: string;
 }
 
-/** The six things an owner sets on their twin. */
+/** What an owner sets on their twin. */
 export interface TwinProfile {
 	name: string;
 	instructions: string;
 	/** The twin's opening message; empty for none. */
 	greeting: string;
+	/** The owner's note about themself, which the twin reads with its copies; empty for none. */
+	about: string;
 	/** Ids from the owner's skill catalog. */
 	skills: string[];
 	toolboxes: Pick<MCPConfig, "id" | "name" | "type">[];
@@ -208,7 +218,7 @@ export async function listTwins(
 export async function saveTwinProfile(
 	actions: InsightActions,
 	twinId: string,
-	profile: Omit<TwinProfile, "image">,
+	profile: Omit<TwinProfile, "image" | "about">,
 ): Promise<void> {
 	const agent = await getAgent(actions, twinId);
 	const output = await callPixel(
@@ -240,13 +250,86 @@ export async function saveTwinProfile(
 	}
 }
 
-/** Save an existing twin: its profile, then a newly chosen image. */
+/**
+ * The note the twin's owner wrote about themself; empty when there is none.
+ *
+ * @throws when the twin's files could not be read, so a note that is there is
+ * never taken for none and then saved over.
+ */
+export async function readTwinNote(
+	actions: InsightActions,
+	twinId: string,
+): Promise<string> {
+	const files = twinFiles(twinId);
+	// looked for before it is read: a file that is not there is an answer, a read that fails is not
+	if (!(await listTwinTop(actions, twinId)).some(isFilesFolder)) return "";
+	const held = files.mapEntries(
+		await callPixel(actions, files.browse(TWIN_FILES_PATH), z.unknown()),
+		TWIN_FILES_PATH,
+	);
+	const isHeld = held.some(
+		(item) => item.type !== "directory" && item.name === TWIN_NOTE_FILE,
+	);
+	return isHeld
+		? callPixel(actions, files.read(TWIN_NOTE_PATH), z.string())
+		: "";
+}
+
+/**
+ * Save the owner's note about themself over the one the twin holds, after
+ * what is already on its way into the twin. An empty note takes the file away.
+ */
+export function saveTwinNote(
+	actions: InsightActions,
+	twinId: string,
+	note: string,
+): Promise<void> {
+	return queueForTwin(twinId, async () => {
+		await callPixel(
+			actions,
+			note.trim()
+				? // built here and not by the files adapter, which puts the text between <encode> tags as it
+					// is: a note can say anything, those tags too
+					pixel("SaveAppAssets", {
+						project: twinId,
+						filePath: TWIN_NOTE_PATH,
+						content: note,
+					})
+				: twinFiles(twinId).remove(TWIN_NOTE_PATH),
+			z.unknown(),
+		);
+	});
+}
+
+/**
+ * Save an existing twin: its profile, then its owner's note when that
+ * changed, then a newly chosen image.
+ *
+ * @param savedAbout - The note the twin holds, as it was last read or saved.
+ * Left out when that is not known, and the note is then left as it is.
+ */
 export async function saveTwin(
 	actions: InsightActions,
 	twinId: string,
-	{ image, ...profile }: TwinProfile,
+	{ image, about, ...profile }: TwinProfile,
+	savedAbout?: string,
 ): Promise<void> {
 	await saveTwinProfile(actions, twinId, profile);
+	// an unchanged note is not written again: its owner may have edited the file under Files since
+	if (
+		savedAbout !== undefined &&
+		about !== savedAbout &&
+		(about.trim() || savedAbout.trim())
+	) {
+		try {
+			await saveTwinNote(actions, twinId, about);
+		} catch (cause) {
+			throw new Error(
+				`Your changes were saved, but your note could not be: ${reason(cause)}`,
+				{ cause },
+			);
+		}
+	}
 	if (!image) return;
 	try {
 		await uploadProjectImage(twinId, image);
@@ -346,12 +429,14 @@ export type TwinSetupStep =
 	| "folder"
 	| "greeting"
 	| "image"
+	| "note"
 	| "knowledge";
 
 /**
  * The steps creating this profile takes, in the order they run: the agent,
- * its files folder, then its greeting and its image when it has them, neither
- * of which the create call takes, then the copies of what the owner chose.
+ * its files folder, then its greeting, its image and its owner's note when it
+ * has them, none of which the create call takes, then the copies of what the
+ * owner chose.
  */
 export function twinSetupSteps(
 	profile: TwinProfile,
@@ -362,6 +447,7 @@ export function twinSetupSteps(
 		"folder",
 		...(profile.greeting ? (["greeting"] as const) : []),
 		...(profile.image ? (["image"] as const) : []),
+		...(profile.about.trim() ? (["note"] as const) : []),
 		...(knowledge.length ? (["knowledge"] as const) : []),
 	];
 }
@@ -430,6 +516,10 @@ export async function createTwin(
 					await uploadProjectImage(twinId, profile.image);
 			},
 		},
+		note: {
+			failure: "your note could not be saved",
+			run: () => saveTwinNote(actions, twinId, profile.about),
+		},
 		knowledge: {
 			failure: "not everything you chose could be added",
 			run: () => addTwinKnowledge(actions, twinId, knowledge, onCopied),
@@ -459,6 +549,31 @@ export async function deleteTwin(
 		actions,
 		pixel("DeleteWorkspace", { workspaceId: twinId }),
 		z.unknown(),
+	);
+}
+
+/**
+ * Tell people a twin was shared with them, in an email from the owner's own
+ * Outlook. One person gets a letter to themself; several are hidden from each
+ * other, since who a twin is shared with is its owner's to know.
+ *
+ * @param emails - Who to tell; at least one.
+ * @throws when Outlook did not send it, such as when it is not connected.
+ */
+export async function sendTwinNote(
+	actions: InsightActions,
+	emails: string[],
+	subject: string,
+	body: string,
+): Promise<void> {
+	await callPixel(
+		actions,
+		pixel("MicrosoftOutlookSendMail", {
+			...(emails.length === 1 ? { to: emails } : { bcc: emails }),
+			subject,
+			body,
+		}),
+		z.object({ sent: z.literal(true) }),
 	);
 }
 
@@ -564,6 +679,7 @@ export async function createTwinFolder(
 // one folder per kind, so a later version can move them under per-audience sets
 const SAVED_FOLDERS: Partial<Record<ConnectorSavedFile["service"], string>> = {
 	"outlook-mail": "emails",
+	"outlook-calendar": "meetings",
 	"teams-chats": "teams-chats",
 };
 
@@ -616,6 +732,97 @@ export function copyToTwin(
 			return { path, recordError: reason(cause) };
 		}
 	});
+}
+
+const transcriptPageSchema = z.object({
+	subject: z.string().optional(),
+	transcript: z.string().optional(),
+	hasMore: z.boolean().optional(),
+	nextOffset: z.number().optional(),
+	message: z.string().optional(),
+});
+// a page is about three quarters of an hour of talk, so this is a meeting of a whole day
+const MAX_TRANSCRIPT_PAGES = 12;
+
+/** What was said in a meeting, or why that cannot be read. */
+export type MeetingTranscript =
+	| {
+			/** The meeting's subject; empty when it has none. */
+			subject: string;
+			/** A line for each turn, starting with who spoke. */
+			text: string;
+			/** Whether the meeting ran on past what was read. */
+			isCutShort: boolean;
+	  }
+	| {
+			/** Why there is nothing to read, in the server's words. */
+			message: string;
+	  };
+
+/**
+ * Read what was said in the Teams meeting of an event on the owner's Outlook
+ * calendar, a page at a time until it is all read. Only a server whose
+ * Microsoft sign in asks for the transcript scope can.
+ *
+ * @param eventId - The event, as the calendar names it.
+ */
+// shortcut: never run against Microsoft: the scope it needs has not been granted to any deployment yet, so check it against a real meeting once one has it
+export async function readMeetingTranscript(
+	actions: InsightActions,
+	eventId: string,
+): Promise<MeetingTranscript> {
+	const pages: string[] = [];
+	let subject = "";
+	let offset: number | undefined;
+	for (let page = 0; page < MAX_TRANSCRIPT_PAGES; page += 1) {
+		const answer = await callPixel(
+			actions,
+			pixel("MicrosoftCalendarGetMeetingTranscript", {
+				id: eventId,
+				offset,
+			}),
+			transcriptPageSchema,
+		);
+		subject = answer.subject ?? subject;
+		if (answer.transcript === undefined)
+			// a meeting with a transcript answers no message, so one on a later page is not an answer for all of it
+			return pages.length === 0
+				? {
+						message:
+							answer.message ?? "This meeting has no transcript.",
+					}
+				: { subject, text: pages.join("\n"), isCutShort: true };
+		pages.push(answer.transcript);
+		if (!answer.hasMore || answer.nextOffset === undefined)
+			return {
+				subject,
+				text: pages.join("\n"),
+				// more was promised, without saying where it starts
+				isCutShort: answer.hasMore === true,
+			};
+		offset = answer.nextOffset;
+	}
+	return { subject, text: pages.join("\n"), isCutShort: true };
+}
+
+/**
+ * A meeting's transcript as the Markdown file a twin keeps beside the
+ * meeting: its subject as the title, then a line for each turn.
+ */
+export function meetingTranscriptFile(
+	transcript: Extract<MeetingTranscript, { text: string }>,
+): File {
+	const subject = transcript.subject.trim() || "Meeting";
+	return new File(
+		[
+			`# ${subject}: transcript\n\n${transcript.text}\n`,
+			transcript.isCutShort
+				? "\nThe meeting went on past this point; the rest of its transcript was not read.\n"
+				: "",
+		],
+		`${sanitizeFileNameStem(subject).slice(0, 100) || "Meeting"}-transcript.md`,
+		{ type: "text/markdown" },
+	);
 }
 
 /**

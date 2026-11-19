@@ -1,4 +1,10 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import {
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
@@ -53,7 +59,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 /** The form, in a session whose server can make avatar options when `canGenerate` is set. */
-function renderForm(canGenerate = false) {
+function renderForm(canGenerate = false, isNoteUnread = false) {
 	const onSaved = vi.fn();
 	const session = createInitialCollaborationState();
 	const form = (
@@ -64,6 +70,7 @@ function renderForm(canGenerate = false) {
 					name: "Robin Twin",
 					instructions: "Answer briefly.",
 					greeting: "Hello",
+					about: "I run renewals.",
 					skills: ["skill-1", "skill-gone"],
 					toolboxes: [
 						{ id: "db-1", name: "Sales", type: "DATABASE" },
@@ -78,6 +85,7 @@ function renderForm(canGenerate = false) {
 				},
 			]}
 			imageUrl="/twin.png"
+			isNoteUnread={isNoteUnread}
 			onSaved={onSaved}
 		/>
 	);
@@ -347,4 +355,81 @@ it("holds one image at a time: a picked option takes a chosen file's place, and 
 	await vi.waitFor(() =>
 		expect(upload).toHaveBeenCalledExactlyOnceWith("twin-1", chosen),
 	);
+});
+
+/** Every write of the owner's note the server was asked for, in full. */
+const noteWrites = (): string[] =>
+	insight.actions.run.mock.calls
+		.map(([statement]) => String(statement))
+		.filter((statement) => statement.includes("About me.md"));
+
+it("saves the owner's note only when it changed, and takes the file away when it is emptied", async () => {
+	const { user, onSaved } = renderForm();
+	const about = screen.getByLabelText("About you");
+	expect(about).toHaveValue("I run renewals.");
+	expect(about).toHaveAccessibleDescription(/A note your twin reads/);
+	// something else changed: the note is left as the twin holds it
+	await user.type(screen.getByLabelText("Greeting"), " there");
+	await user.click(screen.getByRole("button", { name: "Save" }));
+	await vi.waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
+	expect(noteWrites()).toEqual([]);
+
+	await user.type(about, " Ask Dana about billing.");
+	await user.click(screen.getByRole("button", { name: "Save" }));
+	await vi.waitFor(() => expect(onSaved).toHaveBeenCalledTimes(2));
+	// saved now, so saving again writes nothing more
+	await user.click(screen.getByRole("button", { name: "Save" }));
+	await vi.waitFor(() => expect(onSaved).toHaveBeenCalledTimes(3));
+	expect(noteWrites()).toEqual([
+		'SaveAppAssets(project=["twin-1"], filePath=["/public/About me.md"], content=["I run renewals. Ask Dana about billing."]);',
+	]);
+
+	await user.clear(about);
+	await user.click(screen.getByRole("button", { name: "Save" }));
+	await vi.waitFor(() => expect(onSaved).toHaveBeenCalledTimes(4));
+	expect(noteWrites().at(-1)).toBe(
+		'DeleteAppAssets(project=["twin-1"], filePath=["/public/About me.md"]);',
+	);
+});
+
+it("keeps the note and says the rest was saved when only the note could not be", async () => {
+	answers.SaveAppAssets = new Error("The disk is full.");
+	const { user, onSaved } = renderForm();
+	await user.type(screen.getByLabelText("About you"), " More.");
+	await user.click(screen.getByRole("button", { name: "Save" }));
+	expect(await screen.findByRole("alert")).toHaveTextContent(
+		"Your changes were saved, but your note could not be: The disk is full.",
+	);
+	expect(screen.getByLabelText("About you")).toHaveValue(
+		"I run renewals. More.",
+	);
+	expect(onSaved).not.toHaveBeenCalled();
+	// the next save tries the note again
+	answers.SaveAppAssets = undefined;
+	await user.click(screen.getByRole("button", { name: "Save" }));
+	await vi.waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
+	expect(noteWrites()).toHaveLength(2);
+});
+
+it("refuses a note longer than a twin can take, before anything is sent", async () => {
+	const { user } = renderForm();
+	fireEvent.change(screen.getByLabelText("About you"), {
+		target: { value: "x".repeat(8001) },
+	});
+	await user.click(screen.getByRole("button", { name: "Save" }));
+	expect(
+		await screen.findByText("Keep the note to 8,000 characters or fewer."),
+	).toBeVisible();
+	expect(insight.actions.run).not.toHaveBeenCalled();
+});
+
+it("locks a note that could not be read, and leaves the one the twin holds as it is", async () => {
+	const { user, onSaved } = renderForm(false, true);
+	const about = screen.getByLabelText("About you");
+	expect(about).toBeDisabled();
+	expect(about).toHaveAccessibleDescription(/could not be read just now/);
+	await user.type(screen.getByLabelText("Greeting"), " there");
+	await user.click(screen.getByRole("button", { name: "Save" }));
+	await vi.waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
+	expect(noteWrites()).toEqual([]);
 });

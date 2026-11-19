@@ -26,18 +26,21 @@ interface TwinProfileFieldsProps {
 	onSkillCreated: (skill: CatalogSkill) => void;
 	/** The saved twin's image, shown until another is chosen. */
 	imageUrl?: string;
+	/** The owner's note could not be read: it is not shown, and cannot be changed until it can. */
+	isNoteUnread?: boolean;
 }
 
 /**
  * A Digital Twin's profile fields, for the form around them: who it is (image
- * and name), how it answers (instructions and greeting), and what it can use
- * (skills and toolboxes).
+ * and name), how it answers (instructions, greeting and its owner's note
+ * about themself), and what it can use (skills and toolboxes).
  */
 export function TwinProfileFields({
 	group,
 	skills,
 	onSkillCreated,
 	imageUrl,
+	isNoteUnread = false,
 }: TwinProfileFieldsProps) {
 	const form = useFormContext<TwinProfile>();
 	const { isSubmitting } = form.formState;
@@ -84,6 +87,20 @@ export function TwinProfileFields({
 								disabled={isSubmitting}
 								rows={3}
 								description="The first thing people see when they start a chat with your twin. Leave it empty for none."
+							/>
+							<FormTextarea
+								name="about"
+								label="About you"
+								disabled={isSubmitting || isNoteUnread}
+								rows={8}
+								placeholder={
+									"What I do:\nWhat I am working on:\nWho to ask instead:\nHow to reach me:"
+								}
+								description={
+									isNoteUnread
+										? "Your note could not be read just now, so it is not shown here and saving leaves it as it is. Reload the page to try again."
+										: "Optional. A note your twin reads with everything else it knows: what you do, what you are working on, who to ask instead and how to reach you. The people you share it with can open it."
+								}
 							/>
 						</>
 					)}

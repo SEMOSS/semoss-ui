@@ -1,14 +1,20 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
+import { CollaborationSessionProvider } from "@/features/collaboration/state/collaboration-session.context";
+import { readOpenedTwins } from "./opened-twins";
 import { TwinChatStart } from "./twin-chat-start";
 
 // one actions object, as the provider gives; a new one per render would read again forever
 const insight = vi.hoisted(() => ({ actions: { run: vi.fn() } }));
 vi.mock("@semoss/sdk/react", () => ({ useInsight: () => insight }));
-// the ask box opens a room of its own; where it shows is what this page decides
+// the ask box opens a room of its own; where it shows is what this page decides, and that its
+// agent stays the twin: an ask box whose agent could be changed is not "The ask box" here
 vi.mock("@/features/daily-chat/landing-chat-composer", () => ({
-	LandingChatComposer: () => <p>The ask box</p>,
+	LandingChatComposer: ({ isAgentLocked }: { isAgentLocked?: boolean }) => (
+		<p>{isAgentLocked ? "The ask box" : "An ask box for any agent"}</p>
+	),
 }));
 
 const answer = (output: unknown) => ({
@@ -22,15 +28,22 @@ const twin = (config_json: unknown) => ({
 });
 
 beforeEach(() => {
+	localStorage.clear();
 	insight.actions.run.mockReset();
 });
 afterEach(cleanup);
 
+const STATE = createInitialCollaborationState();
+/** Who the marks are kept for. */
+const PERSON = STATE.profile.email || STATE.profile.id;
+
 const renderStart = (agentId: string) =>
 	render(
-		<MemoryRouter>
-			<TwinChatStart agentId={agentId} />
-		</MemoryRouter>,
+		<CollaborationSessionProvider initialState={STATE}>
+			<MemoryRouter>
+				<TwinChatStart agentId={agentId} />
+			</MemoryRouter>
+		</CollaborationSessionProvider>,
 	);
 
 it("shows who the twin is, its greeting as written, and the ask box", async () => {
@@ -57,6 +70,11 @@ it("shows who the twin is, its greeting as written, and the ask box", async () =
 	expect(screen.getByText("renewal").tagName).toBe("STRONG");
 	expect(screen.getByText(/an AI, not the person/)).toBeVisible();
 	expect(screen.getByText("The ask box")).toBeVisible();
+	// it tells the person it is a guest in their chat, and is no longer new to them
+	expect(
+		screen.getByText(/cannot see your mail, calendar or files/),
+	).toBeVisible();
+	expect([...readOpenedTwins(PERSON)]).toEqual(["twin-2"]);
 });
 
 it("shows no greeting for a twin whose greeting is off", async () => {
@@ -81,6 +99,8 @@ it("says so instead of offering a chat with a twin the person cannot open", asyn
 		"User unauthorized to perform this operation",
 	);
 	expect(screen.queryByText("The ask box")).toBeNull();
+	// a twin that did not open stays new
+	expect(readOpenedTwins(PERSON).size).toBe(0);
 	expect(screen.getByRole("link", { name: "Digital Twins" })).toHaveAttribute(
 		"href",
 		"/twins",

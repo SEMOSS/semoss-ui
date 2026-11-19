@@ -16,6 +16,8 @@ import type {
 	ConnectorViewerService,
 } from "@semoss/connectors";
 import { toast } from "@semoss/ui/next";
+import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
+import { CollaborationSessionProvider } from "@/features/collaboration/state/collaboration-session.context";
 import { TwinContentsPage } from "@/pages/twin-contents.page";
 
 // one insight: the viewer saves into it and the copy has to run in the same one
@@ -25,6 +27,7 @@ const insight = vi.hoisted(() => ({
 }));
 // saving a found item reads the owner's Microsoft 365, which is the library's own to do
 const saveItem = vi.hoisted(() => vi.fn());
+const saveAttachments = vi.hoisted(() => vi.fn());
 vi.mock("@semoss/sdk/react", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
 	useInsight: () => insight,
@@ -67,10 +70,12 @@ vi.mock("@semoss/connectors", async (importOriginal) => {
 	return {
 		...(await importOriginal<typeof import("@semoss/connectors")>()),
 		MailboxView: viewer("The Outlook mailbox", "outlook-mail"),
+		CalendarAgendaView: viewer("The Outlook calendar", "outlook-calendar"),
 		TeamsChatViewer: viewer("The Teams chat list", "teams-chats"),
 		OneDriveViewer: viewer("The OneDrive explorer", "onedrive"),
 		TeamsFilesViewer: viewer("The Teams files explorer", "teams-files"),
 		saveMicrosoftItem: saveItem,
+		saveMailAttachments: saveAttachments,
 	};
 });
 // the dock talks to SEMOSS; where it is pointed is what this page decides
@@ -81,6 +86,11 @@ vi.mock("@/features/routines/routine-documents-dock", () => ({
 }));
 vi.mock("@/features/connectors/api/microsoft", () => ({
 	connectMicrosoft: vi.fn(),
+}));
+// a transcript is written into the page's files first, as a viewer saves
+const uploadToPage = vi.hoisted(() => vi.fn());
+vi.mock("@/features/rooms/api/upload-room-files", () => ({
+	uploadRoomFiles: uploadToPage,
 }));
 // what each copy holds is described a moment after a change; the page only has to ask, and the waiting has its own test
 const index = vi.hoisted(() => ({
@@ -114,6 +124,13 @@ const holdCopy = (isStillThere = true): void => {
 			]
 		: [];
 };
+// jsdom's File has no text()
+const textOf = (file: File): Promise<string> =>
+	new Promise((resolve) => {
+		const reader = new FileReader();
+		reader.onload = () => resolve(String(reader.result));
+		reader.readAsText(file);
+	});
 const NEW_FOLDER =
 	'NewAppAssetsDirectory(project=["twin-1"], filePath=["/public"]);';
 /** What the server answers each reactor with; an Error is a refusal. */
@@ -121,7 +138,12 @@ let answers: Record<string, unknown>;
 const ran = (): string[] =>
 	insight.actions.run.mock.calls.map(([statement]) => String(statement));
 
-function renderContents(place = "", twinId?: string) {
+/** The page; `canReadTranscripts` puts it in a session whose server can read a meeting's transcript. */
+function renderContents(
+	place = "",
+	twinId?: string,
+	canReadTranscripts = false,
+) {
 	const router = createMemoryRouter(
 		[
 			{ path: "/twins/mine/contents", element: <TwinContentsPage /> },
@@ -133,7 +155,21 @@ function renderContents(place = "", twinId?: string) {
 			],
 		},
 	);
-	render(<RouterProvider router={router} />);
+	const session = createInitialCollaborationState();
+	render(
+		canReadTranscripts ? (
+			<CollaborationSessionProvider
+				initialState={{
+					...session,
+					settings: { ...session.settings, meetingTranscripts: true },
+				}}
+			>
+				<RouterProvider router={router} />
+			</CollaborationSessionProvider>
+		) : (
+			<RouterProvider router={router} />
+		),
+	);
 	return { router, user: userEvent.setup() };
 }
 
@@ -146,6 +182,8 @@ beforeEach(() => {
 		Copy: { targetFilePath: "public/emails/Budget review.md" },
 	};
 	saveItem.mockReset();
+	saveAttachments.mockReset();
+	uploadToPage.mockReset();
 	index.request.mockReset();
 	index.twinId = undefined;
 	insight.actions.run.mockReset();
@@ -194,6 +232,7 @@ it("opens on the twin's own files, kept to the folder a chat reads, and names ev
 		"Files",
 		"Find with AI",
 		"Outlook",
+		"Calendar",
 		"Teams chats",
 		"OneDrive",
 		"Teams files",
@@ -532,4 +571,209 @@ it("says when the twin could not be read, and reads again on request", async () 
 	answers.MyProjects = [{ project_id: "twin-1", project_name: "Robin Twin" }];
 	await user.click(screen.getByRole("button", { name: "Try again" }));
 	expect(await screen.findByText(/The file dock on/)).toBeVisible();
+});
+
+it("offers an added email's attachments, copies them in beside it, and says what was left out", async () => {
+	answers.WorkSuggestTwinKnowledge = {
+		suggestions: [
+			{
+				kind: "email",
+				id: "conv-1",
+				title: "Apollo cutover",
+				from: "Sam Lee",
+				date: "2026-11-03T09:00:00Z",
+				preview: "Confirmed for the 14th",
+				reason: "Sets the cutover date",
+			},
+		],
+		notes: [],
+	};
+	saveItem.mockResolvedValue({
+		path: "Apollo cutover.md",
+		name: "Apollo cutover.md",
+		service: "outlook-mail",
+		itemKey: "conversation:conv-1",
+	});
+	const offer = () =>
+		screen.queryByRole("button", { name: "Add the email's attachments" });
+	const { user } = renderContents("find");
+	await user.type(
+		await screen.findByRole("textbox", {
+			name: "What should your Digital Twin know?",
+		}),
+		"The Apollo cutover",
+	);
+	await user.click(screen.getByRole("button", { name: "Find suggestions" }));
+	expect(offer()).toBeNull();
+	await user.click(
+		await screen.findByRole("button", { name: "Add Apollo cutover" }),
+	);
+	await waitFor(() => expect(offer()).toBeVisible());
+	// nothing is read for them until the owner asks
+	expect(saveAttachments).not.toHaveBeenCalled();
+
+	// the mailbox could not be read: the offer stays, to try again
+	saveAttachments.mockRejectedValueOnce(new Error("Sign in to Microsoft"));
+	await user.click(offer() as HTMLElement);
+	await waitFor(() =>
+		expect(toast.error).toHaveBeenCalledWith(
+			"Could not add the attachments.",
+			{ description: "Sign in to Microsoft" },
+		),
+	);
+	expect(offer()).toBeEnabled();
+
+	saveAttachments.mockResolvedValue({
+		saved: [
+			{
+				path: "Plan.docx",
+				name: "Plan.docx",
+				service: "outlook-mail",
+				itemKey: "m-2:a-1",
+			},
+		],
+		skipped: ["Recording.mp4"],
+	});
+	await user.click(offer() as HTMLElement);
+	expect(
+		await screen.findByText(
+			"Added 1 attachment to your Digital Twin. Left out for being over 25 MB: Recording.mp4.",
+		),
+	).toBeVisible();
+	expect(saveAttachments).toHaveBeenLastCalledWith("insight-1", "conv-1");
+	// beside its email, through the same copy
+	expect(ran().filter((statement) => statement.startsWith("Copy("))).toEqual([
+		expect.stringContaining(
+			'targetFilePath=["public/emails/Apollo cutover.md"]',
+		),
+		'Copy(sourceType=["INSIGHT"], sourceFilePath=["Plan.docx"], target=["twin-1"], targetType=["PROJECT"], targetFilePath=["public/emails/Plan.docx"]);',
+	]);
+	// done with, so it is not offered again
+	expect(offer()).toBeNull();
+});
+
+it("offers no attachments for something that is not an email", async () => {
+	const { user } = renderContents("teams-chats");
+	await user.click(
+		await screen.findByRole("button", { name: "Save to Digital Twin" }),
+	);
+	await waitFor(() =>
+		expect(toast.success).toHaveBeenCalledWith(
+			'Added "Budget review.md" to your Digital Twin.',
+		),
+	);
+	expect(screen.queryByRole("button", { name: /attachments/ })).toBeNull();
+});
+
+it("copies a meeting from the calendar into the twin's meetings, and offers no transcript where the server cannot read one", async () => {
+	answers.Copy = { targetFilePath: "public/meetings/Budget review.md" };
+	const { user } = renderContents("calendar");
+	expect(
+		await screen.findByText("The Outlook calendar, without its own header"),
+	).toBeVisible();
+	await user.click(
+		screen.getByRole("button", { name: "Save to Digital Twin" }),
+	);
+	await waitFor(() =>
+		expect(toast.success).toHaveBeenCalledWith(
+			'Added "Budget review.md" to your Digital Twin.',
+		),
+	);
+	expect(ran().find((statement) => statement.startsWith("Copy("))).toBe(
+		'Copy(sourceType=["INSIGHT"], sourceFilePath=["Budget review.md"], target=["twin-1"], targetType=["PROJECT"], targetFilePath=["public/meetings/Budget review.md"]);',
+	);
+	expect(screen.queryByRole("button", { name: /transcript/ })).toBeNull();
+});
+
+it("adds what was said in an added meeting beside it, where the server can read transcripts", async () => {
+	const offer = () =>
+		screen.queryByRole("button", { name: "Add the meeting's transcript" });
+	const read = (offset?: number) =>
+		`MicrosoftCalendarGetMeetingTranscript(id=["budget-review"]${offset === undefined ? "" : `, offset=[${offset}]`});`;
+	const { user } = renderContents("calendar", undefined, true);
+	await user.click(
+		await screen.findByRole("button", { name: "Save to Digital Twin" }),
+	);
+	await waitFor(() => expect(offer()).toBeVisible());
+	// nothing is read for it until the owner asks
+	expect(ran().some((statement) => statement.includes("Transcript"))).toBe(
+		false,
+	);
+
+	// two pages of talk
+	const pages: Record<string, unknown> = {
+		[read()]: {
+			subject: "Budget review",
+			transcript: "Ann Lee: Shall we start?",
+			hasMore: true,
+			nextOffset: 1,
+		},
+		[read(1)]: {
+			subject: "Budget review",
+			transcript: "Bo Chen: Yes.",
+			hasMore: false,
+		},
+	};
+	const run = insight.actions.run.getMockImplementation();
+	insight.actions.run.mockImplementation(async (statement: string) =>
+		statement in pages
+			? {
+					pixelReturn: [
+						{
+							output: pages[statement],
+							operationType: ["OPERATION"],
+						},
+					],
+				}
+			: run?.(statement),
+	);
+	uploadToPage.mockResolvedValue([
+		{
+			fileLocation: "Budget-review-transcript.md",
+			fileName: "Budget-review-transcript.md",
+		},
+	]);
+	await user.click(offer() as HTMLElement);
+	expect(
+		await screen.findByText("Added 1 transcript to your Digital Twin."),
+	).toBeVisible();
+	expect(ran()).toEqual(expect.arrayContaining([read(), read(1)]));
+	const [insightId, [file]] = uploadToPage.mock.calls[0] as [string, File[]];
+	expect(insightId).toBe("insight-1");
+	expect(file.name).toBe("Budget-review-transcript.md");
+	expect(await textOf(file)).toBe(
+		"# Budget review: transcript\n\nAnn Lee: Shall we start?\nBo Chen: Yes.\n",
+	);
+	expect(
+		ran()
+			.filter((statement) => statement.startsWith("Copy("))
+			.at(-1),
+	).toBe(
+		'Copy(sourceType=["INSIGHT"], sourceFilePath=["Budget-review-transcript.md"], target=["twin-1"], targetType=["PROJECT"], targetFilePath=["public/meetings/Budget-review-transcript.md"]);',
+	);
+	// done with, so it is not offered again
+	expect(offer()).toBeNull();
+});
+
+it("says why a meeting has no transcript, in the server's words, and adds nothing", async () => {
+	answers.MicrosoftCalendarGetMeetingTranscript = {
+		subject: "Budget review",
+		message: "This meeting has no transcript: it was not transcribed.",
+	};
+	const { user } = renderContents("calendar", undefined, true);
+	await user.click(
+		await screen.findByRole("button", { name: "Save to Digital Twin" }),
+	);
+	await user.click(
+		await screen.findByRole("button", {
+			name: "Add the meeting's transcript",
+		}),
+	);
+	expect(
+		await screen.findByText(
+			"This meeting has no transcript: it was not transcribed.",
+		),
+	).toBeVisible();
+	expect(uploadToPage).not.toHaveBeenCalled();
+	expect(screen.queryByRole("button", { name: /transcript/ })).toBeNull();
 });

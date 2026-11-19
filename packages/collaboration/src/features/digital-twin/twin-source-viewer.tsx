@@ -1,4 +1,5 @@
 import {
+	CalendarAgendaView,
 	type ConnectorSavedFile,
 	type ConnectorSavedItems,
 	MailboxView,
@@ -44,13 +45,13 @@ export function TwinSourceViewer({
 		}
 	};
 	// the host names the place above the viewer, so the viewer leaves its own header out
-	const host = {
+	const viewer = {
 		saveTargetName: "Digital Twin",
 		showHeader: false,
-		savedItems,
 		onSaved,
 		onSignIn: handleSignIn,
 	};
+	const host = { ...viewer, savedItems };
 	switch (source) {
 		// the place has a page of its own, so its rows lead with who each is from, under their Microsoft picture
 		// where they have one, and mail takes its filters
@@ -61,6 +62,15 @@ export function TwinSourceViewer({
 					presentation="page"
 					getPersonPhotoUrl={connectorPersonPhotoUrl}
 					{...host}
+				/>
+			);
+		// the calendar has no way to mark what was put in, so a meeting saved twice is copied twice
+		case "calendar":
+			return (
+				<CalendarAgendaView
+					provider="microsoft"
+					presentation="calendar"
+					{...viewer}
 				/>
 			);
 		case "teams-chats":

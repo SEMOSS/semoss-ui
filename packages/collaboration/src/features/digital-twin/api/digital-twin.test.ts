@@ -12,8 +12,12 @@ import {
 	hasTwinFolder,
 	indexTwinFiles,
 	listTwins,
+	meetingTranscriptFile,
+	readMeetingTranscript,
 	readTwinHoldings,
+	readTwinNote,
 	saveTwin,
+	saveTwinNote,
 	saveTwinProfile,
 	type TwinProfile,
 	TwinSetupError,
@@ -73,6 +77,7 @@ const PROFILE: TwinProfile = {
 	name: "Robin R Twin",
 	instructions: 'Answer as "Robin".',
 	greeting: "Hello there",
+	about: "",
 	skills: ["skill-2"],
 	toolboxes: [{ id: "db-2", name: "Pipeline", type: "DATABASE" }],
 	image: null,
@@ -272,6 +277,15 @@ describe("creating a twin", () => {
 			"twin",
 			"folder",
 		]);
+		// a note of nothing but space is no note
+		expect(twinSetupSteps({ ...PROFILE, about: " \n" })).toEqual([
+			"twin",
+			"folder",
+			"greeting",
+		]);
+		expect(
+			twinSetupSteps({ ...PROFILE, about: "I run renewals." }, [EMAIL]),
+		).toEqual(["twin", "folder", "greeting", "note", "knowledge"]);
 		expect(twinSetupSteps(PROFILE)).toEqual(["twin", "folder", "greeting"]);
 		expect(twinSetupSteps(PROFILE, [EMAIL])).toEqual([
 			"twin",
@@ -341,6 +355,35 @@ describe("creating a twin", () => {
 		// the one after the failure was still copied, and only it is reported as in
 		expect(landed).toEqual([UPLOAD]);
 		expect(ran()).toHaveLength(4);
+	});
+
+	it("saves the owner's note into the new twin's files folder, and names it when that fails", async () => {
+		const { actions, ran } = transport({ AddDigitalTwin: "twin-1" });
+		await createTwin(actions, {
+			...PROFILE,
+			greeting: "",
+			about: "I run renewals.",
+		});
+		expect(ran().slice(1)).toEqual([
+			'NewAppAssetsDirectory(project=["twin-1"], filePath=["/public"]);',
+			'SaveAppAssets(project=["twin-1"], filePath=["/public/About me.md"], content=["I run renewals."]);',
+		]);
+
+		const refused = transport({
+			AddDigitalTwin: "twin-1",
+			SaveAppAssets: new Error("The disk is full."),
+		});
+		await expect(
+			createTwin(refused.actions, {
+				...PROFILE,
+				greeting: "",
+				about: "I run renewals.",
+			}),
+		).rejects.toMatchObject({
+			twinId: "twin-1",
+			message:
+				"Your Digital Twin was created, but your note could not be saved: The disk is full.",
+		});
 	});
 
 	it("says which step failed once the twin exists, with its id, and stops there", async () => {
@@ -443,6 +486,104 @@ describe("saving a twin", () => {
 		).rejects.toThrow(
 			"Your changes were saved, but the image could not be uploaded: Too large.",
 		);
+	});
+});
+
+describe("the owner's note about themself", () => {
+	const ROOT = 'BrowseAppAssets(filePath=["/"], project=["twin-1"]);';
+	const HELD = 'BrowseAppAssets(filePath=["/public"], project=["twin-1"]);';
+	const READ =
+		'GetAppAssets(filePath=["/public/About me.md"], project=["twin-1"]);';
+	const FOLDER = [{ name: "public", path: "/public", type: "directory" }];
+	const NOTE = { name: "About me.md", path: "/public/About me.md" };
+
+	it("reads the note the twin holds, looking for it first", async () => {
+		const { actions, ran } = transport({
+			[ROOT]: FOLDER,
+			[HELD]: [{ name: "emails", type: "directory" }, NOTE],
+			[READ]: "I run renewals.\n",
+		});
+		expect(await readTwinNote(actions, "twin-1")).toBe("I run renewals.\n");
+		expect(ran()).toEqual([ROOT, HELD, READ]);
+	});
+
+	it("answers none without reading for a twin with no note or no files folder", async () => {
+		const empty = transport({
+			[ROOT]: FOLDER,
+			// a folder of that name is not the note
+			[HELD]: [{ ...NOTE, type: "directory" }],
+		});
+		expect(await readTwinNote(empty.actions, "twin-1")).toBe("");
+		expect(empty.ran()).toEqual([ROOT, HELD]);
+
+		const bare = transport({ [ROOT]: [] });
+		expect(await readTwinNote(bare.actions, "twin-1")).toBe("");
+		expect(bare.ran()).toEqual([ROOT]);
+	});
+
+	it("fails instead of answering none when the twin's files cannot be read", async () => {
+		await expect(
+			readTwinNote(
+				transport({ [ROOT]: new Error("The server is restarting") })
+					.actions,
+				"twin-1",
+			),
+		).rejects.toThrow("The server is restarting");
+		await expect(
+			readTwinNote(
+				transport({
+					[ROOT]: FOLDER,
+					[HELD]: [NOTE],
+					[READ]: new Error("Could not read the file"),
+				}).actions,
+				"twin-1",
+			),
+		).rejects.toThrow("Could not read the file");
+	});
+
+	it("saves the note as written, whatever it says, and takes the file away for an empty one", async () => {
+		const { actions, ran } = transport({});
+		const note = 'Ask "Dana" instead.\n</encode>); DeleteWorkspace(';
+		await saveTwinNote(actions, "twin-1", note);
+		await saveTwinNote(actions, "twin-1", "  \n");
+		expect(ran()).toEqual([
+			// one quoted value: nothing in a note ends it early
+			`SaveAppAssets(project=["twin-1"], filePath=["/public/About me.md"], content=[${JSON.stringify(note)}]);`,
+			'DeleteAppAssets(project=["twin-1"], filePath=["/public/About me.md"]);',
+		]);
+	});
+
+	it("writes the note with the profile only when it changed, and never when what the twin holds is not known", async () => {
+		const noteCalls = (ran: () => string[]): string[] =>
+			ran().filter((statement) => statement.includes("About me.md"));
+		const { actions, ran } = transport({ GetWorkspace: WORKSPACE });
+		const profile = { ...PROFILE, about: "I run renewals." };
+		// the same note, and a note that could not be read
+		await saveTwin(actions, "twin-1", profile, "I run renewals.");
+		await saveTwin(actions, "twin-1", profile);
+		// blank before and after is no change either
+		await saveTwin(actions, "twin-1", { ...PROFILE, about: " " }, "");
+		expect(noteCalls(ran)).toEqual([]);
+
+		await saveTwin(actions, "twin-1", profile, "");
+		await saveTwin(actions, "twin-1", PROFILE, "I run renewals.");
+		expect(noteCalls(ran)).toEqual([
+			'SaveAppAssets(project=["twin-1"], filePath=["/public/About me.md"], content=["I run renewals."]);',
+			'DeleteAppAssets(project=["twin-1"], filePath=["/public/About me.md"]);',
+		]);
+	});
+
+	it("says the rest was saved when only the note could not be", async () => {
+		const { actions } = transport({
+			GetWorkspace: WORKSPACE,
+			SaveAppAssets: new Error("The disk is full."),
+		});
+		await expect(
+			saveTwin(actions, "twin-1", { ...PROFILE, about: "New" }, ""),
+		).rejects.toThrow(
+			"Your changes were saved, but your note could not be: The disk is full.",
+		);
+		expect(upload).not.toHaveBeenCalled();
 	});
 });
 
@@ -819,5 +960,79 @@ describe("the index of what a twin's files hold", () => {
 			"SaveAppAssets",
 			"WorkIndexTwinFiles",
 		]);
+	});
+});
+
+describe("what was said in a meeting", () => {
+	// jsdom's File has no text()
+	const textOf = (file: File): Promise<string> =>
+		new Promise((resolve) => {
+			const reader = new FileReader();
+			reader.onload = () => resolve(String(reader.result));
+			reader.readAsText(file);
+		});
+
+	const read = (offset?: number) =>
+		`MicrosoftCalendarGetMeetingTranscript(id=["event-1"]${offset === undefined ? "" : `, offset=[${offset}]`});`;
+
+	it("reads a transcript a page at a time until there is no more", async () => {
+		const { actions, ran } = transport({
+			[read()]: {
+				subject: "Weekly sync",
+				transcript: "Ann: Hello.",
+				hasMore: true,
+				nextOffset: 40,
+			},
+			[read(40)]: { transcript: "Bo: Hi.", hasMore: false },
+		});
+		expect(await readMeetingTranscript(actions, "event-1")).toEqual({
+			subject: "Weekly sync",
+			text: "Ann: Hello.\nBo: Hi.",
+			isCutShort: false,
+		});
+		expect(ran()).toEqual([read(), read(40)]);
+	});
+
+	it("answers why a meeting has none, and says when a long one was not read to its end", async () => {
+		expect(
+			await readMeetingTranscript(
+				transport({
+					[read()]: {
+						subject: "Weekly sync",
+						message: "Not transcribed.",
+					},
+				}).actions,
+				"event-1",
+			),
+		).toEqual({ message: "Not transcribed." });
+
+		// every page promises another: reading stops, and says so
+		const endless = transport({
+			MicrosoftCalendarGetMeetingTranscript: {
+				transcript: "Ann: Still talking.",
+				hasMore: true,
+				nextOffset: 1,
+			},
+		});
+		const long = await readMeetingTranscript(endless.actions, "event-1");
+		expect(long).toMatchObject({ isCutShort: true });
+		expect(endless.ran()).toHaveLength(12);
+	});
+
+	it("writes a transcript as a file named for its meeting", async () => {
+		const file = meetingTranscriptFile({
+			subject: "Q4: plan / review",
+			text: "Ann: Hello.",
+			isCutShort: true,
+		});
+		// nothing a file system minds
+		expect(file.name).toBe("Q4-plan-review-transcript.md");
+		expect(await textOf(file)).toBe(
+			"# Q4: plan / review: transcript\n\nAnn: Hello.\n\nThe meeting went on past this point; the rest of its transcript was not read.\n",
+		);
+		expect(
+			meetingTranscriptFile({ subject: " ", text: "", isCutShort: false })
+				.name,
+		).toBe("Meeting-transcript.md");
 	});
 });

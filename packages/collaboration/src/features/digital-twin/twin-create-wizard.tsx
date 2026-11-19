@@ -7,6 +7,7 @@ import {
 	Library,
 	type LucideIcon,
 	MessageSquareText,
+	NotebookPen,
 	Sparkles,
 	UserRound,
 } from "lucide-react";
@@ -66,8 +67,8 @@ const STEPS = [
 		label: "Voice",
 		title: "How should it answer?",
 		description:
-			"Say how it should sound and how it greets people. You can change both later.",
-		fields: ["instructions", "greeting"],
+			"Say how it should sound and how it greets people, and tell it about yourself. You can change all of it later.",
+		fields: ["instructions", "greeting", "about"],
 	},
 	{
 		id: "abilities",
@@ -106,6 +107,7 @@ const SETUP: Record<
 	folder: { label: "Make room for what it knows", icon: FolderOpen },
 	greeting: { label: "Save its greeting", icon: MessageSquareText },
 	image: { label: "Upload its image", icon: ImageIcon },
+	note: { label: "Save your note", icon: NotebookPen },
 	knowledge: { label: "Add what you chose", icon: Library },
 	finish: { label: "Finish setting it up", icon: Sparkles },
 };
@@ -211,7 +213,8 @@ export function TwinCreateWizard({
 					done: 0,
 				});
 				await Promise.all([
-					saveTwin(actions, madeId, profile),
+					// shortcut: the first try may have saved a note the owner has emptied since, and that one stays; the twin's Profile shows it, to clear there
+					saveTwin(actions, madeId, profile, ""),
 					sleep(pause),
 				]);
 				if (pending.length) {
@@ -301,6 +304,15 @@ export function TwinCreateWizard({
 				<span className="line-clamp-3 whitespace-pre-line">
 					{values.greeting.trim() ||
 						"None. People start the chat themselves."}
+				</span>
+			),
+		},
+		{
+			term: "About you",
+			step: 1,
+			value: (
+				<span className="line-clamp-3 whitespace-pre-line">
+					{values.about.trim() || "None."}
 				</span>
 			),
 		},

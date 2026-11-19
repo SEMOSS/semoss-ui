@@ -266,6 +266,11 @@ function setup(
 		[
 			{ path: "/", Component: LandingChatComposer },
 			{ path: "/topics/:topicId", Component: TopicComposer },
+			// a page that is one agent's own, as a Digital Twin's chat page is
+			{
+				path: "/twins/chat",
+				element: <LandingChatComposer isAgentLocked />,
+			},
 			{ path: "/work", element: <div>Work</div> },
 			{ path: "/thread/:threadId", Component: RoomDestination },
 		],
@@ -1076,4 +1081,13 @@ it("links a topic assistant's chat for a topic made on this page by its server i
 		"actual-room",
 		"server-topic",
 	);
+});
+
+it("does not let the agent be changed on a page that is one agent's own", () => {
+	// the same ready draft whose agent the overview's ask box lets a person choose
+	setup(undefined, "", "/twins/chat");
+	fireEvent.click(
+		screen.getByRole("button", { name: "Assistant options: Assistant" }),
+	);
+	expect(screen.getByRole("button", { name: "Choose agent" })).toBeDisabled();
 });

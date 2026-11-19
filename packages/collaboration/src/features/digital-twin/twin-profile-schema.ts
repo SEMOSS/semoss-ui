@@ -2,7 +2,7 @@ import { getCatalogImageValidationError } from "@semoss/sdk";
 import { AGENT_MAX_GREETING_LENGTH } from "@semoss/shared";
 import { z } from "@semoss/ui/next";
 import { mcpConfigSchema } from "@/features/agents/api/agent-schemas";
-import type { TwinProfile } from "./api/digital-twin";
+import { TWIN_NOTE_MAX_LENGTH, type TwinProfile } from "./api/digital-twin";
 
 // How a new twin is asked to sound, with NAME standing for its owner. Who it is, what it answers from and
 // naming its sources are not here: the server adds those rules to every twin, whatever its instructions say.
@@ -28,6 +28,13 @@ export const twinProfileSchema = z.object({
 			AGENT_MAX_GREETING_LENGTH,
 			`Keep the greeting to ${AGENT_MAX_GREETING_LENGTH.toLocaleString("en-US")} characters or fewer.`,
 		),
+	// kept as written, blank lines and all: it is saved as a file its owner can also edit
+	about: z
+		.string()
+		.max(
+			TWIN_NOTE_MAX_LENGTH,
+			`Keep the note to ${TWIN_NOTE_MAX_LENGTH.toLocaleString("en-US")} characters or fewer.`,
+		),
 	skills: z.array(z.string()),
 	toolboxes: z.array(mcpConfigSchema),
 	image: z
@@ -50,6 +57,7 @@ export function newTwinProfile(ownerName: string): TwinProfile {
 		name: "",
 		instructions: DEFAULT_INSTRUCTIONS.replaceAll("NAME", ownerName),
 		greeting: "",
+		about: "",
 		skills: [],
 		toolboxes: [],
 		image: null,

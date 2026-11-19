@@ -156,25 +156,6 @@ export function TwinKnowledgeFinder({
 		() => new Set(),
 	);
 	const [isAddingAll, setIsAddingAll] = useState(false);
-	const [isPromptAnimating, setIsPromptAnimating] = useState(false);
-	const finderRef = useRef<HTMLDivElement>(null);
-	useEffect(() => {
-		const prompt = finderRef.current?.querySelector("textarea");
-		if (!prompt || typeof IntersectionObserver === "undefined") return;
-		let isInView = false;
-		const handleVisibility = () =>
-			setIsPromptAnimating(isInView && !document.hidden);
-		const observer = new IntersectionObserver((entries) => {
-			isInView = entries.some((entry) => entry.isIntersecting);
-			handleVisibility();
-		});
-		observer.observe(prompt);
-		document.addEventListener("visibilitychange", handleVisibility);
-		return () => {
-			observer.disconnect();
-			document.removeEventListener("visibilitychange", handleVisibility);
-		};
-	}, []);
 	// read at once, so a second press before the row redraws does not add an item twice
 	const runningKeysRef = useRef(new Set<string>());
 	const resultsRef = useRef<HTMLDivElement>(null);
@@ -389,11 +370,7 @@ export function TwinKnowledgeFinder({
 
 	return (
 		// the question scrolls away with what it found, so a short panel, as the create steps have, can give all of itself to the list
-		<div
-			ref={finderRef}
-			data-prompt-animating={isPromptAnimating}
-			className="h-full overflow-y-auto"
-		>
+		<div className="h-full overflow-y-auto">
 			<Form
 				form={form}
 				onSubmit={handleSubmit}
@@ -403,7 +380,6 @@ export function TwinKnowledgeFinder({
 			>
 				<FormTextarea
 					name="prompt"
-					className="twin-knowledge-prompt"
 					label="What should your Digital Twin know?"
 					description="Nothing is added until you add it."
 					placeholder="Such as: the Apollo migration, its timeline, the vendor contract and the open risks"
