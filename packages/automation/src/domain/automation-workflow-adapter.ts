@@ -564,11 +564,13 @@ function defaultCanvasConfig(
 		};
 	}
 	if (type === "export.template_pptx") {
+		const outputFileName = stringValue(config.outputFileName);
 		return {
 			templateFile: stringValue(config.templateFile),
 			replacements: Array.isArray(config.replacements)
 				? (config.replacements as unknown as TemplatePptxReplacement[])
 				: [],
+			...(outputFileName ? { outputFileName } : {}),
 		};
 	}
 	return {
@@ -872,6 +874,11 @@ function mergeCanvasConfig(
 		next.templateFile = pptxConfig.templateFile;
 		next.replacements =
 			pptxConfig.replacements as unknown as AutomationWorkflowNodeConfig["replacements"];
+		if (pptxConfig.outputFileName) {
+			next.outputFileName = pptxConfig.outputFileName;
+		} else {
+			delete next.outputFileName;
+		}
 	}
 	return next;
 }

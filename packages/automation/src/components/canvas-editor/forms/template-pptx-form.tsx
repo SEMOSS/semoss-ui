@@ -82,7 +82,8 @@ function buildPixelPreview(config: TemplatePptxConfig): string {
 		payload[r.shapeName] = serializeReplacement(r);
 	}
 	const payloadJson = JSON.stringify(payload, null, 2);
-	return `TemplatePPTX(template_file=["${config.templateFile}"], payload=["<encode>${payloadJson}</encode>"], fileName=["output.pptx"]);`;
+	const fileName = config.outputFileName?.trim() || "output";
+	return `TemplatePPTX(template_file=["${config.templateFile}"], payload=["<encode>${payloadJson}</encode>"], fileName=["${fileName}"]);`;
 }
 
 // ---------------------------------------------------------------------------
@@ -92,27 +93,47 @@ function buildPixelPreview(config: TemplatePptxConfig): string {
 let nextSeriesKey = 0;
 
 interface ChartEditorProps {
-	categories: string[];
+	categories: string[] | string;
 	series: PptxChartSeries[];
 	readOnly: boolean;
-	onCategoriesChange: (cats: string[]) => void;
+	upstreamVars: string[];
+	onCategoriesChange: (cats: string[] | string) => void;
 	onSeriesChange: (series: PptxChartSeries[]) => void;
+}
+
+/** Returns true when the value is an exact variable reference like ${foo.bar}. */
+function isVarRef(value: string): boolean {
+	return /^\$\{[^}]+\}$/.test(value.trim());
+}
+
+/** Serializes categories for display in the plain comma input (non-ref path). */
+function categoriesToString(cats: string[] | string): string {
+	if (typeof cats === "string") return cats;
+	return cats.join(", ");
+}
+
+/** Serializes series values for display in the plain comma input (non-ref path). */
+function valuesToString(values: number[] | string): string {
+	if (typeof values === "string") return values;
+	return values.join(", ");
 }
 
 function ChartEditor({
 	categories,
 	series,
 	readOnly,
+	upstreamVars,
 	onCategoriesChange,
 	onSeriesChange,
 }: ChartEditorProps) {
-	// Series have no id and their names are editable and non-unique, so keep a
-	// parallel list of stable keys that follows adds and removals.
 	const seriesKeysRef = useRef<string[]>([]);
 	while (seriesKeysRef.current.length < series.length) {
 		seriesKeysRef.current.push(`series-${nextSeriesKey++}`);
 	}
 	seriesKeysRef.current.length = series.length;
+
+	const categoriesIsRef =
+		typeof categories === "string" && isVarRef(categories);
 
 	const addSeries = () => {
 		onSeriesChange([...series, { name: "", values: [] }]);
@@ -130,34 +151,45 @@ function ChartEditor({
 	};
 
 	const updateSeriesValues = (idx: number, raw: string) => {
-		const values = raw
-			.split(",")
-			.map((v) => Number(v.trim()))
-			.filter((v) => !Number.isNaN(v));
+		// Keep as a variable reference string; otherwise parse as numbers.
+		const next: number[] | string = isVarRef(raw)
+			? raw
+			: raw
+					.split(",")
+					.map((v) => Number(v.trim()))
+					.filter((v) => !Number.isNaN(v));
 		onSeriesChange(
-			series.map((s, i) => (i === idx ? { ...s, values } : s)),
+			series.map((s, i) => (i === idx ? { ...s, values: next } : s)),
 		);
+	};
+
+	const handleCategoriesChange = (raw: string) => {
+		// Keep as a variable reference string; otherwise split into an array.
+		const next: string[] | string = isVarRef(raw)
+			? raw
+			: raw
+					.split(",")
+					.map((v) => v.trim())
+					.filter(Boolean);
+		onCategoriesChange(next);
 	};
 
 	return (
 		<div className="flex flex-col gap-2">
 			<div className="flex flex-col gap-1">
 				<span className="text-[11px] text-muted-foreground">
-					Categories (comma-separated)
+					Categories{" "}
+					{!categoriesIsRef && (
+						<span className="opacity-60">(comma-separated)</span>
+					)}
 				</span>
-				<Input
-					className="h-7 text-xs"
-					value={categories.join(", ")}
-					placeholder="Q1, Q2, Q3, Q4"
-					disabled={readOnly}
-					onChange={(e) =>
-						onCategoriesChange(
-							e.target.value
-								.split(",")
-								.map((v) => v.trim())
-								.filter(Boolean),
-						)
-					}
+				<BoundInput
+					label=""
+					value={categoriesToString(categories)}
+					placeholder="Q1, Q2, Q3, Q4 or ${variable}"
+					onChange={handleCategoriesChange}
+					upstreamVars={upstreamVars}
+					readOnly={readOnly}
 				/>
 			</div>
 
@@ -168,35 +200,36 @@ function ChartEditor({
 				{series.map((s, idx) => (
 					<div
 						key={seriesKeysRef.current[idx]}
-						className="flex items-center gap-1.5"
+						className="flex flex-col gap-1 rounded border bg-background p-2"
 					>
-						<Input
-							className="h-7 w-28 shrink-0 text-xs"
-							value={s.name}
-							placeholder="Series name"
-							disabled={readOnly}
-							onChange={(e) =>
-								updateSeriesName(idx, e.target.value)
-							}
+						<div className="flex items-center gap-1.5">
+							<Input
+								className="h-7 flex-1 text-xs"
+								value={s.name}
+								placeholder="Series name"
+								disabled={readOnly}
+								onChange={(e) =>
+									updateSeriesName(idx, e.target.value)
+								}
+							/>
+							{!readOnly && (
+								<button
+									type="button"
+									className="text-muted-foreground transition-colors hover:text-destructive"
+									onClick={() => removeSeries(idx)}
+								>
+									<Trash2 className="h-3.5 w-3.5" />
+								</button>
+							)}
+						</div>
+						<BoundInput
+							label=""
+							value={valuesToString(s.values)}
+							placeholder="5.1, 5.8, 6.9, 7.7 or ${variable}"
+							onChange={(raw) => updateSeriesValues(idx, raw)}
+							upstreamVars={upstreamVars}
+							readOnly={readOnly}
 						/>
-						<Input
-							className="h-7 min-w-0 flex-1 text-xs"
-							value={s.values.join(", ")}
-							placeholder="5.1, 5.8, 6.9, 7.7"
-							disabled={readOnly}
-							onChange={(e) =>
-								updateSeriesValues(idx, e.target.value)
-							}
-						/>
-						{!readOnly && (
-							<button
-								type="button"
-								className="text-muted-foreground transition-colors hover:text-destructive"
-								onClick={() => removeSeries(idx)}
-							>
-								<Trash2 className="h-3.5 w-3.5" />
-							</button>
-						)}
 					</div>
 				))}
 				{!readOnly && (
@@ -275,7 +308,10 @@ export function TemplatePptxForm({
 		onChange({ ...config, replacements: next });
 	};
 
-	const updateChartCategories = (index: number, categories: string[]) => {
+	const updateChartCategories = (
+		index: number,
+		categories: string[] | string,
+	) => {
 		if (readOnly) return;
 		const next = config.replacements.map((r, i) =>
 			i === index && r.type === "chart" ? { ...r, categories } : r,
@@ -310,6 +346,18 @@ export function TemplatePptxForm({
 				placeholder="path/to/template.pptx"
 				description="Path to the .pptx file in the insight folder."
 				onChange={(v) => onChange({ ...config, templateFile: v })}
+				upstreamVars={upstreamVars}
+				readOnly={readOnly}
+			/>
+
+			<BoundInput
+				label="Output File Name"
+				value={config.outputFileName ?? ""}
+				placeholder="output"
+				description="Name for the generated file, without extension. .pptx and a timestamp are added automatically."
+				onChange={(v) =>
+					onChange({ ...config, outputFileName: v || undefined })
+				}
 				upstreamVars={upstreamVars}
 				readOnly={readOnly}
 			/>
@@ -396,6 +444,7 @@ export function TemplatePptxForm({
 											categories={r.categories}
 											series={r.series}
 											readOnly={readOnly}
+											upstreamVars={upstreamVars}
 											onCategoriesChange={(cats) =>
 												updateChartCategories(i, cats)
 											}

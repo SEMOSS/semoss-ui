@@ -270,7 +270,8 @@ export interface AutomationNodeCatalog {
 
 export interface PptxChartSeries {
 	name: string;
-	values: number[];
+	/** Numeric values or an exact variable reference resolved at runtime. */
+	values: number[] | string;
 }
 
 export type TemplatePptxReplacement =
@@ -279,11 +280,14 @@ export type TemplatePptxReplacement =
 	| {
 			shapeName: string;
 			type: "chart";
-			categories: string[];
+			/** Category labels or an exact variable reference resolved at runtime. */
+			categories: string[] | string;
 			series: PptxChartSeries[];
 	  };
 
 export interface TemplatePptxConfig {
 	templateFile: string;
 	replacements: TemplatePptxReplacement[];
+	/** Optional output path; defaults to "output.pptx" if omitted. */
+	outputFileName?: string;
 }
