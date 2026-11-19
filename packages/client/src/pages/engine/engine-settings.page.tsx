@@ -15,6 +15,7 @@ import { BulkAccessManagement } from "@/features/bulk-access-management/bulk-acc
 import { BulkAccessManagementCard } from "@/features/bulk-access-management/bulk-access-management-card";
 import { EffectivePermissions } from "@/features/effective-permissions/effective-permissions";
 import { EngineAppsTable } from "@/features/engine-app-permissions/engine-apps-table";
+import { EngineEnginesTable } from "@/features/engine-engine-permissions/engine-engines-table";
 import { ModelUsageLimitsCard } from "@/features/model-usage-limits/model-usage-limits-card";
 import { useEngine } from "@/hooks/useEngine";
 
@@ -154,9 +155,14 @@ export const EngineSettingsPage = ({
 								/>
 							</div>
 							{canEditAccess ? (
-								<div className="mt-6">
+								<div className="mt-6 flex flex-col gap-6">
 									<EngineAppsTable
 										key={engine.engine_id}
+										id={engine.engine_id}
+										type={type}
+									/>
+									<EngineEnginesTable
+										key={`engines-${engine.engine_id}`}
 										id={engine.engine_id}
 										type={type}
 									/>
