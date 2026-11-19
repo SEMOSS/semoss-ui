@@ -2,6 +2,7 @@
 
 import { describe, expect, test, vi } from "vitest";
 import {
+	chmodSync,
 	existsSync,
 	mkdirSync,
 	mkdtempSync,
@@ -17,7 +18,12 @@ import {
 	openFolderGrants,
 	parseGrantsFile,
 } from "./folder-grants";
-import { createLocalFs, resolveInsideFolder } from "./local-fs";
+import {
+	createLocalFs,
+	isHiddenName,
+	isRunnable,
+	resolveInsideFolder,
+} from "./local-fs";
 
 /** A fresh folder to attach, beside one it must not reach. */
 const setup = () => {
@@ -32,8 +38,9 @@ const setup = () => {
 	const trash = vi.fn(async () => undefined);
 	const openPath = vi.fn(async () => "");
 	const reveal = vi.fn();
-	const fs = createLocalFs({ trash, openPath, reveal });
-	return { base, root, outside, fs, trash, openPath, reveal };
+	const confirmRun = vi.fn(async () => false);
+	const fs = createLocalFs({ trash, openPath, reveal, confirmRun });
+	return { base, root, outside, fs, trash, openPath, reveal, confirmRun };
 };
 
 describe("resolveInsideFolder", () => {
@@ -82,6 +89,38 @@ describe("resolveInsideFolder", () => {
 		const { root } = setup();
 
 		await expect(resolveInsideFolder(root, "/.git/config")).rejects.toThrow(
+			"not available",
+		);
+	});
+});
+
+describe("hidden entries", () => {
+	test("hide .git however its name is written", () => {
+		for (const name of [
+			".git",
+			".GIT",
+			".Git",
+			".git.",
+			".git ",
+			".git. .",
+		]) {
+			expect(isHiddenName(name)).toBe(true);
+		}
+		for (const name of ["git", ".github", ".gitignore", "a.git"]) {
+			expect(isHiddenName(name)).toBe(false);
+		}
+	});
+
+	test("refuse .git by another case, and a link that leads into it", async () => {
+		const { root } = setup();
+		await expect(
+			resolveInsideFolder(root, ".GIT/hooks/pre-commit"),
+		).rejects.toThrow("not available");
+		symlinkSync(join(root, ".git"), join(root, "innocent"));
+		await expect(
+			resolveInsideFolder(root, "innocent/config"),
+		).rejects.toThrow("not available");
+		await expect(resolveInsideFolder(root, "innocent")).rejects.toThrow(
 			"not available",
 		);
 	});
@@ -182,6 +221,56 @@ describe("createLocalFs", () => {
 		await expect(fs.open(root, "../secret/key.txt")).rejects.toThrow(
 			"outside",
 		);
+	});
+
+	test("asks before opening anything that would run", async () => {
+		const { root, fs, openPath, confirmRun } = setup();
+		writeFileSync(join(root, "run.command"), "echo hi");
+		writeFileSync(join(root, "tool"), "#!/bin/sh");
+		chmodSync(join(root, "tool"), 0o755);
+
+		await expect(fs.open(root, "/run.command")).rejects.toThrow(
+			"chose not to open",
+		);
+		await expect(fs.open(root, "/tool")).rejects.toThrow(
+			"chose not to open",
+		);
+		expect(openPath).not.toHaveBeenCalled();
+		expect(confirmRun).toHaveBeenCalledWith(join(root, "run.command"));
+
+		confirmRun.mockResolvedValueOnce(true);
+		await fs.open(root, "/run.command");
+		expect(openPath).toHaveBeenCalledWith(join(root, "run.command"));
+		// a document opens without asking
+		confirmRun.mockClear();
+		await fs.open(root, "/q3.md");
+		expect(confirmRun).not.toHaveBeenCalled();
+	});
+
+	test("knows what would run", () => {
+		const file = { mode: 0o644, isFile: () => true };
+		const directory = { mode: 0o755, isFile: () => false };
+		for (const name of [
+			"a.app",
+			"a.EXE",
+			"a.bat",
+			"a.lnk",
+			"a.sh",
+			"a.desktop",
+		]) {
+			expect(isRunnable(`/x/${name}`, file)).toBe(true);
+		}
+		expect(isRunnable("/x/Thing.app", directory)).toBe(true);
+		expect(isRunnable("/x/notes.md", file)).toBe(false);
+		expect(isRunnable("/x/folder", directory)).toBe(false);
+		expect(isRunnable("/x/bin", { ...file, mode: 0o755 })).toBe(true);
+		// Windows ignores trailing dots and spaces and a stream suffix
+		for (const name of ["run.bat.", "run.bat ", "run.exe:zone"]) {
+			expect(isRunnable(`/x/${name}`, file)).toBe(true);
+		}
+		// a document on a drive that marks every file executable
+		expect(isRunnable("/x/notes.md", { ...file, mode: 0o777 })).toBe(false);
+		expect(isRunnable("/x/run.sh", { ...file, mode: 0o777 })).toBe(true);
 	});
 });
 

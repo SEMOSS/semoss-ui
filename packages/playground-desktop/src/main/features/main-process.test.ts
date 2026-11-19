@@ -5,13 +5,12 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-	isAppPage,
+	externalUrlFor,
 	isConnectPopup,
 	isExternalLink,
 	isSignInPopup,
 } from "./app-window/window-security";
 import { pickLocalOrigin, toLocalModuleUrl } from "./auth/sign-in-redirect";
-import { isTrustedSender } from "./ipc/handle-ipc";
 import { checkServer } from "./server-connection/check-server";
 import {
 	CONFIG_FILE_NAME,
@@ -19,6 +18,7 @@ import {
 	parseDesktopConfig,
 } from "./server-connection/desktop-config";
 import { removeUnusedPartitions } from "./server-connection/server-sessions";
+import { isAppPage } from "./trust-boundaries/zones";
 
 // the modules under test import electron for their wiring, not for these helpers
 vi.mock("electron", () => ({
@@ -32,48 +32,9 @@ vi.mock("electron", () => ({
 /** The app's local origin. */
 const APP = "http://127.0.0.1:4321";
 /** The local origin tool views are framed from. */
-const TOOL_FRAMES = "http://127.0.0.1:4322";
+const TOOL_FRAMES = "http://tools.localhost:4322";
 /** The hosted server the app signs in to. */
 const SERVER = { url: "https://semoss.example", module: "/Monolith" };
-
-describe("isTrustedSender", () => {
-	/**
-	 * A calling frame, a top one unless it has a parent.
-	 *
-	 * @param url - The frame's URL.
-	 * @param parent - Its parent frame, or null for a top frame.
-	 * @returns The frame, as the check reads it.
-	 */
-	const frame = (url: string, parent: object | null = null) =>
-		({ url, parent }) as Parameters<typeof isTrustedSender>[0];
-
-	test("accepts only the app's own page, in its top frame", () => {
-		expect(isTrustedSender(frame(`${APP}/#/new`), APP)).toBe(true);
-		expect(isTrustedSender(frame(`${APP}/index.html`), APP)).toBe(true);
-		expect(isTrustedSender(frame("http://127.0.0.1:9999/"), APP)).toBe(
-			false,
-		);
-		expect(isTrustedSender(frame("https://login.example/"), APP)).toBe(
-			false,
-		);
-		expect(isTrustedSender(frame("not a url"), APP)).toBe(false);
-		expect(isTrustedSender(undefined, APP)).toBe(false);
-		expect(isTrustedSender(null, APP)).toBe(false);
-	});
-
-	test("refuses a server page on the app's origin, and any child frame", () => {
-		expect(
-			isTrustedSender(
-				frame(`${APP}/Monolith/public_home/app/portals/x.html`),
-				APP,
-			),
-		).toBe(false);
-		expect(isTrustedSender(frame(`${APP}/`, frame(`${APP}/`)), APP)).toBe(
-			false,
-		);
-		expect(isTrustedSender(frame(`${TOOL_FRAMES}/`), APP)).toBe(false);
-	});
-});
 
 describe("window policy", () => {
 	test("sends web and mail links out, and nothing else", () => {
@@ -116,6 +77,42 @@ describe("window policy", () => {
 		expect(
 			isSignInPopup(`${APP}/Monolith/api/auth/login/ms`, APP, undefined),
 		).toBe(false);
+	});
+
+	test("opens a local module link at the server's own address", () => {
+		const origins = {
+			appOrigin: APP,
+			toolFrameOrigin: TOOL_FRAMES,
+			getServer: () => SERVER,
+		};
+		expect(
+			externalUrlFor(
+				`${TOOL_FRAMES}/Monolith/public_home/a/portals/?x=1#y`,
+				origins,
+			),
+		).toBe("https://semoss.example/Monolith/public_home/a/portals/?x=1#y");
+		expect(
+			externalUrlFor(
+				`${APP}/SemossWeb/packages/client/dist/#/s/a/`,
+				origins,
+			),
+		).toBe("https://semoss.example/SemossWeb/packages/client/dist/#/s/a/");
+		expect(externalUrlFor("https://docs.example/a", origins)).toBe(
+			"https://docs.example/a",
+		);
+		// nothing else on a local origin, and no tricks in the path
+		expect(externalUrlFor(`${APP}/`, origins)).toBeNull();
+		expect(externalUrlFor(`${TOOL_FRAMES}/other`, origins)).toBeNull();
+		expect(
+			externalUrlFor(`${TOOL_FRAMES}/Monolith/..;/manager`, origins),
+		).toBeNull();
+		expect(
+			externalUrlFor(`${TOOL_FRAMES}/Monolith/a`, {
+				...origins,
+				getServer: () => null,
+			}),
+		).toBeNull();
+		expect(externalUrlFor("file:///etc/passwd", origins)).toBeNull();
 	});
 
 	test("knows the SDK's connector popup, which opens blank", () => {

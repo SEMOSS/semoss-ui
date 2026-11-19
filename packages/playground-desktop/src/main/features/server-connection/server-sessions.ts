@@ -1,15 +1,18 @@
-import { type Session, session } from "electron";
+import { type Session, session, type WebContents } from "electron";
 import { readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import type { ServerConfig } from "../../../contract/server-connection";
-import { routeSignInsThroughApp } from "../auth/sign-in-redirect";
 import { handleDownloads } from "../downloads/downloads";
+import { lockPermissions } from "../trust-boundaries/permissions";
+import { guardWebRequests } from "../trust-boundaries/web-requests";
 
 /** The browser sessions the app's servers sign in with. */
 export interface ServerSessions {
 	/**
-	 * The session for a partition, set up on first use: sign ins come back
-	 * through the app, and downloads open the save dialog.
+	 * The session for a partition, set up on first use: its permissions are
+	 * locked, its requests guarded (sign ins come back through the app, the
+	 * tool frame key goes only to the app's window), and downloads open the
+	 * save dialog.
 	 *
 	 * @param partition - The server's partition, or null before any server is
 	 * saved: the default session, which only shows the connect screen.
@@ -51,20 +54,34 @@ export const removeUnusedPartitions = (
 	}
 };
 
+/** What {@link createServerSessions} sets each session up with. */
+export interface ServerSessionsOptions {
+	/** The app's origin. */
+	readonly appOrigin: string;
+	/** The origin tool views are framed from. */
+	readonly toolFrameOrigin: string;
+	/** This launch's tool frame key. */
+	readonly toolFrameKey: string;
+	/** The server in use, which sign ins are routed to. */
+	readonly getServer: () => ServerConfig | null;
+	/** The app's window's contents, while it is open. */
+	readonly getAppWebContents: () => WebContents | undefined;
+}
+
 /**
  * Keep one browser session per saved server. Cookies and storage live in the
  * session, so each server keeps its own sign in and nothing crosses over.
  *
- * @param appOrigin - The app's origin.
- * @param toolFrameOrigin - The origin tool views are framed from.
- * @param getServer - The server in use, which sign ins are routed to.
+ * @param options - The origins, the key, the server and the app's window.
  * @returns The sessions.
  */
-export const createServerSessions = (
-	appOrigin: string,
-	toolFrameOrigin: string,
-	getServer: () => ServerConfig | null,
-): ServerSessions => {
+export const createServerSessions = ({
+	appOrigin,
+	toolFrameOrigin,
+	toolFrameKey,
+	getServer,
+	getAppWebContents,
+}: ServerSessionsOptions): ServerSessions => {
 	const used = new Set<Session>();
 
 	return {
@@ -73,9 +90,13 @@ export const createServerSessions = (
 				? session.fromPartition(partition)
 				: session.defaultSession;
 			if (!used.has(serverSession)) {
-				routeSignInsThroughApp(serverSession, getServer, {
+				lockPermissions(serverSession, appOrigin, getAppWebContents);
+				guardWebRequests(serverSession, {
 					appOrigin,
 					toolFrameOrigin,
+					toolFrameKey,
+					getServer,
+					getAppWebContentsId: () => getAppWebContents()?.id,
 				});
 				handleDownloads(serverSession);
 				used.add(serverSession);

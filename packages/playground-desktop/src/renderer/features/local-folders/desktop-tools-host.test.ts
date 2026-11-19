@@ -53,8 +53,15 @@ describe("the desktop's tools host", () => {
 		expect(write).toMatchObject({
 			title: "desktop:localFolders.titles.write",
 			usualMode: "ask",
-			modeKey: "folder_write",
+			// its own setting: a Room Files choice never applies to this machine's disk
+			modeKey: "desktop_folder_write",
 		});
+		expect(
+			tools.find((tool) => tool.name === "desktop_read"),
+		).toMatchObject({ usualMode: "auto", modeKey: "desktop_folder_read" });
+		for (const tool of tools) {
+			expect(tool.modeKey).toMatch(/^desktop_folder_/);
+		}
 		const list = tools.find((tool) => tool.name === "desktop_list");
 		expect(list?.description).toContain('"notes"');
 		// the same tools while the folders are the same

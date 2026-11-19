@@ -21,6 +21,15 @@ electronFuses:
   # (Windows) or the secret service (Linux). One way: turning it off again
   # leaves the saved cookies unreadable, which costs a sign in
   enableCookieEncryption: true
+  # Nothing else on this machine can run the signed app as plain Node, or
+  # attach a debugger, or swap its code, and so borrow its keychain entry for
+  # the cookie key (AGENTS.md, Trust boundaries)
+  runAsNode: false
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false
+  enableEmbeddedAsarIntegrityValidation: true
+  onlyLoadAppFromAsar: true
+  grantFileProtocolExtraPrivileges: false
   # flipping a fuse breaks the macOS ad hoc signature; an unsigned arm64 build
   # will not launch without a fresh one (a signed build is re-signed anyway)
   resetAdHocDarwinSignature: true

@@ -7,13 +7,19 @@ import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ServerConfig } from "../../../contract/server-connection";
+import { TOOL_FRAME_KEY_HEADER } from "../trust-boundaries/web-requests";
 import {
 	isSignInPath,
 	type LocalServer,
 	localizeCookie,
 	MODULE_PAGE_SANDBOX,
 	startLocalServer,
+	withoutFrameAncestors,
 } from "./local-server";
+import type { ToolCookieJar } from "./tool-cookies";
+
+/** The tool frame key the tests' local server is started with. */
+const KEY = "test-launch-key";
 
 /** A stand-in SEMOSS server: echoes the path and host, sets a server cookie. */
 const startUpstream = (): Promise<Server> =>
@@ -27,10 +33,20 @@ const startUpstream = (): Promise<Server> =>
 				res.end();
 				return;
 			}
+			if (req.url === "/Monolith/public_home/strict/portals/") {
+				res.writeHead(200, {
+					"Content-Type": "text/html",
+					"Content-Security-Policy":
+						"img-src *; frame-ancestors 'self'",
+				});
+				res.end("<html>strict</html>");
+				return;
+			}
 			if (req.url?.startsWith("/Monolith/public_home/")) {
 				res.writeHead(200, {
 					"Content-Type": "text/html",
 					"Content-Security-Policy": "img-src *",
+					"X-Frame-Options": "SAMEORIGIN",
 				});
 				res.end("<html>portal</html>");
 				return;
@@ -40,7 +56,14 @@ const startUpstream = (): Promise<Server> =>
 				"Set-Cookie":
 					"JSESSIONID=abc; Domain=semoss.example; Path=/Monolith; Secure; HttpOnly; SameSite=None",
 			});
-			res.end(JSON.stringify({ path: req.url, host: req.headers.host }));
+			res.end(
+				JSON.stringify({
+					path: req.url,
+					host: req.headers.host,
+					cookie: req.headers.cookie,
+					key: req.headers[TOOL_FRAME_KEY_HEADER],
+				}),
+			);
 		});
 		upstream.on("upgrade", (_req, socket) => {
 			socket.end(
@@ -65,11 +88,16 @@ interface Reply {
  *
  * @param origin - The origin.
  * @param path - The path, with any query.
+ * @param headers - Request headers, such as another `Host`.
  * @returns The response.
  */
-const get = (origin: string, path: string): Promise<Reply> =>
+const get = (
+	origin: string,
+	path: string,
+	headers: Record<string, string> = {},
+): Promise<Reply> =>
 	new Promise((resolve, reject) => {
-		const req = request(`${origin}${path}`, (res) => {
+		const req = request(`${origin}${path}`, { headers }, (res) => {
 			let body = "";
 			res.on("data", (chunk) => {
 				body += chunk;
@@ -91,6 +119,20 @@ describe("startLocalServer", () => {
 	let local: LocalServer | undefined;
 	let rootDir: string;
 	let server: ServerConfig | null;
+	/** What the fake jar was asked for and told to keep. */
+	let jarCalls: { header: string[]; store: [string, readonly string[]][] };
+	/** The app's cookies as the fake jar has them. */
+	const toolCookies: ToolCookieJar = {
+		header: async (url, pageHeader) => {
+			jarCalls.header.push(url);
+			return ["JSESSIONID=from-app-jar", pageHeader]
+				.filter(Boolean)
+				.join("; ");
+		},
+		store: async (url, setCookies) => {
+			jarCalls.store.push([url, setCookies]);
+		},
+	};
 
 	beforeEach(async () => {
 		upstream = await startUpstream();
@@ -99,6 +141,7 @@ describe("startLocalServer", () => {
 		rootDir = mkdtempSync(join(tmpdir(), "desktop-renderer-"));
 		writeFileSync(join(rootDir, "index.html"), "<html>app</html>");
 		writeFileSync(join(rootDir, "app.js"), "console.log(1)");
+		jarCalls = { header: [], store: [] };
 	});
 
 	afterEach(async () => {
@@ -114,9 +157,29 @@ describe("startLocalServer", () => {
 			preferredPort,
 			preferredToolFramePort: null,
 			getServer: () => server,
-			contentSecurityPolicy: "default-src 'self'",
+			contentSecurityPolicy: ({ appOrigin, toolFrameOrigin }) =>
+				`default-src 'self'; frame-src ${toolFrameOrigin}; x ${appOrigin}`,
+			toolFrameKey: KEY,
+			toolCookies,
 		});
 		return local;
+	};
+
+	/**
+	 * GET a path from the tool frame origin as the app's window does: its own
+	 * host, and this launch's key. `tools.localhost` is reached on 127.0.0.1,
+	 * since Node does not resolve it the way Chromium does.
+	 */
+	const getTool = (
+		path: string,
+		headers: Record<string, string> = {},
+	): Promise<Reply> => {
+		const { toolFramePort } = local ?? { toolFramePort: 0 };
+		return get(`http://127.0.0.1:${toolFramePort}`, path, {
+			Host: `tools.localhost:${toolFramePort}`,
+			[TOOL_FRAME_KEY_HEADER]: KEY,
+			...headers,
+		});
 	};
 
 	test("serves the renderer, with its policy on the page", async () => {
@@ -125,7 +188,7 @@ describe("startLocalServer", () => {
 		expect(page.status).toBe(200);
 		expect(page.body).toBe("<html>app</html>");
 		expect(page.headers["content-security-policy"]).toBe(
-			"default-src 'self'",
+			`default-src 'self'; frame-src http://tools.localhost:${local?.toolFramePort}; x ${origin}`,
 		);
 		const script = await get(origin, "/app.js");
 		expect(script.headers["content-type"]).toMatch(/javascript/);
@@ -161,6 +224,7 @@ describe("startLocalServer", () => {
 		expect(page.headers["content-security-policy"]).toBe(
 			`img-src *, ${MODULE_PAGE_SANDBOX}`,
 		);
+		expect(page.headers["x-frame-options"]).toBe("SAMEORIGIN");
 		const call = await get(origin, "/Monolith/api/config");
 		expect(call.headers["content-security-policy"]).toBe(
 			MODULE_PAGE_SANDBOX,
@@ -172,23 +236,147 @@ describe("startLocalServer", () => {
 	test("forwards only the module on the tool frame origin, unsandboxed", async () => {
 		const { origin, toolFrameOrigin, port, toolFramePort } = await start();
 		expect(toolFramePort).not.toBe(port);
-		expect(toolFrameOrigin).toBe(`http://127.0.0.1:${toolFramePort}`);
-		expect(toolFrameOrigin).not.toBe(origin);
+		// another site than the app's 127.0.0.1, so another process
+		expect(toolFrameOrigin).toBe(`http://tools.localhost:${toolFramePort}`);
 
-		const page = await get(
-			toolFrameOrigin,
-			"/Monolith/public_home/app/portals/x.html",
-		);
+		const page = await getTool("/Monolith/public_home/app/portals/x.html");
 		expect(page.status).toBe(200);
 		expect(page.body).toBe("<html>portal</html>");
-		expect(page.headers["content-security-policy"]).toBe("img-src *");
-		const call = await get(toolFrameOrigin, "/Monolith/api/config");
+		// only the app's page, another site, frames it
+		expect(page.headers["x-frame-options"]).toBeUndefined();
+		expect(page.headers["content-security-policy"]).toBe(
+			`img-src *, frame-ancestors 'self' ${origin}`,
+		);
+		expect(page.headers["origin-agent-cluster"]).toBe("?1");
+		// a server's own frame-ancestors would refuse the app's page, another site
+		const strict = await getTool("/Monolith/public_home/strict/portals/");
+		expect(strict.headers["content-security-policy"]).toBe(
+			`img-src *, frame-ancestors 'self' ${origin}`,
+		);
+		const call = await getTool("/Monolith/api/config");
 		expect(JSON.parse(call.body)).toMatchObject({
 			path: "/Monolith/api/config",
 		});
 		// never the app's page, which holds the bridge
-		expect((await get(toolFrameOrigin, "/")).status).toBe(404);
-		expect((await get(toolFrameOrigin, "/app.js")).status).toBe(404);
+		expect((await getTool("/")).status).toBe(404);
+		expect((await getTool("/app.js")).status).toBe(404);
+	});
+
+	test("answers only the app's window: its own host and this launch's key", async () => {
+		const { toolFramePort } = await start();
+		const tool = `http://127.0.0.1:${toolFramePort}`;
+		const path = "/Monolith/api/config";
+		// no key: another window, another program on this machine
+		expect(
+			(
+				await get(tool, path, {
+					Host: `tools.localhost:${toolFramePort}`,
+				})
+			).status,
+		).toBe(403);
+		expect(
+			(await getTool(path, { [TOOL_FRAME_KEY_HEADER]: "guess" })).status,
+		).toBe(403);
+		// the app's own host is not the tool frame origin's
+		expect(
+			(await getTool(path, { Host: `127.0.0.1:${toolFramePort}` }))
+				.status,
+		).toBe(403);
+		// the key never reaches the server
+		const call = await getTool(path);
+		expect(JSON.parse(call.body).key).toBeUndefined();
+	});
+
+	test("signs tool requests in with the app's cookies, which tools never get", async () => {
+		const { origin } = await start();
+		const call = await getTool("/Monolith/api/config", {
+			Cookie: "tool-own=1",
+		});
+		// the app's cookies, then the tool's own
+		expect(JSON.parse(call.body).cookie).toBe(
+			"JSESSIONID=from-app-jar; tool-own=1",
+		);
+		expect(jarCalls.header).toEqual([`${origin}/Monolith/api/config`]);
+		// the server's cookie goes to the app's jar, not to the tool's page
+		expect(call.headers["set-cookie"]).toBeUndefined();
+		expect(jarCalls.store).toEqual([
+			[
+				`${origin}/Monolith/api/config`,
+				[
+					"JSESSIONID=abc; Domain=semoss.example; Path=/Monolith; HttpOnly; SameSite=Lax; Max-Age=2592000",
+				],
+			],
+		]);
+	});
+
+	test("refuses a tool's service worker, which would outlive it", async () => {
+		await start();
+		expect(
+			(
+				await getTool("/Monolith/public_home/app/portals/sw.js", {
+					"Service-Worker": "script",
+				})
+			).status,
+		).toBe(403);
+	});
+
+	test("turns tool views off for the rest of the run", async () => {
+		const { origin } = await start();
+		local?.disableToolFrames();
+		const page = await getTool("/Monolith/public_home/app/portals/x.html");
+		expect(page.status).toBe(503);
+		expect(page.body).toContain("Tool views are off");
+		// the app itself keeps working
+		expect((await get(origin, "/Monolith/api/config")).status).toBe(200);
+	});
+
+	test("forwards the platform on the tool frame origin only", async () => {
+		const { origin } = await start();
+		const platform = await getTool(
+			"/SemossWeb/packages/client/dist/index.html",
+		);
+		expect(JSON.parse(platform.body)).toMatchObject({
+			path: "/SemossWeb/packages/client/dist/index.html",
+		});
+		// nothing else beside the module
+		expect((await getTool("/SemossWeb/other")).status).toBe(404);
+		// never on the app's origin, which serves its own files there
+		expect(
+			(await get(origin, "/SemossWeb/packages/client/dist/index.html"))
+				.status,
+		).toBe(404);
+	});
+
+	test("never forwards a path the server could read as another one", async () => {
+		const { origin } = await start();
+		for (const path of [
+			"/Monolith/..;/manager/html",
+			"/Monolith/%2e%2e/manager/html",
+			"/Monolith/a%2f..%2f..%2fmanager",
+			"/SemossWeb/packages/client/dist/..;/..;/x",
+		]) {
+			expect((await getTool(path)).status).toBe(404);
+			expect((await get(origin, path)).body).not.toContain("manager");
+		}
+	});
+
+	test("refuses requests for any host but its own", async () => {
+		const { origin } = await start();
+		expect(
+			(
+				await get(origin, "/Monolith/api/config", {
+					Host: "attacker.example",
+				})
+			).status,
+		).toBe(403);
+		expect(
+			(
+				await getTool("/Monolith/api/config", {
+					Host: "attacker.example",
+				})
+			).status,
+		).toBe(403);
+		expect((await get(origin, "/Monolith/api/config")).status).toBe(200);
 	});
 
 	test("brings the server's redirects back to the app's origin", async () => {
@@ -197,7 +385,7 @@ describe("startLocalServer", () => {
 		expect(reply.status).toBe(302);
 		expect(reply.headers.location).toBe(`${origin}/Monolith/after`);
 		const { toolFrameOrigin } = local ?? { toolFrameOrigin: "" };
-		const framed = await get(toolFrameOrigin, "/Monolith/redirect");
+		const framed = await getTool("/Monolith/redirect");
 		expect(framed.headers.location).toBe(
 			`${toolFrameOrigin}/Monolith/after`,
 		);
@@ -208,10 +396,7 @@ describe("startLocalServer", () => {
 		const { origin } = await start();
 		expect((await get(origin, "/Monolith/api/config")).status).toBe(503);
 		expect((await get(origin, "/")).status).toBe(200);
-		const { toolFrameOrigin } = local ?? { toolFrameOrigin: "" };
-		expect(
-			(await get(toolFrameOrigin, "/Monolith/api/config")).status,
-		).toBe(503);
+		expect((await getTool("/Monolith/api/config")).status).toBe(503);
 	});
 
 	test("forwards WebSocket upgrades on the module", async () => {
@@ -251,6 +436,8 @@ describe("startLocalServer", () => {
 			preferredPort: port,
 			preferredToolFramePort: null,
 			getServer: () => server,
+			toolFrameKey: KEY,
+			toolCookies,
 		});
 		expect(other.port).not.toBe(port);
 		await other.close();
@@ -282,6 +469,22 @@ describe("isSignInPath", () => {
 		]) {
 			expect(isSignInPath(path, "/Monolith")).toBe(false);
 		}
+	});
+});
+
+describe("withoutFrameAncestors", () => {
+	test("drops only the server's frame-ancestors, in every policy", () => {
+		expect(
+			withoutFrameAncestors("default-src 'self'; frame-ancestors 'self'"),
+		).toBe("default-src 'self'");
+		expect(
+			withoutFrameAncestors([
+				"FRAME-ANCESTORS 'none'",
+				"img-src *; frame-ancestors https://a.example",
+			]),
+		).toBe("img-src *");
+		expect(withoutFrameAncestors("frame-ancestors 'self'")).toBeUndefined();
+		expect(withoutFrameAncestors(undefined)).toBeUndefined();
 	});
 });
 

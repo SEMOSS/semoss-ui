@@ -201,6 +201,24 @@ export const COMMAND_CHANNEL = "app:command";
  */
 export const TOOL_FRAME_ORIGIN_ARG = "--semoss-tool-frame-origin=";
 
+/**
+ * The host tool views are framed from. It is another site than the app's
+ * `127.0.0.1`, so Chromium runs tool views in another renderer process than
+ * the app's page, which holds the bridge. `*.localhost` always resolves to this
+ * machine. See AGENTS.md, Trust boundaries.
+ */
+export const TOOL_FRAME_HOST = "tools.localhost";
+
+/**
+ * Whether an origin is a tool frame origin, `http://tools.localhost:<port>`.
+ * The preload hands the page nothing else.
+ *
+ * @param origin - The origin.
+ * @returns True for the tool frame host on a port.
+ */
+export const isToolFrameOrigin = (origin: string): boolean =>
+	/^http:\/\/tools\.localhost:\d{1,5}$/.test(origin);
+
 /** What the preload exposes as `window.semossDesktop`. */
 export interface DesktopBridge {
 	/** Call the main process on an allowlisted channel. */
@@ -211,8 +229,10 @@ export interface DesktopBridge {
 	/** Hear the main process's commands; returns the unsubscribe. */
 	onCommand: (listener: (command: DesktopCommand) => void) => () => void;
 	/**
-	 * The origin tool views are framed from, such as `http://127.0.0.1:4322`:
-	 * another origin than the page's, so a tool's page cannot reach this bridge.
+	 * The origin tool views are framed from, such as `http://tools.localhost:4322`:
+	 * another site than the page's, so a tool's page runs in another process
+	 * and cannot reach this bridge. Undefined when main gave none, so the chat
+	 * shows its form instead of framing a tool.
 	 */
-	readonly toolFrameOrigin: string;
+	readonly toolFrameOrigin: string | undefined;
 }

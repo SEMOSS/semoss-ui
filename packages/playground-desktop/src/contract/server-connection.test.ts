@@ -3,8 +3,11 @@ import { describe, expect, test } from "vitest";
 import {
 	formatServerAddress,
 	isModulePath,
+	isPlainPath,
+	isPlatformPath,
 	parseServerAddress,
 	parseServerConfig,
+	platformPathFor,
 } from "./server-connection";
 
 describe("parseServerConfig", () => {
@@ -96,5 +99,47 @@ describe("parseServerAddress", () => {
 		expect(formatServerAddress(server)).toBe(
 			"https://workshop.cfg.deloitte.com/cfg-ai-dev/Monolith",
 		);
+	});
+});
+
+describe("platformPathFor", () => {
+	test("finds the platform beside the module", () => {
+		expect(platformPathFor("/Monolith")).toBe(
+			"/SemossWeb/packages/client/dist",
+		);
+		expect(platformPathFor("/cfg-ai-dev/Monolith")).toBe(
+			"/cfg-ai-dev/SemossWeb/packages/client/dist",
+		);
+	});
+
+	test("matches only the platform's own paths", () => {
+		expect(
+			isPlatformPath(
+				"/SemossWeb/packages/client/dist/index.html",
+				"/Monolith",
+			),
+		).toBe(true);
+		expect(isPlatformPath("/SemossWeb/packages/other", "/Monolith")).toBe(
+			false,
+		);
+		expect(isPlatformPath("/Monolith/api", "/Monolith")).toBe(false);
+	});
+});
+
+describe("isPlainPath", () => {
+	test.each([
+		["/Monolith/api/config?x=../y;z", true],
+		["/Monolith/public_home/app/portals/my%20file.html", true],
+		["/Monolith/v1.2/file.js", true],
+		["/Monolith/../manager", false],
+		["/Monolith/./api", false],
+		["/Monolith/..;/manager", false],
+		["/Monolith/%2e%2e/manager", false],
+		["/Monolith/%2E%2E/manager", false],
+		["/Monolith/a%2fb", false],
+		["/Monolith/a%5cb", false],
+		["/Monolith\\..\\manager", false],
+	])("%s -> %s", (path, expected) => {
+		expect(isPlainPath(path)).toBe(expected);
 	});
 });

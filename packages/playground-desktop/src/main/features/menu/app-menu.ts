@@ -1,4 +1,5 @@
 import {
+	app,
 	type BrowserWindow,
 	Menu,
 	type MenuItemConstructorOptions,
@@ -10,8 +11,8 @@ import {
 
 /**
  * The app's menu: New Chat and Change Server, the standard Edit menu (so copy
- * and paste work everywhere), View with reload, zoom, and the developer tools,
- * and the Window menu.
+ * and paste work everywhere), View with reload, zoom, and (outside the
+ * packaged app) the developer tools, and the Window menu.
  *
  * @param window - The app's window, which the menu's commands go to.
  */
@@ -45,7 +46,10 @@ export const setAppMenu = (window: BrowserWindow): void => {
 			submenu: [
 				{ role: "reload" },
 				{ role: "forceReload" },
-				{ role: "toggleDevTools" },
+				// the developer tools can run anything as the app page: dev builds only
+				...(app.isPackaged
+					? []
+					: [{ role: "toggleDevTools" as const }]),
 				{ type: "separator" },
 				{ role: "resetZoom" },
 				{ role: "zoomIn" },

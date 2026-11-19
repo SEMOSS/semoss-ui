@@ -1,5 +1,14 @@
-import type { OnBeforeRequestListenerDetails, Session } from "electron";
+import type { OnBeforeRequestListenerDetails } from "electron";
 import type { ServerConfig } from "../../../contract/server-connection";
+
+/**
+ * Sign ins come back through the app. A provider sends its callback to the
+ * server's registered address, but the sign in started through the app's
+ * origin, whose cookies hold the session it belongs to. Every request for the
+ * server's module is sent to the same path on a local origin, where the proxy
+ * forwards it with those cookies. `trust-boundaries/web-requests.ts` installs
+ * this on each session.
+ */
 
 /**
  * Where a request for the server's own module goes instead: the same path on
@@ -60,33 +69,3 @@ export const pickLocalOrigin = (
 	details.initiatorOrigin === toolFrameOrigin
 		? toolFrameOrigin
 		: appOrigin;
-
-/**
- * Bring sign ins back to the app's session. A provider sends its callback to
- * the server's registered address, but the sign in started through the app's
- * origin, whose cookies hold the session it belongs to. Every request for the
- * server's module is sent to the same path on the app's origin, where the proxy
- * forwards it with those cookies. Cookies ignore the port, so the tool frame
- * origin carries them too.
- *
- * @param session - The app's browser session.
- * @param getServer - The current server.
- * @param origins - The app's origin and the tool frame origin.
- */
-export const routeSignInsThroughApp = (
-	session: Session,
-	getServer: () => ServerConfig | null,
-	origins: LocalOrigins,
-): void => {
-	session.webRequest.onBeforeRequest(
-		{ urls: ["https://*/*", "http://*/*"] },
-		(details, callback) => {
-			const redirectURL = toLocalModuleUrl(
-				details.url,
-				getServer(),
-				pickLocalOrigin(details, origins),
-			);
-			callback(redirectURL ? { redirectURL } : {});
-		},
-	);
-};

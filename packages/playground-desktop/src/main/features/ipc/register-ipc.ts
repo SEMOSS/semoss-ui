@@ -15,7 +15,7 @@ import {
 	isLanguageCode,
 } from "../server-connection/desktop-config";
 import type { ServerSessions } from "../server-connection/server-sessions";
-import { handleIpc } from "./handle-ipc";
+import { handleIpc, type IpcCaller } from "./handle-ipc";
 
 /** What the IPC handlers act on. */
 interface RegisterIpcOptions {
@@ -58,27 +58,32 @@ export const registerIpc = ({
 	grants,
 	watchers,
 }: RegisterIpcOptions): void => {
-	handleIpc("server-connection:get", appOrigin, () =>
+	const caller: IpcCaller = {
+		appOrigin,
+		getAppWebContents: () => windows.getWindow()?.webContents,
+	};
+
+	handleIpc("server-connection:get", caller, () =>
 		config.server ? toConfig(config.server) : null,
 	);
 
-	handleIpc("server-connection:list", appOrigin, () => ({
+	handleIpc("server-connection:list", caller, () => ({
 		servers: config.servers.map(toConfig),
 		active: config.server ? toConfig(config.server) : null,
 	}));
 
-	handleIpc("server-connection:check", appOrigin, (server) =>
+	handleIpc("server-connection:check", caller, (server) =>
 		checkServer(parseServerConfig(server)),
 	);
 
-	handleIpc("server-connection:set", appOrigin, async (server) => {
+	handleIpc("server-connection:set", caller, async (server) => {
 		config.useServer(parseServerConfig(server));
 		// the new window's rooms watch their own folders
 		watchers.closeAll();
 		await windows.open();
 	});
 
-	handleIpc("server-connection:forget", appOrigin, async (server) => {
+	handleIpc("server-connection:forget", caller, async (server) => {
 		const target = parseServerConfig(server);
 		const wasActive =
 			config.server !== null && isSameServer(config.server, target);
@@ -96,16 +101,16 @@ export const registerIpc = ({
 		await forgottenSession.clearCache();
 	});
 
-	handleIpc("shell:open-external", appOrigin, async (url) => {
+	handleIpc("shell:open-external", caller, async (url) => {
 		if (typeof url !== "string" || !isExternalLink(url)) {
 			throw new Error("Refused to open that link");
 		}
 		await shell.openExternal(url);
 	});
 
-	handleIpc("language:get", appOrigin, () => config.language);
+	handleIpc("language:get", caller, () => config.language);
 
-	handleIpc("language:set", appOrigin, (language) => {
+	handleIpc("language:set", caller, (language) => {
 		if (!isLanguageCode(language)) {
 			throw new Error("That is not a language code");
 		}
@@ -113,7 +118,7 @@ export const registerIpc = ({
 	});
 
 	registerLocalFolders({
-		appOrigin,
+		caller,
 		grants,
 		watchers,
 		getPartition: () => config.server?.partition ?? null,

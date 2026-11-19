@@ -35,6 +35,7 @@ vi.mock("@semoss/i18n", () => ({
 	}),
 }));
 vi.mock("@semoss/sdk/react", () => ({
+	Env: { MODULE: "/Monolith" },
 	useSession: <T,>(
 		selector: (state: {
 			status: string;

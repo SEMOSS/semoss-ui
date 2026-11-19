@@ -6,6 +6,8 @@ import {
 	type ChatConfig,
 	useServerChatTheme,
 } from "@semoss/chat";
+import { Env } from "@semoss/sdk/react";
+import { platformPathFor } from "../../../contract/server-connection";
 import { getDesktopBridge } from "../desktop-bridge/desktop-bridge";
 import { createDesktopFoldersHost } from "../local-folders/desktop-folders-host";
 import { createDesktopToolsHost } from "../local-folders/desktop-tools-host";
@@ -22,9 +24,12 @@ const DESKTOP_CHAT_COMPONENTS: ChatComponents = {
  * The chat's config on the desktop: the server's playground theme over the
  * chat's defaults, the app's routes, the tools it runs over the folders the
  * user attaches from this machine, and the plus menu and "/" menu with Attach
- * Folder. Tool views are framed from the main process's second local origin,
- * so a tool's page cannot reach the desktop bridge. The desktop has no agent
- * pages, so chat UI shows no links to them.
+ * Folder. Tool views, the platform's low code apps included, are framed from
+ * the tool frame origin, another site than this page, so a tool's page runs in
+ * another process and cannot reach the desktop bridge (AGENTS.md, Trust
+ * boundaries). Without that origin, the chat's frames would land on this
+ * page's own origin, where the main process refuses them. The desktop has no
+ * agent pages, so chat UI shows no links to them.
  *
  * @param host - What the layout gives the chat: how to open the settings
  * dialog, for chat UI's links to it and the account menu, and what to do when
@@ -52,6 +57,7 @@ export const useDesktopChatConfig = ({
 			options: {
 				roomHref: (roomId) => `#/room/${roomId}`,
 				toolFrameOrigin: toolFrameOrigin,
+				platformUrl: `${toolFrameOrigin ?? ""}${platformPathFor(Env.MODULE)}`,
 			},
 			callbacks: {
 				onOpenRoom: (roomId) => navigate(`/room/${roomId}`),

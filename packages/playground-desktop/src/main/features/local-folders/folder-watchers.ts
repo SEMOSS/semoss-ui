@@ -1,5 +1,6 @@
 import { type FSWatcher, watch } from "node:fs";
 import { sep } from "node:path";
+import { isHiddenName } from "./local-fs";
 
 /** How long a burst of changes is gathered before it is reported. */
 const DEBOUNCE_MS = 200;
@@ -71,6 +72,13 @@ export const createFolderWatchers = (): FolderWatchers => {
 				timer: null,
 			};
 			entry.watcher.on("change", (_event, filename) => {
+				// what is hidden from the page is not reported either
+				if (
+					typeof filename === "string" &&
+					filename.split(sep).some(isHiddenName)
+				) {
+					return;
+				}
 				if (entry.pending) {
 					if (typeof filename === "string" && filename) {
 						entry.pending.add(`/${filename.split(sep).join("/")}`);

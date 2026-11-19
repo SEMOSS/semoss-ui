@@ -2,6 +2,7 @@ import type { BrowserWindow } from "electron";
 import { setAppMenu } from "../menu/app-menu";
 import type { DesktopConfigFile } from "../server-connection/desktop-config";
 import type { ServerSessions } from "../server-connection/server-sessions";
+import { guardToolFrameIsolation } from "../trust-boundaries/tool-frame-isolation";
 import { createMainWindow } from "./main-window";
 import { secureWindow } from "./window-security";
 
@@ -27,6 +28,8 @@ interface AppWindowHostOptions {
 	readonly config: DesktopConfigFile;
 	/** The servers' browser sessions. */
 	readonly sessions: ServerSessions;
+	/** Switch tool views off, once one was found in the app page's process. */
+	readonly onToolFrameBreach: () => void;
 }
 
 /**
@@ -40,8 +43,11 @@ export const createAppWindowHost = ({
 	toolFrameOrigin,
 	config,
 	sessions,
+	onToolFrameBreach,
 }: AppWindowHostOptions): AppWindowHost => {
 	let current: BrowserWindow | null = null;
+	// a breach reloads the window once; tool views stay off after that
+	let hasReloadedForBreach = false;
 
 	const open = async (): Promise<void> => {
 		const serverSession = sessions.get(config.server?.partition ?? null);
@@ -60,7 +66,25 @@ export const createAppWindowHost = ({
 		}
 
 		const window = createMainWindow(config, serverSession, toolFrameOrigin);
-		secureWindow(window, appOrigin, () => config.server?.module);
+		secureWindow(window, {
+			appOrigin,
+			toolFrameOrigin,
+			getServer: () => config.server,
+		});
+		guardToolFrameIsolation(
+			window.webContents,
+			toolFrameOrigin,
+			(frame) => {
+				console.error(
+					`A tool view (${frame.url}) ran in the app page's process ${frame.processId}; tool views are off`,
+				);
+				onToolFrameBreach();
+				if (!hasReloadedForBreach) {
+					hasReloadedForBreach = true;
+					window.webContents.reload();
+				}
+			},
+		);
 		setAppMenu(window);
 		current = window;
 		window.on("closed", () => {

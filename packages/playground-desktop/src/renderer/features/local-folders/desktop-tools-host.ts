@@ -83,8 +83,11 @@ const buildTools = (
 		return {
 			...tool,
 			title: getI18n().t(`desktop:localFolders.titles.${operation}`),
-			// it follows the Room Files tool that does the same
-			modeKey: `folder_${operation}`,
+			// Its own setting, never the Room Files tool's: the room's settings
+			// live on the server, and a choice made for the server's files must
+			// not let an agent change this machine's disk without asking. Unset,
+			// it runs its usual way: reads at once, any change asks first.
+			modeKey: `${DESKTOP_TOOL_PREFIX}_folder_${operation}`,
 			summarize: (args) => summarizeFolderToolCall(tool.name, args),
 			run: async (args) => {
 				const outcome = await executeFolderTool(

@@ -52,6 +52,10 @@ export default defineConfig((env) => {
 		},
 		renderer: {
 			...rendererConfig,
+			// The page reaches the dev server through the app's own origin, so
+			// it needs no CORS; Vite's default allows any localhost origin,
+			// tool views on tools.localhost included, to read workspace files.
+			server: { ...rendererConfig.server, cors: false },
 			root: resolve(root, "src/renderer"),
 			plugins: [
 				scopePptxViewerCssPlugin,

@@ -10,14 +10,181 @@ import {
 	stat,
 	writeFile,
 } from "node:fs/promises";
-import { dirname, relative, resolve, sep } from "node:path";
+import { basename, dirname, extname, relative, resolve, sep } from "node:path";
 import type { LocalFileEntry } from "../../../contract/local-folders";
 
 /** The largest file a read hands the page. */
 export const MAX_READ_BYTES = 50 * 1024 * 1024;
 
-/** Entries a folder never shows and nothing may touch. */
+/**
+ * Entries a folder never shows and nothing may touch. `.git` holds hooks and
+ * config that run code on the user's next git command.
+ */
 const HIDDEN_NAMES: ReadonlySet<string> = new Set([".git"]);
+
+/**
+ * Whether an entry's name is hidden, however it is written: any case (macOS
+ * and Windows ignore it), any Unicode form, and with the trailing dots and
+ * spaces Windows drops (`.git.` is `.git` there).
+ *
+ * @param name - One path segment.
+ * @returns True for a hidden entry.
+ */
+export const isHiddenName = (name: string): boolean =>
+	HIDDEN_NAMES.has(
+		name
+			.normalize("NFC")
+			.toLowerCase()
+			.replace(/[. ]+$/, ""),
+	);
+
+/**
+ * Whether any segment of a path inside a folder is hidden.
+ *
+ * @param folder - The folder's real path.
+ * @param path - A resolved path inside it.
+ * @returns True when the path is, or is under, a hidden entry.
+ */
+const isUnderHiddenName = (folder: string, path: string): boolean =>
+	relative(folder, path).split(sep).some(isHiddenName);
+
+/**
+ * Files the system would run rather than show when opened: apps, scripts,
+ * installers and shortcuts on macOS, Windows and Linux.
+ */
+const RUNNABLE_EXTENSIONS: ReadonlySet<string> = new Set([
+	".app",
+	".command",
+	".tool",
+	".terminal",
+	".workflow",
+	".action",
+	".scpt",
+	".applescript",
+	".pkg",
+	".mpkg",
+	".sh",
+	".bash",
+	".zsh",
+	".csh",
+	".ksh",
+	".fish",
+	".py",
+	".pyw",
+	".rb",
+	".pl",
+	".php",
+	".jar",
+	".exe",
+	".com",
+	".bat",
+	".cmd",
+	".msi",
+	".msix",
+	".appx",
+	".ps1",
+	".psm1",
+	".vbs",
+	".vbe",
+	".js",
+	".jse",
+	".wsf",
+	".wsh",
+	".hta",
+	".scr",
+	".cpl",
+	".pif",
+	".lnk",
+	".url",
+	".reg",
+	".inf",
+	".desktop",
+	".appimage",
+	".run",
+	".webloc",
+	".inetloc",
+	".fileloc",
+]);
+
+/**
+ * Documents a file marked executable still only shows: FAT, exFAT and many
+ * network drives mark every file executable, and these never run.
+ */
+const DOCUMENT_EXTENSIONS: ReadonlySet<string> = new Set([
+	".txt",
+	".md",
+	".markdown",
+	".csv",
+	".tsv",
+	".json",
+	".xml",
+	".yaml",
+	".yml",
+	".log",
+	".pdf",
+	".rtf",
+	".doc",
+	".docx",
+	".xls",
+	".xlsx",
+	".ppt",
+	".pptx",
+	".odt",
+	".ods",
+	".odp",
+	".png",
+	".jpg",
+	".jpeg",
+	".gif",
+	".webp",
+	".bmp",
+	".tif",
+	".tiff",
+	".heic",
+	".svg",
+	".mp3",
+	".wav",
+	".m4a",
+	".mp4",
+	".mov",
+	".webm",
+]);
+
+/**
+ * A name's extension as the system reads it: lower case, without the trailing
+ * dots and spaces and the `:stream` suffix Windows ignores (`run.bat.` and
+ * `run.bat:x` are `run.bat` there).
+ *
+ * @param path - The entry.
+ * @returns Its extension, such as `.bat`, or empty for none.
+ */
+const extensionOf = (path: string): string =>
+	extname(
+		basename(path)
+			.replace(/:.*$/, "")
+			.replace(/[. ]+$/, ""),
+	).toLowerCase();
+
+/**
+ * Whether opening an entry would run something: a runnable kind of file or
+ * bundle, or a file marked executable that is not a plain document.
+ *
+ * @param path - The entry's real path.
+ * @param stats - What it is.
+ * @returns True when opening it should be confirmed first.
+ */
+export const isRunnable = (
+	path: string,
+	stats: Pick<Stats, "mode" | "isFile">,
+): boolean => {
+	const extension = extensionOf(path);
+	return (
+		RUNNABLE_EXTENSIONS.has(extension) ||
+		(stats.isFile() &&
+			(stats.mode & 0o111) !== 0 &&
+			!DOCUMENT_EXTENSIONS.has(extension))
+	);
+};
 
 /** What the file calls need from the system. */
 export interface LocalFsSystem {
@@ -27,6 +194,11 @@ export interface LocalFsSystem {
 	openPath: (path: string) => Promise<string>;
 	/** Show a path in the file manager. */
 	reveal: (path: string) => void;
+	/**
+	 * Ask the user, in the main process, before opening something that would
+	 * run; resolves to true to open it.
+	 */
+	confirmRun: (path: string) => Promise<boolean>;
 }
 
 /** File calls inside one attached folder. Every path is inside it, `/` being it. */
@@ -90,19 +262,21 @@ export const resolveInsideFolder = async (
 	if (!isInsideFolder(rootReal, target)) {
 		throw new Error("That path is outside the attached folder");
 	}
-	const segments = relative(rootReal, target).split(sep);
-	if (segments.some((segment) => HIDDEN_NAMES.has(segment))) {
+	if (isUnderHiddenName(rootReal, target)) {
 		throw new Error("That path is not available");
 	}
 
 	// the nearest part of the path that exists, links followed, has to be
-	// inside the folder too
+	// inside the folder too, and not lead into a hidden entry
 	let probe = target;
 	for (;;) {
 		try {
 			const real = await realpath(probe);
 			if (!isInsideFolder(rootReal, real)) {
 				throw new Error("That path leads outside the attached folder");
+			}
+			if (isUnderHiddenName(rootReal, real)) {
+				throw new Error("That path is not available");
 			}
 			break;
 		} catch (error) {
@@ -178,7 +352,7 @@ export const createLocalFs = (system: LocalFsSystem): LocalFs => ({
 		}
 		const entries: LocalFileEntry[] = [];
 		for (const dirent of dirents) {
-			if (HIDDEN_NAMES.has(dirent.name)) continue;
+			if (isHiddenName(dirent.name)) continue;
 			const target = resolve(directory, dirent.name);
 			try {
 				// a link is listed as what it leads to; one leading out is shown,
@@ -272,7 +446,14 @@ export const createLocalFs = (system: LocalFsSystem): LocalFs => ({
 		await system.trash(target);
 	},
 	open: async (root, path) => {
-		const target = await resolveInsideFolder(root, path);
+		// the file a link leads to, which is what the system opens
+		const target = await realpath(await resolveInsideFolder(root, path));
+		if (
+			isRunnable(target, await stat(target)) &&
+			!(await system.confirmRun(target))
+		) {
+			throw new Error("The user chose not to open it");
+		}
 		const message = await system.openPath(target);
 		if (message) throw new Error(message);
 	},

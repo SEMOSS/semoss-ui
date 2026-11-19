@@ -29,12 +29,20 @@ export interface LocalFileEntry {
  * untyped, so every file call checks its reference with this.
  *
  * @param value - The argument.
- * @returns True for `{ roomId, folderId }` with both non-empty.
+ * @returns True for `{ roomId, folderId }` with both ids.
  */
 export const isLocalFolderRef = (value: unknown): value is LocalFolderRef =>
 	typeof value === "object" &&
 	value !== null &&
-	typeof (value as LocalFolderRef).roomId === "string" &&
-	(value as LocalFolderRef).roomId.length > 0 &&
-	typeof (value as LocalFolderRef).folderId === "string" &&
-	(value as LocalFolderRef).folderId.length > 0;
+	isLocalFolderId((value as LocalFolderRef).roomId) &&
+	isLocalFolderId((value as LocalFolderRef).folderId);
+
+/**
+ * Whether a value can be a room or attachment id: non-empty text without `|`,
+ * which main uses to join them into one watch's key.
+ *
+ * @param value - The value.
+ * @returns True for an id.
+ */
+export const isLocalFolderId = (value: unknown): value is string =>
+	typeof value === "string" && value.length > 0 && !value.includes("|");

@@ -120,3 +120,44 @@ export const isModulePath = (path: string, module: string): boolean =>
 	path === module ||
 	path.startsWith(`${module}/`) ||
 	path.startsWith(`${module}?`);
+
+/**
+ * Where the server's platform (its low code apps) is. SEMOSS deploys it beside
+ * the module: `/cfg-ai-dev/Monolith` has its platform at
+ * `/cfg-ai-dev/SemossWeb/packages/client/dist`.
+ *
+ * @param module - The module path.
+ * @returns The platform's path.
+ */
+export const platformPathFor = (module: string): string =>
+	`${module.slice(0, module.lastIndexOf("/"))}/SemossWeb/packages/client/dist`;
+
+/**
+ * Whether a request path is the server's platform, which the tool frame origin
+ * forwards beside the module.
+ *
+ * @param path - The request's path, with any query.
+ * @param module - The module path.
+ * @returns True for the platform and anything under it.
+ */
+export const isPlatformPath = (path: string, module: string): boolean =>
+	isModulePath(path, platformPathFor(module));
+
+/**
+ * Whether a request path means only what it says. A server such as Tomcat
+ * reads `/Monolith/..;/manager` or `/Monolith/%2e%2e/manager` as another path,
+ * which would get past a prefix check, so those are never forwarded.
+ *
+ * @param path - The request's path, with any query.
+ * @returns False for a `.` or `..` segment, `;`, `\`, or an encoded dot,
+ * slash or backslash.
+ */
+export const isPlainPath = (path: string): boolean => {
+	const [pathname = ""] = path.split("?");
+	return (
+		!/[;\\]|%2e|%2f|%5c/i.test(pathname) &&
+		!pathname
+			.split("/")
+			.some((segment) => segment === "." || segment === "..")
+	);
+};
