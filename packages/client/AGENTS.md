@@ -707,6 +707,22 @@ restart and reload on every server in a cluster.
   (`ReloadProject`) clears the app modules python has cached, so the next run imports the current
   .py files without restarting python.
 
+### SMSS Editor
+
+- **`components/settings/update-smss.tsx`** (`UpdateSMSS`) is the one SMSS editor, for engines
+  and projects, in normal and admin mode: the engine and app SMSS pages, the workbench panels
+  and Resource Governance's SMSS tab all render it. It reads `GetEngineSMSS`/`GetProjectSMSS`,
+  or `AdminGetEngineSMSS`/`AdminGetProjectSMSS` in admin mode, which return `{ smss, smssHash }`:
+  the text with its secrets masked, and the hash of the SMSS as it was read.
+- A save (`updateDatabaseSmssProperties` in `api/databases.ts`, `updateProjectSmssProperties`
+  in `api/projects.ts`) sends the text with that `smssHash`. When the SMSS changed since it was
+  read, the backend refuses it with a 409 and the error code `SMSS_CHANGED`: the editor keeps
+  the text, stays unlocked, and shows a destructive alert, "This SMSS changed since you opened
+  it", with Load Latest.
+- Load Latest, and Refresh while the editor holds unsaved edits, ask first in a dialog, "Load
+  the latest SMSS?", since the unsaved changes are lost; on confirm the SMSS is read again and
+  the editor takes the latest text. Refresh with nothing unsaved reads it again at once.
+
 ### Settings Tabs
 
 Every engine and project Settings tab has the same view: a left menu of sections with the open
