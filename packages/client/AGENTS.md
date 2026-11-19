@@ -624,6 +624,44 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   logo, name and id. The role decides the models offered: only `TYPESAFE` models decide, and they
   never answer, classify by chat or embed.
 
+### Catalog Dependencies
+
+`features/catalog/dependencies/` reads and edits the engines and projects an engine or project
+depends on (`GetCatalogDependencies` / `SetCatalogDependencies`). `GetCatalogDependencies`
+returns `{ dependencies, dependencyIds, links }`: `dependencies` has one node per engine or project
+(`CatalogDependency`, whose `description` is the item's own catalog description), and `links` one
+entry per link and role (`CatalogDependencyLink`: `parent_id`, `catalog_id`, `is_automatic`,
+`role`, `dependency_name`, `dependency_description`). `useCatalogDependencies` joins the owner's
+own links (`parent_id` is the owner) with their nodes into `CatalogDependencyRow`s:
+
+- **Automatic rows** are recorded by the backend from the owner's configuration when the owner is
+  saved: an agent's model, subagents, skills, toolboxes and knowledge; a model's guardrails; a
+  guardrail's judge model or topic vector; a vector database's embedder; a function's storage; a
+  router's routes, classifier, embeddings and fallback; an automation's nodes; a blocks app's
+  engines; code references. Their `role` names which (`CatalogDependencyRole` in
+  `@semoss/shared`), their `dependency_description` is a sentence the backend wrote, and they have
+  no `dependency_name`. They are shown but never edited or removed here: each shows its role badge
+  (`DEPENDENCY_ROLE_LABELS` in `catalog-dependency.ts`) and a note that it comes from the
+  configuration. Change the configuration to change them.
+- **Manual rows** have the role `MANUAL` and are the ones a user added, each with an optional
+  `dependency_name` (unique per owner, ignoring case; checked inline on save and by the backend)
+  and `dependency_description`. Links saved before automatic dependencies existed come back as
+  manual, and a response without `links` is read as manual rows for the direct nodes.
+- **A save sends only the manual rows.** `SetCatalogDependencies` replaces the manual links and
+  keeps the automatic ones, so the edit dialog, the Engines panel and its Manage dialog build their
+  payload from manual rows only, with `toCatalogDependencyPayload` (`{ id, type, name?,
+  description? }`).
+- **One target can be two rows**, in two roles (an agent's model that is also a manual dependency):
+  two links, one node. Key rows by id and role (`getDependencyKey`), never by id alone.
+- `useCatalogDependencies` returns the rows as `dependencies` and splits them into
+  `manualDependencies` and `automaticDependencies`; `allDependencies` stays the graph's nodes. A
+  refresh keeps the rows already read until the new ones arrive, so the project layout stays
+  mounted. After a save that changes the configuration, read the dependencies again: the agent
+  editor calls the project context's `refreshDependencies`. An engine's Dependencies tab is never
+  mounted beside its Settings, and reads afresh each time it opens.
+- `GetCatalogDependents` (what depends on an item) exists on the backend; nothing in the client
+  reads it yet.
+
 ### Catalog name in the import forms
 
 - Every engine import form keeps the catalog name under `CATALOG_NAME_KEY`

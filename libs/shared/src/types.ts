@@ -452,8 +452,35 @@ export type CatalogType =
 	| "INSIGHTS";
 
 /**
+ * Why an owner depends on a target. The backend records every role but
+ * `MANUAL` itself, from the owner's configuration, when the owner is saved;
+ * `MANUAL` rows are the ones a user added.
+ */
+export type CatalogDependencyRole =
+	| "AGENT_MODEL"
+	| "SUBAGENT"
+	| "SKILL"
+	| "TOOLBOX"
+	| "KNOWLEDGE"
+	| "GUARDRAIL"
+	| "JUDGE_MODEL"
+	| "TOPIC_VECTOR"
+	| "EMBEDDER"
+	| "FUNCTION_STORAGE"
+	| "ROUTE_MODEL"
+	| "ROUTER_CLASSIFIER"
+	| "ROUTER_EMBEDDINGS"
+	| "ROUTER_FALLBACK"
+	| "AUTOMATION_NODE"
+	| "BLOCK_ENGINE"
+	| "CODE_REFERENCE"
+	| "MANUAL";
+
+/**
  * One catalog item another engine or project depends on, as
- * `GetCatalogDependencies` returns it.
+ * `GetCatalogDependencies` returns it in `dependencies`: one node per item,
+ * however many links lead to it. The links are in `links`
+ * (`CatalogDependencyLink`).
  */
 export interface CatalogDependency {
 	/** The dependency's id */
@@ -473,6 +500,7 @@ export interface CatalogDependency {
 	permission_name?: Role;
 	/** The permission level the user has requested, if any */
 	access_permission?: number;
+	/** The dependency's own catalog description */
 	description?: string;
 	/** Comma separated tags */
 	tags?: string;
@@ -481,6 +509,39 @@ export interface CatalogDependency {
 	/** Ids of the dependency's own dependencies */
 	dependencies?: string[];
 }
+
+/**
+ * One link from an owner to a dependency, as `GetCatalogDependencies` returns
+ * it in `links`: one per role, so a target the owner depends on in two roles
+ * has two links and one node.
+ */
+export interface CatalogDependencyLink {
+	/** The id of the engine or project that depends on the target */
+	parent_id: string;
+	/** The target's id, the `catalog_id` of its node */
+	catalog_id: string;
+	/**
+	 * Whether the backend recorded the link from the owner's configuration.
+	 * Automatic links are read-only; only manual ones are saved by an edit.
+	 */
+	is_automatic: boolean;
+	/** Why the owner depends on the target; always `MANUAL` for manual links */
+	role: CatalogDependencyRole;
+	/** The link's name, unique per owner; manual links only */
+	dependency_name: string | null;
+	/**
+	 * What the link is for: written by the backend for automatic links, typed
+	 * by the user for manual ones
+	 */
+	dependency_description: string | null;
+}
+
+/**
+ * One of an owner's direct links joined with its target's node: a row of the
+ * owner's dependencies. One target in two roles is two rows.
+ */
+export type CatalogDependencyRow = CatalogDependency &
+	Omit<CatalogDependencyLink, "parent_id">;
 
 export interface Prompt {
 	id: string;

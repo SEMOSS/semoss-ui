@@ -3,6 +3,7 @@ import {
 	Edit,
 	Eye,
 	Info,
+	Lock,
 	Pencil,
 	TriangleAlert,
 	User,
@@ -11,7 +12,7 @@ import { useState } from "react";
 import type { Role } from "@semoss/sdk";
 import {
 	AppCatalogAvatar,
-	type CatalogDependency,
+	type CatalogDependencyRow,
 	type CatalogType,
 	EngineSubtypeIcon,
 } from "@semoss/shared";
@@ -27,7 +28,11 @@ import {
 import { capitalize as toCapitalized } from "@semoss/utility/text";
 import { CatalogGrid } from "@/components/catalog/catalog-grid";
 import { CatalogGridItem } from "@/components/catalog/catalog-grid-item";
-import { getDependencyTypeConfig } from "./catalog-dependency";
+import {
+	getDependencyKey,
+	getDependencyRoleLabel,
+	getDependencyTypeConfig,
+} from "./catalog-dependency";
 import { EditCatalogDependenciesDialog } from "./edit-catalog-dependencies-dialog";
 
 const PERMISSION_ICONS: Record<Role | "NONE", React.ReactNode> = {
@@ -47,16 +52,22 @@ interface CatalogDependenciesViewProps {
 	canEdit: boolean;
 	/** Explains how the dependencies are edited, or why they cannot be here */
 	editHint?: string;
-	/** The owner's dependencies */
-	dependencies: CatalogDependency[];
+	/**
+	 * The owner's direct dependencies, automatic and manual, one row per
+	 * target and role
+	 */
+	dependencies: CatalogDependencyRow[];
 	/** Reads the dependencies again after an edit is saved */
 	onRefresh: () => void;
 }
 
 /**
  * The list of the engines and projects an engine or a project depends on:
- * one row per dependency with the user's access to it, and, for editors, the
- * edit dialog.
+ * one row per dependency and role with the user's access to it, and, for
+ * editors, the edit dialog. Automatic rows come from the owner's
+ * configuration and are read-only, with their role and the backend's
+ * description; manual rows show the name and description a user gave them,
+ * and only they are edited.
  */
 export const CatalogDependenciesView = ({
 	catalogId,
@@ -68,6 +79,8 @@ export const CatalogDependenciesView = ({
 }: CatalogDependenciesViewProps) => {
 	const [isOpen, setIsOpen] = useState(false);
 	const ownerLabel = getDependencyTypeConfig(catalogType).label.toLowerCase();
+	const automaticNote = `Set by this ${ownerLabel}'s configuration. Change the configuration to change it.`;
+	const hasAutomatic = dependencies.some((d) => d.is_automatic);
 
 	return (
 		<>
@@ -111,6 +124,9 @@ export const CatalogDependenciesView = ({
 					These are the resources (engines and apps) this {ownerLabel}{" "}
 					depends on. You need access to each of them for this{" "}
 					{ownerLabel} to work properly.
+					{hasAutomatic
+						? ` Automatic dependencies come from this ${ownerLabel}'s configuration and can only be changed there.`
+						: null}
 				</Muted>
 
 				<CatalogGrid variant="LIST">
@@ -125,14 +141,19 @@ export const CatalogDependenciesView = ({
 							);
 							const permissionKey = d.permission_name || "NONE";
 							const name = d.catalog_name || d.catalog_id;
+							const roleLabel = getDependencyRoleLabel(d.role);
 
 							return (
 								<CatalogGridItem
-									key={d.catalog_id}
+									key={getDependencyKey(d)}
 									variant="LIST"
 									path={`${config.route}/${d.catalog_id}`}
 									name={name}
-									description={d.description || ""}
+									description={
+										d.dependency_description ||
+										d.description ||
+										""
+									}
 									id={d.catalog_id}
 									icon={
 										config.kind === "project" ? (
@@ -157,6 +178,45 @@ export const CatalogDependenciesView = ({
 									dateLastEdited=""
 									actions={
 										<>
+											{d.is_automatic ? (
+												<Tooltip
+													disableHoverableContent={
+														false
+													}
+												>
+													<TooltipTrigger asChild>
+														<Badge
+															asChild
+															variant="secondary"
+															className="gap-1"
+														>
+															<button
+																type="button"
+																aria-label={`${roleLabel}, automatic. ${automaticNote}`}
+															>
+																<Lock
+																	className="size-3"
+																	aria-hidden="true"
+																/>
+																{roleLabel}
+															</button>
+														</Badge>
+													</TooltipTrigger>
+													<TooltipContent>
+														{automaticNote}
+													</TooltipContent>
+												</Tooltip>
+											) : d.dependency_name ? (
+												<Badge
+													variant="secondary"
+													className="max-w-40"
+													title={d.dependency_name}
+												>
+													<span className="truncate">
+														{d.dependency_name}
+													</span>
+												</Badge>
+											) : null}
 											<Badge variant="outline">
 												{config.label}
 											</Badge>
@@ -217,12 +277,11 @@ export const CatalogDependenciesView = ({
 				</CatalogGrid>
 			</div>
 
-			{canEdit ? (
+			{canEdit && isOpen ? (
 				<EditCatalogDependenciesDialog
 					catalogId={catalogId}
 					catalogType={catalogType}
-					dependencies={dependencies}
-					open={isOpen}
+					dependencies={dependencies.filter((d) => !d.is_automatic)}
 					onClose={(saved) => {
 						if (saved) {
 							onRefresh();

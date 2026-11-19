@@ -1,35 +1,39 @@
 import { XIcon } from "lucide-react";
-import type { CatalogDependency, Engine } from "@semoss/shared";
+import type { CatalogDependencyRow, Engine } from "@semoss/shared";
 import { EngineSubtypeIcon } from "@semoss/shared";
 import { Button } from "@semoss/ui/next";
-import { CATEGORY_META } from "./catalog-dependency";
+import {
+	CATEGORY_META,
+	getDependencyKey,
+	getDependencyRoleLabel,
+} from "./catalog-dependency";
 
 interface EngineCategoryCardProps {
 	/** Engine category the card shows */
 	category: Engine["engine_type"];
-	/** Selected engines of this category */
-	engines: CatalogDependency[];
+	/** Engines of this category the owner depends on, automatic and manual */
+	engines: CatalogDependencyRow[];
 	/** Whether the user can manage/remove engines */
 	canEdit: boolean;
 	/** Opens the manage dialog for this category */
 	onManage: () => void;
-	/** Removes one engine from the owner's dependencies */
-	onRemove: (engine: CatalogDependency) => void;
+	/** Removes one manual engine from the owner's dependencies */
+	onRemove: (engine: CatalogDependencyRow) => void;
 	/** Disables the remove buttons while a removal is saving */
 	isRemoving: boolean;
 }
 
 /**
  * One engine category card: icon tile, title and description, a Manage
- * action, and the selected engines as removable chips (or an italic
- * empty-state line).
+ * action, and the engines as chips (or an italic empty-state line). Manual
+ * chips can be removed; automatic ones show their role and cannot.
  *
  * @name EngineCategoryCard
  * @param category - Engine category the card shows.
- * @param engines - Selected engines of this category.
+ * @param engines - Engines of this category, automatic and manual.
  * @param canEdit - Whether the user can manage/remove engines.
  * @param onManage - Opens the manage dialog for this category.
- * @param onRemove - Removes one engine from the owner's dependencies.
+ * @param onRemove - Removes one manual engine from the owner's dependencies.
  * @param isRemoving - Disables the remove buttons while a removal is saving.
  * @return The category card.
  */
@@ -77,9 +81,13 @@ export const EngineCategoryCard = ({
 					<ul className="flex flex-wrap gap-1.5">
 						{engines.map((engine) => (
 							<li
-								key={engine.catalog_id}
+								key={getDependencyKey(engine)}
 								className="flex items-center gap-1.5 rounded-full border border-border bg-background py-1 ps-1.5 pe-2 text-xs"
-								title={engine.catalog_name}
+								title={
+									engine.is_automatic
+										? `${engine.catalog_name}: ${getDependencyRoleLabel(engine.role)}, set by the configuration`
+										: engine.catalog_name
+								}
 							>
 								<span className="flex size-4 shrink-0 items-center justify-center">
 									<EngineSubtypeIcon
@@ -92,7 +100,11 @@ export const EngineCategoryCard = ({
 								<span className="max-w-40 truncate">
 									{engine.catalog_name}
 								</span>
-								{canEdit ? (
+								{engine.is_automatic ? (
+									<span className="shrink-0 text-muted-foreground">
+										{getDependencyRoleLabel(engine.role)}
+									</span>
+								) : canEdit ? (
 									<button
 										type="button"
 										disabled={isRemoving}

@@ -130,6 +130,7 @@ export const ProjectLayout = () => {
 				permission: getUserProjectPermission.data,
 				dependencies: getDependencies.dependencies,
 				refresh,
+				refreshDependencies: getDependencies.refresh,
 				update,
 			}}
 		>

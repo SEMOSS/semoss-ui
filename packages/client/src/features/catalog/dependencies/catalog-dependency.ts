@@ -18,7 +18,13 @@ import {
 	SquareFunctionIcon,
 	Workflow,
 } from "lucide-react";
-import type { CatalogDependency, CatalogType, Engine } from "@semoss/shared";
+import type {
+	CatalogDependency,
+	CatalogDependencyRole,
+	CatalogDependencyRow,
+	CatalogType,
+	Engine,
+} from "@semoss/shared";
 import { TYPE_TO_ROUTE } from "@/constants";
 import { isProjectType } from "@/utility/catalog";
 
@@ -208,15 +214,89 @@ export const CATEGORY_META = {
 } as const satisfies Record<Engine["engine_type"], CategoryMeta>;
 
 /**
- * The `SetCatalogDependencies` payload entry for a dependency. The target's
- * specific type goes as it is; nothing is collapsed to a generic PROJECT.
+ * A short label per dependency role, for the role badge on a row. Typed with
+ * `satisfies`, so a role the backend adds fails type-check here.
+ */
+export const DEPENDENCY_ROLE_LABELS = {
+	AGENT_MODEL: "Agent model",
+	SUBAGENT: "Subagent",
+	SKILL: "Skill",
+	TOOLBOX: "Toolbox",
+	KNOWLEDGE: "Knowledge",
+	GUARDRAIL: "Guardrail",
+	JUDGE_MODEL: "Judge model",
+	TOPIC_VECTOR: "Topic vector",
+	EMBEDDER: "Embedder",
+	FUNCTION_STORAGE: "Function storage",
+	ROUTE_MODEL: "Route model",
+	ROUTER_CLASSIFIER: "Router classifier",
+	ROUTER_EMBEDDINGS: "Router embeddings",
+	ROUTER_FALLBACK: "Router fallback",
+	AUTOMATION_NODE: "Automation node",
+	BLOCK_ENGINE: "Block engine",
+	CODE_REFERENCE: "Code reference",
+	MANUAL: "Manual",
+} as const satisfies Record<CatalogDependencyRole, string>;
+
+const isDependencyRole = (role: string): role is CatalogDependencyRole =>
+	Object.hasOwn(DEPENDENCY_ROLE_LABELS, role);
+
+/**
+ * The label of a dependency's role. A role from a newer backend shows as it is.
+ *
+ * @param role - The row's role.
+ * @returns Its short label.
+ */
+export const getDependencyRoleLabel = (role: string): string =>
+	isDependencyRole(role) ? DEPENDENCY_ROLE_LABELS[role] : role;
+
+/**
+ * A key for a dependency row. One target can be a dependency in two roles,
+ * so the id alone is not unique.
+ *
+ * @param dependency - The row.
+ * @returns Its id and role.
+ */
+export const getDependencyKey = (
+	dependency: Pick<CatalogDependencyRow, "catalog_id" | "role">,
+): string => `${dependency.catalog_id}:${dependency.role}`;
+
+/** One `SetCatalogDependencies` entry: a manual dependency to keep or add. */
+export interface CatalogDependencyPayload {
+	/** The target's id */
+	readonly id: string;
+	/** The target's specific type */
+	readonly type: CatalogType;
+	/** The row's name, unique per owner */
+	readonly name?: string;
+	/** What the dependency is for */
+	readonly description?: string;
+}
+
+/**
+ * The `SetCatalogDependencies` payload entry for a manual dependency. The
+ * target's specific type goes as it is; nothing is collapsed to a generic
+ * PROJECT. The name and description go only when set, trimmed. The backend
+ * replaces only the manual rows, so automatic ones are never sent.
  *
  * @param dependency - The dependency to serialize.
- * @returns The {id, type} wire entry.
+ * @returns The wire entry.
  */
 export const toCatalogDependencyPayload = (
-	dependency: Pick<CatalogDependency, "catalog_id" | "catalog_type">,
-): { id: string; type: CatalogType } => ({
-	id: dependency.catalog_id,
-	type: dependency.catalog_type,
-});
+	dependency: Pick<CatalogDependency, "catalog_id" | "catalog_type"> &
+		Partial<
+			Pick<
+				CatalogDependencyRow,
+				"dependency_name" | "dependency_description"
+			>
+		>,
+): CatalogDependencyPayload => {
+	const name = dependency.dependency_name?.trim();
+	const description = dependency.dependency_description?.trim();
+	return {
+		id: dependency.catalog_id,
+		type: dependency.catalog_type,
+		...(name ? { name } : {}),
+		...(description ? { description } : {}),
+	};
+};
