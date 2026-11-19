@@ -115,12 +115,16 @@ function LiveTopicM365Folders({
 		setNote("");
 		// Load data for both tabs when opening
 		try {
-			const [teamsList, foldersList] = await Promise.all([
+			const [teamsList, allFolders] = await Promise.all([
 				listAvailableTeams(actions),
 				listAvailableOneDriveFolders(actions),
 			]);
 			setTeams(teamsList);
-			setOnedriveFolders(foldersList);
+			// Filter to show only folders, exclude files
+			const foldersOnly = allFolders.filter(
+				(item) => item.isFolder === true,
+			);
+			setOnedriveFolders(foldersOnly);
 		} catch (cause: unknown) {
 			setError(
 				cause instanceof Error

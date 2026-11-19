@@ -36,6 +36,7 @@ const oneDriveFolderSchema = z.object({
 	driveId: z.string(),
 	itemId: z.string(),
 	webUrl: z.string().optional(),
+	isFolder: z.boolean().optional(),
 });
 export type OneDriveFolder = z.infer<typeof oneDriveFolderSchema>;
 
