@@ -109,7 +109,8 @@ export function MirrorStep({
 								className={cn(
 									"wrap-anywhere h-auto min-h-8 pointer-coarse:min-h-11 whitespace-normal rounded-md px-2 py-1 text-start font-normal text-sm",
 									isFlagged &&
-										"bg-destructive/10 text-destructive line-through hover:bg-destructive/15 hover:text-destructive",
+										// the dark hover of a ghost button would paint over the mark
+										"bg-destructive/10 text-destructive line-through hover:bg-destructive/15 hover:text-destructive dark:hover:bg-destructive/15",
 								)}
 								onClick={() =>
 									change({

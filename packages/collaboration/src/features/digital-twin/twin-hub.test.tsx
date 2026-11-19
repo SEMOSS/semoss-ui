@@ -216,9 +216,10 @@ it("still lists the twins when the persona cannot be read", async () => {
 	expect(
 		await screen.findByRole("link", { name: "Manage: Robin Twin" }),
 	).toBeVisible();
+	// the persona is read beside the twins, so its failure can land after they are listed
 	expect(
-		within(screen.getByRole("region", { name: "Your persona" })).getByRole(
-			"alert",
-		),
+		await within(
+			screen.getByRole("region", { name: "Your persona" }),
+		).findByRole("alert"),
 	).toHaveTextContent("The server is restarting.");
 });
