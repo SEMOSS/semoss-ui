@@ -90,6 +90,12 @@ const catalog = new Catalog<ReactCatalogComponent>(
 	[],
 );
 
+const MESSAGE_KINDS = [
+	"createSurface",
+	"updateComponents",
+	"updateDataModel",
+	"deleteSurface",
+] as const;
 const components = z.array(z.record(z.string(), z.unknown())).max(128);
 const surfaceId = z.string().min(1).max(100);
 const requestSchema = z
@@ -97,70 +103,95 @@ const requestSchema = z
 		title: z.string().trim().min(1).max(200),
 		messages: z
 			.array(
-				z.union([
-					z
-						.object({
-							version: z.literal("1.0"),
-							createSurface: z
-								.object({
-									surfaceId,
-									catalogId: z.literal(A2UI_CATALOG_ID),
-									components: components.optional(),
-									dataModel: z
-										.record(z.string(), z.unknown())
-										.optional(),
-								})
-								.strict(),
-						})
-						.strict(),
-					z
-						.object({
-							version: z.literal("1.0"),
-							updateComponents: z
-								.object({ surfaceId, components })
-								.strict(),
-						})
-						.strict(),
-					z
-						.object({
-							version: z.literal("1.0"),
-							updateDataModel: z
-								.object({
-									surfaceId,
-									path: z.string().optional(),
-									value: z.unknown().optional(),
-								})
-								.strict(),
-						})
-						.strict(),
-					z
-						.object({
-							version: z.literal("1.0"),
-							deleteSurface: z.object({ surfaceId }).strict(),
-						})
-						.strict(),
-				]),
+				// One object, not a union of the four kinds, so a mistake is reported once, at its own path.
+				z
+					.object({
+						version: z.literal("1.0"),
+						createSurface: z
+							.object({
+								surfaceId,
+								catalogId: z.literal(A2UI_CATALOG_ID),
+								components: components.optional(),
+								dataModel: z
+									.record(z.string(), z.unknown())
+									.optional(),
+							})
+							.strict()
+							.optional(),
+						updateComponents: z
+							.object({ surfaceId, components })
+							.strict()
+							.optional(),
+						updateDataModel: z
+							.object({
+								surfaceId,
+								path: z.string().optional(),
+								value: z.unknown().optional(),
+							})
+							.strict()
+							.optional(),
+						deleteSurface: z
+							.object({ surfaceId })
+							.strict()
+							.optional(),
+					})
+					.strict()
+					.refine(
+						(message) =>
+							MESSAGE_KINDS.filter((kind) => kind in message)
+								.length === 1,
+						`Each message needs exactly one of ${MESSAGE_KINDS.join(", ")}.`,
+					),
 			)
 			.min(1)
 			.max(32),
 	})
 	.strict();
 
-/** Validate a bounded tool payload, then let the official SDK resolve the graph and bindings. */
+/**
+ * Validate a bounded tool payload, then let the official SDK resolve the graph and bindings.
+ * What it throws is returned to the agent, so each error says what to correct.
+ */
 export function createA2uiProcessor(
 	serialized: string,
 	onAction: (action: ActionPayload) => void,
 ): { title: string; processor: MessageProcessor<ReactCatalogComponent> } {
 	if (new TextEncoder().encode(serialized).length > 65_536)
 		throw new Error("The interface exceeds the 64 KiB limit.");
-	const request = requestSchema.parse(JSON.parse(serialized) as unknown);
-	let count = 0;
-	for (const message of request.messages) {
-		if ("createSurface" in message)
-			count += message.createSurface.components?.length ?? 0;
-		if ("updateComponents" in message)
-			count += message.updateComponents.components.length;
+	const input: unknown = JSON.parse(serialized);
+	// A model server hands a list argument over as text when its JSON does not parse.
+	if (isRecord(input) && typeof input.messages === "string") {
+		const text = input.messages;
+		try {
+			input.messages = JSON.parse(text) as unknown;
+		} catch (error) {
+			const reason =
+				error instanceof Error
+					? error.message
+					: "it could not be parsed";
+			// shortcut: only V8 reports a position, so other browsers send the reason without the text before it
+			const end = Number(/position (\d+)/.exec(reason)?.[1]);
+			throw new Error(
+				`messages is not valid JSON: ${reason}${end ? `, right after ${text.slice(Math.max(0, end - 60), end)}` : ""}`,
+			);
+		}
 	}
+	const parsed = requestSchema.safeParse(input);
+	if (!parsed.success)
+		throw new Error(
+			parsed.error.issues
+				.map(
+					(issue) =>
+						`${issue.path.join(".") || "arguments"}: ${issue.message}`,
+				)
+				.join("; "),
+		);
+	const request = parsed.data;
+	let count = 0;
+	for (const message of request.messages)
+		count +=
+			(message.createSurface?.components?.length ?? 0) +
+			(message.updateComponents?.components.length ?? 0);
 	if (count > 128) throw new Error("The interface has too many components.");
 	// Even reserved SDK functions are outside this catalog's input-only contract.
 	const inspect = (value: unknown, depth = 0): void => {
@@ -191,12 +222,7 @@ export function createA2uiProcessor(
 			validationConfig: {
 				targetVersion: "1.0",
 				maxDepth: 16,
-				allowedMessages: [
-					"createSurface",
-					"updateComponents",
-					"updateDataModel",
-					"deleteSurface",
-				],
+				allowedMessages: [...MESSAGE_KINDS],
 			},
 		},
 	);
@@ -211,7 +237,9 @@ export function createA2uiProcessor(
 		// child references can otherwise expand a small graph into an enormous UI.
 		const visited = new Set<string>();
 		let hasButton = false;
+		let current = surface.rootId;
 		const visit = (id: string, depth: number): void => {
+			current = id;
 			if (depth > 16 || visited.has(id))
 				throw new Error(
 					"Use a tree of unique component IDs, at most 16 levels deep.",
@@ -285,7 +313,7 @@ export function createA2uiProcessor(
 								: typeof value === "string";
 				if (!valid)
 					throw new Error(
-						"Initialize every input with a value of the correct type in the data model.",
+						'Initialize its value in the data model with the right type: a string array for ChoicePicker ([] or ["value"], even for one choice), true or false for CheckBox, a number for Slider, a string for the others.',
 					);
 				if (
 					component.type === "TextField" &&
@@ -409,7 +437,13 @@ export function createA2uiProcessor(
 				}
 			}
 		};
-		visit(surface.rootId, 1);
+		try {
+			visit(surface.rootId, 1);
+		} catch (error) {
+			throw new Error(
+				`Component ${current}: ${error instanceof Error ? error.message : String(error)}`,
+			);
+		}
 		if (!hasButton)
 			throw new Error("Include a labeled button to send the response.");
 		return { title: request.title, processor };

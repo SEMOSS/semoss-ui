@@ -100,15 +100,53 @@ it("keeps the form after a failed decision and permits retry", async () => {
 	expect(view.onRespond).toHaveBeenCalledTimes(2);
 });
 
-it("shows a recoverable validation error and allows dismissal", async () => {
+it("returns a validation error to the agent instead of asking the owner", async () => {
 	mock.failure = true;
 	const view = props();
-	render(<A2uiToolView {...view} />);
-	expect(screen.getByRole("alert")).toHaveTextContent(
-		"could not be displayed",
+	const { rerender } = render(<A2uiToolView {...view} />);
+	expect(
+		await screen.findByText("The agent was told why and can try again."),
+	).toBeVisible();
+	// the host hands over new callbacks on every render
+	rerender(<A2uiToolView {...view} onRespond={vi.fn()} />);
+	expect(view.onRespond).toHaveBeenCalledTimes(1);
+	expect(view.onRespond).toHaveBeenCalledWith(
+		expect.objectContaining({
+			userAction: "a2ui-invalid",
+			result: { error: "Invalid catalog" },
+		}),
 	);
+	expect(view.onDecline).not.toHaveBeenCalled();
+	expect(screen.getByRole("alert")).toHaveTextContent(
+		"could not be displayed. Invalid catalog",
+	);
+});
+
+it("leaves Dismiss when the agent cannot be told", async () => {
+	mock.failure = true;
+	const view = props();
+	vi.mocked(view.onRespond).mockRejectedValueOnce(
+		new Error("Connection lost"),
+	);
+	render(<A2uiToolView {...view} />);
+	expect(await screen.findByText(/Connection lost/)).toBeVisible();
 	fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
 	await waitFor(() => expect(view.onDecline).toHaveBeenCalledTimes(1));
+	expect(view.onRespond).toHaveBeenCalledTimes(1);
+});
+
+it("does not report an invalid interface from saved history", () => {
+	mock.failure = true;
+	const view = props();
+	render(
+		<A2uiToolView
+			{...view}
+			mode="result"
+			call={{ ...view.call, status: "declined" }}
+		/>,
+	);
+	expect(screen.getByText("Dismissed.")).toBeVisible();
+	expect(view.onRespond).not.toHaveBeenCalled();
 });
 
 it("does not send actions from saved history or a disposed surface", async () => {

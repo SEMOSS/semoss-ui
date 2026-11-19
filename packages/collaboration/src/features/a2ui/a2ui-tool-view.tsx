@@ -100,6 +100,33 @@ export function A2uiToolView({
 		};
 	}, [serialized]);
 
+	// The owner cannot repair an invalid interface, so its error goes back to the agent as the
+	// call's result and the agent corrects it. Dismiss stays for when that fails.
+	useEffect(() => {
+		if (!loadError || !isActive || submitting.current) return;
+		submitting.current = true;
+		setIsSubmitting(true);
+		void handlers.current
+			.onRespond({
+				userAction: "a2ui-invalid",
+				summary:
+					"The interface is invalid, so the owner did not see it and has not answered. Correct the error and call ShowUI again. After two invalid attempts, ask in plain text instead.",
+				result: { error: loadError.slice(0, 2000) },
+			})
+			.then(() => setDecision("responded"))
+			.catch((error: unknown) =>
+				setSubmitError(
+					error instanceof Error
+						? error.message
+						: "Could not tell the agent what went wrong.",
+				),
+			)
+			.finally(() => {
+				submitting.current = false;
+				setIsSubmitting(false);
+			});
+	}, [loadError, isActive]);
+
 	const handleDismiss = async (): Promise<void> => {
 		if (!isActive || submitting.current) return;
 		submitting.current = true;
@@ -130,8 +157,7 @@ export function A2uiToolView({
 			{loadError ? (
 				<Alert variant="destructive">
 					<AlertDescription>
-						This interface could not be displayed. Dismiss it and
-						ask the agent to try again. {loadError}
+						This interface could not be displayed. {loadError}
 					</AlertDescription>
 				</Alert>
 			) : surface && isActive ? (
@@ -144,9 +170,13 @@ export function A2uiToolView({
 			) : !surface && isActive ? (
 				<Spinner aria-label="Loading interface" />
 			) : null}
-			{submitError && (
+			{submitError && isActive && (
 				<Alert variant="destructive">
-					<AlertDescription>{submitError}</AlertDescription>
+					<AlertDescription>
+						{submitError}
+						{loadError &&
+							" Dismiss this and ask the agent to try again."}
+					</AlertDescription>
 				</Alert>
 			)}
 			{isActive ? (
@@ -162,7 +192,9 @@ export function A2uiToolView({
 					{isSubmitting && (
 						<output className="flex items-center gap-2">
 							<Spinner />
-							Saving response…
+							{loadError
+								? "Updating the agent…"
+								: "Saving response…"}
 						</output>
 					)}
 				</div>
@@ -173,7 +205,9 @@ export function A2uiToolView({
 							? "Dismissed."
 							: call.status === "succeeded" ||
 									decision === "responded"
-								? "Response sent. This interface is closed."
+								? loadError
+									? "The agent was told why and can try again."
+									: "Response sent. This interface is closed."
 								: "This interface is no longer accepting responses."}
 					</Muted>
 				</output>

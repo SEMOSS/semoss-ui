@@ -138,6 +138,74 @@ it.each([
 	).toThrow();
 });
 
+it("reads messages a model server handed over as JSON text", () => {
+	const { processor } = createA2uiProcessor(
+		JSON.stringify({
+			...a2uiRequest,
+			messages: JSON.stringify(a2uiRequest.messages),
+		}),
+		vi.fn(),
+	);
+	try {
+		expect(processor.getSurface("task-choice")).toBeDefined();
+	} finally {
+		processor.dispose();
+	}
+});
+
+it("tells the agent what to correct", () => {
+	const original = a2uiRequest.messages[0].createSurface;
+	const load = (messages: unknown) => () =>
+		createA2uiProcessor(
+			JSON.stringify({ title: "Example", messages }),
+			vi.fn(),
+		);
+	// a closing bracket where a brace belongs, as a model wrote it; the text shown ends at the mistake
+	expect(
+		load('[{"version": "1.0", "createSurface": {"surfaceId": "a"]}]'),
+	).toThrow(
+		/^messages is not valid JSON: .*, right after \[\{"version": "1\.0", "createSurface": \{"surfaceId": "a"$/,
+	);
+	expect(load([{ createSurface: original }])).toThrow(
+		'messages.0.version: Invalid input: expected "1.0"',
+	);
+	expect(
+		load([
+			{
+				version: "1.0",
+				createSurface: original,
+				deleteSurface: { surfaceId: original.surfaceId },
+			},
+		]),
+	).toThrow("messages.0: Each message needs exactly one of createSurface");
+	expect(load([{ version: "1.0" }])).toThrow("exactly one of createSurface");
+	// a pick-one list started with a string instead of a string array
+	expect(
+		load([
+			{
+				version: "1.0",
+				createSurface: {
+					...original,
+					dataModel: { notes: "review" },
+					components: original.components.map((component) =>
+						component.id === "notes"
+							? {
+									id: "notes",
+									component: "ChoicePicker",
+									label: "Task",
+									options: [
+										{ label: "Review", value: "review" },
+									],
+									value: { "@path": "/notes" },
+								}
+							: component,
+					),
+				},
+			},
+		]),
+	).toThrow("Component notes: Initialize its value in the data model");
+});
+
 it("rejects oversized payloads and unsupported wire operations before processing", () => {
 	expect(() =>
 		createA2uiProcessor(

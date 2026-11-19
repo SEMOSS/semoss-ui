@@ -384,9 +384,12 @@ platform skill together. No separate Python server or model API key is needed.
 This first profile supports one isolated surface per call, at most 32 messages,
 128 component definitions, and 64 KiB of JSON. It accepts fixed component trees
 and data bindings; it excludes remote catalogs/media, executable functions,
-HTML, validation checks, and cross-call or token-level UI streaming. Invalid
-interfaces show an error with a Dismiss action. Failed submissions retain input
-values for retry.
+HTML, validation checks, and cross-call or token-level UI streaming. An interface
+that fails validation is returned to the agent as the call's result
+(`userAction: "a2ui-invalid"`, with an error naming the component or path), so
+the agent corrects it without the owner; the owner sees the error and that the
+agent was told, and Dismiss remains if that report fails. `messages` sent as JSON
+text is parsed. Failed submissions retain input values for retry.
 
 After deploying both sides, try: “Show me an interactive form to choose a task,
 add notes, and pick a review date.” Confirm that submitting resumes the same run
