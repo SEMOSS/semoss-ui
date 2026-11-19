@@ -13,8 +13,10 @@ import { decodeBase64ToBytes } from "@semoss/utility/encoding";
 import { sanitizeFileNameStem } from "@semoss/utility/file";
 import { tryParseJson } from "@semoss/utility/json";
 import {
-	type ProjectRow,
 	projectListSchema,
+	toWorkspaceAgent,
+	type WorkspaceAgent,
+	workspacePayloadSchema,
 } from "@/features/agents/api/agent-schemas";
 import { getAgent } from "@/features/agents/api/get-agent";
 import { callPixel, type InsightActions, pixel } from "@/lib/pixel";
@@ -45,6 +47,8 @@ export const TWIN_NOTE_MAX_LENGTH = 8000;
 export interface DigitalTwin {
 	id: string;
 	name: string;
+	/** The person the twin represents, when their display name is known. */
+	ownerName?: string;
 }
 
 /** What an owner sets on their twin. */
@@ -86,6 +90,7 @@ export class TwinSetupError extends Error {
 const TWIN_FILTER = {
 	projectType: "WORKSPACE",
 	metaFilters: { digital_twin: ["true"] },
+	noMeta: true,
 };
 const MY_TWIN_PIXEL = pixel("MyProjects", {
 	...TWIN_FILTER,
@@ -94,11 +99,21 @@ const MY_TWIN_PIXEL = pixel("MyProjects", {
 	createdByMe: true,
 });
 const TWINS_PIXEL = pixel("MyProjects", TWIN_FILTER);
+const twinListSchema = projectListSchema.element
+	.extend({ digital_twin_owner_name: z.string().nullish() })
+	.array();
+const twinWelcomeSchema = workspacePayloadSchema.extend({
+	digital_twin_file_access: z
+		.enum(["manage", "add", "read"])
+		.optional()
+		.catch("read"),
+});
 
 // project_name can be a namespace many agents share; the display name is the twin's own
-const toTwin = (row: ProjectRow): DigitalTwin => ({
+const toTwin = (row: z.infer<typeof twinListSchema>[number]): DigitalTwin => ({
 	id: row.project_id,
 	name: row.project_display_name?.trim() || row.project_name,
+	ownerName: row.digital_twin_owner_name?.trim() || undefined,
 });
 
 // a sentence of its own wherever it is put: the server's reasons come with and without a full stop
@@ -166,7 +181,7 @@ async function readTwinSources(
 
 /** All twins the signed-in person created and still owns. */
 async function listMyTwins(actions: InsightActions): Promise<DigitalTwin[]> {
-	return (await callPixel(actions, MY_TWIN_PIXEL, projectListSchema)).map(
+	return (await callPixel(actions, MY_TWIN_PIXEL, twinListSchema)).map(
 		toTwin,
 	);
 }
@@ -199,13 +214,56 @@ export async function getMyTwinAgent(actions: InsightActions, twinId?: string) {
 	return twin ? getAgent(actions, twin.id) : null;
 }
 
+/** Read an accessible twin and the file changes its owner can request in chat. */
+export async function getTwinChatWelcome(
+	actions: InsightActions,
+	twinId: string,
+): Promise<{ agent: WorkspaceAgent; fileAccess: "manage" | "add" | "read" }> {
+	if (!twinId.trim()) throw new Error("The link names no Digital Twin.");
+	const payload = await callPixel(
+		actions,
+		pixel("GetWorkspace", {
+			workspaceId: twinId,
+			includeDigitalTwinFileAccess: true,
+		}),
+		twinWelcomeSchema,
+	);
+	const agent = toWorkspaceAgent(payload);
+	if (payload.digital_twin_file_access !== undefined)
+		return { agent, fileAccess: payload.digital_twin_file_access };
+
+	// Servers predating the capability can only add copies in an owner's chat.
+	try {
+		const mine = await callPixel(
+			actions,
+			pixel("MyProjects", {
+				...TWIN_FILTER,
+				project: twinId,
+				createdByMe: true,
+				effectivePermissions: [1, 2],
+				limit: 1,
+			}),
+			projectListSchema,
+		);
+		return {
+			agent,
+			fileAccess: mine.some((row) => row.project_id === twinId)
+				? "add"
+				: "read",
+		};
+	} catch {
+		// An unavailable ownership check leaves the accessible chat in read mode.
+		return { agent, fileAccess: "read" };
+	}
+}
+
 /** The signed-in person's own twins, and the twins other people shared with them. */
 export async function listTwins(
 	actions: InsightActions,
 ): Promise<{ mine: DigitalTwin[]; shared: DigitalTwin[] }> {
 	const [mine, all] = await Promise.all([
 		listMyTwins(actions),
-		callPixel(actions, TWINS_PIXEL, projectListSchema),
+		callPixel(actions, TWINS_PIXEL, twinListSchema),
 	]);
 	const mineIds = new Set(mine.map((twin) => twin.id));
 	return {

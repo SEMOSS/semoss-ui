@@ -1,7 +1,10 @@
 import { Alert, AlertDescription, Button, Spinner } from "@semoss/ui/next";
 import { optimizePrompt } from "@/features/rooms/api/optimize-prompt";
 import { RoomComposer } from "@/features/rooms/components/room-composer";
-import type { ComposerPanelAction } from "@/features/rooms/components/room-composer.types";
+import type {
+	ComposerPanelAction,
+	ComposerPrompt,
+} from "@/features/rooms/components/room-composer.types";
 import { RoomContextFiles } from "@/features/rooms/components/room-context-files";
 import type {
 	RoomSession,
@@ -30,6 +33,8 @@ interface DraftChatComposerProps {
 	isHero?: boolean;
 	/** The page is one agent's own, such as a Digital Twin's, so the agent cannot be changed. */
 	isAgentLocked?: boolean;
+	/** Suggested first messages for the empty composer. */
+	starterPrompts?: readonly ComposerPrompt[];
 	panelActions: readonly ComposerPanelAction[];
 }
 
@@ -46,6 +51,7 @@ export function DraftChatComposer({
 	isCompact = false,
 	isHero = false,
 	isAgentLocked = false,
+	starterPrompts,
 	panelActions,
 }: DraftChatComposerProps) {
 	const actionsTriggerId = `new-chat-${draftId}-composer-actions`;
@@ -87,8 +93,12 @@ export function DraftChatComposer({
 			<RoomComposer
 				key={`${draftId}:${snapshot.composerResetKey}`}
 				autoFocus={!isCompact}
-				// the root's own background would show as square corners over the photo
-				className={isHero ? "bg-transparent" : undefined}
+				className={
+					isHero || starterPrompts?.length
+						? "bg-transparent"
+						: undefined
+				}
+				starterPrompts={starterPrompts}
 				surfaceClassName={isHero ? "shadow-lg" : undefined}
 				// the hero's longer placeholder wraps on a phone, so it keeps the full height there
 				inputClassName={

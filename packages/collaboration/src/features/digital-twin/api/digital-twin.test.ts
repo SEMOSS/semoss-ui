@@ -9,6 +9,7 @@ import {
 	generateTwinAvatar,
 	getMyTwin,
 	getMyTwinAgent,
+	getTwinChatWelcome,
 	hasTwinFolder,
 	indexTwinFiles,
 	listTwins,
@@ -32,9 +33,9 @@ vi.mock("@semoss/sdk", async (importOriginal) => ({
 }));
 
 const MINE =
-	'MyProjects(projectType=["WORKSPACE"], metaFilters=[{"digital_twin":["true"]}], effectivePermissions=[1], createdByMe=[true]);';
+	'MyProjects(projectType=["WORKSPACE"], metaFilters=[{"digital_twin":["true"]}], noMeta=[true], effectivePermissions=[1], createdByMe=[true]);';
 const ALL =
-	'MyProjects(projectType=["WORKSPACE"], metaFilters=[{"digital_twin":["true"]}]);';
+	'MyProjects(projectType=["WORKSPACE"], metaFilters=[{"digital_twin":["true"]}], noMeta=[true]);';
 
 // an agent as GetWorkspace answers, with everything the twin form does not show set
 const WORKSPACE = {
@@ -151,6 +152,7 @@ describe("finding twins", () => {
 					project_id: "twin-2",
 					project_name: "dana",
 					project_display_name: "Dana Ortiz Twin",
+					digital_twin_owner_name: " Dana Ortiz ",
 				},
 			],
 		});
@@ -159,7 +161,13 @@ describe("finding twins", () => {
 				{ id: "twin-1", name: "Robin Twin" },
 				{ id: "twin-3", name: "Research Twin" },
 			],
-			shared: [{ id: "twin-2", name: "Dana Ortiz Twin" }],
+			shared: [
+				{
+					id: "twin-2",
+					name: "Dana Ortiz Twin",
+					ownerName: "Dana Ortiz",
+				},
+			],
 		});
 		expect([...ran()].sort()).toEqual([ALL, MINE].sort());
 	});
@@ -196,6 +204,78 @@ describe("finding twins", () => {
 		await expect(
 			getMyTwin(transport({ [MINE]: { rows: [] } }).actions),
 		).rejects.toThrow(/unexpected shape/);
+	});
+
+	it.each(["manage", "add", "read"] as const)(
+		"loads the twin and its %s chat capability in one request",
+		async (access) => {
+			const { actions, ran } = transport({
+				GetWorkspace: {
+					...WORKSPACE,
+					digital_twin_file_access: access,
+				},
+			});
+			await expect(
+				getTwinChatWelcome(actions, "twin-1"),
+			).resolves.toMatchObject({
+				agent: { workspace_id: "twin-1", name: "Robin Twin" },
+				fileAccess: access,
+			});
+			expect(ran()).toEqual([
+				'GetWorkspace(workspaceId=["twin-1"], includeDigitalTwinFileAccess=[true]);',
+			]);
+		},
+	);
+
+	it.each([
+		{
+			rows: [{ project_id: "twin-1", project_name: "Robin Twin" }],
+			access: "add",
+		},
+		{
+			rows: [{ project_id: "another", project_name: "Different Twin" }],
+			access: "read",
+		},
+		{ rows: [], access: "read" },
+		{ rows: new Error("Ownership unavailable"), access: "read" },
+	])(
+		"uses the verified capability for this twin on older servers: $access",
+		async ({ rows, access }) => {
+			const { actions, ran } = transport({
+				GetWorkspace: { ...WORKSPACE, permission: "OWNER" },
+				MyProjects: rows,
+			});
+			await expect(
+				getTwinChatWelcome(actions, "twin-1"),
+			).resolves.toMatchObject({ fileAccess: access });
+			expect(ran()[1]).toBe(
+				'MyProjects(projectType=["WORKSPACE"], metaFilters=[{"digital_twin":["true"]}], noMeta=[true], project=["twin-1"], createdByMe=[true], effectivePermissions=[1,2], limit=[1]);',
+			);
+		},
+	);
+
+	it("keeps chat available when the server returns an unknown capability", async () => {
+		const { actions, ran } = transport({
+			GetWorkspace: { ...WORKSPACE, digital_twin_file_access: "unknown" },
+		});
+		await expect(
+			getTwinChatWelcome(actions, "twin-1"),
+		).resolves.toMatchObject({ fileAccess: "read" });
+		expect(ran()).toHaveLength(1);
+	});
+
+	it("skips ownership reads for missing and inaccessible twins", async () => {
+		const { actions, ran } = transport({
+			GetWorkspace: new Error("Access denied"),
+		});
+		await expect(getTwinChatWelcome(actions, " ")).rejects.toThrow(
+			"no Digital Twin",
+		);
+		expect(ran()).toHaveLength(0);
+		await expect(getTwinChatWelcome(actions, "twin-1")).rejects.toThrow(
+			"Access denied",
+		);
+		expect(ran()).toHaveLength(1);
 	});
 });
 

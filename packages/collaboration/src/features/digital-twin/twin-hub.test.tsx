@@ -87,7 +87,7 @@ it("shows all the owner's twins with their own links, and each shared twin with 
 	twins = { mine: [ROBIN, research], all: [ROBIN, research, DANA] };
 	renderHub();
 	const mine = within(
-		await screen.findByRole("region", { name: "Your Digital Twins" }),
+		await screen.findByRole("region", { name: "Your twins" }),
 	);
 	expect(
 		mine.getByRole("heading", { level: 3, name: "Robin Twin" }),
@@ -150,9 +150,9 @@ it("marks a twin shared with the person as new until its chat has been opened in
 	expect(within(park).queryByText("New")).toBeNull();
 	// the person's own twins are never new to them
 	expect(
-		within(
-			screen.getByRole("region", { name: "Your Digital Twins" }),
-		).queryByText("New"),
+		within(screen.getByRole("region", { name: "Your twins" })).queryByText(
+			"New",
+		),
 	).toBeNull();
 });
 
@@ -197,7 +197,7 @@ it("puts the owner's persona above their twins, counting the twins that use it",
 		await screen.findByRole("region", { name: "Your persona" }),
 	);
 	expect(await card.findByText("Runs renewals.")).toBeVisible();
-	expect(card.getByText("1 of your 2 Digital Twins use it.")).toBeVisible();
+	expect(card.getByText("Used by 1 of your 2 twins.")).toBeVisible();
 	expect(
 		card.getByRole("link", { name: "Open your persona" }),
 	).toHaveAttribute("href", "/twins/persona");
@@ -222,4 +222,53 @@ it("still lists the twins when the persona cannot be read", async () => {
 			screen.getByRole("region", { name: "Your persona" }),
 		).findByRole("alert"),
 	).toHaveTextContent("The server is restarting.");
+});
+
+it("expands the owned gallery and searches every twin and shared owner without changing persona usage", async () => {
+	const user = userEvent.setup();
+	const ownRows = ["Planning", "Handoffs", "Research", "Reviews"].map(
+		(name, index) => ({
+			project_id: `owned-${index}`,
+			project_name: name,
+		}),
+	);
+	twins = {
+		mine: ownRows,
+		all: [...ownRows, { ...DANA, digital_twin_owner_name: "Maya Chen" }],
+	};
+	persona = {
+		exists: true,
+		sections: { ...NO_SECTIONS, short: "Direct and collaborative." },
+		offTwins: [],
+	};
+	renderHub();
+	const own = within(
+		await screen.findByRole("region", { name: "Your twins" }),
+	);
+	expect(own.getAllByRole("listitem")).toHaveLength(3);
+	await user.click(own.getByRole("button", { name: "View all 4" }));
+	expect(own.getAllByRole("listitem")).toHaveLength(4);
+	await user.click(own.getByRole("button", { name: "Show fewer" }));
+	expect(own.getAllByRole("listitem")).toHaveLength(3);
+	const search = screen.getByRole("searchbox", {
+		name: "Find a twin or owner",
+	});
+	await user.type(search, "reviews");
+	expect(own.getByRole("link", { name: "Chat: Reviews" })).toBeVisible();
+	await user.clear(search);
+	await user.type(search, "mAyA");
+	expect(screen.getByText("By Maya Chen")).toBeVisible();
+	expect(screen.queryByRole("region", { name: "Your twins" })).toBeNull();
+	expect(screen.getByText("Used by all 4 of your twins.")).toBeVisible();
+	await user.type(search, "xyz");
+	expect(
+		screen.getByRole("heading", { name: "No matching twins" }),
+	).toBeVisible();
+	await user.click(screen.getByRole("button", { name: "Clear search" }));
+	expect(search).toHaveFocus();
+	expect(
+		within(screen.getByRole("region", { name: "Your twins" })).getAllByRole(
+			"listitem",
+		),
+	).toHaveLength(3);
 });

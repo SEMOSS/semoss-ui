@@ -95,7 +95,7 @@ it("shows how the persona opens and how many of the owner's twins use it", async
 	expect(screen.getByText("Runs renewals.")).toBeVisible();
 	expect(screen.queryByText("Direct.")).toBeNull();
 	// a twin it was switched off for is not counted, and neither is one that is gone
-	expect(screen.getByText("2 of your 3 Digital Twins use it.")).toBeVisible();
+	expect(screen.getByText("Used by 2 of your 3 twins.")).toBeVisible();
 
 	const again = (twinIds: string[]) =>
 		rerender(
@@ -104,9 +104,7 @@ it("shows how the persona opens and how many of the owner's twins use it", async
 			</MemoryRouter>,
 		);
 	again(["twin-1", "twin-3"]);
-	expect(
-		screen.getByText("All 2 of your Digital Twins use it."),
-	).toBeVisible();
+	expect(screen.getByText("Used by all 2 of your twins.")).toBeVisible();
 	again(["twin-1"]);
 	expect(screen.getByText("Your Digital Twin uses it.")).toBeVisible();
 	again([]);
