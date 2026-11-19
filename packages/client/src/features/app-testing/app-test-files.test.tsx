@@ -22,7 +22,25 @@ const fileQuery = vi.hoisted(() => ({
 	error: undefined as { message: string } | undefined,
 	refresh: vi.fn(),
 }));
-const readPixel = vi.hoisted(() => vi.fn((_pixel: string) => fileQuery));
+const historyQuery = vi.hoisted(() => ({
+	status: "SUCCESS",
+	data: {
+		target: "app",
+		runs: [],
+		latest: [],
+		total: 0,
+		offset: 0,
+		hasMore: false,
+		retainedRuns: 100,
+	} as unknown,
+	error: undefined as { message: string } | undefined,
+	refresh: vi.fn(),
+}));
+const readPixel = vi.hoisted(() =>
+	vi.fn((pixel: string) =>
+		pixel.includes("ListAppTestRuns") ? historyQuery : fileQuery,
+	),
+);
 vi.mock("@semoss/sdk/react", () => ({ useSessionPixel: readPixel }));
 
 const fileActions = {
@@ -64,6 +82,18 @@ beforeEach(() => {
 	fileQuery.data = { target: "app", recording };
 	fileQuery.error = undefined;
 	readPixel.mockClear();
+	historyQuery.status = "SUCCESS";
+	historyQuery.data = {
+		target: "app",
+		runs: [],
+		latest: [],
+		total: 0,
+		offset: 0,
+		hasMore: false,
+		retainedRuns: 100,
+	};
+	historyQuery.error = undefined;
+	historyQuery.refresh.mockClear();
 });
 afterEach(() => {
 	cleanup();
@@ -317,17 +347,23 @@ it("fetches one definition only after opening it and does not read on delete", a
 			onSelect={vi.fn()}
 		/>,
 	);
-	expect(readPixel).not.toHaveBeenCalled();
+	expect(
+		readPixel.mock.calls.filter((call) =>
+			call[0].includes("GetAppTestRecording"),
+		),
+	).toHaveLength(0);
 	fireEvent.click(
 		screen.getByRole("button", { name: "Open Checkout to orders" }),
 	);
 	await screen.findByRole("textbox", { name: "Test file JSON" });
 	expect(
-		readPixel.mock.calls.every(
-			(call) =>
-				call[0] ===
-				'META | GetAppTestRecording(project=["app"], recordingId=["example-test"]);',
-		),
+		readPixel.mock.calls
+			.filter((call) => !call[0].includes("ListAppTestRuns"))
+			.every(
+				(call) =>
+					call[0] ===
+					'META | GetAppTestRecording(project=["app"], recordingId=["example-test"]);',
+			),
 	).toBe(true);
 	fireEvent.click(screen.getByRole("button", { name: "Close file" }));
 	await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
@@ -336,7 +372,11 @@ it("fetches one definition only after opening it and does not read on delete", a
 		screen.getByRole("button", { name: "Delete Checkout to orders" }),
 	);
 	await screen.findByRole("dialog", { name: "Delete test file" });
-	expect(readPixel.mock.calls.every((call) => call[0] === "")).toBe(true);
+	expect(
+		readPixel.mock.calls
+			.filter((call) => !call[0].includes("ListAppTestRuns"))
+			.every((call) => call[0] === ""),
+	).toBe(true);
 });
 
 it("shows loading and recoverable read errors without exposing an empty editor", async () => {
@@ -482,11 +522,88 @@ it("runs one file without reading its definition and offers explicit Run all bes
 		screen.getByRole("button", { name: "Run test Checkout to orders" }),
 	);
 	expect(one).toHaveBeenCalledWith(recording.id);
-	expect(readPixel).not.toHaveBeenCalled();
+	expect(
+		readPixel.mock.calls.filter((call) =>
+			call[0].includes("GetAppTestRecording"),
+		),
+	).toHaveLength(0);
 	fireEvent.click(screen.getByRole("button", { name: "Run all" }));
 	expect(all).toHaveBeenCalledTimes(1);
 	expect(
 		screen.getByRole("button", { name: "Refresh tests" }).parentElement,
 	).toBe(screen.getByRole("button", { name: "Run all" }).parentElement);
 	expect(screen.getByText("assets / app-tests / tests")).toBeTruthy();
+});
+
+it("shows persisted latest results and opens history without loading the test definition", async () => {
+	historyQuery.data = {
+		target: "app",
+		runs: [],
+		latest: [
+			{
+				id: recording.id,
+				name: recording.name,
+				status: "FAILED",
+				steps: 8,
+				stepsAttempted: 6,
+				stepsCompleted: 5,
+				assertions: 3,
+				assertionsPassed: 1,
+				runId: "run-one",
+				startedAt: "2026-11-19T12:00:00Z",
+			},
+		],
+		total: 1,
+		offset: 0,
+		hasMore: false,
+		retainedRuns: 100,
+	};
+	render(
+		<AppTestFiles
+			{...fileActions}
+			recordings={[recording]}
+			isLoading={false}
+			onSelect={vi.fn()}
+		/>,
+	);
+	expect(screen.getByText("FAILED")).toBeTruthy();
+	expect(screen.getByText("5/8")).toBeTruthy();
+	const opener = screen.getByRole("button", {
+		name: "History Checkout to orders",
+	});
+	opener.focus();
+	fireEvent.click(opener);
+	await screen.findByRole("dialog", {
+		name: "Run history: Checkout to orders",
+	});
+	expect(
+		readPixel.mock.calls.some((call) =>
+			call[0].includes('recordingId=["example-test"]'),
+		),
+	).toBe(true);
+	expect(
+		readPixel.mock.calls.some((call) =>
+			call[0].includes("GetAppTestRecording"),
+		),
+	).toBe(false);
+	fireEvent.click(screen.getByRole("button", { name: "Close history" }));
+	await waitFor(() => expect(document.activeElement).toBe(opener));
+});
+
+it("shows history failures as unavailable and retries through Refresh tests", () => {
+	historyQuery.status = "ERROR";
+	historyQuery.error = { message: "History storage unavailable" };
+	render(
+		<AppTestFiles
+			{...fileActions}
+			recordings={[recording]}
+			isLoading={false}
+			onSelect={vi.fn()}
+		/>,
+	);
+	expect(screen.getByText(/History storage unavailable/)).toBeTruthy();
+	expect(screen.getByText("Unavailable")).toBeTruthy();
+	expect(screen.queryByText("Not run")).toBeNull();
+	fireEvent.click(screen.getByRole("button", { name: "Refresh tests" }));
+	expect(historyQuery.refresh).toHaveBeenCalledOnce();
 });

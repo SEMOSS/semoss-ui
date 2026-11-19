@@ -6,6 +6,9 @@ import {
 } from "lucide-react";
 import { useRef, useState } from "react";
 import {
+	Alert,
+	AlertDescription,
+	Badge,
 	Button,
 	H4,
 	Spinner,
@@ -16,11 +19,14 @@ import {
 	TableHeader,
 	TableRow,
 } from "@semoss/ui/next";
+import { formatLocalDateTime } from "@semoss/utility/date";
 import type {
 	AppTestRecording,
 	AppTestRecordingSummary,
 } from "./app-test.types";
 import { AppTestFileDialog } from "./app-test-file-dialog";
+import { AppTestHistoryDialog } from "./app-test-history-dialog";
+import { useAppTestHistory } from "./use-app-test-history";
 
 interface AppTestFilesProps {
 	/** Metadata-only entries for the app being edited. */
@@ -36,6 +42,8 @@ interface AppTestFilesProps {
 	onRunAll: () => void;
 	onSave: (recording: AppTestRecording) => Promise<void>;
 	onDelete: (id: string) => Promise<void>;
+	/** Changes when a local run starts or finishes, triggering a history refresh. */
+	runKey?: string;
 }
 
 /** A compact file listing with standard view, edit, and delete actions. */
@@ -51,7 +59,14 @@ export const AppTestFiles = ({
 	onRunAll,
 	onSave,
 	onDelete,
+	runKey,
 }: AppTestFilesProps) => {
+	const history = useAppTestHistory(appId, { runKey });
+	const latest = new Map(history.page?.latest.map((test) => [test.id, test]));
+	const [openedHistory, setOpenedHistory] = useState<{
+		appId: string;
+		recording: AppTestRecordingSummary;
+	} | null>(null);
 	const opener = useRef<HTMLButtonElement | null>(null);
 	const refreshButton = useRef<HTMLButtonElement | null>(null);
 	const [opened, setOpened] = useState<{
@@ -77,7 +92,10 @@ export const AppTestFiles = ({
 						type="button"
 						variant="ghost"
 						size="sm"
-						onClick={onRefresh}
+						onClick={() => {
+							onRefresh();
+							history.refresh();
+						}}
 						disabled={isLoading || isBusy}
 					>
 						<RefreshCwIcon aria-hidden="true" className="size-4" />
@@ -100,6 +118,13 @@ export const AppTestFiles = ({
 				<FolderIcon aria-hidden="true" className="size-4 shrink-0" />
 				assets / app-tests / tests
 			</p>
+			{history.error && (
+				<Alert variant="destructive">
+					<AlertDescription>
+						{history.error} Use Refresh tests to retry.
+					</AlertDescription>
+				</Alert>
+			)}
 			{isLoading ? (
 				<output className="flex items-center gap-2 py-4 text-muted-foreground text-sm">
 					<Spinner className="size-4" />
@@ -122,71 +147,134 @@ export const AppTestFiles = ({
 							<TableRow>
 								<TableHead scope="col">File</TableHead>
 								<TableHead scope="col">Description</TableHead>
+								<TableHead scope="col">Last run</TableHead>
+								<TableHead scope="col">Result</TableHead>
+								<TableHead scope="col">
+									Completed steps
+								</TableHead>
 								<TableHead scope="col">Actions</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
-							{recordings.map((recording) => (
-								<TableRow
-									key={recording.id}
-									data-state={
-										selectedId === recording.id
-											? "selected"
-											: undefined
-									}
-								>
-									<TableCell>
-										<Button
-											type="button"
-											variant="ghost"
-											size="sm"
-											className="h-auto min-h-8 max-w-64 whitespace-normal break-words text-start"
-											aria-label={`Open ${recording.name}`}
-											onClick={(event) => {
-												opener.current =
-													event.currentTarget;
-												setOpened({
-													recording,
-													mode: "view",
-												});
-												onSelect(recording.id);
-											}}
-										>
-											<FileJsonIcon
-												aria-hidden="true"
-												className="size-4"
-											/>
-											{recording.name}
-										</Button>
-										<div className="font-mono text-muted-foreground text-xs">
-											{recording.id}.json
-										</div>
-									</TableCell>
-									<TableCell className="min-w-40 max-w-64 whitespace-normal break-words">
-										<p className="line-clamp-2">
-											{recording.description}
-										</p>
-									</TableCell>
-									<TableCell>
-										<div className="flex gap-1">
+							{recordings.map((recording) => {
+								const last = latest.get(recording.id);
+								return (
+									<TableRow
+										key={recording.id}
+										data-state={
+											selectedId === recording.id
+												? "selected"
+												: undefined
+										}
+									>
+										<TableCell>
 											<Button
 												type="button"
+												variant="ghost"
 												size="sm"
-												variant="outline"
-												disabled={isBusy || isLoading}
-												aria-label={`Run test ${recording.name}`}
-												onClick={() =>
-													onRun(recording.id)
-												}
+												className="h-auto min-h-8 max-w-64 whitespace-normal break-words text-start"
+												aria-label={`Open ${recording.name}`}
+												onClick={(event) => {
+													opener.current =
+														event.currentTarget;
+													setOpened({
+														recording,
+														mode: "view",
+													});
+													onSelect(recording.id);
+												}}
 											>
-												<PlayIcon
+												<FileJsonIcon
 													aria-hidden="true"
 													className="size-4"
 												/>
-												Run test
+												{recording.name}
 											</Button>
-											{(["edit", "delete"] as const).map(
-												(mode) => (
+											<div className="font-mono text-muted-foreground text-xs">
+												{recording.id}.json
+											</div>
+										</TableCell>
+										<TableCell className="min-w-40 max-w-64 whitespace-normal break-words">
+											<p className="line-clamp-2">
+												{recording.description}
+											</p>
+										</TableCell>
+										<TableCell className="min-w-32 whitespace-normal">
+											{last ? (
+												<time dateTime={last.startedAt}>
+													{formatLocalDateTime(
+														last.startedAt,
+													)}
+												</time>
+											) : history.isLoading ? (
+												"Loading…"
+											) : history.error ? (
+												"Unavailable"
+											) : (
+												"Not run"
+											)}
+										</TableCell>
+										<TableCell>
+											{last ? (
+												<Badge
+													variant={
+														last.status ===
+															"FAILED" ||
+														last.status === "ERROR"
+															? "destructive"
+															: "outline"
+													}
+												>
+													{last.status}
+												</Badge>
+											) : (
+												"—"
+											)}
+										</TableCell>
+										<TableCell>
+											{last
+												? `${last.stepsCompleted}/${last.steps}`
+												: "—"}
+										</TableCell>
+										<TableCell>
+											<div className="flex flex-wrap gap-1">
+												<Button
+													type="button"
+													size="sm"
+													variant="outline"
+													disabled={
+														isBusy || isLoading
+													}
+													aria-label={`Run test ${recording.name}`}
+													onClick={() =>
+														onRun(recording.id)
+													}
+												>
+													<PlayIcon
+														aria-hidden="true"
+														className="size-4"
+													/>
+													Run test
+												</Button>
+												<Button
+													type="button"
+													size="sm"
+													variant="ghost"
+													aria-label={`History ${recording.name}`}
+													onClick={(event) => {
+														opener.current =
+															event.currentTarget;
+														setOpenedHistory({
+															appId,
+															recording,
+														});
+													}}
+												>
+													History
+												</Button>
+												{(
+													["edit", "delete"] as const
+												).map((mode) => (
 													<Button
 														key={mode}
 														type="button"
@@ -207,15 +295,27 @@ export const AppTestFiles = ({
 															? "Edit"
 															: "Delete"}
 													</Button>
-												),
-											)}
-										</div>
-									</TableCell>
-								</TableRow>
-							))}
+												))}
+											</div>
+										</TableCell>
+									</TableRow>
+								);
+							})}
 						</TableBody>
 					</Table>
 				</section>
+			)}
+			{openedHistory?.appId === appId && (
+				<AppTestHistoryDialog
+					appId={appId}
+					key={`${appId}-${openedHistory.recording.id}`}
+					recording={openedHistory.recording}
+					onClose={() => setOpenedHistory(null)}
+					onReturnFocus={() => {
+						if (opener.current?.isConnected) opener.current.focus();
+						else refreshButton.current?.focus();
+					}}
+				/>
 			)}
 			{opened && hasOpenedFile && (
 				<AppTestFileDialog

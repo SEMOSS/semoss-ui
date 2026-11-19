@@ -59,6 +59,8 @@ export interface AppTestRun {
 	coverageWarning?: string;
 	summary?: Record<string, number>;
 	error?: string;
+	historyWarning?: string;
+	reportWarning?: string;
 	tests?: {
 		name: string;
 		description?: string;
@@ -68,4 +70,63 @@ export interface AppTestRun {
 		repeats?: number;
 		passedRepeats?: number;
 	}[];
+}
+
+/** Compact, project-visible result; private page evidence is deliberately excluded. */
+export interface AppTestHistoryResult {
+	id: string;
+	name: string;
+	status: string;
+	steps: number;
+	stepsAttempted: number;
+	stepsCompleted: number;
+	assertions: number;
+	assertionsPassed: number;
+	durationMs?: number;
+	definitionHash?: string;
+	classification?: string;
+	reason?: string;
+	failedStep?: number;
+	startedAt?: string;
+	finishedAt?: string;
+	repeats?: number;
+	passedRepeats?: number;
+}
+
+/** Latest result for a test UUID, independent of the definition's current name. */
+export interface AppTestLatestResult extends AppTestHistoryResult {
+	runId: string;
+	startedAt: string;
+}
+
+/** One history-list row; per-test filters include that test's compact counters. */
+export interface AppTestRunSummary {
+	runId: string;
+	status: string;
+	startedAt: string;
+	finishedAt?: string;
+	durationMs?: number;
+	test?: AppTestLatestResult;
+}
+
+/** A bounded history page; definitions and detailed browser evidence are never listed. */
+export interface AppTestRunHistoryPage {
+	target: string;
+	runs: AppTestRunSummary[];
+	latest: AppTestLatestResult[];
+	total: number;
+	offset: number;
+	hasMore: boolean;
+	retainedRuns: number;
+}
+
+/** One persisted run loaded on demand, potentially filtered to one test. */
+export interface AppTestRunHistory {
+	runId: string;
+	target: string;
+	status: string;
+	startedAt: string;
+	finishedAt?: string;
+	durationMs?: number;
+	tests: AppTestHistoryResult[];
 }

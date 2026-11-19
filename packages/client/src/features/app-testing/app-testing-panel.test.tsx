@@ -40,6 +40,14 @@ const state = vi.hoisted(() => ({
 	discard: vi.fn(),
 }));
 vi.mock("./use-app-testing", () => ({ useAppTesting: () => state }));
+vi.mock("./use-app-test-history", () => ({
+	useAppTestHistory: () => ({
+		page: null,
+		isLoading: false,
+		error: "",
+		refresh: vi.fn(),
+	}),
+}));
 vi.mock("./app-frame-registry", () => ({ useAppFrame: () => null }));
 
 beforeEach(() => state.save.mockReset().mockResolvedValue(undefined));

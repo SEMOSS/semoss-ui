@@ -4,6 +4,8 @@ import {
 	getAppTestRecording,
 	getAppTestRun,
 	parseAppTestRecordings,
+	parseAppTestRunHistory,
+	parseAppTestRunHistoryPage,
 	parseAppTestUpload,
 	runAllAppTests,
 	runAppTests,
@@ -13,6 +15,72 @@ import {
 const transport = vi.hoisted(() => vi.fn());
 vi.mock("@semoss/sdk", () => ({ Session: { insight: { run: transport } } }));
 beforeEach(() => transport.mockReset());
+
+it("validates persisted history identities/counts and excludes private evidence from parsed results", () => {
+	const test = {
+		id: "test",
+		name: "Checkout",
+		status: "FAILED",
+		steps: 8,
+		stepsAttempted: 6,
+		stepsCompleted: 5,
+		assertions: 3,
+		assertionsPassed: 1,
+	};
+	const run = {
+		runId: "run",
+		target: "app",
+		status: "COMPLETED",
+		startedAt: "2026-11-19T12:00:00Z",
+		tests: [{ ...test, evidence: { screenshot: "private-image" } }],
+	};
+	const result = parseAppTestRunHistory("app", "run", "test", {
+		target: "app",
+		run,
+	});
+	expect(JSON.stringify(result)).not.toContain("private-image");
+	expect(result.tests[0].stepsCompleted).toBe(5);
+	expect(() =>
+		parseAppTestRunHistory("other-app", "run", "test", {
+			target: "app",
+			run,
+		}),
+	).toThrow();
+	expect(() =>
+		parseAppTestRunHistory("app", "other-run", "test", {
+			target: "app",
+			run,
+		}),
+	).toThrow();
+	expect(() =>
+		parseAppTestRunHistory("app", "run", "other-test", {
+			target: "app",
+			run,
+		}),
+	).toThrow();
+	expect(() =>
+		parseAppTestRunHistory("app", "run", "test", {
+			target: "app",
+			run: { ...run, tests: [{ ...test, stepsCompleted: -1 }] },
+		}),
+	).toThrow();
+	const latest = { ...test, runId: "run", startedAt: run.startedAt };
+	const page = {
+		target: "app",
+		runs: [{ ...run, test: latest }],
+		latest: [latest],
+		total: 1,
+		offset: 0,
+		hasMore: false,
+		retainedRuns: 100,
+	};
+	expect(parseAppTestRunHistoryPage("app", page, "test").latest[0].id).toBe(
+		"test",
+	);
+	expect(() =>
+		parseAppTestRunHistoryPage("app", page, "other-test"),
+	).toThrow();
+});
 
 describe("app recording transport", () => {
 	it("sends an explicit app ID and escaped recording values", async () => {

@@ -5,6 +5,8 @@ import type {
 	AppTestRecording,
 	AppTestRecordingSummary,
 	AppTestRun,
+	AppTestRunHistory,
+	AppTestRunHistoryPage,
 } from "@/features/app-testing/app-test.types";
 
 const stepSchema = z.object({
@@ -119,6 +121,8 @@ const runSchema = z.object({
 	coverageWarning: z.string().optional(),
 	summary: z.record(z.string(), z.number()).optional(),
 	error: z.string().optional(),
+	historyWarning: z.string().optional(),
+	reportWarning: z.string().optional(),
 	tests: z
 		.array(
 			z.object({
@@ -133,6 +137,96 @@ const runSchema = z.object({
 		)
 		.optional(),
 });
+
+const historyResultSchema = z.object({
+	id: z.string(),
+	name: z.string(),
+	status: z.string(),
+	steps: z.number().int().nonnegative(),
+	stepsAttempted: z.number().int().nonnegative(),
+	stepsCompleted: z.number().int().nonnegative(),
+	assertions: z.number().int().nonnegative(),
+	assertionsPassed: z.number().int().nonnegative(),
+	durationMs: z.number().nonnegative().optional(),
+	definitionHash: z.string().optional(),
+	classification: z.string().optional(),
+	reason: z.string().optional(),
+	failedStep: z.number().int().nonnegative().optional(),
+	startedAt: z.iso.datetime().optional(),
+	finishedAt: z.iso.datetime().optional(),
+	repeats: z.number().int().positive().optional(),
+	passedRepeats: z.number().int().nonnegative().optional(),
+});
+const latestResultSchema = historyResultSchema.extend({
+	runId: z.string(),
+	startedAt: z.iso.datetime(),
+});
+
+/** Validate history summaries against the app before showing any persisted result. */
+export const parseAppTestRunHistoryPage = (
+	appId: string,
+	value: unknown,
+	recordingId?: string,
+): AppTestRunHistoryPage => {
+	const page = z
+		.object({
+			target: z.literal(appId),
+			runs: z.array(
+				z.object({
+					runId: z.string(),
+					status: z.string(),
+					startedAt: z.iso.datetime(),
+					finishedAt: z.iso.datetime().optional(),
+					durationMs: z.number().nonnegative().optional(),
+					test: latestResultSchema.optional(),
+				}),
+			),
+			latest: z.array(latestResultSchema),
+			total: z.number().int().nonnegative(),
+			offset: z.number().int().nonnegative(),
+			hasMore: z.boolean(),
+			retainedRuns: z.number().int().positive(),
+		})
+		.parse(value);
+	if (
+		recordingId &&
+		(page.latest.some((test) => test.id !== recordingId) ||
+			page.runs.some(
+				(run) =>
+					run.test?.id !== recordingId ||
+					run.test.runId !== run.runId,
+			))
+	) {
+		throw new Error("The test history target changed");
+	}
+	return page;
+};
+
+/** Read one result only after the user opens it; reject different app/run/test identities. */
+export const parseAppTestRunHistory = (
+	appId: string,
+	runId: string,
+	recordingId: string,
+	value: unknown,
+): AppTestRunHistory => {
+	const result = z
+		.object({
+			target: z.literal(appId),
+			run: z.object({
+				runId: z.literal(runId),
+				target: z.literal(appId),
+				status: z.string(),
+				startedAt: z.iso.datetime(),
+				finishedAt: z.iso.datetime().optional(),
+				durationMs: z.number().nonnegative().optional(),
+				tests: z.array(historyResultSchema).min(1),
+			}),
+		})
+		.parse(value);
+	if (result.run.tests.some((test) => test.id !== recordingId))
+		throw new Error("The test history target changed");
+	return result.run;
+};
 
 /** Read a Pixel result, preserving backend failures for retry. */
 const callAppTestPixel = async (pixel: string): Promise<unknown> => {

@@ -317,6 +317,15 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 								</AlertDescription>
 							</Alert>
 						)}
+						{(state.run.historyWarning ||
+							state.run.reportWarning) && (
+							<Alert>
+								<AlertDescription>
+									{state.run.historyWarning ||
+										state.run.reportWarning}
+								</AlertDescription>
+							</Alert>
+						)}
 						{state.run.tests
 							?.filter((test) => test.status !== "PASSED")
 							.map((test, index) => (
@@ -346,6 +355,11 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 			</Form>
 			<AppTestFiles
 				appId={appId}
+				runKey={
+					state.run
+						? `${state.run.runId}:${state.run.status}`
+						: undefined
+				}
 				recordings={state.recordings}
 				isLoading={state.isLoading}
 				onSelect={state.setSelectedId}
