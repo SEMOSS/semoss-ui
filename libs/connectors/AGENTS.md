@@ -312,6 +312,32 @@ provider captured in that selection. `CalendarAgendaView` accepts `onOpenEvent`,
 below 640px of its own container and restores the chosen grid when wider. The default
 presentation preserves Playground's existing calendar/list behavior.
 
+A host that gives a viewer a page of its own, as Collaboration's Digital Twin pages do, passes
+`presentation="page"` to `MailboxView` or `TeamsChatViewer`. Each row then leads with
+`ConnectorItemAvatar`, a colored disc with the initials of who the email or chat is from (a
+group chat shows a group's mark, and a search hit its message's author), in place of the small
+mail or chat icon; the avatar took the icon's place, so an email with attachments shows its
+paperclip before its date. The color is picked from the name, so a person keeps theirs down a
+list: solid on the light theme and a tint on the dark one, from the tokens light letters read
+on. It is exported for a host's own list of the same items. A host with pictures to show also
+passes `getPersonPhotoUrl`, which answers where a `ConnectorPerson`'s picture is: an email's
+sender and a search hit's author are named by their address, and a one on one chat's other
+person by their Microsoft user id (`TeamsChat.person`, which `parseChats` reads from the
+member the listing named the chat after, since Teams gives no address for whoever wrote a
+chat's last message). The avatar draws the picture over the initials as a plain lazy image,
+so nothing is asked for until its row is near the screen and the initials show until it
+loads; a picture that cannot be read, which is how a host says there is none, leaves the
+initials. Group chats keep their mark. On a page the mailbox also takes a
+row of filters under its search field: the sender, how far back, and mail with attachments.
+The sender and the cutoff are the list reactors' own `from` and `sinceDays` keys
+(`MailPageOptions`), and attachments ride in `search` as the mailbox's own operator
+(`MailApp.attachmentSearch`: `hasattachment:true` in Outlook, `has:attachment` in Gmail), so
+every one of them is applied by the mailbox, not to the page that was read. A list the filters
+emptied says so, and its Clear Search clears them with the search. The toggles are chips
+there, and one that is on wears the primary color on its border and a fill, since the accent
+fill a toggle has cannot say on from off against a pale page. The default and compact
+presentations show none of this.
+
 A host that lays a mailbox out itself, with its folders beside the list as a mail app has
 them, builds it from the same parts `MailboxView` uses: `useMailFolders` (the listing, ordered
 inbox first), `buildMailFolderTree`, `useMailPages`, `groupMailByConversation`, and

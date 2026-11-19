@@ -71,6 +71,28 @@ export interface ConnectorSavedItemsProps {
 	savedItems?: ConnectorSavedItems;
 }
 
+/** Who an item is from, as far as its viewer knows them. */
+export interface ConnectorPerson {
+	/** Their address, when the viewer knows it. */
+	email?: string;
+	/**
+	 * Their Microsoft user id, where that is how the viewer knows them, as
+	 * Teams names the people of a chat.
+	 */
+	userId?: string;
+}
+
+/** What a host can also give a viewer whose rows lead with who each item is from. */
+export interface ConnectorPersonPhotoProps {
+	/**
+	 * Where a person's picture is, for a host that has pictures to show. A
+	 * row that leads with who its item is from draws the picture over their
+	 * initials once it loads. The initials stay for anyone this answers
+	 * nothing for, and for a picture that cannot be read.
+	 */
+	getPersonPhotoUrl?: (person: ConnectorPerson) => string | undefined;
+}
+
 /** What a host gives every connector viewer. */
 export interface ConnectorViewerProps {
 	/** Prepare the originating file space; release its lifetime after the save. */

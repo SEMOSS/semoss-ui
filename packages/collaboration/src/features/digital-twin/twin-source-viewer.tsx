@@ -7,6 +7,7 @@ import {
 	TeamsFilesViewer,
 } from "@semoss/connectors";
 import { toast } from "@semoss/ui/next";
+import { connectorPersonPhotoUrl } from "@/features/collaboration/api/person-photo";
 import { connectMicrosoft } from "@/features/connectors/api/microsoft";
 import type { TwinSourceId } from "./twin-sources";
 
@@ -51,10 +52,25 @@ export function TwinSourceViewer({
 		onSignIn: handleSignIn,
 	};
 	switch (source) {
+		// the place has a page of its own, so its rows lead with who each is from, under their Microsoft picture
+		// where they have one, and mail takes its filters
 		case "outlook":
-			return <MailboxView provider="microsoft" {...host} />;
+			return (
+				<MailboxView
+					provider="microsoft"
+					presentation="page"
+					getPersonPhotoUrl={connectorPersonPhotoUrl}
+					{...host}
+				/>
+			);
 		case "teams-chats":
-			return <TeamsChatViewer {...host} />;
+			return (
+				<TeamsChatViewer
+					presentation="page"
+					getPersonPhotoUrl={connectorPersonPhotoUrl}
+					{...host}
+				/>
+			);
 		case "onedrive":
 			return <OneDriveViewer {...host} />;
 		default:

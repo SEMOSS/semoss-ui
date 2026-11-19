@@ -109,7 +109,7 @@ it("is the steps that create a twin for someone who has none, starting from thei
 		}),
 	).toBeVisible();
 	expect(screen.getByLabelText("Instructions")).toHaveDisplayValue(
-		/^You are the Digital Twin of Robin Hale:/,
+		/^Answer the way Robin Hale would explain it to a colleague:/,
 	);
 	// nothing to manage, share or delete yet
 	expect(screen.queryByRole("tab")).toBeNull();

@@ -76,7 +76,7 @@ export function TwinProfileFields({
 								label="Instructions"
 								disabled={isSubmitting}
 								rows={10}
-								description="How your twin answers. The people you share it with can read these."
+								description="How your twin sounds and what it pays attention to. It always says it is an AI, answers only from what you gave it and names its sources, whatever is written here. The people you share it with can read these."
 							/>
 							<FormTextarea
 								name="greeting"

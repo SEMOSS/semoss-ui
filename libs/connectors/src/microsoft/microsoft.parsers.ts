@@ -1,6 +1,7 @@
 import { isRecord } from "@semoss/utility/object";
 import { readNonBlankString } from "@semoss/utility/text";
 import { parseGraphDate } from "../core/connector.format";
+import type { ConnectorPerson } from "../core/connector.types";
 import {
 	parseEach,
 	readBody,
@@ -277,6 +278,35 @@ const parseMessagePage = (raw: unknown): TeamsMessagePage => {
 export const parseChannelMessages = (raw: unknown): TeamsMessagePage =>
 	parseMessagePage(raw);
 
+/**
+ * Who a one on one chat is with. A listing names such a chat after the other
+ * person and reports them among its members, by their Microsoft user id, and
+ * by their address too when it read the chat's members.
+ *
+ * @param entry - The chat as the reactor returned it.
+ * @param displayName - What the chat is called.
+ * @return The person, or undefined when the listing does not say who it is.
+ */
+const parseChatPerson = (
+	entry: Record<string, unknown>,
+	displayName: string | undefined,
+): ConnectorPerson | undefined => {
+	if (
+		entry.chatType !== "oneOnOne" ||
+		!displayName ||
+		!Array.isArray(entry.members)
+	) {
+		return undefined;
+	}
+	const other = entry.members.find(
+		(member): member is Record<string, unknown> =>
+			isRecord(member) && member.name === displayName,
+	);
+	const userId = readNonBlankString(other?.userId);
+	const email = readNonBlankString(other?.email);
+	return userId || email ? { userId: userId, email: email } : undefined;
+};
+
 const parseChat = (entry: unknown): TeamsChat | null => {
 	if (!isRecord(entry)) {
 		return null;
@@ -285,12 +315,13 @@ const parseChat = (entry: unknown): TeamsChat | null => {
 	if (!id) {
 		return null;
 	}
+	const displayName =
+		readNonBlankString(entry.displayName) ??
+		readNonBlankString(entry.topic);
 	return {
 		id: id,
 		chatType: readNonBlankString(entry.chatType),
-		displayName:
-			readNonBlankString(entry.displayName) ??
-			readNonBlankString(entry.topic),
+		displayName: displayName,
 		// Graph can return year 0001 as an unset last-updated timestamp.
 		lastUpdatedDateTime:
 			(parseGraphDate(
@@ -301,6 +332,7 @@ const parseChat = (entry: unknown): TeamsChat | null => {
 		webUrl: readNonBlankString(entry.webUrl),
 		hasUnread: entry.hasUnread === true,
 		lastMessage: parseTeamsMessage(entry.lastMessage) ?? undefined,
+		person: parseChatPerson(entry, displayName),
 	};
 };
 

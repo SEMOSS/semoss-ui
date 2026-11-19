@@ -96,6 +96,19 @@ vi.mock("@/features/rooms/api/upload-room-files", () => ({
 	uploadRoomFiles: uploadToPage,
 }));
 
+// what each copy holds is described a moment after the twin exists; the step only has to say which twin, and
+// the waiting has its own test
+const index = vi.hoisted(() => ({
+	twinId: undefined as string | undefined,
+	request: vi.fn(),
+}));
+vi.mock("./use-twin-index", () => ({
+	useTwinIndex: (twinId: string | undefined) => {
+		index.twinId = twinId;
+		return index.request;
+	},
+}));
+
 /** What the server answers each reactor with; an Error is a refusal, a promise an answer still on its way. */
 let answers: Record<string, unknown>;
 /** Which copies the server refuses, by the name of the file. */
@@ -143,6 +156,8 @@ beforeEach(() => {
 	upload.mockResolvedValue({});
 	uploadToPage.mockReset();
 	saveItem.mockReset();
+	index.request.mockReset();
+	index.twinId = undefined;
 	// jsdom has no object URLs; the preview only needs an address
 	URL.createObjectURL = vi.fn(() => "blob:preview");
 	URL.revokeObjectURL = vi.fn();
@@ -259,8 +274,9 @@ it("starts on who the twin is, one step of five, with nothing sent or read", () 
 	).toEqual(["1Identity"]);
 	// the later steps are there, waiting, and out of the way
 	expect(screen.getByLabelText("Instructions")).not.toBeVisible();
+	// how it should sound; who it is and what it answers from are the server's to say
 	expect(screen.getByLabelText("Instructions")).toHaveDisplayValue(
-		/^You are the Digital Twin of Robin Reyes: .* Do not make commitments or decisions for Robin Reyes\.$/,
+		"Answer the way Robin Reyes would explain it to a colleague: plainly and briefly. Lead with the answer.",
 	);
 	// the owner's mailbox is not read before they ask for it
 	expect(screen.queryByText("The Outlook mailbox")).toBeNull();
@@ -553,7 +569,7 @@ it("makes the twin step by step once the review is confirmed, copies in what was
 		"SaveAppAssets",
 	]);
 	expect(insight.actions.run.mock.calls[0]?.[0]).toMatch(
-		/^AddDigitalTwin\(name=\["Robin Twin"\], systemPrompt=\["You are the Digital Twin of Robin Reyes: .*"\], mcp=\[\], skills=\[\]\);$/,
+		/^AddDigitalTwin\(name=\["Robin Twin"\], systemPrompt=\["Answer the way Robin Reyes would explain it to a colleague: .*"\], mcp=\[\], skills=\[\]\);$/,
 	);
 	expect(insight.actions.run.mock.calls[3]?.[0]).toContain(
 		'greeting="Ask me anything.", greetingEnabled=true);',
@@ -569,6 +585,8 @@ it("makes the twin step by step once the review is confirmed, copies in what was
 	expect(copies()).toEqual([
 		'Copy(sourceType=["INSIGHT"], sourceFilePath=["Budget review.md"], target=["twin-1"], targetType=["PROJECT"], targetFilePath=["public/emails/Budget review.md"]);',
 	]);
+	// and what its files hold is described for its chats, now that there is a twin
+	expect(index.twinId).toBe("twin-1");
 
 	// it knows something by now, so sharing it is what comes next
 	expect(screen.getByText(/it knows what you chose/)).toBeVisible();

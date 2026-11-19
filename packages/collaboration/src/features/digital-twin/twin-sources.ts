@@ -1,4 +1,4 @@
-import { File, Sparkles } from "lucide-react";
+import { File } from "lucide-react";
 import {
 	type AppIcon,
 	OneDriveIcon,
@@ -7,6 +7,7 @@ import {
 	TeamsFilesIcon,
 } from "@/components/common/app-icons";
 import type { TwinSource } from "./api/digital-twin";
+import { TwinFinderIcon } from "./twin-finder-icon";
 
 /**
  * The owner's own places a twin's knowledge is picked from, as the rail names
@@ -50,7 +51,7 @@ export type TwinSourceId = keyof typeof TWIN_SOURCES;
 export const TWIN_FINDER = {
 	id: "find",
 	label: "Find with AI",
-	icon: Sparkles,
+	icon: TwinFinderIcon,
 	description:
 		"Describe what your Digital Twin should know. Your Outlook, Teams chats and OneDrive are searched, and the emails, chats and files that fit are suggested for you to add.",
 } as const;

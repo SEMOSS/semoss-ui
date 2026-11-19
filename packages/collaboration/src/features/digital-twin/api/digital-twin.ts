@@ -515,6 +515,40 @@ export function readTwinHoldings(
 	});
 }
 
+const twinIndexSchema = z.object({
+	described: z.number(),
+	remaining: z.number(),
+});
+// the server describes about a dozen files a pass, so this covers a first pass over a large twin
+const MAX_INDEX_PASSES = 10;
+
+/**
+ * Bring the twin's index of what its files hold up to date, so a chat with it
+ * is told what each copy is about and not only its file name. The server
+ * describes a few files a pass and says how many wait, so this asks again
+ * while a pass still got somewhere. Each pass takes its own turn after what is
+ * on its way into the twin, so an add made meanwhile goes ahead of the next.
+ *
+ * It never fails: a twin works without descriptions, and the next time its
+ * owner opens its pages the index is tried again.
+ */
+export async function indexTwinFiles(
+	actions: InsightActions,
+	twinId: string,
+): Promise<void> {
+	for (let pass = 0; pass < MAX_INDEX_PASSES; pass += 1) {
+		const result = await queueForTwin(twinId, () =>
+			callPixel(
+				actions,
+				pixel("WorkIndexTwinFiles", { project: twinId }),
+				twinIndexSchema,
+			),
+		).catch(() => null);
+		// nothing waits, or what waits cannot be described now: no text model, or a file the model fails on
+		if (!result || result.remaining <= 0 || result.described <= 0) return;
+	}
+}
+
 /** Make the twin's files folder. Only where it is known to be missing. */
 export async function createTwinFolder(
 	actions: InsightActions,

@@ -82,6 +82,17 @@ vi.mock("@/features/routines/routine-documents-dock", () => ({
 vi.mock("@/features/connectors/api/microsoft", () => ({
 	connectMicrosoft: vi.fn(),
 }));
+// what each copy holds is described a moment after a change; the page only has to ask, and the waiting has its own test
+const index = vi.hoisted(() => ({
+	twinId: undefined as string | undefined,
+	request: vi.fn(),
+}));
+vi.mock("./use-twin-index", () => ({
+	useTwinIndex: (twinId: string | undefined) => {
+		index.twinId = twinId;
+		return index.request;
+	},
+}));
 
 const BROWSE = 'BrowseAppAssets(filePath=["/"], project=["twin-1"]);';
 // the one item the viewers offer, as the twin records where a copy of it came from
@@ -135,6 +146,8 @@ beforeEach(() => {
 		Copy: { targetFilePath: "public/emails/Budget review.md" },
 	};
 	saveItem.mockReset();
+	index.request.mockReset();
+	index.twinId = undefined;
 	insight.actions.run.mockReset();
 	insight.actions.run.mockImplementation(async (statement: string) => {
 		const answer = answers[statement.slice(0, statement.indexOf("("))];
@@ -189,12 +202,11 @@ it("opens on the twin's own files, kept to the folder a chat reads, and names ev
 		"aria-current",
 		"true",
 	);
-	// the back link and Done both return to the twin's own page
-	for (const name of ["Back to your Digital Twin", "Done"])
-		expect(screen.getByRole("link", { name })).toHaveAttribute(
-			"href",
-			"/twins/mine?twinId=twin-1",
-		);
+	// the back link is the one way back to the twin's own page
+	expect(
+		screen.getByRole("link", { name: "Back to your Digital Twin" }),
+	).toHaveAttribute("href", "/twins/mine?twinId=twin-1");
+	expect(screen.queryByRole("link", { name: "Done" })).toBeNull();
 	// nothing is made just by opening the page
 	expect(ran()).not.toContain(NEW_FOLDER);
 });
@@ -247,10 +259,9 @@ it("does not carry copied-item markers to another twin", async () => {
 	expect(ran()).toContain(
 		'BrowseAppAssets(filePath=["/"], project=["twin-2"]);',
 	);
-	expect(screen.getByRole("link", { name: "Done" })).toHaveAttribute(
-		"href",
-		"/twins/mine?twinId=twin-2",
-	);
+	expect(
+		screen.getByRole("link", { name: "Back to your Digital Twin" }),
+	).toHaveAttribute("href", "/twins/mine?twinId=twin-2");
 });
 
 it.each([
@@ -286,6 +297,9 @@ it.each([
 		);
 		// then where the copy came from is recorded, for the next time the page opens
 		expect(ran().at(-1)).toBe(SAVE_RECORD);
+		// and the twin's index of what its files hold is asked for, for its chats
+		expect(index.twinId).toBe("twin-1");
+		expect(index.request).toHaveBeenCalledTimes(1);
 		expect(
 			screen.getByText('Added "Budget review.md" to your Digital Twin.'),
 		).toBeVisible();
@@ -395,12 +409,16 @@ it("reads what the twin holds again when the owner comes back from its files", a
 	const rail = screen.getByRole("navigation", { name: "What to list" });
 	await user.click(within(rail).getByRole("button", { name: "Files" }));
 	expect(await screen.findByText(/The file dock on/)).toBeVisible();
+	// nothing changed on the way in
+	expect(index.request).not.toHaveBeenCalled();
 	// the owner deletes the copy there
 	holdCopy(false);
 	await user.click(within(rail).getByRole("button", { name: "Outlook" }));
 	expect(
 		await screen.findByRole("button", { name: "Save to Digital Twin" }),
 	).toBeVisible();
+	// and what the files hold is described again, since they may have changed
+	expect(index.request).toHaveBeenCalledTimes(1);
 });
 
 it("keeps an added item marked, and says so, when where it came from could not be recorded", async () => {
@@ -445,6 +463,7 @@ it("says when a copy fails, with the server's reason, and keeps the viewer", asy
 		),
 	).toBeVisible();
 	expect(toast.success).not.toHaveBeenCalled();
+	expect(index.request).not.toHaveBeenCalled();
 	expect(screen.getByText(/The Outlook mailbox/)).toBeVisible();
 	// not in the twin, so it is offered again and not marked
 	expect(screen.queryByText("In your Digital Twin")).not.toBeInTheDocument();

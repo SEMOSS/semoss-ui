@@ -18,6 +18,10 @@ export interface MailPageOptions {
 	folder: string;
 	/** A search as a person types it, empty when nothing is searched for. */
 	search: string;
+	/** Words the sender's name or address has to contain. */
+	from?: string;
+	/** How many days back to read; every email in the folder when left out. */
+	sinceDays?: number;
 	unreadOnly: boolean;
 	isGrouped: boolean;
 }
@@ -48,7 +52,8 @@ interface PageRun {
 
 /** Read fixed-size pages; raw server counts advance the cursor independently of valid IDs. */
 export const useMailPages = (options: MailPageOptions): MailPages => {
-	const { provider, folder, search, unreadOnly, isGrouped } = options;
+	const { provider, folder, search, from, sinceDays, unreadOnly, isGrouped } =
+		options;
 	const { insightId } = useInsight();
 	const { t } = useTranslation("connectors");
 	const key = JSON.stringify([
@@ -58,6 +63,8 @@ export const useMailPages = (options: MailPageOptions): MailPages => {
 		search,
 		unreadOnly,
 		isGrouped,
+		from,
+		sinceDays,
 	]);
 	const [refreshId, setRefreshId] = useState(0);
 	const [state, setState] = useState<PageState>({
@@ -86,6 +93,8 @@ export const useMailPages = (options: MailPageOptions): MailPages => {
 					MAIL_APPS[provider].pixels.listMail({
 						folder,
 						search,
+						from,
+						sinceDays,
 						unreadOnly,
 						limit: 25,
 						offset,
@@ -129,7 +138,16 @@ export const useMailPages = (options: MailPageOptions): MailPages => {
 				run.isPending = false;
 			}
 		},
-		[insightId, provider, folder, search, unreadOnly, emptyPageMessage],
+		[
+			insightId,
+			provider,
+			folder,
+			search,
+			from,
+			sinceDays,
+			unreadOnly,
+			emptyPageMessage,
+		],
 	);
 
 	// refreshId explicitly starts a new sequence even when its filters are unchanged.

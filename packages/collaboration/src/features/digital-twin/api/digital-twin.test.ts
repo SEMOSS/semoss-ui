@@ -10,6 +10,7 @@ import {
 	getMyTwin,
 	getMyTwinAgent,
 	hasTwinFolder,
+	indexTwinFiles,
 	listTwins,
 	readTwinHoldings,
 	saveTwin,
@@ -745,5 +746,78 @@ describe("generating an avatar option", () => {
 		await expect(generateTwinAvatar(actions)).rejects.toThrow(
 			"did not return a picture",
 		);
+	});
+});
+
+describe("the index of what a twin's files hold", () => {
+	const INDEX = 'WorkIndexTwinFiles(project=["twin-1"]);';
+	/** A transport that answers each pass of the index in turn; the last answer repeats. */
+	function passes(...answers: unknown[]) {
+		let pass = 0;
+		return transport({
+			get WorkIndexTwinFiles() {
+				const answer = answers[Math.min(pass, answers.length - 1)];
+				pass += 1;
+				return answer;
+			},
+		});
+	}
+
+	it("asks again while files wait and the last pass got somewhere", async () => {
+		const { actions, ran } = passes(
+			{ described: 12, remaining: 5 },
+			{ described: 5, remaining: 0 },
+		);
+		await indexTwinFiles(actions, "twin-1");
+		expect(ran()).toEqual([INDEX, INDEX]);
+	});
+
+	it("stops when a pass describes nothing, as with no text model, and after ten passes", async () => {
+		const stuck = passes({
+			described: 0,
+			remaining: 3,
+			note: "Descriptions need Collaboration's text model",
+		});
+		await indexTwinFiles(stuck.actions, "twin-1");
+		expect(stuck.ran()).toEqual([INDEX]);
+
+		const endless = passes({ described: 12, remaining: 100 });
+		await indexTwinFiles(endless.actions, "twin-1");
+		expect(endless.ran()).toHaveLength(10);
+	});
+
+	it("never fails its caller: a refusal, or an answer it cannot read, only ends it", async () => {
+		const refused = passes(new Error("Collaboration is not enabled"));
+		await expect(
+			indexTwinFiles(refused.actions, "twin-1"),
+		).resolves.toBeUndefined();
+		expect(refused.ran()).toEqual([INDEX]);
+
+		// an older server answers true to a reactor it does not have
+		const unread = passes(true);
+		await expect(
+			indexTwinFiles(unread.actions, "twin-1"),
+		).resolves.toBeUndefined();
+		expect(unread.ran()).toEqual([INDEX]);
+	});
+
+	it("takes its turn after a copy that is on its way into the twin", async () => {
+		const { actions, ran } = transport({
+			Copy: { targetFilePath: "public/emails/Budget review.md" },
+			BrowseAppAssets: [],
+			WorkIndexTwinFiles: { described: 1, remaining: 0 },
+		});
+		const copy = copyToTwin(actions, "twin-1", {
+			...EMAIL,
+			itemKey: "budget-review",
+		});
+		const index = indexTwinFiles(actions, "twin-1");
+		await Promise.all([copy, index]);
+		expect(ran().map((statement) => statement.split("(")[0])).toEqual([
+			"Copy",
+			"BrowseAppAssets",
+			"SaveAppAssets",
+			"WorkIndexTwinFiles",
+		]);
 	});
 });

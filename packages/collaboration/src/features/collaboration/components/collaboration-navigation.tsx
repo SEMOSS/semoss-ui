@@ -42,6 +42,7 @@ export function CollaborationNavigation({
 			to: "/",
 			label: lexicon.today,
 			icon: House,
+			iconClassName: "fill-primary/15 text-primary dark:brightness-125",
 			// only what is due today, so the badge stays meaningful
 			count: dueToday,
 			isActive: pathname === "/",
@@ -50,6 +51,7 @@ export function CollaborationNavigation({
 			to: "/work",
 			label: "Work",
 			icon: Layers,
+			iconClassName: "fill-chart-2/15 text-chart-2",
 			count: 0,
 			// its topic index has a link of its own
 			isActive:
@@ -60,6 +62,8 @@ export function CollaborationNavigation({
 			to: "/work/topics",
 			label: "Topics",
 			icon: Tags,
+			iconClassName:
+				"fill-chart-1/15 text-chart-1 dark:fill-chart-3/15 dark:text-chart-3",
 			count: 0,
 			// the index and each topic's own page
 			isActive:
@@ -70,6 +74,7 @@ export function CollaborationNavigation({
 			to: "/twins",
 			label: "Digital Twins",
 			icon: UsersRound,
+			iconClassName: "fill-assistant/15 text-assistant",
 			count: 0,
 			isActive: pathname.startsWith("/twins"),
 		},
@@ -78,6 +83,7 @@ export function CollaborationNavigation({
 			to: "/routines",
 			label: "Routines",
 			icon: CalendarClock,
+			iconClassName: "fill-success/15 text-success",
 			count: 0,
 			isActive: pathname === "/routines",
 		},
@@ -86,6 +92,7 @@ export function CollaborationNavigation({
 		to,
 		label,
 		icon: Icon,
+		iconClassName,
 		count,
 		isActive,
 	}: (typeof links)[number]) => (
@@ -104,7 +111,7 @@ export function CollaborationNavigation({
 					)}
 				>
 					<Icon
-						className="size-4 shrink-0 text-muted-foreground"
+						className={cn("size-4 shrink-0", iconClassName)}
 						aria-hidden="true"
 					/>
 					{!isCollapsed && (

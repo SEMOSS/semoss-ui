@@ -1,4 +1,4 @@
-import { ArrowLeft, File, FolderPlus } from "lucide-react";
+import { ArrowLeft, FolderPlus } from "lucide-react";
 import { type ReactNode, useCallback, useId, useState } from "react";
 import { Link, Navigate, useSearchParams } from "react-router";
 import type { ConnectorSavedFile } from "@semoss/connectors";
@@ -33,16 +33,18 @@ import {
 	TWIN_FILES_PATH,
 	type TwinCopy,
 } from "./api/digital-twin";
+import { TwinFilesIcon } from "./twin-files-icon";
 import { TwinKnowledgeFinder } from "./twin-knowledge-finder";
 import { TwinSourceViewer } from "./twin-source-viewer";
 import { TWIN_FINDER, TWIN_SOURCES } from "./twin-sources";
+import { useTwinIndex } from "./use-twin-index";
 import { useTwinRead } from "./use-twin-read";
 
 // what each place is called in the rail, and what it says above its list
 const PLACES = {
 	files: {
 		label: "Files",
-		icon: File,
+		icon: TwinFilesIcon,
 		description:
 			"The copies your Digital Twin answers from. Upload more, or open, rename and delete what is here.",
 	},
@@ -97,6 +99,8 @@ export function TwinContents() {
 		[requestedTwinId],
 	);
 	const contents = useTwinRead(readContents);
+	// what each copy holds is described for the twin's chats a moment after the page opens and after each change here
+	const requestIndex = useTwinIndex(contents.data?.id);
 	// set once the folder is known to be there: added here, or made by a copy
 	const [isFolderAdded, setIsFolderAdded] = useState(false);
 	const [isAddingFolder, setIsAddingFolder] = useState(false);
@@ -109,6 +113,7 @@ export function TwinContents() {
 
 	const requested = params.get("in");
 	const place = isPlace(requested) ? requested : "files";
+	const PlaceIcon = PLACES[place].icon;
 
 	const markHeld = (itemKey: string | undefined, isHeld: boolean): void => {
 		if (!itemKey) return;
@@ -143,6 +148,7 @@ export function TwinContents() {
 		setIsFolderAdded(true);
 		setStatus(`Added "${file.name}" to your Digital Twin.`);
 		toast.success(`Added "${file.name}" to your Digital Twin.`);
+		requestIndex();
 		if (copy.recordError) {
 			toast.warning(
 				`"${file.name}" will not show as added once this page is reloaded.`,
@@ -151,13 +157,14 @@ export function TwinContents() {
 		}
 	};
 	const handlePlaceChange = (next: string): void => {
-		// the owner may have deleted a copy among the files, so what the twin holds is read again
+		// the owner may have uploaded or deleted a copy among the files, so what the twin holds is read again
 		if (place === "files" && twin) {
 			void readTwinHoldings(actions, twin.id).then(
 				(holdings) => setHeldKeys(holdings.itemKeys),
 				// what is marked stays as it was
 				() => undefined,
 			);
+			requestIndex();
 		}
 		// replaced, so Back leaves the page instead of walking the places
 		const search = new URLSearchParams(params);
@@ -287,11 +294,6 @@ export function TwinContents() {
 						them.
 					</P>
 				</div>
-				<Button asChild className="pointer-coarse:min-h-11 shrink-0">
-					<Link to={twin ? twinSettingsPath(twin.id) : "/twins"}>
-						Done
-					</Link>
-				</Button>
 			</header>
 			<div className="flex min-h-0 flex-1 flex-col md:flex-row">
 				<TopicContentsNav
@@ -310,8 +312,12 @@ export function TwinContents() {
 					<div className="shrink-0 border-b px-4 py-3">
 						<H2
 							id={labelId}
-							className="font-medium text-base leading-snug tracking-normal"
+							className="flex items-center gap-2 font-medium text-base leading-snug tracking-normal"
 						>
+							<PlaceIcon
+								aria-hidden="true"
+								className="size-4 shrink-0"
+							/>
 							{PLACES[place].label}
 						</H2>
 						<P className="text-muted-foreground text-sm">

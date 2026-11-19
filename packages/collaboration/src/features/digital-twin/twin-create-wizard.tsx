@@ -49,6 +49,7 @@ import { TwinProfileFields } from "./twin-profile-fields";
 import { newTwinProfile, twinProfileSchema } from "./twin-profile-schema";
 import { describeTwinSources, twinSourceKind } from "./twin-sources";
 import { useImagePreview } from "./use-image-preview";
+import { useTwinIndex } from "./use-twin-index";
 
 // one decision at a time: who it is, how it answers, what it can use, what it knows, then a look at all of it
 const STEPS = [
@@ -65,7 +66,7 @@ const STEPS = [
 		label: "Voice",
 		title: "How should it answer?",
 		description:
-			"Its instructions start from a version that keeps it honest about being an AI and about where its answers come from. Change what you like.",
+			"Say how it should sound and how it greets people. You can change both later.",
 		fields: ["instructions", "greeting"],
 	},
 	{
@@ -157,6 +158,8 @@ export function TwinCreateWizard({
 	>([]);
 	// set by a create that made the twin, even one whose later steps failed
 	const [twinId, setTwinId] = useState<string>();
+	// what each copy holds is described for the twin's chats a moment after the twin exists
+	const requestIndex = useTwinIndex(twinId);
 	// what the server is doing, and how far it is, while the twin is made; null while the steps show
 	const [setup, setSetup] = useState<{
 		steps: (TwinSetupStep | "finish")[];
@@ -250,6 +253,8 @@ export function TwinCreateWizard({
 			return;
 		}
 		setTwinId(madeId);
+		// a twin finished on a second try already had its id, so nothing else asks for what was just added
+		requestIndex();
 		setSetup(
 			(current) => current && { ...current, done: current.steps.length },
 		);
