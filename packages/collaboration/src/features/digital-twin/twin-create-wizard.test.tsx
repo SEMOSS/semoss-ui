@@ -579,6 +579,7 @@ it("makes the twin step by step once the review is confirmed, copies in what was
 		// where the copy came from is recorded, so the owner's lists mark it from then on
 		"BrowseAppAssets",
 		"SaveAppAssets",
+		"WorkNoteTwinCopy",
 	]);
 	expect(insight.actions.run.mock.calls[0]?.[0]).toMatch(
 		/^AddDigitalTwin\(name=\["Robin Twin"\], systemPrompt=\["Answer the way Robin Reyes would explain it to a colleague: .*"\], mcp=\[\], skills=\[\]\);$/,

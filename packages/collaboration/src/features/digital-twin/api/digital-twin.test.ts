@@ -979,6 +979,9 @@ describe("what a twin holds", () => {
 		`SaveAppAssets(project=["twin-1"], filePath=["/twin-sources.json"], content=["<encode>${JSON.stringify(sources)}</encode>"]);`;
 	const copyOf = (name: string): string =>
 		`Copy(sourceType=["INSIGHT"], sourceFilePath=["${name}"], target=["twin-1"], targetType=["PROJECT"], targetFilePath=["public/emails/${name}"]);`;
+	// what tells the server a copy was just made, so a check compares it with now
+	const noted = (name: string): string =>
+		`WorkNoteTwinCopy(project=["twin-1"], filePath=["public/emails/${name}"]);`;
 	const email = (name: string, itemKey: string): TwinSource => ({
 		path: name,
 		name,
@@ -1041,6 +1044,7 @@ describe("what a twin holds", () => {
 			// nothing recorded yet, so nothing to read
 			ROOT,
 			record({ "public/emails/A.md": "thread-a" }),
+			noted("A.md"),
 			copyOf("B.md"),
 			ROOT,
 			READ,
@@ -1048,6 +1052,7 @@ describe("what a twin holds", () => {
 				"public/emails/A.md": "thread-a",
 				"public/emails/B.md": "thread-b",
 			}),
+			noted("B.md"),
 		]);
 	});
 
@@ -1089,11 +1094,13 @@ describe("what a twin holds", () => {
 			"Copy",
 			"BrowseAppAssets",
 			"SaveAppAssets",
+			"WorkNoteTwinCopy",
 			"Copy",
 			"BrowseAppAssets",
 			"GetAppAssets",
 			"SaveAppAssets",
-			// a file from the owner's computer came from no list, so it has nothing to record
+			"WorkNoteTwinCopy",
+			// a file from the owner's computer came from no list, so it has nothing to record or to tell
 			"Copy",
 		]);
 		expect(JSON.parse(state.record ?? "")).toEqual({
@@ -1109,11 +1116,12 @@ describe("what a twin holds", () => {
 			"twin-1",
 			email("A.md", "thread-a"),
 		);
-		expect(unreadable.ran().at(-1)).toBe(
+		expect(unreadable.ran().slice(-2)).toEqual([
 			record({ "public/emails/A.md": "thread-a" }),
-		);
+			noted("A.md"),
+		]);
 
-		const { actions } = transport({
+		const { actions, ran } = transport({
 			Copy: { targetFilePath: "public/emails/A.md" },
 			[ROOT]: [],
 			SaveAppAssets: new Error("The disk is full."),
@@ -1124,6 +1132,21 @@ describe("what a twin holds", () => {
 			path: "public/emails/A.md",
 			recordError: "The disk is full.",
 		});
+		// a copy that is not in the record is not one the server could look up
+		expect(
+			ran().some((statement) => statement.startsWith("WorkNote")),
+		).toBe(false);
+	});
+
+	it("answers with the copy all the same when the server could not be told of it", async () => {
+		const { actions } = transport({
+			Copy: { targetFilePath: "public/emails/A.md" },
+			[ROOT]: [],
+			WorkNoteTwinCopy: new Error("Collaboration is not enabled"),
+		});
+		expect(
+			await copyToTwin(actions, "twin-1", email("A.md", "thread-a")),
+		).toEqual({ path: "public/emails/A.md" });
 	});
 
 	it("knows what the twin holds from the record and the copies still there, after the copies on their way", async () => {
@@ -1138,7 +1161,7 @@ describe("what a twin holds", () => {
 		await copying;
 		expect(holdings.hasFolder).toBe(true);
 		expect([...holdings.itemKeys]).toEqual(["thread-a"]);
-		expect(ran().slice(3)).toEqual([ROOT, READ, LIST]);
+		expect(ran().slice(4)).toEqual([ROOT, READ, LIST]);
 
 		// a second copy of one item, then the owner deletes the first and the only copy of another
 		await copyToTwin(actions, "twin-1", email("A (2).md", "thread-a"));
@@ -1150,6 +1173,58 @@ describe("what a twin holds", () => {
 		expect([
 			...(await readTwinHoldings(actions, "twin-1")).itemKeys,
 		]).toEqual(["thread-a"]);
+		// the copies that are gone leave the record, so a file that takes one's name later is not taken for it
+		expect(JSON.parse(state.record ?? "")).toEqual({
+			"public/emails/A (2).md": "thread-a",
+		});
+	});
+
+	it("drops a removed copy from the record with the drive only it was in, and nothing when no file is listed", async () => {
+		const { actions, ran, state } = twinServer(
+			JSON.stringify({
+				"public/files/Plan.docx": "item-1",
+				"drive:item-1": "b!drive",
+				"public/files/Deck.pptx": "item-2",
+				"public/files/Deck (2).pptx": "item-2",
+				"drive:item-2": "b!shared",
+			}),
+		);
+		// the plan and the first deck were removed; the second copy of the deck is still there
+		state.copies.push("public/files/Deck (2).pptx");
+		await readTwinHoldings(actions, "twin-1");
+		expect(JSON.parse(state.record ?? "")).toEqual({
+			"public/files/Deck (2).pptx": "item-2",
+			"drive:item-2": "b!shared",
+		});
+		// what is recorded matches what is there: nothing is saved again
+		const saves = (): number =>
+			ran().filter((statement) => statement.startsWith("SaveAppAssets"))
+				.length;
+		await readTwinHoldings(actions, "twin-1");
+		expect(saves()).toBe(1);
+
+		// a listing with no file in it may be one that failed: the record is left as it is
+		state.copies = [];
+		await readTwinHoldings(actions, "twin-1");
+		expect(saves()).toBe(1);
+	});
+
+	it("still answers what the twin holds when the tidied record cannot be saved", async () => {
+		const { actions } = transport({
+			[ROOT]: [
+				{ path: "/public/", name: "public", type: "directory" },
+				{ path: "/twin-sources.json", name: "twin-sources.json" },
+			],
+			[LIST]: [{ path: "/public/emails/Kickoff.md" }],
+			[READ]: {
+				"public/emails/Kickoff.md": "conversation:hello",
+				"public/emails/Gone.md": "conversation:gone",
+			},
+			SaveAppAssets: new Error("The disk is full."),
+		});
+		expect([
+			...(await readTwinHoldings(actions, "twin-1")).itemKeys,
+		]).toEqual(["conversation:hello"]);
 	});
 
 	it("skips the search when there is no files folder and lists uploads without a source record", async () => {
@@ -1355,6 +1430,7 @@ describe("the index of what a twin's files hold", () => {
 			"Copy",
 			"BrowseAppAssets",
 			"SaveAppAssets",
+			"WorkNoteTwinCopy",
 			"WorkIndexTwinFiles",
 		]);
 	});

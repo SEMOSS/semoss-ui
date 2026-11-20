@@ -242,7 +242,8 @@ it("lists the copies that wait under Updates, counts them in the rail, and reads
 		kind: "email",
 		change: "gone",
 		path: "public/emails/Budget review.md",
-		key: "conversation:conv-1",
+		// the item the twin's record names for that copy: one of another item's is not removed
+		key: RECORD["public/emails/Budget review.md"],
 	};
 	twinUpdates.found = {
 		// one of another twin's, which this page neither lists nor counts
@@ -429,8 +430,12 @@ it.each([
 		expect(ran()).toContain(
 			`Copy(sourceType=["INSIGHT"], sourceFilePath=["Budget review.md"], target=["twin-1"], targetType=["PROJECT"], targetFilePath=["public/${folder}/Budget review.md"]);`,
 		);
-		// then where the copy came from is recorded, for the next time the page opens
-		expect(ran().at(-1)).toBe(SAVE_RECORD);
+		// then where the copy came from is recorded, for the next time the page opens, and the server is told
+		// of the copy, so a check compares it with now
+		expect(ran().slice(-2)).toEqual([
+			SAVE_RECORD,
+			'WorkNoteTwinCopy(project=["twin-1"], filePath=["public/emails/Budget review.md"]);',
+		]);
 		// and the twin's index of what its files hold is asked for, for its chats
 		expect(index.twinId).toBe("twin-1");
 		expect(index.request).toHaveBeenCalledTimes(1);

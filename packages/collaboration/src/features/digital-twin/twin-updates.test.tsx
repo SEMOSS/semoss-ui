@@ -98,11 +98,14 @@ const ELSEWHERE: TwinUpdate = {
 	path: "public/emails/Email thread - Elsewhere.md",
 };
 const ALL = [THREAD, FILE, CHAT, OLDER, GONE, ELSEWHERE];
-const DONE: TwinCheck = {
+/** A check that is over and compared this many copies in twin-1, some of which it could not read. */
+const checked = (copies: number, unknown = 0): TwinCheck => ({
 	id: "job-0",
 	status: "done",
 	finishedAt: "2026-11-19T15:02:00Z",
-};
+	counts: { byTwin: { "twin-1": { copies, unknown } } },
+});
+const DONE = checked(5);
 
 /** What the server answers each reactor with; an Error is a refusal. */
 let answers: Record<string, unknown>;
@@ -148,8 +151,23 @@ const row = (name: string): HTMLElement => {
 };
 
 beforeEach(() => {
+	// the twin holds every copy a suggestion is about, and the newer copy the older one makes way for, and its
+	// record names the item each came from
+	const newer = OLDER.newerCopy ?? "";
 	answers = {
-		SearchAppAssets: ALL.map((update) => ({ path: `/${update.path}` })),
+		SearchAppAssets: [...ALL.map((update) => update.path), newer].map(
+			(path) => ({ path: `/${path}` }),
+		),
+		BrowseAppAssets: [
+			{ name: "public", path: "/public/", type: "directory" },
+			{ name: "twin-sources.json", path: "/twin-sources.json" },
+		],
+		GetAppAssets: JSON.stringify({
+			...Object.fromEntries(
+				ALL.map((update) => [update.path, update.key]),
+			),
+			[newer]: OLDER.key,
+		}),
 	};
 	insight.actions.run.mockReset();
 	insight.actions.run.mockImplementation(async (statement: string) => {
@@ -203,9 +221,9 @@ it("lists what waits for this twin, each with why, and nothing of another twin",
 	expect(row("Email thread - Budget.md")).toHaveTextContent(
 		/"Budget review": 3 new emails, latest from Dana Lee, Nov 1[78]\./,
 	);
-	// a file says who changed it, how old the copy is, and its name now
+	// a file says who changed it, how old the copy is, and what the original is called where that is another name
 	expect(row("Plan.pptx")).toHaveTextContent(
-		/Changed by Sam Park on Nov 1[78]\. Your copy is from Nov 1[34]\. It is now named "Q4 plan\.pptx"\./,
+		/Changed by Sam Park on Nov 1[78]\. Your copy is from Nov 1[34]\. The original is named "Q4 plan\.pptx"\./,
 	);
 	expect(
 		within(row("Plan.pptx")).getByRole("link", { name: "Open original" }),
@@ -234,6 +252,39 @@ it("lists what waits for this twin, each with why, and nothing of another twin",
 	expect(screen.getByText(/^Last checked /)).toBeVisible();
 });
 
+it("says a chat's count is at least that many when the check read no further back, and names no rename a save made", () => {
+	renderUpdates(
+		resource({
+			updates: [
+				{ ...CHAT, count: 49, more: true },
+				{
+					...CHAT,
+					id: "copy-chat-2",
+					path: "public/teams-chats/Chat - Sync.md",
+					count: 1,
+					more: true,
+				},
+				// a copy numbered because its name was taken, and one whose name lost what a file name cannot hold
+				{ ...FILE, path: "public/files/Q4 plan (2).pptx" },
+				{
+					...FILE,
+					id: "copy-file-2",
+					path: "public/files/Q4- plan.pptx",
+					title: "Q4: plan.pptx",
+				},
+			],
+			lastCheck: DONE,
+		}),
+	);
+
+	expect(row("Chat - Hiring.md")).toHaveTextContent(
+		/49 or more new messages, latest from Priya/,
+	);
+	expect(row("Chat - Sync.md")).toHaveTextContent(/1 or more new messages/);
+	expect(row("Q4 plan (2).pptx")).not.toHaveTextContent("is named");
+	expect(row("Q4- plan.pptx")).not.toHaveTextContent("is named");
+});
+
 it("updates a copy on the owner's press: the item is saved again and written over it", async () => {
 	const user = userEvent.setup();
 	renderUpdates(resource({ updates: ALL, lastCheck: DONE }));
@@ -252,7 +303,8 @@ it("updates a copy on the owner's press: the item is saved again and written ove
 		kind: "email",
 		conversationId: "conv-1",
 	});
-	expect(ran().slice(1)).toEqual([
+	// after a look at what the twin holds and what its record names
+	expect(ran().slice(3)).toEqual([
 		'Copy(sourceType=["INSIGHT"], sourceFilePath=["saved again.md"], target=["twin-1"], targetType=["PROJECT"], targetFilePath=["public/emails/Email thread - Budget.md"], override=[true]);',
 		'WorkSettleTwinUpdate(updateId=["copy-thread"], action=["applied"]);',
 	]);
@@ -282,6 +334,33 @@ it("says why a copy could not be updated, and keeps its suggestion", async () =>
 	expect(onChanged).not.toHaveBeenCalled();
 	expect(screen.getByText("Email thread - Budget.md")).toBeVisible();
 	expect(ran().some((statement) => statement.startsWith("Copy"))).toBe(false);
+});
+
+it("writes nothing over a file that is no longer the copy the suggestion was about", async () => {
+	const user = userEvent.setup();
+	// since the check, the copy was removed and another conversation saved under its name
+	answers.GetAppAssets = JSON.stringify({
+		[THREAD.path]: "conversation:conv-9",
+	});
+	renderUpdates(resource({ updates: [THREAD], lastCheck: DONE }));
+
+	await user.click(screen.getByRole("button", { name: /^Update: / }));
+	await waitFor(() =>
+		expect(toast.error).toHaveBeenCalledWith(
+			'Could not update "Email thread - Budget.md".',
+			{
+				description:
+					"That copy has changed since the last check. Check again.",
+			},
+		),
+	);
+	expect(saveItem).not.toHaveBeenCalled();
+	expect(ran().some((statement) => statement.startsWith("Copy"))).toBe(false);
+	// its suggestion is dropped on the server, and the list is read again
+	expect(ran().at(-1)).toBe(
+		'WorkSettleTwinUpdate(updateId=["copy-thread"], action=["dismissed"]);',
+	);
+	expect(refresh).toHaveBeenCalled();
 });
 
 it("updates every changed copy in turn, and leaves the ones to remove", async () => {
@@ -337,7 +416,7 @@ it("keeps a copy as it is, and removes one, on the owner's press", async () => {
 			'Removed "Old pricing.xlsx" from your Digital Twin.',
 		),
 	);
-	expect(ran().slice(2)).toEqual([
+	expect(ran().slice(4)).toEqual([
 		'DeleteAppAssets(project=["twin-1"], filePath=["/public/files/Old pricing.xlsx"]);',
 		'WorkSettleTwinUpdate(updateId=["copy-gone"], action=["dismissed"]);',
 	]);
@@ -460,10 +539,13 @@ it("says where it stands before anything is listed", () => {
 	never.unmount();
 
 	const current = renderUpdates(resource({ updates: [], lastCheck: DONE }));
-	expect(screen.getByText(/^Nothing to update: /)).toBeVisible();
+	expect(
+		screen.getByText("Nothing to update in the 5 copies checked here."),
+	).toBeVisible();
+	expect(screen.getByText(/^Last checked /)).toBeVisible();
 	current.unmount();
 
-	// a check the server started by itself shows as one under way
+	// a check the server started by itself shows as one under way, and says nothing yet of what waits
 	const running = renderUpdates(
 		resource({
 			updates: [],
@@ -472,6 +554,7 @@ it("says where it stands before anything is listed", () => {
 	);
 	expect(screen.getByText("Reading your files…")).toBeVisible();
 	expect(screen.getByRole("button", { name: "Checking…" })).toBeDisabled();
+	expect(screen.queryByText(/^Check now to see whether /)).toBeNull();
 	running.unmount();
 
 	renderUpdates(
@@ -486,6 +569,80 @@ it("says where it stands before anything is listed", () => {
 	);
 	expect(screen.getByText("The last check did not finish.")).toBeVisible();
 	expect(screen.getByText("Could not sign in to Microsoft")).toBeVisible();
+	expect(screen.queryByText(/Nothing to update/)).toBeNull();
+});
+
+it("says nothing changed only of the copies the last check compared in this twin", () => {
+	// a check that was over before this twin was made, that could not open it, or that read no twin at all
+	const unread = renderUpdates(
+		resource({
+			updates: [],
+			lastCheck: {
+				id: "job-6",
+				status: "done",
+				finishedAt: "2026-11-19T15:02:00Z",
+				counts: { byTwin: { "twin-2": { copies: 4, unknown: 0 } } },
+			},
+		}),
+	);
+	expect(screen.getByText("Not checked yet.")).toBeVisible();
+	expect(screen.getByText(/^Check now to see whether /)).toBeVisible();
+	expect(screen.queryByText(/Nothing to update/)).toBeNull();
+	unread.unmount();
+
+	// a twin that holds only what a check cannot compare, as uploads and attachments
+	const none = renderUpdates(
+		resource({ updates: [], lastCheck: checked(0) }),
+	);
+	expect(
+		screen.getByText(/^A check found nothing here that it can compare\. /),
+	).toBeVisible();
+	none.unmount();
+
+	const one = renderUpdates(resource({ updates: [], lastCheck: checked(1) }));
+	expect(
+		screen.getByText("Nothing to update in the one copy checked here."),
+	).toBeVisible();
+	one.unmount();
+
+	// Microsoft 365 did not answer for some: nothing is known of those
+	const some = renderUpdates(
+		resource({ updates: [], lastCheck: checked(3, 1) }),
+	);
+	expect(
+		screen.getByText(
+			"1 of the 3 copies here could not be checked this time. Nothing to update in the 2 copies checked here.",
+		),
+	).toBeVisible();
+	some.unmount();
+
+	const all = renderUpdates(
+		resource({ updates: [], lastCheck: checked(2, 2) }),
+	);
+	expect(
+		screen.getByText(
+			"None of the 2 copies here could be checked this time.",
+		),
+	).toBeVisible();
+	expect(screen.queryByText(/Nothing to update/)).toBeNull();
+	all.unmount();
+
+	const only = renderUpdates(
+		resource({ updates: [], lastCheck: checked(1, 1) }),
+	);
+	expect(
+		screen.getByText("The copy here could not be checked this time."),
+	).toBeVisible();
+	only.unmount();
+
+	// said above the suggestions too, where some wait
+	renderUpdates(resource({ updates: [THREAD], lastCheck: checked(3, 1) }));
+	expect(
+		screen.getByText(
+			"1 of the 3 copies here could not be checked this time.",
+		),
+	).toBeVisible();
+	expect(screen.getByText("Email thread - Budget.md")).toBeVisible();
 });
 
 it("lets the owner choose how often their twins are checked, where a session is around it", async () => {

@@ -204,6 +204,50 @@ async function readTwinSources(
 	return sources.success ? sources.data : {};
 }
 
+/**
+ * Which item the twin's record names for each copy, by the copy's path as the
+ * record writes it (no leading slash). Empty when nothing is recorded, and
+ * when the record cannot be read. Read at once, not after what is on its way
+ * into the twin: it answers whether a copy that is already there is still
+ * what it was, which must not wait behind a pass of the index.
+ */
+export async function readTwinRecord(
+	actions: InsightActions,
+	twinId: string,
+): Promise<Record<string, string>> {
+	return readTwinSources(actions, twinId, await listTwinTop(actions, twinId));
+}
+
+// the entry that names the drive a copied file is in, by the file's id
+const DRIVE_ENTRY = "drive:";
+
+/**
+ * The record without the copies that are gone, and without a drive whose last
+ * copy went with them. A file that later takes a removed copy's name would
+ * otherwise be taken for that copy, and updated from or removed with an item
+ * it never came from.
+ *
+ * @param listed - Every file under the twin's files folder, as the record names paths.
+ * @returns The record to save, or null when it holds nothing to drop.
+ */
+function withoutGoneCopies(
+	sources: Record<string, string>,
+	listed: ReadonlySet<string>,
+): Record<string, string> | null {
+	const copies = Object.entries(sources).filter(
+		([path]) => !path.startsWith(DRIVE_ENTRY) && listed.has(path),
+	);
+	const keys = new Set(copies.map(([, key]) => key));
+	const kept = Object.entries(sources).filter(([path]) =>
+		path.startsWith(DRIVE_ENTRY)
+			? keys.has(path.slice(DRIVE_ENTRY.length))
+			: listed.has(path),
+	);
+	return kept.length === Object.keys(sources).length
+		? null
+		: Object.fromEntries(kept);
+}
+
 /** All twins the signed-in person created and still owns. */
 async function listMyTwins(actions: InsightActions): Promise<DigitalTwin[]> {
 	return (await callPixel(actions, MY_TWIN_PIXEL, twinListSchema)).map(
@@ -837,6 +881,24 @@ export function readTwinHoldings(
 			const key = sources[fullPath.slice(1)];
 			if (key) itemKeys.add(key);
 		}
+		// A copy removed since, in Files here or anywhere else, leaves its record entry behind: dropped now.
+		// Never from a listing that holds no file at all, which may be one that failed. What is listed is right
+		// either way, so a record that cannot be saved is left for the next read.
+		const listed = new Set(
+			found
+				.filter((item) => item.type !== "directory")
+				.map((item) => item.path.replace(/^\/+/, "")),
+		);
+		const tidied = listed.size > 0 && withoutGoneCopies(sources, listed);
+		if (tidied)
+			await callPixel(
+				actions,
+				twinFiles(twinId).save(
+					TWIN_SOURCES_PATH,
+					JSON.stringify(tidied),
+				),
+				z.unknown(),
+			).catch(() => undefined);
 		return { hasFolder, files, itemKeys };
 	});
 }
@@ -941,12 +1003,19 @@ export function copyToTwin(
 						// of a shared or Teams drive without it. An entry of its own, so every value stays text
 						// and a window still on older code goes on reading the record, and keeps the entry.
 						...(source.driveId && {
-							[`drive:${source.itemKey}`]: source.driveId,
+							[`${DRIVE_ENTRY}${source.itemKey}`]: source.driveId,
 						}),
 					}),
 				),
 				z.unknown(),
 			);
+			// Told to the server, which reads the item in the record: a check then compares the copy with
+			// now, and not with the day a server next loads its file. The copy is in and recorded either way.
+			await callPixel(
+				actions,
+				pixel("WorkNoteTwinCopy", { project: twinId, filePath: path }),
+				z.unknown(),
+			).catch(() => undefined);
 			return { path };
 		} catch (cause) {
 			return { path, recordError: reason(cause) };

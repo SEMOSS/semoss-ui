@@ -44,6 +44,30 @@ const COPY_OVER =
 	'Copy(sourceType=["INSIGHT"], sourceFilePath=["Email thread - Budget (2).md"], target=["twin-1"], targetType=["PROJECT"], targetFilePath=["public/emails/Email thread - Budget.md"], override=[true]);';
 const LISTING =
 	'SearchAppAssets(project=["twin-1"], filePath=["/public"], search=["."], options=["regex"]);';
+/** What the twin's record names for each copy, and for the drive of a file. */
+const RECORD: Record<string, string> = {
+	"public/emails/Email thread - Budget.md": "conversation:conv-1",
+	"public/files/Old pricing.xlsx": "item-1",
+	"drive:item-1": "b!drive",
+};
+/** What a click reads first: the files the twin holds, then the record beside them. */
+const LOOK = [
+	LISTING,
+	'BrowseAppAssets(filePath=["/"], project=["twin-1"]);',
+	'GetAppAssets(filePath=["/twin-sources.json"], project=["twin-1"]);',
+];
+/** The twin as the server answers for it. */
+const twin = (
+	held: { path: string }[] = HELD,
+	record: Record<string, string> = RECORD,
+) => ({
+	SearchAppAssets: held,
+	BrowseAppAssets: [
+		{ name: "public", path: "/public/", type: "directory" },
+		{ name: "twin-sources.json", path: "/twin-sources.json", type: "json" },
+	],
+	GetAppAssets: JSON.stringify(record),
+});
 
 /**
  * A transport that answers each statement, by its whole text or by its
@@ -118,6 +142,50 @@ describe("what waits for the owner", () => {
 			lastCheck: null,
 		});
 	});
+
+	it("reads what the last check compared in each twin, and nothing from a job that counts another way", async () => {
+		const job = { id: "job-1", status: "done" };
+		const compared = transport({
+			WorkListTwinUpdates: {
+				updates: [],
+				// a job as the server sends it: its other counts beside the one a twin's page reads
+				lastCheck: {
+					...job,
+					counts: {
+						twins: 2,
+						copies: 4,
+						unknown: 1,
+						byTwin: {
+							"twin-1": { copies: 3, unknown: 1 },
+							"twin-2": { copies: 1, unknown: 0 },
+						},
+					},
+				},
+			},
+		});
+		expect(
+			(await listTwinUpdates(compared.actions)).lastCheck?.counts?.byTwin,
+		).toEqual({
+			"twin-1": { copies: 3, unknown: 1 },
+			"twin-2": { copies: 1, unknown: 0 },
+		});
+
+		// a check from before twins were counted one by one, and one whose count is not a number
+		for (const counts of [
+			{ twins: 0, copies: 0 },
+			{ byTwin: { "twin-1": { copies: "three", unknown: 0 } } },
+		]) {
+			const { actions } = transport({
+				WorkListTwinUpdates: {
+					updates: [],
+					lastCheck: { ...job, counts },
+				},
+			});
+			const { lastCheck } = await listTwinUpdates(actions);
+			expect(lastCheck).toMatchObject(job);
+			expect(lastCheck?.counts?.byTwin).toBeUndefined();
+		}
+	});
 });
 
 describe("checking now", () => {
@@ -172,7 +240,7 @@ describe("checking now", () => {
 describe("updating a copy", () => {
 	it("saves the item again, writes it over the copy under the copy's own name, then settles it", async () => {
 		const { actions, ran } = transport({
-			SearchAppAssets: HELD,
+			...twin(),
 			Copy: { targetFilePath: "public/emails/Email thread - Budget.md" },
 		});
 
@@ -182,7 +250,7 @@ describe("updating a copy", () => {
 			conversationId: "conv-1",
 		});
 		expect(ran()).toEqual([
-			LISTING,
+			...LOOK,
 			COPY_OVER,
 			'WorkSettleTwinUpdate(updateId=["copy-1"], action=["applied"]);',
 		]);
@@ -190,15 +258,23 @@ describe("updating a copy", () => {
 
 	it("reads a file again from the drive its copy recorded, and a chat by its id", async () => {
 		// the server answers a copy with the path it wrote
-		const { actions } = transport((statement) =>
-			statement.startsWith("SearchAppAssets")
-				? [...HELD, { path: "/public/teams-chats/Chat - Hiring.md" }]
+		const held = twin(
+			[...HELD, { path: "/public/teams-chats/Chat - Hiring.md" }],
+			{
+				...RECORD,
+				"public/teams-chats/Chat - Hiring.md": "19:abc@thread.v2",
+			},
+		);
+		const { actions } = transport((statement) => {
+			const reactor = statement.slice(0, statement.indexOf("("));
+			return reactor in held
+				? held[reactor as keyof typeof held]
 				: {
 						targetFilePath: /targetFilePath=\["([^"]+)"\]/.exec(
 							statement,
 						)?.[1],
-					},
-		);
+					};
+		});
 
 		await applyTwinUpdate(actions, "insight-1", {
 			...FILE,
@@ -223,57 +299,127 @@ describe("updating a copy", () => {
 	});
 
 	it("does not bring back a copy the owner removed: its suggestion is dropped and nothing is written", async () => {
-		const { actions, ran } = transport({ SearchAppAssets: [HELD[1]] });
+		const { actions, ran } = transport(twin([HELD[1]]));
 
 		await expect(
 			applyTwinUpdate(actions, "insight-1", THREAD),
 		).rejects.toThrow("no longer in your Digital Twin");
 		expect(save).not.toHaveBeenCalled();
 		expect(ran()).toEqual([
-			LISTING,
+			...LOOK,
 			'WorkSettleTwinUpdate(updateId=["copy-1"], action=["dismissed"]);',
 		]);
 	});
 
+	it.each([
+		// the copy was removed and another conversation was saved under its name
+		[
+			"another item's copy",
+			{ ...RECORD, [THREAD.path]: "conversation:conv-9" },
+		],
+		// the copy was removed, its record entry with it, and a file with its name was uploaded
+		["a file that came from no item", { "drive:item-1": "b!drive" }],
+		["a record that cannot be read", { [THREAD.path]: 7 }],
+	])(
+		"does not write over %s that has taken the copy's name since the check",
+		async (_what, record) => {
+			const { actions, ran } = transport(
+				twin(HELD, record as Record<string, string>),
+			);
+
+			await expect(
+				applyTwinUpdate(actions, "insight-1", THREAD),
+			).rejects.toThrow("has changed since the last check");
+			expect(save).not.toHaveBeenCalled();
+			expect(ran()).toEqual([
+				...LOOK,
+				'WorkSettleTwinUpdate(updateId=["copy-1"], action=["dismissed"]);',
+			]);
+		},
+	);
+
 	it("leaves the suggestion waiting when the item cannot be read or the copy is not written", async () => {
-		const failing = transport({ SearchAppAssets: HELD });
+		const failing = transport(twin());
 		save.mockRejectedValueOnce(
 			new Error("That email is no longer in the mailbox."),
 		);
 		await expect(
 			applyTwinUpdate(failing.actions, "insight-1", THREAD),
 		).rejects.toThrow("no longer in the mailbox");
-		expect(failing.ran()).toEqual([LISTING]);
+		expect(failing.ran()).toEqual(LOOK);
 
 		const refused = transport({
-			SearchAppAssets: HELD,
+			...twin(),
 			Copy: new Error("You cannot edit this project"),
 		});
 		await expect(
 			applyTwinUpdate(refused.actions, "insight-1", THREAD),
 		).rejects.toThrow("cannot edit");
-		expect(refused.ran()).toEqual([LISTING, COPY_OVER]);
+		expect(refused.ran()).toEqual([...LOOK, COPY_OVER]);
 	});
 });
 
 describe("removing and keeping a copy", () => {
 	it("removes the one file and settles its suggestion", async () => {
-		const { actions, ran } = transport({ SearchAppAssets: HELD });
+		const { actions, ran } = transport(twin());
 
 		await removeTwinCopy(actions, FILE);
 		expect(ran()).toEqual([
-			LISTING,
+			...LOOK,
 			'DeleteAppAssets(project=["twin-1"], filePath=["/public/files/Old pricing.xlsx"]);',
 			'WorkSettleTwinUpdate(updateId=["copy-2"], action=["dismissed"]);',
 		]);
 	});
 
+	it("removes nothing when the file is no longer that item's copy", async () => {
+		// a file uploaded under the name of a copy that was removed: the record names no item for it
+		const { actions, ran } = transport(twin(HELD, {}));
+
+		await expect(removeTwinCopy(actions, FILE)).rejects.toThrow(
+			"has changed since the last check",
+		);
+		expect(ran()).toEqual([
+			...LOOK,
+			'WorkSettleTwinUpdate(updateId=["copy-2"], action=["dismissed"]);',
+		]);
+	});
+
+	it("removes the older of two copies only while the newer one is still held", async () => {
+		const newer = "public/emails/Email thread - Budget (2).md";
+		const older: TwinUpdate = {
+			...THREAD,
+			change: "duplicate",
+			newerCopy: newer,
+		};
+		const both = transport(
+			twin([...HELD, { path: `/${newer}` }], {
+				...RECORD,
+				[newer]: "conversation:conv-1",
+			}),
+		);
+		await removeTwinCopy(both.actions, older);
+		expect(both.ran()).toEqual([
+			...LOOK,
+			'DeleteAppAssets(project=["twin-1"], filePath=["/public/emails/Email thread - Budget.md"]);',
+			'WorkSettleTwinUpdate(updateId=["copy-1"], action=["dismissed"]);',
+		]);
+
+		// the newer copy was removed since the check: this one is the only copy left
+		const onlyOne = transport(twin());
+		await expect(removeTwinCopy(onlyOne.actions, older)).rejects.toThrow(
+			"has changed since the last check",
+		);
+		expect(
+			onlyOne.ran().some((statement) => statement.startsWith("Delete")),
+		).toBe(false);
+	});
+
 	it("only settles the suggestion of a copy that is already gone", async () => {
-		const { actions, ran } = transport({ SearchAppAssets: [HELD[0]] });
+		const { actions, ran } = transport(twin([HELD[0]]));
 
 		await removeTwinCopy(actions, FILE);
 		expect(ran()).toEqual([
-			LISTING,
+			...LOOK,
 			'WorkSettleTwinUpdate(updateId=["copy-2"], action=["dismissed"]);',
 		]);
 	});
@@ -290,7 +436,7 @@ describe("removing and keeping a copy", () => {
 		"/public/files/Plan.docx",
 		"public/About me.md",
 	])("never asks the server to remove or write over %j", async (path) => {
-		const { actions, ran } = transport({ SearchAppAssets: HELD });
+		const { actions, ran } = transport(twin());
 
 		await expect(
 			removeTwinCopy(actions, { ...FILE, path }),

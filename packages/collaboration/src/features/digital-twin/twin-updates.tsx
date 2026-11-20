@@ -81,6 +81,17 @@ const when = (at: string): string => {
 			});
 };
 
+/**
+ * A file's name as two are compared. A copy's name is its original's as a save
+ * writes it: numbered where the name was taken, and without the characters a
+ * file name cannot hold. Letters and digits alone tell another name from that.
+ */
+const nameKey = (name: string): string =>
+	name
+		.replace(/ \(\d+\)(?=\.[^.]+$|$)/, "")
+		.replace(/[^\p{L}\p{N}]+/gu, "")
+		.toLowerCase();
+
 /** Why an update is suggested, in a sentence or two of facts. */
 function reasonFor(update: TwinUpdate): string {
 	const { noun } = KINDS[update.kind];
@@ -90,7 +101,7 @@ function reasonFor(update: TwinUpdate): string {
 		}.`;
 	if (update.change === "gone")
 		return update.kind === "email"
-			? "The conversation is no longer in your mailbox."
+			? "The conversation was deleted, or is no longer in your mailbox."
 			: update.kind === "chat"
 				? "The chat is no longer in Teams."
 				: "The original is no longer in its drive.";
@@ -106,19 +117,22 @@ function reasonFor(update: TwinUpdate): string {
 				update.latestAt ? ` on ${day(update.latestAt)}` : ""
 			}.`,
 			update.copiedAt && `Your copy is from ${day(update.copiedAt)}.`,
+			// said of the original as it is, not as a rename: the copy may have had another name from the start
 			update.title &&
-				update.title !== twinCopyName(update.path) &&
-				`It is now named "${update.title}".`,
+				nameKey(update.title) !== nameKey(twinCopyName(update.path)) &&
+				`The original is named "${update.title}".`,
 		]
 			.filter(Boolean)
 			.join(" ");
 	const count = update.count ?? 0;
 	const what = update.kind === "email" ? "email" : "message";
-	// a chat is read as far back as its copy reaches, so its count can be a floor
-	const many =
-		update.kind === "chat" && count >= 50
-			? "50 or more new messages"
-			: `${count} new ${count === 1 ? what : `${what}s`}`;
+	// a chat is read as far back as its newest fifty entries: when all of them are newer than the copy, more
+	// may be, and the count is a floor
+	const isFloor =
+		update.kind === "chat" && (update.more === true || count >= 50);
+	const many = `${count}${isFloor ? " or more" : ""} new ${
+		count === 1 && !isFloor ? what : `${what}s`
+	}`;
 	return `${update.title ? `"${update.title}": ` : ""}${many}${
 		latest ? `, ${latest}` : ""
 	}.`;
@@ -391,14 +405,37 @@ export function TwinUpdates({ twinId, updates, onChanged }: TwinUpdatesProps) {
 		);
 	};
 
+	// what the last check compared in this twin; nothing when it did not read it, as a twin made since or one it
+	// could not open, so the page never says of such a twin that nothing changed
+	const compared = lastCheck?.counts?.byTwin?.[twinId];
 	const checkedAt = lastCheck?.finishedAt ?? lastCheck?.startedAt;
-	const lastChecked = !lastCheck
-		? "Not checked yet."
-		: lastCheck.status === "failed"
+	const lastChecked =
+		lastCheck?.status === "failed"
 			? "The last check did not finish."
-			: checkedAt
-				? `Last checked ${when(checkedAt)}.`
-				: "";
+			: !compared
+				? "Not checked yet."
+				: checkedAt
+					? `Last checked ${when(checkedAt)}.`
+					: "";
+	// the copies whose original could not be read this time: the check knows nothing new of them
+	const unchecked = !compared?.unknown
+		? ""
+		: compared.unknown < compared.copies
+			? `${compared.unknown} of the ${compared.copies} copies here could not be checked this time.`
+			: compared.copies === 1
+				? "The copy here could not be checked this time."
+				: `None of the ${compared.copies} copies here could be checked this time.`;
+	const nothingWaits = !compared
+		? "Check now to see whether the emails, Teams chats and files this Digital Twin holds a copy of have changed since."
+		: compared.copies === 0
+			? "A check found nothing here that it can compare. It compares the email conversations, Teams chats and files added from Outlook, Teams and OneDrive."
+			: compared.unknown >= compared.copies
+				? unchecked
+				: `${unchecked ? `${unchecked} ` : ""}Nothing to update in the ${
+						compared.copies - compared.unknown === 1
+							? "one copy"
+							: `${compared.copies - compared.unknown} copies`
+					} checked here.`;
 	const every = session?.state.settings.twinCheckEveryHours;
 	return (
 		<div className="flex h-full min-h-0 flex-col overflow-y-auto">
@@ -544,13 +581,23 @@ export function TwinUpdates({ twinId, updates, onChanged }: TwinUpdatesProps) {
 					</output>
 				)
 			) : rows.length === 0 ? (
-				<P className="max-w-prose p-4 text-muted-foreground text-sm">
-					{lastCheck
-						? "Nothing to update: the emails, Teams chats and files this Digital Twin holds a copy of have not changed since."
-						: "Check now to see whether the emails, Teams chats and files this Digital Twin holds a copy of have changed since."}
-				</P>
+				// while a check runs, its step above says where things stand
+				!isChecking && (
+					<P className="max-w-prose p-4 text-muted-foreground text-sm">
+						{nothingWaits}
+					</P>
+				)
 			) : (
-				<ul aria-label="Suggested updates">{rows.map(renderRow)}</ul>
+				<>
+					{unchecked !== "" && !isChecking && (
+						<P className="shrink-0 border-b px-4 py-2 text-muted-foreground text-sm">
+							{unchecked}
+						</P>
+					)}
+					<ul aria-label="Suggested updates">
+						{rows.map(renderRow)}
+					</ul>
+				</>
 			)}
 		</div>
 	);

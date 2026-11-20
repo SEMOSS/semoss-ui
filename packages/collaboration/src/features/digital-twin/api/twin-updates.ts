@@ -1,7 +1,7 @@
 import { type MicrosoftItemRef, saveMicrosoftItem } from "@semoss/connectors";
 import { z } from "@semoss/ui/next";
 import { callPixel, type InsightActions, pixel } from "@/lib/pixel";
-import { TWIN_FILES_PATH } from "./digital-twin";
+import { readTwinRecord, TWIN_FILES_PATH } from "./digital-twin";
 
 // A copy as the twin's pages write one: a single file in one of the folders they copy into. The delete reactor
 // removes every file of the twin when it is given no path, and a path that names a folder (".." names the one
@@ -26,6 +26,8 @@ const updateSchema = z.object({
 	title: z.string().optional(),
 	// new emails or messages
 	count: z.number().optional(),
+	// a chat's count is a floor: everything the check read of it was newer than the copy
+	more: z.boolean().optional(),
 	latestFrom: z.string().optional(),
 	// when the source last changed, and when the copy was last known current
 	latestAt: z.string().optional(),
@@ -43,6 +45,20 @@ const checkSchema = z.object({
 	error: z.string().nullish(),
 	startedAt: z.string().nullish(),
 	finishedAt: z.string().nullish(),
+	counts: z
+		.object({
+			// by a twin's id: how many of its copies the check compared, and how many of those could not be read
+			// where they came from. A twin the check did not read is not in here.
+			byTwin: z
+				.record(
+					z.string(),
+					z.object({ copies: z.number(), unknown: z.number() }),
+				)
+				.optional(),
+		})
+		.nullish()
+		// a job that counts another way says nothing of what it compared
+		.catch(null),
 });
 const listSchema = z.object({
 	updates: z.array(z.unknown()),
@@ -134,23 +150,53 @@ function requireCopyPath(path: string): void {
 		throw new Error("That is not a copy in a Digital Twin.");
 }
 
-/** Whether the twin still holds the copy. */
-async function hasCopy(
+/**
+ * What is at a suggestion's path now. A suggestion is as old as its check:
+ * since then its copy may have been removed, and a file of another item, or
+ * of none, may have taken the name. "held" only while the file is there and
+ * the twin's record still names this item for it; for the older of two
+ * copies, only while the newer one is still held too.
+ */
+async function copyNow(
 	actions: InsightActions,
 	update: TwinUpdate,
-): Promise<boolean> {
-	// every file under the twin's folder, as the page reads what the twin holds; a listing starts its paths with a slash
-	const found = await callPixel(
-		actions,
-		pixel("SearchAppAssets", {
-			project: update.twinId,
-			filePath: TWIN_FILES_PATH,
-			search: ".",
-			options: ["regex"],
-		}),
-		z.array(z.object({ path: z.string() })),
+): Promise<"held" | "replaced" | "gone"> {
+	const [found, record] = await Promise.all([
+		// every file under the twin's folder, as the page reads what the twin holds; a listing starts its paths with a slash
+		callPixel(
+			actions,
+			pixel("SearchAppAssets", {
+				project: update.twinId,
+				filePath: TWIN_FILES_PATH,
+				search: ".",
+				options: ["regex"],
+			}),
+			z.array(z.object({ path: z.string() })),
+		),
+		readTwinRecord(actions, update.twinId),
+	]);
+	const listed = new Set(found.map((item) => item.path.replace(/^\/+/, "")));
+	const isCopy = (path: string | undefined): boolean =>
+		path !== undefined && listed.has(path) && record[path] === update.key;
+	if (!listed.has(update.path)) return "gone";
+	if (!isCopy(update.path)) return "replaced";
+	return update.change === "duplicate" && !isCopy(update.newerCopy)
+		? "replaced"
+		: "held";
+}
+
+/** Drop a suggestion whose copy is not what it was about, and say so. Nothing in the twin is touched. */
+async function refuse(
+	actions: InsightActions,
+	update: TwinUpdate,
+	now: "replaced" | "gone",
+): Promise<never> {
+	await settle(actions, update, "dismissed");
+	throw new Error(
+		now === "gone"
+			? "That copy is no longer in your Digital Twin."
+			: "That copy has changed since the last check. Check again.",
 	);
-	return found.some((item) => item.path.replace(/^\/+/, "") === update.path);
 }
 
 function settle(
@@ -188,12 +234,14 @@ function toItem(update: TwinUpdate): MicrosoftItemRef {
 /**
  * Bring a copy up to date: the item is saved again into the page's files,
  * the way its viewer saves it, and written over the copy under the name the
- * copy has. A copy the owner removed since is not brought back; its
- * suggestion is dropped and that is said.
+ * copy has. A copy the owner removed since is not brought back, and a file
+ * that is no longer this item's copy is not written over; the suggestion is
+ * dropped and that is said.
  *
  * @param insightId - The page's insight, whose files the item is saved into.
- * @throws when the copy is gone, when the item could not be read (also when
- * Microsoft 365 needs a sign in), or when the copy could not be written.
+ * @throws when the copy is gone or is another file now, when the item could
+ * not be read (also when Microsoft 365 needs a sign in), or when the copy
+ * could not be written.
  */
 export async function applyTwinUpdate(
 	actions: InsightActions,
@@ -201,10 +249,8 @@ export async function applyTwinUpdate(
 	update: TwinUpdate,
 ): Promise<void> {
 	requireCopyPath(update.path);
-	if (!(await hasCopy(actions, update))) {
-		await settle(actions, update, "dismissed");
-		throw new Error("That copy is no longer in your Digital Twin.");
-	}
+	const now = await copyNow(actions, update);
+	if (now !== "held") return refuse(actions, update, now);
 	const saved = await saveMicrosoftItem(insightId, toItem(update));
 	const { targetFilePath } = await callPixel(
 		actions,
@@ -227,13 +273,18 @@ export async function applyTwinUpdate(
  * Remove a copy from its twin: one whose original is gone, or the older of
  * two copies of one item. A copy that is already gone only loses its
  * suggestion.
+ *
+ * @throws when the file is no longer this item's copy, or the newer copy it
+ * was to make way for is gone: nothing is removed then.
  */
 export async function removeTwinCopy(
 	actions: InsightActions,
 	update: TwinUpdate,
 ): Promise<void> {
 	requireCopyPath(update.path);
-	if (await hasCopy(actions, update))
+	const now = await copyNow(actions, update);
+	if (now === "replaced") return refuse(actions, update, now);
+	if (now === "held")
 		await callPixel(
 			actions,
 			pixel("DeleteAppAssets", {
