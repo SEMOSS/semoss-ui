@@ -6,21 +6,22 @@ import {
 	OutlookIcon,
 	TeamsChatsIcon,
 } from "@/components/common/app-icons";
+import type { TwinSuggestion } from "./api/twin-suggestions";
 // the scene a room opens with (room-loading.tsx), drawn here smaller with the same classes: the search's lens
 // stands where the room's tile does, and the places it searches circle it. That stylesheet's reduced-motion rule
 // and its aura, a deliberate exception to DESIGN.md's no-gradients rule, come with it.
 import "@/features/rooms/components/room-loading.css";
 
-// the places the server searches, each as its own mark
+// the places the server searches, each as its own mark, with the kind of item it holds
 const PLACES = [
-	{ id: "outlook", icon: OutlookIcon },
-	{ id: "teams", icon: TeamsChatsIcon },
-	{ id: "onedrive", icon: OneDriveIcon },
+	{ id: "outlook", kind: "email", icon: OutlookIcon },
+	{ id: "teams", kind: "chat", icon: TeamsChatsIcon },
+	{ id: "onedrive", kind: "file", icon: OneDriveIcon },
 ] as const;
 
 // What the search does, in the order the server does it, and how long each line shows; the last one holds. The
 // server sends no progress, so these keep time by the clock: the three places are searched at once, which makes
-// each of their lines true while any of them shows.
+// each of their lines true while any of them shows. A place the search leaves out loses its line.
 const STEPS: readonly {
 	text: string;
 	ms?: number;
@@ -39,6 +40,11 @@ const RIPPLE_DELAYS = ["0s", "-1.2s", "-2.4s"];
 interface TwinKnowledgeSearchSceneProps {
 	/** Whether a search is under way. At rest the lens waits on its own. */
 	isSearching: boolean;
+	/**
+	 * The kinds the search looks for: only their places circle the lens and
+	 * are named. All of them when left out.
+	 */
+	kinds?: readonly TwinSuggestion["kind"][];
 }
 
 /**
@@ -49,6 +55,7 @@ interface TwinKnowledgeSearchSceneProps {
  */
 export function TwinKnowledgeSearchScene({
 	isSearching,
+	kinds,
 }: TwinKnowledgeSearchSceneProps) {
 	const [step, setStep] = useState(0);
 	// every search starts from its first line, with no effect to wait for
@@ -57,14 +64,20 @@ export function TwinKnowledgeSearchScene({
 		setWasSearching(isSearching);
 		setStep(0);
 	}
-	const current = STEPS[step];
+	const places = PLACES.filter(
+		(place) => !kinds || kinds.includes(place.kind),
+	);
+	const current = STEPS.filter(
+		(line) =>
+			!line.place || places.some((place) => place.id === line.place),
+	)[step];
+	const wait = isSearching ? current?.ms : undefined;
 	useEffect(() => {
-		const wait = isSearching ? STEPS[step]?.ms : undefined;
 		if (wait === undefined) return;
 		// every line gets its own wait, also when it is as long as the one before
 		const timer = setTimeout(() => setStep(step + 1), wait);
 		return () => clearTimeout(timer);
-	}, [isSearching, step]);
+	}, [wait, step]);
 
 	return (
 		<div
@@ -127,13 +140,14 @@ export function TwinKnowledgeSearchScene({
 						</div>
 					</div>
 					{isSearching &&
-						PLACES.map(({ id, icon: Icon }, index) => (
+						places.map(({ id, icon: Icon }, index) => (
 							<div
 								key={id}
 								className="room-loading-arm absolute inset-0"
 								style={
 									{
-										"--orbit-start": `${30 + index * 120}deg`,
+										// spread evenly, however many are searched
+										"--orbit-start": `${30 + (index * 360) / places.length}deg`,
 										"--arrive-delay": `${100 + index * 150}ms`,
 									} as CSSProperties
 								}

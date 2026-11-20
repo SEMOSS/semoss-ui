@@ -43,8 +43,17 @@ const due = vi.hoisted(() => ({ today: 0 }));
 vi.mock("@/features/dashboard/use-due-today", () => ({
 	useDueToday: () => due.today,
 }));
+// what waits in the owner's Digital Twins, which the Digital Twins link counts
+const twins = vi.hoisted(() => ({ updates: [] as unknown[] }));
 vi.mock("@/features/dashboard/dashboard.context", () => ({
 	useDashboard: () => dashboard,
+	useTwinUpdates: () => ({
+		data: { updates: twins.updates, lastCheck: null },
+		error: "",
+		isLoading: false,
+		checkedAt: null,
+		refresh: vi.fn(),
+	}),
 }));
 // one actions object: the recent routine runs reader reruns whenever it changes
 const insight = vi.hoisted(() => ({
@@ -118,6 +127,7 @@ beforeEach(() => {
 afterEach(() => {
 	cleanup();
 	due.today = 0;
+	twins.updates = [];
 });
 
 describe("CollaborationNavigation", () => {
@@ -173,6 +183,23 @@ describe("CollaborationNavigation", () => {
 			within(screen.getByRole("link", { name: "Today" })).getByText("2"),
 		).toBeVisible();
 		expect(screen.queryByText(/^0(?: to check)?$/)).not.toBeInTheDocument();
+	});
+
+	it("counts on Digital Twins the copies that wait for the owner, and says nothing when none do", () => {
+		twins.updates = [{ id: "copy-1" }, { id: "copy-2" }, { id: "copy-3" }];
+		renderNavigation("/");
+
+		expect(
+			within(
+				screen.getByRole("link", { name: "Digital Twins" }),
+			).getByText("3"),
+		).toBeVisible();
+		cleanup();
+		twins.updates = [];
+		renderNavigation("/");
+		expect(
+			screen.getByRole("link", { name: "Digital Twins" }),
+		).toHaveTextContent(/^Digital Twins$/);
 	});
 
 	it.each([

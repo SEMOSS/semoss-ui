@@ -19,6 +19,8 @@ interface DraftChatOptionsProps {
 	session: RoomSession;
 	snapshot: RoomSessionSnapshot;
 	onSelectAgent: (agentId: string) => Promise<void>;
+	/** The page is one agent's own, such as a Digital Twin's, so the agent cannot be changed. */
+	isAgentLocked?: boolean;
 }
 
 /** Keep the selected assistant visible; reveal configuration only on request. */
@@ -26,6 +28,7 @@ export function DraftChatOptions({
 	session,
 	snapshot,
 	onSelectAgent,
+	isAgentLocked = false,
 }: DraftChatOptionsProps) {
 	const modelId = useId();
 	const [isOpen, setIsOpen] = useState(false);
@@ -69,7 +72,7 @@ export function DraftChatOptions({
 						compact
 						value={snapshot.settings.agentId}
 						name={snapshot.agent?.name ?? "Assistant"}
-						disabled={isDisabled}
+						disabled={isDisabled || isAgentLocked}
 						onChange={(agentId) => {
 							setIsOpen(false);
 							void onSelectAgent(agentId);

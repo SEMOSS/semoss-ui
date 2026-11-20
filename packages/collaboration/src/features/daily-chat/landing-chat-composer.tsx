@@ -1,4 +1,5 @@
 import { useLocation } from "react-router";
+import type { ComposerPrompt } from "@/features/rooms/components/room-composer.types";
 import { NewChatWorkbenchProvider } from "./new-chat-workbench-provider";
 import { NewChatWorkspace } from "./new-chat-workspace";
 import { useNewChatController } from "./use-new-chat-controller";
@@ -10,6 +11,13 @@ interface LandingChatComposerProps {
 	taskId?: string;
 	/** Today's ask box: lifted off the hero photo, with wording for the whole workspace. */
 	isHero?: boolean;
+	/**
+	 * The page is one agent's own, such as a Digital Twin's chat page, so the
+	 * agent the address names cannot be changed here. The model still can.
+	 */
+	isAgentLocked?: boolean;
+	/** Suggested first messages the user can edit before sending. */
+	starterPrompts?: readonly ComposerPrompt[];
 }
 
 /** Start a conversation in place without opening a room yet. */
@@ -17,6 +25,8 @@ export function LandingChatComposer({
 	topicId,
 	taskId,
 	isHero,
+	isAgentLocked,
+	starterPrompts,
 }: LandingChatComposerProps) {
 	const location = useLocation();
 	const controller = useNewChatController(location.state, topicId, taskId);
@@ -27,7 +37,12 @@ export function LandingChatComposer({
 			snapshot={controller.snapshot}
 			onSaveSettings={controller.onSaveSettings}
 		>
-			<NewChatWorkspace {...controller} isHero={isHero} />
+			<NewChatWorkspace
+				{...controller}
+				isHero={isHero}
+				isAgentLocked={isAgentLocked}
+				starterPrompts={starterPrompts}
+			/>
 		</NewChatWorkbenchProvider>
 	);
 }

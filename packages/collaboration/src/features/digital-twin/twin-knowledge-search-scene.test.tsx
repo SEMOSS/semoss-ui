@@ -58,6 +58,20 @@ it("says what the search is doing as it goes, lights the place it names, and hol
 	expect(screen.getByText("This can take up to a minute.")).toBeVisible();
 });
 
+it("names and circles only the places a narrowed search looks in", () => {
+	render(<TwinKnowledgeSearchScene isSearching kinds={["email", "file"]} />);
+	expect(document.querySelectorAll(".room-loading-arm")).toHaveLength(2);
+	pass(2500);
+	expect(screen.getByText("Searching your Outlook…")).toBeVisible();
+	// Teams chats are not searched, so the line after Outlook's is OneDrive's
+	pass(2500);
+	expect(screen.getByText("Searching your OneDrive…")).toBeVisible();
+	expect(lit()).toBe(1);
+	pass(2500);
+	expect(screen.getByText("Reading what turned up…")).toBeVisible();
+	expect(screen.queryByText(/Teams chats/)).toBeNull();
+});
+
 it("starts every search from its first line", () => {
 	const { rerender } = render(<TwinKnowledgeSearchScene isSearching />);
 	// a line at a time: the next line's wait starts once the line is drawn

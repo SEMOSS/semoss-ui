@@ -104,6 +104,7 @@ const FileExplorerPanel = ({ id }: WorkbenchPanelProps) => {
 		mode,
 		adapter,
 		readOnly,
+		onRefresh: host?.onRefresh,
 		initialPath: config.initialPath,
 		onItemSelect: openFile,
 		onItemsMoved: (movedItems) => {

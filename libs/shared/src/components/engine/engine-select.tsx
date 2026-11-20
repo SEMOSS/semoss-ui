@@ -50,6 +50,12 @@ export interface EngineSelectProps {
 	/** Additional metadata filters for engine query */
 	metaFilters?: unknown[];
 
+	/**
+	 * Lists every engine through the admin read, for an admin in admin mode.
+	 * Outside it the list is the engines the user can see.
+	 */
+	admin?: boolean;
+
 	/** Props forwarded to the PopoverContent component */
 	popoverContentProps?: React.ComponentProps<typeof PopoverContent>;
 
@@ -113,6 +119,8 @@ export interface EngineSelectProps {
  * - Real-time search with debouncing
  * - Infinite scroll for large datasets
  * - Filter by engine type and metadata
+ * - Every engine through AdminMyEngines in admin mode, or the user's own
+ *   through MyEngines
  * - Displays engine name and description, or its id with showEngineId
  * - Or lists a given set of engines (engines), searched by name and id
  */
@@ -125,6 +133,7 @@ export const EngineSelect = ({
 	onChange,
 	engineTypes,
 	metaFilters,
+	admin = false,
 	popoverContentProps = {},
 	showEngineId,
 	showEngineIcon = true,
@@ -166,7 +175,7 @@ export const EngineSelect = ({
 	const getEngines = useIteratorPixel<Engine[], Engine>(
 		(limit, offset) =>
 			open && !engines
-				? `META | MyEngines(${
+				? `META | ${admin ? "AdminMyEngines" : "MyEngines"}(${
 						debouncedSearch
 							? `filterWord=${JSON.stringify(debouncedSearch)}, `
 							: ""
@@ -200,6 +209,7 @@ export const EngineSelect = ({
 		},
 		[
 			open,
+			admin,
 			debouncedSearch,
 			JSON.stringify(engineTypes),
 			JSON.stringify(metaFilters),

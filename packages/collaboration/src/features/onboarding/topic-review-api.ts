@@ -76,6 +76,12 @@ const reviewTopicSchema = topicDraftSchema.extend({
 		.nullish()
 		.transform((value) => value ?? null),
 	youWrote: z.number().default(0),
+	// set up in the builder, and the built topic a suggestion went into
+	built: z.boolean().default(false),
+	usedBy: z
+		.string()
+		.nullish()
+		.transform((value) => value ?? null),
 	vipThreads: z.number().default(0),
 	// an area's first topic keeps its own name here while it stands for the whole area
 	own: z
@@ -468,7 +474,14 @@ export async function applyTopicReview(
 			"Your topics are saved, but their filing job is not confirmed. Retry to recover it.",
 		);
 	}
-	const corrections = review.draft.corrections ?? [];
+	const dropped = new Set(
+		review.draft.topics
+			.filter((t) => t.built && !t.keep && !t.mergedIntoKey)
+			.map((t) => t.key),
+	);
+	const corrections = (review.draft.corrections ?? []).filter(
+		(c) => !dropped.has(c.topicKey),
+	);
 	const correctedThreads = [
 		...new Set(corrections.map((item) => item.threadId)),
 	];

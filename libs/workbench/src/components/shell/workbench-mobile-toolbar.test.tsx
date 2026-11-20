@@ -144,3 +144,32 @@ it("lets a narrow host choose compact layout on a desktop viewport", () => {
 	expect(screen.getByTestId("workbench-mobile-toolbar")).toBeVisible();
 	expect(screen.queryByTestId("workbench-border-top")).toBeNull();
 });
+
+it("activates a border tab in its own stack when reached from a stage tab with the keyboard", () => {
+	const { store } = setup("toolbar", "compact");
+	act(() =>
+		store.getState().layout.actions.loadSnapshot({
+			tree: {
+				type: "tabset",
+				id: "main",
+				size: 1,
+				panelIds: ["library"],
+				activeId: "library",
+			},
+			panels: {
+				library: { id: "library", type: "library", name: "Library" },
+				files: { id: "files", type: "files", name: "Files" },
+			},
+			borders: {
+				left: { panelIds: ["files"], activeId: null, size: 260 },
+			},
+		}),
+	);
+	fireEvent.keyDown(screen.getByRole("tab", { name: "Library" }), {
+		key: "ArrowRight",
+	});
+	const { mobileActivePanelId, tabsets, borders } = store.getState().layout;
+	expect(mobileActivePanelId).toBe("files");
+	expect(borders.left.activeId).toBe("files");
+	expect(tabsets[0].activeId).toBe("library");
+});

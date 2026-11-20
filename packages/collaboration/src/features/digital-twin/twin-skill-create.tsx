@@ -92,9 +92,8 @@ export function TwinSkillCreate({ disabled, onCreated }: TwinSkillCreateProps) {
 				<DialogHeader>
 					<DialogTitle>Create skill</DialogTitle>
 					<DialogDescription>
-						Save reusable instructions to your skill catalog. The
-						skill is selected for your twin and applied when you
-						save or create it.
+						Add reusable instructions to your skill catalog and
+						select the new skill for this twin.
 					</DialogDescription>
 				</DialogHeader>
 				<Form

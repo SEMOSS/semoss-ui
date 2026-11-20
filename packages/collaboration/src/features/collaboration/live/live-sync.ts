@@ -734,6 +734,7 @@ const SETTINGS_FIELDS = [
 	"syncEveryMinutes",
 	"newTopicsEveryHours",
 	"closeAcrossThreads",
+	"twinCheckEveryHours",
 ] as const;
 
 /**

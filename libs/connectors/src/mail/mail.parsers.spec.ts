@@ -73,6 +73,17 @@ describe("mail", () => {
 		});
 	});
 
+	it("says which email of a thread is a draft that was never sent", () => {
+		const { messages } = parseMailPage({
+			messages: [{ id: "sent" }, { id: "draft", isDraft: true }],
+		});
+
+		expect(messages.map((message) => message.isDraft)).toEqual([
+			undefined,
+			true,
+		]);
+	});
+
 	it("reads an opened message with its attachments", () => {
 		const message = parseMailMessageDetail({
 			id: "u1",

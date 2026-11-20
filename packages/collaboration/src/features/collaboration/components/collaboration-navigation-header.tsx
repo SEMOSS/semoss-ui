@@ -80,7 +80,10 @@ export function CollaborationNavigationHeader({
 							aria-controls={toggle.controls}
 							onClick={toggle.onToggle}
 						>
-							<ToggleIcon aria-hidden="true" />
+							<ToggleIcon
+								aria-hidden="true"
+								className="fill-primary/15 text-primary dark:brightness-125"
+							/>
 						</Button>
 					</TooltipTrigger>
 					<TooltipContent side="right">{toggleLabel}</TooltipContent>

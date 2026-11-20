@@ -4,6 +4,8 @@ import type { FilePanelMode } from "../types/file-panel.types";
 
 /** What a host adds to the file explorer panels below it. */
 export interface FileExplorerHost {
+	/** Re-read a companion listing after file changes or a manual refresh. */
+	onRefresh?: () => void;
 	/**
 	 * Extra right-click entries for one item, such as the playground's Add to
 	 * Context. Called once per rendered row.

@@ -5,6 +5,7 @@ import {
 	Check,
 	CircleDashed,
 	CircleSlash,
+	Cpu,
 	Eye,
 	Gauge,
 	Globe,
@@ -83,6 +84,7 @@ const SOURCE_ICONS: Readonly<Record<ModelUsageLimitSource, LucideIcon>> = {
 	ALL_MODELS: Layers,
 	PLATFORM: Building2,
 	APP: LayoutGrid,
+	ENGINE: Cpu,
 };
 
 /** The icons of No Limit Defined, Unlimited and Rules, in the order of USAGE_LIMIT_MODES */

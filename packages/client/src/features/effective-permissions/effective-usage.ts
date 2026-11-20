@@ -93,6 +93,7 @@ export const getEffectiveLimit = (
 	const source: ModelUsageLimitSource =
 		limitType === "TEAM" ||
 		limitType === "APP" ||
+		limitType === "ENGINE" ||
 		limitType === "PUBLIC" ||
 		limitType === "ALL_MODELS"
 			? limitType
