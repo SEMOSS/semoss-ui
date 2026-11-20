@@ -85,7 +85,8 @@ export function PersonaSources({ onStart }: PersonaSourcesProps) {
 			</ul>
 			<P className="max-w-prose text-muted-foreground text-sm">
 				It takes under ten minutes, and you can wrap up early. Nothing
-				changes for your Digital Twins until you save what I write.
+				changes for your Digital Twins or your assistant until you save
+				what I write.
 			</P>
 			<Button
 				type="button"

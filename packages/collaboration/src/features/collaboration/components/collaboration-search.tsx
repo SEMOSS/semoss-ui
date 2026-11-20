@@ -54,7 +54,7 @@ const GO_TO = [
 		id: "topics",
 		label: "Topics",
 		detail: "All your topics",
-		path: "/brain/topics",
+		path: "/work/topics",
 	},
 	{
 		id: "filing",

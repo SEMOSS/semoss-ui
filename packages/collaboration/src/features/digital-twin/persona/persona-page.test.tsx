@@ -1,14 +1,16 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
+import type { CollaborationState } from "@/features/collaboration/state/collaboration.types";
+import { CollaborationSessionProvider } from "@/features/collaboration/state/collaboration-session.context";
 import type { PersonaSections } from "./api/persona";
 import { PersonaPage } from "./persona-page";
 
 // one actions object, as the provider gives; a new one per render would read again forever
 const insight = vi.hoisted(() => ({ actions: { run: vi.fn() } }));
 vi.mock("@semoss/sdk/react", () => ({ useInsight: () => insight }));
-
 const BLANK: PersonaSections = {
 	short: "",
 	voice: "",
@@ -37,25 +39,94 @@ beforeEach(() => {
 		const answer = answers[statement.slice(0, statement.indexOf("("))];
 		if (answer instanceof Error) throw answer;
 		return {
-			pixelReturn: [{ output: answer, operationType: ["OPERATION"] }],
+			pixelReturn: [
+				{ output: await answer, operationType: ["OPERATION"] },
+			],
 		};
 	});
 });
 afterEach(cleanup);
 
+/** The page as Digital Twins opens it, which is how it was before it had a door of its own. */
 const renderPage = () => {
 	render(
 		<MemoryRouter>
-			<PersonaPage />
+			<PersonaPage isFromTwins />
 		</MemoryRouter>,
 	);
 	return userEvent.setup();
 };
 
-it("shows what the persona says in a box per section, and who else can come to know it", async () => {
+/** The page as the sidebar opens it, under a session when one is given. */
+const renderOwnPage = (state?: CollaborationState) => {
+	const page = (
+		<MemoryRouter>
+			<PersonaPage />
+		</MemoryRouter>
+	);
+	render(
+		state ? (
+			<CollaborationSessionProvider initialState={state}>
+				{page}
+			</CollaborationSessionProvider>
+		) : (
+			page
+		),
+	);
+	return userEvent.setup();
+};
+
+/** Someone signed in to Microsoft, who has confirmed how they write email. */
+const signedIn = (): CollaborationState => {
+	const state = createInitialCollaborationState();
+	state.liveProfile = {
+		...state.profile,
+		style: {
+			summary: "Short and friendly.",
+			source: "you",
+			confirmed: true,
+			examples: [],
+			variants: {},
+			pending: null,
+		},
+	};
+	return state;
+};
+const assistantSwitch = () =>
+	screen.findByRole("switch", { name: "Use my persona when writing for me" });
+
+const openTab = async (
+	user: ReturnType<typeof userEvent.setup>,
+	name: "Persona" | "Usage",
+): Promise<void> => {
+	const tab = await screen.findByRole("tab", { name });
+	await vi.waitFor(() => expect(tab).toBeEnabled());
+	await user.click(tab);
+};
+
+it("opens on the saved summary and one readable section, with access to every section and the privacy note", async () => {
+	answers.WorkGetTwinPersona = persona({
+		short: "I help colleagues find a clear next step.",
+		voice: "Direct.",
+	});
 	renderPage();
 	expect(screen.getByText("Loading your persona…")).toBeInTheDocument();
-	expect(await screen.findByLabelText("Voice")).toHaveValue("Direct.");
+	expect(
+		await screen.findByText("I help colleagues find a clear next step."),
+	).toBeVisible();
+	expect(screen.getByRole("tab", { name: "Persona" })).toHaveAttribute(
+		"aria-selected",
+		"true",
+	);
+	expect(
+		screen.getByRole("heading", { name: "Persona sections" }),
+	).toBeVisible();
+	expect(screen.getByRole("button", { name: "Voice" })).toHaveAttribute(
+		"aria-pressed",
+		"true",
+	);
+	expect(screen.getByText("Direct.")).toBeVisible();
+	expect(screen.queryByRole("textbox")).toBeNull();
 	for (const label of [
 		"In short",
 		"How you decide",
@@ -65,43 +136,46 @@ it("shows what the persona says in a box per section, and who else can come to k
 		"Leave to you",
 		"Sounds like you",
 	]) {
-		expect(screen.getByLabelText(label)).toHaveValue("");
+		expect(screen.getByRole("button", { name: label })).toBeEnabled();
 	}
-	expect(
-		screen.getByText(/a twin can be talked into quoting what it was told/),
-	).toBeVisible();
+	expect(screen.getByText(/shared twin may quote/i)).toBeVisible();
 	expect(screen.getByRole("link", { name: "Digital Twins" })).toHaveAttribute(
 		"href",
 		"/twins",
 	);
 });
 
-it("saves every section and then shows the text as the server kept it", async () => {
+it("saves only the edited section and reads the latest values returned by the server", async () => {
 	const user = renderPage();
-	const limits = await screen.findByLabelText("Leave to you");
-	await user.type(limits, "# Budgets: ask Dana Smith.");
+	await user.click(
+		await screen.findByRole("button", { name: "Leave to you" }),
+	);
+	await user.click(screen.getByRole("button", { name: "Write section" }));
+	await user.type(
+		screen.getByRole("textbox", { name: "Leave to you" }),
+		"# Budgets: ask Dana Smith.",
+	);
 	answers.WorkSaveTwinPersona = persona({
-		voice: "Direct.",
+		voice: "Revised in another window.",
 		limits: "Budgets: ask Dana Smith.",
 	});
 	await user.click(screen.getByRole("button", { name: "Save" }));
-	// a line that could pass for a heading comes back without its mark
-	await vi.waitFor(() =>
-		expect(limits).toHaveValue("Budgets: ask Dana Smith."),
-	);
+	expect(await screen.findByText("Budgets: ask Dana Smith.")).toBeVisible();
+	expect(screen.queryByRole("textbox")).toBeNull();
 	expect(ran().at(-1)).toBe(
 		`WorkSaveTwinPersona(sections=[${JSON.stringify({
-			...BLANK,
-			voice: "Direct.",
 			limits: "# Budgets: ask Dana Smith.",
 		})}]);`,
 	);
+	await user.click(screen.getByRole("button", { name: "Voice" }));
+	expect(screen.getByText("Revised in another window.")).toBeVisible();
 });
 
 it("keeps what was written when the save is refused, and says why", async () => {
 	answers.WorkSaveTwinPersona = new Error("Collaboration is not enabled.");
 	const user = renderPage();
-	const voice = await screen.findByLabelText("Voice");
+	await user.click(await screen.findByRole("button", { name: "Edit" }));
+	const voice = screen.getByRole("textbox", { name: "Voice" });
 	await user.type(voice, " Brief.");
 	await user.click(screen.getByRole("button", { name: "Save" }));
 	expect(await screen.findByRole("alert")).toHaveTextContent(
@@ -113,8 +187,12 @@ it("keeps what was written when the save is refused, and says why", async () => 
 it("asks for a section before saving a persona that says nothing, and offers no delete for one that is not there", async () => {
 	answers.WorkGetTwinPersona = persona();
 	const user = renderPage();
-	await screen.findByLabelText("Voice");
+	await openTab(user, "Usage");
 	expect(screen.queryByRole("button", { name: "Delete persona" })).toBeNull();
+	await openTab(user, "Persona");
+	await user.click(
+		await screen.findByRole("button", { name: "Write section" }),
+	);
 	await user.click(screen.getByRole("button", { name: "Save" }));
 	expect(await screen.findByRole("alert")).toHaveTextContent(
 		"Write at least one section first.",
@@ -122,8 +200,9 @@ it("asks for a section before saving a persona that says nothing, and offers no 
 	expect(ran()).toEqual(["WorkGetTwinPersona();"]);
 });
 
-it("deletes the persona only after it is confirmed, and starts the boxes over", async () => {
+it("deletes the persona only after confirmation and resets the section reader", async () => {
 	const user = renderPage();
+	await openTab(user, "Usage");
 	const trigger = await screen.findByRole("button", {
 		name: "Delete persona",
 	});
@@ -132,6 +211,7 @@ it("deletes the persona only after it is confirmed, and starts the boxes over", 
 		screen.getByRole("dialog", { name: "Delete your persona?" }),
 	);
 	await user.click(dialog.getByRole("button", { name: "Cancel" }));
+	await vi.waitFor(() => expect(trigger).toHaveFocus());
 	expect(ran()).toEqual(["WorkGetTwinPersona();"]);
 
 	answers.WorkDeleteTwinPersona = new Error("The database is down.");
@@ -145,17 +225,29 @@ it("deletes the persona only after it is confirmed, and starts the boxes over", 
 	expect(
 		await within(screen.getByRole("dialog")).findByRole("alert"),
 	).toHaveTextContent("The database is down.");
-	expect(screen.getByLabelText("Voice")).toHaveValue("Direct.");
+	await user.click(
+		within(screen.getByRole("dialog")).getByRole("button", {
+			name: "Cancel",
+		}),
+	);
+	await openTab(user, "Persona");
+	expect(screen.getByText("Direct.")).toBeVisible();
 
 	answers.WorkDeleteTwinPersona = persona();
+	await openTab(user, "Usage");
+	await user.click(screen.getByRole("button", { name: "Delete persona" }));
 	await user.click(
 		within(screen.getByRole("dialog")).getByRole("button", {
 			name: "Delete",
 		}),
 	);
 	await vi.waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-	expect(screen.getByLabelText("Voice")).toHaveValue("");
+	const personaTab = screen.getByRole("tab", { name: "Persona" });
+	expect(personaTab).toHaveAttribute("aria-selected", "true");
+	await vi.waitFor(() => expect(personaTab).toHaveFocus());
 	expect(screen.queryByRole("button", { name: "Delete persona" })).toBeNull();
+	expect(screen.getByRole("button", { name: "Write section" })).toBeVisible();
+	expect(screen.queryByText("Direct.")).toBeNull();
 	expect(ran().at(-1)).toBe("WorkDeleteTwinPersona();");
 });
 
@@ -165,26 +257,24 @@ it("says when the persona cannot be read, and reads it again when asked", async 
 	expect(await screen.findByRole("alert")).toHaveTextContent(
 		"The server is restarting.",
 	);
-	expect(screen.queryByLabelText("Voice")).toBeNull();
+	expect(screen.queryByRole("button", { name: "Voice" })).toBeNull();
 	answers.WorkGetTwinPersona = persona({ voice: "Direct." });
 	await user.click(screen.getByRole("button", { name: "Try again" }));
-	expect(await screen.findByLabelText("Voice")).toHaveValue("Direct.");
+	expect(await screen.findByText("Direct.")).toBeVisible();
 });
 
 it("leads to the interview from the page, named for where the interview is", async () => {
 	answers.WorkGetTwinPersona = persona();
 	const { unmount } = render(
 		<MemoryRouter>
-			<PersonaPage />
+			<PersonaPage isFromTwins />
 		</MemoryRouter>,
 	);
 	expect(
 		await screen.findByRole("link", { name: "Start the interview" }),
 	).toHaveAttribute("href", "/twins/persona/interview");
-	// someone with no persona is told the interview can write it
-	expect(
-		screen.getByText(/The interview writes these for you/),
-	).toBeVisible();
+	// Someone with no persona can also begin manually.
+	expect(screen.getByRole("button", { name: "Write section" })).toBeEnabled();
 	unmount();
 
 	answers.WorkGetTwinPersona = {
@@ -195,5 +285,192 @@ it("leads to the interview from the page, named for where the interview is", asy
 	expect(
 		await screen.findByRole("link", { name: "Open the interview" }),
 	).toHaveAttribute("href", "/twins/persona/interview");
-	expect(screen.queryByText(/The interview writes these for you/)).toBeNull();
+	expect(screen.getByRole("button", { name: "Edit" })).toBeEnabled();
+});
+
+it("opens from the sidebar as the same page with no way back to Digital Twins, and its interview behind the same door", async () => {
+	answers.WorkGetTwinPersona = {
+		...persona({ voice: "Direct." }),
+		interview: { answered: 6, of: 6, wrapped: true, done: true },
+	};
+	renderOwnPage();
+	expect(await screen.findByText("Direct.")).toBeVisible();
+	expect(screen.queryByRole("link", { name: "Digital Twins" })).toBeNull();
+	expect(
+		screen.getByRole("link", { name: "Keep grilling me" }),
+	).toHaveAttribute("href", "/persona/interview?go=more");
+	expect(screen.getByRole("tab", { name: "Usage" })).toBeEnabled();
+	expect(screen.queryByRole("tab", { name: "In email" })).toBeNull();
+	expect(ran()).toEqual(["WorkGetTwinPersona();"]);
+});
+
+it("has the owner's assistant write with the persona until it is switched off, and saves the switch as it is moved", async () => {
+	const user = renderOwnPage();
+	await openTab(user, "Usage");
+	const toggle = await assistantSwitch();
+	// a server from before the switch says nothing of it, and uses the persona
+	expect(toggle).toBeChecked();
+	expect(toggle).toHaveAccessibleDescription(
+		expect.stringContaining(
+			"your voice and boundaries in email and Teams drafts",
+		),
+	);
+	answers.WorkSetAssistantPersona = { enabled: false };
+	// by keyboard, as a switch is moved
+	act(() => toggle.focus());
+	await user.keyboard(" ");
+	await vi.waitFor(() =>
+		expect(ran().at(-1)).toBe("WorkSetAssistantPersona(enabled=[false]);"),
+	);
+	expect(toggle).not.toBeChecked();
+	expect(toggle).toHaveFocus();
+
+	// A later persona save preserves the independently saved switch.
+	await openTab(user, "Persona");
+	await user.click(screen.getByRole("button", { name: "Edit" }));
+	await user.type(
+		screen.getByRole("textbox", { name: "Voice" }),
+		" Be warm.",
+	);
+	answers.WorkSaveTwinPersona = {
+		...persona({ voice: "Direct. Be warm." }),
+		assistant: false,
+	};
+	await user.click(screen.getByRole("button", { name: "Save" }));
+	expect(await screen.findByText("Direct. Be warm.")).toBeVisible();
+	await openTab(user, "Usage");
+	const savedToggle = await assistantSwitch();
+	expect(savedToggle).not.toBeChecked();
+
+	// what shows is what the server kept, whatever was asked for
+	await user.click(savedToggle);
+	await vi.waitFor(() =>
+		expect(ran().at(-1)).toBe("WorkSetAssistantPersona(enabled=[true]);"),
+	);
+	await vi.waitFor(() => expect(savedToggle).not.toBeChecked());
+	expect(screen.queryByRole("alert")).toBeNull();
+});
+
+it("puts the switch back and says why beside it when it cannot be saved", async () => {
+	answers.WorkSetAssistantPersona = new Error(
+		"Collaboration is not enabled.",
+	);
+	const user = renderOwnPage();
+	await openTab(user, "Usage");
+	const toggle = await assistantSwitch();
+	await user.click(toggle);
+	expect(await screen.findByRole("alert")).toHaveTextContent(
+		"Collaboration is not enabled.",
+	);
+	expect(toggle).toBeChecked();
+	// said of the switch itself, so it is heard again when the switch is come back to
+	expect(toggle).toHaveAccessibleDescription(
+		expect.stringContaining("Collaboration is not enabled."),
+	);
+
+	answers.WorkSetAssistantPersona = { enabled: false };
+	await user.click(toggle);
+	await vi.waitFor(() => expect(ran()).toHaveLength(3));
+	expect(toggle).not.toBeChecked();
+	expect(screen.queryByRole("alert")).toBeNull();
+});
+
+it("keeps usage changes and deletion unavailable while a section save is pending", async () => {
+	let finish = (): void => undefined;
+	const delay = new Promise<void>((resolve) => {
+		finish = resolve;
+	});
+	answers.WorkSaveTwinPersona = delay.then(() =>
+		persona({ voice: "Direct. Be warm." }),
+	);
+	const user = renderPage();
+	await user.click(await screen.findByRole("button", { name: "Edit" }));
+	await user.type(
+		screen.getByRole("textbox", { name: "Voice" }),
+		" Be warm.",
+	);
+	await user.click(screen.getByRole("button", { name: "Save" }));
+	await openTab(user, "Usage");
+	const remove = screen.getByRole("button", { name: "Delete persona" });
+	expect(remove).toBeDisabled();
+	await user.click(await assistantSwitch());
+	expect(ran()).toHaveLength(2);
+	expect(ran()[1]).toMatch(/^WorkSaveTwinPersona/);
+	await act(async () => finish());
+	await vi.waitFor(() => expect(remove).toBeEnabled());
+	await openTab(user, "Persona");
+	expect(screen.getByText("Direct. Be warm.")).toBeVisible();
+});
+
+it("offers the assistant switch only once a section is saved, using the value the server returned", async () => {
+	answers.WorkGetTwinPersona = persona();
+	const user = renderOwnPage();
+	await openTab(user, "Usage");
+	expect(screen.queryByRole("switch")).toBeNull();
+	await openTab(user, "Persona");
+	await user.click(await screen.findByRole("button", { name: "Voice" }));
+	await user.click(screen.getByRole("button", { name: "Write section" }));
+	await user.type(screen.getByRole("textbox", { name: "Voice" }), "Direct.");
+	answers.WorkSaveTwinPersona = {
+		...persona({ voice: "Direct." }),
+		assistant: false,
+	};
+	await user.click(screen.getByRole("button", { name: "Save" }));
+	expect(await screen.findByText("Direct.")).toBeVisible();
+	await openTab(user, "Usage");
+	expect(await assistantSwitch()).not.toBeChecked();
+});
+
+it("explains which features stop using the persona before deletion", async () => {
+	const user = renderOwnPage();
+	await openTab(user, "Usage");
+	await user.click(
+		await screen.findByRole("button", { name: "Delete persona" }),
+	);
+	expect(
+		screen.getByRole("dialog", { name: "Delete your persona?" }),
+	).toHaveAccessibleDescription(
+		expect.stringMatching(
+			/your assistant stops writing for you with it.*cannot be undone/i,
+		),
+	);
+	await user.click(screen.getByRole("button", { name: "Cancel" }));
+	expect(
+		screen.getByRole("region", { name: "Delete your persona" }),
+	).toHaveTextContent(/twins and assistant/i);
+});
+
+it("keeps a section edit across Usage and offers one persona even with a legacy email style", async () => {
+	const user = renderOwnPage(signedIn());
+	await user.click(await screen.findByRole("button", { name: "Edit" }));
+	const voice = screen.getByRole("textbox", { name: "Voice" });
+	await user.type(voice, " Ask first.");
+
+	expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).toEqual([
+		"Persona",
+		"Usage",
+	]);
+	await openTab(user, "Usage");
+	expect(await assistantSwitch()).toBeVisible();
+	await openTab(user, "Persona");
+	expect(screen.getByRole("textbox", { name: "Voice" })).toHaveValue(
+		"Direct. Ask first.",
+	);
+	expect(ran()).toEqual(["WorkGetTwinPersona();"]);
+});
+
+it("renders a dash-led summary as separate points in the page header", async () => {
+	answers.WorkGetTwinPersona = persona({
+		short: "- Start with the decision.\n- Offer a trade-off.",
+		voice: "Direct.",
+	});
+	renderPage();
+	const summary = await screen.findByRole("list", {
+		name: "Persona summary",
+	});
+	expect(
+		within(summary)
+			.getAllByRole("listitem")
+			.map((item) => item.textContent),
+	).toEqual(["Start with the decision.", "Offer a trade-off."]);
 });

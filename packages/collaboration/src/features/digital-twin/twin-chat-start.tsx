@@ -68,7 +68,10 @@ const SHARED_PROMPTS = [
 	},
 ];
 
-/** Introduces the twin, its sources and, for its owner, the changes they can approve in chat. */
+/**
+ * Introduces the twin and its sources: to its owner with the changes they can
+ * approve in chat, to anyone else with whose twin it is.
+ */
 export function TwinChatStart({ agentId }: TwinChatStartProps) {
 	const read = useCallback(
 		(actions: InsightActions) => getTwinChatWelcome(actions, agentId),
@@ -78,6 +81,8 @@ export function TwinChatStart({ agentId }: TwinChatStartProps) {
 	const twin = welcome.data?.agent;
 	const fileAccess = welcome.data?.fileAccess;
 	const canAdd = fileAccess === "manage" || fileAccess === "add";
+	// a shared twin's name need not say whose it is
+	const sharedBy = canAdd ? undefined : welcome.data?.ownerName;
 	const { profile } = useCollaborationSession().state;
 	const person = profile.email || profile.id;
 	const isOpened = twin !== undefined;
@@ -112,6 +117,11 @@ export function TwinChatStart({ agentId }: TwinChatStartProps) {
 							name={twin.name}
 							portrait={portrait}
 						>
+							{sharedBy && (
+								<P className="wrap-anywhere col-span-full font-medium @lg/twins:text-lg">
+									{sharedBy}’s Digital Twin
+								</P>
+							)}
 							<P className="col-span-full max-w-prose @lg/twins:text-base @lg/twins:text-inherit text-muted-foreground text-sm leading-relaxed">
 								{canAdd
 									? "Your AI twin answers questions using the emails, chats, and files you’ve shared with it."

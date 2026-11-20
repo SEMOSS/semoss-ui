@@ -21,9 +21,17 @@ import { resetMyData } from "@/features/onboarding/onboarding-api";
 import { SettingsPage } from "@/pages/settings.page";
 import { settingsSections } from "./settings-sections";
 
+// one actions object, answering every read with nothing: Email reads its folders again whenever it changes
+const insight = vi.hoisted(() => ({
+	actions: {
+		run: async () => ({
+			pixelReturn: [{ output: {}, operationType: ["OPERATION"] }],
+		}),
+	},
+}));
 vi.mock("@semoss/sdk/react", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
-	useInsight: () => ({ actions: {} }),
+	useInsight: () => insight,
 }));
 vi.mock("@/features/collaboration/live/use-style-learning", () => ({
 	useStyleLearning: () => ({
@@ -181,18 +189,13 @@ it("redirects the old profile link, validates profile fields, and saves only con
 	expect(screen.queryByText("Unsaved profile edits")).not.toBeInTheDocument();
 });
 
-it("keeps VIP controls and the missing-profile state usable inside Settings", async () => {
+it("leaves VIPs to People and keeps the missing-profile state usable inside Settings", async () => {
 	const user = userEvent.setup();
-	const { state, onChange, unmount } = renderSettings();
-	await user.click(
-		screen.getByRole("button", {
-			name: `Remove VIP ${state.people[0].name}`,
-		}),
-	);
-	expect(onChange.mock.lastCall?.[0].next.people[0].vip).toBe(false);
-	expect(
-		screen.getByRole("link", { name: "Choose VIPs from People" }),
-	).toHaveAttribute("href", "/brain/people");
+	const { state, unmount } = renderSettings();
+	// the one person here is a VIP; VIPs are listed and removed on People
+	expect(state.people[0].vip).toBe(true);
+	expect(screen.getByRole("button", { name: "Save profile" })).toBeVisible();
+	expect(screen.queryByText(/VIP/)).toBeNull();
 	unmount();
 	renderSettings("/settings/about-you", false);
 	expect(
@@ -200,6 +203,30 @@ it("keeps VIP controls and the missing-profile state usable inside Settings", as
 	).toBeVisible();
 	await user.click(screen.getByRole("link", { name: "Appearance" }));
 	expect(screen.getByRole("radiogroup", { name: "Theme" })).toBeVisible();
+});
+
+it("keeps how drafts look under Email, and sends the owner to Persona for how they write", async () => {
+	const user = userEvent.setup();
+	renderSettings("/settings/about-you");
+	expect(screen.getByText(/How you write is under Persona\./)).toBeVisible();
+
+	await user.click(screen.getByRole("link", { name: "Email" }));
+	const email = screen.getByRole("region", { name: "Email" });
+	expect(
+		within(email).getByRole("heading", { name: "Font and signature" }),
+	).toBeVisible();
+	expect(
+		await within(email).findByRole("combobox", { name: "Draft folder" }),
+	).toBeEnabled();
+	// how the owner writes went to their persona, and its learning with it
+	expect(within(email).getByText(/How you write is under/)).toHaveTextContent(
+		"How drafts look and where they are left in Outlook. Nothing is sent until you send it. How you write is under Persona.",
+	);
+	expect(
+		within(email).getByRole("link", { name: "Persona" }),
+	).toHaveAttribute("href", "/persona");
+	expect(screen.queryByRole("region", { name: "In email" })).toBeNull();
+	expect(screen.queryByRole("button", { name: /Learn/ })).toBeNull();
 });
 
 it("keeps rule and filing drafts across categories, validates thresholds, and saves/adds/removes through the existing session", async () => {

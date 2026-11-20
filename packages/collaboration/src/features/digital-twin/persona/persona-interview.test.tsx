@@ -27,8 +27,8 @@ const LIMITS = {
 	step: {
 		id: "limits",
 		kind: "choice",
-		title: "What should your twin stay out of?",
-		detail: "It will not discuss or decide these for you.",
+		title: "What should be left to you?",
+		detail: "Your twins will not discuss or decide these for you, and your assistant takes no position on them when it writes for you.",
 		options: ["Budgets and pricing", "Hiring"],
 		ordered: false,
 	},
@@ -117,9 +117,20 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
+/** The interview as Digital Twins opens it, which is how it was before the persona had a door of its own. */
 function renderInterview(search = "") {
 	render(
 		<MemoryRouter initialEntries={[`/twins/persona/interview${search}`]}>
+			<PersonaInterview isFromTwins />
+		</MemoryRouter>,
+	);
+	return userEvent.setup();
+}
+
+/** The interview as the persona's own page opens it. */
+function renderOwnInterview() {
+	render(
+		<MemoryRouter initialEntries={["/persona/interview"]}>
 			<PersonaInterview />
 		</MemoryRouter>,
 	);
@@ -148,7 +159,7 @@ it("asks what it may read before anything is read, and reads only what is left o
 	expect(
 		await screen.findByRole("heading", {
 			level: 2,
-			name: "What should your twin stay out of?",
+			name: "What should be left to you?",
 		}),
 	).toHaveFocus();
 	expect(ran().at(-1)).toBe(
@@ -361,6 +372,98 @@ it("shows the persona it wrote to change and save, then how many of the owner's 
 	expect(
 		screen.getByRole("link", { name: "Open your persona" }),
 	).toHaveAttribute("href", "/twins/persona");
+	// opened from Digital Twins, it leads back there
+	expect(
+		screen.getByRole("link", { name: "Back to Digital Twins" }),
+	).toHaveAttribute("href", "/twins");
+	expect(screen.getByRole("link", { name: "Your persona" })).toHaveAttribute(
+		"href",
+		"/twins/persona",
+	);
+});
+
+it("leads back to the persona's own page when it was opened from there, with no way to Digital Twins", async () => {
+	answers.WorkTwinPersonaInterview = [DONE];
+	answers.WorkSaveTwinPersona = {
+		exists: true,
+		sections: SECTIONS,
+		offTwins: [],
+	};
+	answers.MyProjects = [];
+	const user = renderOwnInterview();
+	await screen.findByRole("heading", {
+		level: 2,
+		name: "Here is what I wrote",
+	});
+	expect(screen.getByRole("link", { name: "Your persona" })).toHaveAttribute(
+		"href",
+		"/persona",
+	);
+	expect(
+		screen.getByRole("link", { name: "Keep grilling me" }),
+	).toHaveAttribute("href", "/persona/interview?go=more");
+	await user.click(screen.getByRole("button", { name: "Save my persona" }));
+	await screen.findByRole("heading", { level: 1, name: "Meet your persona" });
+	expect(
+		screen.getByRole("link", { name: "Open your persona" }),
+	).toHaveAttribute("href", "/persona");
+	expect(screen.queryByRole("link", { name: /Digital Twins/ })).toBeNull();
+
+	// and so does the way to write it by hand, when the interview cannot be opened
+	cleanup();
+	answers.WorkTwinPersonaInterview = [
+		new Error("The interview needs Collaboration's text model."),
+	];
+	renderOwnInterview();
+	expect(
+		await screen.findByRole("link", { name: "Write it by hand" }),
+	).toHaveAttribute("href", "/persona");
+});
+
+it("says the persona is for the owner's assistant as well as their twins, and after saving only when the assistant uses it", async () => {
+	renderInterview();
+	await screen.findByText("May I read how you write?");
+	expect(
+		screen.getByText(/Every Digital Twin you created then answers/),
+	).toHaveTextContent(/your assistant writes for you the way you would/);
+	expect(
+		screen.getByText(/Nothing changes for your Digital Twins/),
+	).toHaveTextContent(/or your assistant until you save/);
+
+	// a server from before the switch says nothing of it, and uses the persona; a switch that is off is not spoken for
+	for (const [assistant, isSaid] of [
+		[undefined, true],
+		[true, true],
+		[false, false],
+	] as const) {
+		cleanup();
+		answers.WorkTwinPersonaInterview = [DONE];
+		answers.WorkSaveTwinPersona = {
+			exists: true,
+			sections: SECTIONS,
+			offTwins: [],
+			assistant,
+		};
+		answers.MyProjects = [];
+		const user = renderInterview();
+		await user.click(
+			await screen.findByRole("button", { name: "Save my persona" }),
+		);
+		await screen.findByRole("heading", {
+			level: 1,
+			name: "Meet your persona",
+		});
+		expect(
+			screen.getByText(
+				"The next Digital Twin you create will answer this way.",
+			),
+		).toBeVisible();
+		expect(
+			screen.queryByText(
+				"Your assistant writes email and Teams messages for you this way too.",
+			) !== null,
+		).toBe(isSaid);
+	}
 });
 
 it("still shows the persona as saved when the twins cannot be counted, and keeps the review when the save is refused", async () => {

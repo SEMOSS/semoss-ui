@@ -39,6 +39,19 @@ const twin = (config_json: unknown) => ({
 	digital_twin_file_access: "read",
 	config_json,
 });
+/** The twin's row in the list, the read that names whose twin it is. */
+const row = (owner: string | null) => [
+	{
+		project_id: "twin-2",
+		project_name: "dana",
+		digital_twin_owner_name: owner,
+	},
+];
+/** Answers the twin's own read with `workspace` and every read of the list with `rows`. */
+const serve = (workspace: unknown, rows: unknown) =>
+	insight.actions.run.mockImplementation(async (pixel: string) =>
+		answer(pixel.startsWith("GetWorkspace(") ? workspace : rows),
+	);
 
 beforeEach(() => {
 	localStorage.clear();
@@ -59,14 +72,13 @@ const renderStart = (agentId: string) =>
 		</CollaborationSessionProvider>,
 	);
 
-it("shows who the twin is, its greeting as written, and the ask box", async () => {
-	insight.actions.run.mockResolvedValue(
-		answer(
-			twin({
-				greeting: "Ask me about the **renewal**.",
-				greeting_enabled: true,
-			}),
-		),
+it("shows who the twin is and whose, its greeting as written, and the ask box", async () => {
+	serve(
+		twin({
+			greeting: "Ask me about the **renewal**.",
+			greeting_enabled: true,
+		}),
+		row("Dana Ortiz"),
 	);
 	renderStart("twin-2");
 	expect(screen.getByText("Loading the Digital Twin…")).toBeInTheDocument();
@@ -76,9 +88,16 @@ it("shows who the twin is, its greeting as written, and the ask box", async () =
 			name: "Dana Ortiz Twin",
 		}),
 	).toBeVisible();
-	expect(insight.actions.run).toHaveBeenCalledExactlyOnceWith(
-		'GetWorkspace(workspaceId=["twin-2"], includeDigitalTwinFileAccess=[true]);',
-	);
+	expect(insight.actions.run.mock.calls).toEqual([
+		[
+			'GetWorkspace(workspaceId=["twin-2"], includeDigitalTwinFileAccess=[true]);',
+		],
+		[
+			'MyProjects(projectType=["WORKSPACE"], metaFilters=[{"digital_twin":["true"]}], noMeta=[true], project=["twin-2"], limit=[1]);',
+		],
+	]);
+	// a twin's name is its owner's to choose, so the page says whose it is
+	expect(screen.getByText("Dana Ortiz’s Digital Twin")).toBeVisible();
 	// Markdown, not its source
 	expect(screen.getByText("renewal").tagName).toBe("STRONG");
 	expect(screen.getByText(/Ask this AI twin/)).toBeVisible();
@@ -93,12 +112,13 @@ it("shows who the twin is, its greeting as written, and the ask box", async () =
 });
 
 it("explains approval and original files to the owner and links to this twin’s copies", async () => {
-	insight.actions.run.mockResolvedValue(
-		answer({
+	serve(
+		{
 			...twin({}),
 			permission: "OWNER",
 			digital_twin_file_access: "manage",
-		}),
+		},
+		row("Robin Hale"),
 	);
 	renderStart("twin-2");
 	expect(
@@ -106,6 +126,9 @@ it("explains approval and original files to the owner and links to this twin’s
 			name: "Choose what your twin shares",
 		}),
 	).toBeVisible();
+	// their own twin is "your AI twin"; it is not named after them a second time
+	expect(screen.getByText(/^Your AI twin answers/)).toBeVisible();
+	expect(screen.queryByText(/’s Digital Twin/)).toBeNull();
 	expect(
 		screen.getByText(
 			/deleting its saved copy.*approve each change.*original files/i,
@@ -119,17 +142,14 @@ it("explains approval and original files to the owner and links to this twin’s
 });
 
 it("describes approved additions on a server that only supports adding copies in chat", async () => {
-	insight.actions.run
-		.mockResolvedValueOnce(
-			answer({
-				...twin({}),
-				permission: "OWNER",
-				digital_twin_file_access: undefined,
-			}),
-		)
-		.mockResolvedValueOnce(
-			answer([{ project_id: "twin-2", project_name: "Dana Ortiz Twin" }]),
-		);
+	serve(
+		{
+			...twin({}),
+			permission: "OWNER",
+			digital_twin_file_access: undefined,
+		},
+		[{ project_id: "twin-2", project_name: "Dana Ortiz Twin" }],
+	);
 	renderStart("twin-2");
 	expect(await screen.findByText(/approve each addition/)).toBeVisible();
 	expect(screen.queryByText(/deleting its saved copy/)).toBeNull();
@@ -137,6 +157,20 @@ it("describes approved additions on a server that only supports adding copies in
 		screen.getByRole("link", { name: "View or remove shared documents" }),
 	).toHaveAttribute("href", "/twins/mine/contents?twinId=twin-2&in=files");
 });
+
+it.each([
+	{ why: "the server cannot tell", rows: row(null) },
+	{ why: "the list cannot be read", rows: { error: "not a list" } },
+])(
+	"opens a shared twin without naming its owner when $why",
+	async ({ rows }) => {
+		serve(twin({}), rows);
+		renderStart("twin-2");
+		expect(await screen.findByText(/^Ask this AI twin/)).toBeVisible();
+		expect(screen.getByText("The ask box")).toBeVisible();
+		expect(screen.queryByText(/’s Digital Twin/)).toBeNull();
+	},
+);
 
 it("shows no greeting for a twin whose greeting is off", async () => {
 	insight.actions.run.mockResolvedValue(
