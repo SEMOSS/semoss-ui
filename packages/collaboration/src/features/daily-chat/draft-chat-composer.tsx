@@ -1,7 +1,10 @@
 import { Alert, AlertDescription, Button, Spinner } from "@semoss/ui/next";
 import { optimizePrompt } from "@/features/rooms/api/optimize-prompt";
 import { RoomComposer } from "@/features/rooms/components/room-composer";
-import type { ComposerPanelAction } from "@/features/rooms/components/room-composer.types";
+import type {
+	ComposerPanelAction,
+	ComposerPrompt,
+} from "@/features/rooms/components/room-composer.types";
 import { RoomContextFiles } from "@/features/rooms/components/room-context-files";
 import type {
 	RoomSession,
@@ -28,6 +31,10 @@ interface DraftChatComposerProps {
 	isCompact?: boolean;
 	/** Today's ask box: a compact composer lifted off the hero photo behind it. */
 	isHero?: boolean;
+	/** The page is one agent's own, such as a Digital Twin's, so the agent cannot be changed. */
+	isAgentLocked?: boolean;
+	/** Suggested first messages for the empty composer. */
+	starterPrompts?: readonly ComposerPrompt[];
 	panelActions: readonly ComposerPanelAction[];
 }
 
@@ -43,6 +50,8 @@ export function DraftChatComposer({
 	onSelectAgent,
 	isCompact = false,
 	isHero = false,
+	isAgentLocked = false,
+	starterPrompts,
 	panelActions,
 }: DraftChatComposerProps) {
 	const actionsTriggerId = `new-chat-${draftId}-composer-actions`;
@@ -84,8 +93,12 @@ export function DraftChatComposer({
 			<RoomComposer
 				key={`${draftId}:${snapshot.composerResetKey}`}
 				autoFocus={!isCompact}
-				// the root's own background would show as square corners over the photo
-				className={isHero ? "bg-transparent" : undefined}
+				className={
+					isHero || starterPrompts?.length
+						? "bg-transparent"
+						: undefined
+				}
+				starterPrompts={starterPrompts}
 				surfaceClassName={isHero ? "shadow-lg" : undefined}
 				// the hero's longer placeholder wraps on a phone, so it keeps the full height there
 				inputClassName={
@@ -166,6 +179,7 @@ export function DraftChatComposer({
 						session={session}
 						snapshot={snapshot}
 						onSelectAgent={onSelectAgent}
+						isAgentLocked={isAgentLocked}
 					/>
 				) : (
 					<div className="@md/composer:w-36 w-28 min-w-0 shrink-0">
@@ -174,6 +188,7 @@ export function DraftChatComposer({
 							value={snapshot.settings.agentId}
 							name={snapshot.agent?.name ?? "Assistant"}
 							disabled={
+								isAgentLocked ||
 								!snapshot.isReady ||
 								isBusy ||
 								snapshot.isSavingSettings

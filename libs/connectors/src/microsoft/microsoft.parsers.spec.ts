@@ -137,6 +137,56 @@ describe("Teams", () => {
 		expect(chats.map((chat) => chat.id)).toEqual(["busy", "renamed"]);
 	});
 
+	it("says who a one on one chat is with, by the id or the address the listing gave", () => {
+		const [named, read, group, unknown] = parseChats({
+			chats: [
+				// named from its last message: the other person alone, by their id
+				{
+					id: "d",
+					chatType: "oneOnOne",
+					displayName: "Dana Ortiz",
+					members: [{ userId: "id-dana", name: "Dana Ortiz" }],
+					lastMessage: { id: "m4", createdDateTime: "2026-09-04" },
+				},
+				// named from its members, which hold the signed in user too
+				{
+					id: "c",
+					chatType: "oneOnOne",
+					displayName: "Ben Carter",
+					members: [
+						{
+							userId: "id-me",
+							name: "Robin Hale",
+							email: "me@x.io",
+						},
+						{ name: "Ben Carter", email: "ben@x.io" },
+					],
+					lastMessage: { id: "m3", createdDateTime: "2026-09-03" },
+				},
+				// a group is nobody's, whoever it is named after
+				{
+					id: "b",
+					chatType: "group",
+					displayName: "Dana Ortiz",
+					members: [{ userId: "id-dana", name: "Dana Ortiz" }],
+					lastMessage: { id: "m2", createdDateTime: "2026-09-02" },
+				},
+				// nobody named, and members that are not what a listing gives
+				{
+					id: "a",
+					chatType: "oneOnOne",
+					displayName: "Kira Stone",
+					members: ["Kira Stone", { name: "Kira Stone" }],
+					lastMessage: { id: "m1", createdDateTime: "2026-09-01" },
+				},
+			],
+		});
+		expect(named.person).toEqual({ userId: "id-dana", email: undefined });
+		expect(read.person).toEqual({ userId: undefined, email: "ben@x.io" });
+		expect(group.person).toBeUndefined();
+		expect(unknown.person).toBeUndefined();
+	});
+
 	it("reads one chat", () => {
 		expect(
 			parseChatDetail({ id: "19:abc", topic: "Launch", webUrl: "u" }),

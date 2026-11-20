@@ -3,7 +3,12 @@ import userEvent from "@testing-library/user-event";
 import { useEffect } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FILE_PANEL_COMPONENTS, FILE_PANEL_TYPES } from "@semoss/panels";
-import { useWorkbenchPanel, type WorkbenchPanelProps } from "@semoss/workbench";
+import type { FileItem } from "@semoss/shared";
+import {
+	useWorkbench,
+	useWorkbenchPanel,
+	type WorkbenchPanelProps,
+} from "@semoss/workbench";
 import { RoutineDocuments } from "./routine-documents";
 import { RoutineDocumentsDock } from "./routine-documents-dock";
 
@@ -34,13 +39,22 @@ vi.mock("./custom-routine-api", () => ({
 const openNewFile = vi.fn();
 function StubExplorer({ id }: WorkbenchPanelProps) {
 	const { config, setValue } = useWorkbenchPanel(id);
+	const selectPanel = useWorkbench((s) => s.layout.actions.selectPanel);
 	useEffect(
 		() =>
 			setValue({
 				capabilities: { upload: true },
 				commands: { openNewFile },
+				tree: {
+					selectItem: (item: FileItem) =>
+						selectPanel(
+							"preview",
+							{ path: item.path },
+							{ name: item.name },
+						),
+				},
 			}),
-		[setValue],
+		[selectPanel, setValue],
 	);
 	return (
 		<>
@@ -50,6 +64,7 @@ function StubExplorer({ id }: WorkbenchPanelProps) {
 	);
 }
 const components = {
+	preview: { content: () => <p>File preview</p> },
 	[FILE_PANEL_TYPES.FILE_EXPLORER]: {
 		...FILE_PANEL_COMPONENTS[FILE_PANEL_TYPES.FILE_EXPLORER],
 		content: StubExplorer,
@@ -58,6 +73,7 @@ const components = {
 
 beforeEach(() => {
 	api.open.mockReset();
+	openNewFile.mockClear();
 	Object.defineProperty(window, "matchMedia", {
 		writable: true,
 		value: vi.fn().mockImplementation((query: string) => ({
@@ -68,7 +84,10 @@ beforeEach(() => {
 		})),
 	});
 });
-afterEach(cleanup);
+afterEach(() => {
+	cleanup();
+	vi.restoreAllMocks();
+});
 
 describe("RoutineDocuments", () => {
 	it("opens the routine's folder, then shows the file dock rooted there", async () => {
@@ -135,4 +154,69 @@ describe("RoutineDocuments", () => {
 		).toBeInTheDocument();
 		expect(screen.queryByText("Routine files")).not.toBeInTheDocument();
 	});
+
+	it.each([1024, 450])(
+		"opens files from Library at %i px, then returns there when the preview closes",
+		async (width) => {
+			vi.spyOn(
+				HTMLElement.prototype,
+				"getBoundingClientRect",
+			).mockReturnValue(new DOMRect(0, 0, width, 600));
+			const user = userEvent.setup();
+			render(
+				<RoutineDocumentsDock
+					config={{
+						mode: { type: "APP", app: "twin-1" },
+						rootPath: "/public",
+					}}
+					components={components}
+					renderOverview={(explorer) => (
+						<button
+							type="button"
+							disabled={!explorer}
+							onClick={() =>
+								explorer?.tree.selectItem({
+									name: "Plans.md",
+									path: "/Plans.md",
+								})
+							}
+						>
+							Open plans
+						</button>
+					)}
+				/>,
+			);
+			const library = await screen.findByRole("tab", { name: "Library" });
+			const documents = screen.getByRole("tab", { name: "Documents" });
+			expect(library).toHaveAttribute("aria-selected", "true");
+			expect(documents).toHaveAttribute("aria-selected", "false");
+			if (width >= 768) {
+				expect(documents).toHaveAttribute("tabindex", "0");
+				documents.focus();
+				await user.keyboard("{Enter}");
+				expect(documents).toHaveAttribute("aria-selected", "true");
+				await user.keyboard("{Enter}");
+				expect(documents).toHaveAttribute("aria-selected", "false");
+			}
+			await user.click(
+				screen.getByRole("button", { name: "Upload documents" }),
+			);
+			expect(openNewFile).toHaveBeenCalledExactlyOnceWith(
+				undefined,
+				"upload",
+			);
+			await user.click(
+				await screen.findByRole("button", { name: "Open plans" }),
+			);
+			const preview = screen.getByRole("tab", { name: /Plans\.md/ });
+			expect(preview).toHaveAttribute("aria-selected", "true");
+			expect(await screen.findByText("File preview")).toBeVisible();
+			preview.focus();
+			await user.keyboard("{Delete}");
+			expect(library).toHaveAttribute("aria-selected", "true");
+			expect(
+				await screen.findByRole("button", { name: "Open plans" }),
+			).toBeVisible();
+		},
+	);
 });

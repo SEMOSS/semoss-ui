@@ -291,10 +291,14 @@ export interface Settings {
 	syncEveryMinutes: number;
 	/** Read-only: the server has an image model set for Digital Twin avatar options. */
 	avatarGeneration: boolean;
+	/** Read-only: the server's Microsoft sign in asks for the scope a meeting's transcript is read with. */
+	meetingTranscripts: boolean;
 	/** Hours between looks for new topics in mail no topic holds: 0 never, 24 daily, 72 every 3 days, 168 weekly. */
 	newTopicsEveryHours: number;
 	/** Whether a message in one conversation of a topic may close a step from another. */
 	closeAcrossThreads: boolean;
+	/** Hours between checks of the owner's Digital Twins for copies whose original changed: 0 never, 1, 4, 24 daily. */
+	twinCheckEveryHours: number;
 	version: number;
 }
 

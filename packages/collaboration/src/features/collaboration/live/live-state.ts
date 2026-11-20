@@ -178,8 +178,12 @@ function mapSettings(row: Row): Settings {
 		syncEveryMinutes: Number(row.syncEveryMinutes ?? 15),
 		// older servers send none and cannot make avatars
 		avatarGeneration: row.avatarGeneration === true,
+		// older servers send none and offer no transcripts
+		meetingTranscripts: row.meetingTranscripts === true,
 		newTopicsEveryHours: Number(row.newTopicsEveryHours ?? 24),
 		closeAcrossThreads: row.closeAcrossThreads !== false,
+		// older servers send none and check no twins
+		twinCheckEveryHours: Number(row.twinCheckEveryHours ?? 24),
 		version: Number(row.version ?? 0),
 	};
 }

@@ -10,6 +10,7 @@ import { Env, useInsight } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import { listCalendarEvents } from "@/features/connectors/api/microsoft";
+import { listTwinUpdates } from "@/features/digital-twin/api/twin-updates";
 import { roomPath } from "@/lib/workspace-paths";
 import { DashboardContext, type SourceSelection } from "./dashboard.context";
 import { dashboardStorageKey } from "./dashboard-layout";
@@ -70,6 +71,20 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 		loadCalendar,
 		isActive && state.settings.sourcesJson.calendar === true,
 	);
+	// What waits in the owner's Digital Twins, read once for the whole shell. Reading it starts a check on the
+	// server when one is due, and while a check runs it is read every few seconds, so what it finds shows as
+	// it lands and not at the next slow read.
+	const [isTwinCheckRunning, setIsTwinCheckRunning] = useState(false);
+	const loadTwinUpdates = useCallback(async () => {
+		const found = await listTwinUpdates(actions);
+		setIsTwinCheckRunning(found.lastCheck?.status === "running");
+		return found;
+	}, [actions]);
+	const twinUpdates = useVisibleResource(
+		loadTwinUpdates,
+		true,
+		isTwinCheckRunning ? 3_000 : 5 * 60_000,
+	);
 	function refreshSources(): void {
 		calendar.refresh();
 		setRefreshRevision((value) => value + 1);
@@ -98,6 +113,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 				layout,
 				history,
 				calendar,
+				twinUpdates,
 				refreshSources,
 				refreshRevision,
 				isSearchOpen,

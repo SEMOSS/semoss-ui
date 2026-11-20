@@ -83,7 +83,10 @@ code may import from `core/` and `components/`; those two never import from them
   bar above it once it is open. Its right-click menu still saves, since the host may have let
   its copy go. Mail is keyed by thread (`mailSaveKey`), since a save takes the whole thread, so
   every row of a thread is held together whether or not the list groups them. Collaboration's
-  Digital Twin pages use it.
+  Digital Twin pages use it. A saved drive file also names its `driveId` when its viewer knows
+  it (OneDrive, Teams files and `saveMicrosoftItem` all do), since an item id alone cannot be
+  read again in a drive that is not the user's own; a host that will read the file later, as
+  those pages do to see whether it has changed, keeps it beside `itemKey`.
 - **A host can save an item it found itself.** `saveMicrosoftItem(insightId, item)`
   (`microsoft/microsoft-item-save.ts`) saves one of the user's Outlook threads, Teams chats or
   drive files by its ids (`MicrosoftItemRef`), for a host that found it some other way than in a
@@ -94,6 +97,13 @@ code may import from `core/` and `components/`; those two never import from them
   alike. An email thread that is gone by then is refused, not saved as an empty file. Keep the
   keys in step with the viewers: mail goes through `mailSaveKey`, a chat is its id, a file its
   drive item id. `ConnectorSavedMark` is exported for a host's own list of held items.
+  `saveMailAttachments(insightId, conversationId)` saves what was attached to a thread's emails,
+  for a host that saved the thread and wants its files too. A listed email only says whether it
+  has attachments, so each one that does is opened with `GetMail`; it takes what
+  `MailAttachmentList` shows (`kind === "file"`, not inline), leaves out a file over 25 MB and
+  names it in `skipped`, and gives each saved file the attachment list's own key, the email's id,
+  a colon and the attachment's. It fails as a whole when a read or a download does, and what was
+  saved before stays in the insight's files.
 - **Save preparation belongs to the originating host.** Optional
   `prepareSave?: () => Promise<void | (() => void)>` runs before saving. A returned release
   function runs in `finally`, after save callbacks, including failures and navigation away.
@@ -122,7 +132,10 @@ code may import from `core/` and `components/`; those two never import from them
   thread from every folder with `<prefix>ListMail(conversationId=...)`. Outlook reports each
   email's `uniqueBody`, its text without the history it quotes; `mail/mail.threads.ts` cuts
   quoted history itself when a body arrives without one, as every Gmail body does. Saving an
-  email, from its row or its own view, saves its whole thread.
+  email, from its row or its own view, saves its whole thread. A thread read from every folder
+  lists its drafts too, each marked `isDraft`: the views show them, and `mailThreadToMarkdown`
+  leaves them out of the saved file, which a host may put where other people read it, and
+  refuses a thread that holds nothing else.
 - **Folders are a tree.** `<prefix>ListMailFolders` returns nested folders too, each right after
   the folder it sits in, with `parentId`, `path` (`Inbox/Projects`), and `depth`: Outlook walks
   Graph's `childFolders`, and Gmail nests a label under the label its name continues. The
@@ -311,6 +324,32 @@ provider captured in that selection. `CalendarAgendaView` accepts `onOpenEvent`,
 `presentation="agenda"` keeps the date-grouped browser; `presentation="calendar"` adapts
 below 640px of its own container and restores the chosen grid when wider. The default
 presentation preserves Playground's existing calendar/list behavior.
+
+A host that gives a viewer a page of its own, as Collaboration's Digital Twin pages do, passes
+`presentation="page"` to `MailboxView` or `TeamsChatViewer`. Each row then leads with
+`ConnectorItemAvatar`, a colored disc with the initials of who the email or chat is from (a
+group chat shows a group's mark, and a search hit its message's author), in place of the small
+mail or chat icon; the avatar took the icon's place, so an email with attachments shows its
+paperclip before its date. The color is picked from the name, so a person keeps theirs down a
+list: solid on the light theme and a tint on the dark one, from the tokens light letters read
+on. It is exported for a host's own list of the same items. A host with pictures to show also
+passes `getPersonPhotoUrl`, which answers where a `ConnectorPerson`'s picture is: an email's
+sender and a search hit's author are named by their address, and a one on one chat's other
+person by their Microsoft user id (`TeamsChat.person`, which `parseChats` reads from the
+member the listing named the chat after, since Teams gives no address for whoever wrote a
+chat's last message). The avatar draws the picture over the initials as a plain lazy image,
+so nothing is asked for until its row is near the screen and the initials show until it
+loads; a picture that cannot be read, which is how a host says there is none, leaves the
+initials. Group chats keep their mark. On a page the mailbox also takes a
+row of filters under its search field: the sender, how far back, and mail with attachments.
+The sender and the cutoff are the list reactors' own `from` and `sinceDays` keys
+(`MailPageOptions`), and attachments ride in `search` as the mailbox's own operator
+(`MailApp.attachmentSearch`: `hasattachment:true` in Outlook, `has:attachment` in Gmail), so
+every one of them is applied by the mailbox, not to the page that was read. A list the filters
+emptied says so, and its Clear Search clears them with the search. The toggles are chips
+there, and one that is on wears the primary color on its border and a fill, since the accent
+fill a toggle has cannot say on from off against a pale page. The default and compact
+presentations show none of this.
 
 A host that lays a mailbox out itself, with its folders beside the list as a mail app has
 them, builds it from the same parts `MailboxView` uses: `useMailFolders` (the listing, ordered

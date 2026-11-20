@@ -32,6 +32,7 @@ export function TwinImageField({ imageUrl }: TwinImageFieldProps) {
 	const name = form.watch("name");
 	const image = form.watch("image");
 	const preview = useImagePreview(image);
+	const isDisabled = !imageUrl && form.formState.isSubmitting;
 	// off on a server with no image model set, and where no session is around the form
 	const canGenerate =
 		useOptionalCollaborationSession()?.state.settings.avatarGeneration ===
@@ -52,7 +53,13 @@ export function TwinImageField({ imageUrl }: TwinImageFieldProps) {
 			render={({ field, fieldState }) => (
 				<Field data-invalid={Boolean(fieldState.error)}>
 					<FieldLabel htmlFor={id}>Image</FieldLabel>
-					<div className="flex min-w-0 items-center gap-4">
+					<div
+						className={
+							imageUrl
+								? "flex min-w-0 @sm/profile:flex-row flex-col items-start @sm/profile:items-center gap-3"
+								: "flex min-w-0 items-center gap-4"
+						}
+					>
 						<AgentAvatar
 							agent={{
 								name: name.trim() || "Digital Twin",
@@ -73,16 +80,22 @@ export function TwinImageField({ imageUrl }: TwinImageFieldProps) {
 								field.onChange(event.target.files?.[0] ?? null)
 							}
 							accept={CATALOG_IMAGE_ACCEPT}
-							disabled={form.formState.isSubmitting}
+							disabled={isDisabled}
 							aria-invalid={Boolean(fieldState.error)}
 							aria-describedby={`${id}-hint${fieldState.error ? ` ${id}-error` : ""}`}
-							className="min-h-11 w-full min-w-0"
+							className={
+								imageUrl
+									? "min-h-11 w-full min-w-0 border-0 bg-transparent px-1 shadow-none file:me-2 file:rounded-md file:border file:bg-card file:px-3 file:text-foreground"
+									: "min-h-11 w-full min-w-0"
+							}
 						/>
 					</div>
 					<FieldDescription id={`${id}-hint`}>
-						{canGenerate
-							? "Optional. Generate options or upload a PNG, JPEG or GIF, up to 10 MiB. It is saved when you save."
-							: "Optional. A PNG, JPEG or GIF, up to 10 MiB. It is uploaded when you save."}
+						{imageUrl
+							? "PNG, JPEG or GIF, up to 10 MiB."
+							: canGenerate
+								? "Optional. Generate options or upload a PNG, JPEG or GIF, up to 10 MiB. It is saved when you save."
+								: "Optional. A PNG, JPEG or GIF, up to 10 MiB. It is uploaded when you save."}
 					</FieldDescription>
 					{fieldState.error?.message && (
 						<FieldError id={`${id}-error`}>
@@ -93,7 +106,7 @@ export function TwinImageField({ imageUrl }: TwinImageFieldProps) {
 						<TwinAvatarOptions
 							image={image}
 							onPick={field.onChange}
-							isDisabled={form.formState.isSubmitting}
+							isDisabled={isDisabled}
 						/>
 					)}
 				</Field>

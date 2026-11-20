@@ -466,12 +466,15 @@ export const getEngineUsersNoCredentials = async (
  * @param projectId - The project ID
  * @param users - Array of users with their permissions to add
  * @param admin - Whether to use admin endpoint
+ * @param endDate - When the access ends, as an ISO date and time with a zone;
+ * left out for access with no end
  * @returns Whether the operation was successful
  */
 export const addProjectUserPermissions = async (
 	projectId: string,
 	users: PostUser[],
 	admin = false,
+	endDate?: string,
 ): Promise<boolean> => {
 	let url = `${Env.MODULE}/api/auth/`;
 	if (admin) {
@@ -484,6 +487,7 @@ export const addProjectUserPermissions = async (
 		{
 			projectId,
 			userpermissions: users,
+			...(endDate ? { endDate } : {}),
 		},
 		{},
 	);
