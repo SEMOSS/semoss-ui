@@ -32,8 +32,9 @@ export function ResetStyleDialog({ onReset }: ResetStyleDialogProps) {
 					<DialogTitle>Reset your writing style?</DialogTitle>
 					<DialogDescription>
 						This removes your summary, examples, both audience
-						styles, and any proposal waiting for review. Drafts will
-						not use a style until you confirm a new one.
+						styles, and any proposal waiting for review. Email
+						drafts will not use an email style until you confirm a
+						new one. Your persona is not touched.
 					</DialogDescription>
 				</DialogHeader>
 				<DialogFooter className="flex-col sm:flex-row">

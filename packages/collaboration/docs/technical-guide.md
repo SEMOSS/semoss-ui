@@ -15,7 +15,7 @@ It unifies, for one signed-in user:
 - **Work**: topics, action items (Open/Waiting/Handled/Snoozed), source threads, topic sessions, goals and notes.
 - **Brain**: people, topics, thread context, review queue, memory, and Microsoft source readers/imports (Outlook, Teams, Calendar).
 - **Routines**: scheduled agent runs whose results live in Routines (inbox daily brief, agenda, expense, custom routines, skills).
-- **Settings**: About you (profile/VIPs), Appearance, Rules (context/ingestion), Data reset.
+- **Settings**: About you (profile), Appearance, Rules (context/ingestion), Data reset. VIPs are on Brain's People page.
 - **Onboarding**: topic setup/filing flow (`features/onboarding`).
 
 There is no backend in this package; it talks to the existing SEMOSS backend via
@@ -93,7 +93,7 @@ Tree: `RootLayout` → `AuthorizedLayout` (session gate + app `InsightProvider`)
 | `/thread/:id` | Source-import bridge; `room:`-prefixed id = saved room |
 | `/brain`, `/brain/sources`, `/brain/people[/:id]`, `/brain/threads[/:id]` | Brain |
 | `/settings/{about-you,appearance,rules,data}` | Settings (legacy `/settings`, `/brain/profile`, `/settings/dashboard` → About you) |
-| `/room` → Work; `/agents/*` → Brain | Legacy redirects |
+| `/room` → Work; `/agents/*` → Brain; `/brain/topics` → `/work/topics` | Legacy redirects |
 
 New routes: add to `route-config.tsx` with `lazy` import of a thin page; keep legacy links valid.
 

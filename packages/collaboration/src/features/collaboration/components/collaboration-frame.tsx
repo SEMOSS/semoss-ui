@@ -17,6 +17,7 @@ import { useDashboard } from "@/features/dashboard/dashboard.context";
 import { DashboardSourceDialog } from "@/features/dashboard/dashboard-source-dialog";
 import {
 	isHeroPath,
+	personaInterviewPath,
 	twinContentsPath,
 	twinPersonaInterviewPath,
 } from "@/lib/workspace-paths";
@@ -77,12 +78,13 @@ export function CollaborationFrame() {
 		setNavigationOverride(null);
 	}
 	// a room, a topic's contents page and a twin's are workbenches, and a persona's interview is one thing at a
-	// time: they get the navigation's width
+	// time, whichever door it was opened from: they get the navigation's width
 	const isRoom =
 		pathname.startsWith("/thread/") ||
 		/^\/topics\/[^/]+\/contents$/.test(pathname) ||
 		pathname === twinContentsPath() ||
-		pathname === twinPersonaInterviewPath();
+		pathname === twinPersonaInterviewPath() ||
+		pathname === personaInterviewPath();
 	// a hero page scrolls with the header as one, so its photo can run up behind the search box
 	const hasHero = isHeroPath(pathname);
 	const isCollapsed =

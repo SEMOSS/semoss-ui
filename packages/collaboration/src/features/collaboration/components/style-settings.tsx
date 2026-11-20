@@ -4,7 +4,7 @@ import {
 	Alert,
 	AlertDescription,
 	Button,
-	H3,
+	H2,
 	P,
 	Small,
 	Spinner,
@@ -25,8 +25,9 @@ const describeProposal = (proposal: StyleProposal): string => {
 };
 
 /**
- * Review how the assistant writes as you: confirm or edit a learned proposal, edit the confirmed style, and learn
- * again from recent mail and chats. Drafts use only the confirmed style.
+ * The persona's "In email" part: how the assistant writes email as you, on top of the persona. Confirm or edit a
+ * learned proposal, edit the confirmed style, and learn again from recent mail and chats. Drafts use only the
+ * confirmed style.
  */
 export function StyleSettings({ profile }: { profile: Profile }) {
 	const learning = useStyleLearning();
@@ -108,16 +109,14 @@ export function StyleSettings({ profile }: { profile: Profile }) {
 		Object.keys(style.variants ?? {}).length > 0;
 
 	return (
-		<section
-			className="space-y-4 border-border border-t pt-5"
-			aria-label="How you write"
-		>
+		<section className="max-w-3xl space-y-4" aria-label="In email">
 			<div className="space-y-1">
-				<H3 className="font-medium text-base">How you write</H3>
-				<P className="text-base text-muted-foreground">
-					Drafts use the style you confirm here. Learning reads up to
-					50 emails you sent and your chat messages from the last 30
-					days, and keeps nothing until you agree to it.
+				<H2 className="font-medium text-base">In email</H2>
+				<P className="max-w-prose text-muted-foreground text-sm">
+					For email only, on top of your persona. Drafts use the style
+					you confirm here. Learning reads up to 50 emails you sent
+					and your chat messages from the last 30 days, and keeps
+					nothing until you agree to it.
 				</P>
 			</div>
 			<div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -178,8 +177,8 @@ export function StyleSettings({ profile }: { profile: Profile }) {
 				<div className="space-y-3">
 					<Small className="block text-muted-foreground">
 						{style.confirmed
-							? "Confirmed. Drafts use this style."
-							: "Not confirmed yet. Drafts do not use a style."}
+							? "Confirmed. Email drafts use this style."
+							: "Not confirmed yet. Email drafts do not use it."}
 					</Small>
 					<StyleForm
 						key={`style-${JSON.stringify([style.summary, style.examples, style.variants, style.confirmed, style.learnedAt])}`}

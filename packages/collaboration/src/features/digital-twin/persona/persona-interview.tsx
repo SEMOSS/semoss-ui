@@ -29,6 +29,8 @@ import { CollaborationPageHeader } from "@/features/collaboration/components/col
 import { useOptionalCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import { givenFirst } from "@/lib/person-name";
 import {
+	personaInterviewPath,
+	personaPath,
 	twinPersonaInterviewPath,
 	twinPersonaPath,
 } from "@/lib/workspace-paths";
@@ -60,18 +62,34 @@ const WRITING_PARTS = [
 	{ id: "examples", icon: <Quote className="size-5" /> },
 ];
 
+interface PersonaInterviewProps {
+	/**
+	 * Opened from Digital Twins: its links go to the persona page under
+	 * Digital Twins, and it offers the way back there once it is saved. Left
+	 * out, they go to the page the sidebar opens.
+	 */
+	isFromTwins?: boolean;
+}
+
 /**
  * The interview that writes the signed-in person's persona, a step at a
  * time: what it may read, the steps the server asks, a wait while it writes
- * the next one, the persona it wrote to change and save, and then how many
- * of their Digital Twins use it. Leaving and coming back goes on where it
- * was; nothing changes for their twins before the save.
+ * the next one, the persona it wrote to change and save, and then who uses
+ * it. Leaving and coming back goes on where it was; nothing changes for
+ * their twins or their assistant before the save.
  */
-export function PersonaInterview() {
+export function PersonaInterview({
+	isFromTwins = false,
+}: PersonaInterviewProps) {
 	const { actions } = useInsight();
 	const [params] = useSearchParams();
 	const interview = usePersonaInterview(params.get("go") === "more");
 	const { view, error } = interview;
+	// the door it was opened from is the one it leaves by, and the one it goes on behind
+	const personaTo = isFromTwins ? twinPersonaPath() : personaPath();
+	const moreTo = isFromTwins
+		? twinPersonaInterviewPath("more")
+		: personaInterviewPath("more");
 	const session = useOptionalCollaborationSession();
 	const ownerName =
 		givenFirst(
@@ -91,8 +109,12 @@ export function PersonaInterview() {
 	// a step come back to opens at its last round, as one reached going forward opens at its first
 	const [isReturning, setIsReturning] = useState(false);
 	const [isPastCheckpoint, setIsPastCheckpoint] = useState(false);
-	// set by the save: how many of the owner's twins use the persona, or null when that could not be read
-	const [saved, setSaved] = useState<{ using: number | null }>();
+	// set by the save: how many of the owner's twins use the persona, or null when that could not be read, and
+	// whether their assistant does
+	const [saved, setSaved] = useState<{
+		using: number | null;
+		isAssistantOn: boolean;
+	}>();
 
 	// the step stays mounted while its answer is on its way, so nothing typed is lost if it does not get there
 	const asking =
@@ -156,7 +178,7 @@ export function PersonaInterview() {
 			() => null,
 		);
 		toast.success("Persona saved");
-		setSaved({ using });
+		setSaved({ using, isAssistantOn: persona.assistant !== false });
 		return persona.sections;
 	};
 
@@ -172,7 +194,7 @@ export function PersonaInterview() {
 					size="sm"
 					className="-ml-2 mb-2 pointer-coarse:min-h-11 self-start"
 				>
-					<Link to={twinPersonaPath()}>
+					<Link to={personaTo}>
 						<ArrowLeft aria-hidden="true" />
 						Your persona
 					</Link>
@@ -189,33 +211,45 @@ export function PersonaInterview() {
 						headline={{ working: "", ready: "Meet your persona" }}
 					>
 						<div className="flex w-full flex-col items-center gap-5">
-							<P className="text-muted-foreground text-sm">
-								{saved.using === null
-									? "Your Digital Twins answer this way from their next chat."
-									: saved.using === 0
-										? "The next Digital Twin you create will answer this way."
-										: saved.using === 1
-											? "It now shapes how your Digital Twin answers."
-											: `It now shapes how ${saved.using} of your Digital Twins answer.`}
-							</P>
+							<div className="flex flex-col gap-1">
+								<P className="text-muted-foreground text-sm">
+									{saved.using === null
+										? "Your Digital Twins answer this way from their next chat."
+										: saved.using === 0
+											? "The next Digital Twin you create will answer this way."
+											: saved.using === 1
+												? "It now shapes how your Digital Twin answers."
+												: `It now shapes how ${saved.using} of your Digital Twins answer.`}
+								</P>
+								{saved.isAssistantOn && (
+									<P className="text-muted-foreground text-sm">
+										Your assistant writes email and Teams
+										messages for you this way too.
+									</P>
+								)}
+							</div>
 							<div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-center">
 								<Button
 									asChild
-									variant="outline"
+									variant={
+										isFromTwins ? "outline" : "default"
+									}
 									className="pointer-coarse:min-h-11"
 								>
-									<Link to={twinPersonaPath()}>
+									<Link to={personaTo}>
 										Open your persona
 									</Link>
 								</Button>
-								<Button
-									asChild
-									className="pointer-coarse:min-h-11"
-								>
-									<Link to="/twins">
-										Back to Digital Twins
-									</Link>
-								</Button>
+								{isFromTwins && (
+									<Button
+										asChild
+										className="pointer-coarse:min-h-11"
+									>
+										<Link to="/twins">
+											Back to Digital Twins
+										</Link>
+									</Button>
+								)}
 							</div>
 						</div>
 					</TwinBirthScene>
@@ -253,7 +287,7 @@ export function PersonaInterview() {
 						<CollaborationPageHeader
 							className="mb-6"
 							title="Build your persona"
-							description="A few steps on how you sound, how you decide and what you keep for yourself. Every Digital Twin you created then answers the way you would."
+							description="A few steps on how you sound, how you decide and what you keep for yourself. Every Digital Twin you created then answers the way you would, and your assistant writes for you the way you would."
 							actions={
 								(asking || view.phase === "done") && (
 									<Button
@@ -293,7 +327,7 @@ export function PersonaInterview() {
 											Try again
 										</Button>
 										<Button asChild variant="outline">
-											<Link to={twinPersonaPath()}>
+											<Link to={personaTo}>
 												Write it by hand
 											</Link>
 										</Button>
@@ -615,11 +649,7 @@ export function PersonaInterview() {
 										variant="outline"
 										className="pointer-coarse:min-h-11"
 									>
-										<Link
-											to={twinPersonaInterviewPath(
-												"more",
-											)}
-										>
+										<Link to={moreTo}>
 											Keep grilling me
 										</Link>
 									</Button>

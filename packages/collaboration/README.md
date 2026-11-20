@@ -300,32 +300,19 @@ Source readers retain explicit attachment downloads through the existing
 Microsoft APIs. Source snapshot imports include attachment names only. Files
 chosen for a room's composer use the room's ordinary upload and submission flow.
 
-## Writing style
+## Your persona
 
-Settings → About you holds **How you write**. Drafts use only the style the owner has confirmed; an
-unconfirmed or still-pending style never reaches the assistant, the frontend context, or the server prompt.
+Open Persona from the sidebar (`/persona`) or from Digital Twins (`/twins/persona`).
+Both routes edit the same persona. The interview returns to the route where it started.
 
-- **Learn from my writing** starts the `BrainLearnStyle` job (followed with `BrainGetJob(kind="style")`). It samples up
-  to 50 emails from the Sent folder and the owner's own chat messages from the last 30 days, skips forwards and anything
-  the owner's Brain rules keep out, and asks the classifier model (`COLLAB_CLASSIFIER_ENGINE_ID`) to keep only messages
-  written by a person. The text model (`COLLAB_LLM_ENGINE_ID`) then returns a summary, short excerpts and internal and
-  external variants. Excerpts must be found in the named sample, and a variant needs at least three samples.
-- The result is stored as a **pending proposal** (`style.pending`). The owner edits the summary, examples, and variants,
-  then confirms it (saved with `source: "learned"`) or discards it. Only the agreed content is retained.
-- **Audience variants** follow the recipients: an email is internal when every recipient belongs to the owner's
-  organisation (`BrainOrgDomains`) and external when any recipient is outside it. Before composing an email, the assistant
-  calls `GetWritingStyle` with the recipients and uses the returned confirmed style for that audience. Pending proposals
-  are excluded; the frontend does not inject a profile/style snapshot into each request.
-- **Re-learning** is manual. Learning again replaces only the pending proposal and never overwrites the confirmed style.
-- The general summary is optional. Saving a style with no summary, examples, or variants, or pressing **Reset style**
-  (with a confirmation), removes the whole style and any proposal; drafts then use no style.
-- Style changes are saved directly and awaited (`useStyleSave`), not through the background saver. Each save sends the
-  whole style, the session takes the style the server returns (`profile.style.server`), a success toast confirms it,
-  and a failure stays visible in the form with the owner's entries kept. The proposal is written by the server alone;
-  reviewing it clears it with `pending: null`.
-- The assistant reads `GetWritingStyle` before generating an email and calling `ComposeEmail`. Generic messages,
-  Teams chats, summaries, and factual lookups do not trigger email-style retrieval. A newly saved style is available
-  on the next tool call; existing drafts retain their text until edited or regenerated.
+- **Persona** shows one section at a time. A section can hold prose or a list of points.
+  Use **Add point** to add an entry or **Edit** to change or remove entries. Saving updates
+  just that section.
+- **Usage** controls whether the owner's assistant uses their persona for email and Teams
+  drafts. This is on by default. Each Digital Twin has its own persona switch in its profile.
+
+The assistant and the inbox daily brief use the enabled persona when writing for the owner.
+Changes apply to newly generated drafts. Settings → Email controls the font, signature and draft folder.
 
 ## Routes and ownership
 
@@ -339,11 +326,12 @@ unconfirmed or still-pending style never reaches the assistant, the frontend con
 | `/work/topic/:topicId`, `/brain/topics/:topicId` | Redirects to the shared topic workspace |
 | `/thread/:id` | Source import bridge, or saved room when the identity starts with `room:` |
 | `/brain`, `/brain/sources` | Review and source readers/imports |
-| `/settings/about-you`, `/settings/appearance`, `/settings/rules`, `/settings/data` | Profile/VIPs, theme, context rules, and data reset |
-| `/brain/people`, `/brain/people/:personId` | People directory and detail |
+| `/settings/about-you`, `/settings/appearance`, `/settings/rules`, `/settings/data` | Profile, theme, context rules, and data reset |
+| `/brain/people`, `/brain/people/:personId` | People directory, VIPs first, and detail |
 | `/brain/threads`, `/brain/threads/:threadId` | Thread context directory and detail |
 
 `/room` redirects to Work; `/agents/*` redirects to Brain;
+`/brain/topics` redirects to the sidebar's Topics page (`/work/topics`);
 `/settings` and the legacy `/brain/profile` and `/settings/dashboard` links open Settings → About you.
 Settings categories support direct links and browser history. Unsaved profile and
 rule form entries survive category changes and are discarded when leaving Settings.

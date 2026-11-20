@@ -5,23 +5,15 @@ import { Badge, Button, cn, P, Separator, Small } from "@semoss/ui/next";
 import { BriefPanel } from "@/features/dashboard/brief-panel";
 import { MailCheckStatus } from "@/features/dashboard/mail-check-status";
 import { topicPath } from "@/lib/workspace-paths";
-import { WorkRefreshStatus } from "../live/work-refresh-status";
 import { selectWorkItems } from "../state/collaboration.selectors";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { topicTone } from "../topic-tone";
 import { CollaborationHeroHeader } from "./collaboration-hero-header";
 import { CollaborationHeroPage } from "./collaboration-hero-page";
-import { CollaborationPageHeader } from "./collaboration-page-header";
-import { CollaborationSurface } from "./collaboration-surface";
 import { TopicEditor } from "./topic-editor";
 
-interface WorkTopicsProps {
-	/** Given under Settings, where the list keeps that area's plain page header; without it the list opens on Work's hero. */
-	settings?: { title: string; description: string };
-}
-
 /** The topics that give each action its purpose, each opening its own page. */
-export function WorkTopics({ settings }: WorkTopicsProps) {
+export function WorkTopics() {
 	const { state } = useCollaborationSession();
 	const [isCreating, setIsCreating] = useState(false);
 	const createButtonRef = useRef<HTMLButtonElement>(null);
@@ -51,13 +43,8 @@ export function WorkTopics({ settings }: WorkTopicsProps) {
 					<li key={topic.id}>
 						<Link
 							to={topicPath(topic.id)}
-							className={cn(
-								"flex min-w-0 flex-col gap-4 transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring sm:flex-row sm:items-center",
-								// Settings' card has no padding of its own; the hero's card does, so its rows only reach a little past the text
-								settings
-									? "focus-visible:-outline-offset-2 p-5 md:px-6"
-									: "-mx-2 rounded-lg px-2 py-4",
-							)}
+							// the hero's card has padding of its own, so a row only reaches a little past the text
+							className="-mx-2 flex min-w-0 flex-col gap-4 rounded-lg px-2 py-4 transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring sm:flex-row sm:items-center"
 						>
 							<div className="min-w-0 flex-1 space-y-2">
 								<div className="flex flex-wrap items-center gap-2">
@@ -102,7 +89,7 @@ export function WorkTopics({ settings }: WorkTopicsProps) {
 			})}
 		</ul>
 	) : (
-		<div className={cn("space-y-2", settings && "p-6")}>
+		<div className="space-y-2">
 			<P>No topics yet.</P>
 			<P className="text-muted-foreground text-sm">
 				Create a topic to organize your work, or open All work to see
@@ -116,37 +103,6 @@ export function WorkTopics({ settings }: WorkTopicsProps) {
 			onClose={() => setIsCreating(false)}
 		/>
 	);
-
-	if (settings)
-		return (
-			<CollaborationSurface
-				header={
-					<CollaborationPageHeader
-						layoutClassName="flex-col sm:flex-row"
-						title={settings.title}
-						description={settings.description}
-						actions={
-							<>
-								<Button
-									asChild
-									variant="outline"
-									size="sm"
-									className="pointer-coarse:min-h-11"
-								>
-									<Link to="/work">All work</Link>
-								</Button>
-								{create}
-							</>
-						}
-					>
-						<WorkRefreshStatus />
-					</CollaborationPageHeader>
-				}
-			>
-				{list}
-				{editor}
-			</CollaborationSurface>
-		);
 
 	return (
 		<CollaborationHeroPage>

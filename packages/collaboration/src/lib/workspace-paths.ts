@@ -51,15 +51,26 @@ export function twinContentsPath(place?: string, twinId?: string): string {
 	return search.size ? `${path}?${search}` : path;
 }
 
-/** The signed-in person's persona for their Digital Twins. */
+/** The signed-in person's persona, opened from the sidebar. */
+export function personaPath(): string {
+	return "/persona";
+}
+
+/**
+ * The interview that writes that persona, opened from there. `more` opens one
+ * that was wrapped up early at the steps it left out.
+ */
+export function personaInterviewPath(more?: "more"): string {
+	const path = "/persona/interview";
+	return more ? `${path}?${new URLSearchParams({ go: more })}` : path;
+}
+
+/** The same persona page opened from Digital Twins, which it leads back to. */
 export function twinPersonaPath(): string {
 	return "/twins/persona";
 }
 
-/**
- * The interview that writes that persona. `more` opens one that was wrapped
- * up early at the steps it left out.
- */
+/** The same interview opened from Digital Twins; `more` as in {@link personaInterviewPath}. */
 export function twinPersonaInterviewPath(more?: "more"): string {
 	const path = "/twins/persona/interview";
 	return more ? `${path}?${new URLSearchParams({ go: more })}` : path;

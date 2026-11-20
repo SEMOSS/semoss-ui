@@ -41,6 +41,7 @@ import { BrainMemory } from "./brain-memory";
 import { BrainReview } from "./brain-review";
 import { BrainThread } from "./brain-thread";
 import { CollaborationSearch } from "./collaboration-search";
+import { PeopleDirectory } from "./people-directory";
 import { PersonDetail } from "./person-detail";
 import { ProfileForm } from "./profile-form";
 import { RulesEditor } from "./rules-editor";
@@ -82,6 +83,7 @@ function renderSession(
 			{ path: "/brain/memory", Component: BrainMemory },
 			{ path: "/topics/:topicId", Component: TopicPage },
 			{ path: "/brain/threads/:threadId", Component: BrainThread },
+			{ path: "/brain/people", Component: PeopleDirectory },
 			{ path: "/brain/people/:personId", Component: PersonDetail },
 			{ path: "/rules", Component: RulesEditor },
 			{ path: "/search", Component: CollaborationSearch },
@@ -590,6 +592,117 @@ describe("collaboration Work and Brain integration", () => {
 		expect(
 			row("Ignored in").getByRole("link", { name: "Board" }),
 		).toBeInTheDocument();
+	});
+
+	it("lists VIPs once on People, in a section of their own, and moves a removed one under the people followed", async () => {
+		const user = userEvent.setup();
+		renderSession("/brain/people");
+		const section = (name: RegExp) =>
+			within(screen.getByRole("region", { name }));
+		const ava = { name: "Ava Reed" };
+		expect(section(/^VIPs \(4\)$/).getByRole("link", ava)).toBeVisible();
+		expect(section(/^You follow/).queryByRole("link", ava)).toBeNull();
+		await user.click(
+			screen.getByRole("button", { name: "Remove VIP Ava Reed" }),
+		);
+		expect(section(/^VIPs \(3\)$/).queryByRole("link", ava)).toBeNull();
+		expect(section(/^You follow/).getByRole("link", ava)).toBeVisible();
+	});
+
+	it("makes someone a VIP from their row on People, starting from none", async () => {
+		const user = userEvent.setup();
+		const state = createInitialCollaborationState();
+		for (const person of state.people) person.vip = false;
+		renderSession("/brain/people", state);
+		const section = (name: RegExp) =>
+			within(screen.getByRole("region", { name }));
+		expect(
+			section(/^VIPs \(0\)$/).getByText(/Choose Make VIP beside anyone/),
+		).toBeVisible();
+		const make = screen.getByRole("button", { name: "Make VIP Ava Reed" });
+		// what is read on the button; the name spoken for it adds whose row it is
+		expect(make).toHaveTextContent(/^Make VIP$/);
+		await user.click(make);
+		expect(
+			section(/^VIPs \(1\)$/).getByRole("button", {
+				name: "Remove VIP Ava Reed",
+			}),
+		).toHaveTextContent(/^Remove VIP$/);
+		expect(
+			section(/^You follow/).queryByRole("link", { name: "Ava Reed" }),
+		).toBeNull();
+	});
+
+	it("follows someone made a VIP from a search on People, so they stay followed once they stop being one", async () => {
+		const user = userEvent.setup();
+		const state = createInitialCollaborationState();
+		const ava = state.people.find((person) => person.id === "p-ava");
+		if (!ava) throw new Error("Missing sample person");
+		ava.vip = false;
+		ava.follow = "declined";
+		renderSession("/brain/people", state);
+		const section = (name: RegExp) =>
+			within(screen.getByRole("region", { name }));
+		const link = { name: "Ava Reed" };
+		// not followed, so only a search finds them
+		expect(
+			screen.queryByRole("button", { name: /VIP Ava Reed/ }),
+		).toBeNull();
+		await user.type(
+			screen.getByRole("textbox", { name: "Name or email" }),
+			"ava",
+		);
+		expect(
+			section(/^Everyone else$/).getByRole("link", link),
+		).toBeVisible();
+		await user.click(
+			screen.getByRole("button", { name: "Make VIP Ava Reed" }),
+		);
+		expect(section(/^VIPs \(1\)$/).getByRole("link", link)).toBeVisible();
+		await user.click(
+			screen.getByRole("button", { name: "Remove VIP Ava Reed" }),
+		);
+		expect(
+			section(/^You follow \(1\)$/).getByRole("link", link),
+		).toBeVisible();
+	});
+
+	it("keeps keyboard focus on a person's VIP button as their row moves between sections on People", async () => {
+		const user = userEvent.setup();
+		renderSession("/brain/people");
+		const button = (action: "Make" | "Remove") =>
+			screen.getByRole("button", { name: `${action} VIP Hugo Lane` });
+		button("Make").focus();
+		await user.keyboard("{Enter}");
+		expect(button("Remove")).toHaveFocus();
+		// pressed again it undoes itself; it never lands on another person's button
+		await user.keyboard("{Enter}");
+		expect(button("Make")).toHaveFocus();
+		// a pointer click does not pull the page to wherever the row went
+		await user.click(button("Make"));
+		expect(button("Remove")).not.toHaveFocus();
+	});
+
+	it("leaves the focus in the filter on People when a search finds someone whose row had left the page", async () => {
+		const user = userEvent.setup();
+		const state = createInitialCollaborationState();
+		const ava = state.people.find((person) => person.id === "p-ava");
+		if (!ava) throw new Error("Missing sample person");
+		// a VIP who is not followed, as older records can be: no longer a VIP, they are on no list
+		ava.follow = "declined";
+		renderSession("/brain/people", state);
+		screen.getByRole("button", { name: "Remove VIP Ava Reed" }).focus();
+		await user.keyboard("{Enter}");
+		expect(
+			screen.queryByRole("button", { name: /VIP Ava Reed/ }),
+		).toBeNull();
+		const filter = screen.getByRole("textbox", { name: "Name or email" });
+		await user.type(filter, "ava");
+		expect(
+			screen.getByRole("button", { name: "Make VIP Ava Reed" }),
+		).toBeVisible();
+		expect(filter).toHaveFocus();
+		expect(filter).toHaveValue("ava");
 	});
 
 	it("shows an open item's due day, saved as midnight UTC, as that day on a person's page", () => {

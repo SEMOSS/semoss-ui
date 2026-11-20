@@ -283,23 +283,46 @@ export async function getMyTwinAgent(actions: InsightActions, twinId?: string) {
 	return twin ? getAgent(actions, twin.id) : null;
 }
 
-/** Read an accessible twin and the file changes its owner can request in chat. */
+/**
+ * Read an accessible twin, the file changes its owner can request in chat,
+ * and whose twin it is, when the server can tell.
+ */
 export async function getTwinChatWelcome(
 	actions: InsightActions,
 	twinId: string,
-): Promise<{ agent: WorkspaceAgent; fileAccess: "manage" | "add" | "read" }> {
+): Promise<{
+	agent: WorkspaceAgent;
+	fileAccess: "manage" | "add" | "read";
+	ownerName?: string;
+}> {
 	if (!twinId.trim()) throw new Error("The link names no Digital Twin.");
-	const payload = await callPixel(
-		actions,
-		pixel("GetWorkspace", {
-			workspaceId: twinId,
-			includeDigitalTwinFileAccess: true,
-		}),
-		twinWelcomeSchema,
-	);
+	const [payload, ownerName] = await Promise.all([
+		callPixel(
+			actions,
+			pixel("GetWorkspace", {
+				workspaceId: twinId,
+				includeDigitalTwinFileAccess: true,
+			}),
+			twinWelcomeSchema,
+		),
+		// only the list names a twin's owner; the chat opens without the name
+		callPixel(
+			actions,
+			pixel("MyProjects", { ...TWIN_FILTER, project: twinId, limit: 1 }),
+			twinListSchema,
+		).then(
+			(rows) =>
+				rows.map(toTwin).find((twin) => twin.id === twinId)?.ownerName,
+			() => undefined,
+		),
+	]);
 	const agent = toWorkspaceAgent(payload);
 	if (payload.digital_twin_file_access !== undefined)
-		return { agent, fileAccess: payload.digital_twin_file_access };
+		return {
+			agent,
+			fileAccess: payload.digital_twin_file_access,
+			ownerName,
+		};
 
 	// Servers predating the capability can only add copies in an owner's chat.
 	try {
@@ -319,10 +342,11 @@ export async function getTwinChatWelcome(
 			fileAccess: mine.some((row) => row.project_id === twinId)
 				? "add"
 				: "read",
+			ownerName,
 		};
 	} catch {
 		// An unavailable ownership check leaves the accessible chat in read mode.
-		return { agent, fileAccess: "read" };
+		return { agent, fileAccess: "read", ownerName };
 	}
 }
 
