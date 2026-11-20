@@ -155,6 +155,11 @@ export const attachIframeRecorder = (
 					if (isStopped) return;
 					if (step.selector && !isStableSelector(step.selector))
 						warnWeak(step.selector);
+					if (
+						step.targetSelector &&
+						!isStableSelector(step.targetSelector)
+					)
+						warnWeak(step.targetSelector);
 					// The top-level route is a replay barrier, including actions inside nested frames.
 					let pagePath: string | undefined;
 					if (frame.src && frame.contentDocument) {
@@ -184,6 +189,51 @@ export const attachIframeRecorder = (
 					event.stopImmediatePropagation();
 					isPickingCheck = false;
 					onCheckMode(false);
+					if (
+						target.tagName === "INPUT" &&
+						["checkbox", "radio"].includes(
+							(target as HTMLInputElement).type,
+						)
+					) {
+						// Native checkbox/radio pre-activation happens before click listeners.
+						// A task (not a microtask) runs after cancelled activation restores state.
+						setTimeout(
+							() =>
+								emit({
+									type: "ASSERT_CHECKED",
+									selector: elementSelector(target),
+									checked: (target as HTMLInputElement)
+										.checked,
+								}),
+							0,
+						);
+						return;
+					}
+					if (
+						["INPUT", "SELECT", "TEXTAREA"].includes(target.tagName)
+					) {
+						if (
+							target.tagName === "SELECT" &&
+							(target as HTMLSelectElement).multiple
+						) {
+							onNotice(
+								"A multi-select needs separate checks for its selected options; a single-value check was not recorded.",
+							);
+							return;
+						}
+						emit({
+							type: "ASSERT_VALUE",
+							selector: elementSelector(target),
+							value: (
+								target as
+									| HTMLInputElement
+									| HTMLSelectElement
+									| HTMLTextAreaElement
+							).value,
+						});
+						return;
+					}
+
 					const text = (target.textContent ?? "")
 						.replace(/\s+/g, " ")
 						.trim();
@@ -193,6 +243,26 @@ export const attachIframeRecorder = (
 						...(text ? { text, exact: true } : {}),
 					});
 				};
+				let dragSource: string | null = null;
+				const dragStart = (event: Event): void => {
+					const target =
+						elementFromEvent(event)?.closest("[draggable=true]");
+					dragSource =
+						target && !isPrivate(target)
+							? elementSelector(target)
+							: null;
+				};
+				const drop = (event: Event): void => {
+					const target = elementFromEvent(event);
+					if (dragSource && target && !isPrivate(target))
+						emit({
+							type: "DRAG",
+							selector: dragSource,
+							targetSelector: elementSelector(target),
+						});
+					dragSource = null;
+				};
+
 				const click = (event: MouseEvent): void => {
 					const original = elementFromEvent(event);
 					if (!original) return;
@@ -312,6 +382,8 @@ export const attachIframeRecorder = (
 				};
 				// Scroll positions depend on layout and timing; replay scrolls elements into view itself.
 				doc.addEventListener("click", click, true);
+				doc.addEventListener("dragstart", dragStart, true);
+				doc.addEventListener("drop", drop, true);
 				doc.addEventListener(
 					"pointerdown",
 					preventCheckActivation,
@@ -345,6 +417,8 @@ export const attachIframeRecorder = (
 				observer.observe(doc, { childList: true, subtree: true });
 				const cleanupDocument = (): void => {
 					doc.removeEventListener("click", click, true);
+					doc.removeEventListener("dragstart", dragStart, true);
+					doc.removeEventListener("drop", drop, true);
 					doc.removeEventListener(
 						"pointerdown",
 						preventCheckActivation,

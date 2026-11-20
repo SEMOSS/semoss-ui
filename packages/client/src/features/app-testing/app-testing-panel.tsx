@@ -334,9 +334,29 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 									className="text-sm"
 								>
 									{test.name}:{" "}
-									{test.reason ||
-										test.classification ||
-										test.status}
+									{test.classification
+										? `${test.classification} · `
+										: ""}
+									{test.reason || test.status}
+									{test.failedStep !== undefined
+										? ` · Step ${test.failedStep}`
+										: ""}
+									{test.stepsCompleted !== undefined
+										? ` · ${test.stepsCompleted}/${test.stepsAttempted ?? test.stepsCompleted} attempted steps completed`
+										: ""}
+									{test.expected !== undefined
+										? ` · Expected: ${String(test.expected)}`
+										: ""}
+									{test.actual !== undefined
+										? ` · Actual: ${String(test.actual)}`
+										: ""}
+									{test.page ? ` · Page: ${test.page}` : ""}
+									{test.availableTestIds?.length
+										? ` · Available test IDs: ${test.availableTestIds.join(", ")}`
+										: ""}
+									{test.cleanup
+										? ` · Cleanup: ${test.cleanup.status}`
+										: ""}
 								</p>
 							))}
 						{state.run.status === "UNKNOWN" && (
@@ -361,6 +381,8 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 						: undefined
 				}
 				recordings={state.recordings}
+				invalidFiles={state.invalidFiles}
+				onDeleteInvalid={state.deleteInvalidFile}
 				isLoading={state.isLoading}
 				onSelect={state.setSelectedId}
 				isBusy={

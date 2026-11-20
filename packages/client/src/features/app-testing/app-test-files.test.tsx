@@ -607,3 +607,50 @@ it("shows history failures as unavailable and retries through Refresh tests", ()
 	fireEvent.click(screen.getByRole("button", { name: "Refresh tests" }));
 	expect(historyQuery.refresh).toHaveBeenCalledOnce();
 });
+
+it("keeps valid files usable and confirms exactly one invalid-file deletion", async () => {
+	const remove = vi
+		.fn()
+		.mockRejectedValueOnce(new Error("Please retry"))
+		.mockResolvedValueOnce(undefined);
+	render(
+		<AppTestFiles
+			{...fileActions}
+			recordings={[recording]}
+			isLoading={false}
+			onSelect={vi.fn()}
+			invalidFiles={[
+				{
+					file: "broken.json",
+					code: "INVALID_DEFINITION",
+					reason: "Step 1 has an unsupported type",
+				},
+			]}
+			onDeleteInvalid={remove}
+		/>,
+	);
+	expect(
+		screen.getByRole("button", { name: "Open Checkout to orders" }),
+	).toBeTruthy();
+	fireEvent.click(
+		screen.getByRole("button", { name: "Delete invalid file broken.json" }),
+	);
+	const dialog = await screen.findByRole("dialog", {
+		name: "Delete invalid test file",
+	});
+	expect(remove).not.toHaveBeenCalled();
+	fireEvent.click(
+		within(dialog).getByRole("button", { name: "Delete file" }),
+	);
+	expect(await within(dialog).findByText("Please retry")).toBeTruthy();
+	expect(remove).toHaveBeenCalledWith("broken.json");
+	fireEvent.click(
+		within(dialog).getByRole("button", { name: "Delete file" }),
+	);
+	await waitFor(() =>
+		expect(
+			screen.queryByRole("dialog", { name: "Delete invalid test file" }),
+		).toBeNull(),
+	);
+	expect(remove).toHaveBeenCalledTimes(2);
+});

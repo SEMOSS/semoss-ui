@@ -2,14 +2,16 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useSessionPixel } from "@semoss/sdk/react";
 import {
 	deleteAppTestRecording,
+	deleteInvalidAppTestFile,
 	getAppTestRun,
-	parseAppTestRecordings,
+	parseAppTestDiscovery,
 	parseAppTestUpload,
 	runAllAppTests,
 	runAppTests,
 	saveAppTestRecording,
 } from "@/api/app-testing";
 import type {
+	AppTestInvalidFile,
 	AppTestRecording,
 	AppTestRecordingSummary,
 	AppTestRun,
@@ -37,6 +39,8 @@ interface AppTestingState {
 	notice: string;
 	error: string;
 	recordings: AppTestRecordingSummary[];
+	invalidFiles: AppTestInvalidFile[];
+	deleteInvalidFile: (fileName: string) => Promise<void>;
 	isLoading: boolean;
 	refreshRecordings: () => void;
 	startRecording: () => void;
@@ -61,15 +65,17 @@ export const useAppTesting = (
 		`META | ListAppTestRecordings(project=${JSON.stringify([appId])});`,
 	);
 	const parsed = useMemo(() => {
-		if (query.status !== "SUCCESS") return { recordings: [], error: "" };
+		if (query.status !== "SUCCESS")
+			return { recordings: [], invalid: [], error: "" };
 		try {
 			return {
-				recordings: parseAppTestRecordings(appId, query.data),
+				...parseAppTestDiscovery(appId, query.data),
 				error: "",
 			};
 		} catch {
 			return {
 				recordings: [],
+				invalid: [],
 				error: "The saved tests could not be read.",
 			};
 		}
@@ -89,7 +95,9 @@ export const useAppTesting = (
 	const lifetime = useRef<AbortController | null>(null);
 	const runStartedAt = useRef(0);
 	const weakSteps = steps.filter(
-		(step) => step.selector && !isStableSelector(step.selector),
+		(step) =>
+			(step.selector && !isStableSelector(step.selector)) ||
+			(step.targetSelector && !isStableSelector(step.targetSelector)),
 	).length;
 
 	useEffect(() => {
@@ -375,6 +383,11 @@ export const useAppTesting = (
 		notice,
 		error: error || parsed.error || query.error?.message || "",
 		recordings: parsed.recordings,
+		invalidFiles: parsed.invalid,
+		deleteInvalidFile: async (fileName: string): Promise<void> => {
+			await deleteInvalidAppTestFile(appId, fileName);
+			query.refresh();
+		},
 		isLoading: query.status === "INITIAL" || query.status === "LOADING",
 		refreshRecordings: query.refresh,
 		startRecording,

@@ -21,16 +21,20 @@ import {
 } from "@semoss/ui/next";
 import { formatLocalDateTime } from "@semoss/utility/date";
 import type {
+	AppTestInvalidFile,
 	AppTestRecording,
 	AppTestRecordingSummary,
 } from "./app-test.types";
 import { AppTestFileDialog } from "./app-test-file-dialog";
 import { AppTestHistoryDialog } from "./app-test-history-dialog";
+import { AppTestInvalidFiles } from "./app-test-invalid-files";
 import { useAppTestHistory } from "./use-app-test-history";
 
 interface AppTestFilesProps {
 	/** Metadata-only entries for the app being edited. */
 	recordings: AppTestRecordingSummary[];
+	invalidFiles?: AppTestInvalidFile[];
+	onDeleteInvalid?: (fileName: string) => Promise<void>;
 	appId: string;
 	isLoading: boolean;
 	/** Mutations are disabled while a replay, save or recording is in progress. */
@@ -50,6 +54,8 @@ interface AppTestFilesProps {
 export const AppTestFiles = ({
 	appId,
 	recordings,
+	invalidFiles = [],
+	onDeleteInvalid,
 	isLoading,
 	isBusy,
 	selectedId,
@@ -118,6 +124,11 @@ export const AppTestFiles = ({
 				<FolderIcon aria-hidden="true" className="size-4 shrink-0" />
 				assets / app-tests / tests
 			</p>
+			<AppTestInvalidFiles
+				files={invalidFiles}
+				isBusy={isBusy}
+				onDelete={onDeleteInvalid}
+			/>
 			{history.error && (
 				<Alert variant="destructive">
 					<AlertDescription>

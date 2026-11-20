@@ -1,4 +1,3 @@
-import { useRef } from "react";
 import { useSessionPixel } from "@semoss/sdk/react";
 import {
 	Alert,
@@ -11,11 +10,13 @@ import {
 	DialogHeader,
 	DialogTitle,
 	Form,
+	FormCheckbox,
 	FormInput,
+	FormSelect,
+	FormSelectItem,
 	FormTextarea,
 	Spinner,
 	Textarea,
-	useFieldArray,
 	useForm,
 	zodResolver,
 } from "@semoss/ui/next";
@@ -28,10 +29,9 @@ import {
 	type AppTestRecordingFormValues,
 	appTestRecordingFormSchema,
 	fromAppTestFormValues,
-	newAppTestStep,
 	toAppTestFormValues,
 } from "./app-test-recording-form";
-import { AppTestStepFields } from "./app-test-step-fields";
+import { AppTestStepsEditor } from "./app-test-steps-editor";
 
 interface AppTestFileDialogProps {
 	/** Summary selected from the listing; full content is read only when opened. */
@@ -77,14 +77,20 @@ export const AppTestFileDialog = ({
 			mode === "edit"
 				? zodResolver(appTestRecordingFormSchema)
 				: undefined,
-		defaultValues: { name: "", description: "", startPath: "", steps: [] },
+		defaultValues: {
+			name: "",
+			description: "",
+			startPath: "",
+			steps: [],
+			cleanupSteps: [],
+			routeMatch: "EXACT",
+			useVariables: false,
+		},
 		values: toAppTestFormValues(
 			definition ?? { ...recording, startPath: "", steps: [] },
 		),
 		resetOptions: { keepDirtyValues: true },
 	});
-	const addStepButton = useRef<HTMLButtonElement | null>(null);
-	const steps = useFieldArray({ control: form.control, name: "steps" });
 	const { isSubmitting, errors, dirtyFields } = form.formState;
 	const handleSubmit = async (
 		values: AppTestRecordingFormValues,
@@ -196,93 +202,37 @@ export const AppTestFileDialog = ({
 								description="Relative to this app. Leave empty for the app home page."
 								disabled={isSubmitting}
 							/>
-							<fieldset className="flex min-w-0 flex-col gap-4">
-								<legend className="mb-2 font-medium text-sm">
-									Steps
-								</legend>
-								{steps.fields.map((step, index) => (
-									<fieldset
-										key={step.id}
-										className="flex min-w-0 flex-col gap-3 border-t pt-3"
-									>
-										<legend className="font-medium text-sm">
-											Step {index + 1}
-										</legend>
-										<AppTestStepFields index={index} />
-										<div className="flex flex-wrap gap-2">
-											<Button
-												type="button"
-												size="sm"
-												variant="outline"
-												disabled={
-													isSubmitting || index === 0
-												}
-												onClick={() =>
-													steps.move(index, index - 1)
-												}
-												aria-label={`Move step ${index + 1} up`}
-											>
-												Move up
-											</Button>
-											<Button
-												type="button"
-												size="sm"
-												variant="outline"
-												disabled={
-													isSubmitting ||
-													index ===
-														steps.fields.length - 1
-												}
-												onClick={() =>
-													steps.move(index, index + 1)
-												}
-												aria-label={`Move step ${index + 1} down`}
-											>
-												Move down
-											</Button>
-											<Button
-												type="button"
-												size="sm"
-												variant="ghost"
-												disabled={
-													isSubmitting ||
-													steps.fields.length <= 1
-												}
-												onClick={() => {
-													steps.remove(index);
-													addStepButton.current?.focus();
-												}}
-												aria-label={`Remove step ${index + 1}`}
-											>
-												Remove step
-											</Button>
-										</div>
-									</fieldset>
-								))}
-								<Button
-									ref={addStepButton}
-									type="button"
-									size="sm"
-									variant="outline"
-									className="self-start"
-									disabled={
-										isSubmitting ||
-										steps.fields.length >= 300
-									}
-									onClick={() =>
-										steps.append(newAppTestStep())
-									}
-								>
-									Add step
-								</Button>
-								{errors.steps?.message && (
-									<Alert variant="destructive">
-										<AlertDescription>
-											{errors.steps.message}
-										</AlertDescription>
-									</Alert>
-								)}
-							</fieldset>
+							<FormSelect
+								name="routeMatch"
+								label="Route matching"
+								disabled={isSubmitting}
+							>
+								<FormSelectItem value="EXACT">
+									Exact URL
+								</FormSelectItem>
+								<FormSelectItem value="PORTAL_ROOT">
+									Allow portal entry/root aliases
+								</FormSelectItem>
+							</FormSelect>
+							<p className="text-muted-foreground text-sm">
+								Root alias matching is explicit. Query
+								parameters, including the selected database
+								environment, always remain significant.
+							</p>
+							<FormCheckbox
+								name="useVariables"
+								label="Enable per-attempt variables"
+								disabled={isSubmitting}
+							/>
+							<p className="text-muted-foreground text-sm">
+								Use {"{{uniqueId}}"} for a value unique to each
+								replay; reuse it in matching assertions or
+								cleanup.{" "}
+								{"{{runId}}, {{testId}}, {{attemptId}}"} are
+								also supported.
+							</p>
+							<AppTestStepsEditor section="steps" />
+							<AppTestStepsEditor section="cleanupSteps" />
 						</>
 					)}
 					{mode === "edit" && Object.keys(dirtyFields).length > 0 && (

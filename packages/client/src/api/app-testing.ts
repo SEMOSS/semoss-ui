@@ -8,19 +8,14 @@ import type {
 	AppTestRunHistory,
 	AppTestRunHistoryPage,
 } from "@/features/app-testing/app-test.types";
+import { APP_TEST_STEP_TYPES } from "@/features/app-testing/app-test.types";
 
 const stepSchema = z.object({
-	type: z.enum([
-		"CLICK",
-		"FILL",
-		"SELECT",
-		"CHECK",
-		"KEY",
-		"SCROLL",
-		"ASSERT_TEXT",
-		"ASSERT_VISIBLE",
-		"NAVIGATE",
-	]),
+	type: z.enum(APP_TEST_STEP_TYPES),
+	targetSelector: z.string().optional(),
+	count: z.number().int().nonnegative().optional(),
+	state: z.enum(["visible", "hidden", "attached", "detached"]).optional(),
+	timeoutMs: z.number().int().min(100).max(30000).optional(),
 	selector: z.string().optional(),
 	framePath: z.array(z.string()).optional(),
 	value: z.string().optional(),
@@ -40,6 +35,9 @@ const recordingFieldsSchema = z.object({
 	description: z.string().trim().min(1).optional(),
 	startPath: z.string(),
 	steps: z.array(stepSchema),
+	cleanupSteps: z.array(stepSchema).max(50).optional(),
+	routeMatch: z.enum(["EXACT", "PORTAL_ROOT"]).optional(),
+	useVariables: z.boolean().optional(),
 	version: z.number(),
 	updatedAt: z.string(),
 });
@@ -131,6 +129,24 @@ const runSchema = z.object({
 				status: z.string(),
 				reason: z.string().optional(),
 				classification: z.string().optional(),
+				failedStep: z.number().optional(),
+				expected: z.unknown().optional(),
+				actual: z.unknown().optional(),
+				page: z.string().optional(),
+				availableTestIds: z.array(z.string()).max(40).optional(),
+				stepsAttempted: z.number().optional(),
+				stepsCompleted: z.number().optional(),
+				assertions: z.number().optional(),
+				assertionsPassed: z.number().optional(),
+				cleanup: z
+					.object({
+						status: z.string(),
+						stepsAttempted: z.number().optional(),
+						stepsCompleted: z.number().optional(),
+						failedStep: z.number().optional(),
+						reason: z.string().optional(),
+					})
+					.optional(),
 				repeats: z.number().optional(),
 				passedRepeats: z.number().optional(),
 			}),
@@ -328,6 +344,15 @@ export const parseAppTestUpload = (content: string): AppTestDraft => {
 		description: parsed.data.description,
 		startPath: parsed.data.startPath,
 		steps: parsed.data.steps,
+		...(parsed.data.cleanupSteps !== undefined
+			? { cleanupSteps: parsed.data.cleanupSteps }
+			: {}),
+		...(parsed.data.routeMatch !== undefined
+			? { routeMatch: parsed.data.routeMatch }
+			: {}),
+		...(parsed.data.useVariables !== undefined
+			? { useVariables: parsed.data.useVariables }
+			: {}),
 	};
 };
 
@@ -388,6 +413,47 @@ export const deleteAppTestRecording = async (
 	z.object({ deleted: z.literal(true) }).parse(
 		await callAppTestPixel(
 			`DeleteAppTestRecording(project=${JSON.stringify([appId])}, recordingId=${JSON.stringify([recordingId])});`,
+		),
+	);
+};
+
+/** Keep errors beside valid summaries while preserving the legacy summaries-only parser. */
+export const parseAppTestDiscovery = (appId: string, value: unknown) => {
+	const recordings = parseAppTestRecordings(appId, value);
+	const result = z
+		.object({
+			invalid: z
+				.array(
+					z.object({
+						file: z
+							.string()
+							.min(1)
+							.max(255)
+							.refine(
+								(name) =>
+									!/[\\/]/.test(name) &&
+									name.endsWith(".json"),
+							),
+						code: z.string(),
+						reason: z.string(),
+					}),
+				)
+				.default([]),
+		})
+		.parse(value);
+	return { recordings, invalid: result.invalid };
+};
+
+/** Only a server-reported invalid filename may be deleted through the explicit invalid-file action. */
+export const deleteInvalidAppTestFile = async (
+	appId: string,
+	fileName: string,
+): Promise<void> => {
+	if (!fileName || /[\\/]/.test(fileName) || !fileName.endsWith(".json"))
+		throw new Error("Choose an invalid file from this app's listing");
+	z.object({ deleted: z.literal(true) }).parse(
+		await callAppTestPixel(
+			`DeleteAppTestRecording(project=${JSON.stringify([appId])}, fileName=${JSON.stringify([fileName])});`,
 		),
 	);
 };

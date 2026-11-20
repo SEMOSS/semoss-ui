@@ -1,15 +1,30 @@
+export const APP_TEST_STEP_TYPES = [
+	"CLICK",
+	"FILL",
+	"SELECT",
+	"CHECK",
+	"KEY",
+	"SCROLL",
+	"ASSERT_TEXT",
+	"ASSERT_VISIBLE",
+	"NAVIGATE",
+	"ASSERT_VALUE",
+	"ASSERT_CHECKED",
+	"ASSERT_COUNT",
+	"ASSERT_HIDDEN",
+	"ASSERT_ABSENT",
+	"ASSERT_URL",
+	"WAIT_FOR",
+	"DRAG",
+] as const;
+
 /** Browser operations understood by the platform app-test runner. */
 export interface AppTestStep {
-	type:
-		| "CLICK"
-		| "FILL"
-		| "SELECT"
-		| "CHECK"
-		| "KEY"
-		| "SCROLL"
-		| "ASSERT_TEXT"
-		| "ASSERT_VISIBLE"
-		| "NAVIGATE";
+	type: (typeof APP_TEST_STEP_TYPES)[number];
+	targetSelector?: string;
+	count?: number;
+	state?: "visible" | "hidden" | "attached" | "detached";
+	timeoutMs?: number;
 	selector?: string;
 	/** Selectors of nested frames, relative to the app document. */
 	framePath?: string[];
@@ -34,6 +49,9 @@ export interface AppTestRecording {
 	description: string;
 	startPath: string;
 	steps: AppTestStep[];
+	cleanupSteps?: AppTestStep[];
+	routeMatch?: "EXACT" | "PORTAL_ROOT";
+	useVariables?: boolean;
 	version: number;
 	updatedAt: string;
 }
@@ -47,7 +65,13 @@ export type AppTestRecordingSummary = Pick<
 /** Unsaved browser actions and explicit outcome checks. */
 export type AppTestDraft = Pick<
 	AppTestRecording,
-	"name" | "description" | "startPath" | "steps"
+	| "name"
+	| "description"
+	| "startPath"
+	| "steps"
+	| "cleanupSteps"
+	| "routeMatch"
+	| "useVariables"
 > & { id?: string };
 
 /** The subset of the runner report displayed in the app viewer. */
@@ -67,6 +91,22 @@ export interface AppTestRun {
 		status: string;
 		reason?: string;
 		classification?: string;
+		failedStep?: number;
+		expected?: unknown;
+		actual?: unknown;
+		page?: string;
+		availableTestIds?: string[];
+		stepsAttempted?: number;
+		stepsCompleted?: number;
+		assertions?: number;
+		assertionsPassed?: number;
+		cleanup?: {
+			status: string;
+			stepsAttempted?: number;
+			stepsCompleted?: number;
+			failedStep?: number;
+			reason?: string;
+		};
 		repeats?: number;
 		passedRepeats?: number;
 	}[];
@@ -129,4 +169,11 @@ export interface AppTestRunHistory {
 	finishedAt?: string;
 	durationMs?: number;
 	tests: AppTestHistoryResult[];
+}
+
+/** Malformed files are reported separately and never hide valid test summaries. */
+export interface AppTestInvalidFile {
+	file: string;
+	code: string;
+	reason: string;
 }

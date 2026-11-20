@@ -40,7 +40,10 @@ it("round-trips all action fields and preserves metadata, empty values and optio
 		"name",
 		"description",
 		"startPath",
+		"routeMatch",
+		"useVariables",
 		"steps",
+		"cleanupSteps",
 	]);
 	const saved = fromAppTestFormValues(recording, values);
 	expect(saved.id).toBe(recording.id);
@@ -98,4 +101,44 @@ it("serializes an action change without retaining fields from the previous actio
 			steps: [newAppTestStep()],
 		}).success,
 	).toBe(false);
+});
+
+it("preserves bounded checks, route policy, variables and cleanup without exposing immutable fields", () => {
+	const definition = {
+		...recording,
+		routeMatch: "PORTAL_ROOT" as const,
+		useVariables: true,
+		steps: [
+			{
+				type: "ASSERT_VALUE" as const,
+				selector: '[data-testid="name"]',
+				value: "{{uniqueId}}",
+				timeoutMs: 20000,
+			},
+			{ type: "ASSERT_COUNT" as const, selector: ".task", count: 0 },
+			{
+				type: "WAIT_FOR" as const,
+				selector: ".loading",
+				state: "hidden" as const,
+			},
+		],
+		cleanupSteps: [
+			{ type: "CLICK" as const, selector: '[data-testid="delete"]' },
+		],
+	};
+	const values = appTestRecordingFormSchema.parse(
+		toAppTestFormValues(definition),
+	);
+	const saved = fromAppTestFormValues(definition, values);
+	expect(saved.routeMatch).toBe("PORTAL_ROOT");
+	expect(saved.useVariables).toBe(true);
+	expect(saved.steps[0]).toMatchObject({
+		type: "ASSERT_VALUE",
+		value: "{{uniqueId}}",
+		timeoutMs: 20000,
+	});
+	expect(saved.steps[1]).toMatchObject({ type: "ASSERT_COUNT", count: 0 });
+	expect(saved.cleanupSteps).toMatchObject(definition.cleanupSteps);
+	values.steps[0].timeoutMs = "30001";
+	expect(appTestRecordingFormSchema.safeParse(values).success).toBe(false);
 });

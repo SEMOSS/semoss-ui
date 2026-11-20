@@ -17,12 +17,16 @@ import {
 interface AppTestStepFieldsProps {
 	/** Position in the editable recording; field-array identities are owned by the dialog. */
 	index: number;
+	section?: "steps" | "cleanupSteps";
 }
 
 /** Show only the controls needed by this step's action, plus optional route and iframe targets. */
-export const AppTestStepFields = ({ index }: AppTestStepFieldsProps) => {
+export const AppTestStepFields = ({
+	index,
+	section = "steps",
+}: AppTestStepFieldsProps) => {
 	const form = useFormContext<AppTestRecordingFormValues>();
-	const name = `steps.${index}` as const;
+	const name = `${section}.${index}` as const;
 	const type = form.watch(`${name}.type`);
 	const hasPagePath = form.watch(`${name}.hasPagePath`);
 	const frames = useFieldArray({
@@ -45,7 +49,7 @@ export const AppTestStepFields = ({ index }: AppTestStepFieldsProps) => {
 					</FormSelectItem>
 				))}
 			</FormSelect>
-			{type === "NAVIGATE" ? (
+			{["NAVIGATE", "ASSERT_URL"].includes(type) ? (
 				<FormInput
 					name={`${name}.path`}
 					label="Destination page"
@@ -61,7 +65,7 @@ export const AppTestStepFields = ({ index }: AppTestStepFieldsProps) => {
 					disabled={disabled}
 				/>
 			)}
-			{["FILL", "SELECT"].includes(type) && (
+			{["FILL", "SELECT", "ASSERT_VALUE"].includes(type) && (
 				<FormTextarea
 					name={`${name}.value`}
 					label={type === "SELECT" ? "Option value" : "Field value"}
@@ -83,7 +87,7 @@ export const AppTestStepFields = ({ index }: AppTestStepFieldsProps) => {
 					/>
 				</>
 			)}
-			{type === "CHECK" && (
+			{["CHECK", "ASSERT_CHECKED"].includes(type) && (
 				<FormCheckbox
 					name={`${name}.checked`}
 					label="Checkbox should be checked"
@@ -117,6 +121,49 @@ export const AppTestStepFields = ({ index }: AppTestStepFieldsProps) => {
 					/>
 				</div>
 			)}
+			{type === "ASSERT_COUNT" && (
+				<FormInput
+					name={`${name}.count`}
+					label="Expected count"
+					type="number"
+					min={0}
+					max={10000}
+					disabled={disabled}
+				/>
+			)}
+			{type === "DRAG" && (
+				<FormInput
+					name={`${name}.targetSelector`}
+					label="Destination selector (required)"
+					required
+					disabled={disabled}
+				/>
+			)}
+			{type === "WAIT_FOR" && (
+				<FormSelect
+					name={`${name}.state`}
+					label="Wait until"
+					disabled={disabled}
+				>
+					{["visible", "hidden", "attached", "detached"].map(
+						(state) => (
+							<FormSelectItem key={state} value={state}>
+								{state}
+							</FormSelectItem>
+						),
+					)}
+				</FormSelect>
+			)}
+			<FormInput
+				name={`${name}.timeoutMs`}
+				label="Timeout in milliseconds (optional)"
+				type="number"
+				min={100}
+				max={30000}
+				description="Default 5000; always capped by the remaining run budget."
+				disabled={disabled}
+			/>
+
 			<FormCheckbox
 				name={`${name}.hasPagePath`}
 				label="Wait for a page before this step"

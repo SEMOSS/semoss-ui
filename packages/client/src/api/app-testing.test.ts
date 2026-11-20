@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	deleteAppTestRecording,
+	deleteInvalidAppTestFile,
 	getAppTestRecording,
 	getAppTestRun,
+	parseAppTestDiscovery,
 	parseAppTestRecordings,
 	parseAppTestRunHistory,
 	parseAppTestRunHistoryPage,
@@ -312,4 +314,81 @@ it("runs all tests only by sending explicit all=true for the current app", async
 	expect(transport.mock.calls[0][0]).toBe(
 		'META | RunAppTests(project=["app"], all=[true]);',
 	);
+});
+
+it("keeps valid metadata discoverable alongside invalid files and validates deletion scope", async () => {
+	const discovery = parseAppTestDiscovery("app", {
+		target: "app",
+		recordings: [
+			{ id: "valid", name: "Good", description: "Check good behavior" },
+		],
+		invalid: [
+			{
+				file: "broken.json",
+				code: "INVALID_DEFINITION",
+				reason: "Invalid UUID",
+			},
+		],
+	});
+	expect(discovery.recordings).toHaveLength(1);
+	expect(discovery.invalid[0].file).toBe("broken.json");
+	expect(() =>
+		parseAppTestDiscovery("app", {
+			target: "app",
+			recordings: [],
+			invalid: [
+				{
+					file: "../outside.json",
+					code: "INVALID_DEFINITION",
+					reason: "Bad",
+				},
+			],
+		}),
+	).toThrow();
+	await expect(
+		deleteInvalidAppTestFile("app", "../outside.json"),
+	).rejects.toThrow();
+	expect(transport).not.toHaveBeenCalled();
+	transport.mockResolvedValueOnce({
+		errors: [],
+		pixelReturn: [{ output: { deleted: true } }],
+	});
+	await deleteInvalidAppTestFile("app", "broken.json");
+	expect(transport.mock.calls[0][0]).toContain('fileName=["broken.json"]');
+});
+
+it("preserves actionable live diagnostics without copying screenshot evidence", async () => {
+	transport.mockResolvedValueOnce({
+		errors: [],
+		pixelReturn: [
+			{
+				output: {
+					target: "app",
+					runId: "run",
+					status: "COMPLETED",
+					tests: [
+						{
+							name: "Task",
+							status: "FAILED",
+							classification: "AMBIGUOUS_SELECTOR",
+							failedStep: 2,
+							expected: "one task",
+							actual: "10 elements matched",
+							availableTestIds: ["task-t1"],
+							stepsCompleted: 1,
+							stepsAttempted: 2,
+							evidence: { screenshot: "private-image" },
+						},
+					],
+				},
+			},
+		],
+	});
+	const result = await getAppTestRun("app", "run");
+	expect(result.tests?.[0]).toMatchObject({
+		failedStep: 2,
+		actual: "10 elements matched",
+		availableTestIds: ["task-t1"],
+	});
+	expect(JSON.stringify(result)).not.toContain("private-image");
 });

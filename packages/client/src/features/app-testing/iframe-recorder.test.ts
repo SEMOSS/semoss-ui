@@ -222,7 +222,7 @@ describe("normal app iframe recording", () => {
 		const nested = state.doc.createElement("iframe");
 		nested.id = "nested";
 		state.doc.body.append(nested);
-		await Promise.resolve();
+		await new Promise((resolve) => setTimeout(resolve, 0));
 		const child = nested.contentDocument;
 		if (!child) throw new Error("Nested test frame has no document");
 		child.body.innerHTML = '<button id="inside">Inside</button>';
@@ -355,5 +355,54 @@ describe("multi-page recording", () => {
 			{ type: "CLICK", pagePath: "" },
 			{ type: "ASSERT_TEXT", pagePath: "details.html" },
 		]);
+	});
+});
+
+describe("meaningful form and drag checks", () => {
+	it("records selected/input values and checkbox state instead of option labels or visibility", async () => {
+		const state = setup(
+			'<select data-testid="lane"><option value="ready">Ready</option><option value="progress" selected>In Progress</option></select><input data-testid="title" value="Saved task"><input type="checkbox" data-testid="done" checked>',
+		);
+		for (const selector of [
+			"select",
+			'input[data-testid="title"]',
+			'input[data-testid="done"]',
+		]) {
+			state.recorder.addCheck();
+			element<HTMLElement>(state.doc, selector).click();
+		}
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		expect(state.steps()).toMatchObject([
+			{ type: "ASSERT_VALUE", value: "progress" },
+			{ type: "ASSERT_VALUE", value: "Saved task" },
+			{ type: "ASSERT_CHECKED", checked: true },
+		]);
+		expect(JSON.stringify(state.steps())).not.toContain("ReadyIn Progress");
+	});
+	it("records a native drag in the same app document and releases listeners on stop", () => {
+		const state = setup(
+			'<div draggable="true" data-testid="source">Task</div><div data-testid="destination">Lane</div>',
+		);
+		element(state.doc, '[data-testid="source"]').dispatchEvent(
+			new Event("dragstart", { bubbles: true }),
+		);
+		element(state.doc, '[data-testid="destination"]').dispatchEvent(
+			new Event("drop", { bubbles: true }),
+		);
+		expect(state.steps()).toMatchObject([
+			{
+				type: "DRAG",
+				selector: 'div[data-testid="source"]',
+				targetSelector: 'div[data-testid="destination"]',
+			},
+		]);
+		state.recorder.stop();
+		element(state.doc, '[data-testid="source"]').dispatchEvent(
+			new Event("dragstart", { bubbles: true }),
+		);
+		element(state.doc, '[data-testid="destination"]').dispatchEvent(
+			new Event("drop", { bubbles: true }),
+		);
+		expect(state.steps()).toHaveLength(1);
 	});
 });
