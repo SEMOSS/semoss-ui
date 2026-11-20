@@ -12,6 +12,8 @@
 		"test:coverage": "vitest run --configLoader runner --coverage"
 	},
 	"dependencies": {
+		"@a2ui/react": "0.15.0",
+		"@a2ui/web_core": "0.15.0",
 		"@lexical/html": "0.39.0",
 		"@lexical/link": "0.39.0",
 		"@lexical/list": "0.39.0",

@@ -35,6 +35,18 @@ const baseConfig = createViteConfig({
 	test: {
 		setupFiles: "./vitest.setup.ts",
 		passWithNoTests: true,
+		// Keep A2UI's ESM graph in the same VM context as its renderer tests.
+		server: {
+			deps: {
+				inline: [
+					/@a2ui\//,
+					/@lit\//,
+					/lit-html/,
+					/lit-element/,
+					/\/lit\//,
+				],
+			},
+		},
 	},
 });
 

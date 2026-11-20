@@ -362,6 +362,41 @@ tool, delegation, and agent-run infrastructure is shared by every room.
 
 ## Development
 
+### Agent-generated interfaces (A2UI)
+
+The owner's chat agent can call `ShowUI` to present a choice or short form using
+A2UI 1.0. The official `@a2ui/react` and `@a2ui/web_core` packages resolve protocol
+messages and data bindings; the local catalog renders 11 component types with
+SEMOSS controls. The view loads on demand through `component://collaboration/a2ui`.
+
+`ShowUI` pauses the existing agent run. A button returns the selected event and
+current bound values through the existing `respond` decision; Dismiss rejects
+the pending tool. Responses do not approve external work. Routines and delegated
+runs do not receive this tool. Completed interfaces cannot submit again; their
+arguments and response remain in the tool's Inputs and Output tabs.
+
+The agent loads `collaboration/references/ui/a2ui.md` for the catalog contract
+and a complete example. The implementation is in `src/features/a2ui/`; its
+paired server changes are `WorkShowUIReactor` and `CollaborationAgentTools` in
+the SEMOSS backend. Deploy the frontend, backend, and updated collaboration
+platform skill together. No separate Python server or model API key is needed.
+
+This first profile supports one isolated surface per call, at most 32 messages,
+128 component definitions, and 64 KiB of JSON. It accepts fixed component trees
+and data bindings; it excludes remote catalogs/media, executable functions,
+HTML, validation checks, and cross-call or token-level UI streaming. An interface
+that fails validation is returned to the agent as the call's result
+(`userAction: "a2ui-invalid"`, with an error naming the component or path), so
+the agent corrects it without the owner; the owner sees the error and that the
+agent was told, and Dismiss remains if that report fails. `messages` sent as JSON
+text is parsed. Failed submissions retain input values for retry.
+
+After deploying both sides, try: “Show me an interactive form to choose a task,
+add notes, and pick a review date.” Confirm that submitting resumes the same run
+with those values and that reopening the completed tool cannot resubmit it.
+
+### Running locally
+
 ```bash
 pnpm dev:collaboration
 ```
@@ -408,6 +443,22 @@ pnpm --filter @semoss/collaboration type-check
 pnpm --filter @semoss/collaboration test
 pnpm --filter @semoss/collaboration build
 ```
+
+The November 16, 2026 A2UI integration passed 37 protocol/renderer tests,
+focused tool/controller checks, package type checking, the production build,
+and changed-file Biome checks.
+The build retains large-chunk warnings. The full suite has 42 failures across
+five onboarding/topic-matching files; all 42 failure names were reproduced
+against the unchanged HEAD source in an isolated baseline.
+
+The paired backend changes compiled and passed six focused JUnit tests against
+the local deployed dependencies. A complete Maven run was blocked by uncached
+PDFBox 3.0.8. No backend deployment or live model round trip was performed.
+Browser captures were unavailable because local browser use is disabled in Work
+settings and the OS denied a standalone browser launch. The source reviewer
+scored both identified fixes resolved; the visual review disposition remains
+`recapture`, pending desktop/mobile evidence. These checks do not certify
+layout, keyboard focus behavior, or screen-reader compatibility in a live browser.
 
 The October 9, 2026 chat email/calendar integration was checked with Node 24.4.0
 and pnpm 10.13.1. Connectors passed all 185 tests and workbench passed all 65.

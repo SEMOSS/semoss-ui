@@ -7,6 +7,11 @@ export const TOOL_VIEW_LIBRARIES: ToolViewLibraries = {
 	mail: MAIL_TOOL_VIEWS,
 	calendar: CALENDAR_TOOL_VIEWS,
 	collaboration: {
+		a2ui: lazy(() =>
+			import("@/features/a2ui/a2ui-tool-view").then((module) => ({
+				default: module.A2uiToolView,
+			})),
+		),
 		tool: lazy(() =>
 			import("./collaboration-tool-view").then((module) => ({
 				default: module.CollaborationToolView,
