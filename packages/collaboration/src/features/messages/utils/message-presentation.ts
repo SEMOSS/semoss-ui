@@ -143,7 +143,7 @@ export function messagePartBlocks(
 	const blocks: MessagePartBlock[] = [];
 	parts.forEach((item, index) => {
 		const previous = blocks.at(-1);
-		if (item.part.type === "tool") {
+		if (item.part.type === "tool" || item.part.type === "run") {
 			if (previous?.type === "tools") previous.items.push(item);
 			else blocks.push({ type: "tools", key: item.key, items: [item] });
 		} else if (
