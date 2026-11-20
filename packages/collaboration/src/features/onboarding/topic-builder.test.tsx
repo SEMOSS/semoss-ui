@@ -151,9 +151,9 @@ it("keeps existing conversations when a new search returns fewer rows", async ()
 	});
 });
 
-it.each([false, true])(
-	"saves confirmed edits and conversation choices with optional repeat search (repeat = %s)",
-	async (repeat) => {
+it.each(["individual", "repeat", "bulk"])(
+	"saves confirmed edits and conversation choices (%s)",
+	async (mode) => {
 		const user = userEvent.setup();
 		const review = renderFlow();
 		const topic = {
@@ -235,16 +235,30 @@ it.each([false, true])(
 		expect(screen.getByLabelText("What belongs")).toHaveValue(
 			"CBER and CDER regulatory work.",
 		);
-		await user.click(screen.getByRole("button", { name: "Add Alex (2)" }));
+		const first = screen.getAllByRole("checkbox")[0];
+		if (mode === "bulk") {
+			await user.click(
+				screen.getByRole("button", { name: "Add all suggestions (2)" }),
+			);
+			expect(
+				screen.queryByRole("button", { name: /Add all suggestions/ }),
+			).toBeNull();
+			expect(first).toBeChecked();
+		} else {
+			await user.click(
+				screen.getByRole("button", { name: "Add Alex (2)" }),
+			);
+			await user.click(first);
+			expect(
+				screen.queryByRole("button", { name: /Add clue/ }),
+			).toBeNull();
+			await user.click(first);
+			await user.click(
+				screen.getByRole("button", { name: /Add clue.*ELSA/ }),
+			);
+		}
 		await user.click(
 			screen.getByRole("button", { name: "Remove Old contact (0)" }),
-		);
-		const first = screen.getAllByRole("checkbox")[0];
-		await user.click(first);
-		expect(screen.queryByRole("button", { name: /Add clue/ })).toBeNull();
-		await user.click(first);
-		await user.click(
-			screen.getByRole("button", { name: /Add clue.*ELSA/ }),
 		);
 		await user.click(first);
 		expect(find.mock.calls.map((call) => call[2].name)).toEqual([
@@ -254,7 +268,7 @@ it.each([false, true])(
 		expect(
 			screen.getByRole("button", { name: /Save and continue/ }),
 		).toBeEnabled();
-		if (repeat) {
+		if (mode === "repeat") {
 			await user.click(
 				screen.getByRole("button", { name: "Find again" }),
 			);

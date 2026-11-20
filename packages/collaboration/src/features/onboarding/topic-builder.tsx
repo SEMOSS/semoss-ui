@@ -270,14 +270,14 @@ export function TopicBuilder({
 	return (
 		<>
 			<div className="grid min-w-0 gap-6 lg:grid-cols-[18rem_1fr]">
-				<aside className="space-y-3">
+				<aside className="min-w-0 space-y-3">
 					<H3 className="text-base">Your topics ({built.length})</H3>
 					{built.length ? (
 						<ul className="divide-y rounded-lg border">
 							{built.map((topic) => (
 								<li
 									key={topic.key}
-									className="flex items-start"
+									className="grid grid-cols-[minmax(0,1fr)_auto] items-center pr-1"
 								>
 									<button
 										type="button"
@@ -287,9 +287,9 @@ export function TopicBuilder({
 										onClick={() =>
 											setCard(fromBuilt(topic))
 										}
-										className="flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left text-sm hover:bg-muted/50 disabled:opacity-60"
+										className="flex min-w-0 flex-col items-start gap-0.5 px-3 py-2 text-left text-sm hover:bg-muted/50 disabled:opacity-60"
 									>
-										<span className="min-w-0 break-words font-medium">
+										<span className="max-w-full break-words font-medium">
 											{topic.name}
 										</span>
 										<span className="w-full text-muted-foreground text-xs tabular-nums">
@@ -308,7 +308,7 @@ export function TopicBuilder({
 									{!topic.accepted && (
 										<Button
 											type="button"
-											size="sm"
+											size="icon-sm"
 											variant="ghost"
 											aria-label={`Remove ${topic.name} from setup`}
 											disabled={isBusy || isStarting}
@@ -353,7 +353,7 @@ export function TopicBuilder({
 							{queue.map((item) => (
 								<div
 									key={item.line}
-									className="flex items-center justify-between gap-2"
+									className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-transparent border-x pr-1"
 								>
 									<div className="min-w-0">
 										<P className="break-words text-sm">
@@ -366,7 +366,7 @@ export function TopicBuilder({
 									<Button
 										type="button"
 										variant="ghost"
-										size="sm"
+										size="icon-sm"
 										aria-label={`Drop ${item.name} from queue`}
 										disabled={isBusy}
 										onClick={() => {

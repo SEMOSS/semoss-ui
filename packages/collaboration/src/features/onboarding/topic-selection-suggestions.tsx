@@ -55,16 +55,27 @@ export function TopicSelectionSuggestions({
 	}
 	const suggested = [...people.values()]
 		.filter((p) => p.count >= 2 && !card.people.some((c) => c.id === p.id))
-		.sort((a, b) => b.count - a.count)
-		.slice(0, 6);
+		.sort((a, b) => b.count - a.count);
 	const unused = selected.every((t) => t.participants !== undefined)
 		? card.people.filter((p) => !people.has(p.id))
 		: [];
 	const keywords = [...clues.values()]
 		.filter((c) => c.count >= 2)
-		.sort((a, b) => b.count - a.count)
-		.slice(0, 6);
+		.sort((a, b) => b.count - a.count);
 	if (!suggested.length && !unused.length && !keywords.length) return null;
+	const additions = suggested.slice(0, Math.max(0, 60 - card.people.length));
+	let combinedClues = card.clues;
+	let addedClues = 0;
+	for (const clue of keywords) {
+		const next = [combinedClues.trim(), clue.name]
+			.filter(Boolean)
+			.join(", ");
+		if (next.length <= 4000) {
+			combinedClues = next;
+			addedClues++;
+		}
+	}
+	const count = additions.length + addedClues;
 	return (
 		<section className="space-y-2">
 			<H3 className="text-sm">
@@ -75,7 +86,28 @@ export function TopicSelectionSuggestions({
 				Choose which changes to add to this topic.
 			</P>
 			<div className="flex flex-wrap gap-2">
-				{suggested.map((p) => (
+				{count > 0 && (
+					<Button
+						type="button"
+						size="sm"
+						disabled={disabled}
+						onClick={() =>
+							onChange({
+								people: [
+									...card.people,
+									...additions.map(({ id, name }) => ({
+										id,
+										name,
+									})),
+								],
+								clues: combinedClues,
+							})
+						}
+					>
+						Add all suggestions ({count})
+					</Button>
+				)}
+				{suggested.slice(0, 6).map((p) => (
 					<Button
 						key={p.id}
 						type="button"
@@ -112,7 +144,7 @@ export function TopicSelectionSuggestions({
 						Remove {p.name} (0)
 					</Button>
 				))}
-				{keywords.map((c) => (
+				{keywords.slice(0, 6).map((c) => (
 					<Button
 						key={c.name}
 						type="button"
