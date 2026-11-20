@@ -490,27 +490,65 @@ export function TopicBuilder({
 										? "Preparing topics…"
 										: "Draft my topics"}
 								</Button>
-								{!text.trim() && starters.length > 0 && (
-									<span className="text-muted-foreground text-xs">
-										Or start from what Brain found:
-									</span>
-								)}
-								{!text.trim() &&
-									starters.map((topic) => (
-										<Button
-											key={topic.key}
-											type="button"
-											size="sm"
-											variant="outline"
-											disabled={isBusy || isStarting}
-											onClick={() =>
-												setCard(fromSuggestion(topic))
-											}
-										>
-											{topic.own?.name || topic.name}
-										</Button>
-									))}
 							</div>
+							{!text.trim() && starters.length > 0 && (
+								<details className="space-y-2">
+									<summary className="cursor-pointer font-medium text-sm">
+										Other suggested topics (
+										{starters.length})
+									</summary>
+									<ul className="space-y-3">
+										{starters.map((topic) => (
+											<li
+												key={topic.key}
+												className="space-y-1"
+											>
+												<P className="font-medium text-sm">
+													{topic.own?.name ||
+														topic.name}
+												</P>
+												<P className="text-muted-foreground text-sm">
+													{topic.threadIds.length}{" "}
+													{topic.threadIds.length ===
+													1
+														? "conversation"
+														: "conversations"}
+													{topic.description &&
+														` · ${topic.description}`}
+												</P>
+												{topic.sampleSubjects
+													.slice(0, 2)
+													.map((subject, index) => (
+														<P
+															key={`${index}-${subject}`}
+															className="break-words text-muted-foreground text-xs"
+														>
+															{subject}
+														</P>
+													))}
+												<Button
+													type="button"
+													size="sm"
+													variant="outline"
+													disabled={
+														isBusy || isStarting
+													}
+													aria-label={`Review suggested topic ${topic.own?.name || topic.name}`}
+													onClick={() =>
+														setCard(
+															fromSuggestion(
+																topic,
+															),
+														)
+													}
+												>
+													Review suggestion
+												</Button>
+											</li>
+										))}
+									</ul>
+								</details>
+							)}
 							{error && (
 								<Failure
 									error={error}
