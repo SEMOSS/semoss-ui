@@ -37,7 +37,7 @@ interface RunNodeDataViewerProps {
 	frame?: NonNullable<AutomationNodeResult["OUTPUT_FRAME"]>;
 	savedResult?: AutomationSavedResultReference;
 	outputPreview: string;
-	onOutputPopout: (output: string) => void;
+	onOutputPopout?: (output: string) => void;
 }
 
 /** Pages a standard SEMOSS frame and falls back to the saved output preview. */
@@ -135,7 +135,11 @@ export function RunNodeDataViewer({
 				)}
 				<CellOutputBlock
 					output={outputPreview}
-					onOutputPopout={() => onOutputPopout(outputPreview)}
+					onOutputPopout={
+						onOutputPopout
+							? () => onOutputPopout(outputPreview)
+							: undefined
+					}
 				/>
 			</div>
 		);

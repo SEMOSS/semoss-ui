@@ -16,6 +16,7 @@ const NODE_CATEGORIES = new Set([
 	"agent",
 	"storage",
 	"data",
+	"clean",
 	"browser",
 	"vector",
 	"function",
