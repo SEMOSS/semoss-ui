@@ -669,7 +669,9 @@ own links (`parent_id` is the owner) with their nodes into `CatalogDependencyRow
   configuration. Change the configuration to change them.
 - **Manual rows** have the role `MANUAL` and are the ones a user added, each with an optional
   `dependency_name` (unique per owner, ignoring case; checked inline on save and by the backend)
-  and `dependency_description`. Links saved before automatic dependencies existed come back as
+  and `dependency_description`. The `dependency_name` is the key a CODE app reads its id by:
+  `LoadApp` returns the named manual links, and the SDK puts them in `Env.DEPENDENCIES`. Links
+  saved before automatic dependencies existed come back as
   manual, and a response without `links` is read as manual rows for the direct nodes.
 - **A save sends only the manual rows.** `SetCatalogDependencies` replaces the manual links and
   keeps the automatic ones, so the edit dialog, the Engines panel and its Manage dialog build their

@@ -119,6 +119,29 @@ lifecycle ends. `InsightProvider` does this by default; use
 workspace. There is no separate local disposal or automatic session-following
 lifecycle.
 
+#### App dependencies
+
+An app's manual dependencies can each have a name, set in the app's Dependencies
+tab. When `initialize()` loads the page's app (`Env.APP`), the SDK fills
+`Env.DEPENDENCIES` with each name mapped to that engine or project's id. The app
+reads the id rather than hardcoding it, so pointing the app at another model
+means editing the dependency, not the code:
+
+```ts
+await insight.initialize();
+
+const modelId = Env.DEPENDENCIES.summaryModel;
+if (!modelId) {
+    throw new Error('Add a dependency named "summaryModel" to this app');
+}
+await insight.actions.run(`LLM(engine="${modelId}", command="...")`);
+```
+
+`Env.DEPENDENCIES` is `{}` until the insight is initialized, and has no entry for
+a dependency without a name. An insight initialized for a different `app` leaves it
+alone. In tests or a dev server with no backend, set it yourself with
+`Env.update({ DEPENDENCIES: { summaryModel: "<engine id>" } })`.
+
 Core stores do not require React, but this does not guarantee Node/SSR support for
 all browser-dependent SDK APIs.
 
