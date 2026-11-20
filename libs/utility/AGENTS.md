@@ -33,6 +33,7 @@ entry and keeps `react` external.
 
 | React file | Purpose |
 | --- | --- |
+| `react/use-latest-ref` | `useLatestRef(value)`: a ref holding the last committed value, written in a layout effect, for handlers and subscriptions that must not be set up again when it changes |
 | `react/use-store-selector` | `useStoreSelector(store, selector?)`: read any store with `subscribe` and `getSnapshot`, or the part a selector picks, rendering only when what it reads changes |
 
 ## Available utilities

@@ -14,9 +14,18 @@ import type { ResourceType } from "./access.types";
  * - **No STORAGE.** Buckets have no read or save reactors, which is why the
  *   storage explorer opens a file by pulling it into a new insight and opening
  *   an INSIGHT-scoped panel instead.
+ *
+ * A `MOUNT` is a host's own tree, read and saved through the `FileSource` the
+ * host registers under its id with `FileSourcesProvider`.
  */
 export type FilePanelMode =
-	| Extract<FileMode, { type: "APP" } | { type: "ENGINE" } | { type: "USER" }>
+	| Extract<
+			FileMode,
+			| { type: "APP" }
+			| { type: "ENGINE" }
+			| { type: "USER" }
+			| { type: "MOUNT" }
+	  >
 	| { type: "INSIGHT"; insightId: string };
 
 /** The resource a mode's permissions are resolved against. */
@@ -35,7 +44,8 @@ interface FilePanelResource {
  *
  * @param mode - The panel's scope.
  * @return The resource to resolve a permission for, or null when the scope has
- * no resource of its own (a user's own files).
+ * no resource of its own (a user's own files, or a host's mount, whose source
+ * refuses what it cannot do).
  */
 export const getFilePanelResource = (
 	mode: FilePanelMode,
@@ -79,6 +89,8 @@ export const sameFileMode = (a: FileMode, b: FileMode): boolean => {
 			return a.storage === (b as typeof a).storage;
 		case "INSIGHT":
 			return a.insightId === (b as typeof a).insightId;
+		case "MOUNT":
+			return a.mountId === (b as typeof a).mountId;
 		default:
 			return true;
 	}

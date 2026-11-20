@@ -1,0 +1,100 @@
+{
+	"title": "Knowledge Stores",
+	"aboutTitle": "About Knowledge Stores",
+	"whatIsKnowledgeStore": "What's a Knowledge Store?",
+	"ragDescription": "RAG (Retrieval-Augmented Generation) chat enhances AI conversations by grounding responses in trusted data. Choose from the libraries below to receive a response referencing those documents specifically.",
+	"subtitle": "Search, filter, and create new knowledge stores.",
+	"newSource": {
+		"title": "New Knowledge Store",
+		"description": "Upload documents to create a new knowledge store"
+	},
+	"form": {
+		"nameLabel": "Name",
+		"descriptionLabel": "Description",
+		"embeddingLabel": "Embedding",
+		"filesLabel": "Files",
+		"descriptionPlaceholder": "Enter Description"
+	},
+	"tabs": {
+		"all": "All",
+		"global": "Global Stores",
+		"mine": "My Stores"
+	},
+	"filters": {
+		"allCenters": "All Centers/Offices",
+		"all": "All"
+	},
+	"actions": {
+		"createSource": "Create Knowledge Store",
+		"viewDocuments": "View documents",
+		"newChat": "New Chat"
+	},
+	"messages": {
+		"noDescription": "No description",
+		"noLibrariesFound": "No document libraries found matching your criteria.",
+		"loadingDocuments": "Loading documents…",
+		"noDocuments": "No documents found.",
+		"untitled": "Untitled"
+	},
+	"documents": {
+		"title": "Documents"
+	},
+	"embedDocuments": {
+		"title": "Embed Documents into Existing Source",
+		"description": "Upload documents to embed into this knowledge store.",
+		"documents": "Documents",
+		"selectFiles": "Click to select files or drag and drop",
+		"embedButton": "Embed Documents",
+		"embedding": "Embedding...",
+		"removeFile": "Remove file"
+	},
+	"embedMessages": {
+		"selectKnowledgeSource": "Please select a knowledge store",
+		"selectDocument": "Please select at least one document",
+		"embedSuccess": "Documents embedded successfully",
+		"embedFailed": "Failed to embed documents"
+	},
+	"breadcrumbs": {
+		"home": "Home",
+		"knowledgeStores": "Knowledge Stores",
+		"loading": "Loading"
+	},
+	"detail": {
+		"knowledge": "Knowledge",
+		"embedDocuments": "Embed documents",
+		"documentsDescription": "Documents currently embedded in this knowledge store.",
+		"failedToLoadDocuments": "Failed to load documents."
+	},
+	"studio": {
+		"loadError": "Unable to load knowledge collections.",
+		"retry": "Try again",
+		"tags": "Tags",
+		"searchTags": "Search tags…",
+		"noTags": "No tags found.",
+		"favorites": "Favorites",
+		"sortName": "Name (A–Z)",
+		"sortDate": "Date (newest)",
+		"favorite": "Favorite",
+		"files": "Files",
+		"permissions": "Permissions",
+		"userAccess": "User access",
+		"addUser": "Add user",
+		"noUsers": "No users found.",
+		"user": "User",
+		"role": "Role",
+		"author": "Author",
+		"editor": "Editor",
+		"readOnly": "Read-only",
+		"removeUser": "Remove user",
+		"remove": "Remove",
+		"cancel": "Cancel",
+		"add": "Add",
+		"searchUsers": "Search by name or email…",
+		"documentCount": "Embedded documents: {{count}}",
+		"previewError": "Failed to load preview.",
+		"previewUnavailable": "Preview is not available for this file type.",
+		"removeDescription": "Remove {{name}} from this knowledge source?",
+		"dateUploaded": "Date Uploaded",
+		"size": "Size"
+	}
+}

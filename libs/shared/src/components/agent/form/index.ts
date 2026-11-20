@@ -23,6 +23,8 @@ export {
 	buildAddWorkspacePixel,
 	buildEditWorkspacePixel,
 	getWorkspaceSaveWarning,
+	toAddWorkspaceParams,
+	toEditWorkspaceParams,
 } from "./pixel";
 export {
 	AGENT_FORM_DEFAULT_VALUES,

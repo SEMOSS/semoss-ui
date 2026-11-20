@@ -71,6 +71,15 @@ falling back to `mutate`, and it shows New, New File, and New Folder without the
 `FileExplorer` hands the overlay the explorer's `adapter`, so it creates in that source rather
 than in the mode's asset tree. `@semoss/connectors`' drive views are built this way.
 
+**A host can bring a tree with no Pixels.** Pass `source` (a `FileSource`,
+`file-source.ts`) to `useFileExplorer` for a tree the browser reaches by itself, such as a
+folder on the user's machine: every listing (`useFileListing`, also used by each open folder)
+and every change (rename, move, copy, delete, new file and folder, upload through
+`uploadToFileSource`) goes through it, its capabilities replace the adapter's, and the api
+carries it as `explorer.source`, which `FileExplorer` hands the overlay. Asset trees keep their
+Pixel path unchanged. Its `FileMode` is `{ type: "MOUNT", mountId }`, whose adapter refuses
+every Pixel.
+
 **A source can be kept to one folder.** `scopeFileExplorerAdapter(adapter, root)` returns an
 adapter that sees `root` as `/`: the explorer lists, searches, creates and uploads there and
 reaches nothing above it, a typed `..` included. Item paths are then relative to the folder, so a

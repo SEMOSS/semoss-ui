@@ -287,6 +287,44 @@ const createStorageAdapter = (storage: string): FileExplorerAdapter => {
 };
 
 /**
+ * The adapter for a mounted source, which has no Pixels: its explorer and
+ * panels go through the host's `FileSource` instead, so every builder throws
+ * rather than returning a Pixel that would run against the insight.
+ *
+ * @return An adapter that refuses every operation.
+ */
+const createMountAdapter = (): FileExplorerAdapter => {
+	const unsupported = (): never => {
+		throw new Error(
+			"A mounted folder is reached through its file source, not Pixels",
+		);
+	};
+
+	return {
+		capabilities: {
+			search: false,
+			mutate: false,
+			upload: false,
+			download: false,
+			delete: false,
+		},
+		browse: unsupported,
+		search: unsupported,
+		rename: unsupported,
+		copy: unsupported,
+		remove: unsupported,
+		download: unsupported,
+		read: unsupported,
+		save: unsupported,
+		createFile: unsupported,
+		createDirectory: unsupported,
+		unzip: unsupported,
+		upload: unsupported,
+		mapEntries: () => [],
+	};
+};
+
+/**
  * Resolve the adapter for a file mode.
  *
  * @param mode - The asset tree being browsed.
@@ -390,6 +428,10 @@ export const getFileExplorerAdapter = (mode: FileMode): FileExplorerAdapter => {
 			scopeLeadBare: "",
 			upload: (actions, path, files) => actions.uploadUser(path, files),
 		});
+	}
+
+	if (mode.type === "MOUNT") {
+		return createMountAdapter();
 	}
 
 	return createStorageAdapter(mode.storage);

@@ -1,0 +1,261 @@
+{
+	"welcome": "{{name}}さん、ようこそ",
+	"suggestions": {
+		"title": "次のメッセージの提案"
+	},
+	"settings": {
+		"description": "このルームのモデル、指示、ナレッジ、ツールです。",
+		"compact": "会話を圧縮",
+		"compactSuccess": "会話を圧縮しました",
+		"compactSkipped": "圧縮する内容がありません — 会話はすでに簡潔です",
+		"compactError": "会話の圧縮に失敗しました",
+		"compacting": "会話を圧縮しています...",
+		"compactedAbove": "会話が圧縮されました",
+		"compactedAboveTooltip": "コンテキストサイズを削減するため、以前のメッセージが要約されました",
+		"compactButton": "圧縮",
+		"compactionOptions": "圧縮オプション",
+		"advancedOptions": "詳細オプション",
+		"strategyLabel": {
+			"SUMMARY": "要約",
+			"TOOL_PRUNE": "ツール整理",
+			"AUTO": "自動"
+		},
+		"strategyTooltip": {
+			"SUMMARY": "古いメッセージをAIが生成した要約に置き換えます。トークンの使用量を減らしながら、会話全体の文脈を保持します。",
+			"TOOL_PRUNE": "会話履歴から冗長なツール呼び出しの結果を削除します。ツールの出力が大きく、詳細が不要になった場合に最適です。",
+			"AUTO": "現在の会話内容に基づいて、要約またはツール整理のいずれかを選択します。"
+		},
+		"noKnowledge": "ナレッジが選択されていません。",
+		"fromRoom": "ルームから",
+		"inheritedSelection": "継承された項目はこのチャットから削除できません。",
+		"removeSelection": "{{name}}を削除",
+		"agentLoadError": "エージェントを読み込めませんでした。再試行するか、別のエージェントを選択してください。",
+		"toolsTitle": "ツール"
+	},
+	"form": {
+		"modelLabel": "モデル",
+		"instructionsLabel": "指示",
+		"agentLabel": "エージェント",
+		"knowledgeLabel": "ナレッジ",
+		"temperatureLabel": "温度"
+	},
+	"modes": {
+		"ask": "チャット",
+		"agent": "エージェント",
+		"exitAgent": "チャットに切り替え",
+		"selectedAgent": "エージェント：{{name}}",
+		"defaultAgent": "デフォルトのエージェント",
+		"noAgent": "エージェントなし"
+	},
+	"workspace": {
+		"publish": "エージェントとして公開",
+		"publishTitle": "エージェントを公開",
+		"publishDescription": "現在のルーム構成(指示とMCPを含む)で新しいエージェントを公開します。",
+		"nameLabel": "名前 *",
+		"namePlaceholder": "エージェント名を入力",
+		"descriptionLabel": "説明",
+		"descriptionPlaceholder": "エージェントの説明を入力",
+		"cancelButton": "キャンセル",
+		"publishingButton": "公開中...",
+		"publishButton": "エージェントを公開",
+		"nameRequired": "エージェント名は必須です",
+		"publishSuccess": "エージェントを正常に作成しました",
+		"publishError": "エージェントの作成に失敗しました: {{error}}"
+	},
+	"input": {
+		"ariaPlaceholder": "テキストを入力",
+		"thinking": "考え中...",
+		"menuPrompt": "今日はどのようにお手伝いできますか？",
+		"addToChat": "チャットに追加",
+		"recordLabel": "モデルを録音",
+		"stopRecording": "録音を停止",
+		"record": "録音",
+		"askLabel": "AIに質問",
+		"thinkingTooltip": "考え中",
+		"enterQuestion": "質問を入力してください",
+		"completeTool": "続行するにはツールを完了してください",
+		"ask": "質問",
+		"errorProcessing": "チャットの処理中にエラーが発生しました",
+		"stopLabel": "応答を停止",
+		"stopTooltip": "停止",
+		"stoppingTooltip": "停止中",
+		"recordUnavailable": "このブラウザーでは音声入力を利用できません",
+		"historyHint": "過去のプロンプト {{index}} / {{total}} · ↑/↓で移動 · Escで下書きを復元",
+		"draftRestored": "下書きを復元しました",
+		"removeFile": "{{name}} を削除"
+	},
+	"content": {
+		"scrollToTop": "一番上にスクロール",
+		"scrollToBottom": "一番下にスクロール"
+	},
+	"inlineTool": {
+		"openInSidebar": "ワークスペースで開く",
+		"minimize": "最小化",
+		"maximize": "最大化",
+		"close": "閉じる"
+	},
+	"fileExplorer": {
+		"copyPath": "パスをコピー",
+		"download": "ダウンロード",
+		"delete": "削除",
+		"copyFailed": "クリップボードへのコピーに失敗しました"
+	},
+	"menuToolbox": {
+		"addToolbox": "ツールを追加"
+	},
+	"menuKnowledge": {
+		"addKnowledge": "ナレッジを追加"
+	},
+	"menuWorkspace": {
+		"selectAgent": "エージェントを選択",
+		"searchPlaceholder": "エージェントを検索",
+		"notFound": "見つかりません"
+	},
+	"menuUpload": {
+		"attachDocument": "ファイルを添付"
+	},
+	"menuFileExplorer": {
+		"name": "ルームのファイル"
+	},
+	"errors": {
+		"createRoom": "ルームの作成中にエラーが発生しました。エラー: {{message}}",
+		"fileInUse": "アップロードされたファイルは別のプログラムで使用中です。そのプログラムを閉じて、新しいチャットでファイルを再アップロードしてください。",
+		"processingChat": "チャットの処理中にエラーが発生しました",
+		"roomNotFound": "ルームが見つかりません",
+		"initializeFailed": "ルームの初期化中にエラーが発生しました",
+		"updateOptionsFailed": "ルームのオプションの更新中にエラーが発生しました"
+	},
+	"contextWindow": {
+		"descriptionLow": "すべての会話には上限があります。非常に長い会話は、最終的にモデルが以前のメッセージを忘れる原因になります。",
+		"descriptionMedium": "この会話が長くなっています。続けると、モデルは以前のメッセージを忘れ始めます。この会話を圧縮するか、まもなく新しいチャットを始めることをご検討ください。",
+		"descriptionHigh": "この会話はほぼ満杯です。モデルはまもなく以前のメッセージを忘れ始めます。完全なコンテキストで続けるには、この会話を圧縮するか新しいチャットを始めてください。",
+		"descriptionExceeded": "この会話は上限を超えました。モデルは現在、以前のメッセージを忘れています。最良の結果を得るには、この会話を圧縮するか新しいチャットを開始してください。",
+		"memoryUsedTitle": "使用メモリ:",
+		"memoryUsedValue": "{{used}} / {{total}} トークン ({{percent}}%)",
+		"totalUsedTitle": "チャット合計:",
+		"totalUsedValue": "{{total}} トークン"
+	},
+	"menuMcp": {
+		"searchPlaceholder": "ナレッジとツールボックスを検索",
+		"noResults": "一致する項目が見つかりません",
+		"noItemsAvailable": "使用可能なナレッジまたはツールボックスはありません"
+	},
+	"studio": {
+		"views": "会話の表示",
+		"chat": "チャット",
+		"workspace": "ワークスペース",
+		"toolsLocked": "応答の生成中はツールを変更できません。",
+		"toolsHint": "選択内容は次のメッセージに適用されます。",
+		"moreActions": "その他の操作",
+		"prompts": "プロンプト",
+		"removeFile": "{{name}} を削除",
+		"errorTitle": "問題が発生しました",
+		"errorDescription": "ページを更新するか、ホームに戻ってもう一度お試しください。",
+		"backHome": "ホームに戻る",
+		"export": "エクスポート",
+		"refresh": "更新",
+		"exportCsv": "CSV でエクスポート",
+		"exportPdf": "PDF でエクスポート",
+		"closeWorkspace": "ワークスペースを閉じる",
+		"openWorkspace": "ワークスペースを開く",
+		"preparingWorkspace": "ワークスペースを準備中…",
+		"prepareError": "ワークスペースを準備できませんでした。下書きは保持されています。",
+		"retry": "再試行"
+	},
+	"workspacePlaces": {
+		"files": "ファイル",
+		"openPanel": "パネルを開く",
+		"activity": "アクティビティ",
+		"settings": "設定",
+		"descriptions": {
+			"files": "ここにアップロードしたファイルと、ルームのツールが作成したもの",
+			"settings": "このルームのモデル、指示、ナレッジ、ツール",
+			"activity": "このルームでのすべてのツール呼び出しと変更"
+		}
+	},
+	"optimizer": {
+		"optimize": "プロンプトを最適化",
+		"revert": "前のプロンプトに戻す",
+		"optimizing": "最適化中…",
+		"success": "プロンプトを最適化しました！",
+		"noModel": "プロンプトを最適化するモデルを選択してください",
+		"invalidResponse": "最適化されたプロンプトを受信できませんでした",
+		"failed": "プロンプトを最適化できませんでした",
+		"tooLarge": "プロンプトが長すぎます。短くしてから最適化してください。",
+		"noPermission": "このモデルを使用する権限がありません"
+	},
+	"contextItems": {
+		"label": "次のメッセージに追加済み",
+		"remove": "{{name}} を次のメッセージから削除"
+	},
+	"header": {
+		"untitled": "無題のルーム",
+		"renameLabel": "ルーム名",
+		"roomSection": "ルーム"
+	},
+	"slash": {
+		"empty": "コマンドが見つかりません",
+		"openPlace": "{{name}} をワークスペースで開く",
+		"groups": {
+			"chat": "チャット",
+			"workspace": "ワークスペース",
+			"room": "ルーム",
+			"prompts": "プロンプト"
+		},
+		"commands": {
+			"attach": {
+				"label": "ファイルを添付",
+				"description": "次のメッセージにファイルを追加します"
+			},
+			"knowledge": {
+				"label": "ナレッジを追加",
+				"description": "アシスタントがナレッジソースを検索できるようにします"
+			},
+			"toolbox": {
+				"label": "ツールを追加",
+				"description": "アシスタントが使えるツールボックスを追加します"
+			},
+			"agent": {
+				"label": "エージェントを選択",
+				"description": "このルームで使うエージェントを選びます"
+			},
+			"agent-harness": {
+				"label": "エージェントに切り替え",
+				"description": "このルームをエージェントで実行します"
+			},
+			"chat-mode": {
+				"label": "チャットに切り替え",
+				"description": "このルームをエージェントなしで実行します"
+			},
+			"compact": {
+				"label": "圧縮",
+				"description": "会話を要約してコンテキストを空けます"
+			},
+			"close-workspace": {
+				"description": "タブを残したままワークスペースを隠します"
+			},
+			"favorite": {
+				"description": "このルームを一覧の先頭に固定します"
+			},
+			"unfavorite": {
+				"description": "このルームの固定を解除します"
+			},
+			"rename": {
+				"description": "このルームの名前を変更します"
+			},
+			"download": {
+				"description": "この会話を Word または PDF で保存します"
+			},
+			"delete": {
+				"description": "このルームと会話を削除します"
+			},
+			"publish": {
+				"description": "このルームの指示とツールをエージェントとして保存します"
+			}
+		}
+	},
+	"files": {
+		"roomFiles": "ルームのファイル",
+		"actionFailed": "うまくいきませんでした。{{message}}"
+	}
+}

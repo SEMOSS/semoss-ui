@@ -1,0 +1,261 @@
+{
+	"welcome": "مرحباً، {{name}}",
+	"suggestions": {
+		"title": "اقتراحات لمتابعة المحادثة"
+	},
+	"settings": {
+		"description": "النموذج والتعليمات والمعرفة والأدوات لهذه الغرفة.",
+		"compact": "ضغط المحادثة",
+		"compactSuccess": "تم ضغط المحادثة بنجاح",
+		"compactSkipped": "لا يوجد ما يمكن ضغطه — المحادثة مختصرة بالفعل",
+		"compactError": "فشل ضغط المحادثة",
+		"compacting": "جارٍ ضغط المحادثة...",
+		"compactedAbove": "تم ضغط المحادثة",
+		"compactedAboveTooltip": "تم تلخيص الرسائل السابقة لتقليل حجم السياق",
+		"compactButton": "ضغط",
+		"compactionOptions": "خيارات الضغط",
+		"advancedOptions": "خيارات متقدمة",
+		"strategyLabel": {
+			"SUMMARY": "تلخيص",
+			"TOOL_PRUNE": "تقليم الأدوات",
+			"AUTO": "تلقائي"
+		},
+		"strategyTooltip": {
+			"SUMMARY": "يستبدل الرسائل الأقدم بملخص تم إنشاؤه بالذكاء الاصطناعي. يحافظ على السياق العام للمحادثة مع توفير مساحة من الرموز.",
+			"TOOL_PRUNE": "يزيل نتائج استدعاء الأدوات المطولة من سجل المحادثة. مناسب عندما تكون مخرجات الأدوات كبيرة ولم تعد التفاصيل ضرورية.",
+			"AUTO": "سيتم اختيار التلخيص أو تقليم الأدوات بناءً على المحادثة الحالية."
+		},
+		"noKnowledge": "لم يتم تحديد أي معرفة.",
+		"fromRoom": "من الغرفة",
+		"inheritedSelection": "لا يمكن إزالة العناصر الموروثة من هذه الدردشة.",
+		"removeSelection": "إزالة {{name}}",
+		"agentLoadError": "تعذر تحميل الوكيل. أعد المحاولة أو اختر وكيلاً آخر.",
+		"toolsTitle": "الأدوات"
+	},
+	"form": {
+		"modelLabel": "النموذج",
+		"instructionsLabel": "التعليمات",
+		"agentLabel": "الوكيل",
+		"knowledgeLabel": "المعرفة",
+		"temperatureLabel": "درجة الحرارة"
+	},
+	"modes": {
+		"ask": "دردشة",
+		"agent": "وكيل",
+		"exitAgent": "التبديل إلى الدردشة",
+		"selectedAgent": "الوكيل: {{name}}",
+		"defaultAgent": "الوكيل الافتراضي",
+		"noAgent": "بدون وكيل"
+	},
+	"workspace": {
+		"publish": "نشر كوكيل",
+		"publishTitle": "نشر الوكيل",
+		"publishDescription": "نشر وكيل جديد بتكوين الغرفة الحالي، بما في ذلك التعليمات وMCPs.",
+		"nameLabel": "الاسم *",
+		"namePlaceholder": "أدخل اسم الوكيل",
+		"descriptionLabel": "الوصف",
+		"descriptionPlaceholder": "أدخل وصف الوكيل",
+		"cancelButton": "إلغاء",
+		"publishingButton": "جارٍ النشر...",
+		"publishButton": "نشر الوكيل",
+		"nameRequired": "اسم الوكيل مطلوب",
+		"publishSuccess": "تم إنشاء الوكيل بنجاح",
+		"publishError": "فشل إنشاء الوكيل: {{error}}"
+	},
+	"input": {
+		"ariaPlaceholder": "أدخل النص",
+		"thinking": "جارٍ التفكير...",
+		"menuPrompt": "كيف يمكنني مساعدتك اليوم؟",
+		"addToChat": "أضف إلى دردشتك",
+		"recordLabel": "تسجيل النموذج",
+		"stopRecording": "إيقاف التسجيل",
+		"record": "تسجيل",
+		"askLabel": "اسأل الذكاء الاصطناعي",
+		"thinkingTooltip": "جارٍ التفكير",
+		"enterQuestion": "الرجاء إدخال سؤال",
+		"completeTool": "يرجى إكمال الأداة (الأدوات) للمتابعة",
+		"ask": "اسأل",
+		"errorProcessing": "خطأ في معالجة الدردشة",
+		"stopLabel": "إيقاف الرد",
+		"stopTooltip": "إيقاف",
+		"stoppingTooltip": "جارٍ الإيقاف",
+		"recordUnavailable": "الإملاء غير متاح في هذا المتصفح",
+		"historyHint": "الرسالة السابقة {{index}} من {{total}} · ↑/↓ للتصفح · Esc لاستعادة المسودة",
+		"draftRestored": "تمت استعادة المسودة",
+		"removeFile": "إزالة {{name}}"
+	},
+	"content": {
+		"scrollToTop": "انتقل إلى الأعلى",
+		"scrollToBottom": "انتقل إلى الأسفل"
+	},
+	"inlineTool": {
+		"openInSidebar": "فتح في مساحة العمل",
+		"minimize": "تصغير",
+		"maximize": "تكبير",
+		"close": "إغلاق"
+	},
+	"fileExplorer": {
+		"copyPath": "نسخ المسار",
+		"download": "تنزيل",
+		"delete": "حذف",
+		"copyFailed": "فشل النسخ إلى الحافظة"
+	},
+	"menuToolbox": {
+		"addToolbox": "إضافة أدوات"
+	},
+	"menuKnowledge": {
+		"addKnowledge": "إضافة معرفة"
+	},
+	"menuWorkspace": {
+		"selectAgent": "اختر وكيل",
+		"searchPlaceholder": "البحث عن وكلاء",
+		"notFound": "غير موجود"
+	},
+	"menuUpload": {
+		"attachDocument": "إرفاق ملفات"
+	},
+	"menuFileExplorer": {
+		"name": "ملفات الغرفة"
+	},
+	"errors": {
+		"createRoom": "حدث خطأ أثناء إنشاء الغرفة. الخطأ: {{message}}",
+		"fileInUse": "الملف (الملفات) التي تم تحميلها مستخدمة حاليًا بواسطة برنامج آخر. أغلق البرنامج وأعد تحميل الملف (الملفات) في محادثة جديدة.",
+		"processingChat": "خطأ في معالجة الدردشة",
+		"roomNotFound": "لم يتم العثور على الغرفة",
+		"initializeFailed": "خطأ في تهيئة الغرفة",
+		"updateOptionsFailed": "خطأ في تحديث خيارات الغرفة"
+	},
+	"contextWindow": {
+		"descriptionLow": "جميع المحادثات لها حد. ستؤدي المحادثات الطويلة جدًا في نهاية المطاف إلى نسيان النموذج للرسائل السابقة.",
+		"descriptionMedium": "تطول هذه المحادثة. إذا استمرت، سيبدأ النموذج في نسيان الرسائل السابقة. فكر في ضغط هذه المحادثة أو بدء دردشة جديدة قريبًا.",
+		"descriptionHigh": "هذه المحادثة على وشك الامتلاء. سيبدأ النموذج قريبًا في نسيان الرسائل السابقة. اضغط هذه المحادثة أو ابدأ دردشة جديدة للاستمرار بسياق كامل.",
+		"descriptionExceeded": "تجاوزت هذه المحادثة حدها. يقوم النموذج الآن بنسيان الرسائل السابقة. اضغط هذه المحادثة أو ابدأ دردشة جديدة للحصول على أفضل النتائج.",
+		"memoryUsedTitle": "الذاكرة المستخدمة:",
+		"memoryUsedValue": "{{used}} / {{total}} رمز ({{percent}}%)",
+		"totalUsedTitle": "إجمالي المحادثة:",
+		"totalUsedValue": "{{total}} رمز"
+	},
+	"menuMcp": {
+		"searchPlaceholder": "البحث في المعرفة وصناديق الأدوات",
+		"noResults": "لم يتم العثور على عناصر مطابقة",
+		"noItemsAvailable": "لا توجد معرفة أو صناديق أدوات متاحة"
+	},
+	"studio": {
+		"views": "طرق عرض المحادثة",
+		"chat": "المحادثة",
+		"workspace": "مساحة العمل",
+		"toolsLocked": "لا يمكن تغيير الأدوات أثناء إنشاء الرد.",
+		"toolsHint": "تُطبّق اختياراتك على رسالتك التالية.",
+		"moreActions": "إجراءات إضافية",
+		"prompts": "المطالبات",
+		"removeFile": "إزالة {{name}}",
+		"errorTitle": "حدث خطأ",
+		"errorDescription": "حدّث الصفحة أو عد إلى الصفحة الرئيسية وحاول مرة أخرى.",
+		"backHome": "العودة إلى الرئيسية",
+		"export": "تصدير",
+		"refresh": "تحديث",
+		"exportCsv": "تصدير بصيغة CSV",
+		"exportPdf": "تصدير بصيغة PDF",
+		"closeWorkspace": "إغلاق مساحة العمل",
+		"openWorkspace": "فتح مساحة العمل",
+		"preparingWorkspace": "جارٍ إعداد مساحة العمل…",
+		"prepareError": "تعذر إعداد مساحة العمل. تم الاحتفاظ بمسودتك.",
+		"retry": "إعادة المحاولة"
+	},
+	"workspacePlaces": {
+		"files": "الملفات",
+		"openPanel": "فتح لوحة",
+		"activity": "النشاط",
+		"settings": "الإعدادات",
+		"descriptions": {
+			"files": "الملفات التي ترفعها هنا وكل ما تنشئه أدوات الغرفة",
+			"settings": "نموذج هذه الغرفة وتعليماتها ومعرفتها وأدواتها",
+			"activity": "كل استدعاء أداة وكل تغيير في هذه الغرفة"
+		}
+	},
+	"optimizer": {
+		"optimize": "تحسين الرسالة",
+		"revert": "العودة إلى الرسالة السابقة",
+		"optimizing": "جارٍ التحسين…",
+		"success": "تم تحسين الرسالة!",
+		"noModel": "اختر نموذجًا لتحسين رسالتك",
+		"invalidResponse": "لم يتم استلام رسالة محسّنة",
+		"failed": "تعذّر تحسين الرسالة",
+		"tooLarge": "الرسالة طويلة جدًا للتحسين. يُرجى تقصيرها أولًا.",
+		"noPermission": "ليس لديك إذن لاستخدام هذا النموذج"
+	},
+	"contextItems": {
+		"label": "مضاف إلى رسالتك التالية",
+		"remove": "إزالة {{name}} من رسالتك التالية"
+	},
+	"header": {
+		"untitled": "غرفة بلا عنوان",
+		"renameLabel": "اسم الغرفة",
+		"roomSection": "الغرفة"
+	},
+	"slash": {
+		"empty": "لم يتم العثور على أوامر",
+		"openPlace": "فتح {{name}} في مساحة العمل",
+		"groups": {
+			"chat": "الدردشة",
+			"workspace": "مساحة العمل",
+			"room": "الغرفة",
+			"prompts": "المطالبات"
+		},
+		"commands": {
+			"attach": {
+				"label": "إرفاق ملفات",
+				"description": "أضف ملفات إلى رسالتك التالية"
+			},
+			"knowledge": {
+				"label": "إضافة معرفة",
+				"description": "دع المساعد يبحث في مصادر معرفتك"
+			},
+			"toolbox": {
+				"label": "إضافة أدوات",
+				"description": "أضف صناديق أدوات يمكن للمساعد استخدامها"
+			},
+			"agent": {
+				"label": "اختيار وكيل",
+				"description": "اختر الوكيل الذي تعمل به هذه الغرفة"
+			},
+			"agent-harness": {
+				"label": "التبديل إلى الوكيل",
+				"description": "شغّل هذه الغرفة باستخدام وكيل"
+			},
+			"chat-mode": {
+				"label": "التبديل إلى الدردشة",
+				"description": "شغّل هذه الغرفة بدون وكيل"
+			},
+			"compact": {
+				"label": "ضغط",
+				"description": "لخّص المحادثة لتحرير السياق"
+			},
+			"close-workspace": {
+				"description": "إخفاء مساحة العمل مع الاحتفاظ بعلاماتها"
+			},
+			"favorite": {
+				"description": "ثبّت هذه الغرفة أعلى قائمتك"
+			},
+			"unfavorite": {
+				"description": "ألغِ تثبيت هذه الغرفة من أعلى قائمتك"
+			},
+			"rename": {
+				"description": "غيّر اسم هذه الغرفة"
+			},
+			"download": {
+				"description": "احفظ هذه المحادثة بتنسيق Word أو PDF"
+			},
+			"delete": {
+				"description": "احذف هذه الغرفة ومحادثتها"
+			},
+			"publish": {
+				"description": "احفظ تعليمات هذه الغرفة وأدواتها كوكيل"
+			}
+		}
+	},
+	"files": {
+		"roomFiles": "ملفات الغرفة",
+		"actionFailed": "لم ينجح ذلك. {{message}}"
+	}
+}

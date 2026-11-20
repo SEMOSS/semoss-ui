@@ -52,6 +52,16 @@ const TERMINAL_RUN_STATUSES: ReadonlySet<AgentRunStatusValue> = new Set([
 ]);
 
 /**
+ * Whether a run has ended: `COMPLETED`, `FAILED` or `CANCELLED`.
+ * `INPUT_REQUIRED` is a pause, not an end.
+ *
+ * @param status - The run's status.
+ * @returns True when the run will not change again.
+ */
+export const isTerminalRunStatus = (status: AgentRunStatusValue): boolean =>
+	TERMINAL_RUN_STATUSES.has(status);
+
+/**
  * @returns A fresh, empty items-state to seed a poll loop.
  *
  * Exported only for this file's own spec — not part of the public API
@@ -277,7 +287,7 @@ export class AgentStore {
 						await reconcile(run.status);
 						waitMs =
 							pollIntervalMs * inputRequiredIntervalMultiplier;
-					} else if (TERMINAL_RUN_STATUSES.has(run.status)) {
+					} else if (isTerminalRunStatus(run.status)) {
 						if (deliveredEvents > 0) {
 							// The backend can still be flushing final item
 							// events when the status first reads terminal —

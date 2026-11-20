@@ -41,8 +41,10 @@ Translations used across **all** packages:
 
 ### Tier 2: Package-Specific
 Translations specific to individual packages:
-- `playground/` - Playground app translations (chat, room, sidebar, knowledge, workspace, mcp,
-  tool, tour, mobile, chatTools in `chat-tools.json`, chatConnectors in `chat-connectors.json`)
+- `chat/` - `@semoss/chat` translations (chat, room, sidebar, knowledge, workspace, mcp,
+  tool, chatTools in `chat-tools.json`, chatConnectors in `chat-connectors.json`), loaded
+  through `chatResources` by every host that mounts chat UI
+- `playground/` - Playground-only translations (tour, mobile)
 - `client/` - Client app translations (for example `githubApp`)
 
 ## Usage
@@ -110,7 +112,7 @@ function ClientComponent() {
 
 ### Adding a Package-Specific Translation
 
-1. Create/update the namespace file for every language (e.g., `locales/<lng>/playground/sidebar.json`).
+1. Create/update the namespace file for every language (e.g., `locales/<lng>/chat/sidebar.json`).
 2. Add a lazy `load` entry (and an `ns` entry if it should preload) to the package config.
 
 ```typescript
@@ -119,7 +121,7 @@ export const playgroundResources: LazyResources = {
     ns: ["common", "sidebar" /* , ... */],
     load: {
         common: (l) => import(`./locales/${l}/common.json`),
-        sidebar: (l) => import(`./locales/${l}/playground/sidebar.json`), // Add here
+        sidebar: (l) => import(`./locales/${l}/chat/sidebar.json`), // Add here
         // ... other namespaces
     },
 };

@@ -11,7 +11,7 @@ import {
 } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { Env } from "@semoss/sdk";
-import { download, useInsight, usePixel } from "@semoss/sdk/react";
+import { download, useInsight } from "@semoss/sdk/react";
 import { toast, useDebouncedValue } from "@semoss/ui/next";
 import { downloadBlob } from "@semoss/utility/browser";
 import type { FileItem } from "./file.types";
@@ -32,6 +32,7 @@ import type {
 } from "./file-explorer.types";
 import {
 	canMoveItemToDirectory,
+	decodeBase64Asset,
 	ensureDirectoryPath,
 	FILE_EXPLORER_DRAG_DATA_TYPE,
 	getContextMenuAnchor,
@@ -44,6 +45,27 @@ import {
 	parseExplorerDragItems,
 	serializeExplorerDragPayload,
 } from "./file-explorer.utils";
+import {
+	collectTransferEntries,
+	endTransferDrag,
+	type FileExplorerTransferDrag,
+	type FileExplorerTransferSource,
+	getForeignTransferDrag,
+	registerTransferSource,
+	startTransferDrag,
+} from "./file-explorer-transfer";
+import { uploadToFileSource } from "./file-source";
+import { useFileListing } from "./use-file-listing";
+
+/**
+ * Whether a drag carries files from the system, the only drag an explorer
+ * uploads.
+ *
+ * @param dataTransfer - The drag's data transfer.
+ * @return True when it carries files.
+ */
+const hasSystemFiles = (dataTransfer: DataTransfer): boolean =>
+	Array.from(dataTransfer.types).includes("Files");
 
 /** Bounds of the resizable date column, in px. */
 const DATE_COL_MIN = 100;
@@ -75,6 +97,7 @@ export const useFileExplorer = (
 	const {
 		mode,
 		adapter: customAdapter,
+		source,
 		initialPath,
 		readOnly = false,
 		onRefresh,
@@ -96,18 +119,18 @@ export const useFileExplorer = (
 		() => customAdapter ?? getFileExplorerAdapter(mode),
 		[customAdapter, mode],
 	);
-	const capabilities = useMemo(
-		() => ({
-			search: adapter.capabilities.search,
-			searchScope: adapter.capabilities.searchScope !== false,
-			download: adapter.capabilities.download,
-			mutate: adapter.capabilities.mutate && !readOnly,
-			create: canCreateItems(adapter.capabilities) && !readOnly,
-			upload: adapter.capabilities.upload && !readOnly,
-			delete: adapter.capabilities.delete && !readOnly,
-		}),
-		[adapter, readOnly],
-	);
+	const capabilities = useMemo(() => {
+		const own = source?.capabilities ?? adapter.capabilities;
+		return {
+			search: own.search,
+			searchScope: own.searchScope !== false,
+			download: own.download,
+			mutate: own.mutate && !readOnly,
+			create: canCreateItems(own) && !readOnly,
+			upload: own.upload && !readOnly,
+			delete: own.delete && !readOnly,
+		};
+	}, [adapter, readOnly, source]);
 	const canMutate = capabilities.mutate;
 
 	const [path, setPath] = useState<string>(
@@ -154,69 +177,38 @@ export const useFileExplorer = (
 
 	// ── Listing ─────────────────────────────────────────────────────────────
 
-	// an empty pixel keeps usePixel at INITIAL, which is how the INSIGHT mode
-	// waits for its insight to exist before asking for anything
-	const listPixel = useMemo(() => {
-		if (mode.type === "INSIGHT" && !insight.insightId) {
-			return "";
-		}
-
-		if (debouncedSearch && capabilities.search) {
-			return adapter.search(
-				searchType === "all" ? "" : path,
-				debouncedSearch,
-			);
-		}
-
-		return adapter.browse(path);
-	}, [
-		adapter,
-		capabilities.search,
-		debouncedSearch,
-		insight.insightId,
-		mode.type,
-		path,
-		searchType,
-	]);
-
-	const getFiles = usePixel<unknown[]>(
-		listPixel,
-		{ data: [] },
-		insight.insightId,
-	);
+	// an INSIGHT tree waits at INITIAL until its insight exists; a host's
+	// own source has no insight to wait for
+	const getFiles = useFileListing({
+		adapter: adapter,
+		source: source,
+		insightId: insight.insightId,
+		path: path,
+		term: debouncedSearch,
+		isSearchAll: searchType === "all",
+		enabled:
+			Boolean(source) ||
+			mode.type !== "INSIGHT" ||
+			Boolean(insight.insightId),
+	});
 
 	const items = useMemo(() => {
-		const mapped = adapter.mapEntries(
-			getFiles.data,
-			debouncedSearch && capabilities.search && searchType === "all"
-				? ""
-				: path,
-		);
-
-		// modes without server-side search still filter what they have, so a
+		// trees without search of their own still filter what they have, so a
 		// programmatic search term is never silently ignored
 		if (capabilities.search || !debouncedSearch) {
-			return mapped;
+			return getFiles.items;
 		}
 
 		const needle = debouncedSearch.toLowerCase();
-		return mapped.filter((item) =>
+		return getFiles.items.filter((item) =>
 			item.name.toLowerCase().includes(needle),
 		);
-	}, [
-		adapter,
-		capabilities.search,
-		debouncedSearch,
-		getFiles.data,
-		path,
-		searchType,
-	]);
+	}, [capabilities.search, debouncedSearch, getFiles.items]);
 
 	/**
 	 * The last settled listing for the current directory.
 	 *
-	 * `usePixel` resets its data to the initial value the moment a new Pixel
-	 * starts, so every search keystroke and every refresh would otherwise empty
+	 * The listing resets its entries the moment a new one starts, so every search keystroke and every refresh would otherwise empty
 	 * the tree mid-flight and pop it back. Holding the previous result keeps the
 	 * list stable — but only while the directory is unchanged, so navigating
 	 * still clears rather than briefly showing the folder you just left.
@@ -611,7 +603,11 @@ export const useFileExplorer = (
 
 		try {
 			setIsUploading(true);
-			await adapter.upload(insight.actions, destination, files);
+			if (source) {
+				await uploadToFileSource(source, destination, files);
+			} else {
+				await adapter.upload(insight.actions, destination, files);
+			}
 			refresh([destination]);
 			toast.success(
 				t("fileExplorer.toasts.uploadSuccess", {
@@ -660,7 +656,13 @@ export const useFileExplorer = (
 					continue;
 				}
 
-				await insight.actions.run(adapter.rename(item.path, newPath));
+				if (source) {
+					await source.move(item.path, newPath);
+				} else {
+					await insight.actions.run(
+						adapter.rename(item.path, newPath),
+					);
+				}
 				movedItems.push({
 					item: item,
 					oldPath: item.path,
@@ -720,7 +722,13 @@ export const useFileExplorer = (
 			for (const item of copyingItems) {
 				try {
 					const newPath = `${normalizedTarget}${getItemName(item)}`;
-					await insight.actions.run(adapter.copy(item.path, newPath));
+					if (source) {
+						await source.copy(item.path, newPath);
+					} else {
+						await insight.actions.run(
+							adapter.copy(item.path, newPath),
+						);
+					}
 					written.push(newPath);
 					copiedCount += 1;
 				} catch (e) {
@@ -824,7 +832,11 @@ export const useFileExplorer = (
 
 			for (const item of ordered) {
 				try {
-					await insight.actions.run(adapter.remove(item.path));
+					if (source) {
+						await source.remove(item.path);
+					} else {
+						await insight.actions.run(adapter.remove(item.path));
+					}
 					affected.add(getParentPath(item.path));
 					deletedItems.push(item);
 				} catch (e) {
@@ -882,7 +894,11 @@ export const useFileExplorer = (
 
 		try {
 			const newPath = `${getParentPath(item.path)}${trimmed}`;
-			await insight.actions.run(adapter.rename(item.path, newPath));
+			if (source) {
+				await source.move(item.path, newPath);
+			} else {
+				await insight.actions.run(adapter.rename(item.path, newPath));
+			}
 			onItemsMoved?.([
 				{ item: item, oldPath: item.path, newPath: newPath },
 			]);
@@ -910,7 +926,14 @@ export const useFileExplorer = (
 		}
 
 		try {
-			await insight.actions.run(adapter.unzip(item.path));
+			if (source) {
+				if (!source.unzip) {
+					throw new Error(t("fileExplorer.toasts.unzipFailed"));
+				}
+				await source.unzip(item.path);
+			} else {
+				await insight.actions.run(adapter.unzip(item.path));
+			}
 			refresh([getParentPath(item.path)]);
 			// An archive does not say what came out of it, so this cannot name
 			// the files it overwrote.
@@ -1006,6 +1029,30 @@ export const useFileExplorer = (
 			return;
 		}
 
+		if (source) {
+			try {
+				await source.download?.(downloadingItems);
+				toast.success(
+					t("fileExplorer.toasts.downloadSuccess", {
+						count: downloadingItems.length,
+					}),
+				);
+			} catch (e) {
+				toast.error(
+					getFileOperationErrorMessage(
+						t("fileExplorer.toasts.downloadFailedItems", {
+							items: downloadingItems
+								.map((item) => item.name)
+								.join(", "),
+						}),
+						e,
+					),
+				);
+				console.error(e);
+			}
+			return;
+		}
+
 		const failed: string[] = [];
 		let downloadedCount = 0;
 
@@ -1053,6 +1100,147 @@ export const useFileExplorer = (
 		}
 	};
 
+	// ── Copying between explorers ───────────────────────────────────────────
+
+	// How another explorer reads this tree when files are dragged out of it.
+	// Rebuilt every render, behind a ref, so the registration lasts as long as
+	// the explorer while every read uses the current source, adapter, and
+	// insight.
+	const liveTransferSource: FileExplorerTransferSource = {
+		list: async (directory) => {
+			if (source) {
+				return source.list(directory);
+			}
+
+			const { pixelReturn } = await insight.actions.run<[unknown]>(
+				adapter.browse(directory),
+			);
+			return adapter.mapEntries(pixelReturn[0]?.output, directory);
+		},
+		read: async (file) => {
+			if (source) {
+				return source.read(file);
+			}
+
+			const { pixelReturn } = await insight.actions.run<[unknown]>(
+				adapter.read(file, true),
+			);
+			const output = pixelReturn[0]?.output;
+			if (output === "") {
+				return new Uint8Array();
+			}
+
+			const bytes =
+				typeof output === "string" ? decodeBase64Asset(output) : null;
+			if (!bytes) {
+				throw new Error(getItemName({ name: file, path: file }));
+			}
+			return bytes;
+		},
+	};
+	const transferSourceRef = useRef(liveTransferSource);
+	transferSourceRef.current = liveTransferSource;
+
+	useEffect(
+		() =>
+			registerTransferSource(instanceId, {
+				list: (directory) => transferSourceRef.current.list(directory),
+				read: (file) => transferSourceRef.current.read(file),
+			}),
+		[instanceId],
+	);
+
+	// what "upload" means to a tree is exactly what a copy into it needs
+	const canReceiveTransfer = capabilities.upload;
+
+	/**
+	 * Copy what was dragged out of another explorer into a directory of this
+	 * one, folders with everything in them. A name that is already there is
+	 * replaced, as an upload replaces it.
+	 *
+	 * @param drag - The drag from the other explorer.
+	 * @param targetDirectory - Where the copies land.
+	 */
+	const receiveTransfer = async (
+		drag: FileExplorerTransferDrag,
+		targetDirectory: string,
+	) => {
+		if (!canReceiveTransfer || drag.items.length === 0) {
+			return;
+		}
+
+		const target = ensureDirectoryPath(targetDirectory);
+		try {
+			setIsUploading(true);
+			const entries = await collectTransferEntries(drag);
+			const filled = new Set(
+				entries.files.map((file) => getParentPath(`/${file.path}`)),
+			);
+
+			// Parents first. A source writes a file's folders itself, so it
+			// only needs the empty ones; Pixels upload into a folder that has
+			// to exist. One that is already there is not a failure.
+			for (const directory of entries.directories) {
+				if (source && filled.has(`/${directory}/`)) {
+					continue;
+				}
+
+				try {
+					if (source) {
+						await source.createDirectory(`${target}${directory}`);
+					} else {
+						await insight.actions.run(
+							adapter.createDirectory(`${target}${directory}`),
+						);
+					}
+				} catch (e) {
+					console.warn(e);
+				}
+			}
+
+			if (source) {
+				for (const file of entries.files) {
+					await source.write(`${target}${file.path}`, file.bytes);
+				}
+			} else {
+				// Pixels take files one folder at a time
+				const byDirectory = new Map<string, File[]>();
+				for (const file of entries.files) {
+					const directory = getParentPath(`${target}${file.path}`);
+					const name = file.path.split("/").pop() ?? file.path;
+					const files = byDirectory.get(directory) ?? [];
+					files.push(new File([new Uint8Array(file.bytes)], name));
+					byDirectory.set(directory, files);
+				}
+
+				for (const [directory, files] of byDirectory) {
+					await adapter.upload(insight.actions, directory, files);
+				}
+			}
+
+			refresh([target]);
+			onItemsWritten?.(
+				entries.files.map((file) => `${target}${file.path}`),
+			);
+			toast.success(
+				t("fileExplorer.toasts.copySuccess", {
+					count: drag.items.length,
+				}),
+			);
+		} catch (e) {
+			refresh([target]);
+			toast.error(
+				getFileOperationErrorMessage(
+					t("fileExplorer.toasts.copyFailed"),
+					e,
+				),
+			);
+			console.error(e);
+		} finally {
+			setIsUploading(false);
+		}
+	};
+
 	// ── Drag and drop ───────────────────────────────────────────────────────
 
 	/**
@@ -1096,6 +1284,7 @@ export const useFileExplorer = (
 	// goes away, so the teardown is also pinned to the window.
 	useEffect(() => {
 		const reset = () => {
+			endTransferDrag();
 			setIsDraggingExternal(false);
 			setMoveDropCount(0);
 			setActiveDragItems([]);
@@ -1144,6 +1333,9 @@ export const useFileExplorer = (
 		// a host that opens the file somewhere else (a dock, a tab strip) is a
 		// copy, since the file itself stays put.
 		e.dataTransfer.effectAllowed = "copyMove";
+		// another explorer reads these to copy them in; a read-only tree can
+		// still be copied out of
+		startTransferDrag({ instanceId: instanceId, items: dragItems });
 		e.dataTransfer.setData(
 			"text/plain",
 			dragItems.map((item) => item.path).join("\n"),
@@ -1181,6 +1373,18 @@ export const useFileExplorer = (
 	 * @param e - The drop event.
 	 */
 	const onRootDrop = (e: DragEvent<HTMLElement>) => {
+		const incoming = getForeignTransferDrag(instanceId);
+		if (incoming) {
+			e.preventDefault();
+			e.stopPropagation();
+			endTransferDrag();
+			resetDragState();
+			if (canReceiveTransfer) {
+				void receiveTransfer(incoming, path);
+			}
+			return;
+		}
+
 		if (isExplorerDrag(e.dataTransfer)) {
 			e.preventDefault();
 			e.stopPropagation();
@@ -1189,6 +1393,12 @@ export const useFileExplorer = (
 			if (canMutate && dragItems.length > 0) {
 				move(dragItems, ensureDirectoryPath(path));
 			}
+			return;
+		}
+
+		// anything else that is not files from the system, such as a Files
+		// panel section being reordered, is not this explorer's to take
+		if (!hasSystemFiles(e.dataTransfer)) {
 			return;
 		}
 
@@ -1208,6 +1418,21 @@ export const useFileExplorer = (
 	 * @param e - The dragover event.
 	 */
 	const onRootDragOver = (e: DragEvent<HTMLElement>) => {
+		const incoming = getForeignTransferDrag(instanceId);
+		if (incoming) {
+			e.preventDefault();
+			e.stopPropagation();
+			setActiveDropTargetPath(null);
+			setIsDraggingExternal(false);
+			if (canReceiveTransfer) {
+				e.dataTransfer.dropEffect = "copy";
+				setMoveDropCount(incoming.items.length);
+			} else {
+				e.dataTransfer.dropEffect = "none";
+			}
+			return;
+		}
+
 		if (isExplorerDrag(e.dataTransfer)) {
 			e.preventDefault();
 			e.stopPropagation();
@@ -1218,6 +1443,10 @@ export const useFileExplorer = (
 				setMoveDropCount(dragItems.length);
 			}
 			setIsDraggingExternal(false);
+			return;
+		}
+
+		if (!hasSystemFiles(e.dataTransfer)) {
 			return;
 		}
 
@@ -1240,7 +1469,10 @@ export const useFileExplorer = (
 			return;
 		}
 
-		if (isExplorerDrag(e.dataTransfer)) {
+		if (
+			isExplorerDrag(e.dataTransfer) ||
+			getForeignTransferDrag(instanceId)
+		) {
 			e.preventDefault();
 			e.stopPropagation();
 			resetDragState();
@@ -1316,6 +1548,7 @@ export const useFileExplorer = (
 		instanceId: instanceId,
 		mode: mode,
 		adapter: adapter,
+		source: source ?? null,
 		capabilities: capabilities,
 		header: {
 			path: path,
@@ -1369,6 +1602,13 @@ export const useFileExplorer = (
 			onRootDragOver: onRootDragOver,
 			onRootDragLeave: onRootDragLeave,
 			onRootDrop: onRootDrop,
+			getIncomingTransfer: () =>
+				canReceiveTransfer ? getForeignTransferDrag(instanceId) : null,
+			receiveTransfer: (drag, targetDirectory) => {
+				endTransferDrag();
+				return receiveTransfer(drag, targetDirectory);
+			},
+			endTransfer: endTransferDrag,
 		},
 		newFile: {
 			isOpen: newFileState.isOpen,
@@ -1399,6 +1639,9 @@ export const useFileExplorer = (
 		},
 		get adapter() {
 			return liveApiRef.current.adapter;
+		},
+		get source() {
+			return liveApiRef.current.source;
 		},
 		get capabilities() {
 			return liveApiRef.current.capabilities;

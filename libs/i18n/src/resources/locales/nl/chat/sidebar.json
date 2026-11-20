@@ -1,0 +1,155 @@
+{
+	"search": "Zoeken",
+	"takeTour": "Volg een rondleiding",
+	"nav": {
+		"newChat": {
+			"label": "Nieuw",
+			"tooltip": "Nieuwe chat - Begin op elk moment een nieuw gesprek.",
+			"ariaLabel": "Nieuwe chat"
+		},
+		"agents": {
+			"label": "Agents",
+			"tooltip": "Agents"
+		},
+		"agentsWorkspaces": {
+			"tooltip": "Agents/Werkruimtes - Open je werkruimtes of maak nieuwe AI-agents aan."
+		},
+		"knowledgeLibrary": {
+			"tooltip": "Kennisbibliotheek - Blader door, maak, deel en beheer je documentbibliotheken."
+		},
+		"toolbox": {
+			"tooltip": "Toolbox - Ontdek de uitgebreide mogelijkheden van Elsa met krachtige aanvullende tools."
+		},
+		"promptLibrary": {
+			"tooltip": "Promptbibliotheek - Blader door, maak en gebruik opgeslagen prompts."
+		},
+		"goHome": "Naar startpagina",
+		"help": "Help"
+	},
+	"buckets": {
+		"favorites": "Favorieten",
+		"today": "Vandaag",
+		"yesterday": "Gisteren",
+		"fewDaysAgo": "Enkele dagen geleden",
+		"lastWeek": "Vorige week",
+		"thisMonth": "Deze maand",
+		"lastMonth": "Vorige maand",
+		"older": "Ouder"
+	},
+	"messages": {
+		"errorLoadingRooms": "Fout bij het laden van ruimtes",
+		"noRoomsFound": "Geen ruimtes gevonden",
+		"untitled": "Naamloos"
+	},
+	"actions": {
+		"openNavigation": "Navigatie openen",
+		"openSidebar": "Zijbalk openen",
+		"closeSidebar": "Zijbalk sluiten",
+		"favorite": "Markeren als favoriet",
+		"unfavorite": "Verwijderen uit favorieten",
+		"rename": "Naam wijzigen",
+		"delete": "Verwijderen",
+		"openInline": "In-line openen",
+		"minimize": "Minimaliseren",
+		"maximize": "Maximaliseren",
+		"close": "Sluiten",
+		"roomActions": "Chatacties"
+	},
+	"toasts": {
+		"failedToPin": "Vastmaken van ruimte mislukt",
+		"failedToUnpin": "Losmaken van ruimte mislukt",
+		"roomNameEmpty": "Ruimtenaam mag niet leeg zijn",
+		"roomRenamedSuccess": "Naam van ruimte succesvol gewijzigd",
+		"failedToRename": "Naam wijzigen van ruimte mislukt",
+		"roomDeletedSuccess": "Ruimte succesvol verwijderd",
+		"failedToDelete": "Kan de kamer niet verwijderen"
+	},
+	"userMenu": {
+		"settings": "Instellingen",
+		"language": "Taal"
+	},
+	"settings": {
+		"title": "Instellingen",
+		"description": "Je voorkeuren en de apps die de assistent kan gebruiken.",
+		"sections": {
+			"general": "Algemeen",
+			"connectors": "Connectors"
+		},
+		"general": {
+			"appearance": "Weergave",
+			"theme": "Thema",
+			"themeDescription": "Donkere en systeemthema's zijn in bèta.",
+			"themes": {
+				"system": "Systeem",
+				"light": "Licht",
+				"dark": "Donker"
+			},
+			"language": "Taal",
+			"languageDescription": "De taal waarin de app wordt weergegeven.",
+			"version": "Versie {{version}}",
+			"newChat": {
+				"title": "Chat",
+				"default": "Standaard",
+				"model": "Model",
+				"modelDescription": "Het model dat een nieuwe chat gebruikt.",
+				"unavailableModel": "Model niet beschikbaar",
+				"mode": "Modus",
+				"modeDescription": "Of een nieuwe chat begint als chat of met een agent.",
+				"modes": {
+					"chat": "Chat",
+					"agent": "Agent"
+				},
+				"agent": "Agent",
+				"agentDescription": "De agent die een nieuwe chat in agentmodus uitvoert.",
+				"saveError": "Je voorkeur kon niet worden opgeslagen: {{message}}"
+			}
+		}
+	},
+	"download": {
+		"title": "Gesprek downloaden",
+		"description": "Kies een indeling voor je download.",
+		"word": "Word-document",
+		"pdf": "PDF-document",
+		"success": "Gesprek gedownload als {{format}}",
+		"failed": "Kan het gesprek niet downloaden",
+		"noContent": "Geen gespreksinhoud om te downloaden",
+		"noResponse": "Geen antwoord ontvangen van de server",
+		"generateFailed": "Kan {{format}}-bestand niet genereren",
+		"generateFailedWithType": "Kan {{format}}-bestand niet genereren. Bewerkingstype: {{operationType}}"
+	},
+	"chats": "Chats",
+	"view": {
+		"button": "Chats sorteren en groeperen",
+		"customized": "aangepaste volgorde",
+		"sortBy": "Sorteren op",
+		"groupBy": "Groeperen op",
+		"sort": {
+			"recent": "Meest recent",
+			"oldest": "Oudste",
+			"nameAsc": "Naam (A–Z)",
+			"nameDesc": "Naam (Z–A)"
+		},
+		"group": {
+			"date": "Datum",
+			"agent": "Agent"
+		}
+	},
+	"groups": {
+		"all": "Alle chats",
+		"noAgent": "Geen agent",
+		"unnamedAgent": "Naamloze agent",
+		"openAgent": "{{name}} openen in een nieuw tabblad"
+	},
+	"searchChats": {
+		"label": "Chats zoeken",
+		"title": "Chats zoeken",
+		"description": "Vind een chat op naam of op wat erin is gezegd.",
+		"placeholder": "Chats zoeken…",
+		"loading": "Zoeken…",
+		"empty": "Geen chats gevonden voor ‘{{query}}’",
+		"recent": "Recent",
+		"allAgents": "Alle agents",
+		"results": "Resultaten",
+		"matchedMessage": "Gevonden in berichten"
+	}
+}

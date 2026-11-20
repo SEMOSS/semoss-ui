@@ -325,6 +325,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 						key={newFile.instance}
 						mode={explorer.mode}
 						adapter={explorer.adapter}
+						source={explorer.source}
 						path={newFile.path}
 						open={newFile.isOpen}
 						action={newFile.action}

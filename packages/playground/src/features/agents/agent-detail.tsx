@@ -1,0 +1,289 @@
+import {
+	MessagesSquareIcon,
+	PencilIcon,
+	PlusIcon,
+	Trash2Icon,
+	UsersRound,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { Navigate, useNavigate } from "react-router";
+import { useAgentWorkspace } from "@semoss/chat";
+import { useTranslation } from "@semoss/i18n";
+import { getUserProjectPermission, type Role } from "@semoss/sdk";
+import {
+	AgentDefinition,
+	AppCatalogAvatar,
+	MembersTable,
+} from "@semoss/shared";
+import {
+	Button,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	Spinner,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+	toast,
+} from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
+import { deleteAgent } from "@/features/agents/agent-actions";
+import { getPlaygroundAgentLinks } from "@/features/agents/agent-links";
+import { WorkspaceChatList } from "@/features/agents/workspace-chat-list";
+import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
+
+/** Props for {@link AgentDetail}. */
+interface AgentDetailProps {
+	/** The agent to show. */
+	workspaceId?: string;
+}
+
+/**
+ * An agent's detail page, read-only:
+ *   - Header: the agent's name with Edit, Delete and New Chat actions
+ *   - Recent chats with the agent
+ *   - The shared agent definition, the same view the client uses
+ *   - Members
+ *
+ * Edit and Delete show only for the permission that allows them. An agent
+ * that fails to load sends the user back to the catalog.
+ */
+export const AgentDetail = ({ workspaceId }: AgentDetailProps) => {
+	const { t } = useTranslation(["workspace", "common"]);
+
+	const navigate = useNavigate();
+	const theme = usePlaygroundTheme();
+
+	const [isDeleting, setIsDeleting] = useState(false);
+	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+	const [userPermission, setUserPermission] = useState<Role | null>(null);
+
+	// The user's role on this agent, refetched when the agent changes; a stale
+	// answer for a previous agent is dropped
+	useEffect(() => {
+		setUserPermission(null);
+		if (!workspaceId) return;
+		let cancelled = false;
+		(async () => {
+			try {
+				const permission = await getUserProjectPermission(workspaceId);
+				if (!cancelled && permission) {
+					setUserPermission(permission);
+				}
+			} catch {
+				// If permission fetch fails, leave as null — Edit/Delete stay hidden
+			}
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, [workspaceId]);
+
+	const canEdit = userPermission === "EDIT" || userPermission === "OWNER";
+	const canDelete = userPermission === "OWNER";
+
+	const agent = useAgentWorkspace(workspaceId);
+
+	// a failed read is announced once, as it lands
+	useEffect(() => {
+		if (!agent.error) return;
+		toast.error(
+			t("workspace:detail.failedToLoad", {
+				error: getErrorMessage(
+					agent.error,
+					t("workspace:messages.unknownError"),
+				),
+			}),
+		);
+	}, [agent.error, t]);
+
+	if (agent.status === "ERROR" || !workspaceId) {
+		return <Navigate to="/agent" />;
+	}
+
+	const workspace = agent.workspace;
+	if (!workspace) {
+		return (
+			<div className="flex h-full w-full items-center justify-center">
+				<Spinner />
+			</div>
+		);
+	}
+
+	// GetWorkspace returns the instructions with escaped line breaks
+	const definition = {
+		...workspace,
+		system_prompt: (workspace.system_prompt || "").replace(/\\n/g, "\n"),
+	};
+
+	return (
+		<div className="@container h-full w-full overflow-y-auto">
+			<div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-6 sm:px-6">
+				{/* Sticky header so New Chat / Edit / Delete stay reachable while scrolling */}
+				<div className="-mx-4 -mt-6 sm:-mx-6 sticky top-0 z-20 flex flex-wrap items-center gap-3 border-b bg-background px-4 py-4 sm:px-6">
+					<AppCatalogAvatar
+						projectId={workspaceId}
+						name={workspace.name}
+						className="size-10 shrink-0 rounded-md text-base"
+					/>
+					<div className="min-w-0 flex-1">
+						<div className="break-words font-semibold text-2xl text-foreground leading-tight">
+							{workspace.name}
+						</div>
+					</div>
+					<div className="flex shrink-0 items-center gap-2">
+						{canEdit && (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="outline"
+										size="icon"
+										aria-label={t("workspace:actions.edit")}
+										onClick={() =>
+											navigate(
+												`/agent/${workspaceId}/edit`,
+											)
+										}
+										data-testid="workspace-detail-page--edit-btn"
+									>
+										<PencilIcon />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									{t("workspace:actions.edit")}
+								</TooltipContent>
+							</Tooltip>
+						)}
+						{canDelete && (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="outline"
+										size="icon"
+										aria-label={t(
+											"workspace:actions.delete",
+										)}
+										onClick={() =>
+											setIsDeleteDialogOpen(true)
+										}
+										data-testid="workspace-detail-page--delete-btn"
+									>
+										<Trash2Icon />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									{t("workspace:actions.delete")}
+								</TooltipContent>
+							</Tooltip>
+						)}
+						<Button
+							onClick={() =>
+								navigate(`/new?workspaceId=${workspaceId}`)
+							}
+							data-testid="workspace-detail-page--new-chat-btn"
+						>
+							<PlusIcon />
+							{t("workspace:actions.newChat")}
+						</Button>
+					</div>
+				</div>
+
+				{/* Body: the outer container scrolls */}
+				<div className="flex flex-col gap-8">
+					{/* Recent chats, grouped by day */}
+					<section className="flex min-w-0 flex-col gap-4">
+						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
+							<MessagesSquareIcon className="size-5" />
+							{t("workspace:detail.recentChats.title")}
+						</h2>
+						<WorkspaceChatList workspaceId={workspaceId} />
+					</section>
+
+					{/* Agent definition, read-only */}
+					<section aria-label={t("workspace:detail.about.title")}>
+						<AgentDefinition
+							workspace={definition}
+							{...getPlaygroundAgentLinks(
+								theme.featureFlags?.showPlatformLinks,
+							)}
+						/>
+					</section>
+
+					{/* Members */}
+					<section className="flex min-w-0 flex-col gap-3">
+						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
+							<UsersRound className="size-5" />
+							{t("workspace:detail.tabs.members")}
+						</h2>
+						<div className="min-h-32">
+							<MembersTable
+								id={workspaceId}
+								type="WORKSPACE"
+								readOnly
+							/>
+						</div>
+					</section>
+				</div>
+			</div>
+
+			{/* Delete confirmation */}
+			<Dialog
+				open={isDeleteDialogOpen}
+				onOpenChange={setIsDeleteDialogOpen}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>
+							{t("workspace:card.deleteConfirmTitle")}
+						</DialogTitle>
+						<DialogDescription>
+							{t("workspace:card.deleteConfirmDescription", {
+								name: workspace.name,
+							})}
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={(e) => {
+								e.stopPropagation();
+								setIsDeleteDialogOpen(false);
+							}}
+							data-testid="workspace-detail-page--cancel-delete-btn"
+						>
+							{t("common:buttons.cancel")}
+						</Button>
+						<Button
+							variant="destructive"
+							data-testid="workspace-detail-page--confirm-delete-btn"
+							disabled={isDeleting}
+							onClick={async (e) => {
+								e.stopPropagation();
+								setIsDeleting(true);
+								try {
+									await deleteAgent(workspaceId);
+									navigate("/agent");
+								} catch (err) {
+									toast.error(
+										err instanceof Error
+											? err.message
+											: t(
+													"workspace:detail.failedToDelete",
+												),
+									);
+								} finally {
+									setIsDeleting(false);
+								}
+							}}
+						>
+							{t("workspace:actions.delete")}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+		</div>
+	);
+};

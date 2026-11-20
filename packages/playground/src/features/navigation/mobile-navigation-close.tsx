@@ -2,7 +2,7 @@ import { XIcon } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
 import { Button, useSidebar } from "@semoss/ui/next";
 
-/** A visible dismissal action inside the mobile navigation sheet. */
+/** The Close button inside the mobile navigation sheet; nothing on desktop. */
 export function MobileNavigationClose() {
 	const { t } = useTranslation("sidebar");
 	const { isMobile, setOpenMobile } = useSidebar();

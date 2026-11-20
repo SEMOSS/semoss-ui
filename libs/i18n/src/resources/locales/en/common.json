@@ -80,6 +80,7 @@
 		"moreActionsFor": "More actions for {{name}}",
 		"toggleMenu": "Toggle menu",
 		"resizeDateColumn": "Resize date column",
+		"resizeSections": "Resize {{above}} and {{below}}",
 		"failedToLoadFiles": "Failed to load files",
 		"pdfNotSupported": "Your browser doesn't support PDF viewing.",
 		"binaryView": {

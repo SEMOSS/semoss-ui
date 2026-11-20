@@ -368,7 +368,8 @@ export type PixelJobStreamingStatus =
 /**
  * Fetch the latest message chunks and status for an async pixel job.
  * Each call returns only the chunks received since the last poll.
- * For a managed polling loop use {@link streamPixelJob} instead.
+ * Poll until a terminal status, then read the job's result with
+ * {@link getPixelAsyncResult}; the sdk-chat skill describes the whole loop.
  *
  * @param jobId - The job ID returned from runPixelAsync
  */

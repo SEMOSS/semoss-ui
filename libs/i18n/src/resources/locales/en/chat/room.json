@@ -1,0 +1,261 @@
+{
+	"welcome": "Welcome, {{name}}",
+	"suggestions": {
+		"title": "Suggested follow-ups"
+	},
+	"settings": {
+		"description": "Model, instructions, knowledge, and tools for this room.",
+		"compact": "Compact Conversation",
+		"compactSuccess": "Conversation compacted successfully",
+		"compactSkipped": "Nothing to compact — conversation is already concise",
+		"compactError": "Failed to compact conversation",
+		"compacting": "Compacting conversation...",
+		"compactedAbove": "Conversation compacted",
+		"compactedAboveTooltip": "Earlier messages were summarized to reduce context size",
+		"compactButton": "Compact",
+		"compactionOptions": "Compaction Options",
+		"advancedOptions": "Advanced Options",
+		"strategyLabel": {
+			"SUMMARY": "Summarize",
+			"TOOL_PRUNE": "Prune Tools",
+			"AUTO": "Auto"
+		},
+		"strategyTooltip": {
+			"SUMMARY": "Replaces older messages with an AI-generated summary. Preserves the overall context of the conversation while freeing up token space.",
+			"TOOL_PRUNE": "Removes verbose tool call results from the conversation history. Best when tool outputs are large and the details are no longer needed.",
+			"AUTO": "Will select summarization or tool pruning based on the current conversation."
+		},
+		"noKnowledge": "No Knowledge selected.",
+		"fromRoom": "From room",
+		"inheritedSelection": "Inherited selections cannot be removed from this room.",
+		"removeSelection": "Remove {{name}}",
+		"agentLoadError": "Could not load the agent. Try again or select another agent.",
+		"toolsTitle": "Tools"
+	},
+	"form": {
+		"modelLabel": "Model",
+		"instructionsLabel": "Instructions",
+		"agentLabel": "Agent",
+		"knowledgeLabel": "Knowledge",
+		"temperatureLabel": "Temperature"
+	},
+	"modes": {
+		"ask": "Chat",
+		"agent": "Agent",
+		"exitAgent": "Switch to chat",
+		"selectedAgent": "Agent: {{name}}",
+		"defaultAgent": "Default Agent",
+		"noAgent": "No Agent"
+	},
+	"workspace": {
+		"publish": "Publish as Agent",
+		"publishTitle": "Publish Agent",
+		"publishDescription": "Publish a new agent with the current room configuration, including instructions and MCPs.",
+		"nameLabel": "Name *",
+		"namePlaceholder": "Enter agent name",
+		"descriptionLabel": "Description",
+		"descriptionPlaceholder": "Enter agent description",
+		"cancelButton": "Cancel",
+		"publishingButton": "Publishing...",
+		"publishButton": "Publish Agent",
+		"nameRequired": "Agent name is required",
+		"publishSuccess": "Agent created successfully",
+		"publishError": "Failed to create agent: {{error}}"
+	},
+	"input": {
+		"ariaPlaceholder": "Enter text",
+		"thinking": "Thinking...",
+		"menuPrompt": "How can I help you today?",
+		"addToChat": "Add to your chat",
+		"recordLabel": "Record the Model",
+		"stopRecording": "Stop Recording",
+		"record": "Record",
+		"askLabel": "Ask the AI",
+		"thinkingTooltip": "Thinking",
+		"enterQuestion": "Please enter a question",
+		"completeTool": "Please complete the tool(s) to proceed",
+		"ask": "Ask",
+		"errorProcessing": "Error processing chat",
+		"stopLabel": "Stop the response",
+		"stopTooltip": "Stop",
+		"stoppingTooltip": "Stopping",
+		"recordUnavailable": "Dictation is unavailable in this browser",
+		"historyHint": "Earlier prompt {{index}} of {{total}} · ↑/↓ browse · Esc to restore draft",
+		"draftRestored": "Draft restored",
+		"removeFile": "Remove {{name}}"
+	},
+	"content": {
+		"scrollToTop": "Scroll to top",
+		"scrollToBottom": "Scroll to bottom"
+	},
+	"inlineTool": {
+		"openInSidebar": "Open in Workspace",
+		"minimize": "Minimize",
+		"maximize": "Maximize",
+		"close": "Close"
+	},
+	"fileExplorer": {
+		"copyPath": "Copy Path",
+		"download": "Download",
+		"delete": "Delete",
+		"copyFailed": "Failed to copy to clipboard"
+	},
+	"menuToolbox": {
+		"addToolbox": "Add Tools"
+	},
+	"menuKnowledge": {
+		"addKnowledge": "Add Knowledge"
+	},
+	"menuWorkspace": {
+		"selectAgent": "Select Agent",
+		"searchPlaceholder": "Search agents",
+		"notFound": "Not Found"
+	},
+	"menuUpload": {
+		"attachDocument": "Attach Files"
+	},
+	"menuFileExplorer": {
+		"name": "Room Files"
+	},
+	"errors": {
+		"createRoom": "An error occurred while creating the room. Error: {{message}}",
+		"fileInUse": "At least one uploaded file is currently in use by another program. Close the program and re-upload.",
+		"processingChat": "Error processing chat",
+		"roomNotFound": "Room not found",
+		"initializeFailed": "Error initializing room",
+		"updateOptionsFailed": "Error updating room options"
+	},
+	"contextWindow": {
+		"descriptionLow": "All conversations have a limit. Very long conversations will eventually cause the model to forget earlier messages.",
+		"descriptionMedium": "This conversation is getting long. If it continues, the model will start forgetting earlier messages. Consider compacting this conversation or starting a new chat soon.",
+		"descriptionHigh": "This conversation is nearly full. The model will soon start forgetting earlier messages. Compact this conversation or start a new chat to continue with full context.",
+		"descriptionExceeded": "This conversation has exceeded its limit. The model is now forgetting earlier messages. Compact this conversation or start a new chat for best results.",
+		"memoryUsedTitle": "Memory used:",
+		"memoryUsedValue": "{{used}} / {{total}} tokens ({{percent}}%)",
+		"totalUsedTitle": "Chat total:",
+		"totalUsedValue": "{{total}} tokens"
+	},
+	"menuMcp": {
+		"searchPlaceholder": "Search knowledge and toolboxes",
+		"noResults": "No matching items found",
+		"noItemsAvailable": "No knowledge or toolboxes available"
+	},
+	"studio": {
+		"views": "Conversation views",
+		"chat": "Chat",
+		"workspace": "Workspace",
+		"toolsLocked": "Tools cannot be changed while a response is running.",
+		"toolsHint": "Selections apply to your next message.",
+		"moreActions": "More actions",
+		"prompts": "Prompts",
+		"removeFile": "Remove {{name}}",
+		"errorTitle": "Something went wrong",
+		"errorDescription": "Please refresh or return to the home page and try again.",
+		"backHome": "Back to home",
+		"export": "Export",
+		"refresh": "Refresh",
+		"exportCsv": "Export as CSV",
+		"exportPdf": "Export as PDF",
+		"closeWorkspace": "Close Workspace",
+		"openWorkspace": "Open Workspace",
+		"preparingWorkspace": "Preparing Workspace…",
+		"prepareError": "Could not prepare the Workspace. Your draft is preserved.",
+		"retry": "Try again"
+	},
+	"workspacePlaces": {
+		"files": "Files",
+		"openPanel": "Open a Panel",
+		"activity": "Activity",
+		"settings": "Settings",
+		"descriptions": {
+			"files": "Files you upload here and anything the room's tools create",
+			"settings": "This room's model, instructions, knowledge, and tools",
+			"activity": "Every tool call and change in this room"
+		}
+	},
+	"optimizer": {
+		"optimize": "Optimize prompt",
+		"revert": "Revert to previous prompt",
+		"optimizing": "Optimizing…",
+		"success": "Prompt optimized!",
+		"noModel": "Select a model to optimize your prompt",
+		"invalidResponse": "No optimized prompt received",
+		"failed": "Failed to optimize prompt",
+		"tooLarge": "Prompt is too large for optimization. Please shorten it first.",
+		"noPermission": "You do not have permission to use this model"
+	},
+	"contextItems": {
+		"label": "Added to Your Next Message",
+		"remove": "Remove {{name}} from your next message"
+	},
+	"header": {
+		"untitled": "Untitled room",
+		"renameLabel": "Room name",
+		"roomSection": "Room"
+	},
+	"slash": {
+		"empty": "No commands found",
+		"openPlace": "Open {{name}} in the Workspace",
+		"groups": {
+			"chat": "Chat",
+			"workspace": "Workspace",
+			"room": "Room",
+			"prompts": "Prompts"
+		},
+		"commands": {
+			"attach": {
+				"label": "Attach files",
+				"description": "Add files to your next message"
+			},
+			"knowledge": {
+				"label": "Add knowledge",
+				"description": "Let the assistant search your knowledge sources"
+			},
+			"toolbox": {
+				"label": "Add tools",
+				"description": "Add toolboxes the assistant can use"
+			},
+			"agent": {
+				"label": "Choose agent",
+				"description": "Pick the agent this room runs"
+			},
+			"agent-harness": {
+				"label": "Switch to agent",
+				"description": "Run this room with an agent"
+			},
+			"chat-mode": {
+				"label": "Switch to chat",
+				"description": "Run this room without an agent"
+			},
+			"compact": {
+				"label": "Compact",
+				"description": "Summarize the conversation to free up context"
+			},
+			"close-workspace": {
+				"description": "Hide the Workspace and keep its tabs"
+			},
+			"favorite": {
+				"description": "Pin this room to the top of your list"
+			},
+			"unfavorite": {
+				"description": "Unpin this room from the top of your list"
+			},
+			"rename": {
+				"description": "Change this room's name"
+			},
+			"download": {
+				"description": "Save this conversation as Word or PDF"
+			},
+			"delete": {
+				"description": "Delete this room and its conversation"
+			},
+			"publish": {
+				"description": "Save this room's instructions and tools as an agent"
+			}
+		}
+	},
+	"files": {
+		"roomFiles": "Room Files",
+		"actionFailed": "That did not work. {{message}}"
+	}
+}

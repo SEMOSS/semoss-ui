@@ -5,9 +5,9 @@ import {
 } from "@semoss/i18n";
 import { Env } from "@semoss/sdk/react";
 import { ThemeProvider, Toaster } from "@semoss/ui/next";
-import { LandscapeRestriction } from "@/components/common/landscape-restriction";
-import { LanguageDirection } from "@/components/common/language-direction";
-import { Router } from "@/pages";
+import { LandscapeRestriction } from "@/features/app-shell/landscape-restriction";
+import { LanguageDirection } from "@/features/app-shell/language-direction";
+import { Router } from "@/pages/router";
 
 // The server writes MODULE into index.html (semoss-env tag, read when the SDK
 // loads) and it always wins; .env, then "/Monolith", cover a page without one.
@@ -15,12 +15,12 @@ Env.update({
 	MODULE: Env.MODULE || import.meta.env.MODULE || "/Monolith",
 });
 
-// create a new i18n instance for the playground. Languages load lazily (one
-// chunk per language) via the builder's dynamic backend.
+// The playground's own i18n instance. Languages load lazily (one chunk per
+// language) via the builder's dynamic backend.
 const i18nBuilder = new I18nBuilder(playgroundResources);
 const i18n = i18nBuilder.i18n;
 
-// Awaited by main.tsx before the first render so the active language is present.
+/** Resolves once the active language is loaded; `main.tsx` awaits it before the first render. */
 export const i18nReady = i18nBuilder.ready;
 
 /**

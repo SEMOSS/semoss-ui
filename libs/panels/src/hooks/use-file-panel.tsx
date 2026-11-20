@@ -7,16 +7,19 @@ import {
 	usePixel,
 } from "@semoss/sdk/react";
 import {
+	decodeBase64Asset,
 	getFileOperationErrorMessage,
 	useFileEditorPathRef,
 } from "@semoss/shared";
 import { Muted, Spinner, toast } from "@semoss/ui/next";
+import { downloadBlob } from "@semoss/utility/browser";
 import {
 	useWorkbench,
 	WorkbenchPanelError,
 	WorkbenchPanelLoading,
 } from "@semoss/workbench";
 import { FILE_PANEL_EVENTS } from "../constants/file-panel.constants";
+import { useFileMount, useFileSources } from "../contexts/file-sources.context";
 import {
 	type FilePanelMode,
 	getFilePanelResource,
@@ -28,6 +31,10 @@ import {
 	getFileSavePixel,
 } from "../utility/file-panel.utility";
 import { useAccess } from "./use-access";
+import { useMountFile } from "./use-mount-file";
+
+/** What a mount's panel says when the host has no such mount. */
+const MISSING_MOUNT_MESSAGE = "This folder is not available here";
 
 /** The scope and file every file panel is opened with. */
 export interface FilePanelParams {
@@ -126,13 +133,29 @@ export const useFilePanel = (
 	const downloadingRef = useRef(false);
 	const emit = useWorkbench((state) => state.events.actions.emit);
 
-	const read = usePixel<string>(
-		enabled && access.status === "ready"
+	// a host's mount is read through its source; every other scope through
+	// its Pixels, which a mount does not have
+	const mount = useFileMount(config.mode);
+	const isMount = config.mode.type === "MOUNT";
+	const missingMountMessage =
+		useFileSources()?.missingMountMessage ?? MISSING_MOUNT_MESSAGE;
+	const isReadEnabled = enabled && access.status === "ready";
+	const pixelRead = usePixel<string>(
+		isReadEnabled && !isMount
 			? getFileReadPixel(config.mode, config.path, base64)
 			: "",
 		{ data: "", onSuccess: () => setRevision((r) => r + 1) },
 		targetInsightId,
 	);
+	const mountRead = useMountFile({
+		source: mount?.source ?? null,
+		path: config.path,
+		base64: base64,
+		enabled: isReadEnabled && isMount,
+		missingMessage: missingMountMessage,
+		onLoad: () => setRevision((r) => r + 1),
+	});
+	const read = isMount ? mountRead : pixelRead;
 
 	/**
 	 * Write the file back, in whichever encoding the panel reads it in — the
@@ -148,17 +171,32 @@ export const useFilePanel = (
 			savingRef.current = true;
 			setIsSaving(true);
 			try {
-				const response = await runPixel<[unknown]>(
-					getFileSavePixel(
-						config.mode,
-						currentPathRef.current,
-						content,
-						base64,
-					),
-					targetInsightId,
-				);
-				if (response.errors.length > 0) {
-					throw new Error(response.errors[0]);
+				if (isMount) {
+					if (!mount) {
+						throw new Error(missingMountMessage);
+					}
+					const bytes = base64
+						? decodeBase64Asset(content)
+						: new TextEncoder().encode(content);
+					if (!bytes) {
+						throw new Error(
+							"The file's contents could not be read",
+						);
+					}
+					await mount.source.write(currentPathRef.current, bytes);
+				} else {
+					const response = await runPixel<[unknown]>(
+						getFileSavePixel(
+							config.mode,
+							currentPathRef.current,
+							content,
+							base64,
+						),
+						targetInsightId,
+					);
+					if (response.errors.length > 0) {
+						throw new Error(response.errors[0]);
+					}
 				}
 				toast.success(t("fileExplorer.toasts.saveSuccess"));
 				emit(FILE_PANEL_EVENTS.FILE_SAVED, {
@@ -180,7 +218,18 @@ export const useFilePanel = (
 				setIsSaving(false);
 			}
 		},
-		[base64, config, currentPathRef, emit, readOnly, t, targetInsightId],
+		[
+			base64,
+			config,
+			currentPathRef,
+			emit,
+			isMount,
+			missingMountMessage,
+			mount,
+			readOnly,
+			t,
+			targetInsightId,
+		],
 	);
 
 	const download = useCallback(async (): Promise<void> => {
@@ -188,6 +237,25 @@ export const useFilePanel = (
 		downloadingRef.current = true;
 		setIsDownloading(true);
 		try {
+			if (isMount) {
+				if (!mount) {
+					throw new Error(missingMountMessage);
+				}
+				const item = {
+					name: config.name,
+					path: currentPathRef.current,
+				};
+				if (mount.source.download) {
+					await mount.source.download([item]);
+				} else {
+					// a copy saved through the browser, for a source that has no
+					// download of its own
+					const bytes = await mount.source.read(item.path);
+					downloadBlob(new Blob([new Uint8Array(bytes)]), item.name);
+				}
+				toast.success(t("fileExplorer.toasts.downloadFileSuccess"));
+				return;
+			}
 			const response = await runPixel<[string]>(
 				getFileDownloadPixel(config.mode, currentPathRef.current),
 				targetInsightId,
@@ -213,7 +281,15 @@ export const useFilePanel = (
 			downloadingRef.current = false;
 			setIsDownloading(false);
 		}
-	}, [config, currentPathRef, t, targetInsightId]);
+	}, [
+		config,
+		currentPathRef,
+		isMount,
+		missingMountMessage,
+		mount,
+		t,
+		targetInsightId,
+	]);
 
 	const gate =
 		access.status === "loading" ? (

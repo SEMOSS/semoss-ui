@@ -1,3 +1,10 @@
+import {
+	type AddWorkspaceParams,
+	addWorkspacePixel,
+	type EditWorkspaceParams,
+	editWorkspacePixel,
+	readWorkspaceSaveWarning,
+} from "@semoss/sdk";
 import { PIXEL_HOOK_KIND } from "../agent.types";
 import type { AgentFormValues } from "./types";
 
@@ -25,20 +32,52 @@ const buildHooksPayload = (hooks: AgentFormValues["hooks"]) =>
 				: { kind: h.kind },
 		);
 
+/**
+ * The agent form's basics, as AddWorkspace takes them: its knowledge and
+ * toolboxes in one list, and its skills by id.
+ *
+ * @param data - The agent form's values.
+ * @returns What `addWorkspace` in `@semoss/sdk` takes.
+ */
+export const toAddWorkspaceParams = (
+	data: AgentFormValues,
+): AddWorkspaceParams => ({
+	name: data.name,
+	description: data.description,
+	systemPrompt: data.instructions,
+	mcp: [...data.knowledge, ...data.toolboxes],
+	skills: data.skills.map((s) => s.id),
+	prompts: data.prompts,
+});
+
 /** Returns a partial-save warning emitted by EditWorkspace, when present. */
-export const getWorkspaceSaveWarning = (
-	output: unknown,
-): string | undefined => {
-	if (
-		typeof output !== "object" ||
-		output === null ||
-		!("warning" in output)
-	) {
-		return undefined;
-	}
-	const warning = output.warning;
-	return typeof warning === "string" ? warning : undefined;
-};
+export const getWorkspaceSaveWarning = readWorkspaceSaveWarning;
+
+/**
+ * The agent form's whole state, as EditWorkspace takes it. Subagent rows with
+ * no agent and pixel hooks with no pixel yet are left out.
+ *
+ * @param data - The agent form's values.
+ * @returns What `editWorkspace` in `@semoss/sdk` takes.
+ */
+export const toEditWorkspaceParams = (
+	data: AgentFormValues,
+): EditWorkspaceParams => ({
+	...toAddWorkspaceParams(data),
+	modelId: data.modelId,
+	useDefaultAgentTools: data.useDefaultAgentTools,
+	disabledDefaultTools: data.disabledDefaultTools,
+	maxTurns: data.maxTurns,
+	maxReflections: data.maxReflections,
+	maxSeconds: data.maxSeconds,
+	maxSubagentDepth: data.maxSubagentDepth,
+	maxSubagentsPerRun: data.maxSubagentsPerRun,
+	maxSpawnsPerTurn: data.maxSpawnsPerTurn,
+	subagents: buildSubagentsPayload(data.subagents),
+	hooks: buildHooksPayload(data.hooks),
+	greeting: data.greeting,
+	greetingEnabled: data.greetingEnabled,
+});
 
 /**
  * Builds the EditWorkspace pixel call that mirrors the full agent form state.
@@ -49,25 +88,15 @@ export const getWorkspaceSaveWarning = (
 export const buildEditWorkspacePixel = (
 	workspaceId: string,
 	data: AgentFormValues,
-): string => {
-	const mcp = [...data.knowledge, ...data.toolboxes];
-	const skills = data.skills.map((s) => s.id);
-	const subagents = buildSubagentsPayload(data.subagents);
-	const hooks = buildHooksPayload(data.hooks);
-
-	return `EditWorkspace(workspaceId=["${workspaceId}"], name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.instructions)}, mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)}, modelId=${JSON.stringify(data.modelId)}, useDefaultAgentTools=${JSON.stringify(data.useDefaultAgentTools)}, disabledDefaultTools=${JSON.stringify(data.disabledDefaultTools)}, maxTurns=${JSON.stringify(data.maxTurns)}, maxReflections=${JSON.stringify(data.maxReflections)}, maxSeconds=${JSON.stringify(data.maxSeconds)}, maxSubagentDepth=${JSON.stringify(data.maxSubagentDepth)}, maxSubagentsPerRun=${JSON.stringify(data.maxSubagentsPerRun)}, maxSpawnsPerTurn=${JSON.stringify(data.maxSpawnsPerTurn)}, subagents=${JSON.stringify(subagents)}, hooks=${JSON.stringify(hooks)}, greeting=${JSON.stringify(data.greeting)}, greetingEnabled=${JSON.stringify(data.greetingEnabled)});`;
-};
+): string => editWorkspacePixel(workspaceId, toEditWorkspaceParams(data));
 
 /**
  * Builds the AddWorkspace pixel for a new agent. AddWorkspace only accepts
  * the basics; follow it with `buildEditWorkspacePixel` when
  * `agentNeedsFollowUpEdit` is true.
  */
-export const buildAddWorkspacePixel = (data: AgentFormValues): string => {
-	const mcp = [...data.knowledge, ...data.toolboxes];
-	const skills = data.skills.map((s) => s.id);
-	return `AddWorkspace(name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.instructions)}, mcp=${JSON.stringify(mcp)}, skills=${JSON.stringify(skills)}, prompts=${JSON.stringify(data.prompts)});`;
-};
+export const buildAddWorkspacePixel = (data: AgentFormValues): string =>
+	addWorkspacePixel(toAddWorkspaceParams(data));
 
 /**
  * Whether a new agent sets anything AddWorkspace does not accept (model,

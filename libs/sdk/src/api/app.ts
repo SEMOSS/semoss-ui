@@ -1,7 +1,8 @@
 import { Env } from "../env";
-import { post } from "../utility";
+import { getText, post } from "../utility";
 import { runPixel } from "./base";
 import { type PixelMessages, readPixelMessages } from "./pixel-messages";
+import { throwOnPixelErrors } from "./playground-room";
 
 /**
  * Upload file(s) to an app
@@ -66,4 +67,59 @@ export const reloadApp = async (
 	}
 
 	return readPixelMessages(response.pixelReturn[0]);
+};
+
+/** What {@link getProjectInfo} reads. Field names are the backend's. */
+export interface ProjectInfo {
+	/** What the app is built with; empty or missing for a plain project. */
+	project_type?: "BLOCKS" | "CODE" | "INSIGHT" | "";
+	[key: string]: unknown;
+}
+
+/**
+ * Read an app's details (`ProjectInfo`), such as what it is built with.
+ *
+ * @param insightId - The insight to run in.
+ * @param appId - The app.
+ * @returns Its details.
+ * @throws When the backend reports an error, as when the user cannot see it.
+ */
+export const getProjectInfo = async (
+	insightId: string,
+	appId: string,
+): Promise<ProjectInfo> => {
+	const { pixelReturn } = throwOnPixelErrors(
+		await runPixel<[ProjectInfo]>(
+			`ProjectInfo(project=["${appId}"]);`,
+			insightId,
+		),
+	);
+	return pixelReturn[0]?.output ?? {};
+};
+
+/** What the backend serves at an app's portal when it has none. */
+const UNPUBLISHED_PORTAL_TEXT =
+	"Publish is not enabled on this project or there was an error publishing this project";
+
+/**
+ * Whether an app has a published portal, the page at
+ * `public_home/<app>/portals/`. The backend answers 200 either way, so the
+ * page's text tells them apart.
+ *
+ * @param appId - The app.
+ * @returns True when the portal is there; false when it is not, or cannot be read.
+ */
+export const isPortalPublished = async (appId: string): Promise<boolean> => {
+	try {
+		const { response, data } = await getText(
+			`${Env.MODULE}/public_home/${appId}/portals/`,
+		);
+		return (
+			response.status === 200 &&
+			Boolean(data) &&
+			data !== UNPUBLISHED_PORTAL_TEXT
+		);
+	} catch {
+		return false;
+	}
 };

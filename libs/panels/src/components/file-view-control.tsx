@@ -14,12 +14,14 @@ import {
 	WorkbenchChromeButton,
 } from "@semoss/workbench";
 import { MCP } from "../constants/file-panel.constants";
+import { useFileExplorerHost } from "../contexts/file-explorer-host.context";
 import type { FilePanelParams } from "../hooks/use-file-panel";
 import type { FileViewControls } from "../types/file-view.types";
 import { MetadataHelpDialog } from "./mcp";
 
 /**
- * Refresh, save, and an optional view switch, for every file panel.
+ * Refresh, save, an optional view switch, and a host's own buttons, for every
+ * file panel.
  *
  * One control for all of them: a view publishes what it can do and this draws
  * exactly that, so the image viewer gets a refresh, the code editor gets a
@@ -34,8 +36,16 @@ export const FileViewControl: FC<WorkbenchPanelProps> = ({ id }) => {
 		FilePanelParams,
 		FileViewControls
 	>(id);
+	const host = useFileExplorerHost();
 
 	if (!value) return null;
+
+	const hostActions =
+		host?.fileActions?.({
+			mode: config.mode,
+			path: config.path,
+			name: config.name,
+		}) ?? [];
 
 	const showMetadataHelp =
 		config.mode?.type !== "INSIGHT" &&
@@ -82,6 +92,15 @@ export const FileViewControl: FC<WorkbenchPanelProps> = ({ id }) => {
 					onClick={value.save}
 				/>
 			) : null}
+			{hostActions.map((hostAction) => (
+				<WorkbenchChromeButton
+					key={hostAction.name}
+					icon={hostAction.icon}
+					label={hostAction.name}
+					disabled={value.isBusy}
+					onClick={() => void hostAction.action()}
+				/>
+			))}
 		</>
 	);
 };

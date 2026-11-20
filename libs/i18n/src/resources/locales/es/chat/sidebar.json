@@ -1,0 +1,155 @@
+{
+	"search": "Buscar",
+	"takeTour": "Tomar un Tour",
+	"nav": {
+		"newChat": {
+			"label": "Nuevo",
+			"tooltip": "Nuevo Chat - Inicia una nueva conversación en cualquier momento.",
+			"ariaLabel": "Nuevo chat"
+		},
+		"agents": {
+			"label": "Agentes",
+			"tooltip": "Agentes"
+		},
+		"agentsWorkspaces": {
+			"tooltip": "Agentes/Espacios de trabajo - Accede a tus espacios de trabajo o crea nuevos agentes de IA."
+		},
+		"knowledgeLibrary": {
+			"tooltip": "Biblioteca de Conocimiento - Explora, crea, comparte y administra tus bibliotecas de documentos."
+		},
+		"toolbox": {
+			"tooltip": "Caja de Herramientas - Conoce las capacidades extendidas de Elsa con potentes herramientas adicionales."
+		},
+		"promptLibrary": {
+			"tooltip": "Biblioteca de Prompts - Explora, crea y utiliza prompts guardados."
+		},
+		"goHome": "Ir al inicio",
+		"help": "Ayuda"
+	},
+	"buckets": {
+		"favorites": "Favoritos",
+		"today": "Hoy",
+		"yesterday": "Ayer",
+		"fewDaysAgo": "Hace unos días",
+		"lastWeek": "Última semana",
+		"thisMonth": "Este mes",
+		"lastMonth": "Último mes",
+		"older": "Más antiguo"
+	},
+	"messages": {
+		"errorLoadingRooms": "Error al cargar las salas",
+		"noRoomsFound": "No se encontraron salas",
+		"untitled": "Sin título"
+	},
+	"actions": {
+		"openNavigation": "Abrir navegación",
+		"openSidebar": "Abrir barra lateral",
+		"closeSidebar": "Cerrar barra lateral",
+		"favorite": "Favorito",
+		"unfavorite": "Quitar de favoritos",
+		"rename": "Renombrar",
+		"delete": "Eliminar",
+		"openInline": "Abrir en línea",
+		"minimize": "Minimizar",
+		"maximize": "Maximizar",
+		"close": "Cerrar",
+		"roomActions": "Acciones del chat"
+	},
+	"toasts": {
+		"failedToPin": "Error al fijar la sala",
+		"failedToUnpin": "Error al desfijar la sala",
+		"roomNameEmpty": "El nombre de la sala no puede estar vacío",
+		"roomRenamedSuccess": "Sala renombrada exitosamente",
+		"failedToRename": "Error al renombrar la sala",
+		"roomDeletedSuccess": "Sala eliminada exitosamente",
+		"failedToDelete": "No se pudo eliminar la sala"
+	},
+	"userMenu": {
+		"settings": "Configuración",
+		"language": "Idioma"
+	},
+	"settings": {
+		"title": "Configuración",
+		"description": "Tus preferencias y las aplicaciones que puede usar el asistente.",
+		"sections": {
+			"general": "General",
+			"connectors": "Conectores"
+		},
+		"general": {
+			"appearance": "Apariencia",
+			"theme": "Tema",
+			"themeDescription": "Los temas oscuro y del sistema están en beta.",
+			"themes": {
+				"system": "Sistema",
+				"light": "Claro",
+				"dark": "Oscuro"
+			},
+			"language": "Idioma",
+			"languageDescription": "El idioma en el que se muestra la aplicación.",
+			"version": "Versión {{version}}",
+			"newChat": {
+				"title": "Chat",
+				"default": "Predeterminado",
+				"model": "Modelo",
+				"modelDescription": "El modelo que usa un chat nuevo.",
+				"unavailableModel": "Modelo no disponible",
+				"mode": "Modo",
+				"modeDescription": "Si un chat nuevo empieza como chat o con un agente.",
+				"modes": {
+					"chat": "Chat",
+					"agent": "Agente"
+				},
+				"agent": "Agente",
+				"agentDescription": "El agente que ejecuta un chat nuevo en modo agente.",
+				"saveError": "No se pudo guardar tu preferencia: {{message}}"
+			}
+		}
+	},
+	"download": {
+		"title": "Descargar conversación",
+		"description": "Elige un formato para la descarga.",
+		"word": "Documento de Word",
+		"pdf": "Documento PDF",
+		"success": "Conversación descargada como {{format}}",
+		"failed": "No se pudo descargar la conversación",
+		"noContent": "No hay contenido de la conversación para descargar",
+		"noResponse": "No se recibió respuesta del servidor",
+		"generateFailed": "No se pudo generar el archivo {{format}}",
+		"generateFailedWithType": "No se pudo generar el archivo {{format}}. Tipo de operación: {{operationType}}"
+	},
+	"chats": "Chats",
+	"view": {
+		"button": "Ordenar y agrupar chats",
+		"customized": "orden personalizado",
+		"sortBy": "Ordenar por",
+		"groupBy": "Agrupar por",
+		"sort": {
+			"recent": "Más recientes",
+			"oldest": "Más antiguos",
+			"nameAsc": "Nombre (A–Z)",
+			"nameDesc": "Nombre (Z–A)"
+		},
+		"group": {
+			"date": "Fecha",
+			"agent": "Agente"
+		}
+	},
+	"groups": {
+		"all": "Todos los chats",
+		"noAgent": "Sin agente",
+		"unnamedAgent": "Agente sin título",
+		"openAgent": "Abrir {{name}} en una pestaña nueva"
+	},
+	"searchChats": {
+		"label": "Buscar chats",
+		"title": "Buscar chats",
+		"description": "Encuentra un chat por su nombre o por lo que se dijo en él.",
+		"placeholder": "Buscar chats…",
+		"loading": "Buscando…",
+		"empty": "Ningún chat coincide con «{{query}}»",
+		"recent": "Recientes",
+		"allAgents": "Todos los agentes",
+		"results": "Resultados",
+		"matchedMessage": "Coincide en mensajes"
+	}
+}

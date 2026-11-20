@@ -94,18 +94,24 @@ export const runMcpTool = async (
  *
  * @param params.id - The project or engine that holds the tools.
  * @param params.type - Its catalog type, such as `PROJECT` or `FUNCTION`.
+ * @param insightId - Insight to run the pixel against; without one the
+ * backend makes one.
  * @returns The MCP document as the backend returns it, with its `tools`.
  * @throws Error when the backend cannot list the tools.
  */
-export const getMcpTools = async (params: {
-	id: string;
-	type: string;
-}): Promise<unknown> => {
+export const getMcpTools = async (
+	params: {
+		id: string;
+		type: string;
+	},
+	insightId?: string,
+): Promise<unknown> => {
 	const { id, type } = params;
 	const owner = type === "PROJECT" ? "project" : "engine";
 
 	const response = await runPixel<[unknown]>(
 		`GetMCPTools(${owner}=${JSON.stringify([id])});`,
+		insightId,
 	);
 
 	if (response.errors.length > 0) {
@@ -113,4 +119,37 @@ export const getMcpTools = async (params: {
 	}
 
 	return response.pixelReturn[0]?.output;
+};
+
+/**
+ * Read a browser automation script a project recorded (`GetAllSteps`), for
+ * the browser extension to play. The script is kept by the user's session,
+ * which `Session()` names.
+ *
+ * @param insightId - The insight to run in.
+ * @param params.project - The project that recorded it.
+ * @param params.fileName - The script's file.
+ * @returns The script, as the backend returns it.
+ * @throws When the backend reports an error.
+ */
+export const getBrowserAutomationScript = async (
+	insightId: string,
+	params: { project: string; fileName: string },
+): Promise<unknown> => {
+	const { project, fileName } = params;
+
+	const session = await runPixel<[string]>("Session();", insightId);
+	if (session.errors.length > 0) {
+		throw new Error(session.errors.join(""));
+	}
+	const sessionId = session.pixelReturn[0]?.output;
+
+	const script = await runPixel<[unknown]>(
+		`GetAllSteps(project=["${project}"], sessionId=["${sessionId}"], fileName=["${fileName}"]);`,
+		insightId,
+	);
+	if (script.errors.length > 0) {
+		throw new Error(script.errors.join(""));
+	}
+	return script.pixelReturn[0]?.output;
 };

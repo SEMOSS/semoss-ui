@@ -1,0 +1,117 @@
+{
+	"status": {
+		"failed": "Failed",
+		"cancelled": "Cancelled",
+		"completed": "Completed",
+		"queued": "In queue to auto-execute",
+		"loadingTool": "Loading tool…",
+		"waitingForArguments": "Waiting for arguments…",
+		"running": "Running",
+		"waitingForInput": "Waiting for input"
+	},
+	"actions": {
+		"cancel": "Cancel",
+		"expand": "Expand",
+		"collapse": "Collapse",
+		"openInSidebar": "Open in Sidebar",
+		"closeInSidebar": "Close Sidebar",
+		"openInline": "Open In-Line"
+	},
+	"tabs": {
+		"output": "Output",
+		"inputs": "Inputs",
+		"description": "Description"
+	},
+	"group": {
+		"labelClosed": "{{toolName}} + {{count}} more",
+		"labelOpen": "Executed Tools ({{count}})",
+		"labelStreaming_one": "Loading {{count}} tool…",
+		"labelStreaming_other": "Loading {{count}} tools…",
+		"labelPartial_one": "{{count}} tool completed, {{loadingCount}} loading…",
+		"labelPartial_other": "{{count}} tools completed, {{loadingCount}} loading…",
+		"summaryCompleted": "{{count}} completed",
+		"summaryLoading": "{{count}} loading",
+		"summaryError": "{{count}} failed",
+		"summaryCancelled": "{{count}} cancelled"
+	},
+	"form": {
+		"result": "Result",
+		"parameters": "Parameters",
+		"schemaLoadFailed": "Failed to load tool schema",
+		"schemaLoadFailedDescription": "Unable to retrieve tool configuration. Please try again later.",
+		"schemaLoading": "Loading tool schema...",
+		"noParameters": "No parameters required",
+		"showOptionalFields": "Show Optional Fields ({{count}})",
+		"hideOptionalFields": "Hide Optional Fields ({{count}})",
+		"execute": "Execute Tool",
+		"executing": "Executing...",
+		"noOutput": "No output yet.",
+		"noDescription": "No description provided.",
+		"outputDialogTitle": "{{title}} — Output"
+	},
+	"playwright": {
+		"details": "Playwright Script Details",
+		"projectId": "Project ID",
+		"recordedFile": "Recorded File"
+	},
+	"subagent": {
+		"title": "Subagent",
+		"notFound": "Subagent not found",
+		"noResult": "No response yet"
+	},
+	"extension": {
+		"required": "Browser Extension Required",
+		"notResponding": "The browser extension is not responding. To execute Playwright scripts, please ensure the SEMOSS Chrome Extension is installed and the side panel is open.",
+		"stepsTitle": "Steps to open the extension:",
+		"step1": "Look for the SEMOSS extension icon in your browser toolbar (puzzle piece icon)",
+		"step2": "Click the extension icon to open the side panel",
+		"step3": "Wait for the panel to load completely",
+		"step4": "Click \"Retry\" below to continue",
+		"cancel": "Cancel",
+		"retry": "Retry",
+		"checking": "Checking..."
+	},
+	"activity": {
+		"steps": "Tool activity ({{count}})",
+		"needsInput": "Your input is needed",
+		"cancelError": "Unable to cancel this tool.",
+		"actions": "Tool actions"
+	},
+	"inspector": {
+		"input": "Input",
+		"info": "Info",
+		"tabsLabel": "Tool details",
+		"find": "Find",
+		"copy": "Copy",
+		"copied": "Copied to clipboard",
+		"copyFailed": "Could not copy to clipboard",
+		"wrap": "Wrap lines",
+		"foldAll": "Collapse all",
+		"unfoldAll": "Expand all",
+		"text": "Text",
+		"expandedDescription": "Read-only payload. Search, copy, or collapse sections to explore the data.",
+		"toolName": "Tool name",
+		"callId": "Call ID",
+		"source": "Source",
+		"execution": "Execution mode",
+		"inputSchema": "Input schema",
+		"metadata": "Metadata",
+		"emptyOutput": "This tool returned no output.",
+		"runningOutput": "The tool is running. Output will appear here.",
+		"inputView": "Input view",
+		"pretty": "Pretty",
+		"raw": "Raw",
+		"emptyString": "Empty string",
+		"itemCount": "Items: {{total}}",
+		"fieldCount": "Fields: {{total}}",
+		"showMore": "Show more ({{remaining}} remaining)",
+		"showLess": "Show less",
+		"showFullValue": "Show full value"
+	},
+	"view": {
+		"frameTitle": "Tool",
+		"noTool": "No Tool",
+		"submitAnswersError": "Unable to submit these answers.",
+		"invalidInputRequest": "The assistant sent an invalid input request and it cannot be displayed."
+	}
+}

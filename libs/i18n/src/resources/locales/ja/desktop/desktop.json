@@ -1,0 +1,65 @@
+{
+	"connect": {
+		"title": "SEMOSS に接続",
+		"description": "SEMOSS サーバーのアドレスをモジュールパスを含めて入力してください。後で [ファイル] > [サーバーを変更] から変更できます。",
+		"urlLabel": "サーバーのアドレス",
+		"urlHint": "https://semoss.example.com/Monolith のような完全なアドレス。",
+		"submit": "接続",
+		"checking": "サーバーを確認しています…",
+		"cancel": "キャンセル",
+		"current": "{{server}} に接続中",
+		"titleSaved": "サーバー",
+		"descriptionSaved": "保存済みのサーバーを切り替えるか、新しいサーバーを追加します。サーバーごとにサインイン状態が保持されます。",
+		"addTitle": "サーバーを追加"
+	},
+	"nav": {
+		"newChat": "新しいチャット"
+	},
+	"account": {
+		"menu": "アカウント",
+		"changeServer": "サーバーを変更",
+		"signOut": "サインアウト"
+	},
+	"unreachable": {
+		"title": "サーバーに接続できません",
+		"description": "{{server}} から応答がありません。再試行するか、別のサーバーに接続してください。",
+		"descriptionNoServer": "サーバーから応答がありません。再試行するか、別のサーバーに接続してください。",
+		"changeServer": "別のサーバーを使用"
+	},
+	"servers": {
+		"listLabel": "保存済みのサーバー",
+		"current": "使用中",
+		"switch": "有効化",
+		"switchLabel": "{{server}} を有効化",
+		"removeLabel": "{{server}} を削除",
+		"removeTitle": "このサーバーを削除しますか？",
+		"removeDescription": "{{server}} からサインアウトし、このアプリがこのコンピューターに保存したデータを削除します。チャットはサーバーに残ります。",
+		"removeConfirm": "サーバーを削除",
+		"failed": "サーバーを切り替えられませんでした: {{message}}"
+	},
+	"localFolders": {
+		"desktop": "デスクトップ",
+		"attach": "フォルダーを添付",
+		"attachDescription": "このコンピューターのフォルダーを添付",
+		"empty": "このコンピューターのフォルダーを添付すると、ここでそのファイルを扱えます。変更はディスクに保存されます。",
+		"folderActions": "{{name}} の操作",
+		"reveal": "{{fileManager}} で表示",
+		"openWithApp": "既定のアプリで開く",
+		"detach": "添付を解除",
+		"detached": "{{name}} の添付を解除しました。ファイルはコンピューターに残っています。",
+		"attachFailed": "フォルダーを添付できませんでした。{{message}}",
+		"detachFailed": "フォルダーの添付を解除できませんでした。{{message}}",
+		"openFailed": "うまくいきませんでした。{{message}}",
+		"notHere": "このフォルダーはこのコンピューターでは添付されていません。",
+		"titles": {
+			"list": "デスクトップのフォルダーを一覧",
+			"read": "デスクトップのファイルを読む",
+			"search": "デスクトップを検索",
+			"write": "デスクトップのファイルを書く",
+			"edit": "デスクトップのファイルを編集",
+			"create_directory": "デスクトップにフォルダーを作成",
+			"move": "デスクトップで移動・名前変更",
+			"delete": "デスクトップから削除"
+		}
+	}
+}

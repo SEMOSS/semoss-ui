@@ -9,6 +9,10 @@ if (!container) {
 }
 const root = createRoot(container);
 
+/**
+ * Wait for embed sign in and the active language, start the SDK's session,
+ * then render the app.
+ */
 const mount = async () => {
 	// Wait for the active language's translations before the first render.
 	await Promise.all([waitForEmbedAuth(), i18nReady]);

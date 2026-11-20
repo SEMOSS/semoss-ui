@@ -64,7 +64,7 @@ All functions in this table are exported from `@semoss/sdk`.
 | `getRoomOptions(insightId, roomId)` | `Promise<RoomOptions>` |
 | `getRoomForInsight(insightId)` | `Promise<RoomRecord \| null>` |
 | `setRoomForInsight(insightId, roomId)` | `Promise<void>`; throws on returned pixel errors |
-| `updateRoomOptions(insightId, roomId, roomOptions)` | `Promise<void>`; serializes a `RoomOptions[]`, without merging or returning server options |
+| `updateRoomOptions(insightId, roomId, roomOptions)` | `Promise<void>`; serializes a `RoomOptions[]` (or a chat's own options objects), without merging or returning server options |
 
 The raw update wrapper does not establish server-side replace/merge semantics.
 Fetch the current options before assembling an update when preservation matters.
@@ -295,7 +295,7 @@ with no statement; submit that failure with `mcpToolStatus: "error"`. Use
 `decideAgentRunAction` instead for a paused agent run's tool.
 `makeUserPixelMcp({ filePath, generator, tools })` writes a generator's tools
 into a pixel MCP file in the user's own assets.
-`getMcpTools({ id, type })` calls GetMCPTools and returns the MCP document as
+`getMcpTools({ id, type }, insightId?)` calls GetMCPTools and returns the MCP document as
 the backend returns it, with its `tools` (each tool's definition and `_meta`).
 A `PROJECT` is read by project and every other catalog type by engine. It
 rejects when the pixel fails.
@@ -349,7 +349,8 @@ validation to equal `"SUBMITTED"`.
 optional fields are `inputMessageId`, `finalOutputMessageId`, `finalText`,
 and `errorMessage`. Status values are `SUBMITTED`, `RUNNING`,
 `INPUT_REQUIRED`, `COMPLETED`, `FAILED`, and `CANCELLED`. `INPUT_REQUIRED` is a
-pause, not a terminal success. Do not infer durable success from streamed text.
+pause, not a terminal success; `isTerminalRunStatus(status)` is true for the other
+three. Do not infer durable success from streamed text.
 `getAgentRun` and `stopAgentRun` normalize missing `pendingActions` to `[]`;
 `pollAgentRun` returns the endpoint payload without that normalization.
 
@@ -452,7 +453,9 @@ owning run, not a room ID. `toolArgs`, `editedArgs`, `toolMeta`, `toolCallId`,
     omitted or JSON-equal parameters to `approve`, changed parameters to `edit`.
 - `await agent.decide(action, "reject")` rejects that action.
 - `await agent.decide(action, "respond", answers)` JSON-stringifies the answer
-    object as `mcpToolResult`, for tools such as RequestUserInput.
+    object as `mcpToolResult`, for tools such as RequestUserInput. The backend takes
+    `respond` for any paused tool, so a client can run an `ask` tool itself and resume
+    the run with its result; `@semoss/chat` does this for the desktop folder tools.
 - Raw `decideAgentRunAction({ actionId, decision, paramValues?, mcpToolResult? }, insightId?)`
     returns `Promise<string>` and calls RunMCPTool. Raw decisions are `approve`,
     `edit`, `reject`, or `respond`, not `submit`. Supply arguments for `edit` and a

@@ -78,6 +78,7 @@
 		"moreActionsFor": "مزيد من الإجراءات لـ {{name}}",
 		"toggleMenu": "تبديل القائمة",
 		"resizeDateColumn": "تغيير حجم عمود التاريخ",
+		"resizeSections": "تغيير حجم {{above}} و{{below}}",
 		"failedToLoadFiles": "فشل تحميل الملفات",
 		"pdfNotSupported": "متصفحك لا يدعم عرض ملفات PDF.",
 		"binaryView": {

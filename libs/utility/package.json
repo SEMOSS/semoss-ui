@@ -23,6 +23,7 @@
 		"./identifier": "./src/identifier.ts",
 		"./object": "./src/object.ts",
 		"./store": "./src/store.ts",
+		"./react/use-latest-ref": "./src/react/use-latest-ref.ts",
 		"./react/use-store-selector": "./src/react/use-store-selector.ts",
 		"./text": "./src/text.ts"
 	},

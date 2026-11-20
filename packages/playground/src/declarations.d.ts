@@ -1,3 +1,4 @@
+// Image imports resolve to their bundled URL (Vite asset handling).
 declare module "*.png" {
 	const value: string;
 	export = value;

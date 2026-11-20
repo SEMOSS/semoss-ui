@@ -35,7 +35,7 @@ const baseConfig = createViteConfig({
 		setupFiles: "./vitest.setup.ts",
 		coverage: {
 			reportsDirectory: "./coverage/packages/playground",
-			include: ["**/src/components"],
+			include: ["**/src/features"],
 		},
 		deps: {
 			optimizer: {

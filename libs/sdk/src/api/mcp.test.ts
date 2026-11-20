@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { runPixel } from "./base";
-import { getMcpTools, makeUserPixelMcp, runMcpTool } from "./mcp";
+import {
+	getBrowserAutomationScript,
+	getMcpTools,
+	makeUserPixelMcp,
+	runMcpTool,
+} from "./mcp";
 
 vi.mock("./base", () => ({
 	runPixel: vi.fn(),
@@ -120,11 +125,24 @@ describe("getMcpTools", () => {
 		).resolves.toEqual(tools);
 		expect(mockRunPixel).toHaveBeenLastCalledWith(
 			'GetMCPTools(project=["app-1"]);',
+			undefined,
 		);
 
 		await getMcpTools({ id: "fn-1", type: "FUNCTION" });
 		expect(mockRunPixel).toHaveBeenLastCalledWith(
 			'GetMCPTools(engine=["fn-1"]);',
+			undefined,
+		);
+	});
+
+	it("runs in the insight it is given", async () => {
+		mockRunPixel.mockResolvedValue(answer([{ output: { tools: [] } }]));
+
+		await getMcpTools({ id: "app-1", type: "PROJECT" }, "insight-1");
+
+		expect(mockRunPixel).toHaveBeenLastCalledWith(
+			'GetMCPTools(project=["app-1"]);',
+			"insight-1",
 		);
 	});
 
@@ -134,5 +152,39 @@ describe("getMcpTools", () => {
 		await expect(
 			getMcpTools({ id: "app-1", type: "PROJECT" }),
 		).rejects.toThrow("No access");
+	});
+});
+
+describe("getBrowserAutomationScript", () => {
+	it("reads the session's id, then the script recorded in it", async () => {
+		mockRunPixel
+			.mockResolvedValueOnce(answer([{ output: "session-1" }]))
+			.mockResolvedValueOnce(answer([{ output: { steps: [] } }]));
+
+		await expect(
+			getBrowserAutomationScript("insight-1", {
+				project: "app-1",
+				fileName: "login.json",
+			}),
+		).resolves.toEqual({ steps: [] });
+		expect(mockRunPixel.mock.calls).toEqual([
+			["Session();", "insight-1"],
+			[
+				'GetAllSteps(project=["app-1"], sessionId=["session-1"], fileName=["login.json"]);',
+				"insight-1",
+			],
+		]);
+	});
+
+	it("throws the backend's errors, without reading a script for no session", async () => {
+		mockRunPixel.mockResolvedValueOnce(answer([], ["No session"]));
+
+		await expect(
+			getBrowserAutomationScript("insight-1", {
+				project: "app-1",
+				fileName: "login.json",
+			}),
+		).rejects.toThrow("No session");
+		expect(mockRunPixel).toHaveBeenCalledTimes(1);
 	});
 });
