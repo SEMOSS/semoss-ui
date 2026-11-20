@@ -4,6 +4,7 @@ export const AccessPermissionEnum = {
 	READ_ONLY: 3,
 } as const;
 
+export * from "./catalog-types.constants";
 export * from "./engine-images.constants";
 export * from "./login-provider-icons.constants";
 export * from "./login-type-names.constants";

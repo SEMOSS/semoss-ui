@@ -54,7 +54,7 @@ application features; this inventory does not require moving existing features.
 | `assets/` | Images and static files |
 | `components/` | Components grouped by feature area (`project/`, `engine/`, `settings/`, …) |
 | `contexts/` | React contexts (`<name>.context.tsx`) |
-| `features/` | Application features, one folder per concern (for example `team-list/`, `team-type/`, `team-members/`, `team-resource-access/`, `group-managers/`, `bulk-access-management/`, `usage-limit-path/`, `platform-default-limit/`, `team-usage-limit/`, `model-usage-limits/`, `engine-app-permissions/`, `my-model-usage/`, `my-access-request/`) |
+| `features/` | Application features, one folder per concern (for example `team-list/`, `team-type/`, `team-members/`, `team-resource-access/`, `group-managers/`, `bulk-access-management/`, `usage-limit-path/`, `platform-default-limit/`, `team-usage-limit/`, `model-usage-limits/`, `engine-app-permissions/`, `my-model-usage/`, `my-access-request/`, `catalog/dependencies/`) |
 | `hooks/` | React hooks (`use-<name>.ts`) |
 | `pages/` | Routing tree (see below) |
 | `stores/` | State owners (`assistant/`, `designer/`, `page/`, `session/`, `workbench/`, `workspace/`) |
@@ -647,6 +647,107 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   shared `EngineSelect` over the models the editor reads once (its `engines`), each with its
   logo, name and id. The role decides the models offered: only `TYPESAFE` models decide, and they
   never answer, classify by chat or embed.
+
+### Catalog Dependencies
+
+`features/catalog/dependencies/` reads and edits the engines and projects an engine or project
+depends on (`GetCatalogDependencies` / `SetCatalogDependencies`). `GetCatalogDependencies`
+returns `{ dependencies, dependencyIds, links }`: `dependencies` has one node per engine or project
+(`CatalogDependency`, whose `description` is the item's own catalog description), and `links` one
+entry per link and role (`CatalogDependencyLink`: `parent_id`, `catalog_id`, `is_automatic`,
+`role`, `dependency_name`, `dependency_description`). `useCatalogDependencies` joins the owner's
+own links (`parent_id` is the owner) with their nodes into `CatalogDependencyRow`s:
+
+- **Automatic rows** are recorded by the backend from the owner's configuration when the owner is
+  saved: an agent's model, subagents, skills, toolboxes and knowledge; a model's guardrails; a
+  guardrail's judge model or topic vector; a vector database's embedder; a function's storage; a
+  router's routes, classifier, embeddings and fallback; an automation's nodes; a blocks app's
+  engines; code references. Their `role` names which (`CatalogDependencyRole` in
+  `@semoss/shared`), their `dependency_description` is a sentence the backend wrote, and they have
+  no `dependency_name`. They are shown but never edited or removed here: each shows its role badge
+  (`DEPENDENCY_ROLE_LABELS` in `catalog-dependency.ts`) and a note that it comes from the
+  configuration. Change the configuration to change them.
+- **Manual rows** have the role `MANUAL` and are the ones a user added, each with an optional
+  `dependency_name` (unique per owner, ignoring case; checked inline on save and by the backend)
+  and `dependency_description`. The `dependency_name` is the key a CODE app reads its id by:
+  `LoadApp` returns the named manual links, and the SDK puts them in `Env.DEPENDENCIES`. Links
+  saved before automatic dependencies existed come back as
+  manual, and a response without `links` is read as manual rows for the direct nodes.
+- **A save sends only the manual rows.** `SetCatalogDependencies` replaces the manual links and
+  keeps the automatic ones, so the edit dialog, the Engines panel and its Manage dialog build their
+  payload from manual rows only, with `toCatalogDependencyPayload` (`{ id, type, name?,
+  description? }`).
+- **One target can be two rows**, in two roles (an agent's model that is also a manual dependency):
+  two links, one node. Key rows by id and role (`getDependencyKey`), never by id alone.
+- `useCatalogDependencies` returns the rows as `dependencies` and splits them into
+  `manualDependencies` and `automaticDependencies`; `allDependencies` stays the graph's nodes. A
+  refresh keeps the rows already read until the new ones arrive, so the project layout stays
+  mounted. After a save that changes the configuration, read the dependencies again: the agent
+  editor calls the project context's `refreshDependencies`. An engine's Dependencies tab is never
+  mounted beside its Settings, and reads afresh each time it opens.
+- `GetCatalogDependents` (what depends on an item) exists on the backend; nothing in the client
+  reads it yet. The Dependency Map works out what depends on an item from the whole network.
+
+### Dependency Map
+
+`features/dependency-map/` is the admin Dependency Map at `settings/dependencies`
+(`pages/settings/dependency-map.page.tsx`, admin mode only): every engine and project and every
+link, on a React Flow canvas.
+
+- **The backend lays it out.** `AdminGetCatalogDependencyGraph` (`api/dependency-map.ts`) returns
+  every node with its position (a GraphStream force layout per connected component, the metamodel
+  page's layout, packed together; items with no links in a block of their own), every link
+  (`source` has the dependency, `target` is what it depends on; `role`, `isAutomatic`, `inCycle`),
+  and the stats. Isolated items are always included. With `catalogId`, `direction` and `depth` it
+  returns only the network around one item, laid out the same way (Trace's Only show traced). The
+  client adds no layout library and never moves a node.
+- **`dependency-graph.ts` is the pure model**: the index (by id, outgoing and incoming links,
+  each node's family), `traceGraph` (what an item uses or what uses it, each way on its own so
+  siblings are not pulled in), ranked `searchNodes`, `getMapEmphasis` (what the filters, lens and
+  search leave out is dimmed, never removed, so nothing moves), `findAccessGaps`, `getHubs` and
+  `summarizeImpact`. Types are drawn in seven families (`DEPENDENCY_FAMILIES`) using only the
+  existing tokens: `chart-1`…`chart-5`, `assistant` for agents and skills, and
+  `muted-foreground` for apps; databases and storage share a colour. The type's icon and label
+  always name the type too. The map adds no tokens to `@semoss/ui`.
+- **The view is in the address** (`use-dependency-map-view.ts`: `q`, `selected`, `link`, `lens`,
+  `focus`, `dir`, `depth`, `scope`, `user`, `gaps`, `types`, `links`), so a view can be shared. A
+  link with only `focus` opens a trace on that item. The map is reached only from its Settings
+  tile: nothing outside Settings links to it, since it is admin only.
+- **One toolbar, icons with tooltips** (`dependency-map-toolbar.tsx`): the search (one
+  `InputGroup` with its count, previous, next, the list of matches and clear), the View
+  (All, Trace, User Access; the UI says "View", the address keeps `lens`), Filters (a popover
+  with the types and the links), the counts, Refresh, Expand and Sync. Everything else is on
+  the canvas, so it keeps the page.
+- **Views:** Trace (what an item uses, what uses it, or both, to a depth, with the impact by
+  type; in Trace with nothing traced yet, the item clicked is traced) and User Access
+  (`AdminGetUserCatalogAccess`: what one person can use, directly, through a team or because it
+  is public, as Effective Permissions counts it; a toggle marks every link they can't follow).
+  Their controls are the view bar on the canvas's top left (`dependency-map-view-bar.tsx`).
+  There is no Health view: deleted items show their badge, and links in a cycle the warning
+  colour.
+- **One legend** (`dependency-map-legend.tsx`), folded behind an icon on the canvas's top right:
+  the types with their counts (struck through when filtered out) and the link styles.
+- **Large networks:** `onlyRenderVisibleElements`; nodes and edges are memoized; below zoom 0.45
+  a node drops its image, and below 0.2 only highlighted links are drawn. Nodes and edges are
+  rebuilt only when what they draw changes. React Flow measures the nodes itself (no
+  `onNodesChange`); a click, or Enter on a focused item or link, selects it.
+- **Nodes** show only the type's colour, the item's image (a project's, or an engine's with its
+  logo as the fallback), name and type, with at most one badge: Deleted, or the user's access in
+  User Access. Neither items nor links have a hover card: clicking either opens its details in
+  the drawer. A hovered or selected link is drawn in the primary colour; manual links are
+  dashed.
+- **Clicking an item or a link opens the drawer** (`dependency-map-drawer.tsx`), an `aside`
+  beside the canvas inside the map (on a phone, in the canvas's place): Overview (description,
+  facts, the user's access and gaps, how far a change reaches both ways), Uses, Used by, and
+  Security, links to the item's Access, Effective Permissions, Apps (engines), Requests, Audit
+  Trail and Visibility tabs in Resource Governance, each in a new tab. Close or Escape clears the
+  selection.
+- **Expand** shows the whole map, toolbar and drawer included, in a full-window `Dialog`, and
+  asks the browser for full screen on the document, so the drawer and every popover, which
+  portal to the body, still show. Escape closes the drawer first, then the expanded view;
+  leaving the browser's full screen collapses it. The canvas keeps its viewport across the move.
+- **Sync** (`dependency-sync-dialog.tsx`) runs `AdminBackfillCatalogDependencies`, shows how
+  many of each kind it read and the ones that failed, and reads the map again.
 
 ### Catalog name in the import forms
 

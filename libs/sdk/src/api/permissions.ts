@@ -352,21 +352,26 @@ export const denyProjectUserAccessRequest = async (
 };
 
 /**
- * Propagate user permissions to project dependencies. The backend gives each
- * person the access the signed-in user can give on each dependency, and asks
- * the dependency's owners for the rest. There is no admin version.
- * @param projectId - The project ID
+ * Propagate user permissions to the dependencies of an engine or project. The
+ * backend gives each person the access the signed-in user can give on each
+ * dependency, and asks the dependency's owners for the rest. There is no admin
+ * version.
+ * @param catalogId - The engine ID or project ID whose dependencies get the access
  * @param users - Array of users with their permissions to propagate
+ * @param catalogType - Its engine type or project type, such as `FUNCTION` or
+ * `SKILL`; the backend reads it when left out
  * @returns Whether the operation was successful
  */
-export const propagateUserPermissions = async (
-	projectId: string,
+export const propagateCatalogDependencyPermissions = async (
+	catalogId: string,
 	users: PostUser[],
+	catalogType?: string,
 ): Promise<boolean> => {
 	const response = await post<{ success: boolean }>(
-		`${Env.MODULE}/api/auth/project/propagateProjectDependencyPermissions`,
+		`${Env.MODULE}/api/auth/project/propagateCatalogDependencyPermissions`,
 		{
-			projectId,
+			catalogId,
+			...(catalogType ? { catalogType } : {}),
 			userpermissions: users,
 		},
 		{},

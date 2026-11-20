@@ -20,6 +20,7 @@ function renderPage(type: Project["project_type"], permission: Role) {
 				},
 				dependencies: [],
 				refresh: vi.fn(),
+				refreshDependencies: vi.fn(),
 				update: vi.fn(),
 			}}
 		>

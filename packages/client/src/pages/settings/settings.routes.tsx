@@ -9,6 +9,7 @@ import { AdminThemePage } from "./admin-theme-page";
 import { AgentRunsPage } from "./agent-runs.page";
 import { AuditTrailPage } from "./audit-trail.page";
 import { ConfigurationsPage } from "./configurations-page";
+import { DependencyMapPage } from "./dependency-map.page";
 import { EnterpriseUsagePage } from "./enterprise-usage.page";
 import { GitHubAppPage } from "./github-app.page";
 import { LLMFeedbackPage } from "./llm-feedback-page";
@@ -33,6 +34,7 @@ const SETTINGS_COMPONENTS: Record<string, ComponentType> = {
 	"resources/:type": ResourceGovernancePage,
 	"resources/:type/:id": ResourceGovernancePage,
 	"service-accounts": ServiceAccountsSettingsPage,
+	dependencies: DependencyMapPage,
 	"social-properties": ConfigurationsPage,
 	"github-app": GitHubAppPage,
 	"admin-query": AdminQueryPage,

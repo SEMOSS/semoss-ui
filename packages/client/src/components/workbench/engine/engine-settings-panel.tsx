@@ -6,6 +6,7 @@ import type { WorkbenchPanelConfig } from "@semoss/workbench";
 import { ResourceAuditTrail } from "@/features/audit-trail/resource-audit-trail";
 import { useEngine } from "@/hooks/useEngine";
 import { EngineActivityPage } from "@/pages/engine/engine-activity-page";
+import { EngineDependenciesPage } from "@/pages/engine/engine-dependencies.page";
 import { EngineMcpUsagePage } from "@/pages/engine/engine-mcp-usage.page";
 import { EngineMetadataPage } from "@/pages/engine/engine-metadata.page";
 import { EngineOverviewPage } from "@/pages/engine/engine-overview-page";
@@ -23,6 +24,7 @@ interface EngineSettingsPanelProps {
 		component:
 			| "overview"
 			| "usage"
+			| "dependencies"
 			| "mcp-usage"
 			| "activity"
 			| "metadata"
@@ -36,7 +38,7 @@ interface EngineSettingsPanelProps {
 }
 
 /**
- * Renders the engine settings surfaces (overview, usage, MCP, activity,
+ * Renders the engine settings surfaces (overview, usage, dependencies, MCP, activity,
  * metadata, access control, audit trail, SMSS) inside a workbench bottom panel. The set of
  * tabs differs by engine type. Loads the engine metadata and the user's role,
  * then provides the EngineContext so the embedded pages behave the same as
@@ -97,6 +99,9 @@ const EngineSettingsPanel: React.FC<EngineSettingsPanelProps> = ({ tabs }) => {
 			<div className="w-full flex-1 overflow-auto bg-card p-2">
 				{activeTab?.component === "overview" && <EngineOverviewPage />}
 				{activeTab?.component === "usage" && <EngineUsagePage />}
+				{activeTab?.component === "dependencies" && (
+					<EngineDependenciesPage />
+				)}
 				{activeTab?.component === "mcp-usage" && <EngineMcpUsagePage />}
 				{activeTab?.component === "activity" && <EngineActivityPage />}
 				{activeTab?.component === "metadata" && <EngineMetadataPage />}
@@ -131,6 +136,11 @@ export const ENGINE_SETTINGS_TABS: EngineSettingsPanelProps["tabs"] = [
 	{
 		name: "Usage",
 		component: "usage",
+		restrict: ["READ_ONLY", "EDIT", "OWNER"],
+	},
+	{
+		name: "Dependencies",
+		component: "dependencies",
 		restrict: ["READ_ONLY", "EDIT", "OWNER"],
 	},
 	{

@@ -32,6 +32,7 @@ import {
 	createNewTerminalCommand,
 	createOpenPanelCommand,
 	createReconnectCommand,
+	withTab,
 } from "../../workbench.presets";
 import { PROJECT_INSIGHT_EXPLORER_PANEL } from "../project-insight-explorer-panel";
 import {
@@ -128,8 +129,17 @@ export const SKILL_WORKBENCH_COMPONENTS: Record<
 	[WORKBENCH_COMPONENTS.PROJECT_INSIGHT_EXPLORER]:
 		PROJECT_INSIGHT_EXPLORER_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_TERMINAL]: PROJECT_TERMINAL_PANEL,
+	// the shared tabs plus Dependencies, right after Overview
 	[WORKBENCH_COMPONENTS.PROJECT_SETTINGS]: createProjectSettingsPanel(
-		PROJECT_SETTINGS_TABS,
+		withTab(
+			PROJECT_SETTINGS_TABS,
+			{
+				name: "Dependencies",
+				component: "project-dependencies",
+				restrict: ["OWNER", "EDIT", "READ_ONLY"],
+			},
+			1,
+		),
 	),
 	[ASSISTANT_TOOL_PANEL_TYPE]: ASSISTANT_TOOL_PANEL,
 	[WORKBENCH_COMPONENTS.ASSISTANT]: ASSISTANT_PANEL,

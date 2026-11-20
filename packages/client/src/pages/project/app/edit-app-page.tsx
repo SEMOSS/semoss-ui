@@ -8,8 +8,8 @@ import {
 } from "@/components/workbench";
 import { Workspace } from "@/components/workspace";
 import { WorkbenchProvider } from "@/contexts";
+import { CatalogDependencyWarning } from "@/features/catalog/dependencies/catalog-dependency-warning";
 import { usePage, useProject } from "@/hooks";
-import { ProjectDependencyWarning } from "./project-dependency-warning";
 
 /**
  * Editable surface for the `/app` catalog. CODE and BLOCKS projects each
@@ -49,7 +49,10 @@ export const EditAppPage = () => {
 		<InsightProvider options={{ app: project.project_id }}>
 			<WorkbenchProvider components={CODE_WORKBENCH_COMPONENTS}>
 				<ProjectNavbar actions={<ProjectShareButton />} />
-				<ProjectDependencyWarning />
+				<CatalogDependencyWarning
+					catalogId={project.project_id}
+					catalogType={project.project_type}
+				/>
 				<CodeWorkbench />
 			</WorkbenchProvider>
 		</InsightProvider>

@@ -1,7 +1,8 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import { runPixel, useInsight, usePixel } from "@semoss/sdk/react";
+import { runPixel, useInsight } from "@semoss/sdk/react";
 import { Spinner, toast } from "@semoss/ui/next";
 import { WorkspaceContext } from "@/contexts";
+import { useCatalogDependencyWarning } from "@/features/catalog/dependencies/use-catalog-dependency-warning";
 import { useNavigate } from "@/hooks/useNavigate";
 
 const BlocksWorkbench = lazy(() =>
@@ -53,31 +54,10 @@ export const Workspace: React.FC = () => {
 	}, [project.project_id, insight.isReady, insight.insightId, navigate]);
 
 	// check the dependencies
-	usePixel(
-		insight.isReady && project.project_id
-			? `ValidateUserProjectDependencies(project="${project.project_id}");`
-			: "",
-		{
-			onSuccess: (data: Record<string, boolean>) => {
-				const needsAccess: string[] = [];
-				Object.entries(data).forEach((kv) => {
-					const hasAccess = kv[1];
-
-					if (!hasAccess) {
-						needsAccess.push(kv[0]);
-					}
-				});
-				if (needsAccess.length) {
-					toast.warning(
-						`You do not have access to the following dependencies: ${needsAccess.join(
-							", ",
-						)}.`,
-					);
-				}
-			},
-		},
-		insight.insightId,
-	);
+	useCatalogDependencyWarning({
+		catalogId: project.project_id,
+		catalogType: project.project_type,
+	});
 
 	if (!insight.isReady || !workspace) {
 		return <WorkspaceLoadingState />;

@@ -1,47 +1,58 @@
 import { BlocksIcon } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useSessionInsight } from "@semoss/sdk/react";
-import type { ProjectDependency } from "@semoss/shared";
+import { runPixel } from "@semoss/sdk/react";
+import type { CatalogDependencyRow, Engine } from "@semoss/shared";
 import { Muted, ScrollArea, toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import type { WorkbenchPanelConfig } from "@semoss/workbench";
 import { useProject } from "@/hooks/use-project";
+import { toCatalogDependencyPayload } from "./catalog-dependency";
 import { EngineCategoryCard } from "./engine-category-card";
 import { ManageEnginesDialog } from "./manage-engines-dialog";
-import { toDependencyPayload } from "./project-engines-panel.constants";
 
 /** Engine categories always shown, in display order. */
-const PRIMARY_CATEGORIES = ["MODEL", "DATABASE", "STORAGE", "VECTOR"];
+const PRIMARY_CATEGORIES: readonly Engine["engine_type"][] = [
+	"MODEL",
+	"DATABASE",
+	"STORAGE",
+	"VECTOR",
+];
 
 /** Engine categories shown only when the project depends on one. */
-const EXTRA_CATEGORIES = ["FUNCTION", "GUARDRAIL"];
+const EXTRA_CATEGORIES: readonly Engine["engine_type"][] = [
+	"FUNCTION",
+	"GUARDRAIL",
+];
 
 /**
  * The "Available engines" workbench panel: one card per engine category with
- * the selected engines as removable chips and a category-scoped Manage
- * dialog — the engines the agent can use when building and running the app.
- * Saves go through SetProjectDependencies (preserving project-kind and
- * other-category dependencies), which also refreshes the agent's engine
- * context on the backend.
+ * the selected engines as chips and a category-scoped Manage dialog — the
+ * engines the agent can use when building and running the app. Manual
+ * engines can be removed; automatic ones come from the project's
+ * configuration and show their role instead. Saves go through
+ * SetCatalogDependencies with the manual rows only (preserving project-kind
+ * and other-category ones), which also refreshes the agent's engine context
+ * on the backend.
  *
- * @name ProjectEnginesPanel
+ * @name CatalogEnginesPanel
  * @return The available-engines panel.
  */
-const ProjectEnginesPanel = () => {
-	const { project, dependencies, permission, refresh } = useProject();
-	const { run: runPixel } = useSessionInsight();
-	const [manageCategory, setManageCategory] = useState<string | null>(null);
+const CatalogEnginesPanel = () => {
+	const { project, dependencies, permission, refreshDependencies } =
+		useProject();
+	const [manageCategory, setManageCategory] = useState<
+		Engine["engine_type"] | null
+	>(null);
 	const [isRemoving, setIsRemoving] = useState(false);
 	const canEdit = permission === "OWNER" || permission === "EDIT";
 
 	const buckets = useMemo(() => {
-		const next = new Map<string, ProjectDependency[]>();
+		const next = new Map<string, CatalogDependencyRow[]>();
 		for (const category of [...PRIMARY_CATEGORIES, ...EXTRA_CATEGORIES]) {
 			next.set(category, []);
 		}
 		for (const dependency of dependencies) {
-			const type = (dependency.engine_type ?? "").toUpperCase();
-			next.get(type)?.push(dependency);
+			next.get(dependency.catalog_type)?.push(dependency);
 		}
 		return next;
 	}, [dependencies]);
@@ -53,22 +64,25 @@ const ProjectEnginesPanel = () => {
 		),
 	];
 
-	const removeEngine = async (engine: ProjectDependency) => {
+	const removeEngine = async (engine: CatalogDependencyRow) => {
 		setIsRemoving(true);
 		try {
+			// only manual rows are sent; the backend keeps the automatic ones
 			const payload = dependencies
 				.filter(
-					(dependency) => dependency.engine_id !== engine.engine_id,
+					(dependency) =>
+						!dependency.is_automatic &&
+						dependency.catalog_id !== engine.catalog_id,
 				)
-				.map(toDependencyPayload);
-			const response = await runPixel<string[]>(
-				`SetProjectDependencies(project="${project.project_id}", dependencies=${JSON.stringify(payload)})`,
+				.map(toCatalogDependencyPayload);
+			const response = await runPixel<[unknown]>(
+				`SetCatalogDependencies(catalogId="${project.project_id}", catalogType="${project.project_type}", dependencies=${JSON.stringify(payload)});`,
 			);
 			if (response.errors.length > 0) {
 				throw new Error(response.errors.join(""));
 			}
-			toast.success(`Removed ${engine.engine_name}`);
-			refresh();
+			toast.success(`Removed ${engine.catalog_name}`);
+			refreshDependencies();
 		} catch (error) {
 			toast.error(getErrorMessage(error, "Failed to remove engine"));
 		} finally {
@@ -103,10 +117,11 @@ const ProjectEnginesPanel = () => {
 			{manageCategory ? (
 				<ManageEnginesDialog
 					category={manageCategory}
-					appId={project.project_id}
+					catalogId={project.project_id}
+					catalogType={project.project_type}
 					dependencies={dependencies}
 					onClose={(saved) => {
-						if (saved) refresh();
+						if (saved) refreshDependencies();
 						setManageCategory(null);
 					}}
 				/>
@@ -119,12 +134,12 @@ const ProjectEnginesPanel = () => {
  * Blueprint for the "Available engines" panel. keepAlive: search text and
  * dialog state survive tab switches.
  */
-export const PROJECT_ENGINES_PANEL: WorkbenchPanelConfig = {
+export const CATALOG_ENGINES_PANEL: WorkbenchPanelConfig = {
 	name: "Engines",
 	helpText: "Available engines",
 	icon: ({ className }) => <BlocksIcon className={className} />,
 	canClose: false,
 	canRename: false,
 	mount: "keepAlive",
-	content: ProjectEnginesPanel,
+	content: CatalogEnginesPanel,
 };

@@ -440,19 +440,108 @@ export interface Skill {
  */
 export type SkillConfig = Pick<Skill, "id" | "name">;
 
-export interface ProjectDependency {
-	engine_type: Project["project_type"] | Engine["engine_type"] | "PROJECT";
-	engine_id: string;
-	engine_name: string;
-	engine_subtype?: string;
-	description?: string;
-	engine_discoverable?: boolean;
+/**
+ * The specific type of any catalog item: every engine type and every project
+ * type. Catalog dependencies store both their owner and their target with this
+ * type, never a generic ENGINE or PROJECT. The backend spells the insight
+ * project type INSIGHTS where the UI's `Project` says INSIGHT, so both appear.
+ */
+export type CatalogType =
+	| Engine["engine_type"]
+	| Project["project_type"]
+	| "INSIGHTS";
+
+/**
+ * Why an owner depends on a target. The backend records every role but
+ * `MANUAL` itself, from the owner's configuration, when the owner is saved;
+ * `MANUAL` rows are the ones a user added.
+ */
+export type CatalogDependencyRole =
+	| "AGENT_MODEL"
+	| "SUBAGENT"
+	| "SKILL"
+	| "TOOLBOX"
+	| "KNOWLEDGE"
+	| "GUARDRAIL"
+	| "JUDGE_MODEL"
+	| "TOPIC_VECTOR"
+	| "EMBEDDER"
+	| "FUNCTION_STORAGE"
+	| "ROUTE_MODEL"
+	| "ROUTER_CLASSIFIER"
+	| "ROUTER_EMBEDDINGS"
+	| "ROUTER_FALLBACK"
+	| "AUTOMATION_NODE"
+	| "BLOCK_ENGINE"
+	| "CODE_REFERENCE"
+	| "MANUAL";
+
+/**
+ * One catalog item another engine or project depends on, as
+ * `GetCatalogDependencies` returns it in `dependencies`: one node per item,
+ * however many links lead to it. The links are in `links`
+ * (`CatalogDependencyLink`).
+ */
+export interface CatalogDependency {
+	/** The dependency's id */
+	catalog_id: string;
+	/** The dependency's specific type, such as MODEL or SKILL */
+	catalog_type: CatalogType;
+	/** The dependency's name */
+	catalog_name: string;
+	/** The engine's subtype, such as OPEN_AI; projects have none */
+	catalog_subtype?: string;
+	catalog_date_created?: string;
+	catalog_discoverable?: boolean;
+	catalog_global?: boolean;
+	/** The user's permission level on the dependency, if any */
+	permission?: number;
+	/** The user's role on the dependency, if any */
 	permission_name?: Role;
-	engine_global?: boolean;
+	/** The permission level the user has requested, if any */
 	access_permission?: number;
+	/** The dependency's own catalog description */
+	description?: string;
+	/** Comma separated tags */
 	tags?: string;
+	/** Whether the user can view every dependency of this dependency */
 	can_view_dependencies?: boolean;
+	/** Ids of the dependency's own dependencies */
+	dependencies?: string[];
 }
+
+/**
+ * One link from an owner to a dependency, as `GetCatalogDependencies` returns
+ * it in `links`: one per role, so a target the owner depends on in two roles
+ * has two links and one node.
+ */
+export interface CatalogDependencyLink {
+	/** The id of the engine or project that depends on the target */
+	parent_id: string;
+	/** The target's id, the `catalog_id` of its node */
+	catalog_id: string;
+	/**
+	 * Whether the backend recorded the link from the owner's configuration.
+	 * Automatic links are read-only; only manual ones are saved by an edit.
+	 */
+	is_automatic: boolean;
+	/** Why the owner depends on the target; always `MANUAL` for manual links */
+	role: CatalogDependencyRole;
+	/** The link's name, unique per owner; manual links only */
+	dependency_name: string | null;
+	/**
+	 * What the link is for: written by the backend for automatic links, typed
+	 * by the user for manual ones
+	 */
+	dependency_description: string | null;
+}
+
+/**
+ * One of an owner's direct links joined with its target's node: a row of the
+ * owner's dependencies. One target in two roles is two rows.
+ */
+export type CatalogDependencyRow = CatalogDependency &
+	Omit<CatalogDependencyLink, "parent_id">;
 
 export interface Prompt {
 	id: string;
