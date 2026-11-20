@@ -136,6 +136,12 @@ describe("describeModelUsageLimit", () => {
 		);
 	});
 
+	it("says an engine's rules as shared by the engine or for each of its users", () => {
+		expect(describeModelUsageLimit(TEAM_LIMIT, "ENGINE")).toBe(
+			"$200 a day shared and $80 a day for each user",
+		);
+	});
+
 	it("says nothing after the rules of a source that counts one way only", () => {
 		expect(describeModelUsageLimit(TEAM_LIMIT, "DIRECT")).toBe(
 			"$200 a day and $80 a day",
@@ -149,6 +155,9 @@ describe("an app's limit", () => {
 		expect(getSourceCounts("APP")).toEqual(["SHARED", "EACH_PERSON"]);
 		expect(isUnlimitedOffered("APP")).toBe(true);
 		expect(isAcrossAllModels("APP")).toBe(false);
+		expect(getSourceCounts("ENGINE")).toEqual(["SHARED", "EACH_PERSON"]);
+		expect(isUnlimitedOffered("ENGINE")).toBe(true);
+		expect(isAcrossAllModels("ENGINE")).toBe(false);
 	});
 
 	it("can be saved with shared and for each user rules, and needs known prices for cost", () => {

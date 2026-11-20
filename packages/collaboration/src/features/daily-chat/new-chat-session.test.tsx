@@ -266,6 +266,22 @@ function setup(
 		[
 			{ path: "/", Component: LandingChatComposer },
 			{ path: "/topics/:topicId", Component: TopicComposer },
+			// a page that is one agent's own, as a Digital Twin's chat page is
+			{
+				path: "/twins/chat",
+				element: (
+					<LandingChatComposer
+						isAgentLocked
+						starterPrompts={[
+							{
+								id: "topics",
+								title: "Explore topics",
+								context: "Which topics can you help with?",
+							},
+						]}
+					/>
+				),
+			},
 			{ path: "/work", element: <div>Work</div> },
 			{ path: "/thread/:threadId", Component: RoomDestination },
 		],
@@ -1076,4 +1092,34 @@ it("links a topic assistant's chat for a topic made on this page by its server i
 		"actual-room",
 		"server-topic",
 	);
+});
+
+it("does not let the agent be changed on a page that is one agent's own", () => {
+	// the same ready draft whose agent the overview's ask box lets a person choose
+	setup(undefined, "", "/twins/chat");
+	fireEvent.click(
+		screen.getByRole("button", { name: "Assistant options: Assistant" }),
+	);
+	expect(screen.getByRole("button", { name: "Choose agent" })).toBeDisabled();
+});
+
+it("fills a twin's draft from a starting point and opens a room only on Send", async () => {
+	const router = setup(undefined, "?agentId=twin", "/twins/chat");
+	await userEvent
+		.setup()
+		.click(screen.getByRole("button", { name: "Explore topics" }));
+	const editor = screen.getByRole("textbox");
+	await waitFor(() => expect(editor).toHaveFocus());
+	expect(editor).toHaveTextContent("Which topics can you help with?");
+	expect(mocks.create).not.toHaveBeenCalled();
+	expect(mocks.send).not.toHaveBeenCalled();
+	submit();
+	await waitFor(() =>
+		expect(router.state.location.pathname).toBe(roomPath("actual-room")),
+	);
+	expect(mocks.send).toHaveBeenCalledExactlyOnceWith({
+		text: "Which topics can you help with?",
+		files: [],
+	});
+	expect(sessions[0].getSnapshot().settings.agentId).toBe("twin");
 });

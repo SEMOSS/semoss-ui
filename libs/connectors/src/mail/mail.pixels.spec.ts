@@ -19,6 +19,29 @@ describe("mail pixels", () => {
 		).toContain("unreadOnly=[true]");
 	});
 
+	it("sends the sender and the cutoff a list is narrowed to, and leaves them out otherwise", () => {
+		expect(
+			MAIL_APPS.microsoft.pixels.listMail({
+				folder: "inbox",
+				limit: 25,
+				from: "ada lovelace",
+				sinceDays: 30,
+			}),
+		).toBe(
+			'MicrosoftOutlookListMail(folder=["inbox"], limit=[25], from=["<encode>ada lovelace</encode>"], sinceDays=[30], includeBody=[false]);',
+		);
+		expect(
+			MAIL_APPS.google.pixels.listMail({
+				folder: "inbox",
+				limit: 25,
+				from: "",
+				sinceDays: undefined,
+			}),
+		).toBe(
+			'GoogleGmailListMail(folder=["inbox"], limit=[25], includeBody=[false]);',
+		);
+	});
+
 	it("sends a typed search whole, for the backend to read its fields", () => {
 		expect(
 			MAIL_APPS.google.pixels.listMail({

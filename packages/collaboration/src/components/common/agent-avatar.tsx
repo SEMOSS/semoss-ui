@@ -11,12 +11,15 @@ export function AgentAvatar({
 	agent,
 	size = "md",
 	shape = "circle",
+	className,
 }: {
 	agent: AvatarAgent;
 	/** `xl` is the portrait of a scene the agent is the subject of. */
 	size?: "xs" | "sm" | "md" | "lg" | "xl";
 	/** Keeps conversational avatars circular while allowing directory portraits. */
 	shape?: "circle" | "rounded";
+	/** Sizes or positions the portrait for its containing surface. */
+	className?: string;
 }) {
 	const [failed, setFailed] = useState("");
 	return (
@@ -32,6 +35,7 @@ export function AgentAvatar({
 					"size-16": size === "lg",
 					"size-24": size === "xl",
 				},
+				className,
 			)}
 		>
 			{agent.avatar && failed !== agent.avatar ? (

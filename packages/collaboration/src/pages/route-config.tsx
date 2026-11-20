@@ -79,6 +79,28 @@ export const routes: RouteObject[] = [
 									).TwinChatPage,
 								}),
 							},
+							{
+								path: "twins/persona",
+								id: "twins/persona",
+								lazy: async () => ({
+									Component: (
+										await import(
+											"@/pages/twin-persona.page"
+										)
+									).TwinPersonaPage,
+								}),
+							},
+							{
+								path: "twins/persona/interview",
+								id: "twins/persona/interview",
+								lazy: async () => ({
+									Component: (
+										await import(
+											"@/pages/twin-persona-interview.page"
+										)
+									).TwinPersonaInterviewPage,
+								}),
+							},
 							...[
 								"work",
 								"work/topics",

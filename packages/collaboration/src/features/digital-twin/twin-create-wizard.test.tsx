@@ -24,6 +24,7 @@ const upload = vi.hoisted(() => vi.fn());
 const uploadToPage = vi.hoisted(() => vi.fn());
 // saving a found item reads the owner's Microsoft 365, which is the library's own to do
 const saveItem = vi.hoisted(() => vi.fn());
+const saveAttachments = vi.hoisted(() => vi.fn());
 
 vi.mock("@semoss/sdk/react", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
@@ -41,29 +42,34 @@ vi.mock("@semoss/connectors", async (importOriginal) => {
 			saveTargetName,
 			savedItems,
 			onSaved,
-		}: ConnectorViewerProps & ConnectorSavedItemsProps) => (
-			<div>
-				<p>{name}</p>
-				{/* one item, which a viewer marks in place of offering it once the host holds it */}
-				{savedItems?.isSaved(file) ? (
-					<p>{savedItems.label}</p>
-				) : (
-					<button
-						type="button"
-						onClick={() =>
-							onSaved?.({
-								path: file,
-								name: file,
-								service,
-								itemKey: file,
-							})
-						}
-					>
-						Save to {saveTargetName}
-					</button>
-				)}
-			</div>
-		);
+		}: ConnectorViewerProps & ConnectorSavedItemsProps) => {
+			// the mail viewer knows an email by its thread; the others know an item by its id
+			const itemKey =
+				service === "outlook-mail" ? `conversation:${file}` : file;
+			return (
+				<div>
+					<p>{name}</p>
+					{/* one item, which a viewer marks in place of offering it once the host holds it */}
+					{savedItems?.isSaved(itemKey) ? (
+						<p>{savedItems.label}</p>
+					) : (
+						<button
+							type="button"
+							onClick={() =>
+								onSaved?.({
+									path: file,
+									name: file,
+									service,
+									itemKey,
+								})
+							}
+						>
+							Save to {saveTargetName}
+						</button>
+					)}
+				</div>
+			);
+		};
 	return {
 		...(await importOriginal<typeof import("@semoss/connectors")>()),
 		MailboxView: viewer(
@@ -87,6 +93,7 @@ vi.mock("@semoss/connectors", async (importOriginal) => {
 			"Roadmap.pptx",
 		),
 		saveMicrosoftItem: saveItem,
+		saveMailAttachments: saveAttachments,
 	};
 });
 vi.mock("@/features/connectors/api/microsoft", () => ({
@@ -94,6 +101,19 @@ vi.mock("@/features/connectors/api/microsoft", () => ({
 }));
 vi.mock("@/features/rooms/api/upload-room-files", () => ({
 	uploadRoomFiles: uploadToPage,
+}));
+
+// what each copy holds is described a moment after the twin exists; the step only has to say which twin, and
+// the waiting has its own test
+const index = vi.hoisted(() => ({
+	twinId: undefined as string | undefined,
+	request: vi.fn(),
+}));
+vi.mock("./use-twin-index", () => ({
+	useTwinIndex: (twinId: string | undefined) => {
+		index.twinId = twinId;
+		return index.request;
+	},
 }));
 
 /** What the server answers each reactor with; an Error is a refusal, a promise an answer still on its way. */
@@ -112,6 +132,9 @@ const copies = (): string[] =>
 beforeEach(() => {
 	answers = {
 		AddDigitalTwin: "twin-1",
+		BrowseAppAssets: [
+			{ name: "public", path: "/public/", type: "directory" },
+		],
 		GetWorkspace: {
 			workspace_id: "twin-1",
 			name: "Robin Twin",
@@ -143,13 +166,16 @@ beforeEach(() => {
 	upload.mockResolvedValue({});
 	uploadToPage.mockReset();
 	saveItem.mockReset();
+	saveAttachments.mockReset();
+	index.request.mockReset();
+	index.twinId = undefined;
 	// jsdom has no object URLs; the preview only needs an address
 	URL.createObjectURL = vi.fn(() => "blob:preview");
 	URL.revokeObjectURL = vi.fn();
 });
 afterEach(cleanup);
 
-function renderWizard() {
+function renderWizard(hasPersona = false) {
 	const onOpenSettings = vi.fn();
 	render(
 		<MemoryRouter>
@@ -162,6 +188,7 @@ function renderWizard() {
 						description: "One section per client",
 					},
 				]}
+				hasPersona={hasPersona}
 				onOpenSettings={onOpenSettings}
 			/>
 		</MemoryRouter>,
@@ -259,8 +286,9 @@ it("starts on who the twin is, one step of five, with nothing sent or read", () 
 	).toEqual(["1Identity"]);
 	// the later steps are there, waiting, and out of the way
 	expect(screen.getByLabelText("Instructions")).not.toBeVisible();
+	// how it should sound; who it is and what it answers from are the server's to say
 	expect(screen.getByLabelText("Instructions")).toHaveDisplayValue(
-		/^You are the Digital Twin of Robin Reyes: .* Do not make commitments or decisions for Robin Reyes\.$/,
+		"Answer the way Robin Reyes would explain it to a colleague: plainly and briefly. Lead with the answer.",
 	);
 	// the owner's mailbox is not read before they ask for it
 	expect(screen.queryByText("The Outlook mailbox")).toBeNull();
@@ -551,9 +579,10 @@ it("makes the twin step by step once the review is confirmed, copies in what was
 		// where the copy came from is recorded, so the owner's lists mark it from then on
 		"BrowseAppAssets",
 		"SaveAppAssets",
+		"WorkNoteTwinCopy",
 	]);
 	expect(insight.actions.run.mock.calls[0]?.[0]).toMatch(
-		/^AddDigitalTwin\(name=\["Robin Twin"\], systemPrompt=\["You are the Digital Twin of Robin Reyes: .*"\], mcp=\[\], skills=\[\]\);$/,
+		/^AddDigitalTwin\(name=\["Robin Twin"\], systemPrompt=\["Answer the way Robin Reyes would explain it to a colleague: .*"\], mcp=\[\], skills=\[\]\);$/,
 	);
 	expect(insight.actions.run.mock.calls[3]?.[0]).toContain(
 		'greeting="Ask me anything.", greetingEnabled=true);',
@@ -569,6 +598,8 @@ it("makes the twin step by step once the review is confirmed, copies in what was
 	expect(copies()).toEqual([
 		'Copy(sourceType=["INSIGHT"], sourceFilePath=["Budget review.md"], target=["twin-1"], targetType=["PROJECT"], targetFilePath=["public/emails/Budget review.md"]);',
 	]);
+	// and what its files hold is described for its chats, now that there is a twin
+	expect(index.twinId).toBe("twin-1");
 
 	// it knows something by now, so sharing it is what comes next
 	expect(screen.getByText(/it knows what you chose/)).toBeVisible();
@@ -735,4 +766,224 @@ it("goes to the step that holds a problem when it is not the one on screen", asy
 		),
 	).toBeVisible();
 	expect(step("How should it answer?")).toBeVisible();
+});
+
+it("takes a note about the owner with how the twin answers, and saves it into the new twin", async () => {
+	const { user } = renderWizard();
+	await user.type(nameField(), "Robin Twin");
+	await user.click(next("Voice"));
+	const about = screen.getByLabelText("About you");
+	expect(about).toHaveValue("");
+	expect(about).toHaveAttribute(
+		"placeholder",
+		expect.stringContaining("Who to ask instead:"),
+	);
+	await user.type(about, "I run renewals.");
+	await user.click(next("Abilities"));
+	await user.click(next("Knowledge"));
+	await user.click(next("Review"));
+	expect(reviewOf("About you")).toHaveTextContent("I run renewals.");
+	// the note is still being saved, so the scene can be looked at mid-way
+	let finishNote = (): void => undefined;
+	answers.SaveAppAssets = new Promise<boolean>((resolve) => {
+		finishNote = () => resolve(true);
+	});
+	await create(user);
+	expect(
+		await screen.findByText("Step 3 of 3: Save your note"),
+	).toBeInTheDocument();
+	finishNote();
+	expect(
+		await screen.findByRole("heading", {
+			level: 1,
+			name: "Meet Robin Twin",
+		}),
+	).toBeVisible();
+	expect(
+		insight.actions.run.mock.calls.map(([statement]) => statement),
+	).toEqual([
+		expect.stringMatching(/^AddDigitalTwin\(/),
+		'NewAppAssetsDirectory(project=["twin-1"], filePath=["/public"]);',
+		'SaveAppAssets(project=["twin-1"], filePath=["/public/About me.md"], content=["I run renewals."]);',
+	]);
+});
+
+it("chooses a picked email's attachments with it, as files of their own", async () => {
+	answers.WorkSuggestTwinKnowledge = {
+		suggestions: [
+			{
+				kind: "email",
+				id: "conv-1",
+				title: "Apollo cutover",
+				from: "Sam Lee",
+				date: "2026-11-03T09:00:00Z",
+				preview: "Confirmed for the 14th",
+				reason: "Sets the cutover date",
+			},
+		],
+		notes: [],
+	};
+	saveItem.mockResolvedValue({
+		path: "Apollo cutover.md",
+		name: "Apollo cutover.md",
+		service: "outlook-mail",
+		itemKey: "conversation:conv-1",
+	});
+	// the found email has two; the one picked in the mailbox has none
+	saveAttachments.mockImplementation(async (_insightId, thread) => ({
+		saved:
+			thread === "conv-1"
+				? [
+						{
+							path: "Plan.docx",
+							name: "Plan.docx",
+							service: "outlook-mail",
+							itemKey: "m-2:a-1",
+						},
+						{
+							path: "Costs.xlsx",
+							name: "Costs.xlsx",
+							service: "outlook-mail",
+							itemKey: "m-2:a-2",
+						},
+					]
+				: [],
+		skipped: [],
+	}));
+	const { user } = renderWizard();
+	await reachKnowledge(user);
+	expect(screen.queryByRole("button", { name: /attachments/ })).toBeNull();
+	// an email picked in the mailbox
+	await user.click(
+		screen.getByRole("button", { name: "Save to Digital Twin" }),
+	);
+	expect(
+		screen.getByRole("button", { name: "Add the email's attachments" }),
+	).toBeVisible();
+
+	await user.click(place("Find with AI"));
+	await user.type(
+		screen.getByRole("textbox", {
+			name: "What should your Digital Twin know?",
+		}),
+		"The Apollo cutover",
+	);
+	await user.click(screen.getByRole("button", { name: "Find suggestions" }));
+	await user.click(
+		await screen.findByRole("button", { name: "Add Apollo cutover" }),
+	);
+	// one button for both emails, and nothing read for them before it is pressed
+	expect(saveAttachments).not.toHaveBeenCalled();
+	await user.click(
+		await screen.findByRole("button", {
+			name: "Add the attachments of 2 emails",
+		}),
+	);
+	expect(
+		await screen.findByText(
+			"Chose 2 attachments. They are added when your Digital Twin is created.",
+		),
+	).toBeVisible();
+	expect(saveAttachments.mock.calls).toEqual([
+		["insight-1", "Budget review.md"],
+		["insight-1", "conv-1"],
+	]);
+	expect(screen.queryByRole("button", { name: /attachments/ })).toBeNull();
+
+	await user.click(place(/What you chose/));
+	expect(place(/What you chose/)).toHaveTextContent("4");
+	expect(screen.getAllByText("Attachment from Outlook")).toHaveLength(2);
+	await user.click(next("Review"));
+	// the viewer's pick and the found email are emails; what was attached counts as files
+	expect(reviewOf("What it knows")).toHaveTextContent("2 emails, 2 files");
+});
+
+it("makes a twin that uses its owner's persona without a step for it, and with no instructions of its own", async () => {
+	const { user } = renderWizard(true);
+	await user.type(nameField(), "Robin Twin");
+	await user.click(next("Voice"));
+	expect(
+		screen.getByRole("switch", { name: "Use my persona" }),
+	).toBeChecked();
+	// their persona says how it sounds, so no line about that is waiting in the box
+	expect(screen.getByLabelText("Instructions")).toHaveValue("");
+	await user.click(next("Abilities"));
+	await user.click(next("Knowledge"));
+	await user.click(next("Review"));
+	expect(reviewOf("Persona")).toHaveTextContent("It answers in your voice");
+	expect(reviewOf("Instructions")).toHaveTextContent("None");
+	await create(user);
+	expect(
+		await screen.findByRole("heading", {
+			level: 1,
+			name: "Meet Robin Twin",
+		}),
+	).toBeVisible();
+	expect(
+		insight.actions.run.mock.calls.map(([statement]) => statement),
+	).toEqual([
+		expect.stringContaining('systemPrompt=[""]'),
+		'NewAppAssetsDirectory(project=["twin-1"], filePath=["/public"]);',
+	]);
+});
+
+it("makes a plain twin for an owner who switches their persona off: it gets how to sound, and the persona is switched off for it", async () => {
+	const { user } = renderWizard(true);
+	await user.type(nameField(), "Robin Twin");
+	await user.click(next("Voice"));
+	await user.click(screen.getByRole("switch", { name: "Use my persona" }));
+	await user.click(next("Abilities"));
+	await user.click(next("Knowledge"));
+	await user.click(next("Review"));
+	expect(reviewOf("Persona")).toHaveTextContent("Off for this twin");
+	// with neither a persona nor instructions it would have nothing on how to sound
+	expect(reviewOf("Instructions")).toHaveTextContent(
+		"Answer the way Robin Reyes would explain it to a colleague",
+	);
+	// the switch is still being sent, so the scene can be looked at mid-way
+	let finishSwitch = (): void => undefined;
+	answers.WorkSetTwinPersona = new Promise<boolean>((resolve) => {
+		finishSwitch = () => resolve(true);
+	});
+	await create(user);
+	expect(
+		await screen.findByText("Step 3 of 3: Switch your persona off for it"),
+	).toBeInTheDocument();
+	finishSwitch();
+	await screen.findByRole("heading", { level: 1, name: "Meet Robin Twin" });
+	expect(
+		insight.actions.run.mock.calls.map(([statement]) => statement),
+	).toEqual([
+		expect.stringContaining(
+			'systemPrompt=["Answer the way Robin Reyes would explain it to a colleague: plainly and briefly. Lead with the answer."]',
+		),
+		'NewAppAssetsDirectory(project=["twin-1"], filePath=["/public"]);',
+		'WorkSetTwinPersona(project=["twin-1"], enabled=[false]);',
+	]);
+});
+
+it("keeps instructions an owner wrote whichever way the persona switch is, and shows no switch to someone with no persona", async () => {
+	const { user } = renderWizard(true);
+	await user.type(nameField(), "Robin Twin");
+	await user.click(next("Voice"));
+	await user.type(screen.getByLabelText("Instructions"), "Answer in Dutch.");
+	await user.click(screen.getByRole("switch", { name: "Use my persona" }));
+	await user.click(next("Abilities"));
+	await user.click(next("Knowledge"));
+	await user.click(next("Review"));
+	expect(reviewOf("Instructions")).toHaveTextContent("Answer in Dutch.");
+	cleanup();
+
+	const plain = renderWizard();
+	await plain.user.type(nameField(), "Robin Twin");
+	await plain.user.click(next("Voice"));
+	expect(screen.queryByRole("switch", { name: "Use my persona" })).toBeNull();
+	expect(screen.getByText(/You have no persona yet/)).toBeVisible();
+	// someone without one may still make a twin with no instructions, as before
+	await plain.user.clear(screen.getByLabelText("Instructions"));
+	await plain.user.click(next("Abilities"));
+	await plain.user.click(next("Knowledge"));
+	await plain.user.click(next("Review"));
+	expect(screen.queryByText("Persona", { selector: "dt" })).toBeNull();
+	expect(reviewOf("Instructions")).toHaveTextContent("None");
 });

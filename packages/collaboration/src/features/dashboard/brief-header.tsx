@@ -1,16 +1,26 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router";
 import { CollaborationHeroHeader } from "@/features/collaboration/components/collaboration-hero-header";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
-import { useDashboard } from "./dashboard.context";
+import { twinContentsPath } from "@/lib/workspace-paths";
+import { useDashboard, useTwinUpdates } from "./dashboard.context";
 import { dashboardTimeZone, eventStart, isAllDay } from "./dashboard-calendar";
 import { dayKey } from "./dashboard-selectors";
 import { MailCheckStatus } from "./mail-check-status";
 import { useDueToday } from "./use-due-today";
 
-/** One line: what is due today and when the next meeting starts. */
+/**
+ * One line: what is due today and when the next meeting starts. Under it,
+ * when mail was last read and, when a check found any, how many copies in the
+ * owner's Digital Twins wait for them.
+ */
 export function BriefHeader() {
 	const { state } = useCollaborationSession();
 	const { calendar } = useDashboard();
+	const twinUpdates = useTwinUpdates().data?.updates ?? [];
+	// to the Updates of the one twin they are all in; else to the twins, whose cards each say how many
+	const isOneTwin =
+		new Set(twinUpdates.map((update) => update.twinId)).size === 1;
 	const [now, setNow] = useState(() => new Date());
 	useEffect(() => {
 		const timer = window.setInterval(() => setNow(new Date()), 60_000);
@@ -69,6 +79,20 @@ export function BriefHeader() {
 			description={`${dueLine}${at ? ` Your next meeting is at ${at}.` : ""}`}
 		>
 			<MailCheckStatus />
+			{twinUpdates.length > 0 && (
+				<Link
+					to={
+						isOneTwin
+							? twinContentsPath("updates", twinUpdates[0].twinId)
+							: "/twins"
+					}
+					className="inline-flex min-h-7 pointer-coarse:min-h-11 items-center rounded-sm underline underline-offset-2 hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+				>
+					{twinUpdates.length === 1
+						? "1 Digital Twin update"
+						: `${twinUpdates.length} Digital Twin updates`}
+				</Link>
+			)}
 		</CollaborationHeroHeader>
 	);
 }

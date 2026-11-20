@@ -50,6 +50,8 @@ interface ToolWorkbenchProviderProps {
 	) => Parameters<WorkbenchState["layout"]["actions"]["movePanel"]>[1];
 	roomId: string;
 	insightId: string;
+	/** The room's agent, whose own files a link in an answer can open; left out for a room with none. */
+	agentId?: string;
 	tools: Record<string, ConversationTool>;
 	toolCreatedAt?: Record<string, string>;
 	pendingApprovals: PendingToolApproval[];
@@ -60,6 +62,10 @@ interface ToolWorkbenchProviderProps {
 	onRejectTool: (approval: PendingToolApproval) => Promise<void>;
 	children: ReactNode;
 }
+
+// The folder of an agent's project that holds its own files: the one part a chat reads, and that the people
+// the agent is shared with may read.
+const AGENT_FILES_PATH = "/public";
 
 /** One room's persistent store and the snapshot identity used to hydrate it. */
 interface RoomToolWorkbench {
@@ -87,6 +93,7 @@ function createRoomToolWorkbench(
 export function ToolWorkbenchProvider({
 	roomId,
 	insightId,
+	agentId,
 	tools,
 	toolCreatedAt,
 	pendingApprovals,
@@ -266,34 +273,66 @@ export function ToolWorkbenchProvider({
 		[isOpen, store, panelTarget],
 	);
 
-	const openFile = useCallback(
-		(path: string, name: string, fileInsightId?: string) => {
+	// a file in the dock, from whichever place holds it
+	const openFilePanel = useCallback(
+		(config: {
+			mode: FilePanelMode;
+			name: string;
+			path: string;
+			isolated?: true;
+		}) => {
 			if (!isOpen) {
 				const trigger = document.activeElement;
 				workbenchTriggerId.current =
 					trigger instanceof HTMLElement ? trigger.id || null : null;
 			}
+			store
+				.getState()
+				.layout.actions.selectPanel(
+					getFilePanelType(config.path),
+					config,
+					{
+						name: config.name,
+						target: panelTarget?.(store.getState().layout),
+					},
+				);
+			setIsOpen(true);
+		},
+		[isOpen, store, panelTarget],
+	);
+
+	const openFile = useCallback(
+		(path: string, name: string, fileInsightId?: string) => {
 			const otherInsightId =
 				fileInsightId && fileInsightId !== insightId
 					? fileInsightId
 					: null;
-			store.getState().layout.actions.selectPanel(
-				getFilePanelType(path),
-				{
-					mode: {
-						type: "INSIGHT",
-						insightId: otherInsightId ?? insightId,
-					},
-					name,
-					path,
-					// Another insight's file keeps its own scope when the room's insight changes.
-					...(otherInsightId ? { isolated: true } : {}),
+			openFilePanel({
+				mode: {
+					type: "INSIGHT",
+					insightId: otherInsightId ?? insightId,
 				},
-				{ name, target: panelTarget?.(store.getState().layout) },
-			);
-			setIsOpen(true);
+				name,
+				path,
+				// Another insight's file keeps its own scope when the room's insight changes.
+				...(otherInsightId ? { isolated: true as const } : {}),
+			});
 		},
-		[insightId, isOpen, store, panelTarget],
+		[insightId, openFilePanel],
+	);
+
+	const openAgentFile = useMemo(
+		() =>
+			agentId
+				? (path: string, name: string) =>
+						// read in place from the agent's project: its access decides whether the file can be edited
+						openFilePanel({
+							mode: { type: "APP", app: agentId },
+							name,
+							path: `${AGENT_FILES_PATH}${path}`,
+						})
+				: undefined,
+		[agentId, openFilePanel],
 	);
 
 	const openInline = useCallback(
@@ -427,6 +466,7 @@ export function ToolWorkbenchProvider({
 			openInline,
 			openWorkbench,
 			openFile,
+			openAgentFile,
 			closeTool,
 			closeWorkbench,
 			onApproveTool,
@@ -448,6 +488,7 @@ export function ToolWorkbenchProvider({
 			openInline,
 			openWorkbench,
 			openFile,
+			openAgentFile,
 			closeTool,
 			closeWorkbench,
 			onApproveTool,

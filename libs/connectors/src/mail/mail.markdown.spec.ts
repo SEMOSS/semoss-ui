@@ -102,4 +102,24 @@ describe("mailThreadToMarkdown", () => {
 		expect(markdown).toContain("Looks good.\n");
 		expect(markdown).not.toContain("cut short");
 	});
+
+	it("leaves a draft out of a saved thread, and refuses a thread of drafts only", () => {
+		// a thread is read from every folder, so a reply that was never sent comes with it
+		const draft: MailMessage = {
+			...message,
+			id: "u3",
+			body: "Not sent yet.",
+			isDraft: true,
+		};
+		const markdown = mailThreadToMarkdown(MAIL_APPS.microsoft, [
+			message,
+			draft,
+		]);
+		expect(markdown).toContain("**Emails:** 1");
+		expect(markdown).toContain("Numbers attached.");
+		expect(markdown).not.toContain("Not sent yet.");
+		expect(() =>
+			mailThreadToMarkdown(MAIL_APPS.microsoft, [draft]),
+		).toThrow("only drafts");
+	});
 });

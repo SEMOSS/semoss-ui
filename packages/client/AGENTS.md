@@ -189,14 +189,15 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   on an engine's Access Control tab, and on the Apps tab of an engine in Resource Governance in
   admin mode: the apps the engine gives a permission to, whose custom
   reactors use the engine with it for people who have no access to the engine themselves. It
-  reads `getResourcePermissions` on the engine (`use-engine-app-permissions.ts`: `projects`,
-  `canChangeProjects`, `addsAreAdminOnly`, `canChangeModelLimits` and `costLimitsAvailable`, in
-  admin mode when the table's `admin` is set). Only the engine's editors and owners see the apps,
-  and admins in admin mode: the Access Control tab mounts the table for an editor or owner
-  only, and the backend sends anyone else an empty `projects`. It shows each app with its
+  reads `getResourcePermissions` on the engine (`use-engine-app-permissions.ts`: the `engines`
+  of type `PROJECT`, kept as one list per read, `canChangeEngines`, `addsAreAdminOnly`,
+  `canChangeModelLimits` and `costLimitsAvailable`, in admin mode when the table's `admin` is
+  set). Only the engine's editors and owners see the apps, and admins in admin mode: the Access
+  Control tab mounts the table for an editor or owner only, and the backend sends anyone else an
+  empty `engines`. It shows each app with its
   image, name (the app's display name when it has one) and id
   (`components/shared/resource-id.tsx`), its level, and an Ends column when an app has an end
-  date. The controls follow `canChangeProjects` from the backend, which is true for the
+  date. The controls follow `canChangeEngines` from the backend, which is true for the
   engine's owners and in admin mode, and not the page's permission: owners change a level in
   place between Read-Only and Editor (an app is never an Author), take an app's access away
   after a confirmation, and add one with Add App; editors see each level in a disabled select.
@@ -205,7 +206,8 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   apps and the model's limits the summary is the same `usage-limit-edit-button.tsx` and opens
   `usage-limit-dialog.tsx` with `source="APP"`, whose rules are Shared by the App or For Each
   User, and everyone else sees the summary with "Only owners can set usage limits". Every
-  change is one permission batch on the engine with one `PROJECT` change
+  change is one permission batch on the engine with one change whose subject is
+  `{ category: "ENGINE", id, type: "PROJECT" }`
   (`engine-app-permissions.ts`: `toAddAppBatch`, `toAppLevelBatch`, `toAppLimitBatch` and
   `toRemoveAppBatch`), saved at once through `savePermissionBatches`; a `CHANGE` sets the whole
   grant, so it carries the app's level, end date and usage limit through `toSentGrant`. A saved
@@ -220,6 +222,28 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   with no app it shows "Pick an app" under the field, and with an App Limit that is not
   complete it shows the editor's problems, both from then on. Bulk Access Management works on
   an engine's people and teams, and its apps are managed in this table.
+- **`features/engine-engine-permissions/`** is the Engines table (`engine-engines-table.tsx`)
+  under the Apps table on an engine's Access Control tab, and on the Engines tab of an engine in
+  Resource Governance in admin mode: the other engines the engine gives a permission to, which
+  can call it as part of their own work, even for people who have no access to it, such as a
+  vector database that creates its embeddings with a model or a guardrail that uses a model as
+  its judge.
+  It works as the Apps table does, from the same read (`use-engine-engine-permissions.ts`: the
+  `engines` of every type but `PROJECT`), with the same controls, rules and refusals. Each row
+  shows the engine's logo (`EngineSubtypeIcon` from its type and subtype), name and id, and is
+  keyed by type and id, since an id names one engine of a type. On a model its Usage Limit
+  column opens `usage-limit-dialog.tsx` with `source="ENGINE"`, whose rules are Shared by the
+  Engine or For Each User. Every change is one permission batch on the engine with one change
+  whose subject is `{ category: "ENGINE", id, type }` (`engine-engine-permissions.ts`:
+  `toAddEngineBatch`, `toEngineLevelBatch`, `toEngineLimitBatch` and `toRemoveEngineBatch`).
+  `add-engine-engine-dialog.tsx` is Add Engine: the shared `EngineSelect` over the engines the
+  user can see, or every engine in admin mode (`admin`), of the types whose code calls other
+  engines (`ENGINE_GRANTEE_ENGINE_TYPES`: models, vector databases, guardrails, functions,
+  databases and storage; venv engines need no permission), the level, starting at Read-Only,
+  and on a model the Engine Limit, starting at No Limit Defined. Authorize Access stays
+  enabled: pressed with no engine it shows "Pick an engine", with the engine itself it shows
+  "An engine cannot be given a permission on itself", and with an Engine Limit that is not
+  complete it shows the editor's problems.
 - **Nothing is lost by accident.** Load Latest Access reads the access again and keeps the
   staged changes. Both views ask before Discard Changes drops them, and
   `use-unsaved-changes-guard.ts` warns before leaving the page with changes that are not saved
@@ -230,7 +254,7 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   also act as an ordinary user. The Access Control tab, My Teams and their Bulk Access
   Management views call `/auth/permissionBatch` with the user's permissions. Admin mode calls
   `/auth/admin/permissionBatch` (each SDK call takes `admin`): Team Permissions' Bulk Access
-  Management, and Resource Governance's Access, Apps and Effective Permissions tabs. Admin mode
+  Management, and Resource Governance's Access, Apps, Engines and Effective Permissions tabs. Admin mode
   also calls the admin pixel or endpoint for everything else it does to someone else's engine
   or project, since on the backend an admin has more than their own permissions only through
   an `Admin*` reactor or `/auth/admin/...` endpoint: reading and saving the SMSS
@@ -682,6 +706,22 @@ restart and reload on every server in a cluster.
   app's Settings (`pages/app/app-python-reactors-settings.page.tsx`). Reload Python Files
   (`ReloadProject`) clears the app modules python has cached, so the next run imports the current
   .py files without restarting python.
+
+### SMSS Editor
+
+- **`components/settings/update-smss.tsx`** (`UpdateSMSS`) is the one SMSS editor, for engines
+  and projects, in normal and admin mode: the engine and app SMSS pages, the workbench panels
+  and Resource Governance's SMSS tab all render it. It reads `GetEngineSMSS`/`GetProjectSMSS`,
+  or `AdminGetEngineSMSS`/`AdminGetProjectSMSS` in admin mode, which return `{ smss, smssHash }`:
+  the text with its secrets masked, and the hash of the SMSS as it was read.
+- A save (`updateDatabaseSmssProperties` in `api/databases.ts`, `updateProjectSmssProperties`
+  in `api/projects.ts`) sends the text with that `smssHash`. When the SMSS changed since it was
+  read, the backend refuses it with a 409 and the error code `SMSS_CHANGED`: the editor keeps
+  the text, stays unlocked, and shows a destructive alert, "This SMSS changed since you opened
+  it", with Load Latest.
+- Load Latest, and Refresh while the editor holds unsaved edits, ask first in a dialog, "Load
+  the latest SMSS?", since the unsaved changes are lost; on confirm the SMSS is read again and
+  the editor takes the latest text. Refresh with nothing unsaved reads it again at once.
 
 ### Settings Tabs
 

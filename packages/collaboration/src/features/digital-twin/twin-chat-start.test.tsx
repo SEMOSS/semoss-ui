@@ -1,14 +1,32 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
+import { CollaborationSessionProvider } from "@/features/collaboration/state/collaboration-session.context";
+import type { ComposerPrompt } from "@/features/rooms/components/room-composer.types";
+import { readOpenedTwins } from "./opened-twins";
 import { TwinChatStart } from "./twin-chat-start";
 
 // one actions object, as the provider gives; a new one per render would read again forever
 const insight = vi.hoisted(() => ({ actions: { run: vi.fn() } }));
 vi.mock("@semoss/sdk/react", () => ({ useInsight: () => insight }));
-// the ask box opens a room of its own; where it shows is what this page decides
+// the ask box opens a room of its own; where it shows is what this page decides, and that its
+// agent stays the twin: an ask box whose agent could be changed is not "The ask box" here
 vi.mock("@/features/daily-chat/landing-chat-composer", () => ({
-	LandingChatComposer: () => <p>The ask box</p>,
+	LandingChatComposer: ({
+		isAgentLocked,
+		starterPrompts,
+	}: {
+		isAgentLocked?: boolean;
+		starterPrompts?: readonly ComposerPrompt[];
+	}) => (
+		<>
+			<p>{isAgentLocked ? "The ask box" : "An ask box for any agent"}</p>
+			{starterPrompts?.map((prompt) => (
+				<span key={prompt.id}>{prompt.title}</span>
+			))}
+		</>
+	),
 }));
 
 const answer = (output: unknown) => ({
@@ -18,19 +36,27 @@ const twin = (config_json: unknown) => ({
 	workspace_id: "twin-2",
 	name: "Dana Ortiz Twin",
 	system_prompt: "",
+	digital_twin_file_access: "read",
 	config_json,
 });
 
 beforeEach(() => {
+	localStorage.clear();
 	insight.actions.run.mockReset();
 });
 afterEach(cleanup);
 
+const STATE = createInitialCollaborationState();
+/** Who the marks are kept for. */
+const PERSON = STATE.profile.email || STATE.profile.id;
+
 const renderStart = (agentId: string) =>
 	render(
-		<MemoryRouter>
-			<TwinChatStart agentId={agentId} />
-		</MemoryRouter>,
+		<CollaborationSessionProvider initialState={STATE}>
+			<MemoryRouter>
+				<TwinChatStart agentId={agentId} />
+			</MemoryRouter>
+		</CollaborationSessionProvider>,
 	);
 
 it("shows who the twin is, its greeting as written, and the ask box", async () => {
@@ -51,12 +77,65 @@ it("shows who the twin is, its greeting as written, and the ask box", async () =
 		}),
 	).toBeVisible();
 	expect(insight.actions.run).toHaveBeenCalledExactlyOnceWith(
-		'GetWorkspace(workspaceId=["twin-2"]);',
+		'GetWorkspace(workspaceId=["twin-2"], includeDigitalTwinFileAccess=[true]);',
 	);
 	// Markdown, not its source
 	expect(screen.getByText("renewal").tagName).toBe("STRONG");
-	expect(screen.getByText(/an AI, not the person/)).toBeVisible();
+	expect(screen.getByText(/Ask this AI twin/)).toBeVisible();
 	expect(screen.getByText("The ask box")).toBeVisible();
+	expect(
+		screen.getByText(/no access to your own mail, calendar, or files/),
+	).toBeVisible();
+	expect(screen.getByText("Find a source")).toBeVisible();
+	expect(screen.queryByText("Add a document")).toBeNull();
+	expect(screen.queryByText("Choose what your twin shares")).toBeNull();
+	expect([...readOpenedTwins(PERSON)]).toEqual(["twin-2"]);
+});
+
+it("explains approval and original files to the owner and links to this twin’s copies", async () => {
+	insight.actions.run.mockResolvedValue(
+		answer({
+			...twin({}),
+			permission: "OWNER",
+			digital_twin_file_access: "manage",
+		}),
+	);
+	renderStart("twin-2");
+	expect(
+		await screen.findByRole("heading", {
+			name: "Choose what your twin shares",
+		}),
+	).toBeVisible();
+	expect(
+		screen.getByText(
+			/deleting its saved copy.*approve each change.*original files/i,
+		),
+	).toBeVisible();
+	expect(
+		screen.getByRole("link", { name: "View shared documents" }),
+	).toHaveAttribute("href", "/twins/mine/contents?twinId=twin-2&in=files");
+	expect(screen.getByText("Add a document")).toBeVisible();
+	expect(screen.queryByText("Find a source")).toBeNull();
+});
+
+it("describes approved additions on a server that only supports adding copies in chat", async () => {
+	insight.actions.run
+		.mockResolvedValueOnce(
+			answer({
+				...twin({}),
+				permission: "OWNER",
+				digital_twin_file_access: undefined,
+			}),
+		)
+		.mockResolvedValueOnce(
+			answer([{ project_id: "twin-2", project_name: "Dana Ortiz Twin" }]),
+		);
+	renderStart("twin-2");
+	expect(await screen.findByText(/approve each addition/)).toBeVisible();
+	expect(screen.queryByText(/deleting its saved copy/)).toBeNull();
+	expect(
+		screen.getByRole("link", { name: "View or remove shared documents" }),
+	).toHaveAttribute("href", "/twins/mine/contents?twinId=twin-2&in=files");
 });
 
 it("shows no greeting for a twin whose greeting is off", async () => {
@@ -81,6 +160,8 @@ it("says so instead of offering a chat with a twin the person cannot open", asyn
 		"User unauthorized to perform this operation",
 	);
 	expect(screen.queryByText("The ask box")).toBeNull();
+	// a twin that did not open stays new
+	expect(readOpenedTwins(PERSON).size).toBe(0);
 	expect(screen.getByRole("link", { name: "Digital Twins" })).toHaveAttribute(
 		"href",
 		"/twins",

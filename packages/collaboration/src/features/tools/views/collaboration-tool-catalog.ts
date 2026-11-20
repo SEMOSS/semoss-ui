@@ -128,6 +128,11 @@ export const COLLABORATION_TOOL_VIEWS = {
 	DownloadDriveFile: { title: "File download", family: "files" },
 	CreateDriveFolder: { title: "Create a OneDrive folder", family: "files" },
 	UploadDriveFile: { title: "Upload a file to OneDrive", family: "files" },
+	// a Digital Twin's alone, in the chat its owner has with it
+	SaveToDigitalTwin: {
+		title: "Add a file to your Digital Twin",
+		family: "files",
+	},
 	Remember: { title: "Remember a detail", family: "memory" },
 	Forget: { title: "Forget a memory", family: "memory" },
 	SearchMemories: {

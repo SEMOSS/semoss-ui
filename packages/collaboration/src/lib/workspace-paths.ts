@@ -51,6 +51,20 @@ export function twinContentsPath(place?: string, twinId?: string): string {
 	return search.size ? `${path}?${search}` : path;
 }
 
+/** The signed-in person's persona for their Digital Twins. */
+export function twinPersonaPath(): string {
+	return "/twins/persona";
+}
+
+/**
+ * The interview that writes that persona. `more` opens one that was wrapped
+ * up early at the steps it left out.
+ */
+export function twinPersonaInterviewPath(more?: "more"): string {
+	const path = "/twins/persona/interview";
+	return more ? `${path}?${new URLSearchParams({ go: more })}` : path;
+}
+
 /** Pages that open on the hero photo; the shell scrolls them together with its header so the photo runs behind it. */
 export function isHeroPath(pathname: string): boolean {
 	return ["/", "/work", "/work/review", "/work/topics"].includes(
