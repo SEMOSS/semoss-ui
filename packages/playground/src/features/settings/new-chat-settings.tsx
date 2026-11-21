@@ -13,10 +13,14 @@ import {
 	ToggleGroup,
 	ToggleGroupItem,
 } from "@semoss/ui/next";
-import { offersAgentMode } from "@/features/conversation/agent-mode-choice";
+import {
+	newChatModes,
+	offersAgentMode,
+} from "@/features/conversation/agent-mode-choice";
 import {
 	isNewChatMode,
 	readDeploymentNewChatDefaults,
+	resolveNewChatMode,
 } from "@/features/new-chat-preferences/new-chat-preferences";
 import { useNewChatPreferences } from "@/features/new-chat-preferences/use-new-chat-preferences";
 import { useChat } from "@/hooks/use-chat";
@@ -49,10 +53,15 @@ export const NewChatSettings = observer(() => {
 
 	const canSelectModel = Boolean(theme.featureFlags?.enableModelSelect);
 	const canUseAgentMode = offersAgentMode(theme.featureFlags);
+	const modes = newChatModes(theme.featureFlags);
 	// the mode a new chat would start in, which the agent row follows
-	const startMode =
-		preferences.mode ?? readDeploymentNewChatDefaults(theme).mode ?? "chat";
-	const isAgentDefault = canUseAgentMode && startMode === "agent";
+	const startMode = resolveNewChatMode(
+		null,
+		preferences,
+		readDeploymentNewChatDefaults(theme),
+		modes,
+	);
+	const isAgentDefault = startMode === "agent";
 	const defaultLabel = t("settings.general.newChat.default");
 
 	// the saved agent's name, for the picker's trigger
@@ -127,7 +136,7 @@ export const NewChatSettings = observer(() => {
 					</Select>
 				</SettingsRow>
 			) : null}
-			{canUseAgentMode ? (
+			{modes.length > 1 ? (
 				<SettingsRow
 					label={t("settings.general.newChat.mode")}
 					labelId={modeLabelId}

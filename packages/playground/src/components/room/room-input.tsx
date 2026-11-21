@@ -62,7 +62,10 @@ import {
 import { useFileDrag } from "@/contexts/file-drag-context";
 import { ConnectorSignInNotice } from "@/features/connectors/components/connector-sign-in-notice";
 import { useUserConnectorsSync } from "@/features/connectors/use-user-connectors-sync";
-import { canChooseAgentMode } from "@/features/conversation/agent-mode-choice";
+import {
+	canChooseAgentMode,
+	offersDefaultAgent,
+} from "@/features/conversation/agent-mode-choice";
 import { ContextItems } from "@/features/conversation/context-items";
 import {
 	getPromptHistory,
@@ -1190,7 +1193,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						values={options.mcp}
 						workspace={agentChipWorkspace}
 						agentEditable={!!onWorkspaceChange}
-						allowDefaultAgent={canChooseMode}
+						allowDefaultAgent={offersDefaultAgent(
+							root.theme.featureFlags,
+						)}
 						isDefaultAgent={
 							onDefaultAgentChange ? isDefaultAgent : undefined
 						}

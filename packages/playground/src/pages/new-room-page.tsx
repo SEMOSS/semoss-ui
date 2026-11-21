@@ -25,7 +25,8 @@ import { RoomWorkbench } from "@/components/room/room-workbench";
 import { FileDragProvider } from "@/contexts/file-drag-context";
 import {
 	canChooseAgentMode,
-	offersAgentMode,
+	isAgentModeOnly,
+	newChatModes,
 } from "@/features/conversation/agent-mode-choice";
 import { clearAgentOptions } from "@/features/conversation/clear-agent-options";
 import { DropHighlight } from "@/features/conversation/drop-highlight";
@@ -152,7 +153,7 @@ export const NewRoomPage = observer(() => {
 			session,
 			preferences,
 			deployment,
-			offersAgentMode(theme.featureFlags),
+			newChatModes(theme.featureFlags),
 		);
 		return {
 			mode: initialMode,
@@ -173,10 +174,15 @@ export const NewRoomPage = observer(() => {
 	// dropped quietly, for Default Agent, rather than shown as an error.
 	const defaultAgentIdRef = useRef(initialChat.agentId);
 	// With modeFollowsAgent the agent picker decides the mode: a saved agent
-	// or Default Agent runs in agent mode, No Agent in chat mode.
-	const modeFollowsAgent = !!theme.featureFlags?.modeFollowsAgent;
+	// or Default Agent runs in agent mode, No Agent in chat mode. agentModeOnly
+	// is the same without No Agent, so every chat runs in agent mode.
+	const agentModeOnly = isAgentModeOnly(theme.featureFlags);
+	const modeFollowsAgent =
+		!agentModeOnly && !!theme.featureFlags?.modeFollowsAgent;
 	const mode: "chat" | "agent" =
-		modeFollowsAgent && selectedWorkspaceId ? "agent" : chosenMode;
+		agentModeOnly || (modeFollowsAgent && selectedWorkspaceId)
+			? "agent"
+			: chosenMode;
 	const {
 		room: preparedRoom,
 		isPreparing,
