@@ -525,6 +525,9 @@ it("shows single steps under Needs you and Also asked of you, with their topic a
 			</MemoryRouter>
 		</CollaborationSessionProvider>,
 	);
+	await userEvent.click(
+		await screen.findByRole("button", { name: /^Single steps/ }),
+	);
 	const needs = within(
 		await screen.findByRole("list", {
 			name: "Single steps: Needs you",
@@ -563,6 +566,9 @@ it("offers Undo after a single step is taken off the list", async () => {
 				<WorkItems />
 			</MemoryRouter>
 		</CollaborationSessionProvider>,
+	);
+	await userEvent.click(
+		await screen.findByRole("button", { name: /^Single steps/ }),
 	);
 	await userEvent.click(
 		await screen.findByRole("button", {

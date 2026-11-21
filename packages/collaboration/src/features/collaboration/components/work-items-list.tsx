@@ -1490,7 +1490,7 @@ export function WorkItems({
 	const dragFrom = useRef("");
 	const [showOthers, setShowOthers] = useState(false);
 	// single steps fold away on a topic's page, where its work items lead
-	const [showSteps, setShowSteps] = useState(!topicId);
+	const [showSteps, setShowSteps] = useState(false);
 	const [view, setView] = useState<View>("all");
 	const waitingTab = useRef<HTMLButtonElement>(null);
 	const [mergeItemId, setMergeItemId] = useState<string | null>(null);
@@ -1751,7 +1751,10 @@ export function WorkItems({
 	);
 	const needSteps = looseSteps.filter((step) => !asideSteps.includes(step));
 	const singleSteps = looseSteps.length ? (
-		<section aria-label="Single steps" className="mt-6 space-y-2">
+		<section
+			aria-label="Single steps"
+			className="mt-6 space-y-2 rounded-xl border bg-card px-5 py-4"
+		>
 			<H3 className="text-base leading-tight">
 				<button
 					type="button"
@@ -1843,6 +1846,7 @@ export function WorkItems({
 									: "Your priorities"
 							}
 							count={mine.length}
+							plain={Boolean(topicId)}
 							detail={
 								sharedTopic ? (
 									<ItemTopicChip item={sharedTopic} />
@@ -1862,55 +1866,64 @@ export function WorkItems({
 									}}
 									className="gap-0"
 								>
-									<div className="flex items-end justify-between gap-4 border-b">
-										<TabsList className="h-auto justify-start gap-6 rounded-none bg-transparent p-0">
-											{(
-												[
-													["all", "All work", mine],
+									{(!topicId || mine.length > 1) && (
+										<div className="flex items-end justify-between gap-4 border-b">
+											<TabsList className="h-auto justify-start gap-6 rounded-none bg-transparent p-0">
+												{(
 													[
-														"next",
-														"Next steps",
-														withNext,
-													],
-													[
-														"waiting",
-														"Waiting",
-														waiting,
-													],
-												] as const
-											).map(([value, label, rows]) => (
-												<TabsTrigger
-													key={value}
-													value={value}
-													ref={
-														value === "waiting"
-															? waitingTab
-															: undefined
-													}
-													// an underlined tab instead of the pill: the line sits on the rule under the row
-													className="-mb-px h-auto pointer-coarse:min-h-11 flex-none gap-2 rounded-none border-0 border-transparent border-b-2 px-0 pt-1 pb-3 font-normal text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:font-medium data-[state=active]:text-primary data-[state=active]:shadow-none dark:data-[state=active]:border-primary dark:data-[state=active]:bg-transparent dark:data-[state=active]:text-foreground"
-												>
-													{/* the space is for the tab's spoken name; the gap spaces them on screen */}
-													{label}{" "}
-													<span className="text-xs tabular-nums">
-														{rows.length}
-													</span>
-												</TabsTrigger>
-											))}
-										</TabsList>
-										<span
-											className={cn(
-												"hidden shrink-0 items-center gap-1.5 pb-3 text-muted-foreground text-xs",
-												canOrder && "sm:flex",
-											)}
-										>
-											<ArrowUpDown
-												aria-hidden="true"
-												className="size-3.5"
-											/>
-											In your order
-										</span>
-									</div>
+														[
+															"all",
+															"All work",
+															mine,
+														],
+														[
+															"next",
+															"Next steps",
+															withNext,
+														],
+														[
+															"waiting",
+															"Waiting",
+															waiting,
+														],
+													] as const
+												).map(
+													([value, label, rows]) => (
+														<TabsTrigger
+															key={value}
+															value={value}
+															ref={
+																value ===
+																"waiting"
+																	? waitingTab
+																	: undefined
+															}
+															// an underlined tab instead of the pill: the line sits on the rule under the row
+															className="-mb-px h-auto pointer-coarse:min-h-11 flex-none gap-2 rounded-none border-0 border-transparent border-b-2 px-0 pt-1 pb-3 font-normal text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:font-medium data-[state=active]:text-primary data-[state=active]:shadow-none dark:data-[state=active]:border-primary dark:data-[state=active]:bg-transparent dark:data-[state=active]:text-foreground"
+														>
+															{/* the space is for the tab's spoken name; the gap spaces them on screen */}
+															{label}{" "}
+															<span className="text-xs tabular-nums">
+																{rows.length}
+															</span>
+														</TabsTrigger>
+													),
+												)}
+											</TabsList>
+											<span
+												className={cn(
+													"hidden shrink-0 items-center gap-1.5 pb-3 text-muted-foreground text-xs",
+													canOrder && "sm:flex",
+												)}
+											>
+												<ArrowUpDown
+													aria-hidden="true"
+													className="size-3.5"
+												/>
+												In your order
+											</span>
+										</div>
+									)}
 									<TabsContent value={view}>
 										{shownNeedsYou.length ||
 										shownAlsoAsked.length ? (

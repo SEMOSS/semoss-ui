@@ -44,34 +44,13 @@ export function WorkItemPage() {
 					</Small>
 				) : shown ? (
 					<>
-						<h1 className="mb-1 font-semibold text-2xl">
+						<h1 className="mb-6 font-semibold text-2xl">
 							{context.task?.title || shown.title}
 						</h1>
-						<Small className="mb-6 block text-muted-foreground">
-							Ask anything about this item. The assistant sees its
-							steps and the mail and chats it came from.
-						</Small>
-						{rooms.length > 0 && (
-							<RoomSelector
-								rooms={rooms}
-								onRoomSelect={(roomId) =>
-									navigate(roomPath(roomId))
-								}
-								label={
-									rooms.length === 1
-										? "View earlier chat"
-										: "View earlier chats"
-								}
-							/>
-						)}
-						<LandingChatComposer
-							topicId={shown.topicId}
-							taskId={shown.id}
-						/>
 						{context.task ? (
 							<section
 								aria-label="Where it stands"
-								className="mt-10 space-y-3"
+								className="mb-10 space-y-3"
 							>
 								<h2 className="font-display font-semibold text-base">
 									Where it stands
@@ -86,6 +65,37 @@ export function WorkItemPage() {
 								</div>
 							</section>
 						) : null}
+						<section
+							aria-label="Ask about this item"
+							className="space-y-3"
+						>
+							<div className="space-y-1">
+								<h2 className="font-display font-semibold text-base">
+									Ask about this item
+								</h2>
+								<Small className="block text-muted-foreground">
+									The assistant sees its steps and the mail
+									and chats it came from.
+								</Small>
+							</div>
+							{rooms.length > 0 && (
+								<RoomSelector
+									rooms={rooms}
+									onRoomSelect={(roomId) =>
+										navigate(roomPath(roomId))
+									}
+									label={
+										rooms.length === 1
+											? "View earlier chat"
+											: "View earlier chats"
+									}
+								/>
+							)}
+							<LandingChatComposer
+								topicId={shown.topicId}
+								taskId={shown.id}
+							/>
+						</section>
 					</>
 				) : (
 					<Small className="text-muted-foreground">

@@ -218,7 +218,9 @@ export function TopicDetail() {
 								setIsEditing(true);
 							}}
 						>
-							{topic.description}
+							<span className="line-clamp-2">
+								{topic.description}
+							</span>
 						</Button>
 					) : undefined
 				}
@@ -299,20 +301,8 @@ export function TopicDetail() {
 					</div>
 				)}
 			</CollaborationPageHeader>
-			<section aria-label="Topic assistant" className="mb-8 space-y-3">
-				<P className="text-muted-foreground text-sm">
-					{canStartAssistant
-						? "Ask about this topic's work, people, and emails."
-						: "Set this topic to Active or Dormant to start a chat."}
-				</P>
-				{canStartAssistant && (
-					<Suspense fallback={<output>Loading assistant...</output>}>
-						<LandingChatComposer topicId={topic.id} />
-					</Suspense>
-				)}
-			</section>
 			<div className="grid min-w-0 grid-cols-1 items-start gap-5 xl:grid-cols-3">
-				<div className="min-w-0 space-y-5 xl:col-span-2">
+				<div className="min-w-0 space-y-6 xl:col-span-2">
 					<Card className={cardClassName}>
 						<Tabs
 							value={tab}
@@ -469,6 +459,25 @@ export function TopicDetail() {
 							</TabsContent>
 						</Tabs>
 					</Card>
+					<section aria-label="Topic assistant" className="space-y-3">
+						<div className="space-y-1">
+							<H2 className="font-display font-semibold text-base">
+								Ask about this topic
+							</H2>
+							<P className="text-muted-foreground text-sm">
+								{canStartAssistant
+									? "Ask about this topic's work, people, and emails."
+									: "Set this topic to Active or Dormant to start a chat."}
+							</P>
+						</div>
+						{canStartAssistant && (
+							<Suspense
+								fallback={<output>Loading assistant...</output>}
+							>
+								<LandingChatComposer topicId={topic.id} />
+							</Suspense>
+						)}
+					</section>
 				</div>
 				<aside
 					aria-label="Topic context"
