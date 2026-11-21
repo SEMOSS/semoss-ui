@@ -1491,6 +1491,8 @@ export function WorkItems({
 	const [showOthers, setShowOthers] = useState(false);
 	// single steps fold away on a topic's page, where its work items lead
 	const [showSteps, setShowSteps] = useState(false);
+	const [showTopicReview, setShowTopicReview] = useState(false);
+	const [showTopicWaiting, setShowTopicWaiting] = useState(false);
 	const [view, setView] = useState<View>("all");
 	const waitingTab = useRef<HTMLButtonElement>(null);
 	const [mergeItemId, setMergeItemId] = useState<string | null>(null);
@@ -1835,8 +1837,13 @@ export function WorkItems({
 					</span>
 				</Link>
 			) : null}
-			<div className="grid @5xl:grid-cols-12 grid-cols-1 gap-6">
-				<div className="@5xl:col-span-8 min-w-0">
+			<div
+				className={cn(
+					"grid grid-cols-1 gap-6",
+					!topicId && "@5xl:grid-cols-12",
+				)}
+			>
+				<div className={cn("min-w-0", !topicId && "@5xl:col-span-8")}>
 					{/* its own block: the panel fills its parent, and the column also holds the lists below it */}
 					<div>
 						<BriefPanel
@@ -1847,6 +1854,7 @@ export function WorkItems({
 							}
 							count={mine.length}
 							plain={Boolean(topicId)}
+							hideHeader={Boolean(topicId)}
 							detail={
 								sharedTopic ? (
 									<ItemTopicChip item={sharedTopic} />
@@ -1931,10 +1939,14 @@ export function WorkItems({
 												{shownNeedsYou.length ||
 												view === "all" ? (
 													<section aria-label="Needs you">
-														{groupHeading(
-															"Needs you",
-															shownNeedsYou.length,
-														)}
+														{!topicId ||
+														shownAlsoAsked.length >
+															0
+															? groupHeading(
+																	"Needs you",
+																	shownNeedsYou.length,
+																)
+															: null}
 														{shownNeedsYou.length ? (
 															rows(
 																shownNeedsYou,
@@ -2025,7 +2037,7 @@ export function WorkItems({
 								shown={items.length}
 								total={totals.workItems}
 							/>
-							{mine.length ? (
+							{mine.length && (!topicId || mine.length > 1) ? (
 								<div className="mt-auto flex flex-wrap justify-between gap-x-4 gap-y-1 border-t pt-4 text-muted-foreground text-xs">
 									<span>
 										{mine.length > 1 && canOrder
@@ -2041,26 +2053,93 @@ export function WorkItems({
 						</BriefPanel>
 					</div>
 					{review.length && topicId ? (
-						// on a topic page its new items are reviewed in place, under the work already kept
-						<div className="mt-6">
-							<ReviewList
-								topicId={topicId}
-								items={review}
-								all={items}
-								run={run}
-								runAll={runAll}
-								undoDismiss={(taskId) =>
-									void run(
-										pixel("WorkSaveWork", {
-											taskId,
-											status: "active",
-										}),
-									)
-								}
-							/>
-						</div>
+						// on a topic page its new items stay tucked until opened so active work and the assistant stay visible
+						<section
+							aria-label="Suggested work items to review"
+							className="mt-4 space-y-3"
+						>
+							<button
+								type="button"
+								aria-expanded={showTopicReview}
+								onClick={() => setShowTopicReview((v) => !v)}
+								className="flex w-full flex-wrap items-center gap-x-2.5 gap-y-1 rounded-xl border border-primary/15 bg-primary/5 px-4 py-3 text-left transition-colors hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-ring"
+							>
+								<ChevronDown
+									aria-hidden="true"
+									className={cn(
+										"size-4 shrink-0 text-muted-foreground transition-transform motion-reduce:transition-none",
+										!showTopicReview && "-rotate-90",
+									)}
+								/>
+								<span className="font-medium text-sm">
+									{review.length} suggested work{" "}
+									{review.length === 1 ? "item" : "items"} to
+									review
+								</span>
+								<span className="text-muted-foreground text-xs">
+									From this topic&apos;s mail and chats
+								</span>
+							</button>
+							{showTopicReview ? (
+								<ReviewList
+									topicId={topicId}
+									items={review}
+									all={items}
+									run={run}
+									runAll={runAll}
+									undoDismiss={(taskId) =>
+										void run(
+											pixel("WorkSaveWork", {
+												taskId,
+												status: "active",
+											}),
+										)
+									}
+								/>
+							) : null}
+						</section>
 					) : null}
 					{singleSteps}
+					{topicId && waits.length ? (
+						<section
+							aria-label="Waiting on"
+							className="mt-4 space-y-3 rounded-xl border bg-card px-5 py-4"
+						>
+							<H3 className="text-base leading-tight">
+								<button
+									type="button"
+									aria-expanded={showTopicWaiting}
+									onClick={() =>
+										setShowTopicWaiting((v) => !v)
+									}
+									className="flex w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-sm text-left focus-visible:outline-2 focus-visible:outline-ring"
+								>
+									<ChevronDown
+										aria-hidden="true"
+										className={cn(
+											"size-4 shrink-0 text-muted-foreground transition-transform motion-reduce:transition-none",
+											!showTopicWaiting && "-rotate-90",
+										)}
+									/>
+									Waiting on
+									<span className="rounded-md bg-muted px-2 py-0.5 font-medium text-muted-foreground text-xs tabular-nums">
+										{waits.length}
+									</span>
+									<span className="font-normal text-muted-foreground text-sm">
+										The handoffs behind your work
+									</span>
+								</button>
+							</H3>
+							{showTopicWaiting ? (
+								<WorkWaitingOn
+									waits={waits}
+									onViewAll={() =>
+										waitingTab.current?.focus()
+									}
+								/>
+							) : null}
+						</section>
+					) : null}
 					{topicId ? null : (
 						<>
 							<DoneWork />
@@ -2068,13 +2147,15 @@ export function WorkItems({
 						</>
 					)}
 				</div>
-				<div className="@5xl:col-span-4 min-w-0">
-					<WorkWaitingOn
-						waits={waits}
-						// focusing a tab also selects it, and brings the list into view where the cards stack
-						onViewAll={() => waitingTab.current?.focus()}
-					/>
-				</div>
+				{topicId ? null : (
+					<div className="@5xl:col-span-4 min-w-0">
+						<WorkWaitingOn
+							waits={waits}
+							// focusing a tab also selects it, and brings the list into view where the cards stack
+							onViewAll={() => waitingTab.current?.focus()}
+						/>
+					</div>
+				)}
 			</div>
 			{topicId ? null : (
 				<Link

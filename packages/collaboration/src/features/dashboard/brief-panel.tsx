@@ -8,6 +8,7 @@ export function BriefPanel({
 	detail,
 	dense = false,
 	plain = false,
+	hideHeader = false,
 	children,
 }: {
 	title: string;
@@ -18,12 +19,19 @@ export function BriefPanel({
 	dense?: boolean;
 	/** Flat container without outer card chrome, for embedding inside an existing card. */
 	plain?: boolean;
+	/** Keeps the heading accessible to screen readers without taking visual space. */
+	hideHeader?: boolean;
 	children: ReactNode;
 }) {
 	const titleId = useId();
 	const body = (
 		<>
-			<header className="flex min-h-8 flex-wrap items-center justify-between gap-x-3 gap-y-2">
+			<header
+				className={cn(
+					"flex min-h-8 flex-wrap items-center justify-between gap-x-3 gap-y-2",
+					hideHeader && "sr-only",
+				)}
+			>
 				<div className="flex items-center gap-3">
 					<H2 id={titleId} className="text-xl leading-tight">
 						{title}
