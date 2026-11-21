@@ -15,7 +15,6 @@ export interface WorkspaceSearchResult {
 	group:
 		| "Threads"
 		| "Chats"
-		| "Actions"
 		| "People"
 		| "Topics"
 		| "Calendar"
@@ -37,19 +36,6 @@ export function searchWorkspaceRecords(
 	const term = query.trim().toLocaleLowerCase();
 	if (!term) return [];
 	return [
-		...state.items
-			.filter(
-				(item) => item.status === "open" || item.status === "waiting",
-			)
-			.map(
-				(item): WorkspaceSearchResult => ({
-					id: `action:${item.id}`,
-					label: item.title,
-					detail: item.priority || "Action",
-					group: "Actions",
-					path: threadPath(item.threadId),
-				}),
-			),
 		...state.people
 			.filter((row) => includeSaved || row.isSample)
 			.map(

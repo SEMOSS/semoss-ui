@@ -1,24 +1,32 @@
 import { type ReactNode, useId } from "react";
-import { Card, H2 } from "@semoss/ui/next";
+import { Card, cn, H2 } from "@semoss/ui/next";
 
 /** One card of a hero page: its title, a count and a detail on the first line, the content below. */
 export function BriefPanel({
 	title,
 	count,
 	detail,
+	dense = false,
 	children,
 }: {
 	title: string;
 	/** How many things the card holds, shown beside the title. */
 	count?: number;
 	detail?: ReactNode;
+	/** Tighter padding, for a card that sits inside another panel. */
+	dense?: boolean;
 	children: ReactNode;
 }) {
 	const titleId = useId();
 	return (
 		// as tall as its row, so the cards beside it end on one line
 		<section aria-labelledby={titleId} className="h-full min-w-0">
-			<Card className="h-full min-w-0 gap-4 p-6 shadow-xs">
+			<Card
+				className={cn(
+					"h-full min-w-0 shadow-xs",
+					dense ? "gap-3 p-5" : "gap-4 p-6",
+				)}
+			>
 				<header className="flex min-h-8 flex-wrap items-center justify-between gap-x-3 gap-y-2">
 					<div className="flex items-center gap-3">
 						<H2 id={titleId} className="text-xl leading-tight">

@@ -5,16 +5,17 @@ import { Badge, Button, cn, P, Separator, Small } from "@semoss/ui/next";
 import { BriefPanel } from "@/features/dashboard/brief-panel";
 import { MailCheckStatus } from "@/features/dashboard/mail-check-status";
 import { topicPath } from "@/lib/workspace-paths";
-import { selectWorkItems } from "../state/collaboration.selectors";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { topicTone } from "../topic-tone";
 import { CollaborationHeroHeader } from "./collaboration-hero-header";
 import { CollaborationHeroPage } from "./collaboration-hero-page";
 import { TopicEditor } from "./topic-editor";
+import { useWorkItems, waitingOn } from "./work-items-list";
 
-/** The topics that give each action its purpose, each opening its own page. */
+/** The topics that group the owner's work items, each opening its own page. */
 export function WorkTopics() {
 	const { state } = useCollaborationSession();
+	const { items, isMine } = useWorkItems();
 	const [isCreating, setIsCreating] = useState(false);
 	const createButtonRef = useRef<HTMLButtonElement>(null);
 	const topics = state.topics.filter((topic) => topic.status !== "archived");
@@ -32,13 +33,14 @@ export function WorkTopics() {
 	const list = topics.length ? (
 		<ul aria-label="Work topics" className="divide-y divide-border">
 			{topics.map((topic) => {
-				const open = selectWorkItems(state, {
-					topicId: topic.id,
-				}).total;
-				const waiting = selectWorkItems(state, {
-					topicId: topic.id,
-					view: "waiting",
-				}).total;
+				// the owner's kept work items on this topic, and those waiting on someone
+				const work = (items ?? []).filter(
+					(item) => !item.proposed && item.topicId === topic.id,
+				);
+				const open = work.length;
+				const waiting = work.filter((item) =>
+					waitingOn(item, isMine),
+				).length;
 				return (
 					<li key={topic.id}>
 						<Link
@@ -92,8 +94,7 @@ export function WorkTopics() {
 		<div className="space-y-2">
 			<P>No topics yet.</P>
 			<P className="text-muted-foreground text-sm">
-				Create a topic to organize your work, or open All work to see
-				unfiled actions.
+				Create a topic to group your work items.
 			</P>
 		</div>
 	);
