@@ -208,7 +208,11 @@ it("leaves VIPs to People and keeps the missing-profile state usable inside Sett
 it("keeps how drafts look under Email, and sends the owner to Persona for how they write", async () => {
 	const user = userEvent.setup();
 	renderSettings("/settings/about-you");
-	expect(screen.getByText(/How you write is under Persona\./)).toBeVisible();
+	expect(screen.getByText(/How you write is under/)).toBeVisible();
+	expect(screen.getByRole("link", { name: "Persona" })).toHaveAttribute(
+		"href",
+		"/persona",
+	);
 
 	await user.click(screen.getByRole("link", { name: "Email" }));
 	const email = screen.getByRole("region", { name: "Email" });

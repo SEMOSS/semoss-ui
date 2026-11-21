@@ -1,4 +1,4 @@
-import { ArrowRight, Layers, Plus } from "lucide-react";
+import { ArrowRight, Inbox, Layers, Plus } from "lucide-react";
 import { useRef, useState } from "react";
 import { Link } from "react-router";
 import { Badge, Button, cn, P, Separator, Small } from "@semoss/ui/next";
@@ -19,6 +19,9 @@ export function WorkTopics() {
 	const [isCreating, setIsCreating] = useState(false);
 	const createButtonRef = useRef<HTMLButtonElement>(null);
 	const topics = state.topics.filter((topic) => topic.status !== "archived");
+	const openReviews = state.reviews.filter(
+		(review) => review.status === "open",
+	).length;
 
 	const create = (
 		<Button
@@ -73,13 +76,17 @@ export function WorkTopics() {
 										</Badge>
 									)}
 								</div>
-								<P className="max-w-prose break-words text-muted-foreground text-sm leading-relaxed">
+								<P className="line-clamp-2 max-w-prose break-words text-muted-foreground text-sm leading-relaxed">
 									{topic.description || "No description yet."}
 								</P>
 							</div>
 							<div className="flex shrink-0 items-center gap-4 text-muted-foreground text-sm tabular-nums">
-								<span>{open} open</span>
-								<span>{waiting} waiting</span>
+								{items !== null ? (
+									<>
+										<span>{open} open</span>
+										<span>{waiting} waiting</span>
+									</>
+								) : null}
 								<ArrowRight
 									aria-hidden="true"
 									className="ml-auto size-4"
@@ -128,6 +135,37 @@ export function WorkTopics() {
 					</Link>
 				</Button>
 			</CollaborationHeroHeader>
+			{openReviews > 0 && (
+				<div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-primary/15 bg-primary/5 px-5 py-4">
+					<div className="flex min-w-0 items-center gap-3.5">
+						<span
+							aria-hidden="true"
+							className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-background text-foreground shadow-xs"
+						>
+							<Inbox className="size-4" />
+						</span>
+						<div className="min-w-0">
+							<P className="font-semibold text-sm">
+								{openReviews}{" "}
+								{openReviews === 1
+									? "conversation needs"
+									: "conversations need"}{" "}
+								topic review
+							</P>
+							<P className="text-muted-foreground text-xs">
+								Confirm which topic these emails and chats
+								belong to.
+							</P>
+						</div>
+					</div>
+					<Button asChild variant="outline" size="sm">
+						<Link to="/brain">
+							Review filing
+							<ArrowRight aria-hidden="true" className="size-4" />
+						</Link>
+					</Button>
+				</div>
+			)}
 			<BriefPanel
 				title="All topics"
 				count={topics.length}

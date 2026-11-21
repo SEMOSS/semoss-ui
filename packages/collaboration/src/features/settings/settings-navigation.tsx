@@ -92,7 +92,7 @@ function SettingsNavigation({
 /** The tab bar strip placed above Settings and setup page content. */
 export function SettingsTabBar() {
 	return (
-		<div className="shrink-0 bg-muted/15 px-4 pt-4 sm:px-6 lg:px-8">
+		<div className="shrink-0 border-b bg-muted/15 px-4 py-3 sm:px-6 lg:px-8">
 			<div className="mx-auto w-full max-w-screen-2xl">
 				<SettingsNavigation />
 			</div>
