@@ -57,6 +57,11 @@ export interface Project {
 	project_global?: string;
 	/** Whether the project is a template, which anyone who can see it can clone */
 	project_is_template?: boolean;
+	/**
+	 * Whether the project's portal has its own login page, so it is served to
+	 * signed out visitors for them to sign in there
+	 */
+	project_has_custom_login?: boolean;
 	project_created_by?: string;
 	project_created_by_type?: string;
 	project_date_created?: string;

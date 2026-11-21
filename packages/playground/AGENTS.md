@@ -278,7 +278,10 @@ code and are easy to undo by accident:
   (`RoomActionsProvider` renders a controlled `SaveWorkspaceDialog`), so a new chat publishes
   only once it is a room.
   The per-panel control — "open inline" — is registered by the tool panel with
-  `useWorkbenchControl`.
+  `useWorkbenchControl`, beside its **Show Details** switch, which shows the call's
+  `ToolInspector` (info, inputs, output) in place of the tool's view and keeps the
+  choice in the tab's config (`showsDetails`). A server tool's view already is its
+  inspector, so it has no switch.
 - **The room header holds the room's name.** `features/room-header/room-header.tsx` is
   one narrow row in `RoomLayout`'s `header` slot. It floats over the top of the
   conversation with no border, blurring what scrolls beneath it once the conversation reports
