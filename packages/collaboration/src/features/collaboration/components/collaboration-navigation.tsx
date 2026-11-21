@@ -192,7 +192,10 @@ export function CollaborationNavigation({
 					isCollapsed={isCollapsed}
 					onNavigate={onNavigate}
 				/>
-				<CollaborationProfileMenu onNavigate={onNavigate} />
+				<CollaborationProfileMenu
+					isCollapsed={isCollapsed}
+					onNavigate={onNavigate}
+				/>
 			</div>
 		</div>
 	);

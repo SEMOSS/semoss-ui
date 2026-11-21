@@ -610,16 +610,28 @@ function ItemRow({
 									{next.text}
 								</>
 							) : waiting ? (
-								<>
+								waiting.text.trim().toLowerCase() ===
+								item.title.trim().toLowerCase() ? (
 									<span className="font-medium text-foreground">
 										Waiting on{" "}
 										{waiting.assigneeName
 											? givenFirst(waiting.assigneeName)
 											: "someone"}
-										:
-									</span>{" "}
-									{waiting.text}
-								</>
+									</span>
+								) : (
+									<>
+										<span className="font-medium text-foreground">
+											Waiting on{" "}
+											{waiting.assigneeName
+												? givenFirst(
+														waiting.assigneeName,
+													)
+												: "someone"}
+											:
+										</span>{" "}
+										{waiting.text}
+									</>
+								)
 							) : (
 								"No open steps"
 							)}

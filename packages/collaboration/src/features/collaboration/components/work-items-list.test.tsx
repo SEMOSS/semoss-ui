@@ -222,11 +222,11 @@ it("lists each handoff with its person, item and ask, and opens the Waiting view
 	await renderWork();
 	const card = within(screen.getByRole("region", { name: "Waiting on" }));
 	expect(card.getByText("Priya Shah")).toBeVisible();
-	expect(card.getByRole("link", { name: "Item b" })).toHaveAttribute(
+	expect(card.getByRole("link", { name: "Send the policy" })).toHaveAttribute(
 		"href",
 		"/work/item/b",
 	);
-	expect(card.getByText("Send the policy")).toBeVisible();
+	expect(card.getByText("Item b")).toBeVisible();
 
 	await user.click(card.getByRole("button", { name: "View waiting items" }));
 	const tab = screen.getByRole("tab", { name: "Waiting 1" });

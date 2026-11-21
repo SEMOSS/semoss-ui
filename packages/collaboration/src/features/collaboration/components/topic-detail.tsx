@@ -1,4 +1,5 @@
 import {
+	ArrowLeft,
 	ChevronDown,
 	ListChecks,
 	LockKeyhole,
@@ -181,6 +182,13 @@ export function TopicDetail() {
 
 	return (
 		<CollaborationPage>
+			<Link
+				to="/work/topics"
+				className="mb-4 inline-flex items-center gap-1.5 rounded-sm text-muted-foreground text-sm hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
+			>
+				<ArrowLeft aria-hidden="true" className="size-4" />
+				Topics
+			</Link>
 			<CollaborationPageHeader
 				titleClassName="font-bold"
 				layoutClassName="flex-col md:flex-row"

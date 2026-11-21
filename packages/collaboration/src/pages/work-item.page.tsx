@@ -1,4 +1,5 @@
-import { useNavigate, useParams } from "react-router";
+import { ArrowLeft } from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router";
 import { Small } from "@semoss/ui/next";
 import { CollaborationPage } from "@/features/collaboration/components/collaboration-page";
 import { RoomSelector } from "@/features/collaboration/components/room-selector";
@@ -30,6 +31,13 @@ export function WorkItemPage() {
 	return (
 		<CollaborationPage>
 			<div className="mx-auto w-full max-w-3xl pt-4 pb-12 sm:pt-12">
+				<Link
+					to="/work"
+					className="mb-4 inline-flex items-center gap-1.5 rounded-sm text-muted-foreground text-sm hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
+				>
+					<ArrowLeft aria-hidden="true" className="size-4" />
+					Work
+				</Link>
 				{items === null || (!shown && context.loading) ? (
 					<Small className="text-muted-foreground">
 						{error || "Loading..."}
