@@ -359,6 +359,8 @@ export interface ThemeMap {
 			enableAgentHarness?: boolean;
 			/** Whether the agent picker decides a new chat's mode: a saved agent or Default Agent runs in agent mode, No Agent in chat mode. Users get no Chat and Agent choice. Defaults to false. */
 			modeFollowsAgent?: boolean;
+			/** Whether every new chat runs in agent mode, with Default Agent unless a saved agent is picked or set as a default. Chat mode is never offered: no Chat and Agent choice and no No Agent. Includes modeFollowsAgent without No Agent: the agent picker still decides, and every choice it offers runs in agent mode. Turns on agent mode itself. Chats already created keep their mode. Defaults to false. */
+			agentModeOnly?: boolean;
 			enableRewrite?: boolean;
 			enableDarkMode?: boolean;
 			enablePromptOptimizer?: boolean;
