@@ -15,7 +15,7 @@ import {
 import { formatDurationMs } from "@semoss/utility/date";
 import type { AutomationNode, AutomationNodeType } from "./automation.types";
 
-const STEP_TYPES: {
+export const STEP_TYPES: {
 	type: AutomationNodeType;
 	label: string;
 	description: string;
@@ -78,13 +78,20 @@ const STEP_TYPES: {
 		icon: Clock,
 		color: "text-sky-600",
 	},
+	{
+		type: "export.template_pptx",
+		label: "Template PPTX",
+		description: "Generate a PPTX file from a template",
+		icon: LayoutGrid,
+		color: "text-indigo-600",
+	},
 ];
 
 // Two namespaces in one map: UPPERCASE keys match RunStatus/NodeStatus from the
 // backend (PENDING, RUNNING, SUCCESS, FAILED, SKIPPED, INTERRUPTED, CANCELLED);
 // lowercase keys match the FE-only StepRunStatus used during live poll (idle,
 // running, waiting, success, error). getStatusClasses() handles both.
-const STATUS_STYLES: Record<string, string> = {
+export const STATUS_STYLES: Record<string, string> = {
 	PENDING: "bg-muted text-muted-foreground",
 	RUNNING: "bg-primary/10 text-primary",
 	WAITING_FOR_INPUT: "bg-warning/10 text-warning",
@@ -102,7 +109,7 @@ const STATUS_STYLES: Record<string, string> = {
 	idle: "bg-muted text-muted-foreground",
 };
 
-const TYPE_DISPLAY_META: Record<
+export const TYPE_DISPLAY_META: Record<
 	string,
 	{
 		label: string;
@@ -125,6 +132,7 @@ const TYPE_DISPLAY_META: Record<
 	data: STEP_TYPES[5],
 	app: STEP_TYPES[6],
 	wait: STEP_TYPES[7],
+	"export.template_pptx": STEP_TYPES[8],
 	loop: {
 		label: "Loop over items",
 		description: "Repeat a nested sequence for every item or batch",

@@ -35,12 +35,14 @@ import {
 	type AutomationWorkbenchContextValue,
 	type N8nImportConversionInput,
 	type N8nImportConversionResult,
+	type PptxShapeSelection,
 } from "@semoss/automation";
 import {
 	FILE_PANEL_COMPONENTS,
 	FILE_PANEL_EVENTS,
 	type FileSavedEvent,
 	getFilePanelScope,
+	type PptxShapeSelectedPayload,
 } from "@semoss/panels";
 import { type Role, runPixel } from "@semoss/sdk";
 import { Session, useInsight } from "@semoss/sdk/react";
@@ -640,6 +642,9 @@ export const AutomationWorkbench = observer(
 			/** Source the dialog opened with, so dismissing without an edit changes nothing. */
 			openedWith: string;
 		} | null>(null);
+		const [pptxShapeSelection, setPptxShapeSelection] =
+			useState<PptxShapeSelection | null>(null);
+		const pptxShapeTokenRef = useRef(0);
 		const wasRunningRef = useRef(false);
 		const inspectorSelectionRef = useRef<string | null>(null);
 		// Which node a Python-node file tab's path belongs to, so a save of it
@@ -824,6 +829,18 @@ export const AutomationWorkbench = observer(
 			},
 		);
 
+		useWorkbenchEvent<PptxShapeSelectedPayload>(
+			FILE_PANEL_EVENTS.PPTX_SHAPE_SELECTED,
+			(payload) => {
+				pptxShapeTokenRef.current += 1;
+				setPptxShapeSelection({
+					shapeName: payload.shapeName,
+					shapeType: payload.shapeType,
+					token: pptxShapeTokenRef.current,
+				});
+			},
+		);
+
 		const workbenchContextValue = useMemo<AutomationWorkbenchContextValue>(
 			() => ({
 				appId,
@@ -851,6 +868,7 @@ export const AutomationWorkbench = observer(
 				onViewRunDetails: handleViewRunDetails,
 				runDetailsFocusNodeId: runDetailsFocus?.nodeId ?? null,
 				runDetailsFocusToken: runDetailsFocus?.token ?? 0,
+				pptxShapeSelection,
 			}),
 			[
 				appId,
@@ -870,6 +888,7 @@ export const AutomationWorkbench = observer(
 				isPythonFileOpen,
 				activeRuns,
 				followedRunId,
+				pptxShapeSelection,
 				readOnly,
 				runDetailsFocus,
 				selectedRun,

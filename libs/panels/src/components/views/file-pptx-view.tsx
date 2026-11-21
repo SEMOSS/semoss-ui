@@ -22,7 +22,10 @@ import { useFilePanel } from "../../hooks/use-file-panel";
 import { useFileViewControls } from "../../hooks/use-file-view-controls";
 import { useOfficeFileCommands } from "../../hooks/use-office-file-commands";
 import { getFilePanelScope } from "../../types/file-panel.types";
-import type { FileViewProps } from "../../types/file-view.types";
+import type {
+	FileViewProps,
+	PptxShapeSelectedPayload,
+} from "../../types/file-view.types";
 import { OfficeViewerError } from "./office/office-viewer-error";
 import { OfficeViewerFrame } from "./office/office-viewer-frame";
 import {
@@ -51,7 +54,11 @@ interface PresentationSession {
 }
 
 /** Preview and edit a PowerPoint file from a project, engine, or user resource. */
-export const FilePptxView = ({ config, onControls }: FileViewProps) => {
+export const FilePptxView = ({
+	config,
+	onControls,
+	onShapeSelected,
+}: FileViewProps) => {
 	const { i18n } = useTranslation();
 	const panel = useFilePanel(config, { base64: true });
 	const panelRef = useRef(panel);
@@ -94,6 +101,27 @@ export const FilePptxView = ({ config, onControls }: FileViewProps) => {
 			setIsDirty(false);
 		}
 	}, [panel.read.revision, panel.read.status]);
+
+	const onShapeSelectedRef = useRef(onShapeSelected);
+	useLayoutEffect(() => {
+		onShapeSelectedRef.current = onShapeSelected;
+	}, [onShapeSelected]);
+
+	const handleSelectionChange = useCallback((ids: string[]) => {
+		const cb = onShapeSelectedRef.current;
+		if (!cb || ids.length === 0) return;
+		const handle = viewerRef.current;
+		if (!handle) return;
+		const el = handle.getElementById(ids[0]) as
+			| { name?: string; type?: string }
+			| undefined;
+		if (!el) return;
+		const payload: PptxShapeSelectedPayload = {
+			shapeName: el.name ?? ids[0],
+			shapeType: el.type ?? "unknown",
+		};
+		cb(payload);
+	}, []);
 
 	const handleDirtyChange = useCallback((dirty: boolean) => {
 		// Vendor "clean" means its original load, not the last host save. An
@@ -206,6 +234,7 @@ export const FilePptxView = ({ config, onControls }: FileViewProps) => {
 					customization={PPTX_VIEWER_CUSTOMIZATION}
 					canEdit={!panel.readOnly}
 					autosave={false}
+					onSelectionChange={handleSelectionChange}
 					onDirtyChange={handleDirtyChange}
 					onError={(message) => setEditorError(new Error(message))}
 				/>

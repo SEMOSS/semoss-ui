@@ -17,6 +17,7 @@ export type {
 	AutomationCanvasProps,
 } from "./components/canvas-editor/automation-canvas";
 export { AutomationCanvas } from "./components/canvas-editor/automation-canvas-loader";
+export type { PptxShapeSelection } from "./components/canvas-editor/forms/template-pptx-form";
 export { InspectorTab } from "./components/canvas-editor/tabs/inspector-tab";
 export type { AutomationTraceSnapshot } from "./components/canvas-editor/tabs/runs-tab";
 export { RunsTab } from "./components/canvas-editor/tabs/runs-tab";
@@ -45,6 +46,7 @@ export { downloadN8nExport } from "./domain/automation-to-n8n-adapter";
 export type {
 	AutomationNodeGroup,
 	AutomationWorkflowDocument,
+	PptxChartSeries,
 } from "./domain/automation-workflow.types";
 export type { AutomationNodeSources } from "./domain/automation-workflow-adapter";
 export type {

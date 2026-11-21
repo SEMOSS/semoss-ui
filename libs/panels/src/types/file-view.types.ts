@@ -47,6 +47,12 @@ export interface FileViewControls extends FilePanelValue {
 	setViewMode?: (mode: string) => void;
 }
 
+/** Payload published on the `FILE_PANEL_EVENTS.PPTX_SHAPE_SELECTED` bus event. */
+export interface PptxShapeSelectedPayload {
+	shapeName: string;
+	shapeType: string;
+}
+
 /** The props every file view takes. */
 export interface FileViewProps {
 	/** The scope and file to show. */
@@ -58,4 +64,10 @@ export interface FileViewProps {
 	rename: (name: string) => void;
 	/** Receive the view's chrome state. Must be identity-stable. */
 	onControls?: (controls: FileViewControls) => void;
+	/**
+	 * Called when the user selects a shape in a supported viewer (PPTX). The
+	 * host is responsible for forwarding this onto whatever bus it uses; the
+	 * view itself must not call workbench hooks.
+	 */
+	onShapeSelected?: (payload: PptxShapeSelectedPayload) => void;
 }
