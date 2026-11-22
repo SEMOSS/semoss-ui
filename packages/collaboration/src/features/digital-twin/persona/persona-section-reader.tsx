@@ -262,7 +262,7 @@ export function PersonaSectionReader({
 								{section.label}
 							</H3>
 						</div>
-						{!isEditing && (
+						{!isEditing && currentText.trim() && (
 							<Button
 								ref={editButton}
 								type="button"
@@ -272,7 +272,7 @@ export function PersonaSectionReader({
 								onClick={() => startEditing("edit")}
 							>
 								<Pencil aria-hidden="true" />
-								{currentText.trim() ? "Edit" : "Write section"}
+								Edit
 							</Button>
 						)}
 					</div>
@@ -381,19 +381,30 @@ export function PersonaSectionReader({
 										</li>
 									))}
 								</ul>
-							) : (
+							) : currentText.trim() ? (
 								<P
 									dir="auto"
-									className={cn(
-										"wrap-anywhere max-w-prose whitespace-pre-wrap leading-relaxed",
-										!currentText.trim() &&
-											"text-muted-foreground",
-									)}
+									className="wrap-anywhere max-w-prose whitespace-pre-wrap leading-relaxed"
 								>
-									{currentText.trim()
-										? currentText
-										: section.hint}
+									{currentText}
 								</P>
+							) : (
+								<div className="flex flex-col items-start gap-4 rounded-xl border border-dashed bg-muted/25 p-6">
+									<P className="max-w-prose text-muted-foreground text-sm leading-relaxed">
+										{section.hint}
+									</P>
+									<Button
+										ref={editButton}
+										type="button"
+										size="sm"
+										variant="outline"
+										className="pointer-coarse:min-h-11 bg-background"
+										onClick={() => startEditing("edit")}
+									>
+										<Pencil aria-hidden="true" />
+										Write section
+									</Button>
+								</div>
 							)}
 							{points.length > 0 && (
 								<Button

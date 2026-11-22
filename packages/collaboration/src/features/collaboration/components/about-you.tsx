@@ -1,5 +1,8 @@
 import { useId } from "react";
+import { Link } from "react-router";
 import { Card, H2, P } from "@semoss/ui/next";
+import { givenFirst } from "@/lib/person-name";
+import { personaPath } from "@/lib/workspace-paths";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { PersonAvatar } from "./person-avatar";
 import { ProfileForm } from "./profile-form";
@@ -17,20 +20,27 @@ export function AboutYou() {
 					</H2>
 					<P className="text-base text-muted-foreground">
 						The profile you choose for assistant context. How you
-						write is under Persona.
+						write is under{" "}
+						<Link
+							to={personaPath()}
+							className="font-medium text-foreground underline underline-offset-2 hover:text-primary"
+						>
+							Persona
+						</Link>
+						.
 					</P>
 				</header>
 				{profile ? (
 					<>
 						<div className="flex items-start gap-4">
 							<PersonAvatar
-								name={profile.name}
+								name={givenFirst(profile.name)}
 								initials={profile.initials}
 								email={profile.email}
 							/>
 							<div className="min-w-0 space-y-1">
 								<P className="break-words font-medium text-base">
-									{profile.name}
+									{givenFirst(profile.name)}
 								</P>
 								<P className="break-words text-base text-muted-foreground">
 									{profile.email}

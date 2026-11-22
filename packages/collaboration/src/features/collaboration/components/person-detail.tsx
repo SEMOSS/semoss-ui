@@ -12,9 +12,7 @@ import {
 	Small,
 	Switch,
 } from "@semoss/ui/next";
-import { threadPath } from "@/lib/workspace-paths";
 import { dateLabel } from "../date-label";
-import { localDue } from "../live/live-state";
 import { selectTopicIgnores } from "../state/collaboration.selectors";
 import { isFollowed } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
@@ -27,6 +25,7 @@ import { Section } from "./section";
 import { TextEntryForm } from "./text-entry-form";
 import { ThreadMenu } from "./thread-menu";
 import { TopicChip } from "./topic-chip";
+import { itemPath, useWorkItems } from "./work-items-list";
 
 /** Contact settings apply consistently to topic memberships and future context. */
 export function PersonDetail() {
@@ -34,6 +33,7 @@ export function PersonDetail() {
 	const fieldId = useId();
 	const { state, dispatch } = useCollaborationSession();
 	const [topicToAdd, setTopicToAdd] = useState("");
+	const { items } = useWorkItems();
 	const person = state.people.find((candidate) => candidate.id === personId);
 	if (!person)
 		return (
@@ -72,12 +72,13 @@ export function PersonDetail() {
 			(participant) => participant.personId === person.id,
 		),
 	);
-	const openItems = state.items.filter(
-		(item) =>
-			item.actorId === person.id &&
-			(item.status === "open" || item.status === "waiting") &&
-			!state.threads.find((thread) => thread.id === item.threadId)?.muted,
-	);
+	// work items with a step this person owes
+	const owed = (items ?? []).flatMap((item) => {
+		const step = item.proposed
+			? undefined
+			: item.openSteps.find((s) => s.assigneeId === person.id);
+		return step ? [{ item, step }] : [];
+	});
 	const memories = memoriesAbout(state.memories, {
 		type: "person",
 		id: person.id,
@@ -101,7 +102,7 @@ export function PersonDetail() {
 					description={
 						<>
 							{person.title}
-							{person.title ? " · " : ""}
+							{person.title ? " \u00b7 " : ""}
 							{state.accounts.find(
 								(account) => account.id === person.accountId,
 							)?.name || "No account"}
@@ -145,30 +146,28 @@ export function PersonDetail() {
 						</Small>
 					</Section>
 					<Section
-						title={`Open with ${person.name.split(" ")[0]}`}
+						title={`Waiting on ${person.name.split(" ")[0]}`}
 						variant="card"
 					>
-						{openItems.map((item) => (
+						{owed.map(({ item, step }) => (
 							<div
 								key={item.id}
 								className="space-y-1 border-b pb-3 last:border-0 last:pb-0"
 							>
 								<Link
 									className="break-words text-sm hover:underline"
-									to={threadPath(item.threadId)}
+									to={itemPath(item)}
 								>
 									{item.title}
 								</Link>
-								<Small className="font-normal text-muted-foreground text-xs">
-									{item.due
-										? `Due ${dateLabel(localDue(item.due), undefined, "date")}`
-										: dateLabel(item.received)}
+								<Small className="block break-words font-normal text-muted-foreground text-xs">
+									{step.text}
 								</Small>
 							</div>
 						))}
-						{!openItems.length && (
+						{!owed.length && (
 							<Small className="font-normal text-muted-foreground text-xs">
-								Nothing open with this person.
+								No work waits on this person.
 							</Small>
 						)}
 					</Section>
@@ -403,12 +402,12 @@ export function PersonDetail() {
 												{thread.subject}
 											</Link>
 											<Small className="mt-1 font-normal text-muted-foreground text-xs">
-												{thread.channel} ·{" "}
+												{thread.channel} {"\u00b7"}{" "}
 												{participant?.role}
 												{participant?.included &&
 												!person.neverIngest
 													? ""
-													: " · Excluded"}
+													: " \u00b7 Excluded"}
 											</Small>
 										</div>
 										<Switch
