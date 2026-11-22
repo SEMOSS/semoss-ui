@@ -113,6 +113,7 @@ export interface Job {
 	progress: number;
 	counts: Record<string, unknown>;
 	error: string;
+	startedAt?: string;
 	finishedAt: string;
 	/** "topics" for the filing pass after onboarding keeps topics. */
 	mode: string;
@@ -133,6 +134,7 @@ export function mapJob(out: Row): Job {
 		progress: num(out.progress),
 		counts: (out.counts ?? {}) as Record<string, unknown>,
 		error: str(out.error),
+		startedAt: str(out.startedAt),
 		finishedAt: str(out.finishedAt),
 		mode: str((out.params as Row | undefined)?.mode),
 		reviewId: str((out.params as Row | undefined)?.reviewId),
