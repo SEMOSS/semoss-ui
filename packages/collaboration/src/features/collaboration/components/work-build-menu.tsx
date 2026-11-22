@@ -34,7 +34,9 @@ function elapsed(status: Status): string {
 function label(status: Status): string {
 	switch (status.state) {
 		case "queued":
-			return "Starting...";
+			return num(status.threads) > 0
+				? `Waiting to start (${num(status.threads)} threads)`
+				: "Starting...";
 		case "running": {
 			// a long thread is read in parts, so the thread count can sit still while parts move
 			const parts = num(status.windows);
@@ -59,7 +61,11 @@ function label(status: Status): string {
 function progress(status: Status): string {
 	const text = label(status);
 	const time = ACTIVE.has(String(status.state)) ? elapsed(status) : "";
-	return text && time ? `${text} - ${time}` : text;
+	// a build waiting behind this one, or the rest of a first build read in parts
+	const after = status.state !== "queued" ? num(status.queuedThreads) : 0;
+	return [text, time, after > 0 ? `then ${after} more threads` : ""]
+		.filter(Boolean)
+		.join(" - ");
 }
 
 /** "Build from mail": starts a build, shows its progress, and tells every view of work when it is done. */
