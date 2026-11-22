@@ -23,19 +23,43 @@ type Status = Record<string, unknown>;
 const num = (value: unknown) => (typeof value === "number" ? value : 0);
 const ACTIVE = new Set(["queued", "running", "grouping", "tidying"]);
 
-function progress(status: Status): string {
+// m:ss since the run started; the 3 s status poll keeps it moving
+function elapsed(status: Status): string {
+	const started = Date.parse(String(status.startedAt ?? ""));
+	if (Number.isNaN(started)) return "";
+	const seconds = Math.max(0, Math.floor((Date.now() - started) / 1000));
+	return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+}
+
+function label(status: Status): string {
 	switch (status.state) {
 		case "queued":
 			return "Starting...";
-		case "running":
-			return `Reading threads ${num(status.extracted)} of ${num(status.threads)}`;
-		case "grouping":
-			return "Grouping into work items...";
+		case "running": {
+			// a long thread is read in parts, so the thread count can sit still while parts move
+			const parts = num(status.windows);
+			const threads = `Reading threads ${num(status.extracted)} of ${num(status.threads)}`;
+			return parts > 0
+				? `${threads} (${num(status.windowsRead)} of ${parts} parts)`
+				: threads;
+		}
+		case "grouping": {
+			const topics = num(status.groupTopics);
+			return topics > 0
+				? `Grouping topic ${Math.min(num(status.groupedTopics) + 1, topics)} of ${topics}`
+				: "Grouping into work items...";
+		}
 		case "tidying":
 			return `Tidying steps ${num(status.tidied)} of ${num(status.items)}`;
 		default:
 			return "";
 	}
+}
+
+function progress(status: Status): string {
+	const text = label(status);
+	const time = ACTIVE.has(String(status.state)) ? elapsed(status) : "";
+	return text && time ? `${text} - ${time}` : text;
 }
 
 /** "Build from mail": starts a build, shows its progress, and tells every view of work when it is done. */
