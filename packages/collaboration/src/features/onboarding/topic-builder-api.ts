@@ -18,7 +18,9 @@ const draftSchema = z.object({
 			options: z.array(z.string()),
 			descriptions: z.record(z.string(), z.string()).optional(),
 		})
-		.nullable(),
+		// the server leaves a null question out of the JSON
+		.nullish()
+		.transform((value) => value ?? null),
 });
 export type TopicBuildDraft = z.infer<typeof draftSchema>;
 
