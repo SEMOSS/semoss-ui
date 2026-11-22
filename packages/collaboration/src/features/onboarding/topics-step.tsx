@@ -17,11 +17,14 @@ import { useJob } from "./use-job";
 // what the topic job is doing, in the owner's words
 const MAP_STEPS: Record<string, string> = {
 	queued: "Getting started",
+	waiting: "Waiting for your mail sync to finish",
 	reading: "Reading your conversations",
 	grouping: "Grouping related conversations",
 	naming: "Naming each group",
-	saving: "Naming each group",
+	saving: "Almost done",
 	areas: "Finding your main areas of work",
+	drafting: "Drafting a topic for each line you wrote",
+	finding: "Finding the conversations for each topic",
 };
 
 // the line under the bar: how far the current step has got
@@ -31,6 +34,9 @@ function stepDetail(step: string, counts: Record<string, unknown>): string {
 	const checked = Number(counts.checked ?? 0);
 	const checks = Number(counts.checks ?? 0);
 	const conversations = Number(counts.conversations ?? 0);
+	const topics = Number(counts.topics ?? 0);
+	if (step === "finding" && topics > 0)
+		return `Found conversations for ${Number(counts.topicsFound ?? 0)} of ${topics} topics`;
 	if (step === "grouping" && toRead > 0)
 		return read < toRead
 			? `Read ${formatCount(read)} of ${formatCount(toRead)} conversations`

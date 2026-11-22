@@ -2,6 +2,7 @@ import { z } from "@semoss/ui/next";
 import type { InsightActions } from "@/lib/pixel";
 import { callPixel, pixel } from "@/lib/pixel";
 import { type Job, mapJob } from "./onboarding-api";
+import { draftSchema, foundSchema } from "./topic-builder-api";
 import { topicClues, topicCluesSchema } from "./topic-clues";
 
 export { topicClues } from "./topic-clues";
@@ -180,6 +181,24 @@ export const topicReviewSchema = z
 				.enum(["broad", "projects", "detailed"])
 				.default("broad"),
 			modelError: z.string().default(""),
+			// cards drafted in the background from what the owner wrote about their work
+			prebuilt: z
+				.object({
+					text: z.string().default(""),
+					reply: z.string().default(""),
+					error: z.string().default(""),
+					topics: z
+						.array(
+							z.object({
+								draft: draftSchema,
+								found: foundSchema
+									.nullish()
+									.transform((value) => value ?? null),
+							}),
+						)
+						.default([]),
+				})
+				.optional(),
 			corrections: z.array(topicCorrectionSchema).optional(),
 			history: z
 				.array(

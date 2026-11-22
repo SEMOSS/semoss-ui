@@ -2,7 +2,7 @@ import { z } from "@semoss/ui/next";
 import { callPixel, type InsightActions, pixel } from "@/lib/pixel";
 import type { TopicReview } from "./topic-review-api";
 
-const draftSchema = z.object({
+export const draftSchema = z.object({
 	line: z.number().int(),
 	lineText: z.string(),
 	name: z.string(),
@@ -31,7 +31,7 @@ const startSchema = z.object({
 	reply: z.string(),
 });
 
-const foundSchema = z.object({
+export const foundSchema = z.object({
 	threads: z.array(
 		z.object({
 			threadId: z.string(),

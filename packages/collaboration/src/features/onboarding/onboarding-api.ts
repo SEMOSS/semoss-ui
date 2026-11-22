@@ -329,6 +329,23 @@ export async function saveContacts(
 }
 
 /** The connection's setup flags; either is absent on an older server. */
+/** What the owner wrote about their work, one area per line; their topics start from it. */
+export async function getWorkContext(actions: InsightActions): Promise<string> {
+	return str((await run(actions, pixel("BrainGetProfile"))).workContext);
+}
+
+/** Saves it as the server keeps it: trimmed lines, blank ones dropped; empty leaves it to the assistant. */
+export async function saveWorkContext(
+	actions: InsightActions,
+	text: string,
+): Promise<string> {
+	const out = await run(
+		actions,
+		pixel("BrainSaveProfile", { profile: { workContext: text } }),
+	);
+	return str(out.workContext);
+}
+
 export async function getSetupState(
 	actions: InsightActions,
 ): Promise<{ imported?: boolean; setupDone?: boolean }> {
