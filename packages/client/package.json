@@ -17,7 +17,7 @@
         "@dnd-kit/sortable": "^10.0.0",
         "@dnd-kit/utilities": "^3.2.2",
         "@hello-pangea/dnd": "^18.0.1",
-        "@hookform/resolvers": "^5.9.1",
+        "@hookform/resolvers": "^7.0.8",
         "@mdi/js": "^6.9.96",
         "@semoss/automation": "workspace:*",
         "@semoss/i18n": "workspace:*",
@@ -38,9 +38,9 @@
         "mobx-react-lite": "^4.0.0",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
-        "react-hook-form": "^7.55.0",
+        "react-hook-form": "^7.92.0",
         "react-router": "8.3.0",
-        "zod": "^4.6.5",
+        "zod": "^4.6.7",
         "zustand": "^5.0.0"
     },
     "devDependencies": {
