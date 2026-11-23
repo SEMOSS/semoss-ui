@@ -167,7 +167,7 @@ it.each(["flat", "bubbles"] as const)(
 			"true",
 		);
 		expect(
-			screen.getByRole("article", { name: `${agent.name}'s message` }),
+			screen.getByRole("article", { name: `Message from ${agent.name}` }),
 		).toBeVisible();
 		expect(
 			screen.getByRole("button", { name: "Copy response" }),
@@ -222,3 +222,44 @@ it("renders a marked user table with keyboard scrolling and leaves assistant pro
 		screen.getByText("Assistant response").closest(".max-w-prose"),
 	).toBeNull();
 });
+
+it.each(["chat", "flat", "bubbles"] as const)(
+	"draws the agent's picture on its own messages only in %s layout, and its initials without one",
+	(layout) => {
+		const [answer] = presentMessages(sources);
+		const asked: ConversationMessage = {
+			id: "asked",
+			role: "user",
+			parts: [{ type: "text", text: "What changed?" }],
+		};
+		const view = render(
+			<MessageTimelineEntry
+				{...answer}
+				agent={agent}
+				agentImage="/twin.png"
+				layout={layout}
+			/>,
+		);
+		const picture = view.container.querySelector("img");
+		expect(picture).toHaveAttribute("src", "/twin.png");
+		// decorative: the message already names who wrote it
+		expect(picture).toHaveAttribute("alt", "");
+
+		view.rerender(
+			<MessageTimelineEntry {...answer} agent={agent} layout={layout} />,
+		);
+		expect(view.container.querySelector("img")).toBeNull();
+		expect(view.container).toHaveTextContent("RA");
+
+		// the person's own message never shows the agent's picture
+		view.rerender(
+			<MessageTimelineEntry
+				message={asked}
+				agent={agent}
+				agentImage="/twin.png"
+				layout={layout}
+			/>,
+		);
+		expect(view.container.querySelector("img")).toBeNull();
+	},
+);

@@ -32,6 +32,13 @@ export interface ToolWorkbenchContextValue {
 	 * such as the attachment download area, which the dock never re-points.
 	 */
 	openFile: (path: string, name: string, insightId?: string) => void;
+	/**
+	 * Open one of the agent's own files in the dock, from the agent's project,
+	 * by its path inside the agent's files folder. The file opens read-only for
+	 * someone the agent is only shared with. Left out where the room has no
+	 * agent whose files could be opened.
+	 */
+	openAgentFile?: (path: string, name: string) => void;
 	closeTool: (toolId: string) => void;
 	/** Close the dock; true means it owns returning focus to the opening control. */
 	closeWorkbench: () => boolean;

@@ -182,6 +182,29 @@ export const setProjectTemplate = async (
 	return post<{ success: boolean }>(url, postData, {});
 };
 
+/**
+ * Set whether a project's portal has its own login page, so the portal is
+ * served to signed out visitors for them to sign in there. Without one, only
+ * signed in users who can view the project get its portal.
+ *
+ * @param admin - whether to set it as an admin, on any project
+ * @param projectId - the project
+ * @param hasCustomLogin - whether the portal has its own login page
+ * @returns whether the setting was saved
+ */
+export const setProjectCustomLogin = async (
+	admin: boolean,
+	projectId: string,
+	hasCustomLogin: boolean,
+) => {
+	const url = `${Env.MODULE}/api/auth/${admin ? "admin/" : ""}project/setProjectCustomLogin`;
+	return post<{ success: boolean }>(
+		url,
+		{ projectId, customLogin: hasCustomLogin },
+		{},
+	);
+};
+
 export const setProjectVisiblity = async (admin, appId, visible) => {
 	let url = `${Env.MODULE}/api/auth/`;
 
@@ -241,23 +264,29 @@ export const uploadImage = async (
  *
  * @param projectId - The project's id.
  * @param smssProps - The new content of the SMSS file.
+ * @param smssHash - The hash the SMSS was read with. The save is refused with
+ * a 409 and the error code `SMSS_CHANGED` when the SMSS changed since.
  * @param admin - Whether to save in admin mode, where an admin can update any
  * project; outside it the user must own the project.
- * @returns The response, whose `success` says the save went through.
+ * @returns The response, whose `success` says the save went through and whose
+ * `smssHash` is the hash of the SMSS as saved.
  */
 export const updateProjectSmssProperties = async (
 	projectId: string,
 	smssProps: string,
+	smssHash: string,
 	admin = false,
 ) => {
 	return await post<{
 		success: boolean;
+		smssHash?: string;
 	}>(
 		admin
 			? `${Env.MODULE}/api/auth/admin/project/updateSmssFile`
 			: `${Env.MODULE}/api/project-${projectId}/updateSmssFile`,
 		{
 			smss: smssProps,
+			smssHash,
 			engineId: projectId,
 			projectId,
 		},

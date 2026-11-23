@@ -101,6 +101,19 @@ it("prepares once before saving and releases after the originating callback", as
 	expect(current().isBusy("mail")).toBe(false);
 });
 
+it("names the drive a drive file was saved from, when the request knows it", async () => {
+	const onSaved = vi.fn();
+	await render({ onSaved });
+	await act(async () => {
+		current().save({ ...request, driveId: "b!drive" });
+	});
+	expect(onSaved).toHaveBeenCalledWith({
+		...file,
+		itemKey: "mail",
+		driveId: "b!drive",
+	});
+});
+
 it.each(["save", "callback"])(
 	"releases when %s fails and allows retry",
 	async (failure) => {

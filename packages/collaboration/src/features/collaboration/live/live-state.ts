@@ -12,6 +12,7 @@ import { createEmptyWorkspace } from "../state/collaboration.reducer";
 import type {
 	Account,
 	CollaborationState,
+	MainTwin,
 	Memory,
 	MemoryRef,
 	Person,
@@ -179,8 +180,12 @@ function mapSettings(row: Row): Settings {
 		syncEveryMinutes: Number(row.syncEveryMinutes ?? 15),
 		// older servers send none and cannot make avatars
 		avatarGeneration: row.avatarGeneration === true,
+		// older servers send none and offer no transcripts
+		meetingTranscripts: row.meetingTranscripts === true,
 		newTopicsEveryHours: Number(row.newTopicsEveryHours ?? 24),
 		closeAcrossThreads: row.closeAcrossThreads !== false,
+		// older servers send none and check no twins
+		twinCheckEveryHours: Number(row.twinCheckEveryHours ?? 24),
 		version: Number(row.version ?? 0),
 	};
 }
@@ -246,6 +251,29 @@ function mapThreadAgent(value: unknown): ThreadAgent | null {
 	return id
 		? { id, name: str(row.name) || "Assistant", modelId: str(row.modelId) }
 		: null;
+}
+
+/**
+ * The person's own Digital Twin as `BrainGetSettings` sends it and as a save
+ * answers: a name, and a picture only once they chose one.
+ *
+ * @param agentId - The seeded agent's id, which the settings send beside it.
+ * @returns The twin, or undefined from a server that predates it.
+ */
+export function mapMainTwin(
+	value: unknown,
+	agentId: string,
+): MainTwin | undefined {
+	const row = (value ?? {}) as Row;
+	const name = str(row.name).trim();
+	if (!name) return undefined;
+	const image = str(row.image);
+	return {
+		name,
+		// sent as bare base64: its address is built once here, not on each render
+		avatar: image ? `data:image/png;base64,${image}` : "",
+		agentId,
+	};
 }
 
 // no source-connection reactor yet (SRC-06): show what settings turns on
@@ -550,7 +578,8 @@ export async function loadLiveState(
 	const self = people.find((person) => person.relationship === "self");
 	const profile = mapProfile(profileRow, self?.id);
 	const settings = mapSettings(settingsRow);
-	setThreadAgent(mapThreadAgent(settingsRow.assistantAgent));
+	const threadAgent = mapThreadAgent(settingsRow.assistantAgent);
+	setThreadAgent(threadAgent);
 
 	return {
 		today: new Date().toISOString().slice(0, 10),
@@ -566,6 +595,7 @@ export async function loadLiveState(
 		accounts: accountsPage.items as unknown as Account[],
 		profile,
 		liveProfile: profile,
+		mainTwin: mapMainTwin(settingsRow.mainTwin, threadAgent?.id ?? ""),
 		settings,
 		rules: rulesPage.items.map(
 			(row) => ({ ...row, isSample: false }) as unknown as Rule,

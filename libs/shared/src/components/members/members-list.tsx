@@ -60,6 +60,11 @@ export interface MemberUser {
 	permission_granted_by_type: string;
 	/** When the access was given or the member was added */
 	date_added: string;
+	/**
+	 * When the access ends, in the host's words, such as "Until Dec 31, 2026".
+	 * Shown under the date added; left out for access with no end.
+	 */
+	access_ends?: string;
 	/** On a model engine, the usage limit on their own grant, or null for no limit defined */
 	usage_limit?: ModelUsageLimit | null;
 }
@@ -655,6 +660,11 @@ export const MembersList = ({
 											<span className="text-muted-foreground text-sm">
 												{user.date_added ?? "-"}
 											</span>
+											{user.access_ends && (
+												<span className="block text-sm">
+													{user.access_ends}
+												</span>
+											)}
 										</TableCell>
 										{showSelectionAndActions && (
 											<TableCell>

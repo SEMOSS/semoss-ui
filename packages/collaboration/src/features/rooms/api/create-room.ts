@@ -72,8 +72,7 @@ export async function createRoom(
 		roomOptions.workspace = {
 			...previousWorkspace,
 			workspace_id: workspaceId,
-			name:
-				options.workspaceName ?? previousWorkspace?.name ?? "Assistant",
+			name: options.workspaceName ?? previousWorkspace?.name ?? "Agent",
 		};
 	} else if (options.workspaceId !== undefined) {
 		delete roomOptions.workspace;

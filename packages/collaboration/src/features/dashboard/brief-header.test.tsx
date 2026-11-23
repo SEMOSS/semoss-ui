@@ -9,6 +9,8 @@ import { BriefHeader } from "./brief-header";
 const dashboard = vi.hoisted(() => ({
 	events: [] as CalendarEvent[],
 	due: 0,
+	// the twin each copy that waits for the owner is in
+	twinUpdates: [] as { twinId: string }[],
 }));
 
 vi.mock("./use-due-today", () => ({ useDueToday: () => dashboard.due }));
@@ -18,12 +20,16 @@ vi.mock("./dashboard.context", () => ({
 		calendar: { data: dashboard.events, checkedAt: null, isLoading: false },
 		refreshSources: vi.fn(),
 	}),
+	useTwinUpdates: () => ({
+		data: { updates: dashboard.twinUpdates, lastCheck: null },
+	}),
 }));
 
 afterEach(() => {
 	cleanup();
 	dashboard.events = [];
 	dashboard.due = 0;
+	dashboard.twinUpdates = [];
 	vi.useRealTimers();
 });
 
@@ -55,6 +61,33 @@ it("says how many work items are due today", () => {
 	expect(
 		screen.getByRole("button", { name: "Check for new mail" }),
 	).toBeInTheDocument();
+});
+
+it("links to the copies that wait in the twins the owner shares, and says nothing when none do", () => {
+	renderHeader();
+	expect(
+		screen.queryByRole("link", { name: /you share/ }),
+	).not.toBeInTheDocument();
+	cleanup();
+	// all in one twin: straight to its Updates
+	dashboard.twinUpdates = [{ twinId: "twin-1" }, { twinId: "twin-1" }];
+	renderHeader();
+	expect(
+		screen.getByRole("link", { name: "2 updates in a twin you share" }),
+	).toHaveAttribute("href", "/twins/mine/contents?twinId=twin-1&in=updates");
+	cleanup();
+	// in several: to the twins, whose cards each say how many
+	dashboard.twinUpdates = [{ twinId: "twin-1" }, { twinId: "twin-2" }];
+	renderHeader();
+	expect(
+		screen.getByRole("link", { name: "2 updates in twins you share" }),
+	).toHaveAttribute("href", "/twins");
+	cleanup();
+	dashboard.twinUpdates = [{ twinId: "twin-2" }];
+	renderHeader();
+	expect(
+		screen.getByRole("link", { name: "1 update in a twin you share" }),
+	).toBeVisible();
 });
 
 it("leaves whole day events out of the next meeting, so tomorrow's holiday is not a 7 PM meeting", () => {

@@ -9,14 +9,19 @@ import {
 	toAgentFormValues,
 } from "@semoss/shared";
 import { z } from "@semoss/ui/next";
+import { isSameArray } from "@semoss/utility/array";
 import { decodeBase64ToBytes } from "@semoss/utility/encoding";
+import { sanitizeFileNameStem } from "@semoss/utility/file";
 import { tryParseJson } from "@semoss/utility/json";
 import {
-	type ProjectRow,
 	projectListSchema,
+	toWorkspaceAgent,
+	type WorkspaceAgent,
+	workspacePayloadSchema,
 } from "@/features/agents/api/agent-schemas";
 import { getAgent } from "@/features/agents/api/get-agent";
 import { callPixel, type InsightActions, pixel } from "@/lib/pixel";
+import { setTwinPersona } from "../persona/api/persona";
 
 /**
  * The folder of a twin's project that holds what it knows. It is the agent
@@ -32,29 +37,55 @@ const TWIN_SOURCES_FILE = "twin-sources.json";
 const TWIN_SOURCES_PATH = `/${TWIN_SOURCES_FILE}`;
 const twinSourcesSchema = z.record(z.string(), z.string());
 
+// The note an owner writes about themself. It is a copy like any other: the twin reads it with the rest, the
+// people it is shared with can open it, and its owner can also edit it under Files.
+const TWIN_NOTE_FILE = "About me.md";
+const TWIN_NOTE_PATH = `${TWIN_FILES_PATH}/${TWIN_NOTE_FILE}`;
+/** The most an owner's note about themself can hold. */
+export const TWIN_NOTE_MAX_LENGTH = 8000;
+
 /** A Digital Twin as the lists show it. */
 export interface DigitalTwin {
 	id: string;
 	name: string;
+	/** The person the twin represents, when their display name is known. */
+	ownerName?: string;
 }
 
-/** The six things an owner sets on their twin. */
+/** What an owner sets on their twin. */
 export interface TwinProfile {
 	name: string;
 	instructions: string;
 	/** The twin's opening message; empty for none. */
 	greeting: string;
+	/** The owner's note about themself, which the twin reads with its copies; empty for none. */
+	about: string;
 	/** Ids from the owner's skill catalog. */
 	skills: string[];
 	toolboxes: Pick<MCPConfig, "id" | "name" | "type">[];
 	/** A new image to upload; without one the twin keeps the image it has. */
 	image?: File | null;
+	/** Whether the twin answers with its owner's persona. It does until they switch it off, and it means nothing for someone who has none. */
+	usePersona: boolean;
+}
+
+type WorkspaceProfile = Omit<TwinProfile, "image" | "about" | "usePersona">;
+
+/** The last acknowledged writes for one editor. A null value needs reconciliation after a failure. */
+export interface TwinProfileCheckpoint {
+	profile: Partial<WorkspaceProfile> | null;
+	/** Leave absent when the owner’s note could not be read. */
+	about?: string | null;
+	/** Leave absent when the owner’s persona is unavailable. */
+	usePersona?: boolean | null;
+	image?: File | null;
+	/** A rename updates the workspace and the gallery display name separately. */
+	needsDisplayName?: boolean;
 }
 
 /**
- * A create that made the twin but could not finish setting it up. The server
- * refuses a second twin, so the caller saves the rest as an edit of `twinId`
- * instead of creating again.
+ * A create that made the twin but could not finish setting it up. The caller
+ * finishes `twinId` on retry instead of creating a duplicate.
  */
 export class TwinSetupError extends Error {
 	readonly twinId: string;
@@ -74,19 +105,30 @@ export class TwinSetupError extends Error {
 const TWIN_FILTER = {
 	projectType: "WORKSPACE",
 	metaFilters: { digital_twin: ["true"] },
+	noMeta: true,
 };
 const MY_TWIN_PIXEL = pixel("MyProjects", {
 	...TWIN_FILTER,
-	// 1 is owner: the twin this person created and still owns
+	// 1 is owner: the twins this person created and still owns
 	effectivePermissions: 1,
 	createdByMe: true,
 });
 const TWINS_PIXEL = pixel("MyProjects", TWIN_FILTER);
+const twinListSchema = projectListSchema.element
+	.extend({ digital_twin_owner_name: z.string().nullish() })
+	.array();
+const twinWelcomeSchema = workspacePayloadSchema.extend({
+	digital_twin_file_access: z
+		.enum(["manage", "add", "read"])
+		.optional()
+		.catch("read"),
+});
 
 // project_name can be a namespace many agents share; the display name is the twin's own
-const toTwin = (row: ProjectRow): DigitalTwin => ({
+const toTwin = (row: z.infer<typeof twinListSchema>[number]): DigitalTwin => ({
 	id: row.project_id,
 	name: row.project_display_name?.trim() || row.project_name,
+	ownerName: row.digital_twin_owner_name?.trim() || undefined,
 });
 
 // a sentence of its own wherever it is put: the server's reasons come with and without a full stop
@@ -106,13 +148,23 @@ async function listTwinTop(
 ): Promise<FileItem[]> {
 	const files = twinFiles(twinId);
 	return files.mapEntries(
-		await callPixel(actions, files.browse("/"), z.unknown()),
+		await callPixel(
+			actions,
+			files.browse("/"),
+			z.array(
+				z.object({
+					name: z.string(),
+					path: z.string(),
+					type: z.string().optional(),
+				}),
+			),
+		),
 		"/",
 	);
 }
 
 // What is still on its way into each twin. A twin's list of sources is read, changed and saved whole, so
-// one change at a time; a person has one twin, so this holds one entry.
+// one change at a time per twin.
 const TWIN_QUEUES = new Map<string, Promise<unknown>>();
 
 /** Run after everything already queued for the twin, whether or not that worked. */
@@ -152,31 +204,164 @@ async function readTwinSources(
 	return sources.success ? sources.data : {};
 }
 
-/** The signed-in person's own twin, or null when they have none. */
+/**
+ * Which item the twin's record names for each copy, by the copy's path as the
+ * record writes it (no leading slash). Empty when nothing is recorded, and
+ * when the record cannot be read. Read at once, not after what is on its way
+ * into the twin: it answers whether a copy that is already there is still
+ * what it was, which must not wait behind a pass of the index.
+ */
+export async function readTwinRecord(
+	actions: InsightActions,
+	twinId: string,
+): Promise<Record<string, string>> {
+	return readTwinSources(actions, twinId, await listTwinTop(actions, twinId));
+}
+
+// the entry that names the drive a copied file is in, by the file's id
+const DRIVE_ENTRY = "drive:";
+
+/**
+ * The record without the copies that are gone, and without a drive whose last
+ * copy went with them. A file that later takes a removed copy's name would
+ * otherwise be taken for that copy, and updated from or removed with an item
+ * it never came from.
+ *
+ * @param listed - Every file under the twin's files folder, as the record names paths.
+ * @returns The record to save, or null when it holds nothing to drop.
+ */
+function withoutGoneCopies(
+	sources: Record<string, string>,
+	listed: ReadonlySet<string>,
+): Record<string, string> | null {
+	const copies = Object.entries(sources).filter(
+		([path]) => !path.startsWith(DRIVE_ENTRY) && listed.has(path),
+	);
+	const keys = new Set(copies.map(([, key]) => key));
+	const kept = Object.entries(sources).filter(([path]) =>
+		path.startsWith(DRIVE_ENTRY)
+			? keys.has(path.slice(DRIVE_ENTRY.length))
+			: listed.has(path),
+	);
+	return kept.length === Object.keys(sources).length
+		? null
+		: Object.fromEntries(kept);
+}
+
+/** All twins the signed-in person created and still owns. */
+async function listMyTwins(actions: InsightActions): Promise<DigitalTwin[]> {
+	return (await callPixel(actions, MY_TWIN_PIXEL, twinListSchema)).map(
+		toTwin,
+	);
+}
+
+/** An owned twin by id; older links without an id work only when there is at most one. */
 export async function getMyTwin(
 	actions: InsightActions,
+	twinId?: string,
 ): Promise<DigitalTwin | null> {
-	const [row] = await callPixel(actions, MY_TWIN_PIXEL, projectListSchema);
-	return row ? toTwin(row) : null;
+	const twins = await listMyTwins(actions);
+	if (twinId !== undefined) {
+		const twin = twins.find((entry) => entry.id === twinId);
+		if (!twin)
+			throw new Error(
+				"This Digital Twin is unavailable or is not yours to manage.",
+			);
+		return twin;
+	}
+	if (twins.length > 1) {
+		throw new Error(
+			"You share more than one twin. Go back to Digital Twins and choose one.",
+		);
+	}
+	return twins[0] ?? null;
 }
 
 /** The signed-in person's own twin with its full configuration, or null when they have none. */
-export async function getMyTwinAgent(actions: InsightActions) {
-	const twin = await getMyTwin(actions);
+export async function getMyTwinAgent(actions: InsightActions, twinId?: string) {
+	const twin = await getMyTwin(actions, twinId);
 	return twin ? getAgent(actions, twin.id) : null;
 }
 
-/** The signed-in person's own twin, and the twins other people shared with them. */
+/**
+ * Read an accessible twin, the file changes its owner can request in chat,
+ * and whose twin it is, when the server can tell.
+ */
+export async function getTwinChatWelcome(
+	actions: InsightActions,
+	twinId: string,
+): Promise<{
+	agent: WorkspaceAgent;
+	fileAccess: "manage" | "add" | "read";
+	ownerName?: string;
+}> {
+	if (!twinId.trim()) throw new Error("The link names no Digital Twin.");
+	const [payload, ownerName] = await Promise.all([
+		callPixel(
+			actions,
+			pixel("GetWorkspace", {
+				workspaceId: twinId,
+				includeDigitalTwinFileAccess: true,
+			}),
+			twinWelcomeSchema,
+		),
+		// only the list names a twin's owner; the chat opens without the name
+		callPixel(
+			actions,
+			pixel("MyProjects", { ...TWIN_FILTER, project: twinId, limit: 1 }),
+			twinListSchema,
+		).then(
+			(rows) =>
+				rows.map(toTwin).find((twin) => twin.id === twinId)?.ownerName,
+			() => undefined,
+		),
+	]);
+	const agent = toWorkspaceAgent(payload);
+	if (payload.digital_twin_file_access !== undefined)
+		return {
+			agent,
+			fileAccess: payload.digital_twin_file_access,
+			ownerName,
+		};
+
+	// Servers predating the capability can only add copies in an owner's chat.
+	try {
+		const mine = await callPixel(
+			actions,
+			pixel("MyProjects", {
+				...TWIN_FILTER,
+				project: twinId,
+				createdByMe: true,
+				effectivePermissions: [1, 2],
+				limit: 1,
+			}),
+			projectListSchema,
+		);
+		return {
+			agent,
+			fileAccess: mine.some((row) => row.project_id === twinId)
+				? "add"
+				: "read",
+			ownerName,
+		};
+	} catch {
+		// An unavailable ownership check leaves the accessible chat in read mode.
+		return { agent, fileAccess: "read", ownerName };
+	}
+}
+
+/** The signed-in person's own twins, and the twins other people shared with them. */
 export async function listTwins(
 	actions: InsightActions,
-): Promise<{ mine: DigitalTwin | null; shared: DigitalTwin[] }> {
+): Promise<{ mine: DigitalTwin[]; shared: DigitalTwin[] }> {
 	const [mine, all] = await Promise.all([
-		getMyTwin(actions),
-		callPixel(actions, TWINS_PIXEL, projectListSchema),
+		listMyTwins(actions),
+		callPixel(actions, TWINS_PIXEL, twinListSchema),
 	]);
+	const mineIds = new Set(mine.map((twin) => twin.id));
 	return {
 		mine,
-		shared: all.filter((row) => row.project_id !== mine?.id).map(toTwin),
+		shared: all.filter((row) => !mineIds.has(row.project_id)).map(toTwin),
 	};
 }
 
@@ -187,27 +372,77 @@ export async function listTwins(
 export async function saveTwinProfile(
 	actions: InsightActions,
 	twinId: string,
-	profile: Omit<TwinProfile, "image">,
+	profile: WorkspaceProfile,
 ): Promise<void> {
-	const agent = await getAgent(actions, twinId);
-	const output = await callPixel(
-		actions,
-		buildEditWorkspacePixel(twinId, {
-			...toAgentFormValues(agent),
-			name: profile.name,
-			instructions: profile.instructions,
-			greeting: profile.greeting,
-			greetingEnabled: profile.greeting !== "",
-			// only the ids are sent
-			skills: profile.skills.map((id) => ({ id, name: id })),
-			toolboxes: profile.toolboxes,
-		}),
-		z.unknown(),
-	);
-	// the greeting lives in the part this warning says was not written
-	const warning = getWorkspaceSaveWarning(output);
-	if (warning) throw new Error(warning);
-	if (agent.name !== profile.name) {
+	await saveWorkspaceChanges(actions, twinId, profile, { profile: null });
+}
+
+/** EditWorkspace replaces the configuration. Overlay just the owner's edits on its current values. */
+async function saveWorkspaceChanges(
+	actions: InsightActions,
+	twinId: string,
+	profile: WorkspaceProfile,
+	saved: TwinProfileCheckpoint,
+): Promise<boolean> {
+	const previous = saved.profile;
+	const changes: Partial<WorkspaceProfile> = {};
+	for (const key of ["name", "instructions", "greeting"] as const) {
+		if (profile[key] !== previous?.[key]) changes[key] = profile[key];
+	}
+	if (!previous?.skills || !isSameArray(profile.skills, previous.skills)) {
+		changes.skills = profile.skills;
+	}
+	if (
+		profile.toolboxes.length !== previous?.toolboxes?.length ||
+		profile.toolboxes.some(({ id, name, type }, index) => {
+			const other = previous?.toolboxes?.[index];
+			return (
+				!other ||
+				id !== other.id ||
+				name !== other.name ||
+				type !== other.type
+			);
+		})
+	) {
+		changes.toolboxes = profile.toolboxes;
+	}
+	const changed = Object.keys(changes) as (keyof WorkspaceProfile)[];
+	if (changed.length) {
+		const agent = await getAgent(actions, twinId);
+		const current = toAgentFormValues(agent);
+		if (
+			changes.name !== undefined &&
+			(changes.name !== agent.name || previous !== null)
+		) {
+			saved.needsDisplayName = true;
+		}
+		try {
+			const output = await callPixel(
+				actions,
+				buildEditWorkspacePixel(twinId, {
+					...current,
+					...changes,
+					greetingEnabled:
+						changes.greeting === undefined
+							? current.greetingEnabled
+							: Boolean(changes.greeting),
+					skills:
+						changes.skills?.map((id) => ({ id, name: id })) ??
+						current.skills,
+				}),
+				z.unknown(),
+			);
+			const warning = getWorkspaceSaveWarning(output);
+			if (warning) throw new Error(warning);
+		} catch (cause) {
+			// A lost reply or a partial CONFIG_JSON write may already have applied any attempted field.
+			saved.profile = { ...previous };
+			for (const key of changed) delete saved.profile[key];
+			throw cause;
+		}
+		saved.profile = { ...previous, ...changes };
+	}
+	if (saved.needsDisplayName) {
 		await callPixel(
 			actions,
 			pixel("SetProjectDisplayName", {
@@ -216,23 +451,141 @@ export async function saveTwinProfile(
 			}),
 			z.unknown(),
 		);
+		saved.needsDisplayName = false;
+		return true;
 	}
+	return changed.length > 0;
 }
 
-/** Save an existing twin: its profile, then a newly chosen image. */
+/**
+ * The note the twin's owner wrote about themself; empty when there is none.
+ *
+ * @throws when the twin's files could not be read, so a note that is there is
+ * never taken for none and then saved over.
+ */
+export async function readTwinNote(
+	actions: InsightActions,
+	twinId: string,
+): Promise<string> {
+	const files = twinFiles(twinId);
+	// looked for before it is read: a file that is not there is an answer, a read that fails is not
+	if (!(await listTwinTop(actions, twinId)).some(isFilesFolder)) return "";
+	const held = files.mapEntries(
+		await callPixel(actions, files.browse(TWIN_FILES_PATH), z.unknown()),
+		TWIN_FILES_PATH,
+	);
+	const isHeld = held.some(
+		(item) => item.type !== "directory" && item.name === TWIN_NOTE_FILE,
+	);
+	return isHeld
+		? callPixel(actions, files.read(TWIN_NOTE_PATH), z.string())
+		: "";
+}
+
+/**
+ * Save the owner's note about themself over the one the twin holds, after
+ * what is already on its way into the twin. An empty note takes the file away.
+ */
+export function saveTwinNote(
+	actions: InsightActions,
+	twinId: string,
+	note: string,
+): Promise<void> {
+	return queueForTwin(twinId, async () => {
+		await callPixel(
+			actions,
+			note.trim()
+				? // built here and not by the files adapter, which puts the text between <encode> tags as it
+					// is: a note can say anything, those tags too
+					pixel("SaveAppAssets", {
+						project: twinId,
+						filePath: TWIN_NOTE_PATH,
+						content: note,
+					})
+				: twinFiles(twinId).remove(TWIN_NOTE_PATH),
+			z.unknown(),
+		);
+	});
+}
+
+/**
+ * Save an existing twin: its profile, then its owner's note and whether it
+ * uses their persona when either changed, then a newly chosen image.
+ *
+ * @param savedAbout - The note the twin holds, as it was last read or saved.
+ * Left out when that is not known, and the note is then left as it is.
+ * @param savedUsePersona - Whether the twin uses its owner's persona, as last
+ * read or saved. Left out when that is not known or they have none, and it is
+ * then left as it is.
+ */
 export async function saveTwin(
 	actions: InsightActions,
 	twinId: string,
-	{ image, ...profile }: TwinProfile,
+	profile: TwinProfile,
+	savedAbout?: string,
+	savedUsePersona?: boolean,
 ): Promise<void> {
-	await saveTwinProfile(actions, twinId, profile);
-	if (!image) return;
+	await saveTwinChanges(actions, twinId, profile, {
+		profile: null,
+		about: savedAbout,
+		usePersona: savedUsePersona,
+	});
+}
+
+/** Save a validated snapshot, recording each successful resource before starting the next one. */
+export async function saveTwinChanges(
+	actions: InsightActions,
+	twinId: string,
+	{ image, about, usePersona, ...profile }: TwinProfile,
+	saved: TwinProfileCheckpoint,
+): Promise<void> {
+	let hasSaved = await saveWorkspaceChanges(actions, twinId, profile, saved);
+	// an unchanged note is not written again: its owner may have edited the file under Files since
+	if (
+		saved.about !== undefined &&
+		about !== saved.about &&
+		(saved.about === null || about.trim() || saved.about.trim())
+	) {
+		try {
+			// Deleting a missing file fails. A previous delete may have landed before its reply was lost.
+			if (
+				saved.about !== null ||
+				about.trim() ||
+				(await readTwinNote(actions, twinId))
+			) {
+				await saveTwinNote(actions, twinId, about);
+			}
+			saved.about = about;
+			hasSaved = true;
+		} catch (cause) {
+			saved.about = null;
+			throw new Error(
+				`${hasSaved ? "Your changes were saved, but your note could not be" : "Your note could not be saved"}: ${reason(cause)}`,
+				{ cause },
+			);
+		}
+	}
+	if (saved.usePersona !== undefined && usePersona !== saved.usePersona) {
+		try {
+			await setTwinPersona(actions, twinId, usePersona);
+			saved.usePersona = usePersona;
+			hasSaved = true;
+		} catch (cause) {
+			saved.usePersona = null;
+			throw new Error(
+				`${hasSaved ? "Your changes were saved, but your" : "Your"} persona could not be switched ${usePersona ? "on" : "off"} for it: ${reason(cause)}`,
+				{ cause },
+			);
+		}
+	}
+	if (!image || image === saved.image) return;
 	try {
 		await uploadProjectImage(twinId, image);
+		saved.image = image;
 	} catch (cause) {
-		// the profile is saved by now, so say which part is not
+		saved.image = null;
 		throw new Error(
-			`Your changes were saved, but the image could not be uploaded: ${reason(cause)}`,
+			`${hasSaved ? "Your changes were saved, but the" : "The"} image could not be uploaded: ${reason(cause)}`,
 			{ cause },
 		);
 	}
@@ -297,6 +650,8 @@ export interface TwinSource {
 	service?: ConnectorSavedFile["service"];
 	/** What that viewer knows the item by, so its list can mark it; an upload has none. */
 	itemKey?: string;
+	/** The drive a drive file was saved from, when its viewer knew it, so the file can be read again later. */
+	driveId?: string;
 }
 
 /** A copy made in a twin. */
@@ -315,6 +670,8 @@ export interface TwinCopy {
 export interface TwinHoldings {
 	/** Whether its files folder is there; a twin whose setup stopped early has none. */
 	hasFolder: boolean;
+	/** Documents the twin can answer from, with paths relative to its files folder. */
+	files: FileItem[];
 	/** The items it holds a copy of, by what their viewer knows them by. */
 	itemKeys: ReadonlySet<string>;
 }
@@ -325,12 +682,16 @@ export type TwinSetupStep =
 	| "folder"
 	| "greeting"
 	| "image"
+	| "note"
+	| "persona"
 	| "knowledge";
 
 /**
  * The steps creating this profile takes, in the order they run: the agent,
- * its files folder, then its greeting and its image when it has them, neither
- * of which the create call takes, then the copies of what the owner chose.
+ * its files folder, then its greeting, its image and its owner's note when it
+ * has them, none of which the create call takes, then switching its owner's
+ * persona off for it when they chose that, then the copies of what the owner
+ * chose.
  */
 export function twinSetupSteps(
 	profile: TwinProfile,
@@ -341,6 +702,9 @@ export function twinSetupSteps(
 		"folder",
 		...(profile.greeting ? (["greeting"] as const) : []),
 		...(profile.image ? (["image"] as const) : []),
+		...(profile.about.trim() ? (["note"] as const) : []),
+		// a new twin uses its owner's persona, so only switching it off is a step
+		...(profile.usePersona ? [] : (["persona"] as const)),
 		...(knowledge.length ? (["knowledge"] as const) : []),
 	];
 }
@@ -409,6 +773,14 @@ export async function createTwin(
 					await uploadProjectImage(twinId, profile.image);
 			},
 		},
+		note: {
+			failure: "your note could not be saved",
+			run: () => saveTwinNote(actions, twinId, profile.about),
+		},
+		persona: {
+			failure: "your persona could not be switched off for it",
+			run: () => setTwinPersona(actions, twinId, false),
+		},
 		knowledge: {
 			failure: "not everything you chose could be added",
 			run: () => addTwinKnowledge(actions, twinId, knowledge, onCopied),
@@ -420,7 +792,7 @@ export async function createTwin(
 			await during(step, setUp[step].run);
 		} catch (cause) {
 			throw new TwinSetupError(
-				`Your Digital Twin was created, but ${setUp[step].failure}: ${reason(cause)}`,
+				`The new twin was created, but ${setUp[step].failure}: ${reason(cause)}`,
 				twinId,
 				{ cause },
 			);
@@ -441,6 +813,31 @@ export async function deleteTwin(
 	);
 }
 
+/**
+ * Tell people a twin was shared with them, in an email from the owner's own
+ * Outlook. One person gets a letter to themself; several are hidden from each
+ * other, since who a twin is shared with is its owner's to know.
+ *
+ * @param emails - Who to tell; at least one.
+ * @throws when Outlook did not send it, such as when it is not connected.
+ */
+export async function sendTwinNote(
+	actions: InsightActions,
+	emails: string[],
+	subject: string,
+	body: string,
+): Promise<void> {
+	await callPixel(
+		actions,
+		pixel("MicrosoftOutlookSendMail", {
+			...(emails.length === 1 ? { to: emails } : { bcc: emails }),
+			subject,
+			body,
+		}),
+		z.object({ sent: z.literal(true) }),
+	);
+}
+
 /** Whether the twin's files folder is there; a twin whose setup stopped early has none. */
 export async function hasTwinFolder(
 	actions: InsightActions,
@@ -450,9 +847,8 @@ export async function hasTwinFolder(
 }
 
 /**
- * What the twin holds: its files folder, and the items a viewer saved that it
- * still has a copy of. A copy the owner deleted since no longer counts, and
- * neither does one made before copies recorded where they came from.
+ * List the documents in the twin, including uploads and older copies. A saved
+ * source item is marked only when its recorded copy still exists.
  */
 export function readTwinHoldings(
 	actions: InsightActions,
@@ -462,12 +858,11 @@ export function readTwinHoldings(
 	return queueForTwin(twinId, async () => {
 		const top = await listTwinTop(actions, twinId);
 		const hasFolder = top.some(isFilesFolder);
-		// without the folder there is no copy, and without a record no copy to look for
-		if (!hasFolder || !top.some((item) => item.name === TWIN_SOURCES_FILE))
-			return { hasFolder, itemKeys: new Set<string>() };
+		const files: FileItem[] = [];
+		const itemKeys = new Set<string>();
+		if (!hasFolder) return { hasFolder, files, itemKeys };
 		const [sources, found] = await Promise.all([
 			readTwinSources(actions, twinId, top),
-			// every file under the folder, however deep; the pattern is any name
 			callPixel(
 				actions,
 				pixel("SearchAppAssets", {
@@ -476,22 +871,94 @@ export function readTwinHoldings(
 					search: ".",
 					options: ["regex"],
 				}),
-				z.array(z.object({ path: z.string() })),
+				z.array(
+					z.object({
+						path: z.string(),
+						type: z.string().optional(),
+						lastModified: z.string().nullish(),
+					}),
+				),
 			),
 		]);
-		// a listing starts its paths with a slash; a copy answers with its path without one
-		const held = new Set(
-			found.map((item) => item.path.replace(/^\/+/, "")),
+		for (const item of found) {
+			const fullPath = `/${item.path.replace(/^\/+/, "")}`;
+			if (
+				item.type === "directory" ||
+				!fullPath.startsWith(`${TWIN_FILES_PATH}/`)
+			)
+				continue;
+			const path = fullPath.slice(TWIN_FILES_PATH.length);
+			const name = path.slice(path.lastIndexOf("/") + 1);
+			// Skip the reserved names excluded by the runtime's AgentFilesIndex.
+			if (
+				!name ||
+				path.includes("/.") ||
+				name === "placeholder.txt" ||
+				path === "/agent-files-index.json"
+			)
+				continue;
+			files.push({
+				name,
+				path,
+				lastModified: item.lastModified ?? undefined,
+			});
+			const key = sources[fullPath.slice(1)];
+			if (key) itemKeys.add(key);
+		}
+		// A copy removed since, in Files here or anywhere else, leaves its record entry behind: dropped now.
+		// Never from a listing that holds no file at all, which may be one that failed. What is listed is right
+		// either way, so a record that cannot be saved is left for the next read.
+		const listed = new Set(
+			found
+				.filter((item) => item.type !== "directory")
+				.map((item) => item.path.replace(/^\/+/, "")),
 		);
-		return {
-			hasFolder,
-			itemKeys: new Set(
-				Object.entries(sources)
-					.filter(([path]) => held.has(path))
-					.map(([, itemKey]) => itemKey),
-			),
-		};
+		const tidied = listed.size > 0 && withoutGoneCopies(sources, listed);
+		if (tidied)
+			await callPixel(
+				actions,
+				twinFiles(twinId).save(
+					TWIN_SOURCES_PATH,
+					JSON.stringify(tidied),
+				),
+				z.unknown(),
+			).catch(() => undefined);
+		return { hasFolder, files, itemKeys };
 	});
+}
+
+const twinIndexSchema = z.object({
+	described: z.number(),
+	remaining: z.number(),
+});
+// the server describes about a dozen files a pass, so this covers a first pass over a large twin
+const MAX_INDEX_PASSES = 10;
+
+/**
+ * Bring the twin's index of what its files hold up to date, so a chat with it
+ * is told what each copy is about and not only its file name. The server
+ * describes a few files a pass and says how many wait, so this asks again
+ * while a pass still got somewhere. Each pass takes its own turn after what is
+ * on its way into the twin, so an add made meanwhile goes ahead of the next.
+ *
+ * It never fails: a twin works without descriptions, and the next time its
+ * owner opens its pages the index is tried again.
+ */
+export async function indexTwinFiles(
+	actions: InsightActions,
+	twinId: string,
+): Promise<void> {
+	for (let pass = 0; pass < MAX_INDEX_PASSES; pass += 1) {
+		const result = await queueForTwin(twinId, () =>
+			callPixel(
+				actions,
+				pixel("WorkIndexTwinFiles", { project: twinId }),
+				twinIndexSchema,
+			),
+		).catch(() => null);
+		// nothing waits, or what waits cannot be described now: no text model, or a file the model fails on
+		if (!result || result.remaining <= 0 || result.described <= 0) return;
+	}
 }
 
 /** Make the twin's files folder. Only where it is known to be missing. */
@@ -509,6 +976,7 @@ export async function createTwinFolder(
 // one folder per kind, so a later version can move them under per-audience sets
 const SAVED_FOLDERS: Partial<Record<ConnectorSavedFile["service"], string>> = {
 	"outlook-mail": "emails",
+	"outlook-calendar": "meetings",
 	"teams-chats": "teams-chats",
 };
 
@@ -552,15 +1020,122 @@ export function copyToTwin(
 				actions,
 				twinFiles(twinId).save(
 					TWIN_SOURCES_PATH,
-					JSON.stringify({ ...sources, [path]: source.itemKey }),
+					JSON.stringify({
+						...sources,
+						[path]: source.itemKey,
+						// The drive a file is in, by the file's id: a check for a newer version cannot read a file
+						// of a shared or Teams drive without it. An entry of its own, so every value stays text
+						// and a window still on older code goes on reading the record, and keeps the entry.
+						...(source.driveId && {
+							[`${DRIVE_ENTRY}${source.itemKey}`]: source.driveId,
+						}),
+					}),
 				),
 				z.unknown(),
 			);
+			// Told to the server, which reads the item in the record: a check then compares the copy with
+			// now, and not with the day a server next loads its file. The copy is in and recorded either way.
+			await callPixel(
+				actions,
+				pixel("WorkNoteTwinCopy", { project: twinId, filePath: path }),
+				z.unknown(),
+			).catch(() => undefined);
 			return { path };
 		} catch (cause) {
 			return { path, recordError: reason(cause) };
 		}
 	});
+}
+
+const transcriptPageSchema = z.object({
+	subject: z.string().optional(),
+	transcript: z.string().optional(),
+	hasMore: z.boolean().optional(),
+	nextOffset: z.number().optional(),
+	message: z.string().optional(),
+});
+// a page is about three quarters of an hour of talk, so this is a meeting of a whole day
+const MAX_TRANSCRIPT_PAGES = 12;
+
+/** What was said in a meeting, or why that cannot be read. */
+export type MeetingTranscript =
+	| {
+			/** The meeting's subject; empty when it has none. */
+			subject: string;
+			/** A line for each turn, starting with who spoke. */
+			text: string;
+			/** Whether the meeting ran on past what was read. */
+			isCutShort: boolean;
+	  }
+	| {
+			/** Why there is nothing to read, in the server's words. */
+			message: string;
+	  };
+
+/**
+ * Read what was said in the Teams meeting of an event on the owner's Outlook
+ * calendar, a page at a time until it is all read. Only a server whose
+ * Microsoft sign in asks for the transcript scope can.
+ *
+ * @param eventId - The event, as the calendar names it.
+ */
+// shortcut: never run against Microsoft: the scope it needs has not been granted to any deployment yet, so check it against a real meeting once one has it
+export async function readMeetingTranscript(
+	actions: InsightActions,
+	eventId: string,
+): Promise<MeetingTranscript> {
+	const pages: string[] = [];
+	let subject = "";
+	let offset: number | undefined;
+	for (let page = 0; page < MAX_TRANSCRIPT_PAGES; page += 1) {
+		const answer = await callPixel(
+			actions,
+			pixel("MicrosoftCalendarGetMeetingTranscript", {
+				id: eventId,
+				offset,
+			}),
+			transcriptPageSchema,
+		);
+		subject = answer.subject ?? subject;
+		if (answer.transcript === undefined)
+			// a meeting with a transcript answers no message, so one on a later page is not an answer for all of it
+			return pages.length === 0
+				? {
+						message:
+							answer.message ?? "This meeting has no transcript.",
+					}
+				: { subject, text: pages.join("\n"), isCutShort: true };
+		pages.push(answer.transcript);
+		if (!answer.hasMore || answer.nextOffset === undefined)
+			return {
+				subject,
+				text: pages.join("\n"),
+				// more was promised, without saying where it starts
+				isCutShort: answer.hasMore === true,
+			};
+		offset = answer.nextOffset;
+	}
+	return { subject, text: pages.join("\n"), isCutShort: true };
+}
+
+/**
+ * A meeting's transcript as the Markdown file a twin keeps beside the
+ * meeting: its subject as the title, then a line for each turn.
+ */
+export function meetingTranscriptFile(
+	transcript: Extract<MeetingTranscript, { text: string }>,
+): File {
+	const subject = transcript.subject.trim() || "Meeting";
+	return new File(
+		[
+			`# ${subject}: transcript\n\n${transcript.text}\n`,
+			transcript.isCutShort
+				? "\nThe meeting went on past this point; the rest of its transcript was not read.\n"
+				: "",
+		],
+		`${sanitizeFileNameStem(subject).slice(0, 100) || "Meeting"}-transcript.md`,
+		{ type: "text/markdown" },
+	);
 }
 
 /**

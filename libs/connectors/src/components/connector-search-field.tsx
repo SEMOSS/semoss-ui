@@ -1,4 +1,4 @@
-import { SearchIcon, XIcon } from "lucide-react";
+import { type LucideIcon, SearchIcon, XIcon } from "lucide-react";
 import { useId } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
@@ -19,6 +19,8 @@ interface ConnectorSearchFieldProps {
 	placeholder: string;
 	/** How the search reads what is typed, shown under the field when given. */
 	description?: string;
+	/** Drawn at the start of the field. Defaults to a lens. */
+	icon?: LucideIcon;
 }
 
 /** A viewer's search box, with a button to clear it. */
@@ -27,6 +29,7 @@ export const ConnectorSearchField = ({
 	onChange,
 	placeholder,
 	description,
+	icon: Icon = SearchIcon,
 }: ConnectorSearchFieldProps) => {
 	const { t } = useTranslation("connectors");
 	const descriptionId = useId();
@@ -45,7 +48,7 @@ export const ConnectorSearchField = ({
 					onChange={(event) => onChange(event.target.value)}
 				/>
 				<InputGroupAddon>
-					<SearchIcon aria-hidden />
+					<Icon aria-hidden />
 				</InputGroupAddon>
 				{value ? (
 					<InputGroupAddon align="inline-end">
