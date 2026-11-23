@@ -11,7 +11,7 @@ import { AppGithubPage } from "@/pages/app/app-github.page";
 import { AppMcpUsagePage } from "@/pages/app/app-mcp-usage.page";
 import { AppSmssPage } from "@/pages/app/app-smss-page";
 import { AgentActivityPage } from "@/pages/project/agent/agent-activity-page";
-import { ProjectDependenciesPage } from "@/pages/project/project-dependencies-page";
+import { ProjectCatalogDependenciesPage } from "@/pages/project/project-dependencies.page";
 
 interface ProjectDetailTabsProps {
 	/** Tabs to show */
@@ -97,7 +97,7 @@ export const ProjectDetailTabs = ({ tabs }: ProjectDetailTabsProps) => {
 					<ProjectOverview project={project} />
 				)}
 				{activeTab?.component === "project-dependencies" && (
-					<ProjectDependenciesPage />
+					<ProjectCatalogDependenciesPage />
 				)}
 				{activeTab?.component === "mcp-usage" && (
 					// a skill serves its own tools, so there is no remote

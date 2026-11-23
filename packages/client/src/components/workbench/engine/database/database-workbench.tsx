@@ -146,7 +146,9 @@ export const DATABASE_WORKBENCH_COMPONENTS: Record<
 				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			// before Access Control, where it has always sat
-			4,
+			ENGINE_SETTINGS_TABS.findIndex(
+				(tab) => tab.component === "access-control",
+			),
 		),
 	),
 	[ASSISTANT_TOOL_PANEL_TYPE]: ASSISTANT_TOOL_PANEL,

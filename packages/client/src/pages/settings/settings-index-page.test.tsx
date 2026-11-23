@@ -105,6 +105,7 @@ describe("SettingsIndexPage merged navigation", () => {
 			"/settings/members",
 			"/settings/team-permissions",
 			"/settings/service-accounts",
+			"/settings/ontology",
 		]);
 	});
 

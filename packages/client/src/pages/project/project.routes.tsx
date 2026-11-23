@@ -21,7 +21,7 @@ import { EditNotebookPage } from "./notebook/edit-notebook-page";
 import { ViewNotebookPage } from "./notebook/view-notebook-page";
 import { ProjectLayout } from "./project.layout";
 import { ProjectAuditPage } from "./project-audit.page";
-import { ProjectDependenciesPage } from "./project-dependencies-page";
+import { ProjectCatalogDependenciesPage } from "./project-dependencies.page";
 import { ProjectOverviewPage } from "./project-overview-page";
 import { ProjectSettingsLayout } from "./project-settings-layout";
 import { PROJECT_SETTINGS_SECTIONS } from "./project-settings-sections";
@@ -101,8 +101,8 @@ export const PROJECT_ROUTES: ProjectRoute[] = [
 								tabs={[
 									{ name: "Overview", path: "" },
 									{
-										name: "Dependencies",
-										path: "dependencies",
+										name: "Ontology",
+										path: "ontology",
 										restrict: [
 											"OWNER",
 											"EDIT",
@@ -161,8 +161,19 @@ export const PROJECT_ROUTES: ProjectRoute[] = [
 								element: <ProjectOverviewPage />,
 							},
 							{
+								path: "ontology",
+								element: <ProjectCatalogDependenciesPage />,
+							},
+							// the tab was at dependencies; old links still land on it
+							{
 								path: "dependencies",
-								element: <ProjectDependenciesPage />,
+								element: (
+									<Navigate
+										to="../ontology"
+										relative="path"
+										replace
+									/>
+								),
 							},
 							{
 								path: "mcp-usage",
@@ -243,6 +254,15 @@ export const PROJECT_ROUTES: ProjectRoute[] = [
 								tabs={[
 									{ name: "Overview", path: "" },
 									{
+										name: "Ontology",
+										path: "ontology",
+										restrict: [
+											"OWNER",
+											"EDIT",
+											"READ_ONLY",
+										],
+									},
+									{
 										name: "MCP",
 										path: "mcp-usage",
 										restrict: [
@@ -292,6 +312,21 @@ export const PROJECT_ROUTES: ProjectRoute[] = [
 							{
 								path: "",
 								element: <ProjectOverviewPage />,
+							},
+							{
+								path: "ontology",
+								element: <ProjectCatalogDependenciesPage />,
+							},
+							// the tab was at dependencies; old links still land on it
+							{
+								path: "dependencies",
+								element: (
+									<Navigate
+										to="../ontology"
+										relative="path"
+										replace
+									/>
+								),
 							},
 							{
 								// a skill serves its own tools, so there is no
@@ -378,6 +413,15 @@ export const PROJECT_ROUTES: ProjectRoute[] = [
 								tabs={[
 									{ name: "Overview", path: "" },
 									{
+										name: "Ontology",
+										path: "ontology",
+										restrict: [
+											"OWNER",
+											"EDIT",
+											"READ_ONLY",
+										],
+									},
+									{
 										name: "Activity Log",
 										path: "activity",
 										restrict: [
@@ -418,6 +462,21 @@ export const PROJECT_ROUTES: ProjectRoute[] = [
 							{
 								path: "",
 								element: <ProjectOverviewPage />,
+							},
+							{
+								path: "ontology",
+								element: <ProjectCatalogDependenciesPage />,
+							},
+							// the tab was at dependencies; old links still land on it
+							{
+								path: "dependencies",
+								element: (
+									<Navigate
+										to="../ontology"
+										relative="path"
+										replace
+									/>
+								),
 							},
 							{
 								path: "activity",
@@ -490,8 +549,8 @@ export const PROJECT_ROUTES: ProjectRoute[] = [
 								tabs={[
 									{ name: "Overview", path: "" },
 									{
-										name: "Dependencies",
-										path: "dependencies",
+										name: "Ontology",
+										path: "ontology",
 										restrict: [
 											"OWNER",
 											"EDIT",
@@ -550,8 +609,19 @@ export const PROJECT_ROUTES: ProjectRoute[] = [
 								element: <ProjectOverviewPage />,
 							},
 							{
+								path: "ontology",
+								element: <ProjectCatalogDependenciesPage />,
+							},
+							// the tab was at dependencies; old links still land on it
+							{
 								path: "dependencies",
-								element: <ProjectDependenciesPage />,
+								element: (
+									<Navigate
+										to="../ontology"
+										relative="path"
+										replace
+									/>
+								),
 							},
 							{
 								path: "mcp-usage",
@@ -634,6 +704,15 @@ export const PROJECT_ROUTES: ProjectRoute[] = [
 								tabs={[
 									{ name: "Overview", path: "" },
 									{
+										name: "Ontology",
+										path: "ontology",
+										restrict: [
+											"OWNER",
+											"EDIT",
+											"READ_ONLY",
+										],
+									},
+									{
 										name: "GitHub",
 										path: "github",
 										restrict: ["OWNER"],
@@ -687,6 +766,21 @@ export const PROJECT_ROUTES: ProjectRoute[] = [
 							{
 								path: "",
 								element: <AgentOverviewPage />,
+							},
+							{
+								path: "ontology",
+								element: <ProjectCatalogDependenciesPage />,
+							},
+							// the tab was at dependencies; old links still land on it
+							{
+								path: "dependencies",
+								element: (
+									<Navigate
+										to="../ontology"
+										relative="path"
+										replace
+									/>
+								),
 							},
 							buildProjectSettingsRoute(),
 							{

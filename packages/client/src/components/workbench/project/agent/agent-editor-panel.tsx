@@ -11,6 +11,7 @@ import {
 	toAgentPromptTitles,
 } from "@semoss/shared";
 import { Spinner, toast } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
@@ -37,7 +38,7 @@ export interface AgentEditorSaveValue {
 const AgentEditorPanel: WorkbenchComponent = ({ id }) => {
 	const { setValue } = useWorkbenchPanel(id);
 
-	const { project, permission } = useProject();
+	const { project, permission, refreshDependencies } = useProject();
 	const insight = useInsight();
 	const readOnly = !(permission === "OWNER" || permission === "EDIT");
 	// The insight's id resolves asynchronously after mount - fetching before
@@ -68,6 +69,10 @@ const AgentEditorPanel: WorkbenchComponent = ({ id }) => {
 				buildEditWorkspacePixel(project.project_id, formValues),
 			);
 			const warning = getWorkspaceSaveWarning(pixelReturn[0]?.output);
+			// the backend records the agent's model, subagents, skills,
+			// toolboxes and knowledge as dependencies on save; read them again
+			// so the dependency warning follows the saved configuration
+			refreshDependencies();
 			if (warning) {
 				toast.warning(warning);
 			} else {
@@ -75,11 +80,20 @@ const AgentEditorPanel: WorkbenchComponent = ({ id }) => {
 			}
 		} catch (e) {
 			console.error(e);
-			toast.error((e as Error).message || "Failed to save agent");
+			toast.error(
+				getErrorMessage(e, "Failed to save agent") ||
+					"Failed to save agent",
+			);
 		} finally {
 			setIsLoading(false);
 		}
-	}, [readOnly, formValues, insight, project.project_id]);
+	}, [
+		readOnly,
+		formValues,
+		insight,
+		project.project_id,
+		refreshDependencies,
+	]);
 
 	useWorkbenchControl(id, AgentEditorSaveControl);
 

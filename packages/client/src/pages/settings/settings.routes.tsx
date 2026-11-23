@@ -9,6 +9,7 @@ import { AdminThemePage } from "./admin-theme-page";
 import { AgentRunsPage } from "./agent-runs.page";
 import { AuditTrailPage } from "./audit-trail.page";
 import { ConfigurationsPage } from "./configurations-page";
+import { DependencyMapPage } from "./dependency-map.page";
 import { EnterpriseUsagePage } from "./enterprise-usage.page";
 import { GitHubAppPage } from "./github-app.page";
 import { LLMFeedbackPage } from "./llm-feedback-page";
@@ -17,6 +18,7 @@ import { ManagedTeamsPage } from "./managed-teams-page";
 import { MemberSettingsPage } from "./member-settings-page";
 import { MyFilesPage } from "./my-files-page";
 import { MyProfilePage } from "./my-profile.page";
+import { OntologyRedirect } from "./ontology-redirect";
 import { RDFMapPage } from "./rdf-map-page";
 import { ResourceGovernancePage } from "./resource-governance-page";
 import { ServiceAccountsSettingsPage } from "./service-accounts-settings-page";
@@ -33,6 +35,7 @@ const SETTINGS_COMPONENTS: Record<string, ComponentType> = {
 	"resources/:type": ResourceGovernancePage,
 	"resources/:type/:id": ResourceGovernancePage,
 	"service-accounts": ServiceAccountsSettingsPage,
+	ontology: DependencyMapPage,
 	"social-properties": ConfigurationsPage,
 	"github-app": GitHubAppPage,
 	"admin-query": AdminQueryPage,
@@ -77,6 +80,8 @@ export const SETTINGS_ROUTE: RouteObject = {
 	element: <SettingsLayout />,
 	children: [
 		...SETTINGS_CHILDREN,
+		// the Ontology was at dependencies; old links still open it
+		{ path: "dependencies", element: <OntologyRedirect /> },
 		{ path: "*", element: <Navigate to="." replace /> },
 	],
 };

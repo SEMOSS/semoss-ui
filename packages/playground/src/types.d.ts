@@ -388,25 +388,3 @@ export interface User {
 	type: string;
 	email: string;
 }
-
-export interface ProjectDependency {
-	engine_type:
-		| "PROJECT"
-		| "STORAGE"
-		| "DATABASE"
-		| "FUNCTION"
-		| "MODEL"
-		| "VECTOR";
-	engine_id: string;
-	engine_name: string;
-	engine_subtype?: string;
-	description?: string;
-	engine_discoverable?: boolean;
-	permission_name?: "READ_ONLY" | "EDIT" | "OWNER";
-	engine_global?: boolean;
-	access_permission?: number; // The permission level the user has requested, if any
-	tags?: string; // comma separated tags
-	can_view_dependencies?: boolean;
-	engine_date_created?: string;
-	dependencies?: string[]; // Array of dependency engine IDs
-}

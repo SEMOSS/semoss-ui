@@ -62,6 +62,17 @@ describe("Env", () => {
 		});
 	});
 
+	describe("DEPENDENCIES", () => {
+		it("starts empty and is set by update", async () => {
+			stubEnvTag(null);
+			const Env = await loadEnv();
+			expect(Env.DEPENDENCIES).toEqual({});
+
+			Env.update({ DEPENDENCIES: { summaryModel: "model-1" } });
+			expect(Env.DEPENDENCIES.summaryModel).toBe("model-1");
+		});
+	});
+
 	describe("refreshFromDocument", () => {
 		it("picks up a tag that appears after load", async () => {
 			stubEnvTag(null);

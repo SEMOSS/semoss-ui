@@ -33,6 +33,7 @@ import {
 	createNewTerminalCommand,
 	createOpenPanelCommand,
 	createReconnectCommand,
+	withTab,
 } from "../../workbench.presets";
 import {
 	createProjectSettingsPanel,
@@ -129,8 +130,17 @@ export const NOTEBOOK_WORKBENCH_COMPONENTS: Record<
 	[WORKBENCH_COMPONENTS.GIT_VERSION]: GIT_VERSION_PANEL,
 	[WORKBENCH_COMPONENTS.GIT_DIFF]: GIT_DIFF_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_TERMINAL]: PROJECT_TERMINAL_PANEL,
+	// the shared tabs plus Dependencies, right after Overview
 	[WORKBENCH_COMPONENTS.PROJECT_SETTINGS]: createProjectSettingsPanel(
-		PROJECT_SETTINGS_TABS,
+		withTab(
+			PROJECT_SETTINGS_TABS,
+			{
+				name: "Dependencies",
+				component: "project-dependencies",
+				restrict: ["OWNER", "EDIT", "READ_ONLY"],
+			},
+			1,
+		),
 	),
 	[ASSISTANT_TOOL_PANEL_TYPE]: ASSISTANT_TOOL_PANEL,
 	[WORKBENCH_COMPONENTS.ASSISTANT]: ASSISTANT_PANEL,

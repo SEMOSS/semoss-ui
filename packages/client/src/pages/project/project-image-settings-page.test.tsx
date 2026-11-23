@@ -19,7 +19,9 @@ function renderPage(type: Project["project_type"], permission: Role) {
 					project_type: type,
 				},
 				dependencies: [],
+				dependencyGraph: { nodes: [], links: [] },
 				refresh: vi.fn(),
+				refreshDependencies: vi.fn(),
 				update: vi.fn(),
 			}}
 		>

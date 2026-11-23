@@ -1,13 +1,14 @@
 import { useCallback, useMemo } from "react";
 import { Outlet, useParams } from "react-router";
 import { useConfig, usePixel } from "@semoss/sdk/react";
-import type { Project, ProjectDependency } from "@semoss/shared";
+import type { Project } from "@semoss/shared";
 import { Spinner } from "@semoss/ui/next";
 import { ResourceNotFound } from "@/components/common/resource-not-found";
 import {
 	ProjectContext,
 	type ProjectContextType,
 } from "@/contexts/project-context";
+import { useCatalogDependencies } from "@/features/catalog/dependencies/use-catalog-dependencies";
 import { useAPI } from "@/hooks/use-api";
 
 const CATALOG: Record<Project["project_type"], ProjectContextType["catalog"]> =
@@ -39,12 +40,6 @@ export const ProjectLayout = () => {
 		},
 	);
 
-	// get dependencies for the project
-	const getDependencies = usePixel<{
-		engines: ProjectDependency[];
-		dependencies: string[];
-	}>(appId ? `GetProjectDependencies(project=["${appId}"]);` : "");
-
 	// the core metadata keys plus any dynamic ones from the project config
 	const metaKeys = useMemo(() => {
 		const dynamicKeys = projectMetaKeys
@@ -65,6 +60,12 @@ export const ProjectLayout = () => {
 			? `GetProjectMetadata(project=["${appId}"], metaKeys=${JSON.stringify(metaKeys)});`
 			: "",
 	);
+
+	// get dependencies for the project, once its type is known
+	const getDependencies = useCatalogDependencies({
+		catalogId: appId,
+		catalogType: getMetadata.data?.project_type,
+	});
 
 	/**
 	 * Refresh the project data
@@ -101,7 +102,7 @@ export const ProjectLayout = () => {
 	if (
 		!appId ||
 		getUserProjectPermission.status === "ERROR" ||
-		getDependencies.status === "ERROR" ||
+		getDependencies.error ||
 		getMetadata.status === "ERROR"
 	) {
 		return <ResourceNotFound path={catalog.path} />;
@@ -110,8 +111,8 @@ export const ProjectLayout = () => {
 	if (
 		getUserProjectPermission.status !== "SUCCESS" ||
 		!getUserProjectPermission.data ||
-		getDependencies.status !== "SUCCESS" ||
-		getMetadata.status !== "SUCCESS"
+		getMetadata.status !== "SUCCESS" ||
+		getDependencies.isLoading
 	) {
 		return (
 			<div className="flex h-full w-full items-center justify-center">
@@ -127,8 +128,13 @@ export const ProjectLayout = () => {
 				catalog,
 				project: getMetadata.data,
 				permission: getUserProjectPermission.data,
-				dependencies: getDependencies.data?.engines || [],
+				dependencies: getDependencies.dependencies,
+				dependencyGraph: {
+					nodes: getDependencies.allDependencies,
+					links: getDependencies.links,
+				},
 				refresh,
+				refreshDependencies: getDependencies.refresh,
 				update,
 			}}
 		>

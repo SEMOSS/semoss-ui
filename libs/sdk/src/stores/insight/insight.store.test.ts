@@ -102,6 +102,7 @@ beforeEach(() => {
 		ACCESS_KEY: "",
 		SECRET_KEY: "",
 		TOOL: null,
+		DEPENDENCIES: {},
 	});
 	// Populated into the module-level system config cache on the first initialize() call.
 	mockGetSystemConfig.mockResolvedValue(SYSTEM_CONFIG_WITH_LOGINS);
@@ -197,6 +198,60 @@ describe("InsightStore", () => {
 			await initStore(store, { app: "my-app-id" });
 			const [pixel] = mockRunPixel.mock.calls[0];
 			expect(pixel).toContain('LoadApp("my-app-id")');
+		});
+
+		describe("app dependencies from LoadApp", () => {
+			const initWithLoadApp = (output: unknown) => {
+				mockRunPixel.mockResolvedValueOnce(
+					pixelResult("test-insight-id", output),
+				);
+				return new InsightStore().initialize();
+			};
+
+			it("fills Env.DEPENDENCIES for the page's app", async () => {
+				Env.update({ APP: "my-app-id" });
+				await initWithLoadApp({
+					message: "Successfully set app context to 'my-app-id'",
+					dependencies: { summaryModel: "model-1", docs: "vector-1" },
+				});
+				expect(Env.DEPENDENCIES).toEqual({
+					summaryModel: "model-1",
+					docs: "vector-1",
+				});
+			});
+
+			it("drops names without a string id", async () => {
+				Env.update({ APP: "my-app-id" });
+				await initWithLoadApp({
+					dependencies: {
+						good: "model-1",
+						empty: "",
+						nested: { id: "x" },
+					},
+				});
+				expect(Env.DEPENDENCIES).toEqual({ good: "model-1" });
+			});
+
+			it("leaves Env untouched when LoadApp answers with a string", async () => {
+				Env.update({
+					APP: "my-app-id",
+					DEPENDENCIES: { kept: "model-1" },
+				});
+				await initWithLoadApp(
+					"Successfully set app context to 'my-app-id'",
+				);
+				expect(Env.DEPENDENCIES).toEqual({ kept: "model-1" });
+			});
+
+			it("does not write for an app other than the page's", async () => {
+				mockRunPixel.mockResolvedValueOnce(
+					pixelResult("test-insight-id", {
+						dependencies: { summaryModel: "model-1" },
+					}),
+				);
+				await new InsightStore().initialize({ app: "other-app" });
+				expect(Env.DEPENDENCIES).toEqual({});
+			});
 		});
 
 		it("includes LoadPyFromFile when python script option is provided", async () => {

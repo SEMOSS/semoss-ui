@@ -154,12 +154,17 @@ export const BLOCKS_WORKBENCH_COMPONENTS: Record<
 	[WORKBENCH_COMPONENTS.BLOCKS_EXPORT]: BLOCKS_EXPORT_PANEL,
 	...FILE_PANEL_COMPONENTS,
 	[WORKBENCH_COMPONENTS.PROJECT_TERMINAL]: PROJECT_TERMINAL_PANEL,
-	// The shared `PROJECT_SETTINGS_TABS` plus Settings, which BLOCKS shows and
-	// the shared list does not. Written out rather than spliced: the insert
-	// sits in the middle, so a splice would read as an index into a list
-	// defined in another file.
+	// The shared `PROJECT_SETTINGS_TABS` plus Dependencies and Settings, which
+	// BLOCKS shows and the shared list does not. Written out rather than
+	// spliced: the inserts sit in the middle, so a splice would read as an
+	// index into a list defined in another file.
 	[WORKBENCH_COMPONENTS.PROJECT_SETTINGS]: createProjectSettingsPanel([
 		{ name: "Overview", component: "project-overview" },
+		{
+			name: "Dependencies",
+			component: "project-dependencies",
+			restrict: ["OWNER", "EDIT", "READ_ONLY"],
+		},
 		{
 			name: "MCP",
 			component: "mcp-usage",

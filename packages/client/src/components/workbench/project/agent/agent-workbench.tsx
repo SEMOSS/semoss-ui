@@ -124,16 +124,25 @@ export const AGENT_WORKBENCH_COMPONENTS: Record<
 	[WORKBENCH_COMPONENTS.PROJECT_TERMINAL]: PROJECT_TERMINAL_PANEL,
 	[WORKBENCH_COMPONENTS.PROJECT_SETTINGS]: createProjectSettingsPanel(
 		withTab(
-			PROJECT_SETTINGS_TABS,
+			withTab(
+				PROJECT_SETTINGS_TABS,
+				{
+					name: "Agent Activity",
+					component: "agent-activity",
+					restrict: ["OWNER", "EDIT", "READ_ONLY"],
+				},
+				// before Access Control, wherever the shared list puts it
+				PROJECT_SETTINGS_TABS.findIndex(
+					(tab) => tab.component === "access-control",
+				),
+			),
 			{
-				name: "Agent Activity",
-				component: "agent-activity",
+				name: "Dependencies",
+				component: "project-dependencies",
 				restrict: ["OWNER", "EDIT", "READ_ONLY"],
 			},
-			// before Access Control, wherever the shared list puts it
-			PROJECT_SETTINGS_TABS.findIndex(
-				(tab) => tab.component === "access-control",
-			),
+			// right after Overview, which leads the shared list
+			1,
 		),
 	),
 	[ASSISTANT_TOOL_PANEL_TYPE]: ASSISTANT_TOOL_PANEL,

@@ -68,6 +68,7 @@ const envStore: {
 	HEADLESS: boolean;
 	REDIRECT_URL: string;
 	TOOL: MCPToolRequest | null;
+	DEPENDENCIES: Record<string, string>;
 } = {
 	APP: "",
 	MODULE: "",
@@ -79,6 +80,7 @@ const envStore: {
 	HEADLESS: false,
 	REDIRECT_URL: "",
 	TOOL: null,
+	DEPENDENCIES: {},
 };
 
 export const Env = {
@@ -152,6 +154,17 @@ export const Env = {
 	 */
 	get TOOL() {
 		return envStore.TOOL;
+	},
+
+	/**
+	 * The app's named dependencies: each dependency name its owner gave a
+	 * manual dependency, mapped to that engine or project's id. Filled from
+	 * `LoadApp` when `Insight.initialize()` loads the page's app (`APP`), so an
+	 * app reads `Env.DEPENDENCIES.summaryModel` rather than hardcoding the id.
+	 * Empty until then, and for links with no name.
+	 */
+	get DEPENDENCIES() {
+		return envStore.DEPENDENCIES;
 	},
 
 	/**

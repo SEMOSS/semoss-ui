@@ -10,6 +10,7 @@ import {
 	KeyRound,
 	Landmark,
 	Link2,
+	Network,
 	Palette,
 	ScrollText,
 	SearchIcon,
@@ -55,6 +56,10 @@ const CardMapper: Record<string, CardConfig> = {
 	},
 	"Resource Governance": {
 		icon: <Landmark className={ICON_CLASS} />,
+		className: "bg-chart-2/10 text-chart-2",
+	},
+	"Enterprise Ontology": {
+		icon: <Network className={ICON_CLASS} aria-hidden="true" />,
 		className: "bg-chart-2/10 text-chart-2",
 	},
 	"Member Settings": {

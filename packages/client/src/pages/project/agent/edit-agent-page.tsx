@@ -6,8 +6,8 @@ import {
 	AgentWorkbench,
 } from "@/components/workbench";
 import { WorkbenchProvider } from "@/contexts";
+import { CatalogDependencyWarning } from "@/features/catalog/dependencies/catalog-dependency-warning";
 import { usePage, useProject } from "@/hooks";
-import { ProjectDependencyWarning } from "../app/project-dependency-warning";
 
 /**
  * Editable surface for a WORKSPACE project. Owns the insight (bound to the
@@ -31,7 +31,10 @@ export const EditAgentPage = () => {
 		<InsightProvider options={{ app: project.project_id }}>
 			<WorkbenchProvider components={AGENT_WORKBENCH_COMPONENTS}>
 				<ProjectNavbar actions={<ProjectShareButton />} />
-				<ProjectDependencyWarning />
+				<CatalogDependencyWarning
+					catalogId={project.project_id}
+					catalogType={project.project_type}
+				/>
 				<AgentWorkbench />
 			</WorkbenchProvider>
 		</InsightProvider>

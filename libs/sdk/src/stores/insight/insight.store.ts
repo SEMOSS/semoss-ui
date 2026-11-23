@@ -560,10 +560,13 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		}
 
 		// create the new insight
-		const { insightId, errors } = await runPixel<[Record<string, unknown>]>(
-			pixel,
-			this._store.insightId,
-		);
+		const { insightId, errors, pixelReturn } = await runPixel<
+			[
+				{
+					dependencies: Record<string, string>;
+				},
+			]
+		>(pixel, this._store.insightId);
 
 		// log errors if it exists
 		if (errors.length) {
@@ -572,6 +575,16 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
 		// set the insight ID
 		this._store.insightId = insightId;
+
+		// LoadApp, the first pixel, returns the app's named dependencies. Env is
+		// page-global, so only the page's own app (APP) fills it.
+		const appId = this._store.options.appId;
+		if (appId && appId === Env.APP) {
+			const dependencies = pixelReturn?.[0]?.output?.dependencies;
+			if (dependencies) {
+				Env.update({ DEPENDENCIES: dependencies });
+			}
+		}
 
 		// point the insight space toward the room
 		if (Env?.TOOL?.roomId && !this._store.options.disableRoom) {

@@ -19,6 +19,8 @@ interface DiscardChangesDialogProps {
 	onConfirm: () => void;
 	/** Called to keep the changes */
 	onCancel: () => void;
+	/** What stays as it is when nothing is saved; the access by default */
+	unchangedText?: string;
 }
 
 /**
@@ -31,6 +33,7 @@ export const DiscardChangesDialog = ({
 	changeCount,
 	onConfirm,
 	onCancel,
+	unchangedText = "the access stays as it is",
 }: DiscardChangesDialogProps) => {
 	const isLeaving = reason === "LEAVE";
 	const changes =
@@ -56,8 +59,8 @@ export const DiscardChangesDialog = ({
 					</DialogTitle>
 					<DialogDescription>
 						{isLeaving
-							? `You have ${changes} that are not saved. Leaving drops them, and the access stays as it is.`
-							: `This drops ${changes}. Nothing was saved, so the access stays as it is.`}
+							? `You have ${changes} that are not saved. Leaving drops them, and ${unchangedText}.`
+							: `This drops ${changes}. Nothing was saved, so ${unchangedText}.`}
 					</DialogDescription>
 				</DialogHeader>
 				<DialogFooter>

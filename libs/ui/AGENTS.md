@@ -42,7 +42,7 @@ Tokens are raw values on `:root` (light) and `.dark` (dark), mapped to Tailwind 
 | `success` / `success-foreground` | `text-success`, `bg-success/10` | Success/positive status |
 | `warning` / `warning-foreground` | `text-warning`, `bg-warning/10` | Warning/caution status |
 | `border` / `input` / `ring` / `ring-offset` | `border-border`, `ring-ring/50` | Borders, input outlines, focus rings |
-| `chart-1` … `chart-5` | `bg-chart-1`, `text-chart-2` | Data visualization series colors |
+| `chart-1` … `chart-13` | `bg-chart-1`, `text-chart-2` | Data visualization series colors; `chart-6` to `chart-13` keep one hue in light and dark. The dependency graphs give each catalog type its own (see the client guide) |
 | `sidebar-*` | `bg-sidebar`, `border-sidebar-border` | Sidebar chrome (8 tokens) |
 | `login-*` | — | Login page skin only |
 

@@ -2,8 +2,8 @@ import { Ban, Eye, Pencil, User } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import type { Role } from "@semoss/sdk";
-import { runPixel, usePixel } from "@semoss/sdk/react";
-import type { Project, ProjectDependency } from "@semoss/shared";
+import { runPixel, usePixel, useSessionInsight } from "@semoss/sdk/react";
+import type { CatalogDependency, Project } from "@semoss/shared";
 import {
 	Badge,
 	Button,
@@ -18,6 +18,7 @@ import {
 	DialogTitle,
 	Field,
 	FieldLabel,
+	Muted,
 	RadioGroup,
 	RadioGroupItem,
 	Tabs,
@@ -28,9 +29,16 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import type { MyAccessRequest } from "@/api/user-access";
+import { type MyAccessRequest, requestCatalogAccess } from "@/api/user-access";
 import OPEN_AI from "@/assets/img/OPEN_AI.svg";
-import { PERMISSION_DESCRIPTION_MAP, TYPE_TO_ROUTE } from "@/constants";
+import { PERMISSION_DESCRIPTION_MAP } from "@/constants";
+import {
+	getDependencyDisplayName,
+	getDependencyTypeConfig,
+	getDependencyVisibilityLabel,
+	isPrivateDependency,
+} from "@/features/catalog/dependencies/catalog-dependency";
+import { getResourcePagePath } from "@/utility/catalog";
 
 interface ProjectAccessRequestDialogProps {
 	/** Project details */
@@ -121,59 +129,56 @@ export const ProjectAccessRequestDialog = ({
 	);
 	const [roleChangeComment, setRoleChangeComment] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
+	const { insightId } = useSessionInsight();
 
 	const getDependencies = usePixel<{
-		engines: ProjectDependency[];
-		dependencies: string[];
-	}>(open ? `GetProjectDependencies(project="${project.project_id}")` : "", {
-		data: {
-			engines: [],
-			dependencies: [],
+		dependencies: CatalogDependency[];
+		dependencyIds: string[];
+	}>(
+		open
+			? `GetCatalogDependencies(catalogId="${project.project_id}", catalogType="${project.project_type}");`
+			: "",
+		{
+			data: {
+				dependencies: [],
+				dependencyIds: [],
+			},
 		},
-	});
+	);
+	const dependencies: CatalogDependency[] =
+		getDependencies.data?.dependencies ?? [];
 
 	const isAllRequested = useMemo(() => {
-		return getDependencies.data.engines.every((dep) =>
-			requestedDeps.has(dep.engine_id),
-		);
-	}, [getDependencies.data.engines, requestedDeps]);
+		return dependencies.every((dep) => requestedDeps.has(dep.catalog_id));
+	}, [dependencies, requestedDeps]);
 
 	/**
-	 * Request access for a single dependency.
-	 * @param depId
-	 * @returns
+	 * Request access for a single dependency, with the request its kind takes.
+	 * @param dep - the dependency
 	 */
-	const handleSingleDependencyRequest = async (depId: string) => {
+	const handleSingleDependencyRequest = async (dep: CatalogDependency) => {
+		if (!requestedPermission || requestedPermission === "DISCOVERABLE") {
+			toast.error(
+				"Please select a permission role on the first tab before requesting access.",
+			);
+			setTabValue("permissions");
+			return;
+		}
+		const name = getDependencyDisplayName(dep);
 		try {
 			setIsLoading(true);
-
-			if (!requestedPermission) {
-				toast.error(
-					"Please select a permission role on the first tab before requesting access.",
-				);
-				setTabValue("permissions");
-				return;
-			}
-
-			const response = await runPixel(
-				`META | RequestEngine(engine=['${depId}'], permission=['${requestedPermission}']${
-					roleChangeComment
-						? `, comment=["<encode>${roleChangeComment}</encode>"]`
-						: ""
-				})`,
+			const output = await requestCatalogAccess(
+				insightId,
+				getDependencyTypeConfig(dep.catalog_type).kind,
+				dep.catalog_id,
+				requestedPermission,
+				roleChangeComment,
 			);
-
-			const { pixelReturn } = response;
-			const r = pixelReturn[0];
-			if (r.operationType.indexOf("ERROR") === -1) {
-				setRequestedDeps((prev) => new Set(prev).add(depId));
-				toast.success(`Dependency ${depId}: ${r.output}`);
-			} else {
-				toast.error(`Dependency ${depId}: ${r.output}`);
-			}
+			setRequestedDeps((prev) => new Set(prev).add(dep.catalog_id));
+			toast.success(`${name}: ${output}`);
 		} catch (e) {
 			toast.error(
-				getErrorMessage(e, "Request failed for the dependency."),
+				`${name}: ${getErrorMessage(e, "Request failed for the dependency.")}`,
 			);
 		} finally {
 			setIsLoading(false);
@@ -181,64 +186,36 @@ export const ProjectAccessRequestDialog = ({
 	};
 
 	/**
-	 * Request access for all dependencies that do not have the requested permission and have not been requested yet.
-	 * @returns
+	 * Request access for all dependencies that do not have the requested
+	 * permission and have not been requested yet. Private dependencies, which
+	 * the backend never lets anyone request, are left out.
 	 */
 	const handleRequestAllAccess = async () => {
-		setIsLoading(true);
-
-		try {
-			if (!requestedPermission) {
-				toast.error(
-					"Please select a permission role on the first tab before requesting access.",
-				);
-				setTabValue("permissions");
-				return;
-			}
-
-			const dependenciesToRequest = getDependencies.data.engines.filter(
-				(dep) =>
-					dep.permission_name !== requestedPermission &&
-					!requestedDeps.has(dep.engine_id),
-			);
-
-			if (dependenciesToRequest.length === 0) {
-				toast.info("No new dependencies require access request.");
-				return;
-			}
-
-			let pixel = ``;
-			for (const dep of dependenciesToRequest) {
-				pixel += `META | RequestEngine(engine=['${dep.engine_id}'], permission=['${requestedPermission}']${
-					roleChangeComment
-						? `, comment=["<encode>${roleChangeComment}</encode>"]`
-						: ""
-				})`;
-			}
-
-			const response = await runPixel(pixel);
-			const { pixelReturn } = response;
-
-			for (const [rIdx, r] of pixelReturn.entries()) {
-				if (r.operationType.indexOf("ERROR") === -1) {
-					setRequestedDeps((prev) =>
-						new Set(prev).add(
-							dependenciesToRequest[rIdx].engine_id,
-						),
-					);
-					toast.success(
-						`Dependency ${dependenciesToRequest[rIdx].engine_id}: ${r.output}`,
-					);
-				} else {
-					toast.error(
-						`Dependency ${dependenciesToRequest[rIdx].engine_id}: ${r.output}`,
-					);
-				}
-			}
-		} catch (e) {
+		if (!requestedPermission) {
 			toast.error(
-				getErrorMessage(e, "Request failed for the dependency."),
+				"Please select a permission role on the first tab before requesting access.",
 			);
+			setTabValue("permissions");
+			return;
+		}
+
+		const dependenciesToRequest = dependencies.filter(
+			(dep) =>
+				dep.permission_name !== requestedPermission &&
+				!requestedDeps.has(dep.catalog_id) &&
+				!isPrivateDependency(dep),
+		);
+
+		if (dependenciesToRequest.length === 0) {
+			toast.info("No new dependencies require access request.");
+			return;
+		}
+
+		setIsLoading(true);
+		try {
+			for (const dep of dependenciesToRequest) {
+				await handleSingleDependencyRequest(dep);
+			}
 		} finally {
 			setIsLoading(false);
 		}
@@ -421,7 +398,7 @@ export const ProjectAccessRequestDialog = ({
 									disabled={
 										isAllRequested ||
 										isLoading ||
-										getDependencies.data.engines.some(
+										dependencies.some(
 											(dep) => dep.access_permission,
 										)
 									}
@@ -433,101 +410,117 @@ export const ProjectAccessRequestDialog = ({
 							</div>
 
 							<div className="space-y-3">
-								{getDependencies.data.engines.map((dep) => (
-									<div
-										key={dep.engine_id}
-										className="flex flex-col gap-3 rounded-xl border bg-background p-4"
-									>
-										<div className="flex flex-wrap items-start justify-between gap-4">
-											<div className="flex items-start gap-4">
-												<img
-													src={OPEN_AI}
-													alt={dep.engine_name}
-													className="h-12 w-12 rounded-lg object-cover"
-												/>
-												<div className="space-y-1">
-													<Link
-														to={`${TYPE_TO_ROUTE[dep.engine_type as keyof typeof TYPE_TO_ROUTE]}/${dep.engine_id}`}
-														className="text-primary"
-													>
-														<p className="font-medium text-sm">
-															{dep.engine_name}
-														</p>
-													</Link>
-													<PermissionBadge
-														permission={
-															dep.permission_name
-														}
+								{dependencies.map((dep) => {
+									const pagePath = getResourcePagePath(
+										getDependencyTypeConfig(
+											dep.catalog_type,
+										).kind,
+										dep.catalog_type,
+										dep.catalog_id,
+									);
+									const name = (
+										<p className="font-medium text-sm">
+											{getDependencyDisplayName(dep)}
+										</p>
+									);
+									return (
+										<div
+											key={dep.catalog_id}
+											className="flex flex-col gap-3 rounded-xl border bg-background p-4"
+										>
+											<div className="flex flex-wrap items-start justify-between gap-4">
+												<div className="flex items-start gap-4">
+													<img
+														src={OPEN_AI}
+														alt=""
+														className="h-12 w-12 rounded-lg object-cover"
 													/>
+													<div className="space-y-1">
+														{pagePath ? (
+															<Link
+																to={pagePath}
+																className="text-primary"
+															>
+																{name}
+															</Link>
+														) : (
+															name
+														)}
+														<PermissionBadge
+															permission={
+																dep.permission_name
+															}
+														/>
+													</div>
+												</div>
+
+												<div className="flex flex-wrap items-center gap-2">
+													<Badge variant="outline">
+														{getDependencyVisibilityLabel(
+															dep,
+														)}
+													</Badge>
+													<Badge variant="outline">
+														{
+															getDependencyTypeConfig(
+																dep.catalog_type,
+															).label
+														}
+													</Badge>
 												</div>
 											</div>
 
-											<div className="flex flex-wrap items-center gap-2">
-												{dep.engine_global ? (
-													<Badge variant="outline">
-														Public
-													</Badge>
-												) : dep.engine_discoverable ? (
-													<Badge variant="outline">
-														Discoverable
-													</Badge>
+											<p className="text-muted-foreground text-sm">
+												{dep.description?.trim()
+													? dep.description
+													: "No Description Available"}
+											</p>
+
+											<div className="flex justify-end">
+												{dep.access_permission ||
+												requestedDeps.has(
+													dep.catalog_id,
+												) ? (
+													<Button
+														variant="outline"
+														disabled
+													>
+														Pending Access
+													</Button>
+												) : isPrivateDependency(dep) ? (
+													<Muted className="text-xs">
+														Private: ask an owner of
+														this app or an admin
+													</Muted>
+												) : !dep.permission_name ? (
+													<Button
+														variant="outline"
+														disabled={isLoading}
+														onClick={() =>
+															handleSingleDependencyRequest(
+																dep,
+															)
+														}
+													>
+														Request Access
+													</Button>
 												) : (
-													<>
-														<Badge variant="outline">
-															Non-Discoverable
-														</Badge>
-														<Badge variant="outline">
-															Private
-														</Badge>
-													</>
+													<Button
+														variant="outline"
+														disabled={isLoading}
+														onClick={() =>
+															handleSingleDependencyRequest(
+																dep,
+															)
+														}
+													>
+														Change Access
+													</Button>
 												)}
-												<Badge variant="outline">
-													{dep.engine_type}
-												</Badge>
 											</div>
 										</div>
-
-										<p className="text-muted-foreground text-sm">
-											{dep.description?.trim()
-												? dep.description
-												: "No Description Available"}
-										</p>
-
-										<div className="flex justify-end">
-											{dep.access_permission ||
-											requestedDeps.has(dep.engine_id) ? (
-												<Button
-													variant="outline"
-													disabled
-												>
-													Pending Access
-												</Button>
-											) : !dep.permission_name ? (
-												<Button
-													variant="outline"
-													onClick={() =>
-														handleSingleDependencyRequest(
-															dep.engine_id,
-														)
-													}
-												>
-													Request Access
-												</Button>
-											) : (
-												<Button
-													variant="outline"
-													onClick={() =>
-														handleSingleDependencyRequest(
-															dep.engine_id,
-														)
-													}
-												>
-													Change Access
-												</Button>
-											)}
-										</div>
-									</div>
-								))}
+									);
+								})}
 							</div>
 
 							<DialogFooter>

@@ -150,6 +150,17 @@ tests are not backend authority; retain its compatibility caveats until verified
   `readPixelMessages` in [`api/pixel-messages.ts`](./src/api/pixel-messages.ts). A warning means
   the action ran here but the other servers in a cluster could not be told, for example.
 
+## App Dependencies
+
+`LoadApp` returns `{ message, dependencies }`, where `dependencies` maps each of the app's named
+manual dependencies (`dependency_name`) to its engine or project id. Automatic links have no name,
+so they are not included. `setupInsight` in
+[`insight.store.ts`](./src/stores/insight/insight.store.ts) reads that output (`LoadApp` is the
+batch's first pixel) and copies it into `Env.DEPENDENCIES`, a plain `Record<string, string>` that
+apps read directly. There is no lookup helper. `Env` is page-global, so the SDK writes it only when
+the insight's app is the page's `Env.APP`. A string output (older backend) leaves `Env` alone. The
+usage example is in the [README](./README.md#app-dependencies).
+
 ## Session, Config and Permissions
 
 Session state lives in three framework-free stores. Every status they and their hooks report is

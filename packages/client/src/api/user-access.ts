@@ -524,3 +524,50 @@ export const withdrawMyAccessRequest = async (
 		throw new Error(response.errors.join(""));
 	}
 };
+
+/** The pixels that ask for access to an engine or a project, and their key */
+const REQUEST_PIXELS: Record<
+	AccessRequestTarget,
+	{ pixel: string; key: string }
+> = {
+	ENGINE: { pixel: "RequestEngine", key: "engine" },
+	PROJECT: { pixel: "RequestProject", key: "project" },
+};
+
+/**
+ * Asks the owners of an engine or a project for access at a level. The
+ * backend refuses an item that is neither discoverable nor shared with the
+ * user, a level they already hold, and a level they already asked for.
+ *
+ * @param insightId - the insight the pixel runs in
+ * @param target - whether the id is an engine's or a project's
+ * @param id - the engine or project id
+ * @param level - the level asked for
+ * @param comment - the reason, sent encoded; left out when empty
+ * @returns the backend's confirmation
+ * @throws Error with the backend's reason when the request is refused
+ */
+export const requestCatalogAccess = async (
+	insightId: string,
+	target: AccessRequestTarget,
+	id: string,
+	level: AccessLevel,
+	comment: string,
+): Promise<string> => {
+	const { pixel, key } = REQUEST_PIXELS[target];
+	const reason = comment.trim();
+	const response = await runPixel<[unknown]>(
+		`META | ${pixel}(${key}=[${JSON.stringify(id)}], permission=[${JSON.stringify(level)}]${
+			reason ? `, comment=["<encode>${reason}</encode>"]` : ""
+		});`,
+		insightId,
+	);
+	if (response.errors.length > 0) {
+		throw new Error(response.errors.join(""));
+	}
+	const result = response.pixelReturn[0];
+	if (!result) {
+		throw new Error("The request was not sent");
+	}
+	return String(result.output);
+};
