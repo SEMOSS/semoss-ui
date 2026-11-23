@@ -76,6 +76,9 @@ export type AppTestDraft = Pick<
 
 /** The subset of the runner report displayed in the app viewer. */
 export interface AppTestRun {
+	mode?: string;
+	fixtureHash?: string;
+	portalHash?: string;
 	runId: string;
 	target: string;
 	status: string;
@@ -141,6 +144,7 @@ export interface AppTestLatestResult extends AppTestHistoryResult {
 
 /** One history-list row; per-test filters include that test's compact counters. */
 export interface AppTestRunSummary {
+	mode?: string;
 	runId: string;
 	status: string;
 	startedAt: string;
@@ -162,6 +166,9 @@ export interface AppTestRunHistoryPage {
 
 /** One persisted run loaded on demand, potentially filtered to one test. */
 export interface AppTestRunHistory {
+	mode?: string;
+	fixtureHash?: string;
+	portalHash?: string;
 	runId: string;
 	target: string;
 	status: string;

@@ -17,6 +17,7 @@ import {
 	zodResolver,
 } from "@semoss/ui/next";
 import { useAppFrame } from "./app-frame-registry";
+import { AppTestDatabasePanel } from "./app-test-database-panel";
 import { AppTestFiles } from "./app-test-files";
 import { useAppTesting } from "./use-app-testing";
 
@@ -56,7 +57,7 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 			name: `Recording ${new Date().toLocaleString()}`,
 			description: "",
 		});
-		state.startRecording();
+		void state.startRecording();
 	};
 	const handleSave = async ({
 		name,
@@ -92,6 +93,18 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 			aria-label="App recording and tests"
 			className="h-full min-w-0 overflow-y-auto bg-background p-3"
 		>
+			<AppTestDatabasePanel
+				key={appId}
+				appId={appId}
+				frame={frame}
+				onConfigurationSaved={state.refreshRecordings}
+				isBusy={
+					state.isRunning ||
+					state.isSaving ||
+					state.isRecording ||
+					hasDraft
+				}
+			/>
 			<input
 				ref={uploadInput}
 				type="file"
@@ -306,6 +319,8 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 						)}
 						<output aria-live="polite" className="text-sm">
 							{runLabel}
+							{state.run.mode === "ISOLATED_H2" &&
+								" · Isolated H2"}
 							{summary
 								? ` · ${summary.passed ?? 0} passed · ${summary.failed ?? 0} failed · ${summary.error ?? 0} errors · ${summary.skipped ?? 0} skipped`
 								: ""}

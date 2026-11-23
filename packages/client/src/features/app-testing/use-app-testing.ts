@@ -3,6 +3,7 @@ import { useSessionPixel } from "@semoss/sdk/react";
 import {
 	deleteAppTestRecording,
 	deleteInvalidAppTestFile,
+	getAppTestDatabase,
 	getAppTestRun,
 	parseAppTestDiscovery,
 	parseAppTestUpload,
@@ -43,7 +44,7 @@ interface AppTestingState {
 	deleteInvalidFile: (fileName: string) => Promise<void>;
 	isLoading: boolean;
 	refreshRecordings: () => void;
-	startRecording: () => void;
+	startRecording: () => Promise<void>;
 	stopRecording: () => void;
 	addCheck: () => void;
 	save: (name: string, description: string) => Promise<void>;
@@ -66,7 +67,12 @@ export const useAppTesting = (
 	);
 	const parsed = useMemo(() => {
 		if (query.status !== "SUCCESS")
-			return { recordings: [], invalid: [], error: "" };
+			return {
+				recordings: [],
+				invalid: [],
+				testDatabaseEnabled: false,
+				error: "",
+			};
 		try {
 			return {
 				...parseAppTestDiscovery(appId, query.data),
@@ -76,6 +82,7 @@ export const useAppTesting = (
 			return {
 				recordings: [],
 				invalid: [],
+				testDatabaseEnabled: false,
 				error: "The saved tests could not be read.",
 			};
 		}
@@ -85,6 +92,7 @@ export const useAppTesting = (
 	const [isRecording, setIsRecording] = useState(false);
 	const [isPickingCheck, setIsPickingCheck] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
+	const [isPreparingRecording, setIsPreparingRecording] = useState(false);
 	const [isStartingRun, setIsStartingRun] = useState(false);
 	const [isAccessible, setIsAccessible] = useState(false);
 	const [selectedId, setSelectedId] = useState("__platform_smoke__");
@@ -182,8 +190,46 @@ export const useAppTesting = (
 		setIsPickingCheck(false);
 	};
 
-	const startRecording = (): void => {
-		if (!frame || !isAccessible) return;
+	const startRecording = async (): Promise<void> => {
+		if (
+			!frame ||
+			!isAccessible ||
+			isPreparingRecording ||
+			isSaving ||
+			isRunning
+		)
+			return;
+		const signal = lifetime.current?.signal;
+		const originalUrl = frame.src;
+		setIsPreparingRecording(true);
+		try {
+			const configuration = await getAppTestDatabase(appId);
+			if (signal?.aborted) return;
+			if (frame.src !== originalUrl)
+				throw new Error(
+					"The app preview changed. Try recording again.",
+				);
+			if (
+				configuration.enabled &&
+				!new URL(frame.src, window.location.href).pathname.includes(
+					"/app-test-preview/",
+				)
+			)
+				throw new Error(
+					"Open Test Preview in Test Database before recording. The normal app still uses its usual database.",
+				);
+		} catch (failure: unknown) {
+			if (!signal?.aborted)
+				setError(
+					failure instanceof Error
+						? failure.message
+						: "Could not check the test database mode",
+				);
+			return;
+		} finally {
+			if (!signal?.aborted) setIsPreparingRecording(false);
+		}
+
 		try {
 			const actual = new URL(frame.contentDocument?.URL ?? "");
 			const base = new URL(frame.src, window.location.href);
@@ -374,7 +420,7 @@ export const useAppTesting = (
 		weakSteps,
 		isRecording,
 		isPickingCheck,
-		isSaving,
+		isSaving: isSaving || isPreparingRecording,
 		isRunning,
 		isAccessible,
 		selectedId,

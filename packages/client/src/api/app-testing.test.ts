@@ -2,8 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	deleteAppTestRecording,
 	deleteInvalidAppTestFile,
+	getAppTestDatabase,
 	getAppTestRecording,
 	getAppTestRun,
+	openAppTestDatabase,
 	parseAppTestDiscovery,
 	parseAppTestRecordings,
 	parseAppTestRunHistory,
@@ -11,6 +13,7 @@ import {
 	parseAppTestUpload,
 	runAllAppTests,
 	runAppTests,
+	saveAppTestDatabase,
 	saveAppTestRecording,
 } from "./app-testing";
 
@@ -391,4 +394,66 @@ it("preserves actionable live diagnostics without copying screenshot evidence", 
 		availableTestIds: ["task-t1"],
 	});
 	expect(JSON.stringify(result)).not.toContain("private-image");
+});
+
+it("saves fixture settings with the explicit app and preserves isolated replay mode", async () => {
+	const configuration = {
+		enabled: true,
+		sourceEngineId: "source",
+		schemaSql: "CREATE TABLE TASKS (ID INTEGER);",
+		seedSql: "",
+	};
+	transport.mockResolvedValueOnce({
+		errors: [],
+		pixelReturn: [{ output: { target: "app", configuration } }],
+	});
+	await expect(saveAppTestDatabase("app", configuration)).resolves.toEqual(
+		configuration,
+	);
+	expect(transport.mock.calls[0][0]).toContain(
+		'ManageAppTestDatabase(project=["app"], action=["save"]',
+	);
+	transport.mockResolvedValueOnce({
+		errors: [],
+		pixelReturn: [
+			{
+				output: {
+					target: "app",
+					runId: "run",
+					status: "QUEUED",
+					mode: "ISOLATED_H2",
+				},
+			},
+		],
+	});
+	await expect(runAppTests("app", "test")).resolves.toMatchObject({
+		mode: "ISOLATED_H2",
+	});
+});
+
+it("rejects cross-app configuration and forged or mismatched preview addresses", async () => {
+	transport.mockResolvedValueOnce({
+		errors: [],
+		pixelReturn: [
+			{ output: { target: "other", configuration: { enabled: false } } },
+		],
+	});
+	await expect(getAppTestDatabase("app")).rejects.toThrow();
+	transport.mockResolvedValueOnce({
+		errors: [],
+		pixelReturn: [
+			{
+				output: {
+					target: "app",
+					environmentId: "10000000-0000-4000-8000-000000000001",
+					expiresAt: "2026-11-23T12:30:00Z",
+					mode: "ISOLATED_H2",
+					previewPath: "https://other.example/",
+				},
+			},
+		],
+	});
+	await expect(openAppTestDatabase("app")).rejects.toThrow(
+		"Invalid test preview address",
+	);
 });

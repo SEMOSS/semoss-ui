@@ -115,6 +115,9 @@ const runSchema = z.object({
 	runId: z.string(),
 	target: z.string(),
 	status: z.string(),
+	mode: z.string().optional(),
+	fixtureHash: z.string().optional(),
+	portalHash: z.string().optional(),
 	scope: z.string().optional(),
 	coverageWarning: z.string().optional(),
 	summary: z.record(z.string(), z.number()).optional(),
@@ -191,6 +194,7 @@ export const parseAppTestRunHistoryPage = (
 				z.object({
 					runId: z.string(),
 					status: z.string(),
+					mode: z.string().optional(),
 					startedAt: z.iso.datetime(),
 					finishedAt: z.iso.datetime().optional(),
 					durationMs: z.number().nonnegative().optional(),
@@ -232,6 +236,9 @@ export const parseAppTestRunHistory = (
 				runId: z.literal(runId),
 				target: z.literal(appId),
 				status: z.string(),
+				mode: z.string().optional(),
+				fixtureHash: z.string().optional(),
+				portalHash: z.string().optional(),
 				startedAt: z.iso.datetime(),
 				finishedAt: z.iso.datetime().optional(),
 				durationMs: z.number().nonnegative().optional(),
@@ -422,6 +429,7 @@ export const parseAppTestDiscovery = (appId: string, value: unknown) => {
 	const recordings = parseAppTestRecordings(appId, value);
 	const result = z
 		.object({
+			testDatabaseEnabled: z.boolean().default(false),
 			invalid: z
 				.array(
 					z.object({
@@ -441,7 +449,11 @@ export const parseAppTestDiscovery = (appId: string, value: unknown) => {
 				.default([]),
 		})
 		.parse(value);
-	return { recordings, invalid: result.invalid };
+	return {
+		recordings,
+		invalid: result.invalid,
+		testDatabaseEnabled: result.testDatabaseEnabled,
+	};
 };
 
 /** Only a server-reported invalid filename may be deleted through the explicit invalid-file action. */
@@ -454,6 +466,103 @@ export const deleteInvalidAppTestFile = async (
 	z.object({ deleted: z.literal(true) }).parse(
 		await callAppTestPixel(
 			`DeleteAppTestRecording(project=${JSON.stringify([appId])}, fileName=${JSON.stringify([fileName])});`,
+		),
+	);
+};
+
+/** Public fixture settings; credentials and runtime connection paths never belong here. */
+export const appTestDatabaseSchema = z.object({
+	enabled: z.boolean(),
+	sourceEngineId: z.string().default(""),
+	schemaSql: z.string().default(""),
+	seedSql: z.string().default(""),
+});
+export type AppTestDatabaseConfiguration = z.infer<
+	typeof appTestDatabaseSchema
+>;
+
+/** Reject stale or cross-app settings before populating the editor. */
+export const parseAppTestDatabase = (
+	appId: string,
+	value: unknown,
+): AppTestDatabaseConfiguration => {
+	const result = z
+		.object({
+			target: z.literal(appId),
+			configuration: appTestDatabaseSchema,
+		})
+		.parse(value);
+	return result.configuration;
+};
+
+/** Read the current mode before starting a manual recording. */
+export const getAppTestDatabase = async (
+	appId: string,
+): Promise<AppTestDatabaseConfiguration> =>
+	parseAppTestDatabase(
+		appId,
+		await callAppTestPixel(
+			`ManageAppTestDatabase(project=${JSON.stringify([appId])}, action=["get"]);`,
+		),
+	);
+
+/** Validate the fixture on the server before enabling it for every subsequent test. */
+export const saveAppTestDatabase = async (
+	appId: string,
+	configuration: AppTestDatabaseConfiguration,
+): Promise<AppTestDatabaseConfiguration> =>
+	parseAppTestDatabase(
+		appId,
+		await callAppTestPixel(
+			`ManageAppTestDatabase(project=${JSON.stringify([appId])}, action=["save"], configuration=${JSON.stringify([configuration])});`,
+		),
+	);
+
+export interface AppTestDatabasePreview {
+	target: string;
+	environmentId: string;
+	expiresAt: string;
+	previewPath: string;
+	mode: "ISOLATED_H2";
+}
+
+/** Start a disposable preview for recording; its relative URL is a temporary capability. */
+export const openAppTestDatabase = async (
+	appId: string,
+): Promise<AppTestDatabasePreview> => {
+	const result = z
+		.object({
+			target: z.literal(appId),
+			environmentId: z.uuid(),
+			expiresAt: z.iso.datetime(),
+			previewPath: z.string(),
+			mode: z.literal("ISOLATED_H2"),
+		})
+		.parse(
+			await callAppTestPixel(
+				`ManageAppTestDatabase(project=${JSON.stringify([appId])}, action=["open"]);`,
+			),
+		);
+	const prefix = `app-test-preview/${result.environmentId}/`;
+	if (
+		!result.previewPath.startsWith(prefix) ||
+		!/^app-test-preview\/[a-f0-9-]+\/[a-f0-9-]+\/public_home\/[a-zA-Z0-9_-]+\/portals\/$/.test(
+			result.previewPath,
+		) ||
+		!result.previewPath.endsWith(`/public_home/${appId}/portals/`)
+	)
+		throw new Error("Invalid test preview address");
+	return result;
+};
+
+/** Revoke the preview capability and dispose its H2 database. */
+export const closeAppTestDatabase = async (
+	appId: string,
+	environmentId: string,
+): Promise<void> => {
+	z.object({ target: z.literal(appId), closed: z.literal(true) }).parse(
+		await callAppTestPixel(
+			`ManageAppTestDatabase(project=${JSON.stringify([appId])}, action=["close"], environmentId=${JSON.stringify([environmentId])});`,
 		),
 	);
 };

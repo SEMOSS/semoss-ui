@@ -7,6 +7,7 @@ const actions = vi.hoisted(() => ({
 	all: vi.fn(),
 	save: vi.fn(),
 	refresh: vi.fn(),
+	database: vi.fn(),
 }));
 vi.mock("@semoss/sdk/react", () => ({
 	useSessionPixel: () => ({
@@ -21,6 +22,7 @@ vi.mock("@/api/app-testing", async (original) => ({
 	runAppTests: actions.one,
 	runAllAppTests: actions.all,
 	saveAppTestRecording: actions.save,
+	getAppTestDatabase: actions.database,
 }));
 const draft = {
 	name: "Imported workflow",
@@ -31,6 +33,7 @@ const draft = {
 
 beforeEach(() => {
 	vi.clearAllMocks();
+	actions.database.mockResolvedValue({ enabled: false });
 	actions.one.mockResolvedValue({
 		target: "app",
 		runId: "one",
@@ -92,4 +95,18 @@ it("reports invalid/oversized uploads and failed saves without claiming import s
 	expect(result.current.error).toBe("Write refused");
 	expect(result.current.notice).toBe("");
 	expect(actions.refresh).not.toHaveBeenCalled();
+});
+
+it("refuses to record the normal app when isolated H2 is enabled", async () => {
+	actions.database.mockResolvedValue({ enabled: true });
+	const frame = document.createElement("iframe");
+	frame.src = "http://localhost/Monolith/public_home/app/portals/";
+	Object.defineProperty(frame, "contentDocument", {
+		value: { URL: frame.src },
+	});
+	const { result } = renderHook(() => useAppTesting("app", frame));
+	await act(async () => result.current.startRecording());
+	expect(actions.database).toHaveBeenCalledWith("app");
+	expect(result.current.isRecording).toBe(false);
+	expect(result.current.error).toContain("Open Test Preview");
 });

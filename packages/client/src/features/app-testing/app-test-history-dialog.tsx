@@ -164,6 +164,8 @@ export const AppTestHistoryDialog = ({
 											</TableCell>
 											<TableCell>
 												{run.test?.status ?? run.status}
+												{run.mode === "ISOLATED_H2" &&
+													" · H2"}
 											</TableCell>
 											<TableCell>
 												{run.test
@@ -258,6 +260,12 @@ export const AppTestHistoryDialog = ({
 									{result.name}: {result.status}
 								</p>
 								<dl className="grid min-w-0 grid-cols-1 gap-1 text-sm sm:grid-cols-2">
+									<dt>Database Mode</dt>
+									<dd>
+										{detail?.mode === "ISOLATED_H2"
+											? "Isolated H2"
+											: "Normal App Connection"}
+									</dd>
 									<dt>Started</dt>
 									<dd>
 										{formatLocalDateTime(
