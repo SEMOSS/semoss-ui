@@ -29,6 +29,7 @@ import { describeSchedule } from "./routine-schedule-summary";
 const DELIVERY_STATUS = {
 	email: "Emails you",
 	teams: "Messages you in Teams",
+	brief: "Shown as a section of the brief",
 	none: "Kept here",
 } as const;
 
@@ -75,7 +76,10 @@ export function CustomRoutineHeader({
 	// one line instead of a badge, a next-run line and a switch caption saying the same thing
 	const facts = [
 		routine.enabled ? null : "Off",
-		describeSchedule(routine),
+		// the daily brief runs it, so its own days and time do not apply
+		routine.delivery === "brief"
+			? "Runs with your daily brief"
+			: describeSchedule(routine),
 		nextRun && `Next run ${nextRun}`,
 		DELIVERY_STATUS[routine.delivery],
 	].filter(Boolean);

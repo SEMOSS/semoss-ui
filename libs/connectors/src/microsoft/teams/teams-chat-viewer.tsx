@@ -4,12 +4,17 @@ import { useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
 import { cn } from "@semoss/ui/next";
 import { ConnectorIconButton } from "../../components/connector-icon-button";
+import { ConnectorItemAvatar } from "../../components/connector-item-avatar";
 import { ConnectorItemRow } from "../../components/connector-item-row";
 import { ConnectorList } from "../../components/connector-list";
 import { ConnectorSearchField } from "../../components/connector-search-field";
 import { ConnectorViewerHeader } from "../../components/connector-viewer-header";
 import { formatListDate } from "../../core/connector.format";
-import type { ConnectorViewerProps } from "../../core/connector.types";
+import type {
+	ConnectorPersonPhotoProps,
+	ConnectorSavedItemsProps,
+	ConnectorViewerProps,
+} from "../../core/connector.types";
 import { runConnectorPixel } from "../../core/connector-pixel";
 import { useConnectorQuery } from "../../core/use-connector-query";
 import {
@@ -45,7 +50,16 @@ interface OpenChat {
 }
 
 /** Props for {@link TeamsChatViewer}. */
-export type TeamsChatViewerProps = ConnectorViewerProps;
+export type TeamsChatViewerProps = ConnectorViewerProps &
+	ConnectorSavedItemsProps &
+	ConnectorPersonPhotoProps & {
+		/**
+		 * `page` is for a host that gives the chats a page of their own: each
+		 * row leads with who the chat is with, under their picture where the
+		 * host gives `getPersonPhotoUrl`, or with a group's mark.
+		 */
+		presentation?: "default" | "page";
+	};
 
 /**
  * The user's Teams chats, the one with the newest message first: search their
@@ -53,7 +67,13 @@ export type TeamsChatViewerProps = ConnectorViewerProps;
  * insight.
  */
 export const TeamsChatViewer = (props: TeamsChatViewerProps) => {
-	const { onSignIn, showHeader = true } = props;
+	const {
+		onSignIn,
+		showHeader = true,
+		presentation = "default",
+		getPersonPhotoUrl,
+	} = props;
+	const isPage = presentation === "page";
 	const { t, i18n } = useTranslation("connectors");
 	const { insightId } = useInsight();
 	const saver = useConnectorSaver("teams-chats", props);
@@ -159,6 +179,8 @@ export const TeamsChatViewer = (props: TeamsChatViewerProps) => {
 						onSignIn={onSignIn}
 						listRef={listRef}
 						serviceName={serviceName}
+						presentation={presentation}
+						getPersonPhotoUrl={getPersonPhotoUrl}
 					/>
 				) : (
 					<ConnectorList
@@ -194,7 +216,24 @@ export const TeamsChatViewer = (props: TeamsChatViewerProps) => {
 										key={chat.id}
 										itemKey={chat.id}
 										icon={
-											chat.chatType === "oneOnOne" ? (
+											isPage ? (
+												<ConnectorItemAvatar
+													name={title}
+													icon={
+														chat.chatType ===
+														"oneOnOne"
+															? undefined
+															: UsersIcon
+													}
+													photoUrl={
+														chat.person
+															? getPersonPhotoUrl?.(
+																	chat.person,
+																)
+															: undefined
+													}
+												/>
+											) : chat.chatType === "oneOnOne" ? (
 												<MessageCircleIcon
 													aria-hidden
 													className="size-4"
@@ -229,6 +268,9 @@ export const TeamsChatViewer = (props: TeamsChatViewerProps) => {
 											serviceName: t("services.teams"),
 											webUrl: chat.webUrl,
 											saveLabel: saver.saveLabel,
+											savedLabel: saver.savedLabel(
+												request.key,
+											),
 											isBusy: isBusy,
 											onAddToContext: saver.addToContext
 												? () =>

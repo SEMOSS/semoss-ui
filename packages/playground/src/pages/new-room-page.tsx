@@ -3,7 +3,11 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { useTranslation } from "@semoss/i18n";
-import { InsightProvider, usePixel } from "@semoss/sdk/react";
+import {
+	InsightProvider,
+	useSession,
+	useSessionPixel,
+} from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -19,21 +23,33 @@ import { RoomGreeting } from "@/components/room/room-greeting";
 import { RoomInput } from "@/components/room/room-input";
 import { RoomWorkbench } from "@/components/room/room-workbench";
 import { FileDragProvider } from "@/contexts/file-drag-context";
-import { canChooseAgentMode } from "@/features/conversation/agent-mode-choice";
+import {
+	canChooseAgentMode,
+	isAgentModeOnly,
+	newChatModes,
+} from "@/features/conversation/agent-mode-choice";
 import { clearAgentOptions } from "@/features/conversation/clear-agent-options";
 import { DropHighlight } from "@/features/conversation/drop-highlight";
 import { NextMessageRoomProvider } from "@/features/conversation/next-message-room.context";
+import { RoomLayout } from "@/features/conversation/room-layout";
 import { useNewRoom } from "@/features/conversation/use-new-room";
+import {
+	readDeploymentNewChatDefaults,
+	readNewChatPreferences,
+	readSessionNewChat,
+	resolveNewChatAgentId,
+	resolveNewChatMode,
+	writeSessionNewChat,
+} from "@/features/new-chat-preferences/new-chat-preferences";
 import { RoomHeader } from "@/features/room-header/room-header";
 import { DraftSettingsContext } from "@/features/workbench/draft-settings.context";
-import { FittedRoomLayout } from "@/features/workbench/fitted-room-layout";
 import {
 	NEW_ROOM_READY_PANEL_KINDS,
 	type NewRoomPanelRequest,
 	type NewRoomWorkbenchPanels,
 } from "@/features/workbench/use-workbench-panels";
 import { useChat } from "@/hooks/use-chat";
-import { useRoot } from "@/hooks/use-root";
+import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
 import { RoomStore } from "@/stores/room/room.store";
 import { ROOM_PANEL_TYPES } from "@/stores/room/room-sidebar";
 import type { MCPConfig, Prompt, Workspace } from "@/types";
@@ -51,7 +67,7 @@ export const NewRoomPage = observer(() => {
 		"chat",
 		"chatConnectors",
 	]);
-	const { root } = useRoot();
+	const theme = usePlaygroundTheme();
 	const { theme: colorMode } = useTheme();
 
 	const isDark =
@@ -59,19 +75,14 @@ export const NewRoomPage = observer(() => {
 		(colorMode === "system" &&
 			window.matchMedia("(prefers-color-scheme: dark)").matches);
 
-	const landingSrc = isDark
-		? root.theme.images.landingDark
-		: root.theme.images.landing;
+	const landingSrc = isDark ? theme.images.landingDark : theme.images.landing;
 
 	const { chat } = useChat();
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
-
-	// Re-fetch the user's profile default model each time this page mounts so
-	// changes made in the token-usage embed are reflected immediately.
-	useEffect(() => {
-		chat.refreshProfileDefaultModel();
-	}, [chat]);
+	const userName = useSession((state) => state.user?.name) ?? "";
+	const lastLogin = useSession((state) => state.user?.lastLogin);
+	const userMeta = useSession((state) => state.user?.meta);
 
 	const initialPrompt = searchParams.get("prompt") ?? "";
 
@@ -86,13 +97,13 @@ export const NewRoomPage = observer(() => {
 	const newRoom = useMemo(
 		() =>
 			new RoomStore({
-				theme: root.theme,
+				theme: theme,
 				roomId: "temp",
 				panelComponents: ROOM_PANEL_COMPONENTS,
 				// no insight for Files to read until the draft prepares its room
 				includeFiles: false,
 			}),
-		[root.theme],
+		[theme],
 	);
 	// Remember manual provenance when an agent also supplies the same resource.
 	const manualMcpRef = useRef(
@@ -117,8 +128,7 @@ export const NewRoomPage = observer(() => {
 	useEffect(() => {
 		if (!bannerRef.current) return;
 		// The url stripping here is primarily due to a BE theme bug where single quote apostrophes get serial added when saving
-		const urls =
-			(root.theme.banner ?? "").match(/https?:\/\/[^\s'"<>]+/g) ?? [];
+		const urls = (theme.banner ?? "").match(/https?:\/\/[^\s'"<>]+/g) ?? [];
 		bannerRef.current
 			.querySelectorAll("a")
 			.forEach((a: HTMLAnchorElement, i: number) => {
@@ -126,18 +136,53 @@ export const NewRoomPage = observer(() => {
 				a.rel = "noopener noreferrer";
 				if (urls[i]) a.setAttribute("href", urls[i]);
 			});
-	}, [root.theme.banner]);
+	}, [theme.banner]);
 
 	const [isLoading, setIsLoading] = useState(false);
 	const submittedRef = useRef(false);
 	const greetingRoomStartedForRef = useRef<string>("");
-	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
-	const [chosenMode, setChosenMode] = useState<"chat" | "agent">("chat");
+	// A new chat starts as the last chat started in this login session did,
+	// else as the user's defaults say (Settings > General), else as the
+	// deployment's do. Read once: a default changed meanwhile applies to the
+	// next new chat.
+	const [initialChat] = useState(() => {
+		const session = readSessionNewChat(lastLogin);
+		const preferences = readNewChatPreferences(userMeta);
+		const deployment = readDeploymentNewChatDefaults(theme);
+		const initialMode = resolveNewChatMode(
+			session,
+			preferences,
+			deployment,
+			newChatModes(theme.featureFlags),
+		);
+		return {
+			mode: initialMode,
+			// an agent link names its own agent
+			agentId:
+				initialMode === "agent" && !workspaceIdSearchParams
+					? resolveNewChatAgentId(session, preferences, deployment)
+					: "",
+		};
+	});
+	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>(
+		initialChat.agentId,
+	);
+	const [chosenMode, setChosenMode] = useState<"chat" | "agent">(
+		initialChat.mode,
+	);
+	// The agent the defaults picked: one the user can no longer open is
+	// dropped quietly, for Default Agent, rather than shown as an error.
+	const defaultAgentIdRef = useRef(initialChat.agentId);
 	// With modeFollowsAgent the agent picker decides the mode: a saved agent
-	// or Default Agent runs in agent mode, No Agent in chat mode.
-	const modeFollowsAgent = !!root.theme.featureFlags?.modeFollowsAgent;
+	// or Default Agent runs in agent mode, No Agent in chat mode. agentModeOnly
+	// is the same without No Agent, so every chat runs in agent mode.
+	const agentModeOnly = isAgentModeOnly(theme.featureFlags);
+	const modeFollowsAgent =
+		!agentModeOnly && !!theme.featureFlags?.modeFollowsAgent;
 	const mode: "chat" | "agent" =
-		modeFollowsAgent && selectedWorkspaceId ? "agent" : chosenMode;
+		agentModeOnly || (modeFollowsAgent && selectedWorkspaceId)
+			? "agent"
+			: chosenMode;
 	const {
 		room: preparedRoom,
 		isPreparing,
@@ -165,7 +210,7 @@ export const NewRoomPage = observer(() => {
 		[newRoom.options.predefinedPrompts],
 	);
 
-	const getWorkspace = usePixel<Workspace | null>(
+	const getWorkspace = useSessionPixel<Workspace | null>(
 		selectedWorkspaceId
 			? `GetWorkspace(${JSON.stringify(selectedWorkspaceId)});`
 			: "",
@@ -197,7 +242,7 @@ export const NewRoomPage = observer(() => {
 			: "";
 
 	// Fetch knowledge vector engine if knowledgeId is provided
-	const getKnowledge = usePixel<
+	const getKnowledge = useSessionPixel<
 		| {
 				engine_id: string;
 				engine_name: string;
@@ -211,7 +256,7 @@ export const NewRoomPage = observer(() => {
 		{ data: null },
 	);
 
-	const getPrompts = usePixel<Prompt[]>(
+	const getPrompts = useSessionPixel<Prompt[]>(
 		selectedWorkspaceId && prompts.length > 0
 			? `META | ListPrompt(filters=[Filter( (PROMPT__ID == [${prompts.map((p) => `"${p}"`).join(", ")}]) )])`
 			: "",
@@ -227,14 +272,14 @@ export const NewRoomPage = observer(() => {
 	useEffect(() => {
 		newRoom.setOptions({
 			instructions: "",
-			mcp: [...(root.theme.defaultTools || [])],
+			mcp: [...(theme.defaultTools || [])],
 			workspace: undefined,
 			predefinedPrompts: [],
-			temperature: root.theme.featureFlags?.enableTemperature
-				? (root.theme.defaultRoomSettings?.temperature ?? 0)
+			temperature: theme.featureFlags?.enableTemperature
+				? (theme.defaultRoomSettings?.temperature ?? 0)
 				: undefined,
 		});
-	}, [newRoom, root.theme]);
+	}, [newRoom, theme]);
 
 	/**
 	 * Options shared by every room-creation path: current MCPs, the agent
@@ -263,6 +308,14 @@ export const NewRoomPage = observer(() => {
 				}),
 			);
 		}
+	};
+
+	/** Remember the chat started, so the next new chat starts as it did. */
+	const rememberChat = (options: RoomStore["options"]): void => {
+		writeSessionNewChat(lastLogin, {
+			mode: mode,
+			agentId: options.workspace?.workspace_id ?? "",
+		});
 	};
 
 	/** Shared error handling for every room-creation path below. */
@@ -340,6 +393,7 @@ export const NewRoomPage = observer(() => {
 					}
 				})();
 				submittedRef.current = true;
+				rememberChat(options);
 				navigate(`/room/${preparedRoom.roomId}`);
 			} else {
 				// Standard flow — create room and send first message together.
@@ -353,6 +407,7 @@ export const NewRoomPage = observer(() => {
 					prepareRoom,
 				);
 				submittedRef.current = true;
+				rememberChat(options);
 				navigate(`/room/${room.roomId}`);
 			}
 			return true;
@@ -392,6 +447,7 @@ export const NewRoomPage = observer(() => {
 				prepareRoom,
 			);
 			submittedRef.current = true;
+			rememberChat(options);
 			navigate(`/room/${room.roomId}`);
 		} catch (error: unknown) {
 			handleCreateRoomError(error);
@@ -417,9 +473,6 @@ export const NewRoomPage = observer(() => {
 			// agent again applies its default model again
 			appliedAgentModelRef.current = "";
 			appliedAgentOptionsRef.current = "";
-			if (chat.profileDefaultModelId) {
-				void chat.selectModelById(chat.profileDefaultModelId);
-			}
 			return;
 		}
 		if (getWorkspace.status !== "SUCCESS" || !getWorkspace.data) {
@@ -493,6 +546,19 @@ export const NewRoomPage = observer(() => {
 		newRoom,
 		chat,
 	]);
+
+	// A default agent the user can no longer open gives way to Default Agent
+	useEffect(() => {
+		if (
+			!agentLoadFailed ||
+			!defaultAgentIdRef.current ||
+			selectedWorkspaceId !== defaultAgentIdRef.current
+		) {
+			return;
+		}
+		defaultAgentIdRef.current = "";
+		setSelectedWorkspaceId("");
+	}, [agentLoadFailed, selectedWorkspaceId]);
 
 	// A URL-routed agent with a greeting drops straight into a room with it
 	// already rendered, instead of the landing page.
@@ -612,7 +678,12 @@ export const NewRoomPage = observer(() => {
 		next: RoomStore["options"]["workspace"] | null,
 	) => {
 		if (isLoading || isPreparing) return;
+		defaultAgentIdRef.current = "";
 		if (next?.workspace_id !== newRoom.options.workspace?.workspace_id) {
+			// an agent's model gives way to the new chat's default with it
+			if (!next && appliedAgentModelRef.current) {
+				chat.selectNewChatDefaultModel();
+			}
 			appliedAgentOptionsRef.current = "";
 			appliedAgentModelRef.current = "";
 			setPrompts([]);
@@ -707,27 +778,27 @@ export const NewRoomPage = observer(() => {
 
 	return (
 		<div className="flex h-full w-full flex-col overflow-hidden">
-			{root.theme.banner ? (
+			{theme.banner ? (
 				<div
 					ref={bannerRef}
 					className="w-full shrink-0 px-4 py-2 text-center text-sm [&_a]:underline"
 					style={{
 						backgroundColor:
-							root.theme.bannerBackgroundColor ||
-							"var(--primary)",
+							theme.bannerBackgroundColor || "var(--primary)",
 						color:
-							root.theme.bannerTextColor ||
+							theme.bannerTextColor ||
 							"var(--primary-foreground)",
 					}}
 					// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
-					dangerouslySetInnerHTML={{ __html: root.theme.banner }}
+					dangerouslySetInnerHTML={{ __html: theme.banner }}
 				/>
 			) : null}
 			<div className="min-h-0 flex-1">
-				<FittedRoomLayout
-					room={workbenchRoom}
-					// a preparation error needs the space, so the Workspace fills
-					shouldFill={preparationError}
+				<RoomLayout
+					isWorkbenchOpen={workbenchRoom.sidebar.isOpen}
+					onWorkbenchCollapse={() =>
+						void workbenchRoom.closeSidebar()
+					}
 					header={
 						<RoomHeader
 							room={workbenchRoom}
@@ -816,38 +887,38 @@ export const NewRoomPage = observer(() => {
 						)}
 						<DropHighlight className="flex h-full flex-col items-center overflow-auto px-4 py-8 sm:px-6">
 							<div className="relative z-10 mx-auto my-auto flex w-full max-w-3xl flex-col gap-6 py-6">
-								{root.theme.landing ? (
+								{theme.landing ? (
 									<div
 										className="mx-auto flex max-w-xl"
 										// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
 										dangerouslySetInnerHTML={{
 											__html:
-												root.theme?.altLandingKey &&
+												theme?.altLandingKey &&
 												searchParams.has(
-													root.theme.altLandingKey,
+													theme.altLandingKey,
 												) &&
-												root.theme.altLanding
-													? root.theme.altLanding
-													: root.theme.landing,
+												theme.altLanding
+													? theme.altLanding
+													: theme.landing,
 										}}
 									/>
 								) : (
 									<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
 										<H2 className="text-center">
 											{t("room:welcome", {
-												name: chat.user.name,
+												name: userName,
 											})}
 										</H2>
-										{root.theme.description ? (
+										{theme.description ? (
 											<Muted className="text-center">
-												{root.theme.description}
+												{theme.description}
 											</Muted>
 										) : null}
 									</div>
 								)}
 								{agentGreeting && (
 									<RoomGreeting
-										room={newRoom}
+										room={workbenchRoom}
 										greeting={agentGreeting}
 									/>
 								)}
@@ -889,9 +960,7 @@ export const NewRoomPage = observer(() => {
 									onWorkspaceChange={handleAgentChange}
 									onPrompt={createRoom}
 									excludeCommandIds={
-										canChooseAgentMode(
-											root.theme.featureFlags,
-										)
+										canChooseAgentMode(theme.featureFlags)
 											? []
 											: ["agent-harness", "chat-mode"]
 									}
@@ -947,7 +1016,7 @@ export const NewRoomPage = observer(() => {
 							</div>
 						</DropHighlight>
 					</FileDragProvider>
-				</FittedRoomLayout>
+				</RoomLayout>
 			</div>
 		</div>
 	);

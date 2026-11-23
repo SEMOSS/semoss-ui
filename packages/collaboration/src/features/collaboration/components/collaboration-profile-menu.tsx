@@ -1,9 +1,10 @@
 import { LogOut, Settings } from "lucide-react";
 import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { useInsight } from "@semoss/sdk/react";
+import { useSession } from "@semoss/sdk/react";
 import {
 	Button,
+	cn,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
@@ -17,20 +18,24 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { givenFirst } from "@/lib/person-name";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { PersonAvatar } from "./person-avatar";
 
 interface CollaborationProfileMenuProps {
+	/** Compact navigation shows only the avatar icon. */
+	isCollapsed?: boolean;
 	/** Closes mobile navigation after choosing a destination. */
 	onNavigate?: () => void;
 }
 
 /** Account actions use the current session and leave failed logout attempts retryable. */
 export function CollaborationProfileMenu({
+	isCollapsed = false,
 	onNavigate,
 }: CollaborationProfileMenuProps) {
 	const { state } = useCollaborationSession();
-	const { actions } = useInsight();
+	const logout = useSession((state) => state.logout);
 	const navigate = useNavigate();
 	const [isOpen, setIsOpen] = useState(false);
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -47,7 +52,8 @@ export function CollaborationProfileMenu({
 		setIsLoggingOut(true);
 		setError("");
 		try {
-			if (!(await actions.logout())) throw new Error("Logout failed");
+			// throws when refused; the login page then reads the signed out session
+			await logout();
 			await navigate("/login", { replace: true });
 		} catch {
 			setError("Could not log out. Please try again.");
@@ -66,20 +72,31 @@ export function CollaborationProfileMenu({
 						<Button
 							type="button"
 							variant="ghost"
-							size="icon"
-							className="size-11 rounded-full"
+							size={isCollapsed ? "icon" : "sm"}
+							className={cn(
+								"min-h-9 pointer-coarse:min-h-11 w-full justify-start gap-2 rounded-lg px-2 font-normal text-xs",
+								isCollapsed &&
+									"size-11 justify-center rounded-full px-0",
+							)}
 							aria-label={`Account menu for ${name}`}
 						>
 							<PersonAvatar
 								name={name}
 								email={email}
-								className="size-8 shrink-0"
+								className="size-7 shrink-0"
 								tone="bg-primary/10 text-primary"
 							/>
+							{!isCollapsed && (
+								<span className="min-w-0 truncate text-foreground">
+									{givenFirst(name)}
+								</span>
+							)}
 						</Button>
 					</DropdownMenuTrigger>
 				</TooltipTrigger>
-				<TooltipContent side="right">Account</TooltipContent>
+				{isCollapsed && (
+					<TooltipContent side="right">Account</TooltipContent>
+				)}
 			</Tooltip>
 			<DropdownMenuContent
 				align="start"

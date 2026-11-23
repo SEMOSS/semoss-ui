@@ -3,6 +3,7 @@ import {
 	MailsIcon,
 	PaperclipIcon,
 	RefreshCwIcon,
+	UserIcon,
 } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
@@ -16,9 +17,15 @@ import {
 	DropdownMenuContent,
 	DropdownMenuTrigger,
 	Muted,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	Toggle,
 } from "@semoss/ui/next";
 import { ConnectorIconButton } from "../components/connector-icon-button";
+import { ConnectorItemAvatar } from "../components/connector-item-avatar";
 import { ConnectorItemRow } from "../components/connector-item-row";
 import { ConnectorList } from "../components/connector-list";
 import { ConnectorSearchField } from "../components/connector-search-field";
@@ -28,24 +35,26 @@ import { formatListDate } from "../core/connector.format";
 import type {
 	ConnectorAccount,
 	ConnectorFocusRequest,
+	ConnectorPersonPhotoProps,
+	ConnectorSavedItemsProps,
 	ConnectorViewerProps,
 } from "../core/connector.types";
 import { runConnectorPixel } from "../core/connector-pixel";
 import { useConnectorControls } from "../core/use-connector-controls";
 import { useConnectorFocus } from "../core/use-connector-focus";
-import { useConnectorQuery } from "../core/use-connector-query";
 import {
 	type ConnectorSaveRequest,
 	useConnectorSaver,
 } from "../core/use-connector-saver";
 import { useConnectorSearch } from "../core/use-connector-search";
 import { useReturnFocus } from "../core/use-return-focus";
-import { getMailFolderLabel, INBOX, orderMailFolders } from "./mail.folders";
+import { getMailFolderLabel, INBOX } from "./mail.folders";
 import { mailMessageFileName, mailMessageToMarkdown } from "./mail.markdown";
-import { parseMailFolders, parseMailMessageDetail } from "./mail.parsers";
+import { parseMailMessageDetail } from "./mail.parsers";
 import {
 	groupMailByConversation,
 	type MailConversation,
+	mailSaveKey,
 	normalizeMailSubject,
 } from "./mail.threads";
 import type { MailMessage } from "./mail.types";
@@ -59,6 +68,7 @@ import {
 	readConversation,
 	threadSaveRequest,
 } from "./mail-thread-view";
+import { useMailFolders } from "./use-mail-folders";
 import { useMailPages } from "./use-mail-pages";
 
 /**
@@ -73,14 +83,37 @@ const isWholeThread = (
 ): conversation is MailConversation & { conversationId: string } =>
 	!!conversation.conversationId;
 
+/** How far back the `page` presentation's date filter reads, in days; 0 is any time. */
+const RECEIVED_OPTIONS = [
+	{ days: 0, labelKey: "mail.receivedAny" },
+	{ days: 7, labelKey: "mail.receivedWeek" },
+	{ days: 30, labelKey: "mail.receivedMonth" },
+	{ days: 90, labelKey: "mail.receivedQuarter" },
+	{ days: 365, labelKey: "mail.receivedYear" },
+] as const;
+
+// On a page a toggle is a chip, and one that is on wears the primary color on its border and a fill: the accent
+// fill a toggle has is about 1:1 against a pale page, so it cannot say on from off there.
+const PAGE_TOGGLE_CLASS =
+	"border border-input bg-background data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-foreground";
+
 /** Props for {@link MailboxView}. */
-export interface MailboxViewProps extends ConnectorViewerProps {
+export interface MailboxViewProps
+	extends ConnectorViewerProps,
+		ConnectorSavedItemsProps,
+		ConnectorPersonPhotoProps {
 	/** The account whose mailbox is read: Outlook for `microsoft`, Gmail for `google`. */
 	provider: ConnectorAccount;
 	/** The logo the header shows. Defaults to the mailbox's own. */
 	brand?: ConnectorBrand;
-	/** Opt into the narrow browser toolbar and two-line mail rows. */
-	presentation?: "default" | "compact";
+	/**
+	 * How much room the browser has. `compact` is for a narrow panel: a short
+	 * toolbar and two-line mail rows. `page` is for a host that gives the
+	 * mailbox a page of its own: each row leads with who its email is from,
+	 * under their picture where the host gives `getPersonPhotoUrl`, and the
+	 * list can be narrowed by sender, by date, and to mail with attachments.
+	 */
+	presentation?: "default" | "compact" | "page";
 	/** Let the host open a retained detail instead of replacing this browser. */
 	onOpenItem?: (selection: MailSelection) => void;
 	/** Restore focus to the originating row after host navigation. */
@@ -107,9 +140,11 @@ export const MailboxView = (props: MailboxViewProps) => {
 		presentation = "default",
 		onOpenItem,
 		focusItem,
+		getPersonPhotoUrl,
 	} = props;
 	const browserRef = useRef<HTMLDivElement>(null);
 	const Row = presentation === "compact" ? MailCompactRow : ConnectorItemRow;
+	const isPage = presentation === "page";
 	const app = MAIL_APPS[provider];
 	const { t, i18n } = useTranslation("connectors");
 	const { insightId } = useInsight();
@@ -118,16 +153,20 @@ export const MailboxView = (props: MailboxViewProps) => {
 	const { text: search, setText: setSearch, searched } = useConnectorSearch();
 	const [isUnreadOnly, setIsUnreadOnly] = useState(false);
 	const [isGrouped, setIsGrouped] = useState(true);
+	// what the page presentation's filters narrow the list to; nothing else sets them
+	const sender = useConnectorSearch();
+	const [sinceDays, setSinceDays] = useState(0);
+	const [hasAttachments, setHasAttachments] = useState(false);
+	const isFiltered =
+		sender.searched !== "" || sinceDays > 0 || hasAttachments;
+	const toggleClass = cn("h-8 px-2 text-xs", isPage && PAGE_TOGGLE_CLASS);
 	const [openConversation, setOpenConversation] =
 		useState<MailConversation | null>(null);
 	const { listRef, rememberItem } = useReturnFocus(openConversation !== null);
 	const serviceName = t(app.nameKey);
 
-	const foldersQuery = useConnectorQuery(
-		app.pixels.listFolders(),
-		parseMailFolders,
-	);
-	const folders = orderMailFolders(foldersQuery.data ?? [], t("mail.inbox"));
+	const foldersQuery = useMailFolders(provider);
+	const { folders } = foldersQuery;
 	const selectedFolder = folders.find((entry) => entry.id === folder);
 	const folderName = selectedFolder
 		? getMailFolderLabel(selectedFolder)
@@ -136,7 +175,12 @@ export const MailboxView = (props: MailboxViewProps) => {
 	const query = useMailPages({
 		provider,
 		folder,
-		search: searched,
+		// mail with attachments is asked for in the mailbox's own search syntax
+		search: hasAttachments
+			? `${searched} ${app.attachmentSearch}`.trim()
+			: searched,
+		from: sender.searched,
+		sinceDays: sinceDays || undefined,
 		unreadOnly: isUnreadOnly,
 		isGrouped,
 	});
@@ -197,13 +241,15 @@ export const MailboxView = (props: MailboxViewProps) => {
 		title: string,
 	): ConnectorSaveRequest => {
 		// a row with conversations off stands for one email, which still
-		// belongs to a thread; saving takes the whole thread either way
+		// belongs to a thread; saving takes the whole thread either way, so
+		// every row of the thread is saving, and held, together
+		const key = mailSaveKey(conversation.latest);
 		const conversationId =
 			conversation.conversationId ?? conversation.latest.conversationId;
 		if (conversationId) {
 			return threadSaveRequest(
 				app,
-				conversation.key,
+				key,
 				title,
 				conversation.latest.subject,
 				() => readConversation(app, read, conversationId),
@@ -211,7 +257,7 @@ export const MailboxView = (props: MailboxViewProps) => {
 		}
 		const email: MailMessage = conversation.latest;
 		return {
-			key: conversation.key,
+			key: key,
 			name: title,
 			source: {
 				kind: "text",
@@ -302,7 +348,7 @@ export const MailboxView = (props: MailboxViewProps) => {
 							<>
 								<Toggle
 									variant="default"
-									className="h-8 px-2 text-xs"
+									className={toggleClass}
 									size="sm"
 									pressed={isUnreadOnly}
 									onPressedChange={setIsUnreadOnly}
@@ -311,7 +357,7 @@ export const MailboxView = (props: MailboxViewProps) => {
 								</Toggle>
 								<Toggle
 									variant="default"
-									className="h-8 px-2 text-xs"
+									className={toggleClass}
 									size="sm"
 									pressed={isGrouped}
 									onPressedChange={setIsGrouped}
@@ -333,22 +379,80 @@ export const MailboxView = (props: MailboxViewProps) => {
 						}
 						onChange={setSearch}
 					/>
+					{isPage ? (
+						// what narrows the list beside the words searched for; the row wraps where the page is narrow
+						<div className="flex flex-wrap items-center gap-2">
+							<div className="min-w-40 flex-1 sm:max-w-56">
+								<ConnectorSearchField
+									icon={UserIcon}
+									value={sender.text}
+									placeholder={t("mail.fromFilter")}
+									onChange={sender.setText}
+								/>
+							</div>
+							<Select
+								value={String(sinceDays)}
+								onValueChange={(value) =>
+									setSinceDays(Number(value))
+								}
+							>
+								<SelectTrigger
+									size="sm"
+									aria-label={t("mail.received")}
+									className="bg-background text-xs shadow-none"
+								>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									{RECEIVED_OPTIONS.map((option) => (
+										<SelectItem
+											key={option.days}
+											value={String(option.days)}
+										>
+											{t(option.labelKey)}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+							<Toggle
+								variant="default"
+								className={toggleClass}
+								size="sm"
+								pressed={hasAttachments}
+								onPressedChange={setHasAttachments}
+							>
+								<PaperclipIcon aria-hidden />
+								{t("mail.hasAttachments")}
+							</Toggle>
+						</div>
+					) : null}
 				</div>
 
 				<ConnectorList
 					query={{ ...conversationsQuery, reload: reload }}
 					serviceName={serviceName}
 					account={app.account}
-					onClearSearch={searched ? () => setSearch("") : undefined}
+					onClearSearch={
+						searched || isFiltered
+							? () => {
+									setSearch("");
+									sender.setText("");
+									setSinceDays(0);
+									setHasAttachments(false);
+								}
+							: undefined
+					}
 					onSignIn={onSignIn}
 					listRef={listRef}
 					isFull={query.hasMore && !query.pageError}
 					emptyText={
 						searched
 							? t("common.noResults", { query: searched })
-							: isUnreadOnly
-								? t("mail.noUnread")
-								: t("mail.empty")
+							: isFiltered
+								? t("mail.noFiltered")
+								: isUnreadOnly
+									? t("mail.noUnread")
+									: t("mail.empty")
 					}
 					onShowMore={query.loadMore}
 				>
@@ -373,12 +477,32 @@ export const MailboxView = (props: MailboxViewProps) => {
 								: count > 1
 									? MailsIcon
 									: MailIcon;
+							const received = formatListDate(
+								latest.receivedDate,
+								i18n.language,
+							);
 							return (
 								<Row
 									key={conversation.key}
 									itemKey={conversation.key}
 									icon={
-										<Icon aria-hidden className="size-4" />
+										isPage ? (
+											<ConnectorItemAvatar
+												name={from}
+												photoUrl={
+													latest.from
+														? getPersonPhotoUrl?.({
+																email: latest.from,
+															})
+														: undefined
+												}
+											/>
+										) : (
+											<Icon
+												aria-hidden
+												className="size-4"
+											/>
+										)
 									}
 									title={title}
 									description={
@@ -389,10 +513,21 @@ export const MailboxView = (props: MailboxViewProps) => {
 												})
 											: from
 									}
-									meta={formatListDate(
-										latest.receivedDate,
-										i18n.language,
-									)}
+									meta={
+										// the avatar took the place of the icon that said so
+										isPage &&
+										conversation.hasAttachments ? (
+											<>
+												<PaperclipIcon
+													aria-hidden
+													className="size-3.5"
+												/>
+												{received}
+											</>
+										) : (
+											received
+										)
+									}
 									isEmphasized={conversation.isUnread}
 									openLabel={
 										count > 1
@@ -441,6 +576,9 @@ export const MailboxView = (props: MailboxViewProps) => {
 										itemName: title,
 										serviceName: serviceName,
 										saveLabel: saver.saveLabel,
+										savedLabel: saver.savedLabel(
+											request.key,
+										),
 										isBusy: isBusy,
 										onAddToContext: saver.addToContext
 											? () =>

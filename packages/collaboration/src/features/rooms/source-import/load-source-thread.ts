@@ -209,9 +209,7 @@ export async function loadSourceThread(
 	const context = selectThreadContext(state, threadId);
 	if (!context) throw new Error("This thread's source could not be read.");
 	if (context.hiddenCount)
-		limitations.push(
-			"Messages excluded from assistant context are not included.",
-		);
+		limitations.push("Excluded messages are not included.");
 	const sourceMessages = new Map(
 		state.workspaces[threadId]?.messages.map((message) => [
 			message.id,

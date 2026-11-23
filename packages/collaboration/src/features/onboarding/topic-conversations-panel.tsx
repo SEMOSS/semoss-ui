@@ -1,4 +1,4 @@
-import { CornerDownRight, MessagesSquare, Undo2, X } from "lucide-react";
+import { CornerDownRight, Undo2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
 	Badge,
@@ -13,6 +13,7 @@ import {
 	P,
 	Spinner,
 } from "@semoss/ui/next";
+import { TeamsIcon } from "@/components/common/app-icons";
 import type { InsightActions } from "@/lib/pixel";
 import { Failure, message } from "./onboarding-ui";
 import {
@@ -60,6 +61,8 @@ export function TopicConversationsPanel({
 	const [picked, setPicked] = useState<Set<string>>(new Set());
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	// why the last change did not go through, shown beside the list rather than at the bottom of the page
+	const [notice, setNotice] = useState<string | null>(null);
 	const latest = useRef(review);
 	latest.current = review;
 	const topicId = review.draft.topics.find((t) => t.key === topicKey)?.id;
@@ -95,6 +98,7 @@ export function TopicConversationsPanel({
 		let isCurrent = true;
 		setIsLoading(true);
 		setError(null);
+		setNotice(null);
 		setItems([]);
 		setPicked(new Set());
 		setShown(PAGE);
@@ -116,6 +120,30 @@ export function TopicConversationsPanel({
 			isCurrent = false;
 		};
 	}, [actions, topicKey]);
+
+	// after a failed change: fresh previews, keeping the ticks on conversations still listed
+	const refresh = async (): Promise<void> => {
+		setIsLoading(true);
+		try {
+			const saved = await onSave();
+			const page = await getTopicEvidence(actions, saved, topicKey);
+			setItems(page.items);
+			setTotal(page.total);
+			setHasMore(page.hasMore);
+			setPicked(
+				(current) =>
+					new Set(
+						page.items
+							.filter((item) => current.has(item.id))
+							.map((item) => item.id),
+					),
+			);
+		} catch (cause: unknown) {
+			setError(message(cause));
+		} finally {
+			setIsLoading(false);
+		}
+	};
 
 	const showMore = async (): Promise<void> => {
 		if (shown < items.length) {
@@ -146,6 +174,7 @@ export function TopicConversationsPanel({
 		rows: TopicEvidenceItem[],
 		targetKey?: string,
 	): Promise<void> => {
+		setNotice(null);
 		for (let start = 0; start < rows.length; start += BATCH) {
 			const part = rows.slice(start, start + BATCH);
 			const change: TopicReviewChange = {
@@ -157,7 +186,16 @@ export function TopicConversationsPanel({
 				),
 				...(targetKey ? { targetKey } : {}),
 			};
-			if (!(await changes.change(change))) return;
+			if (!(await changes.change(change))) {
+				// a stale preview is the usual cause; clear the failure so the next try is not blocked
+				const reason = (
+					changes.lastError() ?? "That did not go through"
+				).replace(/[.\s]*$/, "");
+				changes.reset();
+				setNotice(`${reason}. The list is refreshed; try again.`);
+				await refresh();
+				return;
+			}
 		}
 		setPicked(new Set());
 	};
@@ -220,6 +258,7 @@ export function TopicConversationsPanel({
 				</div>
 			)}
 			{error && <Failure error={error} />}
+			{notice && <Failure error={notice} />}
 			{isLoading && items.length === 0 ? (
 				<P className="flex items-center gap-2 text-muted-foreground text-sm">
 					<Spinner className="size-4" /> Loading conversations...
@@ -314,7 +353,7 @@ export function TopicConversationsPanel({
 										variant="secondary"
 										className="shrink-0 gap-1 font-normal"
 									>
-										<MessagesSquare
+										<TeamsIcon
 											className="size-3"
 											aria-hidden="true"
 										/>

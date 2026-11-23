@@ -1,13 +1,14 @@
 import {
+	ArrowLeft,
 	ChevronDown,
+	ListChecks,
 	LockKeyhole,
-	PanelRightOpen,
 	Plus,
 	Search,
 	X,
 } from "lucide-react";
 import { lazy, Suspense, useId, useRef, useState } from "react";
-import { Link, useParams } from "react-router";
+import { Link, useLocation, useNavigate, useParams } from "react-router";
 import {
 	Badge,
 	Button,
@@ -37,7 +38,7 @@ import {
 import { TopicSessions } from "@/features/dashboard/topic-sessions";
 import { lexicon } from "@/lib/lexicon";
 import { givenFirst } from "@/lib/person-name";
-import { WorkRefreshStatus } from "../live/work-refresh-status";
+import { topicContentsPath } from "@/lib/workspace-paths";
 import { useWorkUpdates } from "../live/work-updates.context";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { memoriesAbout } from "../state/memory";
@@ -52,13 +53,14 @@ import { PersonGlobalBadges } from "./person-global-badges";
 import { TextEntryForm } from "./text-entry-form";
 import { TopicActions } from "./topic-actions";
 import { TopicEditor } from "./topic-editor";
+import { TopicFiles } from "./topic-files";
 import { TopicFolders } from "./topic-folders";
 import { TopicIgnoredPeople } from "./topic-ignored-people";
 import { TopicMatchesDialog } from "./topic-matches-dialog";
 import { TopicPeoplePopover } from "./topic-people-popover";
 import { TopicPersonMenu } from "./topic-person-menu";
 import { TopicThreadRow } from "./topic-thread-row";
-import { useWorkFeed, WorkFilterMenu, WorkItemsList } from "./work-items-feed";
+import { WorkItems } from "./work-items-list";
 
 const LandingChatComposer = lazy(() =>
 	import("@/features/daily-chat/landing-chat-composer").then((module) => ({
@@ -91,21 +93,34 @@ const hintClassName =
 const memberControlClassName =
 	"text-muted-foreground pointer-fine:opacity-0 pointer-fine:group-focus-within/person:opacity-100 pointer-fine:group-hover/person:opacity-100";
 
-/** One topic workspace for actions, threads, sessions, and editable context. */
+/** The tab a link back to the topic asks for in its state; Work items otherwise. */
+function returnTab(state: unknown): string {
+	return typeof state === "object" &&
+		state !== null &&
+		"tab" in state &&
+		(state.tab === "threads" ||
+			state.tab === "sessions" ||
+			state.tab === "files")
+		? state.tab
+		: "work";
+}
+
+/** One topic workspace for actions, threads, sessions, linked files, and editable context. */
 export function TopicDetail() {
 	const { topicId } = useParams();
 	const fieldId = useId();
 	const { state, dispatch } = useCollaborationSession();
 	const [isEditing, setIsEditing] = useState(false);
-	const [tab, setTab] = useState("actions");
+	const navigate = useNavigate();
+	const location = useLocation();
+	// the add-or-remove page comes back to the tab it was opened from
+	const [tab, setTab] = useState(() => returnTab(location.state));
 	const [isMatchReviewOpen, setIsMatchReviewOpen] = useState(false);
 	const [isResortOpen, setIsResortOpen] = useState(false);
 	const updates = useWorkUpdates();
 	const editButtonRef = useRef<HTMLButtonElement>(null);
 	// the button that opened the review, for focus on close; a click does not focus it in Safari
 	const matchTriggerRef = useRef<HTMLElement | null>(null);
-	const contextButtonRef = useRef<HTMLButtonElement>(null);
-	const contextRef = useRef<HTMLElement>(null);
 	const [showAllSuggested, setShowAllSuggested] = useState(false);
 	const topic = state.topics.find((candidate) => candidate.id === topicId);
 	const canStartAssistant =
@@ -114,9 +129,7 @@ export function TopicDetail() {
 		type: "topic",
 		id: topicId ?? "",
 	});
-	const [isContextOpen, setIsContextOpen] = useState(false);
 	const [areNotesOpen, setAreNotesOpen] = useState(topicMemories.length > 0);
-	const feed = useWorkFeed({ topicId: topicId ?? "", initialFilter: "open" });
 	if (!topic)
 		return (
 			<CollaborationSurface
@@ -136,29 +149,46 @@ export function TopicDetail() {
 		thread.topicLinks.some((link) => link.topicId === topic.id),
 	);
 	const members = topic.people.filter((person) => person.state === "member");
-	const workItems = state.items.filter(
-		(item) =>
-			(item.status === "open" || item.status === "waiting") &&
-			threads.some(
-				(thread) => thread.id === item.threadId && !thread.muted,
-			),
-	);
 	const accountName =
 		state.accounts.find((account) => account.id === topic.accountId)
 			?.name || "No account";
-	const feedThreadCount = new Set(workItems.map((item) => item.threadId))
-		.size;
 	// the server scores active and dormant topics; samples and isolated pages have no server to ask
 	const canFindConversations =
 		Boolean(updates) && !topic.isSample && canStartAssistant;
+	// the server only links a chat to a saved topic that is active or dormant
+	const canManageChats = !topic.isSample && canStartAssistant;
+	// the server keeps a saved topic's file links
+	const canManageFiles = !topic.isSample;
+	const files = topic.files ?? [];
 	// the menu returns focus to its own trigger; a button passes itself
 	const openMatchReview = (trigger?: HTMLElement) => {
 		matchTriggerRef.current = trigger ?? null;
 		setIsMatchReviewOpen(true);
 	};
+	// the full page for adding and removing by hand, opened on the mailbox, the chats or OneDrive
+	const manageButton = (label: string, place?: string) => (
+		<Button
+			asChild
+			variant="outline"
+			size="sm"
+			className="pointer-coarse:min-h-11"
+		>
+			<Link to={topicContentsPath(topic.id, place)}>
+				<ListChecks aria-hidden="true" />
+				{label}
+			</Link>
+		</Button>
+	);
 
 	return (
 		<CollaborationPage>
+			<Link
+				to="/work/topics"
+				className="mb-4 inline-flex items-center gap-1.5 rounded-sm text-muted-foreground text-sm hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
+			>
+				<ArrowLeft aria-hidden="true" className="size-4" />
+				Topics
+			</Link>
 			<CollaborationPageHeader
 				titleClassName="font-bold"
 				layoutClassName="flex-col md:flex-row"
@@ -188,7 +218,9 @@ export function TopicDetail() {
 								setIsEditing(true);
 							}}
 						>
-							{topic.description}
+							<span className="line-clamp-2">
+								{topic.description}
+							</span>
 						</Button>
 					) : undefined
 				}
@@ -207,34 +239,6 @@ export function TopicDetail() {
 								Find conversations
 							</Button>
 						)}
-						<Button
-							ref={contextButtonRef}
-							variant={isContextOpen ? "secondary" : "outline"}
-							className="pointer-coarse:min-h-11"
-							aria-expanded={isContextOpen}
-							aria-controls={`${fieldId}-context`}
-							onClick={() => {
-								setIsContextOpen((open) => !open);
-								if (!isContextOpen) {
-									requestAnimationFrame(() => {
-										const context = contextRef.current;
-										if (
-											context &&
-											context.getBoundingClientRect()
-												.top >= window.innerHeight
-										) {
-											context.focus();
-											context.scrollIntoView({
-												block: "start",
-											});
-										}
-									});
-								}
-							}}
-						>
-							<PanelRightOpen aria-hidden="true" />
-							Context
-						</Button>
 						<TopicActions
 							topic={topic}
 							threadCount={threads.length}
@@ -242,6 +246,31 @@ export function TopicDetail() {
 								editButtonRef.current = null;
 								setIsEditing(true);
 							}}
+							onManageThreads={() =>
+								navigate(topicContentsPath(topic.id))
+							}
+							onManageChats={
+								canManageChats
+									? () =>
+											navigate(
+												topicContentsPath(
+													topic.id,
+													"chats",
+												),
+											)
+									: undefined
+							}
+							onManageFiles={
+								canManageFiles
+									? () =>
+											navigate(
+												topicContentsPath(
+													topic.id,
+													"onedrive",
+												),
+											)
+									: undefined
+							}
 							onResort={
 								canFindConversations && threads.length > 0
 									? () => {
@@ -272,30 +301,8 @@ export function TopicDetail() {
 					</div>
 				)}
 			</CollaborationPageHeader>
-			<section aria-label="Topic assistant" className="mb-8 space-y-3">
-				<P className="text-muted-foreground text-sm">
-					{canStartAssistant
-						? "Ask about this topic’s work, people, and emails."
-						: "Set this topic to Active or Dormant to start a chat."}
-				</P>
-				{canStartAssistant && (
-					<Suspense fallback={<output>Loading assistant…</output>}>
-						<LandingChatComposer topicId={topic.id} />
-					</Suspense>
-				)}
-			</section>
-			<div
-				className={cn(
-					"grid min-w-0 grid-cols-1 items-start gap-5",
-					isContextOpen && "xl:grid-cols-3",
-				)}
-			>
-				<div
-					className={cn(
-						"min-w-0 space-y-5",
-						isContextOpen && "xl:col-span-2",
-					)}
-				>
+			<div className="grid min-w-0 grid-cols-1 items-start gap-5 xl:grid-cols-3">
+				<div className="min-w-0 space-y-6 xl:col-span-2">
 					<Card className={cardClassName}>
 						<Tabs
 							value={tab}
@@ -308,15 +315,12 @@ export function TopicDetail() {
 									className={collaborationTabsStyles.list}
 								>
 									<TabsTrigger
-										value="actions"
+										value="work"
 										className={
 											collaborationTabsStyles.trigger
 										}
 									>
-										Actions
-										<span className="text-muted-foreground tabular-nums">
-											{feed.total(undefined)}
-										</span>
+										Work items
 									</TabsTrigger>
 									<TabsTrigger
 										value="threads"
@@ -334,39 +338,21 @@ export function TopicDetail() {
 									>
 										{lexicon.chats}
 									</TabsTrigger>
+									<TabsTrigger
+										value="files"
+										className={
+											collaborationTabsStyles.trigger
+										}
+									>
+										Files
+									</TabsTrigger>
 								</TabsList>
-								{tab === "actions" && (
-									<div className="ml-auto flex flex-wrap items-center justify-end gap-3">
-										<WorkRefreshStatus />
-										<WorkFilterMenu feed={feed} />
-									</div>
-								)}
-								{tab === "threads" &&
-									canFindConversations &&
-									threads.length > 0 && (
-										<Button
-											type="button"
-											variant="outline"
-											size="sm"
-											className="ml-auto pointer-coarse:min-h-11"
-											onClick={(event) =>
-												openMatchReview(
-													event.currentTarget,
-												)
-											}
-										>
-											<Search aria-hidden="true" />
-											Find conversations
-										</Button>
-									)}
-							</div>
-							<TabsContent value="actions" className="mt-0">
-								<WorkItemsList
-									feed={feed}
-									emptyAction={
-										canFindConversations ? (
+								{tab === "threads" && threads.length > 0 && (
+									<div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+										{canFindConversations && (
 											<Button
 												type="button"
+												variant="outline"
 												size="sm"
 												className="pointer-coarse:min-h-11"
 												onClick={(event) =>
@@ -376,12 +362,30 @@ export function TopicDetail() {
 												}
 											>
 												<Search aria-hidden="true" />
-												Find conversations for this
-												topic
+												Find conversations
 											</Button>
-										) : undefined
-									}
-								/>
+										)}
+										{manageButton("Add or remove")}
+									</div>
+								)}
+								{tab === "sessions" && canManageChats && (
+									<div className="ml-auto">
+										{manageButton("Add or remove", "chats")}
+									</div>
+								)}
+								{tab === "files" &&
+									canManageFiles &&
+									files.length > 0 && (
+										<div className="ml-auto">
+											{manageButton(
+												"Add or remove",
+												"onedrive",
+											)}
+										</div>
+									)}
+							</div>
+							<TabsContent value="work" className="mt-0 p-3">
+								<WorkItems topicId={topic.id} />
 							</TabsContent>
 							<TabsContent value="threads" className="mt-0">
 								{/* the tab already says Threads; this line only counts them */}
@@ -391,15 +395,6 @@ export function TopicDetail() {
 										{threads.length === 1
 											? "thread"
 											: "threads"}
-										{feedThreadCount > 0 && (
-											<>
-												{" \u00b7 "}
-												<span>
-													{feedThreadCount} in your
-													feed
-												</span>
-											</>
-										)}
 									</P>
 								)}
 								{threads.length ? (
@@ -412,41 +407,36 @@ export function TopicDetail() {
 												key={thread.id}
 												thread={thread}
 												topicId={topic.id}
-												items={workItems.filter(
-													(item) =>
-														item.threadId ===
-														thread.id,
-												)}
 											/>
 										))}
 									</ul>
-								) : canFindConversations ? (
+								) : (
 									<div className="flex flex-col items-start gap-3 px-5 py-4">
 										<P className="text-muted-foreground text-sm">
-											No threads in this topic yet. Find
-											conversations that fit it, or add it
-											from a thread's details.
+											{canFindConversations
+												? "No threads in this topic yet. Let Brain find the conversations that fit it, or pick them yourself."
+												: "No threads in this topic yet. Pick the conversations that belong here."}
 										</P>
-										<Button
-											type="button"
-											variant="outline"
-											size="sm"
-											className="pointer-coarse:min-h-11"
-											onClick={(event) =>
-												openMatchReview(
-													event.currentTarget,
-												)
-											}
-										>
-											<Search aria-hidden="true" />
-											Find conversations
-										</Button>
+										<div className="flex flex-wrap gap-2">
+											{canFindConversations && (
+												<Button
+													type="button"
+													variant="outline"
+													size="sm"
+													className="pointer-coarse:min-h-11"
+													onClick={(event) =>
+														openMatchReview(
+															event.currentTarget,
+														)
+													}
+												>
+													<Search aria-hidden="true" />
+													Find conversations
+												</Button>
+											)}
+											{manageButton("Add threads")}
+										</div>
 									</div>
-								) : (
-									<P className="px-5 py-4 text-muted-foreground text-sm">
-										No threads in this topic yet. Add it
-										from a thread's details.
-									</P>
 								)}
 							</TabsContent>
 							<TabsContent value="sessions" className="mt-0">
@@ -454,35 +444,52 @@ export function TopicDetail() {
 									<TopicSessions topicId={topic.id} />
 								)}
 							</TabsContent>
+							<TabsContent value="files" className="mt-0">
+								<TopicFiles
+									files={files}
+									emptyAction={
+										canManageFiles
+											? manageButton(
+													"Add files",
+													"onedrive",
+												)
+											: undefined
+									}
+								/>
+							</TabsContent>
 						</Tabs>
 					</Card>
+					<section
+						aria-label="Ask Your Digital Twin About This Topic"
+						className="space-y-3"
+					>
+						<div className="space-y-1">
+							<H2 className="font-display font-semibold text-base">
+								Ask about this topic
+							</H2>
+							<P className="text-muted-foreground text-sm">
+								{canStartAssistant
+									? "Ask about this topic's work, people, and emails."
+									: "Set this topic to Active or Dormant to start a chat."}
+							</P>
+						</div>
+						{canStartAssistant && (
+							<Suspense
+								fallback={
+									<output>
+										Loading your Digital Twin...
+									</output>
+								}
+							>
+								<LandingChatComposer topicId={topic.id} />
+							</Suspense>
+						)}
+					</section>
 				</div>
 				<aside
-					ref={contextRef}
-					tabIndex={-1}
-					id={`${fieldId}-context`}
-					hidden={!isContextOpen}
 					aria-label="Topic context"
-					className="min-w-0 divide-y divide-border focus-visible:outline-2 focus-visible:outline-ring xl:pt-1 [&>section:first-of-type]:pt-0 [&>section]:py-6"
+					className="min-w-0 divide-y divide-border xl:pt-1 [&>section:first-of-type]:pt-0 [&>section]:py-6"
 				>
-					<div className="flex items-center justify-between gap-3 pb-4 xl:hidden">
-						<H2 className={contextHeadingClassName}>
-							Topic context
-						</H2>
-						<Button
-							type="button"
-							variant="ghost"
-							size="icon-sm"
-							className="pointer-coarse:size-11"
-							aria-label="Close topic context"
-							onClick={() => {
-								setIsContextOpen(false);
-								contextButtonRef.current?.focus();
-							}}
-						>
-							<X aria-hidden="true" />
-						</Button>
-					</div>
 					<section aria-labelledby={`${fieldId}-people`}>
 						<div>
 							<div className={asideHeaderClassName}>
@@ -613,7 +620,7 @@ export function TopicDetail() {
 																					`On ${personThreads} ${personThreads === 1 ? "thread" : "threads"}`}
 																				<span>
 																					{member.role
-																						? ` · ${member.role}`
+																						? ` \u00b7 ${member.role}`
 																						: ""}
 																				</span>
 																			</Small>
@@ -702,7 +709,7 @@ export function TopicDetail() {
 									id={`${fieldId}-assistant-context`}
 									className={contextHeadingClassName}
 								>
-									Assistant
+									Your Digital Twin
 								</H2>
 							</div>
 							<div className="space-y-3">
@@ -826,7 +833,7 @@ export function TopicDetail() {
 												aria-hidden="true"
 												className="-rotate-90 group-data-[state=open]:rotate-0"
 											/>
-											Notes for the assistant
+											Notes for Your Digital Twin
 										</Button>
 									</CollapsibleTrigger>
 									<CollapsibleContent
@@ -836,7 +843,7 @@ export function TopicDetail() {
 									>
 										<MemoryList
 											memories={topicMemories}
-											emptyText="Notes here help the assistant with this topic and its threads."
+											emptyText="Notes here help your Digital Twin with this topic and its threads."
 											addLabel="New note"
 											about={{
 												type: "topic",
@@ -918,7 +925,7 @@ export function TopicDetail() {
 							<Button
 								variant="ghost"
 								size="sm"
-								aria-label={`${topic.kind} · ${accountName}: Edit topic kind and account`}
+								aria-label={`${topic.kind} \u00b7 ${accountName}: Edit topic kind and account`}
 								className="h-auto min-h-8 max-w-full font-normal text-muted-foreground"
 								onClick={(event) => {
 									editButtonRef.current = event.currentTarget;
@@ -933,7 +940,7 @@ export function TopicDetail() {
 									<span className="capitalize">
 										{topic.kind}
 									</span>{" "}
-									· {accountName}
+									{"\u00b7"} {accountName}
 								</span>
 								<ChevronDown
 									aria-hidden="true"

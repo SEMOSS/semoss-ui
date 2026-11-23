@@ -21,6 +21,8 @@ export interface MailApp {
 	sourceName: string;
 	/** The string key of how its search reads what is typed, shown while searching. */
 	searchHintKey: string;
+	/** What its search takes for mail with something attached, in its own syntax. */
+	attachmentSearch: string;
 	/** The mailbox's reactor calls. */
 	pixels: MailPixels;
 }
@@ -35,6 +37,7 @@ export const MAIL_APPS: Record<ConnectorAccount, MailApp> = {
 		appNameKey: "services.outlook",
 		sourceName: "Outlook",
 		searchHintKey: "mail.searchHintOutlook",
+		attachmentSearch: "hasattachment:true",
 		pixels: mailPixels("MicrosoftOutlook"),
 	},
 	google: {
@@ -45,6 +48,7 @@ export const MAIL_APPS: Record<ConnectorAccount, MailApp> = {
 		appNameKey: "services.gmail",
 		sourceName: "Gmail",
 		searchHintKey: "mail.searchHintGmail",
+		attachmentSearch: "has:attachment",
 		pixels: mailPixels("GoogleGmail"),
 	},
 };

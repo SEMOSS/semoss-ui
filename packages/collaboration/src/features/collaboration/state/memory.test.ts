@@ -106,7 +106,14 @@ describe("memory helpers", () => {
 					confirmed: false,
 				}),
 			),
-		).toBe("Assistant suggestion");
+		).toBe("Digital Twin suggestion");
+		// saved from a chat in the background: in use like one saved in the chat
+		expect(originLabel(memory({ origin: "brain", confirmed: false }))).toBe(
+			"Learned in chat",
+		);
+		expect(originLabel(memory({ origin: "brain", confirmed: true }))).toBe(
+			"Learned in chat, confirmed",
+		);
 	});
 
 	it("follows a topic merge and delete the way the server does", () => {

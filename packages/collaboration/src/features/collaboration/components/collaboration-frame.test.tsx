@@ -44,8 +44,9 @@ vi.mock("@/features/dashboard/use-chat-history", () => ({
 	useChatHistory: () => remote.history,
 }));
 vi.mock("@/features/dashboard/use-visible-resource", () => ({
+	// nothing read yet, which every resource the shell reads (the calendar, what waits in the twins) starts as
 	useVisibleResource: () => ({
-		data: [],
+		data: null,
 		error: "",
 		isLoading: false,
 		checkedAt: null,
@@ -309,6 +310,32 @@ describe("CollaborationFrame", () => {
 		).toBe(header);
 	});
 
+	it("scrolls each hero page together with its header, from the top, and leaves other pages to scroll themselves", async () => {
+		const { router } = renderFrame();
+		const column = screen
+			.getByRole("button", { name: "Search" })
+			.closest("header")?.parentElement;
+		if (!column) throw new Error("Missing the content column");
+		expect(column).toHaveClass("overflow-y-auto");
+		column.scrollTop = 200;
+		expect(column.scrollTop).toBe(200);
+		await act(() => router.navigate("/brain"));
+		expect(column).not.toHaveClass("overflow-y-auto");
+		// the browser hands the old offset back with the scroller; Today must not reopen part-way down
+		await act(() => router.navigate("/"));
+		expect(column).toHaveClass("overflow-y-auto");
+		expect(column.scrollTop).toBe(0);
+		// one column scrolls every hero page, so the next one would inherit this page's offset
+		for (const path of ["/work", "/work/review", "/work/topics"]) {
+			column.scrollTop = 200;
+			await act(() => router.navigate(path));
+			expect(column).toHaveClass("overflow-y-auto");
+			expect(column.scrollTop).toBe(0);
+		}
+		await act(() => router.navigate("/routines"));
+		expect(column).not.toHaveClass("overflow-y-auto");
+	});
+
 	it("keeps one header and search palette mounted across page and room navigation", async () => {
 		const { router, user } = renderFrame();
 		const header = screen
@@ -470,6 +497,23 @@ describe("CollaborationFrame", () => {
 				String(key).endsWith(":isCollapsed"),
 			),
 		).toBe(false);
+	});
+
+	it("gives a persona's interview the navigation's width, and gives it back on the persona's own page", async () => {
+		const { router } = renderFrame();
+		const navigation = screen.getByRole("complementary", {
+			name: "Navigation",
+		});
+		expect(navigation).toHaveClass("w-64");
+		await act(() => router.navigate("/twins/persona/interview?go=more"));
+		expect(navigation).toHaveClass("w-16");
+		await act(() => router.navigate("/twins/persona"));
+		expect(navigation).toHaveClass("w-64");
+		// the same behind the door the sidebar opens
+		await act(() => router.navigate("/persona/interview?go=more"));
+		expect(navigation).toHaveClass("w-16");
+		await act(() => router.navigate("/persona"));
+		expect(navigation).toHaveClass("w-64");
 	});
 
 	it("moves focus out of the sidebar when a room opens and its session links collapse", async () => {

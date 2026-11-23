@@ -3,17 +3,16 @@ import {
 	I18nextProvider,
 	playgroundResources,
 } from "@semoss/i18n";
-import { Env, InsightProvider } from "@semoss/sdk/react";
+import { Env } from "@semoss/sdk/react";
 import { ThemeProvider, Toaster } from "@semoss/ui/next";
 import { LandscapeRestriction } from "@/components/common/landscape-restriction";
 import { LanguageDirection } from "@/components/common/language-direction";
 import { Router } from "@/pages";
 
-// use the environment variable to set the module
+// The server writes MODULE into index.html (semoss-env tag, read when the SDK
+// loads) and it always wins; .env, then "/Monolith", cover a page without one.
 Env.update({
-	MODULE: import.meta.env.MODULE || "/Monolith",
-	ACCESS_KEY: import.meta.env.ACCESS_KEY,
-	SECRET_KEY: import.meta.env.SECRET_KEY,
+	MODULE: Env.MODULE || import.meta.env.MODULE || "/Monolith",
 });
 
 // create a new i18n instance for the playground. Languages load lazily (one
@@ -25,26 +24,26 @@ const i18n = i18nBuilder.i18n;
 export const i18nReady = i18nBuilder.ready;
 
 /**
- * The playground's root. The file panels need no provider here: they read
- * resource permissions from the SDK's `Session.permissions`.
+ * The playground's root. It holds no insight: sign in, the user and the config
+ * come from the SDK's `Session` and `Config` (started in `main.tsx`), and only
+ * rooms mount an `InsightProvider`. The file panels read resource permissions
+ * from `Session.permissions`.
  */
 export const App = () => {
 	return (
 		<I18nextProvider i18n={i18n}>
 			<LanguageDirection>
-				<InsightProvider>
-					{/* TODO: read default theme from theme map somehow */}
-					<ThemeProvider
-						defaultTheme="light"
-						storageKey="smss-ui-theme-playground"
-					>
-						<LandscapeRestriction />
-						<div className="absolute inset-0 h-screen w-screen overflow-hidden">
-							<Router />
-						</div>
-						<Toaster position="top-center" />
-					</ThemeProvider>
-				</InsightProvider>
+				{/* TODO: read default theme from theme map somehow */}
+				<ThemeProvider
+					defaultTheme="light"
+					storageKey="smss-ui-theme-playground"
+				>
+					<LandscapeRestriction />
+					<div className="absolute inset-0 h-screen w-screen overflow-hidden">
+						<Router />
+					</div>
+					<Toaster position="top-center" />
+				</ThemeProvider>
 			</LanguageDirection>
 		</I18nextProvider>
 	);

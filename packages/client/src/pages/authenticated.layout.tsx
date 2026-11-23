@@ -1,6 +1,6 @@
-import { Suspense, useState } from "react";
+import { Suspense } from "react";
 import { Navigate, Outlet, useLocation } from "react-router";
-import { useSession } from "@semoss/sdk/react";
+import { useSession, useSessionRetry } from "@semoss/sdk/react";
 import { Button, Muted, Spinner } from "@semoss/ui/next";
 import { ErrorState } from "@/components/common/error-state";
 
@@ -13,8 +13,7 @@ import { ErrorState } from "@/components/common/error-state";
 export const AuthenticatedLayout = () => {
 	const status = useSession((state) => state.status);
 	const errorMessage = useSession((state) => state.error?.message ?? "");
-	const refresh = useSession((state) => state.refresh);
-	const [isRetrying, setIsRetrying] = useState(false);
+	const { isRetrying, retry } = useSessionRetry();
 	const location = useLocation();
 
 	// wait till the config is authenticated to load the view
@@ -24,13 +23,6 @@ export const AuthenticatedLayout = () => {
 
 	// the config or the user could not be read, so no page has what it needs
 	if (status === "ERROR") {
-		const handleRetry = async () => {
-			setIsRetrying(true);
-			// never rejects: a failure shows as the ERROR status again
-			await refresh();
-			setIsRetrying(false);
-		};
-
 		return (
 			<ErrorState
 				title="Something went wrong!"
@@ -46,7 +38,7 @@ export const AuthenticatedLayout = () => {
 					variant="outline"
 					className="mt-2"
 					disabled={isRetrying}
-					onClick={handleRetry}
+					onClick={retry}
 				>
 					{isRetrying ? (
 						<>

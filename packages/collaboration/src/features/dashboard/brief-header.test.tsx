@@ -6,34 +6,37 @@ import { CollaborationSessionProvider } from "@/features/collaboration/state/col
 import type { CalendarEvent } from "@/features/connectors/api/microsoft-schemas";
 import { BriefHeader } from "./brief-header";
 
-const dashboard = vi.hoisted(() => ({ events: [] as CalendarEvent[] }));
+const dashboard = vi.hoisted(() => ({
+	events: [] as CalendarEvent[],
+	due: 0,
+	// the twin each copy that waits for the owner is in
+	twinUpdates: [] as { twinId: string }[],
+}));
+
+vi.mock("./use-due-today", () => ({ useDueToday: () => dashboard.due }));
 
 vi.mock("./dashboard.context", () => ({
 	useDashboard: () => ({
 		calendar: { data: dashboard.events, checkedAt: null, isLoading: false },
 		refreshSources: vi.fn(),
 	}),
+	useTwinUpdates: () => ({
+		data: { updates: dashboard.twinUpdates, lastCheck: null },
+	}),
 }));
 
 afterEach(() => {
 	cleanup();
 	dashboard.events = [];
+	dashboard.due = 0;
+	dashboard.twinUpdates = [];
 	vi.useRealTimers();
 });
 
-/** The headline counts only open work due today or overdue. */
-function renderHeader(dues: (string | null)[] = []) {
+/** The headline says the count of the work items due today, the same number the sidebar badge shows. */
+function renderHeader(due = 0) {
+	dashboard.due = due;
 	const state = createInitialCollaborationState();
-	const item = state.items[0];
-	if (!item) throw new Error("Missing sample item");
-	state.threads = [];
-	state.items = dues.map((due, index) => ({
-		...item,
-		id: `item-${index}`,
-		status: "open",
-		askType: "reply",
-		due,
-	}));
 	const router = createMemoryRouter([
 		{ path: "/", element: <BriefHeader /> },
 	]);
@@ -44,19 +47,13 @@ function renderHeader(dues: (string | null)[] = []) {
 	);
 }
 
-it("says nothing is due when the queue has no deadlines today", () => {
-	renderHeader([null, new Date(Date.now() + 3 * 86_400_000).toISOString()]);
+it("says nothing is due when no work item is due today", () => {
+	renderHeader(0);
 	expect(screen.getByText("Nothing is due today.")).toBeVisible();
 });
 
-it("counts overdue and due-today work, not the whole queue", () => {
-	const now = Date.now();
-	renderHeader([
-		new Date(now - 86_400_000).toISOString(),
-		new Date(now).toISOString(),
-		null,
-		new Date(now + 3 * 86_400_000).toISOString(),
-	]);
+it("says how many work items are due today", () => {
+	renderHeader(2);
 	expect(screen.getByText("2 things are due today.")).toBeVisible();
 	for (const name of [/open$/, /handled$/, /waiting on others$/]) {
 		expect(screen.queryByRole("link", { name })).not.toBeInTheDocument();
@@ -64,6 +61,33 @@ it("counts overdue and due-today work, not the whole queue", () => {
 	expect(
 		screen.getByRole("button", { name: "Check for new mail" }),
 	).toBeInTheDocument();
+});
+
+it("links to the copies that wait in the twins the owner shares, and says nothing when none do", () => {
+	renderHeader();
+	expect(
+		screen.queryByRole("link", { name: /you share/ }),
+	).not.toBeInTheDocument();
+	cleanup();
+	// all in one twin: straight to its Updates
+	dashboard.twinUpdates = [{ twinId: "twin-1" }, { twinId: "twin-1" }];
+	renderHeader();
+	expect(
+		screen.getByRole("link", { name: "2 updates in a twin you share" }),
+	).toHaveAttribute("href", "/twins/mine/contents?twinId=twin-1&in=updates");
+	cleanup();
+	// in several: to the twins, whose cards each say how many
+	dashboard.twinUpdates = [{ twinId: "twin-1" }, { twinId: "twin-2" }];
+	renderHeader();
+	expect(
+		screen.getByRole("link", { name: "2 updates in twins you share" }),
+	).toHaveAttribute("href", "/twins");
+	cleanup();
+	dashboard.twinUpdates = [{ twinId: "twin-2" }];
+	renderHeader();
+	expect(
+		screen.getByRole("link", { name: "1 update in a twin you share" }),
+	).toBeVisible();
 });
 
 it("leaves whole day events out of the next meeting, so tomorrow's holiday is not a 7 PM meeting", () => {
@@ -99,14 +123,4 @@ it("leaves whole day events out of the next meeting, so tomorrow's holiday is no
 	expect(
 		screen.getByText(/Your next meeting is at 3:00\sPM\.$/),
 	).toBeVisible();
-});
-
-it("counts a due day saved as midnight UTC on that day, not the evening before", () => {
-	// 3 PM in New York, where Nov 6's due read as an instant would be 7 PM today
-	vi.useFakeTimers({
-		toFake: ["Date"],
-		now: new Date("2026-11-05T20:00:00Z"),
-	});
-	renderHeader(["2026-11-06T00:00:00Z", "2026-11-05T00:00:00Z"]);
-	expect(screen.getByText("One thing is due today.")).toBeVisible();
 });

@@ -60,7 +60,8 @@
 	"onedrive": {
 		"viewLabel": "Affichage",
 		"mine": "Mes fichiers",
-		"shared": "Partagés avec moi"
+		"shared": "Partagés avec moi",
+		"sharedNote": "Les fichiers partagés avec vous sont trouvés par la recherche Microsoft : un fichier partagé récemment peut donc mettre un moment à apparaître ici."
 	},
 	"mail": {
 		"folder": "Dossier de courrier",
@@ -106,6 +107,14 @@
 		"showQuoted": "Afficher les e-mails cités",
 		"hideQuoted": "Masquer les e-mails cités",
 		"filters": "Filtres",
+		"fromFilter": "De : nom ou adresse",
+		"receivedAny": "Toutes les dates",
+		"receivedWeek": "Semaine dernière",
+		"receivedMonth": "Mois dernier",
+		"receivedQuarter": "3 derniers mois",
+		"receivedYear": "Année dernière",
+		"hasAttachments": "Avec pièces jointes",
+		"noFiltered": "Aucun e-mail ne correspond à ces filtres",
 		"pageError": "Impossible de charger davantage de messages.",
 		"emptyPage": "La boîte mail a renvoyé une page vide. Réessayez.",
 		"picturesHidden": "Les images provenant du web sont masquées pour protéger votre vie privée.",

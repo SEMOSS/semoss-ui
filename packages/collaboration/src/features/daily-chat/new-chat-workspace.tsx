@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, AlertDescription, Button } from "@semoss/ui/next";
 import { connectorPanelActions } from "@/features/room-connectors/connector-panel-actions";
 import { useRoomConnectors } from "@/features/room-connectors/room-connectors.context";
+import type { ComposerPrompt } from "@/features/rooms/components/room-composer.types";
 import { ROOM_SETTINGS_PANEL_TYPE } from "@/features/rooms/components/room-settings-panel";
 import { useShowCurrentChat } from "@/features/rooms/current-chat";
 import type {
@@ -29,6 +30,14 @@ interface NewChatWorkspaceProps {
 	onSend: (submission: ComposerSubmission) => Promise<void>;
 	onSaveSettings: (settings: RoomSettings) => Promise<void>;
 	onSelectAgent: (agentId: string) => Promise<void>;
+	/** Today's ask box, drawn over the hero photo. */
+	isHero?: boolean;
+	/** The page is one agent's own, such as a Digital Twin's, so the agent cannot be changed. */
+	isAgentLocked?: boolean;
+	/** The page was opened to ask something, so the ask box takes the focus. */
+	isFocused?: boolean;
+	/** Suggested first messages for the empty composer. */
+	starterPrompts?: readonly ComposerPrompt[];
 }
 
 /** Compact overview composer with its tools available without leaving the page. */
@@ -41,6 +50,10 @@ export function NewChatWorkspace({
 	onSend,
 	onSaveSettings,
 	onSelectAgent,
+	isHero,
+	isAgentLocked,
+	isFocused,
+	starterPrompts,
 }: NewChatWorkspaceProps) {
 	useShowCurrentChat(session);
 	const workbench = useToolWorkbench();
@@ -107,6 +120,10 @@ export function NewChatWorkspace({
 				onSaveSettings={onSaveSettings}
 				onSelectAgent={onSelectAgent}
 				isCompact
+				isHero={isHero}
+				isAgentLocked={isAgentLocked}
+				isFocused={isFocused}
+				starterPrompts={starterPrompts}
 				panelActions={[
 					{
 						id: "settings",

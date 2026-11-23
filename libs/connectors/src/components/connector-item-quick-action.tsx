@@ -6,6 +6,7 @@ import {
 import { useTranslation } from "@semoss/i18n";
 import { ConnectorIconButton } from "./connector-icon-button";
 import type { ConnectorItemActions } from "./connector-item-actions";
+import { ConnectorSavedMark } from "./connector-saved-mark";
 
 /** Props for {@link ConnectorItemQuickAction}. */
 interface ConnectorItemQuickActionProps {
@@ -17,6 +18,7 @@ interface ConnectorItemQuickActionProps {
  * The one action a row shows as a button, as the file explorer's rows do:
  * adding the item to the conversation, or saving it where the host takes
  * nothing into its context. Everything is on the row's right-click menu.
+ * An item the host already holds shows that in place of the save button.
  * Renders nothing when the item can be neither.
  */
 export const ConnectorItemQuickAction = ({
@@ -28,6 +30,7 @@ export const ConnectorItemQuickAction = ({
 		onAddToContext,
 		onSave,
 		saveLabel,
+		savedLabel,
 		isBusy = false,
 	} = actions;
 
@@ -41,6 +44,22 @@ export const ConnectorItemQuickAction = ({
 				isSpinning={isBusy}
 				onClick={onAddToContext}
 			/>
+		);
+	}
+	if (savedLabel) {
+		return (
+			// as wide as the button it stands in for, so the rows' dates stay in line
+			<span
+				role="img"
+				aria-label={t("actions.named", {
+					action: savedLabel,
+					name: itemName,
+				})}
+				title={savedLabel}
+				className="flex size-8 shrink-0 items-center justify-center [@media(pointer:coarse)]:size-9"
+			>
+				<ConnectorSavedMark />
+			</span>
 		);
 	}
 	if (onSave) {

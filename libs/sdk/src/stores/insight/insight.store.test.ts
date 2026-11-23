@@ -192,11 +192,11 @@ describe("InsightStore", () => {
 			expect(store.insightId).toBe("test-insight-id");
 		});
 
-		it("includes SetContext when app option is provided", async () => {
+		it("includes LoadApp when app option is provided", async () => {
 			const store = new InsightStore();
 			await initStore(store, { app: "my-app-id" });
 			const [pixel] = mockRunPixel.mock.calls[0];
-			expect(pixel).toContain('SetContext("my-app-id")');
+			expect(pixel).toContain('LoadApp("my-app-id")');
 		});
 
 		it("includes LoadPyFromFile when python script option is provided", async () => {

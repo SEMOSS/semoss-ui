@@ -46,6 +46,24 @@
 		"yearly": "Anual",
 		"allTime": "Todo el tiempo"
 	},
+	"usageLimit": {
+		"notDefinedHint": {
+			"APP": "Las personas que usan el modelo a través de esta aplicación usan el límite de uso público, su límite total de modelos o el límite general de la plataforma.",
+			"ENGINE": "Las personas que usan el modelo a través de este motor usan el límite de uso público, su límite total de modelos o el límite general de la plataforma."
+		},
+		"unlimitedHint": {
+			"APP": "Sin tope para las llamadas que los reactores personalizados de esta aplicación hacen con su permiso. El total del modelo se sigue aplicando.",
+			"ENGINE": "Sin tope para las llamadas que el propio código de este motor hace con su permiso. El total del modelo se sigue aplicando."
+		},
+		"counts": {
+			"appShared": "Compartido por la aplicación",
+			"appEach": "Por cada usuario",
+			"engineShared": "Compartido por el motor",
+			"engineEach": "Por cada usuario"
+		},
+		"eachUserNote": "Las reglas por cada usuario solo cuentan las llamadas a las que se aplica el límite de esta aplicación.",
+		"eachEngineUserNote": "Las reglas por cada usuario solo cuentan las llamadas a las que se aplica el límite de este motor."
+	},
 	"footer": {
 		"add": "Agregar",
 		"addWithCount": "Agregar ({{count}})"

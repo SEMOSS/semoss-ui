@@ -425,6 +425,37 @@ describe("shared collaboration session", () => {
 		expect(state.liveProfile?.id).toBe("live-me");
 	});
 
+	it("holds the person's own Digital Twin as the server last sent it, through every other change", () => {
+		const base = createInitialCollaborationState();
+		expect(base.mainTwin).toBeUndefined();
+		const mainTwin = {
+			name: "Robin's Digital Twin",
+			avatar: "data:image/png;base64,AAAA",
+			agentId: "collaboration-agent",
+		};
+		const named = apply(base, { type: "main-twin.server", mainTwin });
+		expect(named.mainTwin).toEqual(mainTwin);
+		// the same twin again is no change: the session keeps its state
+		expect(apply(named, { type: "main-twin.server", mainTwin })).toBe(
+			named,
+		);
+		// nothing that reloads records rebuilds the state without it
+		const refreshed = apply(named, {
+			type: "live.refresh",
+			updates: { threads: [], workspaces: {}, items: [] },
+		});
+		expect(apply(refreshed, { type: "snooze.expire" }).mainTwin).toEqual(
+			mainTwin,
+		);
+		// a save answers the whole twin: going back to the photo drops the picture
+		expect(
+			apply(named, {
+				type: "main-twin.server",
+				mainTwin: { ...mainTwin, name: "Rob", avatar: "" },
+			}).mainTwin,
+		).toEqual({ ...mainTwin, name: "Rob", avatar: "" });
+	});
+
 	it("deletes a topic with its links and rules; threads keep one primary topic", () => {
 		let state = createInitialCollaborationState();
 		state = apply(state, {
@@ -456,6 +487,34 @@ describe("shared collaboration session", () => {
 			if (links.length)
 				expect(links.filter((link) => link.primary)).toHaveLength(1);
 		}
+	});
+
+	it("keeps a topic's linked files, and carries them to the topic it is merged into", () => {
+		const file = (itemId: string) => ({
+			itemId,
+			name: `${itemId}.docx`,
+			source: "onedrive" as const,
+		});
+		let state = createInitialCollaborationState();
+		state = apply(state, {
+			type: "topic.save",
+			topic: { id: "t-geng", files: [file("a"), file("b")] },
+		});
+		state = apply(state, {
+			type: "topic.save",
+			topic: { id: "t-gsales", files: [file("b")] },
+		});
+		state = apply(state, {
+			type: "topic.merge",
+			sourceId: "t-geng",
+			targetId: "t-gsales",
+		});
+		// a file on both topics is linked once
+		expect(
+			state.topics
+				.find((topic) => topic.id === "t-gsales")
+				?.files?.map((entry) => entry.itemId),
+		).toEqual(["b", "a"]);
 	});
 
 	it("merges topic links, memories, members, rules and Work associations atomically", () => {
@@ -622,6 +681,34 @@ describe("shared collaboration session", () => {
 		expect(
 			state.items.find((item) => item.id === "i12")?.snoozeUntil,
 		).toBeUndefined();
+	});
+
+	it("clears the automated mark when the owner says a person writes there", () => {
+		const threadId = "th-geng-review";
+		const initial = createInitialCollaborationState();
+		const flagged = {
+			...initial,
+			threads: initial.threads.map((thread) =>
+				thread.id === threadId
+					? { ...thread, automated: true }
+					: thread,
+			),
+		};
+		const find = (value: CollaborationState) =>
+			value.threads.find((thread) => thread.id === threadId);
+		const state = apply(flagged, {
+			type: "thread.notAutomated",
+			threadId,
+			notAutomated: true,
+		});
+		expect(find(state)?.automated).toBeUndefined();
+		expect(find(state)?.notAutomated).toBe(true);
+		const back = apply(state, {
+			type: "thread.notAutomated",
+			threadId,
+			notAutomated: false,
+		});
+		expect(find(back)?.notAutomated).toBeUndefined();
 	});
 
 	it("retains the current state for unchanged commands and snooze checks", () => {

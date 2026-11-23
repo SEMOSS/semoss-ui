@@ -142,7 +142,7 @@ describe("Jev model import", () => {
 		expect(details).toBeDefined();
 		const payload = JSON.parse(details ?? "{}");
 		expect(payload).toMatchObject({
-			NAME: "Jev Test",
+			CATALOG_NAME: "Jev Test",
 			MODEL: "jev-custom-version",
 			MODEL_TYPE: "TYPESAFE",
 			MODEL_BRAND: "TYPESAFE",

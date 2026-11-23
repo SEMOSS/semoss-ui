@@ -181,9 +181,9 @@ export function ExpenseRoutineForm({
 										with the earlier messages of its thread.
 									</li>
 									<li>
-										Your assistant checks it against the
-										guideline documents you keep here, and
-										follows any example email threads you
+										The request is checked against the
+										guideline documents you keep here,
+										following any example email threads you
 										add (.eml or .msg) where an approver
 										pushed back, set conditions, or
 										declined.

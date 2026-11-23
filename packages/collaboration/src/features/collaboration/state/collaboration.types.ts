@@ -36,6 +36,19 @@ interface TopicPerson {
 	vip?: boolean;
 }
 
+/** A OneDrive or Teams file linked to a topic; the file stays where it is in Microsoft 365. */
+export interface TopicFile {
+	/** The file's id in its drive, which with the drive's id is how Microsoft 365 finds it again. */
+	itemId: string;
+	driveId?: string;
+	/** As Microsoft 365 named it when it was linked. */
+	name: string;
+	/** The app it was picked in. */
+	source: "onedrive" | "teams";
+	/** Opens it in its own app; as it was when the file was linked. */
+	webUrl?: string;
+}
+
 export interface Topic {
 	id: string;
 	name: string;
@@ -50,6 +63,8 @@ export interface Topic {
 	calendarSeries: string[];
 	/** Outlook folders the topic stands for; mail in them is filed under it. */
 	folders?: { id: string; path: string; origin?: string | null }[];
+	/** OneDrive and Teams files the owner linked to the topic. */
+	files?: TopicFile[];
 	stats: { threads: number; openItems: number; lastActivity: string };
 	isSample: boolean;
 }
@@ -122,6 +137,8 @@ export interface Thread {
 	participants: Participant[];
 	muted: boolean;
 	automated?: boolean;
+	/** You said a person writes here; the sort never marks it automated again. */
+	notAutomated?: boolean;
 	messageCount: number;
 	lastAt: string;
 	roomId: string | null;
@@ -137,6 +154,12 @@ export interface Thread {
 	conflict?: string;
 	source?: SourceReference;
 	isSample: boolean;
+}
+
+export interface Room {
+	id: string;
+	title?: string;
+	lastActivity: string;
 }
 
 export interface WorkItem {
@@ -159,6 +182,10 @@ export interface WorkItem {
 	closedReason?: string;
 	snoozeUntil?: string;
 	snoozedFrom?: "open" | "waiting";
+	/** Legacy single room; prefer rooms array for multiple chats. */
+	roomId?: string;
+	/** Multiple chat rooms linked to this work item, newest first. */
+	rooms?: Room[];
 	isSample: boolean;
 }
 
@@ -262,6 +289,16 @@ export interface Settings {
 	draftSignatureOn: boolean;
 	/** Minutes between background syncs while the app is closed; 0 turns them off. */
 	syncEveryMinutes: number;
+	/** Read-only: the server has an image model set for Digital Twin avatar options. */
+	avatarGeneration: boolean;
+	/** Read-only: the server's Microsoft sign in asks for the scope a meeting's transcript is read with. */
+	meetingTranscripts: boolean;
+	/** Hours between looks for new topics in mail no topic holds: 0 never, 24 daily, 72 every 3 days, 168 weekly. */
+	newTopicsEveryHours: number;
+	/** Whether a message in one conversation of a topic may close a step from another. */
+	closeAcrossThreads: boolean;
+	/** Hours between checks of the owner's Digital Twins for copies whose original changed: 0 never, 1, 4, 24 daily. */
+	twinCheckEveryHours: number;
 	version: number;
 }
 
@@ -411,6 +448,19 @@ export interface ThreadWorkspace {
 	meetings: { title: string; when: string; state: string }[];
 }
 
+/**
+ * The signed-in person's own Digital Twin: the seeded Collaboration agent, as
+ * they see it under their own name and picture.
+ */
+export interface MainTwin {
+	/** What the twin is called now: the name its owner gave it, or the server's default. */
+	name: string;
+	/** The picture its owner chose, as a data address; empty while their Microsoft photo stands in. */
+	avatar: string;
+	/** The seeded agent every chat with this twin runs on; empty when the server names none. */
+	agentId: string;
+}
+
 export interface CollaborationState {
 	deletedSourceIds?: string[];
 	today: string;
@@ -422,6 +472,8 @@ export interface CollaborationState {
 	accounts: Account[];
 	profile: Profile;
 	liveProfile: Profile | null;
+	/** Left out with no loaded data, and by a server that predates it. */
+	mainTwin?: MainTwin;
 	settings: Settings;
 	rules: Rule[];
 	sources: SourceStatus[];
@@ -502,6 +554,7 @@ export type CollaborationCommand =
 			included: boolean;
 	  }
 	| { type: "thread.mute"; threadId: string; muted: boolean }
+	| { type: "thread.notAutomated"; threadId: string; notAutomated: boolean }
 	| {
 			type: "person.save";
 			personId: string;
@@ -534,6 +587,7 @@ export type CollaborationCommand =
 			changes: Partial<Profile>;
 			target?: "sample" | "live";
 	  }
+	| { type: "review.reopen"; reviewId: string }
 	| { type: "settings.save"; changes: Partial<Settings> }
 	| { type: "rule.add"; rule: Omit<Rule, "id" | "createdBy" | "createdAt"> }
 	| { type: "rule.remove"; ruleId: string }
@@ -577,6 +631,11 @@ export type CollaborationCommand =
 			/** The style as the server holds it after learning, which the saver must not write back. */
 			type: "profile.style.server";
 			style: ProfileStyle;
+	  }
+	| {
+			/** The person's own Digital Twin as the server holds it after a save, which nothing writes back. */
+			type: "main-twin.server";
+			mainTwin: MainTwin;
 	  }
 	| { type: "snooze.expire" };
 

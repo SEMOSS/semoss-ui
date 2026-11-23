@@ -126,6 +126,18 @@ describe("MembersList with a host source", () => {
 		).toBeNull();
 	});
 
+	it("says when a member's access ends, for a host that words it", async () => {
+		const load = vi.fn<MembersListSource["load"]>().mockResolvedValue({
+			members: [{ ...ADA, access_ends: "Until Dec 31, 2026" }, GRACE],
+			total: 2,
+		});
+		render(<MembersList source={makeSource(load)} />);
+
+		expect(await screen.findByText("Until Dec 31, 2026")).toBeTruthy();
+		// only the member it was said for
+		expect(screen.getAllByText(/^Until /)).toHaveLength(1);
+	});
+
 	it("names its rows by the source's member label", async () => {
 		const load = vi
 			.fn<MembersListSource["load"]>()

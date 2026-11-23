@@ -45,6 +45,11 @@ export interface FileExplorerSecondaryAction {
 export interface FileExplorerItemActions {
 	actions?: (FileExplorerPrimaryAction | null)[];
 	secondaryActions?: (FileExplorerSecondaryAction | null)[];
+	/**
+	 * Fills the row, for an item the consumer sets apart from the rest, such
+	 * as a file it already holds. The row's own states show over it.
+	 */
+	isMarked?: boolean;
 }
 
 /** Items held for a paste, and how they got there. */
@@ -284,6 +289,8 @@ export interface FileExplorerOptions {
 	 * mutating context-menu entries. Browsing, search, and download remain.
 	 */
 	readOnly?: boolean;
+	/** Fired when a command or file operation explicitly reloads the listing. */
+	onRefresh?: () => void;
 	/** A file row was activated (directories are handled internally). */
 	onItemSelect?: (item: FileItem) => void;
 	/** Fired after a successful move or rename, with old and new paths. */
@@ -318,6 +325,12 @@ export interface FileExplorerOptions {
  */
 export interface FileExplorerNewFileOverlayProps {
 	mode: FileMode;
+	/**
+	 * The explorer's source, which creates in a host's own source, such as a
+	 * connector's drive, where the mode's asset tree would create in the
+	 * insight. Left out, the overlay uses the mode's.
+	 */
+	adapter?: FileExplorerAdapter;
 	/**
 	 * The directory to create in, trailing-slashed. This is the *initial*
 	 * destination only — the overlay may let the user retarget it, and reports

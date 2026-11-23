@@ -81,7 +81,7 @@ export const ViewAppPage = observer(() => {
 		// clear out the old app
 		setInsightId(undefined);
 
-		runPixel(`SetContext("${project.project_id}")`, "new")
+		runPixel(`LoadApp("${project.project_id}")`, "new")
 			.then((response) => {
 				setInsightId(response.insightId);
 				setBookmarked(Boolean(project.project_favorite));

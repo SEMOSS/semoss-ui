@@ -15,7 +15,10 @@ import { download, useInsight, usePixel } from "@semoss/sdk/react";
 import { toast, useDebouncedValue } from "@semoss/ui/next";
 import { downloadBlob } from "@semoss/utility/browser";
 import type { FileItem } from "./file.types";
-import { getFileExplorerAdapter } from "./file-explorer.adapters";
+import {
+	canCreateItems,
+	getFileExplorerAdapter,
+} from "./file-explorer.adapters";
 import type {
 	FileExplorerApi,
 	FileExplorerClipboard,
@@ -74,6 +77,7 @@ export const useFileExplorer = (
 		adapter: customAdapter,
 		initialPath,
 		readOnly = false,
+		onRefresh,
 		onItemSelect,
 		onItemsMoved,
 		onItemsDeleted,
@@ -98,6 +102,7 @@ export const useFileExplorer = (
 			searchScope: adapter.capabilities.searchScope !== false,
 			download: adapter.capabilities.download,
 			mutate: adapter.capabilities.mutate && !readOnly,
+			create: canCreateItems(adapter.capabilities) && !readOnly,
 			upload: adapter.capabilities.upload && !readOnly,
 			delete: adapter.capabilities.delete && !readOnly,
 		}),
@@ -379,6 +384,7 @@ export const useFileExplorer = (
 	 * the user collapsed and re-expanded it.
 	 */
 	const refresh = (directoryPaths?: string[]) => {
+		onRefresh?.();
 		if (debouncedSearch || !directoryPaths?.length) {
 			getFiles.refresh();
 			for (const reload of directoryRefreshRef.current.values()) {

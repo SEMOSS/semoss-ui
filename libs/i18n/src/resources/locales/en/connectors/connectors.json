@@ -60,7 +60,8 @@
 	"onedrive": {
 		"viewLabel": "What to Show",
 		"mine": "My Files",
-		"shared": "Shared with Me"
+		"shared": "Shared with Me",
+		"sharedNote": "Files shared with you are found through Microsoft's search, so one shared recently can take a while to appear here."
 	},
 	"mail": {
 		"folder": "Mail Folder",
@@ -106,6 +107,14 @@
 		"showQuoted": "Show Quoted Emails",
 		"hideQuoted": "Hide Quoted Emails",
 		"filters": "Filters",
+		"fromFilter": "From name or address",
+		"receivedAny": "Any Time",
+		"receivedWeek": "Past Week",
+		"receivedMonth": "Past Month",
+		"receivedQuarter": "Past 3 Months",
+		"receivedYear": "Past Year",
+		"hasAttachments": "Has Attachments",
+		"noFiltered": "No emails match these filters",
 		"pageError": "Could not load more messages.",
 		"emptyPage": "The mailbox returned an empty page. Try again.",
 		"picturesHidden": "Pictures from the web are hidden to protect your privacy.",

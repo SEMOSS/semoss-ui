@@ -37,14 +37,18 @@ interface NotebookPreviewBlockProps {
 	content: string;
 	/** True while the message chunk is still streaming (JSON may be incomplete). */
 	isLoading?: boolean;
-	/** Room store; interactive editing/running requires an active room. */
+	/**
+	 * Room store; the interactive notebook runs in its insight, so it needs a
+	 * room that has one.
+	 */
 	room?: RoomStore;
 }
 
 /**
  * A chat block that renders a fenced `.ipynb` payload as the interactive shared
  * Notebook (run cells, edit, save to the room). Falls back to a read-only JSON
- * view while streaming, when the JSON can't be parsed, or without a room.
+ * view while streaming, when the JSON can't be parsed, or without a room with
+ * an insight (a new chat's draft before it is prepared).
  */
 export const NotebookPreviewBlock = ({
 	content,
@@ -83,7 +87,10 @@ export const NotebookPreviewBlock = ({
 		}
 	}, [content, isLoading]);
 
-	const showNotebook = isValidNotebook && !!room && !isRaw;
+	// cells run in the room's insight, which a new chat's draft does not have
+	// until it is prepared, so it shows the JSON until then
+	const hasInsight = !!room && room.insightId !== "new";
+	const showNotebook = isValidNotebook && hasInsight && !isRaw;
 	const isRunning = showNotebook && notebookState.isRunning;
 
 	const openSaveDialog = () => {
@@ -154,7 +161,7 @@ export const NotebookPreviewBlock = ({
 						className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
 						variant="ghost"
 						size="sm"
-						disabled={!isValidNotebook || !room}
+						disabled={!isValidNotebook || !hasInsight}
 						onClick={() => setIsRaw((prev) => !prev)}
 					>
 						{isRaw ? (
@@ -224,6 +231,7 @@ export const NotebookPreviewBlock = ({
 							<Notebook
 								ref={notebookRef}
 								content={content}
+								insightId={room?.insightId ?? ""}
 								onStateChange={setNotebookState}
 							/>
 						</div>
@@ -251,6 +259,7 @@ export const NotebookPreviewBlock = ({
 							<Notebook
 								ref={fullViewNotebookRef}
 								content={content}
+								insightId={room?.insightId ?? ""}
 								onStateChange={() => {}}
 							/>
 						) : (

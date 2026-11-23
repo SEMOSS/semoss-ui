@@ -60,7 +60,8 @@
 	"onedrive": {
 		"viewLabel": "表示する内容",
 		"mine": "マイファイル",
-		"shared": "共有アイテム"
+		"shared": "共有アイテム",
+		"sharedNote": "共有されたファイルは Microsoft の検索で取得されるため、最近共有されたファイルがここに表示されるまで時間がかかることがあります。"
 	},
 	"mail": {
 		"folder": "メール フォルダー",
@@ -106,6 +107,14 @@
 		"showQuoted": "引用されたメールを表示",
 		"hideQuoted": "引用されたメールを非表示",
 		"filters": "フィルター",
+		"fromFilter": "差出人: 名前またはアドレス",
+		"receivedAny": "すべての期間",
+		"receivedWeek": "過去 1 週間",
+		"receivedMonth": "過去 1 か月",
+		"receivedQuarter": "過去 3 か月",
+		"receivedYear": "過去 1 年",
+		"hasAttachments": "添付ファイルあり",
+		"noFiltered": "これらのフィルターに一致するメールはありません",
 		"pageError": "追加のメッセージを読み込めませんでした。",
 		"emptyPage": "メールボックスから空のページが返されました。もう一度お試しください。",
 		"picturesHidden": "プライバシー保護のため、Web 上の画像は非表示になっています。",

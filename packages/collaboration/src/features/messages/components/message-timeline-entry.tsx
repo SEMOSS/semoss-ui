@@ -12,6 +12,7 @@ import {
 } from "../utils/message-presentation";
 import { MessageActions } from "./message-actions";
 import { MessagePart } from "./message-part";
+import { MessageTaskOutcome } from "./message-task-outcome";
 import { MessageTimestamp } from "./message-timestamp";
 import { MessageToolActivity } from "./message-tool-activity";
 
@@ -19,6 +20,7 @@ import { MessageToolActivity } from "./message-tool-activity";
 export function MessageTimelineEntry({
 	message,
 	agent,
+	agentImage,
 	parts = ownedMessageParts(message),
 	createdAt = message.createdAt,
 	userMessageTone = "accent",
@@ -27,6 +29,8 @@ export function MessageTimelineEntry({
 }: {
 	message: ConversationMessage;
 	agent: AgentConfiguration;
+	/** The agent's picture for its own messages; left out, they keep its initials. */
+	agentImage?: string;
 	/** Presentation parts may span several consecutive assistant messages. */
 	parts?: OwnedMessagePart[];
 	createdAt?: string;
@@ -44,6 +48,13 @@ export function MessageTimelineEntry({
 	const reply = message.delegationReply;
 	const request = message.delegationRequest;
 	const isDelegation = !!(reply || request);
+	// only the agent's side: the person's own messages never show a picture
+	const portrait = { name: agent.name, avatar: agentImage };
+	const outcomes = new Map<string, ConversationMessage["taskOutcome"]>();
+	for (const source of [message, ...parts.map((item) => item.message)]) {
+		if (source.role === "assistant" && source.taskOutcome)
+			outcomes.set(source.runId ?? source.id, source.taskOutcome);
+	}
 
 	return (
 		<article
@@ -52,7 +63,7 @@ export function MessageTimelineEntry({
 				"group/message relative flex min-w-0 gap-3",
 				!isWork && "mt-6 flex-col first:mt-0",
 				!isWork && isUser
-					? "ms-auto max-w-prose items-end"
+					? "ms-auto w-fit max-w-full items-end"
 					: !isBubble && "w-full",
 				isBubble &&
 					"w-fit @md/conversation:max-w-prose max-w-full flex-col",
@@ -61,26 +72,31 @@ export function MessageTimelineEntry({
 			aria-label={
 				isUser
 					? "Your message"
-					: `${reply?.assignee ?? request?.requester ?? agent.name}'s message`
+					: `Message from ${reply?.assignee ?? request?.requester ?? agent.name}`
 			}
 		>
 			{isFlat &&
 				!isDelegation &&
 				(leadingVisual ?? (
 					<AgentAvatar
-						agent={isUser ? { name: "You" } : agent}
+						agent={isUser ? { name: "You" } : portrait}
 						size="sm"
 					/>
 				))}
-			<div className="flex min-w-0 max-w-full flex-1 flex-col gap-2">
+			<div
+				className={cn(
+					"flex min-w-0 max-w-full flex-1 flex-col gap-2",
+					!isWork && isUser && "w-full max-w-prose",
+				)}
+			>
 				{!isDelegation && (!isUser || isFlat) && (
 					<div className="flex min-h-6 min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
 						{isBubble
 							? (leadingVisual ?? (
-									<AgentAvatar agent={agent} size="xs" />
+									<AgentAvatar agent={portrait} size="xs" />
 								))
 							: !isFlat && (
-									<AgentAvatar agent={agent} size="xs" />
+									<AgentAvatar agent={portrait} size="xs" />
 								)}
 						<Muted className="wrap-anywhere font-medium text-foreground text-sm">
 							{isUser ? "You" : agent.name}
@@ -150,6 +166,10 @@ export function MessageTimelineEntry({
 							),
 						)}
 				</div>
+				{!isUser &&
+					[...outcomes].map(([id, outcome]) => (
+						<MessageTaskOutcome key={id} outcome={outcome} />
+					))}
 				<MessageActions message={message} parts={parts} />
 				{!isBubble && ((!isWork && isUser) || isDelegation) && (
 					<MessageTimestamp

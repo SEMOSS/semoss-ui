@@ -1465,6 +1465,11 @@ const SAMPLE_STATE: CollaborationState = {
 		draftSignatureHtml: "",
 		draftSignatureOn: true,
 		syncEveryMinutes: 15,
+		avatarGeneration: false,
+		meetingTranscripts: false,
+		newTopicsEveryHours: 24,
+		closeAcrossThreads: true,
+		twinCheckEveryHours: 24,
 		version: 1,
 	},
 	rules: [

@@ -585,6 +585,58 @@ describe("SessionStore", () => {
 		expect(session.getSnapshot().status).toBe("AUTHENTICATED");
 	});
 
+	it("reports a read in progress, keeping the last status meanwhile", async () => {
+		let failConfig = (_error: Error) => {};
+		mockGetSystemConfig
+			.mockRejectedValueOnce(new Error("down"))
+			.mockImplementationOnce(
+				() =>
+					new Promise((_resolve, reject) => {
+						failConfig = reject;
+					}),
+			);
+		const { session } = createSession();
+
+		await session.initialize();
+		expect(session.getSnapshot()).toMatchObject({
+			status: "ERROR",
+			isChecking: false,
+		});
+
+		const retry = session.refresh();
+		expect(session.getSnapshot()).toMatchObject({
+			status: "ERROR",
+			isChecking: true,
+		});
+
+		failConfig(new Error("still down"));
+		await retry;
+		expect(session.getSnapshot()).toMatchObject({
+			status: "ERROR",
+			isChecking: false,
+		});
+	});
+
+	it("is not reading once signed in or out", async () => {
+		mockGetSystemConfig
+			.mockResolvedValueOnce(backendConfig({ NATIVE: "Ada" }))
+			.mockResolvedValue(backendConfig());
+		mockLogout.mockResolvedValue(true);
+		const { session } = createSession();
+
+		await session.initialize();
+		expect(session.getSnapshot()).toMatchObject({
+			status: "AUTHENTICATED",
+			isChecking: false,
+		});
+
+		await session.logout();
+		expect(session.getSnapshot()).toMatchObject({
+			status: "UNAUTHENTICATED",
+			isChecking: false,
+		});
+	});
+
 	it("offers the signed out config's sign ins after logout", async () => {
 		mockGetSystemConfig
 			.mockResolvedValueOnce(backendConfig({ NATIVE: "Ada" }))

@@ -10,10 +10,6 @@
 			"label": "الوكلاء",
 			"tooltip": "الوكلاء"
 		},
-		"allChats": {
-			"label": "جميع الدردشات",
-			"tooltip": "جميع الدردشات"
-		},
 		"agentsWorkspaces": {
 			"tooltip": "الوكلاء/مساحات العمل - الوصول إلى مساحات عملك أو إنشاء وكلاء ذكاء اصطناعي جدد."
 		},
@@ -51,9 +47,11 @@
 		"rename": "إعادة التسمية",
 		"delete": "حذف",
 		"openInline": "فتح مضمّن",
+		"showDetails": "عرض التفاصيل",
 		"minimize": "تصغير",
 		"maximize": "تكبير",
-		"close": "إغلاق"
+		"close": "إغلاق",
+		"roomActions": "إجراءات المحادثة"
 	},
 	"toasts": {
 		"failedToPin": "فشل تثبيت الغرفة",
@@ -86,7 +84,23 @@
 			},
 			"language": "اللغة",
 			"languageDescription": "اللغة التي يُعرض بها التطبيق.",
-			"version": "الإصدار {{version}}"
+			"version": "الإصدار {{version}}",
+			"newChat": {
+				"title": "المحادثة",
+				"default": "الافتراضي",
+				"model": "النموذج",
+				"modelDescription": "النموذج الذي تستخدمه المحادثة الجديدة.",
+				"unavailableModel": "نموذج غير متاح",
+				"mode": "الوضع",
+				"modeDescription": "هل تبدأ المحادثة الجديدة كمحادثة أم مع وكيل.",
+				"modes": {
+					"chat": "محادثة",
+					"agent": "وكيل"
+				},
+				"agent": "الوكيل",
+				"agentDescription": "الوكيل الذي تشغّله المحادثة الجديدة في وضع الوكيل.",
+				"saveError": "تعذّر حفظ تفضيلك: {{message}}"
+			}
 		}
 	},
 	"download": {
@@ -96,5 +110,40 @@
 		"pdf": "مستند PDF",
 		"success": "تم تنزيل المحادثة بتنسيق {{format}}",
 		"failed": "تعذر تنزيل المحادثة"
+	},
+	"chats": "المحادثات",
+	"view": {
+		"button": "فرز المحادثات وتجميعها",
+		"customized": "ترتيب مخصص",
+		"sortBy": "الفرز حسب",
+		"groupBy": "التجميع حسب",
+		"sort": {
+			"recent": "الأحدث",
+			"oldest": "الأقدم",
+			"nameAsc": "الاسم (أ–ي)",
+			"nameDesc": "الاسم (ي–أ)"
+		},
+		"group": {
+			"date": "التاريخ",
+			"agent": "الوكيل"
+		}
+	},
+	"groups": {
+		"all": "كل المحادثات",
+		"noAgent": "بدون وكيل",
+		"unnamedAgent": "وكيل بلا عنوان",
+		"openAgent": "فتح {{name}} في علامة تبويب جديدة"
+	},
+	"searchChats": {
+		"label": "البحث في المحادثات",
+		"title": "البحث في المحادثات",
+		"description": "اعثر على محادثة باسمها أو بما قيل فيها.",
+		"placeholder": "البحث في المحادثات…",
+		"loading": "جارٍ البحث…",
+		"empty": "لا توجد محادثات تطابق «{{query}}»",
+		"recent": "الأخيرة",
+		"allAgents": "كل الوكلاء",
+		"results": "النتائج",
+		"matchedMessage": "مطابقة في الرسائل"
 	}
 }

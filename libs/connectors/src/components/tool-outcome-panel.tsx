@@ -7,12 +7,13 @@ import {
 	Muted,
 	Spinner,
 } from "@semoss/ui/next";
+import { safeHttpsUrl } from "@semoss/utility/browser";
 
 /** Props for {@link ToolOutcomePanel}. */
 interface ToolOutcomePanelProps {
 	/** What the user did, such as `Saved as a draft in Gmail.` */
 	message: string;
-	/** Where the result opens in its app. */
+	/** Where the result opens in its app. Shown only when it is an absolute HTTPS URL. */
 	webUrl?: string;
 	/** The app it opens in, such as `Gmail`. */
 	appName: string;
@@ -38,6 +39,7 @@ export const ToolOutcomePanel = ({
 	onReturn,
 }: ToolOutcomePanelProps) => {
 	const { t } = useTranslation("connectors");
+	const href = safeHttpsUrl(webUrl);
 	return (
 		<div className="flex flex-col gap-3">
 			<output className="flex items-start gap-2 text-sm">
@@ -56,10 +58,10 @@ export const ToolOutcomePanel = ({
 				</Alert>
 			) : null}
 			<div className="flex flex-wrap justify-end gap-2">
-				{webUrl ? (
+				{href ? (
 					<Button variant="ghost" size="sm" asChild>
 						<a
-							href={webUrl}
+							href={href}
 							target="_blank"
 							rel="noopener noreferrer"
 						>

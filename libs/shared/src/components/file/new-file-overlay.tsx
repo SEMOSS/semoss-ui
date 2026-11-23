@@ -32,7 +32,10 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import { getFileExplorerAdapter } from "./file-explorer.adapters";
+import {
+	canCreateItems,
+	getFileExplorerAdapter,
+} from "./file-explorer.adapters";
 import type {
 	FileExplorerNewFileOverlayProps,
 	NewFileAction,
@@ -85,6 +88,7 @@ const ACTION_LABEL_KEYS: Record<NewFileAction, string> = {
  */
 export const NewFileOverlay: React.FC<FileExplorerNewFileOverlayProps> = ({
 	mode,
+	adapter: explorerAdapter,
 	path,
 	open,
 	action,
@@ -94,14 +98,17 @@ export const NewFileOverlay: React.FC<FileExplorerNewFileOverlayProps> = ({
 	const { t } = useTranslation("common");
 	const fileInputId = useId();
 	const destinationInputId = useId();
-	const adapter = useMemo(() => getFileExplorerAdapter(mode), [mode]);
+	const adapter = useMemo(
+		() => explorerAdapter ?? getFileExplorerAdapter(mode),
+		[explorerAdapter, mode],
+	);
 
 	const availableActions = useMemo(() => {
 		const actions: NewFileAction[] = [];
 		if (adapter.capabilities.upload) {
 			actions.push("upload");
 		}
-		if (adapter.capabilities.mutate) {
+		if (canCreateItems(adapter.capabilities)) {
 			actions.push("add_file", "add_directory");
 		}
 		return actions;

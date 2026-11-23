@@ -12,9 +12,13 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { HttpError } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
 import { MonacoEditor, type monaco, type OnMount } from "@semoss/shared";
 import {
+	Alert,
+	AlertDescription,
+	AlertTitle,
 	Button,
 	ContextMenu,
 	ContextMenuContent,
@@ -22,6 +26,12 @@ import {
 	ContextMenuSeparator,
 	ContextMenuShortcut,
 	ContextMenuTrigger,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
 	Label,
 	Muted,
 	Spinner,
@@ -32,6 +42,7 @@ import {
 	toast,
 	useTheme,
 } from "@semoss/ui/next";
+import { isRecord } from "@semoss/utility/object";
 import {
 	updateDatabaseSmssProperties,
 	updateProjectSmssProperties,
@@ -54,6 +65,14 @@ const IS_MAC =
 const MODIFIER_KEY = IS_MAC ? "Cmd" : "Ctrl";
 const REPLACE_SHORTCUT = IS_MAC ? "Cmd+Alt+F" : "Ctrl+H";
 
+/** What reading an engine's or project's SMSS returns. */
+interface SmssCopy {
+	/** The SMSS text, with its secrets masked */
+	smss: string;
+	/** The hash of the SMSS as it was read, which a save sends back */
+	smssHash: string;
+}
+
 interface UpdateSMSSFormProps {
 	/**
 	 * Type of setting
@@ -74,9 +93,11 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 	const [readOnly, setReadOnly] = useState(true);
 	const [wordWrap, setWordWrap] = useState(false);
 	const [contentHeight, setContentHeight] = useState<number | null>(null);
+	const [hasConflict, setHasConflict] = useState(false);
+	const [isConfirmingLoadLatest, setIsConfirmingLoadLatest] = useState(false);
 	const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
 
-	const getSMSS = usePixel<string>(
+	const getSMSS = usePixel<SmssCopy | undefined>(
 		type === "DATABASE" ||
 			type === "STORAGE" ||
 			type === "MODEL" ||
@@ -94,12 +115,16 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 	);
 
 	useEffect(() => {
-		if (getSMSS.status !== "SUCCESS") {
+		if (getSMSS.status !== "SUCCESS" || !getSMSS.data) {
 			return;
 		}
 
-		setValue(getSMSS.data);
+		setValue(getSMSS.data.smss);
 	}, [getSMSS.status, getSMSS.data]);
+
+	const savedSmss =
+		getSMSS.status === "SUCCESS" ? getSMSS.data?.smss : undefined;
+	const hasUnsavedEdits = savedSmss !== undefined && value !== savedSmss;
 
 	// Sizes the loading and error placeholders, and the editor until it reports
 	// what it actually laid out. Counts logical lines, so it undercounts once
@@ -236,12 +261,27 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 	 * @desc hit endpoint to update smss file
 	 */
 	const updateSMSSProperties = async () => {
+		if (getSMSS.status !== "SUCCESS" || !getSMSS.data) {
+			return;
+		}
+
+		const { smssHash } = getSMSS.data;
 		try {
 			let response = null;
 			if (type === "PROJECT") {
-				response = await updateProjectSmssProperties(id, value);
+				response = await updateProjectSmssProperties(
+					id,
+					value,
+					smssHash,
+					adminMode,
+				);
 			} else {
-				response = await updateDatabaseSmssProperties(id, value);
+				response = await updateDatabaseSmssProperties(
+					id,
+					value,
+					smssHash,
+					adminMode,
+				);
 			}
 
 			if (!response) {
@@ -250,6 +290,7 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 
 			if (response.data.success) {
 				setReadOnly(true);
+				setHasConflict(false);
 				// refresh it
 				getSMSS.refresh();
 
@@ -258,8 +299,41 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 				toast.error("Unable to update SMSS Properties");
 			}
 		} catch (error) {
+			if (
+				error instanceof HttpError &&
+				error.status === 409 &&
+				isRecord(error.data) &&
+				error.data.errorCode === "SMSS_CHANGED"
+			) {
+				setHasConflict(true);
+				return;
+			}
+
 			toast.error(`${error}: Unable to update SMSS Properties`);
 		}
+	};
+
+	/**
+	 * Reads the SMSS again. The editor takes the latest text once it lands, so
+	 * any unsaved edits are dropped.
+	 */
+	const loadLatest = () => {
+		setIsConfirmingLoadLatest(false);
+		setHasConflict(false);
+		getSMSS.refresh();
+	};
+
+	/**
+	 * Loads the latest SMSS, asking first when the editor holds unsaved edits
+	 * that loading would drop.
+	 */
+	const handleLoadLatest = () => {
+		if (hasUnsavedEdits) {
+			setIsConfirmingLoadLatest(true);
+			return;
+		}
+
+		loadLatest();
 	};
 
 	return (
@@ -271,7 +345,7 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 							aria-label={"Refresh"}
 							variant="ghost"
 							size="icon-sm"
-							onClick={() => getSMSS.refresh()}
+							onClick={handleLoadLatest}
 						>
 							<RefreshCwIcon className="size-3" />
 						</Button>
@@ -307,8 +381,8 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 							size="icon-sm"
 							onClick={() => {
 								const updated = !readOnly;
-								if (updated) {
-									setValue(getSMSS.data);
+								if (updated && savedSmss !== undefined) {
+									setValue(savedSmss);
 								}
 								setReadOnly(!readOnly);
 							}}
@@ -326,14 +400,12 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 						<span
 							className="inline-flex"
 							tabIndex={
-								readOnly || getSMSS.data === value
-									? 0
-									: undefined
+								readOnly || !hasUnsavedEdits ? 0 : undefined
 							}
 						>
 							<Button
 								aria-label={"Update SMSS Properties"}
-								disabled={readOnly || getSMSS.data === value}
+								disabled={readOnly || !hasUnsavedEdits}
 								size="sm"
 								onClick={() => {
 									updateSMSSProperties();
@@ -345,7 +417,7 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 						</span>
 					</TooltipTrigger>
 					<TooltipContent>
-						{readOnly || getSMSS.data === value
+						{readOnly || !hasUnsavedEdits
 							? readOnly
 								? "You do not have permission to update these properties"
 								: "No changes to save"
@@ -353,6 +425,31 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 					</TooltipContent>
 				</Tooltip>
 			</div>
+
+			{hasConflict && (
+				<div className="border-input border-b p-4">
+					<Alert variant="destructive">
+						<AlertTitle>
+							This SMSS changed since you opened it
+						</AlertTitle>
+						<AlertDescription>
+							<p>
+								Someone saved a newer version after you opened
+								it, so your changes were not saved. Load the
+								latest version to keep editing.
+							</p>
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={handleLoadLatest}
+							>
+								Load Latest
+							</Button>
+						</AlertDescription>
+					</Alert>
+				</div>
+			)}
 
 			<Suspense
 				fallback={
@@ -496,6 +593,38 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 					</ContextMenu>
 				)}
 			</Suspense>
+
+			<Dialog
+				open={isConfirmingLoadLatest}
+				onOpenChange={setIsConfirmingLoadLatest}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle className="font-medium text-base leading-6">
+							Load the latest SMSS?
+						</DialogTitle>
+						<DialogDescription>
+							Your unsaved changes will be lost.
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => setIsConfirmingLoadLatest(false)}
+						>
+							Cancel
+						</Button>
+						<Button
+							type="button"
+							variant="destructive"
+							onClick={loadLatest}
+						>
+							Load Latest
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 };

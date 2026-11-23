@@ -2,10 +2,12 @@ import { MessageCircleIcon, SearchIcon, UsersIcon } from "lucide-react";
 import type { Ref } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { Button, Muted } from "@semoss/ui/next";
+import { ConnectorItemAvatar } from "../../components/connector-item-avatar";
 import { ConnectorItemRow } from "../../components/connector-item-row";
 import { ConnectorList } from "../../components/connector-list";
 import { ConnectorViewerStatus } from "../../components/connector-viewer-status";
 import { formatListDate } from "../../core/connector.format";
+import type { ConnectorPersonPhotoProps } from "../../core/connector.types";
 import type { ConnectorErrorInfo } from "../../core/connector-pixel";
 import type { ConnectorQuery } from "../../core/use-connector-query";
 import type {
@@ -15,7 +17,7 @@ import type {
 import type { TeamsChat, TeamsMessageSearchPage } from "../microsoft.types";
 
 /** Props for {@link TeamsMessageSearchList}. */
-interface TeamsMessageSearchListProps {
+interface TeamsMessageSearchListProps extends ConnectorPersonPhotoProps {
 	/** What was searched, for the empty state. */
 	search: string;
 	/** The read of the messages found. */
@@ -46,6 +48,8 @@ interface TeamsMessageSearchListProps {
 	listRef?: Ref<HTMLUListElement>;
 	/** The app's name, for the messages. */
 	serviceName: string;
+	/** `page` leads each row with who wrote its message, as the chat list does on a page. */
+	presentation?: "default" | "page";
 }
 
 /**
@@ -67,6 +71,8 @@ export const TeamsMessageSearchList = ({
 	onSignIn,
 	listRef,
 	serviceName,
+	presentation = "default",
+	getPersonPhotoUrl,
 }: TeamsMessageSearchListProps) => {
 	const { t, i18n } = useTranslation("connectors");
 	const chatsById = new Map(chats.map((chat) => [chat.id, chat]));
@@ -109,7 +115,22 @@ export const TeamsMessageSearchList = ({
 							<ConnectorItemRow
 								key={itemKey}
 								itemKey={itemKey}
-								icon={<Icon aria-hidden className="size-4" />}
+								icon={
+									presentation === "page" ? (
+										<ConnectorItemAvatar
+											name={author}
+											photoUrl={
+												hit.fromEmail
+													? getPersonPhotoUrl?.({
+															email: hit.fromEmail,
+														})
+													: undefined
+											}
+										/>
+									) : (
+										<Icon aria-hidden className="size-4" />
+									)
+								}
 								title={title}
 								description={
 									chat.displayName
@@ -135,6 +156,7 @@ export const TeamsMessageSearchList = ({
 									serviceName: t("services.teams"),
 									webUrl: chat.webUrl ?? hit.webUrl,
 									saveLabel: saver.saveLabel,
+									savedLabel: saver.savedLabel(request.key),
 									isBusy: isBusy,
 									onAddToContext: saver.addToContext
 										? () => saver.addToContext?.(request)

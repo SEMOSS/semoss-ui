@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useInsight } from "@semoss/sdk/react";
+import { useSession } from "@semoss/sdk/react";
 import { Spinner, useTheme } from "@semoss/ui/next";
 import { LoginForm } from "./form/login-form";
 
@@ -20,29 +20,37 @@ interface LoginPageProps {
 	imageSrcDark?: string;
 
 	/**
-	 * Content rendered once the user is authorized — i.e. the actual app.
-	 * While not authorized, the login screen is shown instead.
+	 * Content rendered once the user is signed in — i.e. the actual app.
+	 * While signed out, or when the session could not be read, the login
+	 * screen is shown instead.
 	 */
 	children: ReactNode;
 }
 
 /**
  * Drop-in auth gate. Wrap your app's root with this and the user will see the
- * shared login form until `useInsight().isAuthorized` flips to true, at which
- * point the wrapped children render.
+ * shared login form until the SDK's session is `AUTHENTICATED`, at which point
+ * the wrapped children render. It reads `useSession((state) => state.status)`:
+ * a spinner while `INITIALIZING`, the form when `UNAUTHENTICATED` or `ERROR`.
  *
- * Must be mounted inside an `<InsightProvider>` (so `LoginForm` can call
- * `actions.login(...)`).
+ * It needs no `<InsightProvider>`. Call `Session.initialize()` once from the
+ * app's entry point, and mount the app's workspace `<InsightProvider>` inside
+ * the gate so its insight is made after sign in.
  *
  * Example:
  *
- *     <InsightProvider>
- *       <ThemeProvider defaultTheme="light" storageKey="...">
- *         <LoginPage branding={<AppLogo />} imageSrc={...}>
+ *     // main.tsx
+ *     void Session.initialize();
+ *     root.render(<App />);
+ *
+ *     // app.tsx
+ *     <ThemeProvider defaultTheme="light" storageKey="...">
+ *       <LoginPage branding={<AppLogo />} imageSrc={...}>
+ *         <InsightProvider>
  *           <YourApp />
- *         </LoginPage>
- *       </ThemeProvider>
- *     </InsightProvider>
+ *         </InsightProvider>
+ *       </LoginPage>
+ *     </ThemeProvider>
  */
 export const LoginPage = ({
 	branding,
@@ -50,12 +58,12 @@ export const LoginPage = ({
 	imageSrcDark,
 	children,
 }: LoginPageProps) => {
-	const { isInitialized, isAuthorized } = useInsight();
+	const status = useSession((state) => state.status);
 	const { theme: colorMode } = useTheme();
 
-	// While the insight is still bootstrapping (figuring out auth state)
-	// show a centered spinner so the page doesn't flash login + then app.
-	if (!isInitialized) {
+	// While the session is still being read show a centered spinner so the
+	// page doesn't flash login + then app.
+	if (status === "INITIALIZING") {
 		return (
 			<div className="flex h-svh w-full items-center justify-center">
 				<Spinner />
@@ -63,7 +71,7 @@ export const LoginPage = ({
 		);
 	}
 
-	if (isAuthorized) {
+	if (status === "AUTHENTICATED") {
 		return <>{children}</>;
 	}
 

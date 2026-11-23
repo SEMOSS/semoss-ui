@@ -9,6 +9,10 @@ import { RoomThread } from "./room-thread";
 
 interface RoomConversationProps {
 	agent: AgentConfiguration;
+	/** The agent's image for the header; left out for a room with no agent of its own. */
+	agentImage?: string;
+	/** The picture on each of the agent's messages; left out, they keep its initials. */
+	messageImage?: string;
 	title: string;
 	conversationId: string;
 	thread: RoomViewProps["thread"];
@@ -23,6 +27,10 @@ interface RoomConversationProps {
 	headerActions?: ReactNode;
 	/** The chat's topic chips, beside its title. */
 	headerTopics?: ReactNode;
+	/** Who the chat is with, under its title. */
+	headerAgentLine?: ReactNode;
+	/** That line in full and what the agent can reach, in the title's details. */
+	headerAgentDetails?: ReactNode;
 	transcriptActions?: ReactNode;
 	status: ReactNode;
 	composer: ReactNode;
@@ -34,6 +42,8 @@ interface RoomConversationProps {
 /** Shared room view for direct rooms, saved chats, and source threads. */
 export function RoomConversation({
 	agent,
+	agentImage,
+	messageImage,
 	title,
 	conversationId,
 	thread,
@@ -46,6 +56,8 @@ export function RoomConversation({
 	onToggleToolWorkbench,
 	headerActions,
 	headerTopics,
+	headerAgentLine,
+	headerAgentDetails,
 	transcriptActions,
 	status,
 	composer,
@@ -74,7 +86,10 @@ export function RoomConversation({
 			{!isLanding && (
 				<RoomHeader
 					agent={agent}
+					agentImage={agentImage}
 					title={title}
+					agentLine={headerAgentLine}
+					agentDetails={headerAgentDetails}
 					isToolWorkbenchOpen={isToolWorkbenchOpen}
 					showToolWorkbench={showToolWorkbench}
 					workbenchTriggerId={roomWorkbenchTriggerId(conversationId)}
@@ -91,6 +106,7 @@ export function RoomConversation({
 			>
 				<RoomThread
 					agent={agent}
+					agentImage={messageImage}
 					thread={thread}
 					isLoadingHistory={isLoadingHistory}
 					roomId={conversationId}

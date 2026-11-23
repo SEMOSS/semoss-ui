@@ -38,6 +38,25 @@ export const isRecord = (value: unknown): value is Record<string, unknown> =>
 	typeof value === "object" && value !== null && !Array.isArray(value);
 
 /**
+ * Whether a value is an object literal or a null-prototype record, and not an
+ * array, map, set, date, or class instance. Spreading such a value copies all
+ * of it.
+ *
+ * @param value - The value to check.
+ * @returns True for a plain object.
+ */
+export const isPlainObject = (
+	value: unknown,
+): value is Record<PropertyKey, unknown> => {
+	if (typeof value !== "object" || value === null) {
+		return false;
+	}
+
+	const prototype = Object.getPrototypeOf(value);
+	return prototype === Object.prototype || prototype === null;
+};
+
+/**
  * Whether two values are the same, or plain records or arrays with the same
  * prototype and entries. Entries and non-plain objects are compared by
  * identity, not deeply.

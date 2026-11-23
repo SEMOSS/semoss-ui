@@ -16,11 +16,19 @@ import {
 } from "@/features/collaboration/state/collaboration-session.context";
 import type { ConversationMessage } from "@/features/messages/types/message";
 import type { Session } from "@/types/session";
+import { showFileOnOpen } from "../room-file-to-show";
 import { RoomSession } from "../room-session";
 import { RoomWorkspace } from "./room-workspace";
 
 // what the mocked composer sends
 const composerText = vi.hoisted(() => ({ value: "" }));
+
+// one actions object, as the provider gives; the room reads through it what its agent is
+const insight = vi.hoisted(() => ({ actions: { run: vi.fn() } }));
+vi.mock("@semoss/sdk/react", async (original) => ({
+	...(await original<typeof import("@semoss/sdk/react")>()),
+	useInsight: () => insight,
+}));
 
 vi.mock("@semoss/i18n", async (original) => ({
 	...(await original<typeof import("@semoss/i18n")>()),
@@ -83,20 +91,32 @@ vi.mock("@/features/tools/components/tool-workbench", () => ({
 	),
 }));
 
+// the header and the thread show what the room hands them about its agent
 vi.mock("./room-header", () => ({
 	RoomHeader: ({
 		onToggleToolWorkbench,
-	}: {
-		onToggleToolWorkbench: () => void;
-	}) => (
-		<button type="button" onClick={onToggleToolWorkbench}>
-			Toggle workbench
-		</button>
+		agentImage,
+		agentLine,
+		agentDetails,
+	}: ComponentProps<typeof import("./room-header")["RoomHeader"]>) => (
+		<>
+			<button type="button" onClick={onToggleToolWorkbench}>
+				Toggle workbench
+			</button>
+			<output aria-label="Header picture">{agentImage}</output>
+			<output aria-label="Header line">{agentLine}</output>
+			<output aria-label="Header details">{agentDetails}</output>
+		</>
 	),
 }));
 
 vi.mock("./room-thread", () => ({
-	RoomThread: () => <div>Thread</div>,
+	RoomThread: ({ agentImage }: { agentImage?: string }) => (
+		<>
+			<div>Thread</div>
+			<output aria-label="Message picture">{agentImage}</output>
+		</>
+	),
 }));
 
 vi.mock("./room-run-status", () => ({
@@ -187,6 +207,9 @@ const defaultProps: ComponentProps<typeof RoomWorkspace> = {
 
 // jsdom has no matchMedia; useIsMobile reads it to keep auto-opened decks off phones
 beforeEach(() => {
+	// the read of what the agent is stays out unless a test answers it
+	insight.actions.run.mockReset();
+	insight.actions.run.mockReturnValue(new Promise(() => undefined));
 	layoutStore.getState().layout.actions.loadSnapshot({
 		tree: {
 			type: "tabset",
@@ -348,6 +371,24 @@ describe("RoomWorkspace", () => {
 		expect(workbenchState.openFile).toHaveBeenCalledWith(
 			"/Q3 (draft).pptx",
 			"Q3 (draft).pptx",
+		);
+	});
+
+	it("shows the file a room was opened for, once, when the room comes on screen", () => {
+		showFileOnOpen("another-room", {
+			path: "other.docx",
+			name: "other.docx",
+		});
+		showFileOnOpen(session.id, {
+			path: "Q1 Review.pptx",
+			name: "Q1 Review.pptx",
+		});
+		const { rerender } = render(<RoomWorkspace {...defaultProps} />);
+		rerender(<RoomWorkspace {...defaultProps} thread={[]} />);
+		expect(workbenchState.openFile).toHaveBeenCalledTimes(1);
+		expect(workbenchState.openFile).toHaveBeenCalledWith(
+			"Q1 Review.pptx",
+			"Q1 Review.pptx",
 		);
 	});
 
@@ -703,4 +744,195 @@ it("keeps reconnect available for an unconfirmed send even when the run has fail
 	fireEvent.click(screen.getByRole("button", { name: "Reconnect" }));
 	expect(reconnect).toHaveBeenCalledOnce();
 	owner.dispose();
+});
+
+describe("who the room is with", () => {
+	const TWIN_ROW =
+		'MyProjects(projectType=["WORKSPACE"], metaFilters=[{"digital_twin":["true"]}], noMeta=[true], project=["agent-1"], limit=[1]);';
+	const MINE_ROW =
+		'MyProjects(projectType=["WORKSPACE"], metaFilters=[{"digital_twin":["true"]}], noMeta=[true], project=["agent-1"], limit=[1], createdByMe=[true]);';
+	/** Answer the two reads that tell what the room's agent is. */
+	const answerTwinRead = (rows: Record<string, unknown[]>) =>
+		insight.actions.run.mockImplementation(async (pixel: string) => ({
+			pixelReturn: [
+				{ output: rows[pixel] ?? [], operationType: ["OPERATION"] },
+			],
+		}));
+	const row = (owner?: string) => ({
+		project_id: "agent-1",
+		project_name: "Renewals Twin",
+		digital_twin_owner_name: owner ?? null,
+	});
+	const withTwin = (name: string, avatar: string) => ({
+		...createInitialCollaborationState(),
+		mainTwin: { name, avatar, agentId: "collaboration-agent" },
+	});
+
+	it.each(["", "collaboration-agent"])(
+		"shows the person's own twin for a room the seeded agent runs (agent id %j), with no read",
+		async (agentId) => {
+			render(
+				<CollaborationSessionProvider
+					initialState={withTwin(
+						"Robin's Digital Twin",
+						"data:image/png;base64,AAAA",
+					)}
+				>
+					<RoomWorkspace
+						{...defaultProps}
+						// the room session names the agent as the chat does
+						agent={{ ...agent, name: "Robin's Digital Twin" }}
+						session={{ ...session, agentId }}
+					/>
+				</CollaborationSessionProvider>,
+			);
+			expect(screen.getByLabelText("Header picture")).toHaveTextContent(
+				"data:image/png;base64,AAAA",
+			);
+			expect(screen.getByLabelText("Message picture")).toHaveTextContent(
+				"data:image/png;base64,AAAA",
+			);
+			expect(screen.getByLabelText("Header line")).toHaveTextContent(
+				"Robin's Digital Twin · Private to you",
+			);
+			// its sentence opens with "Private to you", so its name stands alone over it
+			expect(screen.getByLabelText("Header details")).toHaveTextContent(
+				/^Robin's Digital TwinPrivate to you\. Works with your mail, Teams, calendar, files, work and routines\.$/,
+			);
+			// the read that had nothing to ask settles on its own
+			await act(async () => undefined);
+			expect(insight.actions.run).not.toHaveBeenCalled();
+		},
+	);
+
+	it("keeps another agent's own image and no message picture, and says what it is once one read has told", async () => {
+		answerTwinRead({ [TWIN_ROW]: [row("Dana Ortiz")] });
+		render(
+			<CollaborationSessionProvider
+				initialState={withTwin("Robin's Digital Twin", "")}
+			>
+				<RoomWorkspace
+					{...defaultProps}
+					agent={{ ...agent, name: "Renewals Twin" }}
+				/>
+			</CollaborationSessionProvider>,
+		);
+		expect(screen.getByLabelText("Header picture")).toHaveTextContent(
+			"project-agent-1/projectImage/download",
+		);
+		expect(screen.getByLabelText("Message picture")).toBeEmptyDOMElement();
+		// until the read lands it is an AI agent, and no more is said
+		expect(screen.getByLabelText("Header line")).toHaveTextContent(
+			"Renewals Twin · AI agent",
+		);
+		expect(screen.getByLabelText("Header details")).toHaveTextContent(
+			/^Renewals Twin · AI agent$/,
+		);
+		await waitFor(() =>
+			expect(screen.getByLabelText("Header line")).toHaveTextContent(
+				"Renewals Twin · Shared by Dana Ortiz",
+			),
+		);
+		// the details say the line in full, then what the twin can reach
+		expect(screen.getByLabelText("Header details")).toHaveTextContent(
+			/^Renewals Twin · Shared by Dana OrtizIt answers only from what its owner shared with it\./,
+		);
+		expect(
+			insight.actions.run.mock.calls.map(([pixel]) => pixel).sort(),
+		).toEqual([TWIN_ROW, MINE_ROW].sort());
+	});
+
+	it("says a twin the person shares is theirs, and any other agent what it can use", async () => {
+		answerTwinRead({ [TWIN_ROW]: [row()], [MINE_ROW]: [row()] });
+		const { unmount } = render(<RoomWorkspace {...defaultProps} />);
+		await waitFor(() =>
+			expect(screen.getByLabelText("Header line")).toHaveTextContent(
+				"Research agent · A twin you share",
+			),
+		);
+		expect(screen.getByLabelText("Header details")).toHaveTextContent(
+			"It answers only from the copies you gave it.",
+		);
+		unmount();
+
+		answerTwinRead({});
+		render(<RoomWorkspace {...defaultProps} />);
+		await waitFor(() =>
+			expect(screen.getByLabelText("Header details")).toHaveTextContent(
+				"It can use your mail, Teams, calendar, files and work in this chat.",
+			),
+		);
+		expect(screen.getByLabelText("Header line")).toHaveTextContent(
+			"Research agent · AI agent",
+		);
+	});
+
+	it("says nothing of the agent before it while a room's new agent is still being read", async () => {
+		answerTwinRead({ [TWIN_ROW]: [row("Dana Ortiz")] });
+		const view = render(<RoomWorkspace {...defaultProps} />);
+		await waitFor(() =>
+			expect(screen.getByLabelText("Header line")).toHaveTextContent(
+				"Research agent · Shared by Dana Ortiz",
+			),
+		);
+		// the room is given another agent, whose read stays out
+		insight.actions.run.mockReturnValue(new Promise(() => undefined));
+		view.rerender(
+			<RoomWorkspace
+				{...defaultProps}
+				agent={{ ...agent, name: "Planning agent" }}
+				session={{ ...session, agentId: "agent-2" }}
+			/>,
+		);
+		expect(screen.getByLabelText("Header line")).toHaveTextContent(
+			"Planning agent · AI agent",
+		);
+		expect(screen.getByLabelText("Header details")).toHaveTextContent(
+			/^Planning agent · AI agent$/,
+		);
+	});
+
+	it("says only that it is an AI agent when the read fails, and in a delegated task's room", async () => {
+		insight.actions.run.mockRejectedValue(new Error("Offline"));
+		const { unmount } = render(<RoomWorkspace {...defaultProps} />);
+		await waitFor(() =>
+			expect(insight.actions.run).toHaveBeenCalledTimes(2),
+		);
+		await act(async () => undefined);
+		expect(screen.getByLabelText("Header line")).toHaveTextContent(
+			"Research agent · AI agent",
+		);
+		expect(screen.getByLabelText("Header details")).toHaveTextContent(
+			/^Research agent · AI agent$/,
+		);
+		unmount();
+
+		// the seeded agent runs it, yet a delegated task is not a chat with the person's own twin
+		insight.actions.run.mockClear();
+		const owner = new RoomSession("delegation-test", "room-1");
+		render(
+			<RoomWorkspace
+				{...defaultProps}
+				session={{ ...session, agentId: "" }}
+				roomSnapshot={{
+					...owner.getSnapshot(),
+					options: {
+						...owner.getSnapshot().options,
+						delegation_action_id: "action-1",
+					} as never,
+				}}
+			/>,
+		);
+		expect(screen.getByLabelText("Header line")).toHaveTextContent(
+			"Research agent · AI agent",
+		);
+		expect(screen.getByLabelText("Header picture")).toBeEmptyDOMElement();
+		expect(screen.getByLabelText("Message picture")).toBeEmptyDOMElement();
+		expect(screen.getByLabelText("Header details")).toHaveTextContent(
+			/^Research agent · AI agent$/,
+		);
+		await act(async () => undefined);
+		expect(insight.actions.run).not.toHaveBeenCalled();
+		owner.dispose();
+	});
 });

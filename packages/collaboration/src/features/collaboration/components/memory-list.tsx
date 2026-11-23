@@ -54,6 +54,10 @@ export function MemoryRow({
 	const [isEditing, setIsEditing] = useState(false);
 	const isSuggestion = memory.state === "suggested";
 	const isLearned = memory.state === "active" && !memory.confirmed;
+	// the memory that keeping a suggested change retires
+	const replaced = isSuggestion
+		? state.memories.find((other) => other.id === memory.replacesId)
+		: undefined;
 	const resolve = (
 		action: "accept" | "confirm" | "dismiss" | "restore" | "reopen",
 	) => dispatch({ type: "memory.resolve", memoryId: memory.id, action });
@@ -75,6 +79,11 @@ export function MemoryRow({
 				/>
 			) : (
 				<P className="break-words text-sm leading-6">{memory.text}</P>
+			)}
+			{replaced && (
+				<Small className="block break-words font-normal text-muted-foreground text-xs leading-5">
+					Replaces: {replaced.text}
+				</Small>
 			)}
 			<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
 				{memory.kind === "preference" && (

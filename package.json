@@ -30,21 +30,9 @@
     "turbo": "^2.9.14",
     "typescript": "~6.0.0"
   },
-  "packageManager": "pnpm@10.13.1",
+  "packageManager": "pnpm@12.18.0",
   "engines": {
-    "pnpm": "~10.13.0",
-    "node": ">=24.4.0 <25"
-  },
-  "pnpm": {
-    "overrides": {
-      "flatted": "3.4.2",
-      "@crxjs/vite-plugin>rollup": "2.80.0",
-      "archiver-utils>lodash": "4.18.1",
-      "mocha>serialize-javascript": "7.0.5"
-    },
-    "patchedDependencies": {
-      "ooxml-core@1.53.1": "patches/ooxml-core@1.53.1.patch",
-      "ooxml-ui@1.54.1": "patches/ooxml-ui@1.54.1.patch"
-    }
+    "pnpm": "~12.18.0",
+    "node": ">=26.0.0 <27"
   }
 }

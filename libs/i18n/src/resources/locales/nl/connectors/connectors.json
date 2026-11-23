@@ -60,7 +60,8 @@
 	"onedrive": {
 		"viewLabel": "Wat tonen",
 		"mine": "Mijn bestanden",
-		"shared": "Gedeeld met mij"
+		"shared": "Gedeeld met mij",
+		"sharedNote": "Bestanden die met je zijn gedeeld worden gevonden via de zoekfunctie van Microsoft, dus een onlangs gedeeld bestand kan hier even op zich laten wachten."
 	},
 	"mail": {
 		"folder": "Mailmap",
@@ -106,6 +107,14 @@
 		"showQuoted": "Geciteerde e-mails tonen",
 		"hideQuoted": "Geciteerde e-mails verbergen",
 		"filters": "Filters",
+		"fromFilter": "Van: naam of adres",
+		"receivedAny": "Elk moment",
+		"receivedWeek": "Afgelopen week",
+		"receivedMonth": "Afgelopen maand",
+		"receivedQuarter": "Afgelopen 3 maanden",
+		"receivedYear": "Afgelopen jaar",
+		"hasAttachments": "Met bijlagen",
+		"noFiltered": "Geen e-mails voldoen aan deze filters",
 		"pageError": "Meer berichten konden niet worden geladen.",
 		"emptyPage": "De mailbox gaf een lege pagina terug. Probeer het opnieuw.",
 		"picturesHidden": "Afbeeldingen van het web zijn verborgen om je privacy te beschermen.",

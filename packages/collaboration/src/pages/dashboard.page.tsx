@@ -1,33 +1,37 @@
 import { Navigate } from "react-router";
-import { CollaborationPage } from "@/features/collaboration/components/collaboration-page";
+import { CollaborationHeroPage } from "@/features/collaboration/components/collaboration-hero-page";
 import { LandingChatComposer } from "@/features/daily-chat/landing-chat-composer";
+import { BriefActivity } from "@/features/dashboard/brief-activity";
 import { BriefDay } from "@/features/dashboard/brief-day";
 import { BriefHeader } from "@/features/dashboard/brief-header";
 import { BriefWork } from "@/features/dashboard/brief-work";
 import { TodaySuggestions } from "@/features/dashboard/today-suggestions";
 import { useNeedsOnboarding } from "@/features/onboarding/use-needs-onboarding";
 
-/** Today: an ask box, the top work items and the day's meetings. */
+/** Today: a greeting over the hero photo, an ask box, then the top work items, the day's meetings and what came in last. */
 export function DashboardPage() {
 	// until the owner finishes or skips setup, Today sends them back to it; other pages keep their deep links
 	if (useNeedsOnboarding()) return <Navigate to="/onboarding" replace />;
 
 	return (
-		<CollaborationPage>
-			{/* the ask box leads; today's list waits below it */}
-			<div className="mx-auto w-full max-w-3xl pt-4 pb-12 sm:pt-12">
-				<BriefHeader />
-				<LandingChatComposer />
+		<CollaborationHeroPage>
+			<BriefHeader />
+			{/* the ask box leads; today's cards wait below it */}
+			<div className="mx-auto w-full max-w-6xl">
+				<LandingChatComposer isHero />
 				<TodaySuggestions />
 			</div>
-			<div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-6 lg:grid-cols-12">
-				<div className="min-w-0 lg:col-span-8">
+			<div className="mt-10 grid @3xl:grid-cols-2 @6xl:grid-cols-13 grid-cols-1 gap-6">
+				<div className="@3xl:col-span-2 @6xl:col-span-5 min-w-0">
 					<BriefWork />
 				</div>
-				<div className="min-w-0 lg:col-span-4">
+				<div className="@6xl:col-span-4 min-w-0">
 					<BriefDay />
 				</div>
+				<div className="@6xl:col-span-4 min-w-0">
+					<BriefActivity />
+				</div>
 			</div>
-		</CollaborationPage>
+		</CollaborationHeroPage>
 	);
 }

@@ -11,6 +11,7 @@ import { createEmptyWorkspace } from "../state/collaboration.reducer";
 import type {
 	Account,
 	CollaborationState,
+	MainTwin,
 	Memory,
 	MemoryRef,
 	Person,
@@ -25,6 +26,7 @@ import type {
 	Thread,
 	ThreadWorkspace,
 	Topic,
+	TopicFile,
 	WorkItem,
 	WorkspaceMessage,
 	WorkspaceStep,
@@ -175,6 +177,14 @@ function mapSettings(row: Row): Settings {
 		draftSignatureOn: row.draftSignatureOn !== false,
 		// older servers send none and sync every 15 minutes
 		syncEveryMinutes: Number(row.syncEveryMinutes ?? 15),
+		// older servers send none and cannot make avatars
+		avatarGeneration: row.avatarGeneration === true,
+		// older servers send none and offer no transcripts
+		meetingTranscripts: row.meetingTranscripts === true,
+		newTopicsEveryHours: Number(row.newTopicsEveryHours ?? 24),
+		closeAcrossThreads: row.closeAcrossThreads !== false,
+		// older servers send none and check no twins
+		twinCheckEveryHours: Number(row.twinCheckEveryHours ?? 24),
 		version: Number(row.version ?? 0),
 	};
 }
@@ -242,6 +252,29 @@ function mapThreadAgent(value: unknown): ThreadAgent | null {
 		: null;
 }
 
+/**
+ * The person's own Digital Twin as `BrainGetSettings` sends it and as a save
+ * answers: a name, and a picture only once they chose one.
+ *
+ * @param agentId - The seeded agent's id, which the settings send beside it.
+ * @returns The twin, or undefined from a server that predates it.
+ */
+export function mapMainTwin(
+	value: unknown,
+	agentId: string,
+): MainTwin | undefined {
+	const row = (value ?? {}) as Row;
+	const name = str(row.name).trim();
+	if (!name) return undefined;
+	const image = str(row.image);
+	return {
+		name,
+		// sent as bare base64: its address is built once here, not on each render
+		avatar: image ? `data:image/png;base64,${image}` : "",
+		agentId,
+	};
+}
+
 // no source-connection reactor yet (SRC-06): show what settings turns on
 function mapSources(settings: Settings): SourceStatus[] {
 	const labels: [string, string, string][] = [
@@ -259,6 +292,17 @@ function mapSources(settings: Settings): SourceStatus[] {
 		volume: null,
 		permission: "",
 		isSample: false,
+	}));
+}
+
+/** A topic's linked files, as BrainGetTopic and BrainLinkTopicFile answer them. */
+export function mapTopicFiles(rows: unknown): TopicFile[] {
+	return list<Row>(rows).map((file) => ({
+		itemId: str(file.itemId),
+		driveId: opt(file.driveId),
+		name: str(file.name, "Untitled file"),
+		source: file.source === "teams" ? "teams" : "onedrive",
+		webUrl: opt(file.webUrl),
 	}));
 }
 
@@ -294,6 +338,7 @@ export function mapTopic(row: Row): Topic {
 			path: str(folder.path),
 			origin: opt(folder.origin),
 		})),
+		files: mapTopicFiles(row.files),
 		stats: {
 			threads: Number(stats.threads ?? 0),
 			openItems: Number(stats.openItems ?? 0),
@@ -393,6 +438,7 @@ export function mapThread(row: Row): Thread {
 		})),
 		muted: row.muted === true,
 		automated: row.automated === true ? true : undefined,
+		notAutomated: row.notAutomated === true ? true : undefined,
 		messageCount: Number(row.messageCount ?? 0),
 		lastAt: str(row.lastAt),
 		roomId: opt(row.roomId) ?? null,
@@ -526,7 +572,8 @@ export async function loadLiveState(
 	const self = people.find((person) => person.relationship === "self");
 	const profile = mapProfile(profileRow, self?.id);
 	const settings = mapSettings(settingsRow);
-	setThreadAgent(mapThreadAgent(settingsRow.assistantAgent));
+	const threadAgent = mapThreadAgent(settingsRow.assistantAgent);
+	setThreadAgent(threadAgent);
 
 	return {
 		today: new Date().toISOString().slice(0, 10),
@@ -542,6 +589,7 @@ export async function loadLiveState(
 		accounts: accountsPage.items as unknown as Account[],
 		profile,
 		liveProfile: profile,
+		mainTwin: mapMainTwin(settingsRow.mainTwin, threadAgent?.id ?? ""),
 		settings,
 		rules: rulesPage.items.map(
 			(row) => ({ ...row, isSample: false }) as unknown as Rule,
@@ -557,7 +605,11 @@ export async function loadLiveState(
 // a due day is saved as midnight UTC; as a plain date it shows on that day in every time zone
 export function dueDay(value: unknown): string | null {
 	const due = opt(value);
-	return due?.endsWith("T00:00:00Z") ? due.slice(0, 10) : (due ?? null);
+	// a due is a day: the server stores it at noon UTC (older rows at midnight), which is the next day east of
+	// UTC+11 when read as an instant
+	return due && /T(00|12):00:00(\.0+)?Z$/.test(due)
+		? due.slice(0, 10)
+		: (due ?? null);
 }
 
 /** A due to read in local time: a plain due day becomes its local midnight, so it shows on that day. */

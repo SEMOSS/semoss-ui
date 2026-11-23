@@ -1,15 +1,18 @@
 import {
 	BookOpen,
 	Brain,
-	CalendarDays,
 	FolderOpen,
-	Mail,
-	MessageSquare,
+	Network,
 	Tags,
 	Timer,
 } from "lucide-react";
 import type { ToolViewProps } from "@semoss/shared";
 import { Alert, AlertDescription, H4, Muted, Spinner } from "@semoss/ui/next";
+import {
+	OutlookCalendarIcon,
+	OutlookIcon,
+	TeamsIcon,
+} from "@/components/common/app-icons";
 import { useToolWorkbench } from "../tool-workbench.context";
 import { CollaborationToolApproval } from "./collaboration-tool-approval";
 import {
@@ -26,10 +29,11 @@ import { ToolResultDetails } from "./tool-result-details";
 import { ToolResultList } from "./tool-result-list";
 
 const FAMILY_ICONS = {
-	calendar: CalendarDays,
+	people: Network,
+	calendar: OutlookCalendarIcon,
 	topics: Tags,
-	mail: Mail,
-	teams: MessageSquare,
+	mail: OutlookIcon,
+	teams: TeamsIcon,
 	files: FolderOpen,
 	memory: Brain,
 	routines: Timer,

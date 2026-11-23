@@ -1,6 +1,7 @@
 // Removed unused import (was: import { link } from "fs");
 // biome-ignore-all lint/suspicious/noTemplateCurlyInString: TODO
 import type { ReasoningConfig } from "@/components/engine/engine-metadata-display";
+import { CATALOG_NAME_KEY } from "@/components/import/shared/import-form.constants";
 import {
 	JEV_CATEGORY_TEXT,
 	JEV_MODEL_VERSIONS,
@@ -397,7 +398,7 @@ export const IMPORTABLE_MODELS = {
 					model_types: ["llm"],
 					fields: [
 						{
-							key: "NAME",
+							key: CATALOG_NAME_KEY,
 							label: "Catalog Name",
 							type: "text",
 							required: true,
@@ -538,7 +539,7 @@ export const IMPORTABLE_MODELS = {
 					model_types: ["llm"],
 					fields: [
 						{
-							key: "NAME",
+							key: CATALOG_NAME_KEY,
 							label: "Catalog Name",
 							type: "text",
 							required: true,
@@ -676,7 +677,7 @@ export const IMPORTABLE_MODELS = {
 					model_types: ["embedding"],
 					fields: [
 						{
-							key: "NAME",
+							key: CATALOG_NAME_KEY,
 							label: "Catalog Name",
 							type: "text",
 							required: true,
@@ -799,7 +800,7 @@ export const IMPORTABLE_MODELS = {
 					model_types: ["llm"],
 					fields: [
 						{
-							key: "NAME",
+							key: CATALOG_NAME_KEY,
 							label: "Catalog Name",
 							type: "text",
 							required: true,
@@ -947,7 +948,7 @@ export const IMPORTABLE_MODELS = {
 					model_types: ["embedding"],
 					fields: [
 						{
-							key: "NAME",
+							key: CATALOG_NAME_KEY,
 							label: "Catalog Name",
 							type: "text",
 							required: true,
@@ -1057,7 +1058,7 @@ export const IMPORTABLE_MODELS = {
 					model_types: ["llm"],
 					fields: [
 						{
-							key: "NAME",
+							key: CATALOG_NAME_KEY,
 							label: "Catalog Name",
 							type: "text",
 							required: true,
@@ -1172,7 +1173,7 @@ export const IMPORTABLE_MODELS = {
 					model_types: ["embedding"],
 					fields: [
 						{
-							key: "NAME",
+							key: CATALOG_NAME_KEY,
 							label: "Catalog Name",
 							type: "text",
 							required: true,
@@ -1251,7 +1252,7 @@ export const IMPORTABLE_MODELS = {
 					model_types: ["llm"],
 					fields: [
 						{
-							key: "NAME",
+							key: CATALOG_NAME_KEY,
 							label: "Catalog Name",
 							type: "text",
 							required: true,
@@ -1380,7 +1381,22 @@ export const IMPORTABLE_MODELS = {
 							required: true,
 							disabled: true,
 							default:
-								"import genai_client;${VAR_NAME} = genai_client.GoogleGenAiTextClient(model_name = '${MODEL}', region='${GCP_REGION}', project='${PROJECT}', service_account_credentials = ${SERVICE_ACCOUNT_CREDENTIALS})",
+								"import genai_client;${VAR_NAME} = genai_client.GoogleGenAiTextClient(model_name = '${MODEL}', region='${GCP_REGION}', project='${PROJECT}', service_account_credentials = ${SERVICE_ACCOUNT_CREDENTIALS}, generation_api='${GENERATION_API}')",
+							category: "Settings",
+						},
+						{
+							key: "GENERATION_API",
+							label: "Generation API",
+							type: "select",
+							options: ["interactions", "generate_content"],
+							optionLabels: {
+								generate_content: "GenerateContent",
+								interactions: "Interactions",
+							},
+							required: true,
+							default: "generate_content",
+							helperText:
+								"Interactions applies to new Gemini conversations and requires a global, us, or eu location. Existing conversations keep their API.",
 							category: "Settings",
 						},
 					],
@@ -1389,7 +1405,7 @@ export const IMPORTABLE_MODELS = {
 					model_types: ["embedding"],
 					fields: [
 						{
-							key: "NAME",
+							key: CATALOG_NAME_KEY,
 							label: "Catalog Name",
 							type: "text",
 							required: true,
@@ -1493,7 +1509,7 @@ export const IMPORTABLE_MODELS = {
 					model_types: ["llm"],
 					fields: [
 						{
-							key: "NAME",
+							key: CATALOG_NAME_KEY,
 							label: "Catalog Name",
 							type: "text",
 							required: true,
@@ -1680,7 +1696,7 @@ export const IMPORTABLE_MODELS = {
 					model_types: ["embedding"],
 					fields: [
 						{
-							key: "NAME",
+							key: CATALOG_NAME_KEY,
 							label: "Catalog Name",
 							type: "text",
 							required: true,
@@ -1767,7 +1783,7 @@ export const IMPORTABLE_MODELS = {
 					model_types: ["llm"],
 					fields: [
 						{
-							key: "NAME",
+							key: CATALOG_NAME_KEY,
 							label: "Catalog Name",
 							type: "text",
 							required: true,
@@ -1901,7 +1917,7 @@ export const IMPORTABLE_MODELS = {
 					model_types: ["embedding"],
 					fields: [
 						{
-							key: "NAME",
+							key: CATALOG_NAME_KEY,
 							label: "Catalog Name",
 							type: "text",
 							required: true,
@@ -2014,7 +2030,7 @@ export const IMPORTABLE_MODELS = {
 					model_types: ["llm"],
 					fields: [
 						{
-							key: "NAME",
+							key: CATALOG_NAME_KEY,
 							label: "Catalog Name",
 							type: "text",
 							required: true,
@@ -2145,7 +2161,7 @@ export const IMPORTABLE_MODELS = {
 					model_types: ["embedding"],
 					fields: [
 						{
-							key: "NAME",
+							key: CATALOG_NAME_KEY,
 							label: "Catalog Name",
 							type: "text",
 							required: true,
@@ -2225,7 +2241,7 @@ export const IMPORTABLE_MODELS = {
 					model_types: ["llm"],
 					fields: [
 						{
-							key: "NAME",
+							key: CATALOG_NAME_KEY,
 							label: "Catalog Name",
 							type: "text",
 							required: true,
@@ -2366,7 +2382,7 @@ export const IMPORTABLE_MODELS = {
 					model_types: ["llm"],
 					fields: [
 						{
-							key: "NAME",
+							key: CATALOG_NAME_KEY,
 							label: "Catalog Name",
 							type: "text",
 							required: true,

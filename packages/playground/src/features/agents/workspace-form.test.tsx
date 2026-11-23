@@ -13,6 +13,15 @@ const mocks = vi.hoisted(() => ({
 	run: vi.fn(),
 	upload: vi.fn(),
 }));
+const mockPixel = vi.hoisted(() => (pixel: string) => ({
+	status: "SUCCESS",
+	data:
+		pixel === "GetAgentFormOptions();"
+			? { default_tools: [], known_hook_kinds: ["pixel"] }
+			: pixel.startsWith("Check")
+				? { exists: false }
+				: [],
+}));
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
@@ -43,22 +52,15 @@ vi.mock("@/hooks/use-root", () => ({
 }));
 vi.mock("@semoss/sdk/react", async (original) => ({
 	...(await original<typeof import("@semoss/sdk/react")>()),
-	usePixel: (pixel: string) => ({
-		status: "SUCCESS",
-		data:
-			pixel === "GetAgentFormOptions();"
-				? { default_tools: [], known_hook_kinds: ["pixel"] }
-				: pixel.startsWith("Check")
-					? { exists: false }
-					: [],
-	}),
+	usePixel: mockPixel,
+	useSessionPixel: mockPixel,
 	useIteratorPixel: () => ({
 		data: [],
 		next: vi.fn(),
 		isLoading: false,
 		hasMore: false,
 	}),
-	useInsight: () => ({ actions: { run: mocks.run, upload: mocks.upload } }),
+	useSessionInsight: () => ({ run: mocks.run, upload: mocks.upload }),
 }));
 vi.mock("@semoss/shared", async (original) => ({
 	...(await original<typeof import("@semoss/shared")>()),

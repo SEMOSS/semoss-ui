@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import type { Role } from "@semoss/sdk";
-import { useSession } from "@semoss/sdk/react";
 import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import { ProjectAccessControl } from "@/components/project/project-access-control";
 import { ProjectOverview } from "@/components/project/project-overview";
@@ -38,20 +37,18 @@ interface ProjectDetailTabsProps {
 
 /**
  * A project's details as tabs, showing the ones the user's role allows; Audit
- * is for the project's owners and admins. Opens on Overview, or else the first
- * tab.
+ * is for the project's owners, admins included only when they own it. Opens on
+ * Overview, or else the first tab.
  */
 export const ProjectDetailTabs = ({ tabs }: ProjectDetailTabsProps) => {
 	const { project, type, permission } = useProject();
-	const isAdmin = useSession((state) => state.user?.isAdmin === true);
 
 	const [selectedTabName, setSelectedTabName] = useState<string>("Overview");
 
 	// see all the visible tabs
 	const visibleTabs = useMemo(() => {
 		return tabs.filter((tab) => {
-			if (tab.component === "audit")
-				return permission === "OWNER" || isAdmin;
+			if (tab.component === "audit") return permission === "OWNER";
 			if (!tab.restrict || tab.restrict.length === 0) {
 				return true;
 			}
@@ -60,7 +57,7 @@ export const ProjectDetailTabs = ({ tabs }: ProjectDetailTabsProps) => {
 			}
 			return tab.restrict.includes(permission);
 		});
-	}, [tabs, permission, isAdmin]);
+	}, [tabs, permission]);
 
 	// the current active tab index based on the current pathname
 	const activeTabIdx = useMemo(() => {
@@ -119,14 +116,13 @@ export const ProjectDetailTabs = ({ tabs }: ProjectDetailTabsProps) => {
 					<ProjectAccessControl />
 				)}
 				{activeTab?.component === "smss" && <AppSmssPage />}
-				{activeTab?.component === "audit" &&
-					(permission === "OWNER" || isAdmin) && (
-						<ResourceAuditTrail
-							key={project.project_id}
-							scope="PROJECT"
-							resourceId={project.project_id}
-						/>
-					)}
+				{activeTab?.component === "audit" && permission === "OWNER" && (
+					<ResourceAuditTrail
+						key={project.project_id}
+						scope="PROJECT"
+						resourceId={project.project_id}
+					/>
+				)}
 			</div>
 		</div>
 	);

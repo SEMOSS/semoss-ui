@@ -69,6 +69,23 @@ afterEach(async () => {
 	vi.unstubAllGlobals();
 });
 
+it("reads with the sender and the cutoff it is narrowed to, and starts over when one changes", async () => {
+	read.mockResolvedValue(page(0));
+	await render({ ...defaults, from: "ada", sinceDays: 30 });
+	expect(read).toHaveBeenLastCalledWith(
+		expect.stringContaining(
+			'from=["<encode>ada</encode>"], sinceDays=[30]',
+		),
+		"origin",
+	);
+	await act(async () => current().loadMore());
+	expect(read.mock.lastCall?.[0]).toContain("offset=[25]");
+
+	await render({ ...defaults, from: "ada", sinceDays: 7 });
+	expect(read.mock.lastCall?.[0]).toContain("offset=[0]");
+	expect(read.mock.lastCall?.[0]).toContain("sinceDays=[7]");
+});
+
 it("loads more than 100 messages through successive fixed 25-message pages", async () => {
 	for (let offset = 0; offset < 125; offset += 25)
 		read.mockResolvedValueOnce(page(offset, 25, offset < 100));

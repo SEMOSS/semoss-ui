@@ -1,4 +1,11 @@
-import { Copy, EyeOff, LockKeyhole, Trash2 } from "lucide-react";
+import {
+	Copy,
+	Eye,
+	EyeOff,
+	LockKeyhole,
+	LockKeyholeOpen,
+	Trash2,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { usePixel, useSession } from "@semoss/sdk/react";
 import {
@@ -15,6 +22,7 @@ import {
 import { capitalize, formatToDataTestId } from "@semoss/utility/text";
 import { setEngineGlobal, setEngineVisiblity } from "@/api/engines";
 import {
+	setProjectCustomLogin,
 	setProjectGlobal,
 	setProjectTemplate,
 	setProjectVisiblity,
@@ -60,7 +68,8 @@ interface SettingsTilesProps {
 
 /**
  * The visibility and lifecycle settings of a project or engine as tiles:
- * private, non discoverable, use as template (projects), and delete.
+ * Private or Public and Discoverable or Non-Discoverable, each titled by the
+ * state it is in, Use as Template and Custom Login Page (projects), and delete.
  */
 export const SettingsTiles = (props: SettingsTilesProps) => {
 	const { id, type, name, condensed, onDelete, direction = "column" } = props;
@@ -72,6 +81,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 	const [discoverable, setDiscoverable] = useState(true);
 	const [global, setGlobal] = useState(true);
 	const [isTemplate, setIsTemplate] = useState(false);
+	const [hasCustomLogin, setHasCustomLogin] = useState(false);
 	const [loading, setLoading] = useState(false);
 
 	const isEngineType =
@@ -119,11 +129,13 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 				project_global: boolean;
 				project_discoverable: boolean;
 				project_is_template: boolean;
+				project_has_custom_login: boolean;
 			};
 
 			setDiscoverable(data.project_discoverable);
 			setGlobal(data.project_global);
 			setIsTemplate(data.project_is_template === true);
+			setHasCustomLogin(data.project_has_custom_login === true);
 		}
 	}, [engineInfo.status, engineInfo.data, type]);
 
@@ -156,6 +168,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 			? (engineInfo.data as { project_type?: string } | undefined)
 					?.project_type
 			: undefined,
+		admin: adminMode,
 	});
 
 	/**
@@ -316,12 +329,23 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 		}
 	};
 
+	const AccessIcon = global ? LockKeyholeOpen : LockKeyhole;
+	const accessTitle = global ? "Public" : "Private";
+	const accessDescription = global
+		? `Everyone on the platform can access ${name}, not only its members`
+		: "No one outside of the specified member group can access";
+	const DiscoveryIcon = discoverable ? Eye : EyeOff;
+	const discoveryTitle = discoverable ? "Discoverable" : "Non-Discoverable";
+	const discoveryDescription = discoverable
+		? `Users can discover ${name}, view its details, and request access.`
+		: `Users cannot discover ${name}, view its details, or request access when it is non-discoverable.`;
+
 	const templateTile =
 		type === "PROJECT" ? (
 			<AlertTile
 				setBounds={direction === "column"}
 				icon={<Copy aria-hidden />}
-				title="Use as template"
+				title="Use as Template"
 				description="Allow users who can view this project to create their own independent copy. This does not make the project public."
 				action={
 					<Switch
@@ -343,12 +367,88 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 			/>
 		) : null;
 
+	/**
+	 * Toggle whether this project's portal has its own login page, which serves
+	 * the portal to signed out visitors for them to sign in there.
+	 */
+	const changeCustomLogin = async () => {
+		try {
+			setLoading(true);
+			const response = await setProjectCustomLogin(
+				adminMode,
+				id,
+				!hasCustomLogin,
+			);
+			if (response.data.success) {
+				setHasCustomLogin(!hasCustomLogin);
+				toast.success(
+					hasCustomLogin
+						? `${name} is now shown only to signed in users who can view it`
+						: `${name} now shows its own login page to signed out visitors`,
+				);
+			} else {
+				toast.error(
+					`Error updating the login page setting for ${name}`,
+				);
+			}
+		} catch (e) {
+			toast.error(String(e));
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const customLoginTile =
+		type === "PROJECT" ? (
+			<AlertTile
+				setBounds={direction === "column"}
+				icon={
+					<svg
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth={2}
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						aria-hidden="true"
+					>
+						<path d="M5.2 7.5a9 9 0 1 1 0 9" />
+						<path d="M1 12h9" />
+						<path d="m7 9 3 3-3 3" />
+						<circle cx="15" cy="8.5" r="2.5" />
+						<path d="M12 16.5a2.5 2.5 0 0 1 2.5-2.5h1a2.5 2.5 0 0 1 2.5 2.5" />
+					</svg>
+				}
+				title="Custom Login Page"
+				description="This app's portal has its own login page, so people who are signed out can open it and sign in there. When off, only signed in users who can view this app can open its portal."
+				action={
+					<Switch
+						aria-label={`${name} has a custom login page`}
+						title={
+							hasCustomLogin
+								? `Turn off the custom login page for ${name}`
+								: `Turn on the custom login page for ${name}`
+						}
+						checked={hasCustomLogin}
+						data-testid={formatToDataTestId(
+							`settingsTiles-${name}-custom-login-switch`,
+						)}
+						onCheckedChange={() => {
+							changeCustomLogin();
+						}}
+					/>
+				}
+			/>
+		) : null;
+
 	/** LOADING */
 	if (loading || isDeleting) {
 		return (
 			<div className="flex h-full flex-col items-center justify-center gap-4">
 				<Spinner className="size-8" />
-				<P className="text-muted-foreground">Deleting...</P>
+				<P className="text-muted-foreground">
+					{isDeleting ? "Deleting..." : "Saving..."}
+				</P>
 			</div>
 		);
 	}
@@ -361,9 +461,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 				>
 					<AlertTile
 						setBounds={direction === "column"}
-						icon={<LockKeyhole data-testid="lock-icon" />}
-						title="Private"
-						description="No one outside of the specified member group can access"
+						icon={<AccessIcon data-testid="lock-icon" />}
+						title={accessTitle}
+						description={accessDescription}
 						action={
 							<Switch
 								title={
@@ -371,6 +471,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 										? `Make ${name} private`
 										: `Make ${name} public`
 								}
+								aria-label={`${name} is private`}
 								checked={!global}
 								disabled={!canPerform(type, "public")}
 								data-testid={formatToDataTestId(
@@ -389,10 +490,10 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 									<AlertTile
 										setBounds={direction === "column"}
 										icon={
-											<EyeOff data-testid="non-discoverable-icon" />
+											<DiscoveryIcon data-testid="non-discoverable-icon" />
 										}
-										title="Non Discoverable"
-										description={`Users cannot discover ${name}, view its details, or request access when it is non-discoverable.`}
+										title={discoveryTitle}
+										description={discoveryDescription}
 										action={
 											<Switch
 												title={
@@ -410,6 +511,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 												data-testid={formatToDataTestId(
 													`settingsTiles-${name}-makeDiscoverable-switch`,
 												)}
+												aria-label={`${name} is non-discoverable`}
 												checked={!discoverable}
 												onCheckedChange={() => {
 													changeDiscoverable();
@@ -428,10 +530,10 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 						<AlertTile
 							setBounds={direction === "column"}
 							icon={
-								<EyeOff data-testid="non-discoverable-icon" />
+								<DiscoveryIcon data-testid="non-discoverable-icon" />
 							}
-							title="Non Discoverable"
-							description={`Users cannot discover ${name}, view its details, or request access when it is non-discoverable.`}
+							title={discoveryTitle}
+							description={discoveryDescription}
 							testId={formatToDataTestId(
 								`settingsTiles-${name}-makeDiscoverable-switch`,
 							)}
@@ -449,6 +551,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 										global ||
 										!canPerform(type, "discoverable")
 									}
+									aria-label={`${name} is non-discoverable`}
 									checked={!discoverable}
 									onCheckedChange={() => {
 										changeDiscoverable();
@@ -458,6 +561,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 						/>
 					)}
 					{templateTile}
+					{customLoginTile}
 					<AlertTile
 						setBounds={direction === "column"}
 						icon={<Trash2 className="mt-0.5 h-[22px] w-[22px]" />}
@@ -505,9 +609,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 				>
 					<AlertTile
 						setBounds={direction === "column"}
-						icon={<LockKeyhole data-testid="lock-icon" />}
-						title="Private"
-						description="No one outside of the specified member group can access"
+						icon={<AccessIcon data-testid="lock-icon" />}
+						title={accessTitle}
+						description={accessDescription}
 						testId="private-text"
 						action={
 							<Switch
@@ -516,6 +620,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 										? `Make ${name} private`
 										: `Make ${name} public`
 								}
+								aria-label={`${name} is private`}
 								checked={!global}
 								disabled={!canPerform(type, "public")}
 								data-testid={formatToDataTestId(
@@ -534,10 +639,10 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 									<AlertTile
 										setBounds={direction === "column"}
 										icon={
-											<EyeOff data-testid="non-discoverable-icon" />
+											<DiscoveryIcon data-testid="non-discoverable-icon" />
 										}
-										title="Non Discoverable"
-										description={`Users cannot discover ${name}, view its details, or request access when it is non-discoverable.`}
+										title={discoveryTitle}
+										description={discoveryDescription}
 										testId="discoverable-text"
 										action={
 											<Switch
@@ -553,6 +658,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 														? `Make ${name} non-discoverable`
 														: `Make ${name} discoverable`
 												}
+												aria-label={`${name} is non-discoverable`}
 												checked={!discoverable}
 												data-testid={formatToDataTestId(
 													`settingsTiles-${name}-makeDiscoverable-switch`,
@@ -573,9 +679,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 					) : (
 						<AlertTile
 							setBounds={direction === "column"}
-							icon={<EyeOff />}
-							title="Non Discoverable"
-							description={`Users cannot discover ${name}, view its details, or request access when it is non-discoverable.`}
+							icon={<DiscoveryIcon />}
+							title={discoveryTitle}
+							description={discoveryDescription}
 							action={
 								<Switch
 									disabled={
@@ -587,6 +693,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 											? `Make ${name} non-discoverable`
 											: `Make ${name} discoverable`
 									}
+									aria-label={`${name} is non-discoverable`}
 									checked={!discoverable}
 									data-testid={formatToDataTestId(
 										`settingsTiles-${name}-makeDiscoverable-switch`,
@@ -599,6 +706,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 						/>
 					)}
 					{templateTile}
+					{customLoginTile}
 					{onDelete ? (
 						<>
 							<AlertTile

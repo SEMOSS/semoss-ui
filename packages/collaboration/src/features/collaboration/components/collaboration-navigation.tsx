@@ -1,11 +1,19 @@
-import { CalendarClock, Inbox, ListChecks } from "lucide-react";
+import {
+	CalendarClock,
+	Fingerprint,
+	House,
+	Layers,
+	Tags,
+	UsersRound,
+} from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { cn, Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 import { ChatHistoryList } from "@/features/dashboard/chat-history-list";
-import { selectToday } from "@/features/dashboard/today-selectors";
+import { useTwinUpdates } from "@/features/dashboard/dashboard.context";
+import { useDueToday } from "@/features/dashboard/use-due-today";
 import { RoutineRecentRuns } from "@/features/routines/routine-recent-runs";
 import { lexicon } from "@/lib/lexicon";
-import { useCollaborationSession } from "../state/collaboration-session.context";
+import { personaPath } from "@/lib/workspace-paths";
 import {
 	CollaborationNavigationHeader,
 	type NavigationToggle,
@@ -26,7 +34,7 @@ interface CollaborationNavigationProps {
 	toggle?: NavigationToggle;
 }
 
-/** One quiet navigation follows the daily brief and conversations; topics live in Settings. */
+/** One quiet navigation follows the daily brief, the work and its topics, and conversations. */
 export function CollaborationNavigation({
 	isCollapsed = false,
 	isSessionsOpen,
@@ -34,34 +42,120 @@ export function CollaborationNavigation({
 	onNavigate,
 	toggle,
 }: CollaborationNavigationProps) {
-	const { state } = useCollaborationSession();
 	const { pathname } = useLocation();
-	// Work, filing and setup stay reachable from Today, Settings and search;
-	// Routines stays here because it is the proactive part
+	const dueToday = useDueToday();
+	const twinUpdates = useTwinUpdates();
+	// filing and setup stay reachable from Settings and search; Topics sits under Work because the owner
+	// opens it often, and Routines stays here because it is the proactive part
 	const links = [
 		{
 			to: "/",
 			label: lexicon.today,
-			icon: Inbox,
+			icon: House,
+			iconClassName: "fill-primary/15 text-primary dark:brightness-125",
 			// only what is due today, so the badge stays meaningful
-			count: selectToday(state).due,
+			count: dueToday,
 			isActive: pathname === "/",
 		},
 		{
 			to: "/work",
 			label: "Work",
-			icon: ListChecks,
+			icon: Layers,
+			iconClassName: "fill-chart-2/15 text-chart-2",
 			count: 0,
-			isActive: pathname.startsWith("/work"),
+			// its topic index has a link of its own
+			isActive:
+				pathname.startsWith("/work") &&
+				!pathname.startsWith("/work/topics"),
 		},
+		{
+			to: "/work/topics",
+			label: "Topics",
+			icon: Tags,
+			iconClassName:
+				"fill-chart-1/15 text-chart-1 dark:fill-chart-3/15 dark:text-chart-3",
+			count: 0,
+			// the index and each topic's own page
+			isActive:
+				pathname.startsWith("/work/topics") ||
+				pathname.startsWith("/topics/"),
+		},
+		{
+			to: "/twins",
+			label: "Digital Twins",
+			icon: UsersRound,
+			iconClassName: "fill-assistant/15 text-assistant",
+			// the copies in the owner's twins that wait for them: an original changed, is gone, or is copied twice
+			count: twinUpdates.data?.updates.length ?? 0,
+			isActive: pathname.startsWith("/twins"),
+		},
+		{
+			to: personaPath(),
+			label: "Persona",
+			icon: Fingerprint,
+			// open strokes, so nothing to fill; as it is the color is too pale on the light page (2:1), so it is
+			// darkened there
+			iconClassName: "text-chart-5 brightness-75 dark:brightness-100",
+			count: 0,
+			// its interview too; opened from Digital Twins the same page is under /twins, and that link stays lit
+			isActive: pathname.startsWith(personaPath()),
+		},
+		// last: its recent runs lead the scroller below and read as its own only right under it
 		{
 			to: "/routines",
 			label: "Routines",
 			icon: CalendarClock,
+			iconClassName: "fill-success/15 text-success",
 			count: 0,
 			isActive: pathname === "/routines",
 		},
 	];
+	const renderLink = ({
+		to,
+		label,
+		icon: Icon,
+		iconClassName,
+		count,
+		isActive,
+	}: (typeof links)[number]) => (
+		// a fresh tooltip per rail state: hovered while expanded (no label drawn) it never closes, so collapsing would
+		// show every label hovered before
+		<Tooltip key={`${to}:${isCollapsed}`} disableHoverableContent={false}>
+			<TooltipTrigger asChild>
+				<Link
+					to={to}
+					aria-current={isActive ? "page" : undefined}
+					onClick={onNavigate}
+					aria-label={label}
+					className={cn(
+						"flex min-h-8 pointer-coarse:min-h-11 items-center gap-2 rounded-lg px-2 py-1 font-normal text-xs hover:bg-sidebar-accent focus-visible:outline-2 focus-visible:outline-ring aria-[current=page]:bg-sidebar-accent aria-[current=page]:font-medium",
+						isCollapsed && "justify-center px-0",
+					)}
+				>
+					<Icon
+						className={cn("size-4 shrink-0", iconClassName)}
+						aria-hidden="true"
+					/>
+					{!isCollapsed && (
+						<>
+							<span className="truncate">{label}</span>
+							{count > 0 && (
+								<span className="ml-auto shrink-0 font-normal text-muted-foreground text-xs tabular-nums">
+									{count}
+								</span>
+							)}
+						</>
+					)}
+				</Link>
+			</TooltipTrigger>
+			{isCollapsed && (
+				<TooltipContent side="right">
+					{label}
+					{count > 0 ? ` \u00b7 ${count}` : ""}
+				</TooltipContent>
+			)}
+		</Tooltip>
+	);
 	return (
 		<div className="flex h-full min-h-0 flex-col">
 			<div className="shrink-0 p-2 pr-3 pb-0">
@@ -75,50 +169,7 @@ export function CollaborationNavigation({
 				aria-label="Main"
 				className="flex shrink-0 flex-col gap-0.5 px-2 pt-2 pr-3 pb-0.5"
 			>
-				{links.map(({ to, label, icon: Icon, count, isActive }) => (
-					// a fresh tooltip per rail state: hovered while expanded (no label drawn) it never closes, so collapsing would
-					// show every label hovered before
-					<Tooltip
-						key={`${to}:${isCollapsed}`}
-						disableHoverableContent={false}
-					>
-						<TooltipTrigger asChild>
-							<Link
-								to={to}
-								aria-current={isActive ? "page" : undefined}
-								onClick={onNavigate}
-								aria-label={label}
-								className={cn(
-									"flex min-h-8 pointer-coarse:min-h-11 items-center gap-2 rounded-lg px-2 py-1 font-normal text-xs hover:bg-sidebar-accent focus-visible:outline-2 focus-visible:outline-ring aria-[current=page]:bg-sidebar-accent aria-[current=page]:font-medium",
-									isCollapsed && "justify-center px-0",
-								)}
-							>
-								<Icon
-									className="size-4 shrink-0 text-muted-foreground"
-									aria-hidden="true"
-								/>
-								{!isCollapsed && (
-									<>
-										<span className="truncate">
-											{label}
-										</span>
-										{count > 0 && (
-											<span className="ml-auto shrink-0 font-normal text-muted-foreground text-xs tabular-nums">
-												{count}
-											</span>
-										)}
-									</>
-								)}
-							</Link>
-						</TooltipTrigger>
-						{isCollapsed && (
-							<TooltipContent side="right">
-								{label}
-								{count > 0 ? ` \u00b7 ${count}` : ""}
-							</TooltipContent>
-						)}
-					</Tooltip>
-				))}
+				{links.map(renderLink)}
 			</nav>
 			<div className="flex min-h-0 flex-1 flex-col pr-1">
 				<div
@@ -141,7 +192,10 @@ export function CollaborationNavigation({
 					isCollapsed={isCollapsed}
 					onNavigate={onNavigate}
 				/>
-				<CollaborationProfileMenu onNavigate={onNavigate} />
+				<CollaborationProfileMenu
+					isCollapsed={isCollapsed}
+					onNavigate={onNavigate}
+				/>
 			</div>
 		</div>
 	);

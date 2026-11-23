@@ -68,7 +68,8 @@
 		},
 		"guardrailActions": {
 			"MASK": "مُقنّع",
-			"BLOCK": "محظور"
+			"BLOCK": "محظور",
+			"TIMEOUT": "انتهت المهلة"
 		},
 		"groupRequest": "الطلب",
 		"groupSpan": "النطاق",
@@ -151,6 +152,7 @@
 	},
 	"layout": {
 		"appName": "سجل التدقيق",
-		"appDescription": "تطبيق سجل التدقيق"
+		"appDescription": "تطبيق سجل التدقيق",
+		"loadFailed": "تعذّر تحميل سجل التدقيق. حاول مرة أخرى، وإذا استمرت المشكلة، فاتصل بالدعم."
 	}
 }

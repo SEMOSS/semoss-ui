@@ -195,7 +195,7 @@ test("the divider between the panes shows the navigation's hover line, with no g
 	expect(divider).toBeEmptyDOMElement();
 });
 
-test("the Workspace opens as wide as its content, and fills once it has none to fit", () => {
+test("the Workspace opens on its share of the row", () => {
 	let observe: ((width: number) => void) | null = null;
 	vi.stubGlobal(
 		"ResizeObserver",
@@ -213,8 +213,8 @@ test("the Workspace opens as wide as its content, and fills once it has none to 
 		},
 	);
 	const panel = <div>Work</div>;
-	const { rerender } = render(
-		<RoomLayout isWorkbenchOpen workbenchFitWidth={350} workbench={panel}>
+	render(
+		<RoomLayout isWorkbenchOpen workbench={panel}>
 			<div>Chat</div>
 		</RoomLayout>,
 	);
@@ -222,13 +222,5 @@ test("the Workspace opens as wide as its content, and fills once it has none to 
 	const workspacePane = screen.getByRole("region", {
 		name: "studio.workspace",
 	}).parentElement;
-	// 350px of a 1400px row
-	expect(Number(workspacePane?.style.flexGrow)).toBeCloseTo(25);
-
-	rerender(
-		<RoomLayout isWorkbenchOpen workbenchFitWidth={null} workbench={panel}>
-			<div>Chat</div>
-		</RoomLayout>,
-	);
 	expect(Number(workspacePane?.style.flexGrow)).toBeCloseTo(65);
 });

@@ -28,6 +28,7 @@ const SESSION_ONLY = new Set<CollaborationCommand["type"]>([
 	"source.status",
 	"live-profile.set",
 	"profile.style.server",
+	"main-twin.server",
 	"snooze.expire",
 	"memory.server",
 	"topic.server",
@@ -70,10 +71,23 @@ export type LiveSync = ((change: CollaborationChange) => void) & {
 	serverId: (localId: string) => string;
 };
 
+/** A saved topic merge or delete the server can put back with `BrainUndoTopicChange`. */
+export interface TopicChange {
+	kind: "merge" | "delete";
+	/** The id `BrainMergeTopics` or `BrainDeleteTopic` returned. */
+	changeId: string;
+	/** The topic that was merged away or deleted. */
+	topicId: string;
+	name: string;
+	/** What it was merged into. */
+	intoName?: string;
+}
+
 /** Queue-backed saver: changes go out one at a time and in order. */
 export function createLiveSync(
 	actions: InsightActions,
 	onError: (message: string) => void,
+	onTopicChange?: (change: TopicChange) => void,
 ): LiveSync {
 	const ids = new Map<string, string>();
 	const id = (value: string) => ids.get(value) ?? value;
@@ -118,7 +132,13 @@ export function createLiveSync(
 					ids.set(create.localId, serverId);
 				}
 				// statements built before the creates ran still hold local ids
-				await runBatch(actions, plan.statements.map(withServerIds));
+				const outputs = await runBatch(
+					actions,
+					plan.statements.map(withServerIds),
+				);
+				// a merge or delete says how to put it back; offer that once it is saved
+				if (onTopicChange)
+					announceTopicChanges(change, outputs, onTopicChange);
 			})
 			.catch((cause: unknown) =>
 				onError(cause instanceof Error ? cause.message : String(cause)),
@@ -129,6 +149,41 @@ export function createLiveSync(
 		localId: (serverId: string): string =>
 			[...ids].find(([, value]) => value === serverId)?.[0] ?? serverId,
 		serverId: id,
+	});
+}
+
+function announceTopicChanges(
+	change: CollaborationChange,
+	outputs: unknown[],
+	announce: (change: TopicChange) => void,
+) {
+	const commands = change.commands.filter(
+		(command) =>
+			command.type === "topic.merge" || command.type === "topic.delete",
+	);
+	// one output per command, in order; anything else saved beside them is not undoable here
+	if (commands.length !== outputs.length) return;
+	const nameOf = (topicId: string) =>
+		change.previous.topics.find((topic) => topic.id === topicId)?.name ??
+		"Topic";
+	commands.forEach((command, index) => {
+		const output = outputs[index] as { changeId?: unknown } | null;
+		if (typeof output?.changeId !== "string" || !output.changeId) return;
+		if (command.type === "topic.merge")
+			announce({
+				kind: "merge",
+				changeId: output.changeId,
+				topicId: command.sourceId,
+				name: nameOf(command.sourceId),
+				intoName: nameOf(command.targetId),
+			});
+		else if (command.type === "topic.delete")
+			announce({
+				kind: "delete",
+				changeId: output.changeId,
+				topicId: command.topicId,
+				name: nameOf(command.topicId),
+			});
 	});
 }
 
@@ -153,6 +208,39 @@ function planChange(
 					targetTopicId: id(merge.targetId),
 				}),
 			);
+		return plan;
+	}
+	// a new topic merged into an existing one: the answer keeps the new topic, then the merge moves its
+	// conversations, people, and notes to the chosen topic and removes it
+	const reviewMerges = change.commands.filter(
+		(
+			command,
+		): command is Extract<
+			CollaborationCommand,
+			{ type: "review.resolve" }
+		> =>
+			command.type === "review.resolve" &&
+			command.decision === "merge" &&
+			!!command.targetTopicId,
+	);
+	if (reviewMerges.length) {
+		for (const merge of reviewMerges) {
+			const review = prev.reviews.find(
+				(candidate) => candidate.id === merge.reviewId,
+			);
+			if (!review?.refId || !merge.targetTopicId) continue;
+			plan.statements.push(
+				pixel("BrainResolveReview", {
+					reviewId: review.id,
+					action: "merge",
+					paramValues: { topicId: merge.targetTopicId },
+				}),
+				pixel("BrainMergeTopics", {
+					sourceTopicId: id(review.refId),
+					targetTopicId: id(merge.targetTopicId),
+				}),
+			);
+		}
 		return plan;
 	}
 	// a delete drops the topic's links, people, notes, and rules on the server in one call
@@ -305,6 +393,13 @@ function planThreads(
 				pixel("BrainSetThreadMuted", {
 					threadId: thread.id,
 					muted: thread.muted,
+				}),
+			);
+		if (Boolean(old.notAutomated) !== Boolean(thread.notAutomated))
+			plan.statements.push(
+				pixel("BrainSetThreadNotAutomated", {
+					threadId: thread.id,
+					notAutomated: Boolean(thread.notAutomated),
 				}),
 			);
 		for (const participant of thread.participants) {
@@ -494,6 +589,12 @@ function planReviews(
 	_id: (v: string) => string,
 ) {
 	const before = byId(prev.reviews);
+	// undo: the question goes back to open
+	for (const command of commands)
+		if (command.type === "review.reopen")
+			plan.statements.push(
+				pixel("BrainReopenReview", { reviewId: command.reviewId }),
+			);
 	for (const review of next.reviews) {
 		const old = before.get(review.id);
 		if (!old || old.status === review.status || review.status === "open")
@@ -632,6 +733,9 @@ const SETTINGS_FIELDS = [
 	"draftSignatureHtml",
 	"draftSignatureOn",
 	"syncEveryMinutes",
+	"newTopicsEveryHours",
+	"closeAcrossThreads",
+	"twinCheckEveryHours",
 ] as const;
 
 /**

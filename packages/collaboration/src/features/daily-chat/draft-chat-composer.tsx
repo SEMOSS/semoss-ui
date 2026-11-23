@@ -1,7 +1,11 @@
 import { Alert, AlertDescription, Button, Spinner } from "@semoss/ui/next";
+import { useChatAgent } from "@/features/digital-twin/use-main-twin";
 import { optimizePrompt } from "@/features/rooms/api/optimize-prompt";
 import { RoomComposer } from "@/features/rooms/components/room-composer";
-import type { ComposerPanelAction } from "@/features/rooms/components/room-composer.types";
+import type {
+	ComposerPanelAction,
+	ComposerPrompt,
+} from "@/features/rooms/components/room-composer.types";
 import { RoomContextFiles } from "@/features/rooms/components/room-context-files";
 import type {
 	RoomSession,
@@ -26,6 +30,14 @@ interface DraftChatComposerProps {
 	onSelectAgent: (agentId: string) => Promise<void>;
 	/** The overview composer is compact and never steals initial page focus. */
 	isCompact?: boolean;
+	/** Today's ask box: a compact composer lifted off the hero photo behind it. */
+	isHero?: boolean;
+	/** The page is one agent's own, such as a Digital Twin's, so the agent cannot be changed. */
+	isAgentLocked?: boolean;
+	/** The page was opened to ask something, so the compact ask box takes the focus too. */
+	isFocused?: boolean;
+	/** Suggested first messages for the empty composer. */
+	starterPrompts?: readonly ComposerPrompt[];
 	panelActions: readonly ComposerPanelAction[];
 }
 
@@ -40,15 +52,25 @@ export function DraftChatComposer({
 	onSaveSettings,
 	onSelectAgent,
 	isCompact = false,
+	isHero = false,
+	isAgentLocked = false,
+	isFocused = false,
+	starterPrompts,
 	panelActions,
 }: DraftChatComposerProps) {
+	const chat = useChatAgent({
+		agentId: snapshot.settings.agentId,
+		agent: snapshot.agent,
+		options: snapshot.options,
+		isOwnPage: isAgentLocked,
+	});
 	const actionsTriggerId = `new-chat-${draftId}-composer-actions`;
 	const isBusy = snapshot.isPreparing || snapshot.turn.isSubmitting;
 	return (
 		<>
 			{snapshot.isLoading && (
 				<output className="flex items-center gap-2 text-muted-foreground">
-					<Spinner aria-hidden="true" /> Opening Assistant…
+					<Spinner aria-hidden="true" /> Opening chat...
 				</output>
 			)}
 			{snapshot.error && !snapshot.isReady && (
@@ -80,9 +102,27 @@ export function DraftChatComposer({
 			)}
 			<RoomComposer
 				key={`${draftId}:${snapshot.composerResetKey}`}
-				autoFocus={!isCompact}
-				inputClassName={isCompact ? "min-h-10" : undefined}
-				placeholder={isCompact ? "Ask anything…" : undefined}
+				autoFocus={!isCompact || isFocused}
+				className={
+					isHero || starterPrompts?.length
+						? "bg-transparent"
+						: undefined
+				}
+				starterPrompts={starterPrompts}
+				surfaceClassName={isHero ? "shadow-lg" : undefined}
+				// the hero's longer placeholder wraps on a phone, so it keeps the full height there
+				inputClassName={
+					isHero ? "sm:min-h-14" : isCompact ? "min-h-10" : undefined
+				}
+				placeholder={
+					isHero
+						? chat.kind === "mainTwin"
+							? `Ask ${chat.name} anything, search your work, or take action...`
+							: "Ask anything, search your work, or take action…"
+						: isCompact
+							? "Ask anything…"
+							: undefined
+				}
 				initialDraft={snapshot.composerDraft}
 				onDraftChange={session.setComposerDraft}
 				retainUntilSent
@@ -99,7 +139,7 @@ export function DraftChatComposer({
 					snapshot.settingsError ||
 					(snapshot.isReady ? snapshot.error?.message : undefined)
 				}
-				agentName={snapshot.agent?.name ?? "Assistant"}
+				agentName={chat.name}
 				agent={snapshot.agent ?? undefined}
 				isSubmitting={isBusy}
 				isRunning={snapshot.turn.isRunning}
@@ -151,14 +191,16 @@ export function DraftChatComposer({
 						session={session}
 						snapshot={snapshot}
 						onSelectAgent={onSelectAgent}
+						isAgentLocked={isAgentLocked}
 					/>
 				) : (
 					<div className="@md/composer:w-36 w-28 min-w-0 shrink-0">
 						<ThreadAgentSelect
 							compact
 							value={snapshot.settings.agentId}
-							name={snapshot.agent?.name ?? "Assistant"}
+							name={chat.name}
 							disabled={
+								isAgentLocked ||
 								!snapshot.isReady ||
 								isBusy ||
 								snapshot.isSavingSettings

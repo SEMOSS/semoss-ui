@@ -26,7 +26,9 @@ const catalog = vi.hoisted(() => ({
 	next: vi.fn(),
 	reset: vi.fn(),
 }));
-vi.mock("@semoss/sdk/react", () => ({ useIteratorPixel: () => catalog }));
+vi.mock("@semoss/sdk/react", () => ({
+	useSessionIteratorPixel: () => catalog,
+}));
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));

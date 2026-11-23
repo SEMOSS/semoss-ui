@@ -82,10 +82,13 @@ const ACCESS: ResourcePermissions = {
 		},
 	],
 	teams: [TEAM],
+	engines: [],
 	allowedPermissionChanges: {
 		canChangePeople: true,
 		canGiveAuthorAccess: true,
 		canChangeTeams: true,
+		canViewEngines: true,
+		canChangeEngines: true,
 		addsAreAdminOnly: false,
 		limitLevels: ["READ_ONLY", "EDIT", "OWNER"],
 		canChangeModelLimits: true,

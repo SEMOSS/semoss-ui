@@ -1,5 +1,5 @@
 import { PanelRightClose, PanelRightOpen } from "lucide-react";
-import { type ReactNode, useContext } from "react";
+import { type ReactNode, useContext, useId } from "react";
 import { createPortal } from "react-dom";
 import {
 	Button,
@@ -19,8 +19,14 @@ import { CollaborationHeaderContext } from "@/features/collaboration/components/
 interface RoomHeaderProps {
 	/** The agent assigned to this conversation. */
 	agent: AgentConfiguration;
+	/** The agent's image, such as a Digital Twin's own; its initials show without one. */
+	agentImage?: string;
 	/** The conversation title, available in full from its details popover. */
 	title: string;
+	/** Who the chat is with, drawn under its title; left out, the title stands alone. */
+	agentLine?: ReactNode;
+	/** That line in full and what the agent can reach, in the title's details; left out, they name it as an AI agent. */
+	agentDetails?: ReactNode;
 	isToolWorkbenchOpen: boolean;
 	showToolWorkbench?: boolean;
 	/** Stable focus destination for an automatically opened room workbench. */
@@ -35,7 +41,10 @@ interface RoomHeaderProps {
 /** Compose room identity and actions into the shell without moving their state. */
 export function RoomHeader({
 	agent,
+	agentImage,
 	title,
+	agentLine,
+	agentDetails,
 	isToolWorkbenchOpen,
 	showToolWorkbench = true,
 	workbenchTriggerId,
@@ -43,6 +52,9 @@ export function RoomHeader({
 	actions,
 	topics,
 }: RoomHeaderProps) {
+	const detailsLabelId = useId();
+	const titleId = useId();
+	const agentLineId = useId();
 	const headerControls = useContext(CollaborationHeaderContext);
 	const conversationTitle = title.trim() || "Untitled conversation";
 	const toolWorkbenchLabel = isToolWorkbenchOpen
@@ -51,17 +63,46 @@ export function RoomHeader({
 	const controls = (
 		<>
 			<Popover>
-				<H1 className="min-w-0 flex-1 font-medium text-sm">
+				{/* the start of the title button's name: what it opens. Hidden, so it is never read on its own */}
+				<span id={detailsLabelId} hidden>
+					Conversation details:
+				</span>
+				{/* the heading is the conversation's title alone, not the whole name of the button it holds */}
+				<H1
+					className="min-w-0 flex-1 font-medium text-sm"
+					aria-labelledby={titleId}
+				>
 					<PopoverTrigger asChild>
 						<Button
 							type="button"
 							variant="ghost"
 							className="h-11 w-full min-w-0 justify-start gap-2 px-1 text-left font-normal"
-							aria-label={`Conversation details: ${conversationTitle}`}
+							// named by what it opens, then by everything it shows: the title and the line under it
+							aria-labelledby={
+								agentLine
+									? `${detailsLabelId} ${titleId} ${agentLineId}`
+									: `${detailsLabelId} ${titleId}`
+							}
 						>
-							<AgentAvatar agent={agent} size="xs" />
-							<span className="truncate font-medium text-sm">
-								{conversationTitle}
+							<AgentAvatar
+								agent={{ name: agent.name, avatar: agentImage }}
+								size="xs"
+							/>
+							<span className="flex min-w-0 flex-col">
+								<span
+									id={titleId}
+									className="truncate font-medium text-sm leading-tight"
+								>
+									{conversationTitle}
+								</span>
+								{agentLine && (
+									<span
+										id={agentLineId}
+										className="truncate text-muted-foreground text-xs leading-tight"
+									>
+										{agentLine}
+									</span>
+								)}
 							</span>
 						</Button>
 					</PopoverTrigger>
@@ -74,9 +115,11 @@ export function RoomHeader({
 					<P className="break-words font-medium text-sm">
 						{conversationTitle}
 					</P>
-					<P className="break-words text-muted-foreground text-sm">
-						{agent.name} · AI agent
-					</P>
+					{agentDetails ?? (
+						<P className="break-words text-muted-foreground text-sm">
+							{agent.name} · AI agent
+						</P>
+					)}
 				</PopoverContent>
 			</Popover>
 			{topics}

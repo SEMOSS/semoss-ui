@@ -18,6 +18,26 @@ export function threadNeedsTopic(thread: Thread): boolean {
 	);
 }
 
+/** The other people on a conversation, by name: who a step from it can be handed to. */
+export function threadPeople(
+	state: CollaborationState,
+	threadId: string | undefined,
+): { id: string; name: string }[] {
+	const thread = threadId
+		? state.threads.find((candidate) => candidate.id === threadId)
+		: undefined;
+	if (!thread) return [];
+	return thread.participants.flatMap((participant) => {
+		const person = state.people.find(
+			(candidate) => candidate.id === participant.personId,
+		);
+		const name = person?.name ?? participant.name;
+		return person?.relationship === "self" || !name
+			? []
+			: [{ id: participant.personId, name }];
+	});
+}
+
 /** The topics a topic choice asks about; older reviews without candidates fall back to the thread's suggestions. */
 export function topicChoiceCandidates(
 	review: ReviewEntry,

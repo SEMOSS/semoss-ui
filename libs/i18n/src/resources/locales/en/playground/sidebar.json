@@ -10,10 +10,6 @@
 			"label": "Agents",
 			"tooltip": "Agents"
 		},
-		"allChats": {
-			"label": "All Chats",
-			"tooltip": "All Chats"
-		},
 		"agentsWorkspaces": {
 			"tooltip": "Agents/Workspaces - Access your workspaces or create new AI agents."
 		},
@@ -52,9 +48,11 @@
 		"download": "Download",
 		"delete": "Delete",
 		"openInline": "Open in-line",
+		"showDetails": "Show Details",
 		"minimize": "Minimize",
 		"maximize": "Maximize",
-		"close": "Close"
+		"close": "Close",
+		"roomActions": "Room actions"
 	},
 	"toasts": {
 		"failedToPin": "Could not add the room to favorites",
@@ -87,7 +85,23 @@
 			},
 			"language": "Language",
 			"languageDescription": "The language the app is shown in.",
-			"version": "Version {{version}}"
+			"version": "Version {{version}}",
+			"newChat": {
+				"title": "Chat",
+				"default": "Default",
+				"model": "Model",
+				"modelDescription": "The model a new chat uses.",
+				"unavailableModel": "Unavailable model",
+				"mode": "Mode",
+				"modeDescription": "Whether a new chat starts as a chat or with an agent.",
+				"modes": {
+					"chat": "Chat",
+					"agent": "Agent"
+				},
+				"agent": "Agent",
+				"agentDescription": "The agent a new chat in agent mode runs.",
+				"saveError": "Could not save your preference: {{message}}"
+			}
 		}
 	},
 	"download": {
@@ -97,5 +111,40 @@
 		"pdf": "PDF document",
 		"success": "Conversation downloaded as {{format}}",
 		"failed": "Could not download the conversation"
+	},
+	"chats": "Chats",
+	"view": {
+		"button": "Sort and group chats",
+		"customized": "custom order",
+		"sortBy": "Sort by",
+		"groupBy": "Group by",
+		"sort": {
+			"recent": "Most recent",
+			"oldest": "Oldest",
+			"nameAsc": "Name (A–Z)",
+			"nameDesc": "Name (Z–A)"
+		},
+		"group": {
+			"date": "Date",
+			"agent": "Agent"
+		}
+	},
+	"groups": {
+		"all": "All chats",
+		"noAgent": "No agent",
+		"unnamedAgent": "Untitled agent",
+		"openAgent": "Open {{name}} in a new tab"
+	},
+	"searchChats": {
+		"label": "Search chats",
+		"title": "Search chats",
+		"description": "Find a chat by its name or by what was said in it.",
+		"placeholder": "Search chats…",
+		"loading": "Searching…",
+		"empty": "No chats match “{{query}}”",
+		"recent": "Recent",
+		"allAgents": "All agents",
+		"results": "Results",
+		"matchedMessage": "Matched in messages"
 	}
 }

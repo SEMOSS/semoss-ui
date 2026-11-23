@@ -15,10 +15,16 @@ export {
 	type CalendarEventDetailViewProps,
 } from "./calendar/calendar-event-detail-view";
 export { CALENDAR_TOOL_VIEWS } from "./calendar/calendar-tool-views";
+export { ConnectorItemAvatar } from "./components/connector-item-avatar";
+export { ConnectorSavedMark } from "./components/connector-saved-mark";
 export type {
 	ConnectorAccount,
 	ConnectorFocusRequest,
+	ConnectorPerson,
+	ConnectorPersonPhotoProps,
 	ConnectorSavedFile,
+	ConnectorSavedItems,
+	ConnectorSavedItemsProps,
 	ConnectorViewerControls,
 	ConnectorViewerProps,
 	ConnectorViewerService,
@@ -35,7 +41,16 @@ export {
 	GoogleDriveViewer,
 	type GoogleDriveViewerProps,
 } from "./google/drive/google-drive-viewer";
-export type { MailMessage } from "./mail/mail.types";
+export {
+	buildMailFolderTree,
+	type MailFolderNode,
+} from "./mail/mail.folders";
+export {
+	groupMailByConversation,
+	type MailConversation,
+	normalizeMailSubject,
+} from "./mail/mail.threads";
+export type { MailFolder, MailMessage } from "./mail/mail.types";
 export {
 	MailDetailView,
 	type MailDetailViewProps,
@@ -46,6 +61,15 @@ export {
 	MailboxView,
 	type MailboxViewProps,
 } from "./mail/mailbox-view";
+export { type MailFolders, useMailFolders } from "./mail/use-mail-folders";
+export { type MailPages, useMailPages } from "./mail/use-mail-pages";
+export {
+	type MicrosoftItemRef,
+	microsoftItemKey,
+	type SavedMailAttachments,
+	saveMailAttachments,
+	saveMicrosoftItem,
+} from "./microsoft/microsoft-item-save";
 export {
 	OneDriveViewer,
 	type OneDriveViewerProps,

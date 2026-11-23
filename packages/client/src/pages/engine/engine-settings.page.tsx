@@ -14,6 +14,8 @@ import {
 import { BulkAccessManagement } from "@/features/bulk-access-management/bulk-access-management";
 import { BulkAccessManagementCard } from "@/features/bulk-access-management/bulk-access-management-card";
 import { EffectivePermissions } from "@/features/effective-permissions/effective-permissions";
+import { EngineAppsTable } from "@/features/engine-app-permissions/engine-apps-table";
+import { EngineEnginesTable } from "@/features/engine-engine-permissions/engine-engines-table";
 import { ModelUsageLimitsCard } from "@/features/model-usage-limits/model-usage-limits-card";
 import { useEngine } from "@/hooks/useEngine";
 
@@ -26,8 +28,9 @@ interface EngineSettingsPageProps {
 }
 
 /**
- * An engine's access control: its access settings, then its members, or Bulk
- * Access Management or Effective Permissions in their place.
+ * An engine's access control: its access settings, then its members, its teams
+ * and the apps it gives a permission to, or Bulk Access Management or
+ * Effective Permissions in their place.
  */
 export const EngineSettingsPage = ({
 	view = "MEMBERS",
@@ -47,6 +50,10 @@ export const EngineSettingsPage = ({
 	const target = { resourceType: "ENGINE" as const, id: engine.engine_id };
 	const name =
 		engine.engine_display_name || engine.engine_name || engine.engine_id;
+	const model =
+		type === "MODEL"
+			? { isPublic: engine.engine_global === true }
+			: undefined;
 
 	return (
 		<SettingsContext.Provider
@@ -144,17 +151,23 @@ export const EngineSettingsPage = ({
 									id={engine.engine_id}
 									canManage={permission === "OWNER"}
 									canViewPeople={canEditAccess}
-									model={
-										type === "MODEL"
-											? {
-													isPublic:
-														engine.engine_global ===
-														true,
-												}
-											: undefined
-									}
+									model={model}
 								/>
 							</div>
+							{canEditAccess ? (
+								<div className="mt-6 flex flex-col gap-6">
+									<EngineAppsTable
+										key={engine.engine_id}
+										id={engine.engine_id}
+										type={type}
+									/>
+									<EngineEnginesTable
+										key={`engines-${engine.engine_id}`}
+										id={engine.engine_id}
+										type={type}
+									/>
+								</div>
+							) : null}
 						</div>
 					)}
 				</section>

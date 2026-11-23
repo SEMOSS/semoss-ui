@@ -97,7 +97,7 @@ export function BrainMemory() {
 			header={
 				<CollaborationPageHeader
 					title="Memory"
-					description="What the thread assistant keeps for you across threads: your preferences, and facts about people, topics, and threads."
+					description="What your Digital Twin keeps for you across threads: your preferences, and facts about people, topics, and threads."
 				/>
 			}
 			aside={
@@ -119,12 +119,12 @@ export function BrainMemory() {
 							/>
 						</div>
 						<Small className="block font-normal text-muted-foreground text-xs leading-5">
-							Off: the assistant neither reads nor saves memories.
-							Your memories stay here.
+							Off: your Digital Twin neither reads nor saves
+							memories. Your memories stay here.
 						</Small>
 						<div className="flex items-center justify-between gap-4">
 							<Label htmlFor={`${fieldId}-learn`}>
-								Suggest memories from my chats
+								Learn from my chats
 							</Label>
 							<Switch
 								id={`${fieldId}-learn`}
@@ -141,18 +141,21 @@ export function BrainMemory() {
 							/>
 						</div>
 						<Small className="block font-normal text-muted-foreground text-xs leading-5">
-							After a chat, the assistant reads what you wrote and
-							suggests what to keep. Nothing is used until you
-							keep it.
+							Shortly after you write in a chat, your Digital Twin
+							saves what is worth keeping and updates what it
+							learned before. It asks in Review before changing a
+							memory you wrote or confirmed.
 						</Small>
 					</Section>
 					<Section title="How memory works" variant="card">
 						<P className="text-muted-foreground text-xs leading-5">
-							When you tell the assistant something lasting, it
-							saves it and shows it in the chat, where you can
-							undo it. What it learned stays background until you
-							confirm it: it never adds a recipient or sends
-							anything because of an unconfirmed memory.
+							When you tell your Digital Twin something lasting,
+							it saves it. Some saves show in the chat, where you
+							can undo them; the rest are saved shortly after and
+							listed under Learned. What it learned stays
+							background until you confirm it: it never adds a
+							recipient or sends anything because of an
+							unconfirmed memory.
 						</P>
 						<P className="text-muted-foreground text-xs leading-5">
 							Type /remember and a sentence in any chat to save it
@@ -212,7 +215,7 @@ export function BrainMemory() {
 						<P className="py-6 text-muted-foreground text-sm">
 							{listed.length
 								? "No memory matches."
-								: "No memories yet. Tell the assistant something lasting in a thread, or add one above."}
+								: "No memories yet. Tell your Digital Twin something lasting in a thread, or add one above."}
 						</P>
 					)}
 				</div>
@@ -314,7 +317,7 @@ function DeleteAllMemories({ count }: { count: number }) {
 				<DialogHeader>
 					<DialogTitle>Delete all {count} memories?</DialogTitle>
 					<DialogDescription>
-						The assistant forgets everything here, including
+						Your Digital Twin forgets everything here, including
 						suggestions. Your threads, topics, and people stay. This
 						cannot be undone.
 					</DialogDescription>

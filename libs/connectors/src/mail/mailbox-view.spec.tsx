@@ -10,6 +10,8 @@ const mocks = vi.hoisted(() => ({
 	loadMore: vi.fn(),
 	reload: vi.fn(),
 	hasMore: false,
+	// what the view last asked its pages for
+	pageOptions: undefined as unknown,
 }));
 vi.mock("@semoss/sdk/react", () => ({
 	useInsight: () => ({ insightId: "origin" }),
@@ -30,16 +32,19 @@ vi.mock("../core/use-connector-query", () => ({
 	}),
 }));
 vi.mock("./use-mail-pages", () => ({
-	useMailPages: () => ({
-		data: mocks.messages,
-		status: "ready",
-		error: null,
-		isRefreshing: false,
-		reload: mocks.reload,
-		loadMore: mocks.loadMore,
-		pageError: mocks.pageError,
-		hasMore: mocks.hasMore,
-	}),
+	useMailPages: (options: unknown) => {
+		mocks.pageOptions = options;
+		return {
+			data: mocks.messages,
+			status: "ready",
+			error: null,
+			isRefreshing: false,
+			reload: mocks.reload,
+			loadMore: mocks.loadMore,
+			pageError: mocks.pageError,
+			hasMore: mocks.hasMore,
+		};
+	},
 }));
 let root: Root;
 let container: HTMLDivElement;
@@ -81,6 +86,60 @@ afterEach(async () => {
 	vi.unstubAllGlobals();
 });
 
+it("leads each row with its sender and narrows the list where the host gives it a page", async () => {
+	mocks.messages = parseMailPage({
+		messages: [
+			{
+				id: "m1",
+				subject: "Budget",
+				fromName: "Ava Reed",
+				from: "ava@test.com",
+			},
+		],
+	}).messages;
+	const attachmentsToggle = () =>
+		[...container.querySelectorAll("button")].find(
+			(button) => button.textContent === "mail.hasAttachments",
+		);
+	// elsewhere a row keeps its mail icon and the list its two toggles
+	await render({ presentation: "default" });
+	expect(container.querySelector('[data-slot="avatar"]')).toBeNull();
+	expect(attachmentsToggle()).toBeUndefined();
+
+	await render({ presentation: "page" });
+	// who the email is from stands where the mail icon was
+	expect(container.querySelector('[data-slot="avatar"]')?.textContent).toBe(
+		"AR",
+	);
+	// with no picture until the host has one to give for the sender's address
+	expect(container.querySelector('[data-slot="avatar"] img')).toBeNull();
+	await render({
+		presentation: "page",
+		getPersonPhotoUrl: (person) => `/photo/${person.email}`,
+	});
+	expect(
+		container
+			.querySelector('[data-slot="avatar"] img')
+			?.getAttribute("src"),
+	).toBe("/photo/ava@test.com");
+	expect(
+		container.querySelector('[placeholder="mail.fromFilter"]'),
+	).not.toBeNull();
+	expect(
+		container.querySelector('[aria-label="mail.received"]'),
+	).not.toBeNull();
+	expect(mocks.pageOptions).toMatchObject({
+		search: "",
+		from: "",
+		sinceDays: undefined,
+	});
+	expect(attachmentsToggle()?.getAttribute("aria-pressed")).toBe("false");
+	await act(async () => attachmentsToggle()?.click());
+	// asked for in Outlook's own search syntax
+	expect(mocks.pageOptions).toMatchObject({ search: "hasattachment:true" });
+	expect(attachmentsToggle()?.getAttribute("aria-pressed")).toBe("true");
+});
+
 it("keeps the browser mounted while handing a provider-bound selection to the host", async () => {
 	const onOpenItem = vi.fn();
 	const onAddToContext = vi.fn();
@@ -113,6 +172,38 @@ it("keeps the browser mounted while handing a provider-bound selection to the ho
 	expect(row?.textContent?.indexOf("Sender")).toBeLessThan(
 		row?.textContent?.indexOf("A long subject") ?? 0,
 	);
+});
+
+it("says a thread the host holds is held on each of its rows, in place of offering to save it", async () => {
+	mocks.messages = parseMailPage({
+		messages: [
+			{ id: "m1", subject: "Held", conversationId: "c1" },
+			{ id: "m2", subject: "Re: Held", conversationId: "c1" },
+			{ id: "m3", subject: "Free" },
+		],
+	}).messages;
+	await render({
+		presentation: "default",
+		savedItems: {
+			isSaved: (itemKey) => itemKey === "conversation:c1",
+			label: "In the host",
+		},
+	});
+	const held = () =>
+		container.querySelectorAll('[role="img"][title="In the host"]');
+	// the translation stand-in answers a key: this one is the save label with the email's subject
+	const offered = () =>
+		container.querySelectorAll('li button[aria-label="actions.named"]');
+	expect(held()).toHaveLength(1);
+	expect(offered()).toHaveLength(1);
+
+	// with conversations off each email is a row, and a save still takes its whole thread
+	const conversations = Array.from(container.querySelectorAll("button")).find(
+		(button) => button.textContent === "mail.conversations",
+	);
+	await act(async () => conversations?.click());
+	expect(held()).toHaveLength(2);
+	expect(offered()).toHaveLength(1);
 });
 
 it("restores the origin row on return, waits while hidden, and does not refocus unchanged requests", async () => {

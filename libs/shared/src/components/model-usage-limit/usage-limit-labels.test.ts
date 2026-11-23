@@ -16,6 +16,15 @@ describe("describeLoggedBilledTo", () => {
 		expect(describeLoggedBilledTo("PUBLIC", null, null)).toBe(
 			"Public Use Limit",
 		);
+		expect(describeLoggedBilledTo("ENGINE", "app-1", "PROJECT")).toBe(
+			"App Limit",
+		);
+		expect(describeLoggedBilledTo("ENGINE", "guard-1", "GUARDRAIL")).toBe(
+			"Engine Limit",
+		);
+		expect(describeLoggedBilledTo("PROJECT", "app-1", null)).toBe(
+			"App Limit",
+		);
 		expect(describeLoggedBilledTo("ALL_MODELS", "u-1", "NATIVE")).toBe(
 			"User's Total Model Limit",
 		);
@@ -38,6 +47,8 @@ describe("getUsageSourceLabel", () => {
 		expect(getUsageSourceLabel("DIRECT")).toBe("Direct Limit");
 		expect(getUsageSourceLabel("TEAM")).toBe("Team Limit");
 		expect(getUsageSourceLabel("PUBLIC")).toBe("Public Use Limit");
+		expect(getUsageSourceLabel("APP")).toBe("App Limit");
+		expect(getUsageSourceLabel("ENGINE")).toBe("Engine Limit");
 		expect(getUsageSourceLabel("ALL_MODELS")).toBe(
 			"User's Total Model Limit",
 		);

@@ -83,13 +83,20 @@ describe("engine workbench audit tab", () => {
 			expect(mocks.audit).not.toHaveBeenCalled();
 		},
 	);
-	it("allows admins and removes the audit view when authorization is revoked", () => {
+	it("hides audit history from an admin who does not own the engine", () => {
 		mocks.permission = "READ_ONLY";
 		mocks.admin = true;
+		render(<SettingsFixture />);
+		expect(
+			screen.queryByRole("tab", { name: "Audit Trail" }),
+		).not.toBeInTheDocument();
+		expect(mocks.audit).not.toHaveBeenCalled();
+	});
+	it("removes the audit view once the user no longer owns the engine", () => {
 		const view = render(<SettingsFixture />);
 		fireEvent.click(screen.getByRole("tab", { name: "Audit Trail" }));
 		expect(screen.getByText("Engine audit history")).toBeInTheDocument();
-		mocks.admin = false;
+		mocks.permission = "READ_ONLY";
 		view.rerender(<SettingsFixture />);
 		expect(
 			screen.queryByText("Engine audit history"),

@@ -28,6 +28,17 @@ export interface ConnectorSavedFile {
 	name: string;
 	/** The viewer it came from. */
 	service: ConnectorViewerService;
+	/**
+	 * What that viewer knows the item it was saved from by. Set on the file
+	 * `onSaved` is handed, so a host can mark the item through `savedItems`.
+	 */
+	itemKey?: string;
+	/**
+	 * The drive a drive file was saved from, when its viewer knows it; left
+	 * out for a file of the user's own drive read without one. A host that
+	 * reads the file again later needs it beside the item's id.
+	 */
+	driveId?: string;
 }
 
 /** Transient actions a host can display in its own viewer chrome. */
@@ -45,6 +56,49 @@ export interface ConnectorFocusRequest {
 	requestId: number;
 }
 
+/** How a host marks the items it already holds, in a viewer that lists them. */
+export interface ConnectorSavedItems {
+	/** Whether the host holds the item, by the `itemKey` of its saved file. */
+	isSaved: (itemKey: string) => boolean;
+	/**
+	 * What a held item says in place of the save action, such as
+	 * `In your Digital Twin`.
+	 */
+	label: string;
+}
+
+/** What a host can also give a viewer that marks the items the host holds. */
+export interface ConnectorSavedItemsProps {
+	/**
+	 * The items the host already holds. Each shows as held where the viewer
+	 * would offer to save it: on its row, and above it once it is open. Its
+	 * right-click menu still saves, since the host may have let its copy go.
+	 */
+	savedItems?: ConnectorSavedItems;
+}
+
+/** Who an item is from, as far as its viewer knows them. */
+export interface ConnectorPerson {
+	/** Their address, when the viewer knows it. */
+	email?: string;
+	/**
+	 * Their Microsoft user id, where that is how the viewer knows them, as
+	 * Teams names the people of a chat.
+	 */
+	userId?: string;
+}
+
+/** What a host can also give a viewer whose rows lead with who each item is from. */
+export interface ConnectorPersonPhotoProps {
+	/**
+	 * Where a person's picture is, for a host that has pictures to show. A
+	 * row that leads with who its item is from draws the picture over their
+	 * initials once it loads. The initials stay for anyone this answers
+	 * nothing for, and for a picture that cannot be read.
+	 */
+	getPersonPhotoUrl?: (person: ConnectorPerson) => string | undefined;
+}
+
 /** What a host gives every connector viewer. */
 export interface ConnectorViewerProps {
 	/** Prepare the originating file space; release its lifetime after the save. */
@@ -52,6 +106,12 @@ export interface ConnectorViewerProps {
 	prepareSave?: () => Promise<void | (() => void)>;
 	/** Whether this retained viewer is currently visible. Defaults to true. */
 	isVisible?: boolean;
+	/**
+	 * Raised by the host when what the viewer shows may have changed behind
+	 * it, such as after an agent's run wrote to the drive. A viewer that keeps
+	 * a listing reads it again each time the number changes.
+	 */
+	refreshRequestId?: number;
 	/** Publish actions to host chrome instead of rendering their inline equivalents. */
 	onControlsChange?: (controls: ConnectorViewerControls) => void;
 	/**

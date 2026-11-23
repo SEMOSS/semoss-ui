@@ -3,14 +3,9 @@ import {
 	getPixelJobStreaming,
 	runPixel,
 	runPixelAsync,
+	Session,
 } from "@semoss/sdk/react";
 import type { Engine } from "@semoss/shared";
-
-/** One login-provider entry in the GetUserInfo response. */
-interface UserInfoProvider {
-	/** Profile metadata map (e.g. "text-generation-model"). */
-	meta?: Record<string, unknown>;
-}
 
 /** MCP server reference persisted on a room's options. */
 export type RoomMcpEntry = {
@@ -188,27 +183,6 @@ const assertPixelSuccess = (errors: string[]): void => {
 };
 
 /**
- * Extract a profile metadata string that may be returned as an array.
- *
- * @name getProfileMetadataValue
- * @param value - Raw metadata value: a string, an array of strings, or
- * anything else.
- * @return The string value (first array element when wrapped), or an empty
- * string when the value is not a string.
- */
-const getProfileMetadataValue = (value: unknown): string => {
-	if (typeof value === "string") {
-		return value;
-	}
-
-	if (Array.isArray(value) && typeof value[0] === "string") {
-		return value[0];
-	}
-
-	return "";
-};
-
-/**
  * Resolve a text-generation model engine by its id.
  *
  * @name resolveWorkbenchAssistantModel
@@ -260,8 +234,8 @@ const getFirstWorkbenchAssistantModel = async (
 };
 
 /**
- * Resolve the user's configured default text-generation model by reading the
- * "text-generation-model" entry from their profile metadata. When no default
+ * Resolve the user's configured default text-generation model, the
+ * session's `user.defaultModels.textGeneration`. When no default
  * is configured — or the configured model no longer resolves (deleted or no
  * longer visible) — falls back to the first text-generation model available
  * to the user.
@@ -275,18 +249,10 @@ const getFirstWorkbenchAssistantModel = async (
 export const getDefaultWorkbenchAssistantModel = async (
 	insightId: string,
 ): Promise<Engine | null> => {
-	const userResponse = await runPixel<[Record<string, UserInfoProvider>]>(
-		"META | GetUserInfo();",
-		insightId,
-	);
-	assertPixelSuccess(userResponse.errors);
-
-	const provider = Object.values(
-		userResponse.pixelReturn[0]?.output ?? {},
-	)[0];
-	const modelId = getProfileMetadataValue(
-		provider?.meta?.["text-generation-model"],
-	);
+	// the session reads the user's metadata from the database, and keeps it
+	// current after the user's own `setMetadata`
+	const modelId =
+		Session.getSnapshot().user?.defaultModels.textGeneration ?? "";
 
 	const configured = await resolveWorkbenchAssistantModel(insightId, modelId);
 	if (configured) {

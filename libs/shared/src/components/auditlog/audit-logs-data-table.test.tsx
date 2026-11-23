@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AuditLogsDataTable } from "./audit-logs-data-table";
 import type { EventData } from "./common";
 
@@ -13,7 +13,22 @@ vi.mock("@semoss/i18n", async (importOriginal) => ({
 	}),
 }));
 
-afterEach(cleanup);
+beforeEach(() => {
+	// jsdom has no ResizeObserver, which the table's UI primitives measure with.
+	vi.stubGlobal(
+		"ResizeObserver",
+		class {
+			observe() {}
+			unobserve() {}
+			disconnect() {}
+		},
+	);
+});
+
+afterEach(() => {
+	cleanup();
+	vi.unstubAllGlobals();
+});
 
 const event = (overrides: Partial<EventData>): EventData => ({
 	requestId: "request-1",

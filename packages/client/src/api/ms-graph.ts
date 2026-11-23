@@ -1,4 +1,4 @@
-import { Env } from "@semoss/sdk/react";
+import { Env, getCsrfHeaders } from "@semoss/sdk/react";
 
 /**
  * What the deployment can do about Microsoft Graph subscriptions right now, as
@@ -147,7 +147,10 @@ export const createMsGraphSubscription = async (
 		{
 			method: "POST",
 			credentials: "include",
-			headers: { Accept: "application/json" },
+			headers: {
+				Accept: "application/json",
+				...(await getCsrfHeaders()),
+			},
 		},
 	);
 	const body = (await readJson(response)) as
@@ -166,7 +169,10 @@ export const deleteMsGraphSubscription = async (
 		{
 			method: "DELETE",
 			credentials: "include",
-			headers: { Accept: "application/json" },
+			headers: {
+				Accept: "application/json",
+				...(await getCsrfHeaders()),
+			},
 		},
 	);
 	const body = (await readJson(response)) as MsGraphErrorBody | null;

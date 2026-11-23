@@ -1,27 +1,26 @@
-import { RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
-import {
-	Button,
-	cn,
-	H1,
-	P,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@semoss/ui/next";
-import { checkTime } from "@/features/collaboration/live/work-refresh-status";
-import { useWorkUpdates } from "@/features/collaboration/live/work-updates.context";
+import { Link } from "react-router";
+import { CollaborationHeroHeader } from "@/features/collaboration/components/collaboration-hero-header";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
-import { useDashboard } from "./dashboard.context";
+import { twinContentsPath } from "@/lib/workspace-paths";
+import { useDashboard, useTwinUpdates } from "./dashboard.context";
 import { dashboardTimeZone, eventStart, isAllDay } from "./dashboard-calendar";
 import { dayKey } from "./dashboard-selectors";
-import { selectToday } from "./today-selectors";
+import { MailCheckStatus } from "./mail-check-status";
+import { useDueToday } from "./use-due-today";
 
-/** One line: what is due today and when the next meeting starts. */
+/**
+ * One line: what is due today and when the next meeting starts. Under it,
+ * when mail was last read and, when a check found any, how many copies in the
+ * twins the owner shares wait for them.
+ */
 export function BriefHeader() {
 	const { state } = useCollaborationSession();
-	const { calendar, refreshSources } = useDashboard();
-	const updates = useWorkUpdates();
+	const { calendar } = useDashboard();
+	const twinUpdates = useTwinUpdates().data?.updates ?? [];
+	// to the Updates of the one twin they are all in; else to the twins, whose cards each say how many
+	const isOneTwin =
+		new Set(twinUpdates.map((update) => update.twinId)).size === 1;
 	const [now, setNow] = useState(() => new Date());
 	useEffect(() => {
 		const timer = window.setInterval(() => setNow(new Date()), 60_000);
@@ -44,7 +43,7 @@ export function BriefHeader() {
 			: hour < 18
 				? "Good afternoon"
 				: "Good evening";
-	const { due } = selectToday(state, now);
+	const due = useDueToday(now);
 	const next = (calendar.data ?? [])
 		.flatMap((event) => {
 			const start = eventStart(event);
@@ -57,11 +56,6 @@ export function BriefHeader() {
 				: [];
 		})
 		.sort((a, b) => a.getTime() - b.getTime())[0];
-	// the same check as Work's Refresh: when Microsoft 365 was last read, not when this page re-read
-	const check = updates?.lastMailCheck ?? null;
-	const isChecking = Boolean(
-		updates?.isSyncing || check?.status === "running",
-	);
 	const at = next?.toLocaleTimeString(undefined, {
 		timeZone: zone,
 		hour: "numeric",
@@ -75,50 +69,30 @@ export function BriefHeader() {
 				? "One thing is due today."
 				: `${due} things are due today.`;
 	return (
-		<header className="mb-6 flex flex-col items-center gap-2 text-center">
-			<H1 className="font-display font-medium text-3xl leading-tight sm:text-[2.5rem]">
-				{greeting}
-				{name ? `, ${name}` : ""}.
-			</H1>
-			<P className="text-base text-muted-foreground">
-				{dueLine}
-				{at ? ` Your next meeting is at ${at}.` : ""}
-			</P>
-			<div className="flex items-center gap-1 text-muted-foreground/80 text-xs">
-				<span>
-					{isChecking
-						? "Checking\u2026"
-						: updates?.syncError || check?.status === "failed"
-							? "Last check failed"
-							: check?.at
-								? `Updated ${checkTime(check.at)}`
-								: ""}
+		<CollaborationHeroHeader
+			eyebrow={
+				<span className="font-medium text-xs uppercase tracking-widest">
+					Welcome to Collaboration
 				</span>
-				<Tooltip disableHoverableContent={false}>
-					<TooltipTrigger asChild>
-						<Button
-							variant="ghost"
-							size="icon-sm"
-							aria-label="Check for new mail"
-							disabled={!updates || isChecking}
-							className="pointer-coarse:size-11 size-7 text-muted-foreground"
-							onClick={() => {
-								updates?.syncMail();
-								refreshSources();
-							}}
-						>
-							<RefreshCw
-								aria-hidden="true"
-								className={cn(
-									"size-3.5",
-									isChecking && "animate-spin",
-								)}
-							/>
-						</Button>
-					</TooltipTrigger>
-					<TooltipContent>Check for new mail</TooltipContent>
-				</Tooltip>
-			</div>
-		</header>
+			}
+			title={`${greeting}${name ? `, ${name}` : ""}.`}
+			description={`${dueLine}${at ? ` Your next meeting is at ${at}.` : ""}`}
+		>
+			<MailCheckStatus />
+			{twinUpdates.length > 0 && (
+				<Link
+					to={
+						isOneTwin
+							? twinContentsPath("updates", twinUpdates[0].twinId)
+							: "/twins"
+					}
+					className="inline-flex min-h-7 pointer-coarse:min-h-11 items-center rounded-sm underline underline-offset-2 hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+				>
+					{twinUpdates.length === 1
+						? "1 update in a twin you share"
+						: `${twinUpdates.length} updates in ${isOneTwin ? "a twin" : "twins"} you share`}
+				</Link>
+			)}
+		</CollaborationHeroHeader>
 	);
 }

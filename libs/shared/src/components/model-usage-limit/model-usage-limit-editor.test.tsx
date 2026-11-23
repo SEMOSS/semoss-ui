@@ -29,6 +29,14 @@ const mocks = vi.hoisted(() => {
 		"usageLimit.metrics.COMPUTE_TIME": "Compute Time",
 		"usageLimit.counts.teamShared": "Shared",
 		"usageLimit.counts.teamEach": "For Each Member",
+		"usageLimit.counts.appShared": "Shared by the App",
+		"usageLimit.counts.appEach": "For Each User",
+		"usageLimit.eachUserNote":
+			"For each user rules count only the calls this app's limit applies to.",
+		"usageLimit.counts.engineShared": "Shared by the Engine",
+		"usageLimit.counts.engineEach": "For Each User",
+		"usageLimit.eachEngineUserNote":
+			"For each user rules count only the calls this engine's limit applies to.",
 		"usageLimit.rule.remove": "Remove rule {{number}}",
 		"usageLimit.rule.windowUnits.MINUTE_one": "Minute",
 		"usageLimit.rule.windowUnits.MINUTE_other": "Minutes",
@@ -60,6 +68,8 @@ vi.mock("@semoss/i18n", async (importOriginal) => ({
 const AMOUNT_PROBLEM = "Enter an amount above 0";
 const LENGTH_PROBLEM = "Enter a length from 1 to 59 minutes";
 const NO_RULES = "Add a rule to cap use. A call must pass every rule.";
+const EACH_USER_NOTE =
+	"For each user rules count only the calls this app's limit applies to.";
 
 /**
  * Renders the editor for one person on a model, as a host does before any
@@ -254,6 +264,88 @@ describe("ModelUsageLimitEditor problems", () => {
 		);
 
 		expect(metricSelect.textContent).toBe("Compute Time");
+	});
+
+	it("offers an engine's counts as shared by the engine or for each user", async () => {
+		render(
+			<ModelUsageLimitEditor
+				defaultValue={{
+					unlimited: false,
+					rules: [
+						{
+							metric: "TOKENS",
+							amount: 1000,
+							window: "DAY",
+							counts: "EACH_PERSON",
+						},
+					],
+				}}
+				source="ENGINE"
+				onChange={vi.fn()}
+			/>,
+		);
+
+		const countsSelect = screen.getByRole("combobox", {
+			name: "Whose use rule 1 counts",
+		});
+		expect(countsSelect.textContent).toBe("For Each User");
+		expect(
+			screen.getByText(
+				"For each user rules count only the calls this engine's limit applies to.",
+			),
+		).toBeTruthy();
+		expect(screen.queryByText(EACH_USER_NOTE)).toBeNull();
+
+		fireEvent.click(countsSelect);
+		expect(
+			await screen.findByRole("option", { name: "Shared by the Engine" }),
+		).toBeTruthy();
+	});
+
+	it("offers an app's counts as shared by the app or for each user", async () => {
+		const onChange = vi.fn();
+		render(
+			<ModelUsageLimitEditor
+				defaultValue={{
+					unlimited: false,
+					rules: [
+						{
+							metric: "TOKENS",
+							amount: 1000,
+							window: "DAY",
+							counts: "SHARED",
+						},
+					],
+				}}
+				source="APP"
+				onChange={onChange}
+			/>,
+		);
+
+		const countsSelect = screen.getByRole("combobox", {
+			name: "Whose use rule 1 counts",
+		});
+		expect(countsSelect.textContent).toBe("Shared by the App");
+		expect(screen.queryByText(EACH_USER_NOTE)).toBeNull();
+
+		fireEvent.click(countsSelect);
+		fireEvent.click(
+			await screen.findByRole("option", { name: "For Each User" }),
+		);
+
+		expect(countsSelect.textContent).toBe("For Each User");
+		expect(screen.getByText(EACH_USER_NOTE)).toBeTruthy();
+		expect(onChange).toHaveBeenLastCalledWith({
+			unlimited: false,
+			rules: [
+				{
+					metric: "TOKENS",
+					amount: 1000,
+					window: "DAY",
+					counts: "EACH_PERSON",
+				},
+			],
+		});
 	});
 
 	it("disables every control while the host saves", () => {

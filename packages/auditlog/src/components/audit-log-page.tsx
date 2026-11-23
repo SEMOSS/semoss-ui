@@ -2,7 +2,7 @@ import { Download, RotateCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { download, runPixel } from "@semoss/sdk";
-import { useInsight } from "@semoss/sdk/react";
+import { useSessionInsight } from "@semoss/sdk/react";
 import {
 	AuditLogFilter,
 	type AuditLogFilterValue,
@@ -33,7 +33,8 @@ import {
 
 export const AuditLogPage = ({ catalogName }) => {
 	const { t } = useTranslation("auditlog");
-	const { insightId } = useInsight(); // fetching insight id for access
+	// the session's own insight: the report and its export share it
+	const { insightId } = useSessionInsight();
 	const [logs, setLogs] = useState<EventData[]>([]);
 	const [page, setPage] = useState(0);
 	const [rowsPerPage, setRowsPerPage] = useState(50);

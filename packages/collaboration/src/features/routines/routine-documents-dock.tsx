@@ -1,6 +1,10 @@
 import { Maximize2, Minimize2, Upload } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { FILE_PANEL_TYPES } from "@semoss/panels";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+	FILE_PANEL_TYPES,
+	FileExplorerHostProvider,
+	type FilePanelMode,
+} from "@semoss/panels";
 import type { FileExplorerApi } from "@semoss/shared";
 import { Button, cn } from "@semoss/ui/next";
 import {
@@ -12,46 +16,78 @@ import {
 	type WorkbenchPanelConfigAny,
 	WorkbenchProvider,
 } from "@semoss/workbench";
+import {
+	DOCUMENT_LIBRARY,
+	DOCUMENT_LIBRARY_PANEL,
+	DocumentOverviewContext,
+	type RenderDocumentOverview,
+} from "./document-library-panel";
+
+/**
+ * What the dock's explorer opens: whose files, and the folder it starts in
+ * (`initialPath`, with a leading slash) or is kept to (`rootPath`, which
+ * nothing above can be browsed from).
+ */
+// a type, not an interface: a panel's config is read as a plain record
+type DocumentsDockConfig = {
+	mode: FilePanelMode;
+	initialPath?: string;
+	rootPath?: string;
+};
 
 interface RoutineDocumentsDockProps {
-	/** The routine's folder in the owner's user assets, with a leading slash. */
-	path: string;
+	/** The files the dock shows; read once, when the dock mounts. */
+	config: DocumentsDockConfig;
 	/** Panel blueprints: the shared file panels, or stubs in tests. */
 	components: Record<string, WorkbenchPanelConfigAny>;
+	/** Optional library tab beside file previews. */
+	renderOverview?: RenderDocumentOverview;
+	/** Refresh the library's listing when the explorer reloads its files. */
+	onRefresh?: () => void;
 }
 
 // below this width the dock uses the phone shell, as the room's tool dock does
 const COMPACT_BELOW_PX = 768;
 
 /**
- * The same dock as Settings > My Files, rooted at the routine's folder: the
- * user-assets explorer on the left, files opening in the stage beside it.
+ * The same dock as Settings > My Files over the given files: the explorer on
+ * the left, files opening in the stage beside it.
  */
-function createLayout(path: string): WorkbenchLayout {
-	// shortcut: the explorer's crumbs can climb above this folder into the rest of the owner's files; clamp navigateTo if that confuses owners
+function createLayout(
+	config: DocumentsDockConfig,
+	hasOverview: boolean,
+): WorkbenchLayout {
+	// shortcut: with only an initialPath, the explorer's crumbs can climb above that folder into the rest of the owner's files; give a rootPath, or clamp navigateTo, if that confuses owners
 	return {
 		tree: {
 			type: "tabset",
 			id: "main",
 			size: 1,
-			panelIds: [],
-			activeId: null,
+			panelIds: hasOverview ? [DOCUMENT_LIBRARY] : [],
+			activeId: hasOverview ? DOCUMENT_LIBRARY : null,
 			enableDeleteWhenEmpty: false,
 		},
 		panels: {
+			...(hasOverview && {
+				[DOCUMENT_LIBRARY]: {
+					id: DOCUMENT_LIBRARY,
+					type: DOCUMENT_LIBRARY,
+					name: "Library",
+				},
+			}),
 			[FILE_PANEL_TYPES.FILE_EXPLORER]: {
 				id: FILE_PANEL_TYPES.FILE_EXPLORER,
 				type: FILE_PANEL_TYPES.FILE_EXPLORER,
 				name: "Documents",
 				helpText: "Reference documents",
 				canClose: false,
-				config: { mode: { type: "USER" }, initialPath: path },
+				config,
 			},
 		},
 		borders: {
 			left: {
 				panelIds: [FILE_PANEL_TYPES.FILE_EXPLORER],
-				activeId: FILE_PANEL_TYPES.FILE_EXPLORER,
+				activeId: hasOverview ? null : FILE_PANEL_TYPES.FILE_EXPLORER,
 				size: 260,
 			},
 		},
@@ -82,19 +118,35 @@ function UploadDocumentsButton() {
 }
 
 /**
- * A file dock over one routine's documents folder: sized to the card, or to
- * the viewport when maximized. The shell fills its nearest positioned
- * ancestor, so the frame around it is always positioned.
+ * A file dock over one folder of documents, such as a routine's or a Digital
+ * Twin's: sized to the space around it, or to the viewport when maximized.
+ * The shell fills its nearest positioned ancestor, so the frame around it is
+ * always positioned.
  */
 export function RoutineDocumentsDock({
-	path,
+	config,
 	components,
+	renderOverview,
+	onRefresh,
 }: RoutineDocumentsDockProps) {
 	// one store per folder; the shell loads the snapshot itself
 	const [{ store, snapshot }] = useState(() => ({
-		store: createWorkbenchStore({ components }),
-		snapshot: createLayout(path),
+		store: createWorkbenchStore({
+			components: renderOverview
+				? {
+						...components,
+						[DOCUMENT_LIBRARY]: DOCUMENT_LIBRARY_PANEL,
+						// Library and Upload need the explorer API even before its rail opens.
+						[FILE_PANEL_TYPES.FILE_EXPLORER]: {
+							...components[FILE_PANEL_TYPES.FILE_EXPLORER],
+							mount: "eager",
+						},
+					}
+				: components,
+		}),
+		snapshot: createLayout(config, Boolean(renderOverview)),
 	}));
+	const explorerHost = useMemo(() => ({ onRefresh }), [onRefresh]);
 	const [isMaximized, setIsMaximized] = useState(false);
 	const frame = useRef<HTMLDivElement | null>(null);
 	// the dock's own width decides the layout, not the viewport's: a narrow card column gets the phone shell
@@ -111,8 +163,8 @@ export function RoutineDocumentsDock({
 		observer.observe(element);
 		return () => observer.disconnect();
 	}, []);
-	return (
-		<WorkbenchProvider store={store}>
+	const dock = (
+		<DocumentOverviewContext.Provider value={renderOverview}>
 			<div
 				aria-hidden="true"
 				className={cn(
@@ -123,10 +175,9 @@ export function RoutineDocumentsDock({
 			<div
 				ref={frame}
 				className={cn(
-					"overflow-hidden rounded-lg border bg-secondary-background",
-					isMaximized
-						? "fixed inset-4 z-50"
-						: "relative min-h-128 flex-1",
+					"relative flex-1 overflow-hidden rounded-lg border bg-secondary-background",
+					renderOverview ? "min-h-0" : "min-h-128",
+					isMaximized && "fixed inset-4 z-50 min-h-0",
 				)}
 			>
 				<Workbench
@@ -151,6 +202,17 @@ export function RoutineDocumentsDock({
 					}}
 				/>
 			</div>
+		</DocumentOverviewContext.Provider>
+	);
+	return (
+		<WorkbenchProvider store={store}>
+			{onRefresh ? (
+				<FileExplorerHostProvider host={explorerHost}>
+					{dock}
+				</FileExplorerHostProvider>
+			) : (
+				dock
+			)}
 		</WorkbenchProvider>
 	);
 }

@@ -164,6 +164,18 @@ it.each([
 	);
 });
 
+it.each([
+	"javascript:alert(1)",
+	"http://example.com/join",
+	"/join/1",
+	"//example.com/join",
+])("hides unsafe meeting join links: %s", async (joinUrl) => {
+	mocks.data = { ...event, joinUrl };
+	await render({ onControlsChange: vi.fn() });
+	expect(container.textContent).not.toContain("calendar.join");
+	expect(container.querySelector(`a[href="${joinUrl}"]`)).toBeNull();
+});
+
 it("does not publish summary or mismatched event actions while the selected event is loading", async () => {
 	const controls = vi.fn<(value: ConnectorViewerControls) => void>();
 	const onAddToContext = vi.fn();
@@ -217,6 +229,7 @@ it("preserves complete-summary tool details and their inline actions", async () 
 				saver={{
 					saveLabel: "Save",
 					isBusy: () => false,
+					savedLabel: () => undefined,
 					save: vi.fn(),
 					addToContext: vi.fn(),
 				}}

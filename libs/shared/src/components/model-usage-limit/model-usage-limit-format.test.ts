@@ -9,9 +9,12 @@ import {
 	describeModelUsageLimit,
 	formatComputeTime,
 	formatDollars,
+	getSourceCounts,
 	getUsageShareStatus,
 	getUsedPercent,
+	isAcrossAllModels,
 	isSameModelUsageLimit,
+	isUnlimitedOffered,
 	parseDollarsToMicros,
 	toExplicitUsageLimit,
 } from "./model-usage-limit-format";
@@ -125,6 +128,68 @@ describe("describeModelUsageLimit", () => {
 				"PUBLIC",
 			),
 		).toBe("$80 a day for each person and $200 a day shared");
+	});
+
+	it("says an app's rules as shared by the app or for each of its users", () => {
+		expect(describeModelUsageLimit(TEAM_LIMIT, "APP")).toBe(
+			"$200 a day shared and $80 a day for each user",
+		);
+	});
+
+	it("says an engine's rules as shared by the engine or for each of its users", () => {
+		expect(describeModelUsageLimit(TEAM_LIMIT, "ENGINE")).toBe(
+			"$200 a day shared and $80 a day for each user",
+		);
+	});
+
+	it("says nothing after the rules of a source that counts one way only", () => {
+		expect(describeModelUsageLimit(TEAM_LIMIT, "DIRECT")).toBe(
+			"$200 a day and $80 a day",
+		);
+	});
+});
+
+describe("an app's limit", () => {
+	it("offers both counts and Unlimited, on one model, as a team's does", () => {
+		expect(getSourceCounts("APP")).toEqual(getSourceCounts("TEAM"));
+		expect(getSourceCounts("APP")).toEqual(["SHARED", "EACH_PERSON"]);
+		expect(isUnlimitedOffered("APP")).toBe(true);
+		expect(isAcrossAllModels("APP")).toBe(false);
+		expect(getSourceCounts("ENGINE")).toEqual(["SHARED", "EACH_PERSON"]);
+		expect(isUnlimitedOffered("ENGINE")).toBe(true);
+		expect(isAcrossAllModels("ENGINE")).toBe(false);
+	});
+
+	it("can be saved with shared and for each user rules, and needs known prices for cost", () => {
+		expect(
+			findModelUsageLimitProblem(TEAM_LIMIT, {
+				source: "APP",
+				isCostAvailable: true,
+			}),
+		).toBeNull();
+		expect(
+			findModelUsageLimitProblem(TEAM_LIMIT, {
+				source: "APP",
+				isCostAvailable: false,
+			}),
+		).toBe("This model has no known prices");
+	});
+
+	it("warns in the app's words when a shared amount leaves a rule for each user nothing to stop", () => {
+		const [shared, each] = checkModelUsageLimitRules(
+			{
+				unlimited: false,
+				rules: [
+					rule({ amount: 500, window: "DAY", counts: "SHARED" }),
+					rule({ amount: 1000, window: "DAY" }),
+				],
+			},
+			{ source: "APP", isCostAvailable: true },
+		);
+		expect(shared.warning).toBeNull();
+		expect(each.warning).toBe(
+			`${(1000).toLocaleString()} tokens a day for each user can never be reached, since 500 tokens a day shared is less`,
+		);
 	});
 });
 
@@ -401,5 +466,11 @@ describe("rule drafts", () => {
 		const third = makeNewRuleDraft([first, second], "TEAM");
 		expect(third.window).toBe("MONTH");
 		expect(makeNewRuleDraft([], "MODEL_TOTAL").counts).toBe("SHARED");
+	});
+
+	it("start an app's first rule shared and later ones for each user", () => {
+		const first = makeNewRuleDraft([], "APP");
+		expect(first.counts).toBe("SHARED");
+		expect(makeNewRuleDraft([first], "APP").counts).toBe("EACH_PERSON");
 	});
 });

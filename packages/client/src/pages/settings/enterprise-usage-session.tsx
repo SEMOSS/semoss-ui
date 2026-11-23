@@ -7,15 +7,15 @@ import { EnterpriseUsage } from "@/features/enterprise-usage/enterprise-usage";
  * downloads. Renders inside the page's `InsightProvider`.
  */
 export function EnterpriseUsageSession() {
-	const { isReady, isInitialized, isAuthorized, insightId, error } =
-		useInsight();
-	if (error || (isInitialized && !isAuthorized))
+	const { isReady, isInitialized, insightId, error } = useInsight();
+	// setup finished without the insight; the page is already signed in
+	if (error || (isInitialized && !isReady))
 		return (
 			<Alert variant="destructive">
 				<AlertTitle>Usage Session Unavailable</AlertTitle>
 				<AlertDescription>
 					{error?.message ||
-						"Unable To Initialize An Authorized Session."}{" "}
+						"Unable To Initialize The Usage Session."}{" "}
 					Reload This Page To Try Again.
 				</AlertDescription>
 			</Alert>

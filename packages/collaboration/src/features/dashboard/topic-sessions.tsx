@@ -107,6 +107,26 @@ export function TopicSessions({ topicId }: TopicSessionsProps) {
 					</AlertDescription>
 				</Alert>
 			)}
+			{sessions.linkedError && (
+				<Alert variant="destructive">
+					<AlertDescription className="space-y-2">
+						<P className="text-sm">
+							Could not load this topic's chats. Ones outside your
+							recent chats may be missing.
+						</P>
+						<Button
+							type="button"
+							size="sm"
+							variant="outline"
+							className="pointer-coarse:min-h-11"
+							disabled={sessions.isLoading}
+							onClick={sessions.retry}
+						>
+							Retry topic chats
+						</Button>
+					</AlertDescription>
+				</Alert>
+			)}
 			{history.error && (
 				<Alert variant="destructive">
 					<AlertDescription className="space-y-2">
@@ -125,11 +145,12 @@ export function TopicSessions({ topicId }: TopicSessionsProps) {
 			)}
 			{!sessions.isLoading &&
 				!sessions.errorCount &&
+				!sessions.linkedError &&
 				!history.error &&
 				!sessions.rooms.length && (
 					<P className="text-muted-foreground text-sm">
-						No linked chats in the history loaded so far. Ask the
-						assistant above to start one.
+						No linked chats in the history loaded so far. Ask your
+						Digital Twin above to start one.
 					</P>
 				)}
 			{sessions.checkedCount > 0 && (

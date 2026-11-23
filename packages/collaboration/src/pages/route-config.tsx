@@ -39,6 +39,88 @@ export const routes: RouteObject[] = [
 									).RoutinesPage,
 								}),
 							},
+							{
+								path: "twins",
+								id: "twins",
+								lazy: async () => ({
+									Component: (
+										await import("@/pages/twins.page")
+									).TwinsPage,
+								}),
+							},
+							{
+								path: "twins/mine",
+								id: "twins/mine",
+								lazy: async () => ({
+									Component: (
+										await import(
+											"@/pages/twin-settings.page"
+										)
+									).TwinSettingsPage,
+								}),
+							},
+							{
+								path: "twins/mine/contents",
+								id: "twins/mine/contents",
+								lazy: async () => ({
+									Component: (
+										await import(
+											"@/pages/twin-contents.page"
+										)
+									).TwinContentsPage,
+								}),
+							},
+							{
+								path: "twins/chat",
+								id: "twins/chat",
+								lazy: async () => ({
+									Component: (
+										await import("@/pages/twin-chat.page")
+									).TwinChatPage,
+								}),
+							},
+							{
+								path: "twins/persona",
+								id: "twins/persona",
+								lazy: async () => ({
+									Component: (
+										await import(
+											"@/pages/twin-persona.page"
+										)
+									).TwinPersonaPage,
+								}),
+							},
+							{
+								path: "twins/persona/interview",
+								id: "twins/persona/interview",
+								lazy: async () => ({
+									Component: (
+										await import(
+											"@/pages/twin-persona-interview.page"
+										)
+									).TwinPersonaInterviewPage,
+								}),
+							},
+							{
+								path: "persona",
+								id: "persona",
+								lazy: async () => ({
+									Component: (
+										await import("@/pages/persona.page")
+									).PersonaPage,
+								}),
+							},
+							{
+								path: "persona/interview",
+								id: "persona/interview",
+								lazy: async () => ({
+									Component: (
+										await import(
+											"@/pages/persona-interview.page"
+										)
+									).PersonaInterviewPage,
+								}),
+							},
 							...[
 								"work",
 								"work/topics",
@@ -62,6 +144,17 @@ export const routes: RouteObject[] = [
 									Component: (
 										await import("@/pages/topic.page")
 									).TopicPage,
+								}),
+							},
+							{
+								path: "topics/:topicId/contents",
+								id: "topic-contents",
+								lazy: async () => ({
+									Component: (
+										await import(
+											"@/pages/topic-contents.page"
+										)
+									).TopicContentsPage,
 								}),
 							},
 							{
@@ -98,7 +191,6 @@ export const routes: RouteObject[] = [
 							},
 							...[
 								"brain",
-								"brain/topics",
 								"brain/memory",
 								"brain/sources",
 								"brain/people",
@@ -122,6 +214,11 @@ export const routes: RouteObject[] = [
 								path: "agents/*",
 								id: "legacy-agents",
 								element: <Navigate to="/brain" replace />,
+							},
+							{
+								// Topics left Settings for the sidebar; old links open its page there
+								path: "brain/topics",
+								element: <Navigate to="/work/topics" replace />,
 							},
 							{
 								path: "brain/profile",

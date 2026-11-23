@@ -183,6 +183,38 @@ describe("custom routine skills and tools", () => {
 		).toBeEnabled();
 	});
 
+	it("offers the daily brief as a place for the result, and then asks for no schedule", async () => {
+		const user = userEvent.setup();
+		let values = {} as CustomRoutineSettings;
+		render(
+			<Harness
+				onValues={(next) => {
+					values = next as CustomRoutineSettings;
+				}}
+			/>,
+		);
+		expect(
+			screen.getByRole("group", { name: "Days (required)" }),
+		).toBeVisible();
+		await user.click(
+			screen.getByRole("radio", { name: /Add to my daily brief/ }),
+		);
+		expect(values.delivery).toBe("brief");
+		expect(
+			screen.getByText(/The brief starts this routine on every run/),
+		).toBeVisible();
+		expect(
+			screen.queryByRole("group", { name: "Days (required)" }),
+		).not.toBeInTheDocument();
+		// its days and time stay saved, for when the result goes somewhere else again
+		expect(values.days).toEqual(["MON"]);
+		expect(values.time).toBe("08:00");
+		await user.click(screen.getByRole("radio", { name: /Email me/ }));
+		expect(
+			screen.getByRole("group", { name: "Days (required)" }),
+		).toBeVisible();
+	});
+
 	it("refuses an eleventh tool before it reaches the server", () => {
 		const eleven = [
 			...tenTools,

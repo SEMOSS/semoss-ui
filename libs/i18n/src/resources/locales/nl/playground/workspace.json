@@ -140,21 +140,6 @@
 		"noPrompts": "Geen prompts gevonden",
 		"searchPlaceholder": "Prompts zoeken..."
 	},
-	"chats": {
-		"title": "Alle chats",
-		"subtitle": "Blader door, zoek en ruim uw chats op.",
-		"selectAll": "Alles selecteren",
-		"deselectAll": "Alles deselecteren",
-		"favorites": "Favorieten",
-		"selectChat": "Chat {{name}} selecteren",
-		"selectedCount": "{{count}} geselecteerd",
-		"totalCount": "{{count}} chats",
-		"deleteSelected": "{{count}} geselecteerde verwijderen",
-		"bulkDeleteConfirmTitle": "{{count}} chats verwijderen?",
-		"bulkDeleteConfirmDescription": "Hiermee worden {{count}} chats permanent verwijderd. Deze actie kan niet ongedaan worden gemaakt.",
-		"bulkDeleteSuccess": "{{count}} chats verwijderd",
-		"bulkDeletePartialFail": "Verwijderen van {{failed}} van {{total}} chats mislukt"
-	},
 	"instructions": {
 		"expand": "Uitvouwen",
 		"viewTitle": "Instructies",

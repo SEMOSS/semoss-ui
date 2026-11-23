@@ -9,7 +9,6 @@ import {
 } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
 import { MonacoEditor } from "@semoss/shared";
-import { useTheme } from "@semoss/ui/next";
 import { Logo } from "../../assets/logos";
 import type {
 	ConsoleContext,
@@ -76,8 +75,7 @@ export const TerminalConsole = ({
 	consoleId = "default",
 }: TerminalConsoleProps) => {
 	const terminal = useTerminal();
-	const { actions, insightId, isAuthorized } = useInsight();
-	const { theme } = useTheme();
+	const { actions, insightId, isReady } = useInsight();
 	const { t } = useTranslation("console");
 	const insightIdRef = useRef(insightId);
 	insightIdRef.current = insightId;
@@ -116,7 +114,7 @@ export const TerminalConsole = ({
 			attributeFilter: ["class"],
 		});
 		return () => observer.disconnect();
-	}, [theme]);
+	}, []);
 	const monacoTheme = resolvedTheme === "dark" ? "vs-dark" : "vs";
 
 	const [state, setStateValue] = useState<ConsoleState>({
@@ -128,8 +126,11 @@ export const TerminalConsole = ({
 	});
 	const stateRef = useRef(state);
 	stateRef.current = state;
-	const setState = (next: Partial<ConsoleState>) =>
-		setStateValue((curr) => ({ ...curr, ...next }));
+	const setState = useCallback(
+		(next: Partial<ConsoleState>) =>
+			setStateValue((curr) => ({ ...curr, ...next })),
+		[],
+	);
 
 	const [input, setInput] = useState("");
 	const inputRef = useRef(input);
@@ -138,7 +139,7 @@ export const TerminalConsole = ({
 	const [history, setHistory] = useState<ConsoleHistoryStep[]>([]);
 	const historyRef = useRef(history);
 	historyRef.current = history;
-	const [, setHistoryCursor] = useState<number | null>(null);
+	const historyCursorRef = useRef<number | null>(null);
 	const stepIdCounterRef = useRef(0);
 
 	const transcriptEleRef = useRef<HTMLDivElement | null>(null);
@@ -148,7 +149,7 @@ export const TerminalConsole = ({
 	const monacoRef = useRef<typeof monacoType | null>(null);
 	const completerRegisteredRef = useRef(false);
 	// Disposables for the completion providers — cleaned up on unmount so
-	// that re-mounting (e.g. after SetContext) doesn't stack stale providers.
+	// that re-mounting (e.g. after LoadApp) doesn't stack stale providers.
 	const completionDisposablesRef = useRef<monacoType.IDisposable[]>([]);
 
 	useEffect(() => {
@@ -182,7 +183,7 @@ export const TerminalConsole = ({
 			id: `step-${stepIdCounterRef.current}`,
 		};
 		setHistory((curr) => [...curr, withId]);
-		setHistoryCursor(null);
+		historyCursorRef.current = null;
 		setTimeout(() => {
 			const el = transcriptEleRef.current;
 			if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
@@ -384,10 +385,13 @@ export const TerminalConsole = ({
 		[appendStep, t, updateStep],
 	);
 
-	const applyContext = useCallback((context: ConsoleContext) => {
-		setState({ context });
-		editorRef.current?.focus();
-	}, []);
+	const applyContext = useCallback(
+		(context: ConsoleContext) => {
+			setState({ context });
+			editorRef.current?.focus();
+		},
+		[setState],
+	);
 
 	const execute = useCallback(async () => {
 		const raw = inputRef.current;
@@ -444,14 +448,14 @@ export const TerminalConsole = ({
 		editorRef.current?.focus();
 
 		await runPixelWithLogs(raw, pixel, context);
-	}, [appendStep, applyContext, runPixelWithLogs, t]);
+	}, [appendStep, applyContext, runPixelWithLogs, setState, t]);
 
 	// history recall: Up at row 0 / Down at last row pulls the previous /
 	// next submitted command into the editor. We also switch the console
 	// context to the one the recalled step was executed in, so the editor
 	// mode (syntax highlighting) matches and a subsequent Submit runs the
 	// command in the same persona as before.
-	const moveCursorToEnd = () => {
+	const moveCursorToEnd = useCallback(() => {
 		// schedule after the controlled value flushes through React
 		setTimeout(() => {
 			const editor = editorRef.current;
@@ -465,49 +469,50 @@ export const TerminalConsole = ({
 			editor.revealLine(lineNumber);
 			editor.focus();
 		}, 0);
-	};
+	}, []);
 
-	const recallStep = (step: ConsoleHistoryStep) => {
-		setInput(step.input);
-		if (step.context && step.context !== stateRef.current.context) {
-			const ctx = step.context as ConsoleContext;
-			if (
-				ctx === "Pixel" ||
-				ctx === "R" ||
-				ctx === "Python" ||
-				ctx === "Shell"
-			) {
-				setState({ context: ctx });
+	const recallStep = useCallback(
+		(step: ConsoleHistoryStep) => {
+			setInput(step.input);
+			if (step.context && step.context !== stateRef.current.context) {
+				const ctx = step.context as ConsoleContext;
+				if (
+					ctx === "Pixel" ||
+					ctx === "R" ||
+					ctx === "Python" ||
+					ctx === "Shell"
+				) {
+					setState({ context: ctx });
+				}
 			}
-		}
-		moveCursorToEnd();
-	};
+			moveCursorToEnd();
+		},
+		[moveCursorToEnd, setState],
+	);
 
 	const historyUp = useCallback(() => {
 		const steps = historyRef.current.filter((s) => s.executed);
 		if (!steps.length) return;
-		setHistoryCursor((curr) => {
-			const next =
-				curr === null ? steps.length - 1 : Math.max(0, curr - 1);
-			recallStep(steps[next]);
-			return next;
-		});
-	}, []);
+		const curr = historyCursorRef.current;
+		const next = curr === null ? steps.length - 1 : Math.max(0, curr - 1);
+		historyCursorRef.current = next;
+		recallStep(steps[next]);
+	}, [recallStep]);
 	const historyDown = useCallback(() => {
 		const steps = historyRef.current.filter((s) => s.executed);
 		if (!steps.length) return;
-		setHistoryCursor((curr) => {
-			if (curr === null) return null;
-			const next = curr + 1;
-			if (next >= steps.length) {
-				setInput("");
-				moveCursorToEnd();
-				return null;
-			}
-			recallStep(steps[next]);
-			return next;
-		});
-	}, []);
+		const curr = historyCursorRef.current;
+		if (curr === null) return;
+		const next = curr + 1;
+		if (next >= steps.length) {
+			historyCursorRef.current = null;
+			setInput("");
+			moveCursorToEnd();
+			return;
+		}
+		historyCursorRef.current = next;
+		recallStep(steps[next]);
+	}, [moveCursorToEnd, recallStep]);
 
 	// Focus on mount
 	useEffect(() => {
@@ -551,7 +556,8 @@ export const TerminalConsole = ({
 
 	// Platform reactors via help() — fetched once per auth, not per project.
 	useEffect(() => {
-		if (!isAuthorized) return;
+		// the workspace's insight is made; sign in is the session's
+		if (!isReady) return;
 		let cancelled = false;
 		(async () => {
 			try {
@@ -592,11 +598,11 @@ export const TerminalConsole = ({
 		return () => {
 			cancelled = true;
 		};
-	}, [isAuthorized, actions, rebuildReactorCatalog]);
+	}, [isReady, actions, rebuildReactorCatalog]);
 
 	// App-specific reactors — re-fetched only when the project context changes.
 	useEffect(() => {
-		if (!isAuthorized || !effectiveProjectId) {
+		if (!isReady || !effectiveProjectId) {
 			appReactorsRef.current = [];
 			rebuildReactorCatalog();
 			return;
@@ -622,7 +628,7 @@ export const TerminalConsole = ({
 		return () => {
 			cancelled = true;
 		};
-	}, [isAuthorized, actions, effectiveProjectId, rebuildReactorCatalog]);
+	}, [isReady, actions, effectiveProjectId, rebuildReactorCatalog]);
 
 	// Expose an external submission path so other panes (the file editor's
 	// Run button) can pipe their pixel through this transcript — same async

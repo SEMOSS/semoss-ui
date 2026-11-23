@@ -16,6 +16,10 @@ const mocks = vi.hoisted(() => ({
 	editWorkspace: vi.fn(),
 	navigate: vi.fn(),
 }));
+const mockPixel = vi.hoisted(() => (pixel: string) => ({
+	status: "SUCCESS",
+	data: pixel.startsWith("GetWorkspace") ? mocks.workspace : [],
+}));
 // Query snapshots are supplied through rerender instead of an SDK subscription.
 vi.mock("mobx-react-lite", () => ({
 	observer: <T,>(component: T) => component,
@@ -43,10 +47,8 @@ vi.mock("@semoss/sdk", async (original) => ({
 }));
 vi.mock("@semoss/sdk/react", async (original) => ({
 	...(await original<typeof import("@semoss/sdk/react")>()),
-	usePixel: (pixel: string) => ({
-		status: "SUCCESS",
-		data: pixel.startsWith("GetWorkspace") ? mocks.workspace : [],
-	}),
+	usePixel: mockPixel,
+	useSessionPixel: mockPixel,
 	useIteratorPixel: () => ({
 		data: [],
 		next: vi.fn(),

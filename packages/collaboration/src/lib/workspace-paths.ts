@@ -3,6 +3,12 @@ export function topicPath(topicId: string): string {
 	return `/topics/${encodeURIComponent(topicId)}`;
 }
 
+/** The full page for adding and removing a topic's emails, chats and files, opened on a place such as "chats". */
+export function topicContentsPath(topicId: string, place?: string): string {
+	const path = `${topicPath(topicId)}/contents`;
+	return place ? `${path}?${new URLSearchParams({ in: place })}` : path;
+}
+
 /** Canonical conversation route; identity stays independent of its backend room. */
 export function threadPath(threadId: string): string {
 	return `/thread/${encodeURIComponent(threadId)}`;
@@ -22,4 +28,57 @@ export function newRoomPath(agentId?: string, modelId?: string) {
 
 	const query = search.toString();
 	return query ? `/?${query}` : "/";
+}
+
+/** The page that starts a chat with a Digital Twin, the signed-in person's own or one shared with them. */
+export function twinChatPath(agentId: string): string {
+	return `/twins/chat?${new URLSearchParams({ agentId })}`;
+}
+
+/** Manage a particular Digital Twin, optionally opening its People tab. */
+export function twinSettingsPath(twinId: string, tab?: "people"): string {
+	const search = new URLSearchParams({ twinId });
+	if (tab) search.set("tab", tab);
+	return `/twins/mine?${search}`;
+}
+
+/** What a Digital Twin knows. The optional id keeps older single-twin links working. */
+export function twinContentsPath(place?: string, twinId?: string): string {
+	const path = "/twins/mine/contents";
+	const search = new URLSearchParams();
+	if (twinId !== undefined) search.set("twinId", twinId);
+	if (place) search.set("in", place);
+	return search.size ? `${path}?${search}` : path;
+}
+
+/** The signed-in person's persona, opened from the sidebar. */
+export function personaPath(): string {
+	return "/persona";
+}
+
+/**
+ * The interview that writes that persona, opened from there. `more` opens one
+ * that was wrapped up early at the steps it left out.
+ */
+export function personaInterviewPath(more?: "more"): string {
+	const path = "/persona/interview";
+	return more ? `${path}?${new URLSearchParams({ go: more })}` : path;
+}
+
+/** The same persona page opened from Digital Twins, which it leads back to. */
+export function twinPersonaPath(): string {
+	return "/twins/persona";
+}
+
+/** The same interview opened from Digital Twins; `more` as in {@link personaInterviewPath}. */
+export function twinPersonaInterviewPath(more?: "more"): string {
+	const path = "/twins/persona/interview";
+	return more ? `${path}?${new URLSearchParams({ go: more })}` : path;
+}
+
+/** Pages that open on the hero photo; the shell scrolls them together with its header so the photo runs behind it. */
+export function isHeroPath(pathname: string): boolean {
+	return ["/", "/work", "/work/review", "/work/topics"].includes(
+		pathname.replace(/\/$/, "") || "/",
+	);
 }

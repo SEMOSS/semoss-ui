@@ -45,6 +45,24 @@
 		"yearly": "Jaarlijks",
 		"allTime": "Altijd"
 	},
+	"usageLimit": {
+		"notDefinedHint": {
+			"APP": "Mensen die het model via deze app gebruiken, vallen onder de limiet voor openbaar gebruik, hun eigen totale modellimiet of de algemene platformlimiet.",
+			"ENGINE": "Mensen die het model via deze engine gebruiken, vallen onder de limiet voor openbaar gebruik, hun eigen totale modellimiet of de algemene platformlimiet."
+		},
+		"unlimitedHint": {
+			"APP": "Geen plafond voor de aanroepen die de aangepaste reactors van deze app met de machtiging van de app doen. Het modeltotaal blijft gelden.",
+			"ENGINE": "Geen plafond voor de aanroepen die de eigen code van deze engine met de machtiging van de engine doet. Het modeltotaal blijft gelden."
+		},
+		"counts": {
+			"appShared": "Gedeeld door de app",
+			"appEach": "Voor elke gebruiker",
+			"engineShared": "Gedeeld door de engine",
+			"engineEach": "Voor elke gebruiker"
+		},
+		"eachUserNote": "Regels voor elke gebruiker tellen alleen de aanroepen waarop de limiet van deze app van toepassing is.",
+		"eachEngineUserNote": "Regels voor elke gebruiker tellen alleen de aanroepen waarop de limiet van deze engine van toepassing is."
+	},
 	"footer": {
 		"add": "Toevoegen",
 		"addWithCount": "Toevoegen ({{count}})"

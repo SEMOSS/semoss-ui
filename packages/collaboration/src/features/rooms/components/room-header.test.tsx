@@ -1,6 +1,7 @@
 import {
 	act,
 	cleanup,
+	fireEvent,
 	render,
 	screen,
 	waitFor,
@@ -37,6 +38,94 @@ it("keeps a room-specific focus destination when the workbench closes", () => {
 	act(() => document.getElementById(id)?.focus());
 	expect(toggle).toHaveFocus();
 	expect(roomWorkbenchTriggerId("another-room")).not.toBe(id);
+});
+
+it("shows the agent's own image, and its initials when it has none or the image does not load", () => {
+	const props = {
+		agent,
+		title: "Room",
+		isToolWorkbenchOpen: false,
+		onToggleToolWorkbench: vi.fn(),
+	};
+	const view = render(<RoomHeader {...props} />);
+	const details = screen.getByRole("button", {
+		name: "Conversation details: Room",
+	});
+	expect(details.querySelector("img")).toBeNull();
+	expect(details).toHaveTextContent("RA");
+
+	view.rerender(<RoomHeader {...props} agentImage="/twin.png" />);
+	const image = details.querySelector("img");
+	expect(image).toHaveAttribute("src", "/twin.png");
+	// decorative: the button is already named by the conversation
+	expect(image).toHaveAttribute("alt", "");
+	if (image) fireEvent.error(image);
+	expect(details.querySelector("img")).toBeNull();
+	expect(details).toHaveTextContent("RA");
+});
+
+it("takes initials from the name, not from its possessive", () => {
+	render(
+		<RoomHeader
+			agent={{ ...agent, name: "Ryan's Digital Twin" }}
+			title="Room"
+			isToolWorkbenchOpen={false}
+			onToggleToolWorkbench={vi.fn()}
+		/>,
+	);
+	const details = screen.getByRole("button", {
+		name: "Conversation details: Room",
+	});
+	expect(details).toHaveTextContent("RD");
+	expect(details).not.toHaveTextContent("RS");
+});
+
+it("says who the chat is with under its title, and what that agent can reach in the details", async () => {
+	const props = {
+		agent: { ...agent, name: "Renewals Twin" },
+		title: "Renewal questions",
+		isToolWorkbenchOpen: false,
+		onToggleToolWorkbench: vi.fn(),
+	};
+	const view = render(
+		<RoomHeader
+			{...props}
+			agentLine="Renewals Twin · Shared by Dana"
+			agentDetails={
+				<p>It answers only from what its owner shared with it.</p>
+			}
+		/>,
+	);
+	// the button is named by everything it shows, so saying the line finds it too
+	const trigger = screen.getByRole("button", {
+		name: "Conversation details: Renewal questions Renewals Twin · Shared by Dana",
+	});
+	expect(
+		within(trigger).getByText("Renewals Twin · Shared by Dana"),
+	).toBeVisible();
+	await userEvent.setup().click(trigger);
+	const details = screen.getByRole("dialog", {
+		name: "Conversation details",
+	});
+	// the details it was handed stand in for the line that names it as an AI agent
+	expect(
+		within(details).getByText(
+			"It answers only from what its owner shared with it.",
+		),
+	).toBeVisible();
+	expect(within(details).queryByText(/AI agent/)).toBeNull();
+
+	// with neither, the header reads as it did
+	view.rerender(<RoomHeader {...props} />);
+	expect(trigger).toHaveAccessibleName(
+		"Conversation details: Renewal questions",
+	);
+	expect(trigger).toHaveTextContent(/^RTRenewal questions$/);
+	expect(
+		within(
+			screen.getByRole("dialog", { name: "Conversation details" }),
+		).getByText("Renewals Twin · AI agent"),
+	).toBeVisible();
 });
 
 it("exposes a long conversation title to keyboard users and returns focus", async () => {

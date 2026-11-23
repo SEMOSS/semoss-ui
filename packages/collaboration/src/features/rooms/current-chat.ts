@@ -87,7 +87,7 @@ export async function addThreadToChat(
 			(message) => message.id === messageId,
 		);
 		if (messageId && !email)
-			throw new Error("This email is not available to the assistant.");
+			throw new Error("This email is excluded, so it cannot be added.");
 		const [file] = await uploadRoomFiles(session.insight.insightId, [
 			sourceThreadFile(
 				email

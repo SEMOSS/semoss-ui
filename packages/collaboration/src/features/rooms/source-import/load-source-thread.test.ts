@@ -67,7 +67,7 @@ it("loads all Brain pages, deduplicates, sorts and excludes restricted source co
 	]);
 	expect(sourceThreadMarkdown(document)).not.toContain("Secret");
 	expect(document.limitations).toContain(
-		"Messages excluded from assistant context are not included.",
+		"Excluded messages are not included.",
 	);
 });
 

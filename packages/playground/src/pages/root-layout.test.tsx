@@ -1,25 +1,27 @@
 import { cleanup, render, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router";
+import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useRoot } from "@/hooks/use-root";
 import { InitializedLayout } from "./initialized-layout";
 import { RootLayout } from "./root-layout";
 
 const sdk = vi.hoisted(() => ({
-	isInitialized: true,
-	error: null as Error | null,
-	system: {
-		config: { theme: undefined as { THEME_MAP?: string } | undefined },
-	},
+	status: "AUTHENTICATED" as string,
+	theme: null as Record<string, unknown> | null,
 }));
-vi.mock("@semoss/sdk/react", () => ({ useInsight: () => sdk }));
+vi.mock("@semoss/sdk/react", () => ({
+	useConfig: <T,>(selector: (state: { theme: unknown }) => T) =>
+		selector({ theme: sdk.theme }),
+	useSession: <T,>(selector: (state: { status: string }) => T) =>
+		selector({ status: sdk.status }),
+}));
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
 afterEach(() => {
 	cleanup();
-	sdk.error = null;
-	sdk.system.config.theme = undefined;
+	sdk.status = "AUTHENTICATED";
+	sdk.theme = null;
 });
 
 function RootConsumer() {
@@ -36,21 +38,19 @@ describe("Playground initialization", () => {
 		);
 		expect(screen.getByRole("heading")).toBeVisible();
 	});
-	it("uses defaults when custom theme JSON is invalid", () => {
-		sdk.system.config.theme = { THEME_MAP: "not JSON" };
+	it("uses defaults when the server theme has no playground entry", () => {
+		sdk.theme = { client: { name: "Client" } };
 		render(
 			<RootLayout>
 				<RootConsumer />
 			</RootLayout>,
 		);
-		expect(screen.getByRole("heading")).toBeVisible();
+		expect(
+			screen.queryByRole("heading", { name: "Client" }),
+		).not.toBeInTheDocument();
 	});
 	it("continues to apply the configured Playground theme", () => {
-		sdk.system.config.theme = {
-			THEME_MAP: JSON.stringify({
-				playground: { name: "Team Playground" },
-			}),
-		};
+		sdk.theme = { playground: { name: "Team Playground" } };
 		render(
 			<RootLayout>
 				<RootConsumer />
@@ -60,15 +60,31 @@ describe("Playground initialization", () => {
 			screen.getByRole("heading", { name: "Team Playground" }),
 		).toBeVisible();
 	});
-	it("shows an initialization error without requiring the root provider", () => {
-		sdk.error = new Error("Backend unavailable");
-		render(
-			<MemoryRouter>
-				<InitializedLayout />
-			</MemoryRouter>,
-		);
-		expect(
-			screen.getByRole("heading", { name: "studio.errorTitle" }),
-		).toBeVisible();
+	it("waits for the session before rendering any route", () => {
+		sdk.status = "INITIALIZING";
+		const router = createMemoryRouter([
+			{
+				element: <InitializedLayout />,
+				children: [{ path: "/", element: <h1>Route</h1> }],
+			},
+		]);
+		render(<RouterProvider router={router} />);
+		expect(screen.queryByRole("heading")).not.toBeInTheDocument();
 	});
+	it.each(["UNAUTHENTICATED", "AUTHENTICATED", "ERROR"])(
+		"renders the routes once the session is %s",
+		(status) => {
+			sdk.status = status;
+			const router = createMemoryRouter([
+				{
+					element: <InitializedLayout />,
+					children: [{ path: "/", element: <h1>Route</h1> }],
+				},
+			]);
+			render(<RouterProvider router={router} />);
+			expect(
+				screen.getByRole("heading", { name: "Route" }),
+			).toBeVisible();
+		},
+	);
 });

@@ -99,7 +99,7 @@ it("keeps tool nodes mounted while collapsing successful steps out of the access
 	).toBeNull();
 	expect(container.querySelectorAll("[inert]")).toHaveLength(2);
 	const summary = screen.getByRole("button", {
-		name: "2 tools completed View steps",
+		name: "2 tool calls 2 completed View steps",
 	});
 	expect(summary).toHaveAttribute("aria-expanded", "false");
 	fireEvent.click(summary);
@@ -115,7 +115,9 @@ it("preserves manually expanded groups when new completed tools arrive", () => {
 		<MessageToolActivity items={tools("COMPLETED", "COMPLETED")} />,
 	);
 	fireEvent.click(
-		screen.getByRole("button", { name: "2 tools completed View steps" }),
+		screen.getByRole("button", {
+			name: "2 tool calls 2 completed View steps",
+		}),
 	);
 	rerender(
 		<MessageToolActivity
@@ -123,7 +125,9 @@ it("preserves manually expanded groups when new completed tools arrive", () => {
 		/>,
 	);
 	expect(
-		screen.getByRole("button", { name: "3 tools completed Hide steps" }),
+		screen.getByRole("button", {
+			name: "3 tool calls 3 completed Hide steps",
+		}),
 	).toHaveAttribute("aria-expanded", "true");
 });
 
@@ -138,11 +142,15 @@ it("defers folding a focused tool until focus leaves and preserves the button id
 	rerender(<MessageToolActivity items={tools("COMPLETED", "COMPLETED")} />);
 	expect(button).toHaveFocus();
 	expect(
-		screen.queryByRole("button", { name: "2 tools completed View steps" }),
+		screen.queryByRole("button", {
+			name: "2 tool calls 2 completed View steps",
+		}),
 	).toBeNull();
 	act(() => button.blur());
 	expect(
-		screen.getByRole("button", { name: "2 tools completed View steps" }),
+		screen.getByRole("button", {
+			name: "2 tool calls 2 completed View steps",
+		}),
 	).toBeInTheDocument();
 	expect(button.isConnected).toBe(true);
 });
@@ -159,7 +167,9 @@ it("keeps inspected tools visible while grouping neighboring successes and failu
 	);
 	expect(screen.getByText("Open tool contents")).toBeVisible();
 	expect(
-		screen.getByRole("button", { name: "3 tools used View steps" }),
+		screen.getByRole("button", {
+			name: "3 tool calls 2 completed · 1 unsuccessful View steps",
+		}),
 	).toBeInTheDocument();
 	expect(
 		screen.queryByRole("button", {
@@ -176,7 +186,7 @@ it("keeps the summary neutral and reveals the specific errors on focus", async (
 	items[3].part.tool.output = "The subagent limit was reached.";
 	render(<MessageToolActivity items={items} />);
 	const summary = screen.getByRole("button", {
-		name: "4 tools used View steps",
+		name: "4 tool calls 2 completed · 2 unsuccessful View steps",
 	});
 	expect(summary).toHaveAttribute("aria-expanded", "false");
 	act(() => summary.focus());
@@ -200,7 +210,7 @@ it("keeps the summary and expansion state stable when a finished tool reports a 
 		<MessageToolActivity items={tools("COMPLETED", "COMPLETED")} />,
 	);
 	const summary = screen.getByRole("button", {
-		name: "2 tools completed View steps",
+		name: "2 tool calls 2 completed View steps",
 	});
 	fireEvent.click(summary);
 	const row = screen.getByRole("button", {
@@ -208,7 +218,9 @@ it("keeps the summary and expansion state stable when a finished tool reports a 
 	});
 	rerender(<MessageToolActivity items={tools("COMPLETED", "FAILED")} />);
 	expect(
-		screen.getByRole("button", { name: "2 tools used Hide steps" }),
+		screen.getByRole("button", {
+			name: "2 tool calls 1 completed · 1 unsuccessful Hide steps",
+		}),
 	).toBe(summary);
 	expect(summary).toHaveAttribute("aria-expanded", "true");
 	expect(
@@ -229,7 +241,9 @@ it("shows failure details for a single tool and keeps focused failures visible",
 	rerender(<MessageToolActivity items={tools("FAILED", "COMPLETED")} />);
 	expect(row).toHaveFocus();
 	expect(
-		screen.queryByRole("button", { name: "2 tools used View steps" }),
+		screen.queryByRole("button", {
+			name: "2 tool calls 1 completed · 1 unsuccessful View steps",
+		}),
 	).toBeNull();
 	const tooltip = await screen.findByRole("tooltip");
 	expect(tooltip).toHaveTextContent("No error details were provided.");
@@ -245,7 +259,7 @@ it("shows a bounded preview on hover while keeping every failed step accessible 
 	}
 	render(<MessageToolActivity items={items} />);
 	const summary = screen.getByRole("button", {
-		name: "4 tools used View steps",
+		name: "4 tool calls 0 completed · 4 unsuccessful View steps",
 	});
 	await user.hover(summary);
 	const tooltip = await screen.findByRole("tooltip");
@@ -344,7 +358,9 @@ it("folds a result that can open what it found with the other steps, keeping its
 	const open = { name: "Open email: ReadThread · GTC DC" };
 	expect(screen.queryByRole("button", open)).toBeNull();
 	fireEvent.click(
-		screen.getByRole("button", { name: "3 tools completed View steps" }),
+		screen.getByRole("button", {
+			name: "3 tool calls 3 completed View steps",
+		}),
 	);
 	expect(screen.getByRole("button", open)).toBeVisible();
 });

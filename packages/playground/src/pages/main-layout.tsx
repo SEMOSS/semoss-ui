@@ -8,7 +8,6 @@ import {
 	useState,
 } from "react";
 import { matchPath, Outlet, useLocation } from "react-router";
-import { useInsight } from "@semoss/sdk/react";
 import {
 	cn,
 	SidebarInset,
@@ -28,14 +27,12 @@ import { WorkspaceNavigationContext } from "@/features/conversation/workspace-na
 import { NavigationButton } from "@/features/navigation/navigation-button";
 import { PageHeaderContext } from "@/features/navigation/page-header.context";
 import { SettingsDialogProvider } from "@/features/settings/settings-dialog-provider";
-import { useRoot } from "@/hooks/use-root";
+import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
 import { useThemeTitle } from "@/hooks/use-theme-title";
 import { ChatStore } from "@/stores/chat/chat.store";
 
 export const MainLayout = observer(() => {
-	const { actions } = useInsight();
-	const { root } = useRoot();
-	const theme = root.theme;
+	const theme = usePlaygroundTheme();
 	// React freezes DOM style props in development; keep the observable theme mutable.
 	const layoutStyle = { ...theme.overrides["main-layout"] };
 	const { pathname } = useLocation();
@@ -58,13 +55,13 @@ export const MainLayout = observer(() => {
 
 	// set up the chat store
 	const chatStore = useMemo(() => {
-		const store = new ChatStore(root.theme, actions, ROOM_PANEL_COMPONENTS);
+		const store = new ChatStore(theme, ROOM_PANEL_COMPONENTS);
 
 		// initialize it
 		store.initialize();
 
 		return store;
-	}, [root.theme, actions]);
+	}, [theme]);
 
 	// Refs for embed iframe sync
 	const iframeRefs = useRef<Record<string, HTMLIFrameElement | null>>({});
@@ -147,20 +144,20 @@ export const MainLayout = observer(() => {
 	// Auto-show tour for first-time users (resets when cookies are cleared).
 	// If the welcome dialog is visible, defer until it is acknowledged.
 	useEffect(() => {
-		if (root.theme.tour?.show === false) return;
+		if (theme.tour?.show === false) return;
 		const hasSeen = document.cookie
 			.split("; ")
 			.find((c) => c.startsWith("hasSeenTour="));
 		if (!hasSeen) {
 			// biome-ignore lint/suspicious/noDocumentCookie: TODO: why not use localStorage?
 			document.cookie = "hasSeenTour=true; path=/; max-age=31536000"; // 1 year
-			if (root.theme.dialog) {
+			if (theme.dialog) {
 				setPendingTour(true);
 			} else {
 				setIsTourOpen(true);
 			}
 		}
-	}, [root.theme.tour?.show, root.theme.dialog]);
+	}, [theme.tour?.show, theme.dialog]);
 
 	return (
 		<ChatContext.Provider

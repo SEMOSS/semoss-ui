@@ -29,6 +29,7 @@ import {
 import { getErrorMessage } from "@semoss/utility/error";
 import { createGuardrailEngine } from "@/api/guardrails";
 import { EngineFormHeader } from "@/components/import/shared/engine-form-header";
+import { CATALOG_NAME_KEY } from "@/components/import/shared/import-form.constants";
 import { JevPolicyChoicesField } from "./jev-policy-choices-field";
 import {
 	JEV_JUDGE_SUBTYPE,
@@ -91,7 +92,7 @@ export const JevPolicyGuardrailForm = ({
 		try {
 			engineId = await createGuardrailEngine(
 				insightId,
-				values.MODEL_NAME,
+				values[CATALOG_NAME_KEY],
 				toJevPolicyGuardrailDetails(values),
 			);
 		} catch (error: unknown) {
@@ -138,7 +139,7 @@ export const JevPolicyGuardrailForm = ({
 						</div>
 						<div className="flex flex-2 flex-col gap-2">
 							<FormInput
-								name="MODEL_NAME"
+								name={CATALOG_NAME_KEY}
 								label="Catalog Name"
 								description="Name used to identify this guardrail in the catalog."
 								disabled={isSubmitting}

@@ -33,6 +33,28 @@ function message(
 	return { id, role: "assistant", createdAt: "2026-09-24T16:00:00Z", parts };
 }
 
+it("keeps the org chart visible between completed lookup steps", () => {
+	const parts = [
+		tool("one"),
+		tool("two"),
+		tool("ShowOrgChart"),
+		tool("three"),
+		tool("four"),
+	];
+	const groups = completedToolGroups(
+		ownedMessageParts(message("chart", parts)),
+		new Set(),
+	);
+	expect(
+		groups.map((group) =>
+			group.map(({ part }) => part.type === "tool" && part.tool.name),
+		),
+	).toEqual([
+		["one", "two"],
+		["three", "four"],
+	]);
+});
+
 it("folds tool continuations across message boundaries without mutating their owners", () => {
 	const first = message("first", [
 		{ type: "text", text: "Searching" },

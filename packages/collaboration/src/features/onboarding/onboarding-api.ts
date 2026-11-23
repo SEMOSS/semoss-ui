@@ -149,7 +149,8 @@ export type JobKind =
 	| "topic_map"
 	| "topic_match"
 	| "topic_resort"
-	| "style";
+	| "style"
+	| "persona";
 
 export async function getJob(
 	actions: InsightActions,
