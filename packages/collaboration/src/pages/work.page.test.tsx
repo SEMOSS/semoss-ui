@@ -83,7 +83,7 @@ function workState(): CollaborationState {
 			short: "Alpha",
 			description: "Ship the launch with the customer.",
 			status: "active",
-			stats: { threads: 999, openItems: 999, lastActivity: "" },
+			stats: { threads: 999, openItems: 999, chats: 0, lastActivity: "" },
 			people: [
 				{
 					personId: person.id,

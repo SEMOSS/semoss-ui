@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { cn, H1, H2 } from "@semoss/ui/next";
 import { AgentAvatar } from "@/components/common/agent-avatar";
-import { topicTone } from "@/features/collaboration/topic-tone";
+import { topicColorClassName } from "@/features/collaboration/topic-color";
 import "./twin-gallery.css";
 
 interface TwinPageCoverProps {
@@ -31,7 +31,7 @@ export function TwinPageCover({
 				aria-hidden="true"
 				className={cn(
 					"twin-gallery-art -z-10 pointer-events-none absolute inset-0 @lg/twins:block hidden overflow-hidden",
-					topicTone(twinId),
+					topicColorClassName(twinId),
 				)}
 			>
 				<span

@@ -137,3 +137,11 @@ export function getAutomaticColor(topicId: string): string {
 
 	return toneToHex[toneClass] ?? "#8a9099";
 }
+
+/**
+ * Get the CSS class name for a topic's automatic (hashed) color.
+ * Used in legacy code that applies tone classes directly.
+ */
+export function topicColorClassName(topicId: string): string {
+	return hashTopicId(topicId);
+}

@@ -3,6 +3,7 @@ import {
 	getAutomaticColor,
 	parseColor,
 	topicColor,
+	topicColorClassName,
 	toRgb,
 } from "./topic-color";
 
@@ -184,5 +185,38 @@ describe("getAutomaticColor", () => {
 	it("returns a valid hex color", () => {
 		const color = getAutomaticColor("test-topic-123");
 		expect(color).toMatch(/^#[0-9a-f]{6}$/);
+	});
+});
+
+describe("topicColorClassName", () => {
+	it("returns a valid CSS class name", () => {
+		const className = topicColorClassName("topic1");
+		expect(className).toMatch(/^bg-chart-[1-5]$/);
+	});
+
+	it("returns consistent class name for same topic ID", () => {
+		const className1 = topicColorClassName("my-topic");
+		const className2 = topicColorClassName("my-topic");
+		expect(className1).toBe(className2);
+	});
+
+	it("returns different classes for different topic IDs (usually)", () => {
+		const classNames = new Set<string>();
+		for (let i = 0; i < 10; i++) {
+			classNames.add(topicColorClassName(`topic-${i}`));
+		}
+		expect(classNames.size).toBeGreaterThan(1);
+	});
+
+	it("returns one of the five tone classes", () => {
+		const validClasses = [
+			"bg-chart-1",
+			"bg-chart-2",
+			"bg-chart-3",
+			"bg-chart-4",
+			"bg-chart-5",
+		];
+		const className = topicColorClassName("test-topic-123");
+		expect(validClasses).toContain(className);
 	});
 });

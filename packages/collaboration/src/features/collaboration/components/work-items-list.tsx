@@ -71,7 +71,7 @@ import {
 	useCollaborationSession,
 	useWorkChanged,
 } from "../state/collaboration-session.context";
-import { topicTone } from "../topic-tone";
+import { topicColorClassName } from "../topic-color";
 import { offerStepUndo } from "../work-item-actions";
 import { ClosedForYou } from "./closed-for-you";
 import { CollaborationHeroHeader } from "./collaboration-hero-header";
@@ -1028,7 +1028,7 @@ function ReviewList({
 																			aria-hidden="true"
 																			className={cn(
 																				"size-2 shrink-0 rounded-xs",
-																				topicTone(
+																				topicColorClassName(
 																					t.id,
 																				),
 																			)}

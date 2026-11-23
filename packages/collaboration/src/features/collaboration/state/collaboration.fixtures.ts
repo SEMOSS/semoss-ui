@@ -64,6 +64,7 @@ const SAMPLE_STATE: CollaborationState = {
 			stats: {
 				threads: 3,
 				openItems: 2,
+				chats: 0,
 				lastActivity: "2026-09-24T15:40:00.000Z",
 			},
 			isSample: true,
@@ -120,6 +121,7 @@ const SAMPLE_STATE: CollaborationState = {
 			stats: {
 				threads: 4,
 				openItems: 4,
+				chats: 0,
 				lastActivity: "2026-09-24T15:40:00.000Z",
 			},
 			isSample: true,
@@ -162,6 +164,7 @@ const SAMPLE_STATE: CollaborationState = {
 			stats: {
 				threads: 3,
 				openItems: 5,
+				chats: 0,
 				lastActivity: "2026-09-24T16:40:00.000Z",
 			},
 			isSample: true,
@@ -204,6 +207,7 @@ const SAMPLE_STATE: CollaborationState = {
 			stats: {
 				threads: 2,
 				openItems: 1,
+				chats: 0,
 				lastActivity: "2026-09-24T16:15:00.000Z",
 			},
 			isSample: true,
@@ -238,6 +242,7 @@ const SAMPLE_STATE: CollaborationState = {
 			stats: {
 				threads: 2,
 				openItems: 1,
+				chats: 0,
 				lastActivity: "2026-09-24T16:15:00.000Z",
 			},
 			isSample: true,
@@ -273,6 +278,7 @@ const SAMPLE_STATE: CollaborationState = {
 			stats: {
 				threads: 3,
 				openItems: 3,
+				chats: 0,
 				lastActivity: "2026-09-24T16:15:00.000Z",
 			},
 			isSample: true,
@@ -301,6 +307,7 @@ const SAMPLE_STATE: CollaborationState = {
 			stats: {
 				threads: 1,
 				openItems: 1,
+				chats: 0,
 				lastActivity: "2026-09-22T19:15:00.000Z",
 			},
 			isSample: true,
@@ -2243,3 +2250,27 @@ const SAMPLE_STATE: CollaborationState = {
 export function createInitialCollaborationState(): CollaborationState {
 	return structuredClone(SAMPLE_STATE);
 }
+
+/** Reusable fixtures for testing. */
+export const fixtures = {
+	topic: {
+		id: "test-topic",
+		name: "Test Topic",
+		short: "test",
+		accountId: null,
+		kind: "client" as const,
+		color: "#8a9099",
+		status: "active" as const,
+		description: "A test topic",
+		keywords: [],
+		people: [],
+		calendarSeries: [],
+		stats: {
+			threads: 0,
+			openItems: 0,
+			chats: 0,
+			lastActivity: "",
+		},
+		isSample: false,
+	},
+};
