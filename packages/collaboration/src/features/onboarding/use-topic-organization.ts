@@ -25,6 +25,8 @@ interface TopicOrganizationController {
 	isOpening: boolean;
 	error: string | null;
 	ask: () => Promise<void>;
+	/** The message of the most recent preview failure, for showing it where the request was made. */
+	lastError: () => string | null;
 	showProposal: () => void;
 	closeProposal: () => void;
 	openPreview: (
@@ -56,6 +58,7 @@ export function useTopicOrganization(
 	const scope = useRef({ actions, reviewId: controller.review.id });
 	scope.current = { actions, reviewId: controller.review.id };
 	const inFlight = useRef(false);
+	const lastFailure = useRef<string | null>(null);
 	const previewOrigin = useRef<number | undefined>(undefined);
 	const reviewId = controller.review.id;
 	useEffect(() => {
@@ -93,7 +96,13 @@ export function useTopicOrganization(
 		groups: TopicOrganizationGroup[],
 		expectedRevision?: number,
 	): Promise<boolean> => {
-		if (!isCurrent() || inFlight.current || changes.error) return false;
+		lastFailure.current = null;
+		if (!isCurrent() || inFlight.current || changes.error) {
+			if (changes.error)
+				lastFailure.current =
+					"An earlier change did not save. Reload the saved topics, then try again.";
+			return false;
+		}
 		inFlight.current = true;
 		setIsOpening(true);
 		setError(null);
@@ -114,7 +123,8 @@ export function useTopicOrganization(
 			setIsProposalOpen(false);
 			return true;
 		} catch (cause: unknown) {
-			if (isCurrent()) setError(message(cause));
+			lastFailure.current = message(cause);
+			if (isCurrent()) setError(lastFailure.current);
 			return false;
 		} finally {
 			inFlight.current = false;
@@ -190,6 +200,7 @@ export function useTopicOrganization(
 			(controller.status !== "saved" ||
 				proposal.revision !== controller.review.revision),
 		ask,
+		lastError: () => lastFailure.current,
 		openPreview,
 		acceptPreview,
 		showProposal: () => {

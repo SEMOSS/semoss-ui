@@ -86,7 +86,7 @@ export function CustomRoutineFields({
 					<FormTextarea
 						name="prompt"
 						label="Task (required)"
-						description="Write it the way you would ask your assistant, such as: summarize what my clients asked for since yesterday, grouped by client."
+						description="Write it the way you would ask your Digital Twin, such as: summarize what my clients asked for since yesterday, grouped by client."
 						rows={5}
 					/>
 				</FieldGroup>

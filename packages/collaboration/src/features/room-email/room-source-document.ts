@@ -77,7 +77,7 @@ export function roomSourceDocument(
 			};
 		}),
 		limitations: context.hiddenCount
-			? ["Messages excluded from assistant context are not included."]
+			? ["Excluded messages are not included."]
 			: [],
 	};
 }

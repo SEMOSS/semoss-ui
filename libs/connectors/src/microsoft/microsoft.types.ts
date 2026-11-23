@@ -1,3 +1,5 @@
+import type { ConnectorPerson } from "../core/connector.types";
+
 /**
  * A file or folder in a Microsoft drive: OneDrive, or the files of a Teams
  * channel, which live in the team's SharePoint drive.
@@ -98,6 +100,8 @@ export interface TeamsChat {
 	hasUnread: boolean;
 	/** A short copy of the newest message. */
 	lastMessage?: TeamsMessage;
+	/** Who a one on one chat is with, when the listing says who that is. */
+	person?: ConnectorPerson;
 }
 
 /** A Teams message a search found, in a chat or a channel. */

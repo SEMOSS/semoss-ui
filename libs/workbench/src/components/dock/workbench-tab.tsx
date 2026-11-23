@@ -23,6 +23,8 @@ interface WorkbenchTabProps {
 	/** The stack (dock or border) activating this tab targets. */
 	stack: Pick<WorkbenchStack, "kind" | "id">;
 	active: boolean;
+	/** The first tab in a collapsed rail stays reachable by keyboard. */
+	tabStop?: boolean;
 	/** Turns the tab on its side, for a left/right border rail. */
 	vertical?: boolean;
 	/** Taller touch targets and no trailing controls, for the mobile strip. */
@@ -91,7 +93,14 @@ const RAIL_TAB_TURN =
  * is handled by the drag layer through the `data-tab` attribute.
  */
 export const WorkbenchTab: FC<WorkbenchTabProps> = memo(
-	({ pid, stack, active, vertical = false, compact = false }) => {
+	({
+		pid,
+		stack,
+		active,
+		tabStop = active,
+		vertical = false,
+		compact = false,
+	}) => {
 		const actions = useWorkbench((s) => s.layout.actions);
 		const record = useWorkbench((s) => s.layout.panels[pid]);
 		const isEditing = useWorkbench((s) => s.layout.editingPanelId === pid);
@@ -155,7 +164,8 @@ export const WorkbenchTab: FC<WorkbenchTabProps> = memo(
 				el?.focus();
 				const nextPid = el?.getAttribute("data-tab");
 				if (nextPid) {
-					actions.activatePanel(stack, nextPid);
+					// The compact strip can lead from the stage to a border tab.
+					actions.navigatePanel(nextPid);
 				}
 			};
 			if (e.key === "ArrowRight") {
@@ -188,7 +198,7 @@ export const WorkbenchTab: FC<WorkbenchTabProps> = memo(
 					data-testid={`workbench-tab-${pid}`}
 					role="tab"
 					aria-selected={active}
-					tabIndex={active ? 0 : -1}
+					tabIndex={tabStop ? 0 : -1}
 					title={record.helpText || record.name}
 					onPointerDown={(e) => {
 						// a compact tab selects on click instead: pointerdown is

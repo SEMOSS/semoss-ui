@@ -37,7 +37,13 @@ const APP_LIMIT: ModelUsageLimit = {
 
 /** An app with an end date and a usage limit */
 const INTAKE: EngineApp = {
-	subject: { category: "PROJECT", id: "app1", name: "Intake Form" },
+	subject: {
+		category: "ENGINE",
+		id: "app1",
+		type: "PROJECT",
+		name: "Intake Form",
+		subtype: null,
+	},
 	access: {
 		level: "READ_ONLY",
 		endDate: "2027-01-01T00:00:00Z",
@@ -47,32 +53,51 @@ const INTAKE: EngineApp = {
 
 /** An app with neither */
 const REPORTS: EngineApp = {
-	subject: { category: "PROJECT", id: "app2", name: "Reports" },
+	subject: {
+		category: "ENGINE",
+		id: "app2",
+		type: "PROJECT",
+		name: "Reports",
+		subtype: null,
+	},
 	access: { level: "EDIT", endDate: null, usageLimit: null },
 };
 
+/** Another engine the engine gives a permission to, which the Apps table leaves out */
+const GUARDRAIL: EngineApp = {
+	subject: {
+		category: "ENGINE",
+		id: "guard1",
+		type: "GUARDRAIL",
+		name: "Prompt Guard",
+		subtype: "PROMPT",
+	},
+	access: { level: "READ_ONLY", endDate: null, usageLimit: null },
+};
+
 /**
- * An engine's permissions as an owner reads them, with the apps given; an
+ * An engine's permissions as an owner reads them, with the apps given and an
+ * engine grantee the table leaves out; an
  * editor's when the apps cannot be changed, and an owner's where only admins
  * give access when asked
  */
 const permissionsWith = (
-	projects: EngineApp[],
-	canChangeProjects = true,
+	apps: EngineApp[],
+	canChangeEngines = true,
 	addsAreAdminOnly = false,
 ): ResourcePermissions => ({
 	people: [],
 	teams: [],
-	projects,
+	engines: [...apps, GUARDRAIL],
 	allowedPermissionChanges: {
-		canChangePeople: canChangeProjects,
-		canGiveAuthorAccess: canChangeProjects,
-		canChangeTeams: canChangeProjects,
-		canViewProjects: true,
-		canChangeProjects,
+		canChangePeople: canChangeEngines,
+		canGiveAuthorAccess: canChangeEngines,
+		canChangeTeams: canChangeEngines,
+		canViewEngines: true,
+		canChangeEngines,
 		addsAreAdminOnly,
-		limitLevels: canChangeProjects ? ["READ_ONLY", "EDIT", "OWNER"] : [],
-		canChangeModelLimits: canChangeProjects,
+		limitLevels: canChangeEngines ? ["READ_ONLY", "EDIT", "OWNER"] : [],
+		canChangeModelLimits: canChangeEngines,
 	},
 	publicUse: null,
 	modelTotal: null,
@@ -129,6 +154,7 @@ describe("EngineAppsTable", () => {
 		expect(await screen.findByText("Intake Form")).toBeInTheDocument();
 		expect(screen.getByText("Reports")).toBeInTheDocument();
 		expect(screen.getByText("id: app1")).toBeInTheDocument();
+		expect(screen.queryByText("Prompt Guard")).not.toBeInTheDocument();
 		expect(getResourcePermissions).toHaveBeenCalledExactlyOnceWith(
 			{ resourceType: "ENGINE", id: "engine-1" },
 			false,
@@ -263,7 +289,11 @@ describe("EngineAppsTable", () => {
 					changes: [
 						{
 							action: "CHANGE",
-							subject: { category: "PROJECT", id: "app1" },
+							subject: {
+								category: "ENGINE",
+								id: "app1",
+								type: "PROJECT",
+							},
 							to: {
 								level: "EDIT",
 								endDate: "2027-01-01T00:00:00Z",
@@ -330,7 +360,11 @@ describe("EngineAppsTable", () => {
 					changes: [
 						{
 							action: "REMOVE",
-							subject: { category: "PROJECT", id: "app1" },
+							subject: {
+								category: "ENGINE",
+								id: "app1",
+								type: "PROJECT",
+							},
 						},
 					],
 				},
@@ -395,7 +429,11 @@ describe("EngineAppsTable", () => {
 					changes: [
 						{
 							action: "CHANGE",
-							subject: { category: "PROJECT", id: "app1" },
+							subject: {
+								category: "ENGINE",
+								id: "app1",
+								type: "PROJECT",
+							},
 							to: {
 								level: "READ_ONLY",
 								endDate: "2027-01-01T00:00:00Z",

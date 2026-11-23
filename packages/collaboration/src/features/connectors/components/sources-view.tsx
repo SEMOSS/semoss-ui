@@ -316,10 +316,10 @@ export function SourcesView({
 				/>
 			)}
 			<P className="text-muted-foreground">
-				Imported sources stay in this session. Asking the assistant
-				about them stores the selected context in the backend
-				conversation. Source permissions and saved conversations are
-				separate from local filing edits.
+				Imported sources stay in this session. Asking about them in a
+				chat stores the selected context in the backend conversation.
+				Source permissions and saved conversations are separate from
+				local filing edits.
 			</P>
 			<EmailDraftDialog
 				isOpen={isNewDraftOpen}

@@ -408,3 +408,35 @@ it("reviews a routine's new preferences on its own card, as text that takes more
 		),
 	);
 });
+
+it("names the skill and twin file tools, and their fields, in the app's words", async () => {
+	workbench.tools.tool = call("UseSkillInAssistant", {
+		name: "Client summaries",
+		inAssistant: true,
+	});
+	const skills = render(<ToolContent toolId="tool" />);
+	expect(
+		await screen.findByRole("heading", { name: "Digital Twin Skills" }),
+	).toBeInTheDocument();
+	expect(screen.getByText("Used by your Digital Twin")).toBeInTheDocument();
+	skills.unmount();
+
+	workbench.tools.tool = call("ManageRoutine", {
+		id: "inbox-daily-brief",
+		assistantAvailable: true,
+	});
+	const routine = render(<ToolContent toolId="tool" />);
+	expect(
+		await screen.findByText("Collaboration model ready"),
+	).toBeInTheDocument();
+	routine.unmount();
+
+	// in the chat a twin's owner has with it
+	workbench.tools.tool = call("SaveToDigitalTwin", {
+		name: "Budget review.md",
+	});
+	render(<ToolContent toolId="tool" />);
+	expect(
+		await screen.findByRole("heading", { name: "Add a File to This Twin" }),
+	).toBeInTheDocument();
+});

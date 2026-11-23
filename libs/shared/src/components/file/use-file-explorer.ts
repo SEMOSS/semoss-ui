@@ -77,6 +77,7 @@ export const useFileExplorer = (
 		adapter: customAdapter,
 		initialPath,
 		readOnly = false,
+		onRefresh,
 		onItemSelect,
 		onItemsMoved,
 		onItemsDeleted,
@@ -383,6 +384,7 @@ export const useFileExplorer = (
 	 * the user collapsed and re-expanded it.
 	 */
 	const refresh = (directoryPaths?: string[]) => {
+		onRefresh?.();
 		if (debouncedSearch || !directoryPaths?.length) {
 			getFiles.refresh();
 			for (const reload of directoryRefreshRef.current.values()) {

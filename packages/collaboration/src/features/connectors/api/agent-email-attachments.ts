@@ -43,7 +43,7 @@ export async function readAgentEmailAttachment(
 	);
 	if (bytes.length !== attachment.size)
 		throw new Error(
-			"The email attachment was incomplete. Ask the assistant to attach it again.",
+			"The email attachment was incomplete. Ask in the chat to attach it again.",
 		);
 	return new File([bytes], attachment.name);
 }

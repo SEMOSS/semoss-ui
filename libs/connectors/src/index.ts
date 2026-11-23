@@ -15,9 +15,13 @@ export {
 	type CalendarEventDetailViewProps,
 } from "./calendar/calendar-event-detail-view";
 export { CALENDAR_TOOL_VIEWS } from "./calendar/calendar-tool-views";
+export { ConnectorItemAvatar } from "./components/connector-item-avatar";
+export { ConnectorSavedMark } from "./components/connector-saved-mark";
 export type {
 	ConnectorAccount,
 	ConnectorFocusRequest,
+	ConnectorPerson,
+	ConnectorPersonPhotoProps,
 	ConnectorSavedFile,
 	ConnectorSavedItems,
 	ConnectorSavedItemsProps,
@@ -59,6 +63,13 @@ export {
 } from "./mail/mailbox-view";
 export { type MailFolders, useMailFolders } from "./mail/use-mail-folders";
 export { type MailPages, useMailPages } from "./mail/use-mail-pages";
+export {
+	type MicrosoftItemRef,
+	microsoftItemKey,
+	type SavedMailAttachments,
+	saveMailAttachments,
+	saveMicrosoftItem,
+} from "./microsoft/microsoft-item-save";
 export {
 	OneDriveViewer,
 	type OneDriveViewerProps,

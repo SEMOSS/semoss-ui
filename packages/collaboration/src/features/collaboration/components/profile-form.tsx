@@ -58,9 +58,21 @@ export function ProfileForm({
 				form.reset(values);
 			}}
 		>
-			<FormInput name="role" label="Role" />
-			<FormInput name="timezone" label="Time zone" />
-			<FormInput name="workingHours" label="Working hours" />
+			<FormInput
+				name="role"
+				label="Role"
+				placeholder="e.g. Engineering Lead"
+			/>
+			<FormInput
+				name="timezone"
+				label="Time zone"
+				placeholder="e.g. America/New_York"
+			/>
+			<FormInput
+				name="workingHours"
+				label="Working hours"
+				placeholder="e.g. 9:00 AM – 5:30 PM"
+			/>
 			<Button type="submit">Save profile</Button>
 			{Object.keys(form.formState.dirtyFields).length > 0 && (
 				<Small className="text-muted-foreground">

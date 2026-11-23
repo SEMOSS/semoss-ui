@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getResourcePermissions, type ResourcePermissions } from "@semoss/sdk";
 import { getErrorMessage } from "@semoss/utility/error";
-import type { EngineApp } from "./engine-app-permissions";
+import { APP_GRANTEE_TYPE, type EngineApp } from "./engine-app-permissions";
 
 /** The apps an engine gives a permission to, and what the user may change */
 interface EngineAppPermissions {
@@ -15,7 +15,7 @@ interface EngineAppPermissions {
 	 * Whether the user can give, change and take away an app's permission: the
 	 * engine's owners, and admins in admin mode
 	 */
-	canChangeProjects: boolean;
+	canChangeEngines: boolean;
 	/**
 	 * Whether only admins can give an app access to the engine, from its
 	 * settings page in admin mode. Owners can still change and take away the
@@ -51,7 +51,8 @@ interface PermissionsRead {
 
 /**
  * Reads the apps an engine gives a permission to, from the engine's
- * permissions, with what the signed in user may change, so the Apps table can
+ * permissions (its grantees of type PROJECT), with what the signed in user may
+ * change, so the Apps table can
  * show and change them. `refresh` bumps the count the read depends on, so the
  * apps are read again; a read that fails clears the apps, since a permission
  * may have changed, and a read for another engine or mode is never returned as
@@ -104,10 +105,17 @@ export const useEngineAppPermissions = (
 
 	const permissions =
 		read !== null && read.key === key ? read.permissions : null;
+	const apps = useMemo(
+		() =>
+			permissions?.engines.filter(
+				(grantee) => grantee.subject.type === APP_GRANTEE_TYPE,
+			) ?? null,
+		[permissions],
+	);
 	return {
-		apps: permissions?.projects ?? null,
-		canChangeProjects:
-			permissions?.allowedPermissionChanges.canChangeProjects ?? false,
+		apps,
+		canChangeEngines:
+			permissions?.allowedPermissionChanges.canChangeEngines ?? false,
 		addsAreAdminOnly:
 			permissions?.allowedPermissionChanges.addsAreAdminOnly ?? false,
 		canChangeModelLimits:

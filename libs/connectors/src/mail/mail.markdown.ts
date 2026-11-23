@@ -87,24 +87,31 @@ const mailMessageToSection = (app: MailApp, message: MailMessage): string => {
 
 /**
  * An email thread as Markdown, each email a section in the order it was
- * sent.
+ * sent. A draft is left out: a thread is read from every folder, so a reply
+ * that was never sent is listed with it, and a saved file may be put where
+ * other people read it.
  *
  * @param app - The mailbox it was read from.
  * @param messages - The thread's emails, oldest first, read with their bodies.
  * @return The document.
+ * @throws Error when the thread holds drafts only, so there is nothing to save.
  */
 export const mailThreadToMarkdown = (
 	app: MailApp,
 	messages: MailMessage[],
 ): string => {
-	const latest = messages[messages.length - 1];
+	const sent = messages.filter((message) => !message.isDraft);
+	if (messages.length > 0 && sent.length === 0) {
+		throw new Error("This thread holds only drafts that were never sent.");
+	}
+	const latest = sent[sent.length - 1];
 	return toDocument([
 		`# ${escapeInline(toTitle(normalizeMailSubject(latest?.subject), "(no subject)"))}`,
 		toFieldLines([
 			["Source", `${app.sourceName} email thread`],
-			["Emails", String(messages.length)],
+			["Emails", String(sent.length)],
 		]),
-		...messages.map((message) => mailMessageToSection(app, message)),
+		...sent.map((message) => mailMessageToSection(app, message)),
 	]);
 };
 

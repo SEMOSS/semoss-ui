@@ -45,6 +45,7 @@ import {
 import { EmailDraftCard } from "./email-draft-card";
 import { EmailSendActions } from "./email-send-actions";
 import { MemoryToolCard, parseMemoryResult } from "./memory-tool-card";
+import { OrgChartCard } from "./org-chart-card";
 import { ToolCallMenu } from "./tool-call-menu";
 import { ToolFailureTooltip } from "./tool-failure-tooltip";
 import { ToolInline } from "./tool-inline";
@@ -158,6 +159,12 @@ export function ToolCallCard(props: ToolCallCardProps) {
 				: null,
 		[tool],
 	);
+	if (
+		tool.status === "COMPLETED" &&
+		!tool.error &&
+		getToolComponent(tool) === TOOL_COMPONENTS.orgChart
+	)
+		return <OrgChartCard key={tool.output} tool={tool} />;
 	if (memoryResult)
 		return (
 			<MemoryToolCard

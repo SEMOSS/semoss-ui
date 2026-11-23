@@ -165,12 +165,13 @@ export const WorkbenchBorder: FC<WorkbenchBorderProps> = ({ side, slots }) => {
 						: "flex-row overflow-x-auto",
 				)}
 			>
-				{border.panelIds.map((pid) => (
+				{border.panelIds.map((pid, index) => (
 					<WorkbenchTab
 						key={pid}
 						pid={pid}
 						stack={railStack}
 						active={border.activeId === pid}
+						tabStop={openPid ? openPid === pid : index === 0}
 						vertical={vertical}
 					/>
 				))}

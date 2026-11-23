@@ -1,10 +1,19 @@
-import { CalendarClock, House, Layers, Tags, UsersRound } from "lucide-react";
+import {
+	CalendarClock,
+	Fingerprint,
+	House,
+	Layers,
+	Tags,
+	UsersRound,
+} from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { cn, Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 import { ChatHistoryList } from "@/features/dashboard/chat-history-list";
+import { useTwinUpdates } from "@/features/dashboard/dashboard.context";
 import { useDueToday } from "@/features/dashboard/use-due-today";
 import { RoutineRecentRuns } from "@/features/routines/routine-recent-runs";
 import { lexicon } from "@/lib/lexicon";
+import { personaPath } from "@/lib/workspace-paths";
 import {
 	CollaborationNavigationHeader,
 	type NavigationToggle,
@@ -35,6 +44,7 @@ export function CollaborationNavigation({
 }: CollaborationNavigationProps) {
 	const { pathname } = useLocation();
 	const dueToday = useDueToday();
+	const twinUpdates = useTwinUpdates();
 	// filing and setup stay reachable from Settings and search; Topics sits under Work because the owner
 	// opens it often, and Routines stays here because it is the proactive part
 	const links = [
@@ -42,6 +52,7 @@ export function CollaborationNavigation({
 			to: "/",
 			label: lexicon.today,
 			icon: House,
+			iconClassName: "fill-primary/15 text-primary dark:brightness-125",
 			// only what is due today, so the badge stays meaningful
 			count: dueToday,
 			isActive: pathname === "/",
@@ -50,6 +61,7 @@ export function CollaborationNavigation({
 			to: "/work",
 			label: "Work",
 			icon: Layers,
+			iconClassName: "fill-chart-2/15 text-chart-2",
 			count: 0,
 			// its topic index has a link of its own
 			isActive:
@@ -60,6 +72,8 @@ export function CollaborationNavigation({
 			to: "/work/topics",
 			label: "Topics",
 			icon: Tags,
+			iconClassName:
+				"fill-chart-1/15 text-chart-1 dark:fill-chart-3/15 dark:text-chart-3",
 			count: 0,
 			// the index and each topic's own page
 			isActive:
@@ -70,14 +84,28 @@ export function CollaborationNavigation({
 			to: "/twins",
 			label: "Digital Twins",
 			icon: UsersRound,
-			count: 0,
+			iconClassName: "fill-assistant/15 text-assistant",
+			// the copies in the owner's twins that wait for them: an original changed, is gone, or is copied twice
+			count: twinUpdates.data?.updates.length ?? 0,
 			isActive: pathname.startsWith("/twins"),
+		},
+		{
+			to: personaPath(),
+			label: "Persona",
+			icon: Fingerprint,
+			// open strokes, so nothing to fill; as it is the color is too pale on the light page (2:1), so it is
+			// darkened there
+			iconClassName: "text-chart-5 brightness-75 dark:brightness-100",
+			count: 0,
+			// its interview too; opened from Digital Twins the same page is under /twins, and that link stays lit
+			isActive: pathname.startsWith(personaPath()),
 		},
 		// last: its recent runs lead the scroller below and read as its own only right under it
 		{
 			to: "/routines",
 			label: "Routines",
 			icon: CalendarClock,
+			iconClassName: "fill-success/15 text-success",
 			count: 0,
 			isActive: pathname === "/routines",
 		},
@@ -86,6 +114,7 @@ export function CollaborationNavigation({
 		to,
 		label,
 		icon: Icon,
+		iconClassName,
 		count,
 		isActive,
 	}: (typeof links)[number]) => (
@@ -104,7 +133,7 @@ export function CollaborationNavigation({
 					)}
 				>
 					<Icon
-						className="size-4 shrink-0 text-muted-foreground"
+						className={cn("size-4 shrink-0", iconClassName)}
 						aria-hidden="true"
 					/>
 					{!isCollapsed && (
@@ -163,7 +192,10 @@ export function CollaborationNavigation({
 					isCollapsed={isCollapsed}
 					onNavigate={onNavigate}
 				/>
-				<CollaborationProfileMenu onNavigate={onNavigate} />
+				<CollaborationProfileMenu
+					isCollapsed={isCollapsed}
+					onNavigate={onNavigate}
+				/>
 			</div>
 		</div>
 	);

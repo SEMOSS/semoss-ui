@@ -3,6 +3,7 @@ import type { InsightActions } from "@/lib/pixel";
 import {
 	loadLiveState,
 	localDue,
+	mapMainTwin,
 	mapMemory,
 	mapStyle,
 	mapTopic,
@@ -92,6 +93,72 @@ it("loads each topic once when the list contains duplicate records", async () =>
 		'BrainGetTopic(topicId=["one"]); BrainGetTopic(topicId=["two"]);',
 	);
 	expect(state.topics).toMatchObject(topics);
+});
+
+it("maps the person's own Digital Twin from the settings, with the seeded agent's id and a picture address built once", async () => {
+	const load = async (settings: Record<string, unknown>) => {
+		const run = vi.fn(async (statement: string) => ({
+			pixelReturn: (statement.startsWith("BrainGetTopic")
+				? []
+				: [
+						{},
+						settings,
+						...Array.from({ length: 12 }, () => ({ items: [] })),
+					]
+			).map((output) => ({ output, operationType: [] })),
+		}));
+		return loadLiveState({ run } as unknown as InsightActions);
+	};
+	const assistantAgent = {
+		id: "collaboration-agent",
+		name: "Collaboration Agent",
+		modelId: "model-1",
+	};
+	// a name only: the person's Microsoft photo stands in, so no picture is held
+	expect(
+		(
+			await load({
+				assistantAgent,
+				mainTwin: { name: "Robin's Digital Twin" },
+			})
+		).mainTwin,
+	).toEqual({
+		name: "Robin's Digital Twin",
+		avatar: "",
+		agentId: "collaboration-agent",
+	});
+	// a chosen picture arrives bare and is held as an address
+	expect(
+		(
+			await load({
+				assistantAgent,
+				mainTwin: { name: "Rob", image: "AAAA" },
+			})
+		).mainTwin,
+	).toEqual({
+		name: "Rob",
+		avatar: "data:image/png;base64,AAAA",
+		agentId: "collaboration-agent",
+	});
+	// an older server sends none, and the state holds none
+	expect((await load({ assistantAgent })).mainTwin).toBeUndefined();
+	// no seeded agent to name: the twin is still held, for its name and picture
+	expect((await load({ mainTwin: { name: "Rob" } })).mainTwin).toEqual({
+		name: "Rob",
+		avatar: "",
+		agentId: "",
+	});
+});
+
+it("reads a save's answer as the settings' twin, and nothing from an answer with no name", () => {
+	expect(mapMainTwin({ name: " Rob ", image: "AAAA" }, "agent-1")).toEqual({
+		name: "Rob",
+		avatar: "data:image/png;base64,AAAA",
+		agentId: "agent-1",
+	});
+	expect(mapMainTwin({ name: "  " }, "agent-1")).toBeUndefined();
+	expect(mapMainTwin(null, "agent-1")).toBeUndefined();
+	expect(mapMainTwin("Rob", "agent-1")).toBeUndefined();
 });
 
 it("requests optional display bodies while preserving exclusions, links and legacy text", async () => {

@@ -1381,7 +1381,22 @@ export const IMPORTABLE_MODELS = {
 							required: true,
 							disabled: true,
 							default:
-								"import genai_client;${VAR_NAME} = genai_client.GoogleGenAiTextClient(model_name = '${MODEL}', region='${GCP_REGION}', project='${PROJECT}', service_account_credentials = ${SERVICE_ACCOUNT_CREDENTIALS})",
+								"import genai_client;${VAR_NAME} = genai_client.GoogleGenAiTextClient(model_name = '${MODEL}', region='${GCP_REGION}', project='${PROJECT}', service_account_credentials = ${SERVICE_ACCOUNT_CREDENTIALS}, generation_api='${GENERATION_API}')",
+							category: "Settings",
+						},
+						{
+							key: "GENERATION_API",
+							label: "Generation API",
+							type: "select",
+							options: ["interactions", "generate_content"],
+							optionLabels: {
+								generate_content: "GenerateContent",
+								interactions: "Interactions",
+							},
+							required: true,
+							default: "generate_content",
+							helperText:
+								"Interactions applies to new Gemini conversations and requires a global, us, or eu location. Existing conversations keep their API.",
 							category: "Settings",
 						},
 					],

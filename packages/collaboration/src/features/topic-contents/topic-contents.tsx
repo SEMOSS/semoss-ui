@@ -17,6 +17,7 @@ import {
 } from "@/components/common/app-icons";
 import { TopicDot } from "@/features/collaboration/components/topic-dot";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
+import { lexicon } from "@/lib/lexicon";
 import { topicPath } from "@/lib/workspace-paths";
 import { ChatSource } from "./chat-source";
 import { FileSource } from "./file-source";
@@ -66,7 +67,7 @@ function fileableFolders(folders: MailFolder[]): MailFolder[] {
 
 /**
  * A full page for choosing what is in a topic by hand: the owner's Outlook folders as the mailbox has them,
- * the conversations Brain has read, the assistant chats, and their OneDrive and Teams files, each row with a
+ * the conversations Brain has read, the Digital Twin chats, and their OneDrive and Teams files, each row with a
  * box that adds it or takes it off, and for mail a pane to read it in first.
  */
 export function TopicContents() {
@@ -107,7 +108,7 @@ export function TopicContents() {
 					? [
 							{
 								id: "topic-chats",
-								label: "Assistant chats",
+								label: lexicon.twinChats,
 								icon: MessageSquare,
 							},
 						]
@@ -137,7 +138,7 @@ export function TopicContents() {
 					? [
 							{
 								id: "chats",
-								label: "Assistant chats",
+								label: lexicon.twinChats,
 								icon: MessageSquare,
 							},
 						]

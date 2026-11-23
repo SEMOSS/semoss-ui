@@ -19,6 +19,7 @@ interface TopicPeoplePickerProps {
 	/** People already on the topic, kept or removed. */
 	taken: Set<string>;
 	disabled: boolean;
+	searchOnly?: boolean;
 	onAdd: (person: { id: string; name: string }) => void;
 }
 
@@ -28,6 +29,7 @@ export function TopicPeoplePicker({
 	contacts,
 	taken,
 	disabled,
+	searchOnly = false,
 	onAdd,
 }: TopicPeoplePickerProps) {
 	const fieldId = useId();
@@ -37,14 +39,32 @@ export function TopicPeoplePicker({
 	const [isSearching, setIsSearching] = useState(false);
 	const [status, setStatus] = useState("");
 	const text = query.trim();
-	const pool = (text.length >= 2 ? results : contacts).filter(
-		(person) => !taken.has(person.id) && !person.automated,
+	const candidates = text.length >= 2 ? results : searchOnly ? [] : contacts;
+	const known = [...contacts, ...results].filter((person) =>
+		taken.has(person.id),
 	);
+	const ids = new Set(taken);
+	const emails = new Set(
+		known.map((p) => p.email.toLowerCase()).filter(Boolean),
+	);
+	const pool = candidates.filter((person) => {
+		const email = person.email.toLowerCase();
+		if (
+			person.automated ||
+			ids.has(person.id) ||
+			(email && emails.has(email))
+		)
+			return false;
+		ids.add(person.id);
+		if (email) emails.add(email);
+		return true;
+	});
 	const shown = text.length >= 2 ? pool : pool.slice(0, QUICK_SHOWN);
 
 	useEffect(() => {
 		if (text.length < 2) {
 			setResults([]);
+			setIsSearching(false);
 			return;
 		}
 		let isCurrent = true;

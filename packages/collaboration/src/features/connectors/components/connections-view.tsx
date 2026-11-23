@@ -252,7 +252,7 @@ export function ConnectionsView() {
 								? "Checking your connection..."
 								: microsoft?.signedIn
 									? `Signed in as ${microsoft.account ?? "your Microsoft account"}.`
-									: "Not connected. Connect to let the assistant read your mail, Teams chats and calendar."}
+									: "Not connected. Connect so your mail, Teams chats and calendar can be read."}
 						</P>
 						{connection?.mailbox && (
 							<P className="text-muted-foreground text-sm">
@@ -356,8 +356,7 @@ export function ConnectionsView() {
 				<header className="space-y-1 border-b pb-4">
 					<H2 className="font-medium text-xl">Automatic updates</H2>
 					<P className="text-muted-foreground">
-						How new mail reaches the assistant without you pressing
-						Refresh.
+						How new mail comes in without you pressing Refresh.
 					</P>
 				</header>
 				<div className="divide-y">
