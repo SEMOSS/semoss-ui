@@ -30,6 +30,8 @@ import { MapTooltip } from "@/features/dependency-map/map-tooltip";
 import {
 	canRequestDependency,
 	DEPENDENCY_ACCESS_LEVEL_LABELS,
+	getConfigurationPlace,
+	getDependencyRoleLabel,
 	getDependencyTypeConfig,
 	getDependencyVisibilityLabel,
 } from "./catalog-dependency";
@@ -41,6 +43,7 @@ import {
 	getNodeLinks,
 } from "./catalog-dependency-graph";
 import { DependencyAccessBadge } from "./dependency-access-badge";
+import { DependencyKindBadge } from "./dependency-kind-badge";
 import { DependencyLinkRow } from "./dependency-link-row";
 
 /** Props for {@link CatalogDependencyDrawer}. */
@@ -55,8 +58,18 @@ interface CatalogDependencyDrawerProps {
 	onSelect: (id: string) => void;
 	/** Asks for access to the item */
 	onRequestAccess: (node: CatalogGraphNode) => void;
-	/** Shown above the details, such as the link's form while links are edited */
+	/** Shown above the details, such as a manual link's Edit and Remove while links are edited */
 	children?: ReactNode;
+	/**
+	 * What stops the draft being saved on the owner's manual link to this
+	 * item, such as a name another link has; shown under its name
+	 */
+	problem?: string;
+	/**
+	 * Whether the user can edit the owner, so a link to where its automatic
+	 * dependencies are changed leads somewhere they can use
+	 */
+	canEditOwner?: boolean;
 }
 
 /**
@@ -64,11 +77,14 @@ interface CatalogDependencyDrawerProps {
  * built as the admin Ontology's drawer is. The header holds the item's image,
  * name, type and visibility, and its actions as icon buttons with tooltips:
  * Request Access, View Its Ontology, Open in Catalog, and Close. The item then
- * folds into Overview (its id, description and anything the user should know)
- * and Lineage (what it uses and what uses it, each link with its role and why
- * it exists, each item opening here in turn). A private item says only its
+ * folds into Overview (its id, description and anything the user should know);
+ * Code, for a manual link between it and the owner: the name a Code app reads
+ * the item's id by, and the link's description; Configuration, for an
+ * automatic one: its role, why it exists, and where to change it; and
+ * Lineage (what it uses and what uses it, each link with its kind, each item
+ * opening here in turn). A private item says only its
  * type, and how to get access. Its heading takes focus when it opens. While
- * the owner's links are edited, a manual link's form sits above the details.
+ * the owner's links are edited, a manual link's Edit and Remove sit above the details.
  */
 export const CatalogDependencyDrawer = ({
 	graph,
@@ -77,6 +93,8 @@ export const CatalogDependencyDrawer = ({
 	onSelect,
 	onRequestAccess,
 	children,
+	problem,
+	canEditOwner = false,
 }: CatalogDependencyDrawerProps) => {
 	const root = graph.nodes.get(graph.rootId);
 	const rootName = root?.name ?? "this item";
@@ -106,6 +124,16 @@ export const CatalogDependencyDrawer = ({
 					: `Uses ${rootName}`;
 	const hiddenCount = node.hiddenCount ?? 0;
 	const isOne = hiddenCount === 1;
+	// the links between this item and the owner, either way, are the ones
+	// the Ontology tab is about; links further out show in Lineage only
+	const ownLinks = isRoot
+		? []
+		: [...uses, ...usedBy].filter(
+				({ other, edge }) =>
+					other.id === graph.rootId && edge.role !== "HIDDEN",
+			);
+	const manualLinks = ownLinks.filter(({ edge }) => !edge.isAutomatic);
+	const automaticLinks = ownLinks.filter(({ edge }) => edge.isAutomatic);
 
 	const renderLinks = (links: readonly GraphNodeLink[]) =>
 		links.length === 0 ? (
@@ -216,7 +244,7 @@ export const CatalogDependencyDrawer = ({
 			<Accordion
 				key={node.id}
 				type="multiple"
-				defaultValue={["overview"]}
+				defaultValue={["overview", "code", "configuration"]}
 			>
 				<AccordionItem value="overview">
 					<AccordionTrigger>Overview</AccordionTrigger>
@@ -273,6 +301,121 @@ export const CatalogDependencyDrawer = ({
 						) : null}
 					</AccordionContent>
 				</AccordionItem>
+				{manualLinks.length > 0 ? (
+					<AccordionItem value="code">
+						<AccordionTrigger>
+							<span className="flex items-center gap-2">
+								Code
+								<DependencyKindBadge isAutomatic={false} />
+							</span>
+						</AccordionTrigger>
+						<AccordionContent className="flex flex-col gap-4">
+							{manualLinks.map(({ edge }) => (
+								<dl
+									key={edge.id}
+									className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm"
+								>
+									<dt className="text-muted-foreground">
+										Name
+									</dt>
+									<dd className="min-w-0">
+										{edge.name ? (
+											<code className="break-all rounded bg-muted px-1.5 py-0.5 font-medium font-mono text-sm">
+												{edge.name}
+											</code>
+										) : (
+											<Muted>
+												No name. Edit the dependency to
+												give it one.
+											</Muted>
+										)}
+										{problem &&
+										edge.source === graph.rootId ? (
+											<P className="mt-1 flex items-center gap-1 text-destructive text-sm">
+												<TriangleAlert
+													className="size-4 shrink-0"
+													aria-hidden="true"
+												/>
+												{problem}
+											</P>
+										) : null}
+									</dd>
+									<dt className="text-muted-foreground">
+										Description
+									</dt>
+									<dd className="min-w-0">
+										{edge.description ? (
+											<P className="text-sm">
+												{edge.description}
+											</P>
+										) : (
+											<Muted>No description.</Muted>
+										)}
+									</dd>
+								</dl>
+							))}
+						</AccordionContent>
+					</AccordionItem>
+				) : null}
+				{automaticLinks.length > 0 ? (
+					<AccordionItem value="configuration">
+						<AccordionTrigger>
+							<span className="flex items-center gap-2">
+								Configuration
+								<DependencyKindBadge isAutomatic={true} />
+							</span>
+						</AccordionTrigger>
+						<AccordionContent>
+							<ul className="flex flex-col gap-4">
+								{automaticLinks.map(({ edge }) => {
+									const owner =
+										graph.nodes.get(edge.source) ?? node;
+									const place = getConfigurationPlace(
+										edge.role,
+										owner,
+									);
+									// only the owner's editors get a link to
+									// its settings; a dependent's are not known
+									const placePath =
+										canEditOwner &&
+										owner.id === graph.rootId
+											? place.path
+											: null;
+									return (
+										<li
+											key={edge.id}
+											className="flex flex-col gap-1"
+										>
+											<P className="font-medium text-sm">
+												{getDependencyRoleLabel(
+													edge.role,
+												)}
+											</P>
+											<Muted>
+												{edge.description ??
+													`Set by the ${getDependencyTypeConfig(owner.type).label.toLowerCase()}'s configuration.`}
+											</Muted>
+											<P className="text-sm">
+												{`Read-only here. Change it in ${owner.name}'s `}
+												{placePath ? (
+													<Link
+														to={placePath}
+														className="font-medium text-primary underline-offset-4 hover:underline"
+													>
+														{place.label}
+													</Link>
+												) : (
+													place.label
+												)}
+												.
+											</P>
+										</li>
+									);
+								})}
+							</ul>
+						</AccordionContent>
+					</AccordionItem>
+				) : null}
 				<AccordionItem value="lineage">
 					<AccordionTrigger
 						aria-label={`Lineage, ${uses.length} upstream, ${usedBy.length} downstream`}

@@ -1,6 +1,5 @@
-import { ArrowRight, Lock } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import {
-	Badge,
 	Item,
 	ItemActions,
 	ItemContent,
@@ -14,6 +13,7 @@ import {
 	getDependencyTypeConfig,
 } from "./catalog-dependency";
 import type { GraphNodeLink } from "./catalog-dependency-graph";
+import { DependencyKindBadge } from "./dependency-kind-badge";
 
 /** Props for {@link DependencyLinkRow}. */
 interface DependencyLinkRowProps extends GraphNodeLink {
@@ -23,10 +23,11 @@ interface DependencyLinkRowProps extends GraphNodeLink {
 
 /**
  * One link in the Ontology drawer's Lineage: the item at its other end, which
- * opens in the drawer, then its role and why it exists. An automatic link's
- * role has a lock and says it is set by the configuration of the item that
- * has it; a manual one reads Manual, with the name and description a user
- * gave it. The link to the private dependents has no role.
+ * opens in the drawer, then what kind of link it is. An automatic link reads
+ * Automatic, with its role and the sentence the backend wrote, set by the
+ * configuration of the item that has it; a manual one reads Manual, with the
+ * name a user gave it, in the code face a Code app reads it by, and its
+ * description. The link to the private dependents has neither.
  */
 export const DependencyLinkRow = ({
 	edge,
@@ -74,22 +75,21 @@ export const DependencyLinkRow = ({
 			</Item>
 			{isHidden ? null : (
 				// lined up with the row's padding above
-				<div className="flex flex-wrap items-center gap-1 px-2">
-					<Badge variant="secondary" className="gap-1">
-						{edge.isAutomatic ? (
-							<Lock className="size-3" aria-hidden="true" />
-						) : null}
-						{getDependencyRoleLabel(edge.role)}
-					</Badge>
-					{edge.name ? (
-						<Badge
-							variant="outline"
-							className="max-w-40"
-							title={edge.name}
-						>
-							<span className="truncate">{edge.name}</span>
-						</Badge>
-					) : null}
+				<div className="flex min-w-0 flex-wrap items-center gap-2 px-2">
+					<DependencyKindBadge isAutomatic={edge.isAutomatic} />
+					{edge.isAutomatic ? (
+						<span className="text-muted-foreground text-xs">
+							{getDependencyRoleLabel(edge.role)}
+						</span>
+					) : edge.name ? (
+						<code className="min-w-0 break-all font-medium font-mono text-xs">
+							{edge.name}
+						</code>
+					) : (
+						<span className="text-muted-foreground text-xs">
+							No name
+						</span>
+					)}
 				</div>
 			)}
 			{note ? <Muted className="px-2 text-xs">{note}</Muted> : null}

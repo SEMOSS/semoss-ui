@@ -8,7 +8,7 @@ import {
 	useInternalNode,
 	useStore,
 } from "@xyflow/react";
-import { Lock, Undo2, X } from "lucide-react";
+import { Lock, PencilLine, Undo2, X } from "lucide-react";
 import { memo } from "react";
 import { Button, cn } from "@semoss/ui/next";
 import type { DependencyGraphEdge } from "@/api/dependency-map";
@@ -32,6 +32,25 @@ export interface DependencyEdgeAction {
 
 const ACTION_ICONS = { remove: X, restore: Undo2, locked: Lock } as const;
 
+/**
+ * What a link says about itself at its midpoint, outside edit mode too: a
+ * manual link its name, an automatic one a lock naming its role, so the two
+ * kinds differ by more than the line's dashes.
+ */
+export type DependencyEdgeMarker =
+	| {
+			readonly kind: "manual";
+			/** The name a user gave it, or null for none */
+			readonly name: string | null;
+			/** What stops it being saved, such as a name another link has */
+			readonly problem?: string;
+	  }
+	| {
+			readonly kind: "automatic";
+			/** What it says, such as "Automatic: Judge model" */
+			readonly label: string;
+	  };
+
 /** What the canvas hands each edge. */
 export interface DependencyEdgeData extends Record<string, unknown> {
 	/** The link */
@@ -43,6 +62,8 @@ export interface DependencyEdgeData extends Record<string, unknown> {
 	emphasis: EdgeEmphasis;
 	/** A control at its midpoint, while links are edited */
 	action?: DependencyEdgeAction;
+	/** What it says about itself at its midpoint, beside the control */
+	marker?: DependencyEdgeMarker;
 }
 
 /** An edge on the Dependency Map. */
@@ -60,7 +81,8 @@ const isThinSelector = (state: ReactFlowState): boolean =>
  * Automatic links are solid and manual ones dashed; a link in a cycle is drawn
  * as a warning and an access gap as a problem. Clicking it opens its details
  * in the drawer; a hovered or selected link is drawn in the primary colour.
- * While links are edited, a link can carry a control at its midpoint
+ * A link can say what it is at its midpoint ({@link DependencyEdgeMarker}),
+ * and while links are edited carry a control there
  * ({@link DependencyEdgeAction}).
  */
 export const DependencyEdge = memo(
@@ -78,7 +100,7 @@ export const DependencyEdge = memo(
 		if (!sourceNode || !targetNode || !data) {
 			return null;
 		}
-		const { edge, emphasis, action } = data;
+		const { edge, emphasis, action, marker } = data;
 		const isStrong = emphasis === "highlight" || emphasis === "gap";
 		if (isThin && !isStrong && !selected) {
 			return null;
@@ -92,6 +114,53 @@ export const DependencyEdge = memo(
 		});
 
 		const ActionIcon = action ? ACTION_ICONS[action.kind] : null;
+		// an edit control on an automatic link is its lock, so the marker's
+		// own lock is left out beside it
+		const shownMarker =
+			marker?.kind === "automatic" && action?.kind === "locked"
+				? undefined
+				: marker;
+		const markerNode = !shownMarker ? null : shownMarker.kind ===
+			"manual" ? (
+			<span
+				title={shownMarker.problem}
+				className={cn(
+					"flex h-6 max-w-40 items-center gap-1 rounded-full border border-dashed bg-background px-2 text-xs shadow-xs",
+					shownMarker.problem &&
+						"border-destructive border-solid text-destructive",
+					emphasis === "dimmed" && "opacity-40",
+				)}
+			>
+				{shownMarker.problem ? (
+					<span className="sr-only">{`${shownMarker.problem}: `}</span>
+				) : null}
+				<PencilLine
+					className="size-3 shrink-0 text-muted-foreground"
+					aria-hidden="true"
+				/>
+				<span className="sr-only">Manual: </span>
+				{shownMarker.name ? (
+					<span className="truncate font-medium font-mono">
+						{shownMarker.name}
+					</span>
+				) : (
+					<span className="text-muted-foreground">No name</span>
+				)}
+			</span>
+		) : (
+			<MapTooltip label={shownMarker.label}>
+				<span
+					role="img"
+					aria-label={shownMarker.label}
+					className={cn(
+						"flex size-5 items-center justify-center rounded-full border bg-muted text-muted-foreground",
+						emphasis === "dimmed" && "opacity-40",
+					)}
+				>
+					<Lock className="size-3" aria-hidden="true" />
+				</span>
+			</MapTooltip>
+		);
 
 		return (
 			<>
@@ -120,47 +189,50 @@ export const DependencyEdge = memo(
 						strokeDasharray: edge.isAutomatic ? undefined : "6 4",
 					}}
 				/>
-				{action && ActionIcon ? (
+				{(action && ActionIcon) || markerNode ? (
 					<EdgeLabelRenderer>
 						{/* nodrag and nopan keep a press on the control off the canvas */}
 						<div
-							className="nodrag nopan pointer-events-auto absolute"
+							className="nodrag nopan pointer-events-auto absolute flex items-center gap-1"
 							style={{
 								transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
 							}}
 						>
-							<MapTooltip label={action.label}>
-								{action.onClick ? (
-									<Button
-										type="button"
-										size="icon-sm"
-										variant="outline"
-										aria-label={action.label}
-										className={cn(
-											"size-6 rounded-full bg-background shadow-xs",
-											action.kind === "remove" &&
-												"hover:border-destructive hover:text-destructive",
-										)}
-										onClick={(event) => {
-											event.stopPropagation();
-											action.onClick?.();
-										}}
-									>
-										<ActionIcon aria-hidden="true" />
-									</Button>
-								) : (
-									<span
-										role="img"
-										aria-label={action.label}
-										className="flex size-6 items-center justify-center rounded-full border bg-muted text-muted-foreground"
-									>
-										<ActionIcon
-											className="size-3"
-											aria-hidden="true"
-										/>
-									</span>
-								)}
-							</MapTooltip>
+							{markerNode}
+							{action && ActionIcon ? (
+								<MapTooltip label={action.label}>
+									{action.onClick ? (
+										<Button
+											type="button"
+											size="icon-sm"
+											variant="outline"
+											aria-label={action.label}
+											className={cn(
+												"size-6 rounded-full bg-background shadow-xs",
+												action.kind === "remove" &&
+													"hover:border-destructive hover:text-destructive",
+											)}
+											onClick={(event) => {
+												event.stopPropagation();
+												action.onClick?.();
+											}}
+										>
+											<ActionIcon aria-hidden="true" />
+										</Button>
+									) : (
+										<span
+											role="img"
+											aria-label={action.label}
+											className="flex size-6 items-center justify-center rounded-full border bg-muted text-muted-foreground"
+										>
+											<ActionIcon
+												className="size-3"
+												aria-hidden="true"
+											/>
+										</span>
+									)}
+								</MapTooltip>
+							) : null}
 						</div>
 					</EdgeLabelRenderer>
 				) : null}

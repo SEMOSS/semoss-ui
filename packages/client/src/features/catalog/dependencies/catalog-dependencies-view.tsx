@@ -1,5 +1,5 @@
 import { Panel, type ReactFlowInstance } from "@xyflow/react";
-import { Info, Network, Pencil } from "lucide-react";
+import { Info, Network, Pencil, RefreshCw, Trash2, Undo2 } from "lucide-react";
 import {
 	type KeyboardEvent,
 	type ReactNode,
@@ -23,12 +23,15 @@ import {
 	H4,
 	Muted,
 	P,
+	Spinner,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 	toast,
 	useIsMobile,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
+import { syncCatalogDependencies } from "@/api/catalog-dependencies";
 import { DiscardChangesDialog } from "@/features/bulk-access-management/discard-changes-dialog";
 import type { DependencyFlowEdge } from "@/features/dependency-map/dependency-edge";
 import { DependencyMapSearch } from "@/features/dependency-map/dependency-map-search";
@@ -37,7 +40,6 @@ import { ExpandCanvasButton } from "@/features/dependency-map/expand-canvas-butt
 import { ExpandedCanvasDialog } from "@/features/dependency-map/expanded-canvas-dialog";
 import { focusCanvasItem } from "@/features/dependency-map/focus-canvas-item";
 import { useExpandableCanvas } from "@/features/dependency-map/use-expandable-canvas";
-import { AddDependencyPanel } from "./add-dependency-panel";
 import { getDependencyTypeConfig } from "./catalog-dependency";
 import { CatalogDependencyCanvas } from "./catalog-dependency-canvas";
 import {
@@ -60,7 +62,8 @@ import {
 	type MenuEditActions,
 } from "./catalog-dependency-menu-items";
 import { DependencyEditBar } from "./dependency-edit-bar";
-import { DependencyLinkForm } from "./dependency-link-form";
+import { DependencyLinkDialog } from "./dependency-link-dialog";
+import { DependencySaveControls } from "./dependency-save-controls";
 import { FIT_VIEW_OPTIONS } from "./fit-view-on-change";
 import { RequestDependencyAccessDialog } from "./request-dependency-access-dialog";
 import { useCatalogDependents } from "./use-catalog-dependents";
@@ -79,6 +82,12 @@ interface CatalogDependenciesViewProps {
 	catalogDescription?: string | null;
 	/** Whether the user can edit the owner's dependencies here */
 	canEdit: boolean;
+	/**
+	 * Whether the user can record the owner's automatic dependencies again
+	 * from its configuration: its editors, even where its manual ones are
+	 * edited elsewhere. Defaults to `canEdit`
+	 */
+	canResync?: boolean;
 	/**
 	 * Why the dependencies cannot be edited here; editors who can are told to
 	 * use the edit button when it is left out
@@ -113,9 +122,12 @@ const DEFAULT_EDIT_HINT = "Add or remove dependencies using the edit button";
  * with its description, why it is connected, and Request Access, which asks
  * for that one item. Editors edit the manual dependencies on the canvas itself, as the
  * automation canvas edits a workflow: Edit Dependencies turns it into a
- * draft, with an edit bar on top (Add Dependency, Discard, Save), Remove or
- * Undo at each manual link's midpoint, and each link's name and description
- * in the drawer. Nothing is saved until Save, which sends them all at once.
+ * draft, with an edit bar on top (Add Dependency, Done), Save, Reset and a
+ * reminder in the toolbar as the database metamodel page has them, and Remove
+ * or Undo at each manual link's midpoint. Adding a link and editing one open
+ * the same dialog, with its target, its name (required) and its description;
+ * an added link then reads as every other dependency does. Nothing is saved
+ * until Save, which sends them all at once.
  * Automatic ones come from the owner's configuration and show a lock.
  */
 export const CatalogDependenciesView = ({
@@ -125,17 +137,25 @@ export const CatalogDependenciesView = ({
 	catalogSubtype,
 	catalogDescription,
 	canEdit,
+	canResync = canEdit,
 	editHint,
 	dependencies,
 	graph: graphData,
 	onRefresh,
 }: CatalogDependenciesViewProps) => {
+	const [isResyncing, setIsResyncing] = useState(false);
 	const isMobile = useIsMobile();
 	const [expandedIds, setExpandedIds] =
 		useState<ReadonlySet<string>>(NO_EXPANDED);
 	const [selectedId, setSelectedId] = useState("");
 	const [query, setQuery] = useState("");
-	const [isAdding, setIsAdding] = useState(false);
+	/**
+	 * The link dialog while it is open: the id of the link it edits, or null
+	 * when it adds one
+	 */
+	const [linkDialog, setLinkDialog] = useState<{
+		readonly linkId: string | null;
+	} | null>(null);
 	const [isDiscardOpen, setIsDiscardOpen] = useState(false);
 	const [requestTarget, setRequestTarget] = useState<CatalogGraphNode | null>(
 		null,
@@ -182,7 +202,6 @@ export const CatalogDependenciesView = ({
 			links: edited.links,
 			dependents: dependents.dependents,
 			hiddenCount: dependents.hiddenCount,
-			unknownAccessIds: edited.addedIds,
 		});
 	}, [
 		catalogId,
@@ -213,6 +232,16 @@ export const CatalogDependenciesView = ({
 	const selectedLink = selectedNode
 		? getOwnDraftLink(selectedNode, draftLinks)
 		: undefined;
+	// the link the dialog edits; one gone from the draft closes the dialog
+	// rather than turning it into Add Dependency
+	const dialogLink =
+		linkDialog?.linkId == null
+			? undefined
+			: draftLinks?.get(linkDialog.linkId);
+	const isLinkDialogShown =
+		draftLinks !== null &&
+		linkDialog !== null &&
+		(linkDialog.linkId === null || dialogLink !== undefined);
 
 	const handleExpand = useCallback((id: string) => {
 		setExpandedIds((previous) => new Set(previous).add(id));
@@ -242,7 +271,7 @@ export const CatalogDependenciesView = ({
 
 	const stopEditing = (): void => {
 		setIsDiscardOpen(false);
-		setIsAdding(false);
+		setLinkDialog(null);
 		draft.discard();
 	};
 
@@ -258,7 +287,6 @@ export const CatalogDependenciesView = ({
 	const handleSave = async (): Promise<void> => {
 		const changeCount = draft.changeCount;
 		if (await draft.save()) {
-			setIsAdding(false);
 			toast.success(
 				changeCount === 1
 					? "1 dependency change saved"
@@ -267,15 +295,41 @@ export const CatalogDependenciesView = ({
 		}
 	};
 
-	const handleAdd = useCallback((): void => {
-		closeDrawer();
-		setIsAdding(true);
-	}, [closeDrawer]);
+	/**
+	 * Records the owner's automatic dependencies again from its configuration,
+	 * then reads what it uses and what uses it again.
+	 */
+	const handleResync = async (): Promise<void> => {
+		setIsResyncing(true);
+		try {
+			const count = await syncCatalogDependencies(catalogId, catalogType);
+			toast.success(
+				count === 1
+					? "Re-synced: 1 automatic dependency from the configuration"
+					: `Re-synced: ${count} automatic dependencies from the configuration`,
+			);
+		} catch (error: unknown) {
+			toast.error(
+				getErrorMessage(
+					error,
+					"The dependencies could not be re-synced",
+				),
+			);
+			return;
+		} finally {
+			setIsResyncing(false);
+		}
+		onRefresh();
+		dependents.refresh();
+	};
 
-	/** Opens a manual link's target in the drawer, with its form. */
+	const handleAdd = useCallback((): void => {
+		setLinkDialog({ linkId: null });
+	}, []);
+
+	/** Opens a manual link's name and description in the link dialog. */
 	const handleEditLink = useCallback((id: string): void => {
-		setIsAdding(false);
-		setSelectedId(id);
+		setLinkDialog({ linkId: id });
 	}, []);
 
 	const handleRemove = useCallback(
@@ -296,13 +350,21 @@ export const CatalogDependenciesView = ({
 			draftLinks
 				? {
 						links: draftLinks,
+						problems: draft.problems,
 						onRemove: handleRemove,
 						onRestore: restore,
 						onAdd: handleAdd,
 						onEditLink: handleEditLink,
 					}
 				: undefined,
-		[draftLinks, handleRemove, restore, handleAdd, handleEditLink],
+		[
+			draftLinks,
+			draft.problems,
+			handleRemove,
+			restore,
+			handleAdd,
+			handleEditLink,
+		],
 	);
 
 	/**
@@ -330,16 +392,14 @@ export const CatalogDependenciesView = ({
 	};
 
 	/**
-	 * Escape closes Add Dependency or the drawer first, then leaves edit mode,
-	 * asking first when there are changes. While editing it is always taken,
-	 * so it never collapses the expanded view.
+	 * Escape closes the drawer first, then leaves edit mode, asking first when
+	 * there are changes. While editing it is always taken, so it never
+	 * collapses the expanded view. The link dialog takes its own Escape.
 	 *
 	 * @returns Whether Escape was taken.
 	 */
 	const handleEscape = (): boolean => {
-		if (isAdding) {
-			setIsAdding(false);
-		} else if (selectedId) {
+		if (selectedId) {
 			closeDrawerAndRefocus();
 		} else if (isEditing) {
 			if (!draft.isSaving) {
@@ -369,7 +429,7 @@ export const CatalogDependenciesView = ({
 	};
 
 	// on a phone the drawer takes the canvas's place until it is closed
-	const isCanvasShown = !(isMobile && (selectedNode || isAdding));
+	const isCanvasShown = !(isMobile && selectedNode);
 
 	const graphArea: ReactNode = (
 		// biome-ignore lint/a11y/noStaticElementInteractions: Escape here only closes the drawer; the drawer's Close button does the same
@@ -387,12 +447,23 @@ export const CatalogDependenciesView = ({
 					matches={matches}
 					onJump={handleJump}
 				/>
-				<ButtonGroup aria-label="Ontology actions" className="ml-auto">
-					<ExpandCanvasButton
-						isExpanded={isExpanded}
-						onToggle={toggleExpanded}
-					/>
-				</ButtonGroup>
+				<div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+					{isEditing ? (
+						<DependencySaveControls
+							changeCount={draft.changeCount}
+							problemCount={draft.problems.size}
+							isSaving={draft.isSaving}
+							onReset={draft.reset}
+							onSave={() => void handleSave()}
+						/>
+					) : null}
+					<ButtonGroup aria-label="Ontology actions">
+						<ExpandCanvasButton
+							isExpanded={isExpanded}
+							onToggle={toggleExpanded}
+						/>
+					</ButtonGroup>
+				</div>
 			</div>
 			{dependents.error ? (
 				<Alert variant="destructive">
@@ -457,8 +528,7 @@ export const CatalogDependenciesView = ({
 										isSaving={draft.isSaving}
 										saveError={draft.saveError}
 										onAdd={handleAdd}
-										onDiscard={handleDiscard}
-										onSave={() => void handleSave()}
+										onDone={handleDiscard}
 									/>
 								</Panel>
 							) : (
@@ -471,63 +541,75 @@ export const CatalogDependenciesView = ({
 						</CatalogDependencyCanvas>
 					</div>
 				) : null}
-				{(draftLinks && isAdding) || selectedNode ? (
+				{selectedNode ? (
 					<div
 						className={cn("shrink-0", isMobile ? "w-full" : "w-md")}
 					>
-						{draftLinks && isAdding ? (
-							<AddDependencyPanel
-								catalogId={catalogId}
-								linkedIds={
-									new Set(
-										[...draftLinks.values()]
-											.filter((link) => !link.isRemoved)
-											.map((link) => link.catalog_id),
-									)
-								}
-								onPick={(option) => {
-									draft.add(option);
-									handleEditLink(option.catalog_id);
-								}}
-								onClose={() => setIsAdding(false)}
-							/>
-						) : selectedNode ? (
-							<CatalogDependencyDrawer
-								graph={graph}
-								node={selectedNode}
-								onClose={closeDrawerAndRefocus}
-								onSelect={handleJump}
-								onRequestAccess={setRequestTarget}
-							>
-								{draftLinks && selectedLink ? (
-									<DependencyLinkForm
-										key={selectedLink.catalog_id}
-										link={selectedLink}
-										takenNames={getTakenNames(
-											draftLinks.values(),
+						<CatalogDependencyDrawer
+							graph={graph}
+							node={selectedNode}
+							onClose={closeDrawerAndRefocus}
+							onSelect={handleJump}
+							onRequestAccess={setRequestTarget}
+							problem={
+								selectedLink
+									? draft.problems.get(
 											selectedLink.catalog_id,
-										)}
-										problem={draft.problems.get(
-											selectedLink.catalog_id,
-										)}
-										onChange={(change) =>
-											draft.update(
+										)
+									: undefined
+							}
+							canEditOwner={canEdit || canResync}
+						>
+							{selectedLink?.isRemoved ? (
+								<Alert>
+									<Trash2 aria-hidden="true" />
+									<AlertDescription className="flex flex-wrap items-center justify-between gap-2">
+										This dependency is removed when you
+										save.
+										<Button
+											type="button"
+											size="sm"
+											variant="outline"
+											onClick={() =>
+												restore(selectedLink.catalog_id)
+											}
+										>
+											<Undo2 aria-hidden="true" />
+											Undo
+										</Button>
+									</AlertDescription>
+								</Alert>
+							) : selectedLink ? (
+								<div className="flex flex-wrap gap-2">
+									<Button
+										type="button"
+										size="sm"
+										variant="outline"
+										onClick={() =>
+											handleEditLink(
 												selectedLink.catalog_id,
-												change,
 											)
 										}
-										onRemove={() =>
+									>
+										<Pencil aria-hidden="true" />
+										Edit Dependency
+									</Button>
+									<Button
+										type="button"
+										size="sm"
+										variant="outline"
+										onClick={() =>
 											handleRemove(
 												selectedLink.catalog_id,
 											)
 										}
-										onRestore={() =>
-											restore(selectedLink.catalog_id)
-										}
-									/>
-								) : null}
-							</CatalogDependencyDrawer>
-						) : null}
+									>
+										<Trash2 aria-hidden="true" />
+										Remove Dependency
+									</Button>
+								</div>
+							) : null}
+						</CatalogDependencyDrawer>
 					</div>
 				) : null}
 			</div>
@@ -567,21 +649,43 @@ export const CatalogDependenciesView = ({
 							{hasAutomatic
 								? ` Automatic dependencies come from this ${ownerLabel}'s configuration and can only be changed there.`
 								: null}
+							{canResync
+								? " If one looks out of date after a change to the configuration, use Re-sync."
+								: null}
 						</Muted>
 					</div>
-					{/* when empty, the empty state offers the edit */}
-					{canEdit && !isEmpty && !isEditing ? (
-						<Button
-							variant="outline"
-							size="sm"
-							className="shrink-0 self-start"
-							onClick={startEditing}
-							data-testid="catalogDependenciesView-edit-btn"
-						>
-							<Pencil aria-hidden="true" />
-							Edit Dependencies
-						</Button>
-					) : null}
+					{isEditing ? null : (
+						<div className="flex shrink-0 flex-wrap gap-2 self-start">
+							{canResync ? (
+								<Button
+									variant="outline"
+									size="sm"
+									disabled={isResyncing}
+									onClick={() => void handleResync()}
+									data-testid="catalogDependenciesView-resync-btn"
+								>
+									{isResyncing ? (
+										<Spinner className="size-4" />
+									) : (
+										<RefreshCw aria-hidden="true" />
+									)}
+									{isResyncing ? "Re-syncing..." : "Re-sync"}
+								</Button>
+							) : null}
+							{/* when empty, the empty state offers the edit */}
+							{canEdit && !isEmpty ? (
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={startEditing}
+									data-testid="catalogDependenciesView-edit-btn"
+								>
+									<Pencil aria-hidden="true" />
+									Edit Dependencies
+								</Button>
+							) : null}
+						</div>
+					)}
 				</div>
 
 				{isEmpty ? (
@@ -624,6 +728,40 @@ export const CatalogDependenciesView = ({
 					graphArea
 				)}
 			</div>
+
+			{isLinkDialogShown && draftLinks && linkDialog ? (
+				<DependencyLinkDialog
+					// a new form for each link, so one never starts from another's
+					key={linkDialog.linkId ?? ""}
+					catalogId={catalogId}
+					link={dialogLink}
+					linkedIds={
+						new Set(
+							[...draftLinks.values()]
+								.filter((link) => !link.isRemoved)
+								.map((link) => link.catalog_id),
+						)
+					}
+					problem={
+						linkDialog.linkId === null
+							? undefined
+							: draft.problems.get(linkDialog.linkId)
+					}
+					takenNames={getTakenNames(
+						draftLinks.values(),
+						linkDialog.linkId ?? "",
+					)}
+					onSubmit={(target, fields) => {
+						if (linkDialog.linkId === null) {
+							draft.add(target, fields);
+						} else {
+							draft.update(linkDialog.linkId, fields);
+						}
+						setLinkDialog(null);
+					}}
+					onClose={() => setLinkDialog(null)}
+				/>
+			) : null}
 
 			{requestTarget ? (
 				<RequestDependencyAccessDialog

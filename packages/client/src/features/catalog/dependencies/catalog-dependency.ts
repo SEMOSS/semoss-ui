@@ -25,7 +25,7 @@ import type {
 	CatalogType,
 	Engine,
 } from "@semoss/shared";
-import { isProjectType } from "@/utility/catalog";
+import { getResourcePagePath, isProjectType } from "@/utility/catalog";
 
 /** How the dependency views show one catalog type. */
 export interface DependencyTypeConfig {
@@ -202,6 +202,10 @@ export const DEPENDENCY_ROLE_LABELS = {
 	TOPIC_VECTOR: "Topic vector",
 	EMBEDDER: "Embedder",
 	FUNCTION_STORAGE: "Function storage",
+	KEYWORD_ENGINE: "Keyword engine",
+	DOCUMENT_PROCESSOR: "Document processor",
+	PROXY_TARGET: "Proxy target",
+	IMAGE_MODEL: "Image model",
 	ROUTE_MODEL: "Route model",
 	ROUTER_CLASSIFIER: "Router classifier",
 	ROUTER_EMBEDDINGS: "Router embeddings",
@@ -223,6 +227,77 @@ const isDependencyRole = (role: string): role is CatalogDependencyRole =>
  */
 export const getDependencyRoleLabel = (role: string): string =>
 	isDependencyRole(role) ? DEPENDENCY_ROLE_LABELS[role] : role;
+
+/** The roles an engine's SMSS sets, so the SMSS tab is where they change. */
+const SMSS_ROLES: ReadonlySet<string> = new Set<CatalogDependencyRole>([
+	"JUDGE_MODEL",
+	"TOPIC_VECTOR",
+	"EMBEDDER",
+	"FUNCTION_STORAGE",
+	"KEYWORD_ENGINE",
+	"DOCUMENT_PROCESSOR",
+	"PROXY_TARGET",
+	"IMAGE_MODEL",
+]);
+
+/** The roles a Model Router's routing configuration sets. */
+const ROUTER_ROLES: ReadonlySet<string> = new Set<CatalogDependencyRole>([
+	"ROUTE_MODEL",
+	"ROUTER_CLASSIFIER",
+	"ROUTER_EMBEDDINGS",
+	"ROUTER_FALLBACK",
+]);
+
+/** Where an automatic dependency is changed. */
+export interface ConfigurationPlace {
+	/**
+	 * What the place is called, after the owner's name: "SMSS", "Guardrails
+	 * settings", "Model settings", "settings", or a project's "editor"
+	 */
+	readonly label: string;
+	/** Its page, or null when the user has no page to go to */
+	readonly path: string | null;
+}
+
+/**
+ * Where the configuration that records an automatic dependency is edited, so
+ * the link can say where to change it: an engine's SMSS tab, its Guardrails
+ * or Model settings, or a project's own page for what its editor sets (an
+ * agent's model and skills, an automation's steps, an app's blocks or code).
+ *
+ * @param role - The automatic link's role.
+ * @param owner - The item that has the dependency.
+ * @returns The place, with its page when it has one.
+ */
+export const getConfigurationPlace = (
+	role: string,
+	owner: {
+		readonly kind: "ENGINE" | "PROJECT";
+		readonly type: string;
+		readonly id: string;
+	},
+): ConfigurationPlace => {
+	const page = getResourcePagePath(owner.kind, owner.type, owner.id);
+	if (owner.kind === "ENGINE") {
+		if (role === "GUARDRAIL") {
+			return {
+				label: "Guardrails settings",
+				path: page ? `${page}/settings/guardrails` : null,
+			};
+		}
+		if (ROUTER_ROLES.has(role)) {
+			return {
+				label: "Model settings",
+				path: page ? `${page}/settings/model` : null,
+			};
+		}
+		if (SMSS_ROLES.has(role)) {
+			return { label: "SMSS", path: page ? `${page}/smss` : null };
+		}
+		return { label: "settings", path: page ? `${page}/settings` : null };
+	}
+	return { label: "editor", path: page };
+};
 
 /**
  * A key for a dependency row. One target can be a dependency in two roles,
@@ -291,6 +366,17 @@ export const DEPENDENCY_ACCESS_LEVEL_LABELS = {
 /** The backend's permission ids: 1 is owner, 2 editor and 3 read-only. */
 const LEVEL_BY_PERMISSION_ID: Readonly<Record<number, DependencyAccessLevel>> =
 	{ 1: "OWNER", 2: "EDIT", 3: "READ_ONLY" };
+
+/**
+ * The access level a backend permission id stands for.
+ *
+ * @param id - The permission id, such as an engine's `engine_user_permission`.
+ * @returns The level, or undefined for none or an id it does not know.
+ */
+export const getAccessLevelForPermissionId = (
+	id: number | undefined,
+): DependencyAccessLevel | undefined =>
+	id === undefined ? undefined : LEVEL_BY_PERMISSION_ID[id];
 
 /**
  * The user's standing on one dependency:
@@ -363,10 +449,9 @@ export const getDependencyDisplayName = (
 export const getDependencyAccess = (
 	dependency: AccessFields,
 ): DependencyAccess => {
-	const requested =
-		dependency.access_permission === undefined
-			? undefined
-			: LEVEL_BY_PERMISSION_ID[dependency.access_permission];
+	const requested = getAccessLevelForPermissionId(
+		dependency.access_permission,
+	);
 	if (isAccessLevel(dependency.permission_name)) {
 		return requested && requested !== dependency.permission_name
 			? { kind: "granted", level: dependency.permission_name, requested }

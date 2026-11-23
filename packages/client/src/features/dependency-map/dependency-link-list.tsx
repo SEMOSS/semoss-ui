@@ -1,3 +1,4 @@
+import { Lock, PencilLine } from "lucide-react";
 import {
 	Badge,
 	Item,
@@ -97,10 +98,21 @@ export const DependencyLinkList = ({
 							>
 								<button
 									type="button"
-									className="shrink-0"
+									className="shrink-0 gap-1"
 									aria-label={`${role}, ${origin}: show this link`}
 									onClick={() => onSelectEdge(link.id)}
 								>
+									{link.isAutomatic ? (
+										<Lock
+											className="size-3"
+											aria-hidden="true"
+										/>
+									) : (
+										<PencilLine
+											className="size-3"
+											aria-hidden="true"
+										/>
+									)}
 									{role}
 								</button>
 							</Badge>

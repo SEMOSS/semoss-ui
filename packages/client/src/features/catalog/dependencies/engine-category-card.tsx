@@ -1,4 +1,4 @@
-import { XIcon } from "lucide-react";
+import { Lock, PencilLine, XIcon } from "lucide-react";
 import type { CatalogDependencyRow, Engine } from "@semoss/shared";
 import { EngineSubtypeIcon } from "@semoss/shared";
 import { Button } from "@semoss/ui/next";
@@ -26,8 +26,9 @@ interface EngineCategoryCardProps {
 
 /**
  * One engine category card: icon tile, title and description, a Manage
- * action, and the engines as chips (or an italic empty-state line). Manual
- * chips can be removed; automatic ones show their role and cannot.
+ * action, and the engines as chips (or an italic empty-state line). An
+ * automatic chip has a lock and its role, and cannot be removed; a manual one
+ * has a pencil and the name a Code app reads it by, and can be.
  */
 export const EngineCategoryCard = ({
 	category,
@@ -79,11 +80,10 @@ export const EngineCategoryCard = ({
 							return (
 								<li
 									key={getDependencyKey(engine)}
-									className="flex items-center gap-1.5 rounded-full border border-border bg-background py-1 ps-1.5 pe-2 text-xs"
-									title={
+									className={
 										engine.is_automatic
-											? `${name}: ${roleLabel}, set by the configuration`
-											: name
+											? "flex items-center gap-1.5 rounded-full border border-border bg-muted py-1 ps-1.5 pe-2 text-xs"
+											: "flex items-center gap-1.5 rounded-full border border-border border-dashed bg-background py-1 ps-1.5 pe-2 text-xs"
 									}
 								>
 									<span className="flex size-4 shrink-0 items-center justify-center">
@@ -99,10 +99,35 @@ export const EngineCategoryCard = ({
 										{name}
 									</span>
 									{engine.is_automatic ? (
-										<span className="shrink-0 text-muted-foreground">
+										<span className="flex shrink-0 items-center gap-1 text-muted-foreground">
+											<Lock
+												className="size-3"
+												aria-hidden="true"
+											/>
+											<span className="sr-only">
+												Automatic,{" "}
+											</span>
 											{roleLabel}
 										</span>
-									) : canEdit ? (
+									) : (
+										<span className="flex min-w-0 items-center gap-1 text-muted-foreground">
+											<PencilLine
+												className="size-3 shrink-0"
+												aria-hidden="true"
+											/>
+											<span className="sr-only">
+												Manual,{" "}
+											</span>
+											{engine.dependency_name ? (
+												<code className="max-w-32 truncate font-mono">
+													{engine.dependency_name}
+												</code>
+											) : (
+												"No name"
+											)}
+										</span>
+									)}
+									{engine.is_automatic ? null : canEdit ? (
 										<Button
 											type="button"
 											variant="ghost"

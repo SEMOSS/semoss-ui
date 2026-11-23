@@ -31,7 +31,7 @@ import {
 export interface MenuEditActions extends CanvasEditState {
 	/** Opens Add Dependency */
 	readonly onAdd: () => void;
-	/** Opens a manual link's target with the link's form */
+	/** Opens a manual link's name and description in the link dialog */
 	readonly onEditLink: (id: string) => void;
 }
 
@@ -68,7 +68,7 @@ interface CatalogDependencyMenuItemsProps {
  * On the empty canvas: fit the view, and go back to the direct links. Each
  * action shows only where it applies, so a private item offers only its
  * details. While the owner's links are edited, the empty canvas offers Add
- * Dependency, and a manual link's target Edit Link and Remove Dependency (or
+ * Dependency, and a manual link's target Edit Dependency and Remove Dependency (or
  * Undo Removal).
  */
 export const CatalogDependencyMenuItems = ({
@@ -161,7 +161,7 @@ export const CatalogDependencyMenuItems = ({
 								onSelect={() => edit.onEditLink(node.id)}
 							>
 								<Pencil aria-hidden="true" />
-								Edit Link
+								Edit Dependency
 							</ContextMenuItem>
 							<ContextMenuItem
 								variant="destructive"

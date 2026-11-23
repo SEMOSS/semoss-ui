@@ -209,16 +209,6 @@ describe("buildCatalogDependencyGraph", () => {
 		);
 	});
 
-	it("tells nothing about the access of a target whose access is unknown", () => {
-		const graph = buildCatalogDependencyGraph(
-			input({ unknownAccessIds: new Set(["model"]) }),
-		);
-		expect(graph.nodes.get("model")?.access).toBeNull();
-		expect(graph.nodes.get("vector")?.access).toEqual({
-			kind: "requestable",
-		});
-	});
-
 	it("adds no private node when nothing is hidden", () => {
 		const graph = buildCatalogDependencyGraph(input());
 		expect(graph.nodes.has(PRIVATE_DEPENDENTS_ID)).toBe(false);

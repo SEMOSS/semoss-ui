@@ -1,4 +1,4 @@
-import { CheckIcon, SearchIcon } from "lucide-react";
+import { CheckIcon, Lock, SearchIcon } from "lucide-react";
 import { type UIEvent, useState } from "react";
 import type { CatalogDependencyRow, CatalogType, Engine } from "@semoss/shared";
 import { EngineSubtypeIcon } from "@semoss/shared";
@@ -26,6 +26,10 @@ import {
 	getDependencyRoleLabel,
 	toCatalogDependencyPayload,
 } from "./catalog-dependency";
+import {
+	type DependencyOption,
+	getUniqueDependencyName,
+} from "./catalog-dependency-draft";
 import { useDependencyOptions } from "./use-dependency-options";
 
 interface ManageEnginesDialogProps {
@@ -46,6 +50,8 @@ interface ManageEnginesDialogProps {
  * a page at a time as the list scrolls, toggles manual selections, and saves
  * the owner's manual dependency list with every other category (and
  * project-kind dependency) preserved, each with its name and description.
+ * A name is required, so an engine picked here is named after itself, made
+ * unique among the owner's other links; the Ontology tab renames it.
  * Automatic engines of the category are listed read-only and never sent; the
  * backend keeps them. The backend refreshes the agent's engine context from
  * the saved list.
@@ -75,24 +81,31 @@ export const ManageEnginesDialog = ({
 		(dependency) =>
 			dependency.is_automatic && dependency.catalog_type === category,
 	);
-	const [selectedIds, setSelectedIds] = useState<Set<string>>(
+	// the picked engines by id, each with the name a new one is named after
+	const [selectedIds, setSelectedIds] = useState<ReadonlyMap<string, string>>(
 		() =>
-			new Set(
+			new Map(
 				manualDependencies
 					.filter(
 						(dependency) => dependency.catalog_type === category,
 					)
-					.map((dependency) => dependency.catalog_id),
+					.map((dependency) => [
+						dependency.catalog_id,
+						getDependencyDisplayName(dependency),
+					]),
 			),
 	);
 
-	const toggleEngine = (engineId: string) => {
+	const toggleEngine = (engine: DependencyOption) => {
 		setSelectedIds((current) => {
-			const next = new Set(current);
-			if (next.has(engineId)) {
-				next.delete(engineId);
+			const next = new Map(current);
+			if (next.has(engine.catalog_id)) {
+				next.delete(engine.catalog_id);
 			} else {
-				next.add(engineId);
+				next.set(
+					engine.catalog_id,
+					engine.catalog_name || engine.catalog_id,
+				);
 			}
 			return next;
 		});
@@ -116,15 +129,31 @@ export const ManageEnginesDialog = ({
 			const others = manualDependencies.filter(
 				(dependency) => dependency.catalog_type !== category,
 			);
+			const kept = manualDependencies.filter(
+				(dependency) =>
+					dependency.catalog_type === category &&
+					selectedIds.has(dependency.catalog_id),
+			);
+			// a new pick is named after itself, unique among the names kept
+			const taken = [...others, ...kept].flatMap((dependency) => {
+				const name = dependency.dependency_name?.trim().toLowerCase();
+				return name ? [name] : [];
+			});
+			const added = [...selectedIds]
+				.filter(([id]) => !kept.some((row) => row.catalog_id === id))
+				.map(([id, baseName]) => {
+					const name = getUniqueDependencyName(baseName, taken);
+					taken.push(name.toLowerCase());
+					return toCatalogDependencyPayload({
+						catalog_id: id,
+						catalog_type: category,
+						dependency_name: name,
+					});
+				});
 			await setCatalogDependencies(catalogId, catalogType, [
 				...others.map(toCatalogDependencyPayload),
-				...[...selectedIds].map((id) =>
-					toCatalogDependencyPayload(
-						manualDependencies.find(
-							(dependency) => dependency.catalog_id === id,
-						) ?? { catalog_id: id, catalog_type: category },
-					),
-				),
+				...kept.map(toCatalogDependencyPayload),
+				...added,
 			]);
 			toast.success(`${meta.label} updated`);
 			onClose(true);
@@ -162,8 +191,10 @@ export const ManageEnginesDialog = ({
 
 				{automaticEngines.length > 0 ? (
 					<div className="flex flex-col gap-1.5">
-						<p className="text-muted-foreground text-xs">
-							Set by the configuration, and kept as they are:
+						<p className="flex items-center gap-1 text-muted-foreground text-xs">
+							<Lock className="size-3" aria-hidden="true" />
+							Automatic: set by the configuration, and kept as
+							they are:
 						</p>
 						<ul className="flex flex-wrap gap-1.5">
 							{automaticEngines.map((engine) => (
@@ -214,9 +245,7 @@ export const ManageEnginesDialog = ({
 												isSelected && "bg-accent/50",
 											)}
 											aria-pressed={isSelected}
-											onClick={() =>
-												toggleEngine(option.catalog_id)
-											}
+											onClick={() => toggleEngine(option)}
 										>
 											<span className="flex size-5 shrink-0 items-center justify-center">
 												<EngineSubtypeIcon

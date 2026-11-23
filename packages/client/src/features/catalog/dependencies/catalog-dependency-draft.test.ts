@@ -9,9 +9,12 @@ import {
 	applyDraftToGraph,
 	countDraftChanges,
 	createDependencyDraft,
+	type DependencyOption,
 	type DraftLink,
 	getOwnDraftLink,
 	getTakenNames,
+	getUniqueDependencyName,
+	NAME_LIMIT,
 	NAME_TAKEN,
 	removeFromDraft,
 	restoreInDraft,
@@ -49,6 +52,21 @@ const SAVED = [
 	}),
 ];
 
+/** A target the picker offers, with the user's access to it. */
+const LEDGER: DependencyOption = {
+	catalog_id: "ledger",
+	catalog_type: "DATABASE",
+	catalog_name: "Ledger",
+	permission_name: "EDIT",
+	catalog_global: false,
+	catalog_discoverable: true,
+};
+
+const LEDGER_FIELDS = {
+	dependency_name: "LEDGER",
+	dependency_description: "Journal entries",
+};
+
 describe("dependency draft", () => {
 	it("starts from the manual rows only, a private one named by its type", () => {
 		const draft = createDependencyDraft(SAVED);
@@ -60,39 +78,42 @@ describe("dependency draft", () => {
 		expect(countDraftChanges(draft, SAVED)).toBe(0);
 	});
 
-	it("adds a target once, and brings back one marked for removal", () => {
+	it("adds a target once, with its name, and brings back one marked for removal", () => {
 		let draft = createDependencyDraft(SAVED);
-		draft = addToDraft(draft, {
-			catalog_id: "ledger",
-			catalog_type: "DATABASE",
-			catalog_name: "Ledger",
-		});
-		draft = addToDraft(draft, {
-			catalog_id: "ledger",
-			catalog_type: "DATABASE",
-			catalog_name: "Ledger",
+		draft = addToDraft(draft, LEDGER, LEDGER_FIELDS);
+		draft = addToDraft(draft, LEDGER, {
+			dependency_name: "OTHER",
+			dependency_description: "",
 		});
 		expect(
 			draft.links.filter((link) => link.catalog_id === "ledger"),
 		).toHaveLength(1);
-		expect(draft.links.at(-1)?.isNew).toBe(true);
-		draft = removeFromDraft(draft, "sales");
-		draft = addToDraft(draft, {
-			catalog_id: "sales",
-			catalog_type: "DATABASE",
-			catalog_name: "Sales",
+		expect(draft.links.at(-1)).toMatchObject({
+			isNew: true,
+			dependency_name: "LEDGER",
+			dependency_description: "Journal entries",
 		});
+		draft = removeFromDraft(draft, "sales");
+		draft = addToDraft(
+			draft,
+			{
+				catalog_id: "sales",
+				catalog_type: "DATABASE",
+				catalog_name: "Sales",
+			},
+			{ dependency_name: "ORDERS", dependency_description: "" },
+		);
 		expect(
-			draft.links.find((link) => link.catalog_id === "sales")?.isRemoved,
-		).toBe(false);
+			draft.links.find((link) => link.catalog_id === "sales"),
+		).toMatchObject({ isRemoved: false, dependency_name: "ORDERS" });
 	});
 
 	it("drops a new link at once, and keeps a saved one marked until undone", () => {
-		let draft = addToDraft(createDependencyDraft(SAVED), {
-			catalog_id: "ledger",
-			catalog_type: "DATABASE",
-			catalog_name: "Ledger",
-		});
+		let draft = addToDraft(
+			createDependencyDraft(SAVED),
+			LEDGER,
+			LEDGER_FIELDS,
+		);
 		draft = removeFromDraft(draft, "ledger");
 		expect(draft.links.some((link) => link.catalog_id === "ledger")).toBe(
 			false,
@@ -139,11 +160,7 @@ describe("dependency draft", () => {
 		let draft = updateDraftLink(createDependencyDraft(SAVED), "sales", {
 			dependency_description: "  Orders and accounts ",
 		});
-		draft = addToDraft(draft, {
-			catalog_id: "ledger",
-			catalog_type: "DATABASE",
-			catalog_name: "Ledger",
-		});
+		draft = addToDraft(draft, LEDGER, LEDGER_FIELDS);
 		draft = removeFromDraft(draft, "payroll");
 		expect(toDraftPayload(draft)).toEqual([
 			{
@@ -152,7 +169,12 @@ describe("dependency draft", () => {
 				name: "SALES_DB",
 				description: "Orders and accounts",
 			},
-			{ id: "ledger", type: "DATABASE" },
+			{
+				id: "ledger",
+				type: "DATABASE",
+				name: "LEDGER",
+				description: "Journal entries",
+			},
 		]);
 		expect(toDraftPayload(restoreInDraft(draft, "payroll"))).toContainEqual(
 			{
@@ -228,7 +250,6 @@ describe("applyDraftToGraph", () => {
 		const applied = applyDraftToGraph({ nodes, links }, null, "owner");
 		expect(applied.nodes).toBe(nodes);
 		expect(applied.links).toBe(links);
-		expect(applied.addedIds.size).toBe(0);
 	});
 
 	it("puts the draft in place of the owner's manual links", () => {
@@ -236,25 +257,23 @@ describe("applyDraftToGraph", () => {
 			dependency_name: " WAREHOUSE ",
 		});
 		draft = removeFromDraft(draft, "payroll");
-		draft = addToDraft(draft, {
-			catalog_id: "ledger",
-			catalog_type: "DATABASE",
-			catalog_name: "Ledger",
-		});
+		draft = addToDraft(draft, LEDGER, LEDGER_FIELDS);
 		const applied = applyDraftToGraph(
 			{ nodes, links },
 			byId(draft.links),
 			"owner",
 		);
-		// the new target is drawn from the picker, as one the user can see
+		// the new target is drawn from the picker, with the user's access to it
 		expect(applied.nodes.at(-1)).toEqual({
 			catalog_id: "ledger",
 			catalog_type: "DATABASE",
 			catalog_name: "Ledger",
 			catalog_subtype: undefined,
+			permission_name: "EDIT",
+			catalog_global: false,
+			catalog_discoverable: true,
 			is_private: false,
 		});
-		expect(applied.addedIds).toEqual(new Set(["ledger"]));
 		// the automatic link and a dependency's own link stay as they were;
 		// the removed link stays, so it can be undone
 		expect(
@@ -268,7 +287,25 @@ describe("applyDraftToGraph", () => {
 			["sales", "payroll", null],
 			["owner", "sales", "WAREHOUSE"],
 			["owner", "payroll", null],
-			["owner", "ledger", null],
+			["owner", "ledger", "LEDGER"],
 		]);
+	});
+});
+
+describe("getUniqueDependencyName", () => {
+	it("names a link after its target, numbering a name another link has", () => {
+		expect(getUniqueDependencyName(" Ledger ", [])).toBe("Ledger");
+		expect(getUniqueDependencyName("Ledger", ["ledger"])).toBe("Ledger 2");
+		expect(getUniqueDependencyName("Ledger", ["ledger", "ledger 2"])).toBe(
+			"Ledger 3",
+		);
+		expect(getUniqueDependencyName("  ", [])).toBe("Dependency");
+	});
+
+	it("keeps a numbered name to the name limit", () => {
+		const long = "x".repeat(NAME_LIMIT);
+		const name = getUniqueDependencyName(long, [long]);
+		expect(name).toHaveLength(NAME_LIMIT);
+		expect(name.endsWith(" 2")).toBe(true);
 	});
 });

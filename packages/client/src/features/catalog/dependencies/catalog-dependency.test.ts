@@ -7,6 +7,7 @@ import {
 	canUseDependency,
 	DEPENDENCY_ROLE_LABELS,
 	DEPENDENCY_TYPE_CONFIG,
+	getConfigurationPlace,
 	getDependencyAccess,
 	getDependencyAccessLabel,
 	getDependencyDisplayName,
@@ -222,5 +223,35 @@ describe("dependency access", () => {
 			getDependencyVisibilityLabel({ catalog_discoverable: true }),
 		).toBe("Discoverable");
 		expect(getDependencyVisibilityLabel({})).toBe("Private");
+	});
+});
+
+describe("getConfigurationPlace", () => {
+	const guardrailOwner = {
+		kind: "ENGINE" as const,
+		type: "GUARDRAIL",
+		id: "guard-1",
+	};
+
+	it.each([
+		["JUDGE_MODEL", "SMSS", "/smss"],
+		["KEYWORD_ENGINE", "SMSS", "/smss"],
+		["IMAGE_MODEL", "SMSS", "/smss"],
+		["GUARDRAIL", "Guardrails settings", "/settings/guardrails"],
+		["ROUTE_MODEL", "Model settings", "/settings/model"],
+	])("sends an engine's %s to its %s", (role, label, suffix) => {
+		const place = getConfigurationPlace(role, guardrailOwner);
+		expect(place.label).toBe(label);
+		expect(place.path?.endsWith(`guard-1${suffix}`)).toBe(true);
+	});
+
+	it("sends a project's automatic links to its own editor", () => {
+		const place = getConfigurationPlace("AGENT_MODEL", {
+			kind: "PROJECT",
+			type: "WORKSPACE",
+			id: "agent-1",
+		});
+		expect(place.label).toBe("editor");
+		expect(place.path).toContain("agent-1");
 	});
 });

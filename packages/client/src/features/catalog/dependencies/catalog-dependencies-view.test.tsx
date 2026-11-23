@@ -38,11 +38,16 @@ const mocks = vi.hoisted(() => ({
 		permission: "OWNER",
 	},
 	runPixel: vi.fn(),
+	/** The project context's full refresh, which reloads the whole page */
+	refreshProject: vi.fn(),
+	/** The project context's refresh of the dependencies only */
+	refreshDependencies: vi.fn(),
 	/** What Add Dependency's search lists */
 	options: [] as {
 		engine_id: string;
 		engine_name: string;
 		engine_type: string;
+		engine_user_permission?: number;
 	}[],
 	dependents: {
 		dependents: [] as CatalogDependent[],
@@ -197,13 +202,16 @@ vi.mock("@/hooks/use-project", () => ({
 		permission: mocks.project.permission,
 		dependencies: [],
 		dependencyGraph: { nodes: [], links: [] },
-		refresh: vi.fn(),
+		refresh: mocks.refreshProject,
+		refreshDependencies: mocks.refreshDependencies,
 	}),
 }));
 
 afterEach(() => {
 	cleanup();
 	mocks.runPixel.mockReset();
+	mocks.refreshProject.mockReset();
+	mocks.refreshDependencies.mockReset();
 	mocks.options = [];
 	mocks.dependents = { dependents: [], hiddenCount: 0 };
 	mocks.dependentsError = undefined;
@@ -318,6 +326,9 @@ const renderAgentView = ({
 			/>
 		</MemoryRouter>,
 	);
+
+/** The toolbar's Save, named by what it would do or why it is off. */
+const saveButton = () => screen.getByTestId("catalogDependenciesView-save-btn");
 
 const openNode = (name: string) => {
 	fireEvent.click(
@@ -462,19 +473,50 @@ describe("CatalogDependenciesView", () => {
 			within(sheet).getByText("The model's own catalog description"),
 		).toBeInTheDocument();
 		expect(within(sheet).getByText("Read-only")).toBeInTheDocument();
-		// one target in two roles: both links are listed
-		// the links sit in Lineage, which starts folded
+		// one target in two roles: the manual link's name and description
+		// are in Code, the automatic one's role and where to change it in
+		// Configuration, both open from the start
+		const code = within(sheet)
+			.getByRole("button", { name: /^Code/ })
+			.closest("[data-slot='accordion-item']");
+		expect(code).not.toBeNull();
+		const codeSection = within(code as HTMLElement);
+		expect(codeSection.getByText("Manual")).toBeInTheDocument();
+		expect(codeSection.getByText("Drafting").tagName).toBe("CODE");
+		expect(
+			codeSection.getByText("Writes the first draft"),
+		).toBeInTheDocument();
+		const configuration = within(sheet)
+			.getByRole("button", { name: /^Configuration/ })
+			.closest("[data-slot='accordion-item']");
+		expect(configuration).not.toBeNull();
+		const configurationSection = within(configuration as HTMLElement);
+		expect(configurationSection.getByText("Automatic")).toBeInTheDocument();
+		expect(
+			configurationSection.getByText("Agent model"),
+		).toBeInTheDocument();
+		expect(
+			configurationSection.getByText("The agent answers with this model"),
+		).toBeInTheDocument();
+		expect(
+			configurationSection.getByText(
+				/Read-only here\. Change it in Helpdesk's/,
+			),
+		).toBeInTheDocument();
+		expect(
+			configurationSection.getByRole("link", { name: "editor" }),
+		).toHaveAttribute("href", expect.stringContaining("agent-1"));
+		// Lineage, which starts folded, says each link's kind too
 		fireEvent.click(
 			within(sheet).getByRole("button", { name: /^Lineage/ }),
 		);
-		expect(within(sheet).getByText("Agent model")).toBeInTheDocument();
-		expect(
-			within(sheet).getByText("The agent answers with this model"),
-		).toBeInTheDocument();
-		expect(within(sheet).getByText("Drafting")).toBeInTheDocument();
-		expect(
-			within(sheet).getByText("Writes the first draft"),
-		).toBeInTheDocument();
+		// the agent's two links to the model come into it, so Downstream
+		const downstream = within(
+			within(sheet).getByRole("region", { name: "Downstream" }),
+		);
+		expect(downstream.getByText("Automatic")).toBeInTheDocument();
+		expect(downstream.getByText("Manual")).toBeInTheDocument();
+		expect(downstream.getByText("Drafting").tagName).toBe("CODE");
 		expect(
 			within(sheet).getByText(
 				/You don't have access to all dependencies/,
@@ -486,6 +528,47 @@ describe("CatalogDependenciesView", () => {
 		expect(
 			within(sheet).getByRole("link", { name: /View Its Ontology/ }),
 		).toHaveAttribute("href", "/model/model-1/ontology");
+	});
+
+	it("re-syncs the automatic dependencies from the configuration and reads them again", async () => {
+		mocks.runPixel.mockResolvedValue({
+			errors: [],
+			pixelReturn: [{ output: { automatic: 3 } }],
+		});
+		const onRefresh = vi.fn();
+		renderAgentView({ onRefresh });
+		fireEvent.click(screen.getByRole("button", { name: "Re-sync" }));
+
+		await waitFor(() => expect(onRefresh).toHaveBeenCalledOnce());
+		expect(mocks.runPixel).toHaveBeenCalledWith(
+			'SyncCatalogDependencies(catalogId="agent-1", catalogType="WORKSPACE");',
+		);
+		expect(screen.getByRole("button", { name: "Re-sync" })).toBeEnabled();
+	});
+
+	it("keeps the dependencies as read when a re-sync is refused", async () => {
+		mocks.runPixel.mockResolvedValue({
+			errors: ["You cannot edit this agent"],
+			pixelReturn: [],
+		});
+		const onRefresh = vi.fn();
+		renderAgentView({ onRefresh });
+		fireEvent.click(screen.getByRole("button", { name: "Re-sync" }));
+
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", { name: "Re-sync" }),
+			).toBeEnabled(),
+		);
+		expect(mocks.runPixel).toHaveBeenCalledOnce();
+		expect(onRefresh).not.toHaveBeenCalled();
+	});
+
+	it("offers no Re-sync to viewers", () => {
+		renderAgentView({ canEdit: false });
+		expect(
+			screen.queryByRole("button", { name: "Re-sync" }),
+		).not.toBeInTheDocument();
 	});
 
 	it("tells nothing about a private item, and offers no request", () => {
@@ -669,8 +752,13 @@ describe("editing dependencies on the canvas", () => {
 		expect(
 			screen.queryByRole("button", { name: "Edit Dependencies" }),
 		).not.toBeInTheDocument();
-		// Save waits for a change
-		expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+		// Save waits for a change, and says so
+		expect(saveButton()).toHaveAttribute("aria-disabled", "true");
+		expect(saveButton()).toHaveAccessibleName("Save");
+		expect(saveButton()).toHaveAccessibleDescription("No changes to save");
+		expect(
+			screen.queryByText("Save changes or they will be lost."),
+		).not.toBeInTheDocument();
 		// only the manual links can be removed
 		expect(
 			screen.getByRole("button", { name: "Remove Search" }),
@@ -678,14 +766,23 @@ describe("editing dependencies on the canvas", () => {
 		expect(
 			screen.queryByRole("button", { name: "Remove Policies" }),
 		).not.toBeInTheDocument();
-		fireEvent.click(screen.getByRole("button", { name: "Discard" }));
+		fireEvent.click(screen.getByRole("button", { name: "Done" }));
 		expect(
 			screen.queryByText("Editing dependencies"),
 		).not.toBeInTheDocument();
 		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 	});
 
-	it("names and describes a manual link in the drawer and saves every manual link at once", async () => {
+	/** Opens a manual link's Edit Dependency dialog from its drawer. */
+	const openLinkDialog = (name: string) => {
+		const drawer = openNode(name);
+		fireEvent.click(
+			within(drawer).getByRole("button", { name: "Edit Dependency" }),
+		);
+		return screen.getByRole("dialog", { name: "Edit Dependency" });
+	};
+
+	it("names and describes a manual link in the Edit Dependency dialog and saves every manual link at once", async () => {
 		mocks.runPixel.mockResolvedValue({ errors: [], pixelReturn: [] });
 		const onRefresh = vi.fn();
 		renderAgentView({
@@ -694,16 +791,22 @@ describe("editing dependencies on the canvas", () => {
 		});
 		startEditing();
 
-		const drawer = openNode("Search");
-		fireEvent.change(within(drawer).getByLabelText("Name (optional)"), {
+		const dialog = openLinkDialog("Search");
+		fireEvent.change(within(dialog).getByLabelText(/^Name/), {
 			target: { value: " Lookup " },
 		});
 		fireEvent.change(
-			within(drawer).getByLabelText("Description (optional)"),
+			within(dialog).getByLabelText("Description (Optional)"),
 			{ target: { value: "Finds sources" } },
 		);
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Update Dependency" }),
+		);
+		await waitFor(() =>
+			expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+		);
 		expect(screen.getByText("1 change")).toBeInTheDocument();
-		fireEvent.click(screen.getByRole("button", { name: "Save" }));
+		fireEvent.click(saveButton());
 
 		await waitFor(() => expect(onRefresh).toHaveBeenCalledOnce());
 		expect(mocks.runPixel).toHaveBeenCalledOnce();
@@ -727,7 +830,7 @@ describe("editing dependencies on the canvas", () => {
 		).not.toBeInTheDocument();
 	});
 
-	it("adds a dependency from Add Dependency and opens its link", async () => {
+	it("adds a named dependency in the Add Dependency dialog, and shows it as any other", async () => {
 		mocks.runPixel.mockResolvedValue({ errors: [], pixelReturn: [] });
 		mocks.options = [
 			{
@@ -739,33 +842,62 @@ describe("editing dependencies on the canvas", () => {
 				engine_id: "db-2",
 				engine_name: "Ledger",
 				engine_type: "DATABASE",
+				engine_user_permission: 2,
 			},
 		];
 		renderAgentView({ links: [LINKS[3]] as CatalogDependencyLink[] });
 		startEditing();
 		fireEvent.click(screen.getByRole("button", { name: "Add Dependency" }));
 
-		const panel = screen.getByRole("complementary", {
-			name: "Add Dependency",
-		});
+		const dialog = screen.getByRole("dialog", { name: "Add Dependency" });
+		// nothing picked yet
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Add Dependency" }),
+		);
+		expect(
+			await within(dialog).findByText("Pick an engine or project"),
+		).toBeInTheDocument();
 		// a target already linked is listed as Added, and cannot be picked
 		expect(
-			within(panel).getByRole("button", { name: /Search/ }),
+			within(dialog).getByRole("button", { name: /Search/ }),
 		).toBeDisabled();
-		fireEvent.click(within(panel).getByRole("button", { name: /Ledger/ }));
-
-		// the new target is drawn and open with its link's form
-		expect(screen.getByTestId("node-db-2")).toBeInTheDocument();
+		fireEvent.click(within(dialog).getByRole("button", { name: /Ledger/ }));
+		// the name starts as the target's, and cannot be left empty
+		const name = within(dialog).getByLabelText(/^Name/);
+		expect(name).toHaveValue("Ledger");
+		fireEvent.change(name, { target: { value: "  " } });
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Add Dependency" }),
+		);
 		expect(
-			screen.getByRole("complementary", { name: "Ledger" }),
+			await within(dialog).findByText("Enter a name"),
 		).toBeInTheDocument();
-		expect(screen.getByText("1 change")).toBeInTheDocument();
-		fireEvent.click(screen.getByRole("button", { name: "Save" }));
+		expect(screen.queryByTestId("node-db-2")).not.toBeInTheDocument();
 
+		fireEvent.change(name, { target: { value: "LEDGER" } });
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Add Dependency" }),
+		);
+		await waitFor(() =>
+			expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+		);
+
+		// drawn as any other dependency: nothing opens on its own, and its
+		// drawer has the user's access and the same Edit and Remove
+		expect(screen.getByTestId("node-db-2")).toBeInTheDocument();
+		expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
+		expect(screen.getByText("1 change")).toBeInTheDocument();
+		const drawer = openNode("Ledger");
+		expect(within(drawer).getAllByText("Editor").length).toBeGreaterThan(0);
+		expect(
+			within(drawer).getByRole("button", { name: "Edit Dependency" }),
+		).toBeInTheDocument();
+
+		fireEvent.click(saveButton());
 		await waitFor(() => expect(mocks.runPixel).toHaveBeenCalledOnce());
 		expect(sentPayload()).toEqual([
 			{ id: "skill-1", type: "SKILL" },
-			{ id: "db-2", type: "DATABASE" },
+			{ id: "db-2", type: "DATABASE", name: "LEDGER" },
 		]);
 	});
 
@@ -782,31 +914,31 @@ describe("editing dependencies on the canvas", () => {
 		expect(screen.queryByText("1 change")).not.toBeInTheDocument();
 
 		fireEvent.click(screen.getByRole("button", { name: "Remove Search" }));
-		fireEvent.click(screen.getByRole("button", { name: "Save" }));
+		fireEvent.click(saveButton());
 		await waitFor(() => expect(mocks.runPixel).toHaveBeenCalledOnce());
 		expect(sentPayload()).toEqual([{ id: "db-1", type: "DATABASE" }]);
 	});
 
-	it("flags a repeated name and keeps Save off", () => {
+	it("refuses a repeated name in the dialog and changes nothing", async () => {
 		renderAgentView({
 			links: [LINKS[1], LINKS[3]] as CatalogDependencyLink[],
 		});
 		startEditing();
 
-		const drawer = openNode("Search");
-		fireEvent.change(within(drawer).getByLabelText("Name (optional)"), {
-			target: { value: "drafting" },
-		});
+		const dialog = openLinkDialog("Search");
+		const name = within(dialog).getByLabelText(/^Name/);
+		fireEvent.change(name, { target: { value: " drafting " } });
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Update Dependency" }),
+		);
 
 		expect(
-			within(drawer).getByText(
+			await within(dialog).findByText(
 				"Another dependency already has this name",
 			),
 		).toBeInTheDocument();
-		expect(
-			within(drawer).getByLabelText("Name (optional)"),
-		).toHaveAttribute("aria-invalid", "true");
-		expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+		expect(name).toHaveAttribute("aria-invalid", "true");
+		expect(screen.queryByText("1 change")).not.toBeInTheDocument();
 		expect(mocks.runPixel).not.toHaveBeenCalled();
 	});
 
@@ -822,23 +954,36 @@ describe("editing dependencies on the canvas", () => {
 		});
 		startEditing();
 
-		const drawer = openNode("Search");
-		fireEvent.change(within(drawer).getByLabelText("Name (optional)"), {
+		const dialog = openLinkDialog("Search");
+		fireEvent.change(within(dialog).getByLabelText(/^Name/), {
 			target: { value: "Lookup" },
 		});
-		fireEvent.click(screen.getByRole("button", { name: "Save" }));
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Update Dependency" }),
+		);
+		await waitFor(() =>
+			expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+		);
+		fireEvent.click(saveButton());
 
 		expect(
 			await screen.findByText("Name already used"),
 		).toBeInTheDocument();
 		expect(screen.getByText("Editing dependencies")).toBeInTheDocument();
-		expect(within(drawer).getByLabelText("Name (optional)")).toHaveValue(
-			"Lookup",
+		fireEvent.click(
+			within(screen.getByRole("complementary")).getByRole("button", {
+				name: "Edit Dependency",
+			}),
 		);
+		expect(
+			within(
+				screen.getByRole("dialog", { name: "Edit Dependency" }),
+			).getByLabelText(/^Name/),
+		).toHaveValue("Lookup");
 		expect(onRefresh).not.toHaveBeenCalled();
 	});
 
-	it("closes Add Dependency on Escape in the expanded view, and stays expanded", () => {
+	it("closes Add Dependency on Escape in the expanded view, and stays expanded", async () => {
 		renderAgentView();
 		startEditing();
 		fireEvent.click(
@@ -850,24 +995,153 @@ describe("editing dependencies on the canvas", () => {
 		fireEvent.click(
 			within(expanded).getByRole("button", { name: "Add Dependency" }),
 		);
-		const search = within(expanded).getByRole("searchbox", {
-			name: "Search engines",
-		});
+		const search = within(
+			screen.getByRole("dialog", { name: "Add Dependency" }),
+		).getByRole("searchbox", { name: "Search engines" });
 		fireEvent.keyDown(search, { key: "Escape" });
-		expect(
-			screen.queryByRole("complementary", { name: "Add Dependency" }),
-		).toBeNull();
+		await waitFor(() =>
+			expect(
+				screen.queryByRole("dialog", { name: "Add Dependency" }),
+			).not.toBeInTheDocument(),
+		);
 		expect(
 			screen.getByRole("dialog", { name: "Helpdesk's ontology" }),
 		).toBeInTheDocument();
 		expect(screen.getByText("Editing dependencies")).toBeInTheDocument();
 	});
 
+	it("reminds to save while changes wait, and Reset drops them and keeps editing", () => {
+		renderAgentView({ links: [LINKS[3]] as CatalogDependencyLink[] });
+		startEditing();
+		fireEvent.click(screen.getByRole("button", { name: "Remove Search" }));
+
+		expect(
+			screen.getByText("Save changes or they will be lost."),
+		).toBeInTheDocument();
+		expect(saveButton()).toHaveAttribute("aria-disabled", "false");
+		expect(saveButton()).toHaveAccessibleDescription(
+			"Save changes to the dependencies",
+		);
+
+		fireEvent.click(
+			screen.getByTestId("catalogDependenciesView-reset-btn"),
+		);
+		expect(screen.queryByText("1 change")).not.toBeInTheDocument();
+		expect(
+			screen.queryByText("Save changes or they will be lost."),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByTestId("catalogDependenciesView-reset-btn"),
+		).not.toBeInTheDocument();
+		expect(screen.getByText("Editing dependencies")).toBeInTheDocument();
+		expect(saveButton()).toHaveAttribute("aria-disabled", "true");
+	});
+
+	it("saves from the expanded view's toolbar", async () => {
+		mocks.runPixel.mockResolvedValue({ errors: [], pixelReturn: [] });
+		renderAgentView({
+			links: [LINKS[3], LINKS[4]] as CatalogDependencyLink[],
+		});
+		startEditing();
+		fireEvent.click(
+			screen.getByRole("button", { name: "Expand the ontology" }),
+		);
+		const expanded = screen.getByRole("dialog", {
+			name: "Helpdesk's ontology",
+		});
+		fireEvent.click(
+			within(expanded).getByRole("button", { name: "Remove Search" }),
+		);
+		fireEvent.click(
+			within(expanded).getByTestId("catalogDependenciesView-save-btn"),
+		);
+		await waitFor(() => expect(mocks.runPixel).toHaveBeenCalledOnce());
+		expect(sentPayload()).toEqual([{ id: "db-1", type: "DATABASE" }]);
+	});
+
+	it("names a link after each target picked, until a name is typed", () => {
+		mocks.options = [
+			{
+				engine_id: "db-2",
+				engine_name: "Ledger",
+				engine_type: "DATABASE",
+			},
+			{
+				engine_id: "db-3",
+				engine_name: "Payroll",
+				engine_type: "DATABASE",
+			},
+		];
+		renderAgentView({ links: [LINKS[3]] as CatalogDependencyLink[] });
+		startEditing();
+		fireEvent.click(screen.getByRole("button", { name: "Add Dependency" }));
+		const dialog = screen.getByRole("dialog", { name: "Add Dependency" });
+		const name = within(dialog).getByLabelText(/^Name/);
+
+		fireEvent.click(within(dialog).getByRole("button", { name: /Ledger/ }));
+		expect(name).toHaveValue("Ledger");
+		// a new pick replaces the name the last pick gave
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: /Payroll/ }),
+		);
+		expect(name).toHaveValue("Payroll");
+		// a name the user typed stays
+		fireEvent.change(name, { target: { value: "Pay" } });
+		fireEvent.click(within(dialog).getByRole("button", { name: /Ledger/ }));
+		expect(name).toHaveValue("Pay");
+	});
+
+	it("marks the links whose names clash, and keeps Save off until one changes", async () => {
+		renderAgentView({
+			links: [LINKS[1], LINKS[3]] as CatalogDependencyLink[],
+		});
+		startEditing();
+		// a removed link's name is free, so Search can take "Drafting"
+		fireEvent.click(screen.getByRole("button", { name: "Remove GPT" }));
+		let dialog = openLinkDialog("Search");
+		fireEvent.change(within(dialog).getByLabelText(/^Name/), {
+			target: { value: "Drafting" },
+		});
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Update Dependency" }),
+		);
+		await waitFor(() =>
+			expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+		);
+		// bringing the removed one back makes both names clash
+		fireEvent.click(screen.getByRole("button", { name: "Undo GPT" }));
+
+		expect(saveButton()).toHaveAttribute("aria-disabled", "true");
+		expect(saveButton()).toHaveAccessibleDescription(
+			"Fix the names marked in red before saving",
+		);
+		const drawer = screen.getByRole("complementary");
+		expect(
+			within(drawer).getByText(
+				"Another dependency already has this name",
+			),
+		).toBeInTheDocument();
+		// the edit dialog opens on the problem, and clears it once renamed
+		fireEvent.click(
+			within(drawer).getByRole("button", { name: "Edit Dependency" }),
+		);
+		dialog = screen.getByRole("dialog", { name: "Edit Dependency" });
+		const name = within(dialog).getByLabelText(/^Name/);
+		expect(name).toHaveAttribute("aria-invalid", "true");
+		fireEvent.change(name, { target: { value: "Lookup" } });
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Update Dependency" }),
+		);
+		await waitFor(() =>
+			expect(saveButton()).toHaveAttribute("aria-disabled", "false"),
+		);
+	});
+
 	it("asks before discarding changes", () => {
 		renderAgentView({ links: [LINKS[3]] as CatalogDependencyLink[] });
 		startEditing();
 		fireEvent.click(screen.getByRole("button", { name: "Remove Search" }));
-		fireEvent.click(screen.getByRole("button", { name: "Discard" }));
+		fireEvent.click(screen.getByRole("button", { name: "Done" }));
 
 		const dialog = screen.getByRole("dialog", { name: "Discard Changes?" });
 		fireEvent.click(
@@ -875,7 +1149,7 @@ describe("editing dependencies on the canvas", () => {
 		);
 		expect(screen.getByText("1 change")).toBeInTheDocument();
 
-		fireEvent.click(screen.getByRole("button", { name: "Discard" }));
+		fireEvent.click(screen.getByRole("button", { name: "Done" }));
 		fireEvent.click(
 			within(
 				screen.getByRole("dialog", { name: "Discard Changes?" }),
@@ -926,6 +1200,26 @@ describe("ProjectCatalogDependenciesPage", () => {
 		).toBeInTheDocument();
 	});
 
+	it("lets an agent's editors re-sync, though its manual dependencies are set elsewhere", () => {
+		renderPage("WORKSPACE", "EDIT");
+		expect(
+			screen.queryByRole("button", { name: "Edit Dependencies" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Re-sync" }),
+		).toBeInTheDocument();
+	});
+
+	it.each<Project["project_type"]>(["SKILL", "NOTEBOOK"])(
+		"offers no Re-sync for a %s, whose configuration records none",
+		(type) => {
+			renderPage(type, "OWNER");
+			expect(
+				screen.queryByRole("button", { name: "Re-sync" }),
+			).not.toBeInTheDocument();
+		},
+	);
+
 	it("tells editors how to edit", () => {
 		renderPage("CODE", "OWNER");
 		expect(
@@ -940,5 +1234,35 @@ describe("ProjectCatalogDependenciesPage", () => {
 		expect(
 			screen.queryByRole("button", { name: "Edit Dependencies" }),
 		).not.toBeInTheDocument();
+	});
+
+	it("reads only the dependencies again after a save, so the page stays", async () => {
+		mocks.runPixel.mockResolvedValue({ errors: [], pixelReturn: [] });
+		mocks.options = [
+			{
+				engine_id: "db-2",
+				engine_name: "Ledger",
+				engine_type: "DATABASE",
+			},
+		];
+		renderPage("CODE", "OWNER");
+		fireEvent.click(
+			screen.getByRole("button", { name: "Edit Dependencies" }),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Add Dependency" }));
+		const dialog = screen.getByRole("dialog", { name: "Add Dependency" });
+		fireEvent.click(within(dialog).getByRole("button", { name: /Ledger/ }));
+		fireEvent.click(
+			within(dialog).getByRole("button", { name: "Add Dependency" }),
+		);
+		await waitFor(() =>
+			expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+		);
+		fireEvent.click(saveButton());
+
+		await waitFor(() =>
+			expect(mocks.refreshDependencies).toHaveBeenCalledOnce(),
+		);
+		expect(mocks.refreshProject).not.toHaveBeenCalled();
 	});
 });

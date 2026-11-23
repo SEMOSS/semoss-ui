@@ -1,3 +1,4 @@
+import type { LucideIcon } from "lucide-react";
 import { cn } from "@semoss/ui/next";
 import { DEPENDENCY_FAMILIES, type DependencyFamily } from "./dependency-graph";
 
@@ -20,6 +21,8 @@ export interface LegendLink {
 	readonly label: string;
 	/** Its line's border colour and style */
 	readonly className: string;
+	/** The mark the link carries at its midpoint, such as a lock */
+	readonly icon?: LucideIcon;
 }
 
 /** Props for {@link DependencyLegendLists}. */
@@ -82,6 +85,12 @@ export const DependencyLegendLists = ({
 						aria-hidden="true"
 						className={cn("w-6 border-t-2", link.className)}
 					/>
+					{link.icon ? (
+						<link.icon
+							className="size-3 shrink-0 text-muted-foreground"
+							aria-hidden="true"
+						/>
+					) : null}
 					{link.label}
 				</li>
 			))}

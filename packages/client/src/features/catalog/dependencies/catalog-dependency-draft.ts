@@ -27,7 +27,16 @@ export interface DraftLink {
 	readonly catalog_name: string;
 	/** An engine's subtype */
 	readonly catalog_subtype?: string;
-	/** The link's name, unique per owner; empty for none */
+	/** The user's level on a target added in this edit, as the picker read it */
+	readonly permission_name?: CatalogDependency["permission_name"];
+	/** Whether a target added in this edit is public */
+	readonly catalog_global?: boolean;
+	/** Whether a target added in this edit is discoverable */
+	readonly catalog_discoverable?: boolean;
+	/**
+	 * The link's name, unique per owner. Required for a link added or edited
+	 * here; a link saved before names were required can have none, as empty
+	 */
 	readonly dependency_name: string;
 	/** What the link is for; empty for none */
 	readonly dependency_description: string;
@@ -43,10 +52,22 @@ export interface DependencyDraft {
 	readonly links: readonly DraftLink[];
 }
 
-/** A target to add, as the picker offers it. */
+/** A target to add, as the picker offers it, with the user's access to it. */
 export type DependencyOption = Pick<
 	CatalogDependency,
-	"catalog_id" | "catalog_name" | "catalog_type" | "catalog_subtype"
+	| "catalog_id"
+	| "catalog_name"
+	| "catalog_type"
+	| "catalog_subtype"
+	| "permission_name"
+	| "catalog_global"
+	| "catalog_discoverable"
+>;
+
+/** What a user gives a manual link: its name and description. */
+export type DraftLinkFields = Pick<
+	DraftLink,
+	"dependency_name" | "dependency_description"
 >;
 
 /**
@@ -74,23 +95,29 @@ export const createDependencyDraft = (
 });
 
 /**
- * Adds a target. One already in the draft is left as it is, and one marked
- * for removal is brought back.
+ * Adds a target with its name and description. One already in the draft is
+ * left as it is; one marked for removal is brought back with them.
  *
  * @param draft - The draft.
  * @param target - The target.
+ * @param fields - The link's name and description.
  * @returns The new draft.
  */
 export const addToDraft = (
 	draft: DependencyDraft,
 	target: DependencyOption,
+	fields: DraftLinkFields,
 ): DependencyDraft => {
 	const existing = draft.links.find(
 		(link) => link.catalog_id === target.catalog_id,
 	);
 	if (existing) {
 		return existing.isRemoved
-			? restoreInDraft(draft, target.catalog_id)
+			? updateDraftLink(
+					restoreInDraft(draft, target.catalog_id),
+					target.catalog_id,
+					fields,
+				)
 			: draft;
 	}
 	return {
@@ -101,8 +128,10 @@ export const addToDraft = (
 				catalog_type: target.catalog_type,
 				catalog_name: target.catalog_name || target.catalog_id,
 				catalog_subtype: target.catalog_subtype,
-				dependency_name: "",
-				dependency_description: "",
+				permission_name: target.permission_name,
+				catalog_global: target.catalog_global,
+				catalog_discoverable: target.catalog_discoverable,
+				...fields,
 				isNew: true,
 				isRemoved: false,
 			},
@@ -158,14 +187,40 @@ export const restoreInDraft = (
 export const updateDraftLink = (
 	draft: DependencyDraft,
 	id: string,
-	change: Partial<
-		Pick<DraftLink, "dependency_name" | "dependency_description">
-	>,
+	change: Partial<DraftLinkFields>,
 ): DependencyDraft => ({
 	links: draft.links.map((link) =>
 		link.catalog_id === id ? { ...link, ...change } : link,
 	),
 });
+
+/**
+ * A name for a manual link made where no one types one, such as an engine
+ * picked in the Code workbench's Engines panel: the target's name, or the
+ * name with " 2", " 3" and so on after it when another link has it, kept to
+ * the name limit. A name is required, and unique per owner ignoring case.
+ *
+ * @param base - The name to start from, such as the target's name.
+ * @param takenNames - The names in use, trimmed and in lower case.
+ * @returns A name no other link has.
+ */
+export const getUniqueDependencyName = (
+	base: string,
+	takenNames: readonly string[],
+): string => {
+	const start = base.trim().slice(0, NAME_LIMIT) || "Dependency";
+	const taken = new Set(takenNames);
+	if (!taken.has(start.toLowerCase())) {
+		return start;
+	}
+	for (let count = 2; ; count += 1) {
+		const suffix = ` ${count}`;
+		const name = `${start.slice(0, NAME_LIMIT - suffix.length)}${suffix}`;
+		if (!taken.has(name.toLowerCase())) {
+			return name;
+		}
+	}
+};
 
 /**
  * The names the other links not marked for removal have, trimmed and in
@@ -289,32 +344,26 @@ export interface DraftGraphData {
 	readonly nodes: readonly CatalogDependency[];
 	/** Every link, the owner's manual ones taken from the draft */
 	readonly links: readonly CatalogDependencyLink[];
-	/**
-	 * The targets added in the draft. They were picked from what the user can
-	 * open, so nothing is said about their access, and they are never requested
-	 */
-	readonly addedIds: ReadonlySet<string>;
 }
-
-const NO_IDS: ReadonlySet<string> = new Set();
 
 /**
  * The owner's graph with the draft in place of its manual links. Removed
  * links stay, so they can be undone, and a target the graph did not have is
- * drawn from what the picker gave.
+ * drawn from what the picker gave, the user's access to it included, so it
+ * reads as every other dependency does.
  *
  * @param graph - The nodes and links as read.
  * @param links - The draft's links, by target id; null when not editing.
  * @param ownerId - The owner's id.
- * @returns The nodes, the links, and the targets the draft added.
+ * @returns The nodes and the links.
  */
 export const applyDraftToGraph = (
-	graph: Pick<DraftGraphData, "nodes" | "links">,
+	graph: DraftGraphData,
 	links: ReadonlyMap<string, DraftLink> | null,
 	ownerId: string,
 ): DraftGraphData => {
 	if (!links) {
-		return { ...graph, addedIds: NO_IDS };
+		return graph;
 	}
 	const known = new Set(graph.nodes.map((node) => node.catalog_id));
 	const drafted = [...links.values()];
@@ -329,6 +378,9 @@ export const applyDraftToGraph = (
 						catalog_type: link.catalog_type,
 						catalog_name: link.catalog_name,
 						catalog_subtype: link.catalog_subtype,
+						permission_name: link.permission_name,
+						catalog_global: link.catalog_global,
+						catalog_discoverable: link.catalog_discoverable,
 						// the picker lists only items the user can see
 						is_private: false,
 					}),
@@ -350,8 +402,5 @@ export const applyDraftToGraph = (
 				}),
 			),
 		],
-		addedIds: new Set(
-			drafted.filter((link) => link.isNew).map((link) => link.catalog_id),
-		),
 	};
 };

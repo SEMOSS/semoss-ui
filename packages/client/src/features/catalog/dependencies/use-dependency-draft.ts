@@ -9,6 +9,7 @@ import {
 	type DependencyDraft,
 	type DependencyOption,
 	type DraftLink,
+	type DraftLinkFields,
 	removeFromDraft,
 	restoreInDraft,
 	toDraftPayload,
@@ -27,11 +28,6 @@ export interface UseDependencyDraftInput {
 	/** Called after a save, so the owner's dependencies are read again */
 	onSaved: () => void;
 }
-
-/** A change to a link's name or description. */
-type DraftLinkChange = Partial<
-	Pick<DraftLink, "dependency_name" | "dependency_description">
->;
 
 const NO_PROBLEMS: ReadonlyMap<string, string> = new Map();
 
@@ -56,14 +52,16 @@ export interface UseDependencyDraftResult {
 	readonly start: () => void;
 	/** Stops editing and drops the draft */
 	readonly discard: () => void;
-	/** Adds a target */
-	readonly add: (target: DependencyOption) => void;
+	/** Drops every change and keeps editing, from the rows as saved */
+	readonly reset: () => void;
+	/** Adds a target with its link's name and description */
+	readonly add: (target: DependencyOption, fields: DraftLinkFields) => void;
 	/** Removes a target; a saved one can be brought back until the save */
 	readonly remove: (id: string) => void;
 	/** Brings back a target marked for removal */
 	readonly restore: (id: string) => void;
 	/** Changes a link's name or description */
-	readonly update: (id: string, change: DraftLinkChange) => void;
+	readonly update: (id: string, change: Partial<DraftLinkFields>) => void;
 	/**
 	 * Saves the draft in one call and stops editing. A refused save keeps the
 	 * draft and the reason. Resolves with whether it saved.
@@ -98,7 +96,12 @@ export const useDependencyDraft = ({
 		[draft],
 	);
 	const changeCount = draft ? countDraftChanges(draft, saved) : 0;
-	const problems = draft ? validateDependencyDraft(draft) : NO_PROBLEMS;
+	// kept while the draft is unchanged, so the canvas, which marks the links
+	// with a problem, rebuilds its edges only when the draft changes
+	const problems = useMemo(
+		() => (draft ? validateDependencyDraft(draft) : NO_PROBLEMS),
+		[draft],
+	);
 
 	// closing or reloading the tab with changes asks first
 	useEffect(() => {
@@ -122,8 +125,8 @@ export const useDependencyDraft = ({
 		[],
 	);
 	const add = useCallback(
-		(target: DependencyOption) =>
-			change((current) => addToDraft(current, target)),
+		(target: DependencyOption, fields: DraftLinkFields) =>
+			change((current) => addToDraft(current, target, fields)),
 		[change],
 	);
 	const remove = useCallback(
@@ -135,7 +138,7 @@ export const useDependencyDraft = ({
 		[change],
 	);
 	const update = useCallback(
-		(id: string, fields: DraftLinkChange) =>
+		(id: string, fields: Partial<DraftLinkFields>) =>
 			change((current) => updateDraftLink(current, id, fields)),
 		[change],
 	);
@@ -179,6 +182,10 @@ export const useDependencyDraft = ({
 		discard: () => {
 			setSaveError(null);
 			setDraft(null);
+		},
+		reset: () => {
+			setSaveError(null);
+			setDraft(createDependencyDraft(saved));
 		},
 		add,
 		remove,

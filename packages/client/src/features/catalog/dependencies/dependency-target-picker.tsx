@@ -1,8 +1,7 @@
-import { Check, Search, X } from "lucide-react";
+import { Check, Search } from "lucide-react";
 import { type UIEvent, useEffect, useRef, useState } from "react";
 import {
-	Button,
-	H4,
+	cn,
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
@@ -19,7 +18,6 @@ import {
 } from "@semoss/ui/next";
 import { ACTIVE_TOGGLE_CLASS } from "@/features/dependency-map/active-toggle";
 import { DependencyItemImage } from "@/features/dependency-map/dependency-item-image";
-import { MapTooltip } from "@/features/dependency-map/map-tooltip";
 import { getDependencyTypeConfig } from "./catalog-dependency";
 import type { DependencyOption } from "./catalog-dependency-draft";
 import {
@@ -27,31 +25,40 @@ import {
 	useDependencyOptions,
 } from "./use-dependency-options";
 
-/** Props for {@link AddDependencyPanel}. */
-interface AddDependencyPanelProps {
+/** Props for {@link DependencyTargetPicker}. */
+interface DependencyTargetPickerProps {
 	/** The owner, which is never offered */
 	catalogId: string;
 	/** The targets the draft already links to, listed as Added and not pickable */
 	linkedIds: ReadonlySet<string>;
-	/** Adds a target to the draft */
-	onPick: (option: DependencyOption) => void;
-	/** Closes the panel */
-	onClose: () => void;
+	/** The id of the target picked, or null for none yet */
+	value: string | null;
+	/** Picks a target */
+	onChange: (option: DependencyOption) => void;
+	/** Whether the field shows a problem, such as nothing picked */
+	isInvalid?: boolean;
+	/** The id of the field's error, which the list is described by */
+	errorId?: string;
+	/** Whether the picker takes no input */
+	disabled?: boolean;
 }
 
 /**
- * Add Dependency, in the Ontology's drawer area while its dependencies are
- * edited, as the automation canvas's add-node menu is: Engines or Projects,
- * then a search over the ones the user can see, a page at a time as the list
- * scrolls. A target already linked reads Added. Picking one adds it to the
- * draft and opens its link, to name and describe it.
+ * The target field of the Add Dependency dialog, as the automation canvas's
+ * add-node menu picks a step: Engines or Projects, then a search over the
+ * ones the user can see, a page at a time as the list scrolls. A target
+ * already linked reads Added and cannot be picked; the one picked reads
+ * Selected.
  */
-export const AddDependencyPanel = ({
+export const DependencyTargetPicker = ({
 	catalogId,
 	linkedIds,
-	onPick,
-	onClose,
-}: AddDependencyPanelProps) => {
+	value,
+	onChange,
+	isInvalid = false,
+	errorId,
+	disabled = false,
+}: DependencyTargetPickerProps) => {
 	const [source, setSource] = useState<DependencySource>("ENGINE");
 	const [search, setSearch] = useState("");
 	const searchRef = useRef<HTMLInputElement>(null);
@@ -62,7 +69,8 @@ export const AddDependencyPanel = ({
 	});
 	const sourceLabel = source === "ENGINE" ? "engines" : "projects";
 
-	// the search takes focus when the panel opens, as a picker should
+	// the search takes focus when the dialog opens, as a picker should; it
+	// runs before the dialog's own focus, which then leaves it there
 	useEffect(() => {
 		searchRef.current?.focus();
 	}, []);
@@ -77,66 +85,49 @@ export const AddDependencyPanel = ({
 	};
 
 	return (
-		<aside
-			aria-label="Add Dependency"
-			className="slide-in-from-right flex size-full min-h-0 animate-in flex-col border-l bg-background duration-300"
-		>
-			<div className="flex flex-col gap-3 border-b p-4">
-				<div className="flex items-center gap-2">
-					<H4 className="flex-1 text-base">Add Dependency</H4>
-					<MapTooltip label="Close">
-						<Button
-							type="button"
-							size="icon-sm"
-							variant="ghost"
-							aria-label="Close Add Dependency"
-							onClick={onClose}
-						>
-							<X aria-hidden="true" />
-						</Button>
-					</MapTooltip>
-				</div>
-				<ToggleGroup
-					type="single"
-					size="sm"
-					variant="outline"
-					aria-label="What to add"
-					value={source}
-					onValueChange={(value: DependencySource | "") => {
-						if (value) {
-							setSource(value);
-						}
-					}}
+		<div className="flex flex-col gap-3">
+			<ToggleGroup
+				type="single"
+				size="sm"
+				variant="outline"
+				aria-label="What to add"
+				value={source}
+				disabled={disabled}
+				onValueChange={(next: DependencySource | "") => {
+					if (next) {
+						setSource(next);
+					}
+				}}
+			>
+				<ToggleGroupItem value="ENGINE" className={ACTIVE_TOGGLE_CLASS}>
+					Engines
+				</ToggleGroupItem>
+				<ToggleGroupItem
+					value="PROJECT"
+					className={ACTIVE_TOGGLE_CLASS}
 				>
-					<ToggleGroupItem
-						value="ENGINE"
-						className={ACTIVE_TOGGLE_CLASS}
-					>
-						Engines
-					</ToggleGroupItem>
-					<ToggleGroupItem
-						value="PROJECT"
-						className={ACTIVE_TOGGLE_CLASS}
-					>
-						Projects
-					</ToggleGroupItem>
-				</ToggleGroup>
-				<InputGroup>
-					<InputGroupAddon>
-						<Search aria-hidden="true" />
-					</InputGroupAddon>
-					<InputGroupInput
-						ref={searchRef}
-						type="search"
-						aria-label={`Search ${sourceLabel}`}
-						placeholder={`Search ${sourceLabel}`}
-						value={search}
-						onChange={(event) => setSearch(event.target.value)}
-					/>
-				</InputGroup>
-			</div>
+					Projects
+				</ToggleGroupItem>
+			</ToggleGroup>
+			<InputGroup>
+				<InputGroupAddon>
+					<Search aria-hidden="true" />
+				</InputGroupAddon>
+				<InputGroupInput
+					ref={searchRef}
+					type="search"
+					aria-label={`Search ${sourceLabel}`}
+					placeholder={`Search ${sourceLabel}`}
+					value={search}
+					disabled={disabled}
+					onChange={(event) => setSearch(event.target.value)}
+				/>
+			</InputGroup>
 			<div
-				className="min-h-0 flex-1 overflow-y-auto p-2"
+				className={cn(
+					"h-64 overflow-y-auto rounded-md border p-1",
+					isInvalid && "border-destructive",
+				)}
 				onScroll={handleScroll}
 			>
 				{isLoading && options.length === 0 ? (
@@ -150,10 +141,12 @@ export const AddDependencyPanel = ({
 				) : (
 					<ul
 						aria-label={`Matching ${sourceLabel}`}
+						aria-describedby={isInvalid ? errorId : undefined}
 						className="flex flex-col"
 					>
 						{options.map((option) => {
 							const isLinked = linkedIds.has(option.catalog_id);
+							const isSelected = option.catalog_id === value;
 							const config = getDependencyTypeConfig(
 								option.catalog_type,
 							);
@@ -162,12 +155,16 @@ export const AddDependencyPanel = ({
 									<Item
 										asChild
 										size="sm"
-										className="w-full flex-nowrap px-2 py-2 text-left"
+										className={cn(
+											"w-full flex-nowrap px-2 py-2 text-left",
+											isSelected && "bg-accent",
+										)}
 									>
 										<button
 											type="button"
-											disabled={isLinked}
-											onClick={() => onPick(option)}
+											aria-pressed={isSelected}
+											disabled={disabled || isLinked}
+											onClick={() => onChange(option)}
 										>
 											<ItemMedia>
 												<DependencyItemImage
@@ -194,13 +191,15 @@ export const AddDependencyPanel = ({
 													{config.label}
 												</ItemDescription>
 											</ItemContent>
-											{isLinked ? (
+											{isLinked || isSelected ? (
 												<ItemActions className="text-muted-foreground text-xs">
 													<Check
 														className="size-4 text-primary"
 														aria-hidden="true"
 													/>
-													Added
+													{isLinked
+														? "Added"
+														: "Selected"}
 												</ItemActions>
 											) : null}
 										</button>
@@ -216,6 +215,6 @@ export const AddDependencyPanel = ({
 					</div>
 				) : null}
 			</div>
-		</aside>
+		</div>
 	);
 };

@@ -1,4 +1,4 @@
-import { Info } from "lucide-react";
+import { Info, Lock, PencilLine } from "lucide-react";
 import {
 	Button,
 	Popover,
@@ -45,12 +45,14 @@ const ACCESS_EXAMPLES: readonly {
 
 const LINKS: readonly LegendLink[] = [
 	{
-		label: "Automatic: set by its configuration",
+		label: "Automatic: set by its configuration, read-only here",
 		className: "border-muted-foreground",
+		icon: Lock,
 	},
 	{
-		label: "Manual: added by a person",
+		label: "Manual: added by a person, with its name",
 		className: "border-muted-foreground border-dashed",
+		icon: PencilLine,
 	},
 ];
 

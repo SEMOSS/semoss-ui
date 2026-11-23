@@ -36,6 +36,7 @@ import type {
 	UserCatalogAccess,
 } from "@/api/dependency-map";
 import { ResourceId } from "@/components/shared/resource-id";
+import { DependencyKindBadge } from "@/features/catalog/dependencies/dependency-kind-badge";
 import { getGovernancePath } from "@/features/resource-governance/governance-type-view";
 import { getResourcePagePath } from "@/utility/catalog";
 import { DependencyDrawer } from "./dependency-drawer";
@@ -164,7 +165,7 @@ export const DependencyMapDrawer = ({
 	if (edge) {
 		const source = index.nodes.get(edge.source);
 		const target = index.nodes.get(edge.target);
-		const { role, origin } = describeLink(edge);
+		const { role } = describeLink(edge);
 		const added = edge.dateAdded
 			? formatDateTimeWithRelativeDay(edge.dateAdded)
 			: "";
@@ -173,8 +174,10 @@ export const DependencyMapDrawer = ({
 		body = (
 			<div className="flex flex-col gap-4 pt-4">
 				<div className="flex flex-wrap gap-1">
-					<Badge variant="secondary">{role}</Badge>
-					<Badge variant="outline">{origin}</Badge>
+					<DependencyKindBadge isAutomatic={edge.isAutomatic} />
+					{edge.isAutomatic ? (
+						<Badge variant="secondary">{role}</Badge>
+					) : null}
 					{edge.inCycle ? (
 						<Badge variant="outline" className="gap-1">
 							<TriangleAlert
@@ -186,7 +189,9 @@ export const DependencyMapDrawer = ({
 					) : null}
 				</div>
 				{edge.name ? (
-					<p className="font-medium text-sm">{edge.name}</p>
+					<code className="self-start break-all rounded bg-muted px-1.5 py-0.5 font-medium font-mono text-sm">
+						{edge.name}
+					</code>
 				) : null}
 				<p className="text-muted-foreground text-sm">
 					{edge.description ||

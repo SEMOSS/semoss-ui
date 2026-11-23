@@ -1,11 +1,5 @@
 import { Pencil, Plus } from "lucide-react";
-import {
-	Alert,
-	AlertDescription,
-	Badge,
-	Button,
-	Spinner,
-} from "@semoss/ui/next";
+import { Alert, AlertDescription, Badge, Button } from "@semoss/ui/next";
 import { MapOverlayCard } from "@/features/dependency-map/map-overlay-card";
 
 /** Props for {@link DependencyEditBar}. */
@@ -18,21 +12,19 @@ interface DependencyEditBarProps {
 	isSaving: boolean;
 	/** Why the last save was refused, or null */
 	saveError: string | null;
-	/** Opens the Add Dependency panel */
+	/** Opens the Add Dependency dialog */
 	onAdd: () => void;
 	/** Leaves edit mode, asking first when there are changes */
-	onDiscard: () => void;
-	/** Saves every change at once */
-	onSave: () => void;
+	onDone: () => void;
 }
 
 /**
  * The bar across the top of the Ontology canvas while its dependencies are
  * edited, as the automation canvas shows its draft: what is being edited and
- * how many changes wait, Add Dependency, then Discard and Save. Save stays
- * off with nothing to save or a name to fix, and shows Saving... while it
- * runs. A refused save shows the backend's reason under the bar, and the draft
- * stays.
+ * how many changes wait, Add Dependency, and Done, which leaves edit mode and
+ * asks first when changes wait. Save is in the toolbar
+ * (`DependencySaveControls`). Names to fix, or the backend's reason for a
+ * refused save, show under the bar, and the draft stays.
  */
 export const DependencyEditBar = ({
 	changeCount,
@@ -40,8 +32,7 @@ export const DependencyEditBar = ({
 	isSaving,
 	saveError,
 	onAdd,
-	onDiscard,
-	onSave,
+	onDone,
 }: DependencyEditBarProps) => (
 	<div className="flex w-full max-w-xl flex-col gap-2">
 		<MapOverlayCard className="flex flex-wrap items-center gap-2 pl-3">
@@ -71,19 +62,10 @@ export const DependencyEditBar = ({
 					type="button"
 					size="sm"
 					variant="outline"
-					onClick={onDiscard}
+					onClick={onDone}
 					disabled={isSaving}
 				>
-					Discard
-				</Button>
-				<Button
-					type="button"
-					size="sm"
-					onClick={onSave}
-					disabled={isSaving || changeCount === 0 || problemCount > 0}
-				>
-					{isSaving ? <Spinner className="size-4" /> : null}
-					{isSaving ? "Saving..." : "Save"}
+					Done
 				</Button>
 			</div>
 		</MapOverlayCard>

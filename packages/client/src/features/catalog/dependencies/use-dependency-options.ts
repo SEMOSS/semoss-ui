@@ -1,6 +1,7 @@
 import { useDebouncedValue, useIteratorPixel } from "@semoss/sdk/react";
 import type { CatalogType, Engine, Project } from "@semoss/shared";
 import { ALL_ENGINE_TYPES } from "@/utility/catalog";
+import { getAccessLevelForPermissionId } from "./catalog-dependency";
 import type { DependencyOption } from "./catalog-dependency-draft";
 
 /** Whether the picker lists engines or projects. */
@@ -18,6 +19,23 @@ const DEPENDENCY_PROJECT_TYPES: readonly CatalogType[] = [
 ];
 
 const PAGE_LIMIT = 25;
+
+/**
+ * The most access a user has, directly or through a team: the backend's ids
+ * run from 1 (owner) to 3 (read-only), so the smallest wins. A team's level
+ * can come as text.
+ *
+ * @param levels - The user's own level and their team's, either missing.
+ * @returns The id of the most access, or undefined for none.
+ */
+const getHighestPermissionId = (
+	...levels: readonly (number | string | null | undefined)[]
+): number | undefined => {
+	const ids = levels
+		.map((level) => Number(level))
+		.filter((id) => Number.isInteger(id) && id > 0);
+	return ids.length > 0 ? Math.min(...ids) : undefined;
+};
 
 /** What {@link useDependencyOptions} reads. */
 export interface UseDependencyOptionsInput {
@@ -48,8 +66,8 @@ export interface UseDependencyOptionsResult {
 /**
  * The engines (`MyEngines`) or projects (`MyProjects`) the user can see, as
  * dependency targets, filtered by search and type, a page at a time. The
- * search is debounced. The Ontology tab's Add Dependency panel and the
- * Engines panel's Manage dialog offer them.
+ * search is debounced. The Ontology tab's Add Dependency dialog and the
+ * Engines panel's Manage dialog offer them, each with the user's access.
  *
  * @param input - The owner, the search, the source and the type.
  * @returns The options and paging.
@@ -85,6 +103,14 @@ export const useDependencyOptions = ({
 				catalog_name: eng.engine_display_name || eng.engine_name,
 				catalog_type: eng.engine_type,
 				catalog_subtype: eng.engine_subtype,
+				permission_name: getAccessLevelForPermissionId(
+					getHighestPermissionId(
+						eng.engine_user_permission,
+						eng.engine_group_permission,
+					),
+				),
+				catalog_global: eng.engine_global === true,
+				catalog_discoverable: eng.engine_discoverable === true,
 			})),
 		{ limit: PAGE_LIMIT },
 		[debouncedSearch, source, typeFilter],
@@ -101,6 +127,14 @@ export const useDependencyOptions = ({
 				catalog_id: proj.project_id,
 				catalog_name: proj.project_display_name || proj.project_name,
 				catalog_type: proj.project_type,
+				permission_name: getAccessLevelForPermissionId(
+					getHighestPermissionId(
+						proj.user_permission,
+						proj.group_permission,
+					),
+				),
+				// typed as text, though the backend can send a boolean
+				catalog_global: String(proj.project_global) === "true",
 			})),
 		{ limit: PAGE_LIMIT },
 		[debouncedSearch, source, typeFilter],

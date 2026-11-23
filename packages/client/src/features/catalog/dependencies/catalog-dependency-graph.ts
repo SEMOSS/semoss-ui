@@ -135,11 +135,6 @@ export interface BuildCatalogDependencyGraphInput {
 	readonly dependents: readonly CatalogDependent[];
 	/** How many dependents the user cannot view */
 	readonly hiddenCount: number;
-	/**
-	 * Targets whose access is not told, such as ones added in an edit, which
-	 * were picked from what the user can open
-	 */
-	readonly unknownAccessIds?: ReadonlySet<string>;
 }
 
 const edgeId = (source: string, target: string, role: string): string =>
@@ -163,7 +158,6 @@ export const buildCatalogDependencyGraph = ({
 	links,
 	dependents,
 	hiddenCount,
-	unknownAccessIds,
 }: BuildCatalogDependencyGraphInput): CatalogDependencyGraph => {
 	const graphNodes = new Map<string, CatalogGraphNode>();
 	const edges: CatalogGraphEdge[] = [];
@@ -220,9 +214,7 @@ export const buildCatalogDependencyGraph = ({
 					side: "USES",
 					depth: parentDepth + 1,
 					dependency: node,
-					access: unknownAccessIds?.has(node.catalog_id)
-						? null
-						: getDependencyAccess(node),
+					access: getDependencyAccess(node),
 					isPrivate,
 				});
 				usesQueue.push(node.catalog_id);

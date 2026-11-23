@@ -3,6 +3,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { type ReactNode, useMemo } from "react";
 import type {
 	DependencyEdgeAction,
+	DependencyEdgeMarker,
 	DependencyFlowEdge,
 } from "@/features/dependency-map/dependency-edge";
 import {
@@ -13,6 +14,7 @@ import {
 import type { DependencyFlowNode } from "@/features/dependency-map/dependency-node";
 import {
 	getDependencyAccessLabel,
+	getDependencyRoleLabel,
 	getDependencyTypeConfig,
 } from "./catalog-dependency";
 import { type DraftLink, getOwnDraftLink } from "./catalog-dependency-draft";
@@ -36,6 +38,8 @@ export interface CanvasEditState {
 	readonly onRemove: (id: string) => void;
 	/** Brings back a link marked for removal */
 	readonly onRestore: (id: string) => void;
+	/** What stops the save, by target id, such as a name another link has */
+	readonly problems: ReadonlyMap<string, string>;
 }
 
 /** Props for {@link CatalogDependencyCanvas}. */
@@ -76,8 +80,9 @@ interface CatalogDependencyCanvasProps {
  * never dragged; a click, or Enter on a focused item, selects it. The view
  * fits again whenever the items shown change. While the owner's links are
  * edited, each manual link has Remove (or Undo once removed) at its
- * midpoint, an automatic one a lock, and a click on a manual link opens its
- * target, with the link's form.
+ * midpoint, and a click on a manual link opens its target. The owner's own
+ * links always say what they are at their midpoint: a manual link its name,
+ * an automatic one a lock naming its role.
  */
 export const CatalogDependencyCanvas = ({
 	view,
@@ -166,16 +171,32 @@ export const CatalogDependencyCanvas = ({
 				const isHighlighted =
 					selectedId !== "" &&
 					(edge.source === selectedId || edge.target === selectedId);
-				const isOwnLink = edit !== undefined && edge.source === rootId;
+				const isOwnerLink = edge.source === rootId;
+				const isOwnLink = edit !== undefined && isOwnerLink;
 				const draftLink = isOwnLink
 					? edit.links.get(edge.target)
 					: undefined;
+				const roleLabel = getDependencyRoleLabel(edge.role);
+				// the owner's own links say what they are; links further out
+				// keep to the line, so the canvas stays clear
+				const marker: DependencyEdgeMarker | undefined = !isOwnerLink
+					? undefined
+					: edge.isAutomatic
+						? {
+								kind: "automatic",
+								label: `Automatic: ${roleLabel}`,
+							}
+						: {
+								kind: "manual",
+								name: edge.name,
+								problem: edit?.problems.get(edge.target),
+							};
 				const action: DependencyEdgeAction | undefined = !isOwnLink
 					? undefined
 					: edge.isAutomatic
 						? {
 								kind: "locked",
-								label: "Automatic: change it in the configuration",
+								label: `Automatic: ${roleLabel}. Change it in the configuration`,
 							}
 						: draftLink?.isRemoved
 							? {
@@ -209,6 +230,7 @@ export const CatalogDependencyCanvas = ({
 								? "highlight"
 								: "normal",
 						action,
+						marker,
 					},
 				};
 			}),
@@ -225,7 +247,7 @@ export const CatalogDependencyCanvas = ({
 			edges={edges}
 			onSelectNode={onSelect}
 			onSelectEdge={(edge) => {
-				// a manual link of the owner opens its target, with the link's form
+				// a manual link of the owner opens its target in the drawer
 				if (
 					edit &&
 					edge.source === rootId &&
