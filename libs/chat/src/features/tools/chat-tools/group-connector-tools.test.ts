@@ -8,8 +8,8 @@ import {
 /** A toolbox tool that runs `reactor`. */
 const tool = (reactor: string, title = reactor): ToolboxTool => ({
 	name: reactor,
-	reactor: reactor,
-	title: title,
+	reactor,
+	title,
 	description: "",
 	execution: "auto",
 	parameters: [],

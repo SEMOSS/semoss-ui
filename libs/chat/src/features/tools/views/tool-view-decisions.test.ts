@@ -27,8 +27,8 @@ const chatTool = () => {
 			this.parameters = parameters;
 		},
 		pendingAction: null,
-		message: message,
-		room: room,
+		message,
+		room,
 	} as unknown as ToolStore;
 	return { tool, message, room };
 };

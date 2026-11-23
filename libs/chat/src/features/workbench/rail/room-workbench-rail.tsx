@@ -122,10 +122,10 @@ export const RoomWorkbenchRail = ({
 
 			<WorkbenchRailContext.Provider
 				value={{
-					room: room,
+					room,
 					isDraft: Boolean(draftPanels),
-					side: side,
-					panels: panels,
+					side,
+					panels,
 				}}
 			>
 				<Rail />

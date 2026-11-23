@@ -5,11 +5,6 @@ import { expect, test, vi } from "vitest";
 import type { UserSettingsSection } from "./user-settings-dialog";
 import { UserSettingsDialog } from "./user-settings-dialog";
 
-vi.mock("@semoss/i18n", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@semoss/i18n")>()),
-	useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 const SECTIONS: UserSettingsSection[] = [
 	{
 		id: "connectors",

@@ -44,7 +44,7 @@ export class ChatTurnRunner implements TurnRunner {
 			roomId: room.roomId,
 			command: text,
 			context: room.options?.instructions || "",
-			media: media,
+			media,
 			parentMessageId: parent.id,
 			// the work folder's tools ride along: the backend merges them with
 			// the room's own and the browser runs them

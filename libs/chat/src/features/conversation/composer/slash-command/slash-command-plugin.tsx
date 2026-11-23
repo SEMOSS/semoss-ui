@@ -38,19 +38,31 @@ export const SlashCommandPlugin: React.FC<SlashCommandPluginProps> = ({
 		return true;
 	};
 
+	/**
+	 * The command the menu has highlighted, or its first match.
+	 *
+	 * @param query - What was typed after "/".
+	 * @param selectedIndex - The highlighted row.
+	 * @returns The command, or undefined when none matches.
+	 */
+	const findCommand = (
+		query: string,
+		selectedIndex: number,
+	): SlashCommandEntry | undefined => {
+		const filtered = filterSlashCommands(commands, query);
+		return filtered[selectedIndex] ?? filtered[0];
+	};
+
 	return (
 		<MentionPlugin
 			trigger="/"
 			onAccept={(query, selectedIndex) => {
-				const filtered = filterSlashCommands(commands, query);
-				const match = filtered[selectedIndex] ?? filtered[0];
+				const match = findCommand(query, selectedIndex);
 				if (match) runCommand(match);
 			}}
-			onTabComplete={(query, selectedIndex) => {
-				const filtered = filterSlashCommands(commands, query);
-				const match = filtered[selectedIndex] ?? filtered[0];
-				return match?.id;
-			}}
+			onTabComplete={(query, selectedIndex) =>
+				findCommand(query, selectedIndex)?.id
+			}
 			renderMenu={({
 				isOpen,
 				onOpenChange,

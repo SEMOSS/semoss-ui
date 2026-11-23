@@ -1,5 +1,6 @@
 import type { PixelMessageToolCallPart } from "../../../types";
 import type { ResponseMessageStore } from "../store/response-message.store";
+import { EMPTY_ENGINE_META } from "../store/tool.store";
 
 /**
  * Shape of the `stream_type: "tool"` chunk's `data` payload — OpenAI-style
@@ -66,11 +67,7 @@ export const applyToolStreamChunk = (
 				original_name: "",
 				description: "",
 				_meta: {
-					SMSS_ENGINE_NAME: "",
-					SMSS_ENGINE_ID: "",
-					SMSS_ENGINE_TYPE: "",
-					SMSS_PROJECT_NAME: "",
-					SMSS_PROJECT_ID: "",
+					...EMPTY_ENGINE_META,
 					SMSS_MCP_EXECUTION: "ask",
 				},
 			},

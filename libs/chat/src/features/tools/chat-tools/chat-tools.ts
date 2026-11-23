@@ -5,6 +5,7 @@ import type { PixelMessageToolCallPart } from "../../../types";
 import type { RoomStore } from "../../room/store/room.store";
 import { ROOM_PANEL_TYPES } from "../../room/store/room-workbench-layout";
 import type { ToolStore } from "../../room/store/tool.store";
+import { EMPTY_ENGINE_META } from "../../room/store/tool.store";
 import {
 	MCP_EXECUTION_AGENT_ASK,
 	MCP_EXECUTION_AGENT_AUTO,
@@ -39,8 +40,6 @@ import type { ClientTool, ClientToolOutcome } from "./tools-host";
 
 /** A tool call as a message part holds it. */
 type ToolCall = PixelMessageToolCallPart["toolCall"];
-/** The metadata a tool call carries. */
-type ToolCallMeta = NonNullable<ToolCall["_meta"]>;
 
 /** What the model reads back when the user declines a change. */
 const DECLINED_RESULT = "The user declined this change, so it did not run.";
@@ -57,15 +56,6 @@ const CLIENT_TOOLS_UNAVAILABLE =
  */
 const disabledMessage = (name: string): string =>
 	`${name} is disabled in this chat's settings. Ask the user to allow it in Settings if they want this done.`;
-
-/** The engine fields a folder tool's metadata leaves empty. */
-const EMPTY_ENGINE_META: Omit<ToolCallMeta, "SMSS_MCP_EXECUTION"> = {
-	SMSS_ENGINE_NAME: "",
-	SMSS_ENGINE_ID: "",
-	SMSS_ENGINE_TYPE: "",
-	SMSS_PROJECT_NAME: "",
-	SMSS_PROJECT_ID: "",
-};
 
 /**
  * A failed tool call, in the shape the model reads back.
@@ -135,11 +125,6 @@ export class ChatTools {
 		this.roomFiles = new RoomFolder(this.runFolderPixel);
 	}
 
-	/** Whether the room runs its messages through the agent harness. */
-	get isAgentMode(): boolean {
-		return this.room.mode === "agent";
-	}
-
 	/**
 	 * How the chat runs a default tool, from the room's settings.
 	 *
@@ -184,7 +169,7 @@ export class ChatTools {
 	 * and read the client tools from the room's toolbox.
 	 */
 	get chatToolDefinitions(): FolderToolDefinition[] {
-		if (this.isAgentMode) {
+		if (this.room.mode === "agent") {
 			return [];
 		}
 		return [

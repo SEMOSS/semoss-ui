@@ -4,11 +4,6 @@ import type { RoomStore } from "../room/store/room.store";
 import { useDraftPanels } from "./use-draft-panels";
 import type { RoomPreparation } from "./use-prepared-room";
 
-vi.mock("@semoss/i18n", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@semoss/i18n")>()),
-	useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 /** A room with what preparing reaches for. */
 const createRoom = () =>
 	({

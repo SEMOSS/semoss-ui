@@ -79,7 +79,7 @@ export const RoomToolsDefaultSection = ({
 						<ChatToolRow
 							key={name}
 							tool={{
-								name: name,
+								name,
 								title: t(`tools.titles.${name}`),
 								description: definition?.description ?? "",
 								execution: mode === "ask" ? "ask" : "auto",

@@ -1,6 +1,4 @@
 {
-	"welcomeTitle": "エージェントマネージャーへようこそ",
-	"welcomeDescription": "お客様固有のニーズに合わせて設計され、プロセスにシームレスに統合されるカスタムAIエージェントをご覧ください。",
 	"form": {
 		"nameLabel": "名前",
 		"descriptionLabel": "説明",
@@ -23,19 +21,6 @@
 		"deleteConfirmTitle": "本当によろしいですか？",
 		"deleteConfirmDescription": "この操作は元に戻せません。{{name}}ワークスペースが完全に削除されます。",
 		"createdAgo": "作成: {{when}}"
-	},
-	"sharing": {
-		"title": "メンバーを追加",
-		"description": "このエージェントにアクセスして共同作業するメンバーを招待します。",
-		"searchPlaceholder": "ユーザーを検索...",
-		"searchUsers": "ユーザーを検索...",
-		"noUsersFound": "ユーザーが見つかりません",
-		"hasAccess": "アクセス権あり",
-		"pendingInvite": "招待保留中",
-		"membersToAdd": "追加するメンバー",
-		"emptyState": "このワークスペースを共有するユーザーを追加",
-		"buttonAdding": "追加中...",
-		"buttonAdd": "メンバーを追加"
 	},
 	"members": {
 		"autoSaveHint": "メンバーの追加・削除、権限の変更は自動的に保存されます。",
@@ -64,7 +49,6 @@
 		"noChats": "チャットが見つかりません",
 		"error": "エラー:",
 		"selectRoom": "ルームを選択",
-		"newChat": "新しいチャット",
 		"delete": "削除",
 		"cancel": "キャンセル",
 		"deleteSuccess": "チャットを削除しました",
@@ -99,26 +83,12 @@
 		"fetchPermissionsFailed": "ユーザー権限の取得に失敗しました",
 		"unknownError": "不明なエラー"
 	},
-	"breadcrumbs": {
-		"home": "ホーム",
-		"agent": "エージェント",
-		"loading": "読み込み中",
-		"edit": "編集",
-		"new": "新規",
-		"room": "ルーム"
-	},
 	"detail": {
 		"tabs": {
-			"myChats": "マイチャット",
-			"knowledge": "ナレッジ",
-			"toolbox": "ツールボックス",
-			"prompts": "プロンプト",
-			"members": "メンバー",
-			"skills": "スキル"
+			"members": "メンバー"
 		},
 		"about": {
-			"title": "概要",
-			"noInstructions": "指示は設定されていません。"
+			"title": "概要"
 		},
 		"recentChats": {
 			"title": "前のチャットを続ける"
@@ -142,17 +112,6 @@
 		"searchPlaceholder": "プロンプトを検索...",
 		"all": "すべて",
 		"general": "一般"
-	},
-	"instructions": {
-		"expand": "展開",
-		"viewTitle": "指示",
-		"viewDescription": "このエージェントの動作を導くシステムプロンプト。",
-		"editTitle": "指示を編集",
-		"editDescription": "このエージェントの動作を導くシステムプロンプトを更新します。",
-		"charCount_other": "{{count, number}} 文字"
-	},
-	"skills": {
-		"noSkills": "スキルが追加されていません"
 	},
 	"catalog": {
 		"title": "マイ エージェント",

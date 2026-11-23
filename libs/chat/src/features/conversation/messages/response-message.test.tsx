@@ -725,8 +725,10 @@ test("Download saves the response as Word or PDF and closes the dialog", async (
 	const trigger = screen.getByRole("button", { name: "download.title" });
 
 	fireEvent.click(trigger);
-	let dialog = await screen.findByRole("dialog", { name: "download.title" });
-	expect(dialog).toHaveAccessibleDescription("download.description");
+	let dialog = await screen.findByRole("dialog", {
+		name: "chat:download.title",
+	});
+	expect(dialog).toHaveAccessibleDescription("chat:download.description");
 	vi.mocked(runPixel).mockResolvedValueOnce(
 		pixelResponse(["file-key"], ["FILE_DOWNLOAD"]),
 	);
@@ -738,13 +740,13 @@ test("Download saves the response as Word or PDF and closes the dialog", async (
 		'ToDocx(markdown=["<encode>Hello world</encode>"], fileName="Chat Response Export");',
 	]);
 	expect(download).toHaveBeenCalledWith("insight-1", "file-key");
-	expect(mocks.toast.success).toHaveBeenCalledWith("download.success");
+	expect(mocks.toast.success).toHaveBeenCalledWith("chat:download.success");
 	// focus goes back to the button that opened it
 	await waitFor(() => expect(trigger).toHaveFocus());
 
 	// a pixel that makes no file says so, and the dialog stays open
 	fireEvent.click(trigger);
-	dialog = await screen.findByRole("dialog", { name: "download.title" });
+	dialog = await screen.findByRole("dialog", { name: "chat:download.title" });
 	vi.mocked(runPixel).mockResolvedValueOnce(pixelResponse(["nothing"]));
 	fireEvent.click(
 		within(dialog).getByRole("button", { name: /sidebar:download\.pdf/ }),
@@ -758,7 +760,7 @@ test("Download saves the response as Word or PDF and closes the dialog", async (
 		'ToPdf(markdown=["<encode>Hello world</encode>"], fileName="Chat Response Export");',
 	);
 	expect(
-		screen.getByRole("dialog", { name: "download.title" }),
+		screen.getByRole("dialog", { name: "chat:download.title" }),
 	).toBeVisible();
 	expect(download).toHaveBeenCalledTimes(1);
 });

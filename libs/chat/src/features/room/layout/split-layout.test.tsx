@@ -11,10 +11,6 @@ import { afterEach, expect, test, vi } from "vitest";
 import { SplitLayout } from "./split-layout";
 import { SplitLayoutActionsContext } from "./split-layout-actions.context";
 
-vi.mock("@semoss/i18n", () => ({
-	useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 afterEach(() => vi.unstubAllGlobals());
 
 test("keeps conversation drafts and work editors mounted across width, tab, and close changes", async () => {

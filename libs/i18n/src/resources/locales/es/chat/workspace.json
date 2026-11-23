@@ -1,6 +1,4 @@
 {
-	"welcomeTitle": "Bienvenido al Gestor de Agentes",
-	"welcomeDescription": "Explore agentes de IA personalizados diseñados para satisfacer sus necesidades únicas e integrarse perfectamente en sus procesos.",
 	"form": {
 		"nameLabel": "Nombre",
 		"descriptionLabel": "Descripción",
@@ -23,19 +21,6 @@
 		"deleteConfirmTitle": "¿Está seguro?",
 		"deleteConfirmDescription": "Esta acción es irreversible. Esto eliminará permanentemente el espacio de trabajo {{name}}.",
 		"createdAgo": "Creado {{when}}"
-	},
-	"sharing": {
-		"title": "Añadir miembros",
-		"description": "Invitar miembros para acceder y colaborar en este agente.",
-		"searchPlaceholder": "Buscar un usuario...",
-		"searchUsers": "Buscar usuarios...",
-		"noUsersFound": "No se encontraron usuarios",
-		"hasAccess": "Tiene acceso",
-		"pendingInvite": "Invitación pendiente",
-		"membersToAdd": "Miembros a añadir",
-		"emptyState": "Añadir usuarios para compartir este espacio de trabajo",
-		"buttonAdding": "Añadiendo...",
-		"buttonAdd": "Añadir Miembros"
 	},
 	"members": {
 		"autoSaveHint": "Las adiciones y eliminaciones de miembros y los cambios de permisos se guardan automáticamente.",
@@ -64,7 +49,6 @@
 		"noChats": "No se encontraron chats",
 		"error": "Error:",
 		"selectRoom": "Seleccionar sala",
-		"newChat": "Nuevo chat",
 		"delete": "Eliminar",
 		"cancel": "Cancelar",
 		"deleteSuccess": "Chat eliminado",
@@ -99,26 +83,12 @@
 		"fetchPermissionsFailed": "Error al obtener permisos de usuario",
 		"unknownError": "Error desconocido"
 	},
-	"breadcrumbs": {
-		"home": "Inicio",
-		"agent": "Agente",
-		"loading": "Cargando",
-		"edit": "Editar",
-		"new": "Nuevo",
-		"room": "Sala"
-	},
 	"detail": {
 		"tabs": {
-			"myChats": "Mis Chats",
-			"knowledge": "Conocimiento",
-			"toolbox": "Cajas de herramientas",
-			"prompts": "Indicaciones",
-			"members": "Miembros",
-			"skills": "Habilidades"
+			"members": "Miembros"
 		},
 		"about": {
-			"title": "Acerca de",
-			"noInstructions": "No hay instrucciones configuradas."
+			"title": "Acerca de"
 		},
 		"recentChats": {
 			"title": "Continuar un chat anterior"
@@ -142,19 +112,6 @@
 		"searchPlaceholder": "Buscar indicaciones...",
 		"all": "Todos",
 		"general": "General"
-	},
-	"instructions": {
-		"expand": "Expandir",
-		"viewTitle": "Instrucciones",
-		"viewDescription": "La indicación del sistema que guía el comportamiento de este agente.",
-		"editTitle": "Editar instrucciones",
-		"editDescription": "Actualiza la indicación del sistema que guía el comportamiento de este agente.",
-		"charCount_one": "{{count, number}} carácter",
-		"charCount_many": "{{count, number}} caracteres",
-		"charCount_other": "{{count, number}} caracteres"
-	},
-	"skills": {
-		"noSkills": "No se han añadido habilidades"
 	},
 	"catalog": {
 		"title": "Mis agentes",

@@ -27,9 +27,6 @@ const mocks = vi.hoisted(() => ({
 	},
 }));
 
-vi.mock("@semoss/i18n", () => ({
-	useTranslation: () => ({ t: (key: string) => key }),
-}));
 vi.mock("@semoss/sdk/react", () => ({
 	useSessionIteratorPixel: () => ({
 		data: mocks.rooms,

@@ -2,21 +2,8 @@ import { render, screen } from "@testing-library/react";
 import type { CSSProperties } from "react";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import {
-	mergePlaygroundTheme,
-	resolvePlaygroundServerTheme,
-} from "@semoss/shared";
-import { ENV_THEME } from "@/features/theme/playground-theme";
+import { DEFAULT_PLAYGROUND_THEME, mergePlaygroundTheme } from "@semoss/shared";
 import { AppLayout } from "./app-layout";
-
-/**
- * The playground's theme for a server theme: the server's over the build's.
- *
- * @param serverTheme - The server's `THEME_MAP`, or null.
- * @returns The theme.
- */
-const resolveTheme = (serverTheme: Record<string, unknown> | null) =>
-	resolvePlaygroundServerTheme(serverTheme, ENV_THEME);
 
 // Keep the real layout and UI primitives; isolate network-backed children.
 vi.mock("@semoss/i18n", () => ({
@@ -71,7 +58,7 @@ test.each([
 ] satisfies { name: string; style: CSSProperties }[])(
 	"renders $name theme overrides without freezing the theme",
 	({ style }) => {
-		const defaults = resolveTheme(null);
+		const defaults = DEFAULT_PLAYGROUND_THEME;
 		const overrides: CSSProperties = { ...style };
 		theme.current = mergePlaygroundTheme(defaults, {
 			overrides: { "main-layout": overrides },

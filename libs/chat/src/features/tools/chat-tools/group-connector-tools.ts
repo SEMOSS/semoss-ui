@@ -102,7 +102,7 @@ export const groupConnectorTools = (
 	getServiceLabel: (service: ConnectorService) => string,
 ): GroupedConnectorTools => {
 	const groups = CONNECTOR_SERVICES.map((service) => ({
-		service: service,
+		service,
 		label: getServiceLabel(service),
 		issue: getConnectorAccessIssue(access, service),
 		tools: tools
@@ -131,8 +131,8 @@ export const groupConnectorTools = (
 				? [
 						{
 							providerId: provider.id,
-							issue: issue,
-							serviceNames: serviceNames,
+							issue,
+							serviceNames,
 						},
 					]
 				: [];
@@ -140,8 +140,8 @@ export const groupConnectorTools = (
 	);
 
 	return {
-		groups: groups,
+		groups,
 		otherTools: tools.filter((tool) => !findConnectorTool(tool.reactor)),
-		notices: notices,
+		notices,
 	};
 };

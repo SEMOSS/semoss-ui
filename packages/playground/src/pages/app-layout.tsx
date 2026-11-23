@@ -1,4 +1,4 @@
-import { type CSSProperties, useCallback, useEffect, useState } from "react";
+import { type CSSProperties, useCallback, useState } from "react";
 import { Outlet } from "react-router";
 import {
 	ChatProvider,
@@ -13,7 +13,6 @@ import {
 	SidebarProvider,
 	useCacheState,
 } from "@semoss/ui/next";
-import { setFavicon } from "@semoss/utility/browser";
 import { GlobalDialog } from "@/features/app-shell/global-dialog";
 import { GlobalFooter } from "@/features/app-shell/global-footer";
 import { useHostChatConfig } from "@/features/chat-config/use-host-chat-config";
@@ -22,7 +21,6 @@ import { AppNavigation } from "@/features/navigation/app-navigation";
 import { NavigationButton } from "@/features/navigation/navigation-button";
 import { PageHeaderContext } from "@/features/navigation/page-header.context";
 import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
-import { useThemeTitle } from "@/features/theme/use-theme-title";
 import { LandingTour } from "@/features/tour/landing-tour";
 import { TourContext } from "@/features/tour/tour.context";
 import { useLandingTour } from "@/features/tour/use-landing-tour";
@@ -65,13 +63,6 @@ export const AppLayout = () => {
 		onOpenSettings: settings.openSettings,
 		onWorkbenchOpenChange: navigation.setIsWorkbenchOpen,
 	});
-
-	useThemeTitle(theme);
-
-	useEffect(() => {
-		const icon = theme?.images?.tabIcon;
-		if (icon) setFavicon(icon);
-	}, [theme?.images?.tabIcon]);
 
 	return (
 		<ChatProvider config={chatConfig}>

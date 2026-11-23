@@ -27,6 +27,14 @@ reads the server's over a base, the same object while the server's theme is unch
 app and the desktop app read it; `@semoss/chat` never does: each app turns the theme into the
 chat's options and pieces.
 
+Both apps share two more pieces here:
+- `theme/playground-build-env.ts` reads the build's `.env`: `readPlaygroundBuildTheme` and
+  `readPlaygroundBuildNewChat`.
+- `theme/playground-chat-options.ts` (`playgroundThemeChatOptions`) maps the theme to the chat's
+  options. It is typed structurally, since this package cannot import `@semoss/chat`; the web
+  app's `use-host-chat-config.ts` checks at compile time that every key it returns is a
+  `ChatOptions` field.
+
 ### Agents (`hooks/use-agent-workspace.ts`, `types.ts`)
 
 `useAgentWorkspace(workspaceId)` reads an agent's configuration (`GetWorkspace`) in the

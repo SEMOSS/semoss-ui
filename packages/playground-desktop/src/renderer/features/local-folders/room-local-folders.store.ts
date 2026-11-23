@@ -86,7 +86,7 @@ export class RoomLocalFoldersStore {
 		const folders = this.folders;
 		if (this.toolFolderCache?.folders !== folders) {
 			this.toolFolderCache = {
-				folders: folders,
+				folders,
 				folder: new DesktopFolders(
 					folders.map((folder) => ({
 						name: folder.name,

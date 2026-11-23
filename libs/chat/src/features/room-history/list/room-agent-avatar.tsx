@@ -1,5 +1,4 @@
 import { AppCatalogAvatar } from "@semoss/shared";
-import { cn } from "@semoss/ui/next";
 
 /** Props for {@link RoomAgentAvatar}. */
 export interface RoomAgentAvatarProps {
@@ -7,8 +6,6 @@ export interface RoomAgentAvatarProps {
 	workspaceId?: string | null;
 	/** That agent's name, for the avatar's fallback initials. */
 	workspaceName?: string | null;
-	/** Sizing; defaults to a 20px square. */
-	className?: string;
 }
 
 /**
@@ -18,21 +15,15 @@ export interface RoomAgentAvatarProps {
 export const RoomAgentAvatar = ({
 	workspaceId,
 	workspaceName,
-	className,
 }: RoomAgentAvatarProps) => {
 	if (!workspaceId) {
-		return (
-			<span
-				aria-hidden="true"
-				className={cn("size-5 shrink-0", className)}
-			/>
-		);
+		return <span aria-hidden="true" className="size-5 shrink-0" />;
 	}
 	return (
 		<AppCatalogAvatar
 			projectId={workspaceId}
 			name={workspaceName ?? ""}
-			className={cn("size-5 shrink-0 rounded-sm text-xs", className)}
+			className="size-5 shrink-0 rounded-sm text-xs"
 		/>
 	);
 };

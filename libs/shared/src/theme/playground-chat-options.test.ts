@@ -1,10 +1,10 @@
 import { describe, expect, test } from "vitest";
+import { playgroundThemeChatOptions } from "./playground-chat-options";
 import {
 	DEFAULT_PLAYGROUND_THEME,
 	mergePlaygroundTheme,
 	type PlaygroundTheme,
-} from "@semoss/shared";
-import { themeToChatOptions } from "./theme-chat-options";
+} from "./playground-theme";
 
 /** The default theme with the given feature flags laid over it. */
 const withFlags = (
@@ -21,9 +21,12 @@ const ROOM_ACTIONS = [
 ] as const;
 const MESSAGE_ACTIONS = ["rewrite", "feedback", "copy", "download"] as const;
 
-describe("themeToChatOptions", () => {
+describe("playgroundThemeChatOptions", () => {
 	test("the default theme keeps every part the chat shows by default", () => {
-		const options = themeToChatOptions(DEFAULT_PLAYGROUND_THEME, {});
+		const options = playgroundThemeChatOptions(
+			DEFAULT_PLAYGROUND_THEME,
+			{},
+		);
 		expect(options).toMatchObject({
 			agentMode: "chat-only",
 			isModelSelectable: true,
@@ -36,11 +39,25 @@ describe("themeToChatOptions", () => {
 			isEmbedderSelectable: true,
 			roomActions: undefined,
 			messageActions: undefined,
+			catalogItemHref: undefined,
 		});
 	});
 
+	test("platform links follow the flag and need the platform's URL", () => {
+		const href = playgroundThemeChatOptions(
+			withFlags({ showPlatformLinks: true }),
+			{},
+			"/platform",
+		).catalogItemHref;
+		expect(href?.({ id: "e1", type: "VECTOR" })).toContain("/platform");
+		expect(
+			playgroundThemeChatOptions(withFlags({ showPlatformLinks: true }))
+				.catalogItemHref,
+		).toBeUndefined();
+	});
+
 	test("a theme that turns flags off turns the chat's options off", () => {
-		const options = themeToChatOptions(
+		const options = playgroundThemeChatOptions(
 			withFlags({
 				enableModelSelect: false,
 				enableSuggestions: false,
@@ -65,7 +82,7 @@ describe("themeToChatOptions", () => {
 	});
 
 	test("Rewrite and Favorite leave with their flags", () => {
-		const options = themeToChatOptions(
+		const options = playgroundThemeChatOptions(
 			withFlags({ enableRewrite: false, hideChatHistory: true }),
 			{},
 		);
@@ -84,7 +101,7 @@ describe("themeToChatOptions", () => {
 
 	test("agent-only wins over the agent picker, which wins over the choice", () => {
 		const modeOf = (flags: PlaygroundTheme["featureFlags"]) =>
-			themeToChatOptions(withFlags(flags), {}).agentMode;
+			playgroundThemeChatOptions(withFlags(flags), {}).agentMode;
 		expect(modeOf({ enableAgentHarness: true })).toBe("choice");
 		expect(
 			modeOf({ enableAgentHarness: true, modeFollowsAgent: true }),
@@ -102,7 +119,7 @@ describe("themeToChatOptions", () => {
 			agentId: "env-agent",
 		};
 		expect(
-			themeToChatOptions(DEFAULT_PLAYGROUND_THEME, build).newChat,
+			playgroundThemeChatOptions(DEFAULT_PLAYGROUND_THEME, build).newChat,
 		).toMatchObject(build);
 
 		const theme = mergePlaygroundTheme(DEFAULT_PLAYGROUND_THEME, {
@@ -118,7 +135,7 @@ describe("themeToChatOptions", () => {
 			},
 			defaultTools: [{ id: "tool", name: "Tool", type: "FUNCTION" }],
 		});
-		expect(themeToChatOptions(theme, build).newChat).toEqual({
+		expect(playgroundThemeChatOptions(theme, build).newChat).toEqual({
 			modelId: "theme-model",
 			modelName: "Theme Model",
 			mode: "agent",

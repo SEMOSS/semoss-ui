@@ -152,7 +152,7 @@ export const useConnections = (): UseConnectionsResult => {
 	);
 
 	const connections = CONNECTOR_PROVIDERS.map((provider) => ({
-		provider: provider,
+		provider,
 		isAvailable: isProviderOffered(availableProviders, provider),
 		isConnected: provider.loginKey in logins,
 		accountName: logins[provider.loginKey] ?? "",
@@ -193,15 +193,15 @@ export const useConnections = (): UseConnectionsResult => {
 	return {
 		// the SDK's upper-case status, in this hook's lower-case form
 		status: status.toLowerCase() as UseConnectionsResult["status"],
-		connections: connections,
-		connectingProviderId: connectingProviderId,
-		disconnectingProviderId: disconnectingProviderId,
-		isServiceReady: isServiceReady,
-		isServiceCovered: isServiceCovered,
+		connections,
+		connectingProviderId,
+		disconnectingProviderId,
+		isServiceReady,
+		isServiceCovered,
 		hasAccessInfo: (providerId) =>
 			getProviderAccess(connectorAccess, providerId) !== null,
-		refresh: refresh,
-		connect: connect,
-		disconnect: disconnect,
+		refresh,
+		connect,
+		disconnect,
 	};
 };

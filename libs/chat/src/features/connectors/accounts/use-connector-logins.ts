@@ -18,7 +18,7 @@ export const useConnectorLogins = (connectors: ConnectorsStore): void => {
 		const isKnown = status !== "LOADING";
 		connectors.setSessionLogins({
 			logins: isKnown ? logins : null,
-			connectorAccess: connectorAccess,
+			connectorAccess,
 			availableProviders: isKnown ? availableProviders : undefined,
 		});
 	}, [connectors, logins, status, connectorAccess, availableProviders]);

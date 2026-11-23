@@ -106,11 +106,6 @@ export abstract class AbstractMessageStore<
 		return this.room.getMessagesByKey(this.getSnapshot().childKeys);
 	}
 
-	/** Which child continues the conversation; -1 when it has none. */
-	get activeChildPosition(): number {
-		return this.getSnapshot().activeChildIndex;
-	}
-
 	/** What the message says, in order. */
 	get parts(): D["parts"] {
 		return this.getSnapshot().parts;
@@ -256,16 +251,9 @@ export abstract class AbstractMessageStore<
 
 	/** Make this message its parent's active child. */
 	activateMessage = (): void => {
-		this.parent?.setActiveChildPosition(this.position);
-	};
-
-	/**
-	 * Choose which child continues the conversation.
-	 *
-	 * @param activeChildPosition - The child's index.
-	 */
-	setActiveChildPosition = (activeChildPosition: number): void => {
-		this.room.setActiveChildMessage(this.key, activeChildPosition);
+		if (this.parent) {
+			this.room.setActiveChildMessage(this.parent.key, this.position);
+		}
 	};
 
 	/**

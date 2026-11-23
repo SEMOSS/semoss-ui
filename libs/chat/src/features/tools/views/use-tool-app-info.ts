@@ -49,7 +49,7 @@ export const useToolAppInfo = (
 			(info) => {
 				if (isCurrent) {
 					setState({
-						source: source,
+						source,
 						status: "SUCCESS",
 						projectType:
 							typeof info.project_type === "string"
@@ -61,7 +61,7 @@ export const useToolAppInfo = (
 			() => {
 				if (isCurrent) {
 					setState({
-						source: source,
+						source,
 						status: "ERROR",
 						projectType: "",
 					});

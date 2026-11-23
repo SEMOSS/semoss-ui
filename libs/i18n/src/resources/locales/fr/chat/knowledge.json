@@ -20,10 +20,6 @@
 		"global": "Bases globales",
 		"mine": "Mes bases"
 	},
-	"filters": {
-		"allCenters": "Tous les centres/bureaux",
-		"all": "Tout"
-	},
 	"actions": {
 		"createSource": "Créer une base de connaissances",
 		"viewDocuments": "Voir les documents",
@@ -54,11 +50,6 @@
 		"embedSuccess": "Documents intégrés avec succès",
 		"embedFailed": "Échec de l'intégration des documents"
 	},
-	"breadcrumbs": {
-		"home": "Accueil",
-		"knowledgeStores": "Bases de connaissances",
-		"loading": "Chargement"
-	},
 	"detail": {
 		"knowledge": "Connaissances",
 		"embedDocuments": "Intégrer des documents",
@@ -77,23 +68,9 @@
 		"favorite": "Favori",
 		"files": "Fichiers",
 		"permissions": "Autorisations",
-		"userAccess": "Accès des utilisateurs",
-		"addUser": "Ajouter un utilisateur",
-		"noUsers": "Aucun utilisateur trouvé.",
-		"user": "Utilisateur",
-		"role": "Rôle",
-		"author": "Auteur",
-		"editor": "Éditeur",
-		"readOnly": "Lecture seule",
-		"removeUser": "Retirer l’utilisateur",
-		"remove": "Retirer",
-		"cancel": "Annuler",
-		"add": "Ajouter",
-		"searchUsers": "Rechercher par nom ou adresse e-mail…",
 		"documentCount": "Documents intégrés : {{count}}",
 		"previewError": "Impossible de charger l’aperçu.",
 		"previewUnavailable": "L’aperçu n’est pas disponible pour ce type de fichier.",
-		"removeDescription": "Retirer {{name}} de cette source de connaissances ?",
 		"dateUploaded": "Date d'importation",
 		"size": "Taille"
 	}

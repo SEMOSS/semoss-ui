@@ -2,7 +2,6 @@ import { CopyIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
-	Button,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -13,6 +12,7 @@ import { getErrorMessage } from "@semoss/utility/error";
 import type { InputMessageStore } from "../../room/store/input-message.store";
 import type { RoomStore } from "../../room/store/room.store";
 import { useMessage } from "../../room/store/use-message";
+import { TooltipButton } from "../tooltip-button";
 import {
 	type AttachmentPreview,
 	getAttachmentIcon,
@@ -172,22 +172,18 @@ export const InputMessage = ({ room, message }: InputMessageProps) => {
 					))}
 				</div>
 				<MessageActions align="end" dateCreated={dateCreated}>
-					<Tooltip disableHoverableContent={false}>
-						<TooltipTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								aria-label={t("input.copyMessage")}
-								disabled={parts.length === 0}
-								onClick={handleCopy}
-							>
-								<CopyIcon aria-hidden="true" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent side="bottom">
-							{t("input.copyMessage")}
-						</TooltipContent>
-					</Tooltip>
+					<TooltipButton
+						variant="ghost"
+						size="icon"
+						aria-label={t("input.copyMessage")}
+						disabled={parts.length === 0}
+						onClick={handleCopy}
+						tooltip={t("input.copyMessage")}
+						tooltipSide="bottom"
+						isTooltipHoverable
+					>
+						<CopyIcon aria-hidden="true" />
+					</TooltipButton>
 				</MessageActions>
 			</div>
 

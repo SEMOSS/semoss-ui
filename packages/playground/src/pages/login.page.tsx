@@ -1,12 +1,9 @@
-import { useEffect } from "react";
 import { Navigate, useLocation } from "react-router";
 import { useSession } from "@semoss/sdk/react";
 import { LoginForm } from "@semoss/shared";
 import { useTheme } from "@semoss/ui/next";
-import { setFavicon } from "@semoss/utility/browser";
 import { AppLogo } from "@/features/navigation/app-logo";
 import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
-import { useThemeTitle } from "@/features/theme/use-theme-title";
 
 /**
  * The sign in page: the shared `LoginForm` beside the theme's login image. A
@@ -28,13 +25,6 @@ export const LoginPage = () => {
 	// `AuthenticatedLayout` passes the page the user was sent here from
 	const returnPath =
 		(location.state as { from: Location })?.from?.pathname || "/";
-
-	useThemeTitle(theme);
-
-	useEffect(() => {
-		const icon = theme?.images?.tabIcon;
-		if (icon) setFavicon(icon);
-	}, [theme?.images?.tabIcon]);
 
 	if (status === "AUTHENTICATED") {
 		return <Navigate to={returnPath} replace />;

@@ -1,8 +1,9 @@
 import { createContext, type ReactNode, useContext, useState } from "react";
+import { useChatSession } from "../../chat/provider/chat-session.context";
 import { listRoomTools } from "../../tools/mcp/mcp-utils";
 import type { RoomStore } from "../store/room.store";
 import { useRoomSelector } from "../store/use-room-selector";
-import { DownloadConversationDialog } from "./download-conversation-dialog";
+import { DownloadDialog } from "./download-dialog";
 import { SaveAgentDialog } from "./save-agent-dialog";
 import { type RoomActions, useRoomActions } from "./use-room-actions";
 
@@ -63,15 +64,16 @@ export const RoomActionsProvider = ({
 		}),
 	);
 	const actions = useRoomActions(roomId);
+	const { chat } = useChatSession();
 	const [isRenaming, setIsRenaming] = useState(false);
 	const [isDownloadOpen, setIsDownloadOpen] = useState(false);
 	const [isPublishOpen, setIsPublishOpen] = useState(false);
 	return (
 		<RoomActionsContext.Provider
 			value={{
-				room: room,
-				actions: actions,
-				isRenaming: isRenaming,
+				room,
+				actions,
+				isRenaming,
 				startRenaming: () => setIsRenaming(true),
 				stopRenaming: () => setIsRenaming(false),
 				openDownload: () => setIsDownloadOpen(true),
@@ -85,10 +87,13 @@ export const RoomActionsProvider = ({
 				open={isPublishOpen}
 				onOpenChange={setIsPublishOpen}
 			/>
-			<DownloadConversationDialog
-				roomId={roomId}
+			<DownloadDialog
+				ns="sidebar"
 				open={isDownloadOpen}
 				onOpenChange={setIsDownloadOpen}
+				onDownload={(format) =>
+					chat.downloadConversation(roomId, format)
+				}
 			/>
 		</RoomActionsContext.Provider>
 	);

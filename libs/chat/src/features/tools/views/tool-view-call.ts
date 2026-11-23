@@ -38,7 +38,7 @@ export const toToolViewCall = (tool: ToolStore): ToolViewCall => {
 				? response
 				: readToolResponseDetail(response)
 			: undefined,
-		status: status,
+		status,
 	};
 };
 

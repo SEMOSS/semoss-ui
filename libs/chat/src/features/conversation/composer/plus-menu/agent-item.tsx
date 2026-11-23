@@ -16,7 +16,7 @@ export const AgentItem = () => {
 	}
 	const agentName = getAgentLabel({
 		workspace: options.workspace,
-		isAgentMode: isAgentMode,
+		isAgentMode,
 		defaultAgentLabel: t("modes.defaultAgent"),
 	});
 

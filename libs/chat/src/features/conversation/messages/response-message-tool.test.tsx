@@ -16,9 +16,6 @@ const mocks = vi.hoisted(() => ({
 	isMobile: false,
 	isWorkbenchActive: false,
 }));
-vi.mock("@semoss/i18n", () => ({
-	useTranslation: () => ({ t: (key: string) => key }),
-}));
 vi.mock("@semoss/ui/next", async (original) => ({
 	...(await original<typeof import("@semoss/ui/next")>()),
 	useIsMobile: () => mocks.isMobile,

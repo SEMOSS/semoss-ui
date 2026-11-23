@@ -8,13 +8,11 @@ import {
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import { copyTextToClipboard } from "@semoss/utility/clipboard";
 import type { RoomStore } from "../../../room/store/room.store";
+import { TooltipButton } from "../../tooltip-button";
 import { BlockHeader } from "./block-header";
 
 /**
@@ -150,31 +148,26 @@ export const MermaidBlock = ({ code, isLoading, room }: MermaidBlockProps) => {
 							? t("response.savingToRoom")
 							: t("response.saveInRoom")}
 					</Button>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								className="-my-1 -me-2 h-6 gap-1 px-2 text-muted-foreground text-xs hover:text-foreground"
-								variant="ghost"
-								size="sm"
-								disabled={!code}
-								onClick={() =>
-									void copyTextToClipboard(code, {
-										onSuccess: () =>
-											toast.success(
-												t("notifications.copySuccess"),
-											),
-										onError: (msg) => toast.error(msg),
-									})
-								}
-							>
-								<CopyIcon className="size-3.5" />
-								{t("response.copy")}
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent side="bottom">
-							{t("response.copy")}
-						</TooltipContent>
-					</Tooltip>
+					<TooltipButton
+						className="-my-1 -me-2 h-6 gap-1 px-2 text-muted-foreground text-xs hover:text-foreground"
+						variant="ghost"
+						size="sm"
+						disabled={!code}
+						onClick={() =>
+							void copyTextToClipboard(code, {
+								onSuccess: () =>
+									toast.success(
+										t("notifications.copySuccess"),
+									),
+								onError: (msg) => toast.error(msg),
+							})
+						}
+						tooltip={t("response.copy")}
+						tooltipSide="bottom"
+					>
+						<CopyIcon className="size-3.5" />
+						{t("response.copy")}
+					</TooltipButton>
 				</BlockHeader>
 				{!isCollapsed &&
 					(shouldShowCode ? (

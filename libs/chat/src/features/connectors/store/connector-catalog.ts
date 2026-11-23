@@ -119,7 +119,7 @@ const operationTools = (
 ): ConnectorTool[] =>
 	operations.map(([operation, execution]) => ({
 		reactor: `${prefix}${operation}`,
-		execution: execution,
+		execution,
 		...(declaresView ? { declaresView: true } : {}),
 	}));
 

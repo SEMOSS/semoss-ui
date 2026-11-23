@@ -42,10 +42,6 @@ vi.mock("@semoss/panels", async (original) => {
 		},
 	};
 });
-vi.mock("@semoss/i18n", () => ({
-	useTranslation: () => ({ t: (key: string) => key }),
-	getI18n: () => ({ t: (key: string) => key }),
-}));
 
 /** An editor with an unsaved local value, kept alive by the real workbench. */
 function NotesEditor() {
@@ -201,7 +197,7 @@ test("a host's mount gets the host's file actions and Add to Context; Room Files
 		chatOptions: testChatOptions(),
 		roomId: "room-desktop",
 		workbenchPanels: {},
-		toolsHost: toolsHost,
+		toolsHost,
 	});
 	render(<RoomWorkbench room={room} />);
 	const host = mocks.explorerHost.mock.lastCall?.[0];

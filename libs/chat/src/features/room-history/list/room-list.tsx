@@ -32,7 +32,7 @@ import { useLatestRef } from "@semoss/utility/react/use-latest-ref";
 import { useChatConfig } from "../../chat/config/chat-config.context";
 import { useChatSession } from "../../chat/provider/chat-session.context";
 import { useChatSelector } from "../../chat/store/use-chat-selector";
-import { DownloadConversationDialog } from "../../room/actions/download-conversation-dialog";
+import { DownloadDialog } from "../../room/actions/download-dialog";
 import { RoomAgentAvatar } from "./room-agent-avatar";
 import {
 	buildPlaygroundRoomsPixel,
@@ -155,11 +155,8 @@ export const RoomList = ({
 			isViewLoading ||
 			getRooms.isLoading ||
 			!getRooms.hasMore,
-		onNext: () => {
-			if (isVisible) {
-				getRooms.next();
-			}
-		},
+		// never while hidden: `disabled` covers it
+		onNext: () => getRooms.next(),
 	});
 
 	// Skip the reset on first mount — the iterators already fetch on
@@ -469,12 +466,15 @@ export const RoomList = ({
 					})}
 				</ScrollArea>
 			</SidebarContent>
-			<DownloadConversationDialog
-				roomId={downloadRoomId}
+			<DownloadDialog
+				ns="sidebar"
 				open={downloadRoomId !== null}
 				onOpenChange={(open) => {
 					if (!open) setDownloadRoomId(null);
 				}}
+				onDownload={(format) =>
+					chat.downloadConversation(downloadRoomId ?? "", format)
+				}
 			/>
 		</>
 	);

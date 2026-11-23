@@ -117,13 +117,7 @@ export const AppNavigation = ({ onOpenSettings }: AppNavigationProps) => {
 							{theme.sidebar.headerItems.map((item, index) => (
 								<NavigationItem
 									key={`header-${item.name}-${index}`}
-									name={item.name}
-									icon={item.icon}
-									iconDark={item.iconDark}
-									path={item.path}
-									url={item.url}
-									embed={item.embed}
-									tooltip={item.tooltip}
+									{...item}
 								/>
 							))}
 						</>
@@ -167,13 +161,7 @@ export const AppNavigation = ({ onOpenSettings }: AppNavigationProps) => {
 											(item) => (
 												<NavigationItem
 													key={item.path}
-													name={item.name}
-													icon={item.icon}
-													iconDark={item.iconDark}
-													path={item.path}
-													url={item.url}
-													embed={item.embed}
-													tooltip={item.tooltip}
+													{...item}
 												/>
 											),
 										)}

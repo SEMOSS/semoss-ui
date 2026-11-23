@@ -5,11 +5,6 @@ import type { ToolStore } from "../../room/store/tool.store";
 import { ChatTools } from "./chat-tools";
 import { FOLDER_TOOL_NAMES } from "./folder-tools";
 
-vi.mock("@semoss/i18n", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@semoss/i18n")>()),
-	getI18n: () => ({ t: (key: string) => key }),
-}));
-
 /** A tool call as a message part holds it. */
 type ToolCall = PixelMessageToolCallPart["toolCall"];
 
@@ -24,7 +19,7 @@ const createRoom = (
 	const room = {
 		roomId: "room-1",
 		insightId: "insight-1",
-		mode: mode,
+		mode,
 		options: { mcp: [] } as Record<string, unknown>,
 		setOptions: vi.fn((options: Record<string, unknown>) => {
 			room.options = { ...room.options, ...options };
@@ -44,7 +39,7 @@ const createRoom = (
 const toolCall = (name: string, meta?: ToolCall["_meta"]): ToolCall => ({
 	id: `call-${name}`,
 	type: "function",
-	name: name,
+	name,
 	arguments: { path: "notes/today.md" },
 	_tool_found: false,
 	original_name: name,

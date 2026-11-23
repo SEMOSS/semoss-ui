@@ -1,6 +1,4 @@
 {
-	"welcomeTitle": "Bienvenue dans le gestionnaire d'agents",
-	"welcomeDescription": "Explorez des agents IA personnalisés conçus pour répondre à vos besoins uniques et s'intégrer parfaitement dans vos processus.",
 	"form": {
 		"nameLabel": "Nom",
 		"descriptionLabel": "Description",
@@ -23,19 +21,6 @@
 		"deleteConfirmTitle": "Êtes-vous sûr ?",
 		"deleteConfirmDescription": "Cette action est irréversible. Cela supprimera définitivement l'espace de travail {{name}}.",
 		"createdAgo": "Créé {{when}}"
-	},
-	"sharing": {
-		"title": "Ajouter des membres",
-		"description": "Inviter des membres à accéder et collaborer sur cet agent.",
-		"searchPlaceholder": "Rechercher un utilisateur...",
-		"searchUsers": "Rechercher des utilisateurs...",
-		"noUsersFound": "Aucun utilisateur trouvé",
-		"hasAccess": "A accès",
-		"pendingInvite": "Invitation en attente",
-		"membersToAdd": "Membres à ajouter",
-		"emptyState": "Ajouter des utilisateurs pour partager cet espace de travail",
-		"buttonAdding": "Ajout en cours...",
-		"buttonAdd": "Ajouter des Membres"
 	},
 	"members": {
 		"autoSaveHint": "Les ajouts, suppressions de membres et les modifications d'autorisations sont enregistrés automatiquement.",
@@ -64,7 +49,6 @@
 		"noChats": "Aucun chat trouvé",
 		"error": "Erreur :",
 		"selectRoom": "Sélectionner une salle",
-		"newChat": "Nouveau chat",
 		"delete": "Supprimer",
 		"cancel": "Annuler",
 		"deleteSuccess": "Chat supprimé",
@@ -99,26 +83,12 @@
 		"fetchPermissionsFailed": "Échec de la récupération des permissions utilisateur",
 		"unknownError": "Erreur inconnue"
 	},
-	"breadcrumbs": {
-		"home": "Accueil",
-		"agent": "Agent",
-		"loading": "Chargement",
-		"edit": "Modifier",
-		"new": "Nouveau",
-		"room": "Salle"
-	},
 	"detail": {
 		"tabs": {
-			"myChats": "Mes discussions",
-			"knowledge": "Connaissances",
-			"toolbox": "Boîtes à outils",
-			"prompts": "Invites",
-			"members": "Membres",
-			"skills": "Compétences"
+			"members": "Membres"
 		},
 		"about": {
-			"title": "À propos",
-			"noInstructions": "Aucune instruction configurée."
+			"title": "À propos"
 		},
 		"recentChats": {
 			"title": "Continuer une discussion précédente"
@@ -142,19 +112,6 @@
 		"searchPlaceholder": "Rechercher des invites...",
 		"all": "Tous",
 		"general": "Général"
-	},
-	"instructions": {
-		"expand": "Agrandir",
-		"viewTitle": "Instructions",
-		"viewDescription": "L'invite système qui guide le comportement de cet agent.",
-		"editTitle": "Modifier les instructions",
-		"editDescription": "Mettez à jour l'invite système qui guide le comportement de cet agent.",
-		"charCount_one": "{{count, number}} caractère",
-		"charCount_many": "{{count, number}} caractères",
-		"charCount_other": "{{count, number}} caractères"
-	},
-	"skills": {
-		"noSkills": "Aucune compétence ajoutée"
 	},
 	"catalog": {
 		"title": "Mes agents",

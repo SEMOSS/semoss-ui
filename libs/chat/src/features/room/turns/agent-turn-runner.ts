@@ -6,6 +6,7 @@ import type {
 	PendingAgentAction,
 } from "@semoss/sdk";
 import { AgentStore, getSubagentRuns, isTerminalRunStatus } from "@semoss/sdk";
+import { tryParseJson } from "@semoss/utility/json";
 import type {
 	PixelMessageSubagentPart,
 	PixelMessageToolCallPart,
@@ -21,6 +22,7 @@ import { ResponseMessageStore } from "../store/response-message.store";
 import { readInputPayload } from "../store/response-placeholder";
 import type { RoomStore } from "../store/room.store";
 import type { ToolStore } from "../store/tool.store";
+import { EMPTY_ENGINE_META } from "../store/tool.store";
 import { isToolSettled, type ToolStatus } from "../store/tool-status";
 import { type Turn, type TurnRunner, trackTurn } from "./turn-runner";
 
@@ -108,11 +110,7 @@ const toolCallPart = (call: {
 		original_name: call.originalName,
 		description: "",
 		_meta: {
-			SMSS_ENGINE_NAME: "",
-			SMSS_ENGINE_ID: "",
-			SMSS_ENGINE_TYPE: "",
-			SMSS_PROJECT_NAME: "",
-			SMSS_PROJECT_ID: "",
+			...EMPTY_ENGINE_META,
 			...call.meta,
 			SMSS_MCP_EXECUTION: call.execution,
 		},
@@ -135,7 +133,7 @@ const buildToolCallPart = (item: AgentToolItem): PixelMessageToolCallPart => {
 		id: item.id,
 		name: item.name,
 		title: item.title || originalName,
-		originalName: originalName,
+		originalName,
 		arguments: item.arguments,
 		meta: item.metadata,
 		execution: toAgentExecutionMode(item.metadata?.SMSS_MCP_EXECUTION),
@@ -418,9 +416,6 @@ class AgentRunWriter {
 	private updateSubagent(
 		item: Extract<AgentRunItem, { kind: "subagent" }>,
 	): void {
-		if (!findSubagentPart(this.response, item.id)) {
-			return;
-		}
 		this.response.updateParts(
 			(part): part is PixelMessageSubagentPart =>
 				part.type === "SUBAGENT" && part.subagent.id === item.id,
@@ -553,7 +548,7 @@ export class AgentTurnRunner implements TurnRunner {
 				engine: room.model.engine_id,
 				harnessType: AGENT_HARNESS_TYPE,
 				agentId: room.options.workspace?.workspace_id,
-				media: media,
+				media,
 			},
 			room.insightId,
 		);
@@ -715,20 +710,13 @@ const findSpawningMessage = (
 		if (!(message instanceof InputMessageStore)) continue;
 		for (const part of message.parts) {
 			if (part.type !== "TOOL_RESULT") continue;
-			try {
-				const output = JSON.parse(part.toolResult.output) as {
-					jobId?: string;
-					runId?: string;
-				};
-				if (
-					output.jobId === childRunId ||
-					output.runId === childRunId
-				) {
-					toolCallId = part.toolResult.toolCallId;
-					break;
-				}
-			} catch {
-				// not JSON — not a spawn result
+			// a result that is not JSON is not a spawn result
+			const output = tryParseJson(part.toolResult.output) as
+				| { jobId?: string; runId?: string }
+				| undefined;
+			if (output?.jobId === childRunId || output?.runId === childRunId) {
+				toolCallId = part.toolResult.toolCallId;
+				break;
 			}
 		}
 		if (toolCallId) break;

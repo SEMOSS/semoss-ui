@@ -5,16 +5,11 @@ import { useEffect } from "react";
  *
  * @param onOpenChange - Opens the search, as `RoomHistorySearch`'s `onOpenChange`; pass a stable
  * function, such as a state setter.
- * @param isEnabled - Whether the shortcut is on, as when the chat history is shown.
  */
 export const useRoomHistorySearchShortcut = (
 	onOpenChange: (open: boolean) => void,
-	isEnabled = true,
 ): void => {
 	useEffect(() => {
-		if (!isEnabled) {
-			return;
-		}
 		const handleKeyDown = (event: KeyboardEvent) => {
 			if (
 				event.key.toLowerCase() === "k" &&
@@ -28,5 +23,5 @@ export const useRoomHistorySearchShortcut = (
 		};
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [onOpenChange, isEnabled]);
+	}, [onOpenChange]);
 };

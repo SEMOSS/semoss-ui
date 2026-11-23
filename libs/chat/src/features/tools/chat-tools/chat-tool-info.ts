@@ -65,7 +65,7 @@ export const listToolParameters = (
 	);
 	return Object.entries(inputSchema.properties)
 		.map(([name, property]) => ({
-			name: name,
+			name,
 			description:
 				isRecord(property) && typeof property.description === "string"
 					? property.description

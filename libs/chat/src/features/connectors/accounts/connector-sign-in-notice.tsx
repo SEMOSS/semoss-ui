@@ -81,7 +81,7 @@ export const ConnectorSignInNotice = ({
 						/>
 						<span className="min-w-0 flex-1 text-sm">
 							{t("signIn.notice", {
-								account: account,
+								account,
 								services: listServices(providerId),
 							})}
 						</span>
@@ -97,7 +97,7 @@ export const ConnectorSignInNotice = ({
 							size="icon-sm"
 							className="shrink-0"
 							aria-label={t("signIn.dismiss", {
-								account: account,
+								account,
 							})}
 							onClick={() => connectors.dismissSignIn(providerId)}
 						>
@@ -119,7 +119,7 @@ export const ConnectorSignInNotice = ({
 						/>
 						<span className="min-w-0 flex-1 text-sm">
 							{t("signIn.notOffered", {
-								account: account,
+								account,
 								services: listServices(providerId),
 							})}
 						</span>
@@ -128,7 +128,7 @@ export const ConnectorSignInNotice = ({
 							size="icon-sm"
 							className="shrink-0"
 							aria-label={t("signIn.dismiss", {
-								account: account,
+								account,
 							})}
 							onClick={() => connectors.dismissSignIn(providerId)}
 						>
@@ -150,7 +150,7 @@ export const ConnectorSignInNotice = ({
 						/>
 						<span className="min-w-0 flex-1 text-sm">
 							{t("scopes.notice", {
-								account: account,
+								account,
 								services: listFormatter.format(
 									services.map((service) =>
 										t(`services.${service}.name`),
@@ -163,7 +163,7 @@ export const ConnectorSignInNotice = ({
 							size="icon-sm"
 							className="shrink-0"
 							aria-label={t("scopes.dismiss", {
-								account: account,
+								account,
 							})}
 							onClick={() =>
 								connectors.dismissScopeNotice(providerId)

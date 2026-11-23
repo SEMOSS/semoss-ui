@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
-	cn,
 	P,
 	Popover,
 	PopoverContent,
@@ -21,9 +20,6 @@ import { CompactionStrategyPicker } from "./compaction-strategy-picker";
 
 /** Props for {@link RoomContextUsageIndicator}. */
 interface RoomContextUsageIndicatorProps {
-	/** CSS classes for styling customization */
-	className?: string;
-
 	/** Room whose usage this indicator reflects */
 	room: RoomStore;
 
@@ -59,7 +55,6 @@ const formatTokens = (tokens: number | undefined) => {
  * delay, so the mouse can travel from the donut into the popover.
  */
 export const RoomContextUsageIndicator = ({
-	className,
 	room,
 	onCompact,
 	isLoading = false,
@@ -156,7 +151,7 @@ export const RoomContextUsageIndicator = ({
 							size="icon-sm"
 							aria-label={`${t("contextWindow.memoryUsedTitle")} ${usedPercent.toFixed(1)}%`}
 							type="button"
-							className={cn("shrink-0 rounded-full", className)}
+							className="shrink-0 rounded-full"
 							onClick={(e) => e.stopPropagation()}
 							onMouseEnter={handleOpen}
 							onMouseLeave={scheduleClose}

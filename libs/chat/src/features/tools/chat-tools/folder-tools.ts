@@ -455,7 +455,7 @@ const readFile = async (
 	const slice = sliceTextLines(text, offset, limit, MAX_READ_CHARS);
 
 	return succeeded({
-		path: path,
+		path,
 		total_lines: slice.totalLines,
 		start_line: slice.startLine,
 		end_line: slice.endLine,
@@ -557,9 +557,9 @@ const searchFolder = async (
 	}
 
 	return succeeded({
-		query: query,
+		query,
 		path: path || "/",
-		matches: matches,
+		matches,
 		truncated: isTruncated,
 		...(isTruncated
 			? {
@@ -597,7 +597,7 @@ const writeFile = async (
 
 	return succeeded(
 		{
-			path: path,
+			path,
 			bytes: new TextEncoder().encode(content).length,
 			created: !existing,
 		},
@@ -875,7 +875,41 @@ const ROOM_FILES_TOOLS = createFolderToolSpecs(ROOM_FILES_SPACE);
 export const buildFolderToolDefinitions = (context: {
 	executionOf: (name: FolderToolName) => FolderToolExecution | null;
 }): FolderToolDefinition[] =>
-	buildDefinitions(ROOM_FILES_TOOLS, ALL_FOLDER_TOOLS, context.executionOf);
+	ALL_FOLDER_TOOLS.flatMap((name) => {
+		const execution = context.executionOf(name);
+		const operation = getFolderToolOperation(name);
+		if (!execution || !operation) return [];
+		const { description, ...spec } = toDefinitionSpec(
+			ROOM_FILES_TOOLS[operation],
+		);
+		return [
+			{
+				name,
+				...spec,
+				description:
+					execution === "ask"
+						? `${description}${describeFolderToolApproval(operation)}`
+						: description,
+			},
+		];
+	});
+
+/**
+ * A spec's title, description, and input schema, as a definition carries them.
+ *
+ * @param spec - One operation's spec.
+ * @returns The definition's fields but its name.
+ */
+const toDefinitionSpec = ({
+	title,
+	description,
+	properties,
+	required,
+}: FolderToolSpec): Omit<FolderToolDefinition, "name"> => ({
+	title,
+	description,
+	inputSchema: { type: "object", properties, required },
+});
 
 /**
  * One folder tool, described for the folder it works in, for a host that
@@ -897,58 +931,14 @@ export const describeFolderTool = (
 	usualMode: FolderToolExecution;
 	approvalNote: string;
 } => {
-	const { title, description, properties, required } =
-		createFolderToolSpecs(space)[operation];
+	const name = `${space.prefix}_${operation}`;
 	return {
-		name: `${space.prefix}_${operation}`,
-		title: title,
-		description: description,
-		inputSchema: {
-			type: "object",
-			properties: properties,
-			required: required,
-		},
-		usualMode: READ_OPERATIONS.has(operation) ? "auto" : "ask",
+		name,
+		...toDefinitionSpec(createFolderToolSpecs(space)[operation]),
+		usualMode: getUsualFolderToolExecution(name),
 		approvalNote: describeFolderToolApproval(operation).trim(),
 	};
 };
-
-/**
- * One set of tools' definitions.
- *
- * @param specs - Each operation's spec, described for the set's folder.
- * @param names - The set's names, in operation order.
- * @param executionOf - How each tool runs, or null to leave it out.
- * @returns The definitions.
- */
-const buildDefinitions = <N extends FolderToolName>(
-	specs: Record<FolderToolOperation, FolderToolSpec>,
-	names: readonly N[],
-	executionOf: (name: N) => FolderToolExecution | null,
-): FolderToolDefinition[] =>
-	names.flatMap((name) => {
-		const execution = executionOf(name);
-		if (!execution) {
-			return [];
-		}
-		const operation = getFolderToolOperation(name) ?? "read";
-		const { title, description, properties, required } = specs[operation];
-		return [
-			{
-				name: name,
-				title: title,
-				description:
-					execution === "ask"
-						? `${description}${describeFolderToolApproval(operation)}`
-						: description,
-				inputSchema: {
-					type: "object",
-					properties: properties,
-					required: required,
-				},
-			},
-		];
-	});
 
 /**
  * Run one folder tool call in its folder, whatever the tool's prefix: the

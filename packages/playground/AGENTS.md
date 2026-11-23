@@ -61,16 +61,18 @@ and again inside `AppLayout` (`isInnerComponent`) so the navigation stays beside
   while a room's Workspace is open with the chat's `useWorkbenchNavigation`, provides the tour
   (`useLandingTour`), and renders `EmbeddedPages`.
 - **`useHostChatConfig`** owns the theme's meaning for the chat. `options`: the theme as
-  the chat's options (`themeToChatOptions` in `theme-chat-options.ts`, with the env's
-  new-chat defaults under the theme's `defaultRoomSettings`), the links (`roomHref`,
-  `agentHref`, and `catalogItemHref` where `showPlatformLinks` is on) and the platform URL
+  the chat's options (`playgroundThemeChatOptions` from `@semoss/shared`, shared with the
+  desktop app, with the env's new-chat defaults under the theme's `defaultRoomSettings` and
+  `catalogItemHref` where `showPlatformLinks` is on), the links (`roomHref`, `agentHref`) and the platform URL
   (`platformUrl`, from `platform-url.ts` and `VITE_PLATFORM_URL`), memoized on the theme;
   `callbacks`: `onOpenRoom`, `onOpenNewChat`, `onOpenSettings`, and `onWorkbenchOpenChange`;
   `components`: no plus or "/" menu where the theme hides tools in a frame (`hideToolsInIframe`,
   `features/navigation/is-iframed.ts`); and `workbenchPanels` without the activity log where it
   turns `showActivityLog` off. It passes no `tools`. A new
-  theme flag the chat needs is a mapping in `themeToChatOptions` to a `ChatOptions` field,
-  or a piece placed here.
+  theme flag the chat needs is a mapping in `playgroundThemeChatOptions`
+  (`libs/shared/src/theme/playground-chat-options.ts`) to a `ChatOptions` field, or a piece placed
+  here. A compile-time check in `use-host-chat-config.ts` fails when that mapping names an
+  option the chat no longer has.
 - **`pages/room.page.tsx`** lays out `RoomScope`, with `RoomSuggestions` in `RoomConversation`'s
   `suggestions` where the theme's `enableSuggestions` is on, and **`pages/new-chat.page.tsx`**
   (`NewChatPage`) renders `NewChat`; both put `PageHeaderNavigation` at the start of the header.

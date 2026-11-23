@@ -20,10 +20,6 @@
 		"global": "グローバルストア",
 		"mine": "マイストア"
 	},
-	"filters": {
-		"allCenters": "すべてのセンター/オフィス",
-		"all": "すべて"
-	},
 	"actions": {
 		"createSource": "ナレッジストアを作成",
 		"viewDocuments": "ドキュメントを表示",
@@ -54,11 +50,6 @@
 		"embedSuccess": "ドキュメントを正常に埋め込みました",
 		"embedFailed": "ドキュメントの埋め込みに失敗しました"
 	},
-	"breadcrumbs": {
-		"home": "ホーム",
-		"knowledgeStores": "ナレッジストア",
-		"loading": "読み込み中"
-	},
 	"detail": {
 		"knowledge": "ナレッジ",
 		"embedDocuments": "ドキュメントを埋め込む",
@@ -77,23 +68,9 @@
 		"favorite": "お気に入り",
 		"files": "ファイル",
 		"permissions": "権限",
-		"userAccess": "ユーザーアクセス",
-		"addUser": "ユーザーを追加",
-		"noUsers": "ユーザーが見つかりません。",
-		"user": "ユーザー",
-		"role": "ロール",
-		"author": "作成者",
-		"editor": "編集者",
-		"readOnly": "閲覧のみ",
-		"removeUser": "ユーザーを削除",
-		"remove": "削除",
-		"cancel": "キャンセル",
-		"add": "追加",
-		"searchUsers": "名前またはメールで検索…",
 		"documentCount": "埋め込み済みドキュメント：{{count}}",
 		"previewError": "プレビューを読み込めませんでした。",
 		"previewUnavailable": "このファイル形式のプレビューは利用できません。",
-		"removeDescription": "このナレッジソースから {{name}} を削除しますか？",
 		"dateUploaded": "アップロード日",
 		"size": "サイズ"
 	}

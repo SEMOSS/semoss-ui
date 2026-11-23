@@ -9,9 +9,6 @@ const mocks = vi.hoisted(() => ({
 	withInsight: vi.fn(async () => []),
 }));
 
-vi.mock("@semoss/i18n", () => ({
-	getI18n: () => ({ t: (key: string) => key }),
-}));
 vi.mock("@semoss/sdk/react", async (original) => ({
 	...(await original<typeof import("@semoss/sdk/react")>()),
 	Session: {

@@ -89,7 +89,7 @@ const buildSuggestionsPixel = (room: RoomStore): string => {
 		engineId: room.model.engine_id,
 		roomId: room.roomId,
 		parentMessageId: room.tail.id,
-		suggestionContext: suggestionContext,
+		suggestionContext,
 	});
 };
 

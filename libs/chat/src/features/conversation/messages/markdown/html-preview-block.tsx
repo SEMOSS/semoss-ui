@@ -9,21 +9,18 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { SandpackHtmlPreview } from "@semoss/shared";
 import {
-	Button,
 	Code,
 	Dialog,
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
 	Spinner,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import { copyTextToClipboard } from "@semoss/utility/clipboard";
 import { useLatestRef } from "@semoss/utility/react/use-latest-ref";
 import type { RoomStore } from "../../../room/store/room.store";
+import { TooltipButton } from "../../tooltip-button";
 import { BlockHeader } from "./block-header";
 import {
 	RESPONSE_BLOCK_MAX_HEIGHT,
@@ -40,10 +37,6 @@ interface HtmlPreviewBlockProps {
 	room?: RoomStore;
 	/** Whether the HTML is still streaming, so the preview updates on a throttle. */
 	isLoading?: boolean;
-	/** The Copy button's tooltip. */
-	copyTooltip: string;
-	/** The toast shown once the HTML is copied. */
-	copySuccessMessage: string;
 }
 
 /** How often, at most, a streaming preview takes new HTML. */
@@ -128,8 +121,6 @@ export const HtmlPreviewBlock = ({
 	html,
 	room,
 	isLoading,
-	copyTooltip,
-	copySuccessMessage,
 }: HtmlPreviewBlockProps) => {
 	const { t } = useTranslation("chat");
 	const [isFullViewOpen, setIsFullViewOpen] = useState(false);
@@ -242,89 +233,72 @@ export const HtmlPreviewBlock = ({
 					}
 					isCollapseDisabled={!html}
 				>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								className="text-muted-foreground text-xs hover:text-foreground"
-								variant="ghost"
-								size="sm"
-								disabled={!html}
-								onClick={() => setIsRaw((prev) => !prev)}
-								aria-label={
-									isRaw
-										? t("blocks.switchToPreview")
-										: t("blocks.editHtml")
-								}
-							>
-								{isRaw ? (
-									<EyeIcon className="size-3" />
-								) : (
-									<PencilIcon className="size-3" />
-								)}
-								{isRaw ? t("blocks.preview") : t("blocks.edit")}
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent side="bottom">
-							{isRaw
+					<TooltipButton
+						className="text-muted-foreground text-xs hover:text-foreground"
+						variant="ghost"
+						size="sm"
+						disabled={!html}
+						onClick={() => setIsRaw((prev) => !prev)}
+						aria-label={
+							isRaw
 								? t("blocks.switchToPreview")
-								: t("blocks.editHtml")}
-						</TooltipContent>
-					</Tooltip>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								className="text-muted-foreground text-xs hover:text-foreground"
-								variant="ghost"
-								size="sm"
-								disabled={!html}
-								onClick={() => setIsFullViewOpen(true)}
-							>
-								<ExpandIcon className="size-3" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent side="bottom">
-							{t("response.fullView")}
-						</TooltipContent>
-					</Tooltip>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								className="text-muted-foreground text-xs hover:text-foreground"
-								variant="ghost"
-								size="sm"
-								disabled={!room || !html || isLoading}
-								onClick={() => setIsSaveDialogOpen(true)}
-							>
-								<SaveIcon className="size-3" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent side="bottom">
-							{t("response.saveInRoom")}
-						</TooltipContent>
-					</Tooltip>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								className="text-muted-foreground text-xs hover:text-foreground"
-								variant="ghost"
-								size="sm"
-								disabled={!html || isLoading}
-								onClick={() =>
-									void copyTextToClipboard(html, {
-										onSuccess: () =>
-											toast.success(copySuccessMessage),
-										onError: (message) =>
-											toast.error(message),
-									})
-								}
-							>
-								<CopyIcon className="size-3" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent side="bottom">
-							{copyTooltip}
-						</TooltipContent>
-					</Tooltip>
+								: t("blocks.editHtml")
+						}
+						tooltip={
+							isRaw
+								? t("blocks.switchToPreview")
+								: t("blocks.editHtml")
+						}
+						tooltipSide="bottom"
+					>
+						{isRaw ? (
+							<EyeIcon className="size-3" />
+						) : (
+							<PencilIcon className="size-3" />
+						)}
+						{isRaw ? t("blocks.preview") : t("blocks.edit")}
+					</TooltipButton>
+					<TooltipButton
+						className="text-muted-foreground text-xs hover:text-foreground"
+						variant="ghost"
+						size="sm"
+						disabled={!html}
+						onClick={() => setIsFullViewOpen(true)}
+						tooltip={t("response.fullView")}
+						tooltipSide="bottom"
+					>
+						<ExpandIcon className="size-3" />
+					</TooltipButton>
+					<TooltipButton
+						className="text-muted-foreground text-xs hover:text-foreground"
+						variant="ghost"
+						size="sm"
+						disabled={!room || !html || isLoading}
+						onClick={() => setIsSaveDialogOpen(true)}
+						tooltip={t("response.saveInRoom")}
+						tooltipSide="bottom"
+					>
+						<SaveIcon className="size-3" />
+					</TooltipButton>
+					<TooltipButton
+						className="text-muted-foreground text-xs hover:text-foreground"
+						variant="ghost"
+						size="sm"
+						disabled={!html || isLoading}
+						onClick={() =>
+							void copyTextToClipboard(html, {
+								onSuccess: () =>
+									toast.success(
+										t("notifications.copySuccess"),
+									),
+								onError: (message) => toast.error(message),
+							})
+						}
+						tooltip={t("response.copy")}
+						tooltipSide="bottom"
+					>
+						<CopyIcon className="size-3" />
+					</TooltipButton>
 				</BlockHeader>
 				{!isCollapsed &&
 					(isRaw ? (

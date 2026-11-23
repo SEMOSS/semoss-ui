@@ -38,8 +38,8 @@ export const useRoomToolViewHost = (
 		);
 	return useMemo(
 		() => ({
-			saveTargetName: saveTargetName,
-			onSignIn: onSignIn,
+			saveTargetName,
+			onSignIn,
 			onSaved: (file: ToolViewSavedFile) => onSaved(toRoomFile(file)),
 			onAddToContext: (file: ToolViewSavedFile) =>
 				onAddToContext(toRoomFile(file)),

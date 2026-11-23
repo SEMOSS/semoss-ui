@@ -8,11 +8,6 @@ import {
 } from "./connector-tools";
 import { ConnectorsStore } from "./connectors.store";
 
-vi.mock("@semoss/i18n", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@semoss/i18n")>()),
-	getI18n: () => ({ t: (key: string) => key }),
-}));
-
 // the user's connector file comes from the server, and so does the room's
 // tool file, which the tests leave out. The session's logins come from the
 // SDK, which the tests set through setSessionLogins.
@@ -27,8 +22,8 @@ vi.mock("../../room/store/room-tool-file", async (importOriginal) => {
 		...(await importOriginal<
 			typeof import("../../room/store/room-tool-file")
 		>()),
-		readRoomToolFile: readRoomToolFile,
-		saveRoomToolFile: saveRoomToolFile,
+		readRoomToolFile,
+		saveRoomToolFile,
 		// the queue reads and writes through the mocks above
 		updateRoomToolFile: vi.fn(
 			async (
@@ -188,7 +183,7 @@ describe("ConnectorsStore", () => {
 		const connectorAccess = { MICROSOFT: { outlook: true } };
 		store.setSessionLogins({
 			logins: { NATIVE: "Ada", MICROSOFT: "Ada" },
-			connectorAccess: connectorAccess,
+			connectorAccess,
 			availableProviders: [{ provider: "ms", isOauth: true }],
 		});
 		expect(store.connectedProviders).toEqual(["MICROSOFT"]);

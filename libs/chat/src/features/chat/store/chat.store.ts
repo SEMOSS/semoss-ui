@@ -12,6 +12,7 @@ import {
 	renameUserRoom,
 } from "@semoss/sdk";
 import { download, Session } from "@semoss/sdk/react";
+import { toError } from "@semoss/utility/error";
 import { StoreState } from "@semoss/utility/store";
 import type { WorkbenchPanelConfigAny } from "@semoss/workbench";
 import type { AbstractPixelMessage, ChatMode, Engine } from "../../../types";
@@ -446,7 +447,7 @@ export class ChatStore {
 				this.refreshRoomLists();
 				return null;
 			} catch (e) {
-				const error = e instanceof Error ? e : new Error(String(e));
+				const error = toError(e);
 				// A failed upload leaves the optimistic room, so the user can
 				// retry with a new message; anything else means the room has
 				// no data, so it is dropped.

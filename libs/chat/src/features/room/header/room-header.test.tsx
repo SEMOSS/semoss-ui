@@ -5,11 +5,6 @@ import { RoomProvider } from "../scope/room.context";
 import { RoomStore } from "../store/room.store";
 import { RoomHeader } from "./room-header";
 
-vi.mock("@semoss/i18n", () => ({
-	useTranslation: () => ({ t: (key: string) => key }),
-	getI18n: () => ({ t: (key: string) => key }),
-}));
-
 // a desktop window: the header's icons are the compact size
 beforeEach(() => {
 	vi.stubGlobal(

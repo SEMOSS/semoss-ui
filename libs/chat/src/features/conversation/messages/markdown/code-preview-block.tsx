@@ -31,6 +31,7 @@ import {
 } from "@semoss/ui/next";
 import { copyTextToClipboard } from "@semoss/utility/clipboard";
 import type { RoomStore } from "../../../room/store/room.store";
+import { TooltipButton } from "../../tooltip-button";
 import { BlockHeader } from "./block-header";
 import {
 	buildExecutePixel,
@@ -180,29 +181,23 @@ export const CodePreviewBlock = ({
 					isCollapseDisabled={!code}
 				>
 					{canExecute && (
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									className="text-muted-foreground text-xs hover:text-foreground"
-									variant="ghost"
-									size="sm"
-									disabled={!room || isExecuting}
-									onClick={() => void handleExecute()}
-								>
-									{isExecuting ? (
-										<Spinner className="size-3" />
-									) : (
-										<PlayIcon className="size-3" />
-									)}
-									{isExecuting
-										? t("blocks.running")
-										: t("blocks.run")}
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent>
-								{t("blocks.runScript")}
-							</TooltipContent>
-						</Tooltip>
+						<TooltipButton
+							className="text-muted-foreground text-xs hover:text-foreground"
+							variant="ghost"
+							size="sm"
+							disabled={!room || isExecuting}
+							onClick={() => void handleExecute()}
+							tooltip={t("blocks.runScript")}
+						>
+							{isExecuting ? (
+								<Spinner className="size-3" />
+							) : (
+								<PlayIcon className="size-3" />
+							)}
+							{isExecuting
+								? t("blocks.running")
+								: t("blocks.run")}
+						</TooltipButton>
 					)}
 
 					{canSaveAsNotebook ? (
@@ -246,22 +241,17 @@ export const CodePreviewBlock = ({
 							</DropdownMenuContent>
 						</DropdownMenu>
 					) : (
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									className="text-muted-foreground text-xs hover:text-foreground"
-									variant="ghost"
-									size="sm"
-									disabled={!room || !code}
-									onClick={handleOpenSaveCodeDialog}
-								>
-									<SaveIcon className="size-3" />
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent side="bottom">
-								{t("common:buttons.save")}
-							</TooltipContent>
-						</Tooltip>
+						<TooltipButton
+							className="text-muted-foreground text-xs hover:text-foreground"
+							variant="ghost"
+							size="sm"
+							disabled={!room || !code}
+							onClick={handleOpenSaveCodeDialog}
+							tooltip={t("common:buttons.save")}
+							tooltipSide="bottom"
+						>
+							<SaveIcon className="size-3" />
+						</TooltipButton>
 					)}
 					<Tooltip>
 						<TooltipTrigger asChild>
@@ -285,22 +275,17 @@ export const CodePreviewBlock = ({
 						</TooltipTrigger>
 						<TooltipContent>{t("response.copy")}</TooltipContent>
 					</Tooltip>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								className="text-muted-foreground text-xs hover:text-foreground"
-								variant="ghost"
-								size="sm"
-								disabled={!code}
-								onClick={() => setIsFullViewOpen(true)}
-							>
-								<ExpandIcon className="size-3" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent side="bottom">
-							{t("response.fullView")}
-						</TooltipContent>
-					</Tooltip>
+					<TooltipButton
+						className="text-muted-foreground text-xs hover:text-foreground"
+						variant="ghost"
+						size="sm"
+						disabled={!code}
+						onClick={() => setIsFullViewOpen(true)}
+						tooltip={t("response.fullView")}
+						tooltipSide="bottom"
+					>
+						<ExpandIcon className="size-3" />
+					</TooltipButton>
 				</BlockHeader>
 				{!isCollapsed && (
 					// capped to the height an html preview uses, so a long block

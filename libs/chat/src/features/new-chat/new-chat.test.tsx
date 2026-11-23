@@ -114,10 +114,6 @@ const chat = fakeStore({
 		return DEFAULT_WORKBENCH_PANELS;
 	},
 });
-vi.mock("@semoss/i18n", () => ({
-	useTranslation: () => ({ t: (key: string) => key }),
-	getI18n: () => ({ t: (key: string) => key }),
-}));
 vi.mock("../connectors/store/connector-tools", async (original) => ({
 	...(await original<typeof import("../connectors/store/connector-tools")>()),
 	readUserConnectorTools: vi.fn().mockResolvedValue(null),

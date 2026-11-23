@@ -20,10 +20,6 @@
 		"global": "المخازن العالمية",
 		"mine": "مخازني"
 	},
-	"filters": {
-		"allCenters": "جميع المراكز/المكاتب",
-		"all": "الكل"
-	},
 	"actions": {
 		"createSource": "إنشاء مخزن معرفة",
 		"viewDocuments": "عرض المستندات",
@@ -54,11 +50,6 @@
 		"embedSuccess": "تم تضمين المستندات بنجاح",
 		"embedFailed": "فشل تضمين المستندات"
 	},
-	"breadcrumbs": {
-		"home": "الرئيسية",
-		"knowledgeStores": "مخازن المعرفة",
-		"loading": "جارٍ التحميل"
-	},
 	"detail": {
 		"knowledge": "المعرفة",
 		"embedDocuments": "تضمين المستندات",
@@ -77,23 +68,9 @@
 		"favorite": "مفضّل",
 		"files": "الملفات",
 		"permissions": "الأذونات",
-		"userAccess": "وصول المستخدمين",
-		"addUser": "إضافة مستخدم",
-		"noUsers": "لم يتم العثور على مستخدمين.",
-		"user": "المستخدم",
-		"role": "الدور",
-		"author": "مؤلف",
-		"editor": "محرر",
-		"readOnly": "للقراءة فقط",
-		"removeUser": "إزالة مستخدم",
-		"remove": "إزالة",
-		"cancel": "إلغاء",
-		"add": "إضافة",
-		"searchUsers": "ابحث بالاسم أو البريد الإلكتروني…",
 		"documentCount": "المستندات المضمّنة: {{count}}",
 		"previewError": "تعذّر تحميل المعاينة.",
 		"previewUnavailable": "المعاينة غير متاحة لهذا النوع من الملفات.",
-		"removeDescription": "هل تريد إزالة {{name}} من مصدر المعرفة هذا؟",
 		"dateUploaded": "تاريخ التحميل",
 		"size": "الحجم"
 	}

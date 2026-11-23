@@ -86,7 +86,6 @@ export function PromptHistoryPlugin({ entries }: PromptHistoryPluginProps) {
 				!event.shiftKey &&
 				!event.isComposing &&
 				!editor.isComposing() &&
-				editor.isEditable() &&
 				$isRangeSelection(selection) &&
 				selection.isCollapsed()
 			);

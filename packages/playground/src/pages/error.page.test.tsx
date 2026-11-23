@@ -1,20 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { resolvePlaygroundServerTheme } from "@semoss/shared";
+import { DEFAULT_PLAYGROUND_THEME } from "@semoss/shared";
 import { SidebarProvider, ThemeProvider } from "@semoss/ui/next";
-import { ENV_THEME } from "@/features/theme/playground-theme";
 import { AuthenticatedLayout } from "@/pages/authenticated-layout";
 import { ErrorPage } from "@/pages/error.page";
-
-/**
- * The playground's theme for a server theme: the server's over the build's.
- *
- * @param serverTheme - The server's `THEME_MAP`, or null.
- * @returns The theme.
- */
-const resolveTheme = (serverTheme: Record<string, unknown> | null) =>
-	resolvePlaygroundServerTheme(serverTheme, ENV_THEME);
 
 /** The session and theme the mocked SDK and theme hooks return. */
 const mocks = vi.hoisted(() => ({
@@ -41,7 +31,7 @@ vi.mock("@/features/theme/use-playground-theme", () => ({
 }));
 
 beforeEach(() => {
-	mocks.theme = resolveTheme(null);
+	mocks.theme = DEFAULT_PLAYGROUND_THEME;
 	mocks.session.status = "ERROR";
 	mocks.session.refresh.mockResolvedValue(undefined);
 	vi.stubGlobal(
@@ -137,7 +127,7 @@ test("renders the root route error boundary with home and refresh", async () => 
 test.each(["light", "dark"] as const)(
 	"preserves custom %s branding and sidebar navigation for inner errors",
 	async (theme) => {
-		const defaults = resolveTheme(null);
+		const defaults = DEFAULT_PLAYGROUND_THEME;
 		mocks.theme = {
 			...defaults,
 			images: {

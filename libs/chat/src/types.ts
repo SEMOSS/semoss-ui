@@ -47,8 +47,6 @@ export type {
 	MCP,
 	MCPConfig,
 	Prompt,
-	Skill,
-	SkillConfig,
 	Workspace,
 } from "@semoss/shared";
 
@@ -163,22 +161,6 @@ export interface InputPixelMessage extends AbstractPixelMessage {
 /** A message the model returned. */
 export interface ResponsePixelMessage extends AbstractPixelMessage {
 	io: "OUTPUT";
-	parts: (
-		| PixelMessageTextPart
-		| PixelMessageThinkingPart
-		| PixelMessageMediaPart
-		| PixelMessageToolCallPart
-		| PixelMessageToolResultPart
-		| PixelMessageSubagentPart
-	)[];
-	ornaments: {
-		modelName?: string;
-		/** Successful destination, separate from the selected router modelId. */
-		routing?: ModelRouting;
-		/** Legacy agent-run attribution; read-only fallback for existing rooms. */
-		agentRunId?: string;
-		agentRunRole?: string;
-	};
 	/** The user's feedback on the response, once given. */
 	feedback?: {
 		/** True for a thumbs up, false for a thumbs down. */

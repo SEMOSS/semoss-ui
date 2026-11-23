@@ -10,9 +10,6 @@ const mocks = vi.hoisted(() => ({
 	control: null as ComponentType<WorkbenchPanelProps> | null,
 	tool: null as unknown,
 }));
-vi.mock("@semoss/i18n", () => ({
-	useTranslation: () => ({ t: (key: string) => key }),
-}));
 vi.mock("@semoss/workbench", () => ({
 	useWorkbenchPanel: () => ({
 		config: mocks.config,

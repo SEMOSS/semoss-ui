@@ -9,13 +9,25 @@ import {
 	ROOM_PANEL_TYPES,
 } from "@semoss/chat";
 import {
-	createMcpPlatformUrl,
+	playgroundThemeChatOptions,
 	readPlaygroundBuildNewChat,
 } from "@semoss/shared";
 import { isIframed } from "@/features/navigation/is-iframed";
 import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 import { PLATFORM_URL } from "./platform-url";
-import { themeToChatOptions } from "./theme-chat-options";
+
+/**
+ * Fails to compile when the shared theme mapping names an option the chat no
+ * longer has; a spread would drop it silently.
+ */
+type UnknownThemeOption = Exclude<
+	keyof ReturnType<typeof playgroundThemeChatOptions>,
+	keyof ChatOptions
+>;
+const THEME_OPTIONS_ARE_CHAT_OPTIONS: [UnknownThemeOption] extends [never]
+	? true
+	: never = true;
+void THEME_OPTIONS_ARE_CHAT_OPTIONS;
 
 /** The build's new-chat defaults, from its env. */
 const NEW_CHAT_BUILD_DEFAULTS = readPlaygroundBuildNewChat(import.meta.env);
@@ -59,13 +71,14 @@ export const useHostChatConfig = ({
 	// Its own memo, keyed on the theme alone, so chat UI reads new options only when it changes.
 	const options = useMemo<ChatOptions>(
 		() => ({
-			...themeToChatOptions(theme, NEW_CHAT_BUILD_DEFAULTS),
+			...playgroundThemeChatOptions(
+				theme,
+				NEW_CHAT_BUILD_DEFAULTS,
+				PLATFORM_URL,
+			),
 			roomHref: (roomId) => `#/room/${roomId}`,
 			agentHref: (workspaceId) => `#/agent/${workspaceId}`,
 			platformUrl: PLATFORM_URL,
-			catalogItemHref: theme.featureFlags?.showPlatformLinks
-				? createMcpPlatformUrl(PLATFORM_URL)
-				: undefined,
 		}),
 		[theme],
 	);

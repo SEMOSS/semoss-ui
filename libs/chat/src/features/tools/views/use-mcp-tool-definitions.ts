@@ -74,7 +74,7 @@ export const useMcpToolDefinitions = (
 	insightId: string,
 ): McpToolDefinitions => {
 	const [state, setState] = useState<McpToolDefinitions & { app: string }>({
-		app: app,
+		app,
 		status: "LOADING",
 		tools: [],
 	});
@@ -85,7 +85,7 @@ export const useMcpToolDefinitions = (
 			(document) => {
 				if (isCurrent) {
 					setState({
-						app: app,
+						app,
 						status: "SUCCESS",
 						tools: readToolDefinitions(document),
 					});

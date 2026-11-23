@@ -97,7 +97,7 @@ export const useCreateRoomFromDraft = (
 	): void => {
 		hasSubmittedRef.current = true;
 		writeSessionNewChat(lastLogin, {
-			mode: mode,
+			mode,
 			agentId: options.workspace?.workspace_id ?? "",
 		});
 		callbacks.onOpenRoom(roomId);

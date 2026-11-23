@@ -60,10 +60,6 @@ vi.mock("../../chat/provider/chat-session.context", async (original) => {
 vi.mock("../../room/actions/add-agent", () => ({
 	addAgent: mocks.addWorkspace,
 }));
-vi.mock("@semoss/i18n", () => ({
-	useTranslation: () => ({ t: (key: string) => key }),
-	getI18n: () => ({ t: (key: string) => key }),
-}));
 
 // a desktop window: the rail's icons are the compact size
 beforeEach(() => {

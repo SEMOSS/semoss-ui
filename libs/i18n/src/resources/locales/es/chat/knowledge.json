@@ -20,10 +20,6 @@
 		"global": "Almacenes Globales",
 		"mine": "Mis Almacenes"
 	},
-	"filters": {
-		"allCenters": "Todos los Centros/Oficinas",
-		"all": "Todos"
-	},
 	"actions": {
 		"createSource": "Crear Almacén de Conocimiento",
 		"viewDocuments": "Ver documentos",
@@ -54,11 +50,6 @@
 		"embedSuccess": "Documentos insertados con éxito",
 		"embedFailed": "Error al insertar documentos"
 	},
-	"breadcrumbs": {
-		"home": "Inicio",
-		"knowledgeStores": "Almacenes de Conocimiento",
-		"loading": "Cargando"
-	},
 	"detail": {
 		"knowledge": "Conocimiento",
 		"embedDocuments": "Insertar documentos",
@@ -77,23 +68,9 @@
 		"favorite": "Favorito",
 		"files": "Archivos",
 		"permissions": "Permisos",
-		"userAccess": "Acceso de usuarios",
-		"addUser": "Añadir usuario",
-		"noUsers": "No se encontraron usuarios.",
-		"user": "Usuario",
-		"role": "Rol",
-		"author": "Autor",
-		"editor": "Editor",
-		"readOnly": "Solo lectura",
-		"removeUser": "Eliminar usuario",
-		"remove": "Eliminar",
-		"cancel": "Cancelar",
-		"add": "Añadir",
-		"searchUsers": "Buscar por nombre o correo…",
 		"documentCount": "Documentos incorporados: {{count}}",
 		"previewError": "No se pudo cargar la vista previa.",
 		"previewUnavailable": "No hay vista previa para este tipo de archivo.",
-		"removeDescription": "¿Eliminar a {{name}} de esta fuente de conocimiento?",
 		"dateUploaded": "Fecha de carga",
 		"size": "Tamaño"
 	}

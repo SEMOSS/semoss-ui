@@ -3,7 +3,6 @@ import type { ComponentProps, ReactNode } from "react";
 import { useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
-	Button,
 	type Code,
 	H1,
 	H2,
@@ -12,13 +11,11 @@ import {
 	type Markdown,
 	P,
 	ScrollArea,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
 } from "@semoss/ui/next";
 import { downloadBlob } from "@semoss/utility/browser";
 import { escapeCsvValue } from "@semoss/utility/csv";
 import type { RoomStore } from "../../../room/store/room.store";
+import { TooltipButton } from "../../tooltip-button";
 import { BlockHeader } from "./block-header";
 import { CodePreviewBlock } from "./code-preview-block";
 import { KNOWN_SHIKI_LANGS } from "./constants";
@@ -316,23 +313,18 @@ export const createMarkdownComponents = (
 					onToggleCollapse={() => setIsCollapsed((v) => !v)}
 				>
 					{enableTableExport && (
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
-									variant="ghost"
-									size="sm"
-									aria-label={t("blocks.exportToCsv")}
-									onClick={handleExportCsv}
-								>
-									<Download className="size-3.5" />
-									{t("blocks.exportCsv")}
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent side="left">
-								{t("blocks.downloadAsCsv")}
-							</TooltipContent>
-						</Tooltip>
+						<TooltipButton
+							className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
+							variant="ghost"
+							size="sm"
+							aria-label={t("blocks.exportToCsv")}
+							onClick={handleExportCsv}
+							tooltip={t("blocks.downloadAsCsv")}
+							tooltipSide="left"
+						>
+							<Download className="size-3.5" />
+							{t("blocks.exportCsv")}
+						</TooltipButton>
 					)}
 				</BlockHeader>
 				{!isCollapsed && (

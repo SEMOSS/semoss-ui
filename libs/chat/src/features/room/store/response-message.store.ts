@@ -165,8 +165,8 @@ export class ResponseMessageStore extends AbstractMessageStore<ResponseMessageDa
 				submitLlmFeedback(insightId, {
 					roomId: room.roomId,
 					messageId: this.id,
-					rating: rating,
-					feedbackText: feedbackText,
+					rating,
+					feedbackText,
 				}),
 			{ showLoading: false },
 		);
@@ -333,8 +333,6 @@ export class ResponseMessageStore extends AbstractMessageStore<ResponseMessageDa
 	 * @param toolResponse - What it returned, or its error.
 	 * @param toolStatus - How it ended.
 	 * @param executedParameters - The arguments it ran with.
-	 * @param errorDuringSaving - Whether the call returned but its output could
-	 * not be read.
 	 * @returns Settles with the batch that carries the result.
 	 */
 	saveToolExecution = (
@@ -342,13 +340,6 @@ export class ResponseMessageStore extends AbstractMessageStore<ResponseMessageDa
 		toolResponse: string,
 		toolStatus: ToolOutcome = "success",
 		executedParameters: Record<string, unknown>,
-		errorDuringSaving: boolean = false,
 	): Promise<void> =>
-		this.toolSaves.save(
-			tool,
-			toolResponse,
-			toolStatus,
-			executedParameters,
-			errorDuringSaving,
-		);
+		this.toolSaves.save(tool, toolResponse, toolStatus, executedParameters);
 }

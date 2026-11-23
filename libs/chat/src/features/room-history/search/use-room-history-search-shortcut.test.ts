@@ -26,17 +26,11 @@ test("Cmd+K and Ctrl+K open search; other chords do not", () => {
 	expect(onOpenChange.mock.calls).toEqual([[true], [true]]);
 });
 
-test("does nothing while off, and stops listening on unmount", () => {
+test("stops listening on unmount", () => {
 	const onOpenChange = vi.fn();
-	const { rerender, unmount } = renderHook(
-		({ isEnabled }) =>
-			useRoomHistorySearchShortcut(onOpenChange, isEnabled),
-		{ initialProps: { isEnabled: false } },
+	const { unmount } = renderHook(() =>
+		useRoomHistorySearchShortcut(onOpenChange),
 	);
-	press({ key: "k", metaKey: true });
-	expect(onOpenChange).not.toHaveBeenCalled();
-
-	rerender({ isEnabled: true });
 	press({ key: "k", metaKey: true });
 	expect(onOpenChange).toHaveBeenCalledTimes(1);
 

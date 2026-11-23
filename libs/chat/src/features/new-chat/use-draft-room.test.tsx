@@ -1,11 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
-import { expect, test, vi } from "vitest";
+import { expect, test } from "vitest";
 import { testChatOptions } from "../../test/chat-options";
 import { useDraftRoom } from "./use-draft-room";
-
-vi.mock("@semoss/i18n", () => ({
-	getI18n: () => ({ t: (key: string) => key }),
-}));
 
 /** One toolbox the deployment turns on for a new chat. */
 const SEARCH = { id: "search", type: "FUNCTION", name: "Search" } as const;

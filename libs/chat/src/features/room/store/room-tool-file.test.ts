@@ -13,7 +13,7 @@ const ROOM_TOOL_FILE_PATH = "/mcp/pixel_mcp.json";
 const createRoom = (output: unknown, errors: string[] = []) =>
 	({
 		runRoomPixel: vi.fn(async () => ({
-			errors: errors,
+			errors,
 			insightId: "insight-1",
 			pixelReturn: [{ output: output }],
 		})),

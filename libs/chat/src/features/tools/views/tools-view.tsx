@@ -97,14 +97,14 @@ export const ToolsView = ({ room, app, message, toolId }: ToolsViewProps) => {
 	);
 
 	const route = resolveToolFrameUrl({
-		tool: tool,
-		app: app,
+		tool,
+		app,
 		hasComponentView: !!toolView,
-		toolResponse: toolResponse,
-		appInfo: appInfo,
-		platformUrl: platformUrl,
+		toolResponse,
+		appInfo,
+		platformUrl,
 		module: Env.MODULE,
-		toolFrameOrigin: toolFrameOrigin,
+		toolFrameOrigin,
 	});
 	// a legacy portal page is framed only once it is known to be published
 	const isPublished = usePortalPublished(

@@ -54,11 +54,11 @@ export const SlashCommand = (props: SlashCommandProps) => {
 		}
 		const entry: SlashCommandEntry = {
 			id: name,
-			label: label,
-			description: description,
-			group: group,
+			label,
+			description,
+			group,
 			keywords: keywords?.split("\n"),
-			isLockedWhileBusy: isLockedWhileBusy,
+			isLockedWhileBusy,
 			get icon() {
 				return latest.current.icon;
 			},

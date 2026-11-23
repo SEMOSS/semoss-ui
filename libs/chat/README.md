@@ -230,8 +230,8 @@ export const useMyChatConfig = (
 ```
 
 The playground and the desktop app read the deployment's `THEME_MAP` (`usePlaygroundServerTheme`
-from `@semoss/shared`) and turn it into options in their own adapter (`themeToChatOptions`, in
-each app's `theme-chat-options.ts`), and into the pieces they place: no plus or "/" menu where
+from `@semoss/shared`) and turn it into options with `playgroundThemeChatOptions` (also in
+`@semoss/shared`, typed without the chat's types), and into the pieces they place: no plus or "/" menu where
 the theme hides tools in a frame, `workbenchPanels` without the activity log, follow-up
 suggestions, room dates, the color modes Settings offers, and the banner and landing of a new
 chat.

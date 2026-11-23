@@ -12,7 +12,6 @@
 		"previewOf": "{{name}} का पूर्वावलोकन"
 	},
 	"response": {
-		"agent": "एजेंट",
 		"previousMessage": "पिछला संदेश",
 		"nextMessage": "अगला संदेश",
 		"rewriteMessage": "संदेश फिर से लिखें",
@@ -20,7 +19,6 @@
 		"poorResponse": "खराब जवाब",
 		"copyResponse": "जवाब कॉपी करें",
 		"copyImage": "छवि कॉपी करें",
-		"copyCode": "कोड कॉपी करें",
 		"copy": "कॉपी करें",
 		"saveInRoom": "रूम में सेव करें",
 		"savingToRoom": "सेव हो रहा है...",
@@ -30,7 +28,6 @@
 		"feedbackPlaceholder": "टिप्पणी जोड़ें (वैकल्पिक)",
 		"feedbackCancel": "रद्द करें",
 		"feedbackSubmit": "सबमिट करें",
-		"fastForwardToEnd": "अंत तक तेजी से आगे बढ़ें",
 		"completeToolsAsk_one": "कृपया आगे बढ़ने के लिए टूल पूरा करें।",
 		"completeToolsAsk_other": "कृपया आगे बढ़ने के लिए सभी टूल पूरे करें।",
 		"emptyResponse": "खाली प्रतिक्रिया."
@@ -38,21 +35,12 @@
 	"input": {
 		"copyMessage": "संदेश कॉपी करें"
 	},
-	"plan": {
-		"heading": "यहाँ वह योजना है जो मैंने बनाई है। आवश्यकतानुसार इसे संशोधित करने के लिए स्वतंत्र महसूस करें।",
-		"fixStep": "चरण ठीक करें",
-		"edit": "संपादित करें",
-		"delete": "हटाएं",
-		"addTask": "कार्य जोड़ें",
-		"confirmPlan": "योजना की पुष्टि करें"
-	},
 	"notifications": {
 		"feedbackSuccess": "प्रतिक्रिया के लिए धन्यवाद!",
 		"rewriteSuccess": "संदेश सफलतापूर्वक फिर से लिखा गया",
 		"copySuccess": "क्लिपबोर्ड पर सफलतापूर्वक कॉपी किया गया",
 		"noCopyContent": "कॉपी करने के लिए कोई सामग्री नहीं",
 		"savedInRoom": "{{filePath}} के रूप में रूम में सेव किया गया",
-		"planStepRemoved": "योजना से चरण {{stepNumber}} सफलतापूर्वक हटाया गया",
 		"invalidImage": "अमान्य इमेज फ़ॉर्मेट"
 	},
 	"gracefulErrors": {

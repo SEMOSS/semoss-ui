@@ -2,15 +2,8 @@ import { PlusIcon, XIcon } from "lucide-react";
 import { useId } from "react";
 import { useTranslation } from "@semoss/i18n";
 import type { MCPConfig } from "@semoss/shared";
-import {
-	Badge,
-	Button,
-	H4,
-	Muted,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@semoss/ui/next";
+import { Badge, Button, H4, Muted } from "@semoss/ui/next";
+import { TooltipButton } from "../conversation/tooltip-button";
 import { isRemovableToolbox, listRoomTools } from "../tools/mcp/mcp-utils";
 
 /** Props for {@link RoomSelectedResources}. */
@@ -93,33 +86,26 @@ export function RoomSelectedResources({
 									)}
 								</div>
 								{!isInherited && (
-									<Tooltip disableHoverableContent={false}>
-										<TooltipTrigger asChild>
-											<Button
-												type="button"
-												variant="ghost"
-												size="icon-sm"
-												disabled={disabled}
-												aria-label={t(
-													"room:settings.removeSelection",
-													{
-														name:
-															item.name ||
-															item.id,
-													},
-												)}
-												onClick={() => onRemove(item)}
-											>
-												<XIcon aria-hidden="true" />
-											</Button>
-										</TooltipTrigger>
-										<TooltipContent>
-											{t(
-												"room:settings.removeSelection",
-												{ name: item.name || item.id },
-											)}
-										</TooltipContent>
-									</Tooltip>
+									<TooltipButton
+										type="button"
+										variant="ghost"
+										size="icon-sm"
+										disabled={disabled}
+										aria-label={t(
+											"room:settings.removeSelection",
+											{
+												name: item.name || item.id,
+											},
+										)}
+										onClick={() => onRemove(item)}
+										tooltip={t(
+											"room:settings.removeSelection",
+											{ name: item.name || item.id },
+										)}
+										isTooltipHoverable
+									>
+										<XIcon aria-hidden="true" />
+									</TooltipButton>
 								)}
 							</li>
 						);

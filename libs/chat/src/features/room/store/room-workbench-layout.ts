@@ -110,7 +110,7 @@ export const createRoomWorkbenchLayout = ({
 			activeId: frontId,
 			enableDeleteWhenEmpty: false,
 		},
-		panels: panels,
+		panels,
 		selectedPanelId: frontId,
 	};
 };
@@ -131,7 +131,7 @@ export const getRoomFileMode = (
 	insightId: string,
 ): Extract<FilePanelMode, { type: "INSIGHT" }> => ({
 	type: "INSIGHT",
-	insightId: insightId,
+	insightId,
 });
 
 /**

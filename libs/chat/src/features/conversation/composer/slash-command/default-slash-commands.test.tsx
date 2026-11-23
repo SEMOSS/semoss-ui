@@ -23,11 +23,6 @@ import {
 	useSlashCommands,
 } from "./slash-command-registry.context";
 
-vi.mock("@semoss/i18n", () => ({
-	useTranslation: () => ({ t: (key: string) => key }),
-	getI18n: () => ({ t: (key: string) => key }),
-}));
-
 /** Lists the ids the slash menu reads, in its order. */
 const CommandIds = () => (
 	<output aria-label="commands">
@@ -42,7 +37,7 @@ const createComposer = (
 	room: RoomStore,
 	overrides: Partial<Composer> = {},
 ): Composer => ({
-	room: room,
+	room,
 	isDraft: false,
 	isBusy: false,
 	options: room.options,

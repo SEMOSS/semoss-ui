@@ -53,8 +53,6 @@ export interface RoomListViewMenuProps {
 	isCustomized: boolean;
 	/** Called with the whole next view when a sort or grouping is picked. */
 	onViewChange: (view: RoomListView) => void;
-	/** Classes for the menu's button. */
-	className?: string;
 }
 
 /** The room list's Sort by and Group by menu, behind a muted icon button. */
@@ -62,7 +60,6 @@ export const RoomListViewMenu = ({
 	view,
 	isCustomized,
 	onViewChange,
-	className,
 }: RoomListViewMenuProps) => {
 	const { t } = useTranslation("sidebar");
 	const label = t("view.button");
@@ -101,11 +98,7 @@ export const RoomListViewMenu = ({
 									? `${label} (${t("view.customized")})`
 									: label
 							}
-							className={cn(
-								"relative",
-								ROOM_LIST_ACTION_CLASS,
-								className,
-							)}
+							className={cn("relative", ROOM_LIST_ACTION_CLASS)}
 						>
 							<ListFilterIcon />
 							{isCustomized ? (

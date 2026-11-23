@@ -78,7 +78,8 @@ src/
   `AppLayout` is its counterpart.
 - **`useHostChatConfig`** is the chat's config. It owns what the server's playground theme
   (`usePlaygroundServerTheme` from `@semoss/shared`) means for the chat: `options` are the theme
-  as the chat's options (`themeToChatOptions` in `theme-chat-options.ts`), with `roomHref`
+  as the chat's options (`playgroundThemeChatOptions` from `@semoss/shared`, as the web app
+  does), with `roomHref`
   (`#/room/<id>`), the tool frame origin, and the platform URL on that origin
   (`platformPathFor`), `catalogItemHref` where `showPlatformLinks` is on, and no `agentHref`;
   `workbenchPanels` without the activity log where the theme turns `showActivityLog` off;
@@ -378,7 +379,7 @@ on a macOS-style tile) and regenerate the PNG with the command in its header.
 the web app's `VITE_NAME`, `VITE_THEME` and new-chat defaults (typed in `src/renderer/vite-env.d.ts`).
 `features/theme/` reads them as the web app does: `ENV_THEME` (`readPlaygroundBuildTheme`) is the
 base `usePlaygroundTheme` lays the server's theme over, and `readPlaygroundBuildNewChat` gives
-`themeToChatOptions` its fallback. `ENDPOINT` and `MODULE` do not apply: the desktop's servers are
+`playgroundThemeChatOptions` its fallback. `ENDPOINT` and `MODULE` do not apply: the desktop's servers are
 the saved ones.
 
 `electron.vite.config.ts` imports `@semoss/config` and `@semoss/panels/vite` by path: electron-vite

@@ -82,10 +82,10 @@ export const WorkspaceChatList = ({ workspaceId }: WorkspaceChatListProps) => {
 	const roomList = useSessionIteratorPixel<WorkspaceRoomsPage, WorkspaceRoom>(
 		(limit, offset) =>
 			getWorkspaceRoomsPixel({
-				workspaceId: workspaceId,
+				workspaceId,
 				search: debouncedSearch,
-				limit: limit,
-				offset: offset,
+				limit,
+				offset,
 			}),
 		(response) => response.total_count,
 		(response) => response.rooms,

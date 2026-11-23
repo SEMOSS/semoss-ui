@@ -10,7 +10,7 @@ import {
 } from "@semoss/chat";
 import { Env } from "@semoss/sdk/react";
 import {
-	createMcpPlatformUrl,
+	playgroundThemeChatOptions,
 	readPlaygroundBuildNewChat,
 } from "@semoss/shared";
 import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
@@ -19,7 +19,6 @@ import { getDesktopBridge } from "../desktop-bridge/desktop-bridge";
 import type { DesktopToolsHost } from "../local-folders/desktop-tools-host";
 import { DesktopPlusMenu } from "./desktop-plus-menu";
 import { DesktopSlashCommands } from "./desktop-slash-commands";
-import { themeToChatOptions } from "./theme-chat-options";
 
 /** The desktop's own components in the chat's places. One object, so the chat store is not remade. */
 const DESKTOP_CHAT_COMPONENTS: ChatComponents = {
@@ -71,13 +70,14 @@ export const useHostChatConfig = ({
 	const options = useMemo<ChatOptions>(() => {
 		const platformUrl = `${toolFrameOrigin ?? ""}${platformPathFor(Env.MODULE)}`;
 		return {
-			...themeToChatOptions(theme, NEW_CHAT_BUILD_DEFAULTS),
+			...playgroundThemeChatOptions(
+				theme,
+				NEW_CHAT_BUILD_DEFAULTS,
+				platformUrl,
+			),
 			roomHref: (roomId) => `#/room/${roomId}`,
-			toolFrameOrigin: toolFrameOrigin,
+			toolFrameOrigin,
 			platformUrl,
-			catalogItemHref: theme.featureFlags?.showPlatformLinks
-				? createMcpPlatformUrl(platformUrl)
-				: undefined,
 		};
 	}, [theme, toolFrameOrigin]);
 

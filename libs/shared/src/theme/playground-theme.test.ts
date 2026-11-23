@@ -1,18 +1,18 @@
 import { expect, test } from "vitest";
+import { resolvePlaygroundServerTheme } from "../hooks/use-playground-server-theme";
 import {
+	DEFAULT_PLAYGROUND_THEME,
 	mergePlaygroundTheme,
-	resolvePlaygroundServerTheme,
-} from "@semoss/shared";
-import { ENV_THEME } from "@/features/theme/playground-theme";
+} from "./playground-theme";
 
 /**
- * The playground's theme for a server theme: the server's over the build's.
+ * The playground theme for a server theme: the server's over the defaults.
  *
  * @param serverTheme - The server's `THEME_MAP`, or null.
  * @returns The theme.
  */
 const resolveTheme = (serverTheme: Record<string, unknown> | null) =>
-	resolvePlaygroundServerTheme(serverTheme, ENV_THEME);
+	resolvePlaygroundServerTheme(serverTheme, DEFAULT_PLAYGROUND_THEME);
 
 test("no server theme, or none for the playground, gives the defaults", () => {
 	const defaults = resolveTheme(null);

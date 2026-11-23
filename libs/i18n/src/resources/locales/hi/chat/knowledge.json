@@ -20,10 +20,6 @@
 		"global": "वैश्विक स्टोर",
 		"mine": "मेरे स्टोर"
 	},
-	"filters": {
-		"allCenters": "सभी केंद्र/कार्यालय",
-		"all": "सभी"
-	},
 	"actions": {
 		"createSource": "ज्ञान भंडार बनाएं",
 		"viewDocuments": "दस्तावेज़ देखें",
@@ -54,11 +50,6 @@
 		"embedSuccess": "दस्तावेज़ सफलतापूर्वक एम्बेड किए गए",
 		"embedFailed": "दस्तावेज़ एम्बेड करने में विफल"
 	},
-	"breadcrumbs": {
-		"home": "होम",
-		"knowledgeStores": "ज्ञान स्टोर",
-		"loading": "लोड हो रहा है"
-	},
 	"detail": {
 		"knowledge": "ज्ञान",
 		"embedDocuments": "दस्तावेज़ एम्बेड करें",
@@ -77,23 +68,9 @@
 		"favorite": "पसंदीदा",
 		"files": "फ़ाइलें",
 		"permissions": "अनुमतियाँ",
-		"userAccess": "उपयोगकर्ता पहुँच",
-		"addUser": "उपयोगकर्ता जोड़ें",
-		"noUsers": "कोई उपयोगकर्ता नहीं मिला।",
-		"user": "उपयोगकर्ता",
-		"role": "भूमिका",
-		"author": "लेखक",
-		"editor": "संपादक",
-		"readOnly": "केवल पढ़ने के लिए",
-		"removeUser": "उपयोगकर्ता हटाएँ",
-		"remove": "हटाएँ",
-		"cancel": "रद्द करें",
-		"add": "जोड़ें",
-		"searchUsers": "नाम या ईमेल से खोजें…",
 		"documentCount": "एम्बेड किए गए दस्तावेज़: {{count}}",
 		"previewError": "पूर्वावलोकन लोड नहीं हुआ।",
 		"previewUnavailable": "इस प्रकार की फ़ाइल का पूर्वावलोकन उपलब्ध नहीं है।",
-		"removeDescription": "इस ज्ञान स्रोत से {{name}} को हटाएँ?",
 		"dateUploaded": "अपलोड की तारीख",
 		"size": "आकार"
 	}

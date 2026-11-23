@@ -294,11 +294,7 @@ export const ResponseMessageTool = ({
 					</Button>
 				)}
 				{needsDecision && canCancel && (
-					<ResponseMessageToolMenu
-						message={message}
-						tool={tool}
-						shouldShowCancel
-					/>
+					<ResponseMessageToolMenu message={message} tool={tool} />
 				)}
 			</div>
 			{/* One slot for a pending decision and an open call, so a framed

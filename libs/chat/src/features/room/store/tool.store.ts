@@ -14,6 +14,15 @@ import type { RoomStore } from "./room.store";
 import { ROOM_PANEL_TYPES } from "./room-workbench-layout";
 import { type ToolStatus, toToolStatus } from "./tool-status";
 
+/** The engine fields of a tool call's metadata when no engine runs it. */
+export const EMPTY_ENGINE_META = {
+	SMSS_ENGINE_NAME: "",
+	SMSS_ENGINE_ID: "",
+	SMSS_ENGINE_TYPE: "",
+	SMSS_PROJECT_NAME: "",
+	SMSS_PROJECT_ID: "",
+} as const;
+
 /**
  * Build a synthetic toolCall payload for server tools (e.g. provider-side
  * web_search) that the model provider executes itself. These calls arrive
@@ -37,11 +46,7 @@ const buildServerToolJson = (
 	description: "",
 	server_tool: true,
 	_meta: {
-		SMSS_ENGINE_NAME: "",
-		SMSS_ENGINE_ID: "",
-		SMSS_ENGINE_TYPE: "",
-		SMSS_PROJECT_NAME: "",
-		SMSS_PROJECT_ID: "",
+		...EMPTY_ENGINE_META,
 		SMSS_MCP_EXECUTION: "disabled",
 	},
 });

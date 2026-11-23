@@ -105,7 +105,7 @@ export const useRoomConnectorHost = (
 				error instanceof PopupBlockedError
 					? t("providers.popupBlocked")
 					: t("providers.connectError", {
-							name: name,
+							name,
 							message: getErrorMessage(error, ""),
 						}),
 			);

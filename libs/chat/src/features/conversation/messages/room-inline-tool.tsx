@@ -19,6 +19,7 @@ import type { ToolStore } from "../../room/store/tool.store";
 import { useTool } from "../../room/store/use-tool";
 import { getToolAppId } from "../../tools/mcp/mcp-utils";
 import { ToolsView } from "../../tools/views/tools-view";
+import { TooltipButton } from "../tooltip-button";
 
 /** Props for {@link RoomInlineTool}. */
 interface RoomInlineToolProps {
@@ -107,50 +108,36 @@ export const RoomInlineTool = ({
 								{t("inlineTool.openInSidebar")}
 							</TooltipContent>
 						</Tooltip>
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon-sm"
-									onClick={() => {
-										tool.setIsExpanded(!isExpanded);
-									}}
-								>
-									{isExpanded ? (
-										<MonitorXIcon />
-									) : (
-										<TvMinimalIcon />
-									)}
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent>
-								{isExpanded
+						<TooltipButton
+							variant="ghost"
+							size="icon-sm"
+							onClick={() => {
+								tool.setIsExpanded(!isExpanded);
+							}}
+							tooltip={
+								isExpanded
 									? t("inlineTool.minimize")
-									: t("inlineTool.maximize")}
-							</TooltipContent>
-						</Tooltip>
+									: t("inlineTool.maximize")
+							}
+						>
+							{isExpanded ? <MonitorXIcon /> : <TvMinimalIcon />}
+						</TooltipButton>
 						<Separator
 							orientation="vertical"
 							style={{ height: "17px" }}
 						/>
 
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon-sm"
-									onClick={() => {
-										// close the tool (also resets isExpanded via store)
-										tool.closeTool();
-									}}
-								>
-									<XIcon />
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent>
-								{t("inlineTool.close")}
-							</TooltipContent>
-						</Tooltip>
+						<TooltipButton
+							variant="ghost"
+							size="icon-sm"
+							onClick={() => {
+								// close the tool (also resets isExpanded via store)
+								tool.closeTool();
+							}}
+							tooltip={t("inlineTool.close")}
+						>
+							<XIcon />
+						</TooltipButton>
 					</div>
 				)}
 				<div className="w-full flex-1 overflow-hidden">

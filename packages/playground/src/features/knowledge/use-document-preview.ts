@@ -92,7 +92,7 @@ export const useDocumentPreview = (
 					? getImageMimeType(getFileExtension(fileName))
 					: "application/pdf";
 			const blob = new Blob([decodeBase64ToBytes(base64)], {
-				type: type,
+				type,
 			});
 			createdBlobUrl = URL.createObjectURL(blob);
 			return { ...EMPTY, blobUrl: createdBlobUrl };

@@ -342,7 +342,7 @@ test("the Connectors section's Refresh and Sign In never submit the form", () =>
 				parameters: [],
 			},
 		],
-		load: load,
+		load,
 	});
 	const room = {
 		connectors: {

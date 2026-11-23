@@ -38,3 +38,11 @@ HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
 	clip: vi.fn(),
 	// biome-ignore lint/suspicious/noExplicitAny: <needed for testing>
 })) as any;
+
+// Chat UI reads its copy through i18next; tests read the keys instead. A
+// test that needs real copy or another shape mocks "@semoss/i18n" itself.
+vi.mock("@semoss/i18n", async (original) => ({
+	...(await original<typeof import("@semoss/i18n")>()),
+	useTranslation: () => ({ t: (key: string) => key }),
+	getI18n: () => ({ t: (key: string) => key }),
+}));

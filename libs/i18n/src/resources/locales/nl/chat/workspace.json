@@ -1,6 +1,4 @@
 {
-	"welcomeTitle": "Welkom bij Agent Manager",
-	"welcomeDescription": "Ontdek aangepaste AI-agents die zijn ontworpen om aan uw unieke behoeften te voldoen en naadloos in uw processen te integreren.",
 	"form": {
 		"nameLabel": "Naam",
 		"descriptionLabel": "Beschrijving",
@@ -23,19 +21,6 @@
 		"deleteConfirmTitle": "Weet u het zeker?",
 		"deleteConfirmDescription": "Deze actie is onomkeerbaar. Hiermee wordt de werkruimte {{name}} permanent verwijderd.",
 		"createdAgo": "Aangemaakt {{when}}"
-	},
-	"sharing": {
-		"title": "Leden toevoegen",
-		"description": "Nodig leden uit om toegang te krijgen tot deze agent en eraan samen te werken.",
-		"searchPlaceholder": "Zoek naar een gebruiker...",
-		"searchUsers": "Gebruikers zoeken...",
-		"noUsersFound": "Geen gebruikers gevonden",
-		"hasAccess": "Heeft toegang",
-		"pendingInvite": "Uitnodiging in behandeling",
-		"membersToAdd": "Toe te voegen leden",
-		"emptyState": "Voeg gebruikers toe om deze werkruimte te delen",
-		"buttonAdding": "Toevoegen...",
-		"buttonAdd": "Leden toevoegen"
 	},
 	"members": {
 		"autoSaveHint": "Toevoegingen, verwijderingen en wijzigingen van rechten van leden worden automatisch opgeslagen.",
@@ -64,7 +49,6 @@
 		"noChats": "Geen chats gevonden",
 		"error": "Fout:",
 		"selectRoom": "Ruimte selecteren",
-		"newChat": "Nieuwe chat",
 		"delete": "Verwijderen",
 		"cancel": "Annuleren",
 		"deleteSuccess": "Chat verwijderd",
@@ -99,26 +83,12 @@
 		"fetchPermissionsFailed": "Ophalen van gebruikersrechten mislukt",
 		"unknownError": "Onbekende fout"
 	},
-	"breadcrumbs": {
-		"home": "Home",
-		"agent": "Agent",
-		"loading": "Laden",
-		"edit": "Bewerken",
-		"new": "Nieuw",
-		"room": "Ruimte"
-	},
 	"detail": {
 		"tabs": {
-			"myChats": "Mijn chats",
-			"knowledge": "Kennis",
-			"toolbox": "Toolboxes",
-			"prompts": "Prompts",
-			"members": "Leden",
-			"skills": "Vaardigheden"
+			"members": "Leden"
 		},
 		"about": {
-			"title": "Over",
-			"noInstructions": "Geen instructies geconfigureerd."
+			"title": "Over"
 		},
 		"recentChats": {
 			"title": "Een eerdere chat voortzetten"
@@ -142,18 +112,6 @@
 		"searchPlaceholder": "Prompts zoeken...",
 		"all": "Alle",
 		"general": "Algemeen"
-	},
-	"instructions": {
-		"expand": "Uitvouwen",
-		"viewTitle": "Instructies",
-		"viewDescription": "De systeemprompt die het gedrag van deze agent stuurt.",
-		"editTitle": "Instructies bewerken",
-		"editDescription": "Werk de systeemprompt bij die het gedrag van deze agent stuurt.",
-		"charCount_one": "{{count, number}} teken",
-		"charCount_other": "{{count, number}} tekens"
-	},
-	"skills": {
-		"noSkills": "Geen vaardigheden toegevoegd"
 	},
 	"catalog": {
 		"title": "Mijn agents",

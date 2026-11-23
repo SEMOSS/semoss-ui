@@ -20,10 +20,6 @@
 		"global": "Globale opslagplaatsen",
 		"mine": "Mijn opslagplaatsen"
 	},
-	"filters": {
-		"allCenters": "Alle centra/kantoren",
-		"all": "Alle"
-	},
 	"actions": {
 		"createSource": "Kennisopslagplaats aanmaken",
 		"viewDocuments": "Documenten bekijken",
@@ -54,11 +50,6 @@
 		"embedSuccess": "Documenten succesvol geëmbed",
 		"embedFailed": "Embedden van documenten mislukt"
 	},
-	"breadcrumbs": {
-		"home": "Home",
-		"knowledgeStores": "Kennisopslagplaatsen",
-		"loading": "Laden"
-	},
 	"detail": {
 		"knowledge": "Kennis",
 		"embedDocuments": "Documenten embedden",
@@ -77,23 +68,9 @@
 		"favorite": "Favoriet",
 		"files": "Bestanden",
 		"permissions": "Rechten",
-		"userAccess": "Gebruikerstoegang",
-		"addUser": "Gebruiker toevoegen",
-		"noUsers": "Geen gebruikers gevonden.",
-		"user": "Gebruiker",
-		"role": "Rol",
-		"author": "Auteur",
-		"editor": "Bewerker",
-		"readOnly": "Alleen lezen",
-		"removeUser": "Gebruiker verwijderen",
-		"remove": "Verwijderen",
-		"cancel": "Annuleren",
-		"add": "Toevoegen",
-		"searchUsers": "Zoeken op naam of e-mail…",
 		"documentCount": "Ingesloten documenten: {{count}}",
 		"previewError": "Voorbeeld kon niet worden geladen.",
 		"previewUnavailable": "Voor dit bestandstype is geen voorbeeld beschikbaar.",
-		"removeDescription": "{{name}} verwijderen uit deze kennisbron?",
 		"dateUploaded": "Uploaddatum",
 		"size": "Grootte"
 	}

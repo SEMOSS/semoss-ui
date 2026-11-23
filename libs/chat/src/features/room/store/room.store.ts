@@ -1004,8 +1004,8 @@ export class RoomStore {
 		maxLogChars?: number,
 	) =>
 		runPixelWithConsole(this.snapshot.insightId, pixel, {
-			onConsole: onConsole,
-			maxLogChars: maxLogChars,
+			onConsole,
+			maxLogChars,
 		});
 
 	/**

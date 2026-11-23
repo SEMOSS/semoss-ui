@@ -1,6 +1,4 @@
 {
-	"welcomeTitle": "एजेंट मैनेजर में स्वागत है",
-	"welcomeDescription": "अपनी विशिष्ट आवश्यकताओं को पूरा करने और आपकी प्रक्रियाओं में सहजता से एकीकृत होने के लिए डिज़ाइन किए गए कस्टम AI एजेंट का अन्वेषण करें।",
 	"form": {
 		"nameLabel": "नाम",
 		"descriptionLabel": "विवरण",
@@ -23,19 +21,6 @@
 		"deleteConfirmTitle": "क्या आपको यकीन है?",
 		"deleteConfirmDescription": "यह क्रिया अपरिवर्तनीय है। यह {{name}} वर्कस्पेस को स्थायी रूप से हटा देगा।",
 		"createdAgo": "{{when}} बनाया गया"
-	},
-	"sharing": {
-		"title": "सदस्य जोड़ें",
-		"description": "इस एजेंट तक पहुंचने और उस पर सहयोग करने के लिए सदस्यों को आमंत्रित करें।",
-		"searchPlaceholder": "उपयोगकर्ता खोजें...",
-		"searchUsers": "उपयोगकर्ता खोजें...",
-		"noUsersFound": "कोई उपयोगकर्ता नहीं मिला",
-		"hasAccess": "पहुंच है",
-		"pendingInvite": "लंबित आमंत्रण",
-		"membersToAdd": "जोड़ने के लिए सदस्य",
-		"emptyState": "इस वर्कस्पेस को साझा करने के लिए उपयोगकर्ता जोड़ें",
-		"buttonAdding": "जोड़ा जा रहा है...",
-		"buttonAdd": "सदस्य जोड़ें"
 	},
 	"members": {
 		"autoSaveHint": "सदस्य जोड़ना, हटाना और अनुमति परिवर्तन स्वचालित रूप से सहेजे जाते हैं।",
@@ -64,7 +49,6 @@
 		"noChats": "कोई चैट नहीं मिली",
 		"error": "त्रुटि:",
 		"selectRoom": "रूम चुनें",
-		"newChat": "नई चैट",
 		"delete": "हटाएं",
 		"cancel": "रद्द करें",
 		"deleteSuccess": "चैट हटा दी गई",
@@ -99,26 +83,12 @@
 		"fetchPermissionsFailed": "उपयोगकर्ता अनुमतियां प्राप्त करने में विफल",
 		"unknownError": "अज्ञात त्रुटि"
 	},
-	"breadcrumbs": {
-		"home": "होम",
-		"agent": "एजेंट",
-		"loading": "लोड हो रहा है",
-		"edit": "संपादित करें",
-		"new": "नया",
-		"room": "रूम"
-	},
 	"detail": {
 		"tabs": {
-			"myChats": "मेरी चैट",
-			"knowledge": "ज्ञान",
-			"toolbox": "टूलबॉक्स",
-			"prompts": "प्रॉम्प्ट",
-			"members": "सदस्य",
-			"skills": "कौशल"
+			"members": "सदस्य"
 		},
 		"about": {
-			"title": "परिचय",
-			"noInstructions": "कोई निर्देश कॉन्फ़िगर नहीं किए गए हैं।"
+			"title": "परिचय"
 		},
 		"recentChats": {
 			"title": "पिछली चैट जारी रखें"
@@ -142,18 +112,6 @@
 		"searchPlaceholder": "प्रॉम्प्ट खोजें...",
 		"all": "सभी",
 		"general": "सामान्य"
-	},
-	"instructions": {
-		"expand": "विस्तृत करें",
-		"viewTitle": "निर्देश",
-		"viewDescription": "इस एजेंट के व्यवहार को निर्देशित करने वाला सिस्टम प्रॉम्प्ट।",
-		"editTitle": "निर्देश संपादित करें",
-		"editDescription": "इस एजेंट के व्यवहार को निर्देशित करने वाले सिस्टम प्रॉम्प्ट को अपडेट करें।",
-		"charCount_one": "{{count, number}} वर्ण",
-		"charCount_other": "{{count, number}} वर्ण"
-	},
-	"skills": {
-		"noSkills": "कोई कौशल नहीं जोड़ा गया"
 	},
 	"catalog": {
 		"title": "मेरे एजेंट",

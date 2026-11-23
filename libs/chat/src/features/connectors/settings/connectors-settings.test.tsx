@@ -12,11 +12,6 @@ const mocks = vi.hoisted(() => ({
 	userConnectors: null as unknown as UseUserConnectorsResult,
 }));
 
-vi.mock("@semoss/i18n", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@semoss/i18n")>()),
-	useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 // the session's logins and the user's connector file come from the server;
 // the tests stand in for both
 vi.mock("../accounts/use-connections", () => ({

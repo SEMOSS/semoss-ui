@@ -7,12 +7,13 @@ import { useChatSession } from "../chat/provider/chat-session.context";
 import { FileDropProvider } from "../conversation/attachments/file-drop.context";
 import { NextMessageRoomProvider } from "../conversation/attachments/next-message-room.context";
 import { RoomInput } from "../conversation/composer/room-input";
+import { DropHighlight } from "../conversation/drop-highlight";
+import { RoomGreeting } from "../conversation/messages/room-greeting";
 import { RoomHeader } from "../room/header/room-header";
 import { SplitLayout } from "../room/layout/split-layout";
 import { useRoomSelector } from "../room/store/use-room-selector";
 import { DraftSettingsContext } from "../room-settings/draft-settings.context";
 import { RoomWorkbench } from "../workbench/room-workbench";
-import { NewChatLanding } from "./new-chat-landing";
 import { NewChatWelcome } from "./new-chat-welcome";
 import { useCreateRoomFromDraft } from "./use-create-room-from-draft";
 import { useDraftAgent } from "./use-draft-agent";
@@ -210,78 +211,84 @@ export const NewChat = ({
 					}
 				>
 					<FileDropProvider>
-						<NewChatLanding
-							backdrop={backdrop}
-							welcome={welcome}
-							greeting={greeting}
-							room={workbenchRoom}
-						>
-							{draft.hasAgentLoadFailed && (
-								<Alert variant="destructive">
-									<AlertDescription>
-										{t("room:settings.agentLoadError")}
-									</AlertDescription>
-									<Button
-										type="button"
-										variant="outline"
-										size="sm"
-										onClick={agent.refresh}
-									>
-										{t("room:studio.retry")}
-									</Button>
-								</Alert>
-							)}
-							<RoomInput
-								// a different prompt handed in starts the editor again
-								key={initialPrompt}
-								className="max-h-72"
-								isLoading={isBusy}
-								session={session}
-								room={newRoom}
-								onPrompt={created.createRoom}
-								// The new-room flow has no cancellable turn, so
-								// it's only ever busy (spinner) or idle (send).
-								sendState={isBusy ? "loading" : "send"}
-								variant={{
-									kind: "draft",
-									onSwitchToAgentHarness: () =>
-										draft.chooseMode("agent"),
-									onExitAgentHarness: () =>
-										draft.chooseMode("chat"),
-									draftWorkbench: {
-										room: workbenchRoom,
-										draftPanels: draftPanels,
-									},
-									initialValue: initialPrompt,
-									isSubmitDisabled:
-										draft.isAgentOptionsPending,
-								}}
-							/>
-							{predefinedPrompts.length > 0 ? (
-								<div className="mx-auto flex w-full flex-col items-center gap-3">
-									<div className="flex w-full flex-wrap justify-center gap-2">
-										{predefinedPrompts
-											.slice(0, 5)
-											.map((prompt) => (
-												<Button
-													key={prompt.id}
-													variant="outline"
-													className="h-auto min-h-10 max-w-full gap-2 whitespace-normal rounded-xl px-4 py-2 text-start"
-													disabled={isBusy}
-													onClick={() =>
-														created.createRoom(
-															prompt.context,
-															[],
-														)
-													}
-												>
-													{prompt.title}
-												</Button>
-											))}
+						{backdrop}
+						{/* files dropped anywhere on the landing attach to the draft */}
+						<DropHighlight className="flex h-full flex-col items-center overflow-auto px-4 py-8 sm:px-6">
+							<div className="relative z-10 mx-auto my-auto flex w-full max-w-3xl flex-col gap-6 py-6">
+								{welcome}
+								{greeting && (
+									<RoomGreeting
+										room={workbenchRoom}
+										greeting={greeting}
+									/>
+								)}
+								{draft.hasAgentLoadFailed && (
+									<Alert variant="destructive">
+										<AlertDescription>
+											{t("room:settings.agentLoadError")}
+										</AlertDescription>
+										<Button
+											type="button"
+											variant="outline"
+											size="sm"
+											onClick={agent.refresh}
+										>
+											{t("room:studio.retry")}
+										</Button>
+									</Alert>
+								)}
+								<RoomInput
+									// a different prompt handed in starts the editor again
+									key={initialPrompt}
+									className="max-h-72"
+									isLoading={isBusy}
+									session={session}
+									room={newRoom}
+									onPrompt={created.createRoom}
+									// The new-room flow has no cancellable turn, so
+									// it's only ever busy (spinner) or idle (send).
+									sendState={isBusy ? "loading" : "send"}
+									variant={{
+										kind: "draft",
+										onSwitchToAgentHarness: () =>
+											draft.chooseMode("agent"),
+										onExitAgentHarness: () =>
+											draft.chooseMode("chat"),
+										draftWorkbench: {
+											room: workbenchRoom,
+											draftPanels,
+										},
+										initialValue: initialPrompt,
+										isSubmitDisabled:
+											draft.isAgentOptionsPending,
+									}}
+								/>
+								{predefinedPrompts.length > 0 ? (
+									<div className="mx-auto flex w-full flex-col items-center gap-3">
+										<div className="flex w-full flex-wrap justify-center gap-2">
+											{predefinedPrompts
+												.slice(0, 5)
+												.map((prompt) => (
+													<Button
+														key={prompt.id}
+														variant="outline"
+														className="h-auto min-h-10 max-w-full gap-2 whitespace-normal rounded-xl px-4 py-2 text-start"
+														disabled={isBusy}
+														onClick={() =>
+															created.createRoom(
+																prompt.context,
+																[],
+															)
+														}
+													>
+														{prompt.title}
+													</Button>
+												))}
+										</div>
 									</div>
-								</div>
-							) : null}
-						</NewChatLanding>
+								) : null}
+							</div>
+						</DropHighlight>
 					</FileDropProvider>
 				</SplitLayout>
 			</div>

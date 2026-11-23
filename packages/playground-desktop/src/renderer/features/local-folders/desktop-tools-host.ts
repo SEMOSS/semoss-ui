@@ -153,7 +153,7 @@ export const createDesktopToolsHost = (
 		const folders = entry.store.folders;
 		if (entry.cache?.folders !== folders) {
 			entry.cache = {
-				folders: folders,
+				folders,
 				tools: buildTools(entry, (change) => notify(entry, change)),
 				files: createDesktopHostFiles(entry.store),
 			};

@@ -12,7 +12,6 @@
 		"previewOf": "Aperçu de {{name}}"
 	},
 	"response": {
-		"agent": "Agent",
 		"previousMessage": "Message précédent",
 		"nextMessage": "Message suivant",
 		"rewriteMessage": "Réécrire le message",
@@ -20,7 +19,6 @@
 		"poorResponse": "Mauvaise réponse",
 		"copyResponse": "Copier la réponse",
 		"copyImage": "Copier l'image",
-		"copyCode": "Copier le code",
 		"copy": "Copier",
 		"saveInRoom": "Enregistrer dans la salle",
 		"savingToRoom": "Enregistrement...",
@@ -30,7 +28,6 @@
 		"feedbackPlaceholder": "Ajouter un commentaire (facultatif)",
 		"feedbackCancel": "Annuler",
 		"feedbackSubmit": "Envoyer",
-		"fastForwardToEnd": "Aller à la fin",
 		"completeToolsAsk_one": "Veuillez compléter l'outil pour continuer.",
 		"completeToolsAsk_other": "Veuillez compléter les outils pour continuer.",
 		"emptyResponse": "Réponse vide."
@@ -38,21 +35,12 @@
 	"input": {
 		"copyMessage": "Copier le message"
 	},
-	"plan": {
-		"heading": "Voici le plan que j'ai créé. N'hésitez pas à le modifier selon vos besoins.",
-		"fixStep": "Corriger l'étape",
-		"edit": "Modifier",
-		"delete": "Supprimer",
-		"addTask": "Ajouter une tâche",
-		"confirmPlan": "Confirmer le plan"
-	},
 	"notifications": {
 		"feedbackSuccess": "Merci pour votre retour !",
 		"rewriteSuccess": "Message réécrit avec succès",
 		"copySuccess": "Copié dans le presse-papiers avec succès",
 		"noCopyContent": "Aucun contenu à copier",
 		"savedInRoom": "Enregistré dans la salle sous {{filePath}}",
-		"planStepRemoved": "Étape {{stepNumber}} supprimée du plan avec succès",
 		"invalidImage": "Format d'image non valide"
 	},
 	"gracefulErrors": {

@@ -66,8 +66,8 @@ export const sendPlaywrightScript = async (
 	const scriptContent = await room.runRoomRequest(
 		(insightId) =>
 			getBrowserAutomationScript(insightId, {
-				project: project,
-				fileName: fileName,
+				project,
+				fileName,
 			}),
 		{ showLoading: false, setErrorOnFail: false },
 	);
@@ -78,7 +78,7 @@ export const sendPlaywrightScript = async (
 				projectId: project,
 				name: fileName,
 				autoExecute: false,
-				scriptContent: scriptContent,
+				scriptContent,
 			},
 		},
 		"*",

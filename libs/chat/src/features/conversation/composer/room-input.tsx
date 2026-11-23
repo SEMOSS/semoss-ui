@@ -49,6 +49,7 @@ import { ContextItems } from "../attachments/context-items";
 import { useFileDrop } from "../attachments/file-drop.context";
 import { FilePreviewGrid } from "../attachments/file-preview-grid";
 import { useContextItems } from "../attachments/use-context-items";
+import { TooltipButton } from "../tooltip-button";
 import {
 	type Composer,
 	ComposerContext,
@@ -57,7 +58,6 @@ import {
 import { AutoScrollOnPastePlugin } from "./editor/auto-scroll-on-paste-plugin";
 import { BackspacePlugin } from "./editor/backspace-plugin";
 import { EnterPlugin } from "./editor/enter-plugin";
-import { FocusPlugin } from "./editor/focus-plugin";
 import { filterPastedFiles } from "./filter-pasted-files";
 import { DefaultPlusMenu } from "./plus-menu/default-plus-menu";
 import { getPromptHistory } from "./prompt-history";
@@ -296,6 +296,14 @@ export const RoomInput = ({
 	const hasAttachments = files.length > 0 || queuedFileCount > 0;
 
 	const speech = useSpeechToText(editorRef);
+	// the editor and its placeholder sit in one grid cell, padded alike
+	const textPadding = cn(
+		chatOptions.hasPromptOptimizer && "ps-2",
+		hasAttachments ? "pt-0" : "pt-4",
+	);
+	const micLabel = t(
+		speech.isListening ? "input.stopRecording" : "input.record",
+	);
 	const [isPromptLibraryOpen, setIsPromptLibraryOpen] = useState(false);
 	const { submit, runPrompt } = useComposerSubmit({
 		editorRef,
@@ -313,13 +321,13 @@ export const RoomInput = ({
 	const draftPanels = draft?.draftWorkbench.draftPanels;
 	// what the plus menu's items and the "/" menu's commands act through
 	const composer: Composer = {
-		room: room,
+		room,
 		isDraft: draft !== null,
-		isBusy: isBusy,
-		options: options,
-		agentTools: agentTools,
-		isAgentMode: isAgentMode,
-		agent: agent,
+		isBusy,
+		options,
+		agentTools,
+		isAgentMode,
+		agent,
 		closeMenu: () => setIsMenuOpen(false),
 		openPicker: handleOpenMcpOverlay,
 		switchToAgent: handleSwitchToAgentHarness,
@@ -372,7 +380,7 @@ export const RoomInput = ({
 				<ComposerWorkbenchContext.Provider
 					value={{
 						room: workbenchRoom,
-						draftPanels: draftPanels,
+						draftPanels,
 					}}
 				>
 					<SlashCommandRegistryProvider
@@ -475,11 +483,7 @@ export const RoomInput = ({
 														ref={contentEditableRef}
 														className={cn(
 															"col-start-1 row-start-1 min-h-16 px-4 pb-3 text-base leading-relaxed outline-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
-															chatOptions.hasPromptOptimizer &&
-																"ps-2",
-															hasAttachments
-																? "pt-0"
-																: "pt-4",
+															textPadding,
 														)}
 														aria-label={t(
 															"input.ariaPlaceholder",
@@ -508,11 +512,7 @@ export const RoomInput = ({
 														<div
 															className={cn(
 																"pointer-events-none col-start-1 row-start-1 select-none px-4 pb-3 text-base text-muted-foreground",
-																chatOptions.hasPromptOptimizer &&
-																	"ps-2",
-																hasAttachments
-																	? "pt-0"
-																	: "pt-4",
+																textPadding,
 															)}
 														>
 															{isLoading
@@ -589,47 +589,31 @@ export const RoomInput = ({
 										)}
 										{(agentChipWorkspace ||
 											isDefaultAgent) && (
-											<Tooltip
-												disableHoverableContent={false}
-											>
-												<TooltipTrigger asChild>
-													{agent.kind !== "fixed" ? (
-														<Button
-															type="button"
-															variant="outline"
-															size="sm"
-															className="min-w-0 max-w-48 gap-2 rounded-full"
-															disabled={isBusy}
-															onClick={() =>
+											<TooltipButton
+												type="button"
+												variant="outline"
+												size="sm"
+												className="min-w-0 max-w-48 gap-2 rounded-full"
+												// a fixed agent shows, but cannot be changed
+												{...(agent.kind === "fixed"
+													? {
+															"aria-disabled": true,
+														}
+													: {
+															disabled: isBusy,
+															onClick: () =>
 																handleOpenMcpOverlay(
 																	"AGENT",
-																)
-															}
-														>
-															{agentChipIcon}
-															<span className="truncate">
-																{agentName}
-															</span>
-														</Button>
-													) : (
-														<Button
-															type="button"
-															variant="outline"
-															size="sm"
-															aria-disabled="true"
-															className="inline-flex h-8 min-w-0 max-w-48 items-center gap-2 rounded-full px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-														>
-															{agentChipIcon}
-															<span className="truncate">
-																{agentName}
-															</span>
-														</Button>
-													)}
-												</TooltipTrigger>
-												<TooltipContent>
+																),
+														})}
+												tooltip={agentName}
+												isTooltipHoverable
+											>
+												{agentChipIcon}
+												<span className="truncate">
 													{agentName}
-												</TooltipContent>
-											</Tooltip>
+												</span>
+											</TooltipButton>
 										)}
 									</div>
 									<div className="ms-auto flex min-w-0 max-w-full flex-wrap items-center justify-end gap-1">
@@ -675,10 +659,7 @@ export const RoomInput = ({
 												disableHoverableContent={false}
 											>
 												<TooltipTrigger asChild>
-													<span
-														className="inline-flex"
-														data-tour="tour-record"
-													>
+													<span className="inline-flex">
 														<Button
 															type="button"
 															variant="ghost"
@@ -690,11 +671,9 @@ export const RoomInput = ({
 															aria-pressed={
 																speech.isListening
 															}
-															aria-label={t(
-																speech.isListening
-																	? "input.stopRecording"
-																	: "input.record",
-															)}
+															aria-label={
+																micLabel
+															}
 															onClick={
 																speech.toggle
 															}
@@ -710,13 +689,11 @@ export const RoomInput = ({
 													</span>
 												</TooltipTrigger>
 												<TooltipContent>
-													{t(
-														!speech.canListen
-															? "input.recordUnavailable"
-															: speech.isListening
-																? "input.stopRecording"
-																: "input.record",
-													)}
+													{speech.canListen
+														? micLabel
+														: t(
+																"input.recordUnavailable",
+															)}
 												</TooltipContent>
 											</Tooltip>
 										</div>
@@ -775,7 +752,7 @@ export const RoomInput = ({
 											disableHoverableContent={false}
 										>
 											<TooltipTrigger asChild>
-												<span data-tour="tour-send">
+												<span>
 													<Button
 														variant="default"
 														size="icon"
@@ -848,7 +825,6 @@ export const RoomInput = ({
 							/>
 							<HistoryPlugin />
 							<AutoFocusPlugin />
-							<FocusPlugin />
 							<EditorRefPlugin editorRef={editorRef} />
 							<EnterPlugin onEnter={() => void submit()} />
 							<BackspacePlugin

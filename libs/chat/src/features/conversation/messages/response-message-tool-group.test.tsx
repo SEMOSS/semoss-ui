@@ -4,9 +4,6 @@ import { fakeStore } from "../../../test/fake-store";
 import type { ToolStore } from "../../room/store/tool.store";
 import { ResponseMessageToolGroup } from "./response-message-tool-group";
 
-vi.mock("@semoss/i18n", () => ({
-	useTranslation: () => ({ t: (key: string) => key }),
-}));
 vi.mock("./response-message-tool", () => ({
 	ResponseMessageTool: ({
 		tool,

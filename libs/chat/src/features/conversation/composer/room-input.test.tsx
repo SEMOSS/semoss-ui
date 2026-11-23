@@ -103,7 +103,7 @@ vi.mock("../../chat/config/chat-config.context", async (original) => ({
 	>()),
 	useChatConfig: () => ({
 		options: host.options,
-		components: components,
+		components,
 	}),
 }));
 vi.mock("./use-graceful-errors", () => ({

@@ -20,10 +20,6 @@
 		"global": "Global Stores",
 		"mine": "My Stores"
 	},
-	"filters": {
-		"allCenters": "All Centers/Offices",
-		"all": "All"
-	},
 	"actions": {
 		"createSource": "Create Knowledge Store",
 		"viewDocuments": "View documents",
@@ -54,11 +50,6 @@
 		"embedSuccess": "Documents embedded successfully",
 		"embedFailed": "Failed to embed documents"
 	},
-	"breadcrumbs": {
-		"home": "Home",
-		"knowledgeStores": "Knowledge Stores",
-		"loading": "Loading"
-	},
 	"detail": {
 		"knowledge": "Knowledge",
 		"embedDocuments": "Embed documents",
@@ -77,23 +68,9 @@
 		"favorite": "Favorite",
 		"files": "Files",
 		"permissions": "Permissions",
-		"userAccess": "User access",
-		"addUser": "Add user",
-		"noUsers": "No users found.",
-		"user": "User",
-		"role": "Role",
-		"author": "Author",
-		"editor": "Editor",
-		"readOnly": "Read-only",
-		"removeUser": "Remove user",
-		"remove": "Remove",
-		"cancel": "Cancel",
-		"add": "Add",
-		"searchUsers": "Search by name or email…",
 		"documentCount": "Embedded documents: {{count}}",
 		"previewError": "Failed to load preview.",
 		"previewUnavailable": "Preview is not available for this file type.",
-		"removeDescription": "Remove {{name}} from this knowledge source?",
 		"dateUploaded": "Date Uploaded",
 		"size": "Size"
 	}

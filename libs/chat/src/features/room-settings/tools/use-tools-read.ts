@@ -41,7 +41,7 @@ export const useToolsRead = (
 	read: () => Promise<unknown>,
 ): ToolsRead => {
 	const [state, setState] = useState<ToolsReadState>({
-		source: source,
+		source,
 		status: "idle",
 		tools: [],
 	});
@@ -63,14 +63,14 @@ export const useToolsRead = (
 		): void => {
 			if (request !== latestRequest.current) return;
 			setState((previous) => ({
-				source: source,
-				status: status,
+				source,
+				status,
 				tools: tools ?? previous.tools,
 			}));
 		};
 
 		setState((previous) => ({
-			source: source,
+			source,
 			status: "loading",
 			tools: previous.source === source ? previous.tools : [],
 		}));

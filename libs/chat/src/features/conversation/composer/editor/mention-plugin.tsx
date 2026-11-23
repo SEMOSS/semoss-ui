@@ -1,7 +1,5 @@
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import type { LexicalNode } from "lexical";
 import {
-	$createTextNode,
 	$getSelection,
 	$isRangeSelection,
 	$isTextNode,
@@ -11,7 +9,6 @@ import {
 	KEY_ENTER_COMMAND,
 	KEY_ESCAPE_COMMAND,
 	KEY_TAB_COMMAND,
-	TextNode,
 } from "lexical";
 import type React from "react";
 import {
@@ -38,10 +35,6 @@ export interface MentionMenuProps {
 	onOpenChange: (isOpen: boolean) => void;
 	/** Where the menu anchors. */
 	menuPosition: MentionMenuPosition | null;
-	/** Insert a text token in place of the trigger + query text */
-	addToken: (token: string) => void;
-	/** Insert a Lexical node in place of the trigger + query text */
-	addNode: (nodeFactory: () => LexicalNode) => void;
 	/** Removes the trigger + query text and closes the menu. */
 	onRequestClose: () => void;
 	/** Text typed after the trigger character, for filtering */
@@ -66,15 +59,10 @@ interface MentionPluginProps {
 	renderMenu: (props: MentionMenuProps) => ReactNode;
 
 	/**
-	 * Called when Enter is pressed while the menu is open. The plugin closes
-	 * the menu (removing trigger + query text) after this fires unless addNode
-	 * was already called (which resets triggerOffsetRef).
+	 * Called when Enter is pressed while the menu is open. The plugin then
+	 * closes the menu, removing the trigger and query text.
 	 */
-	onAccept?: (
-		query: string,
-		selectedIndex: number,
-		addNode: (nodeFactory: () => LexicalNode) => void,
-	) => void;
+	onAccept?: (query: string, selectedIndex: number) => void;
 
 	/**
 	 * Called when Tab is pressed. If it returns a string, that string replaces
@@ -132,94 +120,6 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 	const handleSelectedIndexChange = useCallback((index: number) => {
 		setSelectedIndex(index);
 	}, []);
-
-	/** Insert a token after the trigger, replacing trigger + query text */
-	const addToken = useCallback(
-		(token: string) => {
-			const triggerIdx = triggerOffsetRef.current;
-			if (triggerIdx === null) return false;
-
-			editor.update(() => {
-				const selection = $getSelection();
-				if (!$isRangeSelection(selection)) return;
-
-				const anchor = selection.anchor;
-				const anchorNode = anchor.getNode();
-				if (!$isTextNode(anchorNode)) return;
-
-				const textContent = anchorNode.getTextContent();
-				const textBeforeTrigger = textContent.slice(0, triggerIdx);
-				const textAfterCursor = textContent.slice(anchor.offset);
-
-				const tokenNode = $createTextNode(token);
-
-				if (textBeforeTrigger) {
-					anchorNode.setTextContent(textBeforeTrigger);
-					anchorNode.insertAfter(tokenNode);
-				} else {
-					anchorNode.replace(tokenNode);
-				}
-
-				const spaceNode = new TextNode(" ");
-				tokenNode.insertAfter(spaceNode);
-
-				if (textAfterCursor) {
-					spaceNode.insertAfter(new TextNode(textAfterCursor));
-				}
-
-				spaceNode.select(1, 1);
-			});
-
-			setIsOpen(false);
-			isExplicitlyClosedRef.current = false;
-			triggerOffsetRef.current = null;
-		},
-		[editor],
-	);
-
-	/** Insert an arbitrary Lexical node in place of the trigger + query text */
-	const addNode = useCallback(
-		(nodeFactory: () => LexicalNode) => {
-			const triggerIdx = triggerOffsetRef.current;
-			if (triggerIdx === null) return;
-
-			editor.update(() => {
-				const node = nodeFactory();
-
-				const selection = $getSelection();
-				if (!$isRangeSelection(selection)) return;
-
-				const anchor = selection.anchor;
-				const anchorNode = anchor.getNode();
-				if (!$isTextNode(anchorNode)) return;
-
-				const textContent = anchorNode.getTextContent();
-				const textBeforeTrigger = textContent.slice(0, triggerIdx);
-				const textAfterCursor = textContent.slice(anchor.offset);
-
-				if (textBeforeTrigger) {
-					anchorNode.setTextContent(textBeforeTrigger);
-					anchorNode.insertAfter(node);
-				} else {
-					anchorNode.replace(node);
-				}
-
-				const spaceNode = new TextNode(" ");
-				node.insertAfter(spaceNode);
-
-				if (textAfterCursor) {
-					spaceNode.insertAfter(new TextNode(textAfterCursor));
-				}
-
-				spaceNode.select(1, 1);
-			});
-
-			setIsOpen(false);
-			isExplicitlyClosedRef.current = false;
-			triggerOffsetRef.current = null;
-		},
-		[editor],
-	);
 
 	/**
 	 * Replace the text between the trigger character and the cursor with
@@ -362,10 +262,7 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 				onAcceptRef.current?.(
 					queryRef.current,
 					selectedIndexRef.current,
-					addNode,
 				);
-				// addNode resets triggerOffsetRef, so handleRequestClose becomes
-				// a no-op when the caller inserted a node rather than just executing
 				handleRequestClose();
 				return true;
 			},
@@ -427,7 +324,7 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 			removeArrowUp();
 			removeEscape();
 		};
-	}, [editor, isOpen, handleRequestClose, replaceQuery, addNode]);
+	}, [editor, isOpen, handleRequestClose, replaceQuery]);
 
 	// closing from the menu keeps it closed until a new trigger is typed
 	const handleOpenChange = useCallback(
@@ -441,14 +338,12 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 	if (!isOpen || !menuPosition) return null;
 
 	return renderMenu({
-		isOpen: isOpen,
+		isOpen,
 		onOpenChange: handleOpenChange,
-		menuPosition: menuPosition,
-		addToken: addToken,
-		addNode: addNode,
+		menuPosition,
 		onRequestClose: handleRequestClose,
-		query: query,
-		selectedIndex: selectedIndex,
+		query,
+		selectedIndex,
 		onItemCountChange: handleItemCountChange,
 		onSelectedIndexChange: handleSelectedIndexChange,
 	});

@@ -308,7 +308,6 @@ export interface ThemeMap {
 			 *   "tour-input"       — the chat input step
 			 *   "tour-input-menu"  — the attach & configure step
 			 *   "tour-new-chat"    — the new chat sidebar button
-			 *   "tour-agents"      — the agents sidebar button
 			 * Steps not listed here are shown as normal.
 			 */
 			excludedSteps?: string[];
@@ -386,7 +385,7 @@ export interface ThemeMap {
 			enablePromptOptimizer?: boolean;
 			/** Whether to hide tools when the app is rendered inside an iframe. */
 			hideToolsInIframe?: boolean;
-			/** Whether to hide the chat-history list (sidebar and the "All Chats" page/nav link) so users cannot browse past conversations. */
+			/** Whether to hide the room history in the sidebar, so users cannot browse past conversations. */
 			hideChatHistory?: boolean;
 			/** Whether to run MakeEngineMCP after creating a new knowledge source. Defaults to true. */
 			enableKnowledgeMCP?: boolean;
@@ -396,7 +395,7 @@ export interface ThemeMap {
 			showActivityLog?: boolean;
 			/** Whether to show external links to the SEMOSS platform. Defaults to true. */
 			showPlatformLinks?: boolean;
-			/** Whether to show a text input for feedback comments when rating a response. Defaults to false. */
+			/** Whether to show a text input for feedback comments when rating a response. Defaults to true. */
 			enableFeedbackText?: boolean;
 			/** Whether to show an export button on tables rendered in chat responses. Defaults to false. */
 			enableTableExport?: boolean;

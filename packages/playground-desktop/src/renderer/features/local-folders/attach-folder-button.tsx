@@ -5,9 +5,11 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
+	toast,
 } from "@semoss/ui/next";
+import { getErrorMessage } from "@semoss/utility/error";
 import type { RoomLocalFoldersStore } from "./room-local-folders.store";
-import { useAttachLocalFolder } from "./use-attach-local-folder";
+import { useLocalFolders } from "./use-local-folders";
 
 /** Props for {@link AttachFolderButton}. */
 interface AttachFolderButtonProps {
@@ -29,8 +31,16 @@ export const AttachFolderButton = ({
 	isLabelled = false,
 }: AttachFolderButtonProps) => {
 	const { t } = useTranslation("desktop");
-	const { attach, isPicking } = useAttachLocalFolder(store);
-	const handleClick = () => attach?.();
+	const isPicking = useLocalFolders(store, (snapshot) => snapshot.isPicking);
+	const handleClick = () => {
+		store.attach().catch((error: unknown) => {
+			toast.error(
+				t("localFolders.attachFailed", {
+					message: getErrorMessage(error, ""),
+				}),
+			);
+		});
+	};
 	const label = t("localFolders.attach");
 
 	if (isLabelled) {

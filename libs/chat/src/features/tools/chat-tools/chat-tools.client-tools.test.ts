@@ -5,11 +5,6 @@ import type { ToolStore } from "../../room/store/tool.store";
 import { ChatTools } from "./chat-tools";
 import type { ClientTool, ToolsHost } from "./tools-host";
 
-vi.mock("@semoss/i18n", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@semoss/i18n")>()),
-	getI18n: () => ({ t: (key: string) => key }),
-}));
-
 /** A tool that has nothing to do with folders: it runs on its own. */
 const echoTool = (): ClientTool => ({
 	name: "host_echo",
@@ -58,7 +53,7 @@ const createRoom = (
 	const room = {
 		roomId: "room-1",
 		insightId: "insight-1",
-		mode: mode,
+		mode,
 		options: { mcp: [], defaultTools } as Record<string, unknown>,
 		toolsHost: host,
 		refreshWorkbenchFileExplorer: vi.fn(),
@@ -81,7 +76,7 @@ const pausedTool = (
 		editedArgs: null,
 	} as unknown as PendingAgentAction;
 	return {
-		room: room,
+		room,
 		json: {
 			name: `__room__${name}`,
 			_meta: { SMSS_FUNCTION_NAME: name, ...meta },
@@ -229,7 +224,7 @@ describe("ChatTools client tools", () => {
 		const call = (name: string) => ({
 			id: "call-1",
 			type: "function",
-			name: name,
+			name,
 			arguments: { text: "hi" },
 			_tool_found: false,
 			original_name: name,

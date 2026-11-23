@@ -37,7 +37,7 @@ export const createMemoryFileSource = (
 
 	return {
 		files: fileMap,
-		directories: directories,
+		directories,
 		capabilities: {
 			search: false,
 			mutate: true,

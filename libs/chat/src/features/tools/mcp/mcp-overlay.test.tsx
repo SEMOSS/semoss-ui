@@ -16,9 +16,6 @@ const read = vi.hoisted(() => ({
 	refresh: vi.fn(),
 	requested: [] as (string | null | undefined)[],
 }));
-vi.mock("@semoss/i18n", () => ({
-	useTranslation: () => ({ t: (key: string) => key }),
-}));
 vi.mock("../../chat/config/chat-config.context", async (original) => ({
 	...(await original<
 		typeof import("../../chat/config/chat-config.context")

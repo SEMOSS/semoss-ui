@@ -14,9 +14,6 @@ const run = vi.hoisted(() => vi.fn());
 vi.mock("@semoss/sdk/react", () => ({
 	useSessionInsight: () => ({ run }),
 }));
-vi.mock("@semoss/i18n", () => ({
-	useTranslation: () => ({ t: (key: string) => key }),
-}));
 vi.mock("../../chat/provider/chat-session.context", async (original) => ({
 	...(await original<
 		typeof import("../../chat/provider/chat-session.context")

@@ -4,10 +4,6 @@ import type { SlashCommandEntry } from "./slash-command-entry";
 import { filterSlashCommands, SlashCommandMenu } from "./slash-command-menu";
 import { SlashCommandsContext } from "./slash-command-registry.context";
 
-vi.mock("@semoss/i18n", () => ({
-	useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 /** A command with only what the menu reads. */
 const command = (
 	id: string,
@@ -15,9 +11,9 @@ const command = (
 	label: string,
 	extra: Partial<SlashCommandEntry> = {},
 ): SlashCommandEntry => ({
-	id: id,
-	group: group,
-	label: label,
+	id,
+	group,
+	label,
 	icon: null,
 	onExecute: vi.fn(),
 	...extra,

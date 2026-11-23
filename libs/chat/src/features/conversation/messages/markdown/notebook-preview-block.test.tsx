@@ -3,10 +3,6 @@ import { afterEach, expect, it, vi } from "vitest";
 import type { RoomStore } from "../../../room/store/room.store";
 import { NotebookPreviewBlock } from "./notebook-preview-block";
 
-vi.mock("@semoss/i18n", () => ({
-	useTranslation: () => ({ t: (key: string) => key }),
-}));
-
 // the notebook records the insight it is given; the editor is not under test
 vi.mock("@semoss/shared", async (original) => ({
 	...(await original<typeof import("@semoss/shared")>()),

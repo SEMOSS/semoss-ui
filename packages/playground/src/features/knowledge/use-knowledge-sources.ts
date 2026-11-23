@@ -78,8 +78,8 @@ export const useKnowledgeSources = (
 	}, [load, engineId]);
 
 	return {
-		sources: sources,
-		status: status,
+		sources,
+		status,
 		retry: () => load({ engineId: engineId }, false),
 		refresh: (tags) => load({ tags: tags }, true),
 	};

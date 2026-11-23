@@ -12,6 +12,7 @@ import {
 	TeamsFilesViewer,
 } from "@semoss/connectors";
 import type { WorkbenchPanelConfig } from "@semoss/workbench";
+import { ROOM_PANEL_TYPES } from "../../room/store/room-workbench-layout";
 import { ConnectorPanelIcon } from "./connector-panel-icon";
 import { getConnectorSource } from "./connector-sources";
 import { ConnectorViewerPanel } from "./connector-viewer-panel";
@@ -32,7 +33,7 @@ const createViewerPanel = (
 ): WorkbenchPanelConfig => {
 	const { brand, provider } = getConnectorSource(service);
 	return {
-		name: name,
+		name,
 		icon: ({ id, className }) => (
 			<ConnectorPanelIcon id={id} brand={brand} className={className} />
 		),
@@ -44,72 +45,59 @@ const createViewerPanel = (
 	};
 };
 
-/** The user's OneDrive. */
-export const ONEDRIVE_PANEL = createViewerPanel(
-	"onedrive",
-	(props) => <OneDriveViewer {...props} />,
-	"OneDrive",
-);
-
-/** The user's Outlook mail. */
-export const OUTLOOK_MAIL_PANEL = createViewerPanel(
-	"outlook-mail",
-	(props) => <MailboxView {...props} provider="microsoft" />,
-	"Outlook Mail",
-);
-
-/** The user's Outlook calendar. */
-export const OUTLOOK_CALENDAR_PANEL = createViewerPanel(
-	"outlook-calendar",
-	(props) => <CalendarAgendaView {...props} provider="microsoft" />,
-	"Outlook Calendar",
-);
-
-/** The user's Teams channels and their threads. */
-export const TEAMS_CHANNELS_PANEL = createViewerPanel(
-	"teams-channels",
-	(props) => <TeamsChannelViewer {...props} />,
-	"Teams channels",
-);
-
-/** The files shared in the user's Teams channels. */
-export const TEAMS_FILES_PANEL = createViewerPanel(
-	"teams-files",
-	(props) => <TeamsFilesViewer {...props} />,
-	"Teams files",
-);
-
-/** The user's Google Drive. */
-export const GOOGLE_DRIVE_PANEL = createViewerPanel(
-	"google-drive",
-	(props) => <GoogleDriveViewer {...props} />,
-	"Google Drive",
-);
-
-/** The user's Gmail. */
-export const GMAIL_PANEL = createViewerPanel(
-	"gmail",
-	(props) => <MailboxView {...props} provider="google" />,
-	"Gmail",
-);
-
-/** The user's Google Calendar. */
-export const GOOGLE_CALENDAR_PANEL = createViewerPanel(
-	"google-calendar",
-	(props) => <CalendarAgendaView {...props} provider="google" />,
-	"Google Calendar",
-);
-
-/** The user's Google Docs. */
-export const GOOGLE_DOCS_PANEL = createViewerPanel(
-	"google-docs",
-	(props) => <GoogleDocsViewer {...props} />,
-	"Google Docs",
-);
-
-/** The user's Teams chats. */
-export const TEAMS_CHATS_PANEL = createViewerPanel(
-	"teams-chats",
-	(props) => <TeamsChatViewer {...props} />,
-	"Teams chats",
-);
+/**
+ * Every connector viewer's blueprint, by the room panel type that opens it.
+ * Module scope matters: blueprint identity churn remounts panels.
+ */
+export const CONNECTOR_VIEWER_PANELS: Record<string, WorkbenchPanelConfig> = {
+	[ROOM_PANEL_TYPES.ONEDRIVE]: createViewerPanel(
+		"onedrive",
+		(props) => <OneDriveViewer {...props} />,
+		"OneDrive",
+	),
+	[ROOM_PANEL_TYPES.OUTLOOK_MAIL]: createViewerPanel(
+		"outlook-mail",
+		(props) => <MailboxView {...props} provider="microsoft" />,
+		"Outlook Mail",
+	),
+	[ROOM_PANEL_TYPES.OUTLOOK_CALENDAR]: createViewerPanel(
+		"outlook-calendar",
+		(props) => <CalendarAgendaView {...props} provider="microsoft" />,
+		"Outlook Calendar",
+	),
+	[ROOM_PANEL_TYPES.TEAMS_CHANNELS]: createViewerPanel(
+		"teams-channels",
+		(props) => <TeamsChannelViewer {...props} />,
+		"Teams channels",
+	),
+	[ROOM_PANEL_TYPES.TEAMS_FILES]: createViewerPanel(
+		"teams-files",
+		(props) => <TeamsFilesViewer {...props} />,
+		"Teams files",
+	),
+	[ROOM_PANEL_TYPES.TEAMS_CHATS]: createViewerPanel(
+		"teams-chats",
+		(props) => <TeamsChatViewer {...props} />,
+		"Teams chats",
+	),
+	[ROOM_PANEL_TYPES.GOOGLE_DRIVE]: createViewerPanel(
+		"google-drive",
+		(props) => <GoogleDriveViewer {...props} />,
+		"Google Drive",
+	),
+	[ROOM_PANEL_TYPES.GMAIL]: createViewerPanel(
+		"gmail",
+		(props) => <MailboxView {...props} provider="google" />,
+		"Gmail",
+	),
+	[ROOM_PANEL_TYPES.GOOGLE_CALENDAR]: createViewerPanel(
+		"google-calendar",
+		(props) => <CalendarAgendaView {...props} provider="google" />,
+		"Google Calendar",
+	),
+	[ROOM_PANEL_TYPES.GOOGLE_DOCS]: createViewerPanel(
+		"google-docs",
+		(props) => <GoogleDocsViewer {...props} />,
+		"Google Docs",
+	),
+};

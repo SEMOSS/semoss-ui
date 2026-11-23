@@ -13,10 +13,6 @@ import { ROOM_PANEL_TYPES } from "./room-workbench-layout";
 import { useRoomSelector } from "./use-room-selector";
 
 // a folder call's title is translated
-vi.mock("@semoss/i18n", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@semoss/i18n")>()),
-	getI18n: () => ({ t: (key: string) => key }),
-}));
 
 vi.mock("@semoss/sdk/react", () => ({
 	console: vi.fn(),
@@ -183,7 +179,7 @@ test("removing a child deletes its branch and the calls it made, and their views
 	root.addChild(input);
 	input.addChild(reply);
 	root.addChild(kept);
-	root.setActiveChildPosition(0);
+	input.activateMessage();
 	const tool = room.getTool("call-1");
 	const listener = vi.fn();
 	room.subscribe(listener);

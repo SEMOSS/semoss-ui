@@ -1,5 +1,14 @@
-import { type PlaygroundTheme, usePlaygroundServerTheme } from "@semoss/shared";
-import { ENV_THEME } from "./playground-theme";
+import {
+	type PlaygroundTheme,
+	readPlaygroundBuildTheme,
+	usePlaygroundServerTheme,
+} from "@semoss/shared";
+
+/**
+ * The build's theme, read once from the playground's `.env` (`VITE_NAME`,
+ * `VITE_THEME`): the base the server's theme is laid over.
+ */
+const ENV_THEME = readPlaygroundBuildTheme(import.meta.env);
 
 /**
  * Read the playground theme: the server's `THEME_MAP` `playground` entry over

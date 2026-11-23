@@ -105,7 +105,7 @@ const createMemoryFolder = (
 			}
 			if (fileMap.has(path)) {
 				return {
-					path: path,
+					path,
 					name: getFolderPathName(path),
 					kind: "file",
 					size: fileMap.get(path)?.length,
@@ -113,7 +113,7 @@ const createMemoryFolder = (
 			}
 			if (directorySet.has(path)) {
 				return {
-					path: path,
+					path,
 					name: getFolderPathName(path),
 					kind: "directory",
 				};

@@ -20,15 +20,16 @@ import { decodeBase64ToBytes } from "@semoss/utility/encoding";
 import { getErrorMessage } from "@semoss/utility/error";
 import { useChatConfig } from "../../chat/config/chat-config.context";
 import { MESSAGE_ACTION_IDS } from "../../chat/config/chat-options";
+import { DownloadDialog } from "../../room/actions/download-dialog";
 import { InputMessageStore } from "../../room/store/input-message.store";
 import type { ResponseMessageStore } from "../../room/store/response-message.store";
 import type { RoomStore } from "../../room/store/room.store";
 import { STREAMING_PLACEHOLDER_ID } from "../../room/store/room-placeholders";
 import { useMessage } from "../../room/store/use-message";
 import { useRoomSelector } from "../../room/store/use-room-selector";
+import { TooltipButton } from "../tooltip-button";
 import { MessageActions } from "./message-actions";
 import { ResponseBranchNav } from "./response-branch-nav";
-import { ResponseDownloadDialog } from "./response-download-dialog";
 import { ResponseFeedbackDialog } from "./response-feedback-dialog";
 import { ResponseMessageMedia } from "./response-message-media";
 import { ResponseMessageSubagent } from "./response-message-subagent";
@@ -349,24 +350,19 @@ export const ResponseMessage = ({
 				}
 			>
 				{shownActions.has("rewrite") && hasParentContent && (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								disabled={isMessageThinking || !canRewrite}
-								variant="ghost"
-								size="icon-sm"
-								aria-label={t("response.rewriteMessage")}
-								onClick={() => {
-									handleRewrite();
-								}}
-							>
-								<RefreshCwIcon aria-hidden="true" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent side="bottom">
-							{t("response.rewriteMessage")}
-						</TooltipContent>
-					</Tooltip>
+					<TooltipButton
+						disabled={isMessageThinking || !canRewrite}
+						variant="ghost"
+						size="icon-sm"
+						aria-label={t("response.rewriteMessage")}
+						onClick={() => {
+							handleRewrite();
+						}}
+						tooltip={t("response.rewriteMessage")}
+						tooltipSide="bottom"
+					>
+						<RefreshCwIcon aria-hidden="true" />
+					</TooltipButton>
 				)}
 
 				{shownActions.has("feedback") &&
@@ -402,71 +398,54 @@ export const ResponseMessage = ({
 					))}
 
 				{shownActions.has("copy") && hasImage && (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon-sm"
-								aria-label={t("response.copyImage")}
-								disabled={isMessageThinking}
-								onClick={handleCopyImage}
-							>
-								<CopyIcon aria-hidden="true" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent side="bottom">
-							{t("response.copyImage")}
-						</TooltipContent>
-					</Tooltip>
+					<TooltipButton
+						variant="ghost"
+						size="icon-sm"
+						aria-label={t("response.copyImage")}
+						disabled={isMessageThinking}
+						onClick={handleCopyImage}
+						tooltip={t("response.copyImage")}
+						tooltipSide="bottom"
+					>
+						<CopyIcon aria-hidden="true" />
+					</TooltipButton>
 				)}
 
 				{hasText && (
 					<>
 						{shownActions.has("copy") && (
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Button
-										variant="ghost"
-										size="icon-sm"
-										aria-label={t("response.copyResponse")}
-										disabled={
-											isMessageThinking ||
-											parts.length === 0
-										}
-										onClick={handleCopyText}
-									>
-										<CopyIcon aria-hidden="true" />
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent side="bottom">
-									{t("response.copyResponse")}
-								</TooltipContent>
-							</Tooltip>
+							<TooltipButton
+								variant="ghost"
+								size="icon-sm"
+								aria-label={t("response.copyResponse")}
+								disabled={
+									isMessageThinking || parts.length === 0
+								}
+								onClick={handleCopyText}
+								tooltip={t("response.copyResponse")}
+								tooltipSide="bottom"
+							>
+								<CopyIcon aria-hidden="true" />
+							</TooltipButton>
 						)}
 						{shownActions.has("download") && (
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Button
-										variant="ghost"
-										size="icon-sm"
-										aria-label={t("download.title")}
-										disabled={
-											isMessageThinking ||
-											parts.length === 0
-										}
-										onClick={(event) => {
-											actionTriggerRef.current =
-												event.currentTarget;
-											setIsDownloadDialogOpen(true);
-										}}
-									>
-										<DownloadIcon aria-hidden="true" />
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent side="bottom">
-									{t("download.title")}
-								</TooltipContent>
-							</Tooltip>
+							<TooltipButton
+								variant="ghost"
+								size="icon-sm"
+								aria-label={t("download.title")}
+								disabled={
+									isMessageThinking || parts.length === 0
+								}
+								onClick={(event) => {
+									actionTriggerRef.current =
+										event.currentTarget;
+									setIsDownloadDialogOpen(true);
+								}}
+								tooltip={t("download.title")}
+								tooltipSide="bottom"
+							>
+								<DownloadIcon aria-hidden="true" />
+							</TooltipButton>
 						)}
 					</>
 				)}
@@ -483,10 +462,11 @@ export const ResponseMessage = ({
 				/>
 			)}
 
-			<ResponseDownloadDialog
-				message={message}
+			<DownloadDialog
+				ns="chat"
 				open={isDownloadDialogOpen}
 				onOpenChange={setIsDownloadDialogOpen}
+				onDownload={message.downloadResponse}
 				returnFocusRef={actionTriggerRef}
 			/>
 		</div>

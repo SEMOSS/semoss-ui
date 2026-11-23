@@ -22,14 +22,12 @@ import {
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import { copyTextToClipboard } from "@semoss/utility/clipboard";
 import type { RoomStore } from "../../../room/store/room.store";
 import { NEW_INSIGHT_ID } from "../../../room/store/room-placeholders";
+import { TooltipButton } from "../../tooltip-button";
 import { BlockHeader } from "./block-header";
 import { SaveFileDialog } from "./save-file-dialog";
 
@@ -111,61 +109,49 @@ export const NotebookPreviewBlock = ({
 					isCollapseDisabled={!content}
 				>
 					{isRunning ? (
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									className="-my-1 h-6 px-2 text-destructive text-xs hover:text-destructive"
-									variant="ghost"
-									size="sm"
-									aria-label={
-										notebookState.runProgress
-											? t(
-													"blocks.stopProgress",
-													notebookState.runProgress,
-												)
-											: t("blocks.stop")
-									}
-									onClick={() =>
-										void notebookRef.current?.interrupt()
-									}
-								>
-									<SquareIcon className="size-3" />{" "}
-									{t("blocks.stop")}
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent side="bottom">
-								{notebookState.runProgress
+						<TooltipButton
+							className="-my-1 h-6 px-2 text-destructive text-xs hover:text-destructive"
+							variant="ghost"
+							size="sm"
+							aria-label={
+								notebookState.runProgress
 									? t(
 											"blocks.stopProgress",
 											notebookState.runProgress,
 										)
-									: t("blocks.stop")}
-							</TooltipContent>
-						</Tooltip>
+									: t("blocks.stop")
+							}
+							onClick={() =>
+								void notebookRef.current?.interrupt()
+							}
+							tooltip={
+								notebookState.runProgress
+									? t(
+											"blocks.stopProgress",
+											notebookState.runProgress,
+										)
+									: t("blocks.stop")
+							}
+							tooltipSide="bottom"
+						>
+							<SquareIcon className="size-3" /> {t("blocks.stop")}
+						</TooltipButton>
 					) : (
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
-									variant="ghost"
-									size="sm"
-									disabled={
-										!shouldShowNotebook ||
-										!notebookState.hasCodeCells
-									}
-									aria-label={t("blocks.runAll")}
-									onClick={() =>
-										void notebookRef.current?.runAll()
-									}
-								>
-									<PlayIcon className="size-3" />{" "}
-									{t("blocks.run")}
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent side="bottom">
-								{t("blocks.runAll")}
-							</TooltipContent>
-						</Tooltip>
+						<TooltipButton
+							className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
+							variant="ghost"
+							size="sm"
+							disabled={
+								!shouldShowNotebook ||
+								!notebookState.hasCodeCells
+							}
+							aria-label={t("blocks.runAll")}
+							onClick={() => void notebookRef.current?.runAll()}
+							tooltip={t("blocks.runAll")}
+							tooltipSide="bottom"
+						>
+							<PlayIcon className="size-3" /> {t("blocks.run")}
+						</TooltipButton>
 					)}
 
 					<Button
@@ -182,65 +168,50 @@ export const NotebookPreviewBlock = ({
 						)}
 						{isRaw ? t("blocks.notebook") : t("blocks.edit")}
 					</Button>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
-								variant="ghost"
-								size="sm"
-								disabled={!content}
-								aria-label={t("blocks.copyNotebook")}
-								onClick={() =>
-									void copyTextToClipboard(content, {
-										onSuccess: () =>
-											toast.success(
-												t("notifications.copySuccess"),
-											),
-										onError: (msg) => toast.error(msg),
-									})
-								}
-							>
-								<CopyIcon className="size-3" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent side="bottom">
-							{t("response.copy")}
-						</TooltipContent>
-					</Tooltip>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
-								variant="ghost"
-								size="sm"
-								disabled={!isValidNotebook || !room}
-								aria-label={t("blocks.saveNotebookToRoom")}
-								onClick={handleOpenSaveDialog}
-							>
-								<SaveIcon className="size-3" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent side="bottom">
-							{t("common:buttons.save")}
-						</TooltipContent>
-					</Tooltip>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
-								variant="ghost"
-								size="sm"
-								disabled={!content}
-								aria-label={t("response.fullView")}
-								onClick={() => setIsFullViewOpen(true)}
-							>
-								<ExpandIcon className="size-3" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent side="bottom">
-							{t("response.fullView")}
-						</TooltipContent>
-					</Tooltip>
+					<TooltipButton
+						className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
+						variant="ghost"
+						size="sm"
+						disabled={!content}
+						aria-label={t("blocks.copyNotebook")}
+						onClick={() =>
+							void copyTextToClipboard(content, {
+								onSuccess: () =>
+									toast.success(
+										t("notifications.copySuccess"),
+									),
+								onError: (msg) => toast.error(msg),
+							})
+						}
+						tooltip={t("response.copy")}
+						tooltipSide="bottom"
+					>
+						<CopyIcon className="size-3" />
+					</TooltipButton>
+					<TooltipButton
+						className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
+						variant="ghost"
+						size="sm"
+						disabled={!isValidNotebook || !room}
+						aria-label={t("blocks.saveNotebookToRoom")}
+						onClick={handleOpenSaveDialog}
+						tooltip={t("common:buttons.save")}
+						tooltipSide="bottom"
+					>
+						<SaveIcon className="size-3" />
+					</TooltipButton>
+					<TooltipButton
+						className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
+						variant="ghost"
+						size="sm"
+						disabled={!content}
+						aria-label={t("response.fullView")}
+						onClick={() => setIsFullViewOpen(true)}
+						tooltip={t("response.fullView")}
+						tooltipSide="bottom"
+					>
+						<ExpandIcon className="size-3" />
+					</TooltipButton>
 				</BlockHeader>
 				{!isCollapsed &&
 					(shouldShowNotebook ? (

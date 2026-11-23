@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import { useTranslation } from "@semoss/i18n";
 import type { RoomStore } from "../../../room/store/room.store";
 import type { ChunkStatus } from "../use-active-index";
 import { HtmlPreviewBlock } from "./html-preview-block";
@@ -28,8 +27,6 @@ interface ResponseMessageTextHtmlProps {
 export const ResponseMessageTextHtml: React.FC<
 	ResponseMessageTextHtmlProps
 > = ({ html, status, room, onComplete }) => {
-	const { t } = useTranslation("chat");
-
 	// Advance the queue as soon as this chunk becomes done.
 	// The parent flips status from "active" → "done" once the closing fence
 	// is detected and the next chunk exists (or streaming has ended).
@@ -50,8 +47,6 @@ export const ResponseMessageTextHtml: React.FC<
 			html={html}
 			room={room}
 			isLoading={status === "active"}
-			copyTooltip="Copy"
-			copySuccessMessage={t("notifications.copySuccess")}
 		/>
 	);
 };

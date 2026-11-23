@@ -1,11 +1,13 @@
-import type { AgentModePolicy, ChatOptions } from "@semoss/chat";
-import type { PlaygroundBuildNewChat, PlaygroundTheme } from "@semoss/shared";
+import { createMcpPlatformUrl } from "../components/mcp/mcp-utils";
+import type { PlaygroundBuildNewChat } from "./playground-build-env";
+import type { PlaygroundTheme } from "./playground-theme";
 
-/** The part of the chat's options the desktop reads from the server's theme. */
-export type ThemeChatOptions = Omit<
-	ChatOptions,
-	"roomHref" | "agentHref" | "platformUrl" | "toolFrameOrigin"
->;
+/** How a new chat's mode is chosen (`AgentModePolicy` in `@semoss/chat`). */
+export type PlaygroundAgentMode =
+	| "chat-only"
+	| "choice"
+	| "follows-agent"
+	| "agent-only";
 
 /**
  * How the theme's flags choose a new chat's mode: `agentModeOnly` wins, then
@@ -16,7 +18,7 @@ export type ThemeChatOptions = Omit<
  */
 const readAgentMode = (
 	flags: PlaygroundTheme["featureFlags"],
-): AgentModePolicy => {
+): PlaygroundAgentMode => {
 	if (flags?.agentModeOnly) return "agent-only";
 	if (flags?.modeFollowsAgent) return "follows-agent";
 	if (flags?.enableAgentHarness) return "choice";
@@ -24,18 +26,22 @@ const readAgentMode = (
 };
 
 /**
- * The playground theme as the chat's options: its feature flags, defaults,
- * and limits, with the build's new-chat defaults under the theme's.
+ * The playground theme as the chat's options (`ChatOptions` in
+ * `@semoss/chat`, which this package cannot import): its feature flags,
+ * defaults, and limits, with the build's new-chat defaults under the theme's.
+ * Each app spreads it into its own options beside its routes.
  *
- * @param theme - The server's playground theme over the build's, with every
- * default filled in.
- * @param build - The build's new-chat defaults, from the playground's `.env`.
- * @returns The options; the desktop adds its routes and origins.
+ * @param theme - The playground theme, with every default filled in.
+ * @param build - The build's new-chat defaults, from its `.env`.
+ * @param platformUrl - Where the platform app is served; the catalog
+ * pickers link there where the theme shows platform links.
+ * @returns The options; the app adds its routes and URLs.
  */
-export const themeToChatOptions = (
+export const playgroundThemeChatOptions = (
 	theme: PlaygroundTheme,
 	build: PlaygroundBuildNewChat = {},
-): ThemeChatOptions => {
+	platformUrl?: string,
+) => {
 	const flags = theme.featureFlags;
 	const settings = theme.defaultRoomSettings;
 	return {
@@ -58,8 +64,8 @@ export const themeToChatOptions = (
 		isTableExportable: !!flags?.enableTableExport,
 		hasFeedbackComment: !!flags?.enableFeedbackText,
 		hasSystemCatalogItems: flags?.showSystemTools ?? true,
-		shouldMakeKnowledgeMcp: flags?.enableKnowledgeMCP ?? true,
-		isEmbedderSelectable: flags?.allowEmbeddingOptions ?? true,
+		shouldMakeKnowledgeMcp: !!flags?.enableKnowledgeMCP,
+		isEmbedderSelectable: !!flags?.allowEmbeddingOptions,
 		defaultEmbedderId: theme.defaultEmbedderId,
 		allowedFileTypes: theme.allowedFileTypes,
 		fileDragDisclaimer: theme.fileDragDisclaimer,
@@ -69,10 +75,16 @@ export const themeToChatOptions = (
 		gracefulErrors: theme.gracefulErrors,
 		// with no room list there is nothing to favorite into
 		roomActions: flags?.hideChatHistory
-			? (actions) => actions.filter((id) => id !== "favorite")
+			? <T extends string>(actions: readonly T[]) =>
+					actions.filter((id) => id !== "favorite")
 			: undefined,
 		messageActions: flags?.enableRewrite
 			? undefined
-			: (actions) => actions.filter((id) => id !== "rewrite"),
+			: <T extends string>(actions: readonly T[]) =>
+					actions.filter((id) => id !== "rewrite"),
+		catalogItemHref:
+			platformUrl !== undefined && flags?.showPlatformLinks
+				? createMcpPlatformUrl(platformUrl)
+				: undefined,
 	};
 };
