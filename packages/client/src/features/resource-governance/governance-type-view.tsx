@@ -16,9 +16,12 @@ const BOTH_PANELS_QUERY = "(min-width: 1024px)";
 /**
  * The list beside the details, from the width both panels show at. The page
  * scrolls, so the details have all its height once the header scrolls away.
+ * The details column takes only the width beside the list, so a wide table
+ * in it, such as the audit trail, scrolls sideways in its own region and the
+ * page never does.
  */
 export const GOVERNANCE_COLUMNS_CLASS =
-	"flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(300px,380px)_1fr] lg:items-start";
+	"flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(300px,380px)_minmax(0,1fr)] lg:items-start";
 
 /**
  * A panel as tall as the page below the navbar that stays in view while the
@@ -124,7 +127,7 @@ export const GovernanceTypeView = ({
 			</div>
 			<div
 				className={cn(
-					"flex-col gap-2 lg:min-h-[calc(100dvh-5.5rem)]",
+					"min-w-0 flex-col gap-2 lg:min-h-[calc(100dvh-5.5rem)]",
 					resourceId ? "flex" : "hidden lg:flex",
 				)}
 			>

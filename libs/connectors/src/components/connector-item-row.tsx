@@ -13,14 +13,17 @@ const ROW_CONTENT_CLASS =
 export interface ConnectorItemRowProps {
 	/** Identifies the item, so focus can return to its row. */
 	itemKey: string;
-	/** The item's icon, drawn at the start of the row. */
+	/**
+	 * The item's icon, drawn at the start of the row at its own size: a small
+	 * glyph, or an avatar, which makes the row as tall as it is.
+	 */
 	icon: ReactNode;
 	/** The item's name or subject. */
 	title: string;
 	/** A second line, such as the sender or the folder's size. */
 	description?: string;
-	/** A short detail at the end, such as a date. */
-	meta?: string;
+	/** A short detail at the end, such as a date, with a small icon before it when it has one. */
+	meta?: ReactNode;
 	/** Marks the item as new, as for unread mail. */
 	isEmphasized?: boolean;
 	/**
@@ -65,7 +68,7 @@ export const ConnectorItemRow = ({
 	// the trailing action share a centerline in both one- and two-line rows.
 	const content = (
 		<>
-			<span className="flex size-4 shrink-0 items-center justify-center text-muted-foreground">
+			<span className="flex min-h-4 min-w-4 shrink-0 items-center justify-center text-muted-foreground">
 				{icon}
 			</span>
 			<span className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -100,7 +103,7 @@ export const ConnectorItemRow = ({
 			{meta ? (
 				<span
 					className={cn(
-						"shrink-0 text-end text-xs tabular-nums",
+						"flex shrink-0 items-center gap-1 text-end text-xs tabular-nums",
 						detailColor,
 					)}
 				>

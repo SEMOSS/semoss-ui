@@ -92,9 +92,8 @@ export function TwinSkillCreate({ disabled, onCreated }: TwinSkillCreateProps) {
 				<DialogHeader>
 					<DialogTitle>Create skill</DialogTitle>
 					<DialogDescription>
-						Save reusable instructions to your skill catalog. The
-						skill is selected for your twin and applied when you
-						save or create it.
+						Add reusable instructions to your skill catalog and
+						select the new skill for this twin.
 					</DialogDescription>
 				</DialogHeader>
 				<Form
@@ -113,7 +112,7 @@ export function TwinSkillCreate({ disabled, onCreated }: TwinSkillCreateProps) {
 					<FormTextarea
 						name="description"
 						label="Description (required)"
-						description="When your twin should use this skill."
+						description="When this twin should use this skill."
 						required
 						rows={2}
 						disabled={isSubmitting}
@@ -121,7 +120,7 @@ export function TwinSkillCreate({ disabled, onCreated }: TwinSkillCreateProps) {
 					<FormTextarea
 						name="content"
 						label="Skill instructions (required)"
-						description="Write the instructions your twin should follow. Markdown is supported."
+						description="Write the instructions this twin should follow. Markdown is supported."
 						required
 						rows={10}
 						disabled={isSubmitting}

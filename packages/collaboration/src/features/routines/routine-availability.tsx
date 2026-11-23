@@ -34,7 +34,7 @@ export function RoutineAvailability({
 								/\bBrain\b/g,
 								"Settings",
 							) ||
-								"Your inbox connection, scheduler, or assistant is unavailable. Check your connection or contact your administrator."}
+								"Your inbox connection, scheduler, or Collaboration model is unavailable. Check your connection or contact your administrator."}
 							{!routine.mailboxAvailable && (
 								<Button
 									asChild

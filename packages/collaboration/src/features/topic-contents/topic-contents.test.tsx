@@ -71,7 +71,7 @@ function setup(path = `/topics/${TOPIC}/contents`, isSample = false) {
 }
 
 const rail = () => screen.getByRole("navigation", { name: "What to list" });
-// two groups each have an Assistant chats entry: the topic's own, and all of them
+// two groups each have a Digital Twin Chats entry: the topic's own, and all of them
 const group = (name: string) => within(rail()).getByRole("region", { name });
 
 beforeEach(() => {
@@ -149,16 +149,16 @@ it("keeps the two kinds of chat apart, each under its own name and above the fol
 			.map((button) => button.textContent),
 	).toEqual([
 		`Teams chats${teams}`,
-		"Assistant chats",
+		"Digital Twin Chats",
 		expect.stringMatching(/^No topic yet/),
 		expect.stringMatching(/^Everything Brain has read/),
 		"OneDrive",
 		"Teams files",
 	]);
-	// the topic's own assistant chats are a list of their own
+	// the topic's own Digital Twin chats are a list of their own
 	expect(
 		within(group("In this topic")).getByRole("button", {
-			name: "Assistant chats",
+			name: "Digital Twin Chats",
 		}),
 	).toBeVisible();
 });
@@ -223,7 +223,7 @@ it("lists a nested folder by its path, and keeps the place in the address withou
 
 	await user.click(
 		within(group("Add from")).getByRole("button", {
-			name: "Assistant chats",
+			name: "Digital Twin Chats",
 		}),
 	);
 	expect(screen.getByText("Chats: all")).toBeVisible();
@@ -369,7 +369,7 @@ it("offers a sample topic only what Brain has read: no mailbox, no chats and no 
 		within(rail()).queryByRole("tree", { name: "Outlook folders" }),
 	).not.toBeInTheDocument();
 	expect(
-		within(rail()).queryByRole("button", { name: "Assistant chats" }),
+		within(rail()).queryByRole("button", { name: "Digital Twin Chats" }),
 	).not.toBeInTheDocument();
 	// the place it cannot show falls back to the threads with no topic
 	expect(screen.queryByText("Chats: all")).not.toBeInTheDocument();

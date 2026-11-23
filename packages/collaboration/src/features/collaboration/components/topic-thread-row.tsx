@@ -12,21 +12,19 @@ import {
 import { threadPath } from "@/lib/workspace-paths";
 import { channelMeta } from "../channel-meta";
 import { dateLabel } from "../date-label";
-import type { Thread, WorkItem } from "../state/collaboration.types";
+import type { Thread } from "../state/collaboration.types";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { resumeThread } from "../work-item-actions";
 import { PersonAvatar } from "./person-avatar";
 import { ThreadMenu } from "./thread-menu";
 
-/** A topic's source thread, with its feed status and existing thread controls. */
+/** A topic's source thread, with its existing thread controls. */
 export function TopicThreadRow({
 	thread,
 	topicId,
-	items,
 }: {
 	thread: Thread;
 	topicId: string;
-	items: WorkItem[];
 }) {
 	const { state, dispatch } = useCollaborationSession();
 	const meta = channelMeta(thread.channel);
@@ -73,7 +71,7 @@ export function TopicThreadRow({
 									to={threadPath(thread.id)}
 									title={
 										topicLink?.primary
-											? `${thread.subject} · main topic`
+											? `${thread.subject} \u00b7 main topic`
 											: thread.subject
 									}
 								>
@@ -91,18 +89,6 @@ export function TopicThreadRow({
 									</Small>
 								)}
 
-								{items.length > 0 && (
-									<Badge
-										variant="secondary"
-										className="border-0 bg-primary/10 text-primary dark:text-foreground"
-									>
-										{items.some(
-											(item) => item.status === "open",
-										)
-											? "Open action"
-											: "Waiting"}
-									</Badge>
-								)}
 								{topicLink?.source === "suggested" && (
 									<Badge variant="outline">
 										Suggested topic

@@ -24,17 +24,21 @@ import {
 	type TwinSourceId,
 	twinSourceKind,
 } from "./twin-sources";
+import {
+	attachmentsSummary,
+	useTwinMailAttachments,
+} from "./use-twin-mail-attachments";
 
 // the two places that are not one of the owner's Microsoft 365 apps
 const CHOSEN = {
 	label: "What you chose",
 	description:
-		"Copies of these go into your Digital Twin when it is created. Until then they wait here, and you can take any of them back out.",
+		"Copies of these go into the new twin when it is created. Until then they wait here, and you can take any of them back out.",
 };
 const UPLOAD = {
 	label: "Your computer",
 	description:
-		"Files from this computer, such as a project plan or a slide deck. They are added to your Digital Twin as they are.",
+		"Files from this computer, such as a project plan or a slide deck. They are added to the new twin as they are.",
 };
 const isSource = (place: string): place is TwinSourceId =>
 	place in TWIN_SOURCES;
@@ -54,7 +58,8 @@ interface TwinKnowledgeStepProps {
  * from, a search that suggests what to pick from a description, and the list
  * of what was picked. There is no twin yet to copy into, so each pick only
  * waits in the page's files for the create that copies it, marked in the list
- * it was picked from until it is taken back out.
+ * it was picked from until it is taken back out. After an email, its
+ * attachments can be chosen in one go.
  */
 export function TwinKnowledgeStep({
 	items,
@@ -66,12 +71,35 @@ export function TwinKnowledgeStep({
 	const [place, setPlace] = useState("outlook");
 	const [isUploading, setIsUploading] = useState(false);
 	const [status, setStatus] = useState("");
+	// the emails chosen here, whose attachments can be chosen too
+	const attachments = useTwinMailAttachments();
 
 	const handleAdd = (source: TwinSource): void => {
 		onAdd(source);
+		attachments.offer(source);
 		setStatus(
-			`Chose "${source.name}". It is added when your Digital Twin is created.`,
+			`Chose "${source.name}". It is added when the new twin is created.`,
 		);
+	};
+	const handleAddAttachments = async (): Promise<void> => {
+		setStatus("Looking for attachments…");
+		try {
+			const found = await attachments.save();
+			for (const file of found.saved) onAdd(file);
+			setStatus(
+				attachmentsSummary(
+					found.saved.length,
+					found.skipped,
+					(what) =>
+						`Chose ${what}. They are added when the new twin is created.`,
+				),
+			);
+		} catch (cause) {
+			setStatus("The attachments were not chosen.");
+			toast.error("Could not take the attachments.", {
+				description: cause instanceof Error ? cause.message : undefined,
+			});
+		}
 	};
 	const handleUpload = async (files: File[]): Promise<void> => {
 		setIsUploading(true);
@@ -90,7 +118,7 @@ export function TwinKnowledgeStep({
 
 	const groups: TopicPlaceGroup[] = [
 		{
-			title: "For your twin",
+			title: "For This Twin",
 			places: [
 				{
 					id: "chosen",
@@ -124,7 +152,7 @@ export function TwinKnowledgeStep({
 	const savedItems = {
 		isSaved: (itemKey: string) =>
 			items.some((item) => item.itemKey === itemKey),
-		label: "Chosen for your Digital Twin",
+		label: "Chosen for This Twin",
 	};
 	return (
 		<div className="flex min-w-0 flex-col overflow-hidden rounded-lg border md:h-128 md:flex-row">
@@ -240,19 +268,39 @@ export function TwinKnowledgeStep({
 					) : (
 						<P className="p-4 text-muted-foreground text-sm">
 							Nothing chosen yet. Pick a place under Add from,
-							then save the emails, Teams chats and files your
-							Digital Twin should answer from. You can also skip
-							this and add them after it is created.
+							then save the emails, Teams chats and files the new
+							twin should answer from. You can also skip this and
+							add them after it is created.
 						</P>
 					)}
 				</div>
-				{/* always there, so the first pick does not move the list; the count beside What you chose changes with it */}
-				<output className="wrap-anywhere line-clamp-2 shrink-0 border-t px-4 py-2 text-muted-foreground text-sm">
-					{status ||
-						(isFinding
-							? "Add a suggestion to choose it for your Digital Twin."
-							: "Save an item to choose it for your Digital Twin.")}
-				</output>
+				{/* always there and tall enough for its button, so neither the first pick nor the offer moves the list; the count beside What you chose changes with it */}
+				<div className="flex min-h-12 shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-t px-4 py-2">
+					{/* wide enough to read before the button is let onto its line */}
+					<output className="wrap-anywhere line-clamp-2 min-w-0 flex-1 basis-48 text-muted-foreground text-sm">
+						{status ||
+							(isFinding
+								? "Add a suggestion to choose it for the new twin."
+								: "Save an item to choose it for the new twin.")}
+					</output>
+					{attachments.pending > 0 && (
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							className="pointer-coarse:min-h-11 shrink-0"
+							disabled={attachments.isSaving}
+							onClick={() => void handleAddAttachments()}
+						>
+							{attachments.isSaving && (
+								<Spinner aria-hidden="true" />
+							)}
+							{attachments.pending === 1
+								? "Add the email's attachments"
+								: `Add the attachments of ${attachments.pending} emails`}
+						</Button>
+					)}
+				</div>
 			</section>
 		</div>
 	);

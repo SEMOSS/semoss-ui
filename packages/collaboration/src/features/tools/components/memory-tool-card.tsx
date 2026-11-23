@@ -162,14 +162,14 @@ export function MemoryToolCard({
 			const out = await resolveMemoryNow(actions, memory.id, "confirm");
 			if (out.memory)
 				dispatch?.({ type: "memory.server", memories: [out.memory] });
-			return "Confirmed. The assistant can act on it.";
+			return "Confirmed. Your Digital Twin can act on it.";
 		});
 	const restore = () =>
 		run(async () => {
 			const out = await resolveMemoryNow(actions, memory.id, "restore");
 			if (out.memory)
 				dispatch?.({ type: "memory.server", memories: [out.memory] });
-			return "Kept. The assistant remembers it again.";
+			return "Kept. Your Digital Twin remembers it again.";
 		});
 	const apply = () =>
 		run(async () => {
@@ -237,7 +237,7 @@ export function MemoryToolCard({
 				<Muted className="block break-words text-xs">
 					{proposed
 						? `You wrote: ${memory.text}`
-						: "You wrote this memory, so the assistant asks first."}
+						: "You wrote this memory, so you are asked first."}
 				</Muted>
 			)}
 			{status === "undone_here" && (

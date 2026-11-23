@@ -5,6 +5,7 @@ export interface CollaborationToolDefinition {
 	title: string;
 	family:
 		| "calendar"
+		| "people"
 		| "topics"
 		| "mail"
 		| "teams"
@@ -18,6 +19,7 @@ export interface CollaborationToolDefinition {
 
 /** The dedicated tools, including ones available only to routines or the owner's chat. */
 export const COLLABORATION_TOOL_VIEWS = {
+	ShowOrgChart: { title: "Org Chart", family: "people" },
 	ListCalendars: {
 		title: "Calendars",
 		family: "calendar",
@@ -128,6 +130,11 @@ export const COLLABORATION_TOOL_VIEWS = {
 	DownloadDriveFile: { title: "File download", family: "files" },
 	CreateDriveFolder: { title: "Create a OneDrive folder", family: "files" },
 	UploadDriveFile: { title: "Upload a file to OneDrive", family: "files" },
+	// a Digital Twin's alone, in the chat its owner has with it
+	SaveToDigitalTwin: {
+		title: "Add a File to This Twin",
+		family: "files",
+	},
 	Remember: { title: "Remember a detail", family: "memory" },
 	Forget: { title: "Forget a memory", family: "memory" },
 	SearchMemories: {
@@ -153,7 +160,7 @@ export const COLLABORATION_TOOL_VIEWS = {
 	},
 	OpenSkill: { title: "Skill instructions", family: "skills" },
 	PublishSkill: { title: "Publish a skill", family: "skills" },
-	UseSkillInAssistant: { title: "Assistant skills", family: "skills" },
+	UseSkillInAssistant: { title: "Digital Twin Skills", family: "skills" },
 	DeleteMySkill: { title: "Delete a skill", family: "skills" },
 } satisfies Record<string, CollaborationToolDefinition>;
 

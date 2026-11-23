@@ -17,6 +17,10 @@ describe("collaboration routes", () => {
 		["/topics/client/unsupported", "not-found"],
 		["/twins/someone", "not-found"],
 		["/twins/mine/unsupported", "not-found"],
+		["/twins/persona/unsupported", "not-found"],
+		["/twins/persona/interview/unsupported", "not-found"],
+		["/persona/unsupported", "not-found"],
+		["/persona/interview/unsupported", "not-found"],
 		["/unknown", "not-found"],
 		["/new", "not-found"],
 		["/settings/unknown", "not-found"],
@@ -36,6 +40,10 @@ describe("collaboration routes", () => {
 		["/twins/mine", "twins/mine"],
 		["/twins/mine/contents", "twins/mine/contents"],
 		["/twins/chat", "twins/chat"],
+		["/twins/persona", "twins/persona"],
+		["/twins/persona/interview", "twins/persona/interview"],
+		["/persona", "persona"],
+		["/persona/interview", "persona/interview"],
 		["/work/all", "work/all"],
 		["/work/waiting", "work/waiting"],
 		["/work/done", "work/done"],
@@ -67,6 +75,8 @@ describe("collaboration routes", () => {
 		["/settings", "/settings/about-you"],
 		["/settings/dashboard", "/settings/about-you"],
 		["/brain/profile", "/settings/about-you"],
+		// Settings no longer lists topics; the sidebar's Topics page does
+		["/brain/topics", "/work/topics"],
 	])("redirects obsolete entry %s to %s", (path, destination) => {
 		const element = leafRoute(path)?.element;
 		expect(isValidElement(element)).toBe(true);
@@ -86,6 +96,10 @@ describe("collaboration routes", () => {
 		"/twins/mine",
 		"/twins/mine/contents",
 		"/twins/chat",
+		"/twins/persona",
+		"/twins/persona/interview",
+		"/persona",
+		"/persona/interview",
 		"/topics/client",
 		"/work/topic/client",
 		"/brain/topics/client",

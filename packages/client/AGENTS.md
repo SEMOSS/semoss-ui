@@ -379,7 +379,9 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   time as it scrolls (`use-governance-resources.ts`). The type, the resource and the tab are in
   the address: `settings/resources/:type/:id?tab=`. The page scrolls rather than the details: the
   header scrolls away, the details take the page's height, and the list stays in view beside them
-  (`GOVERNANCE_PANEL_CLASS`, sticky below the navbar).
+  (`GOVERNANCE_PANEL_CLASS`, sticky below the navbar). The details column takes only the width
+  beside the list (`GOVERNANCE_COLUMNS_CLASS`), so a wide table, such as the Audit Trail's,
+  scrolls sideways in its own region and the page never does.
 - **Deleting many.** Each row has a checkbox beside it, and Select all shown checks every row read
   so far. Delete (N) confirms with `delete-governance-resources-dialog.tsx`, which names each
   one, then deletes them one after another with the admin mode pixel each type takes
@@ -394,7 +396,10 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   access, and apply everything after one review), Apps for engines (the Apps table of
   `features/engine-app-permissions/` in admin mode, where an admin gives any app a permission
   on the engine), Effective Permissions, Requests, Visibility (the
-  settings tiles, delete included), Audit Trail (the resource's audit trail, which admins can
+  settings tiles, Private or Public and Discoverable or Non-Discoverable each titled by the
+  state it is in, delete included: an app's also have Use as Template and Custom Login Page,
+  which serves its portal to signed out visitors for its own login page,
+  `setProjectCustomLogin` in `api/projects.ts`), Audit Trail (the resource's audit trail, which admins can
   read), SMSS, and Usage Limits for models.
 - **Staged access changes are applied or discarded before moving on.** Access stays mounted on every
   tab, so its staged changes survive a look at another tab. Opening another resource or type is a

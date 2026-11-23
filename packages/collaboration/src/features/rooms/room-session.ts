@@ -646,7 +646,7 @@ export class RoomSession {
 					workspace: settings.agentId
 						? {
 								workspace_id: settings.agentId,
-								name: agent?.name ?? "Assistant",
+								name: agent?.name ?? "Agent",
 							}
 						: undefined,
 				});

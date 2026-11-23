@@ -3,12 +3,15 @@ import { useId, useState } from "react";
 import { EngineSelect } from "@semoss/shared";
 import {
 	Button,
+	cn,
 	Label,
 	P,
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
 } from "@semoss/ui/next";
+import { AgentAvatar } from "@/components/common/agent-avatar";
+import { useChatAgent } from "@/features/digital-twin/use-main-twin";
 import type {
 	RoomSession,
 	RoomSessionSnapshot,
@@ -19,16 +22,26 @@ interface DraftChatOptionsProps {
 	session: RoomSession;
 	snapshot: RoomSessionSnapshot;
 	onSelectAgent: (agentId: string) => Promise<void>;
+	/** The page is one agent's own, such as a Digital Twin's, so the agent cannot be changed. */
+	isAgentLocked?: boolean;
 }
 
-/** Keep the selected assistant visible; reveal configuration only on request. */
+/** Keep who the chat is with visible; reveal configuration only on request. */
 export function DraftChatOptions({
 	session,
 	snapshot,
 	onSelectAgent,
+	isAgentLocked = false,
 }: DraftChatOptionsProps) {
 	const modelId = useId();
 	const [isOpen, setIsOpen] = useState(false);
+	const chat = useChatAgent({
+		agentId: snapshot.settings.agentId,
+		agent: snapshot.agent,
+		options: snapshot.options,
+		isOwnPage: isAgentLocked,
+	});
+	const isMainTwin = chat.kind === "mainTwin";
 	const isDisabled =
 		!snapshot.isReady ||
 		snapshot.isPreparing ||
@@ -45,12 +58,20 @@ export function DraftChatOptions({
 					variant="ghost"
 					size="sm"
 					disabled={isDisabled}
-					className="pointer-coarse:min-h-11 max-w-48 gap-1 font-normal text-muted-foreground"
-					aria-label={`Assistant options: ${snapshot.agent?.name ?? "Assistant"}`}
+					className={cn(
+						"pointer-coarse:min-h-11 min-w-0 gap-1 font-normal text-muted-foreground",
+						// the person's own twin is who the page is about: its name is not cut short at a fixed width
+						isMainTwin ? "max-w-full" : "max-w-48",
+					)}
+					aria-label={`Chat Options: ${chat.name}`}
 				>
-					<span className="truncate">
-						{snapshot.agent?.name ?? "Assistant"}
-					</span>
+					{isMainTwin && (
+						<AgentAvatar
+							agent={{ name: chat.name, avatar: chat.avatar }}
+							size="xs"
+						/>
+					)}
+					<span className="truncate">{chat.name}</span>
 					<ChevronDown
 						aria-hidden="true"
 						className="size-3.5 shrink-0"
@@ -61,15 +82,15 @@ export function DraftChatOptions({
 				align="start"
 				side="top"
 				className="w-72 max-w-(--radix-popover-content-available-width) space-y-4"
-				aria-label="Assistant options"
+				aria-label="Chat Options"
 			>
 				<div className="space-y-2">
-					<P className="font-medium text-sm">Assistant</P>
+					<P className="font-medium text-sm">Talking To</P>
 					<ThreadAgentSelect
 						compact
 						value={snapshot.settings.agentId}
-						name={snapshot.agent?.name ?? "Assistant"}
-						disabled={isDisabled}
+						name={chat.name}
+						disabled={isDisabled || isAgentLocked}
 						onChange={(agentId) => {
 							setIsOpen(false);
 							void onSelectAgent(agentId);

@@ -64,8 +64,9 @@ added: backend calls apps share live in `libs/sdk/src/api/` (for example `runMcp
      then `VITE_DEFAUlT_MODEL_ID`, `VITE_DEFAULT_CHAT_MODE` and `VITE_DEFAULT_CHAT_AGENT_ID`;
   4. the first available: the first model, chat mode, and Default Agent.
 
-  A mode is always chat where agent mode is not offered, an agent link (`?workspaceId=`) wins over
-  steps 1 to 3, and an agent from them that the user can no longer open gives way to Default Agent.
+  A mode is always chat where agent mode is not offered and always agent where the theme's
+  `agentModeOnly` flag is on (`resolveNewChatMode` takes the modes `newChatModes` offers, and
+  Settings shows no mode row then), an agent link (`?workspaceId=`) wins over steps 1 to 3, and an agent from them that the user can no longer open gives way to Default Agent.
   The rules live in `features/new-chat-preferences/new-chat-preferences.ts`. Playground does not
   read the platform's `text-generation-model`.
 
@@ -278,7 +279,10 @@ code and are easy to undo by accident:
   (`RoomActionsProvider` renders a controlled `SaveWorkspaceDialog`), so a new chat publishes
   only once it is a room.
   The per-panel control — "open inline" — is registered by the tool panel with
-  `useWorkbenchControl`.
+  `useWorkbenchControl`, beside its **Show Details** switch, which shows the call's
+  `ToolInspector` (info, inputs, output) in place of the tool's view and keeps the
+  choice in the tab's config (`showsDetails`). A server tool's view already is its
+  inspector, so it has no switch.
 - **The room header holds the room's name.** `features/room-header/room-header.tsx` is
   one narrow row in `RoomLayout`'s `header` slot. It floats over the top of the
   conversation with no border, blurring what scrolls beneath it once the conversation reports
@@ -321,7 +325,17 @@ Default Agent is removed. The menu shows no Chat and Agent choice and the `/agen
 command is left out (`canChooseAgentMode`, `features/conversation/agent-mode-choice.ts`). The
 new chat page turns the flag on by passing `onDefaultAgentChange` to `RoomInput` and the draft
 Settings form; with it, `MCPOverlay` and `AgentSelector` offer No Agent and Default Agent as
-separate choices. A room keeps the mode it was created with.
+separate choices.
+
+The theme's `agentModeOnly` flag (Agent Mode Only on the admin Theme page) is `modeFollowsAgent`
+without No Agent: the agent picker still decides, but every choice it offers runs in agent mode, so
+every new chat runs in agent mode and chat mode is never offered. The admin page shows Mode Follows
+Agent and Enable Agent Harness as included while it is on, without saving them. The menu shows no
+Chat and Agent choice, the `/agent-harness` and chat mode commands are left out, and the agent
+picker's choice of no saved agent is Default Agent, with no No Agent (`isAgentModeOnly` and
+`offersDefaultAgent`). The new chat page leaves `onDefaultAgentChange` off, since passing it is
+what offers No Agent. A room keeps the mode it was created with, so a chat
+created in chat mode before the flag was turned on stays in chat mode.
 
 Whatever the theme, a chat in agent mode with no saved agent runs Default Agent, and the input
 shows a Default Agent chip beside the add button: editable in a new chat, where it opens the

@@ -171,6 +171,7 @@ const EMPTY_PLAYGROUND: ThemeMap["playground"] = {
 		enablePromptOptimizer: true,
 		enableAgentHarness: false,
 		modeFollowsAgent: false,
+		agentModeOnly: false,
 		showActivityLog: true,
 		enableTemperature: false,
 		enableRewrite: true,
@@ -194,8 +195,8 @@ const FEATURE_FLAGS: {
 	key: keyof NonNullable<ThemeMap["playground"]["featureFlags"]>;
 	label: string;
 	description: string;
-	/** A flag that covers this one: while it is on, this switch shows as on and is locked. */
-	includedIn?: keyof NonNullable<ThemeMap["playground"]["featureFlags"]>;
+	/** Flags that cover this one: while any of them is on, this switch shows as on and is locked. */
+	includedIn?: (keyof NonNullable<ThemeMap["playground"]["featureFlags"]>)[];
 }[] = [
 	// Sidebar navigation items
 	{
@@ -226,13 +227,20 @@ const FEATURE_FLAGS: {
 		label: "Enable Agent Harness",
 		description:
 			"Lets users choose Chat or Agent mode for a new chat. Agent mode runs messages server-side via RunAgent instead of the normal chat flow.",
-		includedIn: "modeFollowsAgent",
+		includedIn: ["modeFollowsAgent", "agentModeOnly"],
 	},
 	{
 		key: "modeFollowsAgent",
 		label: "Mode Follows Agent",
+		includedIn: ["agentModeOnly"],
 		description:
 			"The agent picker decides a new chat's mode: a saved agent or Default Agent runs in agent mode, and No Agent runs in chat mode. The Chat and Agent choice is not shown. Turns on agent mode itself, so Enable Agent Harness is not needed.",
+	},
+	{
+		key: "agentModeOnly",
+		label: "Agent Mode Only",
+		description:
+			"Every new chat runs in agent mode, with Default Agent unless a saved agent is picked or set as a default. Mode Follows Agent without No Agent: the agent picker still decides, and every choice it offers runs in agent mode, so chat mode is never offered. Turns on agent mode itself. Chats already created keep their mode.",
 	},
 	{
 		key: "showActivityLog",
@@ -776,8 +784,8 @@ export const AdminThemePage: React.FC = () => {
 				</div>
 			) : (
 				<>
-					<FieldGroup>
-						<Field>
+					<FieldGroup className="gap-4">
+						<Field className="gap-1.5">
 							<FieldLabel>Name</FieldLabel>
 							<Input
 								disabled={isLoading}
@@ -1220,6 +1228,7 @@ const PlaygroundForm: React.FC<FormProps> = ({
 		{
 			title: "Colors",
 			description: "Hex (e.g. #4f46e5), CSS variables, or named colors.",
+			layout: "grid",
 			fields: [
 				{
 					type: "color",
@@ -1262,6 +1271,7 @@ const PlaygroundForm: React.FC<FormProps> = ({
 			title: "Images",
 			description:
 				"URLs, relative paths, or data URIs used throughout the app.",
+			layout: "grid",
 			fields: IMAGE_FIELDS.map(({ key, label, description }) => ({
 				type: "text",
 				label,
@@ -1337,13 +1347,12 @@ const PlaygroundForm: React.FC<FormProps> = ({
 			layout: "grid",
 			fields: FEATURE_FLAGS.map(
 				({ key, label, description, includedIn }): PlaygroundField => {
-					// shown as on while the covering flag is, without saving it
-					const includingFlag =
-						includedIn && pg?.featureFlags?.[includedIn]
-							? FEATURE_FLAGS.find(
-									(flag) => flag.key === includedIn,
-								)
-							: undefined;
+					// shown as on while a covering flag is, without saving it
+					const includingFlag = FEATURE_FLAGS.find(
+						(flag) =>
+							includedIn?.includes(flag.key) &&
+							pg?.featureFlags?.[flag.key],
+					);
 					return {
 						type: "switch",
 						label,
@@ -1417,7 +1426,7 @@ const PlaygroundForm: React.FC<FormProps> = ({
 				other advanced settings are editable in the JSON tab.
 			</div>
 
-			<div className="flex flex-col gap-6">
+			<div className="flex flex-col gap-4">
 				{sections.map((section) => (
 					<FormSection
 						key={section.title}
@@ -1435,7 +1444,7 @@ const PlaygroundForm: React.FC<FormProps> = ({
 								))}
 							</div>
 						) : (
-							<FieldGroup>
+							<FieldGroup className="gap-4">
 								{section.fields.map((field) => (
 									<PlaygroundFieldRenderer
 										key={field.label}
@@ -1484,13 +1493,13 @@ const ClientForm: React.FC<FormProps> = ({ theme, disabled, updateTheme }) => {
 				the JSON tab.
 			</div>
 
-			<div className="flex flex-col gap-6">
+			<div className="flex flex-col gap-4">
 				<FormSection
 					title="Branding"
 					description="Image values accept URLs, relative paths, or data URIs (for example: data:image/png;base64,...). Turn off 'Show app name beside logo' when your logo already contains text."
 				>
-					<FieldGroup>
-						<Field>
+					<FieldGroup className="gap-4">
+						<Field className="gap-1.5">
 							<FieldLabel>Client Name</FieldLabel>
 							<Input
 								disabled={disabled}
@@ -1502,7 +1511,7 @@ const ClientForm: React.FC<FormProps> = ({ theme, disabled, updateTheme }) => {
 								}
 							/>
 						</Field>
-						<Field>
+						<Field className="gap-1.5">
 							<FieldLabel>Landing Page Title</FieldLabel>
 							<Input
 								disabled={disabled}
@@ -1515,7 +1524,7 @@ const ClientForm: React.FC<FormProps> = ({ theme, disabled, updateTheme }) => {
 								}
 							/>
 						</Field>
-						<Field>
+						<Field className="gap-1.5">
 							<FieldLabel>Logo</FieldLabel>
 							<Input
 								disabled={disabled}
@@ -1552,8 +1561,8 @@ const ClientForm: React.FC<FormProps> = ({ theme, disabled, updateTheme }) => {
 				</FormSection>
 
 				<FormSection title="Login Hero">
-					<FieldGroup>
-						<Field>
+					<FieldGroup className="gap-4">
+						<Field className="gap-1.5">
 							<FieldLabel>Login Hero Image</FieldLabel>
 							<Input
 								disabled={disabled}
@@ -1566,7 +1575,7 @@ const ClientForm: React.FC<FormProps> = ({ theme, disabled, updateTheme }) => {
 								}
 							/>
 						</Field>
-						<Field>
+						<Field className="gap-1.5">
 							<FieldLabel>
 								Login Hero Image (Dark Mode)
 							</FieldLabel>
@@ -1588,7 +1597,7 @@ const ClientForm: React.FC<FormProps> = ({ theme, disabled, updateTheme }) => {
 					title="Cookie Policy"
 					description="HTML rendered in the cookie banner and preference modal."
 				>
-					<FieldGroup>
+					<FieldGroup className="gap-4">
 						<HtmlTextareaField
 							label="Cookie Banner HTML"
 							disabled={disabled}
@@ -1600,7 +1609,7 @@ const ClientForm: React.FC<FormProps> = ({ theme, disabled, updateTheme }) => {
 								})
 							}
 						/>
-						<Field>
+						<Field className="gap-1.5">
 							<FieldLabel>Preference Modal Header</FieldLabel>
 							<Input
 								disabled={disabled}
@@ -1631,8 +1640,8 @@ const ClientForm: React.FC<FormProps> = ({ theme, disabled, updateTheme }) => {
 				</FormSection>
 
 				<FormSection title="Terms">
-					<FieldGroup>
-						<Field>
+					<FieldGroup className="gap-4">
+						<Field className="gap-1.5">
 							<FieldLabel>Terms Header</FieldLabel>
 							<Input
 								disabled={disabled}
@@ -1662,7 +1671,7 @@ const ClientForm: React.FC<FormProps> = ({ theme, disabled, updateTheme }) => {
 					title="Legal Notice Pages"
 					description="Full-page HTML for the cookie and privacy notice routes."
 				>
-					<FieldGroup>
+					<FieldGroup className="gap-4">
 						<HtmlTextareaField
 							label="Cookie Notice Page HTML"
 							disabled={disabled}
@@ -1705,9 +1714,9 @@ const BIForm: React.FC<FormProps> = ({ theme, disabled, updateTheme }) => {
 				JSON tab.
 			</div>
 
-			<div className="flex flex-col gap-6">
+			<div className="flex flex-col gap-4">
 				<FormSection title="Branding">
-					<FieldGroup>
+					<FieldGroup className="gap-4">
 						<SwitchField
 							label="Include name alongside logo"
 							checked={client.includeNameWithLogo ?? true}
@@ -1725,7 +1734,7 @@ const BIForm: React.FC<FormProps> = ({ theme, disabled, updateTheme }) => {
 					title="Home Intro"
 					description="HTML rendered on the BI home page."
 				>
-					<FieldGroup>
+					<FieldGroup className="gap-4">
 						<HtmlTextareaField
 							label="Home Intro HTML"
 							disabled={disabled}
@@ -1744,8 +1753,8 @@ const BIForm: React.FC<FormProps> = ({ theme, disabled, updateTheme }) => {
 					title="Images & Backgrounds"
 					description="Image values accept URLs, relative paths, or data URIs (for example: data:image/png;base64,...)."
 				>
-					<FieldGroup>
-						<Field>
+					<FieldGroup className="gap-4">
+						<Field className="gap-1.5">
 							<FieldLabel>Login Image</FieldLabel>
 							<Input
 								disabled={disabled}
@@ -1767,7 +1776,7 @@ const BIForm: React.FC<FormProps> = ({ theme, disabled, updateTheme }) => {
 								})
 							}
 						/>
-						<Field>
+						<Field className="gap-1.5">
 							<FieldLabel>Home Intro Image</FieldLabel>
 							<Input
 								disabled={disabled}
@@ -1789,7 +1798,7 @@ const BIForm: React.FC<FormProps> = ({ theme, disabled, updateTheme }) => {
 								})
 							}
 						/>
-						<Field>
+						<Field className="gap-1.5">
 							<FieldLabel>Background Image</FieldLabel>
 							<Input
 								disabled={disabled}
@@ -1801,7 +1810,7 @@ const BIForm: React.FC<FormProps> = ({ theme, disabled, updateTheme }) => {
 								}
 							/>
 						</Field>
-						<Field>
+						<Field className="gap-1.5">
 							<FieldLabel>Background Image Opacity</FieldLabel>
 							<Input
 								type="number"
@@ -1839,8 +1848,8 @@ const BIForm: React.FC<FormProps> = ({ theme, disabled, updateTheme }) => {
 					title="Help Dropdown"
 					description="Contact & user-guide entries in the BI help menu."
 				>
-					<FieldGroup>
-						<Field>
+					<FieldGroup className="gap-4">
+						<Field className="gap-1.5">
 							<FieldLabel>Contact Us Title</FieldLabel>
 							<Input
 								disabled={disabled}
@@ -1855,7 +1864,7 @@ const BIForm: React.FC<FormProps> = ({ theme, disabled, updateTheme }) => {
 								}
 							/>
 						</Field>
-						<Field>
+						<Field className="gap-1.5">
 							<FieldLabel>Contact Us Link</FieldLabel>
 							<Input
 								disabled={disabled}
@@ -1882,7 +1891,7 @@ const BIForm: React.FC<FormProps> = ({ theme, disabled, updateTheme }) => {
 								})
 							}
 						/>
-						<Field>
+						<Field className="gap-1.5">
 							<FieldLabel>Contact Us Icon</FieldLabel>
 							<Input
 								disabled={disabled}
@@ -1895,7 +1904,7 @@ const BIForm: React.FC<FormProps> = ({ theme, disabled, updateTheme }) => {
 								}
 							/>
 						</Field>
-						<Field>
+						<Field className="gap-1.5">
 							<FieldLabel>Contact Us Description</FieldLabel>
 							<Textarea
 								disabled={disabled}
@@ -1913,7 +1922,7 @@ const BIForm: React.FC<FormProps> = ({ theme, disabled, updateTheme }) => {
 								}
 							/>
 						</Field>
-						<Field>
+						<Field className="gap-1.5">
 							<FieldLabel>Description Font Size</FieldLabel>
 							<Input
 								disabled={disabled}
@@ -1977,8 +1986,8 @@ const BIForm: React.FC<FormProps> = ({ theme, disabled, updateTheme }) => {
 				</FormSection>
 
 				<FormSection title="Visualization Defaults">
-					<FieldGroup>
-						<Field>
+					<FieldGroup className="gap-4">
+						<Field className="gap-1.5">
 							<FieldLabel>Color Palette</FieldLabel>
 							<Input
 								disabled={disabled}
@@ -2009,7 +2018,7 @@ const BIForm: React.FC<FormProps> = ({ theme, disabled, updateTheme }) => {
 					title="Cookie Policy"
 					description="Extra HTML strings only the BI app renders."
 				>
-					<FieldGroup>
+					<FieldGroup className="gap-4">
 						<HtmlTextareaField
 							label="Cookie Policy Message"
 							disabled={disabled}
@@ -2025,7 +2034,7 @@ const BIForm: React.FC<FormProps> = ({ theme, disabled, updateTheme }) => {
 				</FormSection>
 
 				<FormSection title="Login Page">
-					<FieldGroup>
+					<FieldGroup className="gap-4">
 						<HtmlTextareaField
 							label="Login Center HTML"
 							disabled={disabled}
@@ -2076,7 +2085,7 @@ const FormSection: React.FC<{
 	}, [collapseCommand]);
 
 	return (
-		<section className="flex flex-col gap-4">
+		<section className="flex flex-col gap-2">
 			<button
 				type="button"
 				onClick={() => setOpen((v) => !v)}
@@ -2100,7 +2109,7 @@ const FormSection: React.FC<{
 				</div>
 			</button>
 			{open && (
-				<div className="ml-1 flex flex-col gap-4 border-border border-l pl-3 sm:ml-2 sm:pl-6">
+				<div className="ml-1 flex flex-col gap-4 border-border border-l pl-3 sm:ml-2 sm:pl-4">
 					{children}
 				</div>
 			)}

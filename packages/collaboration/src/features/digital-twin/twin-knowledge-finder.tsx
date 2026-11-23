@@ -1,6 +1,7 @@
-import { Plus, Search, Sparkles } from "lucide-react";
+import { MessagesSquare, Plus, Search, Sparkles } from "lucide-react";
 import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import {
+	ConnectorItemAvatar,
 	type ConnectorSavedFile,
 	type ConnectorSavedItems,
 	ConnectorSavedMark,
@@ -8,12 +9,21 @@ import {
 	saveMicrosoftItem,
 } from "@semoss/connectors";
 import { useInsight } from "@semoss/sdk/react";
+import { getFileIconComponent } from "@semoss/shared";
 import {
 	Alert,
 	AlertDescription,
 	Button,
+	Checkbox,
 	cn,
+	FieldError,
+	FieldLabel,
+	FieldLegend,
+	FieldSet,
 	Form,
+	FormField,
+	FormSelect,
+	FormSelectItem,
 	FormTextarea,
 	P,
 	Spinner,
@@ -29,6 +39,7 @@ import {
 	OutlookIcon,
 	TeamsChatsIcon,
 } from "@/components/common/app-icons";
+import { connectorPersonPhotoUrl } from "@/features/collaboration/api/person-photo";
 import { connectMicrosoft } from "@/features/connectors/api/microsoft";
 import {
 	suggestTwinKnowledge,
@@ -39,30 +50,58 @@ import {
 } from "./api/twin-suggestions";
 import { TwinKnowledgeSearchScene } from "./twin-knowledge-search-scene";
 
+// how far back a search can be kept to, in days; 0 is any time
+const WHEN = [
+	{ days: "0", label: "Any time" },
+	{ days: "7", label: "Past week" },
+	{ days: "30", label: "Past month" },
+	{ days: "90", label: "Past 3 months" },
+	{ days: "365", label: "Past year" },
+] as const;
+
 const finderSchema = z.object({
 	prompt: z
 		.string()
 		.trim()
-		.min(1, "Say what your Digital Twin should know.")
+		.min(1, "Say what this twin should know.")
 		.max(
 			TWIN_SUGGESTION_PROMPT_MAX,
 			`Keep it to ${TWIN_SUGGESTION_PROMPT_MAX} characters or fewer.`,
 		),
+	// the two filters; as they start, everything is searched
+	kinds: z
+		.array(z.enum(["email", "chat", "file"]))
+		.min(1, "Choose at least one place to look in."),
+	sinceDays: z.enum(["0", "7", "30", "90", "365"]),
 });
 type FinderValues = z.infer<typeof finderSchema>;
+type Kind = FinderValues["kinds"][number];
 
-// the kinds in the order they are listed, named as the rest of the page names them, and how each says who it is from
+/** The kinds to look for once one of them is ticked or unticked. */
+const withKind = (chosen: Kind[], kind: Kind, isOn: boolean): Kind[] =>
+	isOn ? [...chosen, kind] : chosen.filter((entry) => entry !== kind);
+
+// the kinds in the order they are listed, named as the rest of the page names them, the place each is searched for
+// in, and how each says who it is from
 const KINDS = [
-	{ kind: "email", label: "Emails", icon: OutlookIcon, by: "From" },
+	{
+		kind: "email",
+		label: "Emails",
+		place: "Outlook",
+		icon: OutlookIcon,
+		by: "From",
+	},
 	{
 		kind: "chat",
 		label: "Teams chats",
+		place: "Teams chats",
 		icon: TeamsChatsIcon,
 		by: "Message from",
 	},
 	{
 		kind: "file",
 		label: "Files",
+		place: "OneDrive",
 		icon: OneDriveIcon,
 		by: "Last changed by",
 	},
@@ -86,7 +125,8 @@ interface TwinKnowledgeFinderProps {
 /**
  * Finds what a Digital Twin could know from one description: the server
  * searches the owner's own Outlook, Teams chats and OneDrive for it and lists
- * the emails, chats and files that fit, each with the reason. Nothing is
+ * the emails, chats and files that fit, each with the reason. The owner can
+ * keep a search to some of the three, and to a stretch of time. Nothing is
  * added until the owner adds it, one at a time or all at once; an added item
  * is saved into the page's files the way its own viewer saves it, so the
  * viewers' lists mark it too.
@@ -99,9 +139,17 @@ export function TwinKnowledgeFinder({
 	const id = useId();
 	const form = useForm<FinderValues>({
 		resolver: zodResolver(finderSchema),
-		defaultValues: { prompt: "" },
+		defaultValues: {
+			prompt: "",
+			kinds: KINDS.map((entry) => entry.kind),
+			sinceDays: "0",
+		},
 	});
 	const { errors, isSubmitting } = form.formState;
+	// as the filters stand: they cannot change while a search runs
+	const kinds = form.watch("kinds");
+	const isNarrowed =
+		kinds.length < KINDS.length || form.watch("sinceDays") !== "0";
 	const [found, setFound] = useState<TwinSuggestions | null>(null);
 	const [needsSignIn, setNeedsSignIn] = useState(false);
 	const [busyKeys, setBusyKeys] = useState<ReadonlySet<string>>(
@@ -117,11 +165,19 @@ export function TwinKnowledgeFinder({
 			resultsRef.current?.scrollIntoView?.({ block: "nearest" });
 	}, [isSubmitting]);
 
-	const handleSubmit = async ({ prompt }: FinderValues): Promise<void> => {
+	const handleSubmit = async ({
+		prompt,
+		kinds,
+		sinceDays,
+	}: FinderValues): Promise<void> => {
 		setNeedsSignIn(false);
 		let next: TwinSuggestions;
 		try {
-			next = await suggestTwinKnowledge(actions, prompt);
+			// a filter left as it starts is left out, so the server searches as it always has
+			next = await suggestTwinKnowledge(actions, prompt, {
+				kinds: kinds.length < KINDS.length ? kinds : undefined,
+				sinceDays: Number(sinceDays) || undefined,
+			});
 		} catch (cause) {
 			const reason = cause instanceof Error ? cause.message : "";
 			// in place of a reason, a lost Microsoft sign-in names the account to sign in to, as JSON
@@ -210,6 +266,7 @@ export function TwinKnowledgeFinder({
 		const detailColor = isHeld
 			? "text-foreground/75"
 			: "text-muted-foreground";
+		const FileLogo = getFileIconComponent(name);
 		return (
 			<li
 				key={key}
@@ -221,35 +278,65 @@ export function TwinKnowledgeFinder({
 				// what the search brought back arrives as a list: each row a beat after the one above, the wait capped
 				style={{ animationDelay: `${Math.min(index, 8) * 50}ms` }}
 			>
-				<div className="min-w-0 flex-1 space-y-0.5">
-					<P className="wrap-anywhere font-medium text-sm">{name}</P>
-					<P className={cn("wrap-anywhere text-xs", detailColor)}>
-						{[row.from && `${by} ${row.from}`, when]
-							.filter(Boolean)
-							.join(" · ")}
-					</P>
-					{row.reason && (
-						// why it was picked, marked as the search's own words
-						<P className="flex gap-1.5 text-sm">
-							<Sparkles
-								aria-hidden="true"
-								className="mt-0.75 size-3.5 shrink-0 text-primary"
-							/>
-							<span className="wrap-anywhere min-w-0">
-								{row.reason}
-							</span>
-						</P>
+				{/* what each row leads with tells the kinds apart down the list: who an email is from, a chat, a file's own logo */}
+				<div className="flex min-w-0 flex-1 gap-2">
+					{row.kind === "file" ? (
+						// as big as the avatars of the other kinds, so the names line up
+						<span className="me-1 grid size-9 shrink-0 place-items-center">
+							<FileLogo className="size-7" />
+						</span>
+					) : (
+						<ConnectorItemAvatar
+							name={
+								row.kind === "chat"
+									? row.title || row.from
+									: row.from
+							}
+							// a chat with one person shows them, as the Teams chat list does; any other shows a chat's mark
+							icon={
+								row.kind === "chat" && !row.person
+									? MessagesSquare
+									: undefined
+							}
+							photoUrl={
+								row.person
+									? connectorPersonPhotoUrl(row.person)
+									: undefined
+							}
+						/>
 					)}
-					{row.preview && (
-						<P
-							className={cn(
-								"wrap-anywhere line-clamp-2 text-xs",
-								detailColor,
-							)}
-						>
-							{row.preview}
+					<div className="min-w-0 flex-1 space-y-0.5">
+						<P className="wrap-anywhere font-medium text-sm">
+							{name}
 						</P>
-					)}
+						<P className={cn("wrap-anywhere text-xs", detailColor)}>
+							{[row.from && `${by} ${row.from}`, when]
+								.filter(Boolean)
+								.join(" · ")}
+						</P>
+						{row.reason && (
+							// why it was picked, marked as the search's own words
+							<P className="flex gap-1.5 text-sm">
+								<Sparkles
+									aria-hidden="true"
+									className="mt-0.75 size-3.5 shrink-0 text-primary"
+								/>
+								<span className="wrap-anywhere min-w-0">
+									{row.reason}
+								</span>
+							</P>
+						)}
+						{row.preview && (
+							<P
+								className={cn(
+									"wrap-anywhere line-clamp-2 text-xs",
+									detailColor,
+								)}
+							>
+								{row.preview}
+							</P>
+						)}
+					</div>
 				</div>
 				{isHeld ? (
 					<span className="flex shrink-0 items-center gap-1.5 font-medium text-xs">
@@ -293,12 +380,87 @@ export function TwinKnowledgeFinder({
 			>
 				<FormTextarea
 					name="prompt"
-					label="What should your Digital Twin know?"
+					label="What Should This Twin Know?"
 					description="Nothing is added until you add it."
 					placeholder="Such as: the Apollo migration, its timeline, the vendor contract and the open risks"
 					rows={3}
 					maxLength={TWIN_SUGGESTION_PROMPT_MAX}
 				/>
+				{/* both optional: as they start, everything is searched */}
+				<div className="flex flex-wrap items-start gap-x-6 gap-y-3">
+					<FormField
+						control={form.control}
+						name="kinds"
+						render={({ field, fieldState }) => (
+							<FieldSet className="min-w-0 gap-2">
+								<FieldLegend variant="label">
+									Look in
+								</FieldLegend>
+								<div className="flex flex-wrap gap-2">
+									{KINDS.map(
+										({ kind, label, icon: Icon }) => (
+											// a chip that holds its own checkbox, so one that is on shows a filled check, a border and a fill
+											<FieldLabel
+												key={kind}
+												htmlFor={`${id}-in-${kind}`}
+												className="min-h-9 pointer-coarse:min-h-11 cursor-pointer items-center rounded-md border bg-background px-2.5 py-1.5 font-normal has-data-[state=checked]:bg-primary/10"
+											>
+												<Checkbox
+													id={`${id}-in-${kind}`}
+													checked={field.value.includes(
+														kind,
+													)}
+													disabled={isSubmitting}
+													aria-invalid={
+														!!fieldState.error
+													}
+													aria-describedby={
+														fieldState.error
+															? `${id}-in-error`
+															: undefined
+													}
+													onCheckedChange={(isOn) =>
+														field.onChange(
+															withKind(
+																field.value,
+																kind,
+																isOn === true,
+															),
+														)
+													}
+												/>
+												<Icon
+													aria-hidden="true"
+													className="size-4 shrink-0"
+												/>
+												{label}
+											</FieldLabel>
+										),
+									)}
+								</div>
+								{fieldState.error?.message && (
+									<FieldError id={`${id}-in-error`}>
+										{fieldState.error.message}
+									</FieldError>
+								)}
+							</FieldSet>
+						)}
+					/>
+					<FormSelect
+						name="sinceDays"
+						label="When"
+						disabled={isSubmitting}
+						// the field sets the width: its children fill it
+						className="w-40"
+						triggerClassName="bg-background"
+					>
+						{WHEN.map(({ days, label }) => (
+							<FormSelectItem key={days} value={days}>
+								{label}
+							</FormSelectItem>
+						))}
+					</FormSelect>
+				</div>
 				{errors.root?.server?.message && (
 					<Alert variant="destructive">
 						<AlertDescription>
@@ -333,12 +495,21 @@ export function TwinKnowledgeFinder({
 				{/* said as it changes; the scene and the list show it to someone looking */}
 				<output className="sr-only">
 					{isSubmitting
-						? "Searching your Outlook, Teams chats and OneDrive…"
+						? `Searching your ${new Intl.ListFormat("en", {
+								type: "conjunction",
+							}).format(
+								KINDS.filter((entry) =>
+									kinds.includes(entry.kind),
+								).map((entry) => entry.place),
+							)}…`
 						: found && `Found ${count}.`}
 				</output>
 				{isSubmitting || !found ? (
 					// one scene for the wait and for before it, so the lens stays put when a search starts
-					<TwinKnowledgeSearchScene isSearching={isSubmitting} />
+					<TwinKnowledgeSearchScene
+						isSearching={isSubmitting}
+						kinds={kinds}
+					/>
 				) : (
 					<>
 						{found.notes.length > 0 && (
@@ -356,12 +527,15 @@ export function TwinKnowledgeFinder({
 							<P className="max-w-prose p-4 text-muted-foreground text-sm">
 								Nothing that fits was found. Try other words,
 								such as a project's name, a person or a subject.
+								{/* a search that was kept narrow says how to widen it */}
+								{isNarrowed &&
+									" Or look in more places, or further back."}
 							</P>
 						) : (
 							<div className="flex min-h-11 flex-wrap items-center justify-between gap-2 border-b px-4 py-2">
 								<P className="text-muted-foreground text-sm">
-									{count}. Add the ones your Digital Twin
-									should answer from.
+									{count}. Add the ones this twin should
+									answer from.
 								</P>
 								{pending.length > 0 && (
 									<Button

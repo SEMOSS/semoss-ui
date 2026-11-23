@@ -5,7 +5,11 @@ import {
 } from "../core/connector-files";
 import { runConnectorPixel } from "../core/connector-pixel";
 import { mailSaveKey } from "../mail/mail.threads";
-import { microsoftItemKey, saveMicrosoftItem } from "./microsoft-item-save";
+import {
+	microsoftItemKey,
+	saveMailAttachments,
+	saveMicrosoftItem,
+} from "./microsoft-item-save";
 
 vi.mock("../core/connector-pixel", () => ({ runConnectorPixel: vi.fn() }));
 vi.mock("../core/connector-files", () => ({ saveToInsight: vi.fn() }));
@@ -147,11 +151,109 @@ it("downloads a file from the drive it is in, under the name it is given", async
 		name: "Plan.docx",
 	});
 
-	expect(file).toMatchObject({ service: "onedrive", itemKey: "item-1" });
+	expect(file).toMatchObject({
+		service: "onedrive",
+		itemKey: "item-1",
+		driveId: "drive-9",
+	});
 	const { fileName, written } = await saved();
 	expect(fileName).toBe("Plan.docx");
 	expect(written).toContain("MicrosoftOneDriveDownloadFile");
 	expect(written).toContain('driveId=["drive-9"]');
 	expect(written).toContain('itemId=["item-1"]');
 	expect(written).toContain("free name.docx");
+});
+
+it("saves the files attached to a thread's emails, and leaves out pictures in the text and files too large", async () => {
+	const opened: string[] = [];
+	run.mockImplementation(async (pixel) => {
+		if (pixel.startsWith("MicrosoftOutlookListMail")) {
+			return {
+				messages: [
+					{
+						id: "m-2",
+						conversationId: "conv-1",
+						hasAttachments: true,
+					},
+					// an email that says it has none is not opened
+					{
+						id: "m-1",
+						conversationId: "conv-1",
+						hasAttachments: false,
+					},
+				],
+			};
+		}
+		opened.push(pixel);
+		return {
+			id: "m-2",
+			attachments: [
+				{ id: "a-1", name: "Plan.docx", size: 4096, kind: "file" },
+				{ id: "a-2", name: "logo.png", isInline: true, kind: "file" },
+				{ id: "a-3", name: "Thread.eml", kind: "item" },
+				{
+					id: "a-4",
+					name: "Recording.mp4",
+					size: 26 * 1024 * 1024,
+					kind: "file",
+				},
+			],
+		};
+	});
+
+	const result = await saveMailAttachments("insight-1", "conv-1");
+
+	expect(opened).toEqual([expect.stringContaining('id=["m-2"]')]);
+	expect(result).toEqual({
+		saved: [
+			{
+				path: "Plan.docx",
+				name: "Plan.docx",
+				service: "outlook-mail",
+				// what the mail viewer's attachment list knows it by
+				itemKey: "m-2:a-1",
+			},
+		],
+		skipped: ["Recording.mp4"],
+	});
+	expect(save).toHaveBeenCalledOnce();
+	const { written } = await saved();
+	expect(written).toContain("MicrosoftOutlookDownloadAttachment");
+	expect(written).toContain("m-2");
+	expect(written).toContain("a-1");
+	expect(written).toContain("free name.docx");
+});
+
+it("answers nothing saved for a thread with no attachments, and fails when one cannot be saved", async () => {
+	run.mockResolvedValue({
+		messages: [{ id: "m-1", conversationId: "conv-1" }],
+	});
+	expect(await saveMailAttachments("insight-1", "conv-1")).toEqual({
+		saved: [],
+		skipped: [],
+	});
+	expect(save).not.toHaveBeenCalled();
+
+	run.mockImplementation(async (pixel) =>
+		pixel.startsWith("MicrosoftOutlookListMail")
+			? {
+					messages: [
+						{
+							id: "m-1",
+							conversationId: "conv-1",
+							hasAttachments: true,
+						},
+					],
+				}
+			: {
+					id: "m-1",
+					attachments: [
+						{ id: "a-1", name: "Plan.docx", kind: "file" },
+					],
+				},
+	);
+	save.mockRejectedValue(new Error("The attachment is gone"));
+	await expect(saveMailAttachments("insight-1", "conv-1")).rejects.toThrow(
+		"The attachment is gone",
+	);
 });

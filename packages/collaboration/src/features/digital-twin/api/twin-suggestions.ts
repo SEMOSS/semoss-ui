@@ -16,6 +16,10 @@ const suggestionSchema = z.object({
 	date: z.string(),
 	preview: z.string(),
 	reason: z.string(),
+	// whose picture goes with it, where the server knows: an email's sender, or who a one on one chat is with
+	person: z
+		.object({ email: z.string().optional(), userId: z.string().optional() })
+		.optional(),
 });
 const suggestionsSchema = z.object({
 	suggestions: z.array(suggestionSchema),
@@ -24,6 +28,14 @@ const suggestionsSchema = z.object({
 
 /** An email, Teams chat or file suggested for a twin, with why it fits. */
 export type TwinSuggestion = z.infer<typeof suggestionSchema>;
+
+/** What narrows a search for a twin's knowledge; left out, everything is searched. */
+export interface TwinSuggestionFilters {
+	/** The kinds to look for: only their places are searched. All three when left out. */
+	kinds?: TwinSuggestion["kind"][];
+	/** How many days back to look; any time when left out. */
+	sinceDays?: number;
+}
 
 /** What a search for a twin's knowledge found. */
 export interface TwinSuggestions {
@@ -40,6 +52,7 @@ export interface TwinSuggestions {
  * Nothing is copied: the owner adds the ones they want.
  *
  * @param prompt - What the twin should know, in the owner's words.
+ * @param filters - The kinds to look for and how far back, when the owner narrowed the search.
  * @throws when the owner is not signed in to Microsoft 365, when none of the
  * three could be searched, or when the model did not answer.
  */
@@ -47,10 +60,11 @@ export interface TwinSuggestions {
 export function suggestTwinKnowledge(
 	actions: InsightActions,
 	prompt: string,
+	filters: TwinSuggestionFilters = {},
 ): Promise<TwinSuggestions> {
 	return callPixel(
 		actions,
-		pixel("WorkSuggestTwinKnowledge", { prompt }),
+		pixel("WorkSuggestTwinKnowledge", { prompt, ...filters }),
 		suggestionsSchema,
 	);
 }
