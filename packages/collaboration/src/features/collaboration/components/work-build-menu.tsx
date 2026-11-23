@@ -37,14 +37,8 @@ function label(status: Status): string {
 			return num(status.threads) > 0
 				? `Waiting to start (${num(status.threads)} threads)`
 				: "Starting...";
-		case "running": {
-			// a long thread is read in parts, so the thread count can sit still while parts move
-			const parts = num(status.windows);
-			const threads = `Reading threads ${num(status.extracted)} of ${num(status.threads)}`;
-			return parts > 0
-				? `${threads} (${num(status.windowsRead)} of ${parts} parts)`
-				: threads;
-		}
+		case "running":
+			return `Reading conversations ${num(status.extracted)} of ${num(status.threads)}`;
 		case "grouping": {
 			const topics = num(status.groupTopics);
 			return topics > 0
