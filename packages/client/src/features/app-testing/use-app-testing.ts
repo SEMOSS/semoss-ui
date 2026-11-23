@@ -8,6 +8,7 @@ import {
 	parseAppTestUpload,
 	runAllAppTests,
 	runAppTests,
+	runIsolatedAppTest,
 	saveAppTestRecording,
 } from "@/api/app-testing";
 import type {
@@ -49,7 +50,11 @@ interface AppTestingState {
 	save: (name: string, description: string) => Promise<void>;
 	updateRecording: (recording: AppTestRecording) => Promise<void>;
 	deleteRecording: (id: string) => Promise<void>;
-	startRun: (recordingId: string) => Promise<void>;
+	approvedH2RecordingId?: string;
+	startRun: (
+		recordingId: string,
+		candidateCommitSha?: string,
+	) => Promise<void>;
 	runAll: () => Promise<void>;
 	uploadTest: (file: File) => Promise<void>;
 	refreshRun: () => Promise<void>;
@@ -66,7 +71,12 @@ export const useAppTesting = (
 	);
 	const parsed = useMemo(() => {
 		if (query.status !== "SUCCESS")
-			return { recordings: [], invalid: [], error: "" };
+			return {
+				recordings: [],
+				invalid: [],
+				approvedH2RecordingId: undefined,
+				error: "",
+			};
 		try {
 			return {
 				...parseAppTestDiscovery(appId, query.data),
@@ -76,6 +86,7 @@ export const useAppTesting = (
 			return {
 				recordings: [],
 				invalid: [],
+				approvedH2RecordingId: undefined,
 				error: "The saved tests could not be read.",
 			};
 		}
@@ -292,7 +303,10 @@ export const useAppTesting = (
 		}
 	};
 
-	const startRun = async (recordingId: string | null): Promise<void> => {
+	const startRun = async (
+		recordingId: string | null,
+		candidateCommitSha?: string,
+	): Promise<void> => {
 		if (isRunning || isSaving || isRecording) return;
 		const signal = lifetime.current?.signal;
 		setIsStartingRun(true);
@@ -304,7 +318,13 @@ export const useAppTesting = (
 			const result =
 				recordingId === null
 					? await runAllAppTests(appId)
-					: await runAppTests(appId, recordingId);
+					: candidateCommitSha
+						? await runIsolatedAppTest(
+								appId,
+								recordingId,
+								candidateCommitSha,
+							)
+						: await runAppTests(appId, recordingId);
 			if (!signal?.aborted) setRun(result);
 		} catch (failure: unknown) {
 			if (!signal?.aborted)
@@ -397,6 +417,7 @@ export const useAppTesting = (
 		updateRecording,
 		deleteRecording,
 		startRun,
+		approvedH2RecordingId: parsed.approvedH2RecordingId,
 		runAll: () => startRun(null),
 		uploadTest,
 		refreshRun,

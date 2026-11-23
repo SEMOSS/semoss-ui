@@ -79,6 +79,8 @@ export interface AppTestRun {
 	runId: string;
 	target: string;
 	status: string;
+	mode?: string;
+	candidateCommitSha?: string;
 	scope?: string;
 	coverageWarning?: string;
 	summary?: Record<string, number>;

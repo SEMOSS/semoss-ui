@@ -11,12 +11,43 @@ import {
 	parseAppTestUpload,
 	runAllAppTests,
 	runAppTests,
+	runIsolatedAppTest,
 	saveAppTestRecording,
 } from "./app-testing";
 
 const transport = vi.hoisted(() => vi.fn());
 vi.mock("@semoss/sdk", () => ({ Session: { insight: { run: transport } } }));
 beforeEach(() => transport.mockReset());
+
+it("requires the backend to acknowledge the exact commit and H2 isolation mode", async () => {
+	const candidateCommitSha = "a".repeat(40);
+	const response = { runId: "run", target: "app", status: "QUEUED" };
+	transport.mockResolvedValueOnce({
+		errors: [],
+		pixelReturn: [{ output: response }],
+	});
+	await expect(
+		runIsolatedAppTest("app", "approved-recording", candidateCommitSha),
+	).rejects.toThrow("did not start the requested H2 regression run");
+	transport.mockResolvedValueOnce({
+		errors: [],
+		pixelReturn: [
+			{
+				output: {
+					...response,
+					mode: "ISOLATED_H2",
+					candidateCommitSha,
+				},
+			},
+		],
+	});
+	await expect(
+		runIsolatedAppTest("app", "approved-recording", candidateCommitSha),
+	).resolves.toMatchObject({ runId: "run", candidateCommitSha });
+	expect(transport).toHaveBeenLastCalledWith(
+		expect.stringContaining(candidateCommitSha),
+	);
+});
 
 it("validates persisted history identities/counts and excludes private evidence from parsed results", () => {
 	const test = {

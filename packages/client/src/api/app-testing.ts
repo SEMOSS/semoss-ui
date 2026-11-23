@@ -115,6 +115,11 @@ const runSchema = z.object({
 	runId: z.string(),
 	target: z.string(),
 	status: z.string(),
+	mode: z.string().optional(),
+	candidateCommitSha: z
+		.string()
+		.regex(/^[a-f0-9]{40}$/)
+		.optional(),
 	scope: z.string().optional(),
 	coverageWarning: z.string().optional(),
 	summary: z.record(z.string(), z.number()).optional(),
@@ -389,6 +394,29 @@ export const runAppTests = async (
 	return result;
 };
 
+/** Replay the approved recording against a specific commit and disposable H2 database. */
+export const runIsolatedAppTest = async (
+	appId: string,
+	recordingId: string,
+	candidateCommitSha: string,
+): Promise<AppTestRun> => {
+	const result = runSchema.parse(
+		await callAppTestPixel(
+			`RunAppTests(project=${JSON.stringify([appId])}, recordingIds=${JSON.stringify([recordingId])}, candidateCommitSha=${JSON.stringify([candidateCommitSha])});`,
+		),
+	);
+	if (
+		result.target !== appId ||
+		result.mode !== "ISOLATED_H2" ||
+		result.candidateCommitSha !== candidateCommitSha
+	) {
+		throw new Error(
+			"The server did not start the requested H2 regression run",
+		);
+	}
+	return result;
+};
+
 /** Poll the initiating user's run and reject mismatched app results. */
 export const getAppTestRun = async (
 	appId: string,
@@ -422,6 +450,7 @@ export const parseAppTestDiscovery = (appId: string, value: unknown) => {
 	const recordings = parseAppTestRecordings(appId, value);
 	const result = z
 		.object({
+			approvedH2RecordingId: z.uuid().optional(),
 			invalid: z
 				.array(
 					z.object({
@@ -441,7 +470,7 @@ export const parseAppTestDiscovery = (appId: string, value: unknown) => {
 				.default([]),
 		})
 		.parse(value);
-	return { recordings, invalid: result.invalid };
+	return { recordings, ...result };
 };
 
 /** Only a server-reported invalid filename may be deleted through the explicit invalid-file action. */

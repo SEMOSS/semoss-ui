@@ -33,6 +33,13 @@ const schema = z.object({
 		.max(2000, "Use at most 2000 characters"),
 });
 
+const regressionSchema = z.object({
+	candidateCommitSha: z
+		.string()
+		.trim()
+		.regex(/^[a-f0-9]{40}$/, "Enter the full 40-character Git commit SHA"),
+});
+
 interface AppTestingPanelProps {
 	/** The app whose preview iframe, in the App panel, is recorded. */
 	appId: string;
@@ -43,6 +50,10 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 	const uploadInput = useRef<HTMLInputElement | null>(null);
 	const frame = useAppFrame(appId);
 	const state = useAppTesting(appId, frame);
+	const regressionForm = useForm<z.infer<typeof regressionSchema>>({
+		resolver: zodResolver(regressionSchema),
+		defaultValues: { candidateCommitSha: "" },
+	});
 	const form = useForm<z.infer<typeof schema>>({
 		resolver: zodResolver(schema),
 		defaultValues: { name: "", description: "" },
@@ -306,10 +317,17 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 						)}
 						<output aria-live="polite" className="text-sm">
 							{runLabel}
+							{state.run.mode === "ISOLATED_H2" &&
+								" with isolated H2"}
 							{summary
 								? ` · ${summary.passed ?? 0} passed · ${summary.failed ?? 0} failed · ${summary.error ?? 0} errors · ${summary.skipped ?? 0} skipped`
 								: ""}
 						</output>
+						{state.run.candidateCommitSha && (
+							<p className="break-all font-mono text-muted-foreground text-xs">
+								{state.run.candidateCommitSha}
+							</p>
+						)}
 						{state.run.error && (
 							<Alert variant="destructive">
 								<AlertDescription>
@@ -398,6 +416,50 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 				onSave={state.updateRecording}
 				onDelete={state.deleteRecording}
 			/>
+			{state.approvedH2RecordingId && (
+				<Form
+					form={regressionForm}
+					onSubmit={async ({ candidateCommitSha }) => {
+						if (state.approvedH2RecordingId) {
+							await state.startRun(
+								state.approvedH2RecordingId,
+								candidateCommitSha,
+							);
+						}
+					}}
+					noValidate
+					className="mt-3 flex flex-col gap-2 border-t pt-3"
+				>
+					<FormInput
+						name="candidateCommitSha"
+						label="Candidate Commit SHA (Required)"
+						description="Replays the approved scenario with synthetic data in a fresh H2 database."
+						autoComplete="off"
+						spellCheck={false}
+						required
+						disabled={
+							state.isRunning ||
+							state.isSaving ||
+							state.isRecording ||
+							hasDraft
+						}
+					/>
+					<Button
+						type="submit"
+						size="sm"
+						variant="outline"
+						className="self-start"
+						disabled={
+							state.isRunning ||
+							state.isSaving ||
+							state.isRecording ||
+							hasDraft
+						}
+					>
+						Run H2 Regression
+					</Button>
+				</Form>
+			)}
 			<div className="mt-3 flex flex-col gap-1 border-t pt-3">
 				<Button
 					type="button"
