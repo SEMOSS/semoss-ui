@@ -16,14 +16,14 @@ export {
 	type FileViewHostFile,
 } from "./contexts/file-explorer-host.context";
 export {
-	type FileMount,
-	type FileMountGroup,
 	type FileSources,
 	FileSourcesProvider,
 	type FileSourcesProviderProps,
+	useFileExplorerRoot,
 	useFileSources,
 } from "./contexts/file-sources.context";
 export { useAccess } from "./hooks/use-access";
+export { useDockFileOptions } from "./hooks/use-dock-file-options";
 export { type FileBuffer, useFileBuffer } from "./hooks/use-file-buffer";
 export {
 	type FilePanelApi,

@@ -41,7 +41,6 @@
 		"desktop": "デスクトップ",
 		"attach": "フォルダーを添付",
 		"attachDescription": "このコンピューターのフォルダーを添付",
-		"empty": "このコンピューターのフォルダーを添付すると、ここでそのファイルを扱えます。変更はディスクに保存されます。",
 		"folderActions": "{{name}} の操作",
 		"reveal": "{{fileManager}} で表示",
 		"openWithApp": "既定のアプリで開く",
@@ -49,6 +48,9 @@
 		"detached": "{{name}} の添付を解除しました。ファイルはコンピューターに残っています。",
 		"attachFailed": "フォルダーを添付できませんでした。{{message}}",
 		"detachFailed": "フォルダーの添付を解除できませんでした。{{message}}",
+		"notInFolder": "先に添付したフォルダーのいずれかを選んでください。",
+		"betweenFolders": "ファイルの移動とコピーは、同じ添付フォルダー内でのみ行えます。",
+		"searchTruncated": "各フォルダーの最初の {{count}} 件を表示しています。さらに見るにはフォルダー内を検索してください。",
 		"openFailed": "うまくいきませんでした。{{message}}",
 		"notHere": "このフォルダーはこのコンピューターでは添付されていません。",
 		"titles": {

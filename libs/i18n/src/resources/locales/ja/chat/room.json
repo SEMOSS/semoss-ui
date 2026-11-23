@@ -257,7 +257,7 @@
 		}
 	},
 	"files": {
-		"roomFiles": "ルームのファイル",
+		"room": "ルーム",
 		"actionFailed": "うまくいきませんでした。{{message}}"
 	}
 }

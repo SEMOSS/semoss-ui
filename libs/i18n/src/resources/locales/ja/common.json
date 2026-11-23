@@ -67,6 +67,7 @@
 		"logoAlt": "ロゴ"
 	},
 	"fileExplorer": {
+		"roots": "ファイル",
 		"search": "検索",
 		"name": "名前",
 		"dateModified": "更新日",
@@ -130,6 +131,7 @@
 		},
 		"refreshTooltip": "{{path}} を更新",
 		"createTooltip": "{{path}} に作成",
+		"searchFilters": "検索フィルター",
 		"searchAll": "すべて",
 		"searchOnly": "「{{name}}」のみ",
 		"searchAllAria": "すべて検索",

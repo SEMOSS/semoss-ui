@@ -67,6 +67,7 @@
 		"logoAlt": "लोगो"
 	},
 	"fileExplorer": {
+		"roots": "फ़ाइलें",
 		"search": "खोजें",
 		"name": "नाम",
 		"dateModified": "संशोधन की तारीख",
@@ -130,6 +131,7 @@
 		},
 		"refreshTooltip": "{{path}} रिफ्रेश करें",
 		"createTooltip": "{{path}} पर बनाएं",
+		"searchFilters": "खोज फ़िल्टर",
 		"searchAll": "सभी",
 		"searchOnly": "केवल \"{{name}}\"",
 		"searchAllAria": "सभी में खोजें",

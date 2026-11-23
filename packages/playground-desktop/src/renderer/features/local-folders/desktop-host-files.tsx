@@ -2,14 +2,10 @@ import { ExternalLinkIcon } from "lucide-react";
 import type { HostFiles } from "@semoss/chat";
 import { getI18n } from "@semoss/i18n";
 import type { FileExplorerSecondaryAction } from "@semoss/shared";
-import { Muted, toast } from "@semoss/ui/next";
+import { toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import { AttachFolderButton } from "./attach-folder-button";
-import { LocalFolderMenu } from "./local-folder-menu";
+import { DESKTOP_MOUNT_ID } from "./desktop-files-source";
 import type { RoomLocalFoldersStore } from "./room-local-folders.store";
-
-/** The Files panel's group of folders from the user's machine. */
-const DESKTOP_MOUNT_GROUP = "desktop";
 
 /**
  * Run a folder action, telling the user when it fails.
@@ -29,64 +25,79 @@ const report = async (run: () => Promise<void>): Promise<void> => {
 };
 
 /**
- * What a room's Files panel lists beside Room Files on the desktop: a Desktop
- * section with each folder attached from the user's machine, its own tree
- * under it, and the actions on its files: Open with Default App, and Show in
- * the machine's file manager.
+ * Detach a folder, telling the user how it went. Its files stay on the
+ * machine.
+ *
+ * @param store - The room's folders.
+ * @param folderId - The attachment.
+ * @param name - The folder's name.
+ */
+const detach = async (
+	store: RoomLocalFoldersStore,
+	folderId: string,
+	name: string,
+): Promise<void> => {
+	const { t } = getI18n();
+	try {
+		await store.detach(folderId);
+		toast.success(t("desktop:localFolders.detached", { name: name }));
+	} catch (error) {
+		toast.error(
+			t("desktop:localFolders.detachFailed", {
+				message: getErrorMessage(error, ""),
+			}),
+		);
+	}
+};
+
+/**
+ * What the desktop adds to its Desktop tree in a room's Files, which
+ * `DesktopFileRoots` adds: the actions on its files, Open with Default App
+ * and Show in the machine's file manager, and on each attached folder,
+ * Detach.
  *
  * @param store - The room's attached folders.
- * @returns The sources for the chat's Files panel.
+ * @returns The rest of the desktop's Files for the chat.
  */
 export const createDesktopHostFiles = (
 	store: RoomLocalFoldersStore,
 ): HostFiles => {
 	const { t } = getI18n();
 	const openWithApp = t("desktop:localFolders.openWithApp");
+	/**
+	 * Which folder a Desktop path is in.
+	 *
+	 * @param mountId - The panel's or row's mount.
+	 * @param path - The path in the Desktop tree.
+	 * @returns The folder and its path, or null for anything else.
+	 */
+	const locate = (mountId: string, path: string) =>
+		mountId === DESKTOP_MOUNT_ID ? store.filesSource.locate(path) : null;
 
 	return {
 		missingMountMessage: t("desktop:localFolders.notHere"),
-		groups: [
-			{
-				id: DESKTOP_MOUNT_GROUP,
-				label: t("desktop:localFolders.desktop"),
-				actions: <AttachFolderButton store={store} />,
-				emptyState: (
-					<div className="flex flex-col items-start gap-2 border-b px-4 py-3">
-						<Muted className="text-xs">
-							{t("desktop:localFolders.empty")}
-						</Muted>
-						<AttachFolderButton store={store} isLabelled />
-					</div>
-				),
-				mountActions: (mount) => (
-					<LocalFolderMenu
-						store={store}
-						folder={{ id: mount.id, name: mount.name }}
-					/>
-				),
-			},
-		],
-		mounts: store.folders.map((folder) => ({
-			id: folder.id,
-			name: folder.name,
-			group: DESKTOP_MOUNT_GROUP,
-			source: store.sourceFor(folder.id),
-		})),
 		// an open Desktop file opens in place, so what the other app saves
 		// comes back to the tab through the folder's watch
-		fileActions: ({ mode, path }) =>
-			mode.type === "MOUNT"
+		fileActions: ({ mode, path }) => {
+			const found =
+				mode.type === "MOUNT" ? locate(mode.mountId, path) : null;
+			return found
 				? [
 						{
 							name: openWithApp,
 							icon: ExternalLinkIcon,
 							action: () =>
-								report(() => store.open(mode.mountId, path)),
+								report(() =>
+									store.open(found.folderId, found.path),
+								),
 						},
 					]
-				: [],
+				: [];
+		},
 		secondaryActions: (item, mode) => {
-			if (mode.type !== "MOUNT") {
+			const found =
+				mode.type === "MOUNT" ? locate(mode.mountId, item.path) : null;
+			if (!found) {
 				return [];
 			}
 			const reveal: FileExplorerSecondaryAction = {
@@ -94,8 +105,18 @@ export const createDesktopHostFiles = (
 					fileManager: store.fileManagerName,
 				}),
 				action: () =>
-					report(() => store.reveal(mode.mountId, item.path)),
+					report(() => store.reveal(found.folderId, found.path)),
 			};
+			// an attached folder's own row
+			if (found.path === "/") {
+				return [
+					reveal,
+					{
+						name: t("desktop:localFolders.detach"),
+						action: () => detach(store, found.folderId, item.name),
+					},
+				];
+			}
 			if (item.type === "directory") {
 				return [reveal];
 			}
@@ -103,7 +124,7 @@ export const createDesktopHostFiles = (
 				{
 					name: openWithApp,
 					action: () =>
-						report(() => store.open(mode.mountId, item.path)),
+						report(() => store.open(found.folderId, found.path)),
 				},
 				reveal,
 			];

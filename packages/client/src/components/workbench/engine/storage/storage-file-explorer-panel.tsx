@@ -1,21 +1,20 @@
 import { CloudIcon } from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { FileExplorerPane, getFilePanelType } from "@semoss/panels";
-import { runPixel, useInsight } from "@semoss/sdk/react";
+import { FileExplorerPane, useDockFileOptions } from "@semoss/panels";
+import { useInsight } from "@semoss/sdk/react";
 import {
 	decorateExplorer,
 	type FileExplorerApi,
 	type FileMode,
 	getFileOperationErrorMessage,
-	useFileExplorer,
+	useStorageFileExplorer,
 } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
 import type {
 	WorkbenchComponent,
 	WorkbenchPanelConfig,
 } from "@semoss/workbench";
-import { useWorkbench } from "@semoss/workbench";
 import { useEngine } from "@/hooks";
 
 /**
@@ -32,47 +31,17 @@ const StorageFileExplorerPanel: WorkbenchComponent = ({ id }) => {
 	const { engine, permission } = useEngine();
 	const insight = useInsight();
 	const { t } = useTranslation("common");
-	const layoutActions = useWorkbench((s) => s.layout.actions);
 	const readOnly = !(permission === "OWNER" || permission === "EDIT");
-	const mode = useMemo<FileMode>(
+	const mode = useMemo<Extract<FileMode, { type: "STORAGE" }>>(
 		() => ({ type: "STORAGE", storage: engine.engine_id }),
 		[engine.engine_id],
 	);
 
-	const explorer = useFileExplorer({
-		mode: mode,
+	// a file opens by being pulled into a new insight; see `useDockFileOptions`
+	const explorer = useStorageFileExplorer({
+		storage: mode.storage,
 		readOnly,
-		onItemSelect: (item) => {
-			const fileName =
-				item.name.split("/").filter(Boolean).pop() || item.name;
-			const insightFilePath = `/${fileName}`;
-
-			runPixel<[string]>(
-				`PullFromStorage(storage=["${engine.engine_id}"], storagePath=["${item.path}"], filePath="/");`,
-				"new",
-			)
-				.then((response) => {
-					if (response.errors.length > 0) {
-						throw new Error(response.errors[0]);
-					}
-
-					layoutActions.selectPanel(
-						getFilePanelType(insightFilePath),
-						{
-							mode: {
-								type: "INSIGHT",
-								insightId: response.insightId,
-							},
-							name: item.name,
-							path: insightFilePath,
-						},
-						{ name: item.name },
-					);
-				})
-				.catch((e) => {
-					toast.error(e?.message || "Failed to load storage file");
-				});
-		},
+		...useDockFileOptions(mode),
 	});
 
 	// Pulling the bucket down to local is folded into refresh rather than a

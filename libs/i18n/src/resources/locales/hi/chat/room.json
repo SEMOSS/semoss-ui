@@ -257,7 +257,7 @@
 		}
 	},
 	"files": {
-		"roomFiles": "रूम फ़ाइलें",
+		"room": "रूम",
 		"actionFailed": "यह काम नहीं किया। {{message}}"
 	}
 }

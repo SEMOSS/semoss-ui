@@ -67,6 +67,7 @@
 		"logoAlt": "logo"
 	},
 	"fileExplorer": {
+		"roots": "Bestanden",
 		"search": "Zoeken",
 		"name": "Naam",
 		"dateModified": "Wijzigingsdatum",
@@ -130,6 +131,7 @@
 		},
 		"refreshTooltip": "{{path}} vernieuwen",
 		"createTooltip": "Aanmaken in {{path}}",
+		"searchFilters": "Zoekfilters",
 		"searchAll": "Alle",
 		"searchOnly": "Alleen \"{{name}}\"",
 		"searchAllAria": "Alles doorzoeken",

@@ -106,17 +106,31 @@ A mount has no resource of its own, so `useAccess` treats it as editable; its so
 what it cannot do. A panel restored while its mount is not here shows the host's
 `missingMountMessage`.
 
-A `FILE_EXPLORER_PANEL` whose mode the host's `isShownIn` accepts lists the mounts below its own
-tree: its own tree under `primaryLabel`, then one heading per `FileMountGroup` (Desktop now, a
-storage group later) with each mount as a collapsible section of its own explorer
-(`FileMountSection`). A group with no mounts shows its `emptyState`, or hides without one, so a
-host with nothing mounted keeps the plain panel. Every explorer in the panel, its own and each
-mount's, is wired into the dock the same way by `useDockFileExplorer`.
+The host's trees are explorers, not data. A host component under `FileSourcesProvider` builds
+one per tree with a per-mode hook from `@semoss/shared` (`useSourceFileExplorer` for a mount,
+`useStorageFileExplorer`, `useEngineFileExplorer`, …), wires it into the dock by spreading
+`useDockFileOptions(mode)` into it, and adds it with `useFileExplorerRoot({ id, name, actions,
+explorer })` for as long as it is mounted. One component per tree, since hooks cannot run in a
+loop. `useDockFileOptions` opens a storage bucket's file by pulling it into a new insight, as a
+bucket has no read reactor. `useFileMount` finds a mount's source among the added roots.
 
-The top-level sections (the panel's own tree and each group) can be dragged by their heading, or
-moved with Alt+Up and Alt+Down on it, and the line between two open sections resizes them
-(`useFileExplorerSections`). Order and sizes are flex weights kept in the panel's config as
-`sections`, so they last with the layout; which sections are collapsed is not kept.
+A `FILE_EXPLORER_PANEL` whose mode the host's `isShownIn` accepts hands `FileExplorer` its own
+tree (labelled `primaryLabel`) and then the host's. With no
+host trees it is the plain panel. The panel publishes the root the user is working in, so the
+chrome control's New and Refresh act on it, and refreshes a host's root on `FILES_CHANGED` for its
+scope. Rows of a host's root get the host's `secondaryActions`, handed the row's explorer.
+
+`FileExplorer` draws a row per root once there are two or more: it opens and closes the root,
+and drags it (or Alt+Up and Alt+Down) to move it. The roots stack at the height they need and
+scroll together. The arrangement is kept in the panel's config as `roots` (`order`,
+`collapsed`), so it lasts with the layout; a layout saved as `sections` is read until the user
+next changes it.
+
+The desktop app adds one root, Desktop: one explorer over a source that lists every attached
+folder as a top level directory (mount `desktop`), so the folders read as a tree. Its search walks
+each folder in a worker thread of the desktop app's main process (`local-fs:search`). Its row's menu
+attaches a folder, its `emptyState` offers Attach Folder when none is, and each folder's row menu carries Show
+in Finder and Detach.
 
 Dragging rows from one explorer into another copies them, folders with everything in them, and
 replaces a name that is already there. Each `useFileExplorer` registers how its tree is read

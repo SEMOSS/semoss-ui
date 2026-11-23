@@ -324,7 +324,7 @@ export function SplitLayout({
 									onWorkbenchClose?.();
 								}}
 								className={cn(
-									"min-w-0 bg-muted/30",
+									"min-w-0",
 									!isWorkbenchShown && "hidden",
 								)}
 							>

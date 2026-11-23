@@ -257,7 +257,7 @@
 		}
 	},
 	"files": {
-		"roomFiles": "Fichiers du salon",
+		"room": "Salon",
 		"actionFailed": "Cela n’a pas fonctionné. {{message}}"
 	}
 }

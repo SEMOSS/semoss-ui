@@ -253,7 +253,7 @@
 		}
 	},
 	"files": {
-		"roomFiles": "Archivos de la sala",
+		"room": "Sala",
 		"actionFailed": "No funcionó. {{message}}"
 	}
 }

@@ -55,6 +55,13 @@ export interface ChatComponents {
 	readonly SlashCommands?: ComponentType | null;
 	/** The icons of the Workspace's rail, after its cog; default `DefaultWorkbenchRail`. */
 	readonly WorkbenchRail?: ComponentType;
+	/**
+	 * The host's trees in a room's Files, beside Room Files, such as the
+	 * desktop app's folders: it adds each with `useFileExplorerRoot` from
+	 * `@semoss/panels`, and draws nothing. Drawn inside the room's Workspace,
+	 * where `useRoom` gives the room. None by default.
+	 */
+	readonly WorkbenchFileRoots?: ComponentType;
 }
 
 /**

@@ -1,28 +1,11 @@
-import { useCallback } from "react";
 import {
 	type FileExplorerAdapter,
 	type FileExplorerApi,
-	type FileExplorerMovedItem,
-	type FileItem,
 	type FileSource,
-	getParentPath,
 	useFileExplorer,
 } from "@semoss/shared";
-import { useWorkbench, writeSpawnDragSpec } from "@semoss/workbench";
-import { FILE_PANEL_EVENTS } from "../constants/file-panel.constants";
-import {
-	type FilePanelMode,
-	getFilePanelScope,
-} from "../types/file-panel.types";
-import { getFilePanelType } from "../utility/file-editor.utility";
-import { useWorkbenchFilePanels } from "./use-workbench-file-panels";
-
-/** Whether a moved item stayed in its original directory. */
-const isRename = (moved: FileExplorerMovedItem): boolean =>
-	getParentPath(moved.oldPath) === getParentPath(moved.newPath);
-
-/** Keeps a path as it is, for an explorer that is not kept to a folder. */
-const asIs = (path: string): string => path;
+import type { FilePanelMode } from "../types/file-panel.types";
+import { useDockFileOptions } from "./use-dock-file-options";
 
 interface UseDockFileExplorerOptions {
 	/** The explorer's scope, which every panel it opens is opened with. */
@@ -43,9 +26,9 @@ interface UseDockFileExplorerOptions {
 }
 
 /**
- * A file explorer wired into the dock: a file opens in its panel, renames and
- * deletes follow the panels showing them, files written in place tell those
- * panels, and a file dragged out opens where it is dropped.
+ * A file explorer over any panel scope, wired into the dock through
+ * {@link useDockFileOptions}. The Files panel builds its own tree with it,
+ * whatever the scope its config names.
  *
  * @param options - The explorer's scope and source.
  * @returns The explorer.
@@ -57,83 +40,14 @@ export const useDockFileExplorer = ({
 	readOnly,
 	initialPath,
 	onRefresh,
-	toSourcePath = asIs,
-}: UseDockFileExplorerOptions): FileExplorerApi => {
-	const layoutActions = useWorkbench((state) => state.layout.actions);
-	const emit = useWorkbench((state) => state.events.actions.emit);
-	const { migrateMovedTabs, removeDeletedTabs } =
-		useWorkbenchFilePanels(mode);
-
-	const openFile = useCallback(
-		(item: FileItem) =>
-			layoutActions.selectPanel(
-				getFilePanelType(item.path),
-				{ mode, name: item.name, path: toSourcePath(item.path) },
-				{ name: item.name },
-			),
-		[mode, layoutActions, toSourcePath],
-	);
-
-	return useFileExplorer({
+	toSourcePath,
+}: UseDockFileExplorerOptions): FileExplorerApi =>
+	useFileExplorer({
 		mode,
 		adapter,
 		source,
 		readOnly,
 		initialPath: initialPath,
 		onRefresh,
-		onItemSelect: openFile,
-		onItemsMoved: (movedItems) => {
-			const migrated = migrateMovedTabs(
-				movedItems.map((moved) => ({
-					item: {
-						...moved.item,
-						path: toSourcePath(moved.item.path),
-					},
-					oldPath: toSourcePath(moved.oldPath),
-					newPath: toSourcePath(moved.newPath),
-				})),
-			);
-			if (
-				!migrated &&
-				movedItems.length === 1 &&
-				isRename(movedItems[0])
-			) {
-				const newPath = movedItems[0].newPath;
-				openFile({
-					name: newPath.split("/").filter(Boolean).pop() ?? newPath,
-					path: newPath,
-				});
-			}
-		},
-		onItemsDeleted: (items) =>
-			removeDeletedTabs(
-				items.map((item) => ({
-					...item,
-					path: toSourcePath(item.path),
-				})),
-			),
-		// An extract or a copy can land on a file an editor is showing. Nothing
-		// about the panel changes, so without this it keeps displaying — and
-		// would save back — the content that was just replaced.
-		onItemsWritten: (paths) =>
-			emit(FILE_PANEL_EVENTS.FILES_CHANGED, {
-				scope: getFilePanelScope(mode),
-				paths: paths?.map(toSourcePath),
-			}),
-		onItemDragStart: (event, items) => {
-			if (items.length !== 1 || items[0].type === "directory") {
-				return;
-			}
-
-			writeSpawnDragSpec(event.dataTransfer, {
-				type: getFilePanelType(items[0].path),
-				config: {
-					mode,
-					name: items[0].name,
-					path: toSourcePath(items[0].path),
-				},
-				name: items[0].name,
-			});
-		},
+		...useDockFileOptions(mode, toSourcePath),
 	});
-};

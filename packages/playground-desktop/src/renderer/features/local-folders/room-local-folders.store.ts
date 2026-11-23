@@ -1,6 +1,10 @@
 import type { FileSource } from "@semoss/shared";
 import { getErrorMessage } from "@semoss/utility/error";
 import { StoreState } from "@semoss/utility/store";
+import {
+	createDesktopFilesSource,
+	type DesktopFilesSource,
+} from "./desktop-files-source";
 import { DesktopFolders } from "./desktop-folders";
 import type { LocalFolder, LocalFoldersHost } from "./local-folders-host";
 
@@ -57,6 +61,11 @@ export class RoomLocalFoldersStore {
 		folders: readonly LocalFolder[];
 		folder: DesktopFolders;
 	} | null = null;
+	/** The Desktop tree's source, kept while the folders are the same. */
+	private filesSourceCache: {
+		folders: readonly LocalFolder[];
+		source: DesktopFilesSource;
+	} | null = null;
 
 	/**
 	 * @param deps - The host and the room's callbacks.
@@ -96,6 +105,27 @@ export class RoomLocalFoldersStore {
 			};
 		}
 		return this.toolFolderCache.folder;
+	}
+
+	/**
+	 * The attached folders as one tree for the room's Files, each a top level
+	 * directory. The same object while the folders are the same.
+	 */
+	get filesSource(): DesktopFilesSource {
+		const folders = this.folders;
+		if (this.filesSourceCache?.folders !== folders) {
+			this.filesSourceCache = {
+				folders,
+				source: createDesktopFilesSource(
+					folders.map((folder) => ({
+						id: folder.id,
+						name: folder.name,
+						source: this.sourceFor(folder.id),
+					})),
+				),
+			};
+		}
+		return this.filesSourceCache.source;
 	}
 
 	/**

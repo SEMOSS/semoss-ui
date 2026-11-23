@@ -73,8 +73,9 @@ Tests sit beside their source. Test helpers are in `src/test/`.
 2. **A host changes the chat in two ways only.** Layout and controls are composition: the host
    places pieces and fills slots (`leading`, `trailing`, `header`, `workbench`, children,
    `RoomConversation`'s `suggestions`), and hands `UserSettingsDialog` its `sections`. The chat's
-   places are components: `ChatConfig.components` holds the host's `PlusMenu`, `SlashCommands`
-   and `WorkbenchRail` (plain components with no props, made of the chat's exported items), and
+   places are components: `ChatConfig.components` holds the host's `PlusMenu`, `SlashCommands`,
+   `WorkbenchRail` and `WorkbenchFileRoots` (plain components with no props, made of the chat's
+   exported items, or for `WorkbenchFileRoots` the host's explorers), and
    the chat renders each inside its own frame, or its default; `null` for `PlusMenu` or
    `SlashCommands` places no menu. The panels are data, `ChatConfig.workbenchPanels`; a room
    panel left out leaves the rail and the "/" menu. `NewChat` takes the host's `banner`,

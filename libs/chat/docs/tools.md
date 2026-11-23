@@ -96,11 +96,13 @@ its name (`desktop_*`). These details are easy to break:
 - **A room opened where its host is not** (the web app, another machine), or a tool the room
   does not have now, answers the call with the host's `unavailableMessage`, or the chat's own
   without a host, so an agent run never waits on it.
-- **A host's files sit beside Room Files.** `ToolsHost.files(roomId)` is a `HostFiles`: groups and
-  mounts for the Files panel, and the actions on a mount's files. `RoomWorkbench` lists them after
-  Room Files (`FileSourcesProvider`) and adds Add to Context to a mount's files, which uploads a
-  copy to Room Files, since a message's `media` is a path there; the host's own actions come
-  first. A `subscribe` call with `{ mountId }` emits `FILES_CHANGED` for that mount's `MOUNT`
+- **A host's files sit beside Room Files.** The trees come from the host's
+  `ChatComponents.WorkbenchFileRoots`, drawn inside the room's Workspace under
+  `FileSourcesProvider`: one component per tree builds its explorer with a per-mode hook and
+  adds it with `useFileExplorerRoot`. `ToolsHost.files(roomId)` is a `HostFiles`: the actions on
+  a mount's files, and what a panel says when its mount is gone. `RoomWorkbench` adds Add to Context to a
+  mount's files, which reads the file through the row's explorer's `source` and uploads a copy to
+  Room Files, since a message's `media` is a path there; the host's own actions come first. A `subscribe` call with `{ mountId }` emits `FILES_CHANGED` for that mount's `MOUNT`
   scope, so its explorer and panels refresh.
 - **The host keeps what it needs per room.** The chat calls `subscribe` as a room is made and
   stops as it is dropped, `load` once the room is open and its mode known, and `discard` when a

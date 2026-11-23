@@ -67,6 +67,7 @@
 		"logoAlt": "الشعار"
 	},
 	"fileExplorer": {
+		"roots": "الملفات",
 		"search": "بحث",
 		"name": "الاسم",
 		"dateModified": "تاريخ التعديل",
@@ -130,6 +131,7 @@
 		},
 		"refreshTooltip": "تحديث {{path}}",
 		"createTooltip": "إنشاء في {{path}}",
+		"searchFilters": "عوامل تصفية البحث",
 		"searchAll": "الكل",
 		"searchOnly": "فقط \"{{name}}\"",
 		"searchAllAria": "بحث في الكل",

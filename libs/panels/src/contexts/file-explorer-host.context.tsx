@@ -4,7 +4,11 @@ import {
 	type ReactNode,
 	useContext,
 } from "react";
-import type { FileExplorerSecondaryAction, FileItem } from "@semoss/shared";
+import type {
+	FileExplorerApi,
+	FileExplorerSecondaryAction,
+	FileItem,
+} from "@semoss/shared";
 import type { FilePanelMode } from "../types/file-panel.types";
 
 /** A button a host adds to an open file's tab controls. */
@@ -34,11 +38,14 @@ export interface FileExplorerHost {
 	 *
 	 * @param item - The row's file or directory.
 	 * @param mode - The space the explorer browses.
+	 * @param explorer - The row's explorer, such as to read a file through
+	 * its `source`.
 	 * @return The entries to add; none when the host has nothing for the item.
 	 */
 	secondaryActions?: (
 		item: FileItem,
 		mode: FilePanelMode,
+		explorer: FileExplorerApi,
 	) => FileExplorerSecondaryAction[];
 	/**
 	 * Extra buttons in an open file's tab controls, after Refresh and Save,

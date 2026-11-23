@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useContext, useMemo } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	type FileExplorerHost,
@@ -6,10 +6,11 @@ import {
 	type FileSources,
 	FileSourcesProvider,
 } from "@semoss/panels";
-import type { FileExplorerSecondaryAction } from "@semoss/shared";
+import type { FileExplorerSecondaryAction, FileSource } from "@semoss/shared";
 import { toast, useIsMobile } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import { Workbench, WorkbenchProvider } from "@semoss/workbench";
+import { ChatConfigContext } from "../chat/config/chat-config.context";
 import { useNextMessageRoom } from "../conversation/attachments/next-message-room.context";
 import { RoomProvider, useRoomOrContext } from "../room/scope/room.context";
 import type { RoomStore } from "../room/store/room.store";
@@ -56,16 +57,17 @@ export const RoomWorkbench = ({
 		room,
 		(current) => room.toolsHost?.files?.(current.roomId) ?? null,
 	);
+	// read without `useChatConfig`, so the Workspace also renders with no host config
+	const FileRoots =
+		useContext(ChatConfigContext)?.components?.WorkbenchFileRoots;
 	const fileSources = useMemo<FileSources | null>(
 		() =>
 			hostFiles
 				? {
-						primaryLabel: tRoom("files.roomFiles"),
+						primaryLabel: tRoom("files.room"),
 						// the room's own Files, not another explorer such as a connector's
 						isShownIn: (mode) => mode.type === "INSIGHT",
 						missingMountMessage: hostFiles.missingMountMessage,
-						groups: hostFiles.groups,
-						mounts: hostFiles.mounts,
 					}
 				: null,
 		[hostFiles, tRoom],
@@ -75,17 +77,15 @@ export const RoomWorkbench = ({
 		 * Copy a file from one of the host's mounts to Room Files and queue
 		 * it for the next message: a message's media is a path in Room Files.
 		 *
-		 * @param mountId - The mount.
+		 * @param source - The mount's source.
 		 * @param item - The file.
 		 */
 		const addMountFileToContext = async (
-			mountId: string,
+			source: FileSource,
 			item: { path: string; name: string },
 		): Promise<void> => {
-			const mount = hostFiles?.mounts.find(({ id }) => id === mountId);
-			if (!mount) return;
 			try {
-				const bytes = await mount.source.read(item.path);
+				const bytes = await source.read(item.path);
 				const [uploaded] = await uploadTurnFiles(room.insightId, [
 					new File([new Uint8Array(bytes)], item.name),
 				]);
@@ -110,7 +110,7 @@ export const RoomWorkbench = ({
 				context.mode.type === "MOUNT"
 					? (hostFiles?.fileActions?.(context) ?? [])
 					: [],
-			secondaryActions: (item, mode) => {
+			secondaryActions: (item, mode, explorer) => {
 				if (mode.type !== "MOUNT") {
 					return item.type === "directory"
 						? []
@@ -130,13 +130,15 @@ export const RoomWorkbench = ({
 							];
 				}
 				const actions: FileExplorerSecondaryAction[] = [
-					...(hostFiles?.secondaryActions?.(item, mode) ?? []),
+					...(hostFiles?.secondaryActions?.(item, mode, explorer) ??
+						[]),
 				];
-				if (item.type !== "directory") {
+				const { source } = explorer;
+				if (item.type !== "directory" && source) {
 					actions.push({
 						name: t("actions.addToContext"),
 						placement: "end",
-						action: () => addMountFileToContext(mode.mountId, item),
+						action: () => addMountFileToContext(source, item),
 					});
 				}
 				return actions;
@@ -172,6 +174,7 @@ export const RoomWorkbench = ({
 					<FileExplorerHostProvider host={explorerHost}>
 						{fileSources ? (
 							<FileSourcesProvider sources={fileSources}>
+								{FileRoots ? <FileRoots /> : null}
 								{workbench}
 							</FileSourcesProvider>
 						) : (

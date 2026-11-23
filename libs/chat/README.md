@@ -447,6 +447,7 @@ a host keeps or leaves out their entries with `options.roomActions` and `options
 | `PlusMenu` | The composer's plus menu | `DefaultPlusMenu` | `AttachFilesItem`, `KnowledgeItem`, `ToolsItem`, `ModeItem`, `AgentItem`, and the host's `DropdownMenuItem`s; `useComposer()` for the room and its actions |
 | `SlashCommands` | The composer's "/" menu | `DefaultSlashCommands` | `SlashCommand`s; `useComposer()` |
 | `WorkbenchRail` | The Workspace rail's icons, after its cog | `DefaultWorkbenchRail` | `WorkbenchRailItem`s; `useWorkbenchRail()` for the room and the chat's panels |
+| `WorkbenchFileRoots` | The host's trees in a room's Files, after Room Files; draws nothing | none | One component per tree calling a per-mode explorer hook (`useSourceFileExplorer`, …) with `useDockFileOptions` and `useFileExplorerRoot`; `useRoom()` for the room |
 
 `PlusMenu: null` or `SlashCommands: null` places no menu. The panels themselves are data, not a
 component: `ChatConfig.workbenchPanels`, every panel a Workspace can open by panel type, default
@@ -562,9 +563,9 @@ since the room store uses it. The chat:
 - answers an agent run's paused call the same way, and with `unavailableMessage` when the room
   does not have the tool here;
 - marks the calls the host `owns` as its own by name, so past calls render before it loads;
-- lists `files(roomId)` in the Files panel beside Room Files, with the host's actions on its
-  files and the chat's Add to Context, and refreshes a mount's explorer when the listener is
-  called with `{ mountId }`;
+- puts `files(roomId)` in the Files panel: the host's actions on the files of the trees its
+  `WorkbenchFileRoots` adds, and the chat's Add to Context;
+  and refreshes a mount's explorer when the listener is called with `{ mountId }`;
 - calls `load(roomId)` once a room is open, and `discard(roomId)` when a new chat is left
   before its first message.
 

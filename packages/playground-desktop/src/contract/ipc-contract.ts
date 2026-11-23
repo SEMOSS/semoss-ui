@@ -2,6 +2,7 @@ import type {
 	LocalFileEntry,
 	LocalFolderGrant,
 	LocalFolderRef,
+	LocalFolderSearchResult,
 } from "./local-folders";
 import type { ServerConfig } from "./server-connection";
 
@@ -89,6 +90,14 @@ export interface IpcContract {
 		request: [ref: LocalFolderRef, path: string];
 		response: LocalFileEntry[];
 	};
+	/**
+	 * The entries under a folder whose names contain a term, at any depth,
+	 * searched in a background worker; an empty path searches all of it.
+	 */
+	"local-fs:search": {
+		request: [ref: LocalFolderRef, path: string, term: string];
+		response: LocalFolderSearchResult;
+	};
 	/** One entry, or null when nothing is there. */
 	"local-fs:stat": {
 		request: [ref: LocalFolderRef, path: string];
@@ -164,6 +173,7 @@ const IPC_CHANNEL_LIST: Record<IpcChannel, true> = {
 	"local-folders:watch": true,
 	"local-folders:unwatch": true,
 	"local-fs:list": true,
+	"local-fs:search": true,
 	"local-fs:stat": true,
 	"local-fs:read": true,
 	"local-fs:write": true,

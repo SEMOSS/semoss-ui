@@ -1,8 +1,4 @@
-import type {
-	FileExplorerHost,
-	FileMount,
-	FileMountGroup,
-} from "@semoss/panels";
+import type { FileExplorerHost } from "@semoss/panels";
 
 /** How a tool call runs: on its own, or once the user approves it. */
 export type ClientToolExecution = "auto" | "ask";
@@ -61,12 +57,12 @@ export interface ClientTool {
 	run(args: Record<string, unknown>): Promise<ClientToolOutcome>;
 }
 
-/** Sources a host adds to a room's Files panel, beside Room Files. */
+/**
+ * What a host adds to a room's Files panel for its own trees. The trees
+ * themselves come from the host's `ChatComponents.WorkbenchFileRoots`, which
+ * adds each with `useFileExplorerRoot`.
+ */
 export interface HostFiles {
-	/** The groups the mounts are listed under, with their own actions. */
-	readonly groups: readonly FileMountGroup[];
-	/** The mounts, each a folder with its own source. */
-	readonly mounts: readonly FileMount[];
 	/** What a panel says when its mount is gone. */
 	readonly missingMountMessage: string;
 	/** A mount's file actions, such as Open with App. */

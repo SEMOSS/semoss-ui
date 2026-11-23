@@ -257,7 +257,7 @@
 		}
 	},
 	"files": {
-		"roomFiles": "Ruimtebestanden",
+		"room": "Ruimte",
 		"actionFailed": "Dat is niet gelukt. {{message}}"
 	}
 }

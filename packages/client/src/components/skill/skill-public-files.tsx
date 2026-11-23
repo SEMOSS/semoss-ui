@@ -79,17 +79,15 @@ export const SkillPublicFiles: React.FC<SkillPublicFilesProps> = ({
 		<>
 			<div className="mb-6 max-h-[35vh] overflow-auto rounded-md border border-border">
 				<FileExplorer
-					explorer={explorer}
-					header={
+					explorers={[{ id: "files", name: "", explorer: explorer }]}
+					header={(active) => (
 						<FileExplorerHeader
-							explorer={explorer}
+							explorer={active}
 							actions={
-								<FileExplorerRefreshAction
-									explorer={explorer}
-								/>
+								<FileExplorerRefreshAction explorer={active} />
 							}
 						/>
-					}
+					)}
 					newFileOverlay={null}
 				/>
 			</div>

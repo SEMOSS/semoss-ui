@@ -67,6 +67,7 @@
 		"logoAlt": "logo"
 	},
 	"fileExplorer": {
+		"roots": "Fichiers",
 		"search": "Rechercher",
 		"name": "Nom",
 		"dateModified": "Date de modification",
@@ -130,6 +131,7 @@
 		},
 		"refreshTooltip": "Actualiser {{path}}",
 		"createTooltip": "Créer dans {{path}}",
+		"searchFilters": "Filtres de recherche",
 		"searchAll": "Tout",
 		"searchOnly": "Uniquement \"{{name}}\"",
 		"searchAllAria": "Rechercher partout",

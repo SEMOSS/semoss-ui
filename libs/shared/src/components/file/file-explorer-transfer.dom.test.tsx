@@ -72,7 +72,11 @@ const createSource = (files: Record<string, string>) => {
 const Explorer = ({ source }: { source: FileSource }) => {
 	const explorer = useFileExplorer({ mode: MODE, source: source });
 	return (
-		<FileExplorer explorer={explorer} header={null} newFileOverlay={null} />
+		<FileExplorer
+			explorers={[{ id: "files", name: "", explorer: explorer }]}
+			header={() => null}
+			newFileOverlay={null}
+		/>
 	);
 };
 

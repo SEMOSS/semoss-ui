@@ -10,11 +10,15 @@ import {
 	isLocalFolderRef,
 	type LocalFolderGrant,
 	type LocalFolderRef,
+	MAX_FOLDER_SEARCH_RESULTS,
 } from "../../../contract/local-folders";
 import { handleIpc, type IpcCaller } from "../ipc/handle-ipc";
 import type { FolderGrant, FolderGrants } from "./folder-grants";
+import { createFolderSearches } from "./folder-searches";
 import type { FolderWatchers } from "./folder-watchers";
 import { createLocalFs } from "./local-fs";
+import { SEARCH_TIME_BUDGET_MS } from "./search-folder";
+import createSearchWorker from "./search-folder.worker?nodeWorker";
 
 /** What the local folder handlers act on. */
 interface RegisterLocalFoldersOptions {
@@ -116,6 +120,9 @@ export const registerLocalFolders = ({
 		},
 	});
 
+	// each search walks its folder in a worker of its own
+	const searches = createFolderSearches(createSearchWorker);
+
 	const partitionInUse = (): string => {
 		const partition = getPartition();
 		if (!partition) throw new Error("No server is in use");
@@ -200,6 +207,22 @@ export const registerLocalFolders = ({
 	handleIpc("local-fs:list", caller, (ref, path) =>
 		fs.list(folderOf(ref).path, readPath(path)),
 	);
+	handleIpc("local-fs:search", caller, (ref, path, term) => {
+		const grant = folderOf(ref);
+		if (typeof term !== "string") {
+			throw new Error("A search term is required");
+		}
+		return searches.search(
+			watchKey(partitionInUse(), ref as LocalFolderRef),
+			{
+				root: grant.path,
+				start: readPath(path),
+				term: term,
+				limit: MAX_FOLDER_SEARCH_RESULTS,
+				timeBudgetMs: SEARCH_TIME_BUDGET_MS,
+			},
+		);
+	});
 	handleIpc("local-fs:stat", caller, (ref, path) =>
 		fs.stat(folderOf(ref).path, readPath(path)),
 	);

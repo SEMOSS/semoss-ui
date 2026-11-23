@@ -257,7 +257,7 @@
 		}
 	},
 	"files": {
-		"roomFiles": "ملفات الغرفة",
+		"room": "الغرفة",
 		"actionFailed": "لم ينجح ذلك. {{message}}"
 	}
 }

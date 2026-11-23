@@ -41,7 +41,6 @@
 		"desktop": "Bureau",
 		"attach": "Joindre un dossier",
 		"attachDescription": "Joindre un dossier de cet ordinateur",
-		"empty": "Joignez un dossier de cet ordinateur pour travailler ici sur ses fichiers. Les modifications sont enregistrées sur votre disque.",
 		"folderActions": "Actions de {{name}}",
 		"reveal": "Afficher dans {{fileManager}}",
 		"openWithApp": "Ouvrir avec l’application par défaut",
@@ -49,6 +48,9 @@
 		"detached": "{{name}} détaché. Ses fichiers sont toujours sur votre ordinateur.",
 		"attachFailed": "Le dossier n’a pas pu être joint. {{message}}",
 		"detachFailed": "Le dossier n’a pas pu être détaché. {{message}}",
+		"notInFolder": "Choisissez d'abord l'un des dossiers joints.",
+		"betweenFolders": "Les fichiers ne se déplacent et ne se copient qu'au sein d'un même dossier joint.",
+		"searchTruncated": "Affichage des {{count}} premiers résultats de chaque dossier. Recherchez dans un dossier pour en voir plus.",
 		"openFailed": "Cela n’a pas fonctionné. {{message}}",
 		"notHere": "Ce dossier n’est pas joint sur cet ordinateur.",
 		"titles": {

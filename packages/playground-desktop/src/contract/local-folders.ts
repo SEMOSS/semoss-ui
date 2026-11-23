@@ -24,6 +24,17 @@ export interface LocalFileEntry {
 	readonly lastModified?: string;
 }
 
+/** The most matches one attached folder's search returns. */
+export const MAX_FOLDER_SEARCH_RESULTS = 500;
+
+/** What a search of an attached folder found. */
+export interface LocalFolderSearchResult {
+	/** The matches, as the listing has them, nearest first. */
+	readonly entries: LocalFileEntry[];
+	/** Whether it stopped at its limit or its time budget, leaving some out. */
+	readonly isTruncated: boolean;
+}
+
 /**
  * Whether a value names an attached folder. The page's arguments arrive
  * untyped, so every file call checks its reference with this.

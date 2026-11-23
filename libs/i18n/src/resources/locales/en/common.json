@@ -67,6 +67,7 @@
 		"logoAlt": "logo"
 	},
 	"fileExplorer": {
+		"roots": "Files",
 		"search": "Search",
 		"searchToggle": "Search files",
 		"clearSearch": "Clear search",
@@ -133,6 +134,7 @@
 		},
 		"refreshTooltip": "Refresh {{path}}",
 		"createTooltip": "Create at {{path}}",
+		"searchFilters": "Search Filters",
 		"searchAll": "All",
 		"searchOnly": "Only \"{{name}}\"",
 		"searchAllAria": "Search all",

@@ -84,20 +84,17 @@ describe("the desktop's tools host", () => {
 
 		expect(outcome?.isError).toBe(false);
 		expect(notes.files.get("/todo.md")).toBe("- ship");
-		expect(onChange).toHaveBeenCalledWith({ mountId: "f1" });
+		// the Desktop tree holds every folder, so it is the one that re-reads
+		expect(onChange).toHaveBeenCalledWith({ mountId: "desktop" });
 	});
 
-	it("lists the folders in Files, and detaches them when a new chat is left", async () => {
+	it("keeps the room's folders for Files, and detaches them when a new chat is left", async () => {
 		const { host, folders } = setup();
 		host.subscribe("room-1", vi.fn());
 		await host.load?.("room-1");
 
-		expect(host.files?.("room-1")?.mounts).toEqual([
-			expect.objectContaining({
-				id: "f1",
-				name: "notes",
-				group: "desktop",
-			}),
+		expect(host.foldersFor("room-1").folders).toEqual([
+			expect.objectContaining({ id: "f1", name: "notes" }),
 		]);
 
 		await host.discard?.("room-1");

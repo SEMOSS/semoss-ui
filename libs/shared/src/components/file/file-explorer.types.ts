@@ -376,3 +376,12 @@ export interface FileExplorerNewFileOverlayProps {
 	 */
 	onClose: (success: boolean, createdIn?: string) => void;
 }
+
+/**
+ * Options for a per-mode explorer hook, such as `useEngineFileExplorer`: the
+ * hook supplies the tree, and these say how it behaves.
+ */
+export type FileExplorerHookOptions = Omit<
+	FileExplorerOptions,
+	"mode" | "adapter" | "source"
+>;

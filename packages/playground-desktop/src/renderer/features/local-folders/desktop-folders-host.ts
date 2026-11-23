@@ -4,11 +4,19 @@ import type {
 	LocalFileEntry,
 	LocalFolderRef,
 } from "../../../contract/local-folders";
-import type { LocalFolder, LocalFoldersHost } from "./local-folders-host";
+import type {
+	FolderSource,
+	LocalFolder,
+	LocalFoldersHost,
+} from "./local-folders-host";
 
-/** What an attached folder can do in the explorer: everything but download, since it is already here. */
+/**
+ * What an attached folder can do in the explorer: everything but download,
+ * since it is already here. Its search walks the folder in the main process's
+ * background worker.
+ */
 const FOLDER_CAPABILITIES: FileSource["capabilities"] = {
-	search: false,
+	search: true,
 	mutate: true,
 	create: true,
 	upload: true,
@@ -52,23 +60,41 @@ const getFileManagerName = (): string => {
 const createFolderSource = (
 	bridge: DesktopBridge,
 	ref: LocalFolderRef,
-): FileSource => ({
-	capabilities: FOLDER_CAPABILITIES,
-	list: async (path) =>
-		(await bridge.invoke("local-fs:list", ref, path)).map(toItem),
-	stat: async (path) => {
-		const entry = await bridge.invoke("local-fs:stat", ref, path);
-		return entry ? toItem(entry) : null;
-	},
-	read: (path) => bridge.invoke("local-fs:read", ref, path),
-	write: (path, bytes) => bridge.invoke("local-fs:write", ref, path, bytes),
-	move: (from, to) => bridge.invoke("local-fs:move", ref, from, to),
-	copy: (from, to) => bridge.invoke("local-fs:copy", ref, from, to),
-	remove: (path) => bridge.invoke("local-fs:remove", ref, path),
-	createFile: (path) => bridge.invoke("local-fs:create-file", ref, path),
-	createDirectory: (path) =>
-		bridge.invoke("local-fs:create-directory", ref, path),
-});
+): FolderSource => {
+	let isSearchTruncated = false;
+	return {
+		capabilities: FOLDER_CAPABILITIES,
+		get isSearchTruncated() {
+			return isSearchTruncated;
+		},
+		// an empty path searches the whole folder
+		search: async (path, term) => {
+			const result = await bridge.invoke(
+				"local-fs:search",
+				ref,
+				path,
+				term,
+			);
+			isSearchTruncated = result.isTruncated;
+			return result.entries.map(toItem);
+		},
+		list: async (path) =>
+			(await bridge.invoke("local-fs:list", ref, path)).map(toItem),
+		stat: async (path) => {
+			const entry = await bridge.invoke("local-fs:stat", ref, path);
+			return entry ? toItem(entry) : null;
+		},
+		read: (path) => bridge.invoke("local-fs:read", ref, path),
+		write: (path, bytes) =>
+			bridge.invoke("local-fs:write", ref, path, bytes),
+		move: (from, to) => bridge.invoke("local-fs:move", ref, from, to),
+		copy: (from, to) => bridge.invoke("local-fs:copy", ref, from, to),
+		remove: (path) => bridge.invoke("local-fs:remove", ref, path),
+		createFile: (path) => bridge.invoke("local-fs:create-file", ref, path),
+		createDirectory: (path) =>
+			bridge.invoke("local-fs:create-directory", ref, path),
+	};
+};
 
 /**
  * The chat's way to the user's own files on the desktop: folders attached to
@@ -81,7 +107,7 @@ const createFolderSource = (
 export const createDesktopFoldersHost = (
 	bridge: DesktopBridge,
 ): LocalFoldersHost => {
-	const sources = new Map<string, FileSource>();
+	const sources = new Map<string, FolderSource>();
 	const toFolders = (
 		grants: readonly { id: string; name: string }[],
 	): LocalFolder[] => grants.map(({ id, name }) => ({ id, name }));

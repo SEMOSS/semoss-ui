@@ -318,7 +318,7 @@ const resolveChangeable = async (
  * @param stats - Its stats.
  * @returns The entry, with its path inside the folder.
  */
-const toEntry = (
+export const toEntry = (
 	rootReal: string,
 	target: string,
 	stats: Stats,

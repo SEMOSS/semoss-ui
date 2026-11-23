@@ -1,5 +1,11 @@
 import type { FileSource } from "@semoss/shared";
 
+/** One attached folder's files, and whether its last search left some out. */
+export interface FolderSource extends FileSource {
+	/** Whether the last search stopped at its limit or time budget. */
+	readonly isSearchTruncated?: boolean;
+}
+
 /** A folder from the user's machine, attached to one room. */
 export interface LocalFolder {
 	/** The attachment's id: the same across restarts, so panels opened on it come back. */
@@ -47,7 +53,7 @@ export interface LocalFoldersHost {
 	 * @param folderId - The attachment.
 	 * @returns Its source.
 	 */
-	source(roomId: string, folderId: string): FileSource;
+	source(roomId: string, folderId: string): FolderSource;
 	/**
 	 * Open a file or folder in the app the machine opens it with.
 	 *

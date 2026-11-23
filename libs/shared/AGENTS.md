@@ -71,14 +71,14 @@ file panel's `targetInsightId`, or the room's insight in the playground.
 
 State lives in `useFileExplorer(options)`, which returns one `FileExplorerApi`; `FileExplorer`,
 `FileExplorerHeader`, `FileExplorerItem`, and the context menu are presentational consumers of
-it. A host calls the hook, passes the result down as `explorer`, and drives the tree through
+it. A host calls the hook, passes the result down in `explorers`, and drives the tree through
 `explorer.commands` — a facade whose identity never changes, so it survives being handed to a
 surface outside the explorer's React subtree. The whole api object is identity-stable for the
 same reason; such a holder sees live behaviour but **not** live state, because it does not
 re-render when the explorer does.
 
-Three props are required with no fallback, so every consumer states its intent: `explorer`,
-`header` (`null` for none), and `newFileOverlay` (`null` for a browse-only tree). Everything
+Three props are required with no fallback, so every consumer states its intent: `explorers`,
+`header` (return `null` for none), and `newFileOverlay` (`null` for a browse-only tree). Everything
 mode-specific — capabilities and one Pixel per operation — lives in
 `file-explorer.adapters.ts`; nothing else branches on `mode.type`.
 
@@ -120,6 +120,27 @@ clicked and on a folder's chevron while its children load, so they act on the ro
 The header's shortcuts tooltip points mouse users at right-click and the button, not the keys. A
 row's state (selected, its menu open, a drop target) highlights the whole row, its icon or
 chevron included, through `TreeViewItem`'s `rowClassName`.
+
+**One explorer, several roots.** `FileExplorer` takes `explorers`, a list of
+`{ id, name, actions?, emptyState?, listingNote?, explorer }`. Each `explorer` comes from a per-mode hook
+(`useInsightFileExplorer`, `useAppFileExplorer`, `useEngineFileExplorer`,
+`useStorageFileExplorer`, `useUserFileExplorer`, `useSourceFileExplorer`) or from
+`useFileExplorer`; the hook names the tree, so a root has no mode of its own. With one root it is
+a plain tree. With more, the roots behave like folders. The top level (labelled Files) lists each
+as a folder row, drawn exactly as the tree's own (same height, padding, chevron and name, with the
+host's `actions` in the hover menu column): a click opens it in place, Alt+Up and Alt+Down or a drag moves it, and a
+double-click or Enter (or a double-click on one of its folders) goes into it, which then fills the
+explorer. Backspace goes up a folder, and from a root's top back to the top level, as does the
+top-level entry in the header's path menu. `header(active, place)` gets `place`
+(`FileExplorerPlace`) and passes it to `FileExplorerHeader`. At the top level, the one search runs
+in every root, each its own way (server search, a filter, or a source's `search`), and every root
+opens to show what it found. The date column width follows the root the user last worked in,
+which `onActiveRootChange` reports. A root may carry an `emptyState` and a `listingNote` of its
+own. The arrangement (order and closed roots) is `layout`/`onLayoutChange`, kept by the explorer
+itself when the host keeps none.
+
+The search's filters (all of the tree, or only the current folder, where the source can keep a
+search to a folder) are a menu inside the search field, not a row under it.
 
 `FileExplorer` is **not** deprecated — it is the shell `@semoss/panels`'
 `FileExplorerPane` renders, and `libs/panels` is its main consumer.

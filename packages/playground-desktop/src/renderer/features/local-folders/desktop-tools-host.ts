@@ -10,6 +10,7 @@ import {
 	type ToolsHostChange,
 } from "@semoss/chat";
 import { getI18n } from "@semoss/i18n";
+import { DESKTOP_MOUNT_ID } from "./desktop-files-source";
 import { DESKTOP_FOLDERS_NAME } from "./desktop-folders";
 import { createDesktopHostFiles } from "./desktop-host-files";
 import type { LocalFolder, LocalFoldersHost } from "./local-folders-host";
@@ -96,9 +97,8 @@ const buildTools = (
 					args,
 				);
 				if (outcome.hasChanges) {
-					for (const folder of entry.store.folders) {
-						notify({ mountId: folder.id });
-					}
+					// the Desktop tree holds every folder, so it re-reads
+					notify({ mountId: DESKTOP_MOUNT_ID });
 				}
 				return { isError: outcome.isError, payload: outcome.payload };
 			},
@@ -139,8 +139,19 @@ export const createDesktopToolsHost = (
 				host: foldersHost,
 				getRoomId: () => roomId,
 				onFoldersChanged: () => notify(entry),
-				onFilesChanged: (mountId, paths) =>
-					notify(entry, { mountId: mountId, paths: paths }),
+				// a folder's change is a change in the Desktop tree, under the
+				// folder's name
+				onFilesChanged: (folderId, paths) =>
+					notify(entry, {
+						mountId: DESKTOP_MOUNT_ID,
+						paths: paths?.flatMap(
+							(path) =>
+								entry.store.filesSource.toDesktopPath(
+									folderId,
+									path,
+								) ?? [],
+						),
+					}),
 			}),
 		};
 		rooms.set(roomId, entry);

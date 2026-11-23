@@ -257,7 +257,7 @@
 		}
 	},
 	"files": {
-		"roomFiles": "Room Files",
+		"room": "Room",
 		"actionFailed": "That did not work. {{message}}"
 	}
 }

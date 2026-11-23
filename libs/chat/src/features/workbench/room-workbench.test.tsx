@@ -3,10 +3,13 @@ import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import type { FileExplorerHost } from "@semoss/panels";
+import type { FileExplorerApi } from "@semoss/shared";
 import { testChatOptions } from "../../test/chat-options";
 import { createMemoryFileSource } from "../../test/memory-file-source";
+import { ChatConfigContext } from "../chat/config/chat-config.context";
 import { NextMessageRoomProvider } from "../conversation/attachments/next-message-room.context";
 import { SplitLayout } from "../room/layout/split-layout";
+import { useRoom } from "../room/scope/room.context";
 import { RoomStore } from "../room/store/room.store";
 import { useRoomSelector } from "../room/store/use-room-selector";
 import type { ToolsHost } from "../tools/chat-tools/tools-host";
@@ -156,7 +159,8 @@ test.each([false, true])(
 		const host = mocks.explorerHost.mock.lastCall?.[0];
 		const file = { name: "notes.txt", path: "/notes.txt" };
 		const mode = { type: "INSIGHT", insightId: "room-controls" } as const;
-		const actions = host?.secondaryActions?.(file, mode) ?? [];
+		const explorer = { mode, source: null } as unknown as FileExplorerApi;
+		const actions = host?.secondaryActions?.(file, mode, explorer) ?? [];
 		expect(actions).toHaveLength(1);
 		await act(async () => {
 			await actions[0].action(file);
@@ -167,7 +171,11 @@ test.each([false, true])(
 			expect.objectContaining({ path: "notes.txt", name: "notes.txt" }),
 		]);
 		expect(
-			host?.secondaryActions?.({ ...file, type: "directory" }, mode),
+			host?.secondaryActions?.(
+				{ ...file, type: "directory" },
+				mode,
+				explorer,
+			),
 		).toEqual([]);
 		if (isDraft) expect(room.contextItems.items).toEqual([]);
 	},
@@ -180,8 +188,6 @@ test("a host's mount gets the host's file actions and Add to Context; Room Files
 		owns: () => false,
 		list: () => [],
 		files: () => ({
-			groups: [{ id: "desktop", label: "Desktop" }],
-			mounts: [{ id: "f1", name: "notes", group: "desktop", source }],
 			missingMountMessage: "Not here",
 			fileActions: () => [
 				{ name: "Open with App", icon: () => null, action: open },
@@ -202,6 +208,7 @@ test("a host's mount gets the host's file actions and Add to Context; Room Files
 	render(<RoomWorkbench room={room} />);
 	const host = mocks.explorerHost.mock.lastCall?.[0];
 	const mode = { type: "MOUNT", mountId: "f1" } as const;
+	const explorer = { mode, source } as unknown as FileExplorerApi;
 
 	const actions =
 		host?.fileActions?.({ mode, path: "/notes.md", name: "notes.md" }) ??
@@ -212,7 +219,11 @@ test("a host's mount gets the host's file actions and Add to Context; Room Files
 
 	expect(
 		host
-			?.secondaryActions?.({ name: "notes.md", path: "/notes.md" }, mode)
+			?.secondaryActions?.(
+				{ name: "notes.md", path: "/notes.md" },
+				mode,
+				explorer,
+			)
 			.map((action) => action.name),
 	).toEqual(["Show in Finder", "actions.addToContext"]);
 
@@ -236,4 +247,38 @@ test("without a host's files an open file gets no extra button", () => {
 			name: "notes.md",
 		}),
 	).toEqual([]);
+});
+
+test("a host's file roots are drawn in the room's Workspace, where they can read the room", () => {
+	const seen: string[] = [];
+	const FileRoots = () => {
+		seen.push(useRoom().roomId);
+		return null;
+	};
+	const toolsHost: ToolsHost = {
+		owns: () => false,
+		list: () => [],
+		files: () => ({ missingMountMessage: "Not here" }),
+		subscribe: () => () => undefined,
+		unavailableMessage: "",
+	};
+	const room = new RoomStore({
+		chatOptions: testChatOptions(),
+		roomId: "room-desktop",
+		workbenchPanels: {},
+		toolsHost,
+	});
+	render(
+		<ChatConfigContext.Provider
+			value={{
+				options: testChatOptions(),
+				callbacks: { onOpenRoom: vi.fn(), onOpenNewChat: vi.fn() },
+				components: { WorkbenchFileRoots: FileRoots },
+			}}
+		>
+			<RoomWorkbench room={room} />
+		</ChatConfigContext.Provider>,
+	);
+
+	expect(seen).toContain("room-desktop");
 });

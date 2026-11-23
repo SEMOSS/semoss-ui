@@ -41,7 +41,6 @@
 		"desktop": "Bureaublad",
 		"attach": "Map toevoegen",
 		"attachDescription": "Een map van deze computer toevoegen",
-		"empty": "Voeg een map van deze computer toe om hier met de bestanden te werken. Wijzigingen worden op je schijf opgeslagen.",
 		"folderActions": "Acties voor {{name}}",
 		"reveal": "Tonen in {{fileManager}}",
 		"openWithApp": "Openen met standaardapp",
@@ -49,6 +48,9 @@
 		"detached": "{{name}} losgekoppeld. De bestanden staan nog op je computer.",
 		"attachFailed": "De map kon niet worden toegevoegd. {{message}}",
 		"detachFailed": "De map kon niet worden losgekoppeld. {{message}}",
+		"notInFolder": "Kies eerst een van de toegevoegde mappen.",
+		"betweenFolders": "Bestanden worden alleen binnen één toegevoegde map verplaatst en gekopieerd.",
+		"searchTruncated": "De eerste {{count}} resultaten per map worden getoond. Zoek in een map voor meer.",
 		"openFailed": "Dat is niet gelukt. {{message}}",
 		"notHere": "Deze map is niet toegevoegd op deze computer.",
 		"titles": {

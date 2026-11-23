@@ -16,6 +16,7 @@ import {
 import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 import { platformPathFor } from "../../../contract/server-connection";
 import { getDesktopBridge } from "../desktop-bridge/desktop-bridge";
+import { DesktopFileRoots } from "../local-folders/desktop-file-roots";
 import type { DesktopToolsHost } from "../local-folders/desktop-tools-host";
 import { DesktopPlusMenu } from "./desktop-plus-menu";
 import { DesktopSlashCommands } from "./desktop-slash-commands";
@@ -24,6 +25,7 @@ import { DesktopSlashCommands } from "./desktop-slash-commands";
 const DESKTOP_CHAT_COMPONENTS: ChatComponents = {
 	PlusMenu: DesktopPlusMenu,
 	SlashCommands: DesktopSlashCommands,
+	WorkbenchFileRoots: DesktopFileRoots,
 };
 
 /** The build's new-chat defaults, from the playground's `.env`. */

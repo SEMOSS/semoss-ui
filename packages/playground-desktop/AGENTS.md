@@ -42,7 +42,8 @@ src/
     features/ipc/                 handle-ipc (every handler behind the sender check), register-ipc
     features/downloads/           the save dialog, starting in Downloads
     features/local-folders/       folder-grants (smss-desktop-folders.json), local-fs (file calls kept
-                                  inside each folder), folder-watchers, register-local-folders
+                                  inside each folder), folder-watchers, search-folder (+ its worker,
+                                  folder-searches), register-local-folders
     features/menu/                File (New Chat, Change Server…), Edit, View, Window
   preload/      preload.ts: an allowlisted invoke, the menu's commands and the tool frame origin,
                 nothing else
@@ -318,12 +319,21 @@ A room can attach folders from this machine. The app gives them to the chat as
   open, offers the `desktop_*` tools over the room's folders (`DesktopFolders`, each folder a
   top level entry, with the chat's `describeFolderTool` and `executeFolderTool`; each has its own
   `desktop_folder_*` setting, never the Room Files one, so reads run at once and every change asks
-  until the user says otherwise), lists the folders in Files under Desktop
-  (`desktop-host-files.tsx`: Attach Folder, Show in Finder, Open with Default App, Detach), and
-  detaches a new chat's folders when it is left before its first message.
+  until the user says otherwise), and detaches a new chat's folders when it is left before its
+  first message.
+- In Files, the room's folders are one root, Desktop (`DesktopFileRoots` in the chat's
+  `WorkbenchFileRoots` slot, `DesktopRoot`): one explorer over `createDesktopFilesSource`, which
+  lists each folder as a top level directory (mount `desktop`). Its row's menu and its empty state
+  attach a folder (`usePickFolder`); each folder's row carries Show in Finder and Detach, and its
+  files Open with Default App (`desktop-host-files.tsx`).
 - Attach Folder in the plus menu (`AttachFolderItem`) and "/" (`AttachFolderCommand`) attach
-  to an open room, or to the room a new chat prepares (`useComposer().prepareRoom()`). They leave
-  the Workspace as it is; the folders show in Files when the user opens it.
+  to an open room, or to the room a new chat prepares (`useComposer().prepareRoom()`). An open
+  room then shows its Files.
+- **Search runs off the main thread.** `local-fs:search` walks the folder in a `worker_threads`
+  worker (`search-folder.worker.ts`, imported with electron-vite's `?nodeWorker`), one per folder
+  at a time: a newer search stops the older one. It finds what the listing shows (hidden names
+  skipped), does not walk through links to folders, and stops at `MAX_FOLDER_SEARCH_RESULTS` (500)
+  or 10 seconds, saying so (`isTruncated`), which Desktop shows under its results.
 - Its strings are in the `desktop` namespace, under `localFolders`.
 
 - **Only the system's folder picker attaches a folder** (`local-folders:pick`, parented to the
