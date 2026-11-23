@@ -15,7 +15,7 @@ Use the narrowest public category subpath. Hosts compile this source-only packag
 | `/json` | Strict and tolerant parsing, string-array parsing, formatting, key-sorted serialization, tabular detection, parse-error locations |
 | `/file` | File extensions and filename-stem sanitization |
 | `/encoding` | Byte/UTF-8 Base64 encoding and strict decoding |
-| `/browser` | Favicon updates and Blob downloads |
+| `/browser` | Favicon updates, Blob downloads, and HTML style-comment normalization |
 | `/clipboard` | Clipboard writes with optional result callbacks |
 | `/csv` | CSV cell escaping |
 | `/async` | Timer-based sleep |
@@ -94,6 +94,8 @@ imported only by the files under `src/react/`, each with its own entry in `expor
 such as `@semoss/utility/react/use-store-selector`; the root and every other category
 work without it. Browser globals are
 accessed only when browser helpers run; callers own notifications and feature policy.
+`uncommentHtmlStyles` removes legacy comment markers from `<style>` text in an
+inert document. It does not sanitize HTML; sanitize its output before rendering.
 Day.js remains the date dependency; existing native Date/Intl output is preserved.
 `getDateBucket` and `DATE_BUCKET_ORDER` provide relative groups; callers translate
 the bucket IDs and add feature-specific groups such as favorites.

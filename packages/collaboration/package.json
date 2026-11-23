@@ -29,7 +29,7 @@
 		"@semoss/ui": "workspace:*",
 		"@semoss/utility": "workspace:*",
 		"@semoss/workbench": "workspace:*",
-		"dompurify": "^3.4.15",
+		"dompurify": "^3.5.0",
 		"lexical": "^0.39.0",
 		"lucide-react": "^0.545.0",
 		"react": "^19.0.0",

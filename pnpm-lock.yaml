@@ -251,8 +251,8 @@ importers:
         specifier: workspace:*
         version: link:../utility
       dompurify:
-        specifier: ^3.4.15
-        version: 3.4.17
+        specifier: ^3.5.0
+        version: 3.5.0
       lucide-react:
         specifier: ^0.545.0
         version: 0.545.0(react@19.2.8)
@@ -447,8 +447,8 @@ importers:
         specifier: ^4.1.11
         version: 4.1.11(vitest@4.1.11)
       dompurify:
-        specifier: ^2.3.10
-        version: 2.5.8
+        specifier: ^3.5.0
+        version: 3.5.0
       echarts:
         specifier: ^5.5.1
         version: 5.6.0
@@ -1294,8 +1294,8 @@ importers:
         specifier: workspace:*
         version: link:../../libs/workbench
       dompurify:
-        specifier: ^3.4.15
-        version: 3.4.15
+        specifier: ^3.5.0
+        version: 3.5.0
       lexical:
         specifier: ^0.39.0
         version: 0.39.0
@@ -4875,14 +4875,11 @@ packages:
     resolution: {integrity: sha512-cgwlv/1iFQiFnU96XXgROh8xTeetsnJiDsTc7TYCLFd9+/WNkIqPTxiM/8pSd8VIrhXGTf1Ny1q1hquVqDJB5w==}
     engines: {node: '>= 4'}
 
-  dompurify@2.5.8:
-    resolution: {integrity: sha512-o1vSNgrmYMQObbSSvF/1brBYEQPHhV1+gsmrusO7/GXtp1T9rCS8cXFqVxK/9crT1jA6Ccv+5MTSjBNqr7Sovw==}
-
-  dompurify@3.4.15:
-    resolution: {integrity: sha512-EUBjM+B+lkDE41iE82DDSCfkoPGfXx8IxFxPMjNzm/Uk4xDet77rTN9wqlxlVg71kK7XGuUMv6wUxJUwwv+Xyw==}
-
   dompurify@3.4.17:
     resolution: {integrity: sha512-B/pSlYVHQ58kqISD/yDjuJ1yfzI34m1gF4lAod2bwSRhiN4K5Cl3H8Af7hqB2PmTL911tdEudnnXn5FnhRoz0w==}
+
+  dompurify@3.5.0:
+    resolution: {integrity: sha512-LYC0ZkE8P1V42JsRYTwMdme/2ET8SpOc5AA2eOFjP/IadvRd2fwiT4TVz5vkfy0XUx12aS2UaRkTnfVPNOv9vw==}
 
   domutils@3.2.2:
     resolution: {integrity: sha512-6kZKyUajlDuqlHKVX1w7gyslj9MPIXzIFiz/rGu35uC1wMi+kMhQwGhl4lt9unC9Vb9INnY9Z3/ZA3+FhASLaw==}
@@ -11429,13 +11426,12 @@ snapshots:
     dependencies:
       domelementtype: 2.3.0
 
-  dompurify@2.5.8: {}
-
-  dompurify@3.4.15:
+  dompurify@3.4.17:
     optionalDependencies:
       '@types/trusted-types': 2.0.7
+    optional: true
 
-  dompurify@3.4.17:
+  dompurify@3.5.0:
     optionalDependencies:
       '@types/trusted-types': 2.0.7
 
@@ -12793,7 +12789,7 @@ snapshots:
       d3-sankey: 0.12.3
       dagre-d3-es: 7.0.14
       dayjs: 1.11.21
-      dompurify: 3.4.17
+      dompurify: 3.5.0
       es-toolkit: 1.47.0
       katex: 0.16.47
       khroma: 2.1.0
@@ -13150,7 +13146,7 @@ snapshots:
 
   ooxml-ui@1.21.0(patch_hash=9646eaab0211f75c794bcf382c80cbf8f1ba848f51b6c921c3f08f72b57d04e4)(three@0.186.1):
     dependencies:
-      dompurify: 3.4.17
+      dompurify: 3.5.0
       emf-converter: 4.21.0
       lit: 3.3.3
       ooxml-core: 1.22.0(patch_hash=5f003529d29fd8bceb179590c3b3a4609ac04574bbfee42407512bd38a49acba)
@@ -13317,7 +13313,7 @@ snapshots:
   pptx-react-viewer@4.45.0(patch_hash=cc2dcd16e6f9446e5c77b73c15fd51d7ee0f0b6b62332da448363a2452c7e41d)(fast-xml-parser@5.11.2)(framer-motion@13.2.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(i18next@26.7.2(typescript@6.0.3))(jspdf@4.2.1)(jszip@3.10.2)(lucide-react@0.545.0(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react-i18next@17.1.13(i18next@26.7.2(typescript@6.0.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3))(react-icons@5.7.0(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(yjs@13.6.33):
     dependencies:
       clsx: 2.1.1
-      dompurify: 3.4.17
+      dompurify: 3.5.0
       fast-xml-parser: 5.11.2
       framer-motion: 13.2.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       html2canvas-pro: 2.5.2
