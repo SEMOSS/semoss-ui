@@ -73,7 +73,7 @@ describe("RoutineChatButton", () => {
 				/>,
 			);
 			await user.dblClick(
-				screen.getByRole("button", { name: "Ask Assistant" }),
+				screen.getByRole("button", { name: "Ask Your Digital Twin" }),
 			);
 			expect(
 				screen.getByRole("button", { name: "Opening chat…" }),
@@ -110,16 +110,20 @@ describe("RoutineChatButton", () => {
 				startedAt={startedAt}
 			/>,
 		);
-		await user.click(screen.getByRole("button", { name: "Ask Assistant" }));
+		await user.click(
+			screen.getByRole("button", { name: "Ask Your Digital Twin" }),
+		);
 		expect(await screen.findByRole("alert")).toHaveTextContent(
 			"Connection interrupted",
 		);
 		expect(service.navigate).not.toHaveBeenCalled();
 		expect(historyChanged).not.toHaveBeenCalled();
 		expect(
-			screen.getByRole("button", { name: "Ask Assistant" }),
+			screen.getByRole("button", { name: "Ask Your Digital Twin" }),
 		).toBeEnabled();
-		await user.click(screen.getByRole("button", { name: "Ask Assistant" }));
+		await user.click(
+			screen.getByRole("button", { name: "Ask Your Digital Twin" }),
+		);
 		await waitFor(() => expect(service.navigate).toHaveBeenCalledOnce());
 		expect(service.open).toHaveBeenNthCalledWith(
 			2,
@@ -142,7 +146,9 @@ describe("RoutineChatButton", () => {
 				startedAt={startedAt}
 			/>,
 		);
-		await user.click(screen.getByRole("button", { name: "Ask Assistant" }));
+		await user.click(
+			screen.getByRole("button", { name: "Ask Your Digital Twin" }),
+		);
 		view.unmount();
 		await act(async () => pending.resolve("routine-chat"));
 		expect(service.navigate).not.toHaveBeenCalled();
@@ -155,7 +161,7 @@ describe("RoutineResult chat availability", () => {
 		["inbox-daily-brief", INBOX_RESULT_COPY],
 		["weekly-meeting-agendas", AGENDA_RESULT_COPY],
 	] as const)(
-		"opens the displayed %s output with only Ask Assistant",
+		"opens the displayed %s output with only Ask Your Digital Twin",
 		async (id, copy) => {
 			const user = userEvent.setup();
 			render(
@@ -176,7 +182,7 @@ describe("RoutineResult chat availability", () => {
 			).not.toBeInTheDocument();
 			expect(screen.getByText(completedRun.summary)).toBeVisible();
 			await user.click(
-				screen.getByRole("button", { name: "Ask Assistant" }),
+				screen.getByRole("button", { name: "Ask Your Digital Twin" }),
 			);
 			expect(service.open).toHaveBeenCalledExactlyOnceWith(
 				service.actions,
@@ -206,7 +212,7 @@ describe("RoutineResult chat availability", () => {
 			</MemoryRouter>,
 		);
 		expect(
-			screen.getByRole("button", { name: "Ask Assistant" }),
+			screen.getByRole("button", { name: "Ask Your Digital Twin" }),
 		).toBeEnabled();
 		expect(screen.queryByRole("link", { name: "Open session" })).toBeNull();
 	});
@@ -235,7 +241,7 @@ describe("RoutineResult chat availability", () => {
 				</MemoryRouter>,
 			);
 			expect(
-				screen.queryByRole("button", { name: "Ask Assistant" }),
+				screen.queryByRole("button", { name: "Ask Your Digital Twin" }),
 			).toBeNull();
 			expect(
 				screen.queryByRole("link", { name: "Open session" }),

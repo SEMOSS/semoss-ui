@@ -2,6 +2,7 @@ import { Brain, FolderOpen, Settings2 } from "lucide-react";
 import {
 	type KeyboardEvent,
 	type PointerEvent as ReactPointerEvent,
+	useCallback,
 	useContext,
 	useEffect,
 	useId,
@@ -27,6 +28,9 @@ import {
 	guessMemoryKind,
 	rememberCommand,
 } from "@/features/collaboration/state/memory";
+import { getTwinKind } from "@/features/digital-twin/api/twin-kind";
+import { useChatAgent } from "@/features/digital-twin/use-main-twin";
+import { useTwinRead } from "@/features/digital-twin/use-twin-read";
 import { roomFileLinks } from "@/features/messages/utils/room-file-link";
 import { connectorPanelActions } from "@/features/room-connectors/connector-panel-actions";
 import { useRoomConnectors } from "@/features/room-connectors/room-connectors.context";
@@ -38,10 +42,12 @@ import {
 import { ToolWorkbench } from "@/features/tools/components/tool-workbench";
 import { openToolWorkbenchFiles } from "@/features/tools/open-tool-workbench-files";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
+import type { InsightActions } from "@/lib/pixel";
 import type { Session } from "@/types/session";
 import { useShowCurrentChat } from "../current-chat";
 import { takeFileToShow } from "../room-file-to-show";
 import type { ComposerSubmission, RoomViewProps } from "../types/room";
+import { RoomAgentLine } from "./room-agent-line";
 import { RoomComposer } from "./room-composer";
 import type { RoomSlashCommand } from "./room-composer-slash-plugin";
 import { RoomContextFiles } from "./room-context-files";
@@ -131,6 +137,24 @@ export function RoomWorkspace({
 }: RoomWorkspaceProps) {
 	const roomEmail = useContext(RoomEmailContext);
 	useShowCurrentChat(roomSession);
+	// Who the chat is with. One read when the room opens tells a twin from any other agent; the
+	// person's own twin and a delegated task's room need none.
+	const chat = useChatAgent({
+		agentId: session.agentId,
+		agent,
+		options: roomSnapshot?.options,
+	});
+	const otherAgentId = chat.kind === "agent" ? session.agentId : "";
+	const readTwinKind = useCallback(
+		async (actions: InsightActions) =>
+			otherAgentId ? getTwinKind(actions, otherAgentId) : undefined,
+		[otherAgentId],
+	);
+	const twinKind = useTwinRead(readTwinKind);
+	// a read still out says nothing yet, and neither does what it found for the agent before
+	const otherAgent = twinKind.isLoading ? undefined : twinKind.data;
+	const aboutAgent =
+		chat.kind === "mainTwin" ? ({ kind: "mainTwin" } as const) : otherAgent;
 	// /remember saves a memory as the owner's own, with no model call
 	const memorySession = useOptionalCollaborationSession();
 	const workbench = useToolWorkbench();
@@ -360,16 +384,32 @@ export function RoomWorkspace({
 					<RoomConversation
 						agent={agent}
 						agentImage={
-							session.agentId
-								? agentImageUrl(session.agentId)
-								: undefined
+							chat.kind === "mainTwin"
+								? chat.avatar
+								: session.agentId
+									? agentImageUrl(session.agentId)
+									: undefined
 						}
+						messageImage={chat.avatar}
 						title={session.title}
 						conversationId={session.id}
 						headerTopics={
 							<RoomTopics
 								roomId={session.id}
 								isRunning={isRunning}
+							/>
+						}
+						headerAgentLine={
+							<RoomAgentLine
+								name={agent.name}
+								about={aboutAgent}
+							/>
+						}
+						headerAgentDetails={
+							<RoomAgentLine
+								name={agent.name}
+								about={aboutAgent}
+								part="details"
 							/>
 						}
 						thread={thread}

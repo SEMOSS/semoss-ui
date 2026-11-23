@@ -20,31 +20,31 @@ export const TWIN_SOURCES = {
 		label: "Outlook",
 		icon: OutlookIcon,
 		description:
-			"Your mailbox. Save an email to add its whole conversation to your Digital Twin.",
+			"Your mailbox. Save an email to add its whole conversation to this twin.",
 	},
 	calendar: {
 		label: "Calendar",
 		icon: OutlookCalendarIcon,
 		description:
-			"Your Outlook calendar. Save a meeting to add when it was, who was invited and what it was about to your Digital Twin.",
+			"Your Outlook calendar. Save a meeting to add when it was, who was invited and what it was about to this twin.",
 	},
 	"teams-chats": {
 		label: "Teams chats",
 		icon: TeamsChatsIcon,
 		description:
-			"Your Teams chats. Save one to add its latest messages to your Digital Twin.",
+			"Your Teams chats. Save one to add its latest messages to this twin.",
 	},
 	onedrive: {
 		label: "OneDrive",
 		icon: OneDriveIcon,
 		description:
-			"Your OneDrive files and the files shared with you. Save one to add it to your Digital Twin.",
+			"Your OneDrive files and the files shared with you. Save one to add it to this twin.",
 	},
 	"teams-files": {
 		label: "Teams files",
 		icon: TeamsFilesIcon,
 		description:
-			"The files of a Teams channel. Choose a team and a channel, then save a file to add it to your Digital Twin.",
+			"The files of a Teams channel. Choose a team and a channel, then save a file to add it to this twin.",
 	},
 } as const;
 
@@ -60,7 +60,7 @@ export const TWIN_FINDER = {
 	label: "Find with AI",
 	icon: TwinFinderIcon,
 	description:
-		"Describe what your Digital Twin should know. Your Outlook, Teams chats and OneDrive are searched, and the emails, chats and files that fit are suggested for you to add.",
+		"Describe what this twin should know. Your Outlook, Teams chats and OneDrive are searched, and the emails, chats and files that fit are suggested for you to add.",
 } as const;
 
 // The mail viewer knows an email by its thread, or by itself when it has none, and a file attached to one by

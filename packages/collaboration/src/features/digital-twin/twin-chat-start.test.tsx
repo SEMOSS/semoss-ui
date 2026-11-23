@@ -97,7 +97,7 @@ it("shows who the twin is and whose, its greeting as written, and the ask box", 
 		],
 	]);
 	// a twin's name is its owner's to choose, so the page says whose it is
-	expect(screen.getByText("Dana Ortiz’s Digital Twin")).toBeVisible();
+	expect(screen.getByText("Shared by Dana Ortiz")).toBeVisible();
 	// Markdown, not its source
 	expect(screen.getByText("renewal").tagName).toBe("STRONG");
 	expect(screen.getByText(/Ask this AI twin/)).toBeVisible();
@@ -107,7 +107,7 @@ it("shows who the twin is and whose, its greeting as written, and the ask box", 
 	).toBeVisible();
 	expect(screen.getByText("Find a source")).toBeVisible();
 	expect(screen.queryByText("Add a document")).toBeNull();
-	expect(screen.queryByText("Choose what your twin shares")).toBeNull();
+	expect(screen.queryByText("Choose What This Twin Shares")).toBeNull();
 	expect([...readOpenedTwins(PERSON)]).toEqual(["twin-2"]);
 });
 
@@ -123,12 +123,12 @@ it("explains approval and original files to the owner and links to this twin’s
 	renderStart("twin-2");
 	expect(
 		await screen.findByRole("heading", {
-			name: "Choose what your twin shares",
+			name: "Choose What This Twin Shares",
 		}),
 	).toBeVisible();
-	// their own twin is "your AI twin"; it is not named after them a second time
-	expect(screen.getByText(/^Your AI twin answers/)).toBeVisible();
-	expect(screen.queryByText(/’s Digital Twin/)).toBeNull();
+	// their own twin is "this twin"; it is not named after them a second time
+	expect(screen.getByText(/^This twin answers/)).toBeVisible();
+	expect(screen.queryByText(/^Shared by/)).toBeNull();
 	expect(
 		screen.getByText(
 			/deleting its saved copy.*approve each change.*original files/i,
@@ -168,7 +168,7 @@ it.each([
 		renderStart("twin-2");
 		expect(await screen.findByText(/^Ask this AI twin/)).toBeVisible();
 		expect(screen.getByText("The ask box")).toBeVisible();
-		expect(screen.queryByText(/’s Digital Twin/)).toBeNull();
+		expect(screen.queryByText(/^Shared by/)).toBeNull();
 	},
 );
 

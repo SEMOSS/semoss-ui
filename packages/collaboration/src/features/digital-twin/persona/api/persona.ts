@@ -64,7 +64,7 @@ export const PERSONA_SECTIONS: {
 	{
 		key: "limits",
 		label: "Leave to you",
-		hint: "What your twins stay out of, to the letter. When your assistant writes for you, it takes no position on these.",
+		hint: "What the twins you share stay out of, to the letter. Your own Digital Twin leaves these to you unless you tell it otherwise.",
 	},
 	{
 		key: "examples",

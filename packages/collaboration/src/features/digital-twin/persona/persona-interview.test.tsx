@@ -28,7 +28,7 @@ const LIMITS = {
 		id: "limits",
 		kind: "choice",
 		title: "What should be left to you?",
-		detail: "Your twins will not discuss or decide these for you, and your assistant takes no position on them when it writes for you.",
+		detail: "The twins you share will not discuss or decide these for you, and your own Digital Twin leaves them to you unless you tell it otherwise.",
 		options: ["Budgets and pricing", "Hiring"],
 		ordered: false,
 	},
@@ -146,7 +146,7 @@ it("asks what it may read before anything is read, and reads only what is left o
 	for (const place of [
 		"Mail you sent",
 		"Your Teams messages",
-		"What the assistant has learned about you",
+		"What Your Digital Twin Has Learned About You",
 	]) {
 		expect(screen.getByRole("switch", { name: place })).toBeChecked();
 	}
@@ -362,7 +362,7 @@ it("shows the persona it wrote to change and save, then how many of the owner's 
 		}),
 	).toHaveFocus();
 	expect(
-		screen.getByText("It now shapes how 2 of your Digital Twins answer."),
+		screen.getByText("It now shapes how 2 of the twins you share answer."),
 	).toBeVisible();
 	expect(
 		ran().find((statement) => statement.startsWith("WorkSaveTwinPersona")),
@@ -420,15 +420,17 @@ it("leads back to the persona's own page when it was opened from there, with no 
 	).toHaveAttribute("href", "/persona");
 });
 
-it("says the persona is for the owner's assistant as well as their twins, and after saving only when the assistant uses it", async () => {
+it("says the persona is for the owner's own Digital Twin as well as the twins they share, and after saving only when their own twin uses it", async () => {
 	renderInterview();
 	await screen.findByText("May I read how you write?");
 	expect(
-		screen.getByText(/Every Digital Twin you created then answers/),
-	).toHaveTextContent(/your assistant writes for you the way you would/);
+		screen.getByText(/every twin you share answers the way you would/),
+	).toHaveTextContent(
+		/Your Digital Twin then weighs things and writes for you the way you would/,
+	);
 	expect(
-		screen.getByText(/Nothing changes for your Digital Twins/),
-	).toHaveTextContent(/or your assistant until you save/);
+		screen.getByText(/Nothing changes for your Digital Twin or/),
+	).toHaveTextContent(/or the twins you share until you save/);
 
 	// a server from before the switch says nothing of it, and uses the persona; a switch that is off is not spoken for
 	for (const [assistant, isSaid] of [
@@ -454,13 +456,11 @@ it("says the persona is for the owner's assistant as well as their twins, and af
 			name: "Meet your persona",
 		});
 		expect(
-			screen.getByText(
-				"The next Digital Twin you create will answer this way.",
-			),
+			screen.getByText("The next twin you share will answer this way."),
 		).toBeVisible();
 		expect(
 			screen.queryByText(
-				"Your assistant writes email and Teams messages for you this way too.",
+				"Your Digital Twin weighs things and writes for you this way too.",
 			) !== null,
 		).toBe(isSaid);
 	}
@@ -490,7 +490,7 @@ it("still shows the persona as saved when the twins cannot be counted, and keeps
 	await screen.findByRole("heading", { level: 1, name: "Meet your persona" });
 	expect(
 		screen.getByText(
-			"Your Digital Twins answer this way from their next chat.",
+			"The twins you share answer this way from their next chat.",
 		),
 	).toBeVisible();
 });

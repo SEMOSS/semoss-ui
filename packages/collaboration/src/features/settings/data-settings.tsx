@@ -20,9 +20,11 @@ export function DataSettings() {
 					<H3 className="font-medium text-base">Reset your data</H3>
 					<P className="text-base text-muted-foreground">
 						Delete your profile, people, topics, threads, rules,
-						memories, work items, and routines with their past runs,
-						then start onboarding again. Your chats and Microsoft
-						sign-in stay. This cannot be undone.
+						memories, work items, and routines with their past runs
+						and the chats opened from them, then start onboarding
+						again. Your other chats, your persona, your Digital
+						Twin’s name and picture, and your Microsoft sign-in
+						stay. This cannot be undone.
 					</P>
 					<ResetMyData />
 				</div>

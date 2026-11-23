@@ -35,11 +35,13 @@ import {
 	TabsTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { AgentAvatar } from "@/components/common/agent-avatar";
 import { CollaborationPage } from "@/features/collaboration/components/collaboration-page";
 import {
 	personaInterviewPath,
 	twinPersonaInterviewPath,
 } from "@/lib/workspace-paths";
+import { useMainTwin } from "../use-main-twin";
 import { useTwinRead } from "../use-twin-read";
 import {
 	deleteTwinPersona,
@@ -64,10 +66,11 @@ interface PersonaPageProps {
 
 /**
  * The owner can read and edit their persona, open the interview, and choose
- * whether the assistant uses it when drafting messages.
+ * whether their own Digital Twin uses it.
  */
 export function PersonaPage({ isFromTwins = false }: PersonaPageProps) {
 	const { actions } = useInsight();
+	const twin = useMainTwin();
 	const read = useTwinRead(getTwinPersona);
 	// what a save, a delete or the switch on this page made of it, which is newer than what was read
 	const [changed, setChanged] = useState<TwinPersona>();
@@ -296,8 +299,8 @@ export function PersonaPage({ isFromTwins = false }: PersonaPageProps) {
 										aria-hidden="true"
 										className="mt-0.5 size-4 shrink-0"
 									/>
-									Only you can open this page. A shared twin
-									may quote what you write here.
+									Only you can open this page. A twin you
+									share may quote what you write here.
 								</P>
 							</>
 						) : (
@@ -320,53 +323,31 @@ export function PersonaPage({ isFromTwins = false }: PersonaPageProps) {
 							<>
 								<div className="divide-y rounded-xl border bg-card @lg/persona:px-6 px-4">
 									<div className="flex items-start gap-3 py-5">
-										<Users
-											aria-hidden="true"
-											className="mt-1 size-5 shrink-0 text-assistant"
-										/>
-										<div className="min-w-0 space-y-1">
-											<P className="font-semibold">
-												Digital Twins
-											</P>
-											<P className="text-muted-foreground text-sm">
-												Your twins use your persona by
-												default. You can switch it off
-												in each twin’s profile.
-											</P>
-											<Button
-												asChild
-												variant="link"
-												size="sm"
-												className="h-auto pointer-coarse:min-h-11 px-0"
-											>
-												<Link to="/twins">
-													Manage twins{" "}
-													<ArrowRight
-														aria-hidden="true"
-														className="size-3.5 rtl:rotate-180"
-													/>
-												</Link>
-											</Button>
-										</div>
-									</div>
-									<div className="flex items-start gap-3 py-5">
-										<MessagesSquare
-											aria-hidden="true"
-											className="mt-1 size-5 shrink-0 text-muted-foreground"
+										<AgentAvatar
+											agent={{
+												name: twin.name,
+												avatar: twin.avatar,
+											}}
+											size="sm"
 										/>
 										<div className="min-w-0 flex-1 space-y-1">
 											<Label htmlFor={assistantId}>
-												Use my persona when writing for
-												me
+												Use My Persona With My Digital
+												Twin
 											</Label>
 											<div
 												id={`${assistantId}-about`}
 												className="space-y-2"
 											>
 												<P className="text-muted-foreground text-sm">
-													Your assistant uses your
-													voice and boundaries in
-													email and Teams drafts.
+													Your Digital Twin weighs
+													things the way you described
+													and writes email and Teams
+													drafts in your voice. It
+													answers you in a plain
+													voice. Drafts your routines
+													write follow this switch
+													too.
 												</P>
 												{assistantError && (
 													<Alert variant="destructive">
@@ -395,6 +376,40 @@ export function PersonaPage({ isFromTwins = false }: PersonaPageProps) {
 											}
 										/>
 									</div>
+									<div className="flex items-start gap-3 py-5">
+										{/* as wide as the picture in the row above, so the two rows' text lines up */}
+										<span
+											aria-hidden="true"
+											className="flex size-8 shrink-0 items-center justify-center"
+										>
+											<Users className="size-5 text-assistant" />
+										</span>
+										<div className="min-w-0 space-y-1">
+											<P className="font-semibold">
+												Twins You Share
+											</P>
+											<P className="text-muted-foreground text-sm">
+												The twins you share use your
+												persona by default. You can
+												switch it off in each twin's
+												profile.
+											</P>
+											<Button
+												asChild
+												variant="link"
+												size="sm"
+												className="h-auto pointer-coarse:min-h-11 px-0"
+											>
+												<Link to="/twins">
+													Manage twins{" "}
+													<ArrowRight
+														aria-hidden="true"
+														className="size-3.5 rtl:rotate-180"
+													/>
+												</Link>
+											</Button>
+										</div>
+									</div>
 								</div>
 								<section
 									aria-labelledby={deleteId}
@@ -408,8 +423,9 @@ export function PersonaPage({ isFromTwins = false }: PersonaPageProps) {
 											Delete your persona
 										</H2>
 										<P className="text-muted-foreground text-sm">
-											Removes your persona from your twins
-											and assistant.
+											Removes your persona from your
+											Digital Twin and the twins you
+											share.
 										</P>
 									</div>
 									<Dialog
@@ -463,11 +479,10 @@ export function PersonaPage({ isFromTwins = false }: PersonaPageProps) {
 												<DialogDescription>
 													Every section of your
 													persona is deleted. Your
-													Digital Twins stop answering
-													in your voice, and your
-													assistant stops writing for
-													you with it. This cannot be
-													undone.
+													Digital Twin stops using it,
+													and the twins you share stop
+													answering in your voice.
+													This cannot be undone.
 												</DialogDescription>
 											</DialogHeader>
 											{deleteError && (
@@ -508,7 +523,7 @@ export function PersonaPage({ isFromTwins = false }: PersonaPageProps) {
 						) : (
 							<P className="text-muted-foreground">
 								Write your first section to use your persona
-								with your Digital Twins and assistant.
+								with your Digital Twin and the twins you share.
 							</P>
 						)}
 					</TabsContent>

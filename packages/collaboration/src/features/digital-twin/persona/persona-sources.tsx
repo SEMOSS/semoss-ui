@@ -16,7 +16,7 @@ const PLACES: { source: InterviewSource; label: string; hint: string }[] = [
 	},
 	{
 		source: "memory",
-		label: "What the assistant has learned about you",
+		label: "What Your Digital Twin Has Learned About You",
 		hint: "How you like things done, as Collaboration saved it from your chats.",
 	},
 ];
@@ -85,8 +85,8 @@ export function PersonaSources({ onStart }: PersonaSourcesProps) {
 			</ul>
 			<P className="max-w-prose text-muted-foreground text-sm">
 				It takes under ten minutes, and you can wrap up early. Nothing
-				changes for your Digital Twins or your assistant until you save
-				what I write.
+				changes for your Digital Twin or the twins you share until you
+				save what I write.
 			</P>
 			<Button
 				type="button"

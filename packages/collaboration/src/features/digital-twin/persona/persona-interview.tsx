@@ -214,17 +214,17 @@ export function PersonaInterview({
 							<div className="flex flex-col gap-1">
 								<P className="text-muted-foreground text-sm">
 									{saved.using === null
-										? "Your Digital Twins answer this way from their next chat."
+										? "The twins you share answer this way from their next chat."
 										: saved.using === 0
-											? "The next Digital Twin you create will answer this way."
+											? "The next twin you share will answer this way."
 											: saved.using === 1
-												? "It now shapes how your Digital Twin answers."
-												: `It now shapes how ${saved.using} of your Digital Twins answer.`}
+												? "It now shapes how the twin you share answers."
+												: `It now shapes how ${saved.using} of the twins you share answer.`}
 								</P>
 								{saved.isAssistantOn && (
 									<P className="text-muted-foreground text-sm">
-										Your assistant writes email and Teams
-										messages for you this way too.
+										Your Digital Twin weighs things and
+										writes for you this way too.
 									</P>
 								)}
 							</div>
@@ -287,7 +287,7 @@ export function PersonaInterview({
 						<CollaborationPageHeader
 							className="mb-6"
 							title="Build your persona"
-							description="A few steps on how you sound, how you decide and what you keep for yourself. Every Digital Twin you created then answers the way you would, and your assistant writes for you the way you would."
+							description="A few steps on how you sound, how you decide and what you keep for yourself. Your Digital Twin then weighs things and writes for you the way you would, and every twin you share answers the way you would."
 							actions={
 								(asking || view.phase === "done") && (
 									<Button

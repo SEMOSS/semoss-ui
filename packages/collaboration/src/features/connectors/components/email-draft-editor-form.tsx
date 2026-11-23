@@ -236,8 +236,8 @@ export function EmailDraftEditorForm({
 						)}
 						{snapshot.sendApprovalToolId && !snapshot.isSent && (
 							<P className="text-sm text-warning">
-								Assistant asked to send this. Press Send to send
-								it as it is.
+								Sending this needs your approval. Press Send to
+								send it as it is.
 							</P>
 						)}
 						{snapshot.isSent ? (

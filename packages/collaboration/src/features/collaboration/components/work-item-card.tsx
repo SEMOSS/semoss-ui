@@ -54,7 +54,7 @@ export function WorkItemCard({
 	);
 	const author =
 		(person?.name && givenFirst(person.name)) ||
-		(item.actorId === "assistant" ? "Assistant" : "You");
+		(item.actorId === "assistant" ? "Your Digital Twin" : "You");
 	const { label: channelLabel, icon: Icon } = channelMeta(item.channel);
 	const path = threadPath(thread.id);
 	// open and waiting rows keep their two actions out of the way until the row is hovered or focused
@@ -400,7 +400,10 @@ export function WorkItemCard({
 								>
 									{item.reasons.map((reason, index) => (
 										<li key={`${index}-${reason}`}>
-											{reason}
+											{/* the stored reason keeps its old word */}
+											{reason === "Suggested by assistant"
+												? "Suggested by your Digital Twin"
+												: reason}
 										</li>
 									))}
 								</ul>

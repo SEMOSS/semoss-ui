@@ -33,7 +33,7 @@ export function TwinSkillContent({ skill }: TwinSkillContentProps) {
 					{skill.name}
 				</DialogTitle>
 				<DialogDescription>
-					The saved instructions your twin can follow.
+					The saved instructions this twin can follow.
 				</DialogDescription>
 			</DialogHeader>
 			{content.isLoading ? (

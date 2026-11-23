@@ -7,7 +7,7 @@ Authoritative detail lives in [README.md](../README.md), [PRODUCT.md](../PRODUCT
 
 ## 1. Purpose
 
-A **personal SEMOSS assistant web app** (private package, Vite + React 19, port `5180`).
+A **personal SEMOSS workspace web app**, led by each person's own Digital Twin (private package, Vite + React 19, port `5180`).
 It unifies, for one signed-in user:
 
 - **Chat** with SEMOSS agents (rooms, streaming runs, tool approvals, files).
@@ -88,7 +88,7 @@ Tree: `RootLayout` → `AuthorizedLayout` (session gate + app `InsightProvider`)
 | `/routines` | Routines workspace |
 | `/work`, `/work/all`, `/work/waiting`, `/work/done` | Topics / global work lists |
 | `/topics/:topicId` | Topic workspace (Actions, Threads, Sessions, goals, notes) |
-| `/topics/:topicId/contents` | Add or remove a topic's emails, chats and linked files by hand (`features/topic-contents`): live Outlook folders, Brain's threads, assistant chats, OneDrive and Teams files |
+| `/topics/:topicId/contents` | Add or remove a topic's emails, chats and linked files by hand (`features/topic-contents`): live Outlook folders, Brain's threads, Digital Twin chats, OneDrive and Teams files |
 | `/work/topic/:id`, `/brain/topics/:id` | Redirect to `/topics/:id` |
 | `/thread/:id` | Source-import bridge; `room:`-prefixed id = saved room |
 | `/brain`, `/brain/sources`, `/brain/people[/:id]`, `/brain/threads[/:id]` | Brain |
@@ -101,7 +101,7 @@ New routes: add to `route-config.tsx` with `lazy` import of a thin page; keep le
 
 ### 5.1 RoomSession — the single conversation owner
 `features/rooms/room-session.ts`. Every conversation (new chat, saved room, imported source,
-topic assistant, routine room) uses one `RoomSession` on the existing Playground harness:
+topic chat, routine room) uses one `RoomSession` on the existing Playground harness:
 collaboration rooms, `RunAgent`, streamed events, approvals, cancel, reconnect.
 - Each room owns an **isolated insight** (files, uploads) and composer draft.
 - New chat: agent/settings stay local until **first send**, which creates the room once
@@ -109,19 +109,19 @@ collaboration rooms, `RunAgent`, streamed events, approvals, cancel, reconnect.
 - Room options (`PlaygroundRoomOptions`, zod-validated in `api/room-schemas.ts`) store settings and the
   `source` descriptor only (identity, saved file ref, message envelope metadata) — never bodies.
 - Agent turns: `api/agent-turn-controller.ts` + `agent-turn-registry.ts` (idle controllers evicted).
-- Do **not** introduce a parallel thread/assistant session.
+- Do **not** introduce a parallel thread or chat session.
 
 ### 5.2 Landing/new chat (`features/daily-chat`)
 Landing composer is source-free with a closed workbench; first send pushes the canonical saved-room route
 and consumes the landing draft. Unsent drafts are cached in-memory per history entry (Back/Forward restore).
-Late preparation must never redirect over the current page. Topic "Ask assistant" has its own draft and
+Late preparation must never redirect over the current page. A topic's "Ask about this topic" composer has its own draft and
 must confirm the room↔topic link before first send.
 
 ### 5.3 Source import (`features/rooms/source-import`)
 Opening a Brain/Outlook/Teams/Calendar source: read permitted history (Brain: all 100-message pages, dedupe by id,
 oldest first; Teams latest 30; Outlook selected email; calendar one event) → create room → upload one Markdown
-snapshot into the room insight → queue it for first user request. Never starts an assistant request. Exclusions and
-ingestion rules applied first; display HTML never goes to the assistant; attachment names only. Concurrent opens of
+snapshot into the room insight → queue it for first user request. Never starts an agent request. Exclusions and
+ingestion rules applied first; display HTML never goes to the agent; attachment names only. Concurrent opens of
 the same source share a pending import; later opens create fresh rooms. Failed imports retain room + receipt.
 
 ### 5.4 Work/Brain session (`features/collaboration`)
