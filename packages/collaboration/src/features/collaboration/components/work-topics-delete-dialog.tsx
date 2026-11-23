@@ -109,7 +109,7 @@ export function WorkTopicsDeleteDialog({
 					<Button
 						disabled={isLoading}
 						onClick={handleConfirm}
-						className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+						className="bg-destructive text-white hover:bg-destructive/90"
 					>
 						Delete topics
 					</Button>
