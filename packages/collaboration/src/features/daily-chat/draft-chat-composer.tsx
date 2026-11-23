@@ -1,4 +1,5 @@
 import { Alert, AlertDescription, Button, Spinner } from "@semoss/ui/next";
+import { useChatAgent } from "@/features/digital-twin/use-main-twin";
 import { optimizePrompt } from "@/features/rooms/api/optimize-prompt";
 import { RoomComposer } from "@/features/rooms/components/room-composer";
 import type {
@@ -33,6 +34,8 @@ interface DraftChatComposerProps {
 	isHero?: boolean;
 	/** The page is one agent's own, such as a Digital Twin's, so the agent cannot be changed. */
 	isAgentLocked?: boolean;
+	/** The page was opened to ask something, so the compact ask box takes the focus too. */
+	isFocused?: boolean;
 	/** Suggested first messages for the empty composer. */
 	starterPrompts?: readonly ComposerPrompt[];
 	panelActions: readonly ComposerPanelAction[];
@@ -51,16 +54,23 @@ export function DraftChatComposer({
 	isCompact = false,
 	isHero = false,
 	isAgentLocked = false,
+	isFocused = false,
 	starterPrompts,
 	panelActions,
 }: DraftChatComposerProps) {
+	const chat = useChatAgent({
+		agentId: snapshot.settings.agentId,
+		agent: snapshot.agent,
+		options: snapshot.options,
+		isOwnPage: isAgentLocked,
+	});
 	const actionsTriggerId = `new-chat-${draftId}-composer-actions`;
 	const isBusy = snapshot.isPreparing || snapshot.turn.isSubmitting;
 	return (
 		<>
 			{snapshot.isLoading && (
 				<output className="flex items-center gap-2 text-muted-foreground">
-					<Spinner aria-hidden="true" /> Opening Assistant…
+					<Spinner aria-hidden="true" /> Opening chat...
 				</output>
 			)}
 			{snapshot.error && !snapshot.isReady && (
@@ -92,7 +102,7 @@ export function DraftChatComposer({
 			)}
 			<RoomComposer
 				key={`${draftId}:${snapshot.composerResetKey}`}
-				autoFocus={!isCompact}
+				autoFocus={!isCompact || isFocused}
 				className={
 					isHero || starterPrompts?.length
 						? "bg-transparent"
@@ -106,7 +116,9 @@ export function DraftChatComposer({
 				}
 				placeholder={
 					isHero
-						? "Ask anything, search your work, or take action…"
+						? chat.kind === "mainTwin"
+							? `Ask ${chat.name} anything, search your work, or take action...`
+							: "Ask anything, search your work, or take action…"
 						: isCompact
 							? "Ask anything…"
 							: undefined
@@ -127,7 +139,7 @@ export function DraftChatComposer({
 					snapshot.settingsError ||
 					(snapshot.isReady ? snapshot.error?.message : undefined)
 				}
-				agentName={snapshot.agent?.name ?? "Assistant"}
+				agentName={chat.name}
 				agent={snapshot.agent ?? undefined}
 				isSubmitting={isBusy}
 				isRunning={snapshot.turn.isRunning}
@@ -186,7 +198,7 @@ export function DraftChatComposer({
 						<ThreadAgentSelect
 							compact
 							value={snapshot.settings.agentId}
-							name={snapshot.agent?.name ?? "Assistant"}
+							name={chat.name}
 							disabled={
 								isAgentLocked ||
 								!snapshot.isReady ||

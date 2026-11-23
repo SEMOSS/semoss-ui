@@ -99,7 +99,7 @@ export function DashboardSourceDialog() {
 					</DialogTitle>
 					<DialogDescription>
 						{kind === "calendar"
-							? "Review this meeting and prepare with your assistant."
+							? "Review this meeting and prepare with your Digital Twin."
 							: "Read, reply, or bring this email into a conversation."}
 					</DialogDescription>
 				</DialogHeader>
@@ -137,7 +137,7 @@ export function DashboardSourceDialog() {
 							<Button
 								onClick={() => openAssistant(selected, "ask")}
 							>
-								Prepare with assistant
+								Prepare With Your Digital Twin
 							</Button>
 						)}
 					</>

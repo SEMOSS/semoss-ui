@@ -15,7 +15,9 @@ import {
 	type WorkUpdatesStatus,
 } from "@/features/collaboration/live/work-updates.context";
 import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
+import type { MainTwin } from "@/features/collaboration/state/collaboration.types";
 import { CollaborationSessionProvider } from "@/features/collaboration/state/collaboration-session.context";
+import { FOCUS_ASK_BOX } from "@/features/digital-twin/use-main-twin";
 import { linkRoomTopic } from "@/features/rooms/api/room-topics";
 import { RoomSettingsForm } from "@/features/rooms/components/room-settings-form";
 import { ROOM_SETTINGS_PANEL_TYPE } from "@/features/rooms/components/room-settings-panel";
@@ -168,6 +170,8 @@ function roomSessionFixture() {
 		for (const listener of listeners) listener();
 	};
 	const session = {
+		// lets a test put the draft in a state the real session reaches on its own
+		update,
 		scope: mocks.scope,
 		insight: { actions: {}, insightId: "draft-insight" },
 		canEvict: vi.fn(() => true),
@@ -261,10 +265,13 @@ function setup(
 	search = "",
 	pathname = "/",
 	updates: WorkUpdatesStatus | null = null,
+	mainTwin?: MainTwin,
 ) {
 	const router = createMemoryRouter(
 		[
 			{ path: "/", Component: LandingChatComposer },
+			// Today's ask box
+			{ path: "/today", element: <LandingChatComposer isHero /> },
 			{ path: "/topics/:topicId", Component: TopicComposer },
 			// a page that is one agent's own, as a Digital Twin's chat page is
 			{
@@ -295,7 +302,7 @@ function setup(
 	);
 	render(
 		<CollaborationSessionProvider
-			initialState={createInitialCollaborationState()}
+			initialState={{ ...createInitialCollaborationState(), mainTwin }}
 		>
 			<WorkUpdatesContext.Provider value={updates}>
 				<TooltipProvider>
@@ -379,7 +386,9 @@ it("keeps a suggested prompt, files, and agent choice local before the first sen
 		target: { files: [file] },
 	});
 	fireEvent.click(
-		screen.getByRole("button", { name: "Assistant options: Assistant" }),
+		screen.getByRole("button", {
+			name: "Chat Options: Your Digital Twin",
+		}),
 	);
 	fireEvent.click(screen.getByRole("button", { name: "Choose agent" }));
 	await waitFor(() =>
@@ -542,7 +551,7 @@ it("applies requested agent and model once while preserving later local edits", 
 		}),
 	);
 	fireEvent.click(
-		screen.getByRole("button", { name: "Assistant options: Assistant" }),
+		screen.getByRole("button", { name: "Chat Options: Agent" }),
 	);
 	await userEvent
 		.setup()
@@ -695,7 +704,9 @@ it("restores a landing draft through Back and Forward without navigation state",
 		target: { files: [file] },
 	});
 	fireEvent.click(
-		screen.getByRole("button", { name: "Assistant options: Assistant" }),
+		screen.getByRole("button", {
+			name: "Chat Options: Your Digital Twin",
+		}),
 	);
 	fireEvent.click(screen.getByRole("button", { name: "Choose agent" }));
 	await act(() => router.navigate(-1));
@@ -747,7 +758,9 @@ it("retains landing text, files, and settings when opening and closing Settings"
 		target: { files: [file] },
 	});
 	fireEvent.click(
-		screen.getByRole("button", { name: "Assistant options: Assistant" }),
+		screen.getByRole("button", {
+			name: "Chat Options: Your Digital Twin",
+		}),
 	);
 	fireEvent.click(screen.getByRole("button", { name: "Choose agent" }));
 	await user.click(
@@ -921,7 +934,9 @@ it("keeps a topic assistant local and links its room before the first unchanged 
 	expect(mocks.send).not.toHaveBeenCalled();
 	expect(router.state.location.pathname).toBe("/topics/topic-one");
 	expect(
-		screen.getByRole("button", { name: "Assistant options: Assistant" }),
+		screen.getByRole("button", {
+			name: "Chat Options: Your Digital Twin",
+		}),
 	).toBeDisabled();
 	submit();
 	await act(async () => confirmLink?.());
@@ -1052,7 +1067,9 @@ it("keeps a pending topic link owned by its original draft after navigating away
 	await act(() => router.navigate(-1));
 	expect(draftIdentity()).toBe(id);
 	expect(
-		screen.getByRole("button", { name: "Assistant options: Assistant" }),
+		screen.getByRole("button", {
+			name: "Chat Options: Your Digital Twin",
+		}),
 	).toBeDisabled();
 	submit();
 	await act(async () => confirmLink?.());
@@ -1095,10 +1112,11 @@ it("links a topic assistant's chat for a topic made on this page by its server i
 });
 
 it("does not let the agent be changed on a page that is one agent's own", () => {
-	// the same ready draft whose agent the overview's ask box lets a person choose
+	// the same ready draft whose agent the overview's ask box lets a person choose; until the agent the
+	// address names is applied it is no one's twin by name, and never the person's own
 	setup(undefined, "", "/twins/chat");
 	fireEvent.click(
-		screen.getByRole("button", { name: "Assistant options: Assistant" }),
+		screen.getByRole("button", { name: "Chat Options: Digital Twin" }),
 	);
 	expect(screen.getByRole("button", { name: "Choose agent" })).toBeDisabled();
 });
@@ -1122,4 +1140,103 @@ it("fills a twin's draft from a starting point and opens a room only on Send", a
 		files: [],
 	});
 	expect(sessions[0].getSnapshot().settings.agentId).toBe("twin");
+});
+
+const ROBIN: MainTwin = {
+	name: "Robin's Digital Twin",
+	avatar: "data:image/png;base64,AAAA",
+	agentId: "collaboration-agent",
+};
+
+it("names the person's own twin in Today's ask box, with its picture, and says who the chat is with in its options", async () => {
+	setup(undefined, "", "/today", null, ROBIN);
+	expect(
+		screen.getByText(
+			"Ask Robin's Digital Twin anything, search your work, or take action...",
+		),
+	).toBeInTheDocument();
+	expect(
+		screen.getByRole("textbox", { name: "Message Robin's Digital Twin" }),
+	).toBeInTheDocument();
+	const options = screen.getByRole("button", {
+		name: "Chat Options: Robin's Digital Twin",
+	});
+	expect(options.querySelector("img")).toHaveAttribute("src", ROBIN.avatar);
+	// the person's own twin is not cut short at a fixed width
+	expect(options).not.toHaveClass("max-w-48");
+	fireEvent.click(options);
+	const popover = screen.getByRole("dialog", { name: "Chat Options" });
+	expect(popover).toHaveTextContent("Talking To");
+
+	// another agent: its own name, no picture, and the ask box asks no one by name
+	fireEvent.click(screen.getByRole("button", { name: "Choose agent" }));
+	const other = await screen.findByRole("button", {
+		name: "Chat Options: Agent",
+	});
+	// only its name: no picture, and no initials standing in for one
+	expect(other).toHaveTextContent(/^Agent$/);
+	expect(other).toHaveClass("max-w-48");
+	expect(
+		screen.getByText("Ask anything, search your work, or take action…"),
+	).toBeInTheDocument();
+});
+
+it("shows the seeded agent as the person's own twin, whatever that agent is called", () => {
+	setup(undefined, "", "/today", null, ROBIN);
+	act(() =>
+		sessions[0].update({
+			settings: {
+				...sessions[0].getSnapshot().settings,
+				agentId: "collaboration-agent",
+			},
+			agent: {
+				workspace_id: "collaboration-agent",
+				name: "Collaboration Agent",
+				description: "",
+				system_prompt: "",
+				mcp: [],
+				skills: [],
+				prompts: [],
+			},
+		}),
+	);
+	expect(
+		screen.getByRole("button", {
+			name: "Chat Options: Robin's Digital Twin",
+		}),
+	).toBeVisible();
+	expect(screen.queryByText(/Collaboration Agent/)).toBeNull();
+});
+
+it("says a chat is opening while the draft connects", () => {
+	setup();
+	act(() => sessions[0].update({ isLoading: true }));
+	expect(screen.getByText("Opening chat...")).toBeVisible();
+});
+
+it("puts the focus in the ask box only when the page was opened to ask", async () => {
+	setup(FOCUS_ASK_BOX, "", "/today");
+	await waitFor(() => expect(screen.getByRole("textbox")).toHaveFocus());
+});
+
+it("names who the draft is with in its settings and on its ask box, and a twin's own page as a Digital Twin until its agent is applied", async () => {
+	const user = userEvent.setup();
+	const openSettings = async () => {
+		await user.click(
+			screen.getByRole("button", { name: "Open composer actions" }),
+		);
+		await user.click(screen.getByRole("menuitem", { name: "Settings" }));
+		await settleFocus();
+	};
+	const today = setup(undefined, "", "/today", null, ROBIN);
+	await openSettings();
+	expect(screen.getByText("Agent: Robin's Digital Twin")).toBeVisible();
+
+	// a page that is one twin's own: its draft starts on the seeded agent, which is never shown as the person's own twin there
+	await act(() => today.navigate("/twins/chat"));
+	expect(
+		screen.getByRole("textbox", { name: "Message Digital Twin" }),
+	).toBeInTheDocument();
+	await openSettings();
+	expect(screen.getByText("Agent: Digital Twin")).toBeVisible();
 });

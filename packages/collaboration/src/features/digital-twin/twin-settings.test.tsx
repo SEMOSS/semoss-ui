@@ -99,13 +99,13 @@ it("is the steps that create a twin for someone who has none, starting from thei
 	expect(
 		await screen.findByRole("heading", {
 			level: 1,
-			name: "Create your Digital Twin",
+			name: "Create a Twin to Share",
 		}),
 	).toBeVisible();
 	expect(
 		screen.getByRole("heading", {
 			level: 2,
-			name: "Who is your Digital Twin?",
+			name: "Who is the new twin?",
 		}),
 	).toBeVisible();
 	expect(screen.getByLabelText("Instructions")).toHaveDisplayValue(
@@ -121,7 +121,7 @@ it("opens creation even when the owner already has a twin", async () => {
 	expect(
 		await screen.findByRole("heading", {
 			level: 1,
-			name: "Create your Digital Twin",
+			name: "Create a Twin to Share",
 		}),
 	).toBeVisible();
 	expect(
@@ -275,9 +275,7 @@ it("creates another twin and opens that new twin's people after setup", async ()
 		await user.click(
 			screen.getByRole("button", { name: `Next: ${label}` }),
 		);
-	await user.click(
-		screen.getByRole("button", { name: "Create Digital Twin" }),
-	);
+	await user.click(screen.getByRole("button", { name: "Create Twin" }));
 	expect(
 		await screen.findByRole("heading", {
 			level: 1,

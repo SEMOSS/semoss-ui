@@ -147,7 +147,9 @@ it("sends the people just added a note with the chat link, hiding them from each
 		dialog.getByText(/No email address on file for Cy Dee/),
 	).toBeVisible();
 	const note = dialog.getByLabelText("Note");
-	expect(note).toHaveDisplayValue(/shared my Digital Twin, "Robin Twin"/);
+	expect(note).toHaveDisplayValue(
+		/shared a Digital Twin of mine, "Robin Twin"/,
+	);
 	expect(note).toHaveAccessibleDescription(
 		new RegExp(LINK.replace("?", "\\?")),
 	);
@@ -163,7 +165,7 @@ it("sends the people just added a note with the chat link, hiding them from each
 	expect(screen.queryByRole("dialog")).toBeNull();
 	expect(sent()).toHaveLength(1);
 	expect(sent()[0]).toContain(
-		'MicrosoftOutlookSendMail(bcc=["ann@example.com","bo@example.com"], subject=["I shared my Digital Twin with you: Robin Twin"], body=["Ask it about the renewal.\\n\\nChat with it here:\\n',
+		'MicrosoftOutlookSendMail(bcc=["ann@example.com","bo@example.com"], subject=["I shared a Digital Twin with you: Robin Twin"], body=["Ask it about the renewal.\\n\\nChat with it here:\\n',
 	);
 	expect(sent()[0]).toContain(LINK);
 	expect(screen.getByRole("button", { name: "Send again" })).toBeVisible();

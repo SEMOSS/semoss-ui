@@ -47,7 +47,7 @@ const CHECK_CHOICES = [
 
 // what a check is doing, by the step its job reports
 const STEPS: Record<string, string> = {
-	twins: "Reading what your Digital Twins hold…",
+	twins: "Reading what the twins you share hold...",
 	mail: "Reading your Outlook conversations…",
 	chats: "Reading your Teams chats…",
 	files: "Reading your files…",
@@ -204,7 +204,7 @@ export function TwinUpdates({ twinId, updates, onChanged }: TwinUpdatesProps) {
 			setCheckError({
 				needsSignIn,
 				message: needsSignIn
-					? "Sign in to Microsoft 365 to check your Digital Twins."
+					? "Sign in to Microsoft 365 to check the twins you share."
 					: reason || "The check did not work. Try again.",
 			});
 		} finally {
@@ -258,7 +258,7 @@ export function TwinUpdates({ twinId, updates, onChanged }: TwinUpdatesProps) {
 		return act(
 			entry,
 			() => applyTwinUpdate(actions, insightId, entry),
-			`Updated "${name}" in your Digital Twin.`,
+			`Updated "${name}" in this twin.`,
 			`Could not update "${name}".`,
 		);
 	};
@@ -281,7 +281,7 @@ export function TwinUpdates({ twinId, updates, onChanged }: TwinUpdatesProps) {
 		const isRemoved = await act(
 			entry,
 			() => removeTwinCopy(actions, entry),
-			`Removed "${name}" from your Digital Twin.`,
+			`Removed "${name}" from this twin.`,
 			`Could not remove "${name}".`,
 		);
 		if (isRemoved) onChanged();
@@ -516,8 +516,8 @@ export function TwinUpdates({ twinId, updates, onChanged }: TwinUpdatesProps) {
 					</Select>
 					<P className="min-w-0 flex-1 basis-56 text-muted-foreground text-sm">
 						{every === 0
-							? "Off. Your Digital Twins are checked only when you press Check now."
-							: "For all your Digital Twins, while Collaboration is open, and while it is closed when background access is on."}
+							? "Off. The twins you share are checked only when you press Check now."
+							: "For all the twins you share, while Collaboration is open, and while it is closed when background access is on."}
 					</P>
 				</div>
 			)}

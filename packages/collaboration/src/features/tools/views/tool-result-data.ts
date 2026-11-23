@@ -38,7 +38,8 @@ export function resultText(value: unknown): string {
 /** Human labels for data and request fields; identifiers remain available in details. */
 export function toolFieldLabel(key: string): string {
 	const labels: Record<string, string> = {
-		inAssistant: "Used by your assistant",
+		inAssistant: "Used by your Digital Twin",
+		assistantAvailable: "Collaboration model ready",
 		skillMd: "Instructions",
 		webUrl: "Link",
 		webLink: "Link",

@@ -146,7 +146,7 @@ export function TwinSettings() {
 			setDeleteError(
 				cause instanceof Error
 					? cause.message
-					: "Your Digital Twin could not be deleted.",
+					: "This twin could not be deleted.",
 			);
 			return;
 		}
@@ -174,9 +174,7 @@ export function TwinSettings() {
 				{back}
 				{error ? (
 					<Alert variant="destructive">
-						<AlertTitle>
-							Could not load your Digital Twin
-						</AlertTitle>
+						<AlertTitle>Could not load this twin</AlertTitle>
 						<AlertDescription>
 							{error}
 							<Button
@@ -195,7 +193,7 @@ export function TwinSettings() {
 						<Skeleton className="h-16 w-full" />
 						<Skeleton className="h-96 w-full" />
 						<output className="sr-only">
-							Loading your Digital Twin…
+							Loading this twin...
 						</output>
 					</div>
 				)}

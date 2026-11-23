@@ -64,7 +64,7 @@ export const PERSONA_SECTIONS: {
 	{
 		key: "limits",
 		label: "Leave to you",
-		hint: "What your twins stay out of. They follow this to the letter.",
+		hint: "What the twins you share stay out of, to the letter. Your own Digital Twin leaves these to you unless you tell it otherwise.",
 	},
 	{
 		key: "examples",
@@ -77,6 +77,7 @@ const personaSchema = z.object({
 	exists: z.boolean(),
 	sections: personaSectionsSchema,
 	offTwins: z.array(z.string()),
+	assistant: z.boolean().optional(),
 	interview: z
 		.object({
 			answered: z.number(),
@@ -87,13 +88,18 @@ const personaSchema = z.object({
 		.nullish(),
 });
 
-/** The signed-in person's persona for their Digital Twins. */
+/** The signed-in person's persona: how their Digital Twins answer, and how their assistant writes for them. */
 export interface TwinPersona {
-	/** Whether any section holds text; their twins use it from then on. */
+	/** Whether any section holds text; their twins and their assistant use it from then on. */
 	exists: boolean;
 	sections: PersonaSections;
 	/** The ids of the twins they switched it off for. */
 	offTwins: string[];
+	/**
+	 * Whether their own assistant writes for them with it. Only `false` is
+	 * off: a server from before the switch leaves it out, and uses it.
+	 */
+	assistant?: boolean;
 	/**
 	 * Where the interview that writes it is; left out or null when there is
 	 * none. `wrapped` says it was wrapped up before the steps that go deeper,
@@ -120,7 +126,7 @@ export function getTwinPersona(actions: InsightActions): Promise<TwinPersona> {
  */
 export function saveTwinPersona(
 	actions: InsightActions,
-	sections: PersonaSections,
+	sections: Partial<PersonaSections>,
 ): Promise<TwinPersona> {
 	return callPixel(
 		actions,
@@ -129,7 +135,7 @@ export function saveTwinPersona(
 	);
 }
 
-/** Delete the signed-in person's persona. The twins it was switched off for stay on record. */
+/** Delete the signed-in person's persona. The twins it was switched off for stay on record, and so does the assistant's switch. */
 export function deleteTwinPersona(
 	actions: InsightActions,
 ): Promise<TwinPersona> {
@@ -147,4 +153,23 @@ export async function setTwinPersona(
 		pixel("WorkSetTwinPersona", { project: twinId, enabled: isEnabled }),
 		z.unknown(),
 	);
+}
+
+/**
+ * Switch the signed-in person's persona on or off for their own assistant,
+ * which writes email and Teams messages for them with it. Their twins are not
+ * touched.
+ *
+ * @returns what the server kept.
+ */
+export async function setAssistantPersona(
+	actions: InsightActions,
+	isEnabled: boolean,
+): Promise<boolean> {
+	const { enabled } = await callPixel(
+		actions,
+		pixel("WorkSetAssistantPersona", { enabled: isEnabled }),
+		z.object({ enabled: z.boolean() }),
+	);
+	return enabled;
 }

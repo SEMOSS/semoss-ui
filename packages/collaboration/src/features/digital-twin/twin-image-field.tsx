@@ -27,7 +27,8 @@ interface TwinImageFieldProps {
  */
 export function TwinImageField({ imageUrl }: TwinImageFieldProps) {
 	const id = useId();
-	const form = useFormContext<TwinProfile>();
+	// only the two fields it reads, so a form that holds no more than a name and an image can show it too
+	const form = useFormContext<Pick<TwinProfile, "name" | "image">>();
 	const input = useRef<HTMLInputElement | null>(null);
 	const name = form.watch("name");
 	const image = form.watch("image");

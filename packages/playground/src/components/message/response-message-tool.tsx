@@ -97,13 +97,17 @@ export const ResponseMessageTool = observer(
 		const cancelled = tool.status === "CANCELLED";
 		const running = tool.status === "LOADING";
 		const succeeded = tool.status === "SUCCESS";
-		// the arrow shows or hides the tool in the chat; the sidebar button moves it out and back
+		// the row opens the tool where it is placed and hides it from the chat; the sidebar button moves it out and back
 		const isOpenInline = tool.isOpen && tool.display === "inline";
 		const showDecision = shouldShowInlineDecision && !isDecisionCollapsed;
 		const isExpanded = isOpenInline || showDecision;
 		const isActive = isExpanded || (isOpenInSidebar && isSidebarActive);
 		// mobile keeps tools inline, but a tool already in the drawer can come back
 		const canUseSidebar = !isMobile || isOpenInSidebar;
+		const opensInSidebar =
+			!isMobile &&
+			!shouldShowInlineDecision &&
+			tool.display === "sidebar";
 		// Agent runs own their cancellation lifecycle. Never write a legacy tool result into an active run.
 		const canCancel =
 			!succeeded &&
@@ -123,7 +127,9 @@ export const ResponseMessageTool = observer(
 							: t("status.queued");
 		const openAction = isExpanded
 			? t("actions.collapse")
-			: t("actions.openInline");
+			: opensInSidebar
+				? t("actions.openInSidebar")
+				: t("actions.openInline");
 		const sidebarAction = isOpenInSidebar
 			? t("actions.openInline")
 			: t("actions.openInSidebar");
@@ -153,7 +159,8 @@ export const ResponseMessageTool = observer(
 			}
 			setIsDecisionCollapsed(false);
 			// a pending decision already renders inline once it is uncollapsed
-			if (!shouldShowInlineDecision) tool.openTool("inline");
+			if (!shouldShowInlineDecision)
+				tool.openTool(opensInSidebar ? "sidebar" : "inline");
 		};
 		const handleSidebar = () => {
 			if (isOpenInSidebar) {
@@ -190,7 +197,7 @@ export const ResponseMessageTool = observer(
 						size="sm"
 						onClick={handleToggle}
 						className="h-auto min-h-8 min-w-0 flex-1 justify-start gap-2 whitespace-normal px-2 py-1 text-start hover:bg-transparent dark:hover:bg-transparent"
-						aria-expanded={isExpanded}
+						aria-expanded={opensInSidebar ? undefined : isExpanded}
 						aria-label={`${tool.displayName}: ${status}. ${openAction}`}
 					>
 						<span
@@ -219,13 +226,15 @@ export const ResponseMessageTool = observer(
 								{status}
 							</span>
 						</span>
-						<ChevronDownIcon
-							aria-hidden="true"
-							className={cn(
-								"size-4 shrink-0 text-muted-foreground transition-transform motion-reduce:transition-none",
-								isExpanded && "rotate-180",
-							)}
-						/>
+						{!opensInSidebar && (
+							<ChevronDownIcon
+								aria-hidden="true"
+								className={cn(
+									"size-4 shrink-0 text-muted-foreground transition-transform motion-reduce:transition-none",
+									isExpanded && "rotate-180",
+								)}
+							/>
+						)}
 					</Button>
 					{canUseSidebar && (
 						<Tooltip>

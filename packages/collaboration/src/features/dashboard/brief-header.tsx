@@ -12,7 +12,7 @@ import { useDueToday } from "./use-due-today";
 /**
  * One line: what is due today and when the next meeting starts. Under it,
  * when mail was last read and, when a check found any, how many copies in the
- * owner's Digital Twins wait for them.
+ * twins the owner shares wait for them.
  */
 export function BriefHeader() {
 	const { state } = useCollaborationSession();
@@ -89,8 +89,8 @@ export function BriefHeader() {
 					className="inline-flex min-h-7 pointer-coarse:min-h-11 items-center rounded-sm underline underline-offset-2 hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
 				>
 					{twinUpdates.length === 1
-						? "1 Digital Twin update"
-						: `${twinUpdates.length} Digital Twin updates`}
+						? "1 update in a twin you share"
+						: `${twinUpdates.length} updates in ${isOneTwin ? "a twin" : "twins"} you share`}
 				</Link>
 			)}
 		</CollaborationHeroHeader>

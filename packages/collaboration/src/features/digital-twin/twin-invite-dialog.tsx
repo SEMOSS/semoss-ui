@@ -77,7 +77,7 @@ export function TwinInviteDialog({
 		resolver: zodResolver(schema),
 		defaultValues: {
 			note: [
-				`I've shared my Digital Twin, "${twin.name}", with you. It is an AI that answers questions about my work from the copies of emails, chats and files I chose to put into it, so you can ask it things when I'm not around.`,
+				`I've shared a Digital Twin of mine, "${twin.name}", with you. It is an AI that answers questions about my work from the copies of emails, chats and files I chose to put into it, so you can ask it things when I'm not around.`,
 				"It only knows what I put into it, and it cannot see your mail, calendar or files. Check anything important with me.",
 				...(accessEnds
 					? [`You can chat with it until ${accessEnds}.`]
@@ -92,7 +92,7 @@ export function TwinInviteDialog({
 			await sendTwinNote(
 				actions,
 				emails,
-				`I shared my Digital Twin with you: ${twin.name}`,
+				`I shared a Digital Twin with you: ${twin.name}`,
 				`${note}\n\nChat with it here:\n${link}`,
 			);
 		} catch (cause) {

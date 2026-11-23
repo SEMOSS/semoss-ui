@@ -117,7 +117,7 @@ export function useTwinPeopleSource(
 			people: {
 				title: "Add People",
 				description:
-					"They can chat with your Digital Twin, open the copies it holds and read its instructions.",
+					"They can chat with this twin, open the copies it holds and read its instructions.",
 				successMessage: "People added",
 				load: async (searchTerm, limit, offset, msGraphLookup) =>
 					(

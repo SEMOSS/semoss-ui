@@ -20,6 +20,7 @@ import { MessageToolActivity } from "./message-tool-activity";
 export function MessageTimelineEntry({
 	message,
 	agent,
+	agentImage,
 	parts = ownedMessageParts(message),
 	createdAt = message.createdAt,
 	userMessageTone = "accent",
@@ -28,6 +29,8 @@ export function MessageTimelineEntry({
 }: {
 	message: ConversationMessage;
 	agent: AgentConfiguration;
+	/** The agent's picture for its own messages; left out, they keep its initials. */
+	agentImage?: string;
 	/** Presentation parts may span several consecutive assistant messages. */
 	parts?: OwnedMessagePart[];
 	createdAt?: string;
@@ -45,6 +48,8 @@ export function MessageTimelineEntry({
 	const reply = message.delegationReply;
 	const request = message.delegationRequest;
 	const isDelegation = !!(reply || request);
+	// only the agent's side: the person's own messages never show a picture
+	const portrait = { name: agent.name, avatar: agentImage };
 	const outcomes = new Map<string, ConversationMessage["taskOutcome"]>();
 	for (const source of [message, ...parts.map((item) => item.message)]) {
 		if (source.role === "assistant" && source.taskOutcome)
@@ -67,14 +72,14 @@ export function MessageTimelineEntry({
 			aria-label={
 				isUser
 					? "Your message"
-					: `${reply?.assignee ?? request?.requester ?? agent.name}'s message`
+					: `Message from ${reply?.assignee ?? request?.requester ?? agent.name}`
 			}
 		>
 			{isFlat &&
 				!isDelegation &&
 				(leadingVisual ?? (
 					<AgentAvatar
-						agent={isUser ? { name: "You" } : agent}
+						agent={isUser ? { name: "You" } : portrait}
 						size="sm"
 					/>
 				))}
@@ -88,10 +93,10 @@ export function MessageTimelineEntry({
 					<div className="flex min-h-6 min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
 						{isBubble
 							? (leadingVisual ?? (
-									<AgentAvatar agent={agent} size="xs" />
+									<AgentAvatar agent={portrait} size="xs" />
 								))
 							: !isFlat && (
-									<AgentAvatar agent={agent} size="xs" />
+									<AgentAvatar agent={portrait} size="xs" />
 								)}
 						<Muted className="wrap-anywhere font-medium text-foreground text-sm">
 							{isUser ? "You" : agent.name}

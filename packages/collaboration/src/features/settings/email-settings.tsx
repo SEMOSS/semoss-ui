@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { Link } from "react-router";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	Alert,
@@ -24,10 +25,10 @@ import {
 	SelectValue,
 	Switch,
 } from "@semoss/ui/next";
-import { StyleSettings } from "@/features/collaboration/components/style-settings";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import { SignatureFrame } from "@/features/connectors/components/draft-look";
 import { sanitizeDraftHtml } from "@/features/email/email-html";
+import { personaPath } from "@/lib/workspace-paths";
 import {
 	createDraftFolder,
 	type DraftFolder,
@@ -49,7 +50,7 @@ const FONTS = [
 ];
 const SIZES = [9, 10, 11, 12, 14, 16];
 
-/** How the assistant writes your email: style, font, signature, and the Outlook folder drafts are left in. */
+/** How your email drafts look and where they are left: font, signature, and the Outlook folder. How you write is the persona's. */
 export function EmailSettings() {
 	const { actions } = useInsight();
 	const { state, dispatch } = useCollaborationSession();
@@ -97,14 +98,18 @@ export function EmailSettings() {
 						Email
 					</H2>
 					<P className="text-base text-muted-foreground">
-						How the assistant writes email as you, how drafts look,
-						and where they are left in Outlook. Nothing is sent
-						until you send it.
+						How drafts look and where they are left in Outlook.
+						Nothing is sent until you send it. How you write is
+						under{" "}
+						<Link
+							to={personaPath()}
+							className="rounded-sm font-medium text-foreground underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring"
+						>
+							Persona
+						</Link>
+						.
 					</P>
 				</header>
-				{state.liveProfile && (
-					<StyleSettings profile={state.liveProfile} />
-				)}
 				<DraftLook isLive={isLive} />
 				<div className="space-y-2 border-border border-t pt-5">
 					<Label htmlFor={`${fieldId}-folder`}>Draft folder</Label>

@@ -58,13 +58,13 @@ const PLACES = {
 		label: "Files",
 		icon: TwinFilesIcon,
 		description:
-			"The copies your Digital Twin answers from. Upload more, or open, rename and delete what is here.",
+			"The copies this twin answers from. Upload more, or open, rename and delete what is here.",
 	},
 	updates: {
 		label: "Updates",
 		icon: RefreshCw,
 		description:
-			"What changed where it came from since you copied it. Nothing in your Digital Twin changes until you choose, and an update replaces the copy. Files you uploaded and attachments are not checked.",
+			"What changed where it came from since you copied it. Nothing in this twin changes until you choose, and an update replaces the copy. Files you uploaded and attachments are not checked.",
 	},
 	[TWIN_FINDER.id]: TWIN_FINDER,
 	...TWIN_SOURCES,
@@ -75,7 +75,7 @@ const isPlace = (value: string | null): value is Place =>
 
 const GROUPS: TopicPlaceGroup[] = [
 	{
-		title: "In your twin",
+		title: "In This Twin",
 		places: [
 			{ id: "files", ...PLACES.files },
 			{ id: "updates", ...PLACES.updates },
@@ -211,14 +211,14 @@ export function TwinContents() {
 	): Promise<boolean> => {
 		// marked while the copy runs, so the same item is not asked for twice
 		markHeld(file.itemKey, true);
-		setStatus(`Copying "${file.name}" into your Digital Twin…`);
+		setStatus(`Copying "${file.name}" into this twin...`);
 		let copy: TwinCopy;
 		try {
 			copy = await copyToTwin(actions, twinId, file);
 		} catch (cause) {
 			markHeld(file.itemKey, false);
-			setStatus(`"${file.name}" was not added to your Digital Twin.`);
-			toast.error(`Could not add "${file.name}" to your Digital Twin.`, {
+			setStatus(`"${file.name}" was not added to this twin.`);
+			toast.error(`Could not add "${file.name}" to this twin.`, {
 				description: cause instanceof Error ? cause.message : undefined,
 			});
 			return false;
@@ -227,8 +227,8 @@ export function TwinContents() {
 		markHeld(file.itemKey, true);
 		// the copy makes the folders it lands in
 		setFolderExists(true);
-		setStatus(`Added "${file.name}" to your Digital Twin.`);
-		toast.success(`Added "${file.name}" to your Digital Twin.`);
+		setStatus(`Added "${file.name}" to this twin.`);
+		toast.success(`Added "${file.name}" to this twin.`);
 		requestIndex();
 		if (copy.recordError) {
 			toast.warning(
@@ -291,14 +291,14 @@ export function TwinContents() {
 			setStatus(
 				[
 					added > 0 &&
-						`Added ${added} ${added === 1 ? "transcript" : "transcripts"} to your Digital Twin.`,
+						`Added ${added} ${added === 1 ? "transcript" : "transcripts"} to this twin.`,
 					...notes,
 				]
 					.filter(Boolean)
 					.join(" "),
 			);
 		} catch (cause) {
-			setStatus("The transcript was not added to your Digital Twin.");
+			setStatus("The transcript was not added to this twin.");
 			toast.error("Could not add the transcript.", {
 				description: cause instanceof Error ? cause.message : undefined,
 			});
@@ -312,7 +312,7 @@ export function TwinContents() {
 		try {
 			found = await attachments.save();
 		} catch (cause) {
-			setStatus("The attachments were not added to your Digital Twin.");
+			setStatus("The attachments were not added to this twin.");
 			toast.error("Could not add the attachments.", {
 				description: cause instanceof Error ? cause.message : undefined,
 			});
@@ -326,7 +326,7 @@ export function TwinContents() {
 			attachmentsSummary(
 				added,
 				found.skipped,
-				(what) => `Added ${what} to your Digital Twin.`,
+				(what) => `Added ${what} to this twin.`,
 			),
 		);
 	};
@@ -358,7 +358,7 @@ export function TwinContents() {
 	const savedItems = {
 		isSaved: (itemKey: string) =>
 			(heldKeys ?? twin?.itemKeys)?.has(itemKey) ?? false,
-		label: "In your Digital Twin",
+		label: "In This Twin",
 	};
 	const renderLibrary = (explorer?: FileExplorerApi): ReactNode =>
 		twin && (
@@ -383,7 +383,7 @@ export function TwinContents() {
 	if (!twin) {
 		body = contents.error ? (
 			<Alert variant="destructive" className="m-4 w-auto">
-				<AlertTitle>Could not load your Digital Twin</AlertTitle>
+				<AlertTitle>Could not load this twin</AlertTitle>
 				<AlertDescription>
 					{contents.error}
 					<Button
@@ -399,7 +399,7 @@ export function TwinContents() {
 			<div className="flex flex-col gap-3 p-4">
 				<Skeleton className="h-10 w-full" />
 				<Skeleton className="h-64 w-full" />
-				<output className="sr-only">Loading your Digital Twin…</output>
+				<output className="sr-only">Loading this twin...</output>
 			</div>
 		);
 	} else if (place === TWIN_FINDER.id) {
@@ -451,7 +451,9 @@ export function TwinContents() {
 				>
 					<Link
 						to={twin ? twinSettingsPath(twin.id) : "/twins"}
-						aria-label="Back to your Digital Twin"
+						aria-label={
+							twin ? "Back to This Twin" : "Back to Digital Twins"
+						}
 					>
 						<ArrowLeft aria-hidden="true" />
 					</Link>
@@ -459,14 +461,13 @@ export function TwinContents() {
 				<div className="min-w-0 flex-1">
 					<H1 className="wrap-anywhere font-medium text-base leading-snug tracking-normal sm:text-lg">
 						{twin
-							? `What ${twin.name} knows`
-							: "What your Digital Twin knows"}
+							? `What ${twin.name} Knows`
+							: "What This Twin Knows"}
 					</H1>
 					{/* a phone keeps the room for the list; each place says what it holds */}
 					<P className="hidden text-muted-foreground text-sm sm:block">
 						Copies of the emails, Teams chats and files you choose.
-						The people you share your Digital Twin with can open
-						them.
+						The people you share this twin with can open them.
 					</P>
 				</div>
 			</header>
@@ -540,8 +541,8 @@ export function TwinContents() {
 							<P className="wrap-anywhere line-clamp-2 min-w-0 flex-1 basis-48 text-muted-foreground text-sm">
 								{status ||
 									(isFinding
-										? "Add a suggestion to copy it into your Digital Twin."
-										: "Save an item to copy it into your Digital Twin.")}
+										? "Add a suggestion to copy it into this twin."
+										: "Save an item to copy it into this twin.")}
 							</P>
 							{twin && attachments.pending > 0 && (
 								<Button

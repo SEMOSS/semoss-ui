@@ -136,24 +136,27 @@ export const forgetSessionNewChat = (): void => {
 };
 
 /**
- * The mode a new chat starts in: the session's last chat, then the user's
- * default, then the deployment's, then chat. Always chat where the deployment
- * offers no agent mode.
+ * The mode a new chat starts in: the first of the session's last chat, the
+ * user's default and the deployment's that the deployment offers, else the
+ * first mode it offers. Always chat where it offers no agent mode, and always
+ * agent where every chat runs in agent mode.
  *
  * @param session - The chat last started in this login session, if any.
  * @param preferences - The user's defaults.
  * @param deployment - The deployment's defaults.
- * @param offersAgentMode - Whether the deployment offers agent mode.
+ * @param offeredModes - The modes the deployment offers, chat first.
  * @returns The mode.
  */
 export const resolveNewChatMode = (
 	session: SessionNewChat | null,
 	preferences: NewChatPreferences,
 	deployment: NewChatPreferences,
-	offersAgentMode: boolean,
+	offeredModes: readonly NewChatMode[],
 ): NewChatMode => {
-	if (!offersAgentMode) return "chat";
-	return session?.mode ?? preferences.mode ?? deployment.mode ?? "chat";
+	for (const mode of [session?.mode, preferences.mode, deployment.mode]) {
+		if (mode && offeredModes.includes(mode)) return mode;
+	}
+	return offeredModes[0] ?? "chat";
 };
 
 /**

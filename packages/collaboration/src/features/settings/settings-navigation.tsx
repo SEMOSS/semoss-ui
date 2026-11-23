@@ -8,6 +8,7 @@ import { suggestedMemories } from "@/features/collaboration/state/memory";
 
 // Old Brain routes stay as they are so links and bookmarks keep working.
 // Order: your account and connections, then what the assistant knows, then the app itself.
+// Topics is not among them: it has its own place in the sidebar.
 const SETUP_DESTINATIONS: {
 	to: string;
 	label: string;
@@ -18,12 +19,12 @@ const SETUP_DESTINATIONS: {
 	{ to: "/settings/about-you", label: "About you" },
 	{ to: "/brain/sources", label: "Connections" },
 	{ to: "/settings/email", label: "Email" },
-	{ to: "/brain/topics", label: "Topics", startsGroup: true },
 	{
 		to: "/brain",
 		label: "Review",
 		count: (state) =>
 			state.reviews.filter((review) => review.status === "open").length,
+		startsGroup: true,
 	},
 	{
 		to: "/brain/threads",
@@ -91,7 +92,7 @@ function SettingsNavigation({
 /** The tab bar strip placed above Settings and setup page content. */
 export function SettingsTabBar() {
 	return (
-		<div className="shrink-0 bg-muted/15 px-4 pt-4 sm:px-6 lg:px-8">
+		<div className="shrink-0 border-b bg-muted/15 px-4 py-3 sm:px-6 lg:px-8">
 			<div className="mx-auto w-full max-w-screen-2xl">
 				<SettingsNavigation />
 			</div>

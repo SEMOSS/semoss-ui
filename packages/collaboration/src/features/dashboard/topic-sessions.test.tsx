@@ -297,7 +297,7 @@ it("keeps partial results visible and retries only failed metadata without a fal
 	);
 	expect(
 		screen.queryByText(
-			"No linked chats in the history loaded so far. Ask the assistant above to start one.",
+			"No linked chats in the history loaded so far. Ask your Digital Twin above to start one.",
 		),
 	).not.toBeInTheDocument();
 	read.mockResolvedValue({ threadId: "source-one", isDelegation: false });
@@ -333,7 +333,7 @@ it("revalidates associations on a new tab activation without relying on room tim
 	read.mockResolvedValue({ threadId: null, isDelegation: false });
 	const view = render(content());
 	await screen.findByText(
-		"No linked chats in the history loaded so far. Ask the assistant above to start one.",
+		"No linked chats in the history loaded so far. Ask your Digital Twin above to start one.",
 	);
 	view.rerender(content(false));
 	read.mockResolvedValue({ threadId: "source-one", isDelegation: false });
@@ -360,7 +360,7 @@ it("discards pending results when the account/insight owner changes", async () =
 	await waitFor(() => expect(read).toHaveBeenCalledOnce());
 	view.rerender(content(true, "account-two"));
 	await screen.findByText(
-		"No linked chats in the history loaded so far. Ask the assistant above to start one.",
+		"No linked chats in the history loaded so far. Ask your Digital Twin above to start one.",
 	);
 	await act(async () =>
 		resolveOld?.({ threadId: "source-one", isDelegation: false }),
@@ -387,7 +387,7 @@ it("discards pending topic links when the account/insight owner changes", async 
 	await waitFor(() => expect(readTopics).toHaveBeenCalledOnce());
 	view.rerender(content(true, "account-two"));
 	await screen.findByText(
-		"No linked chats in the history loaded so far. Ask the assistant above to start one.",
+		"No linked chats in the history loaded so far. Ask your Digital Twin above to start one.",
 	);
 	await act(async () =>
 		resolveOld?.([{ topicId: "topic-one", state: "linked" }]),
@@ -407,7 +407,7 @@ it("keeps history failure distinct from an empty linked-session result", async (
 	expect(screen.getByRole("alert")).toHaveTextContent(mocks.error);
 	expect(
 		screen.queryByText(
-			"No linked chats in the history loaded so far. Ask the assistant above to start one.",
+			"No linked chats in the history loaded so far. Ask your Digital Twin above to start one.",
 		),
 	).not.toBeInTheDocument();
 	expect(
@@ -447,7 +447,7 @@ it("keeps verified associations through revalidation and failure until a success
 		.setup()
 		.click(screen.getByRole("button", { name: "Retry session links" }));
 	await screen.findByText(
-		"No linked chats in the history loaded so far. Ask the assistant above to start one.",
+		"No linked chats in the history loaded so far. Ask your Digital Twin above to start one.",
 	);
 	expect(
 		screen.queryByRole("link", { name: /^Verified conversation/ }),
@@ -509,7 +509,7 @@ it("keeps cached topic links visible through failed refreshes and retries them",
 		.setup()
 		.click(screen.getByRole("button", { name: "Retry session links" }));
 	await screen.findByText(
-		"No linked chats in the history loaded so far. Ask the assistant above to start one.",
+		"No linked chats in the history loaded so far. Ask your Digital Twin above to start one.",
 	);
 	expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 	expect(readTopics).toHaveBeenCalledTimes(3);
@@ -625,13 +625,13 @@ it("adds and removes chats by hand, saving each change before the row shows it",
 	const user = userEvent.setup();
 	const view = render(content(true, "account-one", "topic-one", "all"));
 	const box = (name: string) => screen.getByRole("checkbox", { name });
-	// the list says these are the assistant's chats, which a Teams chat is easily taken for
+	// the list says these are chats in this app, which a Teams chat is easily taken for
 	expect(
-		await screen.findByRole("heading", { name: "Assistant chats" }),
+		await screen.findByRole("heading", { name: "Digital Twin Chats" }),
 	).toBeVisible();
 	expect(
 		screen.getByText(
-			"Your chats with the assistant in this app. These are not Teams chats.",
+			"Your chats in this app, with your Digital Twin or another agent. These are not Teams chats.",
 		),
 	).toBeVisible();
 	// every chat, with the topic's own checked
@@ -710,7 +710,7 @@ it("finds a chat outside the loaded history by name", async () => {
 	render(content(true, "account-one", "topic-one", "all"));
 	await user.type(
 		await screen.findByRole("searchbox", {
-			name: "Search Assistant chats",
+			name: "Search Digital Twin Chats",
 		}),
 		"hiring",
 	);

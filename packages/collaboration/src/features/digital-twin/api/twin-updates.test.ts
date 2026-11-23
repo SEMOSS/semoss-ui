@@ -303,7 +303,7 @@ describe("updating a copy", () => {
 
 		await expect(
 			applyTwinUpdate(actions, "insight-1", THREAD),
-		).rejects.toThrow("no longer in your Digital Twin");
+		).rejects.toThrow("no longer in this twin");
 		expect(save).not.toHaveBeenCalled();
 		expect(ran()).toEqual([
 			...LOOK,
