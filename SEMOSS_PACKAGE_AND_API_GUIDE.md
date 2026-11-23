@@ -24,7 +24,7 @@ source barrel before adding a new public contract.
 | Package | What it provides | Main import path | Representative APIs | Typical consumers | Scope |
 | --- | --- | --- | --- | --- | --- |
 | `@semoss/config` | Shared Vite, library-build, proxy, and Vitest configuration | `@semoss/config` | `createViteConfig`, `createViteLibConfig`, `localeManualChunks` | Workspace libraries and applications | Public library API, primarily build-time |
-| `@semoss/sdk` | HTTP, Pixel execution, environments, rooms, agents, insights, and stores | `@semoss/sdk` | `get`, `post`, `runPixel`, `runPixelAsync`, `Env`, `CSRF`, `AgentStore`, `InsightStore`, `RoomStore`, `createRoom` | Client, playground, terminal, CLI, shared components | Public library API |
+| `@semoss/sdk` | HTTP, Pixel execution, environments, rooms, agents, insights, and stores | `@semoss/sdk` | `get`, `post`, `runPixel`, `runPixelAsync`, `Env`, `CSRF`, `AgentStore`, `InsightStore`, `RoomStore`, `createRoom` | Client, playground, terminal, shared components | Public library API |
 | `@semoss/sdk/react` | React bindings for SDK state and API calls | `@semoss/sdk/react` | `usePixel`, `InsightProvider`, `useCsrf`, `waitForEmbedAuth`, React contexts/hooks | React applications | Public library API |
 | `@semoss/ui` | Legacy and base UI exports | `@semoss/ui` | Base components and styles | Existing consumers during migration | Public, legacy surface |
 | `@semoss/ui/next` | Current SEMOSS design-system components and hooks | `@semoss/ui/next` | `Button`, `Dialog`, `Form`, `FormInput`, `Table`, `Select`, `Tabs`, `toast`, `Spinner`, `cn`, `useTheme` | All modern React UI | Public library API; preferred UI surface |
@@ -55,7 +55,6 @@ source barrel before adding a new public contract.
 | `@semoss/automation` | Visual workflow editor and automation run UI | `packages/automation/src/index.ts` | `AutomationCanvas`, `InspectorTab`, `RunsTab`, `AgentRunDialog`, automation document/node/run types | Embedded by client or used through the standalone/MCP surface | Embeddable application API |
 | `@semoss/auditlog-package` | Audit log dashboard | `packages/auditlog/src/main.tsx`, `App.tsx` | Audit log routes and dashboard UI | Standalone or embedded audit log view | Application-internal |
 | `@semoss/browser-automation` | Browser automation application and harness UI | `packages/browser-automation/src/main.tsx`, `App.tsx` | Browser automation views, MCP/browser integration, insight-backed application shell | Browser automation workflows | Application-internal |
-| `@semoss/cli` | Node command-line tooling | `@semoss/cli`, `bin/run.js` | oclif command runner; commands such as `init` and `deploy` | Terminal/Node users | Host-facing public API |
 | Chrome extension | Browser automation extension |
 
 ## Application API Details
@@ -274,18 +273,6 @@ function WorkflowEditor({ appId }: { appId: string }) {
 The handle supports imperative operations such as `refresh` and
 `applyInspectorAction`. Use callback props for trace, inspector, and history
 updates rather than reaching into the canvas's internal state.
-
-### `@semoss/cli`: Run a Command
-
-The CLI is consumed from a shell rather than imported into a React application:
-
-```bash
-pnpm exec @semoss/cli init
-pnpm exec @semoss/cli deploy
-```
-
-Use `--help` on a command to see its current flags. The CLI command set and
-flags are host-facing and should be checked against the installed version.
 
 ### Applications: Prefer Their Public Integration Surface
 
