@@ -6,23 +6,28 @@ import {
 	type ReactFlowState,
 	useStore,
 } from "@xyflow/react";
-import type { LucideIcon } from "lucide-react";
+import { type LucideIcon, Pencil, Plus } from "lucide-react";
 import { memo } from "react";
-import { Badge, cn } from "@semoss/ui/next";
+import { Badge, cn, Spinner } from "@semoss/ui/next";
 import type { DependencyGraphNode } from "@/api/dependency-map";
-import { getDependencyTypeConfig } from "@/features/catalog/dependencies/catalog-dependency";
+import {
+	getDependencyTypeConfig,
+	TRAVERSE_LABELS,
+} from "@/features/catalog/dependencies/catalog-dependency";
+import type { TraverseDirection } from "@/features/catalog/dependencies/catalog-dependency-graph";
 import {
 	DEPENDENCY_FAMILIES,
 	getDependencyFamily,
 	type NodeEmphasis,
 } from "./dependency-graph";
+import { MapTooltip } from "./map-tooltip";
 
 /** A short status a node shows as its one badge, such as an access level. */
 export interface DependencyNodeStatus {
 	/** The words; never colour alone */
 	readonly label: string;
 	/** How strongly the badge reads */
-	readonly variant: "secondary" | "outline" | "destructive";
+	readonly variant: "secondary" | "outline";
 	/** An icon before the words */
 	readonly icon?: LucideIcon;
 }
@@ -42,12 +47,25 @@ export interface DependencyNodeData extends Record<string, unknown> {
 	caption?: string;
 	/** Whether the user cannot see what it is: a lock for an image, dashed */
 	isPrivate?: boolean;
-	/** How many items one link further out are not shown */
-	hiddenChildren?: number;
-	/** Which edge of the node the items it leaves out are beyond */
-	hiddenSide?: "left" | "right";
-	/** Shows the items one link further out */
-	onExpand?: (id: string) => void;
+	/**
+	 * Whether there is more to show by pendingDirection upstream, to what it uses:
+	 * a "+" on the card's right
+	 */
+	canTraverseUpstream?: boolean;
+	/**
+	 * Whether there is more to show by pendingDirection downstream, to what uses
+	 * it: a "+" on the card's left
+	 */
+	canTraverseDownstream?: boolean;
+	/** Which way a traversal is being read, so its "+" shows a spinner */
+	pendingDirection?: TraverseDirection;
+	/** Traverses from it, upstream or downstream */
+	onTraverse?: (id: string, direction: TraverseDirection) => void;
+	/**
+	 * Opens the item's link for editing, such as a manual dependency's name
+	 * and description; drawn as a pencil on the card's corner
+	 */
+	onEdit?: (id: string) => void;
 }
 
 /** A node on the Dependency Map. */
@@ -70,6 +88,10 @@ const EMPHASIS_CLASS = {
 	root: "border-primary/40",
 } as const satisfies Record<NodeEmphasis, string>;
 
+// the round controls on a card's edge: the pencil and the traverse "+"
+const CORNER_BUTTON_CLASS =
+	"nodrag nopan absolute z-10 flex size-6 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+
 // the automation canvas's port dots
 const PORT_CLASS =
 	"size-2! border-2! border-background! bg-muted-foreground! min-h-0! min-w-0!";
@@ -81,8 +103,10 @@ const PORT_CLASS =
  * is in the drawer), its name, and its catalog type in
  * small capitals (never the subtype, such as H2 or Postgres, which its details
  * give), with at most one badge at the end (Deleted, or its status) and a port
- * dot on each side. A private item is muted and dashed; a deleted one has a dashed destructive border. When the view leaves
- * items out beyond it, a "+N" button on that edge shows them. The card fills
+ * dot on each side. A private item is muted and dashed; a deleted one has a
+ * dashed destructive border. Where there is more to traverse, a "+" on the
+ * card's right shows what it uses (upstream) and one on its left what uses
+ * it (downstream), with no count. The card fills
  * the size the canvas gives it. Clicking it opens its details. Memoized, as
  * React Flow recommends for custom nodes, since the admin canvas renders
  * thousands of them.
@@ -95,9 +119,11 @@ export const DependencyNode = memo(
 			emphasis,
 			status,
 			isPrivate = false,
-			hiddenChildren = 0,
-			hiddenSide = "right",
-			onExpand,
+			canTraverseUpstream = false,
+			canTraverseDownstream = false,
+			pendingDirection,
+			onTraverse,
+			onEdit,
 			caption,
 		} = data;
 		const family = DEPENDENCY_FAMILIES[getDependencyFamily(node.type)];
@@ -158,7 +184,7 @@ export const DependencyNode = memo(
 					<div className="flex min-w-0 flex-1 flex-col">
 						<span
 							className={cn(
-								"truncate font-semibold text-sm leading-snug",
+								"truncate font-medium text-sm leading-snug",
 								isPrivate && "text-muted-foreground",
 							)}
 						>
@@ -182,26 +208,71 @@ export const DependencyNode = memo(
 						<div className="ml-auto shrink-0">{badge}</div>
 					) : null}
 				</div>
-				{hiddenChildren > 0 && onExpand ? (
-					<button
-						type="button"
-						aria-label={`Show ${hiddenChildren} more linked to ${node.name}`}
-						title={`Show ${hiddenChildren} more`}
-						onClick={(event) => {
-							// expanding is not selecting the node
-							event.stopPropagation();
-							onExpand(node.id);
-						}}
-						className={cn(
-							"nodrag nopan -translate-y-1/2 absolute top-1/2 z-10 flex h-6 min-w-6 items-center justify-center rounded-full border bg-background px-1.5 font-medium text-muted-foreground text-xs shadow-sm hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-							hiddenSide === "right"
-								? "-right-3 translate-x-1/2"
-								: "-left-3 -translate-x-1/2",
-						)}
-					>
-						+{hiddenChildren}
-					</button>
+				{onEdit ? (
+					<MapTooltip label={`Edit ${node.name}`}>
+						<button
+							type="button"
+							aria-label={`Edit ${node.name}`}
+							onClick={(event) => {
+								// editing is not selecting the node
+								event.stopPropagation();
+								onEdit(node.id);
+							}}
+							className={cn(
+								CORNER_BUTTON_CLASS,
+								"-right-2.5 -top-2.5",
+							)}
+						>
+							<Pencil className="size-3" aria-hidden="true" />
+						</button>
+					</MapTooltip>
 				) : null}
+				{onTraverse
+					? (
+							[
+								["UPSTREAM", canTraverseUpstream],
+								["DOWNSTREAM", canTraverseDownstream],
+							] as const
+						).map(([direction, canTraverse]) => {
+							if (!canTraverse) {
+								return null;
+							}
+							const label = `${TRAVERSE_LABELS[direction].show} from ${node.name}`;
+							return (
+								<MapTooltip key={direction} label={label}>
+									<button
+										type="button"
+										aria-label={label}
+										disabled={
+											pendingDirection === direction
+										}
+										onClick={(event) => {
+											// traversing is not selecting the node
+											event.stopPropagation();
+											onTraverse(node.id, direction);
+										}}
+										className={cn(
+											CORNER_BUTTON_CLASS,
+											"-translate-y-1/2 top-1/2",
+											// what it uses is to its right, what uses it to its left
+											direction === "UPSTREAM"
+												? "-right-3 translate-x-1/2"
+												: "-left-3 -translate-x-1/2",
+										)}
+									>
+										{pendingDirection === direction ? (
+											<Spinner className="size-3" />
+										) : (
+											<Plus
+												className="size-3"
+												aria-hidden="true"
+											/>
+										)}
+									</button>
+								</MapTooltip>
+							);
+						})
+					: null}
 				<Handle
 					type="target"
 					position={Position.Left}

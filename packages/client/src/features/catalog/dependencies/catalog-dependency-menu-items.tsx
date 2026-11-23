@@ -1,10 +1,11 @@
 import {
+	ArrowDown,
+	ArrowUp,
 	ExternalLink,
 	Info,
 	LockKeyhole,
 	Maximize,
 	Minus,
-	Network,
 	Pencil,
 	Plus,
 	Trash2,
@@ -17,7 +18,7 @@ import {
 	ContextMenuSeparator,
 } from "@semoss/ui/next";
 import type { GraphMenuTarget } from "@/features/dependency-map/dependency-flow-canvas";
-import { canRequestDependency } from "./catalog-dependency";
+import { canRequestDependency, TRAVERSE_LABELS } from "./catalog-dependency";
 import type { CanvasEditState } from "./catalog-dependency-canvas";
 import { getOwnDraftLink } from "./catalog-dependency-draft";
 import {
@@ -25,14 +26,28 @@ import {
 	type CatalogGraphNode,
 	type DependencyGraphView,
 	getGraphNodePaths,
+	getTraversalKey,
+	type TraversalKey,
+	type TraverseDirection,
 } from "./catalog-dependency-graph";
+
+/** The menu's words for each way to traverse. */
+/** The icon each way to traverse has in the menu. */
+const TRAVERSE_ICONS = {
+	UPSTREAM: ArrowUp,
+	DOWNSTREAM: ArrowDown,
+} as const satisfies Record<TraverseDirection, typeof ArrowUp>;
+
+/** The ways to traverse, in the order the menu offers them. */
+const TRAVERSE_DIRECTIONS: readonly TraverseDirection[] = [
+	"UPSTREAM",
+	"DOWNSTREAM",
+];
 
 /** What the menu offers while the owner's links are edited. */
 export interface MenuEditActions extends CanvasEditState {
 	/** Opens Add Dependency */
 	readonly onAdd: () => void;
-	/** Opens a manual link's name and description in the link dialog */
-	readonly onEditLink: (id: string) => void;
 }
 
 /** Props for {@link CatalogDependencyMenuItems}. */
@@ -41,16 +56,18 @@ interface CatalogDependencyMenuItemsProps {
 	target: GraphMenuTarget;
 	/** The owner's graph */
 	graph: CatalogDependencyGraph;
-	/** What the canvas shows, for what an item leaves out beyond it */
+	/** What the canvas shows, for where each item's traversals stand */
 	view: DependencyGraphView;
-	/** The items whose next level is shown */
-	expandedIds: ReadonlySet<string>;
+	/** Whether any traversal is shown past the owner's direct links */
+	hasTraversals: boolean;
+	/** The traversals whose read is running */
+	pendingTraversals: ReadonlySet<TraversalKey>;
 	/** Opens an item in the drawer */
-	onOpenDetails: (id: string) => void;
-	/** Shows the items one link further out from an item */
-	onExpand: (id: string) => void;
-	/** Hides them again */
-	onCollapse: (id: string) => void;
+	onOpenItem: (id: string) => void;
+	/** Traverses from an item, upstream or downstream */
+	onTraverse: (id: string, direction: TraverseDirection) => void;
+	/** Hides a traversal */
+	onHide: (id: string, direction: TraverseDirection) => void;
 	/** Asks for access to an item */
 	onRequestAccess: (node: CatalogGraphNode) => void;
 	/** Fits the canvas to what it shows */
@@ -62,9 +79,11 @@ interface CatalogDependencyMenuItemsProps {
 }
 
 /**
- * The Ontology tab's right-click menu. On an item: open its details, show or
- * hide the next level beyond it (the way to walk further than the direct
- * links), ask for access, open it in the catalog, or go to its own Ontology.
+ * The Ontology tab's right-click menu. On an item: open its details,
+ * traverse upstream (to what it uses) or downstream (to what uses it) in
+ * place, or hide a traversal shown, ask for access, or open it in the
+ * catalog. A way with nothing more to show is off; one being read says
+ * Loading. No counts are shown.
  * On the empty canvas: fit the view, and go back to the direct links. Each
  * action shows only where it applies, so a private item offers only its
  * details. While the owner's links are edited, the empty canvas offers Add
@@ -75,10 +94,11 @@ export const CatalogDependencyMenuItems = ({
 	target,
 	graph,
 	view,
-	expandedIds,
-	onOpenDetails,
-	onExpand,
-	onCollapse,
+	hasTraversals,
+	pendingTraversals,
+	onOpenItem,
+	onTraverse,
+	onHide,
 	onRequestAccess,
 	onFitView,
 	onShowDirectOnly,
@@ -104,7 +124,7 @@ export const CatalogDependencyMenuItems = ({
 				</ContextMenuItem>
 				<ContextMenuItem
 					onSelect={onShowDirectOnly}
-					disabled={expandedIds.size === 0}
+					disabled={!hasTraversals}
 				>
 					<Undo2 aria-hidden="true" />
 					Show Direct Links Only
@@ -113,10 +133,8 @@ export const CatalogDependencyMenuItems = ({
 		);
 	}
 
-	const hiddenChildren =
-		view.nodes.find((placed) => placed.id === node.id)?.hiddenChildren ?? 0;
-	const isExpanded = expandedIds.has(node.id);
-	const { catalogPath, ontologyPath } = getGraphNodePaths(graph, node);
+	const placed = view.nodes.find((shown) => shown.id === node.id);
+	const { catalogPath } = getGraphNodePaths(graph, node);
 	const isRequestable = node.access
 		? canRequestDependency(node.access)
 		: false;
@@ -130,21 +148,49 @@ export const CatalogDependencyMenuItems = ({
 				{node.name}
 			</ContextMenuLabel>
 			<ContextMenuSeparator />
-			<ContextMenuItem onSelect={() => onOpenDetails(node.id)}>
+			<ContextMenuItem onSelect={() => onOpenItem(node.id)}>
 				<Info aria-hidden="true" />
 				Open Details
 			</ContextMenuItem>
-			{edit ? null : isExpanded ? (
-				<ContextMenuItem onSelect={() => onCollapse(node.id)}>
-					<Minus aria-hidden="true" />
-					Hide Next Level
-				</ContextMenuItem>
-			) : hiddenChildren > 0 ? (
-				<ContextMenuItem onSelect={() => onExpand(node.id)}>
-					<Plus aria-hidden="true" />
-					{`Show Next Level (${hiddenChildren})`}
-				</ContextMenuItem>
-			) : null}
+			{/* editing shows the direct links only, so nothing is traversed */}
+			{/* a private item offers only its details */}
+			{edit ||
+			!placed ||
+			node.id === graph.rootId ||
+			(node.isPrivate && node.hiddenCount === undefined)
+				? null
+				: TRAVERSE_DIRECTIONS.map((direction) => {
+						const { show, hide } = TRAVERSE_LABELS[direction];
+						const Icon = TRAVERSE_ICONS[direction];
+						const state =
+							direction === "UPSTREAM"
+								? placed.upstream
+								: placed.downstream;
+						if (state === "SHOWN") {
+							return (
+								<ContextMenuItem
+									key={direction}
+									onSelect={() => onHide(node.id, direction)}
+								>
+									<Minus aria-hidden="true" />
+									{hide}
+								</ContextMenuItem>
+							);
+						}
+						const isLoading = pendingTraversals.has(
+							getTraversalKey(node.id, direction),
+						);
+						return (
+							<ContextMenuItem
+								key={direction}
+								disabled={state === "NONE" || isLoading}
+								onSelect={() => onTraverse(node.id, direction)}
+							>
+								<Icon aria-hidden="true" />
+								{isLoading ? "Loading..." : show}
+							</ContextMenuItem>
+						);
+					})}
 			{edit && draftLink ? (
 				<>
 					<ContextMenuSeparator />
@@ -183,18 +229,14 @@ export const CatalogDependencyMenuItems = ({
 			) : null}
 			{catalogPath ? (
 				<ContextMenuItem asChild>
-					<Link to={catalogPath} target="_blank" rel="noreferrer">
+					<Link
+						to={catalogPath}
+						target="_blank"
+						rel="noopener noreferrer"
+					>
 						<ExternalLink aria-hidden="true" />
 						Open in Catalog
 						<span className="sr-only"> (opens in a new tab)</span>
-					</Link>
-				</ContextMenuItem>
-			) : null}
-			{ontologyPath ? (
-				<ContextMenuItem asChild>
-					<Link to={ontologyPath}>
-						<Network aria-hidden="true" />
-						View Its Ontology
 					</Link>
 				</ContextMenuItem>
 			) : null}

@@ -1,17 +1,8 @@
-import { Lock, PencilLine } from "lucide-react";
-import {
-	Badge,
-	Item,
-	ItemContent,
-	ItemDescription,
-	ItemMedia,
-	ItemTitle,
-	Muted,
-} from "@semoss/ui/next";
+import { Muted } from "@semoss/ui/next";
 import type { DependencyGraphEdge } from "@/api/dependency-map";
 import { getDependencyTypeConfig } from "@/features/catalog/dependencies/catalog-dependency";
 import { type DependencyGraphIndex, describeLink } from "./dependency-graph";
-import { DependencyItemImage } from "./dependency-item-image";
+import { DependencyLinkRow } from "./dependency-link-row";
 
 /** The most rows a list shows; a hub can be used by hundreds of items. */
 const ROW_LIMIT = 200;
@@ -53,70 +44,18 @@ export const DependencyLinkList = ({
 					}
 					const { role, origin } = describeLink(link);
 					return (
-						<li
+						<DependencyLinkRow
 							key={link.id}
-							className="flex min-w-0 items-center gap-1"
-						>
-							<Item
-								asChild
-								size="sm"
-								className="min-w-0 flex-1 flex-nowrap px-2 py-1.5 text-left"
-							>
-								<button
-									type="button"
-									onClick={() => onJump(node.id)}
-								>
-									<ItemMedia>
-										<DependencyItemImage
-											node={node}
-											className="size-6"
-										/>
-									</ItemMedia>
-									<ItemContent className="min-w-0 gap-0">
-										<ItemTitle
-											className="w-full truncate font-normal"
-											title={node.name}
-										>
-											{node.name}
-										</ItemTitle>
-										<ItemDescription className="truncate text-xs">
-											{
-												getDependencyTypeConfig(
-													node.type,
-												).label
-											}
-											{link.name ? ` · ${link.name}` : ""}
-										</ItemDescription>
-									</ItemContent>
-								</button>
-							</Item>
-							<Badge
-								asChild
-								variant={
-									link.isAutomatic ? "secondary" : "outline"
-								}
-							>
-								<button
-									type="button"
-									className="shrink-0 gap-1"
-									aria-label={`${role}, ${origin}: show this link`}
-									onClick={() => onSelectEdge(link.id)}
-								>
-									{link.isAutomatic ? (
-										<Lock
-											className="size-3"
-											aria-hidden="true"
-										/>
-									) : (
-										<PencilLine
-											className="size-3"
-											aria-hidden="true"
-										/>
-									)}
-									{role}
-								</button>
-							</Badge>
-						</li>
+							node={node}
+							description={`${getDependencyTypeConfig(node.type).label}${link.name ? ` · ${link.name}` : ""}`}
+							link={{
+								isAutomatic: link.isAutomatic,
+								label: role,
+							}}
+							onOpenItem={() => onJump(node.id)}
+							onOpenLink={() => onSelectEdge(link.id)}
+							linkLabel={`${role}, ${origin}: show this link`}
+						/>
 					);
 				})}
 			</ul>

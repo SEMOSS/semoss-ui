@@ -43,6 +43,8 @@ export const ProjectCatalogDependenciesPage = () => {
 
 	return (
 		<CatalogDependenciesView
+			// a new view per owner, so nothing from one carries to the next
+			key={project.project_id}
 			catalogId={project.project_id}
 			catalogType={project.project_type}
 			catalogName={project.project_display_name || project.project_name}

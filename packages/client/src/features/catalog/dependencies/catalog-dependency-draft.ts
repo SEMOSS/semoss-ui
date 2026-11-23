@@ -4,8 +4,8 @@ import type {
 	CatalogDependencyRow,
 	CatalogType,
 } from "@semoss/shared";
+import type { CatalogDependencyPayload } from "@/api/catalog-dependencies";
 import {
-	type CatalogDependencyPayload,
 	getDependencyDisplayName,
 	toCatalogDependencyPayload,
 } from "./catalog-dependency";
@@ -14,8 +14,11 @@ import type { CatalogGraphNode } from "./catalog-dependency-graph";
 /** The longest name a manual dependency can have. */
 export const NAME_LIMIT = 255;
 
+/** What a name past the limit reads. */
+export const NAME_LIMIT_MESSAGE = `Use ${NAME_LIMIT} characters or fewer`;
+
 /** What a name another link of the same owner has reads. */
-export const NAME_TAKEN = "Another dependency already has this name";
+export const NAME_TAKEN_MESSAGE = "Another dependency already has this name";
 
 /** One manual dependency while its owner's dependencies are edited. */
 export interface DraftLink {
@@ -223,28 +226,65 @@ export const getUniqueDependencyName = (
 };
 
 /**
- * The names the other links not marked for removal have, trimmed and in
- * lower case, so a repeat can be found ignoring case and spaces at the ends.
+ * The form a dependency name is compared in: trimmed and in lower case, so a
+ * repeat is found ignoring case and spaces at the ends, as the backend does.
  *
- * @param links - The draft's links.
- * @param exceptId - The link whose own name is left out.
- * @returns The names in use; empty names are left out.
+ * @param name - The name; empty for none.
+ * @returns The name to compare.
  */
-export const getTakenNames = (
-	links: Iterable<DraftLink>,
-	exceptId: string,
+export const normalizeDependencyName = (
+	name: string | null | undefined,
+): string => (name ?? "").trim().toLowerCase();
+
+/**
+ * The names a set of links has, to check a name against: each normalized,
+ * leaving out empty names, links marked for removal, and one link's own.
+ *
+ * @param links - The links, such as a draft's or an owner's saved rows.
+ * @param exceptId - The target whose own name is left out.
+ * @returns The names in use.
+ */
+export const collectTakenNames = (
+	links: Iterable<{
+		readonly catalog_id: string;
+		readonly dependency_name?: string | null;
+		readonly isRemoved?: boolean;
+	}>,
+	exceptId?: string,
 ): string[] =>
 	[...links].flatMap((link) => {
-		const name = link.dependency_name.trim().toLowerCase();
+		const name = normalizeDependencyName(link.dependency_name);
 		return link.isRemoved || link.catalog_id === exceptId || !name
 			? []
 			: [name];
 	});
 
 /**
+ * What is wrong with a manual dependency's name, if anything: too long, or
+ * one another link has. An empty name is not checked here; the link dialog
+ * asks for one.
+ *
+ * @param name - The name, as typed.
+ * @param isTaken - Whether another link has a name, given normalized.
+ * @returns The problem's message, or undefined when the name will do.
+ */
+export const getDependencyNameProblem = (
+	name: string,
+	isTaken: (normalized: string) => boolean,
+): string | undefined => {
+	const trimmed = name.trim();
+	if (trimmed.length > NAME_LIMIT) {
+		return NAME_LIMIT_MESSAGE;
+	}
+	return trimmed && isTaken(normalizeDependencyName(trimmed))
+		? NAME_TAKEN_MESSAGE
+		: undefined;
+};
+
+/**
  * What stops the draft being saved, by target: a name another link has
  * (ignoring case and spaces at the ends), or one too long. Links marked for
- * removal are not checked.
+ * removal are not checked. Each name is counted once.
  *
  * @param draft - The draft.
  * @returns Each problem's message, by target id; empty when it can be saved.
@@ -252,62 +292,76 @@ export const getTakenNames = (
 export const validateDependencyDraft = (
 	draft: DependencyDraft,
 ): ReadonlyMap<string, string> => {
+	const counts = new Map<string, number>();
+	for (const name of collectTakenNames(draft.links)) {
+		counts.set(name, (counts.get(name) ?? 0) + 1);
+	}
 	const problems = new Map<string, string>();
 	for (const link of draft.links) {
-		const name = link.dependency_name.trim();
-		if (link.isRemoved || !name) {
+		if (link.isRemoved) {
 			continue;
 		}
-		if (name.length > NAME_LIMIT) {
-			problems.set(
-				link.catalog_id,
-				`Use ${NAME_LIMIT} characters or fewer`,
-			);
-		} else if (
-			getTakenNames(draft.links, link.catalog_id).includes(
-				name.toLowerCase(),
-			)
-		) {
-			problems.set(link.catalog_id, NAME_TAKEN);
+		// a name counted more than once is another link's too
+		const problem = getDependencyNameProblem(
+			link.dependency_name,
+			(name) => (counts.get(name) ?? 0) > 1,
+		);
+		if (problem) {
+			problems.set(link.catalog_id, problem);
 		}
 	}
 	return problems;
 };
 
 /**
- * How many changes the draft holds against the rows as saved: each target
- * added, each removed, and each saved link whose name or description changed.
+ * The changes the draft holds against the rows as saved, one per link, in
+ * words for the change count's tooltip: each target added (with its name),
+ * each removed, and each saved link whose name or description changed.
  *
  * @param draft - The draft.
  * @param saved - The owner's manual rows as saved.
- * @returns The count.
+ * @returns One sentence per change, in the draft's order.
  */
-export const countDraftChanges = (
+export const listDraftChanges = (
 	draft: DependencyDraft,
 	saved: readonly CatalogDependencyRow[],
-): number => {
+): string[] => {
 	const savedById = new Map(
 		saved
 			.filter((row) => !row.is_automatic)
 			.map((row) => [row.catalog_id, row]),
 	);
-	let count = 0;
-	for (const link of draft.links) {
-		if (link.isNew || link.isRemoved) {
-			count += 1;
-			continue;
+	return draft.links.flatMap((link) => {
+		const name = link.dependency_name.trim();
+		if (link.isNew) {
+			return [
+				name
+					? `Added ${link.catalog_name} as ${name}`
+					: `Added ${link.catalog_name}`,
+			];
+		}
+		if (link.isRemoved) {
+			return [`Removed ${link.catalog_name}`];
 		}
 		const row = savedById.get(link.catalog_id);
-		if (
-			row &&
-			((row.dependency_name ?? "") !== link.dependency_name.trim() ||
-				(row.dependency_description ?? "") !==
-					link.dependency_description.trim())
-		) {
-			count += 1;
+		if (!row) {
+			return [];
 		}
-	}
-	return count;
+		const edits = [
+			(row.dependency_name ?? "") !== name
+				? name
+					? `renamed to ${name}`
+					: "name cleared"
+				: null,
+			(row.dependency_description ?? "") !==
+			link.dependency_description.trim()
+				? "description changed"
+				: null,
+		].filter((edit): edit is string => edit !== null);
+		return edits.length > 0
+			? [`${link.catalog_name}: ${edits.join(", ")}`]
+			: [];
+	});
 };
 
 /**
@@ -339,7 +393,7 @@ export const getOwnDraftLink = (
 	node.side === "USES" && node.depth === 1 ? links?.get(node.id) : undefined;
 
 /** The owner's graph as read, or with the draft applied. */
-export interface DraftGraphData {
+interface DraftGraphData {
 	/** Every node, the targets added in the draft included */
 	readonly nodes: readonly CatalogDependency[];
 	/** Every link, the owner's manual ones taken from the draft */

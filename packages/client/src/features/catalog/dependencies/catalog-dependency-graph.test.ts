@@ -4,10 +4,10 @@ import type {
 	CatalogDependencyLink,
 	CatalogType,
 } from "@semoss/shared";
+import type { CatalogDependent } from "@/api/catalog-dependencies";
 import {
 	type BuildCatalogDependencyGraphInput,
 	buildCatalogDependencyGraph,
-	type CatalogDependent,
 	type DependencyGraphViewOptions,
 	GRAPH_NODE_SIZE,
 	getDependencyGraphView,
@@ -15,6 +15,7 @@ import {
 	getGraphNodePaths,
 	getNodeLinks,
 	getPathToNode,
+	getTraversalKey,
 	PRIVATE_DEPENDENTS_ID,
 	searchCatalogGraph,
 } from "./catalog-dependency-graph";
@@ -96,11 +97,14 @@ const input = (
 	...overrides,
 });
 
-const DIRECT: DependencyGraphViewOptions = { expandedIds: new Set<string>() };
+const DIRECT: DependencyGraphViewOptions = { traversals: new Set() };
 
-/** Every level shown: each item two links out has its parent expanded. */
+/** Both sides past the direct links: the vector traversed upstream, the app downstream. */
 const ALL: DependencyGraphViewOptions = {
-	expandedIds: new Set<string>(["vector", "app"]),
+	traversals: new Set([
+		getTraversalKey("vector", "UPSTREAM"),
+		getTraversalKey("app", "DOWNSTREAM"),
+	]),
 };
 
 describe("buildCatalogDependencyGraph", () => {
@@ -246,28 +250,109 @@ describe("getDependencyGraphView", () => {
 		expect(place(second)).toEqual(place(first));
 	});
 
-	it("stops at the direct links and counts what it leaves out", () => {
+	it("stops at the direct links and says which way there is more", () => {
 		const view = getDependencyGraphView(
 			buildCatalogDependencyGraph(input()),
 			DIRECT,
 		);
+		const placed = (id: string) => view.nodes.find((n) => n.id === id);
 		expect(view.nodes.map((n) => n.id)).not.toContain("embedder");
-		expect(view.nodes.find((n) => n.id === "vector")?.hiddenChildren).toBe(
-			1,
-		);
-		expect(view.nodes.find((n) => n.id === "app")?.hiddenChildren).toBe(1);
+		// the owner's read covers what its dependencies use
+		expect(placed("vector")).toMatchObject({ upstream: "MORE" });
+		expect(placed("model")).toMatchObject({ upstream: "NONE" });
+		// what else uses a dependency is not read yet
+		expect(placed("model")).toMatchObject({ downstream: "MORE" });
+		// the owner's read covers what uses its dependents
+		expect(placed("app")).toMatchObject({ downstream: "MORE" });
+		// a private item is never traversed
+		expect(placed("db")).toMatchObject({
+			upstream: "NONE",
+			downstream: "NONE",
+		});
+		expect(placed("agent")).toMatchObject({
+			upstream: "NONE",
+			downstream: "NONE",
+		});
 	});
 
-	it("shows the next level of an expanded node past the direct links", () => {
+	it("shows a traversal past the direct links, and says it is shown", () => {
 		const view = getDependencyGraphView(
 			buildCatalogDependencyGraph(input()),
-			{ expandedIds: new Set<string>(["vector"]) },
+			{ traversals: new Set([getTraversalKey("vector", "UPSTREAM")]) },
 		);
 		expect(view.nodes.map((n) => n.id)).toContain("embedder");
-		expect(view.nodes.find((n) => n.id === "vector")?.hiddenChildren).toBe(
-			0,
+		expect(view.nodes.find((n) => n.id === "vector")?.upstream).toBe(
+			"SHOWN",
 		);
 		expect(view.nodes.map((n) => n.id)).not.toContain("portal");
+	});
+
+	it("puts what else uses a dependency to its left once it is read", () => {
+		const graph = buildCatalogDependencyGraph(
+			input({
+				extraDependents: new Map([
+					[
+						"model",
+						[
+							dependent("other-app", "model"),
+							// the owner itself, already placed
+							dependent("agent", "model", {
+								catalog_type: "WORKSPACE",
+							}),
+						],
+					],
+				]),
+			}),
+		);
+		expect(graph.knownDownstream.has("model")).toBe(true);
+		const view = getDependencyGraphView(graph, {
+			traversals: new Set([getTraversalKey("model", "DOWNSTREAM")]),
+		});
+		const placed = (id: string) => view.nodes.find((n) => n.id === id);
+		// model is one column right of the owner, so what uses it sits on
+		// the owner's column, and the owner keeps its place
+		expect(placed("other-app")?.x).toBe(placed("agent")?.x);
+		expect(placed("other-app")).toMatchObject({ side: "RELATED" });
+		expect(view.nodes.filter((n) => n.id === "agent")).toHaveLength(1);
+		expect(placed("model")?.downstream).toBe("SHOWN");
+		expect(
+			view.edges.some(
+				(edge) =>
+					edge.source === "other-app" && edge.target === "model",
+			),
+		).toBe(true);
+	});
+
+	it("puts what a dependent uses to its right once it is read, all the way down", () => {
+		const graph = buildCatalogDependencyGraph(
+			input({
+				extraDependencies: new Map([
+					[
+						"app",
+						{
+							nodes: [
+								node("store", "STORAGE"),
+								node("bucket", "STORAGE"),
+							],
+							links: [
+								link("app", "store"),
+								link("store", "bucket"),
+							],
+						},
+					],
+				]),
+			}),
+		);
+		expect(graph.knownUpstream.has("app")).toBe(true);
+		expect(graph.knownUpstream.has("store")).toBe(true);
+		const view = getDependencyGraphView(graph, {
+			traversals: new Set([getTraversalKey("app", "UPSTREAM")]),
+		});
+		const placed = (id: string) => view.nodes.find((n) => n.id === id);
+		// app is one column left of the owner; what it uses is on the owner's
+		expect(placed("store")?.x).toBe(placed("agent")?.x);
+		expect(placed("store")?.upstream).toBe("MORE");
+		expect(view.nodes.map((n) => n.id)).not.toContain("bucket");
 	});
 });
 
@@ -289,18 +374,22 @@ describe("getGraphBounds", () => {
 });
 
 describe("getPathToNode", () => {
-	it("lists the items to expand, nearest the owner first", () => {
+	it("lists the traversals to show an item, nearest the owner first", () => {
 		const graph = buildCatalogDependencyGraph(input());
-		expect(getPathToNode(graph, "embedder")).toEqual(["vector"]);
-		expect(getPathToNode(graph, "portal")).toEqual(["app"]);
+		expect(getPathToNode(graph, "embedder")).toEqual([
+			getTraversalKey("vector", "UPSTREAM"),
+		]);
+		expect(getPathToNode(graph, "portal")).toEqual([
+			getTraversalKey("app", "DOWNSTREAM"),
+		]);
 		expect(getPathToNode(graph, "model")).toEqual([]);
 		expect(getPathToNode(graph, "agent")).toEqual([]);
 	});
 
-	it("shows the node once each is expanded", () => {
+	it("shows the item once each traversal is shown", () => {
 		const graph = buildCatalogDependencyGraph(input());
 		const view = getDependencyGraphView(graph, {
-			expandedIds: new Set(getPathToNode(graph, "embedder")),
+			traversals: new Set(getPathToNode(graph, "embedder")),
 		});
 		expect(view.nodes.map((n) => n.id)).toContain("embedder");
 	});

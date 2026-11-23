@@ -1,13 +1,17 @@
 import { Lock, PencilLine, XIcon } from "lucide-react";
 import type { CatalogDependencyRow, Engine } from "@semoss/shared";
 import { EngineSubtypeIcon } from "@semoss/shared";
-import { Button } from "@semoss/ui/next";
+import { Button, Muted } from "@semoss/ui/next";
 import {
 	CATEGORY_META,
 	getDependencyDisplayName,
 	getDependencyKey,
 	getDependencyRoleLabel,
 } from "./catalog-dependency";
+
+/** An automatic engine's chip: muted, since only its configuration changes it. */
+export const AUTOMATIC_CHIP_CLASS =
+	"flex items-center gap-1.5 rounded-full border border-border bg-muted py-1 ps-1.5 pe-2 text-xs";
 
 interface EngineCategoryCardProps {
 	/** Engine category the card shows */
@@ -26,7 +30,7 @@ interface EngineCategoryCardProps {
 
 /**
  * One engine category card: icon tile, title and description, a Manage
- * action, and the engines as chips (or an italic empty-state line). An
+ * action, and the engines as chips (or a muted empty-state line). An
  * automatic chip has a lock and its role, and cannot be removed; a manual one
  * has a pencil and the name a Code app reads it by, and can be.
  */
@@ -48,7 +52,7 @@ export const EngineCategoryCard = ({
 					<Icon className="size-5" aria-hidden="true" />
 				</span>
 				<div className="min-w-0 flex-1">
-					<p className="font-semibold text-sm">{meta.label}</p>
+					<p className="font-medium text-sm">{meta.label}</p>
 					<p className="text-muted-foreground text-xs">
 						{meta.blurb}
 					</p>
@@ -67,9 +71,7 @@ export const EngineCategoryCard = ({
 
 			<div className="mt-3">
 				{engines.length === 0 ? (
-					<p className="text-muted-foreground text-sm italic">
-						{meta.empty}
-					</p>
+					<Muted>{meta.empty}</Muted>
 				) : (
 					<ul className="flex flex-wrap gap-1.5">
 						{engines.map((engine) => {
@@ -82,7 +84,7 @@ export const EngineCategoryCard = ({
 									key={getDependencyKey(engine)}
 									className={
 										engine.is_automatic
-											? "flex items-center gap-1.5 rounded-full border border-border bg-muted py-1 ps-1.5 pe-2 text-xs"
+											? AUTOMATIC_CHIP_CLASS
 											: "flex items-center gap-1.5 rounded-full border border-border border-dashed bg-background py-1 ps-1.5 pe-2 text-xs"
 									}
 								>
@@ -134,7 +136,7 @@ export const EngineCategoryCard = ({
 											size="icon-sm"
 											disabled={isRemoving}
 											aria-label={`Remove ${name}`}
-											className="size-4 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
+											className="-my-1 -me-1.5 size-6 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
 											onClick={() => onRemove(engine)}
 										>
 											<XIcon

@@ -6,6 +6,10 @@ import type {
 	CatalogDependencyRow,
 	CatalogType,
 } from "@semoss/shared";
+import {
+	type CatalogDependenciesResponse,
+	getCatalogDependenciesPixel,
+} from "@/api/catalog-dependencies";
 
 /** An engine's or a project's dependencies and the state of reading them. */
 export interface UseCatalogDependenciesResult {
@@ -33,13 +37,12 @@ export interface UseCatalogDependenciesResult {
 	refresh: () => void;
 }
 
-interface CatalogDependenciesResponse {
-	/** One node per engine or project in the graph */
-	dependencies: CatalogDependency[];
-	/** Ids of the owner's direct dependencies */
-	dependencyIds: string[];
-	/** One entry per link and role in the graph; absent from older backends */
-	links?: CatalogDependencyLink[];
+/** What {@link useCatalogDependencies} reads. */
+export interface UseCatalogDependenciesInput {
+	/** The owner's id; nothing is read until it is known */
+	catalogId: string | undefined;
+	/** The owner's specific type; nothing is read until it is known */
+	catalogType: CatalogType | undefined;
 }
 
 const EMPTY: CatalogDependenciesResponse = {
@@ -94,13 +97,10 @@ const toDependencyRows = (
 export const useCatalogDependencies = ({
 	catalogId,
 	catalogType,
-}: {
-	catalogId: string | undefined;
-	catalogType: CatalogType | undefined;
-}): UseCatalogDependenciesResult => {
+}: UseCatalogDependenciesInput): UseCatalogDependenciesResult => {
 	const pixel =
 		catalogId && catalogType
-			? `GetCatalogDependencies(catalogId="${catalogId}", catalogType="${catalogType}");`
+			? getCatalogDependenciesPixel(catalogId, catalogType)
 			: "";
 	// the last successful read and the pixel it answered, so a refresh of the
 	// same owner keeps its rows instead of blanking whoever shows them

@@ -1,15 +1,15 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { CatalogDependencyRow, CatalogType } from "@semoss/shared";
 import { getErrorMessage } from "@semoss/utility/error";
 import { setCatalogDependencies } from "@/api/catalog-dependencies";
 import {
 	addToDraft,
-	countDraftChanges,
 	createDependencyDraft,
 	type DependencyDraft,
 	type DependencyOption,
 	type DraftLink,
 	type DraftLinkFields,
+	listDraftChanges,
 	removeFromDraft,
 	restoreInDraft,
 	toDraftPayload,
@@ -42,6 +42,8 @@ export interface UseDependencyDraftResult {
 	readonly isEditing: boolean;
 	/** How many changes the draft holds */
 	readonly changeCount: number;
+	/** Each change in words, such as "Removed Ledger", for the count's tooltip */
+	readonly changes: readonly string[];
 	/** What stops a save, by target id */
 	readonly problems: ReadonlyMap<string, string>;
 	/** Whether the save is running */
@@ -73,7 +75,7 @@ export interface UseDependencyDraftResult {
  * Edits an owner's manual dependencies as a draft, as the automation canvas
  * edits a workflow: nothing reaches the backend until Save, which sends the
  * whole manual set in one `SetCatalogDependencies`, the only way the backend
- * takes them. Leaving the page with changes asks the browser to warn.
+ * takes them. The view guards leaving the page with changes.
  *
  * @param input - The owner, its saved rows, and what to do after a save.
  * @returns The draft and its actions.
@@ -95,25 +97,17 @@ export const useDependencyDraft = ({
 				: null,
 		[draft],
 	);
-	const changeCount = draft ? countDraftChanges(draft, saved) : 0;
+	const changes = useMemo(
+		() => (draft ? listDraftChanges(draft, saved) : []),
+		[draft, saved],
+	);
+	const changeCount = changes.length;
 	// kept while the draft is unchanged, so the canvas, which marks the links
 	// with a problem, rebuilds its edges only when the draft changes
 	const problems = useMemo(
 		() => (draft ? validateDependencyDraft(draft) : NO_PROBLEMS),
 		[draft],
 	);
-
-	// closing or reloading the tab with changes asks first
-	useEffect(() => {
-		if (changeCount === 0) {
-			return;
-		}
-		const warn = (event: BeforeUnloadEvent): void => {
-			event.preventDefault();
-		};
-		window.addEventListener("beforeunload", warn);
-		return () => window.removeEventListener("beforeunload", warn);
-	}, [changeCount]);
 
 	// the edits only set state, so they keep their identity across renders and
 	// the canvas's nodes and edges are rebuilt only when the draft changes
@@ -143,6 +137,16 @@ export const useDependencyDraft = ({
 		[change],
 	);
 
+	// starting and resetting both work from the rows as saved
+	const begin = useCallback((): void => {
+		setSaveError(null);
+		setDraft(createDependencyDraft(saved));
+	}, [saved]);
+	const discard = useCallback((): void => {
+		setSaveError(null);
+		setDraft(null);
+	}, []);
+
 	const save = async (): Promise<boolean> => {
 		if (!draft || problems.size > 0) {
 			return false;
@@ -157,7 +161,7 @@ export const useDependencyDraft = ({
 			);
 		} catch (error: unknown) {
 			setSaveError(
-				getErrorMessage(error, "The dependencies could not be saved"),
+				getErrorMessage(error, "Couldn't save the dependencies"),
 			);
 			setIsSaving(false);
 			return false;
@@ -172,21 +176,13 @@ export const useDependencyDraft = ({
 		links,
 		isEditing: draft !== null,
 		changeCount,
+		changes,
 		problems,
 		isSaving,
 		saveError,
-		start: () => {
-			setSaveError(null);
-			setDraft(createDependencyDraft(saved));
-		},
-		discard: () => {
-			setSaveError(null);
-			setDraft(null);
-		},
-		reset: () => {
-			setSaveError(null);
-			setDraft(createDependencyDraft(saved));
-		},
+		start: begin,
+		discard,
+		reset: begin,
 		add,
 		remove,
 		restore,

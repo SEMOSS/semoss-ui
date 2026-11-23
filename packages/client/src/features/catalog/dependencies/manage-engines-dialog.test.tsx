@@ -13,6 +13,8 @@ import { ManageEnginesDialog } from "./manage-engines-dialog";
 const mocks = vi.hoisted(() => ({
 	runPixel: vi.fn(),
 	/** What the engine search lists */
+	/** Why the engine search failed, if it did */
+	error: null as Error | null,
 	options: [] as {
 		engine_id: string;
 		engine_name: string;
@@ -31,19 +33,22 @@ vi.mock("@semoss/sdk/react", () => ({
 		data: map(mocks.options),
 		isLoading: false,
 		hasMore: false,
-		error: null,
+		error: mocks.error,
 		next: vi.fn(),
 	}),
 }));
 
 vi.mock("@semoss/shared", () => ({
+	AppCatalogAvatar: () => <span data-testid="project-avatar" />,
 	EngineSubtypeIcon: () => <span data-testid="engine-icon" />,
+	useCatalogImageUrl: () => "",
 }));
 
 afterEach(() => {
 	cleanup();
 	mocks.runPixel.mockReset();
 	mocks.options = [];
+	mocks.error = null;
 });
 
 const row = (
@@ -116,5 +121,24 @@ describe("ManageEnginesDialog", () => {
 			},
 			{ id: "gpt-2", type: "MODEL", name: "GPT 2" },
 		]);
+	});
+
+	it("says why the engines could not be read, instead of finding none", () => {
+		mocks.error = new Error("You cannot list models");
+		render(
+			<ManageEnginesDialog
+				category="MODEL"
+				catalogId="app-1"
+				catalogType="CODE"
+				dependencies={[]}
+				onClose={vi.fn()}
+			/>,
+		);
+		expect(
+			screen.getByText(
+				"Couldn't read the models: You cannot list models",
+			),
+		).toBeInTheDocument();
+		expect(screen.queryByText(/No models found/)).toBeNull();
 	});
 });

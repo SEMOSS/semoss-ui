@@ -101,7 +101,7 @@ describe("toCatalogDependencyPayload", () => {
 
 describe("DEPENDENCY_ROLE_LABELS", () => {
 	it("labels every role and falls back for a new one", () => {
-		expect(getDependencyRoleLabel("JUDGE_MODEL")).toBe("Judge model");
+		expect(getDependencyRoleLabel("JUDGE_MODEL")).toBe("Judge Model");
 		expect(getDependencyRoleLabel("SUBAGENT")).toBe("Subagent");
 		expect(getDependencyRoleLabel("SOMETHING_NEW")).toBe("SOMETHING_NEW");
 		expect(
@@ -204,11 +204,11 @@ describe("dependency access", () => {
 			access_permission: 3,
 		});
 		expect(requested).toEqual({ kind: "requested", level: "READ_ONLY" });
-		expect(getDependencyAccessLabel(requested)).toBe("Requested Read-only");
+		expect(getDependencyAccessLabel(requested)).toBe("Requested Read-Only");
 		const requestable = getDependencyAccess({ catalog_discoverable: true });
 		expect(requestable).toEqual({ kind: "requestable" });
 		expect(canRequestDependency(requestable)).toBe(true);
-		expect(getDependencyAccessLabel(requestable)).toBe("Can request");
+		expect(getDependencyAccessLabel(requestable)).toBe("Can Request");
 		const hidden = getDependencyAccess({ is_private: true });
 		expect(hidden).toEqual({ kind: "private" });
 		expect(canRequestDependency(hidden)).toBe(false);
@@ -237,8 +237,8 @@ describe("getConfigurationPlace", () => {
 		["JUDGE_MODEL", "SMSS", "/smss"],
 		["KEYWORD_ENGINE", "SMSS", "/smss"],
 		["IMAGE_MODEL", "SMSS", "/smss"],
-		["GUARDRAIL", "Guardrails settings", "/settings/guardrails"],
-		["ROUTE_MODEL", "Model settings", "/settings/model"],
+		["GUARDRAIL", "Guardrails Settings", "/settings/guardrails"],
+		["ROUTE_MODEL", "Model Settings", "/settings/model"],
 	])("sends an engine's %s to its %s", (role, label, suffix) => {
 		const place = getConfigurationPlace(role, guardrailOwner);
 		expect(place.label).toBe(label);
@@ -251,7 +251,7 @@ describe("getConfigurationPlace", () => {
 			type: "WORKSPACE",
 			id: "agent-1",
 		});
-		expect(place.label).toBe("editor");
+		expect(place.label).toBe("Editor");
 		expect(place.path).toContain("agent-1");
 	});
 });

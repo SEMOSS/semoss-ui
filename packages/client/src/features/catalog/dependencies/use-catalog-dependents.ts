@@ -1,6 +1,10 @@
 import { usePixel } from "@semoss/sdk/react";
 import type { CatalogType } from "@semoss/shared";
-import type { CatalogDependent } from "./catalog-dependency-graph";
+import {
+	type CatalogDependent,
+	type CatalogDependentsResponse,
+	getCatalogDependentsPixel,
+} from "@/api/catalog-dependencies";
 
 /** What depends on an engine or project, and the state of reading it. */
 export interface UseCatalogDependentsResult {
@@ -11,48 +15,43 @@ export interface UseCatalogDependentsResult {
 	dependents: CatalogDependent[];
 	/** How many items depend on it, all the way up, that the user cannot view */
 	hiddenCount: number;
-	/** Whether the first read waits on the backend */
-	isLoading: boolean;
 	/** Why the read failed, if it did */
 	error: Error | undefined;
 	/** Reads them again */
 	refresh: () => void;
 }
 
-interface CatalogDependentsResponse {
-	dependents: CatalogDependent[];
-	hiddenCount: number;
+/** What {@link useCatalogDependents} reads. */
+export interface UseCatalogDependentsInput {
+	/** The owner's id; nothing is read until it is known */
+	catalogId: string | undefined;
+	/** The owner's specific type; nothing is read until it is known */
+	catalogType: CatalogType | undefined;
 }
 
 const EMPTY: CatalogDependentsResponse = { dependents: [], hiddenCount: 0 };
 
 /**
  * Reads what depends on an engine or a project, all the way up. The backend
- * lists only the items the user can view and counts the rest. Nothing is read
- * until both the owner's id and its specific type are known.
+ * lists only the items the user can view and counts the rest.
  *
- * @param options - The owner's id and specific type.
- * @returns The dependents, the read's state and a refresh.
+ * @param input - The owner's id and specific type.
+ * @returns The dependents, the read's error and a refresh.
  */
 export const useCatalogDependents = ({
 	catalogId,
 	catalogType,
-}: {
-	catalogId: string | undefined;
-	catalogType: CatalogType | undefined;
-}): UseCatalogDependentsResult => {
-	const pixel =
+}: UseCatalogDependentsInput): UseCatalogDependentsResult => {
+	const { data, error, refresh } = usePixel<CatalogDependentsResponse>(
 		catalogId && catalogType
-			? `GetCatalogDependents(catalogId=${JSON.stringify(catalogId)}, catalogType=${JSON.stringify(catalogType)}, recursive=[true]);`
-			: "";
-	const { status, data, error, refresh } =
-		usePixel<CatalogDependentsResponse>(pixel, { data: EMPTY });
+			? getCatalogDependentsPixel(catalogId, catalogType, true)
+			: "",
+		{ data: EMPTY },
+	);
 
 	return {
 		dependents: data?.dependents ?? [],
 		hiddenCount: data?.hiddenCount ?? 0,
-		isLoading:
-			pixel !== "" && (status === "INITIAL" || status === "LOADING"),
 		error,
 		refresh,
 	};

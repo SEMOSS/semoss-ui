@@ -50,7 +50,7 @@ const LINKS: readonly LegendLink[] = [
 		icon: Lock,
 	},
 	{
-		label: "Manual: added by a person, with its name",
+		label: "Manual: added by a person, named in its tooltip",
 		className: "border-muted-foreground border-dashed",
 		icon: PencilLine,
 	},

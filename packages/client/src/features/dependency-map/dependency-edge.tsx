@@ -34,8 +34,10 @@ const ACTION_ICONS = { remove: X, restore: Undo2, locked: Lock } as const;
 
 /**
  * What a link says about itself at its midpoint, outside edit mode too: a
- * manual link its name, an automatic one a lock naming its role, so the two
- * kinds differ by more than the line's dashes.
+ * pencil on a manual link and a lock on an automatic one, each naming the
+ * link in its tooltip (the manual name, or the automatic role), so the two
+ * kinds differ by more than the line's dashes. A manual link whose name
+ * stops the save is drawn as a problem.
  */
 export type DependencyEdgeMarker =
 	| {
@@ -120,47 +122,38 @@ export const DependencyEdge = memo(
 			marker?.kind === "automatic" && action?.kind === "locked"
 				? undefined
 				: marker;
-		const markerNode = !shownMarker ? null : shownMarker.kind ===
-			"manual" ? (
-			<span
-				title={shownMarker.problem}
-				className={cn(
-					"flex h-6 max-w-40 items-center gap-1 rounded-full border border-dashed bg-background px-2 text-xs shadow-xs",
-					shownMarker.problem &&
-						"border-destructive border-solid text-destructive",
-					emphasis === "dimmed" && "opacity-40",
-				)}
-			>
-				{shownMarker.problem ? (
-					<span className="sr-only">{`${shownMarker.problem}: `}</span>
-				) : null}
-				<PencilLine
-					className="size-3 shrink-0 text-muted-foreground"
-					aria-hidden="true"
-				/>
-				<span className="sr-only">Manual: </span>
-				{shownMarker.name ? (
-					<span className="truncate font-medium font-mono">
-						{shownMarker.name}
-					</span>
-				) : (
-					<span className="text-muted-foreground">No name</span>
-				)}
-			</span>
-		) : (
-			<MapTooltip label={shownMarker.label}>
+		// a mark only, as small as the lock: a line has no room for a name, so
+		// a manual link's name is in its tooltip and the drawer's Configuration section
+		const markerLabel = !shownMarker
+			? ""
+			: shownMarker.kind === "automatic"
+				? shownMarker.label
+				: [
+						shownMarker.problem,
+						`Manual: ${shownMarker.name ?? "No name"}`,
+					]
+						.filter(Boolean)
+						.join(". ");
+		const MarkerIcon = shownMarker?.kind === "manual" ? PencilLine : Lock;
+		const markerNode = shownMarker ? (
+			<MapTooltip label={markerLabel}>
 				<span
 					role="img"
-					aria-label={shownMarker.label}
+					aria-label={markerLabel}
 					className={cn(
-						"flex size-5 items-center justify-center rounded-full border bg-muted text-muted-foreground",
+						"flex size-5 items-center justify-center rounded-full border",
+						shownMarker.kind === "manual"
+							? shownMarker.problem
+								? "border-destructive bg-background text-destructive"
+								: "border-dashed bg-background text-muted-foreground"
+							: "bg-muted text-muted-foreground",
 						emphasis === "dimmed" && "opacity-40",
 					)}
 				>
-					<Lock className="size-3" aria-hidden="true" />
+					<MarkerIcon className="size-3" aria-hidden="true" />
 				</span>
 			</MapTooltip>
-		);
+		) : null;
 
 		return (
 			<>

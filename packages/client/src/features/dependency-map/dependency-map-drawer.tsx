@@ -1,8 +1,6 @@
 import {
 	AppWindow,
-	ArrowDown,
 	ArrowDownToLine,
-	ArrowUp,
 	ArrowUpFromLine,
 	ExternalLink,
 	Eye,
@@ -22,6 +20,7 @@ import {
 	Badge,
 	Button,
 	ButtonGroup,
+	InlineCode,
 	Item,
 	ItemActions,
 	ItemContent,
@@ -39,7 +38,13 @@ import { ResourceId } from "@/components/shared/resource-id";
 import { DependencyKindBadge } from "@/features/catalog/dependencies/dependency-kind-badge";
 import { getGovernancePath } from "@/features/resource-governance/governance-type-view";
 import { getResourcePagePath } from "@/utility/catalog";
-import { DependencyDrawer } from "./dependency-drawer";
+import {
+	DependencyDrawer,
+	DRAWER_FACT_CLASS,
+	DRAWER_FACT_LABEL_CLASS,
+	DRAWER_FACT_VALUE_CLASS,
+	DRAWER_FACTS_CLASS,
+} from "./dependency-drawer";
 import {
 	ACCESS_LEVEL_LABELS,
 	ACCESS_SOURCE_LABELS,
@@ -50,6 +55,7 @@ import {
 import { DependencyItemImage } from "./dependency-item-image";
 import { DependencyLinkList } from "./dependency-link-list";
 import { DrawerItemMeta } from "./drawer-item-meta";
+import { DrawerLineage } from "./drawer-lineage";
 import { focusCanvasItem } from "./focus-canvas-item";
 import { MapTooltip } from "./map-tooltip";
 
@@ -189,9 +195,9 @@ export const DependencyMapDrawer = ({
 					) : null}
 				</div>
 				{edge.name ? (
-					<code className="self-start break-all rounded bg-muted px-1.5 py-0.5 font-medium font-mono text-sm">
+					<InlineCode className="self-start break-all font-medium">
 						{edge.name}
-					</code>
+					</InlineCode>
 				) : null}
 				<p className="text-muted-foreground text-sm">
 					{edge.description ||
@@ -271,10 +277,10 @@ export const DependencyMapDrawer = ({
 			</DrawerItemMeta>
 		);
 		const traceUpstreamLabel = upstream
-			? `Trace upstream (${upstream})`
+			? `Trace Upstream (${upstream})`
 			: "Uses nothing";
 		const traceDownstreamLabel = downstream
-			? `Trace downstream (${downstream})`
+			? `Trace Downstream (${downstream})`
 			: "Nothing uses it";
 		headerActions = (
 			<ButtonGroup aria-label="Item actions">
@@ -292,34 +298,41 @@ export const DependencyMapDrawer = ({
 						</Button>
 					</MapTooltip>
 				) : null}
+				{/* aria-disabled rather than disabled, so an empty way keeps focus
+				    and its tooltip says why */}
 				<MapTooltip label={traceUpstreamLabel}>
-					{/* a span keeps the tooltip on a disabled button */}
-					<span>
-						<Button
-							type="button"
-							size="icon-sm"
-							variant="ghost"
-							aria-label={traceUpstreamLabel}
-							disabled={upstream === 0}
-							onClick={() => onTrace(node.id, "DEPENDENCIES")}
-						>
-							<ArrowUpFromLine aria-hidden="true" />
-						</Button>
-					</span>
+					<Button
+						type="button"
+						size="icon-sm"
+						variant="ghost"
+						aria-label={traceUpstreamLabel}
+						aria-disabled={upstream === 0}
+						className="aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+						onClick={() => {
+							if (upstream > 0) {
+								onTrace(node.id, "DEPENDENCIES");
+							}
+						}}
+					>
+						<ArrowUpFromLine aria-hidden="true" />
+					</Button>
 				</MapTooltip>
 				<MapTooltip label={traceDownstreamLabel}>
-					<span>
-						<Button
-							type="button"
-							size="icon-sm"
-							variant="ghost"
-							aria-label={traceDownstreamLabel}
-							disabled={downstream === 0}
-							onClick={() => onTrace(node.id, "DEPENDENTS")}
-						>
-							<ArrowDownToLine aria-hidden="true" />
-						</Button>
-					</span>
+					<Button
+						type="button"
+						size="icon-sm"
+						variant="ghost"
+						aria-label={traceDownstreamLabel}
+						aria-disabled={downstream === 0}
+						className="aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+						onClick={() => {
+							if (downstream > 0) {
+								onTrace(node.id, "DEPENDENTS");
+							}
+						}}
+					>
+						<ArrowDownToLine aria-hidden="true" />
+					</Button>
 				</MapTooltip>
 			</ButtonGroup>
 		);
@@ -350,11 +363,11 @@ export const DependencyMapDrawer = ({
 						)}
 						{userAccess !== undefined ? (
 							<section
-								aria-label="The picked user"
+								aria-label="Picked User"
 								className="flex flex-col gap-1 border-primary border-l-2 pl-3"
 							>
 								<p className="font-medium text-sm">
-									The picked user
+									Picked User
 								</p>
 								<p className="text-sm">
 									{userAccess
@@ -370,20 +383,20 @@ export const DependencyMapDrawer = ({
 							</section>
 						) : null}
 						{node.createdBy || created ? (
-							<dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+							<dl className={DRAWER_FACTS_CLASS}>
 								{node.createdBy ? (
-									<div>
-										<dt className="text-muted-foreground text-xs">
-											Created by
+									<div className={DRAWER_FACT_CLASS}>
+										<dt className={DRAWER_FACT_LABEL_CLASS}>
+											Created By
 										</dt>
-										<dd className="break-words">
+										<dd className={DRAWER_FACT_VALUE_CLASS}>
 											{node.createdBy}
 										</dd>
 									</div>
 								) : null}
 								{created ? (
-									<div>
-										<dt className="text-muted-foreground text-xs">
+									<div className={DRAWER_FACT_CLASS}>
+										<dt className={DRAWER_FACT_LABEL_CLASS}>
 											Created
 										</dt>
 										<dd>{created}</dd>
@@ -393,11 +406,11 @@ export const DependencyMapDrawer = ({
 						) : null}
 						{gaps.length > 0 ? (
 							<section
-								aria-label="Uses but the user can't"
+								aria-label="Uses But the User Can't"
 								className="flex flex-col gap-2"
 							>
 								<p className="font-medium text-sm">
-									Uses but the user can't ({gaps.length})
+									Uses But the User Can't ({gaps.length})
 								</p>
 								<DependencyLinkList
 									links={gaps}
@@ -410,68 +423,30 @@ export const DependencyMapDrawer = ({
 						) : null}
 					</AccordionContent>
 				</AccordionItem>
-				<AccordionItem value="lineage">
-					<AccordionTrigger
-						aria-label={`Lineage, ${upstream} upstream, ${downstream} downstream`}
-					>
-						<span className="flex items-center gap-2">
-							Lineage
-							<Badge variant="secondary" className="gap-0.5">
-								<ArrowUp
-									className="size-3"
-									aria-hidden="true"
-								/>
-								{upstream}
-							</Badge>
-							<Badge variant="secondary" className="gap-0.5">
-								<ArrowDown
-									className="size-3"
-									aria-hidden="true"
-								/>
-								{downstream}
-							</Badge>
-						</span>
-					</AccordionTrigger>
-					<AccordionContent className="flex flex-col gap-4">
-						<section
-							aria-label="Upstream"
-							className="flex flex-col gap-2"
-						>
-							<p className="flex items-baseline justify-between gap-2 text-sm">
-								<span className="font-medium">Upstream</span>
-								<span className="text-muted-foreground text-xs">
-									{upstream} in all · {uses.length} directly
-								</span>
-							</p>
-							<DependencyLinkList
-								links={uses}
-								end="target"
-								index={index}
-								onJump={onJump}
-								onSelectEdge={onSelectEdge}
-							/>
-						</section>
-						<section
-							aria-label="Downstream"
-							className="flex flex-col gap-2"
-						>
-							<p className="flex items-baseline justify-between gap-2 text-sm">
-								<span className="font-medium">Downstream</span>
-								<span className="text-muted-foreground text-xs">
-									{downstream} in all · {usedBy.length}{" "}
-									directly
-								</span>
-							</p>
-							<DependencyLinkList
-								links={usedBy}
-								end="source"
-								index={index}
-								onJump={onJump}
-								onSelectEdge={onSelectEdge}
-							/>
-						</section>
-					</AccordionContent>
-				</AccordionItem>
+				<DrawerLineage
+					upstreamCount={upstream}
+					downstreamCount={downstream}
+					upstreamNote={`${upstream} in all · ${uses.length} directly`}
+					downstreamNote={`${downstream} in all · ${usedBy.length} directly`}
+					upstream={
+						<DependencyLinkList
+							links={uses}
+							end="target"
+							index={index}
+							onJump={onJump}
+							onSelectEdge={onSelectEdge}
+						/>
+					}
+					downstream={
+						<DependencyLinkList
+							links={usedBy}
+							end="source"
+							index={index}
+							onJump={onJump}
+							onSelectEdge={onSelectEdge}
+						/>
+					}
+				/>
 				{node.missing ? null : (
 					<AccordionItem value="security">
 						<AccordionTrigger>Security</AccordionTrigger>

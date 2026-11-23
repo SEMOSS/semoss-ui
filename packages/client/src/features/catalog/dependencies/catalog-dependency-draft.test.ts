@@ -7,15 +7,15 @@ import type {
 import {
 	addToDraft,
 	applyDraftToGraph,
-	countDraftChanges,
+	collectTakenNames,
 	createDependencyDraft,
 	type DependencyOption,
 	type DraftLink,
 	getOwnDraftLink,
-	getTakenNames,
 	getUniqueDependencyName,
+	listDraftChanges,
 	NAME_LIMIT,
-	NAME_TAKEN,
+	NAME_TAKEN_MESSAGE,
 	removeFromDraft,
 	restoreInDraft,
 	toDraftPayload,
@@ -75,7 +75,7 @@ describe("dependency draft", () => {
 			"payroll",
 		]);
 		expect(draft.links[1]?.catalog_name).toBe("Private Database");
-		expect(countDraftChanges(draft, SAVED)).toBe(0);
+		expect(listDraftChanges(draft, SAVED)).toHaveLength(0);
 	});
 
 	it("adds a target once, with its name, and brings back one marked for removal", () => {
@@ -122,20 +122,20 @@ describe("dependency draft", () => {
 		expect(
 			draft.links.find((link) => link.catalog_id === "sales")?.isRemoved,
 		).toBe(true);
-		expect(countDraftChanges(draft, SAVED)).toBe(1);
+		expect(listDraftChanges(draft, SAVED)).toHaveLength(1);
 		draft = restoreInDraft(draft, "sales");
-		expect(countDraftChanges(draft, SAVED)).toBe(0);
+		expect(listDraftChanges(draft, SAVED)).toHaveLength(0);
 	});
 
 	it("counts a renamed link, and a rename back to the saved name as none", () => {
 		let draft = updateDraftLink(createDependencyDraft(SAVED), "sales", {
 			dependency_name: "WAREHOUSE",
 		});
-		expect(countDraftChanges(draft, SAVED)).toBe(1);
+		expect(listDraftChanges(draft, SAVED)).toHaveLength(1);
 		draft = updateDraftLink(draft, "sales", {
 			dependency_name: " SALES_DB ",
 		});
-		expect(countDraftChanges(draft, SAVED)).toBe(0);
+		expect(listDraftChanges(draft, SAVED)).toHaveLength(0);
 	});
 
 	it("flags a name used twice, ignoring case, but not on a removed link", () => {
@@ -143,8 +143,8 @@ describe("dependency draft", () => {
 			dependency_name: "sales_db",
 		});
 		const problems = validateDependencyDraft(draft);
-		expect(problems.get("sales")).toBe(NAME_TAKEN);
-		expect(problems.get("payroll")).toBe(NAME_TAKEN);
+		expect(problems.get("sales")).toBe(NAME_TAKEN_MESSAGE);
+		expect(problems.get("payroll")).toBe(NAME_TAKEN_MESSAGE);
 		draft = removeFromDraft(draft, "sales");
 		expect(validateDependencyDraft(draft).size).toBe(0);
 	});
@@ -188,10 +188,10 @@ describe("dependency draft", () => {
 		let draft = updateDraftLink(createDependencyDraft(SAVED), "payroll", {
 			dependency_name: " Payroll ",
 		});
-		expect(getTakenNames(draft.links, "sales")).toEqual(["payroll"]);
-		expect(getTakenNames(draft.links, "payroll")).toEqual(["sales_db"]);
+		expect(collectTakenNames(draft.links, "sales")).toEqual(["payroll"]);
+		expect(collectTakenNames(draft.links, "payroll")).toEqual(["sales_db"]);
 		draft = removeFromDraft(draft, "sales");
-		expect(getTakenNames(draft.links, "payroll")).toEqual([]);
+		expect(collectTakenNames(draft.links, "payroll")).toEqual([]);
 	});
 });
 
@@ -288,6 +288,22 @@ describe("applyDraftToGraph", () => {
 			["owner", "sales", "WAREHOUSE"],
 			["owner", "payroll", null],
 			["owner", "ledger", "LEDGER"],
+		]);
+	});
+});
+
+describe("listDraftChanges", () => {
+	it("says each change in words, one per link", () => {
+		let draft = updateDraftLink(createDependencyDraft(SAVED), "sales", {
+			dependency_name: "WAREHOUSE",
+			dependency_description: "Orders and accounts",
+		});
+		draft = removeFromDraft(draft, "payroll");
+		draft = addToDraft(draft, LEDGER, LEDGER_FIELDS);
+		expect(listDraftChanges(draft, SAVED)).toEqual([
+			"SALES: renamed to WAREHOUSE, description changed",
+			"Removed Private Database",
+			"Added Ledger as LEDGER",
 		]);
 	});
 });

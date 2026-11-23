@@ -1,5 +1,5 @@
 import { Panel, type ReactFlowInstance } from "@xyflow/react";
-import { Info, Network, Pencil, RefreshCw, Trash2, Undo2 } from "lucide-react";
+import { Info, Network, Pencil, Plus, RefreshCw } from "lucide-react";
 import {
 	type KeyboardEvent,
 	type ReactNode,
@@ -21,7 +21,6 @@ import {
 	ButtonGroup,
 	cn,
 	H4,
-	Muted,
 	P,
 	Spinner,
 	Tooltip,
@@ -33,19 +32,21 @@ import {
 import { getErrorMessage } from "@semoss/utility/error";
 import { syncCatalogDependencies } from "@/api/catalog-dependencies";
 import { DiscardChangesDialog } from "@/features/bulk-access-management/discard-changes-dialog";
+import { useUnsavedChangesGuard } from "@/features/bulk-access-management/use-unsaved-changes-guard";
 import type { DependencyFlowEdge } from "@/features/dependency-map/dependency-edge";
 import { DependencyMapSearch } from "@/features/dependency-map/dependency-map-search";
 import type { DependencyFlowNode } from "@/features/dependency-map/dependency-node";
 import { ExpandCanvasButton } from "@/features/dependency-map/expand-canvas-button";
 import { ExpandedCanvasDialog } from "@/features/dependency-map/expanded-canvas-dialog";
 import { focusCanvasItem } from "@/features/dependency-map/focus-canvas-item";
+import { MapTooltip } from "@/features/dependency-map/map-tooltip";
 import { useExpandableCanvas } from "@/features/dependency-map/use-expandable-canvas";
 import { getDependencyTypeConfig } from "./catalog-dependency";
 import { CatalogDependencyCanvas } from "./catalog-dependency-canvas";
 import {
 	applyDraftToGraph,
+	collectTakenNames,
 	getOwnDraftLink,
-	getTakenNames,
 } from "./catalog-dependency-draft";
 import { CatalogDependencyDrawer } from "./catalog-dependency-drawer";
 import {
@@ -55,19 +56,21 @@ import {
 	getDependencyGraphView,
 	getPathToNode,
 	searchCatalogGraph,
+	type TraversalKey,
+	type TraverseDirection,
 } from "./catalog-dependency-graph";
 import { CatalogDependencyLegend } from "./catalog-dependency-legend";
 import {
 	CatalogDependencyMenuItems,
 	type MenuEditActions,
 } from "./catalog-dependency-menu-items";
-import { DependencyEditBar } from "./dependency-edit-bar";
 import { DependencyLinkDialog } from "./dependency-link-dialog";
 import { DependencySaveControls } from "./dependency-save-controls";
 import { FIT_VIEW_OPTIONS } from "./fit-view-on-change";
 import { RequestDependencyAccessDialog } from "./request-dependency-access-dialog";
 import { useCatalogDependents } from "./use-catalog-dependents";
 import { useDependencyDraft } from "./use-dependency-draft";
+import { useOntologyTraversals } from "./use-ontology-traversals";
 
 interface CatalogDependenciesViewProps {
 	/** The owner's id */
@@ -107,7 +110,7 @@ interface CatalogDependenciesViewProps {
 	onRefresh: () => void;
 }
 
-const NO_EXPANDED: ReadonlySet<string> = new Set();
+const NO_TRAVERSALS: ReadonlySet<TraversalKey> = new Set();
 
 const DEFAULT_EDIT_HINT = "Add or remove dependencies using the edit button";
 
@@ -116,14 +119,16 @@ const DEFAULT_EDIT_HINT = "Add or remove dependencies using the edit button";
  * a toolbar with the search and Expand, then the graph with its drawer beside
  * it (on a phone, in its place). The graph has the owner in the middle, what
  * uses it directly on the left and what it uses directly on the right, each
- * item with the user's access to it; right-click an item (or use its "+N") to
- * show the next level beyond it. Items the user cannot see are named only by
+ * item with the user's access to it; right-click an item (or use the "+" on
+ * its side) to traverse upstream to what it uses or downstream to what uses
+ * it, in place, reading that way for it first when needed. Items the user cannot see are named only by
  * their type ("Private Database"). Clicking an item opens it in the drawer
  * with its description, why it is connected, and Request Access, which asks
  * for that one item. Editors edit the manual dependencies on the canvas itself, as the
  * automation canvas edits a workflow: Edit Dependencies turns it into a
- * draft, with an edit bar on top (Add Dependency, Done), Save, Reset and a
- * reminder in the toolbar as the database metamodel page has them, and Remove
+ * draft: the toolbar says so beside Save, Reset and Done, as the database
+ * metamodel page does; Add Dependency is a "+" on the canvas, a pencil on
+ * each manual link's target opens it to edit, and Remove
  * or Undo at each manual link's midpoint. Adding a link and editing one open
  * the same dialog, with its target, its name (required) and its description;
  * an added link then reads as every other dependency does. Nothing is saved
@@ -145,8 +150,8 @@ export const CatalogDependenciesView = ({
 }: CatalogDependenciesViewProps) => {
 	const [isResyncing, setIsResyncing] = useState(false);
 	const isMobile = useIsMobile();
-	const [expandedIds, setExpandedIds] =
-		useState<ReadonlySet<string>>(NO_EXPANDED);
+	// the view is keyed by its owner, so another owner starts over
+	const traversal = useOntologyTraversals();
 	const [selectedId, setSelectedId] = useState("");
 	const [query, setQuery] = useState("");
 	/**
@@ -174,13 +179,17 @@ export const CatalogDependenciesView = ({
 		catalogType,
 		saved: dependencies,
 		onSaved: () => {
+			// what was read past the owner may have changed with the save
+			traversal.reset();
 			onRefresh();
 			dependents.refresh();
 		},
 	});
 	const { isEditing, links: draftLinks, remove, restore } = draft;
+	// leaving the page with changes asks first: the browser for a close or
+	// reload, the discard dialog for a move within the app
+	const leaveBlocker = useUnsavedChangesGuard(draft.changeCount > 0);
 	const ownerLabel = getDependencyTypeConfig(catalogType).label.toLowerCase();
-	const hasAutomatic = dependencies.some((d) => d.is_automatic);
 	const hint = editHint ?? (canEdit ? DEFAULT_EDIT_HINT : undefined);
 
 	// while editing, the owner's manual links are the draft's
@@ -202,6 +211,8 @@ export const CatalogDependenciesView = ({
 			links: edited.links,
 			dependents: dependents.dependents,
 			hiddenCount: dependents.hiddenCount,
+			extraDependents: traversal.extraDependents,
+			extraDependencies: traversal.extraDependencies,
 		});
 	}, [
 		catalogId,
@@ -214,12 +225,15 @@ export const CatalogDependenciesView = ({
 		draftLinks,
 		dependents.dependents,
 		dependents.hiddenCount,
+		traversal.extraDependents,
+		traversal.extraDependencies,
 	]);
-	// editing works on the owner's own links, so only the direct ones show
-	const shownExpandedIds = isEditing ? NO_EXPANDED : expandedIds;
+	// editing works on the owner's own links, so only the direct ones show;
+	// the traversals are kept for when editing ends
+	const shownTraversals = isEditing ? NO_TRAVERSALS : traversal.traversals;
 	const view = useMemo(
-		() => getDependencyGraphView(graph, { expandedIds: shownExpandedIds }),
-		[graph, shownExpandedIds],
+		() => getDependencyGraphView(graph, { traversals: shownTraversals }),
+		[graph, shownTraversals],
 	);
 	const matches = useMemo(
 		() => searchCatalogGraph(graph, query),
@@ -243,44 +257,50 @@ export const CatalogDependenciesView = ({
 		linkDialog !== null &&
 		(linkDialog.linkId === null || dialogLink !== undefined);
 
-	const handleExpand = useCallback((id: string) => {
-		setExpandedIds((previous) => new Set(previous).add(id));
-	}, []);
+	const { traverse } = traversal;
+	/** Traverses from an item, reading that way first when it is not known. */
+	const handleTraverse = useCallback(
+		(id: string, direction: TraverseDirection): void => {
+			const node = graph.nodes.get(id);
+			if (!node) {
+				return;
+			}
+			const isKnown = (
+				direction === "UPSTREAM"
+					? graph.knownUpstream
+					: graph.knownDownstream
+			).has(id);
+			void traverse(node, direction, isKnown);
+		},
+		[graph, traverse],
+	);
 
-	const handleCollapse = (id: string): void => {
-		setExpandedIds((previous) => {
-			const next = new Set(previous);
-			next.delete(id);
-			return next;
-		});
-	};
-
-	const closeDrawer = useCallback((): void => setSelectedId(""), []);
+	const handleCloseDrawer = useCallback((): void => setSelectedId(""), []);
 
 	/** Closes the drawer and puts focus back on the item it showed. */
-	const closeDrawerAndRefocus = (): void => {
+	const handleCloseDrawerAndRefocus = (): void => {
 		const openId = selectedId;
-		closeDrawer();
+		handleCloseDrawer();
 		requestAnimationFrame(() => focusCanvasItem(openId));
 	};
 
-	const startEditing = (): void => {
-		setExpandedIds(NO_EXPANDED);
+	const handleStartEditing = (): void => {
+		traversal.clear();
 		draft.start();
 	};
 
-	const stopEditing = (): void => {
+	const handleStopEditing = (): void => {
 		setIsDiscardOpen(false);
 		setLinkDialog(null);
 		draft.discard();
 	};
 
 	/** Leaves edit mode, asking first when there are changes. */
-	const handleDiscard = (): void => {
+	const handleDone = (): void => {
 		if (draft.changeCount > 0) {
 			setIsDiscardOpen(true);
 		} else {
-			stopEditing();
+			handleStopEditing();
 		}
 	};
 
@@ -310,15 +330,13 @@ export const CatalogDependenciesView = ({
 			);
 		} catch (error: unknown) {
 			toast.error(
-				getErrorMessage(
-					error,
-					"The dependencies could not be re-synced",
-				),
+				getErrorMessage(error, "Couldn't re-sync the dependencies"),
 			);
 			return;
 		} finally {
 			setIsResyncing(false);
 		}
+		traversal.reset();
 		onRefresh();
 		dependents.refresh();
 	};
@@ -369,17 +387,14 @@ export const CatalogDependenciesView = ({
 
 	/**
 	 * Opens an item in the drawer, from the search or the drawer's own lists:
-	 * an item beyond the levels shown has every level up to it shown first,
+	 * an item not on the canvas has the traversals that reach it shown first,
 	 * and one already shown is centred.
 	 */
 	const handleJump = (id: string): void => {
 		if (!graph.nodes.has(id)) {
 			return;
 		}
-		const path = getPathToNode(graph, id);
-		if (path.some((step) => !expandedIds.has(step))) {
-			setExpandedIds((previous) => new Set([...previous, ...path]));
-		}
+		traversal.showPath(getPathToNode(graph, id));
 		setSelectedId(id);
 		const placed = view.nodes.find((n) => n.id === id);
 		if (placed && flowRef.current) {
@@ -400,10 +415,10 @@ export const CatalogDependenciesView = ({
 	 */
 	const handleEscape = (): boolean => {
 		if (selectedId) {
-			closeDrawerAndRefocus();
+			handleCloseDrawerAndRefocus();
 		} else if (isEditing) {
 			if (!draft.isSaving) {
-				handleDiscard();
+				handleDone();
 			}
 		} else {
 			return false;
@@ -451,13 +466,58 @@ export const CatalogDependenciesView = ({
 					{isEditing ? (
 						<DependencySaveControls
 							changeCount={draft.changeCount}
+							changes={draft.changes}
 							problemCount={draft.problems.size}
 							isSaving={draft.isSaving}
 							onReset={draft.reset}
 							onSave={() => void handleSave()}
+							onDone={handleDone}
 						/>
 					) : null}
 					<ButtonGroup aria-label="Ontology actions">
+						{!isEditing && canResync ? (
+							<MapTooltip
+								label={
+									isResyncing
+										? "Re-Syncing..."
+										: "Re-Sync From Configuration"
+								}
+							>
+								<Button
+									type="button"
+									size="icon-sm"
+									variant="outline"
+									aria-label={
+										isResyncing
+											? "Re-Syncing..."
+											: "Re-Sync From Configuration"
+									}
+									disabled={isResyncing}
+									onClick={() => void handleResync()}
+									data-testid="catalogDependenciesView-resync-btn"
+								>
+									{isResyncing ? (
+										<Spinner className="size-4" />
+									) : (
+										<RefreshCw aria-hidden="true" />
+									)}
+								</Button>
+							</MapTooltip>
+						) : null}
+						{!isEditing && canEdit ? (
+							<MapTooltip label="Edit Dependencies">
+								<Button
+									type="button"
+									size="icon-sm"
+									variant="outline"
+									aria-label="Edit Dependencies"
+									onClick={handleStartEditing}
+									data-testid="catalogDependenciesView-edit-btn"
+								>
+									<Pencil aria-hidden="true" />
+								</Button>
+							</MapTooltip>
+						) : null}
 						<ExpandCanvasButton
 							isExpanded={isExpanded}
 							onToggle={toggleExpanded}
@@ -488,8 +548,9 @@ export const CatalogDependenciesView = ({
 							selectedId={selectedId}
 							matchIds={matchIds}
 							onSelect={setSelectedId}
-							onClearSelection={closeDrawer}
-							onExpand={handleExpand}
+							onClearSelection={handleCloseDrawer}
+							onTraverse={handleTraverse}
+							pendingTraversals={traversal.pendingTraversals}
 							edit={edit}
 							onInit={(instance) => {
 								flowRef.current = instance;
@@ -499,10 +560,15 @@ export const CatalogDependenciesView = ({
 									target={target}
 									graph={graph}
 									view={view}
-									expandedIds={expandedIds}
-									onOpenDetails={setSelectedId}
-									onExpand={handleExpand}
-									onCollapse={handleCollapse}
+									hasTraversals={
+										traversal.traversals.size > 0
+									}
+									pendingTraversals={
+										traversal.pendingTraversals
+									}
+									onOpenItem={setSelectedId}
+									onTraverse={handleTraverse}
+									onHide={traversal.hide}
 									onRequestAccess={setRequestTarget}
 									onFitView={() =>
 										void flowRef.current?.fitView({
@@ -510,27 +576,47 @@ export const CatalogDependenciesView = ({
 											duration: 300,
 										})
 									}
-									onShowDirectOnly={() =>
-										setExpandedIds(NO_EXPANDED)
-									}
+									onShowDirectOnly={traversal.clear}
 									edit={edit}
 								/>
 							)}
 						>
 							{isEditing ? (
-								<Panel
-									position="top-center"
-									className="w-full max-w-xl px-4"
-								>
-									<DependencyEditBar
-										changeCount={draft.changeCount}
-										problemCount={draft.problems.size}
-										isSaving={draft.isSaving}
-										saveError={draft.saveError}
-										onAdd={handleAdd}
-										onDone={handleDiscard}
-									/>
-								</Panel>
+								<>
+									<Panel position="top-left">
+										<MapTooltip label="Add Dependency">
+											<Button
+												type="button"
+												size="icon"
+												variant="outline"
+												aria-label="Add Dependency"
+												disabled={draft.isSaving}
+												className="rounded-full bg-background shadow-sm"
+												onClick={handleAdd}
+											>
+												<Plus aria-hidden="true" />
+											</Button>
+										</MapTooltip>
+									</Panel>
+									{draft.problems.size > 0 ||
+									draft.saveError ? (
+										<Panel
+											position="top-center"
+											className="w-full max-w-md px-4"
+										>
+											<Alert variant="destructive">
+												<AlertDescription>
+													{draft.problems.size > 0
+														? draft.problems
+																.size === 1
+															? "1 dependency needs a different name before you can save."
+															: `${draft.problems.size} dependencies need different names before you can save.`
+														: draft.saveError}
+												</AlertDescription>
+											</Alert>
+										</Panel>
+									) : null}
+								</>
 							) : (
 								<Panel position="top-right">
 									<CatalogDependencyLegend
@@ -548,8 +634,8 @@ export const CatalogDependenciesView = ({
 						<CatalogDependencyDrawer
 							graph={graph}
 							node={selectedNode}
-							onClose={closeDrawerAndRefocus}
-							onSelect={handleJump}
+							onClose={handleCloseDrawerAndRefocus}
+							onOpenItem={handleJump}
 							onRequestAccess={setRequestTarget}
 							problem={
 								selectedLink
@@ -559,57 +645,26 @@ export const CatalogDependenciesView = ({
 									: undefined
 							}
 							canEditOwner={canEdit || canResync}
-						>
-							{selectedLink?.isRemoved ? (
-								<Alert>
-									<Trash2 aria-hidden="true" />
-									<AlertDescription className="flex flex-wrap items-center justify-between gap-2">
-										This dependency is removed when you
-										save.
-										<Button
-											type="button"
-											size="sm"
-											variant="outline"
-											onClick={() =>
-												restore(selectedLink.catalog_id)
-											}
-										>
-											<Undo2 aria-hidden="true" />
-											Undo
-										</Button>
-									</AlertDescription>
-								</Alert>
-							) : selectedLink ? (
-								<div className="flex flex-wrap gap-2">
-									<Button
-										type="button"
-										size="sm"
-										variant="outline"
-										onClick={() =>
-											handleEditLink(
-												selectedLink.catalog_id,
-											)
+							linkActions={
+								selectedLink
+									? {
+											isRemoved: selectedLink.isRemoved,
+											onEdit: () =>
+												handleEditLink(
+													selectedLink.catalog_id,
+												),
+											onRemove: () =>
+												handleRemove(
+													selectedLink.catalog_id,
+												),
+											onRestore: () =>
+												restore(
+													selectedLink.catalog_id,
+												),
 										}
-									>
-										<Pencil aria-hidden="true" />
-										Edit Dependency
-									</Button>
-									<Button
-										type="button"
-										size="sm"
-										variant="outline"
-										onClick={() =>
-											handleRemove(
-												selectedLink.catalog_id,
-											)
-										}
-									>
-										<Trash2 aria-hidden="true" />
-										Remove Dependency
-									</Button>
-								</div>
-							) : null}
-						</CatalogDependencyDrawer>
+									: undefined
+							}
+						/>
 					</div>
 				) : null}
 			</div>
@@ -619,73 +674,31 @@ export const CatalogDependenciesView = ({
 	return (
 		<>
 			<div className="flex w-full flex-col gap-4">
-				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-					<div className="flex flex-col gap-1">
-						<div className="flex items-center gap-2">
-							<H4 className="text-base">Ontology</H4>
-							{hint ? (
-								<Tooltip disableHoverableContent={false}>
-									<TooltipTrigger asChild>
-										<button
-											type="button"
-											aria-label={hint}
-											className="rounded-sm text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-										>
-											<Info
-												className="size-4"
-												aria-hidden="true"
-											/>
-										</button>
-									</TooltipTrigger>
-									<TooltipContent>{hint}</TooltipContent>
-								</Tooltip>
-							) : null}
-						</div>
-						<Muted className="max-w-prose">
-							What this {ownerLabel} uses and what uses it, one
-							link out. Right-click an item to go further, or to
-							open or request it. You need access to everything it
-							uses for it to work fully for you.
-							{hasAutomatic
-								? ` Automatic dependencies come from this ${ownerLabel}'s configuration and can only be changed there.`
-								: null}
-							{canResync
-								? " If one looks out of date after a change to the configuration, use Re-sync."
-								: null}
-						</Muted>
+				<div className="flex flex-col gap-1">
+					<div className="flex items-center gap-2">
+						<H4 className="text-base">Ontology</H4>
+						{hint ? (
+							<Tooltip disableHoverableContent={false}>
+								<TooltipTrigger asChild>
+									<button
+										type="button"
+										aria-label={hint}
+										className="rounded-sm text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+									>
+										<Info
+											className="size-4"
+											aria-hidden="true"
+										/>
+									</button>
+								</TooltipTrigger>
+								<TooltipContent>{hint}</TooltipContent>
+							</Tooltip>
+						) : null}
 					</div>
-					{isEditing ? null : (
-						<div className="flex shrink-0 flex-wrap gap-2 self-start">
-							{canResync ? (
-								<Button
-									variant="outline"
-									size="sm"
-									disabled={isResyncing}
-									onClick={() => void handleResync()}
-									data-testid="catalogDependenciesView-resync-btn"
-								>
-									{isResyncing ? (
-										<Spinner className="size-4" />
-									) : (
-										<RefreshCw aria-hidden="true" />
-									)}
-									{isResyncing ? "Re-syncing..." : "Re-sync"}
-								</Button>
-							) : null}
-							{/* when empty, the empty state offers the edit */}
-							{canEdit && !isEmpty ? (
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={startEditing}
-									data-testid="catalogDependenciesView-edit-btn"
-								>
-									<Pencil aria-hidden="true" />
-									Edit Dependencies
-								</Button>
-							) : null}
-						</div>
-					)}
+					<P className="text-muted-foreground text-sm">
+						What this {ownerLabel} uses and what uses it.
+						Right-click an item to traverse upstream or downstream.
+					</P>
 				</div>
 
 				{isEmpty ? (
@@ -698,26 +711,48 @@ export const CatalogDependenciesView = ({
 							<P className="font-medium text-sm">
 								No dependencies yet
 							</P>
-							<Muted>
+							<P className="text-muted-foreground text-sm">
 								Nothing this {ownerLabel} uses, and nothing that
 								uses it, is recorded.
-							</Muted>
+							</P>
 						</div>
-						{canEdit ? (
-							<Button
-								variant="outline"
-								size="sm"
-								onClick={startEditing}
-							>
-								<Pencil aria-hidden="true" />
-								Edit Dependencies
-							</Button>
+						{/* the toolbar is not shown while empty, so its actions are here */}
+						{canEdit || canResync ? (
+							<div className="flex flex-wrap justify-center gap-2">
+								{canResync ? (
+									<Button
+										variant="outline"
+										size="sm"
+										disabled={isResyncing}
+										onClick={() => void handleResync()}
+									>
+										{isResyncing ? (
+											<Spinner className="size-4" />
+										) : (
+											<RefreshCw aria-hidden="true" />
+										)}
+										{isResyncing
+											? "Re-Syncing..."
+											: "Re-Sync"}
+									</Button>
+								) : null}
+								{canEdit ? (
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={handleStartEditing}
+									>
+										<Pencil aria-hidden="true" />
+										Edit Dependencies
+									</Button>
+								) : null}
+							</div>
 						) : null}
 					</div>
 				) : isExpanded ? (
 					// Escape closes the drawer and leaves edit mode before it collapses
 					<ExpandedCanvasDialog
-						title={`${catalogName}'s ontology`}
+						title={`${catalogName}'s Ontology`}
 						placeholderClassName="h-120 md:h-160"
 						onEscape={handleEscape}
 						onCollapse={collapse}
@@ -747,7 +782,7 @@ export const CatalogDependenciesView = ({
 							? undefined
 							: draft.problems.get(linkDialog.linkId)
 					}
-					takenNames={getTakenNames(
+					takenNames={collectTakenNames(
 						draftLinks.values(),
 						linkDialog.linkId ?? "",
 					)}
@@ -777,10 +812,19 @@ export const CatalogDependenciesView = ({
 			) : null}
 
 			<DiscardChangesDialog
+				open={leaveBlocker.state === "blocked"}
+				reason="LEAVE"
+				changeCount={draft.changeCount}
+				onConfirm={() => leaveBlocker.proceed?.()}
+				onCancel={() => leaveBlocker.reset?.()}
+				unchangedText="the dependencies stay as they are"
+			/>
+
+			<DiscardChangesDialog
 				open={isDiscardOpen}
 				reason="DISCARD"
 				changeCount={draft.changeCount}
-				onConfirm={stopEditing}
+				onConfirm={handleStopEditing}
 				onCancel={() => setIsDiscardOpen(false)}
 				unchangedText="the dependencies stay as they are"
 			/>

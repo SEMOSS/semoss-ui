@@ -1,10 +1,8 @@
-import { CheckIcon, Lock, SearchIcon } from "lucide-react";
-import { type UIEvent, useState } from "react";
+import { Lock, SearchIcon } from "lucide-react";
+import { useState } from "react";
 import type { CatalogDependencyRow, CatalogType, Engine } from "@semoss/shared";
-import { EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Button,
-	cn,
 	Dialog,
 	DialogContent,
 	DialogDescription,
@@ -27,9 +25,12 @@ import {
 	toCatalogDependencyPayload,
 } from "./catalog-dependency";
 import {
+	collectTakenNames,
 	type DependencyOption,
 	getUniqueDependencyName,
 } from "./catalog-dependency-draft";
+import { DependencyOptionList } from "./dependency-option-list";
+import { AUTOMATIC_CHIP_CLASS } from "./engine-category-card";
 import { useDependencyOptions } from "./use-dependency-options";
 
 interface ManageEnginesDialogProps {
@@ -41,8 +42,8 @@ interface ManageEnginesDialogProps {
 	catalogType: CatalogType;
 	/** The owner's current direct dependencies (all kinds, automatic too) */
 	dependencies: CatalogDependencyRow[];
-	/** Called on close; true when a save succeeded */
-	onClose: (saved: boolean) => void;
+	/** Called on close, with whether a save succeeded */
+	onClose: (didSave: boolean) => void;
 }
 
 /**
@@ -68,7 +69,7 @@ export const ManageEnginesDialog = ({
 
 	const [search, setSearch] = useState("");
 	const [isSaving, setIsSaving] = useState(false);
-	const { options, isLoading, hasMore, error, next } = useDependencyOptions({
+	const read = useDependencyOptions({
 		catalogId,
 		search,
 		source: "ENGINE",
@@ -82,7 +83,9 @@ export const ManageEnginesDialog = ({
 			dependency.is_automatic && dependency.catalog_type === category,
 	);
 	// the picked engines by id, each with the name a new one is named after
-	const [selectedIds, setSelectedIds] = useState<ReadonlyMap<string, string>>(
+	const [selectedNames, setSelectedNames] = useState<
+		ReadonlyMap<string, string>
+	>(
 		() =>
 			new Map(
 				manualDependencies
@@ -96,8 +99,8 @@ export const ManageEnginesDialog = ({
 			),
 	);
 
-	const toggleEngine = (engine: DependencyOption) => {
-		setSelectedIds((current) => {
+	const handleToggleEngine = (engine: DependencyOption) => {
+		setSelectedNames((current) => {
 			const next = new Map(current);
 			if (next.has(engine.catalog_id)) {
 				next.delete(engine.catalog_id);
@@ -109,15 +112,6 @@ export const ManageEnginesDialog = ({
 			}
 			return next;
 		});
-	};
-
-	const handleScroll = (event: UIEvent<HTMLDivElement>): void => {
-		const list = event.currentTarget;
-		const isNearBottom =
-			list.scrollHeight - list.scrollTop - list.clientHeight < 80;
-		if (isNearBottom && !isLoading && hasMore) {
-			next();
-		}
 	};
 
 	const handleSave = async () => {
@@ -132,14 +126,11 @@ export const ManageEnginesDialog = ({
 			const kept = manualDependencies.filter(
 				(dependency) =>
 					dependency.catalog_type === category &&
-					selectedIds.has(dependency.catalog_id),
+					selectedNames.has(dependency.catalog_id),
 			);
 			// a new pick is named after itself, unique among the names kept
-			const taken = [...others, ...kept].flatMap((dependency) => {
-				const name = dependency.dependency_name?.trim().toLowerCase();
-				return name ? [name] : [];
-			});
-			const added = [...selectedIds]
+			const taken = collectTakenNames([...others, ...kept]);
+			const added = [...selectedNames]
 				.filter(([id]) => !kept.some((row) => row.catalog_id === id))
 				.map(([id, baseName]) => {
 					const name = getUniqueDependencyName(baseName, taken);
@@ -158,7 +149,9 @@ export const ManageEnginesDialog = ({
 			toast.success(`${meta.label} updated`);
 			onClose(true);
 		} catch (saveError) {
-			toast.error(getErrorMessage(saveError, "Failed to update engines"));
+			toast.error(
+				getErrorMessage(saveError, "Couldn't update the engines"),
+			);
 		} finally {
 			setIsSaving(false);
 		}
@@ -171,9 +164,7 @@ export const ManageEnginesDialog = ({
 		>
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
-					<DialogTitle className="font-medium text-base leading-6">
-						Manage {categoryLabel}
-					</DialogTitle>
+					<DialogTitle>Manage {meta.label}</DialogTitle>
 					<DialogDescription>{meta.blurb}.</DialogDescription>
 				</DialogHeader>
 
@@ -182,7 +173,7 @@ export const ManageEnginesDialog = ({
 						<SearchIcon className="size-4" aria-hidden="true" />
 					</InputGroupAddon>
 					<InputGroupInput
-						placeholder={`Search ${categoryLabel}…`}
+						placeholder={`Search ${categoryLabel}...`}
 						aria-label={`Search ${categoryLabel}`}
 						value={search}
 						onChange={(event) => setSearch(event.target.value)}
@@ -200,7 +191,7 @@ export const ManageEnginesDialog = ({
 							{automaticEngines.map((engine) => (
 								<li
 									key={getDependencyKey(engine)}
-									className="flex items-center gap-1.5 rounded-full border border-border bg-muted py-1 ps-1.5 pe-2 text-xs"
+									className={AUTOMATIC_CHIP_CLASS}
 								>
 									<span className="max-w-40 truncate">
 										{getDependencyDisplayName(engine)}
@@ -214,75 +205,22 @@ export const ManageEnginesDialog = ({
 					</div>
 				) : null}
 
-				<div
-					className="max-h-96 min-h-40 overflow-y-auto rounded-md border border-border"
-					onScroll={handleScroll}
-				>
-					{error ? (
-						<p className="p-4 text-center text-destructive text-sm">
-							{`Couldn't load ${categoryLabel}: ${error.message}`}
-						</p>
-					) : isLoading && options.length === 0 ? (
-						<div className="flex h-40 items-center justify-center">
-							<Spinner className="size-5" />
-						</div>
-					) : options.length === 0 ? (
-						<p className="p-4 text-center text-muted-foreground text-sm">
-							No {categoryLabel} found.
-						</p>
-					) : (
-						<ul className="flex flex-col p-1">
-							{options.map((option) => {
-								const isSelected = selectedIds.has(
-									option.catalog_id,
-								);
-								return (
-									<li key={option.catalog_id}>
-										<button
-											type="button"
-											className={cn(
-												"flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent",
-												isSelected && "bg-accent/50",
-											)}
-											aria-pressed={isSelected}
-											onClick={() => toggleEngine(option)}
-										>
-											<span className="flex size-5 shrink-0 items-center justify-center">
-												<EngineSubtypeIcon
-													engineType={
-														option.catalog_type
-													}
-													engineSubtype={
-														option.catalog_subtype
-													}
-													className="size-full object-contain"
-												/>
-											</span>
-											<span className="min-w-0 flex-1 truncate">
-												{option.catalog_name}
-											</span>
-											{isSelected ? (
-												<CheckIcon
-													className="size-4 shrink-0 text-primary"
-													aria-hidden="true"
-												/>
-											) : null}
-										</button>
-									</li>
-								);
-							})}
-						</ul>
-					)}
-					{isLoading && options.length > 0 ? (
-						<div className="flex justify-center py-2">
-							<Spinner className="size-4" />
-						</div>
-					) : null}
-				</div>
+				<DependencyOptionList
+					read={read}
+					sourceLabel={categoryLabel}
+					isSelected={(option) =>
+						selectedNames.has(option.catalog_id)
+					}
+					getStatus={(option) =>
+						selectedNames.has(option.catalog_id) ? "Selected" : null
+					}
+					onPick={handleToggleEngine}
+					className="max-h-96 min-h-40"
+				/>
 
 				<DialogFooter className="items-center">
 					<span className="me-auto text-muted-foreground text-xs">
-						{selectedIds.size} selected
+						{selectedNames.size} selected
 					</span>
 					<Button
 						type="button"
@@ -298,7 +236,7 @@ export const ManageEnginesDialog = ({
 						onClick={() => void handleSave()}
 					>
 						{isSaving ? <Spinner className="size-4" /> : null}
-						Save
+						{isSaving ? "Saving..." : "Save"}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

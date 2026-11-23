@@ -44,6 +44,8 @@ export const EngineDependenciesPage = () => {
 
 	return (
 		<CatalogDependenciesView
+			// a new view per owner, so nothing from one carries to the next
+			key={engine.engine_id}
 			catalogId={engine.engine_id}
 			catalogType={engine.engine_type}
 			catalogName={engine.engine_display_name || engine.engine_name}

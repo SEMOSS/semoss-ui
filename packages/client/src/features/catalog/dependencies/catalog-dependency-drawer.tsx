@@ -1,13 +1,13 @@
 import {
-	ArrowDown,
-	ArrowUp,
 	ExternalLink,
 	Lock,
 	LockKeyhole,
 	Network,
+	Pencil,
+	Trash2,
 	TriangleAlert,
+	Undo2,
 } from "lucide-react";
-import type { ReactNode } from "react";
 import { Link } from "react-router";
 import {
 	Accordion,
@@ -19,17 +19,31 @@ import {
 	Badge,
 	Button,
 	ButtonGroup,
+	cn,
+	InlineCode,
 	Muted,
 	P,
+	Separator,
 } from "@semoss/ui/next";
 import { ResourceId } from "@/components/shared/resource-id";
-import { DependencyDrawer } from "@/features/dependency-map/dependency-drawer";
+import {
+	DependencyDrawer,
+	DRAWER_FACT_CLASS,
+	DRAWER_FACT_LABEL_CLASS,
+	DRAWER_FACT_VALUE_CLASS,
+	DRAWER_FACTS_CLASS,
+	DRAWER_NOTE_CLASS,
+	DRAWER_WIDE_FACT_CLASS,
+} from "@/features/dependency-map/dependency-drawer";
 import { DependencyItemImage } from "@/features/dependency-map/dependency-item-image";
+import { DependencyLinkRow } from "@/features/dependency-map/dependency-link-row";
 import { DrawerItemMeta } from "@/features/dependency-map/drawer-item-meta";
+import { DrawerLineage } from "@/features/dependency-map/drawer-lineage";
 import { MapTooltip } from "@/features/dependency-map/map-tooltip";
 import {
 	canRequestDependency,
 	DEPENDENCY_ACCESS_LEVEL_LABELS,
+	describeAutomaticLink,
 	getConfigurationPlace,
 	getDependencyRoleLabel,
 	getDependencyTypeConfig,
@@ -41,10 +55,11 @@ import {
 	type GraphNodeLink,
 	getGraphNodePaths,
 	getNodeLinks,
+	HIDDEN_ROLE,
+	PRIVATE_DEPENDENTS_LABEL,
 } from "./catalog-dependency-graph";
 import { DependencyAccessBadge } from "./dependency-access-badge";
 import { DependencyKindBadge } from "./dependency-kind-badge";
-import { DependencyLinkRow } from "./dependency-link-row";
 
 /** Props for {@link CatalogDependencyDrawer}. */
 interface CatalogDependencyDrawerProps {
@@ -55,11 +70,9 @@ interface CatalogDependencyDrawerProps {
 	/** Closes the drawer, putting focus back on the item it showed */
 	onClose: () => void;
 	/** Opens another item of the graph in the drawer */
-	onSelect: (id: string) => void;
+	onOpenItem: (id: string) => void;
 	/** Asks for access to the item */
 	onRequestAccess: (node: CatalogGraphNode) => void;
-	/** Shown above the details, such as a manual link's Edit and Remove while links are edited */
-	children?: ReactNode;
 	/**
 	 * What stops the draft being saved on the owner's manual link to this
 	 * item, such as a name another link has; shown under its name
@@ -70,6 +83,20 @@ interface CatalogDependencyDrawerProps {
 	 * dependencies are changed leads somewhere they can use
 	 */
 	canEditOwner?: boolean;
+	/**
+	 * The owner's manual link to this item while links are edited: Edit and
+	 * Remove (or Undo once removed), as icons on the Configuration heading
+	 */
+	linkActions?: {
+		/** Whether the link is to be removed on save */
+		readonly isRemoved: boolean;
+		/** Opens the link's name and description in the link dialog */
+		readonly onEdit: () => void;
+		/** Marks the link for removal, or drops a new one */
+		readonly onRemove: () => void;
+		/** Brings back a link marked for removal */
+		readonly onRestore: () => void;
+	};
 }
 
 /**
@@ -78,23 +105,25 @@ interface CatalogDependencyDrawerProps {
  * name, type and visibility, and its actions as icon buttons with tooltips:
  * Request Access, View Its Ontology, Open in Catalog, and Close. The item then
  * folds into Overview (its id, description and anything the user should know);
- * Code, for a manual link between it and the owner: the name a Code app reads
- * the item's id by, and the link's description; Configuration, for an
- * automatic one: its role, why it exists, and where to change it; and
+ * Configuration, listing each link between it and the owner with its type,
+ * Manual or Automatic: a manual link's name (the key a Code app reads the
+ * item's id by) and description, or an automatic link's role, why it exists
+ * and where it is changed; and
  * Lineage (what it uses and what uses it, each link with its kind, each item
  * opening here in turn). A private item says only its
  * type, and how to get access. Its heading takes focus when it opens. While
- * the owner's links are edited, a manual link's Edit and Remove sit above the details.
+ * the owner's links are edited, the owner's manual link has Edit and Remove
+ * (or Undo) as icons on the Configuration heading, before its chevron.
  */
 export const CatalogDependencyDrawer = ({
 	graph,
 	node,
 	onClose,
-	onSelect,
+	onOpenItem,
 	onRequestAccess,
-	children,
 	problem,
 	canEditOwner = false,
+	linkActions,
 }: CatalogDependencyDrawerProps) => {
 	const root = graph.nodes.get(graph.rootId);
 	const rootName = root?.name ?? "this item";
@@ -130,21 +159,50 @@ export const CatalogDependencyDrawer = ({
 		? []
 		: [...uses, ...usedBy].filter(
 				({ other, edge }) =>
-					other.id === graph.rootId && edge.role !== "HIDDEN",
+					other.id === graph.rootId && edge.role !== HIDDEN_ROLE,
 			);
-	const manualLinks = ownLinks.filter(({ edge }) => !edge.isAutomatic);
-	const automaticLinks = ownLinks.filter(({ edge }) => edge.isAutomatic);
+	// Edit and Remove act on the owner's own manual link to this item, and
+	// sit on the Configuration line
+	const headerActions = ownLinks.some(
+		({ edge }) => !edge.isAutomatic && edge.source === graph.rootId,
+	)
+		? linkActions
+		: undefined;
 
 	const renderLinks = (links: readonly GraphNodeLink[]) =>
 		links.length === 0 ? (
-			<Muted>None</Muted>
+			<P className={DRAWER_NOTE_CLASS}>None</P>
 		) : (
-			<ul className="divide-y">
-				{links.map((link) => (
+			<ul className="flex flex-col gap-1">
+				{links.map(({ edge, other, sourceType }) => (
 					<DependencyLinkRow
-						key={link.edge.id}
-						{...link}
-						onSelect={onSelect}
+						key={edge.id}
+						node={other}
+						isPrivate={other.isPrivate}
+						description={`${
+							other.hiddenCount === undefined
+								? getDependencyTypeConfig(other.type).label
+								: PRIVATE_DEPENDENTS_LABEL
+						}${!edge.isAutomatic && edge.name ? ` · ${edge.name}` : ""}`}
+						link={
+							edge.role === HIDDEN_ROLE
+								? undefined
+								: {
+										isAutomatic: edge.isAutomatic,
+										label: getDependencyRoleLabel(
+											edge.role,
+										),
+									}
+						}
+						note={
+							edge.role === HIDDEN_ROLE
+								? null
+								: (edge.description ??
+									(edge.isAutomatic
+										? describeAutomaticLink(sourceType)
+										: null))
+						}
+						onOpenItem={() => onOpenItem(other.id)}
 					/>
 				))}
 			</ul>
@@ -204,7 +262,7 @@ export const CatalogDependencyDrawer = ({
 									<Link
 										to={catalogPath}
 										target="_blank"
-										rel="noreferrer"
+										rel="noopener noreferrer"
 										aria-label="Open in Catalog (opens in a new tab)"
 									>
 										<ExternalLink aria-hidden="true" />
@@ -239,19 +297,15 @@ export const CatalogDependencyDrawer = ({
 			focusKey={node.id}
 			onClose={onClose}
 		>
-			{children ? <div className="pt-4">{children}</div> : null}
 			{/* a new key per item, so each opens on its overview */}
 			<Accordion
 				key={node.id}
 				type="multiple"
-				defaultValue={["overview", "code", "configuration"]}
+				defaultValue={["overview", "configuration"]}
 			>
 				<AccordionItem value="overview">
 					<AccordionTrigger>Overview</AccordionTrigger>
 					<AccordionContent className="flex flex-col gap-4">
-						{isPlaceholder || node.isPrivate ? null : (
-							<ResourceId id={node.id} name={node.name} />
-						)}
 						{isPlaceholder ? (
 							<P className="text-sm">
 								{isOne
@@ -265,26 +319,62 @@ export const CatalogDependencyDrawer = ({
 									{`You can't see this ${typeLabel}: you have no access to it and it isn't discoverable. ${rootName} needs it to work fully. Ask an owner of ${rootName}, or an admin, for access.`}
 								</AlertDescription>
 							</Alert>
-						) : node.description ? (
-							<P className="text-muted-foreground text-sm">
-								{node.description}
-							</P>
 						) : (
-							<Muted>
-								{node.side === "USED_BY" || isRoot
-									? "Open it to read its description."
-									: "No description."}
-							</Muted>
+							<>
+								<ResourceId id={node.id} name={node.name} />
+								<dl className={DRAWER_FACTS_CLASS}>
+									<div className={DRAWER_WIDE_FACT_CLASS}>
+										<dt className={DRAWER_FACT_LABEL_CLASS}>
+											Description
+										</dt>
+										<dd className={DRAWER_FACT_VALUE_CLASS}>
+											{node.description ? (
+												node.description
+											) : (
+												<span
+													className={
+														DRAWER_NOTE_CLASS
+													}
+												>
+													{node.side === "USED_BY" ||
+													isRoot
+														? "Open it to read its description"
+														: "No description"}
+												</span>
+											)}
+										</dd>
+									</div>
+									{relation ? (
+										<div className={DRAWER_WIDE_FACT_CLASS}>
+											<dt
+												className={
+													DRAWER_FACT_LABEL_CLASS
+												}
+											>
+												Connection
+											</dt>
+											<dd
+												className={
+													DRAWER_FACT_VALUE_CLASS
+												}
+											>
+												{relation}
+											</dd>
+										</div>
+									) : null}
+								</dl>
+							</>
 						)}
-						{relation ? <Muted>{relation}</Muted> : null}
 						{access?.kind === "granted" && access.requested ? (
-							<Muted>{`You asked for ${DEPENDENCY_ACCESS_LEVEL_LABELS[access.requested]} access. It waits on its owners.`}</Muted>
+							<P className={DRAWER_NOTE_CLASS}>
+								{`You asked for ${DEPENDENCY_ACCESS_LEVEL_LABELS[access.requested]} access. It waits on its owners.`}
+							</P>
 						) : null}
 						{access?.kind === "requested" ? (
-							<Muted>
+							<P className={DRAWER_NOTE_CLASS}>
 								Your request waits on its owners. Open it to
 								change or withdraw the request.
-							</Muted>
+							</P>
 						) : null}
 						{/* a private item's notice already says what is missing */}
 						{dependency?.can_view_dependencies === false &&
@@ -301,73 +391,70 @@ export const CatalogDependencyDrawer = ({
 						) : null}
 					</AccordionContent>
 				</AccordionItem>
-				{manualLinks.length > 0 ? (
-					<AccordionItem value="code">
-						<AccordionTrigger>
-							<span className="flex items-center gap-2">
-								Code
-								<DependencyKindBadge isAutomatic={false} />
-							</span>
-						</AccordionTrigger>
-						<AccordionContent className="flex flex-col gap-4">
-							{manualLinks.map(({ edge }) => (
-								<dl
-									key={edge.id}
-									className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm"
-								>
-									<dt className="text-muted-foreground">
-										Name
-									</dt>
-									<dd className="min-w-0">
-										{edge.name ? (
-											<code className="break-all rounded bg-muted px-1.5 py-0.5 font-medium font-mono text-sm">
-												{edge.name}
-											</code>
-										) : (
-											<Muted>
-												No name. Edit the dependency to
-												give it one.
-											</Muted>
-										)}
-										{problem &&
-										edge.source === graph.rootId ? (
-											<P className="mt-1 flex items-center gap-1 text-destructive text-sm">
-												<TriangleAlert
-													className="size-4 shrink-0"
-													aria-hidden="true"
-												/>
-												{problem}
-											</P>
-										) : null}
-									</dd>
-									<dt className="text-muted-foreground">
-										Description
-									</dt>
-									<dd className="min-w-0">
-										{edge.description ? (
-											<P className="text-sm">
-												{edge.description}
-											</P>
-										) : (
-											<Muted>No description.</Muted>
-										)}
-									</dd>
-								</dl>
-							))}
-						</AccordionContent>
-					</AccordionItem>
-				) : null}
-				{automaticLinks.length > 0 ? (
+				{ownLinks.length > 0 ? (
 					<AccordionItem value="configuration">
-						<AccordionTrigger>
-							<span className="flex items-center gap-2">
-								Configuration
-								<DependencyKindBadge isAutomatic={true} />
-							</span>
-						</AccordionTrigger>
+						{/* the heading reads text, actions, chevron: the trigger
+						    spans the line, as the other sections' do, and the
+						    actions sit over it just before its chevron, outside
+						    it, since a button cannot hold other buttons */}
+						<div className="relative flex items-center [&>h3]:flex-1">
+							<AccordionTrigger>Configuration</AccordionTrigger>
+							{headerActions ? (
+								<ButtonGroup
+									aria-label="Dependency actions"
+									className="-translate-y-1/2 absolute top-1/2 right-6"
+								>
+									{headerActions.isRemoved ? (
+										<MapTooltip label="Undo Removal">
+											<Button
+												type="button"
+												size="icon-sm"
+												variant="ghost"
+												aria-label="Undo Removal"
+												onClick={
+													headerActions.onRestore
+												}
+											>
+												<Undo2 aria-hidden="true" />
+											</Button>
+										</MapTooltip>
+									) : (
+										<>
+											<MapTooltip label="Edit Dependency">
+												<Button
+													type="button"
+													size="icon-sm"
+													variant="ghost"
+													aria-label="Edit Dependency"
+													onClick={
+														headerActions.onEdit
+													}
+												>
+													<Pencil aria-hidden="true" />
+												</Button>
+											</MapTooltip>
+											<MapTooltip label="Remove Dependency">
+												<Button
+													type="button"
+													size="icon-sm"
+													variant="ghost"
+													aria-label="Remove Dependency"
+													className="hover:text-destructive"
+													onClick={
+														headerActions.onRemove
+													}
+												>
+													<Trash2 aria-hidden="true" />
+												</Button>
+											</MapTooltip>
+										</>
+									)}
+								</ButtonGroup>
+							) : null}
+						</div>
 						<AccordionContent>
 							<ul className="flex flex-col gap-4">
-								{automaticLinks.map(({ edge }) => {
+								{ownLinks.map(({ edge }, index) => {
 									const owner =
 										graph.nodes.get(edge.source) ?? node;
 									const place = getConfigurationPlace(
@@ -381,34 +468,204 @@ export const CatalogDependencyDrawer = ({
 										owner.id === graph.rootId
 											? place.path
 											: null;
+									// the owner's own manual link is the one
+									// the edit acts on
+									const actions =
+										!edge.isAutomatic &&
+										owner.id === graph.rootId
+											? linkActions
+											: undefined;
 									return (
 										<li
 											key={edge.id}
-											className="flex flex-col gap-1"
+											className="flex flex-col gap-4"
 										>
-											<P className="font-medium text-sm">
-												{getDependencyRoleLabel(
-													edge.role,
+											{index > 0 ? <Separator /> : null}
+											<dl
+												className={cn(
+													DRAWER_FACTS_CLASS,
+													actions?.isRemoved &&
+														"opacity-60",
 												)}
-											</P>
-											<Muted>
-												{edge.description ??
-													`Set by the ${getDependencyTypeConfig(owner.type).label.toLowerCase()}'s configuration.`}
-											</Muted>
-											<P className="text-sm">
-												{`Read-only here. Change it in ${owner.name}'s `}
-												{placePath ? (
-													<Link
-														to={placePath}
-														className="font-medium text-primary underline-offset-4 hover:underline"
+											>
+												<div
+													className={
+														DRAWER_FACT_CLASS
+													}
+												>
+													<dt
+														className={
+															DRAWER_FACT_LABEL_CLASS
+														}
 													>
-														{place.label}
-													</Link>
+														Type
+													</dt>
+													<dd
+														className={
+															DRAWER_FACT_VALUE_CLASS
+														}
+													>
+														<DependencyKindBadge
+															isAutomatic={
+																edge.isAutomatic
+															}
+														/>
+													</dd>
+												</div>
+												{edge.isAutomatic ? (
+													<div
+														className={
+															DRAWER_FACT_CLASS
+														}
+													>
+														<dt
+															className={
+																DRAWER_FACT_LABEL_CLASS
+															}
+														>
+															Role
+														</dt>
+														<dd
+															className={cn(
+																DRAWER_FACT_VALUE_CLASS,
+																"font-medium",
+															)}
+														>
+															{getDependencyRoleLabel(
+																edge.role,
+															)}
+														</dd>
+													</div>
 												) : (
-													place.label
+													<div
+														className={
+															DRAWER_FACT_CLASS
+														}
+													>
+														<dt
+															className={
+																DRAWER_FACT_LABEL_CLASS
+															}
+														>
+															Name
+														</dt>
+														<dd
+															className={
+																DRAWER_FACT_VALUE_CLASS
+															}
+														>
+															{edge.name ? (
+																<InlineCode className="break-all">
+																	{edge.name}
+																</InlineCode>
+															) : (
+																<span
+																	className={
+																		DRAWER_NOTE_CLASS
+																	}
+																>
+																	No name
+																</span>
+															)}
+															{problem &&
+															owner.id ===
+																graph.rootId ? (
+																<span className="mt-1 flex items-center gap-1 text-destructive text-xs">
+																	<TriangleAlert
+																		className="size-3.5 shrink-0"
+																		aria-hidden="true"
+																	/>
+																	{problem}
+																</span>
+															) : null}
+														</dd>
+													</div>
 												)}
-												.
-											</P>
+												<div
+													className={
+														DRAWER_WIDE_FACT_CLASS
+													}
+												>
+													<dt
+														className={
+															DRAWER_FACT_LABEL_CLASS
+														}
+													>
+														Description
+													</dt>
+													<dd
+														className={
+															DRAWER_FACT_VALUE_CLASS
+														}
+													>
+														{edge.description ? (
+															edge.description
+														) : (
+															<span
+																className={
+																	DRAWER_NOTE_CLASS
+																}
+															>
+																{edge.isAutomatic
+																	? describeAutomaticLink(
+																			owner.type,
+																		)
+																	: "No description"}
+															</span>
+														)}
+													</dd>
+												</div>
+												{edge.isAutomatic ? (
+													<div
+														className={
+															DRAWER_WIDE_FACT_CLASS
+														}
+													>
+														<dt
+															className={
+																DRAWER_FACT_LABEL_CLASS
+															}
+														>
+															Changed In
+														</dt>
+														<dd
+															className={
+																DRAWER_FACT_VALUE_CLASS
+															}
+														>
+															{placePath ? (
+																<Button
+																	asChild
+																	variant="link"
+																	className="h-auto p-0"
+																>
+																	<Link
+																		to={
+																			placePath
+																		}
+																	>
+																		{`${owner.name}'s ${place.label}`}
+																	</Link>
+																</Button>
+															) : (
+																`${owner.name}'s ${place.label}`
+															)}
+															<span className="block text-muted-foreground text-xs">
+																Read-Only Here
+															</span>
+														</dd>
+													</div>
+												) : null}
+											</dl>
+											{actions?.isRemoved ? (
+												<P
+													className={
+														DRAWER_NOTE_CLASS
+													}
+												>
+													Removed when you save
+												</P>
+											) : null}
 										</li>
 									);
 								})}
@@ -416,45 +673,12 @@ export const CatalogDependencyDrawer = ({
 						</AccordionContent>
 					</AccordionItem>
 				) : null}
-				<AccordionItem value="lineage">
-					<AccordionTrigger
-						aria-label={`Lineage, ${uses.length} upstream, ${usedBy.length} downstream`}
-					>
-						<span className="flex items-center gap-2">
-							Lineage
-							<Badge variant="secondary" className="gap-0.5">
-								<ArrowUp
-									className="size-3"
-									aria-hidden="true"
-								/>
-								{uses.length}
-							</Badge>
-							<Badge variant="secondary" className="gap-0.5">
-								<ArrowDown
-									className="size-3"
-									aria-hidden="true"
-								/>
-								{usedBy.length}
-							</Badge>
-						</span>
-					</AccordionTrigger>
-					<AccordionContent className="flex flex-col gap-4">
-						<section
-							aria-label="Upstream"
-							className="flex flex-col gap-1"
-						>
-							<p className="font-medium text-sm">Upstream</p>
-							{renderLinks(uses)}
-						</section>
-						<section
-							aria-label="Downstream"
-							className="flex flex-col gap-1"
-						>
-							<p className="font-medium text-sm">Downstream</p>
-							{renderLinks(usedBy)}
-						</section>
-					</AccordionContent>
-				</AccordionItem>
+				<DrawerLineage
+					upstreamCount={uses.length}
+					downstreamCount={usedBy.length}
+					upstream={renderLinks(uses)}
+					downstream={renderLinks(usedBy)}
+				/>
 			</Accordion>
 		</DependencyDrawer>
 	);

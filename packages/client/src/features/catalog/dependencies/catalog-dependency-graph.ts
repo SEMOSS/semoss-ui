@@ -1,9 +1,12 @@
 import type {
 	CatalogDependency,
 	CatalogDependencyLink,
-	CatalogDependencyRole,
 	CatalogType,
 } from "@semoss/shared";
+import type {
+	CatalogDependent,
+	ItemDependencies,
+} from "@/api/catalog-dependencies";
 import {
 	rankSearchMatches,
 	type SearchEntry,
@@ -19,36 +22,47 @@ import {
 } from "./catalog-dependency";
 
 /**
- * One link from an item that depends on the owner, or on one of the owner's
- * dependents, as `GetCatalogDependents` returns it: `catalog_id` depends on
- * `dependency_id`, in one role.
+ * Where a node sits: the owner, what it uses, what uses it, or an item
+ * reached by traversing from another one (`RELATED`), such as something else
+ * that uses one of the owner's dependencies.
  */
-export interface CatalogDependent {
-	/** What it depends on: the owner, or an item between them */
-	dependency_id: string;
-	/** The item that depends on it */
-	catalog_id: string;
-	/** The item's specific type */
-	catalog_type: CatalogType;
-	/** The item's name */
-	catalog_name?: string;
-	/** The engine's subtype; a project's type */
-	catalog_subtype?: string;
-	/** Whether the backend recorded the link from the item's configuration */
-	is_automatic: boolean;
-	/** Why the item depends on it */
-	role: CatalogDependencyRole;
-	/** The link's name; manual links only */
-	dependency_name: string | null;
-	/** What the link is for */
-	dependency_description: string | null;
-}
+type DependencyGraphSide = "ROOT" | "USES" | "USED_BY" | "RELATED";
 
-/** Where a node sits: the owner, what it uses, or what uses it. */
-export type DependencyGraphSide = "ROOT" | "USES" | "USED_BY";
+/**
+ * A way to traverse from an item: upstream to what it uses, or downstream to
+ * what uses it. The canvas, the menu and the graph all use these words.
+ */
+export type TraverseDirection = "UPSTREAM" | "DOWNSTREAM";
+
+/** One traversal shown on the canvas: an item and a direction, as a key. */
+export type TraversalKey = `${string}|${TraverseDirection}`;
+
+/**
+ * The key of a traversal.
+ *
+ * @param id - The item traversed from.
+ * @param direction - Which way.
+ * @returns Its key.
+ */
+export const getTraversalKey = (
+	id: string,
+	direction: TraverseDirection,
+): TraversalKey => `${id}|${direction}`;
+
+/**
+ * Where a traversal from a placed item stands: shown (it can be hidden),
+ * more to show (or not read yet), or nothing that way.
+ */
+type TraverseState = "SHOWN" | "MORE" | "NONE";
 
 /** The id of the node that stands for the dependents the user cannot view. */
 export const PRIVATE_DEPENDENTS_ID = "private-dependents";
+
+/** What the node standing for the dependents the user cannot view is called under its name. */
+export const PRIVATE_DEPENDENTS_LABEL = "Items you can't view";
+
+/** The role of the link from the dependents the user cannot view to the owner. */
+export const HIDDEN_ROLE = "HIDDEN";
 
 /** One engine or project in an owner's dependency graph. */
 export interface CatalogGraphNode {
@@ -82,7 +96,7 @@ export interface CatalogGraphNode {
 }
 
 /** One link: `source` depends on `target`, in one role. */
-export interface CatalogGraphEdge {
+interface CatalogGraphEdge {
 	/** Unique per source, target and role */
 	readonly id: string;
 	/** The item that has the dependency */
@@ -107,10 +121,14 @@ export interface CatalogDependencyGraph {
 	readonly nodes: ReadonlyMap<string, CatalogGraphNode>;
 	/** Every link */
 	readonly edges: readonly CatalogGraphEdge[];
+	/** The items whose every dependency has been read, so upstream is known */
+	readonly knownUpstream: ReadonlySet<string>;
+	/** The items whose every dependent has been read, so downstream is known */
+	readonly knownDownstream: ReadonlySet<string>;
 }
 
 /** The owner the graph is built around. */
-export interface DependencyGraphRoot {
+interface DependencyGraphRoot {
 	/** Its id */
 	readonly id: string;
 	/** Its specific type */
@@ -135,10 +153,112 @@ export interface BuildCatalogDependencyGraphInput {
 	readonly dependents: readonly CatalogDependent[];
 	/** How many dependents the user cannot view */
 	readonly hiddenCount: number;
+	/**
+	 * What uses an item traversed downstream, by its id, from
+	 * `GetCatalogDependents` without `recursive`
+	 */
+	readonly extraDependents?: ReadonlyMap<string, readonly CatalogDependent[]>;
+	/** What an item traversed upstream uses, by its id, all the way down */
+	readonly extraDependencies?: ReadonlyMap<string, ItemDependencies>;
 }
+
+const NO_EXTRA = new Map<never, never>();
 
 const edgeId = (source: string, target: string, role: string): string =>
 	`${source}->${target}:${role}`;
+
+/**
+ * Groups items by a key, each group in the items' order.
+ *
+ * @param items - The items.
+ * @param keyOf - Each item's key.
+ * @returns The groups, by key.
+ */
+const groupBy = <T, K>(
+	items: Iterable<T>,
+	keyOf: (item: T) => K,
+): Map<K, T[]> => {
+	const groups = new Map<K, T[]>();
+	for (const item of items) {
+		const key = keyOf(item);
+		const group = groups.get(key);
+		if (group) {
+			group.push(item);
+		} else {
+			groups.set(key, [item]);
+		}
+	}
+	return groups;
+};
+
+/** A node for an item a dependency read sent, with the user's access to it. */
+const toDependencyNode = (
+	node: CatalogDependency,
+	side: DependencyGraphSide,
+	depth: number,
+): CatalogGraphNode => {
+	const isPrivate = isPrivateDependency(node);
+	return {
+		id: node.catalog_id,
+		kind: getDependencyTypeConfig(node.catalog_type).kind,
+		type: node.catalog_type,
+		subtype: isPrivate ? null : (node.catalog_subtype ?? null),
+		name: getDependencyDisplayName(node),
+		description: isPrivate ? null : node.description || null,
+		side,
+		depth,
+		dependency: node,
+		access: getDependencyAccess(node),
+		isPrivate,
+	};
+};
+
+/** A node for an item a dependents read sent, which says nothing of access. */
+const toDependentNode = (
+	dependent: CatalogDependent,
+	side: DependencyGraphSide,
+	depth: number,
+): CatalogGraphNode => ({
+	id: dependent.catalog_id,
+	kind: getDependencyTypeConfig(dependent.catalog_type).kind,
+	type: dependent.catalog_type,
+	subtype: dependent.catalog_subtype ?? null,
+	name: dependent.catalog_name || dependent.catalog_id,
+	description: null,
+	side,
+	depth,
+	dependency: null,
+	access: null,
+	isPrivate: false,
+});
+
+/** The edge for a dependency read's link from `parentId`. */
+const toLinkEdge = (
+	parentId: string,
+	link: CatalogDependencyLink,
+): CatalogGraphEdge => ({
+	id: edgeId(parentId, link.catalog_id, link.role),
+	source: parentId,
+	target: link.catalog_id,
+	role: link.role,
+	isAutomatic: link.is_automatic,
+	name: link.dependency_name,
+	description: link.dependency_description,
+});
+
+/** The edge for a dependents read's link, from the dependent to `target`. */
+const toDependentEdge = (
+	dependent: CatalogDependent,
+	target: string,
+): CatalogGraphEdge => ({
+	id: edgeId(dependent.catalog_id, target, dependent.role),
+	source: dependent.catalog_id,
+	target,
+	role: dependent.role,
+	isAutomatic: dependent.is_automatic,
+	name: dependent.dependency_name,
+	description: dependent.dependency_description,
+});
 
 /**
  * Builds an owner's graph from what it uses and what uses it. Each item is
@@ -158,6 +278,8 @@ export const buildCatalogDependencyGraph = ({
 	links,
 	dependents,
 	hiddenCount,
+	extraDependents = NO_EXTRA,
+	extraDependencies = NO_EXTRA,
 }: BuildCatalogDependencyGraphInput): CatalogDependencyGraph => {
 	const graphNodes = new Map<string, CatalogGraphNode>();
 	const edges: CatalogGraphEdge[] = [];
@@ -183,61 +305,58 @@ export const buildCatalogDependencyGraph = ({
 		isPrivate: false,
 	});
 
-	// what the owner uses, all the way down
-	const byId = new Map(nodes.map((node) => [node.catalog_id, node]));
-	const linksByParent = new Map<string, CatalogDependencyLink[]>();
-	for (const link of links) {
-		const list = linksByParent.get(link.parent_id) ?? [];
-		list.push(link);
-		linksByParent.set(link.parent_id, list);
-	}
-	const usesQueue = [root.id];
-	while (usesQueue.length > 0) {
-		const parentId = usesQueue.shift() ?? "";
-		const parentDepth = graphNodes.get(parentId)?.depth ?? 0;
-		for (const link of linksByParent.get(parentId) ?? []) {
-			const node = byId.get(link.catalog_id);
-			// a link back to an item already placed, such as the owner in a
-			// cycle, is kept; a link to an item the backend did not send is not
-			if (!node && !graphNodes.has(link.catalog_id)) {
-				continue;
+	/**
+	 * Walks down from an item over a read's links, adding each item first
+	 * reached on the given side, one link deeper than the one it was reached
+	 * from, and every link. A link back to an item already placed, such as
+	 * the owner in a cycle, is kept; one to an item the read did not send is
+	 * not. Each item walked from is marked in `walked`, when given.
+	 */
+	const walkDown = (
+		startId: string,
+		read: {
+			nodes: readonly CatalogDependency[];
+			links: readonly CatalogDependencyLink[];
+		},
+		side: DependencyGraphSide,
+		walked?: Set<string>,
+	): void => {
+		const byId = new Map(read.nodes.map((node) => [node.catalog_id, node]));
+		const linksByParent = groupBy(read.links, (link) => link.parent_id);
+		const queue = [startId];
+		const reached = new Set([startId]);
+		while (queue.length > 0) {
+			const parentId = queue.shift() ?? "";
+			walked?.add(parentId);
+			const parentDepth = graphNodes.get(parentId)?.depth ?? 0;
+			for (const link of linksByParent.get(parentId) ?? []) {
+				const node = byId.get(link.catalog_id);
+				if (!node && !graphNodes.has(link.catalog_id)) {
+					continue;
+				}
+				if (node && !graphNodes.has(node.catalog_id)) {
+					graphNodes.set(
+						node.catalog_id,
+						toDependencyNode(node, side, parentDepth + 1),
+					);
+				}
+				addEdge(toLinkEdge(parentId, link));
+				if (!reached.has(link.catalog_id)) {
+					reached.add(link.catalog_id);
+					queue.push(link.catalog_id);
+				}
 			}
-			if (node && !graphNodes.has(node.catalog_id)) {
-				const isPrivate = isPrivateDependency(node);
-				graphNodes.set(node.catalog_id, {
-					id: node.catalog_id,
-					kind: getDependencyTypeConfig(node.catalog_type).kind,
-					type: node.catalog_type,
-					subtype: isPrivate ? null : (node.catalog_subtype ?? null),
-					name: getDependencyDisplayName(node),
-					description: isPrivate ? null : node.description || null,
-					side: "USES",
-					depth: parentDepth + 1,
-					dependency: node,
-					access: getDependencyAccess(node),
-					isPrivate,
-				});
-				usesQueue.push(node.catalog_id);
-			}
-			addEdge({
-				id: edgeId(parentId, link.catalog_id, link.role),
-				source: parentId,
-				target: link.catalog_id,
-				role: link.role,
-				isAutomatic: link.is_automatic,
-				name: link.dependency_name,
-				description: link.dependency_description,
-			});
 		}
-	}
+	};
+
+	// what the owner uses, all the way down
+	walkDown(root.id, { nodes, links }, "USES");
 
 	// what uses the owner, all the way up
-	const dependentsOf = new Map<string, CatalogDependent[]>();
-	for (const dependent of dependents) {
-		const list = dependentsOf.get(dependent.dependency_id) ?? [];
-		list.push(dependent);
-		dependentsOf.set(dependent.dependency_id, list);
-	}
+	const dependentsOf = groupBy(
+		dependents,
+		(dependent) => dependent.dependency_id,
+	);
 	const addDependent = (
 		dependent: CatalogDependent,
 		depth: number,
@@ -245,31 +364,14 @@ export const buildCatalogDependencyGraph = ({
 		if (graphNodes.has(dependent.catalog_id)) {
 			return false;
 		}
-		graphNodes.set(dependent.catalog_id, {
-			id: dependent.catalog_id,
-			kind: getDependencyTypeConfig(dependent.catalog_type).kind,
-			type: dependent.catalog_type,
-			subtype: dependent.catalog_subtype ?? null,
-			name: dependent.catalog_name || dependent.catalog_id,
-			description: null,
-			side: "USED_BY",
-			depth,
-			dependency: null,
-			access: null,
-			isPrivate: false,
-		});
+		graphNodes.set(
+			dependent.catalog_id,
+			toDependentNode(dependent, "USED_BY", depth),
+		);
 		return true;
 	};
 	const addDependentEdge = (dependent: CatalogDependent, target: string) =>
-		addEdge({
-			id: edgeId(dependent.catalog_id, target, dependent.role),
-			source: dependent.catalog_id,
-			target,
-			role: dependent.role,
-			isAutomatic: dependent.is_automatic,
-			name: dependent.dependency_name,
-			description: dependent.dependency_description,
-		});
+		addEdge(toDependentEdge(dependent, target));
 	const walkUp = (startIds: string[]): void => {
 		const queue = [...startIds];
 		while (queue.length > 0) {
@@ -312,10 +414,10 @@ export const buildCatalogDependencyGraph = ({
 			hiddenCount: count,
 		});
 		addEdge({
-			id: edgeId(PRIVATE_DEPENDENTS_ID, root.id, "HIDDEN"),
+			id: edgeId(PRIVATE_DEPENDENTS_ID, root.id, HIDDEN_ROLE),
 			source: PRIVATE_DEPENDENTS_ID,
 			target: root.id,
-			role: "HIDDEN",
+			role: HIDDEN_ROLE,
 			isAutomatic: true,
 			name: null,
 			description: null,
@@ -330,17 +432,62 @@ export const buildCatalogDependencyGraph = ({
 		walkUp(starts);
 	}
 
-	return { rootId: root.id, nodes: graphNodes, edges };
+	// the owner's reads cover what its dependencies use and what uses its
+	// dependents, all the way, so those directions are known
+	const knownUpstream = new Set<string>([root.id]);
+	const knownDownstream = new Set<string>([root.id]);
+	for (const node of graphNodes.values()) {
+		if (node.side === "USES") {
+			knownUpstream.add(node.id);
+		} else if (node.side === "USED_BY") {
+			knownDownstream.add(node.id);
+		}
+	}
+
+	// an item traversed upstream: everything below it, all the way down
+	for (const [itemId, read] of extraDependencies) {
+		if (graphNodes.has(itemId)) {
+			walkDown(itemId, read, "RELATED", knownUpstream);
+		}
+	}
+
+	// an item traversed downstream: what uses it directly
+	for (const [itemId, itemDependents] of extraDependents) {
+		const item = graphNodes.get(itemId);
+		if (!item) {
+			continue;
+		}
+		knownDownstream.add(itemId);
+		for (const dependent of itemDependents) {
+			if (!graphNodes.has(dependent.catalog_id)) {
+				graphNodes.set(
+					dependent.catalog_id,
+					toDependentNode(dependent, "RELATED", item.depth + 1),
+				);
+			}
+			addDependentEdge(dependent, itemId);
+		}
+	}
+
+	return {
+		rootId: root.id,
+		nodes: graphNodes,
+		edges,
+		knownUpstream,
+		knownDownstream,
+	};
 };
 
 /** A node placed on the canvas, with what the view left out beyond it. */
-export interface PlacedGraphNode extends CatalogGraphNode {
+interface PlacedGraphNode extends CatalogGraphNode {
 	/** Left edge, in canvas units */
 	readonly x: number;
 	/** Top edge, in canvas units */
 	readonly y: number;
-	/** How many items one link further out the view leaves out */
-	readonly hiddenChildren: number;
+	/** Whether it can be traversed upstream, to what it uses, or hidden */
+	readonly upstream: TraverseState;
+	/** Whether it can be traversed downstream, to what uses it, or hidden */
+	readonly downstream: TraverseState;
 }
 
 /** What the canvas draws. */
@@ -351,13 +498,13 @@ export interface DependencyGraphView {
 	readonly edges: readonly CatalogGraphEdge[];
 }
 
-/** How many links out the view shows on each side: the direct links. */
-const DIRECT_DEPTH = 1;
-
 /** How the graph is filtered. */
 export interface DependencyGraphViewOptions {
-	/** Nodes whose next level is shown past the direct links */
-	readonly expandedIds: ReadonlySet<string>;
+	/**
+	 * The traversals shown past the owner's direct links, each an item and a
+	 * direction
+	 */
+	readonly traversals: ReadonlySet<TraversalKey>;
 }
 
 /** The size of a node on the tab's canvas: the automation canvas's card width. */
@@ -365,96 +512,132 @@ export const GRAPH_NODE_SIZE = { width: 280, height: 72 } as const;
 const COLUMN_GAP = 96;
 const ROW_GAP = 24;
 
-/**
- * Whether `child` is one link further out than `parent`, on the same side.
- *
- * @param edge - A link.
- * @param nodes - The graph's nodes.
- * @returns The inner and outer ends, or null when the link goes sideways.
- */
-const getOutwardPair = (
-	edge: CatalogGraphEdge,
-	nodes: ReadonlyMap<string, CatalogGraphNode>,
-): { inner: string; outer: string } | null => {
-	const source = nodes.get(edge.source);
-	const target = nodes.get(edge.target);
-	if (!source || !target) {
-		return null;
-	}
-	// on the uses side a link points outward; on the used by side, inward
-	if (target.side === "USES" && target.depth === source.depth + 1) {
-		return { inner: source.id, outer: target.id };
-	}
-	if (source.side === "USED_BY" && source.depth === target.depth + 1) {
-		return { inner: target.id, outer: source.id };
-	}
-	return null;
+/** The links out of and into each node, for walking the graph either way. */
+const indexEdges = (
+	edges: readonly CatalogGraphEdge[],
+): {
+	usesOf: ReadonlyMap<string, CatalogGraphEdge[]>;
+	usedByOf: ReadonlyMap<string, CatalogGraphEdge[]>;
+} => {
+	return {
+		usesOf: groupBy(edges, (edge) => edge.source),
+		usedByOf: groupBy(edges, (edge) => edge.target),
+	};
 };
 
 /**
- * Filters the graph to the direct links on both sides, with the levels the
- * user expanded, and lays it out left to right: what uses the owner in
- * columns to its left, the owner in the middle, what it uses to its right,
- * one column per link. Each column is ordered by where its neighbours one
- * column in sit, then by type and name, so the same graph always draws the
- * same way.
+ * Filters the graph to the owner's direct links both ways, plus each
+ * traversal shown, and lays it out left to right: what uses an item to its
+ * left and what it uses to its right, one column per link, the owner in the
+ * middle. An item is placed once, where it is first reached walking out from
+ * the owner, so a traversal that meets an item already shown only adds the
+ * line to it. Each column is ordered by where its neighbours one column in
+ * sit, then by type and name, so the same graph always draws the same way.
  *
  * @param graph - The graph.
- * @param options - The expanded nodes.
- * @returns The nodes to draw, placed, and their links.
+ * @param options - The traversals shown.
+ * @returns The nodes to draw, placed, each with where its traversals stand,
+ *   and their links.
  */
 export const getDependencyGraphView = (
 	graph: CatalogDependencyGraph,
-	{ expandedIds }: DependencyGraphViewOptions,
+	{ traversals }: DependencyGraphViewOptions,
 ): DependencyGraphView => {
-	const innerOf = new Map<string, string[]>();
-	const outerOf = new Map<string, string[]>();
-	for (const edge of graph.edges) {
-		const pair = getOutwardPair(edge, graph.nodes);
-		if (!pair) {
-			continue;
+	const { usesOf, usedByOf } = indexEdges(graph.edges);
+	const isShown = (id: string, direction: TraverseDirection): boolean =>
+		id === graph.rootId || traversals.has(getTraversalKey(id, direction));
+
+	// walk out from the owner over the links shown
+	const columnOf = new Map<string, number>([[graph.rootId, 0]]);
+	const queue = [graph.rootId];
+	while (queue.length > 0) {
+		const id = queue.shift() ?? "";
+		const column = columnOf.get(id) ?? 0;
+		if (isShown(id, "UPSTREAM")) {
+			for (const edge of usesOf.get(id) ?? []) {
+				if (
+					!columnOf.has(edge.target) &&
+					graph.nodes.has(edge.target)
+				) {
+					columnOf.set(edge.target, column + 1);
+					queue.push(edge.target);
+				}
+			}
 		}
-		innerOf.set(pair.outer, [
-			...(innerOf.get(pair.outer) ?? []),
-			pair.inner,
-		]);
-		outerOf.set(pair.inner, [
-			...(outerOf.get(pair.inner) ?? []),
-			pair.outer,
-		]);
+		if (isShown(id, "DOWNSTREAM")) {
+			for (const edge of usedByOf.get(id) ?? []) {
+				if (
+					!columnOf.has(edge.source) &&
+					graph.nodes.has(edge.source)
+				) {
+					columnOf.set(edge.source, column - 1);
+					queue.push(edge.source);
+				}
+			}
+		}
 	}
 
-	const ordered = [...graph.nodes.values()].sort((a, b) => a.depth - b.depth);
-	const visible = new Set<string>();
-	for (const node of ordered) {
+	/** Where a traversal from a shown item stands. */
+	const getTraverseState = (
+		node: CatalogGraphNode,
+		direction: TraverseDirection,
+	): TraverseState => {
+		// the owner shows both ways; a private item is never traversed, but
+		// the hidden items node lists what reached the owner through it
 		if (
-			node.depth <= DIRECT_DEPTH ||
-			(innerOf.get(node.id) ?? []).some(
-				(inner) => visible.has(inner) && expandedIds.has(inner),
-			)
+			node.id === graph.rootId ||
+			(node.isPrivate && node.hiddenCount === undefined)
 		) {
-			visible.add(node.id);
+			return "NONE";
 		}
-	}
+		const isKnown = (
+			direction === "UPSTREAM"
+				? graph.knownUpstream
+				: graph.knownDownstream
+		).has(node.id);
+		const others = (
+			direction === "UPSTREAM"
+				? usesOf.get(node.id)
+				: usedByOf.get(node.id)
+		)?.map((edge) =>
+			direction === "UPSTREAM" ? edge.target : edge.source,
+		);
+		const hasAny = (others ?? []).length > 0;
+		if (traversals.has(getTraversalKey(node.id, direction))) {
+			return hasAny ? "SHOWN" : "NONE";
+		}
+		if (!isKnown) {
+			return "MORE";
+		}
+		return (others ?? []).some((other) => !columnOf.has(other))
+			? "MORE"
+			: "NONE";
+	};
 
-	// one column per link from the owner: negative to its left
-	const columns = new Map<number, CatalogGraphNode[]>();
-	for (const node of ordered) {
-		if (!visible.has(node.id)) {
-			continue;
-		}
-		const column = node.side === "USED_BY" ? -node.depth : node.depth;
-		columns.set(column, [...(columns.get(column) ?? []), node]);
-	}
+	const columns = groupBy(
+		[...columnOf].flatMap(([id, column]) => {
+			const node = graph.nodes.get(id);
+			return node ? [{ node, column }] : [];
+		}),
+		({ column }) => column,
+	);
+	// a node's neighbours one column nearer the owner, for its row
+	const innerNeighbours = (id: string, column: number): string[] => {
+		const inner = column - Math.sign(column);
+		return [
+			...(usesOf.get(id) ?? []).map((edge) => edge.target),
+			...(usedByOf.get(id) ?? []).map((edge) => edge.source),
+		].filter((other) => columnOf.get(other) === inner);
+	};
 	const rowOf = new Map<string, number>([[graph.rootId, 0]]);
 	const columnKeys = [...columns.keys()].sort(
-		(a, b) => Math.abs(a) - Math.abs(b),
+		(a, b) => Math.abs(a) - Math.abs(b) || a - b,
 	);
 	const placed: PlacedGraphNode[] = [];
 	for (const column of columnKeys) {
-		const inColumn = columns.get(column) ?? [];
+		const inColumn = (columns.get(column) ?? []).map(({ node }) => node);
 		const barycenter = (node: CatalogGraphNode): number => {
-			const rows = (innerOf.get(node.id) ?? []).flatMap((inner) => {
+			const rows = innerNeighbours(node.id, column).flatMap((inner) => {
 				const row = rowOf.get(inner);
 				return row === undefined ? [] : [row];
 			});
@@ -476,9 +659,8 @@ export const getDependencyGraphView = (
 				...node,
 				x: column * (GRAPH_NODE_SIZE.width + COLUMN_GAP),
 				y: row * (GRAPH_NODE_SIZE.height + ROW_GAP),
-				hiddenChildren: (outerOf.get(node.id) ?? []).filter(
-					(outer) => !visible.has(outer),
-				).length,
+				upstream: getTraverseState(node, "UPSTREAM"),
+				downstream: getTraverseState(node, "DOWNSTREAM"),
 			});
 		});
 	}
@@ -486,7 +668,7 @@ export const getDependencyGraphView = (
 	return {
 		nodes: placed,
 		edges: graph.edges.filter(
-			(edge) => visible.has(edge.source) && visible.has(edge.target),
+			(edge) => columnOf.has(edge.source) && columnOf.has(edge.target),
 		),
 	};
 };
@@ -553,7 +735,7 @@ export const getGraphBounds = (
 };
 
 /** Where an item of the graph can be opened, when the user may open it. */
-export interface GraphNodePaths {
+interface GraphNodePaths {
 	/**
 	 * Its catalog page; null for the owner, a private item, the private
 	 * dependents or a type with no page
@@ -597,30 +779,59 @@ export const getGraphNodePaths = (
 };
 
 /**
- * The items to expand so a node deeper than the direct links shows: each one
- * between it and the owner, on its side, nearest the owner first. Following
- * them out from the owner reaches the node.
+ * The traversals to show so an item further out than the owner's direct
+ * links shows: each item between it and the owner, with the way to go from
+ * it, nearest the owner first, along the shortest walk over the links read.
  *
  * @param graph - The graph.
- * @param id - The node to show.
- * @returns The ids to expand; empty for the owner or a direct link.
+ * @param id - The item to show.
+ * @returns The traversals; empty for the owner, a direct link, or an item
+ *   the graph cannot reach.
  */
 export const getPathToNode = (
 	graph: CatalogDependencyGraph,
 	id: string,
-): string[] => {
-	const path: string[] = [];
-	let current = graph.nodes.get(id);
-	while (current && current.depth > 1) {
-		const outer = current;
-		const inner = graph.edges
-			.map((edge) => getOutwardPair(edge, graph.nodes))
-			.find((pair) => pair?.outer === outer.id)?.inner;
-		if (!inner) {
-			break;
+): TraversalKey[] => {
+	const { usesOf, usedByOf } = indexEdges(graph.edges);
+	const cameFrom = new Map<
+		string,
+		{ from: string; key: TraversalKey } | null
+	>([[graph.rootId, null]]);
+	const queue = [graph.rootId];
+	while (queue.length > 0 && !cameFrom.has(id)) {
+		const current = queue.shift() ?? "";
+		const steps: [string, TraverseDirection][] = [
+			...(usesOf.get(current) ?? []).map(
+				(edge): [string, TraverseDirection] => [
+					edge.target,
+					"UPSTREAM",
+				],
+			),
+			...(usedByOf.get(current) ?? []).map(
+				(edge): [string, TraverseDirection] => [
+					edge.source,
+					"DOWNSTREAM",
+				],
+			),
+		];
+		for (const [next, direction] of steps) {
+			if (!cameFrom.has(next) && graph.nodes.has(next)) {
+				cameFrom.set(next, {
+					from: current,
+					key: getTraversalKey(current, direction),
+				});
+				queue.push(next);
+			}
 		}
-		path.unshift(inner);
-		current = graph.nodes.get(inner);
+	}
+	const path: TraversalKey[] = [];
+	let step = cameFrom.get(id);
+	while (step) {
+		// the owner shows both ways already
+		if (step.from !== graph.rootId) {
+			path.unshift(step.key);
+		}
+		step = cameFrom.get(step.from);
 	}
 	return path;
 };

@@ -3,6 +3,20 @@ import { type ReactNode, useEffect, useRef } from "react";
 import { Button, H4, Muted, ScrollArea, Separator } from "@semoss/ui/next";
 import { MapTooltip } from "./map-tooltip";
 
+/**
+ * The classes of a drawer's facts, as the drawers and the audit sheet lay
+ * them out: a two-column list (`DRAWER_FACTS_CLASS` on the `dl`), each fact a
+ * label above its value (`DRAWER_FACT_CLASS`, or `DRAWER_WIDE_FACT_CLASS` for
+ * one across both columns), the label small and muted, and an empty value or
+ * a side note in the description style.
+ */
+export const DRAWER_FACTS_CLASS = "grid grid-cols-2 gap-x-4 gap-y-3 text-sm";
+export const DRAWER_FACT_CLASS = "flex min-w-0 flex-col gap-1";
+export const DRAWER_WIDE_FACT_CLASS = `${DRAWER_FACT_CLASS} col-span-2`;
+export const DRAWER_FACT_LABEL_CLASS = "text-muted-foreground text-xs";
+export const DRAWER_FACT_VALUE_CLASS = "min-w-0 break-words";
+export const DRAWER_NOTE_CLASS = "text-muted-foreground text-sm";
+
 /** Props for {@link DependencyDrawer}. */
 interface DependencyDrawerProps {
 	/** The drawer's accessible name */

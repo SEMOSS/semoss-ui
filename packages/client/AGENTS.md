@@ -678,14 +678,14 @@ own links (`parent_id` is the owner) with their nodes into `CatalogDependencyRow
   its Guardrails or Model settings, or a project's own editor). The SMSS roles are
   `JUDGE_MODEL`, `TOPIC_VECTOR`, `EMBEDDER`, `FUNCTION_STORAGE`, `KEYWORD_ENGINE`,
   `DOCUMENT_PROCESSOR`, `PROXY_TARGET` and `IMAGE_MODEL`.
-- **Re-sync.** Editors of an engine, or of an agent, automation, blocks app or Code app (the
+- **Re-Sync.** Editors of an engine, or of an agent, automation, blocks app or Code app (the
   project types whose configuration records automatic dependencies; agents and blocks apps
-  included, though their manual dependencies are set elsewhere) have Re-sync on the Ontology tab, which runs
+  included, though their manual dependencies are set elsewhere) have Re-Sync on the Ontology tab, which runs
   `SyncCatalogDependencies` (`syncCatalogDependencies` in `api/catalog-dependencies.ts`): the
   backend records the item's automatic dependencies again from its configuration as it is now,
   for when a change made outside its settings left them out of date, and keeps the manual ones.
   A refusal shows the backend's reason in a toast; a re-sync reads the dependencies and
-  dependents again.
+  dependents again. Re-Sync is an icon beside Expand ("Re-Sync From Configuration").
 - **Manual rows** have the role `MANUAL` and are the ones a user added, each with a
   `dependency_name` (required when a link is added or edited here, unique per owner, ignoring
   case; checked in the dialog and by the backend; links saved before it was required can have
@@ -698,6 +698,15 @@ own links (`parent_id` is the owner) with their nodes into `CatalogDependencyRow
   engine it adds after itself, made unique among the owner's links with
   `getUniqueDependencyName` ("GPT", then "GPT 2"); the Ontology tab renames it. A link saved
   before names were required keeps having none until it is edited.
+- **Every catalog dependency pixel is built in `api/catalog-dependencies.ts`**
+  (`getCatalogDependenciesPixel`, `getCatalogDependentsPixel`,
+  `getValidateCatalogDependenciesPixel`), with its inputs escaped; the read hooks and the
+  traversal reads use them, and the boundary types (`CatalogDependent`,
+  `CatalogDependenciesResponse`, `ItemDependencies`, `CatalogDependencyPayload`) live there.
+  Name checks are `normalizeDependencyName`, `collectTakenNames` and
+  `getDependencyNameProblem` in `catalog-dependency-draft.ts`, shared by the draft, the link
+  dialog and the Manage dialog. The kind is shown by one `DependencyKindBadge` (with a role as
+  its label, and as a button in the admin lists).
 - **A save sends only the manual rows.** `SetCatalogDependencies` replaces the manual links and
   keeps the automatic ones, so the Ontology tab's edit mode, the Engines panel and its Manage
   dialog build their payload from manual rows only, with `toCatalogDependencyPayload` (`{ id, type, name?,
@@ -733,9 +742,18 @@ own links (`parent_id` is the owner) with their nodes into `CatalogDependencyRow
     item once, on its side (what the owner uses, from `GetCatalogDependencies`, or what uses it,
     from `GetCatalogDependents` with `recursive` through `use-catalog-dependents.ts`) at the depth
     a breadth-first walk first reaches it. The dependents the user cannot view are one node
-    (`PRIVATE_DEPENDENTS_ID`, from `hiddenCount`). `getDependencyGraphView` shows both sides one
-    link out, plus the items whose next level was expanded (`expandedIds`), and lays it out
-    left to right with no layout library.
+    (`PRIVATE_DEPENDENTS_ID`, from `hiddenCount`). It also merges what was read for items
+    traversed past the owner (`extraDependents`, `extraDependencies`; their items are
+    `RELATED`), and says which items' upstream and downstream are fully known
+    (`knownUpstream`, `knownDownstream`): the owner's reads cover its dependencies' upstream and its dependents'
+    downstream. `getDependencyGraphView` shows the owner's direct links both ways plus each
+    traversal shown (`traversals`, each an item and `UPSTREAM` or `DOWNSTREAM`, keyed by
+    `getTraversalKey`), and lays it out left to right
+    with no layout library: walking out from the owner, what uses an item goes one column to its
+    left and what it uses one column to its right, each item placed once where it is first
+    reached. Each placed item says where its traversals stand (`upstream` / `downstream`:
+    `SHOWN`, `MORE` (more to show, or not read yet) or `NONE`), with no counts.
+    `getPathToNode` gives the traversals that show an item, for the search and the drawer.
     `getGraphNodePaths` gives an item's catalog page and Ontology tab, when the user may open
     them (`getResourcePagePath`, so an id is encoded and a type with no page has none), for the
     drawer and the right-click menu alike. While editing, `applyDraftToGraph` (in
@@ -743,13 +761,28 @@ own links (`parent_id` is the owner) with their nodes into `CatalogDependencyRow
     from.
   - The canvas (`catalog-dependency-canvas.tsx`) reuses the admin map's `DependencyNode`,
     `DependencyEdge` and `DependencyItemImage`, at 280 by 72 (`GRAPH_NODE_SIZE`). The owner is in
-    the middle, with the legend on the canvas. To go further than the direct links, a "+N" on an
-    item, or its right-click menu, shows the next level beyond it.
+    the middle, with the legend on the canvas. To go further than the direct links, an item is
+    traversed in place, the owner kept in the middle: upstream, to what it uses, or downstream,
+    to what uses it, from its right-click menu or the "+" on its card (on the right for
+    upstream, on the left for downstream, with no count). `use-ontology-traversals.ts` holds the
+    traversals and reads the way the owner's reads do not cover, the first time an item is
+    traversed that way: what else uses one of its dependencies (`GetCatalogDependents` without
+    `recursive`) or what else one of its dependents uses (`GetCatalogDependencies`), through
+    `getCatalogDependents` and `getCatalogDependencies` in `api/catalog-dependencies.ts`. A
+    refused read shows the backend's reason in a toast and shows nothing new. The reads start
+    over for another owner and after a save or a Re-Sync. The view is keyed by its owner in both pages, so nothing
+    carries from one owner to the next. Editing shows the direct links only,
+    and the traversals come back when it ends.
   - **Right-click** (`catalog-dependency-menu-items.tsx`, in the shared `dependency-flow-canvas.tsx`):
-    on an item, Open Details, Show Next Level (N) or Hide Next Level, Request Access, Open in
-    Catalog and View Its Ontology, each only where it applies (a private item offers only its
-    details); on the empty canvas, Fit View and Show Direct Links Only.
-  - The header has Edit Dependencies, for editors. Access is asked for one item at a time,
+    on an item, Open Details, Traverse Upstream (or Hide Upstream once shown), Traverse
+    Downstream (or Hide Downstream), each off when that way has nothing more and "Loading..."
+    while read, then Request Access and Open in Catalog, each only where it applies (a private
+    item offers only its details). It does not leave the page: View Its Ontology is the
+    drawer's. On the empty canvas, Fit View and Show Direct Links Only.
+  - The toolbar has Re-Sync (for editors, where the type records automatic dependencies) and
+    Edit Dependencies (for editors) as icon buttons with tooltips beside Expand, so they are
+    in the expanded view too; while the tab is empty, which has no toolbar, the empty state
+    offers both. Access is asked for one item at a time,
     from the drawer's Request Access or the item's right-click menu, with
     `request-dependency-access-dialog.tsx` (a level and a reason; a refusal shows the
     backend's reason and the dialog stays open). There is no access summary and no side or
@@ -758,34 +791,45 @@ own links (`parent_id` is the owner) with their nodes into `CatalogDependencyRow
     starts a draft (`catalog-dependency-draft.ts`, the pure model, and `use-dependency-draft.ts`,
     its state and save); nothing reaches the backend until Save, which sends every manual link in
     one `SetCatalogDependencies` (`api/catalog-dependencies.ts`). While editing:
-    - the canvas shows the direct links only, and `dependency-edit-bar.tsx` sits on top: Editing
-      dependencies with the change count, Add Dependency and Done (which leaves edit mode,
-      asking first when there are changes), with names to fix or the backend's reason for a
-      refused save under it, and the draft kept;
-    - Save is in the toolbar beside Expand, as the database metamodel page has it
-      (`dependency-save-controls.tsx`), so it is there in the expanded view too: a "Save changes
-      or they will be lost." reminder while changes wait, Reset to the dependencies as saved
-      (which keeps editing and does not ask), and an icon Save, tinted and pulsing while there
-      is something to save, and off otherwise with why in its tooltip (No changes to save, names
-      to fix, or Saving...);
+    - the canvas shows the direct links only. The toolbar, beside Expand, says so as the
+      database metamodel page does (`dependency-save-controls.tsx`), so it is there in the
+      expanded view too: a tinted banner, Editing dependencies with the change count (primary
+      while nothing is changed; a warning, with "Save changes or they will be lost.", once
+      something is), whose count lists each change when hovered or focused
+      (`listDraftChanges`: "Added Ledger as LEDGER", "Removed Search", "Search: renamed to
+      Lookup"), Reset to the dependencies as saved (which keeps editing and does not ask), an
+      icon Save, outlined in primary and pulsing while there is something to save, and off otherwise with
+      why in its tooltip and description (No changes to save, names to fix, or Saving...), and
+      Done, which leaves edit mode, asking first when there are changes;
+    - Add Dependency is a "+" icon on the canvas's top left; names to fix, or the backend's
+      reason for a refused save, show over the canvas's top, and the draft stays;
+    - each manual link's target has a pencil on its card's corner (the shared
+      `DependencyNode`'s optional `onEdit`), which opens its link in the dialog;
     - each manual link has Remove at its midpoint, Undo once removed (removed links stay drawn,
       dimmed, until the save), and each automatic link a lock (the shared `DependencyEdge`'s
       optional `action`); a new target reads New and a removed one Removed;
     - adding a link and editing one open the same dialog, `dependency-link-dialog.tsx`: the
       target, the name (required, unique per owner ignoring case; a repeat shows under it) and
       an optional description. Submitting puts the link in the draft; the toolbar's Save sends
-      it. Add Dependency (the bar, or a right-click on the empty canvas) picks the target in it
-      with `dependency-target-picker.tsx`: Engines or Projects, a search over the ones the user
+      it. Add Dependency (the canvas's "+", or a right-click on the empty canvas) picks the target in it
+      with `dependency-target-picker.tsx` (over the shared `dependency-option-list.tsx`, which
+      the Engines panel's Manage dialog uses too, with the read's error shown): Engines or
+      Projects, a search over the ones the user
       can see (`use-dependency-options.ts`), paged as it scrolls, with a target already linked
       marked Added and the name starting as the target's. An added link then reads as every
       other dependency does: nothing opens on its own, and its node and drawer show the user's
       access to it, which the picker read (`getAccessLevelForPermissionId`);
     - clicking a manual link, or its target, opens the target in the drawer as any item opens,
-      with Edit Dependency and Remove Dependency (or Undo once removed) above the details;
+      with Edit Dependency and Remove Dependency (or Undo Removal once removed) as icon
+      buttons with tooltips on the line of its Configuration heading, between the title and the
+      chevron; a removed link's
+      entry is dimmed and reads "Removed when you save.";
     - right-click on a manual link's target offers Edit Dependency and Remove Dependency (or Undo
       Removal);
     - Done, or Escape with nothing open, asks first with the shared `discard-changes-dialog.tsx`
-      when there are changes, and the browser warns before the page closes with them. A saved
+      when there are changes; leaving the page with changes asks first through the shared
+      `useUnsavedChangesGuard` and `DiscardChangesDialog` (the browser for a close or reload,
+      the dialog for a move within the app). A saved
       draft shows a toast and reads the dependencies and dependents again.
     Blocks apps and agents stay read-only here, with a hint to where theirs are set.
   - **Laid out as the admin Ontology is:** a toolbar with the shared search
@@ -799,22 +843,34 @@ own links (`parent_id` is the owner) with their nodes into `CatalogDependencyRow
   - Clicking an item opens `catalog-dependency-drawer.tsx` beside the canvas, built as the
     admin drawer is: the item's image (the only place images show; nodes show the type's
     icon), name, type and visibility, and its actions as icon buttons with tooltips (Request
-    Access, View Its Ontology, Open in Catalog, Close); then Overview (its id, description,
-    and anything the user should know, such as a request waiting or missing access) and
-    Code, for a manual link between it and the owner: the link's name, in a code face since a
-    Code app reads the target's id by it, and its description; Configuration, for an automatic
-    one: its role, the backend's sentence, and "Read-only here. Change it in <owner>'s <place>"
-    with a link to that place; and Lineage, with its upstream and downstream counts as badges,
-    listing what it uses and what uses it (`dependency-link-row.tsx`: each link's kind badge,
-    then an automatic one's role and sentence or a manual one's name and description; each item
-    opens in the drawer).
+    Access, View Its Ontology, Open in Catalog, Close). Its sections lay their facts out as the
+    admin drawer and the audit sheet do: a two-column list, each small muted label above its
+    value, empty values in the description style ("No description", "No name", "None", no
+    trailing period). Overview has the id with Copy, then Description and Connection, then
+    anything the user should know (a request waiting, missing access). Configuration lists
+    each link between it and the owner, separated by rules, with its Type, Manual or Automatic
+    (`dependency-kind-badge.tsx`): a manual link's Name (`InlineCode`, since a Code app reads
+    the target's id by it, with a clash in red under it) and Description; an automatic link's
+    Role, the backend's sentence as its Description, and Changed In, "<owner>'s <place>" as a
+    link button for the owner's editors, with "Read-Only Here" under it. Lineage, with its
+    upstream and downstream counts as badges, lists what it uses and what uses it one row per
+    link, with the admin map's lists (the shared `dependency-map/dependency-link-row.tsx` and
+    `drawer-lineage.tsx`: the item's image and name,
+    its type and a manual link's name under it, the link's description on hover, and the kind
+    at the end, a lock and the role or a pencil and Manual); each item opens in the drawer. Its
+    heading takes focus when it opens, and closing returns focus to the item
+    (`focusCanvasItem`).
+  - The tab's intro is one line across the page, in the description style: what the item uses
+    and what uses it, and that right-clicking traverses upstream or downstream.
   - On the canvas the owner's own links say what they are at their midpoint, edit mode or not
-    (`DependencyEdgeMarker` in the shared `dependency-edge.tsx`): a manual link a dashed chip
-    with a pencil and its name, an automatic one a lock whose tooltip names its role. Links
-    further out keep to the line (solid automatic, dashed manual). The legend explains both with
-    their marks. The Engines panel's chips do the same: an automatic chip is muted with a lock
-    and its role, a manual one dashed with a pencil and its name. Its heading takes focus when it opens, and
-    closing returns focus to the item (`focusCanvasItem`).
+    (`DependencyEdgeMarker` in the shared `dependency-edge.tsx`), with a mark as small as the
+    edit controls: a dashed pencil on a manual link and a lock on an automatic one. A line has
+    no room for a name, so the mark's tooltip names the link (the manual name, or the automatic
+    role) and the drawer's Configuration section shows it in full; a manual link whose name clashes is
+    drawn in the destructive colour. Links further out keep to the line (solid automatic,
+    dashed manual). The legend explains both with their marks. The Engines panel's chips do the
+    same: an automatic chip is muted with a lock and its role, a manual one dashed with a
+    pencil and its name.
 
 ### Dependency Map
 
@@ -884,7 +940,7 @@ link, on a React Flow canvas.
   for selection, as faint as it can be: the owner a light primary border (`border-primary/40`),
   a traced item lighter still, a search match a soft halo (`ring-3 ring-primary/20`), and the
   selection the primary border with the same 3px halo the library gives a focused control. A private node is muted and dashed with a lock; a deleted one has a
-  dashed destructive border. A node can carry a "+N" expand button. Neither items nor links have
+  dashed destructive border. A node can carry a "+" traverse button on either side (the Ontology tab's). Neither items nor links have
   a hover card. A hovered or selected link is drawn in the primary colour; manual links are
   dashed.
 - **Right-click** (`dependency-map-menu-items.tsx`, in the shared `dependency-flow-canvas.tsx`, the

@@ -280,10 +280,10 @@ describe("DependencyMap", () => {
 		});
 		expect(open).toHaveAttribute("href", "/model/model");
 		expect(open).toHaveAttribute("target", "_blank");
-		// nothing upstream: that trace is off, and says why
+		// nothing upstream: that trace is off, and says why, keeping focus
 		expect(
 			within(drawer).getByRole("button", { name: "Uses nothing" }),
-		).toBeDisabled();
+		).toHaveAttribute("aria-disabled", "true");
 		// the sections fold: Overview starts open, the rest closed
 		expect(
 			within(drawer).getByRole("button", { name: "Overview" }),
@@ -384,7 +384,7 @@ describe("DependencyMap", () => {
 		fireEvent.click(screen.getByRole("button", { name: "GPT Model" }));
 		// the trace is an icon action, with how far it reaches
 		fireEvent.click(
-			screen.getByRole("button", { name: "Trace downstream (1)" }),
+			screen.getByRole("button", { name: "Trace Downstream (1)" }),
 		);
 		expect(canvasItem("GPT Model")).toHaveAttribute(
 			"data-emphasis",

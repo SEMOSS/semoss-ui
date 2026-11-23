@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import {
 	Button,
 	Dialog,
@@ -30,8 +30,7 @@ import {
 	type DependencyOption,
 	type DraftLink,
 	type DraftLinkFields,
-	NAME_LIMIT,
-	NAME_TAKEN,
+	getDependencyNameProblem,
 } from "./catalog-dependency-draft";
 import { DependencyTargetPicker } from "./dependency-target-picker";
 
@@ -52,11 +51,14 @@ const createLinkSchema = (takenNames: readonly string[]) =>
 			.string()
 			.trim()
 			.min(1, "Enter a name")
-			.max(NAME_LIMIT, `Use ${NAME_LIMIT} characters or fewer`)
-			.refine(
-				(name) => !takenNames.includes(name.toLowerCase()),
-				NAME_TAKEN,
-			),
+			.superRefine((name, context) => {
+				const problem = getDependencyNameProblem(name, (key) =>
+					takenNames.includes(key),
+				);
+				if (problem) {
+					context.addIssue({ code: "custom", message: problem });
+				}
+			}),
 		dependency_description: z.string().trim(),
 	});
 
@@ -101,6 +103,7 @@ export const DependencyLinkDialog = ({
 	onClose,
 }: DependencyLinkDialogProps) => {
 	const targetErrorId = useId();
+	const searchRef = useRef<HTMLInputElement>(null);
 	const isEditing = link !== undefined;
 	// the name the last pick gave the link, so a new pick replaces it until
 	// the user types one of their own
@@ -177,7 +180,17 @@ export const DependencyLinkDialog = ({
 				}
 			}}
 		>
-			<DialogContent className="sm:max-w-lg">
+			<DialogContent
+				className="sm:max-w-lg"
+				// adding starts in the search, as a picker does; editing, in
+				// the dialog's first field
+				onOpenAutoFocus={(event) => {
+					if (searchRef.current) {
+						event.preventDefault();
+						searchRef.current.focus();
+					}
+				}}
+			>
 				<DialogHeader>
 					<DialogTitle>
 						{isEditing ? "Edit Dependency" : "Add Dependency"}
@@ -228,6 +241,7 @@ export const DependencyLinkDialog = ({
 											Dependency
 										</FieldLegend>
 										<DependencyTargetPicker
+											searchRef={searchRef}
 											catalogId={catalogId}
 											linkedIds={linkedIds}
 											value={

@@ -1,6 +1,10 @@
+import { useContext } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import type { CatalogType } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
+import { getValidateCatalogDependenciesPixel } from "@/api/catalog-dependencies";
+import { ProjectContext } from "@/contexts/project-context";
+import { getDependencyDisplayName } from "./catalog-dependency";
 
 /** Which engine or project to check the dependencies of. */
 export interface UseCatalogDependencyWarningOptions {
@@ -11,20 +15,12 @@ export interface UseCatalogDependencyWarningOptions {
 }
 
 /**
- * The ids of the dependencies the user has no access to.
- *
- * @param access - Whether the user can access each dependency, by id.
- * @returns The ids without access.
- */
-const getMissingIds = (access: Record<string, boolean>): string[] =>
-	Object.entries(access)
-		.filter(([, hasAccess]) => !hasAccess)
-		.map(([id]) => id);
-
-/**
  * Checks, once the insight is ready, whether the user can access each of an
  * engine's or a project's dependencies, and warns with a toast naming the
- * ones they cannot. Call it inside the owner-bound `InsightProvider`.
+ * ones they cannot, as every place names a dependency ("Private Database"
+ * for one they cannot see). Inside a project the names come from the
+ * project's dependencies already read; elsewhere the id is shown. Call it
+ * inside the owner-bound `InsightProvider`.
  *
  * @param options - The owner.
  */
@@ -33,17 +29,25 @@ export const useCatalogDependencyWarning = ({
 	catalogType,
 }: UseCatalogDependencyWarningOptions): void => {
 	const insight = useInsight();
+	// optional: an engine's page has no project around it
+	const project = useContext(ProjectContext);
+	const nodes = project?.dependencyGraph.nodes ?? [];
 
 	usePixel<Record<string, boolean>>(
 		insight.isReady && catalogId && catalogType
-			? `ValidateCatalogDependencies(catalogId="${catalogId}", catalogType="${catalogType}");`
+			? getValidateCatalogDependenciesPixel(catalogId, catalogType)
 			: "",
 		{
 			onSuccess: (access) => {
-				const missingIds = getMissingIds(access ?? {});
-				if (missingIds.length > 0) {
+				const missing = Object.entries(access ?? {})
+					.filter(([, hasAccess]) => !hasAccess)
+					.map(([id]) => {
+						const node = nodes.find((n) => n.catalog_id === id);
+						return node ? getDependencyDisplayName(node) : id;
+					});
+				if (missing.length > 0) {
 					toast.warning(
-						`You do not have access to the following dependencies: ${missingIds.join(", ")}.`,
+						`You don't have access to these dependencies: ${missing.join(", ")}.`,
 					);
 				}
 			},

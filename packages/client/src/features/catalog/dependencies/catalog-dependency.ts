@@ -25,10 +25,12 @@ import type {
 	CatalogType,
 	Engine,
 } from "@semoss/shared";
+import type { CatalogDependencyPayload } from "@/api/catalog-dependencies";
 import { getResourcePagePath, isProjectType } from "@/utility/catalog";
+import type { TraverseDirection } from "./catalog-dependency-graph";
 
 /** How the dependency views show one catalog type. */
-export interface DependencyTypeConfig {
+interface DependencyTypeConfig {
 	/** Engine or project */
 	readonly kind: "ENGINE" | "PROJECT";
 	/** Singular label, such as "Model" or "Agent" */
@@ -136,7 +138,7 @@ export const getDependencyTypeConfig = (type: string): DependencyTypeConfig => {
 };
 
 /** Display metadata for one engine category card. */
-export interface CategoryMeta {
+interface CategoryMeta {
 	/** Card title. */
 	readonly label: string;
 	/** One-line description under the title. */
@@ -192,27 +194,27 @@ export const CATEGORY_META = {
  * `satisfies`, so a role the backend adds fails type-check here.
  */
 export const DEPENDENCY_ROLE_LABELS = {
-	AGENT_MODEL: "Agent model",
+	AGENT_MODEL: "Agent Model",
 	SUBAGENT: "Subagent",
 	SKILL: "Skill",
 	TOOLBOX: "Toolbox",
 	KNOWLEDGE: "Knowledge",
 	GUARDRAIL: "Guardrail",
-	JUDGE_MODEL: "Judge model",
-	TOPIC_VECTOR: "Topic vector",
+	JUDGE_MODEL: "Judge Model",
+	TOPIC_VECTOR: "Topic Vector",
 	EMBEDDER: "Embedder",
-	FUNCTION_STORAGE: "Function storage",
-	KEYWORD_ENGINE: "Keyword engine",
-	DOCUMENT_PROCESSOR: "Document processor",
-	PROXY_TARGET: "Proxy target",
-	IMAGE_MODEL: "Image model",
-	ROUTE_MODEL: "Route model",
-	ROUTER_CLASSIFIER: "Router classifier",
-	ROUTER_EMBEDDINGS: "Router embeddings",
-	ROUTER_FALLBACK: "Router fallback",
-	AUTOMATION_NODE: "Automation node",
-	BLOCK_ENGINE: "Block engine",
-	CODE_REFERENCE: "Code reference",
+	FUNCTION_STORAGE: "Function Storage",
+	KEYWORD_ENGINE: "Keyword Engine",
+	DOCUMENT_PROCESSOR: "Document Processor",
+	PROXY_TARGET: "Proxy Target",
+	IMAGE_MODEL: "Image Model",
+	ROUTE_MODEL: "Route Model",
+	ROUTER_CLASSIFIER: "Router Classifier",
+	ROUTER_EMBEDDINGS: "Router Embeddings",
+	ROUTER_FALLBACK: "Router Fallback",
+	AUTOMATION_NODE: "Automation Node",
+	BLOCK_ENGINE: "Block Engine",
+	CODE_REFERENCE: "Code Reference",
 	MANUAL: "Manual",
 } as const satisfies Record<CatalogDependencyRole, string>;
 
@@ -227,6 +229,25 @@ const isDependencyRole = (role: string): role is CatalogDependencyRole =>
  */
 export const getDependencyRoleLabel = (role: string): string =>
 	isDependencyRole(role) ? DEPENDENCY_ROLE_LABELS[role] : role;
+
+/**
+ * The words for traversing from an item each way: the right-click menu's
+ * entry to show it and to hide it, which the "+" on a card says too.
+ */
+export const TRAVERSE_LABELS = {
+	UPSTREAM: { show: "Traverse Upstream", hide: "Hide Upstream" },
+	DOWNSTREAM: { show: "Traverse Downstream", hide: "Hide Downstream" },
+} as const satisfies Record<TraverseDirection, { show: string; hide: string }>;
+
+/**
+ * The sentence an automatic link shows when the backend wrote none: where it
+ * comes from. One wording for every place on the Ontology tab.
+ *
+ * @param ownerType - The type of the item whose configuration records it.
+ * @returns The sentence, without a full stop, as a description.
+ */
+export const describeAutomaticLink = (ownerType: string): string =>
+	`Set by the ${getDependencyTypeConfig(ownerType).label.toLowerCase()}'s configuration`;
 
 /** The roles an engine's SMSS sets, so the SMSS tab is where they change. */
 const SMSS_ROLES: ReadonlySet<string> = new Set<CatalogDependencyRole>([
@@ -249,10 +270,10 @@ const ROUTER_ROLES: ReadonlySet<string> = new Set<CatalogDependencyRole>([
 ]);
 
 /** Where an automatic dependency is changed. */
-export interface ConfigurationPlace {
+interface ConfigurationPlace {
 	/**
 	 * What the place is called, after the owner's name: "SMSS", "Guardrails
-	 * settings", "Model settings", "settings", or a project's "editor"
+	 * Settings", "Model Settings", "Settings", or a project's "Editor"
 	 */
 	readonly label: string;
 	/** Its page, or null when the user has no page to go to */
@@ -281,22 +302,22 @@ export const getConfigurationPlace = (
 	if (owner.kind === "ENGINE") {
 		if (role === "GUARDRAIL") {
 			return {
-				label: "Guardrails settings",
+				label: "Guardrails Settings",
 				path: page ? `${page}/settings/guardrails` : null,
 			};
 		}
 		if (ROUTER_ROLES.has(role)) {
 			return {
-				label: "Model settings",
+				label: "Model Settings",
 				path: page ? `${page}/settings/model` : null,
 			};
 		}
 		if (SMSS_ROLES.has(role)) {
 			return { label: "SMSS", path: page ? `${page}/smss` : null };
 		}
-		return { label: "settings", path: page ? `${page}/settings` : null };
+		return { label: "Settings", path: page ? `${page}/settings` : null };
 	}
-	return { label: "editor", path: page };
+	return { label: "Editor", path: page };
 };
 
 /**
@@ -309,18 +330,6 @@ export const getConfigurationPlace = (
 export const getDependencyKey = (
 	dependency: Pick<CatalogDependencyRow, "catalog_id" | "role">,
 ): string => `${dependency.catalog_id}:${dependency.role}`;
-
-/** One `SetCatalogDependencies` entry: a manual dependency to keep or add. */
-export interface CatalogDependencyPayload {
-	/** The target's id */
-	readonly id: string;
-	/** The target's specific type */
-	readonly type: CatalogType;
-	/** The row's name, unique per owner */
-	readonly name?: string;
-	/** What the dependency is for */
-	readonly description?: string;
-}
 
 /**
  * The `SetCatalogDependencies` payload entry for a manual dependency. The
@@ -351,7 +360,10 @@ export const toCatalogDependencyPayload = (
 };
 
 /** An access level a user can hold on, or ask for, an engine or project. */
-export type DependencyAccessLevel = "OWNER" | "EDIT" | "READ_ONLY";
+/** The access levels a user can hold on, or ask for, an engine or project, most first. */
+export const ACCESS_LEVELS = ["OWNER", "EDIT", "READ_ONLY"] as const;
+
+export type DependencyAccessLevel = (typeof ACCESS_LEVELS)[number];
 
 /**
  * The words for each access level, shared by the dependency views and the
@@ -360,7 +372,7 @@ export type DependencyAccessLevel = "OWNER" | "EDIT" | "READ_ONLY";
 export const DEPENDENCY_ACCESS_LEVEL_LABELS = {
 	OWNER: "Owner",
 	EDIT: "Editor",
-	READ_ONLY: "Read-only",
+	READ_ONLY: "Read-Only",
 } as const satisfies Record<DependencyAccessLevel, string>;
 
 /** The backend's permission ids: 1 is owner, 2 editor and 3 read-only. */
@@ -377,6 +389,31 @@ export const getAccessLevelForPermissionId = (
 	id: number | undefined,
 ): DependencyAccessLevel | undefined =>
 	id === undefined ? undefined : LEVEL_BY_PERMISSION_ID[id];
+
+/**
+ * The most access a user has, directly or through a team: the backend's ids
+ * run from 1 (owner) to 3 (read-only), so the smallest wins. A team's level
+ * can come as text.
+ *
+ * @param ids - The user's own level and their team's, either missing.
+ * @returns The level, or undefined for none.
+ */
+export const getHighestAccessLevel = (
+	...ids: readonly (number | string | null | undefined)[]
+): DependencyAccessLevel | undefined => {
+	let highest: number | undefined;
+	for (const id of ids) {
+		const value = Number(id);
+		if (
+			Number.isInteger(value) &&
+			value > 0 &&
+			(highest === undefined || value < highest)
+		) {
+			highest = value;
+		}
+	}
+	return getAccessLevelForPermissionId(highest);
+};
 
 /**
  * The user's standing on one dependency:
@@ -408,7 +445,7 @@ type AccessFields = Pick<
 >;
 
 const isAccessLevel = (role: unknown): role is DependencyAccessLevel =>
-	role === "OWNER" || role === "EDIT" || role === "READ_ONLY";
+	ACCESS_LEVELS.some((level) => level === role);
 
 /**
  * Whether a dependency is private to the user: no access, and neither public
@@ -504,7 +541,7 @@ export const getDependencyAccessLabel = (access: DependencyAccess): string => {
 		case "requested":
 			return `Requested ${DEPENDENCY_ACCESS_LEVEL_LABELS[access.level]}`;
 		case "requestable":
-			return "Can request";
+			return "Can Request";
 		case "private":
 			return "Hidden";
 	}

@@ -64,7 +64,7 @@ const CatalogEnginesPanel = () => {
 		),
 	];
 
-	const removeEngine = async (engine: CatalogDependencyRow) => {
+	const handleRemoveEngine = async (engine: CatalogDependencyRow) => {
 		setIsRemoving(true);
 		try {
 			// only manual rows are sent; the backend keeps the automatic ones
@@ -82,7 +82,7 @@ const CatalogEnginesPanel = () => {
 			toast.success(`Removed ${getDependencyDisplayName(engine)}`);
 			refreshDependencies();
 		} catch (error) {
-			toast.error(getErrorMessage(error, "Failed to remove engine"));
+			toast.error(getErrorMessage(error, "Couldn't remove the engine"));
 		} finally {
 			setIsRemoving(false);
 		}
@@ -106,7 +106,9 @@ const CatalogEnginesPanel = () => {
 							canEdit={canEdit}
 							isRemoving={isRemoving}
 							onManage={() => setManageCategory(category)}
-							onRemove={(engine) => void removeEngine(engine)}
+							onRemove={(engine) =>
+								void handleRemoveEngine(engine)
+							}
 						/>
 					))}
 				</div>
@@ -118,8 +120,8 @@ const CatalogEnginesPanel = () => {
 					catalogId={project.project_id}
 					catalogType={project.project_type}
 					dependencies={dependencies}
-					onClose={(saved) => {
-						if (saved) refreshDependencies();
+					onClose={(didSave) => {
+						if (didSave) refreshDependencies();
 						setManageCategory(null);
 					}}
 				/>
@@ -129,12 +131,12 @@ const CatalogEnginesPanel = () => {
 };
 
 /**
- * Blueprint for the "Available engines" panel. keepAlive: search text and
- * dialog state survive tab switches.
+ * Blueprint for the Available Engines panel. keepAlive, so an open Manage
+ * dialog and its search survive tab switches.
  */
 export const CATALOG_ENGINES_PANEL: WorkbenchPanelConfig = {
 	name: "Engines",
-	helpText: "Available engines",
+	helpText: "Available Engines",
 	icon: ({ className }) => <BlocksIcon className={className} />,
 	canClose: false,
 	canRename: false,

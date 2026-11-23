@@ -16,14 +16,12 @@ import type {
 	CatalogDependencyRow,
 	Project,
 } from "@semoss/shared";
+import type { CatalogDependent } from "@/api/catalog-dependencies";
 import type { GraphMenuTarget } from "@/features/dependency-map/dependency-flow-canvas";
 import { ProjectCatalogDependenciesPage } from "@/pages/project/project-dependencies.page";
 import { CatalogDependenciesView } from "./catalog-dependencies-view";
 import type { CanvasEditState } from "./catalog-dependency-canvas";
-import type {
-	CatalogDependent,
-	DependencyGraphView,
-} from "./catalog-dependency-graph";
+import type { DependencyGraphView } from "./catalog-dependency-graph";
 
 // the dialog's checkboxes and radios measure themselves; jsdom has no ResizeObserver
 globalThis.ResizeObserver ??= class {
@@ -54,6 +52,15 @@ const mocks = vi.hoisted(() => ({
 		hiddenCount: 0,
 	},
 	dependentsError: undefined as Error | undefined,
+}));
+
+// the guard needs a data router; the views here render in a memory router
+vi.mock("@/features/bulk-access-management/use-unsaved-changes-guard", () => ({
+	useUnsavedChangesGuard: () => ({
+		state: "unblocked",
+		proceed: undefined,
+		reset: undefined,
+	}),
 }));
 
 vi.mock("@semoss/sdk/react", () => ({
@@ -90,14 +97,15 @@ vi.mock("@semoss/shared", () => ({
 	useCatalogImageUrl: () => "",
 }));
 
-// a canvas overlay, such as the edit bar, outside React Flow's store
+// a canvas overlay, such as Add Dependency's "+", outside React Flow's store
 vi.mock("@xyflow/react", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@xyflow/react")>()),
 	Panel: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
 }));
 
 // the canvas is React Flow, which jsdom cannot lay out: draw each item it is
-// handed as a button, with its badge and its "+N"
+// handed as a button, with its Remove or Undo while editing and a Traverse
+// button for each way there is more
 vi.mock("./catalog-dependency-canvas", async () => {
 	const { useState } = await import("react");
 	const { ContextMenu, ContextMenuContent, ContextMenuTrigger } =
@@ -106,7 +114,10 @@ vi.mock("./catalog-dependency-canvas", async () => {
 		CatalogDependencyCanvas: (props: {
 			view: DependencyGraphView;
 			onSelect: (id: string) => void;
-			onExpand: (id: string) => void;
+			onTraverse: (
+				id: string,
+				direction: "UPSTREAM" | "DOWNSTREAM",
+			) => void;
 			renderMenu: (target: GraphMenuTarget) => ReactNode;
 			edit?: CanvasEditState;
 			children?: ReactNode;
@@ -165,14 +176,32 @@ vi.mock("./catalog-dependency-canvas", async () => {
 												</button>
 											)
 										) : null}
-										{node.hiddenChildren > 0 ? (
+										{node.upstream === "MORE" &&
+										!props.edit ? (
 											<button
 												type="button"
 												onClick={() =>
-													props.onExpand(node.id)
+													props.onTraverse(
+														node.id,
+														"UPSTREAM",
+													)
 												}
 											>
-												+{node.hiddenChildren}
+												{`Traverse Upstream from ${node.name}`}
+											</button>
+										) : null}
+										{node.downstream === "MORE" &&
+										!props.edit ? (
+											<button
+												type="button"
+												onClick={() =>
+													props.onTraverse(
+														node.id,
+														"DOWNSTREAM",
+													)
+												}
+											>
+												{`Traverse Downstream from ${node.name}`}
 											</button>
 										) : null}
 									</li>
@@ -354,19 +383,21 @@ describe("CatalogDependenciesView", () => {
 		).toBeInTheDocument();
 	});
 
-	it("opens on the direct links, and shows the next level on request", () => {
+	it("opens on the direct links, and traverses upstream from an item's +", () => {
 		renderAgentView();
-		// the embedder is two links away, beyond the vector database
+		// the embedder is two links away, beyond the vector database, whose
+		// dependencies the owner's read already holds
 		expect(screen.queryByTestId("node-embedder-1")).toBeNull();
 		fireEvent.click(
 			within(screen.getByTestId("node-vector-1")).getByRole("button", {
-				name: "+1",
+				name: "Traverse Upstream from Policies",
 			}),
 		);
 		expect(screen.getByTestId("node-embedder-1")).toBeInTheDocument();
+		expect(mocks.runPixel).not.toHaveBeenCalled();
 	});
 
-	it("walks further, and back, from an item's right-click menu", async () => {
+	it("traverses, and hides, from an item's right-click menu, with no counts and no page change", async () => {
 		renderAgentView();
 		const rightClick = (name: string) =>
 			fireEvent.contextMenu(
@@ -375,17 +406,137 @@ describe("CatalogDependenciesView", () => {
 				).getByRole("button", { name }),
 			);
 		rightClick("Policies");
+		const menu = await screen.findByRole("menu");
+		expect(
+			within(menu).queryByRole("menuitem", { name: /View Its Ontology/ }),
+		).toBeNull();
+		expect(within(menu).queryByText(/\(\d+\)/)).toBeNull();
 		fireEvent.click(
-			await screen.findByRole("menuitem", {
-				name: "Show Next Level (1)",
-			}),
+			within(menu).getByRole("menuitem", { name: "Traverse Upstream" }),
 		);
 		expect(screen.getByTestId("node-embedder-1")).toBeInTheDocument();
 		rightClick("Policies");
 		fireEvent.click(
-			await screen.findByRole("menuitem", { name: "Hide Next Level" }),
+			await screen.findByRole("menuitem", { name: "Hide Upstream" }),
 		);
 		expect(screen.queryByTestId("node-embedder-1")).toBeNull();
+	});
+
+	it("reads what else uses a dependency when traversing downstream from it", async () => {
+		mocks.runPixel.mockResolvedValue({
+			errors: [],
+			pixelReturn: [
+				{
+					output: {
+						dependents: [
+							{
+								dependency_id: "skill-1",
+								catalog_id: "other-agent",
+								catalog_type: "WORKSPACE",
+								catalog_name: "Other Agent",
+								is_automatic: true,
+								role: "SKILL",
+								dependency_name: null,
+								dependency_description: null,
+							},
+						],
+						hiddenCount: 0,
+					},
+				},
+			],
+		});
+		renderAgentView();
+		fireEvent.click(
+			within(screen.getByTestId("node-skill-1")).getByRole("button", {
+				name: "Traverse Downstream from Search",
+			}),
+		);
+		expect(
+			await screen.findByTestId("node-other-agent"),
+		).toBeInTheDocument();
+		expect(mocks.runPixel).toHaveBeenCalledWith(
+			'GetCatalogDependents(catalogId="skill-1", catalogType="SKILL", recursive=[false]);',
+		);
+	});
+
+	it("reads what a dependent uses when traversing upstream from it", async () => {
+		mocks.dependents = {
+			dependents: [
+				{
+					dependency_id: "agent-1",
+					catalog_id: "portal-1",
+					catalog_type: "CODE",
+					catalog_name: "Portal",
+					is_automatic: false,
+					role: "MANUAL",
+					dependency_name: null,
+					dependency_description: null,
+				},
+			],
+			hiddenCount: 0,
+		};
+		mocks.runPixel.mockResolvedValue({
+			errors: [],
+			pixelReturn: [
+				{
+					output: {
+						dependencies: [
+							{
+								catalog_id: "store-1",
+								catalog_type: "STORAGE",
+								catalog_name: "Store",
+								permission_name: "READ_ONLY",
+								is_private: false,
+							},
+						],
+						links: [
+							{
+								parent_id: "portal-1",
+								catalog_id: "store-1",
+								is_automatic: true,
+								role: "CODE_REFERENCE",
+								dependency_name: null,
+								dependency_description: null,
+							},
+						],
+					},
+				},
+			],
+		});
+		renderAgentView();
+		fireEvent.click(
+			within(screen.getByTestId("node-portal-1")).getByRole("button", {
+				name: "Traverse Upstream from Portal",
+			}),
+		);
+		expect(await screen.findByTestId("node-store-1")).toBeInTheDocument();
+		expect(mocks.runPixel).toHaveBeenCalledWith(
+			'GetCatalogDependencies(catalogId="portal-1", catalogType="CODE");',
+		);
+	});
+
+	it("shows nothing new when a traversal's read is refused", async () => {
+		mocks.runPixel.mockResolvedValue({
+			errors: ["You cannot view this skill"],
+			pixelReturn: [],
+		});
+		renderAgentView();
+		const graph = screen.getByRole("list", { name: "Dependency graph" });
+		const before = within(graph).getAllByRole("listitem").length;
+		fireEvent.click(
+			within(screen.getByTestId("node-skill-1")).getByRole("button", {
+				name: "Traverse Downstream from Search",
+			}),
+		);
+		await waitFor(() => expect(mocks.runPixel).toHaveBeenCalledOnce());
+		await waitFor(() =>
+			expect(
+				within(screen.getByTestId("node-skill-1")).getByRole("button", {
+					name: "Traverse Downstream from Search",
+				}),
+			).toBeInTheDocument(),
+		);
+		expect(within(graph).getAllByRole("listitem")).toHaveLength(before);
 	});
 
 	it("offers what fits the item in its right-click menu", async () => {
@@ -416,7 +567,7 @@ describe("CatalogDependenciesView", () => {
 		});
 		fireEvent.change(search, { target: { value: "Embedder" } });
 		fireEvent.keyDown(search, { key: "Enter" });
-		// every level up to it is shown, and it opens beside the canvas
+		// the traversals that reach it are shown, and it opens beside the canvas
 		expect(screen.getByTestId("node-embedder-1")).toBeInTheDocument();
 		expect(
 			within(screen.getByRole("complementary")).getByRole("heading", {
@@ -432,7 +583,7 @@ describe("CatalogDependenciesView", () => {
 			screen.getByRole("button", { name: "Expand the ontology" }),
 		);
 		const expanded = screen.getByRole("dialog", {
-			name: "Helpdesk's ontology",
+			name: "Helpdesk's Ontology",
 		});
 		expect(
 			within(expanded).getByRole("complementary", { name: "GPT" }),
@@ -472,41 +623,47 @@ describe("CatalogDependenciesView", () => {
 		expect(
 			within(sheet).getByText("The model's own catalog description"),
 		).toBeInTheDocument();
-		expect(within(sheet).getByText("Read-only")).toBeInTheDocument();
-		// one target in two roles: the manual link's name and description
-		// are in Code, the automatic one's role and where to change it in
-		// Configuration, both open from the start
-		const code = within(sheet)
-			.getByRole("button", { name: /^Code/ })
-			.closest("[data-slot='accordion-item']");
-		expect(code).not.toBeNull();
-		const codeSection = within(code as HTMLElement);
-		expect(codeSection.getByText("Manual")).toBeInTheDocument();
-		expect(codeSection.getByText("Drafting").tagName).toBe("CODE");
-		expect(
-			codeSection.getByText("Writes the first draft"),
-		).toBeInTheDocument();
+		expect(within(sheet).getByText("Read-Only")).toBeInTheDocument();
+		// one target in two roles: Configuration, open from the start, lists
+		// both links, each with its type
 		const configuration = within(sheet)
 			.getByRole("button", { name: /^Configuration/ })
 			.closest("[data-slot='accordion-item']");
 		expect(configuration).not.toBeNull();
-		const configurationSection = within(configuration as HTMLElement);
-		expect(configurationSection.getByText("Automatic")).toBeInTheDocument();
+		const entries = within(configuration as HTMLElement).getAllByRole(
+			"listitem",
+		);
+		expect(entries).toHaveLength(2);
+		const automatic = entries.find((entry) =>
+			within(entry).queryByText("Automatic"),
+		);
+		const manual = entries.find((entry) =>
+			within(entry).queryByText("Manual"),
+		);
+		expect(automatic).toBeDefined();
+		expect(manual).toBeDefined();
+		const automaticEntry = within(automatic as HTMLElement);
+		expect(automaticEntry.getByText("Agent Model")).toBeInTheDocument();
 		expect(
-			configurationSection.getByText("Agent model"),
+			automaticEntry.getByText("The agent answers with this model"),
 		).toBeInTheDocument();
+		expect(automaticEntry.getByText("Read-Only Here")).toBeInTheDocument();
 		expect(
-			configurationSection.getByText("The agent answers with this model"),
-		).toBeInTheDocument();
-		expect(
-			configurationSection.getByText(
-				/Read-only here\. Change it in Helpdesk's/,
-			),
-		).toBeInTheDocument();
-		expect(
-			configurationSection.getByRole("link", { name: "editor" }),
+			automaticEntry.getByRole("link", { name: "Helpdesk's Editor" }),
 		).toHaveAttribute("href", expect.stringContaining("agent-1"));
-		// Lineage, which starts folded, says each link's kind too
+		const manualEntry = within(manual as HTMLElement);
+		expect(manualEntry.getByText("Drafting").tagName).toBe("CODE");
+		expect(
+			manualEntry.getByText("Writes the first draft"),
+		).toBeInTheDocument();
+		expect(
+			within(configuration as HTMLElement).queryByRole("button", {
+				name: /^Code/,
+			}),
+		).toBeNull();
+		// Lineage, which starts folded, lists each link on one row, as the
+		// admin Ontology does: the item, its type (and a manual link's name)
+		// under it, and the link's kind at the end
 		fireEvent.click(
 			within(sheet).getByRole("button", { name: /^Lineage/ }),
 		);
@@ -514,9 +671,10 @@ describe("CatalogDependenciesView", () => {
 		const downstream = within(
 			within(sheet).getByRole("region", { name: "Downstream" }),
 		);
-		expect(downstream.getByText("Automatic")).toBeInTheDocument();
+		expect(downstream.getAllByRole("listitem")).toHaveLength(2);
+		expect(downstream.getByText("Agent Model")).toBeInTheDocument();
 		expect(downstream.getByText("Manual")).toBeInTheDocument();
-		expect(downstream.getByText("Drafting").tagName).toBe("CODE");
+		expect(downstream.getByText(/· Drafting$/)).toBeInTheDocument();
 		expect(
 			within(sheet).getByText(
 				/You don't have access to all dependencies/,
@@ -537,13 +695,13 @@ describe("CatalogDependenciesView", () => {
 		});
 		const onRefresh = vi.fn();
 		renderAgentView({ onRefresh });
-		fireEvent.click(screen.getByRole("button", { name: "Re-sync" }));
+		fireEvent.click(screen.getByRole("button", { name: /^Re-Sync/ }));
 
 		await waitFor(() => expect(onRefresh).toHaveBeenCalledOnce());
 		expect(mocks.runPixel).toHaveBeenCalledWith(
 			'SyncCatalogDependencies(catalogId="agent-1", catalogType="WORKSPACE");',
 		);
-		expect(screen.getByRole("button", { name: "Re-sync" })).toBeEnabled();
+		expect(screen.getByRole("button", { name: /^Re-Sync/ })).toBeEnabled();
 	});
 
 	it("keeps the dependencies as read when a re-sync is refused", async () => {
@@ -553,21 +711,51 @@ describe("CatalogDependenciesView", () => {
 		});
 		const onRefresh = vi.fn();
 		renderAgentView({ onRefresh });
-		fireEvent.click(screen.getByRole("button", { name: "Re-sync" }));
+		fireEvent.click(screen.getByRole("button", { name: /^Re-Sync/ }));
 
 		await waitFor(() =>
 			expect(
-				screen.getByRole("button", { name: "Re-sync" }),
+				screen.getByRole("button", { name: /^Re-Sync/ }),
 			).toBeEnabled(),
 		);
 		expect(mocks.runPixel).toHaveBeenCalledOnce();
 		expect(onRefresh).not.toHaveBeenCalled();
 	});
 
+	it("puts Edit Dependencies and Re-sync beside Expand, and in the empty state", () => {
+		renderAgentView();
+		const actions = within(
+			screen.getByRole("group", { name: "Ontology actions" }),
+		);
+		expect(
+			actions.getByRole("button", { name: /^Re-Sync/ }),
+		).toBeInTheDocument();
+		expect(
+			actions.getByRole("button", { name: "Edit Dependencies" }),
+		).toBeInTheDocument();
+		expect(
+			actions.getByRole("button", { name: "Expand the ontology" }),
+		).toBeInTheDocument();
+		cleanup();
+
+		// nothing recorded: no toolbar, so the empty state offers both
+		renderAgentView({ nodes: [], links: [] });
+		expect(screen.getByText("No dependencies yet")).toBeInTheDocument();
+		expect(
+			screen.queryByRole("group", { name: "Ontology actions" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: /^Re-Sync/ }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Edit Dependencies" }),
+		).toBeInTheDocument();
+	});
+
 	it("offers no Re-sync to viewers", () => {
 		renderAgentView({ canEdit: false });
 		expect(
-			screen.queryByRole("button", { name: "Re-sync" }),
+			screen.queryByRole("button", { name: /^Re-Sync/ }),
 		).not.toBeInTheDocument();
 	});
 
@@ -721,11 +909,13 @@ describe("CatalogDependenciesView", () => {
 		).toBeInTheDocument();
 	});
 
-	it("notes that automatic dependencies come from the configuration", () => {
+	it("says what the tab shows in one short line", () => {
 		renderAgentView();
-		expect(
-			screen.getByText(/Automatic dependencies come from this agent/),
-		).toBeInTheDocument();
+		const intro = screen.getByText(
+			"What this agent uses and what uses it. Right-click an item to traverse upstream or downstream.",
+		);
+		// it spans the page rather than a narrow column
+		expect(intro.className).not.toContain("max-w-prose");
 	});
 });
 
@@ -745,10 +935,10 @@ describe("editing dependencies on the canvas", () => {
 		return JSON.parse(pixel.slice(pixel.indexOf("dependencies=") + 13, -2));
 	};
 
-	it("turns the canvas into a draft with an edit bar, and leaves it with nothing changed", () => {
+	it("turns the canvas into a draft with the editing banner, and leaves it with nothing changed", () => {
 		renderAgentView();
 		startEditing();
-		expect(screen.getByText("Editing dependencies")).toBeInTheDocument();
+		expect(screen.getByText("Editing Dependencies")).toBeInTheDocument();
 		expect(
 			screen.queryByRole("button", { name: "Edit Dependencies" }),
 		).not.toBeInTheDocument();
@@ -768,7 +958,7 @@ describe("editing dependencies on the canvas", () => {
 		).not.toBeInTheDocument();
 		fireEvent.click(screen.getByRole("button", { name: "Done" }));
 		expect(
-			screen.queryByText("Editing dependencies"),
+			screen.queryByText("Editing Dependencies"),
 		).not.toBeInTheDocument();
 		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 	});
@@ -826,7 +1016,7 @@ describe("editing dependencies on the canvas", () => {
 			},
 		]);
 		expect(
-			screen.queryByText("Editing dependencies"),
+			screen.queryByText("Editing Dependencies"),
 		).not.toBeInTheDocument();
 	});
 
@@ -969,7 +1159,7 @@ describe("editing dependencies on the canvas", () => {
 		expect(
 			await screen.findByText("Name already used"),
 		).toBeInTheDocument();
-		expect(screen.getByText("Editing dependencies")).toBeInTheDocument();
+		expect(screen.getByText("Editing Dependencies")).toBeInTheDocument();
 		fireEvent.click(
 			within(screen.getByRole("complementary")).getByRole("button", {
 				name: "Edit Dependency",
@@ -990,7 +1180,7 @@ describe("editing dependencies on the canvas", () => {
 			screen.getByRole("button", { name: "Expand the ontology" }),
 		);
 		const expanded = screen.getByRole("dialog", {
-			name: "Helpdesk's ontology",
+			name: "Helpdesk's Ontology",
 		});
 		fireEvent.click(
 			within(expanded).getByRole("button", { name: "Add Dependency" }),
@@ -1005,15 +1195,20 @@ describe("editing dependencies on the canvas", () => {
 			).not.toBeInTheDocument(),
 		);
 		expect(
-			screen.getByRole("dialog", { name: "Helpdesk's ontology" }),
+			screen.getByRole("dialog", { name: "Helpdesk's Ontology" }),
 		).toBeInTheDocument();
-		expect(screen.getByText("Editing dependencies")).toBeInTheDocument();
+		expect(screen.getByText("Editing Dependencies")).toBeInTheDocument();
 	});
 
 	it("reminds to save while changes wait, and Reset drops them and keeps editing", () => {
 		renderAgentView({ links: [LINKS[3]] as CatalogDependencyLink[] });
 		startEditing();
 		fireEvent.click(screen.getByRole("button", { name: "Remove Search" }));
+
+		// the count names each change, for its tooltip and screen readers
+		expect(
+			screen.getByRole("button", { name: "1 change: Removed Search" }),
+		).toBeInTheDocument();
 
 		expect(
 			screen.getByText("Save changes or they will be lost."),
@@ -1033,7 +1228,7 @@ describe("editing dependencies on the canvas", () => {
 		expect(
 			screen.queryByTestId("catalogDependenciesView-reset-btn"),
 		).not.toBeInTheDocument();
-		expect(screen.getByText("Editing dependencies")).toBeInTheDocument();
+		expect(screen.getByText("Editing Dependencies")).toBeInTheDocument();
 		expect(saveButton()).toHaveAttribute("aria-disabled", "true");
 	});
 
@@ -1047,7 +1242,7 @@ describe("editing dependencies on the canvas", () => {
 			screen.getByRole("button", { name: "Expand the ontology" }),
 		);
 		const expanded = screen.getByRole("dialog", {
-			name: "Helpdesk's ontology",
+			name: "Helpdesk's Ontology",
 		});
 		fireEvent.click(
 			within(expanded).getByRole("button", { name: "Remove Search" }),
@@ -1156,7 +1351,7 @@ describe("editing dependencies on the canvas", () => {
 			).getByRole("button", { name: /Discard/ }),
 		);
 		expect(
-			screen.queryByText("Editing dependencies"),
+			screen.queryByText("Editing Dependencies"),
 		).not.toBeInTheDocument();
 		expect(
 			screen.queryByRole("button", { name: "Remove Search" }),
@@ -1206,7 +1401,7 @@ describe("ProjectCatalogDependenciesPage", () => {
 			screen.queryByRole("button", { name: "Edit Dependencies" }),
 		).not.toBeInTheDocument();
 		expect(
-			screen.getByRole("button", { name: "Re-sync" }),
+			screen.getByRole("button", { name: /^Re-Sync/ }),
 		).toBeInTheDocument();
 	});
 
@@ -1215,7 +1410,7 @@ describe("ProjectCatalogDependenciesPage", () => {
 		(type) => {
 			renderPage(type, "OWNER");
 			expect(
-				screen.queryByRole("button", { name: "Re-sync" }),
+				screen.queryByRole("button", { name: /^Re-Sync/ }),
 			).not.toBeInTheDocument();
 		},
 	);

@@ -27,6 +27,7 @@ import {
 import { getErrorMessage } from "@semoss/utility/error";
 import { requestCatalogAccess } from "@/api/user-access";
 import {
+	ACCESS_LEVELS,
 	DEPENDENCY_ACCESS_LEVEL_LABELS,
 	type DependencyAccessLevel,
 } from "./catalog-dependency";
@@ -62,7 +63,7 @@ const LEVELS = [
 }[];
 
 const schema = z.object({
-	level: z.enum(["READ_ONLY", "EDIT", "OWNER"]),
+	level: z.enum(ACCESS_LEVELS),
 	reason: z.string().trim().max(1000, "Use 1,000 characters or fewer"),
 });
 
@@ -105,7 +106,7 @@ export const RequestDependencyAccessDialog = ({
 		} catch (error: unknown) {
 			form.setError("root.server", {
 				type: "server",
-				message: getErrorMessage(error, "The request was refused"),
+				message: getErrorMessage(error, "Couldn't send the request"),
 			});
 			return;
 		}
