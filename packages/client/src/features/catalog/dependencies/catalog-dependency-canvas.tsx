@@ -22,10 +22,7 @@ import {
 	type DependencyGraphView,
 	GRAPH_NODE_SIZE,
 	getGraphBounds,
-	getTraversalKey,
 	PRIVATE_DEPENDENTS_LABEL,
-	type TraversalKey,
-	type TraverseDirection,
 } from "./catalog-dependency-graph";
 import { getDependencyAccessStatus } from "./dependency-access-status";
 import {
@@ -42,8 +39,6 @@ export interface CanvasEditState {
 	readonly onRemove: (id: string) => void;
 	/** Brings back a link marked for removal */
 	readonly onRestore: (id: string) => void;
-	/** What stops the save, by target id, such as a name another link has */
-	readonly problems: ReadonlyMap<string, string>;
 	/** Opens a manual link's name and description in the link dialog */
 	readonly onEditLink: (id: string) => void;
 }
@@ -62,10 +57,6 @@ interface CatalogDependencyCanvasProps {
 	onSelect: (id: string) => void;
 	/** Clears the selection */
 	onClearSelection: () => void;
-	/** Traverses from an item, upstream to what it uses or downstream to what uses it */
-	onTraverse: (id: string, direction: TraverseDirection) => void;
-	/** The traversals whose read is running, so their "+" shows a spinner */
-	pendingTraversals: ReadonlySet<TraversalKey>;
 	/** Hands the canvas's instance up, so the view can centre and fit items */
 	onInit: (
 		instance: ReactFlowInstance<DependencyFlowNode, DependencyFlowEdge>,
@@ -101,8 +92,6 @@ export const CatalogDependencyCanvas = ({
 	matchIds,
 	onSelect,
 	onClearSelection,
-	onTraverse,
-	pendingTraversals,
 	onInit,
 	renderMenu,
 	edit,
@@ -166,20 +155,6 @@ export const CatalogDependencyCanvas = ({
 								? undefined
 								: PRIVATE_DEPENDENTS_LABEL,
 						isPrivate: node.isPrivate,
-						// editing shows the direct links only, so nothing further opens
-						canTraverseUpstream: !edit && node.upstream === "MORE",
-						canTraverseDownstream:
-							!edit && node.downstream === "MORE",
-						pendingDirection: pendingTraversals.has(
-							getTraversalKey(node.id, "UPSTREAM"),
-						)
-							? "UPSTREAM"
-							: pendingTraversals.has(
-										getTraversalKey(node.id, "DOWNSTREAM"),
-									)
-								? "DOWNSTREAM"
-								: undefined,
-						onTraverse,
 						// a manual link's target opens its link straight from the card
 						onEdit:
 							draftLink && !draftLink.isRemoved
@@ -188,15 +163,7 @@ export const CatalogDependencyCanvas = ({
 					},
 				};
 			}),
-		[
-			view,
-			rootId,
-			selectedId,
-			matchIds,
-			onTraverse,
-			pendingTraversals,
-			edit,
-		],
+		[view, rootId, selectedId, matchIds, edit],
 	);
 
 	const edges = useMemo((): DependencyFlowEdge[] => {
@@ -215,20 +182,12 @@ export const CatalogDependencyCanvas = ({
 			const roleLabel = getDependencyRoleLabel(edge.role);
 			// each control is named for its link, so no two share a name
 			const targetName = nameById.get(edge.target) ?? edge.target;
-			// the owner's own links say what they are; links further out
-			// keep to the line, so the canvas stays clear
-			const marker: DependencyEdgeMarker | undefined = !isOwnerLink
-				? undefined
-				: edge.isAutomatic
-					? {
-							kind: "automatic",
-							label: `Automatic: ${roleLabel}`,
-						}
-					: {
-							kind: "manual",
-							name: edge.name,
-							problem: edit?.problems.get(edge.target),
-						};
+			// the owner's automatic links carry a lock naming their role;
+			// a manual link's name is in the drawer, so the line stays clear
+			const marker: DependencyEdgeMarker | undefined =
+				isOwnerLink && edge.isAutomatic
+					? { label: `Automatic: ${roleLabel}` }
+					: undefined;
 			const action: DependencyEdgeAction | undefined = !isOwnLink
 				? undefined
 				: edge.isAutomatic

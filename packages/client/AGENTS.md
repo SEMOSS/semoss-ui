@@ -678,14 +678,14 @@ own links (`parent_id` is the owner) with their nodes into `CatalogDependencyRow
   its Guardrails or Model settings, or a project's own editor). The SMSS roles are
   `JUDGE_MODEL`, `TOPIC_VECTOR`, `EMBEDDER`, `FUNCTION_STORAGE`, `KEYWORD_ENGINE`,
   `DOCUMENT_PROCESSOR`, `PROXY_TARGET` and `IMAGE_MODEL`.
-- **Re-Sync.** Editors of an engine, or of an agent, automation, blocks app or Code app (the
+- **Sync Dependencies.** Editors of an engine, or of an agent, automation, blocks app or Code app (the
   project types whose configuration records automatic dependencies; agents and blocks apps
-  included, though their manual dependencies are set elsewhere) have Re-Sync on the Ontology tab, which runs
+  included, though their manual dependencies are set elsewhere) have Sync Dependencies on the Ontology tab, which runs
   `SyncCatalogDependencies` (`syncCatalogDependencies` in `api/catalog-dependencies.ts`): the
   backend records the item's automatic dependencies again from its configuration as it is now,
   for when a change made outside its settings left them out of date, and keeps the manual ones.
   A refusal shows the backend's reason in a toast; a re-sync reads the dependencies and
-  dependents again. Re-Sync is an icon beside Expand ("Re-Sync From Configuration").
+  dependents again. It is an icon beside Expand, whose tooltip reads Sync Dependencies ("Syncing..." while it runs).
 - **Manual rows** have the role `MANUAL` and are the ones a user added, each with a
   `dependency_name` (required when a link is added or edited here, unique per owner, ignoring
   case; checked in the dialog and by the backend; links saved before it was required can have
@@ -763,14 +763,14 @@ own links (`parent_id` is the owner) with their nodes into `CatalogDependencyRow
     `DependencyEdge` and `DependencyItemImage`, at 280 by 72 (`GRAPH_NODE_SIZE`). The owner is in
     the middle, with the legend on the canvas. To go further than the direct links, an item is
     traversed in place, the owner kept in the middle: upstream, to what it uses, or downstream,
-    to what uses it, from its right-click menu or the "+" on its card (on the right for
-    upstream, on the left for downstream, with no count). `use-ontology-traversals.ts` holds the
+    to what uses it, from its right-click menu only (the cards carry no traverse
+    control, and no counts are shown). `use-ontology-traversals.ts` holds the
     traversals and reads the way the owner's reads do not cover, the first time an item is
     traversed that way: what else uses one of its dependencies (`GetCatalogDependents` without
     `recursive`) or what else one of its dependents uses (`GetCatalogDependencies`), through
     `getCatalogDependents` and `getCatalogDependencies` in `api/catalog-dependencies.ts`. A
     refused read shows the backend's reason in a toast and shows nothing new. The reads start
-    over for another owner and after a save or a Re-Sync. The view is keyed by its owner in both pages, so nothing
+    over for another owner and after a save or a sync. The view is keyed by its owner in both pages, so nothing
     carries from one owner to the next. Editing shows the direct links only,
     and the traversals come back when it ends.
   - **Right-click** (`catalog-dependency-menu-items.tsx`, in the shared `dependency-flow-canvas.tsx`):
@@ -779,7 +779,7 @@ own links (`parent_id` is the owner) with their nodes into `CatalogDependencyRow
     while read, then Request Access and Open in Catalog, each only where it applies (a private
     item offers only its details). It does not leave the page: View Its Ontology is the
     drawer's. On the empty canvas, Fit View and Show Direct Links Only.
-  - The toolbar has Re-Sync (for editors, where the type records automatic dependencies) and
+  - The toolbar has Sync Dependencies (for editors, where the type records automatic dependencies) and
     Edit Dependencies (for editors) as icon buttons with tooltips beside Expand, so they are
     in the expanded view too; while the tab is empty, which has no toolbar, the empty state
     offers both. Access is asked for one item at a time,
@@ -849,8 +849,8 @@ own links (`parent_id` is the owner) with their nodes into `CatalogDependencyRow
     trailing period). Overview has the id with Copy, then Description and Connection, then
     anything the user should know (a request waiting, missing access). Configuration lists
     each link between it and the owner, separated by rules, with its Type, Manual or Automatic
-    (`dependency-kind-badge.tsx`): a manual link's Name (`InlineCode`, since a Code app reads
-    the target's id by it, with a clash in red under it) and Description; an automatic link's
+    (`dependency-kind-badge.tsx`): a manual link's Name, as plain text (a Code app reads the
+    target's id by it; a clash shows in red under it) and Description; an automatic link's
     Role, the backend's sentence as its Description, and Changed In, "<owner>'s <place>" as a
     link button for the owner's editors, with "Read-Only Here" under it. Lineage, with its
     upstream and downstream counts as badges, lists what it uses and what uses it one row per
@@ -862,12 +862,10 @@ own links (`parent_id` is the owner) with their nodes into `CatalogDependencyRow
     (`focusCanvasItem`).
   - The tab's intro is one line across the page, in the description style: what the item uses
     and what uses it, and that right-clicking traverses upstream or downstream.
-  - On the canvas the owner's own links say what they are at their midpoint, edit mode or not
-    (`DependencyEdgeMarker` in the shared `dependency-edge.tsx`), with a mark as small as the
-    edit controls: a dashed pencil on a manual link and a lock on an automatic one. A line has
-    no room for a name, so the mark's tooltip names the link (the manual name, or the automatic
-    role) and the drawer's Configuration section shows it in full; a manual link whose name clashes is
-    drawn in the destructive colour. Links further out keep to the line (solid automatic,
+  - On the canvas the owner's automatic links carry a lock at their midpoint, edit mode or
+    not (`DependencyEdgeMarker` in the shared `dependency-edge.tsx`), whose tooltip names the
+    role. Manual links carry no mark: a line has no room for a name, so it, and a name that
+    clashes, are in the item's drawer. Links further out keep to the line (solid automatic,
     dashed manual). The legend explains both with their marks. The Engines panel's chips do the
     same: an automatic chip is muted with a lock and its role, a manual one dashed with a
     pencil and its name.
@@ -929,18 +927,18 @@ link, on a React Flow canvas.
   `onNodesChange`); a click, or Enter on a focused item or link, selects it.
 - **Nodes** (`dependency-node.tsx`, shared with the Ontology tab) are drawn as the automation
   canvas draws a step (`AutomationNodeCard` in `@semoss/automation`, mirrored here since it is
-  not exported): a card with a two-pixel border and rounded corners, lightly tinted in the
+  not exported): a card with rounded corners and no border at rest, lightly tinted in the
   type's colour (`tintClass`, over `bg-card` so links never show through), a rounded tile in
   the same tint holding the type's icon (no image: images are in the
   drawers, so nodes read nothing), its name, its catalog type in small
   capitals (no subtype such as H2; the details show it), at most one badge at the end (Deleted,
   or a `status`, `DependencyNodeData.status`: the picked user's access in User Access here, the
-  viewer's on the tab), and a port dot on each side. The card fills the size the canvas gives
+  viewer's on the tab); links attach to hidden handles on its sides, with no port dot. The card fills the size the canvas gives
   it: the backend's `nodeSize` here, 280 by 72 on the tab. A state is drawn in the primary blue that DESIGN.md keeps
-  for selection, as faint as it can be: the owner a light primary border (`border-primary/40`),
+  for selection, as faint as it can be: the owner a light primary edge (`outline-primary/40`, an outline inset over the rim),
   a traced item lighter still, a search match a soft halo (`ring-3 ring-primary/20`), and the
-  selection the primary border with the same 3px halo the library gives a focused control. A private node is muted and dashed with a lock; a deleted one has a
-  dashed destructive border. A node can carry a "+" traverse button on either side (the Ontology tab's). Neither items nor links have
+  selection the primary edge with the same 3px halo the library gives a focused control. A private node is muted; a deleted one has a
+  dashed destructive border. Traversing is in the right-click menu, not on the card. Neither items nor links have
   a hover card. A hovered or selected link is drawn in the primary colour; manual links are
   dashed.
 - **Right-click** (`dependency-map-menu-items.tsx`, in the shared `dependency-flow-canvas.tsx`, the

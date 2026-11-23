@@ -325,12 +325,12 @@ export const CatalogDependenciesView = ({
 			const count = await syncCatalogDependencies(catalogId, catalogType);
 			toast.success(
 				count === 1
-					? "Re-synced: 1 automatic dependency from the configuration"
-					: `Re-synced: ${count} automatic dependencies from the configuration`,
+					? "Synced: 1 automatic dependency from the configuration"
+					: `Synced: ${count} automatic dependencies from the configuration`,
 			);
 		} catch (error: unknown) {
 			toast.error(
-				getErrorMessage(error, "Couldn't re-sync the dependencies"),
+				getErrorMessage(error, "Couldn't sync the dependencies"),
 			);
 			return;
 		} finally {
@@ -368,21 +368,13 @@ export const CatalogDependenciesView = ({
 			draftLinks
 				? {
 						links: draftLinks,
-						problems: draft.problems,
 						onRemove: handleRemove,
 						onRestore: restore,
 						onAdd: handleAdd,
 						onEditLink: handleEditLink,
 					}
 				: undefined,
-		[
-			draftLinks,
-			draft.problems,
-			handleRemove,
-			restore,
-			handleAdd,
-			handleEditLink,
-		],
+		[draftLinks, handleRemove, restore, handleAdd, handleEditLink],
 	);
 
 	/**
@@ -479,8 +471,8 @@ export const CatalogDependenciesView = ({
 							<MapTooltip
 								label={
 									isResyncing
-										? "Re-Syncing..."
-										: "Re-Sync From Configuration"
+										? "Syncing..."
+										: "Sync Dependencies"
 								}
 							>
 								<Button
@@ -489,8 +481,8 @@ export const CatalogDependenciesView = ({
 									variant="outline"
 									aria-label={
 										isResyncing
-											? "Re-Syncing..."
-											: "Re-Sync From Configuration"
+											? "Syncing..."
+											: "Sync Dependencies"
 									}
 									disabled={isResyncing}
 									onClick={() => void handleResync()}
@@ -549,8 +541,6 @@ export const CatalogDependenciesView = ({
 							matchIds={matchIds}
 							onSelect={setSelectedId}
 							onClearSelection={handleCloseDrawer}
-							onTraverse={handleTraverse}
-							pendingTraversals={traversal.pendingTraversals}
 							edit={edit}
 							onInit={(instance) => {
 								flowRef.current = instance;
@@ -732,8 +722,8 @@ export const CatalogDependenciesView = ({
 											<RefreshCw aria-hidden="true" />
 										)}
 										{isResyncing
-											? "Re-Syncing..."
-											: "Re-Sync"}
+											? "Syncing..."
+											: "Sync Dependencies"}
 									</Button>
 								) : null}
 								{canEdit ? (

@@ -20,7 +20,6 @@ import {
 	Button,
 	ButtonGroup,
 	cn,
-	InlineCode,
 	Muted,
 	P,
 	Separator,
@@ -555,9 +554,7 @@ export const CatalogDependencyDrawer = ({
 															}
 														>
 															{edge.name ? (
-																<InlineCode className="break-all">
-																	{edge.name}
-																</InlineCode>
+																edge.name
 															) : (
 																<span
 																	className={

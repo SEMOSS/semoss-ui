@@ -6,15 +6,11 @@ import {
 	type ReactFlowState,
 	useStore,
 } from "@xyflow/react";
-import { type LucideIcon, Pencil, Plus } from "lucide-react";
+import { type LucideIcon, Pencil } from "lucide-react";
 import { memo } from "react";
-import { Badge, cn, Spinner } from "@semoss/ui/next";
+import { Badge, cn } from "@semoss/ui/next";
 import type { DependencyGraphNode } from "@/api/dependency-map";
-import {
-	getDependencyTypeConfig,
-	TRAVERSE_LABELS,
-} from "@/features/catalog/dependencies/catalog-dependency";
-import type { TraverseDirection } from "@/features/catalog/dependencies/catalog-dependency-graph";
+import { getDependencyTypeConfig } from "@/features/catalog/dependencies/catalog-dependency";
 import {
 	DEPENDENCY_FAMILIES,
 	getDependencyFamily,
@@ -45,22 +41,8 @@ export interface DependencyNodeData extends Record<string, unknown> {
 	status?: DependencyNodeStatus;
 	/** Words under the name in place of its type, for a node that is no one item */
 	caption?: string;
-	/** Whether the user cannot see what it is: a lock for an image, dashed */
+	/** Whether the user cannot see what it is: drawn muted */
 	isPrivate?: boolean;
-	/**
-	 * Whether there is more to show by pendingDirection upstream, to what it uses:
-	 * a "+" on the card's right
-	 */
-	canTraverseUpstream?: boolean;
-	/**
-	 * Whether there is more to show by pendingDirection downstream, to what uses
-	 * it: a "+" on the card's left
-	 */
-	canTraverseDownstream?: boolean;
-	/** Which way a traversal is being read, so its "+" shows a spinner */
-	pendingDirection?: TraverseDirection;
-	/** Traverses from it, upstream or downstream */
-	onTraverse?: (id: string, direction: TraverseDirection) => void;
 	/**
 	 * Opens the item's link for editing, such as a manual dependency's name
 	 * and description; drawn as a pencil on the card's corner
@@ -78,35 +60,34 @@ const COMPACT_ZOOM = 0.45;
 const isCompactSelector = (state: ReactFlowState): boolean =>
 	state.transform[2] < COMPACT_ZOOM;
 
-// as the automation canvas does, a state is the card's border colour; a
+// as the automation canvas does, a state is the card's edge colour; a
 // search match and the selection are rings, so they read over any border
 const EMPHASIS_CLASS = {
 	normal: "",
 	dimmed: "opacity-25",
 	match: "ring-3 ring-primary/20",
-	traced: "border-primary/30",
-	root: "border-primary/40",
+	traced: "outline-primary/30",
+	root: "outline-primary/40",
 } as const satisfies Record<NodeEmphasis, string>;
 
-// the round controls on a card's edge: the pencil and the traverse "+"
+// the round control on a card's corner: the pencil
 const CORNER_BUTTON_CLASS =
 	"nodrag nopan absolute z-10 flex size-6 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
-// the automation canvas's port dots
+// links still attach to the sides, but no port dot is drawn
 const PORT_CLASS =
-	"size-2! border-2! border-background! bg-muted-foreground! min-h-0! min-w-0!";
+	"size-0! min-h-0! min-w-0! border-0! bg-transparent! opacity-0!";
 
 /**
  * An engine or project on a dependency graph, drawn as the automation canvas
- * draws a step: a card with a two-pixel border, lightly tinted in the type's
+ * draws a step: a card, lightly tinted in the type's
  * colour, a rounded tile with the type's icon in its colour (the item's image
  * is in the drawer), its name, and its catalog type in
  * small capitals (never the subtype, such as H2 or Postgres, which its details
- * give), with at most one badge at the end (Deleted, or its status) and a port
- * dot on each side. A private item is muted and dashed; a deleted one has a
- * dashed destructive border. Where there is more to traverse, a "+" on the
- * card's right shows what it uses (upstream) and one on its left what uses
- * it (downstream), with no count. The card fills
+ * give), with at most one badge at the end (Deleted, or its status). It has no
+ * border at rest: one shows when it is selected, the root or on a traced path,
+ * and a deleted item has a dashed destructive one. Links attach to hidden
+ * handles on its sides. A private item is muted. Traversing is in the right-click menu. The card fills
  * the size the canvas gives it. Clicking it opens its details. Memoized, as
  * React Flow recommends for custom nodes, since the admin canvas renders
  * thousands of them.
@@ -119,10 +100,6 @@ export const DependencyNode = memo(
 			emphasis,
 			status,
 			isPrivate = false,
-			canTraverseUpstream = false,
-			canTraverseDownstream = false,
-			pendingDirection,
-			onTraverse,
 			onEdit,
 			caption,
 		} = data;
@@ -144,18 +121,19 @@ export const DependencyNode = memo(
 		return (
 			<div
 				className={cn(
-					"group relative flex size-full cursor-pointer rounded-2xl border-2 border-border bg-card shadow-sm transition-opacity",
-					node.missing && "border-destructive border-dashed",
-					isPrivate && "border-dashed",
+					// no edge at rest; a state draws one as an outline inset over the
+					// card's rim, so nothing shows around the tint and the size never shifts
+					"group -outline-offset-2 relative flex size-full cursor-pointer rounded-2xl bg-card shadow-sm outline-2 outline-transparent transition-opacity",
+					node.missing && "outline-dashed outline-destructive",
 					EMPHASIS_CLASS[emphasis],
 					// selected: the library's 3px focus halo, in the blue DESIGN.md
 					// keeps for selection
-					selected && "border-primary ring-3 ring-primary/20",
+					selected && "outline-primary ring-3 ring-primary/20",
 				)}
 			>
 				<div
 					className={cn(
-						"flex min-w-0 flex-1 items-center gap-3 rounded-xl px-3 text-card-foreground",
+						"flex min-w-0 flex-1 items-center gap-3 rounded-2xl px-3 text-card-foreground",
 						// a light tint of the type's colour, over the card so links never show through
 						isPrivate || node.missing
 							? "bg-muted"
@@ -227,52 +205,6 @@ export const DependencyNode = memo(
 						</button>
 					</MapTooltip>
 				) : null}
-				{onTraverse
-					? (
-							[
-								["UPSTREAM", canTraverseUpstream],
-								["DOWNSTREAM", canTraverseDownstream],
-							] as const
-						).map(([direction, canTraverse]) => {
-							if (!canTraverse) {
-								return null;
-							}
-							const label = `${TRAVERSE_LABELS[direction].show} from ${node.name}`;
-							return (
-								<MapTooltip key={direction} label={label}>
-									<button
-										type="button"
-										aria-label={label}
-										disabled={
-											pendingDirection === direction
-										}
-										onClick={(event) => {
-											// traversing is not selecting the node
-											event.stopPropagation();
-											onTraverse(node.id, direction);
-										}}
-										className={cn(
-											CORNER_BUTTON_CLASS,
-											"-translate-y-1/2 top-1/2",
-											// what it uses is to its right, what uses it to its left
-											direction === "UPSTREAM"
-												? "-right-3 translate-x-1/2"
-												: "-left-3 -translate-x-1/2",
-										)}
-									>
-										{pendingDirection === direction ? (
-											<Spinner className="size-3" />
-										) : (
-											<Plus
-												className="size-3"
-												aria-hidden="true"
-											/>
-										)}
-									</button>
-								</MapTooltip>
-							);
-						})
-					: null}
 				<Handle
 					type="target"
 					position={Position.Left}

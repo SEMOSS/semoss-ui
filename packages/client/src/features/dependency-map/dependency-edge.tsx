@@ -8,7 +8,7 @@ import {
 	useInternalNode,
 	useStore,
 } from "@xyflow/react";
-import { Lock, PencilLine, Undo2, X } from "lucide-react";
+import { Lock, Undo2, X } from "lucide-react";
 import { memo } from "react";
 import { Button, cn } from "@semoss/ui/next";
 import type { DependencyGraphEdge } from "@/api/dependency-map";
@@ -33,25 +33,15 @@ export interface DependencyEdgeAction {
 const ACTION_ICONS = { remove: X, restore: Undo2, locked: Lock } as const;
 
 /**
- * What a link says about itself at its midpoint, outside edit mode too: a
- * pencil on a manual link and a lock on an automatic one, each naming the
- * link in its tooltip (the manual name, or the automatic role), so the two
- * kinds differ by more than the line's dashes. A manual link whose name
- * stops the save is drawn as a problem.
+ * The lock an automatic link carries at its midpoint, outside edit mode too,
+ * naming its role in its tooltip, so automatic and manual links differ by
+ * more than the line's dashes. A manual link carries none; its name is in
+ * the drawer.
  */
-export type DependencyEdgeMarker =
-	| {
-			readonly kind: "manual";
-			/** The name a user gave it, or null for none */
-			readonly name: string | null;
-			/** What stops it being saved, such as a name another link has */
-			readonly problem?: string;
-	  }
-	| {
-			readonly kind: "automatic";
-			/** What it says, such as "Automatic: Judge model" */
-			readonly label: string;
-	  };
+export interface DependencyEdgeMarker {
+	/** What its lock's tooltip says, such as "Automatic: Judge Model" */
+	readonly label: string;
+}
 
 /** What the canvas hands each edge. */
 export interface DependencyEdgeData extends Record<string, unknown> {
@@ -83,7 +73,7 @@ const isThinSelector = (state: ReactFlowState): boolean =>
  * Automatic links are solid and manual ones dashed; a link in a cycle is drawn
  * as a warning and an access gap as a problem. Clicking it opens its details
  * in the drawer; a hovered or selected link is drawn in the primary colour.
- * A link can say what it is at its midpoint ({@link DependencyEdgeMarker}),
+ * An automatic link can carry a lock at its midpoint ({@link DependencyEdgeMarker}),
  * and while links are edited carry a control there
  * ({@link DependencyEdgeAction}).
  */
@@ -118,39 +108,18 @@ export const DependencyEdge = memo(
 		const ActionIcon = action ? ACTION_ICONS[action.kind] : null;
 		// an edit control on an automatic link is its lock, so the marker's
 		// own lock is left out beside it
-		const shownMarker =
-			marker?.kind === "automatic" && action?.kind === "locked"
-				? undefined
-				: marker;
-		// a mark only, as small as the lock: a line has no room for a name, so
-		// a manual link's name is in its tooltip and the drawer's Configuration section
-		const markerLabel = !shownMarker
-			? ""
-			: shownMarker.kind === "automatic"
-				? shownMarker.label
-				: [
-						shownMarker.problem,
-						`Manual: ${shownMarker.name ?? "No name"}`,
-					]
-						.filter(Boolean)
-						.join(". ");
-		const MarkerIcon = shownMarker?.kind === "manual" ? PencilLine : Lock;
+		const shownMarker = action?.kind === "locked" ? undefined : marker;
 		const markerNode = shownMarker ? (
-			<MapTooltip label={markerLabel}>
+			<MapTooltip label={shownMarker.label}>
 				<span
 					role="img"
-					aria-label={markerLabel}
+					aria-label={shownMarker.label}
 					className={cn(
-						"flex size-5 items-center justify-center rounded-full border",
-						shownMarker.kind === "manual"
-							? shownMarker.problem
-								? "border-destructive bg-background text-destructive"
-								: "border-dashed bg-background text-muted-foreground"
-							: "bg-muted text-muted-foreground",
+						"flex size-5 items-center justify-center rounded-full border bg-muted text-muted-foreground",
 						emphasis === "dimmed" && "opacity-40",
 					)}
 				>
-					<MarkerIcon className="size-3" aria-hidden="true" />
+					<Lock className="size-3" aria-hidden="true" />
 				</span>
 			</MapTooltip>
 		) : null;

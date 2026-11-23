@@ -1,9 +1,10 @@
-import { Info, Lock, PencilLine } from "lucide-react";
+import { Info, Lock } from "lucide-react";
 import {
 	Button,
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
+	Separator,
 } from "@semoss/ui/next";
 import {
 	FAMILY_ORDER,
@@ -11,6 +12,8 @@ import {
 } from "@/features/dependency-map/dependency-graph";
 import {
 	DependencyLegendLists,
+	LEGEND_HEADING_CLASS,
+	LEGEND_SECTION_CLASS,
 	type LegendLink,
 } from "@/features/dependency-map/dependency-legend-lists";
 import type { DependencyAccess } from "./catalog-dependency";
@@ -45,14 +48,13 @@ const ACCESS_EXAMPLES: readonly {
 
 const LINKS: readonly LegendLink[] = [
 	{
-		label: "Automatic: set by its configuration, read-only here",
+		label: "Automatic: from its configuration",
 		className: "border-muted-foreground",
 		icon: Lock,
 	},
 	{
-		label: "Manual: added by a person, named in its tooltip",
+		label: "Manual: added by a person",
 		className: "border-muted-foreground border-dashed",
-		icon: PencilLine,
 	},
 ];
 
@@ -80,7 +82,7 @@ export const CatalogDependencyLegend = ({
 			</PopoverTrigger>
 			<PopoverContent
 				align="end"
-				className="flex w-72 flex-col gap-3 text-xs"
+				className="flex w-80 flex-col gap-3 text-xs"
 			>
 				<DependencyLegendLists
 					families={FAMILY_ORDER.filter((family) =>
@@ -88,19 +90,26 @@ export const CatalogDependencyLegend = ({
 					).map((family) => ({ family }))}
 					links={LINKS}
 				/>
-				<ul aria-label="Access" className="flex flex-col gap-1.5">
-					{ACCESS_EXAMPLES.map(({ access, meaning }) => (
-						<li
-							key={access.kind}
-							className="flex items-center gap-2"
-						>
-							<DependencyAccessBadge access={access} />
-							<span className="text-muted-foreground">
-								{meaning}
-							</span>
-						</li>
-					))}
-				</ul>
+				<Separator />
+				<section className={LEGEND_SECTION_CLASS}>
+					<p className={LEGEND_HEADING_CLASS}>Access</p>
+					<ul aria-label="Access" className="flex flex-col gap-1.5">
+						{ACCESS_EXAMPLES.map(({ access, meaning }) => (
+							<li
+								key={access.kind}
+								className="flex items-center gap-2"
+							>
+								{/* one column for the badges, so the meanings line up */}
+								<span className="flex w-32 shrink-0">
+									<DependencyAccessBadge access={access} />
+								</span>
+								<span className="min-w-0 text-muted-foreground">
+									{meaning}
+								</span>
+							</li>
+						))}
+					</ul>
+				</section>
 			</PopoverContent>
 		</Popover>
 	);

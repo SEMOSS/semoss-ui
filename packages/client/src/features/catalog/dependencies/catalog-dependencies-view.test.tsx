@@ -104,8 +104,7 @@ vi.mock("@xyflow/react", async (importOriginal) => ({
 }));
 
 // the canvas is React Flow, which jsdom cannot lay out: draw each item it is
-// handed as a button, with its Remove or Undo while editing and a Traverse
-// button for each way there is more
+// handed as a button, with its Remove or Undo while editing
 vi.mock("./catalog-dependency-canvas", async () => {
 	const { useState } = await import("react");
 	const { ContextMenu, ContextMenuContent, ContextMenuTrigger } =
@@ -114,10 +113,6 @@ vi.mock("./catalog-dependency-canvas", async () => {
 		CatalogDependencyCanvas: (props: {
 			view: DependencyGraphView;
 			onSelect: (id: string) => void;
-			onTraverse: (
-				id: string,
-				direction: "UPSTREAM" | "DOWNSTREAM",
-			) => void;
 			renderMenu: (target: GraphMenuTarget) => ReactNode;
 			edit?: CanvasEditState;
 			children?: ReactNode;
@@ -175,34 +170,6 @@ vi.mock("./catalog-dependency-canvas", async () => {
 													{`Remove ${node.name}`}
 												</button>
 											)
-										) : null}
-										{node.upstream === "MORE" &&
-										!props.edit ? (
-											<button
-												type="button"
-												onClick={() =>
-													props.onTraverse(
-														node.id,
-														"UPSTREAM",
-													)
-												}
-											>
-												{`Traverse Upstream from ${node.name}`}
-											</button>
-										) : null}
-										{node.downstream === "MORE" &&
-										!props.edit ? (
-											<button
-												type="button"
-												onClick={() =>
-													props.onTraverse(
-														node.id,
-														"DOWNSTREAM",
-													)
-												}
-											>
-												{`Traverse Downstream from ${node.name}`}
-											</button>
 										) : null}
 									</li>
 								))}
@@ -359,6 +326,19 @@ const renderAgentView = ({
 /** The toolbar's Save, named by what it would do or why it is off. */
 const saveButton = () => screen.getByTestId("catalogDependenciesView-save-btn");
 
+/** Traverses from an item one way, from its right-click menu. */
+const traverseFromMenu = async (
+	name: string,
+	label: "Traverse Upstream" | "Traverse Downstream",
+) => {
+	fireEvent.contextMenu(
+		within(
+			screen.getByRole("list", { name: "Dependency graph" }),
+		).getByRole("button", { name }),
+	);
+	fireEvent.click(await screen.findByRole("menuitem", { name: label }));
+};
+
 const openNode = (name: string) => {
 	fireEvent.click(
 		within(
@@ -383,16 +363,14 @@ describe("CatalogDependenciesView", () => {
 		).toBeInTheDocument();
 	});
 
-	it("opens on the direct links, and traverses upstream from an item's +", () => {
+	it("opens on the direct links, and traverses only from the right-click menu", async () => {
 		renderAgentView();
+		// the cards carry no traverse buttons
+		expect(screen.queryByRole("button", { name: /Traverse/ })).toBeNull();
 		// the embedder is two links away, beyond the vector database, whose
 		// dependencies the owner's read already holds
 		expect(screen.queryByTestId("node-embedder-1")).toBeNull();
-		fireEvent.click(
-			within(screen.getByTestId("node-vector-1")).getByRole("button", {
-				name: "Traverse Upstream from Policies",
-			}),
-		);
+		await traverseFromMenu("Policies", "Traverse Upstream");
 		expect(screen.getByTestId("node-embedder-1")).toBeInTheDocument();
 		expect(mocks.runPixel).not.toHaveBeenCalled();
 	});
@@ -446,11 +424,7 @@ describe("CatalogDependenciesView", () => {
 			],
 		});
 		renderAgentView();
-		fireEvent.click(
-			within(screen.getByTestId("node-skill-1")).getByRole("button", {
-				name: "Traverse Downstream from Search",
-			}),
-		);
+		await traverseFromMenu("Search", "Traverse Downstream");
 		expect(
 			await screen.findByTestId("node-other-agent"),
 		).toBeInTheDocument();
@@ -504,11 +478,7 @@ describe("CatalogDependenciesView", () => {
 			],
 		});
 		renderAgentView();
-		fireEvent.click(
-			within(screen.getByTestId("node-portal-1")).getByRole("button", {
-				name: "Traverse Upstream from Portal",
-			}),
-		);
+		await traverseFromMenu("Portal", "Traverse Upstream");
 		expect(await screen.findByTestId("node-store-1")).toBeInTheDocument();
 		expect(mocks.runPixel).toHaveBeenCalledWith(
 			'GetCatalogDependencies(catalogId="portal-1", catalogType="CODE");',
@@ -523,20 +493,18 @@ describe("CatalogDependenciesView", () => {
 		renderAgentView();
 		const graph = screen.getByRole("list", { name: "Dependency graph" });
 		const before = within(graph).getAllByRole("listitem").length;
-		fireEvent.click(
-			within(screen.getByTestId("node-skill-1")).getByRole("button", {
-				name: "Traverse Downstream from Search",
-			}),
-		);
+		await traverseFromMenu("Search", "Traverse Downstream");
 		await waitFor(() => expect(mocks.runPixel).toHaveBeenCalledOnce());
-		await waitFor(() =>
-			expect(
-				within(screen.getByTestId("node-skill-1")).getByRole("button", {
-					name: "Traverse Downstream from Search",
-				}),
-			).toBeInTheDocument(),
-		);
 		expect(within(graph).getAllByRole("listitem")).toHaveLength(before);
+		// once refused, the way can be tried again from the menu
+		fireEvent.contextMenu(
+			within(graph).getByRole("button", { name: "Search" }),
+		);
+		expect(
+			await screen.findByRole("menuitem", {
+				name: "Traverse Downstream",
+			}),
+		).not.toHaveAttribute("data-disabled");
 	});
 
 	it("offers what fits the item in its right-click menu", async () => {
@@ -652,7 +620,8 @@ describe("CatalogDependenciesView", () => {
 			automaticEntry.getByRole("link", { name: "Helpdesk's Editor" }),
 		).toHaveAttribute("href", expect.stringContaining("agent-1"));
 		const manualEntry = within(manual as HTMLElement);
-		expect(manualEntry.getByText("Drafting").tagName).toBe("CODE");
+		// the name is plain text, not a chip
+		expect(manualEntry.getByText("Drafting").tagName).toBe("DD");
 		expect(
 			manualEntry.getByText("Writes the first draft"),
 		).toBeInTheDocument();
@@ -695,13 +664,17 @@ describe("CatalogDependenciesView", () => {
 		});
 		const onRefresh = vi.fn();
 		renderAgentView({ onRefresh });
-		fireEvent.click(screen.getByRole("button", { name: /^Re-Sync/ }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Sync Dependencies" }),
+		);
 
 		await waitFor(() => expect(onRefresh).toHaveBeenCalledOnce());
 		expect(mocks.runPixel).toHaveBeenCalledWith(
 			'SyncCatalogDependencies(catalogId="agent-1", catalogType="WORKSPACE");',
 		);
-		expect(screen.getByRole("button", { name: /^Re-Sync/ })).toBeEnabled();
+		expect(
+			screen.getByRole("button", { name: "Sync Dependencies" }),
+		).toBeEnabled();
 	});
 
 	it("keeps the dependencies as read when a re-sync is refused", async () => {
@@ -711,24 +684,26 @@ describe("CatalogDependenciesView", () => {
 		});
 		const onRefresh = vi.fn();
 		renderAgentView({ onRefresh });
-		fireEvent.click(screen.getByRole("button", { name: /^Re-Sync/ }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Sync Dependencies" }),
+		);
 
 		await waitFor(() =>
 			expect(
-				screen.getByRole("button", { name: /^Re-Sync/ }),
+				screen.getByRole("button", { name: "Sync Dependencies" }),
 			).toBeEnabled(),
 		);
 		expect(mocks.runPixel).toHaveBeenCalledOnce();
 		expect(onRefresh).not.toHaveBeenCalled();
 	});
 
-	it("puts Edit Dependencies and Re-sync beside Expand, and in the empty state", () => {
+	it("puts Edit Dependencies and Sync Dependencies beside Expand, and in the empty state", () => {
 		renderAgentView();
 		const actions = within(
 			screen.getByRole("group", { name: "Ontology actions" }),
 		);
 		expect(
-			actions.getByRole("button", { name: /^Re-Sync/ }),
+			actions.getByRole("button", { name: "Sync Dependencies" }),
 		).toBeInTheDocument();
 		expect(
 			actions.getByRole("button", { name: "Edit Dependencies" }),
@@ -745,17 +720,17 @@ describe("CatalogDependenciesView", () => {
 			screen.queryByRole("group", { name: "Ontology actions" }),
 		).not.toBeInTheDocument();
 		expect(
-			screen.getByRole("button", { name: /^Re-Sync/ }),
+			screen.getByRole("button", { name: "Sync Dependencies" }),
 		).toBeInTheDocument();
 		expect(
 			screen.getByRole("button", { name: "Edit Dependencies" }),
 		).toBeInTheDocument();
 	});
 
-	it("offers no Re-sync to viewers", () => {
+	it("offers no Sync Dependencies to viewers", () => {
 		renderAgentView({ canEdit: false });
 		expect(
-			screen.queryByRole("button", { name: /^Re-Sync/ }),
+			screen.queryByRole("button", { name: "Sync Dependencies" }),
 		).not.toBeInTheDocument();
 	});
 
@@ -1401,16 +1376,16 @@ describe("ProjectCatalogDependenciesPage", () => {
 			screen.queryByRole("button", { name: "Edit Dependencies" }),
 		).not.toBeInTheDocument();
 		expect(
-			screen.getByRole("button", { name: /^Re-Sync/ }),
+			screen.getByRole("button", { name: "Sync Dependencies" }),
 		).toBeInTheDocument();
 	});
 
 	it.each<Project["project_type"]>(["SKILL", "NOTEBOOK"])(
-		"offers no Re-sync for a %s, whose configuration records none",
+		"offers no Sync Dependencies for a %s, whose configuration records none",
 		(type) => {
 			renderPage(type, "OWNER");
 			expect(
-				screen.queryByRole("button", { name: /^Re-Sync/ }),
+				screen.queryByRole("button", { name: "Sync Dependencies" }),
 			).not.toBeInTheDocument();
 		},
 	);
