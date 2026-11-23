@@ -10,16 +10,21 @@ export type AgentRef = NonNullable<RoomOptions["workspace"]>;
  * - `fixed`: an open room, whose agent was set when it was created. It is
  *   shown, never picked, and the picker has no Agent tab.
  * - `saved`: a new chat picks a saved agent or none. With `withModeChoice`
- *   the Chat and Agent choice sets the mode (`enableAgentHarness`), so no
- *   saved agent in agent mode runs Default Agent, and the picker names the
- *   empty choice Default Agent.
+ *   the Chat and Agent choice sets the mode (`enableAgentHarness`). With
+ *   `noneIsDefaultAgent` no saved agent runs Default Agent, so the picker
+ *   names the empty choice Default Agent rather than No Agent: with the Chat
+ *   and Agent choice, or where every chat runs in agent mode (`agentModeOnly`).
  * - `savedOrDefault`: the agent picker decides the mode (`modeFollowsAgent`),
  *   offering No Agent and Default Agent as separate choices;
  *   `isDefaultAgent` is which of them is picked while no saved agent is.
  */
 export type AgentChoice =
 	| { readonly kind: "fixed" }
-	| { readonly kind: "saved"; readonly withModeChoice: boolean }
+	| {
+			readonly kind: "saved";
+			readonly withModeChoice: boolean;
+			readonly noneIsDefaultAgent: boolean;
+	  }
 	| { readonly kind: "savedOrDefault"; readonly isDefaultAgent: boolean };
 
 /** What the agent picker (`MCPOverlay`) hands back when the user saves. */

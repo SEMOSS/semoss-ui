@@ -44,8 +44,9 @@ vi.mock("@/features/dashboard/use-chat-history", () => ({
 	useChatHistory: () => remote.history,
 }));
 vi.mock("@/features/dashboard/use-visible-resource", () => ({
+	// nothing read yet, which every resource the shell reads (the calendar, what waits in the twins) starts as
 	useVisibleResource: () => ({
-		data: [],
+		data: null,
 		error: "",
 		isLoading: false,
 		checkedAt: null,
@@ -496,6 +497,23 @@ describe("CollaborationFrame", () => {
 				String(key).endsWith(":isCollapsed"),
 			),
 		).toBe(false);
+	});
+
+	it("gives a persona's interview the navigation's width, and gives it back on the persona's own page", async () => {
+		const { router } = renderFrame();
+		const navigation = screen.getByRole("complementary", {
+			name: "Navigation",
+		});
+		expect(navigation).toHaveClass("w-64");
+		await act(() => router.navigate("/twins/persona/interview?go=more"));
+		expect(navigation).toHaveClass("w-16");
+		await act(() => router.navigate("/twins/persona"));
+		expect(navigation).toHaveClass("w-64");
+		// the same behind the door the sidebar opens
+		await act(() => router.navigate("/persona/interview?go=more"));
+		expect(navigation).toHaveClass("w-16");
+		await act(() => router.navigate("/persona"));
+		expect(navigation).toHaveClass("w-64");
 	});
 
 	it("moves focus out of the sidebar when a room opens and its session links collapse", async () => {

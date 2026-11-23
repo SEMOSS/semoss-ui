@@ -251,8 +251,13 @@ describe("saving a drive row", () => {
 			throw new Error("the rows were not listed");
 		}
 		const request = getDriveSaveRequest(file, getDownload);
+		// with the drive the listing named, which a host needs to read the file again later
 		expect(request).toEqual(
-			expect.objectContaining({ key: "id-q3.xlsx", name: "q3.xlsx" }),
+			expect.objectContaining({
+				key: "id-q3.xlsx",
+				name: "q3.xlsx",
+				driveId: "d",
+			}),
 		);
 		expect(
 			request?.source.kind === "download" &&

@@ -425,6 +425,37 @@ describe("shared collaboration session", () => {
 		expect(state.liveProfile?.id).toBe("live-me");
 	});
 
+	it("holds the person's own Digital Twin as the server last sent it, through every other change", () => {
+		const base = createInitialCollaborationState();
+		expect(base.mainTwin).toBeUndefined();
+		const mainTwin = {
+			name: "Robin's Digital Twin",
+			avatar: "data:image/png;base64,AAAA",
+			agentId: "collaboration-agent",
+		};
+		const named = apply(base, { type: "main-twin.server", mainTwin });
+		expect(named.mainTwin).toEqual(mainTwin);
+		// the same twin again is no change: the session keeps its state
+		expect(apply(named, { type: "main-twin.server", mainTwin })).toBe(
+			named,
+		);
+		// nothing that reloads records rebuilds the state without it
+		const refreshed = apply(named, {
+			type: "live.refresh",
+			updates: { threads: [], workspaces: {}, items: [] },
+		});
+		expect(apply(refreshed, { type: "snooze.expire" }).mainTwin).toEqual(
+			mainTwin,
+		);
+		// a save answers the whole twin: going back to the photo drops the picture
+		expect(
+			apply(named, {
+				type: "main-twin.server",
+				mainTwin: { ...mainTwin, name: "Rob", avatar: "" },
+			}).mainTwin,
+		).toEqual({ ...mainTwin, name: "Rob", avatar: "" });
+	});
+
 	it("deletes a topic with its links and rules; threads keep one primary topic", () => {
 		let state = createInitialCollaborationState();
 		state = apply(state, {

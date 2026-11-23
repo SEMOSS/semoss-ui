@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import type { AgentConfiguration } from "@/features/agents/types/agent";
 import { useDelegationStatus } from "@/features/delegations/api/use-delegation-status";
 import { DelegationResponsePanel } from "@/features/delegations/components/delegation-response-panel";
+import { useChatAgent } from "@/features/digital-twin/use-main-twin";
 import { getRoomEmailContext } from "@/features/room-email/room-email-store";
 import {
 	presentThreadApprovals,
@@ -14,8 +15,8 @@ import type { RoomSession, RoomSessionSnapshot } from "../room-session";
 import { pendingSession } from "../utils/session-from-room";
 import { RoomView } from "./room-view";
 
-const ASSISTANT: AgentConfiguration = {
-	name: "Assistant",
+const AGENT: AgentConfiguration = {
+	name: "Agent",
 	description: "",
 	system_prompt: "",
 	mcp: [],
@@ -33,7 +34,17 @@ export function RoomSessionView({
 }) {
 	const navigate = useNavigate();
 	const { turn } = snapshot;
-	const agent = snapshot.agent ?? ASSISTANT;
+	const chat = useChatAgent({
+		agentId: snapshot.settings.agentId,
+		agent: snapshot.agent,
+		options: snapshot.options,
+	});
+	// Every surface of the room names the agent as the chat does. What is saved
+	// with the room reads the snapshot, so it keeps the agent's own name.
+	const agent = useMemo<AgentConfiguration>(
+		() => ({ ...(snapshot.agent ?? AGENT), name: chat.name }),
+		[snapshot.agent, chat.name],
+	);
 	const handleAnswered = useCallback(() => {
 		void session.reconnect();
 	}, [session]);

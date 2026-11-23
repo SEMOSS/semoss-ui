@@ -161,6 +161,7 @@ const parseMailMessage = (entry: unknown): MailMessage | null => {
 		sentDate: readNonBlankString(entry.sentDate),
 		isUnread: entry.unread === true,
 		hasAttachments: entry.hasAttachments === true,
+		...(entry.isDraft === true && { isDraft: true }),
 		body: readBody(entry.body, entry.bodyTruncated === true),
 		uniqueBody: readBody(
 			entry.uniqueBody,

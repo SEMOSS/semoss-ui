@@ -33,6 +33,8 @@ interface UseDockFileExplorerOptions {
 	source?: FileSource;
 	readOnly: boolean;
 	initialPath?: string;
+	/** Fired when a command or file operation explicitly reloads the listing. */
+	onRefresh?: () => void;
 	/**
 	 * Where a path from the explorer is in its source, for an explorer kept to
 	 * a folder. Open panels, events and drags all speak source paths.
@@ -54,6 +56,7 @@ export const useDockFileExplorer = ({
 	source,
 	readOnly,
 	initialPath,
+	onRefresh,
 	toSourcePath = asIs,
 }: UseDockFileExplorerOptions): FileExplorerApi => {
 	const layoutActions = useWorkbench((state) => state.layout.actions);
@@ -77,6 +80,7 @@ export const useDockFileExplorer = ({
 		source,
 		readOnly,
 		initialPath: initialPath,
+		onRefresh,
 		onItemSelect: openFile,
 		onItemsMoved: (movedItems) => {
 			const migrated = migrateMovedTabs(

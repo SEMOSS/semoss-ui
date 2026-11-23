@@ -83,78 +83,83 @@ export function TaskItemControls({
 			</form>
 		);
 	return (
-		<div className="flex flex-wrap items-center gap-2">
-			<Button
-				type="button"
-				size="sm"
-				variant="outline"
-				disabled={isBusy}
-				onClick={() => setDraft(item.title)}
-			>
-				Rename
-			</Button>
-			<Input
-				type="date"
-				aria-label="Work item due"
-				className="w-auto"
-				disabled={isBusy}
-				value={dayOf(item.due)}
-				onChange={(event) => onChange({ due: event.target.value })}
-			/>
-			<Select
-				value={item.priority || undefined}
-				disabled={isBusy}
-				onValueChange={(priority) =>
-					onChange({ priority: priority as WorkItemPriority })
-				}
-			>
-				<SelectTrigger size="sm" aria-label="Priority">
-					<SelectValue placeholder="Priority" />
-				</SelectTrigger>
-				<SelectContent>
-					{PRIORITIES.map((p) => (
-						<SelectItem key={p.value} value={p.value}>
-							{p.label}
-						</SelectItem>
-					))}
-				</SelectContent>
-			</Select>
-			{isClosed ? null : (
-				<Button
-					type="button"
-					size="sm"
-					variant={item.ongoing ? "secondary" : "outline"}
-					aria-pressed={Boolean(item.ongoing)}
-					title="Ongoing work stays open when its last step is finished"
+		<div className="flex flex-wrap items-center justify-between gap-3">
+			<div className="flex flex-wrap items-center gap-2">
+				<Input
+					type="date"
+					aria-label="Work item due"
+					className="w-auto"
 					disabled={isBusy}
-					onClick={() => onChange({ ongoing: !item.ongoing })}
+					value={dayOf(item.due)}
+					onChange={(event) => onChange({ due: event.target.value })}
+				/>
+				<Select
+					value={item.priority || undefined}
+					disabled={isBusy}
+					onValueChange={(priority) =>
+						onChange({ priority: priority as WorkItemPriority })
+					}
 				>
-					Ongoing
-				</Button>
-			)}
-			<Button
-				type="button"
-				size="sm"
-				variant={isClosed ? "outline" : "default"}
-				disabled={isBusy}
-				onClick={() =>
-					onChange({ status: isClosed ? "active" : "done" })
-				}
-			>
-				{isClosed ? "Reopen work item" : "Mark work item done"}
-			</Button>
-			{isClosed ? null : (
+					<SelectTrigger size="sm" aria-label="Priority">
+						<SelectValue placeholder="Priority" />
+					</SelectTrigger>
+					<SelectContent>
+						{PRIORITIES.map((p) => (
+							<SelectItem key={p.value} value={p.value}>
+								{p.label}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+				{isClosed ? null : (
+					<Button
+						type="button"
+						size="sm"
+						variant={item.ongoing ? "secondary" : "outline"}
+						aria-pressed={Boolean(item.ongoing)}
+						title="Ongoing work stays open when its last step is finished"
+						disabled={isBusy}
+						onClick={() => onChange({ ongoing: !item.ongoing })}
+					>
+						Ongoing
+					</Button>
+				)}
 				<Button
 					type="button"
 					size="sm"
 					variant="ghost"
-					className="text-muted-foreground"
+					className="text-muted-foreground hover:text-foreground"
 					disabled={isBusy}
-					onClick={() => onChange({ status: "dropped" })}
+					onClick={() => setDraft(item.title)}
 				>
-					Drop
+					Rename
 				</Button>
-			)}
+			</div>
+			<div className="flex flex-wrap items-center gap-2">
+				{isClosed ? null : (
+					<Button
+						type="button"
+						size="sm"
+						variant="ghost"
+						className="text-muted-foreground hover:text-destructive"
+						disabled={isBusy}
+						onClick={() => onChange({ status: "dropped" })}
+					>
+						Drop
+					</Button>
+				)}
+				<Button
+					type="button"
+					size="sm"
+					variant={isClosed ? "outline" : "default"}
+					disabled={isBusy}
+					onClick={() =>
+						onChange({ status: isClosed ? "active" : "done" })
+					}
+				>
+					{isClosed ? "Reopen work item" : "Mark work item done"}
+				</Button>
+			</div>
 		</div>
 	);
 }

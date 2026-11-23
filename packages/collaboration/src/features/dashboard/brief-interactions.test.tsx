@@ -220,6 +220,13 @@ function BriefHarness({
 						checkedAt: null,
 						refresh: vi.fn(),
 					},
+					twinUpdates: {
+						data: null,
+						error: "",
+						isLoading: false,
+						checkedAt: null,
+						refresh: vi.fn(),
+					},
 					refreshSources: vi.fn(),
 					refreshRevision: 0,
 					isSearchOpen: false,

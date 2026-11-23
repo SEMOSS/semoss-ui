@@ -14,7 +14,11 @@ test("a room's fixed agent keeps its agent whatever the picker saved", () => {
 });
 
 test("a new chat's picker changes the agent, and none clears it", () => {
-	const choice = { kind: "saved", withModeChoice: true } as const;
+	const choice = {
+		kind: "saved",
+		withModeChoice: true,
+		noneIsDefaultAgent: true,
+	} as const;
 	expect(applyAgentOverlaySave({ mcp, workspace: alpha }, choice)).toEqual({
 		options: { mcp, workspace: alpha },
 	});

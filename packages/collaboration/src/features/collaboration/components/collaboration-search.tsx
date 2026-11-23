@@ -54,7 +54,7 @@ const GO_TO = [
 		id: "topics",
 		label: "Topics",
 		detail: "All your topics",
-		path: "/brain/topics",
+		path: "/work/topics",
 	},
 	{
 		id: "filing",
@@ -77,7 +77,7 @@ const GO_TO = [
 	{
 		id: "memory",
 		label: "Memory",
-		detail: "What the assistant remembers",
+		detail: "What your Digital Twin remembers",
 		path: "/brain/memory",
 	},
 	{
@@ -98,7 +98,6 @@ const groups: WorkspaceSearchResult["group"][] = [
 	"Go to",
 	"Chats",
 	"Threads",
-	"Actions",
 	"People",
 	"Topics",
 	"Calendar",
@@ -170,7 +169,7 @@ export function CollaborationSearch({
 					(entry): WorkspaceSearchResult => ({
 						id: `${entry.kind}:${entry.id}`,
 						label: entry.name,
-						detail: `${entry.kind === "thread" ? "Thread" : entry.kind === "person" ? "Person" : "Topic"}${entry.detail ? ` · ${entry.detail}` : ""}`,
+						detail: `${entry.kind === "thread" ? "Thread" : entry.kind === "person" ? "Person" : "Topic"}${entry.detail ? ` \u00b7 ${entry.detail}` : ""}`,
 						group:
 							entry.kind === "thread"
 								? "Threads"
@@ -293,7 +292,7 @@ export function CollaborationSearch({
 				<Command shouldFilter={false} label="Search">
 					<CommandInput
 						aria-label="Search"
-						placeholder="Search mail, chats, people and topics…"
+						placeholder="Search mail, chats, people and topics..."
 						value={query}
 						onValueChange={setQuery}
 						className="pr-10"
@@ -301,7 +300,7 @@ export function CollaborationSearch({
 					<CommandList className="max-h-96 p-2">
 						<CommandEmpty>
 							{remote.isLoading || saved.status === "loading"
-								? "Searching…"
+								? "Searching..."
 								: errors.length > 0
 									? "Some searches failed. Retry below."
 									: "No matching items. Try another name or keyword."}
@@ -358,7 +357,7 @@ export function CollaborationSearch({
 				</Command>
 				{(remote.isLoading || saved.status === "loading") && (
 					<output className="px-4 py-2 text-muted-foreground text-xs">
-						Searching connected records…
+						Searching connected records...
 					</output>
 				)}
 				{errors.length > 0 && (
@@ -388,11 +387,11 @@ export function CollaborationSearch({
 							? `${saved.entries.length} of ${saved.total} saved matches`
 							: "Saved conversations, people, and topics"}
 						{state.settings.sourcesJson.calendar
-							? " · Up to 30 events this week"
-							: " · Calendar disconnected"}
+							? " \u00b7 Up to 30 events this week"
+							: " \u00b7 Calendar disconnected"}
 						{state.settings.sourcesJson.email
-							? " · Outlook sender/subject, up to 20 per query"
-							: " · Outlook disconnected"}
+							? " \u00b7 Outlook sender/subject, up to 20 per query"
+							: " \u00b7 Outlook disconnected"}
 					</span>
 					<Label htmlFor={windowId} className="text-xs">
 						Email window

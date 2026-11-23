@@ -13,7 +13,9 @@ import { useChatSession } from "../chat/provider/use-chat-session";
 import { useChatSelector } from "../chat/store/use-chat-selector";
 import {
 	canChooseAgentMode,
-	offersAgentMode,
+	isAgentModeOnly,
+	newChatModes,
+	offersDefaultAgent,
 } from "../conversation/composer/agent-mode-choice";
 import type { ComposerSession } from "../conversation/composer/use-composer-session";
 import type { RoomStore } from "../room/store/room.store";
@@ -95,7 +97,7 @@ export const useDraftAgent = (
 			session,
 			preferences,
 			deployment,
-			offersAgentMode(theme.featureFlags),
+			newChatModes(theme.featureFlags),
 		);
 		return {
 			mode,
@@ -123,8 +125,13 @@ export const useDraftAgent = (
 	const isDefaultAgentGone =
 		!pick && !linkAgentId && agent.status === "ERROR";
 	const agentId = isDefaultAgentGone ? "" : requestedAgentId;
-	const modeFollowsAgent = !!theme.featureFlags?.modeFollowsAgent;
-	const mode: ChatMode = modeFollowsAgent && agentId ? "agent" : chosenMode;
+	// agentModeOnly is modeFollowsAgent without No Agent, so every chat runs
+	// in agent mode.
+	const agentModeOnly = isAgentModeOnly(theme.featureFlags);
+	const modeFollowsAgent =
+		!agentModeOnly && !!theme.featureFlags?.modeFollowsAgent;
+	const mode: ChatMode =
+		agentModeOnly || (modeFollowsAgent && agentId) ? "agent" : chosenMode;
 
 	const [applied, setApplied] = useState<AppliedAgent | null>(null);
 	const isApplied = applied?.room === newRoom && applied.agentId === agentId;
@@ -238,6 +245,7 @@ export const useDraftAgent = (
 		: {
 				kind: "saved",
 				withModeChoice: canChooseAgentMode(theme.featureFlags),
+				noneIsDefaultAgent: offersDefaultAgent(theme.featureFlags),
 			};
 
 	return {

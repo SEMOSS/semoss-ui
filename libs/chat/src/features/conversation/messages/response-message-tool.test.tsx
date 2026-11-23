@@ -108,6 +108,30 @@ test("the card expands and collapses an inline tool in place", () => {
 	expect(openTool.openTool).not.toHaveBeenCalled();
 });
 
+test("the card opens a sidebar tool in the sidebar and brings it forward there", () => {
+	const closedTool = createTool("chat", false, { display: "sidebar" });
+	const { rerender } = render(<ResponseMessageTool tool={closedTool} />);
+	const openButton = screen.getByRole("button", {
+		name: "Search: Running. actions.openInSidebar",
+	});
+	expect(openButton).not.toHaveAttribute("aria-expanded");
+	fireEvent.click(openButton);
+	expect(closedTool.openTool).toHaveBeenCalledWith("sidebar");
+
+	const openTool = createTool("chat", false, {
+		display: "sidebar",
+		isOpen: true,
+	});
+	rerender(<ResponseMessageTool tool={openTool} />);
+	fireEvent.click(
+		screen.getByRole("button", {
+			name: "Search: Running. actions.openInSidebar",
+		}),
+	);
+	expect(openTool.openTool).toHaveBeenCalledWith("sidebar");
+	expect(openTool.closeTool).not.toHaveBeenCalled();
+});
+
 test("the arrow collapses and expands a pending decision without moving it", () => {
 	const tool = createTool("agent", true);
 	render(<ResponseMessageTool tool={tool} isLarge />);

@@ -150,7 +150,8 @@ export function AgentSelector({
 						>
 							<Bot aria-hidden="true" className="size-4" />
 							{t(
-								choice.kind === "saved" && choice.withModeChoice
+								choice.kind === "saved" &&
+									choice.noneIsDefaultAgent
 									? "room:modes.defaultAgent"
 									: "room:modes.noAgent",
 							)}

@@ -80,7 +80,8 @@ A new chat's model, mode and agent follow one order. Each takes the first that i
    the chat as `ChatConfig.options.new`);
 4. the first available: the first model, chat mode, and Default Agent.
 
-A mode is always chat where agent mode is not offered, an agent link (`?workspaceId=`) wins over
-steps 1 to 3, and an agent from them that the user can no longer open gives way to Default Agent.
+A mode is always chat where agent mode is not offered and always agent where the theme's
+`agentModeOnly` flag is on (`resolveNewChatMode` takes the modes `newChatModes` offers, and
+Settings shows no mode row then), an agent link (`?workspaceId=`) wins over steps 1 to 3, and an agent from them that the user can no longer open gives way to Default Agent.
 The rules live in `features/chat/config/new-chat-preferences.ts`. The chat does not read the
 platform's `text-generation-model`.

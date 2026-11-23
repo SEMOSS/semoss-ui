@@ -1,4 +1,4 @@
-import { HammerIcon, PanelBottomIcon } from "lucide-react";
+import { BracesIcon, HammerIcon, PanelBottomIcon } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
@@ -17,6 +17,7 @@ import {
 } from "@semoss/workbench";
 import { useRoom } from "../../room/scope/room.context";
 import { useRoomSelector } from "../../room/store/use-room-selector";
+import { ToolInspector } from "../../tools/inspector/tool-inspector";
 import { ToolsView } from "../../tools/views/tools-view";
 
 /** Which tool a panel is showing. `toolId` is what dedupes it. */
@@ -27,16 +28,20 @@ interface RoomToolParams {
 	app: string;
 	/** The id of the message that made the call. */
 	message: string;
+	/** Show the call's details (its info, inputs and output) in place of its view. */
+	showsDetails?: boolean;
 }
 
 /**
- * Moves this tool out of the Workspace and into the conversation.
+ * The tool tab's controls: switch between the tool's view and the call's
+ * details, and move the tool out of the Workspace and into the conversation.
  *
  * The one piece of the Workspace's tab chrome that is genuinely per-panel: it acts on the tool the front tab is showing, so it registers as
  * that panel's control rather than sitting beside the container-level actions.
+ * A server tool's view already is its details, so it has no switch.
  */
-const RoomToolInlineControl = ({ id }: WorkbenchPanelProps) => {
-	const { config } = useWorkbenchPanel<RoomToolParams>(id);
+const RoomToolControls = ({ id }: WorkbenchPanelProps) => {
+	const { config, setConfig } = useWorkbenchPanel<RoomToolParams>(id);
 	const { t } = useTranslation("sidebar");
 	const room = useRoom();
 	const toolId = config?.toolId;
@@ -48,48 +53,85 @@ const RoomToolInlineControl = ({ id }: WorkbenchPanelProps) => {
 		return null;
 	}
 
+	const showsDetails = config.showsDetails === true;
+
 	return (
-		<Tooltip>
-			<TooltipTrigger asChild>
-				<Button
-					type="button"
-					size="icon-sm"
-					variant="ghost"
-					className={WORKBENCH_STYLES.chromeButton}
-					aria-label={t("actions.openInline")}
-					onClick={(event) => {
-						// keep the click from selecting the tab it sits on
-						event.stopPropagation();
-						tool.openTool("inline");
-					}}
-				>
-					<PanelBottomIcon
-						aria-hidden
-						className={WORKBENCH_STYLES.chromeIcon}
-					/>
-				</Button>
-			</TooltipTrigger>
-			<TooltipContent>{t("actions.openInline")}</TooltipContent>
-		</Tooltip>
+		<>
+			{!tool.json.server_tool && (
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							type="button"
+							size="icon-sm"
+							variant="ghost"
+							className={WORKBENCH_STYLES.chromeButton}
+							aria-label={t("actions.showDetails")}
+							aria-pressed={showsDetails}
+							onClick={(event) => {
+								// keep the click from selecting the tab it sits on
+								event.stopPropagation();
+								setConfig({ showsDetails: !showsDetails });
+							}}
+						>
+							<BracesIcon
+								aria-hidden
+								className={WORKBENCH_STYLES.chromeIcon}
+							/>
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>{t("actions.showDetails")}</TooltipContent>
+				</Tooltip>
+			)}
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<Button
+						type="button"
+						size="icon-sm"
+						variant="ghost"
+						className={WORKBENCH_STYLES.chromeButton}
+						aria-label={t("actions.openInline")}
+						onClick={(event) => {
+							// keep the click from selecting the tab it sits on
+							event.stopPropagation();
+							tool.openTool("inline");
+						}}
+					>
+						<PanelBottomIcon
+							aria-hidden
+							className={WORKBENCH_STYLES.chromeIcon}
+						/>
+					</Button>
+				</TooltipTrigger>
+				<TooltipContent>{t("actions.openInline")}</TooltipContent>
+			</Tooltip>
+		</>
 	);
 };
 
 /**
- * One tool call, drawn by `ToolsView`, with its "open inline" control
- * registered on the panel's tab.
+ * One tool call, drawn by `ToolsView` or, with Show Details on, by
+ * `ToolInspector`, with its controls registered on the panel's tab.
  */
 const RoomToolPanel = ({ id }: WorkbenchPanelProps) => {
 	const { config } = useWorkbenchPanel<RoomToolParams>(id);
 
 	const room = useRoom();
 	const { t } = useTranslation("tool");
+	const toolId = config?.toolId;
+	const tool = useRoomSelector(room, (current) =>
+		toolId ? current.getTool(toolId) : null,
+	);
 
-	useWorkbenchControl(id, RoomToolInlineControl);
+	useWorkbenchControl(id, RoomToolControls);
 
 	// `app` is empty for server tools (provider-executed) -- ToolsView
 	// handles the routing internally.
 	if (!config?.message || !config?.toolId) {
 		return <div>{t("view.noTool")}</div>;
+	}
+
+	if (config.showsDetails && tool && !tool.json.server_tool) {
+		return <ToolInspector tool={tool} />;
 	}
 
 	return (

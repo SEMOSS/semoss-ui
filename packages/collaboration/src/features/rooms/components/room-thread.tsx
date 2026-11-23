@@ -28,6 +28,7 @@ import { RoomSourceWelcome } from "./room-source-welcome";
 /** Scrollable Playground-style transcript with loading and empty states. */
 export function RoomThread({
 	agent,
+	agentImage,
 	thread,
 	isLoadingHistory,
 	roomId,
@@ -37,6 +38,8 @@ export function RoomThread({
 	children,
 }: {
 	agent: AgentConfiguration;
+	/** The picture on each of the agent's messages; left out, they keep its initials. */
+	agentImage?: string;
 	thread: ConversationMessage[];
 	isLoadingHistory: boolean;
 	roomId: string;
@@ -74,8 +77,12 @@ export function RoomThread({
 
 	return (
 		<div className="relative min-h-0 flex-1 overflow-hidden">
+			<div
+				aria-hidden="true"
+				className="pointer-events-none absolute inset-x-0 top-0 z-10 h-5 bg-gradient-to-b from-background to-transparent"
+			/>
 			<section
-				className="focus-visible:-outline-offset-2 size-full overflow-y-auto px-4 py-4 focus-visible:outline-2 focus-visible:outline-ring sm:px-5 lg:px-7"
+				className="focus-visible:-outline-offset-2 size-full overflow-y-auto px-4 pt-5 pb-4 focus-visible:outline-2 focus-visible:outline-ring sm:px-5 lg:px-7"
 				ref={scroll.viewportRef}
 				aria-label="Conversation messages"
 				// biome-ignore lint/a11y/noNoninteractiveTabindex: transcript must support keyboard scrolling
@@ -159,6 +166,7 @@ export function RoomThread({
 										message={message}
 										parts={parts}
 										agent={agent}
+										agentImage={agentImage}
 										createdAt={createdAt}
 									/>
 								</Fragment>

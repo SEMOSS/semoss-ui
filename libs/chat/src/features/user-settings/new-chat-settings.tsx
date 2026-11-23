@@ -14,11 +14,15 @@ import {
 import {
 	isNewChatMode,
 	readDeploymentNewChatDefaults,
+	resolveNewChatMode,
 } from "../chat/config/new-chat-preferences";
 import { useChatConfig } from "../chat/config/use-chat-config";
 import { useChatSession } from "../chat/provider/use-chat-session";
 import { useChatSelector } from "../chat/store/use-chat-selector";
-import { offersAgentMode } from "../conversation/composer/agent-mode-choice";
+import {
+	newChatModes,
+	offersAgentMode,
+} from "../conversation/composer/agent-mode-choice";
 import { useAgentWorkspace } from "../tools/mcp/use-agent-workspace";
 import { SettingsRow } from "./settings-row";
 import { useNewChatPreferences } from "./use-new-chat-preferences";
@@ -49,12 +53,15 @@ export const NewChatSettings = () => {
 
 	const canSelectModel = Boolean(theme.featureFlags?.enableModelSelect);
 	const canUseAgentMode = offersAgentMode(theme.featureFlags);
+	const modes = newChatModes(theme.featureFlags);
 	// the mode a new chat would start in, which the agent row follows
-	const startMode =
-		preferences.mode ??
-		readDeploymentNewChatDefaults(theme, options.new).mode ??
-		"chat";
-	const isAgentDefault = canUseAgentMode && startMode === "agent";
+	const startMode = resolveNewChatMode(
+		null,
+		preferences,
+		readDeploymentNewChatDefaults(theme, options.new),
+		modes,
+	);
+	const isAgentDefault = startMode === "agent";
 	const defaultLabel = t("settings.general.newChat.default");
 
 	// the saved agent's name, for the picker's trigger
@@ -126,7 +133,7 @@ export const NewChatSettings = () => {
 					</Select>
 				</SettingsRow>
 			) : null}
-			{canUseAgentMode ? (
+			{modes.length > 1 ? (
 				<SettingsRow
 					label={t("settings.general.newChat.mode")}
 					labelId={modeLabelId}

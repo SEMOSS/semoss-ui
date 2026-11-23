@@ -1,0 +1,53 @@
+@container twins (min-width: 32rem) {
+	/* Extend the uploaded portrait's edge color across the cover. The ID color remains for initials. */
+	.twin-gallery-cover:has(img) .twin-gallery-wash {
+		position: absolute;
+		inset: -0.5rem;
+		background-position: 13% 42%;
+		background-size: 950% 400%;
+		filter: blur(0.5rem);
+	}
+	.twin-gallery-art::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		background: repeating-radial-gradient(ellipse at 7% 128%, transparent 0 0.5rem, color-mix(in srgb, var(--primary-foreground) 30%, transparent) 0.54rem, transparent 0.6rem);
+	}
+	.twin-gallery-portrait {
+		position: absolute;
+		inset-inline-end: 0;
+		bottom: 0;
+		width: 49%;
+		height: 100%;
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+		color: var(--primary-foreground);
+	}
+	.twin-gallery-portrait img {
+		mask-image: linear-gradient(var(--cover-direction), transparent, currentColor 19%);
+	}
+	.twin-gallery-portrait > span {
+		display: grid;
+		place-items: center;
+		width: 66%;
+		aspect-ratio: 1;
+		border: 1px solid color-mix(in srgb, currentColor 60%, transparent);
+		border-radius: 50%;
+		background: color-mix(in srgb, var(--chart-3) 70%, transparent);
+		font-size: clamp(1.5rem, 3cqi, 3rem);
+	}
+	.twin-gallery-cover {
+		--twin-ink: var(--foreground);
+		--cover-direction: 90deg;
+	}
+	.dark .twin-gallery-cover { --twin-ink: var(--background); }
+	[dir="rtl"] .twin-gallery-cover { --cover-direction: 270deg; }
+	.twin-gallery-cover::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		background: linear-gradient(var(--cover-direction), color-mix(in srgb, var(--twin-ink) 76%, transparent), color-mix(in srgb, var(--twin-ink) 62%, transparent) 49%, transparent 79%);
+	}
+}

@@ -1,20 +1,67 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-// ============================================
-// CONFIGURATION
-// ============================================
-const CHARS_PER_FRAME = 2; // Characters to reveal per animation frame
-const DEBOUNCE_MS = 15; // Batch updates when content streams too fast (66fps throttle)
-const MAX_BACKTRACK = 40; // Maximum characters to walk back for syntax safety
+/** Slowest reveal pace in characters per millisecond, about 2 a frame at 60fps. */
+const MIN_CHARS_PER_MS = 0.12;
 
-// ============================================
-// CODE FENCE SKIP
-// ============================================
+/**
+ * Milliseconds over which the reveal spreads the text still waiting to type.
+ * It matches the room's 500ms streaming poll, so each poll's text types out
+ * before the next one lands however fast the model streams, and a reply that
+ * arrives in one burst finishes typing within a few seconds.
+ */
+const CATCH_UP_MS = 500;
+
+/** Shortest gap in milliseconds between reveal steps, about 66 renders a second. */
+const MIN_STEP_MS = 15;
+
+/** Furthest, in characters, the visible text holds back to show a markdown span whole. */
+const MAX_BACKTRACK = 40;
+
+/** A markdown delimiter that may be the first half of a longer one. */
+const TRAILING_DELIMITER = /[*_~`[\]!]$/;
+
+/** A link or image whose text or address has not closed. */
+const OPEN_LINK = /\[[^\]]*$|\]\([^)]*$/;
+
+/**
+ * Emphasis and strikethrough delimiters, which come in pairs. A lone `*`
+ * counts only where it can open or close emphasis, so list markers and spaced
+ * operators do not; a lone `_` also skips the middle of a word, as in
+ * snake_case.
+ */
+const PAIRED_DELIMITERS: RegExp[] = [
+	/\*\*/g,
+	/__/g,
+	/~~/g,
+	/(?<=[^*\s])\*(?!\*)|(?<!\*)\*(?=[^*\s])/g,
+	/(?<=[^_\s])_(?!\w)|(?<!\w)_(?=[^_\s])/g,
+];
+
+/** How far the reveal has typed and how much of it is on screen. */
+interface RevealState {
+	/** Characters typed so far; ahead of `revealed` while a span is held back. */
+	readonly cursor: number;
+
+	/** Characters on screen. */
+	readonly revealed: number;
+}
+
+/**
+ * A reveal with `length` characters typed and shown.
+ *
+ * @param length - Characters typed and shown.
+ * @returns The reveal.
+ */
+const revealAt = (length: number): RevealState => ({
+	cursor: length,
+	revealed: length,
+});
+
 /**
  * If targetIndex lands inside a fenced code block (``` ... ```), jump to the
  * index just past the closing fence so the block is revealed atomically.
  * Prevents partial syntax from rendering mid-animation.
- * Inline backticks are NOT affected — only triple-backtick fences.
+ * Inline backticks are NOT affected, only triple-backtick fences.
  *
  * @param fullText - The chunk's full content.
  * @param targetIndex - Where the reveal would stop.
@@ -31,15 +78,15 @@ function skipPastCodeFence(fullText: string, targetIndex: number): number {
 		) {
 			const closingIdx = fullText.indexOf("```", i + 3);
 			if (closingIdx === -1) {
-				// No closing fence yet — unclosed block, leave target as-is
+				// No closing fence yet, so the block is unclosed: leave target as-is
 				break;
 			}
 			const blockEnd = closingIdx + 3;
 			if (targetIndex < blockEnd) {
-				// targetIndex is inside this fence → jump to end of block
+				// targetIndex is inside this fence: jump to the end of the block
 				return blockEnd;
 			}
-			// This fence is entirely before targetIndex — skip past it and continue
+			// This fence is entirely before targetIndex: skip past it and continue
 			i = blockEnd;
 		} else {
 			i++;
@@ -48,136 +95,239 @@ function skipPastCodeFence(fullText: string, targetIndex: number): number {
 	return targetIndex;
 }
 
-// ============================================
-// SYNTAX-AWARE SAFE INDEX FINDER
-// ============================================
-/** Markdown that is still open at the end of the revealed text. */
-const INCOMPLETE_MARKDOWN_PATTERNS: RegExp[] = [
-	/```[\s\S]*$/, // Unclosed code block
-	/`[^`]*$/, // Unclosed inline code
-	/\*\*[^*]+$/, // Unclosed bold **
-	/(?<!\*)\*[^*]+$/, // Unclosed italic *
-	/__[^_]+$/, // Unclosed bold __
-	/(?<!_)_[^_\s][^_]*$/, // Unclosed italic _
-	/\[(?:[^\]]*)$/, // Unclosed link text [
-	/\]\([^)]*$/, // Unclosed link URL ](
-	/!\[(?:[^\]]*)$/, // Unclosed image alt ![
-	/~~[^~]+$/, // Unclosed strikethrough
-];
-
 /**
- * Test if text has incomplete markdown syntax using early-exit matching.
+ * The text of a paragraph outside its inline code spans, or null when a code
+ * span is still open. A span opens on a run of backticks and closes on the
+ * next run of the same length.
  *
- * @param text - The text revealed so far.
- * @returns Whether it ends inside open markdown.
+ * @param text - One paragraph of markdown.
+ * @returns The paragraph without its code spans, or null while one is open.
  */
-function hasIncompleteMarkdown(text: string): boolean {
-	for (const pattern of INCOMPLETE_MARKDOWN_PATTERNS) {
-		if (pattern.test(text)) return true;
+function textOutsideCodeSpans(text: string): string | null {
+	const runs: { start: number; end: number }[] = [];
+	const pattern = /`+/g;
+	for (
+		let match = pattern.exec(text);
+		match !== null;
+		match = pattern.exec(text)
+	) {
+		runs.push({ start: match.index, end: match.index + match[0].length });
 	}
-	return false;
+
+	let outside = "";
+	let cursor = 0;
+	let next = 0;
+	while (next < runs.length) {
+		const open = runs[next];
+		const openAt = next;
+		const length = open.end - open.start;
+		const closeAt = runs.findIndex(
+			(run, index) => index > openAt && run.end - run.start === length,
+		);
+		if (closeAt === -1) {
+			return null;
+		}
+		outside += text.slice(cursor, open.start);
+		cursor = runs[closeAt].end;
+		next = closeAt + 1;
+	}
+	return outside + text.slice(cursor);
 }
 
 /**
- * Find safe index using binary search + validation for faster backtracking.
+ * Whether `text` ends inside markdown that is still open: an inline code
+ * span, an emphasis or strikethrough span, or a link, within the paragraph the
+ * text ends in. Closed spans before it never count. Text inside an open code
+ * fence types as-is, so it never counts either.
  *
- * @param fullText - The chunk's full content.
- * @param targetIndex - Where the reveal would stop.
- * @returns The furthest index at most `MAX_BACKTRACK` back where no markdown
- * is left open; at least 1.
+ * @param text - The markdown that would be on screen.
+ * @returns Whether a span is still open at its end.
  */
-function findSafeIndex(fullText: string, targetIndex: number): number {
-	targetIndex = Math.min(targetIndex, fullText.length);
-
-	// Fast path: if current position is safe, return it
-	if (!hasIncompleteMarkdown(fullText.slice(0, targetIndex))) {
-		return targetIndex;
+function endsInsideOpenSpan(text: string): boolean {
+	let fences = 0;
+	let lastFence = -1;
+	for (
+		let at = text.indexOf("```");
+		at !== -1;
+		at = text.indexOf("```", at + 3)
+	) {
+		fences++;
+		lastFence = at;
+	}
+	if (fences % 2 === 1) {
+		return false;
 	}
 
-	// Binary search backwards to find safe point
-	let left = Math.max(0, targetIndex - MAX_BACKTRACK);
-	let right = targetIndex;
-	let safeIndex = left;
+	const lastBreak = text.lastIndexOf("\n\n");
+	const paragraph = text.slice(
+		Math.max(
+			lastFence === -1 ? 0 : lastFence + 3,
+			lastBreak === -1 ? 0 : lastBreak + 2,
+		),
+	);
+	if (TRAILING_DELIMITER.test(paragraph)) {
+		return true;
+	}
 
+	const prose = textOutsideCodeSpans(paragraph);
+	if (prose === null) {
+		return true;
+	}
+	return (
+		OPEN_LINK.test(prose) ||
+		PAIRED_DELIMITERS.some(
+			(pattern) => (prose.match(pattern)?.length ?? 0) % 2 === 1,
+		)
+	);
+}
+
+/**
+ * How much of the text to show once the reveal has typed up to `cursor`: all
+ * of it, or the latest point at most MAX_BACKTRACK characters back where no
+ * span is left open, so a short span appears whole once the cursor passes its
+ * closing delimiter. A span that opened further back than that shows as it
+ * types. Never less than what is already on screen.
+ *
+ * @param fullText - The full text so far.
+ * @param revealed - Characters already on screen.
+ * @param cursor - Characters typed.
+ * @returns How many characters to show.
+ */
+function visibleLength(
+	fullText: string,
+	revealed: number,
+	cursor: number,
+): number {
+	if (cursor >= fullText.length) {
+		return fullText.length;
+	}
+	if (!endsInsideOpenSpan(fullText.slice(0, cursor))) {
+		return cursor;
+	}
+
+	let left = Math.max(revealed, cursor - MAX_BACKTRACK);
+	let right = cursor - 1;
+	let safeIndex = -1;
 	while (left <= right) {
 		const mid = Math.floor((left + right) / 2);
-		if (hasIncompleteMarkdown(fullText.slice(0, mid))) {
+		if (endsInsideOpenSpan(fullText.slice(0, mid))) {
 			right = mid - 1;
 		} else {
 			safeIndex = mid;
 			left = mid + 1;
 		}
 	}
+	return safeIndex === -1 ? cursor : safeIndex;
+}
 
-	// Never go backwards
-	return Math.max(1, safeIndex);
+/**
+ * The reveal after `elapsed` milliseconds. The cursor moves fast enough to
+ * close the text still waiting within about CATCH_UP_MS, never slower than
+ * MIN_CHARS_PER_MS, and past any code fence it enters. Returns `state` itself
+ * once everything is shown, so a caught up typewriter does not re-render.
+ *
+ * @param state - The reveal so far.
+ * @param fullText - The full text so far.
+ * @param elapsed - Milliseconds since the last step.
+ * @returns The next reveal.
+ */
+function advanceReveal(
+	state: RevealState,
+	fullText: string,
+	elapsed: number,
+): RevealState {
+	if (state.cursor >= fullText.length) {
+		return state.revealed === fullText.length
+			? state
+			: revealAt(fullText.length);
+	}
+
+	const waiting = fullText.length - state.cursor;
+	const pace = Math.max(MIN_CHARS_PER_MS, waiting / CATCH_UP_MS);
+	const typed = state.cursor + Math.max(1, Math.round(elapsed * pace));
+	const cursor = Math.min(
+		fullText.length,
+		skipPastCodeFence(fullText, typed),
+	);
+	return {
+		cursor,
+		revealed: visibleLength(fullText, state.revealed, cursor),
+	};
 }
 
 /** What {@link useMarkdownTypewriter} returns. */
 interface UseMarkdownTypewriterReturn {
-	/** The content revealed so far. */
+	/** The text revealed so far, to render as markdown. */
 	rendered: string;
-	/** Whether the reveal is running and has not caught up. */
+
+	/** The typewriter is running and has text left to reveal. */
 	isTyping: boolean;
-	/** Start revealing. */
+
+	/** Start revealing from the current position. */
 	start: () => void;
-	/** Pause the reveal. */
+
+	/** Pause where it is. */
 	stop: () => void;
-	/** Reveal everything and stop. */
+
+	/** Show all of the content and stop. */
 	skipToEnd: () => void;
+
 	/** Hide everything and stop. */
 	reset: () => void;
 }
 
 /**
- * Reveal streamed markdown a few characters per frame, never stopping inside
- * a code fence or open markdown, so a partial reveal always renders cleanly.
- * Content that is replaced, not extended, starts over; returning to the tab
- * reveals everything that streamed while it was hidden.
+ * Type out streamed markdown. The reveal keeps pace with the text that has
+ * arrived, spreading it over about CATCH_UP_MS, and shows code fences and short
+ * markdown spans whole. It runs on animation frames between `start` and
+ * `stop`, and jumps to the latest text when the tab becomes visible again.
  *
- * @param content - The chunk's content, which may grow.
- * @param startAtLatest - Start fully revealed, so only later tokens animate.
- * @returns The revealed text, whether it is typing, and its controls.
+ * Content that grows keeps the reveal where it is, and so does content cut
+ * back to a prefix of itself, as when a chunk's tail moves into an html chunk.
+ * Any other change starts over from nothing.
+ *
+ * @param content - The full text so far; it grows as the stream arrives.
+ * @param startAtLatest - Start with all of `content` shown, so only later text types.
+ * @returns The text to render, whether it is still typing, and its controls.
  */
 export function useMarkdownTypewriter(
 	content: string,
 	startAtLatest: boolean = false,
 ): UseMarkdownTypewriterReturn {
-	// On a return view, start fully revealed (only later tokens animate); on a
-	// first view, start from 0. `rendered` slices the full content, so this seed
-	// alone gives baseline + animated net-new with no work in the consumer.
-	const [renderedLength, setRenderedLength] = useState<number>(() =>
-		startAtLatest ? content.length : 0,
+	const [reveal, setReveal] = useState<RevealState>(() =>
+		revealAt(startAtLatest ? content.length : 0),
 	);
 	const [isRunning, setIsRunning] = useState<boolean>(false);
 	const contentRef = useRef<string>(content);
-	const rafRef = useRef<number | null>(null);
-	const lastUpdateRef = useRef<number>(0);
-	const pendingCharsRef = useRef<number>(0);
+	const lastStepRef = useRef<number>(0);
 
-	// Keep content ref updated; content that is not an extension starts over
 	useEffect(() => {
-		const prev = contentRef.current;
-		if (!content.startsWith(prev) || content.length < prev.length) {
-			setRenderedLength(0);
-			setIsRunning(false);
-		}
+		const previous = contentRef.current;
 		contentRef.current = content;
+		if (content.startsWith(previous)) {
+			return;
+		}
+		if (previous.startsWith(content)) {
+			setReveal((state) => ({
+				cursor: Math.min(state.cursor, content.length),
+				revealed: Math.min(state.revealed, content.length),
+			}));
+			return;
+		}
+		setReveal(revealAt(0));
+		setIsRunning(false);
 	}, [content]);
 
-	// Memoize rendered string to prevent re-slicing
-	const rendered = useMemo(() => {
-		return content.slice(0, renderedLength);
-	}, [content, renderedLength]);
+	const rendered = useMemo(
+		() => content.slice(0, reveal.revealed),
+		[content, reveal.revealed],
+	);
 
-	// On tab return, snap renderedLength forward to absorb everything that
-	// streamed in while away, then reset timing so only net-new tokens animate.
 	useEffect(() => {
 		const handleVisibilityChange = () => {
 			if (document.visibilityState === "visible") {
-				setRenderedLength(contentRef.current.length);
-				lastUpdateRef.current = performance.now();
-				pendingCharsRef.current = 0;
+				setReveal(revealAt(contentRef.current.length));
+				lastStepRef.current = performance.now();
 			}
 		};
 		document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -189,63 +339,31 @@ export function useMarkdownTypewriter(
 		};
 	}, []);
 
-	// requestAnimationFrame-based typewriter for smooth 60fps animation
 	useEffect(() => {
 		if (!isRunning) {
-			if (rafRef.current !== null) {
-				cancelAnimationFrame(rafRef.current);
-				rafRef.current = null;
-			}
 			return;
 		}
 
-		const animate = (currentTime: number) => {
-			// Debounce updates based on elapsed time
-			if (currentTime - lastUpdateRef.current < DEBOUNCE_MS) {
-				rafRef.current = requestAnimationFrame(animate);
-				return;
+		let frame = 0;
+		const step = (now: number) => {
+			const elapsed = now - lastStepRef.current;
+			if (elapsed >= MIN_STEP_MS) {
+				lastStepRef.current = now;
+				setReveal((state) =>
+					advanceReveal(state, contentRef.current, elapsed),
+				);
 			}
-
-			lastUpdateRef.current = currentTime;
-			pendingCharsRef.current += CHARS_PER_FRAME;
-
-			setRenderedLength((prev) => {
-				const fullText = contentRef.current;
-				const target = prev + Math.floor(pendingCharsRef.current);
-				pendingCharsRef.current = 0;
-
-				if (target >= fullText.length) {
-					return fullText.length; // Caught up
-				}
-
-				// Jump past any enclosing code fence so blocks appear atomically.
-				// Prevents partial syntax from rendering mid-animation for non-html
-				// code fences (e.g. ```python, ```ts) that live inside md chunks.
-				const skipped = skipPastCodeFence(fullText, target);
-
-				// Find syntax-safe index
-				const safeIndex = findSafeIndex(fullText, skipped);
-
-				// Always progress at least 1 character
-				return Math.max(prev + 1, safeIndex);
-			});
-
-			rafRef.current = requestAnimationFrame(animate);
+			frame = requestAnimationFrame(step);
 		};
-
-		rafRef.current = requestAnimationFrame(animate);
+		frame = requestAnimationFrame(step);
 
 		return () => {
-			if (rafRef.current !== null) {
-				cancelAnimationFrame(rafRef.current);
-				rafRef.current = null;
-			}
+			cancelAnimationFrame(frame);
 		};
 	}, [isRunning]);
 
 	const start = useCallback(() => {
-		lastUpdateRef.current = performance.now();
-		pendingCharsRef.current = 0;
+		lastStepRef.current = performance.now();
 		setIsRunning(true);
 	}, []);
 
@@ -254,18 +372,18 @@ export function useMarkdownTypewriter(
 	}, []);
 
 	const skipToEnd = useCallback(() => {
-		setRenderedLength(contentRef.current.length);
+		setReveal(revealAt(contentRef.current.length));
 		setIsRunning(false);
 	}, []);
 
 	const reset = useCallback(() => {
-		setRenderedLength(0);
+		setReveal(revealAt(0));
 		setIsRunning(false);
 	}, []);
 
 	return {
 		rendered,
-		isTyping: isRunning && renderedLength < content.length,
+		isTyping: isRunning && reveal.revealed < content.length,
 		start,
 		stop,
 		skipToEnd,

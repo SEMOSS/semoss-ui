@@ -156,6 +156,7 @@ export function RoomView({
 						layoutKey={roomTask.task ? "task" : "plain"}
 						roomId={sessionId}
 						insightId={insightId}
+						agentId={agentId}
 						tools={tools}
 						toolCreatedAt={toolCreatedAt}
 						pendingApprovals={pendingApprovals}

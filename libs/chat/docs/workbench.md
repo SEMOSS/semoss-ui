@@ -71,7 +71,10 @@ code and are easy to undo by accident:
   (`RoomActionsProvider` renders a controlled `SaveAgentDialog`), so a new chat publishes
   only once it is a room.
   The per-panel control — "open inline" — is registered by the tool panel with
-  `useWorkbenchControl`.
+  `useWorkbenchControl`, beside its **Show Details** switch, which shows the call's
+  `ToolInspector` (info, inputs, output) in place of the tool's view and keeps the
+  choice in the tab's config (`showsDetails`). A server tool's view already is its
+  inspector, so it has no switch.
 - **The room header holds the room's name.** `features/room/header/room-header.tsx` is
   one narrow row in `RoomLayout`'s `header` slot. It floats over the top of the
   conversation with no border, blurring what scrolls beneath it once the conversation reports
@@ -117,8 +120,16 @@ The composer, Settings and the picker all take the chat's `ComposerSession`
 from `useDraftAgent` (`new-chat/use-draft-agent.ts`). Its `agent` is an `AgentChoice`
 (`tools/mcp/agent-choice.ts`): `fixed` in a room, `saved` in a new chat, and `savedOrDefault`
 with the flag, where `MCPOverlay` and `AgentSelector` offer No Agent and Default Agent as separate
-choices. A picker's save reaches either through `applyAgentOverlaySave`. A room keeps the mode it
-was created with.
+choices. A picker's save reaches either through `applyAgentOverlaySave`.
+
+The theme's `agentModeOnly` flag (Agent Mode Only on the admin Theme page) is `modeFollowsAgent`
+without No Agent: every new chat runs in agent mode and chat mode is never offered. The menu shows
+no Chat and Agent choice, the `/agent-harness` and chat mode commands are left out, and the agent
+picker's choice of no saved agent is Default Agent, with no No Agent (`isAgentModeOnly` and
+`offersDefaultAgent`). The draft's choice is `saved` with `withModeChoice` off and
+`noneIsDefaultAgent` on, the second being what names the empty choice Default Agent. A room keeps
+the mode it was created with, so a chat created in chat mode before the flag was turned on stays
+in chat mode.
 
 Whatever the theme, a chat in agent mode with no saved agent runs Default Agent, and the input
 shows a Default Agent chip beside the add button: editable in a new chat, where it opens the

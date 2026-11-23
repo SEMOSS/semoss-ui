@@ -39,6 +39,8 @@ skills supplement the standard; they do not waive reading it for React work.
 - [SDK chat](./skills/sdk-chat.skill.md): rooms, messages, agent runs, approvals, and polling lifecycle.
 - [SDK session](./libs/sdk/skills/session.skill.md): sign in, the user, config, permissions, and
   which insight a pixel runs in.
+- [UI text casing](./skills/ui-text-casing.skill.md): Title Case for titles, labels, and
+  actions, and sentence case for sentences, in user-facing English text.
 - [Design rulebook](./DESIGN.md): UI composition and styling.
 
 Lint and formatting configuration lives in [biome.json](./biome.json).

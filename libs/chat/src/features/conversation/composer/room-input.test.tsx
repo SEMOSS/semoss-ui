@@ -145,7 +145,7 @@ vi.mock("../../tools/mcp/mcp-overlay", () => ({
 				role="dialog"
 				aria-label={defaultTab}
 				data-allow-default-agent={String(
-					agent.kind === "saved" && agent.withModeChoice,
+					agent.kind === "saved" && agent.noneIsDefaultAgent,
 				)}
 				data-default-agent={String(
 					agent.kind === "savedOrDefault"
@@ -502,7 +502,11 @@ test("shows only a selected agent next to add and opens its picker when editable
 			{...defaultProps}
 			session={sessionWith({
 				options: savedAgentOptions("Example agent"),
-				agent: { kind: "saved", withModeChoice: false },
+				agent: {
+					kind: "saved",
+					withModeChoice: false,
+					noneIsDefaultAgent: false,
+				},
 			})}
 			variant={draftVariant()}
 		/>,
@@ -551,7 +555,11 @@ test("a new chat in agent mode without a saved agent shows an editable Default A
 		<RoomInput
 			{...defaultProps}
 			session={sessionWith({
-				agent: { kind: "saved", withModeChoice: false },
+				agent: {
+					kind: "saved",
+					withModeChoice: false,
+					noneIsDefaultAgent: false,
+				},
 			})}
 			variant={draftVariant()}
 		/>,
@@ -695,7 +703,11 @@ test("new chats choose execution mode separately from the saved agent", async ()
 		onSwitchToAgentHarness,
 		onExitAgentHarness,
 	});
-	const agent = { kind: "saved", withModeChoice: true } as const;
+	const agent = {
+		kind: "saved",
+		withModeChoice: true,
+		noneIsDefaultAgent: true,
+	} as const;
 	const { rerender } = render(
 		<RoomInput
 			{...defaultProps}
@@ -765,6 +777,7 @@ test.each([true, false])(
 					agent: {
 						kind: "saved",
 						withModeChoice: enableAgentHarness,
+						noneIsDefaultAgent: enableAgentHarness,
 					},
 					onOptionsChange,
 				})}

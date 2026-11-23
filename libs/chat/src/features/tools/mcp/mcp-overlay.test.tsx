@@ -82,7 +82,7 @@ vi.mock("./agent-selector", () => ({
 			>
 				Select Beta
 			</button>
-			{choice.kind === "saved" && choice.withModeChoice && (
+			{choice.kind === "saved" && choice.noneIsDefaultAgent && (
 				<button type="button" onClick={() => onChange(null)}>
 					Default agent
 				</button>
@@ -132,7 +132,11 @@ test("cancel discards the agent draft and reopening restores committed values", 
 		defaultTab: "AGENT" as const,
 		values: [local],
 		agentTools: [],
-		agent: { kind: "saved", withModeChoice: true } as const,
+		agent: {
+			kind: "saved",
+			withModeChoice: true,
+			noneIsDefaultAgent: true,
+		} as const,
 		onClose,
 	};
 	const { rerender } = render(<MCPOverlay {...props} />);
@@ -155,7 +159,11 @@ test("waits for the picked agent, lists its tools as the agent's, and exposes re
 		defaultTab: "AGENT" as const,
 		values: [local],
 		agentTools: [],
-		agent: { kind: "saved", withModeChoice: true } as const,
+		agent: {
+			kind: "saved",
+			withModeChoice: true,
+			noneIsDefaultAgent: true,
+		} as const,
 		onClose,
 	};
 	const { rerender } = render(<MCPOverlay {...props} />);
@@ -240,7 +248,11 @@ test("Default agent drops the agent's resources but retains local selections", (
 			agentTools={[
 				{ id: "inherited", name: "Agent tool", type: "FUNCTION" },
 			]}
-			agent={{ kind: "saved", withModeChoice: true }}
+			agent={{
+				kind: "saved",
+				withModeChoice: true,
+				noneIsDefaultAgent: true,
+			}}
 			onClose={onClose}
 		/>,
 	);
@@ -296,7 +308,11 @@ test("without isDefaultAgent, No Agent and Default Agent are not separate choice
 			defaultTab="AGENT"
 			values={[local]}
 			agentTools={[]}
-			agent={{ kind: "saved", withModeChoice: true }}
+			agent={{
+				kind: "saved",
+				withModeChoice: true,
+				noneIsDefaultAgent: true,
+			}}
 			onClose={vi.fn()}
 		/>,
 	);
@@ -337,7 +353,11 @@ test("returns keyboard focus to the Settings Add button after Cancel", async () 
 					defaultTab="AGENT"
 					values={[]}
 					agentTools={[]}
-					agent={{ kind: "saved", withModeChoice: false }}
+					agent={{
+						kind: "saved",
+						withModeChoice: false,
+						noneIsDefaultAgent: false,
+					}}
 					onClose={() => setIsOpen(false)}
 				/>
 			</>
@@ -362,7 +382,11 @@ test("choosing Default agent from another overlay tab explicitly commits Agent m
 			defaultTab="KNOWLEDGE"
 			values={[local]}
 			agentTools={[]}
-			agent={{ kind: "saved", withModeChoice: true }}
+			agent={{
+				kind: "saved",
+				withModeChoice: true,
+				noneIsDefaultAgent: true,
+			}}
 			onClose={onClose}
 		/>,
 	);
@@ -385,7 +409,11 @@ test("values changed while open keep the draft, and the next open starts from th
 		open: true,
 		defaultTab: "AGENT" as const,
 		agentTools: [],
-		agent: { kind: "saved", withModeChoice: true } as const,
+		agent: {
+			kind: "saved",
+			withModeChoice: true,
+			noneIsDefaultAgent: true,
+		} as const,
 		onClose,
 	};
 	const { rerender } = render(<MCPOverlay {...props} values={[local]} />);

@@ -129,7 +129,14 @@ export function BriefWork() {
 												{next
 													? `Next: ${next.text}`
 													: wait
-														? `Waiting on ${wait.assigneeName ? givenFirst(wait.assigneeName) : "someone"}: ${wait.text}`
+														? wait.text
+																.trim()
+																.toLowerCase() ===
+															item.title
+																.trim()
+																.toLowerCase()
+															? `Waiting on ${wait.assigneeName ? givenFirst(wait.assigneeName) : "someone"}`
+															: `Waiting on ${wait.assigneeName ? givenFirst(wait.assigneeName) : "someone"}: ${wait.text}`
 														: "No open steps"}
 											</P>
 										</div>

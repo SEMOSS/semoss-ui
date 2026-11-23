@@ -4,6 +4,7 @@ export const lexicon = {
 	doToday: "When you're ready",
 	everything: "See everything",
 	chats: "Chats",
+	twinChats: "Digital Twin Chats",
 	settings: "Settings",
 	search: "Search",
 } as const;

@@ -301,7 +301,7 @@ export function RoutineResult({
 											</AlertTitle>
 											<AlertDescription>
 												{run.error ||
-													"Check your inbox connection and assistant configuration before the next scheduled run."}
+													"Check your inbox connection and Collaboration model configuration before the next scheduled run."}
 												<div className="flex flex-wrap gap-2">
 													{runAgain && (
 														<RunAgainButton

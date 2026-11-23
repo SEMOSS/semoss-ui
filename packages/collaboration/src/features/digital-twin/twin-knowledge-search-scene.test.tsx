@@ -47,15 +47,25 @@ it("says what the search is doing as it goes, lights the place it names, and hol
 	expect(screen.getByText("Reading what turned up…")).toBeVisible();
 	expect(lit()).toBe(0);
 	pass(4000);
-	expect(
-		screen.getByText("Picking what fits your Digital Twin…"),
-	).toBeVisible();
+	expect(screen.getByText("Picking what fits this twin…")).toBeVisible();
 	// however long the server takes from here
 	pass(120_000);
-	expect(
-		screen.getByText("Picking what fits your Digital Twin…"),
-	).toBeVisible();
+	expect(screen.getByText("Picking what fits this twin…")).toBeVisible();
 	expect(screen.getByText("This can take up to a minute.")).toBeVisible();
+});
+
+it("names and circles only the places a narrowed search looks in", () => {
+	render(<TwinKnowledgeSearchScene isSearching kinds={["email", "file"]} />);
+	expect(document.querySelectorAll(".room-loading-arm")).toHaveLength(2);
+	pass(2500);
+	expect(screen.getByText("Searching your Outlook…")).toBeVisible();
+	// Teams chats are not searched, so the line after Outlook's is OneDrive's
+	pass(2500);
+	expect(screen.getByText("Searching your OneDrive…")).toBeVisible();
+	expect(lit()).toBe(1);
+	pass(2500);
+	expect(screen.getByText("Reading what turned up…")).toBeVisible();
+	expect(screen.queryByText(/Teams chats/)).toBeNull();
 });
 
 it("starts every search from its first line", () => {

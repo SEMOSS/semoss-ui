@@ -44,7 +44,11 @@ function Picker({ disabled = false }: { disabled?: boolean }) {
 		<AgentSelector
 			value={value}
 			onChange={setValue}
-			choice={{ kind: "saved", withModeChoice: true }}
+			choice={{
+				kind: "saved",
+				withModeChoice: true,
+				noneIsDefaultAgent: true,
+			}}
 			disabled={disabled}
 		/>
 	);

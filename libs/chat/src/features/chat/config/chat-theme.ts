@@ -58,6 +58,7 @@ export const DEFAULT_CHAT_THEME: ChatTheme = {
 		enableSuggestions: true,
 		enableAgentHarness: false,
 		modeFollowsAgent: false,
+		agentModeOnly: false,
 		enableRewrite: true,
 		enablePromptOptimizer: true,
 		enableDarkMode: true,

@@ -73,6 +73,10 @@ export interface MailPixels {
 		 * word or quoted phrase after them.
 		 */
 		search?: string;
+		/** Words the sender's name or address has to contain. */
+		from?: string;
+		/** How many days back to read; every email in the folder when left out. */
+		sinceDays?: number;
 		unreadOnly?: boolean;
 	}) => string;
 	/**
@@ -179,6 +183,8 @@ export const mailPixels = (prefix: string): MailPixels => ({
 			limit: options.limit,
 			offset: options.offset,
 			search: text(options.search),
+			from: text(options.from),
+			sinceDays: options.sinceDays,
 			unreadOnly: options.unreadOnly || undefined,
 			includeBody: false,
 		}),

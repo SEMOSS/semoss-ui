@@ -129,13 +129,15 @@ export const ResponseMessageTool = ({
 	const isCancelled = toolStatus === "CANCELLED";
 	const isRunning = toolStatus === "LOADING";
 	const isSucceeded = toolStatus === "SUCCESS";
-	// the arrow shows or hides the tool in the chat; the Workbench button moves it out and back
+	// the row opens the tool where it is placed and hides it from the chat; the Workbench button moves it out and back
 	const isOpenInline = isOpen && display === "inline";
 	const shouldShowDecision = shouldShowInlineDecision && !isDecisionCollapsed;
 	const isExpanded = isOpenInline || shouldShowDecision;
 	const isActive = isExpanded || (isOpenInWorkbench && isWorkbenchActive);
 	// mobile keeps tools inline, but a tool already in the drawer can come back
 	const canUseWorkbench = !isMobile || isOpenInWorkbench;
+	const opensInWorkbench =
+		!isMobile && !shouldShowInlineDecision && display === "sidebar";
 	// Agent runs own their cancellation lifecycle. Never write a legacy tool result into an active run.
 	const canCancel =
 		!isSucceeded &&
@@ -155,7 +157,9 @@ export const ResponseMessageTool = ({
 						: t("status.queued");
 	const openAction = isExpanded
 		? t("actions.collapse")
-		: t("actions.openInline");
+		: opensInWorkbench
+			? t("actions.openInSidebar")
+			: t("actions.openInline");
 	const workbenchAction = isOpenInWorkbench
 		? t("actions.openInline")
 		: t("actions.openInSidebar");
@@ -177,7 +181,7 @@ export const ResponseMessageTool = ({
 			setIsCancelling(false);
 		}
 	};
-	/** Show or hide the call in the conversation. */
+	/** Show or hide the call where it is placed: the conversation, or the Workbench. */
 	const handleToggle = () => {
 		if (isExpanded) {
 			setIsDecisionCollapsed(true);
@@ -186,7 +190,8 @@ export const ResponseMessageTool = ({
 		}
 		setIsDecisionCollapsed(false);
 		// a pending decision already renders inline once it is uncollapsed
-		if (!shouldShowInlineDecision) tool.openTool("inline");
+		if (!shouldShowInlineDecision)
+			tool.openTool(opensInWorkbench ? "sidebar" : "inline");
 	};
 	/** Move the call into the Workbench, or back into the conversation. */
 	const handleWorkbench = () => {
@@ -221,7 +226,7 @@ export const ResponseMessageTool = ({
 					size="sm"
 					onClick={handleToggle}
 					className="h-auto min-h-8 min-w-0 flex-1 justify-start gap-2 whitespace-normal px-2 py-1 text-start hover:bg-transparent dark:hover:bg-transparent"
-					aria-expanded={isExpanded}
+					aria-expanded={opensInWorkbench ? undefined : isExpanded}
 					aria-label={`${displayName}: ${status}. ${openAction}`}
 				>
 					<span
@@ -250,13 +255,15 @@ export const ResponseMessageTool = ({
 							{status}
 						</span>
 					</span>
-					<ChevronDownIcon
-						aria-hidden="true"
-						className={cn(
-							"size-4 shrink-0 text-muted-foreground transition-transform motion-reduce:transition-none",
-							isExpanded && "rotate-180",
-						)}
-					/>
+					{!opensInWorkbench && (
+						<ChevronDownIcon
+							aria-hidden="true"
+							className={cn(
+								"size-4 shrink-0 text-muted-foreground transition-transform motion-reduce:transition-none",
+								isExpanded && "rotate-180",
+							)}
+						/>
+					)}
 				</Button>
 				{canUseWorkbench && (
 					<Tooltip>

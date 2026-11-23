@@ -1,4 +1,4 @@
-import { type ReactNode, useId, useState } from "react";
+import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router";
 import {
 	Badge,
@@ -24,7 +24,7 @@ import { TopicChip } from "./topic-chip";
 
 /**
  * Your people, like a follow list: VIPs first, then the people you follow, then Brain's suggestions.
- * Everyone else only shows up when you search.
+ * Everyone else only shows up when you search. Each row makes its person a VIP, or stops them being one.
  */
 export function PeopleDirectory() {
 	const fieldId = useId();
@@ -48,7 +48,11 @@ export function PeopleDirectory() {
 				Number(right.vip) - Number(left.vip) ||
 				(right.strength ?? 0) - (left.strength ?? 0),
 		);
-	const people = matching.filter(isFollowed);
+	const vips = matching.filter((person) => person.vip);
+	// a VIP is always followed; they have a section of their own, so they are not listed twice
+	const people = matching.filter(
+		(person) => isFollowed(person) && !person.vip,
+	);
 	const suggested = matching.filter(
 		(person) => person.follow === "suggested",
 	);
@@ -64,6 +68,14 @@ export function PeopleDirectory() {
 			personId: person.id,
 			changes: { follow: value },
 		});
+	// Whose VIP button was pressed from the keyboard. Their row moves to another section, and the button it
+	// has there takes the focus that would be lost with the old one. A pointer click leaves the page where it is.
+	const movedByKeyboard = useRef<string | null>(null);
+	// good for the one render after the press: a row that left the page must not take the focus from the
+	// filter when a search finds it again
+	useEffect(() => {
+		movedByKeyboard.current = null;
+	});
 
 	const row = (person: Person, action?: ReactNode) => (
 		<li
@@ -75,7 +87,8 @@ export function PeopleDirectory() {
 				initials={person.initials}
 				email={person.email}
 			/>
-			<div className="min-w-0 flex-1">
+			{/* wide enough to read: an action and chips that nearly fill the line wrap under the name, not beside a sliver of it */}
+			<div className="min-w-40 flex-1">
 				<Link
 					className="break-words font-medium text-sm hover:underline"
 					to={`/brain/people/${encodeURIComponent(person.id)}`}
@@ -94,7 +107,33 @@ export function PeopleDirectory() {
 			</div>
 			<div className="flex flex-wrap items-center gap-1.5">
 				{action}
-				{person.vip && <Badge variant="secondary">VIP</Badge>}
+				<Button
+					ref={(node) => {
+						if (node && movedByKeyboard.current === person.id) {
+							movedByKeyboard.current = null;
+							node.focus();
+						}
+					}}
+					size="sm"
+					variant="ghost"
+					className="pointer-coarse:min-h-11"
+					aria-label={`${person.vip ? "Remove VIP" : "Make VIP"} ${person.name}`}
+					onClick={(event) => {
+						// a click made from the keyboard carries no pointer detail
+						if (event.detail === 0)
+							movedByKeyboard.current = person.id;
+						dispatch({
+							type: "person.save",
+							personId: person.id,
+							// a VIP is always followed, as on the person's own page
+							changes: person.vip
+								? { vip: false }
+								: { vip: true, follow: "following" },
+						});
+					}}
+				>
+					{person.vip ? "Remove VIP" : "Make VIP"}
+				</Button>
 				{person.neverIngest && (
 					<Badge variant="outline">Excluded</Badge>
 				)}
@@ -202,12 +241,20 @@ export function PeopleDirectory() {
 				</div>
 			</div>
 			{section(
+				`VIPs (${vips.length})`,
+				vips,
+				(person) => row(person),
+				searching
+					? "None of your VIPs match."
+					: "No VIPs yet. Choose Make VIP beside anyone below to keep them close at hand.",
+			)}
+			{section(
 				`You follow (${people.length})`,
 				people,
 				(person) => row(person),
 				searching
 					? "Nobody you follow matches."
-					: "You do not follow anyone yet. Follow people from the suggestions, or search.",
+					: "No one here yet. Follow people from the suggestions, or search.",
 			)}
 			{suggested.length > 0 &&
 				section(

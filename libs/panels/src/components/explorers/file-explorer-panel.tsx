@@ -143,6 +143,7 @@ const FileExplorerPanel = ({ id }: WorkbenchPanelProps) => {
 		mode,
 		adapter,
 		readOnly,
+		onRefresh: host?.onRefresh,
 		initialPath: config.initialPath,
 		toSourcePath,
 	});

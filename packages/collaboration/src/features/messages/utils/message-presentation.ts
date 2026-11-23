@@ -1,3 +1,7 @@
+import {
+	getToolComponent,
+	TOOL_COMPONENTS,
+} from "@/features/tools/utils/tool-components";
 import { getToolDisplayLocation } from "@/features/tools/utils/tool-metadata";
 import type {
 	ConversationMessage,
@@ -180,6 +184,7 @@ export function completedToolGroups(
 			(item.part.type === "tool" &&
 				(item.part.tool.status === "COMPLETED" ||
 					item.part.tool.status === "FAILED") &&
+				getToolComponent(item.part.tool) !== TOOL_COMPONENTS.orgChart &&
 				!pinnedIds.has(item.part.tool.id))
 		) {
 			current.push(item);

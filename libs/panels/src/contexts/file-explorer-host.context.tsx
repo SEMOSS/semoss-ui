@@ -26,6 +26,8 @@ export interface FileViewHostFile {
 
 /** What a host adds to the file explorer and file panels below it. */
 export interface FileExplorerHost {
+	/** Re-read a companion listing after file changes or a manual refresh. */
+	onRefresh?: () => void;
 	/**
 	 * Extra right-click entries for one item, such as the playground's Add to
 	 * Context. Called once per rendered row.

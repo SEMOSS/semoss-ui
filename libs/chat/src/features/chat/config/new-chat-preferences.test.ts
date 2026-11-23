@@ -149,20 +149,22 @@ describe("resolveNewChatModel", () => {
 });
 
 describe("resolveNewChatMode", () => {
+	const BOTH = ["chat", "agent"] as const;
+
 	test("takes the session's, then the user's, then the deployment's, then chat", () => {
 		expect(
 			resolveNewChatMode(
 				{ mode: "chat", agentId: "" },
 				USER,
 				DEPLOYMENT,
-				true,
+				BOTH,
 			),
 		).toBe("chat");
-		expect(resolveNewChatMode(null, USER, DEPLOYMENT, true)).toBe("agent");
+		expect(resolveNewChatMode(null, USER, DEPLOYMENT, BOTH)).toBe("agent");
 		expect(
-			resolveNewChatMode(null, NONE, { ...NONE, mode: "agent" }, true),
+			resolveNewChatMode(null, NONE, { ...NONE, mode: "agent" }, BOTH),
 		).toBe("agent");
-		expect(resolveNewChatMode(null, NONE, NONE, true)).toBe("chat");
+		expect(resolveNewChatMode(null, NONE, NONE, BOTH)).toBe("chat");
 	});
 
 	test("is always chat where agent mode is not offered", () => {
@@ -171,9 +173,21 @@ describe("resolveNewChatMode", () => {
 				{ mode: "agent", agentId: "" },
 				USER,
 				{ ...NONE, mode: "agent" },
-				false,
+				["chat"],
 			),
 		).toBe("chat");
+	});
+
+	test("is always agent where every chat runs in agent mode", () => {
+		expect(
+			resolveNewChatMode(
+				{ mode: "chat", agentId: "" },
+				{ ...NONE, mode: "chat" },
+				{ ...NONE, mode: "chat" },
+				["agent"],
+			),
+		).toBe("agent");
+		expect(resolveNewChatMode(null, NONE, NONE, ["agent"])).toBe("agent");
 	});
 });
 
