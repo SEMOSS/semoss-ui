@@ -4,6 +4,7 @@ import {
 	buildDependencyGraphPixel,
 	type DependencyGraphScope,
 	parseDependencyGraph,
+	readReply,
 } from "@/api/dependency-map";
 import { buildGraphIndex, type DependencyGraphIndex } from "./dependency-graph";
 
@@ -44,31 +45,18 @@ export const useDependencyGraph = (
 		result.status === "INITIAL" || result.status === "LOADING";
 
 	// parsing and indexing a large network is costly; redo it only for a new reply
-	const parsed = useMemo((): {
-		index: DependencyGraphIndex | null;
-		error: string | null;
-	} => {
-		if (shown === null) {
-			return { index: null, error: null };
-		}
-		try {
-			return {
-				index: buildGraphIndex(parseDependencyGraph(shown)),
-				error: null,
-			};
-		} catch (cause: unknown) {
-			return {
-				index: null,
-				error:
-					cause instanceof Error
-						? cause.message
-						: "The dependency map could not be read.",
-			};
-		}
-	}, [shown]);
+	const parsed = useMemo(
+		() =>
+			readReply(
+				shown,
+				(output) => buildGraphIndex(parseDependencyGraph(output)),
+				"The ontology could not be read.",
+			),
+		[shown],
+	);
 
 	return {
-		index: parsed.index,
+		index: parsed.value,
 		isLoading: isReading && shown === null,
 		isRefreshing: isReading && shown !== null,
 		error: result.error?.message ?? parsed.error,

@@ -25,18 +25,12 @@ import type {
 	CatalogType,
 	Engine,
 } from "@semoss/shared";
-import { TYPE_TO_ROUTE } from "@/constants";
 import { isProjectType } from "@/utility/catalog";
 
-/** Whether a catalog type is an engine or a project. */
-export type CatalogKind = "engine" | "project";
-
-/** How the dependency views show and route one catalog type. */
+/** How the dependency views show one catalog type. */
 export interface DependencyTypeConfig {
 	/** Engine or project */
-	readonly kind: CatalogKind;
-	/** The catalog route an item of this type lives under */
-	readonly route: string;
+	readonly kind: "ENGINE" | "PROJECT";
 	/** Singular label, such as "Model" or "Agent" */
 	readonly label: string;
 	/** The type's catalog icon */
@@ -51,86 +45,72 @@ export interface DependencyTypeConfig {
  */
 export const DEPENDENCY_TYPE_CONFIG = {
 	CODE: {
-		kind: "project",
-		route: TYPE_TO_ROUTE.CODE,
+		kind: "PROJECT",
 		label: "Code",
 		icon: LayoutGrid,
 	},
 	BLOCKS: {
-		kind: "project",
-		route: TYPE_TO_ROUTE.BLOCKS,
+		kind: "PROJECT",
 		label: "Blocks",
 		icon: LayoutGrid,
 	},
 	INSIGHT: {
-		kind: "project",
-		route: TYPE_TO_ROUTE.INSIGHT,
+		kind: "PROJECT",
 		label: "Insight",
 		icon: LayoutGrid,
 	},
 	INSIGHTS: {
-		kind: "project",
-		route: TYPE_TO_ROUTE.INSIGHT,
+		kind: "PROJECT",
 		label: "Insight",
 		icon: LayoutGrid,
 	},
 	SKILL: {
-		kind: "project",
-		route: TYPE_TO_ROUTE.SKILL,
+		kind: "PROJECT",
 		label: "Skill",
 		icon: Puzzle,
 	},
 	NOTEBOOK: {
-		kind: "project",
-		route: TYPE_TO_ROUTE.NOTEBOOK,
+		kind: "PROJECT",
 		label: "Notebook",
 		icon: NotebookText,
 	},
 	AUTOMATION: {
-		kind: "project",
-		route: TYPE_TO_ROUTE.AUTOMATION,
+		kind: "PROJECT",
 		label: "Automation",
 		icon: Workflow,
 	},
 	WORKSPACE: {
-		kind: "project",
-		route: TYPE_TO_ROUTE.WORKSPACE,
+		kind: "PROJECT",
 		label: "Agent",
 		icon: Bot,
 	},
 	FUNCTION: {
-		kind: "engine",
-		route: TYPE_TO_ROUTE.FUNCTION,
+		kind: "ENGINE",
 		label: "Function",
 		icon: Sigma,
 	},
 	MODEL: {
-		kind: "engine",
-		route: TYPE_TO_ROUTE.MODEL,
+		kind: "ENGINE",
 		label: "Model",
 		icon: Cpu,
 	},
 	DATABASE: {
-		kind: "engine",
-		route: TYPE_TO_ROUTE.DATABASE,
+		kind: "ENGINE",
 		label: "Database",
 		icon: Database,
 	},
 	VECTOR: {
-		kind: "engine",
-		route: TYPE_TO_ROUTE.VECTOR,
+		kind: "ENGINE",
 		label: "Vector",
 		icon: Bolt,
 	},
 	STORAGE: {
-		kind: "engine",
-		route: TYPE_TO_ROUTE.STORAGE,
+		kind: "ENGINE",
 		label: "Storage",
 		icon: Archive,
 	},
 	GUARDRAIL: {
-		kind: "engine",
-		route: TYPE_TO_ROUTE.GUARDRAIL,
+		kind: "ENGINE",
 		label: "Guardrail",
 		icon: ShieldCheck,
 	},
@@ -140,9 +120,8 @@ const isCatalogType = (type: string): type is CatalogType =>
 	Object.hasOwn(DEPENDENCY_TYPE_CONFIG, type);
 
 /**
- * How to show and route a dependency's type. A type the table does not know,
- * from a newer backend, falls back on whether it is a project type: projects
- * open in the app pages, which load any project.
+ * How to show a dependency's type. A type the table does not know, from a
+ * newer backend, falls back on whether it is a project type.
  *
  * @param type - The dependency's specific type.
  * @returns Its config.
@@ -152,13 +131,8 @@ export const getDependencyTypeConfig = (type: string): DependencyTypeConfig => {
 		return DEPENDENCY_TYPE_CONFIG[type];
 	}
 	return isProjectType(type)
-		? {
-				kind: "project",
-				route: TYPE_TO_ROUTE.PROJECT,
-				label: "Project",
-				icon: LayoutGrid,
-			}
-		: { kind: "engine", route: "", label: type, icon: Database };
+		? { kind: "PROJECT", label: "Project", icon: LayoutGrid }
+		: { kind: "ENGINE", label: type, icon: Database };
 };
 
 /** Display metadata for one engine category card. */
@@ -300,3 +274,172 @@ export const toCatalogDependencyPayload = (
 		...(description ? { description } : {}),
 	};
 };
+
+/** An access level a user can hold on, or ask for, an engine or project. */
+export type DependencyAccessLevel = "OWNER" | "EDIT" | "READ_ONLY";
+
+/**
+ * The words for each access level, shared by the dependency views and the
+ * admin Dependency Map so both say the same thing.
+ */
+export const DEPENDENCY_ACCESS_LEVEL_LABELS = {
+	OWNER: "Owner",
+	EDIT: "Editor",
+	READ_ONLY: "Read-only",
+} as const satisfies Record<DependencyAccessLevel, string>;
+
+/** The backend's permission ids: 1 is owner, 2 editor and 3 read-only. */
+const LEVEL_BY_PERMISSION_ID: Readonly<Record<number, DependencyAccessLevel>> =
+	{ 1: "OWNER", 2: "EDIT", 3: "READ_ONLY" };
+
+/**
+ * The user's standing on one dependency:
+ * - `granted`: they have a level, directly or through a team; `requested` is a
+ *   different level they asked for and wait on
+ * - `public`: anyone can use it
+ * - `requested`: they have no access and asked for `level`
+ * - `requestable`: they have no access and can ask for it (it is discoverable)
+ * - `private`: they have no access and cannot see what it is
+ */
+export type DependencyAccess =
+	| {
+			readonly kind: "granted";
+			readonly level: DependencyAccessLevel;
+			readonly requested?: DependencyAccessLevel;
+	  }
+	| { readonly kind: "public" }
+	| { readonly kind: "requested"; readonly level: DependencyAccessLevel }
+	| { readonly kind: "requestable" }
+	| { readonly kind: "private" };
+
+type AccessFields = Pick<
+	CatalogDependency,
+	| "permission_name"
+	| "catalog_global"
+	| "catalog_discoverable"
+	| "access_permission"
+	| "is_private"
+>;
+
+const isAccessLevel = (role: unknown): role is DependencyAccessLevel =>
+	role === "OWNER" || role === "EDIT" || role === "READ_ONLY";
+
+/**
+ * Whether a dependency is private to the user: no access, and neither public
+ * nor discoverable. The backend says so with `is_private` and leaves out its
+ * name; older backends are read from the access fields.
+ *
+ * @param dependency - The dependency.
+ * @returns True when the user cannot see what it is.
+ */
+export const isPrivateDependency = (dependency: AccessFields): boolean =>
+	dependency.is_private ??
+	(!isAccessLevel(dependency.permission_name) &&
+		!dependency.catalog_global &&
+		!dependency.catalog_discoverable);
+
+/**
+ * The name to show for a dependency: "Private <Type>", such as "Private
+ * Database", when it is private to the user, else its name, else its id.
+ *
+ * @param dependency - The dependency.
+ * @returns Its display name.
+ */
+export const getDependencyDisplayName = (
+	dependency: AccessFields &
+		Pick<CatalogDependency, "catalog_id" | "catalog_type" | "catalog_name">,
+): string =>
+	isPrivateDependency(dependency)
+		? `Private ${getDependencyTypeConfig(dependency.catalog_type).label}`
+		: dependency.catalog_name || dependency.catalog_id;
+
+/**
+ * The user's standing on a dependency. A level they hold comes first, then
+ * public, then a request that waits, then whether they can ask at all.
+ *
+ * @param dependency - The dependency.
+ * @returns Its access.
+ */
+export const getDependencyAccess = (
+	dependency: AccessFields,
+): DependencyAccess => {
+	const requested =
+		dependency.access_permission === undefined
+			? undefined
+			: LEVEL_BY_PERMISSION_ID[dependency.access_permission];
+	if (isAccessLevel(dependency.permission_name)) {
+		return requested && requested !== dependency.permission_name
+			? { kind: "granted", level: dependency.permission_name, requested }
+			: { kind: "granted", level: dependency.permission_name };
+	}
+	if (dependency.catalog_global) {
+		return { kind: "public" };
+	}
+	if (requested) {
+		return { kind: "requested", level: requested };
+	}
+	return isPrivateDependency(dependency)
+		? { kind: "private" }
+		: { kind: "requestable" };
+};
+
+/**
+ * Whether the user can ask for access to a dependency here: they have no
+ * level on it, it is not public, no request waits, and they can see it.
+ *
+ * @param access - The dependency's access.
+ * @returns True when Request Access applies.
+ */
+export const canRequestDependency = (access: DependencyAccess): boolean =>
+	access.kind === "requestable";
+
+/**
+ * Whether the user can use a dependency now: they have a level or it is public.
+ *
+ * @param access - The dependency's access.
+ * @returns True when it works for them.
+ */
+export const canUseDependency = (access: DependencyAccess): boolean =>
+	access.kind === "granted" || access.kind === "public";
+
+/**
+ * The short label of a dependency's access, such as "Editor", "Public",
+ * "Requested Read-only", "Can request" (the user can see it and ask) or
+ * "Hidden" (the user cannot see what it is, so cannot ask).
+ *
+ * @param access - The dependency's access.
+ * @returns Its label.
+ */
+export const getDependencyAccessLabel = (access: DependencyAccess): string => {
+	switch (access.kind) {
+		case "granted":
+			return DEPENDENCY_ACCESS_LEVEL_LABELS[access.level];
+		case "public":
+			return "Public";
+		case "requested":
+			return `Requested ${DEPENDENCY_ACCESS_LEVEL_LABELS[access.level]}`;
+		case "requestable":
+			return "Can request";
+		case "private":
+			return "Hidden";
+	}
+};
+
+/**
+ * How visible a dependency is in the catalog: Public, Discoverable, or Private
+ * (neither). These are the catalog's words for an item's visibility.
+ *
+ * @param dependency - The dependency.
+ * @returns Its visibility label.
+ */
+export const getDependencyVisibilityLabel = (
+	dependency: Pick<
+		CatalogDependency,
+		"catalog_global" | "catalog_discoverable"
+	>,
+): "Public" | "Discoverable" | "Private" =>
+	dependency.catalog_global
+		? "Public"
+		: dependency.catalog_discoverable
+			? "Discoverable"
+			: "Private";

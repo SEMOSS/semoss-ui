@@ -487,8 +487,12 @@ export interface CatalogDependency {
 	catalog_id: string;
 	/** The dependency's specific type, such as MODEL or SKILL */
 	catalog_type: CatalogType;
-	/** The dependency's name */
-	catalog_name: string;
+	/**
+	 * The dependency's name. Left out when the dependency is private to the
+	 * user (`is_private`): they have no access to it and it is neither public
+	 * nor discoverable.
+	 */
+	catalog_name?: string;
 	/** The engine's subtype, such as OPEN_AI; projects have none */
 	catalog_subtype?: string;
 	catalog_date_created?: string;
@@ -508,6 +512,12 @@ export interface CatalogDependency {
 	can_view_dependencies?: boolean;
 	/** Ids of the dependency's own dependencies */
 	dependencies?: string[];
+	/**
+	 * Whether the dependency is private to the user. The backend then sends
+	 * only its id and type; show it as "Private <Type>". Absent from older
+	 * backends.
+	 */
+	is_private?: boolean;
 }
 
 /**

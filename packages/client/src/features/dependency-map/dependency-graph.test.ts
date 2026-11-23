@@ -36,9 +36,6 @@ const node = (
 	missing: false,
 	x: 0,
 	y: 0,
-	component: 0,
-	dependencyCount: 0,
-	dependentCount: 0,
 	...overrides,
 });
 
@@ -91,17 +88,6 @@ const graph: DependencyGraph = {
 		edge("app", "gone"),
 		edge("app", "nowhere"),
 	],
-	stats: {
-		nodes: 8,
-		edges: 7,
-		automatic: 6,
-		manual: 1,
-		missing: 1,
-		isolated: 1,
-		cycles: 0,
-		components: 2,
-	},
-	bounds: { width: 1000, height: 1000 },
 	nodeSize: { width: 240, height: 64 },
 };
 
@@ -116,11 +102,15 @@ describe("buildGraphIndex", () => {
 });
 
 describe("getDependencyFamily", () => {
-	it("groups agents with skills and apps together", () => {
-		expect(getDependencyFamily("WORKSPACE")).toBe("AGENT");
-		expect(getDependencyFamily("SKILL")).toBe("AGENT");
-		expect(getDependencyFamily("BLOCKS")).toBe("APP");
-		expect(getDependencyFamily("INSIGHTS")).toBe("APP");
+	it("gives every type its own colour", () => {
+		// every type has its own colour; INSIGHTS is drawn as INSIGHT
+		expect(getDependencyFamily("WORKSPACE")).toBe("WORKSPACE");
+		expect(getDependencyFamily("SKILL")).toBe("SKILL");
+		expect(getDependencyFamily("BLOCKS")).toBe("BLOCKS");
+		expect(getDependencyFamily("INSIGHTS")).toBe("INSIGHT");
+		expect(getDependencyFamily("CODE")).toBe("CODE");
+		// a type the map does not know falls back on its kind
+		expect(getDependencyFamily("SOMETHING_NEW")).toBe("DATABASE");
 		expect(getDependencyFamily("MODEL")).toBe("MODEL");
 	});
 });
@@ -200,7 +190,7 @@ describe("getMapEmphasis", () => {
 	it("dims the families filtered out and their links", () => {
 		const { nodes, edges } = getMapEmphasis(
 			index,
-			{ families: new Set(["AGENT", "MODEL"]), links: "ALL" },
+			{ families: new Set(["WORKSPACE", "MODEL"]), links: "ALL" },
 			{ kind: "none" },
 			new Set(),
 		);

@@ -1,12 +1,15 @@
 import { BlocksIcon } from "lucide-react";
 import { useMemo, useState } from "react";
-import { runPixel } from "@semoss/sdk/react";
 import type { CatalogDependencyRow, Engine } from "@semoss/shared";
 import { Muted, ScrollArea, toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import type { WorkbenchPanelConfig } from "@semoss/workbench";
+import { setCatalogDependencies } from "@/api/catalog-dependencies";
 import { useProject } from "@/hooks/use-project";
-import { toCatalogDependencyPayload } from "./catalog-dependency";
+import {
+	getDependencyDisplayName,
+	toCatalogDependencyPayload,
+} from "./catalog-dependency";
 import { EngineCategoryCard } from "./engine-category-card";
 import { ManageEnginesDialog } from "./manage-engines-dialog";
 
@@ -33,9 +36,6 @@ const EXTRA_CATEGORIES: readonly Engine["engine_type"][] = [
  * SetCatalogDependencies with the manual rows only (preserving project-kind
  * and other-category ones), which also refreshes the agent's engine context
  * on the backend.
- *
- * @name CatalogEnginesPanel
- * @return The available-engines panel.
  */
 const CatalogEnginesPanel = () => {
 	const { project, dependencies, permission, refreshDependencies } =
@@ -68,20 +68,18 @@ const CatalogEnginesPanel = () => {
 		setIsRemoving(true);
 		try {
 			// only manual rows are sent; the backend keeps the automatic ones
-			const payload = dependencies
-				.filter(
-					(dependency) =>
-						!dependency.is_automatic &&
-						dependency.catalog_id !== engine.catalog_id,
-				)
-				.map(toCatalogDependencyPayload);
-			const response = await runPixel<[unknown]>(
-				`SetCatalogDependencies(catalogId="${project.project_id}", catalogType="${project.project_type}", dependencies=${JSON.stringify(payload)});`,
+			await setCatalogDependencies(
+				project.project_id,
+				project.project_type,
+				dependencies
+					.filter(
+						(dependency) =>
+							!dependency.is_automatic &&
+							dependency.catalog_id !== engine.catalog_id,
+					)
+					.map(toCatalogDependencyPayload),
 			);
-			if (response.errors.length > 0) {
-				throw new Error(response.errors.join(""));
-			}
-			toast.success(`Removed ${engine.catalog_name}`);
+			toast.success(`Removed ${getDependencyDisplayName(engine)}`);
 			refreshDependencies();
 		} catch (error) {
 			toast.error(getErrorMessage(error, "Failed to remove engine"));

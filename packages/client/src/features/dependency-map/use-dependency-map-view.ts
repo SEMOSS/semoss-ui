@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router";
 import type { DependencyDirection } from "@/api/dependency-map";
 import {
@@ -14,9 +14,9 @@ export type LensKind = "none" | "trace" | "access";
 export interface DependencyMapViewState {
 	/** The search */
 	readonly query: string;
-	/** The selected item, shown in the inspector */
+	/** The selected item, shown in the drawer */
 	readonly selectedId: string;
-	/** The selected link, shown in the inspector */
+	/** The selected link, shown in the drawer */
 	readonly selectedEdgeId: string;
 	/** The lens */
 	readonly lens: LensKind;
@@ -39,9 +39,7 @@ export interface DependencyMapViewState {
 }
 
 /** A change to the view; an empty or default value is left out of the address. */
-export type DependencyMapViewChange = Partial<{
-	[K in keyof DependencyMapViewState]: DependencyMapViewState[K];
-}>;
+export type DependencyMapViewChange = Partial<DependencyMapViewState>;
 
 export interface UseDependencyMapViewResult {
 	/** The view */
@@ -50,6 +48,8 @@ export interface UseDependencyMapViewResult {
 	setView: (change: DependencyMapViewChange) => void;
 	/** Clears the search and filters, keeping the lens and selection */
 	clearFilters: () => void;
+	/** Leaves the trace for the whole network */
+	stopTracing: () => void;
 }
 
 const DIRECTIONS: readonly DependencyDirection[] = [
@@ -179,5 +179,11 @@ export const useDependencyMapView = (): UseDependencyMapViewResult => {
 		() => setView({ query: "", families: null, links: "ALL" }),
 		[setView],
 	);
-	return { view: readDependencyMapView(params), setView, clearFilters };
+	const stopTracing = useCallback(
+		() => setView({ lens: "none", traceRootId: "", tracedOnly: false }),
+		[setView],
+	);
+	// one view per address, so what is derived from it is kept between renders
+	const view = useMemo(() => readDependencyMapView(params), [params]);
+	return { view, setView, clearFilters, stopTracing };
 };

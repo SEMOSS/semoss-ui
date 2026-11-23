@@ -46,11 +46,11 @@ describe("writeDependencyMapView", () => {
 			traceRootId: "a",
 			direction: "DEPENDENTS",
 			depth: 2,
-			families: new Set(["AGENT", "MODEL"]),
+			families: new Set(["MODEL", "WORKSPACE"]),
 			links: "ALL",
 		});
 		expect(params.get("links")).toBeNull();
-		expect(params.get("types")).toBe("MODEL,AGENT");
+		expect(params.get("types")).toBe("WORKSPACE,MODEL");
 		expect(readDependencyMapView(params)).toMatchObject({
 			query: "claims",
 			lens: "trace",

@@ -1,34 +1,44 @@
-import { Muted, Spinner } from "@semoss/ui/next";
+import { Alert, AlertDescription, Button, Skeleton } from "@semoss/ui/next";
 import { CatalogDependenciesView } from "@/features/catalog/dependencies/catalog-dependencies-view";
 import { useCatalogDependencies } from "@/features/catalog/dependencies/use-catalog-dependencies";
 import { useEngine } from "@/hooks/useEngine";
 
 /**
- * An engine's Dependencies tab: the engines and projects it depends on.
- * Owners and editors can edit the list.
+ * An engine's Ontology tab: what it uses and what uses it. Owners and editors
+ * can edit its manual dependencies.
  */
 export const EngineDependenciesPage = () => {
 	const { engine, permission } = useEngine();
-	const { dependencies, isLoading, error, refresh } = useCatalogDependencies({
-		catalogId: engine.engine_id,
-		catalogType: engine.engine_type,
-	});
+	const { dependencies, allDependencies, links, isLoading, error, refresh } =
+		useCatalogDependencies({
+			catalogId: engine.engine_id,
+			catalogType: engine.engine_type,
+		});
 
 	const canEdit = permission === "OWNER" || permission === "EDIT";
 
 	if (error) {
 		return (
-			<div role="alert" className="w-full px-2 py-4 text-center">
-				<Muted>Failed to load dependencies: {error.message}</Muted>
-			</div>
+			<Alert variant="destructive">
+				<AlertDescription className="flex flex-wrap items-center justify-between gap-2">
+					{`Failed to load dependencies: ${error.message}`}
+					<Button variant="outline" size="sm" onClick={refresh}>
+						Retry
+					</Button>
+				</AlertDescription>
+			</Alert>
 		);
 	}
 
 	if (isLoading) {
 		return (
-			<div className="flex w-full items-center justify-center py-8">
-				<Spinner />
-			</div>
+			<output
+				aria-label="Loading dependencies"
+				className="flex w-full flex-col gap-4"
+			>
+				<Skeleton className="h-12 w-full max-w-prose" />
+				<Skeleton className="h-120 w-full md:h-160" />
+			</output>
 		);
 	}
 
@@ -36,13 +46,12 @@ export const EngineDependenciesPage = () => {
 		<CatalogDependenciesView
 			catalogId={engine.engine_id}
 			catalogType={engine.engine_type}
+			catalogName={engine.engine_display_name || engine.engine_name}
+			catalogSubtype={engine.engine_subtype}
+			catalogDescription={engine.description}
 			canEdit={canEdit}
-			editHint={
-				canEdit
-					? "Add or remove dependencies using the edit button"
-					: undefined
-			}
 			dependencies={dependencies}
+			graph={{ nodes: allDependencies, links }}
 			onRefresh={refresh}
 		/>
 	);

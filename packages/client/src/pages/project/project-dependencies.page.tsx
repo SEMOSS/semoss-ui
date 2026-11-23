@@ -12,12 +12,13 @@ const READ_ONLY_HINTS: Partial<Record<string, string>> = {
 };
 
 /**
- * A project's Dependencies tab. Owners and editors can edit the list, except
- * for BLOCKS apps and agents, whose dependencies are rebuilt from their own
- * settings and so stay read-only here.
+ * A project's Ontology tab: what it uses and what uses it. Owners and editors
+ * can edit its manual dependencies, except for BLOCKS apps and agents, whose
+ * dependencies are rebuilt from their own settings and so stay read-only here.
  */
 export const ProjectCatalogDependenciesPage = () => {
-	const { project, dependencies, permission, refresh } = useProject();
+	const { project, dependencies, dependencyGraph, permission, refresh } =
+		useProject();
 
 	const isEditor = permission === "OWNER" || permission === "EDIT";
 	const readOnlyHint = READ_ONLY_HINTS[project.project_type];
@@ -27,14 +28,11 @@ export const ProjectCatalogDependenciesPage = () => {
 		<CatalogDependenciesView
 			catalogId={project.project_id}
 			catalogType={project.project_type}
+			catalogName={project.project_display_name || project.project_name}
 			canEdit={canEdit}
-			editHint={
-				isEditor
-					? (readOnlyHint ??
-						"Add or remove dependencies using the edit button")
-					: undefined
-			}
+			editHint={isEditor ? readOnlyHint : undefined}
 			dependencies={dependencies}
+			graph={dependencyGraph}
 			onRefresh={refresh}
 		/>
 	);

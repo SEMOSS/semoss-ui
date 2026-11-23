@@ -1,10 +1,8 @@
-import { Panel, type ReactFlowInstance, type Viewport } from "@xyflow/react";
+import { Panel, type ReactFlowInstance } from "@xyflow/react";
 import { FilterX, RefreshCcwDot, RefreshCw, Workflow } from "lucide-react";
 import {
 	type KeyboardEvent,
 	type ReactNode,
-	useCallback,
-	useEffect,
 	useMemo,
 	useRef,
 	useState,
@@ -15,45 +13,38 @@ import {
 	AlertTitle,
 	Button,
 	cn,
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogTitle,
 	Muted,
+	P,
 	Skeleton,
 	useIsMobile,
 } from "@semoss/ui/next";
 import type { DependencyDirection } from "@/api/dependency-map";
 import type { DependencyFlowEdge } from "./dependency-edge";
 import {
+	countFamilies,
+	type DependencyFamily,
 	type DependencyMapLens,
-	findAccessGaps,
 	getMapEmphasis,
 	searchNodes,
-	summarizeImpact,
-	traceGraph,
 } from "./dependency-graph";
-import {
-	type DependencyMapActions,
-	DependencyMapActionsContext,
-} from "./dependency-map-actions.context";
 import { DependencyMapCanvas } from "./dependency-map-canvas";
 import { DependencyMapDrawer } from "./dependency-map-drawer";
 import { DependencyMapLegend } from "./dependency-map-legend";
+import { DependencyMapMenuItems } from "./dependency-map-menu-items";
 import { DependencyMapToolbar } from "./dependency-map-toolbar";
 import { DependencyMapViewBar } from "./dependency-map-view-bar";
 import type { DependencyFlowNode } from "./dependency-node";
 import { DependencySyncDialog } from "./dependency-sync-dialog";
+import { ExpandedCanvasDialog } from "./expanded-canvas-dialog";
+import { focusCanvasItem } from "./focus-canvas-item";
+import { MapOverlayCard } from "./map-overlay-card";
 import { useDependencyGraph } from "./use-dependency-graph";
 import { useDependencyMapView } from "./use-dependency-map-view";
+import { useExpandableCanvas } from "./use-expandable-canvas";
 import { useUserCatalogAccess } from "./use-user-catalog-access";
 
 // design-lint-disable-next-line arbitrary-size -- the map fills the viewport below the Settings header
 const MAP_HEIGHT_CLASS = "h-[calc(100dvh-14rem)] min-h-96";
-
-// design-lint-disable-next-line arbitrary-size -- the expanded map fills the whole window
-const EXPANDED_CLASS =
-	"h-dvh max-h-dvh w-screen max-w-none gap-0 rounded-none border-0 p-4 sm:max-w-none";
 
 /** Above this many items the map opens with a hint to search or trace. */
 const LARGE_GRAPH = 1500;
@@ -67,16 +58,20 @@ const LARGE_GRAPH = 1500;
  */
 export const DependencyMap = () => {
 	const isMobile = useIsMobile();
-	const { view, setView, clearFilters } = useDependencyMapView();
+	const { view, setView, clearFilters, stopTracing } = useDependencyMapView();
 	const flowRef = useRef<ReactFlowInstance<
 		DependencyFlowNode,
 		DependencyFlowEdge
 	> | null>(null);
 	const [isSyncOpen, setIsSyncOpen] = useState(false);
 	const [userName, setUserName] = useState("");
-	const [isExpanded, setIsExpanded] = useState(false);
-	// the canvas remounts when the map expands or collapses; it starts here
-	const [startViewport, setStartViewport] = useState<Viewport | undefined>();
+	// the canvas remounts when the map expands or collapses, keeping its place
+	const {
+		isExpanded,
+		startViewport,
+		toggle: handleToggleExpand,
+		collapse,
+	} = useExpandableCanvas(flowRef);
 
 	const isTracing = view.lens === "trace" && view.traceRootId !== "";
 	const scope =
@@ -94,6 +89,13 @@ export const DependencyMap = () => {
 	);
 	const access = view.lens === "access" ? userAccess.access : null;
 	const hasSelection = view.selectedId !== "" || view.selectedEdgeId !== "";
+
+	// the filters and the legend both count the types
+	const familyCounts = useMemo(
+		() =>
+			index ? countFamilies(index) : new Map<DependencyFamily, number>(),
+		[index],
+	);
 
 	const matches = useMemo(
 		() => (index ? searchNodes(index, view.query) : []),
@@ -137,24 +139,6 @@ export const DependencyMap = () => {
 		[index, view.families, view.links, lens, matches],
 	);
 
-	const impact = useMemo(() => {
-		if (!index || !isTracing) {
-			return [];
-		}
-		const trace = traceGraph(
-			index,
-			view.traceRootId,
-			view.direction,
-			view.depth,
-		);
-		return summarizeImpact(index, trace, view.traceRootId);
-	}, [index, isTracing, view.traceRootId, view.direction, view.depth]);
-
-	const gapCount = useMemo(
-		() => (index && access ? findAccessGaps(index, access).length : null),
-		[index, access],
-	);
-
 	const shownCount = useMemo(() => {
 		if (!emphasis) {
 			return 0;
@@ -168,97 +152,45 @@ export const DependencyMap = () => {
 		return count;
 	}, [emphasis]);
 
-	const clearSelection = useCallback(
-		() => setView({ selectedId: "", selectedEdgeId: "" }),
-		[setView],
-	);
+	const handleClearSelection = (): void =>
+		setView({ selectedId: "", selectedEdgeId: "" });
 
-	const jumpTo = useCallback(
-		(id: string) => {
-			const node = index?.nodes.get(id);
-			if (!node || !index) {
-				return;
-			}
-			const { width, height } = index.graph.nodeSize;
-			void flowRef.current?.setCenter(
-				node.x + width / 2,
-				node.y + height / 2,
-				{
-					zoom: 1,
-					duration: 400,
-				},
-			);
-			setView({ selectedId: id, selectedEdgeId: "" });
-		},
-		[index, setView],
-	);
-
-	const isPickingTraceRoot = view.lens === "trace" && view.traceRootId === "";
-	const actions = useMemo(
-		(): DependencyMapActions => ({
-			// in Trace with nothing traced yet, the item clicked is the one traced
-			selectNode: (id) =>
-				setView(
-					isPickingTraceRoot
-						? {
-								traceRootId: id,
-								selectedId: id,
-								selectedEdgeId: "",
-							}
-						: { selectedId: id, selectedEdgeId: "" },
-				),
-			selectEdge: (id) => setView({ selectedEdgeId: id }),
-			jumpTo,
-			trace: (id: string, direction: DependencyDirection) =>
-				setView({
-					lens: "trace",
-					traceRootId: id,
-					direction,
-					selectedId: id,
-					selectedEdgeId: "",
-				}),
-		}),
-		[isPickingTraceRoot, jumpTo, setView],
-	);
-
-	const keepViewport = (): void =>
-		setStartViewport(flowRef.current?.getViewport());
-
-	const collapse = useCallback((): void => {
-		setStartViewport(flowRef.current?.getViewport());
-		setIsExpanded(false);
-		if (document.fullscreenElement) {
-			void document.exitFullscreen();
-		}
-	}, []);
-
-	const handleToggleExpand = (): void => {
-		if (isExpanded) {
-			collapse();
+	const handleJump = (id: string): void => {
+		const node = index?.nodes.get(id);
+		if (!node || !index) {
 			return;
 		}
-		keepViewport();
-		setIsExpanded(true);
-		// take the whole screen too; the window is used when the browser refuses
-		document.documentElement.requestFullscreen?.().catch(() => undefined);
+		const { width, height } = index.graph.nodeSize;
+		void flowRef.current?.setCenter(
+			node.x + width / 2,
+			node.y + height / 2,
+			{ zoom: 1, duration: 400 },
+		);
+		setView({ selectedId: id, selectedEdgeId: "" });
 	};
 
-	// leaving the browser's full screen, such as with Escape, collapses the map
-	useEffect(() => {
-		const handleChange = (): void => {
-			if (!document.fullscreenElement) {
-				setIsExpanded((wasExpanded) => {
-					if (wasExpanded) {
-						setStartViewport(flowRef.current?.getViewport());
-					}
-					return false;
-				});
-			}
-		};
-		document.addEventListener("fullscreenchange", handleChange);
-		return () =>
-			document.removeEventListener("fullscreenchange", handleChange);
-	}, []);
+	const handleSelectNode = (id: string): void => {
+		// in Trace with nothing traced yet, the item clicked is the one traced
+		const isPickingTraceRoot =
+			view.lens === "trace" && view.traceRootId === "";
+		setView(
+			isPickingTraceRoot
+				? { traceRootId: id, selectedId: id, selectedEdgeId: "" }
+				: { selectedId: id, selectedEdgeId: "" },
+		);
+	};
+
+	const handleSelectEdge = (id: string): void =>
+		setView({ selectedEdgeId: id });
+
+	const handleTrace = (id: string, direction: DependencyDirection): void =>
+		setView({
+			lens: "trace",
+			traceRootId: id,
+			direction,
+			selectedId: id,
+			selectedEdgeId: "",
+		});
 
 	// Escape closes the drawer first. React bubbles keys out of portals, so a
 	// menu or popover open over the map closes on its own Escape instead
@@ -268,7 +200,9 @@ export const DependencyMap = () => {
 			event.currentTarget.contains(event.target);
 		if (event.key === "Escape" && hasSelection && isFromMap) {
 			event.preventDefault();
-			clearSelection();
+			const openId = view.selectedEdgeId || view.selectedId;
+			handleClearSelection();
+			requestAnimationFrame(() => focusCanvasItem(openId));
 		}
 	};
 
@@ -280,16 +214,14 @@ export const DependencyMap = () => {
 		canvasArea = (
 			<Skeleton
 				className="size-full rounded-none"
-				aria-label="Loading the dependency map"
+				aria-label="Loading the ontology"
 			/>
 		);
 	} else if (!index) {
 		canvasArea = (
 			<div className="p-4">
 				<Alert variant="destructive">
-					<AlertTitle>
-						The dependency map could not be read
-					</AlertTitle>
+					<AlertTitle>The ontology could not be read</AlertTitle>
 					<AlertDescription className="flex flex-col items-start gap-2">
 						{error ?? "Try again."}
 						<Button
@@ -312,17 +244,18 @@ export const DependencyMap = () => {
 					className="size-8 text-muted-foreground"
 					aria-hidden="true"
 				/>
-				<p className="font-medium">No engines or projects yet</p>
+				<P className="font-medium">No engines or projects yet</P>
 				<Muted>Items appear here once they are created.</Muted>
 			</div>
 		);
 	} else if (emphasis) {
-		const notice =
-			index.edges.size === 0 && view.lens === "none" ? (
-				<div className="flex flex-col items-center gap-2 rounded-lg border bg-card p-4 text-center shadow-sm">
-					<p className="font-medium text-sm">
+		let notice: ReactNode = null;
+		if (index.edges.size === 0 && view.lens === "none") {
+			notice = (
+				<MapOverlayCard className="flex flex-col items-center gap-2 p-4 text-center">
+					<P className="font-medium text-sm">
 						No dependencies recorded yet
-					</p>
+					</P>
 					<Muted>
 						Sync to work them out from every item's configuration.
 					</Muted>
@@ -334,11 +267,13 @@ export const DependencyMap = () => {
 						<RefreshCcwDot aria-hidden="true" />
 						Sync
 					</Button>
-				</div>
-			) : isFiltered && shownCount === 0 ? (
-				<div className="flex flex-col items-center gap-2 rounded-lg border bg-card p-4 text-center shadow-sm">
-					<p className="font-medium text-sm">Nothing matches</p>
-					<Muted>Everything on the map is dimmed.</Muted>
+				</MapOverlayCard>
+			);
+		} else if (isFiltered && shownCount === 0) {
+			notice = (
+				<MapOverlayCard className="flex flex-col items-center gap-2 p-4 text-center">
+					<P className="font-medium text-sm">Nothing matches</P>
+					<Muted>Everything in the ontology is dimmed.</Muted>
 					<Button
 						type="button"
 						size="sm"
@@ -348,16 +283,23 @@ export const DependencyMap = () => {
 						<FilterX aria-hidden="true" />
 						Clear Search and Filters
 					</Button>
-				</div>
-			) : index.graph.nodes.length > LARGE_GRAPH &&
-				view.lens === "none" &&
-				!isFiltered &&
-				!hasSelection ? (
-				<Muted className="rounded-md border bg-card px-3 py-1">
-					{index.graph.nodes.length.toLocaleString()} items. Search,
-					or trace an item, to focus.
-				</Muted>
-			) : null;
+				</MapOverlayCard>
+			);
+		} else if (
+			index.graph.nodes.length > LARGE_GRAPH &&
+			view.lens === "none" &&
+			!isFiltered &&
+			!hasSelection
+		) {
+			notice = (
+				<MapOverlayCard className="px-3 py-1">
+					<Muted>
+						{index.graph.nodes.length.toLocaleString()} items.
+						Search, or trace an item, to focus.
+					</Muted>
+				</MapOverlayCard>
+			);
+		}
 		canvasArea = (
 			<DependencyMapCanvas
 				index={index}
@@ -365,13 +307,33 @@ export const DependencyMap = () => {
 				access={access}
 				selectedId={view.selectedId}
 				selectedEdgeId={view.selectedEdgeId}
-				onSelectNode={actions.selectNode}
-				onSelectEdge={actions.selectEdge}
-				onClearSelection={clearSelection}
+				onSelectNode={handleSelectNode}
+				onSelectEdge={handleSelectEdge}
+				onClearSelection={handleClearSelection}
 				onInit={(instance) => {
 					flowRef.current = instance;
 				}}
 				defaultViewport={startViewport}
+				renderMenu={(target) => (
+					<DependencyMapMenuItems
+						target={target}
+						index={index}
+						hasSelection={hasSelection}
+						isTracing={isTracing}
+						onSelectNode={handleSelectNode}
+						onSelectEdge={handleSelectEdge}
+						onJump={handleJump}
+						onTrace={handleTrace}
+						onFitView={() =>
+							void flowRef.current?.fitView({
+								padding: 0.1,
+								duration: 300,
+							})
+						}
+						onClearSelection={handleClearSelection}
+						onStopTracing={stopTracing}
+					/>
+				)}
 			>
 				{view.lens === "none" ? null : (
 					<Panel position="top-left">
@@ -379,11 +341,10 @@ export const DependencyMap = () => {
 							index={index}
 							view={view}
 							onViewChange={setView}
-							impact={impact}
+							onStopTracing={stopTracing}
 							userName={userName}
 							onUserNameChange={setUserName}
-							accessCount={access ? access.size : null}
-							gapCount={gapCount}
+							access={access}
 							isAccessLoading={userAccess.isLoading}
 							accessError={
 								view.lens === "access" ? userAccess.error : null
@@ -393,7 +354,7 @@ export const DependencyMap = () => {
 				)}
 				<Panel position="top-right">
 					<DependencyMapLegend
-						index={index}
+						familyCounts={familyCounts}
 						families={view.families}
 						isShowingGaps={view.lens === "access" && view.showGaps}
 					/>
@@ -418,12 +379,12 @@ export const DependencyMap = () => {
 		>
 			{index ? (
 				<DependencyMapToolbar
-					index={index}
+					familyCounts={familyCounts}
 					view={view}
 					onViewChange={setView}
 					onClearFilters={clearFilters}
 					matches={matches}
-					onJump={jumpTo}
+					onJump={handleJump}
 					isRefreshing={isRefreshing}
 					onRefresh={refresh}
 					onSync={() => setIsSyncOpen(true)}
@@ -449,7 +410,10 @@ export const DependencyMap = () => {
 							selectedId={view.selectedId}
 							selectedEdgeId={view.selectedEdgeId}
 							access={access}
-							onClose={clearSelection}
+							onClose={handleClearSelection}
+							onTrace={handleTrace}
+							onJump={handleJump}
+							onSelectEdge={handleSelectEdge}
 						/>
 					</div>
 				) : null}
@@ -458,46 +422,23 @@ export const DependencyMap = () => {
 	);
 
 	return (
-		<DependencyMapActionsContext.Provider value={actions}>
+		<>
 			{isExpanded ? (
-				<>
-					<div
-						className={cn(
-							MAP_HEIGHT_CLASS,
-							"flex items-center justify-center rounded-lg border",
-						)}
-					>
-						<Muted>The map is expanded.</Muted>
-					</div>
-					<Dialog
-						open={true}
-						onOpenChange={(open) => {
-							if (!open) {
-								collapse();
-							}
-						}}
-					>
-						<DialogContent
-							showCloseButton={false}
-							className={EXPANDED_CLASS}
-							onEscapeKeyDown={(event) => {
-								// Escape closes the drawer before it collapses the map
-								if (hasSelection) {
-									event.preventDefault();
-									clearSelection();
-								}
-							}}
-						>
-							<DialogTitle className="sr-only">
-								Dependency Map
-							</DialogTitle>
-							<DialogDescription className="sr-only">
-								The dependency map, expanded to fill the window
-							</DialogDescription>
-							{mapArea}
-						</DialogContent>
-					</Dialog>
-				</>
+				<ExpandedCanvasDialog
+					title="Ontology"
+					placeholderClassName={MAP_HEIGHT_CLASS}
+					onEscape={() => {
+						// Escape closes the drawer before it collapses the map
+						if (!hasSelection) {
+							return false;
+						}
+						handleClearSelection();
+						return true;
+					}}
+					onCollapse={collapse}
+				>
+					{mapArea}
+				</ExpandedCanvasDialog>
 			) : (
 				mapArea
 			)}
@@ -506,8 +447,8 @@ export const DependencyMap = () => {
 				onOpenChange={setIsSyncOpen}
 				index={index}
 				onSynced={refresh}
-				onJump={jumpTo}
+				onJump={handleJump}
 			/>
-		</DependencyMapActionsContext.Provider>
+		</>
 	);
 };

@@ -15,20 +15,13 @@ export interface UseCatalogDependenciesResult {
 	 * until read
 	 */
 	dependencies: CatalogDependencyRow[];
-	/**
-	 * The owner's direct manual dependencies, the ones a user added and an
-	 * edit saves
-	 */
-	manualDependencies: CatalogDependencyRow[];
-	/**
-	 * The owner's direct automatic dependencies, recorded by the backend from
-	 * its configuration; read-only
-	 */
-	automaticDependencies: CatalogDependencyRow[];
 	/** Every dependency node, theirs included, each once; empty until read */
 	allDependencies: CatalogDependency[];
-	/** Ids of the owner's direct dependencies */
-	dependencyIds: string[];
+	/**
+	 * Every link between the nodes, the owner's and theirs, one per role;
+	 * empty until read. Older backends send none.
+	 */
+	links: CatalogDependencyLink[];
 	/**
 	 * Whether the owner's first read is waiting on the backend. A refresh keeps
 	 * the rows already read until the new ones arrive.
@@ -132,10 +125,8 @@ export const useCatalogDependencies = ({
 
 	return {
 		dependencies,
-		manualDependencies: dependencies.filter((d) => !d.is_automatic),
-		automaticDependencies: dependencies.filter((d) => d.is_automatic),
 		allDependencies: response?.dependencies ?? [],
-		dependencyIds: response?.dependencyIds ?? [],
+		links: response?.links ?? [],
 		isLoading: pixel !== "" && isReading && !hasPreviousRead,
 		error,
 		refresh,

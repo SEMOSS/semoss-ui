@@ -18,6 +18,7 @@ import { ManagedTeamsPage } from "./managed-teams-page";
 import { MemberSettingsPage } from "./member-settings-page";
 import { MyFilesPage } from "./my-files-page";
 import { MyProfilePage } from "./my-profile.page";
+import { OntologyRedirect } from "./ontology-redirect";
 import { RDFMapPage } from "./rdf-map-page";
 import { ResourceGovernancePage } from "./resource-governance-page";
 import { ServiceAccountsSettingsPage } from "./service-accounts-settings-page";
@@ -34,7 +35,7 @@ const SETTINGS_COMPONENTS: Record<string, ComponentType> = {
 	"resources/:type": ResourceGovernancePage,
 	"resources/:type/:id": ResourceGovernancePage,
 	"service-accounts": ServiceAccountsSettingsPage,
-	dependencies: DependencyMapPage,
+	ontology: DependencyMapPage,
 	"social-properties": ConfigurationsPage,
 	"github-app": GitHubAppPage,
 	"admin-query": AdminQueryPage,
@@ -79,6 +80,8 @@ export const SETTINGS_ROUTE: RouteObject = {
 	element: <SettingsLayout />,
 	children: [
 		...SETTINGS_CHILDREN,
+		// the Ontology was at dependencies; old links still open it
+		{ path: "dependencies", element: <OntologyRedirect /> },
 		{ path: "*", element: <Navigate to="." replace /> },
 	],
 };

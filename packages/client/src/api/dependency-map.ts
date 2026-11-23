@@ -22,9 +22,6 @@ const nodeSchema = z.object({
 	missing: z.boolean().default(false),
 	x: z.number(),
 	y: z.number(),
-	component: z.number().int().default(0),
-	dependencyCount: z.number().int().nonnegative().default(0),
-	dependentCount: z.number().int().nonnegative().default(0),
 });
 
 const edgeSchema = z.object({
@@ -45,28 +42,6 @@ const count = z.number().int().nonnegative().default(0);
 const graphSchema = z.object({
 	nodes: z.array(nodeSchema),
 	edges: z.array(edgeSchema),
-	stats: z
-		.object({
-			nodes: count,
-			edges: count,
-			automatic: count,
-			manual: count,
-			missing: count,
-			isolated: count,
-			cycles: count,
-			components: count,
-		})
-		.default({
-			nodes: 0,
-			edges: 0,
-			automatic: 0,
-			manual: 0,
-			missing: 0,
-			isolated: 0,
-			cycles: 0,
-			components: 0,
-		}),
-	bounds: z.object({ width: z.number(), height: z.number() }),
 	nodeSize: z
 		.object({ width: z.number().positive(), height: z.number().positive() })
 		.default({ width: 240, height: 64 }),
@@ -148,6 +123,41 @@ const parseReply = <T>(
 	return parsed.data;
 };
 
+/** A reply as read, or why it could not be read. */
+export interface ReadReply<T> {
+	/** The reply, or null when there is none or it could not be read */
+	readonly value: T | null;
+	/** Why it could not be read, or null */
+	readonly error: string | null;
+}
+
+/**
+ * Reads a reply `usePixel` returned, keeping a reply that is not the shape
+ * expected as its error rather than throwing during render.
+ *
+ * @param output - The reply, or null before there is one.
+ * @param read - Parses the reply, throwing when it cannot.
+ * @param failure - The error when the throw gives no message.
+ * @returns The value, or the error.
+ */
+export const readReply = <T>(
+	output: unknown,
+	read: (output: unknown) => T,
+	failure: string,
+): ReadReply<T> => {
+	if (output === null) {
+		return { value: null, error: null };
+	}
+	try {
+		return { value: read(output), error: null };
+	} catch (cause: unknown) {
+		return {
+			value: null,
+			error: cause instanceof Error ? cause.message : failure,
+		};
+	}
+};
+
 /** Options for a traced network: only the items around one root. */
 export interface DependencyGraphScope {
 	/** The root */
@@ -187,7 +197,7 @@ export const buildDependencyGraphPixel = (
  * @returns The network.
  */
 export const parseDependencyGraph = (output: unknown): DependencyGraph =>
-	parseReply(graphSchema, output, "dependency map");
+	parseReply(graphSchema, output, "ontology");
 
 /**
  * Builds the `AdminGetUserCatalogAccess` call: every engine and project a user

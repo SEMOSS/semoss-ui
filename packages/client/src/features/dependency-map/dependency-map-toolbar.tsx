@@ -1,17 +1,17 @@
 import {
 	Filter,
-	Maximize2,
-	Minimize2,
+	type LucideIcon,
 	Network,
 	RefreshCcwDot,
 	RefreshCw,
 	Route,
 	UserCheck,
 } from "lucide-react";
-import { type ReactNode, useId } from "react";
+import { useId } from "react";
 import {
 	Badge,
 	Button,
+	ButtonGroup,
 	Checkbox,
 	cn,
 	Label,
@@ -34,14 +34,17 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { DEPENDENCY_ROLE_LABELS } from "@/features/catalog/dependencies/catalog-dependency";
+import { ACTIVE_TOGGLE_CLASS } from "./active-toggle";
 import {
 	DEPENDENCY_FAMILIES,
 	type DependencyFamily,
-	type DependencyGraphIndex,
 	FAMILY_ORDER,
 	type LinkFilter,
 } from "./dependency-graph";
+import { FAMILY_SWATCH_CLASS } from "./dependency-legend-lists";
 import { DependencyMapSearch } from "./dependency-map-search";
+import { ExpandCanvasButton } from "./expand-canvas-button";
+import { MapTooltip } from "./map-tooltip";
 import type {
 	DependencyMapViewChange,
 	DependencyMapViewState,
@@ -53,7 +56,7 @@ const VIEWS: readonly {
 	value: LensKind;
 	label: string;
 	hint: string;
-	icon: typeof Network;
+	icon: LucideIcon;
 }[] = [
 	{
 		value: "none",
@@ -76,8 +79,8 @@ const VIEWS: readonly {
 ];
 
 interface DependencyMapToolbarProps {
-	/** The network */
-	index: DependencyGraphIndex;
+	/** How many items of each family the network holds */
+	familyCounts: ReadonlyMap<DependencyFamily, number>;
 	/** The view */
 	view: DependencyMapViewState;
 	/** Changes the view */
@@ -100,21 +103,13 @@ interface DependencyMapToolbarProps {
 	onToggleExpand: () => void;
 }
 
-/** An icon control with its name in a tooltip. */
-const withTooltip = (label: string, control: ReactNode): ReactNode => (
-	<Tooltip>
-		<TooltipTrigger asChild>{control}</TooltipTrigger>
-		<TooltipContent>{label}</TooltipContent>
-	</Tooltip>
-);
-
 /**
  * The map's one toolbar: search, the view, the filters, the counts, and the
  * map's actions. Controls are icons with their names in tooltips, so the
  * toolbar stays one row and the canvas keeps the page.
  */
 export const DependencyMapToolbar = ({
-	index,
+	familyCounts: counts,
 	view,
 	onViewChange,
 	onClearFilters,
@@ -126,11 +121,8 @@ export const DependencyMapToolbar = ({
 	isExpanded,
 	onToggleExpand,
 }: DependencyMapToolbarProps) => {
+	const typesId = useId();
 	const linksId = useId();
-	const counts = new Map<DependencyFamily, number>();
-	for (const family of index.families.values()) {
-		counts.set(family, (counts.get(family) ?? 0) + 1);
-	}
 	const shownFamilies = FAMILY_ORDER.filter((family) => counts.has(family));
 	const isFamilyShown = (family: DependencyFamily): boolean =>
 		view.families === null || view.families.has(family);
@@ -153,7 +145,6 @@ export const DependencyMapToolbar = ({
 	return (
 		<div className="flex flex-wrap items-center gap-2">
 			<DependencyMapSearch
-				index={index}
 				query={view.query}
 				onQueryChange={(query) => onViewChange({ query })}
 				matches={matches}
@@ -176,10 +167,10 @@ export const DependencyMapToolbar = ({
 						<TooltipTrigger asChild>
 							<ToggleGroupItem
 								value={value}
-								aria-label={label}
-								className="px-2.5"
+								className={cn("px-2.5", ACTIVE_TOGGLE_CLASS)}
 							>
 								<Icon aria-hidden="true" />
+								{label}
 							</ToggleGroupItem>
 						</TooltipTrigger>
 						<TooltipContent>
@@ -189,8 +180,7 @@ export const DependencyMapToolbar = ({
 				))}
 			</ToggleGroup>
 			<Popover>
-				{withTooltip(
-					"Filters",
+				<MapTooltip label="Filters">
 					<PopoverTrigger asChild>
 						<Button
 							type="button"
@@ -201,7 +191,6 @@ export const DependencyMapToolbar = ({
 									? `Filters, ${filterCount} on`
 									: "Filters"
 							}
-							className="px-2.5"
 						>
 							<Filter aria-hidden="true" />
 							{filterCount > 0 ? (
@@ -210,8 +199,8 @@ export const DependencyMapToolbar = ({
 								</Badge>
 							) : null}
 						</Button>
-					</PopoverTrigger>,
-				)}
+					</PopoverTrigger>
+				</MapTooltip>
 				<PopoverContent
 					align="start"
 					className="flex w-72 flex-col gap-4"
@@ -234,7 +223,7 @@ export const DependencyMapToolbar = ({
 						</div>
 						{shownFamilies.map((family) => {
 							const config = DEPENDENCY_FAMILIES[family];
-							const checkboxId = `${linksId}-${family}`;
+							const checkboxId = `${typesId}-${family}`;
 							return (
 								<div
 									key={family}
@@ -253,7 +242,7 @@ export const DependencyMapToolbar = ({
 									<span
 										aria-hidden="true"
 										className={cn(
-											"size-2.5 rounded-full",
+											FAMILY_SWATCH_CLASS,
 											config.swatchClass,
 										)}
 									/>
@@ -320,52 +309,34 @@ export const DependencyMapToolbar = ({
 					</Button>
 				</PopoverContent>
 			</Popover>
-			<span className="ml-auto hidden text-muted-foreground text-xs sm:inline">
-				{index.nodes.size.toLocaleString()} items ·{" "}
-				{index.edges.size.toLocaleString()} links
-			</span>
-			{withTooltip(
-				isRefreshing ? "Refreshing..." : "Refresh",
-				<Button
-					type="button"
-					size="icon-sm"
-					variant="ghost"
-					aria-label="Refresh"
-					disabled={isRefreshing}
-					onClick={onRefresh}
-				>
-					{isRefreshing ? (
-						<Spinner className="size-4" />
-					) : (
-						<RefreshCw aria-hidden="true" />
-					)}
-				</Button>,
-			)}
-			{withTooltip(
-				isExpanded ? "Collapse" : "Expand",
-				<Button
-					type="button"
-					size="icon-sm"
-					variant="ghost"
-					aria-label={
-						isExpanded ? "Collapse the map" : "Expand the map"
-					}
-					onClick={onToggleExpand}
-				>
-					{isExpanded ? (
-						<Minimize2 aria-hidden="true" />
-					) : (
-						<Maximize2 aria-hidden="true" />
-					)}
-				</Button>,
-			)}
-			{withTooltip(
-				"Work out every item's automatic dependencies again",
+			<ButtonGroup aria-label="Map actions" className="ml-auto">
+				<MapTooltip label={isRefreshing ? "Refreshing..." : "Refresh"}>
+					<Button
+						type="button"
+						size="icon-sm"
+						variant="outline"
+						aria-label="Refresh"
+						disabled={isRefreshing}
+						onClick={onRefresh}
+					>
+						{isRefreshing ? (
+							<Spinner className="size-4" />
+						) : (
+							<RefreshCw aria-hidden="true" />
+						)}
+					</Button>
+				</MapTooltip>
+				<ExpandCanvasButton
+					isExpanded={isExpanded}
+					onToggle={onToggleExpand}
+				/>
+			</ButtonGroup>
+			<MapTooltip label="Work out the automatic dependencies again">
 				<Button type="button" size="sm" onClick={onSync}>
 					<RefreshCcwDot aria-hidden="true" />
 					Sync
-				</Button>,
-			)}
+				</Button>
+			</MapTooltip>
 		</div>
 	);
 };

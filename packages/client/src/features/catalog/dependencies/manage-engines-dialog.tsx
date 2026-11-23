@@ -1,12 +1,6 @@
 import { CheckIcon, SearchIcon } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useSessionInsight } from "@semoss/sdk/react";
-import type {
-	CatalogDependency,
-	CatalogDependencyRow,
-	CatalogType,
-	Engine,
-} from "@semoss/shared";
+import { type UIEvent, useState } from "react";
+import type { CatalogDependencyRow, CatalogType, Engine } from "@semoss/shared";
 import { EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Button,
@@ -24,21 +18,15 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
+import { setCatalogDependencies } from "@/api/catalog-dependencies";
 import {
 	CATEGORY_META,
+	getDependencyDisplayName,
 	getDependencyKey,
 	getDependencyRoleLabel,
 	toCatalogDependencyPayload,
 } from "./catalog-dependency";
-
-/** Rows fetched per search in the manage dialog. */
-const MANAGE_FETCH_LIMIT = 50;
-
-/** An engine the picker offers. */
-type EngineOption = Pick<
-	CatalogDependency,
-	"catalog_id" | "catalog_name" | "catalog_type" | "catalog_subtype"
->;
+import { useDependencyOptions } from "./use-dependency-options";
 
 interface ManageEnginesDialogProps {
 	/** Engine category being managed */
@@ -55,19 +43,12 @@ interface ManageEnginesDialogProps {
 
 /**
  * Category-scoped engine picker: searches the user's engines of one category,
- * toggles manual selections, and saves the owner's manual dependency list
- * with every other category (and project-kind dependency) preserved, each
- * with its name and description. Automatic engines of the category are
- * listed read-only and never sent; the backend keeps them. The backend
- * refreshes the agent's engine context from the saved list.
- *
- * @name ManageEnginesDialog
- * @param category - Engine category being managed.
- * @param catalogId - The owner whose dependencies are edited.
- * @param catalogType - The owner's specific type.
- * @param dependencies - The owner's current dependencies.
- * @param onClose - Called on close; true when a save succeeded.
- * @return The manage dialog.
+ * a page at a time as the list scrolls, toggles manual selections, and saves
+ * the owner's manual dependency list with every other category (and
+ * project-kind dependency) preserved, each with its name and description.
+ * Automatic engines of the category are listed read-only and never sent; the
+ * backend keeps them. The backend refreshes the agent's engine context from
+ * the saved list.
  */
 export const ManageEnginesDialog = ({
 	category,
@@ -76,13 +57,17 @@ export const ManageEnginesDialog = ({
 	dependencies,
 	onClose,
 }: ManageEnginesDialogProps) => {
-	const { run: runPixel } = useSessionInsight();
 	const meta = CATEGORY_META[category];
+	const categoryLabel = meta.label.toLowerCase();
 
 	const [search, setSearch] = useState("");
-	const [options, setOptions] = useState<EngineOption[]>([]);
-	const [isLoading, setIsLoading] = useState(true);
 	const [isSaving, setIsSaving] = useState(false);
+	const { options, isLoading, hasMore, error, next } = useDependencyOptions({
+		catalogId,
+		search,
+		source: "ENGINE",
+		typeFilter: category,
+	});
 	const manualDependencies = dependencies.filter(
 		(dependency) => !dependency.is_automatic,
 	);
@@ -93,57 +78,13 @@ export const ManageEnginesDialog = ({
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(
 		() =>
 			new Set(
-				dependencies
+				manualDependencies
 					.filter(
-						(dependency) =>
-							!dependency.is_automatic &&
-							dependency.catalog_type === category,
+						(dependency) => dependency.catalog_type === category,
 					)
 					.map((dependency) => dependency.catalog_id),
 			),
 	);
-
-	// Debounced category-scoped engine search.
-	useEffect(() => {
-		let cancelled = false;
-		setIsLoading(true);
-		const timer = window.setTimeout(async () => {
-			try {
-				const trimmed = search.trim();
-				const filterClause = trimmed
-					? `filterWord=${JSON.stringify(trimmed)}, `
-					: "";
-				const response = await runPixel<[Engine[]]>(
-					`MyEngines(${filterClause}engineTypes=${JSON.stringify([category])}, limit=[${MANAGE_FETCH_LIMIT}], offset=[0]);`,
-				);
-				if (response.errors.length > 0) {
-					throw new Error(response.errors.join(""));
-				}
-				if (cancelled) return;
-				setOptions(
-					response.pixelReturn[0].output.map((engine) => ({
-						catalog_id: engine.engine_id,
-						catalog_name:
-							engine.engine_display_name || engine.engine_name,
-						catalog_type: engine.engine_type,
-						catalog_subtype: engine.engine_subtype,
-					})),
-				);
-			} catch (error) {
-				if (!cancelled) {
-					toast.error(
-						getErrorMessage(error, "Failed to load engines"),
-					);
-				}
-			} finally {
-				if (!cancelled) setIsLoading(false);
-			}
-		}, 250);
-		return () => {
-			cancelled = true;
-			window.clearTimeout(timer);
-		};
-	}, [category, runPixel, search]);
 
 	const toggleEngine = (engineId: string) => {
 		setSelectedIds((current) => {
@@ -157,6 +98,15 @@ export const ManageEnginesDialog = ({
 		});
 	};
 
+	const handleScroll = (event: UIEvent<HTMLDivElement>): void => {
+		const list = event.currentTarget;
+		const isNearBottom =
+			list.scrollHeight - list.scrollTop - list.clientHeight < 80;
+		if (isNearBottom && !isLoading && hasMore) {
+			next();
+		}
+	};
+
 	const handleSave = async () => {
 		setIsSaving(true);
 		try {
@@ -166,7 +116,7 @@ export const ManageEnginesDialog = ({
 			const others = manualDependencies.filter(
 				(dependency) => dependency.catalog_type !== category,
 			);
-			const payload = [
+			await setCatalogDependencies(catalogId, catalogType, [
 				...others.map(toCatalogDependencyPayload),
 				...[...selectedIds].map((id) =>
 					toCatalogDependencyPayload(
@@ -175,17 +125,11 @@ export const ManageEnginesDialog = ({
 						) ?? { catalog_id: id, catalog_type: category },
 					),
 				),
-			];
-			const response = await runPixel<[unknown]>(
-				`SetCatalogDependencies(catalogId="${catalogId}", catalogType="${catalogType}", dependencies=${JSON.stringify(payload)});`,
-			);
-			if (response.errors.length > 0) {
-				throw new Error(response.errors.join(""));
-			}
+			]);
 			toast.success(`${meta.label} updated`);
 			onClose(true);
-		} catch (error) {
-			toast.error(getErrorMessage(error, "Failed to update engines"));
+		} catch (saveError) {
+			toast.error(getErrorMessage(saveError, "Failed to update engines"));
 		} finally {
 			setIsSaving(false);
 		}
@@ -196,21 +140,21 @@ export const ManageEnginesDialog = ({
 			open
 			onOpenChange={(open) => !open && !isSaving && onClose(false)}
 		>
-			<DialogContent className="flex max-h-[70vh] flex-col sm:max-w-md">
+			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
 					<DialogTitle className="font-medium text-base leading-6">
-						Manage {meta.label.toLowerCase()}
+						Manage {categoryLabel}
 					</DialogTitle>
 					<DialogDescription>{meta.blurb}.</DialogDescription>
 				</DialogHeader>
 
 				<InputGroup>
 					<InputGroupAddon>
-						<SearchIcon className="size-4" />
+						<SearchIcon className="size-4" aria-hidden="true" />
 					</InputGroupAddon>
 					<InputGroupInput
-						placeholder={`Search ${meta.label.toLowerCase()}…`}
-						aria-label={`Search ${meta.label.toLowerCase()}`}
+						placeholder={`Search ${categoryLabel}…`}
+						aria-label={`Search ${categoryLabel}`}
 						value={search}
 						onChange={(event) => setSearch(event.target.value)}
 					/>
@@ -228,7 +172,7 @@ export const ManageEnginesDialog = ({
 									className="flex items-center gap-1.5 rounded-full border border-border bg-muted py-1 ps-1.5 pe-2 text-xs"
 								>
 									<span className="max-w-40 truncate">
-										{engine.catalog_name}
+										{getDependencyDisplayName(engine)}
 									</span>
 									<span className="text-muted-foreground">
 										{getDependencyRoleLabel(engine.role)}
@@ -239,19 +183,26 @@ export const ManageEnginesDialog = ({
 					</div>
 				) : null}
 
-				<div className="min-h-40 flex-1 overflow-y-auto rounded-md border border-border">
-					{isLoading ? (
+				<div
+					className="max-h-96 min-h-40 overflow-y-auto rounded-md border border-border"
+					onScroll={handleScroll}
+				>
+					{error ? (
+						<p className="p-4 text-center text-destructive text-sm">
+							{`Couldn't load ${categoryLabel}: ${error.message}`}
+						</p>
+					) : isLoading && options.length === 0 ? (
 						<div className="flex h-40 items-center justify-center">
 							<Spinner className="size-5" />
 						</div>
 					) : options.length === 0 ? (
 						<p className="p-4 text-center text-muted-foreground text-sm">
-							No {meta.label.toLowerCase()} found.
+							No {categoryLabel} found.
 						</p>
 					) : (
 						<ul className="flex flex-col p-1">
 							{options.map((option) => {
-								const selected = selectedIds.has(
+								const isSelected = selectedIds.has(
 									option.catalog_id,
 								);
 								return (
@@ -260,9 +211,9 @@ export const ManageEnginesDialog = ({
 											type="button"
 											className={cn(
 												"flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent",
-												selected && "bg-accent/50",
+												isSelected && "bg-accent/50",
 											)}
-											aria-pressed={selected}
+											aria-pressed={isSelected}
 											onClick={() =>
 												toggleEngine(option.catalog_id)
 											}
@@ -275,15 +226,17 @@ export const ManageEnginesDialog = ({
 													engineSubtype={
 														option.catalog_subtype
 													}
-													alt={option.catalog_name}
 													className="size-full object-contain"
 												/>
 											</span>
 											<span className="min-w-0 flex-1 truncate">
 												{option.catalog_name}
 											</span>
-											{selected ? (
-												<CheckIcon className="size-4 shrink-0 text-primary" />
+											{isSelected ? (
+												<CheckIcon
+													className="size-4 shrink-0 text-primary"
+													aria-hidden="true"
+												/>
 											) : null}
 										</button>
 									</li>
@@ -291,6 +244,11 @@ export const ManageEnginesDialog = ({
 							})}
 						</ul>
 					)}
+					{isLoading && options.length > 0 ? (
+						<div className="flex justify-center py-2">
+							<Spinner className="size-4" />
+						</div>
+					) : null}
 				</div>
 
 				<DialogFooter className="items-center">

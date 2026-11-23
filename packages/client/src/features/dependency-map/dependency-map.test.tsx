@@ -10,6 +10,7 @@ import type { ReactNode } from "react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DependencyMapPage } from "@/pages/settings/dependency-map.page";
+import type { GraphMenuTarget } from "./dependency-flow-canvas";
 import { DependencyMap } from "./dependency-map";
 
 // the drawer's scroll area measures itself; jsdom has no ResizeObserver
@@ -28,7 +29,6 @@ const GRAPH = {
 			name: "Claims Agent",
 			x: 0,
 			y: 0,
-			dependencyCount: 1,
 		},
 		{
 			id: "model",
@@ -37,7 +37,6 @@ const GRAPH = {
 			name: "GPT Model",
 			x: 400,
 			y: 0,
-			dependentCount: 1,
 		},
 		{
 			id: "lonely",
@@ -57,17 +56,6 @@ const GRAPH = {
 			isAutomatic: true,
 		},
 	],
-	stats: {
-		nodes: 3,
-		edges: 1,
-		automatic: 1,
-		manual: 0,
-		missing: 0,
-		isolated: 1,
-		cycles: 0,
-		components: 2,
-	},
-	bounds: { width: 640, height: 464 },
 };
 
 const mocks = vi.hoisted(() => ({
@@ -117,39 +105,74 @@ vi.mock("@xyflow/react", async (importOriginal) => ({
 	Panel: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
 
-// React Flow needs layout jsdom lacks; the canvas lists its nodes instead
-vi.mock("./dependency-map-canvas", () => ({
-	DependencyMapCanvas: ({
-		index,
-		emphasis,
-		onSelectNode,
-		children,
-	}: {
-		index: { graph: { nodes: { id: string; name: string }[] } };
-		emphasis: { nodes: Map<string, string> };
-		onSelectNode: (id: string) => void;
-		children: ReactNode;
-	}) => (
-		<section aria-label="Canvas">
-			<ul aria-label="Items">
-				{index.graph.nodes.map((node) => (
-					<li
-						key={node.id}
-						data-emphasis={emphasis.nodes.get(node.id)}
-					>
-						<button
-							type="button"
-							onClick={() => onSelectNode(node.id)}
-						>
-							{node.name}
-						</button>
-					</li>
-				))}
-			</ul>
-			{children}
-		</section>
-	),
-}));
+// React Flow needs layout jsdom lacks; the canvas lists its nodes instead,
+// inside the real right-click menu
+vi.mock("./dependency-map-canvas", async () => {
+	const { useState } = await import("react");
+	const { ContextMenu, ContextMenuContent, ContextMenuTrigger } =
+		await import("@semoss/ui/next");
+	return {
+		DependencyMapCanvas: ({
+			index,
+			emphasis,
+			onSelectNode,
+			renderMenu,
+			children,
+		}: {
+			index: { graph: { nodes: { id: string; name: string }[] } };
+			emphasis: { nodes: Map<string, string> };
+			onSelectNode: (id: string) => void;
+			renderMenu: (target: GraphMenuTarget) => ReactNode;
+			children: ReactNode;
+		}) => {
+			const [target, setTarget] = useState<GraphMenuTarget>({
+				kind: "pane",
+			});
+			const items = renderMenu(target);
+			return (
+				<ContextMenu>
+					<ContextMenuTrigger asChild disabled={!items}>
+						<section aria-label="Canvas">
+							<ul aria-label="Items">
+								{index.graph.nodes.map((node) => (
+									<li
+										key={node.id}
+										data-emphasis={emphasis.nodes.get(
+											node.id,
+										)}
+									>
+										<button
+											type="button"
+											className="react-flow__node"
+											data-id={node.id}
+											onClick={() =>
+												onSelectNode(node.id)
+											}
+											onContextMenu={() =>
+												setTarget({
+													kind: "node",
+													id: node.id,
+												})
+											}
+										>
+											{node.name}
+										</button>
+									</li>
+								))}
+							</ul>
+							{children}
+						</section>
+					</ContextMenuTrigger>
+					{items ? (
+						<ContextMenuContent className="w-56">
+							{items}
+						</ContextMenuContent>
+					) : null}
+				</ContextMenu>
+			);
+		},
+	};
+});
 
 afterEach(() => {
 	cleanup();
@@ -159,14 +182,11 @@ afterEach(() => {
 	mocks.adminMode = true;
 });
 
-const renderMap = (path = "/settings/dependencies") =>
+const renderMap = (path = "/settings/ontology") =>
 	render(
 		<MemoryRouter initialEntries={[path]}>
 			<Routes>
-				<Route
-					path="/settings/dependencies"
-					element={<DependencyMap />}
-				/>
+				<Route path="/settings/ontology" element={<DependencyMap />} />
 			</Routes>
 		</MemoryRouter>,
 	);
@@ -177,9 +197,20 @@ const canvasItem = (name: string) =>
 		.closest("li");
 
 describe("DependencyMap", () => {
-	it("shows the counts, and dims the types the filters hide", async () => {
+	it("opens on All, and marks the view showing", () => {
 		renderMap();
-		expect(screen.getByText("3 items · 1 links")).toBeInTheDocument();
+		const all = screen.getByRole("radio", { name: "All" });
+		const trace = screen.getByRole("radio", { name: "Trace" });
+		expect(all).toHaveAttribute("aria-checked", "true");
+		expect(trace).toHaveAttribute("aria-checked", "false");
+		fireEvent.click(trace);
+		expect(trace).toHaveAttribute("aria-checked", "true");
+		expect(all).toHaveAttribute("aria-checked", "false");
+	});
+
+	it("dims the types the filters hide, with no item count in the toolbar", async () => {
+		renderMap();
+		expect(screen.queryByText(/items ·/)).toBeNull();
 		fireEvent.click(screen.getByRole("button", { name: "Filters" }));
 		const models = await screen.findByRole("checkbox", { name: "Models" });
 		expect(models).toBeChecked();
@@ -215,7 +246,7 @@ describe("DependencyMap", () => {
 	it("highlights search matches and jumps to one", () => {
 		renderMap();
 		const search = screen.getByRole("searchbox", {
-			name: "Search the map by name or id",
+			name: "Search the ontology by name or id",
 		});
 		fireEvent.change(search, { target: { value: "claims" } });
 		expect(canvasItem("Claims Agent")).toHaveAttribute(
@@ -240,20 +271,33 @@ describe("DependencyMap", () => {
 		fireEvent.click(screen.getByRole("button", { name: "GPT Model" }));
 		const drawer = screen.getByRole("complementary", { name: "GPT Model" });
 		expect(screen.queryByRole("dialog")).toBeNull();
+		// the name is only the title; opening it is an icon action
 		expect(
-			within(drawer).getByRole("link", { name: "Open in Catalog" }),
-		).toHaveAttribute("href", "/model/model");
-		fireEvent.mouseDown(
-			within(drawer).getByRole("tab", { name: "Used by 1" }),
-		);
+			within(drawer).getByRole("heading", { name: "GPT Model" }),
+		).toBeInTheDocument();
+		const open = within(drawer).getByRole("link", {
+			name: /Open in Catalog/,
+		});
+		expect(open).toHaveAttribute("href", "/model/model");
+		expect(open).toHaveAttribute("target", "_blank");
+		// nothing upstream: that trace is off, and says why
 		expect(
-			within(drawer).getByRole("region", { name: "Used by" }),
+			within(drawer).getByRole("button", { name: "Uses nothing" }),
+		).toBeDisabled();
+		// the sections fold: Overview starts open, the rest closed
+		expect(
+			within(drawer).getByRole("button", { name: "Overview" }),
+		).toHaveAttribute("aria-expanded", "true");
+		const lineage = within(drawer).getByRole("button", {
+			name: "Lineage, 0 upstream, 1 downstream",
+		});
+		expect(lineage).toHaveAttribute("aria-expanded", "false");
+		fireEvent.click(lineage);
+		expect(
+			within(drawer).getByRole("region", { name: "Downstream" }),
 		).toHaveTextContent("Claims Agent");
-		fireEvent.mouseDown(
-			within(drawer).getByRole("tab", { name: "Uses 0" }),
-		);
 		expect(
-			within(drawer).getByRole("region", { name: "Uses" }),
+			within(drawer).getByRole("region", { name: "Upstream" }),
 		).toHaveTextContent("None");
 	});
 
@@ -261,8 +305,8 @@ describe("DependencyMap", () => {
 		renderMap();
 		fireEvent.click(screen.getByRole("button", { name: "GPT Model" }));
 		const drawer = screen.getByRole("complementary", { name: "GPT Model" });
-		fireEvent.mouseDown(
-			within(drawer).getByRole("tab", { name: "Security" }),
+		fireEvent.click(
+			within(drawer).getByRole("button", { name: "Security" }),
 		);
 		const audit = within(drawer).getByRole("link", {
 			name: /Audit Trail \(opens in a new tab\)/,
@@ -293,11 +337,54 @@ describe("DependencyMap", () => {
 		expect(screen.queryByRole("complementary")).toBeNull();
 	});
 
+	it("moves focus into the drawer, and back to the item when it closes", async () => {
+		renderMap();
+		const item = screen.getByRole("button", { name: "GPT Model" });
+		fireEvent.click(item);
+		const drawer = screen.getByRole("complementary", { name: "GPT Model" });
+		expect(
+			within(drawer).getByRole("heading", { name: "GPT Model" }),
+		).toHaveFocus();
+		fireEvent.click(screen.getByRole("button", { name: "Close details" }));
+		await waitFor(() =>
+			expect(
+				screen.getByRole("button", { name: "GPT Model" }),
+			).toHaveFocus(),
+		);
+	});
+
+	it("traces and opens an item from its right-click menu", async () => {
+		renderMap();
+		fireEvent.contextMenu(
+			screen.getByRole("button", { name: "GPT Model" }),
+		);
+		const menu = await screen.findByRole("menu");
+		// the model uses nothing, so there is nothing upstream to trace
+		expect(
+			within(menu).getByRole("menuitem", { name: "Trace Upstream" }),
+		).toHaveAttribute("data-disabled");
+		expect(
+			within(menu).getByRole("menuitem", { name: /Open in Catalog/ }),
+		).toHaveAttribute("href", "/model/model");
+		fireEvent.click(
+			within(menu).getByRole("menuitem", { name: "Trace Downstream" }),
+		);
+		expect(canvasItem("GPT Model")).toHaveAttribute(
+			"data-emphasis",
+			"root",
+		);
+		expect(canvasItem("Claims Agent")).toHaveAttribute(
+			"data-emphasis",
+			"traced",
+		);
+	});
+
 	it("traces what uses an item from its drawer", () => {
 		renderMap();
 		fireEvent.click(screen.getByRole("button", { name: "GPT Model" }));
+		// the trace is an icon action, with how far it reaches
 		fireEvent.click(
-			screen.getByRole("button", { name: "Trace what uses it" }),
+			screen.getByRole("button", { name: "Trace downstream (1)" }),
 		);
 		expect(canvasItem("GPT Model")).toHaveAttribute(
 			"data-emphasis",
@@ -320,7 +407,9 @@ describe("DependencyMap", () => {
 		renderMap();
 		fireEvent.click(screen.getByRole("radio", { name: "Trace" }));
 		expect(
-			screen.getByText("Click an item on the map to trace it."),
+			screen.getByText(
+				"Click an item in the ontology, or press Enter on it, to trace it.",
+			),
 		).toBeInTheDocument();
 		fireEvent.click(screen.getByRole("button", { name: "Claims Agent" }));
 		expect(canvasItem("Claims Agent")).toHaveAttribute(
@@ -339,9 +428,7 @@ describe("DependencyMap", () => {
 	});
 
 	it("opens a trace from a link to an item", () => {
-		renderMap(
-			"/settings/dependencies?focus=agent&lens=trace&dir=DEPENDENCIES",
-		);
+		renderMap("/settings/ontology?focus=agent&lens=trace&dir=DEPENDENCIES");
 		expect(canvasItem("Claims Agent")).toHaveAttribute(
 			"data-emphasis",
 			"root",
@@ -354,9 +441,11 @@ describe("DependencyMap", () => {
 
 	it("expands the map into the window, drawer included", async () => {
 		renderMap();
-		fireEvent.click(screen.getByRole("button", { name: "Expand the map" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Expand the ontology" }),
+		);
 		const expanded = await screen.findByRole("dialog", {
-			name: "Dependency Map",
+			name: "Ontology",
 		});
 		fireEvent.click(
 			within(expanded).getByRole("button", { name: "GPT Model" }),
@@ -365,7 +454,9 @@ describe("DependencyMap", () => {
 			within(expanded).getByRole("complementary", { name: "GPT Model" }),
 		).toBeInTheDocument();
 		fireEvent.click(
-			within(expanded).getByRole("button", { name: "Collapse the map" }),
+			within(expanded).getByRole("button", {
+				name: "Collapse the ontology",
+			}),
 		);
 		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 	});
@@ -417,11 +508,11 @@ describe("DependencyMapPage", () => {
 	it("sends anyone outside admin mode back to Settings", async () => {
 		mocks.adminMode = false;
 		render(
-			<MemoryRouter initialEntries={["/settings/dependencies"]}>
+			<MemoryRouter initialEntries={["/settings/ontology"]}>
 				<Routes>
 					<Route path="/settings" element={<p>Settings home</p>} />
 					<Route
-						path="/settings/dependencies"
+						path="/settings/ontology"
 						element={<DependencyMapPage />}
 					/>
 				</Routes>

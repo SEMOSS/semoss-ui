@@ -90,7 +90,12 @@ export const engineProjectToMCP = (tool: Engine | App): MCP => {
  */
 export const catalogDependencyToMCP = (dep: CatalogDependency): MCP => ({
 	id: dep.catalog_id,
-	name: dep.catalog_name,
+	// a dependency private to the user comes without its name
+	name:
+		dep.catalog_name ??
+		(isProjectCatalogType(dep.catalog_type)
+			? "Private App"
+			: `Private ${dep.catalog_type.charAt(0)}${dep.catalog_type.slice(1).toLowerCase()}`),
 	type: isProjectCatalogType(dep.catalog_type) ? "PROJECT" : dep.catalog_type,
 	subtype: dep.catalog_subtype,
 	description: dep.description ?? "",

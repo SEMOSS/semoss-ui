@@ -6,110 +6,168 @@ import type {
 	UserCatalogAccess,
 } from "@/api/dependency-map";
 import {
+	DEPENDENCY_ACCESS_LEVEL_LABELS,
 	getDependencyRoleLabel,
 	getDependencyTypeConfig,
 } from "@/features/catalog/dependencies/catalog-dependency";
 
-/** A group of catalog types drawn in one colour on the map. */
+/**
+ * The catalog type a node is drawn as. Every type has its own colour, so a
+ * Code app always reads the same on every graph. The backend's INSIGHTS
+ * spelling is drawn as INSIGHT.
+ */
 export type DependencyFamily =
+	| "CODE"
+	| "WORKSPACE"
+	| "SKILL"
+	| "DATABASE"
 	| "MODEL"
-	| "DATA"
 	| "VECTOR"
+	| "STORAGE"
 	| "FUNCTION"
 	| "GUARDRAIL"
-	| "AGENT"
-	| "APP";
+	| "BLOCKS"
+	| "NOTEBOOK"
+	| "AUTOMATION"
+	| "INSIGHT";
 
-/** How the map draws one family. */
+/** How the map draws one type. */
 interface FamilyConfig {
-	/** Plural label for the legend */
+	/** Plural label for the legend and the filters */
 	readonly label: string;
-	/** Background class for the node's bar and the legend swatch */
+	/** Background class for the legend and filter swatches */
 	readonly swatchClass: string;
-	/** Text class for the family's icon */
+	/** A light wash of the colour, for a node's icon tile */
+	readonly tintClass: string;
+	/** Text class for the type's icon */
 	readonly textClass: string;
-	/** The colour as a CSS value, for the minimap's SVG fill */
-	readonly color: string;
 }
 
 /**
- * Each family's colour, in legend order, from the design system's existing
- * tokens: the five series colours, the assistant's purple for agents and
- * skills, and the muted foreground for apps. Databases and storage share a
- * colour. The type's icon and label always name the type too, so colour is
- * never the only signal.
+ * Each type's colour, in legend order: the five most common types first
+ * (Code apps, agents, skills, databases, models), then the rest. Each takes
+ * one numbered chart token, so the mapping is fixed: `chart-6` to `chart-13`
+ * keep one hue in light and dark, which is why the common types use them
+ * where they can. The type's icon and label always name the type too, so
+ * colour is never the only signal. Typed with `satisfies`, so a type added
+ * here without a colour fails type-check.
  */
 export const DEPENDENCY_FAMILIES = {
+	CODE: {
+		label: "Code Apps",
+		swatchClass: "bg-chart-6",
+		tintClass: "bg-chart-6/10",
+		textClass: "text-chart-6",
+	},
+	WORKSPACE: {
+		label: "Agents",
+		swatchClass: "bg-chart-7",
+		tintClass: "bg-chart-7/10",
+		textClass: "text-chart-7",
+	},
+	SKILL: {
+		label: "Skills",
+		swatchClass: "bg-chart-8",
+		tintClass: "bg-chart-8/10",
+		textClass: "text-chart-8",
+	},
+	DATABASE: {
+		label: "Databases",
+		swatchClass: "bg-chart-2",
+		tintClass: "bg-chart-2/10",
+		textClass: "text-chart-2",
+	},
 	MODEL: {
 		label: "Models",
-		swatchClass: "bg-chart-1",
-		textClass: "text-chart-1",
-		color: "var(--color-chart-1)",
-	},
-	DATA: {
-		label: "Databases & Storage",
-		swatchClass: "bg-chart-2",
-		textClass: "text-chart-2",
-		color: "var(--color-chart-2)",
+		swatchClass: "bg-chart-10",
+		tintClass: "bg-chart-10/10",
+		textClass: "text-chart-10",
 	},
 	VECTOR: {
 		label: "Vector Databases",
 		swatchClass: "bg-chart-3",
+		tintClass: "bg-chart-3/10",
 		textClass: "text-chart-3",
-		color: "var(--color-chart-3)",
+	},
+	STORAGE: {
+		label: "Storage",
+		swatchClass: "bg-chart-9",
+		tintClass: "bg-chart-9/10",
+		textClass: "text-chart-9",
 	},
 	FUNCTION: {
 		label: "Functions",
 		swatchClass: "bg-chart-4",
+		tintClass: "bg-chart-4/10",
 		textClass: "text-chart-4",
-		color: "var(--color-chart-4)",
 	},
 	GUARDRAIL: {
 		label: "Guardrails",
 		swatchClass: "bg-chart-5",
+		tintClass: "bg-chart-5/10",
 		textClass: "text-chart-5",
-		color: "var(--color-chart-5)",
 	},
-	AGENT: {
-		label: "Agents & Skills",
-		swatchClass: "bg-assistant",
-		textClass: "text-assistant",
-		color: "var(--color-assistant)",
+	BLOCKS: {
+		label: "Blocks Apps",
+		swatchClass: "bg-chart-11",
+		tintClass: "bg-chart-11/10",
+		textClass: "text-chart-11",
 	},
-	APP: {
-		label: "Apps",
-		swatchClass: "bg-muted-foreground",
-		textClass: "text-muted-foreground",
-		color: "var(--color-muted-foreground)",
+	NOTEBOOK: {
+		label: "Notebooks",
+		swatchClass: "bg-chart-12",
+		tintClass: "bg-chart-12/10",
+		textClass: "text-chart-12",
+	},
+	AUTOMATION: {
+		label: "Automations",
+		swatchClass: "bg-chart-13",
+		tintClass: "bg-chart-13/10",
+		textClass: "text-chart-13",
+	},
+	INSIGHT: {
+		label: "Insights",
+		swatchClass: "bg-chart-1",
+		tintClass: "bg-chart-1/10",
+		textClass: "text-chart-1",
 	},
 } as const satisfies Record<DependencyFamily, FamilyConfig>;
 
-/** The families in legend order. */
+/** The types in legend order. */
 export const FAMILY_ORDER = Object.keys(
 	DEPENDENCY_FAMILIES,
 ) as DependencyFamily[];
 
-const TYPE_FAMILY: Readonly<Record<string, DependencyFamily>> = {
-	MODEL: "MODEL",
-	DATABASE: "DATA",
-	STORAGE: "DATA",
-	VECTOR: "VECTOR",
-	FUNCTION: "FUNCTION",
-	GUARDRAIL: "GUARDRAIL",
-	WORKSPACE: "AGENT",
-	SKILL: "AGENT",
-};
+const isFamily = (type: string): type is DependencyFamily =>
+	Object.hasOwn(DEPENDENCY_FAMILIES, type);
 
 /**
- * The family a catalog type is drawn in. A type the map does not know falls
- * back on whether it is a project.
+ * The type a catalog item is drawn as: its own, with the backend's INSIGHTS
+ * read as INSIGHT. A type the map does not know is drawn as a Code app when
+ * it is a project, and as a database otherwise.
  *
  * @param type - The item's catalog type.
  * @returns Its family.
  */
-export const getDependencyFamily = (type: string): DependencyFamily =>
-	TYPE_FAMILY[type] ??
-	(getDependencyTypeConfig(type).kind === "project" ? "APP" : "DATA");
+export const getDependencyFamily = (type: string): DependencyFamily => {
+	const known = type === "INSIGHTS" ? "INSIGHT" : type;
+	if (isFamily(known)) {
+		return known;
+	}
+	return getDependencyTypeConfig(type).kind === "PROJECT"
+		? "CODE"
+		: "DATABASE";
+};
+
+/** One item to search, for {@link rankSearchMatches}. */
+export interface SearchEntry {
+	/** Its id, returned when it matches */
+	readonly id: string;
+	/** Its shown name, lower-cased */
+	readonly name: string;
+	/** Its id, lower-cased; null when it is not searched by id */
+	readonly lowerId: string | null;
+}
 
 /** Lookups over a dependency network, built once per network. */
 export interface DependencyGraphIndex {
@@ -126,11 +184,7 @@ export interface DependencyGraphIndex {
 	/** Each node's family */
 	readonly families: ReadonlyMap<string, DependencyFamily>;
 	/** Lower-cased names and ids, for search */
-	readonly searchable: readonly {
-		readonly id: string;
-		readonly name: string;
-		readonly lowerId: string;
-	}[];
+	readonly searchable: readonly SearchEntry[];
 }
 
 const pushTo = <K, V>(map: Map<K, V[]>, key: K, value: V): void => {
@@ -281,14 +335,16 @@ export const traceGraph = (
 /**
  * The items whose name or id contains the query, best first: an exact name,
  * then a name that starts with it, then a name that contains it, then an id
- * that contains it; ties by name.
+ * that contains it; ties by name. The admin Ontology and the Ontology tab
+ * rank their searches with it.
  *
- * @param index - The network.
+ * @param entries - Each item with its lower-cased name and id; a null id is
+ * not searched, such as an item private to the user.
  * @param query - What was typed.
- * @returns The matching node ids, best first.
+ * @returns The matching ids, best first; empty for an empty search.
  */
-export const searchNodes = (
-	index: DependencyGraphIndex,
+export const rankSearchMatches = (
+	entries: Iterable<SearchEntry>,
 	query: string,
 ): string[] => {
 	const needle = query.trim().toLowerCase();
@@ -296,7 +352,7 @@ export const searchNodes = (
 		return [];
 	}
 	const ranked: { id: string; name: string; rank: number }[] = [];
-	for (const entry of index.searchable) {
+	for (const entry of entries) {
 		let rank = -1;
 		if (entry.name === needle) {
 			rank = 0;
@@ -304,7 +360,7 @@ export const searchNodes = (
 			rank = 1;
 		} else if (entry.name.includes(needle)) {
 			rank = 2;
-		} else if (entry.lowerId.includes(needle)) {
+		} else if (entry.lowerId?.includes(needle)) {
 			rank = 3;
 		}
 		if (rank >= 0) {
@@ -314,6 +370,18 @@ export const searchNodes = (
 	ranked.sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name));
 	return ranked.map((entry) => entry.id);
 };
+
+/**
+ * Searches the network by name and id, ranked by {@link rankSearchMatches}.
+ *
+ * @param index - The network.
+ * @param query - What was typed.
+ * @returns The matching node ids, best first.
+ */
+export const searchNodes = (
+	index: DependencyGraphIndex,
+	query: string,
+): string[] => rankSearchMatches(index.searchable, query);
 
 /** Which links the map shows at full strength. */
 export type LinkFilter = "ALL" | "AUTOMATIC" | "MANUAL" | (string & {});
@@ -517,10 +585,27 @@ export const summarizeImpact = (
 
 /** The words for a user's access level. */
 export const ACCESS_LEVEL_LABELS = {
-	1: "Owner",
-	2: "Editor",
-	3: "Read-only",
+	1: DEPENDENCY_ACCESS_LEVEL_LABELS.OWNER,
+	2: DEPENDENCY_ACCESS_LEVEL_LABELS.EDIT,
+	3: DEPENDENCY_ACCESS_LEVEL_LABELS.READ_ONLY,
 } as const satisfies Record<UserCatalogAccess["permission"], string>;
+
+/**
+ * How many items of each family a network holds, for the filters and the
+ * legend.
+ *
+ * @param index - The network.
+ * @returns Each family's count; families with none are left out.
+ */
+export const countFamilies = (
+	index: DependencyGraphIndex,
+): ReadonlyMap<DependencyFamily, number> => {
+	const counts = new Map<DependencyFamily, number>();
+	for (const family of index.families.values()) {
+		counts.set(family, (counts.get(family) ?? 0) + 1);
+	}
+	return counts;
+};
 
 /** The words for where a user's access comes from. */
 export const ACCESS_SOURCE_LABELS = {

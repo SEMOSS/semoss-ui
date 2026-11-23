@@ -129,6 +129,10 @@ export const ProjectLayout = () => {
 				project: getMetadata.data,
 				permission: getUserProjectPermission.data,
 				dependencies: getDependencies.dependencies,
+				dependencyGraph: {
+					nodes: getDependencies.allDependencies,
+					links: getDependencies.links,
+				},
 				refresh,
 				refreshDependencies: getDependencies.refresh,
 				update,

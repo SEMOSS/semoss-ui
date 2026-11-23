@@ -109,7 +109,6 @@ describe("useCatalogDependencies", () => {
 		);
 		expect(result.current).toMatchObject({
 			dependencies: [toRow(MODEL, link)],
-			dependencyIds: ["model-1"],
 			isLoading: false,
 			error: undefined,
 		});
@@ -135,7 +134,7 @@ describe("useCatalogDependencies", () => {
 		expect(result.current.allDependencies).toEqual([SKILL, MODEL]);
 	});
 
-	it("joins a target with two roles into two rows and splits them", () => {
+	it("joins a target with two roles into two rows", () => {
 		const SUBAGENT: CatalogDependency = {
 			catalog_id: "agent-2",
 			catalog_type: "WORKSPACE",
@@ -171,13 +170,6 @@ describe("useCatalogDependencies", () => {
 		expect(result.current.dependencies).toEqual([
 			toRow(MODEL, agentModel),
 			toRow(SUBAGENT, subagent),
-			toRow(MODEL, manualModel),
-		]);
-		expect(result.current.automaticDependencies).toEqual([
-			toRow(MODEL, agentModel),
-			toRow(SUBAGENT, subagent),
-		]);
-		expect(result.current.manualDependencies).toEqual([
 			toRow(MODEL, manualModel),
 		]);
 	});

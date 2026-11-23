@@ -5,21 +5,18 @@ import {
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
-	cn,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
 } from "@semoss/ui/next";
+import { type DependencyFamily, FAMILY_ORDER } from "./dependency-graph";
 import {
-	DEPENDENCY_FAMILIES,
-	type DependencyFamily,
-	type DependencyGraphIndex,
-	FAMILY_ORDER,
-} from "./dependency-graph";
+	DependencyLegendLists,
+	type LegendLink,
+} from "./dependency-legend-lists";
+import { MapOverlayCard } from "./map-overlay-card";
+import { MapTooltip } from "./map-tooltip";
 
 interface DependencyMapLegendProps {
-	/** The network, for the types it holds and their counts */
-	index: DependencyGraphIndex;
+	/** How many items of each family the network holds */
+	familyCounts: ReadonlyMap<DependencyFamily, number>;
 	/** The types shown, or null for all; the others are struck through */
 	families: ReadonlySet<DependencyFamily> | null;
 	/** Whether access gaps are drawn, so their line is explained */
@@ -32,16 +29,13 @@ interface DependencyMapLegendProps {
  * so the canvas stays clear.
  */
 export const DependencyMapLegend = ({
-	index,
+	familyCounts: counts,
 	families,
 	isShowingGaps,
 }: DependencyMapLegendProps) => {
 	const [isOpen, setIsOpen] = useState(false);
-	const counts = new Map<DependencyFamily, number>();
-	for (const family of index.families.values()) {
-		counts.set(family, (counts.get(family) ?? 0) + 1);
-	}
-	const links = [
+	const toggleLabel = isOpen ? "Hide the legend" : "Show the legend";
+	const links: LegendLink[] = [
 		{ label: "Automatic link", className: "border-muted-foreground" },
 		{
 			label: "Manual link",
@@ -56,94 +50,36 @@ export const DependencyMapLegend = ({
 	return (
 		<Collapsible open={isOpen} onOpenChange={setIsOpen}>
 			<div className="flex flex-col items-end gap-2">
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<CollapsibleTrigger asChild>
-							<Button
-								type="button"
-								size="icon-sm"
-								variant="outline"
-								aria-label={
-									isOpen
-										? "Hide the legend"
-										: "Show the legend"
-								}
-							>
-								{isOpen ? (
-									<X aria-hidden="true" />
-								) : (
-									<Info aria-hidden="true" />
-								)}
-							</Button>
-						</CollapsibleTrigger>
-					</TooltipTrigger>
-					<TooltipContent>
-						{isOpen ? "Hide the legend" : "Legend"}
-					</TooltipContent>
-				</Tooltip>
-				<CollapsibleContent>
-					<div className="flex flex-col gap-3 rounded-lg border bg-card p-3 text-xs shadow-sm">
-						<ul
-							aria-label="Types"
-							className="grid grid-cols-2 gap-x-4 gap-y-1"
+				<MapTooltip label={toggleLabel}>
+					<CollapsibleTrigger asChild>
+						<Button
+							type="button"
+							size="icon-sm"
+							variant="outline"
+							aria-label={toggleLabel}
 						>
-							{FAMILY_ORDER.filter((family) =>
+							{isOpen ? (
+								<X aria-hidden="true" />
+							) : (
+								<Info aria-hidden="true" />
+							)}
+						</Button>
+					</CollapsibleTrigger>
+				</MapTooltip>
+				<CollapsibleContent>
+					<MapOverlayCard className="flex flex-col gap-3 p-3 text-xs">
+						<DependencyLegendLists
+							families={FAMILY_ORDER.filter((family) =>
 								counts.has(family),
-							).map((family) => {
-								const config = DEPENDENCY_FAMILIES[family];
-								const isShown =
-									families === null || families.has(family);
-								return (
-									<li
-										key={family}
-										className={cn(
-											"flex items-center gap-2",
-											!isShown &&
-												"text-muted-foreground line-through",
-										)}
-									>
-										<span
-											aria-hidden="true"
-											className={cn(
-												"size-2.5 rounded-full",
-												config.swatchClass,
-											)}
-										/>
-										<span className="flex-1">
-											{config.label}
-										</span>
-										<span className="text-muted-foreground">
-											{(
-												counts.get(family) ?? 0
-											).toLocaleString()}
-										</span>
-										{isShown ? null : (
-											<span className="sr-only">
-												(hidden)
-											</span>
-										)}
-									</li>
-								);
-							})}
-						</ul>
-						<ul aria-label="Links" className="flex flex-col gap-1">
-							{links.map((link) => (
-								<li
-									key={link.label}
-									className="flex items-center gap-2"
-								>
-									<span
-										aria-hidden="true"
-										className={cn(
-											"w-6 border-t-2",
-											link.className,
-										)}
-									/>
-									{link.label}
-								</li>
-							))}
-						</ul>
-					</div>
+							).map((family) => ({
+								family,
+								count: counts.get(family) ?? 0,
+								isShown:
+									families === null || families.has(family),
+							}))}
+							links={links}
+						/>
+					</MapOverlayCard>
 				</CollapsibleContent>
 			</div>
 		</Collapsible>

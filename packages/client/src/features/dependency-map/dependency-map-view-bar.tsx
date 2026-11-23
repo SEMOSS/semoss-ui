@@ -3,10 +3,11 @@ import {
 	ArrowLeftRight,
 	ArrowRight,
 	Focus,
+	type LucideIcon,
 	Unlink,
 	X,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { useMemo } from "react";
 import { PersonIdentity } from "@semoss/shared";
 import {
 	Button,
@@ -25,11 +26,21 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { getAllUsers } from "@/api/auth";
-import type { DependencyDirection } from "@/api/dependency-map";
+import type {
+	DependencyDirection,
+	UserCatalogAccess,
+} from "@/api/dependency-map";
 import type { SETTINGS_MEMBER } from "@/components/settings/settings.types";
 import { AgentRunFilterSelect } from "@/features/agent-runs/agent-run-filter-select";
-import type { DependencyGraphIndex } from "./dependency-graph";
+import {
+	type DependencyGraphIndex,
+	findAccessGaps,
+	summarizeImpact,
+	traceGraph,
+} from "./dependency-graph";
 import { DependencyItemImage } from "./dependency-item-image";
+import { MapOverlayCard } from "./map-overlay-card";
+import { MapTooltip } from "./map-tooltip";
 import type {
 	DependencyMapViewChange,
 	DependencyMapViewState,
@@ -52,20 +63,12 @@ const loadUsers = async (search: string): Promise<SETTINGS_MEMBER[]> =>
 const DIRECTIONS: readonly {
 	value: DependencyDirection;
 	label: string;
-	icon: typeof ArrowRight;
+	icon: LucideIcon;
 }[] = [
 	{ value: "DEPENDENCIES", label: "What it uses", icon: ArrowRight },
 	{ value: "DEPENDENTS", label: "What uses it", icon: ArrowLeft },
 	{ value: "BOTH", label: "Both ways", icon: ArrowLeftRight },
 ];
-
-/** A control with its name in a tooltip. */
-const withTooltip = (label: string, control: ReactNode): ReactNode => (
-	<Tooltip>
-		<TooltipTrigger asChild>{control}</TooltipTrigger>
-		<TooltipContent>{label}</TooltipContent>
-	</Tooltip>
-);
 
 interface DependencyMapViewBarProps {
 	/** The network */
@@ -74,16 +77,14 @@ interface DependencyMapViewBarProps {
 	view: DependencyMapViewState;
 	/** Changes the view */
 	onViewChange: (change: DependencyMapViewChange) => void;
-	/** The trace's reach by type, for the impact line */
-	impact: readonly { label: string; count: number }[];
+	/** Leaves the trace for the whole network */
+	onStopTracing: () => void;
 	/** The picked user's name, when known */
 	userName: string;
 	/** Records the picked user's name, for the picker */
 	onUserNameChange: (name: string) => void;
-	/** How many items the picked user can use, or null while unknown */
-	accessCount: number | null;
-	/** How many links the picked user can't follow, or null while unknown */
-	gapCount: number | null;
+	/** The picked user's access, or null while unknown or outside User Access */
+	access: ReadonlyMap<string, UserCatalogAccess> | null;
 	/** Whether the user's access is being read */
 	isAccessLoading: boolean;
 	/** Why the user's access could not be read, or null */
@@ -99,30 +100,59 @@ export const DependencyMapViewBar = ({
 	index,
 	view,
 	onViewChange,
-	impact,
+	onStopTracing,
 	userName,
 	onUserNameChange,
-	accessCount,
-	gapCount,
+	access,
 	isAccessLoading,
 	accessError,
 }: DependencyMapViewBarProps) => {
+	const isTracing = view.lens === "trace" && view.traceRootId !== "";
+	// the trace's reach by type, for the impact line
+	const impact = useMemo(
+		() =>
+			isTracing
+				? summarizeImpact(
+						index,
+						traceGraph(
+							index,
+							view.traceRootId,
+							view.direction,
+							view.depth,
+						),
+						view.traceRootId,
+					)
+				: [],
+		[index, isTracing, view.traceRootId, view.direction, view.depth],
+	);
+	// the links the picked user can't follow
+	const gapCount = useMemo(
+		() => (access ? findAccessGaps(index, access).length : null),
+		[index, access],
+	);
+
 	if (view.lens === "trace") {
 		const root = index.nodes.get(view.traceRootId);
 		if (!root) {
 			return (
-				<div className="rounded-lg border bg-card px-3 py-2 shadow-sm">
-					<Muted>Click an item on the map to trace it.</Muted>
-				</div>
+				<MapOverlayCard className="px-3">
+					<Muted>
+						Click an item in the ontology, or press Enter on it, to
+						trace it.
+					</Muted>
+				</MapOverlayCard>
 			);
 		}
 		const reached = impact.reduce((sum, entry) => sum + entry.count, 0);
 		return (
-			<div className="flex max-w-xl flex-col gap-1 rounded-lg border bg-card p-2 shadow-sm">
+			<MapOverlayCard className="flex max-w-xl flex-col gap-1">
 				<div className="flex flex-wrap items-center gap-1">
 					<span className="flex min-w-0 items-center gap-2 px-1">
 						<DependencyItemImage node={root} className="size-5" />
-						<span className="max-w-48 truncate font-medium text-sm">
+						<span
+							className="max-w-48 truncate font-medium text-sm"
+							title={root.name}
+						>
 							{root.name}
 						</span>
 					</span>
@@ -146,7 +176,6 @@ export const DependencyMapViewBar = ({
 									<ToggleGroupItem
 										value={value}
 										aria-label={label}
-										className="px-2"
 									>
 										<Icon aria-hidden="true" />
 									</ToggleGroupItem>
@@ -163,16 +192,15 @@ export const DependencyMapViewBar = ({
 							})
 						}
 					>
-						{withTooltip(
-							"How many links to follow",
+						<MapTooltip label="How many links to follow">
 							<SelectTrigger
 								size="sm"
 								aria-label="Trace depth"
 								className="w-24"
 							>
 								<SelectValue />
-							</SelectTrigger>,
-						)}
+							</SelectTrigger>
+						</MapTooltip>
 						<SelectContent>
 							<SelectItem value="1">1 link</SelectItem>
 							<SelectItem value="2">2 links</SelectItem>
@@ -180,8 +208,7 @@ export const DependencyMapViewBar = ({
 							<SelectItem value="all">All</SelectItem>
 						</SelectContent>
 					</Select>
-					{withTooltip(
-						"Show only the traced items",
+					<MapTooltip label="Show only the traced items">
 						<Toggle
 							size="sm"
 							variant="outline"
@@ -190,29 +217,21 @@ export const DependencyMapViewBar = ({
 							onPressedChange={(tracedOnly) =>
 								onViewChange({ tracedOnly })
 							}
-							className="px-2"
 						>
 							<Focus aria-hidden="true" />
-						</Toggle>,
-					)}
-					{withTooltip(
-						"Stop tracing",
+						</Toggle>
+					</MapTooltip>
+					<MapTooltip label="Stop tracing">
 						<Button
 							type="button"
 							size="icon-sm"
 							variant="ghost"
 							aria-label="Stop tracing"
-							onClick={() =>
-								onViewChange({
-									lens: "none",
-									traceRootId: "",
-									tracedOnly: false,
-								})
-							}
+							onClick={onStopTracing}
 						>
 							<X aria-hidden="true" />
-						</Button>,
-					)}
+						</Button>
+					</MapTooltip>
 				</div>
 				<p
 					className="px-1 text-muted-foreground text-xs"
@@ -228,13 +247,13 @@ export const DependencyMapViewBar = ({
 								.map((entry) => `${entry.count} ${entry.label}`)
 								.join(", ")}`}
 				</p>
-			</div>
+			</MapOverlayCard>
 		);
 	}
 
 	if (view.lens === "access") {
 		return (
-			<div className="flex max-w-xl flex-col gap-1 rounded-lg border bg-card p-2 shadow-sm">
+			<MapOverlayCard className="flex max-w-xl flex-col gap-1">
 				<div className="flex flex-wrap items-center gap-1">
 					<AgentRunFilterSelect<SETTINGS_MEMBER>
 						label="User"
@@ -264,8 +283,7 @@ export const DependencyMapViewBar = ({
 						}}
 						searchPlaceholder="Search people"
 					/>
-					{withTooltip(
-						"Mark the links they can't follow",
+					<MapTooltip label="Mark the links they can't follow">
 						<Toggle
 							size="sm"
 							variant="outline"
@@ -275,11 +293,10 @@ export const DependencyMapViewBar = ({
 							onPressedChange={(showGaps) =>
 								onViewChange({ showGaps })
 							}
-							className="px-2"
 						>
 							<Unlink aria-hidden="true" />
-						</Toggle>,
-					)}
+						</Toggle>
+					</MapTooltip>
 				</div>
 				<output className="flex items-center gap-2 px-1 text-xs">
 					{accessError ? (
@@ -293,9 +310,9 @@ export const DependencyMapViewBar = ({
 							<Spinner className="size-3" />
 							Reading their access...
 						</span>
-					) : accessCount !== null ? (
+					) : access ? (
 						<span className="text-muted-foreground">
-							Can use {accessCount.toLocaleString()} of{" "}
+							Can use {access.size.toLocaleString()} of{" "}
 							{index.nodes.size.toLocaleString()}
 							{gapCount
 								? ` · ${gapCount.toLocaleString()} ${gapCount === 1 ? "link" : "links"} they can't follow`
@@ -303,7 +320,7 @@ export const DependencyMapViewBar = ({
 						</span>
 					) : null}
 				</output>
-			</div>
+			</MapOverlayCard>
 		);
 	}
 

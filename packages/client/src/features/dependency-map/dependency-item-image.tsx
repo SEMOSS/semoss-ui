@@ -1,3 +1,4 @@
+import { Lock } from "lucide-react";
 import {
 	AppCatalogAvatar,
 	EngineSubtypeIcon,
@@ -11,8 +12,13 @@ interface DependencyItemImageProps {
 	/** The item */
 	node: Pick<
 		DependencyGraphNode,
-		"id" | "kind" | "type" | "subtype" | "name" | "missing"
-	>;
+		"id" | "kind" | "type" | "subtype" | "name"
+	> & {
+		/** Whether the item was deleted: its type's icon, and no image is read */
+		missing?: boolean;
+	};
+	/** Whether the user cannot see what it is: a lock, and no image is read */
+	isPrivate?: boolean;
 	/** Size classes */
 	className?: string;
 }
@@ -20,19 +26,21 @@ interface DependencyItemImageProps {
 /**
  * An item's image, as the catalog has it: a project's image (else its
  * initials), or an engine's image (else its type's logo). A deleted item shows
- * its type's icon. Decorative: the item's name is always beside it.
+ * its type's icon, and an item private to the user a lock. Decorative: the
+ * item's name is always beside it.
  */
 export const DependencyItemImage = ({
 	node,
+	isPrivate = false,
 	className,
 }: DependencyItemImageProps) => {
 	// an empty id reads no image
 	const engineImageUrl = useCatalogImageUrl(
 		"ENGINE",
-		node.kind === "ENGINE" && !node.missing ? node.id : "",
+		node.kind === "ENGINE" && !node.missing && !isPrivate ? node.id : "",
 	);
-	if (node.missing) {
-		const Icon = getDependencyTypeConfig(node.type).icon;
+	if (node.missing || isPrivate) {
+		const Icon = isPrivate ? Lock : getDependencyTypeConfig(node.type).icon;
 		return (
 			<span
 				aria-hidden="true"

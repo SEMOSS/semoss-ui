@@ -4,6 +4,7 @@ import { EngineSubtypeIcon } from "@semoss/shared";
 import { Button } from "@semoss/ui/next";
 import {
 	CATEGORY_META,
+	getDependencyDisplayName,
 	getDependencyKey,
 	getDependencyRoleLabel,
 } from "./catalog-dependency";
@@ -27,15 +28,6 @@ interface EngineCategoryCardProps {
  * One engine category card: icon tile, title and description, a Manage
  * action, and the engines as chips (or an italic empty-state line). Manual
  * chips can be removed; automatic ones show their role and cannot.
- *
- * @name EngineCategoryCard
- * @param category - Engine category the card shows.
- * @param engines - Engines of this category, automatic and manual.
- * @param canEdit - Whether the user can manage/remove engines.
- * @param onManage - Opens the manage dialog for this category.
- * @param onRemove - Removes one manual engine from the owner's dependencies.
- * @param isRemoving - Disables the remove buttons while a removal is saving.
- * @return The category card.
  */
 export const EngineCategoryCard = ({
 	category,
@@ -52,7 +44,7 @@ export const EngineCategoryCard = ({
 		<section className="rounded-xl border border-border bg-card p-3 shadow-xs">
 			<div className="flex items-center gap-3">
 				<span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted">
-					<Icon className="size-5" />
+					<Icon className="size-5" aria-hidden="true" />
 				</span>
 				<div className="min-w-0 flex-1">
 					<p className="font-semibold text-sm">{meta.label}</p>
@@ -79,44 +71,56 @@ export const EngineCategoryCard = ({
 					</p>
 				) : (
 					<ul className="flex flex-wrap gap-1.5">
-						{engines.map((engine) => (
-							<li
-								key={getDependencyKey(engine)}
-								className="flex items-center gap-1.5 rounded-full border border-border bg-background py-1 ps-1.5 pe-2 text-xs"
-								title={
-									engine.is_automatic
-										? `${engine.catalog_name}: ${getDependencyRoleLabel(engine.role)}, set by the configuration`
-										: engine.catalog_name
-								}
-							>
-								<span className="flex size-4 shrink-0 items-center justify-center">
-									<EngineSubtypeIcon
-										engineType={engine.catalog_type}
-										engineSubtype={engine.catalog_subtype}
-										alt={engine.catalog_name}
-										className="size-full object-contain"
-									/>
-								</span>
-								<span className="max-w-40 truncate">
-									{engine.catalog_name}
-								</span>
-								{engine.is_automatic ? (
-									<span className="shrink-0 text-muted-foreground">
-										{getDependencyRoleLabel(engine.role)}
+						{engines.map((engine) => {
+							const name = getDependencyDisplayName(engine);
+							const roleLabel = getDependencyRoleLabel(
+								engine.role,
+							);
+							return (
+								<li
+									key={getDependencyKey(engine)}
+									className="flex items-center gap-1.5 rounded-full border border-border bg-background py-1 ps-1.5 pe-2 text-xs"
+									title={
+										engine.is_automatic
+											? `${name}: ${roleLabel}, set by the configuration`
+											: name
+									}
+								>
+									<span className="flex size-4 shrink-0 items-center justify-center">
+										<EngineSubtypeIcon
+											engineType={engine.catalog_type}
+											engineSubtype={
+												engine.catalog_subtype
+											}
+											className="size-full object-contain"
+										/>
 									</span>
-								) : canEdit ? (
-									<button
-										type="button"
-										disabled={isRemoving}
-										aria-label={`Remove ${engine.catalog_name}`}
-										className="shrink-0 text-muted-foreground hover:text-foreground"
-										onClick={() => onRemove(engine)}
-									>
-										<XIcon className="size-3" />
-									</button>
-								) : null}
-							</li>
-						))}
+									<span className="max-w-40 truncate">
+										{name}
+									</span>
+									{engine.is_automatic ? (
+										<span className="shrink-0 text-muted-foreground">
+											{roleLabel}
+										</span>
+									) : canEdit ? (
+										<Button
+											type="button"
+											variant="ghost"
+											size="icon-sm"
+											disabled={isRemoving}
+											aria-label={`Remove ${name}`}
+											className="size-4 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
+											onClick={() => onRemove(engine)}
+										>
+											<XIcon
+												className="size-3"
+												aria-hidden="true"
+											/>
+										</Button>
+									) : null}
+								</li>
+							);
+						})}
 					</ul>
 				)}
 			</div>

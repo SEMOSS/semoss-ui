@@ -223,7 +223,7 @@ anything that could not be exercised manually.
 
 **Need a color?**
 → Use a semantic token class: `bg-primary`, `text-muted-foreground`, `border-border`,
-`text-destructive`, `text-success`, `text-warning`, `bg-sidebar`, `bg-chart-1`…`chart-5`.
+`text-destructive`, `text-success`, `text-warning`, `bg-sidebar`, `bg-chart-1`…`chart-13`.
 → For text: Use `text-foreground` for header and subheaders, use`text-muted-foreground` for descriptions.
 → Status/state colors are exactly three: `destructive` (errors/danger), `success`, `warning`.
 → No matching token → use the *closest* semantic token. Never invent a hex value or reach for

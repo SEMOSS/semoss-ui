@@ -3,6 +3,7 @@ import { usePixel } from "@semoss/sdk/react";
 import {
 	buildUserCatalogAccessPixel,
 	parseUserCatalogAccess,
+	readReply,
 	type UserCatalogAccess,
 } from "@/api/dependency-map";
 
@@ -29,35 +30,23 @@ export const useUserCatalogAccess = (
 		data: null,
 	});
 	const data = result.status === "SUCCESS" ? result.data : null;
-	const parsed = useMemo((): {
-		access: ReadonlyMap<string, UserCatalogAccess> | null;
-		error: string | null;
-	} => {
-		if (data === null) {
-			return { access: null, error: null };
-		}
-		try {
-			return {
-				access: new Map(
-					parseUserCatalogAccess(data).map((entry) => [
-						entry.id,
-						entry,
-					]),
-				),
-				error: null,
-			};
-		} catch (cause: unknown) {
-			return {
-				access: null,
-				error:
-					cause instanceof Error
-						? cause.message
-						: "The user's access could not be read.",
-			};
-		}
-	}, [data]);
+	const parsed = useMemo(
+		() =>
+			readReply(
+				data,
+				(output): ReadonlyMap<string, UserCatalogAccess> =>
+					new Map(
+						parseUserCatalogAccess(output).map((entry) => [
+							entry.id,
+							entry,
+						]),
+					),
+				"The user's access could not be read.",
+			),
+		[data],
+	);
 	return {
-		access: parsed.access,
+		access: parsed.value,
 		isLoading: !!userId && result.status === "LOADING",
 		error: result.error?.message ?? parsed.error,
 	};

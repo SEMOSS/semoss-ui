@@ -123,8 +123,8 @@ export const ENGINE_ROUTES: EngineRoute[] = [
 										],
 									},
 									{
-										name: "Dependencies",
-										path: "dependencies",
+										name: "Ontology",
+										path: "ontology",
 										restrict: [
 											"READ_ONLY",
 											"EDIT",
@@ -176,8 +176,19 @@ export const ENGINE_ROUTES: EngineRoute[] = [
 							{ path: "", element: <EngineOverviewPage /> },
 							{ path: "usage", element: <EngineUsagePage /> },
 							{
-								path: "dependencies",
+								path: "ontology",
 								element: <EngineDependenciesPage />,
+							},
+							// the tab was at dependencies; old links still land on it
+							{
+								path: "dependencies",
+								element: (
+									<Navigate
+										to="../ontology"
+										relative="path"
+										replace
+									/>
+								),
 							},
 							{
 								path: "mcp-usage",
@@ -278,8 +289,8 @@ export const ENGINE_ROUTES: EngineRoute[] = [
 										],
 									},
 									{
-										name: "Dependencies",
-										path: "dependencies",
+										name: "Ontology",
+										path: "ontology",
 										restrict: [
 											"READ_ONLY",
 											"EDIT",
@@ -331,8 +342,19 @@ export const ENGINE_ROUTES: EngineRoute[] = [
 							{ path: "", element: <EngineOverviewPage /> },
 							{ path: "usage", element: <EngineUsagePage /> },
 							{
-								path: "dependencies",
+								path: "ontology",
 								element: <EngineDependenciesPage />,
+							},
+							// the tab was at dependencies; old links still land on it
+							{
+								path: "dependencies",
+								element: (
+									<Navigate
+										to="../ontology"
+										relative="path"
+										replace
+									/>
+								),
 							},
 							{
 								path: "mcp-usage",
@@ -429,8 +451,8 @@ export const ENGINE_ROUTES: EngineRoute[] = [
 										],
 									},
 									{
-										name: "Dependencies",
-										path: "dependencies",
+										name: "Ontology",
+										path: "ontology",
 										restrict: [
 											"READ_ONLY",
 											"EDIT",
@@ -491,8 +513,19 @@ export const ENGINE_ROUTES: EngineRoute[] = [
 							{ path: "", element: <EngineOverviewPage /> },
 							{ path: "usage", element: <EngineUsagePage /> },
 							{
-								path: "dependencies",
+								path: "ontology",
 								element: <EngineDependenciesPage />,
+							},
+							// the tab was at dependencies; old links still land on it
+							{
+								path: "dependencies",
+								element: (
+									<Navigate
+										to="../ontology"
+										relative="path"
+										replace
+									/>
+								),
 							},
 							{
 								path: "mcp-usage",
@@ -593,8 +626,8 @@ export const ENGINE_ROUTES: EngineRoute[] = [
 										],
 									},
 									{
-										name: "Dependencies",
-										path: "dependencies",
+										name: "Ontology",
+										path: "ontology",
 										restrict: [
 											"READ_ONLY",
 											"EDIT",
@@ -646,8 +679,19 @@ export const ENGINE_ROUTES: EngineRoute[] = [
 							{ path: "", element: <EngineOverviewPage /> },
 							{ path: "usage", element: <EngineUsagePage /> },
 							{
-								path: "dependencies",
+								path: "ontology",
 								element: <EngineDependenciesPage />,
+							},
+							// the tab was at dependencies; old links still land on it
+							{
+								path: "dependencies",
+								element: (
+									<Navigate
+										to="../ontology"
+										relative="path"
+										replace
+									/>
+								),
 							},
 							{
 								path: "mcp-usage",
@@ -744,8 +788,8 @@ export const ENGINE_ROUTES: EngineRoute[] = [
 										],
 									},
 									{
-										name: "Dependencies",
-										path: "dependencies",
+										name: "Ontology",
+										path: "ontology",
 										restrict: [
 											"READ_ONLY",
 											"EDIT",
@@ -797,8 +841,19 @@ export const ENGINE_ROUTES: EngineRoute[] = [
 							{ path: "", element: <EngineOverviewPage /> },
 							{ path: "usage", element: <EngineUsagePage /> },
 							{
-								path: "dependencies",
+								path: "ontology",
 								element: <EngineDependenciesPage />,
+							},
+							// the tab was at dependencies; old links still land on it
+							{
+								path: "dependencies",
+								element: (
+									<Navigate
+										to="../ontology"
+										relative="path"
+										replace
+									/>
+								),
 							},
 							{
 								path: "mcp-usage",
@@ -895,8 +950,8 @@ export const ENGINE_ROUTES: EngineRoute[] = [
 										],
 									},
 									{
-										name: "Dependencies",
-										path: "dependencies",
+										name: "Ontology",
+										path: "ontology",
 										restrict: [
 											"READ_ONLY",
 											"EDIT",
@@ -939,8 +994,19 @@ export const ENGINE_ROUTES: EngineRoute[] = [
 							{ path: "", element: <EngineOverviewPage /> },
 							{ path: "usage", element: <EngineUsagePage /> },
 							{
-								path: "dependencies",
+								path: "ontology",
 								element: <EngineDependenciesPage />,
+							},
+							// the tab was at dependencies; old links still land on it
+							{
+								path: "dependencies",
+								element: (
+									<Navigate
+										to="../ontology"
+										relative="path"
+										replace
+									/>
+								),
 							},
 							{
 								path: "activity",

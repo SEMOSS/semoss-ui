@@ -58,7 +58,7 @@ const CardMapper: Record<string, CardConfig> = {
 		icon: <Landmark className={ICON_CLASS} />,
 		className: "bg-chart-2/10 text-chart-2",
 	},
-	"Dependency Map": {
+	"Enterprise Ontology": {
 		icon: <Network className={ICON_CLASS} aria-hidden="true" />,
 		className: "bg-chart-2/10 text-chart-2",
 	},

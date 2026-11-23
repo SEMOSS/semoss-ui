@@ -190,8 +190,8 @@ export const SETTINGS_ROUTES: {
 		admin: true,
 	},
 	{
-		title: "Dependency Map",
-		path: "dependencies",
+		title: "Enterprise Ontology",
+		path: "ontology",
 		description:
 			"See how every engine and project depends on the others, trace impact, check a user's access, and sync automatic dependencies.",
 		icon: mdiGraphOutline,

@@ -58,12 +58,10 @@ describe("parseDependencyGraph", () => {
 				},
 			],
 			edges: [{ id: "a|m|AGENT_MODEL", source: "a", target: "m" }],
-			bounds: { width: 10, height: 10 },
 		});
 		expect(graph.nodes[0]).toMatchObject({
 			description: null,
 			missing: false,
-			dependencyCount: 0,
 		});
 		expect(graph.edges[0]).toMatchObject({
 			role: "MANUAL",
@@ -75,7 +73,7 @@ describe("parseDependencyGraph", () => {
 
 	it("refuses a reply that is not a network", () => {
 		expect(() => parseDependencyGraph({ nodes: "no" })).toThrow(
-			"The dependency map response could not be read.",
+			"The ontology response could not be read.",
 		);
 	});
 });

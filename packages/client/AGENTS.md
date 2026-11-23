@@ -674,23 +674,109 @@ own links (`parent_id` is the owner) with their nodes into `CatalogDependencyRow
   saved before automatic dependencies existed come back as
   manual, and a response without `links` is read as manual rows for the direct nodes.
 - **A save sends only the manual rows.** `SetCatalogDependencies` replaces the manual links and
-  keeps the automatic ones, so the edit dialog, the Engines panel and its Manage dialog build their
-  payload from manual rows only, with `toCatalogDependencyPayload` (`{ id, type, name?,
+  keeps the automatic ones, so the Ontology tab's edit mode, the Engines panel and its Manage
+  dialog build their payload from manual rows only, with `toCatalogDependencyPayload` (`{ id, type, name?,
   description? }`).
 - **One target can be two rows**, in two roles (an agent's model that is also a manual dependency):
   two links, one node. Key rows by id and role (`getDependencyKey`), never by id alone.
-- `useCatalogDependencies` returns the rows as `dependencies` and splits them into
-  `manualDependencies` and `automaticDependencies`; `allDependencies` stays the graph's nodes. A
+- `useCatalogDependencies` returns the rows as `dependencies`, and `allDependencies` and `links`
+  for the graph. A
   refresh keeps the rows already read until the new ones arrive, so the project layout stays
   mounted. After a save that changes the configuration, read the dependencies again: the agent
   editor calls the project context's `refreshDependencies`. An engine's Dependencies tab is never
   mounted beside its Settings, and reads afresh each time it opens.
-- `GetCatalogDependents` (what depends on an item) exists on the backend; nothing in the client
-  reads it yet. The Dependency Map works out what depends on an item from the whole network.
+- **Private dependencies.** `GetCatalogDependencies` sends a dependency the user has no access to
+  that is neither public nor discoverable as its id and type only, with `is_private` true (the
+  backend's `redactPrivateDependency`). The client shows it as "Private <Type>", such as "Private
+  Database" (`getDependencyDisplayName`, which also masks one an older backend still names) and
+  never offers to request it, since the backend refuses. Its id stays, so a save of the manual
+  rows keeps it. Every place that names a dependency uses `getDependencyDisplayName`.
+- **Access words** come from `catalog-dependency.ts`: `getDependencyAccess` (granted, public,
+  requested, requestable, private), `getDependencyAccessLabel` (a level, Public, Requested, **Can request** for an item the user can
+  see and ask for, and **Hidden** for one they cannot see, so cannot ask for; the private
+  dependents node reads "N hidden items"), the levels
+  (`DEPENDENCY_ACCESS_LEVEL_LABELS`, which the admin map's `ACCESS_LEVEL_LABELS` reuses) and
+  `getDependencyVisibilityLabel` (Public, Discoverable, Private). `dependency-access-badge.tsx`
+  draws one as a badge with its icon.
+- **Requesting access.** `requestCatalogAccess` in `api/user-access.ts` asks with `RequestEngine`
+  or `RequestProject`, whichever the item's kind takes, and throws the backend's reason. The
+  app's request dialog (`project-access-request-dialog.tsx`) uses it too.
+- **The Ontology tab is a graph** (`catalog-dependencies-view.tsx`, at `<item path>/:id/ontology`;
+  the old `/dependencies` path redirects there), for someone working out what an engine or
+  project is connected to and asking for what they lack:
+  - `catalog-dependency-graph.ts` is the pure model: `buildCatalogDependencyGraph` places each
+    item once, on its side (what the owner uses, from `GetCatalogDependencies`, or what uses it,
+    from `GetCatalogDependents` with `recursive` through `use-catalog-dependents.ts`) at the depth
+    a breadth-first walk first reaches it. The dependents the user cannot view are one node
+    (`PRIVATE_DEPENDENTS_ID`, from `hiddenCount`). `getDependencyGraphView` shows both sides one
+    link out, plus the items whose next level was expanded (`expandedIds`), and lays it out
+    left to right with no layout library.
+    `getGraphNodePaths` gives an item's catalog page and Ontology tab, when the user may open
+    them (`getResourcePagePath`, so an id is encoded and a type with no page has none), for the
+    drawer and the right-click menu alike. While editing, `applyDraftToGraph` (in
+    `catalog-dependency-draft.ts`) puts the draft's manual links into what the graph is built
+    from.
+  - The canvas (`catalog-dependency-canvas.tsx`) reuses the admin map's `DependencyNode`,
+    `DependencyEdge` and `DependencyItemImage`, at 280 by 72 (`GRAPH_NODE_SIZE`). The owner is in
+    the middle, with the legend on the canvas. To go further than the direct links, a "+N" on an
+    item, or its right-click menu, shows the next level beyond it.
+  - **Right-click** (`catalog-dependency-menu-items.tsx`, in the shared `dependency-flow-canvas.tsx`):
+    on an item, Open Details, Show Next Level (N) or Hide Next Level, Request Access, Open in
+    Catalog and View Its Ontology, each only where it applies (a private item offers only its
+    details); on the empty canvas, Fit View and Show Direct Links Only.
+  - The header has Edit Dependencies, for editors. Access is asked for one item at a time,
+    from the drawer's Request Access or the item's right-click menu, with
+    `request-dependency-access-dialog.tsx` (a level and a reason; a refusal shows the
+    backend's reason and the dialog stays open). There is no access summary and no side or
+    depth picker.
+  - **Editing is on the canvas**, as the automation canvas edits a workflow. Edit Dependencies
+    starts a draft (`catalog-dependency-draft.ts`, the pure model, and `use-dependency-draft.ts`,
+    its state and save); nothing reaches the backend until Save, which sends every manual link in
+    one `SetCatalogDependencies` (`api/catalog-dependencies.ts`). While editing:
+    - the canvas shows the direct links only, and `dependency-edit-bar.tsx` sits on top: Editing
+      dependencies with the change count, Add Dependency, Discard and Save (off with nothing to
+      save or a name to fix, "Saving..." while it runs, the backend's reason under it when
+      refused, and the draft kept);
+    - each manual link has Remove at its midpoint, Undo once removed (removed links stay drawn,
+      dimmed, until the save), and each automatic link a lock (the shared `DependencyEdge`'s
+      optional `action`); a new target reads New and a removed one Removed;
+    - clicking a manual link, or its target, opens the target in the drawer with
+      `dependency-link-form.tsx` above the details: the link's name (unique per owner, ignoring
+      case; a repeat shows under it) and description, and Remove Dependency;
+    - Add Dependency (the bar, or a right-click on the empty canvas) shows
+      `add-dependency-panel.tsx` in the drawer's place: Engines or Projects, a search over the
+      ones the user can see (`use-dependency-options.ts`), paged as it scrolls, with a target
+      already linked marked Added. Picking one adds it and opens its link;
+    - right-click on a manual link's target offers Edit Link and Remove Dependency (or Undo
+      Removal);
+    - Discard, or Escape with nothing open, asks first with the shared `discard-changes-dialog.tsx`
+      when there are changes, and the browser warns before the page closes with them. A saved
+      draft shows a toast and reads the dependencies and dependents again.
+    Blocks apps and agents stay read-only here, with a hint to where theirs are set.
+  - **Laid out as the admin Ontology is:** a toolbar with the shared search
+    (`dependency-map-search.tsx`; `searchCatalogGraph` ranks the matches, which are ringed on
+    the canvas, and a private item matches only by the name the user sees) and Expand (the shared `use-expandable-canvas.ts`, `expand-canvas-button.tsx` and
+    `expanded-canvas-dialog.tsx`, the same full-window dialog and browser full screen; Escape
+    closes Add Dependency, the drawer or asks to discard an edit before it collapses). The graph and its drawer share one bordered area; on a phone the
+    drawer takes the canvas's place. Opening an item beyond the levels shown, from the search
+    or the drawer, shows every level up to it first (`getPathToNode`). Escape closes the drawer
+    first.
+  - Clicking an item opens `catalog-dependency-drawer.tsx` beside the canvas, built as the
+    admin drawer is: the item's image (the only place images show; nodes show the type's
+    icon), name, type and visibility, and its actions as icon buttons with tooltips (Request
+    Access, View Its Ontology, Open in Catalog, Close); then Overview (its id, description,
+    and anything the user should know, such as a request waiting or missing access) and
+    Lineage, with its upstream and downstream counts as badges, listing what it uses and what
+    uses it (`dependency-link-row.tsx`: each link's role, automatic or manual, name and
+    description; each item opens in the drawer). Its heading takes focus when it opens, and
+    closing returns focus to the item (`focusCanvasItem`).
 
 ### Dependency Map
 
-`features/dependency-map/` is the admin Dependency Map at `settings/dependencies`
+`features/dependency-map/` is the admin Dependency Map, named **Enterprise Ontology** in
+Settings and **Ontology** on the page (the code keeps the dependency map names), at
+`settings/ontology` (`settings/dependencies` redirects there, keeping its query string, through
+`pages/settings/ontology-redirect.tsx`)
 (`pages/settings/dependency-map.page.tsx`, admin mode only): every engine and project and every
 link, on a React Flow canvas.
 
@@ -698,24 +784,33 @@ link, on a React Flow canvas.
   every node with its position (a GraphStream force layout per connected component, the metamodel
   page's layout, packed together; items with no links in a block of their own), every link
   (`source` has the dependency, `target` is what it depends on; `role`, `isAutomatic`, `inCycle`),
-  and the stats. Isolated items are always included. With `catalogId`, `direction` and `depth` it
+  Isolated items are always included. With `catalogId`, `direction` and `depth` it
   returns only the network around one item, laid out the same way (Trace's Only show traced). The
   client adds no layout library and never moves a node.
 - **`dependency-graph.ts` is the pure model**: the index (by id, outgoing and incoming links,
   each node's family), `traceGraph` (what an item uses or what uses it, each way on its own so
   siblings are not pulled in), ranked `searchNodes`, `getMapEmphasis` (what the filters, lens and
-  search leave out is dimmed, never removed, so nothing moves), `findAccessGaps`, `getHubs` and
-  `summarizeImpact`. Types are drawn in seven families (`DEPENDENCY_FAMILIES`) using only the
-  existing tokens: `chart-1`…`chart-5`, `assistant` for agents and skills, and
-  `muted-foreground` for apps; databases and storage share a colour. The type's icon and label
-  always name the type too. The map adds no tokens to `@semoss/ui`.
+  search leave out is dimmed, never removed, so nothing moves), `findAccessGaps`, `countFamilies`
+  and `summarizeImpact`. Every catalog type is its own family (`DEPENDENCY_FAMILIES`), with one numbered chart token,
+  so a type always reads the same on every graph: Code apps `chart-6`, agents `chart-7`, skills
+  `chart-8`, databases `chart-2`, models `chart-10`, vector databases `chart-3`, storage
+  `chart-9`, functions `chart-4`, guardrails `chart-5`, blocks apps `chart-11`, notebooks
+  `chart-12`, automations `chart-13`, insights `chart-1`. `chart-6` to `chart-13` were added to
+  `@semoss/ui` for this and keep one hue in light and dark, so the most common types use them.
+  The type's icon and label always name the type too. The Types filter and the address's
+  `types` list one type each.
 - **The view is in the address** (`use-dependency-map-view.ts`: `q`, `selected`, `link`, `lens`,
   `focus`, `dir`, `depth`, `scope`, `user`, `gaps`, `types`, `links`), so a view can be shared. A
   link with only `focus` opens a trace on that item. The map is reached only from its Settings
   tile: nothing outside Settings links to it, since it is admin only.
-- **One toolbar, icons with tooltips** (`dependency-map-toolbar.tsx`): the search (one
-  `InputGroup` with its count, previous, next, the list of matches and clear), the View
-  (All, Trace, User Access; the UI says "View", the address keeps `lens`), Filters (a popover
+- **One toolbar, icons with tooltips** (`dependency-map-toolbar.tsx`): the search
+  (`dependency-map-search.tsx`, kept simple: one `InputGroup` with the match count, "i of N"
+  once stepped through, and Clear; Enter goes to the next match, Shift+Enter the previous,
+  Escape clears), the View
+  (All, Trace, User Access, each an icon with its name; the one showing is filled in the
+  primary colour, `active-toggle.ts`, keyed off `aria-checked` since a tooltip overwrites
+  `data-state`; the UI
+  says "View", the address keeps `lens`), Filters (a popover
   with the types and the links), the counts, Refresh, Expand and Sync. Everything else is on
   the canvas, so it keeps the page.
 - **Views:** Trace (what an item uses, what uses it, or both, to a depth, with the impact by
@@ -728,20 +823,60 @@ link, on a React Flow canvas.
 - **One legend** (`dependency-map-legend.tsx`), folded behind an icon on the canvas's top right:
   the types with their counts (struck through when filtered out) and the link styles.
 - **Large networks:** `onlyRenderVisibleElements`; nodes and edges are memoized; below zoom 0.45
-  a node drops its image, and below 0.2 only highlighted links are drawn. Nodes and edges are
+  a node drops its type line, and below 0.2 only highlighted links are drawn. Nodes and edges are
   rebuilt only when what they draw changes. React Flow measures the nodes itself (no
   `onNodesChange`); a click, or Enter on a focused item or link, selects it.
-- **Nodes** show only the type's colour, the item's image (a project's, or an engine's with its
-  logo as the fallback), name and type, with at most one badge: Deleted, or the user's access in
-  User Access. Neither items nor links have a hover card: clicking either opens its details in
-  the drawer. A hovered or selected link is drawn in the primary colour; manual links are
+- **Nodes** (`dependency-node.tsx`, shared with the Ontology tab) are drawn as the automation
+  canvas draws a step (`AutomationNodeCard` in `@semoss/automation`, mirrored here since it is
+  not exported): a card with a two-pixel border and rounded corners, lightly tinted in the
+  type's colour (`tintClass`, over `bg-card` so links never show through), a rounded tile in
+  the same tint holding the type's icon (no image: images are in the
+  drawers, so nodes read nothing), its name, its catalog type in small
+  capitals (no subtype such as H2; the details show it), at most one badge at the end (Deleted,
+  or a `status`, `DependencyNodeData.status`: the picked user's access in User Access here, the
+  viewer's on the tab), and a port dot on each side. The card fills the size the canvas gives
+  it: the backend's `nodeSize` here, 280 by 72 on the tab. A state is drawn in the primary blue that DESIGN.md keeps
+  for selection, as faint as it can be: the owner a light primary border (`border-primary/40`),
+  a traced item lighter still, a search match a soft halo (`ring-3 ring-primary/20`), and the
+  selection the primary border with the same 3px halo the library gives a focused control. A private node is muted and dashed with a lock; a deleted one has a
+  dashed destructive border. A node can carry a "+N" expand button. Neither items nor links have
+  a hover card. A hovered or selected link is drawn in the primary colour; manual links are
   dashed.
+- **Right-click** (`dependency-map-menu-items.tsx`, in the shared `dependency-flow-canvas.tsx`, the
+  `ContextMenu` from `@semoss/ui/next`): on an item, Open Details, Trace Upstream, Trace
+  Downstream (each off when there is nothing that way), Open in Catalog and Copy ID; on a link,
+  Open Link Details and Go to either end; on the empty canvas, Fit View, Close Details and Stop
+  Tracing. The canvas records what a right-click landed on in React Flow's context menu events.
 - **Clicking an item or a link opens the drawer** (`dependency-map-drawer.tsx`), an `aside`
-  beside the canvas inside the map (on a phone, in the canvas's place): Overview (description,
-  facts, the user's access and gaps, how far a change reaches both ways), Uses, Used by, and
-  Security, links to the item's Access, Effective Permissions, Apps (engines), Requests, Audit
-  Trail and Visibility tabs in Resource Governance, each in a new tab. Close or Escape clears the
-  selection.
+  beside the canvas inside the map (on a phone, in the canvas's place). Actions are icon buttons
+  with tooltips, kept apart from the content. An item's header has:
+  - its image and its name (plain text) on one row with its actions, then across the full width
+    under them `drawer-item-meta.tsx` (shared with the tab's drawer): its type, subtype and
+    badges such as visibility (Public, Discoverable, Deleted) on one row, and its tags (the
+    tab's items; the admin graph sends none) on the next, the first six with "+N more"
+  - an action group: Open in Catalog (new tab), Trace upstream (N) and Trace downstream (N), each
+    off when there is nothing to trace, then Close
+  The item folds into accordions:
+  - **Overview**, open to start: its id with Copy, the description, the picked user's access and gaps, who
+    created it and when
+  - **Lineage**, with its upstream (everything it needs, all the way) and downstream (everything
+    a change affects) counts as badges. Inside, Upstream lists what it uses directly and
+    Downstream what uses it directly.
+  - **Security**: one full-width row per link (an icon and its name, the shared `Item`), in a
+    new tab, to the item's Access, Effective Permissions, Apps
+    (engines), Requests, Audit Trail and Visibility tabs in Resource Governance
+  The drawer's heading takes focus when it opens; Close or Escape clears the selection and
+  returns focus to the item or link (`focus-canvas-item.ts`). The toolbar has no item or link
+  count. Nodes carry their size (`nodeSize`), so fitting and centring never wait on React
+  Flow measuring them.
+- **Floating panels** (the view bar, legend and notices) are `map-overlay-card.tsx`, and icon
+  controls name themselves in `map-tooltip.tsx`.
+- **Shared with the Ontology tab:** the node, edge and item image; the drawer shell
+  (`dependency-drawer.tsx`: header with image, name, actions and Close, the meta row, the
+  scrolling body, and focus on open); the React Flow frame (`dependency-flow-canvas.tsx`: the
+  right-click menu, Enter to select, the fixed canvas settings and `edgeMarker`); the legend
+  lists (`dependency-legend-lists.tsx`); `drawer-item-meta.tsx`, which works out the type's
+  label, icon and colour itself; and the search ranking (`rankSearchMatches`).
 - **Expand** shows the whole map, toolbar and drawer included, in a full-window `Dialog`, and
   asks the browser for full screen on the document, so the drawer and every popover, which
   portal to the body, still show. Escape closes the drawer first, then the expanded view;
