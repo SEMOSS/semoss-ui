@@ -120,11 +120,11 @@ it("switches the persona for the owner's assistant, and answers with what the se
 	).rejects.toThrow("unexpected shape");
 });
 
-it("tells the owner that what they leave to themself binds their assistant's writing as well as their twins", () => {
+it("tells the owner that the twins they share stay out of what they leave to themself, and that their own Digital Twin leaves it to them", () => {
 	expect(
 		PERSONA_SECTIONS.find((section) => section.key === "limits")?.hint,
 	).toBe(
-		"What your twins stay out of, to the letter. When your assistant writes for you, it takes no position on these.",
+		"What the twins you share stay out of, to the letter. Your own Digital Twin leaves these to you unless you tell it otherwise.",
 	);
 });
 

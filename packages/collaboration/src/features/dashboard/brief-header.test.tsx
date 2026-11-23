@@ -63,30 +63,30 @@ it("says how many work items are due today", () => {
 	).toBeInTheDocument();
 });
 
-it("links to the copies that wait in the owner's Digital Twins, and says nothing when none do", () => {
+it("links to the copies that wait in the twins the owner shares, and says nothing when none do", () => {
 	renderHeader();
 	expect(
-		screen.queryByRole("link", { name: /Digital Twin update/ }),
+		screen.queryByRole("link", { name: /you share/ }),
 	).not.toBeInTheDocument();
 	cleanup();
 	// all in one twin: straight to its Updates
 	dashboard.twinUpdates = [{ twinId: "twin-1" }, { twinId: "twin-1" }];
 	renderHeader();
 	expect(
-		screen.getByRole("link", { name: "2 Digital Twin updates" }),
+		screen.getByRole("link", { name: "2 updates in a twin you share" }),
 	).toHaveAttribute("href", "/twins/mine/contents?twinId=twin-1&in=updates");
 	cleanup();
 	// in several: to the twins, whose cards each say how many
 	dashboard.twinUpdates = [{ twinId: "twin-1" }, { twinId: "twin-2" }];
 	renderHeader();
 	expect(
-		screen.getByRole("link", { name: "2 Digital Twin updates" }),
+		screen.getByRole("link", { name: "2 updates in twins you share" }),
 	).toHaveAttribute("href", "/twins");
 	cleanup();
 	dashboard.twinUpdates = [{ twinId: "twin-2" }];
 	renderHeader();
 	expect(
-		screen.getByRole("link", { name: "1 Digital Twin update" }),
+		screen.getByRole("link", { name: "1 update in a twin you share" }),
 	).toBeVisible();
 });
 

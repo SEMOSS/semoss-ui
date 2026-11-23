@@ -119,7 +119,7 @@ export function MirrorStep({
 			</P>
 			<fieldset className="flex min-w-0 flex-col gap-2 rounded-xl border bg-card p-4">
 				<legend className="px-1 text-muted-foreground text-xs">
-					Your twin, as you. Tap what is not you.
+					A twin you share, as you. Tap what is not you.
 				</legend>
 				<div className="flex min-w-0 flex-wrap gap-1.5">
 					{sentences.map((sentence, index) => {

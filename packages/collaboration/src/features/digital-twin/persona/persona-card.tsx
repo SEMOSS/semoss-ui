@@ -17,14 +17,15 @@ import { interviewLink } from "./interview-link";
 import "./persona-card.css";
 
 interface PersonaCardProps {
-	/** The ids of the twins the signed-in person created, to say how many of them use it. */
+	/** The ids of the twins the signed-in person shares, to say how many of them use it. */
 	twinIds: string[];
 }
 
 /**
  * The signed-in person's persona among their Digital Twins: what it says in
- * short and how many of their twins use it, or what one is for when they have
- * none, with the way to the interview that writes it.
+ * short, whether their own Digital Twin uses it and how many of the twins
+ * they share do, or what one is for when they have none, with the way to the
+ * interview that writes it.
  */
 export function PersonaCard({ twinIds }: PersonaCardProps) {
 	const persona = useTwinRead(getTwinPersona);
@@ -37,16 +38,22 @@ export function PersonaCard({ twinIds }: PersonaCardProps) {
 	const using = twinIds.filter((id) => !data?.offTwins.includes(id)).length;
 	const isOnlyTwin = twinIds.length === 1;
 	const interview = data && !data.exists ? interviewLink(data) : null;
-	const usage =
-		twinIds.length === 0
-			? "The next Digital Twin you create will use it."
-			: using === twinIds.length
-				? isOnlyTwin
-					? "Your Digital Twin uses it."
-					: `Used by all ${twinIds.length} of your twins.`
-				: using === 0
-					? `It is switched off for ${isOnlyTwin ? "your Digital Twin" : "all of your Digital Twins"}.`
-					: `Used by ${using} of your ${twinIds.length} twins.`;
+	// only false is off: a server from before the switch leaves it out, and uses it
+	const forOwnTwin =
+		data?.assistant === false
+			? "It is switched off for your Digital Twin."
+			: "Your Digital Twin uses it.";
+	let forSharedTwins = `Used by ${using} of the ${twinIds.length} twins you share.`;
+	if (twinIds.length === 0)
+		forSharedTwins = "The next twin you share will use it.";
+	else if (isOnlyTwin)
+		forSharedTwins = using
+			? "The twin you share uses it."
+			: "It is switched off for the twin you share.";
+	else if (using === twinIds.length)
+		forSharedTwins = `Used by all ${twinIds.length} twins you share.`;
+	else if (using === 0)
+		forSharedTwins = "It is switched off for all the twins you share.";
 
 	return (
 		<section aria-labelledby={titleId} className="@container min-w-0">
@@ -74,11 +81,11 @@ export function PersonaCard({ twinIds }: PersonaCardProps) {
 							>
 								{data.exists
 									? opening
-									: "Teach your Digital Twins to sound like you and to say how you would see something. A few questions, once, and every twin of yours uses it."}
+									: "Teach your Digital Twin how you decide and write, and the twins you share how you sound. A few questions, once, and all of them use it."}
 							</P>
 							{data.exists && (
 								<P className="col-span-2 text-muted-foreground text-sm">
-									{usage}
+									{forOwnTwin} {forSharedTwins}
 								</P>
 							)}
 						</>

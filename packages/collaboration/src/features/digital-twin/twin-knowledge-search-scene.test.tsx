@@ -47,14 +47,10 @@ it("says what the search is doing as it goes, lights the place it names, and hol
 	expect(screen.getByText("Reading what turned up…")).toBeVisible();
 	expect(lit()).toBe(0);
 	pass(4000);
-	expect(
-		screen.getByText("Picking what fits your Digital Twin…"),
-	).toBeVisible();
+	expect(screen.getByText("Picking what fits this twin…")).toBeVisible();
 	// however long the server takes from here
 	pass(120_000);
-	expect(
-		screen.getByText("Picking what fits your Digital Twin…"),
-	).toBeVisible();
+	expect(screen.getByText("Picking what fits this twin…")).toBeVisible();
 	expect(screen.getByText("This can take up to a minute.")).toBeVisible();
 });
 

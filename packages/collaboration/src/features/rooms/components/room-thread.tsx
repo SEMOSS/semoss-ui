@@ -28,6 +28,7 @@ import { RoomSourceWelcome } from "./room-source-welcome";
 /** Scrollable Playground-style transcript with loading and empty states. */
 export function RoomThread({
 	agent,
+	agentImage,
 	thread,
 	isLoadingHistory,
 	roomId,
@@ -37,6 +38,8 @@ export function RoomThread({
 	children,
 }: {
 	agent: AgentConfiguration;
+	/** The picture on each of the agent's messages; left out, they keep its initials. */
+	agentImage?: string;
 	thread: ConversationMessage[];
 	isLoadingHistory: boolean;
 	roomId: string;
@@ -163,6 +166,7 @@ export function RoomThread({
 										message={message}
 										parts={parts}
 										agent={agent}
+										agentImage={agentImage}
 										createdAt={createdAt}
 									/>
 								</Fragment>

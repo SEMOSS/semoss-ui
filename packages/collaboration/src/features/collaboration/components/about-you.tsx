@@ -19,7 +19,7 @@ export function AboutYou() {
 						About you
 					</H2>
 					<P className="text-base text-muted-foreground">
-						The profile you choose for assistant context. How you
+						The profile your Digital Twin knows you by. How you
 						write is under{" "}
 						<Link
 							to={personaPath()}

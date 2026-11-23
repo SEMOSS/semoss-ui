@@ -77,7 +77,7 @@ const GO_TO = [
 	{
 		id: "memory",
 		label: "Memory",
-		detail: "What the assistant remembers",
+		detail: "What your Digital Twin remembers",
 		path: "/brain/memory",
 	},
 	{

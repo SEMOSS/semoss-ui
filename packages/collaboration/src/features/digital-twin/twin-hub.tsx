@@ -23,6 +23,7 @@ import { useCollaborationSession } from "@/features/collaboration/state/collabor
 import { useTwinUpdates } from "@/features/dashboard/dashboard.context";
 import { twinChatPath } from "@/lib/workspace-paths";
 import { type DigitalTwin, listTwins } from "./api/digital-twin";
+import { MainTwinCard } from "./main-twin-card";
 import { readOpenedTwins } from "./opened-twins";
 import { OwnedTwinCard } from "./owned-twin-card";
 import { PersonaCard } from "./persona/persona-card";
@@ -30,7 +31,10 @@ import { useTwinRead } from "./use-twin-read";
 
 const PREVIEW_COUNT = 3;
 
-/** The owner's persona and twins, followed by the twins other people have shared. */
+/**
+ * The signed-in person's own Digital Twin, then their persona and the twins
+ * they share, then the twins other people have shared with them.
+ */
 export function TwinHub() {
 	const twins = useTwinRead(listTwins);
 	const mineId = useId();
@@ -64,7 +68,7 @@ export function TwinHub() {
 			<div className="@container/twins">
 				<CollaborationPageHeader
 					title="Digital Twins"
-					description="Ask about the emails, Teams chats, and files each owner chose."
+					description="Your own Digital Twin, the twins you share, and the twins other people share with you."
 					titleClassName="font-display font-medium text-4xl leading-none tracking-tight md:text-5xl 2xl:text-5xl"
 					layoutClassName="flex-col @3xl/twins:flex-row"
 					className="mb-5"
@@ -93,12 +97,16 @@ export function TwinHub() {
 							<Button asChild className="pointer-coarse:min-h-11">
 								<Link to="/twins/mine?create=true">
 									<Plus aria-hidden="true" />
-									Create Digital Twin
+									Create a Twin to Share
 								</Link>
 							</Button>
 						</>
 					}
 				/>
+				{/* outside the list's states: it shows while the twins load or fail, whatever is searched for */}
+				<div className="mb-6">
+					<MainTwinCard />
+				</div>
 				{twins.data ? (
 					<div className="flex min-w-0 flex-col gap-6">
 						<PersonaCard
@@ -114,7 +122,7 @@ export function TwinHub() {
 										id={mineId}
 										className="font-semibold text-xl tracking-tight"
 									>
-										Your twins
+										Twins You Share
 									</H2>
 									<Badge
 										variant="outline"
@@ -148,6 +156,11 @@ export function TwinHub() {
 										</Button>
 									)}
 								</div>
+								{mine.length > 0 && (
+									<P className="-mt-2 text-muted-foreground text-sm">
+										Each knows only what you copied into it.
+									</P>
+								)}
 								{mine.length > 0 ? (
 									<ul
 										id={`${mineId}-cards`}
@@ -165,7 +178,7 @@ export function TwinHub() {
 									</ul>
 								) : (
 									<P className="rounded-xl border border-dashed p-6 text-muted-foreground text-sm">
-										You have no Digital Twins yet. Create
+										You are not sharing a twin yet. Create
 										one, choose what it knows, then name the
 										people who can ask it about you.
 									</P>
@@ -182,7 +195,7 @@ export function TwinHub() {
 										id={sharedId}
 										className="font-semibold text-xl tracking-tight"
 									>
-										Shared with you
+										Shared With You
 									</H2>
 									<Badge
 										variant="outline"

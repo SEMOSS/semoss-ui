@@ -59,9 +59,9 @@ export function SkillsSettings() {
 						Skills
 					</H2>
 					<P className="text-base text-muted-foreground">
-						Instructions you saved with your assistant, such as how
-						you like a summary written. Turn one on to use it in all
-						your chats. Routines choose their own skills in
+						Instructions you saved with your Digital Twin, such as
+						how you like a summary written. Turn one on to use it in
+						all your chats. Routines choose their own skills in
 						Routines.
 					</P>
 				</header>
@@ -90,8 +90,8 @@ export function SkillsSettings() {
 					</Alert>
 				) : parsed.data.skills.length === 0 ? (
 					<P className="pt-4 text-base text-muted-foreground">
-						No skills yet. Try asking your assistant: "Make a skill
-						for how I like client summaries."
+						No skills yet. Try asking your Digital Twin: "Make a
+						skill for how I like client summaries."
 					</P>
 				) : (
 					<ul className="divide-y divide-border">

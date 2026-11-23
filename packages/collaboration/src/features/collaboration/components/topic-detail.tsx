@@ -459,7 +459,10 @@ export function TopicDetail() {
 							</TabsContent>
 						</Tabs>
 					</Card>
-					<section aria-label="Topic assistant" className="space-y-3">
+					<section
+						aria-label="Ask Your Digital Twin About This Topic"
+						className="space-y-3"
+					>
 						<div className="space-y-1">
 							<H2 className="font-display font-semibold text-base">
 								Ask about this topic
@@ -472,7 +475,11 @@ export function TopicDetail() {
 						</div>
 						{canStartAssistant && (
 							<Suspense
-								fallback={<output>Loading assistant...</output>}
+								fallback={
+									<output>
+										Loading your Digital Twin...
+									</output>
+								}
 							>
 								<LandingChatComposer topicId={topic.id} />
 							</Suspense>
@@ -702,7 +709,7 @@ export function TopicDetail() {
 									id={`${fieldId}-assistant-context`}
 									className={contextHeadingClassName}
 								>
-									Assistant
+									Your Digital Twin
 								</H2>
 							</div>
 							<div className="space-y-3">
@@ -826,7 +833,7 @@ export function TopicDetail() {
 												aria-hidden="true"
 												className="-rotate-90 group-data-[state=open]:rotate-0"
 											/>
-											Notes for the assistant
+											Notes for Your Digital Twin
 										</Button>
 									</CollapsibleTrigger>
 									<CollapsibleContent
@@ -836,7 +843,7 @@ export function TopicDetail() {
 									>
 										<MemoryList
 											memories={topicMemories}
-											emptyText="Notes here help the assistant with this topic and its threads."
+											emptyText="Notes here help your Digital Twin with this topic and its threads."
 											addLabel="New note"
 											about={{
 												type: "topic",

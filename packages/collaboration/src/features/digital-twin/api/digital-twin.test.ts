@@ -468,7 +468,7 @@ describe("creating a twin", () => {
 		expect(failure).toBeInstanceOf(TwinSetupError);
 		expect((failure as TwinSetupError).twinId).toBe("twin-9");
 		expect((failure as TwinSetupError).message).toBe(
-			"Your Digital Twin was created, but your persona could not be switched off for it: It is not yours.",
+			"The new twin was created, but your persona could not be switched off for it: It is not yours.",
 		);
 	});
 
@@ -526,7 +526,7 @@ describe("creating a twin", () => {
 		).catch((cause: unknown) => cause);
 		expect(failure).toBeInstanceOf(TwinSetupError);
 		expect((failure as TwinSetupError).message).toBe(
-			'Your Digital Twin was created, but not everything you chose could be added: "Budget review.md": The file is gone.',
+			'The new twin was created, but not everything you chose could be added: "Budget review.md": The file is gone.',
 		);
 		expect((failure as TwinSetupError).twinId).toBe("twin-1");
 		// the one after the failure was still copied, and only it is reported as in
@@ -559,7 +559,7 @@ describe("creating a twin", () => {
 		).rejects.toMatchObject({
 			twinId: "twin-1",
 			message:
-				"Your Digital Twin was created, but your note could not be saved: The disk is full.",
+				"The new twin was created, but your note could not be saved: The disk is full.",
 		});
 	});
 
@@ -575,7 +575,7 @@ describe("creating a twin", () => {
 		expect(failure).toMatchObject({
 			twinId: "twin-1",
 			message:
-				"Your Digital Twin was created, but its files folder could not be made: The disk is full.",
+				"The new twin was created, but its files folder could not be made: The disk is full.",
 		});
 		expect(ran()).toHaveLength(2);
 	});
@@ -594,7 +594,7 @@ describe("creating a twin", () => {
 		).rejects.toMatchObject({
 			twinId: "twin-1",
 			message:
-				"Your Digital Twin was created, but its image could not be uploaded: Choose a PNG, JPEG, or GIF image.",
+				"The new twin was created, but its image could not be uploaded: Choose a PNG, JPEG, or GIF image.",
 		});
 	});
 

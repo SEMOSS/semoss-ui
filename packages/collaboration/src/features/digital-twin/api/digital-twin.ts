@@ -271,7 +271,7 @@ export async function getMyTwin(
 	}
 	if (twins.length > 1) {
 		throw new Error(
-			"You have more than one Digital Twin. Go back to Digital Twins and choose one.",
+			"You share more than one twin. Go back to Digital Twins and choose one.",
 		);
 	}
 	return twins[0] ?? null;
@@ -792,7 +792,7 @@ export async function createTwin(
 			await during(step, setUp[step].run);
 		} catch (cause) {
 			throw new TwinSetupError(
-				`Your Digital Twin was created, but ${setUp[step].failure}: ${reason(cause)}`,
+				`The new twin was created, but ${setUp[step].failure}: ${reason(cause)}`,
 				twinId,
 				{ cause },
 			);

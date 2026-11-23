@@ -229,7 +229,7 @@ export function ThreadSettings({
 											!person?.neverIngest
 										}
 										disabled={person?.neverIngest}
-										aria-label={`Include ${person?.name || "participant"} in assistant context`}
+										aria-label={`Include ${person?.name || "participant"} in what your Digital Twin reads`}
 										onCheckedChange={(included) =>
 											dispatch({
 												type: "thread.participant",

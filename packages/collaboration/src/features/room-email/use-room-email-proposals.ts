@@ -170,7 +170,7 @@ export function useRoomEmailProposals({
 						target.seed.sourceUid !== proposal.sourceMessageId)
 				) {
 					setError(
-						"This change is for a different email or a different kind of draft. Your open draft was kept. Ask the assistant to create a separate draft.",
+						"This change is for a different email or a different kind of draft. Your open draft was kept. Ask in the chat for a separate draft.",
 					);
 					continue;
 				}
@@ -183,7 +183,7 @@ export function useRoomEmailProposals({
 						state.bodyRevision !== openEmail.bodyRevision
 					) {
 						setError(
-							"You edited the email while the assistant was writing, so your edits were kept. Ask again to apply the change.",
+							"You edited the email while the change was being written, so your edits were kept. Ask again to apply the change.",
 						);
 					} else {
 						// a reply or forward keeps its thread's subject and has no bcc
@@ -241,7 +241,7 @@ export function useRoomEmailProposals({
 			) {
 				if (isNewCompletion && index > lastUserIndex)
 					setError(
-						"This draft does not match the selected, included email. Ask the assistant to try again; nothing was saved.",
+						"This draft does not match the selected, included email. Ask in the chat to try again; nothing was saved.",
 					);
 				continue;
 			}
@@ -299,7 +299,7 @@ export function useRoomEmailProposals({
 					.emailDrafts.find((draft) => draft.seed.id === id);
 				if (!target) {
 					setError(
-						"The email for these attachments is no longer open. Ask the assistant to attach them to the current email.",
+						"The email for these attachments is no longer open. Ask in the chat to attach them to the current email.",
 					);
 					continue;
 				}

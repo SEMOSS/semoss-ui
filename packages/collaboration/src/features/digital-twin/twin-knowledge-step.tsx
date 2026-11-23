@@ -33,12 +33,12 @@ import {
 const CHOSEN = {
 	label: "What you chose",
 	description:
-		"Copies of these go into your Digital Twin when it is created. Until then they wait here, and you can take any of them back out.",
+		"Copies of these go into the new twin when it is created. Until then they wait here, and you can take any of them back out.",
 };
 const UPLOAD = {
 	label: "Your computer",
 	description:
-		"Files from this computer, such as a project plan or a slide deck. They are added to your Digital Twin as they are.",
+		"Files from this computer, such as a project plan or a slide deck. They are added to the new twin as they are.",
 };
 const isSource = (place: string): place is TwinSourceId =>
 	place in TWIN_SOURCES;
@@ -78,7 +78,7 @@ export function TwinKnowledgeStep({
 		onAdd(source);
 		attachments.offer(source);
 		setStatus(
-			`Chose "${source.name}". It is added when your Digital Twin is created.`,
+			`Chose "${source.name}". It is added when the new twin is created.`,
 		);
 	};
 	const handleAddAttachments = async (): Promise<void> => {
@@ -91,7 +91,7 @@ export function TwinKnowledgeStep({
 					found.saved.length,
 					found.skipped,
 					(what) =>
-						`Chose ${what}. They are added when your Digital Twin is created.`,
+						`Chose ${what}. They are added when the new twin is created.`,
 				),
 			);
 		} catch (cause) {
@@ -118,7 +118,7 @@ export function TwinKnowledgeStep({
 
 	const groups: TopicPlaceGroup[] = [
 		{
-			title: "For your twin",
+			title: "For This Twin",
 			places: [
 				{
 					id: "chosen",
@@ -152,7 +152,7 @@ export function TwinKnowledgeStep({
 	const savedItems = {
 		isSaved: (itemKey: string) =>
 			items.some((item) => item.itemKey === itemKey),
-		label: "Chosen for your Digital Twin",
+		label: "Chosen for This Twin",
 	};
 	return (
 		<div className="flex min-w-0 flex-col overflow-hidden rounded-lg border md:h-128 md:flex-row">
@@ -268,9 +268,9 @@ export function TwinKnowledgeStep({
 					) : (
 						<P className="p-4 text-muted-foreground text-sm">
 							Nothing chosen yet. Pick a place under Add from,
-							then save the emails, Teams chats and files your
-							Digital Twin should answer from. You can also skip
-							this and add them after it is created.
+							then save the emails, Teams chats and files the new
+							twin should answer from. You can also skip this and
+							add them after it is created.
 						</P>
 					)}
 				</div>
@@ -280,8 +280,8 @@ export function TwinKnowledgeStep({
 					<output className="wrap-anywhere line-clamp-2 min-w-0 flex-1 basis-48 text-muted-foreground text-sm">
 						{status ||
 							(isFinding
-								? "Add a suggestion to choose it for your Digital Twin."
-								: "Save an item to choose it for your Digital Twin.")}
+								? "Add a suggestion to choose it for the new twin."
+								: "Save an item to choose it for the new twin.")}
 					</output>
 					{attachments.pending > 0 && (
 						<Button

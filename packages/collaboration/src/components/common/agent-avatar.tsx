@@ -55,8 +55,12 @@ export function AgentAvatar({
 								: "text-xs"
 					}
 				>
-					{/* two letters fit every size; a long name's would spill out of the circle */}
-					{buildInitials(agent.name, 2) || "?"}
+					{/* two letters fit every size; a long name's would spill out of the circle. A possessive is
+					    no word of its own: "Ryan's Digital Twin" is RD, not RS. */}
+					{buildInitials(
+						agent.name.replace(/['’]s(?=\s|$)/g, ""),
+						2,
+					) || "?"}
 				</span>
 			)}
 		</span>

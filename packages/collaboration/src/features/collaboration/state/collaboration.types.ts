@@ -448,6 +448,19 @@ export interface ThreadWorkspace {
 	meetings: { title: string; when: string; state: string }[];
 }
 
+/**
+ * The signed-in person's own Digital Twin: the seeded Collaboration agent, as
+ * they see it under their own name and picture.
+ */
+export interface MainTwin {
+	/** What the twin is called now: the name its owner gave it, or the server's default. */
+	name: string;
+	/** The picture its owner chose, as a data address; empty while their Microsoft photo stands in. */
+	avatar: string;
+	/** The seeded agent every chat with this twin runs on; empty when the server names none. */
+	agentId: string;
+}
+
 export interface CollaborationState {
 	deletedSourceIds?: string[];
 	today: string;
@@ -459,6 +472,8 @@ export interface CollaborationState {
 	accounts: Account[];
 	profile: Profile;
 	liveProfile: Profile | null;
+	/** Left out with no loaded data, and by a server that predates it. */
+	mainTwin?: MainTwin;
 	settings: Settings;
 	rules: Rule[];
 	sources: SourceStatus[];
@@ -616,6 +631,11 @@ export type CollaborationCommand =
 			/** The style as the server holds it after learning, which the saver must not write back. */
 			type: "profile.style.server";
 			style: ProfileStyle;
+	  }
+	| {
+			/** The person's own Digital Twin as the server holds it after a save, which nothing writes back. */
+			type: "main-twin.server";
+			mainTwin: MainTwin;
 	  }
 	| { type: "snooze.expire" };
 

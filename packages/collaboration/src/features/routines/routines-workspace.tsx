@@ -285,7 +285,7 @@ export function RoutinesWorkspace() {
 					<div className="flex flex-col gap-6">
 						<CollaborationPageHeader
 							title="Routines"
-							description="Let your assistant take care of the repeat work. Your briefs appear here."
+							description="Your Digital Twin runs these agents for you. Your briefs appear here."
 							className="mb-0"
 						/>
 						<TabsList className="w-full sm:w-fit">

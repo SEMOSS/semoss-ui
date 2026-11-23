@@ -74,8 +74,8 @@ export function WorkItemPage() {
 									Ask about this item
 								</h2>
 								<Small className="block text-muted-foreground">
-									The assistant sees its steps and the mail
-									and chats it came from.
+									Your Digital Twin sees its steps and the
+									mail and chats it came from.
 								</Small>
 							</div>
 							{rooms.length > 0 && (

@@ -130,6 +130,8 @@ vi.mock("@/features/dashboard/dashboard.context", () => ({
 	}),
 }));
 
+// the marker a viewer puts on an item the twin holds; the rail's group heading says the same words
+const HELD = ["In This Twin", { selector: "p" }] as const;
 const BROWSE = 'BrowseAppAssets(filePath=["/"], project=["twin-1"]);';
 // the one item the viewers offer, as the twin records where a copy of it came from
 const RECORD = { "public/emails/Budget review.md": "budget-review" };
@@ -283,10 +285,14 @@ it("opens on the twin's own files, kept to the folder a chat reads, and names ev
 	expect(
 		screen.getByRole("heading", {
 			level: 1,
-			name: "What your Digital Twin knows",
+			name: "What This Twin Knows",
 		}),
 	).toBeVisible();
-	expect(screen.getByText("Loading your Digital Twin…")).toBeInTheDocument();
+	expect(screen.getByText("Loading this twin...")).toBeInTheDocument();
+	// with no twin read yet, the way back is to the list of them
+	expect(
+		screen.getByRole("link", { name: "Back to Digital Twins" }),
+	).toHaveAttribute("href", "/twins");
 	expect(
 		await screen.findByText(
 			'The file dock on {"mode":{"type":"APP","app":"twin-1"},"rootPath":"/public"}',
@@ -318,7 +324,7 @@ it("opens on the twin's own files, kept to the folder a chat reads, and names ev
 	);
 	// the back link is the one way back to the twin's own page
 	expect(
-		screen.getByRole("link", { name: "Back to your Digital Twin" }),
+		screen.getByRole("link", { name: "Back to This Twin" }),
 	).toHaveAttribute("href", "/twins/mine?twinId=twin-1");
 	expect(screen.queryByRole("link", { name: "Done" })).toBeNull();
 	// nothing is made just by opening the page
@@ -369,7 +375,7 @@ it("copies to the selected twin and keeps it selected when changing places", asy
 		'"app":"twin-1"',
 	);
 	expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-		"What Robin Twin knows",
+		"What Robin Twin Knows",
 	);
 });
 
@@ -383,19 +389,19 @@ it("does not carry copied-item markers to another twin", async () => {
 		await screen.findByRole("button", { name: "Save to Digital Twin" }),
 	);
 	await waitFor(() => expect(ran()).toContain(SAVE_RECORD));
-	expect(screen.getByText("In your Digital Twin")).toBeVisible();
+	expect(screen.getByText(...HELD)).toBeVisible();
 	await act(async () => {
 		await router.navigate("/twins/mine/contents?twinId=twin-2&in=outlook");
 	});
 	expect(
 		await screen.findByRole("button", { name: "Save to Digital Twin" }),
 	).toBeVisible();
-	expect(screen.queryByText("In your Digital Twin")).toBeNull();
+	expect(screen.queryByText(...HELD)).toBeNull();
 	expect(ran()).toContain(
 		'BrowseAppAssets(filePath=["/"], project=["twin-2"]);',
 	);
 	expect(
-		screen.getByRole("link", { name: "Back to your Digital Twin" }),
+		screen.getByRole("link", { name: "Back to This Twin" }),
 	).toHaveAttribute("href", "/twins/mine?twinId=twin-2");
 });
 
@@ -415,7 +421,7 @@ it.each([
 			screen.getByRole("heading", { level: 2, name: title }),
 		).toBeVisible();
 		expect(
-			screen.getByText("Save an item to copy it into your Digital Twin."),
+			screen.getByText("Save an item to copy it into this twin."),
 		).toBeVisible();
 
 		await user.click(
@@ -424,7 +430,7 @@ it.each([
 
 		await waitFor(() =>
 			expect(toast.success).toHaveBeenCalledWith(
-				'Added "Budget review.md" to your Digital Twin.',
+				'Added "Budget review.md" to this twin.',
 			),
 		);
 		expect(ran()).toContain(
@@ -440,11 +446,11 @@ it.each([
 		expect(index.twinId).toBe("twin-1");
 		expect(index.request).toHaveBeenCalledTimes(1);
 		expect(
-			screen.getByText('Added "Budget review.md" to your Digital Twin.'),
+			screen.getByText('Added "Budget review.md" to this twin.'),
 		).toBeVisible();
 		expect(toast.error).not.toHaveBeenCalled();
 		// its viewer marks it from here on, in place of offering it again
-		expect(screen.getByText("In your Digital Twin")).toBeVisible();
+		expect(screen.getByText(...HELD)).toBeVisible();
 		expect(
 			screen.queryByRole("button", { name: "Save to Digital Twin" }),
 		).not.toBeInTheDocument();
@@ -478,11 +484,11 @@ it("finds what to add from a description, copies an added suggestion into the tw
 		await screen.findByRole("heading", { level: 2, name: "Find with AI" }),
 	).toBeVisible();
 	expect(
-		screen.getByText("Add a suggestion to copy it into your Digital Twin."),
+		screen.getByText("Add a suggestion to copy it into this twin."),
 	).toBeVisible();
 	const question = () =>
 		screen.getByRole("textbox", {
-			name: "What should your Digital Twin know?",
+			name: "What Should This Twin Know?",
 		});
 	await user.type(question(), "The Apollo cutover");
 	await user.click(screen.getByRole("button", { name: "Find suggestions" }));
@@ -493,7 +499,7 @@ it("finds what to add from a description, copies an added suggestion into the tw
 	// saved into the page's files as its own viewer saves it, then copied into the twin from there
 	await waitFor(() =>
 		expect(toast.success).toHaveBeenCalledWith(
-			'Added "Apollo cutover.md" to your Digital Twin.',
+			'Added "Apollo cutover.md" to this twin.',
 		),
 	);
 	expect(saveItem).toHaveBeenCalledExactlyOnceWith("insight-1", {
@@ -508,7 +514,7 @@ it("finds what to add from a description, copies an added suggestion into the tw
 		within(screen.getByRole("region", { name: "Emails 1" })).getByRole(
 			"listitem",
 		);
-	expect(found()).toHaveTextContent("In your Digital Twin");
+	expect(found()).toHaveTextContent("In This Twin");
 	expect(within(found()).queryByRole("button")).toBeNull();
 
 	// a look at another place does not lose what was asked or what was found
@@ -525,7 +531,7 @@ it("finds what to add from a description, copies an added suggestion into the tw
 it("marks what the twin already holds when the page opens, and offers a copy the owner deleted again", async () => {
 	holdCopy();
 	const held = renderContents("outlook");
-	expect(await screen.findByText("In your Digital Twin")).toBeVisible();
+	expect(await screen.findByText(...HELD)).toBeVisible();
 	expect(
 		screen.queryByRole("button", { name: "Save to Digital Twin" }),
 	).not.toBeInTheDocument();
@@ -537,13 +543,13 @@ it("marks what the twin already holds when the page opens, and offers a copy the
 	expect(
 		await screen.findByRole("button", { name: "Save to Digital Twin" }),
 	).toBeVisible();
-	expect(screen.queryByText("In your Digital Twin")).not.toBeInTheDocument();
+	expect(screen.queryByText(...HELD)).not.toBeInTheDocument();
 });
 
 it("reads what the twin holds again when the owner comes back from its files", async () => {
 	holdCopy();
 	const { user } = renderContents("outlook");
-	expect(await screen.findByText("In your Digital Twin")).toBeVisible();
+	expect(await screen.findByText(...HELD)).toBeVisible();
 
 	const rail = screen.getByRole("navigation", { name: "What to list" });
 	await user.click(within(rail).getByRole("button", { name: "Files" }));
@@ -574,9 +580,9 @@ it("keeps an added item marked, and says so, when where it came from could not b
 	);
 	// it is in the twin all the same
 	expect(toast.success).toHaveBeenCalledWith(
-		'Added "Budget review.md" to your Digital Twin.',
+		'Added "Budget review.md" to this twin.',
 	);
-	expect(screen.getByText("In your Digital Twin")).toBeVisible();
+	expect(screen.getByText(...HELD)).toBeVisible();
 });
 
 it("says when a copy fails, with the server's reason, and keeps the viewer", async () => {
@@ -589,7 +595,7 @@ it("says when a copy fails, with the server's reason, and keeps the viewer", asy
 	);
 	await waitFor(() =>
 		expect(toast.error).toHaveBeenCalledWith(
-			'Could not add "Budget review.md" to your Digital Twin.',
+			'Could not add "Budget review.md" to this twin.',
 			{
 				description:
 					"Project twin-1 does not exist or user does not have edit access",
@@ -597,15 +603,13 @@ it("says when a copy fails, with the server's reason, and keeps the viewer", asy
 		),
 	);
 	expect(
-		screen.getByText(
-			'"Budget review.md" was not added to your Digital Twin.',
-		),
+		screen.getByText('"Budget review.md" was not added to this twin.'),
 	).toBeVisible();
 	expect(toast.success).not.toHaveBeenCalled();
 	expect(index.request).not.toHaveBeenCalled();
 	expect(screen.getByText(/The Outlook mailbox/)).toBeVisible();
 	// not in the twin, so it is offered again and not marked
-	expect(screen.queryByText("In your Digital Twin")).not.toBeInTheDocument();
+	expect(screen.queryByText(...HELD)).not.toBeInTheDocument();
 	expect(
 		screen.getByRole("button", { name: "Save to Digital Twin" }),
 	).toBeVisible();
@@ -699,7 +703,7 @@ it("offers an added email's attachments, copies them in beside it, and says what
 	const { user } = renderContents("find");
 	await user.type(
 		await screen.findByRole("textbox", {
-			name: "What should your Digital Twin know?",
+			name: "What Should This Twin Know?",
 		}),
 		"The Apollo cutover",
 	);
@@ -737,7 +741,7 @@ it("offers an added email's attachments, copies them in beside it, and says what
 	await user.click(offer() as HTMLElement);
 	expect(
 		await screen.findByText(
-			"Added 1 attachment to your Digital Twin. Left out for being over 25 MB: Recording.mp4.",
+			"Added 1 attachment to this twin. Left out for being over 25 MB: Recording.mp4.",
 		),
 	).toBeVisible();
 	expect(saveAttachments).toHaveBeenLastCalledWith("insight-1", "conv-1");
@@ -759,7 +763,7 @@ it("offers no attachments for something that is not an email", async () => {
 	);
 	await waitFor(() =>
 		expect(toast.success).toHaveBeenCalledWith(
-			'Added "Budget review.md" to your Digital Twin.',
+			'Added "Budget review.md" to this twin.',
 		),
 	);
 	expect(screen.queryByRole("button", { name: /attachments/ })).toBeNull();
@@ -776,7 +780,7 @@ it("copies a meeting from the calendar into the twin's meetings, and offers no t
 	);
 	await waitFor(() =>
 		expect(toast.success).toHaveBeenCalledWith(
-			'Added "Budget review.md" to your Digital Twin.',
+			'Added "Budget review.md" to this twin.',
 		),
 	);
 	expect(ran().find((statement) => statement.startsWith("Copy("))).toBe(
@@ -835,7 +839,7 @@ it("adds what was said in an added meeting beside it, where the server can read 
 	]);
 	await user.click(offer() as HTMLElement);
 	expect(
-		await screen.findByText("Added 1 transcript to your Digital Twin."),
+		await screen.findByText("Added 1 transcript to this twin."),
 	).toBeVisible();
 	expect(ran()).toEqual(expect.arrayContaining([read(), read(1)]));
 	const [insightId, [file]] = uploadToPage.mock.calls[0] as [string, File[]];

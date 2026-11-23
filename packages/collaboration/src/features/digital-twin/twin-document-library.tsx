@@ -199,8 +199,8 @@ export function TwinDocumentLibrary({
 				>
 					<P className="col-span-full @lg/twins:text-base text-sm">
 						{files.length
-							? `${files.length.toLocaleString()} ${files.length === 1 ? "document" : "documents"} your twin can answer from.`
-							: "Give your twin its first document, email, or conversation."}
+							? `${files.length.toLocaleString()} ${files.length === 1 ? "document" : "documents"} this twin can answer from.`
+							: "Give this twin its first document, email, or conversation."}
 					</P>
 					<div className="col-span-full flex flex-wrap gap-2">
 						<Button

@@ -93,7 +93,7 @@ export function TwinProfileFields({
 						) : (
 							<P className="text-muted-foreground text-sm">
 								You have no persona yet. Write one from the
-								Digital Twins page, and every twin of yours
+								Digital Twins page, and every twin you share
 								answers in your voice.
 							</P>
 						))}

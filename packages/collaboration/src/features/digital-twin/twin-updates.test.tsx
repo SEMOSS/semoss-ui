@@ -296,7 +296,7 @@ it("updates a copy on the owner's press: the item is saved again and written ove
 	);
 	await waitFor(() =>
 		expect(toast.success).toHaveBeenCalledWith(
-			'Updated "Email thread - Budget.md" in your Digital Twin.',
+			'Updated "Email thread - Budget.md" in this twin.',
 		),
 	);
 	expect(saveItem).toHaveBeenCalledWith("insight-1", {
@@ -413,7 +413,7 @@ it("keeps a copy as it is, and removes one, on the owner's press", async () => {
 	);
 	await waitFor(() =>
 		expect(toast.success).toHaveBeenCalledWith(
-			'Removed "Old pricing.xlsx" from your Digital Twin.',
+			'Removed "Old pricing.xlsx" from this twin.',
 		),
 	);
 	expect(ran().slice(4)).toEqual([
@@ -485,7 +485,7 @@ it("offers the Microsoft sign in when a check needs it, and checks again after i
 	await user.click(screen.getByRole("button", { name: "Check now" }));
 	expect(
 		await screen.findByText(
-			"Sign in to Microsoft 365 to check your Digital Twins.",
+			"Sign in to Microsoft 365 to check the twins you share.",
 		),
 	).toBeVisible();
 	await user.click(
@@ -494,7 +494,7 @@ it("offers the Microsoft sign in when a check needs it, and checks again after i
 	await waitFor(() =>
 		expect(
 			screen.queryByText(
-				"Sign in to Microsoft 365 to check your Digital Twins.",
+				"Sign in to Microsoft 365 to check the twins you share.",
 			),
 		).not.toBeInTheDocument(),
 	);

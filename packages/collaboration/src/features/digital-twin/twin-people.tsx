@@ -74,7 +74,7 @@ export function TwinPeople({ twin }: TwinPeopleProps) {
 						People with access
 					</H2>
 					<P className="max-w-prose text-muted-foreground text-sm">
-						These people can chat with your twin and read its shared
+						These people can chat with this twin and read its shared
 						files and instructions. Only you see this list.
 					</P>
 				</div>

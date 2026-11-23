@@ -66,7 +66,7 @@ export function refLabel(state: CollaborationState, ref: MemoryRef): string {
 /** Who wrote it, in the words the lists use. */
 export function originLabel(memory: Memory): string {
 	if (memory.origin === "you") return "You";
-	if (memory.state === "suggested") return "Assistant suggestion";
+	if (memory.state === "suggested") return "Digital Twin suggestion";
 	return memory.confirmed ? "Learned in chat, confirmed" : "Learned in chat";
 }
 

@@ -203,7 +203,7 @@ const next = (label: string) =>
 const nameField = () => screen.getByLabelText("Name (required)");
 const stepList = () =>
 	within(
-		screen.getByRole("list", { name: "Steps to create your Digital Twin" }),
+		screen.getByRole("list", { name: "Steps to create a twin to share" }),
 	)
 		.getAllByRole("listitem")
 		.map((entry) => entry.textContent);
@@ -222,7 +222,7 @@ async function reachKnowledge(user: User) {
 	await user.click(next("Knowledge"));
 }
 const create = (user: User) =>
-	user.click(screen.getByRole("button", { name: "Create Digital Twin" }));
+	user.click(screen.getByRole("button", { name: "Create Twin" }));
 
 it("creates a skill during setup and carries its selection and name through review into the twin", async () => {
 	answers.CreateSkill = { project_id: "skill-new", name: "Brief replies" };
@@ -267,10 +267,10 @@ it("starts on who the twin is, one step of five, with nothing sent or read", () 
 	expect(
 		screen.getByRole("heading", {
 			level: 1,
-			name: "Create your Digital Twin",
+			name: "Create a Twin to Share",
 		}),
 	).toBeVisible();
-	expect(step("Who is your Digital Twin?")).toBeVisible();
+	expect(step("Who is the new twin?")).toBeVisible();
 	expect(stepList()).toEqual([
 		"1Identity",
 		"2Voice",
@@ -315,7 +315,7 @@ it.each([
 	await user.click(next("Voice"));
 	expect(await screen.findByText(problem)).toBeVisible();
 	expect(nameField()).toBeInvalid();
-	expect(step("Who is your Digital Twin?")).toBeVisible();
+	expect(step("Who is the new twin?")).toBeVisible();
 	expect(insight.actions.run).not.toHaveBeenCalled();
 });
 
@@ -328,7 +328,7 @@ it("moves a step at a time, starts each at its title, and keeps what was entered
 	await user.type(screen.getByLabelText("Greeting"), "Ask me anything.");
 
 	await user.click(screen.getByRole("button", { name: "Back" }));
-	expect(step("Who is your Digital Twin?")).toHaveFocus();
+	expect(step("Who is the new twin?")).toHaveFocus();
 	expect(nameField()).toHaveValue("Robin Twin");
 
 	await user.click(next("Voice"));
@@ -345,7 +345,7 @@ it("moves a step at a time, starts each at its title, and keeps what was entered
 	expect(reviewOf("Greeting")).toHaveTextContent("Ask me anything.");
 	expect(reviewOf("Skills and toolboxes")).toHaveTextContent("None");
 	expect(reviewOf("What it knows")).toHaveTextContent(
-		"Nothing yet. You can add it once your Digital Twin is created.",
+		"Nothing yet. You can add it once the new twin is created.",
 	);
 	expect(stepList()).toEqual([
 		"Identity (done)",
@@ -358,7 +358,7 @@ it("moves a step at a time, starts each at its title, and keeps what was entered
 	await user.click(
 		screen.getByRole("button", { name: "Change name and image" }),
 	);
-	expect(step("Who is your Digital Twin?")).toHaveFocus();
+	expect(step("Who is the new twin?")).toHaveFocus();
 	expect(insight.actions.run).not.toHaveBeenCalled();
 });
 
@@ -372,7 +372,7 @@ it("chooses emails, Teams chats and files for the twin, and lets one be taken ba
 	expect(step("What should it know?").closest("form")).toBeNull();
 	expect(screen.getByText("The Outlook mailbox")).toBeVisible();
 	expect(
-		screen.getByText("Save an item to choose it for your Digital Twin."),
+		screen.getByText("Save an item to choose it for the new twin."),
 	).toBeVisible();
 
 	await user.click(
@@ -380,11 +380,11 @@ it("chooses emails, Teams chats and files for the twin, and lets one be taken ba
 	);
 	expect(
 		screen.getByText(
-			'Chose "Budget review.md". It is added when your Digital Twin is created.',
+			'Chose "Budget review.md". It is added when the new twin is created.',
 		),
 	).toBeVisible();
 	// its viewer marks it from here on, in place of offering it again
-	expect(screen.getByText("Chosen for your Digital Twin")).toBeVisible();
+	expect(screen.getByText("Chosen for This Twin")).toBeVisible();
 	expect(
 		screen.queryByRole("button", { name: "Save to Digital Twin" }),
 	).toBeNull();
@@ -434,7 +434,7 @@ it("chooses emails, Teams chats and files for the twin, and lets one be taken ba
 		screen.getByRole("button", { name: "Save to Digital Twin" }),
 	).toBeVisible();
 	await user.click(place("OneDrive"));
-	expect(screen.getByText("Chosen for your Digital Twin")).toBeVisible();
+	expect(screen.getByText("Chosen for This Twin")).toBeVisible();
 
 	// nothing has left the page yet
 	expect(insight.actions.run).not.toHaveBeenCalled();
@@ -469,13 +469,11 @@ it("finds what to choose from a description, and chooses a suggestion as a viewe
 	await reachKnowledge(user);
 	await user.click(place("Find with AI"));
 	expect(
-		screen.getByText(
-			"Add a suggestion to choose it for your Digital Twin.",
-		),
+		screen.getByText("Add a suggestion to choose it for the new twin."),
 	).toBeVisible();
 	const question = () =>
 		screen.getByRole("textbox", {
-			name: "What should your Digital Twin know?",
+			name: "What Should This Twin Know?",
 		});
 	await user.type(question(), "The Apollo cutover");
 	await user.click(screen.getByRole("button", { name: "Find suggestions" }));
@@ -487,7 +485,7 @@ it("finds what to choose from a description, and chooses a suggestion as a viewe
 
 	expect(
 		await screen.findByText(
-			'Chose "Apollo cutover.md". It is added when your Digital Twin is created.',
+			'Chose "Apollo cutover.md". It is added when the new twin is created.',
 		),
 	).toBeVisible();
 	expect(saveItem).toHaveBeenCalledExactlyOnceWith("insight-1", {
@@ -500,7 +498,7 @@ it("finds what to choose from a description, and chooses a suggestion as a viewe
 		within(screen.getByRole("region", { name: "Emails 1" })).getByRole(
 			"listitem",
 		),
-	).toHaveTextContent("Chosen for your Digital Twin");
+	).toHaveTextContent("Chosen for This Twin");
 	expect(
 		screen.queryByRole("button", { name: "Add Apollo cutover" }),
 	).toBeNull();
@@ -550,7 +548,7 @@ it("makes the twin step by step once the review is confirmed, copies in what was
 	expect(
 		screen.getAllByRole("listitem").map((entry) => entry.textContent),
 	).toEqual([
-		"Create your Digital Twin",
+		"Create the twin",
 		"Make room for what it knows",
 		"Save its greeting",
 		"Upload its image",
@@ -654,7 +652,7 @@ it("comes back to the review with what failed once the twin exists, keeps what w
 
 	const alert = await screen.findByRole("alert");
 	expect(alert).toHaveTextContent(
-		"Your Digital Twin was created, but its greeting could not be saved: The agent is locked. Everything you entered is still here: finish setting it up to try that part again.",
+		"The new twin was created, but its greeting could not be saved: The agent is locked. Everything you entered is still here: finish setting it up to try that part again.",
 	);
 	expect(step("Ready to bring it to life?")).toHaveFocus();
 	// the reason sits above the title the page comes back at: under a long review it would be out of sight
@@ -664,9 +662,7 @@ it("comes back to the review with what failed once the twin exists, keeps what w
 	).toBeTruthy();
 	expect(nameField()).toHaveValue("Robin Twin");
 	expect(screen.getByLabelText("Greeting")).toHaveValue("Ask me anything.");
-	expect(
-		screen.queryByRole("button", { name: "Create Digital Twin" }),
-	).toBeNull();
+	expect(screen.queryByRole("button", { name: "Create Twin" })).toBeNull();
 
 	delete answers.EditWorkspace;
 	await user.click(screen.getByRole("button", { name: "Finish setting up" }));
@@ -702,7 +698,7 @@ it("says which chosen item could not be added, and on the next try copies only t
 	await create(user);
 
 	expect(await screen.findByRole("alert")).toHaveTextContent(
-		'Your Digital Twin was created, but not everything you chose could be added: "Design sync.md": The file is no longer there. Everything you entered is still here',
+		'The new twin was created, but not everything you chose could be added: "Design sync.md": The file is no longer there. Everything you entered is still here',
 	);
 	expect(copies()).toHaveLength(2);
 	// the email is in the twin by now, so only the chat is still a choice
@@ -744,9 +740,7 @@ it("keeps a refused create a create, so it can be tried again", async () => {
 	expect(await screen.findByRole("alert")).toHaveTextContent(
 		/^You are not allowed to create an agent$/,
 	);
-	expect(
-		screen.getByRole("button", { name: "Create Digital Twin" }),
-	).toBeEnabled();
+	expect(screen.getByRole("button", { name: "Create Twin" })).toBeEnabled();
 	expect(ran()).toEqual(["AddDigitalTwin"]);
 });
 
@@ -864,7 +858,7 @@ it("chooses a picked email's attachments with it, as files of their own", async 
 	await user.click(place("Find with AI"));
 	await user.type(
 		screen.getByRole("textbox", {
-			name: "What should your Digital Twin know?",
+			name: "What Should This Twin Know?",
 		}),
 		"The Apollo cutover",
 	);
@@ -881,7 +875,7 @@ it("chooses a picked email's attachments with it, as files of their own", async 
 	);
 	expect(
 		await screen.findByText(
-			"Chose 2 attachments. They are added when your Digital Twin is created.",
+			"Chose 2 attachments. They are added when the new twin is created.",
 		),
 	).toBeVisible();
 	expect(saveAttachments.mock.calls).toEqual([

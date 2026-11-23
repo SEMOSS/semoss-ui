@@ -229,7 +229,7 @@ export function PersonDetail() {
 					</div>
 					<div className="flex items-center justify-between gap-4 py-1">
 						<Label htmlFor={`${fieldId}-person-excluded`}>
-							Exclude from future assistant context
+							Keep From Your Digital Twin
 						</Label>
 						<Switch
 							id={`${fieldId}-person-excluded`}
@@ -250,7 +250,7 @@ export function PersonDetail() {
 					{person.neverIngest && memories.length > 0 && (
 						<div className="space-y-2 rounded-lg border border-border p-3">
 							<Small className="block font-normal text-sm leading-6">
-								The assistant no longer sees the{" "}
+								Your Digital Twin no longer sees the{" "}
 								{memories.length === 1
 									? "memory"
 									: `${memories.length} memories`}{" "}
@@ -273,12 +273,12 @@ export function PersonDetail() {
 					)}
 				</Section>
 				<Section
-					title="What the assistant remembers"
+					title="What Your Digital Twin Remembers"
 					className="space-y-3 border-b px-4 py-4 md:px-6"
 				>
 					<MemoryList
 						memories={memories}
-						emptyText={`Facts about ${person.name} that the assistant keeps across threads.`}
+						emptyText={`Facts about ${person.name} that your Digital Twin keeps across threads.`}
 						addLabel={`New memory about ${person.name}`}
 						about={{ type: "person", id: person.id }}
 						isSample={person.isSample}

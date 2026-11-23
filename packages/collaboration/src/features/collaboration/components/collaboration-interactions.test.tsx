@@ -319,7 +319,7 @@ describe("collaboration Work and Brain integration", () => {
 		const note = screen.getByLabelText("New note");
 		await user.type(note, "Hugo owns the demo environment.");
 		const notesTrigger = screen.getByRole("button", {
-			name: "Notes for the assistant",
+			name: "Notes for Your Digital Twin",
 		});
 		await user.click(notesTrigger);
 		expect(
@@ -880,7 +880,7 @@ describe("collaboration Work and Brain integration", () => {
 		).toBe(true);
 		await user.click(
 			screen.getByRole("switch", {
-				name: "Include Ben Carter in assistant context",
+				name: "Include Ben Carter in what your Digital Twin reads",
 			}),
 		);
 		expect(
@@ -890,7 +890,7 @@ describe("collaboration Work and Brain integration", () => {
 		).toBe(false);
 		expect(
 			screen.getByRole("switch", {
-				name: "Include Ben Carter in assistant context",
+				name: "Include Ben Carter in what your Digital Twin reads",
 			}),
 		).not.toBeChecked();
 	});

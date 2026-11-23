@@ -93,7 +93,9 @@ const signedIn = (): CollaborationState => {
 	return state;
 };
 const assistantSwitch = () =>
-	screen.findByRole("switch", { name: "Use my persona when writing for me" });
+	screen.findByRole("switch", {
+		name: "Use My Persona With My Digital Twin",
+	});
 
 const openTab = async (
 	user: ReturnType<typeof userEvent.setup>,
@@ -138,7 +140,11 @@ it("opens on the saved summary and one readable section, with access to every se
 	]) {
 		expect(screen.getByRole("button", { name: label })).toBeEnabled();
 	}
-	expect(screen.getByText(/shared twin may quote/i)).toBeVisible();
+	expect(
+		screen.getByText(
+			"Only you can open this page. A twin you share may quote what you write here.",
+		),
+	).toBeVisible();
 	expect(screen.getByRole("link", { name: "Digital Twins" })).toHaveAttribute(
 		"href",
 		"/twins",
@@ -304,16 +310,14 @@ it("opens from the sidebar as the same page with no way back to Digital Twins, a
 	expect(ran()).toEqual(["WorkGetTwinPersona();"]);
 });
 
-it("has the owner's assistant write with the persona until it is switched off, and saves the switch as it is moved", async () => {
+it("has the person's own Digital Twin use the persona until it is switched off, and saves the switch as it is moved", async () => {
 	const user = renderOwnPage();
 	await openTab(user, "Usage");
 	const toggle = await assistantSwitch();
 	// a server from before the switch says nothing of it, and uses the persona
 	expect(toggle).toBeChecked();
 	expect(toggle).toHaveAccessibleDescription(
-		expect.stringContaining(
-			"your voice and boundaries in email and Teams drafts",
-		),
+		"Your Digital Twin weighs things the way you described and writes email and Teams drafts in your voice. It answers you in a plain voice. Drafts your routines write follow this switch too.",
 	);
 	answers.WorkSetAssistantPersona = { enabled: false };
 	// by keyboard, as a switch is moved
@@ -402,11 +406,15 @@ it("keeps usage changes and deletion unavailable while a section save is pending
 	expect(screen.getByText("Direct. Be warm.")).toBeVisible();
 });
 
-it("offers the assistant switch only once a section is saved, using the value the server returned", async () => {
+it("offers the switch for the person's own twin only once a section is saved, using the value the server returned", async () => {
+	// with nothing written yet, the tab says what a first section is for
+	const emptyUsage =
+		"Write your first section to use your persona with your Digital Twin and the twins you share.";
 	answers.WorkGetTwinPersona = persona();
 	const user = renderOwnPage();
 	await openTab(user, "Usage");
 	expect(screen.queryByRole("switch")).toBeNull();
+	expect(screen.getByText(emptyUsage)).toBeVisible();
 	await openTab(user, "Persona");
 	await user.click(await screen.findByRole("button", { name: "Voice" }));
 	await user.click(screen.getByRole("button", { name: "Write section" }));
@@ -430,14 +438,48 @@ it("explains which features stop using the persona before deletion", async () =>
 	expect(
 		screen.getByRole("dialog", { name: "Delete your persona?" }),
 	).toHaveAccessibleDescription(
-		expect.stringMatching(
-			/your assistant stops writing for you with it.*cannot be undone/i,
-		),
+		"Every section of your persona is deleted. Your Digital Twin stops using it, and the twins you share stop answering in your voice. This cannot be undone.",
 	);
 	await user.click(screen.getByRole("button", { name: "Cancel" }));
 	expect(
 		screen.getByRole("region", { name: "Delete your persona" }),
-	).toHaveTextContent(/twins and assistant/i);
+	).toHaveTextContent(
+		"Removes your persona from your Digital Twin and the twins you share.",
+	);
+});
+
+it("leads Usage with the person's own Digital Twin and its picture, then the twins they share", async () => {
+	const state = signedIn();
+	const user = renderOwnPage({
+		...state,
+		mainTwin: {
+			name: "Robin's Digital Twin",
+			avatar: "data:image/png;base64,AAAA",
+			agentId: "collaboration-agent",
+		},
+	});
+	await openTab(user, "Usage");
+	const toggle = await assistantSwitch();
+	const shared = screen.getByText("Twins You Share");
+	// their own twin's row comes first, led by the twin's picture
+	expect(
+		toggle.compareDocumentPosition(shared) &
+			Node.DOCUMENT_POSITION_FOLLOWING,
+	).toBeTruthy();
+	const usage = screen.getByRole("tabpanel", { name: "Usage" });
+	expect(usage.querySelector("img")).toHaveAttribute(
+		"src",
+		"data:image/png;base64,AAAA",
+	);
+	expect(
+		screen.getByText(
+			"The twins you share use your persona by default. You can switch it off in each twin's profile.",
+		),
+	).toBeVisible();
+	expect(screen.getByRole("link", { name: "Manage twins" })).toHaveAttribute(
+		"href",
+		"/twins",
+	);
 });
 
 it("keeps a section edit across Usage and offers one persona even with a legacy email style", async () => {
