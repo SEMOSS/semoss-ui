@@ -47,6 +47,7 @@ import type { Session } from "@/types/session";
 import { useShowCurrentChat } from "../current-chat";
 import { takeFileToShow } from "../room-file-to-show";
 import type { ComposerSubmission, RoomViewProps } from "../types/room";
+import { useRoomDockMemory } from "../use-room-dock-memory";
 import { RoomAgentLine } from "./room-agent-line";
 import { RoomComposer } from "./room-composer";
 import type { RoomSlashCommand } from "./room-composer-slash-plugin";
@@ -267,6 +268,14 @@ export function RoomWorkspace({
 		if (isToolWorkbenchOpen) setHasOpenedWorkbench(true);
 	}, [isToolWorkbenchOpen]);
 
+	const { rememberOpened } = useRoomDockMemory({
+		roomId: session.id,
+		isEnabled: showToolWorkbench && !isMobile,
+		isOpen: isToolWorkbenchOpen,
+		openWorkbench,
+		store,
+	});
+
 	function openSettings() {
 		store
 			.getState()
@@ -280,6 +289,7 @@ export function RoomWorkspace({
 			return;
 		}
 		openWorkbench();
+		rememberOpened();
 	}
 
 	/**

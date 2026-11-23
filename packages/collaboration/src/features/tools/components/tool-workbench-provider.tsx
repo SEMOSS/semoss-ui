@@ -119,11 +119,28 @@ export function ToolWorkbenchProvider({
 		const actions = store.getState().layout.actions;
 		const current = actions.getSnapshot();
 		const next = createLayout(insightId);
+		const nextRail = next.borders.left.panelIds;
+		const currentRail = current.borders.left;
 		// new panels and rails join; panels the user already opened stay
 		const merged = {
 			...current,
 			panels: { ...next.panels, ...current.panels },
-			borders: { ...current.borders, ...next.borders },
+			borders: {
+				...current.borders,
+				...next.borders,
+				left: {
+					...next.borders.left,
+					panelIds: [
+						...nextRail,
+						...currentRail.panelIds.filter(
+							(id) => !nextRail.includes(id),
+						),
+					],
+					activeId:
+						currentRail.activeId ?? next.borders.left.activeId,
+					size: currentRail.size,
+				},
+			},
 		};
 		actions.loadSnapshot(merged);
 		setSnapshot(merged);
