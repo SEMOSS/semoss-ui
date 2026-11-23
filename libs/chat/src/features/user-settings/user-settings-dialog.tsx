@@ -1,4 +1,5 @@
-import { XIcon } from "lucide-react";
+import { type LucideIcon, XIcon } from "lucide-react";
+import type { ReactNode } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
@@ -9,7 +10,20 @@ import {
 	DialogDescription,
 	DialogTitle,
 } from "@semoss/ui/next";
-import type { UserSettingsSection } from "./user-settings-section";
+
+/** One section of the user's settings dialog. */
+export interface UserSettingsSection {
+	/** Stable key, which `callbacks.onOpenSettings(id)` opens the dialog on. */
+	id: string;
+	/** The section's name, in the dialog's navigation and as the section's heading. */
+	label: string;
+	/** The section's icon in the navigation. */
+	icon: LucideIcon;
+	/** The section; mounted only while it is shown. */
+	content: ReactNode;
+	/** A bar along the bottom of the section, below what scrolls. */
+	footer?: ReactNode;
+}
 
 /** Props for {@link UserSettingsDialog}. */
 interface UserSettingsDialogProps {
@@ -17,29 +31,29 @@ interface UserSettingsDialogProps {
 	open: boolean;
 	/** Open or close the dialog. */
 	onOpenChange: (open: boolean) => void;
-	/** The id of the page shown; the first page for none or an unknown one. */
+	/** The id of the section shown; the first section for none or an unknown one. */
 	section: string | undefined;
-	/** Show another page. */
+	/** Show another section. */
 	onSectionChange: (section: string) => void;
 	/**
-	 * The pages, in navigation order: the chat's own
-	 * (`useDefaultSettingsPages`) and the host's.
+	 * The sections, in navigation order: the chat's own
+	 * (`useDefaultUserSettingsSections`) and the host's.
 	 */
-	pages: readonly UserSettingsSection[];
+	sections: readonly UserSettingsSection[];
 }
 
 /**
- * The user's settings: a list of pages on the start side and the chosen page
+ * The user's settings: a list of sections on the start side and the chosen section
  * on the end side, stacked on narrow screens. Both sides share one header bar:
- * "Settings" over the list, the page's title and the close button over the
- * page. A page can have a footer bar, as General has for the instance's
- * version. Only the page scrolls; the header and footer stay put. Pages mount
+ * "Settings" over the list, the section's title and the close button over the
+ * section. A section can have a footer bar, as General has for the instance's
+ * version. Only the section scrolls; the header and footer stay put. Sections mount
  * only while shown, so Connectors reads the session's logins each time it
- * opens. The host hands it the pages: the chat's own, from
- * `useDefaultSettingsPages`, and its own. Hold its state with
+ * opens. The host hands it the sections: the chat's own, from
+ * `useDefaultUserSettingsSections`, and its own. Hold its state with
  * `useUserSettingsDialog`, and render it inside the chat's providers.
  *
- * On open, focus goes to the dialog itself rather than its first page button,
+ * On open, focus goes to the dialog itself rather than its first section button,
  * so no focus ring shows until the user moves through it with the keyboard.
  */
 export const UserSettingsDialog = ({
@@ -47,7 +61,7 @@ export const UserSettingsDialog = ({
 	onOpenChange,
 	section,
 	onSectionChange,
-	pages: sections,
+	sections,
 }: UserSettingsDialogProps) => {
 	const { t } = useTranslation("sidebar");
 	const current = sections.find((item) => item.id === section) ?? sections[0];

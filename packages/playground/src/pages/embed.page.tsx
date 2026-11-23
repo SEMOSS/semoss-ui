@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Navigate, useNavigate, useParams } from "react-router";
-import { useChatSelector, useChatSession } from "@semoss/chat";
+import { useEmbeddedPageMap } from "@/features/embed/use-embedded-page-map";
 
 /**
  * The route for an embedded page (`/embed/<path>`). `EmbeddedPages` already keeps
@@ -10,13 +10,8 @@ import { useChatSelector, useChatSession } from "@semoss/chat";
 export const EmbedPage: React.FC = () => {
 	const { "*": splatPath } = useParams();
 	const basePath = splatPath?.split("/")[0] ?? "";
-	const { chat } = useChatSession();
 	const navigate = useNavigate();
-
-	const pageInfo = useChatSelector(
-		chat,
-		(chat) => chat.embeddedPageMap[basePath] ?? null,
-	);
+	const pageInfo = useEmbeddedPageMap()[basePath] ?? null;
 
 	// The embedded app asks the playground to start a chat or open a room.
 	useEffect(() => {

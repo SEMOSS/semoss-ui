@@ -3,13 +3,15 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 import { beforeEach, expect, test, vi } from "vitest";
 import { DropdownMenuItem, toast } from "@semoss/ui/next";
+import { testChatOptions } from "../../../test/chat-options";
 import { fakeStore } from "../../../test/fake-store";
+import type { ResolvedChatOptions } from "../../chat/config/chat-options";
 import type { RoomStore } from "../../room/store/room.store";
 import type { MCPOverlay } from "../../tools/mcp/mcp-overlay";
 import { ContextItemsStore } from "../attachments/context-items.store";
+import { useComposer } from "./composer.context";
 import { AttachFilesItem } from "./plus-menu/attach-files-item";
 import { RoomInput, type RoomInputVariant } from "./room-input";
-import { useComposer } from "./use-composer";
 import type { ComposerSession } from "./use-composer-session";
 
 // ---------------------------------------------------------------------------
@@ -88,13 +90,19 @@ vi.mock("../attachments/file-drop.context", async (importOriginal) => {
 	};
 });
 
-const featureFlags: Record<string, boolean> = {};
+/** The host's options with every optional part off, which a test turns on. */
+const OFF = { hasPromptOptimizer: false, isModelSelectable: false } as const;
+const host: { options: ResolvedChatOptions } = {
+	options: {} as ResolvedChatOptions,
+};
 // the host's own components, which a test sets and the next one clears
 const components: { PlusMenu?: () => React.ReactNode } = {};
-vi.mock("../../chat/config/use-chat-config", () => ({
+vi.mock("../../chat/config/chat-config.context", async (original) => ({
+	...(await original<
+		typeof import("../../chat/config/chat-config.context")
+	>()),
 	useChatConfig: () => ({
-		theme: { featureFlags, defaultCompactionStrategy: "AUTO" },
-		options: {},
+		options: host.options,
 		components: components,
 	}),
 }));
@@ -110,7 +118,10 @@ const CHAT = vi.hoisted(() => ({
 	},
 	subscribe: () => () => {},
 }));
-vi.mock("../../chat/provider/use-chat-session", () => ({
+vi.mock("../../chat/provider/chat-session.context", async (original) => ({
+	...(await original<
+		typeof import("../../chat/provider/chat-session.context")
+	>()),
 	// a fixed chat store: its snapshot is itself
 	useChatSession: () => ({ chat: CHAT }),
 }));
@@ -350,9 +361,9 @@ function draftVariant(
 		kind: "draft",
 		onSwitchToAgentHarness: vi.fn(),
 		onExitAgentHarness: vi.fn(),
-		workbenchPanels: {
+		draftWorkbench: {
 			room,
-			newRoomPanels: {
+			draftPanels: {
 				onOpenPanel: vi.fn(),
 				isBusy: false,
 				connectors: room.connectors,
@@ -382,7 +393,7 @@ beforeEach(() => {
 	openFilePicker.mockClear();
 	fakeEditorText = "";
 	triggerOnChange = null;
-	for (const flag of Object.keys(featureFlags)) delete featureFlags[flag];
+	host.options = testChatOptions(OFF);
 });
 
 /** A saved agent, as the input shows one. */
@@ -571,7 +582,7 @@ test("a new chat in agent mode without a saved agent shows an editable Default A
 });
 
 test("keeps optimizer beside the editor after typing and disables it while busy", () => {
-	featureFlags.enablePromptOptimizer = true;
+	host.options = testChatOptions({ ...OFF, hasPromptOptimizer: true });
 	const { rerender } = render(<RoomInput {...defaultProps} />);
 	expect(
 		screen.getByRole("button", { name: "Optimize prompt" }),
@@ -694,7 +705,7 @@ test("locks mutating menu actions during a turn", async () => {
 });
 
 test("new chats choose execution mode separately from the saved agent", async () => {
-	featureFlags.enableAgentHarness = true;
+	host.options = testChatOptions({ ...OFF, agentMode: "choice" });
 	const user = userEvent.setup();
 	const onOptionsChange = vi.fn();
 	const onSwitchToAgentHarness = vi.fn();
@@ -762,9 +773,12 @@ test("new chats choose execution mode separately from the saved agent", async ()
 });
 
 test.each([true, false])(
-	"saving an agent only changes its profile with the harness flag %s",
+	"saving an agent only changes its profile with the Chat and Agent choice %s",
 	async (enableAgentHarness) => {
-		featureFlags.enableAgentHarness = enableAgentHarness;
+		host.options = testChatOptions({
+			...OFF,
+			agentMode: enableAgentHarness ? "choice" : "chat-only",
+		});
 		const user = userEvent.setup();
 		const onOptionsChange = vi.fn();
 		const onSwitchToAgentHarness = vi.fn();
@@ -807,8 +821,7 @@ test.each([true, false])(
 );
 
 test("when the agent decides the mode, new chats pick a saved agent, Default Agent, or No Agent", async () => {
-	featureFlags.enableAgentHarness = true;
-	featureFlags.modeFollowsAgent = true;
+	host.options = testChatOptions({ ...OFF, agentMode: "follows-agent" });
 	const user = userEvent.setup();
 	const onOptionsChange = vi.fn();
 	const onDefaultAgentChange = vi.fn();

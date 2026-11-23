@@ -11,7 +11,7 @@ import {
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import { useStoreSelector } from "@semoss/utility/react/use-store-selector";
-import { useChatConfig } from "../../chat/config/use-chat-config";
+import { useChatConfig } from "../../chat/config/chat-config.context";
 import type { RoomStore } from "../../room/store/room.store";
 import type { ToolStore } from "../../room/store/tool.store";
 import { useRoomSelector } from "../../room/store/use-room-selector";
@@ -19,8 +19,8 @@ import { decideAgentToolAction } from "../../room/turns/agent-turn-runner";
 import { ToolInspector } from "../inspector/tool-inspector";
 import { ChatToolCard } from "./chat-tool-card";
 import { ComponentToolView } from "./component-tool-view";
+import { DefaultToolView } from "./default-tool-view";
 import { resolveSystemAppUrl, resolveToolFrameUrl } from "./tool-frame-url";
-import { ToolsDefaultView } from "./tools-default-view";
 import { usePortalPublished } from "./use-portal-published";
 import { useToolAppInfo } from "./use-tool-app-info";
 
@@ -162,7 +162,7 @@ export const ToolsView = ({ room, app, message, toolId }: ToolsViewProps) => {
 	}
 
 	const defaultView = (
-		<ToolsDefaultView
+		<DefaultToolView
 			room={room}
 			app={app}
 			message={message}

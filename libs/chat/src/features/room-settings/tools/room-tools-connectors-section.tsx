@@ -6,14 +6,14 @@ import {
 	WrenchIcon,
 } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
+import { ConnectorBrandIcon } from "@semoss/shared";
 import { Button } from "@semoss/ui/next";
-import { useChatConfig } from "../../chat/config/use-chat-config";
+import { useChatConfig } from "../../chat/config/chat-config.context";
 import { signInToProvider } from "../../connectors/accounts/connector-sign-in";
 import { useConnectProvider } from "../../connectors/accounts/use-connect-provider";
 import { useConnectorLogins } from "../../connectors/accounts/use-connector-logins";
 import type { ConnectorProviderId } from "../../connectors/store/connector-catalog";
 import { useConnectors } from "../../connectors/store/use-connectors";
-import { ConnectorServiceIcon } from "../../connectors/viewers/connector-service-icon";
 import type { RoomStore } from "../../room/store/room.store";
 import {
 	type ConnectorAccessIssue,
@@ -80,8 +80,8 @@ export const RoomToolsConnectorsSection = ({
 			key: group.service.id,
 			label: group.label,
 			icon: (
-				<ConnectorServiceIcon
-					serviceId={group.service.id}
+				<ConnectorBrandIcon
+					brand={group.service.id}
 					className="size-4 shrink-0"
 				/>
 			),

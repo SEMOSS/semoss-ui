@@ -6,7 +6,7 @@ import {
 	runPixel,
 	runPixelAsync,
 } from "@semoss/sdk/react";
-import type { ThemeMap } from "@semoss/shared";
+import { testChatOptions } from "../../../test/chat-options";
 import { servePixelTransport } from "../../../test/pixel-transport";
 import type {
 	Engine,
@@ -14,11 +14,11 @@ import type {
 	PixelMessageToolCallPart,
 	ResponsePixelMessage,
 } from "../../../types";
+import { DEFAULT_WORKBENCH_PANELS } from "../../workbench/panels/default-workbench-panels";
 import {
 	TOOL_ERROR_PROMPT,
 	TURN_CANCELLATION_PROMPT,
-} from "../../tools/mcp/mcp-constants";
-import { DEFAULT_WORKBENCH_PANEL_COMPONENTS } from "../../workbench/panels/room-panel-components";
+} from "../turns/turn-prompts";
 import type { ResponseMessageStore } from "./response-message.store";
 import { RoomStore } from "./room.store";
 
@@ -195,13 +195,13 @@ const modelReply = (
  */
 const loadRoom = async (
 	parts: ResponsePixelMessage["parts"],
-	theme = {} as ThemeMap["playground"],
+	chatOptions = testChatOptions(),
 ) => {
 	const room = new RoomStore({
-		theme,
+		chatOptions,
 		roomId: "room-1",
 		insightId: "insight-1",
-		panelComponents: DEFAULT_WORKBENCH_PANEL_COMPONENTS,
+		workbenchPanels: DEFAULT_WORKBENCH_PANELS,
 	});
 	const history = [
 		inputPixel("in-1"),
@@ -505,7 +505,7 @@ paramValues=[${JSON.stringify(room.chatTools.chatParamValues)}]`;
 	expect(room.canCancel).toBe(false);
 });
 
-test("auto tools run five at a time when the theme sets no limit", async () => {
+test("auto tools run five at a time when the host sets no limit", async () => {
 	await loadRoom(
 		["a", "b", "c", "d", "e", "f"].map((name) => toolCall(name)),
 	);
@@ -515,12 +515,12 @@ test("auto tools run five at a time when the theme sets no limit", async () => {
 	);
 });
 
-test("the theme's limit caps auto tools, a saved result makes room for the next, and ask tools wait", async () => {
+test("the host's limit caps auto tools, a saved result makes room for the next, and ask tools wait", async () => {
 	answer = (pixel) =>
 		pixel.startsWith("AddPlaygroundToolExecution") ? [ok("saved")] : [];
 	const { room } = await loadRoom(
 		[toolCall("a"), toolCall("b"), toolCall("c"), toolCall("d", "ask")],
-		{ toolAutoExecutionLimit: 2 } as ThemeMap["playground"],
+		testChatOptions({ toolAutoExecutionLimit: 2 }),
 	);
 	const started = () =>
 		vi.mocked(runMcpTool).mock.calls.map(([call]) => call.name);

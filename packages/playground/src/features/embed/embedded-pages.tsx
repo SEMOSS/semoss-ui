@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { matchPath, useLocation } from "react-router";
-import { useChatSelector, useChatSession } from "@semoss/chat";
+import { useEmbeddedPageMap } from "./use-embedded-page-map";
 
 /**
  * Every page the theme embeds, each in an iframe that stays mounted so it
@@ -11,11 +11,7 @@ import { useChatSelector, useChatSession } from "@semoss/chat";
  */
 export const EmbeddedPages = () => {
 	const { pathname } = useLocation();
-	const { chat } = useChatSession();
-	const embeddedPageMap = useChatSelector(
-		chat,
-		(current) => current.embeddedPageMap,
-	);
+	const embeddedPageMap = useEmbeddedPageMap();
 
 	// Each embedded page's iframe, whether it has sent SMSS_READY, and the path
 	// to send it once it has, all by embed path.

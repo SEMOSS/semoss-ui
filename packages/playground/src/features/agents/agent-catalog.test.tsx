@@ -2,12 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import {
-	type ChatConfig,
-	ChatConfigProvider,
-	ChatSessionProvider,
-	type ChatStore,
-} from "@semoss/chat";
+import { ChatProvider } from "@semoss/chat";
 import { AgentCatalog } from "@/features/agents/agent-catalog";
 
 /** The stubs the mocked modules call, reset before each test. */
@@ -25,6 +20,11 @@ vi.mock("@semoss/ui/next", async (original) => ({
 	useDebouncedValue: (value: string) => value,
 }));
 vi.mock("@semoss/sdk/react", () => ({
+	// the chat reads the session's models as it starts; there are none
+	Session: {
+		insight: { withInsight: async () => [] },
+		getSnapshot: () => ({ user: null }),
+	},
 	useSessionIteratorPixel: (
 		buildPixel: (limit: number, offset: number) => string,
 	) => {
@@ -62,21 +62,18 @@ vi.mock("@/features/agents/workspace-card", () => ({
 	),
 }));
 
-/** The chat providers the pages read from, over this test's stub chat store. */
+/** The chat's provider the pages read from, with the options they need. */
 const chatWrapper = ({ children }: { children: ReactNode }) => (
-	<ChatSessionProvider store={{} as unknown as ChatStore}>
-		<ChatConfigProvider
-			config={
-				{
-					theme: { featureFlags: {}, images: {} },
-					options: {},
-					callbacks: {},
-				} as unknown as ChatConfig
-			}
-		>
-			{children}
-		</ChatConfigProvider>
-	</ChatSessionProvider>
+	<ChatProvider
+		config={{
+			options: {
+				roomHref: (roomId) => `#/room/${roomId}`,
+			},
+			callbacks: { onOpenRoom: vi.fn(), onOpenNewChat: vi.fn() },
+		}}
+	>
+		{children}
+	</ChatProvider>
 );
 
 // jsdom has no scrollIntoView, which the sort select calls; stub it per test

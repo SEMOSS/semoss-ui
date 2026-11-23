@@ -1,5 +1,5 @@
 import { TextQuoteIcon } from "lucide-react";
-import { useComposer } from "../use-composer";
+import { useComposer } from "../composer.context";
 import { SlashCommand } from "./slash-command";
 
 /** The "/" menu's Prompts group: each prompt the chat offers, which sends it. */

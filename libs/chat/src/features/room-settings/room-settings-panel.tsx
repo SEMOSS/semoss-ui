@@ -50,7 +50,7 @@ const RoomSettingsPanel = () => {
 };
 
 /** The room's model, options, and tools. One per Workspace. */
-export const ROOM_CONFIGURATION_PANEL: WorkbenchPanelConfig = {
+export const ROOM_SETTINGS_PANEL: WorkbenchPanelConfig = {
 	name: "Settings",
 	icon: ({ className }) => <Settings2Icon className={className} />,
 	canRename: false,

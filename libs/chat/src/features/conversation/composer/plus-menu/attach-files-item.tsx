@@ -2,7 +2,7 @@ import { PaperclipIcon } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
 import { DropdownMenuItem } from "@semoss/ui/next";
 import { useFileDrop } from "../../attachments/file-drop.context";
-import { useComposer } from "../use-composer";
+import { useComposer } from "../composer.context";
 
 /**
  * The plus menu's Attach item, which opens the file picker of the enclosing

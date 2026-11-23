@@ -137,9 +137,6 @@
 		"noItemsAvailable": "No hay conocimiento o cajas de herramientas disponibles"
 	},
 	"studio": {
-		"views": "Vistas de la conversación",
-		"chat": "Chat",
-		"workspace": "Espacio de trabajo",
 		"toolsLocked": "No se pueden cambiar las herramientas mientras se genera una respuesta.",
 		"toolsHint": "Las selecciones se aplican a tu próximo mensaje.",
 		"moreActions": "Más acciones",
@@ -152,11 +149,16 @@
 		"refresh": "Actualizar",
 		"exportCsv": "Exportar como CSV",
 		"exportPdf": "Exportar como PDF",
-		"closeWorkspace": "Cerrar espacio de trabajo",
-		"openWorkspace": "Abrir espacio de trabajo",
-		"preparingWorkspace": "Preparando espacio de trabajo…",
 		"prepareError": "No se pudo preparar el espacio de trabajo. Se conserva tu borrador.",
 		"retry": "Intentar de nuevo"
+	},
+	"workbench": {
+		"views": "Vistas de la conversación",
+		"chat": "Chat",
+		"workspace": "Espacio de trabajo",
+		"closeWorkspace": "Cerrar espacio de trabajo",
+		"openWorkspace": "Abrir espacio de trabajo",
+		"preparingWorkspace": "Preparando espacio de trabajo…"
 	},
 	"workspacePlaces": {
 		"files": "Archivos",
@@ -194,7 +196,7 @@
 		"openPlace": "Abrir {{name}} en el espacio de trabajo",
 		"groups": {
 			"chat": "Chat",
-			"workspace": "Espacio de trabajo",
+			"workbench": "Espacio de trabajo",
 			"room": "Sala",
 			"prompts": "Prompts"
 		},

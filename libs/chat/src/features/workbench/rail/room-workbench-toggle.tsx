@@ -3,17 +3,17 @@ import { type MouseEvent, useContext } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { cn } from "@semoss/ui/next";
 import { HeaderIconButton } from "../../room/header/header-icon-button";
-import { RoomLayoutActionsContext } from "../../room/layout/room-layout-actions.context";
+import { SplitLayoutActionsContext } from "../../room/layout/split-layout-actions.context";
 import type { RoomStore } from "../../room/store/room.store";
 import { useRoomSelector } from "../../room/store/use-room-selector";
-import type { NewRoomWorkbenchPanels } from "./use-workbench-panels";
+import type { DraftWorkbenchPanels } from "./use-workbench-panels";
 
 /** Props for {@link RoomWorkbenchToggle}. */
 interface RoomWorkbenchToggleProps {
 	/** The room whose Workspace it opens and closes. */
 	room: RoomStore;
 	/** A new chat's own actions, until its first message. */
-	newRoomPanels?: NewRoomWorkbenchPanels;
+	draftPanels?: DraftWorkbenchPanels;
 }
 
 /**
@@ -24,10 +24,10 @@ interface RoomWorkbenchToggleProps {
  */
 export const RoomWorkbenchToggle = ({
 	room,
-	newRoomPanels,
+	draftPanels,
 }: RoomWorkbenchToggleProps) => {
 	const { t } = useTranslation("room");
-	const roomLayout = useContext(RoomLayoutActionsContext);
+	const roomLayout = useContext(SplitLayoutActionsContext);
 	const isOpen = useRoomSelector(
 		room,
 		(current) => current.workbenchPane.isOpen,
@@ -41,7 +41,7 @@ export const RoomWorkbenchToggle = ({
 			room.closeWorkbench();
 			return;
 		}
-		if (newRoomPanels) newRoomPanels.onOpenPanel({ kind: "workbench" });
+		if (draftPanels) draftPanels.onOpenPanel({ kind: "workbench" });
 		else room.openWorkbench();
 		roomLayout?.revealWorkbench(event.currentTarget);
 	};
@@ -50,8 +50,8 @@ export const RoomWorkbenchToggle = ({
 		<HeaderIconButton
 			label={
 				isInView
-					? t("studio.closeWorkspace")
-					: t("studio.openWorkspace")
+					? t("workbench.closeWorkspace")
+					: t("workbench.openWorkspace")
 			}
 			aria-pressed={isInView}
 			onClick={handleClick}

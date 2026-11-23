@@ -1,9 +1,9 @@
-import { createContext } from "react";
+import { createContext, useContext } from "react";
 import type { MCPConfig } from "@semoss/shared";
 import type { RoomStore } from "../../room/store/room.store";
 import type { AgentChoice } from "../../tools/mcp/agent-choice";
 import type { MCPOverlayTab } from "../../tools/mcp/mcp-overlay-picker";
-import type { NewRoomWorkbenchPanels } from "../../workbench/rail/use-workbench-panels";
+import type { DraftWorkbenchPanels } from "../../workbench/rail/use-workbench-panels";
 import type { PromptLibraryItem } from "./prompt-library-dialog";
 
 /**
@@ -14,7 +14,7 @@ export interface Composer {
 	/** The room the composer sends to, or a new chat's draft. */
 	readonly room: RoomStore;
 	/** Whether this is a new chat, before its first message. */
-	readonly isNewChat: boolean;
+	readonly isDraft: boolean;
 	/** Whether a turn is running, which locks what would change the chat. */
 	readonly isBusy: boolean;
 	/** The room's options, for the selected agent and the resource counts. */
@@ -60,7 +60,7 @@ export interface ComposerWorkbench {
 	/** The room whose Workspace the panels open in. */
 	readonly room: RoomStore;
 	/** A new chat's own panel actions, until its first message. */
-	readonly newRoomPanels?: NewRoomWorkbenchPanels;
+	readonly draftPanels?: DraftWorkbenchPanels;
 }
 
 /** The composer, for its menus' items. Null outside a composer. */
@@ -70,3 +70,17 @@ export const ComposerContext = createContext<Composer | null>(null);
 export const ComposerWorkbenchContext = createContext<ComposerWorkbench | null>(
 	null,
 );
+
+/**
+ * Read the composer an item of the plus menu or a "/" command is in.
+ *
+ * @returns The composer's room, state, and actions.
+ * @throws When called outside the composer's menus.
+ */
+export const useComposer = (): Composer => {
+	const composer = useContext(ComposerContext);
+	if (!composer) {
+		throw new Error("useComposer must be used inside the composer's menus");
+	}
+	return composer;
+};

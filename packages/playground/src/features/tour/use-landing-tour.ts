@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { PlaygroundTheme } from "@/features/theme/playground-theme";
+import type { PlaygroundTheme } from "@semoss/shared";
 import type { TourContextValue } from "@/features/tour/tour.context";
 
 /** What {@link useLandingTour} returns. */

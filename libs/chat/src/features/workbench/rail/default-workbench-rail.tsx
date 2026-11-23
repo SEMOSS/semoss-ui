@@ -1,6 +1,6 @@
-import { RailItem } from "./rail-item";
-import { useWorkbench } from "./use-workbench";
 import { WorkbenchPanelIcon } from "./workbench-panel-icon";
+import { useWorkbenchRail } from "./workbench-rail.context";
+import { WorkbenchRailItem } from "./workbench-rail-item";
 
 /**
  * The Workspace's rail icons as the chat has them, and the place to start a
@@ -8,10 +8,10 @@ import { WorkbenchPanelIcon } from "./workbench-panel-icon";
  * activity log, and each connector viewer the chat can show now.
  */
 export const DefaultWorkbenchRail = () => {
-	const { panels } = useWorkbench();
+	const { panels } = useWorkbenchRail();
 
 	return panels.map((panel) => (
-		<RailItem
+		<WorkbenchRailItem
 			key={panel.id}
 			label={panel.label}
 			icon={

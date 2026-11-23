@@ -2,10 +2,10 @@ import { BookOpenIcon, Bot, CheckIcon, HammerIcon } from "lucide-react";
 import { useId, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
-	createMcpPlatformUrl,
 	type MCPConfig,
 	MCPSelector,
 	splitMcpByType,
+	useAgentWorkspace,
 } from "@semoss/shared";
 import {
 	Alert,
@@ -23,12 +23,11 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
-import { useChatConfig } from "../../chat/config/use-chat-config";
+import { useChatConfig } from "../../chat/config/chat-config.context";
 import { NewKnowledgeForm } from "../../knowledge/new-knowledge-form";
 import type { AgentChoice, AgentOverlaySave, AgentRef } from "./agent-choice";
 import { AgentSelector } from "./agent-selector";
 import { listRoomTools } from "./mcp-utils";
-import { useAgentWorkspace } from "./use-agent-workspace";
 
 /** A tab of the agent picker. */
 export type MCPOverlayTab = "AGENT" | "TOOLBOX" | "KNOWLEDGE";
@@ -72,8 +71,7 @@ export const MCPOverlayPicker = ({
 	onClose,
 }: MCPOverlayPickerProps) => {
 	const { t } = useTranslation(["mcp", "knowledge", "common", "room"]);
-	const { theme, options } = useChatConfig();
-	const platformUrl = options.platformUrl ?? "";
+	const { options } = useChatConfig();
 
 	const [knowledge, setKnowledge] = useState<MCPConfig[]>(
 		() => splitMcpByType(values).knowledge,
@@ -124,9 +122,7 @@ export const MCPOverlayPicker = ({
 	 */
 	const toRoomSelections = (next: MCPConfig[]): MCPConfig[] =>
 		next.filter((item) => !agentToolIds.has(item.id));
-	const getPlatformUrl = theme.featureFlags?.showPlatformLinks
-		? createMcpPlatformUrl(platformUrl)
-		: undefined;
+	const getPlatformUrl = options.catalogItemHref;
 
 	if (view === "create") {
 		return (
@@ -298,9 +294,7 @@ export const MCPOverlayPicker = ({
 								if (!disabled) setView("create");
 							}}
 							autoFocus
-							enableKnowledgeMCP={
-								theme.featureFlags?.enableKnowledgeMCP
-							}
+							enableKnowledgeMCP={options.shouldMakeKnowledgeMcp}
 							getPlatformUrl={getPlatformUrl}
 						/>
 					)}
@@ -318,12 +312,8 @@ export const MCPOverlayPicker = ({
 								setToolbox(toRoomSelections(next))
 							}
 							autoFocus
-							enableKnowledgeMCP={
-								theme.featureFlags?.enableKnowledgeMCP
-							}
-							showSystemTools={
-								theme.featureFlags?.showSystemTools
-							}
+							enableKnowledgeMCP={options.shouldMakeKnowledgeMcp}
+							showSystemTools={options.hasSystemCatalogItems}
 							getPlatformUrl={getPlatformUrl}
 						/>
 					)}

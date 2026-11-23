@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
+import { ConnectorBrandIcon } from "@semoss/shared";
 import { Badge, Button, cn, Small, toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import { formatJson } from "@semoss/utility/json";
@@ -17,7 +18,6 @@ import {
 	signInToProvider,
 } from "../../connectors/accounts/connector-sign-in";
 import { useConnectProvider } from "../../connectors/accounts/use-connect-provider";
-import { ConnectorServiceIcon } from "../../connectors/viewers/connector-service-icon";
 import type { ToolStore } from "../../room/store/tool.store";
 import { isToolSettled, type ToolStatus } from "../../room/store/tool-status";
 import { useRoomSelector } from "../../room/store/use-room-selector";
@@ -314,10 +314,7 @@ export const ChatToolCard = ({ tool, variant }: ChatToolCardProps) => {
 		<div className="flex min-w-0 items-start gap-3">
 			<div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
 				{service ? (
-					<ConnectorServiceIcon
-						serviceId={service.id}
-						className="size-4"
-					/>
+					<ConnectorBrandIcon brand={service.id} className="size-4" />
 				) : (
 					<FolderIcon aria-hidden className="size-4" />
 				)}

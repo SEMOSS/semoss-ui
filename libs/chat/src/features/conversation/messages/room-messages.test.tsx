@@ -2,13 +2,14 @@ import { act, render, screen, within } from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vitest";
 import { getWorkspace, type WorkspaceDetails } from "@semoss/sdk";
 import { runPixel } from "@semoss/sdk/react";
-import type { ThemeMap } from "@semoss/shared";
+import { testChatOptions } from "../../../test/chat-options";
 import { servePixelTransport } from "../../../test/pixel-transport";
 import type {
 	InputPixelMessage,
 	PixelMessage,
 	ResponsePixelMessage,
 } from "../../../types";
+import type { ChatOptions } from "../../chat/config/chat-options";
 import type { InputMessageStore } from "../../room/store/input-message.store";
 import type { ResponseMessageStore } from "../../room/store/response-message.store";
 import { RoomStore } from "../../room/store/room.store";
@@ -16,7 +17,7 @@ import { useMessage } from "../../room/store/use-message";
 import { RoomMessages } from "./room-messages";
 
 const mocks = vi.hoisted(() => ({
-	theme: { gracefulErrors: [] } as Record<string, unknown>,
+	options: { gracefulErrors: [] } as Record<string, unknown>,
 	/** How many times each message's row rendered, by message id. */
 	renders: {} as Record<string, number>,
 }));
@@ -56,8 +57,11 @@ vi.mock("@semoss/shared", async (original) => ({
 		overrideMessage?: string;
 	}) => (active ? <p>{overrideMessage ?? "Generating"}</p> : null),
 }));
-vi.mock("../../chat/config/use-chat-config", () => ({
-	useChatConfig: () => ({ theme: mocks.theme }),
+vi.mock("../../chat/config/chat-config.context", async (original) => ({
+	...(await original<
+		typeof import("../../chat/config/chat-config.context")
+	>()),
+	useChatConfig: () => ({ options: mocks.options }),
 }));
 vi.mock("../../connectors/store/connector-tools", async (original) => ({
 	...(await original<
@@ -215,19 +219,22 @@ const pixelResponse = (outputs: unknown[]) => ({
  * first, so loading looks no model up.
  *
  * @param messages - The stored messages.
- * @param options - The room's theme, and the agent's workspace config when
- * the room was started from one.
+ * @param options - The room's chat options (suggestions off unless set), and
+ * the agent's workspace config when the room was started from one.
  * @returns The loaded room.
  */
 const createRoom = async (
 	messages: PixelMessage[],
-	options: { theme?: object; workspaceConfig?: object } = {},
+	options: {
+		chatOptions?: Partial<ChatOptions>;
+		workspaceConfig?: object;
+	} = {},
 ) => {
 	const room = new RoomStore({
-		theme: (options.theme ?? {}) as ThemeMap["playground"],
+		chatOptions: testChatOptions(options.chatOptions),
 		roomId: "room-1",
 		insightId: "insight-1",
-		panelComponents: {},
+		workbenchPanels: {},
 	});
 	room.setModel({
 		engine_id: "model-1",
@@ -273,7 +280,7 @@ const rowNames = () =>
 
 beforeEach(() => {
 	vi.clearAllMocks();
-	mocks.theme = { gracefulErrors: [] };
+	mocks.options = { gracefulErrors: [] };
 	mocks.renders = {};
 	localStorage.clear();
 	// jsdom has no element scrolling
@@ -302,7 +309,7 @@ test("hidden messages and empty replies to a response are skipped, and tool-only
 		output("r7", "i3", [toolCall("d")]),
 		output("r8", "r7", [toolCall("e")]),
 	]);
-	render(<RoomMessages room={room} />);
+	render(<RoomMessages room={room} suggestions={null} />);
 
 	expect(rowNames()).toEqual([
 		"input i1: ",
@@ -333,7 +340,9 @@ test("the model's name shows above a message only when the model changes", async
 		input("i4", "r3"),
 		output("r4", "i4", [text("Four")]),
 	]);
-	const { container } = render(<RoomMessages room={room} />);
+	const { container } = render(
+		<RoomMessages room={room} suggestions={null} />,
+	);
 
 	// the room's own model is the first one, so it is not named
 	const names = within(container).getAllByText(/^Model (One|Two)$/);
@@ -366,9 +375,8 @@ test("the model's name shows above a message only when the model changes", async
 	]);
 });
 
-test("an agent's greeting opens the conversation, and suggestions follow it when the theme turns them on", async () => {
+test("an agent's greeting opens the conversation, and suggestions follow it unless the host places none", async () => {
 	const room = await createRoom([], {
-		theme: { featureFlags: { enableSuggestions: true } },
 		workspaceConfig: { greeting_enabled: true, greeting: "**Welcome** in" },
 	});
 	render(<RoomMessages room={room} />);
@@ -379,24 +387,20 @@ test("an agent's greeting opens the conversation, and suggestions follow it when
 		screen.getByRole("complementary", { name: "suggestions" }),
 	).toBeInTheDocument();
 
-	// a greeting the agent turned off is not shown, and suggestions need the
-	// room's own theme, not the host's
-	mocks.theme = {
-		gracefulErrors: [],
-		featureFlags: { enableSuggestions: true },
-	};
+	// a greeting the agent turned off is not shown, and a host that places
+	// no suggestions gets none
 	const quiet = await createRoom([input("i1", "")], {
 		workspaceConfig: { greeting_enabled: false, greeting: "Hidden" },
 	});
-	render(<RoomMessages room={quiet} />);
+	render(<RoomMessages room={quiet} suggestions={null} />);
 	expect(screen.queryByText("Hidden")).toBeNull();
 	expect(
 		screen.getAllByRole("complementary", { name: "suggestions" }),
 	).toHaveLength(1);
 });
 
-test("the room's error shows below the conversation, in the theme's words when it has them", async () => {
-	mocks.theme = {
+test("the room's error shows below the conversation, in the host's words when it has them", async () => {
+	mocks.options = {
 		gracefulErrors: [
 			{ pattern: "quota", errorKey: "quotaExceeded" },
 			{ pattern: "offline", text: "You are offline" },
@@ -406,7 +410,7 @@ test("the room's error shows below the conversation, in the theme's words when i
 		input("i1", ""),
 		output("r1", "i1", [text("Hello")]),
 	]);
-	render(<RoomMessages room={room} />);
+	render(<RoomMessages room={room} suggestions={null} />);
 
 	act(() => room.setError(new Error("Model exploded")));
 	expect(screen.getByText("Model exploded")).toBeInTheDocument();
@@ -435,7 +439,7 @@ test("a pending response has no row until it streams, and a streamed token rende
 	]);
 	const streaming = responseOf(room, "r2");
 	act(() => streaming.setIsThinking(true));
-	render(<RoomMessages room={room} />);
+	render(<RoomMessages room={room} suggestions={null} />);
 
 	// nothing to show yet: the indicator stands in for it
 	expect(rowNames()).toEqual([

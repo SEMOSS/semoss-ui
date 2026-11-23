@@ -1,12 +1,11 @@
 import { type CSSProperties, useCallback, useEffect, useState } from "react";
 import { Outlet } from "react-router";
 import {
-	ChatConfigProvider,
-	ChatSessionProvider,
+	ChatProvider,
 	UserSettingsDialog,
-	useCreateChatStore,
-	useDefaultSettingsPages,
+	useDefaultUserSettingsSections,
 	useUserSettingsDialog,
+	useWorkbenchNavigation,
 } from "@semoss/chat";
 import {
 	cn,
@@ -17,17 +16,19 @@ import {
 import { setFavicon } from "@semoss/utility/browser";
 import { GlobalDialog } from "@/features/app-shell/global-dialog";
 import { GlobalFooter } from "@/features/app-shell/global-footer";
-import { usePlaygroundChatConfig } from "@/features/chat-config/use-playground-chat-config";
+import { useHostChatConfig } from "@/features/chat-config/use-host-chat-config";
 import { EmbeddedPages } from "@/features/embed/embedded-pages";
-import { GlobalNav } from "@/features/navigation/global-nav";
+import { AppNavigation } from "@/features/navigation/app-navigation";
 import { NavigationButton } from "@/features/navigation/navigation-button";
 import { PageHeaderContext } from "@/features/navigation/page-header.context";
-import { useWorkbenchNavigation } from "@/features/navigation/use-workbench-navigation";
 import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 import { useThemeTitle } from "@/features/theme/use-theme-title";
 import { LandingTour } from "@/features/tour/landing-tour";
 import { TourContext } from "@/features/tour/tour.context";
 import { useLandingTour } from "@/features/tour/use-landing-tour";
+
+/** The color modes offered where the theme turns dark mode off. */
+const LIGHT_ONLY = ["light"] as const;
 
 /**
  * The signed in shell: it makes and provides the chat store, the chat's
@@ -57,12 +58,13 @@ export const AppLayout = () => {
 	const { tour, acknowledgeWelcome } = useLandingTour(theme);
 
 	const settings = useUserSettingsDialog();
-	const settingsPages = useDefaultSettingsPages();
-	const chatConfig = usePlaygroundChatConfig({
-		onOpenSettings: settings.openSettings,
-		onWorkbenchOpenChange: navigation.setWorkbenchOpen,
+	const settingsSections = useDefaultUserSettingsSections({
+		colorModes: theme.featureFlags?.enableDarkMode ? undefined : LIGHT_ONLY,
 	});
-	const chatStore = useCreateChatStore(chatConfig);
+	const chatConfig = useHostChatConfig({
+		onOpenSettings: settings.openSettings,
+		onWorkbenchOpenChange: navigation.setIsWorkbenchOpen,
+	});
 
 	useThemeTitle(theme);
 
@@ -72,56 +74,52 @@ export const AppLayout = () => {
 	}, [theme?.images?.tabIcon]);
 
 	return (
-		<ChatSessionProvider store={chatStore}>
+		<ChatProvider config={chatConfig}>
 			<TourContext.Provider value={tour}>
-				<ChatConfigProvider config={chatConfig}>
-					<UserSettingsDialog
-						open={settings.isOpen}
-						onOpenChange={settings.setIsOpen}
-						section={settings.section}
-						onSectionChange={settings.setSection}
-						pages={settingsPages}
-					/>
-					<LandingTour />
+				<UserSettingsDialog
+					open={settings.isOpen}
+					onOpenChange={settings.setIsOpen}
+					section={settings.section}
+					onSectionChange={settings.setSection}
+					sections={settingsSections}
+				/>
+				<LandingTour />
 
-					<PageHeaderContext.Provider value={registerPageHeader}>
-						<SidebarProvider
-							open={navigation.isNavigationOpen}
-							onOpenChange={navigation.setNavigationOpen}
-							style={
-								{
-									"--sidebar-width": "16rem",
-									"--sidebar-width-mobile": "16rem",
-								} as CSSProperties
-							}
-						>
-							<GlobalNav />
-							<SidebarInset className="m-0! min-w-0 rounded-none! shadow-none">
-								<GlobalDialog
-									onAcknowledge={acknowledgeWelcome}
-								/>
-								<div
-									data-testid="main-layout"
-									className={cn(
-										"relative flex h-dvh w-full flex-col overflow-hidden bg-background",
-										// room for the open-navigation button, kept while the desktop
-										// navigation is open too so the page never shifts
-										!hasPageHeader && "pt-14 md:pt-10",
-									)}
-									style={layoutStyle}
-								>
-									{!hasPageHeader && <NavigationButton />}
-									<div className="relative min-h-0 w-full flex-1 overflow-hidden">
-										<Outlet />
-										<EmbeddedPages />
-									</div>
-									<GlobalFooter />
+				<PageHeaderContext.Provider value={registerPageHeader}>
+					<SidebarProvider
+						open={navigation.isNavigationOpen}
+						onOpenChange={navigation.setIsNavigationOpen}
+						style={
+							{
+								"--sidebar-width": "16rem",
+								"--sidebar-width-mobile": "16rem",
+							} as CSSProperties
+						}
+					>
+						<AppNavigation onOpenSettings={settings.openSettings} />
+						<SidebarInset className="m-0! min-w-0 rounded-none! shadow-none">
+							<GlobalDialog onAcknowledge={acknowledgeWelcome} />
+							<div
+								data-testid="main-layout"
+								className={cn(
+									"relative flex h-dvh w-full flex-col overflow-hidden bg-background",
+									// room for the open-navigation button, kept while the desktop
+									// navigation is open too so the page never shifts
+									!hasPageHeader && "pt-14 md:pt-10",
+								)}
+								style={layoutStyle}
+							>
+								{!hasPageHeader && <NavigationButton />}
+								<div className="relative min-h-0 w-full flex-1 overflow-hidden">
+									<Outlet />
+									<EmbeddedPages />
 								</div>
-							</SidebarInset>
-						</SidebarProvider>
-					</PageHeaderContext.Provider>
-				</ChatConfigProvider>
+								<GlobalFooter />
+							</div>
+						</SidebarInset>
+					</SidebarProvider>
+				</PageHeaderContext.Provider>
 			</TourContext.Provider>
-		</ChatSessionProvider>
+		</ChatProvider>
 	);
 };

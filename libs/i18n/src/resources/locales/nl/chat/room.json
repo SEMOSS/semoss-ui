@@ -141,9 +141,6 @@
 		"noItemsAvailable": "Geen kennis of toolboxes beschikbaar"
 	},
 	"studio": {
-		"views": "Gespreksweergaven",
-		"chat": "Chat",
-		"workspace": "Werkruimte",
 		"toolsLocked": "Tools kunnen niet worden gewijzigd terwijl een antwoord wordt gemaakt.",
 		"toolsHint": "Selecties gelden voor je volgende bericht.",
 		"moreActions": "Meer acties",
@@ -156,11 +153,16 @@
 		"refresh": "Vernieuwen",
 		"exportCsv": "Exporteren als CSV",
 		"exportPdf": "Exporteren als PDF",
-		"closeWorkspace": "Werkruimte sluiten",
-		"openWorkspace": "Werkruimte openen",
-		"preparingWorkspace": "Werkruimte voorbereiden…",
 		"prepareError": "De werkruimte kon niet worden voorbereid. Je concept is bewaard.",
 		"retry": "Opnieuw proberen"
+	},
+	"workbench": {
+		"views": "Gespreksweergaven",
+		"chat": "Chat",
+		"workspace": "Werkruimte",
+		"closeWorkspace": "Werkruimte sluiten",
+		"openWorkspace": "Werkruimte openen",
+		"preparingWorkspace": "Werkruimte voorbereiden…"
 	},
 	"workspacePlaces": {
 		"files": "Bestanden",
@@ -198,7 +200,7 @@
 		"openPlace": "{{name}} openen in de werkruimte",
 		"groups": {
 			"chat": "Chat",
-			"workspace": "Werkruimte",
+			"workbench": "Werkruimte",
 			"room": "Kamer",
 			"prompts": "Prompts"
 		},

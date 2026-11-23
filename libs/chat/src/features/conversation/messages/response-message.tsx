@@ -18,13 +18,14 @@ import {
 import { copyTextToClipboard } from "@semoss/utility/clipboard";
 import { decodeBase64ToBytes } from "@semoss/utility/encoding";
 import { getErrorMessage } from "@semoss/utility/error";
-import { useChatConfig } from "../../chat/config/use-chat-config";
+import { useChatConfig } from "../../chat/config/chat-config.context";
+import { MESSAGE_ACTION_IDS } from "../../chat/config/chat-options";
 import { InputMessageStore } from "../../room/store/input-message.store";
 import type { ResponseMessageStore } from "../../room/store/response-message.store";
 import type { RoomStore } from "../../room/store/room.store";
+import { STREAMING_PLACEHOLDER_ID } from "../../room/store/room-placeholders";
 import { useMessage } from "../../room/store/use-message";
 import { useRoomSelector } from "../../room/store/use-room-selector";
-import { STREAMING_PLACEHOLDER_ID } from "../../tools/mcp/mcp-constants";
 import { MessageActions } from "./message-actions";
 import { ResponseBranchNav } from "./response-branch-nav";
 import { ResponseDownloadDialog } from "./response-download-dialog";
@@ -78,7 +79,8 @@ export const ResponseMessage = ({
 	subsequentTools = [],
 }: ResponseMessageProps) => {
 	const { t } = useTranslation("chat");
-	const { theme } = useChatConfig();
+	const { options } = useChatConfig();
+	const shownActions = new Set(options.messageActions(MESSAGE_ACTION_IDS));
 
 	// this message's own content renders only this message
 	const { id, parts, isMessageThinking, feedbackRating, hasVisibleContent } =
@@ -131,8 +133,7 @@ export const ResponseMessage = ({
 	const [isDownloadDialogOpen, setIsDownloadDialogOpen] = useState(false);
 	// the action whose dialog is open, where focus goes back when it closes
 	const actionTriggerRef = useRef<HTMLButtonElement | null>(null);
-	const isFeedbackTextEnabled = !!theme.featureFlags?.enableFeedbackText;
-	const feedback = useResponseFeedback(message, isFeedbackTextEnabled);
+	const feedback = useResponseFeedback(message, options.hasFeedbackComment);
 
 	// Captured once at mount: was this the first time we saw this message
 	// stream (it had no content yet), or are we returning to one already in
@@ -347,7 +348,7 @@ export const ResponseMessage = ({
 					isDownloadDialogOpen || feedback.pendingRating !== null
 				}
 			>
-				{theme.featureFlags?.enableRewrite && hasParentContent && (
+				{shownActions.has("rewrite") && hasParentContent && (
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<Button
@@ -368,36 +369,39 @@ export const ResponseMessage = ({
 					</Tooltip>
 				)}
 
-				{ratings.map(({ rating, label, Icon }) => (
-					<Tooltip key={label}>
-						<TooltipTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon-sm"
-								aria-label={label}
-								aria-pressed={feedbackRating === rating}
-								disabled={isMessageThinking}
-								onClick={(event) => {
-									actionTriggerRef.current =
-										event.currentTarget;
-									feedback.rate(rating);
-								}}
-							>
-								<Icon
-									aria-hidden="true"
-									fill={
-										feedbackRating === rating
-											? "currentColor"
-											: "none"
-									}
-								/>
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent side="bottom">{label}</TooltipContent>
-					</Tooltip>
-				))}
+				{shownActions.has("feedback") &&
+					ratings.map(({ rating, label, Icon }) => (
+						<Tooltip key={label}>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									aria-label={label}
+									aria-pressed={feedbackRating === rating}
+									disabled={isMessageThinking}
+									onClick={(event) => {
+										actionTriggerRef.current =
+											event.currentTarget;
+										feedback.rate(rating);
+									}}
+								>
+									<Icon
+										aria-hidden="true"
+										fill={
+											feedbackRating === rating
+												? "currentColor"
+												: "none"
+										}
+									/>
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent side="bottom">
+								{label}
+							</TooltipContent>
+						</Tooltip>
+					))}
 
-				{hasImage && (
+				{shownActions.has("copy") && hasImage && (
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<Button
@@ -418,46 +422,52 @@ export const ResponseMessage = ({
 
 				{hasText && (
 					<>
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon-sm"
-									aria-label={t("response.copyResponse")}
-									disabled={
-										isMessageThinking || parts.length === 0
-									}
-									onClick={handleCopyText}
-								>
-									<CopyIcon aria-hidden="true" />
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent side="bottom">
-								{t("response.copyResponse")}
-							</TooltipContent>
-						</Tooltip>
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon-sm"
-									aria-label={t("download.title")}
-									disabled={
-										isMessageThinking || parts.length === 0
-									}
-									onClick={(event) => {
-										actionTriggerRef.current =
-											event.currentTarget;
-										setIsDownloadDialogOpen(true);
-									}}
-								>
-									<DownloadIcon aria-hidden="true" />
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent side="bottom">
-								{t("download.title")}
-							</TooltipContent>
-						</Tooltip>
+						{shownActions.has("copy") && (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon-sm"
+										aria-label={t("response.copyResponse")}
+										disabled={
+											isMessageThinking ||
+											parts.length === 0
+										}
+										onClick={handleCopyText}
+									>
+										<CopyIcon aria-hidden="true" />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent side="bottom">
+									{t("response.copyResponse")}
+								</TooltipContent>
+							</Tooltip>
+						)}
+						{shownActions.has("download") && (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon-sm"
+										aria-label={t("download.title")}
+										disabled={
+											isMessageThinking ||
+											parts.length === 0
+										}
+										onClick={(event) => {
+											actionTriggerRef.current =
+												event.currentTarget;
+											setIsDownloadDialogOpen(true);
+										}}
+									>
+										<DownloadIcon aria-hidden="true" />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent side="bottom">
+									{t("download.title")}
+								</TooltipContent>
+							</Tooltip>
+						)}
 					</>
 				)}
 			</MessageActions>

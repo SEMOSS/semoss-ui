@@ -3,8 +3,8 @@ import { getI18n } from "@semoss/i18n";
 import { isSameArray } from "@semoss/utility/array";
 import { StoreState } from "@semoss/utility/store";
 import type { RoomStore } from "../../room/store/room.store";
+import { NEW_INSIGHT_ID } from "../../room/store/room-placeholders";
 import type { McpTool } from "../../tools/chat-tools/chat-tool-info";
-import { NEW_INSIGHT_ID } from "../../tools/mcp/mcp-constants";
 import {
 	CONNECTOR_SOURCES,
 	type ConnectorSource,

@@ -13,7 +13,10 @@ vi.mock("@semoss/i18n", () => ({
 		i18n: { language: "en" },
 	}),
 }));
-vi.mock("../../chat/config/use-chat-config", () => ({
+vi.mock("../../chat/config/chat-config.context", async (original) => ({
+	...(await original<
+		typeof import("../../chat/config/chat-config.context")
+	>()),
 	useChatConfig: () => ({ callbacks: { onOpenSettings: openSettings } }),
 }));
 vi.mock("../../connectors/accounts/use-connector-logins", () => ({

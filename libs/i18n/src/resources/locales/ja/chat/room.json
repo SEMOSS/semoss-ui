@@ -141,9 +141,6 @@
 		"noItemsAvailable": "使用可能なナレッジまたはツールボックスはありません"
 	},
 	"studio": {
-		"views": "会話の表示",
-		"chat": "チャット",
-		"workspace": "ワークスペース",
 		"toolsLocked": "応答の生成中はツールを変更できません。",
 		"toolsHint": "選択内容は次のメッセージに適用されます。",
 		"moreActions": "その他の操作",
@@ -156,11 +153,16 @@
 		"refresh": "更新",
 		"exportCsv": "CSV でエクスポート",
 		"exportPdf": "PDF でエクスポート",
-		"closeWorkspace": "ワークスペースを閉じる",
-		"openWorkspace": "ワークスペースを開く",
-		"preparingWorkspace": "ワークスペースを準備中…",
 		"prepareError": "ワークスペースを準備できませんでした。下書きは保持されています。",
 		"retry": "再試行"
+	},
+	"workbench": {
+		"views": "会話の表示",
+		"chat": "チャット",
+		"workspace": "ワークスペース",
+		"closeWorkspace": "ワークスペースを閉じる",
+		"openWorkspace": "ワークスペースを開く",
+		"preparingWorkspace": "ワークスペースを準備中…"
 	},
 	"workspacePlaces": {
 		"files": "ファイル",
@@ -198,7 +200,7 @@
 		"openPlace": "{{name}} をワークスペースで開く",
 		"groups": {
 			"chat": "チャット",
-			"workspace": "ワークスペース",
+			"workbench": "ワークスペース",
 			"room": "ルーム",
 			"prompts": "プロンプト"
 		},

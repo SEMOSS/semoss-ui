@@ -8,10 +8,10 @@ import {
 	SparklesIcon,
 } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
-import { useChatConfig } from "../../../chat/config/use-chat-config";
+import { useChatConfig } from "../../../chat/config/chat-config.context";
 import { useFileDrop } from "../../attachments/file-drop.context";
 import { canChooseAgentMode } from "../agent-mode-choice";
-import { useComposer } from "../use-composer";
+import { useComposer } from "../composer.context";
 import { SlashCommand } from "./slash-command";
 
 /**
@@ -20,10 +20,10 @@ import { SlashCommand } from "./slash-command";
  */
 export const ComposerCommands = () => {
 	const { t } = useTranslation("room");
-	const { theme } = useChatConfig();
+	const { options } = useChatConfig();
 	const { openFilePicker } = useFileDrop();
 	const {
-		isNewChat,
+		isDraft,
 		isAgentMode,
 		agent,
 		openPicker,
@@ -31,8 +31,8 @@ export const ComposerCommands = () => {
 		switchToChat,
 		compact,
 	} = useComposer();
-	// an open room's mode is fixed at creation; a new chat's follows the theme
-	const canSwitchMode = isNewChat && canChooseAgentMode(theme.featureFlags);
+	// an open room's mode is fixed at creation; a new chat's follows the host
+	const canSwitchMode = isDraft && canChooseAgentMode(options.agentMode);
 	/** A command's name and description, from `slash.commands.<id>`. */
 	const text = (id: string) => ({
 		name: id,

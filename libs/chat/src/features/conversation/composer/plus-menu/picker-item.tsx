@@ -3,7 +3,7 @@ import { useTranslation } from "@semoss/i18n";
 import { isKnowledgeMcp } from "@semoss/shared";
 import { Badge, DropdownMenuItem } from "@semoss/ui/next";
 import { listRoomTools } from "../../../tools/mcp/mcp-utils";
-import { useComposer } from "../use-composer";
+import { useComposer } from "../composer.context";
 
 /** Props for {@link PickerItem}. */
 interface PickerItemProps {

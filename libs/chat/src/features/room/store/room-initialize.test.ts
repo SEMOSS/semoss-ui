@@ -8,7 +8,7 @@ import {
 } from "vitest";
 import { getWorkspace, type WorkspaceDetails } from "@semoss/sdk";
 import { runMcpTool, runPixel } from "@semoss/sdk/react";
-import type { ThemeMap } from "@semoss/shared";
+import { testChatOptions } from "../../../test/chat-options";
 import { servePixelTransport } from "../../../test/pixel-transport";
 import type {
 	Engine,
@@ -17,9 +17,9 @@ import type {
 	PixelMessage,
 	ResponsePixelMessage,
 } from "../../../types";
-import { MCP_EXECUTION_AUTO } from "../../tools/mcp/mcp-constants";
+import { MCP_EXECUTION_AUTO } from "../../tools/mcp/mcp-execution";
 import { listRoomTools } from "../../tools/mcp/mcp-utils";
-import { DEFAULT_WORKBENCH_PANEL_COMPONENTS } from "../../workbench/panels/room-panel-components";
+import { DEFAULT_WORKBENCH_PANELS } from "../../workbench/panels/default-workbench-panels";
 import {
 	AgentTurnRunner,
 	reconstructAllSubagents,
@@ -166,10 +166,10 @@ const mcp = (id: string, extra: Partial<MCPConfig> = {}) =>
 /** A room as the app builds one, its connectors' restore stubbed. */
 const createRoom = (insightId = "insight-1") => {
 	const room = new RoomStore({
-		theme: {} as ThemeMap["playground"],
+		chatOptions: testChatOptions(),
 		roomId: "room-1",
 		insightId,
-		panelComponents: DEFAULT_WORKBENCH_PANEL_COMPONENTS,
+		workbenchPanels: DEFAULT_WORKBENCH_PANELS,
 	});
 	const restore = vi
 		.spyOn(room.connectors, "restore")

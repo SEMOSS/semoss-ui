@@ -3,19 +3,20 @@ import userEvent from "@testing-library/user-event";
 import type { ReactElement } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { FILE_PANEL_TYPES } from "@semoss/panels";
+import { testChatOptions } from "../../../test/chat-options";
 import {
-	type ChatConfig,
 	ChatConfigContext,
+	type ResolvedChatConfig,
 } from "../../chat/config/chat-config.context";
-import { DEFAULT_CHAT_THEME } from "../../chat/config/chat-theme";
+import type { ResolvedChatOptions } from "../../chat/config/chat-options";
 import { RoomActionsProvider } from "../../room/actions/room-actions.context";
 import { RoomStore } from "../../room/store/room.store";
 import { ROOM_PANEL_TYPES } from "../../room/store/room-workbench-layout";
-import { DEFAULT_WORKBENCH_PANEL_COMPONENTS } from "../panels/room-panel-components";
+import { DEFAULT_WORKBENCH_PANELS } from "../panels/default-workbench-panels";
 import { DefaultWorkbenchRail } from "./default-workbench-rail";
-import { RailItem } from "./rail-item";
 import { RoomWorkbenchRail } from "./room-workbench-rail";
-import type { NewRoomWorkbenchPanels } from "./use-workbench-panels";
+import type { DraftWorkbenchPanels } from "./use-workbench-panels";
+import { WorkbenchRailItem } from "./workbench-rail-item";
 
 const mocks = vi.hoisted(() => ({
 	onOpenNewChat: vi.fn(),
@@ -23,10 +24,15 @@ const mocks = vi.hoisted(() => ({
 	closeRoom: vi.fn(),
 	addWorkspace: vi.fn(),
 	pinned: [] as { ROOM_ID: string }[],
+	options: {} as ResolvedChatOptions,
 }));
 
-vi.mock("../../chat/config/use-chat-config", () => ({
+vi.mock("../../chat/config/chat-config.context", async (original) => ({
+	...(await original<
+		typeof import("../../chat/config/chat-config.context")
+	>()),
 	useChatConfig: () => ({
+		options: mocks.options,
 		callbacks: { onOpenRoom: vi.fn(), onOpenNewChat: mocks.onOpenNewChat },
 	}),
 }));
@@ -36,14 +42,19 @@ vi.mock("@semoss/sdk/react", async (original) => ({
 	...(await original<typeof import("@semoss/sdk/react")>()),
 	usePixel: () => ({ data: mocks.pinned, refresh: vi.fn() }),
 }));
-vi.mock("../../chat/provider/use-chat-session", async () => {
+vi.mock("../../chat/provider/chat-session.context", async (original) => {
 	const { fakeStore } = await import("../../../test/fake-store");
 	const chat = fakeStore({
 		keys: { roomCounter: 0 },
 		pinRoom: mocks.pinRoom,
 		closeRoom: mocks.closeRoom,
 	});
-	return { useChatSession: () => ({ chat }) };
+	return {
+		...(await original<
+			typeof import("../../chat/provider/chat-session.context")
+		>()),
+		useChatSession: () => ({ chat }),
+	};
 });
 // Publish as Agent saves through the agent actions, not the chat store
 vi.mock("../../room/actions/add-agent", () => ({
@@ -60,6 +71,7 @@ beforeEach(() => {
 		mock.mockReset();
 	mocks.addWorkspace.mockReset().mockResolvedValue("saved-agent");
 	mocks.pinned = [];
+	mocks.options = testChatOptions();
 	vi.stubGlobal(
 		"matchMedia",
 		vi.fn(() => ({
@@ -79,9 +91,9 @@ afterEach(() => vi.unstubAllGlobals());
  */
 function createRoom(): RoomStore {
 	const room = new RoomStore({
-		theme: DEFAULT_CHAT_THEME,
+		chatOptions: testChatOptions(),
 		roomId: "panel-rail",
-		panelComponents: DEFAULT_WORKBENCH_PANEL_COMPONENTS,
+		workbenchPanels: DEFAULT_WORKBENCH_PANELS,
 	});
 	room.connectors.setServices(["onedrive"]);
 	return room;
@@ -135,7 +147,7 @@ test("a panel selects its open tab and adds one when it is not open", () => {
 	expect(room.workbench.getState().layout.selection.panel).toBe(settings);
 	expect(mainPanelTypes(room)).toEqual([
 		FILE_PANEL_TYPES.FILE_EXPLORER,
-		ROOM_PANEL_TYPES.CONFIGURATION,
+		ROOM_PANEL_TYPES.SETTINGS,
 	]);
 
 	// the activity log is not open: it joins the main area
@@ -144,8 +156,8 @@ test("a panel selects its open tab and adds one when it is not open", () => {
 	);
 	expect(mainPanelTypes(room)).toEqual([
 		FILE_PANEL_TYPES.FILE_EXPLORER,
-		ROOM_PANEL_TYPES.CONFIGURATION,
-		ROOM_PANEL_TYPES.AUDIT_LOG,
+		ROOM_PANEL_TYPES.SETTINGS,
+		ROOM_PANEL_TYPES.ACTIVITY_LOG,
 	]);
 	const log = room.workbench.getState().layout.selection.panel;
 
@@ -184,7 +196,7 @@ test("a panel drags onto the dock, except in a new chat, which prepares first", 
 	expect(
 		JSON.parse(data.get("application/x-semoss-workbench-panel") ?? ""),
 	).toEqual({
-		type: ROOM_PANEL_TYPES.AUDIT_LOG,
+		type: ROOM_PANEL_TYPES.ACTIVITY_LOG,
 		config: {},
 		name: "workspacePlaces.activity",
 	});
@@ -193,7 +205,7 @@ test("a panel drags onto the dock, except in a new chat, which prepares first", 
 	rerender(
 		<RoomWorkbenchRail
 			room={room}
-			newRoomPanels={{
+			draftPanels={{
 				onOpenPanel: vi.fn(),
 				isBusy: false,
 				connectors: room.connectors,
@@ -209,7 +221,7 @@ test("a panel drags onto the dock, except in a new chat, which prepares first", 
 
 test("a new chat's rail prepares its room, and waits while it does", () => {
 	const room = createRoom();
-	const newRoomPanels: NewRoomWorkbenchPanels = {
+	const draftPanels: DraftWorkbenchPanels = {
 		onOpenPanel: vi.fn(),
 		isBusy: true,
 		connectors: room.connectors,
@@ -218,33 +230,35 @@ test("a new chat's rail prepares its room, and waits while it does", () => {
 	const { rerender } = render(
 		<RoomWorkbenchRail
 			room={room}
-			newRoomPanels={newRoomPanels}
+			draftPanels={draftPanels}
 			side="right"
 		/>,
 	);
 
 	// Files needs the room's insight, so it waits; Settings does not
 	expect(
-		screen.getAllByRole("button", { name: "studio.preparingWorkspace" })[0],
+		screen.getAllByRole("button", {
+			name: "workbench.preparingWorkspace",
+		})[0],
 	).toBeDisabled();
 	fireEvent.click(
 		screen.getByRole("button", { name: "workspacePlaces.settings" }),
 	);
-	expect(newRoomPanels.onOpenPanel).toHaveBeenLastCalledWith({
+	expect(draftPanels.onOpenPanel).toHaveBeenLastCalledWith({
 		kind: "settings",
 	});
 
 	rerender(
 		<RoomWorkbenchRail
 			room={room}
-			newRoomPanels={{ ...newRoomPanels, isBusy: false }}
+			draftPanels={{ ...draftPanels, isBusy: false }}
 			side="right"
 		/>,
 	);
 	fireEvent.click(
 		screen.getByRole("button", { name: "workspacePlaces.files" }),
 	);
-	expect(newRoomPanels.onOpenPanel).toHaveBeenLastCalledWith({
+	expect(draftPanels.onOpenPanel).toHaveBeenLastCalledWith({
 		kind: "files",
 	});
 });
@@ -337,10 +351,12 @@ test("the cog's Publish as Agent saves the room's instructions and tools", async
 	);
 });
 
-test("the cog leaves out Favorite where the chat history is hidden", async () => {
+test("the cog leaves out the actions the host leaves out", async () => {
 	const user = userEvent.setup();
 	const room = createRoom();
-	room.theme.featureFlags = { hideChatHistory: true };
+	mocks.options = testChatOptions({
+		roomActions: (actions) => actions.filter((id) => id !== "favorite"),
+	});
 	render(withActions(room, <RoomWorkbenchRail room={room} side="right" />));
 
 	await openCog(user);
@@ -358,15 +374,20 @@ test("a host's rail replaces the chat's icons, with the chat's and its own", () 
 	const HostRail = () => (
 		<>
 			<DefaultWorkbenchRail />
-			<RailItem label="Server logs" icon={null} onOpen={onOpenLogs} />
+			<WorkbenchRailItem
+				label="Server logs"
+				icon={null}
+				onOpen={onOpenLogs}
+			/>
 		</>
 	);
 	render(
 		<ChatConfigContext.Provider
 			value={
 				{
+					options: testChatOptions(),
 					components: { WorkbenchRail: HostRail },
-				} as unknown as ChatConfig
+				} as unknown as ResolvedChatConfig
 			}
 		>
 			<RoomWorkbenchRail room={createRoom()} side="right" />

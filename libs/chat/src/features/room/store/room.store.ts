@@ -7,7 +7,6 @@ import {
 	loadPlaygroundRoom,
 	runPixelWithConsole,
 } from "@semoss/sdk";
-import type { ThemeMap } from "@semoss/shared";
 import { StoreState } from "@semoss/utility/store";
 import type {
 	WorkbenchPanelId,
@@ -28,6 +27,7 @@ import type {
 	ResponsePixelMessage,
 	ToolOutcome,
 } from "../../../types";
+import type { ResolvedChatOptions } from "../../chat/config/chat-options";
 import { ConnectorsStore } from "../../connectors/store/connectors.store";
 import { ContextItemsStore } from "../../conversation/attachments/context-items.store";
 import { ChatTools } from "../../tools/chat-tools/chat-tools";
@@ -36,7 +36,6 @@ import type {
 	ToolsHost,
 	ToolsHostChange,
 } from "../../tools/chat-tools/tools-host";
-import { NEW_INSIGHT_ID } from "../../tools/mcp/mcp-constants";
 import {
 	AgentTurnRunner,
 	reconstructAllSubagents,
@@ -67,12 +66,13 @@ import {
 } from "./room-compaction";
 import { findActiveModelId, mergeAgentIntoRoom } from "./room-load";
 import { RoomMessageTree, redecorateTools } from "./room-message-tree";
+import { NEW_INSIGHT_ID } from "./room-placeholders";
 import { RoomRequests } from "./room-requests";
 import {
 	INITIAL_ROOM,
 	type RoomOptions,
 	type RoomSnapshot,
-	type RoomStoreOptions,
+	type RoomStoreDependencies,
 } from "./room-snapshot";
 import { RoomStoredOptions } from "./room-stored-options";
 import { updateRoomToolFile } from "./room-tool-file";
@@ -88,7 +88,7 @@ import {
 } from "./room-workbench-controller";
 import type { ToolData, ToolStore } from "./tool.store";
 
-export type { RoomSnapshot, RoomStoreOptions } from "./room-snapshot";
+export type { RoomSnapshot, RoomStoreDependencies } from "./room-snapshot";
 
 /**
  * One room: its messages, tool calls, settings, and Workspace, and the actions
@@ -101,8 +101,10 @@ export type { RoomSnapshot, RoomStoreOptions } from "./room-snapshot";
  * every public name, as a delegate where the work moved.
  */
 export class RoomStore {
-	/** The playground theme, which limits the files sent to the model. */
-	private _theme: ThemeMap["playground"];
+	/** The host's chat options, which limit the files sent to the model. */
+	private _chatOptions: ResolvedChatOptions;
+	/** The panel types the room's Workspace has a blueprint for. */
+	private readonly panelTypes: ReadonlySet<string>;
 
 	/** The room's snapshot; only the store's own actions write it. */
 	private readonly state: StoreState<RoomSnapshot>;
@@ -185,23 +187,24 @@ export class RoomStore {
 	/**
 	 * Build a room and its Workspace. It holds no messages until `initialize`.
 	 *
-	 * @param options - The room's theme, ids, panel blueprints, and whether its
+	 * @param options - The host's chat options, the room's ids, panel blueprints, and whether its
 	 * Workspace offers Files.
 	 */
-	constructor(options: RoomStoreOptions) {
+	constructor(options: RoomStoreDependencies) {
 		const {
-			theme,
+			chatOptions,
 			roomId,
 			insightId = NEW_INSIGHT_ID,
-			panelComponents,
+			workbenchPanels,
 			includeFiles = true,
 			toolsHost,
 		} = options;
-		this._theme = theme;
+		this._chatOptions = chatOptions;
+		this.panelTypes = new Set(Object.keys(workbenchPanels));
 		const workbenchSnapshot = createRoomWorkbenchSnapshot({
 			insightId,
 			includeFiles,
-			panelComponents,
+			workbenchPanels,
 		});
 		this.state = new StoreState<RoomSnapshot>({
 			...INITIAL_ROOM,
@@ -226,7 +229,7 @@ export class RoomStore {
 					this.state.update({ workbenchSnapshot: snapshot }),
 				connectors: this.connectors,
 			},
-			{ snapshot: workbenchSnapshot, panelComponents, includeFiles },
+			{ snapshot: workbenchSnapshot, workbenchPanels, includeFiles },
 		);
 	}
 
@@ -347,10 +350,30 @@ export class RoomStore {
 		return this.snapshot.insightId;
 	}
 
-	/** The playground theme the room was built with. */
-	get theme() {
-		return this._theme;
+	/** The host's chat options, as the chat store last handed them. */
+	get chatOptions(): ResolvedChatOptions {
+		return this._chatOptions;
 	}
+
+	/**
+	 * Take the host's new chat options, as when a deployment's settings arrive
+	 * after the room was built. Turns read them as they start, so a running
+	 * turn keeps the options it started with.
+	 *
+	 * @param chatOptions - The host's chat options, with every default filled in.
+	 */
+	setChatOptions = (chatOptions: ResolvedChatOptions): void => {
+		this._chatOptions = chatOptions;
+	};
+
+	/**
+	 * Whether the room's Workspace can open a panel: the host left its
+	 * blueprint in.
+	 *
+	 * @param panelType - The panel's type.
+	 * @returns True when the room has its blueprint.
+	 */
+	hasPanel = (panelType: string): boolean => this.panelTypes.has(panelType);
 
 	/** Whether the room is running a pixel or a turn. */
 	get isLoading() {
@@ -839,14 +862,14 @@ export class RoomStore {
 	};
 
 	/**
-	 * Whether a file goes to the model with the message. The theme may limit
+	 * Whether a file goes to the model with the message. The host may limit
 	 * this to some extensions; other files stay in the room for tools.
 	 *
 	 * @param fileName - The file's name.
 	 * @returns True when the file is sent to the model.
 	 */
 	shouldAttachToModel = (fileName: string): boolean =>
-		isAttachedToModel(fileName, this._theme.allowedFileTypes);
+		isAttachedToModel(fileName, this._chatOptions.allowedFileTypes);
 
 	/**
 	 * Send the user's message: show it at once with a thinking reply, save the

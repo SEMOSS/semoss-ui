@@ -5,8 +5,8 @@ import {
 	useLayoutEffect,
 	useRef,
 } from "react";
-import { SlashCommandRegistryContext } from "./slash-command.context";
 import type { SlashCommandEntry } from "./slash-command-entry";
+import { SlashCommandRegistryContext } from "./slash-command-registry.context";
 
 /** Props for {@link SlashCommand}. */
 export interface SlashCommandProps {

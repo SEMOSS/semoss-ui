@@ -7,12 +7,7 @@ import {
 } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, expect, test, vi } from "vitest";
-import {
-	type ChatConfig,
-	ChatConfigProvider,
-	ChatSessionProvider,
-	type ChatStore,
-} from "@semoss/chat";
+import { ChatProvider } from "@semoss/chat";
 import { toast } from "@semoss/ui/next";
 import { AgentDetailPage } from "@/pages/agent-detail.page";
 import { AgentEditPage } from "@/pages/agent-edit.page";
@@ -54,9 +49,15 @@ vi.mock("@semoss/sdk", async (original) => ({
 	getUserProjectPermission: async () => "OWNER",
 	// the agent the pages read, as the SDK reads it
 	getWorkspace: async () => mocks.workspace,
+	// the chat reads the session's models as it starts; there are none
+	listModels: async () => [],
 }));
 vi.mock("@semoss/sdk/react", async (original) => ({
 	...(await original<typeof import("@semoss/sdk/react")>()),
+	Session: {
+		insight: mockSessionInsight,
+		getSnapshot: () => ({ user: null }),
+	},
 	usePixel: mockPixel,
 	useSessionPixel: mockPixel,
 	// stable, as the SDK's is
@@ -80,21 +81,18 @@ vi.mock("@/features/agents/workspace-chat-list", () => ({
 	WorkspaceChatList: () => null,
 }));
 
-/** The chat providers the pages read from, over this test's stub chat store. */
+/** The chat's provider the pages read from, with the options they need. */
 const chatWrapper = ({ children }: { children: ReactNode }) => (
-	<ChatSessionProvider store={{} as unknown as ChatStore}>
-		<ChatConfigProvider
-			config={
-				{
-					theme: { featureFlags: {} },
-					options: {},
-					callbacks: {},
-				} as unknown as ChatConfig
-			}
-		>
-			{children}
-		</ChatConfigProvider>
-	</ChatSessionProvider>
+	<ChatProvider
+		config={{
+			options: {
+				roomHref: (roomId) => `#/room/${roomId}`,
+			},
+			callbacks: { onOpenRoom: vi.fn(), onOpenNewChat: vi.fn() },
+		}}
+	>
+		{children}
+	</ChatProvider>
 );
 
 beforeEach(() => {

@@ -12,22 +12,21 @@ import {
 	renameUserRoom,
 } from "@semoss/sdk";
 import { download, Session } from "@semoss/sdk/react";
-import type { ThemeMap } from "@semoss/shared";
 import { StoreState } from "@semoss/utility/store";
 import type { WorkbenchPanelConfigAny } from "@semoss/workbench";
 import type { AbstractPixelMessage, ChatMode, Engine } from "../../../types";
 import { RoomStore } from "../../room/store/room.store";
-import type { ToolsHost } from "../../tools/chat-tools/tools-host";
 import {
 	NEW_INSIGHT_ID,
 	ROOT_PLACEHOLDER_ID,
-} from "../../tools/mcp/mcp-constants";
+} from "../../room/store/room-placeholders";
+import type { ToolsHost } from "../../tools/chat-tools/tools-host";
+import type { ResolvedChatOptions } from "../config/chat-options";
 import {
-	type NewChatBuildDefaults,
 	readDeploymentNewChatDefaults,
-	readNewChatPreferences,
+	readUserNewChatDefaults,
 	resolveNewChatModel,
-} from "../config/new-chat-preferences";
+} from "../config/new-chat-defaults";
 import { formatConversationMarkdown } from "./conversation-markdown";
 
 /**
@@ -95,27 +94,18 @@ export interface ChatSnapshot {
 		/** Goes up whenever a room is created, renamed, pinned, or removed. */
 		roomCounter: number;
 	};
-
-	/** The theme's sidebar items that embed a page, by their path. */
-	readonly embeddedPageMap: Record<
-		string,
-		| ThemeMap["playground"]["sidebar"]["headerItems"][number]
-		| ThemeMap["playground"]["sidebar"]["footerItems"][number]
-	>;
 }
 
 /** What a {@link ChatStore} is made with. */
-export interface ChatStoreOptions {
-	/** The deployment's theme, with every default filled in. */
-	readonly theme: ThemeMap["playground"];
+export interface ChatStoreDependencies {
+	/** The host's chat options, with every default filled in. */
+	readonly options: ResolvedChatOptions;
 	/**
 	 * The Workspace blueprints every room it creates is built with. Passed in
 	 * rather than imported: they import the chat's components, which import
 	 * its stores, so importing them here would close a module cycle.
 	 */
-	readonly panelComponents?: Record<string, WorkbenchPanelConfigAny>;
-	/** The build's new-chat defaults, read from its env by the host. */
-	readonly newChatDefaults?: NewChatBuildDefaults;
+	readonly workbenchPanels?: Record<string, WorkbenchPanelConfigAny>;
 	/** The tools the host runs in the browser, which every room it creates gets. */
 	readonly tools?: ToolsHost;
 }
@@ -128,54 +118,34 @@ export interface ChatStoreOptions {
  * agents: Publish as Agent is `addAgent` in `room/actions/add-agent.ts`.
  */
 export class ChatStore {
-	/** The deployment's theme, with every default filled in. */
-	private _theme: ThemeMap["playground"];
+	/** The host's chat options, with every default filled in. */
+	private _options: ResolvedChatOptions;
 	/** The Workspace blueprints each room is built with. */
 	private _panelComponents: Record<string, WorkbenchPanelConfigAny>;
-	/** The build's new-chat defaults. */
-	private _newChatDefaults: NewChatBuildDefaults;
 	/** The tools the host runs in the browser, which every room it creates gets. */
 	private _tools: ToolsHost | undefined;
+	/** The read `initialize` started, which a second call joins. */
+	private initializing: Promise<void> | null = null;
 	/** The chat's state. Only the store's own actions write it. */
 	private readonly state: StoreState<ChatSnapshot>;
 
 	/** The Workspace blueprints every room is built with, a new chat's draft included. */
-	get panelComponents(): Record<string, WorkbenchPanelConfigAny> {
+	get workbenchPanels(): Record<string, WorkbenchPanelConfigAny> {
 		return this._panelComponents;
 	}
 
 	/**
-	 * @param options - The host's theme, new-chat defaults and tools,
+	 * @param options - The host's chat options and tools,
 	 * and the Workspace blueprints every room is built with.
 	 */
 	constructor({
-		theme,
-		panelComponents = {},
-		newChatDefaults = {},
+		options,
+		workbenchPanels = {},
 		tools,
-	}: ChatStoreOptions) {
-		this._theme = theme;
-		this._newChatDefaults = newChatDefaults;
+	}: ChatStoreDependencies) {
+		this._options = options;
 		this._tools = tools;
-		this._panelComponents = panelComponents;
-		// Only items that embed a page are kept, so a path lookup finds them.
-		const embeddedPageMap = [
-			...theme.sidebar.headerItems,
-			...theme.sidebar.footerItems,
-		]
-			.filter((item) => item.embed && item.url)
-			.reduce(
-				(acc, item) => {
-					acc[item.path] = item;
-					return acc;
-				},
-				{} as Record<
-					string,
-					| ThemeMap["playground"]["sidebar"]["headerItems"][number]
-					| ThemeMap["playground"]["sidebar"]["footerItems"][number]
-				>,
-			);
-
+		this._panelComponents = workbenchPanels;
 		this.state = new StoreState<ChatSnapshot>({
 			isInitialized: false,
 			models: {
@@ -186,7 +156,6 @@ export class ChatStore {
 			rooms: {},
 			optimisticRooms: {},
 			keys: { roomCounter: 0 },
-			embeddedPageMap,
 		});
 	}
 
@@ -255,11 +224,6 @@ export class ChatStore {
 		return this.snapshot.keys;
 	}
 
-	/** The theme's embedded pages, by path. */
-	get embeddedPageMap() {
-		return this.snapshot.embeddedPageMap;
-	}
-
 	/** The rooms shown in the nav before their first message persists. */
 	get optimisticRooms() {
 		return this.snapshot.optimisticRooms;
@@ -267,17 +231,57 @@ export class ChatStore {
 
 	/**
 	 * Read the session's models and select the one a new chat starts with.
-	 * A failure is logged, and the chat still counts as initialized.
+	 * A failure is logged, and the chat still counts as initialized. A second
+	 * call joins the first, so a remount reads them once.
+	 *
+	 * @returns Settles once the models are read, or failed to be.
 	 */
-	initialize = async (): Promise<void> => {
-		try {
-			// the user, and their default model, come from the session
-			await this.getDefaultModel();
-		} catch (e) {
-			console.error(e);
-		} finally {
-			this.state.update({ isInitialized: true });
+	initialize = (): Promise<void> => {
+		this.initializing ??= (async () => {
+			try {
+				// the user, and their default model, come from the session
+				await this.getDefaultModel();
+			} catch (e) {
+				console.error(e);
+			} finally {
+				this.state.update({ isInitialized: true });
+			}
+		})();
+		return this.initializing;
+	};
+
+	/**
+	 * Take the host's new options, as when a deployment's settings arrive
+	 * after the chat started: every cached room gets them, and the model a new
+	 * chat starts with is chosen again when the options that pick it changed.
+	 *
+	 * @param options - The host's chat options, with every default filled in.
+	 */
+	setOptions = (options: ResolvedChatOptions): void => {
+		const previous = this._options;
+		if (options === previous) return;
+		this._options = options;
+		for (const room of Object.values(this.snapshot.rooms)) {
+			room.setChatOptions(options);
 		}
+		const picksModel =
+			options.isModelSelectable !== previous.isModelSelectable ||
+			options.newChat !== previous.newChat;
+		if (this.initializing && picksModel) {
+			void this.getDefaultModel().catch((e) => console.error(e));
+		}
+	};
+
+	/**
+	 * Stop every cached room's subscriptions and forget them, once the host
+	 * drops this chat. The chat can still be used afterward: a room it loads
+	 * again is new.
+	 */
+	dispose = (): void => {
+		for (const room of Object.values(this.snapshot.rooms)) {
+			room.dispose();
+		}
+		this.state.update({ rooms: {} });
 	};
 
 	/**
@@ -363,10 +367,10 @@ export class ChatStore {
 		);
 
 		const room = new RoomStore({
-			theme: this._theme,
+			chatOptions: this._options,
 			roomId,
 			insightId,
-			panelComponents: this._panelComponents,
+			workbenchPanels: this._panelComponents,
 			toolsHost: this._tools,
 		});
 
@@ -581,7 +585,7 @@ export class ChatStore {
 			throw new Error(getI18n().t("sidebar:download.noContent"));
 		}
 
-		const appName = this._theme.name || "Chat";
+		const appName = this._options.appName || "Chat";
 		const document = await exportMarkdownDocument(
 			conversation.insightId,
 			formattedMessages,
@@ -619,9 +623,9 @@ export class ChatStore {
 		}
 
 		const room = new RoomStore({
-			theme: this._theme,
+			chatOptions: this._options,
 			roomId,
-			panelComponents: this._panelComponents,
+			workbenchPanels: this._panelComponents,
 			toolsHost: this._tools,
 		});
 		await room.initialize();
@@ -706,11 +710,11 @@ export class ChatStore {
 	 * used.
 	 */
 	selectNewChatDefaultModel = (): void => {
-		if (!this._theme.featureFlags?.enableModelSelect) return;
+		if (!this._options.isModelSelectable) return;
 		const model = resolveNewChatModel(
 			null,
-			readNewChatPreferences(Session.getSnapshot().user?.meta),
-			readDeploymentNewChatDefaults(this._theme, this._newChatDefaults),
+			readUserNewChatDefaults(Session.getSnapshot().user?.meta),
+			readDeploymentNewChatDefaults(this._options.newChat),
 			this.snapshot.models.available,
 		);
 		if (
@@ -728,19 +732,11 @@ export class ChatStore {
 	 */
 	private getDefaultModel = async (): Promise<void> => {
 		// with model selection off, every chat runs the deployment's model
-		if (!this._theme.featureFlags?.enableModelSelect) {
+		if (!this._options.isModelSelectable) {
+			const { newChat } = this._options;
 			this.setSelectedModel({
-				engine_id:
-					readDeploymentNewChatDefaults(
-						this._theme,
-						this._newChatDefaults,
-					).modelId ?? "",
-				engine_name:
-					this._theme.defaultRoomSettings?.model
-						?.engine_display_name ||
-					this._theme.defaultRoomSettings?.model?.engine_name ||
-					this._newChatDefaults.modelName ||
-					"",
+				engine_id: readDeploymentNewChatDefaults(newChat).modelId ?? "",
+				engine_name: newChat.modelName || "",
 				engine_type: "MODEL",
 			});
 			return;

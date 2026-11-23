@@ -1,13 +1,13 @@
 import { act, renderHook } from "@testing-library/react";
 import { expect, test, vi } from "vitest";
-import type { ThemeMap } from "@semoss/shared";
+import { testChatOptions } from "../../../test/chat-options";
 import type { InputPixelMessage, ResponsePixelMessage } from "../../../types";
 import { FOLDER_TOOL_NAMES } from "../../tools/chat-tools/folder-tools";
 import {
 	MCP_EXECUTION_ASK,
 	MCP_EXECUTION_AUTO,
-} from "../../tools/mcp/mcp-constants";
-import { DEFAULT_WORKBENCH_PANEL_COMPONENTS } from "../../workbench/panels/room-panel-components";
+} from "../../tools/mcp/mcp-execution";
+import { DEFAULT_WORKBENCH_PANELS } from "../../workbench/panels/default-workbench-panels";
 import { RoomStore } from "./room.store";
 import { ROOM_PANEL_TYPES } from "./room-workbench-layout";
 import { useRoomSelector } from "./use-room-selector";
@@ -29,10 +29,10 @@ vi.mock("@semoss/sdk/react", () => ({
 /** A room with the app's panel blueprints, bound to an insight. */
 const createRoom = () =>
 	new RoomStore({
-		theme: {} as ThemeMap["playground"],
+		chatOptions: testChatOptions(),
 		roomId: "room-1",
 		insightId: "insight-1",
-		panelComponents: DEFAULT_WORKBENCH_PANEL_COMPONENTS,
+		workbenchPanels: DEFAULT_WORKBENCH_PANELS,
 	});
 
 test("writes replace what they change and keep the rest", () => {
@@ -60,7 +60,7 @@ test("opening a panel opens the Workspace once", () => {
 	const room = createRoom();
 	const listener = vi.fn();
 	room.subscribe(listener);
-	room.openWorkbenchPanel(ROOM_PANEL_TYPES.CONFIGURATION);
+	room.openWorkbenchPanel(ROOM_PANEL_TYPES.SETTINGS);
 	room.openWorkbench();
 	expect(room.workbenchPane.isOpen).toBe(true);
 	expect(listener).toHaveBeenCalledTimes(1);

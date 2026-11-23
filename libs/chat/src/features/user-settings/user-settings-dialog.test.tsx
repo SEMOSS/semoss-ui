@@ -2,15 +2,15 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BlocksIcon, ServerIcon } from "lucide-react";
 import { expect, test, vi } from "vitest";
+import type { UserSettingsSection } from "./user-settings-dialog";
 import { UserSettingsDialog } from "./user-settings-dialog";
-import type { UserSettingsSection } from "./user-settings-section";
 
 vi.mock("@semoss/i18n", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@semoss/i18n")>()),
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
 
-const PAGES: UserSettingsSection[] = [
+const SECTIONS: UserSettingsSection[] = [
 	{
 		id: "connectors",
 		label: "Connectors",
@@ -35,7 +35,7 @@ const renderDialog = (section: string | undefined) => {
 			onOpenChange={vi.fn()}
 			section={section}
 			onSectionChange={onSectionChange}
-			pages={PAGES}
+			sections={SECTIONS}
 		/>,
 	);
 	return { onSectionChange };

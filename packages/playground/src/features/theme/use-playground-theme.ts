@@ -1,8 +1,5 @@
-import { useServerChatTheme } from "@semoss/chat";
-import {
-	ENV_THEME,
-	type PlaygroundTheme,
-} from "@/features/theme/playground-theme";
+import { type PlaygroundTheme, usePlaygroundServerTheme } from "@semoss/shared";
+import { ENV_THEME } from "@/features/theme/playground-theme";
 
 /**
  * Read the playground's theme: the server's `THEME_MAP` `playground` entry
@@ -14,4 +11,4 @@ import {
  * @returns The theme; the same object while the server's theme is unchanged.
  */
 export const usePlaygroundTheme = (): PlaygroundTheme =>
-	useServerChatTheme(ENV_THEME);
+	usePlaygroundServerTheme(ENV_THEME);

@@ -34,7 +34,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { useChatConfig } from "../../chat/config/use-chat-config";
+import { useChatConfig } from "../../chat/config/chat-config.context";
 import { ConnectorSignInNotice } from "../../connectors/accounts/connector-sign-in-notice";
 import { useUserConnectorsSync } from "../../connectors/accounts/use-user-connectors-sync";
 import type { RoomStore } from "../../room/store/room.store";
@@ -44,7 +44,7 @@ import { AGENT_HARNESS_TYPE } from "../../room/turns/agent-turn-runner";
 import { MCPOverlay } from "../../tools/mcp/mcp-overlay";
 import type { MCPOverlayTab } from "../../tools/mcp/mcp-overlay-picker";
 import { getAgentLabel, runsDefaultAgent } from "../../tools/mcp/mcp-utils";
-import type { NewRoomWorkbenchPanels } from "../../workbench/rail/use-workbench-panels";
+import type { DraftWorkbenchPanels } from "../../workbench/rail/use-workbench-panels";
 import { ContextItems } from "../attachments/context-items";
 import { useFileDrop } from "../attachments/file-drop.context";
 import { FilePreviewGrid } from "../attachments/file-preview-grid";
@@ -59,7 +59,6 @@ import { BackspacePlugin } from "./editor/backspace-plugin";
 import { EnterPlugin } from "./editor/enter-plugin";
 import { FocusPlugin } from "./editor/focus-plugin";
 import { filterPastedFiles } from "./filter-pasted-files";
-import { isIframed } from "./is-iframed";
 import { DefaultPlusMenu } from "./plus-menu/default-plus-menu";
 import { getPromptHistory } from "./prompt-history";
 import { PromptHistoryPlugin } from "./prompt-history-plugin";
@@ -69,7 +68,7 @@ import { $setRootText, replaceEditorText } from "./replace-editor-text";
 import { RoomContextUsageIndicator } from "./room-context-usage-indicator";
 import { DefaultSlashCommands } from "./slash-command/default-slash-commands";
 import { SlashCommandPlugin } from "./slash-command/slash-command-plugin";
-import { SlashCommandRegistryProvider } from "./slash-command/slash-command-registry";
+import { SlashCommandRegistryProvider } from "./slash-command/slash-command-registry.context";
 import { type ComposerSession, saveAgentOverlay } from "./use-composer-session";
 import { useComposerSubmit } from "./use-composer-submit";
 import { useSpeechToText } from "./use-speech-to-text";
@@ -107,9 +106,9 @@ export type RoomInputVariant =
 			/** Switches the draft back to chat mode, likewise. */
 			readonly onExitAgentHarness: () => void;
 			/** Where the slash menu's Workspace panels open: the draft's room and its panel actions. */
-			readonly workbenchPanels: {
+			readonly draftWorkbench: {
 				readonly room: RoomStore;
-				readonly newRoomPanels: NewRoomWorkbenchPanels;
+				readonly draftPanels: DraftWorkbenchPanels;
 			};
 			/** Text the editor starts with; a different one needs a new `key`. */
 			readonly initialValue?: string;
@@ -172,9 +171,16 @@ export const RoomInput = ({
 	const [isScrollable, setIsScrollable] = useState(false);
 	const [inputText, setInputText] = useState(draft?.initialValue ?? "");
 	const isEmpty = inputText.length === 0;
-	const { theme, components } = useChatConfig();
-	const PlusMenu = components?.PlusMenu ?? DefaultPlusMenu;
-	const SlashCommands = components?.SlashCommands ?? DefaultSlashCommands;
+	const { options: chatOptions, components } = useChatConfig();
+	// a host's null places no menu; left out, the chat's own
+	const PlusMenu =
+		components?.PlusMenu === undefined
+			? DefaultPlusMenu
+			: components.PlusMenu;
+	const SlashCommands =
+		components?.SlashCommands === undefined
+			? DefaultSlashCommands
+			: components.SlashCommands;
 	// connectors switched on or off in settings reach this chat at once
 	useUserConnectorsSync(room.connectors);
 	const history = useRoomSelector(room, (current) => current.history);
@@ -303,12 +309,12 @@ export const RoomInput = ({
 		isBusy,
 	});
 
-	const workbenchRoom = draft?.workbenchPanels.room ?? room;
-	const newRoomPanels = draft?.workbenchPanels.newRoomPanels;
+	const workbenchRoom = draft?.draftWorkbench.room ?? room;
+	const draftPanels = draft?.draftWorkbench.draftPanels;
 	// what the plus menu's items and the "/" menu's commands act through
 	const composer: Composer = {
 		room: room,
-		isNewChat: draft !== null,
+		isDraft: draft !== null,
 		isBusy: isBusy,
 		options: options,
 		agentTools: agentTools,
@@ -321,8 +327,8 @@ export const RoomInput = ({
 		compact: onCompact ? () => onCompact() : null,
 		prompts: predefinedPrompts,
 		runPrompt: (prompt) => void runPrompt(prompt.context),
-		prepareRoom: newRoomPanels
-			? newRoomPanels.prepareRoom
+		prepareRoom: draftPanels
+			? draftPanels.prepareRoom
 			: () => Promise.resolve(room),
 	};
 
@@ -366,10 +372,12 @@ export const RoomInput = ({
 				<ComposerWorkbenchContext.Provider
 					value={{
 						room: workbenchRoom,
-						newRoomPanels: newRoomPanels,
+						draftPanels: draftPanels,
 					}}
 				>
-					<SlashCommandRegistryProvider commands={<SlashCommands />}>
+					<SlashCommandRegistryProvider
+						commands={SlashCommands ? <SlashCommands /> : null}
+					>
 						<LexicalComposer
 							initialConfig={{
 								namespace: "RoomInput",
@@ -398,9 +406,11 @@ export const RoomInput = ({
 									// Need pb-1 for scroll bar
 									<div className="max-h-24 shrink-0 overflow-y-auto bg-card p-3 pb-1">
 										{files.length > 0 &&
-											theme.fileDragDisclaimer && (
+											chatOptions.fileDragDisclaimer && (
 												<P className="-mt-1 pb-2 text-muted-foreground text-xs">
-													{theme.fileDragDisclaimer}
+													{
+														chatOptions.fileDragDisclaimer
+													}
 												</P>
 											)}
 										<FilePreviewGrid
@@ -417,8 +427,7 @@ export const RoomInput = ({
 									</div>
 								)}
 								<div className="flex min-h-0 min-w-0 flex-1 items-stretch overflow-hidden">
-									{theme.featureFlags
-										?.enablePromptOptimizer && (
+									{chatOptions.hasPromptOptimizer && (
 										<div
 											className={cn(
 												"shrink-0 ps-2",
@@ -466,8 +475,7 @@ export const RoomInput = ({
 														ref={contentEditableRef}
 														className={cn(
 															"col-start-1 row-start-1 min-h-16 px-4 pb-3 text-base leading-relaxed outline-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
-															theme.featureFlags
-																?.enablePromptOptimizer &&
+															chatOptions.hasPromptOptimizer &&
 																"ps-2",
 															hasAttachments
 																? "pt-0"
@@ -500,9 +508,7 @@ export const RoomInput = ({
 														<div
 															className={cn(
 																"pointer-events-none col-start-1 row-start-1 select-none px-4 pb-3 text-base text-muted-foreground",
-																theme
-																	.featureFlags
-																	?.enablePromptOptimizer &&
+																chatOptions.hasPromptOptimizer &&
 																	"ps-2",
 																hasAttachments
 																	? "pt-0"
@@ -530,10 +536,7 @@ export const RoomInput = ({
 								/>
 								<div className="flex shrink-0 flex-wrap items-center gap-1 p-2">
 									<div className="flex min-w-0 max-w-full items-center gap-1">
-										{!(
-											theme.featureFlags
-												?.hideToolsInIframe && isIframed
-										) && (
+										{PlusMenu && (
 											<DropdownMenu
 												open={isMenuOpen}
 												onOpenChange={setIsMenuOpen}
@@ -717,8 +720,7 @@ export const RoomInput = ({
 												</TooltipContent>
 											</Tooltip>
 										</div>
-										{theme.featureFlags
-											?.enableModelSelect && (
+										{chatOptions.isModelSelectable && (
 											<Tooltip
 												disableHoverableContent={false}
 											>
@@ -862,10 +864,12 @@ export const RoomInput = ({
 							<AutoScrollOnPastePlugin
 								scrollContainerRef={scrollViewportRef}
 							/>
-							<SlashCommandPlugin
-								isLoading={isLoading}
-								hasTools={latestResponseHasTools}
-							/>
+							{SlashCommands && (
+								<SlashCommandPlugin
+									isLoading={isLoading}
+									hasTools={latestResponseHasTools}
+								/>
+							)}
 							<PromptLibraryDialog
 								open={isPromptLibraryOpen}
 								onOpenChange={setIsPromptLibraryOpen}

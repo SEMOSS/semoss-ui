@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { type ReactNode, useState } from "react";
 import { expect, test, vi } from "vitest";
+import { testChatOptions } from "../../test/chat-options";
 import type { RoomStore } from "../room/store/room.store";
 import type { AgentChoice } from "../tools/mcp/agent-choice";
 import { RoomSettingsForm } from "./room-settings-form";
@@ -14,9 +15,10 @@ vi.mock("@semoss/i18n", () => ({
 		i18n: { language: "en" },
 	}),
 }));
-vi.mock("../chat/config/use-chat-config", () => ({
+vi.mock("../chat/config/chat-config.context", async (original) => ({
+	...(await original<typeof import("../chat/config/chat-config.context")>()),
 	useChatConfig: () => ({
-		theme: { featureFlags: {} },
+		options: testChatOptions({ isModelSelectable: false }),
 		callbacks: { onOpenSettings: vi.fn() },
 	}),
 }));

@@ -1,19 +1,31 @@
 import { useEffect, useRef } from "react";
-import { useChatConfig } from "../chat/config/use-chat-config";
+
+/** Props for {@link NewChatBanner}. */
+interface NewChatBannerProps {
+	/** The banner's HTML, from a source the host trusts. Empty for none. */
+	html: string;
+	/** Its background color. Default: the primary color. */
+	backgroundColor?: string;
+	/** Its text color. Default: the primary color's foreground. */
+	textColor?: string;
+}
 
 /**
- * The theme's banner across the top of a new chat, its links opening in a new
- * tab. Renders nothing without a banner.
+ * A banner across the top of a new chat (`NewChat`'s `banner`), its links
+ * opening in a new tab. Renders nothing without HTML.
  */
-export const NewChatBanner = () => {
-	const { theme } = useChatConfig();
+export const NewChatBanner = ({
+	html,
+	backgroundColor,
+	textColor,
+}: NewChatBannerProps) => {
 	const bannerRef = useRef<HTMLDivElement>(null);
 
 	// open the banner's links in a new tab
 	useEffect(() => {
 		if (!bannerRef.current) return;
 		// The url stripping here is primarily due to a BE theme bug where single quote apostrophes get serial added when saving
-		const urls = (theme.banner ?? "").match(/https?:\/\/[^\s'"<>]+/g) ?? [];
+		const urls = html.match(/https?:\/\/[^\s'"<>]+/g) ?? [];
 		bannerRef.current
 			.querySelectorAll("a")
 			.forEach((a: HTMLAnchorElement, i: number) => {
@@ -21,20 +33,19 @@ export const NewChatBanner = () => {
 				a.rel = "noopener noreferrer";
 				if (urls[i]) a.setAttribute("href", urls[i]);
 			});
-	}, [theme.banner]);
+	}, [html]);
 
-	if (!theme.banner) return null;
+	if (!html) return null;
 	return (
 		<div
 			ref={bannerRef}
 			className="w-full shrink-0 px-4 py-2 text-center text-sm [&_a]:underline"
 			style={{
-				backgroundColor:
-					theme.bannerBackgroundColor || "var(--primary)",
-				color: theme.bannerTextColor || "var(--primary-foreground)",
+				backgroundColor: backgroundColor || "var(--primary)",
+				color: textColor || "var(--primary-foreground)",
 			}}
-			// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
-			dangerouslySetInnerHTML={{ __html: theme.banner }}
+			// biome-ignore lint/security/noDangerouslySetInnerHtml: the host's own HTML, from a source it trusts
+			dangerouslySetInnerHTML={{ __html: html }}
 		/>
 	);
 };

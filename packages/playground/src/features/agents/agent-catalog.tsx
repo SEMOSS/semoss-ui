@@ -1,9 +1,9 @@
 import { SearchIcon } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import type { App } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import { useSessionIteratorPixel } from "@semoss/sdk/react";
+import type { App } from "@semoss/shared";
 import {
 	Button,
 	InputGroup,

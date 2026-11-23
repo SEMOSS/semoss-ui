@@ -8,14 +8,15 @@ import {
 } from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vitest";
 import { download, runPixel, runPixelAsync } from "@semoss/sdk/react";
-import type { ThemeMap } from "@semoss/shared";
 import { copyTextToClipboard } from "@semoss/utility/clipboard";
+import { testChatOptions } from "../../../test/chat-options";
 import { servePixelTransport } from "../../../test/pixel-transport";
 import type {
 	InputPixelMessage,
 	PixelMessage,
 	ResponsePixelMessage,
 } from "../../../types";
+import type { ResolvedChatOptions } from "../../chat/config/chat-options";
 import type { InputMessageStore } from "../../room/store/input-message.store";
 import type { ResponseMessageStore } from "../../room/store/response-message.store";
 import { RoomStore } from "../../room/store/room.store";
@@ -23,7 +24,7 @@ import type { ToolStore } from "../../room/store/tool.store";
 import { ResponseMessage } from "./response-message";
 
 const mocks = vi.hoisted(() => ({
-	theme: {} as Record<string, unknown>,
+	options: {} as ResolvedChatOptions,
 	toast: {
 		success: vi.fn(),
 		error: vi.fn(),
@@ -64,8 +65,11 @@ vi.mock("@semoss/ui/next", async (original) => ({
 vi.mock("@semoss/utility/clipboard", () => ({
 	copyTextToClipboard: vi.fn(),
 }));
-vi.mock("../../chat/config/use-chat-config", () => ({
-	useChatConfig: () => ({ theme: mocks.theme }),
+vi.mock("../../chat/config/chat-config.context", async (original) => ({
+	...(await original<
+		typeof import("../../chat/config/chat-config.context")
+	>()),
+	useChatConfig: () => ({ options: mocks.options }),
 }));
 vi.mock("../../connectors/store/connector-tools", async (original) => ({
 	...(await original<
@@ -201,10 +205,10 @@ const pixelResponse = (outputs: unknown[], operationType: string[] = []) => ({
  */
 const createRoom = async (messages: PixelMessage[]) => {
 	const room = new RoomStore({
-		theme: {} as ThemeMap["playground"],
+		chatOptions: testChatOptions(),
 		roomId: "room-1",
 		insightId: "insight-1",
-		panelComponents: {},
+		workbenchPanels: {},
 	});
 	room.setModel({
 		engine_id: "model-1",
@@ -246,7 +250,11 @@ const messageOf = <T extends ResponseMessageStore | InputMessageStore>(
 
 beforeEach(() => {
 	vi.clearAllMocks();
-	mocks.theme = {};
+	// Rewrite is the host's to keep; most of these tests leave it out
+	mocks.options = testChatOptions({
+		hasFeedbackComment: false,
+		messageActions: (actions) => actions.filter((id) => id !== "rewrite"),
+	});
 	localStorage.clear();
 });
 
@@ -508,7 +516,7 @@ test("thumbs up and down save the rating with its pixel, and a second click clea
 });
 
 test("with feedback text on, a new rating asks for a comment before it is sent", async () => {
-	mocks.theme = { featureFlags: { enableFeedbackText: true } };
+	mocks.options = testChatOptions({ hasFeedbackComment: true });
 	const room = await createRoom([
 		input("i1", "", "hi"),
 		output("r1", "i1", [text("Hello")], {
@@ -632,7 +640,7 @@ test("branch arrows switch between the user's sibling messages and count them", 
 });
 
 test("Rewrite Message sends the user's message again as a new branch", async () => {
-	mocks.theme = { featureFlags: { enableRewrite: true } };
+	mocks.options = testChatOptions({ hasFeedbackComment: false });
 	const room = await createRoom([
 		input("i1", "", "first"),
 		output("r1", "i1", [text("One")]),
@@ -687,7 +695,7 @@ test("Rewrite Message sends the user's message again as a new branch", async () 
 	expect(askPixel).toContain('parentMessageId=["r1"]');
 });
 
-test("the Rewrite button shows only when the theme turns it on", async () => {
+test("the Rewrite button shows only where the host keeps it", async () => {
 	const room = await createRoom([
 		input("i1", "", "first"),
 		output("r1", "i1", [text("One")]),

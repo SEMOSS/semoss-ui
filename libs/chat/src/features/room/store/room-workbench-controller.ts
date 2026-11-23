@@ -31,20 +31,20 @@ import type { ToolData, ToolStore } from "./tool.store";
  * in tests, so it falls back to the blueprint's own name.
  *
  * @param panel - Which default panel.
- * @param panelComponents - The blueprints, for their own names.
+ * @param workbenchPanels - The blueprints, for their own names.
  * @returns The tab label.
  */
 const getDefaultPanelName = (
 	panel: "files" | "settings",
-	panelComponents: Record<string, WorkbenchPanelConfigAny>,
+	workbenchPanels: Record<string, WorkbenchPanelConfigAny>,
 ): string => {
 	const type =
 		panel === "files"
 			? FILE_PANEL_TYPES.FILE_EXPLORER
-			: ROOM_PANEL_TYPES.CONFIGURATION;
+			: ROOM_PANEL_TYPES.SETTINGS;
 	return (
 		getI18n()?.t(`room:workspacePlaces.${panel}`) ??
-		panelComponents[type]?.name ??
+		workbenchPanels[type]?.name ??
 		panel
 	);
 };
@@ -60,14 +60,14 @@ const getDefaultPanelName = (
 export const createRoomWorkbenchSnapshot = (options: {
 	insightId: string;
 	includeFiles: boolean;
-	panelComponents: Record<string, WorkbenchPanelConfigAny>;
+	workbenchPanels: Record<string, WorkbenchPanelConfigAny>;
 }): WorkbenchSnapshot =>
 	createRoomWorkbenchLayout({
 		fileMode: options.includeFiles
 			? getRoomFileMode(options.insightId)
 			: null,
-		filesName: getDefaultPanelName("files", options.panelComponents),
-		settingsName: getDefaultPanelName("settings", options.panelComponents),
+		filesName: getDefaultPanelName("files", options.workbenchPanels),
+		settingsName: getDefaultPanelName("settings", options.workbenchPanels),
 	});
 
 /** What the Workbench needs from its room. */
@@ -124,14 +124,14 @@ export class RoomWorkbenchController {
 		deps: RoomWorkbenchControllerDependencies,
 		options: {
 			snapshot: WorkbenchSnapshot;
-			panelComponents: Record<string, WorkbenchPanelConfigAny>;
+			workbenchPanels: Record<string, WorkbenchPanelConfigAny>;
 			includeFiles: boolean;
 		},
 	) {
 		this.deps = deps;
 		this.includesFiles = options.includeFiles;
 		this.workbench = createWorkbenchStore({
-			components: options.panelComponents,
+			components: options.workbenchPanels,
 		});
 		this.workbench.getState().layout.actions.loadSnapshot(options.snapshot);
 		this.syncFileMode();

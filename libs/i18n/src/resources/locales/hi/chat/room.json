@@ -141,9 +141,6 @@
 		"noItemsAvailable": "कोई ज्ञान या टूलबॉक्स उपलब्ध नहीं है"
 	},
 	"studio": {
-		"views": "बातचीत के दृश्य",
-		"chat": "चैट",
-		"workspace": "कार्यस्थान",
 		"toolsLocked": "उत्तर तैयार होते समय टूल बदले नहीं जा सकते।",
 		"toolsHint": "चयन आपके अगले संदेश पर लागू होंगे।",
 		"moreActions": "अन्य कार्रवाइयाँ",
@@ -156,11 +153,16 @@
 		"refresh": "रीफ़्रेश करें",
 		"exportCsv": "CSV के रूप में निर्यात करें",
 		"exportPdf": "PDF के रूप में निर्यात करें",
-		"closeWorkspace": "कार्यस्थान बंद करें",
-		"openWorkspace": "वर्कस्पेस खोलें",
-		"preparingWorkspace": "कार्यस्थान तैयार हो रहा है…",
 		"prepareError": "कार्यस्थान तैयार नहीं हो सका। आपका ड्राफ़्ट सुरक्षित है।",
 		"retry": "फिर कोशिश करें"
+	},
+	"workbench": {
+		"views": "बातचीत के दृश्य",
+		"chat": "चैट",
+		"workspace": "कार्यस्थान",
+		"closeWorkspace": "कार्यस्थान बंद करें",
+		"openWorkspace": "वर्कस्पेस खोलें",
+		"preparingWorkspace": "कार्यस्थान तैयार हो रहा है…"
 	},
 	"workspacePlaces": {
 		"files": "फ़ाइलें",
@@ -198,7 +200,7 @@
 		"openPlace": "{{name}} को कार्यस्थान में खोलें",
 		"groups": {
 			"chat": "चैट",
-			"workspace": "कार्यस्थान",
+			"workbench": "कार्यस्थान",
 			"room": "रूम",
 			"prompts": "प्रॉम्प्ट"
 		},

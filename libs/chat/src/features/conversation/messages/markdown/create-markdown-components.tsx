@@ -52,12 +52,12 @@ type BlockQuoteProps = ComponentProps<"blockquote"> & {
  * Builds the `urlTransform` for anything rendered as assistant content.
  * Unmatched urls are rewritten to "", leaving the link inert.
  *
- * @param allowedUrlPrefixes - The theme's extra allowed prefixes, beside
+ * @param allowedUrlPrefixes - The host's extra allowed prefixes, beside
  * `room://`, http(s), `mailto:`, and in-page anchors.
  * @returns The transform.
  */
 export const createMarkdownUrlTransform =
-	(allowedUrlPrefixes?: string[]) =>
+	(allowedUrlPrefixes?: readonly string[]) =>
 	(url: string): string => {
 		if (url.startsWith("room://")) return url;
 		if (allowedUrlPrefixes?.some((prefix) => url.startsWith(prefix)))

@@ -1,20 +1,25 @@
 import { ListMinusIcon, PlusIcon } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
 import { Button, Small } from "@semoss/ui/next";
+import { useRoomOrContext } from "../../room/scope/room.context";
 import type { RoomStore } from "../../room/store/room.store";
 import { useRoomSuggestions } from "./use-room-suggestions";
 
 /** Props for {@link RoomSuggestions}. */
 interface RoomSuggestionsProps {
-	/** The room whose suggestions to show, and that sends the one picked. */
-	room: RoomStore;
+	/**
+	 * The room whose suggestions to show, and that sends the one picked;
+	 * defaults to the room in context.
+	 */
+	room?: RoomStore;
 }
 
 /**
  * Follow-up messages that continue the conversation or use its attached tools.
  * Picking one sends it; renders nothing when there are none.
  */
-export const RoomSuggestions = ({ room }: RoomSuggestionsProps) => {
+export const RoomSuggestions = ({ room: roomProp }: RoomSuggestionsProps) => {
+	const room = useRoomOrContext(roomProp);
 	const { t } = useTranslation("room");
 	const suggestions = useRoomSuggestions(room);
 	if (suggestions.length === 0) {

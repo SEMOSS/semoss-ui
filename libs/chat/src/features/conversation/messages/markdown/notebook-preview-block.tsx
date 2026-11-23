@@ -29,7 +29,7 @@ import {
 } from "@semoss/ui/next";
 import { copyTextToClipboard } from "@semoss/utility/clipboard";
 import type { RoomStore } from "../../../room/store/room.store";
-import { NEW_INSIGHT_ID } from "../../../tools/mcp/mcp-constants";
+import { NEW_INSIGHT_ID } from "../../../room/store/room-placeholders";
 import { BlockHeader } from "./block-header";
 import { SaveFileDialog } from "./save-file-dialog";
 

@@ -12,7 +12,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import { useChatSession } from "../../chat/provider/use-chat-session";
+import { useChatSession } from "../../chat/provider/chat-session.context";
 
 /** A document format the backend can export a conversation to. */
 type DownloadFormat = "word" | "pdf";

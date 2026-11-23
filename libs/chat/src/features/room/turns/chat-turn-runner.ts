@@ -3,10 +3,7 @@ import { runMcpTool } from "@semoss/sdk/react";
 import { getErrorMessage } from "@semoss/utility/error";
 import type { InputPixelMessage, ResponsePixelMessage } from "../../../types";
 import { isBrowserToolCall } from "../../tools/chat-tools/chat-tool-kind";
-import {
-	MCP_EXECUTION_AUTO,
-	TURN_CANCELLATION_PROMPT,
-} from "../../tools/mcp/mcp-constants";
+import { MCP_EXECUTION_AUTO } from "../../tools/mcp/mcp-execution";
 import { getToolEngineId } from "../../tools/mcp/mcp-utils";
 import type { InputMessageStore } from "../store/input-message.store";
 import type { CancelCommitOutput } from "../store/message-map";
@@ -15,9 +12,10 @@ import { readInputPayload } from "../store/response-placeholder";
 import type { RoomStore } from "../store/room.store";
 import type { ToolStore } from "../store/tool.store";
 import { applyResponseStreamChunk } from "./response-stream";
+import { TURN_CANCELLATION_PROMPT } from "./turn-prompts";
 import type { Turn, TurnRunner } from "./turn-runner";
 
-/** How many auto tool calls run at once when the theme sets no limit. */
+/** How many auto tool calls run at once when the host sets no limit. */
 const DEFAULT_TOOL_LIMIT = 5;
 
 /**
@@ -51,7 +49,7 @@ export class ChatTurnRunner implements TurnRunner {
 			// the work folder's tools ride along: the backend merges them with
 			// the room's own and the browser runs them
 			paramValues: {
-				...(room.theme.featureFlags?.enableTemperature &&
+				...(room.chatOptions.isTemperatureEditable &&
 				room.options.temperature !== undefined
 					? { temperature: room.options.temperature }
 					: {}),
@@ -132,7 +130,7 @@ export class ChatTurnRunner implements TurnRunner {
 	}
 
 	/**
-	 * Run a response's auto tool calls that have not run, up to the theme's
+	 * Run a response's auto tool calls that have not run, up to the host's
 	 * limit on calls running at once. A stop halts the loop.
 	 *
 	 * @param response - The response that made the calls.
@@ -158,7 +156,8 @@ export class ChatTurnRunner implements TurnRunner {
 				running++;
 			}
 		}
-		const limit = room.theme.toolAutoExecutionLimit || DEFAULT_TOOL_LIMIT;
+		const limit =
+			room.chatOptions.toolAutoExecutionLimit || DEFAULT_TOOL_LIMIT;
 		for (const tool of waiting.slice(0, Math.max(0, limit - running))) {
 			void this.runToolExecution(response, tool);
 		}

@@ -15,7 +15,7 @@ import type {
 } from "@semoss/workbench";
 import type { ConnectorsStore } from "../../connectors/store/connectors.store";
 import { useConnectors } from "../../connectors/store/use-connectors";
-import { RoomLayoutActionsContext } from "../../room/layout/room-layout-actions.context";
+import { SplitLayoutActionsContext } from "../../room/layout/split-layout-actions.context";
 import type { RoomStore } from "../../room/store/room.store";
 import { ROOM_PANEL_TYPES } from "../../room/store/room-workbench-layout";
 import { useRoomSelector } from "../../room/store/use-room-selector";
@@ -46,7 +46,7 @@ export type WorkbenchPanelOption =
 	| (WorkbenchPanelOptionBase & { kind: "connector"; brand: ConnectorBrand });
 
 /** What a new chat opens in its Workspace before its first message. */
-export type NewRoomPanelRequest =
+export type DraftPanelRequest =
 	| { kind: "workbench" }
 	| { kind: "settings" }
 	| { kind: "files" }
@@ -57,14 +57,13 @@ export type NewRoomPanelRequest =
  * Requests a draft shows at once, since they need no insight; every other
  * panel waits for the draft to prepare its room.
  */
-export const NEW_ROOM_READY_PANEL_KINDS: ReadonlySet<
-	NewRoomPanelRequest["kind"]
-> = new Set(["workbench", "settings"]);
+export const DRAFT_READY_PANEL_KINDS: ReadonlySet<DraftPanelRequest["kind"]> =
+	new Set(["workbench", "settings"]);
 
 /** How a new chat opens its Workspace's panels before its first message. */
-export interface NewRoomWorkbenchPanels {
+export interface DraftWorkbenchPanels {
 	/** Opens the Workspace or one of its panels, preparing the draft's room. */
-	onOpenPanel: (request: NewRoomPanelRequest) => void;
+	onOpenPanel: (request: DraftPanelRequest) => void;
 	/** Whether the draft is preparing its room or sending its first message. */
 	isBusy: boolean;
 	/** The draft's connectors, whose viewers are offered. */
@@ -80,33 +79,33 @@ export interface NewRoomWorkbenchPanels {
 }
 
 /**
- * The panels a room's Workspace opens: Files, Settings, and the activity log,
- * then the connector viewers the chat can show. A draft's panels that need its
+ * The panels a room's Workspace opens: Files, Settings, and the activity log
+ * where the host keeps its blueprint, then the connector viewers the chat can show. A draft's panels that need its
  * room wait while it prepares. Opening a panel also brings the Workspace into
  * view, selecting its tab on narrow screens.
  *
  * @param room - The room whose Workspace shows the panels.
- * @param newRoomPanels - A new chat's own panel actions, until its first message.
+ * @param draftPanels - A new chat's own panel actions, until its first message.
  * @returns The room's panels, then the connector viewers.
  */
 export const useWorkbenchPanels = (
 	room: RoomStore,
-	newRoomPanels?: NewRoomWorkbenchPanels,
+	draftPanels?: DraftWorkbenchPanels,
 ): WorkbenchPanelOption[] => {
 	const { t } = useTranslation(["room", "connectors"]);
-	const roomLayout = useContext(RoomLayoutActionsContext);
-	const connectors = newRoomPanels?.connectors ?? room.connectors;
+	const roomLayout = useContext(SplitLayoutActionsContext);
+	const connectors = draftPanels?.connectors ?? room.connectors;
 	// the viewers on offer follow the connectors switched on and signed in
 	useConnectors(connectors);
 	const fileMode = useRoomSelector(room, (current) => current.fileMode);
-	const isBusy = newRoomPanels?.isBusy ?? false;
+	const isBusy = draftPanels?.isBusy ?? false;
 	// a busy draft holds back every panel that needs its room
-	const isWaiting = (kind: NewRoomPanelRequest["kind"]) =>
-		isBusy && !NEW_ROOM_READY_PANEL_KINDS.has(kind);
+	const isWaiting = (kind: DraftPanelRequest["kind"]) =>
+		isBusy && !DRAFT_READY_PANEL_KINDS.has(kind);
 	// a new chat routes the request through its draft; a room opens it itself
 	const openPanel =
-		(request: NewRoomPanelRequest, openInRoom: () => void) => () => {
-			if (newRoomPanels) newRoomPanels.onOpenPanel(request);
+		(request: DraftPanelRequest, openInRoom: () => void) => () => {
+			if (draftPanels) draftPanels.onOpenPanel(request);
 			else openInRoom();
 			roomLayout?.revealWorkbench();
 		};
@@ -132,7 +131,7 @@ export const useWorkbenchPanels = (
 			label: t("workspacePlaces.settings"),
 			description: t("workspacePlaces.descriptions.settings"),
 			icon: Settings2Icon,
-			panelType: ROOM_PANEL_TYPES.CONFIGURATION,
+			panelType: ROOM_PANEL_TYPES.SETTINGS,
 			panelConfig: {},
 			isDisabled: isWaiting("settings"),
 			isLoading: false,
@@ -142,20 +141,21 @@ export const useWorkbenchPanels = (
 			),
 		},
 	];
-	if (room.theme.featureFlags?.showActivityLog !== false) {
+	// the host places the activity log by keeping its panel blueprint
+	if (room.hasPanel(ROOM_PANEL_TYPES.ACTIVITY_LOG)) {
 		panels.push({
 			kind: "room",
 			id: "activity",
 			label: t("workspacePlaces.activity"),
 			description: t("workspacePlaces.descriptions.activity"),
 			icon: ScrollTextIcon,
-			panelType: ROOM_PANEL_TYPES.AUDIT_LOG,
+			panelType: ROOM_PANEL_TYPES.ACTIVITY_LOG,
 			panelConfig: {},
 			isDisabled: isWaiting("activity"),
 			isLoading: false,
 			onOpen: openPanel({ kind: "activity" }, () =>
 				room.openWorkbenchPanel(
-					ROOM_PANEL_TYPES.AUDIT_LOG,
+					ROOM_PANEL_TYPES.ACTIVITY_LOG,
 					{},
 					t("workspacePlaces.activity"),
 				),

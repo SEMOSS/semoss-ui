@@ -15,6 +15,15 @@ Each keeps its getters, which read its snapshot; React reads them through a sele
 | `ConnectorsStore` | `useConnectors(room.connectors)` | the room's connectors |
 | `ContextItemsStore` | `useContextItems(room.contextItems, (snapshot) => …)` | the next message's queue |
 
+These hooks are the chat's own; of them only `useChatSession` is exported.
+
+- **One chat store per session.** `ChatProvider` makes it (`useCreateChatStore`) and starts its
+  read of the models in an effect; `initialize` joins a read in flight, so a remount reads once.
+  New host options reach the same store through `setOptions`, which hands them to every cached
+  room (`room.setChatOptions`) and picks the new chat's model again when `isModelSelectable` or
+  `newChat` changed. Only a new tools host or new `workbenchPanels` make a new store; the old
+  one's `dispose` stops its rooms. A new chat's draft (`useDraftRoom`) likewise lasts across new
+  options and takes new defaults only where the user changed nothing.
 - **Select through the store**, the least a component needs. A selector runs again on every change
   its store hears about and the component renders only when what it returns changes (one level
   deep), so derived reads (`room.history`, `room.canCancel`, `message.hasUnfinishedTools`) belong
@@ -68,20 +77,20 @@ Each keeps its getters, which read its snapshot; React reads them through a sele
 A new chat's model, mode and agent follow one order. Each takes the first that is set:
 
 1. what this login session last used, kept in memory and never in `sessionStorage` (the model is
-   `ChatStore`'s selected model; the mode and agent are held by `new-chat-preferences.ts`, by
+   `ChatStore`'s selected model; the mode and agent are held by `new-chat-defaults.ts`, by
    `lastLogin`), so a reload starts again at 2;
 2. the user's default, their metadata `playground--default-input-text-model`,
    `playground--default-chat-mode` and `playground--default-chat-agent`, saved with
    `Session.setMetadata` from Settings > General's Chat section
    (`features/user-settings/new-chat-settings.tsx`), where the model and agent rows' **Default** choice clears it;
-3. the deployment's default: the theme's `defaultRoomSettings` (`model`, `mode`, `agentId`),
-   then `VITE_DEFAUlT_MODEL_ID`, `VITE_DEFAULT_CHAT_MODE` and `VITE_DEFAULT_CHAT_AGENT_ID`
-   (read by the web app in its `features/chat-config/new-chat-build-defaults.ts` and given to
-   the chat as `ChatConfig.options.new`);
+3. the host's default, `ChatConfig.options.newChat` (`modelId`, `mode`, `agentId`). The web app
+   lays its theme's `defaultRoomSettings` over `VITE_DEFAUlT_MODEL_ID`, `VITE_DEFAULT_CHAT_MODE`
+   and `VITE_DEFAULT_CHAT_AGENT_ID` (`features/chat-config/use-host-chat-config.ts`); the
+   desktop app takes the server theme's;
 4. the first available: the first model, chat mode, and Default Agent.
 
-A mode is always chat where agent mode is not offered and always agent where the theme's
-`agentModeOnly` flag is on (`resolveNewChatMode` takes the modes `newChatModes` offers, and
+A mode is always chat where agent mode is not offered and always agent where
+`options.agentMode` is `agent-only` (`resolveNewChatMode` takes the modes `newChatModes` offers, and
 Settings shows no mode row then), an agent link (`?workspaceId=`) wins over steps 1 to 3, and an agent from them that the user can no longer open gives way to Default Agent.
-The rules live in `features/chat/config/new-chat-preferences.ts`. The chat does not read the
+The rules live in `features/chat/config/new-chat-defaults.ts`. The chat does not read the
 platform's `text-generation-model`.

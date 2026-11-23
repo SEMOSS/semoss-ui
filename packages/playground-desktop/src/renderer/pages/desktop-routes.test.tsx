@@ -13,18 +13,6 @@ const mocks = vi.hoisted(() => ({
 	rooms: [] as { ROOM_ID: string; ROOM_NAME: string; DATE_CREATED: string }[],
 	commandListener: null as ((command: DesktopCommand) => void) | null,
 	invoke: null as ReturnType<typeof vi.fn> | null,
-	// a fixed chat store: its snapshot is itself
-	chat: {
-		keys: { roomCounter: 0 },
-		// what the settings dialog's General page reads
-		models: { available: [], selected: null },
-		optimisticRooms: {},
-		removeOptimisticRoom: () => {},
-		getSnapshot() {
-			return this;
-		},
-		subscribe: () => () => {},
-	},
 }));
 
 vi.mock("@semoss/i18n", () => ({
@@ -36,6 +24,11 @@ vi.mock("@semoss/i18n", () => ({
 }));
 vi.mock("@semoss/sdk/react", () => ({
 	Env: { MODULE: "/Monolith" },
+	// the chat store reads the session's models as it starts; there are none
+	Session: {
+		insight: { withInsight: async () => [] },
+		getSnapshot: () => ({ user: null }),
+	},
 	useSession: <T,>(
 		selector: (state: {
 			status: string;
@@ -69,7 +62,6 @@ vi.mock("@semoss/chat", async (original) => {
 	const actual = await original<typeof import("@semoss/chat")>();
 	return {
 		...actual,
-		useCreateChatStore: () => mocks.chat,
 		NewChat: () => <h1>New chat screen</h1>,
 		RoomScope: ({ roomId }: { roomId: string }) => <h1>Room {roomId}</h1>,
 	};

@@ -12,7 +12,7 @@ and `features/room-settings/tools/` the Tools section of Settings.
   downloads, and everything the room's apps (MCP tools) and the default tools read and write. Files in
   the room header opens the file explorer on it. Its Add to Context action uses
   `FileExplorerHostProvider` and queues on `useNextMessageRoom() ?? room`, so files selected from
-  a prepared new room appear in the new chat's composer and transfer before its first message.
+  a draft's prepared room appear in the new chat's composer and transfer before its first message.
 - **A chat gets default tools; an agent brings its own.** In chat mode every message carries the
   default tools, the `folder_*` tools the browser runs in Room Files (`chat-tools/default-tools.ts`).
   Room Settings sets each to Auto, Ask, or Disabled (room option `defaultTools`; reads are Auto
@@ -49,7 +49,7 @@ and `features/room-settings/tools/` the Tools section of Settings.
   whenever its agent changes (a draft, which has no insight, is handed them by `NewChat` through
   `setAgentTools`). Where the UI lists both, it builds the list with `listRoomTools`
   (`tools/mcp/mcp-utils.ts`): the agent's first, then the room's whose id is not the agent's.
-  Components read an agent with `useAgentWorkspace` (`tools/mcp/use-agent-workspace.ts`).
+  Components read an agent with `useAgentWorkspace` from `@semoss/shared`.
 - **Never send `DeleteInsightAssets` an empty path.** With no path it clears the whole space.
   `RoomFolder` (`tools/chat-tools/room-folder.ts`) refuses to address its root for writes, moves, and deletes. The room
   folder also hides and refuses its `mcp` folder, where the room's tools are kept: rewriting it
@@ -66,7 +66,8 @@ and `features/room-settings/tools/` the Tools section of Settings.
 
 A client tool is one a host runs in this browser rather than on the server. A host passes them
 as `ChatConfig.tools`, a `ToolsHost` (`tools/chat-tools/tools-host.ts`);
-`useCreateChatStore(config)` hands it to every `RoomStore` (`room.toolsHost`). The contract is
+`ChatProvider` makes the chat store with it, which hands it to every `RoomStore`
+(`room.toolsHost`); a new tools host makes a new store. The contract is
 generic: the desktop app's tools over the folders the user attaches
 (`packages/playground-desktop/src/renderer/features/local-folders/`) are one host, and a desktop
 terminal would be more tools from the same host. Names in the chat say "client"
@@ -103,7 +104,7 @@ its name (`desktop_*`). These details are easy to break:
   scope, so its explorer and panels refresh.
 - **The host keeps what it needs per room.** The chat calls `subscribe` as a room is made and
   stops as it is dropped, `load` once the room is open and its mode known, and `discard` when a
-  new chat is left before its first message (`useNewRoom`), so the desktop detaches folders
+  new chat is left before its first message (`usePreparedRoom`), so the desktop detaches folders
   attached to a room that is gone. A host's own Attach Folder prepares a new chat's room with
   `useComposer().prepareRoom()`.
 - **Folders as tools.** A host that offers a folder of its own reuses the chat's folder tools:

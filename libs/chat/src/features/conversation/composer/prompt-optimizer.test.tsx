@@ -17,7 +17,10 @@ vi.mock("@semoss/sdk/react", () => ({
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
-vi.mock("../../chat/provider/use-chat-session", () => ({
+vi.mock("../../chat/provider/chat-session.context", async (original) => ({
+	...(await original<
+		typeof import("../../chat/provider/chat-session.context")
+	>()),
 	useChatSession: () => ({ chat: { models: {} } }),
 }));
 const room = {

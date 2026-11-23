@@ -1,8 +1,8 @@
 import { PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import type { Workspace } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
+import type { Workspace } from "@semoss/shared";
 import { AppCatalogAvatar } from "@semoss/shared";
 import {
 	Button,

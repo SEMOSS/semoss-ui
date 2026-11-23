@@ -8,7 +8,7 @@ import {
 import type { ReactNode } from "react";
 import { beforeEach, expect, test, vi } from "vitest";
 import type { PendingAgentAction } from "@semoss/sdk";
-import type { ThemeMap } from "@semoss/shared";
+import { testChatOptions } from "../../../test/chat-options";
 import type { PixelMessageToolCallPart } from "../../../types";
 import { signInToProvider } from "../../connectors/accounts/connector-sign-in";
 import { RoomStore } from "../../room/store/room.store";
@@ -86,10 +86,10 @@ vi.mock("../inspector/tool-inspector", () => ({
  */
 const createRoom = (mode: "chat" | "agent" = "chat") => {
 	const room = new RoomStore({
-		theme: {} as ThemeMap["playground"],
+		chatOptions: testChatOptions(),
 		roomId: "room-1",
 		insightId: "insight-1",
-		panelComponents: {},
+		workbenchPanels: {},
 	});
 	room.setMode(mode);
 	return room;

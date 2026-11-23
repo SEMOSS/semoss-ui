@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { RoomWorkbenchToggle } from "../../workbench/rail/room-workbench-toggle";
-import type { NewRoomWorkbenchPanels } from "../../workbench/rail/use-workbench-panels";
+import type { DraftWorkbenchPanels } from "../../workbench/rail/use-workbench-panels";
 import { useRoomOrContext } from "../scope/room.context";
 import type { RoomStore } from "../store/room.store";
 import { RoomTitle } from "./room-title";
@@ -10,7 +10,7 @@ interface RoomHeaderProps {
 	/** The room whose Workbench the header opens; the `RoomScope`'s room when left out. */
 	room?: RoomStore;
 	/** A new chat's own panel actions, until its first message. */
-	newRoomPanels?: NewRoomWorkbenchPanels;
+	draftPanels?: DraftWorkbenchPanels;
 	/** The host's controls before the name, such as a navigation button. */
 	leading?: ReactNode;
 	/** The host's controls after the name, before the Workbench toggle. */
@@ -24,7 +24,7 @@ interface RoomHeaderProps {
  */
 export const RoomHeader = ({
 	room: roomProp,
-	newRoomPanels,
+	draftPanels,
 	leading,
 	trailing,
 }: RoomHeaderProps) => {
@@ -37,10 +37,7 @@ export const RoomHeader = ({
 			</div>
 			<div className="flex shrink-0 items-center gap-0.5">
 				{trailing}
-				<RoomWorkbenchToggle
-					room={room}
-					newRoomPanels={newRoomPanels}
-				/>
+				<RoomWorkbenchToggle room={room} draftPanels={draftPanels} />
 			</div>
 		</header>
 	);

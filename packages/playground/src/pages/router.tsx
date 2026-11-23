@@ -6,7 +6,7 @@ import { KnowledgeLibrary } from "@/features/knowledge/knowledge-library";
 import { EmbedPage } from "@/pages/embed.page";
 import { ErrorPage } from "@/pages/error.page";
 import { LoginPage } from "@/pages/login.page";
-import { NewRoomPage } from "@/pages/new-room.page";
+import { NewChatPage } from "@/pages/new-chat.page";
 import { RoomPage } from "@/pages/room.page";
 import { AgentDetailPage } from "./agent-detail.page";
 import { AgentEditPage } from "./agent-edit.page";
@@ -34,7 +34,7 @@ const router = createHashRouter([
 								children: [
 									{
 										path: "new",
-										element: <NewRoomPage />,
+										element: <NewChatPage />,
 									},
 									{
 										path: "room/:roomId",

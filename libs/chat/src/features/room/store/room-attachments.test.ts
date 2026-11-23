@@ -1,6 +1,6 @@
 import { beforeEach, expect, test, vi } from "vitest";
 import { runPixel, runPixelAsync, uploadInsight } from "@semoss/sdk/react";
-import type { ThemeMap } from "@semoss/shared";
+import { testChatOptions } from "../../../test/chat-options";
 import { servePixelTransport } from "../../../test/pixel-transport";
 import { RoomStore } from "./room.store";
 
@@ -28,10 +28,10 @@ vi.mock("../../connectors/store/connector-tools", async (importOriginal) => ({
 /** A chat with a platform file policy and an ordinary text model. */
 const createRoom = async (allowedFileTypes: string[]) => {
 	const room = new RoomStore({
-		theme: { allowedFileTypes } as ThemeMap["playground"],
+		chatOptions: testChatOptions({ allowedFileTypes }),
 		roomId: "attachment-test",
 		insightId: "insight-test",
-		panelComponents: {},
+		workbenchPanels: {},
 	});
 	vi.mocked(runPixel).mockResolvedValueOnce({
 		errors: [],

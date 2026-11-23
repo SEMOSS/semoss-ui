@@ -1,6 +1,7 @@
 import { useId, useState } from "react";
-import { type MCPConfig, NewKnowledgeForm } from "@semoss/chat";
+import { NewKnowledgeForm } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
+import type { MCPConfig } from "@semoss/shared";
 import {
 	Button,
 	Dialog,

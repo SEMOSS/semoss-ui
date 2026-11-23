@@ -1,7 +1,6 @@
 import { UsersRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { useAgentWorkspace } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import { useConfig } from "@semoss/sdk/react";
 import {
@@ -10,6 +9,7 @@ import {
 	MembersTable,
 	toAgentFormValues,
 	toAgentPromptTitles,
+	useAgentWorkspace,
 } from "@semoss/shared";
 import {
 	Alert,

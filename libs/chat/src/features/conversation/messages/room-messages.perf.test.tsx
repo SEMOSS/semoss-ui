@@ -2,7 +2,7 @@ import { act, render } from "@testing-library/react";
 import { Profiler, type ProfilerOnRenderCallback } from "react";
 import { beforeEach, expect, test, vi } from "vitest";
 import { runPixel } from "@semoss/sdk/react";
-import type { ThemeMap } from "@semoss/shared";
+import { testChatOptions } from "../../../test/chat-options";
 import { servePixelTransport } from "../../../test/pixel-transport";
 import type {
 	InputPixelMessage,
@@ -39,8 +39,11 @@ vi.mock("@semoss/i18n", async (original) => ({
 		i18n: { dir: () => "ltr", language: "en" },
 	}),
 }));
-vi.mock("../../chat/config/use-chat-config", () => ({
-	useChatConfig: () => ({ theme: { gracefulErrors: [] } }),
+vi.mock("../../chat/config/chat-config.context", async (original) => ({
+	...(await original<
+		typeof import("../../chat/config/chat-config.context")
+	>()),
+	useChatConfig: () => ({ options: testChatOptions() }),
 }));
 vi.mock("../../connectors/store/connector-tools", async (original) => ({
 	...(await original<
@@ -209,10 +212,10 @@ beforeEach(() => {
 
 test("streaming into a long conversation renders only the streaming message", async () => {
 	const room = new RoomStore({
-		theme: {} as ThemeMap["playground"],
+		chatOptions: testChatOptions(),
 		roomId: "room-1",
 		insightId: "insight-1",
-		panelComponents: {},
+		workbenchPanels: {},
 	});
 	room.setModel({
 		engine_id: "model-1",
@@ -235,7 +238,7 @@ test("streaming into a long conversation renders only the streaming message", as
 				commits += 1;
 			}}
 		>
-			<RoomMessages room={room} />
+			<RoomMessages room={room} suggestions={null} />
 		</Profiler>,
 	);
 	const mountCommits = commits;

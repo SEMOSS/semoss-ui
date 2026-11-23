@@ -14,7 +14,7 @@ import {
 	MCP_EXECUTION_AGENT_ASK,
 	MCP_EXECUTION_AGENT_AUTO,
 	MCP_EXECUTION_ASK,
-} from "../../tools/mcp/mcp-constants";
+} from "../../tools/mcp/mcp-execution";
 import { InputMessageStore } from "../store/input-message.store";
 import type { ResponseMessageData } from "../store/message-map";
 import { ResponseMessageStore } from "../store/response-message.store";

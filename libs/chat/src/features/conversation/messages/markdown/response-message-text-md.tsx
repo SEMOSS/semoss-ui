@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { Markdown } from "@semoss/ui/next";
-import { useChatConfig } from "../../../chat/config/use-chat-config";
+import { useChatConfig } from "../../../chat/config/chat-config.context";
 import type { ResponseMessageStore } from "../../../room/store/response-message.store";
 import type { ChunkStatus } from "../use-active-index";
 import { useMarkdownTypewriter } from "../use-markdown-typewriter";
@@ -44,7 +44,7 @@ export const ResponseMessageTextMd = ({
 	onComplete,
 	isFirstView,
 }: ResponseMessageTextMdProps) => {
-	const { theme } = useChatConfig();
+	const { options } = useChatConfig();
 
 	// ── Typewriter ────────────────────────────────────────────────────────────
 	// On a first view the typewriter animates the whole chunk from 0 (even if
@@ -66,15 +66,15 @@ export const ResponseMessageTextMd = ({
 			createMarkdownComponents(
 				message.room,
 				isPreviewLoading,
-				!!theme.featureFlags?.enableTableExport,
+				options.isTableExportable,
 			),
-		[message.room, isPreviewLoading, theme.featureFlags?.enableTableExport],
+		[message.room, isPreviewLoading, options.isTableExportable],
 	);
 
 	// ── URL transform ─────────────────────────────────────────────────────────
 	const urlTransform = useMemo(
-		() => createMarkdownUrlTransform(theme.allowedUrlPrefixes),
-		[theme.allowedUrlPrefixes],
+		() => createMarkdownUrlTransform(options.allowedUrlPrefixes),
+		[options.allowedUrlPrefixes],
 	);
 
 	// ── Effects ───────────────────────────────────────────────────────────────

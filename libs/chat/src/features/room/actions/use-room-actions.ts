@@ -4,8 +4,8 @@ import { getPlaygroundRoomsPixel } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import { useChatConfig } from "../../chat/config/use-chat-config";
-import { useChatSession } from "../../chat/provider/use-chat-session";
+import { useChatConfig } from "../../chat/config/chat-config.context";
+import { useChatSession } from "../../chat/provider/chat-session.context";
 import type { ChatStore } from "../../chat/store/chat.store";
 import { useChatSelector } from "../../chat/store/use-chat-selector";
 

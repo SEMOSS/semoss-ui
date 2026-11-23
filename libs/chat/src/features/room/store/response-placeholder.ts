@@ -1,11 +1,11 @@
 import type { Engine, ResponsePixelMessage } from "../../../types";
-import {
-	ASK_PLACEHOLDER_ID,
-	STREAMING_PLACEHOLDER_ID,
-} from "../../tools/mcp/mcp-constants";
 import type { InputMessageStore } from "./input-message.store";
 import type { ResponseMessageStore } from "./response-message.store";
 import type { RoomStore } from "./room.store";
+import {
+	ASK_PLACEHOLDER_ID,
+	STREAMING_PLACEHOLDER_ID,
+} from "./room-placeholders";
 
 /**
  * The model's name as a message's `ornaments.modelName` records it, until the

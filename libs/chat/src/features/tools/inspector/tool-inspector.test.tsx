@@ -14,10 +14,9 @@ import { fakeStore } from "../../../test/fake-store";
 import type { RoomStore } from "../../room/store/room.store";
 import type { ToolStore } from "../../room/store/tool.store";
 import { ChatToolCard } from "../views/chat-tool-card";
-import { ToolsDefaultView } from "../views/tools-default-view";
-import { ToolDataView } from "./tool-data-view";
+import { DefaultToolView } from "../views/default-tool-view";
+import { formatToolPayload, ToolDataView } from "./tool-data-view";
 import { ToolInspector } from "./tool-inspector";
-import { formatToolPayload } from "./tool-payload";
 
 const mocks = vi.hoisted(() => ({
 	decideAgent: vi.fn().mockResolvedValue(undefined),
@@ -341,7 +340,7 @@ test("the editable default form survives tab changes and submits through the age
 	const tool = createTool("INITIAL");
 	Object.assign(tool, { pendingAction: { id: "action-1" } });
 	render(
-		<ToolsDefaultView
+		<DefaultToolView
 			tool={tool}
 			room={{} as RoomStore}
 			app="example-app"
@@ -375,7 +374,7 @@ test("completed default tools show the arguments actually executed and no execut
 	});
 	Object.assign(tool, { response: "The tool failed." });
 	render(
-		<ToolsDefaultView
+		<DefaultToolView
 			tool={tool}
 			room={{} as RoomStore}
 			app="example-app"

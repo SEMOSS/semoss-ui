@@ -1,0 +1,218 @@
+import type { MCPConfig } from "@semoss/shared";
+import type { ChatMode } from "../../../types";
+
+/**
+ * What a new chat starts with. The model, the mode, and the agent each follow
+ * the same order, taking the first that is set:
+ *
+ * 1. what this login session last used (kept in memory while the page is
+ *    open),
+ * 2. the user's default (their metadata on the server, set in Settings),
+ * 3. the host's default (`ChatOptions.newChat`),
+ * 4. the first available: the first model, chat mode, and Default Agent.
+ *
+ * @packageDocumentation
+ */
+
+/** The user metadata keys the backend allows for the playground's defaults. */
+export const NEW_CHAT_DEFAULT_KEYS = {
+	/** The engine id of the model a new chat starts with. */
+	model: "playground--default-input-text-model",
+	/** The mode a new chat starts in: `chat` or `agent`. */
+	mode: "playground--default-chat-mode",
+	/** The saved agent a new chat in agent mode starts with. */
+	agent: "playground--default-chat-agent",
+} as const;
+
+/** The modes a chat runs in; the same as {@link ChatMode}. */
+export type NewChatMode = ChatMode;
+
+/** A set of defaults, the user's or the deployment's; null when unset. */
+export interface UserNewChatDefaults {
+	/** The default model's engine id. */
+	modelId: string | null;
+	/** The default mode. */
+	mode: ChatMode | null;
+	/** The default saved agent's id. */
+	agentId: string | null;
+}
+
+/** The chat last started in this login session. */
+export interface SessionNewChat {
+	/** The mode it ran in. */
+	mode: ChatMode;
+	/** The saved agent it ran with; empty for none (Default Agent). */
+	agentId: string;
+}
+
+/**
+ * The chat last started on this page, and the login it was started in. Module
+ * state on purpose: it lasts as long as the page, across every new chat.
+ */
+let sessionNewChat: (SessionNewChat & { login: string }) | null = null;
+
+/**
+ * Whether a value is a chat mode.
+ *
+ * @param value - The value to check.
+ * @returns True for `chat` and `agent`.
+ */
+export const isNewChatMode = (value: unknown): value is ChatMode =>
+	value === "chat" || value === "agent";
+
+/**
+ * Read the user's defaults from their metadata.
+ *
+ * @param meta - The user's metadata, if they are signed in.
+ * @returns Each default, null when it is not set or not valid.
+ */
+export const readUserNewChatDefaults = (
+	meta: Record<string, string[]> | undefined,
+): UserNewChatDefaults => {
+	// each key holds a list; the first value is the setting
+	const first = (key: string): string | null => meta?.[key]?.[0] || null;
+	const mode = first(NEW_CHAT_DEFAULT_KEYS.mode);
+	return {
+		modelId: first(NEW_CHAT_DEFAULT_KEYS.model),
+		mode: isNewChatMode(mode) ? mode : null,
+		agentId: first(NEW_CHAT_DEFAULT_KEYS.agent),
+	};
+};
+
+/** What the host says a new chat starts with (`ChatOptions.newChat`). */
+export interface NewChatDefaults {
+	/** The default model's engine id. */
+	readonly modelId?: string;
+	/** The default model's name, shown when model selection is off. */
+	readonly modelName?: string;
+	/** The default mode; anything but `chat` or `agent` is ignored. */
+	readonly mode?: string;
+	/** The default saved agent's id. */
+	readonly agentId?: string;
+	/** The temperature, used where it can be edited (0–1). Default: 0. */
+	readonly temperature?: number;
+	/** The tools a new chat starts with switched on. */
+	readonly tools?: readonly MCPConfig[];
+}
+
+/**
+ * Read the host's defaults as preferences.
+ *
+ * @param defaults - The host's new-chat defaults.
+ * @returns Each default, null when it names none or it is not valid.
+ */
+export const readDeploymentNewChatDefaults = (
+	defaults: NewChatDefaults,
+): UserNewChatDefaults => ({
+	modelId: defaults.modelId || null,
+	mode: isNewChatMode(defaults.mode) ? defaults.mode : null,
+	agentId: defaults.agentId || null,
+});
+
+/**
+ * Read the chat last started in this login session. One started in another
+ * login counts as none.
+ *
+ * @param lastLogin - The session user's last login, which names the session.
+ * @returns The chat, or null when there is none.
+ */
+export const readSessionNewChat = (
+	lastLogin: string | undefined,
+): SessionNewChat | null => {
+	if (!lastLogin || sessionNewChat?.login !== lastLogin) return null;
+	return { mode: sessionNewChat.mode, agentId: sessionNewChat.agentId };
+};
+
+/**
+ * Remember the chat just started, for the next new chat in this login
+ * session.
+ *
+ * @param lastLogin - The session user's last login, which names the session.
+ * @param chat - The chat started.
+ */
+export const writeSessionNewChat = (
+	lastLogin: string | undefined,
+	chat: SessionNewChat,
+): void => {
+	if (!lastLogin) return;
+	sessionNewChat = {
+		login: lastLogin,
+		mode: chat.mode,
+		agentId: chat.mode === "agent" ? chat.agentId : "",
+	};
+};
+
+/** Forget the chat last started, as a fresh page would. */
+export const forgetSessionNewChat = (): void => {
+	sessionNewChat = null;
+};
+
+/**
+ * The mode a new chat starts in: the first of the session's last chat, the
+ * user's default and the deployment's that the deployment offers, else the
+ * first mode it offers. Always chat where it offers no agent mode, and always
+ * agent where every chat runs in agent mode.
+ *
+ * @param session - The chat last started in this login session, if any.
+ * @param preferences - The user's defaults.
+ * @param deployment - The deployment's defaults.
+ * @param offeredModes - The modes the deployment offers, chat first.
+ * @returns The mode.
+ */
+export const resolveNewChatMode = (
+	session: SessionNewChat | null,
+	preferences: UserNewChatDefaults,
+	deployment: UserNewChatDefaults,
+	offeredModes: readonly ChatMode[],
+): ChatMode => {
+	for (const mode of [session?.mode, preferences.mode, deployment.mode]) {
+		if (mode && offeredModes.includes(mode)) return mode;
+	}
+	return offeredModes[0] ?? "chat";
+};
+
+/**
+ * The saved agent a new chat in agent mode starts with: the session's last
+ * agent chat's (which may be none), then the user's default, then the
+ * deployment's, then none, which runs Default Agent. Whether the user can
+ * still open it is checked when it loads.
+ *
+ * @param session - The chat last started in this login session, if any.
+ * @param preferences - The user's defaults.
+ * @param deployment - The deployment's defaults.
+ * @returns The agent's id, or empty for none.
+ */
+export const resolveNewChatAgentId = (
+	session: SessionNewChat | null,
+	preferences: UserNewChatDefaults,
+	deployment: UserNewChatDefaults,
+): string => {
+	if (session?.mode === "agent") return session.agentId;
+	return preferences.agentId ?? deployment.agentId ?? "";
+};
+
+/**
+ * The model a new chat starts with, among the models the user can see: the
+ * one selected in this login session, then the user's default, then the
+ * deployment's, then the first.
+ *
+ * @param selectedId - The model selected in this login session, if any.
+ * @param preferences - The user's defaults.
+ * @param deployment - The deployment's defaults.
+ * @param available - The models the user can see, in order.
+ * @returns The model, or undefined when the user can see none.
+ */
+export const resolveNewChatModel = <M extends { engine_id: string }>(
+	selectedId: string | null,
+	preferences: UserNewChatDefaults,
+	deployment: UserNewChatDefaults,
+	available: readonly M[],
+): M | undefined => {
+	for (const id of [selectedId, preferences.modelId, deployment.modelId]) {
+		const model = id
+			? available.find((item) => item.engine_id === id)
+			: undefined;
+		if (model) return model;
+	}
+	return available[0];
+};

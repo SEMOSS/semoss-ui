@@ -8,19 +8,20 @@ import {
 } from "@testing-library/react";
 import type { ComponentProps, ReactNode } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { testChatOptions } from "../../test/chat-options";
 import { fakeStore } from "../../test/fake-store";
-import { DEFAULT_CHAT_THEME } from "../chat/config/chat-theme";
+import type { ResolvedChatOptions } from "../chat/config/chat-options";
 import {
 	forgetSessionNewChat,
 	readSessionNewChat,
 	writeSessionNewChat,
-} from "../chat/config/new-chat-preferences";
+} from "../chat/config/new-chat-defaults";
 import type { ContextItemsStore } from "../conversation/attachments/context-items.store";
 import { useContextItems } from "../conversation/attachments/use-context-items";
 import type { RoomInput } from "../conversation/composer/room-input";
 import { RoomStore } from "../room/store/room.store";
 import type { RoomSettingsForm } from "../room-settings/room-settings-form";
-import { DEFAULT_WORKBENCH_PANEL_COMPONENTS } from "../workbench/panels/room-panel-components";
+import { DEFAULT_WORKBENCH_PANELS } from "../workbench/panels/default-workbench-panels";
 import { NewChat } from "./new-chat";
 
 const mocks = vi.hoisted(() => ({
@@ -97,13 +98,8 @@ const alpha = {
 	config_json: {},
 };
 mocks.alpha = alpha;
-const root = {
-	theme: {
-		...DEFAULT_CHAT_THEME,
-		featureFlags: { enableAgentHarness: true, modeFollowsAgent: false },
-		banner: "",
-		landing: "",
-	},
+const root: { options: ResolvedChatOptions } = {
+	options: testChatOptions({ agentMode: "choice" }),
 };
 const chat = fakeStore({
 	...mocks,
@@ -114,8 +110,8 @@ const chat = fakeStore({
 	removeOptimisticRoom: vi.fn(),
 	keys: { roomCounter: 0 },
 	// read when the draft is made, after the panels module below is mocked
-	get panelComponents() {
-		return DEFAULT_WORKBENCH_PANEL_COMPONENTS;
+	get workbenchPanels() {
+		return DEFAULT_WORKBENCH_PANELS;
 	},
 });
 vi.mock("@semoss/i18n", () => ({
@@ -138,30 +134,34 @@ vi.mock("@semoss/sdk/react", async (original) => ({
 	useSession: <T,>(selector: (state: typeof mocks.session) => T) =>
 		selector(mocks.session),
 }));
-vi.mock("../tools/mcp/use-agent-workspace", () => ({
+vi.mock("@semoss/shared", async (original) => ({
+	...(await original<typeof import("@semoss/shared")>()),
 	useAgentWorkspace: mocks.agentWorkspace,
 }));
-vi.mock("../chat/config/use-chat-config", () => ({
+vi.mock("../chat/config/chat-config.context", async (original) => ({
+	...(await original<typeof import("../chat/config/chat-config.context")>()),
 	useChatConfig: () => ({
-		theme: root.theme,
-		options: {},
+		options: root.options,
 		callbacks: {
 			onOpenRoom: (roomId: string) => mocks.navigate(`/room/${roomId}`),
 		},
 	}),
 }));
-vi.mock("../chat/provider/use-chat-session", () => ({
+vi.mock("../chat/provider/chat-session.context", async (original) => ({
+	...(await original<
+		typeof import("../chat/provider/chat-session.context")
+	>()),
 	useChatSession: () => ({ chat }),
 }));
 vi.mock("@semoss/ui/next", async (original) => ({
 	...(await original<typeof import("@semoss/ui/next")>()),
 	useTheme: () => ({ theme: "light" }),
 }));
-vi.mock("../workbench/panels/room-panel-components", async () => {
+vi.mock("../workbench/panels/default-workbench-panels", async () => {
 	const { ROOM_PANEL_TYPES } = await import(
 		"../room/store/room-workbench-layout"
 	);
-	const { ROOM_CONFIGURATION_PANEL } = await import(
+	const { ROOM_SETTINGS_PANEL } = await import(
 		"../room-settings/room-settings-panel"
 	);
 	const { FILE_PANEL_TYPES } = await import("@semoss/panels");
@@ -186,13 +186,17 @@ vi.mock("../workbench/panels/room-panel-components", async () => {
 		);
 	};
 	return {
-		DEFAULT_WORKBENCH_PANEL_COMPONENTS: {
+		DEFAULT_WORKBENCH_PANELS: {
 			[ROOM_PANEL_TYPES.GMAIL]: {
 				name: "Gmail",
 				mount: "keepAlive",
 				content: Source,
 			},
-			[ROOM_PANEL_TYPES.CONFIGURATION]: ROOM_CONFIGURATION_PANEL,
+			[ROOM_PANEL_TYPES.SETTINGS]: ROOM_SETTINGS_PANEL,
+			[ROOM_PANEL_TYPES.ACTIVITY_LOG]: {
+				name: "Activity",
+				content: () => <p>Activity log</p>,
+			},
 			[FILE_PANEL_TYPES.FILE_EXPLORER]: {
 				name: "Files",
 				mount: "keepAlive",
@@ -217,8 +221,8 @@ vi.mock("../conversation/attachments/file-drop.context", () => ({
 vi.mock("../conversation/drop-highlight", () => ({
 	DropHighlight: ({ children }: { children: ReactNode }) => children,
 }));
-vi.mock("../room/layout/room-layout", () => ({
-	RoomLayout: ({
+vi.mock("../room/layout/split-layout", () => ({
+	SplitLayout: ({
 		children,
 		workbench,
 		isWorkbenchOpen,
@@ -337,7 +341,7 @@ vi.mock("../conversation/composer/room-input", async () => {
 					<button
 						type="button"
 						onClick={() =>
-							draft?.workbenchPanels.newRoomPanels.onOpenPanel({
+							draft?.draftWorkbench.draftPanels.onOpenPanel({
 								kind: "connector",
 								service: "gmail",
 							})
@@ -434,8 +438,7 @@ beforeEach(() => {
 	mocks.searchParams = new URLSearchParams();
 	mocks.session.user.meta = {};
 	forgetSessionNewChat();
-	root.theme.featureFlags.enableAgentHarness = true;
-	root.theme.featureFlags.modeFollowsAgent = false;
+	root.options = testChatOptions({ agentMode: "choice" });
 	mocks.createRoom.mockResolvedValue({
 		room: { roomId: "sent" },
 		firstMessage: Promise.resolve(null),
@@ -455,7 +458,7 @@ afterEach(() => {
  */
 function selectWorkspaceItem(name: string) {
 	const toggle = screen.queryByRole("button", {
-		name: "studio.openWorkspace",
+		name: "workbench.openWorkspace",
 	});
 	if (toggle) fireEvent.click(toggle);
 	fireEvent.click(screen.getByRole("button", { name }));
@@ -473,10 +476,10 @@ async function renderWorkspace() {
 /** Prepare a file-capable room without backend calls in this integration test. */
 function createPreparedRoom(): RoomStore {
 	return new RoomStore({
-		theme: root.theme,
+		chatOptions: root.options,
 		roomId: "prepared",
 		insightId: "insight",
-		panelComponents: DEFAULT_WORKBENCH_PANEL_COMPONENTS,
+		workbenchPanels: DEFAULT_WORKBENCH_PANELS,
 	});
 }
 
@@ -682,8 +685,8 @@ test.each(["chat", "agent"] as const)(
 	},
 );
 
-test("without the harness flag saved agents retain chat behavior", async () => {
-	root.theme.featureFlags.enableAgentHarness = false;
+test("without agent mode saved agents retain chat behavior", async () => {
+	root.options = testChatOptions({ agentMode: "chat-only" });
 	await renderWorkspace();
 	fireEvent.click(screen.getByRole("button", { name: "Save Alpha" }));
 	await waitFor(() =>
@@ -698,7 +701,7 @@ test("without the harness flag saved agents retain chat behavior", async () => {
 });
 
 test("when the agent decides the mode, a chat with an agent runs in agent mode", async () => {
-	root.theme.featureFlags.modeFollowsAgent = true;
+	root.options = testChatOptions({ agentMode: "follows-agent" });
 	await renderWorkspace();
 	expect(screen.getByLabelText("Mode")).toHaveTextContent("chat");
 	fireEvent.click(screen.getByRole("button", { name: "Save Alpha" }));
@@ -730,7 +733,7 @@ test("when the agent decides the mode, a chat with an agent runs in agent mode",
 });
 
 test("when the agent decides the mode, Default Agent runs in agent mode and No Agent removes it", async () => {
-	root.theme.featureFlags.modeFollowsAgent = true;
+	root.options = testChatOptions({ agentMode: "follows-agent" });
 	await renderWorkspace();
 	expect(screen.getByLabelText("Mode")).toHaveTextContent("chat");
 	fireEvent.click(screen.getByRole("button", { name: "Pick Default Agent" }));
@@ -765,7 +768,7 @@ test("when the agent decides the mode, Default Agent runs in agent mode and No A
 });
 
 test("when the agent decides the mode, No Agent after a saved agent runs in chat mode", async () => {
-	root.theme.featureFlags.modeFollowsAgent = true;
+	root.options = testChatOptions({ agentMode: "follows-agent" });
 	await renderWorkspace();
 	fireEvent.click(screen.getByRole("button", { name: "Save Alpha" }));
 	await waitFor(() =>
@@ -821,10 +824,10 @@ test("Settings prepares the room, and the toggle closes and reopens it on the sa
 	expect(settings).toHaveAttribute("aria-selected", "true");
 	expect(room.workbenchPane.isOpen).toBe(true);
 	fireEvent.click(
-		screen.getByRole("button", { name: "studio.closeWorkspace" }),
+		screen.getByRole("button", { name: "workbench.closeWorkspace" }),
 	);
 	fireEvent.click(
-		screen.getByRole("button", { name: "studio.openWorkspace" }),
+		screen.getByRole("button", { name: "workbench.openWorkspace" }),
 	);
 	expect(
 		screen.getByRole("tab", { name: "room:workspacePlaces.settings" }),
@@ -839,18 +842,18 @@ test("opening the Workspace on a new chat prepares its room once", async () => {
 	mocks.createEmptyRoom.mockResolvedValue(room);
 	render(<NewChatFromLink />);
 	fireEvent.click(
-		screen.getByRole("button", { name: "studio.openWorkspace" }),
+		screen.getByRole("button", { name: "workbench.openWorkspace" }),
 	);
 	expect(
-		screen.getByRole("button", { name: "studio.closeWorkspace" }),
+		screen.getByRole("button", { name: "workbench.closeWorkspace" }),
 	).toBeInTheDocument();
 	await screen.findByRole("tab", { name: "room:workspacePlaces.files" });
 	expect(room.workbenchPane.isOpen).toBe(true);
 	fireEvent.click(
-		screen.getByRole("button", { name: "studio.closeWorkspace" }),
+		screen.getByRole("button", { name: "workbench.closeWorkspace" }),
 	);
 	fireEvent.click(
-		screen.getByRole("button", { name: "studio.openWorkspace" }),
+		screen.getByRole("button", { name: "workbench.openWorkspace" }),
 	);
 	expect(room.workbenchPane.isOpen).toBe(true);
 	expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(1);
@@ -867,14 +870,14 @@ test("closing the Workspace while the room prepares leaves it closed", async () 
 	);
 	render(<NewChatFromLink />);
 	fireEvent.click(
-		screen.getByRole("button", { name: "studio.openWorkspace" }),
+		screen.getByRole("button", { name: "workbench.openWorkspace" }),
 	);
 	fireEvent.click(
-		screen.getByRole("button", { name: "studio.closeWorkspace" }),
+		screen.getByRole("button", { name: "workbench.closeWorkspace" }),
 	);
 	resolvePreparation(room);
 	await waitFor(() => expect(mocks.createEmptyRoom).toHaveBeenCalledTimes(1));
-	await screen.findByRole("button", { name: "studio.openWorkspace" });
+	await screen.findByRole("button", { name: "workbench.openWorkspace" });
 	expect(room.workbenchPane.isOpen).toBe(false);
 });
 
@@ -885,7 +888,7 @@ test("Retry after a failed preparation reopens the Workspace in the prepared roo
 		.mockResolvedValueOnce(room);
 	render(<NewChatFromLink />);
 	fireEvent.click(
-		screen.getByRole("button", { name: "studio.openWorkspace" }),
+		screen.getByRole("button", { name: "workbench.openWorkspace" }),
 	);
 	await screen.findByRole("alert");
 	// the failed preparation renders its Retry after the rejection settles
@@ -903,7 +906,7 @@ test("a new chat's header has its toggle but no title, and its rail lists panels
 	expect(header).not.toHaveTextContent("header.newChat");
 	expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
 	fireEvent.click(
-		screen.getByRole("button", { name: "studio.openWorkspace" }),
+		screen.getByRole("button", { name: "workbench.openWorkspace" }),
 	);
 	const rail = document.querySelector<HTMLElement>("[data-rail]");
 	if (!rail) throw new Error("the panel rail did not render");
@@ -931,7 +934,7 @@ test("reopening keeps Files, and tab changes preserve both the form and editor",
 	fireEvent.change(instructions, { target: { value: "Keep settings" } });
 	fireEvent.keyDown(files, { key: "Enter" });
 	fireEvent.click(
-		screen.getByRole("button", { name: "studio.closeWorkspace" }),
+		screen.getByRole("button", { name: "workbench.closeWorkspace" }),
 	);
 	// this test's Files blueprint has no matcher, so reopen through Settings
 	selectWorkspaceItem("workspacePlaces.settings");
@@ -1134,12 +1137,11 @@ test("an agent link wins over the user's default agent", async () => {
 	expect(screen.getByLabelText("Mode")).toHaveTextContent("agent");
 });
 
-test("with no session chat or user default, the theme's mode and agent apply", async () => {
-	const settings = root.theme.defaultRoomSettings;
-	root.theme.defaultRoomSettings = {
-		...settings,
-		mode: "agent",
-		agentId: "alpha",
+test("with no session chat or user default, the host's mode and agent apply", async () => {
+	const options = root.options;
+	root.options = {
+		...options,
+		newChat: { ...options.newChat, mode: "agent", agentId: "alpha" },
 	};
 	try {
 		render(<NewChatFromLink />);
@@ -1151,21 +1153,24 @@ test("with no session chat or user default, the theme's mode and agent apply", a
 		);
 		expect(screen.getByLabelText("Mode")).toHaveTextContent("agent");
 	} finally {
-		root.theme.defaultRoomSettings = settings;
+		root.options = options;
 	}
 });
 
-test("a link's knowledge joins the theme's default tools", async () => {
+test("a link's knowledge joins the host's default tools", async () => {
 	const pixel = mocks.pixel;
-	const defaultTools = root.theme.defaultTools;
+	const options = root.options;
 	const engine = [{ engine_id: "kb", engine_name: "Handbook" }];
 	mocks.pixel = (request) =>
 		request.startsWith("MyEngines")
 			? { status: "SUCCESS", refresh: vi.fn(), data: engine }
 			: pixel(request);
-	root.theme.defaultTools = [
-		{ id: "theme-tool", name: "Theme tool", type: "FUNCTION" },
-	];
+	root.options = {
+		...options,
+		newChat: {
+			tools: [{ id: "theme-tool", name: "Theme tool", type: "FUNCTION" }],
+		},
+	};
 	mocks.searchParams = new URLSearchParams("knowledgeId=kb");
 	try {
 		render(<NewChatFromLink />);
@@ -1176,21 +1181,21 @@ test("a link's knowledge joins the theme's default tools", async () => {
 		);
 	} finally {
 		mocks.pixel = pixel;
-		root.theme.defaultTools = defaultTools;
+		root.options = options;
 	}
 });
 
-test("a theme that arrives after the page opens keeps the agent the chat starts with", async () => {
+test("options that arrive after the page opens keep the agent the chat starts with", async () => {
 	preferAgent("alpha");
-	const theme = root.theme;
+	const options = root.options;
 	const { rerender } = render(<NewChatFromLink />);
 	await waitFor(() =>
 		expect(screen.getByLabelText("Selected agent")).toHaveTextContent(
 			"Alpha",
 		),
 	);
-	// a server theme rebuilds the draft from its defaults
-	root.theme = { ...theme };
+	// new options, as from a server theme, rebuild the draft from its defaults
+	root.options = { ...options };
 	try {
 		rerender(<NewChatFromLink />);
 		await waitFor(() =>
@@ -1217,6 +1222,6 @@ test("a theme that arrives after the page opens keeps the agent the chat starts 
 			),
 		);
 	} finally {
-		root.theme = theme;
+		root.options = options;
 	}
 });

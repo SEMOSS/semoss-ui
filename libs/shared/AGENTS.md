@@ -18,6 +18,22 @@ It is the home of large shared building blocks such as the file explorer, the Mo
 editor wrappers, the shared login page, engine/MCP/prompt/skill UI,
 forms, and the workbench primitives.
 
+### The playground theme (`theme/playground-theme.ts`, `hooks/use-playground-server-theme.ts`)
+
+`ThemeMap["playground"]` is the deployment's theme for the chat apps (`THEME_MAP` on the server).
+`DEFAULT_PLAYGROUND_THEME` fills every gap, `mergePlaygroundTheme` lays a theme over a base (it
+also reads the flags old stored themes kept at the top level), and `usePlaygroundServerTheme(base)`
+reads the server's over a base, the same object while the server's theme is unchanged. The web
+app and the desktop app read it; `@semoss/chat` never does: each app turns the theme into the
+chat's options and pieces.
+
+### Agents (`hooks/use-agent-workspace.ts`, `types.ts`)
+
+`useAgentWorkspace(workspaceId)` reads an agent's configuration (`GetWorkspace`) in the
+session's insight: `{ workspace, status, error, refresh }`, dropping a read for an agent no
+longer asked for. `Workspace` (an agent, in the backend's field names) and `App` (a project as
+the backend lists it) are in `types.ts`. `@semoss/chat` and the web app's agent pages share them.
+
 ### Sign in (`components/login-page.tsx`, `components/form/login-form.tsx`)
 
 `LoginForm` reads the sign in providers from the SDK's config

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { beforeEach, expect, test, vi } from "vitest";
 import type { WorkspaceDetails } from "@semoss/sdk";
 import type { MCPConfig } from "@semoss/shared";
+import { testChatOptions } from "../../../test/chat-options";
 import type { AgentChoice } from "./agent-choice";
 import { MCPOverlay } from "./mcp-overlay";
 
@@ -18,21 +19,13 @@ const read = vi.hoisted(() => ({
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
-vi.mock("./use-agent-workspace", () => ({
-	useAgentWorkspace: (workspaceId: string | null | undefined) => {
-		read.requested.push(workspaceId);
-		return workspaceId
-			? read
-			: {
-					status: "IDLE",
-					workspace: null,
-					error: null,
-					refresh: read.refresh,
-				};
-	},
-}));
-vi.mock("../../chat/config/use-chat-config", () => ({
-	useChatConfig: () => ({ theme: { featureFlags: {} }, options: {} }),
+vi.mock("../../chat/config/chat-config.context", async (original) => ({
+	...(await original<
+		typeof import("../../chat/config/chat-config.context")
+	>()),
+	useChatConfig: () => ({
+		options: testChatOptions(),
+	}),
 }));
 vi.mock("@semoss/shared", () => ({
 	MCPSelector: ({ values }: { values: MCPConfig[] }) => (
@@ -47,8 +40,18 @@ vi.mock("@semoss/shared", () => ({
 		knowledge: values.filter((item) => item.type === "VECTOR"),
 		toolbox: values.filter((item) => item.type !== "VECTOR"),
 	}),
-	createMcpPlatformUrl: () => () => "",
 	createPromptPlatformUrl: () => () => "",
+	useAgentWorkspace: (workspaceId: string | null | undefined) => {
+		read.requested.push(workspaceId);
+		return workspaceId
+			? read
+			: {
+					status: "IDLE",
+					workspace: null,
+					error: null,
+					refresh: read.refresh,
+				};
+	},
 }));
 vi.mock("../../knowledge/new-knowledge-form", () => ({
 	NewKnowledgeForm: () => null,

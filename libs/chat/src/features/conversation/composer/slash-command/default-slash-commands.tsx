@@ -1,7 +1,7 @@
 import { ComposerCommands } from "./composer-commands";
 import { PromptCommands } from "./prompt-commands";
 import { RoomCommands } from "./room-commands";
-import { WorkspaceCommands } from "./workspace-commands";
+import { WorkbenchCommands } from "./workbench-commands";
 
 /**
  * The composer's "/" menu as the chat has it, and the place to start a
@@ -12,7 +12,7 @@ import { WorkspaceCommands } from "./workspace-commands";
 export const DefaultSlashCommands = () => (
 	<>
 		<ComposerCommands />
-		<WorkspaceCommands />
+		<WorkbenchCommands />
 		<RoomCommands />
 		<PromptCommands />
 	</>

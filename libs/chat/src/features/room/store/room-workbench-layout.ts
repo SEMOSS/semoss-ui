@@ -19,9 +19,9 @@ export const ROOM_PANEL_TYPES = {
 	/** A subagent's run. */
 	SUBAGENT: "room-subagent",
 	/** The room's Settings. */
-	CONFIGURATION: "room-configuration",
+	SETTINGS: "room-configuration",
 	/** The room's activity log. */
-	AUDIT_LOG: "room-audit-log",
+	ACTIVITY_LOG: "room-audit-log",
 	/** The user's OneDrive. */
 	ONEDRIVE: "room-onedrive",
 	/** The user's Outlook mail. */
@@ -82,7 +82,7 @@ export const createRoomWorkbenchLayout = ({
 	const panels: WorkbenchLayout["panels"] = {
 		[ROOM_DEFAULT_PANEL_IDS.SETTINGS]: {
 			id: ROOM_DEFAULT_PANEL_IDS.SETTINGS,
-			type: ROOM_PANEL_TYPES.CONFIGURATION,
+			type: ROOM_PANEL_TYPES.SETTINGS,
 			name: settingsName,
 			config: {},
 		},

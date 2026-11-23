@@ -1,46 +1,35 @@
 import { describe, expect, test } from "vitest";
 import {
 	canChooseAgentMode,
-	isAgentModeOnly,
 	newChatModes,
 	offersAgentMode,
 	offersDefaultAgent,
 } from "./agent-mode-choice";
 
 describe("agent mode choice", () => {
-	test("offers chat alone without an agent mode flag", () => {
-		const flags = {};
-		expect(newChatModes(flags)).toEqual(["chat"]);
-		expect(offersAgentMode(flags)).toBe(false);
-		expect(canChooseAgentMode(flags)).toBe(false);
-		expect(offersDefaultAgent(flags)).toBe(false);
+	test("offers chat alone where agent mode is not offered", () => {
+		expect(newChatModes("chat-only")).toEqual(["chat"]);
+		expect(offersAgentMode("chat-only")).toBe(false);
+		expect(canChooseAgentMode("chat-only")).toBe(false);
+		expect(offersDefaultAgent("chat-only")).toBe(false);
 	});
 
-	test("lets users choose the mode with the agent harness", () => {
-		const flags = { enableAgentHarness: true };
-		expect(newChatModes(flags)).toEqual(["chat", "agent"]);
-		expect(canChooseAgentMode(flags)).toBe(true);
-		expect(offersDefaultAgent(flags)).toBe(true);
+	test("lets users choose the mode with the Chat and Agent choice", () => {
+		expect(newChatModes("choice")).toEqual(["chat", "agent"]);
+		expect(canChooseAgentMode("choice")).toBe(true);
+		expect(offersDefaultAgent("choice")).toBe(true);
 	});
 
 	test("lets the agent picker decide the mode, with No Agent for chat", () => {
-		const flags = { enableAgentHarness: true, modeFollowsAgent: true };
-		expect(newChatModes(flags)).toEqual(["chat", "agent"]);
-		expect(canChooseAgentMode(flags)).toBe(false);
-		expect(offersDefaultAgent(flags)).toBe(false);
+		expect(newChatModes("follows-agent")).toEqual(["chat", "agent"]);
+		expect(canChooseAgentMode("follows-agent")).toBe(false);
+		expect(offersDefaultAgent("follows-agent")).toBe(false);
 	});
 
 	test("offers agent mode alone, with Default Agent, where every chat runs in it", () => {
-		for (const flags of [
-			{ agentModeOnly: true },
-			{ agentModeOnly: true, enableAgentHarness: true },
-			{ agentModeOnly: true, modeFollowsAgent: true },
-		]) {
-			expect(isAgentModeOnly(flags)).toBe(true);
-			expect(newChatModes(flags)).toEqual(["agent"]);
-			expect(offersAgentMode(flags)).toBe(true);
-			expect(canChooseAgentMode(flags)).toBe(false);
-			expect(offersDefaultAgent(flags)).toBe(true);
-		}
+		expect(newChatModes("agent-only")).toEqual(["agent"]);
+		expect(offersAgentMode("agent-only")).toBe(true);
+		expect(canChooseAgentMode("agent-only")).toBe(false);
+		expect(offersDefaultAgent("agent-only")).toBe(true);
 	});
 });

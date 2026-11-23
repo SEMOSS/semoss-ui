@@ -2,13 +2,13 @@ import { getI18n } from "@semoss/i18n";
 import { exportMarkdownDocument, submitLlmFeedback } from "@semoss/sdk";
 import { download } from "@semoss/sdk/react";
 import type { ResponsePixelMessage, ToolOutcome } from "../../../types";
-import { REWRITE_PLACEHOLDER_ID } from "../../tools/mcp/mcp-constants";
 import { ToolSaveController } from "../turns/tool-save-controller";
 import { runTurn } from "../turns/turn-runner";
 import { AbstractMessageStore } from "./abstract-message.store";
 import { InputMessageStore } from "./input-message.store";
 import type { ResponseMessageData } from "./message-map";
 import { getModelOrnamentName } from "./response-placeholder";
+import { REWRITE_PLACEHOLDER_ID } from "./room-placeholders";
 import type { ToolStore } from "./tool.store";
 import { isToolSettled } from "./tool-status";
 
@@ -191,7 +191,7 @@ export class ResponseMessageStore extends AbstractMessageStore<ResponseMessageDa
 
 		if (!text) throw new Error(getI18n().t("chat:download.noContent"));
 
-		const appName = this.room.theme.name || "Chat";
+		const appName = this.room.chatOptions.appName || "Chat";
 		const document = await this.room.runRoomRequest(
 			(insightId) =>
 				exportMarkdownDocument(

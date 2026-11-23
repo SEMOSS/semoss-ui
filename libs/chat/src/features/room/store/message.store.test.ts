@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { expect, test, vi } from "vitest";
-import type { ThemeMap } from "@semoss/shared";
+import { testChatOptions } from "../../../test/chat-options";
 import type { InputPixelMessage, ResponsePixelMessage } from "../../../types";
 import { RoomStore } from "./room.store";
 import { useMessage } from "./use-message";
@@ -14,9 +14,9 @@ vi.mock("@semoss/sdk/react", () => ({
 }));
 
 const room = new RoomStore({
-	theme: {} as ThemeMap["playground"],
+	chatOptions: testChatOptions(),
 	roomId: "room-1",
-	panelComponents: {},
+	workbenchPanels: {},
 });
 
 const pixel = {

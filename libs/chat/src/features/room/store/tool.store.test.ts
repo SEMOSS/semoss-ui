@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vitest";
-import type { ThemeMap } from "@semoss/shared";
+import { testChatOptions } from "../../../test/chat-options";
 import type {
 	PixelMessageToolCallPart,
 	ResponsePixelMessage,
@@ -20,9 +20,9 @@ let room: RoomStore;
 
 beforeEach(() => {
 	room = new RoomStore({
-		theme: {} as ThemeMap["playground"],
+		chatOptions: testChatOptions(),
 		roomId: "room-1",
-		panelComponents: {},
+		workbenchPanels: {},
 	});
 	vi.spyOn(room, "openWorkbenchPanel").mockReturnValue("panel-1");
 	vi.spyOn(room, "closeWorkbenchPanel").mockImplementation(() => undefined);

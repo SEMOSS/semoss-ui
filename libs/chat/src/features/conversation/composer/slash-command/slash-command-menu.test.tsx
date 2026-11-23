@@ -1,8 +1,8 @@
 import { render, screen, within } from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
-import { SlashCommandProvider } from "./slash-command.context";
 import type { SlashCommandEntry } from "./slash-command-entry";
 import { filterSlashCommands, SlashCommandMenu } from "./slash-command-menu";
+import { SlashCommandsContext } from "./slash-command-registry.context";
 
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
@@ -28,11 +28,11 @@ const COMMANDS: SlashCommandEntry[] = [
 		keywords: ["file", "document"],
 	}),
 	command("compact", "chat", "Compact", { isLockedWhileBusy: true }),
-	command("files", "workspace", "Files"),
-	command("settings", "workspace", "Settings", {
+	command("files", "workbench", "Files"),
+	command("settings", "workbench", "Settings", {
 		keywords: ["room-options"],
 	}),
-	command("outlook-mail", "workspace", "Outlook"),
+	command("outlook-mail", "workbench", "Outlook"),
 	...["a", "b", "c", "d", "e", "f"].map((id) =>
 		command(`prompt-${id}`, "prompts", `Prompt ${id}`),
 	),
@@ -78,8 +78,8 @@ test("within a group, a command that starts with the query comes before one that
 	expect(ids(filterSlashCommands(COMMANDS, "set"))).toEqual(["settings"]);
 	const settingsFirst = filterSlashCommands(
 		[
-			command("contains", "workspace", "Your settings"),
-			command("prefix", "workspace", "Settings"),
+			command("contains", "workbench", "Your settings"),
+			command("prefix", "workbench", "Settings"),
 		],
 		"set",
 	);
@@ -91,8 +91,10 @@ test("the menu lists matches under their group headings, and locks busy commands
 	Element.prototype.scrollIntoView ??= () => {};
 	vi.spyOn(Element.prototype, "scrollIntoView").mockImplementation(() => {});
 	render(
-		<SlashCommandProvider
-			commands={COMMANDS.filter((command) => command.id !== "files")}
+		<SlashCommandsContext.Provider
+			value={{
+				commands: COMMANDS.filter((command) => command.id !== "files"),
+			}}
 		>
 			<SlashCommandMenu
 				query=""
@@ -102,10 +104,10 @@ test("the menu lists matches under their group headings, and locks busy commands
 				onCommandSelect={vi.fn()}
 				isBusy
 			/>
-		</SlashCommandProvider>,
+		</SlashCommandsContext.Provider>,
 	);
 	const workspace = screen.getByRole("group", {
-		name: "slash.groups.workspace",
+		name: "slash.groups.workbench",
 	});
 	expect(within(workspace).getByText("Settings")).toBeVisible();
 	expect(within(workspace).queryByText("Files")).toBeNull();

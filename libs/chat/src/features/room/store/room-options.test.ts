@@ -5,10 +5,10 @@ import {
 	runPixel,
 	runPixelAsync,
 } from "@semoss/sdk/react";
-import type { ThemeMap } from "@semoss/shared";
+import { testChatOptions } from "../../../test/chat-options";
 import { servePixelTransport } from "../../../test/pixel-transport";
 import type { Engine, MCPConfig, PixelMessage } from "../../../types";
-import { DEFAULT_WORKBENCH_PANEL_COMPONENTS } from "../../workbench/panels/room-panel-components";
+import { DEFAULT_WORKBENCH_PANELS } from "../../workbench/panels/default-workbench-panels";
 import type { ResponseMessageStore } from "./response-message.store";
 import { RoomStore } from "./room.store";
 
@@ -100,10 +100,10 @@ const message = (
  */
 const createRoom = async (messages: PixelMessage[] = []) => {
 	const room = new RoomStore({
-		theme: {} as ThemeMap["playground"],
+		chatOptions: testChatOptions(),
 		roomId: "room-1",
 		insightId: "insight-1",
-		panelComponents: DEFAULT_WORKBENCH_PANEL_COMPONENTS,
+		workbenchPanels: DEFAULT_WORKBENCH_PANELS,
 	});
 	vi.spyOn(room.connectors, "restore").mockResolvedValue(undefined);
 	room.setModel(MODEL);
@@ -220,9 +220,9 @@ test("a room whose agent changes reads the new agent's tools, and drops a late r
 
 test("a draft reads no agent; it is handed the agent's tools", () => {
 	const draft = new RoomStore({
-		theme: {} as ThemeMap["playground"],
+		chatOptions: testChatOptions(),
 		roomId: "temp",
-		panelComponents: DEFAULT_WORKBENCH_PANEL_COMPONENTS,
+		workbenchPanels: DEFAULT_WORKBENCH_PANELS,
 	});
 	draft.setAgentTools("agent-1", [mcp("agent-tool")]);
 	draft.setOptions({ workspace: { workspace_id: "agent-1" } });
@@ -468,9 +468,9 @@ test("compacting fails when every method fails, a response has tools, or the roo
 	expect(runPixel).not.toHaveBeenCalled();
 
 	const unloaded = new RoomStore({
-		theme: {} as ThemeMap["playground"],
+		chatOptions: testChatOptions(),
 		roomId: "room-2",
-		panelComponents: DEFAULT_WORKBENCH_PANEL_COMPONENTS,
+		workbenchPanels: DEFAULT_WORKBENCH_PANELS,
 	});
 	await expect(unloaded.compactMessages()).rejects.toThrow(
 		"No response message to compact",

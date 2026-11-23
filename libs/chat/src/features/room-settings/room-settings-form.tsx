@@ -21,7 +21,7 @@ import {
 	z,
 	zodResolver,
 } from "@semoss/ui/next";
-import { useChatConfig } from "../chat/config/use-chat-config";
+import { useChatConfig } from "../chat/config/chat-config.context";
 import {
 	type ComposerSession,
 	saveAgentOverlay,
@@ -65,7 +65,7 @@ export const RoomSettingsForm = ({
 		session;
 	const isAgentEditable = session.agent.kind !== "fixed";
 	const { t } = useTranslation(["room", "common", "chatTools"]);
-	const { theme } = useChatConfig();
+	const { options: chatOptions } = useChatConfig();
 	const id = useId();
 	const form = useForm<InstructionsValues>({
 		values: { instructions: options.instructions },
@@ -157,7 +157,7 @@ export const RoomSettingsForm = ({
 						</Button>
 					</Field>
 				)}
-				{theme.featureFlags?.enableModelSelect && (
+				{chatOptions.isModelSelectable && (
 					<Field>
 						<FieldLabel htmlFor={`${id}-model`}>
 							{t("room:form.modelLabel")}
@@ -224,7 +224,7 @@ export const RoomSettingsForm = ({
 					}
 					onRemove={handleRemove}
 				/>
-				{theme.featureFlags?.enableTemperature && (
+				{chatOptions.isTemperatureEditable && (
 					<Field>
 						<FieldLabel htmlFor={`${id}-temperature`}>
 							{t("room:form.temperatureLabel")} (

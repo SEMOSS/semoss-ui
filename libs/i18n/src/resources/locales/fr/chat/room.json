@@ -141,9 +141,6 @@
 		"noItemsAvailable": "Aucune connaissance ou boîte à outils disponible"
 	},
 	"studio": {
-		"views": "Vues de la conversation",
-		"chat": "Discussion",
-		"workspace": "Espace de travail",
 		"toolsLocked": "Les outils ne peuvent pas être modifiés pendant une réponse.",
 		"toolsHint": "Les sélections s’appliquent à votre prochain message.",
 		"moreActions": "Autres actions",
@@ -156,11 +153,16 @@
 		"refresh": "Actualiser",
 		"exportCsv": "Exporter au format CSV",
 		"exportPdf": "Exporter au format PDF",
-		"closeWorkspace": "Fermer l’espace de travail",
-		"openWorkspace": "Ouvrir l’espace de travail",
-		"preparingWorkspace": "Préparation de l’espace de travail…",
 		"prepareError": "Impossible de préparer l’espace de travail. Votre brouillon est conservé.",
 		"retry": "Réessayer"
+	},
+	"workbench": {
+		"views": "Vues de la conversation",
+		"chat": "Discussion",
+		"workspace": "Espace de travail",
+		"closeWorkspace": "Fermer l’espace de travail",
+		"openWorkspace": "Ouvrir l’espace de travail",
+		"preparingWorkspace": "Préparation de l’espace de travail…"
 	},
 	"workspacePlaces": {
 		"files": "Fichiers",
@@ -198,7 +200,7 @@
 		"openPlace": "Ouvrir {{name}} dans l’espace de travail",
 		"groups": {
 			"chat": "Chat",
-			"workspace": "Espace de travail",
+			"workbench": "Espace de travail",
 			"room": "Salle",
 			"prompts": "Prompts"
 		},

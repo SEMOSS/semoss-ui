@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Markdown } from "@semoss/ui/next";
-import { useChatConfig } from "../../chat/config/use-chat-config";
+import { useChatConfig } from "../../chat/config/chat-config.context";
 import type { RoomStore } from "../../room/store/room.store";
 import {
 	createMarkdownComponents,
@@ -23,21 +23,16 @@ interface RoomGreetingProps {
  * markdown renderer and URL allowlist as a real assistant reply.
  */
 export const RoomGreeting = ({ room, greeting }: RoomGreetingProps) => {
-	const { theme } = useChatConfig();
+	const { options } = useChatConfig();
 
 	const components = useMemo(
-		() =>
-			createMarkdownComponents(
-				room,
-				false,
-				!!theme.featureFlags?.enableTableExport,
-			),
-		[room, theme.featureFlags?.enableTableExport],
+		() => createMarkdownComponents(room, false, options.isTableExportable),
+		[room, options.isTableExportable],
 	);
 
 	const urlTransform = useMemo(
-		() => createMarkdownUrlTransform(theme.allowedUrlPrefixes),
-		[theme.allowedUrlPrefixes],
+		() => createMarkdownUrlTransform(options.allowedUrlPrefixes),
+		[options.allowedUrlPrefixes],
 	);
 
 	return (

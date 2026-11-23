@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 /** The groups the slash menu lists its commands under, in this order. */
 export const SLASH_COMMAND_GROUPS = [
 	"chat",
-	"workspace",
+	"workbench",
 	"room",
 	"prompts",
 ] as const;

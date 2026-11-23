@@ -1,23 +1,23 @@
-import { type ReactNode, useEffect, useMemo } from "react";
+import { type ReactNode, useEffect } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { InsightProvider, useSessionPixel } from "@semoss/sdk/react";
 import { Alert, AlertDescription, Button } from "@semoss/ui/next";
-import { useChatConfig } from "../chat/config/use-chat-config";
-import { useChatSession } from "../chat/provider/use-chat-session";
+import { useChatConfig } from "../chat/config/chat-config.context";
+import { useChatSession } from "../chat/provider/chat-session.context";
 import { FileDropProvider } from "../conversation/attachments/file-drop.context";
 import { NextMessageRoomProvider } from "../conversation/attachments/next-message-room.context";
 import { RoomInput } from "../conversation/composer/room-input";
 import { RoomHeader } from "../room/header/room-header";
-import { RoomLayout } from "../room/layout/room-layout";
-import { RoomStore } from "../room/store/room.store";
+import { SplitLayout } from "../room/layout/split-layout";
 import { useRoomSelector } from "../room/store/use-room-selector";
 import { DraftSettingsContext } from "../room-settings/draft-settings.context";
 import { RoomWorkbench } from "../workbench/room-workbench";
-import { NewChatBanner } from "./new-chat-banner";
 import { NewChatLanding } from "./new-chat-landing";
+import { NewChatWelcome } from "./new-chat-welcome";
 import { useCreateRoomFromDraft } from "./use-create-room-from-draft";
 import { useDraftAgent } from "./use-draft-agent";
-import { useNewRoomPanels } from "./use-new-room-panels";
+import { useDraftPanels } from "./use-draft-panels";
+import { useDraftRoom } from "./use-draft-room";
 
 /** Props for {@link NewChat}. */
 interface NewChatProps {
@@ -27,10 +27,14 @@ interface NewChatProps {
 	workspaceId?: string | null;
 	/** A knowledge base the chat starts with. */
 	knowledgeId?: string | null;
-	/** Show the theme's alternate landing rather than its landing. */
-	showAltLanding?: boolean;
 	/** The host's controls at the start of the header, such as a navigation button. */
 	headerLeading?: ReactNode;
+	/** What runs across the top, such as a `NewChatBanner`. Default: nothing. */
+	banner?: ReactNode;
+	/** What fills the space behind the landing, such as a `NewChatBackdrop`. Default: nothing. */
+	backdrop?: ReactNode;
+	/** The welcome above the composer. Default: `NewChatWelcome`. */
+	welcome?: ReactNode;
 }
 
 /**
@@ -41,35 +45,19 @@ export const NewChat = ({
 	initialPrompt = "",
 	workspaceId = null,
 	knowledgeId = null,
-	showAltLanding = false,
 	headerLeading,
+	banner = null,
+	backdrop = null,
+	welcome = <NewChatWelcome />,
 }: NewChatProps) => {
 	const { t } = useTranslation("room");
-	const { theme } = useChatConfig();
+	const { options } = useChatConfig();
 	// the store's blueprints, so a draft opens the same panels as a room
-	const { panelComponents } = useChatSession().chat;
+	const { workbenchPanels } = useChatSession().chat;
 
 	// The new room holds the new chat's options until its first message,
-	// starting from the theme's defaults
-	const newRoom = useMemo(() => {
-		const room = new RoomStore({
-			theme: theme,
-			roomId: "temp",
-			panelComponents,
-			// no insight for Files to read until the draft prepares its room
-			includeFiles: false,
-		});
-		room.setOptions({
-			instructions: "",
-			mcp: [...(theme.defaultTools || [])],
-			workspace: undefined,
-			predefinedPrompts: [],
-			temperature: theme.featureFlags?.enableTemperature
-				? (theme.defaultRoomSettings?.temperature ?? 0)
-				: undefined,
-		});
-		return room;
-	}, [theme, panelComponents]);
+	// starting from the host's defaults
+	const newRoom = useDraftRoom(options, workbenchPanels);
 
 	const draft = useDraftAgent(newRoom, workspaceId);
 	const { session, agent } = draft;
@@ -91,7 +79,7 @@ export const NewChat = ({
 	});
 	const { isPreparing, hasError: hasPreparationError } = created.preparation;
 	const isBusy = created.isLoading || isPreparing;
-	const { workbenchRoom, newRoomPanels, retryPreparation } = useNewRoomPanels(
+	const { workbenchRoom, draftPanels, retryPreparation } = useDraftPanels(
 		newRoom,
 		created.preparation,
 		created.isLoading,
@@ -153,21 +141,21 @@ export const NewChat = ({
 	}, [knowledgeId, getKnowledge.status, getKnowledge.data, newRoom]);
 
 	const workbench = (
-		<RoomWorkbench room={workbenchRoom} newRoomPanels={newRoomPanels} />
+		<RoomWorkbench room={workbenchRoom} draftPanels={draftPanels} />
 	);
 	const predefinedPrompts = session.options.predefinedPrompts;
 
 	return (
 		<div className="flex h-full w-full flex-col overflow-hidden">
-			<NewChatBanner />
+			{banner}
 			<div className="min-h-0 flex-1">
-				<RoomLayout
+				<SplitLayout
 					isWorkbenchOpen={isWorkbenchOpen}
-					onWorkbenchCollapse={() => workbenchRoom.closeWorkbench()}
+					onWorkbenchClose={() => workbenchRoom.closeWorkbench()}
 					header={
 						<RoomHeader
 							room={workbenchRoom}
-							newRoomPanels={newRoomPanels}
+							draftPanels={draftPanels}
 							leading={headerLeading}
 						/>
 					}
@@ -223,7 +211,8 @@ export const NewChat = ({
 				>
 					<FileDropProvider>
 						<NewChatLanding
-							showAltLanding={showAltLanding}
+							backdrop={backdrop}
+							welcome={welcome}
 							greeting={greeting}
 							room={workbenchRoom}
 						>
@@ -259,9 +248,9 @@ export const NewChat = ({
 										draft.chooseMode("agent"),
 									onExitAgentHarness: () =>
 										draft.chooseMode("chat"),
-									workbenchPanels: {
+									draftWorkbench: {
 										room: workbenchRoom,
-										newRoomPanels: newRoomPanels,
+										draftPanels: draftPanels,
 									},
 									initialValue: initialPrompt,
 									isSubmitDisabled:
@@ -294,7 +283,7 @@ export const NewChat = ({
 							) : null}
 						</NewChatLanding>
 					</FileDropProvider>
-				</RoomLayout>
+				</SplitLayout>
 			</div>
 		</div>
 	);

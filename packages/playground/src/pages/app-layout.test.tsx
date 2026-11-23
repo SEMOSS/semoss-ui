@@ -2,9 +2,21 @@ import { render, screen } from "@testing-library/react";
 import type { CSSProperties } from "react";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { mergeChatTheme } from "@semoss/chat";
-import { withPlaygroundDefaults } from "@/features/theme/playground-theme";
+import {
+	mergePlaygroundTheme,
+	resolvePlaygroundServerTheme,
+} from "@semoss/shared";
+import { ENV_THEME } from "@/features/theme/playground-theme";
 import { AppLayout } from "./app-layout";
+
+/**
+ * The playground's theme for a server theme: the server's over the build's.
+ *
+ * @param serverTheme - The server's `THEME_MAP`, or null.
+ * @returns The theme.
+ */
+const resolveTheme = (serverTheme: Record<string, unknown> | null) =>
+	resolvePlaygroundServerTheme(serverTheme, ENV_THEME);
 
 // Keep the real layout and UI primitives; isolate network-backed children.
 vi.mock("@semoss/i18n", () => ({
@@ -15,18 +27,21 @@ const theme = vi.hoisted(() => ({ current: null as unknown }));
 vi.mock("@/features/theme/use-playground-theme", () => ({
 	usePlaygroundTheme: () => theme.current,
 }));
-vi.mock("@semoss/chat", async (original) => ({
-	...(await original<typeof import("@semoss/chat")>()),
-	useCreateChatStore: () => {
-		const store = {
-			embeddedPageMap: {},
-			getSnapshot: () => store,
-			subscribe: () => () => {},
-		};
-		return store;
-	},
+// the chat store reads the session's models as it starts; there are none
+vi.mock("@semoss/sdk/react", async (original) => {
+	const actual = await original<typeof import("@semoss/sdk/react")>();
+	return {
+		...actual,
+		Session: {
+			...actual.Session,
+			insight: { withInsight: async () => [] },
+			getSnapshot: () => ({ user: null }),
+		},
+	};
+});
+vi.mock("@/features/navigation/app-navigation", () => ({
+	AppNavigation: () => null,
 }));
-vi.mock("@/features/navigation/global-nav", () => ({ GlobalNav: () => null }));
 vi.mock("@/features/app-shell/global-footer", () => ({
 	GlobalFooter: () => null,
 }));
@@ -56,9 +71,9 @@ test.each([
 ] satisfies { name: string; style: CSSProperties }[])(
 	"renders $name theme overrides without freezing the theme",
 	({ style }) => {
-		const defaults = withPlaygroundDefaults(null);
+		const defaults = resolveTheme(null);
 		const overrides: CSSProperties = { ...style };
-		theme.current = mergeChatTheme(defaults, {
+		theme.current = mergePlaygroundTheme(defaults, {
 			overrides: { "main-layout": overrides },
 		});
 		render(

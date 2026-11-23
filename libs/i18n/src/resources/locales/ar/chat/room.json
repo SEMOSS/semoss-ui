@@ -141,9 +141,6 @@
 		"noItemsAvailable": "لا توجد معرفة أو صناديق أدوات متاحة"
 	},
 	"studio": {
-		"views": "طرق عرض المحادثة",
-		"chat": "المحادثة",
-		"workspace": "مساحة العمل",
 		"toolsLocked": "لا يمكن تغيير الأدوات أثناء إنشاء الرد.",
 		"toolsHint": "تُطبّق اختياراتك على رسالتك التالية.",
 		"moreActions": "إجراءات إضافية",
@@ -156,11 +153,16 @@
 		"refresh": "تحديث",
 		"exportCsv": "تصدير بصيغة CSV",
 		"exportPdf": "تصدير بصيغة PDF",
-		"closeWorkspace": "إغلاق مساحة العمل",
-		"openWorkspace": "فتح مساحة العمل",
-		"preparingWorkspace": "جارٍ إعداد مساحة العمل…",
 		"prepareError": "تعذر إعداد مساحة العمل. تم الاحتفاظ بمسودتك.",
 		"retry": "إعادة المحاولة"
+	},
+	"workbench": {
+		"views": "طرق عرض المحادثة",
+		"chat": "المحادثة",
+		"workspace": "مساحة العمل",
+		"closeWorkspace": "إغلاق مساحة العمل",
+		"openWorkspace": "فتح مساحة العمل",
+		"preparingWorkspace": "جارٍ إعداد مساحة العمل…"
 	},
 	"workspacePlaces": {
 		"files": "الملفات",
@@ -198,7 +200,7 @@
 		"openPlace": "فتح {{name}} في مساحة العمل",
 		"groups": {
 			"chat": "الدردشة",
-			"workspace": "مساحة العمل",
+			"workbench": "مساحة العمل",
 			"room": "الغرفة",
 			"prompts": "المطالبات"
 		},

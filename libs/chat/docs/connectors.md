@@ -16,7 +16,7 @@ account is not connected shows its switch in gray with a warning mark. These det
   stamped `SMSS_MCP_GENERATOR: PlaygroundConnectors`. The settings Connectors page edits that one
   file, so a change reaches all the user's chats, new and existing, and the UI says so. Each room
   holds a copy in its own `mcp/pixel_mcp.json` (`syncRoomConnectorTools`):
-  `ConnectorsStore.adopt` makes it before a new room's first message, `restore` brings it up to
+  `ConnectorsStore.adopt` makes it before a draft's prepared room sends its first message, `restore` brings it up to
   date whenever a room loads, and the open chat takes a save straight away:
   `writeUserConnectorTools` tells `subscribeUserConnectorTools` listeners, and
   `useUserConnectorsSync` in the room input hands the tools to

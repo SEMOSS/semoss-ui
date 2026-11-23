@@ -57,3 +57,30 @@ test("store/ and turns/ files import no React and no component file", () => {
 	// `ChatStore` takes its panel blueprints) instead of importing it.
 	expect(violations).toEqual([]);
 });
+
+test("chat source never reads the deployment's theme", () => {
+	// The host owns its theme and hands the chat typed options and pieces
+	// (`ChatConfig`), so no chat source names the theme's shape or helpers.
+	const readers = listSources(FEATURES)
+		.filter((path) =>
+			/\b(ThemeMap|PlaygroundTheme|DEFAULT_PLAYGROUND_THEME|mergePlaygroundTheme|usePlaygroundServerTheme)\b/.test(
+				readFileSync(path, "utf8"),
+			),
+		)
+		.map((path) => relative(FEATURES, path));
+	expect(readers).toEqual([]);
+});
+
+/**
+ * Names the chat's glossary replaced (AGENTS.md, Naming), so the old word for
+ * a concept does not come back beside the new one.
+ */
+const RETIRED_NAMES =
+	/\b(newRoomPanels|isNewChat|panelComponents|useDefaultSettingsPages|RoomSearchDialog|RoomLayout|RailItem|ROOM_CONFIGURATION_PANEL|ROOM_AUDIT_LOG_PANEL|NewChatPreferences|CompactStrategyPicker)\b/;
+
+test("chat source uses one word per concept", () => {
+	const users = listSources(FEATURES)
+		.filter((path) => RETIRED_NAMES.test(readFileSync(path, "utf8")))
+		.map((path) => relative(FEATURES, path));
+	expect(users).toEqual([]);
+});

@@ -1,6 +1,7 @@
 import { act, render } from "@testing-library/react";
 import type { PropsWithChildren } from "react";
 import { beforeEach, expect, test, vi } from "vitest";
+import { testChatOptions } from "../../test/chat-options";
 import { fakeStore } from "../../test/fake-store";
 import type { RoomStore } from "../room/store/room.store";
 import { RoomConversation } from "./room-conversation";
@@ -65,7 +66,10 @@ vi.mock("./composer/room-input", () => ({ RoomInput: () => null }));
 vi.mock("./attachments/file-drop.context", () => ({
 	useFileDrop: () => ({ isDragging: false }),
 }));
-vi.mock("../chat/provider/use-chat-session", () => ({
+vi.mock("../chat/provider/chat-session.context", async (original) => ({
+	...(await original<
+		typeof import("../chat/provider/chat-session.context")
+	>()),
 	useChatSession: () => ({ chat: { setSelectedModel: vi.fn() } }),
 }));
 vi.mock("./composer/use-graceful-errors", () => ({
@@ -140,7 +144,7 @@ test("finishes the stream scroll before a later grouped-tool resize", () => {
 		latestResponseMessage: response,
 		agentGreeting: null,
 		error: null,
-		theme: { featureFlags: {} },
+		chatOptions: testChatOptions(),
 		options: { predefinedPrompts: [], mcp: [] },
 		model: null,
 		mode: "ask",
@@ -160,7 +164,10 @@ test("finishes the stream scroll before a later grouped-tool resize", () => {
 	});
 
 	const { getByTestId } = render(
-		<RoomConversation room={room as unknown as RoomStore} />,
+		<RoomConversation
+			room={room as unknown as RoomStore}
+			suggestions={null}
+		/>,
 	);
 	act(flushAnimationFrames);
 	mocks.scrollTo.mockClear();

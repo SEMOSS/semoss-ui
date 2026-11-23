@@ -2,7 +2,7 @@ import { useComposer } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import { toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
-import { useDesktopTools } from "./use-desktop-tools";
+import { useDesktopTools } from "./desktop-tools.context";
 import { useLocalFolders } from "./use-local-folders";
 
 /** What {@link useAttachFolder} gives the composer's Attach Folder. */
@@ -23,11 +23,11 @@ interface AttachFolder {
  */
 export const useAttachFolder = (): AttachFolder => {
 	const { t } = useTranslation("desktop");
-	const { room, isNewChat, isBusy, prepareRoom } = useComposer();
+	const { room, isDraft, isBusy, prepareRoom } = useComposer();
 	const tools = useDesktopTools();
 	// a new chat's draft has no folders; the room it prepares does
 	const isPicking = useLocalFolders(
-		isNewChat ? null : tools.foldersFor(room.roomId),
+		isDraft ? null : tools.foldersFor(room.roomId),
 		(snapshot) => snapshot.isPicking,
 	);
 

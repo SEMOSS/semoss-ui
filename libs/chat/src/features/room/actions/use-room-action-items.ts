@@ -7,10 +7,12 @@ import {
 	TrashIcon,
 } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
+import { useChatConfig } from "../../chat/config/chat-config.context";
+import {
+	ROOM_ACTION_IDS,
+	type RoomActionId,
+} from "../../chat/config/chat-options";
 import { useRoomActionsContext } from "./room-actions.context";
-
-/** The ids of a room's actions. */
-type RoomActionId = "favorite" | "rename" | "publish" | "download" | "delete";
 
 /** One of a room's actions, as a menu item or a slash command shows it. */
 export interface RoomActionItem {
@@ -34,8 +36,8 @@ export interface RoomActionItem {
 
 /**
  * The room's own actions in the order every menu lists them: Favorite,
- * Publish as Agent, Rename, Download, and Delete. Favorite is left out where
- * the chat history is hidden. The rail's cog menu leaves out Rename, since a
+ * Publish as Agent, Rename, Download, and Delete, less any the host leaves
+ * out (`ChatOptions.roomActions`). The rail's cog menu leaves out Rename, since a
  * double-click on the name renames it; the slash menu lists it. Call it inside
  * a `RoomActionsProvider`.
  *
@@ -44,11 +46,12 @@ export interface RoomActionItem {
 export const useRoomActionItems = (): RoomActionItem[] => {
 	const { t } = useTranslation(["room", "sidebar"]);
 	const context = useRoomActionsContext();
+	const { roomActions } = useChatConfig().options;
 	if (!context) return [];
-	const { room, actions } = context;
-	const items: RoomActionItem[] = [];
-	if (!room.theme.featureFlags?.hideChatHistory) {
-		items.push({
+	const { actions } = context;
+	const shown = new Set(roomActions(ROOM_ACTION_IDS));
+	const items: RoomActionItem[] = [
+		{
 			id: "favorite",
 			icon: StarIcon,
 			label: actions.isFavorite
@@ -60,9 +63,7 @@ export const useRoomActionItems = (): RoomActionItem[] => {
 			keywords: ["favorite", "unfavorite", "pin"],
 			isActive: actions.isFavorite,
 			onSelect: () => void actions.toggleFavorite(),
-		});
-	}
-	items.push(
+		},
 		{
 			id: "publish",
 			icon: PackagePlusIcon,
@@ -96,6 +97,6 @@ export const useRoomActionItems = (): RoomActionItem[] => {
 			isDestructive: true,
 			onSelect: () => void actions.remove(),
 		},
-	);
-	return items;
+	];
+	return items.filter((item) => shown.has(item.id));
 };

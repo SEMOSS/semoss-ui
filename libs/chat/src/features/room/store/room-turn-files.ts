@@ -45,11 +45,11 @@ export const uploadTurnFiles = async (
 };
 
 /**
- * Whether a file goes to the model with the message. A theme may limit this
+ * Whether a file goes to the model with the message. The host may limit this
  * to some extensions, compared without case, spaces, or a leading dot.
  *
  * @param fileName - The file's name.
- * @param allowedFileTypes - The theme's extensions; none allows every file.
+ * @param allowedFileTypes - The host's extensions; none allows every file.
  * @returns True when the file is sent to the model.
  */
 export const isAttachedToModel = (

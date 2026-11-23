@@ -1,10 +1,6 @@
 import { expect, test, vi } from "vitest";
-import type { ThemeMap } from "@semoss/shared";
+import { testChatOptions } from "../../../test/chat-options";
 import type { Engine, InputPixelMessage } from "../../../types";
-import {
-	ASK_PLACEHOLDER_ID,
-	STREAMING_PLACEHOLDER_ID,
-} from "../../tools/mcp/mcp-constants";
 import {
 	createInputPlaceholder,
 	createResponsePlaceholder,
@@ -12,6 +8,10 @@ import {
 	readInputPayload,
 } from "./response-placeholder";
 import { RoomStore } from "./room.store";
+import {
+	ASK_PLACEHOLDER_ID,
+	STREAMING_PLACEHOLDER_ID,
+} from "./room-placeholders";
 
 vi.mock("@semoss/sdk/react", () => ({
 	console: vi.fn(),
@@ -24,9 +24,9 @@ vi.mock("@semoss/sdk/react", () => ({
 /** A room running the given model. */
 const roomWith = (model: Engine) => {
 	const room = new RoomStore({
-		theme: {} as ThemeMap["playground"],
+		chatOptions: testChatOptions(),
 		roomId: "room-1",
-		panelComponents: {},
+		workbenchPanels: {},
 	});
 	room.setModel(model);
 	return room;

@@ -11,38 +11,48 @@ import {
 	ToggleGroupItem,
 	useTheme,
 } from "@semoss/ui/next";
-import { useChatConfig } from "../chat/config/use-chat-config";
 import { NewChatSettings } from "./new-chat-settings";
 import { SettingsRow } from "./settings-row";
 
-/** A color mode `useTheme` accepts: system, light, or dark. */
-type ThemeMode = ReturnType<typeof useTheme>["theme"];
+/** A color mode the user can pick. */
+export type ColorMode = "system" | "light" | "dark";
 
-/** The theme choices, in display order. */
-const THEME_OPTIONS: readonly { value: ThemeMode; icon: LucideIcon }[] = [
-	{ value: "system", icon: MonitorIcon },
-	{ value: "light", icon: SunIcon },
-	{ value: "dark", icon: MoonIcon },
-];
+/** Every color mode, in the order the choice lists them. */
+export const COLOR_MODES: readonly ColorMode[] = ["system", "light", "dark"];
+
+/** The icon of each color mode. */
+const COLOR_MODE_ICONS: Readonly<Record<ColorMode, LucideIcon>> = {
+	system: MonitorIcon,
+	light: SunIcon,
+	dark: MoonIcon,
+};
 
 /**
- * Whether a toggle value is one of the color modes.
+ * Whether a toggle value is one of the color modes offered.
  *
  * @param value - The toggle group's value; "" when the active item is clicked again.
- * @returns Whether it is a {@link ThemeMode}.
+ * @param offered - The color modes the host offers.
+ * @returns Whether it is one of them.
  */
-const isThemeMode = (value: string): value is ThemeMode =>
-	THEME_OPTIONS.some((option) => option.value === value);
+const isOfferedColorMode = (
+	value: string,
+	offered: readonly ColorMode[],
+): value is ColorMode => offered.some((mode) => mode === value);
+
+/** Props for {@link GeneralSettings}. */
+interface GeneralSettingsProps {
+	/** The color modes the user picks from; with fewer than two, no choice shows. */
+	colorModes: readonly ColorMode[];
+}
 
 /**
- * The General page of the settings dialog: the color theme, when the
- * deployment turns dark mode on, the language the app is shown in, and what
+ * The General page of the settings dialog: the color theme, where the host
+ * offers a choice of color modes, the language the app is shown in, and what
  * a new chat starts with.
  */
-export const GeneralSettings = () => {
+export const GeneralSettings = ({ colorModes }: GeneralSettingsProps) => {
 	const { t, i18n } = useTranslation("sidebar");
 	const { theme: colorMode, setTheme } = useTheme();
-	const { theme } = useChatConfig();
 	const headingId = useId();
 	const themeLabelId = useId();
 	const languageId = useId();
@@ -56,7 +66,7 @@ export const GeneralSettings = () => {
 				<h3 id={headingId} className="font-semibold text-base">
 					{t("settings.general.appearance")}
 				</h3>
-				{theme.featureFlags?.enableDarkMode ? (
+				{colorModes.length > 1 ? (
 					<SettingsRow
 						label={t("settings.general.theme")}
 						labelId={themeLabelId}
@@ -71,25 +81,28 @@ export const GeneralSettings = () => {
 							// radix clears a single group to "" when the active item is
 							// clicked again; a theme is always chosen
 							onValueChange={(value) => {
-								if (isThemeMode(value)) {
+								if (isOfferedColorMode(value, colorModes)) {
 									setTheme(value);
 								}
 							}}
 						>
-							{THEME_OPTIONS.map(({ value, icon: Icon }) => (
-								<ToggleGroupItem
-									key={value}
-									value={value}
-									aria-label={t(
-										`settings.general.themes.${value}`,
-									)}
-									title={t(
-										`settings.general.themes.${value}`,
-									)}
-								>
-									<Icon aria-hidden />
-								</ToggleGroupItem>
-							))}
+							{colorModes.map((value) => {
+								const Icon = COLOR_MODE_ICONS[value];
+								return (
+									<ToggleGroupItem
+										key={value}
+										value={value}
+										aria-label={t(
+											`settings.general.themes.${value}`,
+										)}
+										title={t(
+											`settings.general.themes.${value}`,
+										)}
+									>
+										<Icon aria-hidden />
+									</ToggleGroupItem>
+								);
+							})}
 						</ToggleGroup>
 					</SettingsRow>
 				) : null}

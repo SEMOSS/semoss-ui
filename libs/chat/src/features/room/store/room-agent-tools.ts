@@ -1,6 +1,6 @@
 import { getWorkspace } from "@semoss/sdk";
 import type { MCPConfig } from "../../../types";
-import { NEW_INSIGHT_ID } from "../../tools/mcp/mcp-constants";
+import { NEW_INSIGHT_ID } from "./room-placeholders";
 import { NO_AGENT_TOOLS } from "./room-snapshot";
 
 /** What the agent tools need from their room. */

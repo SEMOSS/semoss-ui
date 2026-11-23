@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { DEFAULT_CHAT_THEME } from "../../chat/config/chat-theme";
+import { testChatOptions } from "../../../test/chat-options";
 import { RoomProvider } from "../scope/room.context";
 import { RoomStore } from "../store/room.store";
 import { RoomHeader } from "./room-header";
@@ -26,9 +26,9 @@ afterEach(() => vi.unstubAllGlobals());
 /** Build a room with OneDrive switched on, without network-backed loading. */
 function createRoom(): RoomStore {
 	const room = new RoomStore({
-		theme: DEFAULT_CHAT_THEME,
+		chatOptions: testChatOptions(),
 		roomId: "header-controls",
-		panelComponents: {},
+		workbenchPanels: {},
 	});
 	room.connectors.setServices(["onedrive"]);
 	return room;
@@ -52,25 +52,27 @@ test("outside a room the header has no title, and no navigation outside the app 
 
 test("the header holds only the Workspace toggle; More actions is on the rail", () => {
 	render(<RoomHeader room={createRoom()} />);
-	expect(getIconNames()).toEqual(["studio.openWorkspace"]);
+	expect(getIconNames()).toEqual(["workbench.openWorkspace"]);
 });
 
 test("the toggle opens the Workspace as it was left and closes it", () => {
 	const room = createRoom();
 	render(<RoomHeader room={room} />);
-	const toggle = screen.getByRole("button", { name: "studio.openWorkspace" });
+	const toggle = screen.getByRole("button", {
+		name: "workbench.openWorkspace",
+	});
 	expect(toggle).toHaveAttribute("aria-pressed", "false");
 
 	fireEvent.click(toggle);
 	expect(room.workbenchPane.isOpen).toBe(true);
-	expect(toggle).toHaveAttribute("aria-label", "studio.closeWorkspace");
+	expect(toggle).toHaveAttribute("aria-label", "workbench.closeWorkspace");
 	expect(toggle).toHaveAttribute("aria-pressed", "true");
 	// the rail stays collapsed: nothing is opened for the user
 	expect(room.workbench.getState().layout.borders.left.activeId).toBeNull();
 
 	fireEvent.click(toggle);
 	expect(room.workbenchPane.isOpen).toBe(false);
-	expect(toggle).toHaveAttribute("aria-label", "studio.openWorkspace");
+	expect(toggle).toHaveAttribute("aria-label", "workbench.openWorkspace");
 });
 
 test("inside a room, the header finds its room without a prop", () => {
@@ -81,7 +83,7 @@ test("inside a room, the header finds its room without a prop", () => {
 		</RoomProvider>,
 	);
 	fireEvent.click(
-		screen.getByRole("button", { name: "studio.openWorkspace" }),
+		screen.getByRole("button", { name: "workbench.openWorkspace" }),
 	);
 	expect(room.workbenchPane.isOpen).toBe(true);
 });

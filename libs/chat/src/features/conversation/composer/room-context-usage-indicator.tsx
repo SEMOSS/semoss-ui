@@ -11,15 +11,13 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { useChatConfig } from "../../chat/config/use-chat-config";
-import { useChatSession } from "../../chat/provider/use-chat-session";
+import { useChatConfig } from "../../chat/config/chat-config.context";
+import { useChatSession } from "../../chat/provider/chat-session.context";
 import { useChatSelector } from "../../chat/store/use-chat-selector";
 import type { RoomStore } from "../../room/store/room.store";
+import type { CompactionStrategy } from "../../room/store/room-compaction";
 import { useRoomSelector } from "../../room/store/use-room-selector";
-import {
-	type CompactionStrategy,
-	CompactStrategyPicker,
-} from "./compact-strategy-picker";
+import { CompactionStrategyPicker } from "./compaction-strategy-picker";
 
 /** Props for {@link RoomContextUsageIndicator}. */
 interface RoomContextUsageIndicatorProps {
@@ -68,10 +66,10 @@ export const RoomContextUsageIndicator = ({
 }: RoomContextUsageIndicatorProps) => {
 	const { t } = useTranslation("room");
 	const { chat } = useChatSession();
-	const { theme } = useChatConfig();
+	const { options } = useChatConfig();
 	const [isOpen, setIsOpen] = useState(false);
 	const [compactionStrategy, setCompactionStrategy] =
-		useState<CompactionStrategy>(theme.defaultCompactionStrategy ?? "AUTO");
+		useState<CompactionStrategy>(options.compactionStrategy);
 	const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const isHovering = useRef(false);
 	// stop a pending close from setting state after unmount
@@ -249,7 +247,7 @@ export const RoomContextUsageIndicator = ({
 						</P>
 					)}
 					{onCompact && (
-						<CompactStrategyPicker
+						<CompactionStrategyPicker
 							disabled={isLoading || latestResponseHasTools}
 							strategy={compactionStrategy}
 							onStrategyChange={setCompactionStrategy}

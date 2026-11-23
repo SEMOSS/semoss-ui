@@ -12,7 +12,7 @@ import {
 	type SubagentRunSummary,
 } from "@semoss/sdk";
 import { runPixel } from "@semoss/sdk/react";
-import type { ThemeMap } from "@semoss/shared";
+import { testChatOptions } from "../../../test/chat-options";
 import { servePixelTransport } from "../../../test/pixel-transport";
 import type { ResponsePixelMessage } from "../../../types";
 import { InputMessageStore } from "../store/input-message.store";
@@ -69,10 +69,10 @@ const pixelsSucceed = (outputs: unknown[]) =>
 /** An agent room with a model, ready to send a message. */
 const createAgentRoom = async () => {
 	const room = new RoomStore({
-		theme: {} as ThemeMap["playground"],
+		chatOptions: testChatOptions(),
 		roomId: "agent-test",
 		insightId: "insight-test",
-		panelComponents: {},
+		workbenchPanels: {},
 	});
 	pixelsSucceed([[], {}]);
 	await room.initialize({ isNew: true });

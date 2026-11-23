@@ -1,7 +1,7 @@
 import { beforeEach, expect, test, vi } from "vitest";
 import { FILE_PANEL_TYPES } from "@semoss/panels";
-import type { ThemeMap } from "@semoss/shared";
-import { DEFAULT_WORKBENCH_PANEL_COMPONENTS } from "../../workbench/panels/room-panel-components";
+import { testChatOptions } from "../../../test/chat-options";
+import { DEFAULT_WORKBENCH_PANELS } from "../../workbench/panels/default-workbench-panels";
 import { RoomStore } from "./room.store";
 import { ROOM_PANEL_TYPES } from "./room-workbench-layout";
 
@@ -13,8 +13,8 @@ vi.mock("@semoss/sdk/react", () => ({
 	uploadInsight: vi.fn(),
 }));
 
-/** No theme settings matter to the Workbench. */
-const THEME = {} as ThemeMap["playground"];
+/** No chat options matter to the Workbench. */
+const CHAT_OPTIONS = testChatOptions();
 
 /**
  * A room built the way the app builds one. The blueprints are load-bearing:
@@ -27,10 +27,10 @@ const createRoom = (
 	includeFiles = true,
 ) =>
 	new RoomStore({
-		theme: THEME,
+		chatOptions: CHAT_OPTIONS,
 		roomId,
 		insightId,
-		panelComponents: DEFAULT_WORKBENCH_PANEL_COMPONENTS,
+		workbenchPanels: DEFAULT_WORKBENCH_PANELS,
 		includeFiles,
 	});
 
@@ -52,7 +52,7 @@ const openedPanelIds = (room: RoomStore) => {
 	return mainPanelIds(room).filter((pid) => {
 		const record = panels[pid];
 		if (!record) return false;
-		if (record.type === ROOM_PANEL_TYPES.CONFIGURATION) return false;
+		if (record.type === ROOM_PANEL_TYPES.SETTINGS) return false;
 		// a file panel a test opened is an editor, never the room's explorer
 		return record.type !== FILE_PANEL_TYPES.FILE_EXPLORER;
 	});
@@ -98,7 +98,7 @@ test("two files open as two panels, and reopening one reveals it", () => {
 test("every tab closes, Files and Settings included, and the rail reopens them", () => {
 	const room = createRoom("room-close-all");
 
-	room.openWorkbenchPanel(ROOM_PANEL_TYPES.AUDIT_LOG);
+	room.openWorkbenchPanel(ROOM_PANEL_TYPES.ACTIVITY_LOG);
 	room.openWorkbenchFilePanel("/README.md");
 	expect(room.workbenchPane.isOpen).toBe(true);
 
@@ -111,16 +111,16 @@ test("every tab closes, Files and Settings included, and the rail reopens them",
 	// the arrangement survives its last close, so the rail can fill it again
 	expect(room.workbench.getState().layout.tabsets).toHaveLength(1);
 	room.openWorkbenchFileExplorer();
-	room.openWorkbenchPanel(ROOM_PANEL_TYPES.CONFIGURATION);
+	room.openWorkbenchPanel(ROOM_PANEL_TYPES.SETTINGS);
 	expect(mainPanelTypes(room)).toEqual([
 		FILE_PANEL_TYPES.FILE_EXPLORER,
-		ROOM_PANEL_TYPES.CONFIGURATION,
+		ROOM_PANEL_TYPES.SETTINGS,
 	]);
 });
 
 test("reopening restores existing panels without duplicating them", async () => {
 	const room = createRoom("room-reopen");
-	const panelId = room.openWorkbenchPanel(ROOM_PANEL_TYPES.AUDIT_LOG);
+	const panelId = room.openWorkbenchPanel(ROOM_PANEL_TYPES.ACTIVITY_LOG);
 	await room.closeWorkbench();
 
 	room.openWorkbench();
@@ -140,7 +140,7 @@ test("opening the Workbench shows Files and Settings as tabs, Files in front", (
 	// Files is the first tab, Settings the second
 	expect(mainPanelTypes(room)).toEqual([
 		FILE_PANEL_TYPES.FILE_EXPLORER,
-		ROOM_PANEL_TYPES.CONFIGURATION,
+		ROOM_PANEL_TYPES.SETTINGS,
 	]);
 	// and the room lands on Files: the front tab and the selected panel
 	expect(panels[tabsets[0]?.activeId ?? ""]?.type).toBe(
@@ -162,7 +162,7 @@ test("opening the Workbench shows Files and Settings as tabs, Files in front", (
 test("a draft opens with Settings alone", () => {
 	const room = createRoom("temp", "new", false);
 
-	expect(mainPanelTypes(room)).toEqual([ROOM_PANEL_TYPES.CONFIGURATION]);
+	expect(mainPanelTypes(room)).toEqual([ROOM_PANEL_TYPES.SETTINGS]);
 });
 
 test("Files and Settings select their open tabs rather than adding another", () => {
@@ -172,9 +172,7 @@ test("Files and Settings select their open tabs rather than adding another", () 
 	expect(room.openWorkbenchFileExplorer()).toBe(files);
 	expect(room.workbench.getState().layout.selection.panel).toBe(files);
 
-	expect(room.openWorkbenchPanel(ROOM_PANEL_TYPES.CONFIGURATION)).toBe(
-		settings,
-	);
+	expect(room.openWorkbenchPanel(ROOM_PANEL_TYPES.SETTINGS)).toBe(settings);
 	expect(room.workbench.getState().layout.selection.panel).toBe(settings);
 	expect(openedPanelIds(room)).toEqual([]);
 });
@@ -186,7 +184,7 @@ test("a connector viewer opens as a tab and closes with its connector", () => {
 	// a viewer is not opened until it is asked for
 	expect(mainPanelTypes(room)).toEqual([
 		FILE_PANEL_TYPES.FILE_EXPLORER,
-		ROOM_PANEL_TYPES.CONFIGURATION,
+		ROOM_PANEL_TYPES.SETTINGS,
 	]);
 
 	// as the panel rail opens it; `openSourcePanel` only adds the viewer's name
@@ -197,7 +195,7 @@ test("a connector viewer opens as a tab and closes with its connector", () => {
 
 	expect(mainPanelTypes(room)).toEqual([
 		FILE_PANEL_TYPES.FILE_EXPLORER,
-		ROOM_PANEL_TYPES.CONFIGURATION,
+		ROOM_PANEL_TYPES.SETTINGS,
 	]);
 });
 
@@ -265,7 +263,7 @@ test("explicitly closing a cancelled tool does not reopen it inline", () => {
 
 test("the Workbench's default arrangement survives its last panel closing", () => {
 	const room = createRoom("room-empty");
-	const pid = room.openWorkbenchPanel(ROOM_PANEL_TYPES.AUDIT_LOG);
+	const pid = room.openWorkbenchPanel(ROOM_PANEL_TYPES.ACTIVITY_LOG);
 	room.workbench.getState().layout.actions.closePanel(pid);
 
 	// the dock prunes an empty tabset unless it opts out, and a Workbench with no
@@ -292,15 +290,15 @@ test("a room whose Workbench never mounted still dedupes", () => {
 
 test("a prepared layout retains its tabs through Workbench mounts and later opens", () => {
 	const draft = createRoom("temp", "new", false);
-	const log = draft.openWorkbenchPanel(ROOM_PANEL_TYPES.AUDIT_LOG);
+	const log = draft.openWorkbenchPanel(ROOM_PANEL_TYPES.ACTIVITY_LOG);
 	const snapshot = draft.workbench.getState().layout.actions.getSnapshot();
 	const room = createRoom("prepared");
 	room.restoreWorkbenchLayout(snapshot);
 	expect(room.workbenchSnapshot).toBe(snapshot);
 	// the draft had no Files; the prepared room gains it, behind the draft's tab
 	expect(mainPanelTypes(room)).toEqual([
-		ROOM_PANEL_TYPES.CONFIGURATION,
-		ROOM_PANEL_TYPES.AUDIT_LOG,
+		ROOM_PANEL_TYPES.SETTINGS,
+		ROOM_PANEL_TYPES.ACTIVITY_LOG,
 		FILE_PANEL_TYPES.FILE_EXPLORER,
 	]);
 	expect(room.workbench.getState().layout.selection.panel).toBe(log);

@@ -1,6 +1,6 @@
 import { useId } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { ProjectSelect } from "@semoss/shared";
+import { ProjectSelect, useAgentWorkspace } from "@semoss/shared";
 import {
 	cn,
 	Select,
@@ -11,21 +11,20 @@ import {
 	ToggleGroup,
 	ToggleGroupItem,
 } from "@semoss/ui/next";
+import { useChatConfig } from "../chat/config/chat-config.context";
 import {
 	isNewChatMode,
 	readDeploymentNewChatDefaults,
 	resolveNewChatMode,
-} from "../chat/config/new-chat-preferences";
-import { useChatConfig } from "../chat/config/use-chat-config";
-import { useChatSession } from "../chat/provider/use-chat-session";
+} from "../chat/config/new-chat-defaults";
+import { useChatSession } from "../chat/provider/chat-session.context";
 import { useChatSelector } from "../chat/store/use-chat-selector";
 import {
 	newChatModes,
 	offersAgentMode,
 } from "../conversation/composer/agent-mode-choice";
-import { useAgentWorkspace } from "../tools/mcp/use-agent-workspace";
 import { SettingsRow } from "./settings-row";
-import { useNewChatPreferences } from "./use-new-chat-preferences";
+import { useUserNewChatDefaults } from "./use-user-new-chat-defaults";
 
 /**
  * Value of the model's Default choice, which clears the user's own model so
@@ -44,21 +43,21 @@ export const NewChatSettings = () => {
 	const { t } = useTranslation("sidebar");
 	const { chat } = useChatSession();
 	const models = useChatSelector(chat, (chat) => chat.models.available);
-	const { theme, options } = useChatConfig();
-	const preferences = useNewChatPreferences();
+	const { options } = useChatConfig();
+	const preferences = useUserNewChatDefaults();
 	const headingId = useId();
 	const modelSelectId = useId();
 	const modeLabelId = useId();
 	const agentSelectId = useId();
 
-	const canSelectModel = Boolean(theme.featureFlags?.enableModelSelect);
-	const canUseAgentMode = offersAgentMode(theme.featureFlags);
-	const modes = newChatModes(theme.featureFlags);
+	const canSelectModel = options.isModelSelectable;
+	const canUseAgentMode = offersAgentMode(options.agentMode);
+	const modes = newChatModes(options.agentMode);
 	// the mode a new chat would start in, which the agent row follows
 	const startMode = resolveNewChatMode(
 		null,
 		preferences,
-		readDeploymentNewChatDefaults(theme, options.new),
+		readDeploymentNewChatDefaults(options.newChat),
 		modes,
 	);
 	const isAgentDefault = startMode === "agent";

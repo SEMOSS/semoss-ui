@@ -7,7 +7,6 @@ import type {
 	ResponsePixelMessage,
 	ToolOutcome,
 } from "../../../types";
-import { STREAMING_PLACEHOLDER_ID } from "../../tools/mcp/mcp-constants";
 import type { AbstractMessageStore } from "./abstract-message.store";
 import { InputMessageStore } from "./input-message.store";
 import {
@@ -30,6 +29,7 @@ import {
 import { ResponseMessageStore } from "./response-message.store";
 import type { RoomStore } from "./room.store";
 import { createRootMessage } from "./room-load";
+import { STREAMING_PLACEHOLDER_ID } from "./room-placeholders";
 import type { RoomSnapshot } from "./room-snapshot";
 import {
 	initialToolData,

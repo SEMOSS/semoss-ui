@@ -4,11 +4,11 @@ import { useSession } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import type { ChatMode } from "../../types";
-import { writeSessionNewChat } from "../chat/config/new-chat-preferences";
-import { useChatConfig } from "../chat/config/use-chat-config";
-import { useChatSession } from "../chat/provider/use-chat-session";
+import { useChatConfig } from "../chat/config/chat-config.context";
+import { writeSessionNewChat } from "../chat/config/new-chat-defaults";
+import { useChatSession } from "../chat/provider/chat-session.context";
 import type { RoomStore } from "../room/store/room.store";
-import { type NewRoomPreparation, useNewRoom } from "./use-new-room";
+import { type RoomPreparation, usePreparedRoom } from "./use-prepared-room";
 
 /** What {@link useCreateRoomFromDraft} needs from the draft's agent. */
 interface DraftRoomInput {
@@ -31,7 +31,7 @@ interface DraftRoomCreation {
 	/** Whether the room is being created. */
 	readonly isLoading: boolean;
 	/** The file-capable room prepared lazily before the first message. */
-	readonly preparation: NewRoomPreparation;
+	readonly preparation: RoomPreparation;
 	/**
 	 * Create the room with its first message and open it.
 	 *
@@ -64,7 +64,7 @@ export const useCreateRoomFromDraft = (
 	const hasSubmittedRef = useRef(false);
 	// the agent whose greeting room was started, so it starts once
 	const greetingRoomStartedForRef = useRef("");
-	const preparation = useNewRoom(newRoom, mode, hasSubmittedRef);
+	const preparation = usePreparedRoom(newRoom, mode, hasSubmittedRef);
 	const { room: preparedRoom, isPreparing } = preparation;
 
 	/**

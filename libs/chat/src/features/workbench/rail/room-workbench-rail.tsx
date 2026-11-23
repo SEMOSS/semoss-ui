@@ -15,7 +15,7 @@ import { HeaderIconButton } from "../../room/header/header-icon-button";
 import type { RoomStore } from "../../room/store/room.store";
 import { DefaultWorkbenchRail } from "./default-workbench-rail";
 import {
-	type NewRoomWorkbenchPanels,
+	type DraftWorkbenchPanels,
 	useWorkbenchPanels,
 } from "./use-workbench-panels";
 import { WorkbenchRailContext } from "./workbench-rail.context";
@@ -25,7 +25,7 @@ interface RoomWorkbenchRailProps {
 	/** The room whose Workspace the rail opens panels in. */
 	room: RoomStore;
 	/** A new chat's own panel actions, which prepare its room, until its first message. */
-	newRoomPanels?: NewRoomWorkbenchPanels;
+	draftPanels?: DraftWorkbenchPanels;
 	/** Which way a label or menu opens: into the dock, or below the mobile toolbar. */
 	side: "right" | "bottom";
 }
@@ -42,14 +42,14 @@ interface RoomWorkbenchRailProps {
  * selects the panel when it is already open anywhere in the dock and adds a
  * tab beside the others when it is not.
  *
- * An icon (`RailItem`) is also a drag source: dropping one on the dock opens
+ * An icon (`WorkbenchRailItem`) is also a drag source: dropping one on the dock opens
  * it where it lands, so a panel can be dropped into the centre, or beside
  * another as a split. A drag always spawns a *new* view, which is what makes
  * dropping Files beside an open Files useful.
  */
 export const RoomWorkbenchRail = ({
 	room,
-	newRoomPanels,
+	draftPanels,
 	side,
 }: RoomWorkbenchRailProps) => {
 	const { t } = useTranslation(["room", "sidebar"]);
@@ -62,7 +62,7 @@ export const RoomWorkbenchRail = ({
 	const Rail =
 		useContext(ChatConfigContext)?.components?.WorkbenchRail ??
 		DefaultWorkbenchRail;
-	const panels = useWorkbenchPanels(room, newRoomPanels);
+	const panels = useWorkbenchPanels(room, draftPanels);
 
 	return (
 		<>
@@ -123,7 +123,7 @@ export const RoomWorkbenchRail = ({
 			<WorkbenchRailContext.Provider
 				value={{
 					room: room,
-					isNewChat: Boolean(newRoomPanels),
+					isDraft: Boolean(draftPanels),
 					side: side,
 					panels: panels,
 				}}

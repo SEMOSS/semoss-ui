@@ -1,9 +1,9 @@
-import type { ThemeMap } from "@semoss/shared";
 import type {
 	WorkbenchPanelConfigAny,
 	WorkbenchSnapshot,
 } from "@semoss/workbench";
 import type { ChatMode, Engine, MCPConfig, Prompt } from "../../../types";
+import type { ResolvedChatOptions } from "../../chat/config/chat-options";
 import type { ToolsHost } from "../../tools/chat-tools/tools-host";
 import type { MessageKey, MessageMap } from "./message-map";
 import type { ToolData } from "./tool.store";
@@ -182,9 +182,9 @@ export const INITIAL_ROOM: Omit<
 export type RoomOptions = RoomSnapshot["options"];
 
 /** What a room is built from. */
-export interface RoomStoreOptions {
-	/** The playground theme. */
-	theme: ThemeMap["playground"];
+export interface RoomStoreDependencies {
+	/** The host's chat options, with every default filled in. */
+	chatOptions: ResolvedChatOptions;
 	/** The room's id. */
 	roomId: string;
 	/** The insight to start on; "new" until the room loads. */
@@ -195,7 +195,7 @@ export interface RoomStoreOptions {
 	 * importing them there would close a module cycle. The composition root
 	 * passes them down.
 	 */
-	panelComponents: Record<string, WorkbenchPanelConfigAny>;
+	workbenchPanels: Record<string, WorkbenchPanelConfigAny>;
 	/**
 	 * Whether the Workspace's rail offers Files. A new chat's draft has no
 	 * insight for Files to read, so it leaves Files out until it prepares the

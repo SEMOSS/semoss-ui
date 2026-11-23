@@ -7,13 +7,13 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router";
-import { useAgentWorkspace } from "@semoss/chat";
 import { useTranslation } from "@semoss/i18n";
 import { getUserProjectPermission, type Role } from "@semoss/sdk";
 import {
 	AgentDefinition,
 	AppCatalogAvatar,
 	MembersTable,
+	useAgentWorkspace,
 } from "@semoss/shared";
 import {
 	Button,

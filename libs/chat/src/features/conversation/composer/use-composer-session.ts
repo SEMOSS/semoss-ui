@@ -1,5 +1,5 @@
 import type { Engine, MCPConfig } from "../../../types";
-import { useChatSession } from "../../chat/provider/use-chat-session";
+import { useChatSession } from "../../chat/provider/chat-session.context";
 import type { RoomStore } from "../../room/store/room.store";
 import type { RoomOptions } from "../../room/store/room-snapshot";
 import { useRoomSelector } from "../../room/store/use-room-selector";

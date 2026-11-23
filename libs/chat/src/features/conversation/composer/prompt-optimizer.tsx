@@ -12,7 +12,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useChatSession } from "../../chat/provider/use-chat-session";
+import { useChatSession } from "../../chat/provider/chat-session.context";
 import type { RoomStore } from "../../room/store/room.store";
 
 /** What the `LLM` reactor returns. */

@@ -1,7 +1,7 @@
 import { beforeEach, expect, test, vi } from "vitest";
+import { testChatOptions } from "../../../test/chat-options";
 import { servePixelTransport } from "../../../test/pixel-transport";
 import type { Engine } from "../../../types";
-import { DEFAULT_CHAT_THEME } from "../config/chat-theme";
 import { ChatStore } from "./chat.store";
 
 const mocks = vi.hoisted(() => {
@@ -85,12 +85,12 @@ beforeEach(() => {
 });
 
 /**
- * Make a chat store on the default theme and wait for it to initialize.
+ * Make a chat store on the default options and wait for it to initialize.
  *
  * @returns The initialized store.
  */
 const createStore = async () => {
-	const store = new ChatStore({ theme: DEFAULT_CHAT_THEME });
+	const store = new ChatStore({ options: testChatOptions() });
 	await store.initialize();
 	return store;
 };
@@ -107,14 +107,10 @@ test("reads the user's new chat default model from the session", async () => {
 
 test("falls back to the deployment's default, then the first model", async () => {
 	mocks.snapshot = { status: "AUTHENTICATED", user: mocks.user("gone") };
-	const theme = DEFAULT_CHAT_THEME;
 	const store = new ChatStore({
-		theme: {
-			...theme,
-			defaultRoomSettings: {
-				model: MODELS[2],
-			},
-		},
+		options: testChatOptions({
+			newChat: { modelId: MODELS[2].engine_id },
+		}),
 	});
 	await store.initialize();
 

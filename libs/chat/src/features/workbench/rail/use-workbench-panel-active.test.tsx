@@ -1,10 +1,10 @@
 import { renderHook } from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vitest";
 import { FILE_PANEL_TYPES } from "@semoss/panels";
-import type { ThemeMap } from "@semoss/shared";
+import { testChatOptions } from "../../../test/chat-options";
 import { RoomStore } from "../../room/store/room.store";
 import { ROOM_PANEL_TYPES } from "../../room/store/room-workbench-layout";
-import { DEFAULT_WORKBENCH_PANEL_COMPONENTS } from "../panels/room-panel-components";
+import { DEFAULT_WORKBENCH_PANELS } from "../panels/default-workbench-panels";
 import { useWorkbenchPanelActive } from "./use-workbench-panel-active";
 
 vi.mock("@semoss/sdk/react", () => ({
@@ -15,15 +15,15 @@ vi.mock("@semoss/sdk/react", () => ({
 	uploadInsight: vi.fn(),
 }));
 
-const THEME = {} as ThemeMap["playground"];
+const CHAT_OPTIONS = testChatOptions();
 
 /** A room with the real blueprints, so the dock matches panels as the app does. */
 const createRoom = (roomId: string) => {
 	return new RoomStore({
-		theme: THEME,
+		chatOptions: CHAT_OPTIONS,
 		roomId,
 		insightId: "insight-1",
-		panelComponents: DEFAULT_WORKBENCH_PANEL_COMPONENTS,
+		workbenchPanels: DEFAULT_WORKBENCH_PANELS,
 	});
 };
 
@@ -46,7 +46,7 @@ test("reports the open Workbench's selected panel as active", () => {
 test("a panel that is not the selection is not active", () => {
 	const room = createRoom("active-other");
 	room.openWorkbenchFileExplorer();
-	room.openWorkbenchPanel(ROOM_PANEL_TYPES.CONFIGURATION);
+	room.openWorkbenchPanel(ROOM_PANEL_TYPES.SETTINGS);
 
 	const { result } = renderHook(() =>
 		useWorkbenchPanelActive(room, FILE_PANEL_TYPES.FILE_EXPLORER, {

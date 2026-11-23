@@ -3,10 +3,10 @@ import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import type { FileExplorerHost } from "@semoss/panels";
+import { testChatOptions } from "../../test/chat-options";
 import { createMemoryFileSource } from "../../test/memory-file-source";
-import { DEFAULT_CHAT_THEME } from "../chat/config/chat-theme";
 import { NextMessageRoomProvider } from "../conversation/attachments/next-message-room.context";
-import { RoomLayout } from "../room/layout/room-layout";
+import { SplitLayout } from "../room/layout/split-layout";
 import { RoomStore } from "../room/store/room.store";
 import { useRoomSelector } from "../room/store/use-room-selector";
 import type { ToolsHost } from "../tools/chat-tools/tools-host";
@@ -15,6 +15,12 @@ import { RoomWorkbench } from "./room-workbench";
 
 const mocks = vi.hoisted(() => ({
 	explorerHost: vi.fn<(host: FileExplorerHost) => void>(),
+}));
+
+// the rail's cog reads which room actions the host keeps
+vi.mock("../chat/config/chat-config.context", async (original) => ({
+	...(await original<typeof import("../chat/config/chat-config.context")>()),
+	useChatConfig: () => ({ options: testChatOptions() }),
 }));
 vi.mock("@semoss/panels", async (original) => {
 	const actual = await original<typeof import("@semoss/panels")>();
@@ -53,22 +59,22 @@ const RoomLayoutTest = ({ room }: { room: RoomStore }) => {
 		(current) => current.workbenchPane.isOpen,
 	);
 	return (
-		<RoomLayout
+		<SplitLayout
 			isWorkbenchOpen={isOpen}
 			header={<RoomWorkbenchToggle room={room} />}
 			workbench={<RoomWorkbench room={room} />}
 		>
 			<input aria-label="Draft" defaultValue="Unsent draft" />
-		</RoomLayout>
+		</SplitLayout>
 	);
 };
 
 /** Build a room with a local panel, without starting network-backed room loading. */
 function createRoom(): RoomStore {
 	const room = new RoomStore({
-		theme: DEFAULT_CHAT_THEME,
+		chatOptions: testChatOptions(),
 		roomId: "room-controls",
-		panelComponents: { notes: { name: "Notes", content: NotesEditor } },
+		workbenchPanels: { notes: { name: "Notes", content: NotesEditor } },
 	});
 	room.setOptions({ instructions: "Original instructions", mcp: [] });
 	room.openWorkbenchPanel("notes");
@@ -103,10 +109,10 @@ test("the panel rail sits on the left, and holds panels alone", () => {
 	const names = within(rail)
 		.getAllByRole("button")
 		.map((button) => button.getAttribute("aria-label"));
+	// the room has no activity log blueprint, so the rail offers none
 	expect(names).toEqual([
 		"workspacePlaces.files",
 		"workspacePlaces.settings",
-		"workspacePlaces.activity",
 	]);
 });
 
@@ -120,7 +126,7 @@ test("closing from the header and reopening retain drafts and panels and restore
 	expect(draft).toHaveFocus();
 	const originalPanels = room.workbench.getState().layout.panels;
 	await user.click(
-		screen.getByRole("button", { name: "studio.closeWorkspace" }),
+		screen.getByRole("button", { name: "workbench.closeWorkspace" }),
 	);
 	expect(room.workbenchPane.isOpen).toBe(false);
 	await waitFor(() => expect(draft).toHaveFocus());
@@ -137,9 +143,9 @@ test.each([false, true])(
 	async (isDraft) => {
 		const room = createRoom();
 		const draft = new RoomStore({
-			theme: DEFAULT_CHAT_THEME,
+			chatOptions: testChatOptions(),
 			roomId: "",
-			panelComponents: {},
+			workbenchPanels: {},
 		});
 		const panel = <RoomWorkbench room={room} />;
 		render(
@@ -192,9 +198,9 @@ test("a host's mount gets the host's file actions and Add to Context; Room Files
 		unavailableMessage: "",
 	};
 	const room = new RoomStore({
-		theme: DEFAULT_CHAT_THEME,
+		chatOptions: testChatOptions(),
 		roomId: "room-desktop",
-		panelComponents: {},
+		workbenchPanels: {},
 		toolsHost: toolsHost,
 	});
 	render(<RoomWorkbench room={room} />);

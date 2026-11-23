@@ -10,7 +10,7 @@ The SEMOSS chat as an Electron app named "Playground" (`productName`, `org.semos
 the chat's UI and signs in to hosted SEMOSS servers: the user adds the first on first launch, and
 can save more, each with its own sign in. Its renderer composes
 `@semoss/chat`'s pieces as the playground does (see the chat's [README](../../libs/chat/README.md)),
-so rooms, the room list, search, and new chats behave the same, and a room made in one app shows
+so rooms, the room history and its search, and new chats behave the same, and a room made in one app shows
 in the other's list. Every dependency is a dev dependency: electron-vite bundles them.
 
 ## Layout
@@ -50,7 +50,7 @@ src/
     main.tsx      the connect screen until a server is saved, else Env.MODULE, Session.initialize()
                   and the router
     app.tsx       translations (desktopResources), theme, toasts; no session
-    pages/        router, session-layout, app-layout, login, server, new-room, room
+    pages/        router, session-layout, app-layout, login, server, new-chat, room
     features/     chat-config, commands, desktop-bridge, language, local-folders, navigation,
                   server-connection
 ```
@@ -61,36 +61,42 @@ src/
 ## The renderer
 
 - **Routes** (`pages/router.tsx`, a hash router): `SessionLayout` → `AppLayout` hold `/new`
-  (`NewChat`, with `?prompt=`, `?workspaceId=`, `?knowledgeId=`) and `/room/:roomId` (`RoomScope`
+  (`NewChat`, with `?prompt=`, `?workspaceId=`, `?knowledgeId=`, and the server theme's banner,
+  landing image and landing) and `/room/:roomId` (`RoomScope`
   around `RoomFrame`, `RoomHeader`, `RoomWorkbench`, `RoomConversation`). `/login` and `/server`
   are outside the session gate, so both open signed out or when the server cannot be read;
   anything else goes to `/new`.
 - **`SessionLayout`** waits while the session is `INITIALIZING`, sends `UNAUTHENTICATED` to
   `/login` (and back after), and on `ERROR` names the saved server and offers Retry
   (`useSessionRetry`) or Change server.
-- **`AppLayout`** builds the chat's config (`useDesktopChatConfig`), makes the chat store from
-  it (`useCreateChatStore(config)`), and provides both with `ChatSessionProvider` and
-  `ChatConfigProvider`, around the settings dialog, `DesktopSidebar` and the route. It holds the
-  dialog's state (`useUserSettingsDialog`), and routes the menu's `DesktopCommand`s
+- **`AppLayout`** makes the window's tools host and provides it (`DesktopToolsContext`,
+  `features/local-folders/desktop-tools.context.tsx`), builds the chat's config
+  (`useHostChatConfig`) and hands it to `ChatProvider`, around the settings dialog,
+  `AppNavigation` and the route. It holds the dialog's state (`useUserSettingsDialog`), folds the
+  sidebar while a room's Workspace is open (the chat's `useWorkbenchNavigation`), and routes the menu's `DesktopCommand`s
   (`useDesktopCommands`: `new-chat` → `/new`, `change-server` → `/server`). The web app's
   `AppLayout` is its counterpart.
-- **`useDesktopChatConfig`** is the chat's config: the server's theme over the chat's defaults
-  (`useServerChatTheme`); `options` with `roomHref` (`#/room/<id>`) and the tool frame origin,
-  and the platform URL on that origin (`platformPathFor`), and no new-chat defaults or
-  `agentHref`; `callbacks` with `onOpenRoom`,
-  `onOpenNewChat`, `onOpenSettings`, and `onWorkbenchOpenChange`, which folds the sidebar while a
-  room's Workspace is open (`features/navigation/use-workbench-navigation.ts`, as the web app
-  does); `tools`, the desktop's tools host over the folders the
-  user attaches (one per window); and `components`: `DesktopPlusMenu` (the chat's items, with
+- **`useHostChatConfig`** is the chat's config. It owns what the server's playground theme
+  (`usePlaygroundServerTheme` from `@semoss/shared`) means for the chat: `options` are the theme
+  as the chat's options (`themeToChatOptions` in `theme-chat-options.ts`), with `roomHref`
+  (`#/room/<id>`), the tool frame origin, and the platform URL on that origin
+  (`platformPathFor`), `catalogItemHref` where `showPlatformLinks` is on, and no `agentHref`;
+  `workbenchPanels` without the activity log where the theme turns `showActivityLog` off;
+  `callbacks` with `onOpenRoom`, `onOpenNewChat`, `onOpenSettings`, and
+  `onWorkbenchOpenChange`; `tools`, the tools host `AppLayout` makes; and `components`: `DesktopPlusMenu` (the chat's items, with
   Attach Folder under Attach Files) and `DesktopSlashCommands` (the chat's commands, then Attach
   Folder), each in its own file in `features/chat-config/`.
-- **The settings dialog** is the chat's `UserSettingsDialog`, which `AppLayout` hands its pages:
-  the chat's own (`useDefaultSettingsPages`: General, Connectors), then **Servers**
+- **The settings dialog** is the chat's `UserSettingsDialog`, which `AppLayout` hands its
+  sections: the chat's own (`useDefaultUserSettingsSections`: General, Connectors; light only
+  where the theme turns `enableDarkMode` off), then **Servers**
   (`features/server-connection/use-server-settings-section.tsx`), which lists the saved servers
-  and adds one. To add another page, add it to that list; see
+  and adds one. To add another section, add it to that list; see
   [The settings dialog](../../libs/chat/README.md#the-settings-dialog).
-- **`DesktopSidebar`** (`features/navigation/`): New chat, `RoomList` and `RoomSearchDialog`
-  (Cmd/Ctrl+K through `useRoomSearchShortcut`), and the account menu: Settings and Sign out.
+- **`AppNavigation`** (`features/navigation/app-navigation.tsx`): New chat, `RoomHistory` (with
+  its Cmd/Ctrl+K search, and dates where the theme's `chatHistoryDate` is on), left out where the
+  server's theme hides the chat history, and the account menu: Settings (the `onOpenSettings`
+  prop) and Sign out. The room page puts `RoomSuggestions` in `RoomConversation`'s `suggestions`
+  where the theme's `enableSuggestions` is on.
   Servers are managed on the settings dialog's Servers page, not from the menu. Room and
   new-chat headers start with its `SidebarTrigger`.
 - **The server screen** (`ServerConnectView` on `/server`, and alone on first launch) is the
@@ -306,14 +312,15 @@ A room can attach folders from this machine. The app gives them to the chat as
 - `desktop-folders-host.ts` is the `LocalFoldersHost` (`local-folders-host.ts`) over the
   `local-folders:*` and `local-fs:*` channels.
 - `desktop-tools-host.ts` (`createDesktopToolsHost`) is the chat's `ToolsHost`, made once per
-  window in `useDesktopChatConfig`. It keeps a `RoomLocalFoldersStore` per room the chat has
+  window in `AppLayout`, which hands it to the chat's config and to `DesktopToolsContext`, where
+  `useDesktopTools` reads it. It keeps a `RoomLocalFoldersStore` per room the chat has
   open, offers the `desktop_*` tools over the room's folders (`DesktopFolders`, each folder a
   top level entry, with the chat's `describeFolderTool` and `executeFolderTool`; each has its own
   `desktop_folder_*` setting, never the Room Files one, so reads run at once and every change asks
   until the user says otherwise), lists the folders in Files under Desktop
   (`desktop-host-files.tsx`: Attach Folder, Show in Finder, Open with Default App, Detach), and
   detaches a new chat's folders when it is left before its first message.
-- Attach Folder in the plus menu (`AttachFolderMenuItem`) and "/" (`AttachFolderCommand`) attach
+- Attach Folder in the plus menu (`AttachFolderItem`) and "/" (`AttachFolderCommand`) attach
   to an open room, or to the room a new chat prepares (`useComposer().prepareRoom()`). They leave
   the Workspace as it is; the folders show in Files when the user opens it.
 - Its strings are in the `desktop` namespace, under `localFolders`.
@@ -366,6 +373,13 @@ The root `pnpm dev:playground-desktop` runs `dev` with its dependencies.
 **The app icon** is `resources/icon.png` (1024×1024), electron-builder's build resources folder,
 from which it makes the macOS, Windows, and Linux icons. Edit `resources/icon.svg` (the SEMOSS mark
 on a macOS-style tile) and regenerate the PNG with the command in its header.
+
+**The playground's `.env`.** The renderer's `envDir` is `../playground`, so the desktop builds with
+the web app's `VITE_NAME`, `VITE_THEME` and new-chat defaults (typed in `src/renderer/vite-env.d.ts`).
+`features/theme/` reads them as the web app does: `ENV_THEME` (`readPlaygroundBuildTheme`) is the
+base `usePlaygroundTheme` lays the server's theme over, and `readPlaygroundBuildNewChat` gives
+`themeToChatOptions` its fallback. `ENDPOINT` and `MODULE` do not apply: the desktop's servers are
+the saved ones.
 
 `electron.vite.config.ts` imports `@semoss/config` and `@semoss/panels/vite` by path: electron-vite
 bundles its config but leaves packages external, and Node cannot run the workspace's TypeScript

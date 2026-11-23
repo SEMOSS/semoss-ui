@@ -6,7 +6,7 @@ import {
 } from "react-router";
 import { AppLayout } from "./app-layout";
 import { LoginPage } from "./login.page";
-import { NewRoomPage } from "./new-room.page";
+import { NewChatPage } from "./new-chat.page";
 import { RoomPage } from "./room.page";
 import { ServerPage } from "./server.page";
 import { SessionLayout } from "./session-layout";
@@ -19,7 +19,7 @@ export const routes: RouteObject[] = [
 			{
 				element: <AppLayout />,
 				children: [
-					{ path: "new", element: <NewRoomPage /> },
+					{ path: "new", element: <NewChatPage /> },
 					{ path: "room/:roomId", element: <RoomPage /> },
 				],
 			},

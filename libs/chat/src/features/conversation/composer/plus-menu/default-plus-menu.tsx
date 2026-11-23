@@ -1,7 +1,7 @@
+import { AgentItem } from "./agent-item";
 import { AttachFilesItem } from "./attach-files-item";
-import { ChooseAgentItem } from "./choose-agent-item";
 import { KnowledgeItem } from "./knowledge-item";
-import { ModeChoiceItem } from "./mode-choice-item";
+import { ModeItem } from "./mode-item";
 import { ToolsItem } from "./tools-item";
 
 /**
@@ -15,7 +15,7 @@ export const DefaultPlusMenu = () => (
 		<AttachFilesItem />
 		<KnowledgeItem />
 		<ToolsItem />
-		<ModeChoiceItem />
-		<ChooseAgentItem />
+		<ModeItem />
+		<AgentItem />
 	</>
 );

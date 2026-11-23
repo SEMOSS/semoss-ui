@@ -248,11 +248,10 @@ export const WorkspaceChatList = ({ workspaceId }: WorkspaceChatListProps) => {
 		</div>
 	);
 
-	const showInitialLoading = roomList.isLoading && roomList.data.length === 0;
-	const showError = !showInitialLoading && roomList.isError;
-	const showEmpty =
-		!showInitialLoading && !showError && visibleRooms.length === 0;
-	const showList = !showInitialLoading && !showError && !showEmpty;
+	const isInitialLoading = roomList.isLoading && roomList.data.length === 0;
+	const hasError = !isInitialLoading && roomList.isError;
+	const isEmpty = !isInitialLoading && !hasError && visibleRooms.length === 0;
+	const hasList = !isInitialLoading && !hasError && !isEmpty;
 
 	return (
 		<>
@@ -278,16 +277,15 @@ export const WorkspaceChatList = ({ workspaceId }: WorkspaceChatListProps) => {
 					}}
 					className="max-h-96 overflow-y-auto pe-1"
 				>
-					{showInitialLoading && renderState(<Spinner />)}
-					{showError &&
+					{isInitialLoading && renderState(<Spinner />)}
+					{hasError &&
 						renderState(
 							<>
 								{t("chat.error")} {roomList.error?.message}
 							</>,
 						)}
-					{showEmpty &&
-						renderState(<Muted>{t("chat.noChats")}</Muted>)}
-					{showList && (
+					{isEmpty && renderState(<Muted>{t("chat.noChats")}</Muted>)}
+					{hasList && (
 						<div className="flex flex-col">
 							{groups.map((g, gi) => {
 								const isLast = gi === groups.length - 1;
@@ -379,7 +377,7 @@ export const WorkspaceChatList = ({ workspaceId }: WorkspaceChatListProps) => {
 								);
 							})}
 
-							{!showInitialLoading &&
+							{!isInitialLoading &&
 								roomList.isLoading &&
 								roomList.data.length > 0 && (
 									<div className="flex items-center justify-center p-4">

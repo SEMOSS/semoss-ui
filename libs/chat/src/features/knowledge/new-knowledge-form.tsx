@@ -20,7 +20,7 @@ import {
 	zodResolver,
 } from "@semoss/ui/next";
 import type { MCPConfig } from "../../types";
-import { useChatConfig } from "../chat/config/use-chat-config";
+import { useChatConfig } from "../chat/config/chat-config.context";
 import { FilePreviewGrid } from "../conversation/attachments/file-preview-grid";
 
 /** Props for {@link NewKnowledgeForm}. */
@@ -45,7 +45,7 @@ interface NewKnowledgeFormProps {
 
 /**
  * Form fields and create flow for a new VECTOR knowledge store: it creates the
- * engine, uploads the files, embeds them, and, when the theme turns it on,
+ * engine, uploads the files, embeds them, and, when the host turns it on,
  * makes the engine an MCP. Renders only the field grid; chrome (title, footer
  * buttons) is provided by the parent.
  */
@@ -55,7 +55,7 @@ export const NewKnowledgeForm = ({
 	onLoadingChange,
 }: NewKnowledgeFormProps) => {
 	const { run, upload } = useSessionInsight();
-	const { theme } = useChatConfig();
+	const { options } = useChatConfig();
 	const { t } = useTranslation([
 		"knowledge",
 		"validation",
@@ -63,10 +63,9 @@ export const NewKnowledgeForm = ({
 		"common",
 	]);
 
-	const shouldShowEmbeddingOptions =
-		theme.featureFlags?.allowEmbeddingOptions;
-	const defaultEmbedderId = theme.defaultEmbedderId ?? "";
-	const shouldMakeMcp = theme.featureFlags?.enableKnowledgeMCP;
+	const shouldShowEmbeddingOptions = options.isEmbedderSelectable;
+	const defaultEmbedderId = options.defaultEmbedderId;
+	const shouldMakeMcp = options.shouldMakeKnowledgeMcp;
 
 	const id = useId();
 	const form = useForm({

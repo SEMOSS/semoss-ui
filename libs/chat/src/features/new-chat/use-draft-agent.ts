@@ -1,19 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSession, useSessionPixel } from "@semoss/sdk/react";
+import { type AgentWorkspaceRead, useAgentWorkspace } from "@semoss/shared";
 import type { ChatMode, Prompt } from "../../types";
+import { useChatConfig } from "../chat/config/chat-config.context";
 import {
 	readDeploymentNewChatDefaults,
-	readNewChatPreferences,
 	readSessionNewChat,
+	readUserNewChatDefaults,
 	resolveNewChatAgentId,
 	resolveNewChatMode,
-} from "../chat/config/new-chat-preferences";
-import { useChatConfig } from "../chat/config/use-chat-config";
-import { useChatSession } from "../chat/provider/use-chat-session";
+} from "../chat/config/new-chat-defaults";
+import { useChatSession } from "../chat/provider/chat-session.context";
 import { useChatSelector } from "../chat/store/use-chat-selector";
 import {
 	canChooseAgentMode,
-	isAgentModeOnly,
 	newChatModes,
 	offersDefaultAgent,
 } from "../conversation/composer/agent-mode-choice";
@@ -22,10 +22,6 @@ import type { RoomStore } from "../room/store/room.store";
 import { useRoomSelector } from "../room/store/use-room-selector";
 import type { AgentChoice, AgentRef } from "../tools/mcp/agent-choice";
 import { runsDefaultAgent } from "../tools/mcp/mcp-utils";
-import {
-	type AgentWorkspaceRead,
-	useAgentWorkspace,
-} from "../tools/mcp/use-agent-workspace";
 import { clearAgentOptions } from "./clear-agent-options";
 
 /** What {@link useDraftAgent} returns. */
@@ -71,7 +67,7 @@ const NO_PROMPT_IDS: readonly string[] = [];
  * and a default agent the user can no longer open gives way to Default Agent.
  * The picked agent's instructions, toolboxes, prompts and model are merged
  * into the draft once it is read, keeping the knowledge and tools the user
- * added. With `modeFollowsAgent` the agent decides the mode.
+ * added. Under `follows-agent` the agent decides the mode.
  *
  * @param newRoom - The draft that holds the new chat's options.
  * @param linkAgentId - The agent the page's agent link names, if any.
@@ -81,23 +77,21 @@ export const useDraftAgent = (
 	newRoom: RoomStore,
 	linkAgentId: string | null,
 ): DraftAgent => {
-	const { theme, options: chatOptions } = useChatConfig();
+	const { options: chatOptions } = useChatConfig();
+	const { agentMode } = chatOptions;
 	const { chat } = useChatSession();
 	const lastLogin = useSession((state) => state.user?.lastLogin);
 	const userMeta = useSession((state) => state.user?.meta);
 	// Read once: a default changed meanwhile applies to the next new chat.
 	const [initial] = useState(() => {
 		const session = readSessionNewChat(lastLogin);
-		const preferences = readNewChatPreferences(userMeta);
-		const deployment = readDeploymentNewChatDefaults(
-			theme,
-			chatOptions.new,
-		);
+		const preferences = readUserNewChatDefaults(userMeta);
+		const deployment = readDeploymentNewChatDefaults(chatOptions.newChat);
 		const mode = resolveNewChatMode(
 			session,
 			preferences,
 			deployment,
-			newChatModes(theme.featureFlags),
+			newChatModes(agentMode),
 		);
 		return {
 			mode,
@@ -125,11 +119,10 @@ export const useDraftAgent = (
 	const isDefaultAgentGone =
 		!pick && !linkAgentId && agent.status === "ERROR";
 	const agentId = isDefaultAgentGone ? "" : requestedAgentId;
-	// agentModeOnly is modeFollowsAgent without No Agent, so every chat runs
-	// in agent mode.
-	const agentModeOnly = isAgentModeOnly(theme.featureFlags);
-	const modeFollowsAgent =
-		!agentModeOnly && !!theme.featureFlags?.modeFollowsAgent;
+	// agent-only is follows-agent without No Agent, so every chat runs in
+	// agent mode.
+	const agentModeOnly = agentMode === "agent-only";
+	const modeFollowsAgent = agentMode === "follows-agent";
 	const mode: ChatMode =
 		agentModeOnly || (modeFollowsAgent && agentId) ? "agent" : chosenMode;
 
@@ -232,7 +225,7 @@ export const useDraftAgent = (
 	);
 	const model = useChatSelector(chat, (current) => current.models.selected);
 	const isAgentMode = mode === "agent";
-	// With modeFollowsAgent the agent picker decides the mode: a saved agent
+	// Under follows-agent the agent picker decides the mode: a saved agent
 	// or Default Agent runs in agent mode, No Agent in chat mode.
 	const agentChoice: AgentChoice = modeFollowsAgent
 		? {
@@ -244,8 +237,8 @@ export const useDraftAgent = (
 			}
 		: {
 				kind: "saved",
-				withModeChoice: canChooseAgentMode(theme.featureFlags),
-				noneIsDefaultAgent: offersDefaultAgent(theme.featureFlags),
+				withModeChoice: canChooseAgentMode(agentMode),
+				noneIsDefaultAgent: offersDefaultAgent(agentMode),
 			};
 
 	return {

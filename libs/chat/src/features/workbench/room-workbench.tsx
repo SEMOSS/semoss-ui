@@ -17,14 +17,14 @@ import { uploadTurnFiles } from "../room/store/room-turn-files";
 import { useRoomSelector } from "../room/store/use-room-selector";
 import { normalizeFolderPath } from "../tools/chat-tools/folder-path";
 import { RoomWorkbenchRail } from "./rail/room-workbench-rail";
-import type { NewRoomWorkbenchPanels } from "./rail/use-workbench-panels";
+import type { DraftWorkbenchPanels } from "./rail/use-workbench-panels";
 
 /** Props for {@link RoomWorkbench}. */
 interface RoomWorkbenchProps {
 	/** The room whose dock to show, else the room in context; it owns the dock while this view is hidden. */
 	room?: RoomStore;
 	/** A new chat's own panel actions, which prepare its room, until its first message. */
-	newRoomPanels?: NewRoomWorkbenchPanels;
+	draftPanels?: DraftWorkbenchPanels;
 }
 
 /**
@@ -37,7 +37,7 @@ interface RoomWorkbenchProps {
  */
 export const RoomWorkbench = ({
 	room: roomProp,
-	newRoomPanels,
+	draftPanels,
 }: RoomWorkbenchProps) => {
 	const room = useRoomOrContext(roomProp);
 	const workbenchSnapshot = useRoomSelector(
@@ -149,7 +149,7 @@ export const RoomWorkbench = ({
 	const panelRail = ({ vertical }: { vertical: boolean }) => (
 		<RoomWorkbenchRail
 			room={room}
-			newRoomPanels={newRoomPanels}
+			draftPanels={draftPanels}
 			side={vertical ? "right" : "bottom"}
 		/>
 	);

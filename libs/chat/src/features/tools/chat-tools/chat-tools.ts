@@ -10,7 +10,7 @@ import {
 	MCP_EXECUTION_AGENT_AUTO,
 	MCP_EXECUTION_ASK,
 	MCP_EXECUTION_AUTO,
-} from "../mcp/mcp-constants";
+} from "../mcp/mcp-execution";
 import { isAskExecutionMode } from "../mcp/mcp-utils";
 import {
 	findToolCallName,
@@ -531,7 +531,7 @@ export class ChatTools {
 	/** Show the room's settings in its Workbench, where the default tools are. */
 	openRoomSettings = (): void => {
 		this.room.openWorkbenchPanel(
-			ROOM_PANEL_TYPES.CONFIGURATION,
+			ROOM_PANEL_TYPES.SETTINGS,
 			{},
 			getI18n().t("room:workspacePlaces.settings"),
 		);

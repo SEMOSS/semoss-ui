@@ -8,19 +8,19 @@ import type {
 	ResponsePixelMessage,
 	ToolOutcome,
 } from "../../../types";
-import {
-	TOOL_CANCELLATION_PROMPT,
-	TOOL_ERROR_PROMPT,
-	TOOL_INTERRUPTED_PROMPT,
-	TOOL_OUTPUT_UNREADABLE_PROMPT,
-	TURN_CANCELLATION_PROMPT,
-} from "../../tools/mcp/mcp-constants";
 import type { CancelCommitOutput } from "../store/message-map";
 import type { ResponseMessageStore } from "../store/response-message.store";
 import { createResponsePlaceholder } from "../store/response-placeholder";
 import type { ToolStore } from "../store/tool.store";
 import { isToolSettled, toToolStatus } from "../store/tool-status";
 import { applyResponseStreamChunk } from "./response-stream";
+import {
+	TOOL_CANCELLATION_PROMPT,
+	TOOL_ERROR_PROMPT,
+	TOOL_INTERRUPTED_PROMPT,
+	TOOL_OUTPUT_UNREADABLE_PROMPT,
+	TURN_CANCELLATION_PROMPT,
+} from "./turn-prompts";
 
 /** A tool result waiting to be written to room history via the save queue. */
 interface ToolSaveEntry {

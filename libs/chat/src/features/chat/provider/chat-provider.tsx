@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
 import type { ChatConfig } from "../config/chat-config.context";
-import { ChatConfigProvider } from "../config/chat-config-provider";
+import { ChatConfigProvider } from "../config/chat-config.context";
 import { useCreateChatStore } from "../store/use-create-chat-store";
-import { ChatSessionProvider } from "./chat-session-provider";
+import { ChatSessionProvider } from "./chat-session.context";
 
 /** Props for {@link ChatProvider}. */
 interface ChatProviderProps {
-	/** The host's theme, defaults, platform URL, and navigation. */
+	/** The host's options, callbacks, tools, and components. */
 	config: ChatConfig;
 	/** The chat UI that reads the store and the config. */
 	children: ReactNode;

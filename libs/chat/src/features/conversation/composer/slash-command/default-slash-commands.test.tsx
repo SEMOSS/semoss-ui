@@ -1,13 +1,15 @@
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { expect, test, vi } from "vitest";
+import { testChatOptions } from "../../../../test/chat-options";
 import {
-	type ChatConfig,
 	ChatConfigContext,
+	type ResolvedChatConfig,
 } from "../../../chat/config/chat-config.context";
-import { DEFAULT_CHAT_THEME } from "../../../chat/config/chat-theme";
 import { RoomStore } from "../../../room/store/room.store";
-import type { NewRoomWorkbenchPanels } from "../../../workbench/rail/use-workbench-panels";
+import { ROOM_PANEL_TYPES } from "../../../room/store/room-workbench-layout";
+import { DEFAULT_WORKBENCH_PANELS } from "../../../workbench/panels/default-workbench-panels";
+import type { DraftWorkbenchPanels } from "../../../workbench/rail/use-workbench-panels";
 import { FileDropProvider } from "../../attachments/file-drop.context";
 import {
 	type Composer,
@@ -16,8 +18,10 @@ import {
 } from "../composer.context";
 import { DefaultSlashCommands } from "./default-slash-commands";
 import { SlashCommand } from "./slash-command";
-import { useSlashCommands } from "./slash-command.context";
-import { SlashCommandRegistryProvider } from "./slash-command-registry";
+import {
+	SlashCommandRegistryProvider,
+	useSlashCommands,
+} from "./slash-command-registry.context";
 
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
@@ -39,7 +43,7 @@ const createComposer = (
 	overrides: Partial<Composer> = {},
 ): Composer => ({
 	room: room,
-	isNewChat: false,
+	isDraft: false,
 	isBusy: false,
 	options: room.options,
 	agentTools: [],
@@ -56,33 +60,41 @@ const createComposer = (
 	...overrides,
 });
 
+/** The activity log's blueprint alone, so a room offers its panel. */
+const ACTIVITY_LOG_PANEL = {
+	[ROOM_PANEL_TYPES.ACTIVITY_LOG]:
+		DEFAULT_WORKBENCH_PANELS[ROOM_PANEL_TYPES.ACTIVITY_LOG],
+};
+
 /** The ids the composer's "/" menu lists, with the given commands in its slot. */
 const renderCommands = ({
 	commands = <DefaultSlashCommands />,
 	composer,
-	newRoomPanels,
+	draftPanels,
 	config = {},
 }: {
 	commands?: ReactNode;
 	composer?: Partial<Composer>;
-	newRoomPanels?: NewRoomWorkbenchPanels;
-	config?: Partial<ChatConfig>;
+	draftPanels?: DraftWorkbenchPanels;
+	config?: Partial<ResolvedChatConfig>;
 } = {}): string[] => {
 	const room = new RoomStore({
-		theme: DEFAULT_CHAT_THEME,
+		chatOptions: testChatOptions(),
 		roomId: "slash-commands",
-		panelComponents: {},
+		workbenchPanels: ACTIVITY_LOG_PANEL,
 	});
 	render(
 		<ChatConfigContext.Provider
-			value={{ theme: DEFAULT_CHAT_THEME, ...config } as ChatConfig}
+			value={
+				{ options: testChatOptions(), ...config } as ResolvedChatConfig
+			}
 		>
 			<FileDropProvider>
 				<ComposerContext.Provider
 					value={createComposer(room, composer)}
 				>
 					<ComposerWorkbenchContext.Provider
-						value={{ room: room, newRoomPanels: newRoomPanels }}
+						value={{ room: room, draftPanels: draftPanels }}
 					>
 						<SlashCommandRegistryProvider commands={commands}>
 							<CommandIds />
@@ -110,19 +122,19 @@ test("an open room's slash menu lists today's commands in today's order", () => 
 
 test("a draft's slash menu leaves out panels that wait for its room while it prepares", () => {
 	const connectors = new RoomStore({
-		theme: DEFAULT_CHAT_THEME,
+		chatOptions: testChatOptions(),
 		roomId: "new-room",
-		panelComponents: {},
+		workbenchPanels: ACTIVITY_LOG_PANEL,
 	}).connectors;
-	const newRoomPanels = {
+	const draftPanels = {
 		onOpenPanel: vi.fn(),
 		isBusy: true,
 		connectors,
 		prepareRoom: vi.fn(async () => null),
 	};
 	const busyIds = renderCommands({
-		newRoomPanels,
-		composer: { isNewChat: true, compact: null },
+		draftPanels,
+		composer: { isDraft: true, compact: null },
 	});
 	expect(busyIds).toContain("settings");
 	expect(busyIds).not.toContain("files");
@@ -131,25 +143,19 @@ test("a draft's slash menu leaves out panels that wait for its room while it pre
 	expect(busyIds).not.toContain("favorite");
 });
 
-test("a draft switches mode from the menu only where the theme lets users choose", () => {
-	const agentTheme = {
-		...DEFAULT_CHAT_THEME,
-		featureFlags: {
-			...DEFAULT_CHAT_THEME.featureFlags,
-			enableAgentHarness: true,
-		},
-	};
-	const draft = { isNewChat: true, compact: null, switchToChat: vi.fn() };
+test("a draft switches mode from the menu only where the host lets users choose", () => {
+	const choice = { options: testChatOptions({ agentMode: "choice" }) };
+	const draft = { isDraft: true, compact: null, switchToChat: vi.fn() };
 	expect(renderCommands({ composer: draft })).not.toContain("agent-harness");
 	document.body.innerHTML = "";
-	expect(
-		renderCommands({ composer: draft, config: { theme: agentTheme } }),
-	).toContain("agent-harness");
+	expect(renderCommands({ composer: draft, config: choice })).toContain(
+		"agent-harness",
+	);
 	document.body.innerHTML = "";
 	expect(
 		renderCommands({
 			composer: { ...draft, isAgentMode: true },
-			config: { theme: agentTheme },
+			config: choice,
 		}),
 	).toContain("chat-mode");
 });

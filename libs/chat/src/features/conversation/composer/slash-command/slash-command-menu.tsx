@@ -2,12 +2,12 @@ import type React from "react";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { Command, CommandEmpty, CommandList } from "@semoss/ui/next";
-import { useSlashCommands } from "./slash-command.context";
 import {
 	SLASH_COMMAND_GROUPS,
 	type SlashCommandEntry,
 } from "./slash-command-entry";
 import { SlashCommandMenuGroup } from "./slash-command-menu-group";
+import { useSlashCommands } from "./slash-command-registry.context";
 
 /** How many prompts the menu lists before anything is typed. */
 const PROMPT_PREVIEW_COUNT = 5;
@@ -94,7 +94,7 @@ interface SlashCommandMenuProps {
 }
 
 /**
- * The slash command palette. Reads the commands from `SlashCommandProvider`,
+ * The slash command palette. Reads the commands from `SlashCommandRegistryProvider`,
  * filters them by the text typed after "/", and lists the matches under their
  * groups' headings. Arrow keys highlight items; Enter or click runs one.
  */

@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { type UseTranslationOptions, useTranslation } from "@semoss/i18n";
-import { useChatConfig } from "../../chat/config/use-chat-config";
+import { useChatConfig } from "../../chat/config/chat-config.context";
 
 /** What {@link useGracefulErrors} returns. */
 interface GracefulErrors {
@@ -11,8 +11,8 @@ interface GracefulErrors {
 /**
  * Custom hook for transforming error messages into user-friendly, localized messages.
  *
- * This hook matches error messages against configured patterns from the theme's gracefulErrors
- * configuration and returns appropriate translated messages from the "chat" namespace.
+ * This hook matches error messages against configured patterns in the host's `gracefulErrors`
+ * option and returns appropriate translated messages from the "chat" namespace.
  * If no pattern matches, it returns the original error message or a default error message.
  *
  * @param translationOptions - Optional translation options to customize i18n behavior
@@ -33,14 +33,12 @@ export const useGracefulErrors = (
 	translationOptions?: UseTranslationOptions<undefined>,
 ): GracefulErrors => {
 	const { t } = useTranslation("chat", translationOptions);
-	const { theme } = useChatConfig();
-
-	const gracefulErrors = theme.gracefulErrors;
+	const { gracefulErrors } = useChatConfig().options;
 
 	/**
 	 * Transforms an error into a user-friendly, localized message.
 	 *
-	 * Iterates through the configured gracefulErrors patterns from the theme and returns
+	 * Iterates through the host's gracefulErrors patterns and returns
 	 * the first matching translated message from the "chat" namespace. If no pattern matches,
 	 * returns the original error message. If the error has no message, returns the default
 	 * error message ("gracefulErrors.errorDefault").

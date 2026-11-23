@@ -6,14 +6,14 @@ export interface UseUserSettingsDialogReturn {
 	isOpen: boolean;
 	/** Open or close the dialog. */
 	setIsOpen: (isOpen: boolean) => void;
-	/** The id of the page shown; the dialog shows its first page for none or an unknown one. */
+	/** The id of the section shown; the dialog shows its first section for none or an unknown one. */
 	section: string | undefined;
-	/** Show another page. */
+	/** Show another section. */
 	setSection: (section: string) => void;
 	/**
 	 * Open the dialog. Stable, so a chat config that carries it is not rebuilt.
 	 *
-	 * @param section - The id of the page to show; the first page without one.
+	 * @param section - The id of the section to show; the first section without one.
 	 */
 	openSettings: (section?: string) => void;
 }

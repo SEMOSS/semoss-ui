@@ -1,11 +1,9 @@
 import type React from "react";
-import { useChatConfig } from "../../../chat/config/use-chat-config";
 import { MentionMenuPortal } from "../editor/mention-menu-portal";
 import { MentionPlugin } from "../editor/mention-plugin";
-import { isIframed } from "../is-iframed";
-import { useSlashCommands } from "./slash-command.context";
 import type { SlashCommandEntry } from "./slash-command-entry";
 import { filterSlashCommands, SlashCommandMenu } from "./slash-command-menu";
+import { useSlashCommands } from "./slash-command-registry.context";
 
 /** Props for {@link SlashCommandPlugin}. */
 interface SlashCommandPluginProps {
@@ -17,19 +15,16 @@ interface SlashCommandPluginProps {
 
 /**
  * Wires `MentionPlugin` to the slash command system. Must be rendered inside a
- * `LexicalComposer` wrapped by `SlashCommandProvider` so it can read the
- * current command list from context via `useSlashCommands()`. Renders nothing
- * in a frame when the theme hides tools there.
+ * `LexicalComposer` wrapped by `SlashCommandRegistryProvider` so it can read the
+ * current command list from context via `useSlashCommands()`. A host with no
+ * "/" menu (`ChatConfig.components.SlashCommands: null`) does not mount it.
  */
 export const SlashCommandPlugin: React.FC<SlashCommandPluginProps> = ({
 	isLoading,
 	hasTools,
 }) => {
-	const { theme } = useChatConfig();
 	const { commands } = useSlashCommands();
 	const isBusy = Boolean(isLoading || hasTools);
-
-	if (theme.featureFlags?.hideToolsInIframe && isIframed) return null;
 
 	/**
 	 * Runs a picked command, unless it is locked while busy.

@@ -3,7 +3,7 @@ import type {
 	PixelMessageToolCallPart,
 	PixelMessageToolResultPart,
 } from "../../../types";
-import { MCP_EXECUTION_ASK } from "../../tools/mcp/mcp-constants";
+import { MCP_EXECUTION_ASK } from "../../tools/mcp/mcp-execution";
 import { getToolAppId } from "../../tools/mcp/mcp-utils";
 import type { InputMessageStore } from "./input-message.store";
 import type { MessageKey } from "./message-map";

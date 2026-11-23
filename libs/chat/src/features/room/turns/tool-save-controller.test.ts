@@ -6,7 +6,7 @@ import {
 	runPixel,
 	runPixelAsync,
 } from "@semoss/sdk/react";
-import type { ThemeMap } from "@semoss/shared";
+import { testChatOptions } from "../../../test/chat-options";
 import { servePixelTransport } from "../../../test/pixel-transport";
 import type {
 	Engine,
@@ -14,16 +14,16 @@ import type {
 	PixelMessageToolCallPart,
 	ResponsePixelMessage,
 } from "../../../types";
+import { DEFAULT_WORKBENCH_PANELS } from "../../workbench/panels/default-workbench-panels";
+import type { ResponseMessageStore } from "../store/response-message.store";
+import { RoomStore } from "../store/room.store";
 import {
 	TOOL_CANCELLATION_PROMPT,
 	TOOL_ERROR_PROMPT,
 	TOOL_INTERRUPTED_PROMPT,
 	TOOL_OUTPUT_UNREADABLE_PROMPT,
 	TURN_CANCELLATION_PROMPT,
-} from "../../tools/mcp/mcp-constants";
-import { DEFAULT_WORKBENCH_PANEL_COMPONENTS } from "../../workbench/panels/room-panel-components";
-import type { ResponseMessageStore } from "../store/response-message.store";
-import { RoomStore } from "../store/room.store";
+} from "./turn-prompts";
 
 vi.mock("@semoss/sdk/react", () => ({
 	console: vi.fn(),
@@ -202,13 +202,13 @@ const modelReply = (
  */
 const loadRoom = async (
 	parts: ResponsePixelMessage["parts"],
-	theme = {} as ThemeMap["playground"],
+	chatOptions = testChatOptions(),
 ) => {
 	const room = new RoomStore({
-		theme,
+		chatOptions,
 		roomId: "room-1",
 		insightId: "insight-1",
-		panelComponents: DEFAULT_WORKBENCH_PANEL_COMPONENTS,
+		workbenchPanels: DEFAULT_WORKBENCH_PANELS,
 	});
 	const history = [
 		inputPixel("in-1"),

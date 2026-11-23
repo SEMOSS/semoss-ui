@@ -1,14 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, expect, test, vi } from "vitest";
-import {
-	type ChatConfig,
-	ChatConfigProvider,
-	ChatSessionProvider,
-	type ChatStore,
-	NewKnowledgeForm,
-	SaveAgentDialog,
-} from "@semoss/chat";
+import { ChatProvider, NewKnowledgeForm, SaveAgentDialog } from "@semoss/chat";
 import { AGENT_FORM_DEFAULT_VALUES } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
 import { AgentCreate } from "@/features/agents/agent-create";
@@ -49,10 +42,15 @@ vi.mock("@semoss/sdk", async (original) => ({
 	...(await original<typeof import("@semoss/sdk")>()),
 	addWorkspace: (_insightId: string, params: unknown) =>
 		mocks.addWorkspace(params),
+	// the chat reads the session's models as it starts; there are none
+	listModels: async () => [],
 }));
 vi.mock("@semoss/sdk/react", async (original) => ({
 	...(await original<typeof import("@semoss/sdk/react")>()),
-	Session: { insight: mockSessionInsight },
+	Session: {
+		insight: mockSessionInsight,
+		getSnapshot: () => ({ user: null }),
+	},
 	usePixel: mockPixel,
 	useSessionPixel: mockPixel,
 	useIteratorPixel: () => ({
@@ -70,21 +68,21 @@ vi.mock("@semoss/shared", async (original) => ({
 	SkillSelector: () => null,
 }));
 
-/** The chat providers the pages read from, over this test's stub chat store. */
+/** The chat's provider the pages read from, with the options they need. */
 const chatWrapper = ({ children }: { children: ReactNode }) => (
-	<ChatSessionProvider store={{} as unknown as ChatStore}>
-		<ChatConfigProvider
-			config={
-				{
-					theme: { featureFlags: {}, defaultEmbedderId: "embedder" },
-					options: {},
-					callbacks: {},
-				} as unknown as ChatConfig
-			}
-		>
-			{children}
-		</ChatConfigProvider>
-	</ChatSessionProvider>
+	<ChatProvider
+		config={{
+			options: {
+				roomHref: (roomId) => `#/room/${roomId}`,
+				defaultEmbedderId: "embedder",
+				isEmbedderSelectable: false,
+				shouldMakeKnowledgeMcp: false,
+			},
+			callbacks: { onOpenRoom: vi.fn(), onOpenNewChat: vi.fn() },
+		}}
+	>
+		{children}
+	</ChatProvider>
 );
 
 beforeEach(() => vi.clearAllMocks());

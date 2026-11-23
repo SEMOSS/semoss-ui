@@ -1,8 +1,8 @@
 import { TriangleAlertIcon } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
+import { ConnectorBrandIcon } from "@semoss/shared";
 import { cn, Label, Muted, Small, Switch } from "@semoss/ui/next";
 import type { ConnectorService } from "../store/connector-catalog";
-import { ConnectorServiceIcon } from "../viewers/connector-service-icon";
 
 /** Props for {@link ConnectorServiceRow}. */
 interface ConnectorServiceRowProps {
@@ -51,10 +51,7 @@ export const ConnectorServiceRow = ({
 	return (
 		<div className="flex min-w-0 items-start gap-3 py-3">
 			<div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border bg-background">
-				<ConnectorServiceIcon
-					serviceId={service.id}
-					className="size-5"
-				/>
+				<ConnectorBrandIcon brand={service.id} className="size-5" />
 			</div>
 			<div className="flex min-w-0 flex-1 flex-col gap-0.5">
 				<Label htmlFor={switchId} className="font-medium text-sm">

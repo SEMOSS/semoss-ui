@@ -2,6 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 import { toast } from "@semoss/ui/next";
+import { testChatOptions } from "../../../test/chat-options";
 import { fakeStore } from "../../../test/fake-store";
 import { RoomActionsProvider } from "../actions/room-actions.context";
 import type { RoomStore } from "../store/room.store";
@@ -15,7 +16,10 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@semoss/i18n", () => ({
 	useTranslation: () => ({ t: (key: string) => key }),
 }));
-vi.mock("../../chat/config/use-chat-config", () => ({
+vi.mock("../../chat/config/chat-config.context", async (original) => ({
+	...(await original<
+		typeof import("../../chat/config/chat-config.context")
+	>()),
 	useChatConfig: () => ({
 		callbacks: { onOpenRoom: vi.fn(), onOpenNewChat: mocks.onOpenNewChat },
 	}),
@@ -23,13 +27,18 @@ vi.mock("../../chat/config/use-chat-config", () => ({
 vi.mock("@semoss/sdk/react", () => ({
 	usePixel: () => ({ data: [], refresh: vi.fn() }),
 }));
-vi.mock("../../chat/provider/use-chat-session", async () => {
+vi.mock("../../chat/provider/chat-session.context", async (original) => {
 	const { fakeStore } = await import("../../../test/fake-store");
 	const chat = fakeStore({
 		keys: { roomCounter: 0 },
 		renameRoom: mocks.renameRoom,
 	});
-	return { useChatSession: () => ({ chat }) };
+	return {
+		...(await original<
+			typeof import("../../chat/provider/chat-session.context")
+		>()),
+		useChatSession: () => ({ chat }),
+	};
 });
 
 /** Only the fields the room's name reads. */
@@ -38,7 +47,7 @@ const room = fakeStore({
 	metadata: { name: "Quarterly plan", dateCreated: "" },
 	options: { instructions: "", mcp: [] },
 	agentTools: [],
-	theme: { featureFlags: {} },
+	chatOptions: testChatOptions(),
 }) as unknown as RoomStore;
 
 beforeEach(() => {

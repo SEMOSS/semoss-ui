@@ -57,6 +57,9 @@ export default defineConfig((env) => {
 			// tool views on tools.localhost included, to read workspace files.
 			server: { ...rendererConfig.server, cors: false },
 			root: resolve(root, "src/renderer"),
+			// the playground's .env, so both apps build with the same theme and
+			// new-chat defaults (its VITE_ values only; the desktop has its own servers)
+			envDir: resolve(root, "../playground"),
 			plugins: [
 				scopePptxViewerCssPlugin,
 				...(rendererConfig.plugins ?? []),

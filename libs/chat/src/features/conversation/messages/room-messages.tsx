@@ -1,5 +1,5 @@
 import { MoveDownIcon, MoveUpIcon, TriangleAlertIcon } from "lucide-react";
-import { Fragment, useContext } from "react";
+import { Fragment, type ReactNode, useContext } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { ChatGeneratingIndicator } from "@semoss/shared";
 import {
@@ -159,6 +159,11 @@ const toHistoryEntries = (rows: readonly unknown[]): RoomHistoryEntry[] => {
 interface RoomMessagesProps {
 	/** The room whose conversation to show; defaults to the room in context. */
 	room?: RoomStore;
+	/**
+	 * What follows the last response, such as follow-up prompts.
+	 * Default: `RoomSuggestions`; null shows nothing.
+	 */
+	suggestions?: ReactNode;
 }
 
 /**
@@ -166,7 +171,10 @@ interface RoomMessagesProps {
  * error, in a scroll area that follows a streaming reply. Also runs the tool
  * results that tool views post to the window.
  */
-export const RoomMessages = ({ room: roomProp }: RoomMessagesProps) => {
+export const RoomMessages = ({
+	room: roomProp,
+	suggestions,
+}: RoomMessagesProps) => {
 	const room = useRoomOrContext(roomProp);
 	const { t } = useTranslation("room");
 	const { t: tChat } = useTranslation("chat");
@@ -175,15 +183,16 @@ export const RoomMessages = ({ room: roomProp }: RoomMessagesProps) => {
 		room,
 		readRoomTurnState,
 	);
-	const { agentGreeting, isSuggesting, error, isAnyMessageStreaming } =
-		useRoomSelector(room, (current) => ({
+	const { agentGreeting, error, isAnyMessageStreaming } = useRoomSelector(
+		room,
+		(current) => ({
 			agentGreeting: current.agentGreeting,
-			isSuggesting: !!current.theme.featureFlags?.enableSuggestions,
 			error: current.error,
 			isAnyMessageStreaming: current.history.some(
 				(msg) => msg instanceof ResponseMessageStore && msg.isThinking,
 			),
-		}));
+		}),
+	);
 	const historyRows = useRoomSelector(room, selectHistoryRows);
 
 	// the room header floats over the conversation and blurs once it scrolls
@@ -289,7 +298,11 @@ export const RoomMessages = ({ room: roomProp }: RoomMessagesProps) => {
 								}
 							/>
 						</div>
-						{isSuggesting && <RoomSuggestions room={room} />}
+						{suggestions === undefined ? (
+							<RoomSuggestions room={room} />
+						) : (
+							suggestions
+						)}
 					</div>
 					{error ? (
 						<div className="mx-auto flex w-full max-w-3xl items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm shadow-sm">

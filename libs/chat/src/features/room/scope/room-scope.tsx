@@ -1,17 +1,26 @@
 import { type ReactNode, useEffect, useState } from "react";
+import { CALENDAR_TOOL_VIEWS, MAIL_TOOL_VIEWS } from "@semoss/connectors";
 import { InsightProvider } from "@semoss/sdk/react";
-import { ToolViewProvider } from "@semoss/shared";
+import { type ToolViewLibraries, ToolViewProvider } from "@semoss/shared";
 import { Spinner, toast } from "@semoss/ui/next";
 import { useLatestRef } from "@semoss/utility/react/use-latest-ref";
 import type { Engine } from "../../../types";
-import { useChatConfig } from "../../chat/config/use-chat-config";
-import { useChatSession } from "../../chat/provider/use-chat-session";
+import { useChatConfig } from "../../chat/config/chat-config.context";
+import { useChatSession } from "../../chat/provider/chat-session.context";
 import { useChatSelector } from "../../chat/store/use-chat-selector";
-import { TOOL_VIEW_LIBRARIES } from "../../tools/views/tool-view-libraries";
 import { RoomActionsProvider } from "../actions/room-actions.context";
 import type { RoomStore } from "../store/room.store";
 import { useRoomSelector } from "../store/use-room-selector";
 import { RoomProvider } from "./room.context";
+
+/**
+ * The `component://` libraries tool views are drawn from. Module scope
+ * matters: a new object would draw every tool view again.
+ */
+const TOOL_VIEW_LIBRARIES: ToolViewLibraries = {
+	mail: MAIL_TOOL_VIEWS,
+	calendar: CALENDAR_TOOL_VIEWS,
+};
 
 /** Which room `RoomScope` opens, and what it wraps. */
 interface RoomScopeProps {
