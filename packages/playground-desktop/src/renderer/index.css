@@ -6,3 +6,38 @@
 @import "@semoss/panels/globals.css";
 
 @source "./**/*.{ts,tsx}";
+
+/*
+ * macOS: the window has no title bar (main-window.ts), so the room header and
+ * the sidebar's top are the drag area, and both keep clear of the traffic
+ * lights (16px in, 16px down, about 52px wide).
+ */
+html[data-titlebar="inset"] {
+	[data-slot="room-header"],
+	[data-slot="sidebar-header"] {
+		-webkit-app-region: drag;
+	}
+
+	:is([data-slot="room-header"], [data-slot="sidebar-header"])
+		:is(button, a, input, textarea, [role="button"], [contenteditable]) {
+		-webkit-app-region: no-drag;
+	}
+
+	/* the open sidebar holds the lights above New chat */
+	[data-slot="sidebar-header"] {
+		padding-top: 2.5rem;
+	}
+
+	/* otherwise the room header starts after them */
+	[data-slot="sidebar-inset"] [data-slot="room-header"] {
+		padding-inline-start: 5rem;
+	}
+
+	@media (width >= 48rem) {
+		[data-slot="sidebar"][data-state="expanded"]
+			~ [data-slot="sidebar-inset"]
+			[data-slot="room-header"] {
+			padding-inline-start: 0.5rem;
+		}
+	}
+}

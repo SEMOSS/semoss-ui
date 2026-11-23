@@ -18,6 +18,10 @@ const mount = async (): Promise<void> => {
 	if (!container) {
 		throw new Error("Root element #root not found");
 	}
+	// macOS hides the title bar (main-window.ts); index.css makes room for it
+	if (navigator.userAgent.includes("Macintosh")) {
+		document.documentElement.dataset.titlebar = "inset";
+	}
 	const bridge = getDesktopBridge();
 	const root = createRoot(container);
 	const [server] = await Promise.all([

@@ -37,7 +37,9 @@ src/
                                   (one browser session per server), local-server (static files +
                                   proxy), tool-cookies (tool views' sign in), check-server
     features/app-window/          app-window-host (the window, on the active server's session),
-                                  main-window (remembered bounds), window-security
+                                  main-window (remembered bounds; on macOS no title bar, the
+                                  renderer's `data-titlebar="inset"` and index.css make the room
+                                  header and the sidebar's top the drag area), window-security
     features/auth/                sign-in-redirect (where a server URL comes back to)
     features/ipc/                 handle-ipc (every handler behind the sender check), register-ipc
     features/downloads/           the save dialog, starting in Downloads

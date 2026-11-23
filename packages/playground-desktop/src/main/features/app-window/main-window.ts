@@ -66,6 +66,14 @@ export const createMainWindow = (
 		show: false,
 		title: "Playground",
 		backgroundColor: "#ffffff",
+		// on macOS the page runs up to the top edge, the traffic lights in its
+		// header row; the renderer marks its headers as the drag area
+		...(process.platform === "darwin"
+			? {
+					titleBarStyle: "hiddenInset" as const,
+					trafficLightPosition: { x: 16, y: 16 },
+				}
+			: {}),
 		webPreferences: {
 			session: serverSession,
 			preload: join(__dirname, "../preload/preload.js"),

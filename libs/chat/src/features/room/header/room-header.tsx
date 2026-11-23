@@ -30,7 +30,10 @@ export const RoomHeader = ({
 }: RoomHeaderProps) => {
 	const room = useRoomOrContext(roomProp);
 	return (
-		<header className="flex h-14 min-w-0 items-center gap-1 px-2 md:h-11">
+		<header
+			data-slot="room-header"
+			className="flex h-14 min-w-0 items-center gap-1 px-2 md:h-11"
+		>
 			{leading}
 			<div className="flex min-w-0 flex-1 items-center">
 				<RoomTitle />
