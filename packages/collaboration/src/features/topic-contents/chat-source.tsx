@@ -10,6 +10,7 @@ import {
 	useTopicSessions,
 } from "@/features/dashboard/use-topic-sessions";
 import type { RoomRow } from "@/features/rooms/api/room-schemas";
+import { lexicon } from "@/lib/lexicon";
 import { TopicChecklist, type TopicChecklistRow } from "./topic-checklist";
 
 // the topic's own chats list this many; Show more adds as many again
@@ -17,7 +18,8 @@ const PAGE_SIZE = 50;
 
 const VIA_TEXT: Record<NonNullable<TopicSessionRoom["via"]>, string> = {
 	thread: "From one of this topic's threads",
-	assistant: "Added by the assistant",
+	// Brain's classifier or any agent's TagTopic put it there, so it names nobody, as the chat's own topic chip does
+	assistant: "Added automatically",
 };
 
 interface ChatSourceProps {
@@ -28,7 +30,7 @@ interface ChatSourceProps {
 }
 
 /**
- * The owner's assistant chats, each with a box that puts it in the topic or takes it off. A change is saved
+ * The owner's Digital Twin chats, each with a box that puts it in the topic or takes it off. A change is saved
  * before the row shows it, and the chat stays listed so it can be undone where it was made.
  */
 export function ChatSource({ topic, view }: ChatSourceProps) {
@@ -144,13 +146,13 @@ export function ChatSource({ topic, view }: ChatSourceProps) {
 				<TopicChecklist
 					label={
 						view === "topic"
-							? "Assistant chats in this topic"
-							: "Assistant chats"
+							? "Digital Twin Chats in This Topic"
+							: lexicon.twinChats
 					}
 					description={
 						view === "topic"
-							? "Your chats with the assistant that are filed under this topic. Uncheck one to take it off."
-							: "Your chats with the assistant in this app. These are not Teams chats."
+							? "Your chats in this app that are filed under this topic. Uncheck one to take it off."
+							: "Your chats in this app, with your Digital Twin or another agent. These are not Teams chats."
 					}
 					noun="chats"
 					searchPlaceholder="Search by chat name"
@@ -171,8 +173,8 @@ export function ChatSource({ topic, view }: ChatSourceProps) {
 					onRetry={source.retry}
 					emptyText={
 						view === "topic"
-							? "No assistant chats in this topic yet. Pick some under Assistant chats."
-							: "You have no assistant chats yet."
+							? "No Digital Twin chats in this topic yet. Pick some under Digital Twin Chats."
+							: "You have no Digital Twin chats yet."
 					}
 					footnote={
 						view === "all" && terms.length > 0 && search.hasMore

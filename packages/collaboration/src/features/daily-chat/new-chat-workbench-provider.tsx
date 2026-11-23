@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { InsightContext } from "@semoss/sdk/react";
 import type { WorkbenchLayout } from "@semoss/workbench";
+import { useChatAgent } from "@/features/digital-twin/use-main-twin";
 import { ROOM_CONNECTOR_COMPONENTS } from "@/features/room-connectors/room-connectors.components";
 import { createRoomConnectorLayout } from "@/features/room-connectors/room-connectors.constants";
 import { RoomConnectorsProvider } from "@/features/room-connectors/room-connectors-provider";
@@ -29,6 +30,8 @@ interface NewChatWorkbenchProviderProps {
 	session: RoomSession;
 	snapshot: RoomSessionSnapshot;
 	onSaveSettings: (settings: RoomSettings) => Promise<void>;
+	/** The page is one agent's own, such as a Digital Twin's chat page. */
+	isAgentLocked?: boolean;
 	children: ReactNode;
 }
 
@@ -37,9 +40,16 @@ export function NewChatWorkbenchProvider({
 	session,
 	snapshot,
 	onSaveSettings,
+	isAgentLocked,
 	children,
 }: NewChatWorkbenchProviderProps) {
 	const insight = session.insight;
+	const chat = useChatAgent({
+		agentId: snapshot.settings.agentId,
+		agent: snapshot.agent,
+		options: snapshot.options,
+		isOwnPage: isAgentLocked,
+	});
 	return (
 		<InsightContext.Provider
 			value={{
@@ -54,7 +64,7 @@ export function NewChatWorkbenchProvider({
 		>
 			<RoomSettingsPanelContext.Provider
 				value={{
-					agentName: snapshot.agent?.name ?? "Assistant",
+					agentName: chat.name,
 					agent: snapshot.agent ?? undefined,
 					modelId: snapshot.modelId,
 					modelName: snapshot.modelName,

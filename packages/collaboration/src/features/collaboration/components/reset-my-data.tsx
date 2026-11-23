@@ -63,9 +63,11 @@ export function ResetMyData() {
 					<DialogTitle>Reset all of your data?</DialogTitle>
 					<DialogDescription>
 						Your profile, people, topics, threads, rules, memories,
-						work items, and routines with their past runs are
-						deleted, and onboarding starts again. Your chats and
-						Microsoft sign-in stay. This cannot be undone.
+						work items, and routines with their past runs and the
+						chats opened from them are deleted, and onboarding
+						starts again. Your other chats, your persona, your
+						Digital Twin’s name and picture, and your Microsoft
+						sign-in stay. This cannot be undone.
 					</DialogDescription>
 				</DialogHeader>
 				{error && (

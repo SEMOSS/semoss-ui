@@ -2,11 +2,13 @@ import {
 	ArrowLeft,
 	ArrowRight,
 	Check,
+	Fingerprint,
 	FolderOpen,
 	ImageIcon,
 	Library,
 	type LucideIcon,
 	MessageSquareText,
+	NotebookPen,
 	Sparkles,
 	UserRound,
 } from "lucide-react";
@@ -46,16 +48,21 @@ import {
 import { TwinBirthScene } from "./twin-birth-scene";
 import { TwinKnowledgeStep } from "./twin-knowledge-step";
 import { TwinProfileFields } from "./twin-profile-fields";
-import { newTwinProfile, twinProfileSchema } from "./twin-profile-schema";
+import {
+	newTwinInstructions,
+	newTwinProfile,
+	twinProfileSchema,
+} from "./twin-profile-schema";
 import { describeTwinSources, twinSourceKind } from "./twin-sources";
 import { useImagePreview } from "./use-image-preview";
+import { useTwinIndex } from "./use-twin-index";
 
 // one decision at a time: who it is, how it answers, what it can use, what it knows, then a look at all of it
 const STEPS = [
 	{
 		id: "identity",
 		label: "Identity",
-		title: "Who is your Digital Twin?",
+		title: "Who is the new twin?",
 		description:
 			"Give it a name and a face. People see both when they chat with it.",
 		fields: ["image", "name"],
@@ -65,8 +72,8 @@ const STEPS = [
 		label: "Voice",
 		title: "How should it answer?",
 		description:
-			"Its instructions start from a version that keeps it honest about being an AI and about where its answers come from. Change what you like.",
-		fields: ["instructions", "greeting"],
+			"Say how it should sound and how it greets people, and tell it about yourself. You can change all of it later.",
+		fields: ["usePersona", "instructions", "greeting", "about"],
 	},
 	{
 		id: "abilities",
@@ -81,7 +88,7 @@ const STEPS = [
 		label: "Knowledge",
 		title: "What should it know?",
 		description:
-			"Choose the emails, Teams chats and files it answers from. Copies of them go into your Digital Twin when it is created, where the people you share it with can open them. You can also skip this and add them later.",
+			"Choose the emails, Teams chats and files it answers from. Copies of them go into the new twin when it is created, where the people you share it with can open them. You can also skip this and add them later.",
 		fields: [],
 	},
 	{
@@ -89,7 +96,7 @@ const STEPS = [
 		label: "Review",
 		title: "Ready to bring it to life?",
 		description:
-			"This is what you chose. Your Digital Twin stays private until you name the people who can chat with it.",
+			"This is what you chose. The new twin stays private until you name the people who can chat with it.",
 		fields: [],
 	},
 ] as const;
@@ -101,10 +108,12 @@ const SETUP: Record<
 	TwinSetupStep | "finish",
 	{ label: string; icon: LucideIcon }
 > = {
-	twin: { label: "Create your Digital Twin", icon: UserRound },
+	twin: { label: "Create the twin", icon: UserRound },
 	folder: { label: "Make room for what it knows", icon: FolderOpen },
 	greeting: { label: "Save its greeting", icon: MessageSquareText },
 	image: { label: "Upload its image", icon: ImageIcon },
+	note: { label: "Save your note", icon: NotebookPen },
+	persona: { label: "Switch your persona off for it", icon: Fingerprint },
 	knowledge: { label: "Add what you chose", icon: Library },
 	finish: { label: "Finish setting it up", icon: Sparkles },
 };
@@ -118,6 +127,8 @@ interface TwinCreateWizardProps {
 	ownerName: string;
 	/** The owner's skill catalog; the twin can follow any of them. */
 	skills: CatalogSkill[];
+	/** Whether the owner has a persona, which the new twin uses unless they switch it off here. */
+	hasPersona: boolean;
 	/** Called when the owner goes on from the new twin to its own page. */
 	onOpenSettings: () => void;
 }
@@ -133,6 +144,7 @@ interface TwinCreateWizardProps {
 export function TwinCreateWizard({
 	ownerName,
 	skills,
+	hasPersona,
 	onOpenSettings,
 }: TwinCreateWizardProps) {
 	const { actions } = useInsight();
@@ -141,7 +153,7 @@ export function TwinCreateWizard({
 	const id = useId();
 	const form = useForm<TwinProfile>({
 		resolver: zodResolver(twinProfileSchema),
-		defaultValues: newTwinProfile(ownerName),
+		defaultValues: newTwinProfile(ownerName, hasPersona),
 	});
 	const { errors, isSubmitting } = form.formState;
 	const values = form.watch();
@@ -157,6 +169,8 @@ export function TwinCreateWizard({
 	>([]);
 	// set by a create that made the twin, even one whose later steps failed
 	const [twinId, setTwinId] = useState<string>();
+	// what each copy holds is described for the twin's chats a moment after the twin exists
+	const requestIndex = useTwinIndex(twinId);
 	// what the server is doing, and how far it is, while the twin is made; null while the steps show
 	const [setup, setSetup] = useState<{
 		steps: (TwinSetupStep | "finish")[];
@@ -173,11 +187,15 @@ export function TwinCreateWizard({
 		setReached((furthest) => Math.max(furthest, next));
 		setStep(next);
 	};
-	const handleSubmit = async (profile: TwinProfile): Promise<void> => {
+	const handleSubmit = async (entered: TwinProfile): Promise<void> => {
 		if (step < LAST_STEP) {
 			goTo(step + 1);
 			return;
 		}
+		const profile = {
+			...entered,
+			instructions: newTwinInstructions(entered, ownerName),
+		};
 		// no wait is added for someone who asked for less motion, or where that cannot be told
 		const pause =
 			window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ===
@@ -208,7 +226,15 @@ export function TwinCreateWizard({
 					done: 0,
 				});
 				await Promise.all([
-					saveTwin(actions, madeId, profile),
+					// shortcut: the first try may have saved a note the owner has emptied since, and that one stays; the twin's Profile shows it, to clear there
+					// a twin just made uses its owner's persona, so switching it off is a change
+					saveTwin(
+						actions,
+						madeId,
+						profile,
+						"",
+						hasPersona ? true : undefined,
+					),
 					sleep(pause),
 				]);
 				if (pending.length) {
@@ -245,11 +271,13 @@ export function TwinCreateWizard({
 				message:
 					cause instanceof Error
 						? cause.message
-						: "Your Digital Twin could not be created.",
+						: "The new twin could not be created.",
 			});
 			return;
 		}
 		setTwinId(madeId);
+		// a twin finished on a second try already had its id, so nothing else asks for what was just added
+		requestIndex();
 		setSetup(
 			(current) => current && { ...current, done: current.steps.length },
 		);
@@ -264,7 +292,7 @@ export function TwinCreateWizard({
 		if (first >= 0 && first !== step) goTo(first);
 	};
 
-	const name = values.name.trim() || "Your Digital Twin";
+	const name = values.name.trim() || "New Twin";
 	const copied = knowledge.filter((item) => item.isCopied).length;
 	const skillNames = new Map(
 		availableSkills.map((skill) => [skill.id, skill.name]),
@@ -280,12 +308,23 @@ export function TwinCreateWizard({
 				</span>
 			),
 		},
+		...(hasPersona
+			? [
+					{
+						term: "Persona",
+						step: 1,
+						value: values.usePersona
+							? "It answers in your voice, as your persona describes it."
+							: "Off for this twin. It answers plainly.",
+					},
+				]
+			: []),
 		{
 			term: "Instructions",
 			step: 1,
 			value: (
 				<span className="line-clamp-3 whitespace-pre-line">
-					{values.instructions.trim() || "None"}
+					{newTwinInstructions(values, ownerName).trim() || "None"}
 				</span>
 			),
 		},
@@ -296,6 +335,15 @@ export function TwinCreateWizard({
 				<span className="line-clamp-3 whitespace-pre-line">
 					{values.greeting.trim() ||
 						"None. People start the chat themselves."}
+				</span>
+			),
+		},
+		{
+			term: "About you",
+			step: 1,
+			value: (
+				<span className="line-clamp-3 whitespace-pre-line">
+					{values.about.trim() || "None."}
 				</span>
 			),
 		},
@@ -315,7 +363,7 @@ export function TwinCreateWizard({
 			step: KNOWLEDGE_STEP,
 			value:
 				describeTwinSources(knowledge.map((item) => item.source)) ||
-				"Nothing yet. You can add it once your Digital Twin is created.",
+				"Nothing yet. You can add it once the new twin is created.",
 		},
 	];
 	// where to go from the new twin, the thing it needs next last, as the one to press
@@ -478,14 +526,14 @@ export function TwinCreateWizard({
 								</span>
 							)}
 							<span className="min-w-0">
-								Create your Digital Twin
+								Create a Twin to Share
 							</span>
 						</span>
 					}
 					description="An AI that answers questions about you from the emails, Teams chats and files you copy into it. Each twin has its own knowledge and the people you choose to share it with."
 				/>
 				<ol
-					aria-label="Steps to create your Digital Twin"
+					aria-label="Steps to create a twin to share"
 					className="flex items-center gap-2"
 				>
 					{STEPS.map((entry, index) => (
@@ -615,6 +663,7 @@ export function TwinCreateWizard({
 											<TwinProfileFields
 												group={entry.id}
 												skills={availableSkills}
+												hasPersona={hasPersona}
 												onSkillCreated={(skill) =>
 													setCreatedSkills(
 														(current) => [
@@ -690,7 +739,7 @@ export function TwinCreateWizard({
 							) : twinId ? (
 								"Finish setting up"
 							) : (
-								"Create Digital Twin"
+								"Create Twin"
 							)}
 						</Button>
 					</div>

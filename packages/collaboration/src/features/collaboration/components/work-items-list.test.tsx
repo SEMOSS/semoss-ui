@@ -222,11 +222,11 @@ it("lists each handoff with its person, item and ask, and opens the Waiting view
 	await renderWork();
 	const card = within(screen.getByRole("region", { name: "Waiting on" }));
 	expect(card.getByText("Priya Shah")).toBeVisible();
-	expect(card.getByRole("link", { name: "Item b" })).toHaveAttribute(
+	expect(card.getByRole("link", { name: "Send the policy" })).toHaveAttribute(
 		"href",
 		"/work/item/b",
 	);
-	expect(card.getByText("Send the policy")).toBeVisible();
+	expect(card.getByText("Item b")).toBeVisible();
 
 	await user.click(card.getByRole("button", { name: "View waiting items" }));
 	const tab = screen.getByRole("tab", { name: "Waiting 1" });
@@ -525,6 +525,9 @@ it("shows single steps under Needs you and Also asked of you, with their topic a
 			</MemoryRouter>
 		</CollaborationSessionProvider>,
 	);
+	await userEvent.click(
+		await screen.findByRole("button", { name: /^Single steps/ }),
+	);
 	const needs = within(
 		await screen.findByRole("list", {
 			name: "Single steps: Needs you",
@@ -563,6 +566,9 @@ it("offers Undo after a single step is taken off the list", async () => {
 				<WorkItems />
 			</MemoryRouter>
 		</CollaborationSessionProvider>,
+	);
+	await userEvent.click(
+		await screen.findByRole("button", { name: /^Single steps/ }),
 	);
 	await userEvent.click(
 		await screen.findByRole("button", {

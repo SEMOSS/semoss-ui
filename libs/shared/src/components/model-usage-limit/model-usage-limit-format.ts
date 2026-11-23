@@ -11,8 +11,10 @@ import type {
  * a person's grant on a model (DIRECT), a team's grant (TEAM), a model's
  * public use (PUBLIC), a model's total (MODEL_TOTAL), a person's default for
  * all models (ALL_MODELS), the platform default (PLATFORM), a team's total
- * across all models (TEAM_TOTAL), or an app's permission on a model (APP),
- * which covers the calls the app's custom reactors make with it
+ * across all models (TEAM_TOTAL), an app's permission on a model (APP), which
+ * covers the calls the app's custom reactors make with it, or another engine's
+ * permission on a model (ENGINE), which covers the calls the engine's own code
+ * makes with it
  */
 export type ModelUsageLimitSource =
 	| "DIRECT"
@@ -22,7 +24,8 @@ export type ModelUsageLimitSource =
 	| "ALL_MODELS"
 	| "PLATFORM"
 	| "TEAM_TOTAL"
-	| "APP";
+	| "APP"
+	| "ENGINE";
 
 /** The metrics, in the order the editor offers them */
 export const MODEL_USAGE_METRICS: readonly ModelUsageMetric[] = [
@@ -139,13 +142,19 @@ export const getRuleSlotKey = (
 
 /**
  * @param source - where a limit is set
- * @returns which counts its rules can have: both for a team, an app or public
- * use, only shared for a total, and only each person's own for the rest
+ * @returns which counts its rules can have: both for a team, an app, an engine
+ * or public use, only shared for a total, and only each person's own for the
+ * rest
  */
 export const getSourceCounts = (
 	source: ModelUsageLimitSource,
 ): readonly ModelUsageCounts[] => {
-	if (source === "TEAM" || source === "PUBLIC" || source === "APP") {
+	if (
+		source === "TEAM" ||
+		source === "PUBLIC" ||
+		source === "APP" ||
+		source === "ENGINE"
+	) {
 		return ["SHARED", "EACH_PERSON"];
 	}
 	return source === "MODEL_TOTAL" || source === "TEAM_TOTAL"
@@ -258,14 +267,15 @@ export const formatMicrosForInput = (micros: number): string => {
 
 /**
  * What a rule for each person is called after it, where a limit can also be
- * shared: a team's members, an app's users, and the people using a public
- * model. The other sources count one way only, so they say nothing.
+ * shared: a team's members, an app's or engine's users, and the people using a
+ * public model. The other sources count one way only, so they say nothing.
  */
 const EACH_PERSON_PHRASES: Readonly<
 	Partial<Record<ModelUsageLimitSource, string>>
 > = {
 	TEAM: " for each member",
 	APP: " for each user",
+	ENGINE: " for each user",
 	PUBLIC: " for each person",
 };
 

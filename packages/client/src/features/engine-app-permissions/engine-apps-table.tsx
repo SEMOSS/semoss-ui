@@ -104,8 +104,8 @@ export const EngineAppsTable = ({
 }: EngineAppsTableProps) => {
 	const headingId = useId();
 	const permissions = useEngineAppPermissions(id, admin);
-	const { apps, canChangeProjects } = permissions;
-	const canAddApps = canChangeProjects && !permissions.addsAreAdminOnly;
+	const { apps, canChangeEngines } = permissions;
+	const canAddApps = canChangeEngines && !permissions.addsAreAdminOnly;
 	const [isAddOpen, setIsAddOpen] = useState(false);
 	const [addDialogKey, setAddDialogKey] = useState(0);
 	const [isChanging, setIsChanging] = useState(false);
@@ -120,8 +120,7 @@ export const EngineAppsTable = ({
 
 	const hasLimits = type === "MODEL";
 	const isCostAvailable = permissions.costLimitsAvailable;
-	const canChangeLimit =
-		canChangeProjects && permissions.canChangeModelLimits;
+	const canChangeLimit = canChangeEngines && permissions.canChangeModelLimits;
 	const hasEndDates = apps?.some((app) => app.access.endDate) ?? false;
 	const isBusy = isChanging || permissions.isLoading;
 	const shownPendingLevel =
@@ -132,7 +131,7 @@ export const EngineAppsTable = ({
 		2 +
 		(hasLimits ? 1 : 0) +
 		(hasEndDates ? 1 : 0) +
-		(canChangeProjects ? 1 : 0);
+		(canChangeEngines ? 1 : 0);
 
 	const reloadApps = () => {
 		setLevelError(null);
@@ -236,7 +235,7 @@ export const EngineAppsTable = ({
 					</AlertDescription>
 				</Alert>
 			) : null}
-			{canChangeProjects && permissions.addsAreAdminOnly ? (
+			{canChangeEngines && permissions.addsAreAdminOnly ? (
 				<Alert>
 					<AlertDescription>
 						Only admins can give apps access to this engine, from
@@ -251,8 +250,8 @@ export const EngineAppsTable = ({
 				</Alert>
 			) : null}
 			<div className="rounded-xl border border-border">
-				<div className="flex flex-wrap items-start justify-between gap-2 rounded-t-xl border-border border-b bg-background px-6 py-3">
-					<div className="flex min-w-0 flex-col gap-1">
+				<div className="flex items-start justify-between gap-4 rounded-t-xl border-border border-b bg-background px-6 py-3">
+					<div className="flex min-w-0 flex-1 flex-col gap-1">
 						<div className="flex flex-wrap items-center gap-2">
 							<H4 id={headingId}>Apps</H4>
 							{hasLimits ? (
@@ -267,8 +266,8 @@ export const EngineAppsTable = ({
 							) : null}
 						</div>
 						<Muted className="font-normal">
-							Apps whose custom reactors can use this engine for
-							people who have no access to it themselves.
+							Apps whose custom reactors can call this engine,
+							even for people with no access to it.
 						</Muted>
 					</div>
 					{canAddApps ? (
@@ -276,6 +275,7 @@ export const EngineAppsTable = ({
 							ref={addButtonRef}
 							type="button"
 							size="sm"
+							className="shrink-0"
 							onClick={() => {
 								setAddDialogKey((key) => key + 1);
 								setIsAddOpen(true);
@@ -302,7 +302,7 @@ export const EngineAppsTable = ({
 							{hasEndDates ? (
 								<TableHead className="px-4">Ends</TableHead>
 							) : null}
-							{canChangeProjects ? (
+							{canChangeEngines ? (
 								<TableHead className="w-px whitespace-nowrap px-4 text-center">
 									Actions
 								</TableHead>
@@ -349,7 +349,7 @@ export const EngineAppsTable = ({
 												<Select
 													value={level}
 													disabled={
-														!canChangeProjects ||
+														!canChangeEngines ||
 														isBusy
 													}
 													onValueChange={(value) =>
@@ -427,7 +427,7 @@ export const EngineAppsTable = ({
 												)}
 											</TableCell>
 										) : null}
-										{canChangeProjects ? (
+										{canChangeEngines ? (
 											<TableCell className="px-4 text-center">
 												<Tooltip>
 													<TooltipTrigger asChild>
@@ -479,7 +479,7 @@ export const EngineAppsTable = ({
 				</Table>
 			</div>
 
-			{canChangeProjects ? (
+			{canChangeEngines ? (
 				<AddEngineAppDialog
 					key={addDialogKey}
 					open={isAddOpen}

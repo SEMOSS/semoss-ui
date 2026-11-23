@@ -91,7 +91,7 @@ function Host({
 		<TwinKnowledgeFinder
 			savedItems={{
 				isSaved: (itemKey) => held.includes(itemKey),
-				label: "In your Digital Twin",
+				label: "In This Twin",
 			}}
 			onSaved={async (file) => {
 				await onSaved(file);
@@ -105,7 +105,7 @@ async function find(prompt = "Everything about Apollo") {
 	const user = userEvent.setup();
 	await user.type(
 		screen.getByRole("textbox", {
-			name: "What should your Digital Twin know?",
+			name: "What Should This Twin Know?",
 		}),
 		prompt,
 	);
@@ -116,7 +116,7 @@ const group = (name: string) => screen.getByRole("region", { name });
 /** What is said above the list once all four of the server's suggestions are in it. */
 const foundAll = () =>
 	screen.findByText(
-		"4 suggestions. Add the ones your Digital Twin should answer from.",
+		"4 suggestions. Add the ones this twin should answer from.",
 	);
 
 beforeEach(() => {
@@ -159,7 +159,45 @@ it("asks what the twin should know before it searches anything", async () => {
 
 	await user.click(screen.getByRole("button", { name: "Find suggestions" }));
 	expect(
-		await screen.findByText("Say what your Digital Twin should know."),
+		await screen.findByText("Say what this twin should know."),
+	).toBeVisible();
+	expect(insight.actions.run).not.toHaveBeenCalled();
+});
+
+it("keeps a search to the places and the stretch of time the owner chose", async () => {
+	answer = { suggestions: [], notes: [] };
+	const user = userEvent.setup();
+	render(<Host />);
+	// everything is searched until the owner says otherwise
+	for (const name of ["Emails", "Teams chats", "Files"])
+		expect(screen.getByRole("checkbox", { name })).toBeChecked();
+	await user.click(screen.getByRole("checkbox", { name: "Teams chats" }));
+	// by keyboard: the list's pointer handling is not in the test's DOM
+	const when = screen.getByRole("combobox", { name: "When" });
+	expect(when).toHaveTextContent("Any time");
+	when.focus();
+	await user.keyboard("{Enter}");
+	await user.keyboard("{ArrowDown}{ArrowDown}{Enter}");
+	expect(when).toHaveTextContent("Past month");
+	await find();
+
+	// a search kept narrow that found nothing says how to widen it
+	expect(
+		await screen.findByText(/Or look in more places, or further back\./),
+	).toBeVisible();
+	expect(ran()).toEqual([
+		'WorkSuggestTwinKnowledge(prompt=["Everything about Apollo"], kinds=["email","file"], sinceDays=[30]);',
+	]);
+});
+
+it("asks for at least one place to look in before it searches", async () => {
+	const user = userEvent.setup();
+	render(<Host />);
+	for (const name of ["Emails", "Teams chats", "Files"])
+		await user.click(screen.getByRole("checkbox", { name }));
+	await find();
+	expect(
+		await screen.findByText("Choose at least one place to look in."),
 	).toBeVisible();
 	expect(insight.actions.run).not.toHaveBeenCalled();
 });
@@ -179,7 +217,7 @@ it("lists what was found by kind with the reason for each, and marks what the tw
 	expect(emails[0]).toHaveTextContent("Sets the cutover date");
 	expect(emails[0]).toHaveTextContent("Confirmed for the 14th");
 	// held already: it says so in place of offering it again
-	expect(emails[1]).toHaveTextContent("In your Digital Twin");
+	expect(emails[1]).toHaveTextContent("In This Twin");
 	expect(within(emails[1]).queryByRole("button")).toBeNull();
 	expect(
 		within(group("Teams chats 1")).getByRole("listitem"),
@@ -190,6 +228,45 @@ it("lists what was found by kind with the reason for each, and marks what the tw
 	expect(screen.getByRole("button", { name: "Add all 3" })).toBeVisible();
 	// nothing is added by finding it
 	expect(save).not.toHaveBeenCalled();
+});
+
+it("shows whose email or one on one chat a suggestion is by their Microsoft picture, where the server says who", async () => {
+	const chat = {
+		kind: "chat",
+		date: "2026-11-02T10:00:00Z",
+		preview: "",
+		reason: "Covers the vendor call",
+	};
+	answer = {
+		suggestions: [
+			{ ...FOUND.suggestions[0], person: { email: "sam@test.com" } },
+			{
+				...chat,
+				id: "19:one",
+				title: "Dana Ortiz",
+				from: "Dana Ortiz",
+				person: { userId: "id-dana" },
+			},
+			{ ...chat, id: "19:many", title: "Apollo vendors", from: "Grace" },
+		],
+		notes: [],
+	};
+	render(<Host />);
+	await find();
+
+	const email = await within(group("Emails 1")).findByRole("listitem");
+	expect(email.querySelector("img")?.getAttribute("src")).toMatch(
+		/\/msgraph\/photo\?email=sam%40test\.com$/,
+	);
+	const [one, many] = within(group("Teams chats 2")).getAllByRole("listitem");
+	expect(one.querySelector("img")?.getAttribute("src")).toMatch(
+		/\/msgraph\/photo\?userId=id-dana$/,
+	);
+	// their initials wait under the picture, in place of a chat's mark
+	expect(one.querySelector('[data-slot="avatar"]')?.textContent).toBe("DO");
+	// a chat of more people keeps the mark, and asks for nobody's picture
+	expect(many.querySelector("img")).toBeNull();
+	expect(many.querySelector('[data-slot="avatar"]')?.textContent).toBe("");
 });
 
 it("adds a suggestion the way its own viewer saves it, and marks it once the host has it", async () => {
@@ -203,7 +280,7 @@ it("adds a suggestion the way its own viewer saves it, and marks it once the hos
 	await waitFor(() =>
 		expect(
 			within(group("Files 1")).getByRole("listitem"),
-		).toHaveTextContent("In your Digital Twin"),
+		).toHaveTextContent("In This Twin"),
 	);
 	expect(save).toHaveBeenCalledExactlyOnceWith("insight-1", {
 		kind: "file",
@@ -282,7 +359,7 @@ it("says why a search failed and keeps what was asked, so it can be tried again"
 	).toBeNull();
 	expect(
 		screen.getByRole("textbox", {
-			name: "What should your Digital Twin know?",
+			name: "What Should This Twin Know?",
 		}),
 	).toHaveValue("Everything about Apollo");
 

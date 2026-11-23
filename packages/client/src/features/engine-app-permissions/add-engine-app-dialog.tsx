@@ -211,8 +211,8 @@ export const AddEngineAppDialog = ({
 							Add App
 						</DialogTitle>
 						<DialogDescription>
-							The app's custom reactors can use this engine for
-							people who have no access to it themselves.
+							The app's custom reactors can call this engine, even
+							for people with no access to it.
 						</DialogDescription>
 					</DialogHeader>
 

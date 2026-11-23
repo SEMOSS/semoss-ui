@@ -18,6 +18,7 @@ import {
 	Plus,
 	Tags,
 	Users,
+	X,
 } from "lucide-react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router";
@@ -70,6 +71,7 @@ import {
 	useCollaborationSession,
 	useWorkChanged,
 } from "../state/collaboration-session.context";
+import { topicTone } from "../topic-tone";
 import { offerStepUndo } from "../work-item-actions";
 import { ClosedForYou } from "./closed-for-you";
 import { CollaborationHeroHeader } from "./collaboration-hero-header";
@@ -106,6 +108,8 @@ interface Item {
 	needsYou: boolean;
 	topic?: string;
 	topicId?: string;
+	/** Every topic it sits under; the first of them is its main one. */
+	topics?: { id: string; name: string }[];
 	roomId?: string;
 	rooms?: Room[];
 	due?: string;
@@ -151,6 +155,7 @@ function toItem(row: Row): Item {
 		needsYou: row.needsYou !== false,
 		topic: primary ? str(primary.name) : undefined,
 		topicId: primary ? str(primary.id) : undefined,
+		topics: topics.map((t) => ({ id: str(t.id), name: str(t.name) })),
 		roomId: str(row.roomId) || undefined,
 		rooms: list(row.rooms).map(toRoom),
 		due: str(row.due) || undefined,
@@ -207,6 +212,36 @@ function ItemTopicChip({ item }: { item: Item }) {
 	);
 }
 
+/** The topics an item sits under besides the one being looked at, so a topic's own page does not repeat itself. */
+function ItemOtherTopics({
+	item,
+	exceptId,
+}: {
+	item: Item;
+	exceptId?: string;
+}) {
+	const { state } = useCollaborationSession();
+	const others = (item.topics ?? []).filter((t) => t.id !== exceptId);
+	if (!others.length) return null;
+	return (
+		<>
+			{others.map((t) => {
+				const topic = state.topics.find((s) => s.id === t.id);
+				return topic ? (
+					<SharedTopicChip key={t.id} topic={topic} />
+				) : (
+					<span
+						key={t.id}
+						className="whitespace-nowrap rounded-md bg-muted px-2 py-0.5 text-sm"
+					>
+						{t.name}
+					</span>
+				);
+			})}
+		</>
+	);
+}
+
 /** How many of what the server has were returned; a list is cut when a busy owner has more than it sends. */
 export interface WorkTotals {
 	workItems: number;
@@ -216,8 +251,8 @@ export interface WorkTotals {
 const numberOf = (value: unknown, fallback: number): number =>
 	typeof value === "number" && Number.isFinite(value) ? value : fallback;
 
-/** The work list data and the owner's actions on it. */
-export function useWorkItems() {
+/** The work list data and the owner's actions on it; one topic's work when topicId is given. */
+export function useWorkItems(topicId?: string) {
 	const { actions } = useInsight();
 	const [items, setItems] = useState<Item[] | null>(null);
 	// steps that belong to no work item: a single ask on a conversation is usually one
@@ -238,7 +273,10 @@ export function useWorkItems() {
 		try {
 			// includeSuggested: the assistant's own loose steps are the owner's to see too
 			const [out] = (await runBatch(actions, [
-				pixel("WorkListMyWork", { includeSuggested: true }),
+				pixel("WorkListMyWork", {
+					includeSuggested: true,
+					...(topicId ? { topicId } : {}),
+				}),
 			])) as Row[];
 			const workItems = list(out?.workItems).map(toItem);
 			const loose = list(out?.looseSteps).map(toTaskStep);
@@ -253,7 +291,7 @@ export function useWorkItems() {
 		} catch (cause) {
 			setError(errorText(cause));
 		}
-	}, [actions]);
+	}, [actions, topicId]);
 
 	useEffect(() => {
 		// another view changed work: read the list again
@@ -367,10 +405,6 @@ export function mineNext(item: Item, isMine: (step: Step) => boolean) {
 		item.openSteps.find((s) => s.status === "open" && isMine(s)) ??
 		item.openSteps.find((s) => isMine(s))
 	);
-}
-
-function nextStep(item: Item, isMine: (step: Step) => boolean) {
-	return mineNext(item, isMine) ?? item.openSteps[0];
 }
 
 /** Where an item is worked: its newest room, legacy room, or the item page until it has one. */
@@ -576,16 +610,28 @@ function ItemRow({
 									{next.text}
 								</>
 							) : waiting ? (
-								<>
+								waiting.text.trim().toLowerCase() ===
+								item.title.trim().toLowerCase() ? (
 									<span className="font-medium text-foreground">
 										Waiting on{" "}
 										{waiting.assigneeName
 											? givenFirst(waiting.assigneeName)
 											: "someone"}
-										:
-									</span>{" "}
-									{waiting.text}
-								</>
+									</span>
+								) : (
+									<>
+										<span className="font-medium text-foreground">
+											Waiting on{" "}
+											{waiting.assigneeName
+												? givenFirst(
+														waiting.assigneeName,
+													)
+												: "someone"}
+											:
+										</span>{" "}
+										{waiting.text}
+									</>
+								)
 							) : (
 								"No open steps"
 							)}
@@ -652,26 +698,31 @@ const ALL_TOPICS = "all";
 function ReviewList({
 	items,
 	all,
-	isMine,
 	run,
 	runAll,
 	undoDismiss,
+	topicId,
 }: {
 	items: Item[];
 	all: Item[];
-	isMine: (step: Step) => boolean;
+	/** The topic whose page this is; "Not about" and "Move to" act on it. */
+	topicId?: string;
 	run: (statement: string) => Promise<boolean>;
 	/** Runs the statements as one request. */
 	runAll: (statements: string[]) => Promise<boolean>;
 	/** Puts a dismissed item back among the new ones. */
 	undoDismiss: (taskId: string) => void;
 }) {
+	const { state } = useCollaborationSession();
+	// the topic a row is moved or taken off: this page's, else its main one
+	const from = (item: Item) => topicId ?? item.topicId;
 	// the row whose own request is in flight, so its buttons wait
 	const [busyId, setBusyId] = useState("");
 	const [pendingBatch, setPendingBatch] = useState<Item[] | null>(null);
 	const [isBatchSaving, setIsBatchSaving] = useState(false);
 	const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
 	const [topic, setTopic] = useState(ALL_TOPICS);
+	const [showAside, setShowAside] = useState(false);
 	// handled items leave the list, so the most seen at once is how many there were to review
 	const [total, setTotal] = useState(items.length);
 	if (items.length > total) setTotal(items.length);
@@ -691,6 +742,10 @@ function ReviewList({
 		shownTopic === ALL_TOPICS
 			? items
 			: items.filter((item) => item.topicId === shownTopic);
+	// what needs the owner leads; set-aside items and others' work wait behind a toggle
+	const focus = shown.filter((item) => item.mine && item.needsYou);
+	const aside = shown.filter((item) => !(item.mine && item.needsYou));
+	const visible = showAside || !focus.length ? [...focus, ...aside] : focus;
 	const isAllOpen =
 		shown.length > 0 && shown.every((item) => expanded.has(item.id));
 	const accept = (item: Item) =>
@@ -714,6 +769,7 @@ function ReviewList({
 
 	return (
 		<BriefPanel
+			dense={Boolean(topicId)}
 			title="To review"
 			count={items.length}
 			detail={
@@ -782,244 +838,395 @@ function ReviewList({
 			}
 		>
 			{shown.length ? (
-				<ul
-					aria-label="New work items"
-					className="divide-y divide-border"
-				>
-					{shown.map((item) => {
-						const isOpen = expanded.has(item.id);
-						const next = nextStep(item, isMine);
-						const targets = all.filter(
-							(other) => other.id !== item.id,
-						);
-						// accepted work first; another new item is a second choice
-						const targetGroups = [
-							{
-								label: "Your work",
-								items: targets.filter(
-									(other) => !other.proposed,
-								),
-							},
-							{
-								label: "Also new",
-								items: targets.filter(
-									(other) => other.proposed,
-								),
-							},
-						];
-						return (
-							<li
-								key={item.id}
-								className="min-w-0 py-4 first:pt-0"
-							>
-								<div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center">
-									<div className="min-w-0 flex-1 space-y-1.5">
-										<button
-											type="button"
-											aria-expanded={isOpen}
-											aria-controls={`review-${item.id}-detail`}
-											onClick={() =>
-												setExpanded((open) => {
-													const next = new Set(open);
-													if (!next.delete(item.id))
-														next.add(item.id);
-													return next;
-												})
-											}
-											className="flex min-w-0 items-start gap-2 rounded-sm text-left font-medium text-lg leading-snug hover:underline focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
-										>
-											<ChevronDown
-												aria-hidden="true"
-												className={cn(
-													"mt-1.5 size-4 shrink-0 text-muted-foreground transition-transform motion-reduce:transition-none",
-													!isOpen && "-rotate-90",
-												)}
-											/>
-											<span className="wrap-anywhere min-w-0">
-												{item.title}
-											</span>
-										</button>
-										{next ? (
-											<P className="flex items-start gap-2 pl-6 text-muted-foreground text-sm">
-												<CornerDownRight
-													aria-hidden="true"
-													className="mt-0.5 size-4 shrink-0"
-												/>
-												<span className="min-w-0">
-													<span className="font-medium text-foreground">
-														Next:
-													</span>{" "}
-													{next.text}
-												</span>
-											</P>
-										) : null}
-										<div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-6 text-muted-foreground text-xs">
-											<ItemTopicChip item={item} />
-											<span className="flex items-center gap-1.5">
-												<ListChecks
-													aria-hidden="true"
-													className="size-3.5"
-												/>
-												{item.openSteps.length} open
-												step
-												{item.openSteps.length === 1
-													? ""
-													: "s"}
-											</span>
-											{item.mine ? (
-												item.needsYou ? null : (
-													<span>
-														Set aside: for your
-														information, waiting, or
-														from someone new
-													</span>
-												)
-											) : (
-												<span>
-													None assigned to you
-												</span>
-											)}
-										</div>
-									</div>
-									<div className="flex shrink-0 flex-wrap items-center gap-1 pl-6 lg:pl-0">
-										<Button
-											size="sm"
-											variant="secondary"
-											// a softer primary than the solid button, which would shout on every row; the label stays dark because the blue is too dim to read on the tint
-											className="pointer-coarse:min-h-11 bg-primary/10 text-foreground hover:bg-primary/20"
-											disabled={busyId === item.id}
-											onClick={() =>
-												void act(item.id, accept(item))
-											}
-										>
-											<Plus
-												aria-hidden="true"
-												className="text-primary dark:text-foreground"
-											/>
-											Add to my work
-										</Button>
-										<DropdownMenu>
-											<DropdownMenuTrigger asChild>
-												<Button
-													size="sm"
-													variant="ghost"
-													className="pointer-coarse:min-h-11"
-													disabled={
-														!targets.length ||
-														busyId === item.id
-													}
-												>
-													Merge into
-													<ChevronDown aria-hidden="true" />
-												</Button>
-											</DropdownMenuTrigger>
-											<DropdownMenuContent
-												align="end"
-												className="max-h-80 w-72 overflow-y-auto"
+				<>
+					<ul
+						aria-label="New work items"
+						className="divide-y divide-border"
+					>
+						{visible.map((item) => {
+							const isOpen = expanded.has(item.id);
+							const targets = all.filter(
+								(other) => other.id !== item.id,
+							);
+							// accepted work first; another new item is a second choice
+							const targetGroups = [
+								{
+									label: "Your work",
+									items: targets.filter(
+										(other) => !other.proposed,
+									),
+								},
+								{
+									label: "Also new",
+									items: targets.filter(
+										(other) => other.proposed,
+									),
+								},
+							];
+							return (
+								<li
+									key={item.id}
+									className="min-w-0 py-3 first:pt-0"
+								>
+									<div className="flex min-w-0 flex-col gap-2 lg:flex-row lg:items-center">
+										<div className="min-w-0 flex-1 space-y-1.5">
+											<button
+												type="button"
+												aria-expanded={isOpen}
+												aria-controls={`review-${item.id}-detail`}
+												onClick={() =>
+													setExpanded((open) => {
+														const next = new Set(
+															open,
+														);
+														if (
+															!next.delete(
+																item.id,
+															)
+														)
+															next.add(item.id);
+														return next;
+													})
+												}
+												className="flex min-w-0 items-start gap-2 rounded-sm text-left font-medium text-lg leading-snug hover:underline focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
 											>
-												{targetGroups.map(
-													(group, index) =>
-														group.items.length ? (
-															<DropdownMenuGroup
-																key={
-																	group.label
+												<ChevronDown
+													aria-hidden="true"
+													className={cn(
+														"mt-1.5 size-4 shrink-0 text-muted-foreground transition-transform motion-reduce:transition-none",
+														!isOpen && "-rotate-90",
+													)}
+												/>
+												<span className="wrap-anywhere min-w-0">
+													{item.title}
+												</span>
+											</button>
+											<div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 pl-6 text-muted-foreground text-xs">
+												<ItemOtherTopics
+													item={item}
+													exceptId={topicId}
+												/>
+												<span className="flex shrink-0 items-center gap-1.5 whitespace-nowrap">
+													<ListChecks
+														aria-hidden="true"
+														className="size-3.5"
+													/>
+													{item.openSteps.length} open
+													step
+													{item.openSteps.length === 1
+														? ""
+														: "s"}
+												</span>
+												{item.mine ? (
+													item.needsYou ? null : (
+														<span>
+															Set aside: for your
+															information,
+															waiting, or from
+															someone new
+														</span>
+													)
+												) : (
+													<span>
+														None assigned to you
+													</span>
+												)}
+											</div>
+										</div>
+										<div className="flex shrink-0 flex-wrap items-center gap-1 pl-6 lg:pl-0">
+											<Button
+												size="sm"
+												variant="secondary"
+												// a softer primary than the solid button, which would shout on every row; the label stays dark because the blue is too dim to read on the tint
+												className="pointer-coarse:min-h-11 bg-primary/10 text-foreground hover:bg-primary/20"
+												disabled={busyId === item.id}
+												onClick={() =>
+													void act(
+														item.id,
+														accept(item),
+													)
+												}
+											>
+												<Plus
+													aria-hidden="true"
+													className="text-primary dark:text-foreground"
+												/>
+												Add to my work
+											</Button>
+											<DropdownMenu>
+												<DropdownMenuTrigger asChild>
+													<Button
+														size="icon-sm"
+														variant="ghost"
+														aria-label="Change topic"
+														title="Change topic"
+														className="pointer-coarse:size-11 text-muted-foreground"
+														disabled={
+															busyId === item.id
+														}
+													>
+														<Tags aria-hidden="true" />
+													</Button>
+												</DropdownMenuTrigger>
+												<DropdownMenuContent
+													align="end"
+													className="max-h-80 w-72 overflow-y-auto"
+												>
+													{state.topics.some(
+														(t) =>
+															t.status !==
+																"archived" &&
+															t.id !== from(item),
+													) ? (
+														<DropdownMenuGroup>
+															<DropdownMenuLabel className="font-normal text-muted-foreground text-xs">
+																Move to topic
+															</DropdownMenuLabel>
+															{state.topics
+																.filter(
+																	(t) =>
+																		t.status !==
+																			"archived" &&
+																		t.id !==
+																			from(
+																				item,
+																			),
+																)
+																.map((t) => (
+																	<DropdownMenuItem
+																		key={
+																			t.id
+																		}
+																		className="gap-2"
+																		onSelect={() =>
+																			void act(
+																				item.id,
+																				pixel(
+																					"WorkSaveWork",
+																					{
+																						taskId: item.id,
+																						topicIds:
+																							[
+																								t.id,
+																							],
+																						removeTopicIds:
+																							from(
+																								item,
+																							)
+																								? [
+																										from(
+																											item,
+																										) as string,
+																									]
+																								: undefined,
+																					},
+																				),
+																			)
+																		}
+																	>
+																		<span
+																			aria-hidden="true"
+																			className={cn(
+																				"size-2 shrink-0 rounded-xs",
+																				topicTone(
+																					t.id,
+																				),
+																			)}
+																		/>
+																		<span className="line-clamp-2 break-words">
+																			{
+																				t.name
+																			}
+																		</span>
+																	</DropdownMenuItem>
+																))}
+														</DropdownMenuGroup>
+													) : null}
+													{from(item) ? (
+														<>
+															<DropdownMenuSeparator />
+															<DropdownMenuItem
+																onSelect={() =>
+																	void act(
+																		item.id,
+																		pixel(
+																			"WorkSaveWork",
+																			{
+																				taskId: item.id,
+																				removeTopicIds:
+																					[
+																						from(
+																							item,
+																						) as string,
+																					],
+																			},
+																		),
+																	)
 																}
 															>
-																{index > 0 &&
-																targetGroups[0]
-																	.items
-																	.length ? (
-																	<DropdownMenuSeparator />
-																) : null}
-																<DropdownMenuLabel className="font-normal text-muted-foreground text-xs">
-																	{
+																Not about{" "}
+																{state.topics.find(
+																	(t) =>
+																		t.id ===
+																		from(
+																			item,
+																		),
+																)?.name ??
+																	"this topic"}
+															</DropdownMenuItem>
+														</>
+													) : null}
+												</DropdownMenuContent>
+											</DropdownMenu>
+											<DropdownMenu>
+												<DropdownMenuTrigger asChild>
+													<Button
+														size="sm"
+														variant="ghost"
+														className="pointer-coarse:min-h-11"
+														disabled={
+															!targets.length ||
+															busyId === item.id
+														}
+													>
+														Merge
+														<ChevronDown aria-hidden="true" />
+													</Button>
+												</DropdownMenuTrigger>
+												<DropdownMenuContent
+													align="end"
+													className="max-h-80 w-72 overflow-y-auto"
+												>
+													{targetGroups.map(
+														(group, index) =>
+															group.items
+																.length ? (
+																<DropdownMenuGroup
+																	key={
 																		group.label
 																	}
-																</DropdownMenuLabel>
-																{group.items.map(
-																	(other) => (
-																		<DropdownMenuItem
-																			key={
-																				other.id
-																			}
-																			className="flex-col items-start gap-0.5"
-																			onSelect={() =>
-																				void act(
-																					item.id,
-																					pixel(
-																						"WorkMergeItems",
-																						{
-																							taskId: item.id,
-																							intoTaskId:
-																								other.id,
-																						},
-																					),
-																				)
-																			}
-																		>
-																			<span className="line-clamp-2 break-words">
-																				{
-																					other.title
+																>
+																	{index >
+																		0 &&
+																	targetGroups[0]
+																		.items
+																		.length ? (
+																		<DropdownMenuSeparator />
+																	) : null}
+																	<DropdownMenuLabel className="font-normal text-muted-foreground text-xs">
+																		{
+																			group.label
+																		}
+																	</DropdownMenuLabel>
+																	{group.items.map(
+																		(
+																			other,
+																		) => (
+																			<DropdownMenuItem
+																				key={
+																					other.id
 																				}
-																			</span>
-																			{other.topic ? (
-																				<span className="text-muted-foreground text-xs">
+																				className="flex-col items-start gap-0.5"
+																				onSelect={() =>
+																					void act(
+																						item.id,
+																						pixel(
+																							"WorkMergeItems",
+																							{
+																								taskId: item.id,
+																								intoTaskId:
+																									other.id,
+																							},
+																						),
+																					)
+																				}
+																			>
+																				<span className="line-clamp-2 break-words">
 																					{
-																						other.topic
+																						other.title
 																					}
 																				</span>
-																			) : null}
-																		</DropdownMenuItem>
-																	),
-																)}
-															</DropdownMenuGroup>
-														) : null,
-												)}
-											</DropdownMenuContent>
-										</DropdownMenu>
-										<Button
-											size="sm"
-											variant="ghost"
-											className="pointer-coarse:min-h-11 text-muted-foreground"
-											disabled={busyId === item.id}
-											onClick={async () => {
-												const isSaved = await act(
-													item.id,
-													pixel("WorkSaveWork", {
-														taskId: item.id,
-														status: "dropped",
-													}),
-												);
-												// a dismissed new item is dropped but still new, so active puts it back in review
-												if (isSaved)
-													toast(
-														"Work item dismissed.",
-														{
-															action: {
-																label: "Undo",
-																onClick: () =>
-																	undoDismiss(
-																		item.id,
-																	),
-															},
-														},
+																				{other.topic ? (
+																					<span className="text-muted-foreground text-xs">
+																						{
+																							other.topic
+																						}
+																					</span>
+																				) : null}
+																			</DropdownMenuItem>
+																		),
+																	)}
+																</DropdownMenuGroup>
+															) : null,
+													)}
+												</DropdownMenuContent>
+											</DropdownMenu>
+											<Button
+												size="icon-sm"
+												variant="ghost"
+												aria-label="Dismiss"
+												title="Dismiss"
+												className="pointer-coarse:size-11 text-muted-foreground"
+												disabled={busyId === item.id}
+												onClick={async () => {
+													const isSaved = await act(
+														item.id,
+														pixel("WorkSaveWork", {
+															taskId: item.id,
+															status: "dropped",
+														}),
 													);
-											}}
-										>
-											Dismiss
-										</Button>
+													// a dismissed new item is dropped but still new, so active puts it back in review
+													if (isSaved)
+														toast(
+															"Work item dismissed.",
+															{
+																action: {
+																	label: "Undo",
+																	onClick:
+																		() =>
+																			undoDismiss(
+																				item.id,
+																			),
+																},
+															},
+														);
+												}}
+											>
+												<X aria-hidden="true" />
+											</Button>
+										</div>
 									</div>
-								</div>
-								{isOpen ? (
-									<ExpandedTask
-										taskId={item.id}
-										id={`review-${item.id}-detail`}
-									/>
-								) : null}
-							</li>
-						);
-					})}
-				</ul>
+									{isOpen ? (
+										<ExpandedTask
+											taskId={item.id}
+											id={`review-${item.id}-detail`}
+										/>
+									) : null}
+								</li>
+							);
+						})}
+					</ul>
+					{focus.length && aside.length ? (
+						<button
+							type="button"
+							aria-expanded={showAside}
+							onClick={() => setShowAside((v) => !v)}
+							className="flex w-full items-center gap-2 rounded-sm border-t py-3 text-left text-muted-foreground text-sm hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+						>
+							<ChevronDown
+								aria-hidden="true"
+								className={cn(
+									"size-4 transition-transform motion-reduce:transition-none",
+									showAside && "rotate-180",
+								)}
+							/>
+							{showAside
+								? "Show only what needs you"
+								: `${aside.length} more set aside or not assigned to you`}
+						</button>
+					) : null}
+				</>
 			) : (
 				<div className="space-y-2">
 					<P>Nothing new to review.</P>
@@ -1255,7 +1462,14 @@ function DoneWork() {
 }
 
 /** The owner's work items, or with review, the inferred ones waiting for the owner. */
-export function WorkItems({ review: reviewing }: { review?: boolean }) {
+export function WorkItems({
+	review: reviewing,
+	topicId,
+}: {
+	review?: boolean;
+	/** One topic's work, on its page: new items are reviewed in place, and the owner's order is kept on Work. */
+	topicId?: string;
+}) {
 	const { state } = useCollaborationSession();
 	const {
 		items,
@@ -1270,10 +1484,15 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 		changeStep,
 		selfId,
 		isMine,
-	} = useWorkItems();
+	} = useWorkItems(topicId);
+	const canOrder = !topicId;
 	const [dragId, setDragId] = useState<string | null>(null);
 	const dragFrom = useRef("");
 	const [showOthers, setShowOthers] = useState(false);
+	// single steps fold away on a topic's page, where its work items lead
+	const [showSteps, setShowSteps] = useState(false);
+	const [showTopicReview, setShowTopicReview] = useState(false);
+	const [showTopicWaiting, setShowTopicWaiting] = useState(false);
 	const [view, setView] = useState<View>("all");
 	const waitingTab = useRef<HTMLButtonElement>(null);
 	const [mergeItemId, setMergeItemId] = useState<string | null>(null);
@@ -1333,9 +1552,9 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 					</P>
 				) : null}
 				<ReviewList
+					topicId={topicId}
 					items={review}
 					all={items}
-					isMine={isMine}
 					run={run}
 					runAll={runAll}
 					undoDismiss={(taskId) =>
@@ -1449,13 +1668,17 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 						key={item.id}
 						item={item}
 						isMine={isMine}
-						showTopic={!sharedTopic}
-						onDragStart={() => {
-							setDragId(item.id);
-							dragFrom.current = JSON.stringify(
-								mine.map((i) => i.id),
-							);
-						}}
+						showTopic={!sharedTopic && !topicId}
+						onDragStart={
+							canOrder
+								? () => {
+										setDragId(item.id);
+										dragFrom.current = JSON.stringify(
+											mine.map((i) => i.id),
+										);
+									}
+								: undefined
+						}
 						onDragOver={() => {
 							// over itself nothing moves, and this fires many times a second
 							if (
@@ -1465,12 +1688,16 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 							)
 								show(placed(mine, dragId, item.id));
 						}}
-						onDragEnd={saveOrder}
+						onDragEnd={canOrder ? saveOrder : undefined}
 						onMoveUp={
-							before ? () => move(item.id, before.id) : undefined
+							canOrder && before
+								? () => move(item.id, before.id)
+								: undefined
 						}
 						onMoveDown={
-							after ? () => move(item.id, after.id) : undefined
+							canOrder && after
+								? () => move(item.id, after.id)
+								: undefined
 						}
 						onRequestMerge={handleRequestMerge}
 						onClose={(status) => void close(item, status)}
@@ -1506,7 +1733,8 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 							}
 							isBusy={busyStepId === step.id}
 							topicName={
-								step.topicId
+								// on its own topic's page the step's topic goes without saying
+								step.topicId && step.topicId !== topicId
 									? state.topics.find(
 											(t) => t.id === step.topicId,
 										)?.name
@@ -1525,18 +1753,47 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 	);
 	const needSteps = looseSteps.filter((step) => !asideSteps.includes(step));
 	const singleSteps = looseSteps.length ? (
-		<section aria-label="Single steps" className="mt-6 space-y-2">
-			<H3 className="text-base leading-tight">Single steps</H3>
-			<P className="text-muted-foreground text-sm">
-				Asks that are not part of a work item.
-			</P>
-			{stepGroup("Needs you", needSteps)}
-			{stepGroup(
-				"Also asked of you",
-				asideSteps,
-				"From conversations filed as for your information or waiting on someone else, or from people you have not worked with.",
-			)}
-			<CutShort shown={looseSteps.length} total={totals.looseSteps} />
+		<section
+			aria-label="Single steps"
+			className="mt-6 space-y-2 rounded-xl border bg-card px-5 py-4"
+		>
+			<H3 className="text-base leading-tight">
+				<button
+					type="button"
+					aria-expanded={showSteps}
+					onClick={() => setShowSteps((v) => !v)}
+					className="flex w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-sm text-left focus-visible:outline-2 focus-visible:outline-ring"
+				>
+					<ChevronDown
+						aria-hidden="true"
+						className={cn(
+							"size-4 shrink-0 text-muted-foreground transition-transform motion-reduce:transition-none",
+							!showSteps && "-rotate-90",
+						)}
+					/>
+					Single steps
+					<span className="rounded-md bg-muted px-2 py-0.5 font-medium text-muted-foreground text-xs tabular-nums">
+						{looseSteps.length}
+					</span>
+					<span className="font-normal text-muted-foreground text-sm">
+						Asks that are not part of a work item
+					</span>
+				</button>
+			</H3>
+			{showSteps ? (
+				<>
+					{stepGroup("Needs you", needSteps)}
+					{stepGroup(
+						"Also asked of you",
+						asideSteps,
+						"From conversations filed as for your information or waiting on someone else, or from people you have not worked with.",
+					)}
+					<CutShort
+						shown={looseSteps.length}
+						total={totals.looseSteps}
+					/>
+				</>
+			) : null}
 		</section>
 	) : null;
 
@@ -1547,7 +1804,7 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 					{error}
 				</P>
 			) : null}
-			{review.length ? (
+			{!topicId && review.length ? (
 				// items Brain found that nobody has looked at yet
 				<Link
 					to="/work/review"
@@ -1580,13 +1837,24 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 					</span>
 				</Link>
 			) : null}
-			<div className="grid @5xl:grid-cols-12 grid-cols-1 gap-6">
-				<div className="@5xl:col-span-8 min-w-0">
+			<div
+				className={cn(
+					"grid grid-cols-1 gap-6",
+					!topicId && "@5xl:grid-cols-12",
+				)}
+			>
+				<div className={cn("min-w-0", !topicId && "@5xl:col-span-8")}>
 					{/* its own block: the panel fills its parent, and the column also holds the lists below it */}
 					<div>
 						<BriefPanel
-							title="Your priorities"
+							title={
+								topicId
+									? "Work on this topic"
+									: "Your priorities"
+							}
 							count={mine.length}
+							plain={Boolean(topicId)}
+							hideHeader={Boolean(topicId)}
 							detail={
 								sharedTopic ? (
 									<ItemTopicChip item={sharedTopic} />
@@ -1606,50 +1874,64 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 									}}
 									className="gap-0"
 								>
-									<div className="flex items-end justify-between gap-4 border-b">
-										<TabsList className="h-auto justify-start gap-6 rounded-none bg-transparent p-0">
-											{(
-												[
-													["all", "All work", mine],
+									{(!topicId || mine.length > 1) && (
+										<div className="flex items-end justify-between gap-4 border-b">
+											<TabsList className="h-auto justify-start gap-6 rounded-none bg-transparent p-0">
+												{(
 													[
-														"next",
-														"Next steps",
-														withNext,
-													],
-													[
-														"waiting",
-														"Waiting",
-														waiting,
-													],
-												] as const
-											).map(([value, label, rows]) => (
-												<TabsTrigger
-													key={value}
-													value={value}
-													ref={
-														value === "waiting"
-															? waitingTab
-															: undefined
-													}
-													// an underlined tab instead of the pill: the line sits on the rule under the row
-													className="-mb-px h-auto pointer-coarse:min-h-11 flex-none gap-2 rounded-none border-0 border-transparent border-b-2 px-0 pt-1 pb-3 font-normal text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:font-medium data-[state=active]:text-primary data-[state=active]:shadow-none dark:data-[state=active]:border-primary dark:data-[state=active]:bg-transparent dark:data-[state=active]:text-foreground"
-												>
-													{/* the space is for the tab's spoken name; the gap spaces them on screen */}
-													{label}{" "}
-													<span className="text-xs tabular-nums">
-														{rows.length}
-													</span>
-												</TabsTrigger>
-											))}
-										</TabsList>
-										<span className="hidden shrink-0 items-center gap-1.5 pb-3 text-muted-foreground text-xs sm:flex">
-											<ArrowUpDown
-												aria-hidden="true"
-												className="size-3.5"
-											/>
-											In your order
-										</span>
-									</div>
+														[
+															"all",
+															"All work",
+															mine,
+														],
+														[
+															"next",
+															"Next steps",
+															withNext,
+														],
+														[
+															"waiting",
+															"Waiting",
+															waiting,
+														],
+													] as const
+												).map(
+													([value, label, rows]) => (
+														<TabsTrigger
+															key={value}
+															value={value}
+															ref={
+																value ===
+																"waiting"
+																	? waitingTab
+																	: undefined
+															}
+															// an underlined tab instead of the pill: the line sits on the rule under the row
+															className="-mb-px h-auto pointer-coarse:min-h-11 flex-none gap-2 rounded-none border-0 border-transparent border-b-2 px-0 pt-1 pb-3 font-normal text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:font-medium data-[state=active]:text-primary data-[state=active]:shadow-none dark:data-[state=active]:border-primary dark:data-[state=active]:bg-transparent dark:data-[state=active]:text-foreground"
+														>
+															{/* the space is for the tab's spoken name; the gap spaces them on screen */}
+															{label}{" "}
+															<span className="text-xs tabular-nums">
+																{rows.length}
+															</span>
+														</TabsTrigger>
+													),
+												)}
+											</TabsList>
+											<span
+												className={cn(
+													"hidden shrink-0 items-center gap-1.5 pb-3 text-muted-foreground text-xs",
+													canOrder && "sm:flex",
+												)}
+											>
+												<ArrowUpDown
+													aria-hidden="true"
+													className="size-3.5"
+												/>
+												In your order
+											</span>
+										</div>
+									)}
 									<TabsContent value={view}>
 										{shownNeedsYou.length ||
 										shownAlsoAsked.length ? (
@@ -1657,10 +1939,14 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 												{shownNeedsYou.length ||
 												view === "all" ? (
 													<section aria-label="Needs you">
-														{groupHeading(
-															"Needs you",
-															shownNeedsYou.length,
-														)}
+														{!topicId ||
+														shownAlsoAsked.length >
+															0
+															? groupHeading(
+																	"Needs you",
+																	shownNeedsYou.length,
+																)
+															: null}
 														{shownNeedsYou.length ? (
 															rows(
 																shownNeedsYou,
@@ -1698,10 +1984,14 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 							) : (
 								<P className="text-muted-foreground text-sm">
 									{review.length
-										? "Review the new items to start your list."
-										: looseSteps.length
-											? "No work items yet. Your single steps are below."
-											: "No work items yet. They come from your mail and chats, or ask in chat to add one."}
+										? topicId
+											? "Nothing kept yet. Review the new items below to start this topic's list."
+											: "Review the new items to start your list."
+										: topicId
+											? "No work items on this topic yet. They come from its mail and chats, or ask in chat to add one."
+											: looseSteps.length
+												? "No work items yet. Your single steps are below."
+												: "No work items yet. They come from your mail and chats, or ask in chat to add one."}
 								</P>
 							)}
 							{others.length ? (
@@ -1747,10 +2037,10 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 								shown={items.length}
 								total={totals.workItems}
 							/>
-							{mine.length ? (
+							{mine.length && (!topicId || mine.length > 1) ? (
 								<div className="mt-auto flex flex-wrap justify-between gap-x-4 gap-y-1 border-t pt-4 text-muted-foreground text-xs">
 									<span>
-										{mine.length > 1
+										{mine.length > 1 && canOrder
 											? "Drag the handle to arrange your priorities, or use a row's menu"
 											: ""}
 									</span>
@@ -1762,27 +2052,122 @@ export function WorkItems({ review: reviewing }: { review?: boolean }) {
 							) : null}
 						</BriefPanel>
 					</div>
+					{review.length && topicId ? (
+						// on a topic page its new items stay tucked until opened so active work and the assistant stay visible
+						<section
+							aria-label="Suggested work items to review"
+							className="mt-4 space-y-3"
+						>
+							<button
+								type="button"
+								aria-expanded={showTopicReview}
+								onClick={() => setShowTopicReview((v) => !v)}
+								className="flex w-full flex-wrap items-center gap-x-2.5 gap-y-1 rounded-xl border border-primary/15 bg-primary/5 px-4 py-3 text-left transition-colors hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-ring"
+							>
+								<ChevronDown
+									aria-hidden="true"
+									className={cn(
+										"size-4 shrink-0 text-muted-foreground transition-transform motion-reduce:transition-none",
+										!showTopicReview && "-rotate-90",
+									)}
+								/>
+								<span className="font-medium text-sm">
+									{review.length} suggested work{" "}
+									{review.length === 1 ? "item" : "items"} to
+									review
+								</span>
+								<span className="text-muted-foreground text-xs">
+									From this topic&apos;s mail and chats
+								</span>
+							</button>
+							{showTopicReview ? (
+								<ReviewList
+									topicId={topicId}
+									items={review}
+									all={items}
+									run={run}
+									runAll={runAll}
+									undoDismiss={(taskId) =>
+										void run(
+											pixel("WorkSaveWork", {
+												taskId,
+												status: "active",
+											}),
+										)
+									}
+								/>
+							) : null}
+						</section>
+					) : null}
 					{singleSteps}
-					<DoneWork />
-					<ClosedForYou />
+					{topicId && waits.length ? (
+						<section
+							aria-label="Waiting on"
+							className="mt-4 space-y-3 rounded-xl border bg-card px-5 py-4"
+						>
+							<H3 className="text-base leading-tight">
+								<button
+									type="button"
+									aria-expanded={showTopicWaiting}
+									onClick={() =>
+										setShowTopicWaiting((v) => !v)
+									}
+									className="flex w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-sm text-left focus-visible:outline-2 focus-visible:outline-ring"
+								>
+									<ChevronDown
+										aria-hidden="true"
+										className={cn(
+											"size-4 shrink-0 text-muted-foreground transition-transform motion-reduce:transition-none",
+											!showTopicWaiting && "-rotate-90",
+										)}
+									/>
+									Waiting on
+									<span className="rounded-md bg-muted px-2 py-0.5 font-medium text-muted-foreground text-xs tabular-nums">
+										{waits.length}
+									</span>
+									<span className="font-normal text-muted-foreground text-sm">
+										The handoffs behind your work
+									</span>
+								</button>
+							</H3>
+							{showTopicWaiting ? (
+								<WorkWaitingOn
+									waits={waits}
+									onViewAll={() =>
+										waitingTab.current?.focus()
+									}
+								/>
+							) : null}
+						</section>
+					) : null}
+					{topicId ? null : (
+						<>
+							<DoneWork />
+							<ClosedForYou />
+						</>
+					)}
 				</div>
-				<div className="@5xl:col-span-4 min-w-0">
-					<WorkWaitingOn
-						waits={waits}
-						// focusing a tab also selects it, and brings the list into view where the cards stack
-						onViewAll={() => waitingTab.current?.focus()}
-					/>
-				</div>
+				{topicId ? null : (
+					<div className="@5xl:col-span-4 min-w-0">
+						<WorkWaitingOn
+							waits={waits}
+							// focusing a tab also selects it, and brings the list into view where the cards stack
+							onViewAll={() => waitingTab.current?.focus()}
+						/>
+					</div>
+				)}
 			</div>
-			<Link
-				to="/brain/sources"
-				className="mt-6 inline-flex min-h-6 items-center gap-2 rounded-sm text-muted-foreground text-xs hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
-			>
-				<Link2 aria-hidden="true" className="size-3.5" />
-				{sources
-					? `Connected to your ${sources}`
-					: "Connect your mail and chats to find work items"}
-			</Link>
+			{topicId ? null : (
+				<Link
+					to="/brain/sources"
+					className="mt-6 inline-flex min-h-6 items-center gap-2 rounded-sm text-muted-foreground text-xs hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
+				>
+					<Link2 aria-hidden="true" className="size-3.5" />
+					{sources
+						? `Connected to your ${sources}`
+						: "Connect your mail and chats to find work items"}
+				</Link>
+			)}
 			<Dialog
 				open={mergeItem !== undefined}
 				onOpenChange={(open) => {

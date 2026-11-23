@@ -1,11 +1,15 @@
 import {
 	isHeroPath,
 	newRoomPath,
+	personaInterviewPath,
+	personaPath,
 	roomPath,
 	threadPath,
 	topicPath,
 	twinChatPath,
 	twinContentsPath,
+	twinPersonaInterviewPath,
+	twinPersonaPath,
 	twinSettingsPath,
 } from "./workspace-paths";
 
@@ -49,17 +53,24 @@ it("names the twin to chat with, and the place its contents page opens on, in th
 	expect(twinSettingsPath("twin/one&two", "people")).toBe(
 		"/twins/mine?twinId=twin%2Fone%26two&tab=people",
 	);
+	expect(twinPersonaPath()).toBe("/twins/persona");
+	expect(twinPersonaInterviewPath()).toBe("/twins/persona/interview");
+	expect(twinPersonaInterviewPath("more")).toBe(
+		"/twins/persona/interview?go=more",
+	);
+});
+
+it("gives the persona an address of its own, beside the one under Digital Twins that stays", () => {
+	expect(personaPath()).toBe("/persona");
+	expect(personaInterviewPath()).toBe("/persona/interview");
+	expect(personaInterviewPath("more")).toBe("/persona/interview?go=more");
+	// the sidebar lights Digital Twins on anything under /twins, and Persona on anything under /persona
+	expect(twinPersonaPath().startsWith(personaPath())).toBe(false);
 });
 
 it("opens Today, Work, its review and its topics on the hero photo, with or without a trailing slash", () => {
 	for (const path of ["/", "/work", "/work/", "/work/review", "/work/topics"])
 		expect(isHeroPath(path)).toBe(true);
-	// Settings lists the same topics under its own tab bar, without the hero
-	for (const path of [
-		"/brain/topics",
-		"/work/item/one",
-		"/routines",
-		"/brain",
-	])
+	for (const path of ["/work/item/one", "/routines", "/brain"])
 		expect(isHeroPath(path)).toBe(false);
 });

@@ -7,8 +7,6 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { useCollaborationSession } from "../state/collaboration-session.context";
-import { suggestedMemories } from "../state/memory";
 
 interface CollaborationSettingsLinkProps {
 	/** Compact navigation shows only the settings icon. */
@@ -22,14 +20,9 @@ export function CollaborationSettingsLink({
 	isCollapsed,
 	onNavigate,
 }: CollaborationSettingsLinkProps) {
-	const { state } = useCollaborationSession();
 	const { pathname } = useLocation();
 	const isActive =
 		pathname.startsWith("/settings") || pathname.startsWith("/brain");
-	// filing questions wait here quietly instead of on Today
-	const count =
-		state.reviews.filter((review) => review.status === "open").length +
-		suggestedMemories(state.memories).length;
 	return (
 		// fresh per rail state, as the navigation links: a label hovered while expanded would show on collapse
 		<Tooltip key={String(isCollapsed)} disableHoverableContent={false}>
@@ -52,11 +45,6 @@ export function CollaborationSettingsLink({
 					>
 						<Settings2 aria-hidden="true" />
 						{!isCollapsed && "Settings"}
-						{!isCollapsed && count > 0 && (
-							<span className="ml-auto text-muted-foreground text-xs tabular-nums">
-								{count}
-							</span>
-						)}
 					</Link>
 				</Button>
 			</TooltipTrigger>

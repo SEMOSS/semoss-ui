@@ -136,19 +136,39 @@ export interface ModelLimitSubject {
 }
 
 /**
- * An app (a project) an engine gives a permission to. The app's custom reactors
- * use the engine with that permission in place of the signed in user's own, so
- * the app can work with the engine for people who have no access to it
- * themselves. It is kept apart from {@link PermissionSubject}, which is always a
- * person or a team.
+ * The catalog type of an app or engine an engine gives a permission to:
+ * PROJECT for an app, or the engine's own type
  */
-export interface AppSubject {
-	/** Always an app, which the backend calls a project */
-	category: "PROJECT";
-	/** The app's id */
+export type EngineGranteeType =
+	| "PROJECT"
+	| "MODEL"
+	| "STORAGE"
+	| "DATABASE"
+	| "FUNCTION"
+	| "VECTOR"
+	| "GUARDRAIL"
+	| "VENV";
+
+/**
+ * An app or another engine an engine gives a permission to, by its id and its
+ * catalog type. An app's custom reactors, or the other engine's own code, use
+ * the engine with that permission in place of the signed in user's own, so an
+ * app can work with the engine for people who have no access to it themselves,
+ * and a vector database or a guardrail can use the model it is given. It is
+ * kept apart from {@link PermissionSubject}, which is always a person or a
+ * team.
+ */
+export interface EngineSubject {
+	/** Always ENGINE: an app is an engine of type PROJECT */
+	category: "ENGINE";
+	/** The app's or engine's id */
 	id: string;
-	/** The app's name, or its id when the backend sends no name */
+	/** Its catalog type, PROJECT for an app */
+	type: EngineGranteeType;
+	/** Its name, or its id when the backend sends no name */
 	name: string;
+	/** An engine's subtype, for its icon; null for an app */
+	subtype: string | null;
 }
 
 /** A person, with the details Bulk Access Management shows */
@@ -173,7 +193,8 @@ export interface PermissionGrant {
 	/**
 	 * A model engine's usage limit on the grant, or null for no limit defined.
 	 * A person's rules count only their own use; a team's can be shared or for
-	 * each member; an app's can be shared by the app or for each of its users.
+	 * each member; an app's or engine's can be shared by it or for each of its
+	 * users.
 	 */
 	usageLimit?: ModelUsageLimit | null;
 }
@@ -205,18 +226,19 @@ export interface ModelLimitChange {
 }
 
 /**
- * One change to an app's permission on an engine in a permission batch. Only
- * on an engine, and only by its owners and admins in admin mode.
+ * One change to an app's or another engine's permission on an engine in a
+ * permission batch. Only on an engine, and only by its owners and admins in
+ * admin mode.
  */
-export interface AppAccessChange {
-	/** Give the app a permission, change it, or take it away */
+export interface EngineAccessChange {
+	/** Give the app or engine a permission, change it, or take it away */
 	action: "ADD" | "CHANGE" | "REMOVE";
-	/** The app, by its id */
-	subject: Pick<AppSubject, "category" | "id">;
+	/** The app or engine, by its id and catalog type */
+	subject: Pick<EngineSubject, "category" | "id" | "type">;
 	/**
 	 * The permission to give: READ_ONLY or EDIT, never OWNER. A change sets the
-	 * whole permission, so it carries the end date the app has and, on a model,
-	 * its usage limit; leaving one out clears it. Left out when removing.
+	 * whole permission, so it carries the end date the grantee has and, on a
+	 * model, its usage limit; leaving one out clears it. Left out when removing.
 	 */
 	to?: PermissionGrant;
 }
@@ -225,7 +247,7 @@ export interface AppAccessChange {
 export type PermissionChange =
 	| PermissionAccessChange
 	| ModelLimitChange
-	| AppAccessChange;
+	| EngineAccessChange;
 
 /** The changes to one target */
 export interface PermissionBatch {
@@ -263,9 +285,9 @@ export interface PermissionBatchSaveResult {
 	changes: number;
 }
 
-/** A person, team or app with the access they have now */
+/** A person, team, app or engine with the access they have now */
 export interface CurrentAccess<
-	S extends PermissionSubject | AppSubject = PermissionSubject,
+	S extends PermissionSubject | EngineSubject = PermissionSubject,
 > {
 	/** Who */
 	subject: S;
@@ -282,16 +304,18 @@ export interface PermissionAllowedChanges {
 	/** Whether they can change which teams have access */
 	canChangeTeams: boolean;
 	/**
-	 * On an engine, whether they can see which apps have a permission on it:
-	 * its editors and owners, and admins in admin mode. False for anything else.
+	 * On an engine, whether they can see which apps and engines have a
+	 * permission on it: its editors and owners, and admins in admin mode. False
+	 * for anything else.
 	 */
-	canViewProjects: boolean;
+	canViewEngines: boolean;
 	/**
-	 * On an engine, whether they can change which apps have a permission on it:
-	 * its owners, and admins in admin mode. False for anything else.
+	 * On an engine, whether they can change which apps and engines have a
+	 * permission on it: its owners, and admins in admin mode. False for anything
+	 * else.
 	 */
-	canChangeProjects: boolean;
-	/** Whether only admins can give people, teams and apps access to it */
+	canChangeEngines: boolean;
+	/** Whether only admins can give people, teams, apps and engines access to it */
 	addsAreAdminOnly: boolean;
 	/**
 	 * On a model, the access levels whose people's usage limits the user may
@@ -314,12 +338,13 @@ export interface ResourcePermissions {
 	/** The teams that have access */
 	teams: CurrentAccess[];
 	/**
-	 * On an engine, the apps it gives a permission to, each with its name (the
-	 * app's display name when it has one), level (READ_ONLY or EDIT), end date
-	 * and, on a model, its usage limit. Empty for anything else, and for a user
-	 * who can only view the engine.
+	 * On an engine, the apps and engines it gives a permission to, each with its
+	 * catalog type, name (its display name when it has one), an engine's
+	 * subtype, level (READ_ONLY or EDIT), end date and, on a model, its usage
+	 * limit. Empty for anything else, and for a user who can only view the
+	 * engine.
 	 */
-	projects: CurrentAccess<AppSubject>[];
+	engines: CurrentAccess<EngineSubject>[];
 	/** What the signed in user may change */
 	allowedPermissionChanges: PermissionAllowedChanges;
 	/** A model's public use limit and whether it is public; null for anything else */
@@ -370,14 +395,16 @@ export type PermissionSource =
 /**
  * The source a person's calls to a model count against: their own grant
  * (DIRECT), a team's grant, an app's permission on the model (APP) for the
- * calls the app's custom reactors make for a person with no grant of their own
- * or a team's, the model's public use, their own default for all models, or
- * the platform default
+ * calls the app's custom reactors make, or another engine's (ENGINE) for the
+ * calls its own code makes, for a person with no grant of their own or a
+ * team's, the model's public use, their own default for all models, or the
+ * platform default
  */
 export type UsageBilledLimitType =
 	| "DIRECT"
 	| "TEAM"
 	| "APP"
+	| "ENGINE"
 	| "PUBLIC"
 	| "ALL_MODELS"
 	| "PLATFORM";
@@ -386,9 +413,9 @@ export type UsageBilledLimitType =
 export interface UsageBilledTo {
 	/** Which source: the type of limit billed */
 	limitType: UsageBilledLimitType;
-	/** The team's name, for a team */
+	/** The team's name, for a team, or the app's or engine's id */
 	id: string | null;
-	/** The team's type, for a team */
+	/** The team's type, for a team, or the app's or engine's catalog type */
 	type: string | null;
 }
 
@@ -483,6 +510,7 @@ export type UsageLimitType =
 	| "DIRECT"
 	| "TEAM"
 	| "APP"
+	| "ENGINE"
 	| "PUBLIC"
 	| "ALL_MODELS"
 	| "PLATFORM";
@@ -526,8 +554,8 @@ export interface UsageLimitPathStep {
 	/**
 	 * Why it is skipped: NOT_PUBLIC (a public use step on a model that is not
 	 * public), NO_GRANT (a direct step for a person with no grant of their own) or
-	 * HAS_GRANT (an app's step for a person who has a grant of their own or a
-	 * team's), or null
+	 * HAS_GRANT (an app's or engine's step for a person who has a grant of their
+	 * own or a team's), or null
 	 */
 	reason: string | null;
 	/** For a team, when the person got access through it, in UTC, or null */
@@ -619,6 +647,7 @@ const BILLED_LIMIT_TYPES: readonly string[] = [
 	"DIRECT",
 	"TEAM",
 	"APP",
+	"ENGINE",
 	"PUBLIC",
 	"ALL_MODELS",
 	"PLATFORM",
@@ -781,27 +810,49 @@ const readPerson = (value: unknown): AccessPerson | null => {
 	};
 };
 
+const ENGINE_GRANTEE_TYPES: readonly string[] = [
+	"PROJECT",
+	"MODEL",
+	"STORAGE",
+	"DATABASE",
+	"FUNCTION",
+	"VECTOR",
+	"GUARDRAIL",
+	"VENV",
+];
+
+/** Reads an app's or engine's catalog type, or null */
+const readEngineGranteeType = (value: unknown): EngineGranteeType | null =>
+	typeof value === "string" && ENGINE_GRANTEE_TYPES.includes(value)
+		? (value as EngineGranteeType)
+		: null;
+
 /**
- * Reads an app with its permission on an engine, or null when the row has no
- * app id or no grant with a known level. The app's name is its id when the
- * backend sends none.
+ * Reads an app or engine with its permission on an engine, or null when the
+ * row has no id, no known catalog type or no grant with a known level. Its
+ * name is its id when the backend sends none.
  * @param row - The row the backend sent
- * @returns The app and its permission, or null
+ * @returns The app or engine and its permission, or null
  */
-const readAppAccess = (row: unknown): CurrentAccess<AppSubject> | null => {
+const readEngineAccess = (
+	row: unknown,
+): CurrentAccess<EngineSubject> | null => {
 	if (!isObject(row) || !isObject(row.subject)) {
 		return null;
 	}
 	const id = readText(row.subject.id);
+	const type = readEngineGranteeType(row.subject.type);
 	const access = readGrant(row.access);
-	if (!id || !access) {
+	if (!id || !type || !access) {
 		return null;
 	}
 	return {
 		subject: {
-			category: "PROJECT",
+			category: "ENGINE",
 			id,
+			type,
 			name: readText(row.subject.name) ?? id,
+			subtype: readText(row.subject.subtype),
 		},
 		access,
 	};
@@ -821,11 +872,11 @@ const readList = (value: unknown, what: string): unknown[] => {
  * and times in UTC, so a batch can send them back as they are. On a model, each
  * grant carries its usage limit, and the response adds the public use limit,
  * the model total, and whether cost rules are possible. On an engine, the
- * response also lists the apps the engine gives a permission to.
+ * response also lists the apps and engines the engine gives a permission to.
  * @param target - The project or engine
  * @param admin - Whether to use admin mode; outside it an admin has only their own permissions
- * @returns The people, the teams, an engine's apps and the changes the user may make. Rows
- * without a known level, id or type are left out, as are apps without an id or a known level.
+ * @returns The people, the teams, an engine's apps and engines and the changes the user may
+ * make. Rows without a known level, id or type are left out.
  */
 export const getResourcePermissions = async (
 	target: PermissionTargetResource,
@@ -860,15 +911,15 @@ export const getResourcePermissions = async (
 				? [{ subject: { category: "TEAM" as const, id, type }, access }]
 				: [];
 		}),
-		projects: readOptionalList(data.projects).flatMap(
-			(row) => readAppAccess(row) ?? [],
+		engines: readOptionalList(data.engines).flatMap(
+			(row) => readEngineAccess(row) ?? [],
 		),
 		allowedPermissionChanges: {
 			canChangePeople: allowed.canChangePeople === true,
 			canGiveAuthorAccess: allowed.canGiveAuthorAccess === true,
 			canChangeTeams: allowed.canChangeTeams === true,
-			canViewProjects: allowed.canViewProjects === true,
-			canChangeProjects: allowed.canChangeProjects === true,
+			canViewEngines: allowed.canViewEngines === true,
+			canChangeEngines: allowed.canChangeEngines === true,
 			addsAreAdminOnly: allowed.addsAreAdminOnly === true,
 			limitLevels: readLevels(allowed.limitLevels),
 			canChangeModelLimits: allowed.canChangeModelLimits === true,

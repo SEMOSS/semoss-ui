@@ -1191,6 +1191,9 @@ export function collaborationReducer(
 		case "profile.style.server":
 			if (state.liveProfile) state.liveProfile.style = command.style;
 			break;
+		case "main-twin.server":
+			state.mainTwin = command.mainTwin;
+			break;
 		case "live-profile.set":
 			// a profile loaded from the server (its own id) outranks the signed-in placeholder
 			if (
