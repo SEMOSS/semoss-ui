@@ -118,7 +118,6 @@ semoss/
 │   ├── auditlog/                   # @semoss/auditlog-package - Audit log dashboard
 │   ├── automation/                 # @semoss/automation - Automation workspace app
 │   ├── browser-automation/         # @semoss/browser-automation - Browser automation harness
-│   ├── chrome-extension/           # Chrome extension for browser automation
 │   └── cli/                        # @semoss/cli - CLI tooling
 ├── skills/         # Provider-neutral *.skill.md guidance
 ├── pnpm-workspace.yaml

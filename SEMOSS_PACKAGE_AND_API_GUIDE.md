@@ -56,8 +56,7 @@ source barrel before adding a new public contract.
 | `@semoss/auditlog-package` | Audit log dashboard | `packages/auditlog/src/main.tsx`, `App.tsx` | Audit log routes and dashboard UI | Standalone or embedded audit log view | Application-internal |
 | `@semoss/browser-automation` | Browser automation application and harness UI | `packages/browser-automation/src/main.tsx`, `App.tsx` | Browser automation views, MCP/browser integration, insight-backed application shell | Browser automation workflows | Application-internal |
 | `@semoss/cli` | Node command-line tooling | `@semoss/cli`, `bin/run.js` | oclif command runner; commands such as `init` and `deploy` | Terminal/Node users | Host-facing public API |
-| Chrome extension | Browser automation extension | `packages/chrome-extension` build and manifest | Background, content, devtools, options, panel, and browser automation surfaces | Chrome runtime | Host-internal |
-| VS Code extension | SEMOSS VS Code integration | `packages/vscode-extension/src` and compiled extension entry | Commands for authorize, instance selection, app creation, chat, zip, and deploy; sidebar webview | VS Code runtime | Host-internal |
+| Chrome extension | Browser automation extension |
 
 ## Application API Details
 
