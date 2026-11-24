@@ -321,6 +321,21 @@ Every place a model usage limit is set or shown uses these, so limits read the s
 - The editor's own words are in the `members` namespace, under `usageLimit`; the summaries,
   checks, path view and guide are in English.
 
+### Activity Log (`components/auditlog/`)
+
+The engine and project Activity Log: `AuditLogFilter`, the summary, the Event History chart
+(`AuditLogsTimeline`), the Prompt & Response table (`AuditLogsDataTable`) and the detail drawer.
+`pixel.ts` builds every pixel they run (`AuditLogsReport`, `ExportAuditLogsReport`,
+`GetAuditLogsReportFilterOptionList`), so the table, the exports and the filter dropdowns share
+one contract. Each row says why the access check let the call through (`accessReason`, such as
+Direct, Team or Delegated, or Refused) with its details as JSON (`accessDetails`);
+`access-reason.ts` lists the reasons and reads the details (`readAccessDetails`). The table has
+an Access column, the chart's tooltip an Access line, the filter an Access dropdown (`accessReason`
+in the report's `search`), and the drawer an Access section that names levels, how the call was
+made and the platform's work. Rows logged before calls recorded a reason show none. The words
+are in the `auditlog` namespace (`accessReasons`, `accessDetails`, `accessLevels`, `accessVia`,
+`accessRules`).
+
 ### The file editors are gone (`components/file/file-*.tsx`)
 
 `FileEditor` and the six viewers it dispatched to — `file-code-editor`,
