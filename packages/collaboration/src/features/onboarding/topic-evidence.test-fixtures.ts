@@ -5,6 +5,7 @@ import {
 	makeReview,
 	type ReviewWire,
 	reviewSession,
+	setUpInBuilder,
 } from "./topic-review.test-fixtures";
 import type { TopicReview } from "./topic-review-api";
 
@@ -112,7 +113,9 @@ export function changesSent(session: {
 }
 
 /** Controlled transport acknowledgements only; relationship transactions are checked in H2. */
-export function evidenceSession(initial: ReviewWire = twoTopics()) {
+export function evidenceSession(
+	initial: ReviewWire = setUpInBuilder(twoTopics()),
+) {
 	const session = reviewSession(async () => structuredClone(initial));
 	const afterChange = vi.fn(
 		async (_review: ReviewWire): Promise<void> => undefined,
