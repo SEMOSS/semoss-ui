@@ -26,10 +26,13 @@ describe("the levels an engine or a project gives", () => {
 		expect(describeGrantLevels("ENGINE")).toContain(
 			"Editor also lets them write to it",
 		);
-		expect(describeGrantLevels("PROJECT")).toContain("loading a skill");
+		expect(describeGrantLevels("PROJECT")).toBe(
+			"Read-Only lets them read the project: its files, insights and reactors, such as an agent loading a skill.",
+		);
 		expect(summarizeGrantLevel("PROJECT", "READ_ONLY")).toBe(
 			"Reads its files, insights and reactors",
 		);
+		expect(summarizeGrantLevel("PROJECT", "EDIT")).toBeNull();
 		expect(summarizeGrantLevel("ENGINE", "EDIT")).toBe(
 			"Reads and writes it, and uses its connection",
 		);
