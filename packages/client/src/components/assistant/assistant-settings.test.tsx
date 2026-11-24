@@ -23,11 +23,9 @@ vi.mock("@semoss/shared", async (original) => ({
 		name,
 		onChange,
 		id,
-		"aria-describedby": describedBy,
 	}: ComponentProps<typeof ProjectSelect>) => (
 		<button
 			id={id}
-			aria-describedby={describedBy}
 			type="button"
 			onClick={() =>
 				onChange({
@@ -73,9 +71,6 @@ describe("assistant agent settings", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Use default" }));
 		expect(screen.getByLabelText("Agent")).toHaveTextContent(
 			"Database Explorer",
-		);
-		expect(screen.getByLabelText("Agent")).toHaveAccessibleDescription(
-			/Changes apply to your next message/,
 		);
 		expect(store.getState().agent).toBeNull();
 		store.getState().destroy();

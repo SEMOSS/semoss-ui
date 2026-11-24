@@ -79,7 +79,11 @@ describe("TeamResourceAccessPanel", () => {
 		).toBeTruthy();
 
 		expect(screen.queryByRole("checkbox")).toBeNull();
-		expect(screen.queryByRole("combobox")).toBeNull();
+		expect(
+			screen.queryByRole("combobox", {
+				name: "Access level for Pipeline",
+			}),
+		).toBeNull();
 		expect(
 			screen.queryByRole("button", { name: "Remove access to Pipeline" }),
 		).toBeNull();

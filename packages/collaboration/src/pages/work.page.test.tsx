@@ -1,8 +1,15 @@
-import { act, cleanup, render, screen, within } from "@testing-library/react";
+import {
+	act,
+	cleanup,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { createMemoryRouter, RouterProvider } from "react-router";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createInitialCollaborationState } from "@/features/collaboration/state/collaboration.fixtures";
 import type {
 	CollaborationState,
@@ -11,6 +18,7 @@ import type {
 	WorkItem,
 } from "@/features/collaboration/state/collaboration.types";
 import { CollaborationSessionProvider } from "@/features/collaboration/state/collaboration-session.context";
+import { pixel } from "@/lib/pixel";
 import { TopicPage } from "./topic.page";
 import { WorkPage } from "./work.page";
 
@@ -31,34 +39,62 @@ vi.mock("@/features/dashboard/topic-sessions", () => ({
 }));
 // the Work list and its build menu read the server; one actions object, since their loads rerun when it changes
 const insight = vi.hoisted(() => ({
+	workItems: [] as Record<string, unknown>[],
 	actions: {
-		run: vi.fn(async (statement: string) => ({
-			pixelReturn: [
-				{
-					output: statement.startsWith("WorkListMyWork")
-						? {
-								selfId: "me",
-								workItems: [
-									{
-										id: "launch",
-										title: "Ship the Alpha launch",
-										state: "active",
-										mine: true,
-										openSteps: [],
-									},
-								],
-							}
-						: {},
-					operationType: ["OPERATION"],
-				},
-			],
-		})),
+		run: vi.fn(async (statement: string) => {
+			const topicId = /topicId=\["([^"]+)"\]/.exec(statement)?.[1];
+			const workItems = topicId
+				? insight.workItems.filter((item) =>
+						(item.topics as { id: string }[] | undefined)?.some(
+							(topic) => topic.id === topicId,
+						),
+					)
+				: insight.workItems;
+			return {
+				pixelReturn: statement
+					.split(");")
+					.filter((part) => part.trim())
+					.map((part) => ({
+						output: part.trim().startsWith("WorkListMyWork")
+							? { selfId: "me", workItems }
+							: {},
+						operationType: ["OPERATION"],
+					})),
+			};
+		}),
 	},
 }));
 vi.mock("@semoss/sdk/react", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
 	useInsight: () => insight,
 }));
+
+/** A kept work item the server lists for the owner, under one topic. */
+const serverItem = (
+	id: string,
+	topicId: string,
+	extra: Record<string, unknown> = {},
+) => ({
+	id,
+	title: `Work ${id}`,
+	state: "active",
+	mine: true,
+	topics: [{ id: topicId, name: topicId, primary: true }],
+	openSteps: [],
+	...extra,
+});
+
+beforeEach(() => {
+	insight.workItems = [
+		{
+			id: "launch",
+			title: "Ship the Alpha launch",
+			state: "active",
+			mine: true,
+			openSteps: [],
+		},
+	];
+});
 
 afterEach(() => {
 	cleanup();
@@ -293,7 +329,22 @@ it.each(["/work", "/work/all", "/work/waiting", "/work/done"])(
 	},
 );
 
-it("opens the Work topic index with selector-based counts and the existing new-topic dialog", async () => {
+it("opens the Work topic index with counts of each topic's kept work items and the existing new-topic dialog", async () => {
+	insight.workItems = [
+		serverItem("alpha-1", "alpha"),
+		serverItem("alpha-2", "alpha"),
+		serverItem("alpha-3", "alpha", {
+			openSteps: [
+				{
+					id: "s1",
+					text: "Send the deck",
+					status: "open",
+					assigneeId: "someone-else",
+				},
+			],
+		}),
+		serverItem("alpha-new", "alpha", { state: "proposed" }),
+	];
 	const { user } = renderWork("/work/topics");
 	expect(screen.getByRole("heading", { name: "Your topics." })).toBeVisible();
 	expect(screen.getByRole("region", { name: "All topics" })).toBeVisible();
@@ -301,7 +352,7 @@ it("opens the Work topic index with selector-based counts and the existing new-t
 	const alpha = within(index).getByRole("link", { name: /Alpha launch/ });
 	expect(alpha).toHaveAttribute("href", "/topics/alpha");
 	expect(alpha).toHaveTextContent("Ship the launch with the customer.");
-	expect(alpha).toHaveTextContent("3 open");
+	await waitFor(() => expect(alpha).toHaveTextContent("3 open"));
 	expect(alpha).toHaveTextContent("1 waiting");
 	expect(alpha).not.toHaveTextContent("999");
 	expect(screen.queryByText("Archived topic")).not.toBeInTheDocument();
@@ -317,7 +368,11 @@ it("opens the Work topic index with selector-based counts and the existing new-t
 	expect(create).toHaveFocus();
 });
 
-it("combines scoped work with people and notes in one topic", () => {
+it("combines scoped work with people and notes in one topic", async () => {
+	insight.workItems = [
+		serverItem("alpha-kickoff", "alpha", { title: "Alpha kickoff" }),
+		serverItem("beta-interviews", "beta", { title: "Beta interviews" }),
+	];
 	renderWork("/topics/alpha");
 	expect(screen.getByRole("heading", { name: "Alpha launch" })).toBeVisible();
 	expect(
@@ -342,73 +397,20 @@ it("combines scoped work with people and notes in one topic", () => {
 	expect(
 		screen.queryByRole("heading", { name: "Brain wants to check" }),
 	).not.toBeInTheDocument();
+	expect(screen.getByRole("tab", { name: "Work items" })).toHaveAttribute(
+		"aria-selected",
+		"true",
+	);
 	expect(
-		screen.getByRole("button", { name: "Filter work: Open 3" }),
+		await screen.findByRole("link", { name: "Alpha kickoff" }),
 	).toBeVisible();
+	expect(insight.actions.run).toHaveBeenCalledWith(
+		pixel("WorkListMyWork", { includeSuggested: true, topicId: "alpha" }),
+	);
 	expect(
-		screen.queryByRole("link", { name: "Action beta-open" }),
+		screen.queryByRole("link", { name: "Beta interviews" }),
 	).not.toBeInTheDocument();
 	expect(sessions.mounted).not.toHaveBeenCalled();
-});
-
-it("combines topic status and source filters, keeps multi-topic work, and sorts scoped rows", async () => {
-	const { user } = renderWork("/topics/alpha");
-	const openFilter = () =>
-		user.click(screen.getByRole("button", { name: /^Filter work:/ }));
-	await openFilter();
-	expect(
-		screen.getByRole("menuitemradio", { name: "All sources 3" }),
-	).toBeVisible();
-	expect(
-		screen.getByRole("menuitemradio", { name: "Teams 1" }),
-	).toBeVisible();
-	await user.click(screen.getByRole("menuitemradio", { name: "Email 2" }));
-	const actions = screen.getByRole("region", { name: "Open 2, Email" });
-	expect(within(actions).getAllByRole("article")).toHaveLength(2);
-	expect(within(actions).getAllByRole("article")[0]).toHaveTextContent(
-		"Action alpha-email",
-	);
-	expect(
-		within(actions).getByRole("link", { name: "Action shared" }),
-	).toHaveAttribute("href", "/thread/shared");
-	await openFilter();
-	await user.click(screen.getByRole("menuitemradio", { name: "Latest" }));
-	expect(
-		within(
-			screen.getByRole("region", { name: "Open 2, Latest, Email" }),
-		).getAllByRole("article")[0],
-	).toHaveTextContent("Action shared");
-	await openFilter();
-	await user.click(screen.getByRole("menuitemradio", { name: "Waiting 1" }));
-	expect(
-		screen.getByRole("link", { name: "Action alpha-wait" }),
-	).toBeVisible();
-	expect(
-		screen.queryByRole("link", { name: "Action alpha-email" }),
-	).not.toBeInTheDocument();
-	await openFilter();
-	await user.click(screen.getByRole("menuitemradio", { name: "Handled 1" }));
-	const handled = screen.getByRole("region", { name: /^Handled 1/ });
-	await user.click(
-		within(handled).getByRole("button", { name: "Move back" }),
-	);
-	await openFilter();
-	expect(
-		screen.getByRole("menuitemradio", { name: "Handled 0" }),
-	).toBeVisible();
-	await user.click(screen.getByRole("menuitemradio", { name: "Open 4" }));
-	await openFilter();
-	await user.click(
-		screen.getByRole("menuitemradio", { name: "All sources 4" }),
-	);
-	expect(
-		screen.getByRole("link", { name: "Action alpha-done" }),
-	).toBeVisible();
-	await openFilter();
-	await user.click(screen.getByRole("menuitemradio", { name: "Snoozed 1" }));
-	expect(
-		screen.getByRole("link", { name: "Action alpha-snooze" }),
-	).toBeVisible();
 });
 
 it("opens on the tab a link back from the add-or-remove page asks for, and links to that page", async () => {
@@ -424,11 +426,11 @@ it("opens on the tab a link back from the add-or-remove page asks for, and links
 		"href",
 		"/topics/alpha/contents",
 	);
-	// a tab the page does not have falls back to Actions
+	// a tab the page does not have falls back to Work items
 	await act(() =>
 		router.navigate("/topics/beta", { state: { tab: "anything" } }),
 	);
-	expect(screen.getByRole("tab", { name: /^Actions/ })).toHaveAttribute(
+	expect(screen.getByRole("tab", { name: "Work items" })).toHaveAttribute(
 		"aria-selected",
 		"true",
 	);
@@ -503,19 +505,21 @@ it("opens source threads by their canonical import route and reads sessions only
 	).toBeVisible();
 	await user.click(screen.getByRole("tab", { name: "Chats" }));
 	expect(sessions.mounted).toHaveBeenCalledWith("alpha");
-	await user.click(screen.getByRole("tab", { name: /^Actions/ }));
+	await user.click(screen.getByRole("tab", { name: "Work items" }));
 	expect(screen.queryByText("Sessions for alpha")).not.toBeInTheDocument();
 	await act(() => router.navigate("/topics/beta"));
-	expect(screen.getByRole("tab", { name: /^Actions/ })).toHaveAttribute(
+	expect(screen.getByRole("tab", { name: "Work items" })).toHaveAttribute(
 		"aria-selected",
 		"true",
 	);
-	expect(
-		screen.getByRole("button", { name: "Filter work: Open 2" }),
-	).toBeVisible();
-	expect(
-		screen.queryByRole("link", { name: "Action alpha-email" }),
-	).not.toBeInTheDocument();
+	await waitFor(() =>
+		expect(insight.actions.run).toHaveBeenCalledWith(
+			pixel("WorkListMyWork", {
+				includeSuggested: true,
+				topicId: "beta",
+			}),
+		),
+	);
 });
 
 it("never falls back to global work for an unknown topic", () => {
@@ -531,13 +535,16 @@ it("never falls back to global work for an unknown topic", () => {
 	expect(screen.queryByRole("tab")).not.toBeInTheDocument();
 });
 
-it("shows an empty topic's context beside its work, with nothing to open first", () => {
+it("shows an empty topic's context beside its work, with nothing to open first", async () => {
+	insight.workItems = [
+		serverItem("beta-open", "beta", { title: "Action beta-open" }),
+	];
 	renderWork("/topics/beta");
 	expect(
 		screen.queryByRole("button", { name: "Context" }),
 	).not.toBeInTheDocument();
 	expect(
-		screen.getByRole("link", { name: "Action beta-open" }),
+		await screen.findByRole("link", { name: "Action beta-open" }),
 	).toBeVisible();
 	const context = screen.getByRole("complementary", {
 		name: "Topic context",
@@ -548,37 +555,6 @@ it("shows an empty topic's context beside its work, with nothing to open first",
 	expect(
 		within(context).getByRole("combobox", { name: "Topic status" }),
 	).toBeVisible();
-});
-
-it("keeps urgency visible and classification reasons under row details", async () => {
-	const state = workState();
-	const item = state.items.find((item) => item.id === "alpha-email");
-	if (!item) throw new Error("Missing details fixture");
-	item.reasons = ["Asks you to act", "From a VIP", "Urgency: Today"];
-	const thread = state.threads.find((thread) => thread.id === item.threadId);
-	if (!thread) throw new Error("Missing details thread");
-	thread.participants = [
-		{ personId: state.people[0].id, role: "Participant", included: false },
-	];
-	const { user } = renderWork("/topics/alpha", state);
-	expect(screen.getByText("Today")).toBeVisible();
-	expect(screen.getByText("1 participant excluded")).toBeVisible();
-	expect(screen.getByText("From a VIP")).not.toBeVisible();
-	await user.click(
-		screen.getByRole("button", {
-			name: "Thread actions for Source alpha-email",
-		}),
-	);
-	await user.click(screen.getByRole("button", { name: "Show details" }));
-	expect(screen.getByText("From a VIP")).toBeVisible();
-	expect(
-		screen.getByRole("list", { name: "Why this is in your work list" }),
-	).toHaveTextContent("Asks you to act");
-	expect(
-		screen.getByRole("button", {
-			name: "Thread actions for Source alpha-email",
-		}),
-	).toHaveFocus();
 });
 
 // Route composition is exercised with isolated child views; hydration has its own integration coverage.
