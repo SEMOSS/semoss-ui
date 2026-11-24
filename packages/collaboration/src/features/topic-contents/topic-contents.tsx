@@ -9,7 +9,7 @@ import {
 import type { ReactNode } from "react";
 import { Link, Navigate, useParams, useSearchParams } from "react-router";
 import { type MailFolder, useMailFolders } from "@semoss/connectors";
-import { Button, P } from "@semoss/ui/next";
+import { Button, H1, P } from "@semoss/ui/next";
 import {
 	OneDriveIcon,
 	TeamsFilesIcon,
