@@ -27,6 +27,7 @@ import {
 	type UserInsightAccess,
 	type UserResourceAccess,
 } from "@/api";
+import { CatalogTypeIcon } from "@/components/shared/catalog-type-icon";
 import { useAPI, useSettings } from "@/hooks";
 import {
 	ALL_ENGINE_TYPES,
@@ -377,10 +378,18 @@ export const MemberResourceAccess = ({
 				<SelectValue />
 			</SelectTrigger>
 			<SelectContent>
-				<SelectItem value="ALL">All types</SelectItem>
+				<SelectItem value="ALL">
+					<span className="flex items-center gap-2">
+						<CatalogTypeIcon type="ALL" />
+						All Types
+					</span>
+				</SelectItem>
 				{typeOptions.map((option) => (
 					<SelectItem key={option.value} value={option.value}>
-						{option.label}
+						<span className="flex items-center gap-2">
+							<CatalogTypeIcon type={option.value} />
+							{option.label}
+						</span>
 					</SelectItem>
 				))}
 			</SelectContent>

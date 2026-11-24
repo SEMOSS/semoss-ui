@@ -207,6 +207,12 @@ the list does not offer, disabled, with a note. Each engine in the list is an `E
 logo (`EngineSubtypeIcon`), its name and, under it, its id (`showEngineId`) or its description,
 with a check on the chosen one; the host passes the chosen engine's logo as `triggerIcon`. Pickers
 that choose an engine pass `showEngineId`, so every engine list shows logo, name and id.
+`EngineSelect` and `ProjectSelect` also pick several: given `selectedIds`, the list stays open
+between picks, checks the engines or projects with those ids, and passes each one picked to
+`onChange`, so the host adds it or takes it off; the host's `name` is what the trigger shows,
+such as how many are picked. With `isOwnedOnly`, both list only what the user owns, directly or
+through a team (`effectivePermissions=[1]`), as for a picker of what the user can share; admin
+mode lists everything.
 
 ### Model usage limits (`components/model-usage-limit/`)
 
@@ -217,8 +223,9 @@ Every place a model usage limit is set or shown uses these, so limits read the s
   measure (Tokens, Cost in US dollars, Compute Time), a window from minute to year and, for a team,
   an app or public use, Shared or For Each Member / For Each User / For Each Person. Each select gives its `SelectValue`
   the chosen option's label. Whole amounts are written with ASCII digits and comma separators
-  (`toLocaleString("en-US")`) whatever the browser's locale, so they read back as typed. A minute or hour window has a length
-  input beside it, so the rule reads "Every [10] Minutes": 1 to 59 minutes or 1 to 24 hours,
+  (`toLocaleString("en-US")`) whatever the browser's locale, so they read back as typed. A minute or hour window has "Every"
+  and a length box of its own before it, kept on one line with the window's units, so the rule
+  reads "Every [10] Minutes": 1 to 59 minutes or 1 to 24 hours,
   starting at 1, put back in range when the input is left, and sent as `windowLength` only when
   it is more than 1. Every rule has its own amount: a team's shared rule caps the team together,
   and a for each member rule caps each member with a fixed amount.

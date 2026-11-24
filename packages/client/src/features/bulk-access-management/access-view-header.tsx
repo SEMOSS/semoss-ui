@@ -32,7 +32,10 @@ interface AccessViewHeaderProps {
 /**
  * The header of a view opened from an access page, such as Bulk Access Management:
  * a back button beside the title, the description under it, and the view's
- * buttons on the right. The buttons stay on one line; the description wraps.
+ * buttons. The header follows its own width (a container query), not the
+ * screen's, so it also fits a view shown beside a list: when it is wide, the
+ * buttons sit on the right on one line; when it is narrow, they wrap under the
+ * description, which keeps the full width.
  */
 export const AccessViewHeader = ({
 	title,
@@ -44,50 +47,55 @@ export const AccessViewHeader = ({
 }: AccessViewHeaderProps) => {
 	const Heading = headingLevel === 3 ? H3 : H2;
 	return (
-		<div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-6">
-			<div className="flex min-w-0 flex-1 items-start gap-2">
-				{/* the back button is centered on the title's first line, 28px tall at both heading levels */}
-				{backTo ? (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								asChild
-								variant="ghost"
-								size="icon-sm"
-								className="-my-0.5"
-							>
-								<Link
-									to={backTo}
-									relative="path"
-									aria-label={backLabel}
+		<div className="@container w-full">
+			<div className="flex @4xl:flex-row flex-col @4xl:items-start @4xl:justify-between @4xl:gap-6 gap-3">
+				<div className="flex min-w-0 flex-1 items-start gap-2">
+					{/* the back button is centered on the title's first line, 28px tall at both heading levels */}
+					{backTo ? (
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									asChild
+									variant="ghost"
+									size="icon-sm"
+									className="-my-0.5"
 								>
-									<ArrowLeft className="size-4" aria-hidden />
-								</Link>
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>{backLabel}</TooltipContent>
-					</Tooltip>
+									<Link
+										to={backTo}
+										relative="path"
+										aria-label={backLabel}
+									>
+										<ArrowLeft
+											className="size-4"
+											aria-hidden
+										/>
+									</Link>
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>{backLabel}</TooltipContent>
+						</Tooltip>
+					) : null}
+					<div className="flex min-w-0 flex-col gap-1">
+						<Heading
+							className={
+								headingLevel === 3
+									? "font-medium text-lg"
+									: "font-medium text-xl"
+							}
+						>
+							{title}
+						</Heading>
+						<P className="text-muted-foreground text-sm">
+							{description}
+						</P>
+					</div>
+				</div>
+				{actions ? (
+					<div className="flex @4xl:shrink-0 flex-wrap @4xl:flex-nowrap gap-2">
+						{actions}
+					</div>
 				) : null}
-				<div className="flex min-w-0 flex-col gap-1">
-					<Heading
-						className={
-							headingLevel === 3
-								? "font-medium text-lg"
-								: "font-medium text-xl"
-						}
-					>
-						{title}
-					</Heading>
-					<P className="text-muted-foreground text-sm">
-						{description}
-					</P>
-				</div>
 			</div>
-			{actions ? (
-				<div className="flex flex-wrap gap-2 md:shrink-0 md:flex-nowrap">
-					{actions}
-				</div>
-			) : null}
 		</div>
 	);
 };
