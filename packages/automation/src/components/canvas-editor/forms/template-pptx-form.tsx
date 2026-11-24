@@ -18,6 +18,7 @@ import type {
 	TemplatePptxReplacement,
 } from "../../../domain/automation-workflow.types";
 import { BoundInput } from "./pill-input";
+import { PptxTemplateSelect } from "./pptx-template-select";
 
 export interface PptxShapePayload {
 	shapeName: string;
@@ -40,6 +41,8 @@ export interface TemplatePptxFormProps {
 	/** Set by the host when a shape is selected in the PPTX panel. The form
 	 *  adds it as a replacement when pick mode is active. */
 	pptxShapeSelection?: PptxShapeSelection | null;
+	/** The automation's project, whose assets are searched for templates. */
+	appId?: string;
 	readOnly?: boolean;
 }
 
@@ -257,6 +260,7 @@ export function TemplatePptxForm({
 	upstreamVars,
 	onChange,
 	pptxShapeSelection,
+	appId = "",
 	readOnly = false,
 }: TemplatePptxFormProps) {
 	const [pickMode, setPickMode] = useState(false);
@@ -339,15 +343,13 @@ export function TemplatePptxForm({
 
 	return (
 		<div className="flex flex-col gap-4">
-			<BoundInput
-				label="Template File"
-				required
+			<PptxTemplateSelect
 				value={config.templateFile}
-				placeholder="path/to/template.pptx"
-				description="Path to the .pptx file in the insight folder."
-				onChange={(v) => onChange({ ...config, templateFile: v })}
-				upstreamVars={upstreamVars}
-				readOnly={readOnly}
+				appId={appId}
+				onChange={(templateFile) =>
+					onChange({ ...config, templateFile })
+				}
+				disabled={readOnly}
 			/>
 
 			<BoundInput

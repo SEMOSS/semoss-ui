@@ -204,6 +204,7 @@ export function StepForm({
 					upstreamVars={upstreamVars}
 					onChange={update}
 					pptxShapeSelection={pptxShapeSelection}
+					appId={appId}
 					readOnly={readOnly}
 				/>
 			);
