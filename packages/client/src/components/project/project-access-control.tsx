@@ -7,6 +7,7 @@ import { PendingMembersTable } from "@/components/settings/pending-members-table
 import { SettingsTiles } from "@/components/settings/settings-tiles";
 import { TeamsTable } from "@/components/settings/teams-table";
 import { SettingsContext } from "@/contexts/settings-context";
+import { AccessToEnginesTable } from "@/features/access-to-engines/access-to-engines-table";
 import {
 	type AccessControlView,
 	getAccessControlPath,
@@ -14,6 +15,7 @@ import {
 import { BulkAccessManagement } from "@/features/bulk-access-management/bulk-access-management";
 import { BulkAccessManagementCard } from "@/features/bulk-access-management/bulk-access-management-card";
 import { EffectivePermissions } from "@/features/effective-permissions/effective-permissions";
+import { GrantedAppsTable } from "@/features/granted-apps/granted-apps-table";
 import { useProject } from "@/hooks/use-project";
 
 interface ProjectAccessControlProps {
@@ -25,13 +27,14 @@ interface ProjectAccessControlProps {
 }
 
 /**
- * An app's access control: its access settings, then its members, or Bulk
- * Access Management or Effective Permissions in their place.
+ * A project's access control: its access settings, then its members, its
+ * teams, the apps and agents that can use it, and the engines and projects it
+ * can use, or Bulk Access Management or Effective Permissions in their place.
  */
 export const ProjectAccessControl = ({
 	view = "MEMBERS",
 }: ProjectAccessControlProps) => {
-	const { project, permission, refresh } = useProject();
+	const { project, permission, refresh, type } = useProject();
 
 	// bulk access management, effective permissions and teams go by the user's own access:
 	// an admin uses them in admin mode, from the settings pages
@@ -147,6 +150,21 @@ export const ProjectAccessControl = ({
 									canViewPeople={canEditAccess}
 								/>
 							</div>
+							{canEditAccess ? (
+								<div className="mt-6 flex flex-col gap-6">
+									<GrantedAppsTable
+										key={project.project_id}
+										target={target}
+										type={type}
+									/>
+									<AccessToEnginesTable
+										key={`access-to-engines-${project.project_id}`}
+										resourceType="PROJECT"
+										id={project.project_id}
+										type={type}
+									/>
+								</div>
+							) : null}
 						</div>
 					)}
 				</section>

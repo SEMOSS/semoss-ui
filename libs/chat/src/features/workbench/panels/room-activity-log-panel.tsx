@@ -56,6 +56,7 @@ const RoomActivityLogPanel = () => {
 		customDateRange: { from: null, to: null },
 		methodNames: [],
 		engineTypes: [],
+		accessReasons: [],
 		filterUserId: "",
 		roomId: "",
 		searchTerm: "",

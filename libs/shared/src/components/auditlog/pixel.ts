@@ -17,6 +17,8 @@ export interface AuditLogScope {
 export interface AuditLogSearch {
 	methodName?: string[];
 	engineType?: string[];
+	/** Why the access check let the call through, such as DIRECT or REFUSED */
+	accessReason?: string[];
 }
 
 export interface AuditLogReportParams {
@@ -40,6 +42,7 @@ export interface AuditLogReportParams {
 export type AuditLogFilterName =
 	| "methodName"
 	| "engineType"
+	| "accessReason"
 	| "user"
 	| "roomId";
 
@@ -71,6 +74,8 @@ export interface AuditLogFilterValue {
 	customDateRange: { from: Date | null; to: Date | null };
 	methodNames: string[];
 	engineTypes: string[];
+	/** The access reasons to keep, such as DELEGATED or REFUSED */
+	accessReasons: string[];
 	filterUserId: string;
 	roomId: string;
 	searchTerm: string;
@@ -148,6 +153,8 @@ const buildReportParamValues = (
 	const nestedSearch: AuditLogSearch = {};
 	if (search?.methodName?.length) nestedSearch.methodName = search.methodName;
 	if (search?.engineType?.length) nestedSearch.engineType = search.engineType;
+	if (search?.accessReason?.length)
+		nestedSearch.accessReason = search.accessReason;
 	if (Object.keys(nestedSearch).length > 0) paramValues.search = nestedSearch;
 
 	const trimmedTerm = params.searchTerm?.trim();
@@ -213,6 +220,7 @@ export const filterValueToReportParams = (
 		search: {
 			methodName: value.methodNames,
 			engineType: value.engineTypes,
+			accessReason: value.accessReasons,
 		},
 		searchTerm: value.searchTerm,
 	};
@@ -242,7 +250,7 @@ export interface AuditLogUserOption {
 	userType: string;
 }
 
-//methodName / engineType rows are single-column: ["<value>"].
+//methodName / engineType / accessReason rows are single-column: ["<value>"].
 export const parseSimpleFilterOptions = (output: unknown): string[] => {
 	if (!Array.isArray(output)) return [];
 	return output

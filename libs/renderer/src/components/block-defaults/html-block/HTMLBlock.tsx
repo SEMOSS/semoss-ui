@@ -1,6 +1,7 @@
-import DOMPurify from "dompurify";
+import createDOMPurify from "dompurify";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef } from "react";
+import { uncommentHtmlStyles } from "@semoss/utility/browser";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef } from "../../../store";
 
@@ -12,6 +13,9 @@ export interface HTMLBlockDef extends BlockDef<"html"> {
 	slots: never;
 }
 
+// Mermaid adds hooks to the shared instance that must not change HTML blocks.
+const htmlPurifier = createDOMPurify();
+
 export const HTMLBlock: BlockComponent = observer(({ id }) => {
 	const { attrs, data } = useBlock<HTMLBlockDef>(id);
 	const shadowRef = useRef<HTMLDivElement>(null);
@@ -21,7 +25,7 @@ export const HTMLBlock: BlockComponent = observer(({ id }) => {
 			return;
 		}
 
-		const html = DOMPurify.sanitize(data.html);
+		const html = htmlPurifier.sanitize(uncommentHtmlStyles(data.html));
 
 		let shadowRoot = shadowRef.current.shadowRoot;
 

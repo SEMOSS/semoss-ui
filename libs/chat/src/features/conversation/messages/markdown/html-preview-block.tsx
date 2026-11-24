@@ -5,9 +5,9 @@ import {
 	PencilIcon,
 	SaveIcon,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { SandpackHtmlPreview } from "@semoss/shared";
+import { HtmlPreview } from "@semoss/shared";
 import {
 	Code,
 	Dialog,
@@ -18,7 +18,6 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { copyTextToClipboard } from "@semoss/utility/clipboard";
-import { useLatestRef } from "@semoss/utility/react/use-latest-ref";
 import type { RoomStore } from "../../../room/store/room.store";
 import { TooltipButton } from "../../tooltip-button";
 import { BlockHeader } from "./block-header";
@@ -27,6 +26,7 @@ import {
 	RESPONSE_BLOCK_MIN_HEIGHT,
 } from "./constants";
 import { SaveFileDialog } from "./save-file-dialog";
+import { useHtmlPreviewStream } from "./use-html-preview-stream";
 import { useStickToBottom } from "./use-stick-to-bottom";
 
 /** Props for {@link HtmlPreviewBlock}. */
@@ -39,83 +39,10 @@ interface HtmlPreviewBlockProps {
 	isLoading?: boolean;
 }
 
-/** How often, at most, a streaming preview takes new HTML. */
-const HTML_PREVIEW_STREAM_THROTTLE_MS = 120;
-
-/**
- * Injected into the previewed page: it keeps the page's scroll position (or
- * its place at the bottom) across the reloads each new chunk causes, fades
- * the page in once restored, and tells the parent while the user scrolls.
- * `__PREVIEW_CHANNEL__` is replaced with the block's own channel.
- */
-const PREVIEW_SCROLL_SYNC_SCRIPT =
-	"<script>" +
-	"(function(){" +
-	"var channel='__PREVIEW_CHANNEL__';" +
-	"var key='playground-html-preview-scroll-'+channel;" +
-	"var threshold=24;" +
-	"function getScroller(){return document.scrollingElement||document.documentElement||document.body;}" +
-	"function clamp(v,min,max){return Math.max(min,Math.min(max,v));}" +
-	"function isAtBottom(el){return el.scrollHeight-el.clientHeight-el.scrollTop<=threshold;}" +
-	"function readState(){try{var raw=sessionStorage.getItem(key);return raw?JSON.parse(raw):null;}catch(_err){return null;}}" +
-	"var restoring=false;" +
-	"function writeState(el){if(restoring)return;try{sessionStorage.setItem(key,JSON.stringify({scrollTop:el.scrollTop,scrollHeight:el.scrollHeight,atBottom:isAtBottom(el)}));}catch(_err){}}" +
-	"function restoreState(el){restoring=true;var prev=el.style.scrollBehavior;el.style.scrollBehavior='auto';document.documentElement.style.scrollBehavior='auto';var state=readState();if(!state){el.scrollTop=el.scrollHeight;}else if(state.atBottom){el.scrollTop=el.scrollHeight;}else{var max=Math.max(0,el.scrollHeight-el.clientHeight);var top=typeof state.scrollTop==='number'?state.scrollTop:0;el.scrollTop=clamp(top,0,max);}el.style.scrollBehavior=prev;document.documentElement.style.scrollBehavior='';writeState(el);restoring=false;}" +
-	"document.documentElement.style.opacity='0';" +
-	"document.documentElement.style.transition='opacity 0.1s';" +
-	"setTimeout(function(){document.documentElement.style.opacity='1';},500);" +
-	"function init(){var el=getScroller();restoreState(el);requestAnimationFrame(function(){document.documentElement.style.opacity='1';});" +
-	"window.addEventListener('scroll',function(){writeState(el);try{window.parent.postMessage({type:'PREVIEW_SCROLL',channel:channel},'*');}catch(_e){}},{passive:true});" +
-	"window.addEventListener('pagehide',function(){writeState(el);});setTimeout(function(){writeState(el);},120);}" +
-	"if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init,{once:true});}else{init();}" +
-	"})();" +
-	"</script>";
-
-/**
- * Add the scroll sync script to a page, before its `</body>` when it has one.
- *
- * @param html - The page.
- * @param channel - The block's channel, which keys its saved scroll and messages.
- * @returns The page with the script.
- */
-const injectPreviewScrollSync = (html: string, channel: string): string => {
-	const script = PREVIEW_SCROLL_SYNC_SCRIPT.replace(
-		/__PREVIEW_CHANNEL__/g,
-		channel,
-	);
-	const bodyCloseIndex = html.lastIndexOf("</body>");
-	return bodyCloseIndex !== -1
-		? html.slice(0, bodyCloseIndex) + script + html.slice(bodyCloseIndex)
-		: html + script;
-};
-
-/**
- * Whether streamed HTML can be previewed yet: it is not empty, and does not
- * end inside an inline script, a style, or a tag.
- *
- * @param value - The HTML streamed so far.
- * @returns Whether to preview it.
- */
-const isPreviewChunkSafe = (value: string): boolean => {
-	if (!value.trim()) return false;
-
-	const hasUnclosedInlineScript =
-		/<script(?![^>]*\bsrc\s*=)[^>]*>(?![\s\S]*<\/script\s*>)/i.test(value);
-	if (hasUnclosedInlineScript) return false;
-
-	const hasUnclosedStyle = /<style[^>]*>(?![\s\S]*<\/style\s*>)/i.test(value);
-	if (hasUnclosedStyle) return false;
-
-	const endsWithPartialTag = /<[^>]*$/.test(value);
-	if (endsWithPartialTag) return false;
-
-	return true;
-};
-
 /**
  * An HTML block in a response, previewed in a sandbox with Raw, Full View,
- * Save, and Copy. While it streams, the preview takes only HTML that is safe
- * to render, at most once per throttle, and waits while the user scrolls it.
+ * Save, and Copy. While it streams, the preview takes only complete chunks,
+ * at most once per throttle; Copy and Save always use the original HTML.
  */
 export const HtmlPreviewBlock = ({
 	html,
@@ -129,98 +56,9 @@ export const HtmlPreviewBlock = ({
 	const [isRaw, setIsRaw] = useState(false);
 	// the raw view is height capped, so it follows its own newest line
 	const rawScroll = useStickToBottom(html);
-	const [streamedHtml, setStreamedHtml] = useState(() =>
-		isLoading ? (isPreviewChunkSafe(html) ? html : "") : html,
-	);
-
-	const previewChannelRef = useRef(
-		`html-preview-${Math.random().toString(36).slice(2, 10)}`,
-	);
-	const latestSafeHtmlRef = useRef(streamedHtml);
-	const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-	// the throttle's timer reads whether the block still streams when it fires
-	const isLoadingRef = useLatestRef(!!isLoading);
-	const isScrollingRef = useRef(false);
-	const scrollStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
-		null,
-	);
-	// HTML that arrived while the user scrolled the preview, applied once they stop
-	const pendingScrollHtmlRef = useRef<string | null>(null);
-
-	// the preview reports its scrolls; hold new HTML until 150ms after the last
-	useEffect(() => {
-		const channel = previewChannelRef.current;
-		const handleMessage = (event: MessageEvent) => {
-			const data = event.data;
-			if (
-				!data ||
-				typeof data !== "object" ||
-				data.type !== "PREVIEW_SCROLL" ||
-				data.channel !== channel
-			) {
-				return;
-			}
-			isScrollingRef.current = true;
-			if (scrollStopTimerRef.current) {
-				clearTimeout(scrollStopTimerRef.current);
-			}
-			scrollStopTimerRef.current = setTimeout(() => {
-				isScrollingRef.current = false;
-				if (pendingScrollHtmlRef.current !== null) {
-					setStreamedHtml(pendingScrollHtmlRef.current);
-					pendingScrollHtmlRef.current = null;
-				}
-			}, 150);
-		};
-		window.addEventListener("message", handleMessage);
-		return () => {
-			window.removeEventListener("message", handleMessage);
-			if (scrollStopTimerRef.current)
-				clearTimeout(scrollStopTimerRef.current);
-			if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
-		};
-	}, []);
-
-	// take safe streamed HTML on the throttle; once streaming ends, take it all at once
-	useEffect(() => {
-		if (!isLoading) {
-			if (flushTimerRef.current) {
-				clearTimeout(flushTimerRef.current);
-				flushTimerRef.current = null;
-			}
-			latestSafeHtmlRef.current = html;
-			setStreamedHtml(html);
-			return;
-		}
-
-		if (!isPreviewChunkSafe(html)) {
-			return;
-		}
-
-		latestSafeHtmlRef.current = html;
-
-		if (!streamedHtml) {
-			setStreamedHtml(html);
-			return;
-		}
-
-		if (!flushTimerRef.current) {
-			flushTimerRef.current = setTimeout(() => {
-				flushTimerRef.current = null;
-				if (!isLoadingRef.current) return;
-				if (isScrollingRef.current) {
-					pendingScrollHtmlRef.current = latestSafeHtmlRef.current;
-				} else {
-					setStreamedHtml(latestSafeHtmlRef.current);
-				}
-			}, HTML_PREVIEW_STREAM_THROTTLE_MS);
-		}
-	}, [html, isLoading, streamedHtml]);
-
-	const previewHtml = isLoading ? streamedHtml : html;
-	const sandpackHtml = useMemo(() => {
-		return injectPreviewScrollSync(previewHtml, previewChannelRef.current);
-	}, [previewHtml]);
+	const previewHtml = useHtmlPreviewStream(html, !!isLoading);
+	// focus goes back to Full View when its dialog closes
+	const fullViewButtonRef = useRef<HTMLButtonElement>(null);
 
 	return (
 		<>
@@ -250,41 +88,48 @@ export const HtmlPreviewBlock = ({
 								: t("blocks.editHtml")
 						}
 						tooltipSide="bottom"
+						isTooltipHoverable
 					>
 						{isRaw ? (
-							<EyeIcon className="size-3" />
+							<EyeIcon aria-hidden className="size-3" />
 						) : (
-							<PencilIcon className="size-3" />
+							<PencilIcon aria-hidden className="size-3" />
 						)}
 						{isRaw ? t("blocks.preview") : t("blocks.edit")}
 					</TooltipButton>
 					<TooltipButton
+						ref={fullViewButtonRef}
 						className="text-muted-foreground text-xs hover:text-foreground"
 						variant="ghost"
 						size="sm"
 						disabled={!html}
+						aria-label={t("response.fullView")}
 						onClick={() => setIsFullViewOpen(true)}
 						tooltip={t("response.fullView")}
 						tooltipSide="bottom"
+						isTooltipHoverable
 					>
-						<ExpandIcon className="size-3" />
+						<ExpandIcon aria-hidden className="size-3" />
 					</TooltipButton>
 					<TooltipButton
 						className="text-muted-foreground text-xs hover:text-foreground"
 						variant="ghost"
 						size="sm"
 						disabled={!room || !html || isLoading}
+						aria-label={t("response.saveInRoom")}
 						onClick={() => setIsSaveDialogOpen(true)}
 						tooltip={t("response.saveInRoom")}
 						tooltipSide="bottom"
+						isTooltipHoverable
 					>
-						<SaveIcon className="size-3" />
+						<SaveIcon aria-hidden className="size-3" />
 					</TooltipButton>
 					<TooltipButton
 						className="text-muted-foreground text-xs hover:text-foreground"
 						variant="ghost"
 						size="sm"
 						disabled={!html || isLoading}
+						aria-label={t("response.copy")}
 						onClick={() =>
 							void copyTextToClipboard(html, {
 								onSuccess: () =>
@@ -296,8 +141,9 @@ export const HtmlPreviewBlock = ({
 						}
 						tooltip={t("response.copy")}
 						tooltipSide="bottom"
+						isTooltipHoverable
 					>
-						<CopyIcon className="size-3" />
+						<CopyIcon aria-hidden className="size-3" />
 					</TooltipButton>
 				</BlockHeader>
 				{!isCollapsed &&
@@ -318,8 +164,8 @@ export const HtmlPreviewBlock = ({
 						</div>
 					) : (
 						<div className="relative">
-							<SandpackHtmlPreview
-								html={sandpackHtml}
+							<HtmlPreview
+								html={previewHtml}
 								providerClassName="min-h-0"
 								className="w-full"
 								style={{
@@ -329,10 +175,13 @@ export const HtmlPreviewBlock = ({
 							/>
 							{isLoading && (
 								<div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-									<div className="flex items-center gap-2 rounded-md border border-border/70 bg-background/75 px-3 py-1 font-medium text-muted-foreground text-xs uppercase tracking-wider shadow-sm">
-										<Spinner className="size-3" />
+									<output className="flex items-center gap-2 rounded-md border border-border/70 bg-background/75 px-3 py-1 font-medium text-muted-foreground text-xs shadow-sm">
+										<Spinner
+											aria-hidden
+											className="size-3"
+										/>
 										{t("blocks.loadingPreview")}
-									</div>
+									</output>
 								</div>
 							)}
 						</div>
@@ -341,14 +190,19 @@ export const HtmlPreviewBlock = ({
 			<Dialog open={isFullViewOpen} onOpenChange={setIsFullViewOpen}>
 				<DialogContent
 					showOverlay={false}
-					className="!inset-0 !top-0 !start-0 !flex !h-dvh !max-h-dvh !w-dvw !max-w-dvw !translate-x-0 !translate-y-0 !flex-col !gap-3 !overflow-hidden !rounded-none !border-0 !p-3 sm:!w-dvw sm:!max-w-dvw"
+					aria-describedby={undefined}
+					onCloseAutoFocus={(event) => {
+						event.preventDefault();
+						fullViewButtonRef.current?.focus();
+					}}
+					className="inset-0 top-0 left-0 h-dvh max-h-dvh w-dvw max-w-none translate-x-0 translate-y-0 gap-3 overflow-hidden rounded-none border-0 p-3 sm:max-w-none"
 				>
 					<DialogHeader className="shrink-0 pe-8">
 						<DialogTitle>{t("blocks.htmlPreview")}</DialogTitle>
 					</DialogHeader>
 					<div className="relative min-h-0 flex-1 overflow-hidden">
-						<SandpackHtmlPreview
-							html={sandpackHtml}
+						<HtmlPreview
+							html={previewHtml}
 							providerClassName="h-full min-h-0"
 							className="h-full min-h-0 w-full"
 							style={{ height: "100%", minHeight: 0 }}
@@ -356,10 +210,10 @@ export const HtmlPreviewBlock = ({
 						/>
 						{isLoading && (
 							<div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-								<div className="flex items-center gap-2 rounded-md border border-border/70 bg-background/75 px-3 py-1 font-medium text-muted-foreground text-xs uppercase tracking-wider shadow-sm">
-									<Spinner className="size-3" />
+								<output className="flex items-center gap-2 rounded-md border border-border/70 bg-background/75 px-3 py-1 font-medium text-muted-foreground text-xs shadow-sm">
+									<Spinner aria-hidden className="size-3" />
 									{t("blocks.loadingPreview")}
-								</div>
+								</output>
 							</div>
 						)}
 					</div>

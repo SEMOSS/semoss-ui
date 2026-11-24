@@ -1,8 +1,6 @@
 import { Plus, Trash2 } from "lucide-react";
-import { useId, useRef, useState } from "react";
-import { type ModelUsageLimit, savePermissionBatches } from "@semoss/sdk";
+import { useId, useMemo, useRef, useState } from "react";
 import {
-	EngineSubtypeIcon,
 	OWNERS_ONLY_LIMIT_REASON,
 	UsageLimitGuideButton,
 } from "@semoss/shared";
@@ -10,19 +8,8 @@ import {
 	Alert,
 	AlertDescription,
 	Button,
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
 	H4,
 	Muted,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
 	Spinner,
 	Table,
 	TableBody,
@@ -33,40 +20,20 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
-	toast,
 } from "@semoss/ui/next";
-import { formatLocalDateTime } from "@semoss/utility/date";
-import { getErrorMessage } from "@semoss/utility/error";
-import { ResourceId } from "@/components/shared/resource-id";
-import { getLevelLabel } from "@/features/bulk-access-management/permission-batch";
 import { UsageLimitDialog } from "@/features/bulk-access-management/usage-limit-dialog";
-import { UsageLimitEditButton } from "@/features/bulk-access-management/usage-limit-edit-button";
-import { UsageLimitSummary } from "@/features/bulk-access-management/usage-limit-summary";
+import { GrantEndDate } from "@/features/grants/grant-end-date";
+import { GrantLevelCell } from "@/features/grants/grant-level-cell";
+import { describeGrantLevels } from "@/features/grants/grant-levels";
+import { GrantResource } from "@/features/grants/grant-resource";
+import { getTypePlural } from "@/features/grants/grant-types";
+import { GrantUsageLimitCell } from "@/features/grants/grant-usage-limit-cell";
+import type { GrantTarget } from "@/features/grants/grants";
+import { RemoveGrantDialog } from "@/features/grants/remove-grant-dialog";
+import { useGrantChanges } from "@/features/grants/use-grant-changes";
+import { useResourceGrants } from "@/features/grants/use-resource-grants";
 import type { ENGINE_TYPES } from "@/types";
 import { AddEngineEngineDialog } from "./add-engine-engine-dialog";
-import {
-	ENGINE_GRANTEE_LEVELS,
-	type EngineGrantee,
-	type EngineGranteeLevel,
-	isEngineGranteeLevel,
-	toEngineLevelBatch,
-	toEngineLimitBatch,
-	toRemoveEngineBatch,
-} from "./engine-engine-permissions";
-import { useEngineEnginePermissions } from "./use-engine-engine-permissions";
-
-/**
- * A level picked for an engine, shown in its row from the pick until the
- * engines are read again, so the row never shows the level from before a save
- */
-interface PendingLevel {
-	/** The engine, as `type:id` */
-	granteeKey: string;
-	/** The level picked */
-	level: EngineGranteeLevel;
-	/** The engines as read when it was picked; it applies only while they are the ones shown */
-	engines: readonly EngineGrantee[];
-}
 
 /** Props for {@link EngineEnginesTable}. */
 export interface EngineEnginesTableProps {
@@ -84,13 +51,6 @@ export interface EngineEnginesTableProps {
 	 */
 	admin?: boolean;
 }
-
-/**
- * @param grantee - an engine given a permission
- * @returns its key, by catalog type and id, since an id names one engine of a type
- */
-const toGranteeKey = (grantee: EngineGrantee): string =>
-	`${grantee.subject.type}:${grantee.subject.id}`;
 
 /**
  * Lists the other engines an engine gives a permission to: the engines whose
@@ -111,176 +71,93 @@ export const EngineEnginesTable = ({
 	admin = false,
 }: EngineEnginesTableProps) => {
 	const headingId = useId();
-	const permissions = useEngineEnginePermissions(id, admin);
-	const { engines, canChangeEngines } = permissions;
-	const canAddEngines = canChangeEngines && !permissions.addsAreAdminOnly;
+	const target: GrantTarget = { resourceType: "ENGINE", id };
+	const grants = useResourceGrants(target, admin);
+	const { canChangeEngines } = grants;
+	const engines = useMemo(
+		() =>
+			grants.grantees?.filter(
+				(grantee) => grantee.subject.type !== "PROJECT",
+			) ?? null,
+		[grants.grantees],
+	);
 	const [isAddOpen, setIsAddOpen] = useState(false);
 	const [addDialogKey, setAddDialogKey] = useState(0);
-	const [isChanging, setIsChanging] = useState(false);
-	const [pendingLevel, setPendingLevel] = useState<PendingLevel | null>(null);
-	const [levelError, setLevelError] = useState<string | null>(null);
-	const [limitTarget, setLimitTarget] = useState<EngineGrantee | null>(null);
-	const [limitDialogKey, setLimitDialogKey] = useState(0);
-	const [removeTarget, setRemoveTarget] = useState<EngineGrantee | null>(
-		null,
-	);
-	const [removeError, setRemoveError] = useState<string | null>(null);
 	const addButtonRef = useRef<HTMLButtonElement>(null);
 	const didRemoveRef = useRef(false);
+	const changes = useGrantChanges({
+		rows: engines,
+		admin,
+		onSaved: grants.refresh,
+		onRemoved: () => {
+			didRemoveRef.current = true;
+		},
+	});
 
+	const canAddEngines = canChangeEngines && !grants.addsAreAdminOnly;
 	const hasLimits = type === "MODEL";
-	const isCostAvailable = permissions.costLimitsAvailable;
-	const canChangeLimit = canChangeEngines && permissions.canChangeModelLimits;
+	const isCostAvailable = grants.costLimitsAvailable;
+	const canChangeLimit = canChangeEngines && grants.canChangeModelLimits;
 	const hasEndDates =
 		engines?.some((grantee) => grantee.access.endDate) ?? false;
-	const isBusy = isChanging || permissions.isLoading;
-	const shownPendingLevel =
-		pendingLevel !== null && pendingLevel.engines === engines
-			? pendingLevel
-			: null;
+	const isBusy = changes.isChanging || grants.isLoading;
 	const columnCount =
 		2 +
 		(hasLimits ? 1 : 0) +
 		(hasEndDates ? 1 : 0) +
 		(canChangeEngines ? 1 : 0);
-
-	const reloadEngines = () => {
-		setLevelError(null);
-		permissions.refresh();
-	};
-
-	const handleLevelChange = async (grantee: EngineGrantee, value: string) => {
-		if (
-			!engines ||
-			!isEngineGranteeLevel(value) ||
-			value === grantee.access.level
-		) {
-			return;
-		}
-		setIsChanging(true);
-		setLevelError(null);
-		setPendingLevel({
-			granteeKey: toGranteeKey(grantee),
-			level: value,
-			engines,
-		});
-		try {
-			await savePermissionBatches(
-				[toEngineLevelBatch(id, grantee, value)],
-				admin,
-			);
-		} catch (e) {
-			setPendingLevel(null);
-			setLevelError(
-				getErrorMessage(
-					e,
-					`Could not change the access of ${grantee.subject.name}`,
-				),
-			);
-			setIsChanging(false);
-			return;
-		}
-		setIsChanging(false);
-		toast.success(
-			`${grantee.subject.name} has ${getLevelLabel(value)} access`,
-		);
-		reloadEngines();
-	};
-
-	const handleOpenLimit = (grantee: EngineGrantee) => {
-		setLimitDialogKey((key) => key + 1);
-		setLimitTarget(grantee);
-	};
-
-	const handleSaveLimit = async (usageLimit: ModelUsageLimit | null) => {
-		if (!limitTarget) {
-			return;
-		}
-		await savePermissionBatches(
-			[toEngineLimitBatch(id, limitTarget, usageLimit)],
-			admin,
-		);
-		setLimitTarget(null);
-		toast.success(`Saved the usage limit for ${limitTarget.subject.name}`);
-		reloadEngines();
-	};
-
-	const handleOpenRemove = (grantee: EngineGrantee) => {
-		setRemoveError(null);
-		setRemoveTarget(grantee);
-	};
-
-	const handleRemove = async () => {
-		if (!removeTarget) {
-			return;
-		}
-		setIsChanging(true);
-		setRemoveError(null);
-		try {
-			await savePermissionBatches(
-				[toRemoveEngineBatch(id, removeTarget.subject)],
-				admin,
-			);
-		} catch (e) {
-			setRemoveError(
-				getErrorMessage(e, "Could not remove the engine's access"),
-			);
-			setIsChanging(false);
-			return;
-		}
-		setIsChanging(false);
-		didRemoveRef.current = true;
-		toast.success(`${removeTarget.subject.name} no longer has access`);
-		setRemoveTarget(null);
-		reloadEngines();
-	};
+	const removeRow = changes.removeRow;
+	const limitRow = changes.limitRow;
 
 	return (
 		<div className="flex flex-col gap-4">
-			{permissions.error ? (
+			{grants.error ? (
 				<Alert variant="destructive">
 					<AlertDescription className="flex flex-wrap items-center justify-between gap-2">
 						<span>
 							Could not read the engines that can use this engine.{" "}
-							{permissions.error}
+							{grants.error}
 						</span>
 						<Button
 							type="button"
 							variant="outline"
 							size="sm"
-							disabled={permissions.isLoading}
-							onClick={permissions.refresh}
+							disabled={grants.isLoading}
+							onClick={grants.refresh}
 						>
 							Try Again
 						</Button>
 					</AlertDescription>
 				</Alert>
 			) : null}
-			{canChangeEngines && permissions.addsAreAdminOnly ? (
+			{canChangeEngines && grants.addsAreAdminOnly ? (
 				<Alert>
 					<AlertDescription>
-						Only admins can give engines access to this engine, from
-						its settings page in admin mode. You can still change or
-						take away the access engines have.
+						Only admins can give access to{" "}
+						{getTypePlural("ENGINE", type)}, from this page in admin
+						mode. You can still change or take away the access
+						engines already have.
 					</AlertDescription>
 				</Alert>
 			) : null}
-			{levelError ? (
+			{changes.levelError ? (
 				<Alert variant="destructive">
-					<AlertDescription>{levelError}</AlertDescription>
+					<AlertDescription>{changes.levelError}</AlertDescription>
 				</Alert>
 			) : null}
 			<div className="rounded-xl border border-border">
-				<div className="flex items-start justify-between gap-4 rounded-t-xl border-border border-b bg-background px-6 py-3">
-					<div className="flex min-w-0 flex-1 flex-col gap-1">
+				<div className="flex flex-wrap items-start justify-between gap-4 rounded-t-xl border-border border-b bg-background px-6 py-3">
+					<div className="flex min-w-0 flex-1 basis-64 flex-col gap-1">
 						<div className="flex flex-wrap items-center gap-2">
-							<H4 id={headingId}>Engines</H4>
+							<H4 id={headingId}>
+								Engines That Can Use This Engine
+							</H4>
 							{hasLimits ? (
 								<UsageLimitGuideButton
 									section="rules"
 									viewer={{
 										canSetModelLimits:
-											permissions.canChangeModelLimits,
+											grants.canChangeModelLimits,
 										isAdminMode: admin,
 									}}
 								/>
@@ -289,7 +166,8 @@ export const EngineEnginesTable = ({
 						<Muted className="font-normal">
 							Other engines that can call this one, even for
 							people with no access to it, such as a vector
-							database calling its embedding model.
+							database calling its embedding model.{" "}
+							{describeGrantLevels("ENGINE")}
 						</Muted>
 					</div>
 					{canAddEngines ? (
@@ -334,129 +212,70 @@ export const EngineEnginesTable = ({
 					<TableBody>
 						{engines && engines.length > 0 ? (
 							engines.map((grantee) => {
-								const { id: granteeId, name } = grantee.subject;
-								const granteeKey = toGranteeKey(grantee);
-								const level =
-									shownPendingLevel?.granteeKey === granteeKey
-										? shownPendingLevel.level
-										: grantee.access.level;
-								const limitSummary = (
-									<UsageLimitSummary
-										limit={grantee.access.usageLimit}
-										isChanged={false}
-										source="ENGINE"
-									/>
-								);
+								const { name } = grantee.subject;
+								const row = { target, grantee };
 								return (
-									<TableRow key={granteeKey}>
+									<TableRow
+										key={`${grantee.subject.type}:${grantee.subject.id}`}
+									>
 										<TableCell className="pr-4 pl-6">
-											<div className="flex max-w-xs items-center gap-3">
-												<EngineSubtypeIcon
-													engineType={
-														grantee.subject.type
-													}
-													engineSubtype={
-														grantee.subject
-															.subtype ??
-														undefined
-													}
-													alt=""
-													className="size-8 shrink-0 object-contain"
-												/>
-												<div className="flex min-w-0 flex-col">
-													<span className="wrap-break-word whitespace-normal font-medium">
-														{name}
-													</span>
-													<ResourceId
-														id={granteeId}
-														name={name}
-													/>
-												</div>
-											</div>
+											<GrantResource
+												type={grantee.subject.type}
+												id={grantee.subject.id}
+												name={name}
+												subtype={
+													grantee.subject.subtype
+												}
+											/>
 										</TableCell>
 										<TableCell className="px-4">
-											{isEngineGranteeLevel(level) ? (
-												<Select
-													value={level}
-													disabled={
-														!canChangeEngines ||
-														isBusy
-													}
-													onValueChange={(value) =>
-														handleLevelChange(
-															grantee,
-															value,
-														)
-													}
-												>
-													<SelectTrigger
-														size="sm"
-														className="w-36"
-														aria-label={`Permission for ${name}`}
-													>
-														<SelectValue>
-															{getLevelLabel(
-																level,
-															)}
-														</SelectValue>
-													</SelectTrigger>
-													<SelectContent>
-														{ENGINE_GRANTEE_LEVELS.map(
-															(option) => (
-																<SelectItem
-																	key={option}
-																	value={
-																		option
-																	}
-																>
-																	{getLevelLabel(
-																		option,
-																	)}
-																</SelectItem>
-															),
-														)}
-													</SelectContent>
-												</Select>
-											) : (
-												getLevelLabel(level)
-											)}
+											<GrantLevelCell
+												resourceType="ENGINE"
+												level={changes.levelOf(row)}
+												disabled={
+													!canChangeEngines || isBusy
+												}
+												label={`Permission for ${name}`}
+												onChange={(value) =>
+													changes.changeLevel(
+														row,
+														value,
+													)
+												}
+											/>
 										</TableCell>
 										{hasLimits ? (
 											<TableCell className="px-4 text-sm">
-												{canChangeLimit ? (
-													<UsageLimitEditButton
-														disabled={isBusy}
-														context={`Usage limit for ${name}`}
-														onClick={() =>
-															handleOpenLimit(
-																grantee,
-															)
-														}
-													>
-														{limitSummary}
-													</UsageLimitEditButton>
-												) : (
-													<span className="flex max-w-64 flex-col gap-0.5 whitespace-normal">
-														{limitSummary}
-														<span className="text-muted-foreground text-xs">
-															{
-																OWNERS_ONLY_LIMIT_REASON
-															}
-														</span>
-													</span>
-												)}
+												<GrantUsageLimitCell
+													limit={
+														grantee.access
+															.usageLimit
+													}
+													source="ENGINE"
+													isModel
+													disabled={isBusy}
+													context={`Usage limit for ${name}`}
+													readOnlyNote={
+														OWNERS_ONLY_LIMIT_REASON
+													}
+													onEdit={
+														canChangeLimit
+															? () =>
+																	changes.openLimit(
+																		row,
+																	)
+															: undefined
+													}
+												/>
 											</TableCell>
 										) : null}
 										{hasEndDates ? (
 											<TableCell className="px-4">
-												{formatLocalDateTime(
-													grantee.access.endDate ??
-														undefined,
-												) ?? (
-													<span className="text-muted-foreground">
-														No end date
-													</span>
-												)}
+												<GrantEndDate
+													endDate={
+														grantee.access.endDate
+													}
+												/>
 											</TableCell>
 										) : null}
 										{canChangeEngines ? (
@@ -470,8 +289,8 @@ export const EngineEnginesTable = ({
 															disabled={isBusy}
 															aria-label={`Remove access for ${name}`}
 															onClick={() =>
-																handleOpenRemove(
-																	grantee,
+																changes.openRemove(
+																	row,
 																)
 															}
 														>
@@ -496,12 +315,12 @@ export const EngineEnginesTable = ({
 									colSpan={columnCount}
 									className="text-center"
 								>
-									{permissions.isLoading ? (
+									{grants.isLoading ? (
 										<span className="flex items-center justify-center gap-2 text-muted-foreground">
 											<Spinner />
 											Loading engines...
 										</span>
-									) : permissions.error ? null : (
+									) : grants.error ? null : (
 										"No engines have access yet"
 									)}
 								</TableCell>
@@ -522,89 +341,61 @@ export const EngineEnginesTable = ({
 							: undefined
 					}
 					admin={admin}
-					onClose={(granteeId) => {
+					granted={
+						engines?.map((grantee) => ({
+							id: grantee.subject.id,
+							type: grantee.subject.type,
+						})) ?? []
+					}
+					onClose={(granteeIds) => {
 						setIsAddOpen(false);
-						if (granteeId) {
-							reloadEngines();
+						if (granteeIds && granteeIds.length > 0) {
+							grants.refresh();
 						}
 					}}
 				/>
 			) : null}
 
-			{limitTarget ? (
+			{limitRow ? (
 				<UsageLimitDialog
-					key={`limit-${limitDialogKey}`}
+					key={`limit-${changes.limitDialogKey}`}
 					open
-					title={`Usage Limit for ${limitTarget.subject.name}`}
+					title={`Usage Limit for ${limitRow.grantee.subject.name}`}
 					description="Covers the calls this engine's own code makes to the model for people whose only way to it is the engine. Set an overall amount for the engine, an amount for each user, or both."
 					source="ENGINE"
-					defaultValue={limitTarget.access.usageLimit ?? null}
+					defaultValue={limitRow.grantee.access.usageLimit ?? null}
 					isCostAvailable={isCostAvailable}
 					saveLabel="Save Limit"
-					onSave={handleSaveLimit}
-					onClose={() => setLimitTarget(null)}
+					onSave={changes.saveLimit}
+					onClose={changes.closeLimit}
 				/>
 			) : null}
 
-			{removeTarget ? (
-				<Dialog
-					open
-					onOpenChange={(isOpen) => {
-						if (!isOpen && !isChanging) {
-							setRemoveTarget(null);
+			{removeRow ? (
+				<RemoveGrantDialog
+					description={
+						<>
+							The own code of{" "}
+							<span className="font-medium text-foreground">
+								{removeRow.grantee.subject.name}
+							</span>{" "}
+							stops using this engine for people who have no
+							access to it themselves. People with their own
+							access to the engine keep it.
+						</>
+					}
+					error={changes.removeError}
+					isRemoving={changes.isChanging}
+					onConfirm={changes.remove}
+					onCancel={changes.closeRemove}
+					onCloseAutoFocus={(event) => {
+						if (didRemoveRef.current) {
+							didRemoveRef.current = false;
+							event.preventDefault();
+							addButtonRef.current?.focus();
 						}
 					}}
-				>
-					<DialogContent
-						onCloseAutoFocus={(event) => {
-							if (didRemoveRef.current) {
-								didRemoveRef.current = false;
-								event.preventDefault();
-								addButtonRef.current?.focus();
-							}
-						}}
-					>
-						<DialogHeader>
-							<DialogTitle className="font-medium text-base leading-6">
-								Remove Engine Access
-							</DialogTitle>
-							<DialogDescription>
-								The own code of{" "}
-								<span className="font-medium text-foreground">
-									{removeTarget.subject.name}
-								</span>{" "}
-								stops using this engine for people who have no
-								access to it themselves. People with their own
-								access to the engine keep it.
-							</DialogDescription>
-						</DialogHeader>
-						{removeError ? (
-							<Alert variant="destructive">
-								<AlertDescription>
-									{removeError}
-								</AlertDescription>
-							</Alert>
-						) : null}
-						<DialogFooter>
-							<Button
-								type="button"
-								variant="outline"
-								disabled={isChanging}
-								onClick={() => setRemoveTarget(null)}
-							>
-								Cancel
-							</Button>
-							<Button
-								type="button"
-								variant="destructive"
-								disabled={isChanging}
-								onClick={handleRemove}
-							>
-								{isChanging ? "Removing..." : "Remove Access"}
-							</Button>
-						</DialogFooter>
-					</DialogContent>
-				</Dialog>
+				/>
 			) : null}
 		</div>
 	);

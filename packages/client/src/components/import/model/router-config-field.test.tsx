@@ -68,13 +68,24 @@ const routeNames = () =>
 		.map((input) => (input as HTMLInputElement).value);
 
 beforeEach(() => {
+	vi.stubGlobal(
+		"ResizeObserver",
+		class {
+			observe() {}
+			unobserve() {}
+			disconnect() {}
+		},
+	);
 	mocks.usePixel.mockReturnValue({
 		status: "SUCCESS",
 		data: ENGINES,
 		refresh: vi.fn(),
 	});
 });
-afterEach(cleanup);
+afterEach(() => {
+	cleanup();
+	vi.unstubAllGlobals();
+});
 
 describe("Model Router routes", () => {
 	it("shows each route as a card named by its place and its name", () => {

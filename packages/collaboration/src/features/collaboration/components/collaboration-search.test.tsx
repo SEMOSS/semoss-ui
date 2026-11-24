@@ -157,7 +157,7 @@ describe("saved Collaboration search", () => {
 		run.mockResolvedValueOnce(response({ items: [], total: 0 }));
 		fireEvent.change(input, { target: { value: "missing" } });
 		expect(
-			screen.getByText("Searching connected records…"),
+			screen.getByText("Searching connected records..."),
 		).toBeInTheDocument();
 		await screen.findByText(/No matching items/);
 		run.mockRejectedValueOnce(new Error("Offline fixture"));
