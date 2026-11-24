@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Thread } from "@/features/collaboration/state/collaboration.types";
 import type { AgentEmailAttachment } from "@/features/connectors/api/agent-email-attachments";
+import { replySubjectOverride } from "@/features/connectors/api/answer-subject";
 import { plainTextEmail } from "@/features/email/email-html";
 import type { ConversationMessage } from "@/features/messages/types/message";
 import { toolsFromMessages } from "@/features/messages/utils/thread-items";
@@ -186,7 +187,7 @@ export function useRoomEmailProposals({
 							"You edited the email while the change was being written, so your edits were kept. Ask again to apply the change.",
 						);
 					} else {
-						// a reply or forward keeps its thread's subject and has no bcc
+						// a reply or forward has no bcc
 						const isReply = isSourcedProposal(proposal);
 						target.replaceEnvelope({
 							to: proposal.to ?? state.values.to,
@@ -194,8 +195,12 @@ export function useRoomEmailProposals({
 							bcc: isReply
 								? state.values.bcc
 								: (proposal.bcc ?? state.values.bcc),
+							// a reply changes only when the assistant gave it a subject other than the original
 							subject: isReply
-								? state.values.subject
+								? (replySubjectOverride(
+										proposal.subject ?? "",
+										target.seed.subject,
+									) ?? state.values.subject)
 								: (proposal.subject ?? state.values.subject),
 						});
 						if (proposal.body)

@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { Button, Form, P, Spinner, type UseFormReturn } from "@semoss/ui/next";
 import { EmailAddressRow } from "@/features/email/email-address-row";
+import { answerSubject } from "../api/answer-subject";
 import type { EmailDraftValues } from "../api/email-draft-values";
 import type { ReplyRecipientsState } from "../hooks/use-reply-recipients";
 import type { EmailDraftInput } from "../types";
@@ -37,21 +38,15 @@ interface EmailDraftFormProps {
 	/** The owner's draft font, and what Outlook adds below the body (their signature). */
 	bodyStyle?: CSSProperties;
 	afterBody?: ReactNode;
+	/** Files an earlier save left on this email's Outlook draft. */
+	savedAttachments?: { id: string; name: string; size?: number }[];
 	saveLabel?: string;
 	saveVariant?: "default" | "outline";
 	bodyReplacement?: number;
 	onSave: (values: EmailDraftValues) => Promise<void>;
 }
 
-/** The subject Outlook gives a reply or forward; it adds the prefix itself, once. */
-export function answerSubject(
-	mode: "reply" | "forward",
-	subject: string,
-): string {
-	const prefix = mode === "reply" ? "RE:" : "FW:";
-	const already = mode === "reply" ? /^re\s*:/i : /^(fw|fwd)\s*:/i;
-	return already.test(subject) ? subject : `${prefix} ${subject}`;
-}
+export { answerSubject };
 
 /** A shared compose surface with one scrolling work area and a reachable save action. */
 export function EmailDraftForm({
@@ -73,6 +68,7 @@ export function EmailDraftForm({
 	feedbackContent,
 	bodyStyle,
 	afterBody,
+	savedAttachments,
 	saveLabel = "Save Draft",
 	saveVariant = "default",
 	bodyReplacement,
@@ -144,7 +140,7 @@ export function EmailDraftForm({
 							}
 						/>
 					)}
-					{mode === "new" ? (
+					{mode === "new" || mode === "reply" ? (
 						<div className="py-1">
 							<ConnectorFormInput
 								name="subject"
@@ -186,7 +182,10 @@ export function EmailDraftForm({
 				/>
 				{afterBody}
 				<div className="shrink-0 px-4 pb-2">
-					<DraftAttachmentField disabled={fieldsDisabled} />
+					<DraftAttachmentField
+						disabled={fieldsDisabled}
+						savedAttachments={savedAttachments}
+					/>
 				</div>
 				{feedbackContent}
 			</div>

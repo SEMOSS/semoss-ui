@@ -16,7 +16,15 @@ interface DraftAttachment {
 	file: File;
 }
 
+interface SavedAttachmentView {
+	id: string;
+	name: string;
+	size?: number;
+}
+
 interface DraftAttachmentFieldProps {
+	/** Files already on the saved Outlook draft; they are shown, not selected here. */
+	savedAttachments?: readonly SavedAttachmentView[];
 	/** Prevent selection or removal while files and draft are being saved. */
 	disabled: boolean;
 }
@@ -25,7 +33,10 @@ interface DraftAttachmentFieldProps {
  * Native multi-file input keeps same-name files separate and supports removal.
  * FormFileDropzone deduplicates by name, which would discard a selected attachment.
  */
-export function DraftAttachmentField({ disabled }: DraftAttachmentFieldProps) {
+export function DraftAttachmentField({
+	disabled,
+	savedAttachments = [],
+}: DraftAttachmentFieldProps) {
 	const { control } = useFormContext<{ files: DraftAttachment[] }>();
 	const id = useId();
 	const input = useRef<HTMLInputElement | null>(null);
@@ -86,6 +97,34 @@ export function DraftAttachmentField({ disabled }: DraftAttachmentFieldProps) {
 					<FieldDescription id={`${id}-description`}>
 						Files are uploaded when you save the draft.
 					</FieldDescription>
+					{savedAttachments.length > 0 && (
+						<ul
+							className="space-y-2"
+							aria-label="Attached to your saved Outlook draft"
+						>
+							{savedAttachments.map((attachment) => (
+								<li
+									key={attachment.id}
+									className="flex min-w-0 items-center gap-3 rounded-xl border border-border bg-muted/20 p-3"
+								>
+									<FileText
+										className="size-5 shrink-0 text-muted-foreground"
+										aria-hidden="true"
+									/>
+									<div className="min-w-0 flex-1">
+										<Small className="break-words font-medium">
+											{attachment.name}
+										</Small>
+										<Small className="text-muted-foreground">
+											{attachment.size === undefined
+												? "Saved in Outlook"
+												: `${Math.ceil(attachment.size / 1024)} KB · Saved in Outlook`}
+										</Small>
+									</div>
+								</li>
+							))}
+						</ul>
+					)}
 					{field.value.length > 0 && (
 						<ul className="space-y-2">
 							{field.value.map((attachment, index) => (

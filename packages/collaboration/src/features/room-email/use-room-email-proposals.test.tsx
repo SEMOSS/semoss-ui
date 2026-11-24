@@ -1346,7 +1346,8 @@ it.each(["new", "reply"] as const)(
 			to: "recipient@example.com",
 			cc: "copy@example.com",
 			bcc: "private@example.com",
-			subject: "Original subject",
+			subject:
+				mode === "reply" ? "RE: Original subject" : "Original subject",
 		});
 		view.rerender(
 			props(
@@ -1358,12 +1359,60 @@ it.each(["new", "reply"] as const)(
 			to: "",
 			cc: "",
 			bcc: mode === "reply" ? "private@example.com" : "",
-			subject: mode === "reply" ? "Original subject" : "",
+			subject: mode === "reply" ? "RE: Original subject" : "",
 			body: "<p>Revised message</p>",
 		});
 		view.unmount();
 	},
 );
+
+it("applies the subject the assistant gives an open reply, and keeps it when the same subject comes back", () => {
+	const { completed, composer } = setup();
+	composer.requestEmailDraft({
+		id: "open-email",
+		mode: "reply",
+		sourceUid: "email",
+		to: "recipient@example.com",
+		subject: "Original subject",
+		body: "My message",
+	});
+	const [draft] = composer.getSnapshot().emailDrafts;
+	draft.initializeReplyRecipients({ to: ["sender@example.com"], cc: [] });
+	const props = (subject: string, toolId: string) => ({
+		...completed,
+		snapshot: {
+			...completed.snapshot,
+			turn: {
+				...completed.snapshot.turn,
+				messages: [
+					{
+						id: "change",
+						role: "assistant" as const,
+						parts: [
+							composeEmailPart(
+								{
+									openEmailId: "open-email",
+									replyTo: "email",
+									subject,
+								},
+								toolId,
+							),
+						],
+					},
+				],
+			},
+		},
+	});
+	expect(draft.getSnapshot().values.subject).toBe("RE: Original subject");
+	const view = renderHook(useRoomEmailProposals, {
+		initialProps: props("testing draft", "new-subject"),
+	});
+	expect(draft.getSnapshot().values.subject).toBe("testing draft");
+	// the original subject again is not a change, so the edited one stays
+	view.rerender(props("Original subject", "same-subject"));
+	expect(draft.getSnapshot().values.subject).toBe("testing draft");
+	view.unmount();
+});
 
 it("opens a forward of the thread's email, with no note needed", () => {
 	const { completed, composer } = setup();

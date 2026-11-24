@@ -2,9 +2,11 @@ import { draftText, plainTextEmail } from "@/features/email/email-html";
 import type { InsightActions } from "@/lib/pixel";
 import type { EmailDraftInput, SavedEmailDraft } from "../types";
 import type { AgentEmailAttachment } from "./agent-email-attachments";
+import { answerSubject, replySubjectOverride } from "./answer-subject";
 import { EmailDraftSession } from "./email-draft-session";
 import { type EmailDraftValues, emailDraftSchema } from "./email-draft-values";
 import {
+	getMail,
 	MAIL_SENT_EVENT,
 	saveEmailDraft,
 	sendEmailDraft,
@@ -12,6 +14,12 @@ import {
 	UncertainSendError,
 } from "./microsoft";
 import type { ReplyRecipients } from "./reply-recipients";
+import {
+	forgetSavedDraft,
+	recallSavedDraft,
+	rememberSavedDraft,
+	type SavedDraftAttachment,
+} from "./saved-draft-record";
 
 export interface EmailDraftSeed {
 	/** Stable origin identity; reopening an origin never replaces local edits. */
@@ -64,6 +72,8 @@ interface EmailDraftSnapshot {
 	filesReplacement: number;
 	pendingAttachments: number;
 	attachmentError: string;
+	/** Files Outlook already holds on this draft from an earlier save. */
+	savedAttachments: SavedDraftAttachment[];
 	undoBody: string | null;
 	requiresAcceptance: boolean;
 	/** The SendEmail call waiting on this email, if any. */
@@ -99,6 +109,7 @@ export class EmailDraftEditor {
 	private savedValues: EmailDraftValues | null = null;
 	private sendApproval: EmailSendApproval | null = null;
 	private attachmentOperations = new Set<string>();
+	private savedAttachmentsLoaded = false;
 	private disposed = false;
 	private settleSend: ((outcome: EmailSendOutcome) => void) | null = null;
 
@@ -109,7 +120,11 @@ export class EmailDraftEditor {
 				to: seed.to ?? "",
 				cc: seed.cc ?? "",
 				bcc: seed.bcc ?? "",
-				subject: seed.subject ?? "",
+				// a reply opens on the subject Outlook gives it, which the owner or assistant may change
+				subject:
+					seed.mode === "reply" && seed.subject
+						? answerSubject("reply", seed.subject)
+						: (seed.subject ?? ""),
 				body: plainTextEmail(seed.body ?? ""),
 				replyAll: false,
 				files: [],
@@ -128,6 +143,7 @@ export class EmailDraftEditor {
 			filesReplacement: 0,
 			pendingAttachments: 0,
 			attachmentError: "",
+			savedAttachments: [],
 			undoBody: null,
 			requiresAcceptance: Boolean(
 				seed.assistantMessageId || seed.requiresAcceptance,
@@ -324,6 +340,28 @@ export class EmailDraftEditor {
 				});
 		}
 	}
+	/**
+	 * Show the files an earlier save left on this email's Outlook draft, when the browser remembers
+	 * that save. A draft that was never saved, or saved without files, shows nothing.
+	 */
+	async loadSavedAttachments(actions: InsightActions): Promise<void> {
+		if (this.savedAttachmentsLoaded || this.disposed) return;
+		const saved = this.snapshot.saved ?? recallSavedDraft(this.seed.id);
+		if (!saved) return;
+		this.savedAttachmentsLoaded = true;
+		try {
+			const mail = await getMail(actions, saved.savedDraftId);
+			if (this.disposed) return;
+			const files = (mail.attachments ?? [])
+				.filter((file) => file.isFile && !file.isInline)
+				.map(({ id, name, size }) => ({ id, name, size }));
+			this.update({ savedAttachments: files });
+		} catch {
+			// the draft was sent, moved or deleted in Outlook, so nothing is attached to it any more
+			forgetSavedDraft(this.seed.id);
+		}
+	}
+
 	/** Explicitly continue with only the files currently listed in the editor. */
 	dismissAttachmentError = (): void => {
 		this.update({ attachmentError: "", error: "" });
@@ -405,6 +443,10 @@ export class EmailDraftEditor {
 			this.update({ error: "Enter at least one recipient." });
 			return null;
 		}
+		const replySubject =
+			mode === "reply"
+				? replySubjectOverride(values.subject, this.seed.subject)
+				: undefined;
 		const input: EmailDraftInput =
 			mode === "new"
 				? {
@@ -420,6 +462,7 @@ export class EmailDraftEditor {
 					? {
 							mode,
 							sourceUid: sourceUid ?? "",
+							...(replySubject ? { subject: replySubject } : {}),
 							body: values.body,
 							bodyFormat: "html",
 							replyAll: true,
@@ -445,7 +488,10 @@ export class EmailDraftEditor {
 				);
 			} else saved = await saveEmailDraft(actions, input);
 			this.savedValues = { ...values, files: [...values.files] };
-			this.update({ saved, isDirty: false });
+			rememberSavedDraft(this.seed.id, saved);
+			// the files just saved are listed from the editor itself
+			this.savedAttachmentsLoaded = true;
+			this.update({ saved, isDirty: false, savedAttachments: [] });
 			return saved;
 		} catch (cause) {
 			this.update({
