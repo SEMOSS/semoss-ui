@@ -4,7 +4,7 @@ import {
 	Plus as PlusIcon,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { JsonViewer, PopoutModal, SandpackHtmlPreview } from "@semoss/shared";
+import { HtmlPreview, JsonViewer, PopoutModal } from "@semoss/shared";
 import {
 	Markdown,
 	Tooltip,
@@ -145,8 +145,8 @@ function AutomationOutputModalContent({
 					<Markdown>{markdownText}</Markdown>
 				</div>
 			) : isHtml ? (
-				<div className="h-[70vh] min-h-0">
-					<SandpackHtmlPreview html={htmlText} forceFullHeight />
+				<div className="h-full min-h-0">
+					<HtmlPreview html={htmlText} forceFullHeight />
 				</div>
 			) : (
 				<pre className="whitespace-pre-wrap break-all font-mono text-foreground text-sm">
