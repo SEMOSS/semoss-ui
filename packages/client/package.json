@@ -18,7 +18,6 @@
         "@dnd-kit/utilities": "^3.2.2",
         "@hello-pangea/dnd": "^18.0.1",
         "@hookform/resolvers": "^7.0.8",
-        "@mdi/js": "^6.9.96",
         "@semoss/automation": "workspace:*",
         "@semoss/i18n": "workspace:*",
         "@semoss/panels": "workspace:*",

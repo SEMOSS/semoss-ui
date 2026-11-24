@@ -1044,9 +1044,6 @@ importers:
       '@hookform/resolvers':
         specifier: ^7.0.8
         version: 7.0.8(@standard-schema/spec@1.1.0)(ajv@8.20.0)(react-hook-form@7.92.0(@types/react@19.2.18)(react@19.2.8))(zod@4.6.7)
-      '@mdi/js':
-        specifier: ^6.9.96
-        version: 6.9.96
       '@semoss/automation':
         specifier: workspace:*
         version: link:../automation
@@ -1914,9 +1911,6 @@ packages:
 
   '@lit/reactive-element@2.1.2':
     resolution: {integrity: sha512-pbCDiVMnne1lYUIaYNN5wrwQXDtHaYtg7YEFPeW+hws6U47WeFvISGUWekPGKWOP1ygrs0ef0o1VJMk1exos5A==}
-
-  '@mdi/js@6.9.96':
-    resolution: {integrity: sha512-rK0/vLFaiItYS2W7uVmaKPKnhNQE4XVkylpk5njtVwENnp8elwY5uRL6qvdj2esuvUHG7DwygE4Qu3eKxxuJiQ==}
 
   '@mermaid-js/parser@1.1.1':
     resolution: {integrity: sha512-VuHdsYMK1bT6X2JbcAaWAhugTRvRBRyuZgd+c22swUeI9g/ntaxF7CY7dYarhZovofCbUNO0G7JesfmNtjYOCw==}
@@ -7076,8 +7070,6 @@ snapshots:
   '@lit/reactive-element@2.1.2':
     dependencies:
       '@lit-labs/ssr-dom-shim': 1.6.0
-
-  '@mdi/js@6.9.96': {}
 
   '@mermaid-js/parser@1.1.1':
     dependencies:
