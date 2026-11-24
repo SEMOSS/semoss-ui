@@ -450,7 +450,13 @@ describe("guardrail settings configuration", () => {
 		if (!check) {
 			throw Error("A new rule starts with a request check");
 		}
-		pipeline.input = [{ ...check, failureAction: "respond" }];
+		pipeline.input = [
+			{
+				...check,
+				guardrailEngineId: "guardrail-1",
+				failureAction: "respond",
+			},
+		];
 
 		const errors = collectGuardrailConfigIssues(
 			{ pipelines: [pipeline] },
