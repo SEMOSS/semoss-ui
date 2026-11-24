@@ -244,6 +244,10 @@ export function createViteLibConfig(options: {
 				lib,
 				outDir: "dist",
 				emptyOutDir: true,
+				rolldownOptions: {
+					// Rewriting this output must not trigger another library build.
+					watch: { exclude: "dist/**" },
+				},
 				sourcemap: isProduction,
 				minify: isProduction,
 			},

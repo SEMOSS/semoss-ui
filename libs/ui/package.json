@@ -76,7 +76,7 @@
   },
   "devDependencies": {
     "@semoss/config": "workspace:*",
-    "@testing-library/react": "^16.3.0",
+    "@testing-library/react": "16.3.3",
     "@types/js-yaml": "^4.0.9",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
@@ -85,11 +85,11 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "remark-parse": "^11.0.0",
-    "tailwindcss": "^4.3.3",
+    "tailwindcss": "4.3.5",
     "typescript": "~6.0.0",
     "unified": "^11.0.5",
-    "vite": "^8.2.1",
-    "vitest": "^4.1.11"
+    "vite": "8.3.8",
+    "vitest": "5.1.1"
   },
   "peerDependencies": {
     "@hookform/resolvers": "^7.0.8",

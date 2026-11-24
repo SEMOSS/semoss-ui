@@ -45,18 +45,18 @@
     },
     "devDependencies": {
         "@semoss/config": "workspace:*",
-        "@testing-library/jest-dom": "^6.6.3",
-        "@testing-library/react": "^16.2.0",
+        "@testing-library/jest-dom": "8.0.0",
+        "@testing-library/react": "16.3.3",
         "@types/diff": "5.2.3",
         "@types/jest": "^29.5.14",
         "@types/node": "^26.0.0",
         "@types/react": "^19.0.0",
         "@types/react-dom": "^19.0.0",
-        "@vitest/coverage-v8": "^4.1.11",
-        "@vitest/ui": "^4.1.11",
+        "@vitest/coverage-v8": "5.1.1",
+        "@vitest/ui": "5.1.1",
         "html2canvas": "^1.4.1",
         "typescript": "~6.0.0",
-        "vite": "^8.2.1",
-        "vitest": "^4.1.11"
+        "vite": "8.3.8",
+        "vitest": "5.1.1"
     }
 }
