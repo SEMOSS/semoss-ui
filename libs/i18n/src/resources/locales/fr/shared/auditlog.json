@@ -26,7 +26,8 @@
 			"last7Days": "7 derniers jours",
 			"last30Days": "30 derniers jours",
 			"custom": "Personnalisé"
-		}
+		},
+		"accessReason": "Accès"
 	},
 	"summary": {
 		"events": "Événements",
@@ -64,7 +65,8 @@
 			"timestamp": "Horodatage",
 			"status": "Statut",
 			"guardrailAction": "Garde-fou",
-			"billedTo": "Facturé à"
+			"billedTo": "Facturé à",
+			"access": "Accès"
 		},
 		"guardrailActions": {
 			"MASK": "Masqué",
@@ -107,7 +109,8 @@
 			"span": "Span",
 			"session": "Session",
 			"request": "Requête",
-			"response": "Réponse"
+			"response": "Réponse",
+			"access": "Accès"
 		}
 	},
 	"detail": {
@@ -136,7 +139,8 @@
 			"spanId": "ID de span",
 			"request": "Requête",
 			"response": "Réponse",
-			"billedTo": "Facturé à"
+			"billedTo": "Facturé à",
+			"access": "Accès"
 		}
 	},
 	"page": {
@@ -154,5 +158,52 @@
 		"appName": "Journal d'audit",
 		"appDescription": "Application de journal d'audit",
 		"loadFailed": "Impossible de charger le journal d'audit. Réessayez et, si le problème persiste, contactez le support."
+	},
+	"accessReasons": {
+		"DIRECT": "Direct",
+		"TEAM": "Équipe",
+		"PUBLIC": "Public",
+		"DELEGATED": "Délégué",
+		"OWN_PROJECT": "Projet Propre",
+		"INSIGHT": "Insight",
+		"DISCOVERABLE": "Découvrable",
+		"ADMIN": "Administrateur",
+		"PLATFORM": "Plateforme",
+		"REFUSED": "Refusé"
+	},
+	"accessDetails": {
+		"level": "Niveau",
+		"teamId": "Équipe",
+		"teamType": "Type d'Équipe",
+		"granteeId": "Accordé À",
+		"granteeType": "Type du Bénéficiaire",
+		"via": "Par",
+		"callingEngineId": "Moteur Appelant",
+		"appId": "Application",
+		"agentId": "Agent",
+		"rule": "Travail de la Plateforme",
+		"operation": "Opération",
+		"levelNeeded": "Niveau Requis",
+		"attempt": "Tentative"
+	},
+	"accessLevels": {
+		"OWNER": "Auteur",
+		"EDIT": "Éditeur",
+		"READ_ONLY": "Lecture Seule"
+	},
+	"accessVia": {
+		"APP_CODE": "Le code personnalisé d'une application",
+		"AGENT_RUN": "L'exécution d'un agent",
+		"ENGINE_CODE": "Le code propre d'un moteur",
+		"PLATFORM": "La plateforme"
+	},
+	"accessRules": {
+		"LOADING": "Chargement du moteur",
+		"PLATFORM_USE": "Usage propre de la plateforme",
+		"PLATFORM_OPERATION": "Une opération de la plateforme",
+		"ENGINE_ITSELF": "Le moteur s'appelant lui-même",
+		"PROJECT_ENGINE": "Travail propre d'un projet",
+		"VENV": "Un moteur venv",
+		"BEING_CREATED_OR_DELETED": "En cours de création ou de suppression"
 	}
 }

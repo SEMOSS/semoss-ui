@@ -26,7 +26,8 @@
 			"last7Days": "पिछले 7 दिन",
 			"last30Days": "पिछले 30 दिन",
 			"custom": "कस्टम"
-		}
+		},
+		"accessReason": "पहुँच"
 	},
 	"summary": {
 		"events": "इवेंट",
@@ -64,7 +65,8 @@
 			"timestamp": "टाइमस्टैम्प",
 			"status": "स्थिति",
 			"guardrailAction": "गार्डरेल",
-			"billedTo": "बिल किसे गया"
+			"billedTo": "बिल किसे गया",
+			"access": "पहुँच"
 		},
 		"guardrailActions": {
 			"MASK": "मास्क किया गया",
@@ -107,7 +109,8 @@
 			"span": "स्पैन",
 			"session": "सेशन",
 			"request": "अनुरोध",
-			"response": "प्रतिक्रिया"
+			"response": "प्रतिक्रिया",
+			"access": "पहुँच"
 		}
 	},
 	"detail": {
@@ -136,7 +139,8 @@
 			"spanId": "स्पैन आईडी",
 			"request": "अनुरोध",
 			"response": "प्रतिक्रिया",
-			"billedTo": "बिल किसे गया"
+			"billedTo": "बिल किसे गया",
+			"access": "पहुँच"
 		}
 	},
 	"page": {
@@ -154,5 +158,52 @@
 		"appName": "ऑडिट लॉग",
 		"appDescription": "ऑडिट लॉग ऐप",
 		"loadFailed": "हम ऑडिट लॉग लोड नहीं कर सके। फिर से प्रयास करें, और यदि समस्या बनी रहती है, तो सहायता से संपर्क करें।"
+	},
+	"accessReasons": {
+		"DIRECT": "प्रत्यक्ष",
+		"TEAM": "टीम",
+		"PUBLIC": "सार्वजनिक",
+		"DELEGATED": "प्रत्यायोजित",
+		"OWN_PROJECT": "अपना प्रोजेक्ट",
+		"INSIGHT": "इनसाइट",
+		"DISCOVERABLE": "खोजने योग्य",
+		"ADMIN": "एडमिन",
+		"PLATFORM": "प्लेटफ़ॉर्म",
+		"REFUSED": "अस्वीकृत"
+	},
+	"accessDetails": {
+		"level": "स्तर",
+		"teamId": "टीम",
+		"teamType": "टीम का प्रकार",
+		"granteeId": "किसे दिया गया",
+		"granteeType": "प्राप्तकर्ता का प्रकार",
+		"via": "किसके द्वारा",
+		"callingEngineId": "कॉल करने वाला इंजन",
+		"appId": "ऐप",
+		"agentId": "एजेंट",
+		"rule": "प्लेटफ़ॉर्म का कार्य",
+		"operation": "ऑपरेशन",
+		"levelNeeded": "आवश्यक स्तर",
+		"attempt": "प्रयास"
+	},
+	"accessLevels": {
+		"OWNER": "लेखक",
+		"EDIT": "संपादक",
+		"READ_ONLY": "केवल पढ़ने के लिए"
+	},
+	"accessVia": {
+		"APP_CODE": "किसी ऐप का कस्टम कोड",
+		"AGENT_RUN": "किसी एजेंट का रन",
+		"ENGINE_CODE": "किसी इंजन का अपना कोड",
+		"PLATFORM": "प्लेटफ़ॉर्म"
+	},
+	"accessRules": {
+		"LOADING": "इंजन लोड हो रहा है",
+		"PLATFORM_USE": "प्लेटफ़ॉर्म का अपना उपयोग",
+		"PLATFORM_OPERATION": "एक प्लेटफ़ॉर्म ऑपरेशन",
+		"ENGINE_ITSELF": "इंजन स्वयं को कॉल कर रहा है",
+		"PROJECT_ENGINE": "किसी प्रोजेक्ट का अपना कार्य",
+		"VENV": "एक venv इंजन",
+		"BEING_CREATED_OR_DELETED": "बनाया या हटाया जा रहा है"
 	}
 }

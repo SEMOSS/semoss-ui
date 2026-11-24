@@ -7,6 +7,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
+import { CatalogTypeIcon } from "@/components/shared/catalog-type-icon";
 import { GOVERNANCE_TYPES } from "./governance-types";
 
 const GROUPS = [
@@ -23,8 +24,9 @@ interface GovernanceTypeSelectProps {
 
 /**
  * The project or engine type whose resources are listed, with the project
- * types and the engine types in their own groups. Its label sits inside the
- * trigger, so the trigger lines up with the search below it.
+ * types and the engine types in their own groups, each with its icon. Its
+ * label sits inside the trigger, so the trigger lines up with the search below
+ * it, and the chosen type shows there with its icon.
  */
 export const GovernanceTypeSelect = ({
 	value,
@@ -45,7 +47,10 @@ export const GovernanceTypeSelect = ({
 						(option) => option.kind === group.kind,
 					).map((option) => (
 						<SelectItem key={option.type} value={option.type}>
-							{option.label}
+							<span className="flex min-w-0 items-center gap-2">
+								<CatalogTypeIcon type={option.type} />
+								<span className="truncate">{option.label}</span>
+							</span>
 						</SelectItem>
 					))}
 				</SelectGroup>

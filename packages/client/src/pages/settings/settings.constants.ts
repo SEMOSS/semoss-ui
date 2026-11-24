@@ -10,6 +10,7 @@ import {
 	mdiDatabaseSearch,
 	mdiFolder,
 	mdiGithub,
+	mdiKeyChainVariant,
 	mdiPalette,
 	mdiRobotOutline,
 	mdiShieldAccountOutline,
@@ -92,6 +93,16 @@ export const SETTINGS_ROUTES: {
 		admin: false,
 	},
 	{
+		title: "Resource Delegated Access",
+		path: "resource-delegated-access",
+		description:
+			"See which apps, agents and engines can use the engines and projects you can edit, and give access to many at once.",
+		icon: mdiKeyChainVariant,
+		history: ["settings/"],
+		group: "ACCOUNT",
+		admin: false,
+	},
+	{
 		title: "My Teams",
 		path: "managed-teams/:id",
 		description: "A team you manage",
@@ -138,6 +149,16 @@ export const SETTINGS_ROUTES: {
 		history: ["resources"],
 		admin: true,
 		hidden: true,
+	},
+	{
+		title: "All Resource Delegated Access",
+		path: "all-resource-delegated-access",
+		description:
+			"See which apps, agents and engines can use every engine and project, and give access to many at once.",
+		icon: mdiKeyChainVariant,
+		history: ["settings/"],
+		group: "ACCESS",
+		admin: true,
 	},
 	{
 		title: "Member Settings",

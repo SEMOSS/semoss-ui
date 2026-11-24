@@ -23,6 +23,11 @@ import {
 	TooltipTrigger,
 	useTheme,
 } from "@semoss/ui/next";
+import {
+	ACCESS_REASONS,
+	type AccessReason,
+	isAccessReason,
+} from "./access-reason";
 import { AuditLogsDetailDrawer } from "./audit-logs-detail-drawer";
 import type { EventData } from "./common";
 import { TimeDateFormatter } from "./common";
@@ -151,6 +156,13 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 			session: t("timeline.tooltip.session"),
 			request: t("timeline.tooltip.request"),
 			response: t("timeline.tooltip.response"),
+			access: t("timeline.tooltip.access"),
+			accessReasons: Object.fromEntries(
+				ACCESS_REASONS.map((reason) => [
+					reason,
+					t(`accessReasons.${reason}`),
+				]),
+			) as Record<AccessReason, string>,
 		}),
 		[t],
 	);
@@ -342,6 +354,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 							</div>
 							${line(chartText.engine, `${e.engineName ?? ""}${e.engineType ? ` (${e.engineType})` : ""}`)}
 							${line(chartText.user, e.userName || e.userId || "")}
+							${line(chartText.access, isAccessReason(e.accessReason) ? chartText.accessReasons[e.accessReason] : "")}
 							${line(chartText.latency, `${e.latency}ms`)}
 							${line(chartText.tokens, e.tokens != null ? String(e.tokens) : "")}
 							${line(chartText.start, `${start.date} ${start.time}`)}

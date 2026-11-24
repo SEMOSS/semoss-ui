@@ -207,6 +207,12 @@ the list does not offer, disabled, with a note. Each engine in the list is an `E
 logo (`EngineSubtypeIcon`), its name and, under it, its id (`showEngineId`) or its description,
 with a check on the chosen one; the host passes the chosen engine's logo as `triggerIcon`. Pickers
 that choose an engine pass `showEngineId`, so every engine list shows logo, name and id.
+`EngineSelect` and `ProjectSelect` also pick several: given `selectedIds`, the list stays open
+between picks, checks the engines or projects with those ids, and passes each one picked to
+`onChange`, so the host adds it or takes it off; the host's `name` is what the trigger shows,
+such as how many are picked. With `isOwnedOnly`, both list only what the user owns, directly or
+through a team (`effectivePermissions=[1]`), as for a picker of what the user can share; admin
+mode lists everything.
 
 ### Model usage limits (`components/model-usage-limit/`)
 
@@ -217,8 +223,9 @@ Every place a model usage limit is set or shown uses these, so limits read the s
   measure (Tokens, Cost in US dollars, Compute Time), a window from minute to year and, for a team,
   an app or public use, Shared or For Each Member / For Each User / For Each Person. Each select gives its `SelectValue`
   the chosen option's label. Whole amounts are written with ASCII digits and comma separators
-  (`toLocaleString("en-US")`) whatever the browser's locale, so they read back as typed. A minute or hour window has a length
-  input beside it, so the rule reads "Every [10] Minutes": 1 to 59 minutes or 1 to 24 hours,
+  (`toLocaleString("en-US")`) whatever the browser's locale, so they read back as typed. A minute or hour window has "Every"
+  and a length box of its own before it, kept on one line with the window's units, so the rule
+  reads "Every [10] Minutes": 1 to 59 minutes or 1 to 24 hours,
   starting at 1, put back in range when the input is left, and sent as `windowLength` only when
   it is more than 1. Every rule has its own amount: a team's shared rule caps the team together,
   and a for each member rule caps each member with a fixed amount.
@@ -313,6 +320,21 @@ Every place a model usage limit is set or shown uses these, so limits read the s
   path explain limits the same way.
 - The editor's own words are in the `members` namespace, under `usageLimit`; the summaries,
   checks, path view and guide are in English.
+
+### Activity Log (`components/auditlog/`)
+
+The engine and project Activity Log: `AuditLogFilter`, the summary, the Event History chart
+(`AuditLogsTimeline`), the Prompt & Response table (`AuditLogsDataTable`) and the detail drawer.
+`pixel.ts` builds every pixel they run (`AuditLogsReport`, `ExportAuditLogsReport`,
+`GetAuditLogsReportFilterOptionList`), so the table, the exports and the filter dropdowns share
+one contract. Each row says why the access check let the call through (`accessReason`, such as
+Direct, Team or Delegated, or Refused) with its details as JSON (`accessDetails`);
+`access-reason.ts` lists the reasons and reads the details (`readAccessDetails`). The table has
+an Access column, the chart's tooltip an Access line, the filter an Access dropdown (`accessReason`
+in the report's `search`), and the drawer an Access section that names levels, how the call was
+made and the platform's work. Rows logged before calls recorded a reason show none. The words
+are in the `auditlog` namespace (`accessReasons`, `accessDetails`, `accessLevels`, `accessVia`,
+`accessRules`).
 
 ### The file editors are gone (`components/file/file-*.tsx`)
 
