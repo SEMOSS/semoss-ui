@@ -25,8 +25,7 @@ const ADMIN_ONLY_RESOURCES = {
 	MODEL: "Model",
 	STORAGE: "Storage",
 	VECTOR: "Vector",
-	// the backend keeps no flags for guardrails, so they are always admin-only
-	GUARDRAIL: null,
+	GUARDRAIL: "Guardrail",
 } as const;
 
 /**
@@ -262,7 +261,7 @@ export class ConfigStore {
 	/**
 	 * Whether the config keeps an operation for admins. The backend always
 	 * sends these flags; before the config is read, every operation counts as
-	 * admin-only, and so does every operation on a guardrail, which has none.
+	 * admin-only.
 	 *
 	 * @param resource - The kind of resource.
 	 * @param operation - The operation.
@@ -274,7 +273,6 @@ export class ConfigStore {
 	): boolean => {
 		const name = ADMIN_ONLY_RESOURCES[resource];
 		return (
-			name === null ||
 			this.getSnapshot().config?.[
 				`adminOnly${name}${ADMIN_ONLY_OPERATIONS[operation]}`
 			] !== false

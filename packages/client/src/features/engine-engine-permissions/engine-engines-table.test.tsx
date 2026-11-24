@@ -5,6 +5,7 @@ import {
 	screen,
 	waitFor,
 } from "@testing-library/react";
+import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	getResourcePermissions,
@@ -12,7 +13,7 @@ import {
 	type ResourcePermissions,
 	savePermissionBatches,
 } from "@semoss/sdk";
-import type { EngineGrantee } from "./engine-engine-permissions";
+import type { Grantee } from "@/features/grants/grants";
 import { EngineEnginesTable } from "./engine-engines-table";
 
 vi.mock("@semoss/sdk", async (importOriginal) => ({
@@ -36,7 +37,7 @@ const ENGINE_LIMIT: ModelUsageLimit = {
 };
 
 /** A vector database with an end date and a usage limit */
-const VECTORS: EngineGrantee = {
+const VECTORS: Grantee = {
 	subject: {
 		category: "ENGINE",
 		id: "vectors1",
@@ -52,7 +53,7 @@ const VECTORS: EngineGrantee = {
 };
 
 /** A guardrail with neither */
-const GUARD: EngineGrantee = {
+const GUARD: Grantee = {
 	subject: {
 		category: "ENGINE",
 		id: "guard1",
@@ -64,7 +65,7 @@ const GUARD: EngineGrantee = {
 };
 
 /** An app the engine gives a permission to, which the Engines table leaves out */
-const APP: EngineGrantee = {
+const APP: Grantee = {
 	subject: {
 		category: "ENGINE",
 		id: "app1",
@@ -81,19 +82,21 @@ const APP: EngineGrantee = {
  * and an owner's where only admins give access when asked
  */
 const permissionsWith = (
-	grantees: EngineGrantee[],
+	grantees: Grantee[],
 	canChangeEngines = true,
 	addsAreAdminOnly = false,
 ): ResourcePermissions => ({
 	people: [],
 	teams: [],
 	engines: [APP, ...grantees],
+	accessToEngines: [],
 	allowedPermissionChanges: {
 		canChangePeople: canChangeEngines,
 		canGiveAuthorAccess: canChangeEngines,
 		canChangeTeams: canChangeEngines,
 		canViewEngines: true,
 		canChangeEngines,
+		canViewAccessToEngines: true,
 		addsAreAdminOnly,
 		limitLevels: canChangeEngines ? ["READ_ONLY", "EDIT", "OWNER"] : [],
 		canChangeModelLimits: canChangeEngines,
@@ -108,11 +111,13 @@ const permissionsWith = (
 const renderTable = ({ isModel = false, admin = false } = {}) => {
 	const id = isModel ? "model-1" : "engine-1";
 	return render(
-		<EngineEnginesTable
-			id={id}
-			type={isModel ? "MODEL" : "DATABASE"}
-			admin={admin}
-		/>,
+		<MemoryRouter>
+			<EngineEnginesTable
+				id={id}
+				type={isModel ? "MODEL" : "DATABASE"}
+				admin={admin}
+			/>
+		</MemoryRouter>,
 	);
 };
 
@@ -153,6 +158,11 @@ describe("EngineEnginesTable", () => {
 		expect(await screen.findByText("Claims Vectors")).toBeInTheDocument();
 		expect(screen.getByText("Prompt Guard")).toBeInTheDocument();
 		expect(screen.getByText("id: vectors1")).toBeInTheDocument();
+		expect(
+			screen.getByRole("link", {
+				name: "Claims Vectors (opens in a new tab)",
+			}),
+		).toHaveAttribute("href", "/vector/vectors1");
 		expect(screen.queryByText("Intake Form")).not.toBeInTheDocument();
 		expect(getResourcePermissions).toHaveBeenCalledExactlyOnceWith(
 			{ resourceType: "ENGINE", id: "engine-1" },
@@ -186,7 +196,7 @@ describe("EngineEnginesTable", () => {
 		).not.toBeInTheDocument();
 		expect(
 			screen.getByText(
-				/Only admins can give engines access to this engine/,
+				/Only admins can give access to databases, from this page in admin mode/,
 			),
 		).toBeInTheDocument();
 		expect(getLevel("Claims Vectors")).toBeEnabled();
@@ -346,7 +356,7 @@ describe("EngineEnginesTable", () => {
 
 		expect(
 			await screen.findByRole("heading", {
-				name: "Remove Engine Access",
+				name: "Remove Access",
 			}),
 		).toBeInTheDocument();
 		expect(savePermissionBatches).not.toHaveBeenCalled();
@@ -401,7 +411,7 @@ describe("EngineEnginesTable", () => {
 			),
 		).toBeInTheDocument();
 		expect(
-			screen.getByRole("heading", { name: "Remove Engine Access" }),
+			screen.getByRole("heading", { name: "Remove Access" }),
 		).toBeInTheDocument();
 		expect(getResourcePermissions).toHaveBeenCalledTimes(1);
 	});
