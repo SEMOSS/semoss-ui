@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { EngineModelSettings, EngineRouterSettings } from "@/components/engine";
 import { EngineModelPrices } from "@/components/engine/engine-model-prices";
+import { RouterLearningCard } from "@/features/router-learning/router-learning-card";
 import { useEngine } from "@/hooks";
 
 export const EngineModelSettingsPage = () => {
@@ -16,11 +17,17 @@ export const EngineModelSettingsPage = () => {
 
 	if (engine.engine_subtype === "MODEL_ROUTER") {
 		return (
-			<EngineRouterSettings
-				engineId={engine.engine_id}
-				permission={permission}
-				onUpdated={refresh}
-			/>
+			<div className="flex w-full flex-col gap-4">
+				<EngineRouterSettings
+					engineId={engine.engine_id}
+					permission={permission}
+					onUpdated={refresh}
+				/>
+				{/* the status read needs edit access */}
+				{permission === "OWNER" || permission === "EDIT" ? (
+					<RouterLearningCard engineId={engine.engine_id} />
+				) : null}
+			</div>
 		);
 	}
 

@@ -15,6 +15,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
+import { isRecord } from "@semoss/utility/object";
 import type { RouterConfigFormValue } from "@/components/import/model/model-import.constants";
 import {
 	RouterConfigField,
@@ -64,6 +65,19 @@ export const EngineRouterSettings: React.FC<EngineRouterSettingsProps> = ({
 				: null,
 		[getConfig.status, getConfig.data],
 	);
+	// a subtask router has subtasks, skills and a learning section the editor below
+	// does not know; saving through it would turn the router into a plain one
+	const isSubtaskRouter = useMemo(() => {
+		if (getConfig.status !== "SUCCESS") {
+			return false;
+		}
+		try {
+			const parsed: unknown = JSON.parse(String(getConfig.data));
+			return isRecord(parsed) && parsed.mode === "subtask";
+		} catch {
+			return false;
+		}
+	}, [getConfig.status, getConfig.data]);
 	const isDirty =
 		value !== null &&
 		savedValue !== null &&
@@ -178,6 +192,14 @@ export const EngineRouterSettings: React.FC<EngineRouterSettingsProps> = ({
 							>
 								Retry
 							</Button>
+						</AlertDescription>
+					</Alert>
+				) : isSubtaskRouter ? (
+					<Alert>
+						<AlertDescription>
+							This router uses subtask routing, which this editor
+							would overwrite. Its versions and learning are
+							below.
 						</AlertDescription>
 					</Alert>
 				) : isLoading || value === null ? (
