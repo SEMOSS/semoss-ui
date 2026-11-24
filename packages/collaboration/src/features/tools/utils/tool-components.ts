@@ -13,6 +13,7 @@ export const TOOL_COMPONENTS = {
 	emailSend: "email-send",
 	calendarEvent: "calendar-event",
 	memory: "memory",
+	orgChart: "org-chart",
 } as const;
 
 type ToolComponent = (typeof TOOL_COMPONENTS)[keyof typeof TOOL_COMPONENTS];
@@ -25,6 +26,16 @@ export function getToolComponent(
 ): ToolComponent | undefined {
 	if (resolveToolUiUrl(tool)) return undefined;
 	const declared = getDeclaredToolComponent(tool);
+	if (declared === TOOL_COMPONENTS.orgChart || tool.name === "ShowOrgChart") {
+		return !tool.serverTool &&
+			!tool.uiUrl &&
+			tool.name === "ShowOrgChart" &&
+			(!tool.metadata?.SMSS_ENGINE_ID ||
+				tool.metadata.SMSS_TOOL_KIND === "semoss_collaboration_tool") &&
+			(!declared || declared === TOOL_COMPONENTS.orgChart)
+			? TOOL_COMPONENTS.orgChart
+			: undefined;
+	}
 	if (declared)
 		return KNOWN.has(declared) ? (declared as ToolComponent) : undefined;
 	const names = [

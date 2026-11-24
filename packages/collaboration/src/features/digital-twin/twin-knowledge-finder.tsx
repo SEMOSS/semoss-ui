@@ -63,7 +63,7 @@ const finderSchema = z.object({
 	prompt: z
 		.string()
 		.trim()
-		.min(1, "Say what your Digital Twin should know.")
+		.min(1, "Say what this twin should know.")
 		.max(
 			TWIN_SUGGESTION_PROMPT_MAX,
 			`Keep it to ${TWIN_SUGGESTION_PROMPT_MAX} characters or fewer.`,
@@ -380,7 +380,7 @@ export function TwinKnowledgeFinder({
 			>
 				<FormTextarea
 					name="prompt"
-					label="What should your Digital Twin know?"
+					label="What Should This Twin Know?"
 					description="Nothing is added until you add it."
 					placeholder="Such as: the Apollo migration, its timeline, the vendor contract and the open risks"
 					rows={3}
@@ -534,8 +534,8 @@ export function TwinKnowledgeFinder({
 						) : (
 							<div className="flex min-h-11 flex-wrap items-center justify-between gap-2 border-b px-4 py-2">
 								<P className="text-muted-foreground text-sm">
-									{count}. Add the ones your Digital Twin
-									should answer from.
+									{count}. Add the ones this twin should
+									answer from.
 								</P>
 								{pending.length > 0 && (
 									<Button

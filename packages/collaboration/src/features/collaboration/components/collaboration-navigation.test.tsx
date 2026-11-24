@@ -131,7 +131,7 @@ afterEach(() => {
 });
 
 describe("CollaborationNavigation", () => {
-	it("keeps Today, Work, Topics, Digital Twins and Routines as the main destinations", () => {
+	it("keeps Today, Work, Topics, Digital Twins, Persona and Routines as the main destinations", () => {
 		const state = createInitialCollaborationState();
 		state.items = [];
 		state.reviews = [];
@@ -153,10 +153,23 @@ describe("CollaborationNavigation", () => {
 			Array.from(main.querySelectorAll("a,button")).map((control) =>
 				control.getAttribute("aria-label"),
 			),
-		).toEqual(["Today", "Work", "Topics", "Digital Twins", "Routines"]);
+		).toEqual([
+			"Today",
+			"Work",
+			"Topics",
+			"Digital Twins",
+			"Persona",
+			"Routines",
+		]);
 		expect(
 			within(main).getByRole("link", { name: "Today" }),
 		).toHaveTextContent(/^Today$/);
+		// the persona's own door; its mark is open strokes, which a fill would blot
+		const persona = within(main).getByRole("link", { name: "Persona" });
+		expect(persona).toHaveAttribute("href", "/persona");
+		expect(persona.querySelector("svg")?.getAttribute("class")).not.toMatch(
+			/\bfill-/,
+		);
 		for (const name of ["For you", "Unassigned", "Brain"]) {
 			expect(
 				screen.queryByRole("link", { name }),
@@ -209,6 +222,11 @@ describe("CollaborationNavigation", () => {
 		["/topics/alpha", "Topics"],
 		["/twins", "Digital Twins"],
 		["/twins/mine/contents", "Digital Twins"],
+		// the persona opened from Digital Twins stays under it; opened from the sidebar it is its own place
+		["/twins/persona", "Digital Twins"],
+		["/twins/persona/interview", "Digital Twins"],
+		["/persona", "Persona"],
+		["/persona/interview", "Persona"],
 	])("marks only its own destination current on %s", (path, current) => {
 		renderNavigation(path);
 		for (const name of [
@@ -217,6 +235,7 @@ describe("CollaborationNavigation", () => {
 			"Topics",
 			"Routines",
 			"Digital Twins",
+			"Persona",
 		]) {
 			const link = screen.getByRole("link", { name });
 			if (name === current)
@@ -308,10 +327,36 @@ describe("CollaborationNavigation", () => {
 			within(main)
 				.getAllByRole("link")
 				.map((link) => link.getAttribute("aria-label")),
-		).toEqual(["Today", "Work", "Topics", "Digital Twins", "Routines"]);
+		).toEqual([
+			"Today",
+			"Work",
+			"Topics",
+			"Digital Twins",
+			"Persona",
+			"Routines",
+		]);
 		expect(
 			within(main).getByRole("link", { name: "Digital Twins" }),
 		).toHaveAttribute("aria-current", "page");
+	});
+
+	it("opens Persona by keyboard from the sidebar, and from the collapsed rail", async () => {
+		const { user, router, onNavigate } = renderNavigation();
+		act(() => screen.getByRole("link", { name: "Persona" }).focus());
+		await user.keyboard("{Enter}");
+		expect(router.state.location.pathname).toBe("/persona");
+		expect(onNavigate).toHaveBeenCalledOnce();
+		await act(() => router.navigate("/"));
+
+		await user.click(
+			screen.getByRole("button", { name: "Toggle navigation fixture" }),
+		);
+		// the rail draws no label, so the link is still named
+		const persona = screen.getByRole("link", { name: "Persona" });
+		expect(persona).not.toHaveTextContent("Persona");
+		await user.click(persona);
+		expect(router.state.location.pathname).toBe("/persona");
+		expect(persona).toHaveAttribute("aria-current", "page");
 	});
 
 	it.each([
@@ -366,6 +411,7 @@ describe("CollaborationNavigation", () => {
 			screen.getByRole("link", { name: "Today" }),
 			screen.getByRole("link", { name: "Routines" }),
 			screen.getByRole("link", { name: "Digital Twins" }),
+			screen.getByRole("link", { name: "Persona" }),
 			screen.getByRole("link", { name: "Settings" }),
 			screen.getByRole("button", { name: /Account menu for/ }),
 		];

@@ -74,12 +74,55 @@ it("offers to create a twin to someone who has none, and says nothing is shared 
 	renderHub();
 	expect(screen.getByText("Loading Digital Twins…")).toBeInTheDocument();
 	expect(
-		await screen.findByRole("link", { name: "Create Digital Twin" }),
+		await screen.findByRole("link", { name: "Create a Twin to Share" }),
 	).toHaveAttribute("href", "/twins/mine?create=true");
 	expect(
 		screen.getByText(/No one has shared a Digital Twin with you yet/),
 	).toBeVisible();
-	expect(screen.queryByRole("link", { name: /Chat/ })).toBeNull();
+	expect(
+		screen.getByText(
+			"You are not sharing a twin yet. Create one, choose what it knows, then name the people who can ask it about you.",
+		),
+	).toBeVisible();
+	// nothing is said of what shared twins know while there is none
+	expect(screen.queryByText(/Each knows only/)).toBeNull();
+	// the only chat is with their own twin
+	expect(screen.getAllByRole("link", { name: /^Chat/ })).toHaveLength(1);
+	expect(
+		screen.getByRole("link", { name: "Chat: Your Digital Twin" }),
+	).toHaveAttribute("href", "/");
+});
+
+it("leads with the person's own Digital Twin, whatever the lists below it are doing", async () => {
+	// while the twins are read
+	insight.actions.run.mockReturnValue(new Promise(() => undefined));
+	const loading = renderHub();
+	expect(screen.getByText("Loading Digital Twins…")).toBeInTheDocument();
+	expect(
+		screen.getByRole("region", { name: "Your Digital Twin" }),
+	).toHaveTextContent(
+		"Private to you. Works with your mail, Teams, calendar, files, work and routines.",
+	);
+	expect(
+		screen.getByText(
+			"Your own Digital Twin, the twins you share, and the twins other people share with you.",
+		),
+	).toBeVisible();
+	loading.unmount();
+
+	// after they could not be read
+	insight.actions.run.mockRejectedValue(
+		new Error("The server is restarting"),
+	);
+	renderHub();
+	expect(await screen.findByRole("alert")).toHaveTextContent(
+		"The server is restarting",
+	);
+	expect(
+		within(
+			screen.getByRole("region", { name: "Your Digital Twin" }),
+		).getByRole("link", { name: "Chat: Your Digital Twin" }),
+	).toBeVisible();
 });
 
 it("shows all the owner's twins with their own links, and each shared twin with its chat", async () => {
@@ -87,7 +130,7 @@ it("shows all the owner's twins with their own links, and each shared twin with 
 	twins = { mine: [ROBIN, research], all: [ROBIN, research, DANA] };
 	renderHub();
 	const mine = within(
-		await screen.findByRole("region", { name: "Your twins" }),
+		await screen.findByRole("region", { name: "Twins You Share" }),
 	);
 	expect(
 		mine.getByRole("heading", { level: 3, name: "Robin Twin" }),
@@ -102,7 +145,7 @@ it("shows all the owner's twins with their own links, and each shared twin with 
 		mine.getByRole("link", { name: "Chat: Robin Twin" }),
 	).toHaveAttribute("href", "/twins/chat?agentId=twin-1");
 	expect(
-		screen.getByRole("link", { name: "Create Digital Twin" }),
+		screen.getByRole("link", { name: "Create a Twin to Share" }),
 	).toHaveAttribute("href", "/twins/mine?create=true");
 	expect(mine.getAllByRole("listitem")).toHaveLength(2);
 	expect(
@@ -114,7 +157,7 @@ it("shows all the owner's twins with their own links, and each shared twin with 
 
 	// the owner's own twin is not listed again among the shared ones
 	const shared = within(
-		screen.getByRole("region", { name: "Shared with you" }),
+		screen.getByRole("region", { name: "Shared With You" }),
 	);
 	expect(shared.getAllByRole("listitem")).toHaveLength(1);
 	expect(
@@ -144,15 +187,15 @@ it("marks a twin shared with the person as new until its chat has been opened in
 	markTwinOpened("someone-else@example.com", "twin-2");
 	renderHub();
 	const [dana, park] = within(
-		await screen.findByRole("region", { name: "Shared with you" }),
+		await screen.findByRole("region", { name: "Shared With You" }),
 	).getAllByRole("listitem");
 	expect(within(dana).getByText("New")).toBeVisible();
 	expect(within(park).queryByText("New")).toBeNull();
 	// the person's own twins are never new to them
 	expect(
-		within(screen.getByRole("region", { name: "Your twins" })).queryByText(
-			"New",
-		),
+		within(
+			screen.getByRole("region", { name: "Twins You Share" }),
+		).queryByText("New"),
 	).toBeNull();
 });
 
@@ -197,16 +240,37 @@ it("puts the owner's persona above their twins, counting the twins that use it",
 		await screen.findByRole("region", { name: "Your persona" }),
 	);
 	expect(await card.findByText("Runs renewals.")).toBeVisible();
-	expect(card.getByText("Used by 1 of your 2 twins.")).toBeVisible();
+	expect(
+		card.getByText(
+			"Your Digital Twin uses it. Used by 1 of the 2 twins you share.",
+		),
+	).toBeVisible();
 	expect(
 		card.getByRole("link", { name: "Open your persona" }),
 	).toHaveAttribute("href", "/twins/persona");
+	// the person's own twin leads the page, then their persona, then the twins they share and the ones shared with them
+	expect(
+		screen
+			.getAllByRole("heading", { level: 2 })
+			.map((heading) => heading.textContent),
+	).toEqual([
+		"Your Digital Twin",
+		"Your persona",
+		"Twins You Share",
+		"Shared With You",
+	]);
 	const regions = screen
 		.getAllByRole("region")
 		.map((region) => region.getAttribute("aria-labelledby"));
 	expect(regions[0]).toBe(
+		screen.getByRole("heading", { level: 2, name: "Your Digital Twin" }).id,
+	);
+	expect(regions[1]).toBe(
 		screen.getByRole("heading", { level: 2, name: "Your persona" }).id,
 	);
+	expect(
+		screen.getByText("Each knows only what you copied into it."),
+	).toBeVisible();
 });
 
 it("still lists the twins when the persona cannot be read", async () => {
@@ -243,7 +307,7 @@ it("expands the owned gallery and searches every twin and shared owner without c
 	};
 	renderHub();
 	const own = within(
-		await screen.findByRole("region", { name: "Your twins" }),
+		await screen.findByRole("region", { name: "Twins You Share" }),
 	);
 	expect(own.getAllByRole("listitem")).toHaveLength(3);
 	await user.click(own.getByRole("button", { name: "View all 4" }));
@@ -258,17 +322,30 @@ it("expands the owned gallery and searches every twin and shared owner without c
 	await user.clear(search);
 	await user.type(search, "mAyA");
 	expect(screen.getByText("By Maya Chen")).toBeVisible();
-	expect(screen.queryByRole("region", { name: "Your twins" })).toBeNull();
-	expect(screen.getByText("Used by all 4 of your twins.")).toBeVisible();
+	expect(
+		screen.queryByRole("region", { name: "Twins You Share" }),
+	).toBeNull();
+	expect(
+		screen.getByText(
+			"Your Digital Twin uses it. Used by all 4 twins you share.",
+		),
+	).toBeVisible();
+	// the person's own twin is no search result: it stays whatever is searched for
+	expect(
+		screen.getByRole("region", { name: "Your Digital Twin" }),
+	).toBeVisible();
 	await user.type(search, "xyz");
 	expect(
 		screen.getByRole("heading", { name: "No matching twins" }),
 	).toBeVisible();
+	expect(
+		screen.getByRole("region", { name: "Your Digital Twin" }),
+	).toBeVisible();
 	await user.click(screen.getByRole("button", { name: "Clear search" }));
 	expect(search).toHaveFocus();
 	expect(
-		within(screen.getByRole("region", { name: "Your twins" })).getAllByRole(
-			"listitem",
-		),
+		within(
+			screen.getByRole("region", { name: "Twins You Share" }),
+		).getAllByRole("listitem"),
 	).toHaveLength(3);
 });

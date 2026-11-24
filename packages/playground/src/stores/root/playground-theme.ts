@@ -62,6 +62,7 @@ const DEFAULT_THEME: PlaygroundTheme = {
 		enableSuggestions: true,
 		enableAgentHarness: false,
 		modeFollowsAgent: false,
+		agentModeOnly: false,
 		enableRewrite: true,
 		enablePromptOptimizer: true,
 		enableDarkMode: true,

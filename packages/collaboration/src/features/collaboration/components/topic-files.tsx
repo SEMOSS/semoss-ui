@@ -19,8 +19,8 @@ export function TopicFiles({ files, emptyAction }: TopicFilesProps) {
 			<div className="flex flex-col items-start gap-3 px-5 py-4">
 				<P className="text-muted-foreground text-sm">
 					No files in this topic yet. Link the OneDrive and Teams
-					files this work runs on, and the assistant can read them in
-					this topic’s chats.
+					files this work runs on, and your Digital Twin can read them
+					in this topic’s chats.
 				</P>
 				{emptyAction}
 			</div>

@@ -51,8 +51,11 @@ it("says what a persona is for to someone with none, with the way to the intervi
 		screen.getByRole("link", { name: "Or write it by hand" }),
 	).toHaveAttribute("href", "/twins/persona");
 	const card = screen.getByRole("region", { name: "Your persona" });
-	expect(card).toHaveTextContent(/every twin of yours uses it/);
-	expect(card).not.toHaveTextContent(/Digital Twins? uses? it\./);
+	expect(card).toHaveTextContent(
+		"Teach your Digital Twin how you decide and write, and the twins you share how you sound. A few questions, once, and all of them use it.",
+	);
+	// who uses it is only said of a persona that exists
+	expect(card).not.toHaveTextContent(/uses it\.|switched off/);
 });
 
 it("names the way into an interview for where it is: under way, or with what it wrote waiting", async () => {
@@ -81,7 +84,7 @@ it("names the way into an interview for where it is: under way, or with what it 
 	).toHaveAttribute("href", "/twins/persona/interview?go=more");
 });
 
-it("shows how the persona opens and how many of the owner's twins use it", async () => {
+it("shows how the persona opens, whether the person's own twin uses it, and how many of the twins they share do", async () => {
 	answer = {
 		exists: true,
 		sections: { ...BLANK, voice: "Direct.", short: "Runs renewals." },
@@ -95,7 +98,9 @@ it("shows how the persona opens and how many of the owner's twins use it", async
 	expect(screen.getByText("Runs renewals.")).toBeVisible();
 	expect(screen.queryByText("Direct.")).toBeNull();
 	// a twin it was switched off for is not counted, and neither is one that is gone
-	expect(screen.getByText("Used by 2 of your 3 twins.")).toBeVisible();
+	const usage = (shared: string) =>
+		screen.getByText(`Your Digital Twin uses it. ${shared}`);
+	expect(usage("Used by 2 of the 3 twins you share.")).toBeVisible();
 
 	const again = (twinIds: string[]) =>
 		rerender(
@@ -104,21 +109,47 @@ it("shows how the persona opens and how many of the owner's twins use it", async
 			</MemoryRouter>,
 		);
 	again(["twin-1", "twin-3"]);
-	expect(screen.getByText("Used by all 2 of your twins.")).toBeVisible();
+	expect(usage("Used by all 2 twins you share.")).toBeVisible();
 	again(["twin-1"]);
-	expect(screen.getByText("Your Digital Twin uses it.")).toBeVisible();
+	expect(usage("The twin you share uses it.")).toBeVisible();
 	again([]);
-	expect(
-		screen.getByText("The next Digital Twin you create will use it."),
-	).toBeVisible();
+	expect(usage("The next twin you share will use it.")).toBeVisible();
 	// switched off everywhere reads as that, not as a count of none
 	again(["twin-2"]);
-	expect(
-		screen.getByText("It is switched off for your Digital Twin."),
-	).toBeVisible();
+	expect(usage("It is switched off for the twin you share.")).toBeVisible();
 	again(["twin-2", "twin-gone"]);
 	expect(
-		screen.getByText("It is switched off for all of your Digital Twins."),
+		usage("It is switched off for all the twins you share."),
+	).toBeVisible();
+});
+
+it("says when the person's own twin does not use the persona, apart from the twins they share", async () => {
+	answer = {
+		exists: true,
+		sections: { ...BLANK, short: "Runs renewals." },
+		offTwins: [],
+		assistant: false,
+	};
+	renderCard(["twin-1"]);
+	expect(
+		await screen.findByText(
+			"It is switched off for your Digital Twin. The twin you share uses it.",
+		),
+	).toBeVisible();
+	cleanup();
+
+	// switched on for their own twin, and off for the one they share
+	answer = {
+		exists: true,
+		sections: { ...BLANK, short: "Runs renewals." },
+		offTwins: ["twin-1"],
+		assistant: true,
+	};
+	renderCard(["twin-1"]);
+	expect(
+		await screen.findByText(
+			"Your Digital Twin uses it. It is switched off for the twin you share.",
+		),
 	).toBeVisible();
 });
 

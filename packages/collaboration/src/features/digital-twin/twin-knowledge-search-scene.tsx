@@ -32,7 +32,7 @@ const STEPS: readonly {
 	{ text: "Searching your Teams chats", ms: 2500, place: "teams" },
 	{ text: "Searching your OneDrive", ms: 2500, place: "onedrive" },
 	{ text: "Reading what turned up", ms: 4000 },
-	{ text: "Picking what fits your Digital Twin" },
+	{ text: "Picking what fits this twin" },
 ];
 
 const RIPPLE_DELAYS = ["0s", "-1.2s", "-2.4s"];

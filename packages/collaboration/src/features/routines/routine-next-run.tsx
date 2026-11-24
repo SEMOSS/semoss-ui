@@ -19,7 +19,7 @@ export function RoutineNextRun({ routine }: RoutineNextRunProps) {
 		nextRun ??
 		(routine.enabled
 			? "Waiting for the scheduler."
-			: "Choose your schedule to get started.");
+			: "Off — enable to schedule runs.");
 	return (
 		<span className="flex items-start gap-2">
 			<CalendarClock

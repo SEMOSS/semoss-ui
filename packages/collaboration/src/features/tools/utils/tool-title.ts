@@ -1,6 +1,9 @@
 /** Names whose words alone would not say what the tool does. */
 const NAMED: Record<string, string> = {
 	ShowItem: "Open Beside Chat",
+	UseSkillInAssistant: "Digital Twin Skills",
+	SaveToDigitalTwin: "Add a File to This Twin",
+	RemoveFromDigitalTwin: "Remove a File From This Twin",
 };
 
 /** Short joining words stay lowercase inside a title. */
@@ -28,6 +31,9 @@ export function readableToolTitle(
 	title: string | null | undefined,
 	name: string,
 ): string {
+	// a named tool is named here whatever title its call carries: a chat saved before the server
+	// changed a title still holds the old one
+	if (NAMED[name]) return NAMED[name];
 	const raw = title?.trim() || name;
 	if (NAMED[raw]) return NAMED[raw];
 	const words = raw

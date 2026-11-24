@@ -128,7 +128,7 @@ export async function checkTwinUpdates(
 	while (check.status === "running" && check.id) {
 		onProgress?.(check);
 		if (Date.now() > deadline)
-			throw new Error("Checking your Digital Twins is taking too long.");
+			throw new Error("Checking the twins you share is taking too long.");
 		await wait(CHECK_POLL_MS);
 		check = await callPixel(
 			actions,
@@ -194,7 +194,7 @@ async function refuse(
 	await settle(actions, update, "dismissed");
 	throw new Error(
 		now === "gone"
-			? "That copy is no longer in your Digital Twin."
+			? "That copy is no longer in this twin."
 			: "That copy has changed since the last check. Check again.",
 	);
 }

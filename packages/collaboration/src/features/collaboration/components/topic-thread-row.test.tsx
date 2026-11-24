@@ -20,33 +20,19 @@ function RowFixture({ topicId }: { topicId: string }) {
 	if (!thread) throw new Error("Missing thread fixture");
 	return (
 		<ul aria-label="Topic threads">
-			<TopicThreadRow
-				thread={thread}
-				topicId={topicId}
-				items={state.items.filter((item) => item.threadId === threadId)}
-			/>
+			<TopicThreadRow thread={thread} topicId={topicId} />
 		</ul>
 	);
 }
 
-function setup(changes: Partial<Thread> = {}, isWaiting = false) {
+function setup(changes: Partial<Thread> = {}) {
 	const state = createInitialCollaborationState();
 	const thread = state.threads.find((candidate) => candidate.id === threadId);
-	const item = state.items[0];
 	const topicLink = thread?.topicLinks[0];
-	if (!thread || !item || !topicLink)
-		throw new Error("Missing topic thread fixture");
+	if (!thread || !topicLink) throw new Error("Missing topic thread fixture");
 	Object.assign(thread, changes);
 	thread.subject = "Launch review";
 	thread.summary = "Review the launch schedule with the team.";
-	state.items = [
-		{
-			...item,
-			threadId,
-			topicIds: [topicLink.topicId],
-			status: isWaiting ? "waiting" : "open",
-		},
-	];
 	const onChange = vi.fn<(change: CollaborationChange) => void>();
 	const router = createMemoryRouter(
 		[
@@ -84,7 +70,6 @@ it("opens the conversation and keeps source details in the thread menu", async (
 	const subject = screen.getByRole("link", { name: "Launch review" });
 	expect(subject).toHaveAttribute("href", `/thread/${threadId}`);
 	expect(subject).toHaveAttribute("title", "Launch review · main topic");
-	expect(screen.getByText("Open action")).toBeVisible();
 	expect(screen.getByText("Main topic")).toBeInTheDocument();
 	expect(
 		screen.getByText("Review the launch schedule with the team."),
@@ -105,25 +90,21 @@ it("retains statuses, calendar details, resume, and topic unlinking", async () =
 	const link = state.threads.find((thread) => thread.id === threadId)
 		?.topicLinks[0];
 	if (!link) throw new Error("Missing topic link fixture");
-	const { onChange, topicId, user } = setup(
-		{
-			channel: "calendar",
-			when: "Tomorrow, 2:00–3:00 PM",
-			conflict: "Overlaps the team meeting",
-			muted: true,
-			automated: true,
-			isSample: true,
-			topicLinks: [{ ...link, source: "suggested" }],
-		},
-		true,
-	);
+	const { onChange, topicId, user } = setup({
+		channel: "calendar",
+		when: "Tomorrow, 2:00-3:00 PM",
+		conflict: "Overlaps the team meeting",
+		muted: true,
+		automated: true,
+		isSample: true,
+		topicLinks: [{ ...link, source: "suggested" }],
+	});
 	for (const text of [
 		"Suggested topic",
 		"Ignored",
 		"Automated",
 		"Sample",
-		"Waiting",
-		"Tomorrow, 2:00–3:00 PM",
+		"Tomorrow, 2:00-3:00 PM",
 		"Overlaps the team meeting",
 	])
 		expect(screen.getByText(text)).toBeVisible();

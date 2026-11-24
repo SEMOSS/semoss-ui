@@ -16,6 +16,17 @@ vi.mock("@/features/daily-chat/landing-chat-composer", () => ({
 vi.mock("@/features/dashboard/topic-sessions", () => ({
 	TopicSessions: () => null,
 }));
+const insight = vi.hoisted(() => ({
+	actions: {
+		run: vi.fn(async () => ({
+			pixelReturn: [{ output: {}, operationType: ["OPERATION"] }],
+		})),
+	},
+}));
+vi.mock("@semoss/sdk/react", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
+	useInsight: () => insight,
+}));
 
 afterEach(() => {
 	cleanup();

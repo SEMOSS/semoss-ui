@@ -7,6 +7,7 @@ import {
 	type PersonaSections,
 	personaSectionsSchema,
 	saveTwinPersona,
+	setAssistantPersona,
 	setTwinPersona,
 } from "./persona";
 
@@ -81,6 +82,50 @@ it("deletes the persona and switches it for one twin by the twin's id", async ()
 			false,
 		),
 	).rejects.toThrow("It is not yours.");
+});
+
+it("says whether the owner's assistant uses the persona, and reads one from before the switch as it is", async () => {
+	expect(
+		await getTwinPersona(
+			transport({ ...PERSONA, assistant: false }).actions,
+		),
+	).toEqual({ ...PERSONA, assistant: false });
+	// left out, it is on: only a no is off
+	expect(
+		(await getTwinPersona(transport(PERSONA).actions)).assistant,
+	).toBeUndefined();
+	await expect(
+		getTwinPersona(transport({ ...PERSONA, assistant: "no" }).actions),
+	).rejects.toThrow("unexpected shape");
+});
+
+it("switches the persona for the owner's assistant, and answers with what the server kept", async () => {
+	const off = transport({ enabled: false });
+	expect(await setAssistantPersona(off.actions, false)).toBe(false);
+	// asked for on, and kept off
+	expect(await setAssistantPersona(off.actions, true)).toBe(false);
+	expect(off.ran()).toEqual([
+		"WorkSetAssistantPersona(enabled=[false]);",
+		"WorkSetAssistantPersona(enabled=[true]);",
+	]);
+	await expect(
+		setAssistantPersona(
+			transport(new Error("Collaboration is not enabled.")).actions,
+			false,
+		),
+	).rejects.toThrow("Collaboration is not enabled.");
+	// an answer that does not say what was kept is not taken for a yes
+	await expect(
+		setAssistantPersona(transport({}).actions, true),
+	).rejects.toThrow("unexpected shape");
+});
+
+it("tells the owner that the twins they share stay out of what they leave to themself, and that their own Digital Twin leaves it to them", () => {
+	expect(
+		PERSONA_SECTIONS.find((section) => section.key === "limits")?.hint,
+	).toBe(
+		"What the twins you share stay out of, to the letter. Your own Digital Twin leaves these to you unless you tell it otherwise.",
+	);
 });
 
 it("asks for every section the server keeps, each held to the server's size", () => {

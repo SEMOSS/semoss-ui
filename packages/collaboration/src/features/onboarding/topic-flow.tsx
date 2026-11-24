@@ -44,7 +44,7 @@ const STAGES = [
 		key: "done",
 		label: "Done",
 		title: "Ready to file",
-		intro: "The assistant files your recent mail and chats into these topics.",
+		intro: "Brain files your recent mail and chats into these topics.",
 	},
 ] as const;
 export type TopicStage = (typeof STAGES)[number]["key"];
@@ -529,6 +529,7 @@ export function TopicFlow({
 						contacts={contacts}
 						changes={changes}
 						onSave={() => controller.flushDraft(form.getValues())}
+						onReload={handleReload}
 						review={review}
 						values={values}
 						addedNames={addedNames}

@@ -1,4 +1,11 @@
-import { BookOpen, Brain, FolderOpen, Tags, Timer } from "lucide-react";
+import {
+	BookOpen,
+	Brain,
+	FolderOpen,
+	Network,
+	Tags,
+	Timer,
+} from "lucide-react";
 import type { ToolViewProps } from "@semoss/shared";
 import { Alert, AlertDescription, H4, Muted, Spinner } from "@semoss/ui/next";
 import {
@@ -22,6 +29,7 @@ import { ToolResultDetails } from "./tool-result-details";
 import { ToolResultList } from "./tool-result-list";
 
 const FAMILY_ICONS = {
+	people: Network,
 	calendar: OutlookCalendarIcon,
 	topics: Tags,
 	mail: OutlookIcon,

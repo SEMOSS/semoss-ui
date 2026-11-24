@@ -16,12 +16,13 @@ import { PendingMembersTable } from "@/components/settings/pending-members-table
 import { SettingsTiles } from "@/components/settings/settings-tiles";
 import { UpdateSMSS } from "@/components/settings/update-smss";
 import { ResourceId } from "@/components/shared/resource-id";
+import { AccessToEnginesTable } from "@/features/access-to-engines/access-to-engines-table";
 import { ResourceAuditTrail } from "@/features/audit-trail/resource-audit-trail";
 import { BulkAccessManagement } from "@/features/bulk-access-management/bulk-access-management";
 import { useAdminResourceName } from "@/features/bulk-access-management/use-admin-resource-name";
 import { EffectivePermissions } from "@/features/effective-permissions/effective-permissions";
-import { EngineAppsTable } from "@/features/engine-app-permissions/engine-apps-table";
 import { EngineEnginesTable } from "@/features/engine-engine-permissions/engine-engines-table";
+import { GrantedAppsTable } from "@/features/granted-apps/granted-apps-table";
 import { ModelUsageLimitsCard } from "@/features/model-usage-limits/model-usage-limits-card";
 import { getResourcePagePath } from "@/utility/catalog";
 import { GovernanceResourceIcon } from "./governance-resource-icon";
@@ -40,16 +41,13 @@ interface GovernanceTab {
 
 const TABS: readonly GovernanceTab[] = [
 	{ value: "access", label: "Access" },
-	{
-		value: "apps",
-		label: "Apps",
-		isAvailable: (entry) => entry.kind === "ENGINE",
-	},
+	{ value: "apps", label: "Apps and Agents" },
 	{
 		value: "engines",
 		label: "Engines",
 		isAvailable: (entry) => entry.kind === "ENGINE",
 	},
+	{ value: "uses-engines", label: "Can Use" },
 	{ value: "effective-permissions", label: "Effective Permissions" },
 	{ value: "requests", label: "Requests" },
 	{ value: "visibility", label: "Visibility" },
@@ -175,11 +173,12 @@ export const GovernanceResourceDetails = ({
 				className="flex min-h-0 flex-1 flex-col gap-0"
 			>
 				<div className="border-border/60 border-b px-4 py-2">
-					<TabsList className="w-fit max-w-full flex-wrap">
+					<TabsList className="h-auto w-fit max-w-full flex-wrap justify-start">
 						{tabs.map((option) => (
 							<TabsTrigger
 								key={option.value}
 								value={option.value}
+								className="flex-none"
 							>
 								{option.label}
 							</TabsTrigger>
@@ -208,16 +207,14 @@ export const GovernanceResourceDetails = ({
 							headingLevel={3}
 						/>
 					</TabsContent>
-					{entry.kind === "ENGINE" ? (
-						<TabsContent value="apps">
-							<EngineAppsTable
-								key={resourceId}
-								id={resourceId}
-								type={entry.type}
-								admin
-							/>
-						</TabsContent>
-					) : null}
+					<TabsContent value="apps">
+						<GrantedAppsTable
+							key={resourceId}
+							target={target}
+							type={entry.type}
+							admin
+						/>
+					</TabsContent>
 					{entry.kind === "ENGINE" ? (
 						<TabsContent value="engines">
 							<EngineEnginesTable
@@ -228,6 +225,15 @@ export const GovernanceResourceDetails = ({
 							/>
 						</TabsContent>
 					) : null}
+					<TabsContent value="uses-engines">
+						<AccessToEnginesTable
+							key={resourceId}
+							resourceType={entry.kind}
+							id={resourceId}
+							type={entry.type}
+							admin
+						/>
+					</TabsContent>
 					<TabsContent value="effective-permissions">
 						<EffectivePermissions
 							key={resourceId}

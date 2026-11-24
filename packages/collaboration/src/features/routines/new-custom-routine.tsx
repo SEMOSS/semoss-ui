@@ -115,8 +115,8 @@ export function NewCustomRoutine({
 							<H2 className="font-medium text-xl">New routine</H2>
 						</CardTitle>
 						<CardDescription>
-							Your assistant does this on your schedule and sends
-							the result only to you.
+							Your Digital Twin does this on your schedule and
+							sends the result only to you.
 						</CardDescription>
 					</div>
 				</div>

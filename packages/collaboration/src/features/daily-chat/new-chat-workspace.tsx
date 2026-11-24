@@ -34,6 +34,8 @@ interface NewChatWorkspaceProps {
 	isHero?: boolean;
 	/** The page is one agent's own, such as a Digital Twin's, so the agent cannot be changed. */
 	isAgentLocked?: boolean;
+	/** The page was opened to ask something, so the ask box takes the focus. */
+	isFocused?: boolean;
 	/** Suggested first messages for the empty composer. */
 	starterPrompts?: readonly ComposerPrompt[];
 }
@@ -50,6 +52,7 @@ export function NewChatWorkspace({
 	onSelectAgent,
 	isHero,
 	isAgentLocked,
+	isFocused,
 	starterPrompts,
 }: NewChatWorkspaceProps) {
 	useShowCurrentChat(session);
@@ -119,6 +122,7 @@ export function NewChatWorkspace({
 				isCompact
 				isHero={isHero}
 				isAgentLocked={isAgentLocked}
+				isFocused={isFocused}
 				starterPrompts={starterPrompts}
 				panelActions={[
 					{

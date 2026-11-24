@@ -62,7 +62,7 @@ const STEPS = [
 	{
 		id: "identity",
 		label: "Identity",
-		title: "Who is your Digital Twin?",
+		title: "Who is the new twin?",
 		description:
 			"Give it a name and a face. People see both when they chat with it.",
 		fields: ["image", "name"],
@@ -88,7 +88,7 @@ const STEPS = [
 		label: "Knowledge",
 		title: "What should it know?",
 		description:
-			"Choose the emails, Teams chats and files it answers from. Copies of them go into your Digital Twin when it is created, where the people you share it with can open them. You can also skip this and add them later.",
+			"Choose the emails, Teams chats and files it answers from. Copies of them go into the new twin when it is created, where the people you share it with can open them. You can also skip this and add them later.",
 		fields: [],
 	},
 	{
@@ -96,7 +96,7 @@ const STEPS = [
 		label: "Review",
 		title: "Ready to bring it to life?",
 		description:
-			"This is what you chose. Your Digital Twin stays private until you name the people who can chat with it.",
+			"This is what you chose. The new twin stays private until you name the people who can chat with it.",
 		fields: [],
 	},
 ] as const;
@@ -108,7 +108,7 @@ const SETUP: Record<
 	TwinSetupStep | "finish",
 	{ label: string; icon: LucideIcon }
 > = {
-	twin: { label: "Create your Digital Twin", icon: UserRound },
+	twin: { label: "Create the twin", icon: UserRound },
 	folder: { label: "Make room for what it knows", icon: FolderOpen },
 	greeting: { label: "Save its greeting", icon: MessageSquareText },
 	image: { label: "Upload its image", icon: ImageIcon },
@@ -271,7 +271,7 @@ export function TwinCreateWizard({
 				message:
 					cause instanceof Error
 						? cause.message
-						: "Your Digital Twin could not be created.",
+						: "The new twin could not be created.",
 			});
 			return;
 		}
@@ -292,7 +292,7 @@ export function TwinCreateWizard({
 		if (first >= 0 && first !== step) goTo(first);
 	};
 
-	const name = values.name.trim() || "Your Digital Twin";
+	const name = values.name.trim() || "New Twin";
 	const copied = knowledge.filter((item) => item.isCopied).length;
 	const skillNames = new Map(
 		availableSkills.map((skill) => [skill.id, skill.name]),
@@ -363,7 +363,7 @@ export function TwinCreateWizard({
 			step: KNOWLEDGE_STEP,
 			value:
 				describeTwinSources(knowledge.map((item) => item.source)) ||
-				"Nothing yet. You can add it once your Digital Twin is created.",
+				"Nothing yet. You can add it once the new twin is created.",
 		},
 	];
 	// where to go from the new twin, the thing it needs next last, as the one to press
@@ -526,14 +526,14 @@ export function TwinCreateWizard({
 								</span>
 							)}
 							<span className="min-w-0">
-								Create your Digital Twin
+								Create a Twin to Share
 							</span>
 						</span>
 					}
 					description="An AI that answers questions about you from the emails, Teams chats and files you copy into it. Each twin has its own knowledge and the people you choose to share it with."
 				/>
 				<ol
-					aria-label="Steps to create your Digital Twin"
+					aria-label="Steps to create a twin to share"
 					className="flex items-center gap-2"
 				>
 					{STEPS.map((entry, index) => (
@@ -739,7 +739,7 @@ export function TwinCreateWizard({
 							) : twinId ? (
 								"Finish setting up"
 							) : (
-								"Create Digital Twin"
+								"Create Twin"
 							)}
 						</Button>
 					</div>

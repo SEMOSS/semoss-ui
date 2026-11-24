@@ -1,6 +1,7 @@
 # Collaboration
 
-Personal SEMOSS assistant based on the [collaboration mockups](../../mockups).
+Personal SEMOSS workspace, led by each person's own Digital Twin, based on the
+[collaboration mockups](../../mockups).
 The landing overview brings together chat, your calendar, actions needing you,
 completed work, and Brain reviews. Work starts with topics and
 organizes each topic’s actions, source threads, and saved sessions. Brain holds people, topics,
@@ -92,23 +93,23 @@ with Actions, Threads, and Sessions alongside editable goals, people, notes, and
 filing signals. Existing Work and Brain topic links redirect to that workspace.
 Thread rows retain source details, calendar timing, and thread controls.
 
-Ask assistant opens the existing chat composer within the topic. Its draft is
-separate from the home composer and other topics, and survives hiding the
-assistant. Before the first message is sent, the room must be confirmed linked
+Ask about this topic holds the existing chat composer within the topic, where
+the owner asks their Digital Twin. Its draft is separate from the home composer
+and other topics. Before the first message is sent, the room must be confirmed linked
 to that topic. The agent receives the server's topic brief and can retrieve
 topic details, search its emails, and read source threads through the existing
 collaboration tools. A failed link retains the draft and room for retry.
 Archived and suggested topics must be set to Active or Dormant before starting
 a chat.
 
-On each turn the assistant receives open goals, including their IDs, from the
+On each turn the agent receives open goals, including their IDs, from the
 chat's topics and the confirmed topics of its included threads. When current
 evidence fulfills a goal, `CompleteGoal` marks it done automatically, saves the
 outcome as a short accomplishment without internal IDs or citations, and the
-assistant tells the owner. Successful tool results
+agent tells the owner. Successful tool results
 refresh the goal list. Plans, promises, and partial answers leave goals open.
 
-With memory enabled, the assistant also checks each turn for lasting preferences,
+With memory enabled, the owner's Digital Twin also checks each turn for lasting preferences,
 useful facts, and corrections stated by the owner. It uses `Remember` immediately,
 checks for existing memories, and updates them with `replaces` instead of creating
 duplicates. New and learned memories save automatically; changes to owner-written
@@ -198,9 +199,9 @@ same source share the pending import; subsequent openings create new rooms.
 Brain history follows all existing 100-message continuation pages. Connected
 Outlook, Teams, and calendar snapshots retain the bounds of their current APIs.
 Exclusions and ingestion rules apply before export; display-only HTML is never
-assistant context. Attachment names are included without downloading file bytes.
+agent context. Attachment names are included without downloading file bytes.
 The saved source file is queued for the first user request. Importing never starts
-an assistant request. Room options store only the source identity, saved file
+an agent request. Room options store only the source identity, saved file
 reference, and included message envelope metadata. No backend changes are needed.
 
 The room's standard transcript, composer, settings, and workbench replace the
@@ -246,8 +247,8 @@ tables. Reply/forward saving creates a native draft, prepends authored HTML to
 Outlook's quoted body, and updates that new draft before confirming success.
 Further saves create a new copy. Reply composers show editable To and Cc chips,
 initialized from the original reply-all envelope, honoring Reply-To and excluding
-the connected Microsoft account. Assistant context exclusions do not alter this
-envelope. Recipient edits survive panel reopening and assistant body revisions;
+the connected Microsoft account. Context exclusions do not alter this
+envelope. Recipient edits survive panel reopening and agent body revisions;
 empty lists explicitly clear recipients. Loading or unverified recipient defaults
 block saving, and the saved draft's envelope must match the reviewed addresses.
 Save draft never sends; uncertain saves require an Outlook check before another
@@ -256,10 +257,10 @@ attempt.
 Email-source rooms open the existing email reader in their workbench. Reply opens
 the existing editable draft form; choosing Reply again resumes that room's edits.
 The composer’s + menu includes View email to reopen the reader. Source selection
-is included in the next assistant message. Opening a room only reads permitted
-source messages and does not create a draft, send email, or request an assistant
+is included in the next message to the agent. Opening a room only reads permitted
+source messages and does not create a draft, send email, or request an agent
 response. Brain reads preserve current exclusions; Outlook reads verify the saved
-message identities. Assistant email tools also produce room-owned editable drafts.
+message identities. The agent's email tools also produce room-owned editable drafts.
 Every shared draft editor separates Save draft from explicit Send, including new
 emails. Sending first saves the reviewed envelope, then sends that exact draft
 identity. Uncertain delivery requires an Outlook check before retrying the same
@@ -269,7 +270,7 @@ Teams sending is unavailable.
 ## Source context and new sessions
 
 Work and Brain retain their source summaries, participant rules, topics, and
-action items independently of assistant rooms. A source import captures the
+action items independently of chat rooms. A source import captures the
 permitted messages at that moment. Its file identifies missing or bounded
 history and does not silently replace unavailable messages with sample content.
 
@@ -279,7 +280,7 @@ actions remain available through explicit prompts and tool results; restored
 draft proposals never open editor panels automatically.
 
 Thread readers opt in to `includeDisplayBody`; older callers default to plain
-text. Display bodies are session-only and excluded from assistant context. HTML
+text. Display bodies are session-only and excluded from agent context. HTML
 emails use DOMPurify and a script-free sandboxed iframe with an independent CSP;
 remote images require per-message consent. Teams uses sanitized app typography,
 quotes/code/mentions, and media placeholders. Display bodies cap at 128 Ki
@@ -300,32 +301,44 @@ Source readers retain explicit attachment downloads through the existing
 Microsoft APIs. Source snapshot imports include attachment names only. Files
 chosen for a room's composer use the room's ordinary upload and submission flow.
 
-## Writing style
+## Digital Twins
 
-Settings → About you holds **How you write**. Drafts use only the style the owner has confirmed; an
-unconfirmed or still-pending style never reaches the assistant, the frontend context, or the server prompt.
+"Digital Twin" names two things with opposite rules, and the wording keeps them apart.
 
-- **Learn from my writing** starts the `BrainLearnStyle` job (followed with `BrainGetJob(kind="style")`). It samples up
-  to 50 emails from the Sent folder and the owner's own chat messages from the last 30 days, skips forwards and anything
-  the owner's Brain rules keep out, and asks the classifier model (`COLLAB_CLASSIFIER_ENGINE_ID`) to keep only messages
-  written by a person. The text model (`COLLAB_LLM_ENGINE_ID`) then returns a summary, short excerpts and internal and
-  external variants. Excerpts must be found in the named sample, and a variant needs at least three samples.
-- The result is stored as a **pending proposal** (`style.pending`). The owner edits the summary, examples, and variants,
-  then confirms it (saved with `source: "learned"`) or discards it. Only the agreed content is retained.
-- **Audience variants** follow the recipients: an email is internal when every recipient belongs to the owner's
-  organisation (`BrainOrgDomains`) and external when any recipient is outside it. Before composing an email, the assistant
-  calls `GetWritingStyle` with the recipients and uses the returned confirmed style for that audience. Pending proposals
-  are excluded; the frontend does not inject a profile/style snapshot into each request.
-- **Re-learning** is manual. Learning again replaces only the pending proposal and never overwrites the confirmed style.
-- The general summary is optional. Saving a style with no summary, examples, or variants, or pressing **Reset style**
-  (with a confirmation), removes the whole style and any proposal; drafts then use no style.
-- Style changes are saved directly and awaited (`useStyleSave`), not through the background saver. Each save sends the
-  whole style, the session takes the style the server returns (`profile.style.server`), a success toast confirms it,
-  and a failure stays visible in the form with the owner's entries kept. The proposal is written by the server alone;
-  reviewing it clears it with `pending: null`.
-- The assistant reads `GetWritingStyle` before generating an email and calling `ComposeEmail`. Generic messages,
-  Teams chats, summaries, and factual lookups do not trigger email-style retrieval. A newly saved style is available
-  on the next tool call; existing drafts retain their text until edited or regenerated.
+- **Your Digital Twin** is each person's own twin, private to them. It is the seeded
+  Collaboration Agent (`collaboration-agent`) as that person sees it, under their own name
+  for it (`<First name>'s Digital Twin` until they rename it), their picture and their
+  persona. It is not a project and cannot be shared. It works with the owner's mail, Teams,
+  calendar, files, work and routines, and a chat that agent runs is a chat with it. In the
+  app, "your Digital Twin" always means this one.
+- **Twins You Share** are the agents a person builds from copies of emails, Teams chats and
+  files and shares with named people. Each answers only from what was copied into it and
+  never acts as its owner. The app calls one "this twin", "the new twin" while it is being
+  created, and several "the twins you share".
+- **Shared With You** lists the twins other people share with the signed-in person.
+
+Digital Twins (`/twins`) leads with Your Digital Twin, then Twins You Share, then Shared
+With You. A shared twin is managed at `/twins/mine`, its copies at `/twins/mine/contents`,
+and a chat with it starts at `/twins/chat`. Routines keep their "... agent" names; the
+Routines page says the owner's Digital Twin runs them. "Brain" stays the name of the part
+that reads and files mail.
+
+## Your persona
+
+Open Persona from the sidebar (`/persona`) or from Digital Twins (`/twins/persona`).
+Both routes edit the same persona. The interview returns to the route where it started.
+
+- **Persona** shows one section at a time. A section can hold prose or a list of points.
+  Use **Add point** to add an entry or **Edit** to change or remove entries. Saving updates
+  just that section.
+- **Usage** controls whether the owner's own Digital Twin uses their persona. With it on,
+  the twin weighs things the way the owner described and writes email and Teams drafts in
+  their voice; it still answers the owner in a plain voice. This is on by default, and the
+  drafts routines write follow the same switch. Each twin the owner shares has its own
+  persona switch in its profile.
+
+The owner's Digital Twin and the inbox daily brief use the enabled persona when writing for the owner.
+Changes apply to newly generated drafts. Settings → Email controls the font, signature and draft folder.
 
 ## Routes and ownership
 
@@ -335,15 +348,16 @@ unconfirmed or still-pending style never reaches the assistant, the frontend con
 | `/work` | Topic overview |
 | `/work/all`, `/work/waiting`, `/work/done` | Global work lists |
 | `/topics/:topicId` | Shared topic actions, threads, sessions, and editable context |
-| `/topics/:topicId/contents` | Full-screen page for adding and removing a topic's emails and chats by hand: the Outlook folder tree, what Brain has read, and the assistant chats |
+| `/topics/:topicId/contents` | Full-screen page for adding and removing a topic's emails and chats by hand: the Outlook folder tree, what Brain has read, and the Digital Twin chats |
 | `/work/topic/:topicId`, `/brain/topics/:topicId` | Redirects to the shared topic workspace |
 | `/thread/:id` | Source import bridge, or saved room when the identity starts with `room:` |
 | `/brain`, `/brain/sources` | Review and source readers/imports |
-| `/settings/about-you`, `/settings/appearance`, `/settings/rules`, `/settings/data` | Profile/VIPs, theme, context rules, and data reset |
-| `/brain/people`, `/brain/people/:personId` | People directory and detail |
+| `/settings/about-you`, `/settings/appearance`, `/settings/rules`, `/settings/data` | Profile, theme, context rules, and data reset |
+| `/brain/people`, `/brain/people/:personId` | People directory, VIPs first, and detail |
 | `/brain/threads`, `/brain/threads/:threadId` | Thread context directory and detail |
 
 `/room` redirects to Work; `/agents/*` redirects to Brain;
+`/brain/topics` redirects to the sidebar's Topics page (`/work/topics`);
 `/settings` and the legacy `/brain/profile` and `/settings/dashboard` links open Settings → About you.
 Settings categories support direct links and browser history. Unsaved profile and
 rule form entries survive category changes and are discarded when leaving Settings.

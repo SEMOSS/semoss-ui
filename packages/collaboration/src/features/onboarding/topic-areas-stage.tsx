@@ -36,6 +36,8 @@ interface TopicAreasStageProps {
 	changes: ReturnType<typeof useTopicReviewChanges>;
 	/** Save the draft before reading or changing conversations. */
 	onSave: () => Promise<TopicReview>;
+	/** Reload the saved draft after a conversation change did not go through. */
+	onReload: () => Promise<void>;
 	review: TopicReview;
 	values: TopicReviewDraft;
 	addedNames: Record<string, string>;
@@ -66,6 +68,7 @@ export function TopicAreasStage({
 	contacts,
 	changes,
 	onSave,
+	onReload,
 	review,
 	values,
 	addedNames,
@@ -318,6 +321,7 @@ export function TopicAreasStage({
 						contacts={contacts}
 						changes={changes}
 						onSave={onSave}
+						onReload={onReload}
 						others={kept
 							.filter((other) => other.key !== current.key)
 							.map((other) => ({
@@ -354,6 +358,8 @@ interface TopicDetailProps {
 	changes: ReturnType<typeof useTopicReviewChanges>;
 	/** Save the draft before reading or changing conversations. */
 	onSave: () => Promise<TopicReview>;
+	/** Reload the saved draft after a conversation change did not go through. */
+	onReload: () => Promise<void>;
 	/** Kept topics a conversation can move to. */
 	others: { key: string; name: string }[];
 	entry: Entry;
@@ -378,6 +384,7 @@ function TopicDetail({
 	contacts,
 	changes,
 	onSave,
+	onReload,
 	others,
 	entry,
 	review,
@@ -715,6 +722,7 @@ function TopicDetail({
 				isBusy={isBusy}
 				changes={changes}
 				onSave={onSave}
+				onReload={onReload}
 			/>
 
 			{value.keep && (evidence?.folderIds.length ?? 0) > 0 && (

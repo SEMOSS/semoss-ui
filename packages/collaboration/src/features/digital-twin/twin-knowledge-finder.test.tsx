@@ -91,7 +91,7 @@ function Host({
 		<TwinKnowledgeFinder
 			savedItems={{
 				isSaved: (itemKey) => held.includes(itemKey),
-				label: "In your Digital Twin",
+				label: "In This Twin",
 			}}
 			onSaved={async (file) => {
 				await onSaved(file);
@@ -105,7 +105,7 @@ async function find(prompt = "Everything about Apollo") {
 	const user = userEvent.setup();
 	await user.type(
 		screen.getByRole("textbox", {
-			name: "What should your Digital Twin know?",
+			name: "What Should This Twin Know?",
 		}),
 		prompt,
 	);
@@ -116,7 +116,7 @@ const group = (name: string) => screen.getByRole("region", { name });
 /** What is said above the list once all four of the server's suggestions are in it. */
 const foundAll = () =>
 	screen.findByText(
-		"4 suggestions. Add the ones your Digital Twin should answer from.",
+		"4 suggestions. Add the ones this twin should answer from.",
 	);
 
 beforeEach(() => {
@@ -159,7 +159,7 @@ it("asks what the twin should know before it searches anything", async () => {
 
 	await user.click(screen.getByRole("button", { name: "Find suggestions" }));
 	expect(
-		await screen.findByText("Say what your Digital Twin should know."),
+		await screen.findByText("Say what this twin should know."),
 	).toBeVisible();
 	expect(insight.actions.run).not.toHaveBeenCalled();
 });
@@ -217,7 +217,7 @@ it("lists what was found by kind with the reason for each, and marks what the tw
 	expect(emails[0]).toHaveTextContent("Sets the cutover date");
 	expect(emails[0]).toHaveTextContent("Confirmed for the 14th");
 	// held already: it says so in place of offering it again
-	expect(emails[1]).toHaveTextContent("In your Digital Twin");
+	expect(emails[1]).toHaveTextContent("In This Twin");
 	expect(within(emails[1]).queryByRole("button")).toBeNull();
 	expect(
 		within(group("Teams chats 1")).getByRole("listitem"),
@@ -280,7 +280,7 @@ it("adds a suggestion the way its own viewer saves it, and marks it once the hos
 	await waitFor(() =>
 		expect(
 			within(group("Files 1")).getByRole("listitem"),
-		).toHaveTextContent("In your Digital Twin"),
+		).toHaveTextContent("In This Twin"),
 	);
 	expect(save).toHaveBeenCalledExactlyOnceWith("insight-1", {
 		kind: "file",
@@ -359,7 +359,7 @@ it("says why a search failed and keeps what was asked, so it can be tried again"
 	).toBeNull();
 	expect(
 		screen.getByRole("textbox", {
-			name: "What should your Digital Twin know?",
+			name: "What Should This Twin Know?",
 		}),
 	).toHaveValue("Everything about Apollo");
 

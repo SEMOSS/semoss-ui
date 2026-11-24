@@ -301,6 +301,22 @@ export function reviewSession(
 			return packet(await getJob(statement));
 		} else if (statement.startsWith("BrainListPeople(")) {
 			return packet({ items: [] });
+		} else if (statement.startsWith("BrainGetTopicReviewEvidence(")) {
+			if (!saved) throw new Error("Review not found");
+			return packet({
+				reviewId: saved.id,
+				revision: saved.revision,
+				topicKey: JSON.parse(
+					statement.match(/topicKey=(\[[^\]]+\])/)?.[1] || "[]",
+				)[0],
+				items: [],
+				total: 0,
+				offset: 0,
+				hasMore: false,
+				hiddenOrUnavailable: 0,
+				limited: false,
+				scope: "",
+			});
 		} else if (statement.startsWith("BrainSaveTopicReview(")) {
 			if (!saved) throw new Error("Review not found");
 			const match = statement.match(/draft=(\[[\s\S]*\])\);$/);
@@ -381,10 +397,37 @@ export function reviewSession(
 	};
 }
 
-/** Moves on from the areas stage; each stage has its own Next button. */
+/**
+ * The draft once the owner set up its kept topics in the builder; leaving the builder keeps only
+ * the topics set up there, or saved before.
+ */
+export function setUpInBuilder<T extends ReviewWire>(review: T): T {
+	for (const topic of review.draft.topics)
+		if (topic.keep && !topic.mergedIntoKey) topic.built = true;
+	return review;
+}
+
+/** Leaves the builder for the Check stage. */
+export async function checkTopics(user: ReturnType<typeof userEvent.setup>) {
+	await press(user, "Check topics");
+	await screen.findByRole("heading", { name: "Check your topics" });
+}
+
+/** Opens a topic from the Check stage's list; its row starts with its name. */
+export async function openTopic(
+	user: ReturnType<typeof userEvent.setup>,
+	name: string,
+) {
+	await user.click(
+		screen.getByRole("button", { name: new RegExp(`^${name}( |$)`) }),
+	);
+	await screen.findByRole("region", { name });
+}
+
+/** Moves on from the Check stage; its Next button names the stage after it. */
 export async function nextStage(
 	user: ReturnType<typeof userEvent.setup>,
-	stage: "people" | "conversations",
+	stage: "done",
 ) {
 	await press(user, `Next: ${stage}`);
 }

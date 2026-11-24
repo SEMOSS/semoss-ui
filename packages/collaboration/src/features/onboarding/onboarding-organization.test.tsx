@@ -9,19 +9,17 @@ import userEvent from "@testing-library/user-event";
 import { StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { InsightActions } from "@/lib/pixel";
-import { makeEvidence } from "./topic-evidence.test-fixtures";
 import {
 	organizationReview,
 	organizationSession,
-	packet,
 } from "./topic-organization.test-fixtures";
 import {
+	checkTopics,
 	makeAreaReview,
 	nextStage,
-	press,
 	reviewSession,
+	setUpInBuilder,
 } from "./topic-review.test-fixtures";
-import type { SetupChange } from "./topic-setup-api";
 import { TopicsStep } from "./topics-step";
 
 function step(actions: InsightActions, onNext = vi.fn()) {
@@ -37,82 +35,36 @@ function step(actions: InsightActions, onNext = vi.fn()) {
 	);
 }
 
-const SAVED = { timeout: 3000 };
 // a right arrow, kept out of the source as a literal
 const ARROW = String.fromCharCode(8594);
 
-const change = (extra: Partial<SetupChange>): SetupChange => ({
-	type: "edit_topic",
-	topicKey: "",
-	topicKeys: [],
-	name: "",
-	description: "",
-	addTerms: [],
-	addPeople: [],
-	removePeople: [],
-	reason: "",
-	...extra,
-});
-
-/** The organization fixture plus a scripted chat reply and topics with no conversations. */
-function assistantSession(
-	changes: SetupChange[],
-	initial = organizationReview(),
-) {
-	const session = organizationSession(initial);
-	const run = vi.fn(async (statement: string) => {
-		if (statement.startsWith("BrainTopicReviewChat(")) {
-			if (!session.saved) throw new Error("Review not found");
-			return packet({
-				reviewId: session.saved.id,
-				revision: session.saved.revision,
-				reply: "Here is what I would change.",
-				changes,
-			});
-		}
-		if (statement.startsWith("BrainGetTopicReviewEvidence(")) {
-			if (!session.saved) throw new Error("Review not found");
-			const key = JSON.parse(
-				statement.match(/topicKey=(\[[^\]]+\])/)?.[1] || "[]",
-			)[0] as string;
-			return packet(makeEvidence(session.saved, key, { total: 0 }));
-		}
-		return session.run(statement);
-	});
-	return { session, run, actions: { run } as unknown as InsightActions };
+/** Opens the Check stage of a draft whose kept topics were set up in the builder. */
+async function openCheck(actions: InsightActions, onNext = vi.fn()) {
+	const user = userEvent.setup();
+	render(step(actions, onNext));
+	await screen.findByRole("heading", { name: "Your main areas of work" });
+	await checkTopics(user);
+	return user;
 }
 
-async function askAssistant(user: ReturnType<typeof userEvent.setup>) {
-	await user.click(screen.getByRole("button", { name: "Ask the assistant" }));
-	await user.type(
-		await screen.findByRole("textbox", {
-			name: "Message the setup assistant",
-		}),
-		"Recruiting is one area.",
-	);
-	await user.click(screen.getByRole("button", { name: "Send" }));
-}
-
+/** Ticks the two recruiting topics and opens the preview of combining them. */
 async function openCombinePreview(user: ReturnType<typeof userEvent.setup>) {
-	await askAssistant(user);
-	await user.click(await screen.findByRole("button", { name: "Apply" }));
+	await user.click(
+		screen.getByRole("checkbox", {
+			name: "Select UNC Recruiting to combine",
+		}),
+	);
+	await user.click(
+		screen.getByRole("checkbox", { name: "Select VCU Hiring to combine" }),
+	);
+	await user.click(screen.getByRole("button", { name: "Combine into one" }));
 	return screen.findByRole("dialog", {
 		name: "Review your grouping changes",
 	});
 }
 
-const combine = change({
-	type: "combine",
-	topicKeys: ["topic-1", "topic-2"],
-	name: "Recruiting",
-	description: "Recruiting across UNC and VCU.",
-	reason: "The same recruiting area.",
-});
-
 beforeEach(() => {
 	vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
-	// the setup chat keeps its messages per review, and every test here reuses one review id
-	sessionStorage.clear();
 });
 afterEach(() => {
 	cleanup();
@@ -124,20 +76,21 @@ const statements = (run: { mock: { calls: unknown[][] } }, reactor: string) =>
 		.map(([statement]) => String(statement))
 		.filter((statement) => statement.startsWith(`${reactor}(`));
 
-describe("regrouping areas without the assistant", () => {
+describe("regrouping areas", () => {
 	it("saves pending edits first, then regroups against the new revision", async () => {
-		const session = reviewSession(async () => makeAreaReview());
-		const user = userEvent.setup();
-		render(step(session.actions));
+		const session = reviewSession(async () =>
+			setUpInBuilder(makeAreaReview()),
+		);
+		const user = await openCheck(session.actions);
 		await user.click(
-			await screen.findByRole("checkbox", {
-				name: "Platform Operations",
-			}),
+			screen.getByRole("button", { name: "Take Bo Chen off" }),
 		);
 		await user.click(
 			screen.getByRole("button", { name: "Keep these separate" }),
 		);
-		await screen.findByRole("button", { name: "Combine into one topic" });
+		await screen.findByRole("button", {
+			name: "Combine back into one topic",
+		});
 		const calls = session.run.mock.calls.map(([statement]) => statement);
 		const save = calls.findIndex((statement) =>
 			statement.startsWith("BrainSaveTopicReview("),
@@ -150,23 +103,27 @@ describe("regrouping areas without the assistant", () => {
 		expect(calls[regroup]).toContain("revision=[2]");
 		// the earlier edit survives the regroup
 		expect(
-			screen.getByRole("checkbox", { name: "Platform Operations" }),
-		).not.toBeChecked();
+			screen.getByRole("button", { name: "Put Bo Chen back" }),
+		).toBeVisible();
 		expect(
-			session.saved?.draft.topics.find((topic) => topic.key === "topic-3")
-				?.keep,
-		).toBe(false);
+			session.saved?.draft.topics.find((topic) => topic.key === "topic-1")
+				?.removedPeople,
+		).toEqual(["p-2"]);
 	});
 
-	it("changes which topics the next steps list", async () => {
-		const session = reviewSession(async () => makeAreaReview());
-		const user = userEvent.setup();
-		render(step(session.actions));
-		await user.click(
-			await screen.findByRole("button", { name: "Keep these separate" }),
+	it("changes which topics the Done stage lists", async () => {
+		const session = reviewSession(async () =>
+			setUpInBuilder(makeAreaReview()),
 		);
-		await screen.findByRole("checkbox", { name: "VCU Hiring" });
-		await nextStage(user, "people");
+		const user = await openCheck(session.actions);
+		await user.click(
+			screen.getByRole("button", { name: "Keep these separate" }),
+		);
+		await screen.findByRole("checkbox", {
+			name: "Select VCU Hiring to combine",
+		});
+		await nextStage(user, "done");
+		await screen.findByRole("heading", { name: "Ready to file" });
 		expect(screen.getByText("UNC Recruiting")).toBeVisible();
 		expect(screen.getByText("VCU Hiring")).toBeVisible();
 		expect(screen.queryByText("Recruiting")).not.toBeInTheDocument();
@@ -174,27 +131,29 @@ describe("regrouping areas without the assistant", () => {
 		await user.click(screen.getByRole("button", { name: "Back" }));
 		await user.click(
 			await screen.findByRole("button", {
-				name: "Combine into one topic",
+				name: "Combine back into one topic",
 			}),
 		);
 		await screen.findByRole("button", { name: "Keep these separate" });
-		await nextStage(user, "people");
+		await nextStage(user, "done");
+		await screen.findByRole("heading", { name: "Ready to file" });
 		expect(screen.getByText("Recruiting")).toBeVisible();
 		expect(screen.queryByText("VCU Hiring")).not.toBeInTheDocument();
 		expect(screen.queryByText("UNC Recruiting")).not.toBeInTheDocument();
 	});
 
 	it("keeps the area as it was and says why when regrouping fails", async () => {
-		const session = reviewSession(async () => makeAreaReview());
+		const session = reviewSession(async () =>
+			setUpInBuilder(makeAreaReview()),
+		);
 		const run = vi.fn(async (statement: string) => {
 			if (statement.startsWith("BrainSetTopicArea("))
 				throw new Error("Could not regroup these topics");
 			return session.run(statement);
 		});
-		const user = userEvent.setup();
-		render(step({ run } as unknown as InsightActions));
+		const user = await openCheck({ run } as unknown as InsightActions);
 		await user.click(
-			await screen.findByRole("button", { name: "Keep these separate" }),
+			screen.getByRole("button", { name: "Keep these separate" }),
 		);
 		expect(await screen.findByRole("alert")).toHaveTextContent(
 			"Could not regroup these topics",
@@ -206,83 +165,31 @@ describe("regrouping areas without the assistant", () => {
 			screen.getByRole("button", { name: "Reload saved topics" }),
 		).toBeEnabled();
 		expect(
-			screen.queryByRole("checkbox", { name: "VCU Hiring" }),
+			screen.queryByRole("checkbox", {
+				name: "Select VCU Hiring to combine",
+			}),
 		).not.toBeInTheDocument();
 	});
 });
 
-describe("setup assistant", () => {
-	it("applies several proposed changes to the draft at once", async () => {
-		const { session, actions } = assistantSession([
-			change({
-				type: "edit_topic",
-				topicKey: "topic-1",
-				name: "Campus Hiring",
-				addTerms: ["campus"],
-			}),
-			change({ type: "skip", topicKey: "topic-3" }),
-			change({
-				type: "add_topic",
-				name: "Backend Hiring",
-				description: "Engineering recruiting.",
-			}),
-		]);
-		const user = userEvent.setup();
-		render(step(actions));
-		await screen.findByRole("heading", { name: "Your main areas of work" });
-		await askAssistant(user);
-		expect(await screen.findByText("Update UNC Recruiting")).toBeVisible();
-		expect(screen.getByText("Skip Northwind Delivery")).toBeVisible();
-		await user.click(screen.getByRole("button", { name: "Apply all" }));
-		const chat = screen.getByRole("dialog", { name: "Setup assistant" });
-		await waitFor(() =>
-			expect(within(chat).getAllByText("Done")).toHaveLength(3),
+describe("combining topics", () => {
+	it("previews a combination, then adds it to the draft and files it on Save", async () => {
+		const session = organizationSession(
+			setUpInBuilder(organizationReview()),
 		);
-		await user.keyboard("{Escape}");
-		expect(
-			await screen.findByRole("checkbox", { name: "Campus Hiring" }),
-		).toBeChecked();
-		expect(
-			screen.getByRole("checkbox", { name: "Northwind Delivery" }),
-		).not.toBeChecked();
-		expect(
-			screen.getByRole("checkbox", { name: "Backend Hiring" }),
-		).toBeChecked();
-		await waitFor(
-			() =>
-				expect(
-					session.saved?.draft.topics.map((topic) => [
-						topic.name,
-						topic.keep,
-					]),
-				).toEqual([
-					["Campus Hiring", true],
-					["VCU Hiring", true],
-					["Northwind Delivery", false],
-					["Backend Hiring", true],
-				]),
-			SAVED,
-		);
-		expect(session.saved?.draft.topics[0].terms).toBe("UNC\ncampus");
-		// the assistant proposes; only saving the topics applies anything
-		expect(session.saved?.appliedRevision).toBeNull();
-	});
-
-	it("previews a proposed combination, then adds it to the draft and files it on Save", async () => {
-		const { session, actions, run } = assistantSession([combine]);
 		const onNext = vi.fn();
-		const user = userEvent.setup();
-		render(step(actions, onNext));
-		await screen.findByRole("heading", { name: "Your main areas of work" });
+		const user = await openCheck(session.actions, onNext);
 		const preview = await openCombinePreview(user);
 		expect(
 			within(preview).getByText(`3 topics ${ARROW} 2 topics kept`),
 		).toBeVisible();
 		expect(
-			within(preview).getByRole("heading", { name: "Recruiting" }),
+			within(preview).getByRole("heading", { name: "UNC Recruiting" }),
 		).toBeVisible();
 		expect(session.saved?.appliedRevision).toBeNull();
-		expect(statements(run, "BrainChangeTopicReview")).toHaveLength(0);
+		expect(statements(session.run, "BrainChangeTopicReview")).toHaveLength(
+			0,
+		);
 
 		await user.click(
 			within(preview).getByRole("button", {
@@ -296,8 +203,7 @@ describe("setup assistant", () => {
 				}),
 			).not.toBeInTheDocument(),
 		);
-		await user.keyboard("{Escape}");
-		expect(await screen.findByText("2 topics kept")).toBeVisible();
+		expect((await screen.findAllByText("2 topics kept"))[0]).toBeVisible();
 		expect(
 			session.saved?.draft.topics.find(
 				(topic) => topic.key === "topic-2",
@@ -306,46 +212,21 @@ describe("setup assistant", () => {
 		expect(session.saved?.appliedRevision).toBeNull();
 		expect(session.afterApply).not.toHaveBeenCalled();
 
-		await nextStage(user, "people");
-		await nextStage(user, "conversations");
-		await press(user, "Looks right, next topic");
-		await press(user, "Looks right, finish");
+		await nextStage(user, "done");
 		await user.click(
 			await screen.findByRole("button", { name: "Save 2 topics" }),
 		);
 		await waitFor(() => expect(onNext).toHaveBeenCalledOnce());
 		expect(session.saved?.result.topics.map((topic) => topic.name)).toEqual(
-			["Recruiting", "Northwind Delivery"],
+			["UNC Recruiting", "Northwind Delivery"],
 		);
 		expect(session.saved?.result.merges).toHaveLength(1);
 	});
 
-	it("marks a proposed combination Done only once its preview is used", async () => {
-		const { actions } = assistantSession([combine]);
-		const user = userEvent.setup();
-		render(step(actions));
-		await screen.findByRole("heading", { name: "Your main areas of work" });
-		const preview = await openCombinePreview(user);
-		await user.click(
-			within(preview).getByRole("button", { name: "Back to topics" }),
-		);
-		const chat = screen.getByRole("dialog", { name: "Setup assistant" });
-		// only its preview opened, so the combination is still on offer
-		expect(within(chat).queryByText("Done")).not.toBeInTheDocument();
-
-		await user.click(within(chat).getByRole("button", { name: "Apply" }));
-		await user.click(
-			within(
-				await screen.findByRole("dialog", {
-					name: "Review your grouping changes",
-				}),
-			).getByRole("button", { name: "Use this grouping in my draft" }),
-		);
-		expect(await within(chat).findByText("Done")).toBeVisible();
-	});
-
 	it("shows a blocked combination honestly and does not change the draft", async () => {
-		const { session, actions } = assistantSession([combine]);
+		const session = organizationSession(
+			setUpInBuilder(organizationReview()),
+		);
 		session.afterPreview.mockImplementationOnce(async (preview) => ({
 			...preview,
 			groups: preview.groups.map((group) => ({
@@ -354,9 +235,7 @@ describe("setup assistant", () => {
 				reason: "Saved Teams links need exchange-aware combination.",
 			})),
 		}));
-		const user = userEvent.setup();
-		render(step(actions));
-		await screen.findByRole("heading", { name: "Your main areas of work" });
+		const user = await openCheck(session.actions);
 		const preview = await openCombinePreview(user);
 		expect(
 			within(preview).getByText(/Saved Teams links need/),
@@ -370,13 +249,13 @@ describe("setup assistant", () => {
 	});
 
 	it("recovers a committed combination after a lost response before anything older is saved", async () => {
-		const { session, actions, run } = assistantSession([combine]);
+		const session = organizationSession(
+			setUpInBuilder(organizationReview()),
+		);
 		session.afterChange.mockRejectedValueOnce(
 			new Error("Connection lost after grouping was saved"),
 		);
-		const user = userEvent.setup();
-		render(step(actions));
-		await screen.findByRole("heading", { name: "Your main areas of work" });
+		const user = await openCheck(session.actions);
 		const preview = await openCombinePreview(user);
 		await user.click(
 			within(preview).getByRole("button", {
@@ -389,27 +268,14 @@ describe("setup assistant", () => {
 		await user.click(
 			within(preview).getByRole("button", { name: "Back to topics" }),
 		);
-		await user.keyboard("{Escape}");
 		await user.click(await screen.findByRole("button", { name: "Retry" }));
-		expect(await screen.findByText("2 topics kept")).toBeVisible();
+		expect((await screen.findAllByText("2 topics kept"))[0]).toBeVisible();
 		// the server already had it, so the change is not sent twice
-		expect(statements(run, "BrainChangeTopicReview")).toHaveLength(1);
-		expect(statements(run, "BrainGetTopicReview")).toHaveLength(1);
-		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-	});
-
-	it("tells you when a proposal no longer fits your topics", async () => {
-		const { actions } = assistantSession([
-			change({ type: "skip", topicKey: "topic-unknown" }),
-		]);
-		const user = userEvent.setup();
-		render(step(actions));
-		await screen.findByRole("heading", { name: "Your main areas of work" });
-		await askAssistant(user);
-		await user.click(await screen.findByRole("button", { name: "Apply" }));
-		expect(await screen.findByRole("alert")).toHaveTextContent(
-			"no longer fits your topics",
+		expect(statements(session.run, "BrainChangeTopicReview")).toHaveLength(
+			1,
 		);
+		expect(statements(session.run, "BrainGetTopicReview")).toHaveLength(1);
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 	});
 });
 
@@ -434,22 +300,11 @@ describe("saved topics that changed during setup", () => {
 	it.each(["saved", "draft"] as const)(
 		"holds Save until you choose the %s profile",
 		async (choice) => {
-			const initial = organizationReview();
+			const initial = setUpInBuilder(organizationReview());
 			initial.profileConflicts = [conflict];
-			const { session, actions } = assistantSession([], initial);
-			const user = userEvent.setup();
-			render(step(actions));
-			await screen.findByRole("heading", {
-				name: "Your main areas of work",
-			});
-			await nextStage(user, "people");
-			await nextStage(user, "conversations");
-			for (const name of [
-				"Looks right, next topic",
-				"Looks right, next topic",
-				"Looks right, finish",
-			])
-				await press(user, name);
+			const session = organizationSession(initial);
+			const user = await openCheck(session.actions);
+			await nextStage(user, "done");
 			expect(
 				await screen.findByText("Saved topics changed during setup"),
 			).toBeVisible();

@@ -509,6 +509,11 @@ describe("CollaborationFrame", () => {
 		expect(navigation).toHaveClass("w-16");
 		await act(() => router.navigate("/twins/persona"));
 		expect(navigation).toHaveClass("w-64");
+		// the same behind the door the sidebar opens
+		await act(() => router.navigate("/persona/interview?go=more"));
+		expect(navigation).toHaveClass("w-16");
+		await act(() => router.navigate("/persona"));
+		expect(navigation).toHaveClass("w-64");
 	});
 
 	it("moves focus out of the sidebar when a room opens and its session links collapse", async () => {

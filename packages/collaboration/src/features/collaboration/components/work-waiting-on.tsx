@@ -38,40 +38,47 @@ export function WorkWaitingOn({ waits, onViewAll }: WorkWaitingOnProps) {
 			</P>
 			{waits.length ? (
 				<ul className="divide-y divide-border">
-					{waits.slice(0, SHOWN).map((wait) => (
-						<li
-							key={wait.id}
-							className="space-y-2 py-4 first:pt-0 last:pb-0"
-						>
-							<div className="flex items-center gap-3">
-								{wait.who ? (
-									<PersonAvatar
-										name={wait.who}
-										className="size-8"
-									/>
-								) : (
-									<span
-										aria-hidden="true"
-										className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground"
-									>
-										<Users className="size-4" />
-									</span>
-								)}
-								<span className="min-w-0 truncate font-medium">
-									{wait.who || "Someone"}
-								</span>
-							</div>
-							<Link
-								to={wait.to}
-								className="wrap-anywhere block rounded-sm py-0.5 text-sm hover:underline focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
+					{waits.slice(0, SHOWN).map((wait) => {
+						const hasDistinctTitle =
+							wait.title.trim().toLowerCase() !==
+							wait.text.trim().toLowerCase();
+						return (
+							<li
+								key={wait.id}
+								className="space-y-1.5 py-4 first:pt-0 last:pb-0"
 							>
-								{wait.title}
-							</Link>
-							<P className="wrap-anywhere text-muted-foreground text-sm">
-								{wait.text}
-							</P>
-						</li>
-					))}
+								<div className="flex items-center gap-3">
+									{wait.who ? (
+										<PersonAvatar
+											name={wait.who}
+											className="size-8"
+										/>
+									) : (
+										<span
+											aria-hidden="true"
+											className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground"
+										>
+											<Users className="size-4" />
+										</span>
+									)}
+									<span className="min-w-0 truncate font-medium">
+										{wait.who || "Someone"}
+									</span>
+								</div>
+								<Link
+									to={wait.to}
+									className="wrap-anywhere block rounded-sm py-0.5 font-medium text-sm hover:underline focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
+								>
+									{wait.text}
+								</Link>
+								{hasDistinctTitle ? (
+									<P className="wrap-anywhere text-muted-foreground text-xs">
+										{wait.title}
+									</P>
+								) : null}
+							</li>
+						);
+					})}
 				</ul>
 			) : null}
 			{waits.length ? (

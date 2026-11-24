@@ -38,6 +38,9 @@ const MINE =
 	'MyProjects(projectType=["WORKSPACE"], metaFilters=[{"digital_twin":["true"]}], noMeta=[true], effectivePermissions=[1], createdByMe=[true]);';
 const ALL =
 	'MyProjects(projectType=["WORKSPACE"], metaFilters=[{"digital_twin":["true"]}], noMeta=[true]);';
+// one twin's row in that list, the only read that names who a twin is of
+const OWNER =
+	'MyProjects(projectType=["WORKSPACE"], metaFilters=[{"digital_twin":["true"]}], noMeta=[true], project=["twin-1"], limit=[1]);';
 
 // an agent as GetWorkspace answers, with everything the twin form does not show set
 const WORKSPACE = {
@@ -209,25 +212,70 @@ describe("finding twins", () => {
 	});
 
 	it.each(["manage", "add", "read"] as const)(
-		"loads the twin and its %s chat capability in one request",
+		"loads the twin with its %s chat capability, and whose twin it is beside it",
 		async (access) => {
 			const { actions, ran } = transport({
 				GetWorkspace: {
 					...WORKSPACE,
 					digital_twin_file_access: access,
 				},
+				[OWNER]: [
+					{
+						project_id: "twin-1",
+						project_name: "robin",
+						digital_twin_owner_name: " Robin Hale ",
+					},
+				],
 			});
 			await expect(
 				getTwinChatWelcome(actions, "twin-1"),
-			).resolves.toMatchObject({
-				agent: { workspace_id: "twin-1", name: "Robin Twin" },
+			).resolves.toEqual({
+				agent: expect.objectContaining({
+					workspace_id: "twin-1",
+					name: "Robin Twin",
+				}),
 				fileAccess: access,
+				ownerName: "Robin Hale",
 			});
 			expect(ran()).toEqual([
 				'GetWorkspace(workspaceId=["twin-1"], includeDigitalTwinFileAccess=[true]);',
+				OWNER,
 			]);
 		},
 	);
+
+	it.each([
+		{ why: "the list is refused", rows: new Error("List unavailable") },
+		{ why: "the list has another shape", rows: { rows: [] } },
+		{
+			why: "the list answers with another twin",
+			rows: [
+				{
+					project_id: "another",
+					project_name: "dana",
+					digital_twin_owner_name: "Dana Ortiz",
+				},
+			],
+		},
+		{
+			why: "the server cannot tell who made the twin",
+			rows: [
+				{
+					project_id: "twin-1",
+					project_name: "robin",
+					digital_twin_owner_name: null,
+				},
+			],
+		},
+	])("opens the chat with no owner's name when $why", async ({ rows }) => {
+		const { actions } = transport({
+			GetWorkspace: { ...WORKSPACE, digital_twin_file_access: "read" },
+			[OWNER]: rows,
+		});
+		const welcome = await getTwinChatWelcome(actions, "twin-1");
+		expect(welcome.fileAccess).toBe("read");
+		expect(welcome.ownerName).toBeUndefined();
+	});
 
 	it.each([
 		{
@@ -250,7 +298,9 @@ describe("finding twins", () => {
 			await expect(
 				getTwinChatWelcome(actions, "twin-1"),
 			).resolves.toMatchObject({ fileAccess: access });
-			expect(ran()[1]).toBe(
+			// after the twin and its owner's name, which are read together
+			expect(ran()).toHaveLength(3);
+			expect(ran()[2]).toBe(
 				'MyProjects(projectType=["WORKSPACE"], metaFilters=[{"digital_twin":["true"]}], noMeta=[true], project=["twin-1"], createdByMe=[true], effectivePermissions=[1,2], limit=[1]);',
 			);
 		},
@@ -263,7 +313,11 @@ describe("finding twins", () => {
 		await expect(
 			getTwinChatWelcome(actions, "twin-1"),
 		).resolves.toMatchObject({ fileAccess: "read" });
-		expect(ran()).toHaveLength(1);
+		// the twin and its owner's name; no ownership read
+		expect(ran()).toEqual([
+			expect.stringMatching(/^GetWorkspace\(/),
+			OWNER,
+		]);
 	});
 
 	it("skips ownership reads for missing and inaccessible twins", async () => {
@@ -277,7 +331,11 @@ describe("finding twins", () => {
 		await expect(getTwinChatWelcome(actions, "twin-1")).rejects.toThrow(
 			"Access denied",
 		);
-		expect(ran()).toHaveLength(1);
+		// the owner's name is asked for beside the twin, not after it
+		expect(ran()).toEqual([
+			expect.stringMatching(/^GetWorkspace\(/),
+			OWNER,
+		]);
 	});
 });
 
@@ -410,7 +468,7 @@ describe("creating a twin", () => {
 		expect(failure).toBeInstanceOf(TwinSetupError);
 		expect((failure as TwinSetupError).twinId).toBe("twin-9");
 		expect((failure as TwinSetupError).message).toBe(
-			"Your Digital Twin was created, but your persona could not be switched off for it: It is not yours.",
+			"The new twin was created, but your persona could not be switched off for it: It is not yours.",
 		);
 	});
 
@@ -468,7 +526,7 @@ describe("creating a twin", () => {
 		).catch((cause: unknown) => cause);
 		expect(failure).toBeInstanceOf(TwinSetupError);
 		expect((failure as TwinSetupError).message).toBe(
-			'Your Digital Twin was created, but not everything you chose could be added: "Budget review.md": The file is gone.',
+			'The new twin was created, but not everything you chose could be added: "Budget review.md": The file is gone.',
 		);
 		expect((failure as TwinSetupError).twinId).toBe("twin-1");
 		// the one after the failure was still copied, and only it is reported as in
@@ -501,7 +559,7 @@ describe("creating a twin", () => {
 		).rejects.toMatchObject({
 			twinId: "twin-1",
 			message:
-				"Your Digital Twin was created, but your note could not be saved: The disk is full.",
+				"The new twin was created, but your note could not be saved: The disk is full.",
 		});
 	});
 
@@ -517,7 +575,7 @@ describe("creating a twin", () => {
 		expect(failure).toMatchObject({
 			twinId: "twin-1",
 			message:
-				"Your Digital Twin was created, but its files folder could not be made: The disk is full.",
+				"The new twin was created, but its files folder could not be made: The disk is full.",
 		});
 		expect(ran()).toHaveLength(2);
 	});
@@ -536,7 +594,7 @@ describe("creating a twin", () => {
 		).rejects.toMatchObject({
 			twinId: "twin-1",
 			message:
-				"Your Digital Twin was created, but its image could not be uploaded: Choose a PNG, JPEG, or GIF image.",
+				"The new twin was created, but its image could not be uploaded: Choose a PNG, JPEG, or GIF image.",
 		});
 	});
 

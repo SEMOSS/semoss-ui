@@ -86,7 +86,7 @@ export function CollaborationNavigationHeader({
 							/>
 						</Button>
 					</TooltipTrigger>
-					<TooltipContent side="right">{toggleLabel}</TooltipContent>
+					<TooltipContent side="bottom">{toggleLabel}</TooltipContent>
 				</Tooltip>
 			)}
 		</div>

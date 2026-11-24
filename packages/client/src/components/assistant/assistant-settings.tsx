@@ -99,7 +99,6 @@ export const AssistantSettings = () => {
 
 	const fieldId = useId();
 	const agentId = `${fieldId}-agent`;
-	const agentDescriptionId = `${fieldId}-agent-description`;
 	const maxTurnsId = `${fieldId}-max-turns`;
 	const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
 	const [isCompacting, setIsCompacting] = useState(false);
@@ -157,7 +156,6 @@ export const AssistantSettings = () => {
 					</div>
 					<ProjectSelect
 						id={agentId}
-						aria-describedby={agentDescriptionId}
 						className="h-9 shadow-xs"
 						name={agentName}
 						value={selectedAgent.workspace_id}

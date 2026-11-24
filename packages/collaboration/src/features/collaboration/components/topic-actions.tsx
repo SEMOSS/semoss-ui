@@ -93,7 +93,7 @@ export function TopicActions({
 					)}
 					{onManageChats && (
 						<DropdownMenuItem onSelect={onManageChats}>
-							Add or remove assistant chats...
+							Add or Remove Digital Twin Chats...
 						</DropdownMenuItem>
 					)}
 					{onManageFiles && (

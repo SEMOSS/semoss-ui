@@ -182,6 +182,29 @@ export const setProjectTemplate = async (
 	return post<{ success: boolean }>(url, postData, {});
 };
 
+/**
+ * Set whether a project's portal has its own login page, so the portal is
+ * served to signed out visitors for them to sign in there. Without one, only
+ * signed in users who can view the project get its portal.
+ *
+ * @param admin - whether to set it as an admin, on any project
+ * @param projectId - the project
+ * @param hasCustomLogin - whether the portal has its own login page
+ * @returns whether the setting was saved
+ */
+export const setProjectCustomLogin = async (
+	admin: boolean,
+	projectId: string,
+	hasCustomLogin: boolean,
+) => {
+	const url = `${Env.MODULE}/api/auth/${admin ? "admin/" : ""}project/setProjectCustomLogin`;
+	return post<{ success: boolean }>(
+		url,
+		{ projectId, customLogin: hasCustomLogin },
+		{},
+	);
+};
+
 export const setProjectVisiblity = async (admin, appId, visible) => {
 	let url = `${Env.MODULE}/api/auth/`;
 

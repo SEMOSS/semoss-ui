@@ -535,7 +535,9 @@ describe("RoutinesWorkspace", () => {
 			"srcdoc",
 			expect.stringContaining("Suggested priorities"),
 		);
-		await user.click(screen.getByRole("button", { name: "Ask Assistant" }));
+		await user.click(
+			screen.getByRole("button", { name: "Ask Your Digital Twin" }),
+		);
 		await autosave();
 		expect(service.actions.run).toHaveBeenCalledExactlyOnceWith(
 			expect.stringContaining("WorkOpenRoutineRoom"),
