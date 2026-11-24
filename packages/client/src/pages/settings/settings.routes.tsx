@@ -7,6 +7,7 @@ import { AdminTeamDetailPage } from "./admin-team-detail.page";
 import { AdminTeamsPage } from "./admin-teams.page";
 import { AdminThemePage } from "./admin-theme-page";
 import { AgentRunsPage } from "./agent-runs.page";
+import { AllResourceDelegatedAccessPage } from "./all-resource-delegated-access.page";
 import { AuditTrailPage } from "./audit-trail.page";
 import { ConfigurationsPage } from "./configurations-page";
 import { EnterpriseUsagePage } from "./enterprise-usage.page";
@@ -18,6 +19,7 @@ import { MemberSettingsPage } from "./member-settings-page";
 import { MyFilesPage } from "./my-files-page";
 import { MyProfilePage } from "./my-profile.page";
 import { RDFMapPage } from "./rdf-map-page";
+import { ResourceDelegatedAccessPage } from "./resource-delegated-access.page";
 import { ResourceGovernancePage } from "./resource-governance-page";
 import { ServiceAccountsSettingsPage } from "./service-accounts-settings-page";
 import { SETTINGS_ROUTES } from "./settings.constants";
@@ -29,6 +31,8 @@ import { TeamAccessManagementPage } from "./team-access-management.page";
 const SETTINGS_COMPONENTS: Record<string, ComponentType> = {
 	"": SettingsIndexPage,
 	members: MemberSettingsPage,
+	"resource-delegated-access": ResourceDelegatedAccessPage,
+	"all-resource-delegated-access": AllResourceDelegatedAccessPage,
 	resources: ResourceGovernancePage,
 	"resources/:type": ResourceGovernancePage,
 	"resources/:type/:id": ResourceGovernancePage,

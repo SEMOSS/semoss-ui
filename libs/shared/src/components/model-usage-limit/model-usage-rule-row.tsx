@@ -3,6 +3,7 @@ import { useTranslation } from "@semoss/i18n";
 import type { ModelUsageCounts, ModelUsageMetric } from "@semoss/sdk";
 import {
 	Button,
+	Input,
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
@@ -59,7 +60,9 @@ interface ModelUsageRuleRowProps {
 /**
  * One rule of a usage limit: its amount, what it counts, its window and, for a
  * team, an app or public use, whose use it counts. A minute or hour window has
- * a length beside it, so the rule reads "every 10 minutes".
+ * "Every" and a length before it, kept on one line with the window's units, so
+ * the rule reads "Every 10 Minutes". The length is a box of its own, so a click
+ * puts the caret where it lands.
  */
 export const ModelUsageRuleRow = ({
 	draft,
@@ -202,74 +205,80 @@ export const ModelUsageRuleRow = ({
 						)}
 					</SelectContent>
 				</Select>
-				{isLengthShown ? (
-					<InputGroup className="w-28">
-						<InputGroupAddon>
-							{t("usageLimit.rule.every")}
-						</InputGroupAddon>
-						<InputGroupInput
-							inputMode="numeric"
-							aria-label={t("usageLimit.rule.windowLength", {
-								number,
-							})}
-							// marked only while the row shows a problem, which is this
-							// one or an earlier one such as a missing amount
-							aria-invalid={
-								problem !== null && lengthProblem !== null
-							}
-							aria-describedby={
-								isLengthTheProblem ? problemId : undefined
-							}
-							value={draft.lengthText}
-							onChange={(e) =>
-								onChange({
-									...draft,
-									lengthText: cleanLengthInput(
-										e.target.value,
-									),
-								})
-							}
-							onBlur={() => {
-								const lengthText = clampLengthInput(
-									draft.window,
-									draft.lengthText,
-								);
-								if (lengthText !== draft.lengthText) {
-									onChange({ ...draft, lengthText });
+				<div className="flex shrink-0 items-center gap-2">
+					{isLengthShown ? (
+						<>
+							<span className="text-sm">
+								{t("usageLimit.rule.every")}
+							</span>
+							<Input
+								className="w-16"
+								inputMode="numeric"
+								aria-label={t("usageLimit.rule.windowLength", {
+									number,
+								})}
+								// marked only while the row shows a problem, which is this
+								// one or an earlier one such as a missing amount
+								aria-invalid={
+									problem !== null && lengthProblem !== null
 								}
-							}}
-						/>
-					</InputGroup>
-				) : null}
-				<Select value={draft.window} onValueChange={handleWindowChange}>
-					<SelectTrigger
-						size="sm"
-						className="w-32"
-						aria-label={t("usageLimit.rule.window", { number })}
+								aria-describedby={
+									isLengthTheProblem ? problemId : undefined
+								}
+								value={draft.lengthText}
+								onChange={(e) =>
+									onChange({
+										...draft,
+										lengthText: cleanLengthInput(
+											e.target.value,
+										),
+									})
+								}
+								onBlur={() => {
+									const lengthText = clampLengthInput(
+										draft.window,
+										draft.lengthText,
+									);
+									if (lengthText !== draft.lengthText) {
+										onChange({ ...draft, lengthText });
+									}
+								}}
+							/>
+						</>
+					) : null}
+					<Select
+						value={draft.window}
+						onValueChange={handleWindowChange}
 					>
-						{/* after "Every" and a length, the window reads as its units. The
-						label is always given, so the select never copies the chosen
-						item's text into the same node, which can leave it blank when
-						the window changes between the two */}
-						<SelectValue>
-							{isLengthShown
-								? t(
-										`usageLimit.rule.windowUnits.${draft.window}`,
-										{
-											count: lengthCount,
-										},
-									)
-								: t(`usageLimit.windows.${draft.window}`)}
-						</SelectValue>
-					</SelectTrigger>
-					<SelectContent>
-						{MODEL_USAGE_WINDOWS.map((window) => (
-							<SelectItem key={window} value={window}>
-								{t(`usageLimit.windows.${window}`)}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
+						<SelectTrigger
+							size="sm"
+							className="w-32"
+							aria-label={t("usageLimit.rule.window", { number })}
+						>
+							{/* after "Every" and a length, the window reads as its units. The
+							label is always given, so the select never copies the chosen
+							item's text into the same node, which can leave it blank when
+							the window changes between the two */}
+							<SelectValue>
+								{isLengthShown
+									? t(
+											`usageLimit.rule.windowUnits.${draft.window}`,
+											{
+												count: lengthCount,
+											},
+										)
+									: t(`usageLimit.windows.${draft.window}`)}
+							</SelectValue>
+						</SelectTrigger>
+						<SelectContent>
+							{MODEL_USAGE_WINDOWS.map((window) => (
+								<SelectItem key={window} value={window}>
+									{t(`usageLimit.windows.${window}`)}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
 				{countsOffered.length > 1 ? (
 					<Select
 						value={draft.counts}
