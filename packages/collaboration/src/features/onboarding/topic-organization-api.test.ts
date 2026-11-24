@@ -110,6 +110,29 @@ describe("topic organization contracts", () => {
 		).toBe(false);
 	});
 
+	it("accepts the group limit and reports an oversized collection before invalid group fields", () => {
+		const groups = Array.from({ length: 100 }, (_, index) => ({
+			topicKeys: [`topic-${index}`],
+			targetKey: `topic-${index}`,
+			name: `Topic ${index}`,
+			description: "",
+			terms: "",
+		}));
+		expect(topicOrganizationGroupsSchema.safeParse(groups).success).toBe(
+			true,
+		);
+
+		const result = topicOrganizationGroupsSchema.safeParse([...groups, {}]);
+		expect(result.success).toBe(false);
+		expect(result.error?.issues).toEqual([
+			expect.objectContaining({
+				code: "too_big",
+				path: [],
+				maximum: 100,
+			}),
+		]);
+	});
+
 	it("validates distinctive clue limits and deduplicates case variants across supported line separators", () => {
 		expect(topicClues(" UNC \r\nunc\u2028VCU\n\n")).toEqual(["UNC", "VCU"]);
 		expect(topicCluesSchema.safeParse("a".repeat(201)).success).toBe(false);

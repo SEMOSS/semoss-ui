@@ -1,4 +1,5 @@
 import createDOMPurify, { type Config, type DOMPurify } from "dompurify";
+import { uncommentHtmlStyles } from "@semoss/utility/browser";
 import type { MailDisplayBody, MailInlineImage } from "./mail.types";
 
 /** Elements an email body never keeps: active content, forms, and other documents. */
@@ -64,31 +65,6 @@ const UNSHOWN_DOCUMENT: MailHtmlDocument = {
 	hasRemoteImages: false,
 	hasEmbeddedImages: false,
 	hasQuotedHistory: false,
-};
-
-/**
- * Take the comment markers out of an email's style elements. Outlook writes
- * its CSS inside an HTML comment, for mail readers older than CSS, and the
- * sanitizer reads a comment there as markup and drops the whole style with
- * every rule in it. The email is read into an inert document for this, so no
- * pattern has to find where a style ends.
- *
- * @param html - The email's HTML body.
- * @return The HTML, its styles' comment markers taken out.
- */
-const uncommentStyles = (html: string): string => {
-	if (!html.includes("<!--")) {
-		return html;
-	}
-	const doc = new DOMParser().parseFromString(html, "text/html");
-	const styles = doc.querySelectorAll("style");
-	if (styles.length === 0) {
-		return html;
-	}
-	for (const style of styles) {
-		style.textContent = (style.textContent ?? "").replace(/<!--|-->/g, "");
-	}
-	return doc.documentElement.outerHTML;
 };
 
 /**
@@ -220,7 +196,7 @@ const readContentId = (src: string): string | undefined => {
  */
 const parseMailHtml = (html: string): Document => {
 	const doc = new DOMParser().parseFromString(
-		getMailPurifier().sanitize(uncommentStyles(html), SANITIZE_CONFIG),
+		getMailPurifier().sanitize(uncommentHtmlStyles(html), SANITIZE_CONFIG),
 		"text/html",
 	);
 	for (const element of doc.querySelectorAll("[background]")) {

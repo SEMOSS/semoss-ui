@@ -1,6 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, expectTypeOf, it } from "vitest";
+import { type FieldValues, type z, zodResolver } from "@semoss/ui/next";
 import {
 	DATABASE_RUN_OPTIONS_SCHEMA,
+	type DatabaseRunOptionsInput,
 	TIMEOUT_PROBLEM,
 } from "./database-run-options";
 
@@ -25,6 +27,29 @@ describe("database run options", () => {
 				timeout: "",
 			}),
 		).toEqual({ isOneTransaction: true, timeoutSeconds: undefined });
+	});
+
+	it("preserves generic schema input types and resolves transformed run options", async () => {
+		const createResolver = <
+			Schema extends z.ZodType<FieldValues, FieldValues>,
+		>(
+			schema: Schema,
+		) => zodResolver(schema);
+		const resolver = createResolver(DATABASE_RUN_OPTIONS_SCHEMA);
+
+		expectTypeOf(resolver)
+			.parameter(0)
+			.toEqualTypeOf<DatabaseRunOptionsInput>();
+		expect(
+			await resolver(
+				{ isOneTransaction: true, timeout: " 30 " },
+				undefined,
+				{ fields: {}, shouldUseNativeValidation: false },
+			),
+		).toEqual({
+			errors: {},
+			values: { isOneTransaction: true, timeoutSeconds: 30 },
+		});
 	});
 
 	it.each(["0", "-5", "1.5", "ten", "2147483648"])(

@@ -4,10 +4,6 @@
       "path": "../"
     },
     {
-      "name": "cli",
-      "path": "../packages/cli"
-    },
-    {
       "name": "client",
       "path": "../packages/client"
     },
