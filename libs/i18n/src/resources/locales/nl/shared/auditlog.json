@@ -26,7 +26,8 @@
 			"last7Days": "Laatste 7 dagen",
 			"last30Days": "Laatste 30 dagen",
 			"custom": "Aangepast"
-		}
+		},
+		"accessReason": "Toegang"
 	},
 	"summary": {
 		"events": "Gebeurtenissen",
@@ -64,7 +65,8 @@
 			"timestamp": "Tijdstempel",
 			"status": "Status",
 			"guardrailAction": "Guardrail",
-			"billedTo": "Gefactureerd aan"
+			"billedTo": "Gefactureerd aan",
+			"access": "Toegang"
 		},
 		"guardrailActions": {
 			"MASK": "Gemaskeerd",
@@ -107,7 +109,8 @@
 			"span": "Span",
 			"session": "Sessie",
 			"request": "Verzoek",
-			"response": "Antwoord"
+			"response": "Antwoord",
+			"access": "Toegang"
 		}
 	},
 	"detail": {
@@ -136,7 +139,8 @@
 			"spanId": "Span-ID",
 			"request": "Verzoek",
 			"response": "Antwoord",
-			"billedTo": "Gefactureerd aan"
+			"billedTo": "Gefactureerd aan",
+			"access": "Toegang"
 		}
 	},
 	"page": {
@@ -154,5 +158,52 @@
 		"appName": "Auditlogboek",
 		"appDescription": "Auditlogboek-app",
 		"loadFailed": "We konden het auditlogboek niet laden. Probeer het opnieuw en neem contact op met support als het probleem aanhoudt."
+	},
+	"accessReasons": {
+		"DIRECT": "Direct",
+		"TEAM": "Team",
+		"PUBLIC": "Openbaar",
+		"DELEGATED": "Gedelegeerd",
+		"OWN_PROJECT": "Eigen Project",
+		"INSIGHT": "Insight",
+		"DISCOVERABLE": "Vindbaar",
+		"ADMIN": "Beheerder",
+		"PLATFORM": "Platform",
+		"REFUSED": "Geweigerd"
+	},
+	"accessDetails": {
+		"level": "Niveau",
+		"teamId": "Team",
+		"teamType": "Teamtype",
+		"granteeId": "Gegeven Aan",
+		"granteeType": "Type Ontvanger",
+		"via": "Via",
+		"callingEngineId": "Aanroepende Engine",
+		"appId": "App",
+		"agentId": "Agent",
+		"rule": "Platformwerk",
+		"operation": "Bewerking",
+		"levelNeeded": "Benodigd Niveau",
+		"attempt": "Poging"
+	},
+	"accessLevels": {
+		"OWNER": "Auteur",
+		"EDIT": "Bewerker",
+		"READ_ONLY": "Alleen Lezen"
+	},
+	"accessVia": {
+		"APP_CODE": "De aangepaste code van een app",
+		"AGENT_RUN": "De run van een agent",
+		"ENGINE_CODE": "De eigen code van een engine",
+		"PLATFORM": "Het platform"
+	},
+	"accessRules": {
+		"LOADING": "De engine laden",
+		"PLATFORM_USE": "Eigen gebruik van het platform",
+		"PLATFORM_OPERATION": "Een platformbewerking",
+		"ENGINE_ITSELF": "De engine roept zichzelf aan",
+		"PROJECT_ENGINE": "Eigen werk van een project",
+		"VENV": "Een venv-engine",
+		"BEING_CREATED_OR_DELETED": "Wordt gemaakt of verwijderd"
 	}
 }

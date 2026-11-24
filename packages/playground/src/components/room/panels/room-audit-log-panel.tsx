@@ -53,6 +53,7 @@ const RoomAuditLogPanel = observer(() => {
 		customDateRange: { from: null, to: null },
 		methodNames: [],
 		engineTypes: [],
+		accessReasons: [],
 		filterUserId: "",
 		roomId: "",
 		searchTerm: "",

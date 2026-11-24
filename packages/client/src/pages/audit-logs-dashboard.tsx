@@ -97,6 +97,7 @@ export const AuditLogsDashboard = ({
 		customDateRange: { from: null, to: null },
 		methodNames: [],
 		engineTypes: [],
+		accessReasons: [],
 		filterUserId: "",
 		roomId: "",
 		searchTerm: "",
