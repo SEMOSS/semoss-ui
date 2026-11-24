@@ -44,6 +44,27 @@ describe("SettingsIndexPage merged navigation", () => {
 		expect(screen.queryByRole("link", { name: /Agent Runs/ })).toBeNull();
 	});
 
+	it("offers Resource Delegated Access to everyone and All Resource Delegated Access only in admin mode", () => {
+		renderSettings();
+		expect(
+			screen.getByRole("link", { name: /^Resource Delegated Access/ }),
+		).toHaveAttribute("href", "/settings/resource-delegated-access");
+		expect(
+			screen.queryByRole("link", {
+				name: /All Resource Delegated Access/,
+			}),
+		).toBeNull();
+		cleanup();
+		settings.adminMode = true;
+		renderSettings();
+		expect(
+			screen.getByRole("link", { name: /^Resource Delegated Access/ }),
+		).toHaveAttribute("href", "/settings/resource-delegated-access");
+		expect(
+			screen.getByRole("link", { name: /All Resource Delegated Access/ }),
+		).toHaveAttribute("href", "/settings/all-resource-delegated-access");
+	});
+
 	it("preserves both audit and team administration links in admin mode", () => {
 		settings.adminMode = true;
 		renderSettings();
@@ -102,6 +123,7 @@ describe("SettingsIndexPage merged navigation", () => {
 				.map((link) => link.getAttribute("href")),
 		).toEqual([
 			"/settings/resources",
+			"/settings/all-resource-delegated-access",
 			"/settings/members",
 			"/settings/team-permissions",
 			"/settings/service-accounts",

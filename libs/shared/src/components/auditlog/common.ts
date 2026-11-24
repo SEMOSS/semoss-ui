@@ -30,6 +30,13 @@ export interface EventData {
 	billedSubjectId?: string | null;
 	/** The matching login type or team type */
 	billedSubjectType?: string | null;
+	/**
+	 * Why the access check let the call through, or REFUSED, such as DIRECT,
+	 * TEAM or DELEGATED; null on rows logged before it was recorded
+	 */
+	accessReason?: string | null;
+	/** The details behind the reason, as JSON (see `readAccessDetails`) */
+	accessDetails?: string | null;
 }
 /**
  * Format an audit-log timestamp into separate date and time strings for display.

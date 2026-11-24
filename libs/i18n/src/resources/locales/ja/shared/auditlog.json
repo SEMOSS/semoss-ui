@@ -26,7 +26,8 @@
 			"last7Days": "過去7日間",
 			"last30Days": "過去30日間",
 			"custom": "カスタム"
-		}
+		},
+		"accessReason": "アクセス"
 	},
 	"summary": {
 		"events": "イベント",
@@ -64,7 +65,8 @@
 			"timestamp": "タイムスタンプ",
 			"status": "ステータス",
 			"guardrailAction": "ガードレール",
-			"billedTo": "請求先"
+			"billedTo": "請求先",
+			"access": "アクセス"
 		},
 		"guardrailActions": {
 			"MASK": "マスク済み",
@@ -107,7 +109,8 @@
 			"span": "スパン",
 			"session": "セッション",
 			"request": "リクエスト",
-			"response": "レスポンス"
+			"response": "レスポンス",
+			"access": "アクセス"
 		}
 	},
 	"detail": {
@@ -136,7 +139,8 @@
 			"spanId": "スパンID",
 			"request": "リクエスト",
 			"response": "レスポンス",
-			"billedTo": "請求先"
+			"billedTo": "請求先",
+			"access": "アクセス"
 		}
 	},
 	"page": {
@@ -154,5 +158,52 @@
 		"appName": "監査ログ",
 		"appDescription": "監査ログアプリ",
 		"loadFailed": "監査ログを読み込めませんでした。もう一度お試しください。問題が解決しない場合は、サポートにお問い合わせください。"
+	},
+	"accessReasons": {
+		"DIRECT": "直接",
+		"TEAM": "チーム",
+		"PUBLIC": "公開",
+		"DELEGATED": "委任",
+		"OWN_PROJECT": "自身のプロジェクト",
+		"INSIGHT": "インサイト",
+		"DISCOVERABLE": "検出可能",
+		"ADMIN": "管理者",
+		"PLATFORM": "プラットフォーム",
+		"REFUSED": "拒否"
+	},
+	"accessDetails": {
+		"level": "レベル",
+		"teamId": "チーム",
+		"teamType": "チームの種類",
+		"granteeId": "付与先",
+		"granteeType": "付与先の種類",
+		"via": "経由",
+		"callingEngineId": "呼び出し元エンジン",
+		"appId": "アプリ",
+		"agentId": "エージェント",
+		"rule": "プラットフォームの処理",
+		"operation": "操作",
+		"levelNeeded": "必要なレベル",
+		"attempt": "試行"
+	},
+	"accessLevels": {
+		"OWNER": "作成者",
+		"EDIT": "編集者",
+		"READ_ONLY": "読み取り専用"
+	},
+	"accessVia": {
+		"APP_CODE": "アプリのカスタムコード",
+		"AGENT_RUN": "エージェントの実行",
+		"ENGINE_CODE": "エンジン自身のコード",
+		"PLATFORM": "プラットフォーム"
+	},
+	"accessRules": {
+		"LOADING": "エンジンの読み込み",
+		"PLATFORM_USE": "プラットフォーム自身の利用",
+		"PLATFORM_OPERATION": "プラットフォームの操作",
+		"ENGINE_ITSELF": "エンジンが自身を呼び出し",
+		"PROJECT_ENGINE": "プロジェクト自身の処理",
+		"VENV": "venv エンジン",
+		"BEING_CREATED_OR_DELETED": "作成中または削除中"
 	}
 }

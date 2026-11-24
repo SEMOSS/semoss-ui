@@ -136,8 +136,8 @@ export interface ModelLimitSubject {
 }
 
 /**
- * The catalog type of an app or engine an engine gives a permission to:
- * PROJECT for an app, or the engine's own type
+ * The catalog type of an app, agent or engine an engine or project gives a
+ * permission to: PROJECT for an app or an agent, or the engine's own type
  */
 export type EngineGranteeType =
 	| "PROJECT"
@@ -150,25 +150,62 @@ export type EngineGranteeType =
 	| "VENV";
 
 /**
- * An app or another engine an engine gives a permission to, by its id and its
- * catalog type. An app's custom reactors, or the other engine's own code, use
- * the engine with that permission in place of the signed in user's own, so an
- * app can work with the engine for people who have no access to it themselves,
- * and a vector database or a guardrail can use the model it is given. It is
- * kept apart from {@link PermissionSubject}, which is always a person or a
- * team.
+ * An app, an agent or an engine an engine or project gives a permission to, by
+ * its id and its catalog type. An app's custom reactors, an agent's runs, or
+ * the engine's own code, use the engine or project with that permission in
+ * place of the signed in user's own, so an app can work with an engine for
+ * people who have no access to it themselves, an agent can use a skill its
+ * users cannot open, and a vector database or a guardrail can use the model
+ * it is given. It is kept apart from {@link PermissionSubject}, which is
+ * always a person or a team.
  */
 export interface EngineSubject {
-	/** Always ENGINE: an app is an engine of type PROJECT */
+	/** Always ENGINE: an app or an agent is an engine of type PROJECT */
 	category: "ENGINE";
-	/** The app's or engine's id */
+	/** The app's, agent's or engine's id */
 	id: string;
-	/** Its catalog type, PROJECT for an app */
+	/** Its catalog type, PROJECT for an app or an agent */
 	type: EngineGranteeType;
 	/** Its name, or its id when the backend sends no name */
 	name: string;
-	/** An engine's subtype, for its icon; null for an app */
+	/**
+	 * An engine's subtype, for its icon, or a project's type, such as CODE or
+	 * WORKSPACE for an agent, for its page; null when the backend sends none
+	 */
 	subtype: string | null;
+}
+
+/**
+ * An engine or a project that gives an app, an agent or an engine a
+ * permission, the other side of an {@link EngineSubject}: the target whose
+ * Access Control holds the permission, where its owners change it.
+ */
+export interface EngineTarget extends PermissionTargetResource {
+	/** ENGINE for an engine, PROJECT for a project */
+	resourceType: "ENGINE" | "PROJECT";
+	/** An engine's catalog type, or PROJECT for a project */
+	type: EngineGranteeType;
+	/** Its name, or its id when the backend sends no name */
+	name: string;
+	/**
+	 * An engine's subtype, for its icon, or a project's type, such as SKILL,
+	 * for its page; null when the backend sends none
+	 */
+	subtype: string | null;
+}
+
+/**
+ * The permission an engine or a project gives an app, an agent or an engine,
+ * read from the side of the one given it
+ */
+export interface AccessToEngine {
+	/** The engine or project that gives the permission */
+	target: EngineTarget;
+	/**
+	 * The permission: its level (READ_ONLY or EDIT), end date and, on a model,
+	 * the App Limit or Engine Limit the model gives
+	 */
+	access: PermissionGrant;
 }
 
 /** A person, with the details Bulk Access Management shows */
@@ -226,14 +263,15 @@ export interface ModelLimitChange {
 }
 
 /**
- * One change to an app's or another engine's permission on an engine in a
- * permission batch. Only on an engine, and only by its owners and admins in
- * admin mode.
+ * One change to an app's, agent's or engine's permission on an engine or a
+ * project in a permission batch. Only by the target's owners and admins in
+ * admin mode. A project is never given a permission on itself, and only a
+ * model's permission carries a usage limit.
  */
 export interface EngineAccessChange {
-	/** Give the app or engine a permission, change it, or take it away */
+	/** Give the app, agent or engine a permission, change it, or take it away */
 	action: "ADD" | "CHANGE" | "REMOVE";
-	/** The app or engine, by its id and catalog type */
+	/** The app, agent or engine, by its id and catalog type */
 	subject: Pick<EngineSubject, "category" | "id" | "type">;
 	/**
 	 * The permission to give: READ_ONLY or EDIT, never OWNER. A change sets the
@@ -304,17 +342,23 @@ export interface PermissionAllowedChanges {
 	/** Whether they can change which teams have access */
 	canChangeTeams: boolean;
 	/**
-	 * On an engine, whether they can see which apps and engines have a
-	 * permission on it: its editors and owners, and admins in admin mode. False
-	 * for anything else.
+	 * On a project or an engine, whether they can see which apps, agents and
+	 * engines have a permission on it: its editors and owners, and admins in
+	 * admin mode. False for anything else.
 	 */
 	canViewEngines: boolean;
 	/**
-	 * On an engine, whether they can change which apps and engines have a
-	 * permission on it: its owners, and admins in admin mode. False for anything
-	 * else.
+	 * On a project or an engine, whether they can change which apps, agents and
+	 * engines have a permission on it: its owners, and admins in admin mode.
+	 * False for anything else.
 	 */
 	canChangeEngines: boolean;
+	/**
+	 * On a project or an engine, whether they can see which engines and
+	 * projects give it a permission: its editors and owners, and admins in
+	 * admin mode. False for anything else.
+	 */
+	canViewAccessToEngines: boolean;
 	/** Whether only admins can give people, teams, apps and engines access to it */
 	addsAreAdminOnly: boolean;
 	/**
@@ -338,13 +382,20 @@ export interface ResourcePermissions {
 	/** The teams that have access */
 	teams: CurrentAccess[];
 	/**
-	 * On an engine, the apps and engines it gives a permission to, each with its
-	 * catalog type, name (its display name when it has one), an engine's
-	 * subtype, level (READ_ONLY or EDIT), end date and, on a model, its usage
-	 * limit. Empty for anything else, and for a user who can only view the
-	 * engine.
+	 * On a project or an engine, the apps, agents and engines it gives a
+	 * permission to, each with its catalog type, name (its display name when it
+	 * has one), subtype (an engine's subtype or a project's type), level
+	 * (READ_ONLY or EDIT), end date and, on a model, its usage limit. Empty for
+	 * anything else, and for a user who can only view it.
 	 */
 	engines: CurrentAccess<EngineSubject>[];
+	/**
+	 * On a project or an engine, the engines and projects that give it a
+	 * permission, each with its type, name, subtype, level, end date and, on a
+	 * model, the limit it gives. Changed only on the engine or project that
+	 * gives it. Empty for anything else, and for a user who can only view it.
+	 */
+	accessToEngines: AccessToEngine[];
 	/** What the signed in user may change */
 	allowedPermissionChanges: PermissionAllowedChanges;
 	/** A model's public use limit and whether it is public; null for anything else */
@@ -858,6 +909,47 @@ const readEngineAccess = (
 	};
 };
 
+/**
+ * Reads an engine or a project that gives a permission, or null when it has no
+ * id or no known type. A target of type PROJECT is a project. Its name is its
+ * id when the backend sends none.
+ * @param value - The target the backend sent
+ * @returns The engine or project, or null
+ */
+const readEngineTarget = (value: unknown): EngineTarget | null => {
+	if (!isObject(value)) {
+		return null;
+	}
+	const id = readText(value.id);
+	const type = readEngineGranteeType(value.type);
+	if (!id || !type) {
+		return null;
+	}
+	return {
+		resourceType: type === "PROJECT" ? "PROJECT" : "ENGINE",
+		id,
+		type,
+		name: readText(value.name) ?? id,
+		subtype: readText(value.subtype),
+	};
+};
+
+/**
+ * Reads an engine or a project that gives an app, an agent or an engine a
+ * permission, with the permission, or null when the row has no id, no known
+ * type or no grant with a known level.
+ * @param row - The row the backend sent
+ * @returns The engine or project and the permission it gives, or null
+ */
+const readAccessToEngine = (row: unknown): AccessToEngine | null => {
+	if (!isObject(row)) {
+		return null;
+	}
+	const target = readEngineTarget(row.target);
+	const access = readGrant(row.access);
+	return target && access ? { target, access } : null;
+};
+
 /** Reads a list, or throws when the response is not one */
 const readList = (value: unknown, what: string): unknown[] => {
 	if (!Array.isArray(value)) {
@@ -871,12 +963,14 @@ const readList = (value: unknown, what: string): unknown[] => {
  * use, and what the signed in user may change. End dates come back as ISO dates
  * and times in UTC, so a batch can send them back as they are. On a model, each
  * grant carries its usage limit, and the response adds the public use limit,
- * the model total, and whether cost rules are possible. On an engine, the
- * response also lists the apps and engines the engine gives a permission to.
+ * the model total, and whether cost rules are possible. On a project or an
+ * engine, the response also lists the apps, agents and engines it gives a
+ * permission to, and the engines and projects that give it one.
  * @param target - The project or engine
  * @param admin - Whether to use admin mode; outside it an admin has only their own permissions
- * @returns The people, the teams, an engine's apps and engines and the changes the user may
- * make. Rows without a known level, id or type are left out.
+ * @returns The people, the teams, the apps, agents and engines given a permission on it, the
+ * engines and projects that give it one, and the changes the user may make. Rows without a
+ * known level, id or type are left out.
  */
 export const getResourcePermissions = async (
 	target: PermissionTargetResource,
@@ -914,12 +1008,16 @@ export const getResourcePermissions = async (
 		engines: readOptionalList(data.engines).flatMap(
 			(row) => readEngineAccess(row) ?? [],
 		),
+		accessToEngines: readOptionalList(data.accessToEngines).flatMap(
+			(row) => readAccessToEngine(row) ?? [],
+		),
 		allowedPermissionChanges: {
 			canChangePeople: allowed.canChangePeople === true,
 			canGiveAuthorAccess: allowed.canGiveAuthorAccess === true,
 			canChangeTeams: allowed.canChangeTeams === true,
 			canViewEngines: allowed.canViewEngines === true,
 			canChangeEngines: allowed.canChangeEngines === true,
+			canViewAccessToEngines: allowed.canViewAccessToEngines === true,
 			addsAreAdminOnly: allowed.addsAreAdminOnly === true,
 			limitLevels: readLevels(allowed.limitLevels),
 			canChangeModelLimits: allowed.canChangeModelLimits === true,
@@ -1071,6 +1169,113 @@ export const savePermissionBatches = async (
 		targets: readNumber(data.targets) ?? 0,
 		changes: readNumber(data.changes) ?? 0,
 	};
+};
+
+/**
+ * One permission an engine or a project gives an app, an agent or an engine,
+ * as the Resource Delegated Access page lists it
+ */
+export interface GranteePermission {
+	/** The engine or project that gives it */
+	target: EngineTarget;
+	/** The app, agent or engine given it */
+	subject: EngineSubject;
+	/** Its level, end date and, on a model, usage limit */
+	access: PermissionGrant;
+	/** Whether the user can change it: the target's owners, and admins in admin mode */
+	canChange: boolean;
+}
+
+/** What to list on the Resource Delegated Access pages */
+export interface GranteePermissionQuery {
+	/** Text the name or id of the target or the one given access contains, ignoring case */
+	search?: string;
+	/** Whether the target is a project or an engine; either when left out */
+	targetKind?: "PROJECT" | "ENGINE";
+	/** The target's type: a project's type, such as SKILL, or an engine's, such as MODEL */
+	targetType?: string;
+	/** Whether the one given access is a project, such as an app or an agent, or an engine; either when left out */
+	granteeKind?: "PROJECT" | "ENGINE";
+	/** The type of the one given access, in the same way, such as WORKSPACE for an agent */
+	granteeType?: string;
+	/** How many to return; 0 or less for all */
+	limit?: number;
+	/** How many to skip */
+	offset?: number;
+}
+
+/** A page of permissions engines and projects give */
+export interface GranteePermissionPage {
+	/** The permissions of the page, by target then by the one given access */
+	grants: GranteePermission[];
+	/** How many match the query in all */
+	total: number;
+}
+
+/**
+ * Read the permissions engines and projects give apps, agents and engines: on
+ * every engine and project the user can edit, or on every one in admin mode.
+ * Changes go through {@link savePermissionBatches}, one batch for each target.
+ * @param query - The filters and the page
+ * @param admin - Whether to use admin mode; outside it an admin has only their own permissions
+ * @returns The page and how many match. Rows without a known id, type or level are left out.
+ * @throws When the response is not a page
+ */
+export const getAllGranteePermissions = async (
+	query: GranteePermissionQuery = {},
+	admin = false,
+): Promise<GranteePermissionPage> => {
+	const params = new URLSearchParams();
+	if (query.search?.trim()) {
+		params.set("search", query.search.trim());
+	}
+	if (query.targetKind) {
+		params.set("targetKind", query.targetKind);
+	}
+	if (query.targetType) {
+		params.set("targetType", query.targetType);
+	}
+	if (query.granteeKind) {
+		params.set("granteeKind", query.granteeKind);
+	}
+	if (query.granteeType) {
+		params.set("granteeType", query.granteeType);
+	}
+	params.set("limit", String(query.limit ?? 0));
+	params.set("offset", String(query.offset ?? 0));
+	const response = await get<unknown>(
+		`${permissionBatchUrl(admin)}/getAllGranteePermissions?${params.toString()}`,
+	);
+	const data: unknown = response?.data;
+	if (!isObject(data)) {
+		throw Error(
+			"No Response to list the permissions engines and projects give",
+		);
+	}
+	const grants = readList(
+		data.grants,
+		"list the permissions engines and projects give",
+	).flatMap((row): GranteePermission[] => {
+		if (!isObject(row)) {
+			return [];
+		}
+		const target = readEngineTarget(row.target);
+		const grantee = readEngineAccess({
+			subject: row.subject,
+			access: row.access,
+		});
+		return target && grantee
+			? [
+					{
+						target,
+						subject: grantee.subject,
+						access: grantee.access,
+						canChange: row.canChange === true,
+					},
+				]
+			: [];
+	});
+	return { grants, total: readNumber(data.total) ?? grants.length };
 };
 
 /**

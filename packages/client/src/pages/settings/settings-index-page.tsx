@@ -10,6 +10,7 @@ import {
 	KeyRound,
 	Landmark,
 	Link2,
+	Network,
 	Palette,
 	ScrollText,
 	SearchIcon,
@@ -55,6 +56,10 @@ const CardMapper: Record<string, CardConfig> = {
 	},
 	"Resource Governance": {
 		icon: <Landmark className={ICON_CLASS} />,
+		className: "bg-chart-2/10 text-chart-2",
+	},
+	"All Resource Delegated Access": {
+		icon: <Network className={ICON_CLASS} />,
 		className: "bg-chart-2/10 text-chart-2",
 	},
 	"Member Settings": {
@@ -107,6 +112,10 @@ const CardMapper: Record<string, CardConfig> = {
 	},
 	"My Teams": {
 		icon: <Users2 className={ICON_CLASS} />,
+		className: "bg-chart-3/10 text-chart-3",
+	},
+	"Resource Delegated Access": {
+		icon: <Network className={ICON_CLASS} />,
 		className: "bg-chart-3/10 text-chart-3",
 	},
 	"Service Accounts": {
