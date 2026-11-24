@@ -529,6 +529,7 @@ export function TopicFlow({
 						contacts={contacts}
 						changes={changes}
 						onSave={() => controller.flushDraft(form.getValues())}
+						onReload={handleReload}
 						review={review}
 						values={values}
 						addedNames={addedNames}

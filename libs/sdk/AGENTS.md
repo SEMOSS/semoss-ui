@@ -188,8 +188,8 @@ not convert them to `StoreState`.
   `reloadUser` reads the user again without touching the config, logins or permissions. The session's own insight is `Session.insight`, below; the session
   reads the user and saves metadata through it, and clears it on every sign in and out. The
   backend sets the insight's user on every call and drops the session's insights on logout, so
-  the insight needs no explicit drop. `canPerform` combines `isAdmin` with the config's admin-only flags;
-  guardrails have no flags and are always admin-only.
+  the insight needs no explicit drop. `canPerform` combines `isAdmin` with the config's admin-only flags,
+  one set for each kind of project and engine, guardrails included.
 - [`SessionInsightStore`](./src/stores/session/session-insight.store.ts) (`Session.insight`)
   is the session's own insight: `{ insightId }` in a `StoreState`, with `run`, `runAsync`,
   `upload`, `download`, `withInsight(task)`, `ensure` and `clear`. It is made on first use and shared by
@@ -241,8 +241,7 @@ not convert them to `StoreState`.
   database write rather than reporting it, so `setMetadata` reads the user again after saving. The config's
   shape is typed once, on `getSystemConfig` in [`api/base.ts`](./src/api/base.ts), and
   checked against the backend's `ServerConfigurationResource`: null fields are left out of
-  responses, `logins` and `loginDetails` are always present (empty when signed out), and
-  there are no `adminOnlyGuardrail*` flags.
+  responses, and `logins` and `loginDetails` are always present (empty when signed out).
 
 ## Session Logins
 
@@ -285,26 +284,49 @@ a call's `admin` is true, where an admin can read and change anything:
 - `getResourcePermissions` (`getPermissions`) reads the people and teams who can use a project or
   engine and what the signed in user may change (`allowedPermissionChanges`). `getTeamPeople`
   reads a custom team's members or managers through the same endpoint.
-- **Apps and engines on an engine.** An engine can give an app (a project) or another engine a
-  permission, which the app's custom reactors, or the other engine's own code, use in place of the
-  signed in user's own: an app works with the engine for people who have no access to it
-  themselves, and a vector database or a guardrail uses the model it is given. `EngineSubject`
+- **Apps, agents and engines on an engine or a project.** An engine or a project can give an
+  app or an agent (both projects) or an engine a permission, which the app's custom reactors, the
+  agent's runs, or the engine's own code, use in place of the signed in user's own: an app works
+  with an engine for people who have no access to it themselves, an agent uses a skill its users
+  cannot open, and a vector database or a guardrail uses the model it is given. `EngineSubject`
   (`category: "ENGINE"`, `id`, `type`, `name`, `subtype`) is the grantee, by its id and catalog
-  type (`EngineGranteeType`: `PROJECT` for an app, or the engine's own type); it is kept apart
-  from `PermissionSubject`, which is always a person or a team. On an `ENGINE` target
-  `getResourcePermissions` reads `engines`, a `CurrentAccess<EngineSubject>` for each app and
-  engine with its type, name (its display name when it has one), an engine's subtype, level
-  (`READ_ONLY` or `EDIT`), end date and, on a model, usage limit, and
-  `allowedPermissionChanges.canViewEngines`, true for the engine's editors and owners and in admin
-  mode (anyone else gets an empty `engines`), and `canChangeEngines`, true for the engine's owners
-  and in admin mode. A response with no `engines` reads as an empty list and one with no
-  `canViewEngines` or `canChangeEngines` as false, as for every other target; a grantee with no
-  name is named by its id. An `EngineAccessChange` in a batch on the engine gives, changes or
-  takes away a grantee's permission: `action` `ADD`, `CHANGE` or `REMOVE`, `subject` the
-  grantee's `category`, `id` and `type`, and `to` a `PermissionGrant`, left out for `REMOVE`. A
-  `CHANGE` sets the whole grant, so it sends the level, the end date the grantee has and its
-  usage limit. `PermissionChange` is a `PermissionAccessChange`, a `ModelLimitChange` or an
+  type (`EngineGranteeType`: `PROJECT` for an app or an agent, or the engine's own type); it is
+  kept apart from `PermissionSubject`, which is always a person or a team. On a `PROJECT` or
+  `ENGINE` target `getResourcePermissions` reads `engines`, a `CurrentAccess<EngineSubject>` for
+  each grantee with its type, name (its display name when it has one), subtype (an engine's
+  subtype, or a project's type, such as `CODE` or `WORKSPACE`), level (`READ_ONLY` or `EDIT`),
+  end date and, on a model, usage limit, and `allowedPermissionChanges.canViewEngines`, true for
+  the target's editors and owners and in admin mode (anyone else gets an empty `engines`), and
+  `canChangeEngines`, true for its owners and in admin mode. A response with no `engines` reads
+  as an empty list and one with no `canViewEngines` or `canChangeEngines` as false, as for every
+  other target; a grantee with no name is named by its id. An `EngineAccessChange` in a batch on
+  the engine or project gives, changes or takes away a grantee's permission: `action` `ADD`,
+  `CHANGE` or `REMOVE`, `subject` the grantee's `category`, `id` and `type`, and `to` a
+  `PermissionGrant`, left out for `REMOVE`. A `CHANGE` sets the whole grant, so it sends the
+  level, the end date the grantee has and its usage limit; only a model's grant has one.
+  `PermissionChange` is a `PermissionAccessChange`, a `ModelLimitChange` or an
   `EngineAccessChange`.
+- **What a project or an engine can use.** On a `PROJECT` or `ENGINE` target
+  `getResourcePermissions` also reads `accessToEngines`, the other side of `engines`: an
+  `AccessToEngine` for each engine or project that gives it a permission, with its `target`, an
+  `EngineTarget` (`resourceType` `ENGINE` or `PROJECT`, `id`, `type`, `PROJECT` for a project,
+  `name`, `subtype`, a project's type for a project), and its `access`, the level, end date and,
+  on a model, the App Limit or Engine Limit the model gives.
+  `allowedPermissionChanges.canViewAccessToEngines` is true for its editors and owners and in
+  admin mode, and anyone else gets an empty list. A row with no id, no known type or no known
+  level is left out, and one with no name is named by its id. The permission is changed with an
+  `EngineAccessChange` in a batch on the engine or project that gives it.
+- **Every permission in one place.** `getAllGranteePermissions(query, admin)` reads a page of the
+  permissions engines and projects give, on every one the user can edit, or on every one in admin
+  mode (`getAllGranteePermissions` of `/auth/permissionBatch` or `/auth/admin/permissionBatch`):
+  `grants`, each a `GranteePermission` with its `target` (`EngineTarget`), `subject`
+  (`EngineSubject`), `access` and `canChange` (true for the target's owners and in admin mode),
+  and `total`, how many match. `GranteePermissionQuery` filters by `search` (the name or id of
+  either side), `targetKind` and `granteeKind` (`PROJECT` or `ENGINE`, so projects using projects,
+  projects using engines and engines using engines read apart), `targetType` and `granteeType`
+  (a project's type, such as `SKILL`, or an engine's catalog type) and pages with `limit` and
+  `offset`. Changes are ordinary batches, one
+  for each target.
 - `validatePermissionBatches` and `savePermissionBatches` post the batches as JSON in the
   `batches` form field. Validating returns one result per batch, in the order sent, and each
   change's result carries its index in its batch. Saving saves every change of every batch, or

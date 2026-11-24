@@ -67,8 +67,8 @@ describe("onboarding start", () => {
 		expect(session.run).not.toHaveBeenCalled();
 		await user.click(screen.getByRole("button", { name: "Start setup" }));
 		expect(
-			await screen.findByRole("checkbox", {
-				name: "Recruiting UNC and VCU",
+			await screen.findByRole("button", {
+				name: "Review suggested topic Recruiting UNC and VCU",
 			}),
 		).toBeEnabled();
 		expect(
@@ -93,7 +93,9 @@ describe("onboarding start", () => {
 			}),
 		).toBeInTheDocument();
 		await user.click(screen.getByRole("button", { name: "Start setup" }));
-		await screen.findByRole("checkbox", { name: "Recruiting UNC and VCU" });
+		await screen.findByRole("button", {
+			name: "Review suggested topic Recruiting UNC and VCU",
+		});
 		expect(
 			screen.getByRole("progressbar", {
 				name: "Setup progress: step 7 of 8, Topics",

@@ -161,11 +161,17 @@ describe("ConfigStore", () => {
 		expect(store.isAdminOnly("PROJECT", "delete")).toBe(true);
 	});
 
-	it("keeps every guardrail operation for admins", async () => {
-		mockGetSystemConfig.mockResolvedValue(backendConfig());
+	it("reads a guardrail's operations from its own flags", async () => {
+		mockGetSystemConfig.mockResolvedValue(
+			backendConfig({
+				adminOnlyGuardrailAddAccess: false,
+				adminOnlyGuardrailAdd: true,
+			}),
+		);
 		const store = new ConfigStore();
 		await store.load();
 
+		expect(store.isAdminOnly("GUARDRAIL", "access")).toBe(false);
 		expect(store.isAdminOnly("GUARDRAIL", "add")).toBe(true);
 	});
 

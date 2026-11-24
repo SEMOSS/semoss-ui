@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { get, post } from "../utility";
 import {
+	getAllGranteePermissions,
 	getEffectivePermissions,
 	getMyUsageLimitPath,
 	getMyUsageLimitPaths,
@@ -144,12 +145,14 @@ describe("getResourcePermissions", () => {
 			type: "CUSTOM",
 		});
 		expect(access.engines).toEqual([]);
+		expect(access.accessToEngines).toEqual([]);
 		expect(access.allowedPermissionChanges).toEqual({
 			canChangePeople: true,
 			canGiveAuthorAccess: false,
 			canChangeTeams: false,
 			canViewEngines: false,
 			canChangeEngines: false,
+			canViewAccessToEngines: false,
 			addsAreAdminOnly: false,
 			limitLevels: [],
 			canChangeModelLimits: false,
@@ -325,6 +328,135 @@ describe("getResourcePermissions", () => {
 		]);
 		expect(access.allowedPermissionChanges.canViewEngines).toBe(true);
 		expect(access.allowedPermissionChanges.canChangeEngines).toBe(true);
+	});
+
+	it("reads the engines and projects that give a project or engine a permission, naming one with no name by its id, and whether the user can see them", async () => {
+		answerGet({
+			people: [],
+			teams: [],
+			accessToEngines: [
+				{
+					target: {
+						resourceType: "ENGINE",
+						id: "model1",
+						type: "MODEL",
+						name: "Orders Model",
+						subtype: "OPEN_AI",
+					},
+					access: {
+						level: "READ_ONLY",
+						usageLimit: {
+							unlimited: false,
+							rules: [
+								{
+									metric: "TOKENS",
+									amount: 5000,
+									window: "DAY",
+									counts: "SHARED",
+								},
+							],
+						},
+					},
+				},
+				{
+					target: {
+						resourceType: "ENGINE",
+						id: "db1",
+						type: "DATABASE",
+					},
+					access: { level: "EDIT", endDate: "2026-12-31T00:00Z" },
+				},
+				{
+					target: {
+						resourceType: "PROJECT",
+						id: "skill1",
+						type: "PROJECT",
+						name: "Orders Skill",
+						subtype: "SKILL",
+					},
+					access: { level: "READ_ONLY" },
+				},
+				{
+					target: { resourceType: "ENGINE", type: "MODEL" },
+					access: { level: "EDIT" },
+				},
+				{
+					target: {
+						resourceType: "ENGINE",
+						id: "nolevel",
+						type: "MODEL",
+					},
+					access: { level: "NOPE" },
+				},
+			],
+			allowedPermissionChanges: {
+				canChangePeople: false,
+				canViewAccessToEngines: true,
+			},
+		});
+
+		const access = await getResourcePermissions({
+			resourceType: "PROJECT",
+			id: "app2",
+		});
+
+		expect(access.accessToEngines).toEqual([
+			{
+				target: {
+					resourceType: "ENGINE",
+					id: "model1",
+					type: "MODEL",
+					name: "Orders Model",
+					subtype: "OPEN_AI",
+				},
+				access: {
+					level: "READ_ONLY",
+					endDate: null,
+					usageLimit: {
+						unlimited: false,
+						rules: [
+							{
+								metric: "TOKENS",
+								amount: 5000,
+								window: "DAY",
+								counts: "SHARED",
+							},
+						],
+					},
+				},
+			},
+			{
+				target: {
+					resourceType: "ENGINE",
+					id: "db1",
+					type: "DATABASE",
+					name: "db1",
+					subtype: null,
+				},
+				access: {
+					level: "EDIT",
+					endDate: "2026-12-31T00:00Z",
+					usageLimit: null,
+				},
+			},
+			{
+				target: {
+					resourceType: "PROJECT",
+					id: "skill1",
+					type: "PROJECT",
+					name: "Orders Skill",
+					subtype: "SKILL",
+				},
+				access: {
+					level: "READ_ONLY",
+					endDate: null,
+					usageLimit: null,
+				},
+			},
+		]);
+		expect(access.allowedPermissionChanges.canViewAccessToEngines).toBe(
+			true,
+		);
 	});
 
 	it("leaves out apps and engines without an id, a known type or a known level, and lets only true say they can change", async () => {
@@ -594,6 +726,157 @@ describe("validatePermissionBatches and savePermissionBatches", () => {
 			]),
 		).rejects.toThrow(
 			"Only this engine's owners can change which apps and engines can use it",
+		);
+	});
+});
+
+describe("getAllGranteePermissions", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it("sends the filters and the page and reads each permission with whether the user can change it", async () => {
+		answerGet({
+			grants: [
+				{
+					target: {
+						resourceType: "PROJECT",
+						id: "skill1",
+						type: "PROJECT",
+						name: "Orders Skill",
+						subtype: "SKILL",
+					},
+					subject: {
+						category: "ENGINE",
+						id: "agent1",
+						type: "PROJECT",
+						name: "Orders Agent",
+						subtype: "WORKSPACE",
+					},
+					access: { level: "READ_ONLY" },
+					canChange: true,
+				},
+				{
+					target: {
+						resourceType: "ENGINE",
+						id: "model1",
+						type: "MODEL",
+					},
+					subject: {
+						category: "ENGINE",
+						id: "app1",
+						type: "PROJECT",
+					},
+					access: { level: "EDIT", endDate: "2026-12-31T00:00Z" },
+				},
+				{
+					target: { resourceType: "ENGINE", type: "MODEL" },
+					subject: {
+						category: "ENGINE",
+						id: "app1",
+						type: "PROJECT",
+					},
+					access: { level: "EDIT" },
+				},
+				{
+					target: {
+						resourceType: "ENGINE",
+						id: "db1",
+						type: "DATABASE",
+					},
+					subject: {
+						category: "ENGINE",
+						id: "app1",
+						type: "PROJECT",
+					},
+					access: { level: "OWNER?" },
+				},
+			],
+			total: 7,
+		});
+
+		const page = await getAllGranteePermissions(
+			{
+				search: " orders ",
+				targetKind: "PROJECT",
+				granteeKind: "PROJECT",
+				granteeType: "WORKSPACE",
+				limit: 25,
+				offset: 50,
+			},
+			true,
+		);
+
+		const url = requestedUrl();
+		expect(url.pathname).toBe(
+			"/api/auth/admin/permissionBatch/getAllGranteePermissions",
+		);
+		expect(url.searchParams.get("search")).toBe("orders");
+		expect(url.searchParams.get("targetType")).toBeNull();
+		expect(url.searchParams.get("targetKind")).toBe("PROJECT");
+		expect(url.searchParams.get("granteeKind")).toBe("PROJECT");
+		expect(url.searchParams.get("granteeType")).toBe("WORKSPACE");
+		expect(url.searchParams.get("limit")).toBe("25");
+		expect(url.searchParams.get("offset")).toBe("50");
+		expect(page).toEqual({
+			grants: [
+				{
+					target: {
+						resourceType: "PROJECT",
+						id: "skill1",
+						type: "PROJECT",
+						name: "Orders Skill",
+						subtype: "SKILL",
+					},
+					subject: {
+						category: "ENGINE",
+						id: "agent1",
+						type: "PROJECT",
+						name: "Orders Agent",
+						subtype: "WORKSPACE",
+					},
+					access: {
+						level: "READ_ONLY",
+						endDate: null,
+						usageLimit: null,
+					},
+					canChange: true,
+				},
+				{
+					target: {
+						resourceType: "ENGINE",
+						id: "model1",
+						type: "MODEL",
+						name: "model1",
+						subtype: null,
+					},
+					subject: {
+						category: "ENGINE",
+						id: "app1",
+						type: "PROJECT",
+						name: "app1",
+						subtype: null,
+					},
+					access: {
+						level: "EDIT",
+						endDate: "2026-12-31T00:00Z",
+						usageLimit: null,
+					},
+					canChange: false,
+				},
+			],
+			total: 7,
+		});
+	});
+
+	it("uses the user's endpoint outside admin mode and fails when the answer is not a page", async () => {
+		answerGet({ total: 0 });
+
+		await expect(getAllGranteePermissions()).rejects.toThrow(
+			"No Response to list the permissions engines and projects give",
+		);
+		expect(requestedUrl().pathname).toBe(
+			"/api/auth/permissionBatch/getAllGranteePermissions",
 		);
 	});
 });

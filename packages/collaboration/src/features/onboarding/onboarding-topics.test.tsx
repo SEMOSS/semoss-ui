@@ -18,15 +18,18 @@ import {
 } from "./topic-evidence.test-fixtures";
 import { DOT } from "./topic-flow-utils";
 import {
+	checkTopics,
 	deferred,
 	type MapJobWire,
 	makeAreaReview,
 	makeReview,
 	makeTopic,
 	nextStage,
+	openTopic,
 	press,
 	type ReviewWire,
 	reviewSession,
+	setUpInBuilder,
 	topicMapJob,
 } from "./topic-review.test-fixtures";
 import { TopicsStep } from "./topics-step";
@@ -55,15 +58,26 @@ const statements = (session: Session, reactor: string) =>
 		.filter((statement) => statement.startsWith(`${reactor}(`));
 
 async function openAreas(
-	session = reviewSession(async () => makeAreaReview()),
+	session = reviewSession(async () => setUpInBuilder(makeAreaReview())),
 	onNext = vi.fn(),
 	onBack = vi.fn(),
 ) {
 	const user = userEvent.setup();
 	const view = render(step(session.actions, onNext, onBack));
 	await screen.findByRole("heading", { name: "Your main areas of work" });
+	await checkTopics(user);
 	return { session, user, view, onNext, onBack };
 }
+
+/** A kept topic's row in the Check stage list; topics not kept have none. */
+const combineBox = (name: string) =>
+	screen.queryByRole("checkbox", { name: `Select ${name} to combine` });
+
+/** The disclosure that lists the topics found but not kept. */
+const notKept = (count: number) =>
+	screen.getByRole("button", {
+		name: new RegExp(`^Also found, not kept \\(${count}\\)`),
+	});
 
 beforeEach(() => {
 	vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
@@ -154,8 +168,10 @@ describe("onboarding topics: building the draft", () => {
 		// the draft is read again once the job is done
 		expect(generate).toHaveBeenCalledTimes(2);
 		expect(
-			screen.getByRole("checkbox", { name: "Recruiting" }),
-		).toBeChecked();
+			screen.getByRole("button", {
+				name: "Review suggested topic UNC Recruiting",
+			}),
+		).toBeEnabled();
 		expect(screen.queryByText("Found so far")).not.toBeInTheDocument();
 	});
 
@@ -195,7 +211,9 @@ describe("onboarding topics: building the draft", () => {
 		);
 		await user.click(screen.getByRole("button", { name: "Retry" }));
 		expect(
-			await screen.findByRole("checkbox", { name: "Recruiting" }),
+			await screen.findByRole("button", {
+				name: "Review suggested topic UNC Recruiting",
+			}),
 		).toBeEnabled();
 	});
 
@@ -210,7 +228,9 @@ describe("onboarding topics: building the draft", () => {
 			const view = render(step(old.actions));
 			view.rerender(step(current.actions));
 			expect(
-				await screen.findByRole("checkbox", { name: "Backend Hiring" }),
+				await screen.findByRole("button", {
+					name: "Review suggested topic Backend Hiring",
+				}),
 			).toBeEnabled();
 			await act(async () => {
 				if (outcome === "success")
@@ -218,15 +238,17 @@ describe("onboarding topics: building the draft", () => {
 				else pending.reject(new Error("Old request failed"));
 			});
 			expect(
-				screen.queryByRole("checkbox", { name: "Old topic" }),
+				screen.queryByRole("button", {
+					name: "Review suggested topic Old topic",
+				}),
 			).not.toBeInTheDocument();
 			expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 		},
 	);
 });
 
-describe("onboarding topics: areas stage", () => {
-	it("shows the first five areas and saves each keep toggle", async () => {
+describe("onboarding topics: check stage", () => {
+	it("lists the kept topics, opens the first, and saves a skipped one", async () => {
 		const { session, user } = await openAreas();
 		expect(screen.getByText("Step 7 of 8")).toBeVisible();
 		for (const name of [
@@ -236,23 +258,22 @@ describe("onboarding topics: areas stage", () => {
 			"Vendor Reviews",
 			"Security Audits",
 		])
-			expect(screen.getByRole("checkbox", { name })).toBeChecked();
+			expect(combineBox(name)).toBeInTheDocument();
+		expect(combineBox("Customer Onboarding")).not.toBeInTheDocument();
+		expect(notKept(2)).toHaveAttribute("aria-expanded", "false");
 		expect(
-			screen.queryByRole("checkbox", { name: "Customer Onboarding" }),
-		).not.toBeInTheDocument();
-		expect(await screen.findByText("5 topics kept")).toBeVisible();
-		expect(
-			screen.getAllByText(
-				`2 conversations ${DOT} with Ana Lima, Bo Chen`,
-			),
-		).toHaveLength(5);
+			screen.getByRole("region", { name: "Recruiting" }),
+		).toBeVisible();
+		expect((await screen.findAllByText("5 topics kept"))[0]).toBeVisible();
 
+		await openTopic(user, "Platform Operations");
 		await user.click(
-			screen.getByRole("checkbox", { name: "Platform Operations" }),
+			screen.getByRole("button", { name: "Skip this topic" }),
 		);
+		expect(combineBox("Platform Operations")).not.toBeInTheDocument();
 		expect(
-			screen.getByRole("checkbox", { name: "Platform Operations" }),
-		).not.toBeChecked();
+			screen.getByRole("button", { name: "Keep this topic" }),
+		).toBeVisible();
 		await waitFor(
 			() =>
 				expect(
@@ -262,25 +283,22 @@ describe("onboarding topics: areas stage", () => {
 				).toBe(false),
 			SAVED,
 		);
-		expect(await screen.findByText("4 topics kept")).toBeVisible();
+		expect((await screen.findAllByText("4 topics kept"))[0]).toBeVisible();
 		const writes = statements(session, "BrainSaveTopicReview");
 		expect(writes).toHaveLength(1);
 		expect(writes[0]).toContain('reviewId=["review-1"], revision=[1]');
 	});
 
-	it("reveals five more areas and keeps the ones you take part in", async () => {
+	it("shows the topics found but not kept, and keeps one", async () => {
 		const { session, user } = await openAreas();
-		await user.click(screen.getByRole("button", { name: /^Show 2 more/ }));
-		// suggested areas start kept, the rest stay off
-		expect(
-			screen.getByRole("checkbox", { name: "Customer Onboarding" }),
-		).toBeChecked();
-		expect(
-			screen.getByRole("checkbox", { name: "Team Offsite" }),
-		).not.toBeChecked();
-		expect(
-			screen.queryByRole("button", { name: /^Show/ }),
-		).not.toBeInTheDocument();
+		await user.click(notKept(2));
+		await openTopic(user, "Customer Onboarding");
+		expect(combineBox("Customer Onboarding")).not.toBeInTheDocument();
+		await user.click(
+			screen.getByRole("button", { name: "Keep this topic" }),
+		);
+		expect(combineBox("Customer Onboarding")).toBeInTheDocument();
+		expect(notKept(1)).toBeVisible();
 		await waitFor(
 			() =>
 				expect(
@@ -294,67 +312,59 @@ describe("onboarding topics: areas stage", () => {
 			session.saved?.draft.topics.find((topic) => topic.key === "topic-8")
 				?.keep,
 		).toBe(false);
-		expect(await screen.findByText("6 topics kept")).toBeVisible();
+		expect((await screen.findAllByText("6 topics kept"))[0]).toBeVisible();
 	});
 
-	it("never hides a kept area behind Show more", async () => {
+	it("lists every kept topic, however far down the draft it is", async () => {
 		const review = makeAreaReview();
 		const last = review.draft.topics.find(
 			(topic) => topic.key === "topic-8",
 		);
 		if (last) last.keep = true;
-		await openAreas(reviewSession(async () => review));
-		expect(
-			screen.getByRole("checkbox", { name: "Team Offsite" }),
-		).toBeChecked();
-		expect(
-			screen.getByRole("checkbox", { name: "Customer Onboarding" }),
-		).not.toBeChecked();
-		expect(
-			screen.queryByRole("button", { name: /^Show/ }),
-		).not.toBeInTheDocument();
+		await openAreas(reviewSession(async () => setUpInBuilder(review)));
+		expect(combineBox("Team Offsite")).toBeInTheDocument();
+		expect(combineBox("Customer Onboarding")).not.toBeInTheDocument();
+		expect(notKept(1)).toBeVisible();
+	});
+
+	it("leaves out the topics not set up in the builder", async () => {
+		await openAreas(reviewSession(async () => makeAreaReview()));
+		expect(combineBox("Recruiting")).not.toBeInTheDocument();
+		expect(notKept(7)).toBeVisible();
+		expect((await screen.findAllByText("0 topics kept"))[0]).toBeVisible();
 	});
 
 	it("keeps an area's topics separate, then combines them again", async () => {
 		const { session, user } = await openAreas();
-		expect(
-			screen.getByText(`Includes UNC Recruiting ${DOT} VCU Hiring`),
-		).toBeVisible();
-		expect(
-			screen.queryByRole("checkbox", { name: "VCU Hiring" }),
-		).not.toBeInTheDocument();
+		const area = screen.getByRole("region", { name: "Recruiting" });
+		expect(within(area).getByText("Made of 2 parts")).toBeVisible();
+		expect(within(area).getByText("UNC Recruiting")).toBeVisible();
+		expect(within(area).getByText("VCU Hiring")).toBeVisible();
+		expect(combineBox("VCU Hiring")).not.toBeInTheDocument();
 
 		await user.click(
-			screen.getByRole("button", { name: "Keep these separate" }),
+			within(area).getByRole("button", { name: "Keep these separate" }),
 		);
 		expect(
 			await screen.findByRole("button", {
-				name: "Combine into one topic",
+				name: "Combine back into one topic",
 			}),
 		).toBeVisible();
-		expect(
-			screen.getByRole("checkbox", { name: "UNC Recruiting" }),
-		).toBeChecked();
-		expect(
-			screen.getByRole("checkbox", { name: "VCU Hiring" }),
-		).toBeChecked();
+		expect(combineBox("UNC Recruiting")).toBeInTheDocument();
+		expect(combineBox("VCU Hiring")).toBeInTheDocument();
 		expect(statements(session, "BrainSetTopicArea")).toEqual([
 			'BrainSetTopicArea(reviewId=["review-1"], revision=[1], area=["area-1"], split=[true]);',
 		]);
-		expect(await screen.findByText("6 topics kept")).toBeVisible();
+		expect((await screen.findAllByText("6 topics kept"))[0]).toBeVisible();
 
 		await user.click(
-			screen.getByRole("button", { name: "Combine into one topic" }),
+			screen.getByRole("button", { name: "Combine back into one topic" }),
 		);
 		expect(
 			await screen.findByRole("button", { name: "Keep these separate" }),
 		).toBeVisible();
-		expect(
-			screen.getByRole("checkbox", { name: "Recruiting" }),
-		).toBeChecked();
-		expect(
-			screen.queryByRole("checkbox", { name: "VCU Hiring" }),
-		).not.toBeInTheDocument();
+		expect(combineBox("Recruiting")).toBeInTheDocument();
+		expect(combineBox("VCU Hiring")).not.toBeInTheDocument();
 		expect(statements(session, "BrainSetTopicArea")[1]).toBe(
 			'BrainSetTopicArea(reviewId=["review-1"], revision=[2], area=["area-1"], split=[false]);',
 		);
@@ -362,15 +372,15 @@ describe("onboarding topics: areas stage", () => {
 
 	it("renames a topic in place and saves the new name", async () => {
 		const { session, user } = await openAreas();
-		await user.click(
-			screen.getByRole("button", { name: "Rename Platform Operations" }),
-		);
+		await openTopic(user, "Platform Operations");
+		await user.click(screen.getByRole("button", { name: "Rename" }));
 		const name = screen.getByRole("textbox", { name: "Topic name" });
 		await user.clear(name);
 		await user.type(name, "Platform Delivery{Enter}");
 		expect(
-			await screen.findByRole("checkbox", { name: "Platform Delivery" }),
-		).toBeChecked();
+			await screen.findByRole("heading", { name: "Platform Delivery" }),
+		).toBeVisible();
+		expect(combineBox("Platform Delivery")).toBeInTheDocument();
 		await waitFor(
 			() =>
 				expect(
@@ -382,17 +392,19 @@ describe("onboarding topics: areas stage", () => {
 		);
 	});
 
-	it("adds your own topic, kept and saved", async () => {
+	it("adds your own topic, kept, opened and saved", async () => {
 		const { session, user } = await openAreas();
-		const add = screen.getByRole("button", { name: "Add" });
-		expect(add).toBeDisabled();
+		expect(
+			screen.getByRole("button", { name: "Add topic" }),
+		).toBeDisabled();
 		await user.type(
 			screen.getByRole("textbox", { name: "Add a topic" }),
 			"Backend Hiring{Enter}",
 		);
 		expect(
-			await screen.findByRole("checkbox", { name: "Backend Hiring" }),
-		).toBeChecked();
+			await screen.findByRole("heading", { name: "Backend Hiring" }),
+		).toBeVisible();
+		expect(combineBox("Backend Hiring")).toBeInTheDocument();
 		expect(
 			screen.getByRole("textbox", { name: "Add a topic" }),
 		).toHaveValue("");
@@ -405,18 +417,19 @@ describe("onboarding topics: areas stage", () => {
 				).toMatchObject({ name: "Backend Hiring", keep: true }),
 			SAVED,
 		);
-		expect(await screen.findByText("6 topics kept")).toBeVisible();
+		expect((await screen.findAllByText("6 topics kept"))[0]).toBeVisible();
 	});
 
 	it("keeps your edits when autosave fails and offers to reload the saved topics", async () => {
-		const session = reviewSession(async () => makeAreaReview());
+		const session = reviewSession(async () =>
+			setUpInBuilder(makeAreaReview()),
+		);
 		session.afterSave.mockRejectedValueOnce(
 			new Error("Review changed elsewhere"),
 		);
 		const { user } = await openAreas(session);
-		await user.click(
-			screen.getByRole("button", { name: "Rename Platform Operations" }),
-		);
+		await openTopic(user, "Platform Operations");
+		await user.click(screen.getByRole("button", { name: "Rename" }));
 		const name = screen.getByRole("textbox", { name: "Topic name" });
 		await user.clear(name);
 		await user.type(name, "Platform Delivery{Enter}");
@@ -424,9 +437,7 @@ describe("onboarding topics: areas stage", () => {
 			"Review changed elsewhere",
 		);
 		expect(screen.getByText("Not saved")).toBeVisible();
-		expect(
-			screen.getByRole("checkbox", { name: "Platform Delivery" }),
-		).toBeChecked();
+		expect(combineBox("Platform Delivery")).toBeInTheDocument();
 		await user.click(
 			screen.getByRole("button", { name: "Reload saved topics" }),
 		);
@@ -434,19 +445,22 @@ describe("onboarding topics: areas stage", () => {
 			expect(screen.queryByRole("alert")).not.toBeInTheDocument(),
 		);
 		// the server stored the edit before the response was lost
-		expect(
-			screen.getByRole("checkbox", { name: "Platform Delivery" }),
-		).toBeChecked();
+		expect(combineBox("Platform Delivery")).toBeInTheDocument();
 	});
 
 	it("saves your edits on Back, and Back from a later stage only steps back", async () => {
 		const { session, user, view, onBack } = await openAreas();
+		await openTopic(user, "Platform Operations");
 		await user.click(
-			screen.getByRole("checkbox", { name: "Platform Operations" }),
+			screen.getByRole("button", { name: "Skip this topic" }),
 		);
-		await nextStage(user, "people");
+		await nextStage(user, "done");
 		expect(
-			screen.getByRole("heading", { name: "Who belongs on each topic" }),
+			screen.getByRole("heading", { name: "Ready to file" }),
+		).toBeVisible();
+		await user.click(screen.getByRole("button", { name: "Back" }));
+		expect(
+			screen.getByRole("heading", { name: "Check your topics" }),
 		).toBeVisible();
 		await user.click(screen.getByRole("button", { name: "Back" }));
 		expect(
@@ -461,40 +475,41 @@ describe("onboarding topics: areas stage", () => {
 		).toBe(false);
 		view.unmount();
 		render(step(session.actions));
-		expect(
-			await screen.findByRole("checkbox", {
-				name: "Platform Operations",
-			}),
-		).not.toBeChecked();
+		await screen.findByRole("heading", { name: "Your main areas of work" });
+		await checkTopics(user);
+		expect(combineBox("Platform Operations")).not.toBeInTheDocument();
+		expect(notKept(3)).toBeVisible();
 	});
 });
 
-describe("onboarding topics: people stage", () => {
+describe("onboarding topics: people on a topic", () => {
 	it("takes a suggested person off a topic and puts them back", async () => {
 		const { session, user } = await openAreas();
-		await nextStage(user, "people");
-		const row = screen.getByText("Recruiting").closest("li");
-		if (!row) throw new Error("Topic row not found");
-		const bo = within(row).getByRole("button", { name: "Bo Chen" });
-		expect(bo).toHaveAttribute("aria-pressed", "true");
-		expect(
-			within(row).getByRole("button", { name: "Ana Lima" }),
-		).toHaveAttribute("aria-pressed", "true");
+		const topic = screen.getByRole("region", { name: "Recruiting" });
 		const savedTopic = () =>
-			session.saved?.draft.topics.find(
-				(topic) => topic.key === "topic-1",
-			);
+			session.saved?.draft.topics.find((item) => item.key === "topic-1");
+		expect(
+			within(topic).getByRole("button", { name: "Take Ana Lima off" }),
+		).toBeVisible();
 
-		await user.click(bo);
-		expect(bo).toHaveAttribute("aria-pressed", "false");
+		await user.click(
+			within(topic).getByRole("button", { name: "Take Bo Chen off" }),
+		);
+		expect(
+			within(topic).getByRole("button", { name: "Put Bo Chen back" }),
+		).toBeVisible();
 		await waitFor(
 			() => expect(savedTopic()?.removedPeople).toEqual(["p-2"]),
 			SAVED,
 		);
 		expect(savedTopic()?.addedPeople).toEqual([]);
 
-		await user.click(bo);
-		expect(bo).toHaveAttribute("aria-pressed", "true");
+		await user.click(
+			within(topic).getByRole("button", { name: "Put Bo Chen back" }),
+		);
+		expect(
+			within(topic).getByRole("button", { name: "Take Bo Chen off" }),
+		).toBeVisible();
 		await waitFor(
 			() => expect(savedTopic()?.removedPeople).toEqual([]),
 			SAVED,
@@ -503,68 +518,56 @@ describe("onboarding topics: people stage", () => {
 		expect(savedTopic()?.addedPeople).toEqual([]);
 	});
 
-	it("lists only kept topics and takes an added person off with the X", async () => {
-		const review = makeAreaReview();
+	it("takes an added person off a topic with the X", async () => {
+		const review = setUpInBuilder(makeAreaReview());
 		const first = review.draft.topics[0];
 		first.addedPeople = ["p-9"];
 		first.addedPeopleInfo = [{ id: "p-9", name: "Cy Diaz" }];
 		const { session, user } = await openAreas(
 			reviewSession(async () => review),
 		);
+		const topic = screen.getByRole("region", { name: "Recruiting" });
 		await user.click(
-			screen.getByRole("checkbox", { name: "Budget Planning" }),
+			within(topic).getByRole("button", { name: "Take Cy Diaz off" }),
 		);
-		await nextStage(user, "people");
-		expect(screen.queryByText("Budget Planning")).not.toBeInTheDocument();
-		expect(screen.getByText("Platform Operations")).toBeVisible();
-		await user.click(
-			screen.getByRole("button", { name: "Take Cy Diaz off Recruiting" }),
-		);
-		expect(screen.queryByText("Cy Diaz")).not.toBeInTheDocument();
+		expect(
+			within(topic).queryByRole("button", { name: /Cy Diaz/ }),
+		).not.toBeInTheDocument();
 		await waitFor(
 			() =>
 				expect(
 					session.saved?.draft.topics.find(
-						(topic) => topic.key === "topic-1",
+						(item) => item.key === "topic-1",
 					)?.addedPeople,
 				).toEqual([]),
 			SAVED,
 		);
 		expect(
-			session.saved?.draft.topics.find((topic) => topic.key === "topic-1")
+			session.saved?.draft.topics.find((item) => item.key === "topic-1")
 				?.removedPeople,
 		).toEqual([]);
 	});
-
-	it("says so when no topic is kept", async () => {
-		const review = makeReview();
-		review.draft.topics = [
-			makeTopic("topic-1", "Northwind", { keep: false }),
-		];
-		const { user } = await openAreas(reviewSession(async () => review));
-		await nextStage(user, "people");
-		expect(screen.getByText(/No topics are kept yet/)).toBeVisible();
-	});
 });
 
-describe("onboarding topics: conversations stage", () => {
-	it("records what you looked at: unchecked are rejected, the rest confirmed", async () => {
+describe("onboarding topics: conversations on a topic", () => {
+	it("takes a conversation off a topic and puts it back", async () => {
 		const session = evidenceSession();
 		session.evidence.mockImplementation(async (review, key) =>
 			makeEvidence(review, key, { total: 3 }),
 		);
 		const { user } = await openAreas(session);
-		await nextStage(user, "people");
-		await nextStage(user, "conversations");
-		expect(await screen.findByText("Topic 1 of 2")).toBeVisible();
-		const second = await screen.findByRole("checkbox", {
-			name: /Conversation 2/,
+		const off = await screen.findByRole("button", {
+			name: 'Take "Conversation 2" off this topic',
 		});
-		await waitFor(() => expect(second).toBeEnabled());
-		await user.click(second);
-		expect(second).not.toBeChecked();
-		await press(user, "Looks right, next topic");
-		expect(await screen.findByText("Topic 2 of 2")).toBeVisible();
+		await waitFor(() => expect(off).toBeEnabled());
+		await user.click(off);
+		expect(await screen.findByText(/^Taken off this topic/)).toBeVisible();
+		await press(user, "Put back");
+		await waitFor(() =>
+			expect(
+				screen.queryByText(/^Taken off this topic/),
+			).not.toBeInTheDocument(),
+		);
 
 		expect(changesSent(session)).toEqual([
 			{
@@ -583,99 +586,72 @@ describe("onboarding topics: conversations stage", () => {
 				change: {
 					type: "confirm",
 					topicKey: "topic-1",
-					threadIds: ["thread-1", "thread-3"],
-					versions: {
-						"thread-1": "relationship-version-1",
-						"thread-3": "relationship-version-3",
-					},
+					threadIds: ["thread-2"],
+					versions: { "thread-2": "relationship-version-2" },
 				},
 			},
 		]);
-		expect(session.saved?.draft.corrections).toEqual(
-			expect.arrayContaining([
-				{
-					threadId: "thread-2",
-					topicKey: "topic-1",
-					state: "exclude",
-					primary: false,
-				},
-				{
-					threadId: "thread-1",
-					topicKey: "topic-1",
-					state: "include",
-					primary: false,
-				},
-			]),
-		);
+		expect(session.saved?.draft.corrections).toEqual([
+			{
+				threadId: "thread-2",
+				topicKey: "topic-1",
+				state: "include",
+				primary: false,
+			},
+		]);
 	});
 
-	it("does not send choices that are already recorded when you come back", async () => {
+	it("keeps a choice already made when you come back to a topic", async () => {
 		const session = evidenceSession();
 		session.evidence.mockImplementation(async (review, key) =>
 			makeEvidence(review, key, { total: 3 }),
 		);
 		const { user } = await openAreas(session);
-		await nextStage(user, "people");
-		await nextStage(user, "conversations");
-		await user.click(
-			await screen.findByRole("checkbox", { name: /Conversation 2/ }),
-		);
-		await press(user, "Looks right, next topic");
-		await screen.findByText("Topic 2 of 2");
-		await press(user, "Previous topic");
-		expect(await screen.findByText("Topic 1 of 2")).toBeVisible();
-		// what was unchecked before comes back unchecked
-		const second = await screen.findByRole("checkbox", {
-			name: /Conversation 2/,
-		});
-		await waitFor(() => expect(second).not.toBeChecked());
-		const before = changesSent(session).length;
-		await press(user, "Looks right, next topic");
-		await screen.findByText("Topic 2 of 2");
-		expect(changesSent(session)).toHaveLength(before);
+		await press(user, 'Take "Conversation 2" off this topic');
+		await screen.findByText(/^Taken off this topic/);
+		await openTopic(user, "Platform Operations");
+		await openTopic(user, "Northwind Migration");
+		expect(await screen.findByText(/^Taken off this topic/)).toBeVisible();
+		expect(screen.getByRole("button", { name: "Put back" })).toBeVisible();
+		expect(changesSent(session)).toHaveLength(1);
 	});
 
-	it("tells you when a topic has no conversations and moves on without sending anything", async () => {
+	it("says when a topic has no conversations yet, and sends nothing", async () => {
 		const session = evidenceSession();
 		session.evidence.mockImplementation(noEvidence);
 		const { user } = await openAreas(session);
-		await nextStage(user, "people");
-		await nextStage(user, "conversations");
-		expect(
-			await screen.findByText(
-				/No conversations found for this topic yet/,
-			),
-		).toBeVisible();
-		await press(user, "Looks right, next topic");
-		expect(await screen.findByText("Topic 2 of 2")).toBeVisible();
-		await press(user, "Looks right, finish");
+		expect(await screen.findByText(/No conversations yet/)).toBeVisible();
+		await nextStage(user, "done");
 		expect(
 			await screen.findByRole("heading", { name: "Ready to file" }),
 		).toBeVisible();
 		expect(changesSent(session)).toEqual([]);
 	});
 
-	it("loads the conversations of the first kept topic from the saved draft", async () => {
+	it("saves the draft before reading a topic's conversations", async () => {
 		const session = evidenceSession();
 		const { user } = await openAreas(session);
-		await user.click(
-			screen.getByRole("button", { name: "Rename Northwind Migration" }),
-		);
-		const name = screen.getByRole("textbox", { name: "Topic name" });
-		await user.clear(name);
-		await user.type(name, "Northwind Rollout{Enter}");
-		await nextStage(user, "people");
-		await nextStage(user, "conversations");
 		expect(
 			await screen.findByText("TLS certificate renewal"),
 		).toBeVisible();
-		expect(session.saved?.draft.topics[0].name).toBe("Northwind Rollout");
+		await user.click(screen.getByRole("button", { name: "Rename" }));
+		const name = screen.getByRole("textbox", { name: "Topic name" });
+		await user.clear(name);
+		await user.type(name, "Northwind Rollout{Enter}");
+		await openTopic(user, "Platform Operations");
+		await waitFor(() =>
+			expect(session.saved?.draft.topics[0].name).toBe(
+				"Northwind Rollout",
+			),
+		);
 		const calls = session.run.mock.calls.map(([statement]) => statement);
 		const save = calls.findIndex((statement) =>
 			statement.startsWith("BrainSaveTopicReview("),
 		);
-		const read = calls.findIndex((statement) =>
-			statement.startsWith("BrainGetTopicReviewEvidence("),
+		const read = calls.findIndex(
+			(statement) =>
+				statement.startsWith("BrainGetTopicReviewEvidence(") &&
+				statement.includes('topicKey=["topic-2"]'),
 		);
 		expect(save).toBeGreaterThan(-1);
 		expect(read).toBeGreaterThan(save);
@@ -689,10 +665,7 @@ describe("onboarding topics: done stage", () => {
 		session.evidence.mockImplementation(noEvidence);
 		const onNext = vi.fn();
 		const { user } = await openAreas(session, onNext);
-		await nextStage(user, "people");
-		await nextStage(user, "conversations");
-		await press(user, "Looks right, next topic");
-		await press(user, "Looks right, finish");
+		await nextStage(user, "done");
 		expect(
 			await screen.findByRole("heading", { name: "Ready to file" }),
 		).toBeVisible();
@@ -710,32 +683,41 @@ describe("onboarding topics: done stage", () => {
 		);
 	});
 
-	it("lets you go back and change a stage", async () => {
+	it("lets you go back and change topics, people or conversations", async () => {
 		const session = evidenceSession();
 		session.evidence.mockImplementation(noEvidence);
 		const { user } = await openAreas(session);
-		await nextStage(user, "people");
-		await nextStage(user, "conversations");
-		await press(user, "Looks right, next topic");
-		await press(user, "Looks right, finish");
+		await nextStage(user, "done");
 		await screen.findByRole("heading", { name: "Ready to file" });
-		await user.click(screen.getByRole("button", { name: "People" }));
+		await user.click(
+			screen.getByRole("button", {
+				name: "Change topics, people or conversations",
+			}),
+		);
 		expect(
-			screen.getByRole("heading", { name: "Who belongs on each topic" }),
+			screen.getByRole("heading", { name: "Check your topics" }),
 		).toBeVisible();
 	});
 
+	it("says so when no topic is kept", async () => {
+		const review = makeReview();
+		review.draft.topics = [
+			makeTopic("topic-1", "Northwind", { keep: false }),
+		];
+		const { user } = await openAreas(reviewSession(async () => review));
+		await nextStage(user, "done");
+		expect(screen.getByText(/No topics are kept/)).toBeVisible();
+	});
+
 	it("keeps the topics unsaved and explains when the saved names differ from the review", async () => {
-		const session = evidenceSession(makeReview());
+		const session = evidenceSession(setUpInBuilder(makeReview()));
 		session.evidence.mockImplementation(noEvidence);
 		session.afterApply.mockImplementationOnce(async (review) => {
 			review.result.topics[0].short = "Old navigation name";
 		});
 		const onNext = vi.fn();
 		const { user } = await openAreas(session, onNext);
-		await nextStage(user, "people");
-		await nextStage(user, "conversations");
-		await press(user, "Looks right, finish");
+		await nextStage(user, "done");
 		await user.click(
 			await screen.findByRole("button", { name: "Save 1 topic" }),
 		);
@@ -757,14 +739,8 @@ describe("onboarding topics: done stage", () => {
 			screen.getByRole("textbox", { name: "Add a topic" }),
 			"Backend Hiring{Enter}",
 		);
-		await nextStage(user, "people");
-		await nextStage(user, "conversations");
-		for (const name of [
-			"Looks right, next topic",
-			"Looks right, next topic",
-			"Looks right, finish",
-		])
-			await press(user, name);
+		await screen.findByRole("heading", { name: "Backend Hiring" });
+		await nextStage(user, "done");
 		await user.click(
 			await screen.findByRole("button", { name: "Save 3 topics" }),
 		);

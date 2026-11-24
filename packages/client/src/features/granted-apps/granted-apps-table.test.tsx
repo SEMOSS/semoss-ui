@@ -5,6 +5,7 @@ import {
 	screen,
 	waitFor,
 } from "@testing-library/react";
+import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	getResourcePermissions,
@@ -12,8 +13,8 @@ import {
 	type ResourcePermissions,
 	savePermissionBatches,
 } from "@semoss/sdk";
-import type { EngineApp } from "./engine-app-permissions";
-import { EngineAppsTable } from "./engine-apps-table";
+import type { Grantee } from "@/features/grants/grants";
+import { GrantedAppsTable } from "./granted-apps-table";
 
 vi.mock("@semoss/sdk", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@semoss/sdk")>()),
@@ -36,13 +37,13 @@ const APP_LIMIT: ModelUsageLimit = {
 };
 
 /** An app with an end date and a usage limit */
-const INTAKE: EngineApp = {
+const INTAKE: Grantee = {
 	subject: {
 		category: "ENGINE",
 		id: "app1",
 		type: "PROJECT",
 		name: "Intake Form",
-		subtype: null,
+		subtype: "CODE",
 	},
 	access: {
 		level: "READ_ONLY",
@@ -52,7 +53,7 @@ const INTAKE: EngineApp = {
 };
 
 /** An app with neither */
-const REPORTS: EngineApp = {
+const REPORTS: Grantee = {
 	subject: {
 		category: "ENGINE",
 		id: "app2",
@@ -64,7 +65,7 @@ const REPORTS: EngineApp = {
 };
 
 /** Another engine the engine gives a permission to, which the Apps table leaves out */
-const GUARDRAIL: EngineApp = {
+const GUARDRAIL: Grantee = {
 	subject: {
 		category: "ENGINE",
 		id: "guard1",
@@ -82,19 +83,21 @@ const GUARDRAIL: EngineApp = {
  * give access when asked
  */
 const permissionsWith = (
-	apps: EngineApp[],
+	apps: Grantee[],
 	canChangeEngines = true,
 	addsAreAdminOnly = false,
 ): ResourcePermissions => ({
 	people: [],
 	teams: [],
 	engines: [...apps, GUARDRAIL],
+	accessToEngines: [],
 	allowedPermissionChanges: {
 		canChangePeople: canChangeEngines,
 		canGiveAuthorAccess: canChangeEngines,
 		canChangeTeams: canChangeEngines,
 		canViewEngines: true,
 		canChangeEngines,
+		canViewAccessToEngines: true,
 		addsAreAdminOnly,
 		limitLevels: canChangeEngines ? ["READ_ONLY", "EDIT", "OWNER"] : [],
 		canChangeModelLimits: canChangeEngines,
@@ -109,18 +112,20 @@ const permissionsWith = (
 const renderTable = ({ isModel = false, admin = false } = {}) => {
 	const id = isModel ? "model-1" : "engine-1";
 	return render(
-		<EngineAppsTable
-			id={id}
-			type={isModel ? "MODEL" : "DATABASE"}
-			admin={admin}
-		/>,
+		<MemoryRouter>
+			<GrantedAppsTable
+				target={{ resourceType: "ENGINE", id }}
+				type={isModel ? "MODEL" : "DATABASE"}
+				admin={admin}
+			/>
+		</MemoryRouter>,
 	);
 };
 
 const getLevel = (name: string) =>
 	screen.getByRole("combobox", { name: `Permission for ${name}` });
 
-describe("EngineAppsTable", () => {
+describe("GrantedAppsTable", () => {
 	beforeEach(() => {
 		vi.mocked(getResourcePermissions)
 			.mockReset()
@@ -150,10 +155,17 @@ describe("EngineAppsTable", () => {
 		);
 		renderTable();
 
-		expect(screen.getByText("Loading apps...")).toBeInTheDocument();
+		expect(
+			screen.getByText("Loading apps and agents..."),
+		).toBeInTheDocument();
 		expect(await screen.findByText("Intake Form")).toBeInTheDocument();
 		expect(screen.getByText("Reports")).toBeInTheDocument();
 		expect(screen.getByText("id: app1")).toBeInTheDocument();
+		expect(
+			screen.getByRole("link", {
+				name: "Intake Form (opens in a new tab)",
+			}),
+		).toHaveAttribute("href", "/app/app1");
 		expect(screen.queryByText("Prompt Guard")).not.toBeInTheDocument();
 		expect(getResourcePermissions).toHaveBeenCalledExactlyOnceWith(
 			{ resourceType: "ENGINE", id: "engine-1" },
@@ -163,7 +175,7 @@ describe("EngineAppsTable", () => {
 		expect(getLevel("Intake Form")).toHaveTextContent("Read-Only");
 		expect(getLevel("Reports")).toHaveTextContent("Editor");
 		expect(
-			screen.queryByRole("button", { name: "Add App" }),
+			screen.queryByRole("button", { name: "Add App or Agent" }),
 		).not.toBeInTheDocument();
 		expect(
 			screen.queryByRole("columnheader", { name: "Actions" }),
@@ -183,10 +195,12 @@ describe("EngineAppsTable", () => {
 
 		expect(await screen.findByText("Intake Form")).toBeInTheDocument();
 		expect(
-			screen.queryByRole("button", { name: "Add App" }),
+			screen.queryByRole("button", { name: "Add App or Agent" }),
 		).not.toBeInTheDocument();
 		expect(
-			screen.getByText(/Only admins can give apps access to this engine/),
+			screen.getByText(
+				/Only admins can give access to databases, from this page in admin mode/,
+			),
 		).toBeInTheDocument();
 		expect(getLevel("Intake Form")).toBeEnabled();
 		expect(
@@ -201,7 +215,7 @@ describe("EngineAppsTable", () => {
 
 		expect(await screen.findByText("Intake Form")).toBeInTheDocument();
 		expect(
-			screen.getByRole("button", { name: "Add App" }),
+			screen.getByRole("button", { name: "Add App or Agent" }),
 		).toBeInTheDocument();
 		expect(getLevel("Intake Form")).toBeEnabled();
 		expect(
@@ -344,7 +358,7 @@ describe("EngineAppsTable", () => {
 		);
 
 		expect(
-			await screen.findByRole("heading", { name: "Remove App Access" }),
+			await screen.findByRole("heading", { name: "Remove Access" }),
 		).toBeInTheDocument();
 		expect(savePermissionBatches).not.toHaveBeenCalled();
 
@@ -394,7 +408,7 @@ describe("EngineAppsTable", () => {
 			await screen.findByText("Intake Form has no access to this engine"),
 		).toBeInTheDocument();
 		expect(
-			screen.getByRole("heading", { name: "Remove App Access" }),
+			screen.getByRole("heading", { name: "Remove Access" }),
 		).toBeInTheDocument();
 		expect(getResourcePermissions).toHaveBeenCalledTimes(1);
 	});
@@ -454,20 +468,20 @@ describe("EngineAppsTable", () => {
 
 		expect(
 			await screen.findByText(
-				"Could not read the apps that can use this engine. The engine could not be found",
+				"Could not read the apps and agents that can use this engine. The engine could not be found",
 			),
 		).toBeInTheDocument();
 		expect(
-			screen.queryByText("No apps have access yet"),
+			screen.queryByText("No apps or agents have access yet"),
 		).not.toBeInTheDocument();
 
 		fireEvent.click(screen.getByRole("button", { name: "Try Again" }));
 
 		expect(
-			await screen.findByText("No apps have access yet"),
+			await screen.findByText("No apps or agents have access yet"),
 		).toBeInTheDocument();
 		expect(
-			screen.queryByText(/Could not read the apps/),
+			screen.queryByText(/Could not read the apps and agents/),
 		).not.toBeInTheDocument();
 	});
 
@@ -489,5 +503,77 @@ describe("EngineAppsTable", () => {
 			expect(savePermissionBatches).toHaveBeenCalledTimes(1),
 		);
 		expect(vi.mocked(savePermissionBatches).mock.calls[0][1]).toBe(true);
+	});
+
+	it("lists the apps and agents a skill gives a permission to, with no usage limits, and saves on the skill", async () => {
+		const agent: Grantee = {
+			subject: {
+				category: "ENGINE",
+				id: "agent1",
+				type: "PROJECT",
+				name: "Orders Agent",
+				subtype: "WORKSPACE",
+			},
+			access: { level: "READ_ONLY", endDate: null, usageLimit: null },
+		};
+		vi.mocked(getResourcePermissions).mockResolvedValue(
+			permissionsWith([agent]),
+		);
+		render(
+			<MemoryRouter>
+				<GrantedAppsTable
+					target={{ resourceType: "PROJECT", id: "skill1" }}
+					type="SKILL"
+				/>
+			</MemoryRouter>,
+		);
+
+		expect(await screen.findByText("Orders Agent")).toBeInTheDocument();
+		expect(
+			screen.getByRole("heading", {
+				name: "Apps and Agents That Can Use This Skill",
+			}),
+		).toBeInTheDocument();
+		expect(
+			screen.getByText(/such as an agent loading a skill/),
+		).toBeInTheDocument();
+		expect(getResourcePermissions).toHaveBeenCalledExactlyOnceWith(
+			{ resourceType: "PROJECT", id: "skill1" },
+			false,
+		);
+		expect(
+			screen.queryByRole("columnheader", { name: "Usage Limit" }),
+		).not.toBeInTheDocument();
+
+		fireEvent.click(
+			screen.getByRole("button", {
+				name: "Remove access for Orders Agent",
+			}),
+		);
+		expect(
+			await screen.findByText(/stop using this skill/),
+		).toBeInTheDocument();
+		fireEvent.click(screen.getByRole("button", { name: "Remove Access" }));
+
+		await waitFor(() =>
+			expect(savePermissionBatches).toHaveBeenCalledExactlyOnceWith(
+				[
+					{
+						target: { resourceType: "PROJECT", id: "skill1" },
+						changes: [
+							{
+								action: "REMOVE",
+								subject: {
+									category: "ENGINE",
+									id: "agent1",
+									type: "PROJECT",
+								},
+							},
+						],
+					},
+				],
+				false,
+			),
+		);
 	});
 });

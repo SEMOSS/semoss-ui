@@ -56,6 +56,12 @@ export interface EngineSelectProps {
 	 */
 	admin?: boolean;
 
+	/**
+	 * Lists only the engines the user owns, directly or through a team.
+	 * Admin mode lists every engine.
+	 */
+	isOwnedOnly?: boolean;
+
 	/** Props forwarded to the PopoverContent component */
 	popoverContentProps?: React.ComponentProps<typeof PopoverContent>;
 
@@ -97,6 +103,14 @@ export interface EngineSelectProps {
 	 */
 	unavailable?: { engine: Engine; note: string };
 
+	/**
+	 * Lets the user pick several engines without the list closing: each engine
+	 * picked is passed to onChange, and the engines with these ids are shown
+	 * checked. The caller adds or takes off each one picked; `name` is what the
+	 * trigger shows, such as how many are picked.
+	 */
+	selectedIds?: readonly string[];
+
 	/** Focuses the trigger, as a form does for a field with a problem. */
 	ref?: React.Ref<HTMLButtonElement>;
 
@@ -118,7 +132,7 @@ export interface EngineSelectProps {
  * - Lazy loading with pagination (15 items per page)
  * - Real-time search with debouncing
  * - Infinite scroll for large datasets
- * - Filter by engine type and metadata
+ * - Filter by engine type and metadata, or to the engines the user owns
  * - Every engine through AdminMyEngines in admin mode, or the user's own
  *   through MyEngines
  * - Displays engine name and description, or its id with showEngineId
@@ -134,6 +148,7 @@ export const EngineSelect = ({
 	engineTypes,
 	metaFilters,
 	admin = false,
+	isOwnedOnly = false,
 	popoverContentProps = {},
 	showEngineId,
 	showEngineIcon = true,
@@ -142,6 +157,7 @@ export const EngineSelect = ({
 	engines,
 	noneOption,
 	unavailable,
+	selectedIds,
 	ref,
 	"aria-describedby": ariaDescribedBy,
 	"aria-invalid": ariaInvalid,
@@ -167,6 +183,7 @@ export const EngineSelect = ({
 	 * - filterWord: Text search across engine names/descriptions
 	 * - engineTypes: Filter by engine type (MODEL, DATABASE, etc.)
 	 * - metaFilters: Additional metadata-based filtering
+	 * - effectivePermissions: Only the engines the user owns, with isOwnedOnly
 	 * - limit/offset: Pagination parameters
 	 *
 	 * Only runs when popover is open to avoid unnecessary queries, and never
@@ -187,6 +204,8 @@ export const EngineSelect = ({
 						metaFilters
 							? `metaFilters=${JSON.stringify(metaFilters)},`
 							: ""
+					} ${
+						isOwnedOnly && !admin ? "effectivePermissions=[1]," : ""
 					} limit=[${limit}], offset=[${offset}]);`
 				: "",
 		// Determine if there are more pages to load
@@ -210,6 +229,7 @@ export const EngineSelect = ({
 		[
 			open,
 			admin,
+			isOwnedOnly,
 			debouncedSearch,
 			JSON.stringify(engineTypes),
 			JSON.stringify(metaFilters),
@@ -371,6 +391,9 @@ export const EngineSelect = ({
 									engine.engine_display_name ||
 									engine.engine_name;
 								const engineId = engine.engine_id;
+								const isPicked = selectedIds
+									? selectedIds.includes(engineId)
+									: value === engineId;
 
 								return (
 									<CommandItem
@@ -378,10 +401,12 @@ export const EngineSelect = ({
 										value={engineId}
 										onSelect={() => {
 											onChange(engine);
-											setOpen(false);
+											if (!selectedIds) {
+												setOpen(false);
+											}
 										}}
 										className={cn(
-											value === engineId &&
+											isPicked &&
 												"bg-primary/10 data-[selected=true]:bg-primary/15",
 										)}
 									>
@@ -395,8 +420,13 @@ export const EngineSelect = ({
 											description={engine.description}
 											showEngineId={showEngineId}
 											showEngineIcon={showEngineIcon}
-											isSelected={value === engineId}
+											isSelected={isPicked}
 										/>
+										{selectedIds && isPicked ? (
+											<span className="sr-only">
+												, picked
+											</span>
+										) : null}
 									</CommandItem>
 								);
 							})}

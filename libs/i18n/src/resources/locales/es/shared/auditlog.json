@@ -26,7 +26,8 @@
 			"last7Days": "Últimos 7 días",
 			"last30Days": "Últimos 30 días",
 			"custom": "Personalizado"
-		}
+		},
+		"accessReason": "Acceso"
 	},
 	"summary": {
 		"events": "Eventos",
@@ -64,7 +65,8 @@
 			"timestamp": "Marca de tiempo",
 			"status": "Estado",
 			"guardrailAction": "Barrera",
-			"billedTo": "Facturado a"
+			"billedTo": "Facturado a",
+			"access": "Acceso"
 		},
 		"guardrailActions": {
 			"MASK": "Enmascarado",
@@ -107,7 +109,8 @@
 			"span": "Span",
 			"session": "Sesión",
 			"request": "Petición",
-			"response": "Respuesta"
+			"response": "Respuesta",
+			"access": "Acceso"
 		}
 	},
 	"detail": {
@@ -136,7 +139,8 @@
 			"spanId": "ID de span",
 			"request": "Petición",
 			"response": "Respuesta",
-			"billedTo": "Facturado a"
+			"billedTo": "Facturado a",
+			"access": "Acceso"
 		}
 	},
 	"page": {
@@ -154,5 +158,52 @@
 		"appName": "Registro de auditoría",
 		"appDescription": "Aplicación de registro de auditoría",
 		"loadFailed": "No pudimos cargar el registro de auditoría. Inténtelo de nuevo y, si el problema persiste, comuníquese con soporte."
+	},
+	"accessReasons": {
+		"DIRECT": "Directo",
+		"TEAM": "Equipo",
+		"PUBLIC": "Público",
+		"DELEGATED": "Delegado",
+		"OWN_PROJECT": "Proyecto Propio",
+		"INSIGHT": "Insight",
+		"DISCOVERABLE": "Descubrible",
+		"ADMIN": "Administrador",
+		"PLATFORM": "Plataforma",
+		"REFUSED": "Rechazado"
+	},
+	"accessDetails": {
+		"level": "Nivel",
+		"teamId": "Equipo",
+		"teamType": "Tipo de Equipo",
+		"granteeId": "Otorgado A",
+		"granteeType": "Tipo de Otorgado",
+		"via": "Mediante",
+		"callingEngineId": "Motor que Llama",
+		"appId": "Aplicación",
+		"agentId": "Agente",
+		"rule": "Trabajo de la Plataforma",
+		"operation": "Operación",
+		"levelNeeded": "Nivel Necesario",
+		"attempt": "Intento"
+	},
+	"accessLevels": {
+		"OWNER": "Autor",
+		"EDIT": "Editor",
+		"READ_ONLY": "Solo Lectura"
+	},
+	"accessVia": {
+		"APP_CODE": "El código personalizado de una aplicación",
+		"AGENT_RUN": "La ejecución de un agente",
+		"ENGINE_CODE": "El código propio de un motor",
+		"PLATFORM": "La plataforma"
+	},
+	"accessRules": {
+		"LOADING": "Cargando el motor",
+		"PLATFORM_USE": "Uso propio de la plataforma",
+		"PLATFORM_OPERATION": "Una operación de la plataforma",
+		"ENGINE_ITSELF": "El motor llamándose a sí mismo",
+		"PROJECT_ENGINE": "Trabajo propio de un proyecto",
+		"VENV": "Un motor venv",
+		"BEING_CREATED_OR_DELETED": "Creándose o eliminándose"
 	}
 }

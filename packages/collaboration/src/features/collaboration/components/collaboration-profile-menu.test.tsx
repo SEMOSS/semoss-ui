@@ -50,7 +50,7 @@ it("shows the current account and supports keyboard dismissal and Settings navig
 	const trigger = screen.getByRole("button", {
 		name: "Account menu for Taylor Morgan",
 	});
-	expect(trigger).not.toHaveTextContent("Taylor Morgan");
+	expect(trigger).toHaveTextContent("Taylor Morgan");
 	act(() => trigger.focus());
 	await user.keyboard("{Enter}");
 	expect(screen.getByText("taylor@example.invalid")).toBeVisible();
