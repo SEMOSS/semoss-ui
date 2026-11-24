@@ -21,12 +21,15 @@ export const DEFAULT_GRANT_LEVEL: GrantLevel = "READ_ONLY";
 const LEVEL_SENTENCES: Readonly<Record<GrantTargetType, string>> = {
 	ENGINE: "Read-Only lets them read from the engine: query it, ask a model or embed with it, list and download its files, and search a vector database. Editor also lets them write to it, upload and delete its files and documents, and use its connection.",
 	PROJECT:
-		"Read-Only lets them read the project: its files, insights and reactors, such as an agent loading a skill. Editor also lets them use its runtime: run its Python, compile its reactors and write its notebooks.",
+		"Read-Only lets them read the project: its files, insights and reactors, such as an agent loading a skill.",
 };
 
-/** What each level lets the one given it do, short enough for a table cell */
+/**
+ * What each level lets the one given it do, short enough for a table cell; a
+ * project's Editor has none
+ */
 const LEVEL_SUMMARIES: Readonly<
-	Record<GrantTargetType, Readonly<Record<GrantLevel, string>>>
+	Record<GrantTargetType, Readonly<Partial<Record<GrantLevel, string>>>>
 > = {
 	ENGINE: {
 		READ_ONLY: "Reads it: queries, asks or embeds, lists and searches",
@@ -34,7 +37,6 @@ const LEVEL_SUMMARIES: Readonly<
 	},
 	PROJECT: {
 		READ_ONLY: "Reads its files, insights and reactors",
-		EDIT: "Also runs its Python and compiles its reactors",
 	},
 };
 
@@ -56,13 +58,13 @@ export const describeGrantLevels = (resourceType: GrantTargetType): string =>
  * @param resourceType - what gives the permission
  * @param level - the level given
  * @returns what the level lets the one given it do there, or null for a level
- * a grantee is never given
+ * a grantee is never given and for Editor on a project
  */
 export const summarizeGrantLevel = (
 	resourceType: GrantTargetType,
 	level: string,
 ): string | null =>
-	isGrantLevel(level) ? LEVEL_SUMMARIES[resourceType][level] : null;
+	isGrantLevel(level) ? (LEVEL_SUMMARIES[resourceType][level] ?? null) : null;
 
 /**
  * The word a page uses for an engine or project of a type: engine, app, agent,
