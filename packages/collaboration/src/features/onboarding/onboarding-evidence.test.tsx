@@ -10,11 +10,13 @@ import {
 } from "./topic-evidence.test-fixtures";
 import { DOT } from "./topic-flow-utils";
 import {
+	checkTopics,
 	deferred,
 	makeAreaReview,
 	nextStage,
 	press,
 	reviewSession,
+	setUpInBuilder,
 } from "./topic-review.test-fixtures";
 import { TopicsStep } from "./topics-step";
 
@@ -31,21 +33,25 @@ function step(actions: InsightActions, onNext = vi.fn()) {
 	);
 }
 
+/** Opens the Check stage, where the first kept topic's conversations load. */
 async function openConversations(session: ReturnType<typeof evidenceSession>) {
 	const user = userEvent.setup();
 	const view = render(step(session.actions));
 	await screen.findByRole("heading", { name: "Your main areas of work" });
-	await nextStage(user, "people");
-	await nextStage(user, "conversations");
-	await screen.findByText("Topic 1 of 2");
+	await checkTopics(user);
 	return { user, view };
 }
 
-const subjects = () =>
-	screen
-		.getAllByRole("checkbox")
-		.map((box) => box.getAttribute("id"))
-		.filter(Boolean).length;
+/** The conversations listed, by their selection boxes. */
+const conversations = () =>
+	screen.queryAllByRole("checkbox", { name: /^Select "/ });
+
+const evidenceReads = (session: ReturnType<typeof evidenceSession>) =>
+	session.run.mock.calls
+		.map(([statement]) => String(statement))
+		.filter((statement) =>
+			statement.startsWith("BrainGetTopicReviewEvidence("),
+		);
 
 beforeEach(() => {
 	vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
@@ -65,17 +71,16 @@ describe("onboarding conversation check", () => {
 		expect(screen.getByText(/3 messages/)).toHaveTextContent(
 			`${DOT} 3 messages ${DOT} Ana Lima`,
 		);
-		expect(screen.getByText(`${DOT} 1 conversation`)).toBeVisible();
-		// nothing is previous on the first topic
+		expect(screen.getByText("Conversations (1)")).toBeVisible();
+		expect(screen.getByText("1 worth a look, shown first")).toBeVisible();
 		expect(
-			screen.queryByRole("button", { name: "Previous topic" }),
-		).not.toBeInTheDocument();
-		expect(
-			screen.getByRole("button", { name: "Looks right, next topic" }),
+			screen.getByRole("button", {
+				name: 'Take "TLS certificate renewal" off this topic',
+			}),
 		).toBeVisible();
 	});
 
-	it("moves a conversation to another topic at once and does not confirm it again", async () => {
+	it("moves a conversation to another topic at once and does not put it back here", async () => {
 		const session = evidenceSession();
 		const { user } = await openConversations(session);
 		const trigger = await screen.findByRole("button", {
@@ -90,7 +95,7 @@ describe("onboarding conversation check", () => {
 		);
 		expect(
 			await screen.findByText(
-				new RegExp(`Moved to Platform Operations ${DOT}`),
+				new RegExp(`^Moved to Platform Operations ${DOT}`),
 			),
 		).toBeVisible();
 		expect(changesSent(session)).toEqual([
@@ -107,17 +112,14 @@ describe("onboarding conversation check", () => {
 			},
 		]);
 		const box = screen.getByRole("checkbox", {
-			name: /TLS certificate renewal/,
+			name: 'Select "TLS certificate renewal"',
 		});
 		expect(box).toBeDisabled();
 		expect(box).not.toBeChecked();
 		expect(
 			screen.queryByRole("button", { name: /^Move "/ }),
 		).not.toBeInTheDocument();
-
-		await press(user, "Looks right, next topic");
-		expect(await screen.findByText("Topic 2 of 2")).toBeVisible();
-		// the moved one is already decided, so nothing else goes out for topic 1
+		expect(screen.getByRole("button", { name: "Put back" })).toBeDisabled();
 		expect(changesSent(session)).toHaveLength(1);
 		expect(session.saved?.draft.corrections).toEqual([
 			{
@@ -141,57 +143,71 @@ describe("onboarding conversation check", () => {
 			makeEvidence(review, key, { total: 25, offset }),
 		);
 		const { user } = await openConversations(session);
-		await screen.findByRole("checkbox", { name: /Conversation 10/ });
-		expect(subjects()).toBe(10);
+		await screen.findByRole("checkbox", {
+			name: 'Select "Conversation 10"',
+		});
+		expect(conversations()).toHaveLength(10);
 		expect(
-			screen.queryByRole("checkbox", { name: /Conversation 11/ }),
+			screen.queryByRole("checkbox", {
+				name: 'Select "Conversation 11"',
+			}),
 		).not.toBeInTheDocument();
-		const evidenceReads = () =>
-			session.run.mock.calls.filter(([statement]) =>
-				statement.startsWith("BrainGetTopicReviewEvidence("),
-			);
-		expect(evidenceReads()).toHaveLength(2);
+		const reads = evidenceReads(session).length;
 
 		// the first read held twenty, so this one is local
 		await user.click(screen.getByRole("button", { name: /Show more/ }));
-		await screen.findByRole("checkbox", { name: /Conversation 20/ });
-		expect(subjects()).toBe(20);
-		expect(evidenceReads()).toHaveLength(2);
+		await screen.findByRole("checkbox", {
+			name: 'Select "Conversation 20"',
+		});
+		expect(conversations()).toHaveLength(20);
+		expect(evidenceReads(session)).toHaveLength(reads);
 		expect(
 			screen.getByRole("button", { name: /Show more/ }),
 		).toHaveTextContent("(5 left)");
 
 		await user.click(screen.getByRole("button", { name: /Show more/ }));
-		await screen.findByRole("checkbox", { name: /Conversation 25/ });
-		expect(subjects()).toBe(25);
-		expect(evidenceReads()).toHaveLength(3);
-		expect(evidenceReads()[2][0]).toContain("offset=[20]");
+		await screen.findByRole("checkbox", {
+			name: 'Select "Conversation 25"',
+		});
+		expect(conversations()).toHaveLength(25);
+		expect(evidenceReads(session)).toHaveLength(reads + 1);
+		expect(evidenceReads(session).at(-1)).toContain("offset=[20]");
 		expect(
 			screen.queryByRole("button", { name: /Show more/ }),
 		).not.toBeInTheDocument();
 	});
 
-	it("records only the conversations that were on screen", async () => {
+	it("takes off only the conversations you picked", async () => {
 		const session = evidenceSession();
 		session.evidence.mockImplementation(async (review, key, offset) =>
 			makeEvidence(review, key, { total: 25, offset }),
 		);
 		const { user } = await openConversations(session);
-		await screen.findByRole("checkbox", { name: /Conversation 10/ });
-		await press(user, "Looks right, next topic");
-		await screen.findByText("Topic 2 of 2");
+		await screen.findByRole("checkbox", {
+			name: 'Select "Conversation 10"',
+		});
+		for (const name of ["Conversation 2", "Conversation 3"])
+			await user.click(
+				screen.getByRole("checkbox", { name: `Select "${name}"` }),
+			);
+		expect(screen.getByText("2 selected")).toBeVisible();
+		await press(user, "Not this topic");
+		await waitFor(() => expect(changesSent(session)).toHaveLength(1));
 		const [only] = changesSent(session);
-		expect(changesSent(session)).toHaveLength(1);
 		expect(only.change).toMatchObject({
-			type: "confirm",
+			type: "reject",
 			topicKey: "topic-1",
 		});
-		expect("threadIds" in only.change && only.change.threadIds).toEqual(
-			Array.from({ length: 10 }, (_, index) => `thread-${index + 1}`),
+		expect("threadIds" in only.change && only.change.threadIds).toEqual([
+			"thread-2",
+			"thread-3",
+		]);
+		await waitFor(() =>
+			expect(screen.queryByText("2 selected")).not.toBeInTheDocument(),
 		);
 	});
 
-	it("leaves a Teams chat alone: it cannot be unchecked, moved or confirmed", async () => {
+	it("leaves a Teams chat alone: it cannot be picked, moved or taken off", async () => {
 		const session = evidenceSession();
 		session.evidence.mockImplementation(async (review, key) => {
 			const page = makeEvidence(review, key, { total: 2 });
@@ -201,7 +217,7 @@ describe("onboarding conversation check", () => {
 		});
 		const { user } = await openConversations(session);
 		const chat = await screen.findByRole("checkbox", {
-			name: /TLS certificate renewal/,
+			name: 'Select "TLS certificate renewal"',
 		});
 		expect(chat).toBeDisabled();
 		expect(screen.getByText("Teams")).toBeVisible();
@@ -211,43 +227,38 @@ describe("onboarding conversation check", () => {
 			}),
 		).not.toBeInTheDocument();
 		expect(
+			screen.queryByRole("button", {
+				name: 'Take "TLS certificate renewal" off this topic',
+			}),
+		).not.toBeInTheDocument();
+		expect(
 			await screen.findByRole("button", {
 				name: 'Move "Conversation 2" to another topic',
 			}),
 		).toBeVisible();
-		await press(user, "Looks right, next topic");
-		await screen.findByText("Topic 2 of 2");
+		await user.click(
+			screen.getByRole("checkbox", { name: 'Select "Conversation 2"' }),
+		);
+		await press(user, "Not this topic");
+		await waitFor(() => expect(changesSent(session)).toHaveLength(1));
 		const [only] = changesSent(session);
-		expect(changesSent(session)).toHaveLength(1);
 		expect("threadIds" in only.change && only.change.threadIds).toEqual([
 			"thread-2",
 		]);
 	});
 
-	it("retries an uncertain correction with the same operation ID", async () => {
+	it("explains an uncertain correction beside the list and records it once", async () => {
 		const session = evidenceSession();
 		session.afterChange.mockRejectedValueOnce(
 			new Error("Connection lost after the correction was saved"),
 		);
 		const { user } = await openConversations(session);
-		await user.click(
-			await screen.findByRole("checkbox", {
-				name: /TLS certificate renewal/,
-			}),
-		);
-		await press(user, "Looks right, next topic");
+		await press(user, 'Take "TLS certificate renewal" off this topic');
 		expect(await screen.findByRole("alert")).toHaveTextContent(
-			"Connection lost",
+			"Connection lost after the correction was saved. The list is refreshed; try again.",
 		);
-		// still on the first topic
-		expect(screen.getByText("Topic 1 of 2")).toBeVisible();
-		await user.click(screen.getByRole("button", { name: "Retry" }));
-		await waitFor(() =>
-			expect(screen.queryByRole("alert")).not.toBeInTheDocument(),
-		);
-		const sent = changesSent(session);
-		expect(sent).toHaveLength(2);
-		expect(sent[1]).toEqual(sent[0]);
+		expect(await screen.findByText(/^Taken off this topic/)).toBeVisible();
+		expect(changesSent(session)).toHaveLength(1);
 		expect(session.saved?.revision).toBe(2);
 		expect(session.saved?.draft.corrections).toHaveLength(1);
 	});
@@ -261,27 +272,22 @@ describe("onboarding conversation check", () => {
 		expect(await screen.findByRole("alert")).toHaveTextContent(
 			"Conversations are unavailable",
 		);
-		await press(user, "Looks right, next topic");
-		expect(await screen.findByText("Topic 2 of 2")).toBeVisible();
+		await nextStage(user, "done");
+		expect(
+			await screen.findByRole("heading", { name: "Ready to file" }),
+		).toBeVisible();
 		expect(changesSent(session)).toEqual([]);
 	});
 
 	it("ignores a correction response that arrives after switching to another insight", async () => {
 		const old = evidenceSession();
-		const current = reviewSession(async () => makeAreaReview());
+		const current = reviewSession(async () =>
+			setUpInBuilder(makeAreaReview()),
+		);
 		const pending = deferred<void>();
 		old.afterChange.mockImplementationOnce(() => pending.promise);
-		const view = render(step(old.actions));
-		const user = userEvent.setup();
-		await screen.findByRole("heading", { name: "Your main areas of work" });
-		await nextStage(user, "people");
-		await nextStage(user, "conversations");
-		await user.click(
-			await screen.findByRole("checkbox", {
-				name: /TLS certificate renewal/,
-			}),
-		);
-		await press(user, "Looks right, next topic");
+		const { user, view } = await openConversations(old);
+		await press(user, 'Take "TLS certificate renewal" off this topic');
 		await waitFor(() => expect(old.afterChange).toHaveBeenCalled());
 		view.rerender(step(current.actions));
 		const heading = await screen.findByRole("heading", {
@@ -289,7 +295,9 @@ describe("onboarding conversation check", () => {
 		});
 		await act(async () => pending.resolve());
 		expect(heading).toBeVisible();
-		expect(screen.queryByText(/Topic \d of \d/)).not.toBeInTheDocument();
+		expect(
+			screen.queryByText(/^Taken off this topic/),
+		).not.toBeInTheDocument();
 		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 		expect(current.saved?.draft.corrections).toBeUndefined();
 	});
