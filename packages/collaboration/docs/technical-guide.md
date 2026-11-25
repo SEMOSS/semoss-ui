@@ -163,7 +163,7 @@ Code in `features/collaboration/components/collaboration-search.tsx`, `features/
   44px min touch targets, workbench compact < 768px, calendar agenda < 640px.
 - Conversation editors/drafts stay mounted across pane changes; header room controls render into a stable shell target.
 - Rendering the brief/chat must not start agent work.
-- Repo rules apply: **read `skills/react-standard.skill.md` before any React work**, plus accessibility/mobile skills as relevant.
+- Repo rules apply: see the root `AGENTS.md` (non-negotiables, task skills) and `docs/standards/`.
   Don't edit `pnpm-lock.yaml`, `pom.xml`, `*.local`.
 
 ## 7. Dev, test, validate
