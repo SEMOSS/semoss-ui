@@ -576,7 +576,8 @@ export class AgentTurnController {
 			ownerName:
 				action.runId === run.runId
 					? undefined
-					: this.children.get(action.runId)?.workspaceName ||
+					: this.children.get(action.runId)?.label ||
+						this.children.get(action.runId)?.workspaceName ||
 						this.children.get(action.runId)?.executorLabel ||
 						"Child agent",
 			task:
@@ -681,6 +682,9 @@ export class AgentTurnController {
 					workspaceName:
 						child.workspaceName ||
 						(event?.kind === "subagent" ? event.alias : undefined),
+					label:
+						child.label ||
+						(event?.kind === "subagent" ? event.label : undefined),
 				},
 			});
 		}
