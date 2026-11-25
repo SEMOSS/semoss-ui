@@ -19,7 +19,6 @@ const monacoApi = resolve(
 const baseConfig = createViteConfig({
 	rootDir: import.meta.dirname,
 	port: DEV_SERVER_PORTS.client,
-	enableSvgr: true,
 	proxy: { ws: true },
 	alias: [
 		{
