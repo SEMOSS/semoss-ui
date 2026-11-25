@@ -1,6 +1,5 @@
 import { Check, Plus } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useInsight } from "@semoss/sdk/react";
+import { useContext, useState } from "react";
 import {
 	Button,
 	Popover,
@@ -14,77 +13,16 @@ import { TopicChip } from "@/features/collaboration/components/topic-chip";
 import { useRecordIds } from "@/features/collaboration/live/work-updates.context";
 import type { Topic } from "@/features/collaboration/state/collaboration.types";
 import { useOptionalCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
-import {
-	linkRoomTopic,
-	listRoomTopics,
-	type RoomTopic,
-} from "../api/room-topics";
+import { RoomTopicsContext } from "./room-topics.context";
 
-// Brain checks the chat a few seconds after each turn; read again while it catches up
-const AFTER_TURN_READS_MS = [6000, 15000, 30000];
-
-/** The chat's topics, read again after each turn so Brain's tags show up as the owner chats. */
-function useRoomTopics(roomId: string, isRunning: boolean) {
-	const { actions } = useInsight();
-	const { serverId } = useRecordIds();
-	const [topics, setTopics] = useState<RoomTopic[] | null>(null);
-	const wasRunning = useRef(isRunning);
-
-	const refresh = useCallback(async () => {
-		if (!actions || !roomId) return;
-		try {
-			setTopics(await listRoomTopics(actions, roomId));
-		} catch {
-			// not one of the owner's own chats: no topics to show
-			setTopics(null);
-		}
-	}, [actions, roomId]);
-
-	useEffect(() => {
-		void refresh();
-	}, [refresh]);
-
-	useEffect(() => {
-		const finished = wasRunning.current && !isRunning;
-		wasRunning.current = isRunning;
-		if (!finished) return;
-		const timers = AFTER_TURN_READS_MS.map((ms) =>
-			setTimeout(() => void refresh(), ms),
-		);
-		return () => timers.forEach(clearTimeout);
-	}, [isRunning, refresh]);
-
-	const change = useCallback(
-		async (topicId: string, remove: boolean) => {
-			if (!actions) return;
-			setTopics(
-				await linkRoomTopic(
-					actions,
-					roomId,
-					await serverId(topicId),
-					remove,
-				),
-			);
-		},
-		[actions, roomId, serverId],
-	);
-
-	return { topics, change };
-}
-
-/** Topic chips in the chat header: linked topics, Brain's suggestions to accept or dismiss, and a picker. */
-export function RoomTopics({
-	roomId,
-	isRunning,
-}: {
-	roomId: string;
-	isRunning: boolean;
-}) {
+/** Topic chips in the chat header: linked topics, Brain's suggestions to accept or dismiss, and a picker. The chat's topics come from RoomView. */
+export function RoomTopics() {
 	const session = useOptionalCollaborationSession();
-	const { topics, change } = useRoomTopics(roomId, isRunning);
+	const roomTopics = useContext(RoomTopicsContext);
 	const { localId } = useRecordIds();
 	const [open, setOpen] = useState(false);
-	if (!topics || !session) return null;
+	if (!roomTopics?.topics || !session) return null;
+	const { topics, change } = roomTopics;
 
 	// the page knows a topic made here by its own id; the chat's links carry the server's
 	const byId = new Map<string, Topic>(
