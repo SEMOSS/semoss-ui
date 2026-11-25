@@ -22,12 +22,15 @@ import {
 	EMAIL_BROWSER_PANEL,
 	ONEDRIVE_BROWSER_PANEL,
 	ROOM_TASK_PANEL_TYPE,
+	TOPIC_WORK_PANEL_TYPE,
 } from "@/features/room-connectors/room-connectors.constants";
 import type { Session } from "@/types/session";
+import type { RoomTopic } from "../api/room-topics";
 import { showFileOnOpen } from "../room-file-to-show";
 import { RoomSession } from "../room-session";
 import { roomWorkbenchTriggerId } from "../room-workbench-trigger-id";
 import { roomDockStorageKey } from "../use-room-dock-preference";
+import { RoomTopicsContext } from "./room-topics.context";
 import { RoomWorkspace } from "./room-workspace";
 
 // what the mocked composer sends
@@ -949,12 +952,14 @@ describe("who the room is with", () => {
 	});
 });
 
-/** Loads the dock's rail: Files, Emails, Calendar, OneDrive opened on demand, and the task for a work item chat. */
+/** Loads the dock's rail: Files, Emails, Calendar, OneDrive opened on demand, the task for a work item chat, and the topic's work once it has joined. */
 function loadRail({
 	task = false,
+	topicTab = false,
 	activeId = null,
 }: {
 	task?: boolean;
+	topicTab?: boolean;
 	activeId?: string | null;
 } = {}) {
 	const rail = [
@@ -963,6 +968,7 @@ function loadRail({
 		EMAIL_BROWSER_PANEL,
 		CALENDAR_BROWSER_PANEL,
 		ONEDRIVE_BROWSER_PANEL,
+		...(topicTab ? [TOPIC_WORK_PANEL_TYPE] : []),
 	];
 	layoutStore.getState().layout.actions.loadSnapshot({
 		tree: {
@@ -992,19 +998,34 @@ describe("RoomWorkspace drawer memory per chat", () => {
 	const activeKey = `${storageKey}:activeTab`;
 	const leftRail = { kind: "border", id: "left" };
 
-	/** The room as the given chat. */
-	function chat(roomId: string = session.id) {
+	/** The room as the given chat; `topics` are what the chat has been read to be linked to, null until read, and left out when the room has no source of them. */
+	function chat(roomId: string = session.id, topics?: RoomTopic[] | null) {
+		const workspace = (
+			<RoomWorkspace
+				{...defaultProps}
+				session={{ ...session, id: roomId }}
+			/>
+		);
 		return (
 			<CollaborationSessionProvider
 				initialState={createInitialCollaborationState()}
 			>
-				<RoomWorkspace
-					{...defaultProps}
-					session={{ ...session, id: roomId }}
-				/>
+				{topics === undefined ? (
+					workspace
+				) : (
+					<RoomTopicsContext.Provider
+						value={{ topics, change: vi.fn() }}
+					>
+						{workspace}
+					</RoomTopicsContext.Provider>
+				)}
 			</CollaborationSessionProvider>
 		);
 	}
+
+	const linked: RoomTopic[] = [
+		{ topicId: "topic-1", name: "Northwind Migration", state: "linked" },
+	];
 
 	beforeEach(() => {
 		localStorage.clear();
@@ -1038,12 +1059,16 @@ describe("RoomWorkspace drawer memory per chat", () => {
 		["Emails", EMAIL_BROWSER_PANEL],
 		["Calendar", CALENDAR_BROWSER_PANEL],
 		["Task", ROOM_TASK_PANEL_TYPE],
+		["Topic Work", TOPIC_WORK_PANEL_TYPE],
 	])(
 		"brings the %s tab back before opening the drawer, so the owner sees it and not just the rail",
 		(_name, tab) => {
 			localStorage.setItem(storageKey, "true");
 			localStorage.setItem(activeKey, tab);
-			loadRail({ task: tab === ROOM_TASK_PANEL_TYPE });
+			loadRail({
+				task: tab === ROOM_TASK_PANEL_TYPE,
+				topicTab: tab === TOPIC_WORK_PANEL_TYPE,
+			});
 			render(chat());
 			expect(
 				workbenchState.activatePanel,
@@ -1127,6 +1152,57 @@ describe("RoomWorkspace drawer memory per chat", () => {
 		act(() => loadRail({ activeId: FILE_PANEL_TYPES.FILE_EXPLORER }));
 		expect(localStorage.length).toBe(0);
 		byItself.unmount();
+	});
+
+	it("waits for the topic's tab before bringing Topic Work back, then shows it and opens the drawer", () => {
+		localStorage.setItem(storageKey, "true");
+		localStorage.setItem(activeKey, TOPIC_WORK_PANEL_TYPE);
+		loadRail();
+		const { rerender } = render(chat(session.id, null));
+		expect(workbenchState.openWorkbench).not.toHaveBeenCalled();
+
+		// the topic is read, and its tab is on its way
+		rerender(chat(session.id, linked));
+		expect(workbenchState.openWorkbench).not.toHaveBeenCalled();
+
+		act(() => loadRail({ topicTab: true }));
+		expect(workbenchState.activatePanel).toHaveBeenCalledExactlyOnceWith(
+			leftRail,
+			TOPIC_WORK_PANEL_TYPE,
+		);
+		expect(workbenchState.openWorkbench).toHaveBeenCalledTimes(1);
+		expect(
+			workbenchState.activatePanel.mock.invocationCallOrder[0],
+		).toBeLessThan(
+			workbenchState.openWorkbench.mock.invocationCallOrder[0],
+		);
+	});
+
+	it("reopens a drawer saved on Topic Work on its bare tab rail when the chat has no topic now", () => {
+		localStorage.setItem(storageKey, "true");
+		localStorage.setItem(activeKey, TOPIC_WORK_PANEL_TYPE);
+		render(chat(session.id, []));
+		expect(workbenchState.openWorkbench).toHaveBeenCalledTimes(1);
+		expect(workbenchState.activatePanel).not.toHaveBeenCalled();
+	});
+
+	it("does not wait for the topic when the saved tab is another one", () => {
+		localStorage.setItem(storageKey, "true");
+		localStorage.setItem(activeKey, EMAIL_BROWSER_PANEL);
+		render(chat(session.id, null));
+		expect(workbenchState.activatePanel).toHaveBeenCalledExactlyOnceWith(
+			leftRail,
+			EMAIL_BROWSER_PANEL,
+		);
+		expect(workbenchState.openWorkbench).toHaveBeenCalledTimes(1);
+	});
+
+	it("remembers Topic Work as the tab showing in a drawer the owner left open", () => {
+		localStorage.setItem(storageKey, "true");
+		workbenchState.isOpen = true;
+		loadRail({ topicTab: true, activeId: TOPIC_WORK_PANEL_TYPE });
+		render(chat(session.id, linked));
+		expect(localStorage.getItem(activeKey)).toBe(TOPIC_WORK_PANEL_TYPE);
 	});
 
 	it("selects no tab when the owner opens the drawer by hand, as before", () => {

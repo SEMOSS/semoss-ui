@@ -88,16 +88,20 @@ import { WorkWaitingOn } from "./work-waiting-on";
 
 type Row = Record<string, unknown>;
 
-interface Step {
+export interface Step {
 	id: string;
 	text: string;
 	status: string;
 	kind?: string;
 	assigneeId?: string;
 	assigneeName?: string;
+	threadId?: string;
+	createdAt?: string;
+	/** When the step is due, as the server sent it. */
+	due?: string;
 }
 
-interface Item {
+export interface Item {
 	id: string;
 	title: string;
 	proposed: boolean;
@@ -115,6 +119,7 @@ interface Item {
 	due?: string;
 	/** When the item or one of its steps last changed. */
 	updatedAt?: string;
+	closedAt?: string;
 	openSteps: Step[];
 }
 
@@ -131,7 +136,7 @@ function toRoom(row: Row): Room {
 	};
 }
 
-function toStep(row: Row): Step {
+export function toStep(row: Row): Step {
 	return {
 		id: str(row.id),
 		text: str(row.text),
@@ -139,10 +144,13 @@ function toStep(row: Row): Step {
 		kind: str(row.kind) || undefined,
 		assigneeId: str(row.assigneeId) || undefined,
 		assigneeName: str(row.assigneeName) || undefined,
+		threadId: str(row.threadId) || undefined,
+		createdAt: str(row.createdAt) || undefined,
+		due: str(row.due) || undefined,
 	};
 }
 
-function toItem(row: Row): Item {
+export function toItem(row: Row): Item {
 	const topics = list(row.topics);
 	const primary = topics.find((t) => t.primary) ?? topics[0];
 	return {
@@ -160,8 +168,17 @@ function toItem(row: Row): Item {
 		rooms: list(row.rooms).map(toRoom),
 		due: str(row.due) || undefined,
 		updatedAt: str(row.updatedAt) || undefined,
+		closedAt: str(row.closedAt) || undefined,
 		openSteps: list(row.openSteps).map(toStep),
 	};
+}
+
+/** Whether an open step is the owner's: not a hand-off, and theirs or asked of nobody in particular. */
+export function isMyStep(step: Step, selfId: string): boolean {
+	return (
+		step.kind !== "waiting_on" &&
+		(!step.assigneeId || step.assigneeId === selfId)
+	);
 }
 
 export function dueLabel(due?: string): { text: string; soon: boolean } | null {
@@ -368,9 +385,7 @@ export function useWorkItems(topicId?: string) {
 	);
 
 	const isMine = useCallback(
-		(step: Step) =>
-			step.kind !== "waiting_on" &&
-			(!step.assigneeId || step.assigneeId === selfId),
+		(step: Step) => isMyStep(step, selfId),
 		[selfId],
 	);
 

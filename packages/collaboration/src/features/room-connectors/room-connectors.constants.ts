@@ -3,6 +3,7 @@ import type { WorkbenchLayout } from "@semoss/workbench";
 import { createToolWorkbenchLayout } from "../tools/tool-workbench.constants";
 
 export const ROOM_TASK_PANEL_TYPE = "collaboration-room-task";
+export const TOPIC_WORK_PANEL_TYPE = "collaboration-topic-work";
 export const EMAIL_BROWSER_PANEL = "collaboration-emails";
 export const CALENDAR_BROWSER_PANEL = "collaboration-calendar";
 export const MAIL_DETAIL_PANEL = "collaboration-mail-detail";
@@ -20,6 +21,8 @@ export function createRoomConnectorLayout(
 	includeFiles = true,
 	// a room on a work item gets its steps and threads first in the rail, open
 	hasTask = false,
+	// a room linked to a topic gets that topic's work, last in the rail
+	hasTopic = false,
 ): WorkbenchLayout {
 	const base = createToolWorkbenchLayout(insightId);
 	const files = base.panels[FILE_PANEL_TYPES.FILE_EXPLORER];
@@ -41,6 +44,17 @@ export function createRoomConnectorLayout(
 							id: ROOM_TASK_PANEL_TYPE,
 							type: ROOM_TASK_PANEL_TYPE,
 							name: "Task",
+							config: {},
+							minWidth: 300,
+						},
+					}
+				: {}),
+			...(hasTopic
+				? {
+						[TOPIC_WORK_PANEL_TYPE]: {
+							id: TOPIC_WORK_PANEL_TYPE,
+							type: TOPIC_WORK_PANEL_TYPE,
+							name: "Topic Work",
 							config: {},
 							minWidth: 300,
 						},
@@ -68,6 +82,7 @@ export function createRoomConnectorLayout(
 					...(includeFiles ? [files.id] : []),
 					EMAIL_BROWSER_PANEL,
 					CALENDAR_BROWSER_PANEL,
+					...(hasTopic ? [TOPIC_WORK_PANEL_TYPE] : []),
 				],
 				activeId: hasTask ? ROOM_TASK_PANEL_TYPE : null,
 				size: 300,

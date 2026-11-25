@@ -1,4 +1,10 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import type { ConversationTool } from "@/features/messages/types/message";
 import { deferred } from "@/features/onboarding/topic-review.test-fixtures";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
@@ -9,6 +15,10 @@ import { RoomView } from "./room-view";
 const refreshTopic = vi.fn();
 vi.mock("@/features/collaboration/live/work-updates.context", () => ({
 	useWorkUpdates: () => ({ refreshTopic }),
+	useRecordIds: () => ({
+		serverId: async (id: string) => id,
+		localId: (id: string) => id,
+	}),
 }));
 // one stable insight; the room's task read finds no work item for it
 const insight = vi.hoisted(() => ({
@@ -191,4 +201,70 @@ it("keeps the workbench closed when entering a room with restored tools and appr
 	);
 	fireEvent.click(screen.getByRole("button", { name: "Review tool" }));
 	expect(screen.getByLabelText("Dock visibility")).toHaveTextContent("open");
+});
+
+/** WorkListMyWork and every other read answers empty; the chat's topics answer as given. */
+const answerWithTopics = (topics: unknown[]) => async (statement: string) => ({
+	pixelReturn: [
+		{
+			output: statement.startsWith("BrainListRoomTopics")
+				? { roomId: "room-one", topics }
+				: {},
+		},
+	],
+});
+
+it("adds the topic's work to the rail once the chat is known to be linked to a topic, and leaves the dock closed", async () => {
+	insight.actions.run.mockImplementation(
+		answerWithTopics([
+			{
+				topicId: "topic-1",
+				name: "Northwind Migration",
+				state: "linked",
+			},
+		]),
+	);
+	try {
+		render(<RoomView {...props} />);
+		const panels = screen.getByLabelText("Open panels");
+		const before = Number(panels.textContent);
+		await waitFor(() =>
+			expect(Number(panels.textContent)).toBe(before + 1),
+		);
+		expect(screen.getByLabelText("Dock visibility")).toHaveTextContent(
+			"closed",
+		);
+	} finally {
+		insight.actions.run.mockResolvedValue({
+			pixelReturn: [{ output: {} }],
+		});
+	}
+});
+
+it("adds nothing to the rail for a topic the chat is only suggested", async () => {
+	insight.actions.run.mockImplementation(
+		answerWithTopics([
+			{
+				topicId: "topic-1",
+				name: "Northwind Migration",
+				state: "suggested",
+			},
+		]),
+	);
+	try {
+		render(<RoomView {...props} />);
+		const panels = screen.getByLabelText("Open panels");
+		const before = panels.textContent;
+		await waitFor(() =>
+			expect(insight.actions.run).toHaveBeenCalledWith(
+				expect.stringContaining("BrainListRoomTopics"),
+			),
+		);
+		await act(async () => undefined);
+		expect(panels).toHaveTextContent(before ?? "");
+	} finally {
+		insight.actions.run.mockResolvedValue({
+			pixelReturn: [{ output: {} }],
+		});
+	}
 });

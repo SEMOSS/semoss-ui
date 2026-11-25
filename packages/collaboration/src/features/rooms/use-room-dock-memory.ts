@@ -11,6 +11,7 @@ export function useRoomDockMemory({
 	roomId,
 	isEnabled,
 	isOpen,
+	pendingTab = null,
 	openWorkbench,
 	store,
 }: {
@@ -18,6 +19,8 @@ export function useRoomDockMemory({
 	/** False for a room with no drawer, and on a phone, where it covers the chat. */
 	isEnabled: boolean;
 	isOpen: boolean;
+	/** A tab that has yet to join the rail, such as the topic's work; a drawer saved on it waits for it to reopen. */
+	pendingTab?: string | null;
 	openWorkbench: ToolWorkbenchContextValue["openWorkbench"];
 	store: ToolWorkbenchContextValue["store"];
 }): {
@@ -44,8 +47,10 @@ export function useRoomDockMemory({
 		() => null,
 	);
 
+	const isWaitingForTab = savedTab !== null && savedTab === pendingTab;
+
 	useEffect(() => {
-		if (hasSettled.current || !remembersDock) return;
+		if (hasSettled.current || !remembersDock || isWaitingForTab) return;
 		hasSettled.current = true;
 		if (isSavedOpen && !isOpen) {
 			const { panels, actions } = store.getState().layout;
@@ -55,6 +60,7 @@ export function useRoomDockMemory({
 		}
 	}, [
 		remembersDock,
+		isWaitingForTab,
 		isSavedOpen,
 		savedTab,
 		isOpen,

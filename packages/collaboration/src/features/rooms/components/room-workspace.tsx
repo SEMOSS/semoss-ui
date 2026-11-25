@@ -33,6 +33,7 @@ import { useChatAgent } from "@/features/digital-twin/use-main-twin";
 import { useTwinRead } from "@/features/digital-twin/use-twin-read";
 import { roomFileLinks } from "@/features/messages/utils/room-file-link";
 import { connectorPanelActions } from "@/features/room-connectors/connector-panel-actions";
+import { TOPIC_WORK_PANEL_TYPE } from "@/features/room-connectors/room-connectors.constants";
 import { useRoomConnectors } from "@/features/room-connectors/room-connectors.context";
 import { RoomEmailContext } from "@/features/room-email/room-email.context";
 import {
@@ -48,6 +49,7 @@ import { useShowCurrentChat } from "../current-chat";
 import { takeFileToShow } from "../room-file-to-show";
 import type { ComposerSubmission, RoomViewProps } from "../types/room";
 import { useRoomDockMemory } from "../use-room-dock-memory";
+import { linkedTopics } from "../use-room-topics";
 import { RoomAgentLine } from "./room-agent-line";
 import { RoomComposer } from "./room-composer";
 import type { RoomSlashCommand } from "./room-composer-slash-plugin";
@@ -56,6 +58,7 @@ import { RoomConversation } from "./room-conversation";
 import { RoomRunStatus } from "./room-run-status";
 import { ROOM_SETTINGS_PANEL_TYPE } from "./room-settings-panel";
 import { RoomTopics } from "./room-topics";
+import { RoomTopicsContext } from "./room-topics.context";
 import { sourceStarterPrompts } from "./source-starter-prompts";
 
 const ROOM_WORKSPACE_LAYOUT_ID = "collaboration-room-workspace-v1";
@@ -268,10 +271,21 @@ export function RoomWorkspace({
 		if (isToolWorkbenchOpen) setHasOpenedWorkbench(true);
 	}, [isToolWorkbenchOpen]);
 
+	const topics = useContext(RoomTopicsContext)?.topics;
+	const hasTopicWorkTab = useSyncExternalStore(
+		store.subscribe,
+		() => Boolean(store.getState().layout.panels[TOPIC_WORK_PANEL_TYPE]),
+		() => false,
+	);
+	// the topic's tab joins the rail a moment after its topic is read
+	const isTopicTabPending =
+		topics === null ||
+		(linkedTopics(topics).length > 0 && !hasTopicWorkTab);
 	const { rememberOpened } = useRoomDockMemory({
 		roomId: session.id,
 		isEnabled: showToolWorkbench && !isMobile,
 		isOpen: isToolWorkbenchOpen,
+		pendingTab: isTopicTabPending ? TOPIC_WORK_PANEL_TYPE : null,
 		openWorkbench,
 		store,
 	});
@@ -403,12 +417,7 @@ export function RoomWorkspace({
 						messageImage={chat.avatar}
 						title={session.title}
 						conversationId={session.id}
-						headerTopics={
-							<RoomTopics
-								roomId={session.id}
-								isRunning={isRunning}
-							/>
-						}
+						headerTopics={<RoomTopics />}
 						headerAgentLine={
 							<RoomAgentLine
 								name={agent.name}

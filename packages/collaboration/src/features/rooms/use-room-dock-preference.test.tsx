@@ -10,6 +10,7 @@ import {
 	EMAIL_BROWSER_PANEL,
 	ONEDRIVE_BROWSER_PANEL,
 	ROOM_TASK_PANEL_TYPE,
+	TOPIC_WORK_PANEL_TYPE,
 } from "@/features/room-connectors/room-connectors.constants";
 import {
 	roomDockStorageKey,
@@ -34,6 +35,7 @@ const RAIL_TABS = [
 	EMAIL_BROWSER_PANEL,
 	CALENDAR_BROWSER_PANEL,
 	ROOM_TASK_PANEL_TYPE,
+	TOPIC_WORK_PANEL_TYPE,
 ];
 
 /** A signed-in collaboration session for the given account. */
@@ -189,7 +191,7 @@ it("remembers which of the rail's tabs was showing, apart from opening the drawe
 
 	// opening the drawer leaves the remembered tab alone
 	act(() => result.current.save({ isOpen: true }));
-	expect(result.current.activeTab).toBe(ROOM_TASK_PANEL_TYPE);
+	expect(result.current.activeTab).toBe(TOPIC_WORK_PANEL_TYPE);
 });
 
 it("clears the remembered tab for the bare tab rail, and for a tab opened on demand", () => {

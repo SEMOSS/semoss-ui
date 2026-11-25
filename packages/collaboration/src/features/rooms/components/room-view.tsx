@@ -18,11 +18,14 @@ import { ROOM_THREAD_EMAIL_PANEL_COMPONENTS } from "@/features/room-email/room-t
 import type { RoomViewProps } from "@/features/rooms/types/room";
 import { ToolWorkbenchProvider } from "@/features/tools/components/tool-workbench-provider";
 import { TOOL_WORKBENCH_COMPONENTS } from "@/features/tools/tool-workbench.components";
+import { linkedTopics, useRoomTopics } from "../use-room-topics";
 import { ROOM_SETTINGS_PANEL_COMPONENTS } from "./room-settings-panel";
 import { RoomSettingsPanelContext } from "./room-settings-panel.context";
 import { ROOM_TASK_PANEL_COMPONENTS } from "./room-task-panel";
 import { RoomTaskContext } from "./room-task-panel.context";
+import { RoomTopicsContext } from "./room-topics.context";
 import { RoomWorkspace } from "./room-workspace";
+import { ROOM_TOPIC_WORK_PANEL_COMPONENTS } from "./topic-work-panel";
 
 const ROOM_COMPONENTS = {
 	...TOOL_WORKBENCH_COMPONENTS,
@@ -34,6 +37,7 @@ const ROOM_COMPONENTS = {
 	...ROOM_THREAD_EMAIL_PANEL_COMPONENTS,
 	...ROOM_SETTINGS_PANEL_COMPONENTS,
 	...ROOM_TASK_PANEL_COMPONENTS,
+	...ROOM_TOPIC_WORK_PANEL_COMPONENTS,
 };
 
 export function RoomView({
@@ -98,6 +102,9 @@ export function RoomView({
 		updates?.refreshTopic({ topicId, topic });
 	};
 	const session = sessions.find((candidate) => candidate.id === sessionId);
+	// read once, so the header chips and the topic work tab always agree
+	const roomTopics = useRoomTopics(session ? sessionId : "", isRunning);
+	const hasTopic = linkedTopics(roomTopics.topics).length > 0;
 	const { tools, toolCreatedAt } = useMemo(
 		() => ({
 			tools: toolsFromMessages(thread, pendingApprovals, toolStates),
@@ -150,10 +157,11 @@ export function RoomView({
 								id,
 								true,
 								Boolean(roomTask.task),
+								hasTopic,
 							)
 						}
-						// the task loads after mount; its rail joins without remounting the room
-						layoutKey={roomTask.task ? "task" : "plain"}
+						// the task and the topic load after mount; their rails join without remounting the room
+						layoutKey={`${roomTask.task ? "task" : "plain"}-${hasTopic ? "topic" : "none"}`}
 						roomId={sessionId}
 						insightId={insightId}
 						agentId={agentId}
@@ -164,38 +172,40 @@ export function RoomView({
 						onRejectTool={onRejectTool}
 					>
 						<RoomTaskContext.Provider value={roomTask}>
-							<RoomConnectorsProvider session={roomSession}>
-								<RoomSettingsPanelContext.Provider
-									value={{
-										agentName: agent.name,
-										agent,
-										modelId,
-										modelName,
-										settings: roomSettings,
-										inheritedMcp: agent.mcp,
-										isReadOnly:
-											isSending ||
-											isRunning ||
-											isModelSaving,
-										isModelLocked,
-										onSave: onSaveRoomSettings,
-									}}
-								>
-									{roomSession && roomSnapshot ? (
-										<RoomEmailProvider
-											session={roomSession}
-											roomId={sessionId}
-											source={roomSnapshot.source}
-											turn={roomSnapshot.turn}
-											isReady={roomSnapshot.isReady}
-										>
-											{workspace}
-										</RoomEmailProvider>
-									) : (
-										workspace
-									)}
-								</RoomSettingsPanelContext.Provider>
-							</RoomConnectorsProvider>
+							<RoomTopicsContext.Provider value={roomTopics}>
+								<RoomConnectorsProvider session={roomSession}>
+									<RoomSettingsPanelContext.Provider
+										value={{
+											agentName: agent.name,
+											agent,
+											modelId,
+											modelName,
+											settings: roomSettings,
+											inheritedMcp: agent.mcp,
+											isReadOnly:
+												isSending ||
+												isRunning ||
+												isModelSaving,
+											isModelLocked,
+											onSave: onSaveRoomSettings,
+										}}
+									>
+										{roomSession && roomSnapshot ? (
+											<RoomEmailProvider
+												session={roomSession}
+												roomId={sessionId}
+												source={roomSnapshot.source}
+												turn={roomSnapshot.turn}
+												isReady={roomSnapshot.isReady}
+											>
+												{workspace}
+											</RoomEmailProvider>
+										) : (
+											workspace
+										)}
+									</RoomSettingsPanelContext.Provider>
+								</RoomConnectorsProvider>
+							</RoomTopicsContext.Provider>
 						</RoomTaskContext.Provider>
 					</ToolWorkbenchProvider>
 				</div>

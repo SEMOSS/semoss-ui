@@ -6,6 +6,7 @@ import {
 	CALENDAR_BROWSER_PANEL,
 	EMAIL_BROWSER_PANEL,
 	ROOM_TASK_PANEL_TYPE,
+	TOPIC_WORK_PANEL_TYPE,
 } from "@/features/room-connectors/room-connectors.constants";
 
 /** The tabs the rail starts with; one opened on demand is gone after a reload. */
@@ -14,6 +15,7 @@ const REMEMBERED_TABS: readonly string[] = [
 	EMAIL_BROWSER_PANEL,
 	CALENDAR_BROWSER_PANEL,
 	ROOM_TASK_PANEL_TYPE,
+	TOPIC_WORK_PANEL_TYPE,
 ];
 
 /** The tab id when it is one the rail starts with, otherwise none. */

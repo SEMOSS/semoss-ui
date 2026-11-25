@@ -113,6 +113,7 @@ export function ToolWorkbenchProvider({
 	// the shell re-applies this on mount, so it must track what the store loaded
 	const [snapshot, setSnapshot] = useState(initialSnapshot);
 	const appliedLayoutKey = useRef(layoutKey);
+	const lastCreated = useRef(initialSnapshot);
 	useEffect(() => {
 		if (appliedLayoutKey.current === layoutKey) return;
 		appliedLayoutKey.current = layoutKey;
@@ -120,6 +121,11 @@ export function ToolWorkbenchProvider({
 		const current = actions.getSnapshot();
 		const next = createLayout(insightId);
 		const nextRail = next.borders.left.panelIds;
+		// tabs the host asked for last time and no longer does, such as a topic's work once the topic is removed
+		const taken = lastCreated.current.borders.left.panelIds.filter(
+			(id) => !nextRail.includes(id),
+		);
+		lastCreated.current = next;
 		const currentRail = current.borders.left;
 		// new panels and rails join; panels the user already opened stay
 		const merged = {
@@ -133,11 +139,15 @@ export function ToolWorkbenchProvider({
 					panelIds: [
 						...nextRail,
 						...currentRail.panelIds.filter(
-							(id) => !nextRail.includes(id),
+							(id) =>
+								!nextRail.includes(id) && !taken.includes(id),
 						),
 					],
 					activeId:
-						currentRail.activeId ?? next.borders.left.activeId,
+						currentRail.activeId &&
+						!taken.includes(currentRail.activeId)
+							? currentRail.activeId
+							: next.borders.left.activeId,
 					size: currentRail.size,
 				},
 			},
