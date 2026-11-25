@@ -118,6 +118,46 @@ it("shows an explicit empty state and keeps the raw output accessible", async ()
 	).toHaveValue('{\n  "files": []\n}');
 });
 
+it("shows restricted mail alongside normal search results", async () => {
+	workbench.tools.tool = call("SearchMail", {
+		items: [{ subject: "Available email" }],
+		restrictedMail: {
+			status: "partial",
+			note: "Some mailbox matches could not be checked.",
+			items: [
+				{
+					messageId: "mail-1",
+					subject: null,
+					code: "MUTED",
+					message:
+						"This email is muted; the original cause is unavailable.",
+					topicMatch: "unknown",
+				},
+			],
+		},
+	});
+	render(<ToolContent toolId="tool" />);
+	expect(
+		await screen.findByRole("button", { name: "Open Available email" }),
+	).toBeVisible();
+	expect(screen.getByText("1 restricted email was reported.")).toBeVisible();
+	expect(screen.getByText(/restriction check was incomplete/)).toBeVisible();
+	await userEvent.click(
+		screen.getByRole("button", { name: "View Restrictions" }),
+	);
+	expect(screen.getByText(/original cause is unavailable/)).toBeVisible();
+	expect(screen.getByText(/connection.*unknown/)).toBeVisible();
+});
+
+it("reports truncated search output instead of displaying it as a complete result", async () => {
+	workbench.tools.tool = call("SearchMail", '{"items":[');
+	render(<ToolContent toolId="tool" />);
+	expect(
+		await screen.findByText(/Restricted-mail details are unavailable/),
+	).toBeVisible();
+	expect(screen.queryByText("Nothing found")).toBeNull();
+});
+
 it.each([
 	["RUNNING", "Working…"],
 	["FAILED", "Permission denied"],

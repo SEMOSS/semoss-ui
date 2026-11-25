@@ -3,6 +3,7 @@ import {
 	TOOL_COMPONENTS,
 } from "@/features/tools/utils/tool-components";
 import { getToolDisplayLocation } from "@/features/tools/utils/tool-metadata";
+import { isRestrictedMailSearch } from "@/features/tools/views/collaboration-tool-catalog";
 import type {
 	ConversationMessage,
 	ConversationMessagePart,
@@ -35,7 +36,9 @@ export function messageHasVisiblePart(part: ConversationMessagePart): boolean {
 	if (part.type === "tool") {
 		return (
 			getToolDisplayLocation(part.tool) !== "hidden" ||
-			part.tool.status === "INPUT_REQUIRED"
+			part.tool.status === "INPUT_REQUIRED" ||
+			(part.tool.status === "COMPLETED" &&
+				isRestrictedMailSearch(part.tool))
 		);
 	}
 	return true;

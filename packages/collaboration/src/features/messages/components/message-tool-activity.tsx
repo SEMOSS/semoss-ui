@@ -2,6 +2,9 @@ import { Fragment, useId, useState } from "react";
 import { cn } from "@semoss/ui/next";
 import { ToolCallCard } from "@/features/tools/components/tool-call-card";
 import { useToolWorkbench } from "@/features/tools/tool-workbench.context";
+import { getToolDisplayLocation } from "@/features/tools/utils/tool-metadata";
+import { isRestrictedMailSearch } from "@/features/tools/views/collaboration-tool-catalog";
+import { RestrictedMailNotice } from "@/features/tools/views/restricted-mail-notice";
 import {
 	completedToolGroups,
 	type OwnedMessagePart,
@@ -39,8 +42,14 @@ export function MessageToolActivity({
 				}
 			: item,
 	);
+	const visibleTools = tools.filter(
+		({ part }) =>
+			part.type !== "tool" ||
+			getToolDisplayLocation(part.tool) !== "hidden" ||
+			part.tool.status === "INPUT_REQUIRED",
+	);
 	const pinnedIds = new Set<string>();
-	for (const { part } of tools) {
+	for (const { part } of visibleTools) {
 		if (part.type !== "tool") continue;
 		const displayMode = workbench.getToolDisplayMode(part.tool.id);
 		// a found file or email folds too; its Open is in the steps and the answer links it
@@ -54,7 +63,7 @@ export function MessageToolActivity({
 	}
 	// while the turn works, the latest steps stay in view and the earlier ones fold
 	const groups = completedToolGroups(
-		isWorking(items) ? tools.slice(0, -LIVE_STEPS) : tools,
+		isWorking(items) ? visibleTools.slice(0, -LIVE_STEPS) : visibleTools,
 		pinnedIds,
 	);
 	const groupByKey = new Map(
@@ -93,7 +102,7 @@ export function MessageToolActivity({
 					setFocusedTool(null);
 			}}
 		>
-			{tools.map((item) => {
+			{visibleTools.map((item) => {
 				if (item.part.type !== "tool" && item.part.type !== "thinking")
 					return null;
 				const tool =
@@ -168,6 +177,15 @@ export function MessageToolActivity({
 					</Fragment>
 				);
 			})}
+			{tools.map(({ part }) =>
+				part.type === "tool" &&
+				part.tool.status === "COMPLETED" &&
+				isRestrictedMailSearch(part.tool) ? (
+					<div key={`restrictions-${part.tool.id}`} className="py-1">
+						<RestrictedMailNotice output={part.tool.output} />
+					</div>
+				) : null,
+			)}
 		</div>
 	);
 }

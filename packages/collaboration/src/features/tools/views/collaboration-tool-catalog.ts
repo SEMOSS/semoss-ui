@@ -63,6 +63,11 @@ export const COLLABORATION_TOOL_VIEWS = {
 	},
 	ListTopics: { title: "Topics", family: "topics", collection: "items" },
 	SearchMail: { title: "Mail search", family: "mail", collection: "items" },
+	BrainSearchThreads: {
+		title: "Mail search",
+		family: "mail",
+		collection: "items",
+	},
 	ReadThread: {
 		title: "Conversation",
 		family: "mail",
@@ -179,6 +184,12 @@ function collaborationToolName(
 	return Object.hasOwn(COLLABORATION_TOOL_VIEWS, tool.name)
 		? (tool.name as CollaborationToolName)
 		: undefined;
+}
+
+/** Only built-in collaboration searches carry this diagnostic contract. */
+export function isRestrictedMailSearch(tool: ConversationTool): boolean {
+	const name = collaborationToolName(tool);
+	return name === "SearchMail" || name === "BrainSearchThreads";
 }
 
 /** Explicit custom UIs win. The name fallback also gives older saved calls a native view. */

@@ -64,6 +64,109 @@ beforeEach(() => {
 
 afterEach(() => vi.unstubAllGlobals());
 
+it("keeps restricted mail visible when completed tool steps are folded", async () => {
+	const items = tools("COMPLETED", "COMPLETED");
+	if (items[0].part.type !== "tool") throw new Error("Expected a tool");
+	items[0].part.tool.name = "SearchMail";
+	items[0].part.tool.output = JSON.stringify({
+		items: [],
+		restrictedMail: {
+			status: "searched",
+			items: [
+				{
+					messageId: "mail-1",
+					subject: "Launch",
+					code: "SENDER_MUTED",
+					message: "The sender is muted.",
+					topicMatch: "unknown",
+				},
+			],
+		},
+	});
+	render(<MessageToolActivity items={items} />);
+	expect(screen.getByText("1 restricted email was reported.")).toBeVisible();
+	expect(
+		screen.getByRole("button", {
+			name: "2 tool calls 2 completed View steps",
+		}),
+	).toHaveAttribute("aria-expanded", "false");
+	await userEvent.click(
+		screen.getByRole("button", { name: "View Restrictions" }),
+	);
+	expect(screen.getByText("The sender is muted.")).toBeVisible();
+	expect(screen.getByText(/connection.*unknown/)).toBeVisible();
+});
+
+it("does not interpret similarly named attached tools as collaboration search", () => {
+	const items = tools("COMPLETED");
+	if (items[0].part.type !== "tool") throw new Error("Expected a tool");
+	items[0].part.tool.name = "SearchMail";
+	items[0].part.tool.metadata = { SMSS_ENGINE_ID: "external" };
+	render(<MessageToolActivity items={items} />);
+	expect(screen.queryByText(/Restricted-mail details/)).toBeNull();
+});
+
+it("shows diagnostics for a hidden search without exposing its tool card", () => {
+	const items = tools("COMPLETED");
+	if (items[0].part.type !== "tool") throw new Error("Expected a tool");
+	const tool = items[0].part.tool;
+	tool.name = "SearchMail";
+	tool.metadata = { SMSS_MCP_UI: { displayLocation: "hidden" } };
+	tool.output = JSON.stringify({
+		items: [],
+		restrictedMail: {
+			status: "unavailable",
+			note: "Mailbox check failed.",
+			items: [],
+		},
+	});
+	const visible = ownedMessageParts(items[0].message);
+	render(<MessageToolActivity items={visible} />);
+	expect(
+		screen.getByText("The restriction check was unavailable."),
+	).toBeVisible();
+	expect(
+		screen.queryByRole("button", { name: /details in workbench/ }),
+	).toBeNull();
+});
+
+it("replaces an incomplete streamed result when the saved tool output arrives", async () => {
+	const items = tools("COMPLETED");
+	if (items[0].part.type !== "tool") throw new Error("Expected a tool");
+	const tool = items[0].part.tool;
+	tool.name = "SearchMail";
+	tool.output = '{"items":[';
+	const { rerender } = render(<MessageToolActivity items={items} />);
+	expect(
+		screen.getByText(/Restricted-mail details are unavailable/),
+	).toBeVisible();
+	workbench.tools[tool.id] = {
+		...tool,
+		output: JSON.stringify({
+			items: [],
+			restrictedMail: {
+				status: "searched",
+				items: [
+					{
+						messageId: "mail-1",
+						code: "IGNORED",
+						message: "This email was ignored.",
+						topicMatch: "unknown",
+					},
+				],
+			},
+		}),
+	};
+	rerender(<MessageToolActivity items={items} />);
+	expect(
+		screen.queryByText(/Restricted-mail details are unavailable/),
+	).toBeNull();
+	await userEvent.click(
+		screen.getByRole("button", { name: "View Restrictions" }),
+	);
+	expect(screen.getByText("This email was ignored.")).toBeVisible();
+});
+
 it("keeps original source timestamps only in contextual tool menus", async () => {
 	const items = tools("COMPLETED", "RUNNING");
 	items[1].message = {

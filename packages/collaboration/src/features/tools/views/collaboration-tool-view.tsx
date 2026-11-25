@@ -20,6 +20,7 @@ import {
 	type CollaborationToolDefinition,
 	type CollaborationToolName,
 } from "./collaboration-tool-catalog";
+import { RestrictedMailNotice } from "./restricted-mail-notice";
 import {
 	parseToolResult,
 	resultCollection,
@@ -51,13 +52,16 @@ export function CollaborationToolView(props: ToolViewProps) {
 		COLLABORATION_TOOL_VIEWS[name as CollaborationToolName];
 	const Icon = FAMILY_ICONS[definition.family];
 	const result = parseToolResult(call.result);
+	const isMailSearch = name === "SearchMail" || name === "BrainSearchThreads";
 	const record = resultRecord(result);
 	const collection = resultCollection(result, definition.collection);
 	const details =
-		collection && record
+		record && (collection || isMailSearch)
 			? Object.fromEntries(
 					Object.entries(record).filter(
-						([, value]) => value !== collection,
+						([key, value]) =>
+							value !== collection &&
+							(!isMailSearch || key !== "restrictedMail"),
 					),
 				)
 			: undefined;
@@ -102,11 +106,18 @@ export function CollaborationToolView(props: ToolViewProps) {
 						: "Working…"}
 				</output>
 			) : result === undefined ? (
-				<Muted className="text-sm">
-					The tool completed without returning details.
-				</Muted>
+				isMailSearch ? (
+					<RestrictedMailNotice output={call.result} />
+				) : (
+					<Muted className="text-sm">
+						The tool completed without returning details.
+					</Muted>
+				)
 			) : (
 				<>
+					{isMailSearch && (
+						<RestrictedMailNotice output={call.result} />
+					)}
 					{hasMore && (
 						<Alert>
 							<AlertDescription>
@@ -121,7 +132,7 @@ export function CollaborationToolView(props: ToolViewProps) {
 							items={collection}
 							title={definition.title}
 						/>
-					) : (
+					) : isMailSearch ? null : (
 						<ToolResultDetails value={result} />
 					)}
 					{details && Object.keys(details).length > 0 && (

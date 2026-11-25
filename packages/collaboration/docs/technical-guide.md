@@ -146,6 +146,13 @@ the workbench itself stays independent of connectors/auth.
 people delegation. `CompleteGoal` auto-closes goals; `Remember` creates/updates memory (`replaces`, topic links).
 Email tools (`ComposeEmail`, `SendEmail`) produce room-owned editable drafts; restored proposals never auto-open panels.
 
+`SearchMail` and `BrainSearchThreads` can return `restrictedMail` alongside normal results. Chat keeps a
+restriction notice visible even when tool steps are collapsed, with a dialog for reported reasons and topic
+scope. The check is best-effort: an empty list does not prove that no restriction exists, and an unknown
+topic match is not a confirmed link. Missing, malformed, or truncated diagnostics are reported as
+unavailable; live tool output can be truncated and a complete-result transport is not guaranteed. The
+dialog does not expose message or thread IDs, and does not offer a topic-ignore override.
+
 ### 5.7 Routines
 `features/routines` + PRODUCT.md: opt-in scheduled briefs (run time, days, lookback 1h–30d, default 1d) executed through
 SEMOSS scheduler/agent-run infra; apply Brain exclusions; completed briefs appear in Routines. Types: inbox, agenda,
