@@ -19,7 +19,17 @@ allowBuilds:
     # only manages npm's global yarn shims
     'yarn': false
 
+minimumReleaseAgeExclude:
+    # Explicitly requested Office releases, published together on November 25.
+    - ooxml-core@2.1.0
+    - ooxml-ui@2.1.0
+    - pptx-react-viewer@5.1.0
+
+overrides:
+    # Keep every Office binding and core wrapper on the same validated runtime.
+    'ooxml-core': '2.1.0'
+    'ooxml-ui': '2.1.0'
+
 patchedDependencies:
-    'ooxml-ui@1.21.0': 'patches/ooxml-ui@1.21.0.patch'
-    'pptx-react-viewer@4.45.0': 'patches/pptx-react-viewer@4.45.0.patch'
-    'ooxml-core@1.22.0': 'patches/ooxml-core@1.22.0.patch'
+    'ooxml-core@2.1.0': 'patches/ooxml-core@2.1.0.patch'
+    'ooxml-ui@2.1.0': 'patches/ooxml-ui@2.1.0.patch'

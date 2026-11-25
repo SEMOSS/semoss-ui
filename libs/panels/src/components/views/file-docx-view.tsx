@@ -1,18 +1,23 @@
 import { type EditorHandle, WordEditor } from "docx-react-viewer";
 import { useEffect, useMemo, useState } from "react";
 import { decodeBase64Asset } from "@semoss/shared";
+import { useTheme } from "@semoss/ui/next";
 import { useFilePanel } from "../../hooks/use-file-panel";
 import { useFileViewControls } from "../../hooks/use-file-view-controls";
 import { useOfficeEditorSession } from "../../hooks/use-office-editor-session";
 import { useOfficeFileCommands } from "../../hooks/use-office-file-commands";
 import { getFilePanelScope } from "../../types/file-panel.types";
 import type { FileViewProps } from "../../types/file-view.types";
-import { DOCX_HIDDEN_ACTIONS } from "./office/docx-viewer-policy";
+import {
+	DOCX_HIDDEN_ACTIONS,
+	DOCX_VIEWER_CUSTOMIZATION,
+} from "./office/docx-viewer-policy";
 import { OfficeViewerError } from "./office/office-viewer-error";
 import { OfficeViewerFrame } from "./office/office-viewer-frame";
 
 /** Preview and edit a Word document from a project, engine, or user resource. */
 export const FileDocxView = ({ config, onControls }: FileViewProps) => {
+	const { resolvedTheme } = useTheme();
 	const panel = useFilePanel(config, { base64: true });
 	const [handle, setHandle] = useState<EditorHandle | null>(null);
 	const element = handle?.element ?? null;
@@ -105,6 +110,8 @@ export const FileDocxView = ({ config, onControls }: FileViewProps) => {
 				readOnly={panel.readOnly}
 				showToolbar
 				hiddenActions={DOCX_HIDDEN_ACTIONS}
+				customization={DOCX_VIEWER_CUSTOMIZATION}
+				theme={resolvedTheme}
 			/>
 		</OfficeViewerFrame>
 	);

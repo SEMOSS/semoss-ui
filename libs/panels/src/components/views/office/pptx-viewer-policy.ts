@@ -1,4 +1,4 @@
-import type { ViewerCustomization, ViewerTheme } from "pptx-react-viewer";
+import type { ViewerCustomization } from "pptx-react-viewer";
 
 /** Keep presentation editing and basic playback in the supported vendor shell. */
 export const PPTX_VIEWER_CUSTOMIZATION = {
@@ -30,7 +30,12 @@ export const PPTX_VIEWER_CUSTOMIZATION = {
 			"view.window.macros",
 		],
 	},
-	hiddenPanels: ["notes", "accessibilityPane", "comparePane"],
+	hiddenPanels: [
+		"notes",
+		"accessibilityPane",
+		"comparePane",
+		"quickAccessToolbar",
+	],
 	disabledFeatures: ["ai", "collaboration", "comments"],
 	hiddenDialogs: [
 		"options",
@@ -67,30 +72,3 @@ export const PPTX_VIEWER_CUSTOMIZATION = {
 		],
 	},
 } satisfies ViewerCustomization;
-
-/** Bridge only the viewer's chrome tokens; document colors remain document data. */
-export const PPTX_VIEWER_THEME = {
-	colors: {
-		background: "var(--semoss-office-background)",
-		foreground: "var(--semoss-office-foreground)",
-		card: "var(--semoss-office-card)",
-		cardForeground: "var(--semoss-office-card-foreground)",
-		popover: "var(--semoss-office-popover)",
-		popoverForeground: "var(--semoss-office-popover-foreground)",
-		primary: "var(--semoss-office-primary)",
-		primaryForeground: "var(--semoss-office-primary-foreground)",
-		secondary: "var(--semoss-office-secondary)",
-		secondaryForeground: "var(--semoss-office-secondary-foreground)",
-		muted: "var(--semoss-office-muted)",
-		mutedForeground: "var(--semoss-office-muted-foreground)",
-		accent: "var(--semoss-office-accent)",
-		accentForeground: "var(--semoss-office-accent-foreground)",
-		destructive: "var(--semoss-office-destructive)",
-		destructiveForeground: "var(--semoss-office-destructive-foreground)",
-		border: "var(--semoss-office-border)",
-		input: "var(--semoss-office-input)",
-		ring: "var(--semoss-office-ring)",
-	},
-	radius: "var(--semoss-office-radius)",
-	cssVars: { "--font-sans": "var(--semoss-office-font)" },
-} satisfies ViewerTheme;

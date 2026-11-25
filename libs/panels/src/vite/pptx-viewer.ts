@@ -48,6 +48,18 @@ const scopePptxViewerCss = (code: string): string => {
  */
 export const scopePptxViewerCssPlugin: Plugin = {
 	name: "scope-pptx-viewer-css",
+	config() {
+		return {
+			optimizeDeps: {
+				// Visio's development workers import these CommonJS packages through
+				// core. Explicit optimization supplies browser ESM to the worker graph.
+				include: [
+					"@semoss/panels > visio-react-viewer > ooxml-ui > ooxml-core > @xmldom/xmldom",
+					"@semoss/panels > visio-react-viewer > ooxml-ui > ooxml-core > jszip",
+				],
+			},
+		};
+	},
 	transform(code: string, id: string) {
 		if (
 			!id.includes("pptx-react-viewer") ||

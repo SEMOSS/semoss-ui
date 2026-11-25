@@ -49,8 +49,15 @@ export const FileVisioView = ({ config, onControls }: FileViewProps) => {
 	const [isDirty, setIsDirty] = useState(false);
 	const [isSerializing, setIsSerializing] = useState(false);
 	const serializingRef = useRef(false);
-	const sourceRevisionRef = useRef(panel.read.revision);
-	sourceRevisionRef.current = panel.read.revision;
+	const sourceRevisionRef = useRef("");
+	const sourceKey = JSON.stringify([
+		getFilePanelScope(config.mode),
+		config.path,
+		panel.read.revision,
+	]);
+	useLayoutEffect(() => {
+		sourceRevisionRef.current = sourceKey;
+	}, [sourceKey]);
 	const content = useMemo(
 		() => decodeBase64Asset(panel.read.data),
 		[panel.read.data],
@@ -99,7 +106,12 @@ export const FileVisioView = ({ config, onControls }: FileViewProps) => {
 			const sourceGeneration = controller.sourceGeneration;
 			// Inline text is a draft until the viewer commits it. Exporting first
 			// would persist the previous text even though the draft is visible.
-			if (!(await handle.element.commitTextEdit())) return;
+			const outcome = await controller.commitTextEdit();
+			if (
+				outcome.status !== "committed" &&
+				outcome.status !== "unchanged"
+			)
+				return;
 			if (
 				handleRef.current !== handle ||
 				sourceRevisionRef.current !== sourceRevision ||

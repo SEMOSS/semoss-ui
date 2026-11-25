@@ -10,7 +10,7 @@ interface OfficeViewerFrameProps {
 	className?: string;
 }
 
-/** Scopes Office chrome to the host theme without restyling document content. */
+/** Contains native Office chrome and exposes the host color scheme. */
 export const OfficeViewerFrame = ({
 	children,
 	label,

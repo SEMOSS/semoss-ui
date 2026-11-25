@@ -4,7 +4,20 @@ import type { ViewerController, VisioViewerProps } from "visio-react-viewer";
 export const VISIO_VIEWER_POLICY = {
 	showToolbar: true,
 	collaboration: null,
-} satisfies Pick<VisioViewerProps, "showToolbar" | "collaboration">;
+	customization: {
+		ribbon: { hiddenTabs: ["file"] },
+		capabilities: {
+			share: false,
+			open: false,
+			export: false,
+			print: false,
+			settings: false,
+		},
+	},
+} satisfies Pick<
+	VisioViewerProps,
+	"showToolbar" | "collaboration" | "customization"
+>;
 
 type VisioSnapshotSource = Pick<
 	ViewerController,

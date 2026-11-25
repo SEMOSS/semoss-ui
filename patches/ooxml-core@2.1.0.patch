@@ -1,0 +1,222 @@
+diff --git a/dist/automation/index.cjs b/dist/automation/index.cjs
+index 31fed143b0682165a68d57ab879f8131f6a47a00..62d6f983833042023445f576ad03212bf7e2e0ac 100644
+--- a/dist/automation/index.cjs
++++ b/dist/automation/index.cjs
+@@ -108934,6 +108934,15 @@ function visioGlueSites(box6) {
+   ];
+ }
+ 
++function isSelfGlueTrigger(node, formula) {
++  if (node.localName !== "Cell" || node.hasAttribute("E") || !/^(BegTrigger|EndTrigger)$/.test(attribute3(node, "N") ?? "")) return false;
++  const shape = node.parentNode, root = shape?.parentNode?.parentNode;
++  if (shape?.localName !== "Shape" || root?.localName !== "PageContents" || ![VISIO_NS, VISIO_LEGACY_NS].includes(root.namespaceURI ?? "") || node.namespaceURI !== root.namespaceURI || shape.namespaceURI !== root.namespaceURI || ["1", "true"].includes(attribute3(shape, "Del") ?? "")) return false;
++  const id = attribute3(shape, "ID");
++  if (!id || !/^[1-9]\d{0,9}$/.test(id) || !["BeginX", "BeginY", "EndX", "EndY"].every((name) => children3(shape, "Cell").filter((cell) => attribute3(cell, "N") === name).length === 1)) return false;
++  const match = /^\s*_XFTRIGGER\(\s*(?:Sheet\.([1-9]\d{0,9})!)?EventXFMod\s*\)\s*$/i.exec(formula);
++  return !!match && (match[1] === void 0 || match[1] === id);
++}
+ // visio/edit-recalculate-index.ts
+ var key = (cell3) => JSON.stringify([cell3.pageId, cell3.shapeId, cell3.cell.toLowerCase()]);
+ function bound(value3, fallback) {
+@@ -109014,7 +109023,7 @@ function indexCells2(roots, options2) {
+           unit: cellUnit(cell3, relative2)
+         };
+         const source3 = attribute3(node4, "F");
+-        if (executableCellFormula(source3) && !independentTextFieldFormula(node4, source3) && !inertDoubleClickFormula(cell3, source3) && !(glue2 && isNativeGlueCell(cell3, source3)) && // A trigger only counts events of the sheet it names; an unglued connector keeps one
++        if (executableCellFormula(source3) && !independentTextFieldFormula(node4, source3) && !inertDoubleClickFormula(cell3, source3) && !isSelfGlueTrigger(node4, source3) && !(glue2 && isNativeGlueCell(cell3, source3)) && // A trigger only counts events of the sheet it names; an unglued connector keeps one
+         // (Visio's freshly dropped connector names its own sheet).
+         !(/^(BegTrigger|EndTrigger)$/.test(cell3) && isNativeGlueCell(cell3, source3))) {
+           const lenient = options2.scope === "affected";
+@@ -110119,6 +110128,7 @@ async function assertFormattingDependencies(pkg, pagePaths, roots, pageId2, shap
+       if (independentTextFieldFormula(node4, source3)) continue;
+       if (attribute3(node4, "V") === "Themed" && isThemeLookupFormula(source3)) continue;
+       if (isConnectedGlueCell(node4, source3)) continue;
++      if (isSelfGlueTrigger(node4, source3)) continue;
+       const owner = node4.parentNode;
+       if (jumpOnly && node4.localName === "Cell" && /^(BegTrigger|EndTrigger)$/.test(attribute3(node4, "N") ?? "") && owner?.localName === "Shape" && owner.parentNode?.parentNode?.localName === "PageContents" && visioGlueTriggerTarget(source3) === attribute3(owner, "ID"))
+         continue;
+diff --git a/dist/automation/index.mjs b/dist/automation/index.mjs
+index d8ca3248e4c4fe95a4e1c89fb1ed04ad5824d9fd..d7d6c0f56b7ac9439c0751325420587480980f9e 100644
+--- a/dist/automation/index.mjs
++++ b/dist/automation/index.mjs
+@@ -108909,6 +108909,15 @@ function visioGlueSites(box6) {
+   ];
+ }
+ 
++function isSelfGlueTrigger(node, formula) {
++  if (node.localName !== "Cell" || node.hasAttribute("E") || !/^(BegTrigger|EndTrigger)$/.test(attribute3(node, "N") ?? "")) return false;
++  const shape = node.parentNode, root = shape?.parentNode?.parentNode;
++  if (shape?.localName !== "Shape" || root?.localName !== "PageContents" || ![VISIO_NS, VISIO_LEGACY_NS].includes(root.namespaceURI ?? "") || node.namespaceURI !== root.namespaceURI || shape.namespaceURI !== root.namespaceURI || ["1", "true"].includes(attribute3(shape, "Del") ?? "")) return false;
++  const id = attribute3(shape, "ID");
++  if (!id || !/^[1-9]\d{0,9}$/.test(id) || !["BeginX", "BeginY", "EndX", "EndY"].every((name) => children3(shape, "Cell").filter((cell) => attribute3(cell, "N") === name).length === 1)) return false;
++  const match = /^\s*_XFTRIGGER\(\s*(?:Sheet\.([1-9]\d{0,9})!)?EventXFMod\s*\)\s*$/i.exec(formula);
++  return !!match && (match[1] === void 0 || match[1] === id);
++}
+ // visio/edit-recalculate-index.ts
+ var key = (cell3) => JSON.stringify([cell3.pageId, cell3.shapeId, cell3.cell.toLowerCase()]);
+ function bound(value3, fallback) {
+@@ -108989,7 +108998,7 @@ function indexCells2(roots, options2) {
+           unit: cellUnit(cell3, relative2)
+         };
+         const source3 = attribute3(node4, "F");
+-        if (executableCellFormula(source3) && !independentTextFieldFormula(node4, source3) && !inertDoubleClickFormula(cell3, source3) && !(glue2 && isNativeGlueCell(cell3, source3)) && // A trigger only counts events of the sheet it names; an unglued connector keeps one
++        if (executableCellFormula(source3) && !independentTextFieldFormula(node4, source3) && !inertDoubleClickFormula(cell3, source3) && !isSelfGlueTrigger(node4, source3) && !(glue2 && isNativeGlueCell(cell3, source3)) && // A trigger only counts events of the sheet it names; an unglued connector keeps one
+         // (Visio's freshly dropped connector names its own sheet).
+         !(/^(BegTrigger|EndTrigger)$/.test(cell3) && isNativeGlueCell(cell3, source3))) {
+           const lenient = options2.scope === "affected";
+@@ -110094,6 +110103,7 @@ async function assertFormattingDependencies(pkg, pagePaths, roots, pageId2, shap
+       if (independentTextFieldFormula(node4, source3)) continue;
+       if (attribute3(node4, "V") === "Themed" && isThemeLookupFormula(source3)) continue;
+       if (isConnectedGlueCell(node4, source3)) continue;
++      if (isSelfGlueTrigger(node4, source3)) continue;
+       const owner = node4.parentNode;
+       if (jumpOnly && node4.localName === "Cell" && /^(BegTrigger|EndTrigger)$/.test(attribute3(node4, "N") ?? "") && owner?.localName === "Shape" && owner.parentNode?.parentNode?.localName === "PageContents" && visioGlueTriggerTarget(source3) === attribute3(owner, "ID"))
+         continue;
+diff --git a/dist/visio/index.cjs b/dist/visio/index.cjs
+index 7f25e511f7b3d82c7edaf63ecb8e470575bd8eb7..d0cfa4cefef12fe08647928f5df19ba0177d9050 100644
+--- a/dist/visio/index.cjs
++++ b/dist/visio/index.cjs
+@@ -8709,6 +8709,15 @@ function visioGlueSites(box5) {
+   ];
+ }
+ 
++function isSelfGlueTrigger(node, formula) {
++  if (node.localName !== "Cell" || node.hasAttribute("E") || !/^(BegTrigger|EndTrigger)$/.test(attribute2(node, "N") ?? "")) return false;
++  const shape = node.parentNode, root = shape?.parentNode?.parentNode;
++  if (shape?.localName !== "Shape" || root?.localName !== "PageContents" || ![VISIO_NS, VISIO_LEGACY_NS].includes(root.namespaceURI ?? "") || node.namespaceURI !== root.namespaceURI || shape.namespaceURI !== root.namespaceURI || ["1", "true"].includes(attribute2(shape, "Del") ?? "")) return false;
++  const id = attribute2(shape, "ID");
++  if (!id || !/^[1-9]\d{0,9}$/.test(id) || !["BeginX", "BeginY", "EndX", "EndY"].every((name) => children2(shape, "Cell").filter((cell) => attribute2(cell, "N") === name).length === 1)) return false;
++  const match = /^\s*_XFTRIGGER\(\s*(?:Sheet\.([1-9]\d{0,9})!)?EventXFMod\s*\)\s*$/i.exec(formula);
++  return !!match && (match[1] === void 0 || match[1] === id);
++}
+ // visio/edit-recalculate-index.ts
+ var key = (cell2) => JSON.stringify([cell2.pageId, cell2.shapeId, cell2.cell.toLowerCase()]);
+ function bound(value3, fallback) {
+@@ -8789,7 +8798,7 @@ function indexCells(roots, options2) {
+           unit: cellUnit(cell2, relative)
+         };
+         const source = attribute2(node3, "F");
+-        if (executableCellFormula(source) && !independentTextFieldFormula(node3, source) && !inertDoubleClickFormula(cell2, source) && !(glue2 && isNativeGlueCell(cell2, source)) && // A trigger only counts events of the sheet it names; an unglued connector keeps one
++        if (executableCellFormula(source) && !independentTextFieldFormula(node3, source) && !inertDoubleClickFormula(cell2, source) && !isSelfGlueTrigger(node3, source) && !(glue2 && isNativeGlueCell(cell2, source)) && // A trigger only counts events of the sheet it names; an unglued connector keeps one
+         // (Visio's freshly dropped connector names its own sheet).
+         !(/^(BegTrigger|EndTrigger)$/.test(cell2) && isNativeGlueCell(cell2, source))) {
+           const lenient = options2.scope === "affected";
+@@ -46881,6 +46890,7 @@ async function assertFormattingDependencies(pkg, pagePaths, roots, pageId2, shap
+       if (independentTextFieldFormula(node3, source)) continue;
+       if (attribute2(node3, "V") === "Themed" && isThemeLookupFormula(source)) continue;
+       if (isConnectedGlueCell(node3, source)) continue;
++      if (isSelfGlueTrigger(node3, source)) continue;
+       const owner = node3.parentNode;
+       if (jumpOnly && node3.localName === "Cell" && /^(BegTrigger|EndTrigger)$/.test(attribute2(node3, "N") ?? "") && owner?.localName === "Shape" && owner.parentNode?.parentNode?.localName === "PageContents" && visioGlueTriggerTarget(source) === attribute2(owner, "ID"))
+         continue;
+diff --git a/dist/visio/index.mjs b/dist/visio/index.mjs
+index 72941e533b2b635e29baad71b195d3b0befaa95a..300501390d60731377cfcbbb090e7e07fd2b97f5 100644
+--- a/dist/visio/index.mjs
++++ b/dist/visio/index.mjs
+@@ -8703,6 +8703,15 @@ function visioGlueSites(box5) {
+   ];
+ }
+ 
++function isSelfGlueTrigger(node, formula) {
++  if (node.localName !== "Cell" || node.hasAttribute("E") || !/^(BegTrigger|EndTrigger)$/.test(attribute2(node, "N") ?? "")) return false;
++  const shape = node.parentNode, root = shape?.parentNode?.parentNode;
++  if (shape?.localName !== "Shape" || root?.localName !== "PageContents" || ![VISIO_NS, VISIO_LEGACY_NS].includes(root.namespaceURI ?? "") || node.namespaceURI !== root.namespaceURI || shape.namespaceURI !== root.namespaceURI || ["1", "true"].includes(attribute2(shape, "Del") ?? "")) return false;
++  const id = attribute2(shape, "ID");
++  if (!id || !/^[1-9]\d{0,9}$/.test(id) || !["BeginX", "BeginY", "EndX", "EndY"].every((name) => children2(shape, "Cell").filter((cell) => attribute2(cell, "N") === name).length === 1)) return false;
++  const match = /^\s*_XFTRIGGER\(\s*(?:Sheet\.([1-9]\d{0,9})!)?EventXFMod\s*\)\s*$/i.exec(formula);
++  return !!match && (match[1] === void 0 || match[1] === id);
++}
+ // visio/edit-recalculate-index.ts
+ var key = (cell2) => JSON.stringify([cell2.pageId, cell2.shapeId, cell2.cell.toLowerCase()]);
+ function bound(value3, fallback) {
+@@ -8783,7 +8792,7 @@ function indexCells(roots, options2) {
+           unit: cellUnit(cell2, relative)
+         };
+         const source = attribute2(node3, "F");
+-        if (executableCellFormula(source) && !independentTextFieldFormula(node3, source) && !inertDoubleClickFormula(cell2, source) && !(glue2 && isNativeGlueCell(cell2, source)) && // A trigger only counts events of the sheet it names; an unglued connector keeps one
++        if (executableCellFormula(source) && !independentTextFieldFormula(node3, source) && !inertDoubleClickFormula(cell2, source) && !isSelfGlueTrigger(node3, source) && !(glue2 && isNativeGlueCell(cell2, source)) && // A trigger only counts events of the sheet it names; an unglued connector keeps one
+         // (Visio's freshly dropped connector names its own sheet).
+         !(/^(BegTrigger|EndTrigger)$/.test(cell2) && isNativeGlueCell(cell2, source))) {
+           const lenient = options2.scope === "affected";
+@@ -46875,6 +46884,7 @@ async function assertFormattingDependencies(pkg, pagePaths, roots, pageId2, shap
+       if (independentTextFieldFormula(node3, source)) continue;
+       if (attribute2(node3, "V") === "Themed" && isThemeLookupFormula(source)) continue;
+       if (isConnectedGlueCell(node3, source)) continue;
++      if (isSelfGlueTrigger(node3, source)) continue;
+       const owner = node3.parentNode;
+       if (jumpOnly && node3.localName === "Cell" && /^(BegTrigger|EndTrigger)$/.test(attribute2(node3, "N") ?? "") && owner?.localName === "Shape" && owner.parentNode?.parentNode?.localName === "PageContents" && visioGlueTriggerTarget(source) === attribute2(owner, "ID"))
+         continue;
+diff --git a/dist/visio/ui/index.cjs b/dist/visio/ui/index.cjs
+index 41567d17918dfefd4ced176a5a483c07716d18ab..0d120b42c181be2b0566ba6490cf856c079dc051 100644
+--- a/dist/visio/ui/index.cjs
++++ b/dist/visio/ui/index.cjs
+@@ -5719,6 +5719,15 @@ function visioGlueSites(box6) {
+   ];
+ }
+ 
++function isSelfGlueTrigger(node, formula) {
++  if (node.localName !== "Cell" || node.hasAttribute("E") || !/^(BegTrigger|EndTrigger)$/.test(attribute2(node, "N") ?? "")) return false;
++  const shape = node.parentNode, root = shape?.parentNode?.parentNode;
++  if (shape?.localName !== "Shape" || root?.localName !== "PageContents" || ![VISIO_NS, VISIO_LEGACY_NS].includes(root.namespaceURI ?? "") || node.namespaceURI !== root.namespaceURI || shape.namespaceURI !== root.namespaceURI || ["1", "true"].includes(attribute2(shape, "Del") ?? "")) return false;
++  const id = attribute2(shape, "ID");
++  if (!id || !/^[1-9]\d{0,9}$/.test(id) || !["BeginX", "BeginY", "EndX", "EndY"].every((name) => children2(shape, "Cell").filter((cell) => attribute2(cell, "N") === name).length === 1)) return false;
++  const match = /^\s*_XFTRIGGER\(\s*(?:Sheet\.([1-9]\d{0,9})!)?EventXFMod\s*\)\s*$/i.exec(formula);
++  return !!match && (match[1] === void 0 || match[1] === id);
++}
+ // visio/edit-recalculate-index.ts
+ var key = (cell2) => JSON.stringify([cell2.pageId, cell2.shapeId, cell2.cell.toLowerCase()]);
+ function bound(value3, fallback) {
+@@ -5799,7 +5808,7 @@ function indexCells(roots2, options2) {
+           unit: cellUnit(cell2, relative)
+         };
+         const source = attribute2(node3, "F");
+-        if (executableCellFormula(source) && !independentTextFieldFormula(node3, source) && !inertDoubleClickFormula(cell2, source) && !(glue2 && isNativeGlueCell(cell2, source)) && // A trigger only counts events of the sheet it names; an unglued connector keeps one
++        if (executableCellFormula(source) && !independentTextFieldFormula(node3, source) && !inertDoubleClickFormula(cell2, source) && !isSelfGlueTrigger(node3, source) && !(glue2 && isNativeGlueCell(cell2, source)) && // A trigger only counts events of the sheet it names; an unglued connector keeps one
+         // (Visio's freshly dropped connector names its own sheet).
+         !(/^(BegTrigger|EndTrigger)$/.test(cell2) && isNativeGlueCell(cell2, source))) {
+           const lenient = options2.scope === "affected";
+@@ -46898,6 +46907,7 @@ async function assertFormattingDependencies(pkg, pagePaths, roots2, pageId2, sha
+       if (independentTextFieldFormula(node3, source)) continue;
+       if (attribute2(node3, "V") === "Themed" && isThemeLookupFormula(source)) continue;
+       if (isConnectedGlueCell(node3, source)) continue;
++      if (isSelfGlueTrigger(node3, source)) continue;
+       const owner = node3.parentNode;
+       if (jumpOnly && node3.localName === "Cell" && /^(BegTrigger|EndTrigger)$/.test(attribute2(node3, "N") ?? "") && owner?.localName === "Shape" && owner.parentNode?.parentNode?.localName === "PageContents" && visioGlueTriggerTarget(source) === attribute2(owner, "ID"))
+         continue;
+diff --git a/dist/visio/ui/index.mjs b/dist/visio/ui/index.mjs
+index 9d29f1c9fcf4bff43da76b72755d1ce85f15b3cd..5fd37075a70c23911515332b3f3226f4bdc73ca8 100644
+--- a/dist/visio/ui/index.mjs
++++ b/dist/visio/ui/index.mjs
+@@ -5713,6 +5713,15 @@ function visioGlueSites(box6) {
+   ];
+ }
+ 
++function isSelfGlueTrigger(node, formula) {
++  if (node.localName !== "Cell" || node.hasAttribute("E") || !/^(BegTrigger|EndTrigger)$/.test(attribute2(node, "N") ?? "")) return false;
++  const shape = node.parentNode, root = shape?.parentNode?.parentNode;
++  if (shape?.localName !== "Shape" || root?.localName !== "PageContents" || ![VISIO_NS, VISIO_LEGACY_NS].includes(root.namespaceURI ?? "") || node.namespaceURI !== root.namespaceURI || shape.namespaceURI !== root.namespaceURI || ["1", "true"].includes(attribute2(shape, "Del") ?? "")) return false;
++  const id = attribute2(shape, "ID");
++  if (!id || !/^[1-9]\d{0,9}$/.test(id) || !["BeginX", "BeginY", "EndX", "EndY"].every((name) => children2(shape, "Cell").filter((cell) => attribute2(cell, "N") === name).length === 1)) return false;
++  const match = /^\s*_XFTRIGGER\(\s*(?:Sheet\.([1-9]\d{0,9})!)?EventXFMod\s*\)\s*$/i.exec(formula);
++  return !!match && (match[1] === void 0 || match[1] === id);
++}
+ // visio/edit-recalculate-index.ts
+ var key = (cell2) => JSON.stringify([cell2.pageId, cell2.shapeId, cell2.cell.toLowerCase()]);
+ function bound(value3, fallback) {
+@@ -5793,7 +5802,7 @@ function indexCells(roots2, options2) {
+           unit: cellUnit(cell2, relative)
+         };
+         const source = attribute2(node3, "F");
+-        if (executableCellFormula(source) && !independentTextFieldFormula(node3, source) && !inertDoubleClickFormula(cell2, source) && !(glue2 && isNativeGlueCell(cell2, source)) && // A trigger only counts events of the sheet it names; an unglued connector keeps one
++        if (executableCellFormula(source) && !independentTextFieldFormula(node3, source) && !inertDoubleClickFormula(cell2, source) && !isSelfGlueTrigger(node3, source) && !(glue2 && isNativeGlueCell(cell2, source)) && // A trigger only counts events of the sheet it names; an unglued connector keeps one
+         // (Visio's freshly dropped connector names its own sheet).
+         !(/^(BegTrigger|EndTrigger)$/.test(cell2) && isNativeGlueCell(cell2, source))) {
+           const lenient = options2.scope === "affected";
+@@ -46892,6 +46901,7 @@ async function assertFormattingDependencies(pkg, pagePaths, roots2, pageId2, sha
+       if (independentTextFieldFormula(node3, source)) continue;
+       if (attribute2(node3, "V") === "Themed" && isThemeLookupFormula(source)) continue;
+       if (isConnectedGlueCell(node3, source)) continue;
++      if (isSelfGlueTrigger(node3, source)) continue;
+       const owner = node3.parentNode;
+       if (jumpOnly && node3.localName === "Cell" && /^(BegTrigger|EndTrigger)$/.test(attribute2(node3, "N") ?? "") && owner?.localName === "Shape" && owner.parentNode?.parentNode?.localName === "PageContents" && visioGlueTriggerTarget(source) === attribute2(owner, "ID"))
+         continue;

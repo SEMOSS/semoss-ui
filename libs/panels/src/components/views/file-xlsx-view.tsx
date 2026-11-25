@@ -4,6 +4,7 @@ import {
 } from "@christophervr/xlsx-react-viewer";
 import { useEffect, useMemo, useState } from "react";
 import { decodeBase64Asset } from "@semoss/shared";
+import { useTheme } from "@semoss/ui/next";
 import { useFilePanel } from "../../hooks/use-file-panel";
 import { useFileViewControls } from "../../hooks/use-file-view-controls";
 import { useOfficeEditorSession } from "../../hooks/use-office-editor-session";
@@ -14,10 +15,14 @@ import type { FileViewProps } from "../../types/file-view.types";
 import { OfficeViewerError } from "./office/office-viewer-error";
 import { OfficeViewerFrame } from "./office/office-viewer-frame";
 import { XlsxFileAccessNotice } from "./office/xlsx-file-access-notice";
-import { XLSX_HIDDEN_ACTIONS } from "./office/xlsx-viewer-policy";
+import {
+	XLSX_HIDDEN_ACTIONS,
+	XLSX_VIEWER_CUSTOMIZATION,
+} from "./office/xlsx-viewer-policy";
 
 /** Preview and edit an Excel workbook from a project, engine, or user resource. */
 export const FileXlsxView = ({ config, onControls }: FileViewProps) => {
+	const { resolvedTheme } = useTheme();
 	const panel = useFilePanel(config, { base64: true });
 	const [handle, setHandle] = useState<EditorHandle | null>(null);
 	const element = handle?.element ?? null;
@@ -124,6 +129,8 @@ export const FileXlsxView = ({ config, onControls }: FileViewProps) => {
 				showToolbar
 				showFormulaBar
 				hiddenActions={XLSX_HIDDEN_ACTIONS}
+				customization={XLSX_VIEWER_CUSTOMIZATION}
+				theme={resolvedTheme}
 			/>
 		</OfficeViewerFrame>
 	);

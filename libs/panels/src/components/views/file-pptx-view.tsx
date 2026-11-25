@@ -1,6 +1,7 @@
 import {
 	PowerPointViewer,
 	type PowerPointViewerHandle,
+	THEME_CATALOG,
 } from "pptx-react-viewer";
 import { translationsEn } from "pptx-react-viewer/i18n";
 import {
@@ -16,7 +17,7 @@ import {
 	decodeBase64Asset,
 	getFileOperationErrorMessage,
 } from "@semoss/shared";
-import { toast } from "@semoss/ui/next";
+import { toast, useTheme } from "@semoss/ui/next";
 import { encodeBytesToBase64 } from "@semoss/utility/encoding";
 import { useFilePanel } from "../../hooks/use-file-panel";
 import { useFileViewControls } from "../../hooks/use-file-view-controls";
@@ -25,10 +26,7 @@ import { getFilePanelScope } from "../../types/file-panel.types";
 import type { FileViewProps } from "../../types/file-view.types";
 import { OfficeViewerError } from "./office/office-viewer-error";
 import { OfficeViewerFrame } from "./office/office-viewer-frame";
-import {
-	PPTX_VIEWER_CUSTOMIZATION,
-	PPTX_VIEWER_THEME,
-} from "./office/pptx-viewer-policy";
+import { PPTX_VIEWER_CUSTOMIZATION } from "./office/pptx-viewer-policy";
 import "pptx-react-viewer/styles";
 
 let registered = false;
@@ -53,6 +51,11 @@ interface PresentationSession {
 /** Preview and edit a PowerPoint file from a project, engine, or user resource. */
 export const FilePptxView = ({ config, onControls }: FileViewProps) => {
 	const { i18n } = useTranslation();
+	const { resolvedTheme } = useTheme();
+	const viewerTheme = THEME_CATALOG.find(
+		(entry) =>
+			entry.key === (resolvedTheme === "dark" ? "default" : "light"),
+	)?.theme;
 	const panel = useFilePanel(config, { base64: true });
 	const panelRef = useRef(panel);
 	useLayoutEffect(() => {
@@ -96,9 +99,7 @@ export const FilePptxView = ({ config, onControls }: FileViewProps) => {
 	}, [panel.read.revision, panel.read.status]);
 
 	const handleDirtyChange = useCallback((dirty: boolean) => {
-		// Vendor "clean" means its original load, not the last host save. An
-		// undo to that load can still differ from what SEMOSS has persisted.
-		if (dirty) setIsDirty(true);
+		setIsDirty(dirty);
 	}, []);
 
 	const save = useCallback(async () => {
@@ -118,7 +119,8 @@ export const FilePptxView = ({ config, onControls }: FileViewProps) => {
 		serializingRef.current = true;
 		setIsSerializing(true);
 		try {
-			const bytes = await handle.getContent();
+			const snapshot = await handle.getSaveSnapshot();
+			const bytes = snapshot.content;
 			const latestPanel = panelRef.current;
 			if (
 				sessionRef.current !== session ||
@@ -131,10 +133,17 @@ export const FilePptxView = ({ config, onControls }: FileViewProps) => {
 			if (bytes.byteLength === 0) {
 				throw new Error("Presentation content is not ready to save");
 			}
-			await latestPanel.save(encodeBytesToBase64(bytes));
-			// The public viewer has no markClean or per-edit revision callback.
-			// Keep its dirty state after persistence so later edits stay saveable
-			// without reloading the document and discarding its undo history.
+			const persisted = await latestPanel.save(
+				encodeBytesToBase64(bytes),
+			);
+			if (
+				persisted &&
+				sessionRef.current === session &&
+				!panelRef.current.readOnly
+			) {
+				const outcome = handle.acknowledgeSave(snapshot.revision);
+				if (outcome.status === "clean") setIsDirty(false);
+			}
 		} catch (error) {
 			if (sessionRef.current !== session) return;
 			const normalized =
@@ -202,7 +211,7 @@ export const FilePptxView = ({ config, onControls }: FileViewProps) => {
 					ref={viewerRef}
 					content={content}
 					fileName={config.name}
-					theme={PPTX_VIEWER_THEME}
+					theme={viewerTheme}
 					customization={PPTX_VIEWER_CUSTOMIZATION}
 					canEdit={!panel.readOnly}
 					autosave={false}
