@@ -81,8 +81,8 @@ const everything = useStoreSelector(counterStore);
 
 Never change a snapshot in place. `update` merges into plain-object state only;
 replace arrays, maps, and other state with `set`. Both take a value or a function
-of the current state, and a write that changes nothing tells no one. See the [state management skill](../../skills/state-management.skill.md)
-for the full rules and [AGENTS.md](./AGENTS.md#storestate) for what the class does
+of the current state, and a write that changes nothing tells no one. See the [state standard](../../docs/standards/react.md#state)
+for the full rules and [store.test.ts](./src/store.test.ts) for what the class does
 and does not guarantee.
 
 Add a helper here only when it has multiple consumers and a stable, generic
