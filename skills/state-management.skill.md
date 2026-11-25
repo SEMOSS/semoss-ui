@@ -84,9 +84,9 @@ const count = useCounter(store, (state) => state.count);
 - **Not everything named a store is in scope.** The SDK's `InsightStore`, `AgentStore`,
   `RoomStore`, and `Env` are a different kind of object and stay as they are; see the
   [SDK guide](../libs/sdk/AGENTS.md#session-config-and-permissions).
-- **Check the dependency boundary first.** `@semoss/ui`, `@semoss/i18n`, and `@semoss/cli` may
-  not depend on `@semoss/utility` ([root guide](../AGENTS.md#utility-ownership)), and none of
-  them owns a store. `@semoss/workbench` may depend on it; see its
+- **Check the dependency boundary first.** `@semoss/ui` and `@semoss/i18n` may
+  not depend on `@semoss/utility` ([root guide](../AGENTS.md#utility-ownership)), and neither
+  owns a store. `@semoss/workbench` may depend on it; see its
   [guide](../libs/workbench/AGENTS.md).
 
 ## Writing a store

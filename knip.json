@@ -11,24 +11,6 @@
 		"libs/ui/src/{hooks,next}/**": ["exports", "types"]
 	},
 	"workspaces": {
-		"packages/chrome-extension": {
-			"entry": [
-				"src/background/index.ts!",
-				"src/content/index.ts!",
-				"src/panel/index.tsx!",
-				"src/devtools/devtools.js!",
-				"src/options/options.js!"
-			],
-			"ignoreBinaries": ["vite"]
-		},
-		"packages/cli": {
-			"entry": ["bin/*.js!", "src/commands/**/*.ts!"],
-			"ignoreDependencies": [
-				"@oclif/plugin-help",
-				"@oclif/plugin-plugins",
-				"ts-node"
-			]
-		},
 		"libs/panels": {
 			"entry": ["src/vite/ai-sdk-stub.ts!"]
 		}
