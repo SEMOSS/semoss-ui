@@ -15,7 +15,7 @@ interface RoutineChatButtonProps {
 	startedAt?: string;
 	/** A past run whose output starts the conversation, instead of the latest. */
 	runId?: string;
-	/** The button text; "Ask Assistant" by default. */
+	/** The button text; "Ask Your Digital Twin" by default. */
 	label?: string;
 }
 
@@ -24,7 +24,7 @@ export function RoutineChatButton({
 	routineId,
 	startedAt,
 	runId,
-	label = "Ask Assistant",
+	label = "Ask Your Digital Twin",
 }: RoutineChatButtonProps) {
 	const { actions } = useInsight();
 	const navigate = useNavigate();

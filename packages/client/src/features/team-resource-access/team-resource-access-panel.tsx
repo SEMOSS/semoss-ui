@@ -496,7 +496,7 @@ export const TeamResourceAccessPanel = ({
 														className="size-5 text-muted-foreground"
 														aria-hidden
 													/>
-													<p className="font-medium">
+													<p>
 														{hasSearch
 															? `No ${nouns.plural} match that search`
 															: `This team cannot use any ${nouns.plural} yet`}

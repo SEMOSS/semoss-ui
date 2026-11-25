@@ -78,6 +78,18 @@ const correctionInputSchema = z
 export const topicReviewChangeSchema = z.union([
 	correctionInputSchema,
 	z.object({ type: z.literal("undo"), changeId: z.string().min(1) }),
+	// one topic as the owner set it up in the builder
+	z.object({
+		type: z.literal("build"),
+		topicKey: z.string().max(100).optional(),
+		name: z.string().trim().min(1).max(255),
+		description: z.string().max(12000),
+		terms: z.string().max(4000),
+		people: z.array(z.string().min(1).max(100)).max(60),
+		include: z.array(z.string().min(1).max(100)).max(60),
+		exclude: z.array(z.string().min(1).max(100)).max(60),
+		fromSuggestions: z.array(z.string().min(1).max(100)).max(30),
+	}),
 	z.object({
 		type: z.literal("organize"),
 		groups: topicOrganizationGroupsSchema,

@@ -128,7 +128,7 @@ it("adds one email under its own subject and refuses one the rules hide", async 
 			threadId,
 			"excluded",
 		),
-	).rejects.toThrow("This email is not available to the assistant.");
+	).rejects.toThrow("This email is excluded, so it cannot be added.");
 	expect(chat.addContextFile).toHaveBeenCalledOnce();
 });
 

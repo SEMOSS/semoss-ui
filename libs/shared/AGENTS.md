@@ -196,16 +196,59 @@ They take plain values, never a chat's own stores. Their words are in the `trans
 namespace, which every host that shows them loads. Each chat reads its stream with the SDK's
 `readPixelStreamChunk`, so the parts these show come from chunks read the same way.
 
+### HTML previews (`components/html/`)
+
+`HtmlPreview` renders browser-native HTML, CSS, and JavaScript in a `srcDoc` iframe.
+Its sandbox allows scripts but not same-origin access, forms, popups, downloads,
+or top navigation. Never add `allow-same-origin` to make a preview work. Scripts
+can still use the network and CPU; this is not a network sandbox or a guarantee
+of safe execution of hostile code. There is no JSX/TypeScript compiler, npm
+resolver, or virtual filesystem.
+
+`className` and `style` size the viewport; `forceFullHeight` fills a bounded parent.
+The iframe uses the browser's light `Canvas` backdrop rather than a host theme
+color, so unstyled HTML keeps readable native defaults even in a dark host.
+The document's own backgrounds and styles still render normally.
+`providerClassName` still styles the wrapper, and `SandpackHtmlPreview` is retained
+as a compatibility export only. There is no Sandpack dependency, service, or
+Refresh/New Tab toolbar. The hosts keep their own raw, copy, save, and popout
+actions.
+
+`html-preview-document.ts` adds a readiness/error bridge before the author's
+scripts. The parent accepts only messages from its own iframe, with an opaque
+origin and the current document identity; it sends no application data into the
+frame. Errors appear as text with existing `common` labels. A load event alone
+does not establish successful execution; initialization times out after ten
+seconds, and late readiness clears that timeout. Diagnostics are best effort:
+external script details may be redacted and preview scripts can interfere with
+their own bridge.
+
+An explicit document base is retained; otherwise `about:srcdoc` prevents relative
+assets from implicitly resolving against SEMOSS. External resources remain
+subject to CORS and the deployment's CSP. Do not weaken CSP or bypass Trusted
+Types to enable previews. Changing HTML replaces the document and may reset its
+scrolling and JavaScript state; there is no storage-based scroll restoration.
+The playground separately throttles complete streaming chunks to 120 ms and
+shows the final source immediately. Copied and saved source never includes the
+preview bridge.
+
 ### Engine pickers (`components/engine/`)
 
-`EngineSelect` is the one engine picker. It reads its own pages of `MyEngines` (filtered by
-`engineTypes` and `metaFilters`, searched on the server), or, given `engines`, lists just those and
+`EngineSelect` is the one engine picker. It reads its own pages of `MyEngines`, or of
+`AdminMyEngines` for an admin in admin mode (`admin`), filtered by `engineTypes` and `metaFilters`
+and searched on the server, or, given `engines`, lists just those and
 searches their names and ids itself, for a picker the server cannot filter, such as one subtype.
 `noneOption` adds a choice of no engine first in the list, and `unavailable` keeps a chosen engine
 the list does not offer, disabled, with a note. Each engine in the list is an `EngineOption`: its
 logo (`EngineSubtypeIcon`), its name and, under it, its id (`showEngineId`) or its description,
 with a check on the chosen one; the host passes the chosen engine's logo as `triggerIcon`. Pickers
 that choose an engine pass `showEngineId`, so every engine list shows logo, name and id.
+`EngineSelect` and `ProjectSelect` also pick several: given `selectedIds`, the list stays open
+between picks, checks the engines or projects with those ids, and passes each one picked to
+`onChange`, so the host adds it or takes it off; the host's `name` is what the trigger shows,
+such as how many are picked. With `isOwnedOnly`, both list only what the user owns, directly or
+through a team (`effectivePermissions=[1]`), as for a picker of what the user can share; admin
+mode lists everything.
 
 ### Model usage limits (`components/model-usage-limit/`)
 
@@ -216,8 +259,9 @@ Every place a model usage limit is set or shown uses these, so limits read the s
   measure (Tokens, Cost in US dollars, Compute Time), a window from minute to year and, for a team,
   an app or public use, Shared or For Each Member / For Each User / For Each Person. Each select gives its `SelectValue`
   the chosen option's label. Whole amounts are written with ASCII digits and comma separators
-  (`toLocaleString("en-US")`) whatever the browser's locale, so they read back as typed. A minute or hour window has a length
-  input beside it, so the rule reads "Every [10] Minutes": 1 to 59 minutes or 1 to 24 hours,
+  (`toLocaleString("en-US")`) whatever the browser's locale, so they read back as typed. A minute or hour window has "Every"
+  and a length box of its own before it, kept on one line with the window's units, so the rule
+  reads "Every [10] Minutes": 1 to 59 minutes or 1 to 24 hours,
   starting at 1, put back in range when the input is left, and sent as `windowLength` only when
   it is more than 1. Every rule has its own amount: a team's shared rule caps the team together,
   and a for each member rule caps each member with a fixed amount.
@@ -232,8 +276,8 @@ Every place a model usage limit is set or shown uses these, so limits read the s
   just opened or a rule just added is not red; from then on the problems follow the edits, and
   with no rules the hint to add one turns red. Warnings and notes show from the start.
 - `source` (`ModelUsageLimitSource`: `DIRECT`, `TEAM`, `PUBLIC`, `MODEL_TOTAL`, `ALL_MODELS`,
-  `PLATFORM`, `TEAM_TOTAL`, `APP`) decides the counts offered and whether Unlimited is: a total and the
-  platform default have none.
+  `PLATFORM`, `TEAM_TOTAL`, `APP`, `ENGINE`) decides the counts offered and whether Unlimited is: a
+  total and the platform default have none.
 - `APP` is the limit on the permission a model gives an app, which covers the calls the app's
   custom reactors make to the model for people whose only way to it is the app, and comes after
   Team Limits and before the Public Use Limit in the guide's order. It works like a team's: it offers
@@ -243,6 +287,15 @@ Every place a model usage limit is set or shown uses these, so limits read the s
   notes that it counts only the calls the app's limit applies to. The client's Apps table on a
   model's Access Control tab and its Add App dialog, labelled App Limit, are its hosts, and What
   Rules Count in the guide names its counts.
+- `ENGINE` is the limit on the permission a model gives another engine, which covers the calls the
+  engine's own code makes to the model, such as a vector database embedding or a guardrail asking
+  its judge, for people whose only way to the model is that engine. It comes right after the App
+  Limit in the guide's order and works the same way, with its counts named Shared by the Engine
+  and For Each User, and a note that a rule for each user counts only the calls the engine's limit
+  applies to. The client's Engines table on a model's Access Control tab and its Add Engine
+  dialog, labelled Engine Limit, are its hosts. `describeLoggedBilledTo` names a call the logs
+  record as billed to an `ENGINE` source the App Limit when its subject is a `PROJECT`, and the
+  Engine Limit otherwise.
 - `findModelUsageLimitProblem` says why a limit cannot be saved. Hosts keep Save enabled (except
   while saving) and check it when Save is pressed: on a problem they do not save, set the
   editor's `shouldShowProblems`, and call `focusFirstProblem()` through its `ref`
@@ -303,6 +356,21 @@ Every place a model usage limit is set or shown uses these, so limits read the s
   path explain limits the same way.
 - The editor's own words are in the `members` namespace, under `usageLimit`; the summaries,
   checks, path view and guide are in English.
+
+### Activity Log (`components/auditlog/`)
+
+The engine and project Activity Log: `AuditLogFilter`, the summary, the Event History chart
+(`AuditLogsTimeline`), the Prompt & Response table (`AuditLogsDataTable`) and the detail drawer.
+`pixel.ts` builds every pixel they run (`AuditLogsReport`, `ExportAuditLogsReport`,
+`GetAuditLogsReportFilterOptionList`), so the table, the exports and the filter dropdowns share
+one contract. Each row says why the access check let the call through (`accessReason`, such as
+Direct, Team or Delegated, or Refused) with its details as JSON (`accessDetails`);
+`access-reason.ts` lists the reasons and reads the details (`readAccessDetails`). The table has
+an Access column, the chart's tooltip an Access line, the filter an Access dropdown (`accessReason`
+in the report's `search`), and the drawer an Access section that names levels, how the call was
+made and the platform's work. Rows logged before calls recorded a reason show none. The words
+are in the `auditlog` namespace (`accessReasons`, `accessDetails`, `accessLevels`, `accessVia`,
+`accessRules`).
 
 ### The file editors are gone (`components/file/file-*.tsx`)
 

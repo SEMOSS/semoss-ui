@@ -1,8 +1,14 @@
-import { ArrowLeft, Trash2 } from "lucide-react";
-import { useId, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router";
-import { useConfig, useInsight } from "@semoss/sdk/react";
-import { MembersTable } from "@semoss/shared";
+import {
+	ArrowLeft,
+	BookOpenText,
+	MessageCircle,
+	SlidersHorizontal,
+	Trash2,
+	Users,
+} from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Link, useBlocker, useNavigate, useSearchParams } from "react-router";
+import { useInsight } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -15,8 +21,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 	DialogTrigger,
-	H2,
-	P,
 	Skeleton,
 	Tabs,
 	TabsContent,
@@ -24,60 +28,125 @@ import {
 	TabsTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { AgentAvatar } from "@/components/common/agent-avatar";
 import { agentImageUrl } from "@/features/agents/api/agent-image";
 import { CollaborationPage } from "@/features/collaboration/components/collaboration-page";
-import { CollaborationPageHeader } from "@/features/collaboration/components/collaboration-page-header";
 import { useCollaborationSession } from "@/features/collaboration/state/collaboration-session.context";
 import { useSkillCatalog } from "@/features/routines/use-skill-catalog";
 import { givenFirst } from "@/lib/person-name";
+import type { InsightActions } from "@/lib/pixel";
 import { twinChatPath, twinContentsPath } from "@/lib/workspace-paths";
-import { deleteTwin, getMyTwinAgent } from "./api/digital-twin";
+import { deleteTwin, getMyTwinAgent, readTwinNote } from "./api/digital-twin";
+import { getTwinPersona } from "./persona/api/persona";
 import { TwinCreateWizard } from "./twin-create-wizard";
-import { TwinProfileForm } from "./twin-profile-form";
-import { useTwinPeopleSource } from "./use-twin-people-source";
+import { TwinPageCover } from "./twin-page-cover";
+import { TwinPeople } from "./twin-people";
+import { TwinProfileForm, type TwinSaveControl } from "./twin-profile-form";
+import { useTwinIndex } from "./use-twin-index";
 import { useTwinRead } from "./use-twin-read";
 
 /**
- * The owner's own Digital Twin: the steps that create it while they have none,
- * and then its profile, the people it is shared with, and its delete. A link
- * with `?tab=people` opens on the people.
+ * Create a Digital Twin with `?create=true`, or manage the one named by
+ * `?twinId=...`. `tab=people` opens its sharing settings.
  */
 export function TwinSettings() {
 	const { actions } = useInsight();
 	const { state } = useCollaborationSession();
 	const navigate = useNavigate();
 	const [params, setParams] = useSearchParams();
-	const deleteId = useId();
-	const twin = useTwinRead(getMyTwinAgent);
-	const catalog = useSkillCatalog();
-	const isDirectoryAvailable = useConfig(
-		(config) => config.config?.msGraphLookup === true,
+	const requestedTwinId = params.get("twinId") ?? undefined;
+	const isCreating =
+		params.get("create") === "true" && requestedTwinId === undefined;
+	const readTwin = useCallback(
+		async (actions: InsightActions) => {
+			const [agent, persona] = await Promise.all([
+				isCreating ? null : getMyTwinAgent(actions, requestedTwinId),
+				// a persona that cannot be read is left as it is: null, and no switch for it is shown
+				getTwinPersona(actions).catch(() => null),
+			]);
+			if (!agent) return { agent: null, about: null, persona };
+			// a note that cannot be read is left as it is, not taken for none: null, and the form locks it
+			const about = await readTwinNote(actions, agent.workspace_id).catch(
+				() => null,
+			);
+			return { agent, about, persona };
+		},
+		[isCreating, requestedTwinId],
 	);
-	const agent = twin.data;
-	const people = useTwinPeopleSource(agent?.workspace_id ?? "");
+	const twin = useTwinRead(readTwin);
+	const catalog = useSkillCatalog();
+	// undefined until it is read, null for someone with no twin
+	const agent = twin.data?.agent;
+	const about = twin.data?.about ?? null;
+	const persona = twin.data?.persona ?? null;
+	const hasPersona = persona?.exists === true;
+	// a changed note is described for the twin's chats a moment after it is saved
+	const requestIndex = useTwinIndex(agent?.workspace_id);
 	// the browser keeps the image it has for an address, so a new upload gets a new one
 	const [imageRevision, setImageRevision] = useState(0);
 	const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
 	const [deleteError, setDeleteError] = useState("");
 
-	const handleSaved = (): void => {
-		setImageRevision((revision) => revision + 1);
-		// the name above the form comes from the server
-		twin.reload();
+	const [savedName, setSavedName] = useState<string>();
+	const saveControl = useRef<TwinSaveControl>(null);
+	const [leaveError, setLeaveError] = useState("");
+	const keepEditing = useRef<HTMLButtonElement>(null);
+	const previousFocus = useRef<HTMLElement>(null);
+	const blocker = useBlocker(({ currentLocation, nextLocation }) => {
+		if (isDeleting || !saveControl.current?.hasUnsavedChanges())
+			return false;
+		const current = new URLSearchParams(currentLocation.search);
+		const next = new URLSearchParams(nextLocation.search);
+		return (
+			currentLocation.pathname !== nextLocation.pathname ||
+			current.get("twinId") !== next.get("twinId") ||
+			current.get("create") !== next.get("create")
+		);
+	});
+	useEffect(() => {
+		if (blocker.state !== "blocked") return;
+		let active = true;
+		const flush = saveControl.current?.flush() ?? Promise.resolve();
+		void flush.then(
+			() => {
+				if (active) blocker.proceed();
+			},
+			(error: unknown) => {
+				if (active)
+					setLeaveError(
+						error instanceof Error
+							? error.message
+							: "Your changes could not be saved.",
+					);
+			},
+		);
+		return () => {
+			active = false;
+		};
+	}, [blocker]);
+
+	const handleSaved = (
+		name: string,
+		noteChanged: boolean,
+		imageChanged: boolean,
+	): void => {
+		setSavedName(name);
+		if (noteChanged) requestIndex();
+		if (imageChanged) setImageRevision((revision) => revision + 1);
 	};
 	const handleDelete = async (twinId: string): Promise<void> => {
 		setIsDeleting(true);
 		setDeleteError("");
 		try {
+			// Finish outstanding writes before removing their target, even if some edits are invalid.
+			await saveControl.current?.flush().catch(() => undefined);
 			await deleteTwin(actions, twinId);
 		} catch (cause) {
 			setIsDeleting(false);
 			setDeleteError(
 				cause instanceof Error
 					? cause.message
-					: "Your Digital Twin could not be deleted.",
+					: "This twin could not be deleted.",
 			);
 			return;
 		}
@@ -90,10 +159,10 @@ export function TwinSettings() {
 			asChild
 			variant="ghost"
 			size="sm"
-			className="-ml-2 mb-2 pointer-coarse:min-h-11"
+			className="-ms-2 mb-2 pointer-coarse:min-h-11"
 		>
 			<Link to="/twins">
-				<ArrowLeft aria-hidden="true" />
+				<ArrowLeft aria-hidden="true" className="rtl:rotate-180" />
 				Digital Twins
 			</Link>
 		</Button>
@@ -105,9 +174,7 @@ export function TwinSettings() {
 				{back}
 				{error ? (
 					<Alert variant="destructive">
-						<AlertTitle>
-							Could not load your Digital Twin
-						</AlertTitle>
+						<AlertTitle>Could not load this twin</AlertTitle>
 						<AlertDescription>
 							{error}
 							<Button
@@ -126,7 +193,7 @@ export function TwinSettings() {
 						<Skeleton className="h-16 w-full" />
 						<Skeleton className="h-96 w-full" />
 						<output className="sr-only">
-							Loading your Digital Twin…
+							Loading this twin...
 						</output>
 					</div>
 				)}
@@ -146,6 +213,7 @@ export function TwinSettings() {
 						) || "the person who made you"
 					}
 					skills={catalog.skills}
+					hasPersona={hasPersona}
 					// the new twin stays on its own scene until the owner moves on from it
 					onOpenSettings={twin.reload}
 				/>
@@ -154,177 +222,250 @@ export function TwinSettings() {
 	}
 
 	const twinId = agent.workspace_id;
+	const name = savedName ?? agent.name;
 	const imageUrl = `${agentImageUrl(twinId)}${imageRevision ? `&v=${imageRevision}` : ""}`;
 	return (
 		<CollaborationPage>
-			{back}
-			<CollaborationPageHeader
-				title={
-					<span className="flex min-w-0 items-center gap-4">
-						<AgentAvatar
-							agent={{ name: agent.name, avatar: imageUrl }}
-							size="lg"
-						/>
-						<span className="wrap-anywhere min-w-0">
-							{agent.name}
-						</span>
+			<div className="@container/twins mx-auto flex w-full max-w-5xl flex-col gap-5">
+				<div className="flex flex-wrap items-baseline gap-2 text-sm">
+					{back}
+					<span aria-hidden="true" className="text-border">
+						/
 					</span>
-				}
-				description="Your Digital Twin. It answers from the copies you put into it, for the people you name."
-				// beside a long name on a phone the links would leave it a column one letter wide
-				layoutClassName="flex-col sm:flex-row"
-				actions={
-					<>
+					<span className="text-muted-foreground">Manage</span>
+				</div>
+				<TwinPageCover twinId={twinId} name={name} portrait={imageUrl}>
+					<div className="col-span-full flex flex-wrap items-center gap-2">
 						<Button
 							asChild
-							variant="outline"
+							size="sm"
 							className="pointer-coarse:min-h-11"
 						>
-							<Link to={twinContentsPath()}>What it knows</Link>
+							<Link to={twinChatPath(twinId)}>
+								<MessageCircle aria-hidden="true" />
+								Chat
+							</Link>
 						</Button>
 						<Button
 							asChild
+							size="sm"
 							variant="outline"
-							className="pointer-coarse:min-h-11"
+							className="pointer-coarse:min-h-11 bg-card text-card-foreground"
 						>
-							<Link to={twinChatPath(twinId)}>Chat</Link>
+							<Link to={twinContentsPath(undefined, twinId)}>
+								<BookOpenText aria-hidden="true" />
+								What it knows
+							</Link>
 						</Button>
-					</>
-				}
-			/>
-			<Tabs
-				// the address holds the tab, so a link can open on the people whenever it arrives
-				value={params.get("tab") === "people" ? "people" : "profile"}
-				onValueChange={(tab) =>
-					setParams(tab === "people" ? { tab } : {}, {
-						replace: true,
-					})
-				}
-				className="gap-6"
-			>
-				<TabsList className="w-full sm:w-fit">
-					<TabsTrigger value="profile">Profile</TabsTrigger>
-					<TabsTrigger value="people">People</TabsTrigger>
-				</TabsList>
-				{/* mounted while hidden, so half-made changes survive a look at People */}
-				<TabsContent
-					value="profile"
-					forceMount
-					className="data-[state=inactive]:hidden"
-				>
-					<TwinProfileForm
-						twin={{
-							id: twinId,
-							profile: {
-								name: agent.name,
-								instructions: agent.system_prompt,
-								greeting: agent.config_json?.greeting ?? "",
-								skills: agent.skills.map((skill) => skill.id),
-								// knowledge bases are not the form's; saving keeps them
-								toolboxes: agent.mcp
-									.filter((entry) => entry.type !== "VECTOR")
-									.map(({ id, name, type }) => ({
-										id,
-										name,
-										type,
-									})),
-							},
-						}}
-						skills={catalog.skills}
-						imageUrl={imageUrl}
-						onSaved={handleSaved}
-					/>
-				</TabsContent>
-				<TabsContent value="people" className="flex flex-col gap-4">
-					<P className="max-w-prose text-muted-foreground text-sm">
-						The people who can chat with your Digital Twin. Each can
-						also open the copies it holds, read its instructions and
-						see who else is on this list.
-					</P>
-					<MembersTable
-						source={people}
-						isDirectoryAvailable={isDirectoryAvailable}
-					/>
-				</TabsContent>
-			</Tabs>
-			<section
-				aria-labelledby={deleteId}
-				className="mt-10 flex flex-col items-start gap-3 border-t pt-6"
-			>
-				<H2 id={deleteId} className="font-medium text-base">
-					Delete your Digital Twin
-				</H2>
-				<P className="max-w-prose text-muted-foreground text-sm">
-					This deletes your Digital Twin with the copies it holds, and
-					ends everyone's access to it. It cannot be undone.
-				</P>
-				<Dialog
-					open={isDeleteOpen}
-					onOpenChange={(isOpen) => {
-						if (isDeleting) return;
-						setIsDeleteOpen(isOpen);
-						if (isOpen) setDeleteError("");
+					</div>
+				</TwinPageCover>
+				<Tabs
+					// the address holds the tab, so a link can open on the people whenever it arrives
+					value={
+						params.get("tab") === "people" ? "people" : "profile"
+					}
+					onValueChange={(tab) => {
+						const next = new URLSearchParams(params);
+						if (tab === "people") next.set("tab", tab);
+						else next.delete("tab");
+						setParams(next, { replace: true });
 					}}
+					className="gap-6"
 				>
-					<DialogTrigger asChild>
-						<Button
-							type="button"
-							variant="destructive"
-							className="pointer-coarse:min-h-11"
+					<TabsList
+						aria-label="Twin settings"
+						className="min-h-10 pointer-coarse:min-h-12 w-full sm:w-fit"
+					>
+						<TabsTrigger
+							value="profile"
+							className="pointer-coarse:min-h-11 px-4"
 						>
-							<Trash2 aria-hidden="true" />
-							Delete Digital Twin
-						</Button>
-					</DialogTrigger>
-					<DialogContent
-						aria-busy={isDeleting}
-						showCloseButton={!isDeleting}
-						onEscapeKeyDown={(event) => {
-							if (isDeleting) event.preventDefault();
-						}}
-						onInteractOutside={(event) => {
-							if (isDeleting) event.preventDefault();
+							<SlidersHorizontal aria-hidden="true" />
+							Profile
+						</TabsTrigger>
+						<TabsTrigger
+							value="people"
+							className="pointer-coarse:min-h-11 px-4"
+						>
+							<Users aria-hidden="true" />
+							People
+						</TabsTrigger>
+					</TabsList>
+					{/* mounted while hidden, so half-made changes survive a look at People */}
+					<TabsContent
+						value="profile"
+						forceMount
+						className="data-[state=inactive]:hidden"
+					>
+						<TwinProfileForm
+							twin={{
+								id: twinId,
+								profile: {
+									name: agent.name,
+									instructions: agent.system_prompt,
+									greeting: agent.config_json?.greeting ?? "",
+									about: about ?? "",
+									skills: agent.skills.map(
+										(skill) => skill.id,
+									),
+									// knowledge bases are not the form's; saving keeps them
+									toolboxes: agent.mcp
+										.filter(
+											(entry) => entry.type !== "VECTOR",
+										)
+										.map(({ id, name, type }) => ({
+											id,
+											name,
+											type,
+										})),
+									usePersona:
+										persona?.offTwins.includes(twinId) !==
+										true,
+								},
+							}}
+							skills={catalog.skills}
+							imageUrl={imageUrl}
+							isNoteUnread={about === null}
+							persona={persona}
+							hasPersona={hasPersona}
+							onSaved={handleSaved}
+							saveControl={saveControl}
+						/>
+					</TabsContent>
+					<TabsContent value="people" className="flex flex-col gap-4">
+						<TwinPeople twin={{ id: twinId, name }} />
+					</TabsContent>
+				</Tabs>
+				{blocker.state === "blocked" && leaveError && (
+					<Dialog
+						open
+						onOpenChange={(open) => {
+							if (!open) {
+								setLeaveError("");
+								blocker.reset();
+							}
 						}}
 					>
-						<DialogHeader>
-							<DialogTitle className="wrap-anywhere">
-								Delete {agent.name}?
-							</DialogTitle>
-							<DialogDescription>
-								The copies of emails, Teams chats and files it
-								holds are deleted with it, and the people you
-								shared it with can no longer chat with it. This
-								cannot be undone.
-							</DialogDescription>
-						</DialogHeader>
-						{deleteError && (
-							<Alert variant="destructive">
-								<AlertDescription>
-									{deleteError}
-								</AlertDescription>
-							</Alert>
-						)}
-						<DialogFooter>
+						<DialogContent
+							onOpenAutoFocus={(event) => {
+								const active = document.activeElement;
+								previousFocus.current =
+									active instanceof HTMLElement
+										? active
+										: null;
+								event.preventDefault();
+								keepEditing.current?.focus();
+							}}
+							onCloseAutoFocus={(event) => {
+								if (previousFocus.current?.isConnected) {
+									event.preventDefault();
+									previousFocus.current.focus();
+								}
+							}}
+						>
+							<DialogHeader>
+								<DialogTitle>
+									Leave with unsaved changes?
+								</DialogTitle>
+								<DialogDescription>
+									{leaveError}
+								</DialogDescription>
+							</DialogHeader>
+							<DialogFooter>
+								<Button
+									type="button"
+									variant="outline"
+									onClick={() => {
+										setLeaveError("");
+										blocker.proceed();
+									}}
+								>
+									Leave without saving
+								</Button>
+								<Button
+									type="button"
+									ref={keepEditing}
+									onClick={() => {
+										setLeaveError("");
+										blocker.reset();
+									}}
+								>
+									Keep editing
+								</Button>
+							</DialogFooter>
+						</DialogContent>
+					</Dialog>
+				)}
+				<div className="flex justify-end border-t pt-2">
+					<Dialog
+						open={isDeleteOpen}
+						onOpenChange={(isOpen) => {
+							if (isDeleting) return;
+							setIsDeleteOpen(isOpen);
+							if (isOpen) setDeleteError("");
+						}}
+					>
+						<DialogTrigger asChild>
 							<Button
 								type="button"
-								variant="outline"
-								disabled={isDeleting}
-								onClick={() => setIsDeleteOpen(false)}
+								variant="ghost"
+								size="sm"
+								className="pointer-coarse:min-h-11 text-muted-foreground hover:text-destructive"
 							>
-								Cancel
+								<Trash2 aria-hidden="true" />
+								Delete Digital Twin
 							</Button>
-							<Button
-								type="button"
-								variant="destructive"
-								disabled={isDeleting}
-								onClick={() => void handleDelete(twinId)}
-							>
-								{isDeleting ? "Deleting…" : "Delete"}
-							</Button>
-						</DialogFooter>
-					</DialogContent>
-				</Dialog>
-			</section>
+						</DialogTrigger>
+						<DialogContent
+							aria-busy={isDeleting}
+							showCloseButton={!isDeleting}
+							onEscapeKeyDown={(event) => {
+								if (isDeleting) event.preventDefault();
+							}}
+							onInteractOutside={(event) => {
+								if (isDeleting) event.preventDefault();
+							}}
+						>
+							<DialogHeader>
+								<DialogTitle className="wrap-anywhere">
+									Delete {name}?
+								</DialogTitle>
+								<DialogDescription>
+									The copies of emails, Teams chats and files
+									it holds are deleted with it, and the people
+									you shared it with can no longer chat with
+									it. This cannot be undone.
+								</DialogDescription>
+							</DialogHeader>
+							{deleteError && (
+								<Alert variant="destructive">
+									<AlertDescription>
+										{deleteError}
+									</AlertDescription>
+								</Alert>
+							)}
+							<DialogFooter>
+								<Button
+									type="button"
+									variant="outline"
+									disabled={isDeleting}
+									onClick={() => setIsDeleteOpen(false)}
+								>
+									Cancel
+								</Button>
+								<Button
+									type="button"
+									variant="destructive"
+									disabled={isDeleting}
+									onClick={() => void handleDelete(twinId)}
+								>
+									{isDeleting ? "Deleting…" : "Delete"}
+								</Button>
+							</DialogFooter>
+						</DialogContent>
+					</Dialog>
+				</div>
+			</div>
 		</CollaborationPage>
 	);
 }

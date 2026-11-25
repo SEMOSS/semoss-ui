@@ -41,7 +41,7 @@ export function BrainReview() {
 			header={
 				<CollaborationPageHeader
 					title="Review"
-					description="Check how mail is filed into topics. The assistant asks here instead of on Today."
+					description="Check how mail is filed into topics. Brain asks here instead of on Today."
 				/>
 			}
 			aside={
@@ -88,9 +88,10 @@ export function BrainReview() {
 									Suggested memories
 								</Small>
 								<P className="text-muted-foreground text-xs leading-5">
-									From your chats. The assistant asks before
-									it changes a memory you wrote or confirmed,
-									and does not use these until you keep them.
+									From your chats. Your Digital Twin asks
+									before it changes a memory you wrote or
+									confirmed, and does not use these until you
+									keep them.
 								</P>
 								{suggestions.map((memory) => (
 									<MemoryRow
@@ -110,7 +111,7 @@ export function BrainReview() {
 				<TabsContent value="learned" className="mt-0">
 					<P className="border-b px-4 py-3 text-muted-foreground text-xs leading-5 md:px-6">
 						Confirmed topics, your recent review decisions, and what
-						the assistant learned in chats.
+						your Digital Twin learned in chats.
 					</P>
 					{learnedInChat.length > 0 && (
 						<section
@@ -121,7 +122,7 @@ export function BrainReview() {
 								Learned in chats
 							</Small>
 							<P className="text-muted-foreground text-xs leading-5">
-								In use now. Confirm the ones the assistant
+								In use now. Confirm the ones your Digital Twin
 								should act on.
 							</P>
 							{learnedInChat.map((memory) => (

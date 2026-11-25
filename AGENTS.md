@@ -39,6 +39,8 @@ skills supplement the standard; they do not waive reading it for React work.
 - [SDK chat](./skills/sdk-chat.skill.md): rooms, messages, agent runs, approvals, and polling lifecycle.
 - [SDK session](./libs/sdk/skills/session.skill.md): sign in, the user, config, permissions, and
   which insight a pixel runs in.
+- [UI text casing](./skills/ui-text-casing.skill.md): Title Case for titles, labels, and
+  actions, and sentence case for sentences, in user-facing English text.
 - [Design rulebook](./DESIGN.md): UI composition and styling.
 
 Lint and formatting configuration lives in [biome.json](./biome.json).
@@ -80,7 +82,6 @@ Applications:
 - `@semoss/auditlog-package` → Audit log dashboard (depends on i18n, sdk, shared, ui)
 - `@semoss/automation` → Automation workspace app (depends on i18n, sdk, shared, ui, utility;
   no client-store dependency)
-- `@semoss/cli` → CLI tooling (depends on sdk)
 - `@semoss/browser-automation` → Browser automation harness (depends on sdk, ui, utility)
 - `workshop-automation-extension` → Chrome extension (depends on sdk, ui, utility)
 
@@ -115,9 +116,7 @@ semoss/
 │   ├── terminal/                   # @semoss/terminal - Embedded terminal app
 │   ├── auditlog/                   # @semoss/auditlog-package - Audit log dashboard
 │   ├── automation/                 # @semoss/automation - Automation workspace app
-│   ├── browser-automation/         # @semoss/browser-automation - Browser automation harness
-│   ├── chrome-extension/           # Chrome extension for browser automation
-│   └── cli/                        # @semoss/cli - CLI tooling
+│   └── browser-automation/         # @semoss/browser-automation - Browser automation harness
 ├── skills/         # Provider-neutral *.skill.md guidance
 ├── pnpm-workspace.yaml
 ├── turbo.json
@@ -170,8 +169,8 @@ rules.
   directly. React code in `@semoss/utility` lives only under `src/react/`, one hook per file.
 - **Existing stores keep their contracts.** The migration is incremental, one store per scoped
   change. Do not rewrite a legacy store as a side effect of other work.
-- **Dependency boundaries still hold.** `@semoss/ui`, `@semoss/i18n`, and `@semoss/cli` cannot
-  import `@semoss/utility`; none of them owns a store today. Do not add the dependency to follow
+- **Dependency boundaries still hold.** `@semoss/ui` and `@semoss/i18n` cannot
+  import `@semoss/utility`; neither owns a store today. Do not add the dependency to follow
   this direction. `@semoss/workbench` may depend on `@semoss/utility`, so the dock's store can
   move; it still may not import sdk, shared, or i18n.
 
@@ -211,7 +210,7 @@ package guide below.
   use different names or syntax.
 - Keep feature policy, UI composition, SDK transport, and orchestration in their
   owning packages. Preserve dependency boundaries: this does not authorize adding
-  utility dependencies to UI, i18n, or CLI; workbench may depend on utility. The SDK may import utility
+  utility dependencies to UI or i18n; workbench may depend on utility. The SDK may import utility
   category subpaths only as a devDependency that its build bundles into `dist`, and
   its public types must not reference utility types, since its declarations are
   not bundled.
@@ -254,4 +253,3 @@ For validation and handoff, follow the React skill's
 - [packages/auditlog/AGENTS.md](./packages/auditlog/AGENTS.md) - Audit log dashboard app specifics
 - [packages/automation/AGENTS.md](./packages/automation/AGENTS.md) - Automation workspace app specifics
 - [packages/browser-automation/AGENTS.md](./packages/browser-automation/AGENTS.md) - Browser automation harness specifics
-- [packages/cli/AGENTS.md](./packages/cli/AGENTS.md) - CLI tooling specifics

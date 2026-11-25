@@ -14,7 +14,7 @@ export function RulesSettings() {
 						Rules
 					</H2>
 					<P className="text-base text-muted-foreground">
-						Manage exclusions from future assistant context and your
+						Manage what is kept from your Digital Twin, and your
 						filing preferences.
 					</P>
 				</header>

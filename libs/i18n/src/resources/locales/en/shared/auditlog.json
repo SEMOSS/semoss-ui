@@ -26,7 +26,8 @@
 			"last7Days": "Last 7 Days",
 			"last30Days": "Last 30 Days",
 			"custom": "Custom"
-		}
+		},
+		"accessReason": "Access"
 	},
 	"summary": {
 		"events": "Events",
@@ -64,7 +65,8 @@
 			"timestamp": "Timestamp",
 			"status": "Status",
 			"guardrailAction": "Guardrail",
-			"billedTo": "Billed To"
+			"billedTo": "Billed To",
+			"access": "Access"
 		},
 		"guardrailActions": {
 			"MASK": "Masked",
@@ -107,7 +109,8 @@
 			"span": "Span",
 			"session": "Session",
 			"request": "Request",
-			"response": "Response"
+			"response": "Response",
+			"access": "Access"
 		}
 	},
 	"detail": {
@@ -136,7 +139,8 @@
 			"spanId": "Span Id",
 			"request": "Request",
 			"response": "Response",
-			"billedTo": "Billed To"
+			"billedTo": "Billed To",
+			"access": "Access"
 		}
 	},
 	"page": {
@@ -154,5 +158,52 @@
 		"appName": "Audit Log",
 		"appDescription": "Audit log app",
 		"loadFailed": "We couldn't load the Audit Log. Try again, and if the issue persists, please contact support."
+	},
+	"accessReasons": {
+		"DIRECT": "Direct",
+		"TEAM": "Team",
+		"PUBLIC": "Public",
+		"DELEGATED": "Delegated",
+		"OWN_PROJECT": "Own Project",
+		"INSIGHT": "Insight",
+		"DISCOVERABLE": "Discoverable",
+		"ADMIN": "Admin",
+		"PLATFORM": "Platform",
+		"REFUSED": "Refused"
+	},
+	"accessDetails": {
+		"level": "Level",
+		"teamId": "Team",
+		"teamType": "Team Type",
+		"granteeId": "Given To",
+		"granteeType": "Given To Type",
+		"via": "Through",
+		"callingEngineId": "Calling Engine",
+		"appId": "App",
+		"agentId": "Agent",
+		"rule": "Platform Work",
+		"operation": "Operation",
+		"levelNeeded": "Level Needed",
+		"attempt": "Attempt"
+	},
+	"accessLevels": {
+		"OWNER": "Author",
+		"EDIT": "Editor",
+		"READ_ONLY": "Read-Only"
+	},
+	"accessVia": {
+		"APP_CODE": "An app's custom code",
+		"AGENT_RUN": "An agent's run",
+		"ENGINE_CODE": "An engine's own code",
+		"PLATFORM": "The platform"
+	},
+	"accessRules": {
+		"LOADING": "Loading the engine",
+		"PLATFORM_USE": "The platform's own use",
+		"PLATFORM_OPERATION": "A platform operation",
+		"ENGINE_ITSELF": "The engine calling itself",
+		"PROJECT_ENGINE": "A project's own work",
+		"VENV": "A venv engine",
+		"BEING_CREATED_OR_DELETED": "Being created or deleted"
 	}
 }

@@ -87,3 +87,41 @@ describe("the activity log's Billed To column", () => {
 		expect(screen.getAllByText("Ops Team Limit")).toHaveLength(2);
 	});
 });
+
+describe("the activity log's Access column", () => {
+	it("says why each call was allowed, and its details in the drawer", () => {
+		render(
+			<AuditLogsDataTable
+				logs={[
+					event({
+						accessReason: "DELEGATED",
+						accessDetails: JSON.stringify({
+							level: "READ_ONLY",
+							granteeId: "orders-agent",
+							granteeType: "PROJECT",
+							via: "AGENT_RUN",
+						}),
+					}),
+					// a row logged before calls recorded why they were allowed
+					event({ requestId: "request-2", spanId: "span-2" }),
+				]}
+				totalCount={2}
+				page={0}
+				rowsPerPage={50}
+				onPaginationChange={vi.fn()}
+			/>,
+		);
+		expect(
+			screen.getByRole("columnheader", { name: "table.columns.access" }),
+		).toBeTruthy();
+		expect(screen.getAllByText("accessReasons.DELEGATED")).toHaveLength(1);
+
+		fireEvent.click(screen.getByText("accessReasons.DELEGATED"));
+
+		expect(screen.getByText("detail.fields.access")).toBeTruthy();
+		expect(screen.getByText("accessDetails.granteeId")).toBeTruthy();
+		expect(screen.getByText("orders-agent")).toBeTruthy();
+		expect(screen.getByText("accessLevels.READ_ONLY")).toBeTruthy();
+		expect(screen.getByText("accessVia.AGENT_RUN")).toBeTruthy();
+	});
+});

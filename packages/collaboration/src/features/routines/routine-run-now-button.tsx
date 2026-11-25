@@ -34,21 +34,28 @@ export function RoutineRunNowButton({
 	};
 	return (
 		<div className="flex flex-col gap-2">
-			<Button
-				type="button"
-				variant="outline"
-				size="sm"
-				className="w-fit"
-				disabled={
-					isStarting ||
-					!routine.enabled ||
-					routine.lastRun?.status === "running"
-				}
-				onClick={() => void handleRunNow()}
-			>
-				<Play aria-hidden="true" data-icon="inline-start" />
-				Run now
-			</Button>
+			<div className="flex flex-wrap items-center gap-2.5">
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					className="w-fit"
+					disabled={
+						isStarting ||
+						!routine.enabled ||
+						routine.lastRun?.status === "running"
+					}
+					onClick={() => void handleRunNow()}
+				>
+					<Play aria-hidden="true" data-icon="inline-start" />
+					Run now
+				</Button>
+				{!routine.enabled && (
+					<span className="text-muted-foreground text-xs">
+						Enable this routine to run it now.
+					</span>
+				)}
+			</div>
 			{error && (
 				<Alert variant="destructive">
 					<AlertDescription>{error}</AlertDescription>

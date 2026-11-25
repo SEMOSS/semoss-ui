@@ -315,7 +315,7 @@ export class EmailDraftEditor {
 					attachmentError:
 						cause instanceof Error
 							? cause.message
-							: "Attachments could not be added. Ask the assistant to try again.",
+							: "Attachments could not be added. Ask in the chat to try again.",
 				});
 		} finally {
 			if (!this.disposed)

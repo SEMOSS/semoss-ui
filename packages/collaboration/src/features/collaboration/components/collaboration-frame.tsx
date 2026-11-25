@@ -15,7 +15,12 @@ import {
 } from "@semoss/ui/next";
 import { useDashboard } from "@/features/dashboard/dashboard.context";
 import { DashboardSourceDialog } from "@/features/dashboard/dashboard-source-dialog";
-import { isHeroPath, twinContentsPath } from "@/lib/workspace-paths";
+import {
+	isHeroPath,
+	personaInterviewPath,
+	twinContentsPath,
+	twinPersonaInterviewPath,
+} from "@/lib/workspace-paths";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { CollaborationHeader } from "./collaboration-header";
 import {
@@ -72,11 +77,14 @@ export function CollaborationFrame() {
 		// An explicit expansion applies only until the user opens another page.
 		setNavigationOverride(null);
 	}
-	// a room, a topic's contents page and a twin's are workbenches: they get the navigation's width
+	// a room, a topic's contents page and a twin's are workbenches, and a persona's interview is one thing at a
+	// time, whichever door it was opened from: they get the navigation's width
 	const isRoom =
 		pathname.startsWith("/thread/") ||
 		/^\/topics\/[^/]+\/contents$/.test(pathname) ||
-		pathname === twinContentsPath();
+		pathname === twinContentsPath() ||
+		pathname === twinPersonaInterviewPath() ||
+		pathname === personaInterviewPath();
 	// a hero page scrolls with the header as one, so its photo can run up behind the search box
 	const hasHero = isHeroPath(pathname);
 	const isCollapsed =

@@ -1,9 +1,18 @@
 import { ArrowDown, ShieldCheck } from "lucide-react";
 import { Fragment, type ReactNode, useContext } from "react";
-import { Button, Muted, Separator, Spinner } from "@semoss/ui/next";
+import {
+	Button,
+	cn,
+	Markdown,
+	Muted,
+	P,
+	Separator,
+	Spinner,
+} from "@semoss/ui/next";
 import { EmptyView } from "@/components/common/empty-view";
 import type { AgentConfiguration } from "@/features/agents/types/agent";
 import { MessageActivityPart } from "@/features/messages/components/message-activity-part";
+import { MESSAGE_PROSE_CLASS_NAME } from "@/features/messages/components/message-prose.styles";
 import { MessageTimelineEntry } from "@/features/messages/components/message-timeline-entry";
 import { useFollowScroll } from "@/features/messages/hooks/use-follow-scroll";
 import type {
@@ -19,6 +28,7 @@ import { RoomSourceWelcome } from "./room-source-welcome";
 /** Scrollable Playground-style transcript with loading and empty states. */
 export function RoomThread({
 	agent,
+	agentImage,
 	thread,
 	isLoadingHistory,
 	roomId,
@@ -28,6 +38,8 @@ export function RoomThread({
 	children,
 }: {
 	agent: AgentConfiguration;
+	/** The picture on each of the agent's messages; left out, they keep its initials. */
+	agentImage?: string;
 	thread: ConversationMessage[];
 	isLoadingHistory: boolean;
 	roomId: string;
@@ -40,6 +52,9 @@ export function RoomThread({
 	const scroll = useFollowScroll({ resetKey: roomId, resumeSignal });
 	const workbench = useContext(ToolWorkbenchContext);
 	const source = useContext(RoomEmailContext)?.source;
+	const greeting = agent.config_json?.greeting_enabled
+		? agent.config_json.greeting?.trim()
+		: "";
 	const entries = presentMessages(thread, workbench?.tools);
 	const latestMessage = thread.at(-1);
 	const liveMessage = latestMessage?.live ? latestMessage : undefined;
@@ -62,8 +77,12 @@ export function RoomThread({
 
 	return (
 		<div className="relative min-h-0 flex-1 overflow-hidden">
+			<div
+				aria-hidden="true"
+				className="pointer-events-none absolute inset-x-0 top-0 z-10 h-5 bg-gradient-to-b from-background to-transparent"
+			/>
 			<section
-				className="focus-visible:-outline-offset-2 size-full overflow-y-auto px-4 py-4 focus-visible:outline-2 focus-visible:outline-ring sm:px-5 lg:px-7"
+				className="focus-visible:-outline-offset-2 size-full overflow-y-auto px-4 pt-5 pb-4 focus-visible:outline-2 focus-visible:outline-ring sm:px-5 lg:px-7"
 				ref={scroll.viewportRef}
 				aria-label="Conversation messages"
 				// biome-ignore lint/a11y/noNoninteractiveTabindex: transcript must support keyboard scrolling
@@ -84,8 +103,26 @@ export function RoomThread({
 							</Muted>
 						</output>
 					)}
+					{!isLoadingHistory && greeting && (
+						<section
+							aria-label={`Greeting from ${agent.name}`}
+							className="min-w-0 space-y-2 py-4"
+						>
+							<P className="font-medium text-sm">{agent.name}</P>
+							<Markdown
+								dir="auto"
+								className={cn(
+									"min-w-0",
+									MESSAGE_PROSE_CLASS_NAME,
+								)}
+							>
+								{greeting}
+							</Markdown>
+						</section>
+					)}
 					{thread.length === 0 &&
 						!isLoadingHistory &&
+						(!greeting || source) &&
 						(source ? (
 							<RoomSourceWelcome source={source} />
 						) : (
@@ -129,6 +166,7 @@ export function RoomThread({
 										message={message}
 										parts={parts}
 										agent={agent}
+										agentImage={agentImage}
 										createdAt={createdAt}
 									/>
 								</Fragment>

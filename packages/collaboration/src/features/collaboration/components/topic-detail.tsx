@@ -1,4 +1,5 @@
 import {
+	ArrowLeft,
 	ChevronDown,
 	ListChecks,
 	LockKeyhole,
@@ -38,7 +39,6 @@ import { TopicSessions } from "@/features/dashboard/topic-sessions";
 import { lexicon } from "@/lib/lexicon";
 import { givenFirst } from "@/lib/person-name";
 import { topicContentsPath } from "@/lib/workspace-paths";
-import { WorkRefreshStatus } from "../live/work-refresh-status";
 import { useWorkUpdates } from "../live/work-updates.context";
 import { useCollaborationSession } from "../state/collaboration-session.context";
 import { memoriesAbout } from "../state/memory";
@@ -61,7 +61,7 @@ import { TopicMatchesDialog } from "./topic-matches-dialog";
 import { TopicPeoplePopover } from "./topic-people-popover";
 import { TopicPersonMenu } from "./topic-person-menu";
 import { TopicThreadRow } from "./topic-thread-row";
-import { useWorkFeed, WorkFilterMenu, WorkItemsList } from "./work-items-feed";
+import { WorkItems } from "./work-items-list";
 
 const LandingChatComposer = lazy(() =>
 	import("@/features/daily-chat/landing-chat-composer").then((module) => ({
@@ -94,7 +94,7 @@ const hintClassName =
 const memberControlClassName =
 	"text-muted-foreground pointer-fine:opacity-0 pointer-fine:group-focus-within/person:opacity-100 pointer-fine:group-hover/person:opacity-100";
 
-/** The tab a link back to the topic asks for in its state; Actions otherwise. */
+/** The tab a link back to the topic asks for in its state; Work items otherwise. */
 function returnTab(state: unknown): string {
 	return typeof state === "object" &&
 		state !== null &&
@@ -103,7 +103,7 @@ function returnTab(state: unknown): string {
 			state.tab === "sessions" ||
 			state.tab === "files")
 		? state.tab
-		: "actions";
+		: "work";
 }
 
 /** One topic workspace for actions, threads, sessions, linked files, and editable context. */
@@ -131,7 +131,6 @@ export function TopicDetail() {
 		id: topicId ?? "",
 	});
 	const [areNotesOpen, setAreNotesOpen] = useState(topicMemories.length > 0);
-	const feed = useWorkFeed({ topicId: topicId ?? "", initialFilter: "open" });
 	if (!topic)
 		return (
 			<CollaborationSurface
@@ -151,18 +150,9 @@ export function TopicDetail() {
 		thread.topicLinks.some((link) => link.topicId === topic.id),
 	);
 	const members = topic.people.filter((person) => person.state === "member");
-	const workItems = state.items.filter(
-		(item) =>
-			(item.status === "open" || item.status === "waiting") &&
-			threads.some(
-				(thread) => thread.id === item.threadId && !thread.muted,
-			),
-	);
 	const accountName =
 		state.accounts.find((account) => account.id === topic.accountId)
 			?.name || "No account";
-	const feedThreadCount = new Set(workItems.map((item) => item.threadId))
-		.size;
 	// the server scores active and dormant topics; samples and isolated pages have no server to ask
 	const canFindConversations =
 		Boolean(updates) && !topic.isSample && canStartAssistant;
@@ -193,6 +183,13 @@ export function TopicDetail() {
 
 	return (
 		<CollaborationPage>
+			<Link
+				to="/work/topics"
+				className="mb-4 inline-flex items-center gap-1.5 rounded-sm text-muted-foreground text-sm hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"
+			>
+				<ArrowLeft aria-hidden="true" className="size-4" />
+				Topics
+			</Link>
 			<CollaborationPageHeader
 				titleClassName="font-bold"
 				layoutClassName="flex-col md:flex-row"
@@ -222,7 +219,9 @@ export function TopicDetail() {
 								setIsEditing(true);
 							}}
 						>
-							{topic.description}
+							<span className="line-clamp-2">
+								{topic.description}
+							</span>
 						</Button>
 					) : undefined
 				}
@@ -303,20 +302,8 @@ export function TopicDetail() {
 					</div>
 				)}
 			</CollaborationPageHeader>
-			<section aria-label="Topic assistant" className="mb-8 space-y-3">
-				<P className="text-muted-foreground text-sm">
-					{canStartAssistant
-						? "Ask about this topic’s work, people, and emails."
-						: "Set this topic to Active or Dormant to start a chat."}
-				</P>
-				{canStartAssistant && (
-					<Suspense fallback={<output>Loading assistant…</output>}>
-						<LandingChatComposer topicId={topic.id} />
-					</Suspense>
-				)}
-			</section>
 			<div className="grid min-w-0 grid-cols-1 items-start gap-5 xl:grid-cols-3">
-				<div className="min-w-0 space-y-5 xl:col-span-2">
+				<div className="min-w-0 space-y-6 xl:col-span-2">
 					<Card className={cardClassName}>
 						<Tabs
 							value={tab}
@@ -329,15 +316,12 @@ export function TopicDetail() {
 									className={collaborationTabsStyles.list}
 								>
 									<TabsTrigger
-										value="actions"
+										value="work"
 										className={
 											collaborationTabsStyles.trigger
 										}
 									>
-										Actions
-										<span className="text-muted-foreground tabular-nums">
-											{feed.total(undefined)}
-										</span>
+										Work items
 									</TabsTrigger>
 									<TabsTrigger
 										value="threads"
@@ -364,12 +348,6 @@ export function TopicDetail() {
 										Files
 									</TabsTrigger>
 								</TabsList>
-								{tab === "actions" && (
-									<div className="ml-auto flex flex-wrap items-center justify-end gap-3">
-										<WorkRefreshStatus />
-										<WorkFilterMenu feed={feed} />
-									</div>
-								)}
 								{tab === "threads" && threads.length > 0 && (
 									<div className="ml-auto flex flex-wrap items-center justify-end gap-2">
 										{canFindConversations && (
@@ -407,28 +385,8 @@ export function TopicDetail() {
 										</div>
 									)}
 							</div>
-							<TabsContent value="actions" className="mt-0">
-								<WorkItemsList
-									feed={feed}
-									emptyAction={
-										canFindConversations ? (
-											<Button
-												type="button"
-												size="sm"
-												className="pointer-coarse:min-h-11"
-												onClick={(event) =>
-													openMatchReview(
-														event.currentTarget,
-													)
-												}
-											>
-												<Search aria-hidden="true" />
-												Find conversations for this
-												topic
-											</Button>
-										) : undefined
-									}
-								/>
+							<TabsContent value="work" className="mt-0 p-3">
+								<WorkItems topicId={topic.id} />
 							</TabsContent>
 							<TabsContent value="threads" className="mt-0">
 								{/* the tab already says Threads; this line only counts them */}
@@ -438,15 +396,6 @@ export function TopicDetail() {
 										{threads.length === 1
 											? "thread"
 											: "threads"}
-										{feedThreadCount > 0 && (
-											<>
-												{" \u00b7 "}
-												<span>
-													{feedThreadCount} in your
-													feed
-												</span>
-											</>
-										)}
 									</P>
 								)}
 								{threads.length ? (
@@ -459,11 +408,6 @@ export function TopicDetail() {
 												key={thread.id}
 												thread={thread}
 												topicId={topic.id}
-												items={workItems.filter(
-													(item) =>
-														item.threadId ===
-														thread.id,
-												)}
 											/>
 										))}
 									</ul>
@@ -516,6 +460,32 @@ export function TopicDetail() {
 							</TabsContent>
 						</Tabs>
 					</Card>
+					<section
+						aria-label="Ask Your Digital Twin About This Topic"
+						className="space-y-3"
+					>
+						<div className="space-y-1">
+							<H2 className="font-display font-semibold text-base">
+								Ask about this topic
+							</H2>
+							<P className="text-muted-foreground text-sm">
+								{canStartAssistant
+									? "Ask about this topic's work, people, and emails."
+									: "Set this topic to Active or Dormant to start a chat."}
+							</P>
+						</div>
+						{canStartAssistant && (
+							<Suspense
+								fallback={
+									<output>
+										Loading your Digital Twin...
+									</output>
+								}
+							>
+								<LandingChatComposer topicId={topic.id} />
+							</Suspense>
+						)}
+					</section>
 				</div>
 				<aside
 					aria-label="Topic context"
@@ -651,7 +621,7 @@ export function TopicDetail() {
 																					`On ${personThreads} ${personThreads === 1 ? "thread" : "threads"}`}
 																				<span>
 																					{member.role
-																						? ` · ${member.role}`
+																						? ` \u00b7 ${member.role}`
 																						: ""}
 																				</span>
 																			</Small>
@@ -740,7 +710,7 @@ export function TopicDetail() {
 									id={`${fieldId}-assistant-context`}
 									className={contextHeadingClassName}
 								>
-									Assistant
+									Your Digital Twin
 								</H2>
 							</div>
 							<div className="space-y-3">
@@ -869,7 +839,7 @@ export function TopicDetail() {
 												aria-hidden="true"
 												className="-rotate-90 group-data-[state=open]:rotate-0"
 											/>
-											Notes for the assistant
+											Notes for Your Digital Twin
 										</Button>
 									</CollapsibleTrigger>
 									<CollapsibleContent
@@ -879,7 +849,7 @@ export function TopicDetail() {
 									>
 										<MemoryList
 											memories={topicMemories}
-											emptyText="Notes here help the assistant with this topic and its threads."
+											emptyText="Notes here help your Digital Twin with this topic and its threads."
 											addLabel="New note"
 											about={{
 												type: "topic",
@@ -961,7 +931,7 @@ export function TopicDetail() {
 							<Button
 								variant="ghost"
 								size="sm"
-								aria-label={`${topic.kind} · ${accountName}: Edit topic kind and account`}
+								aria-label={`${topic.kind} \u00b7 ${accountName}: Edit topic kind and account`}
 								className="h-auto min-h-8 max-w-full font-normal text-muted-foreground"
 								onClick={(event) => {
 									editButtonRef.current = event.currentTarget;
@@ -976,7 +946,7 @@ export function TopicDetail() {
 									<span className="capitalize">
 										{topic.kind}
 									</span>{" "}
-									· {accountName}
+									{"\u00b7"} {accountName}
 								</span>
 								<ChevronDown
 									aria-hidden="true"

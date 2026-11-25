@@ -79,6 +79,48 @@ export const routes: RouteObject[] = [
 									).TwinChatPage,
 								}),
 							},
+							{
+								path: "twins/persona",
+								id: "twins/persona",
+								lazy: async () => ({
+									Component: (
+										await import(
+											"@/pages/twin-persona.page"
+										)
+									).TwinPersonaPage,
+								}),
+							},
+							{
+								path: "twins/persona/interview",
+								id: "twins/persona/interview",
+								lazy: async () => ({
+									Component: (
+										await import(
+											"@/pages/twin-persona-interview.page"
+										)
+									).TwinPersonaInterviewPage,
+								}),
+							},
+							{
+								path: "persona",
+								id: "persona",
+								lazy: async () => ({
+									Component: (
+										await import("@/pages/persona.page")
+									).PersonaPage,
+								}),
+							},
+							{
+								path: "persona/interview",
+								id: "persona/interview",
+								lazy: async () => ({
+									Component: (
+										await import(
+											"@/pages/persona-interview.page"
+										)
+									).PersonaInterviewPage,
+								}),
+							},
 							...[
 								"work",
 								"work/topics",
@@ -149,7 +191,6 @@ export const routes: RouteObject[] = [
 							},
 							...[
 								"brain",
-								"brain/topics",
 								"brain/memory",
 								"brain/sources",
 								"brain/people",
@@ -173,6 +214,11 @@ export const routes: RouteObject[] = [
 								path: "agents/*",
 								id: "legacy-agents",
 								element: <Navigate to="/brain" replace />,
+							},
+							{
+								// Topics left Settings for the sidebar; old links open its page there
+								path: "brain/topics",
+								element: <Navigate to="/work/topics" replace />,
 							},
 							{
 								path: "brain/profile",

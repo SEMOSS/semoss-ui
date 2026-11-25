@@ -47,6 +47,7 @@ export const AuditLogPage = ({ catalogName }) => {
 		customDateRange: { from: null, to: null },
 		methodNames: [],
 		engineTypes: [],
+		accessReasons: [],
 		filterUserId: "",
 		roomId: "",
 		searchTerm: "",

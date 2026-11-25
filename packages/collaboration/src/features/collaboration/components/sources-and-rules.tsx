@@ -28,7 +28,7 @@ export function SourcesAndRules() {
 			header={
 				<CollaborationPageHeader
 					title="Connections"
-					description="Connect Microsoft 365 once. The assistant then reads new mail, Teams chats and calendar on its own."
+					description="Connect Microsoft 365 once. New mail, Teams chats and calendar are then read on their own."
 				/>
 			}
 		>

@@ -21,6 +21,8 @@ export interface ConnectorSaveRequest {
 	name: string;
 	/** How to put it into the insight's files. */
 	source: ConnectorSaveSource;
+	/** The drive a drive file is in, when known, which the saved file then names. */
+	driveId?: string;
 }
 
 /** What {@link useConnectorSaver} returns. */
@@ -118,7 +120,11 @@ export const useConnectorSaver = (
 				} else if (intent === "context" && onAddToContext) {
 					onAddToContext(file);
 				} else if (onSaved) {
-					onSaved({ ...file, itemKey: request.key });
+					onSaved({
+						...file,
+						itemKey: request.key,
+						...(request.driveId && { driveId: request.driveId }),
+					});
 				} else {
 					toast.success(t("actions.saved", { name: file.name }));
 				}

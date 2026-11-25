@@ -339,6 +339,27 @@ describe("routine autosave", () => {
 		expect(result.current.status).toBe("saved");
 	});
 
+	it("flushes the latest draft when typing continues during the write started by flush", async () => {
+		const first = deferred();
+		const onSave = vi
+			.fn(async (values: Values) => values)
+			.mockReturnValueOnce(first.promise);
+		const { result } = renderAutosave(onSave);
+		act(() => result.current.form.setValue("time", "09:00"));
+		let flushed: Promise<void> | undefined;
+		await act(async () => {
+			flushed = result.current.flush();
+		});
+		act(() => result.current.form.setValue("time", "10:00"));
+		await act(async () => {
+			first.resolve({ ...initial, time: "09:00" });
+			await flushed;
+		});
+		expect(onSave).toHaveBeenCalledTimes(2);
+		expect(onSave).toHaveBeenLastCalledWith({ ...initial, time: "10:00" });
+		expect(result.current.status).toBe("saved");
+	});
+
 	it("rejects a flush of an invalid draft or a failed save, saying why", async () => {
 		const onSave = vi
 			.fn<(values: Values) => Promise<Values>>()

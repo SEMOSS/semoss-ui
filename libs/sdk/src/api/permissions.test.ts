@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { get } from "../utility";
+import { get, post } from "../utility";
 import {
+	addProjectUserPermissions,
 	getEngineUsers,
 	getEngineUsersNoCredentials,
 	getProjectUsersNoCredentials,
@@ -10,9 +11,11 @@ import {
 vi.mock("../utility", async (importOriginal) => ({
 	...(await importOriginal<typeof import("../utility")>()),
 	get: vi.fn(),
+	post: vi.fn(),
 }));
 
 const mockGet = vi.mocked(get);
+const mockPost = vi.mocked(post);
 
 /** The URL of the only request made */
 const requestedUrl = (): URL => {
@@ -207,5 +210,51 @@ describe("getEngineUsers", () => {
 
 		expect(members[0].usage_limit).toEqual(usageLimit);
 		expect(members[1].usage_limit).toEqual({ unlimited: true, rules: [] });
+	});
+});
+
+describe("addProjectUserPermissions", () => {
+	const ANN = {
+		userid: "ann",
+		type: "NATIVE",
+		permission: "READ_ONLY",
+	} as const;
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+		mockPost.mockResolvedValue({
+			data: { success: true },
+		} as unknown as Awaited<ReturnType<typeof post>>);
+	});
+
+	it("gives access with no end unless an end is passed", async () => {
+		expect(await addProjectUserPermissions("p1", [ANN])).toBe(true);
+		expect(mockPost).toHaveBeenCalledExactlyOnceWith(
+			expect.stringContaining(
+				"/api/auth/project/addProjectUserPermissions",
+			),
+			{ projectId: "p1", userpermissions: [ANN] },
+			{},
+		);
+	});
+
+	it("sends when the access ends, to the user's or the admin's endpoint", async () => {
+		await addProjectUserPermissions(
+			"p1",
+			[ANN],
+			true,
+			"2026-12-31T23:59:59.000Z",
+		);
+		expect(mockPost).toHaveBeenCalledExactlyOnceWith(
+			expect.stringContaining(
+				"/api/auth/admin/project/addProjectUserPermissions",
+			),
+			{
+				projectId: "p1",
+				userpermissions: [ANN],
+				endDate: "2026-12-31T23:59:59.000Z",
+			},
+			{},
+		);
 	});
 });

@@ -50,6 +50,11 @@ export interface ProjectSelectProps {
 	 * Outside it the list is the projects the user can see.
 	 */
 	admin?: boolean;
+	/**
+	 * Lists only the projects the user owns, directly or through a team.
+	 * Admin mode lists every project.
+	 */
+	isOwnedOnly?: boolean;
 	/** Props forwarded to the PopoverContent component. */
 	popoverContentProps?: React.ComponentProps<typeof PopoverContent>;
 	/** Show the project ID under the project name instead of the description. */
@@ -62,6 +67,13 @@ export interface ProjectSelectProps {
 	 * scrolling it.
 	 */
 	modal?: boolean;
+	/**
+	 * Lets the user pick several projects without the list closing: each project
+	 * picked is passed to onChange, and the projects with these ids are shown
+	 * checked. The caller adds or takes off each one picked; `name` is what the
+	 * trigger shows, such as how many are picked.
+	 */
+	selectedIds?: readonly string[];
 	/**
 	 * Offers a choice of no project, first in the list, with this label: for a
 	 * picker that narrows something to one project or none, such as "All
@@ -77,8 +89,9 @@ export interface ProjectSelectProps {
 
 /**
  * Searchable, paginated project picker backed by MyProjects, or by
- * AdminMyProjects in admin mode. The list is read in the session's insight, so
- * the picker works outside any `InsightProvider`.
+ * AdminMyProjects in admin mode, narrowed to the projects the user owns with
+ * isOwnedOnly. The list is read in the session's insight, so the picker works
+ * outside any `InsightProvider`.
  *
  * @name ProjectSelect
  * @return A project selector with filtering and infinite scrolling.
@@ -96,11 +109,13 @@ export const ProjectSelect = ({
 	projectTypes,
 	metaFilters,
 	admin = false,
+	isOwnedOnly = false,
 	popoverContentProps = {},
 	showProjectId,
 	showProjectImage = false,
 	modal = false,
 	noneOption,
+	selectedIds,
 }: ProjectSelectProps) => {
 	const [open, setOpen] = useState(false);
 	const [search, setSearch] = useState("");
@@ -121,6 +136,10 @@ export const ProjectSelect = ({
 						metaFilters
 							? `metaFilters=${JSON.stringify(metaFilters)}, `
 							: ""
+					}${
+						isOwnedOnly && !admin
+							? "effectivePermissions=[1], "
+							: ""
 					}limit=[${limit}], offset=[${offset}]);`
 				: "",
 		(response) => (response.length === 0 ? -1 : Infinity),
@@ -129,6 +148,7 @@ export const ProjectSelect = ({
 		[
 			open,
 			admin,
+			isOwnedOnly,
 			debouncedSearch,
 			JSON.stringify(projectTypes),
 			JSON.stringify(metaFilters),
@@ -238,16 +258,21 @@ export const ProjectSelect = ({
 								const displayName =
 									project.project_display_name ||
 									project.project_name;
+								const isPicked = selectedIds
+									? selectedIds.includes(project.project_id)
+									: value === project.project_id;
 								return (
 									<CommandItem
 										key={project.project_id}
 										value={project.project_id}
 										onSelect={() => {
 											onChange(project);
-											setOpen(false);
+											if (!selectedIds) {
+												setOpen(false);
+											}
 										}}
 										className={cn(
-											value === project.project_id &&
+											isPicked &&
 												"bg-primary/10 data-[selected=true]:bg-primary/15",
 										)}
 									>
@@ -272,11 +297,16 @@ export const ProjectSelect = ({
 												</span>
 											) : null}
 										</div>
-										{value === project.project_id ? (
+										{isPicked ? (
 											<CheckIcon
 												className="ms-2 size-4 shrink-0 text-primary"
 												strokeWidth={3}
 											/>
+										) : null}
+										{selectedIds && isPicked ? (
+											<span className="sr-only">
+												, picked
+											</span>
 										) : null}
 									</CommandItem>
 								);

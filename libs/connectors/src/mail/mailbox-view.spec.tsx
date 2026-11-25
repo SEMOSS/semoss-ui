@@ -10,6 +10,8 @@ const mocks = vi.hoisted(() => ({
 	loadMore: vi.fn(),
 	reload: vi.fn(),
 	hasMore: false,
+	// what the view last asked its pages for
+	pageOptions: undefined as unknown,
 }));
 vi.mock("@semoss/sdk/react", () => ({
 	useInsight: () => ({ insightId: "origin" }),
@@ -30,16 +32,19 @@ vi.mock("../core/use-connector-query", () => ({
 	}),
 }));
 vi.mock("./use-mail-pages", () => ({
-	useMailPages: () => ({
-		data: mocks.messages,
-		status: "ready",
-		error: null,
-		isRefreshing: false,
-		reload: mocks.reload,
-		loadMore: mocks.loadMore,
-		pageError: mocks.pageError,
-		hasMore: mocks.hasMore,
-	}),
+	useMailPages: (options: unknown) => {
+		mocks.pageOptions = options;
+		return {
+			data: mocks.messages,
+			status: "ready",
+			error: null,
+			isRefreshing: false,
+			reload: mocks.reload,
+			loadMore: mocks.loadMore,
+			pageError: mocks.pageError,
+			hasMore: mocks.hasMore,
+		};
+	},
 }));
 let root: Root;
 let container: HTMLDivElement;
@@ -79,6 +84,60 @@ afterEach(async () => {
 	await act(async () => root.unmount());
 	container.remove();
 	vi.unstubAllGlobals();
+});
+
+it("leads each row with its sender and narrows the list where the host gives it a page", async () => {
+	mocks.messages = parseMailPage({
+		messages: [
+			{
+				id: "m1",
+				subject: "Budget",
+				fromName: "Ava Reed",
+				from: "ava@test.com",
+			},
+		],
+	}).messages;
+	const attachmentsToggle = () =>
+		[...container.querySelectorAll("button")].find(
+			(button) => button.textContent === "mail.hasAttachments",
+		);
+	// elsewhere a row keeps its mail icon and the list its two toggles
+	await render({ presentation: "default" });
+	expect(container.querySelector('[data-slot="avatar"]')).toBeNull();
+	expect(attachmentsToggle()).toBeUndefined();
+
+	await render({ presentation: "page" });
+	// who the email is from stands where the mail icon was
+	expect(container.querySelector('[data-slot="avatar"]')?.textContent).toBe(
+		"AR",
+	);
+	// with no picture until the host has one to give for the sender's address
+	expect(container.querySelector('[data-slot="avatar"] img')).toBeNull();
+	await render({
+		presentation: "page",
+		getPersonPhotoUrl: (person) => `/photo/${person.email}`,
+	});
+	expect(
+		container
+			.querySelector('[data-slot="avatar"] img')
+			?.getAttribute("src"),
+	).toBe("/photo/ava@test.com");
+	expect(
+		container.querySelector('[placeholder="mail.fromFilter"]'),
+	).not.toBeNull();
+	expect(
+		container.querySelector('[aria-label="mail.received"]'),
+	).not.toBeNull();
+	expect(mocks.pageOptions).toMatchObject({
+		search: "",
+		from: "",
+		sinceDays: undefined,
+	});
+	expect(attachmentsToggle()?.getAttribute("aria-pressed")).toBe("false");
+	await act(async () => attachmentsToggle()?.click());
+	// asked for in Outlook's own search syntax
+	expect(mocks.pageOptions).toMatchObject({ search: "hasattachment:true" });
+	expect(attachmentsToggle()?.getAttribute("aria-pressed")).toBe("true");
 });
 
 it("keeps the browser mounted while handing a provider-bound selection to the host", async () => {

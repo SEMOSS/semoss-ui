@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vitest";
+import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { MermaidBlock } from "../../components/block-defaults/mermaid-block/MermaidBlock.tsx";
 import { render, screen, waitFor } from "../utils";
 
@@ -49,6 +49,18 @@ const blocks = {
 };
 
 describe("Mermaid block", () => {
+	beforeAll(() => {
+		// jsdom does not measure SVG labels used by Mermaid's layout engine.
+		Object.defineProperty(SVGElement.prototype, "getBBox", {
+			configurable: true,
+			value: () => new DOMRect(0, 0, 100, 20),
+		});
+	});
+
+	afterAll(() => {
+		Reflect.deleteProperty(SVGElement.prototype, "getBBox");
+	});
+
 	test("renders correctly with mocked data", async () => {
 		const { container } = render(<MermaidBlock id={blockIds.mermaid} />, {
 			blocks: blocks,

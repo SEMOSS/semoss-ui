@@ -1,0 +1,8 @@
+.persona-print-field {
+	background-image: radial-gradient(currentColor 0.7px, transparent 0.8px);
+	background-size: 0.3125rem 0.3125rem;
+}
+
+.persona-fingerprint {
+	mask: url("./persona-fingerprint.webp") center / contain no-repeat;
+}

@@ -1,12 +1,8 @@
-import { ArrowRight, MessageSquare, RotateCcw } from "lucide-react";
-import { useCallback, useEffect, useId, useState } from "react";
+import { ArrowRight, RotateCcw } from "lucide-react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import {
 	Button,
-	cn,
 	Form,
-	Sheet,
-	SheetContent,
-	SheetTitle,
 	Spinner,
 	useFieldArray,
 	useForm,
@@ -16,6 +12,7 @@ import { listPeople, type OnboardingPerson } from "./onboarding-api";
 import type { OnboardingStepProps } from "./onboarding-step-props";
 import { Failure, message, StepActions, StepHeader } from "./onboarding-ui";
 import { TopicAreasStage } from "./topic-areas-stage";
+import { TopicBuilder } from "./topic-builder";
 import { TopicDoneStage } from "./topic-done-stage";
 import { TopicOrganizationPreviewDialog } from "./topic-organization-preview-dialog";
 import {
@@ -24,27 +21,30 @@ import {
 	setTopicArea,
 	type TopicReview,
 	type TopicReviewDraft,
-	topicClues,
 	topicReviewApplySchema,
 } from "./topic-review-api";
-import type { SetupChange } from "./topic-setup-api";
-import { TopicSetupChat } from "./topic-setup-chat";
 import { useTopicOrganization } from "./use-topic-organization";
 import { useTopicReviewChanges } from "./use-topic-review-changes";
 import { useTopicReviewDraft } from "./use-topic-review-draft";
 
 const STAGES = [
 	{
-		key: "areas",
-		label: "Topics",
+		key: "build",
+		label: "Set up",
 		title: "Your main areas of work",
+		intro: "Set up each topic with Brain: what it is, who is on it, and the conversations that belong.",
+	},
+	{
+		key: "areas",
+		label: "Check",
+		title: "Check your topics",
 		intro: "Pick a topic to see what is in it. Tick two or more to combine them.",
 	},
 	{
 		key: "done",
 		label: "Done",
 		title: "Ready to file",
-		intro: "The assistant files your recent mail and chats into these topics.",
+		intro: "Brain files your recent mail and chats into these topics.",
 	},
 ] as const;
 export type TopicStage = (typeof STAGES)[number]["key"];
@@ -78,14 +78,15 @@ export function TopicFlow({
 		form,
 		changes,
 	);
-	const [stage, setStage] = useState<TopicStage>("areas");
+	const [stage, setStage] = useState<TopicStage>("build");
 	const [contacts, setContacts] = useState<OnboardingPerson[]>([]);
 	const [addedNames, setAddedNames] = useState<Record<string, string>>({});
-	const [isChatOpen, setIsChatOpen] = useState(false);
 	const [isRegrouping, setIsRegrouping] = useState(false);
 	const [isGoingBack, setIsGoingBack] = useState(false);
 	const [isReloading, setIsReloading] = useState(false);
-	const chatTriggerId = useId();
+	const previewTriggerId = useId();
+	// why the last layout or combination could not be used, when it failed before its preview
+	const layoutFailure = useRef<string | null>(null);
 	const { queueDraft } = controller;
 	const values = form.watch();
 	const { errors, isSubmitting } = form.formState;
@@ -256,21 +257,84 @@ export function TopicFlow({
 		return key;
 	};
 
+	// whole areas split before their parts combine with other topics: an area's first topic does not save once
+	// combined into another; the saved review after splitting, or null with the reason kept
+	const splitAreas = async (
+		areaKeys: string[],
+	): Promise<TopicReview | null> => {
+		setIsRegrouping(true);
+		try {
+			let saved = await controller.flushDraft(form.getValues());
+			for (const areaKey of areaKeys) {
+				saved = await setTopicArea(actions, saved, areaKey, true);
+				controller.acceptReview(saved);
+				form.reset(reviewDraft(saved));
+			}
+			return saved;
+		} catch (cause: unknown) {
+			layoutFailure.current = message(cause);
+			return null;
+		} finally {
+			setIsRegrouping(false);
+		}
+	};
+
 	// kept topics into one, keeping a saved topic's profile when there is one; opens a preview first
-	const combineTopics = (
+	const combineTopics = async (
 		topicKeys: string[],
 		name = "",
 		description = "",
 	): Promise<boolean> => {
-		const keys = topicKeys.filter((key) => keptKeys.includes(key));
-		if (keys.length < 2) return Promise.resolve(false);
+		layoutFailure.current = null;
+		if (new Set(topicKeys).size < 2) return false;
+		let current = review;
+		const toSplit = current.draft.areas
+			.filter(
+				(area) =>
+					!area.split &&
+					area.topicKeys.length > 1 &&
+					topicKeys.some((key) => area.topicKeys.includes(key)),
+			)
+			.map((area) => area.key);
+		if (toSplit.length) {
+			const next = await splitAreas(toSplit);
+			if (!next) return false;
+			current = next;
+		}
+		// a split area comes in whole; a skipped topic comes in when combined
+		const merged = new Set(
+			current.draft.topics
+				.filter((topic) => topic.mergedIntoKey)
+				.map((topic) => topic.key),
+		);
+		const keys = [
+			...new Set(
+				topicKeys.flatMap(
+					(key) =>
+						current.draft.areas.find(
+							(area) =>
+								toSplit.includes(area.key) &&
+								area.topicKeys.includes(key),
+						)?.topicKeys ?? [key],
+				),
+			),
+		].filter((key) => indexOf(key) >= 0 && !merged.has(key));
+		if (keys.length < 2) return false;
 		const targetKey =
 			keys.find(
 				(key) =>
-					review.draft.topics.find((t) => t.key === key)?.accepted,
+					current.draft.topics.find((t) => t.key === key)?.accepted,
 			) ?? keys[0];
 		const target = form.getValues(`topics.${indexOf(targetKey)}`);
-		return organization.openPreview([
+		// the server only combines kept topics: keep the skipped ones for now, and put them back if the preview fails
+		const brought = keys.filter(
+			(key) => !form.getValues(`topics.${indexOf(key)}.keep`),
+		);
+		for (const key of brought)
+			form.setValue(`topics.${indexOf(key)}.keep`, true, {
+				shouldDirty: true,
+			});
+		const opened = await organization.openPreview([
 			{
 				topicKeys: keys,
 				targetKey,
@@ -279,70 +343,27 @@ export function TopicFlow({
 				terms: target.terms,
 			},
 		]);
+		if (!opened)
+			for (const key of brought)
+				form.setValue(`topics.${indexOf(key)}.keep`, false, {
+					shouldDirty: true,
+				});
+		return opened;
 	};
 
-	// a chat proposal becomes an ordinary draft edit the owner can still change
-	const applyChange = async (change: SetupChange): Promise<boolean> => {
-		if (change.type === "add_topic") {
-			if (form.getValues("topics").length >= 100) return false;
-			rememberNames(change.addPeople);
-			addTopic({
-				name: change.name,
-				description: change.description,
-				terms: change.addTerms.join("\n"),
-				addedPeople: change.addPeople.map((person) => person.id),
-			});
-			return true;
-		}
-		if (change.type === "combine")
-			return combineTopics(
-				change.topicKeys,
-				change.name,
-				change.description,
-			);
-		const index = indexOf(change.topicKey);
-		if (index < 0 || combined.has(change.topicKey)) return false;
-		if (change.type === "keep" || change.type === "skip") {
-			const isAccepted = review.draft.topics.find(
-				(t) => t.key === change.topicKey,
-			)?.accepted;
-			if (change.type === "skip" && isAccepted) return false;
-			form.setValue(`topics.${index}.keep`, change.type === "keep", {
-				shouldDirty: true,
-			});
-			return true;
-		}
-		if (change.name)
-			form.setValue(`topics.${index}.name`, change.name, {
-				shouldDirty: true,
-			});
-		if (change.description)
-			form.setValue(`topics.${index}.description`, change.description, {
-				shouldDirty: true,
-			});
-		if (change.addTerms.length) {
-			const current = form.getValues(`topics.${index}.terms`);
-			const have = new Set(
-				topicClues(current).map((t) => t.toLowerCase()),
-			);
-			const extra = change.addTerms.filter(
-				(t) => t.trim() && !have.has(t.trim().toLowerCase()),
-			);
-			if (extra.length)
-				form.setValue(
-					`topics.${index}.terms`,
-					[current.trim(), ...extra].filter(Boolean).join("\n"),
-					{ shouldDirty: true },
-				);
-		}
-		if (change.addPeople.length)
-			addPeople(change.topicKey, change.addPeople);
-		if (change.removePeople.length)
-			removePeople(
-				change.topicKey,
-				change.removePeople.map((person) => person.id),
-			);
-		return true;
+	// leaving the builder: only the topics the owner set up stay kept; Brain's other groups wait under "Also found"
+	const finishBuild = (): void => {
+		const built = new Set(
+			review.draft.topics.filter((t) => t.built).map((t) => t.key),
+		);
+		form.getValues("topics").forEach((topic, index) => {
+			const saved = review.draft.topics.find((t) => t.key === topic.key);
+			if (topic.keep && !built.has(topic.key) && !saved?.accepted)
+				form.setValue(`topics.${index}.keep`, false, {
+					shouldDirty: true,
+				});
+		});
+		setStage("areas");
 	};
 
 	const regroup = async (areaKey: string, split: boolean): Promise<void> => {
@@ -363,6 +384,7 @@ export function TopicFlow({
 	};
 
 	const handleSubmit = async (draft: TopicReviewDraft): Promise<void> => {
+		if (stage !== "done") return;
 		try {
 			const saved = await controller.flushDraft(draft);
 			const applied = await applyTopicReview(actions, saved);
@@ -436,6 +458,7 @@ export function TopicFlow({
 				form={form}
 				onSubmit={handleSubmit}
 				onError={() => {
+					if (stage !== "done") return;
 					// the only check is a name on every kept topic, edited on the first stage
 					setStage("areas");
 					form.setError("root.server", {
@@ -454,7 +477,7 @@ export function TopicFlow({
 					aside={
 						<ol
 							aria-label="Topic steps"
-							className="flex flex-wrap gap-1 text-xs"
+							className="flex flex-wrap gap-3 text-xs"
 						>
 							{STAGES.map((item, index) => (
 								<li
@@ -462,16 +485,13 @@ export function TopicFlow({
 									aria-current={
 										item.key === stage ? "step" : undefined
 									}
-									className={cn(
-										"rounded-full px-2.5 py-1",
+									className={
 										item.key === stage
-											? "bg-primary text-primary-foreground"
-											: index < stageIndex
-												? "bg-primary/10 text-primary"
-												: "bg-muted text-muted-foreground",
-									)}
+											? "font-semibold text-foreground"
+											: "text-muted-foreground"
+									}
 								>
-									{item.label}
+									{index + 1}. {item.label}
 								</li>
 							))}
 						</ol>
@@ -484,12 +504,32 @@ export function TopicFlow({
 						error={review.draft.modelError}
 						onRetry={onRestart}
 					/>
+				) : stage === "build" ? (
+					<TopicBuilder
+						actions={actions}
+						review={review}
+						contacts={contacts}
+						changes={changes}
+						isBusy={isBusy}
+						onSave={() => controller.flushDraft(form.getValues())}
+						onRemove={(key) => {
+							form.setValue(
+								`topics.${indexOf(key)}.keep`,
+								false,
+								{ shouldDirty: true },
+							);
+							return controller.flushDraft(form.getValues());
+						}}
+						onDone={finishBuild}
+						onBack={() => void handleBack()}
+					/>
 				) : stage === "areas" ? (
 					<TopicAreasStage
 						actions={actions}
 						contacts={contacts}
 						changes={changes}
 						onSave={() => controller.flushDraft(form.getValues())}
+						onReload={handleReload}
 						review={review}
 						values={values}
 						addedNames={addedNames}
@@ -497,7 +537,15 @@ export function TopicFlow({
 						onRegroup={(areaKey, split) =>
 							void regroup(areaKey, split)
 						}
-						onCombine={(keys) => void combineTopics(keys)}
+						onCombine={(keys) =>
+							void combineTopics(keys).then((opened) => {
+								if (!opened && layoutFailure.current)
+									form.setError("root.server", {
+										type: "server",
+										message: layoutFailure.current,
+									});
+							})
+						}
 						onAddTopic={(name) => addTopic({ name })}
 						onRemovePeople={removePeople}
 						onRestorePeople={addPeople}
@@ -511,6 +559,9 @@ export function TopicFlow({
 						changes={changes}
 						onEdit={setStage}
 					/>
+				)}
+				{organization.error && !organization.preview && (
+					<Failure error={organization.error} />
 				)}
 				{changes.error && (
 					<div className="space-y-2">
@@ -544,84 +595,57 @@ export function TopicFlow({
 						</Button>
 					</div>
 				)}
-				<StepActions
-					onBack={isBusy ? undefined : () => void handleBack()}
-					note={
-						<output>
-							{controller.status === "saved"
-								? `${keptKeys.length} ${keptKeys.length === 1 ? "topic" : "topics"} kept`
-								: controller.status === "error"
-									? "Not saved"
-									: "Saving..."}
-						</output>
-					}
-				>
-					<Button
-						id={chatTriggerId}
-						type="button"
-						variant="outline"
-						disabled={noSuggestions}
-						onClick={() => setIsChatOpen(true)}
-					>
-						<MessageSquare aria-hidden="true" /> Ask the assistant
-					</Button>
-					{stage === "done" ? (
-						<Button
-							type="submit"
-							disabled={
-								isBusy ||
-								!!changes.error ||
-								review.profileConflicts.length > 0
-							}
-						>
-							{isSubmitting && <Spinner className="size-4" />}
-							{isSubmitting
-								? "Saving topics..."
-								: `Save ${keptKeys.length} ${keptKeys.length === 1 ? "topic" : "topics"}`}
-							<ArrowRight aria-hidden="true" />
-						</Button>
-					) : (
-						<Button
-							type="button"
-							disabled={isBusy || noSuggestions}
-							onClick={() => setStage(STAGES[stageIndex + 1].key)}
-						>
-							Next: {STAGES[stageIndex + 1].label.toLowerCase()}
-							<ArrowRight aria-hidden="true" />
-						</Button>
-					)}
-				</StepActions>
-			</Form>
-			<Sheet open={isChatOpen} onOpenChange={setIsChatOpen}>
-				<SheetContent className="w-full gap-0 p-0 sm:max-w-md">
-					<SheetTitle className="sr-only">Setup assistant</SheetTitle>
-					<TopicSetupChat
-						actions={actions}
-						reviewId={review.id}
-						topics={values.topics
-							.filter((topic) => !combined.has(topic.key))
-							.map((topic) => ({
-								key: topic.key,
-								name: topic.name,
-							}))}
-						isBusy={isBusy}
-						onSave={() => controller.flushDraft(form.getValues())}
-						onApply={applyChange}
-						onOwnerWords={(text) =>
-							form.setValue("guidance", text, {
-								shouldDirty: true,
-							})
+				{(stage !== "build" || noSuggestions) && (
+					<StepActions
+						onBack={isBusy ? undefined : () => void handleBack()}
+						note={
+							<output>
+								{controller.status === "saved"
+									? `${keptKeys.length} ${keptKeys.length === 1 ? "topic" : "topics"} kept`
+									: controller.status === "error"
+										? "Not saved"
+										: "Saving..."}
+							</output>
 						}
-						className="h-full rounded-none border-0 bg-background"
-					/>
-				</SheetContent>
-			</Sheet>
+					>
+						{stage === "done" ? (
+							<Button
+								key="apply-topics"
+								type="submit"
+								disabled={
+									isBusy ||
+									!!changes.error ||
+									review.profileConflicts.length > 0
+								}
+							>
+								{isSubmitting && <Spinner className="size-4" />}
+								{isSubmitting
+									? "Saving topics..."
+									: `Save ${keptKeys.length} ${keptKeys.length === 1 ? "topic" : "topics"}`}
+								<ArrowRight aria-hidden="true" />
+							</Button>
+						) : (
+							<Button
+								type="button"
+								disabled={isBusy || noSuggestions}
+								onClick={() =>
+									setStage(STAGES[stageIndex + 1].key)
+								}
+							>
+								Next:{" "}
+								{STAGES[stageIndex + 1].label.toLowerCase()}
+								<ArrowRight aria-hidden="true" />
+							</Button>
+						)}
+					</StepActions>
+				)}
+			</Form>
 			{organization.preview && (
 				<TopicOrganizationPreviewDialog
 					preview={organization.preview}
 					isBusy={changes.isChanging}
 					error={changes.error || organization.error}
-					triggerId={chatTriggerId}
+					triggerId={previewTriggerId}
 					onAccept={() => void organization.acceptPreview()}
 					onClose={organization.closePreview}
 				/>

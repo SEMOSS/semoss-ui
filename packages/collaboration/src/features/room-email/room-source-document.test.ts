@@ -52,7 +52,7 @@ it("retains local participant and keyword exclusions while accepting new permitt
 	);
 	expect(document.messages.map((message) => message.id)).toEqual(["reply"]);
 	expect(document.limitations).toContain(
-		"Messages excluded from assistant context are not included.",
+		"Excluded messages are not included.",
 	);
 });
 

@@ -20,7 +20,7 @@ export function ThreadMemory({ thread }: { thread: Thread }) {
 			{canHold && (
 				<MemoryList
 					memories={memoriesAbout(state.memories, about)}
-					emptyText="Facts about this thread that the assistant should keep. They are memories, so they last beyond this chat."
+					emptyText="Facts about this thread that your Digital Twin should keep. They are memories, so they last beyond this chat."
 					addLabel="New fact"
 					about={about}
 					isSample={thread.isSample}
@@ -59,7 +59,7 @@ function ThreadRecallDetails({ threadId }: { threadId: string }) {
 			}}
 		>
 			<summary className="min-h-9 cursor-pointer font-medium focus-visible:outline-2 focus-visible:outline-ring">
-				What the assistant remembers here
+				What Your Digital Twin Remembers Here
 				<Small className="block font-normal text-muted-foreground">
 					Read each time it answers in this thread
 				</Small>
@@ -100,8 +100,8 @@ function ThreadRecallDetails({ threadId }: { threadId: string }) {
 					</ul>
 					{recall.hidden > 0 && (
 						<Small className="font-normal text-muted-foreground text-xs">
-							{recall.hidden} more did not fit; the assistant can
-							search for them.
+							{recall.hidden} more did not fit; your Digital Twin
+							can search for them.
 						</Small>
 					)}
 					<Link

@@ -101,6 +101,11 @@ export interface MailMessage {
 	sentDate?: string;
 	isUnread: boolean;
 	hasAttachments: boolean;
+	/**
+	 * Whether it is a draft that was never sent. Only a thread read reports
+	 * it, since a thread is read from every folder, the drafts among them.
+	 */
+	isDraft?: boolean;
 	/** Plain text: the backend reads html bodies as text. */
 	body?: string;
 	/**
