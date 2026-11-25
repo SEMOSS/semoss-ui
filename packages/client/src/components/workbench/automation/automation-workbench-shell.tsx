@@ -103,6 +103,7 @@ import {
 import { AUTOMATION_RUN_FILES_PANEL } from "./automation-run-files-panel";
 import { AutomationSettingsPanel } from "./automation-settings-panel";
 import { AutomationSettingsToggle } from "./automation-settings-toggle";
+import { usePickPptxShapes } from "./use-pick-pptx-shapes";
 
 const AUTOMATION_MUTATION_TOOLS = new Set([
 	"AddAutomationStep",
@@ -802,6 +803,13 @@ export const AutomationWorkbench = observer(
 			[appId, layoutActions],
 		);
 
+		const handlePickShapes = usePickPptxShapes({
+			appId,
+			insightId: insight.insightId,
+			inspectorPanelType: INSPECTOR,
+			layout: layoutActions,
+		});
+
 		// A save from the file-editor tab writes straight to the asset, bypassing
 		// the canvas's in-memory step entirely — mirror it back in so a later
 		// canvas Save can't clobber the file with the stale copy it loaded with.
@@ -869,6 +877,7 @@ export const AutomationWorkbench = observer(
 				runDetailsFocusNodeId: runDetailsFocus?.nodeId ?? null,
 				runDetailsFocusToken: runDetailsFocus?.token ?? 0,
 				pptxShapeSelection,
+				onPickShapes: handlePickShapes,
 			}),
 			[
 				appId,
@@ -879,6 +888,7 @@ export const AutomationWorkbench = observer(
 				handleExitHistoricalView,
 				handleInspectorChange,
 				handleOpenPythonEditor,
+				handlePickShapes,
 				handleRunsChange,
 				handleTraceChange,
 				handleViewRunDetails,

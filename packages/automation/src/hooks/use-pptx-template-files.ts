@@ -1,4 +1,4 @@
-import { usePixel } from "@semoss/sdk/react";
+import { runPixel, usePixel } from "@semoss/sdk/react";
 
 /** Where a template lives. TemplatePPTX looks in the insight folder first, then the project assets. */
 export type PptxTemplateSource = "project" | "insight";
@@ -54,6 +54,45 @@ export function toPptxTemplateFiles(
 		});
 	}
 	return files.sort((a, b) => a.path.localeCompare(b.path));
+}
+
+/**
+ * Locates the file a TemplatePPTX step's `templateFile` names, looking where
+ * the reactor does: the insight folder first, then the project assets.
+ *
+ * @param appId - The automation's project.
+ * @param insightId - The insight whose folder is searched.
+ * @param templateFile - The step's template path, relative to either folder.
+ * @return The matching template, or null when none is found or a search fails.
+ */
+export async function findPptxTemplateFile(
+	appId: string,
+	insightId: string | undefined,
+	templateFile: string,
+): Promise<PptxTemplateFile | null> {
+	const wanted = templateFile.replace(/\\/g, "/").replace(/^\/+/, "");
+	if (!wanted.toLowerCase().endsWith(".pptx")) return null;
+
+	const searches: Array<[PptxTemplateSource, string]> = [
+		["insight", 'SearchInsightAssets(filePath=["/"], search=[".pptx"]);'],
+	];
+	if (appId) {
+		searches.push([
+			"project",
+			`SearchAppAssets(filePath=["/"], project=${JSON.stringify([appId])}, search=[".pptx"]);`,
+		]);
+	}
+
+	for (const [source, pixel] of searches) {
+		const response = await runPixel<[unknown]>(pixel, insightId);
+		if (response.errors.length > 0) continue;
+		const match = toPptxTemplateFiles(
+			response.pixelReturn?.[0]?.output,
+			source,
+		).find((file) => file.path === wanted);
+		if (match) return match;
+	}
+	return null;
 }
 
 /**

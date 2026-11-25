@@ -28,7 +28,6 @@ import { LoopForm } from "./forms/loop-form";
 import { ModelEngineForm } from "./forms/model-engine-form";
 import { PillInput } from "./forms/pill-input";
 import { StorageEngineForm } from "./forms/storage-engine-form";
-import type { PptxShapeSelection } from "./forms/template-pptx-form";
 import { TemplatePptxForm } from "./forms/template-pptx-form";
 import { VectorEngineForm } from "./forms/vector-engine-form";
 
@@ -40,7 +39,6 @@ interface StepFormProps {
 	appId?: string;
 	/** When true, every field renders as non-editable and mutating actions are disabled */
 	readOnly?: boolean;
-	pptxShapeSelection?: PptxShapeSelection | null;
 }
 
 export function StepForm({
@@ -50,7 +48,6 @@ export function StepForm({
 	devMode = false,
 	appId = "",
 	readOnly = false,
-	pptxShapeSelection,
 }: StepFormProps) {
 	const update = (config: AutomationNode["config"]) => {
 		if (readOnly) return;
@@ -203,7 +200,6 @@ export function StepForm({
 					config={step.config as TemplatePptxConfig}
 					upstreamVars={upstreamVars}
 					onChange={update}
-					pptxShapeSelection={pptxShapeSelection}
 					appId={appId}
 					readOnly={readOnly}
 				/>

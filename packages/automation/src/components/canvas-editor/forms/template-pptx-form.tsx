@@ -1,5 +1,5 @@
 import { MousePointerClick, Plus, Trash2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import {
 	Button,
 	Field,
@@ -17,6 +17,7 @@ import type {
 	TemplatePptxConfig,
 	TemplatePptxReplacement,
 } from "../../../domain/automation-workflow.types";
+import { PptxPickContext } from "../pptx-pick-context";
 import { BoundInput } from "./pill-input";
 import { PptxTemplateSelect } from "./pptx-template-select";
 
@@ -25,22 +26,10 @@ export interface PptxShapePayload {
 	shapeType: string;
 }
 
-/** A shape-selection event stamped with a token so selecting the same shape
- *  twice fires the effect a second time. */
-export interface PptxShapeSelection {
-	shapeName: string;
-	shapeType: string;
-	/** Monotonically increasing; bumped on every selection event. */
-	token: number;
-}
-
 export interface TemplatePptxFormProps {
 	config: TemplatePptxConfig;
 	upstreamVars: string[];
 	onChange: (c: TemplatePptxConfig) => void;
-	/** Set by the host when a shape is selected in the PPTX panel. The form
-	 *  adds it as a replacement when pick mode is active. */
-	pptxShapeSelection?: PptxShapeSelection | null;
 	/** The automation's project, whose assets are searched for templates. */
 	appId?: string;
 	readOnly?: boolean;
@@ -259,10 +248,10 @@ export function TemplatePptxForm({
 	config,
 	upstreamVars,
 	onChange,
-	pptxShapeSelection,
 	appId = "",
 	readOnly = false,
 }: TemplatePptxFormProps) {
+	const { shapeSelection, onPickShapes } = useContext(PptxPickContext);
 	const [pickMode, setPickMode] = useState(false);
 	const pickModeRef = useRef(pickMode);
 	pickModeRef.current = pickMode;
@@ -273,8 +262,8 @@ export function TemplatePptxForm({
 	onChangeRef.current = onChange;
 
 	useEffect(() => {
-		if (!pptxShapeSelection || !pickModeRef.current || readOnly) return;
-		const { shapeName, shapeType } = pptxShapeSelection;
+		if (!shapeSelection || !pickModeRef.current || readOnly) return;
+		const { shapeName, shapeType } = shapeSelection;
 		const c = configRef.current;
 		if (c.replacements.some((r) => r.shapeName === shapeName)) return;
 		onChangeRef.current({
@@ -287,7 +276,12 @@ export function TemplatePptxForm({
 				),
 			],
 		});
-	}, [pptxShapeSelection, readOnly]);
+	}, [shapeSelection, readOnly]);
+
+	const handlePickToggle = () => {
+		if (!pickMode) onPickShapes?.(config.templateFile);
+		setPickMode(!pickMode);
+	};
 
 	const changeType = (
 		index: number,
@@ -367,8 +361,8 @@ export function TemplatePptxForm({
 			<Field>
 				<FieldLabel>Shape Replacements</FieldLabel>
 				<FieldDescription>
-					Open the PPTX file in a panel, then click{" "}
-					<strong>Pick Shapes</strong> and select shapes to configure.
+					Click <strong>Pick Shapes</strong> to open the template and
+					select shapes to configure.
 				</FieldDescription>
 
 				{!readOnly && (
@@ -376,7 +370,7 @@ export function TemplatePptxForm({
 						variant={pickMode ? "default" : "outline"}
 						size="sm"
 						className="mt-1 flex items-center gap-1.5 self-start text-xs"
-						onClick={() => setPickMode((v) => !v)}
+						onClick={handlePickToggle}
 					>
 						<MousePointerClick className="h-3.5 w-3.5" />
 						{pickMode ? "Picking — click a shape" : "Pick Shapes"}

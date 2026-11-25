@@ -17,7 +17,7 @@ export type {
 	AutomationCanvasProps,
 } from "./components/canvas-editor/automation-canvas";
 export { AutomationCanvas } from "./components/canvas-editor/automation-canvas-loader";
-export type { PptxShapeSelection } from "./components/canvas-editor/forms/template-pptx-form";
+export type { PptxShapeSelection } from "./components/canvas-editor/pptx-pick-context";
 export { InspectorTab } from "./components/canvas-editor/tabs/inspector-tab";
 export type { AutomationTraceSnapshot } from "./components/canvas-editor/tabs/runs-tab";
 export { RunsTab } from "./components/canvas-editor/tabs/runs-tab";
@@ -58,3 +58,4 @@ export type {
 export type { AutomationFlow } from "./features/flow-preview/automation-flow.types";
 export type { AutomationFlowPreviewProps } from "./features/flow-preview/automation-flow-preview";
 export { AutomationFlowPreview } from "./features/flow-preview/automation-flow-preview";
+export { findPptxTemplateFile } from "./hooks/use-pptx-template-files";
