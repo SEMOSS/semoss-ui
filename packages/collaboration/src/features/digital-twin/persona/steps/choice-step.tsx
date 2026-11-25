@@ -74,6 +74,7 @@ export function ChoiceStep({ step, initial, onChange }: ChoiceStepProps) {
 						<ToggleGroupItem
 							key={option}
 							value={option}
+							data-testid={`choice-step-option-${option}`}
 							className={PRESSED_CLASS}
 						>
 							{rank > 0 &&

@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSessionInsight } from "@semoss/sdk/react";
 import {
+	Alert,
+	AlertDescription,
 	Button,
 	Dialog,
 	DialogContent,
@@ -33,20 +35,55 @@ export const PromptBuilderContextTestDialog = (
 	const { run: runPixel } = useSessionInsight();
 	const [loading, setLoading] = useState(false);
 	const [response, setResponse] = useState("");
+	const [error, setError] = useState("");
+	const requestId = useRef(0);
 
 	const ask = async () => {
+		const currentRequest = ++requestId.current;
 		setLoading(true);
-		const LLMresponse = await runPixel(
-			`LLM(engine="${props.llm}", command=["<encode>${props.context}</encode>"])`,
-		);
-		const { output: LLMOutput } = LLMresponse.pixelReturn[0];
-		setResponse(LLMOutput?.response ?? LLMOutput ?? "");
-		setLoading(false);
+		setError("");
+		setResponse("");
+		try {
+			const result = await runPixel(
+				`LLM(engine="${props.llm}", command=["<encode>${props.context}</encode>"])`,
+			);
+			if (result.errors.length) {
+				throw new Error(result.errors.join(", "));
+			}
+			const output = result.pixelReturn[0]?.output;
+			const text =
+				typeof output === "object" &&
+				output !== null &&
+				"response" in output
+					? output.response
+					: output;
+			if (typeof text !== "string") {
+				throw new Error("The model returned an invalid response.");
+			}
+			if (currentRequest === requestId.current) {
+				setResponse(text);
+			}
+		} catch (cause) {
+			if (currentRequest === requestId.current) {
+				setError(
+					cause instanceof Error
+						? cause.message
+						: "Failed to run the prompt test.",
+				);
+			}
+		} finally {
+			if (currentRequest === requestId.current) {
+				setLoading(false);
+			}
+		}
 	};
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: ask is intentionally omitted; runs on open change only
 	useEffect(() => {
-		if (props.open) ask();
+		if (props.open) void ask();
+		return () => {
+			requestId.current++;
+		};
 	}, [props.open]);
 
 	return (
@@ -69,6 +106,10 @@ export const PromptBuilderContextTestDialog = (
 								LLM...
 							</span>
 						</div>
+					) : error ? (
+						<Alert variant="destructive">
+							<AlertDescription>{error}</AlertDescription>
+						</Alert>
 					) : (
 						<div className="h-full w-full overflow-y-auto rounded-md border border-border bg-muted/40 p-4">
 							<p className="whitespace-pre-wrap text-sm leading-relaxed">

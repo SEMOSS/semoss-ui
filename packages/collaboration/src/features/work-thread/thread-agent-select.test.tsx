@@ -282,17 +282,18 @@ it("says whose twin a listed agent is, from one read each time the picker opens"
 		name: "Talking To: Your Digital Twin",
 	});
 	await userEvent.click(trigger);
+	const mine = await screen.findByTestId(
+		"thread-agent-select-option-twin-mine",
+	);
+	expect(mine).toHaveRole("option");
+	await waitFor(() =>
+		expect(mine).toHaveAccessibleName(/Robin Hale Twin\s*A twin you share/),
+	);
+	const shared = screen.getByTestId("thread-agent-select-option-twin-dana");
+	expect(shared).toHaveAccessibleName(/Renewals\s*Shared by Dana Ortiz/);
 	expect(
-		await screen.findByRole("option", {
-			name: "Robin Hale Twin A twin you share",
-		}),
-	).toBeVisible();
-	expect(
-		screen.getByRole("option", { name: "Renewals Shared by Dana Ortiz" }),
-	).toBeVisible();
-	expect(
-		screen.getByRole("option", { name: "Priya Shah Twin Shared with you" }),
-	).toBeVisible();
+		screen.getByTestId("thread-agent-select-option-twin-unknown"),
+	).toHaveAccessibleName(/Priya Shah Twin\s*Shared with you/);
 	// an agent that is no twin has no second line, and the twin's own row needs none under its default name
 	expect(
 		screen.getByRole("option", { name: "Research assistant" }),
@@ -308,8 +309,8 @@ it("says whose twin a listed agent is, from one read each time the picker opens"
 	await userEvent.click(trigger);
 	await waitFor(() => expect(listTwins).toHaveBeenCalledTimes(2));
 	expect(
-		screen.getByRole("option", { name: "Renewals Shared by Dana Ortiz" }),
-	).toBeVisible();
+		screen.getByTestId("thread-agent-select-option-twin-dana"),
+	).toHaveAccessibleName(/Renewals\s*Shared by Dana Ortiz/);
 });
 
 it("lists the agents without a second line when whose twin each is cannot be read", async () => {

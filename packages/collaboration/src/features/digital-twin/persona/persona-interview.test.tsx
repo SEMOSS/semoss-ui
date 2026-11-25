@@ -315,10 +315,13 @@ it("says what the server is writing while an answer is on its way, and keeps the
 		"The server is restarting.",
 	);
 	// the step is back as it was left, with what was picked
-	expect(screen.getByRole("button", { name: "1 Quality" })).toHaveAttribute(
+	expect(screen.getByTestId("choice-step-option-Quality")).toHaveAttribute(
 		"aria-pressed",
 		"true",
 	);
+	expect(
+		screen.getByTestId("choice-step-option-Quality"),
+	).toHaveAccessibleName(/^1\s*Quality$/);
 	expect(screen.queryByRole("status")).toBeNull();
 });
 

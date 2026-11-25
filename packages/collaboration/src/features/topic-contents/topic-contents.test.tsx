@@ -120,16 +120,22 @@ it("opens a saved topic on the inbox, with the mailbox's folders as a tree besid
 	const inTopic = state.threads.filter((thread) =>
 		thread.topicLinks.some((link) => link.topicId === TOPIC),
 	).length;
-	expect(
-		within(group("In this topic")).getByRole("button", {
-			name: `Emails and Teams chats ${inTopic}`,
-		}),
-	).toBeVisible();
-	expect(
-		within(group("Add from")).getByRole("button", {
-			name: `Everything Brain has read ${state.threads.length}`,
-		}),
-	).toBeVisible();
+	const topic = within(group("In this topic")).getByTestId(
+		"topic-contents-nav-place-topic",
+	);
+	expect(topic).toBeVisible();
+	expect(topic).toHaveRole("button");
+	expect(topic).toHaveAccessibleName(
+		new RegExp(`^Emails and Teams chats\\s*${inTopic}$`),
+	);
+	const all = within(group("Add from")).getByTestId(
+		"topic-contents-nav-place-all",
+	);
+	expect(all).toBeVisible();
+	expect(all).toHaveRole("button");
+	expect(all).toHaveAccessibleName(
+		new RegExp(`^Everything Brain has read\\s*${state.threads.length}$`),
+	);
 });
 
 it("keeps the two kinds of chat apart, each under its own name and above the folders", () => {
@@ -276,11 +282,12 @@ it("points at Connections when Teams chats are off and Brain holds none", () => 
 		</CollaborationSessionProvider>,
 	);
 	// still offered, with nothing in it, so the owner learns where Teams chats would be
-	expect(
-		within(group("Add from")).getByRole("button", {
-			name: "Teams chats 0",
-		}),
-	).toHaveAttribute("aria-current", "true");
+	const teams = within(group("Add from")).getByTestId(
+		"topic-contents-nav-place-teams",
+	);
+	expect(teams).toHaveRole("button");
+	expect(teams).toHaveAccessibleName(/^Teams chats\s*0$/);
+	expect(teams).toHaveAttribute("aria-current", "true");
 	expect(
 		screen.getByText("Brain has not read any Teams chats yet."),
 	).toBeVisible();
@@ -324,11 +331,12 @@ it("lists the topic's files with their count, and the drives to pick more from",
 	);
 	expect(screen.getByText("Files: teams")).toBeVisible();
 
-	await user.click(
-		within(group("In this topic")).getByRole("button", {
-			name: "Files 2",
-		}),
+	const topicFiles = within(group("In this topic")).getByTestId(
+		"topic-contents-nav-place-topic-files",
 	);
+	expect(topicFiles).toHaveRole("button");
+	expect(topicFiles).toHaveAccessibleName(/^Files\s*2$/);
+	await user.click(topicFiles);
 	expect(screen.getByText("Files: topic")).toBeVisible();
 
 	// the topic page opens on the files that were just changed

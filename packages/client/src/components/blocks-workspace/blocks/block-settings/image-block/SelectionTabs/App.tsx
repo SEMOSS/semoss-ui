@@ -5,7 +5,7 @@ import { getImageFiles, imageExtensions } from "../utils";
 import SelectedItem from "./SelectedItem";
 import SelectImage from "./SelectImage";
 
-const AppTab = ({ id, data, setData, appId, insightId }) => {
+export const AppTab = ({ data, setData, appId, insightId }) => {
 	const [isLoading, setIsLoading] = useState(false);
 	// biome-ignore lint/suspicious/noExplicitAny: pixel response data is untyped
 	const getAssets = usePixel<{ status: string; data: any }>(
@@ -51,12 +51,9 @@ const AppTab = ({ id, data, setData, appId, insightId }) => {
 				description="Upload your image here"
 				extensions={imageExtensions}
 				multiple={false}
-				id={id}
 				onChange={addFile}
 				data-testid="upload-image"
 			/>
 		</>
 	);
 };
-
-export default AppTab;

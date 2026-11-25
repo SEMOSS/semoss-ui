@@ -131,6 +131,7 @@ export function MirrorStep({
 								// biome-ignore lint/suspicious/noArrayIndexKey: the sentences of one reply never reorder
 								key={index}
 								type="button"
+								data-testid={`mirror-step-sentence-${index}`}
 								variant="ghost"
 								aria-pressed={isFlagged}
 								className={cn(

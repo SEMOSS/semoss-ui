@@ -69,11 +69,11 @@ it.each(["docx", "xlsx", "pdf", "txt", "pptx"])(
 				`[${filename}](room://outputs/${encodeURIComponent(filename)})`,
 			),
 		);
-		await userEvent.click(
-			screen.getByRole("button", {
-				name: `${filename} (open room file)`,
-			}),
-		);
+		const link = screen.getByTestId("message-markdown-link-room-file");
+		expect(link).toHaveRole("button");
+		expect(link).toHaveAccessibleName(expect.stringContaining(filename));
+		expect(link).toHaveAccessibleName(/\(open room file\)/);
+		await userEvent.click(link);
 		expect(screen.getByText("Back to conversation")).toBeVisible();
 		expect(selectedPanel()).toMatchObject({
 			type: getFilePanelType(filename),
@@ -117,10 +117,14 @@ it.each([
 			view(`Sources: [Kickoff thread](${href})`, "insight-1", "twin-1"),
 		);
 		await userEvent.click(
-			screen.getByRole("button", {
-				name: "Kickoff thread (open the agent's file)",
-			}),
+			screen.getByTestId("message-markdown-link-agent-file"),
 		);
+		expect(
+			screen.getByTestId("message-markdown-link-agent-file"),
+		).toHaveRole("button");
+		expect(
+			screen.getByTestId("message-markdown-link-agent-file"),
+		).toHaveAccessibleName(/Kickoff thread.*\(open the agent's file\)/);
 		expect(screen.getByText("Back to conversation")).toBeVisible();
 		const opened = {
 			type: getFilePanelType("Email thread - Kickoff.md"),

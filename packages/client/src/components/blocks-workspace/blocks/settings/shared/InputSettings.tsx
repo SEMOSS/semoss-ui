@@ -101,9 +101,9 @@ export const InputSettings = observer(
 		const onChange = (value: string) => {
 			// Set the value
 			if (
-				limit &&
-				((Number(value) > limit && type === "number") ||
-					(limit && min && Number(value) < min))
+				type === "number" &&
+				((limit !== undefined && Number(value) > limit) ||
+					(min !== undefined && Number(value) < min))
 			) {
 				return;
 			}
@@ -171,6 +171,7 @@ export const InputSettings = observer(
 							: undefined
 					}
 					type={type}
+					min={min}
 					autoComplete="off"
 					data-testid={formatToDataTestId(
 						`inputSettings-${label}-${id}-txt`,

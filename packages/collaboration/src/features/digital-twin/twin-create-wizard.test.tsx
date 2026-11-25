@@ -494,10 +494,16 @@ it("finds what to choose from a description, and chooses a suggestion as a viewe
 		subject: "Apollo cutover",
 	});
 	// marked where it was found, in place of being offered again
+	expect(screen.getByTestId("twin-knowledge-finder-group-email")).toHaveRole(
+		"region",
+	);
 	expect(
-		within(screen.getByRole("region", { name: "Emails 1" })).getByRole(
-			"listitem",
-		),
+		screen.getByTestId("twin-knowledge-finder-group-email"),
+	).toHaveAccessibleName(/^Emails\s*1$/);
+	expect(
+		within(
+			screen.getByTestId("twin-knowledge-finder-group-email"),
+		).getByRole("listitem"),
 	).toHaveTextContent("Chosen for This Twin");
 	expect(
 		screen.queryByRole("button", { name: "Add Apollo cutover" }),
