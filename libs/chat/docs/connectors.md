@@ -67,7 +67,7 @@ account is not connected shows its switch in gray with a warning mark. These det
   `ConnectorsStore.setSessionLogins`, and `useConnections` reads it for the Connectors page. Signing
   in goes through `signInToProvider` (`connector-sign-in.ts`), which calls
   `Session.logins.connect`: a fresh sign in that never signs out the session's own login. See
-  [the SDK guide](../../libs/sdk/AGENTS.md#session-logins).
+  [the SDK guide](../../sdk/AGENTS.md#skills).
 - **Connector files are pixel calls, not session state.** `connector-tools.ts` reads the user's
   connector file with the SDK's `readUserAsset`, writes it with the SDK's
   `makeUserPixelMcp`, and keeps each room's copy through `features/room/store/room-tool-file.ts`. It holds

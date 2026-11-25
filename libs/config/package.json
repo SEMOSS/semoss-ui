@@ -13,8 +13,7 @@
         "@tailwindcss/vite": "4.3.5",
         "@vitejs/plugin-react": "6.3.0",
         "rolldown": "~1.2.18",
-        "unplugin-dts": "1.1.2",
-        "vite-plugin-svgr": "5.2.0"
+        "unplugin-dts": "1.1.2"
     },
     "peerDependencies": {
         "vite": "^8.3.8",

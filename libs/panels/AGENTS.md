@@ -1,208 +1,39 @@
 # AGENTS.md - @semoss/panels
 
-The SEMOSS file panels: file *views*, the blueprints that mount them in a dock, three
-explorer variants, the MCP toolbox editor, and `useAccess`, which reads a resource's
-permission from the SDK session.
+> **Inherits from:** [root AGENTS.md](../../AGENTS.md): non-negotiables, task skills, and [standards](../../docs/README.md#standards).
 
-> **Inherits from:** [../../AGENTS.md](../../AGENTS.md) (root).
-> Load the applicable [root skills](../../skills/README.md), including the
-> [React standard](../../skills/react-standard.skill.md), for general implementation rules.
+The SEMOSS file panels: file views, the blueprints that mount them in a dock, the file
+explorer variants, the MCP toolbox editor, and `useAccess`. Dock mechanics are in
+[libs/workbench/AGENTS.md](../../libs/workbench/AGENTS.md).
 
-## Why this is its own package
+## Boundaries
 
-The panels are both dock-aware and SEMOSS-aware, and neither existing lib can hold that:
+- **Why a package:** panels are both dock-aware and SEMOSS-aware. `@semoss/shared` would drag
+  the dock into every consumer; `@semoss/workbench` must stay domain-agnostic. The layering is in
+  [general.md](../../docs/standards/general.md#architecture).
+- **Must not import:** any host (`packages/*`).
+- **`src/index.ts` is curated, never `export *`.** Add a symbol when a consumer needs it;
+  wildcards once leaked a `getImageMimeType` that clashed with shared's. Do not add viewer
+  implementation subpaths.
+- **State this package owns uses `StoreState`.** The `zustand` peer exists only for the dock.
 
-- `@semoss/shared` would have to depend on `@semoss/workbench`, dragging the dock into every
-  consumer of shared — including ones that never mount one.
-- `@semoss/workbench` cannot take them at all. It exists to be domain-agnostic; these run pixels.
+## Invariants
 
-So the layering is one direction, three layers:
-
-```
-@semoss/ui ← @semoss/workbench ← @semoss/panels → @semoss/shared → @semoss/sdk
-```
-
-Nothing here may import from a host (`packages/*`). `zustand` is a **peer** dependency,
-matching the dock. Hosts supply a compatible version and explicitly share the intended
-store instances; a peer declaration alone does not guarantee shared state. The peer exists for
-the dock's store and goes away when the dock moves off Zustand; state this package owns itself follows the
-[state management skill](../../skills/state-management.skill.md) and uses an
-`StoreState`-backed store, not a new Zustand one.
-
-## Layout
-
-```
-src/
-├── components/
-│   ├── views/  one component per file kind
-│   └── ...     the blueprint factory, the chrome control, explorers, `mcp/` editor UI
-├── contexts/   the file explorer host context; the deprecated access provider
-├── stores/     the deprecated access store factory
-├── hooks/      access, file-panel, explorer, and MCP hooks
-├── utility/    file-panel and MCP utility functions
-├── types/      access, file-panel, and MCP types
-├── constants/  file-panel runtime constants
-├── styles/     the Tailwind `@source` every host imports
-├── vite/       build-time bits a host cannot skip (see below)
-└── index.ts    curated public surface
-```
-
-`src/vite/` is Node-side and is **not** in the barrel — it has its own `./vite` export subpath.
-
-## Access comes from the session
-
-Panels call `useAccess(type, id)`, which reads the SDK session's `Session.permissions` through
-`useSessionPermissions` (`@semoss/sdk/react`) and maps it onto the panels' `loading` / `error` /
-`ready` union. A host wires nothing: the panels, the host's own workbenches and pages share one
-read per resource, and `Session` clears every permission whenever it signs in or out (a 302
-included, once the page uses `Session`), so one user's `OWNER` never survives into the next
-user's session in the same tab. To hand the panels a permission a route already read, call
-`Session.permissions.sync(type, id, permission)`; a test gives views its own session with
-`<SessionProvider session={new SessionStore({ config: new ConfigStore() })}>`.
-
-Worth knowing when reasoning about cost: an `INSIGHT` permission resolves to `"EDIT"` with no
-network call at all. A scope with no resource of its own (a user's own files) asks as an
-`INSIGHT` with an empty id and is editable without asking the session; a project or engine with
-an empty id fails closed.
-
-`file-explorer-control.tsx` calls `useSessionPermissions` itself rather than `useAccess`, because
-a chrome control renders outside its panel's subtree, so it cannot reuse the access the panel
-already resolved. Both share the session's one read.
-
-`AccessStoreProvider`, `createAccessStore`, `createPermissionCache` and `PermissionCache` are
-still exported, **deprecated**, for hosts outside this repository: the provider only renders its
-children and nothing reads a store made by the others. Do not use them in new code.
-
-## A host can add right-click entries to the explorer
-
-`FILE_EXPLORER_PANEL` asks the nearest `FileExplorerHostProvider` for extra entries per row
-(`secondaryActions(item, mode)`), so an app adds its own actions without forking the blueprint.
-The playground adds Add to Context to Chat Files this way. Entries with `placement: "end"` are
-listed after every standard entry. Keep the host object's identity stable: it is a dependency of
-every row's actions.
-
-The same host can add buttons to an open file's tab controls (`fileActions(file)`), drawn by
-`FileViewControl` after Refresh and Save and disabled while the view is busy. The chat adds Open
-with Default App to files from an attached Desktop folder this way.
-
-## A host can keep the explorer to one folder
-
-A `FILE_EXPLORER_PANEL` instance whose config has `rootPath`, such as `/public`, treats that
-folder as its whole tree: nothing above it is browsed, searched or written to. The panel builds
-its explorer on `scopeFileExplorerAdapter` (`@semoss/shared`) and resolves every path that leaves
-the explorer (an opened file, a rename or delete that open tabs follow, a drag, a toolbox path, a
-host's row entries) back to its place in the source, so open panels and events still speak source
-paths. `initialPath` is then a path inside the folder. The client's Agent Files panel is built
-this way.
-
-## A host can mount its own trees beside the explorer
-
-A tree the browser reaches without Pixels, such as a folder on the user's machine, is a
-`FileSource` (`@semoss/shared`) that the host registers under an id with `FileSourcesProvider`
-(`contexts/file-sources.context.tsx`). A file panel opened from it has the mode
-`{ type: "MOUNT", mountId }` (scope `MOUNT:<id>`), and `useFilePanel` reads and saves it through
-the source rather than Pixels (`hooks/use-mount-file.ts`), so every view works on it unchanged.
-A mount has no resource of its own, so `useAccess` treats it as editable; its source refuses
-what it cannot do. A panel restored while its mount is not here shows the host's
-`missingMountMessage`.
-
-The host's trees are explorers, not data. A host component under `FileSourcesProvider` builds
-one per tree with a per-mode hook from `@semoss/shared` (`useSourceFileExplorer` for a mount,
-`useStorageFileExplorer`, `useEngineFileExplorer`, …), wires it into the dock by spreading
-`useDockFileOptions(mode)` into it, and adds it with `useFileExplorerRoot({ id, name, actions,
-explorer })` for as long as it is mounted. One component per tree, since hooks cannot run in a
-loop. `useDockFileOptions` opens a storage bucket's file by pulling it into a new insight, as a
-bucket has no read reactor. `useFileMount` finds a mount's source among the added roots.
-
-A `FILE_EXPLORER_PANEL` whose mode the host's `isShownIn` accepts hands `FileExplorer` its own
-tree (labelled `primaryLabel`) and then the host's. With no
-host trees it is the plain panel. The panel publishes the root the user is working in, so the
-chrome control's New and Refresh act on it, and refreshes a host's root on `FILES_CHANGED` for its
-scope. Rows of a host's root get the host's `secondaryActions`, handed the row's explorer.
-
-`FileExplorer` draws a row per root once there are two or more: it opens and closes the root,
-and drags it (or Alt+Up and Alt+Down) to move it. The roots stack at the height they need and
-scroll together. The arrangement is kept in the panel's config as `roots` (`order`,
-`collapsed`), so it lasts with the layout; a layout saved as `sections` is read until the user
-next changes it.
-
-The desktop app adds one root, Desktop: one explorer over a source that lists every attached
-folder as a top level directory (mount `desktop`), so the folders read as a tree. Its search walks
-each folder in a worker thread of the desktop app's main process (`local-fs:search`). Its row's menu
-attaches a folder, its `emptyState` offers Attach Folder when none is, and each folder's row menu carries Show
-in Finder and Detach.
-
-Dragging rows from one explorer into another copies them, folders with everything in them, and
-replaces a name that is already there. Each `useFileExplorer` registers how its tree is read
-(`file-explorer-transfer.ts` in `@semoss/shared`), so the explorer that takes the drop reads
-through the other's insight or source and writes through its own. A copy needs the receiving
-tree's `upload` capability; dragging within one explorer still moves.
-
-## A view renders a file; a host draws its actions
-
-`components/views/` holds one component per `FileEditorKind`. A view owns the read, the buffer
-and its own view switch, and renders the file and nothing else. It publishes what it can do
-(`FileViewControls`) through `onControls`, and its host draws that.
-
-`createFileViewPanel({ name, view })` is the only host today: it wraps a view as a
-`WorkbenchPanelConfig`, republishes the controls as the panel's scratch value, registers
-`FileViewControl` so they appear in the tab strip, and subscribes to `FILES_CHANGED`. The
-blueprints are a table in `file-panel.components.ts`; there are no per-panel files.
-
-The split is still worth keeping: a view calls no `useWorkbench*` hook, so a host that is not a
-dock can mount one by supplying its own chrome and skipping `useFilesChanged`.
-
-## Rules
-
-- **A file view never calls a `useWorkbench*` hook.** They throw outside a provider, and both
-  hosts mount the same views. Anything dock-shaped belongs in `createFileViewPanel`.
-- **`src/index.ts` is curated, not `export *`.** Of the sixty symbols the source tree used to
-  leak, eight had an external consumer. Panel blueprints are not among them — a host registers
-  `FILE_PANEL_COMPONENTS`. Add a symbol when a consumer needs it; `export *` also put
-  `getImageMimeType(path)` next to `@semoss/shared`'s incompatible `getImageMimeType(extension)`
-  in any barrel that re-exported both.
-- **`useFilePanel` and `useFileBuffer` are public**, for a host whose editor needs chrome of its
-  own. `packages/terminal` builds on them: its editor carries a Run toolbar and a scope guard,
-  and the dock allows one control per panel, so it cannot inherit the code editor's blueprint
-  wholesale. That is the supported way to reuse the access/read/save/dirty machinery.
-- **Nothing a panel imports may import `file-panel.components.ts`.** It is an object literal
-  over every blueprint, so a module still initializing when it is built lands in the map as
-  `undefined` — the dock then renders "no component registered" and `matches` silently falls
-  back to a shallow compare, with nothing thrown. That is exactly what homing `isFilePanelType`
-  there did: it closed the cycle `file-panel.components` → `file-explorer-panel` →
-  `use-workbench-file-panels` → `file-panel.components`, and left the file explorer blueprint
-  undefined in every host. The predicate lives in `file-panel.constants.ts`, which imports
-  nothing. `file-panel.components.test.ts` states the invariant, and the playground's
-  `use-sidebar-panel-active.test.tsx` is what actually reproduces a cycle — it enters through
-  the package specifier, the way a host does.
-- **`FILE_PANEL_TYPES` string values are a storage contract.** Changing one breaks cached
-  layouts that reference the old type; preserve compatibility when changing registrations.
-  The client spreads these into its own `WORKBENCH_COMPONENTS`.
-- **`FILE_PANEL_COMPONENTS` defines what "a file panel" *is* at runtime.** `useWorkbenchFilePanels`
-  decides which open panels follow a rename by membership in it, never by the shape of a config —
-  the Git panels carry the same `{ type, id, name, path }` fields and were being swept up.
-- **Workbench event names live in `file-panel.constants.ts`, beside the panel types.** That file
-  imports nothing, which is what keeps an event name safe to import from anywhere — the same
-  cycle rule as `isFilePanelType`. The hook that subscribes is an ordinary hook in `hooks/`.
-- **An event with no subscriber does not belong here.** `useFilesChanged` earns its place because
-  the explorers and file panels consume it; an event added "for later" is surface with no
-  consumer, and the dock's own panel-lifecycle events were deleted for exactly that reason.
-- **Never dereference `a.mode.type` in a blueprint `matches`.** It runs inside `selectPanel`, a
-  store action outside any error boundary; a config it cannot read must return false, not throw.
-  Use `matchesFilePanel`.
-- **Keep each OOXML viewer lazy-loaded at the file-panel registry.** DOCX, PPTX, VSDX, and XLSX
-  packages are intentionally absent from the views barrel so opening one format never eagerly
-  loads the other Office editors. The manifest exposes only the root, `globals.css`, and `vite`
-  entry points; do not add viewer implementation subpaths.
-- **Monaco needs the `monaco-editor` alias.** Every host that renders a file panel aliases the bare
-  specifier at `libs/shared/node_modules/...`; `vite.config.ts` here does the same so the tests run.
-- Everything else about panels — blueprints, mount policy, chrome controls, the dirty `*` marker —
-  is in [the dock's AGENTS.md](../workbench/AGENTS.md) and
-  [the client's host components](../../packages/client/src/components/workbench/).
+- **A file view never calls a `useWorkbench*` hook**; they throw outside a provider.
+  `createFileViewPanel` adds everything dock-shaped.
+- **Nothing a panel imports may import `file-panel.components.ts`.** A module still initializing
+  lands in the map as `undefined`: the dock shows "no component registered" and `matches` falls
+  back to a shallow compare, with nothing thrown. Shared names live in
+  `constants/file-panel.constants.ts`, which imports nothing. `file-panel.components.test.ts`
+  states this; the playground's `use-sidebar-panel-active.test.tsx` reproduces a cycle.
+- **`FILE_PANEL_TYPES` string values are a storage contract** for cached layouts.
+- **Keep each OOXML viewer (DOCX, PPTX, VSDX, XLSX) lazy-loaded at the registry**, absent from
+  the views barrel, so one format never loads the others.
+- **An event with no subscriber does not belong here.**
 
 ## What a host has to wire up
 
-Three things, each of which fails quietly or late if it is missed:
+Three things, each of which fails quietly or late if missed:
 
 | | Why |
 |---|---|
@@ -210,22 +41,22 @@ Three things, each of which fails quietly or late if it is missed:
 | `aiSdkStubAlias` from `@semoss/panels/vite` | `pptx-react-viewer` imports the `ai` package (its unused AI chat panel). It is an optional peer and is not installed, so without the stub the **build fails outright**. |
 | `scopePptxViewerCssPlugin` from `@semoss/panels/vite` | The viewer ships its own Tailwind build emitting the same class and token names as the host's. Unscoped, whichever sheet loads last restyles the whole document. |
 
-Plus the `monaco-editor` alias above. All of it lives here rather than in each host's
-`vite.config.ts`, so adding a third host is an import rather than an archaeology exercise.
+Plus a `monaco-editor` alias to `libs/shared/node_modules/...` in every host that renders a
+file panel (this package's `vite.config.ts` does the same for tests). Hosts register
+`FILE_PANEL_COMPONENTS`; the client spreads `FILE_PANEL_TYPES` into its `WORKBENCH_COMPONENTS`.
+A route that already read a permission seeds it with `Session.permissions.sync(type, id, permission)`.
 
 ## Validation
-
-This package is source-only; it has no build script. From the repository root:
 
 ```bash
 pnpm --filter @semoss/panels check-types
 pnpm --filter @semoss/panels test
 ```
 
-Also exercise an affected host when changing its panel or Vite integration.
+Also run an affected host when changing its panel or Vite integration. Tests give views their
+own session with `<SessionProvider session={new SessionStore({ config: new ConfigStore() })}>`.
 
-## Generic utilities
+## Reference
 
-Import reusable helpers from `@semoss/utility/<category>`, a direct workspace dependency.
-Follow the [utility guide](../utility/AGENTS.md). Keep domain policy and
-UI behavior here, and preserve public compatibility adapters when moving helpers.
+- Dock model, mount policy, controls: [libs/workbench/AGENTS.md](../../libs/workbench/AGENTS.md)
+- Adding a file view or host: [skills/add-workbench-panel.skill.md](../../skills/add-workbench-panel.skill.md)

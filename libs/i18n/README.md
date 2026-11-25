@@ -1,142 +1,79 @@
-# @semoss/i18n
+# `@semoss/i18n`
 
-Internationalization library for the SEMOSS monorepo using i18next.
+Shared translations and i18next integration for SEMOSS applications. The package exports
+`I18nBuilder`, React bindings, language constants, namespace preloading, and one lazy resource map
+for each supported app family.
 
 ## Structure
 
-The translations are organized in a two-tier structure to support multiple packages in the monorepo:
-
-```
+```text
 libs/i18n/src/
-├── locales/
-│   ├── en/                    # English translations
-│   │   ├── common.json        # Tier 1: Core shared (buttons, labels, actions)
-│   │   ├── validation.json    # Tier 1: Core shared (form validations)
-│   │   ├── notifications.json # Tier 1: Core shared (notification templates)
-│   │   └── playground/        # Tier 2: Playground-specific
-│   │       ├── chat.json
-│   │       ├── room.json
-│   │       ├── sidebar.json
-│   │       ├── knowledge.json
-│   │       ├── workspace.json
-│   │       └── mcp.json
-│   ├── es/                    # Spanish translations (same structure)
-│   ├── fr/                    # French translations (same structure)
-│   ├── hi/                    # Hindi translations (same structure)
-│   ├── ar/                    # Arabic translations (same structure)
-│   └── ja/                    # Japanese translations (same structure)
-├── core.ts                    # Core shared resources
-├── playground.ts              # Playground package resources
-├── client.ts                  # Client package resources (placeholder)
-└── config.ts                  # i18next configuration (uses playground by default)
+├── builder.ts
+├── constants.ts
+├── index.ts
+├── preload.ts
+└── resources/
+    ├── types.ts
+    ├── client.ts
+    ├── playground.ts
+    ├── terminal.ts
+    ├── auditlog.ts
+    └── locales/<language>/
+        ├── common.json
+        ├── validation.json
+        ├── notifications.json
+        ├── shared/
+        ├── client/
+        ├── playground/
+        ├── terminal/
+        └── connectors/
 ```
 
-## Two-Tier System
+The core namespaces (`common`, `validation`, and `notifications`) are available to every app.
+Package-owned namespaces live under their owner directory; `shared/` contains namespaces used by
+more than one app. The supported languages are `en`, `es`, `fr`, `nl`, `ar`, `hi`, and `ja`;
+English is the fallback and Arabic is right-to-left.
 
-### Tier 1: Core Shared
-Translations used across **all** packages:
-- `common.json` - Generic buttons, labels, placeholders, actions
-- `validation.json` - Form validation messages
-- `notifications.json` - Notification templates
+## Initialize an app
 
-### Tier 2: Package-Specific
-Translations specific to individual packages:
-- `chat/` - `@semoss/chat` translations (chat, room, sidebar, knowledge, workspace, mcp,
-  tool, chatTools in `chat-tools.json`, chatConnectors in `chat-connectors.json`), loaded
-  through `chatResources` by every host that mounts chat UI
-- `playground/` - Playground-only translations (tour, mobile)
-- `client/` - Client app translations (for example `githubApp`)
+Pass the app's resource map to `I18nBuilder`. Wait for `ready` before the first render, and provide
+the instance through `I18nextProvider`:
 
-## Usage
-
-### In Playground Package
-
-The default i18next configuration uses playground resources:
-
-```typescript
-import { i18n, useTranslation } from "@semoss/i18n";
-
-function MyComponent() {
-    const { t } = useTranslation();
-
-    // Core shared translations
-    t('common:buttons.save')           // "Save"
-    t('validation:required')            // Validation message
-
-    // Playground-specific
-    t('chat:messages.placeholder')      // "Type a message..."
-    t('room:welcome')                   // "Welcome"
-    t('sidebar:search')                 // "Search"
-}
-```
-
-### In an App
-
-Create the instance via `I18nBuilder`, passing the app's lazy resource config. Languages load on demand (one chunk per language) — await `ready` before the first render.
-
-```typescript
-// packages/client/src/app.tsx
-import { I18nBuilder, clientResources } from "@semoss/i18n";
+```tsx
+import { I18nBuilder, I18nextProvider, clientResources } from "@semoss/i18n";
 
 const builder = new I18nBuilder(clientResources, { lockToEnglish: true });
-export const i18n = builder.i18n;
-export const i18nReady = builder.ready; // await in main.tsx before render
-```
+export const i18nReady = builder.ready;
 
-Then use it in components:
-
-```typescript
-import { useTranslation } from "react-i18next";
-
-function ClientComponent() {
-    const { t } = useTranslation();
-
-    // Core shared translations
-    t('common:buttons.save')           // "Save"
-
-    // Client-specific
-    t('githubApp:header.title')         // "GitHub App"
+export function App() {
+    return (
+        <I18nextProvider i18n={builder.i18n}>
+            <Application />
+        </I18nextProvider>
+    );
 }
 ```
 
-## Adding New Translations
+Await `i18nReady` in the app entry point before mounting `App`. The client uses
+`lockToEnglish: true`; other apps detect the saved language or browser language.
 
-> Languages are loaded lazily (one chunk per language) via a dynamic-import
-> backend. The locale JSON is never in the main bundle. See `AGENTS.md` →
-> "Lazy loading architecture".
+Use the package's React binding to translate text:
 
-### Adding a Core Shared Translation
+```tsx
+import { useTranslation } from "@semoss/i18n";
 
-1. Add the key to `locales/<lng>/common.json` (or validation/notifications) for every language.
-2. No config changes needed — `common`/`validation`/`notifications` are already in every app's loader map.
-
-### Adding a Package-Specific Translation
-
-1. Create/update the namespace file for every language (e.g., `locales/<lng>/chat/sidebar.json`).
-2. Add a lazy `load` entry (and an `ns` entry if it should preload) to the package config.
-
-```typescript
-// libs/i18n/src/resources/playground.ts
-export const playgroundResources: LazyResources = {
-    ns: ["common", "sidebar" /* , ... */],
-    load: {
-        common: (l) => import(`./locales/${l}/common.json`),
-        sidebar: (l) => import(`./locales/${l}/chat/sidebar.json`), // Add here
-        // ... other namespaces
-    },
-};
+export function SaveButtonLabel() {
+    const { t } = useTranslation();
+    return <span>{t("common:buttons.save")}</span>;
+}
 ```
 
-## Supported Languages
+Pass a namespace to `useTranslation` when appropriate, or use the `namespace:key` form. Add
+user-facing strings to locale JSON rather than hard-coding them in components.
 
-- English (`en`) - Default
-- Spanish (`es`)
-- French (`fr`)
-- Hindi (`hi`)
-- Arabic (`ar`)
-- Japanese (`ja`)
-- Dutch (`nl`)
+## Changing translations
 
-## Type Safety
-
-The library exports TypeScript types for translation resources. Import from `@semoss/i18n` to get type definitions for your translation keys.
+Follow the [add-translations skill](../../skills/add-translations.skill.md) for adding, updating,
+moving, or removing keys and namespaces. The [i18n architecture guide](../../docs/architecture/i18n.md)
+covers resource maps and loading behavior. Package boundaries, invariants, and verification
+guidance are in [AGENTS.md](./AGENTS.md).

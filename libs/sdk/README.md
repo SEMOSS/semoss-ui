@@ -520,10 +520,7 @@ overwrites matching files, so do not point it at skills you have edited:
 ### In this monorepo
 
 Contributors read the skills in place: [`libs/sdk/skills/`](./skills/) is the source of
-truth. The SDK's [`AGENTS.md`](./AGENTS.md#skills) points agents to both, and the repository's
-[skill index](../../skills/README.md) links to them too. The flat
-[SDK chat workflow skill](../../skills/sdk-chat.skill.md) only routes to the packaged chat
-guide; follow the [root routing instructions](../../AGENTS.md#required-skill-routing-all-agents).
+truth. The SDK's [`AGENTS.md`](./AGENTS.md#skills) is the only repository file that routes agents to them.
 External consumers do not need these repository-only documents.
 
 ## Catalog images

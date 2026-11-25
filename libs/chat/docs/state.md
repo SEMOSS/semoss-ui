@@ -3,7 +3,7 @@
 > Part of the [chat guide](../AGENTS.md). How the stores hold the conversation, and the rules that keep a streamed token cheap. Read it before changing a store, a turn runner, or how a component reads either.
 
 Every store is on `StoreState` (see the
-[state management skill](../../skills/state-management.skill.md)), and the library has no MobX.
+[state rules](../../../docs/standards/react.md#state) and the [add-store skill](../../../skills/add-store.skill.md)), and the library has no MobX.
 Each keeps its getters, which read its snapshot; React reads them through a selector hook:
 
 | Store | Hook | Hears about |
