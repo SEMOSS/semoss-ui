@@ -27,6 +27,12 @@ import {
 	CollapsibleContent,
 	CollapsibleTrigger,
 	cn,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
@@ -154,6 +160,7 @@ export const GlobalNav = observer(() => {
 	const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
 
 	const [deletedSet, setDeletedSet] = useState(new Set<string>());
+	const [deleteRoomId, setDeleteRoomId] = useState<string | null>(null);
 
 	const navigate = useNavigate();
 
@@ -871,74 +878,13 @@ export const GlobalNav = observer(() => {
 																						)}
 																					</DropdownMenuItem>
 																					<DropdownMenuItem
-																						onClick={async (
+																						onClick={(
 																							e,
 																						) => {
 																							e.stopPropagation();
-
-																							try {
-																								// optimistically add to deleted set to remove from UI immediately
-																								setDeletedSet(
-																									(
-																										prev,
-																									) =>
-																										new Set(
-																											[
-																												...prev,
-																												roomId,
-																											],
-																										),
-																								);
-
-																								await chat.closeRoom(
-																									roomId,
-																								);
-
-																								toast.success(
-																									t(
-																										"toasts.roomDeletedSuccess",
-																									),
-																								);
-																								if (
-																									activeRoomId ===
-																									roomId
-																								) {
-																									navigate(
-																										"/",
-																									);
-																								}
-
-																								// Refetch rooms after deletion
-																								getRooms.reset();
-																							} catch (e) {
-																								if (
-																									e instanceof
-																									Error
-																								) {
-																									toast.error(
-																										e.message,
-																									);
-																								}
-																								// Deletion failed — restore the room in the list.
-																								// On the success path we intentionally leave the
-																								// roomId in deletedSet until the refetch lands, so
-																								// the room doesn't briefly reappear between the
-																								// reset() call and the new data arriving.
-																								setDeletedSet(
-																									(
-																										prev,
-																									) => {
-																										const newSet =
-																											new Set(
-																												prev,
-																											);
-																										newSet.delete(
-																											roomId,
-																										);
-																										return newSet;
-																									},
-																								);
-																							}
+																							setDeleteRoomId(
+																								roomId,
+																							);
 																						}}
 																						className="text-destructive focus:text-destructive"
 																					>
@@ -1028,6 +974,66 @@ export const GlobalNav = observer(() => {
 					if (!open) setDownloadRoomId(null);
 				}}
 			/>
+			<Dialog
+				open={deleteRoomId !== null}
+				onOpenChange={(open) => {
+					if (!open) setDeleteRoomId(null);
+				}}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>{t("deleteConfirm.title")}</DialogTitle>
+						<DialogDescription>
+							{t("deleteConfirm.description", {
+								name:
+									getRooms.data.find(
+										(r) => r.ROOM_ID === deleteRoomId,
+									)?.ROOM_NAME ?? t("messages.untitled"),
+							})}
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setDeleteRoomId(null)}
+						>
+							{t("deleteConfirm.cancel")}
+						</Button>
+						<Button
+							variant="destructive"
+							onClick={async () => {
+								const roomId = deleteRoomId;
+								if (!roomId) return;
+								setDeleteRoomId(null);
+								try {
+									setDeletedSet(
+										(prev) => new Set([...prev, roomId]),
+									);
+									await chat.closeRoom(roomId);
+									toast.success(
+										t("toasts.roomDeletedSuccess"),
+									);
+									if (activeRoomId === roomId) {
+										navigate("/");
+									}
+									getRooms.reset();
+								} catch (e) {
+									if (e instanceof Error) {
+										toast.error(e.message);
+									}
+									setDeletedSet((prev) => {
+										const newSet = new Set(prev);
+										newSet.delete(roomId);
+										return newSet;
+									});
+								}
+							}}
+						>
+							{t("deleteConfirm.confirm")}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</>
 	);
 });

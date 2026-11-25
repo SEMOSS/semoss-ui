@@ -52,6 +52,12 @@
 		"close": "Fermer",
 		"roomActions": "Actions de la discussion"
 	},
+	"deleteConfirm": {
+		"title": "Supprimer le chat",
+		"description": "Êtes-vous sûr de vouloir supprimer \"{{name}}\" ? Cette action est irréversible.",
+		"cancel": "Annuler",
+		"confirm": "Supprimer"
+	},
 	"toasts": {
 		"failedToPin": "Échec de l'épinglage de la salle",
 		"failedToUnpin": "Échec du désépinglage de la salle",

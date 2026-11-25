@@ -52,6 +52,12 @@
 		"close": "Cerrar",
 		"roomActions": "Acciones del chat"
 	},
+	"deleteConfirm": {
+		"title": "Eliminar chat",
+		"description": "¿Estás seguro de que quieres eliminar \"{{name}}\"? Esta acción no se puede deshacer.",
+		"cancel": "Cancelar",
+		"confirm": "Eliminar"
+	},
 	"toasts": {
 		"failedToPin": "Error al fijar la sala",
 		"failedToUnpin": "Error al desfijar la sala",

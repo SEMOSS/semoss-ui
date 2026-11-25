@@ -53,6 +53,12 @@
 		"close": "Close",
 		"roomActions": "Room actions"
 	},
+	"deleteConfirm": {
+		"title": "Delete chat",
+		"description": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
+		"cancel": "Cancel",
+		"confirm": "Delete"
+	},
 	"toasts": {
 		"failedToPin": "Could not add the room to favorites",
 		"failedToUnpin": "Could not remove the room from favorites",

@@ -52,6 +52,12 @@
 		"close": "إغلاق",
 		"roomActions": "إجراءات المحادثة"
 	},
+	"deleteConfirm": {
+		"title": "حذف المحادثة",
+		"description": "هل أنت متأكد أنك تريد حذف \"{{name}}\"؟ لا يمكن التراجع عن هذا الإجراء.",
+		"cancel": "إلغاء",
+		"confirm": "حذف"
+	},
 	"toasts": {
 		"failedToPin": "فشل تثبيت الغرفة",
 		"failedToUnpin": "فشل إلغاء تثبيت الغرفة",
