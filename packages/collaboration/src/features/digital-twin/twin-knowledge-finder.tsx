@@ -562,6 +562,7 @@ export function TwinKnowledgeFinder({
 						{groups.map(({ kind, label, icon: Icon, by, rows }) => (
 							<section
 								key={kind}
+								data-testid={`twin-knowledge-finder-group-${kind}`}
 								aria-labelledby={`${id}-${kind}`}
 							>
 								<P

@@ -30,6 +30,10 @@ export const PromptBuilderContextStep = (props: {
 	setBuilderValue: (builderStepKey: string, value: string | string[]) => void;
 }) => {
 	const baseId = useId();
+	const title = props.builder.title.value;
+	if (title !== undefined && typeof title !== "string") {
+		throw new Error("Prompt title must be a string");
+	}
 	const [cfgLibraryModels, setCfgLibraryModels] = useState(
 		InitialCfgLibraryEngineState,
 	);
@@ -79,7 +83,7 @@ export const PromptBuilderContextStep = (props: {
 						<Label htmlFor={`${baseId}-name`}>Name</Label>
 						<Input
 							id={`${baseId}-name`}
-							value={props.builder.title.value ?? ""}
+							value={typeof title === "string" ? title : ""}
 							onChange={(e) =>
 								props.setBuilderValue("title", e.target.value)
 							}

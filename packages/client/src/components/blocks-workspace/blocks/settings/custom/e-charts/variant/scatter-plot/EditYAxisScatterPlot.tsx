@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
 	type Block,
 	type BlockDef,
+	type EchartVisualizationBlockDef,
 	getValueByPath,
 	type Paths,
 	type PathValue,
@@ -18,7 +19,8 @@ interface JsonSettingsProps<D extends BlockDef = BlockDef> {
 
 export const EditYAxisScatterPlot = observer(
 	<D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
-		const { data, setData } = useBlockSettings<D>(id);
+		const { data, setData } =
+			useBlockSettings<EchartVisualizationBlockDef>(id);
 		const [showYaxis, setShowYaxis] = useState(true);
 		const [value, setValue] = useState("");
 		const [showYaxisTitle, setShowYaxisTitle] = useState(true);

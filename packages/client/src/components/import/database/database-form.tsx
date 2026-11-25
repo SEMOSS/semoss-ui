@@ -62,7 +62,8 @@ interface ParsedResult {
 		relName: string;
 		fromTable: string;
 		toTable: string;
-		toCol: string;
+		toCol?: string;
+		fromCol?: string;
 	}[];
 	nodeProp: Record<string, string[]>;
 }

@@ -30,6 +30,7 @@ export function MessageMarkdownLink({
 			<Button
 				id={id}
 				type="button"
+				data-testid="message-markdown-link-agent-file"
 				variant="link"
 				className={LINK_CLASS_NAME}
 				title={
@@ -48,6 +49,7 @@ export function MessageMarkdownLink({
 			<Button
 				id={id}
 				type="button"
+				data-testid="message-markdown-link-room-file"
 				variant="link"
 				className={LINK_CLASS_NAME}
 				title={props.title ?? `Open room file: ${file.name}`}

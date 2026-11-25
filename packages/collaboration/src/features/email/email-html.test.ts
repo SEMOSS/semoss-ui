@@ -115,6 +115,21 @@ it("round trips rich editor formatting as self-contained email HTML", () => {
 	expect(html).not.toContain("class=");
 });
 
+it("retains safe shorthand styles while removing unsupported and unsafe styles", () => {
+	const html = sanitizeDraftHtml(
+		'<p style="text-align:center; padding:8px; border:1px solid red; color:blue !important; position:fixed; background-image:url(https://example.com/image)">Hello</p>',
+	);
+	const element = new DOMParser().parseFromString(html, "text/html").body
+		.firstElementChild as HTMLElement;
+	expect(element.style.getPropertyValue("text-align")).toBe("center");
+	expect(element.style.getPropertyValue("padding")).toBe("8px");
+	expect(element.style.getPropertyValue("border")).toContain("1px");
+	expect(element.style.getPropertyValue("color")).toBe("blue");
+	expect(element.style.getPropertyPriority("color")).toBe("important");
+	expect(element.style.getPropertyValue("position")).toBe("");
+	expect(element.style.getPropertyValue("background-image")).toBe("");
+});
+
 it("preserves paragraph boundaries and link destinations when preparing a draft for revision", () => {
 	expect(
 		draftText(

@@ -1,5 +1,11 @@
 import "@testing-library/jest-dom";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import {
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import { expect, test, vi } from "vitest";
 import { EngineGuardrailSettings } from "./engine-guardrail-settings";
 
@@ -282,7 +288,11 @@ test("selects the rule to edit from a top level selector", async () => {
 	).not.toBeInTheDocument();
 
 	fireEvent.click(ruleSelect);
-	fireEvent.click(await screen.findByRole("option", { name: /^\* / }));
+	fireEvent.click(
+		await screen.findByRole("option", {
+			name: /^\*\s*1 request, 0 response$/,
+		}),
+	);
 	expect(
 		screen.getByTestId("engine-guardrail-settings--pipeline-1-method"),
 	).toHaveTextContent("*");
@@ -327,7 +337,11 @@ test("keeps the selected phase when switching rules", async () => {
 	fireEvent.click(
 		screen.getByTestId("engine-guardrail-settings--rule-select"),
 	);
-	fireEvent.click(await screen.findByRole("option", { name: /^\* / }));
+	fireEvent.click(
+		await screen.findByRole("option", {
+			name: /^\*\s*1 request, 0 response$/,
+		}),
+	);
 
 	// the phase survives the switch rather than snapping back to Request
 	expect(screen.getByRole("tab", { name: /Response/ })).toHaveAttribute(
@@ -390,7 +404,9 @@ test("brings a new check into view with its engine picker focused", async () => 
 	const added = screen.getByTestId(
 		"engine-guardrail-settings--pipeline-0-input-entry-2",
 	);
-	expect(within(added).getByLabelText("Check with")).toHaveFocus();
+	await waitFor(() =>
+		expect(within(added).getByLabelText("Check with")).toHaveFocus(),
+	);
 	// the check itself is scrolled to, from its top, not a field further down
 	expect(scrollIntoView).toHaveBeenCalledWith({ block: "nearest" });
 	expect(scrollIntoView.mock.contexts).toContain(added);
@@ -662,7 +678,9 @@ test("offers the engine's reported methods instead of free text", async () => {
 	expect(
 		await screen.findByRole("option", { name: /every call with no rule/ }),
 	).toBeInTheDocument();
-	const deprecated = screen.getByRole("option", { name: /^ask deprecated/ });
+	const deprecated = screen.getByRole("option", {
+		name: /^ask\s*deprecated/,
+	});
 	expect(deprecated).toHaveTextContent("deprecated");
 	expect(
 		screen.getByRole("option", { name: /Another method/ }),
@@ -1050,7 +1068,7 @@ test("shows the saved hit limits with the checks they count, and who is locked o
 
 	// the limits start folded away under their count
 	const toggle = await screen.findByRole("button", {
-		name: /^Hit Limits 1 limit/,
+		name: /^Hit Limits\s*1 limit/,
 	});
 	expect(
 		screen.queryByTestId("engine-guardrail-settings--hit-limits-0"),

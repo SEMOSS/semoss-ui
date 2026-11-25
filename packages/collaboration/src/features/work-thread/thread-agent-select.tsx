@@ -146,6 +146,7 @@ export function ThreadAgentSelect(
 					<CommandItem
 						key={agent.id}
 						value={agent.id}
+						data-testid={`thread-agent-select-option-${agent.id}`}
 						disabled={disabled || query.isRefreshing}
 						className="min-h-9 pointer-coarse:min-h-11"
 						onSelect={() => handleSelect(agent.id)}

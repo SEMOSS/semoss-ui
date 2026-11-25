@@ -65,9 +65,11 @@ function renderChart(output: unknown) {
 it("opens the saved chart inline, explores a peer by directory id, and goes back without another request", async () => {
 	const user = userEvent.setup();
 	renderChart(chart);
-	expect(
-		screen.getByRole("heading", { name: "Org Chart for Maya Chen" }),
-	).toBeVisible();
+	expect(screen.getByTestId("org-chart-card-heading")).toBeVisible();
+	expect(screen.getByTestId("org-chart-card-heading")).toHaveRole("heading");
+	expect(screen.getByTestId("org-chart-card-heading")).toHaveAccessibleName(
+		/Org Chart\s*for Maya Chen/,
+	);
 	expect(screen.getByText("Platform")).toBeVisible();
 	expect(
 		screen.getByRole("button", { name: "Show org chart for Alex Rivera" }),
@@ -102,14 +104,16 @@ it("opens the saved chart inline, explores a peer by directory id, and goes back
 	expect(run).toHaveBeenCalledExactlyOnceWith(
 		'META | WorkShowOrgChart(personId=["00000000-0000-0000-0000-000000000003"]);',
 	);
-	expect(
-		screen.getByRole("heading", { name: "Org Chart for Jordan Lee" }),
-	).toHaveFocus();
+	expect(screen.getByTestId("org-chart-card-heading")).toHaveFocus();
+	expect(screen.getByTestId("org-chart-card-heading")).toHaveAccessibleName(
+		/Org Chart\s*for Jordan Lee/,
+	);
 	expect(screen.getByText("No direct reports listed.")).toBeVisible();
 	await user.click(screen.getByRole("button", { name: "Back" }));
-	expect(
-		screen.getByRole("heading", { name: "Org Chart for Maya Chen" }),
-	).toHaveFocus();
+	expect(screen.getByTestId("org-chart-card-heading")).toHaveFocus();
+	expect(screen.getByTestId("org-chart-card-heading")).toHaveAccessibleName(
+		/Org Chart\s*for Maya Chen/,
+	);
 	expect(run).toHaveBeenCalledTimes(1);
 });
 
@@ -182,8 +186,9 @@ it("retries unavailable charts from valid directory data without creating an ext
 	).toBeVisible();
 	run.mockResolvedValueOnce({ pixelReturn: [{ output: chart }] });
 	await user.click(screen.getByRole("button", { name: "Try Again" }));
-	expect(
-		screen.getByRole("heading", { name: "Org Chart for Maya Chen" }),
-	).toHaveFocus();
+	expect(screen.getByTestId("org-chart-card-heading")).toHaveFocus();
+	expect(screen.getByTestId("org-chart-card-heading")).toHaveAccessibleName(
+		/Org Chart\s*for Maya Chen/,
+	);
 	expect(screen.queryByRole("button", { name: "Back" })).toBeNull();
 });

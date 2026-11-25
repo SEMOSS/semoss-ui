@@ -224,7 +224,7 @@ export const BulkAccessManagement = ({
 	const modelLimitsByKey = new Map(
 		batch.modelLimitEntries.map((entry) => [entry.key, entry]),
 	);
-	const reviewItems: ReviewItem[] = batch.changes.flatMap(
+	const reviewItems: ReviewItem[] = batch.changes.flatMap<ReviewItem>(
 		(item, changeIndex) => {
 			const modelLimit = modelLimitsByKey.get(item.key);
 			if (modelLimit) {

@@ -81,6 +81,14 @@ function renderPage() {
 }
 
 beforeEach(() => {
+	vi.stubGlobal(
+		"ResizeObserver",
+		class {
+			observe() {}
+			unobserve() {}
+			disconnect() {}
+		},
+	);
 	mocks.adminMode = true;
 	mocks.usePixel.mockReset();
 	mocks.runPixel.mockReset();
@@ -92,7 +100,10 @@ beforeEach(() => {
 		refresh: mocks.refresh,
 	});
 });
-afterEach(cleanup);
+afterEach(() => {
+	cleanup();
+	vi.unstubAllGlobals();
+});
 
 describe("Audit Trail settings", () => {
 	it("groups controls and pagination around the table with collapsed admin filters", () => {

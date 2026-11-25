@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	type Block,
 	type BlockDef,
+	type EchartVisualizationBlockDef,
 	getValueByPath,
 	type Paths,
 	type PathValue,
@@ -32,7 +33,8 @@ export const ToggleTrendline = observer(
 		chartType,
 	}: JsonSettingsProps<D>) => {
 		const [toggleTrendlines, setToggleTrendlines] = useState<string>(""); //contains toggle trendlines tool state
-		const { data, setData } = useBlockSettings<D>(id); //chart block data and setdata
+		const { data, setData } =
+			useBlockSettings<EchartVisualizationBlockDef>(id); //chart block data and setdata
 		const [value, setValue] = useState("");
 		//different trendlines option to draw lines over bar graph in different format
 		const trendLineOptions = [
