@@ -164,10 +164,12 @@ settings:
 
 overrides:
   '@crxjs/vite-plugin>rollup': 2.80.0
+  ooxml-core: 2.1.0
+  ooxml-ui: 2.1.0
 
 patchedDependencies:
-  ooxml-core@1.53.1: 6bb3ac1a6ac29eed1c5791c726cb12d339081b16522a905eab49d03c35fda3c0
-  ooxml-ui@1.54.1: d964edb9955f68465603e7a668e41e00931d1be5bc694cf3a11189d90c707d09
+  ooxml-core@2.1.0: 3e8af4378062639a8f1169fa5675b1c298a25502320f62c79709257a3adb4bf8
+  ooxml-ui@2.1.0: 1cffb36dd00015b0621b4c06f9d28f23ee18a1adae7ff8ed626e964d79acc535
 
 importers:
 
@@ -306,8 +308,8 @@ importers:
   libs/panels:
     dependencies:
       '@christophervr/xlsx-react-viewer':
-        specifier: ^1.5.0
-        version: 1.5.0(react@19.2.8)(three@0.187.0)
+        specifier: ^2.0.0
+        version: 2.0.0(react@19.2.8)(three@0.187.0)
       '@semoss/i18n':
         specifier: workspace:*
         version: link:../i18n
@@ -327,8 +329,8 @@ importers:
         specifier: workspace:*
         version: link:../workbench
       docx-react-viewer:
-        specifier: ^1.4.0
-        version: 1.4.0(react@19.2.8)(three@0.187.0)
+        specifier: ^2.0.0
+        version: 2.0.0(react@19.2.8)(three@0.187.0)
       lucide-react:
         specifier: ^1.24.0
         version: 1.74.0(@types/react@19.2.18)(react@19.2.8)
@@ -336,8 +338,8 @@ importers:
         specifier: ^8.5.6
         version: 8.5.26
       pptx-react-viewer:
-        specifier: ^4.80.1
-        version: 4.80.1(fast-xml-parser@5.12.1)(framer-motion@13.2.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(i18next@26.7.2(typescript@6.0.3))(jspdf@4.2.1)(jszip@3.10.2)(lucide-react@1.74.0(@types/react@19.2.18)(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react-i18next@17.1.13(i18next@26.7.2(typescript@6.0.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3))(react-icons@5.7.0(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(yjs@13.6.33)
+        specifier: ^5.1.0
+        version: 5.1.0(fast-xml-parser@5.12.1)(framer-motion@13.2.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(i18next@26.7.2(typescript@6.0.3))(jspdf@4.2.1)(jszip@3.10.2)(lucide-react@1.74.0(@types/react@19.2.18)(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react-i18next@17.1.13(i18next@26.7.2(typescript@6.0.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3))(react-icons@5.7.0(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(yjs@13.6.33)
       react:
         specifier: ^19.0.0
         version: 19.2.8
@@ -345,8 +347,8 @@ importers:
         specifier: ^19.0.0
         version: 19.2.8(react@19.2.8)
       visio-react-viewer:
-        specifier: ^1.4.1
-        version: 1.4.1(react@19.2.8)(three@0.187.0)
+        specifier: ^2.0.0
+        version: 2.0.0(react@19.2.8)(three@0.187.0)
       zustand:
         specifier: ^5.0.0
         version: 5.0.15(@types/react@19.2.18)(react@19.2.8)(use-sync-external-store@1.6.0(react@19.2.8))
@@ -1647,11 +1649,13 @@ packages:
   '@chevrotain/types@11.1.2':
     resolution: {integrity: sha512-U+HFai5+zmJCkK86QsaJtoITlboZHBqrVketcO2ROv865xfCMSFpELQoz1GkX5GzME8pTa+3kbKrZHQtI0gdbw==}
 
-  '@christophervr/xlsx-core@1.1.2':
-    resolution: {integrity: sha512-bPHS7S5favm1HKTc7mi4knvom+l6h3tms1ko/CZM4w3p8utnVfcgL4jXE1rigu2hHzJbv4JCloQpNkB44r2Ssg==}
+  '@christophervr/xlsx-core@2.0.0':
+    resolution: {integrity: sha512-QvhR+nJUE871QOPhKh83+v/5IP0f4q6p13FAx82JDik68nMd3y8GahnhiCjXGuEFOamaslAIEe6GTBwQg5mB4w==}
+    engines: {node: '>=22.3'}
 
-  '@christophervr/xlsx-react-viewer@1.5.0':
-    resolution: {integrity: sha512-XOCdoPtyId717fh1jBqGv4S8mT9cc5uuA6lFv9g3EfDvwDm0P1UL1YeCuB+kI5oTi761Iwe7/5+o0oj9WnVmpg==}
+  '@christophervr/xlsx-react-viewer@2.0.0':
+    resolution: {integrity: sha512-/Ax+KN3fZ3Ekyr1Hts0Eln69LIJOnqX31WQh4ivFY/72E6AQbW5N6vCQix25/IzKpmGvo+4qf55vSLb72R0Utw==}
+    engines: {node: '>=22.3'}
     peerDependencies:
       react: '>=18'
 
@@ -4791,11 +4795,13 @@ packages:
     resolution: {integrity: sha512-WkrWp9GR4KXfKGYzOLmTuGVi1UWFfws377n9cc55/tb6DuqyF6pcQ5AbiHEshaDpY9v6oaSr2XCDidGmMwdzIA==}
     engines: {node: '>=8'}
 
-  docx-core@1.1.2:
-    resolution: {integrity: sha512-CKJqdWVQLR2G3igNatJZqQrzytgLvUQ9NDexKfo3wnCnZMKbWBhgbiPWYqEFYf3p4wbeTkk7yv6zoy5MoSzPEA==}
+  docx-core@2.0.0:
+    resolution: {integrity: sha512-lSYKWSgf3WpWTm8QljMZ8oCZaX3CcbY8ygZo1zAj20Njxb4MnPJtMmEy+dB1nsrNARMCWBl39llKgYB/iV9VyA==}
+    engines: {node: '>=22.3'}
 
-  docx-react-viewer@1.4.0:
-    resolution: {integrity: sha512-xrCJP4T6E7ml+ueLr0pByJH9/8CluvInCtstwuRNRzaW5+/4YUk90xr54hvfRqnpYF5BLAL/r5T92Ya9RhfpNA==}
+  docx-react-viewer@2.0.0:
+    resolution: {integrity: sha512-vQ7Oe1puDSy+GOHD4+zZw9RXvIAdgXDoNSAl9obI95PvSgPfvBoc4zjmD/8fHGqBsGO8hXNTnTgtENZU3QVC8g==}
+    engines: {node: '>=22.3'}
     peerDependencies:
       react: '>=18'
 
@@ -4825,6 +4831,9 @@ packages:
 
   dompurify@3.4.17:
     resolution: {integrity: sha512-B/pSlYVHQ58kqISD/yDjuJ1yfzI34m1gF4lAod2bwSRhiN4K5Cl3H8Af7hqB2PmTL911tdEudnnXn5FnhRoz0w==}
+
+  dompurify@3.5.0:
+    resolution: {integrity: sha512-LYC0ZkE8P1V42JsRYTwMdme/2ET8SpOc5AA2eOFjP/IadvRd2fwiT4TVz5vkfy0XUx12aS2UaRkTnfVPNOv9vw==}
 
   domutils@3.2.2:
     resolution: {integrity: sha512-6kZKyUajlDuqlHKVX1w7gyslj9MPIXzIFiz/rGu35uC1wMi+kMhQwGhl4lt9unC9Vb9INnY9Z3/ZA3+FhASLaw==}
@@ -4873,17 +4882,8 @@ packages:
     resolution: {integrity: sha512-B+ZM+RXvRqQaAmkMlO/oSe5nMUOaUnyfGYCEHoR8wrXsZR2mA0XVibsxV1bvTwxdRWah1PkQqso2EzhILGHtEQ==}
     engines: {node: '>=0.10.0'}
 
-  emf-converter@4.28.1:
-    resolution: {integrity: sha512-XaWKMHMWNUJUlzISyaSfYo2PlpH9Ye4DQDejYrT3MHabjo8iEKi6Zl1rabshT5dokPYZiXstgII+0mFkmLnlbA==}
-    hasBin: true
-    peerDependencies:
-      '@napi-rs/canvas': ^1.0.9
-    peerDependenciesMeta:
-      '@napi-rs/canvas':
-        optional: true
-
-  emf-converter@4.29.0:
-    resolution: {integrity: sha512-HbgmPdxE3dQYEkLtvWrKgDKlys0dZwVgbZoj3dCE6/TKJdQxuUKmN3xnDJG6v8dGTdkHHZYoeg82UQ3qELMfIg==}
+  emf-converter@5.0.0:
+    resolution: {integrity: sha512-0GbBR8MgiVxS5aEoSG1u9O9I2NBHGc5AcLe01uq055AKf9Bxr3J482wY6rGbGYyQc42KSI6roYgA4DH1Aao+1g==}
     hasBin: true
     peerDependencies:
       '@napi-rs/canvas': ^1.0.9
@@ -6315,9 +6315,9 @@ packages:
   oniguruma-to-es@4.3.4:
     resolution: {integrity: sha512-3VhUGN3w2eYxnTzHn+ikMI+fp/96KoRSVK9/kMTcFqj1NRDh2IhQCKvYxDnWePKRXY/AqH+Fuiyb7VHSzBjHfA==}
 
-  ooxml-core@1.53.1:
-    resolution: {integrity: sha512-0IBXk/tkgTLnmf6ZTItsIX7bpI44+S++pAxG0FnJMRC5kqG0hVvn7Hl0QakyRorc1N59orrc3yDrk4AxHBay0g==}
-    engines: {node: '>=22'}
+  ooxml-core@2.1.0:
+    resolution: {integrity: sha512-7zs3U2tVxYbYlAOZfVn0QlXXhlUjKiAX5D7chPrD9gNjoVpPov3T1ZXPDd47+iOFCW0CSoBcwgx7tC39GpQjNg==}
+    engines: {node: '>=22.3'}
     hasBin: true
     peerDependencies:
       '@napi-rs/canvas': ^1.0.9
@@ -6331,9 +6331,9 @@ packages:
       xml-crypto:
         optional: true
 
-  ooxml-ui@1.54.1:
-    resolution: {integrity: sha512-FFuJYHyMy4SjslSPqv1z5sAADOsDvkncq94eWN+kYbdg9kNtCqduXph+rj/fCfv4EI4RPFPOs5ZTJBPkcC5eAg==}
-    engines: {node: '>=22'}
+  ooxml-ui@2.1.0:
+    resolution: {integrity: sha512-/o5xMZi8iWgkgAvCGNcr09sYrmEqbjYIqUyUjGBCghOt24Oaf4spYQCYl3ibgSLcTUzm9+KP9cvE9mxbZVpPSA==}
+    engines: {node: '>=22.3'}
     peerDependencies:
       ai: '>=6.0.0 <8'
       react: '>=18'
@@ -6480,8 +6480,9 @@ packages:
     resolution: {integrity: sha512-u82N74LFzG8ca+dD8puPnplTXoGH4fTPpVGuIbt36G3qvNlkvfD0lEAZSxaly3KX8TS/L1A1gsCEmvKmBcVbkQ==}
     engines: {node: ^10 || ^12 || >=14}
 
-  pptx-react-viewer@4.80.1:
-    resolution: {integrity: sha512-mlpDFHQRwTzY6f03nBGEbe14bmMIi/zY363r3zLKNoGo65YFVShXSeji2LT68B9qqfNgiYg174T6L9JgiCs2Zg==}
+  pptx-react-viewer@5.1.0:
+    resolution: {integrity: sha512-hgeJoV5YLv0rd3sG/hn9gvTYJItZ9on9GLz16cfgFIqLhzjk81qQ8XLKPHrH8QRMzedwZ5lyTRwsa3+BusK1TQ==}
+    engines: {node: '>=22.3'}
     peerDependencies:
       '@ai-sdk/react': ^4.0.76
       ai: '>=6 <8'
@@ -6534,8 +6535,8 @@ packages:
   prosemirror-commands@1.7.2:
     resolution: {integrity: sha512-q6Q6szxqdu9Xd6EcdKsqXghu5nQdZTpB4Q9yd04WRc7/jt763e/rT60Owh0L1GYY+T46o5rD+9lEN36dZS43tw==}
 
-  prosemirror-history@1.5.1:
-    resolution: {integrity: sha512-onlwnqKvgtFg6srZOmDOAhlAy1FIHQpOExORybX0S+DvJepE5tPALrB9iGet/2sqqqrelSnB10OoiOJqAvu2DA==}
+  prosemirror-history@1.5.2:
+    resolution: {integrity: sha512-/VCI9OUPT69PzzoKmLJ6xLTkMCXmpt/M6/tOlctR5DjSAinniYgjkw6Ao/Obmq/f5mG5csTQi6a9AWhwFVLSNA==}
 
   prosemirror-keymap@1.2.3:
     resolution: {integrity: sha512-4HucRlpiLd1IPQQXNqeo81BGtkY8Ai5smHhKW9jjPKRc2wQIxksg7Hl1tTI2IfT2B/LgX6bfYvXxEpJl7aKYKw==}
@@ -6546,11 +6547,11 @@ packages:
   prosemirror-state@1.4.4:
     resolution: {integrity: sha512-6jiYHH2CIGbCfnxdHbXZ12gySFY/fz/ulZE333G6bPqIZ4F+TXo9ifiR86nAHpWnfoNjOb3o5ESi7J8Uz1jXHw==}
 
-  prosemirror-transform@1.12.6:
-    resolution: {integrity: sha512-Npot0uIQTDObbDLCiw3TUc08EIT1jNcqbuadG+y5T4jT+4NN8f46AP5h/x+6wE++q7NcW8++oBvc1M0wXvFD/g==}
+  prosemirror-transform@1.12.7:
+    resolution: {integrity: sha512-/e87cbxcM5WJOJrL1IrM9gJqO3EK8LdQoPvs+r4ss1lRO5t5QeqkU0SlmDvcitCSDUbm8s/MxbBB6ds4pY6Xlg==}
 
-  prosemirror-view@1.42.9:
-    resolution: {integrity: sha512-bKbfzeKZOu2H2JQU2TaJmYu6EBcor3VnGIR4jR31cbEt1ztUnfUB6bKGV1+fJzOJdrVWR+tRU0208zM3oQx4wA==}
+  prosemirror-view@1.43.1:
+    resolution: {integrity: sha512-rInvs6bSncGi5ns8FfHdmSlqAg8u+fFwmwME6xx9zxnMgq4evMiiswqvam7LnOPLrMNjhw6ax542LWLIXDH1EA==}
 
   psl@1.15.0:
     resolution: {integrity: sha512-JZd3gMVBAVQkSs6HdNZo9Sdo0LNcQeMNP3CozBJb3JYC/QUYZTnKxP+f8oWRX4rHP5EurWxqAHTSwUCjlNKa1w==}
@@ -7112,6 +7113,9 @@ packages:
   tailwind-merge@3.7.0:
     resolution: {integrity: sha512-XPPUyAc+cvspz3lHTcR/QgPfW2A0lv/xQNIjX3HGhLR+Nq2lHaLq5MtTesHn8GUr3W3DguT2KT5x3NVgRtYwmA==}
 
+  tailwind-merge@3.7.1:
+    resolution: {integrity: sha512-v7y4BV4FUlO8exj/4M5UXKeoowDiuugVUg3tkMNIyOUCOHy5xp8+5aWQeXCtZ2491sUV1YPsVeM9EveZ6/xuZQ==}
+
   tailwindcss@4.3.3:
     resolution: {integrity: sha512-gOhV3P7ufE62QDGg1zVaTgCR+EtPv92k2nIhVcVKcLmxT1sUBsQGhnZj175j+MqRt4zLF7ic+sCYjfhxMxj7YQ==}
 
@@ -7504,11 +7508,13 @@ packages:
   vfile@6.0.3:
     resolution: {integrity: sha512-KzIbH/9tXat2u30jf+smMwFCsno4wHVdNmzFyL+T/L3UGqqk6JKfVqOFOZEpZSHADH1k40ab6NUIXZq422ov3Q==}
 
-  visio-core@1.1.2:
-    resolution: {integrity: sha512-O1+Nc0Ja9mTSQesP4AlkTPRHCp7w/8D9p+/3/mQGsxrW4j1VyCw019ZvRJ+CtZ2togR2RkrvTihzJWXTMGHQfQ==}
+  visio-core@2.0.0:
+    resolution: {integrity: sha512-MzL6rq6gAyJF1ZYoUVJRvNiNoiPm6QTqEEUSwvyECYx7pFkGE50uTgjmjnhVRGew6o3fOjD9zjurR40BlMywaQ==}
+    engines: {node: '>=22.3'}
 
-  visio-react-viewer@1.4.1:
-    resolution: {integrity: sha512-Pg+JVmZm8LVdJ323R2+WaaNgw48HUnssMiRdrqKg7ysyOo3yx1dnyBfiBghTAW0yAtTPhtoTC7z9ZGOAqNL/TA==}
+  visio-react-viewer@2.0.0:
+    resolution: {integrity: sha512-Zf4dBB1LzC1F0dUDl+kgQweuvZ1lcWNZ90If1QzzgMAz7GIWnHaYkOsq2Kr9GDdONUp4lFVfDImqj7fwc/LTyw==}
+    engines: {node: '>=22.3'}
     peerDependencies:
       react: '>=18'
 
@@ -8021,19 +8027,19 @@ snapshots:
 
   '@chevrotain/types@11.1.2': {}
 
-  '@christophervr/xlsx-core@1.1.2':
+  '@christophervr/xlsx-core@2.0.0':
     dependencies:
-      ooxml-core: 1.53.1(patch_hash=6bb3ac1a6ac29eed1c5791c726cb12d339081b16522a905eab49d03c35fda3c0)
+      ooxml-core: 2.1.0(patch_hash=3e8af4378062639a8f1169fa5675b1c298a25502320f62c79709257a3adb4bf8)
     transitivePeerDependencies:
       - '@napi-rs/canvas'
       - node-forge
       - xml-crypto
 
-  '@christophervr/xlsx-react-viewer@1.5.0(react@19.2.8)(three@0.187.0)':
+  '@christophervr/xlsx-react-viewer@2.0.0(react@19.2.8)(three@0.187.0)':
     dependencies:
-      '@christophervr/xlsx-core': 1.1.2
-      ooxml-core: 1.53.1(patch_hash=6bb3ac1a6ac29eed1c5791c726cb12d339081b16522a905eab49d03c35fda3c0)
-      ooxml-ui: 1.54.1(patch_hash=d964edb9955f68465603e7a668e41e00931d1be5bc694cf3a11189d90c707d09)(react@19.2.8)(three@0.187.0)
+      '@christophervr/xlsx-core': 2.0.0
+      ooxml-core: 2.1.0(patch_hash=3e8af4378062639a8f1169fa5675b1c298a25502320f62c79709257a3adb4bf8)
+      ooxml-ui: 2.1.0(patch_hash=1cffb36dd00015b0621b4c06f9d28f23ee18a1adae7ff8ed626e964d79acc535)(react@19.2.8)(three@0.187.0)
       react: 19.2.8
     transitivePeerDependencies:
       - '@napi-rs/canvas'
@@ -11242,19 +11248,19 @@ snapshots:
     dependencies:
       path-type: 4.0.0
 
-  docx-core@1.1.2:
+  docx-core@2.0.0:
     dependencies:
-      ooxml-core: 1.53.1(patch_hash=6bb3ac1a6ac29eed1c5791c726cb12d339081b16522a905eab49d03c35fda3c0)
+      ooxml-core: 2.1.0(patch_hash=3e8af4378062639a8f1169fa5675b1c298a25502320f62c79709257a3adb4bf8)
     transitivePeerDependencies:
       - '@napi-rs/canvas'
       - node-forge
       - xml-crypto
 
-  docx-react-viewer@1.4.0(react@19.2.8)(three@0.187.0):
+  docx-react-viewer@2.0.0(react@19.2.8)(three@0.187.0):
     dependencies:
-      docx-core: 1.1.2
-      ooxml-core: 1.53.1(patch_hash=6bb3ac1a6ac29eed1c5791c726cb12d339081b16522a905eab49d03c35fda3c0)
-      ooxml-ui: 1.54.1(patch_hash=d964edb9955f68465603e7a668e41e00931d1be5bc694cf3a11189d90c707d09)(react@19.2.8)(three@0.187.0)
+      docx-core: 2.0.0
+      ooxml-core: 2.1.0(patch_hash=3e8af4378062639a8f1169fa5675b1c298a25502320f62c79709257a3adb4bf8)
+      ooxml-ui: 2.1.0(patch_hash=1cffb36dd00015b0621b4c06f9d28f23ee18a1adae7ff8ed626e964d79acc535)(react@19.2.8)(three@0.187.0)
       react: 19.2.8
     transitivePeerDependencies:
       - '@napi-rs/canvas'
@@ -11288,6 +11294,10 @@ snapshots:
   dompurify@2.5.8: {}
 
   dompurify@3.4.17:
+    optionalDependencies:
+      '@types/trusted-types': 2.0.7
+
+  dompurify@3.5.0:
     optionalDependencies:
       '@types/trusted-types': 2.0.7
 
@@ -11340,9 +11350,7 @@ snapshots:
 
   elegant-spinner@1.0.1: {}
 
-  emf-converter@4.28.1: {}
-
-  emf-converter@4.29.0: {}
+  emf-converter@5.0.0: {}
 
   emoji-regex@10.6.0: {}
 
@@ -12123,7 +12131,7 @@ snapshots:
     optionalDependencies:
       canvg: 3.0.11
       core-js: 3.50.0
-      dompurify: 3.4.17
+      dompurify: 3.5.0
       html2canvas: 1.4.1
 
   jszip@3.10.2:
@@ -12978,10 +12986,10 @@ snapshots:
       regex: 6.0.1
       regex-recursion: 6.0.2
 
-  ooxml-core@1.53.1(patch_hash=6bb3ac1a6ac29eed1c5791c726cb12d339081b16522a905eab49d03c35fda3c0):
+  ooxml-core@2.1.0(patch_hash=3e8af4378062639a8f1169fa5675b1c298a25502320f62c79709257a3adb4bf8):
     dependencies:
       '@xmldom/xmldom': 0.9.12
-      emf-converter: 4.29.0
+      emf-converter: 5.0.0
       fast-xml-parser: 5.12.1
       fflate: 0.8.3
       jszip: 3.10.2
@@ -12989,33 +12997,33 @@ snapshots:
       mtx-decompressor: 1.9.0
       prosemirror-collab: 1.3.1
       prosemirror-commands: 1.7.2
-      prosemirror-history: 1.5.1
+      prosemirror-history: 1.5.2
       prosemirror-keymap: 1.2.3
       prosemirror-model: 1.25.13
       prosemirror-state: 1.4.4
-      prosemirror-transform: 1.12.6
-      prosemirror-view: 1.42.9
+      prosemirror-transform: 1.12.7
+      prosemirror-view: 1.43.1
       utif: 3.1.0
       xpath: 0.0.36
-      y-prosemirror: 1.3.7(prosemirror-model@1.25.13)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(y-protocols@1.0.7(yjs@13.6.33))(yjs@13.6.33)
+      y-prosemirror: 1.3.7(prosemirror-model@1.25.13)(prosemirror-state@1.4.4)(prosemirror-view@1.43.1)(y-protocols@1.0.7(yjs@13.6.33))(yjs@13.6.33)
       y-protocols: 1.0.7(yjs@13.6.33)
       yjs: 13.6.33
 
-  ooxml-ui@1.54.1(patch_hash=d964edb9955f68465603e7a668e41e00931d1be5bc694cf3a11189d90c707d09)(react@19.2.8)(three@0.187.0):
+  ooxml-ui@2.1.0(patch_hash=1cffb36dd00015b0621b4c06f9d28f23ee18a1adae7ff8ed626e964d79acc535)(react@19.2.8)(three@0.187.0):
     dependencies:
-      dompurify: 3.4.17
-      emf-converter: 4.28.1
+      dompurify: 3.5.0
+      emf-converter: 5.0.0
       lit: 3.3.3
-      ooxml-core: 1.53.1(patch_hash=6bb3ac1a6ac29eed1c5791c726cb12d339081b16522a905eab49d03c35fda3c0)
+      ooxml-core: 2.1.0(patch_hash=3e8af4378062639a8f1169fa5675b1c298a25502320f62c79709257a3adb4bf8)
       opentype.js: 2.0.0
       prosemirror-collab: 1.3.1
       prosemirror-commands: 1.7.2
-      prosemirror-history: 1.5.1
+      prosemirror-history: 1.5.2
       prosemirror-keymap: 1.2.3
       prosemirror-model: 1.25.13
       prosemirror-state: 1.4.4
-      prosemirror-transform: 1.12.6
-      prosemirror-view: 1.42.9
+      prosemirror-transform: 1.12.7
+      prosemirror-view: 1.43.1
       yjs: 13.6.33
       zod: 4.6.7
     optionalDependencies:
@@ -13166,10 +13174,10 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
-  pptx-react-viewer@4.80.1(fast-xml-parser@5.12.1)(framer-motion@13.2.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(i18next@26.7.2(typescript@6.0.3))(jspdf@4.2.1)(jszip@3.10.2)(lucide-react@1.74.0(@types/react@19.2.18)(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react-i18next@17.1.13(i18next@26.7.2(typescript@6.0.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3))(react-icons@5.7.0(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(yjs@13.6.33):
+  pptx-react-viewer@5.1.0(fast-xml-parser@5.12.1)(framer-motion@13.2.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(i18next@26.7.2(typescript@6.0.3))(jspdf@4.2.1)(jszip@3.10.2)(lucide-react@1.74.0(@types/react@19.2.18)(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react-i18next@17.1.13(i18next@26.7.2(typescript@6.0.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3))(react-icons@5.7.0(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(yjs@13.6.33):
     dependencies:
       clsx: 2.1.1
-      dompurify: 3.4.17
+      dompurify: 3.5.0
       fast-xml-parser: 5.12.1
       framer-motion: 13.2.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       html2canvas-pro: 2.6.4
@@ -13177,14 +13185,14 @@ snapshots:
       jspdf: 4.2.1
       jszip: 3.10.2
       lucide-react: 1.74.0(@types/react@19.2.18)(react@19.2.8)
-      ooxml-core: 1.53.1(patch_hash=6bb3ac1a6ac29eed1c5791c726cb12d339081b16522a905eab49d03c35fda3c0)
-      ooxml-ui: 1.54.1(patch_hash=d964edb9955f68465603e7a668e41e00931d1be5bc694cf3a11189d90c707d09)(react@19.2.8)(three@0.187.0)
+      ooxml-core: 2.1.0(patch_hash=3e8af4378062639a8f1169fa5675b1c298a25502320f62c79709257a3adb4bf8)
+      ooxml-ui: 2.1.0(patch_hash=1cffb36dd00015b0621b4c06f9d28f23ee18a1adae7ff8ed626e964d79acc535)(react@19.2.8)(three@0.187.0)
       opentype.js: 2.0.0
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
       react-i18next: 17.1.13(i18next@26.7.2(typescript@6.0.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3)
       react-icons: 5.7.0(react@19.2.8)
-      tailwind-merge: 3.7.0
+      tailwind-merge: 3.7.1
     optionalDependencies:
       three: 0.187.0
       y-webrtc: 10.3.0(supports-color@8.1.1)(yjs@13.6.33)
@@ -13234,13 +13242,13 @@ snapshots:
     dependencies:
       prosemirror-model: 1.25.13
       prosemirror-state: 1.4.4
-      prosemirror-transform: 1.12.6
+      prosemirror-transform: 1.12.7
 
-  prosemirror-history@1.5.1:
+  prosemirror-history@1.5.2:
     dependencies:
       prosemirror-state: 1.4.4
-      prosemirror-transform: 1.12.6
-      prosemirror-view: 1.42.9
+      prosemirror-transform: 1.12.7
+      prosemirror-view: 1.43.1
       rope-sequence: 1.3.4
 
   prosemirror-keymap@1.2.3:
@@ -13255,18 +13263,18 @@ snapshots:
   prosemirror-state@1.4.4:
     dependencies:
       prosemirror-model: 1.25.13
-      prosemirror-transform: 1.12.6
-      prosemirror-view: 1.42.9
+      prosemirror-transform: 1.12.7
+      prosemirror-view: 1.43.1
 
-  prosemirror-transform@1.12.6:
+  prosemirror-transform@1.12.7:
     dependencies:
       prosemirror-model: 1.25.13
 
-  prosemirror-view@1.42.9:
+  prosemirror-view@1.43.1:
     dependencies:
       prosemirror-model: 1.25.13
       prosemirror-state: 1.4.4
-      prosemirror-transform: 1.12.6
+      prosemirror-transform: 1.12.7
 
   psl@1.15.0:
     dependencies:
@@ -13938,6 +13946,8 @@ snapshots:
 
   tailwind-merge@3.7.0: {}
 
+  tailwind-merge@3.7.1: {}
+
   tailwindcss@4.3.3: {}
 
   tapable@2.3.3: {}
@@ -14462,21 +14472,21 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.3
 
-  visio-core@1.1.2:
+  visio-core@2.0.0:
     dependencies:
-      ooxml-core: 1.53.1(patch_hash=6bb3ac1a6ac29eed1c5791c726cb12d339081b16522a905eab49d03c35fda3c0)
+      ooxml-core: 2.1.0(patch_hash=3e8af4378062639a8f1169fa5675b1c298a25502320f62c79709257a3adb4bf8)
     transitivePeerDependencies:
       - '@napi-rs/canvas'
       - node-forge
       - xml-crypto
 
-  visio-react-viewer@1.4.1(react@19.2.8)(three@0.187.0):
+  visio-react-viewer@2.0.0(react@19.2.8)(three@0.187.0):
     dependencies:
-      emf-converter: 4.28.1
-      ooxml-core: 1.53.1(patch_hash=6bb3ac1a6ac29eed1c5791c726cb12d339081b16522a905eab49d03c35fda3c0)
-      ooxml-ui: 1.54.1(patch_hash=d964edb9955f68465603e7a668e41e00931d1be5bc694cf3a11189d90c707d09)(react@19.2.8)(three@0.187.0)
+      emf-converter: 5.0.0
+      ooxml-core: 2.1.0(patch_hash=3e8af4378062639a8f1169fa5675b1c298a25502320f62c79709257a3adb4bf8)
+      ooxml-ui: 2.1.0(patch_hash=1cffb36dd00015b0621b4c06f9d28f23ee18a1adae7ff8ed626e964d79acc535)(react@19.2.8)(three@0.187.0)
       react: 19.2.8
-      visio-core: 1.1.2
+      visio-core: 2.0.0
     transitivePeerDependencies:
       - '@napi-rs/canvas'
       - ai
@@ -14634,12 +14644,12 @@ snapshots:
 
   xpath@0.0.36: {}
 
-  y-prosemirror@1.3.7(prosemirror-model@1.25.13)(prosemirror-state@1.4.4)(prosemirror-view@1.42.9)(y-protocols@1.0.7(yjs@13.6.33))(yjs@13.6.33):
+  y-prosemirror@1.3.7(prosemirror-model@1.25.13)(prosemirror-state@1.4.4)(prosemirror-view@1.43.1)(y-protocols@1.0.7(yjs@13.6.33))(yjs@13.6.33):
     dependencies:
       lib0: 0.2.120
       prosemirror-model: 1.25.13
       prosemirror-state: 1.4.4
-      prosemirror-view: 1.42.9
+      prosemirror-view: 1.43.1
       y-protocols: 1.0.7(yjs@13.6.33)
       yjs: 13.6.33
 

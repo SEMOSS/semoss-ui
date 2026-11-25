@@ -2,6 +2,7 @@ import type { RibbonActionInput, WordCustomization } from "docx-react-viewer";
 
 /** Keep supported native editing controls; capabilities trim application workflows. */
 export const DOCX_VIEWER_CUSTOMIZATION = {
+	ribbon: { hiddenTabs: ["file"] },
 	capabilities: {
 		share: false,
 		open: false,

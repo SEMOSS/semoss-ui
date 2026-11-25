@@ -5,6 +5,7 @@ export const VISIO_VIEWER_POLICY = {
 	showToolbar: true,
 	collaboration: null,
 	customization: {
+		ribbon: { hiddenTabs: ["file"] },
 		capabilities: {
 			share: false,
 			open: false,

@@ -2,6 +2,7 @@ import type { ExcelCustomization } from "@christophervr/xlsx-react-viewer";
 
 /** Keep native editing while the host owns file lifecycle and sharing policy. */
 export const XLSX_VIEWER_CUSTOMIZATION = {
+	ribbon: { hiddenTabs: ["file"] },
 	capabilities: {
 		share: false,
 		open: false,
