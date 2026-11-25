@@ -53,6 +53,12 @@
 		"close": "Sluiten",
 		"roomActions": "Chatacties"
 	},
+	"deleteConfirm": {
+		"title": "Chat verwijderen",
+		"description": "Weet je zeker dat je \"{{name}}\" wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
+		"cancel": "Annuleren",
+		"confirm": "Verwijderen"
+	},
 	"toasts": {
 		"failedToPin": "Vastmaken van ruimte mislukt",
 		"failedToUnpin": "Losmaken van ruimte mislukt",

@@ -53,6 +53,12 @@
 		"close": "閉じる",
 		"roomActions": "チャットの操作"
 	},
+	"deleteConfirm": {
+		"title": "チャットを削除",
+		"description": "「{{name}}」を削除してもよろしいですか？この操作は元に戻せません。",
+		"cancel": "キャンセル",
+		"confirm": "削除"
+	},
 	"toasts": {
 		"failedToPin": "ルームの固定に失敗しました",
 		"failedToUnpin": "ルームの固定解除に失敗しました",
