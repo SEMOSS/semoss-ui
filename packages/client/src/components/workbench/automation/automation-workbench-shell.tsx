@@ -33,6 +33,7 @@ import {
 	type AutomationTraceSnapshot,
 	AutomationWorkbenchContext,
 	type AutomationWorkbenchContextValue,
+	getVisibleRun,
 	type N8nImportConversionInput,
 	type N8nImportConversionResult,
 	type PptxShapeSelection,
@@ -805,7 +806,9 @@ export const AutomationWorkbench = observer(
 
 		const handlePickShapes = usePickPptxShapes({
 			appId,
-			insightId: insight.insightId,
+			runInsightId:
+				getVisibleRun(traceSnapshot, selectedRun)?.executionInsightId ??
+				undefined,
 			inspectorPanelType: INSPECTOR,
 			layout: layoutActions,
 		});

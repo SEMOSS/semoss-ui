@@ -1,7 +1,7 @@
 import { runPixel, usePixel } from "@semoss/sdk/react";
 
-/** Where a template lives. TemplatePPTX looks in the insight folder first, then the project assets. */
-export type PptxTemplateSource = "project" | "insight";
+/** Where a template lives: a persisted run's files, or the project assets. */
+export type PptxTemplateSource = "project" | "run";
 
 /** A .pptx file that can be used as a template. */
 export interface PptxTemplateFile {
@@ -19,7 +19,7 @@ export interface PptxTemplateFilesGroup {
 
 export interface PptxTemplateFiles {
 	project: PptxTemplateFilesGroup;
-	insight: PptxTemplateFilesGroup;
+	run: PptxTemplateFilesGroup;
 }
 
 /**
@@ -57,33 +57,42 @@ export function toPptxTemplateFiles(
 }
 
 /**
- * Locates the file a TemplatePPTX step's `templateFile` names, looking where
- * the reactor does: the insight folder first, then the project assets.
+ * Locates the file a TemplatePPTX step's `templateFile` names: the visible
+ * run's files first, as a run reads its own workspace first, then the project
+ * assets.
  *
  * @param appId - The automation's project.
- * @param insightId - The insight whose folder is searched.
+ * @param runInsightId - The insight of the run whose files are shown, if any.
  * @param templateFile - The step's template path, relative to either folder.
- * @return The matching template, or null when none is found or a search fails.
+ * @return The matching template, or null when none is found or a search fails,
+ * for instance because the run's workspace has closed.
  */
 export async function findPptxTemplateFile(
 	appId: string,
-	insightId: string | undefined,
+	runInsightId: string | undefined,
 	templateFile: string,
 ): Promise<PptxTemplateFile | null> {
 	const wanted = templateFile.replace(/\\/g, "/").replace(/^\/+/, "");
 	if (!wanted.toLowerCase().endsWith(".pptx")) return null;
 
-	const searches: Array<[PptxTemplateSource, string]> = [
-		["insight", 'SearchInsightAssets(filePath=["/"], search=[".pptx"]);'],
-	];
+	const searches: Array<[PptxTemplateSource, string, string | undefined]> =
+		[];
+	if (runInsightId) {
+		searches.push([
+			"run",
+			'SearchInsightAssets(filePath=["/"], search=[".pptx"]);',
+			runInsightId,
+		]);
+	}
 	if (appId) {
 		searches.push([
 			"project",
 			`SearchAppAssets(filePath=["/"], project=${JSON.stringify([appId])}, search=[".pptx"]);`,
+			undefined,
 		]);
 	}
 
-	for (const [source, pixel] of searches) {
+	for (const [source, pixel, insightId] of searches) {
 		const response = await runPixel<[unknown]>(pixel, insightId);
 		if (response.errors.length > 0) continue;
 		const match = toPptxTemplateFiles(
@@ -96,27 +105,31 @@ export async function findPptxTemplateFile(
 }
 
 /**
- * Finds the .pptx templates the TemplatePPTX reactor can read: those in the
- * automation's project assets and in the current insight's folder.
+ * Finds the .pptx templates a step can use: those in the automation's project
+ * assets and in the files of the run being shown.
  *
- * @param appId - The automation's project. Without it only the insight is searched.
+ * @param appId - The automation's project. Without it only the run is searched.
+ * @param runInsightId - The insight of the run whose files are shown. Without it
+ * no run files are searched.
  * @param enabled - Searches run only while true, so a closed picker costs nothing.
  * @return The templates and request state of each folder.
  */
 export function usePptxTemplateFiles(
 	appId: string,
+	runInsightId: string | undefined,
 	enabled: boolean,
 ): PptxTemplateFiles {
 	const projectPixel =
 		enabled && appId
 			? `SearchAppAssets(filePath=["/"], project=${JSON.stringify([appId])}, search=[".pptx"]);`
 			: "";
-	const insightPixel = enabled
-		? 'SearchInsightAssets(filePath=["/"], search=[".pptx"]);'
-		: "";
+	const runSearchPixel =
+		enabled && runInsightId
+			? 'SearchInsightAssets(filePath=["/"], search=[".pptx"]);'
+			: "";
 
 	const project = usePixel<unknown>(projectPixel);
-	const insight = usePixel<unknown>(insightPixel);
+	const run = usePixel<unknown>(runSearchPixel, undefined, runInsightId);
 
 	return {
 		project: {
@@ -124,10 +137,10 @@ export function usePptxTemplateFiles(
 			isLoading: project.status === "LOADING",
 			error: project.error,
 		},
-		insight: {
-			files: toPptxTemplateFiles(insight.data, "insight"),
-			isLoading: insight.status === "LOADING",
-			error: insight.error,
+		run: {
+			files: toPptxTemplateFiles(run.data, "run"),
+			isLoading: run.status === "LOADING",
+			error: run.error,
 		},
 	};
 }

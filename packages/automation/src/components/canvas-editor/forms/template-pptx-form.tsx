@@ -251,7 +251,8 @@ export function TemplatePptxForm({
 	appId = "",
 	readOnly = false,
 }: TemplatePptxFormProps) {
-	const { shapeSelection, onPickShapes } = useContext(PptxPickContext);
+	const { shapeSelection, onPickShapes, runInsightId } =
+		useContext(PptxPickContext);
 	const [pickMode, setPickMode] = useState(false);
 	const pickModeRef = useRef(pickMode);
 	pickModeRef.current = pickMode;
@@ -340,6 +341,7 @@ export function TemplatePptxForm({
 			<PptxTemplateSelect
 				value={config.templateFile}
 				appId={appId}
+				runInsightId={runInsightId}
 				onChange={(templateFile) =>
 					onChange({ ...config, templateFile })
 				}

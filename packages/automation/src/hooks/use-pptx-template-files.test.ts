@@ -17,16 +17,16 @@ const searchResult = (...paths: string[]) => ({
 describe("findPptxTemplateFile", () => {
 	beforeEach(() => runPixel.mockReset());
 
-	it("prefers the insight folder over the project assets", async () => {
+	it("prefers the run's files over the project assets", async () => {
 		runPixel.mockResolvedValueOnce(searchResult("decks/a.pptx"));
 
 		await expect(
-			findPptxTemplateFile("app-1", "insight-1", "decks/a.pptx"),
-		).resolves.toMatchObject({ path: "decks/a.pptx", source: "insight" });
+			findPptxTemplateFile("app-1", "run-insight", "decks/a.pptx"),
+		).resolves.toMatchObject({ path: "decks/a.pptx", source: "run" });
 		expect(runPixel).toHaveBeenCalledTimes(1);
 		expect(runPixel).toHaveBeenCalledWith(
 			expect.stringContaining("SearchInsightAssets"),
-			"insight-1",
+			"run-insight",
 		);
 	});
 
@@ -35,20 +35,43 @@ describe("findPptxTemplateFile", () => {
 			.mockResolvedValueOnce(searchResult("other.pptx"))
 			.mockResolvedValueOnce(searchResult("a.pptx"));
 		await expect(
-			findPptxTemplateFile("app-1", "insight-1", "/a.pptx"),
+			findPptxTemplateFile("app-1", "run-insight", "/a.pptx"),
 		).resolves.toMatchObject({ source: "project" });
+		expect(runPixel).toHaveBeenLastCalledWith(
+			expect.stringContaining("SearchAppAssets"),
+			undefined,
+		);
 
 		runPixel.mockResolvedValue(searchResult());
 		await expect(
-			findPptxTemplateFile("app-1", "insight-1", "missing.pptx"),
+			findPptxTemplateFile("app-1", "run-insight", "missing.pptx"),
 		).resolves.toBeNull();
+	});
+
+	it("uses the project assets when the run's workspace has closed", async () => {
+		runPixel
+			.mockResolvedValueOnce({ errors: ["Insight not found"] })
+			.mockResolvedValueOnce(searchResult("a.pptx"));
+
+		await expect(
+			findPptxTemplateFile("app-1", "run-insight", "a.pptx"),
+		).resolves.toMatchObject({ source: "project" });
+	});
+
+	it("searches only the project assets when no run is open", async () => {
+		runPixel.mockResolvedValueOnce(searchResult("a.pptx"));
+
+		await expect(
+			findPptxTemplateFile("app-1", undefined, "a.pptx"),
+		).resolves.toMatchObject({ source: "project" });
+		expect(runPixel).toHaveBeenCalledTimes(1);
 	});
 
 	it("does not search for a variable reference", async () => {
 		await expect(
 			findPptxTemplateFile(
 				"app-1",
-				"insight-1",
+				"run-insight",
 				["$", "{deck}"].join(""),
 			),
 		).resolves.toBeNull();
@@ -72,8 +95,8 @@ describe("toPptxTemplateFiles", () => {
 	});
 
 	it("returns nothing for output that is not a list of entries", () => {
-		expect(toPptxTemplateFiles(undefined, "insight")).toEqual([]);
-		expect(toPptxTemplateFiles("error", "insight")).toEqual([]);
-		expect(toPptxTemplateFiles([null, 3], "insight")).toEqual([]);
+		expect(toPptxTemplateFiles(undefined, "run")).toEqual([]);
+		expect(toPptxTemplateFiles("error", "run")).toEqual([]);
+		expect(toPptxTemplateFiles([null, 3], "run")).toEqual([]);
 	});
 });

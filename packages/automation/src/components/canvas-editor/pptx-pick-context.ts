@@ -16,6 +16,9 @@ interface PptxPickContextValue {
 	/** Called when pick mode turns on, so a host that can show the template opens it for
 	 *  shape selection. Absent when the host has no PPTX panel. */
 	onPickShapes?: (templateFile: string) => void;
+	/** The insight of the run whose persisted files are shown, searched for templates
+	 *  alongside the project assets. Absent when no run is open. */
+	runInsightId?: string;
 }
 
 /** Links the TemplatePPTX form to the host's PPTX panel. Without a provider the form

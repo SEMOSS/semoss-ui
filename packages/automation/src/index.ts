@@ -43,6 +43,7 @@ export type {
 	AutomationInspectorSnapshot,
 } from "./domain/automation-inspector";
 export { downloadN8nExport } from "./domain/automation-to-n8n-adapter";
+export { getVisibleRun } from "./domain/automation-visible-run";
 export type {
 	AutomationNodeGroup,
 	AutomationWorkflowDocument,

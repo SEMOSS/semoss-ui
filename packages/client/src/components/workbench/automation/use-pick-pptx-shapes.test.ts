@@ -22,11 +22,11 @@ const layout = {
 	collapseBorder: vi.fn(),
 } satisfies PickPptxShapesLayout;
 
-const pickShapes = (insightId: string | null = "insight-1") =>
+const pickShapes = (runInsightId?: string) =>
 	renderHook(() =>
 		usePickPptxShapes({
 			appId: "app-1",
-			insightId: insightId ?? undefined,
+			runInsightId,
 			inspectorPanelType: INSPECTOR,
 			layout,
 		}),
@@ -35,25 +35,25 @@ const pickShapes = (insightId: string | null = "insight-1") =>
 describe("usePickPptxShapes", () => {
 	beforeEach(() => vi.clearAllMocks());
 
-	it("opens an insight template, collapses the other borders, then shows the inspector", async () => {
+	it("opens a run's template in the run's insight, collapses the other borders, then shows the inspector", async () => {
 		vi.mocked(findPptxTemplateFile).mockResolvedValue({
 			name: "a.pptx",
 			path: "decks/a.pptx",
-			source: "insight",
+			source: "run",
 		});
 
-		await pickShapes()("decks/a.pptx");
+		await pickShapes("run-insight")("decks/a.pptx");
 
 		expect(findPptxTemplateFile).toHaveBeenCalledWith(
 			"app-1",
-			"insight-1",
+			"run-insight",
 			"decks/a.pptx",
 		);
 		expect(layout.selectPanel).toHaveBeenNthCalledWith(
 			1,
 			PPTX_VIEWER,
 			{
-				mode: { type: "INSIGHT", insightId: "insight-1" },
+				mode: { type: "INSIGHT", insightId: "run-insight" },
 				name: "a.pptx",
 				path: "/decks/a.pptx",
 			},
@@ -67,14 +67,14 @@ describe("usePickPptxShapes", () => {
 		expect(toast.error).not.toHaveBeenCalled();
 	});
 
-	it("opens a project template in the project's scope", async () => {
+	it("opens a project template in the project's scope even while a run is shown", async () => {
 		vi.mocked(findPptxTemplateFile).mockResolvedValue({
 			name: "a.pptx",
 			path: "a.pptx",
 			source: "project",
 		});
 
-		await pickShapes()("a.pptx");
+		await pickShapes("run-insight")("a.pptx");
 
 		expect(layout.selectPanel).toHaveBeenNthCalledWith(
 			1,
@@ -85,23 +85,6 @@ describe("usePickPptxShapes", () => {
 				path: "/a.pptx",
 			},
 			{ name: "a.pptx" },
-		);
-	});
-
-	it("falls back to the project scope when an insight template has no insight id", async () => {
-		vi.mocked(findPptxTemplateFile).mockResolvedValue({
-			name: "a.pptx",
-			path: "a.pptx",
-			source: "insight",
-		});
-
-		await pickShapes(null)("a.pptx");
-
-		expect(layout.selectPanel).toHaveBeenNthCalledWith(
-			1,
-			PPTX_VIEWER,
-			expect.objectContaining({ mode: { type: "APP", app: "app-1" } }),
-			expect.anything(),
 		);
 	});
 

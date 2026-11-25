@@ -21,18 +21,20 @@ import {
 } from "../../../hooks/use-pptx-template-files";
 
 interface PptxTemplateSelectProps {
-	/** The selected template path, relative to the insight folder or project assets */
+	/** The selected template path, relative to the run's files or project assets */
 	value: string;
 	/** Called with the chosen template path */
 	onChange: (path: string) => void;
-	/** The automation's project, whose assets are searched alongside the insight folder */
+	/** The automation's project, whose assets are searched */
 	appId: string;
+	/** The insight of the run whose files are searched alongside the project assets */
+	runInsightId?: string;
 	disabled?: boolean;
 }
 
 const GROUP_HEADINGS = {
 	project: "Project Assets",
-	insight: "Insight Files",
+	run: "Run Files",
 } as const;
 
 /** Keeps the files whose name or path contains the search text. */
@@ -44,30 +46,32 @@ function matchFiles(files: PptxTemplateFile[], search: string) {
 
 /**
  * Searchable picker for the .pptx template of a TemplatePPTX step. Lists the
- * templates in the project assets and in the current insight folder; a path
+ * templates in the project assets and in the files of the run being shown; a path
  * or `${variable}` that is not listed can still be typed and used.
  */
 export function PptxTemplateSelect({
 	value,
 	onChange,
 	appId,
+	runInsightId,
 	disabled,
 }: PptxTemplateSelectProps) {
 	const [open, setOpen] = useState(false);
 	const [search, setSearch] = useState("");
 	const triggerId = useId();
-	const templates = usePptxTemplateFiles(appId, open);
+	const templates = usePptxTemplateFiles(appId, runInsightId, open);
 
 	const typed = search.trim();
-	const groups = (["project", "insight"] as const)
+	const groups = (["run", "project"] as const)
 		.map((source) => ({
 			source,
 			state: templates[source],
 			files: matchFiles(templates[source].files, search),
 		}))
-		.filter(
-			({ source, state }) =>
-				source === "insight" || Boolean(appId) || state.error,
+		.filter(({ source, state }) =>
+			source === "run"
+				? Boolean(runInsightId) || state.error
+				: Boolean(appId) || state.error,
 		);
 	const isLoading = groups.some(({ state }) => state.isLoading);
 	const hasMatch = groups.some(({ files }) =>
@@ -193,8 +197,8 @@ export function PptxTemplateSelect({
 				</PopoverContent>
 			</Popover>
 			<FieldDescription>
-				A .pptx file in the project assets or the current insight
-				folder. Type a path or {"$"}
+				A .pptx file in the project assets or in the files of the
+				selected run. Type a path or {"$"}
 				{"{variable}"} to use one that is not listed.
 			</FieldDescription>
 		</Field>

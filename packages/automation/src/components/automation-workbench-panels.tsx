@@ -5,6 +5,7 @@ import type {
 	AutomationRunSummary,
 } from "../domain/automation.types";
 import type { AutomationInspectorSnapshot } from "../domain/automation-inspector";
+import { getVisibleRun } from "../domain/automation-visible-run";
 import type { N8nImportConversionModel } from "../domain/n8n-import-adapter";
 import type { AutomationCanvasHandle } from "./canvas-editor/automation-canvas";
 import { AutomationCanvas } from "./canvas-editor/automation-canvas-loader";
@@ -90,9 +91,16 @@ export const AutomationInspectorPanel = () => {
 	const context = useAutomationWorkbenchContext();
 	const snapshot = context.inspectorSnapshot;
 	const { pptxShapeSelection, onPickShapes } = context;
+	const runInsightId =
+		getVisibleRun(context.traceSnapshot, context.selectedRun)
+			?.executionInsightId ?? undefined;
 	const pptxPick = useMemo(
-		() => ({ shapeSelection: pptxShapeSelection, onPickShapes }),
-		[pptxShapeSelection, onPickShapes],
+		() => ({
+			shapeSelection: pptxShapeSelection,
+			onPickShapes,
+			runInsightId,
+		}),
+		[pptxShapeSelection, onPickShapes, runInsightId],
 	);
 	return (
 		<PptxPickContext.Provider value={pptxPick}>
