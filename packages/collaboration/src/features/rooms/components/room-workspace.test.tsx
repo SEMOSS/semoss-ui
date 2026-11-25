@@ -6,6 +6,8 @@ import {
 	waitFor,
 } from "@testing-library/react";
 import type { ComponentProps } from "react";
+import { FILE_PANEL_TYPES } from "@semoss/panels";
+import { Env } from "@semoss/sdk/react";
 import { createWorkbenchStore } from "@semoss/workbench";
 import type { AgentConfiguration } from "@/features/agents/types/agent";
 import { CollaborationHeaderLayoutContext } from "@/features/collaboration/components/collaboration-header.context";
@@ -15,9 +17,17 @@ import {
 	useCollaborationSession,
 } from "@/features/collaboration/state/collaboration-session.context";
 import type { ConversationMessage } from "@/features/messages/types/message";
+import {
+	CALENDAR_BROWSER_PANEL,
+	EMAIL_BROWSER_PANEL,
+	ONEDRIVE_BROWSER_PANEL,
+	ROOM_TASK_PANEL_TYPE,
+} from "@/features/room-connectors/room-connectors.constants";
 import type { Session } from "@/types/session";
 import { showFileOnOpen } from "../room-file-to-show";
 import { RoomSession } from "../room-session";
+import { roomWorkbenchTriggerId } from "../room-workbench-trigger-id";
+import { roomDockStorageKey } from "../use-room-dock-preference";
 import { RoomWorkspace } from "./room-workspace";
 
 // what the mocked composer sends
@@ -47,6 +57,7 @@ const workbenchState = vi.hoisted(() => ({
 	openWorkbench: vi.fn(),
 	closeWorkbench: vi.fn(),
 	selectPanel: vi.fn(),
+	activatePanel: vi.fn(),
 	updatePanel: vi.fn(),
 	openFile: vi.fn(),
 	returnToBrowser: vi.fn(),
@@ -72,6 +83,7 @@ vi.mock("@/features/tools/tool-workbench.context", () => ({
 					...layoutStore.getState().layout,
 					actions: {
 						selectPanel: workbenchState.selectPanel,
+						activatePanel: workbenchState.activatePanel,
 						updatePanel: workbenchState.updatePanel,
 						resizeBorder:
 							layoutStore.getState().layout.actions.resizeBorder,
@@ -934,5 +946,294 @@ describe("who the room is with", () => {
 		await act(async () => undefined);
 		expect(insight.actions.run).not.toHaveBeenCalled();
 		owner.dispose();
+	});
+});
+
+/** Loads the dock's rail: Files, Emails, Calendar, OneDrive opened on demand, and the task for a work item chat. */
+function loadRail({
+	task = false,
+	activeId = null,
+}: {
+	task?: boolean;
+	activeId?: string | null;
+} = {}) {
+	const rail = [
+		...(task ? [ROOM_TASK_PANEL_TYPE] : []),
+		FILE_PANEL_TYPES.FILE_EXPLORER,
+		EMAIL_BROWSER_PANEL,
+		CALENDAR_BROWSER_PANEL,
+		ONEDRIVE_BROWSER_PANEL,
+	];
+	layoutStore.getState().layout.actions.loadSnapshot({
+		tree: {
+			type: "tabset",
+			id: "main",
+			size: 1,
+			panelIds: ["preview"],
+			activeId: "preview",
+			enableDeleteWhenEmpty: false,
+		},
+		panels: {
+			preview: { id: "preview", type: "preview", name: "Preview" },
+			...Object.fromEntries(
+				rail.map((id) => [id, { id, type: id, name: id }]),
+			),
+		},
+		borders: { left: { panelIds: rail, activeId, size: 300 } },
+	});
+}
+
+describe("RoomWorkspace drawer memory per chat", () => {
+	const owner = createInitialCollaborationState().profile.email;
+	const deployment = `${window.location.origin}${Env.MODULE}${window.location.pathname}`;
+	const keyOf = (roomId: string) =>
+		roomDockStorageKey(owner, deployment, roomId);
+	const storageKey = keyOf(session.id);
+	const activeKey = `${storageKey}:activeTab`;
+	const leftRail = { kind: "border", id: "left" };
+
+	/** The room as the given chat. */
+	function chat(roomId: string = session.id) {
+		return (
+			<CollaborationSessionProvider
+				initialState={createInitialCollaborationState()}
+			>
+				<RoomWorkspace
+					{...defaultProps}
+					session={{ ...session, id: roomId }}
+				/>
+			</CollaborationSessionProvider>
+		);
+	}
+
+	beforeEach(() => {
+		localStorage.clear();
+		loadRail();
+		workbenchState.isOpen = false;
+		workbenchState.openWorkbench.mockClear();
+		workbenchState.closeWorkbench.mockClear();
+		workbenchState.selectPanel.mockClear();
+		workbenchState.activatePanel.mockClear();
+	});
+
+	afterEach(() => {
+		workbenchState.isOpen = true;
+	});
+
+	it("reopens the drawer the owner left open in this chat, once", () => {
+		localStorage.setItem(storageKey, "true");
+		const { rerender } = render(chat());
+		expect(workbenchState.openWorkbench).toHaveBeenCalledExactlyOnceWith(
+			undefined,
+			roomWorkbenchTriggerId(session.id),
+		);
+
+		rerender(chat());
+		rerender(chat());
+		expect(workbenchState.openWorkbench).toHaveBeenCalledTimes(1);
+	});
+
+	it.each([
+		["Files", FILE_PANEL_TYPES.FILE_EXPLORER],
+		["Emails", EMAIL_BROWSER_PANEL],
+		["Calendar", CALENDAR_BROWSER_PANEL],
+		["Task", ROOM_TASK_PANEL_TYPE],
+	])(
+		"brings the %s tab back before opening the drawer, so the owner sees it and not just the rail",
+		(_name, tab) => {
+			localStorage.setItem(storageKey, "true");
+			localStorage.setItem(activeKey, tab);
+			loadRail({ task: tab === ROOM_TASK_PANEL_TYPE });
+			render(chat());
+			expect(
+				workbenchState.activatePanel,
+			).toHaveBeenCalledExactlyOnceWith(leftRail, tab);
+			expect(workbenchState.openWorkbench).toHaveBeenCalledTimes(1);
+			expect(
+				workbenchState.activatePanel.mock.invocationCallOrder[0],
+			).toBeLessThan(
+				workbenchState.openWorkbench.mock.invocationCallOrder[0],
+			);
+			// never by creating a tab: the one in the rail is shown
+			expect(workbenchState.selectPanel).not.toHaveBeenCalled();
+		},
+	);
+
+	it("only opens when the saved tab is not in the rail now, such as the task of a finished work item", () => {
+		localStorage.setItem(storageKey, "true");
+		localStorage.setItem(activeKey, ROOM_TASK_PANEL_TYPE);
+		render(chat());
+		expect(workbenchState.openWorkbench).toHaveBeenCalledTimes(1);
+		expect(workbenchState.activatePanel).not.toHaveBeenCalled();
+	});
+
+	it("reopens a drawer left on its bare tab rail the same way, with no tab selected", () => {
+		localStorage.setItem(storageKey, "true");
+		render(chat());
+		expect(workbenchState.openWorkbench).toHaveBeenCalledTimes(1);
+		expect(workbenchState.activatePanel).not.toHaveBeenCalled();
+		expect(workbenchState.selectPanel).not.toHaveBeenCalled();
+	});
+
+	it("does not bring back a saved tab it does not know, or one opened on demand", () => {
+		for (const saved of [ONEDRIVE_BROWSER_PANEL, "not-a-tab"]) {
+			localStorage.setItem(storageKey, "true");
+			localStorage.setItem(activeKey, saved);
+			const { unmount } = render(chat());
+			expect(workbenchState.activatePanel).not.toHaveBeenCalled();
+			expect(workbenchState.openWorkbench).toHaveBeenCalledTimes(1);
+			unmount();
+			workbenchState.openWorkbench.mockClear();
+		}
+	});
+
+	it("remembers which of the rail's tabs is showing in a drawer the owner left open", () => {
+		localStorage.setItem(storageKey, "true");
+		workbenchState.isOpen = true;
+		loadRail({ task: true, activeId: FILE_PANEL_TYPES.FILE_EXPLORER });
+		render(chat());
+		expect(localStorage.getItem(activeKey)).toBe(
+			FILE_PANEL_TYPES.FILE_EXPLORER,
+		);
+
+		for (const tab of [
+			FILE_PANEL_TYPES.FILE_EXPLORER,
+			EMAIL_BROWSER_PANEL,
+			CALENDAR_BROWSER_PANEL,
+			ROOM_TASK_PANEL_TYPE,
+		]) {
+			act(() => loadRail({ task: true, activeId: tab }));
+			expect(localStorage.getItem(activeKey)).toBe(tab);
+		}
+
+		// a tab opened on demand, and the bare tab rail, count as none
+		act(() => loadRail({ activeId: ONEDRIVE_BROWSER_PANEL }));
+		expect(localStorage.getItem(activeKey)).toBeNull();
+		act(() => loadRail({ activeId: EMAIL_BROWSER_PANEL }));
+		expect(localStorage.getItem(activeKey)).toBe(EMAIL_BROWSER_PANEL);
+		act(() => loadRail({ activeId: null }));
+		expect(localStorage.getItem(activeKey)).toBeNull();
+	});
+
+	it("remembers no tab for a drawer that is closed, or that opened by itself and was not left open by the owner", () => {
+		loadRail({ activeId: EMAIL_BROWSER_PANEL });
+		const closed = render(chat());
+		expect(localStorage.length).toBe(0);
+		closed.unmount();
+
+		// opened by itself, as for a file or a tool
+		workbenchState.isOpen = true;
+		const byItself = render(chat());
+		act(() => loadRail({ activeId: FILE_PANEL_TYPES.FILE_EXPLORER }));
+		expect(localStorage.length).toBe(0);
+		byItself.unmount();
+	});
+
+	it("selects no tab when the owner opens the drawer by hand, as before", () => {
+		render(chat());
+		fireEvent.click(
+			screen.getByRole("button", { name: "Toggle workbench" }),
+		);
+		expect(workbenchState.openWorkbench).toHaveBeenCalledTimes(1);
+		expect(workbenchState.activatePanel).not.toHaveBeenCalled();
+		expect(workbenchState.selectPanel).not.toHaveBeenCalled();
+	});
+
+	it("stays closed when nothing was saved, or when the owner left it closed", () => {
+		const { unmount } = render(chat());
+		expect(workbenchState.openWorkbench).not.toHaveBeenCalled();
+		unmount();
+
+		localStorage.setItem(storageKey, "false");
+		localStorage.setItem(activeKey, EMAIL_BROWSER_PANEL);
+		render(chat());
+		expect(workbenchState.openWorkbench).not.toHaveBeenCalled();
+		expect(workbenchState.activatePanel).not.toHaveBeenCalled();
+	});
+
+	it("remembers each chat on its own: a drawer left open in one chat does not open another", () => {
+		localStorage.setItem(keyOf("room-one"), "true");
+		localStorage.setItem(
+			`${keyOf("room-one")}:activeTab`,
+			EMAIL_BROWSER_PANEL,
+		);
+
+		const other = render(chat("room-two"));
+		expect(workbenchState.openWorkbench).not.toHaveBeenCalled();
+		expect(workbenchState.activatePanel).not.toHaveBeenCalled();
+		other.unmount();
+
+		render(chat("room-one"));
+		expect(workbenchState.openWorkbench).toHaveBeenCalledTimes(1);
+		expect(workbenchState.activatePanel).toHaveBeenCalledExactlyOnceWith(
+			leftRail,
+			EMAIL_BROWSER_PANEL,
+		);
+	});
+
+	it("does not reopen on a phone, where the dock covers the chat", () => {
+		localStorage.setItem(storageKey, "true");
+		localStorage.setItem(activeKey, EMAIL_BROWSER_PANEL);
+		const width = window.innerWidth;
+		window.innerWidth = 500;
+		try {
+			render(chat());
+			expect(workbenchState.openWorkbench).not.toHaveBeenCalled();
+			expect(workbenchState.activatePanel).not.toHaveBeenCalled();
+		} finally {
+			window.innerWidth = width;
+		}
+	});
+
+	it("leaves an already open drawer as it is", () => {
+		localStorage.setItem(storageKey, "true");
+		localStorage.setItem(activeKey, EMAIL_BROWSER_PANEL);
+		workbenchState.isOpen = true;
+		render(chat());
+		expect(workbenchState.openWorkbench).not.toHaveBeenCalled();
+		expect(workbenchState.closeWorkbench).not.toHaveBeenCalled();
+		expect(workbenchState.activatePanel).not.toHaveBeenCalled();
+	});
+
+	it("saves an open drawer when the owner opens it with the header toggle", () => {
+		render(chat());
+		fireEvent.click(
+			screen.getByRole("button", { name: "Toggle workbench" }),
+		);
+		expect(workbenchState.openWorkbench).toHaveBeenCalledTimes(1);
+		expect(localStorage.getItem(storageKey)).toBe("true");
+	});
+
+	it("forgets the drawer, and its tab, when it closes from any path", () => {
+		localStorage.setItem(storageKey, "true");
+		localStorage.setItem(activeKey, EMAIL_BROWSER_PANEL);
+		workbenchState.isOpen = true;
+		const { rerender } = render(chat());
+		expect(localStorage.getItem(storageKey)).toBe("true");
+
+		// the dock's own Back to conversation button closes it without the header toggle
+		workbenchState.isOpen = false;
+		rerender(chat());
+		expect(localStorage.getItem(storageKey)).toBeNull();
+		expect(localStorage.getItem(activeKey)).toBeNull();
+	});
+
+	it("still closes through the header toggle exactly as before", () => {
+		workbenchState.isOpen = true;
+		render(chat());
+		fireEvent.click(
+			screen.getByRole("button", { name: "Toggle workbench" }),
+		);
+		expect(workbenchState.closeWorkbench).toHaveBeenCalledTimes(1);
+		expect(workbenchState.openWorkbench).not.toHaveBeenCalled();
+	});
+
+	it("saves nothing for a drawer that opens and closes by itself", () => {
+		const { rerender } = render(chat());
+		workbenchState.isOpen = true;
+		rerender(chat());
+		workbenchState.isOpen = false;
+		rerender(chat());
+		expect(localStorage.length).toBe(0);
 	});
 });
