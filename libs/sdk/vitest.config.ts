@@ -9,7 +9,7 @@ export default createViteConfig({
 		pool: "forks",
 		coverage: {
 			reportsDirectory: "./coverage",
-			include: ["src/**"],
+			include: ["src/**/*.{ts,tsx}"],
 		},
 	},
 });

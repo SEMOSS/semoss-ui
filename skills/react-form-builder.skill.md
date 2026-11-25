@@ -152,6 +152,10 @@ export const CreateItemForm = ({ onCreate, onSubmit }: CreateItemFormProps) => {
 - `FormInput type="number"` still receives input strings; it does not set `valueAsNumber`.
     Decide how empty, invalid, zero, and optional numbers map to the schema and API. Do not
     silently coerce an empty optional input to zero.
+- Zod can reject an oversized collection at a leading upper-size check before parsing its
+    items or running later refinements. Show container-level limit errors rather than relying
+    on every item error being returned. Test the exact limit and one item over it, including
+    an oversized collection with invalid items.
 
 ## Fetching Data and Edit Resets
 
@@ -296,7 +300,9 @@ Run the narrow existing checks for the changed behavior, following the owning pa
 [React handoff](./react-standard.skill.md#full-file-review-and-handoff). Cover applicable cases:
 invalid input, successful write, rejected write retaining values/error state, retry, duplicate
 submit prevention, delayed record arrival, dirty refresh, record switch/reopen, and modal
-dismissal/focus return. Test number conversions when present. Verify labels, error associations,
+dismissal/focus return. RHF schedules `setFocus` asynchronously: await the intended control
+receiving focus in interaction tests rather than asserting synchronously after a field-array
+edit. Keep the focus-target assertions. Test number conversions when present. Verify labels, error associations,
 and pending announcements with the accessibility skill. A missing wrapper association is a
 failed check: use supported props or fix the shared primitive within scope, otherwise report
 the accessibility blocker. Do not mark it passed or bypass an existing wrapper solely to

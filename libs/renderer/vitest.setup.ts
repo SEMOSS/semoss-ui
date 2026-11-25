@@ -1,5 +1,5 @@
 import { vi } from "vitest";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 
 // Mock monaco-editor to avoid complex ESM and worker issues in tests
 vi.mock("monaco-editor", () => ({

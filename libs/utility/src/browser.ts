@@ -9,6 +9,29 @@ export const safeHttpsUrl = (value: string | undefined): string | undefined => {
 	}
 };
 
+/**
+ * Remove legacy HTML comment markers from style-element text in an inert
+ * document. This is preprocessing only; sanitize the result before rendering.
+ *
+ * @param html - An HTML fragment or document.
+ * @returns The normalized document, or the original input when it has no comment
+ * markers or style elements.
+ */
+export const uncommentHtmlStyles = (html: string): string => {
+	if (!html.includes("<!--")) {
+		return html;
+	}
+	const doc = new DOMParser().parseFromString(html, "text/html");
+	const styles = doc.querySelectorAll("style");
+	if (styles.length === 0) {
+		return html;
+	}
+	for (const style of styles) {
+		style.textContent = (style.textContent ?? "").replace(/<!--|-->/g, "");
+	}
+	return doc.documentElement.outerHTML;
+};
+
 /** Replace favicon links; browser globals are accessed only when called. */
 export const setFavicon = (href: string) => {
 	// Remove existing icon links

@@ -196,6 +196,42 @@ They take plain values, never a chat's own stores. Their words are in the `trans
 namespace, which every host that shows them loads. Each chat reads its stream with the SDK's
 `readPixelStreamChunk`, so the parts these show come from chunks read the same way.
 
+### HTML previews (`components/html/`)
+
+`HtmlPreview` renders browser-native HTML, CSS, and JavaScript in a `srcDoc` iframe.
+Its sandbox allows scripts but not same-origin access, forms, popups, downloads,
+or top navigation. Never add `allow-same-origin` to make a preview work. Scripts
+can still use the network and CPU; this is not a network sandbox or a guarantee
+of safe execution of hostile code. There is no JSX/TypeScript compiler, npm
+resolver, or virtual filesystem.
+
+`className` and `style` size the viewport; `forceFullHeight` fills a bounded parent.
+The iframe uses the browser's light `Canvas` backdrop rather than a host theme
+color, so unstyled HTML keeps readable native defaults even in a dark host.
+The document's own backgrounds and styles still render normally.
+`providerClassName` still styles the wrapper, and `SandpackHtmlPreview` is retained
+as a compatibility export only. There is no Sandpack dependency, service, or
+Refresh/New Tab toolbar. The hosts keep their own raw, copy, save, and popout
+actions.
+
+`html-preview-document.ts` adds a readiness/error bridge before the author's
+scripts. The parent accepts only messages from its own iframe, with an opaque
+origin and the current document identity; it sends no application data into the
+frame. Errors appear as text with existing `common` labels. A load event alone
+does not establish successful execution; initialization times out after ten
+seconds, and late readiness clears that timeout. Diagnostics are best effort:
+external script details may be redacted and preview scripts can interfere with
+their own bridge.
+
+An explicit document base is retained; otherwise `about:srcdoc` prevents relative
+assets from implicitly resolving against SEMOSS. External resources remain
+subject to CORS and the deployment's CSP. Do not weaken CSP or bypass Trusted
+Types to enable previews. Changing HTML replaces the document and may reset its
+scrolling and JavaScript state; there is no storage-based scroll restoration.
+The playground separately throttles complete streaming chunks to 120 ms and
+shows the final source immediately. Copied and saved source never includes the
+preview bridge.
+
 ### Engine pickers (`components/engine/`)
 
 `EngineSelect` is the one engine picker. It reads its own pages of `MyEngines`, or of
