@@ -15,12 +15,13 @@
     "test:watch": "turbo run test:watch",
     "check": "biome check",
     "fix": "biome check --write",
+    "grit": "biome search",
     "clean": "knip"
   },
   "author": "",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@biomejs/biome": "2.2.0",
+    "@biomejs/biome": "2.6.9",
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
     "@types/jest": "^29.5.14",
