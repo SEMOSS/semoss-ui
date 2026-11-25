@@ -18,7 +18,7 @@ export default createViteConfig({
 		environment: "node",
 		coverage: {
 			reportsDirectory: "./coverage/packages/automation",
-			include: ["src/domain/**"],
+			include: ["src/domain/**/*.{ts,tsx}"],
 		},
 	},
 });

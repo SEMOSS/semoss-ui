@@ -11,6 +11,18 @@
 
 3. Create a dev build by running `pnpm run build:dev` or launching the dev-server by running `pnpm run dev`. See `package.json` for additional commands.
 
+## Build and test tooling
+
+Keep Vite and Vitest versions aligned across the workspace package manifests.
+Upgrade `vitest`, `@vitest/coverage-v8`, and `@vitest/ui` together.
+
+Vitest clears mock call history before each test without resetting mock
+implementations. Make calls asserted by a test inside that test or in
+`beforeEach`, rather than in `beforeAll` or at module scope.
+
+To open Vitest UI, run `pnpm --filter @semoss/client test:ui` and use the full
+URL printed by Vitest, including its authentication token.
+
 # Contributions and Standardized Commits 
 
 ## Overview
