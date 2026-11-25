@@ -20,6 +20,7 @@ import {
 	zodResolver,
 } from "@semoss/ui/next";
 import { useAppFrame } from "./app-frame-registry";
+import { AppTestChangesPanel } from "./app-test-changes-panel";
 import { AppTestDatabasePanel } from "./app-test-database-panel";
 import { AppTestFiles } from "./app-test-files";
 import { useAppTesting } from "./use-app-testing";
@@ -105,6 +106,16 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 			aria-label="App recording and tests"
 			className="h-full min-w-0 overflow-y-auto bg-background p-3"
 		>
+			<AppTestChangesPanel
+				key={`changes:${appId}`}
+				appId={appId}
+				isBusy={
+					state.isRunning ||
+					state.isSaving ||
+					state.isRecording ||
+					hasDraft
+				}
+			/>
 			<AppTestDatabasePanel
 				key={appId}
 				appId={appId}

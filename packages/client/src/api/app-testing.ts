@@ -581,3 +581,70 @@ export const closeAppTestDatabase = async (
 		),
 	);
 };
+
+const appChangeSchema = z.object({
+	target: z.string(),
+	configuration: z.object({
+		enabled: z.boolean(),
+		baseBranch: z.string(),
+		buildCommand: z.string(),
+	}),
+	isActive: z.boolean(),
+	change: z.object({
+		id: z.string().optional(),
+		branch: z.string().optional(),
+		baseBranch: z.string().optional(),
+		status: z.string().optional(),
+		reason: z.string().optional(),
+		candidateCommit: z.string().optional(),
+		runId: z.string().optional(),
+		updatedAt: z.string().optional(),
+		summary: z.record(z.string(), z.number()).optional(),
+	}),
+});
+
+/** Validate workflow status without exposing the private checkout or build log. */
+export const parseAppChanges = (
+	appId: string,
+	value: unknown,
+): z.infer<typeof appChangeSchema> => {
+	const result = appChangeSchema.parse(value);
+	if (result.target !== appId)
+		throw new Error("The app change target changed");
+	return result;
+};
+
+/** Configure the backend-owned branch/build/test/merge workflow for future app chat turns. */
+export const saveAppChanges = async (
+	appId: string,
+	configuration: z.infer<typeof appChangeSchema>["configuration"],
+): Promise<z.infer<typeof appChangeSchema>> =>
+	parseAppChanges(
+		appId,
+		await callAppTestPixel(
+			`ManageAppTestChanges(project=${JSON.stringify([appId])}, action=["save"], configuration=${JSON.stringify([configuration])});`,
+		),
+	);
+
+/** Preserve a failed candidate while allowing the next chat to start from the base again. */
+export const abandonAppChange = async (
+	appId: string,
+): Promise<z.infer<typeof appChangeSchema>> =>
+	parseAppChanges(
+		appId,
+		await callAppTestPixel(
+			`ManageAppTestChanges(project=${JSON.stringify([appId])}, action=["abandon"]);`,
+		),
+	);
+
+/** Read a bounded private build log, restricted by the server to the initiating user. */
+export const getAppChangeBuildLog = async (appId: string): Promise<string> => {
+	const value = z
+		.object({ target: z.literal(appId), log: z.string() })
+		.parse(
+			await callAppTestPixel(
+				`ManageAppTestChanges(project=${JSON.stringify([appId])}, action=["buildLog"]);`,
+			),
+		);
+	return value.log;
+};
