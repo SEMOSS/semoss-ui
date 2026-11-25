@@ -1,5 +1,17 @@
+import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import type { PathValue } from "@semoss/renderer";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+	type BlockDef,
+	type EchartVisualizationBlockConfig,
+	type EchartVisualizationBlockDef,
+	getValueByPath,
+	type PathValue,
+} from "@semoss/renderer";
+import { Slider } from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
+import { ColorPickerSettings } from "../../../../shared/ColorPickerSettings";
+import { BAR_CHART_DATA } from "../../Visualization.constants";
 
 interface BarChartStyle {
 	barwidth: number;
@@ -15,7 +27,7 @@ const _CUSTOM_BAR_CHART_STYLES = {
 	barColour: "#5470c6",
 };
 
-const _INITIAL_BAR_CHART_STYLES: BarChartStyle[] = [];
+const INITIAL_BAR_CHART_STYLES: BarChartStyle[] = [];
 
 export const VisualizationStyles = observer(
 	<D extends BlockDef = BlockDef>({
@@ -33,7 +45,7 @@ export const VisualizationStyles = observer(
 		const { data, setData } =
 			useBlockSettings<EchartVisualizationBlockDef>(id);
 		const [value, setValue] = useState<
-			typeof EchartVisualizationBlockConfig.data.option
+			string | typeof EchartVisualizationBlockConfig.data.option
 		>(data.option);
 		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 		const [stylesUpdated, setStylesUpdated] = useState<
@@ -187,7 +199,7 @@ export const VisualizationStyles = observer(
 				{/* Series tabs */}
 				{styleData.length > 1 && (
 					<div className="flex flex-row gap-1 py-2">
-						{styleData.map((_, _index) => (
+						{styleData.map((_, index) => (
 							// biome-ignore lint/a11y/useButtonType: handled by caller
 							<button
 								// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available

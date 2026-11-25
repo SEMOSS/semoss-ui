@@ -606,12 +606,12 @@ test("routes file and tool actions from the single add menu", async () => {
 		screen.getByRole("menuitem", { name: "menuUpload.attachDocument" }),
 	);
 	expect(openFilePicker).toHaveBeenCalledTimes(1);
-	for (const [label, tab] of [
-		["menuToolbox.addToolbox", "TOOLBOX"],
-		["menuKnowledge.addKnowledge", "KNOWLEDGE"],
+	for (const [name, tab] of [
+		[/^menuToolbox\.addToolbox\s*0$/, "TOOLBOX"],
+		[/^menuKnowledge\.addKnowledge\s*0$/, "KNOWLEDGE"],
 	]) {
 		await user.click(add);
-		await user.click(screen.getByRole("menuitem", { name: `${label} 0` }));
+		await user.click(screen.getByRole("menuitem", { name }));
 		expect(screen.getByRole("dialog", { name: tab })).toBeVisible();
 		await user.click(screen.getByRole("button", { name: "Close picker" }));
 	}
@@ -647,7 +647,9 @@ test("opens prompts from the inline action before the microphone", async () => {
 		screen.getByRole("dialog", { name: "form.promptsLabel" }),
 	).toBeVisible();
 	expect(
-		screen.getByRole("button", { name: "Example prompt Example text" }),
+		screen.getByRole("button", {
+			name: /^Example prompt\s*Example text$/,
+		}),
 	).toBeVisible();
 });
 
@@ -693,9 +695,9 @@ test("locks mutating menu actions during a turn", async () => {
 	render(<RoomInput {...defaultProps} sendState="stop" />);
 	await user.click(screen.getByRole("button", { name: "input.addToChat" }));
 	for (const name of [
-		"menuUpload.attachDocument",
-		"menuKnowledge.addKnowledge 0",
-		"menuToolbox.addToolbox 0",
+		/^menuUpload\.attachDocument$/,
+		/^menuKnowledge\.addKnowledge\s*0$/,
+		/^menuToolbox\.addToolbox\s*0$/,
 	]) {
 		expect(screen.getByRole("menuitem", { name })).toHaveAttribute(
 			"aria-disabled",

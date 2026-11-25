@@ -163,6 +163,7 @@ export function TopicAreasStage({
 					)}
 					<button
 						type="button"
+						data-testid="topic-areas-stage-topic"
 						className={cn(
 							"flex min-w-0 flex-1 items-center gap-2 text-left",
 							!value.keep && "text-muted-foreground",

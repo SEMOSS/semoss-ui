@@ -25,7 +25,7 @@
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
     "@types/jest": "^29.5.14",
-    "jsdom": "~22.1.0",
+    "jsdom": "~31.0.1",
     "knip": "^5.88.1",
     "lefthook": "^1.12.2",
     "turbo": "^2.9.14",

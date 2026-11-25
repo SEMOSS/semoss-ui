@@ -675,7 +675,23 @@ it("blocks saving while recipients load and provides an inline retry after failu
 	expect(screen.getByRole("textbox", { name: "To" })).toBeDisabled();
 	expect(screen.getByRole("button", { name: "Save Draft" })).toBeDisabled();
 	const body = screen.getByRole("textbox", { name: "Reply text (required)" });
-	await userEvent.setup().type(body, " while loading");
+	const user = userEvent.setup();
+	await user.click(body);
+	// jsdom does not position a caret from the pointer coordinates.
+	const selection = window.getSelection();
+	if (!selection) throw new Error("Missing editor selection");
+	const text = body.querySelector("[data-lexical-text]")?.firstChild;
+	if (!(text instanceof Text)) throw new Error("Missing editor text");
+	const range = document.createRange();
+	range.setStart(text, text.length);
+	range.collapse(true);
+	selection.removeAllRanges();
+	selection.addRange(range);
+	await act(async () => {
+		document.dispatchEvent(new Event("selectionchange"));
+	});
+	await user.keyboard(" while loading");
+	expect(body).toHaveTextContent("while loading");
 	recipientRead.result = {
 		status: "ERROR",
 		error: new Error("Microsoft connection failed"),

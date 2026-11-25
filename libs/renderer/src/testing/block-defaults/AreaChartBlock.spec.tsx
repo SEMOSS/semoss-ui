@@ -1,5 +1,6 @@
 import { screen } from "@testing-library/react";
-import { beforeAll, describe, expect, it } from "vitest";
+import * as reactVega from "react-vega";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { VisualizationBlock } from "../../components/block-defaults/echart-visualization-block";
 import {
 	VegaVisualizationBlock,
@@ -18,6 +19,10 @@ beforeAll(() => {
 		configurable: true,
 		value: 300,
 	});
+});
+
+afterEach(() => {
+	vi.restoreAllMocks();
 });
 
 // Minimal mock for Area Chart block
@@ -141,22 +146,16 @@ describe("AreaChart Block Component", () => {
 			screen.getByText("Add JSON to render your visualization"),
 		).toBeInTheDocument();
 	});
-	it("should have correct width and height style", () => {
-		const { container } = render(
-			<VisualizationBlock id={placeholders.areaChart} />,
-			{
-				blocks: mockBlocks,
-			},
-		);
-
-		const areaChartBlock = container.querySelector(
-			"[data-block='areaChart']",
-		);
-		expect(areaChartBlock).toBeInTheDocument();
-		expect(areaChartBlock).toHaveStyle({
-			width: 300,
-			height: 300,
+	it("passes the chart dimensions to Vega", () => {
+		const createChart = vi.spyOn(reactVega, "createClassFromSpec");
+		render(<VegaVisualizationBlock id={placeholders.areaChart} />, {
+			blocks: mockBlocks,
 		});
+		expect(createChart).toHaveBeenCalledWith(
+			expect.objectContaining({
+				spec: expect.objectContaining({ width: 300, height: 300 }),
+			}),
+		);
 	});
 	it("should show error message for invalid JSON spec", () => {
 		const { container } = render(

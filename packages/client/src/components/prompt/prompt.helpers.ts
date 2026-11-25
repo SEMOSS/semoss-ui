@@ -697,7 +697,7 @@ export async function setBlocksAndOpenUIBuilder(
 		...state.blocks[PROMPT_CONTAINER_BLOCK_ID].slots.children.children,
 	];
 
-	state.notebooks = getNotebookForPrompt(
+	state.queries = getNotebookForPrompt(
 		builder.inputs.value as Token[],
 		builder.inputTypes.value as object,
 	);

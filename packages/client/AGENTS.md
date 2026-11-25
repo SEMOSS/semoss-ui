@@ -761,7 +761,10 @@ restart and reload on every server in a cluster.
   takes the actions the viewer has and is not shown when there are none. It opens when the mouse
   hovers over it, and on a click or from the keyboard; a click on a menu the hover opened keeps it
   open. A menu the hover opened leaves focus where it is, when it opens and when it closes; one a
-  click or a key opened moves focus into it, and back to the button when it closes. Each menu
+  click or a key opened moves focus into it, and back to the button when it closes. Radix
+  forwards `onOpenAutoFocus` at runtime but omits it from its dropdown types; the call site
+  documents this narrow compatibility exception, and `actions-menu.test.tsx` covers focus
+  on open and close. Each menu
   lists its actions with the roles the backend lets run them:
   - `features/engine-actions/engine-actions-menu.tsx`, in the engine header
     (`engine-tabs.layout.tsx`): Clone, Export and Restart, all for owners.

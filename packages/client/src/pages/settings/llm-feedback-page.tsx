@@ -65,7 +65,9 @@ export const LLMFeedbackPage = () => {
 		return date;
 	}, []);
 
-	const [feedback, setFeedback] = useState<LLMFeedback[]>([]);
+	const [feedback, setFeedback] = useState<(LLMFeedback & { id: number })[]>(
+		[],
+	);
 	const [count, setCount] = useState<number>(0);
 	const [paginationModel, setPaginationModel] = useState({
 		page: 0,
@@ -183,11 +185,11 @@ export const LLMFeedbackPage = () => {
 		{ data: [] },
 	);
 
-	const getCount = usePixel<[string]>(
+	const getCount = usePixel<{ TOTAL_FEEDBACK: string }[]>(
 		shouldFetchData
 			? `AdminGetLlmFeedbackCount(${engineId ? `engine=["${engineId}"]` : ""}${projectId ? `, project=["${projectId}"]` : ""}${debouncedUserId ? `, userId=["${debouncedUserId}"]` : ""}, startDate=["${startDate.toISOString().split("T")[0]}"], endDate=["${endDate.toISOString().split("T")[0]}"]);`
 			: "",
-		{ data: ["0"] },
+		{ data: [{ TOTAL_FEEDBACK: "0" }] },
 	);
 
 	useEffect(() => {

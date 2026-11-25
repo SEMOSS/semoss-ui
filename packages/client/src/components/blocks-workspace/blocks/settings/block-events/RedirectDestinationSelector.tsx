@@ -15,7 +15,7 @@ import {
 
 interface Page {
 	id: string;
-	route: string;
+	route: unknown;
 }
 
 interface RedirectDestinationSelectorProps {
