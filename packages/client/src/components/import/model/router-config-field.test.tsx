@@ -68,23 +68,34 @@ const routeNames = () =>
 		.map((input) => (input as HTMLInputElement).value);
 
 beforeEach(() => {
+	vi.stubGlobal(
+		"ResizeObserver",
+		class {
+			observe() {}
+			unobserve() {}
+			disconnect() {}
+		},
+	);
 	mocks.usePixel.mockReturnValue({
 		status: "SUCCESS",
 		data: ENGINES,
 		refresh: vi.fn(),
 	});
 });
-afterEach(cleanup);
+afterEach(() => {
+	cleanup();
+	vi.unstubAllGlobals();
+});
 
 describe("Model Router routes", () => {
 	it("shows each route as a card named by its place and its name", () => {
 		render(<RouterHarness config={KEYWORD_CONFIG} />);
 
 		expect(
-			screen.getByRole("group", { name: "Route 1: coding" }),
+			screen.getByRole("group", { name: /^Route 1:\s*coding$/ }),
 		).toBeInTheDocument();
 		expect(
-			screen.getByRole("group", { name: "Route 3: travel" }),
+			screen.getByRole("group", { name: /^Route 3:\s*travel$/ }),
 		).toBeInTheDocument();
 	});
 

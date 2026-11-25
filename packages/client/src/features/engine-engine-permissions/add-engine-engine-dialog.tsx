@@ -1,32 +1,18 @@
-import { useEffect, useId, useRef, useState } from "react";
-import { type ModelUsageLimit, savePermissionBatches } from "@semoss/sdk";
-import {
-	EngineSelect,
-	EngineSubtypeIcon,
-	findModelUsageLimitProblem,
-	ModelUsageLimitEditor,
-	type ModelUsageLimitEditorHandle,
-	OWNERS_ONLY_LIMIT_REASON,
-	UsageLimitGuideButton,
-} from "@semoss/shared";
+import { useId, useRef, useState } from "react";
+import { savePermissionBatches } from "@semoss/sdk";
+import { type Engine, EngineSelect } from "@semoss/shared";
 import {
 	Alert,
 	AlertDescription,
-	Button,
-	Dialog,
-	DialogContent,
 	DialogDescription,
-	DialogFooter,
 	DialogHeader,
 	DialogTitle,
 	Field,
+	FieldDescription,
 	FieldError,
 	FieldLabel,
 	Form,
 	FormField,
-	FormSelect,
-	FormSelectItem,
-	Spinner,
 	toast,
 	useForm,
 	z,
@@ -34,24 +20,46 @@ import {
 } from "@semoss/ui/next";
 import { getErrorMessage } from "@semoss/utility/error";
 import { getLevelLabel } from "@/features/bulk-access-management/permission-batch";
+import { GrantDialog } from "@/features/grants/grant-dialog";
+import { GrantDialogFooter } from "@/features/grants/grant-dialog-footer";
+import { GrantLevelSelect } from "@/features/grants/grant-level-select";
 import {
-	DEFAULT_ENGINE_GRANTEE_LEVEL,
-	ENGINE_GRANTEE_ENGINE_TYPES,
-	ENGINE_GRANTEE_LEVELS,
-	type EngineGranteeModel,
-	toAddEngineBatch,
-	toEngineGranteeType,
-} from "./engine-engine-permissions";
+	DEFAULT_GRANT_LEVEL,
+	describeGrantLevels,
+	GRANT_LEVELS,
+} from "@/features/grants/grant-levels";
+import { GrantLimitField } from "@/features/grants/grant-limit-field";
+import { GrantQueue } from "@/features/grants/grant-queue";
+import { GrantTypeSelect } from "@/features/grants/grant-type-select";
+import {
+	ALL_GRANT_TYPES,
+	GRANTEE_ENGINE_TYPES,
+	toEngineTypeOptions,
+} from "@/features/grants/grant-types";
+import {
+	type GranteeRef,
+	type GrantModel,
+	toAddGranteesBatch,
+} from "@/features/grants/grants";
+import {
+	type PickedResource,
+	resourceKey,
+	toPickedEngine,
+} from "@/features/grants/picked-resource";
+import { useGrantLimit } from "@/features/grants/use-grant-limit";
+import { getEngineLabel } from "@/utility/catalog";
 
 const schema = z.object({
-	granteeId: z.string().min(1, "Pick an engine"),
-	granteeName: z.string(),
-	granteeType: z.string(),
-	granteeSubtype: z.string(),
-	level: z.enum(ENGINE_GRANTEE_LEVELS),
+	grantees: z
+		.array(z.custom<PickedResource>())
+		.min(1, "Pick at least one engine"),
+	level: z.enum(GRANT_LEVELS),
 });
 
 type AddEngineEngineValues = z.infer<typeof schema>;
+
+/** The types the Engine Type select offers */
+const TYPE_OPTIONS = toEngineTypeOptions(GRANTEE_ENGINE_TYPES);
 
 /** The message for an engine picked to be given a permission on itself */
 const ITSELF_PROBLEM = "An engine cannot be given a permission on itself";
@@ -60,134 +68,147 @@ const ITSELF_PROBLEM = "An engine cannot be given a permission on itself";
 export interface AddEngineEngineDialogProps {
 	/** Whether the dialog is open */
 	open: boolean;
-	/** The engine that gives the other engine a permission */
+	/** The engine that gives the other engines a permission */
 	engineId: string;
 	/**
-	 * On a model, what the engine's usage limit needs; the dialog then shows the
+	 * The engines that already have a permission on the engine, which the list
+	 * does not take: their permission is changed in the table
+	 */
+	granted?: readonly GranteeRef[];
+	/**
+	 * On a model, what the engines' usage limit needs; the dialog then shows the
 	 * Engine Limit below the permission, starting at No Limit Defined
 	 */
-	model?: EngineGranteeModel;
+	model?: GrantModel;
 	/**
 	 * Whether to list every engine and save in admin mode; outside it an admin
 	 * has only their own permissions
 	 */
 	admin?: boolean;
 	/**
-	 * Called when the dialog closes: with the engine's id after it was given a
+	 * Called when the dialog closes: with the ids of the engines given a
 	 * permission, or nothing
 	 */
-	onClose: (granteeId?: string) => void;
+	onClose: (granteeIds?: string[]) => void;
 }
 
 /**
- * Lets an owner of an engine give another engine a permission on it, so the
- * other engine can call it, even for people with no access to it, such as a
- * vector database calling its embedding model or a guardrail calling its judge
- * model. The owner picks one of the engines
- * they can see, or any engine in admin mode, and Read-Only or Editor, and on a
- * model can give the engine a usage limit, shared by the engine or for each of
- * its users. It saves at once: a refusal, such as an engine that already has
- * access, shows in the dialog, which stays open. Authorize Access stays
- * enabled, and pressing it without an engine, with the engine itself, or with a
- * limit that is not complete, shows what is missing. Give it a new key each
- * time it opens so it starts empty.
+ * Lets an owner of an engine give other engines a permission on it, so each
+ * can call it, even for people with no access to it, such as a vector database
+ * calling its embedding model or a guardrail calling its judge model. The owner
+ * narrows the picker to one engine type or keeps every type, and each engine
+ * picked, of the ones they can see or any engine in admin mode, joins a list.
+ * Every engine on the list gets the same level, Read-Only or Editor, with what
+ * each level allows said under the select, and on a model the same usage
+ * limit, each engine its own copy, shared by the engine or for each of its
+ * users. The list is saved at once as one permission batch, so every engine on
+ * it is given access or none is: a refusal shows in the dialog, which stays
+ * open. The engine itself, an engine that already has access, or one already
+ * on the list is not added, and the field says why. Authorize Access stays
+ * enabled, and pressing it with an empty list, or with a limit that is not
+ * complete, shows what is missing. Give it a new key each time it opens so it
+ * starts empty.
  */
 export const AddEngineEngineDialog = ({
 	open,
 	engineId,
+	granted = [],
 	model,
 	admin = false,
 	onClose,
 }: AddEngineEngineDialogProps) => {
 	const engineFieldId = useId();
+	const engineHintId = useId();
 	const engineErrorId = useId();
 	const form = useForm<AddEngineEngineValues>({
 		resolver: zodResolver(schema),
-		defaultValues: {
-			granteeId: "",
-			granteeName: "",
-			granteeType: "",
-			granteeSubtype: "",
-			level: DEFAULT_ENGINE_GRANTEE_LEVEL,
-		},
+		defaultValues: { grantees: [], level: DEFAULT_GRANT_LEVEL },
 	});
-	const { errors, isSubmitting } = form.formState;
-	const granteeName = form.watch("granteeName");
-	const granteeType = form.watch("granteeType");
-	const granteeSubtype = form.watch("granteeSubtype");
-	const [usageLimit, setUsageLimit] = useState<ModelUsageLimit | null>(null);
-	const [shouldShowLimitProblems, setShouldShowLimitProblems] =
-		useState(false);
-	const [shouldFocusLimitProblem, setShouldFocusLimitProblem] =
-		useState(false);
-	const limitEditorRef = useRef<ModelUsageLimitEditorHandle>(null);
+	const { errors, isSubmitting, isSubmitted } = form.formState;
+	const grantees = form.watch("grantees");
+	const [typeFilter, setTypeFilter] = useState<string>(ALL_GRANT_TYPES);
+	const [pickNote, setPickNote] = useState<string | null>(null);
+	const pickerRef = useRef<HTMLButtonElement | null>(null);
 	const canGiveLimit = model?.canChangeLimit === true;
-	const isCostAvailable = model?.isCostAvailable ?? true;
-	const limitProblem = canGiveLimit
-		? findModelUsageLimitProblem(usageLimit, {
-				source: "ENGINE",
-				isCostAvailable,
-			})
-		: null;
+	const limit = useGrantLimit({
+		isOffered: canGiveLimit,
+		source: "ENGINE",
+		isCostAvailable: model?.isCostAvailable ?? true,
+		isSubmitting,
+	});
+	const pickedType =
+		GRANTEE_ENGINE_TYPES.find((type) => type === typeFilter) ?? null;
 
 	/**
-	 * Shows the Engine Limit's problems with the missing engine's, so one press
-	 * of Authorize Access says everything that stops it.
+	 * Puts a picked engine on the list, or takes it off when it is on the list
+	 * already, as its check in the picker shows. This engine, or one that
+	 * already has access, stays off, and the field says why.
+	 *
+	 * @param engine - the engine picked
 	 */
-	const handleInvalid = () => {
-		if (limitProblem) {
-			setShouldShowLimitProblems(true);
+	const handlePick = (engine: Engine) => {
+		const picked = toPickedEngine(engine);
+		if (!picked) {
+			return;
 		}
+		const isSame = (other: { id: string; type: string }) =>
+			other.id === picked.id && other.type === picked.type;
+		if (picked.id === engineId) {
+			setPickNote(ITSELF_PROBLEM);
+			return;
+		}
+		if (granted.some(isSame)) {
+			setPickNote(
+				`${picked.name} already has access. Change its permission in the table.`,
+			);
+			return;
+		}
+		const queued = form.getValues("grantees");
+		setPickNote(null);
+		form.setValue(
+			"grantees",
+			queued.some(isSame)
+				? queued.filter((other) => !isSame(other))
+				: [...queued, picked],
+			{ shouldValidate: isSubmitted },
+		);
 	};
 
 	/**
-	 * Moves focus to the Engine Limit's first problem once the submit that found
-	 * it has ended, since the form's fields are disabled while a submit runs.
+	 * Takes an engine off the list and moves focus back to the picker.
+	 *
+	 * @param grantee - the engine to take off
 	 */
-	useEffect(() => {
-		if (!shouldFocusLimitProblem || isSubmitting) {
-			return;
-		}
-		limitEditorRef.current?.focusFirstProblem();
-		setShouldFocusLimitProblem(false);
-	}, [shouldFocusLimitProblem, isSubmitting]);
+	const handleRemove = (grantee: PickedResource) => {
+		setPickNote(null);
+		form.setValue(
+			"grantees",
+			form
+				.getValues("grantees")
+				.filter((other) => resourceKey(other) !== resourceKey(grantee)),
+			{ shouldValidate: isSubmitted },
+		);
+		pickerRef.current?.focus();
+	};
 
 	/**
-	 * Gives the engine its permission. The engine itself, or an Engine Limit
-	 * that is not complete, stops it: the field or the editor shows the problem,
-	 * and the editor gets focus on its first one after the submit ends.
+	 * Gives every engine on the list its permission, in one permission batch. An
+	 * Engine Limit that is not complete stops it.
 	 */
 	const handleSubmit = async (
 		values: AddEngineEngineValues,
 	): Promise<void> => {
-		const type = toEngineGranteeType(values.granteeType);
-		if (values.granteeId === engineId || !type) {
-			form.setError(
-				"granteeId",
-				{
-					type: "validate",
-					message:
-						values.granteeId === engineId
-							? ITSELF_PROBLEM
-							: "Pick an engine",
-				},
-				{ shouldFocus: true },
-			);
-			return;
-		}
-		if (limitProblem) {
-			setShouldShowLimitProblems(true);
-			setShouldFocusLimitProblem(true);
+		if (limit.stopsSubmit()) {
 			return;
 		}
 		try {
 			await savePermissionBatches(
 				[
-					toAddEngineBatch(
-						engineId,
-						{ id: values.granteeId, type },
+					toAddGranteesBatch(
+						{ resourceType: "ENGINE", id: engineId },
+						values.grantees,
 						values.level,
-						canGiveLimit ? usageLimit : null,
+						canGiveLimit ? limit.usageLimit : null,
 					),
 				],
 				admin,
@@ -195,111 +216,109 @@ export const AddEngineEngineDialog = ({
 		} catch (e: unknown) {
 			form.setError("root.server", {
 				type: "server",
-				message: getErrorMessage(e, "Could not give the engine access"),
+				message: getErrorMessage(
+					e,
+					"Could not give the engines access",
+				),
 			});
 			return;
 		}
+		const level = getLevelLabel(values.level);
 		toast.success(
-			`${values.granteeName} has ${getLevelLabel(values.level)} access`,
+			values.grantees.length === 1
+				? `${values.grantees[0].name} has ${level} access`
+				: `${values.grantees.length} engines have ${level} access`,
 		);
-		onClose(values.granteeId);
+		onClose(values.grantees.map((grantee) => grantee.id));
 	};
 
 	return (
-		<Dialog
+		<GrantDialog
 			open={open}
-			onOpenChange={(isOpen) => {
-				if (!isOpen && !isSubmitting) {
-					onClose();
-				}
-			}}
+			isSubmitting={isSubmitting}
+			onClose={() => onClose()}
+			className="sm:max-w-2xl"
 		>
-			<DialogContent
-				className="sm:max-w-2xl"
-				showCloseButton={!isSubmitting}
-				onEscapeKeyDown={(event) => {
-					if (isSubmitting) {
-						event.preventDefault();
-					}
-				}}
-				onInteractOutside={(event) => {
-					if (isSubmitting) {
-						event.preventDefault();
-					}
-				}}
+			<Form
+				form={form}
+				onSubmit={handleSubmit}
+				onError={limit.showProblems}
+				noValidate
+				aria-busy={isSubmitting}
+				className="flex min-w-0 flex-col gap-4"
 			>
-				<Form
-					form={form}
-					onSubmit={handleSubmit}
-					onError={handleInvalid}
-					noValidate
-					aria-busy={isSubmitting}
-					className="flex min-w-0 flex-col gap-4"
-				>
-					<DialogHeader>
-						<DialogTitle className="font-medium text-base leading-6">
-							Add Engine
-						</DialogTitle>
-						<DialogDescription>
-							The engine can call this one, even for people with
-							no access to it.
-						</DialogDescription>
-					</DialogHeader>
+				<DialogHeader>
+					<DialogTitle className="font-medium text-base leading-6">
+						Add Engines
+					</DialogTitle>
+					<DialogDescription>
+						Each engine on the list can call this one, even for
+						people with no access to it. They all get the same
+						permission.
+					</DialogDescription>
+				</DialogHeader>
 
+				<div className="grid gap-4 sm:grid-cols-3">
+					<GrantTypeSelect
+						label="Engine Type"
+						options={TYPE_OPTIONS}
+						value={typeFilter}
+						disabled={isSubmitting}
+						onChange={setTypeFilter}
+					/>
 					<FormField
 						control={form.control}
-						name="granteeId"
+						name="grantees"
 						render={({ field, fieldState }) => (
-							<Field data-invalid={Boolean(fieldState.error)}>
+							<Field
+								className="sm:col-span-2"
+								data-invalid={Boolean(fieldState.error)}
+							>
 								<FieldLabel htmlFor={engineFieldId}>
 									Engine
 								</FieldLabel>
 								<EngineSelect
-									ref={field.ref}
+									ref={(node) => {
+										field.ref(node);
+										pickerRef.current = node;
+									}}
 									id={engineFieldId}
 									aria-invalid={Boolean(fieldState.error)}
 									aria-describedby={
 										fieldState.error
-											? engineErrorId
-											: undefined
+											? `${engineHintId} ${engineErrorId}`
+											: engineHintId
 									}
-									name={granteeName}
-									value={field.value}
+									name={
+										grantees.length > 0
+											? `${grantees.length} picked`
+											: ""
+									}
+									value=""
 									disabled={isSubmitting}
-									engineTypes={ENGINE_GRANTEE_ENGINE_TYPES}
+									engineTypes={
+										pickedType
+											? [pickedType]
+											: GRANTEE_ENGINE_TYPES
+									}
 									admin={admin}
 									showEngineId
 									modal
-									triggerIcon={
-										granteeType ? (
-											<EngineSubtypeIcon
-												engineType={granteeType}
-												engineSubtype={
-													granteeSubtype || undefined
-												}
-												alt=""
-												className="size-5 shrink-0 object-contain"
-											/>
-										) : null
-									}
-									onChange={(engine) => {
-										form.setValue(
-											"granteeName",
-											engine.engine_display_name ||
-												engine.engine_name ||
-												engine.engine_id,
-										);
-										form.setValue(
-											"granteeType",
-											engine.engine_type,
-										);
-										form.setValue(
-											"granteeSubtype",
-											engine.engine_subtype ?? "",
-										);
-										field.onChange(engine.engine_id);
-									}}
+									selectedIds={grantees.map(
+										(grantee) => grantee.id,
+									)}
+									onChange={handlePick}
 								/>
+								<FieldDescription id={engineHintId}>
+									Pick as many as you need: each one joins the
+									list below, and picking it again takes it
+									off.
+								</FieldDescription>
+								{pickNote ? (
+									<output className="block text-muted-foreground text-xs">
+										{pickNote}
+									</output>
+								) : null}
 								{fieldState.error?.message ? (
 									<FieldError id={engineErrorId}>
 										{fieldState.error.message}
@@ -308,82 +327,61 @@ export const AddEngineEngineDialog = ({
 							</Field>
 						)}
 					/>
+				</div>
 
-					<FormSelect
-						name="level"
-						label="Permission"
-						description="Read-Only lets the engine's code read from this engine and call it. Editor also lets it write to it and use its connection."
+				<GrantQueue
+					heading="Engines to Authorize"
+					emptyText="No engines picked yet"
+					items={grantees}
+					badgeOf={(grantee) =>
+						getEngineLabel(
+							GRANTEE_ENGINE_TYPES.find(
+								(type) => type === grantee.type,
+							),
+						)
+					}
+					disabled={isSubmitting}
+					onRemove={handleRemove}
+				/>
+
+				<GrantLevelSelect
+					description={`Every engine on the list gets this permission. ${describeGrantLevels("ENGINE")}`}
+					disabled={isSubmitting}
+				/>
+
+				{model ? (
+					<GrantLimitField
+						canSetLimit={canGiveLimit}
+						source="ENGINE"
+						label="Engine Limit"
+						isCostAvailable={model.isCostAvailable}
+						onChange={limit.setUsageLimit}
+						editorRef={limit.editorRef}
+						shouldShowProblems={limit.shouldShowProblems}
+						copyNote="Every engine on the list gets its own copy of this limit."
 						disabled={isSubmitting}
-						triggerClassName="w-full sm:w-56"
-					>
-						{ENGINE_GRANTEE_LEVELS.map((level) => (
-							<FormSelectItem key={level} value={level}>
-								{getLevelLabel(level)}
-							</FormSelectItem>
-						))}
-					</FormSelect>
+						admin={admin}
+					/>
+				) : null}
 
-					{canGiveLimit ? (
-						<ModelUsageLimitEditor
-							ref={limitEditorRef}
-							defaultValue={null}
-							onChange={setUsageLimit}
-							source="ENGINE"
-							label="Engine Limit"
-							isCostAvailable={isCostAvailable}
-							shouldShowProblems={shouldShowLimitProblems}
-							disabled={isSubmitting}
-						/>
-					) : model ? (
-						<p className="text-muted-foreground text-xs">
-							{OWNERS_ONLY_LIMIT_REASON}. The engine starts with
-							No Limit Defined.
-						</p>
-					) : null}
-					{model ? (
-						<UsageLimitGuideButton
-							className="self-start"
-							section="rules"
-							viewer={{
-								canSetModelLimits: canGiveLimit,
-								isAdminMode: admin,
-							}}
-						/>
-					) : null}
+				{errors.root?.server?.message ? (
+					<Alert variant="destructive">
+						<AlertDescription>
+							{errors.root.server.message}
+						</AlertDescription>
+					</Alert>
+				) : null}
+				{limit.shouldShowProblems && limit.limitProblem ? (
+					<p className="text-destructive text-xs">
+						{limit.limitProblem}
+					</p>
+				) : null}
 
-					{errors.root?.server?.message ? (
-						<Alert variant="destructive">
-							<AlertDescription>
-								{errors.root.server.message}
-							</AlertDescription>
-						</Alert>
-					) : null}
-					{shouldShowLimitProblems && limitProblem ? (
-						<p className="text-destructive text-xs">
-							{limitProblem}
-						</p>
-					) : null}
-
-					<DialogFooter>
-						<Button
-							type="button"
-							variant="outline"
-							disabled={isSubmitting}
-							onClick={() => onClose()}
-						>
-							Cancel
-						</Button>
-						<Button type="submit" disabled={isSubmitting}>
-							{isSubmitting ? (
-								<Spinner className="size-4" />
-							) : null}
-							{isSubmitting
-								? "Authorizing..."
-								: "Authorize Access"}
-						</Button>
-					</DialogFooter>
-				</Form>
-			</DialogContent>
-		</Dialog>
+				<GrantDialogFooter
+					isSubmitting={isSubmitting}
+					onCancel={() => onClose()}
+				/>
+			</Form>
+		</GrantDialog>
 	);
 };

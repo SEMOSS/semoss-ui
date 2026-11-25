@@ -24,7 +24,7 @@ export const config: BlockSettingsConfig = {
 							label="Active Tab"
 							path="activeTab"
 							type="number"
-							inputProps={{ min: 0 }}
+							min={0}
 						/>
 					),
 				},

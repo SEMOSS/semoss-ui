@@ -54,7 +54,7 @@ application features; this inventory does not require moving existing features.
 | `assets/` | Images and static files |
 | `components/` | Components grouped by feature area (`project/`, `engine/`, `settings/`, …) |
 | `contexts/` | React contexts (`<name>.context.tsx`) |
-| `features/` | Application features, one folder per concern (for example `team-list/`, `team-type/`, `team-members/`, `team-resource-access/`, `group-managers/`, `bulk-access-management/`, `usage-limit-path/`, `platform-default-limit/`, `team-usage-limit/`, `model-usage-limits/`, `engine-app-permissions/`, `my-model-usage/`, `my-access-request/`) |
+| `features/` | Application features, one folder per concern (for example `team-list/`, `team-type/`, `team-members/`, `team-resource-access/`, `group-managers/`, `bulk-access-management/`, `usage-limit-path/`, `platform-default-limit/`, `team-usage-limit/`, `model-usage-limits/`, `grants/`, `granted-apps/`, `engine-engine-permissions/`, `access-to-engines/`, `granted-access/`, `my-model-usage/`, `my-access-request/`) |
 | `hooks/` | React hooks (`use-<name>.ts`) |
 | `pages/` | Routing tree (see below) |
 | `stores/` | State owners (`assistant/`, `designer/`, `page/`, `session/`, `workbench/`, `workspace/`) |
@@ -116,8 +116,9 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   with the team view.
 - **How Usage Limits Work.** Every place a usage limit is set or shown has the shared
   `UsageLimitGuideButton` beside it, opening the guide at the section that matters there: the
-  Model Usage Limits card, the Teams table and Give a Team Access (Team Limits), the Apps table
-  and Add App (What Rules Count), the members
+  Model Usage Limits card, the Teams table and Give a Team Access (Team Limits), the Apps and Agents
+  table and Add App or Agent, and the two Resource Delegated Access pages and their Add Access (What Rules
+  Count), the members
   dialogs (No Limit Defined, Unlimited and Rules), Effective Permissions, Bulk Access Management
   (Who Sets Each Limit), a person's path sheet, the admin limit cards and the User's Total Model
   Limit fields, and My Profile's Model Usage (the person's own view). Each host passes what the
@@ -185,65 +186,133 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   `GetMyEngineAccessRequest`, `GetMyProjectAccessRequest`, `WithdrawMyEngineAccessRequest` and
   `WithdrawMyProjectAccessRequest`) and hands it to the header's request button, which reads
   Change Request while one waits. Asking again replaces the waiting request.
-- **`features/engine-app-permissions/`** is the Apps table (`engine-apps-table.tsx`) under Teams
-  on an engine's Access Control tab, and on the Apps tab of an engine in Resource Governance in
-  admin mode: the apps the engine gives a permission to, whose custom
-  reactors use the engine with it for people who have no access to the engine themselves. It
-  reads `getResourcePermissions` on the engine (`use-engine-app-permissions.ts`: the `engines`
-  of type `PROJECT`, kept as one list per read, `canChangeEngines`, `addsAreAdminOnly`,
-  `canChangeModelLimits` and `costLimitsAvailable`, in admin mode when the table's `admin` is
-  set). Only the engine's editors and owners see the apps, and admins in admin mode: the Access
-  Control tab mounts the table for an editor or owner only, and the backend sends anyone else an
-  empty `engines`. It shows each app with its
-  image, name (the app's display name when it has one) and id
-  (`components/shared/resource-id.tsx`), its level, and an Ends column when an app has an end
-  date. The controls follow `canChangeEngines` from the backend, which is true for the
-  engine's owners and in admin mode, and not the page's permission: owners change a level in
-  place between Read-Only and Editor (an app is never an Author), take an app's access away
-  after a confirmation, and add one with Add App; editors see each level in a disabled select.
-  Where `addsAreAdminOnly` is set, an owner outside admin mode has no Add App and sees that only
-  admins give apps access, from admin mode, while changing and removing still work. On a model the table has a Usage Limit column: for someone who can change both the
-  apps and the model's limits the summary is the same `usage-limit-edit-button.tsx` and opens
-  `usage-limit-dialog.tsx` with `source="APP"`, whose rules are Shared by the App or For Each
-  User, and everyone else sees the summary with "Only owners can set usage limits". Every
-  change is one permission batch on the engine with one change whose subject is
-  `{ category: "ENGINE", id, type: "PROJECT" }`
-  (`engine-app-permissions.ts`: `toAddAppBatch`, `toAppLevelBatch`, `toAppLimitBatch` and
-  `toRemoveAppBatch`), saved at once through `savePermissionBatches`; a `CHANGE` sets the whole
-  grant, so it carries the app's level, end date and usage limit through `toSentGrant`. A saved
-  change shows a toast and reads the apps again, and a row's controls stay disabled until that
-  read lands, so the next change carries the grant as it is. A refused change shows the
-  backend's reason where the user acted: in the dialog, which stays open, or above the table
-  for a level changed in place. `add-engine-app-dialog.tsx` is Add App: the shared
-  `ProjectSelect` over the apps the user can see, or every app in admin mode, of the types the
-  catalog lists as apps (`ENGINE_APP_PROJECT_TYPES`: `CODE` and `BLOCKS`), the level, starting
-  at Read-Only, and on a model the App Limit, starting at No Limit Defined. The backend takes a
-  project of any type, and the table lists every project the engine gives a permission to. Authorize Access stays enabled: pressed
-  with no app it shows "Pick an app" under the field, and with an App Limit that is not
-  complete it shows the editor's problems, both from then on. Bulk Access Management works on
-  an engine's people and teams, and its apps are managed in this table.
+- **`features/grants/`** holds what every view of the permissions engines and projects give
+  apps, agents and engines is built from, so the Apps and Agents table, the Engines table, What
+  This X Can Use and the two Resource Delegated Access pages read, show and change them the same way:
+  - The model: `grants.ts` (`GrantTarget`, an engine or a project; `GranteeRef` and `Grantee`, the
+    app, agent or engine given a permission; `GrantModel`, what a model's limit needs; `isAgent`;
+    `granteeKey`; and the batches `toAddGranteesBatch`, `toGranteeChangeBatch` and
+    `toRemoveGranteeBatch`, each one batch on the target, where a `CHANGE` carries the rest of
+    the grant through `toSentGrant`), `grant-levels.ts` (`GRANT_LEVELS`, Read-Only and Editor,
+    never Author; `describeGrantLevels` and `summarizeGrantLevel`, what each level allows on an
+    engine or a project; `getTargetNoun`), `grant-types.ts` (`GRANTEE_PROJECT_TYPES`: `CODE`,
+    `BLOCKS` and `WORKSPACE` for an agent; `GRANTEE_ENGINE_TYPES`: the engines whose own code
+    calls other engines, venv engines left out; the options of a type select) and
+    `picked-resource.ts` (an engine or project picked in a dialog, from `EngineSelect` or
+    `ProjectSelect`).
+  - The hooks: `use-resource-grants.ts` reads an engine's or project's permissions once
+    (`engines`, the ones it gives; `accessToEngines`, the ones it is given; and what the user may
+    change), `use-grant-changes.ts` saves a level picked in place (shown in its row until the
+    list is read again), a model's usage limit from its dialog and a removal after its
+    confirmation, each as one batch on the row's target with a toast, and `use-grant-limit.ts` is
+    an Add dialog's usage limit (nothing marked before a submit; a submit that finds a problem
+    shows them and moves focus to the first).
+  - The parts: `grant-resource.tsx` (an engine's logo or a project's image, its name as a link to
+    its catalog page in a new tab, or plain in a dialog's list, and its id), `grant-level-cell.tsx`
+    (a level select, or the level as text, with what it allows under it),
+    `grant-usage-limit-cell.tsx`, `grant-end-date.tsx`, `remove-grant-dialog.tsx` (Remove
+    Access), `grant-type-select.tsx` (All Types or one type, each with its icon),
+    `grant-level-select.tsx` (an Add dialog's Permission field with what each level allows),
+    `grant-queue.tsx` (an Add dialog's list of what was picked), `grant-limit-field.tsx` (the
+    limit editor, or why the user cannot set one, with the guide), `grant-dialog.tsx` (an Add
+    dialog that cannot be closed while it saves) and `grant-dialog-footer.tsx` (Cancel and
+    Authorize Access).
+- **`features/granted-apps/`** is the Apps and Agents table (`granted-apps-table.tsx`,
+  `GrantedAppsTable`, headed Apps and Agents That Can Use This Engine, Skill, Agent or App) under
+  Teams on the Access Control tab of an engine and of a project, and on the Apps and Agents tab
+  of Resource Governance in admin mode: the apps and agents the engine or project gives a
+  permission to, whose custom reactors (an app's) or runs (an agent's) use it for people who
+  have no access to it themselves, such as an agent given a skill its users cannot open. It takes
+  its `target` and `type` (the engine's or project's type, which names it in the table's words
+  and gives a model its Usage Limit column) and lists the `engines` of type `PROJECT`; engines
+  given a permission on a project are listed only on the Resource Delegated Access pages. Only the
+  target's editors and owners see it, and admins in admin mode: the Access Control tab mounts it
+  for an editor or owner only, and the backend sends anyone else an empty `engines`. The
+  controls follow `canChangeEngines` from the backend (the target's owners, and admin mode), not
+  the page's permission: owners change a level in place, change a model's limit (`source="APP"`,
+  Shared by the App or For Each User) when they can change its limits, take access away, and
+  add with Add App or Agent; editors see each level in a disabled select and each limit with
+  "Only owners can set usage limits". Where `addsAreAdminOnly` is set, an owner outside admin
+  mode has no Add App or Agent and a note names the type, such as "Only admins can give access to
+  models" (`getTypePlural` in `features/grants/grant-types.ts`). A refused change shows the
+  backend's reason where the user acted: in the dialog, which stays open, or above the table.
+  `add-granted-apps-dialog.tsx` is Add App or Agent (titled Add Apps and Agents): a Type select
+  narrows the shared `ProjectSelect` (every project in admin mode), which picks several at once
+  (`selectedIds`): it stays open, checks the ones on the To Authorize list, and picking one on the
+  list again takes it off; its trigger says how many are picked. The target itself ("is never
+  given a permission on itself") or one that already has access stays off the list, and a note
+  under the picker says why. Everything on the list gets one level and, on a model, one App Limit, each its own copy,
+  saved as one batch with an `ADD` for each. Authorize Access stays enabled: pressed with an
+  empty list it shows "Pick at least one app or agent", and with an App Limit that is not
+  complete it shows the editor's problems, both from then on.
 - **`features/engine-engine-permissions/`** is the Engines table (`engine-engines-table.tsx`)
-  under the Apps table on an engine's Access Control tab, and on the Engines tab of an engine in
-  Resource Governance in admin mode: the other engines the engine gives a permission to, which
-  can call it as part of their own work, even for people who have no access to it, such as a
-  vector database that creates its embeddings with a model or a guardrail that uses a model as
-  its judge.
-  It works as the Apps table does, from the same read (`use-engine-engine-permissions.ts`: the
-  `engines` of every type but `PROJECT`), with the same controls, rules and refusals. Each row
-  shows the engine's logo (`EngineSubtypeIcon` from its type and subtype), name and id, and is
-  keyed by type and id, since an id names one engine of a type. On a model its Usage Limit
-  column opens `usage-limit-dialog.tsx` with `source="ENGINE"`, whose rules are Shared by the
-  Engine or For Each User. Every change is one permission batch on the engine with one change
-  whose subject is `{ category: "ENGINE", id, type }` (`engine-engine-permissions.ts`:
-  `toAddEngineBatch`, `toEngineLevelBatch`, `toEngineLimitBatch` and `toRemoveEngineBatch`).
-  `add-engine-engine-dialog.tsx` is Add Engine: the shared `EngineSelect` over the engines the
-  user can see, or every engine in admin mode (`admin`), of the types whose code calls other
-  engines (`ENGINE_GRANTEE_ENGINE_TYPES`: models, vector databases, guardrails, functions,
-  databases and storage; venv engines need no permission), the level, starting at Read-Only,
-  and on a model the Engine Limit, starting at No Limit Defined. Authorize Access stays
-  enabled: pressed with no engine it shows "Pick an engine", with the engine itself it shows
-  "An engine cannot be given a permission on itself", and with an Engine Limit that is not
-  complete it shows the editor's problems.
+  under the Apps and Agents table on an engine's Access Control tab, and on the Engines tab of
+  an engine in Resource Governance in admin mode: the other engines the engine gives a
+  permission to, which can call it as part of their own work, even for people who have no access
+  to it, such as a vector database that creates its embeddings with a model or a guardrail that
+  uses a model as its judge. It works as the Apps and Agents table does, from the same parts,
+  with the `engines` of every type but `PROJECT`, each row keyed by type and id, and a model's
+  limit with `source="ENGINE"` (Shared by the Engine or For Each User).
+  `add-engine-engine-dialog.tsx` is Add Engine (titled Add Engines): an Engine Type select over
+  `GRANTEE_ENGINE_TYPES` narrows the shared `EngineSelect`, which picks several at once the same
+  way into the Engines to Authorize list. The engine itself ("An engine cannot be given a
+  permission on itself") or one that already has access stays off it. Authorize Access with an
+  empty list shows "Pick at least one engine".
+- **Type icons.** Every dropdown that offers project or engine types shows each type with
+  `components/shared/catalog-type-icon.tsx` (`CatalogTypeIcon`): the sidebar's icon for its
+  catalog, one for each kind of app, several boxes for All Types, and a box for a type with
+  none. Resource Governance's type dropdown, the type selects of the grant views
+  (`features/grants/grant-type-select.tsx`), and the type filters of a member's resource access
+  in Settings use it.
+- **`features/access-to-engines/`** is the other direction: the engines and projects an app,
+  an agent or an engine can use because each gives it a permission (`access-to-engines-table.tsx`,
+  headed What This App Can Use, What This Agent Can Use, What This Engine Can Use, and so on,
+  from the `type` it is given), read from `accessToEngines`. It sits under the Apps and Agents
+  table on a project's Access Control tab, under the Engines table on an engine's, and on the
+  Can Use tab of Resource Governance in admin mode, for editors, owners and admin mode only. Each
+  row has the shared resource, level (with what it allows), usage limit ("Set by the model's
+  owners") and end date cells. It changes nothing: each permission is changed on the engine or
+  project that gives it.
+- **`features/granted-access/`** is every permission engines and projects give apps, agents and
+  engines in one place, on two Settings pages, as My Teams and Team Permissions are: Resource Delegated Access (`pages/settings/resource-delegated-access.page.tsx`, `settings/resource-delegated-access`, a
+  tile under Your Account for everyone), which lists the engines and projects the user can edit
+  and always reads and saves with the user's own permissions, admin mode included, and All Resource Delegated Access (`pages/settings/all-resource-delegated-access.page.tsx`,
+  `settings/all-resource-delegated-access`, a tile under Resources & Access in admin mode only), which
+  lists every engine and project and reads and saves through the admin endpoints. Both pages
+  render `GrantedAccess` (`granted-access.tsx`), the second with `admin`; neither switches
+  between the two. It has a search by name or id over three sections (`grant-section.tsx`,
+  `GrantSection`), one for each kind of each side: Apps and Agents That Use Projects, Apps and
+  Agents That Use Engines, and Engines That Use Engines (engines given access on a project are
+  not listed). Each section reads its own pages of `getAllGranteePermissions` with its
+  `granteeKind` and `targetKind` (`use-granted-access.ts`; the page's Refresh and a saved Add
+  Access bump a `version` every section reads again on), has its own two type selects, counts
+  what matches in its title, says what each level allows, and has a table that reads "this app,
+  agent or engine can use this engine or project", 25 at a time, built from the shared parts and
+  changes; a row's `canChange` (the target's owners, and admin mode) gives it the controls. The
+  three kinds are defined once (`GRANT_KINDS` in `grant-pairs.ts`: each side's kind, name and
+  types), for the sections and for Add Access. The shared side offers every engine type and
+  every project type but insight projects (`SHARED_ENGINE_TYPES`, `SHARED_PROJECT_TYPES`). Add Access (`add-granted-access-dialog.tsx`)
+  first asks where to start, as two choice cards (`grant-choice-card.tsx`): What Gets Access (an
+  app, agent or engine, then what it can use) or What Is Shared (an engine or project, then who
+  can use it), and the kind of access, as three cards matching the sections. The kind limits
+  both pickers (`grants/grant-resource-picker.tsx`, `ProjectSelect` or `EngineSelect` by the
+  side's kind) and their type selects to its types, so every pair can be given; changing the
+  direction or the kind starts the picks over. The user picks the one to start from, then picks
+  several at once into a list (the picker stays open; picking one again takes it off), never the
+  one started from. Everything on the list gets one level and, when a model
+  is among the engines shared, one usage limit. `toGrantBatches` builds one batch for each engine
+  or project. Authorize Access validates the batches first (`validatePermissionBatches`); any
+  change the backend refuses is listed by its pair and reason (`findRefusedPairs`) and nothing is
+  saved; the list stays while the user takes those pairs off, until its close button or a change
+  of direction or kind, and each Authorize Access shows only what that attempt finds. Then all of them are saved together. Resource Delegated Access offers only what the user
+  can give (`use-shareable-kinds.ts`, `useShareableKinds`): the side that is shared lists only
+  what the user owns (`isOwnedOnly` on the pickers), and only the types whose give-access setting
+  (`Config.isAdminOnly(resource, "access")`: Project, Workspace and Skill for projects, each
+  engine type for engines) is open, since the backend refuses those adds outside admin mode,
+  admins included. A kind left with no type is not offered, a note on the page and under the
+  kinds names what only admins give access to ("Only admins can give access to models, from All
+  Resource Delegated Access in admin mode"), and Add Access is left out when no kind is left. All
+  Resource Delegated Access offers every type and every engine and project.
 - **Nothing is lost by accident.** Load Latest Access reads the access again and keeps the
   staged changes. Both views ask before Discard Changes drops them, and
   `use-unsaved-changes-guard.ts` warns before leaving the page with changes that are not saved
@@ -254,7 +323,7 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   also act as an ordinary user. The Access Control tab, My Teams and their Bulk Access
   Management views call `/auth/permissionBatch` with the user's permissions. Admin mode calls
   `/auth/admin/permissionBatch` (each SDK call takes `admin`): Team Permissions' Bulk Access
-  Management, and Resource Governance's Access, Apps, Engines and Effective Permissions tabs. Admin mode
+  Management, and Resource Governance's Access, Apps and Agents, Engines, Can Use and Effective Permissions tabs, and All Resource Delegated Access. Admin mode
   also calls the admin pixel or endpoint for everything else it does to someone else's engine
   or project, since on the backend an admin has more than their own permissions only through
   an `Admin*` reactor or `/auth/admin/...` endpoint: reading and saving the SMSS
@@ -365,14 +434,18 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   under its `group`'s heading (`SETTINGS_GROUPS`: Your Account, Resources & Access, Monitoring,
   Platform), in route order. A heading with no tile for the viewer, or none matching the search,
   is left out. Apps and engines are managed from their catalog pages; admins manage any of them
-  in Resource Governance.
+  in Resource Governance. Resource Delegated Access, under Your Account, lists the permissions the
+  engines and projects the user can edit give apps, agents and engines, with the user's own
+  permissions; All Resource Delegated Access, under Resources & Access in admin mode, lists every
+  one through the admin endpoints (`features/granted-access/`).
 
 ### Resource Governance
 
 - **`features/resource-governance/`** is Resource Governance at `settings/resources`, for admins
   in admin mode. An admin chooses a project or engine type at the top of the list
   (`governance-type-select.tsx`; `GOVERNANCE_TYPES`: every project type, insights included, then
-  every engine type, from `ALL_PROJECT_TYPES` and `ALL_ENGINE_TYPES` in `utility/catalog.ts`),
+  every engine type, from `ALL_PROJECT_TYPES` and `ALL_ENGINE_TYPES` in `utility/catalog.ts`,
+  each with its icon from `components/shared/catalog-type-icon.tsx`, shown in the trigger too),
   then sees that type's resources beside the one open, as Member Settings shows members. It opens
   on the first type in the dropdown. The list
   reads `AdminMyProjects` with `projectType` or `AdminMyEngines` with `engineTypes`, a page at a
@@ -393,9 +466,11 @@ and save them together, through the SDK's [`api/access.ts`](../../libs/sdk/src/a
   Copy ID (`components/shared/resource-id.tsx`), type, who created it and when, and Open, which
   opens its own page in a new tab (`getResourcePagePath`). The tabs are Access (Bulk Access
   Management, without its back button: add many people at one access level, change or remove
-  access, and apply everything after one review), Apps for engines (the Apps table of
-  `features/engine-app-permissions/` in admin mode, where an admin gives any app a permission
-  on the engine), Effective Permissions, Requests, Visibility (the
+  access, and apply everything after one review), Apps and Agents (the table of
+  `features/granted-apps/` in admin mode, where an admin gives any app or agent a permission on
+  the engine or project), Engines for engines (the Engines table in admin mode), Can Use (the
+  engines and projects the project or engine can use, from `features/access-to-engines/`), Effective
+  Permissions, Requests, Visibility (the
   settings tiles, Private or Public and Discoverable or Non-Discoverable each titled by the
   state it is in, delete included: an app's also have Use as Template and Custom Login Page,
   which serves its portal to signed out visitors for its own login page,
@@ -686,7 +761,10 @@ restart and reload on every server in a cluster.
   takes the actions the viewer has and is not shown when there are none. It opens when the mouse
   hovers over it, and on a click or from the keyboard; a click on a menu the hover opened keeps it
   open. A menu the hover opened leaves focus where it is, when it opens and when it closes; one a
-  click or a key opened moves focus into it, and back to the button when it closes. Each menu
+  click or a key opened moves focus into it, and back to the button when it closes. Radix
+  forwards `onOpenAutoFocus` at runtime but omits it from its dropdown types; the call site
+  documents this narrow compatibility exception, and `actions-menu.test.tsx` covers focus
+  on open and close. Each menu
   lists its actions with the roles the backend lets run them:
   - `features/engine-actions/engine-actions-menu.tsx`, in the engine header
     (`engine-tabs.layout.tsx`): Clone, Export and Restart, all for owners.

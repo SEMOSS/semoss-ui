@@ -26,8 +26,6 @@ minimumReleaseAgeExclude:
     - pptx-react-viewer@5.1.0
 
 overrides:
-    # @crxjs/vite-plugin 2.4.0 pins rollup 2.79.2; 2.80.0 has the security fix
-    '@crxjs/vite-plugin>rollup': '2.80.0'
     # Keep every Office binding and core wrapper on the same validated runtime.
     'ooxml-core': '2.1.0'
     'ooxml-ui': '2.1.0'

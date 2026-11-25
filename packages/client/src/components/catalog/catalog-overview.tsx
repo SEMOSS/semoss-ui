@@ -64,17 +64,7 @@ interface CatalogOverviewProps {
 	id: string;
 	/** Keys to show in the overview */
 	metaKeys: {
-		display_options:
-			| "input"
-			| "textarea"
-			| "markdown"
-			| "single-checklist"
-			| "multi-checklist"
-			| "single-select"
-			| "multi-select"
-			| "single-typeahead"
-			| "multi-typeahead"
-			| "select-box";
+		display_options?: string;
 		display_order: number;
 		metakey: string;
 		single_multi: string;

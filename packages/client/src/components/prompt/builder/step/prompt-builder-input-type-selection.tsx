@@ -12,6 +12,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { isRecord } from "@semoss/utility/object";
 import {
 	INPUT_TYPE_DATABASE,
 	INPUT_TYPE_DISPLAY,
@@ -47,15 +48,33 @@ export const PromptBuilderInputTypeSelection = (props: {
 	const [newOption, setNewOption] = useState<string>("");
 
 	useEffect(() => {
-		if (
-			props.inputType === INPUT_TYPE_SELECT &&
-			props.inputTypeMeta?.options
-		) {
-			setSelectOptions(props.inputTypeMeta.options);
-		} else if (props.inputType === INPUT_TYPE_SELECT) {
-			setSelectOptions([]);
+		if (props.inputType === INPUT_TYPE_SELECT) {
+			const meta = props.inputTypeMeta;
+			if (meta == null || (isRecord(meta) && meta.options == null)) {
+				setSelectOptions([]);
+			} else if (
+				isRecord(meta) &&
+				Array.isArray(meta.options) &&
+				meta.options.every((option) => typeof option === "string")
+			) {
+				setSelectOptions(meta.options);
+			} else {
+				throw new Error("Invalid prompt select options");
+			}
 		}
 	}, [props.inputType, props.inputTypeMeta]);
+
+	const selectedMeta = props.inputTypeMeta;
+	if (
+		(props.inputType === INPUT_TYPE_VECTOR ||
+			props.inputType === INPUT_TYPE_DATABASE) &&
+		selectedMeta != null &&
+		typeof selectedMeta !== "string"
+	) {
+		throw new Error("Invalid prompt input selection");
+	}
+	const selectedMetaValue =
+		typeof selectedMeta === "string" ? selectedMeta : "";
 
 	const showMetaSelector =
 		props.inputType === INPUT_TYPE_VECTOR ||
@@ -253,7 +272,7 @@ export const PromptBuilderInputTypeSelection = (props: {
 							</>
 						) : (
 							<Select
-								value={(props.inputTypeMeta as string) ?? ""}
+								value={selectedMetaValue}
 								onValueChange={(val) =>
 									props.setInputType(
 										props.inputToken.index,
@@ -267,10 +286,10 @@ export const PromptBuilderInputTypeSelection = (props: {
 									<SelectValue
 										placeholder={`Select ${getMetaSelectorLabel()}`}
 									>
-										{(props.inputTypeMeta as string)
+										{selectedMetaValue
 											? getMetaSelectorDisplay(
-													props.inputTypeMeta as string,
-												) || props.inputTypeMeta
+													selectedMetaValue,
+												) || selectedMetaValue
 											: undefined}
 									</SelectValue>
 								</SelectTrigger>

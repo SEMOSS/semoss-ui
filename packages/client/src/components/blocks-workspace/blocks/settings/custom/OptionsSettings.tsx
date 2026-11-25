@@ -170,7 +170,7 @@ export const OptionsSettings = observer(
 				return;
 			}
 
-			if (active === over) {
+			if (!over || active.id === over.id) {
 				console.log("Invalid drop!");
 				return;
 			}

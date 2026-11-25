@@ -150,6 +150,27 @@ const getDefaultFieldValue = (field: FieldDefinition) =>
 const hasSelectedMultiselectValue = (value: unknown) =>
 	Array.isArray(value) && value.length > 0;
 
+const getTextFieldValue = (value: unknown): string | number => {
+	if (value === null || value === undefined) return "";
+	if (typeof value === "string" || typeof value === "number") return value;
+	throw new Error("Expected a text or numeric model field value");
+};
+
+const getSelectFieldValue = (value: unknown): string => {
+	if (value === null || value === undefined) return "";
+	if (typeof value === "string") return value;
+	throw new Error("Expected a string model selection");
+};
+
+const getFileFieldValue = (value: unknown): File | File[] => {
+	if (value === null || value === undefined || value === "") return [];
+	if (value instanceof File) return value;
+	if (Array.isArray(value) && value.every((file) => file instanceof File)) {
+		return value;
+	}
+	throw new Error("Expected model upload files");
+};
+
 /**
  * Adds a model to the catalog from the chosen provider's fields. The built-in
  * tools it offers are read for the picked providers and the typed Model ID, and
@@ -202,7 +223,12 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 		),
 	});
 
-	const _lastField = useRef({
+	const _lastField = useRef<{
+		lastFocussedField: string;
+		lastFocussedValue: string;
+		lastValidatedValue: unknown;
+		runValidate: boolean;
+	}>({
 		lastFocussedField: "",
 		lastFocussedValue: "",
 		lastValidatedValue: "",
@@ -618,7 +644,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									</FieldLabel>
 									<Input
 										id={f.key}
-										value={field.value ?? ""}
+										value={getTextFieldValue(field.value)}
 										onChange={(v) => {
 											field.onChange(v);
 											if (isMatchableModelId) {
@@ -755,7 +781,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 											handleDrop(
 												e,
 												field.onChange,
-												field.value,
+												getFileFieldValue(field.value),
 											)
 										}
 									>
@@ -778,7 +804,9 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 												handleFileChange(
 													e,
 													field.onChange,
-													field.value,
+													getFileFieldValue(
+														field.value,
+													),
 												)
 											}
 											disabled={f.disabled}
@@ -847,7 +875,9 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 																		removeFile(
 																			index,
 																			field.onChange,
-																			field.value,
+																			getFileFieldValue(
+																				field.value,
+																			),
 																		);
 																	}}
 																	className="size-8 shrink-0 hover:bg-destructive/10 hover:text-destructive"
@@ -898,7 +928,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 												? fieldErrorTestId
 												: undefined
 										}
-										value={field.value ?? ""}
+										value={getTextFieldValue(field.value)}
 										onChange={(e) =>
 											field.onChange(e.target.value)
 										}
@@ -935,7 +965,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 												? fieldErrorTestId
 												: undefined
 										}
-										value={field.value ?? ""}
+										value={getTextFieldValue(field.value)}
 										onChange={(e) =>
 											field.onChange(e.target.value)
 										}
@@ -967,7 +997,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									<Input
 										id={f.key}
 										type="text"
-										value={field.value ?? ""}
+										value={getTextFieldValue(field.value)}
 										onChange={(e) =>
 											field.onChange(e.target.value)
 										}
@@ -1013,7 +1043,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									</FieldLabel>
 									<Textarea
 										id={f.key}
-										value={field.value ?? ""}
+										value={getTextFieldValue(field.value)}
 										onChange={(e) =>
 											field.onChange(e.target.value)
 										}
@@ -1134,7 +1164,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 										)}
 									</FieldLabel>
 									<Select
-										value={field.value ?? ""}
+										value={getSelectFieldValue(field.value)}
 										onValueChange={(value) =>
 											field.onChange(value)
 										}

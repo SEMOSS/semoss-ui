@@ -61,6 +61,7 @@ export const config: BlockSettingsConfig = {
 							label="Extensions"
 							path={"extensions"}
 							options={FileTypes}
+							multiple
 						/>
 					),
 				},

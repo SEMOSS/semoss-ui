@@ -71,6 +71,7 @@ function SettingsNavigation({
 						>
 							<NavLink
 								to={to}
+								data-testid={`settings-navigation-link-${to}`}
 								end={to === "/brain"}
 								onClick={onNavigate}
 							>

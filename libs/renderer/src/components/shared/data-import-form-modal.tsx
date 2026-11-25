@@ -1595,6 +1595,7 @@ export const DataImportFormModal = observer(
 																<div className="flex shrink-0 items-center gap-1.5 pl-1">
 																	<Checkbox
 																		id={`${tableId}-all`}
+																		aria-label={`Select all columns in ${table.name}`}
 																		checked={
 																			selectedCount >
 																				0 &&

@@ -437,7 +437,7 @@ export class StateStore {
 		type: VariableType,
 		path?: string[],
 		cellId?: string,
-		value?: string,
+		value?: unknown,
 	): Variable | unknown {
 		try {
 			if (pointer) {

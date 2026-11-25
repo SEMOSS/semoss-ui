@@ -34,6 +34,9 @@ const outputCheck = (args: string) => ({
 	guardrailEngineId: "guardrail-1",
 	failureAction: "block" as const,
 	blockErrorMessage: "",
+	toolContinuationSkip: "none" as const,
+	toolContinuationTools: "",
+	toolContinuationArg: "",
 	inputMapping: [{ id: "a", key: "prompt", args }],
 	directParameters: [],
 });
@@ -450,7 +453,13 @@ describe("guardrail settings configuration", () => {
 		if (!check) {
 			throw Error("A new rule starts with a request check");
 		}
-		pipeline.input = [{ ...check, failureAction: "respond" }];
+		pipeline.input = [
+			{
+				...check,
+				guardrailEngineId: "guardrail-1",
+				failureAction: "respond",
+			},
+		];
 
 		const errors = collectGuardrailConfigIssues(
 			{ pipelines: [pipeline] },

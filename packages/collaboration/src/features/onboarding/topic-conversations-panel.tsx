@@ -42,6 +42,8 @@ interface TopicConversationsPanelProps {
 	changes: ReturnType<typeof useTopicReviewChanges>;
 	/** Save the draft so the conversations are read for its latest revision. */
 	onSave: () => Promise<TopicReview>;
+	/** Reload the saved draft, then clear the change that did not go through. */
+	onReload: () => Promise<void>;
 }
 
 /** One topic's conversations: the doubtful ones first; take any off or move them, one or many at a time. */
@@ -53,6 +55,7 @@ export function TopicConversationsPanel({
 	isBusy,
 	changes,
 	onSave,
+	onReload,
 }: TopicConversationsPanelProps) {
 	const [items, setItems] = useState<TopicEvidenceItem[]>([]);
 	const [total, setTotal] = useState(0);
@@ -191,7 +194,7 @@ export function TopicConversationsPanel({
 				const reason = (
 					changes.lastError() ?? "That did not go through"
 				).replace(/[.\s]*$/, "");
-				changes.reset();
+				await onReload();
 				setNotice(`${reason}. The list is refreshed; try again.`);
 				await refresh();
 				return;

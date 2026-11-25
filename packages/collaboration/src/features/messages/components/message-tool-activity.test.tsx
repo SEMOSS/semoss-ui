@@ -98,9 +98,11 @@ it("keeps tool nodes mounted while collapsing successful steps out of the access
 		screen.queryByRole("button", { name: "Tool 0 details in workbench" }),
 	).toBeNull();
 	expect(container.querySelectorAll("[inert]")).toHaveLength(2);
-	const summary = screen.getByRole("button", {
-		name: "2 tool calls 2 completed View steps",
-	});
+	const summary = screen.getByTestId("message-tool-summary-toggle");
+	expect(summary).toHaveRole("button");
+	expect(summary).toHaveAccessibleName(
+		/2 tool calls\s*2 completed\s*View steps/,
+	);
 	expect(summary).toHaveAttribute("aria-expanded", "false");
 	fireEvent.click(summary);
 	expect(
@@ -114,21 +116,19 @@ it("preserves manually expanded groups when new completed tools arrive", () => {
 	const { rerender } = render(
 		<MessageToolActivity items={tools("COMPLETED", "COMPLETED")} />,
 	);
-	fireEvent.click(
-		screen.getByRole("button", {
-			name: "2 tool calls 2 completed View steps",
-		}),
-	);
+	fireEvent.click(screen.getByTestId("message-tool-summary-toggle"));
 	rerender(
 		<MessageToolActivity
 			items={tools("COMPLETED", "COMPLETED", "COMPLETED")}
 		/>,
 	);
+	expect(screen.getByTestId("message-tool-summary-toggle")).toHaveAttribute(
+		"aria-expanded",
+		"true",
+	);
 	expect(
-		screen.getByRole("button", {
-			name: "3 tool calls 3 completed Hide steps",
-		}),
-	).toHaveAttribute("aria-expanded", "true");
+		screen.getByTestId("message-tool-summary-toggle"),
+	).toHaveAccessibleName(/3 tool calls\s*3 completed\s*Hide steps/);
 });
 
 it("defers folding a focused tool until focus leaves and preserves the button identity", () => {
@@ -141,16 +141,10 @@ it("defers folding a focused tool until focus leaves and preserves the button id
 	act(() => button.focus());
 	rerender(<MessageToolActivity items={tools("COMPLETED", "COMPLETED")} />);
 	expect(button).toHaveFocus();
-	expect(
-		screen.queryByRole("button", {
-			name: "2 tool calls 2 completed View steps",
-		}),
-	).toBeNull();
+	expect(screen.queryByTestId("message-tool-summary-toggle")).toBeNull();
 	act(() => button.blur());
 	expect(
-		screen.getByRole("button", {
-			name: "2 tool calls 2 completed View steps",
-		}),
+		screen.getByTestId("message-tool-summary-toggle"),
 	).toBeInTheDocument();
 	expect(button.isConnected).toBe(true);
 });
@@ -167,10 +161,10 @@ it("keeps inspected tools visible while grouping neighboring successes and failu
 	);
 	expect(screen.getByText("Open tool contents")).toBeVisible();
 	expect(
-		screen.getByRole("button", {
-			name: "3 tool calls 2 completed · 1 unsuccessful View steps",
-		}),
-	).toBeInTheDocument();
+		screen.getByTestId("message-tool-summary-toggle"),
+	).toHaveAccessibleName(
+		/3 tool calls\s*2 completed · 1 unsuccessful\s*View steps/,
+	);
 	expect(
 		screen.queryByRole("button", {
 			name: "Tool 3 details in workbench - failed",
@@ -185,9 +179,10 @@ it("keeps the summary neutral and reveals the specific errors on focus", async (
 	items[1].part.tool.error = "The workspace could not be found.";
 	items[3].part.tool.output = "The subagent limit was reached.";
 	render(<MessageToolActivity items={items} />);
-	const summary = screen.getByRole("button", {
-		name: "4 tool calls 2 completed · 2 unsuccessful View steps",
-	});
+	const summary = screen.getByTestId("message-tool-summary-toggle");
+	expect(summary).toHaveAccessibleName(
+		/4 tool calls\s*2 completed · 2 unsuccessful\s*View steps/,
+	);
 	expect(summary).toHaveAttribute("aria-expanded", "false");
 	act(() => summary.focus());
 	const tooltip = await screen.findByRole("tooltip");
@@ -209,19 +204,19 @@ it("keeps the summary and expansion state stable when a finished tool reports a 
 	const { rerender } = render(
 		<MessageToolActivity items={tools("COMPLETED", "COMPLETED")} />,
 	);
-	const summary = screen.getByRole("button", {
-		name: "2 tool calls 2 completed View steps",
-	});
+	const summary = screen.getByTestId("message-tool-summary-toggle");
+	expect(summary).toHaveAccessibleName(
+		/2 tool calls\s*2 completed\s*View steps/,
+	);
 	fireEvent.click(summary);
 	const row = screen.getByRole("button", {
 		name: "Tool 1 details in workbench",
 	});
 	rerender(<MessageToolActivity items={tools("COMPLETED", "FAILED")} />);
-	expect(
-		screen.getByRole("button", {
-			name: "2 tool calls 1 completed · 1 unsuccessful Hide steps",
-		}),
-	).toBe(summary);
+	expect(screen.getByTestId("message-tool-summary-toggle")).toBe(summary);
+	expect(summary).toHaveAccessibleName(
+		/2 tool calls\s*1 completed · 1 unsuccessful\s*Hide steps/,
+	);
 	expect(summary).toHaveAttribute("aria-expanded", "true");
 	expect(
 		screen.getByRole("button", {
@@ -240,11 +235,7 @@ it("shows failure details for a single tool and keeps focused failures visible",
 	act(() => row.focus());
 	rerender(<MessageToolActivity items={tools("FAILED", "COMPLETED")} />);
 	expect(row).toHaveFocus();
-	expect(
-		screen.queryByRole("button", {
-			name: "2 tool calls 1 completed · 1 unsuccessful View steps",
-		}),
-	).toBeNull();
+	expect(screen.queryByTestId("message-tool-summary-toggle")).toBeNull();
 	const tooltip = await screen.findByRole("tooltip");
 	expect(tooltip).toHaveTextContent("No error details were provided.");
 	expect(row).toHaveAttribute("aria-describedby", tooltip.id);
@@ -258,9 +249,10 @@ it("shows a bounded preview on hover while keeping every failed step accessible 
 			item.part.tool.error = "An extended error message. ".repeat(40);
 	}
 	render(<MessageToolActivity items={items} />);
-	const summary = screen.getByRole("button", {
-		name: "4 tool calls 0 completed · 4 unsuccessful View steps",
-	});
+	const summary = screen.getByTestId("message-tool-summary-toggle");
+	expect(summary).toHaveAccessibleName(
+		/4 tool calls\s*0 completed · 4 unsuccessful\s*View steps/,
+	);
 	await user.hover(summary);
 	const tooltip = await screen.findByRole("tooltip");
 	expect(tooltip).toHaveTextContent("Tool 0 failed");
@@ -357,11 +349,7 @@ it("folds a result that can open what it found with the other steps, keeping its
 	);
 	const open = { name: "Open email: ReadThread · GTC DC" };
 	expect(screen.queryByRole("button", open)).toBeNull();
-	fireEvent.click(
-		screen.getByRole("button", {
-			name: "3 tool calls 3 completed View steps",
-		}),
-	);
+	fireEvent.click(screen.getByTestId("message-tool-summary-toggle"));
 	expect(screen.getByRole("button", open)).toBeVisible();
 });
 

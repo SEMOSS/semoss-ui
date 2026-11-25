@@ -150,6 +150,7 @@ export function TwinDocumentLibrary({
 				<li key={item.path}>
 					<Button
 						type="button"
+						data-testid="twin-document-library-row"
 						variant="ghost"
 						disabled={!onOpen}
 						onClick={() => onOpen?.(item)}

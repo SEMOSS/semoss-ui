@@ -115,7 +115,7 @@ export const PieValueLabel = observer(
 			setData(path, option as PathValue<D["data"], typeof path>);
 		}
 
-		function _handleReset() {
+		function handleReset() {
 			const option = JSON.parse(value);
 			option.series[0].label.show = option.reset.label.show;
 			option.series[0].label.position = option.reset.label.position;

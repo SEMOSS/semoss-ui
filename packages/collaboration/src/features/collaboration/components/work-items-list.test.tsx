@@ -260,6 +260,13 @@ it("reviews new items: opens them all at once, filters by topic, and counts the 
 	const list = await renderWork(true);
 	const progress = () =>
 		screen.getByRole("progressbar", { name: "Items reviewed" });
+	expect(list.getAllByRole("listitem")).toHaveLength(2);
+	expect(list.queryByText("None assigned to you")).not.toBeInTheDocument();
+	await user.click(
+		screen.getByRole("button", {
+			name: "1 more set aside or not assigned to you",
+		}),
+	);
 	expect(list.getAllByRole("listitem")).toHaveLength(3);
 	expect(list.getByText("None assigned to you")).toBeVisible();
 	expect(progress()).toHaveAttribute("aria-valuetext", "0 of 3");

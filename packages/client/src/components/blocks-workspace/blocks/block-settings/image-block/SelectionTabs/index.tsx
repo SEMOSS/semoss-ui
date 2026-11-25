@@ -9,7 +9,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import AppTab from "./App";
+import { AppTab } from "./App";
 import ExternalTab from "./External";
 import InsightTab from "./Insight";
 
@@ -38,12 +38,11 @@ const tabConfig = [
 		label: "App",
 		value: "app",
 		tooltip: "Image stored in app assets",
-		render: ({ id, data, setData, appId, insightId }: TabRenderProps) => (
+		render: ({ data, setData, appId, insightId }: TabRenderProps) => (
 			<AppTab
 				insightId={insightId}
 				data={data}
 				setData={setData}
-				id={id}
 				appId={appId}
 			/>
 		),

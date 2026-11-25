@@ -9,6 +9,7 @@ import {
 	type PathValue,
 } from "@semoss/renderer";
 import {
+	Input,
 	Select,
 	SelectContent,
 	SelectItem,

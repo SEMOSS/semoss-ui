@@ -22,6 +22,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@semoss/ui/next";
+import { isAccessReason } from "./access-reason";
 import { dateFormat, ENGINE_TYPES } from "./common";
 import {
 	type AuditLogDateRangeType,
@@ -111,6 +112,7 @@ const MultiSelectDropdown = ({
 	onOpen,
 	loading,
 	disabled,
+	getOptionLabel = (option) => option,
 }: {
 	label: string;
 	options: string[];
@@ -120,13 +122,15 @@ const MultiSelectDropdown = ({
 	onOpen?: () => void;
 	loading?: boolean;
 	disabled?: boolean;
+	/** The words an option is shown with, when they are not the value itself */
+	getOptionLabel?: (option: string) => string;
 }) => {
 	const { t } = useTranslation("auditlog");
 	const summary =
 		selected.length === 0
 			? label
 			: selected.length === 1
-				? selected[0]
+				? getOptionLabel(selected[0])
 				: t("filter.countSummary", {
 						label,
 						count: selected.length,
@@ -173,7 +177,7 @@ const MultiSelectDropdown = ({
 							}}
 							onSelect={(event) => event.preventDefault()}
 						>
-							{option}
+							{getOptionLabel(option)}
 						</DropdownMenuCheckboxItem>
 					))
 				)}
@@ -238,6 +242,9 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 	//lists are fetched lazily when a dropdown is opened, not on page load.
 	const [methodOptions, setMethodOptions] = useState<string[]>([]);
 	const [engineTypeOptions, setEngineTypeOptions] = useState<string[]>([]);
+	const [accessReasonOptions, setAccessReasonOptions] = useState<string[]>(
+		[],
+	);
 	const [userOptions, setUserOptions] = useState<AuditLogUserOption[]>([]);
 	const [loadingFilters, setLoadingFilters] = useState<
 		Record<string, boolean>
@@ -256,6 +263,9 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 	const [selectedEngineTypes, setSelectedEngineTypes] = useState<string[]>(
 		[],
 	);
+	const [selectedAccessReasons, setSelectedAccessReasons] = useState<
+		string[]
+	>([]);
 	const [selectedUserKey, setSelectedUserKey] = useState<string>("");
 	const [searchInput, setSearchInput] = useState<string>("");
 	const [searchTerm, setSearchTerm] = useState<string>("");
@@ -399,6 +409,7 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 		const scopeChanged = lastScopeKeyRef.current !== scopeKey;
 		setSelectedMethods([]);
 		setSelectedEngineTypes([]);
+		setSelectedAccessReasons([]);
 		setSelectedRoomId("");
 		if (scopeChanged) {
 			setSelectedUserKey("");
@@ -406,6 +417,7 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 		}
 		setMethodOptions([]);
 		setEngineTypeOptions([]);
+		setAccessReasonOptions([]);
 		setRoomOptions([]);
 		setUserOptions([]);
 		loadedKeyRef.current = {};
@@ -416,7 +428,7 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 	//scope+date so we don't refetch on every open. runPixel resolves even on
 	//pixel-level errors, so surface those instead of silently showing "no values".
 	const ensureSimpleOptions = (
-		filterName: "methodName" | "engineType" | "roomId",
+		filterName: "methodName" | "engineType" | "accessReason" | "roomId",
 		setOptions: (options: string[]) => void,
 	) => {
 		if (
@@ -537,6 +549,7 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 			},
 			methodNames: selectedMethods,
 			engineTypes: selectedEngineTypes,
+			accessReasons: selectedAccessReasons,
 			filterUserId:
 				ownerStatus === "owner" ? (selectedUser?.userId ?? "") : "",
 			roomId: selectedRoomId,
@@ -553,6 +566,7 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 		customDateRange,
 		selectedMethods,
 		selectedEngineTypes,
+		selectedAccessReasons,
 		selectedUser,
 		selectedRoomId,
 		searchTerm,
@@ -624,6 +638,7 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 	const hasActiveFilters =
 		selectedMethods.length > 0 ||
 		selectedEngineTypes.length > 0 ||
+		selectedAccessReasons.length > 0 ||
 		selectedUserKey !== "" ||
 		searchInput !== "" ||
 		selectedRoomId !== "" ||
@@ -632,6 +647,7 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 	const clearAllFilters = () => {
 		setSelectedMethods([]);
 		setSelectedEngineTypes([]);
+		setSelectedAccessReasons([]);
 		setSelectedUserKey("");
 		setSearchInput("");
 		setSearchTerm("");
@@ -848,6 +864,24 @@ export const AuditLogFilter = (props: AuditLogFilterProps) => {
 				}
 				loading={loadingFilters.engineType}
 				disabled={!scopeReady}
+			/>
+
+			{/** access reason filter (server-side, multi-select; loaded on open) */}
+			<MultiSelectDropdown
+				label={t("filter.accessReason")}
+				options={accessReasonOptions}
+				selected={selectedAccessReasons}
+				onChange={setSelectedAccessReasons}
+				onOpen={() =>
+					ensureSimpleOptions("accessReason", setAccessReasonOptions)
+				}
+				loading={loadingFilters.accessReason}
+				disabled={!scopeReady}
+				getOptionLabel={(option) =>
+					isAccessReason(option)
+						? t(`accessReasons.${option}`)
+						: option
+				}
 			/>
 
 			{/** user filter (loaded on open; ownership resolved lazily) */}

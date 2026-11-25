@@ -105,14 +105,19 @@ export function sanitizeDraftHtml(html: string): string {
 	};
 	const doc = documentFrom(html, config);
 	for (const element of doc.body.querySelectorAll<HTMLElement>("[style]")) {
-		for (const property of Array.from(element.style)) {
+		const styles: Array<[string, string, string]> = [];
+		for (const property of STYLE_PROPERTIES) {
 			const value = element.style.getPropertyValue(property);
-			if (
-				!STYLE_PROPERTIES.has(property) ||
-				/url|expression|var\s*\(|[{}<>\\]/i.test(value)
-			)
-				element.style.removeProperty(property);
+			if (value && !/url|expression|var\s*\(|[{}<>\\]/i.test(value))
+				styles.push([
+					property,
+					value,
+					element.style.getPropertyPriority(property),
+				]);
 		}
+		element.style.cssText = "";
+		for (const [property, value, priority] of styles)
+			element.style.setProperty(property, value, priority);
 	}
 	for (const element of doc.body.querySelectorAll<HTMLElement>("[style]"))
 		if (!element.style.cssText) element.removeAttribute("style");

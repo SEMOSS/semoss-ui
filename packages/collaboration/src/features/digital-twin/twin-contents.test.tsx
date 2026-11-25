@@ -510,10 +510,16 @@ it("finds what to add from a description, copies an added suggestion into the tw
 	expect(ran().find((statement) => statement.startsWith("Copy("))).toBe(
 		'Copy(sourceType=["INSIGHT"], sourceFilePath=["Apollo cutover.md"], target=["twin-1"], targetType=["PROJECT"], targetFilePath=["public/emails/Apollo cutover.md"]);',
 	);
+	expect(screen.getByTestId("twin-knowledge-finder-group-email")).toHaveRole(
+		"region",
+	);
+	expect(
+		screen.getByTestId("twin-knowledge-finder-group-email"),
+	).toHaveAccessibleName(/^Emails\s*1$/);
 	const found = () =>
-		within(screen.getByRole("region", { name: "Emails 1" })).getByRole(
-			"listitem",
-		);
+		within(
+			screen.getByTestId("twin-knowledge-finder-group-email"),
+		).getByRole("listitem");
 	expect(found()).toHaveTextContent("In This Twin");
 	expect(within(found()).queryByRole("button")).toBeNull();
 

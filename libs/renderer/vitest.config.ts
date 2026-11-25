@@ -28,19 +28,15 @@ export default createViteConfig({
 		setupFiles: ["./vitest.setup.ts"],
 		coverage: {
 			reportsDirectory: "./coverage/packages/renderer",
-			include: ["**/src/components"],
+			include: ["src/components/**/*.{ts,tsx}"],
 		},
 		deps: {
 			// Force these packages to be processed by Vite instead of Node
 			optimizer: {
-				web: {
-					include: [
-						"vitest-canvas-mock",
-						"vega",
-						"vega-lite",
-						"vega-embed",
-						"react-vega",
-					],
+				client: {
+					enabled: true,
+					// Vite resolves the extensionless imports in Mermaid's dependency tree.
+					include: ["mermaid"],
 				},
 			},
 			//helps Vitest handle CommonJS/ES module interoperability
