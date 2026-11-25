@@ -43,7 +43,8 @@ skills supplement the standard; they do not waive reading it for React work.
   actions, and sentence case for sentences, in user-facing English text.
 - [Design rulebook](./DESIGN.md): UI composition and styling.
 
-Lint and formatting configuration lives in [biome.json](./biome.json).
+Lint and formatting configuration lives in [biome.json](./biome.json). Custom GritQL lint
+rules live in [biome-plugins/](./biome-plugins/README.md); try patterns with `pnpm grit`.
 
 ## Overview
 
