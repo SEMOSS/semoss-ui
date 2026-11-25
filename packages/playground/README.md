@@ -22,6 +22,8 @@ MODULE=/Monolith
 
 ## Tests
 
+Tests use Vitest with jsdom, declared directly and kept aligned with chat and the desktop app.
+
 Tests sit next to the file they cover, named `*.test.ts` or `*.test.tsx`. From
 `packages/playground`:
 

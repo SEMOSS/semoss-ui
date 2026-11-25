@@ -60,6 +60,9 @@ Run from `packages/playground-desktop`, or with `pnpm --filter @semoss/playgroun
 | `pnpm test` | Run the tests |
 | `pnpm type-check` | Type-check the renderer, then main, preload and contract |
 
+Renderer tests use jsdom, declared directly and kept aligned with chat and the web app.
+Main-process and contract tests opt into Vitest's Node environment per file.
+
 Builds are unsigned unless the signing variables are set; see
 [AGENTS.md](./AGENTS.md#not-here-yet).
 

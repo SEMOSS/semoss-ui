@@ -631,6 +631,8 @@ which is the only host with agent pages.
 
 ## Development
 
+Tests use Vitest with jsdom, declared directly and kept aligned with both playground hosts.
+
 ```bash
 pnpm --filter @semoss/chat test
 ```
