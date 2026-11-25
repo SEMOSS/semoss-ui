@@ -75,7 +75,17 @@ export type AppTestDraft = Pick<
 > & { id?: string };
 
 /** The subset of the runner report displayed in the app viewer. */
+/** Per-run browser presentation; it does not change the test's data or isolation. */
+export interface AppTestBrowserOptions {
+	headless: boolean;
+	keepOpen: boolean;
+}
+
 export interface AppTestRun {
+	headless?: boolean;
+	keepOpen?: boolean;
+	browserOpen?: boolean;
+	browserClosesAt?: string;
 	mode?: string;
 	fixtureHash?: string;
 	portalHash?: string;

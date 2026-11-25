@@ -457,3 +457,49 @@ it("rejects cross-app configuration and forged or mismatched preview addresses",
 		"Invalid test preview address",
 	);
 });
+
+it("passes browser presentation settings to selected and whole-app runs", async () => {
+	transport.mockResolvedValue({
+		errors: [],
+		pixelReturn: [
+			{
+				output: {
+					runId: "run",
+					target: "app",
+					status: "RUNNING",
+					headless: false,
+					keepOpen: true,
+				},
+			},
+		],
+	});
+	await runAppTests("app", "selected-recording", 1, {
+		headless: false,
+		keepOpen: true,
+	});
+	expect(transport.mock.calls[0][0]).toBe(
+		'META | RunAppTests(project=["app"], recordingIds=["selected-recording"], headless=[false], keepOpen=[true]);',
+	);
+	await runAllAppTests("app", { headless: false, keepOpen: false });
+	expect(transport.mock.calls[1][0]).toBe(
+		'META | RunAppTests(project=["app"], all=[true], headless=[false], keepOpen=[false]);',
+	);
+	transport.mockResolvedValue({
+		errors: [],
+		pixelReturn: [
+			{
+				output: {
+					runId: "run",
+					target: "app",
+					status: "COMPLETED",
+					browserOpen: true,
+					browserClosesAt: "2026-11-25T12:00:00Z",
+				},
+			},
+		],
+	});
+	expect(await getAppTestRun("app", "run")).toMatchObject({
+		status: "COMPLETED",
+		browserOpen: true,
+	});
+});

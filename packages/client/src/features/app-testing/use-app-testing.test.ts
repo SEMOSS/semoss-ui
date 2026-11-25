@@ -8,6 +8,7 @@ const actions = vi.hoisted(() => ({
 	save: vi.fn(),
 	refresh: vi.fn(),
 	database: vi.fn(),
+	get: vi.fn(),
 }));
 vi.mock("@semoss/sdk/react", () => ({
 	useSessionPixel: () => ({
@@ -23,6 +24,7 @@ vi.mock("@/api/app-testing", async (original) => ({
 	runAllAppTests: actions.all,
 	saveAppTestRecording: actions.save,
 	getAppTestDatabase: actions.database,
+	getAppTestRun: actions.get,
 }));
 const draft = {
 	name: "Imported workflow",
@@ -56,10 +58,10 @@ afterEach(cleanup);
 it("runs the clicked UUID directly, then runs all only through its separate action", async () => {
 	const { result } = renderHook(() => useAppTesting("app", null));
 	await act(async () => result.current.startRun("clicked-id"));
-	expect(actions.one).toHaveBeenCalledWith("app", "clicked-id");
+	expect(actions.one).toHaveBeenCalledWith("app", "clicked-id", 1, undefined);
 	expect(actions.all).not.toHaveBeenCalled();
 	await act(async () => result.current.runAll());
-	expect(actions.all).toHaveBeenCalledWith("app");
+	expect(actions.all).toHaveBeenCalledWith("app", undefined);
 });
 
 it("imports as a new test and refreshes the list without sending the original id", async () => {
@@ -109,4 +111,110 @@ it("refuses to record the normal app when isolated H2 is enabled", async () => {
 	expect(actions.database).toHaveBeenCalledWith("app");
 	expect(result.current.isRecording).toBe(false);
 	expect(result.current.error).toContain("Open Test Preview");
+});
+
+it("forwards headed inspection settings to individual, all and smoke runs", async () => {
+	const options = { headless: false, keepOpen: true };
+	const { result } = renderHook(() => useAppTesting("app", null));
+	await act(async () => result.current.startRun("clicked-id", options));
+	expect(actions.one).toHaveBeenLastCalledWith(
+		"app",
+		"clicked-id",
+		1,
+		options,
+	);
+	await act(async () => result.current.runAll(options));
+	expect(actions.all).toHaveBeenLastCalledWith("app", options);
+	await act(async () =>
+		result.current.startRun("__platform_smoke__", options),
+	);
+	expect(actions.one).toHaveBeenLastCalledWith(
+		"app",
+		"__platform_smoke__",
+		1,
+		options,
+	);
+});
+
+it("keeps the app busy during inspection even though results have completed", async () => {
+	actions.one.mockResolvedValueOnce({
+		target: "app",
+		runId: "one",
+		status: "COMPLETED",
+		browserOpen: true,
+	});
+	const { result } = renderHook(() => useAppTesting("app", null));
+	await act(async () =>
+		result.current.startRun("clicked-id", {
+			headless: false,
+			keepOpen: true,
+		}),
+	);
+	expect(result.current.isRunning).toBe(true);
+	await act(async () => result.current.runAll());
+	expect(actions.all).not.toHaveBeenCalled();
+});
+
+it("polls completed inspection until the window closes, then enables another run", async () => {
+	vi.useFakeTimers();
+	try {
+		actions.one.mockResolvedValueOnce({
+			target: "app",
+			runId: "one",
+			status: "COMPLETED",
+			browserOpen: true,
+			keepOpen: true,
+		});
+		actions.get.mockResolvedValueOnce({
+			target: "app",
+			runId: "one",
+			status: "COMPLETED",
+			browserOpen: false,
+		});
+		const { result, unmount } = renderHook(() =>
+			useAppTesting("app", null),
+		);
+		await act(async () =>
+			result.current.startRun("clicked-id", {
+				headless: false,
+				keepOpen: true,
+			}),
+		);
+		expect(result.current.isRunning).toBe(true);
+		await act(async () => vi.advanceTimersByTimeAsync(1000));
+		expect(actions.get).toHaveBeenCalledWith("app", "one");
+		expect(result.current.run?.status).toBe("COMPLETED");
+		expect(result.current.isRunning).toBe(false);
+		await act(async () => result.current.runAll());
+		expect(actions.all).toHaveBeenCalledTimes(1);
+		unmount();
+	} finally {
+		vi.useRealTimers();
+	}
+});
+
+it("stops inspection polling on unmount", async () => {
+	vi.useFakeTimers();
+	try {
+		actions.one.mockResolvedValueOnce({
+			target: "app",
+			runId: "one",
+			status: "COMPLETED",
+			browserOpen: true,
+		});
+		const { result, unmount } = renderHook(() =>
+			useAppTesting("app", null),
+		);
+		await act(async () =>
+			result.current.startRun("clicked-id", {
+				headless: false,
+				keepOpen: true,
+			}),
+		);
+		unmount();
+		await act(async () => vi.advanceTimersByTimeAsync(5000));
+		expect(actions.get).not.toHaveBeenCalled();
+	} finally {
+		vi.useRealTimers();
+	}
 });

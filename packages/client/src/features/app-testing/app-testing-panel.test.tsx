@@ -128,7 +128,10 @@ it("runs from file rows without a saved-test dropdown", () => {
 	fireEvent.click(
 		screen.getByRole("button", { name: "Run test Save entry" }),
 	);
-	expect(state.startRun).toHaveBeenLastCalledWith("test-id");
+	expect(state.startRun).toHaveBeenLastCalledWith("test-id", {
+		headless: true,
+		keepOpen: false,
+	});
 	fireEvent.click(screen.getByRole("button", { name: "Run all" }));
 	expect(state.runAll).toHaveBeenCalledTimes(1);
 	state.steps = previous;
@@ -150,5 +153,68 @@ it("offers recording and upload from the plus menu and forwards the chosen JSON 
 		target: { files: [file] },
 	});
 	expect(state.uploadTest).toHaveBeenLastCalledWith(file);
+	state.steps = previous;
+});
+
+it("starts headless by default and applies headed/keep-open choices to all run actions", () => {
+	const previous = state.steps;
+	state.steps = [];
+	state.startRun.mockClear();
+	state.runAll.mockClear();
+	state.recordings = [
+		{ id: "test-id", name: "Save entry", description: "Verify save" },
+	];
+	render(<AppTestingPanel appId="app" />);
+	const headed = screen.getByRole("switch", { name: "Show browser window" });
+	const keep = screen.getByRole("switch", {
+		name: "Keep final window open for up to 60 seconds",
+	});
+	expect(headed.getAttribute("aria-checked")).toBe("false");
+	expect(keep).toBeDisabled();
+	fireEvent.click(headed);
+	fireEvent.click(keep);
+	fireEvent.click(
+		screen.getByRole("button", { name: "Run test Save entry" }),
+	);
+	expect(state.startRun).toHaveBeenLastCalledWith("test-id", {
+		headless: false,
+		keepOpen: true,
+	});
+	fireEvent.click(screen.getByRole("button", { name: "Run all" }));
+	expect(state.runAll).toHaveBeenLastCalledWith({
+		headless: false,
+		keepOpen: true,
+	});
+	fireEvent.click(
+		screen.getByRole("button", { name: "Page visibility check" }),
+	);
+	expect(state.startRun).toHaveBeenLastCalledWith("__platform_smoke__", {
+		headless: false,
+		keepOpen: true,
+	});
+	fireEvent.click(headed);
+	fireEvent.click(screen.getByRole("button", { name: "Run all" }));
+	expect(state.runAll).toHaveBeenLastCalledWith({
+		headless: true,
+		keepOpen: false,
+	});
+	state.steps = previous;
+	state.recordings = [];
+});
+
+it("disables browser preferences while a run is active", () => {
+	const previous = state.steps;
+	state.steps = [];
+	state.isRunning = true;
+	render(<AppTestingPanel appId="app" />);
+	expect(
+		screen.getByRole("switch", { name: "Show browser window" }),
+	).toBeDisabled();
+	expect(
+		screen.getByRole("switch", {
+			name: "Keep final window open for up to 60 seconds",
+		}),
+	).toBeDisabled();
+	state.isRunning = false;
 	state.steps = previous;
 });

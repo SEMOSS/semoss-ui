@@ -1,5 +1,5 @@
 import { CircleIcon, PlusIcon, SquareIcon, UploadIcon } from "lucide-react";
-import { useRef } from "react";
+import { useId, useRef, useState } from "react";
 import {
 	Alert,
 	AlertDescription,
@@ -8,10 +8,13 @@ import {
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
+	FieldLabel,
 	Form,
 	FormInput,
 	FormTextarea,
+	P,
 	Spinner,
+	Switch,
 	useForm,
 	z,
 	zodResolver,
@@ -42,6 +45,15 @@ interface AppTestingPanelProps {
 /** Record workflows and manage saved test definitions without changing application code. */
 export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 	const uploadInput = useRef<HTMLInputElement | null>(null);
+	const headedId = useId();
+	const keepOpenId = useId();
+	const browserHelpId = useId();
+	const [isHeaded, setIsHeaded] = useState(false);
+	const [shouldKeepOpen, setShouldKeepOpen] = useState(false);
+	const browserOptions = {
+		headless: !isHeaded,
+		keepOpen: isHeaded && shouldKeepOpen,
+	};
 	const frame = useAppFrame(appId);
 	const state = useAppTesting(appId, frame);
 	const form = useForm<z.infer<typeof schema>>({
@@ -105,6 +117,46 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 					hasDraft
 				}
 			/>
+			<fieldset
+				className="mb-4 flex min-w-0 flex-col gap-2 border-b pb-4"
+				disabled={
+					state.isRunning ||
+					state.isSaving ||
+					state.isRecording ||
+					hasDraft
+				}
+			>
+				<legend className="mb-2 font-medium text-sm">
+					Test browser
+				</legend>
+				<div className="flex items-center gap-2">
+					<Switch
+						id={headedId}
+						checked={isHeaded}
+						onCheckedChange={setIsHeaded}
+						aria-describedby={browserHelpId}
+					/>
+					<FieldLabel htmlFor={headedId}>
+						Show browser window
+					</FieldLabel>
+				</div>
+				<div className="flex items-center gap-2">
+					<Switch
+						id={keepOpenId}
+						checked={isHeaded && shouldKeepOpen}
+						onCheckedChange={setShouldKeepOpen}
+						disabled={!isHeaded}
+						aria-describedby={browserHelpId}
+					/>
+					<FieldLabel htmlFor={keepOpenId}>
+						Keep final window open for up to 60 seconds
+					</FieldLabel>
+				</div>
+				<P id={browserHelpId} className="text-muted-foreground text-xs">
+					Opens Chromium on the machine running the SEMOSS backend.
+					Close its window after playback to end inspection sooner.
+				</P>
+			</fieldset>
 			<input
 				ref={uploadInput}
 				type="file"
@@ -210,16 +262,16 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 					</div>
 				</fieldset>
 				{!frame ? (
-					<p className="text-muted-foreground text-sm">
+					<P className="text-muted-foreground text-sm">
 						Open the App preview to record a workflow.
-					</p>
+					</P>
 				) : (
 					!state.isAccessible && (
-						<p className="text-muted-foreground text-sm">
+						<P className="text-muted-foreground text-sm">
 							Recording becomes available when this app's document
 							can be accessed. External frames cannot be recorded
 							here.
-						</p>
+						</P>
 					)
 				)}
 				{state.isPickingCheck && (
@@ -272,19 +324,19 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 							{state.isSaving ? "Saving…" : "Save recording"}
 						</Button>
 						{checkCount === 0 && (
-							<p className="text-muted-foreground text-sm">
+							<P className="text-muted-foreground text-sm">
 								No outcome checks recorded. Replay alone will
 								not verify the app.
-							</p>
+							</P>
 						)}
 						{state.weakSteps > 0 && (
-							<p className="text-destructive text-sm">
+							<P className="text-destructive text-sm">
 								{state.weakSteps} step
 								{state.weakSteps === 1 ? " has" : "s have"} no
 								unique data-testid, so this recording cannot be
 								saved. Ask the assistant to add test ids to
 								those elements, then record again.
-							</p>
+							</P>
 						)}
 					</div>
 				)}
@@ -293,10 +345,10 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 					!state.isLoading &&
 					state.recordings.length === 0 &&
 					!error && (
-						<p className="text-muted-foreground text-sm">
+						<P className="text-muted-foreground text-sm">
 							No tests yet. Run a page visibility check, or record
 							a workflow and add a check to test it later.
-						</p>
+						</P>
 					)}
 				{((state.isSaving && !hasDraft) ||
 					(state.isRunning && !state.run)) && (
@@ -313,9 +365,9 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 				{state.run && (
 					<div className="flex flex-col gap-2">
 						{state.run.coverageWarning && (
-							<p className="text-muted-foreground text-sm">
+							<P className="text-muted-foreground text-sm">
 								{state.run.coverageWarning}
-							</p>
+							</P>
 						)}
 						<output aria-live="polite" className="text-sm">
 							{runLabel}
@@ -325,6 +377,16 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 								? ` · ${summary.passed ?? 0} passed · ${summary.failed ?? 0} failed · ${summary.error ?? 0} errors · ${summary.skipped ?? 0} skipped`
 								: ""}
 						</output>
+						{state.run.browserOpen && (
+							<output
+								className="text-muted-foreground text-sm"
+								aria-live="polite"
+							>
+								Results are ready. Close the Chromium window
+								before starting another test run; it closes
+								automatically within 60 seconds.
+							</output>
+						)}
 						{state.run.error && (
 							<Alert variant="destructive">
 								<AlertDescription>
@@ -344,7 +406,7 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 						{state.run.tests
 							?.filter((test) => test.status !== "PASSED")
 							.map((test, index) => (
-								<p
+								<P
 									key={`${test.name}-${index}`}
 									className="text-sm"
 								>
@@ -372,7 +434,7 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 									{test.cleanup
 										? ` · Cleanup: ${test.cleanup.status}`
 										: ""}
-								</p>
+								</P>
 							))}
 						{state.run.status === "UNKNOWN" && (
 							<Button
@@ -408,8 +470,8 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 				}
 				selectedId={state.selectedId}
 				onRefresh={state.refreshRecordings}
-				onRun={(id) => void state.startRun(id)}
-				onRunAll={() => void state.runAll()}
+				onRun={(id) => void state.startRun(id, browserOptions)}
+				onRunAll={() => void state.runAll(browserOptions)}
 				onSave={state.updateRecording}
 				onDelete={state.deleteRecording}
 			/>
@@ -425,15 +487,20 @@ export const AppTestingPanel = ({ appId }: AppTestingPanelProps) => {
 						state.isRecording ||
 						hasDraft
 					}
-					onClick={() => void state.startRun("__platform_smoke__")}
+					onClick={() =>
+						void state.startRun(
+							"__platform_smoke__",
+							browserOptions,
+						)
+					}
 				>
 					Page visibility check
 				</Button>
-				<p className="text-muted-foreground text-xs">
+				<P className="text-muted-foreground text-xs">
 					Checks visible content and immediate JavaScript errors only.
-					Test runs replay each selected test once in a background
-					browser.
-				</p>
+					Test runs replay each selected test once using the browser
+					settings above.
+				</P>
 			</div>
 		</section>
 	);

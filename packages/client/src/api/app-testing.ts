@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { Session } from "@semoss/sdk";
 import type {
+	AppTestBrowserOptions,
 	AppTestDraft,
 	AppTestRecording,
 	AppTestRecordingSummary,
@@ -112,6 +113,10 @@ export const parseAppTestRecordings = (
 };
 
 const runSchema = z.object({
+	headless: z.boolean().optional(),
+	keepOpen: z.boolean().optional(),
+	browserOpen: z.boolean().optional(),
+	browserClosesAt: z.string().optional(),
 	runId: z.string(),
 	target: z.string(),
 	status: z.string(),
@@ -364,10 +369,16 @@ export const parseAppTestUpload = (content: string): AppTestDraft => {
 };
 
 /** An intentional whole-app run; never used as the default for an omitted UUID. */
-export const runAllAppTests = async (appId: string): Promise<AppTestRun> => {
+export const runAllAppTests = async (
+	appId: string,
+	browserOptions?: AppTestBrowserOptions,
+): Promise<AppTestRun> => {
+	const browserArguments = browserOptions
+		? `, headless=[${browserOptions.headless}], keepOpen=[${browserOptions.keepOpen}]`
+		: "";
 	const result = runSchema.parse(
 		await callAppTestPixel(
-			`RunAppTests(project=${JSON.stringify([appId])}, all=[true]);`,
+			`RunAppTests(project=${JSON.stringify([appId])}, all=[true]${browserArguments});`,
 		),
 	);
 	if (result.target !== appId) throw new Error("The app test target changed");
@@ -379,6 +390,7 @@ export const runAppTests = async (
 	appId: string,
 	recordingId: string,
 	repeat = 1,
+	browserOptions?: AppTestBrowserOptions,
 ): Promise<AppTestRun> => {
 	if (!recordingId.trim())
 		throw new Error("Choose a test recording before running it");
@@ -387,9 +399,12 @@ export const runAppTests = async (
 			? `suite=${JSON.stringify([recordingId])}`
 			: `recordingIds=${JSON.stringify([recordingId])}`;
 	const repeatArgument = repeat > 1 ? `, repeat=[${repeat}]` : "";
+	const browserArguments = browserOptions
+		? `, headless=[${browserOptions.headless}], keepOpen=[${browserOptions.keepOpen}]`
+		: "";
 	const result = runSchema.parse(
 		await callAppTestPixel(
-			`RunAppTests(project=${JSON.stringify([appId])}, ${selectionArgument}${repeatArgument});`,
+			`RunAppTests(project=${JSON.stringify([appId])}, ${selectionArgument}${repeatArgument}${browserArguments});`,
 		),
 	);
 	if (result.target !== appId) throw new Error("The app test target changed");

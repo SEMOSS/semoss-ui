@@ -12,6 +12,7 @@ import {
 	saveAppTestRecording,
 } from "@/api/app-testing";
 import type {
+	AppTestBrowserOptions,
 	AppTestInvalidFile,
 	AppTestRecording,
 	AppTestRecordingSummary,
@@ -50,8 +51,11 @@ interface AppTestingState {
 	save: (name: string, description: string) => Promise<void>;
 	updateRecording: (recording: AppTestRecording) => Promise<void>;
 	deleteRecording: (id: string) => Promise<void>;
-	startRun: (recordingId: string) => Promise<void>;
-	runAll: () => Promise<void>;
+	startRun: (
+		recordingId: string,
+		options?: AppTestBrowserOptions,
+	) => Promise<void>;
+	runAll: (options?: AppTestBrowserOptions) => Promise<void>;
 	uploadTest: (file: File) => Promise<void>;
 	refreshRun: () => Promise<void>;
 	discard: () => void;
@@ -153,13 +157,23 @@ export const useAppTesting = (
 	}, [frame]);
 
 	const isRunning =
-		isStartingRun || run?.status === "RUNNING" || run?.status === "QUEUED";
+		isStartingRun ||
+		run?.status === "RUNNING" ||
+		run?.status === "QUEUED" ||
+		run?.browserOpen === true;
 	useEffect(() => {
-		if (!run || !["RUNNING", "QUEUED"].includes(run.status)) return;
+		if (
+			!run ||
+			(!["RUNNING", "QUEUED"].includes(run.status) && !run.browserOpen)
+		)
+			return;
 		let isCancelled = false;
 		const timer = window.setTimeout(async () => {
 			try {
-				if (Date.now() - runStartedAt.current > 180_000) {
+				if (
+					Date.now() - runStartedAt.current >
+					180_000 + (run.keepOpen ? 60_000 : 0)
+				) {
 					throw new Error(
 						"The run is taking longer than expected. Refresh its result to check again.",
 					);
@@ -173,7 +187,7 @@ export const useAppTesting = (
 							? failure.message
 							: "Could not read the run result",
 					);
-					setRun({ ...run, status: "UNKNOWN" });
+					setRun({ ...run, status: "UNKNOWN", browserOpen: false });
 				}
 			}
 		}, 1_000);
@@ -338,7 +352,10 @@ export const useAppTesting = (
 		}
 	};
 
-	const startRun = async (recordingId: string | null): Promise<void> => {
+	const startRun = async (
+		recordingId: string | null,
+		options?: AppTestBrowserOptions,
+	): Promise<void> => {
 		if (isRunning || isSaving || isRecording) return;
 		const signal = lifetime.current?.signal;
 		setIsStartingRun(true);
@@ -349,8 +366,8 @@ export const useAppTesting = (
 		try {
 			const result =
 				recordingId === null
-					? await runAllAppTests(appId)
-					: await runAppTests(appId, recordingId);
+					? await runAllAppTests(appId, options)
+					: await runAppTests(appId, recordingId, 1, options);
 			if (!signal?.aborted) setRun(result);
 		} catch (failure: unknown) {
 			if (!signal?.aborted)
@@ -443,7 +460,7 @@ export const useAppTesting = (
 		updateRecording,
 		deleteRecording,
 		startRun,
-		runAll: () => startRun(null),
+		runAll: (options) => startRun(null, options),
 		uploadTest,
 		refreshRun,
 		discard: () => {
