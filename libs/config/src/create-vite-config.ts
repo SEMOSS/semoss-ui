@@ -12,7 +12,6 @@ import {
 	type PluginOption,
 	type UserConfig,
 } from "vite";
-import svgr from "vite-plugin-svgr";
 import type { ViteUserConfig } from "vitest/config";
 import { basename, resolve } from "node:path";
 
@@ -56,8 +55,6 @@ export function createViteConfig(options: {
 	enableReact?: boolean;
 	/** Include `@tailwindcss/vite`. Defaults to `true`. */
 	enableTailwind?: boolean;
-	/** Include `vite-plugin-svgr`. Defaults to `false`. */
-	enableSvgr?: boolean;
 	/** Extra resolve aliases, applied before the built-in `@` -> `<rootDir>/src`. */
 	alias?: Alias[];
 	/** Build-time `define` values, computed from the loaded env. */
@@ -79,7 +76,6 @@ export function createViteConfig(options: {
 		port,
 		enableReact = true,
 		enableTailwind = true,
-		enableSvgr = false,
 		alias = [],
 		define,
 		manualChunks,
@@ -95,9 +91,6 @@ export function createViteConfig(options: {
 		const plugins: PluginOption[] = [];
 		if (enableTailwind) {
 			plugins.push(tailwindcss());
-		}
-		if (enableSvgr) {
-			plugins.push(svgr());
 		}
 		if (enableReact) {
 			plugins.push(react({ include: /\.(js|jsx|ts|tsx)$/ }));
