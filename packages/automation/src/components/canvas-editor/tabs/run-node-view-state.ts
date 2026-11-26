@@ -145,42 +145,6 @@ function isLoopContextSnapshot(
 	);
 }
 
-function compactText(value: unknown): string {
-	return typeof value === "string" ? value : JSON.stringify(value);
-}
-
-/**
- * The value a loop pass worked on, read from a node's retained scope snapshot: the pass's
- * `item`, or its `batch` when the loop groups several items. Null when the snapshot holds
- * no loop context with either (repeat and while loops have neither).
- */
-export function getLoopItemText(
-	scopeSnapshot: string | null | undefined,
-	iterationIndex: number,
-): string | null {
-	if (!scopeSnapshot) return null;
-	let parsed: unknown;
-	try {
-		parsed = JSON.parse(scopeSnapshot);
-	} catch {
-		return null;
-	}
-	if (
-		parsed === null ||
-		typeof parsed !== "object" ||
-		Array.isArray(parsed)
-	) {
-		return null;
-	}
-	const contexts = Object.values(parsed).filter(isLoopContextSnapshot);
-	const context =
-		contexts.find((entry) => entry.index === iterationIndex) ?? contexts[0];
-	if (!context) return null;
-	if ("item" in context) return compactText(context.item);
-	if ("batch" in context) return compactText(context.batch);
-	return null;
-}
-
 /**
  * Splits a retained scope-snapshot JSON string into one Name/Value row per top-level
  * variable (Mirth Connect-style message browser). The row name is the literal `${...}`

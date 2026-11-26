@@ -1,6 +1,5 @@
 import type { LoopIterationTarget } from "../../../api/automation-history";
 import type {
-	AutomationNodeIteration,
 	AutomationNodeResult,
 	AutomationRunDetail,
 	AutomationRunSummary,
@@ -12,7 +11,6 @@ import {
 	parseUtcDate,
 } from "../../../domain/automation-display";
 import { runtimeNodeId } from "./run-data-browser-data";
-import { getLoopItemText } from "./run-node-view-state";
 
 /** Newest run first, by when it started; ties fall back to RUN_ID so the order is stable. */
 export function sortRunsNewestFirst(
@@ -364,8 +362,6 @@ export interface DashboardRunRow extends BaseDashboardRow {
 	completedAt: string | null;
 	/** The loop pass this row stands for, as the server counts it; null for a run shown as it ran. */
 	loop: LoopIterationTarget | null;
-	/** The value this loop pass worked on (its array item); null outside a loop or when none was kept. */
-	loopItem: string | null;
 	/**
 	 * Displayed number of the run this one reprocesses, when it was started by a reprocess
 	 * and that run is among those listed; null otherwise.
@@ -404,7 +400,6 @@ export interface BuildDashboardRowsParams {
 interface DisplayRun {
 	iteration: number | null;
 	loop: LoopIterationTarget | null;
-	loopItem: string | null;
 	nodes: DisplayNode[];
 	status: RunStatus;
 	startedAt: string | null;
@@ -459,15 +454,6 @@ export function iterationNodeResults(
 	);
 }
 
-/** What a loop pass worked on, from the first of its nodes that kept a scope snapshot. */
-function loopItemOf(iteration: AutomationNodeIteration): string | null {
-	for (const node of iteration.nodeResults) {
-		const item = getLoopItemText(node.scopeSnapshot, iteration.index);
-		if (item !== null) return item;
-	}
-	return null;
-}
-
 /** The outcome of a set of nodes, or null when none of them settles it. */
 function outcomeOf(nodes: DisplayNode[]): RunStatus | null {
 	if (nodes.some(({ node }) => node.STATUS === "FAILED")) return "FAILED";
@@ -510,7 +496,6 @@ function displayRunsFor(
 			{
 				iteration: null,
 				loop: null,
-				loopItem: null,
 				nodes: results.map((node) => ({ node, loop: null })),
 				status: run.STATUS,
 				startedAt: run.STARTED_AT,
@@ -546,7 +531,6 @@ function displayRunsFor(
 			displayRuns.push({
 				iteration: displayRuns.length + 1,
 				loop,
-				loopItem: loopItemOf(iteration),
 				nodes,
 				status: outcomeOf(nodes) ?? "SUCCESS",
 				...withRunFallback(timesOf(iteration.nodeResults), run),
@@ -640,7 +624,6 @@ export function buildDashboardRows(
 				startedAt: displayRun.startedAt,
 				completedAt: displayRun.completedAt,
 				loop: displayRun.loop,
-				loopItem: displayRun.loopItem,
 				reprocessedFromRunNumber: run.REPROCESSED_FROM_RUN_ID
 					? (runNumbers.get(run.REPROCESSED_FROM_RUN_ID) ?? null)
 					: null,

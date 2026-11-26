@@ -1383,55 +1383,6 @@ describe("buildDashboardRows", () => {
 			).toEqual(["between", "s1"]);
 		});
 
-		it("shows the value each loop pass worked on from its nodes' scope snapshot", () => {
-			const snapshot = (index: number, item: unknown) =>
-				JSON.stringify({
-					loop_1: {
-						index,
-						number: index + 1,
-						isFirst: index === 0,
-						item,
-					},
-				});
-			const looped = detail("run-1", [
-				node({
-					NODE_ID: "loop",
-					iterations: [
-						{
-							index: 0,
-							nodeResults: [
-								node({
-									NODE_ID: "a",
-									scopeSnapshot: snapshot(0, "apple"),
-								}),
-							],
-						},
-						{
-							index: 1,
-							nodeResults: [
-								node({
-									NODE_ID: "a",
-									scopeSnapshot: snapshot(1, { id: 2 }),
-								}),
-							],
-						},
-						{ index: 2, nodeResults: [node({ NODE_ID: "a" })] },
-					],
-				}),
-			]);
-			const rows = buildDashboardRows({
-				runs: [run({ RUN_ID: "run-1" })],
-				expandedRunIds: new Set(),
-				runDetails: new Map([["run-1", looped]]),
-				loadingRunIds: new Set(),
-				runErrors: new Map(),
-			});
-
-			expect(
-				rows.map((row) => row.kind === "run" && row.loopItem),
-			).toEqual([null, '{"id":2}', "apple"]);
-		});
-
 		it("gives every row a unique key across runs that share node IDs", () => {
 			const rows = buildDashboardRows({
 				runs: [run({ RUN_ID: "run-1" }), run({ RUN_ID: "run-2" })],
