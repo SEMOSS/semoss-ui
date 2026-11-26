@@ -17,6 +17,7 @@ export type AutomationWorkflowNodeType =
 	| "vector.add"
 	| "vector.delete"
 	| "function.execute"
+	| "api.request"
 	| "agent.run"
 	| "app.pixel"
 	| "control.wait"
@@ -58,7 +59,8 @@ export type AutomationNodeCategory =
 	| "function"
 	| "app"
 	| "control"
-	| "developer";
+	| "developer"
+	| "api";
 
 export type TriggerBinding =
 	| { id: string; type: "manual" }

@@ -5,6 +5,7 @@ import {
 	Cpu,
 	Database,
 	GitBranch,
+	Globe,
 	LayoutGrid,
 	ListTree,
 	type LucideIcon,
@@ -78,6 +79,13 @@ const STEP_TYPES: {
 		icon: Clock,
 		color: "text-sky-600",
 	},
+	{
+		type: "api-request",
+		label: "API Request",
+		description: "Send an HTTP request to an external service",
+		icon: Globe,
+		color: "text-rose-600",
+	},
 ];
 
 // Two namespaces in one map: UPPERCASE keys match RunStatus/NodeStatus from the
@@ -122,6 +130,7 @@ const TYPE_DISPLAY_META: Record<
 	"vector-engine": STEP_TYPES[2],
 	"storage-engine": STEP_TYPES[3],
 	"function-engine": STEP_TYPES[4],
+	"api-request": STEP_TYPES[8],
 	data: STEP_TYPES[5],
 	app: STEP_TYPES[6],
 	wait: STEP_TYPES[7],

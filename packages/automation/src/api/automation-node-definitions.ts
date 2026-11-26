@@ -22,6 +22,7 @@ const NODE_CATEGORIES = new Set([
 	"app",
 	"control",
 	"developer",
+	"api",
 ]);
 const CONFIG_FIELD_TYPES = new Set([
 	"boolean",

@@ -1,5 +1,7 @@
 import { isRecord } from "@semoss/utility/object";
 import type {
+	ApiRequestBodyType,
+	ApiRequestConfig,
 	AutomationEdge,
 	AutomationNode,
 	AutomationNodeType,
@@ -125,6 +127,12 @@ function parsedJsonValue(value: string): AutomationJsonValue | undefined {
 	} catch {
 		return undefined;
 	}
+}
+
+function apiBodyTypeValue(value: unknown): ApiRequestBodyType {
+	return value === "json" || value === "form" || value === "raw"
+		? value
+		: "none";
 }
 
 function numberValue(value: unknown, fallback: number): number {
@@ -380,6 +388,7 @@ function canvasTypeForWorkflow(
 	if (category === "data") return "data";
 	if (category === "vector") return "vector-engine";
 	if (type === "function.execute") return "function-engine";
+	if (type === "api.request") return "api-request";
 	if (type === "control.wait") return "wait";
 	if (type === "control.loop") return "loop";
 	if (isRoutingWorkflowType(type)) return "branch";
@@ -495,6 +504,18 @@ function defaultCanvasConfig(
 			engineId,
 			operation: "execute",
 			params: jsonObjectValue(config.arguments),
+		};
+	}
+	if (type === "api.request") {
+		return {
+			method: stringValue(config.method) || "GET",
+			url: stringValue(config.url),
+			connectionId: stringValue(config.connectionId),
+			query: jsonObjectValue(config.query),
+			headers: jsonObjectValue(config.headers),
+			bodyType: apiBodyTypeValue(config.bodyType),
+			body: jsonValueText(config.body),
+			timeoutSeconds: String(numberValue(config.timeoutSeconds, 30)),
 		};
 	}
 	if (type === "agent.run") {
@@ -613,6 +634,8 @@ function canvasTypeToWorkflow(
 			return "model.chat";
 		case "function-engine":
 			return "function.execute";
+		case "api-request":
+			return "api.request";
 		case "wait":
 			return "control.wait";
 		case "loop":
@@ -775,6 +798,41 @@ function mergeCanvasConfig(
 		}
 		if (typeof limit === "number") next.limit = limit;
 	}
+	if (type === "api.request") {
+		const method = getConfigValue(config, "method");
+		const url = getConfigValue(config, "url");
+		const connectionId = getConfigValue(config, "connectionId");
+		const query = getConfigValue(config, "query");
+		const headers = getConfigValue(config, "headers");
+		const bodyType = getConfigValue(config, "bodyType");
+		const body = getConfigValue(config, "body");
+		const timeoutSeconds = getConfigValue(config, "timeoutSeconds");
+		if (typeof method === "string") next.method = method;
+		if (typeof url === "string") next.url = url;
+		if (typeof connectionId === "string") next.connectionId = connectionId;
+		if (typeof query === "string") {
+			next.query = query.trim() ? (parsedJsonValue(query) ?? query) : {};
+		}
+		if (typeof headers === "string") {
+			next.headers = headers.trim()
+				? (parsedJsonValue(headers) ?? headers)
+				: {};
+		}
+		if (typeof bodyType === "string") next.bodyType = bodyType;
+		if (typeof body === "string") {
+			// A form body is a field map; JSON and raw bodies are sent as written.
+			next.body =
+				bodyType === "form" && body.trim()
+					? (parsedJsonValue(body) ?? body)
+					: body;
+		}
+		if (typeof timeoutSeconds === "string") {
+			const seconds = Number(timeoutSeconds);
+			if (timeoutSeconds.trim() && Number.isFinite(seconds)) {
+				next.timeoutSeconds = seconds;
+			}
+		}
+	}
 	if (type === "function.execute") {
 		const params = getConfigValue(config, "params");
 		if (typeof params === "string") {
@@ -861,6 +919,17 @@ export function getWorkflowNodeDefinition(
 	type: AutomationWorkflowNodeType,
 ): AutomationNodeDefinition | undefined {
 	return getAutomationNodeDefinition(type);
+}
+
+/** Converts an API Request node's canvas form to the configuration the server runs. */
+export function apiRequestWorkflowConfig(
+	config: ApiRequestConfig,
+): AutomationWorkflowNodeConfig {
+	return mergeCanvasConfig(
+		"api.request",
+		config,
+		getWorkflowNodeDefinition("api.request")?.defaultConfig ?? {},
+	);
 }
 
 export function createCanvasWorkflowNode(
@@ -1205,6 +1274,17 @@ export function validateCanvasWorkflowNode(
 			)
 		) {
 			errors.push("Output variable must be unique");
+		}
+	}
+	if (type === "api.request") {
+		for (const [key, label] of [
+			["query", "Query parameters"],
+			["headers", "Headers"],
+		] as const) {
+			const value = config[key];
+			if (typeof value === "string" && value.trim()) {
+				errors.push(`${label} must be a JSON object`);
+			}
 		}
 	}
 	if (type === "function.execute" && typeof config.arguments === "string") {

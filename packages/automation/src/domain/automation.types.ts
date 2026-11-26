@@ -18,6 +18,7 @@ export type AutomationNodeType =
 	| "vector-engine"
 	| "model-engine"
 	| "function-engine"
+	| "api-request"
 	| "app"
 	| "branch"
 	| "loop"
@@ -117,6 +118,24 @@ export interface FunctionEngineConfig {
 	params: string;
 }
 
+export type ApiRequestBodyType = "none" | "json" | "form" | "raw";
+
+/** Canvas form of an `api.request` node; JSON-valued fields are kept as editable text. */
+export interface ApiRequestConfig {
+	method: string;
+	url: string;
+	/** Optional REST function engine supplying host and credentials. */
+	connectionId: string;
+	connectionName?: string;
+	/** JSON object text of query parameters. */
+	query: string;
+	/** JSON object text of request headers. */
+	headers: string;
+	bodyType: ApiRequestBodyType;
+	body: string;
+	timeoutSeconds: string;
+}
+
 export interface AppConfig {
 	pixel: string;
 	appId?: string;
@@ -184,6 +203,7 @@ export type NodeConfig =
 	| VectorEngineConfig
 	| ModelEngineConfig
 	| FunctionEngineConfig
+	| ApiRequestConfig
 	| AppConfig
 	| AgentRunConfig
 	| BranchConfig
