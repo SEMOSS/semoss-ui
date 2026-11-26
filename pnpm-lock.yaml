@@ -162,14 +162,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  ooxml-core: 2.1.0
-  ooxml-ui: 2.1.0
-
-patchedDependencies:
-  ooxml-core@2.1.0: 3e8af4378062639a8f1169fa5675b1c298a25502320f62c79709257a3adb4bf8
-  ooxml-ui@2.1.0: 1cffb36dd00015b0621b4c06f9d28f23ee18a1adae7ff8ed626e964d79acc535
-
 importers:
 
   .:
@@ -6485,7 +6477,7 @@ snapshots:
 
   '@christophervr/xlsx-core@2.0.0':
     dependencies:
-      ooxml-core: 2.1.0(patch_hash=3e8af4378062639a8f1169fa5675b1c298a25502320f62c79709257a3adb4bf8)
+      ooxml-core: 2.1.0
     transitivePeerDependencies:
       - '@napi-rs/canvas'
       - node-forge
@@ -6494,8 +6486,8 @@ snapshots:
   '@christophervr/xlsx-react-viewer@2.0.0(react@19.2.8)(three@0.187.0)':
     dependencies:
       '@christophervr/xlsx-core': 2.0.0
-      ooxml-core: 2.1.0(patch_hash=3e8af4378062639a8f1169fa5675b1c298a25502320f62c79709257a3adb4bf8)
-      ooxml-ui: 2.1.0(patch_hash=1cffb36dd00015b0621b4c06f9d28f23ee18a1adae7ff8ed626e964d79acc535)(react@19.2.8)(three@0.187.0)
+      ooxml-core: 2.1.0
+      ooxml-ui: 2.1.0(react@19.2.8)(three@0.187.0)
       react: 19.2.8
     transitivePeerDependencies:
       - '@napi-rs/canvas'
@@ -9047,7 +9039,7 @@ snapshots:
 
   docx-core@2.0.0:
     dependencies:
-      ooxml-core: 2.1.0(patch_hash=3e8af4378062639a8f1169fa5675b1c298a25502320f62c79709257a3adb4bf8)
+      ooxml-core: 2.1.0
     transitivePeerDependencies:
       - '@napi-rs/canvas'
       - node-forge
@@ -9056,8 +9048,8 @@ snapshots:
   docx-react-viewer@2.0.0(react@19.2.8)(three@0.187.0):
     dependencies:
       docx-core: 2.0.0
-      ooxml-core: 2.1.0(patch_hash=3e8af4378062639a8f1169fa5675b1c298a25502320f62c79709257a3adb4bf8)
-      ooxml-ui: 2.1.0(patch_hash=1cffb36dd00015b0621b4c06f9d28f23ee18a1adae7ff8ed626e964d79acc535)(react@19.2.8)(three@0.187.0)
+      ooxml-core: 2.1.0
+      ooxml-ui: 2.1.0(react@19.2.8)(three@0.187.0)
       react: 19.2.8
     transitivePeerDependencies:
       - '@napi-rs/canvas'
@@ -10267,7 +10259,7 @@ snapshots:
       regex: 6.0.1
       regex-recursion: 6.0.2
 
-  ooxml-core@2.1.0(patch_hash=3e8af4378062639a8f1169fa5675b1c298a25502320f62c79709257a3adb4bf8):
+  ooxml-core@2.1.0:
     dependencies:
       '@xmldom/xmldom': 0.9.12
       emf-converter: 5.0.0
@@ -10290,12 +10282,12 @@ snapshots:
       y-protocols: 1.0.7(yjs@13.6.33)
       yjs: 13.6.33
 
-  ooxml-ui@2.1.0(patch_hash=1cffb36dd00015b0621b4c06f9d28f23ee18a1adae7ff8ed626e964d79acc535)(react@19.2.8)(three@0.187.0):
+  ooxml-ui@2.1.0(react@19.2.8)(three@0.187.0):
     dependencies:
       dompurify: 3.5.0
       emf-converter: 5.0.0
       lit: 3.3.3
-      ooxml-core: 2.1.0(patch_hash=3e8af4378062639a8f1169fa5675b1c298a25502320f62c79709257a3adb4bf8)
+      ooxml-core: 2.1.0
       opentype.js: 2.0.0
       prosemirror-collab: 1.3.1
       prosemirror-commands: 1.7.2
@@ -10441,8 +10433,8 @@ snapshots:
       jspdf: 4.2.1
       jszip: 3.10.2
       lucide-react: 1.74.0(@types/react@19.2.18)(react@19.2.8)
-      ooxml-core: 2.1.0(patch_hash=3e8af4378062639a8f1169fa5675b1c298a25502320f62c79709257a3adb4bf8)
-      ooxml-ui: 2.1.0(patch_hash=1cffb36dd00015b0621b4c06f9d28f23ee18a1adae7ff8ed626e964d79acc535)(react@19.2.8)(three@0.187.0)
+      ooxml-core: 2.1.0
+      ooxml-ui: 2.1.0(react@19.2.8)(three@0.187.0)
       opentype.js: 2.0.0
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
@@ -11546,7 +11538,7 @@ snapshots:
 
   visio-core@2.0.0:
     dependencies:
-      ooxml-core: 2.1.0(patch_hash=3e8af4378062639a8f1169fa5675b1c298a25502320f62c79709257a3adb4bf8)
+      ooxml-core: 2.1.0
     transitivePeerDependencies:
       - '@napi-rs/canvas'
       - node-forge
@@ -11555,8 +11547,8 @@ snapshots:
   visio-react-viewer@2.0.0(react@19.2.8)(three@0.187.0):
     dependencies:
       emf-converter: 5.0.0
-      ooxml-core: 2.1.0(patch_hash=3e8af4378062639a8f1169fa5675b1c298a25502320f62c79709257a3adb4bf8)
-      ooxml-ui: 2.1.0(patch_hash=1cffb36dd00015b0621b4c06f9d28f23ee18a1adae7ff8ed626e964d79acc535)(react@19.2.8)(three@0.187.0)
+      ooxml-core: 2.1.0
+      ooxml-ui: 2.1.0(react@19.2.8)(three@0.187.0)
       react: 19.2.8
       visio-core: 2.0.0
     transitivePeerDependencies:

@@ -20,12 +20,10 @@ import { encodeBytesToBase64 } from "@semoss/utility/encoding";
 import { useFilePanel } from "../../hooks/use-file-panel";
 import { useFileViewControls } from "../../hooks/use-file-view-controls";
 import { useOfficeFileCommands } from "../../hooks/use-office-file-commands";
-import { useVisioTextRecovery } from "../../hooks/use-visio-text-recovery";
 import { getFilePanelScope } from "../../types/file-panel.types";
 import type { FileViewProps } from "../../types/file-view.types";
 import { OfficeViewerError } from "./office/office-viewer-error";
 import { OfficeViewerFrame } from "./office/office-viewer-frame";
-import { VisioTextEditNotice } from "./office/visio-text-edit-notice";
 import {
 	getVisioSaveSnapshot,
 	isVisioSaveSnapshotCurrent,
@@ -40,10 +38,6 @@ export const FileVisioView = ({ config, onControls }: FileViewProps) => {
 		panelRef.current = panel;
 	}, [panel]);
 	const [handle, setHandle] = useState<ViewerHandle | null>(null);
-	const recovery = useVisioTextRecovery(
-		handle?.element ?? null,
-		JSON.stringify([getFilePanelScope(config.mode), panel.read.revision]),
-	);
 	const handleRef = useRef<ViewerHandle | null>(null);
 	const [editorError, setEditorError] = useState<Error | null>(null);
 	const [isDirty, setIsDirty] = useState(false);
@@ -110,8 +104,14 @@ export const FileVisioView = ({ config, onControls }: FileViewProps) => {
 			if (
 				outcome.status !== "committed" &&
 				outcome.status !== "unchanged"
-			)
+			) {
+				toast.error(
+					outcome.status === "refused"
+						? outcome.message
+						: "The text edit was cancelled. The diagram was not saved.",
+				);
 				return;
+			}
 			if (
 				handleRef.current !== handle ||
 				sourceRevisionRef.current !== sourceRevision ||
@@ -212,20 +212,6 @@ export const FileVisioView = ({ config, onControls }: FileViewProps) => {
 			label={`${panel.readOnly ? "Read-only " : ""}Visio diagram: ${config.name}`}
 			className="flex flex-col"
 		>
-			{recovery.failures.length > 0 && (
-				<div className="max-h-64 shrink-0 space-y-2 overflow-auto p-2">
-					{recovery.failures.map((failure) => (
-						<VisioTextEditNotice
-							key={JSON.stringify([
-								failure.pageId,
-								failure.shapeId,
-							])}
-							failure={failure}
-							onDismiss={() => recovery.dismiss(failure)}
-						/>
-					))}
-				</div>
-			)}
 			<VisioViewer
 				key={panel.read.revision}
 				{...VISIO_VIEWER_POLICY}
