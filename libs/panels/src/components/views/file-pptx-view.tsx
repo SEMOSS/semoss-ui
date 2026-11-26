@@ -1,7 +1,7 @@
 import {
 	PowerPointViewer,
 	type PowerPointViewerHandle,
-	THEME_CATALOG,
+	type ViewerTheme,
 } from "pptx-react-viewer";
 import { translationsEn } from "pptx-react-viewer/i18n";
 import {
@@ -17,7 +17,7 @@ import {
 	decodeBase64Asset,
 	getFileOperationErrorMessage,
 } from "@semoss/shared";
-import { toast, useTheme } from "@semoss/ui/next";
+import { toast } from "@semoss/ui/next";
 import { encodeBytesToBase64 } from "@semoss/utility/encoding";
 import { useFilePanel } from "../../hooks/use-file-panel";
 import { useFileViewControls } from "../../hooks/use-file-view-controls";
@@ -28,6 +28,33 @@ import { OfficeViewerError } from "./office/office-viewer-error";
 import { OfficeViewerFrame } from "./office/office-viewer-frame";
 import { PPTX_VIEWER_CUSTOMIZATION } from "./office/pptx-viewer-policy";
 import "pptx-react-viewer/styles";
+
+/** Use the frame's Office palette without feeding PPTX's token aliases back into themselves. */
+const viewerTheme = {
+	colors: {
+		background: "var(--semoss-office-background)",
+		foreground: "var(--semoss-office-foreground)",
+		card: "var(--semoss-office-surface)",
+		cardForeground: "var(--semoss-office-foreground)",
+		popover: "var(--semoss-office-popover)",
+		popoverForeground: "var(--semoss-office-popover-foreground)",
+		primary: "var(--semoss-office-accent)",
+		primaryForeground: "var(--semoss-office-accent-foreground)",
+		secondary: "var(--semoss-office-surface)",
+		secondaryForeground: "var(--semoss-office-foreground)",
+		muted: "var(--semoss-office-surface)",
+		mutedForeground: "var(--semoss-office-muted-foreground)",
+		accent: "var(--semoss-office-selected)",
+		accentForeground: "var(--semoss-office-foreground)",
+		destructive: "var(--semoss-office-danger)",
+		destructiveForeground: "var(--semoss-office-danger-foreground)",
+		border: "var(--semoss-office-border)",
+		input: "var(--semoss-office-control-border)",
+		ring: "var(--semoss-office-ring)",
+	},
+	radius: "var(--semoss-office-radius)",
+	cssVars: { "--pptx-font": "var(--semoss-office-font)" },
+} satisfies ViewerTheme;
 
 let registered = false;
 const registerViewerCopy = (i18n: ReturnType<typeof getI18n>) => {
@@ -51,11 +78,6 @@ interface PresentationSession {
 /** Preview and edit a PowerPoint file from a project, engine, or user resource. */
 export const FilePptxView = ({ config, onControls }: FileViewProps) => {
 	const { i18n } = useTranslation();
-	const { resolvedTheme } = useTheme();
-	const viewerTheme = THEME_CATALOG.find(
-		(entry) =>
-			entry.key === (resolvedTheme === "dark" ? "default" : "light"),
-	)?.theme;
 	const panel = useFilePanel(config, { base64: true });
 	const panelRef = useRef(panel);
 	useLayoutEffect(() => {

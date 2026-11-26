@@ -1,9 +1,29 @@
 /* Scan the source-only panels package in every host's Tailwind build. */
 @source "../**/*.{ts,tsx}";
 
-/* Native Office controls keep their own palette, typography and density.
- * The frame follows the host's scheme without remapping vendor theme tokens.
+/* Resolve the shared Office inputs on the frame, before PPTX's nested controls
+ * remap --office-* through --pptx-*. These aliases avoid circular references and
+ * keep each viewer's light/dark palette independent of the surrounding page.
  */
+.office-viewer-scope {
+ --semoss-office-background: var(--office-background);
+ --semoss-office-foreground: var(--office-foreground);
+ --semoss-office-surface: var(--office-surface);
+ --semoss-office-selected: var(--office-selected);
+ --semoss-office-muted-foreground: var(--office-muted-foreground);
+ --semoss-office-border: var(--office-border);
+ --semoss-office-control-border: var(--office-control-border);
+ --semoss-office-accent: var(--office-accent);
+ --semoss-office-accent-foreground: var(--office-accent-foreground);
+ --semoss-office-popover: var(--office-popover);
+ --semoss-office-popover-foreground: var(--office-popover-foreground);
+ --semoss-office-danger: var(--office-danger);
+ --semoss-office-danger-foreground: var(--office-danger-foreground);
+ --semoss-office-ring: var(--office-ring);
+ --semoss-office-font: var(--office-font);
+ --semoss-office-radius: var(--office-radius);
+}
+
 .office-viewer-scope[data-office-theme="light"] {
  color-scheme: light;
 }

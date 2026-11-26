@@ -20,7 +20,6 @@ const state = vi.hoisted(() => ({
 vi.mock("pptx-react-viewer", async () => {
 	const React = await import("react");
 	return {
-		THEME_CATALOG: [],
 		PowerPointViewer: React.forwardRef(
 			(
 				{ onDirtyChange }: { onDirtyChange: (dirty: boolean) => void },
