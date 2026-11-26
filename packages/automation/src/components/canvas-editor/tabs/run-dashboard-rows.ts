@@ -11,6 +11,10 @@ import {
 	parseUtcDate,
 } from "../../../domain/automation-display";
 import { runtimeNodeId } from "./run-data-browser-data";
+import {
+	nodesMatchVariableConditions,
+	type VariableCondition,
+} from "./run-variable-search";
 
 /** Newest run first, by when it started; ties fall back to RUN_ID so the order is stable. */
 export function sortRunsNewestFirst(
@@ -394,6 +398,8 @@ export interface BuildDashboardRowsParams {
 	runNumbers?: ReadonlyMap<string, number>;
 	/** When a search names one loop iteration ("45.3"), only that iteration is shown. */
 	iterationQuery?: number | null;
+	/** Variable searches: a loop pass is only shown when its own steps meet every one. */
+	variableConditions?: readonly VariableCondition[];
 }
 
 /** One row of the run list: a run as it ran, or one loop iteration shown as a run of its own. */
@@ -597,6 +603,7 @@ export function buildDashboardRows(
 		loadingRunIds,
 		runErrors,
 		iterationQuery = null,
+		variableConditions = [],
 	} = params;
 	const rows: DashboardRow[] = [];
 	const runNumbers = params.runNumbers ?? assignRunNumbers(runs);
@@ -607,6 +614,15 @@ export function buildDashboardRows(
 			if (
 				iterationQuery !== null &&
 				displayRun.iteration !== iterationQuery
+			) {
+				continue;
+			}
+			if (
+				displayRun.loop !== null &&
+				!nodesMatchVariableConditions(
+					displayRun.nodes.map(({ node }) => node),
+					variableConditions,
+				)
 			) {
 				continue;
 			}

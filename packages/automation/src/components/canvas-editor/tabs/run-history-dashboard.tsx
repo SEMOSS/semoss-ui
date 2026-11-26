@@ -8,12 +8,15 @@ import {
 	Inbox,
 	Loader2,
 	Maximize2,
+	Plus,
 	RotateCw,
 	Route,
 	Search,
 	SearchX,
+	SlidersHorizontal,
 	Square,
 	TriangleAlert,
+	X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CellOutputBlock } from "@semoss/shared";
@@ -27,6 +30,9 @@ import {
 	DialogHeader,
 	DialogTitle,
 	Input,
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
 	Spinner,
 	Table,
 	TableBody,
@@ -86,6 +92,12 @@ import {
 } from "./run-dashboard-visuals";
 import { runMatchesKeyword } from "./run-data-browser-data";
 import { getRunScopeVariableRows } from "./run-node-view-state";
+import {
+	activeVariableConditions,
+	collectVariableNames,
+	runMatchesVariableConditions,
+	type VariableCondition,
+} from "./run-variable-search";
 
 interface RunHistoryDashboardProps {
 	appId: string;
@@ -564,14 +576,28 @@ export function RunHistoryDashboard({
 		});
 	}, []);
 
+	const [variableConditions, setVariableConditions] = useState<
+		VariableCondition[]
+	>([]);
+	const activeConditions = useMemo(
+		() => activeVariableConditions(variableConditions),
+		[variableConditions],
+	);
+	const variableNames = useMemo(
+		() => collectVariableNames(runDetails.values()),
+		[runDetails],
+	);
+
 	const hasActiveFilters =
 		keyword.trim() !== "" ||
+		activeConditions.length > 0 ||
 		runIdQuery.trim() !== "" ||
 		Object.values(started).some((value) => value !== "") ||
 		statusFilters.size > 0;
 
 	const clearFilters = useCallback(() => {
 		setKeyword("");
+		setVariableConditions([]);
 		setRunIdQuery("");
 		setStarted(NO_STARTED_FILTERS);
 		setStatusFilters(new Set());
@@ -599,59 +625,69 @@ export function RunHistoryDashboard({
 		[statusFilters, matchesNonStatusFilters],
 	);
 
-	// Keyword search reads retained message/variable data, which is only fetched once a run is expanded —
-	// so eagerly load details for every run that otherwise passes the filters while a keyword is active.
+	// Keyword and variable search read retained data, which is only fetched once a run is expanded —
+	// so eagerly load details for every run that otherwise passes the filters while either is active.
+	const searchesRetainedData =
+		keyword.trim() !== "" || activeConditions.length > 0;
 	useEffect(() => {
-		if (!keyword.trim()) return;
+		if (!searchesRetainedData) return;
 		for (const run of runs) {
 			if (matchesNonKeywordFilters(run) && !runErrors.has(run.RUN_ID)) {
 				fetchDetailIfNeeded(run.RUN_ID);
 			}
 		}
 	}, [
-		keyword,
+		searchesRetainedData,
 		runs,
 		runErrors,
 		matchesNonKeywordFilters,
 		fetchDetailIfNeeded,
 	]);
 
-	const filteredRuns = useMemo(() => {
-		const trimmedKeyword = keyword.trim();
-		return sortRunsNewestFirst(
-			runs.filter((run) => {
-				if (!matchesNonKeywordFilters(run)) return false;
-				if (trimmedKeyword) {
-					const detail = runDetails.get(run.RUN_ID);
-					if (!detail) return false;
-					if (!runMatchesKeyword(detail, trimmedKeyword))
-						return false;
-				}
-				return true;
-			}),
-		);
-	}, [runs, matchesNonKeywordFilters, keyword, runDetails]);
+	/** A run only passes once its details are loaded, since both searches read them. */
+	const matchesRetainedDataSearch = useCallback(
+		(run: AutomationRunSummary) => {
+			if (!searchesRetainedData) return true;
+			const detail = runDetails.get(run.RUN_ID);
+			if (!detail) return false;
+			const trimmedKeyword = keyword.trim();
+			if (trimmedKeyword && !runMatchesKeyword(detail, trimmedKeyword))
+				return false;
+			return runMatchesVariableConditions(detail, activeConditions);
+		},
+		[searchesRetainedData, runDetails, keyword, activeConditions],
+	);
+
+	const filteredRuns = useMemo(
+		() =>
+			sortRunsNewestFirst(
+				runs.filter(
+					(run) =>
+						matchesNonKeywordFilters(run) &&
+						matchesRetainedDataSearch(run),
+				),
+			),
+		[runs, matchesNonKeywordFilters, matchesRetainedDataSearch],
+	);
 
 	/**
 	 * The runs every filter except status lets through. The outcome cards count these, so
 	 * ticking one status never empties the others' counts.
 	 */
-	const outcomeTotals = useMemo(() => {
-		const trimmedKeyword = keyword.trim();
-		return summarizeRuns(
-			runs.filter((run) => {
-				if (!matchesNonStatusFilters(run)) return false;
-				if (!trimmedKeyword) return true;
-				const detail = runDetails.get(run.RUN_ID);
-				return detail
-					? runMatchesKeyword(detail, trimmedKeyword)
-					: false;
-			}),
-		);
-	}, [runs, matchesNonStatusFilters, keyword, runDetails]);
+	const outcomeTotals = useMemo(
+		() =>
+			summarizeRuns(
+				runs.filter(
+					(run) =>
+						matchesNonStatusFilters(run) &&
+						matchesRetainedDataSearch(run),
+				),
+			),
+		[runs, matchesNonStatusFilters, matchesRetainedDataSearch],
+	);
 
 	const searchingForKeyword =
-		keyword.trim() !== "" &&
+		searchesRetainedData &&
 		runs.some(
 			(run) =>
 				matchesNonKeywordFilters(run) && loadingRunIds.has(run.RUN_ID),
@@ -704,6 +740,7 @@ export function RunHistoryDashboard({
 				runErrors,
 				runNumbers,
 				iterationQuery,
+				variableConditions: activeConditions,
 			}),
 		[
 			filteredRuns,
@@ -713,6 +750,7 @@ export function RunHistoryDashboard({
 			runErrors,
 			runNumbers,
 			iterationQuery,
+			activeConditions,
 		],
 	);
 
@@ -786,20 +824,20 @@ export function RunHistoryDashboard({
 		<div
 			className={
 				popout
-					? "flex h-full min-h-0 flex-col overflow-y-auto rounded-xl border bg-card"
-					: "flex h-full min-h-0 flex-col overflow-y-auto rounded-2xl border bg-card shadow-sm"
+					? "bg-card flex h-full min-h-0 flex-col overflow-y-auto rounded-xl border"
+					: "bg-card flex h-full min-h-0 flex-col overflow-y-auto rounded-2xl border shadow-sm"
 			}
 		>
 			{popout ? null : (
-				<div className="flex items-center justify-between gap-3 border-b bg-muted/30 px-4 py-2.5">
-					<span className="font-semibold text-sm tracking-tight">
+				<div className="bg-muted/30 flex items-center justify-between gap-3 border-b px-4 py-2.5">
+					<span className="text-sm font-semibold tracking-tight">
 						Run history
 					</span>
 					<button
 						type="button"
 						onClick={() => setPopout(true)}
 						title="Open the run history in a larger window"
-						className="flex h-8 items-center gap-1.5 rounded-lg border bg-background px-3 font-medium text-xs transition-colors hover:border-primary/40 hover:text-primary"
+						className="bg-background hover:border-primary/40 hover:text-primary flex h-8 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium transition-colors"
 					>
 						<Maximize2 className="size-3.5" aria-hidden />
 						Expand
@@ -827,9 +865,12 @@ export function RunHistoryDashboard({
 				hasActiveFilters={hasActiveFilters}
 				onClearFilters={clearFilters}
 				searching={searchingForKeyword}
+				variableConditions={variableConditions}
+				variableNames={variableNames}
+				onApplyVariableConditions={setVariableConditions}
 			/>
-			<div className="flex items-center justify-between gap-3 border-border border-b bg-muted/40 px-4 py-3 text-xs">
-				<fieldset className="m-0 inline-flex gap-0.5 rounded-xl border-0 bg-muted p-1">
+			<div className="border-border bg-muted/40 flex items-center justify-between gap-3 border-b px-4 py-3 text-xs">
+				<fieldset className="bg-muted m-0 inline-flex gap-0.5 rounded-xl border-0 p-1">
 					<legend className="sr-only">Run history view</legend>
 					{(
 						[
@@ -850,7 +891,7 @@ export function RunHistoryDashboard({
 							type="button"
 							aria-pressed={viewMode === mode}
 							onClick={() => changeViewMode(mode)}
-							className={`flex h-8 items-center gap-1.5 rounded-lg px-3.5 font-medium text-xs transition-all duration-200 ${
+							className={`flex h-8 items-center gap-1.5 rounded-lg px-3.5 text-xs font-medium transition-all duration-200 ${
 								viewMode === mode
 									? "bg-background text-foreground shadow-sm ring-1 ring-black/5"
 									: "text-muted-foreground hover:bg-background/60 hover:text-foreground"
@@ -1008,7 +1049,7 @@ export function RunHistoryDashboard({
 					</DialogHeader>
 					{reprocessTarget?.nodeId === null &&
 					reprocessTarget.loop === null ? (
-						<div className="inline-flex w-fit gap-0.5 rounded-xl bg-muted p-1">
+						<div className="bg-muted inline-flex w-fit gap-0.5 rounded-xl p-1">
 							{(
 								[
 									{ whole: true, label: "Whole message" },
@@ -1021,7 +1062,7 @@ export function RunHistoryDashboard({
 									aria-pressed={reprocessWhole === whole}
 									disabled={nodeRerunPending}
 									onClick={() => setReprocessWhole(whole)}
-									className={`h-8 rounded-lg px-4 font-medium text-xs transition-all duration-200 disabled:opacity-60 ${
+									className={`h-8 rounded-lg px-4 text-xs font-medium transition-all duration-200 disabled:opacity-60 ${
 										reprocessWhole === whole
 											? "bg-background text-foreground shadow-sm ring-1 ring-black/5"
 											: "text-muted-foreground hover:bg-background/60 hover:text-foreground"
@@ -1033,7 +1074,7 @@ export function RunHistoryDashboard({
 						</div>
 					) : null}
 					{reprocessWhole ? null : reprocessDetail === undefined ? (
-						<div className="flex items-center gap-2 py-4 text-muted-foreground text-xs">
+						<div className="text-muted-foreground flex items-center gap-2 py-4 text-xs">
 							<Loader2
 								className="h-4 w-4 animate-spin"
 								aria-hidden
@@ -1041,7 +1082,7 @@ export function RunHistoryDashboard({
 							Loading this message's nodes…
 						</div>
 					) : reprocessNodes.length === 0 ? (
-						<p className="py-4 text-muted-foreground text-xs">
+						<p className="text-muted-foreground py-4 text-xs">
 							None of this message's nodes can be reprocessed.
 						</p>
 					) : (
@@ -1081,10 +1122,10 @@ export function RunHistoryDashboard({
 							<ul className="max-h-72 divide-y overflow-y-auto rounded-xl border shadow-sm">
 								{reprocessNodes.map((node) => (
 									<li key={node.id}>
-										<label className="flex cursor-pointer items-center gap-3 px-3.5 py-2.5 text-sm transition-colors hover:bg-primary/5 has-[:checked]:bg-primary/[0.07]">
+										<label className="hover:bg-primary/5 has-[:checked]:bg-primary/[0.07] flex cursor-pointer items-center gap-3 px-3.5 py-2.5 text-sm transition-colors">
 											<input
 												type="checkbox"
-												className="size-4 accent-primary"
+												className="accent-primary size-4"
 												checked={
 													reprocessSelected?.has(
 														node.id,
@@ -1186,11 +1227,11 @@ export function RunHistoryDashboard({
 	if (!popout) return board;
 	return (
 		<>
-			<div className="flex h-full min-h-0 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed bg-muted/20 p-6 text-center">
-				<span className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+			<div className="bg-muted/20 flex h-full min-h-0 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed p-6 text-center">
+				<span className="bg-primary/10 text-primary flex size-12 items-center justify-center rounded-2xl">
 					<Maximize2 className="size-5" aria-hidden />
 				</span>
-				<p className="font-semibold text-sm">
+				<p className="text-sm font-semibold">
 					The run history is open in the expanded window
 				</p>
 				<Button
@@ -1215,7 +1256,7 @@ export function RunHistoryDashboard({
 						"gap-0 overflow-hidden rounded-2xl p-0",
 					)}
 				>
-					<div className="flex shrink-0 items-center border-b bg-muted/30 px-5 py-3.5 pr-14">
+					<div className="bg-muted/30 flex shrink-0 items-center border-b px-5 py-3.5 pr-14">
 						<DialogTitle className="text-base">
 							Advanced run history
 						</DialogTitle>
@@ -1227,6 +1268,190 @@ export function RunHistoryDashboard({
 				</DialogContent>
 			</Dialog>
 		</>
+	);
+}
+
+function newVariableCondition(): VariableCondition {
+	return { id: crypto.randomUUID(), name: "", value: "" };
+}
+
+function AdvancedSearchPopover({
+	conditions,
+	variableNames,
+	onApply,
+}: {
+	conditions: readonly VariableCondition[];
+	variableNames: readonly string[];
+	onApply: (conditions: VariableCondition[]) => void;
+}) {
+	const [open, setOpen] = useState(false);
+	// Edits stay in a draft until Search is pressed, so typing never changes the dashboard behind.
+	const [draft, setDraft] = useState<VariableCondition[]>([]);
+	const activeCount = activeVariableConditions(conditions).length;
+
+	const changeOpen = (next: boolean) => {
+		if (next) {
+			setDraft(
+				conditions.length > 0
+					? conditions.map((condition) => ({ ...condition }))
+					: [newVariableCondition()],
+			);
+		}
+		setOpen(next);
+	};
+	const changeDraft = (
+		id: string,
+		change: Partial<Omit<VariableCondition, "id">>,
+	) =>
+		setDraft((prev) =>
+			prev.map((condition) =>
+				condition.id === id ? { ...condition, ...change } : condition,
+			),
+		);
+	const search = () => {
+		onApply(activeVariableConditions(draft));
+		setOpen(false);
+	};
+	const clear = () => {
+		onApply([]);
+		setOpen(false);
+	};
+
+	return (
+		<Popover open={open} onOpenChange={changeOpen}>
+			<PopoverTrigger asChild>
+				<Button
+					type="button"
+					variant="outline"
+					className={cn(
+						"h-9 shrink-0 gap-1.5 rounded-lg px-3 text-xs",
+						activeCount > 0 && "border-primary/50 text-primary",
+					)}
+				>
+					<SlidersHorizontal className="size-4" aria-hidden="true" />
+					Advanced search
+					{activeCount > 0 ? (
+						<span className="bg-primary text-primary-foreground rounded-full px-1.5 text-[10px] font-semibold">
+							{activeCount}
+						</span>
+					) : null}
+				</Button>
+			</PopoverTrigger>
+			<PopoverContent align="end" className="w-[34rem] max-w-[90vw] p-4">
+				<form
+					className="flex flex-col gap-3"
+					onSubmit={(event) => {
+						event.preventDefault();
+						search();
+					}}
+				>
+					<div>
+						<p className="text-sm font-semibold">
+							Search by variable value
+						</p>
+						<p className="text-muted-foreground text-xs">
+							Shows runs where every row below matches. Leave the
+							variable on "Any variable" to search all of them, or
+							leave the value blank to find runs that have the
+							variable. Press Search to apply.
+						</p>
+					</div>
+					{draft.length === 0 ? (
+						<p className="text-muted-foreground text-xs">
+							No variable searches yet.
+						</p>
+					) : null}
+					{draft.map((condition) => (
+						<div
+							key={condition.id}
+							className="flex items-center gap-2"
+						>
+							<select
+								value={condition.name}
+								onChange={(event) =>
+									changeDraft(condition.id, {
+										name: event.target.value,
+									})
+								}
+								aria-label="Variable"
+								className={`${FILTER_INPUT} min-w-0 flex-1 rounded-lg border px-2.5`}
+							>
+								<option value="">Any variable</option>
+								{variableNames.map((name) => (
+									<option key={name} value={name}>
+										{name}
+									</option>
+								))}
+							</select>
+							<span className="text-muted-foreground text-xs">
+								contains
+							</span>
+							<Input
+								value={condition.value}
+								onChange={(event) =>
+									changeDraft(condition.id, {
+										value: event.target.value,
+									})
+								}
+								aria-label="Value contains"
+								placeholder="value"
+								className={`${FILTER_INPUT} min-w-0 flex-1`}
+							/>
+							<button
+								type="button"
+								onClick={() =>
+									setDraft((prev) =>
+										prev.filter(
+											(row) => row.id !== condition.id,
+										),
+									)
+								}
+								aria-label="Remove this variable search"
+								className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-md p-1.5 transition-colors"
+							>
+								<X className="size-4" aria-hidden="true" />
+							</button>
+						</div>
+					))}
+					<div className="flex items-center justify-between gap-2">
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() =>
+								setDraft((prev) => [
+									...prev,
+									newVariableCondition(),
+								])
+							}
+							className="h-8 gap-1.5 rounded-lg px-3 text-xs"
+						>
+							<Plus className="size-3.5" aria-hidden="true" />
+							Add variable
+						</Button>
+						<div className="flex items-center gap-2">
+							<Button
+								type="button"
+								variant="ghost"
+								onClick={clear}
+								className="h-8 rounded-lg px-3 text-xs"
+							>
+								Clear
+							</Button>
+							<Button
+								type="submit"
+								className="h-8 gap-1.5 rounded-lg px-3 text-xs"
+							>
+								<Search
+									className="size-3.5"
+									aria-hidden="true"
+								/>
+								Search
+							</Button>
+						</div>
+					</div>
+				</form>
+			</PopoverContent>
+		</Popover>
 	);
 }
 
@@ -1242,6 +1467,9 @@ function RunHistoryFilterBar({
 	hasActiveFilters,
 	onClearFilters,
 	searching,
+	variableConditions,
+	variableNames,
+	onApplyVariableConditions,
 }: {
 	keyword: string;
 	onKeywordChange: (value: string) => void;
@@ -1254,25 +1482,35 @@ function RunHistoryFilterBar({
 	hasActiveFilters: boolean;
 	onClearFilters: () => void;
 	searching: boolean;
+	variableConditions: readonly VariableCondition[];
+	variableNames: readonly string[];
+	onApplyVariableConditions: (conditions: VariableCondition[]) => void;
 }) {
 	return (
-		<div className="flex flex-wrap items-end gap-x-4 gap-y-3 border-border border-b bg-muted/30 px-4 py-3">
+		<div className="border-border bg-muted/30 flex flex-wrap items-end gap-x-4 gap-y-3 border-b px-4 py-3">
 			<div className="flex min-w-65 flex-1 flex-col gap-1.5">
 				<span className={FILTER_LABEL}>
 					Search messages &amp; variable map
 				</span>
-				<div className="group relative">
-					<Search
-						className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground transition-colors group-focus-within:text-primary"
-						aria-hidden="true"
-					/>
-					<Input
-						value={keyword}
-						onChange={(event) =>
-							onKeywordChange(event.target.value)
-						}
-						placeholder="Search incoming, outgoing, and variable map values"
-						className={`${FILTER_INPUT} pl-9`}
+				<div className="flex items-center gap-2">
+					<div className="group relative min-w-0 flex-1">
+						<Search
+							className="text-muted-foreground group-focus-within:text-primary absolute top-1/2 left-3 size-4 -translate-y-1/2 transition-colors"
+							aria-hidden="true"
+						/>
+						<Input
+							value={keyword}
+							onChange={(event) =>
+								onKeywordChange(event.target.value)
+							}
+							placeholder="Search incoming, outgoing, and variable map values"
+							className={`${FILTER_INPUT} pl-9`}
+						/>
+					</div>
+					<AdvancedSearchPopover
+						conditions={variableConditions}
+						variableNames={variableNames}
+						onApply={onApplyVariableConditions}
 					/>
 				</div>
 			</div>
@@ -1315,11 +1553,11 @@ function RunHistoryFilterBar({
 					{STATUS_FILTER_OPTIONS.map(({ status, label }) => (
 						<label
 							key={status}
-							className="flex cursor-pointer select-none items-center gap-1.5 rounded-full border bg-background px-2.5 py-1.5 text-xs transition-colors hover:border-primary/40 has-[:checked]:border-primary/50 has-[:checked]:bg-primary/10 has-[:checked]:font-medium has-[:checked]:text-primary"
+							className="bg-background hover:border-primary/40 has-[:checked]:border-primary/50 has-[:checked]:bg-primary/10 has-[:checked]:text-primary flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs transition-colors select-none has-[:checked]:font-medium"
 						>
 							<input
 								type="checkbox"
-								className="size-3.5 accent-primary"
+								className="accent-primary size-3.5"
 								checked={statusFilters.has(status)}
 								onChange={() => onToggleStatusFilter(status)}
 							/>
@@ -1329,7 +1567,7 @@ function RunHistoryFilterBar({
 				</fieldset>
 			</div>
 			{searching ? (
-				<span className="flex items-center gap-1.5 text-primary text-xs">
+				<span className="text-primary flex items-center gap-1.5 text-xs">
 					<Loader2 className="h-3.5 w-3.5 animate-spin" />
 					Searching retained data…
 				</span>
@@ -1338,7 +1576,7 @@ function RunHistoryFilterBar({
 				<button
 					type="button"
 					onClick={onClearFilters}
-					className="flex h-9 items-center rounded-lg px-3 font-medium text-muted-foreground text-xs transition-colors hover:bg-muted hover:text-foreground"
+					className="text-muted-foreground hover:bg-muted hover:text-foreground flex h-9 items-center rounded-lg px-3 text-xs font-medium transition-colors"
 				>
 					Clear filters
 				</button>
@@ -1373,7 +1611,7 @@ function NodeByNodeRowView({
 	if (row.kind === "run-status") {
 		return (
 			<div
-				className={`grid h-full ${NODE_GRID_COLUMNS} items-center gap-3 border-border border-b border-l-[3px] border-l-transparent bg-muted/40 px-4 text-muted-foreground text-xs`}
+				className={`grid h-full ${NODE_GRID_COLUMNS} border-border bg-muted/40 text-muted-foreground items-center gap-3 border-b border-l-[3px] border-l-transparent px-4 text-xs`}
 			>
 				<span className="font-medium tabular-nums">
 					{row.runNumber}
@@ -1383,7 +1621,7 @@ function NodeByNodeRowView({
 					{row.state === "loading" ? (
 						<>
 							<Loader2
-								className="h-3.5 w-3.5 animate-spin text-primary"
+								className="text-primary h-3.5 w-3.5 animate-spin"
 								aria-hidden
 							/>
 							Loading this run's nodes…
@@ -1394,7 +1632,7 @@ function NodeByNodeRowView({
 							<button
 								type="button"
 								onClick={() => onRetry(row.runId)}
-								className="rounded-md px-2 py-0.5 font-medium text-destructive underline-offset-2 transition-colors hover:bg-destructive/10 hover:underline"
+								className="text-destructive hover:bg-destructive/10 rounded-md px-2 py-0.5 font-medium underline-offset-2 transition-colors hover:underline"
 							>
 								Retry
 							</button>
@@ -1421,13 +1659,13 @@ function NodeByNodeRowView({
 				ROW_BASE,
 				NODE_GRID_COLUMNS,
 				statusAccent(row.status),
-				"w-full cursor-pointer text-left text-xs focus-visible:bg-accent focus-visible:outline-none",
+				"focus-visible:bg-accent w-full cursor-pointer text-left text-xs focus-visible:outline-none",
 				isSelected ? "bg-accent" : "bg-background",
 			)}
 		>
-			<span className="flex items-center gap-1.5 font-medium text-muted-foreground tabular-nums">
+			<span className="text-muted-foreground flex items-center gap-1.5 font-medium tabular-nums">
 				<ChevronRight
-					className={`size-3.5 shrink-0 transition-transform duration-200 group-hover:text-primary ${isSelected ? "rotate-90 text-primary" : ""}`}
+					className={`group-hover:text-primary size-3.5 shrink-0 transition-transform duration-200 ${isSelected ? "text-primary rotate-90" : ""}`}
 					aria-hidden
 				/>
 				{row.runNumber}
@@ -1437,7 +1675,7 @@ function NodeByNodeRowView({
 			</span>
 			<span className="flex min-w-0 items-center gap-1 overflow-hidden whitespace-nowrap">
 				{hiddenSteps > 0 ? (
-					<span className="shrink-0 text-muted-foreground">…</span>
+					<span className="text-muted-foreground shrink-0">…</span>
 				) : null}
 				{visibleSteps.map((step, index) => {
 					const isCurrent = index === visibleSteps.length - 1;
@@ -1450,7 +1688,7 @@ function NodeByNodeRowView({
 							<span
 								className={
 									isCurrent
-										? "rounded-md bg-primary/10 px-1.5 py-0.5 font-semibold text-primary"
+										? "bg-primary/10 text-primary rounded-md px-1.5 py-0.5 font-semibold"
 										: step.kind === "iteration"
 											? "text-muted-foreground italic"
 											: "text-muted-foreground"
@@ -1460,7 +1698,7 @@ function NodeByNodeRowView({
 							</span>
 							{isCurrent ? null : (
 								<ChevronRight
-									className="size-3 text-muted-foreground/50"
+									className="text-muted-foreground/50 size-3"
 									aria-hidden
 								/>
 							)}
@@ -1477,7 +1715,7 @@ function NodeByNodeRowView({
 			<span>
 				<StatusPill status={row.status} kind="node" />
 			</span>
-			<span className="font-medium text-muted-foreground tabular-nums">
+			<span className="text-muted-foreground font-medium tabular-nums">
 				{formatDurationMs(row.durationMs)}
 			</span>
 		</button>
@@ -1539,25 +1777,25 @@ function DashboardRowView({
 					type="button"
 					onClick={() => onToggleRun(row.expandKey, row.run.RUN_ID)}
 					aria-label={row.expanded ? "Collapse run" : "Expand run"}
-					className="flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+					className="text-muted-foreground hover:bg-primary/10 hover:text-primary flex size-6 items-center justify-center rounded-md transition-colors"
 				>
 					{row.loading ? (
-						<Loader2 className="size-3.5 animate-spin text-primary" />
+						<Loader2 className="text-primary size-3.5 animate-spin" />
 					) : (
 						<ChevronRight
-							className={`size-4 transition-transform duration-200 ${row.expanded ? "rotate-90 text-primary" : ""}`}
+							className={`size-4 transition-transform duration-200 ${row.expanded ? "text-primary rotate-90" : ""}`}
 						/>
 					)}
 				</button>
 				<span className="flex min-w-0 items-center gap-2">
-					<span className="rounded-md bg-muted px-2 py-0.5 font-mono font-semibold text-foreground text-xs tabular-nums transition-colors group-hover:bg-primary/10 group-hover:text-primary">
+					<span className="bg-muted text-foreground group-hover:bg-primary/10 group-hover:text-primary rounded-md px-2 py-0.5 font-mono text-xs font-semibold tabular-nums transition-colors">
 						{row.iteration === null
 							? row.runNumber
 							: `${row.runNumber}.${row.iteration}`}
 					</span>
 					{row.run.REPROCESSED_FROM_RUN_ID ? (
 						<span
-							className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary text-xs ring-1 ring-primary/20 ring-inset"
+							className="bg-primary/10 text-primary ring-primary/20 inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset"
 							title={
 								row.reprocessedFromRunNumber === null
 									? "Started by reprocessing an earlier run"
@@ -1574,7 +1812,7 @@ function DashboardRowView({
 						<button
 							type="button"
 							onClick={() => onRetry(row.run.RUN_ID)}
-							className="truncate rounded-md px-1.5 py-0.5 text-destructive text-xs underline-offset-2 hover:bg-destructive/10 hover:underline"
+							className="text-destructive hover:bg-destructive/10 truncate rounded-md px-1.5 py-0.5 text-xs underline-offset-2 hover:underline"
 						>
 							{row.loadError} · Retry
 						</button>
@@ -1651,7 +1889,7 @@ function DashboardRowView({
 			>
 				<span
 					aria-hidden
-					className="absolute top-0 left-[22px] h-1/2 w-3 rounded-bl-md border-border border-b border-l"
+					className="border-border absolute top-0 left-[22px] h-1/2 w-3 rounded-bl-md border-b border-l"
 				/>
 				<button
 					type="button"
@@ -1662,22 +1900,22 @@ function DashboardRowView({
 							: `Expand ${nodeLabel}`
 					}
 					aria-expanded={isSelected}
-					className="flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+					className="text-muted-foreground hover:bg-primary/10 hover:text-primary flex size-6 items-center justify-center rounded-md transition-colors"
 				>
 					<ChevronRight
-						className={`size-4 transition-transform duration-200 ${isSelected ? "rotate-90 text-primary" : ""}`}
+						className={`size-4 transition-transform duration-200 ${isSelected ? "text-primary rotate-90" : ""}`}
 					/>
 				</button>
 				<button
 					type="button"
 					onClick={() => onSelectNode(row.key, nodeLabel, row.node)}
 					title={nodeLabel}
-					className="flex w-full min-w-0 items-center gap-2 text-left font-medium transition-colors hover:text-primary"
+					className="hover:text-primary flex w-full min-w-0 items-center gap-2 text-left font-medium transition-colors"
 				>
 					<span className="truncate">{nodeLabel}</span>
 					{row.node.CARRIED_OVER ? (
 						<span
-							className="shrink-0 rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground text-xs ring-1 ring-border ring-inset"
+							className="bg-muted text-muted-foreground ring-border shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset"
 							title="Not run again: this result was carried over from the run this one reprocesses"
 						>
 							Carried over
@@ -1744,9 +1982,9 @@ function ErrorReason({ text }: { text: string }) {
 		return () => window.clearTimeout(timer);
 	}, [copied]);
 	return (
-		<div className="overflow-hidden rounded-xl border border-destructive/30 bg-destructive/5">
-			<div className="flex items-center justify-between gap-3 border-destructive/20 border-b bg-destructive/10 px-4 py-2.5">
-				<span className="flex items-center gap-2 font-semibold text-destructive text-sm">
+		<div className="border-destructive/30 bg-destructive/5 overflow-hidden rounded-xl border">
+			<div className="border-destructive/20 bg-destructive/10 flex items-center justify-between gap-3 border-b px-4 py-2.5">
+				<span className="text-destructive flex items-center gap-2 text-sm font-semibold">
 					<TriangleAlert className="size-4" aria-hidden />
 					Why this node failed
 				</span>
@@ -1758,7 +1996,7 @@ function ErrorReason({ text }: { text: string }) {
 							() => undefined,
 						);
 					}}
-					className="flex h-7 items-center gap-1.5 rounded-lg border border-destructive/30 bg-background px-2.5 font-medium text-destructive text-xs transition-colors hover:border-destructive hover:bg-destructive hover:text-destructive-foreground"
+					className="border-destructive/30 bg-background text-destructive hover:border-destructive hover:bg-destructive hover:text-destructive-foreground flex h-7 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition-colors"
 				>
 					{copied ? (
 						<Check className="size-3.5" aria-hidden />
@@ -1768,7 +2006,7 @@ function ErrorReason({ text }: { text: string }) {
 					{copied ? "Copied" : "Copy"}
 				</button>
 			</div>
-			<pre className="max-h-64 overflow-auto whitespace-pre-wrap break-words px-4 py-3 font-mono text-foreground text-xs leading-relaxed">
+			<pre className="text-foreground max-h-64 overflow-auto px-4 py-3 font-mono text-xs leading-relaxed break-words whitespace-pre-wrap">
 				{text}
 			</pre>
 		</div>
@@ -1791,7 +2029,7 @@ function NodeDetailPanel({
 	const successText = nodeSuccessText(selected.result);
 
 	return (
-		<section className="flex h-full w-full flex-col border-border border-b border-l-[3px] border-l-primary bg-muted/30 pl-9 shadow-inner">
+		<section className="border-border border-l-primary bg-muted/30 flex h-full w-full flex-col border-b border-l-[3px] pl-9 shadow-inner">
 			<Tabs
 				value={detailTab}
 				onValueChange={(value) => {
@@ -1799,11 +2037,11 @@ function NodeDetailPanel({
 				}}
 				className="flex min-h-0 flex-1 flex-col"
 			>
-				<TabsList className="mx-4 mt-3 w-fit rounded-xl bg-muted p-1 shadow-sm">
+				<TabsList className="bg-muted mx-4 mt-3 w-fit rounded-xl p-1 shadow-sm">
 					{successText === null ? null : (
 						<TabsTrigger
 							value="success"
-							className="gap-1.5 rounded-lg px-4 text-success data-[state=active]:text-success"
+							className="text-success data-[state=active]:text-success gap-1.5 rounded-lg px-4"
 						>
 							<CircleCheck className="size-3.5" aria-hidden />
 							Success message
@@ -1815,7 +2053,7 @@ function NodeDetailPanel({
 					{errorText === null ? null : (
 						<TabsTrigger
 							value="error"
-							className="gap-1.5 rounded-lg px-4 text-destructive data-[state=active]:text-destructive"
+							className="text-destructive data-[state=active]:text-destructive gap-1.5 rounded-lg px-4"
 						>
 							<TriangleAlert className="size-3.5" aria-hidden />
 							Error message
@@ -1827,8 +2065,8 @@ function NodeDetailPanel({
 						value="success"
 						className="min-h-0 flex-1 overflow-y-auto p-4"
 					>
-						<div className="overflow-hidden rounded-xl border border-success/30 bg-success/5">
-							<pre className="max-h-64 overflow-auto whitespace-pre-wrap break-words px-4 py-3 font-mono text-foreground text-xs leading-relaxed">
+						<div className="border-success/30 bg-success/5 overflow-hidden rounded-xl border">
+							<pre className="text-foreground max-h-64 overflow-auto px-4 py-3 font-mono text-xs leading-relaxed break-words whitespace-pre-wrap">
 								{successText}
 							</pre>
 						</div>
@@ -1847,17 +2085,17 @@ function NodeDetailPanel({
 					className="min-h-0 flex-1 overflow-y-auto p-4"
 				>
 					{variableRows && variableRows.length > 0 ? (
-						<div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+						<div className="bg-card overflow-hidden rounded-xl border shadow-sm">
 							<Table
 								className="text-xs"
 								wrapperClassName="overflow-visible"
 							>
-								<TableHeader className="sticky top-0 bg-muted/80 backdrop-blur">
+								<TableHeader className="bg-muted/80 sticky top-0 backdrop-blur">
 									<TableRow>
-										<TableHead className="h-auto py-2 font-semibold uppercase tracking-wider">
+										<TableHead className="h-auto py-2 font-semibold tracking-wider uppercase">
 											Name
 										</TableHead>
-										<TableHead className="h-auto py-2 font-semibold uppercase tracking-wider">
+										<TableHead className="h-auto py-2 font-semibold tracking-wider uppercase">
 											Value
 										</TableHead>
 									</TableRow>
@@ -1866,12 +2104,12 @@ function NodeDetailPanel({
 									{variableRows.map((row) => (
 										<TableRow
 											key={row.name}
-											className="transition-colors hover:bg-primary/5"
+											className="hover:bg-primary/5 transition-colors"
 										>
-											<TableCell className="align-top font-mono font-semibold text-primary">
+											<TableCell className="text-primary align-top font-mono font-semibold">
 												{row.name}
 											</TableCell>
-											<TableCell className="break-words align-top font-mono">
+											<TableCell className="align-top font-mono break-words">
 												{row.value}
 											</TableCell>
 										</TableRow>

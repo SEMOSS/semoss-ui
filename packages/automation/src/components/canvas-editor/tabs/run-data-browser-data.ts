@@ -80,8 +80,8 @@ export function lastRelevantResult(
 }
 
 /** Recursively includes loop-iteration steps so nested nodes are searchable too. */
-function flattenNodeResults(
-	results: AutomationNodeResult[],
+export function flattenNodeResults(
+	results: readonly AutomationNodeResult[],
 ): AutomationNodeResult[] {
 	const flat: AutomationNodeResult[] = [];
 	for (const result of results) {

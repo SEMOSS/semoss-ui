@@ -925,6 +925,50 @@ describe("iterationNodeResults", () => {
 });
 
 describe("buildDashboardRows", () => {
+	it("shows only the loop passes whose variables match a variable search", () => {
+		const pass = (index: number, batch: string) => ({
+			index,
+			nodeResults: [
+				node({
+					NODE_ID: `inner-${index}`,
+					scopeSnapshot: JSON.stringify({
+						loop_a: {
+							index,
+							number: index + 1,
+							isFirst: index === 0,
+							batch,
+						},
+					}),
+				}),
+			],
+		});
+		const looped = detail("run-1", [
+			node({
+				NODE_ID: "loop-a",
+				iterations: [pass(0, "AAA"), pass(1, "BBB"), pass(2, "CCC")],
+			}),
+		]);
+		const buildRows = (
+			variableConditions: { id: string; name: string; value: string }[],
+		) =>
+			buildDashboardRows({
+				runs: [run({ RUN_ID: "run-1" })],
+				expandedRunIds: new Set(),
+				runDetails: new Map([["run-1", looped]]),
+				loadingRunIds: new Set(),
+				runErrors: new Map(),
+				variableConditions,
+			}).flatMap((row) => (row.kind === "run" ? [row.iteration] : []));
+
+		expect(buildRows([])).toHaveLength(3);
+		expect(buildRows([{ id: "c", name: "", value: "bbb" }])).toEqual([2]);
+		expect(
+			buildRows([
+				{ id: "c", name: "$" + "{loop_a.batch}", value: "zzz" },
+			]),
+		).toEqual([]);
+	});
+
 	it("returns one collapsed run row per run when nothing is expanded", () => {
 		const rows = buildDashboardRows({
 			runs: [run({ RUN_ID: "run-1" }), run({ RUN_ID: "run-2" })],
