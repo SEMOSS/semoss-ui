@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import { expect } from "vitest";
 import { HTMLBlock } from "../../components/block-defaults/html-block/HTMLBlock";
 import { render } from "../utils";
@@ -74,5 +75,59 @@ describe("HTML Block", () => {
 		expect(shadowRoot).not.toBeNull();
 		expect(shadowRoot.innerHTML).toContain(`<img src="x">`);
 		expect(shadowRoot.innerHTML).not.toContain(`onerror="alert('XSS')"`);
+	});
+
+	it("keeps comment-wrapped CSS while removing active content", () => {
+		const { container } = render(<HTMLBlock id={blocks.html.id} />, {
+			blocks: {
+				html: {
+					...blocks.html,
+					data: {
+						html: '<div><style><!--p.note { color: blue; }--></style><p class="note" onclick="alert(1)">Styled content</p><script>alert(1)</script></div>',
+					},
+				},
+			},
+		});
+
+		const shadowRoot = container.querySelector<HTMLElement>(
+			"[data-block='html']",
+		)?.shadowRoot;
+		expect(shadowRoot?.querySelector("style")?.textContent).toBe(
+			"p.note { color: blue; }",
+		);
+		expect(shadowRoot?.querySelector("p.note")?.textContent).toBe(
+			"Styled content",
+		);
+		expect(shadowRoot?.querySelector("script, [onclick]")).toBeNull();
+	});
+
+	it("keeps HTML links isolated from hooks on the shared sanitizer", () => {
+		const alterLink = (node: Element): void => {
+			if (node.tagName === "A") {
+				node.setAttribute("target", "_blank");
+				node.setAttribute("rel", "noopener");
+			}
+		};
+		DOMPurify.addHook("afterSanitizeAttributes", alterLink);
+		try {
+			const { container } = render(<HTMLBlock id={blocks.html.id} />, {
+				blocks: {
+					html: {
+						...blocks.html,
+						data: {
+							html: '<a href="https://example.com" target="_blank" rel="noopener noreferrer">Link</a>',
+						},
+					},
+				},
+			});
+			const link = container
+				.querySelector<HTMLElement>("[data-block='html']")
+				?.shadowRoot?.querySelector("a");
+			expect(link?.getAttribute("href")).toBe("https://example.com");
+			expect(link?.getAttribute("target")).toBeNull();
+			expect(link?.getAttribute("rel")).toBe("noopener noreferrer");
+		} finally {
+			DOMPurify.removeHook("afterSanitizeAttributes", alterLink);
+		}
 	});
 });

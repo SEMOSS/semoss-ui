@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import { Form, useForm } from "@semoss/ui/next";
@@ -74,7 +80,7 @@ describe("SQL policy rules", () => {
 		).not.toBeInTheDocument();
 	});
 
-	it("moves focus to the rule that takes a removed one's place, then to Add rule", () => {
+	it("moves focus to the rule that takes a removed one's place, then to Add rule", async () => {
 		render(<RulesHarness rules={BUILT_INS} />);
 
 		fireEvent.click(
@@ -82,11 +88,13 @@ describe("SQL policy rules", () => {
 				name: "Remove the PG_SLEEP* rule from functions",
 			}),
 		);
-		expect(
-			screen.getByRole("combobox", {
-				name: "Functions, the VERSION rule: access",
-			}),
-		).toHaveFocus();
+		await waitFor(() =>
+			expect(
+				screen.getByRole("combobox", {
+					name: "Functions, the VERSION rule: access",
+				}),
+			).toHaveFocus(),
+		);
 
 		fireEvent.click(
 			screen.getByRole("button", {

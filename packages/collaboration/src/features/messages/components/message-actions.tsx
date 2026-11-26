@@ -54,6 +54,7 @@ export function MessageActions({
 		<div className="flex items-center gap-2">
 			<Button
 				type="button"
+				data-testid="message-actions-copy-button"
 				variant="ghost"
 				size="sm"
 				className="pointer-coarse:min-h-11 min-w-24 justify-start text-muted-foreground text-xs"

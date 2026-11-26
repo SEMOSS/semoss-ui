@@ -34,15 +34,15 @@ afterEach(cleanup);
 
 it("orders real files by the server's modification date and opens the selected copy by its full library path", async () => {
 	const { user, onOpen } = renderLibrary();
-	const rows = within(screen.getByRole("list")).getAllByRole("button");
+	const rows = within(screen.getByRole("list")).getAllByTestId(
+		"twin-document-library-row",
+	);
 	expect(rows).toHaveLength(3);
-	expect(rows[0]).toHaveAccessibleName(/^Brief\.pdf Emails \/ Review/);
-	expect(rows[1]).toHaveAccessibleName(/^Brief\.pdf Files \/ Legal/);
-	expect(rows[2]).toHaveAccessibleName("Notes.md Library root");
+	expect(rows[0]).toHaveAccessibleName(/^Brief\.pdf\s*Emails \/ Review/);
+	expect(rows[1]).toHaveAccessibleName(/^Brief\.pdf\s*Files \/ Legal/);
+	expect(rows[2]).toHaveAccessibleName(/^Notes\.md\s*Library root$/);
 
-	screen
-		.getByRole("button", { name: /^Brief\.pdf Emails \/ Review/ })
-		.focus();
+	rows[0].focus();
 	await user.keyboard("{Enter}");
 	expect(onOpen).toHaveBeenCalledExactlyOnceWith(documents[2]);
 });

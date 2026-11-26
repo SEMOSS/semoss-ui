@@ -80,7 +80,7 @@ export const ModifyVariableSelector = ({
 				render={({ field }) => (
 					<Input
 						placeholder="Update Value"
-						value={field.value || ""}
+						value={field.value ? String(field.value) : ""}
 						onChange={(value) => {
 							field.onChange(value);
 						}}

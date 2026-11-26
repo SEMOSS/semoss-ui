@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
 	type Block,
 	type BlockDef,
+	type EchartVisualizationBlockDef,
 	getValueByPath,
 	type Paths,
 	type PathValue,
@@ -18,7 +19,8 @@ interface JsonSettingsProps<D extends BlockDef = BlockDef> {
 
 export const XAxisStyling = observer(
 	<D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
-		const { data, setData } = useBlockSettings<D>(id);
+		const { data, setData } =
+			useBlockSettings<EchartVisualizationBlockDef>(id);
 		const [value, setValue] = useState("");
 		const [showXAxis, setShowXAxis] = useState(true);
 		const [showXAxisTitle, setShowXAxisTitle] = useState(true);

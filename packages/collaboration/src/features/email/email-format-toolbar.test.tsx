@@ -88,6 +88,37 @@ beforeAll(() => {
 	HTMLElement.prototype.releasePointerCapture = vi.fn();
 });
 
+beforeEach(() => {
+	const focus = HTMLElement.prototype.focus;
+	// jsdom collapses the document selection on focus; browsers retain an editor range.
+	vi.spyOn(HTMLElement.prototype, "focus").mockImplementation(function (
+		this: HTMLElement,
+		options,
+	) {
+		const selection = document.getSelection();
+		const anchor = selection?.anchorNode;
+		const end = selection?.focusNode;
+		const editor = anchor?.parentElement?.closest(
+			'[contenteditable="true"]',
+		);
+		const anchorOffset = selection?.anchorOffset ?? 0;
+		const focusOffset = selection?.focusOffset ?? 0;
+		const preserve =
+			selection &&
+			!selection.isCollapsed &&
+			anchor &&
+			end &&
+			editor?.contains(end);
+		focus.call(this, options);
+		if (preserve && anchor.isConnected && end.isConnected)
+			selection.setBaseAndExtent(anchor, anchorOffset, end, focusOffset);
+	});
+});
+
+afterEach(() => {
+	vi.restoreAllMocks();
+});
+
 it("formats the saved selection through dropdowns and keeps undo/redo available", async () => {
 	const { editor, user } = setup();
 	await selectText(editor);
@@ -135,6 +166,24 @@ it("formats the saved selection through dropdowns and keeps undo/redo available"
 	expect(
 		screen.getByRole("combobox", { name: "Font size" }),
 	).toHaveTextContent("Size");
+});
+
+it("does not format a previous range after the editor selection collapses", async () => {
+	const { editor, user } = setup();
+	await selectText(editor);
+	await act(async () => editor.focus());
+	await act(async () =>
+		editor.update(
+			() => {
+				const text = $getRoot().getFirstDescendant();
+				if (!$isTextNode(text)) throw new Error("Missing editor text");
+				text.select(6, 6);
+			},
+			{ discrete: true },
+		),
+	);
+	await user.click(screen.getByRole("button", { name: "Bold" }));
+	expect(screen.getByRole("textbox").querySelector("strong")).toBeNull();
 });
 
 it("applies links and colors to the selection and returns focus after dismissing a popover", async () => {

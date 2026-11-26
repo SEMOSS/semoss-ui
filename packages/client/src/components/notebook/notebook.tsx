@@ -31,7 +31,9 @@ const SortableItems = ({
 	children,
 }: {
 	id: string;
-	children: React.ReactElement;
+	children: React.ReactElement<{
+		dragHandleProps?: React.HTMLAttributes<HTMLElement>;
+	}>;
 }) => {
 	const {
 		attributes,

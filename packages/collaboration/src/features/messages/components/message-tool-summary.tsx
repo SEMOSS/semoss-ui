@@ -28,6 +28,7 @@ export function MessageToolSummary({
 		<ToolFailureTooltip tools={tools}>
 			<Button
 				type="button"
+				data-testid="message-tool-summary-toggle"
 				variant="ghost"
 				className="my-1 h-auto min-h-10 w-full justify-start gap-2 whitespace-normal rounded-xl px-3 py-2 text-start text-muted-foreground hover:text-foreground"
 				aria-expanded={isExpanded}

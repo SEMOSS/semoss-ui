@@ -1,22 +1,3 @@
-import {
-	mdiAccountGroup,
-	// mdiTextBoxMultipleOutline,
-	mdiChartTimelineVariant,
-	// mdiClock,
-	mdiChatProcessingOutline,
-	mdiClipboardTextOutline,
-	mdiCog,
-	mdiDatabase,
-	mdiDatabaseSearch,
-	mdiFolder,
-	mdiGithub,
-	mdiKeyChainVariant,
-	mdiPalette,
-	mdiRobotOutline,
-	mdiShieldAccountOutline,
-	mdiTabletCellphone,
-} from "@mdi/js";
-
 /** A heading the Settings page lists its tiles under. */
 type SettingsGroup = "ACCOUNT" | "ACCESS" | "MONITORING" | "PLATFORM";
 
@@ -42,9 +23,6 @@ export const SETTINGS_ROUTES: {
 	/** Description of the  page if admin */
 	adminDescription?: string;
 
-	/** Icon representing the page */
-	icon: string;
-
 	/** Prior Links to nav to */
 	history?: string[];
 
@@ -61,14 +39,12 @@ export const SETTINGS_ROUTES: {
 			"Manage your profile, your files, and the teams you manage.",
 		adminDescription:
 			"Manage your profile, your files, and the teams you manage. As an admin, manage resources, people, and the platform, and see how it is used.",
-		icon: mdiCog,
 		history: [],
 	},
 	{
 		title: "My Profile",
 		path: "my-profile",
 		description: "Update settings related to your profile.",
-		icon: mdiDatabase,
 		history: ["settings/"],
 		group: "ACCOUNT",
 		admin: false,
@@ -77,7 +53,6 @@ export const SETTINGS_ROUTES: {
 		title: "My Files",
 		path: "my-files",
 		description: "Browse, upload, and manage the files in your user space.",
-		icon: mdiFolder,
 		history: ["settings/"],
 		group: "ACCOUNT",
 		admin: false,
@@ -87,7 +62,6 @@ export const SETTINGS_ROUTES: {
 		path: "managed-teams",
 		description:
 			"Add and remove the members and managers of the teams you manage.",
-		icon: mdiAccountGroup,
 		history: ["managed-teams"],
 		group: "ACCOUNT",
 		admin: false,
@@ -97,7 +71,6 @@ export const SETTINGS_ROUTES: {
 		path: "resource-delegated-access",
 		description:
 			"See which apps, agents and engines can use the engines and projects you can edit, and give access to many at once.",
-		icon: mdiKeyChainVariant,
 		history: ["settings/"],
 		group: "ACCOUNT",
 		admin: false,
@@ -106,14 +79,12 @@ export const SETTINGS_ROUTES: {
 		title: "My Teams",
 		path: "managed-teams/:id",
 		description: "A team you manage",
-		icon: mdiAccountGroup,
 		history: ["managed-teams", "managed-teams/<id>"],
 	},
 	{
 		title: "Bulk Access Management",
 		path: "managed-teams/:id/bulk-access-management",
 		description: "Change who is in a team and who manages it",
-		icon: mdiAccountGroup,
 		history: [
 			"managed-teams",
 			"managed-teams/<id>",
@@ -125,7 +96,6 @@ export const SETTINGS_ROUTES: {
 		path: "resources",
 		description:
 			"Manage the access, visibility, and settings of every project and engine.",
-		icon: mdiShieldAccountOutline,
 		history: ["resources"],
 		group: "ACCESS",
 		admin: true,
@@ -135,7 +105,6 @@ export const SETTINGS_ROUTES: {
 		path: "resources/:type",
 		description:
 			"Manage the access, visibility, and settings of every project and engine.",
-		icon: mdiShieldAccountOutline,
 		history: ["resources"],
 		admin: true,
 		hidden: true,
@@ -145,7 +114,6 @@ export const SETTINGS_ROUTES: {
 		path: "resources/:type/:id",
 		description:
 			"Manage the access, visibility, and settings of every project and engine.",
-		icon: mdiShieldAccountOutline,
 		history: ["resources"],
 		admin: true,
 		hidden: true,
@@ -155,7 +123,6 @@ export const SETTINGS_ROUTES: {
 		path: "all-resource-delegated-access",
 		description:
 			"See which apps, agents and engines can use every engine and project, and give access to many at once.",
-		icon: mdiKeyChainVariant,
 		history: ["settings/"],
 		group: "ACCESS",
 		admin: true,
@@ -165,7 +132,6 @@ export const SETTINGS_ROUTES: {
 		path: "members",
 		description:
 			"Add new members, reset passwords, and edit member-based permissions.",
-		icon: mdiAccountGroup,
 		history: ["settings/"],
 		group: "ACCESS",
 		admin: true,
@@ -175,7 +141,6 @@ export const SETTINGS_ROUTES: {
 		path: "team-permissions",
 		description:
 			"Create teams, choose their members and managers, and give them access to projects and engines.",
-		icon: mdiDatabase,
 		history: ["team-permissions"],
 		group: "ACCESS",
 		admin: true,
@@ -184,7 +149,6 @@ export const SETTINGS_ROUTES: {
 		title: "Team Permissions",
 		path: "team-permissions/:type/:id",
 		description: "A team's members, managers, and access",
-		icon: mdiDatabase,
 		history: ["team-permissions", "team-permissions/<type>/<id>"],
 		admin: true,
 	},
@@ -192,7 +156,6 @@ export const SETTINGS_ROUTES: {
 		title: "Bulk Access Management",
 		path: "team-permissions/:type/:id/bulk-access-management",
 		description: "Change who is in a team and who manages it",
-		icon: mdiDatabase,
 		history: [
 			"team-permissions",
 			"team-permissions/<type>/<id>",
@@ -204,7 +167,6 @@ export const SETTINGS_ROUTES: {
 		title: "Service Accounts",
 		path: "service-accounts",
 		description: "Create and manage service accounts for system access.",
-		icon: mdiAccountGroup,
 		history: ["settings/"],
 		group: "ACCESS",
 		admin: true,
@@ -214,7 +176,6 @@ export const SETTINGS_ROUTES: {
 		path: "enterprise-usage",
 		description:
 			"Explore model usage, adoption, performance, and activity across the platform, and changes to access, settings, and limits.",
-		icon: mdiChartTimelineVariant,
 		history: ["settings/"],
 		group: "MONITORING",
 		admin: true,
@@ -224,7 +185,6 @@ export const SETTINGS_ROUTES: {
 		path: "audit-trail",
 		description:
 			"Review sign-ins, permissions, and resource changes across the platform.",
-		icon: mdiClipboardTextOutline,
 		history: ["settings/"],
 		group: "MONITORING",
 		admin: true,
@@ -234,7 +194,6 @@ export const SETTINGS_ROUTES: {
 		path: "agent-runs",
 		description:
 			"Review every user's conversations with agents and how each run went.",
-		icon: mdiRobotOutline,
 		history: ["settings/"],
 		group: "MONITORING",
 		admin: true,
@@ -243,7 +202,6 @@ export const SETTINGS_ROUTES: {
 		title: "LLM Feedback",
 		path: "llm-feedback",
 		description: "Provide feedback on LLM's performance",
-		icon: mdiChatProcessingOutline,
 		history: ["settings/"],
 		group: "MONITORING",
 		admin: true,
@@ -253,7 +211,6 @@ export const SETTINGS_ROUTES: {
 		path: "social-properties",
 		description:
 			"Change the login configuration settings and the General Platform Limit.",
-		icon: mdiTabletCellphone,
 		history: ["settings/"],
 		group: "PLATFORM",
 		admin: true,
@@ -262,7 +219,6 @@ export const SETTINGS_ROUTES: {
 		title: "Admin Theme",
 		path: "admin-theme",
 		description: "Update theming for the instance",
-		icon: mdiPalette,
 		history: ["settings/"],
 		group: "PLATFORM",
 		admin: true,
@@ -272,7 +228,6 @@ export const SETTINGS_ROUTES: {
 		path: "github-app",
 		description:
 			"Create and manage the GitHub App used for project linking and webhooks.",
-		icon: mdiGithub,
 		history: ["settings/"],
 		group: "PLATFORM",
 		admin: true,
@@ -281,7 +236,6 @@ export const SETTINGS_ROUTES: {
 		title: "Jobs",
 		path: "jobs",
 		description: "Manage and schedule cron jobs for the platform",
-		icon: mdiTabletCellphone,
 		history: ["jobs"],
 		group: "PLATFORM",
 		admin: true,
@@ -291,7 +245,6 @@ export const SETTINGS_ROUTES: {
 		path: "jobs/add-new-job",
 		description:
 			"Fill out all the details in order to add the model to the catalog.",
-		icon: mdiClipboardTextOutline,
 		history: ["jobs", "add-new-job"],
 		admin: true,
 	},
@@ -300,7 +253,6 @@ export const SETTINGS_ROUTES: {
 		path: "jobs/edit-job/:id",
 		description:
 			"Fill out all the details in order to edit the model in the catalog.",
-		icon: mdiClipboardTextOutline,
 		history: ["jobs", "edit-job/:id"],
 		admin: true,
 	},
@@ -308,7 +260,6 @@ export const SETTINGS_ROUTES: {
 		title: "Admin Query",
 		path: "admin-query",
 		description: "Query the platform databases directly. Use with caution.",
-		icon: mdiDatabaseSearch,
 		history: ["settings/"],
 		group: "PLATFORM",
 		admin: true,
@@ -317,7 +268,6 @@ export const SETTINGS_ROUTES: {
 		title: "View RDF Map",
 		path: "view-rdf-map",
 		description: "See configuration details in the RDF Map of the instance",
-		icon: mdiClipboardTextOutline,
 		history: ["settings/"],
 		group: "PLATFORM",
 		admin: true,

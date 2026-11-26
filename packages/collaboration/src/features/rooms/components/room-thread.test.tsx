@@ -604,7 +604,7 @@ describe("RoomThread", () => {
 			screen.queryByRole("button", { name: "Response actions" }),
 		).toBeNull();
 		expect(
-			screen.getAllByRole("button", { name: "Copy response" }),
+			screen.getAllByTestId("message-actions-copy-button"),
 		).toHaveLength(4);
 		expect(screen.getByText("Second").closest("article")).toBe(
 			screen.getByText("First").closest("article"),

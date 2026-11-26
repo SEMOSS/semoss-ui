@@ -19,7 +19,7 @@
 		"@semoss/sdk": "workspace:*",
 		"@semoss/shared": "workspace:*",
 		"@semoss/ui": "workspace:*",
-		"dompurify": "^3.4.15",
+		"dompurify": "^3.5.0",
 		"lucide-react": "^0.545.0",
 		"react": "^19.0.0",
 		"react-dom": "^19.0.0"
@@ -28,8 +28,9 @@
 		"@semoss/config": "workspace:*",
 		"@types/react": "^19.0.0",
 		"@types/react-dom": "^19.0.0",
-		"jsdom": "~22.1.0",
+		"jsdom": "~31.0.1",
 		"typescript": "~6.0.0",
-		"vitest": "^4.1.11"
+		"vite": "8.3.8",
+		"vitest": "5.1.1"
 	}
 }

@@ -115,6 +115,7 @@ export function OrgChartCard({ tool }: { tool: ConversationTool }) {
 				/>
 				<H4
 					ref={heading}
+					data-testid="org-chart-card-heading"
 					tabIndex={-1}
 					className="rounded-sm text-sm focus-visible:outline-2 focus-visible:outline-ring"
 				>

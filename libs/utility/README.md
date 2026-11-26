@@ -15,7 +15,7 @@ Use the narrowest public category subpath. Hosts compile this source-only packag
 | `/json` | Strict and tolerant parsing, string-array parsing, formatting, key-sorted serialization, tabular detection, parse-error locations |
 | `/file` | File extensions and filename-stem sanitization |
 | `/encoding` | Byte/UTF-8 Base64 encoding and strict decoding |
-| `/browser` | Favicon updates and Blob downloads |
+| `/browser` | Favicon updates, Blob downloads, and HTML style-comment normalization |
 | `/clipboard` | Clipboard writes with optional result callbacks |
 | `/csv` | CSV cell escaping |
 | `/async` | Timer-based sleep |
@@ -81,8 +81,8 @@ const everything = useStoreSelector(counterStore);
 
 Never change a snapshot in place. `update` merges into plain-object state only;
 replace arrays, maps, and other state with `set`. Both take a value or a function
-of the current state, and a write that changes nothing tells no one. See the [state management skill](../../skills/state-management.skill.md)
-for the full rules and [AGENTS.md](./AGENTS.md#storestate) for what the class does
+of the current state, and a write that changes nothing tells no one. See the [state standard](../../docs/standards/react.md#state)
+for the full rules and [store.test.ts](./src/store.test.ts) for what the class does
 and does not guarantee.
 
 Add a helper here only when it has multiple consumers and a stable, generic
@@ -94,6 +94,8 @@ imported only by the files under `src/react/`, each with its own entry in `expor
 such as `@semoss/utility/react/use-store-selector`; the root and every other category
 work without it. Browser globals are
 accessed only when browser helpers run; callers own notifications and feature policy.
+`uncommentHtmlStyles` removes legacy comment markers from `<style>` text in an
+inert document. It does not sanitize HTML; sanitize its output before rendering.
 Day.js remains the date dependency; existing native Date/Intl output is preserved.
 `getDateBucket` and `DATE_BUCKET_ORDER` provide relative groups; callers translate
 the bucket IDs and add feature-specific groups such as favorites.

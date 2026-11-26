@@ -5,6 +5,7 @@ import {
 	safeHttpsUrl,
 	scrollAncestorsToTop,
 	setFavicon,
+	uncommentHtmlStyles,
 } from "./browser";
 
 afterEach(() => {
@@ -80,6 +81,29 @@ describe("browser resources", () => {
 		const icon = document.querySelector('link[rel="icon"]');
 		expect(icon?.getAttribute("href")).toBe("data:image/svg+xml,<svg/>");
 		expect(icon?.getAttribute("type")).toBe("image/svg+xml");
+	});
+});
+
+describe("uncommentHtmlStyles", () => {
+	it("unwraps stylesheet comments without changing comments outside styles", () => {
+		const normalized = uncommentHtmlStyles(
+			'<div><!-- Outside --><style><!--p.note { color: blue; }--></style><p class="note">Hello</p></div>',
+		);
+		const doc = new DOMParser().parseFromString(normalized, "text/html");
+
+		expect(doc.querySelector("style")?.textContent).toBe(
+			"p.note { color: blue; }",
+		);
+		expect(doc.querySelector("p.note")?.textContent).toBe("Hello");
+		expect(normalized).toContain("<!-- Outside -->");
+	});
+
+	it.each([
+		" \n<p>Plain content</p>\n",
+		"<style>p { color: blue; }</style><p>Hello</p>",
+		"<!-- Outside --><p>Hello</p>",
+	])("preserves input without comment markers or styles: %s", (html) => {
+		expect(uncommentHtmlStyles(html)).toBe(html);
 	});
 });
 

@@ -90,8 +90,11 @@ describe("Iframe Block", () => {
 			blocks: styledBlocks,
 		});
 
-		const wrapper = container.querySelector("[data-block='iframe']");
-		expect(wrapper).toHaveStyle("width: 80vw; height: 200px;");
+		const wrapper = container.querySelector<HTMLElement>(
+			"[data-block='iframe']",
+		);
+		expect(wrapper?.style.width).toBe("80vw");
+		expect(wrapper?.style.height).toBe("200px");
 		const iframe = container.querySelector("iframe");
 		expect(iframe).toHaveStyle({ width: "100%", height: "100%" });
 	});

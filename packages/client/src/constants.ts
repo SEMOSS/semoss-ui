@@ -1,6 +1,6 @@
 import Logo from "@/assets/logo.svg";
 import LogoLight from "@/assets/logo-light.svg";
-import type { ALL_TYPES } from "./types";
+import type { ENGINE_TYPES } from "./types";
 
 const THEME_TITLE = import.meta.env.VITE_THEME_TITLE;
 
@@ -11,7 +11,7 @@ export const THEME = {
 };
 
 export const PERMISSION_DESCRIPTION_MAP: Record<
-	ALL_TYPES,
+	ENGINE_TYPES | "PROJECT",
 	Record<string, string>
 > = {
 	PROJECT: {

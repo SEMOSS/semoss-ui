@@ -1,7 +1,7 @@
 import { createContext } from "react";
 import type { NotebookStore, Registry, StateStore } from "../store";
 
-interface BlocksContextProps {
+export interface BlocksContextProps {
 	/** Widgets available to all of the blocks */
 	registry: Registry;
 

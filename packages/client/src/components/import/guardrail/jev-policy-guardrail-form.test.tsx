@@ -288,9 +288,11 @@ describe("Jev policy guardrail form", () => {
 		fireEvent.click(
 			screen.getByRole("button", { name: "Remove choice 1" }),
 		);
-		expect(
-			screen.getByRole("textbox", { name: "Choice 1 name" }),
-		).toHaveFocus();
+		await waitFor(() =>
+			expect(
+				screen.getByRole("textbox", { name: "Choice 1 name" }),
+			).toHaveFocus(),
+		);
 
 		fireEvent.click(
 			screen.getByRole("button", { name: "Remove choice 1" }),

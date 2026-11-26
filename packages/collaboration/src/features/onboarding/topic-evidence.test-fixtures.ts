@@ -5,6 +5,7 @@ import {
 	makeReview,
 	type ReviewWire,
 	reviewSession,
+	setUpInBuilder,
 } from "./topic-review.test-fixtures";
 import type { TopicReview } from "./topic-review-api";
 
@@ -112,7 +113,9 @@ export function changesSent(session: {
 }
 
 /** Controlled transport acknowledgements only; relationship transactions are checked in H2. */
-export function evidenceSession(initial: ReviewWire = twoTopics()) {
+export function evidenceSession(
+	initial: ReviewWire = setUpInBuilder(twoTopics()),
+) {
 	const session = reviewSession(async () => structuredClone(initial));
 	const afterChange = vi.fn(
 		async (_review: ReviewWire): Promise<void> => undefined,
@@ -154,10 +157,11 @@ export function evidenceSession(initial: ReviewWire = twoTopics()) {
 					review.draft.lastChange = "Undid conversation correction";
 				} else if (
 					change.type === "organize" ||
-					change.type === "reconcile_profile"
+					change.type === "reconcile_profile" ||
+					change.type === "build"
 				) {
 					throw new Error(
-						"Organization changes use the organization transport fixture",
+						"This change uses a different transport fixture",
 					);
 				} else {
 					// each conversation keeps its latest choice per topic

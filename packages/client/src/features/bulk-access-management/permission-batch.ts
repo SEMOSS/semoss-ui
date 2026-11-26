@@ -363,7 +363,7 @@ export const withEdit = (
 export const toChanges = (
 	entries: BatchEntry[],
 ): { key: string; change: PermissionChange }[] =>
-	entries.flatMap((entry) => {
+	entries.flatMap<{ key: string; change: PermissionChange }>((entry) => {
 		const status = getEntryStatus(entry);
 		const subject: PermissionSubject = {
 			category: entry.subject.category,
