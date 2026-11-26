@@ -26,7 +26,8 @@
 			"last7Days": "آخر 7 أيام",
 			"last30Days": "آخر 30 يومًا",
 			"custom": "مخصص"
-		}
+		},
+		"accessReason": "الوصول"
 	},
 	"summary": {
 		"events": "الأحداث",
@@ -64,7 +65,8 @@
 			"timestamp": "الطابع الزمني",
 			"status": "الحالة",
 			"guardrailAction": "حاجز الحماية",
-			"billedTo": "جهة الفوترة"
+			"billedTo": "جهة الفوترة",
+			"access": "الوصول"
 		},
 		"guardrailActions": {
 			"MASK": "مُقنّع",
@@ -107,7 +109,8 @@
 			"span": "النطاق",
 			"session": "الجلسة",
 			"request": "الطلب",
-			"response": "الاستجابة"
+			"response": "الاستجابة",
+			"access": "الوصول"
 		}
 	},
 	"detail": {
@@ -136,7 +139,8 @@
 			"spanId": "معرّف النطاق",
 			"request": "الطلب",
 			"response": "الاستجابة",
-			"billedTo": "جهة الفوترة"
+			"billedTo": "جهة الفوترة",
+			"access": "الوصول"
 		}
 	},
 	"page": {
@@ -154,5 +158,52 @@
 		"appName": "سجل التدقيق",
 		"appDescription": "تطبيق سجل التدقيق",
 		"loadFailed": "تعذّر تحميل سجل التدقيق. حاول مرة أخرى، وإذا استمرت المشكلة، فاتصل بالدعم."
+	},
+	"accessReasons": {
+		"DIRECT": "مباشر",
+		"TEAM": "فريق",
+		"PUBLIC": "عام",
+		"DELEGATED": "مفوَّض",
+		"OWN_PROJECT": "المشروع نفسه",
+		"INSIGHT": "رؤية",
+		"DISCOVERABLE": "قابل للاكتشاف",
+		"ADMIN": "مسؤول",
+		"PLATFORM": "المنصة",
+		"REFUSED": "مرفوض"
+	},
+	"accessDetails": {
+		"level": "المستوى",
+		"teamId": "الفريق",
+		"teamType": "نوع الفريق",
+		"granteeId": "مُنح إلى",
+		"granteeType": "نوع الممنوح",
+		"via": "عبر",
+		"callingEngineId": "المحرك المستدعي",
+		"appId": "التطبيق",
+		"agentId": "الوكيل",
+		"rule": "عمل المنصة",
+		"operation": "العملية",
+		"levelNeeded": "المستوى المطلوب",
+		"attempt": "المحاولة"
+	},
+	"accessLevels": {
+		"OWNER": "مؤلف",
+		"EDIT": "محرر",
+		"READ_ONLY": "للقراءة فقط"
+	},
+	"accessVia": {
+		"APP_CODE": "الكود المخصص لتطبيق",
+		"AGENT_RUN": "تشغيل وكيل",
+		"ENGINE_CODE": "الكود الخاص بمحرك",
+		"PLATFORM": "المنصة"
+	},
+	"accessRules": {
+		"LOADING": "تحميل المحرك",
+		"PLATFORM_USE": "الاستخدام الخاص بالمنصة",
+		"PLATFORM_OPERATION": "عملية للمنصة",
+		"ENGINE_ITSELF": "المحرك يستدعي نفسه",
+		"PROJECT_ENGINE": "العمل الخاص بمشروع",
+		"VENV": "محرك venv",
+		"BEING_CREATED_OR_DELETED": "قيد الإنشاء أو الحذف"
 	}
 }

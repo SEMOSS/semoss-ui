@@ -37,6 +37,7 @@ const AUDIT_EVENT_LABELS: Readonly<Record<string, string>> = {
 	PROJECT_GLOBAL_UPDATE: "App Made Public Or Private",
 	PROJECT_DISCOVERABLE_UPDATE: "App Discoverability Changed",
 	PROJECT_TEMPLATE_UPDATE: "App Template Setting Changed",
+	PROJECT_CUSTOM_LOGIN_UPDATE: "App Custom Login Page Setting Changed",
 	PROJECT_METADATA_UPDATE: "App Metadata Changed",
 	PROJECT_BLOCKS_UPDATE: "App Blocks Saved",
 	PROJECT_DELETE: "App Deleted",

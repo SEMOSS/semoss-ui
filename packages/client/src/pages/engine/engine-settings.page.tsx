@@ -7,6 +7,7 @@ import { PendingMembersTable } from "@/components/settings/pending-members-table
 import { SettingsTiles } from "@/components/settings/settings-tiles";
 import { TeamsTable } from "@/components/settings/teams-table";
 import { SettingsContext } from "@/contexts/settings-context";
+import { AccessToEnginesTable } from "@/features/access-to-engines/access-to-engines-table";
 import {
 	type AccessControlView,
 	getAccessControlPath,
@@ -14,7 +15,8 @@ import {
 import { BulkAccessManagement } from "@/features/bulk-access-management/bulk-access-management";
 import { BulkAccessManagementCard } from "@/features/bulk-access-management/bulk-access-management-card";
 import { EffectivePermissions } from "@/features/effective-permissions/effective-permissions";
-import { EngineAppsTable } from "@/features/engine-app-permissions/engine-apps-table";
+import { EngineEnginesTable } from "@/features/engine-engine-permissions/engine-engines-table";
+import { GrantedAppsTable } from "@/features/granted-apps/granted-apps-table";
 import { ModelUsageLimitsCard } from "@/features/model-usage-limits/model-usage-limits-card";
 import { useEngine } from "@/hooks/useEngine";
 
@@ -27,9 +29,9 @@ interface EngineSettingsPageProps {
 }
 
 /**
- * An engine's access control: its access settings, then its members, its teams
- * and the apps it gives a permission to, or Bulk Access Management or
- * Effective Permissions in their place.
+ * An engine's access control: its access settings, then its members, its
+ * teams, the apps and engines that can use it, and the engines it can use, or
+ * Bulk Access Management or Effective Permissions in their place.
  */
 export const EngineSettingsPage = ({
 	view = "MEMBERS",
@@ -154,9 +156,23 @@ export const EngineSettingsPage = ({
 								/>
 							</div>
 							{canEditAccess ? (
-								<div className="mt-6">
-									<EngineAppsTable
+								<div className="mt-6 flex flex-col gap-6">
+									<GrantedAppsTable
 										key={engine.engine_id}
+										target={{
+											resourceType: "ENGINE",
+											id: engine.engine_id,
+										}}
+										type={type}
+									/>
+									<EngineEnginesTable
+										key={`engines-${engine.engine_id}`}
+										id={engine.engine_id}
+										type={type}
+									/>
+									<AccessToEnginesTable
+										key={`access-to-engines-${engine.engine_id}`}
+										resourceType="ENGINE"
 										id={engine.engine_id}
 										type={type}
 									/>

@@ -126,6 +126,7 @@ export function BriefActivity() {
 									{row.to ? (
 										<Link
 											to={row.to}
+											data-testid={`brief-activity-row-${row.id}`}
 											title={row.title}
 											className={ROW_LINK}
 										>
@@ -134,6 +135,7 @@ export function BriefActivity() {
 									) : (
 										<button
 											type="button"
+											data-testid={`brief-activity-row-${row.id}`}
 											title={row.title}
 											// one room at a time: a second file waits until the first has opened
 											disabled={Boolean(openingId)}

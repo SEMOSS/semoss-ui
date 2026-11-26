@@ -18,11 +18,12 @@ function WorkbenchControls() {
 	) : null;
 }
 
-function view(text: string, insightId = "insight-1") {
+function view(text: string, insightId = "insight-1", agentId?: string) {
 	return (
 		<ToolWorkbenchProvider
 			roomId="room-1"
 			insightId={insightId}
+			agentId={agentId}
 			tools={{}}
 			pendingApprovals={[]}
 			onApproveTool={vi.fn()}
@@ -68,11 +69,11 @@ it.each(["docx", "xlsx", "pdf", "txt", "pptx"])(
 				`[${filename}](room://outputs/${encodeURIComponent(filename)})`,
 			),
 		);
-		await userEvent.click(
-			screen.getByRole("button", {
-				name: `${filename} (open room file)`,
-			}),
-		);
+		const link = screen.getByTestId("message-markdown-link-room-file");
+		expect(link).toHaveRole("button");
+		expect(link).toHaveAccessibleName(expect.stringContaining(filename));
+		expect(link).toHaveAccessibleName(/\(open room file\)/);
+		await userEvent.click(link);
 		expect(screen.getByText("Back to conversation")).toBeVisible();
 		expect(selectedPanel()).toMatchObject({
 			type: getFilePanelType(filename),
@@ -102,6 +103,90 @@ it("uses the rebound room insight for restored links", async () => {
 		captured.workbench?.store.getState().layout.panels ?? {},
 	).filter((panel) => panel.config?.path === "/summary.docx");
 	expect(panels).toHaveLength(1);
+});
+
+it.each([
+	"agent:/emails/Email%20thread%20-%20Kickoff.md",
+	// the slashes after the scheme are optional, as they are for the run's own tools
+	"agent:emails/Email%20thread%20-%20Kickoff.md",
+	"agent://emails/Email%20thread%20-%20Kickoff.md",
+])(
+	"opens one of the agent's own files from the agent's project: %s",
+	async (href) => {
+		const { rerender } = render(
+			view(`Sources: [Kickoff thread](${href})`, "insight-1", "twin-1"),
+		);
+		await userEvent.click(
+			screen.getByTestId("message-markdown-link-agent-file"),
+		);
+		expect(
+			screen.getByTestId("message-markdown-link-agent-file"),
+		).toHaveRole("button");
+		expect(
+			screen.getByTestId("message-markdown-link-agent-file"),
+		).toHaveAccessibleName(/Kickoff thread.*\(open the agent's file\)/);
+		expect(screen.getByText("Back to conversation")).toBeVisible();
+		const opened = {
+			type: getFilePanelType("Email thread - Kickoff.md"),
+			config: {
+				// under the agent's files folder, read from its project and not from the room
+				path: "/public/emails/Email thread - Kickoff.md",
+				name: "Email thread - Kickoff.md",
+				mode: { type: "APP", app: "twin-1" },
+			},
+		};
+		expect(selectedPanel()).toMatchObject(opened);
+		// a new room insight re-points the room's files, never the agent's
+		rerender(
+			view(`Sources: [Kickoff thread](${href})`, "insight-2", "twin-1"),
+		);
+		expect(selectedPanel()).toMatchObject(opened);
+	},
+);
+
+it("leaves an agent file link as text where there is no agent to open it from", () => {
+	const { unmount } = render(
+		view("[Kickoff thread](agent:/emails/Kickoff.md)"),
+	);
+	expect(screen.getByText("Kickoff thread")).toBeVisible();
+	expect(screen.queryByRole("button")).toBeNull();
+	expect(screen.queryByRole("link")).toBeNull();
+	unmount();
+
+	render(
+		<MessageMarkdown
+			text="[Kickoff thread](agent:/emails/Kickoff.md)"
+			isStreaming={false}
+		/>,
+	);
+	expect(screen.getByText("Kickoff thread")).toBeVisible();
+	expect(screen.queryByRole("button")).toBeNull();
+});
+
+it.each([
+	"agent:/../outside.md",
+	"agent:/%2e%2e/outside.md",
+	"agent:/emails/%2Foutside.md",
+	"agent:/emails%5Coutside.md",
+	"agent:/C:/outside.md",
+	"agent:/Kickoff.md?project=other",
+	"agent:/Kickoff.md#fragment",
+	"agent:/bad%zz.md",
+	"agent:/bad%00.md",
+	"agent:/emails/",
+	"agent:/",
+	"agent:",
+	"agents:/Kickoff.md",
+])("leaves an invalid agent file link inert: %s", (href) => {
+	render(view(`[File](<${href}>)`, "insight-1", "twin-1"));
+	expect(screen.getByText("File")).toBeVisible();
+	expect(screen.queryByRole("link")).toBeNull();
+	expect(screen.queryByRole("button")).toBeNull();
+});
+
+it("does not use an agent file as an image source", () => {
+	render(view("![Preview](agent:/photo.png)", "insight-1", "twin-1"));
+	expect(screen.getByAltText("Preview").getAttribute("src")).toBeFalsy();
 });
 
 it("supports keyboard activation and returns focus after closing the file dock", async () => {

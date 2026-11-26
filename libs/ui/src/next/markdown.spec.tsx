@@ -13,6 +13,20 @@ vi.mock("./code", () => ({
 afterEach(cleanup);
 
 describe("Markdown math", () => {
+	it("renders raw HTML and math together", () => {
+		const { container } = render(
+			createElement(
+				MathMarkdown,
+				null,
+				'<span title="sample">Raw HTML</span> and $x^2$.',
+			),
+		);
+		expect(
+			container.querySelector('span[title="sample"]')?.textContent,
+		).toBe("Raw HTML");
+		expect(container.querySelector("math")).not.toBeNull();
+	});
+
 	it.each([
 		[
 			"dollar inline",

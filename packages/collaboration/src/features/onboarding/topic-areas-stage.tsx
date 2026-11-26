@@ -12,6 +12,7 @@ import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
+	Textarea,
 	useFormContext,
 } from "@semoss/ui/next";
 import { peoplePickerContentClassName } from "@/features/collaboration/components/people-picker-panel";
@@ -35,6 +36,8 @@ interface TopicAreasStageProps {
 	changes: ReturnType<typeof useTopicReviewChanges>;
 	/** Save the draft before reading or changing conversations. */
 	onSave: () => Promise<TopicReview>;
+	/** Reload the saved draft after a conversation change did not go through. */
+	onReload: () => Promise<void>;
 	review: TopicReview;
 	values: TopicReviewDraft;
 	addedNames: Record<string, string>;
@@ -65,6 +68,7 @@ export function TopicAreasStage({
 	contacts,
 	changes,
 	onSave,
+	onReload,
 	review,
 	values,
 	addedNames,
@@ -159,6 +163,7 @@ export function TopicAreasStage({
 					)}
 					<button
 						type="button"
+						data-testid="topic-areas-stage-topic"
 						className={cn(
 							"flex min-w-0 flex-1 items-center gap-2 text-left",
 							!value.keep && "text-muted-foreground",
@@ -317,6 +322,7 @@ export function TopicAreasStage({
 						contacts={contacts}
 						changes={changes}
 						onSave={onSave}
+						onReload={onReload}
 						others={kept
 							.filter((other) => other.key !== current.key)
 							.map((other) => ({
@@ -353,6 +359,8 @@ interface TopicDetailProps {
 	changes: ReturnType<typeof useTopicReviewChanges>;
 	/** Save the draft before reading or changing conversations. */
 	onSave: () => Promise<TopicReview>;
+	/** Reload the saved draft after a conversation change did not go through. */
+	onReload: () => Promise<void>;
 	/** Kept topics a conversation can move to. */
 	others: { key: string; name: string }[];
 	entry: Entry;
@@ -377,6 +385,7 @@ function TopicDetail({
 	contacts,
 	changes,
 	onSave,
+	onReload,
 	others,
 	entry,
 	review,
@@ -396,6 +405,8 @@ function TopicDetail({
 	const evidence = evidenceOf(entry.key);
 	const [renaming, setRenaming] = useState(false);
 	const [draftName, setDraftName] = useState("");
+	const [editingAbout, setEditingAbout] = useState(false);
+	const [draftAbout, setDraftAbout] = useState("");
 	const [isAdding, setIsAdding] = useState(false);
 	const { suggested, added } = topicPeople(evidence, value, addedNames);
 	const isGroup = entry.parts.length > 1;
@@ -410,6 +421,14 @@ function TopicDetail({
 			shouldValidate: true,
 		});
 		setRenaming(false);
+	};
+
+	const saveAbout = () => {
+		form.setValue(`topics.${index}.description`, draftAbout.trim(), {
+			shouldDirty: true,
+			shouldValidate: true,
+		});
+		setEditingAbout(false);
 	};
 
 	return (
@@ -482,18 +501,73 @@ function TopicDetail({
 							}
 							onClick={() => onKeep(entry.key, !value.keep)}
 						>
-							{value.keep ? "Not my work" : "Keep this topic"}
+							{value.keep ? "Skip this topic" : "Keep this topic"}
 						</Button>
 					</>
 				)}
 			</div>
 			{form.formState.errors.topics?.[index]?.name && (
 				<P className="text-destructive text-xs" role="alert">
-					Name this topic or mark it Not my work.
+					Name this topic or skip it.
 				</P>
 			)}
 			<div className="space-y-1">
-				{about && <P className="text-sm">{about}</P>}
+				{editingAbout ? (
+					<div className="flex flex-col gap-2">
+						<Textarea
+							aria-label="Topic description"
+							rows={3}
+							value={draftAbout}
+							maxLength={12000}
+							autoFocus
+							placeholder="What belongs in this topic, and what does not"
+							onChange={(event) =>
+								setDraftAbout(event.target.value)
+							}
+							onKeyDown={(event) => {
+								if (event.key === "Escape") {
+									event.preventDefault();
+									setEditingAbout(false);
+								}
+							}}
+						/>
+						<div className="flex gap-2">
+							<Button type="button" size="sm" onClick={saveAbout}>
+								<Check aria-hidden="true" /> Save
+							</Button>
+							<Button
+								type="button"
+								size="sm"
+								variant="ghost"
+								onClick={() => setEditingAbout(false)}
+							>
+								<X aria-hidden="true" /> Cancel
+							</Button>
+						</div>
+					</div>
+				) : (
+					<>
+						{about && <P className="text-sm">{about}</P>}
+						{!isGroup && (
+							<Button
+								type="button"
+								variant="link"
+								size="sm"
+								className="h-auto p-0 text-xs"
+								disabled={isBusy}
+								onClick={() => {
+									setDraftAbout(value.description);
+									setEditingAbout(true);
+								}}
+							>
+								<Pencil aria-hidden="true" />{" "}
+								{value.description
+									? "Edit description"
+									: "Add a description"}
+							</Button>
+						)}
+					</>
+				)}
 				<P className="text-muted-foreground text-xs">
 					{count
 						? `${count} ${count === 1 ? "conversation" : "conversations"}`
@@ -649,6 +723,7 @@ function TopicDetail({
 				isBusy={isBusy}
 				changes={changes}
 				onSave={onSave}
+				onReload={onReload}
 			/>
 
 			{value.keep && (evidence?.folderIds.length ?? 0) > 0 && (

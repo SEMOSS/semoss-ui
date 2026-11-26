@@ -1,362 +1,68 @@
 # AGENTS.md - @semoss/sdk
 
-This document provides context for AI coding assistants working with the SEMOSS core SDK.
-
-> **Inherits from:** [../../AGENTS.md](../../AGENTS.md) for code style, file-naming, package
-> structure, commit messages, Biome config, and Node/pnpm requirements.
+> **Inherits from:** [root AGENTS.md](../../AGENTS.md): non-negotiables, task skills, and [standards](../../docs/README.md#standards).
 
 ## Skills
 
-Read the skill for the area before working on it, or on code that uses it. They ship in the
-package's `skills/` folder, so apps get the same guidance under
-`node_modules/@semoss/sdk/skills/`:
+These guides ship in the package's `skills/` folder (via `files` and `npmSkills.publish.source` in
+[package.json](./package.json)), so apps get them under `node_modules/@semoss/sdk/skills/`. This
+file is the only place in the repo that routes to them.
 
-- [Session, Config and permissions](./skills/session.skill.md): sign in and out, the user and
-  their metadata, `useSession`/`useConfig`/`useSessionPermissions`/`useLogins`, and which
-  insight a pixel runs in.
+- [Session, config and permissions](./skills/session.skill.md): sign in and out, the user and
+  their metadata, `useSession`/`useConfig`/`useSessionPermissions`/`useLogins`, and which insight
+  a pixel runs in.
 - [Rooms, chat and agent runs](./skills/sdk-chat/SKILL.md): rooms, AskRoom jobs,
-  RunAgent/`AgentStore`, tool approvals and streaming.
+  RunAgent/`AgentStore`, tool approvals, and streaming.
 
-When an API they describe changes, update the skill in the same change. Keep each skill
-self-contained for consumers outside this repository.
+Rules for working with them:
 
-## Overview
+- Keep them self-contained for outside consumers: no links to `docs/`, root `skills/`, or other
+  packages.
+- When an API they describe changes, update the skill in the same change. Do not keep a second
+  copy of their API tables anywhere else.
+- Verify signatures, exports, and defaults against [src/index.ts](./src/index.ts) and nearby tests.
+- Comments and mocked tests do not prove backend behavior. Keep the guides' compatibility caveats
+  until the backend is verified.
+- Repo callers: a room keeps its own `InsightProvider`; sign in, the user, and permissions come
+  from `Session`. Keep chat job streaming separate from agent-run polling.
 
-`@semoss/sdk` is the core client SDK for talking to a SEMOSS backend (pixel/API calls, insight
-state, environment config). It has framework-independent stores and optional **React**
-bindings on a subpath; this is not a blanket Node/SSR compatibility guarantee.
-It has **no runtime dependencies**: it imports `@semoss/utility` category subpaths as a
-devDependency, which the build bundles into `dist`. Its public types must not reference utility
-types, because declarations are emitted per file and not bundled. Treat its published public
-surface as stable and versioned.
+## Purpose
 
-## Build System
+The core client SDK for a SEMOSS backend: pixel and API calls, insight state, environment config,
+and session. Framework-independent stores with optional React bindings. This is not a blanket
+Node or SSR compatibility promise. The published surface is stable and versioned.
 
-- **Bundler**: Vite 8 library mode (Rolldown) → ES modules (`dist/index.mjs`) with types in `dist/types/` (via unplugin-dts).
-- Two entry points via `exports`:
+## Boundaries
 
-| Import | Source entry | Published JavaScript |
-|--------|--------------|----------------------|
-| `@semoss/sdk` | `src/index.ts` | `dist/index.mjs` |
-| `@semoss/sdk/react` | `src/js-frameworks/react/index.ts` | `dist/js-frameworks/react/index.mjs` |
+- **No runtime dependencies.** `@semoss/utility` is a devDependency the build bundles into `dist`;
+  public types must never reference utility types, because declarations are not bundled.
+- React-only code lives under `src/js-frameworks/react`, published as `@semoss/sdk/react`.
 
-The package also ships `skills/` via `files` and `npmSkills.publish.source` in
-[package.json](./package.json). Keep [the SDK chat guide](./skills/sdk-chat/SKILL.md)
-self-contained at that path for external consumers. The
-[flat repository skill](../../skills/sdk-chat.skill.md) routes to it; it is not a
-second API reference.
+## Invariants
 
-### Commands
+- **Two kinds of store; do not convert them.** `Config`, `Session`, `Session.insight`,
+  `Session.logins`, and the permission cache hold a private `StoreState` and are the reference
+  for the [state standard](../../docs/standards/react.md#state). `InsightStore`, `AgentStore`,
+  `RoomStore`, and `Env` hold plain private state behind getters.
+- **All statuses are upper case** (`INITIALIZING`, `READY`, `ERROR`, …).
+- Never edit `dist/`. Be careful with `src/index.ts`, the React entry, `env.ts`, `listener.ts`, and
+  `vite.config.ts`: every package depends on them.
 
-| Command | Description |
-|---------|-------------|
-| `pnpm dev` | Watch mode (`vite build --watch`) |
-| `pnpm build` | Production build |
-| `pnpm build:dev` | Development build |
-| `pnpm test` | Run tests once (Vitest) |
-| `pnpm test:watch` | Tests in watch mode |
-| `pnpm test:coverage` | Coverage report |
+## When Adding to the SDK
 
-## Structure
+Follow [call-backend](../../skills/call-backend.skill.md). Framework-agnostic code goes outside
+`js-frameworks/`. Export from `src/index.ts` or the React entry. When a change touches chat,
+agents, or MCP, inspect the owner and its tests: [api/chat.ts](./src/api/chat.ts),
+[api/base.ts](./src/api/base.ts), [api/agent.ts](./src/api/agent.ts),
+[api/mcp.ts](./src/api/mcp.ts), [AgentStore](./src/stores/agent/agent.store.ts),
+[RoomStore](./src/stores/room/room.store.ts), [types.ts](./src/types.ts).
 
-Follows the standard `src/` layout from the root AGENTS.md (a library, so no `pages/` or
-router):
-
-| Folder / file | Purpose |
-|---------------|---------|
-| `api/` | API / pixel call implementations |
-| `stores/` | State (e.g. `InsightStore`, exported as `Insight`) |
-| `utility/` | Utility functions |
-| `js-frameworks/react/` | React binding (published as `@semoss/sdk/react`) |
-| `constants.ts` | Shared constants |
-| `env.ts` | Environment configuration |
-| `listener.ts` | Side-effect listener imported at the top of `index.ts` |
-| `types.ts` | Shared TypeScript types |
-| `index.ts` | Main barrel |
-
-## Agent Guardrails
-
-### Do Not Modify
-
-- **`dist/`** — build output, regenerated by Vite.
-
-### Be Cautious With
-
-- **`src/index.ts` and `src/js-frameworks/react`** — the public API. This package is published
-  and consumed by every other package; breaking changes ripple everywhere.
-- **`env.ts` / `listener.ts`** — environment wiring and the side-effect import in `index.ts`.
-- **`vite.config.ts`** — build configuration and the two entry points.
-
-### When Adding to the SDK
-
-1. Keep framework-agnostic logic out of `js-frameworks/` — React-only code belongs under
-   `js-frameworks/react`.
-2. Export new public API from `src/index.ts` (core) or the React entry as appropriate.
-3. Verify both entries build:
-   ```bash
-   pnpm --filter @semoss/sdk build
-   ```
-
-### Testing Changes
-
-For SDK source changes, run the relevant tests first, then the package gates:
+## Validation
 
 ```bash
 pnpm --filter @semoss/sdk test
-pnpm --filter @semoss/sdk build
+pnpm --filter @semoss/sdk build    # both entries must build
 ```
 
-For documentation-only edits, check local links, skill metadata, package inclusion,
-and examples against source exports/types. Run focused tests for lifecycle claims;
-do not present those checks as backend integration verification. Follow the
-[repository validation guidance](../../skills/react-standard.skill.md#validation),
-with [biome.json](../../biome.json) as lint/formatting authority.
-
-## Requests and CSRF
-
-`get` and `post` in [`utility/fetch.ts`](./src/utility/fetch.ts) add the access key or bearer
-headers `Env` holds to every request. When the server asks for a CSRF token (`Env.CSRF`, set
-by `Config`), they also send it on every method its CSRF filter guards, which is all but GET,
-HEAD and OPTIONS. The token is read once from `/api/config/fetchCsrf` and kept until logout.
-A call made with `fetch` directly sends the same token by spreading `await getCsrfHeaders()`
-into its headers.
-
-## Chat and Agent Ownership
-
-Load the [SDK chat guide](./skills/sdk-chat/SKILL.md) for API contracts, examples,
-transport selection, lifecycle cleanup, and known gaps. Maintain those details
-there instead of repeating them in AGENTS files.
-
-When changing an API, inspect its owning implementation and adjacent tests:
-
-- [Chat wrappers](./src/api/chat.ts) and [pixel transport](./src/api/base.ts).
-- [Agent wrappers](./src/api/agent.ts) and [AgentStore](./src/stores/agent/agent.store.ts).
-- [MCP wrappers](./src/api/mcp.ts): `runMcpTool`, `makeUserPixelMcp`, and `getMcpTools`.
-- [RoomStore](./src/stores/room/room.store.ts) and [shared types](./src/types.ts).
-- [Core exports](./src/index.ts) and [React exports](./src/js-frameworks/react/index.ts).
-
-Update the packaged guide with signature/behavior changes. Comments and mocked
-tests are not backend authority; retain its compatibility caveats until verified.
-
-## Engine and App Actions
-
-- [`api/engine.ts`](./src/api/engine.ts): `cloneEngine` (`CloneEngine`) clones an engine into a
-  private engine the user owns and returns the clone's id, name and type, throwing when the
-  backend returns no engine id. `restartEngine` (`CloseEngine`) closes an engine so its next use
-  starts it with its current files.
-- [`api/app.ts`](./src/api/app.ts): `reloadApp` (`ReloadProject`) clears the app modules python
-  has cached, so the next run imports the current .py files.
-- These return the success and warning messages the reactor adds beside its output, read by
-  `readPixelMessages` in [`api/pixel-messages.ts`](./src/api/pixel-messages.ts). A warning means
-  the action ran here but the other servers in a cluster could not be told, for example.
-
-## Session, Config and Permissions
-
-Session state lives in three framework-free stores. Every status they and their hooks report is
-upper case, like the rest of the SDK's states: `Session` `INITIALIZING | UNAUTHENTICATED |
-AUTHENTICATED | ERROR`, `Config` `IDLE | LOADING | READY | ERROR`, `useSessionPermissions`
-`IDLE | LOADING | READY | ERROR`, and `LoginsStore` `LOADING | READY | ERROR`. Each holds a private `StoreState` from
-`@semoss/utility/store` (an immutable snapshot) and exposes typed `getSnapshot` and
-`subscribe`, read in React through `useStoreSelector`. They compose it rather than extend it,
-so their public types never name a utility type. These stores are the reference implementation
-of the repo's [state management direction](../../skills/state-management.skill.md); load that
-skill before adding or changing a store here. `InsightStore`, `AgentStore`, `RoomStore`, and
-`Env` are a different kind of object and are not part of that migration: they hold plain
-private state and expose it through getters and actions, with no snapshot to subscribe to. Do
-not convert them to `StoreState`.
-
-- [`ConfigStore`](./src/stores/config/config.store.ts) (`Config`) reads `/api/config` once
-  per page and needs no session. `load({ force })` joins a read in flight and reuses a known
-  config; it sorts the meta keys, parses `theme.THEME_MAP` once, and sets `Env.CSRF`.
-  `isAdminOnly(resource, operation)` reads the `adminOnly{Resource}{Operation}` flags.
-- [`SessionStore`](./src/stores/session/session.store.ts) (`Session`) is the signed in
-  user. It owns `config`, `logins` (its own `LoginsStore`; `Session.logins` is the page's) and
-  `permissions`. `initialize`
-  is single flight, and `isChecking` is true while a check runs (the status keeps its last
-  value, so `ERROR` stays `ERROR` while a retry reads); `login(credentials)`, `logout`, and the 302 handler
-  (`onUnauthorized` in [`utility/fetch.ts`](./src/utility/fetch.ts)) start the session over,
-  clearing logins and permissions. Every sign out, the 302 one included, reads the config
-  again in the background and seeds the logins from it; when that read fails it resets
-  `Config`, so no config naming the old user's logins is left. `Session` only hears 302s once the page uses
-  it (`initialize`, `refresh`, `login` or `logout`), so on a page that never
-  does, its status stays `INITIALIZING` and an insight's own sign in does not start it. The user comes from one request,
-  `META | GetUserInfo(); META | GetUserMetadata();`: identity from `GetUserInfo`, described by
-  the config's `primaryLogin` (where the backend keeps user metadata), then SAML, NATIVE, or
-  the first login; `meta` (each key a list of values, as the backend keeps it) and `defaultModels` from `GetUserMetadata`, which reads the database
-  each time (the token copy in `GetUserInfo` is only reloaded after the user's own
-  `SetUserMetadata`), falling back to the login's token copy when that read fails.
-  `reloadUser` reads the user again without touching the config, logins or permissions. The session's own insight is `Session.insight`, below; the session
-  reads the user and saves metadata through it, and clears it on every sign in and out. The
-  backend sets the insight's user on every call and drops the session's insights on logout, so
-  the insight needs no explicit drop. `canPerform` combines `isAdmin` with the config's admin-only flags;
-  guardrails have no flags and are always admin-only.
-- [`SessionInsightStore`](./src/stores/session/session-insight.store.ts) (`Session.insight`)
-  is the session's own insight: `{ insightId }` in a `StoreState`, with `run`, `runAsync`,
-  `upload`, `download`, `withInsight(task)`, `ensure` and `clear`. It is made on first use and shared by
-  every caller. `withInsight` runs a request in `"new"` when there is no insight yet and keeps
-  the `insightId` it returns (so the first check is one `GetUserInfo` request), falling back to
-  `META | init` when the result names none; `runAsync` and `upload` need an existing insight
-  (the backend refuses `"new"` for uploads), so they make one first. On `INSIGHT_NOT_FOUND` it
-  makes a new one and retries once. `clear` bumps a version, so an insight still being made
-  for the previous user is not kept.
-- [`SessionPermissionStore`](./src/stores/session/session-permissions.store.ts) caches the
-  user's permission per `TYPE:id`, sharing one read per resource and dropping reads that land
-  after a clear.
-- React: `useSession(selector)`, `useConfig(selector)`, `useLogins()`,
-  `useSessionPermissions(type, id)` (which also returns `refresh` and `sync`) and
-  `useSessionInsight()` (`insightId` and the insight's actions), and `useSessionRetry()`
-  (`{ isRetrying, retry }` over the snapshot's `isChecking` and `refresh`), under an optional
-  `SessionProvider`. Each finds its session through the internal `useSessionStore` in
-  `hooks/use-session.ts`: the nearest provider's, else `Session`. Selectors may build objects;
-  equal selections do not render. These hooks read through `useStoreSelector` from
-  `@semoss/utility/react/use-store-selector`, the same hook applications use for their own
-  stores, and hand selectors the store's actions with `pickActions`
-  (`js-frameworks/react/utility/pick-actions.ts`). `useSessionStore`, `SessionContext` and
-  `pickActions` are not exported.
-- `InsightStore` reads its config through `Config.load`, so `system.config` is the same
-  normalized copy (meta keys sorted by `display_order`, lists never missing), and fills
-  `Session.logins`. Its lifecycle remains explicit: initialize, use, then destroy when the
-  caller owns the workspace. Do not add `Session` subscriptions, automatic rejoining, or
-  lifecycle-generation/disposal machinery to `InsightStore`. The backend associates
-  insights with the session and drops them on session close. `InsightProvider` preserves
-  externally owned workspaces with `destroyOnUnmount={false}`. Local readiness/auth flags
-  update through initialization and insight actions; they are not reactive session state.
-  Its auth actions do not refresh or notify `Session`. See the
-  [session guide](./skills/session.skill.md#insight-lifecycle-belongs-to-its-owner).
-- Where a pixel runs: `runPixel(pixel)` with no insight id for a one off pixel that needs no
-  workspace (the backend makes an insight and keeps it until the session ends);
-  `useSessionPixel` (and `useSessionIteratorPixel` for lists that page, which starts over
-  when the ID changes) waits for the session's existing insight ID and `useInsightPixel`
-  waits for the nearest `InsightProvider`'s ID. Both call transport directly, without
-  insight creation or recovery. Existing `usePixel` retains explicit/workspace
-  routing with no session fallback; only implicit context fallback is deprecated,
-  not its call signatures. An explicit empty ID bypasses context and allows backend creation.
-  `Session.insight` (`run`/`upload`/`download`, `useSessionInsight()`) manages shared
-  insight creation and recovery for work outside a workspace. `run` returns `errors`;
-  it does not throw on pixel errors.
-- Transport these use: `isAdminUser`, `registerUser` ([`api/auth.ts`](./src/api/auth.ts)),
-  `getUserInfo` and `setUserMetadata` ([`api/user.ts`](./src/api/user.ts)). `Session.setMetadata`
-  is a partial update like the backend's `SetUserMetadata`: only the keys sent change, an empty
-  list removes one, and keys must be in the server's `USERMETAKEYS`. The backend logs a failed
-  database write rather than reporting it, so `setMetadata` reads the user again after saving. The config's
-  shape is typed once, on `getSystemConfig` in [`api/base.ts`](./src/api/base.ts), and
-  checked against the backend's `ServerConfigurationResource`: null fields are left out of
-  responses, `logins` and `loginDetails` are always present (empty when signed out), and
-  there are no `adminOnlyGuardrail*` flags.
-
-## Session Logins
-
-The SDK owns what the session is signed in to, so an app never tracks or caches it:
-
-- [`LoginsStore`](./src/stores/logins/logins.store.ts), as `Session.logins`, holds the session's
-  logins for the whole page, shared by every `InsightStore` and view. `InsightStore` fills it from the system config
-  when it loads. After a login it reads `/api/config` again, since the copy read while signed
-  out names no logins, and refills it from that, or from a fresh logins read when the config
-  cannot be read. On logout it only resets it, so views still on screen show the logins as
-  unknown rather than signed out.
-- A reset drops any read still in flight, so an answer for the old session never lands in the
-  new one. Provider keys are compared and sent in upper case, the way the backend lists and
-  signs them out.
-- `refresh` joins a read in flight and reuses one younger than 30 seconds; `useLogins()` reads
-  again when a view mounts and whenever the window regains focus.
-- `accountIds` is the user id of each login, from the config's `loginDetails`; the logins read
-  has no ids. A read drops the id of a login the session signed out of, and a login signed in to
-  since the config was read has none until the config is read again. Once logins are known, a
-  config only adds the id of a login that has none, and only when it names that login the same
-  way, so a config cached for an earlier session never replaces them. `Session` seeds it from
-  its config read, at start and after each login, and resets it on logout.
-- `connect` signs in to one more provider with a fresh popup (see `connectLogin` in
-  [`api/auth.ts`](./src/api/auth.ts)): a listed provider is signed out first, since the backend
-  keeps listing an expired token. Neither it nor `disconnect` ever signs out the session's own
-  login (`primaryLogin`), which would end the session or change whose it is.
-- Every sign in popup, `connectLogin` and the first login's `oauth`, waits through
-  `waitForSignInPopup`: the backend sends a finished popup to its configured `redirect`, which can
-  be another app or origin (a dev server's popup lands on the deployed client), where the popup
-  cannot be read. So besides watching the popup close or come back, it reads the login every two
-  seconds and closes the popup once it is there. `oauth` rejects when the popup ends without the
-  login rather than leaving the sign in waiting. Apps call the SDK's `oauth`; none keeps a copy.
-
-## Permission Batches
-
-[`api/access.ts`](./src/api/access.ts) holds Bulk Access Management's calls to the backend's
-permission batch endpoints, `/api/auth/permissionBatch`, or `/api/auth/admin/permissionBatch` when
-a call's `admin` is true, where an admin can read and change anything:
-
-- `getResourcePermissions` (`getPermissions`) reads the people and teams who can use a project or
-  engine and what the signed in user may change (`allowedPermissionChanges`). `getTeamPeople`
-  reads a custom team's members or managers through the same endpoint.
-- **Apps on an engine.** An engine can give an app (a project) a permission, which the app's
-  custom reactors use in place of the signed in user's own, so the app works with the engine for
-  people who have no access to it themselves. `AppSubject` (`category: "PROJECT"`, `id`, `name`)
-  is the app; it is kept apart from `PermissionSubject`, which is always a person or a team. On
-  an `ENGINE` target `getResourcePermissions` reads `projects`, a `CurrentAccess<AppSubject>` for
-  each app with its name (the app's display name when it has one), level (`READ_ONLY` or
-  `EDIT`), end date and, on a model, usage limit, and `allowedPermissionChanges.canViewProjects`,
-  true for the engine's editors and owners and in admin mode (anyone else gets an empty
-  `projects`), and `canChangeProjects`, true for the engine's owners and in admin mode. A
-  response with no `projects` reads as an empty list and one with no `canViewProjects` or
-  `canChangeProjects` as false, as for every other target; an app with no name is named by its
-  id. An `AppAccessChange` in a batch on the engine gives, changes or takes away an app's
-  permission: `action` `ADD`, `CHANGE` or `REMOVE`, `subject` the app's `category` and `id`, and
-  `to` a `PermissionGrant`, left out for `REMOVE`. A `CHANGE` sets the whole grant, so it sends
-  the level, the end date the app has and its usage limit. `PermissionChange` is a
-  `PermissionAccessChange`, a `ModelLimitChange` or an `AppAccessChange`.
-- `validatePermissionBatches` and `savePermissionBatches` post the batches as JSON in the
-  `batches` form field. Validating returns one result per batch, in the order sent, and each
-  change's result carries its index in its batch. Saving saves every change of every batch, or
-  none.
-- `getPermissionsToCopy` reads the people to copy from one project, engine or team into another,
-  with their access on both. `getEffectivePermissions` reads everyone who can use a project or
-  engine, and where their access comes from.
-
-Each call checks the response's shape and throws when it is not what the call reads. Lists of
-people leave out rows without an id, login type or known level, and an engine's apps leave out
-rows without an id or a known level; validation results are never left out, since they are
-matched to the batches by position.
-
-## Model Usage Limits
-
-A model's usage limits share one shape, `ModelUsageLimit` (`unlimited`, and `rules` of
-`ModelUsageLimitRule`: `metric`, `amount`, `window`, `windowLength`, `counts`), defined in
-[`api/access.ts`](./src/api/access.ts). Null is no limit defined, everywhere. Every rule has an
-amount: cost amounts are millionths of a US dollar and compute time is milliseconds.
-`readModelUsageLimit` reads one from any response, as an object or a JSON string; the backend
-leaves out null fields, so a missing limit is null, a rule with no amount is left out, and a limit
-with no rules that is not Unlimited is null too.
-
-- **Window lengths.** `windowLength` is how many minutes (1 to 59) or hours (1 to 24) a `MINUTE`
-  or `HOUR` rule's window spans, such as every 10 minutes. Missing or null means 1, so every
-  reader of rules (limits, Effective Permissions' rules and the path's `UsageLimitRuleUsage`)
-  keeps it only when it is a whole number above 1 on a minute or hour window, and a rule sends it
-  only when it is more than 1.
-
-- **Grants.** `PermissionGrant.usageLimit` is a model grant's limit. A `ModelLimitChange` (`PUBLIC` or `MODEL`
-  subject, `CHANGE` only, `to: { usageLimit }`) changes a model's public use limit or its total.
-- **An app's limit.** The grant a model gives an app (`AppAccessChange`, and each of
-  `getResourcePermissions`' `projects`) carries a `usageLimit` too. It covers the calls the app's
-  custom reactors make to the model for people whose only way to it is the app, those with no
-  grant of their own and none through a team, and comes before the Public Use Limit. It counts
-  like a team's: its `SHARED` rules are the overall amount
-  for the app, and its `EACH_PERSON` rules the amount for each user of the app. Null is no limit
-  defined.
-- **Reads.** `getResourcePermissions` adds a model's `publicUse`, `modelTotal`,
-  `costLimitsAvailable` and `price`, and `allowedPermissionChanges.limitLevels` and
-  `canChangeModelLimits`. Only a model's owners, and admins in admin mode, set usage limits: they
-  get every level in `limitLevels` and `canChangeModelLimits` true, and everyone else gets none
-  and false. `getEffectivePermissions` adds each person's `usage` (who their calls are
-  billed to), `publicUse`, `ceilings` and each provider team's `usageLimit`.
-- **How limits apply to one person.** `getUsageLimitPath(engineId, person, admin)` (the model's
-  editors and owners, or admins) and `getMyUsageLimitPath(engineId)` (the signed in person) read a
-  `UsageLimitPath`: the ceilings, then each source in order, as `UsageLimitPathStep`s whose rules
-  are `UsageLimitRuleUsage` with `used` and `resetsAt` in UTC. Outside admin mode the backend
-  hides the rules of someone else's `ALL_MODELS` and `PLATFORM` steps: such a step comes with no
-  rules and `rulesHidden` true (false when not sent), and a team step may come without its
-  `teamTotal`, read as null.
-- **Defaults and totals.** [`api/model-usage.ts`](./src/api/model-usage.ts) holds the admin-only
-  `getPlatformDefaultLimit`, `setPlatformDefaultLimit`, `getTeamTotalLimit` and
-  `setTeamTotalLimit` (`/api/auth/admin/modelUsage`). Setting null removes the limit. The set
-  calls resolve with the limit the backend saved, read from its `{ usageLimit }` answer, and
-  reject when the save fails.
-- **The engine user endpoints.** `PostUser.usageLimit` carries a model member's limit through
-  `addEngineUserPermissions` and `editEngineUserPermissions`, and `getEngineUsers` reads each
-  model member's `usage_limit`, sent as an object or a JSON string.
+For documentation-only edits, check links, skill metadata, that the skills are included in the
+package, and examples against exports. Do not present those checks as backend verification.

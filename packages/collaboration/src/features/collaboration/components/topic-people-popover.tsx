@@ -146,7 +146,7 @@ export function TopicPeoplePopover({ topic }: { topic: Topic }) {
 				<PeoplePickerPanel
 					fieldId={fieldId}
 					title="Add people"
-					description="Ignore keeps someone's messages in this topic's threads out of Work and the assistant."
+					description="Ignore keeps someone's messages in this topic's threads out of Work and away from your Digital Twin."
 					query={query}
 					onQuery={setQuery}
 					searchRef={searchRef}

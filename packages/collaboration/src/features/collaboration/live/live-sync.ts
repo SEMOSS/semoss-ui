@@ -28,6 +28,7 @@ const SESSION_ONLY = new Set<CollaborationCommand["type"]>([
 	"source.status",
 	"live-profile.set",
 	"profile.style.server",
+	"main-twin.server",
 	"snooze.expire",
 	"memory.server",
 	"topic.server",
@@ -734,6 +735,7 @@ const SETTINGS_FIELDS = [
 	"syncEveryMinutes",
 	"newTopicsEveryHours",
 	"closeAcrossThreads",
+	"twinCheckEveryHours",
 ] as const;
 
 /**

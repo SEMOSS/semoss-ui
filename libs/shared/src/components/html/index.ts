@@ -1,1 +1,5 @@
-export * from "./sandpack-html-preview";
+export {
+	HtmlPreview,
+	HtmlPreview as SandpackHtmlPreview,
+	type HtmlPreviewProps,
+} from "./html-preview";

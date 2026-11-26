@@ -18,6 +18,14 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { describeLoggedBilledTo } from "../model-usage-limit/usage-limit-labels";
+import {
+	type AccessDetail,
+	isAccessLevel,
+	isAccessReason,
+	isAccessRule,
+	isAccessVia,
+	readAccessDetails,
+} from "./access-reason";
 import { TimeDateFormatter } from "./common";
 
 interface JSONTreeViewProps {
@@ -187,6 +195,30 @@ const DetailField = ({ label, value, mono = false }: DetailFieldProps) => (
 export const AuditLogsDetailDrawer = (props) => {
 	const { logDetails } = props;
 	const { t } = useTranslation("auditlog");
+
+	/**
+	 * A detail behind the access reason in words: a level, how the call was made
+	 * and the platform's rule are named, and ids, names and counts are shown as
+	 * they are.
+	 *
+	 * @param detail - the detail
+	 * @returns the words
+	 */
+	const describeAccessDetail = ({ key, value }: AccessDetail): string => {
+		if (
+			(key === "level" || key === "levelNeeded") &&
+			isAccessLevel(value)
+		) {
+			return t(`accessLevels.${value}`);
+		}
+		if (key === "via" && isAccessVia(value)) {
+			return t(`accessVia.${value}`);
+		}
+		if (key === "rule" && isAccessRule(value)) {
+			return t(`accessRules.${value}`);
+		}
+		return value;
+	};
 	const [_width, setWidth] = useState(500);
 	const [promptExpandAll, setPromptExpandAll] = useState<boolean | undefined>(
 		undefined,
@@ -409,6 +441,28 @@ export const AuditLogsDetailDrawer = (props) => {
 							value={`${TimeDateFormatter(logDetails.logTimestamp).date} ${TimeDateFormatter(logDetails.logTimestamp).time}`}
 						/>
 					</div>
+
+					{/* Why the access check let the call through, and the details behind it */}
+					{isAccessReason(logDetails.accessReason) ? (
+						<div className="grid grid-cols-2 gap-x-4 gap-y-3 border-b px-4 py-3">
+							<DetailField
+								label={t("detail.fields.access")}
+								value={t(
+									`accessReasons.${logDetails.accessReason}`,
+								)}
+							/>
+							{readAccessDetails(logDetails.accessDetails).map(
+								(detail) => (
+									<DetailField
+										key={detail.key}
+										label={t(`accessDetails.${detail.key}`)}
+										value={describeAccessDetail(detail)}
+										mono={detail.key.endsWith("Id")}
+									/>
+								),
+							)}
+						</div>
+					) : null}
 
 					{/* Trace identifiers (full width, monospace for easy comparison) */}
 					<div className="flex flex-col gap-3 border-b px-4 py-3">

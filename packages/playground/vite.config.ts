@@ -15,7 +15,6 @@ const monacoApi = resolve(
 const baseConfig = createViteConfig({
 	rootDir: import.meta.dirname,
 	port: DEV_SERVER_PORTS.playground,
-	enableSvgr: true,
 	proxy: { ws: true },
 	alias: [
 		{ find: /^monaco-editor$/, replacement: monacoApi },
@@ -35,11 +34,11 @@ const baseConfig = createViteConfig({
 		setupFiles: "./vitest.setup.ts",
 		coverage: {
 			reportsDirectory: "./coverage/packages/playground",
-			include: ["**/src/components"],
+			include: ["src/components/**/*.{ts,tsx}"],
 		},
 		deps: {
 			optimizer: {
-				web: {
+				client: {
 					include: ["vitest-canvas-mock"],
 				},
 			},

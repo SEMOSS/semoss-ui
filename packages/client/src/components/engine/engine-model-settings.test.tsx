@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { expect, test, vi } from "vitest";
 import "@testing-library/jest-dom";
+import { EngineModelSettings } from "./engine-model-settings";
 
 const METADATA = {
 	engineId: "e1",
@@ -31,8 +32,6 @@ vi.mock("@semoss/sdk/react", () => ({
 		return { status: "INITIAL", data: undefined, refresh: () => {} };
 	},
 }));
-
-const { EngineModelSettings } = await import("./engine-model-settings");
 
 const EFFORT_WARNING =
 	"engine-model-settings--reasoning-default-effort-warning";

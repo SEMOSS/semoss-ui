@@ -26,6 +26,7 @@ import {
 	TableRow,
 } from "@semoss/ui/next";
 import { describeLoggedBilledTo } from "../model-usage-limit/usage-limit-labels";
+import { isAccessReason } from "./access-reason";
 import { AuditLogsDetailDrawer } from "./audit-logs-detail-drawer";
 import type { EventData } from "./common";
 import { TimeDateFormatter } from "./common";
@@ -199,6 +200,13 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 				</span>
 			</TableCell>
 			<TableCell>
+				<span className="text-sm">
+					{isAccessReason(event.accessReason)
+						? t(`accessReasons.${event.accessReason}`)
+						: "-"}
+				</span>
+			</TableCell>
+			<TableCell>
 				<span className="text-sm">{event.latency}ms</span>
 			</TableCell>
 			<TableCell>
@@ -340,6 +348,11 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 								<TableHead>
 									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
 										{t("table.columns.billedTo")}
+									</span>
+								</TableHead>
+								<TableHead>
+									<span className="font-medium font-semibold text-primary text-sm leading-6 tracking-normal">
+										{t("table.columns.access")}
 									</span>
 								</TableHead>
 								<TableHead>

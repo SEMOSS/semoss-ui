@@ -138,7 +138,7 @@ export function RulesEditor() {
 								askAt: Number(values.askAt),
 							},
 						});
-						settingsForm.reset(values);
+						settingsForm.reset(values, { keepDirtyValues: false });
 					}}
 				>
 					<FormInput

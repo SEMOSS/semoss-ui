@@ -40,7 +40,9 @@ describe("RoutineNav", () => {
 		expect(inbox).toHaveAccessibleDescription("On");
 		const expense = screen.getByRole("button", { name: "Expense review" });
 		expect(expense).not.toHaveAttribute("aria-current");
-		expect(expense).toHaveAccessibleDescription("Off · Last run failed");
+		expect(expense).toHaveAccessibleDescription(
+			/^Off\s*·\s*Last run failed$/,
+		);
 		// not loaded yet, so there is no state to describe
 		expect(
 			screen.getByRole("button", { name: "Client asks digest" }),

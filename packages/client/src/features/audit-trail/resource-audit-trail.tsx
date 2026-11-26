@@ -142,13 +142,16 @@ export function ResourceAuditTrail({
 				</Alert>
 			) : (
 				<section
-					className="min-w-0 overflow-x-auto"
+					className="min-w-0 overflow-x-auto focus-visible:outline-2 focus-visible:outline-ring"
 					aria-label="Audit events"
 					// biome-ignore lint/a11y/noNoninteractiveTabindex: Keyboard users need to scroll this bounded table region.
 					tabIndex={0}
 					aria-busy={isLoading}
 				>
-					<Table>
+					<Table
+						className="min-w-max"
+						wrapperClassName="overflow-visible"
+					>
 						<TableHeader>
 							<TableRow>
 								{columns.map((column) => (

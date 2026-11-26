@@ -19,8 +19,8 @@ export function TopicFiles({ files, emptyAction }: TopicFilesProps) {
 			<div className="flex flex-col items-start gap-3 px-5 py-4">
 				<P className="text-muted-foreground text-sm">
 					No files in this topic yet. Link the OneDrive and Teams
-					files this work runs on, and the assistant can read them in
-					this topic’s chats.
+					files this work runs on, and your Digital Twin can read them
+					in this topic’s chats.
 				</P>
 				{emptyAction}
 			</div>
@@ -50,6 +50,7 @@ export function TopicFiles({ files, emptyAction }: TopicFilesProps) {
 							{href ? (
 								<a
 									href={href}
+									data-testid={`topic-files-link-${file.itemId}`}
 									target="_blank"
 									rel="noopener noreferrer"
 									className="flex min-w-0 items-center gap-1.5 font-medium text-sm hover:underline focus-visible:outline-2 focus-visible:outline-ring"

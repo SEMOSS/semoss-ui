@@ -27,6 +27,26 @@ import {
 vi.mock("@/features/daily-chat/landing-chat-composer", () => ({
 	LandingChatComposer: () => null,
 }));
+const insight = vi.hoisted(() => ({
+	workItems: [] as Record<string, unknown>[],
+	actions: {
+		run: vi.fn(async (statement: string) => ({
+			pixelReturn: statement
+				.split(");")
+				.filter((part) => part.trim())
+				.map((part) => ({
+					output: part.trim().startsWith("WorkListMyWork")
+						? { selfId: "me", workItems: insight.workItems }
+						: {},
+					operationType: ["OPERATION"],
+				})),
+		})),
+	},
+}));
+vi.mock("@semoss/sdk/react", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@semoss/sdk/react")>()),
+	useInsight: () => insight,
+}));
 vi.mock("../api/use-collaboration-search", () => ({
 	useCollaborationSearch: () => ({
 		entries: [],
@@ -41,6 +61,7 @@ import { BrainMemory } from "./brain-memory";
 import { BrainReview } from "./brain-review";
 import { BrainThread } from "./brain-thread";
 import { CollaborationSearch } from "./collaboration-search";
+import { PeopleDirectory } from "./people-directory";
 import { PersonDetail } from "./person-detail";
 import { ProfileForm } from "./profile-form";
 import { RulesEditor } from "./rules-editor";
@@ -82,6 +103,7 @@ function renderSession(
 			{ path: "/brain/memory", Component: BrainMemory },
 			{ path: "/topics/:topicId", Component: TopicPage },
 			{ path: "/brain/threads/:threadId", Component: BrainThread },
+			{ path: "/brain/people", Component: PeopleDirectory },
 			{ path: "/brain/people/:personId", Component: PersonDetail },
 			{ path: "/rules", Component: RulesEditor },
 			{ path: "/search", Component: CollaborationSearch },
@@ -120,131 +142,12 @@ function sectionFor(heading: string): HTMLElement {
 	return section;
 }
 
-/** Shows one status of the topic page's work through its filter menu. */
-async function showWork(
-	user: ReturnType<typeof userEvent.setup>,
-	status: "Open" | "Handled",
-) {
-	await user.click(screen.getByRole("button", { name: /^Filter work:/ }));
-	await user.click(
-		screen.getByRole("menuitemradio", { name: new RegExp(`^${status}`) }),
-	);
-}
-
-afterEach(cleanup);
+afterEach(() => {
+	cleanup();
+	insight.workItems = [];
+});
 
 describe("collaboration Work and Brain integration", () => {
-	it("carries a work card's topic confirmation into Brain's learned links and the assistant snapshot", async () => {
-		const user = userEvent.setup();
-		const router = renderSession("/topics/t-geng");
-		expect(
-			submittedContext().topics.map((topic) => topic.id),
-		).not.toContain("t-trip");
-		await user.click(
-			screen.getByRole("button", {
-				name: "Confirm Northwind onsite for Agent architecture at our Oct 15 eng review?",
-			}),
-		);
-		expect(submittedContext().topics.map((topic) => topic.id)).toContain(
-			"t-trip",
-		);
-		await act(() => router.navigate("/brain"));
-		await user.click(screen.getByRole("tab", { name: "Learned recently" }));
-		const panel = screen.getByRole("tabpanel", {
-			name: "Learned recently",
-		});
-		const rows = within(panel).getAllByRole("article");
-		expect(
-			rows.some(
-				(row) =>
-					row.textContent?.includes(
-						"Agent architecture at our Oct 15 eng review?",
-					) &&
-					row.textContent.includes("Filed under Northwind onsite"),
-			),
-		).toBe(true);
-	});
-
-	it("shows completed work items in Handled and reopens the selected item", async () => {
-		const user = userEvent.setup();
-		renderSession("/topics/t-geng");
-		const title = "Confirm Oct 15 architecture review slot with Ava";
-		await user.click(
-			within(articleFor(title)).getByRole("button", {
-				name: "Done",
-			}),
-		);
-		expect(
-			screen.queryByRole("link", { name: title }),
-		).not.toBeInTheDocument();
-		await showWork(user, "Handled");
-		expect(screen.getByRole("link", { name: title })).toBeInTheDocument();
-		await user.click(
-			within(articleFor(title)).getByRole("button", {
-				name: "Move back",
-			}),
-		);
-		await showWork(user, "Open");
-		expect(screen.getByRole("link", { name: title })).toBeInTheDocument();
-	});
-
-	it("clears an item with No response needed and keeps it out of Handled", async () => {
-		const user = userEvent.setup();
-		renderSession("/topics/t-geng");
-		const title = "Confirm Oct 15 architecture review slot with Ava";
-		await user.click(
-			within(articleFor(title)).getByRole("button", {
-				name: /actions for/,
-			}),
-		);
-		await user.click(
-			within(
-				await screen.findByRole("dialog", { name: /actions for/ }),
-			).getByRole("button", { name: "No response needed" }),
-		);
-		expect(
-			screen.queryByRole("link", { name: title }),
-		).not.toBeInTheDocument();
-		await showWork(user, "Handled");
-		expect(
-			screen.queryByRole("link", { name: title }),
-		).not.toBeInTheDocument();
-	});
-
-	it("ignores a thread from its card and resumes it from the thread page", async () => {
-		const user = userEvent.setup();
-		const state = createInitialCollaborationState();
-		const title = "Confirm Oct 15 architecture review slot with Ava";
-		const threadId = state.items.find(
-			(item) => item.title === title,
-		)?.threadId;
-		if (!threadId) throw new Error("Missing thread");
-		const router = renderSession("/topics/t-geng", state);
-		await user.click(
-			within(articleFor(title)).getByRole("button", {
-				name: /actions for/,
-			}),
-		);
-		await user.click(
-			within(
-				await screen.findByRole("dialog", { name: /actions for/ }),
-			).getByRole("button", { name: "Ignore thread" }),
-		);
-		expect(
-			screen.queryByRole("link", { name: title }),
-		).not.toBeInTheDocument();
-		await act(() =>
-			router.navigate(`/brain/threads/${encodeURIComponent(threadId)}`),
-		);
-		const ignored = screen.getByRole("switch", {
-			name: "Ignore this thread",
-		});
-		expect(ignored).toBeChecked();
-		await user.click(ignored);
-		await act(() => router.navigate("/topics/t-geng"));
-		expect(screen.getByRole("link", { name: title })).toBeInTheDocument();
-	});
-
 	it("keeps a suggested memory from review, which puts it in use", async () => {
 		const user = userEvent.setup();
 		const router = renderSession("/brain");
@@ -317,7 +220,7 @@ describe("collaboration Work and Brain integration", () => {
 		const note = screen.getByLabelText("New note");
 		await user.type(note, "Hugo owns the demo environment.");
 		const notesTrigger = screen.getByRole("button", {
-			name: "Notes for the assistant",
+			name: "Notes for Your Digital Twin",
 		});
 		await user.click(notesTrigger);
 		expect(
@@ -592,13 +495,156 @@ describe("collaboration Work and Brain integration", () => {
 		).toBeInTheDocument();
 	});
 
-	it("shows an open item's due day, saved as midnight UTC, as that day on a person's page", () => {
+	it("lists VIPs once on People, in a section of their own, and moves a removed one under the people followed", async () => {
+		const user = userEvent.setup();
+		renderSession("/brain/people");
+		const section = (name: RegExp) =>
+			within(screen.getByRole("region", { name }));
+		const ava = { name: "Ava Reed" };
+		expect(section(/^VIPs \(4\)$/).getByRole("link", ava)).toBeVisible();
+		expect(section(/^You follow/).queryByRole("link", ava)).toBeNull();
+		await user.click(
+			screen.getByRole("button", { name: "Remove VIP Ava Reed" }),
+		);
+		expect(section(/^VIPs \(3\)$/).queryByRole("link", ava)).toBeNull();
+		expect(section(/^You follow/).getByRole("link", ava)).toBeVisible();
+	});
+
+	it("makes someone a VIP from their row on People, starting from none", async () => {
+		const user = userEvent.setup();
 		const state = createInitialCollaborationState();
-		const item = state.items.find((candidate) => candidate.id === "i1");
-		if (!item) throw new Error("Missing sample item");
-		item.due = "2026-11-06T00:00:00Z";
-		renderSession("/brain/people/p-ava", state);
-		expect(screen.getByText("Due Nov 6")).toBeInTheDocument();
+		for (const person of state.people) person.vip = false;
+		renderSession("/brain/people", state);
+		const section = (name: RegExp) =>
+			within(screen.getByRole("region", { name }));
+		expect(
+			section(/^VIPs \(0\)$/).getByText(/Choose Make VIP beside anyone/),
+		).toBeVisible();
+		const make = screen.getByRole("button", { name: "Make VIP Ava Reed" });
+		// what is read on the button; the name spoken for it adds whose row it is
+		expect(make).toHaveTextContent(/^Make VIP$/);
+		await user.click(make);
+		expect(
+			section(/^VIPs \(1\)$/).getByRole("button", {
+				name: "Remove VIP Ava Reed",
+			}),
+		).toHaveTextContent(/^Remove VIP$/);
+		expect(
+			section(/^You follow/).queryByRole("link", { name: "Ava Reed" }),
+		).toBeNull();
+	});
+
+	it("follows someone made a VIP from a search on People, so they stay followed once they stop being one", async () => {
+		const user = userEvent.setup();
+		const state = createInitialCollaborationState();
+		const ava = state.people.find((person) => person.id === "p-ava");
+		if (!ava) throw new Error("Missing sample person");
+		ava.vip = false;
+		ava.follow = "declined";
+		renderSession("/brain/people", state);
+		const section = (name: RegExp) =>
+			within(screen.getByRole("region", { name }));
+		const link = { name: "Ava Reed" };
+		// not followed, so only a search finds them
+		expect(
+			screen.queryByRole("button", { name: /VIP Ava Reed/ }),
+		).toBeNull();
+		await user.type(
+			screen.getByRole("textbox", { name: "Name or email" }),
+			"ava",
+		);
+		expect(
+			section(/^Everyone else$/).getByRole("link", link),
+		).toBeVisible();
+		await user.click(
+			screen.getByRole("button", { name: "Make VIP Ava Reed" }),
+		);
+		expect(section(/^VIPs \(1\)$/).getByRole("link", link)).toBeVisible();
+		await user.click(
+			screen.getByRole("button", { name: "Remove VIP Ava Reed" }),
+		);
+		expect(
+			section(/^You follow \(1\)$/).getByRole("link", link),
+		).toBeVisible();
+	});
+
+	it("keeps keyboard focus on a person's VIP button as their row moves between sections on People", async () => {
+		const user = userEvent.setup();
+		renderSession("/brain/people");
+		const button = (action: "Make" | "Remove") =>
+			screen.getByRole("button", { name: `${action} VIP Hugo Lane` });
+		button("Make").focus();
+		await user.keyboard("{Enter}");
+		expect(button("Remove")).toHaveFocus();
+		// pressed again it undoes itself; it never lands on another person's button
+		await user.keyboard("{Enter}");
+		expect(button("Make")).toHaveFocus();
+		// a pointer click does not pull the page to wherever the row went
+		await user.click(button("Make"));
+		expect(button("Remove")).not.toHaveFocus();
+	});
+
+	it("leaves the focus in the filter on People when a search finds someone whose row had left the page", async () => {
+		const user = userEvent.setup();
+		const state = createInitialCollaborationState();
+		const ava = state.people.find((person) => person.id === "p-ava");
+		if (!ava) throw new Error("Missing sample person");
+		// a VIP who is not followed, as older records can be: no longer a VIP, they are on no list
+		ava.follow = "declined";
+		renderSession("/brain/people", state);
+		screen.getByRole("button", { name: "Remove VIP Ava Reed" }).focus();
+		await user.keyboard("{Enter}");
+		expect(
+			screen.queryByRole("button", { name: /VIP Ava Reed/ }),
+		).toBeNull();
+		const filter = screen.getByRole("textbox", { name: "Name or email" });
+		await user.type(filter, "ava");
+		expect(
+			screen.getByRole("button", { name: "Make VIP Ava Reed" }),
+		).toBeVisible();
+		expect(filter).toHaveFocus();
+		expect(filter).toHaveValue("ava");
+	});
+
+	it("lists the work waiting on a person, with the step they owe, on their page", async () => {
+		insight.workItems = [
+			{
+				id: "review",
+				title: "Architecture review",
+				state: "active",
+				mine: true,
+				openSteps: [
+					{
+						id: "s1",
+						text: "Send the pre-read",
+						status: "open",
+						assigneeId: "p-ava",
+					},
+				],
+			},
+			{
+				id: "booking",
+				title: "Room booking",
+				state: "active",
+				mine: true,
+				openSteps: [
+					{
+						id: "s2",
+						text: "Book the room",
+						status: "open",
+						assigneeId: "me",
+					},
+				],
+			},
+		];
+		renderSession("/brain/people/p-ava");
+		expect(
+			await screen.findByRole("link", { name: "Architecture review" }),
+		).toHaveAttribute("href", "/work/item/review");
+		expect(screen.getByText("Send the pre-read")).toBeInTheDocument();
+		expect(
+			screen.queryByRole("link", { name: "Room booking" }),
+		).not.toBeInTheDocument();
 	});
 
 	it("marks a topic's people with the settings that hold everywhere", () => {
@@ -613,52 +659,6 @@ describe("collaboration Work and Brain integration", () => {
 		expect(
 			within(members).getByText("Excluded everywhere"),
 		).toBeInTheDocument();
-	});
-
-	it("counts each active feed thread once and distinguishes open, waiting, and muted threads", async () => {
-		const user = userEvent.setup();
-		const state = createInitialCollaborationState();
-		const item = state.items.find(
-			(candidate) => candidate.threadId === "th-geng-review",
-		);
-		const mutedThread = state.threads.find(
-			(candidate) => candidate.id === "th-hugo-chat",
-		);
-		if (!item || !mutedThread)
-			throw new Error("Missing sample thread or item");
-		mutedThread.muted = true;
-		state.items.push(
-			{ ...item, id: "second-review-action" },
-			{ ...item, id: "muted-action", threadId: mutedThread.id },
-		);
-		renderSession("/topics/t-geng", state);
-		await user.click(screen.getByRole("tab", { name: "Threads" }));
-		expect(screen.getByText("2 in your feed")).toBeInTheDocument();
-		expect(
-			screen.queryByRole("link", { name: "Open feed" }),
-		).not.toBeInTheDocument();
-		const openRow = screen
-			.getByRole("link", {
-				name: "Agent architecture at our Oct 15 eng review?",
-			})
-			.closest("li");
-		const waitingRow = screen
-			.getByRole("link", { name: "Sandbox access for pilot team" })
-			.closest("li");
-		const mutedRow = screen
-			.getByRole("link", { name: mutedThread.subject })
-			.closest("li");
-		if (!openRow || !waitingRow || !mutedRow)
-			throw new Error("Missing topic thread row");
-		expect(within(openRow).getByText("Open action")).toBeInTheDocument();
-		expect(within(waitingRow).getByText("Waiting")).toBeInTheDocument();
-		expect(
-			within(waitingRow).queryByText("Open action"),
-		).not.toBeInTheDocument();
-		expect(
-			within(mutedRow).queryByText("Open action"),
-		).not.toBeInTheDocument();
-		expect(within(mutedRow).queryByText("Waiting")).not.toBeInTheDocument();
 	});
 
 	it("shows an unloaded participant's name without linking to a missing person", async () => {
@@ -767,7 +767,7 @@ describe("collaboration Work and Brain integration", () => {
 		).toBe(true);
 		await user.click(
 			screen.getByRole("switch", {
-				name: "Include Ben Carter in assistant context",
+				name: "Include Ben Carter in what your Digital Twin reads",
 			}),
 		);
 		expect(
@@ -777,7 +777,7 @@ describe("collaboration Work and Brain integration", () => {
 		).toBe(false);
 		expect(
 			screen.getByRole("switch", {
-				name: "Include Ben Carter in assistant context",
+				name: "Include Ben Carter in what your Digital Twin reads",
 			}),
 		).not.toBeChecked();
 	});

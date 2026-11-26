@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { get, post } from "../utility";
 import {
+	getAllGranteePermissions,
 	getEffectivePermissions,
 	getMyUsageLimitPath,
 	getMyUsageLimitPaths,
@@ -143,13 +144,15 @@ describe("getResourcePermissions", () => {
 			id: "Sales",
 			type: "CUSTOM",
 		});
-		expect(access.projects).toEqual([]);
+		expect(access.engines).toEqual([]);
+		expect(access.accessToEngines).toEqual([]);
 		expect(access.allowedPermissionChanges).toEqual({
 			canChangePeople: true,
 			canGiveAuthorAccess: false,
 			canChangeTeams: false,
-			canViewProjects: false,
-			canChangeProjects: false,
+			canViewEngines: false,
+			canChangeEngines: false,
+			canViewAccessToEngines: false,
 			addsAreAdminOnly: false,
 			limitLevels: [],
 			canChangeModelLimits: false,
@@ -225,15 +228,16 @@ describe("getResourcePermissions", () => {
 		});
 	});
 
-	it("reads an engine's apps with their permission, naming an app with no name by its id, and whether the user can change them", async () => {
+	it("reads an engine's apps and engines with their type and permission, naming one with no name by its id, and whether the user can change them", async () => {
 		answerGet({
 			people: [],
 			teams: [],
-			projects: [
+			engines: [
 				{
 					subject: {
-						category: "PROJECT",
+						category: "ENGINE",
 						id: "app1",
+						type: "PROJECT",
 						name: "Intake Form",
 					},
 					access: {
@@ -259,14 +263,19 @@ describe("getResourcePermissions", () => {
 					},
 				},
 				{
-					subject: { category: "PROJECT", id: "app2" },
+					subject: {
+						category: "ENGINE",
+						id: "vectors",
+						type: "VECTOR",
+						subtype: "FAISS",
+					},
 					access: { level: "READ_ONLY" },
 				},
 			],
 			allowedPermissionChanges: {
 				canChangePeople: true,
-				canViewProjects: true,
-				canChangeProjects: true,
+				canViewEngines: true,
+				canChangeEngines: true,
 			},
 		});
 
@@ -275,12 +284,14 @@ describe("getResourcePermissions", () => {
 			id: "e1",
 		});
 
-		expect(access.projects).toEqual([
+		expect(access.engines).toEqual([
 			{
 				subject: {
-					category: "PROJECT",
+					category: "ENGINE",
 					id: "app1",
+					type: "PROJECT",
 					name: "Intake Form",
+					subtype: null,
 				},
 				access: {
 					level: "EDIT",
@@ -305,37 +316,203 @@ describe("getResourcePermissions", () => {
 				},
 			},
 			{
-				subject: { category: "PROJECT", id: "app2", name: "app2" },
+				subject: {
+					category: "ENGINE",
+					id: "vectors",
+					type: "VECTOR",
+					name: "vectors",
+					subtype: "FAISS",
+				},
 				access: { level: "READ_ONLY", endDate: null, usageLimit: null },
 			},
 		]);
-		expect(access.allowedPermissionChanges.canViewProjects).toBe(true);
-		expect(access.allowedPermissionChanges.canChangeProjects).toBe(true);
+		expect(access.allowedPermissionChanges.canViewEngines).toBe(true);
+		expect(access.allowedPermissionChanges.canChangeEngines).toBe(true);
 	});
 
-	it("leaves out apps without an id or a known level, reads anything but a list as no apps, and lets only true say the apps can change", async () => {
+	it("reads the engines and projects that give a project or engine a permission, naming one with no name by its id, and whether the user can see them", async () => {
 		answerGet({
 			people: [],
 			teams: [],
-			projects: [
+			accessToEngines: [
 				{
-					subject: { category: "PROJECT", name: "No Id" },
+					target: {
+						resourceType: "ENGINE",
+						id: "model1",
+						type: "MODEL",
+						name: "Orders Model",
+						subtype: "OPEN_AI",
+					},
+					access: {
+						level: "READ_ONLY",
+						usageLimit: {
+							unlimited: false,
+							rules: [
+								{
+									metric: "TOKENS",
+									amount: 5000,
+									window: "DAY",
+									counts: "SHARED",
+								},
+							],
+						},
+					},
+				},
+				{
+					target: {
+						resourceType: "ENGINE",
+						id: "db1",
+						type: "DATABASE",
+					},
+					access: { level: "EDIT", endDate: "2026-12-31T00:00Z" },
+				},
+				{
+					target: {
+						resourceType: "PROJECT",
+						id: "skill1",
+						type: "PROJECT",
+						name: "Orders Skill",
+						subtype: "SKILL",
+					},
+					access: { level: "READ_ONLY" },
+				},
+				{
+					target: { resourceType: "ENGINE", type: "MODEL" },
 					access: { level: "EDIT" },
 				},
-				{ subject: { category: "PROJECT", id: "nogrant" } },
 				{
-					subject: { category: "PROJECT", id: "nolevel" },
+					target: {
+						resourceType: "ENGINE",
+						id: "nolevel",
+						type: "MODEL",
+					},
+					access: { level: "NOPE" },
+				},
+			],
+			allowedPermissionChanges: {
+				canChangePeople: false,
+				canViewAccessToEngines: true,
+			},
+		});
+
+		const access = await getResourcePermissions({
+			resourceType: "PROJECT",
+			id: "app2",
+		});
+
+		expect(access.accessToEngines).toEqual([
+			{
+				target: {
+					resourceType: "ENGINE",
+					id: "model1",
+					type: "MODEL",
+					name: "Orders Model",
+					subtype: "OPEN_AI",
+				},
+				access: {
+					level: "READ_ONLY",
+					endDate: null,
+					usageLimit: {
+						unlimited: false,
+						rules: [
+							{
+								metric: "TOKENS",
+								amount: 5000,
+								window: "DAY",
+								counts: "SHARED",
+							},
+						],
+					},
+				},
+			},
+			{
+				target: {
+					resourceType: "ENGINE",
+					id: "db1",
+					type: "DATABASE",
+					name: "db1",
+					subtype: null,
+				},
+				access: {
+					level: "EDIT",
+					endDate: "2026-12-31T00:00Z",
+					usageLimit: null,
+				},
+			},
+			{
+				target: {
+					resourceType: "PROJECT",
+					id: "skill1",
+					type: "PROJECT",
+					name: "Orders Skill",
+					subtype: "SKILL",
+				},
+				access: {
+					level: "READ_ONLY",
+					endDate: null,
+					usageLimit: null,
+				},
+			},
+		]);
+		expect(access.allowedPermissionChanges.canViewAccessToEngines).toBe(
+			true,
+		);
+	});
+
+	it("leaves out apps and engines without an id, a known type or a known level, and lets only true say they can change", async () => {
+		answerGet({
+			people: [],
+			teams: [],
+			engines: [
+				{
+					subject: {
+						category: "ENGINE",
+						type: "PROJECT",
+						name: "No Id",
+					},
+					access: { level: "EDIT" },
+				},
+				{
+					subject: { category: "ENGINE", id: "notype" },
+					access: { level: "EDIT" },
+				},
+				{
+					subject: {
+						category: "ENGINE",
+						id: "badtype",
+						type: "WIDGET",
+					},
+					access: { level: "EDIT" },
+				},
+				{
+					subject: {
+						category: "ENGINE",
+						id: "nogrant",
+						type: "PROJECT",
+					},
+				},
+				{
+					subject: {
+						category: "ENGINE",
+						id: "nolevel",
+						type: "PROJECT",
+					},
 					access: { level: "NOPE" },
 				},
 				{ access: { level: "EDIT" } },
 				"app3",
 				null,
 				{
-					subject: { category: "PROJECT", id: "app1", name: "  " },
+					subject: {
+						category: "ENGINE",
+						id: "app1",
+						type: "PROJECT",
+						name: "  ",
+					},
 					access: { level: "READ_ONLY" },
 				},
 			],
-			allowedPermissionChanges: { canChangeProjects: "true" },
+			allowedPermissionChanges: { canChangeEngines: "true" },
 		});
 
 		const access = await getResourcePermissions({
@@ -343,25 +520,31 @@ describe("getResourcePermissions", () => {
 			id: "e1",
 		});
 
-		expect(access.projects).toEqual([
+		expect(access.engines).toEqual([
 			{
-				subject: { category: "PROJECT", id: "app1", name: "app1" },
+				subject: {
+					category: "ENGINE",
+					id: "app1",
+					type: "PROJECT",
+					name: "app1",
+					subtype: null,
+				},
 				access: { level: "READ_ONLY", endDate: null, usageLimit: null },
 			},
 		]);
-		expect(access.allowedPermissionChanges.canChangeProjects).toBe(false);
+		expect(access.allowedPermissionChanges.canChangeEngines).toBe(false);
 
 		answerGet({
 			people: [],
 			teams: [],
-			projects: { id: "app1" },
+			engines: { id: "app1" },
 			allowedPermissionChanges: {},
 		});
 		const malformed = await getResourcePermissions({
 			resourceType: "ENGINE",
 			id: "e1",
 		});
-		expect(malformed.projects).toEqual([]);
+		expect(malformed.engines).toEqual([]);
 	});
 
 	it("fails when the response has no allowed changes", async () => {
@@ -468,19 +651,27 @@ describe("validatePermissionBatches and savePermissionBatches", () => {
 		);
 	});
 
-	it("saves changes to the apps an engine gives a permission to", async () => {
+	it("saves changes to the apps and engines an engine gives a permission to", async () => {
 		answerPost({ targets: 1, changes: 3 });
 		const batch: PermissionBatch = {
 			target: { resourceType: "ENGINE", id: "e1" },
 			changes: [
 				{
 					action: "ADD",
-					subject: { category: "PROJECT", id: "app1" },
+					subject: {
+						category: "ENGINE",
+						id: "app1",
+						type: "PROJECT",
+					},
 					to: { level: "READ_ONLY", endDate: null },
 				},
 				{
 					action: "CHANGE",
-					subject: { category: "PROJECT", id: "app2" },
+					subject: {
+						category: "ENGINE",
+						id: "guard",
+						type: "GUARDRAIL",
+					},
 					to: {
 						level: "EDIT",
 						endDate: "2026-12-31T00:00Z",
@@ -489,7 +680,11 @@ describe("validatePermissionBatches and savePermissionBatches", () => {
 				},
 				{
 					action: "REMOVE",
-					subject: { category: "PROJECT", id: "app3" },
+					subject: {
+						category: "ENGINE",
+						id: "app3",
+						type: "PROJECT",
+					},
 				},
 			],
 		};
@@ -507,10 +702,10 @@ describe("validatePermissionBatches and savePermissionBatches", () => {
 		);
 	});
 
-	it("rejects with the backend's reason when an app change is refused", async () => {
+	it("rejects with the backend's reason when an app or engine change is refused", async () => {
 		mockPost.mockRejectedValueOnce(
 			new Error(
-				"Only this engine's owners can change which apps can use it",
+				"Only this engine's owners can change which apps and engines can use it",
 			),
 		);
 		await expect(
@@ -520,13 +715,168 @@ describe("validatePermissionBatches and savePermissionBatches", () => {
 					changes: [
 						{
 							action: "REMOVE",
-							subject: { category: "PROJECT", id: "app1" },
+							subject: {
+								category: "ENGINE",
+								id: "app1",
+								type: "PROJECT",
+							},
 						},
 					],
 				},
 			]),
 		).rejects.toThrow(
-			"Only this engine's owners can change which apps can use it",
+			"Only this engine's owners can change which apps and engines can use it",
+		);
+	});
+});
+
+describe("getAllGranteePermissions", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it("sends the filters and the page and reads each permission with whether the user can change it", async () => {
+		answerGet({
+			grants: [
+				{
+					target: {
+						resourceType: "PROJECT",
+						id: "skill1",
+						type: "PROJECT",
+						name: "Orders Skill",
+						subtype: "SKILL",
+					},
+					subject: {
+						category: "ENGINE",
+						id: "agent1",
+						type: "PROJECT",
+						name: "Orders Agent",
+						subtype: "WORKSPACE",
+					},
+					access: { level: "READ_ONLY" },
+					canChange: true,
+				},
+				{
+					target: {
+						resourceType: "ENGINE",
+						id: "model1",
+						type: "MODEL",
+					},
+					subject: {
+						category: "ENGINE",
+						id: "app1",
+						type: "PROJECT",
+					},
+					access: { level: "EDIT", endDate: "2026-12-31T00:00Z" },
+				},
+				{
+					target: { resourceType: "ENGINE", type: "MODEL" },
+					subject: {
+						category: "ENGINE",
+						id: "app1",
+						type: "PROJECT",
+					},
+					access: { level: "EDIT" },
+				},
+				{
+					target: {
+						resourceType: "ENGINE",
+						id: "db1",
+						type: "DATABASE",
+					},
+					subject: {
+						category: "ENGINE",
+						id: "app1",
+						type: "PROJECT",
+					},
+					access: { level: "OWNER?" },
+				},
+			],
+			total: 7,
+		});
+
+		const page = await getAllGranteePermissions(
+			{
+				search: " orders ",
+				targetKind: "PROJECT",
+				granteeKind: "PROJECT",
+				granteeType: "WORKSPACE",
+				limit: 25,
+				offset: 50,
+			},
+			true,
+		);
+
+		const url = requestedUrl();
+		expect(url.pathname).toBe(
+			"/api/auth/admin/permissionBatch/getAllGranteePermissions",
+		);
+		expect(url.searchParams.get("search")).toBe("orders");
+		expect(url.searchParams.get("targetType")).toBeNull();
+		expect(url.searchParams.get("targetKind")).toBe("PROJECT");
+		expect(url.searchParams.get("granteeKind")).toBe("PROJECT");
+		expect(url.searchParams.get("granteeType")).toBe("WORKSPACE");
+		expect(url.searchParams.get("limit")).toBe("25");
+		expect(url.searchParams.get("offset")).toBe("50");
+		expect(page).toEqual({
+			grants: [
+				{
+					target: {
+						resourceType: "PROJECT",
+						id: "skill1",
+						type: "PROJECT",
+						name: "Orders Skill",
+						subtype: "SKILL",
+					},
+					subject: {
+						category: "ENGINE",
+						id: "agent1",
+						type: "PROJECT",
+						name: "Orders Agent",
+						subtype: "WORKSPACE",
+					},
+					access: {
+						level: "READ_ONLY",
+						endDate: null,
+						usageLimit: null,
+					},
+					canChange: true,
+				},
+				{
+					target: {
+						resourceType: "ENGINE",
+						id: "model1",
+						type: "MODEL",
+						name: "model1",
+						subtype: null,
+					},
+					subject: {
+						category: "ENGINE",
+						id: "app1",
+						type: "PROJECT",
+						name: "app1",
+						subtype: null,
+					},
+					access: {
+						level: "EDIT",
+						endDate: "2026-12-31T00:00Z",
+						usageLimit: null,
+					},
+					canChange: false,
+				},
+			],
+			total: 7,
+		});
+	});
+
+	it("uses the user's endpoint outside admin mode and fails when the answer is not a page", async () => {
+		answerGet({ total: 0 });
+
+		await expect(getAllGranteePermissions()).rejects.toThrow(
+			"No Response to list the permissions engines and projects give",
+		);
+		expect(requestedUrl().pathname).toBe(
+			"/api/auth/permissionBatch/getAllGranteePermissions",
 		);
 	});
 });
@@ -854,7 +1204,7 @@ describe("getUsageLimitPath and getMyUsageLimitPath", () => {
 				rules: [],
 				teamTotal: { unlimited: true, rules: [] },
 			},
-			{ layer: "BILLED", limitType: "APP", state: "CHECKED" },
+			{ layer: "BILLED", limitType: "SOMETHING_NEW", state: "CHECKED" },
 		],
 	};
 

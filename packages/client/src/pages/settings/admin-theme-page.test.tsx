@@ -68,3 +68,34 @@ test("Mode Follows Agent shows Enable Agent Harness as included without saving i
 	expect(harnessSwitch()).not.toBeChecked();
 	expect(harnessSwitch()).toBeEnabled();
 });
+
+test("Agent Mode Only turns on and off, and shows Mode Follows Agent and Enable Agent Harness as included while on", async () => {
+	render(
+		<MemoryRouter>
+			<AdminThemePage />
+		</MemoryRouter>,
+	);
+	fireEvent.mouseDown(await screen.findByRole("tab", { name: "Playground" }));
+	const agentModeOnly = () =>
+		screen.getByRole("switch", { name: "Agent Mode Only" });
+	expect(agentModeOnly()).not.toBeChecked();
+
+	fireEvent.click(agentModeOnly());
+	expect(agentModeOnly()).toBeChecked();
+	expect(harnessSwitch()).toBeChecked();
+	expect(harnessSwitch()).toBeDisabled();
+	const followsAgent = () =>
+		screen.getByRole("switch", { name: "Mode Follows Agent" });
+	expect(followsAgent()).toBeChecked();
+	expect(followsAgent()).toBeDisabled();
+	expect(screen.getAllByText(/Included in Agent Mode Only\./)).toHaveLength(
+		2,
+	);
+
+	fireEvent.click(agentModeOnly());
+	expect(agentModeOnly()).not.toBeChecked();
+	expect(followsAgent()).not.toBeChecked();
+	expect(followsAgent()).toBeEnabled();
+	expect(harnessSwitch()).not.toBeChecked();
+	expect(harnessSwitch()).toBeEnabled();
+});

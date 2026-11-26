@@ -135,7 +135,7 @@ function proposalFromTool(tool: ConversationTool): ThreadDraftProposal | null {
 			? { attachments: resultFiles.data.attachments }
 			: {
 					attachmentError:
-						"The assistant's attachments could not be confirmed. Ask it to attach them again.",
+						"The attachments could not be confirmed. Ask in the chat to attach them again.",
 				}
 		: {};
 

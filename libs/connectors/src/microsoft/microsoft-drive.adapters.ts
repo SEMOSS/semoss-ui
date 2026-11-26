@@ -233,6 +233,7 @@ export const getDriveSaveRequest = (
 			buildPixel: buildPixel,
 			readSavedPath: readMicrosoftSavedPath,
 		},
+		...(item.driveId && { driveId: item.driveId }),
 	};
 };
 

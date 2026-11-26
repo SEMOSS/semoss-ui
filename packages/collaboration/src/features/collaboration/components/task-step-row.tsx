@@ -10,6 +10,7 @@ import {
 	DropdownMenuTrigger,
 	Input,
 } from "@semoss/ui/next";
+import { givenFirst } from "@/lib/person-name";
 import { threadPath } from "@/lib/workspace-paths";
 import type { WorkStepChange } from "../api/work-steps";
 import { dueDay } from "../live/live-state";
@@ -236,11 +237,14 @@ export function TaskStepRow({
 					<span className="mt-1 flex items-center gap-1.5 text-muted-foreground text-xs">
 						{step.assigneeName ? (
 							<PersonAvatar
-								name={step.assigneeName}
+								name={givenFirst(step.assigneeName)}
 								className="size-4 text-[0.5rem]"
 							/>
 						) : null}
-						Waiting on {step.assigneeName || "someone"}
+						Waiting on{" "}
+						{step.assigneeName
+							? givenFirst(step.assigneeName)
+							: "someone"}
 					</span>
 				) : null}
 				{topicName ? (

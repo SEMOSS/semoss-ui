@@ -2,12 +2,23 @@ import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+	type BlockDef,
 	type EchartVisualizationBlockConfig,
 	type EchartVisualizationBlockDef,
 	getValueByPath,
 	type PathValue,
 } from "@semoss/renderer";
+import {
+	Input,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	Switch,
+} from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks/useBlockSettings";
+import { ColorPickerSettings } from "../../../../shared/ColorPickerSettings";
 import { LINE_CHART_DATA } from "../../Visualization.constants";
 
 //Initial state of custom value labels as default values for managing and restoring
@@ -45,14 +56,14 @@ export const LineValueLabels = observer(
 		const { data, setData } =
 			useBlockSettings<EchartVisualizationBlockDef>(id);
 		const [value, setValue] = useState<
-			typeof EchartVisualizationBlockConfig.data.option
+			string | typeof EchartVisualizationBlockConfig.data.option
 		>(data.option);
-		const [selectedSeries, _setSelectedSeries] = useState<string>("0");
+		const [selectedSeries, setSelectedSeries] = useState<string>("0");
 		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 		const [valueLabelsUpdated, setValueLabelsUpdated] = useState<
 			"initial" | "updated"
 		>("initial");
-		const _labelPositionValues: string[] = [
+		const labelPositionValues: string[] = [
 			"top",
 			"left",
 			"right",
@@ -67,9 +78,9 @@ export const LineValueLabels = observer(
 			"insideTopRight",
 			"insideBottomRight",
 		];
-		const _alignment: string[] = ["left", "center", "right"];
-		const _fontFamily: string[] = ["sans-serif", "serif", "monospace"];
-		const _fontWeight: string[] = [
+		const alignment: string[] = ["left", "center", "right"];
+		const fontFamily: string[] = ["sans-serif", "serif", "monospace"];
+		const fontWeight: string[] = [
 			"normal",
 			"bold",
 			"bolder",
@@ -153,7 +164,7 @@ export const LineValueLabels = observer(
 			}
 		}, [fieldData]);
 
-		const _updateFields = (
+		const updateFields = (
 			fieldName: string,
 			// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
 			fieldValue: any,
@@ -254,7 +265,7 @@ export const LineValueLabels = observer(
 			}, 300);
 		}
 
-		const _fieldSelectedSeries: CustomizeValueLabelsKeys =
+		const fieldSelectedSeries: CustomizeValueLabelsKeys =
 			fieldData[parseInt(selectedSeries, 10)] || DEFAULT_VALUE_LABELS;
 
 		return (
@@ -282,6 +293,7 @@ export const LineValueLabels = observer(
 				{parseInt(selectedSeries, 10) >= 0 && (
 					<div className="flex flex-row items-center gap-2 px-4 py-2">
 						<Switch
+							aria-label="Show Value Labels"
 							checked={!!fieldSelectedSeries?.show}
 							onCheckedChange={(checked: boolean) =>
 								updateFields("show", checked, selectedSeries)

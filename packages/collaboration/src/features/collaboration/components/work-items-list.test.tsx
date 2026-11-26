@@ -222,11 +222,11 @@ it("lists each handoff with its person, item and ask, and opens the Waiting view
 	await renderWork();
 	const card = within(screen.getByRole("region", { name: "Waiting on" }));
 	expect(card.getByText("Priya Shah")).toBeVisible();
-	expect(card.getByRole("link", { name: "Item b" })).toHaveAttribute(
+	expect(card.getByRole("link", { name: "Send the policy" })).toHaveAttribute(
 		"href",
 		"/work/item/b",
 	);
-	expect(card.getByText("Send the policy")).toBeVisible();
+	expect(card.getByText("Item b")).toBeVisible();
 
 	await user.click(card.getByRole("button", { name: "View waiting items" }));
 	const tab = screen.getByRole("tab", { name: "Waiting 1" });
@@ -260,6 +260,13 @@ it("reviews new items: opens them all at once, filters by topic, and counts the 
 	const list = await renderWork(true);
 	const progress = () =>
 		screen.getByRole("progressbar", { name: "Items reviewed" });
+	expect(list.getAllByRole("listitem")).toHaveLength(2);
+	expect(list.queryByText("None assigned to you")).not.toBeInTheDocument();
+	await user.click(
+		screen.getByRole("button", {
+			name: "1 more set aside or not assigned to you",
+		}),
+	);
 	expect(list.getAllByRole("listitem")).toHaveLength(3);
 	expect(list.getByText("None assigned to you")).toBeVisible();
 	expect(progress()).toHaveAttribute("aria-valuetext", "0 of 3");
@@ -525,6 +532,9 @@ it("shows single steps under Needs you and Also asked of you, with their topic a
 			</MemoryRouter>
 		</CollaborationSessionProvider>,
 	);
+	await userEvent.click(
+		await screen.findByRole("button", { name: /^Single steps/ }),
+	);
 	const needs = within(
 		await screen.findByRole("list", {
 			name: "Single steps: Needs you",
@@ -563,6 +573,9 @@ it("offers Undo after a single step is taken off the list", async () => {
 				<WorkItems />
 			</MemoryRouter>
 		</CollaborationSessionProvider>,
+	);
+	await userEvent.click(
+		await screen.findByRole("button", { name: /^Single steps/ }),
 	);
 	await userEvent.click(
 		await screen.findByRole("button", {

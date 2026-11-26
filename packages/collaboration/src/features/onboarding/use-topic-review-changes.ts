@@ -26,6 +26,8 @@ interface TopicReviewChanges {
 	change: (change: TopicReviewChange) => Promise<TopicReview | null>;
 	/** Reuse the original ID after a rejected or uncertain response. */
 	retry: () => void;
+	/** The message of the most recent failure, for showing it beside the control that caused it. */
+	lastError: () => string | null;
 	/** Clear a failed operation only after explicitly reloading the authoritative draft. */
 	reset: () => void;
 }
@@ -43,6 +45,7 @@ export function useTopicReviewChanges(
 	scope.current = { actions, reviewId: controller.review.id };
 	const inFlight = useRef<Promise<TopicReview | null> | null>(null);
 	const failed = useRef<PendingChange | null>(null);
+	const lastFailure = useRef<string | null>(null);
 	const reviewId = controller.review.id;
 	useEffect(() => {
 		active.current = true;
@@ -104,7 +107,8 @@ export function useTopicReviewChanges(
 			} catch (cause: unknown) {
 				if (isCurrent()) {
 					failed.current = pending;
-					setError(message(cause));
+					lastFailure.current = message(cause);
+					setError(lastFailure.current);
 				}
 				return null;
 			} finally {
@@ -127,6 +131,7 @@ export function useTopicReviewChanges(
 		retry: () => {
 			if (failed.current) void perform(failed.current);
 		},
+		lastError: () => lastFailure.current,
 		reset: () => {
 			failed.current = null;
 			setError(null);

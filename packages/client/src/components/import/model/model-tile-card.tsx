@@ -9,6 +9,7 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { formatToDataTestId } from "@semoss/utility/text";
+import type { ModelVersionDefinition } from "./model-import.constants";
 
 const normalizeEngineKey = (value?: string) =>
 	(value || "").trim().replace(/\W+/g, "_").toUpperCase();
@@ -80,18 +81,7 @@ const resolveModelSubtype = (
 const isRemoteModelIcon = (icon?: string) =>
 	Boolean(icon) && !icon?.startsWith("/src/assets/img/");
 
-interface Model {
-	name: string;
-	display: string;
-	icon: string;
-	modelBrand?: string;
-	disable?: boolean;
-	description?: string;
-	embedding: boolean;
-	audio?: boolean;
-	image?: boolean;
-	link?: string; // optional documentation link
-}
+type Model = ModelVersionDefinition;
 
 interface ModelEngineIconProps {
 	model: Pick<Model, "icon" | "name"> & {

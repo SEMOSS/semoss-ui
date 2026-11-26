@@ -79,7 +79,7 @@ type CustomRenderOptions = {
 
 // Override render method from testing-library
 const customRender = (
-	ui: React.ReactElement,
+	ui: React.ReactElement<{ id: string }>,
 	options?: CustomRenderOptions,
 ): ReturnType<typeof render> => {
 	const { blocks } = options || {}; // Destructure parameters from options

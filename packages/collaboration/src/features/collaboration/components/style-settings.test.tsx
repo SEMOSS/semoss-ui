@@ -122,6 +122,55 @@ afterEach(() => {
 });
 
 describe("StyleSettings", () => {
+	it("is the persona's In email part, which says that it adds to the persona for email", () => {
+		renderSettings();
+		const section = screen.getByRole("region", { name: "In email" });
+		expect(
+			within(section).getByRole("heading", {
+				level: 2,
+				name: "In email",
+			}),
+		).toBeTruthy();
+		expect(
+			within(section).getByText(
+				/^For email only, on top of your persona\./,
+			),
+		).toBeTruthy();
+		// "How you write" is left as the name of the general style's box alone
+		expect(
+			screen.queryByRole("heading", { name: "How you write" }),
+		).toBeNull();
+		expect(
+			screen.queryByRole("region", { name: "How you write" }),
+		).toBeNull();
+	});
+
+	it("speaks only for the email style when it says what drafts use, and says a reset leaves the persona", async () => {
+		const user = userEvent.setup();
+		renderSettings(confirmedState());
+		expect(
+			screen.getByText("Confirmed. Email drafts use this style."),
+		).toBeTruthy();
+		await user.click(screen.getByRole("button", { name: "Reset style" }));
+		const dialog = await screen.findByRole("dialog", {
+			name: "Reset your writing style?",
+		});
+		expect(dialog).toHaveAccessibleDescription(
+			expect.stringContaining(
+				"Email drafts will not use an email style until you confirm a new one. Your persona is not touched.",
+			),
+		);
+		await user.click(
+			within(dialog).getByRole("button", { name: "Reset style" }),
+		);
+		// drafts still go by the persona, which is not this part's to speak for
+		expect(
+			await screen.findByText(
+				"Not confirmed yet. Email drafts do not use it.",
+			),
+		).toBeTruthy();
+	});
+
 	it("shows a proposal for review", () => {
 		renderSettings();
 		expect(

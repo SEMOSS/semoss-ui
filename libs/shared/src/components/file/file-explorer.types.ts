@@ -289,6 +289,8 @@ export interface FileExplorerOptions {
 	 * mutating context-menu entries. Browsing, search, and download remain.
 	 */
 	readOnly?: boolean;
+	/** Fired when a command or file operation explicitly reloads the listing. */
+	onRefresh?: () => void;
 	/** A file row was activated (directories are handled internally). */
 	onItemSelect?: (item: FileItem) => void;
 	/** Fired after a successful move or rename, with old and new paths. */

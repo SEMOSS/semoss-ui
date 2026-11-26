@@ -278,7 +278,17 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 							className="flex size-8 items-center justify-center rounded hover:bg-accent"
 							onClick={(e) => {
 								e.stopPropagation();
-								handleOnTrashClick(item.id ?? "", item.name);
+								if (
+									"id" in item &&
+									typeof item.id === "string" &&
+									item.id
+								) {
+									handleOnTrashClick(item.id, item.name);
+								} else {
+									toast.error(
+										"Community block is missing its ID",
+									);
+								}
 							}}
 						>
 							<Trash2 className="size-4 text-muted-foreground" />

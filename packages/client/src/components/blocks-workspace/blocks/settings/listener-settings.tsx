@@ -192,8 +192,8 @@ export const ListenerSettings = observer(
 				console.log(item);
 				let display = "";
 
-				if (item.payload.queryId) {
-					if (item.payload.cellId) {
+				if ("queryId" in item.payload && item.payload.queryId) {
+					if ("cellId" in item.payload && item.payload.cellId) {
 						display = state.getAlias(
 							item.payload.queryId,
 							item.payload.cellId,
@@ -201,13 +201,19 @@ export const ListenerSettings = observer(
 					} else {
 						display = state.getAlias(item.payload.queryId);
 					}
-				} else if (item.payload.destinationType) {
+				} else if (
+					"destinationType" in item.payload &&
+					item.payload.destinationType
+				) {
 					if (item.payload.destination)
 						display = item.payload.destination;
-				} else if (item.payload.variable) {
+				} else if (
+					"variable" in item.payload &&
+					item.payload.variable
+				) {
 					display = item.payload.variable;
 				} else {
-					if (item.payload.name) {
+					if ("name" in item.payload && item.payload.name) {
 						display = item.payload.name;
 					}
 				}

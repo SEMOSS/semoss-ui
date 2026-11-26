@@ -31,7 +31,7 @@ import {
 	formatTextByteSize,
 	splitMessageLines,
 } from "@semoss/utility/text";
-import { SandpackHtmlPreview } from "../html";
+import { HtmlPreview } from "../html/html-preview";
 import { InlineImageSegments } from "./inline-image";
 import { JsonViewer } from "./json-viewer";
 
@@ -320,7 +320,7 @@ export const CellOutputBlock = ({
 						/>
 					) : isHtmlOutput ? (
 						<div className="h-72">
-							<SandpackHtmlPreview
+							<HtmlPreview
 								html={htmlText}
 								forceFullHeight
 								className="border-0"
@@ -462,7 +462,7 @@ export const CellOutputBlock = ({
 						/>
 					) : isHtmlOutput ? (
 						<div className="h-full min-h-0">
-							<SandpackHtmlPreview
+							<HtmlPreview
 								html={htmlText}
 								forceFullHeight
 								className="border-0"

@@ -70,10 +70,12 @@ describe("RoutineResult email panel", () => {
 		});
 		expect(content).toHaveAttribute("tabindex", "0");
 		expect(
-			within(content).queryByRole("button", { name: "Ask Assistant" }),
+			within(content).queryByRole("button", {
+				name: "Ask Your Digital Twin",
+			}),
 		).toBeNull();
 		expect(
-			screen.getByRole("button", { name: "Ask Assistant" }),
+			screen.getByRole("button", { name: "Ask Your Digital Twin" }),
 		).toHaveAttribute("type", "button");
 		expect(
 			screen.queryByRole("link", { name: "Open session" }),
@@ -87,7 +89,7 @@ describe("RoutineResult email panel", () => {
 			expect(screen.queryByTitle("Latest brief email")).toBeNull();
 			expect(screen.getByText("brief").tagName).toBe("STRONG");
 			expect(
-				screen.getByRole("button", { name: "Ask Assistant" }),
+				screen.getByRole("button", { name: "Ask Your Digital Twin" }),
 			).toBeEnabled();
 		},
 	);
@@ -124,7 +126,7 @@ describe("RoutineResult email panel", () => {
 		await showResult({ ...completedRun, summary: null });
 		expect(screen.getByTitle("Latest brief email")).toBeVisible();
 		expect(
-			screen.queryByRole("button", { name: "Ask Assistant" }),
+			screen.queryByRole("button", { name: "Ask Your Digital Twin" }),
 		).toBeNull();
 	});
 
@@ -138,7 +140,7 @@ describe("RoutineResult email panel", () => {
 		);
 		expect(screen.getByTitle("Latest brief email")).toBeVisible();
 		expect(
-			screen.getByRole("button", { name: "Ask Assistant" }),
+			screen.getByRole("button", { name: "Ask Your Digital Twin" }),
 		).toBeEnabled();
 	});
 
@@ -161,7 +163,7 @@ describe("RoutineResult email panel", () => {
 			expect(screen.getByText(message)).toBeVisible();
 			expect(screen.queryByTitle("Latest brief email")).toBeNull();
 			expect(
-				screen.queryByRole("button", { name: "Ask Assistant" }),
+				screen.queryByRole("button", { name: "Ask Your Digital Twin" }),
 			).toBeNull();
 		},
 	);
@@ -178,7 +180,7 @@ describe("RoutineResult email panel", () => {
 			"/thread/room%3Asource-room",
 		);
 		expect(
-			screen.queryByRole("button", { name: "Ask Assistant" }),
+			screen.queryByRole("button", { name: "Ask Your Digital Twin" }),
 		).toBeNull();
 	});
 

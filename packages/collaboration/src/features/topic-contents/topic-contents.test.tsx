@@ -71,7 +71,7 @@ function setup(path = `/topics/${TOPIC}/contents`, isSample = false) {
 }
 
 const rail = () => screen.getByRole("navigation", { name: "What to list" });
-// two groups each have an Assistant chats entry: the topic's own, and all of them
+// two groups each have a Digital Twin Chats entry: the topic's own, and all of them
 const group = (name: string) => within(rail()).getByRole("region", { name });
 
 beforeEach(() => {
@@ -120,16 +120,22 @@ it("opens a saved topic on the inbox, with the mailbox's folders as a tree besid
 	const inTopic = state.threads.filter((thread) =>
 		thread.topicLinks.some((link) => link.topicId === TOPIC),
 	).length;
-	expect(
-		within(group("In this topic")).getByRole("button", {
-			name: `Emails and Teams chats ${inTopic}`,
-		}),
-	).toBeVisible();
-	expect(
-		within(group("Add from")).getByRole("button", {
-			name: `Everything Brain has read ${state.threads.length}`,
-		}),
-	).toBeVisible();
+	const topic = within(group("In this topic")).getByTestId(
+		"topic-contents-nav-place-topic",
+	);
+	expect(topic).toBeVisible();
+	expect(topic).toHaveRole("button");
+	expect(topic).toHaveAccessibleName(
+		new RegExp(`^Emails and Teams chats\\s*${inTopic}$`),
+	);
+	const all = within(group("Add from")).getByTestId(
+		"topic-contents-nav-place-all",
+	);
+	expect(all).toBeVisible();
+	expect(all).toHaveRole("button");
+	expect(all).toHaveAccessibleName(
+		new RegExp(`^Everything Brain has read\\s*${state.threads.length}$`),
+	);
 });
 
 it("keeps the two kinds of chat apart, each under its own name and above the folders", () => {
@@ -149,16 +155,16 @@ it("keeps the two kinds of chat apart, each under its own name and above the fol
 			.map((button) => button.textContent),
 	).toEqual([
 		`Teams chats${teams}`,
-		"Assistant chats",
+		"Digital Twin Chats",
 		expect.stringMatching(/^No topic yet/),
 		expect.stringMatching(/^Everything Brain has read/),
 		"OneDrive",
 		"Teams files",
 	]);
-	// the topic's own assistant chats are a list of their own
+	// the topic's own Digital Twin chats are a list of their own
 	expect(
 		within(group("In this topic")).getByRole("button", {
-			name: "Assistant chats",
+			name: "Digital Twin Chats",
 		}),
 	).toBeVisible();
 });
@@ -223,7 +229,7 @@ it("lists a nested folder by its path, and keeps the place in the address withou
 
 	await user.click(
 		within(group("Add from")).getByRole("button", {
-			name: "Assistant chats",
+			name: "Digital Twin Chats",
 		}),
 	);
 	expect(screen.getByText("Chats: all")).toBeVisible();
@@ -276,11 +282,12 @@ it("points at Connections when Teams chats are off and Brain holds none", () => 
 		</CollaborationSessionProvider>,
 	);
 	// still offered, with nothing in it, so the owner learns where Teams chats would be
-	expect(
-		within(group("Add from")).getByRole("button", {
-			name: "Teams chats 0",
-		}),
-	).toHaveAttribute("aria-current", "true");
+	const teams = within(group("Add from")).getByTestId(
+		"topic-contents-nav-place-teams",
+	);
+	expect(teams).toHaveRole("button");
+	expect(teams).toHaveAccessibleName(/^Teams chats\s*0$/);
+	expect(teams).toHaveAttribute("aria-current", "true");
 	expect(
 		screen.getByText("Brain has not read any Teams chats yet."),
 	).toBeVisible();
@@ -324,11 +331,12 @@ it("lists the topic's files with their count, and the drives to pick more from",
 	);
 	expect(screen.getByText("Files: teams")).toBeVisible();
 
-	await user.click(
-		within(group("In this topic")).getByRole("button", {
-			name: "Files 2",
-		}),
+	const topicFiles = within(group("In this topic")).getByTestId(
+		"topic-contents-nav-place-topic-files",
 	);
+	expect(topicFiles).toHaveRole("button");
+	expect(topicFiles).toHaveAccessibleName(/^Files\s*2$/);
+	await user.click(topicFiles);
 	expect(screen.getByText("Files: topic")).toBeVisible();
 
 	// the topic page opens on the files that were just changed
@@ -369,7 +377,7 @@ it("offers a sample topic only what Brain has read: no mailbox, no chats and no 
 		within(rail()).queryByRole("tree", { name: "Outlook folders" }),
 	).not.toBeInTheDocument();
 	expect(
-		within(rail()).queryByRole("button", { name: "Assistant chats" }),
+		within(rail()).queryByRole("button", { name: "Digital Twin Chats" }),
 	).not.toBeInTheDocument();
 	// the place it cannot show falls back to the threads with no topic
 	expect(screen.queryByText("Chats: all")).not.toBeInTheDocument();

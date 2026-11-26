@@ -1,43 +1,23 @@
-# Agent Skills
+# Skills
 
-Every agent must read the full [React standard](./react-standard.skill.md) before
-every task involving React files, regardless of directory or task size. Follow
-the [root loading and delegation requirements](../AGENTS.md#required-skill-routing-all-agents),
-read the owning package guide, and load additional skills relevant to the task.
-These files are provider-neutral; follow the explicit links rather than relying
-on automatic discovery.
-
-## Required Skills
+Task procedures. Each skill is a flat `<verb>-<object>.skill.md` file that links to the rules in
+[docs/standards](../docs/README.md#standards) and never copies them. Load the one that matches
+your task; the root [AGENTS.md](../AGENTS.md#task-routing) routes here.
 
 | Skill | Load when |
-| --- | --- |
-| [React standard](./react-standard.skill.md) | Always for React work anywhere in the repo: creating, editing, refactoring, debugging, investigating, planning changes to, or reviewing `.tsx`/`.jsx`, React components/hooks/context/providers in `.ts`/`.js`, and React tests, stories, or examples |
-| [Accessibility](./accessibility.skill.md) | Building or reviewing interactive UI, forms, dialogs, menus, tables, filters, navigation, or accessible behavior |
-| [Mobile development](./mobile-development.skill.md) | Working on responsive layouts, small screens, touch interaction, viewport handling, or mobile navigation |
-| [React form builder](./react-form-builder.skill.md) | Creating or touching forms, including fields, validation, submission, and modal form behavior |
-| [State management](./state-management.skill.md) | Creating, editing, migrating, or reviewing a store or shared application state: `*.store.ts`, `StoreState` from `@semoss/utility/store`, `useStoreSelector`, and existing MobX or Zustand stores and their consumers |
-| [SDK chat](./sdk-chat.skill.md) | Rooms, AskRoom/RunAgent messages, tool approvals, streaming/polling lifecycle, and room configuration |
-| [SDK session](../libs/sdk/skills/session.skill.md) | Sign in and out, the signed in user and their metadata, `useSession`/`useConfig`/`useSessionPermissions`/`useLogins`, and which insight a pixel runs in |
+|---|---|
+| [build-feature](./build-feature.skill.md) | Adding or extending an app feature, screen, or route |
+| [build-component](./build-component.skill.md) | Adding or changing a reusable component (`@semoss/ui`, shared, app) |
+| [build-form](./build-form.skill.md) | Creating or changing a form or dialog form |
+| [add-store](./add-store.skill.md) | Adding shared state, or migrating a MobX or Zustand store |
+| [call-backend](./call-backend.skill.md) | Reading or writing backend data, adding an `api/` module or SDK API |
+| [add-translations](./add-translations.skill.md) | Adding, changing, moving, or removing translation keys |
+| [add-workbench-panel](./add-workbench-panel.skill.md) | Adding a dock panel, file view, or domain workbench |
+| [make-responsive](./make-responsive.skill.md) | Responsive layout, touch interaction, viewport, mobile navigation |
+| [review-change](./review-change.skill.md) | Before handoff, or when asked to review |
+| [maintain-agent-docs](./maintain-agent-docs.skill.md) | Editing AGENTS.md, docs, DESIGN.md, or skills |
 
-Loading the React standard is mandatory for React work; apply individual rules
-to the work they govern, including applicable TypeScript rules for non-React
-source. Unrelated documentation, configuration, scripts, and CI tasks do not
-require it solely because they are in the repository. Specialized skills
-supplement the standard and package boundaries.
-[DESIGN.md](../DESIGN.md) owns design rules; [biome.json](../biome.json) owns lint
-and formatting settings. Use the React skill's
-[review checklist](./react-standard.skill.md#full-file-review-and-handoff) for validation.
+SDK usage guides (rooms, chat, agent runs, session) ship with `@semoss/sdk` and are reached
+through [libs/sdk/AGENTS.md](../libs/sdk/AGENTS.md), not from here.
 
-Package guides own local integration contracts; specialized skills own their task-specific
-workflows. If guidance conflicts with a current API or another requirement, verify the
-implementation and report the conflict rather than inventing an exception. The
-[packaged SDK guide](../libs/sdk/skills/sdk-chat/SKILL.md) is maintained in its published
-location; the flat SDK skill routes to it instead of duplicating its API reference.
-
-## Maintaining Skills
-
-- Keep one flat `<name>.skill.md` file per skill, with `name` and `description` metadata.
-- Keep the React standard's mandatory scope aligned with root and package instructions.
-- Link to shared rules instead of copying them into another skill or AGENTS.md.
-- Keep instructions provider-neutral, without tool restrictions or discovery wrappers.
-- Update links and this index when renaming or adding a skill.
+To add or change a skill, follow [maintain-agent-docs](./maintain-agent-docs.skill.md).
