@@ -99,7 +99,8 @@ interface RunHistoryDashboardProps {
 const ROW_HEIGHT = 46;
 const DETAIL_PANEL_HEIGHT = 340;
 // design-lint-disable-next-line arbitrary-size -- fixed column widths keep virtualized rows aligned with the header
-const GRID_COLUMNS = "grid-cols-[32px_210px_160px_160px_120px_minmax(0,1fr)]";
+const GRID_COLUMNS =
+	"grid-cols-[32px_210px_180px_160px_160px_120px_minmax(0,1fr)]";
 // design-lint-disable-next-line arbitrary-size -- fixed column widths keep virtualized rows aligned with the header
 const NODE_GRID_COLUMNS =
 	"grid-cols-[64px_64px_minmax(0,1fr)_160px_160px_120px_90px]";
@@ -881,6 +882,7 @@ export function RunHistoryDashboard({
 				<div className={cn("grid", GRID_COLUMNS, HEADER_ROW)}>
 					<span />
 					<span>ID / Node</span>
+					<span>Iteration Value</span>
 					<span>Time Started</span>
 					<span>Time Ended</span>
 					<span>Status</span>
@@ -1580,6 +1582,12 @@ function DashboardRowView({
 						</button>
 					) : null}
 				</span>
+				<span
+					className="min-w-0 truncate font-mono text-xs"
+					title={row.loopItem ?? undefined}
+				>
+					{row.loopItem}
+				</span>
 				<span className="text-muted-foreground tabular-nums">
 					{nodeTimeLabel(row.startedAt)}
 				</span>
@@ -1684,6 +1692,7 @@ function DashboardRowView({
 						</span>
 					) : null}
 				</button>
+				<span aria-hidden />
 				<span className="text-muted-foreground tabular-nums">
 					{nodeTimeLabel(row.node.STARTED_AT)}
 				</span>
