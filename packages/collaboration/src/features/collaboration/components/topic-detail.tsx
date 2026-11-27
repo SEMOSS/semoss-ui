@@ -56,6 +56,7 @@ import { TopicEditor } from "./topic-editor";
 import { TopicFiles } from "./topic-files";
 import { TopicFolders } from "./topic-folders";
 import { TopicIgnoredPeople } from "./topic-ignored-people";
+import { TopicM365Folders } from "./topic-m365-folders";
 import { TopicMatchesDialog } from "./topic-matches-dialog";
 import { TopicPeoplePopover } from "./topic-people-popover";
 import { TopicPersonMenu } from "./topic-person-menu";
@@ -816,6 +817,11 @@ export function TopicDetail() {
 								<TopicFolders
 									topicId={topic.id}
 									folders={topic.folders ?? []}
+									isSample={topic.isSample}
+								/>
+								<TopicM365Folders
+									topicId={topic.id}
+									folders={topic.m365Folders || []}
 									isSample={topic.isSample}
 								/>
 								<Collapsible

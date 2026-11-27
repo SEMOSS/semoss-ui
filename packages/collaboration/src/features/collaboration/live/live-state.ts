@@ -306,6 +306,26 @@ export function mapTopicFiles(rows: unknown): TopicFile[] {
 	}));
 }
 
+/** A topic's linked M365 folders, as BrainGetTopic and BrainLinkTopicM365Folder answer them. */
+export function mapTopicM365Folders(
+	rows: unknown,
+): import("@/features/connectors/api/m365-folders").TopicM365Folder[] {
+	return list<Row>(rows).map((folder) => ({
+		linkId: str(folder.linkId),
+		kind:
+			(folder.kind as "drive_folder" | "channel_files") ?? "drive_folder",
+		displayName: str(folder.displayName),
+		driveId: opt(folder.driveId),
+		itemId: opt(folder.itemId),
+		teamId: opt(folder.teamId),
+		channelId: opt(folder.channelId),
+		siteId: opt(folder.siteId),
+		webUrl: opt(folder.webUrl),
+		state: (folder.state as "ok" | "no_access") ?? "ok",
+		checkedAt: opt(folder.checkedAt),
+	}));
+}
+
 export function mapTopic(row: Row): Topic {
 	const stats = (row.stats ?? {}) as Row;
 	return {
@@ -339,6 +359,7 @@ export function mapTopic(row: Row): Topic {
 			origin: opt(folder.origin),
 		})),
 		files: mapTopicFiles(row.files),
+		m365Folders: mapTopicM365Folders(row.m365Folders),
 		stats: {
 			threads: Number(stats.threads ?? 0),
 			openItems: Number(stats.openItems ?? 0),

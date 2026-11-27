@@ -1,3 +1,4 @@
+import type { TopicM365Folder as ApiTopicM365Folder } from "@/features/connectors/api/m365-folders";
 import type { SourceAttachment } from "@/features/connectors/types";
 import type { DisplayBody } from "@/features/email/message-body";
 
@@ -49,6 +50,9 @@ export interface TopicFile {
 	webUrl?: string;
 }
 
+/** A Microsoft 365 folder (Teams channel or OneDrive folder) linked to a topic. */
+export type TopicM365Folder = ApiTopicM365Folder;
+
 export interface Topic {
 	id: string;
 	name: string;
@@ -65,6 +69,8 @@ export interface Topic {
 	folders?: { id: string; path: string; origin?: string | null }[];
 	/** OneDrive and Teams files the owner linked to the topic. */
 	files?: TopicFile[];
+	/** Microsoft 365 folders (Teams channels, OneDrive folders) linked to the topic. */
+	m365Folders?: TopicM365Folder[];
 	stats: { threads: number; openItems: number; lastActivity: string };
 	isSample: boolean;
 }
