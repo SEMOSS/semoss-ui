@@ -107,6 +107,32 @@ const topicWords = (name: string) =>
 		.sort()
 		.join(" ");
 
+const toProfile = ({ name, description, clues }: TopicBuildDraft) => ({
+	name,
+	description,
+	clues,
+});
+
+/** Drafts not set up yet; a draft whose name matches exactly one built topic is that topic. */
+function splitBuilt(drafts: TopicBuildDraft[], topics: Topic[]) {
+	const existing = topics.filter(
+		(topic) => topic.built && topic.keep && !topic.mergedIntoKey,
+	);
+	const matched = new Set<string>();
+	const fresh = drafts.filter((draft) => {
+		const name = topicWords(draft.name);
+		const withClues = topicWords([draft.name, ...draft.clues].join(" "));
+		const matches = existing.filter((topic) => {
+			const savedName = topicWords(topic.name);
+			return savedName && (savedName === name || savedName === withClues);
+		});
+		if (matches.length !== 1) return true;
+		matched.add(matches[0].name);
+		return false;
+	});
+	return { fresh, matched };
+}
+
 /** Step 7: the owner sets up each topic with Brain, one at a time. */
 export function TopicBuilder({
 	actions,
@@ -153,6 +179,44 @@ export function TopicBuilder({
 		.sort((a, b) => b.threadIds.length - a.threadIds.length)
 		.slice(0, 6);
 
+	// what the owner wrote at import: cards drafted in the background, or the words to start from
+	const seeded = useRef(false);
+	useEffect(() => {
+		if (seeded.current) return;
+		seeded.current = true;
+		const prebuilt = review.draft.prebuilt;
+		if (!prebuilt?.topics.length) {
+			if (built.length) return;
+			setText(prebuilt?.text || review.draft.guidance);
+			if (prebuilt?.error) setError(prebuilt.error);
+			return;
+		}
+		const drafts = prebuilt.topics.map((topic) => topic.draft);
+		const { fresh, matched } = splitBuilt(drafts, review.draft.topics);
+		const found = new Map(
+			prebuilt.topics.map((topic) => [topic.draft.line, topic.found]),
+		);
+		const cards = fresh.map((draft) => {
+			const item = fromDraft(draft);
+			const result = found.get(draft.line);
+			// a line whose search failed searches again when its card opens
+			if (result) item.prepared = Promise.resolve(result);
+			return item;
+		});
+		setRequested(drafts.map(toProfile));
+		setAlreadyBuilt([...matched]);
+		setSearchStatus(
+			new Map(
+				cards.map((item) => [
+					item,
+					item.prepared ? "Ready" : "Searches when opened",
+				]),
+			),
+		);
+		setCard(cards[0] ?? null);
+		setQueue(cards.slice(1));
+	}, [review, built.length]);
+
 	const start = async (): Promise<void> => {
 		const words = text.trim();
 		if (!words || isStarting) return;
@@ -163,35 +227,12 @@ export function TopicBuilder({
 			const saved = await onSave();
 			const answer = await startTopicBuild(actions, saved, words);
 			if (generation !== batch.current) return;
-			const existing = saved.draft.topics.filter(
-				(topic) => topic.built && topic.keep && !topic.mergedIntoKey,
+			const { fresh, matched } = splitBuilt(
+				answer.topics,
+				saved.draft.topics,
 			);
-			const matched = new Set<string>();
-			const cards = answer.topics
-				.filter((draft) => {
-					const name = topicWords(draft.name);
-					const withClues = topicWords(
-						[draft.name, ...draft.clues].join(" "),
-					);
-					const matches = existing.filter((topic) => {
-						const savedName = topicWords(topic.name);
-						return (
-							savedName &&
-							(savedName === name || savedName === withClues)
-						);
-					});
-					if (matches.length !== 1) return true;
-					matched.add(matches[0].name);
-					return false;
-				})
-				.map(fromDraft);
-			const profiles = answer.topics.map(
-				({ name, description, clues }) => ({
-					clues,
-					name,
-					description,
-				}),
-			);
+			const cards = fresh.map(fromDraft);
+			const profiles = answer.topics.map(toProfile);
 			setRequested(profiles);
 			setAlreadyBuilt([...matched]);
 			if (!answer.topics.length) {
@@ -222,7 +263,7 @@ export function TopicBuilder({
 						dropped.current.has(item)
 					)
 						return null;
-					status("Searching…");
+					status("Searching...");
 					try {
 						const result = await findTopicThreads(
 							actions,
@@ -487,7 +528,7 @@ export function TopicBuilder({
 										<Plus aria-hidden="true" />
 									)}
 									{isStarting
-										? "Preparing topics…"
+										? "Preparing topics..."
 										: "Draft my topics"}
 								</Button>
 							</div>
@@ -514,7 +555,7 @@ export function TopicBuilder({
 														? "conversation"
 														: "conversations"}
 													{topic.description &&
-														` · ${topic.description}`}
+														` - ${topic.description}`}
 												</P>
 												{topic.sampleSubjects
 													.slice(0, 2)

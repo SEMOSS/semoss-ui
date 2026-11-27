@@ -23,19 +23,43 @@ type Status = Record<string, unknown>;
 const num = (value: unknown) => (typeof value === "number" ? value : 0);
 const ACTIVE = new Set(["queued", "running", "grouping", "tidying"]);
 
-function progress(status: Status): string {
+// m:ss since the run started; the 3 s status poll keeps it moving
+function elapsed(status: Status): string {
+	const started = Date.parse(String(status.startedAt ?? ""));
+	if (Number.isNaN(started)) return "";
+	const seconds = Math.max(0, Math.floor((Date.now() - started) / 1000));
+	return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+}
+
+function label(status: Status): string {
 	switch (status.state) {
 		case "queued":
-			return "Starting...";
+			return num(status.threads) > 0
+				? `Waiting to start (${num(status.threads)} threads)`
+				: "Starting...";
 		case "running":
-			return `Reading threads ${num(status.extracted)} of ${num(status.threads)}`;
-		case "grouping":
-			return "Grouping into work items...";
+			return `Reading conversations ${num(status.extracted)} of ${num(status.threads)}`;
+		case "grouping": {
+			const topics = num(status.groupTopics);
+			return topics > 0
+				? `Grouping topic ${Math.min(num(status.groupedTopics) + 1, topics)} of ${topics}`
+				: "Grouping into work items...";
+		}
 		case "tidying":
 			return `Tidying steps ${num(status.tidied)} of ${num(status.items)}`;
 		default:
 			return "";
 	}
+}
+
+function progress(status: Status): string {
+	const text = label(status);
+	const time = ACTIVE.has(String(status.state)) ? elapsed(status) : "";
+	// a build waiting behind this one, or the rest of a first build read in parts
+	const after = status.state !== "queued" ? num(status.queuedThreads) : 0;
+	return [text, time, after > 0 ? `then ${after} more threads` : ""]
+		.filter(Boolean)
+		.join(" - ");
 }
 
 /** "Build from mail": starts a build, shows its progress, and tells every view of work when it is done. */

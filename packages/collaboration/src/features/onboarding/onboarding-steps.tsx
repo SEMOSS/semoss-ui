@@ -69,6 +69,7 @@ import {
 import { TeamsImportNotice } from "./teams-import-notice";
 import { useFinishSetup } from "./use-finish-setup";
 import { useJob } from "./use-job";
+import { WorkContextCard } from "./work-context-card";
 
 type StepProps = OnboardingStepProps;
 
@@ -864,6 +865,7 @@ export function ImportStep({
 			{(startError || error) && (
 				<Failure error={startError || error || ""} />
 			)}
+			<WorkContextCard actions={actions} />
 			<StepActions
 				onBack={running || starting ? undefined : onBack}
 				note={
