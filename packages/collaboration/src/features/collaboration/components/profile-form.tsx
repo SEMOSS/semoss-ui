@@ -55,7 +55,7 @@ export function ProfileForm({
 						workingHours: values.workingHours,
 					},
 				});
-				form.reset(values);
+				form.reset(values, { keepDirtyValues: false });
 			}}
 		>
 			<FormInput

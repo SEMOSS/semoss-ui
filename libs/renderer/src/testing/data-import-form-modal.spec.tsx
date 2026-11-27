@@ -46,7 +46,12 @@ vi.mock("../components/cell-defaults/data-import-cell", () => ({
 
 const scrollIntoView = HTMLElement.prototype.scrollIntoView;
 const hasPointerCapture = HTMLElement.prototype.hasPointerCapture;
+const screenReaderStyles = document.createElement("style");
 beforeAll(() => {
+	// Match Tailwind's visually hidden utility for accessible-name computation.
+	screenReaderStyles.textContent =
+		".sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0}";
+	document.head.append(screenReaderStyles);
 	vi.stubGlobal(
 		"ResizeObserver",
 		class {
@@ -59,6 +64,7 @@ beforeAll(() => {
 	HTMLElement.prototype.hasPointerCapture = () => false;
 });
 afterAll(() => {
+	screenReaderStyles.remove();
 	vi.unstubAllGlobals();
 	HTMLElement.prototype.scrollIntoView = scrollIntoView;
 	HTMLElement.prototype.hasPointerCapture = hasPointerCapture;

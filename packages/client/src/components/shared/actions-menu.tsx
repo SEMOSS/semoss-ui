@@ -136,6 +136,7 @@ export const ActionsMenu = ({ items, testIdPrefix }: ActionsMenuProps) => {
 				align="end"
 				onPointerEnter={handlePointerEnter}
 				onPointerLeave={handlePointerLeave}
+				// @ts-expect-error Radix forwards this focus handler at runtime but omits it from DropdownMenuContentProps.
 				onOpenAutoFocus={handleAutoFocus}
 				onCloseAutoFocus={(event) => {
 					handleAutoFocus(event);

@@ -1165,7 +1165,9 @@ export const FrameOperations = observer(
 			}
 			if (variation === "echart-gantt-chart") {
 				let columnsToSet = [];
-				const columnsObject = {
+				const columnsObject: Record<string, unknown> & {
+					tooltip: string[];
+				} = {
 					tooltip: [],
 				};
 				const formattedArray = [];

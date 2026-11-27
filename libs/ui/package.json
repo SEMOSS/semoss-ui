@@ -80,7 +80,7 @@
     "@types/js-yaml": "^4.0.9",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "jsdom": "~22.1.0",
+    "jsdom": "~31.0.1",
     "micromark-util-types": "^2.0.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

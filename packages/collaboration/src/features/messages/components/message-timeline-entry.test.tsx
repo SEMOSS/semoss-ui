@@ -57,7 +57,7 @@ it.each(["chat", "bubbles"] as const)(
 		expect(
 			screen.queryByRole("button", { name: "Response actions" }),
 		).toBeNull();
-		const copy = screen.getByRole("button", { name: "Copy response" });
+		const copy = screen.getByTestId("message-actions-copy-button");
 		expect(copy).toBeVisible();
 		expect(screen.getByRole("article")).toContainElement(copy);
 		expect(screen.getByRole("article")).not.toHaveAttribute("tabindex");
@@ -169,9 +169,7 @@ it.each(["flat", "bubbles"] as const)(
 		expect(
 			screen.getByRole("article", { name: `Message from ${agent.name}` }),
 		).toBeVisible();
-		expect(
-			screen.getByRole("button", { name: "Copy response" }),
-		).toBeVisible();
+		expect(screen.getByTestId("message-actions-copy-button")).toBeVisible();
 		rerender(
 			<MessageTimelineEntry
 				{...entry}
@@ -180,9 +178,7 @@ it.each(["flat", "bubbles"] as const)(
 			/>,
 		);
 		expect(screen.queryByText("Work identity")).toBeNull();
-		expect(
-			screen.getByRole("button", { name: "Copy response" }),
-		).toBeVisible();
+		expect(screen.getByTestId("message-actions-copy-button")).toBeVisible();
 	},
 );
 

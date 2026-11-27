@@ -92,10 +92,10 @@ describe("Model Router routes", () => {
 		render(<RouterHarness config={KEYWORD_CONFIG} />);
 
 		expect(
-			screen.getByRole("group", { name: "Route 1: coding" }),
+			screen.getByRole("group", { name: /^Route 1:\s*coding$/ }),
 		).toBeInTheDocument();
 		expect(
-			screen.getByRole("group", { name: "Route 3: travel" }),
+			screen.getByRole("group", { name: /^Route 3:\s*travel$/ }),
 		).toBeInTheDocument();
 	});
 

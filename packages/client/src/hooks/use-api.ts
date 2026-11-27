@@ -7,6 +7,7 @@ import * as API from "@/api";
 // also exports non-function values (Env, constants, classes) that would
 // break the (...args: any) => any constraint on ApiType[A].
 const SdkAPI = { getUserEnginePermission, getUserProjectPermission };
+const combinedAPI = { ...SdkAPI, ...API };
 
 type ApiType = typeof API & typeof SdkAPI;
 
@@ -124,23 +125,11 @@ export function useAPI<A extends keyof ApiType>(
 			try {
 				const [func, ...args] = api;
 
-				// This is a bit of a hack to allow us to call both the client and sdk API without worrying about where the function is coming from. We check the client API first, then the sdk API.
-				const response = await (
-					(
-						API as {
-							[key: string]: (
-								...args: unknown[]
-							) => Promise<unknown>;
-						}
-					)[func] ??
-					(
-						SdkAPI as {
-							[key: string]: (
-								...args: unknown[]
-							) => Promise<unknown>;
-						}
-					)[func]
-				).apply(null, args);
+				const response = await Reflect.apply(
+					combinedAPI[func],
+					null,
+					args,
+				);
 
 				// ignore if its cancelled
 				if (isCancelled) {

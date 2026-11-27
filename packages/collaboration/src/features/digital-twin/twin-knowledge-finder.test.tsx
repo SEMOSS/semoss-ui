@@ -112,7 +112,13 @@ async function find(prompt = "Everything about Apollo") {
 	await user.click(screen.getByRole("button", { name: "Find suggestions" }));
 	return user;
 }
-const group = (name: string) => screen.getByRole("region", { name });
+const group = (kind: "email" | "chat" | "file", count: number) => {
+	const region = screen.getByTestId(`twin-knowledge-finder-group-${kind}`);
+	const label = { email: "Emails", chat: "Teams chats", file: "Files" }[kind];
+	expect(region).toHaveRole("region");
+	expect(region).toHaveAccessibleName(new RegExp(`^${label}\\s*${count}$`));
+	return region;
+};
 /** What is said above the list once all four of the server's suggestions are in it. */
 const foundAll = () =>
 	screen.findByText(
@@ -211,7 +217,7 @@ it("lists what was found by kind with the reason for each, and marks what the tw
 		'WorkSuggestTwinKnowledge(prompt=["Everything about Apollo"]);',
 	]);
 
-	const emails = within(group("Emails 2")).getAllByRole("listitem");
+	const emails = within(group("email", 2)).getAllByRole("listitem");
 	expect(emails[0]).toHaveTextContent("RE: Apollo cutover");
 	expect(emails[0]).toHaveTextContent("From Sam Lee");
 	expect(emails[0]).toHaveTextContent("Sets the cutover date");
@@ -219,10 +225,10 @@ it("lists what was found by kind with the reason for each, and marks what the tw
 	// held already: it says so in place of offering it again
 	expect(emails[1]).toHaveTextContent("In This Twin");
 	expect(within(emails[1]).queryByRole("button")).toBeNull();
-	expect(
-		within(group("Teams chats 1")).getByRole("listitem"),
-	).toHaveTextContent("Teams chatMessage from Grace");
-	expect(within(group("Files 1")).getByRole("listitem")).toHaveTextContent(
+	expect(within(group("chat", 1)).getByRole("listitem")).toHaveTextContent(
+		"Teams chatMessage from Grace",
+	);
+	expect(within(group("file", 1)).getByRole("listitem")).toHaveTextContent(
 		"Last changed by Priya Shah",
 	);
 	expect(screen.getByRole("button", { name: "Add all 3" })).toBeVisible();
@@ -254,11 +260,11 @@ it("shows whose email or one on one chat a suggestion is by their Microsoft pict
 	render(<Host />);
 	await find();
 
-	const email = await within(group("Emails 1")).findByRole("listitem");
+	const email = await within(group("email", 1)).findByRole("listitem");
 	expect(email.querySelector("img")?.getAttribute("src")).toMatch(
 		/\/msgraph\/photo\?email=sam%40test\.com$/,
 	);
-	const [one, many] = within(group("Teams chats 2")).getAllByRole("listitem");
+	const [one, many] = within(group("chat", 2)).getAllByRole("listitem");
 	expect(one.querySelector("img")?.getAttribute("src")).toMatch(
 		/\/msgraph\/photo\?userId=id-dana$/,
 	);
@@ -279,7 +285,7 @@ it("adds a suggestion the way its own viewer saves it, and marks it once the hos
 
 	await waitFor(() =>
 		expect(
-			within(group("Files 1")).getByRole("listitem"),
+			within(group("file", 1)).getByRole("listitem"),
 		).toHaveTextContent("In This Twin"),
 	);
 	expect(save).toHaveBeenCalledExactlyOnceWith("insight-1", {

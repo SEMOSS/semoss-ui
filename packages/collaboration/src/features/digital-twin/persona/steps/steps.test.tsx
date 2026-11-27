@@ -203,14 +203,16 @@ describe("things to pick from", () => {
 			picked: ["Quality", "Speed"],
 			own: [],
 		});
-		expect(
-			group.getByRole("button", { name: "1 Quality" }),
-		).toHaveAttribute("aria-pressed", "true");
-		expect(group.getByRole("button", { name: "2 Speed" })).toBeVisible();
+		const quality = group.getByTestId("choice-step-option-Quality");
+		const speed = group.getByTestId("choice-step-option-Speed");
+		expect(quality).toHaveAttribute("aria-pressed", "true");
+		expect(quality).toHaveRole("button");
+		expect(quality).toHaveAccessibleName(/^1\s*Quality$/);
+		expect(speed).toHaveAccessibleName(/^2\s*Speed$/);
 
 		// taking the first one back moves the other up
-		await user.click(group.getByRole("button", { name: "1 Quality" }));
-		expect(group.getByRole("button", { name: "1 Speed" })).toBeVisible();
+		await user.click(quality);
+		expect(speed).toHaveAccessibleName(/^1\s*Speed$/);
 
 		await user.type(screen.getByLabelText("Add your own"), "Trust{Enter}");
 		await user.type(screen.getByLabelText("Add your own"), "Trust");
@@ -387,11 +389,10 @@ describe("the twin answering as the owner", () => {
 		});
 		await user.click(chatty);
 		// marked with more than colour: pressed, struck through, and said
-		expect(
-			screen.getByRole("button", {
-				name: "Happy to discuss further. (not me)",
-			}),
-		).toHaveAttribute("aria-pressed", "true");
+		expect(chatty).toHaveAttribute("aria-pressed", "true");
+		expect(chatty).toHaveAccessibleName(
+			/Happy to discuss further\.\s*\(not me\)/,
+		);
 		// marks without a verdict are not an answer yet
 		expect(last(onChange)).toEqual({ rounds: {} });
 
@@ -605,8 +606,12 @@ describe("a step the owner comes back to", () => {
 				onChange={onChange}
 			/>,
 		);
-		expect(screen.getByRole("button", { name: "1 Quality" })).toBeVisible();
-		expect(screen.getByRole("button", { name: "2 Speed" })).toBeVisible();
+		expect(
+			screen.getByTestId("choice-step-option-Quality"),
+		).toHaveAccessibleName(/^1\s*Quality$/);
+		expect(
+			screen.getByTestId("choice-step-option-Speed"),
+		).toHaveAccessibleName(/^2\s*Speed$/);
 		expect(
 			screen.getByRole("button", { name: "Remove Trust" }),
 		).toBeVisible();
@@ -722,11 +727,11 @@ describe("a step the owner comes back to", () => {
 			/>,
 		);
 		expect(screen.getByRole("radio", { name: "Not me" })).toBeChecked();
-		expect(
-			screen.getByRole("button", {
-				name: "Happy to discuss further. (not me)",
-			}),
-		).toHaveAttribute("aria-pressed", "true");
+		const chatty = screen.getByTestId("mirror-step-sentence-1");
+		expect(chatty).toHaveAttribute("aria-pressed", "true");
+		expect(chatty).toHaveAccessibleName(
+			/Happy to discuss further\.\s*\(not me\)/,
+		);
 		expect(screen.getByLabelText("What is off? (optional)")).toHaveValue(
 			"Too chatty",
 		);

@@ -48,9 +48,12 @@ const SettingAutocomplete = <D extends BlockDef>({
 	onValueChange?: (value: string) => void;
 }) => {
 	const { data, setData } = useBlockSettings<D>(id);
-	const [selectedValue, setSelectedValue] = useState(
-		data[path] || initialValue,
-	);
+	const [selectedValue, setSelectedValue] = useState(() => {
+		const value = data[path] || initialValue;
+		if (typeof value === "string") return value;
+		if (value === undefined) return undefined;
+		throw new Error(`Expected a string for block setting ${path}`);
+	});
 	const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 
 	const setBlockData = (newValue: string | undefined) => {

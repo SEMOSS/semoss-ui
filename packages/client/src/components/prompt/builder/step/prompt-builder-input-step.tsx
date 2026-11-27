@@ -344,6 +344,10 @@ export const PromptBuilderInputStep = (props: {
 	 * Multi-word inputs should be merged
 	 */
 	const setSelectedTokensAsInputs = (setAsLinked = false) => {
+		const linkedIndex = setAsLinked ? isSelectedLinkable() : false;
+		if (setAsLinked && linkedIndex === false) {
+			throw new Error("Cannot link the selected input tokens");
+		}
 		if (selectedInputTokens.length > 1) {
 			const selectedInputTokensCopy = [...selectedInputTokens];
 			selectedInputTokensCopy.sort((a, b) => a - b);
@@ -369,8 +373,8 @@ export const PromptBuilderInputStep = (props: {
 		} else {
 			setTokenType(selectedInputTokens[0], TOKEN_TYPE_INPUT);
 		}
-		if (setAsLinked) {
-			setLinkedInputToken(selectedInputTokens[0], isSelectedLinkable());
+		if (linkedIndex !== false) {
+			setLinkedInputToken(selectedInputTokens[0], linkedIndex);
 		}
 		setSelectedInputTokens([]);
 	};

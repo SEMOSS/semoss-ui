@@ -1,5 +1,5 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.2.0/schema.json",
+	"$schema": "https://biomejs.dev/schemas/2.6.9/schema.json",
 	"vcs": {
 		"enabled": true,
 		"clientKind": "git",
@@ -21,26 +21,25 @@
 			"**/*.json",
 			"**/*.css",
 			"!**/package.json",
-			"!**/pnpm-lock.json"
-		],
-		"experimentalScannerIgnores": [
-			"node_modules/**",
-			"dist/**",
-			"build/**",
-			"storybook-static/**",
-			".next/**",
-			".turbo/**",
-			"coverage/**",
-			"**/*.min.js",
-			"**/.DS_Store",
-			"**/*.local",
-			".history/**"
+			"!**/pnpm-lock.json",
+			"!!**/node_modules",
+			"!!**/dist",
+			"!!**/build",
+			"!!**/storybook-static",
+			"!!**/.next",
+			"!!**/.turbo",
+			"!!**/coverage",
+			"!!**/.history",
+			"!!**/*.min.js",
+			"!!**/.DS_Store",
+			"!!**/*.local"
 		]
 	},
+	"plugins": [],
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true,
+			"preset": "recommended",
 			"complexity": {
 				"noUselessFragments": "error"
 			},
@@ -70,7 +69,7 @@
 				"useAltText": "error"
 			},
 			"nursery": {
-				"useSortedClasses": {
+				"useTailwindSortedClasses": {
 					"level": "warn",
 					"fix": "safe",
 					"options": {}
@@ -115,6 +114,9 @@
 		}
 	},
 	"css": {
+		"parser": {
+			"tailwindDirectives": true
+		},
 		"formatter": {
 			"enabled": false
 		},
@@ -127,7 +129,7 @@
 			"includes": ["libs/**/src/**", "packages/**/src/**"],
 			"linter": {
 				"rules": {
-					"nursery": { "useReactFunctionComponents": "error" }
+					"style": { "useReactFunctionComponents": "error" }
 				}
 			}
 		},

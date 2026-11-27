@@ -1,5 +1,6 @@
 import { SlidersHorizontal } from "lucide-react";
 import { observer } from "mobx-react-lite";
+import type { DefaultBlockDefinitions } from "@semoss/renderer";
 import {
 	Select,
 	SelectContent,
@@ -29,7 +30,13 @@ export const config: BlockSettingsConfig = {
 				{
 					description: "Type",
 					render: observer(({ id }) => {
-						const { data, setData } = useBlockSettings(id);
+						const { data, setData } =
+							useBlockSettings<
+								Extract<
+									DefaultBlockDefinitions,
+									{ widget: "slider" }
+								>
+							>(id);
 
 						const options = [
 							{
@@ -45,7 +52,16 @@ export const config: BlockSettingsConfig = {
 							<Select
 								value={data.type}
 								onValueChange={(value) => {
-									setData("type", value);
+									if (
+										value === "continuous" ||
+										value === "discrete"
+									) {
+										setData("type", value);
+									} else {
+										throw new Error(
+											`Invalid slider type: ${value}`,
+										);
+									}
 								}}
 							>
 								<SelectTrigger className="w-full">
