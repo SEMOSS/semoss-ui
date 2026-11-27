@@ -157,10 +157,11 @@ export function evidenceSession(
 					review.draft.lastChange = "Undid conversation correction";
 				} else if (
 					change.type === "organize" ||
-					change.type === "reconcile_profile"
+					change.type === "reconcile_profile" ||
+					change.type === "build"
 				) {
 					throw new Error(
-						"Organization changes use the organization transport fixture",
+						"This change uses a different transport fixture",
 					);
 				} else {
 					// each conversation keeps its latest choice per topic

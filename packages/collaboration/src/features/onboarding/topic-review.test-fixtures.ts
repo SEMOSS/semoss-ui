@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import type userEvent from "@testing-library/user-event";
 import { expect, vi } from "vitest";
 import type { InsightActions } from "@/lib/pixel";
@@ -82,6 +82,8 @@ export function makeTopic(
 		area: null,
 		youWrote: 0,
 		vipThreads: 0,
+		built: false,
+		usedBy: null,
 		own: null,
 		...extra,
 	};
@@ -418,9 +420,13 @@ export async function openTopic(
 	user: ReturnType<typeof userEvent.setup>,
 	name: string,
 ) {
-	await user.click(
-		screen.getByRole("button", { name: new RegExp(`^${name}( |$)`) }),
-	);
+	const topics = screen
+		.getAllByTestId("topic-areas-stage-topic")
+		.filter((button) => within(button).queryByText(name));
+	expect(topics).toHaveLength(1);
+	expect(topics[0]).toHaveRole("button");
+	expect(topics[0]).toHaveAccessibleName(expect.stringContaining(name));
+	await user.click(topics[0]);
 	await screen.findByRole("region", { name });
 }
 

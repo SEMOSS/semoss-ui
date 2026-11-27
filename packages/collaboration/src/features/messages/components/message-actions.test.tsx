@@ -56,8 +56,11 @@ it("copies response text and continuations in order, preserving Markdown and exc
 		}),
 	];
 	render(<MessageActions message={message} parts={parts} />);
-	expect(screen.getByRole("button", { name: "Copy response" })).toBeVisible();
-	fireEvent.click(screen.getByRole("button", { name: "Copy response" }));
+	const copy = screen.getByTestId("message-actions-copy-button");
+	expect(copy).toBeVisible();
+	expect(copy).toHaveRole("button");
+	expect(copy).toHaveAccessibleName(/copy\s*response/i);
+	fireEvent.click(copy);
 	await waitFor(() =>
 		expect(screen.getByRole("status")).toHaveTextContent("Response copied"),
 	);
@@ -81,7 +84,7 @@ it("follows document order through response links, copy, and the next control", 
 	await user.tab();
 	expect(screen.getByRole("link", { name: "Source" })).toHaveFocus();
 	await user.tab();
-	expect(screen.getByRole("button", { name: "Copy response" })).toHaveFocus();
+	expect(screen.getByTestId("message-actions-copy-button")).toHaveFocus();
 	await user.keyboard("{Enter}");
 	expect(copyTextToClipboard).toHaveBeenCalledWith("**Answer**");
 	expect(screen.getByRole("button", { name: "Copied" })).toHaveFocus();
@@ -120,7 +123,7 @@ it("copies with a single touch without first revealing any actions", async () =>
 	render(<MessageActions message={message} />);
 	await user.pointer({
 		keys: "[TouchA]",
-		target: screen.getByRole("button", { name: "Copy response" }),
+		target: screen.getByTestId("message-actions-copy-button"),
 	});
 	expect(copyTextToClipboard).toHaveBeenCalledWith("**Answer**");
 	expect(screen.getByRole("button", { name: "Copied" })).toBeVisible();
@@ -133,13 +136,13 @@ it("reports clipboard failure and allows another attempt without false success",
 		new Error("Clipboard unavailable"),
 	);
 	render(<MessageActions message={message} />);
-	fireEvent.click(screen.getByRole("button", { name: "Copy response" }));
+	fireEvent.click(screen.getByTestId("message-actions-copy-button"));
 	await waitFor(() =>
 		expect(error).toHaveBeenCalledWith("Could not copy this response."),
 	);
 	expect(screen.getByRole("status")).toBeEmptyDOMElement();
-	expect(screen.getByRole("button", { name: "Copy response" })).toBeVisible();
-	fireEvent.click(screen.getByRole("button", { name: "Copy response" }));
+	expect(screen.getByTestId("message-actions-copy-button")).toBeVisible();
+	fireEvent.click(screen.getByTestId("message-actions-copy-button"));
 	await waitFor(() =>
 		expect(screen.getByRole("status")).toHaveTextContent("Response copied"),
 	);

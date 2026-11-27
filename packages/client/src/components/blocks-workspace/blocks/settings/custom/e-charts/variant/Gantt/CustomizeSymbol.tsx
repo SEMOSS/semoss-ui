@@ -15,6 +15,8 @@ import {
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
+	Slider,
+	Switch,
 } from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { BaseSettingSection } from "../../../../BaseSettingSection";
@@ -51,7 +53,7 @@ export const CustomizeSymbol = observer(
 		});
 		const [editingInstanceIndex, setEditingInstanceIndex] = useState(-1);
 
-		const _symbolList = [
+		const symbolList = [
 			{ label: "Circle", value: "circle" },
 			{ label: "Empty Circle", value: "emptycircle" },
 			{ label: "Rectangle", value: "rectangle" },
@@ -161,7 +163,7 @@ export const CustomizeSymbol = observer(
 			setAppliedSymbolData(customizeSettings);
 		}, []);
 		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
-		function _updateFields(field: string, directValue: any) {
+		function updateFields(field: string, directValue: any) {
 			setCustomizeSymbolData((prevSymbolData) => ({
 				...prevSymbolData,
 				[field]: directValue,
@@ -179,22 +181,22 @@ export const CustomizeSymbol = observer(
 			}
 		}
 
-		const _dimensionListUpdated = dimensionList.map((item) => ({
+		const dimensionListUpdated = dimensionList.map((item) => ({
 			label: item.name,
 			value: item.selector,
 		}));
 
-		const _showSymbolColor = !!customizeSymbolData.symbolColorSelected;
+		const showSymbolColor = !!customizeSymbolData.symbolColorSelected;
 		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
-		const _dimensionInstanceToRender: any[] =
+		const dimensionInstanceToRender: any[] =
 			dimensionInstance[dimensionSelected]?.map((item) => item) || [];
 
-		const _dimensionNameSelected =
+		const dimensionNameSelected =
 			dimensionList.find(
 				(item) => item.selector === customizeSymbolData.dimension,
 			)?.name || customizeSymbolData.dimension;
 
-		function _updateChartData() {
+		function updateChartData() {
 			const option = JSON.parse(computedValue);
 			if (editingInstanceIndex === -1) {
 				option.customSettings = {
@@ -316,7 +318,7 @@ export const CustomizeSymbol = observer(
 			}, 300);
 		}
 
-		function _deleteAppliedData(index: number) {
+		function deleteAppliedData(index: number) {
 			const option = JSON.parse(computedValue);
 			const updatedAppliedData = appliedSymbolData.filter(
 				(_, itemIndex) => itemIndex !== index,
@@ -340,7 +342,7 @@ export const CustomizeSymbol = observer(
 			}
 		}
 
-		function _applyToCurrentCustom(index: number) {
+		function applyToCurrentCustom(index: number) {
 			if (appliedSymbolData?.[index]) {
 				setCustomizeSymbolData({
 					...appliedSymbolData[index],
@@ -350,7 +352,7 @@ export const CustomizeSymbol = observer(
 			}
 		}
 
-		function _resetToInitialState() {
+		function resetToInitialState() {
 			setCustomizeSymbolData({
 				dimension: "",
 				symbol: "",
@@ -537,6 +539,7 @@ export const CustomizeSymbol = observer(
 				</div>
 				<div className="flex flex-row items-center gap-2 p-2">
 					<Switch
+						aria-label="Select Symbol Color"
 						checked={!!customizeSymbolData.symbolColorSelected}
 						onCheckedChange={(_checked: boolean) =>
 							updateFields("symbolColorSelected", _checked)

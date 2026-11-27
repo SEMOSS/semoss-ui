@@ -115,6 +115,18 @@ describe("ActionsMenu", () => {
 		);
 	});
 
+	it("returns focus to the trigger after a keyboard-opened menu closes", async () => {
+		render(
+			<ActionsMenu items={[cloneItem()]} testIdPrefix="test-actions" />,
+		);
+
+		const trigger = openMenu();
+		const menu = await screen.findByRole("menu");
+		fireEvent.keyDown(menu, { key: "Escape" });
+
+		await waitFor(() => expect(trigger).toHaveFocus());
+	});
+
 	describe("on hover", () => {
 		beforeEach(() => vi.stubGlobal("PointerEvent", TestPointerEvent));
 
@@ -141,6 +153,30 @@ describe("ActionsMenu", () => {
 			expect(
 				await screen.findByRole("menuitem", { name: "Clone" }),
 			).toBeInTheDocument();
+			expect(search).toHaveFocus();
+		});
+
+		it("leaves focus where it is when the hover-opened menu closes", async () => {
+			render(
+				<>
+					<input aria-label="Search" />
+					<ActionsMenu
+						items={[cloneItem()]}
+						testIdPrefix="test-actions"
+					/>
+				</>,
+			);
+			const search = screen.getByRole("textbox", { name: "Search" });
+			const trigger = screen.getByRole("button", { name: /Actions/ });
+			act(() => search.focus());
+			fireEvent.pointerEnter(trigger, { pointerType: "mouse" });
+			await screen.findByRole("menu");
+
+			fireEvent.pointerLeave(trigger, { pointerType: "mouse" });
+
+			await waitFor(() =>
+				expect(screen.queryByRole("menu")).not.toBeInTheDocument(),
+			);
 			expect(search).toHaveFocus();
 		});
 

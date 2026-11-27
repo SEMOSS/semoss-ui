@@ -1,113 +1,57 @@
 # AGENTS.md - @semoss/automation
 
-This document provides context for AI coding assistants working with the SEMOSS Automation
-Workspace system app.
+> **Inherits from:** [root AGENTS.md](../../AGENTS.md): non-negotiables, task skills, and [standards](../../docs/README.md#standards).
 
-> **Inherits from:** [root AGENTS.md](../../AGENTS.md). Load the applicable
-> [root skills](../../skills/README.md), including the [React standard](../../skills/react-standard.skill.md).
+## Purpose
 
-## Overview
+The Automation Workspace system app: renders an automation's steps, drives a live sequential run,
+and exposes a SEMOSS MCP surface for `TriggerAutomation`. It is consumed two ways:
 
-`@semoss/automation` is a Vite "system app" that renders an automation's steps,
-drives a live sequential run, and exposes a SEMOSS MCP surface for `TriggerAutomation`. It
-declares workspace dependencies on `@semoss/i18n`, `@semoss/sdk`, `@semoss/shared`,
-`@semoss/ui`, and `@semoss/utility`; it must not import `@semoss/client` or its stores.
-Its `src/index.ts` barrel is also consumed directly as a normal package
-import — `@semoss/client`'s automation workbench imports `AutomationCanvas`, `InspectorTab`, and
-`RunsTab` straight from `@semoss/automation` and renders them as sibling dock panels
-(no iframe, no postMessage) — see
-[the client workbench](../client/src/components/workbench/automation/automation-workbench.tsx).
-The same components are also iframed as the `TriggerAutomation` MCP tool's sidebar UI, resolved
-from `SMSS_MCP_UI.resourceURI = "system://automation/"` and fed context via the
-`SMSS_INIT_TOOL` postMessage handshake (see `src/semoss/client.ts`) — that's the one remaining
-legitimate use of `src/App.tsx`'s standalone iframe entry point and of postMessage in this
-package (theme sync and MCP tool-completion signaling to the playground parent).
+- **As a package.** The client's automation workbench and collaboration's routine flow import
+  `src/index.ts` and `./flow-preview` directly, with no iframe or postMessage.
+- **As an iframe.** `src/App.tsx` is the `TriggerAutomation` MCP tool's sidebar UI, resolved from
+  `SMSS_MCP_UI.resourceURI = "system://automation/"` and fed context by the `SMSS_INIT_TOOL`
+  handshake. This is the only legitimate use of postMessage here (theme sync and tool-completion
+  signaling to the playground parent).
 
-## Backend pairing
+## Boundaries
 
-- `TriggerAutomation(project=[...])` — executes every automation node in order, server-side, in
-  one long-lived job (`AutomationRunEngine`). It streams a per-node progress event onto that job
-  via `PixelJobManager.addStreamOut` as each node transitions (running → success/failed) —
-  mirroring exactly how `HarnessToolExecutor` streams tool-call progress during an agent turn.
-  Frontend integration must preserve the job lifecycle: start with `runPixelAsync`, poll
-  `getPixelJobStreaming(jobId)` for progress, and fetch the successful final result with
-  `getPixelAsyncResult(jobId)` only after completion. Handle canceled/error statuses explicitly.
-  Its MCP result
-  includes a `summary` field — a per-workflow human-readable message (e.g. "Indexed 20 files")
-  resolved from `automation.json`'s optional `resultMessageTemplate`.
-- Deliberately does **not** drive individual nodes via separate FE-issued `RunAutomationNode`
-  calls, and does not use `runPixelAsync`/`getPixelAsyncResult` as an "await" for anything shorter
-  than the whole job — `getPixelAsyncResult` returns a snapshot of the job's current state rather
-  than blocking until it finishes, so per-node use of that pair let a later node start before an
-  earlier one had actually persisted its output. Inspect the current `src/hooks/` and
-  `src/api/` integration; the former `use-automation-run.ts` path no longer exists.
-- `GetAutomationRun(project=[...], runId=[...])` includes the live execution Insight and SEMOSS's
-  standard `FRAME_MAP` noun for row-shaped node output. Page that frame through the existing
-  `Frame | QueryAll | Offset | Limit | Collect` Pixel path. If the run workspace has closed or the
-  result is not tabular, retain the saved output-preview fallback.
-- `control.loop` is a compound node whose `body` is a nested acyclic workflow
-  graph. Keep its body in the canonical workflow document, reuse the normal node
-  forms and catalog, and treat expand/collapse as transient canvas state. The
-  backend owns bounded sequential `forEach`, fixed-count `repeat`, and
-  condition-based `while` execution. Show these as business choices, expose the
-  backend-owned per-pass variables to nested forms, and do not model iteration
-  with a circular React Flow edge.
+- **Must not import:** `@semoss/client` or its stores.
+- The public entry points are consumed by other packages; changing them changes those apps. Do not
+  move them as incidental cleanup.
+- **State:** React state and hooks, no state library. Shared state uses `StoreState`
+  ([state standard](../../docs/standards/react.md#state)).
 
-## Build System
+## Backend Pairing
 
-- **Bundler**: Vite 8 + React 19
-- **Styling**: Tailwind CSS v4 + `@semoss/ui`
-- **State**: React state and hooks; no state library. Any shared store uses `StoreState` per
-  the [state management skill](../../skills/state-management.skill.md)
+- **One job per run.** `TriggerAutomation(project=[...])` runs every node in order server-side in
+  one long-lived job (`AutomationRunEngine`), streaming a per-node progress event
+  (running → success/failed) through `PixelJobManager.addStreamOut`, as `HarnessToolExecutor` does
+  for tool calls. Start with `runPixelAsync`, poll `getPixelJobStreaming(jobId)`, and fetch the
+  final result with `getPixelAsyncResult(jobId)` only after completion. Handle canceled and error
+  statuses explicitly. The MCP result's `summary` (e.g. "Indexed 20 files") comes from
+  `automation.json`'s optional `resultMessageTemplate`.
+- **Never drive nodes one by one** with FE-issued `RunAutomationNode` calls, and never use
+  `runPixelAsync`/`getPixelAsyncResult` to await anything shorter than the whole job.
+  `getPixelAsyncResult` returns a snapshot, not a wait, so per-node use let a later node start
+  before an earlier one persisted its output.
+- **Row output pages through the frame.** `GetAutomationRun(project=[...], runId=[...])` includes
+  the live execution insight and the standard `FRAME_MAP` noun; page it with
+  `Frame | QueryAll | Offset | Limit | Collect`. If the run workspace has closed or the output is
+  not tabular, keep the saved output-preview fallback.
+- **`control.loop` is a compound node** whose `body` is a nested acyclic workflow graph. Keep the
+  body in the canonical workflow document, reuse the normal node forms and catalog, and treat
+  expand/collapse as transient canvas state. The backend owns bounded `forEach`, fixed-count
+  `repeat`, and condition-based `while`; show them as business choices, expose the backend's
+  per-pass variables to nested forms, and never model iteration with a circular React Flow edge.
+- **`mcp/pixel_mcp.json`'s `resourceURI`** must match
+  `TriggerAutomationReactor.getMcpToolMetadata()` in the Semoss backend repo.
 
-### Commands
-
-| Command | Description |
-|---------|-------------|
-| `pnpm dev` | Start dev server |
-| `pnpm build` | Production build |
-| `pnpm build:dev` | Development build |
-| `pnpm type-check` | `tsc --noEmit` type check |
-| `pnpm preview` | Preview the production build |
-| `pnpm test` | Run Vitest tests once |
-| `pnpm test:watch` | Vitest watch mode |
-| `pnpm test:ui` | Vitest UI |
-| `pnpm test:coverage` | Coverage report |
-
-Run these from `packages/automation`, or use `pnpm --filter @semoss/automation <command>`.
-
-## Structure
-
-This is the existing layout. New application features follow the
-[React architecture policy](../../skills/react-standard.skill.md#architecture-and-exports),
-without relocating the existing public integration surface as an incidental cleanup.
-
-| Folder / file | Purpose |
-|---------------|---------|
-| `src/index.ts` | Public package barrel — what `@semoss/client` imports directly |
-| `src/components/` | Components (one per file) |
-| `src/hooks/` | React hooks (`use-<name>.ts`) |
-| `src/api/` | Automation backend operations |
-| `src/contexts/` | Automation context |
-| `src/domain/` | Automation types + display metadata (steps, statuses) |
-| `src/semoss/` | SEMOSS integration glue (Env/Insight setup, MCP tool-context handshake) |
-| `src/App.tsx`, `src/main.tsx`, `src/index.css` | Standalone iframe entry, used only by the MCP/playground sidebar UI |
-| `mcp/` | MCP configuration (`pixel_mcp.json`) |
-
-## Agent Guardrails
-
-### Be Cautious With
-
-- **`vite.config.ts`** — dev server and build configuration.
-- **`mcp/pixel_mcp.json`** — the MCP surface definition; keep `resourceURI` in sync with
-  `TriggerAutomationReactor.getMcpToolMetadata()` in the Semoss repo.
-- **`src/hooks/` and `src/api/`** — changing the run lifecycle, node ordering, or completion
-  handling affects correctness for dependent steps.
-
-### Testing Changes
+## Validation
 
 ```bash
 pnpm --filter @semoss/automation type-check
 pnpm --filter @semoss/automation test
 pnpm --filter @semoss/automation build
+pnpm --filter @semoss/client type-check   # the barrel's main consumer
 ```

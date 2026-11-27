@@ -34,6 +34,9 @@ const outputCheck = (args: string) => ({
 	guardrailEngineId: "guardrail-1",
 	failureAction: "block" as const,
 	blockErrorMessage: "",
+	toolContinuationSkip: "none" as const,
+	toolContinuationTools: "",
+	toolContinuationArg: "",
 	inputMapping: [{ id: "a", key: "prompt", args }],
 	directParameters: [],
 });

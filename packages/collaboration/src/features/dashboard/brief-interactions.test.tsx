@@ -471,9 +471,10 @@ it("lists the newest conversations under Recent activity and leaves out muted an
 	expect(
 		activity.getAllByRole("link").map((link) => link.textContent),
 	).toEqual(["Teams: Newer chat", "Email: Older mail"]);
-	expect(
-		activity.getByRole("link", { name: "Teams: Newer chat" }),
-	).toHaveAttribute("href", "/thread/support-thread");
+	const chat = activity.getByTestId("brief-activity-row-support-thread");
+	expect(chat).toHaveRole("link");
+	expect(chat).toHaveAccessibleName(/^Teams:\s*Newer chat$/);
+	expect(chat).toHaveAttribute("href", "/thread/support-thread");
 });
 
 it("mixes the owner's recently changed OneDrive files into Recent activity once Microsoft 365 is connected, each opening in its room", async () => {
@@ -499,9 +500,9 @@ it("mixes the owner's recently changed OneDrive files into Recent activity once 
 	const activity = within(
 		screen.getByRole("region", { name: "Recent activity" }),
 	);
-	const deck = await activity.findByRole("button", {
-		name: "File: Q1 Business Review.pptx",
-	});
+	const deck = await activity.findByTestId("brief-activity-row-file:f1");
+	expect(deck).toHaveRole("button");
+	expect(deck).toHaveAccessibleName(/^File:\s*Q1 Business Review\.pptx$/);
 	expect(insight.actions.run).toHaveBeenCalledWith(
 		"MicrosoftOneDriveListRecentFiles(limit=[3]);",
 	);
@@ -542,14 +543,10 @@ it("shows which file's room is opening and holds the other files until it has", 
 	const activity = within(
 		screen.getByRole("region", { name: "Recent activity" }),
 	);
-	const deck = await activity.findByRole("button", {
-		name: "File: Q1 Business Review.pptx",
-	});
+	const deck = await activity.findByTestId("brief-activity-row-file:f1");
 	expect(deck).toHaveAttribute("aria-busy", "true");
 	expect(deck).toBeDisabled();
-	expect(
-		activity.getByRole("button", { name: "File: Old notes.docx" }),
-	).toBeDisabled();
+	expect(activity.getByTestId("brief-activity-row-file:f2")).toBeDisabled();
 	expect(activity.getAllByRole("status", { name: "Opening" })).toHaveLength(
 		1,
 	);

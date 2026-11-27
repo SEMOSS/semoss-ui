@@ -156,13 +156,15 @@ export const PermissionBatchReviewDialog = ({
 	const blocked = items.filter((item) => reasonOf(item) !== null);
 	const countOf = (action: PermissionChange["action"]): number =>
 		items.filter((item) => item.action === action).length;
-	const filters: { value: ReviewFilter; label: string; count: number }[] = [
-		{ value: "ALL", label: "All", count: items.length },
-		{ value: "ADD", label: "Added", count: countOf("ADD") },
-		{ value: "CHANGE", label: "Changed", count: countOf("CHANGE") },
-		{ value: "REMOVE", label: "Removed", count: countOf("REMOVE") },
-		{ value: "BLOCKED", label: "Blocked", count: blocked.length },
-	].filter((option) => option.value === "ALL" || option.count > 0);
+	const filters = (
+		[
+			{ value: "ALL", label: "All", count: items.length },
+			{ value: "ADD", label: "Added", count: countOf("ADD") },
+			{ value: "CHANGE", label: "Changed", count: countOf("CHANGE") },
+			{ value: "REMOVE", label: "Removed", count: countOf("REMOVE") },
+			{ value: "BLOCKED", label: "Blocked", count: blocked.length },
+		] satisfies { value: ReviewFilter; label: string; count: number }[]
+	).filter((option) => option.value === "ALL" || option.count > 0);
 	// a filter whose changes were all left out falls back to everything
 	const activeFilter = filters.some((option) => option.value === filter)
 		? filter

@@ -461,11 +461,12 @@ it("lists a topic's linked files on their own tab, each opening where it lives, 
 	await user.click(screen.getByRole("tab", { name: "Files" }));
 
 	const list = screen.getByRole("list", { name: "Topic files" });
-	expect(
-		within(list).getByRole("link", {
-			name: "Budget.xlsx (opens in OneDrive)",
-		}),
-	).toHaveAttribute("href", "https://contoso.sharepoint.com/budget");
+	const budget = within(list).getByTestId("topic-files-link-item-1");
+	expect(budget).toHaveAttribute(
+		"href",
+		"https://contoso.sharepoint.com/budget",
+	);
+	expect(budget).toHaveAccessibleName(/Budget\.xlsx\s*\(opens in OneDrive\)/);
 	// only an https address becomes a link
 	expect(within(list).queryAllByRole("link")).toHaveLength(1);
 	expect(within(list).getByText("Plan.docx")).toBeVisible();

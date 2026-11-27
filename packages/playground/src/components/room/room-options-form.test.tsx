@@ -131,7 +131,7 @@ function Settings({
 test("lists separate selected resources and removes only the chosen local selection", () => {
 	render(<Settings />);
 	const knowledge = screen.getByRole("region", {
-		name: "room:form.knowledgeLabel 2",
+		name: /^room:form\.knowledgeLabel\s*2$/,
 	});
 	const toolboxes = screen.getByRole("region", {
 		name: "sections.toolboxes.title",

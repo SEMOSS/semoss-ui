@@ -187,6 +187,7 @@ export function TopicContentsNav({
 								<li key={entry.id}>
 									<Button
 										type="button"
+										data-testid={`topic-contents-nav-place-${entry.id}`}
 										variant="ghost"
 										size="sm"
 										aria-current={
