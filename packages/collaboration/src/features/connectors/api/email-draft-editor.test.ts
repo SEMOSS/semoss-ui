@@ -1,6 +1,7 @@
 import type { InsightActions } from "@/lib/pixel";
 import { EmailDraftEditor } from "./email-draft-editor";
 import {
+	getMail,
 	saveEmailDraft,
 	sendEmailDraft,
 	UncertainSendError,
@@ -8,6 +9,7 @@ import {
 
 vi.mock("./microsoft", async (original) => ({
 	...(await original<typeof import("./microsoft")>()),
+	getMail: vi.fn(),
 	saveEmailDraft: vi.fn(),
 	sendEmailDraft: vi.fn(),
 }));
@@ -182,5 +184,122 @@ it("knows nothing went out when the waiting send was turned down", async () => {
 		isSent: false,
 		hasPendingSend: false,
 		error: "The send was turned down, so nothing was sent.",
+	});
+});
+
+describe("files an earlier save left on the Outlook draft", () => {
+	const outlookFile = (id: string, name: string, extra = {}) => ({
+		id,
+		name,
+		size: 2048,
+		isFile: true,
+		...extra,
+	});
+	beforeEach(() => {
+		window.sessionStorage.clear();
+		vi.mocked(getMail).mockReset();
+		vi.mocked(saveEmailDraft).mockReset();
+	});
+
+	it("lists them when the same email is reopened after it was saved", async () => {
+		vi.mocked(saveEmailDraft).mockResolvedValue({
+			savedDraftId: "draft-1",
+		});
+		const first = create();
+		// what Outlook holds is read back from the draft, whichever way the files were uploaded
+		await first.save(actions, first.getSnapshot().values);
+		vi.mocked(getMail).mockResolvedValue({
+			uid: "draft-1",
+			attachments: [
+				outlookFile("att-1", "deck.pptx"),
+				outlookFile("att-2", "logo.png", { isInline: true }),
+				outlookFile("att-3", "linked", { isFile: false }),
+			],
+		} as never);
+		const reopened = create();
+		await reopened.loadSavedAttachments(actions);
+		expect(getMail).toHaveBeenCalledWith(actions, "draft-1");
+		expect(reopened.getSnapshot().savedAttachments).toEqual([
+			{ id: "att-1", name: "deck.pptx", size: 2048 },
+		]);
+	});
+
+	it("shows nothing when the email was never saved", async () => {
+		const editor = create();
+		await editor.loadSavedAttachments(actions);
+		expect(getMail).not.toHaveBeenCalled();
+		expect(editor.getSnapshot().savedAttachments).toEqual([]);
+	});
+
+	it("shows nothing for a draft saved without files", async () => {
+		vi.mocked(saveEmailDraft).mockResolvedValue({
+			savedDraftId: "draft-2",
+		});
+		await create().save(actions, create().getSnapshot().values);
+		vi.mocked(getMail).mockResolvedValue({
+			uid: "draft-2",
+			attachments: [],
+		} as never);
+		const reopened = create();
+		await reopened.loadSavedAttachments(actions);
+		expect(reopened.getSnapshot().savedAttachments).toEqual([]);
+	});
+
+	it("forgets a draft that is gone from Outlook", async () => {
+		vi.mocked(saveEmailDraft).mockResolvedValue({
+			savedDraftId: "draft-3",
+		});
+		await create().save(actions, create().getSnapshot().values);
+		vi.mocked(getMail).mockRejectedValue(new Error("not found"));
+		const reopened = create();
+		await reopened.loadSavedAttachments(actions);
+		expect(reopened.getSnapshot().savedAttachments).toEqual([]);
+		const again = create();
+		await again.loadSavedAttachments(actions);
+		expect(getMail).toHaveBeenCalledTimes(1);
+	});
+});
+
+describe("a reply's subject", () => {
+	const reply = () => {
+		const editor = new EmailDraftEditor({
+			id: "reply",
+			mode: "reply",
+			sourceUid: "source-1",
+			subject: "Budget",
+			body: "Thanks",
+		});
+		editor.initializeReplyRecipients({ to: ["a@example.com"], cc: [] });
+		return editor;
+	};
+	beforeEach(() => {
+		window.sessionStorage.clear();
+		vi.mocked(saveEmailDraft).mockReset();
+		vi.mocked(saveEmailDraft).mockResolvedValue({ savedDraftId: "r" });
+	});
+
+	it("opens on the subject Outlook gives it and saves without one", async () => {
+		const editor = reply();
+		expect(editor.getSnapshot().values.subject).toBe("RE: Budget");
+		await editor.save(actions, editor.getSnapshot().values);
+		expect(saveEmailDraft).toHaveBeenCalledWith(
+			actions,
+			expect.not.objectContaining({ subject: expect.anything() }),
+		);
+	});
+
+	it("saves the subject it was changed to", async () => {
+		const editor = reply();
+		await editor.save(actions, {
+			...editor.getSnapshot().values,
+			subject: "testing draft",
+		});
+		expect(saveEmailDraft).toHaveBeenCalledWith(
+			actions,
+			expect.objectContaining({
+				mode: "reply",
+				subject: "testing draft",
+			}),
+		);
 	});
 });

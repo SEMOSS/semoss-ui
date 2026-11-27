@@ -104,6 +104,8 @@ export type EmailDraftInput =
 	| {
 			mode: "reply";
 			sourceUid: string;
+			/** Replaces the subject Outlook gives the reply, only when it was changed. */
+			subject?: string;
 			body: string;
 			bodyFormat?: "text" | "html";
 			attachments?: string[];

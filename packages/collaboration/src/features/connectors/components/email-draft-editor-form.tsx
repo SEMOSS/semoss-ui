@@ -69,6 +69,10 @@ export function EmailDraftEditorForm({
 		envelope: snapshot.envelopeReplacement,
 		files: snapshot.filesReplacement,
 	});
+	// a reopened email shows the files its earlier save left on the Outlook draft
+	useEffect(() => {
+		void draft.loadSavedAttachments(actions);
+	}, [draft, actions]);
 	useEffect(() => {
 		const previous = replacements.current;
 		const bodyChanged = previous.body !== snapshot.bodyReplacement;
@@ -176,6 +180,7 @@ export function EmailDraftEditorForm({
 			<EmailDraftForm
 				bodyStyle={look.style}
 				afterBody={<DraftSignaturePreview />}
+				savedAttachments={snapshot.savedAttachments}
 				form={form}
 				mode={draft.seed.mode}
 				requiresAcceptance={snapshot.requiresAcceptance}

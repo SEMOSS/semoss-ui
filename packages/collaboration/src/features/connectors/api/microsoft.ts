@@ -224,6 +224,7 @@ export async function saveEmailDraft(
 					body: body,
 					...(html ? { html: true } : {}),
 					replyAll: input.replyAll,
+					...(input.subject ? { subject: input.subject } : {}),
 					...(input.overrideRecipients
 						? { overrideRecipients: true, to, cc }
 						: {}),
