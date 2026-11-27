@@ -1,12 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { runPixel } from "@semoss/sdk";
 import {
+	cancelAutomationRun,
 	getAutomationResult,
 	getAutomationRun,
 	getAutomationRunFramePage,
 	getAutomationRunSource,
 	listAutomationRuns,
 	listAutomationVersions,
+	reprocessWholeAutomationRun,
+	rerunAutomationNodes,
 	resumeAutomationRun,
 	rollbackAutomation,
 } from "./automation-history";
@@ -73,6 +76,92 @@ describe("Automation history API validation", () => {
 		await expect(resumeAutomationRun("app-1", "run-1")).rejects.toThrow(
 			"Resume denied",
 		);
+	});
+
+	it("requests cancellation and validates the confirmation", async () => {
+		vi.mocked(runPixel).mockResolvedValue(
+			pixelResponse({ RUN_ID: "run-1", cancelRequested: true }),
+		);
+		await expect(cancelAutomationRun("app-1", "run-1")).resolves.toEqual({
+			RUN_ID: "run-1",
+			cancelRequested: true,
+		});
+		expect(runPixel).toHaveBeenCalledWith(
+			'CancelAutomationRun(project=["app-1"], runId=["run-1"]);',
+		);
+		vi.mocked(runPixel).mockResolvedValue(
+			pixelResponse({ RUN_ID: "other-run", cancelRequested: true }),
+		);
+		await expect(cancelAutomationRun("app-1", "run-1")).rejects.toThrow(
+			"not confirmed",
+		);
+		vi.mocked(runPixel).mockResolvedValue(
+			pixelResponse(undefined, ["Can only cancel RUNNING"]),
+		);
+		await expect(cancelAutomationRun("app-1", "run-1")).rejects.toThrow(
+			"Can only cancel RUNNING",
+		);
+	});
+
+	it("starts a new run for the chosen nodes and returns the new run, not the original", async () => {
+		vi.mocked(runPixel).mockResolvedValue(
+			pixelResponse({ RUN_ID: "run-2", STATUS: "SUCCESS" }),
+		);
+		await expect(
+			rerunAutomationNodes("app-1", "run-1", ["node-a", "node-b"]),
+		).resolves.toMatchObject({ RUN_ID: "run-2" });
+		expect(runPixel).toHaveBeenCalledWith(
+			'RerunAutomationNodes(project=["app-1"], runId=["run-1"], nodeIds=["node-a","node-b"]);',
+		);
+		// A server that hands back the original run did not start a new one.
+		vi.mocked(runPixel).mockResolvedValue(
+			pixelResponse({ RUN_ID: "run-1" }),
+		);
+		await expect(
+			rerunAutomationNodes("app-1", "run-1", ["node-a"]),
+		).rejects.toThrow("new run");
+		vi.mocked(runPixel).mockResolvedValue(pixelResponse({}));
+		await expect(
+			rerunAutomationNodes("app-1", "run-1", ["node-a"]),
+		).rejects.toThrow("new run");
+		vi.mocked(runPixel).mockResolvedValue(
+			pixelResponse(undefined, ["Trigger, wait, and agent nodes"]),
+		);
+		await expect(
+			rerunAutomationNodes("app-1", "run-1", ["node-a"]),
+		).rejects.toThrow("Trigger, wait, and agent nodes");
+	});
+
+	it("runs the whole message again as a new run", async () => {
+		vi.mocked(runPixel).mockResolvedValue(
+			pixelResponse({ RUN_ID: "run-9", STATUS: "SUCCESS" }),
+		);
+		await expect(
+			reprocessWholeAutomationRun("app-1", "run-1"),
+		).resolves.toMatchObject({ RUN_ID: "run-9" });
+		expect(runPixel).toHaveBeenCalledWith(
+			'RerunAutomationNodes(project=["app-1"], runId=["run-1"], wholeRun=["true"]);',
+		);
+	});
+
+	it("targets one loop iteration with a zero-based index", async () => {
+		vi.mocked(runPixel).mockResolvedValue(
+			pixelResponse({ RUN_ID: "run-2", STATUS: "SUCCESS" }),
+		);
+		await rerunAutomationNodes("app-1", "run-1", ["body-b", "body-c"], {
+			loopNodeId: "loop-1",
+			iteration: 2,
+		});
+		expect(runPixel).toHaveBeenCalledWith(
+			'RerunAutomationNodes(project=["app-1"], runId=["run-1"], nodeIds=["body-b","body-c"], loopNodeId=["loop-1"], iteration=["2"]);',
+		);
+	});
+
+	it("refuses to send an empty node selection", async () => {
+		await expect(
+			rerunAutomationNodes("app-1", "run-1", []),
+		).rejects.toThrow("at least one node");
+		expect(runPixel).not.toHaveBeenCalled();
 	});
 
 	it("validates paged run output", async () => {

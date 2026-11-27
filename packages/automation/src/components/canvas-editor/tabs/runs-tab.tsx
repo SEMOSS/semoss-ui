@@ -13,6 +13,17 @@ import {
 	AlertDescription,
 	AlertTitle,
 	Button,
+	Dialog,
+	DialogContent,
+	DialogTitle,
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+	ToggleGroup,
+	ToggleGroupItem,
 	toast,
 } from "@semoss/ui/next";
 import { formatDurationMs } from "@semoss/utility/date";
@@ -42,13 +53,13 @@ import { ErrorDetail } from "../../form-editor/error-detail";
 import { TraceDetail } from "../../form-editor/trace-detail";
 import { StatusBadge } from "../../status-badge";
 import { RunBanner } from "../run-banner";
+import { RunHistoryDashboard } from "./run-history-dashboard";
 import { RunNodeDataViewer } from "./run-node-data-viewer";
-import { RunNodeSourceViewer } from "./run-node-source-viewer";
 import {
 	findSavedResultForOccurrence,
 	getRunNodeDataSource,
 	getRunNodeOccurrenceKey,
-	getVisibleRunNodeContentView,
+	getRunScopeVariableRows,
 	RUN_NODE_VIEW_LABELS,
 	RUN_RESULTS_LAYOUT_CLASSES,
 	type RunNodeContentView,
@@ -104,6 +115,7 @@ interface RunsTabProps extends AutomationTraceSnapshot {
 }
 
 type View = "history" | "live" | "detail";
+type HistoryView = "list" | "dashboard";
 
 function getExecutedSteps(run: AutomationRunDetail | null): AutomationNode[] {
 	if (!run?.DEFINITION_SNAPSHOT) return [];
@@ -141,6 +153,7 @@ export function RunsTab({
 	focusToken,
 }: RunsTabProps) {
 	const [view, setView] = useState<View>("history");
+	const [historyView, setHistoryView] = useState<HistoryView>("list");
 	const [runs, setRuns] = useState<AutomationRunSummary[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [loadError, setLoadError] = useState<string | null>(null);
@@ -367,6 +380,23 @@ export function RunsTab({
 							{formatRelativeTime(lastRefreshed.toISOString())}
 						</span>
 					)}
+					<ToggleGroup
+						type="single"
+						variant="outline"
+						size="sm"
+						value={historyView}
+						aria-label="Run history view"
+						onValueChange={(next) => {
+							if (next === "list" || next === "dashboard") {
+								setHistoryView(next);
+							}
+						}}
+					>
+						<ToggleGroupItem value="list">List</ToggleGroupItem>
+						<ToggleGroupItem value="dashboard">
+							Advanced Run History
+						</ToggleGroupItem>
+					</ToggleGroup>
 					<Button
 						size="sm"
 						variant="ghost"
@@ -395,73 +425,84 @@ export function RunsTab({
 				</Alert>
 			)}
 
-			<div className="mt-3 min-h-0 flex-1 overflow-y-auto rounded-lg border bg-card">
-				{loading ? (
-					<div className="flex h-40 items-center justify-center">
-						<Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-					</div>
-				) : runs.length === 0 ? (
-					<div className="flex h-40 flex-col items-center justify-center gap-2 px-4 text-center">
-						<p className="font-medium text-sm">
-							{loadError
-								? "Run history unavailable"
-								: "No runs yet"}
-						</p>
-						<p className="text-muted-foreground text-xs">
-							{loadError
-								? "Retry the request above."
-								: "Completed runs will appear here."}
-						</p>
-					</div>
-				) : (
-					<div className="divide-y">
-						{runs.map((run) => (
-							<button
-								key={run.RUN_ID}
-								type="button"
-								onClick={() => void openRun(run.RUN_ID)}
-								className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-muted/40"
-							>
-								<StatusBadge status={run.STATUS} />
-								{run.RUN_ID === followedRunId && (
-									<span className="rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary text-xs">
-										Following
-									</span>
-								)}
-								{run.TRIGGER_TYPE === "SCHEDULED" && (
-									<span
-										className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-muted-foreground text-xs"
-										role="img"
-										aria-label="Scheduled run"
-									>
-										<CalendarClock
-											className="h-3 w-3"
-											aria-hidden
-										/>
-									</span>
-								)}
-								<div className="min-w-0 flex-1">
-									<p className="truncate text-xs">
-										{formatTimestamp(run.STARTED_AT)}
-									</p>
-									{run.COMPLETED_AT && (
-										<p className="text-muted-foreground text-xs">
-											{formatRunDuration(
-												run.STARTED_AT,
-												run.COMPLETED_AT,
-											)}
-										</p>
+			{historyView === "dashboard" ? (
+				<div className="mt-3 flex min-h-0 flex-1 flex-col">
+					<RunHistoryDashboard
+						appId={appId}
+						runs={runs}
+						onRefreshRuns={refresh}
+						onOutputPopout={handleOutputPopout}
+					/>
+				</div>
+			) : (
+				<div className="mt-3 min-h-0 flex-1 overflow-y-auto rounded-lg border bg-card">
+					{loading ? (
+						<div className="flex h-40 items-center justify-center">
+							<Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+						</div>
+					) : runs.length === 0 ? (
+						<div className="flex h-40 flex-col items-center justify-center gap-2 px-4 text-center">
+							<p className="font-medium text-sm">
+								{loadError
+									? "Run history unavailable"
+									: "No runs yet"}
+							</p>
+							<p className="text-muted-foreground text-xs">
+								{loadError
+									? "Retry the request above."
+									: "Completed runs will appear here."}
+							</p>
+						</div>
+					) : (
+						<div className="divide-y">
+							{runs.map((run) => (
+								<button
+									key={run.RUN_ID}
+									type="button"
+									onClick={() => void openRun(run.RUN_ID)}
+									className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-muted/40"
+								>
+									<StatusBadge status={run.STATUS} />
+									{run.RUN_ID === followedRunId && (
+										<span className="rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary text-xs">
+											Following
+										</span>
 									)}
-								</div>
-								<Play
-									className="h-3 w-3 text-muted-foreground"
-									aria-hidden
-								/>
-							</button>
-						))}
-					</div>
-				)}
-			</div>
+									{run.TRIGGER_TYPE === "SCHEDULED" && (
+										<span
+											className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-muted-foreground text-xs"
+											role="img"
+											aria-label="Scheduled run"
+										>
+											<CalendarClock
+												className="h-3 w-3"
+												aria-hidden
+											/>
+										</span>
+									)}
+									<div className="min-w-0 flex-1">
+										<p className="truncate text-xs">
+											{formatTimestamp(run.STARTED_AT)}
+										</p>
+										{run.COMPLETED_AT && (
+											<p className="text-muted-foreground text-xs">
+												{formatRunDuration(
+													run.STARTED_AT,
+													run.COMPLETED_AT,
+												)}
+											</p>
+										)}
+									</div>
+									<Play
+										className="h-3 w-3 text-muted-foreground"
+										aria-hidden
+									/>
+								</button>
+							))}
+						</div>
+					)}
+				</div>
+			)}
 		</div>
 	);
 }
@@ -753,12 +794,12 @@ function ResultsPanel({
 	const [expandedIterationKeys, setExpandedIterationKeys] = useState<
 		Set<string>
 	>(() => new Set());
+	const [expandedVariable, setExpandedVariable] = useState<{
+		name: string;
+		value: string;
+	} | null>(null);
 	const [contentView, setContentView] =
 		useState<RunNodeContentView>("output");
-	const visibleContentView = getVisibleRunNodeContentView(
-		contentView,
-		devMode,
-	);
 
 	const [selectedBodyKey, setSelectedBodyKey] = useState<{
 		loopNodeId: string;
@@ -1203,7 +1244,7 @@ function ResultsPanel({
 										"Loop step"}
 								</p>
 							)}
-							{runId && devMode && (
+							{runId && (
 								<fieldset className="flex w-fit max-w-full flex-wrap rounded-md border bg-muted/40 p-0.5">
 									<legend className="sr-only">
 										{RUN_NODE_VIEW_LABELS.detailView}
@@ -1225,24 +1266,85 @@ function ResultsPanel({
 										type="button"
 										size="sm"
 										variant={
-											contentView === "source"
+											contentView === "scope"
 												? "secondary"
 												: "ghost"
 										}
-										aria-pressed={contentView === "source"}
-										onClick={() => setContentView("source")}
+										aria-pressed={contentView === "scope"}
+										onClick={() => setContentView("scope")}
 									>
-										{RUN_NODE_VIEW_LABELS.source}
+										{RUN_NODE_VIEW_LABELS.scope}
 									</Button>
 								</fieldset>
 							)}
-							{visibleContentView === "source" && runId ? (
-								<RunNodeSourceViewer
-									key={occurrenceKey}
-									appId={appId}
-									runId={runId}
-									nodeId={displayResult.NODE_ID}
-								/>
+							{contentView === "scope" ? (
+								(() => {
+									const scopeRows = getRunScopeVariableRows(
+										displayResult.scopeSnapshot,
+									);
+									if (!scopeRows || scopeRows.length === 0) {
+										const fallback =
+											"No variable snapshot was retained for this step.";
+										return (
+											<CellOutputBlock
+												output={fallback}
+												onOutputPopout={() =>
+													onOutputPopout(fallback)
+												}
+											/>
+										);
+									}
+									return (
+										<section
+											className={
+												RUN_RESULTS_LAYOUT_CLASSES.scrollRegion
+											}
+											aria-label="Automation run variables"
+											// biome-ignore lint/a11y/noNoninteractiveTabindex: the bounded variables table must support keyboard scrolling.
+											tabIndex={0}
+										>
+											<Table
+												className="text-xs"
+												wrapperClassName="overflow-visible"
+											>
+												<TableHeader className="sticky top-0 bg-muted">
+													<TableRow>
+														<TableHead className="h-auto py-1.5">
+															Name
+														</TableHead>
+														<TableHead className="h-auto py-1.5">
+															Value
+														</TableHead>
+													</TableRow>
+												</TableHeader>
+												<TableBody>
+													{scopeRows.map((row) => (
+														<TableRow
+															key={row.name}
+														>
+															<TableCell className="align-top font-medium">
+																{row.name}
+															</TableCell>
+															<TableCell className="p-0 align-top">
+																<button
+																	type="button"
+																	className="block w-full cursor-pointer truncate px-2 py-1.5 text-left hover:bg-muted/50"
+																	onClick={() =>
+																		setExpandedVariable(
+																			row,
+																		)
+																	}
+																>
+																	{row.value}
+																</button>
+															</TableCell>
+														</TableRow>
+													))}
+												</TableBody>
+											</Table>
+										</section>
+									);
+								})()
 							) : (
 								<>
 									{displayResult.STATUS ===
@@ -1329,6 +1431,19 @@ function ResultsPanel({
 					</div>
 				)}
 			</section>
+			<Dialog
+				open={expandedVariable !== null}
+				onOpenChange={(open) => {
+					if (!open) setExpandedVariable(null);
+				}}
+			>
+				<DialogContent className="flex h-4/5 flex-col gap-2 sm:max-w-3xl">
+					<DialogTitle>{expandedVariable?.name}</DialogTitle>
+					<div className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap rounded-md border bg-muted/20 p-3 text-xs">
+						{expandedVariable?.value}
+					</div>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }
