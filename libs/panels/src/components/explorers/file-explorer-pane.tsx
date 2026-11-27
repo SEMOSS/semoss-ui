@@ -1,25 +1,46 @@
-import { useEffect } from "react";
 import {
 	FileExplorer,
 	type FileExplorerApi,
 	FileExplorerHeader,
 	type FileExplorerItemActions,
+	type FileExplorerRoot,
+	type FileExplorerRootsLayout,
 	type FileItem,
 	NewFileOverlay,
 } from "@semoss/shared";
 import type { WorkbenchPanelId } from "@semoss/workbench";
-import { useWorkbenchControl, useWorkbenchPanel } from "@semoss/workbench";
+import {
+	useWorkbenchControl,
+	useWorkbenchEvent,
+	useWorkbenchPanel,
+} from "@semoss/workbench";
+import {
+	FILE_PANEL_EVENTS,
+	type FilesChangedEvent,
+} from "../../constants/file-panel.constants";
 import { useFilesChanged } from "../../hooks/use-files-changed";
-import type { FilePanelMode } from "../../types/file-panel.types";
+import {
+	type FilePanelMode,
+	getFilePanelScope,
+} from "../../types/file-panel.types";
 import { FileExplorerControl } from "./file-explorer-control";
 
 interface FileExplorerPaneProps {
 	/** The panel instance this explorer belongs to. */
 	id: WorkbenchPanelId;
-	/** The explorer to render. Decorated ones must be memoized. */
+	/** The panel's own explorer. Decorated ones must be memoized. */
 	explorer: FileExplorerApi;
 	/** Per-row actions, e.g. the MCP toolbox glyphs. */
-	itemActions?: (item: FileItem) => FileExplorerItemActions;
+	itemActions?: (
+		item: FileItem,
+		root: FileExplorerRoot,
+	) => FileExplorerItemActions;
+	/** More trees under the panel's own, such as a host's folders. */
+	roots?: readonly FileExplorerRoot[];
+	/** The row over the panel's own tree, once there are more roots. */
+	label?: string;
+	layout?: FileExplorerRootsLayout;
+	onLayoutChange?: (layout: FileExplorerRootsLayout) => void;
 }
 
 /**
@@ -32,21 +53,24 @@ interface FileExplorerPaneProps {
  * the same tree, the same header with no actions (those live in the chrome
  * control instead), the same overlay, and the same publish-and-register pair.
  *
- * Publishing is done here rather than by each panel: the api is identity-stable
- * by design and so is `setValue`, so the effect runs once, and the control
- * reads the api back off the panel's scratch value.
+ * The panel publishes the explorer of the root the user is working in, so
+ * the chrome control's New and Refresh act on it. Each api is identity-stable
+ * by design, and so is `setValue`, so it publishes once per root change.
  *
- * @param props - The explorer and its panel wiring.
- * @return The tree and its header.
+ * @param props - The explorers and the panel wiring.
+ * @return The trees and their header.
  */
 export const FileExplorerPane = ({
 	id,
 	explorer,
 	itemActions,
+	roots = [],
+	label = "",
+	layout,
+	onLayoutChange,
 }: FileExplorerPaneProps) => {
 	const { setValue } = useWorkbenchPanel<unknown, FileExplorerApi>(id);
 
-	useEffect(() => setValue(explorer), [explorer, setValue]);
 	useWorkbenchControl(id, FileExplorerControl);
 	// The tree is stale the moment anything else writes a file in this scope.
 	// Here rather than in each explorer panel: all four render this body.
@@ -54,14 +78,33 @@ export const FileExplorerPane = ({
 		mode: explorer.mode as FilePanelMode,
 		refresh: explorer.commands.refresh,
 	});
+	// and so is a host's root, whose files the host may change itself
+	useWorkbenchEvent<FilesChangedEvent>(
+		FILE_PANEL_EVENTS.FILES_CHANGED,
+		(changed) => {
+			for (const root of roots) {
+				if (
+					getFilePanelScope(root.explorer.mode as FilePanelMode) ===
+					changed.scope
+				) {
+					root.explorer.commands.refresh();
+				}
+			}
+		},
+	);
 
 	return (
 		<div className="relative size-full">
 			<FileExplorer
-				explorer={explorer}
-				header={<FileExplorerHeader explorer={explorer} />}
+				explorers={[{ id: "primary", name: label, explorer }, ...roots]}
+				header={(active, place) => (
+					<FileExplorerHeader explorer={active} place={place} />
+				)}
 				newFileOverlay={NewFileOverlay}
 				itemActions={itemActions}
+				layout={layout}
+				onLayoutChange={onLayoutChange}
+				onActiveRootChange={(_, active) => setValue(active)}
 			/>
 		</div>
 	);

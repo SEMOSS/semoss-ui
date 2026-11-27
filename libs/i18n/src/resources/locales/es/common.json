@@ -67,6 +67,7 @@
 		"logoAlt": "logo"
 	},
 	"fileExplorer": {
+		"roots": "Archivos",
 		"search": "Buscar",
 		"name": "Nombre",
 		"dateModified": "Fecha de modificación",
@@ -78,6 +79,7 @@
 		"moreActionsFor": "Más acciones para {{name}}",
 		"toggleMenu": "Alternar menú",
 		"resizeDateColumn": "Redimensionar columna de fecha",
+		"resizeSections": "Cambiar el tamaño de {{above}} y {{below}}",
 		"failedToLoadFiles": "Error al cargar los archivos",
 		"pdfNotSupported": "Tu navegador no admite la visualización de PDF.",
 		"binaryView": {
@@ -129,6 +131,7 @@
 		},
 		"refreshTooltip": "Actualizar {{path}}",
 		"createTooltip": "Crear en {{path}}",
+		"searchFilters": "Filtros de búsqueda",
 		"searchAll": "Todo",
 		"searchOnly": "Solo \"{{name}}\"",
 		"searchAllAria": "Buscar en todo",

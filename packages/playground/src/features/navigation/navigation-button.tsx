@@ -11,6 +11,7 @@ import {
 	useSidebar,
 } from "@semoss/ui/next";
 
+/** Props for {@link NavigationButton}. */
 interface NavigationButtonProps {
 	/**
 	 * Floating over the page's top corner, or inline in a route's own header.
@@ -30,23 +31,24 @@ export function NavigationButton({
 	const { t } = useTranslation("sidebar");
 	const { isMobile, open, openMobile, setOpenMobile, setOpen } = useSidebar();
 	const { key: locationKey } = useLocation();
-	const previousLocation = useRef(locationKey);
-	const wasOpen = useRef(openMobile);
+	const previousLocationKey = useRef(locationKey);
+	const wasMobileOpen = useRef(openMobile);
 	const triggerRef = useRef<HTMLButtonElement>(null);
 	const label = t("actions.openNavigation");
 
 	// Route links live inside the sheet; selecting one dismisses it.
 	useEffect(() => {
-		if (previousLocation.current !== locationKey) {
-			previousLocation.current = locationKey;
+		if (previousLocationKey.current !== locationKey) {
+			previousLocationKey.current = locationKey;
 			setOpenMobile(false);
 		}
 	}, [locationKey, setOpenMobile]);
 
 	// Sidebar's sheet has no SheetTrigger, so restore focus to this entry point.
 	useEffect(() => {
-		const shouldRestoreFocus = wasOpen.current && !openMobile && isMobile;
-		wasOpen.current = openMobile;
+		const shouldRestoreFocus =
+			wasMobileOpen.current && !openMobile && isMobile;
+		wasMobileOpen.current = openMobile;
 		if (!shouldRestoreFocus) return;
 		const frame = requestAnimationFrame(() => triggerRef.current?.focus());
 		return () => cancelAnimationFrame(frame);

@@ -1,0 +1,354 @@
+import {
+	type ComponentRef,
+	type ReactNode,
+	useCallback,
+	useContext,
+	useEffect,
+	useId,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
+import { useTranslation } from "@semoss/i18n";
+import {
+	cn,
+	ResizableHandle,
+	ResizablePanel,
+	ResizablePanelGroup,
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
+} from "@semoss/ui/next";
+import { ChatConfigContext } from "../../chat/config/chat-config.context";
+import { ConversationScrollContext } from "../../conversation/conversation-scroll.context";
+import {
+	type SplitLayoutActions,
+	SplitLayoutActionsContext,
+} from "./split-layout-actions.context";
+
+/** Props for {@link SplitLayout}. */
+export interface SplitLayoutProps {
+	/** The conversation and its composer, mounted for the lifetime of the room. */
+	children: ReactNode;
+	/** The room's workbench, shown as the Workspace. */
+	workbench: ReactNode;
+	/** Whether the Workspace is open. */
+	isWorkbenchOpen: boolean;
+	/**
+	 * The room header. It floats over the top of the conversation, so an open
+	 * Workspace takes the full height beside it; on narrow screens, where one
+	 * pane shows at a time, it sits above both.
+	 */
+	header?: ReactNode;
+	/** Called when the user drags the Workspace closed against the row's edge. */
+	onWorkbenchClose?: () => void;
+}
+
+/** The Workspace's share of the row, in percent. */
+const WORKBENCH_DEFAULT_SIZE = 65;
+
+/** The least of the row each pane can be dragged to, in percent. */
+const PANE_MIN_SIZE = 25;
+
+/** Below this row width in px, one pane shows at a time, behind tabs. */
+const NARROW_WIDTH = 1024;
+
+/** Which pane a narrow row shows. */
+type RoomLayoutPane = "conversation" | "workbench";
+
+/**
+ * A room's conversation beside its Workspace: one stable pair of panes
+ * across desktop and narrow views. Below {@link NARROW_WIDTH} one pane shows
+ * at a time behind Chat and Workspace tabs. Provides
+ * `SplitLayoutActionsContext` to the header and the Workspace's panels, and
+ * `ConversationScrollContext` to the conversation.
+ */
+export function SplitLayout({
+	children,
+	workbench,
+	isWorkbenchOpen: isOpen,
+	header,
+	onWorkbenchClose,
+}: SplitLayoutProps) {
+	const { t } = useTranslation("room");
+	const id = useId();
+	// read without `useChatConfig`, so the layout also renders with no host config
+	const onWorkbenchOpenChange =
+		useContext(ChatConfigContext)?.callbacks.onWorkbenchOpenChange;
+	const containerRef = useRef<HTMLDivElement>(null);
+	const headerRef = useRef<HTMLDivElement>(null);
+	const conversationRef = useRef<HTMLDivElement>(null);
+	const workbenchRef = useRef<HTMLDivElement>(null);
+	const workbenchPaneRef = useRef<ComponentRef<typeof ResizablePanel>>(null);
+	const lastConversationFocus = useRef<HTMLElement | null>(null);
+	// The header control that brought the Workspace into view, so closing the
+	// Workspace from inside it hands focus back there.
+	const revealedFrom = useRef<HTMLElement | null>(null);
+	const wasOpen = useRef(isOpen);
+	const [rowWidth, setRowWidth] = useState(0);
+	// once the user drags the divider, the Workspace keeps their size
+	const [isUserSized, setIsUserSized] = useState(false);
+	const [view, setView] = useState<RoomLayoutPane>(
+		isOpen ? "workbench" : "conversation",
+	);
+	// the Workspace mounts the first time it opens and stays mounted after
+	const [hasOpened, setHasOpened] = useState(isOpen);
+	// the last `isOpen` seen, to react to a change during render
+	const [previousIsOpen, setPreviousIsOpen] = useState(isOpen);
+	// the conversation has scrolled beneath the floating header
+	const [isConversationScrolled, setIsConversationScrolled] = useState(false);
+
+	// opening the Workspace brings it forward
+	if (isOpen !== previousIsOpen) {
+		setPreviousIsOpen(isOpen);
+		if (isOpen) {
+			setHasOpened(true);
+			setView("workbench");
+		}
+	}
+
+	const handleRevealWorkbench = useCallback(
+		(trigger?: HTMLElement | null) => {
+			// a click does not focus a button in every browser, so the panel
+			// says which control it is; a menu item's focus falls back to the
+			// conversation
+			const active = document.activeElement;
+			const from =
+				trigger ?? (active instanceof HTMLElement ? active : null);
+			if (from && headerRef.current?.contains(from))
+				revealedFrom.current = from;
+			setView("workbench");
+		},
+		[],
+	);
+
+	// tell the host's shell, and report closed once the layout unmounts
+	useEffect(() => {
+		onWorkbenchOpenChange?.(isOpen);
+		return () => onWorkbenchOpenChange?.(false);
+	}, [isOpen, onWorkbenchOpenChange]);
+
+	// the row's width decides the narrow layout, not the viewport's
+	useEffect(() => {
+		const container = containerRef.current;
+		if (!container) return;
+		const observer = new ResizeObserver(([entry]) => {
+			if (entry) setRowWidth(entry.contentRect.width);
+		});
+		observer.observe(container);
+		return () => observer.disconnect();
+	}, []);
+
+	const isNarrow = rowWidth > 0 && rowWidth < NARROW_WIDTH;
+	const activeView = isOpen ? view : "conversation";
+	const isConversationShown = !isNarrow || activeView === "conversation";
+	const isWorkbenchShown =
+		isOpen && (!isNarrow || activeView === "workbench");
+	const hasTabs = isNarrow && isOpen;
+
+	// the panel group is an external layout engine, and a pane dragged shut
+	// collapses to zero: put the Workspace back on its share when it reopens,
+	// until the user sizes it themselves
+	useEffect(() => {
+		if (!isOpen || isNarrow || isUserSized) return;
+		workbenchPaneRef.current?.resize(WORKBENCH_DEFAULT_SIZE);
+	}, [isOpen, isNarrow, isUserSized]);
+
+	// keep focus out of a pane that just hid: back to the control that
+	// revealed the Workspace, or to the conversation's last focused control
+	useEffect(() => {
+		const active = document.activeElement;
+		const hasClosed = wasOpen.current && !isOpen;
+		wasOpen.current = isOpen;
+		if (
+			hasClosed ||
+			(!isWorkbenchShown && workbenchRef.current?.contains(active))
+		) {
+			// a header control keeps focus when it closes the Workspace
+			if (headerRef.current?.contains(active)) return;
+			// Mobile actions live in a portal, outside workbenchRef. Wait for its
+			// drawer to release focus before restoring the conversation.
+			const frame = requestAnimationFrame(() => {
+				const trigger = revealedFrom.current;
+				revealedFrom.current = null;
+				if (!isOpen && trigger?.isConnected) {
+					trigger.focus();
+					return;
+				}
+				const previous = lastConversationFocus.current;
+				if (previous && conversationRef.current?.contains(previous))
+					previous.focus();
+				else conversationRef.current?.focus();
+			});
+			return () => cancelAnimationFrame(frame);
+		} else if (
+			!isConversationShown &&
+			conversationRef.current?.contains(active)
+		) {
+			workbenchRef.current?.focus();
+		}
+	}, [isOpen, isConversationShown, isWorkbenchShown]);
+
+	const actions = useMemo<SplitLayoutActions>(
+		() => ({
+			revealWorkbench: handleRevealWorkbench,
+			isWorkbenchVisible: isWorkbenchShown,
+		}),
+		[handleRevealWorkbench, isWorkbenchShown],
+	);
+
+	return (
+		<SplitLayoutActionsContext.Provider value={actions}>
+			<ConversationScrollContext.Provider
+				value={setIsConversationScrolled}
+			>
+				<div
+					ref={containerRef}
+					className="relative flex h-full min-h-0 min-w-0 flex-col"
+				>
+					{header && hasTabs && (
+						<div ref={headerRef} className="shrink-0">
+							{header}
+						</div>
+					)}
+					<Tabs
+						value={activeView}
+						onValueChange={(value) =>
+							setView(
+								value === "workbench"
+									? "workbench"
+									: "conversation",
+							)
+						}
+						className="min-h-0 w-full min-w-0 flex-1 gap-0"
+					>
+						{hasTabs && (
+							<div className="shrink-0 border-b bg-sidebar px-4 py-2">
+								<TabsList
+									className="w-full"
+									aria-label={t("workbench.views")}
+								>
+									<TabsTrigger
+										value="conversation"
+										id={`${id}-conversation-tab`}
+										aria-controls={`${id}-conversation-panel`}
+									>
+										{t("workbench.chat")}
+									</TabsTrigger>
+									<TabsTrigger
+										value="workbench"
+										id={`${id}-workbench-tab`}
+										aria-controls={`${id}-workbench-panel`}
+									>
+										{t("workbench.workspace")}
+									</TabsTrigger>
+								</TabsList>
+							</div>
+						)}
+						<ResizablePanelGroup
+							direction="horizontal"
+							className="min-h-0 flex-1"
+						>
+							<ResizablePanel
+								id={`${id}-conversation`}
+								order={1}
+								defaultSize={100 - WORKBENCH_DEFAULT_SIZE}
+								minSize={PANE_MIN_SIZE}
+								className={cn(
+									"relative min-w-0",
+									!isConversationShown && "hidden",
+								)}
+							>
+								{header && !hasTabs && (
+									<div
+										ref={headerRef}
+										className={cn(
+											"absolute inset-x-0 top-0 z-20 transition-[background-color,backdrop-filter] duration-200",
+											isConversationScrolled &&
+												"bg-background/75 backdrop-blur-sm",
+										)}
+									>
+										{header}
+									</div>
+								)}
+								<TabsContent
+									ref={conversationRef}
+									id={`${id}-conversation-panel`}
+									onFocusCapture={(event) => {
+										// Tabs may focus the region itself when its value changes.
+										// Preserve the last control the user was editing.
+										if (
+											event.target !== event.currentTarget
+										) {
+											lastConversationFocus.current =
+												event.target;
+										}
+									}}
+									forceMount
+									value="conversation"
+									className="h-full min-h-0"
+									role={hasTabs ? "tabpanel" : "region"}
+									aria-label={t("workbench.chat")}
+									aria-labelledby={
+										hasTabs
+											? `${id}-conversation-tab`
+											: undefined
+									}
+								>
+									{children}
+								</TabsContent>
+							</ResizablePanel>
+							<ResizableHandle
+								onDragging={(isDragging) => {
+									if (isDragging) setIsUserSized(true);
+								}}
+								// on the Workspace's edge, a 2px line on hover or drag as the
+								// navigation's edge shows; a wider invisible strip to grab
+								className={cn(
+									"before:-translate-x-1/2 z-10 w-px bg-transparent before:absolute before:inset-y-0 before:left-1/2 before:w-2 after:w-0.5 after:bg-transparent after:transition-colors hover:after:bg-sidebar-border focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:after:bg-ring data-[resize-handle-state=drag]:after:bg-sidebar-border",
+									(!isOpen || isNarrow) && "hidden",
+								)}
+							/>
+							<ResizablePanel
+								ref={workbenchPaneRef}
+								id={`${id}-workbench`}
+								order={2}
+								defaultSize={WORKBENCH_DEFAULT_SIZE}
+								minSize={PANE_MIN_SIZE}
+								collapsible
+								collapsedSize={0}
+								onCollapse={() => {
+									// reopening puts the Workspace back on its default share
+									setIsUserSized(false);
+									onWorkbenchClose?.();
+								}}
+								className={cn(
+									"min-w-0",
+									!isWorkbenchShown && "hidden",
+								)}
+							>
+								<TabsContent
+									ref={workbenchRef}
+									id={`${id}-workbench-panel`}
+									forceMount
+									value="workbench"
+									className="h-full min-h-0"
+									role={hasTabs ? "tabpanel" : "region"}
+									aria-label={t("workbench.workspace")}
+									aria-labelledby={
+										hasTabs
+											? `${id}-workbench-tab`
+											: undefined
+									}
+								>
+									{hasOpened && workbench}
+								</TabsContent>
+							</ResizablePanel>
+						</ResizablePanelGroup>
+					</Tabs>
+				</div>
+			</ConversationScrollContext.Provider>
+		</SplitLayoutActionsContext.Provider>
+	);
+}

@@ -1,0 +1,156 @@
+{
+	"search": "بحث",
+	"takeTour": "خذ جولة",
+	"nav": {
+		"newChat": {
+			"label": "جديد",
+			"tooltip": "دردشة جديدة - ابدأ محادثة جديدة في أي وقت.",
+			"ariaLabel": "دردشة جديدة"
+		},
+		"agents": {
+			"label": "الوكلاء",
+			"tooltip": "الوكلاء"
+		},
+		"agentsWorkspaces": {
+			"tooltip": "الوكلاء/مساحات العمل - الوصول إلى مساحات عملك أو إنشاء وكلاء ذكاء اصطناعي جدد."
+		},
+		"knowledgeLibrary": {
+			"tooltip": "مكتبة المعرفة - تصفح وإنشاء ومشاركة وإدارة مكتبات المستندات الخاصة بك."
+		},
+		"toolbox": {
+			"tooltip": "صندوق الأدوات - تعرف على القدرات الموسعة لـ Elsa مع أدوات إضافية قوية."
+		},
+		"promptLibrary": {
+			"tooltip": "مكتبة المطالبات - تصفح وإنشاء واستخدام المطالبات المحفوظة."
+		},
+		"goHome": "الانتقال إلى الصفحة الرئيسية",
+		"help": "مساعدة"
+	},
+	"buckets": {
+		"favorites": "المفضلة",
+		"today": "اليوم",
+		"yesterday": "أمس",
+		"fewDaysAgo": "منذ بضعة أيام",
+		"lastWeek": "الأسبوع الماضي",
+		"thisMonth": "هذا الشهر",
+		"lastMonth": "الشهر الماضي",
+		"older": "أقدم"
+	},
+	"messages": {
+		"errorLoadingRooms": "خطأ في تحميل الغرف",
+		"noRoomsFound": "لم يتم العثور على غرف",
+		"untitled": "بدون عنوان"
+	},
+	"actions": {
+		"openNavigation": "فتح التنقل",
+		"openSidebar": "فتح الشريط الجانبي",
+		"closeSidebar": "إغلاق الشريط الجانبي",
+		"favorite": "مفضل",
+		"unfavorite": "إلغاء المفضلة",
+		"rename": "إعادة التسمية",
+		"delete": "حذف",
+		"openInline": "فتح مضمّن",
+		"showDetails": "عرض التفاصيل",
+		"minimize": "تصغير",
+		"maximize": "تكبير",
+		"close": "إغلاق",
+		"roomActions": "إجراءات المحادثة"
+	},
+	"toasts": {
+		"failedToPin": "فشل تثبيت الغرفة",
+		"failedToUnpin": "فشل إلغاء تثبيت الغرفة",
+		"roomNameEmpty": "لا يمكن أن يكون اسم الغرفة فارغاً",
+		"roomRenamedSuccess": "تمت إعادة تسمية الغرفة بنجاح",
+		"failedToRename": "فشل إعادة تسمية الغرفة",
+		"roomDeletedSuccess": "تم حذف الغرفة بنجاح",
+		"failedToDelete": "تعذر حذف الغرفة"
+	},
+	"userMenu": {
+		"settings": "الإعدادات",
+		"language": "اللغة"
+	},
+	"settings": {
+		"title": "الإعدادات",
+		"description": "تفضيلاتك والتطبيقات التي يمكن للمساعد استخدامها.",
+		"sections": {
+			"general": "عام",
+			"connectors": "الموصلات"
+		},
+		"general": {
+			"appearance": "المظهر",
+			"theme": "السمة",
+			"themeDescription": "السمة الداكنة وسمة النظام في مرحلة تجريبية.",
+			"themes": {
+				"system": "النظام",
+				"light": "فاتح",
+				"dark": "داكن"
+			},
+			"language": "اللغة",
+			"languageDescription": "اللغة التي يُعرض بها التطبيق.",
+			"version": "الإصدار {{version}}",
+			"newChat": {
+				"title": "المحادثة",
+				"default": "الافتراضي",
+				"model": "النموذج",
+				"modelDescription": "النموذج الذي تستخدمه المحادثة الجديدة.",
+				"unavailableModel": "نموذج غير متاح",
+				"mode": "الوضع",
+				"modeDescription": "هل تبدأ المحادثة الجديدة كمحادثة أم مع وكيل.",
+				"modes": {
+					"chat": "محادثة",
+					"agent": "وكيل"
+				},
+				"agent": "الوكيل",
+				"agentDescription": "الوكيل الذي تشغّله المحادثة الجديدة في وضع الوكيل.",
+				"saveError": "تعذّر حفظ تفضيلك: {{message}}"
+			}
+		}
+	},
+	"download": {
+		"title": "تنزيل المحادثة",
+		"description": "اختر تنسيقًا للتنزيل.",
+		"word": "مستند Word",
+		"pdf": "مستند PDF",
+		"success": "تم تنزيل المحادثة بتنسيق {{format}}",
+		"failed": "تعذر تنزيل المحادثة",
+		"noContent": "لا يوجد محتوى محادثة للتنزيل",
+		"noResponse": "لم يتم تلقي أي رد من الخادم",
+		"generateFailed": "تعذر إنشاء ملف {{format}}",
+		"generateFailedWithType": "تعذر إنشاء ملف {{format}}. نوع العملية: {{operationType}}"
+	},
+	"chats": "المحادثات",
+	"view": {
+		"button": "فرز المحادثات وتجميعها",
+		"customized": "ترتيب مخصص",
+		"sortBy": "الفرز حسب",
+		"groupBy": "التجميع حسب",
+		"sort": {
+			"recent": "الأحدث",
+			"oldest": "الأقدم",
+			"nameAsc": "الاسم (أ–ي)",
+			"nameDesc": "الاسم (ي–أ)"
+		},
+		"group": {
+			"date": "التاريخ",
+			"agent": "الوكيل"
+		}
+	},
+	"groups": {
+		"all": "كل المحادثات",
+		"noAgent": "بدون وكيل",
+		"unnamedAgent": "وكيل بلا عنوان",
+		"openAgent": "فتح {{name}} في علامة تبويب جديدة"
+	},
+	"searchChats": {
+		"label": "البحث في المحادثات",
+		"title": "البحث في المحادثات",
+		"description": "اعثر على محادثة باسمها أو بما قيل فيها.",
+		"placeholder": "البحث في المحادثات…",
+		"loading": "جارٍ البحث…",
+		"empty": "لا توجد محادثات تطابق «{{query}}»",
+		"recent": "الأخيرة",
+		"allAgents": "كل الوكلاء",
+		"results": "النتائج",
+		"matchedMessage": "مطابقة في الرسائل"
+	}
+}

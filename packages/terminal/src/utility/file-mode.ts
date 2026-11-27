@@ -12,5 +12,6 @@ export const modeKey = (m: FileMode): string => {
 	if (m.type === "ENGINE") return `ENGINE:${m.engine}`;
 	if (m.type === "STORAGE") return `STORAGE:${m.storage}`;
 	if (m.type === "USER") return "USER";
+	if (m.type === "MOUNT") return `MOUNT:${m.mountId}`;
 	return `INSIGHT:${m.insightId ?? ""}`;
 };

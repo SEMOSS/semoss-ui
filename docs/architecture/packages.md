@@ -18,6 +18,7 @@ source of truth for its dependencies and `exports`, and its `index.ts` for its A
 | `@semoss/renderer` | Notebook and block rendering, visualization | `@semoss/renderer`, `@semoss/renderer/version` | Public |
 | `@semoss/workbench` | Multi-panel dock shell; domain-agnostic | `@semoss/workbench`, `@semoss/workbench/globals.css` | Public |
 | `@semoss/panels` | File panels for the dock | `@semoss/panels`, `/globals.css`, `/vite` | Public |
+| `@semoss/chat` | The chat's composable pieces: rooms, messages, tools, composer, room list, settings dialog | `@semoss/chat`, `@semoss/chat/globals.css` | Public; private package, source-exported |
 | `@semoss/config` | Shared Vite/Vitest config, `tsconfig.base.json` (private) | `@semoss/config` | Build-time |
 
 ## Applications
@@ -25,7 +26,8 @@ source of truth for its dependencies and `exports`, and its `index.ts` for its A
 | Package | Purpose | Entry | Scope |
 |---|---|---|---|
 | `@semoss/client` | Main web application | `src/main.tsx` | Application-internal |
-| `@semoss/playground` | Chat | `src/main.tsx` | Application-internal |
+| `@semoss/playground` | The chat's web app | `src/main.tsx` | Application-internal |
+| `@semoss/playground-desktop` | The chat's Electron app, signed in to hosted servers | `src/main/main.ts`, `src/renderer/main.tsx` | Application-internal |
 | `@semoss/collaboration` | Work, rooms, connectors, routines | `src/main.tsx` | Application-internal |
 | `@semoss/terminal` | Embedded terminal | `src/index.ts` | Embeddable |
 | `@semoss/automation` | Automation workspace | `src/index.ts` | Embeddable |
@@ -41,6 +43,9 @@ Scope labels are defined under [API Stability and Import Rules](#api-stability-a
   `@semoss/panels/vite` ([details](../../libs/panels/AGENTS.md#what-a-host-has-to-wire-up)).
 - A host that mounts a connector viewer imports `@semoss/connectors/globals.css` and loads the
   `connectors` i18n namespace ([details](../../libs/connectors/AGENTS.md#what-a-host-has-to-wire-up)).
+- A host that mounts chat UI imports `@semoss/chat/globals.css` beside the stylesheets of the
+  libraries it mounts, loads `chatResources` (or a map built on it), and gives the chat one
+  `ChatConfig` ([details](../../libs/chat/README.md#setting-up-a-host)).
 
 ## State Migration
 
@@ -60,7 +65,8 @@ listener sets are legacy. The rules are in [react.md: State](../standards/react.
 | `@semoss/sdk` | Session, config, logins, permissions, and session insight on `StoreState` | Reference implementation; `InsightStore`, `AgentStore`, `RoomStore`, and `Env` are out of scope |
 | `@semoss/collaboration`, `@semoss/connectors`, `@semoss/shared` | Hand-rolled `getSnapshot`/`subscribe` stores and module listener sets | Adopt `StoreState` when touched |
 | `@semoss/client` | MobX (designer, workspace) and Zustand (assistant, page, workbench domains) | New state on `StoreState`; migrate per store |
-| `@semoss/playground` | MobX (root, chat, room, message, tool) plus the dock's Zustand store | New state on `StoreState` or SDK hooks; migrate per store |
+| `@semoss/chat` | Chat, room, message, tool, connectors, and the next message's queue on `StoreState`; no MobX. The room's dock is the workbench's Zustand store | The dock moves with `@semoss/workbench` |
+| `@semoss/playground`, `@semoss/playground-desktop` | No stores of their own; they compose `@semoss/chat` | `StoreState` for any new shared state |
 | `@semoss/renderer` | MobX block and notebook state | Last to move; needs a structural-sharing design first |
 | `@semoss/auditlog-package` | One MobX root store | Migrate as one change |
 | `@semoss/workbench`, `@semoss/panels`, `@semoss/terminal` | The dock's Zustand store and its peer | The dock's store migrates as one scoped change; hosts and the peer follow it |

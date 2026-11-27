@@ -1,0 +1,284 @@
+import { act, render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import type { ReactNode } from "react";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import type { FileExplorerHost } from "@semoss/panels";
+import type { FileExplorerApi } from "@semoss/shared";
+import { testChatOptions } from "../../test/chat-options";
+import { createMemoryFileSource } from "../../test/memory-file-source";
+import { ChatConfigContext } from "../chat/config/chat-config.context";
+import { NextMessageRoomProvider } from "../conversation/attachments/next-message-room.context";
+import { SplitLayout } from "../room/layout/split-layout";
+import { useRoom } from "../room/scope/room.context";
+import { RoomStore } from "../room/store/room.store";
+import { useRoomSelector } from "../room/store/use-room-selector";
+import type { ToolsHost } from "../tools/chat-tools/tools-host";
+import { RoomWorkbenchToggle } from "./rail/room-workbench-toggle";
+import { RoomWorkbench } from "./room-workbench";
+
+const mocks = vi.hoisted(() => ({
+	explorerHost: vi.fn<(host: FileExplorerHost) => void>(),
+}));
+
+// the rail's cog reads which room actions the host keeps
+vi.mock("../chat/config/chat-config.context", async (original) => ({
+	...(await original<typeof import("../chat/config/chat-config.context")>()),
+	useChatConfig: () => ({ options: testChatOptions() }),
+}));
+vi.mock("@semoss/panels", async (original) => {
+	const actual = await original<typeof import("@semoss/panels")>();
+	return {
+		...actual,
+		FileExplorerHostProvider: ({
+			host,
+			children,
+		}: {
+			host: FileExplorerHost;
+			children: ReactNode;
+		}) => {
+			mocks.explorerHost(host);
+			return (
+				<actual.FileExplorerHostProvider host={host}>
+					{children}
+				</actual.FileExplorerHostProvider>
+			);
+		},
+	};
+});
+
+/** An editor with an unsaved local value, kept alive by the real workbench. */
+function NotesEditor() {
+	return <textarea aria-label="Notes" defaultValue="Unsaved notes" />;
+}
+
+/** A room page in brief: the header's toggle, a draft, and the Workspace. */
+const RoomLayoutTest = ({ room }: { room: RoomStore }) => {
+	const isOpen = useRoomSelector(
+		room,
+		(current) => current.workbenchPane.isOpen,
+	);
+	return (
+		<SplitLayout
+			isWorkbenchOpen={isOpen}
+			header={<RoomWorkbenchToggle room={room} />}
+			workbench={<RoomWorkbench room={room} />}
+		>
+			<input aria-label="Draft" defaultValue="Unsent draft" />
+		</SplitLayout>
+	);
+};
+
+/** Build a room with a local panel, without starting network-backed room loading. */
+function createRoom(): RoomStore {
+	const room = new RoomStore({
+		chatOptions: testChatOptions(),
+		roomId: "room-controls",
+		workbenchPanels: { notes: { name: "Notes", content: NotesEditor } },
+	});
+	room.setOptions({ instructions: "Original instructions", mcp: [] });
+	room.openWorkbenchPanel("notes");
+	return room;
+}
+
+beforeEach(() => {
+	vi.clearAllMocks();
+	vi.stubGlobal("innerWidth", 1440);
+	vi.stubGlobal(
+		"matchMedia",
+		vi.fn(() => ({
+			matches: false,
+			addEventListener: vi.fn(),
+			removeEventListener: vi.fn(),
+		})),
+	);
+});
+afterEach(() => vi.unstubAllGlobals());
+
+test("the Workspace has no strip above its tabs", () => {
+	render(<RoomLayoutTest room={createRoom()} />);
+	expect(screen.queryByTestId("workbench-border-top")).toBeNull();
+	expect(screen.queryByRole("button", { name: "workbench.view" })).toBeNull();
+});
+
+test("the panel rail sits on the left, and holds panels alone", () => {
+	const { container } = render(<RoomLayoutTest room={createRoom()} />);
+	expect(container.querySelector("[data-rail='right']")).toBeNull();
+	const rail = container.querySelector<HTMLElement>("[data-rail='left']");
+	if (!rail) throw new Error("the panel rail did not render");
+	const names = within(rail)
+		.getAllByRole("button")
+		.map((button) => button.getAttribute("aria-label"));
+	// the room has no activity log blueprint, so the rail offers none
+	expect(names).toEqual([
+		"workspacePlaces.files",
+		"workspacePlaces.settings",
+	]);
+});
+
+test("closing from the header and reopening retain drafts and panels and restore conversation focus", async () => {
+	const user = userEvent.setup();
+	const room = createRoom();
+	render(<RoomLayoutTest room={room} />);
+	const draft = screen.getByLabelText("Draft");
+	// jsdom has no pane geometry; the resize handle intercepts pointer focus.
+	act(() => draft.focus());
+	expect(draft).toHaveFocus();
+	const originalPanels = room.workbench.getState().layout.panels;
+	await user.click(
+		screen.getByRole("button", { name: "workbench.closeWorkspace" }),
+	);
+	expect(room.workbenchPane.isOpen).toBe(false);
+	await waitFor(() => expect(draft).toHaveFocus());
+	act(() => {
+		room.openWorkbenchPanel("notes");
+	});
+	expect(room.workbench.getState().layout.panels).toBe(originalPanels);
+	expect(screen.getByLabelText("Draft")).toBe(draft);
+	expect(draft).toHaveValue("Unsent draft");
+});
+
+test.each([false, true])(
+	"file context actions queue on the next message room (draft: %s)",
+	async (isDraft) => {
+		const room = createRoom();
+		const draft = new RoomStore({
+			chatOptions: testChatOptions(),
+			roomId: "",
+			workbenchPanels: {},
+		});
+		const panel = <RoomWorkbench room={room} />;
+		render(
+			isDraft ? (
+				<NextMessageRoomProvider room={draft}>
+					{panel}
+				</NextMessageRoomProvider>
+			) : (
+				panel
+			),
+		);
+		const host = mocks.explorerHost.mock.lastCall?.[0];
+		const file = { name: "notes.txt", path: "/notes.txt" };
+		const mode = { type: "INSIGHT", insightId: "room-controls" } as const;
+		const explorer = { mode, source: null } as unknown as FileExplorerApi;
+		const actions = host?.secondaryActions?.(file, mode, explorer) ?? [];
+		expect(actions).toHaveLength(1);
+		await act(async () => {
+			await actions[0].action(file);
+			await actions[0].action(file);
+		});
+		const target = isDraft ? draft : room;
+		expect(target.contextItems.items).toEqual([
+			expect.objectContaining({ path: "notes.txt", name: "notes.txt" }),
+		]);
+		expect(
+			host?.secondaryActions?.(
+				{ ...file, type: "directory" },
+				mode,
+				explorer,
+			),
+		).toEqual([]);
+		if (isDraft) expect(room.contextItems.items).toEqual([]);
+	},
+);
+
+test("a host's mount gets the host's file actions and Add to Context; Room Files do not", async () => {
+	const open = vi.fn(async () => undefined);
+	const source = createMemoryFileSource({ "/notes.md": "# Notes" });
+	const toolsHost: ToolsHost = {
+		owns: () => false,
+		list: () => [],
+		files: () => ({
+			missingMountMessage: "Not here",
+			fileActions: () => [
+				{ name: "Open with App", icon: () => null, action: open },
+			],
+			secondaryActions: () => [
+				{ name: "Show in Finder", action: async () => undefined },
+			],
+		}),
+		subscribe: () => () => undefined,
+		unavailableMessage: "",
+	};
+	const room = new RoomStore({
+		chatOptions: testChatOptions(),
+		roomId: "room-desktop",
+		workbenchPanels: {},
+		toolsHost,
+	});
+	render(<RoomWorkbench room={room} />);
+	const host = mocks.explorerHost.mock.lastCall?.[0];
+	const mode = { type: "MOUNT", mountId: "f1" } as const;
+	const explorer = { mode, source } as unknown as FileExplorerApi;
+
+	const actions =
+		host?.fileActions?.({ mode, path: "/notes.md", name: "notes.md" }) ??
+		[];
+	expect(actions.map((action) => action.name)).toEqual(["Open with App"]);
+	await act(() => actions[0].action());
+	expect(open).toHaveBeenCalled();
+
+	expect(
+		host
+			?.secondaryActions?.(
+				{ name: "notes.md", path: "/notes.md" },
+				mode,
+				explorer,
+			)
+			.map((action) => action.name),
+	).toEqual(["Show in Finder", "actions.addToContext"]);
+
+	expect(
+		host?.fileActions?.({
+			mode: { type: "INSIGHT", insightId: "room-desktop" },
+			path: "/notes.md",
+			name: "notes.md",
+		}),
+	).toEqual([]);
+});
+
+test("without a host's files an open file gets no extra button", () => {
+	render(<RoomWorkbench room={createRoom()} />);
+	const host = mocks.explorerHost.mock.lastCall?.[0];
+
+	expect(
+		host?.fileActions?.({
+			mode: { type: "MOUNT", mountId: "f1" },
+			path: "/notes.md",
+			name: "notes.md",
+		}),
+	).toEqual([]);
+});
+
+test("a host's file roots are drawn in the room's Workspace, where they can read the room", () => {
+	const seen: string[] = [];
+	const FileRoots = () => {
+		seen.push(useRoom().roomId);
+		return null;
+	};
+	const toolsHost: ToolsHost = {
+		owns: () => false,
+		list: () => [],
+		files: () => ({ missingMountMessage: "Not here" }),
+		subscribe: () => () => undefined,
+		unavailableMessage: "",
+	};
+	const room = new RoomStore({
+		chatOptions: testChatOptions(),
+		roomId: "room-desktop",
+		workbenchPanels: {},
+		toolsHost,
+	});
+	render(
+		<ChatConfigContext.Provider
+			value={{
+				options: testChatOptions(),
+				callbacks: { onOpenRoom: vi.fn(), onOpenNewChat: vi.fn() },
+				components: { WorkbenchFileRoots: FileRoots },
+			}}
+		>
+			<RoomWorkbench room={room} />
+		</ChatConfigContext.Provider>,
+	);
+
+	expect(seen).toContain("room-desktop");
+});

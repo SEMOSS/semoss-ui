@@ -1,5 +1,7 @@
 import { Env } from "../env";
 import { post } from "../utility";
+import { runPixel } from "./base";
+import { throwOnPixelErrors } from "./playground-room";
 
 /**
  * Upload file(s) to an insight
@@ -33,4 +35,15 @@ export const uploadInsight = async (
 		fd,
 		{},
 	);
+};
+
+/**
+ * Drop an insight (`DropInsight`), such as a closed room's, so the backend
+ * stops keeping it.
+ *
+ * @param insightId - The insight.
+ * @throws When the backend reports an error.
+ */
+export const dropInsight = async (insightId: string): Promise<void> => {
+	throwOnPixelErrors(await runPixel("DropInsight()", insightId));
 };

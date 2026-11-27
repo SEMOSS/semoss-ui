@@ -34,14 +34,7 @@ const baseConfig = createViteConfig({
 		setupFiles: "./vitest.setup.ts",
 		coverage: {
 			reportsDirectory: "./coverage/packages/playground",
-			include: ["src/components/**/*.{ts,tsx}"],
-		},
-		deps: {
-			optimizer: {
-				client: {
-					include: ["vitest-canvas-mock"],
-				},
-			},
+			include: ["src/features/**/*.{ts,tsx}"],
 		},
 	},
 });

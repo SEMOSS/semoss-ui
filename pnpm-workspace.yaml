@@ -8,6 +8,10 @@ packages:
 allowBuilds:
     # checks its platform binary and speeds up its CLI
     'esbuild': true
+    # downloads the Electron binary that playground-desktop runs and packages
+    'electron': true
+    # Squirrel.Windows installers; playground-desktop builds NSIS ones instead
+    'electron-winstaller': false
     # only falls back to a WebAssembly build when the native binding is missing
     '@swc/core': false
     # prints a funding banner

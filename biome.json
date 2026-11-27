@@ -50,7 +50,9 @@
 				"useExhaustiveDependencies": {
 					"fix": "none",
 					"level": "error",
-					"options": {}
+					"options": {
+						"hooks": [{ "name": "useLatestRef", "stableResult": true }]
+					}
 				}
 			},
 			"style": {

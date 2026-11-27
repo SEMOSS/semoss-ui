@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Env } from "../env";
 import { UnauthorizedError } from "./error";
-import { CSRF, get, getCsrfHeaders, post } from "./fetch";
+import { CSRF, get, getCsrfHeaders, getText, post } from "./fetch";
 
 const createJsonResponse = (
 	data: unknown,
@@ -317,6 +317,51 @@ describe("fetch utility", () => {
 
 		await expect(get("/api/private")).rejects.toBeInstanceOf(
 			UnauthorizedError,
+		);
+	});
+
+	it("reads a page as text with the session's credentials", async () => {
+		Env.update({ BEARER_TOKEN: "token-1" });
+		const fetchMock = vi.mocked(fetch);
+		fetchMock.mockResolvedValueOnce(
+			new Response("<html></html>", {
+				headers: { "content-type": "text/html" },
+			}),
+		);
+
+		const { data } = await getText("/public_home/app/portals/");
+
+		expect(data).toBe("<html></html>");
+		const [path, requestInit] = fetchMock.mock.calls[0];
+		expect(path).toBe("/public_home/app/portals/");
+		expect(requestInit?.method).toBe("GET");
+		expect(
+			(requestInit?.headers as Record<string, string>).authorization,
+		).toBe("Bearer token-1");
+	});
+
+	it("reads a redirected page as the page it lands on", async () => {
+		const replace = vi.fn();
+		vi.stubGlobal("location", { ...window.location, replace: replace });
+		const response = new Response("landed", {
+			headers: { "content-type": "text/html", redirect: "/login" },
+		});
+		Object.defineProperty(response, "redirected", { value: true });
+		vi.mocked(fetch).mockResolvedValueOnce(response);
+
+		await expect(getText("/public_home/app/portals/")).resolves.toEqual(
+			expect.objectContaining({ data: "landed" }),
+		);
+		expect(replace).not.toHaveBeenCalled();
+	});
+
+	it("throws on an error status", async () => {
+		vi.mocked(fetch).mockResolvedValueOnce(
+			new Response("missing", { status: 404 }),
+		);
+
+		await expect(getText("/public_home/app/portals/")).rejects.toThrow(
+			"Request failed with status 404",
 		);
 	});
 });

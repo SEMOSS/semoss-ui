@@ -1,4 +1,9 @@
-import { ChevronDownIcon, SearchIcon, XIcon } from "lucide-react";
+import {
+	ChevronDownIcon,
+	ListFilterIcon,
+	SearchIcon,
+	XIcon,
+} from "lucide-react";
 import type React from "react";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "@semoss/i18n";
@@ -8,22 +13,24 @@ import {
 	ContextMenuContent,
 	ContextMenuItem,
 	ContextMenuTrigger,
+	cn,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
+	DropdownMenuRadioGroup,
+	DropdownMenuRadioItem,
 	DropdownMenuTrigger,
 	InputGroup,
 	InputGroupAddon,
 	InputGroupButton,
 	InputGroupInput,
-	ToggleGroup,
-	ToggleGroupItem,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import type { FileExplorerApi } from "./file-explorer.types";
 import { normalizeAssetPath } from "./file-explorer.utils";
+import type { FileExplorerPlace } from "./file-explorer-root.types";
 
 export interface FileExplorerHeaderProps {
 	explorer: FileExplorerApi;
@@ -33,6 +40,12 @@ export interface FileExplorerHeaderProps {
 	 * host hoists them into its own chrome.
 	 */
 	actions?: React.ReactNode;
+	/**
+	 * Where it is drawn in a `FileExplorer` with several roots: at the top
+	 * level, it names that level and has no path; inside a root, the root's
+	 * top reads as the root's name, and the path ends with the top level.
+	 */
+	place?: FileExplorerPlace;
 }
 
 /**
@@ -64,17 +77,40 @@ const getAncestorPath = (crumbs: string[], index: number) =>
  * survive a narrow sidebar. Search is a toggle rather than a permanently
  * mounted field, so the path and the action buttons keep their width; the row
  * it opens stays open for as long as a query is live, which is what keeps the
- * scope toggle from hiding while it is still filtering.
+ * search's filters, in a menu inside the field, from hiding while it is still
+ * filtering.
  */
 export const FileExplorerHeader: React.FC<FileExplorerHeaderProps> = ({
 	explorer,
 	actions = null,
+	place,
 }) => {
 	const { t } = useTranslation("common");
 	const { crumbs, path, search, showSearch } = explorer.header;
 	const searchInputRef = useRef<HTMLInputElement>(null);
 	const searchToggleRef = useRef<HTMLButtonElement>(null);
 	const searchLabel = t("fileExplorer.searchToggle");
+	const isRoots = place?.level === "roots";
+	const rootPlace = place?.level === "root" ? place : null;
+	/**
+	 * What a crumb reads: a root's own top is its name.
+	 *
+	 * @param crumb - The crumb.
+	 * @returns Its label.
+	 */
+	const crumbLabel = (crumb: string): string =>
+		crumb === "/" && rootPlace ? rootPlace.rootName : crumb;
+	const currentLabel = isRoots ? place.label : crumbLabel(crumbs[0]);
+	// inside a root there is always the top level above it
+	const hasAncestors = !isRoots && (crumbs.length > 1 || Boolean(rootPlace));
+	// the search's filters, in a menu inside the field, where the source can
+	// keep a search to the current folder; the top level searches everything
+	const hasScope =
+		!isRoots &&
+		explorer.capabilities.search &&
+		explorer.capabilities.searchScope !== false;
+	const isCurrentOnly = explorer.header.searchType !== "all";
+	const filtersLabel = t("fileExplorer.searchFilters");
 
 	// the row also opens from Ctrl/Cmd+F on the tree, so focus follows the
 	// state rather than the click that usually causes it
@@ -117,13 +153,13 @@ export const FileExplorerHeader: React.FC<FileExplorerHeaderProps> = ({
 										aria-label={t(
 											"fileExplorer.toggleMenu",
 										)}
-										disabled={crumbs.length <= 1}
-										title={path}
+										disabled={!hasAncestors}
+										title={isRoots ? place.label : path}
 									>
 										<div className="min-w-0 truncate text-start font-medium text-sm">
-											{crumbs[0]}
+											{currentLabel}
 										</div>
-										{crumbs.length > 1 && (
+										{hasAncestors && (
 											<ChevronDownIcon className="size-4 shrink-0 text-muted-foreground" />
 										)}
 									</DropdownMenuTrigger>
@@ -157,10 +193,18 @@ export const FileExplorerHeader: React.FC<FileExplorerHeaderProps> = ({
 											)
 										}
 									>
-										{crumb}
+										{crumbLabel(crumb)}
 									</DropdownMenuItem>
 								);
 							})}
+							{rootPlace ? (
+								<DropdownMenuItem
+									data-testid="file-explorer-path-dropdown-roots"
+									onSelect={rootPlace.onExit}
+								>
+									{rootPlace.label}
+								</DropdownMenuItem>
+							) : null}
 						</DropdownMenuContent>
 					</DropdownMenu>
 				</div>
@@ -223,60 +267,87 @@ export const FileExplorerHeader: React.FC<FileExplorerHeaderProps> = ({
 							searchToggleRef.current?.focus();
 						}}
 					/>
-					{search && (
+					{search || hasScope ? (
 						<InputGroupAddon align="inline-end">
-							<InputGroupButton
-								data-testid="file-explorer-clear-search-button"
-								size="icon-xs"
-								variant="ghost"
-								aria-label={t("fileExplorer.clearSearch")}
-								onClick={clearSearch}
-							>
-								<XIcon className="size-4" />
-							</InputGroupButton>
+							{search ? (
+								<InputGroupButton
+									data-testid="file-explorer-clear-search-button"
+									size="icon-xs"
+									variant="ghost"
+									aria-label={t("fileExplorer.clearSearch")}
+									onClick={clearSearch}
+								>
+									<XIcon className="size-4" />
+								</InputGroupButton>
+							) : null}
+							{hasScope ? (
+								<DropdownMenu>
+									<Tooltip disableHoverableContent={false}>
+										<TooltipTrigger asChild>
+											<DropdownMenuTrigger asChild>
+												<InputGroupButton
+													data-testid="file-explorer-search-filters-button"
+													size="icon-xs"
+													variant="ghost"
+													aria-label={filtersLabel}
+													// a narrowed search shows it is
+													className={cn(
+														isCurrentOnly &&
+															"text-primary",
+													)}
+												>
+													<ListFilterIcon className="size-4" />
+												</InputGroupButton>
+											</DropdownMenuTrigger>
+										</TooltipTrigger>
+										<TooltipContent>
+											{filtersLabel}
+										</TooltipContent>
+									</Tooltip>
+									<DropdownMenuContent align="end">
+										<DropdownMenuRadioGroup
+											value={
+												isCurrentOnly
+													? "current"
+													: "all"
+											}
+											// anything that is not "all" scopes
+											// the search to the current directory
+											onValueChange={(value) =>
+												explorer.header.setSearchType(
+													value,
+												)
+											}
+										>
+											<DropdownMenuRadioItem
+												data-testid="file-explorer-search-all-toggle"
+												value="all"
+												title={t(
+													"fileExplorer.searchAllAria",
+												)}
+											>
+												{t("fileExplorer.searchAll")}
+											</DropdownMenuRadioItem>
+											<DropdownMenuRadioItem
+												data-testid="file-explorer-search-current-toggle"
+												value="current"
+												title={t(
+													"fileExplorer.searchCurrentTitle",
+													{ path },
+												)}
+											>
+												{t("fileExplorer.searchOnly", {
+													name: crumbLabel(crumbs[0]),
+												})}
+											</DropdownMenuRadioItem>
+										</DropdownMenuRadioGroup>
+									</DropdownMenuContent>
+								</DropdownMenu>
+							) : null}
 						</InputGroupAddon>
-					)}
+					) : null}
 				</InputGroup>
 			)}
-
-			{showSearch &&
-				explorer.capabilities.search &&
-				explorer.capabilities.searchScope !== false && (
-					<ToggleGroup
-						type="single"
-						variant="outline"
-						size="sm"
-						className="w-full"
-						value={explorer.header.searchType}
-						// radix clears a single group to "" when the active item is
-						// clicked again, and anything that is not "all" scopes the
-						// search to the current directory
-						onValueChange={(value) =>
-							value && explorer.header.setSearchType(value)
-						}
-					>
-						<ToggleGroupItem
-							data-testid="file-explorer-search-all-toggle"
-							className="flex-1"
-							value="all"
-							aria-label={t("fileExplorer.searchAllAria")}
-							title={t("fileExplorer.searchAllAria")}
-						>
-							{t("fileExplorer.searchAll")}
-						</ToggleGroupItem>
-						<ToggleGroupItem
-							data-testid="file-explorer-search-current-toggle"
-							className="flex-1"
-							value="current"
-							aria-label={t("fileExplorer.searchCurrentAria")}
-							title={t("fileExplorer.searchCurrentTitle", {
-								path,
-							})}
-						>
-							{t("fileExplorer.searchOnly", { name: crumbs[0] })}
-						</ToggleGroupItem>
-					</ToggleGroup>
-				)}
 		</div>
 	);
 };

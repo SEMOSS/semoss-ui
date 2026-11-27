@@ -1,0 +1,67 @@
+{
+	"connect": {
+		"title": "Conectarse a SEMOSS",
+		"description": "Introduce la dirección de tu servidor SEMOSS, con la ruta del módulo. Puedes cambiarla después en Archivo > Cambiar servidor.",
+		"urlLabel": "Dirección del servidor",
+		"urlHint": "La dirección completa, por ejemplo https://semoss.example.com/Monolith.",
+		"submit": "Conectar",
+		"checking": "Comprobando el servidor…",
+		"cancel": "Cancelar",
+		"current": "Conectado a {{server}}",
+		"titleSaved": "Servidores",
+		"descriptionSaved": "Cambia entre tus servidores guardados o añade otro. Cada uno conserva su propio inicio de sesión.",
+		"addTitle": "Añadir un servidor"
+	},
+	"nav": {
+		"newChat": "Nuevo chat"
+	},
+	"account": {
+		"menu": "Cuenta",
+		"changeServer": "Cambiar servidor",
+		"signOut": "Cerrar sesión"
+	},
+	"unreachable": {
+		"title": "No se puede conectar con el servidor",
+		"description": "{{server}} no respondió. Vuelve a intentarlo o conéctate a otro servidor.",
+		"descriptionNoServer": "El servidor no respondió. Vuelve a intentarlo o conéctate a otro servidor.",
+		"changeServer": "Usar otro servidor"
+	},
+	"servers": {
+		"listLabel": "Servidores guardados",
+		"current": "En uso",
+		"switch": "Activar",
+		"switchLabel": "Activar {{server}}",
+		"removeLabel": "Quitar {{server}}",
+		"removeTitle": "¿Quitar este servidor?",
+		"removeDescription": "Se cerrará tu sesión en {{server}} y se eliminará lo que esta aplicación guardó para él en este equipo. Tus chats siguen en el servidor.",
+		"removeConfirm": "Quitar servidor",
+		"failed": "No se pudo cambiar de servidor: {{message}}"
+	},
+	"localFolders": {
+		"desktop": "Escritorio",
+		"attach": "Adjuntar carpeta",
+		"attachDescription": "Adjuntar una carpeta de este equipo",
+		"folderActions": "Acciones de {{name}}",
+		"reveal": "Mostrar en {{fileManager}}",
+		"openWithApp": "Abrir con la aplicación predeterminada",
+		"detach": "Quitar",
+		"detached": "Se quitó {{name}}. Sus archivos siguen en tu equipo.",
+		"attachFailed": "No se pudo adjuntar la carpeta. {{message}}",
+		"detachFailed": "No se pudo quitar la carpeta. {{message}}",
+		"notInFolder": "Elige primero una de las carpetas adjuntas.",
+		"betweenFolders": "Los archivos solo se mueven y copian dentro de una misma carpeta adjunta.",
+		"searchTruncated": "Se muestran las primeras {{count}} coincidencias de cada carpeta. Busca dentro de una carpeta para ver más.",
+		"openFailed": "No funcionó. {{message}}",
+		"notHere": "Esta carpeta no está adjunta en este equipo.",
+		"titles": {
+			"list": "Listar carpeta del escritorio",
+			"read": "Leer archivo del escritorio",
+			"search": "Buscar en el escritorio",
+			"write": "Escribir archivo del escritorio",
+			"edit": "Editar archivo del escritorio",
+			"create_directory": "Crear carpeta en el escritorio",
+			"move": "Mover o renombrar en el escritorio",
+			"delete": "Eliminar del escritorio"
+		}
+	}
+}

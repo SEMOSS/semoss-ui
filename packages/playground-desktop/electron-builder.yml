@@ -1,0 +1,50 @@
+# Packages the built app (out/) for each platform. Signing and notarization come
+# only from the environment (CSC_LINK / CSC_KEY_PASSWORD, APPLE_ID /
+# APPLE_APP_SPECIFIC_PASSWORD / APPLE_TEAM_ID, WIN_CSC_LINK); without them the
+# builds are unsigned, which is fine for local use.
+appId: org.semoss.chat
+productName: Playground
+# "Playground ( 1.0.0 ) mac-arm64.dmg": the version as the app shows it, then
+# the architecture, so testers pick the right one
+artifactName: "Playground ( ${version} ) ${os}-${arch}.${ext}"
+directories:
+  output: release
+  buildResources: resources
+files:
+  - out/**/*
+  - package.json
+asar: true
+# Electron's build-time switches, flipped in the packaged binary
+electronFuses:
+  # the cookie store holds the server's session and the sign in provider's
+  # cookies; encrypt it with a key kept in the OS keychain (macOS), DPAPI
+  # (Windows) or the secret service (Linux). One way: turning it off again
+  # leaves the saved cookies unreadable, which costs a sign in
+  enableCookieEncryption: true
+  # Nothing else on this machine can run the signed app as plain Node, or
+  # attach a debugger, or swap its code, and so borrow its keychain entry for
+  # the cookie key (AGENTS.md, Trust boundaries)
+  runAsNode: false
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false
+  enableEmbeddedAsarIntegrityValidation: true
+  onlyLoadAppFromAsar: true
+  grantFileProtocolExtraPrivileges: false
+  # flipping a fuse breaks the macOS ad hoc signature; an unsigned arm64 build
+  # will not launch without a fresh one (a signed build is re-signed anyway)
+  resetAdHocDarwinSignature: true
+mac:
+  category: public.app-category.productivity
+  target:
+    - dmg
+    - zip
+# the name the disk image mounts under
+dmg:
+  title: "Playground ( ${version} )"
+win:
+  target:
+    - nsis
+linux:
+  target:
+    - AppImage
+  category: Office

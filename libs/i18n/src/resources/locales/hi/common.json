@@ -67,6 +67,7 @@
 		"logoAlt": "लोगो"
 	},
 	"fileExplorer": {
+		"roots": "फ़ाइलें",
 		"search": "खोजें",
 		"name": "नाम",
 		"dateModified": "संशोधन की तारीख",
@@ -78,6 +79,7 @@
 		"moreActionsFor": "{{name}} के लिए अधिक कार्रवाइयाँ",
 		"toggleMenu": "मेनू टॉगल करें",
 		"resizeDateColumn": "तारीख कॉलम का आकार बदलें",
+		"resizeSections": "{{above}} और {{below}} का आकार बदलें",
 		"failedToLoadFiles": "फ़ाइलें लोड करने में विफल",
 		"pdfNotSupported": "आपका ब्राउज़र PDF देखने का समर्थन नहीं करता।",
 		"binaryView": {
@@ -129,6 +131,7 @@
 		},
 		"refreshTooltip": "{{path}} रिफ्रेश करें",
 		"createTooltip": "{{path}} पर बनाएं",
+		"searchFilters": "खोज फ़िल्टर",
 		"searchAll": "सभी",
 		"searchOnly": "केवल \"{{name}}\"",
 		"searchAllAria": "सभी में खोजें",

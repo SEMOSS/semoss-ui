@@ -248,18 +248,18 @@ export const ConnectorFileExplorer = ({
 
 	return (
 		<FileExplorer
-			explorer={explorer}
-			header={
+			explorers={[{ id: "files", name: "", explorer: explorer }]}
+			header={(active) => (
 				<FileExplorerHeader
-					explorer={explorer}
+					explorer={active}
 					actions={
 						<>
-							<FileExplorerNewAction explorer={explorer} />
-							<FileExplorerRefreshAction explorer={explorer} />
+							<FileExplorerNewAction explorer={active} />
+							<FileExplorerRefreshAction explorer={active} />
 						</>
 					}
 				/>
-			}
+			)}
 			newFileOverlay={NewFileOverlay}
 			itemActions={itemActions}
 			listingNote={listingNote}

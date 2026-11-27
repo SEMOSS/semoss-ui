@@ -1,0 +1,172 @@
+import { FILE_PANEL_TYPES, type FilePanelMode } from "@semoss/panels";
+import type {
+	WorkbenchLayout,
+	WorkbenchPanelParams,
+	WorkbenchPanelType,
+	WorkbenchState,
+} from "@semoss/workbench";
+
+/**
+ * Panel type ids the room's Workspace can dock.
+ *
+ * They live beside the store rather than beside the blueprints because both
+ * halves need them and the store must not import the blueprints: those render
+ * the chat's components, which import the store.
+ */
+export const ROOM_PANEL_TYPES = {
+	/** A tool call's view, moved out of the conversation. */
+	TOOL: "room-tool",
+	/** A subagent's run. */
+	SUBAGENT: "room-subagent",
+	/** The room's Settings. */
+	SETTINGS: "room-configuration",
+	/** The room's activity log. */
+	ACTIVITY_LOG: "room-audit-log",
+	/** The user's OneDrive. */
+	ONEDRIVE: "room-onedrive",
+	/** The user's Outlook mail. */
+	OUTLOOK_MAIL: "room-outlook-mail",
+	/** The user's Outlook calendar. */
+	OUTLOOK_CALENDAR: "room-outlook-calendar",
+	/** The user's Teams channels and their threads. */
+	TEAMS_CHANNELS: "room-teams-channels",
+	/** The files shared in the user's Teams channels. */
+	TEAMS_FILES: "room-teams-files",
+	/** The user's Teams chats. */
+	TEAMS_CHATS: "room-teams-chats",
+	/** The user's Google Drive. */
+	GOOGLE_DRIVE: "room-google-drive",
+	/** The user's Gmail. */
+	GMAIL: "room-gmail",
+	/** The user's Google Calendar. */
+	GOOGLE_CALENDAR: "room-google-calendar",
+	/** The user's Google Docs. */
+	GOOGLE_DOCS: "room-google-docs",
+} as const;
+
+/** The room's own panels, open in the Workspace's main tab area by default. */
+const ROOM_DEFAULT_PANEL_IDS = {
+	FILES: "room-panel-files",
+	SETTINGS: "room-panel-settings",
+} as const;
+
+/**
+ * The room Workbench's starting arrangement: Files and Settings as tabs in the
+ * main area, Files in front.
+ *
+ * The tabset has to survive its last close, or the dock would prune its only
+ * container and have nowhere to put the next panel — which it must, because
+ * both of these close like any other tab and the rail reopens them. Everything
+ * else — the activity log, the connector viewers, a file, a tool — is added
+ * beside them from that rail too.
+ *
+ * The ids are a layout convenience, not a contract: nothing looks a panel up
+ * by them — a draft's arrangement is adopted whole, and every other lookup
+ * goes through the blueprint's `matches`.
+ *
+ * @param options.fileMode - The scope Files reads, or null to leave Files out
+ * (a new chat has no insight to read until it prepares its room).
+ * @param options.filesName - Files' tab label.
+ * @param options.settingsName - Settings' tab label.
+ * @returns A fresh arrangement; each room keeps its own reference.
+ */
+export const createRoomWorkbenchLayout = ({
+	fileMode,
+	filesName,
+	settingsName,
+}: {
+	fileMode: FilePanelMode | null;
+	filesName: string;
+	settingsName: string;
+}): WorkbenchLayout => {
+	const panels: WorkbenchLayout["panels"] = {
+		[ROOM_DEFAULT_PANEL_IDS.SETTINGS]: {
+			id: ROOM_DEFAULT_PANEL_IDS.SETTINGS,
+			type: ROOM_PANEL_TYPES.SETTINGS,
+			name: settingsName,
+			config: {},
+		},
+	};
+	if (fileMode) {
+		panels[ROOM_DEFAULT_PANEL_IDS.FILES] = {
+			id: ROOM_DEFAULT_PANEL_IDS.FILES,
+			type: FILE_PANEL_TYPES.FILE_EXPLORER,
+			name: filesName,
+			config: { mode: fileMode },
+		};
+	}
+	const frontId = fileMode
+		? ROOM_DEFAULT_PANEL_IDS.FILES
+		: ROOM_DEFAULT_PANEL_IDS.SETTINGS;
+	return {
+		tree: {
+			type: "tabset",
+			id: "main",
+			size: 1,
+			panelIds: [
+				...(fileMode ? [ROOM_DEFAULT_PANEL_IDS.FILES] : []),
+				ROOM_DEFAULT_PANEL_IDS.SETTINGS,
+			],
+			activeId: frontId,
+			enableDeleteWhenEmpty: false,
+		},
+		panels,
+		selectedPanelId: frontId,
+	};
+};
+
+/**
+ * The file scope the room Workbench's panels are opened in.
+ *
+ * Every read, save and download a file panel makes runs against the insight
+ * named here, and it is also the key renames are broadcast on and the config
+ * the file panels dedupe by — so it has to be the room's *live* insight. A
+ * room binds to a fresh insight on every load, and `RoomStore` updates any
+ * panels opened before that binding completes.
+ *
+ * @param insightId - The room's current insight.
+ * @returns The mode every file panel in that Workbench is opened with.
+ */
+export const getRoomFileMode = (
+	insightId: string,
+): Extract<FilePanelMode, { type: "INSIGHT" }> => ({
+	type: "INSIGHT",
+	insightId,
+});
+
+/**
+ * Whether the panel `type`/`config` names is the one the Workbench is showing.
+ *
+ * Written against the dock state rather than the room so it can back both the
+ * room's point-in-time read and a zustand selector — the menu items that toggle
+ * a panel have to re-render when the front tab changes.
+ *
+ * @param state - The Workbench's dock state.
+ * @param type - Which blueprint.
+ * @param config - The instance's parameters, matched as `selectPanel` matches.
+ * @returns True when a matching panel is the selected one.
+ */
+export const isActiveWorkbenchPanel = (
+	state: WorkbenchState,
+	type: WorkbenchPanelType,
+	config: WorkbenchPanelParams = {},
+): boolean => {
+	const selected = state.layout.selection.panel;
+	if (!selected) {
+		return false;
+	}
+	return state.layout.actions
+		.matchPanels(type, config)
+		.some((record) => record.id === selected);
+};
+
+/**
+ * The file scope a docked panel was opened with, if it is a file panel.
+ *
+ * @param record - The panel.
+ * @returns Its `mode`, or undefined.
+ */
+export const getPanelFileMode = (record: {
+	config?: unknown;
+}): FilePanelMode | undefined =>
+	(record.config as { mode?: FilePanelMode } | undefined)?.mode;

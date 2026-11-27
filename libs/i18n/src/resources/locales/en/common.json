@@ -67,6 +67,7 @@
 		"logoAlt": "logo"
 	},
 	"fileExplorer": {
+		"roots": "Files",
 		"search": "Search",
 		"searchToggle": "Search files",
 		"clearSearch": "Clear search",
@@ -80,6 +81,7 @@
 		"moreActionsFor": "More actions for {{name}}",
 		"toggleMenu": "Toggle menu",
 		"resizeDateColumn": "Resize date column",
+		"resizeSections": "Resize {{above}} and {{below}}",
 		"failedToLoadFiles": "Failed to load files",
 		"pdfNotSupported": "Your browser doesn't support PDF viewing.",
 		"binaryView": {
@@ -132,6 +134,7 @@
 		},
 		"refreshTooltip": "Refresh {{path}}",
 		"createTooltip": "Create at {{path}}",
+		"searchFilters": "Search Filters",
 		"searchAll": "All",
 		"searchOnly": "Only \"{{name}}\"",
 		"searchAllAria": "Search all",

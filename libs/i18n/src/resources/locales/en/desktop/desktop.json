@@ -1,0 +1,67 @@
+{
+	"connect": {
+		"title": "Connect to SEMOSS",
+		"description": "Enter your SEMOSS server's address, with its module path. You can change it later from File > Change Server.",
+		"urlLabel": "Server address",
+		"urlHint": "The full address, such as https://semoss.example.com/Monolith.",
+		"submit": "Connect",
+		"checking": "Checking the server…",
+		"cancel": "Cancel",
+		"current": "Connected to {{server}}",
+		"titleSaved": "Servers",
+		"descriptionSaved": "Switch between your saved servers, or add another. Each one keeps its own sign-in.",
+		"addTitle": "Add a server"
+	},
+	"nav": {
+		"newChat": "New chat"
+	},
+	"account": {
+		"menu": "Account",
+		"changeServer": "Change server",
+		"signOut": "Sign out"
+	},
+	"unreachable": {
+		"title": "Can't reach the server",
+		"description": "{{server}} didn't answer. Retry, or connect to a different server.",
+		"descriptionNoServer": "The server didn't answer. Retry, or connect to a different server.",
+		"changeServer": "Use a different server"
+	},
+	"servers": {
+		"listLabel": "Saved servers",
+		"current": "In use",
+		"switch": "Activate",
+		"switchLabel": "Activate {{server}}",
+		"removeLabel": "Remove {{server}}",
+		"removeTitle": "Remove this server?",
+		"removeDescription": "This signs you out of {{server}} and deletes what this app saved for it on this computer. Your chats stay on the server.",
+		"removeConfirm": "Remove server",
+		"failed": "Couldn't change servers: {{message}}"
+	},
+	"localFolders": {
+		"desktop": "Desktop",
+		"attach": "Attach Folder",
+		"attachDescription": "Attach a folder from this computer",
+		"folderActions": "{{name}} actions",
+		"reveal": "Show in {{fileManager}}",
+		"openWithApp": "Open with Default App",
+		"detach": "Detach",
+		"detached": "{{name}} detached. Its files are still on your computer.",
+		"attachFailed": "The folder could not be attached. {{message}}",
+		"detachFailed": "The folder could not be detached. {{message}}",
+		"notInFolder": "Choose one of the attached folders first.",
+		"betweenFolders": "Files move and copy only within one attached folder.",
+		"searchTruncated": "Showing the first {{count}} matches in each folder. Search a folder for more.",
+		"openFailed": "That did not work. {{message}}",
+		"notHere": "This folder is not attached on this computer.",
+		"titles": {
+			"list": "List Desktop Folder",
+			"read": "Read Desktop File",
+			"search": "Search Desktop",
+			"write": "Write Desktop File",
+			"edit": "Edit Desktop File",
+			"create_directory": "Create Desktop Folder",
+			"move": "Move or Rename on Desktop",
+			"delete": "Delete from Desktop"
+		}
+	}
+}

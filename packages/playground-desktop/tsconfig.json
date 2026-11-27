@@ -1,0 +1,15 @@
+{
+	"extends": "@semoss/config/tsconfig.base.json",
+	"compilerOptions": {
+		"types": [
+			"vite/client",
+			"vitest/globals",
+			"@testing-library/jest-dom/vitest"
+		],
+		"paths": {
+			"@/*": ["./src/renderer/*"]
+		}
+	},
+	"include": ["src/renderer", "src/contract", "../../libs/shared/src"],
+	"exclude": ["dist", "out", "node_modules"]
+}

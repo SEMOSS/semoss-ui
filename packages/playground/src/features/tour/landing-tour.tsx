@@ -1,0 +1,349 @@
+import {
+	ChevronLeftIcon,
+	ChevronRightIcon,
+	MapIcon,
+	XIcon,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
+import {
+	Button,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogTitle,
+} from "@semoss/ui/next";
+import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
+import { useTour } from "@/features/tour/use-tour";
+
+/** A step as shown: translated, with the theme's overrides applied. */
+interface TourStep {
+	/** The `data-tour` value of the element to spotlight; none centers the card. */
+	target?: string;
+	/** The card's title. */
+	title: string;
+	/** The card's text. */
+	content: string;
+	/** Which side of the target the card sits on; right by default. */
+	placement?: "top" | "bottom" | "left" | "right";
+}
+
+/**
+ * A built-in step. Its title and content are translated at render time from
+ * the `tour` namespace, under `steps.<key>`.
+ */
+interface TourStepDef {
+	/** The step's translation key. */
+	key: string;
+	/** The `data-tour` value of the element to spotlight. */
+	target?: string;
+	/** Which side of the target the card sits on. */
+	placement?: "top" | "bottom" | "left" | "right";
+}
+
+/** The built-in steps, in order. */
+const TOUR_STEP_DEFS: TourStepDef[] = [
+	{ key: "welcome" },
+	{ key: "input", target: "tour-input", placement: "top" },
+	{ key: "inputMenu", target: "tour-input-menu", placement: "top" },
+	{ key: "model", target: "tour-model", placement: "top" },
+	{ key: "record", target: "tour-input-more", placement: "top" },
+	{ key: "newChat", target: "tour-new-chat", placement: "right" },
+	// customSteps from theme are inserted here (after tour-new-chat)
+	{
+		key: "chatHistory",
+		target: "tour-chat-history",
+		placement: "right",
+	},
+	{ key: "search", target: "tour-search", placement: "right" },
+	// trailingCustomSteps from theme are inserted here (after tour-search)
+	{ key: "takeTour", target: "tour-take-tour", placement: "right" },
+];
+
+/** The card's widest width, in px. */
+const CARD_WIDTH = 320;
+/** The space between the spotlight's edge and its target, in px. */
+const SPOTLIGHT_PAD = 6;
+
+/**
+ * Measure a step's target.
+ *
+ * @param target - The `data-tour` value to find.
+ * @returns The element's box, or null when there is no target or it is not on the page.
+ */
+function getTargetRect(target: string | undefined): DOMRect | null {
+	if (!target) return null;
+	const el = document.querySelector(`[data-tour="${target}"]`);
+	return el ? el.getBoundingClientRect() : null;
+}
+
+/**
+ * Place the card beside its target, kept inside the viewport.
+ *
+ * @param rect - The target's box; null centers the card.
+ * @param placement - Which side of the target the card sits on.
+ * @returns The card's fixed position and width.
+ */
+function getCardStyle(
+	rect: DOMRect | null,
+	placement: TourStep["placement"],
+): React.CSSProperties {
+	if (!rect) {
+		return {
+			position: "fixed",
+			top: "50%",
+			left: "50%",
+			transform: "translate(-50%, -50%)",
+			width: Math.min(CARD_WIDTH, window.innerWidth - 32),
+		};
+	}
+
+	const PAD = 16;
+	const vw = window.innerWidth;
+	const vh = window.innerHeight;
+	const W = Math.min(CARD_WIDTH, vw - 32);
+	// an estimate of the card's height, to keep it on screen
+	const CARD_H = 180;
+
+	const centerLeft = Math.min(
+		Math.max(rect.left + rect.width / 2 - W / 2, 8),
+		vw - W - 8,
+	);
+	const centerTop = Math.min(
+		Math.max(rect.top + rect.height / 2 - CARD_H / 2, 8),
+		vh - CARD_H - 8,
+	);
+
+	switch (placement) {
+		case "top":
+			return {
+				position: "fixed",
+				top: Math.max(rect.top - CARD_H - PAD, 8),
+				left: centerLeft,
+				width: W,
+			};
+		case "bottom":
+			return {
+				position: "fixed",
+				top: Math.min(rect.bottom + PAD, vh - CARD_H - 8),
+				left: centerLeft,
+				width: W,
+			};
+		case "left":
+			return {
+				position: "fixed",
+				top: centerTop,
+				left: Math.max(rect.left - W - PAD, 8),
+				width: W,
+			};
+		default:
+			return {
+				position: "fixed",
+				top: centerTop,
+				left: Math.min(rect.right + PAD, vw - W - 8),
+				width: W,
+			};
+	}
+}
+
+/**
+ * The landing tour: a card per step that spotlights a part of the app. The
+ * theme can hide it, drop or override built-in steps, and add its own steps
+ * for navigation items.
+ */
+export const LandingTour: React.FC = () => {
+	const { t } = useTranslation("tour");
+	const { isOpen, stopTour } = useTour();
+	const theme = usePlaygroundTheme();
+	const [step, setStep] = useState(0);
+	const [rect, setRect] = useState<DOMRect | null>(null);
+
+	const allSteps = useMemo<TourStep[]>(() => {
+		const excluded = new Set(theme.tour?.excludedSteps ?? []);
+		const custom = theme.tour?.customSteps ?? [];
+		const trailing = theme.tour?.trailingCustomSteps ?? [];
+		const overrides = theme.tour?.stepOverrides ?? {};
+		// Theme overrides are keyed by the step target (or "welcome").
+		// Translation keys live under `steps.<key>.title|content`.
+		const base = TOUR_STEP_DEFS.filter((s) => {
+			const id = s.target ?? "welcome";
+			return !excluded.has(id);
+		}).map<TourStep>((s) => {
+			const id = s.target ?? "welcome";
+			const translated: TourStep = {
+				target: s.target,
+				placement: s.placement,
+				title: t(`steps.${s.key}.title`),
+				content: t(`steps.${s.key}.content`),
+			};
+			const override = overrides[id];
+			return override ? { ...translated, ...override } : translated;
+		});
+		const mapStep = (s: (typeof custom)[number]): TourStep => ({
+			target: `nav-${s.navItemPath}`,
+			title: s.title,
+			content: s.content,
+			placement: s.placement,
+		});
+		// Insert customSteps after "tour-new-chat" (sidebar nav items: Agents, Knowledge, Toolbox…)
+		const newChatIdx = base.findIndex((s) => s.target === "tour-new-chat");
+		const insertAt = newChatIdx >= 0 ? newChatIdx + 1 : base.length;
+		// Insert trailingCustomSteps after "tour-search" (e.g. Support footer items)
+		const searchIdx = base.findIndex((s) => s.target === "tour-search");
+		const trailingAt = searchIdx >= 0 ? searchIdx + 1 : base.length;
+		const withCustom = [
+			...base.slice(0, insertAt),
+			...custom.map(mapStep),
+			...base.slice(insertAt),
+		];
+		const adjustedTrailingAt = trailingAt + custom.length;
+		return [
+			...withCustom.slice(0, adjustedTrailingAt),
+			...trailing.map(mapStep),
+			...withCustom.slice(adjustedTrailingAt),
+		];
+	}, [
+		t,
+		theme.tour?.excludedSteps,
+		theme.tour?.customSteps,
+		theme.tour?.trailingCustomSteps,
+		theme.tour?.stepOverrides,
+	]);
+
+	const currentStep = allSteps[step] ?? allSteps[0];
+	const isFirst = step === 0;
+	const isLast = step === allSteps.length - 1;
+
+	// Reset to step 0 when tour opens
+	useEffect(() => {
+		if (isOpen) setStep(0);
+	}, [isOpen]);
+
+	// Update target rect whenever step or open state changes
+	useEffect(() => {
+		if (!isOpen) return;
+
+		const update = () => {
+			setRect(getTargetRect(currentStep?.target));
+		};
+
+		// Small delay so navigation/render can complete
+		const timeout = setTimeout(update, 80);
+
+		window.addEventListener("resize", update);
+		window.addEventListener("scroll", update, true);
+
+		return () => {
+			clearTimeout(timeout);
+			window.removeEventListener("resize", update);
+			window.removeEventListener("scroll", update, true);
+		};
+	}, [isOpen, currentStep?.target]);
+
+	if (theme.tour?.show === false || !isOpen || !currentStep) return null;
+
+	const cardStyle = getCardStyle(rect, currentStep.placement);
+
+	return (
+		<Dialog
+			open={isOpen}
+			onOpenChange={(open) => {
+				if (!open) stopTour();
+			}}
+		>
+			{/* Spotlight over target element */}
+			{rect ? (
+				<div
+					aria-hidden="true"
+					style={{
+						position: "fixed",
+						top: rect.top - SPOTLIGHT_PAD,
+						left: rect.left - SPOTLIGHT_PAD,
+						width: rect.width + SPOTLIGHT_PAD * 2,
+						height: rect.height + SPOTLIGHT_PAD * 2,
+						borderRadius: 8,
+						boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.55)",
+						zIndex: 9999,
+						pointerEvents: "none",
+						outline: "2px solid var(--primary)",
+						outlineOffset: "2px",
+					}}
+				/>
+			) : null}
+
+			{/* Tour card */}
+			<DialogContent
+				showCloseButton={false}
+				style={{ ...cardStyle, zIndex: 10000 }}
+				className="max-h-[80dvh] translate-x-0 translate-y-0 gap-0 overflow-y-auto rounded-xl border bg-popover p-0 shadow-lg"
+			>
+				<div className="flex flex-col gap-3 p-4">
+					{/* Header */}
+					<div className="flex items-start justify-between gap-2">
+						<div className="flex items-center gap-2">
+							<MapIcon className="size-4 shrink-0 text-primary" />
+							<DialogTitle className="font-semibold text-foreground text-sm leading-tight">
+								{currentStep.title}
+							</DialogTitle>
+						</div>
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							type="button"
+							onClick={stopTour}
+							aria-label={t("controls.closeTour")}
+							className="mt-0.5 shrink-0 text-muted-foreground transition-colors hover:text-foreground"
+						>
+							<XIcon className="size-4" />
+						</Button>
+					</div>
+
+					{/* Content */}
+					<DialogDescription className="text-muted-foreground text-sm leading-relaxed">
+						{currentStep.content}
+					</DialogDescription>
+
+					{/* Footer */}
+					<div className="flex items-center justify-between pt-1">
+						<span className="text-muted-foreground text-xs">
+							{step + 1} / {allSteps.length}
+						</span>
+						<div className="flex items-center gap-1.5">
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={stopTour}
+								className="text-muted-foreground hover:text-foreground"
+							>
+								{t("controls.skip")}
+							</Button>
+							{!isFirst && (
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() => setStep((s) => s - 1)}
+								>
+									<ChevronLeftIcon className="rtl:-scale-x-100 size-4" />
+									{t("controls.back")}
+								</Button>
+							)}
+							{isLast ? (
+								<Button size="sm" onClick={stopTour}>
+									{t("controls.done")}
+								</Button>
+							) : (
+								<Button
+									size="sm"
+									onClick={() => setStep((s) => s + 1)}
+								>
+									{t("controls.next")}
+									<ChevronRightIcon className="rtl:-scale-x-100 size-4" />
+								</Button>
+							)}
+						</div>
+					</div>
+				</div>
+			</DialogContent>
+		</Dialog>
+	);
+};

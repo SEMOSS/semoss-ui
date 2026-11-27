@@ -1,0 +1,67 @@
+{
+	"connect": {
+		"title": "الاتصال بـ SEMOSS",
+		"description": "أدخل عنوان خادم SEMOSS مع مسار الوحدة. يمكنك تغييره لاحقًا من ملف > تغيير الخادم.",
+		"urlLabel": "عنوان الخادم",
+		"urlHint": "العنوان الكامل، مثل https://semoss.example.com/Monolith.",
+		"submit": "اتصال",
+		"checking": "جارٍ التحقق من الخادم…",
+		"cancel": "إلغاء",
+		"current": "متصل بـ {{server}}",
+		"titleSaved": "الخوادم",
+		"descriptionSaved": "بدّل بين خوادمك المحفوظة، أو أضف خادمًا آخر. يحتفظ كل خادم بتسجيل الدخول الخاص به.",
+		"addTitle": "إضافة خادم"
+	},
+	"nav": {
+		"newChat": "محادثة جديدة"
+	},
+	"account": {
+		"menu": "الحساب",
+		"changeServer": "تغيير الخادم",
+		"signOut": "تسجيل الخروج"
+	},
+	"unreachable": {
+		"title": "تعذّر الوصول إلى الخادم",
+		"description": "لم يستجب {{server}}. أعد المحاولة أو اتصل بخادم آخر.",
+		"descriptionNoServer": "لم يستجب الخادم. أعد المحاولة أو اتصل بخادم آخر.",
+		"changeServer": "استخدام خادم آخر"
+	},
+	"servers": {
+		"listLabel": "الخوادم المحفوظة",
+		"current": "قيد الاستخدام",
+		"switch": "تفعيل",
+		"switchLabel": "تفعيل {{server}}",
+		"removeLabel": "إزالة {{server}}",
+		"removeTitle": "إزالة هذا الخادم؟",
+		"removeDescription": "سيؤدي هذا إلى تسجيل خروجك من {{server}} وحذف ما حفظه هذا التطبيق له على هذا الكمبيوتر. تبقى محادثاتك على الخادم.",
+		"removeConfirm": "إزالة الخادم",
+		"failed": "تعذر تغيير الخادم: {{message}}"
+	},
+	"localFolders": {
+		"desktop": "سطح المكتب",
+		"attach": "إرفاق مجلد",
+		"attachDescription": "إرفاق مجلد من هذا الكمبيوتر",
+		"folderActions": "إجراءات {{name}}",
+		"reveal": "إظهار في {{fileManager}}",
+		"openWithApp": "فتح باستخدام التطبيق الافتراضي",
+		"detach": "فصل",
+		"detached": "تم فصل {{name}}. ما زالت ملفاته على الكمبيوتر.",
+		"attachFailed": "تعذّر إرفاق المجلد. {{message}}",
+		"detachFailed": "تعذّر فصل المجلد. {{message}}",
+		"notInFolder": "اختر أحد المجلدات المرفقة أولاً.",
+		"betweenFolders": "لا تُنقل الملفات أو تُنسخ إلا داخل مجلد مرفق واحد.",
+		"searchTruncated": "يتم عرض أول {{count}} نتيجة في كل مجلد. ابحث داخل مجلد لعرض المزيد.",
+		"openFailed": "لم ينجح ذلك. {{message}}",
+		"notHere": "هذا المجلد غير مرفق على هذا الكمبيوتر.",
+		"titles": {
+			"list": "عرض مجلد سطح المكتب",
+			"read": "قراءة ملف سطح المكتب",
+			"search": "البحث في سطح المكتب",
+			"write": "كتابة ملف سطح المكتب",
+			"edit": "تعديل ملف سطح المكتب",
+			"create_directory": "إنشاء مجلد على سطح المكتب",
+			"move": "نقل أو إعادة تسمية على سطح المكتب",
+			"delete": "حذف من سطح المكتب"
+		}
+	}
+}

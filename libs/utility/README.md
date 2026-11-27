@@ -11,6 +11,7 @@ Use the narrowest public category subpath. Hosts compile this source-only packag
 | `/array` | Ordered item-by-item array comparison |
 | `/object` | Date-preserving copying, non-null, non-array object detection, plain-object detection, and shallow equality |
 | `/store` | `StoreState`, an immutable-snapshot state holder with subscribe, for framework-free stores, and the `ReadableStore` contract |
+| `/react/use-latest-ref` | `useLatestRef`, a React hook that keeps a ref holding the last committed value, for handlers and subscriptions |
 | `/react/use-store-selector` | `useStoreSelector`, a React hook that reads a store, or part of one, and renders only when what it reads changes |
 | `/json` | Strict and tolerant parsing, string-array parsing, formatting, key-sorted serialization, tabular detection, parse-error locations |
 | `/file` | File extensions and filename-stem sanitization |

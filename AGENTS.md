@@ -71,6 +71,7 @@ the lefthook `commit-msg` hook).
 | Add shared state or migrate a store | [add-store](./skills/add-store.skill.md) |
 | Read or write backend data, or add an SDK API | [call-backend](./skills/call-backend.skill.md) |
 | Work on rooms, chat, agent runs, or session | [libs/sdk/AGENTS.md](./libs/sdk/AGENTS.md) |
+| Change the chat's UI: a room, messages, the composer, the Workspace | [libs/chat/AGENTS.md](./libs/chat/AGENTS.md) |
 | Add, change, or remove UI text keys | [add-translations](./skills/add-translations.skill.md) |
 | Add a dock panel, file view, or domain workbench | [add-workbench-panel](./skills/add-workbench-panel.skill.md) |
 | Make UI work on small screens or touch | [make-responsive](./skills/make-responsive.skill.md) |
@@ -93,10 +94,12 @@ the lefthook `commit-msg` hook).
 Libraries: [utility](./libs/utility/AGENTS.md) · [sdk](./libs/sdk/AGENTS.md) ·
 [ui](./libs/ui/AGENTS.md) · [i18n](./libs/i18n/AGENTS.md) · [shared](./libs/shared/AGENTS.md) ·
 [connectors](./libs/connectors/AGENTS.md) · [renderer](./libs/renderer/AGENTS.md) ·
-[workbench](./libs/workbench/AGENTS.md) · [panels](./libs/panels/AGENTS.md)
+[workbench](./libs/workbench/AGENTS.md) · [panels](./libs/panels/AGENTS.md) ·
+[chat](./libs/chat/AGENTS.md)
 
 Applications: [client](./packages/client/AGENTS.md) ·
-[playground](./packages/playground/AGENTS.md) · [terminal](./packages/terminal/AGENTS.md) ·
+[playground](./packages/playground/AGENTS.md) ·
+[playground-desktop](./packages/playground-desktop/AGENTS.md) · [terminal](./packages/terminal/AGENTS.md) ·
 [auditlog](./packages/auditlog/AGENTS.md) · [automation](./packages/automation/AGENTS.md) ·
 [browser-automation](./packages/browser-automation/AGENTS.md) ·
 collaboration ([technical guide](./packages/collaboration/docs/technical-guide.md))

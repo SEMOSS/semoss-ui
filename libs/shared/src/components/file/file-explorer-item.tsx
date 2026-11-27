@@ -1,8 +1,8 @@
 import { MoreHorizontalIcon } from "lucide-react";
 import type React from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { useInsight, usePixel } from "@semoss/sdk/react";
+import { useInsight } from "@semoss/sdk/react";
 import {
 	Button,
 	cn,
@@ -29,6 +29,7 @@ import {
 	isPointerOutsideElement,
 	parseExplorerDragItems,
 } from "./file-explorer.utils";
+import { useFileListing } from "./use-file-listing";
 
 /**
  * Worst-case string widths at text-11px (~7px/char + 16px column padding px-2):
@@ -169,7 +170,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 	const treeView = useTreeView<FileItem>();
 	const insight = useInsight();
 	const { t, i18n } = useTranslation("common");
-	const { adapter, capabilities, commands, dnd, tree } = explorer;
+	const { adapter, source, capabilities, commands, dnd, tree } = explorer;
 
 	const isDirectory = item.type === "directory";
 	const isExpanded = treeView.expanded.includes(item.path);
@@ -203,19 +204,14 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 	}, [item, tree.registerItem]);
 
 	// Only fetch children if expanded and is a directory
-	const getChildrenPixel =
-		isDirectory && isExpanded ? adapter.browse(item.path) : "";
-
-	const getChildren = usePixel<unknown[]>(
-		getChildrenPixel,
-		{ data: [] },
-		insight.insightId,
-	);
-
-	const children = useMemo(
-		() => adapter.mapEntries(getChildren.data, item.path),
-		[adapter, getChildren.data, item.path],
-	);
+	const getChildren = useFileListing({
+		adapter: adapter,
+		source: source,
+		insightId: insight.insightId,
+		path: item.path,
+		enabled: isDirectory && isExpanded,
+	});
+	const children = getChildren.items;
 	const childrenNote =
 		isDirectory && getChildren.status === "SUCCESS"
 			? listingNote?.(children, item.path)
@@ -315,6 +311,19 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 				dnd.onItemDragStart(e, dragItems);
 			}}
 			onDragOver={(e) => {
+				// a drag from another explorer is a copy into a folder; over
+				// a file it falls through to the folder the tree shows
+				if (dnd.getIncomingTransfer()) {
+					if (!isDirectory) return;
+
+					e.preventDefault();
+					e.stopPropagation();
+					e.dataTransfer.dropEffect = "copy";
+					dnd.setActiveDropTargetPath(item.path);
+					dnd.setDragState(0, []);
+					return;
+				}
+
 				const draggedItems = currentDragItems(e.dataTransfer);
 				if (!canDropDraggedItems(draggedItems)) return;
 
@@ -325,7 +334,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 				dnd.setDragState(0, draggedItems);
 			}}
 			onDragLeave={(e) => {
-				if (!dnd.enabled) return;
+				if (!dnd.enabled && !dnd.getIncomingTransfer()) return;
 
 				e.stopPropagation();
 				if (
@@ -346,6 +355,19 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 				);
 			}}
 			onDrop={(e) => {
+				const incoming = dnd.getIncomingTransfer();
+				if (incoming && isDirectory) {
+					e.preventDefault();
+					e.stopPropagation();
+					dnd.setActiveDropTargetPath(null);
+					dnd.setDragState(0, []);
+					void dnd.receiveTransfer(
+						incoming,
+						getItemTargetDirectory(item),
+					);
+					return;
+				}
+
 				const draggedItems = currentDragItems(e.dataTransfer);
 				if (!canDropDraggedItems(draggedItems)) return;
 
@@ -357,6 +379,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 			}}
 			onDragEnd={(e) => {
 				e.stopPropagation();
+				dnd.endTransfer();
 				dnd.setActiveDropTargetPath(null);
 				setIsDraggingSource(false);
 				dnd.setDragState(0, []);

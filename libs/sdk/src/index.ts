@@ -19,6 +19,7 @@ export {
 	getPermissionKey,
 	InsightStore as Insight,
 	isRequestUserInputAction,
+	isTerminalRunStatus,
 	type LoginsSnapshot,
 	LoginsStore,
 	normalizeUserInputQuestion,

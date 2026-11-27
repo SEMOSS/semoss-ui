@@ -41,6 +41,7 @@ import type {
 	NewFileAction,
 } from "./file-explorer.types";
 import { ensureDirectoryPath } from "./file-explorer.utils";
+import { uploadToFileSource } from "./file-source";
 
 type NewFileData =
 	| { action: "upload"; files: File[] }
@@ -89,6 +90,7 @@ const ACTION_LABEL_KEYS: Record<NewFileAction, string> = {
 export const NewFileOverlay: React.FC<FileExplorerNewFileOverlayProps> = ({
 	mode,
 	adapter: explorerAdapter,
+	source,
 	path,
 	open,
 	action,
@@ -103,16 +105,17 @@ export const NewFileOverlay: React.FC<FileExplorerNewFileOverlayProps> = ({
 		[explorerAdapter, mode],
 	);
 
+	const capabilities = source?.capabilities ?? adapter.capabilities;
 	const availableActions = useMemo(() => {
 		const actions: NewFileAction[] = [];
-		if (adapter.capabilities.upload) {
+		if (capabilities.upload) {
 			actions.push("upload");
 		}
-		if (canCreateItems(adapter.capabilities)) {
+		if (canCreateItems(capabilities)) {
 			actions.push("add_file", "add_directory");
 		}
 		return actions;
-	}, [adapter]);
+	}, [capabilities]);
 
 	// null means "show the picker" — either because no action was requested,
 	// or because the user stepped back to it
@@ -237,6 +240,34 @@ export const NewFileOverlay: React.FC<FileExplorerNewFileOverlayProps> = ({
 	 * @param targetPath - The directory to upload into.
 	 */
 	const uploadFiles = async (files: File[], targetPath: string) => {
+		if (source) {
+			// a source puts files where they were asked to go, so an archive
+			// is extracted from its new path in the same folder
+			await uploadToFileSource(source, targetPath, files);
+			const extractionErrors: string[] = [];
+			let extractedCount = 0;
+			for (const file of files) {
+				const fileKey = `${file.name}-${file.size}`;
+				if (
+					!source.unzip ||
+					!isZipFile(file) ||
+					!filesToUnzip.get(fileKey)
+				) {
+					continue;
+				}
+				try {
+					await source.unzip(`${targetPath}${file.name}`);
+					extractedCount++;
+				} catch (error) {
+					extractionErrors.push(
+						`${file.name}: ${getErrorMessage(error, "Unknown error")}`,
+					);
+				}
+			}
+			reportUpload(files.length, extractedCount, extractionErrors);
+			return;
+		}
+
 		const uploadResponse = await adapter.upload(
 			insight.actions,
 			targetPath,
@@ -273,10 +304,25 @@ export const NewFileOverlay: React.FC<FileExplorerNewFileOverlayProps> = ({
 			}
 		}
 
+		reportUpload(files.length, extractedCount, extractionErrors);
+	};
+
+	/**
+	 * Tell the user how an upload went.
+	 *
+	 * @param fileCount - Files uploaded.
+	 * @param extractedCount - Archives extracted.
+	 * @param extractionErrors - Each archive that failed to extract.
+	 */
+	const reportUpload = (
+		fileCount: number,
+		extractedCount: number,
+		extractionErrors: string[],
+	) => {
 		if (extractedCount > 0) {
 			toast.success(
 				t("fileExplorer.overlay.toasts.uploadWithExtractSuccess", {
-					count: files.length,
+					count: fileCount,
 					extractedCount: extractedCount,
 				}),
 			);
@@ -320,9 +366,13 @@ export const NewFileOverlay: React.FC<FileExplorerNewFileOverlayProps> = ({
 					return;
 				}
 
-				await insight.actions.run(
-					adapter.createFile(`${targetPath}${data.name}`),
-				);
+				if (source) {
+					await source.createFile(`${targetPath}${data.name}`);
+				} else {
+					await insight.actions.run(
+						adapter.createFile(`${targetPath}${data.name}`),
+					);
+				}
 				toast.success(t("fileExplorer.overlay.toasts.fileCreated"));
 			} else {
 				if (!data.name.trim()) {
@@ -332,9 +382,13 @@ export const NewFileOverlay: React.FC<FileExplorerNewFileOverlayProps> = ({
 					return;
 				}
 
-				await insight.actions.run(
-					adapter.createDirectory(`${targetPath}${data.name}`),
-				);
+				if (source) {
+					await source.createDirectory(`${targetPath}${data.name}`);
+				} else {
+					await insight.actions.run(
+						adapter.createDirectory(`${targetPath}${data.name}`),
+					);
+				}
 				toast.success(
 					t("fileExplorer.overlay.toasts.directoryCreated"),
 				);
@@ -512,8 +566,11 @@ export const NewFileOverlay: React.FC<FileExplorerNewFileOverlayProps> = ({
 													{data.files.map((file) => {
 														const fileKey = `${file.name}-${file.size}`;
 														const fileIsZip =
-															adapter.capabilities
-																.mutate &&
+															capabilities.mutate &&
+															(!source ||
+																Boolean(
+																	source.unzip,
+																)) &&
 															isZipFile(file);
 														const shouldUnzip =
 															fileIsZip &&

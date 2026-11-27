@@ -1,24 +1,38 @@
 import { act, render } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigStore, SessionStore } from "@semoss/sdk";
 import { SessionProvider } from "@semoss/sdk/react";
 import type {
 	FileExplorerApi,
 	FileExplorerOptions,
+	FileExplorerProps,
 	FileMode,
+	FileSource,
 } from "@semoss/shared";
 import {
 	createWorkbenchStore,
 	type WorkbenchPanelConfigAny,
 	WorkbenchProvider,
 } from "@semoss/workbench";
-import { FILE_PANEL_TYPES } from "../../constants/file-panel.constants";
+import {
+	FILE_PANEL_EVENTS,
+	FILE_PANEL_TYPES,
+} from "../../constants/file-panel.constants";
+import {
+	type FileSources,
+	FileSourcesProvider,
+	useFileExplorerRoot,
+	useFileMount,
+} from "../../contexts/file-sources.context";
 import { FILE_EXPLORER_PANEL } from "./file-explorer-panel";
 
 // the tree itself is not under test: what matters is what the panel hands the
 // explorer, and what it does with the paths the explorer reports back
 const captured = vi.hoisted(() => ({
 	options: null as unknown as FileExplorerOptions,
+	calls: [] as FileExplorerOptions[],
+	props: null as unknown as FileExplorerProps,
 	explorer: {
 		capabilities: { mutate: true, upload: true },
 		header: { path: "/" },
@@ -32,11 +46,19 @@ vi.mock("@semoss/shared", async () => {
 		);
 	return {
 		...actual,
-		FileExplorer: () => null,
+		FileExplorer: (props: FileExplorerProps) => {
+			captured.props = props;
+			return null;
+		},
 		FileExplorerHeader: () => null,
+		FileExplorerNewAction: () => null,
+		FileExplorerRefreshAction: () => null,
 		NewFileOverlay: () => null,
 		useFileExplorer: (options: FileExplorerOptions) => {
-			captured.options = options;
+			if (options.mode.type !== "MOUNT") {
+				captured.options = options;
+			}
+			captured.calls.push(options);
 			return {
 				...captured.explorer,
 				mode: options.mode,
@@ -64,7 +86,11 @@ const COMPONENTS: Record<string, WorkbenchPanelConfigAny> = {
 const FileExplorerPanel = FILE_EXPLORER_PANEL.content;
 
 /** The explorer panel in a dock that already has `/public/a.txt` open. */
-const setup = (rootPath?: string) => {
+const setup = (
+	rootPath?: string,
+	sources?: FileSources,
+	hostChildren?: ReactNode,
+) => {
 	const session = new SessionStore({ config: new ConfigStore() });
 	vi.spyOn(session.permissions, "load").mockReturnValue(
 		new Promise(() => undefined),
@@ -98,7 +124,14 @@ const setup = (rootPath?: string) => {
 	render(
 		<SessionProvider session={session}>
 			<WorkbenchProvider store={store}>
-				<FileExplorerPanel id={EXPLORER_ID} />
+				{sources ? (
+					<FileSourcesProvider sources={sources}>
+						{hostChildren}
+						<FileExplorerPanel id={EXPLORER_ID} />
+					</FileSourcesProvider>
+				) : (
+					<FileExplorerPanel id={EXPLORER_ID} />
+				)}
 			</WorkbenchProvider>
 		</SessionProvider>,
 	);
@@ -115,6 +148,7 @@ const setup = (rootPath?: string) => {
 describe("FileExplorerPanel", () => {
 	beforeEach(() => {
 		captured.options = null as unknown as FileExplorerOptions;
+		captured.calls = [];
 	});
 
 	it("browses the whole asset tree when it is given no root", () => {
@@ -174,5 +208,122 @@ describe("FileExplorerPanel", () => {
 			]),
 		);
 		expect(paths()).toEqual([]);
+	});
+
+	describe("with a host's roots", () => {
+		const SOURCE = { capabilities: {} } as unknown as FileSource;
+		const refresh = vi.fn();
+		const MOUNT = {
+			mode: { type: "MOUNT", mountId: "m1" },
+			source: SOURCE,
+			commands: { refresh: refresh },
+		} as unknown as FileExplorerApi;
+		const sources = (
+			overrides: Partial<FileSources> = {},
+		): FileSources => ({
+			primaryLabel: "Room Files",
+			isShownIn: () => true,
+			missingMountMessage: "Not here",
+			...overrides,
+		});
+
+		/** A host's component adding one folder, as the desktop app's do. */
+		const Folder = () => {
+			useFileExplorerRoot({ id: "m1", name: "notes", explorer: MOUNT });
+			return null;
+		};
+
+		/** What a file panel opened from the folder reads it through. */
+		const mounts: (ReturnType<typeof useFileMount> | null)[] = [];
+		const MountReader = () => {
+			mounts.push(useFileMount({ type: "MOUNT", mountId: "m1" }));
+			return null;
+		};
+
+		beforeEach(() => {
+			refresh.mockClear();
+			mounts.length = 0;
+		});
+
+		it("lists the host's roots after the panel's own tree", () => {
+			setup(undefined, sources(), <Folder />);
+
+			const roots = captured.props.explorers;
+			expect(roots.map((root) => root.name)).toEqual([
+				"Room Files",
+				"notes",
+			]);
+			expect(roots[1].explorer).toBe(MOUNT);
+		});
+
+		it("stays a single tree where the host does not show its roots", () => {
+			setup(undefined, sources({ isShownIn: () => false }), <Folder />);
+
+			expect(captured.props.explorers).toHaveLength(1);
+		});
+
+		it("keeps the user's arrangement in the panel's config", () => {
+			const { store } = setup(undefined, sources(), <Folder />);
+
+			act(() =>
+				captured.props.onLayoutChange?.({
+					order: ["m1", "primary"],
+					collapsed: ["primary"],
+				}),
+			);
+
+			expect(
+				store.getState().layout.panels[EXPLORER_ID].config,
+			).toMatchObject({
+				mode: MODE,
+				roots: { order: ["m1", "primary"], collapsed: ["primary"] },
+			});
+			expect(captured.props.layout).toEqual({
+				order: ["m1", "primary"],
+				collapsed: ["primary"],
+			});
+		});
+
+		it("reads an arrangement saved before the roots were one tree", () => {
+			const { store } = setup(undefined, sources(), <Folder />);
+			act(() =>
+				store.getState().layout.actions.updatePanel(EXPLORER_ID, {
+					config: { sections: { order: ["m1", "primary"] } },
+				}),
+			);
+
+			expect(captured.props.layout).toEqual({ order: ["m1", "primary"] });
+		});
+
+		it("refreshes a root when its files change elsewhere", () => {
+			const { store } = setup(undefined, sources(), <Folder />);
+
+			act(() =>
+				store
+					.getState()
+					.events.actions.emit(FILE_PANEL_EVENTS.FILES_CHANGED, {
+						scope: "MOUNT:m1",
+					}),
+			);
+
+			expect(refresh).toHaveBeenCalledTimes(1);
+		});
+
+		it("gives a panel opened from the folder the folder's source", () => {
+			setup(
+				undefined,
+				sources(),
+				<>
+					<Folder />
+					<MountReader />
+				</>,
+			);
+
+			expect(mounts.at(-1)).toEqual({
+				id: "m1",
+				name: "notes",
+				source: SOURCE,
+			});
+		});
 	});
 });

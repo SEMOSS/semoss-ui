@@ -1,24 +1,24 @@
-import { type PropsWithChildren, useEffect, useMemo } from "react";
-import { RootContext } from "@/contexts/root-context";
-import { usePlaygroundTheme } from "@/hooks/use-playground-theme";
-import { applyPlaygroundThemeVariables } from "@/stores/root/playground-theme";
-import { RootStore } from "@/stores/root/root.store";
+import { type PropsWithChildren, useEffect } from "react";
+import { setFavicon } from "@semoss/utility/browser";
+import { applyPlaygroundThemeVariables } from "@/features/theme/playground-theme";
+import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 
 /**
- * Provide the playground's theme, read from the SDK's `Config`, to the views
- * that still read it through `useRoot()`, and apply its colors to the page.
+ * Apply the playground's theme, read from the SDK's `Config`, to the page:
+ * its colors, the tab's title, and the tab's icon.
  */
 export const RootLayout = ({ children }: PropsWithChildren) => {
 	const theme = usePlaygroundTheme();
-
-	// the deprecated adapter for useRoot(); rebuilt when the theme changes
-	const value = useMemo(() => ({ root: new RootStore(theme) }), [theme]);
+	const tabIcon = theme.images?.tabIcon;
 
 	useEffect(() => {
 		applyPlaygroundThemeVariables(theme);
+		if (theme.name) document.title = theme.name;
 	}, [theme]);
 
-	return (
-		<RootContext.Provider value={value}>{children}</RootContext.Provider>
-	);
+	useEffect(() => {
+		if (tabIcon) setFavicon(tabIcon);
+	}, [tabIcon]);
+
+	return children;
 };

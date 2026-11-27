@@ -87,12 +87,32 @@ export interface Project {
 	markdown?: string;
 }
 
+/** A project (an app) the user can see, as the backend lists it. */
 export interface App {
+	/** The project's id. */
 	project_id: string;
+	/** The project's name. */
 	project_name: string;
+	/** The name to show, when it differs from `project_name`. */
 	project_display_name?: string;
+	/** The project's description. */
 	description?: string;
+	/** When the project was created. */
+	project_date_created?: string;
+	/** The project's type. */
+	project_type?: string;
+	/** The user's own grant; null when only a group grants access. */
 	user_permission?: number;
+	/**
+	 * The effective permission: the better of the user's own grant and their
+	 * groups' grant. Null for a global project the user holds no grant on, and
+	 * for discoverable projects the user cannot access yet.
+	 */
+	permission?: number | null;
+	/** Whether everyone on the server can use the project. */
+	project_global?: boolean;
+	/** When the project was last edited. */
+	project_date_last_edited?: string;
 }
 
 /**
@@ -288,7 +308,6 @@ export interface ThemeMap {
 			 *   "tour-input"       — the chat input step
 			 *   "tour-input-menu"  — the attach & configure step
 			 *   "tour-new-chat"    — the new chat sidebar button
-			 *   "tour-agents"      — the agents sidebar button
 			 * Steps not listed here are shown as normal.
 			 */
 			excludedSteps?: string[];
@@ -366,7 +385,7 @@ export interface ThemeMap {
 			enablePromptOptimizer?: boolean;
 			/** Whether to hide tools when the app is rendered inside an iframe. */
 			hideToolsInIframe?: boolean;
-			/** Whether to hide the chat-history list (sidebar and the "All Chats" page/nav link) so users cannot browse past conversations. */
+			/** Whether to hide the room history in the sidebar, so users cannot browse past conversations. */
 			hideChatHistory?: boolean;
 			/** Whether to run MakeEngineMCP after creating a new knowledge source. Defaults to true. */
 			enableKnowledgeMCP?: boolean;
@@ -376,7 +395,7 @@ export interface ThemeMap {
 			showActivityLog?: boolean;
 			/** Whether to show external links to the SEMOSS platform. Defaults to true. */
 			showPlatformLinks?: boolean;
-			/** Whether to show a text input for feedback comments when rating a response. Defaults to false. */
+			/** Whether to show a text input for feedback comments when rating a response. Defaults to true. */
 			enableFeedbackText?: boolean;
 			/** Whether to show an export button on tables rendered in chat responses. Defaults to false. */
 			enableTableExport?: boolean;
@@ -471,4 +490,42 @@ export interface Prompt {
 	context: string;
 	tags: string[];
 	global: boolean;
+}
+
+/** An agent, which the backend calls a workspace. Field names are the backend's. */
+export interface Workspace {
+	/** The agent's id. */
+	workspace_id: string;
+	/** The agent's name. */
+	name: string;
+	/** Catalog display name for user-facing labels, when available. */
+	display_name?: string;
+	/** When the agent was created, as an ISO string. */
+	date_created: string;
+	/** The agent's description. */
+	description: string;
+	/** The agent's system prompt. */
+	system_prompt: string;
+	/** The toolboxes the agent brings. */
+	mcp: MCPConfig[];
+	/** The skills the agent brings. */
+	skills: SkillConfig[];
+	/** The agent's suggested prompts. */
+	prompts: string[];
+
+	/** Agent settings saved on the workspace by the agent editor. */
+	config_json?: {
+		/**
+		 * The agent's default model. Absent or empty means the agent has no
+		 * opinion and the room's own model is used.
+		 */
+		model_id?: string;
+		/**
+		 * The agent's scripted opening message. Shown only when
+		 * `greeting_enabled` is true; never sent to the model as context.
+		 */
+		greeting?: string;
+		/** Whether `greeting` is shown. Toggling this off keeps the authored text. */
+		greeting_enabled?: boolean;
+	};
 }

@@ -1,0 +1,67 @@
+{
+	"connect": {
+		"title": "Verbinden met SEMOSS",
+		"description": "Voer het adres van je SEMOSS-server in, met het modulepad. Je kunt dit later wijzigen via Bestand > Server wijzigen.",
+		"urlLabel": "Serveradres",
+		"urlHint": "Het volledige adres, zoals https://semoss.example.com/Monolith.",
+		"submit": "Verbinden",
+		"checking": "Server wordt gecontroleerd…",
+		"cancel": "Annuleren",
+		"current": "Verbonden met {{server}}",
+		"titleSaved": "Servers",
+		"descriptionSaved": "Wissel tussen je opgeslagen servers of voeg er een toe. Elke server houdt zijn eigen aanmelding.",
+		"addTitle": "Een server toevoegen"
+	},
+	"nav": {
+		"newChat": "Nieuwe chat"
+	},
+	"account": {
+		"menu": "Account",
+		"changeServer": "Server wijzigen",
+		"signOut": "Afmelden"
+	},
+	"unreachable": {
+		"title": "Server niet bereikbaar",
+		"description": "{{server}} reageerde niet. Probeer het opnieuw of maak verbinding met een andere server.",
+		"descriptionNoServer": "De server reageerde niet. Probeer het opnieuw of maak verbinding met een andere server.",
+		"changeServer": "Andere server gebruiken"
+	},
+	"servers": {
+		"listLabel": "Opgeslagen servers",
+		"current": "In gebruik",
+		"switch": "Activeren",
+		"switchLabel": "{{server}} activeren",
+		"removeLabel": "{{server}} verwijderen",
+		"removeTitle": "Deze server verwijderen?",
+		"removeDescription": "Je wordt afgemeld bij {{server}} en wat deze app ervoor op deze computer heeft opgeslagen, wordt verwijderd. Je chats blijven op de server.",
+		"removeConfirm": "Server verwijderen",
+		"failed": "Kan niet van server wisselen: {{message}}"
+	},
+	"localFolders": {
+		"desktop": "Bureaublad",
+		"attach": "Map toevoegen",
+		"attachDescription": "Een map van deze computer toevoegen",
+		"folderActions": "Acties voor {{name}}",
+		"reveal": "Tonen in {{fileManager}}",
+		"openWithApp": "Openen met standaardapp",
+		"detach": "Loskoppelen",
+		"detached": "{{name}} losgekoppeld. De bestanden staan nog op je computer.",
+		"attachFailed": "De map kon niet worden toegevoegd. {{message}}",
+		"detachFailed": "De map kon niet worden losgekoppeld. {{message}}",
+		"notInFolder": "Kies eerst een van de toegevoegde mappen.",
+		"betweenFolders": "Bestanden worden alleen binnen één toegevoegde map verplaatst en gekopieerd.",
+		"searchTruncated": "De eerste {{count}} resultaten per map worden getoond. Zoek in een map voor meer.",
+		"openFailed": "Dat is niet gelukt. {{message}}",
+		"notHere": "Deze map is niet toegevoegd op deze computer.",
+		"titles": {
+			"list": "Bureaubladmap weergeven",
+			"read": "Bureaubladbestand lezen",
+			"search": "Zoeken op bureaublad",
+			"write": "Bureaubladbestand schrijven",
+			"edit": "Bureaubladbestand bewerken",
+			"create_directory": "Map maken op bureaublad",
+			"move": "Verplaatsen of hernoemen op bureaublad",
+			"delete": "Verwijderen van bureaublad"
+		}
+	}
+}

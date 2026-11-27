@@ -145,12 +145,13 @@ export const getRoomForInsight = async (
  *
  * @param insightId - The active SEMOSS insight ID.
  * @param roomId - The ID of the room to update.
- * @param roomOptions - Array of room option objects to apply.
+ * @param roomOptions - Array of room option objects to apply: {@link RoomOptions},
+ * or a chat's own options, such as a playground room's.
  */
-export const updateRoomOptions = async (
+export const updateRoomOptions = async <O extends object = RoomOptions>(
 	insightId: string,
 	roomId: string,
-	roomOptions: RoomOptions[],
+	roomOptions: O[],
 ): Promise<void> => {
 	const pixel = `UpdateRoomOptions(roomId="${roomId}", roomOptions=${JSON.stringify(roomOptions)});`;
 	const { errors } = await runPixel(pixel, insightId);

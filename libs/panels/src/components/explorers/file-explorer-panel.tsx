@@ -4,13 +4,12 @@ import { useInsight } from "@semoss/sdk/react";
 import {
 	type FileExplorerApi,
 	type FileExplorerItemActions,
-	type FileExplorerMovedItem,
+	type FileExplorerRoot,
+	type FileExplorerRootsLayout,
 	type FileItem,
 	getFileExplorerAdapter,
-	getParentPath,
 	resolveScopedFilePath,
 	scopeFileExplorerAdapter,
-	useFileExplorer,
 } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
 import type {
@@ -22,23 +21,20 @@ import {
 	useWorkbenchPanel,
 	WorkbenchPanelError,
 	WorkbenchPanelLoading,
-	writeSpawnDragSpec,
 } from "@semoss/workbench";
-import {
-	FILE_PANEL_EVENTS,
-	FILE_PANEL_TYPES,
-	MCP,
-} from "../../constants/file-panel.constants";
+import { FILE_PANEL_TYPES, MCP } from "../../constants/file-panel.constants";
 import { useFileExplorerHost } from "../../contexts/file-explorer-host.context";
+import {
+	useFileExplorerRoots,
+	useFileSources,
+} from "../../contexts/file-sources.context";
 import { useAccess } from "../../hooks/use-access";
-import { useWorkbenchFilePanels } from "../../hooks/use-workbench-file-panels";
+import { useDockFileExplorer } from "../../hooks/use-dock-file-explorer";
 import {
 	type FilePanelMode,
 	getFilePanelResource,
-	getFilePanelScope,
 	sameFileMode,
 } from "../../types/file-panel.types";
-import { getFilePanelType } from "../../utility/file-editor.utility";
 import { FileExplorerPane } from "./file-explorer-pane";
 
 export interface FileExplorerParams {
@@ -50,14 +46,17 @@ export interface FileExplorerParams {
 	 * to. `initialPath` is then a path inside it.
 	 */
 	rootPath?: string;
+	/** How the user ordered, sized, and closed the panel's roots. */
+	roots?: FileExplorerRootsLayout;
+	/**
+	 * The same, as layouts saved before the roots were rows of one tree kept
+	 * it. Read until the user next arranges the roots.
+	 */
+	sections?: FileExplorerRootsLayout;
 }
 
-/** Whether a moved item stayed in its original directory. */
-const isRename = (moved: FileExplorerMovedItem): boolean =>
-	getParentPath(moved.oldPath) === getParentPath(moved.newPath);
-
 const FileExplorerPanel = ({ id }: WorkbenchPanelProps) => {
-	const { config } = useWorkbenchPanel<FileExplorerParams>(id);
+	const { config, setConfig } = useWorkbenchPanel<FileExplorerParams>(id);
 
 	const insight = useInsight();
 	const host = useFileExplorerHost();
@@ -65,11 +64,10 @@ const FileExplorerPanel = ({ id }: WorkbenchPanelProps) => {
 	const access = useAccess(resource?.type ?? "INSIGHT", resource?.id ?? "");
 	const readOnly = access.status !== "ready" || access.readOnly;
 	const layoutActions = useWorkbench((state) => state.layout.actions);
-	const emit = useWorkbench((state) => state.events.actions.emit);
 	const mode = config.mode;
 	const rootPath = config.rootPath;
-	const { migrateMovedTabs, removeDeletedTabs } =
-		useWorkbenchFilePanels(mode);
+	const sources = useFileSources();
+	const hostRoots = useFileExplorerRoots();
 
 	// Kept to a folder, the explorer's paths are relative to it. Open panels,
 	// events and drags all speak paths in the source, so every path that
@@ -90,80 +88,30 @@ const FileExplorerPanel = ({ id }: WorkbenchPanelProps) => {
 		[rootPath],
 	);
 
-	const openFile = useCallback(
-		(item: FileItem) =>
-			layoutActions.selectPanel(
-				getFilePanelType(item.path),
-				{ mode, name: item.name, path: toSourcePath(item.path) },
-				{ name: item.name },
-			),
-		[mode, layoutActions, toSourcePath],
-	);
-
-	const explorer = useFileExplorer({
+	const explorer = useDockFileExplorer({
 		mode,
 		adapter,
 		readOnly,
 		onRefresh: host?.onRefresh,
 		initialPath: config.initialPath,
-		onItemSelect: openFile,
-		onItemsMoved: (movedItems) => {
-			const migrated = migrateMovedTabs(
-				movedItems.map((moved) => ({
-					item: {
-						...moved.item,
-						path: toSourcePath(moved.item.path),
-					},
-					oldPath: toSourcePath(moved.oldPath),
-					newPath: toSourcePath(moved.newPath),
-				})),
-			);
-			if (
-				!migrated &&
-				movedItems.length === 1 &&
-				isRename(movedItems[0])
-			) {
-				const newPath = movedItems[0].newPath;
-				openFile({
-					name: newPath.split("/").filter(Boolean).pop() ?? newPath,
-					path: newPath,
-				});
-			}
-		},
-		onItemsDeleted: (items) =>
-			removeDeletedTabs(
-				items.map((item) => ({
-					...item,
-					path: toSourcePath(item.path),
-				})),
-			),
-		// An extract or a copy can land on a file an editor is showing. Nothing
-		// about the panel changes, so without this it keeps displaying — and
-		// would save back — the content that was just replaced.
-		onItemsWritten: (paths) =>
-			emit(FILE_PANEL_EVENTS.FILES_CHANGED, {
-				scope: getFilePanelScope(mode),
-				paths: paths?.map(toSourcePath),
-			}),
-		onItemDragStart: (event, items) => {
-			if (items.length !== 1 || items[0].type === "directory") {
-				return;
-			}
-
-			writeSpawnDragSpec(event.dataTransfer, {
-				type: getFilePanelType(items[0].path),
-				config: {
-					mode,
-					name: items[0].name,
-					path: toSourcePath(items[0].path),
-				},
-				name: items[0].name,
-			});
-		},
+		toSourcePath,
 	});
 
 	const itemActions = useCallback(
-		(item: FileItem): FileExplorerItemActions => {
+		(item: FileItem, root: FileExplorerRoot): FileExplorerItemActions => {
+			// a host's root carries the host's entries, and no toolbox ones
+			if (root.explorer !== explorer) {
+				return {
+					actions: [],
+					secondaryActions:
+						host?.secondaryActions?.(
+							item,
+							root.explorer.mode as FilePanelMode,
+							root.explorer,
+						) ?? [],
+				};
+			}
+
 			// the row as it is in the source, which the toolbox paths and a
 			// host's own entries go by
 			const source = rootPath
@@ -238,12 +186,13 @@ const FileExplorerPanel = ({ id }: WorkbenchPanelProps) => {
 
 			return {
 				actions,
-				secondaryActions: host?.secondaryActions?.(source, mode) ?? [],
+				secondaryActions:
+					host?.secondaryActions?.(source, mode, explorer) ?? [],
 			};
 		},
 		[
 			mode,
-			explorer.commands,
+			explorer,
 			insight.actions,
 			layoutActions,
 			readOnly,
@@ -266,11 +215,18 @@ const FileExplorerPanel = ({ id }: WorkbenchPanelProps) => {
 		);
 	}
 
+	// a host's roots show only in the panels it names, such as a room's Files
+	const isShowingHost = sources?.isShownIn(mode) === true;
+
 	return (
 		<FileExplorerPane
 			id={id}
 			explorer={explorer}
 			itemActions={itemActions}
+			roots={isShowingHost ? hostRoots : undefined}
+			label={sources?.primaryLabel}
+			layout={config.roots ?? config.sections}
+			onLayoutChange={(layout) => setConfig({ roots: layout })}
 		/>
 	);
 };

@@ -1,0 +1,77 @@
+{
+	"title": "Kennisopslagplaatsen",
+	"aboutTitle": "Over kennisopslagplaatsen",
+	"whatIsKnowledgeStore": "Wat is een kennisopslagplaats?",
+	"ragDescription": "RAG-chat (Retrieval-Augmented Generation) verbetert AI-gesprekken door antwoorden te baseren op betrouwbare gegevens. Kies uit onderstaande bibliotheken om een antwoord te ontvangen dat specifiek naar die documenten verwijst.",
+	"subtitle": "Zoek, filter en maak nieuwe kennisopslagplaatsen aan.",
+	"newSource": {
+		"title": "Nieuwe kennisopslagplaats",
+		"description": "Upload documenten om een nieuwe kennisopslagplaats aan te maken"
+	},
+	"form": {
+		"nameLabel": "Naam",
+		"descriptionLabel": "Beschrijving",
+		"embeddingLabel": "Embedding",
+		"filesLabel": "Bestanden",
+		"descriptionPlaceholder": "Voer een beschrijving in"
+	},
+	"tabs": {
+		"all": "Alle",
+		"global": "Globale opslagplaatsen",
+		"mine": "Mijn opslagplaatsen"
+	},
+	"actions": {
+		"createSource": "Kennisopslagplaats aanmaken",
+		"viewDocuments": "Documenten bekijken",
+		"newChat": "Nieuwe chat"
+	},
+	"messages": {
+		"noDescription": "Geen beschrijving",
+		"noLibrariesFound": "Geen documentbibliotheken gevonden die aan uw criteria voldoen.",
+		"loadingDocuments": "Documenten laden…",
+		"noDocuments": "Geen documenten gevonden.",
+		"untitled": "Naamloos"
+	},
+	"documents": {
+		"title": "Documenten"
+	},
+	"embedDocuments": {
+		"title": "Documenten in bestaande bron embedden",
+		"description": "Upload documenten om in deze kennisopslagplaats te embedden.",
+		"documents": "Documenten",
+		"selectFiles": "Klik om bestanden te selecteren of sleep ze hierheen",
+		"embedButton": "Documenten embedden",
+		"embedding": "Embedden...",
+		"removeFile": "Bestand verwijderen"
+	},
+	"embedMessages": {
+		"selectKnowledgeSource": "Selecteer een kennisopslagplaats",
+		"selectDocument": "Selecteer ten minste één document",
+		"embedSuccess": "Documenten succesvol geëmbed",
+		"embedFailed": "Embedden van documenten mislukt"
+	},
+	"detail": {
+		"knowledge": "Kennis",
+		"embedDocuments": "Documenten embedden",
+		"documentsDescription": "Documenten die momenteel in deze kennisopslagplaats zijn geëmbed.",
+		"failedToLoadDocuments": "Laden van documenten mislukt."
+	},
+	"studio": {
+		"loadError": "Kennisverzamelingen konden niet worden geladen.",
+		"retry": "Opnieuw proberen",
+		"tags": "Tags",
+		"searchTags": "Tags zoeken…",
+		"noTags": "Geen tags gevonden.",
+		"favorites": "Favorieten",
+		"sortName": "Naam (A–Z)",
+		"sortDate": "Datum (nieuwste)",
+		"favorite": "Favoriet",
+		"files": "Bestanden",
+		"permissions": "Rechten",
+		"documentCount": "Ingesloten documenten: {{count}}",
+		"previewError": "Voorbeeld kon niet worden geladen.",
+		"previewUnavailable": "Voor dit bestandstype is geen voorbeeld beschikbaar.",
+		"dateUploaded": "Uploaddatum",
+		"size": "Grootte"
+	}
+}

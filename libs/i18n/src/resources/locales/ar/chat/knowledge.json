@@ -1,0 +1,77 @@
+{
+	"title": "مخازن المعرفة",
+	"aboutTitle": "حول مخازن المعرفة",
+	"whatIsKnowledgeStore": "ما هو مخزن المعرفة؟",
+	"ragDescription": "دردشة RAG (التوليد المعزز بالاسترجاع) تعزز محادثات الذكاء الاصطناعي من خلال تأسيس الاستجابات على بيانات موثوقة. اختر من المكتبات أدناه لتلقي استجابة تشير إلى تلك المستندات بشكل خاص.",
+	"subtitle": "البحث والتصفية وإنشاء مخازن معرفة جديدة.",
+	"newSource": {
+		"title": "مخزن معرفة جديد",
+		"description": "رفع المستندات لإنشاء مخزن معرفة جديد"
+	},
+	"form": {
+		"nameLabel": "الاسم",
+		"descriptionLabel": "الوصف",
+		"embeddingLabel": "التضمين",
+		"filesLabel": "الملفات",
+		"descriptionPlaceholder": "أدخل الوصف"
+	},
+	"tabs": {
+		"all": "الكل",
+		"global": "المخازن العالمية",
+		"mine": "مخازني"
+	},
+	"actions": {
+		"createSource": "إنشاء مخزن معرفة",
+		"viewDocuments": "عرض المستندات",
+		"newChat": "دردشة جديدة"
+	},
+	"messages": {
+		"noDescription": "لا يوجد وصف",
+		"noLibrariesFound": "لم يتم العثور على مكتبات مستندات تطابق معاييرك.",
+		"loadingDocuments": "جارٍ تحميل المستندات…",
+		"noDocuments": "لم يتم العثور على مستندات.",
+		"untitled": "بدون عنوان"
+	},
+	"documents": {
+		"title": "المستندات"
+	},
+	"embedDocuments": {
+		"title": "تضمين المستندات في مصدر موجود",
+		"description": "رفع المستندات لتضمينها في مخزن المعرفة هذا.",
+		"documents": "المستندات",
+		"selectFiles": "انقر لتحديد الملفات أو اسحب وأفلت",
+		"embedButton": "تضمين المستندات",
+		"embedding": "جارٍ التضمين...",
+		"removeFile": "إزالة الملف"
+	},
+	"embedMessages": {
+		"selectKnowledgeSource": "الرجاء اختيار مخزن معرفة",
+		"selectDocument": "الرجاء اختيار مستند واحد على الأقل",
+		"embedSuccess": "تم تضمين المستندات بنجاح",
+		"embedFailed": "فشل تضمين المستندات"
+	},
+	"detail": {
+		"knowledge": "المعرفة",
+		"embedDocuments": "تضمين المستندات",
+		"documentsDescription": "المستندات المضمنة حالياً في مخزن المعرفة هذا.",
+		"failedToLoadDocuments": "فشل تحميل المستندات."
+	},
+	"studio": {
+		"loadError": "تعذّر تحميل مجموعات المعرفة.",
+		"retry": "حاول مرة أخرى",
+		"tags": "الوسوم",
+		"searchTags": "ابحث عن الوسوم…",
+		"noTags": "لم يتم العثور على وسوم.",
+		"favorites": "المفضلة",
+		"sortName": "الاسم (أ–ي)",
+		"sortDate": "التاريخ (الأحدث)",
+		"favorite": "مفضّل",
+		"files": "الملفات",
+		"permissions": "الأذونات",
+		"documentCount": "المستندات المضمّنة: {{count}}",
+		"previewError": "تعذّر تحميل المعاينة.",
+		"previewUnavailable": "المعاينة غير متاحة لهذا النوع من الملفات.",
+		"dateUploaded": "تاريخ التحميل",
+		"size": "الحجم"
+	}
+}

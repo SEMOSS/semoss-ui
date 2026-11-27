@@ -12,6 +12,7 @@ const EXPLORER_SLICES = [
 	"instanceId",
 	"mode",
 	"adapter",
+	"source",
 	"capabilities",
 	"header",
 	"tree",
@@ -43,7 +44,8 @@ export type FileExplorerCommandOverrides = {
 };
 
 /**
- * Wrap an explorer's commands while keeping the api live.
+ * Wrap an explorer's commands, and optionally its header, while keeping the
+ * api live.
  *
  * `{ ...explorer }` cannot be used for this: every slice is a *getter* onto
  * the hook's current state, so spreading snapshots each one at the moment of
@@ -58,11 +60,14 @@ export type FileExplorerCommandOverrides = {
  *
  * @param base - The explorer from `useFileExplorer`.
  * @param overrides - Commands to replace, each given the live api.
+ * @param header - The header to show in place of `base`'s, read live, such as
+ * one search that every root of a `FileExplorer` shares.
  * @return A live view of `base` with those commands swapped.
  */
 export const decorateExplorer = (
 	base: FileExplorerApi,
 	overrides: FileExplorerCommandOverrides,
+	header?: (live: FileExplorerApi) => FileExplorerApi["header"],
 ): FileExplorerApi => {
 	const decorated = {} as Record<string, unknown>;
 
@@ -70,7 +75,8 @@ export const decorateExplorer = (
 		if (slice === "commands") continue;
 		Object.defineProperty(decorated, slice, {
 			enumerable: true,
-			get: () => base[slice],
+			get: () =>
+				slice === "header" && header ? header(base) : base[slice],
 		});
 	}
 

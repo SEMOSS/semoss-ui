@@ -1,10 +1,11 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { useRoot } from "@/hooks/use-root";
+import { usePlaygroundTheme } from "@/features/theme/use-playground-theme";
 import { InitializedLayout } from "./initialized-layout";
 import { RootLayout } from "./root-layout";
 
+/** The session status and server theme the mocked SDK hooks return. */
 const sdk = vi.hoisted(() => ({
 	status: "AUTHENTICATED" as string,
 	theme: null as Record<string, unknown> | null,
@@ -24,9 +25,10 @@ afterEach(() => {
 	sdk.theme = null;
 });
 
+/** Shows the theme's name, so a test can see which theme the layout provides. */
 function RootConsumer() {
-	const { root } = useRoot();
-	return <h1>{root.theme.name || "Default Playground"}</h1>;
+	const theme = usePlaygroundTheme();
+	return <h1>{theme.name || "Default Playground"}</h1>;
 }
 
 describe("Playground initialization", () => {

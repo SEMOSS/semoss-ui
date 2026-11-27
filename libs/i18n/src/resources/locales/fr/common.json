@@ -67,6 +67,7 @@
 		"logoAlt": "logo"
 	},
 	"fileExplorer": {
+		"roots": "Fichiers",
 		"search": "Rechercher",
 		"name": "Nom",
 		"dateModified": "Date de modification",
@@ -78,6 +79,7 @@
 		"moreActionsFor": "Plus d'actions pour {{name}}",
 		"toggleMenu": "Basculer le menu",
 		"resizeDateColumn": "Redimensionner la colonne de date",
+		"resizeSections": "Redimensionner {{above}} et {{below}}",
 		"failedToLoadFiles": "Échec du chargement des fichiers",
 		"pdfNotSupported": "Votre navigateur ne prend pas en charge l'affichage des PDF.",
 		"binaryView": {
@@ -129,6 +131,7 @@
 		},
 		"refreshTooltip": "Actualiser {{path}}",
 		"createTooltip": "Créer dans {{path}}",
+		"searchFilters": "Filtres de recherche",
 		"searchAll": "Tout",
 		"searchOnly": "Uniquement \"{{name}}\"",
 		"searchAllAria": "Rechercher partout",

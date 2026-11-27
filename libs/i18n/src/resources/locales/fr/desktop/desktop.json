@@ -1,0 +1,67 @@
+{
+	"connect": {
+		"title": "Se connecter à SEMOSS",
+		"description": "Saisissez l'adresse de votre serveur SEMOSS, avec le chemin du module. Vous pourrez la modifier ensuite dans Fichier > Changer de serveur.",
+		"urlLabel": "Adresse du serveur",
+		"urlHint": "L'adresse complète, par exemple https://semoss.example.com/Monolith.",
+		"submit": "Se connecter",
+		"checking": "Vérification du serveur…",
+		"cancel": "Annuler",
+		"current": "Connecté à {{server}}",
+		"titleSaved": "Serveurs",
+		"descriptionSaved": "Passez d'un serveur enregistré à l'autre ou ajoutez-en un. Chacun conserve sa propre connexion.",
+		"addTitle": "Ajouter un serveur"
+	},
+	"nav": {
+		"newChat": "Nouvelle discussion"
+	},
+	"account": {
+		"menu": "Compte",
+		"changeServer": "Changer de serveur",
+		"signOut": "Se déconnecter"
+	},
+	"unreachable": {
+		"title": "Impossible de joindre le serveur",
+		"description": "{{server}} n'a pas répondu. Réessayez ou connectez-vous à un autre serveur.",
+		"descriptionNoServer": "Le serveur n'a pas répondu. Réessayez ou connectez-vous à un autre serveur.",
+		"changeServer": "Utiliser un autre serveur"
+	},
+	"servers": {
+		"listLabel": "Serveurs enregistrés",
+		"current": "En cours",
+		"switch": "Activer",
+		"switchLabel": "Activer {{server}}",
+		"removeLabel": "Supprimer {{server}}",
+		"removeTitle": "Supprimer ce serveur ?",
+		"removeDescription": "Vous serez déconnecté de {{server}} et les données que cette application a enregistrées pour lui sur cet ordinateur seront supprimées. Vos conversations restent sur le serveur.",
+		"removeConfirm": "Supprimer le serveur",
+		"failed": "Impossible de changer de serveur : {{message}}"
+	},
+	"localFolders": {
+		"desktop": "Bureau",
+		"attach": "Joindre un dossier",
+		"attachDescription": "Joindre un dossier de cet ordinateur",
+		"folderActions": "Actions de {{name}}",
+		"reveal": "Afficher dans {{fileManager}}",
+		"openWithApp": "Ouvrir avec l’application par défaut",
+		"detach": "Détacher",
+		"detached": "{{name}} détaché. Ses fichiers sont toujours sur votre ordinateur.",
+		"attachFailed": "Le dossier n’a pas pu être joint. {{message}}",
+		"detachFailed": "Le dossier n’a pas pu être détaché. {{message}}",
+		"notInFolder": "Choisissez d'abord l'un des dossiers joints.",
+		"betweenFolders": "Les fichiers ne se déplacent et ne se copient qu'au sein d'un même dossier joint.",
+		"searchTruncated": "Affichage des {{count}} premiers résultats de chaque dossier. Recherchez dans un dossier pour en voir plus.",
+		"openFailed": "Cela n’a pas fonctionné. {{message}}",
+		"notHere": "Ce dossier n’est pas joint sur cet ordinateur.",
+		"titles": {
+			"list": "Lister un dossier du bureau",
+			"read": "Lire un fichier du bureau",
+			"search": "Rechercher sur le bureau",
+			"write": "Écrire un fichier du bureau",
+			"edit": "Modifier un fichier du bureau",
+			"create_directory": "Créer un dossier sur le bureau",
+			"move": "Déplacer ou renommer sur le bureau",
+			"delete": "Supprimer du bureau"
+		}
+	}
+}

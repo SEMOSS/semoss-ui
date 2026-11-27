@@ -1,0 +1,263 @@
+{
+	"welcome": "{{name}}, स्वागत है",
+	"suggestions": {
+		"title": "सुझाए गए अगले संदेश"
+	},
+	"settings": {
+		"description": "इस रूम के लिए मॉडल, निर्देश, ज्ञान और टूल।",
+		"compact": "बातचीत संकुचित करें",
+		"compactSuccess": "बातचीत सफलतापूर्वक संकुचित की गई",
+		"compactSkipped": "संकुचित करने के लिए कुछ नहीं — बातचीत पहले से ही संक्षिप्त है",
+		"compactError": "बातचीत संकुचित करने में विफल",
+		"compacting": "बातचीत संकुचित की जा रही है...",
+		"compactedAbove": "बातचीत संकुचित की गई",
+		"compactedAboveTooltip": "संदर्भ आकार को कम करने के लिए पुराने संदेशों को संक्षेपित किया गया",
+		"compactButton": "संकुचित करें",
+		"compactionOptions": "संकुचन विकल्प",
+		"advancedOptions": "उन्नत विकल्प",
+		"strategyLabel": {
+			"SUMMARY": "सारांशित करें",
+			"TOOL_PRUNE": "टूल्स छाँटें",
+			"AUTO": "स्वचालित"
+		},
+		"strategyTooltip": {
+			"SUMMARY": "पुराने संदेशों को AI द्वारा जनरेट किए गए सारांश से बदल देता है। टोकन स्थान खाली करते हुए बातचीत का समग्र संदर्भ बनाए रखता है।",
+			"TOOL_PRUNE": "बातचीत के इतिहास से विस्तृत टूल कॉल परिणामों को हटा देता है। यह तब सबसे अच्छा है जब टूल आउटपुट बड़े हों और विवरण की अब आवश्यकता न हो।",
+			"AUTO": "मौजूदा बातचीत के आधार पर सारांशीकरण या टूल छँटाई में से चुना जाएगा।"
+		},
+		"noKnowledge": "कोई ज्ञान चयनित नहीं है।",
+		"fromRoom": "रूम से",
+		"inheritedSelection": "विरासत में मिले चयन इस चैट से नहीं हटाए जा सकते।",
+		"removeSelection": "{{name}} हटाएँ",
+		"agentLoadError": "एजेंट लोड नहीं हो सका। फिर कोशिश करें या दूसरा एजेंट चुनें।",
+		"toolsTitle": "टूल"
+	},
+	"form": {
+		"modelLabel": "मॉडल",
+		"instructionsLabel": "निर्देश",
+		"agentLabel": "एजेंट",
+		"knowledgeLabel": "ज्ञान",
+		"temperatureLabel": "तापमान"
+	},
+	"modes": {
+		"ask": "चैट",
+		"agent": "एजेंट",
+		"exitAgent": "चैट पर जाएँ",
+		"selectedAgent": "एजेंट: {{name}}",
+		"defaultAgent": "डिफ़ॉल्ट एजेंट",
+		"noAgent": "कोई एजेंट नहीं"
+	},
+	"workspace": {
+		"publish": "एजेंट के रूप में प्रकाशित करें",
+		"publishTitle": "एजेंट प्रकाशित करें",
+		"publishDescription": "वर्तमान रूम कॉन्फ़िगरेशन के साथ एक नया एजेंट प्रकाशित करें, जिसमें निर्देश और MCP शामिल हैं।",
+		"nameLabel": "नाम *",
+		"namePlaceholder": "एजेंट नाम दर्ज करें",
+		"descriptionLabel": "विवरण",
+		"descriptionPlaceholder": "एजेंट विवरण दर्ज करें",
+		"cancelButton": "रद्द करें",
+		"publishingButton": "प्रकाशित किया जा रहा है...",
+		"publishButton": "एजेंट प्रकाशित करें",
+		"nameRequired": "एजेंट नाम आवश्यक है",
+		"publishSuccess": "एजेंट सफलतापूर्वक बनाया गया",
+		"publishError": "एजेंट बनाने में विफल: {{error}}"
+	},
+	"input": {
+		"ariaPlaceholder": "टेक्स्ट दर्ज करें",
+		"thinking": "सोच रहा है...",
+		"menuPrompt": "मैं आज आपकी कैसे मदद कर सकता हूं?",
+		"addToChat": "अपनी चैट में जोड़ें",
+		"recordLabel": "मॉडल रिकॉर्ड करें",
+		"stopRecording": "रिकॉर्डिंग बंद करें",
+		"record": "रिकॉर्ड करें",
+		"askLabel": "AI से पूछें",
+		"thinkingTooltip": "सोच रहा है",
+		"enterQuestion": "कृपया एक प्रश्न दर्ज करें",
+		"completeTool": "कृपया आगे बढ़ने के लिए टूल पूरा करें",
+		"ask": "पूछें",
+		"errorProcessing": "चैट प्रोसेस करने में त्रुटि",
+		"stopLabel": "प्रतिक्रिया रोकें",
+		"stopTooltip": "रोकें",
+		"stoppingTooltip": "रोक रहा है",
+		"recordUnavailable": "इस ब्राउज़र में बोलकर लिखना उपलब्ध नहीं है",
+		"historyHint": "पिछला प्रॉम्प्ट {{index}} / {{total}} · ↑/↓ से देखें · ड्राफ़्ट वापस लाने के लिए Esc",
+		"draftRestored": "ड्राफ़्ट वापस लाया गया",
+		"removeFile": "{{name}} हटाएं"
+	},
+	"content": {
+		"scrollToTop": "शीर्ष पर स्क्रॉल करें",
+		"scrollToBottom": "नीचे तक स्क्रॉल करें"
+	},
+	"inlineTool": {
+		"openInSidebar": "कार्यस्थान में खोलें",
+		"minimize": "छोटा करें",
+		"maximize": "बड़ा करें",
+		"close": "बंद करें"
+	},
+	"fileExplorer": {
+		"copyPath": "पथ कॉपी करें",
+		"download": "डाउनलोड करें",
+		"delete": "हटाएं",
+		"copyFailed": "क्लिपबोर्ड पर कॉपी करने में विफल"
+	},
+	"menuToolbox": {
+		"addToolbox": "टूल जोड़ें"
+	},
+	"menuKnowledge": {
+		"addKnowledge": "ज्ञान जोड़ें"
+	},
+	"menuWorkspace": {
+		"selectAgent": "एजेंट चुनें",
+		"searchPlaceholder": "एजेंट खोजें",
+		"notFound": "नहीं मिला"
+	},
+	"menuUpload": {
+		"attachDocument": "फ़ाइलें संलग्न करें"
+	},
+	"menuFileExplorer": {
+		"name": "रूम फ़ाइलें"
+	},
+	"errors": {
+		"createRoom": "रूम बनाते समय एक त्रुटि हुई। त्रुटि: {{message}}",
+		"fileInUse": "अपलोड की गई फ़ाइल(फ़ाइलें) किसी अन्य प्रोग्राम द्वारा उपयोग में हैं। उस प्रोग्राम को बंद करें और नई चैट में फ़ाइल(फ़ाइलें) पुनः अपलोड करें।",
+		"processingChat": "चैट प्रोसेस करने में त्रुटि",
+		"roomNotFound": "रूम नहीं मिला",
+		"initializeFailed": "रूम शुरू करने में त्रुटि",
+		"updateOptionsFailed": "रूम विकल्प अपडेट करने में त्रुटि"
+	},
+	"contextWindow": {
+		"descriptionLow": "सभी बातचीत की एक सीमा होती है। बहुत लंबी बातचीत अंततः मॉडल को पुराने संदेश भुला देने का कारण बनेगी।",
+		"descriptionMedium": "यह बातचीत लंबी हो रही है। यदि यह जारी रहती है, तो मॉडल पुराने संदेशों को भूलना शुरू कर देगा। इस बातचीत को संकुचित करें या जल्द ही नई चैट शुरू करें।",
+		"descriptionHigh": "यह बातचीत लगभग भर चुकी है। मॉडल जल्द ही पुराने संदेशों को भूलना शुरू कर देगा। पूर्ण संदर्भ के साथ जारी रखने के लिए इस बातचीत को संकुचित करें या नई चैट शुरू करें।",
+		"descriptionExceeded": "यह बातचीत अपनी सीमा से अधिक हो गई है। मॉडल अब पुराने संदेशों को भूल रहा है। सर्वोत्तम परिणामों के लिए इस बातचीत को संकुचित करें या नई चैट शुरू करें।",
+		"memoryUsedTitle": "उपयोग की गई मेमोरी:",
+		"memoryUsedValue": "{{used}} / {{total}} टोकन ({{percent}}%)",
+		"totalUsedTitle": "चैट कुल:",
+		"totalUsedValue": "{{total}} टोकन"
+	},
+	"menuMcp": {
+		"searchPlaceholder": "ज्ञान और टूलबॉक्स खोजें",
+		"noResults": "कोई मेल खाने वाली आइटम नहीं मिली",
+		"noItemsAvailable": "कोई ज्ञान या टूलबॉक्स उपलब्ध नहीं है"
+	},
+	"studio": {
+		"toolsLocked": "उत्तर तैयार होते समय टूल बदले नहीं जा सकते।",
+		"toolsHint": "चयन आपके अगले संदेश पर लागू होंगे।",
+		"moreActions": "अन्य कार्रवाइयाँ",
+		"prompts": "प्रॉम्प्ट",
+		"removeFile": "{{name}} हटाएँ",
+		"errorTitle": "कुछ गलत हो गया",
+		"errorDescription": "पेज रीफ़्रेश करें या होम पेज पर लौटकर फिर प्रयास करें।",
+		"backHome": "होम पर लौटें",
+		"export": "निर्यात करें",
+		"refresh": "रीफ़्रेश करें",
+		"exportCsv": "CSV के रूप में निर्यात करें",
+		"exportPdf": "PDF के रूप में निर्यात करें",
+		"prepareError": "कार्यस्थान तैयार नहीं हो सका। आपका ड्राफ़्ट सुरक्षित है।",
+		"retry": "फिर कोशिश करें"
+	},
+	"workbench": {
+		"views": "बातचीत के दृश्य",
+		"chat": "चैट",
+		"workspace": "कार्यस्थान",
+		"closeWorkspace": "कार्यस्थान बंद करें",
+		"openWorkspace": "वर्कस्पेस खोलें",
+		"preparingWorkspace": "कार्यस्थान तैयार हो रहा है…"
+	},
+	"workspacePlaces": {
+		"files": "फ़ाइलें",
+		"openPanel": "पैनल खोलें",
+		"activity": "गतिविधि",
+		"settings": "सेटिंग्स",
+		"descriptions": {
+			"files": "यहाँ अपलोड की गई फ़ाइलें और रूम के टूल द्वारा बनाई गई हर चीज़",
+			"settings": "इस रूम का मॉडल, निर्देश, ज्ञान और टूल",
+			"activity": "इस रूम में हर टूल कॉल और बदलाव"
+		}
+	},
+	"optimizer": {
+		"optimize": "प्रॉम्प्ट सुधारें",
+		"revert": "पिछले प्रॉम्प्ट पर लौटें",
+		"optimizing": "सुधार रहे हैं…",
+		"success": "प्रॉम्प्ट सुधारा गया!",
+		"noModel": "प्रॉम्प्ट सुधारने के लिए मॉडल चुनें",
+		"invalidResponse": "सुधारा हुआ प्रॉम्प्ट प्राप्त नहीं हुआ",
+		"failed": "प्रॉम्प्ट सुधारा नहीं जा सका",
+		"tooLarge": "प्रॉम्प्ट सुधारने के लिए बहुत लंबा है। पहले इसे छोटा करें।",
+		"noPermission": "आपको इस मॉडल का उपयोग करने की अनुमति नहीं है"
+	},
+	"contextItems": {
+		"label": "आपके अगले संदेश में जोड़ा गया",
+		"remove": "{{name}} को अपने अगले संदेश से हटाएं"
+	},
+	"header": {
+		"untitled": "बिना शीर्षक वाला रूम",
+		"renameLabel": "रूम का नाम",
+		"roomSection": "रूम"
+	},
+	"slash": {
+		"empty": "कोई कमांड नहीं मिली",
+		"openPlace": "{{name}} को कार्यस्थान में खोलें",
+		"groups": {
+			"chat": "चैट",
+			"workbench": "कार्यस्थान",
+			"room": "रूम",
+			"prompts": "प्रॉम्प्ट"
+		},
+		"commands": {
+			"attach": {
+				"label": "फ़ाइलें संलग्न करें",
+				"description": "अपने अगले संदेश में फ़ाइलें जोड़ें"
+			},
+			"knowledge": {
+				"label": "ज्ञान जोड़ें",
+				"description": "सहायक को अपने ज्ञान स्रोतों में खोजने दें"
+			},
+			"toolbox": {
+				"label": "टूल जोड़ें",
+				"description": "ऐसे टूलबॉक्स जोड़ें जिनका सहायक उपयोग कर सके"
+			},
+			"agent": {
+				"label": "एजेंट चुनें",
+				"description": "वह एजेंट चुनें जिसके साथ यह रूम चलता है"
+			},
+			"agent-harness": {
+				"label": "एजेंट पर जाएँ",
+				"description": "इस रूम को एजेंट के साथ चलाएँ"
+			},
+			"chat-mode": {
+				"label": "चैट पर जाएँ",
+				"description": "इस रूम को बिना एजेंट के चलाएँ"
+			},
+			"compact": {
+				"label": "संक्षिप्त करें",
+				"description": "संदर्भ खाली करने के लिए बातचीत का सारांश बनाएँ"
+			},
+			"close-workspace": {
+				"description": "कार्यस्थान छिपाएँ और उसके टैब रखें"
+			},
+			"favorite": {
+				"description": "इस रूम को अपनी सूची में सबसे ऊपर पिन करें"
+			},
+			"unfavorite": {
+				"description": "इस रूम को सूची के ऊपर से हटाएँ"
+			},
+			"rename": {
+				"description": "इस रूम का नाम बदलें"
+			},
+			"download": {
+				"description": "इस बातचीत को Word या PDF के रूप में सहेजें"
+			},
+			"delete": {
+				"description": "इस रूम और इसकी बातचीत को हटाएँ"
+			},
+			"publish": {
+				"description": "इस रूम के निर्देश और टूल को एजेंट के रूप में सहेजें"
+			}
+		}
+	},
+	"files": {
+		"room": "रूम",
+		"actionFailed": "यह काम नहीं किया। {{message}}"
+	}
+}

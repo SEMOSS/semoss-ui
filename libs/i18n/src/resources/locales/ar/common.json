@@ -67,6 +67,7 @@
 		"logoAlt": "الشعار"
 	},
 	"fileExplorer": {
+		"roots": "الملفات",
 		"search": "بحث",
 		"name": "الاسم",
 		"dateModified": "تاريخ التعديل",
@@ -78,6 +79,7 @@
 		"moreActionsFor": "مزيد من الإجراءات لـ {{name}}",
 		"toggleMenu": "تبديل القائمة",
 		"resizeDateColumn": "تغيير حجم عمود التاريخ",
+		"resizeSections": "تغيير حجم {{above}} و{{below}}",
 		"failedToLoadFiles": "فشل تحميل الملفات",
 		"pdfNotSupported": "متصفحك لا يدعم عرض ملفات PDF.",
 		"binaryView": {
@@ -129,6 +131,7 @@
 		},
 		"refreshTooltip": "تحديث {{path}}",
 		"createTooltip": "إنشاء في {{path}}",
+		"searchFilters": "عوامل تصفية البحث",
 		"searchAll": "الكل",
 		"searchOnly": "فقط \"{{name}}\"",
 		"searchAllAria": "بحث في الكل",
