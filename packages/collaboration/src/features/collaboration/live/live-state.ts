@@ -314,7 +314,7 @@ export function mapTopic(row: Row): Topic {
 		short: str(row.short, str(row.name)),
 		accountId: opt(row.accountId) ?? null,
 		kind: (row.kind as Topic["kind"]) ?? "internal",
-		color: str(row.color, "#8a9099"),
+		color: str(row.color),
 		status: (row.status as Topic["status"]) ?? "active",
 		description: str(row.description),
 		keywords: list<string>(row.keywords),
@@ -342,6 +342,7 @@ export function mapTopic(row: Row): Topic {
 		stats: {
 			threads: Number(stats.threads ?? 0),
 			openItems: Number(stats.openItems ?? 0),
+			chats: Number(stats.chats ?? 0),
 			lastActivity: str(stats.lastActivity),
 		},
 		isSample: false,

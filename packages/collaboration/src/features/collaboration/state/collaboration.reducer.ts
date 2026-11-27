@@ -103,6 +103,17 @@ export function reconcileCollaborationState(
 			const threads = state.threads.filter((thread) =>
 				thread.topicLinks.some((link) => link.topicId === topic.id),
 			);
+			const chats = new Set<string>();
+			for (const item of state.items) {
+				if (item.topicIds.includes(topic.id)) {
+					if (item.roomId) chats.add(item.roomId);
+					if (item.rooms) {
+						for (const room of item.rooms) {
+							chats.add(room.id);
+						}
+					}
+				}
+			}
 			return {
 				...topic,
 				stats: {
@@ -113,6 +124,7 @@ export function reconcileCollaborationState(
 							(item.status === "open" ||
 								item.status === "waiting"),
 					).length,
+					chats: topic.stats.chats || chats.size,
 					lastActivity:
 						threads
 							.map((thread) => thread.lastAt)
@@ -166,7 +178,7 @@ function newTopic(
 		keywords: [],
 		people: [],
 		calendarSeries: [],
-		stats: { threads: 0, openItems: 0, lastActivity: now },
+		stats: { threads: 0, openItems: 0, chats: 0, lastActivity: now },
 		isSample: false,
 		...patch,
 		id: patch.id ?? `local-topic-${state.sequence++}`,

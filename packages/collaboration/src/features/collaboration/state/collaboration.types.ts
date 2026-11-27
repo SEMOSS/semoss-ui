@@ -65,7 +65,12 @@ export interface Topic {
 	folders?: { id: string; path: string; origin?: string | null }[];
 	/** OneDrive and Teams files the owner linked to the topic. */
 	files?: TopicFile[];
-	stats: { threads: number; openItems: number; lastActivity: string };
+	stats: {
+		threads: number;
+		openItems: number;
+		chats: number;
+		lastActivity: string;
+	};
 	isSample: boolean;
 }
 

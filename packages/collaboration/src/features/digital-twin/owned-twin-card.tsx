@@ -11,7 +11,7 @@ import {
 } from "@semoss/ui/next";
 import { AgentAvatar } from "@/components/common/agent-avatar";
 import { agentImageUrl } from "@/features/agents/api/agent-image";
-import { topicTone } from "@/features/collaboration/topic-tone";
+import { topicColorClassName } from "@/features/collaboration/topic-color";
 import {
 	twinChatPath,
 	twinContentsPath,
@@ -55,7 +55,7 @@ export function OwnedTwinCard({
 						aria-hidden="true"
 						className={cn(
 							"twin-gallery-art -z-10 pointer-events-none absolute inset-0 @lg/twins:block hidden overflow-hidden",
-							topicTone(twin.id),
+							topicColorClassName(twin.id),
 						)}
 					>
 						<span
